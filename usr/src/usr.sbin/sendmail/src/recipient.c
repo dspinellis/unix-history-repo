@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	8.24 (Berkeley) %G%";
+static char sccsid[] = "@(#)recipient.c	8.25 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -687,7 +687,7 @@ writable(filename)
 		printf("\teu/gid=%d/%d, st_u/gid=%d/%d\n",
 			euid, egid, stb.st_uid, stb.st_gid);
 
-	return safefile(filename, euid, egid, uname, SF_NOSLINK, S_IWRITE);
+	return safefile(filename, euid, egid, uname, SF_NOSLINK, S_IWRITE) == 0;
 }
 /*
 **  INCLUDE -- handle :include: specification.
