@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)mount.8	8.7 (Berkeley) %G%
+.\"     @(#)mount.8	8.8 (Berkeley) %G%
 .\"
 .Dd 
 .Dt MOUNT 8
@@ -48,6 +48,13 @@ this list is printed.
 .Pp
 The options are as follows:
 .Bl -tag -width indent
+.It Fl a
+All the filesystems described in
+.Xr fstab 5
+are mounted.
+Exceptions are those marked as ``noauto'' or are excluded by the
+.Fl t
+flag (see below).
 .It Fl d
 Causes everything to be done except for the actual system call.
 This option is useful in conjunction with the
@@ -79,6 +86,10 @@ The same as
 .Fl f ;
 forces the revocation of write access when trying to downgrade
 a filesystem mount status from read-write to read-only.
+.It noauto
+This filesystem should be skipped when mount is run with the
+.Fl a
+flag.
 .It nodev
 Do not interpret character or block special devices on the file system.
 This option is useful for a server that has file systems containing
