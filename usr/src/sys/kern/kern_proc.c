@@ -1,4 +1,4 @@
-/*	kern_proc.c	3.1	%H%	*/
+/*	kern_proc.c	3.2	%H%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -88,8 +88,12 @@ exece()
 				u.u_error = E2BIG;
 			if ((c = fubyte((caddr_t)ap++)) < 0)
 				u.u_error = EFAULT;
-			if (u.u_error)
+			if (u.u_error) {
+				if (bp)
+					brelse(bp);
+				bp = 0;
 				goto badarg;
+			}
 			if ((nc&BMASK) == 0) {
 				if (bp)
 					bdwrite(bp);
