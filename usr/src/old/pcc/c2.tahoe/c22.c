@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)c22.c	1.7 (Berkeley/CCI) %G%";
+static char sccsid[] = "@(#)c22.c	1.8 (Berkeley/CCI) %G%";
 #endif
 
 /*
@@ -34,7 +34,7 @@ rmove()
 		repladdr(p);
 		r = isreg(regs[RT1]);
 		r1 = isreg(regs[RT2]);
-		dest(regs[RT2],p->subop, 1);
+		dest(regs[RT2],p->subop, p->op!=CVT || r<0);
 		if (r>=0 && r1>=0) {
 			p->op = MOV; p->subop = LONG;
 			p->pop = 0;
