@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	4.11 (Berkeley) %G%
+#	@(#)Makefile	4.12 (Berkeley) %G%
 #
 # The system has two monitoring schemes, utilizing either ``prof''
 # or ``gprof''. DFLMON determines the default profiler; mon.o
@@ -19,10 +19,14 @@
 # The C run-time startup code is always machine dependent and expected
 # to be located in ${MACHINE}/csu
 #
+# All files contain sccsid strings. To compile a library that does
+# not include these strings one must add -Dlint to DEFS below.
+#
 DESTDIR=
 INSTALL=install -m 644
 DFLMON=	mon.o
 MACHINE=vax
+DEFS=
 COMPAT=	compat-4.1 compat-sys5
 ALL=	gen inet net stdio ${MACHINE} ${COMPAT}
 TAGSFILE=tags
@@ -43,7 +47,7 @@ libc.a libc_p.a: ${MACHINE}/csu ${ALL}
 	rm -rf t1 tmp
 
 ${MACHINE}/csu ${ALL}: FRC
-	cd $@; make ${MFLAGS}
+	cd $@; make ${MFLAGS} DEFS=${DEFS}
 
 FRC:
 
