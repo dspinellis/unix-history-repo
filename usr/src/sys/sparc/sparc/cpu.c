@@ -13,9 +13,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)cpu.c	7.4 (Berkeley) %G%
+ *	@(#)cpu.c	7.5 (Berkeley) %G%
  *
- * from: $Header: cpu.c,v 1.10 93/04/20 11:16:51 torek Exp $ (LBL)
+ * from: $Header: cpu.c,v 1.11 93/04/27 14:34:42 torek Exp $ (LBL)
  */
 
 #include <sys/param.h>
@@ -24,6 +24,11 @@
 #include <machine/autoconf.h>
 #include <machine/cpu.h>
 #include <machine/reg.h>
+
+#include <sparc/sparc/cache.h>
+
+/* This is declared here so that you must include a CPU for the cache code. */
+struct cacheinfo cacheinfo;
 
 /* the following are used externally (sysctl_hw) */
 char	machine[] = "sparc";
@@ -34,8 +39,8 @@ static char *psrtoname();
 static char *fsrtoname();
 
 /*
- * Attach the CPU.  Right now we just print stuff like "Sun 4/65 (25 MHz)".
- * Eventually we will need more....
+ * Attach the CPU.
+ * Discover interesting goop about the virtual address cache.
  */
 static void
 cpu_attach(parent, dev, aux)
@@ -43,7 +48,7 @@ cpu_attach(parent, dev, aux)
 	struct device *dev;
 	void *aux;
 {
-	register int node, clk;
+	register int node, clk, i, l;
 	register u_int psr, fver;
 	register char *fpuname;
 	struct fpstate fpstate;
@@ -75,6 +80,22 @@ cpu_attach(parent, dev, aux)
 	    clockfreq(clk), fpuname);
 	printf(": %s\n", cpu_model);
 	cpuspeed = clk / 1000000;	/* XXX */
+
+	/*
+	 * Fill in the cache info.  Note, vac-hwflush is spelled
+	 * with an underscore on 4/75s.
+	 */
+	cacheinfo.c_totalsize = getpropint(node, "vac-size", 65536);
+	cacheinfo.c_hwflush = getpropint(node, "vac_hwflush", 0) |
+	    getpropint(node, "vac-hwflush", 0);
+	cacheinfo.c_linesize = l = getpropint(node, "vac-linesize", 16);
+	for (i = 0; (1 << i) < l; i++)
+		/* void */;
+	if ((1 << i) != l)
+		panic("bad cache line size %d", l);
+	cacheinfo.c_l2linesize = i;
+
+	vactype = VAC_WRITETHROUGH;	/* ??? */
 }
 
 struct cfdriver cpucd =
