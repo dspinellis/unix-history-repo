@@ -1,4 +1,4 @@
-#	@(#)Makefile	4.1 (Berkeley) %G%
+#	@(#)Makefile	4.2 (Berkeley) %G%
 #
 # make file for debugger "dbx"
 #
@@ -14,14 +14,14 @@
 .SUFFIXES: .h .c .s .o
 
 AOUT	= tdbx
-DEST	= /usr/ucb/dbx
-DESTDIR	=
+DESTDIR =
+DEST	= ${DESTDIR}/usr/ucb/dbx
 
 LIBRARIES =
 
 CC	= cc
 CFLAGS	= # -g
-LDFLAGS	= # -g
+LDFLAGS	= -g
 
 OBJ = \
     y.tab.o \
@@ -115,7 +115,7 @@ clean:
 	rm -f ${HDR} ${OBJ} y.tab.c y.tab.h ${AOUT} core
 
 install:
-	install -s ${AOUT} ${DESTDIR}/${DEST}
+	install -s ${AOUT} ${DEST}
 
 #
 # Header dependencies are purposely incomplete since header files
