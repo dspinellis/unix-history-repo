@@ -1,6 +1,6 @@
 # ------------------------
 #
-#	Termcap source file	@(#)termcap.src	5.18 (Berkeley) %G%
+#	Termcap source file	@(#)termcap.src	5.19 (Berkeley) %G%
 #	Kevin Layer, Berkeley
 #	Craig Leres, Berkeley
 #	Mark Horton, Berkeley
@@ -1124,12 +1124,20 @@ Xy|4113-nd|tek4113-nd|tektronix 4113 color graphics, no dialog area:\
 	:vb=\ERBA4\ERBA4\ERBA4\ERBA4\ERBA4\ERBA4\ERBA4\ERBA4\ERBA4\ERBA4\ERB0:\
 	:cl=\E\f:uc=^H\EMG1_\EMG0:so=\EMT2:se=\EMT1:\
 	:.ns:.as=\E^N:.ae=\E^O:
-Xz|4105|tek4105: \
+Xz|4105|tek4105:\
 	:al=\E[1L:am:bs:cd=\E[J:ce=\E[K:cl=\E[2J\E[H:cm=\E[%i%2;%2H:co#80:\
 	:dc=\E[1P:dl=\E[1M:dn=\E[1B:ho=\E[H:im=\E[4h:li#30:mi:nd=\E[1C:\
 	:as=\E[1m:ae=\E[0m:ms:pt:se=\E[0m:so=\E[7m:up=\E[1A:kb=^h:ku=\E[1A:\
 	:kd=\E[1B:kl=\E[1D:kr=\E[1C:ul:us=\E[4m:ue=\E[0m:is=\E%!1\E[?6l\E[0m:\
 	:mr=\E[<3m:md=\E[<4m:mh=\E[<6m:mb=\E[<7m:me=\E[<1m:ti=\E%!1\E[?6l:xt:
+# From carolyn@dali.berkeley.edu  Thu Oct 31 12:54:27 1985
+XA|4404|tek4404:\
+	:al=\E[1L:bs:cd=\E[J:ce=\E[K:cl=\E[;H\E[2J:cm=\E[%i%d;%dH:co#80:\
+	:cs=\E[%i%d;%dr:dc=\E[P:dl=\E[1M:do=^J:ei=\E[4l:ho=\E[H:im=\E[4h:\
+	:kd=\E[B:ke=\E[?1h:kl=\E[D:kr=\E[C:ks=\E[?1l:ku=\E[A:li#32::mb=\E[5m:\
+	:md=\E[1m:me=\E[m:nd=\E[C:pt:rc=\E8:sc=\E7:se=\E[27m:so=\E[7m:\
+	:ta=\E[2I:ti=\E%\!1\E[1;32r\E[?6l\E>:te=\E[1;1H\E[0J\E[?6h\E[?1l:\
+	:ue=\E[m:up=\E[A:us=\E[4m:
 # # --------------------------------
 #
 # a: ADDS
