@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)bt_split.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)bt_split.c	5.7 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -295,7 +295,7 @@ bt_page(t, h, lp, rp, skip)
 	++bt_split;
 #endif
 	/* Put the new right page for the split into place. */
-	if ((r = mpool_new(t->bt_mp, &npg)) == NULL)
+	if ((r = __bt_new(t, &npg)) == NULL)
 		return (NULL);
 	r->pgno = npg;
 	r->lower = BTDATAOFF;
@@ -396,8 +396,8 @@ bt_root(t, h, lp, rp, skip)
 	++bt_rootsplit;
 #endif
 	/* Put the new left and right pages for the split into place. */
-	if ((l = mpool_new(t->bt_mp, &lnpg)) == NULL ||
-	    (r = mpool_new(t->bt_mp, &rnpg)) == NULL)
+	if ((l = __bt_new(t, &lnpg)) == NULL ||
+	    (r = __bt_new(t, &rnpg)) == NULL)
 		return (NULL);
 	l->pgno = lnpg;
 	r->pgno = rnpg;

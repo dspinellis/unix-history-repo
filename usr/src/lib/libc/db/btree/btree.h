@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)btree.h	5.7 (Berkeley) %G%
+ *	@(#)btree.h	5.8 (Berkeley) %G%
  */
 
 #include <mpool.h>
@@ -262,7 +262,7 @@ typedef struct BTREE {
 	FILE	*bt_rfp;		/* R: record FILE pointer */
 	int	bt_rfd;			/* R: record file descriptor */
 
-	pgno_t	bt_free;		/* XXX next free page */
+	pgno_t	bt_free;		/* next free page */
 	index_t	bt_psize;		/* page size */
 	index_t	bt_ovflsize;		/* cut-off for key/data overflow */
 	int	bt_lorder;		/* byte order */
