@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)lex.c 4.1 %G%";
+static	char *sccsid = "@(#)lex.c 4.2 %G%";
 
 #include "sh.h"
 
@@ -1133,7 +1133,7 @@ reread:
 				return (-1);
 			/* was isatty but raw with ignoreeof yields problems */
 			if (ioctl(SHIN, TIOCGETP, &tty)==0 && (tty.sg_flags & RAW) == 0) {
-				short ctpgrp;
+				int ctpgrp;
 
 				if (++sincereal > 25)
 					goto oops;
