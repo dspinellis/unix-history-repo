@@ -1,4 +1,0 @@
-Mrexecd	rexecd.c	/^main(argc, argv)$/
-doit	rexecd.c	/^doit(f, fromp)$/
-error	rexecd.c	/^error(fmt, a1, a2, a3)$/
-getstr	rexecd.c	/^getstr(buf, cnt, err)$/
