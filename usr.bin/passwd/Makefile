@@ -19,6 +19,9 @@ CFLAGS+= -DKERBEROS
 DPADD+= ${LIBKRB}
 LDADD+= -lkrb -ldes
 .endif
+.if defined (PW_COMPACT)
+CFLAGS+=-DPW_COMPACT
+.endif
 
 getpwent.o: getpwent.c
 	${CC} ${CFLAGS} -UYP -c ${.IMPSRC}
