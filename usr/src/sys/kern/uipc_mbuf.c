@@ -13,7 +13,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)uipc_mbuf.c	7.11 (Berkeley) %G%
+ *	@(#)uipc_mbuf.c	7.12 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -404,6 +404,8 @@ m_adj(mp, req_len)
 		}
 		if (m->m_len >= len) {
 			m->m_len -= len;
+			if ((mp = m)->m_flags & M_PKTHDR)
+				m->m_pkthdr.len -= len;
 			return;
 		}
 		count -= len;
