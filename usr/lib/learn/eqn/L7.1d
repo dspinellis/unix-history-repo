@@ -1,0 +1,37 @@
+#once #create message
+.ND
+.tr %$
+.EQ
+delim $$
+.EN
+.LP
+Let's do one more example of from-to for practice
+before we go on to the next topic.
+Modify "Example" so it produces output that looks
+like this, then type "ready".
+.pl 1
+#once #create Ref
+.EQ
+delim $$
+.EN
+.LP
+Let $Q( pi )$ be $sum from {i= pi sub 1} to {i= pi sub 2} x sub i$.
+.pl 1
+#once #create Example
+.EQ
+delim $$
+.EN
+.LP
+.pl 1
+#
+#once neqn Ref | nroff >X1 &
+#once neqn message Ref | nroff -T$TERM %s/tinyms -
+#user
+neqn Example | nroff >X2
+#cmp X1 X2
+#fail
+Don't forget to set delimiters before the .LP line,
+and get the spaces right around the dollar signs.
+#log
+#next
+8.1a 10
