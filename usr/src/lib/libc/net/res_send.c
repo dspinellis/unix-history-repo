@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)res_send.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)res_send.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -18,8 +18,8 @@ static char sccsid[] = "@(#)res_send.c	5.3 (Berkeley) %G%";
 #include <netinet/in.h>
 #include <stdio.h>
 #include <errno.h>
-#include <nameser.h>
-#include <resolv.h>
+#include <arpa/nameser.h>
+#include <arpa/resolv.h>
 
 extern int errno;
 
