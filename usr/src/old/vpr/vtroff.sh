@@ -1,6 +1,6 @@
 #! /bin/csh -f
 #
-#	@(#)vtroff.sh	4.4	(Berkeley)	%G%
+#	@(#)vtroff.sh	4.5	(Berkeley)	%G%
 #
 umask 0
 set flags=() noglob length=() fonts=() fontf=()
