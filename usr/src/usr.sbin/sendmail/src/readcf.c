@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readcf.c	8.66 (Berkeley) %G%";
+static char sccsid[] = "@(#)readcf.c	8.67 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -395,10 +395,19 @@ readcf(cfname)
 			break;
 
 		  case 'C':		/* word class */
-			/* scan the list of words and set class for all */
-			mid = macid(&bp[1], &ep);
-			expand(ep, exbuf, &exbuf[sizeof exbuf], e);
-			for (p = exbuf; *p != '\0'; )
+		  case 'T':		/* trusted user (set class `t') */
+			if (bp[0] == 'C')
+			{
+				mid = macid(&bp[1], &ep);
+				expand(ep, exbuf, &exbuf[sizeof exbuf], e);
+				p = exbuf;
+			}
+			else
+			{
+				mid = 't';
+				p = &bp[1];
+			}
+			while (*p != '\0')
 			{
 				register char *wd;
 				char delim;
@@ -472,23 +481,6 @@ readcf(cfname)
 			Priorities[NumPriorities].pri_name = newstr(&bp[1]);
 			Priorities[NumPriorities].pri_val = atoi(++p);
 			NumPriorities++;
-			break;
-
-		  case 'T':		/* trusted user(s) */
-			p = &buf[1];
-			while (*p != '\0')
-			{
-				while (isspace(*p))
-					p++;
-				q = p;
-				while (*p != '\0' && !isspace(*p))
-					p++;
-				if (*p != '\0')
-					*p++ = '\0';
-				if (*q == '\0')
-					continue;
-				(void) stab(q, ST_TRUSTED, ST_ENTER);
-			}
 			break;
 
 		  case 'V':		/* configuration syntax version */
