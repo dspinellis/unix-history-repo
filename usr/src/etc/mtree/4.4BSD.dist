@@ -3,7 +3,7 @@
 #	   tree: distribution tree: /, /usr, /var
 #	   date: Wed Jul 15 13:40:13 1992
 #
-#	@(#)4.4BSD.dist	5.17 (Berkeley) %G%
+#	@(#)4.4BSD.dist	5.18 (Berkeley) %G%
 
 /set type=dir uname=root gname=wheel mode=0755
 # .
@@ -1103,8 +1103,60 @@ quiz.db
 # ./usr/share/games
 ..
 
+# ./usr/share/groff
+groff
+
+# ./usr/share/groff/eign
+eign
+# ./usr/share/groff/eign
+..
+
+# ./usr/share/groff/font
+font
+# ./usr/share/groff/font
+..
+
+# ./usr/share/groff/tmac
+tmac
+
+# ./usr/share/groff/tmac/mdoc
+mdoc
+# ./usr/share/groff/tmac/mdoc
+..
+
+# ./usr/share/groff/tmac/mm
+mm
+# ./usr/share/groff/tmac/mm
+..
+
+# ./usr/share/groff/tmac
+..
+
+# ./usr/share/groff
+..
+
 # ./usr/share/groff_font
 groff_font
+
+# ./usr/share/groff_font/devX100
+devX100
+# ./usr/share/groff_font/devX100
+..
+
+# ./usr/share/groff_font/devX100-12
+devX100-12
+# ./usr/share/groff_font/devX100-12
+..
+
+# ./usr/share/groff_font/devX75
+devX75
+# ./usr/share/groff_font/devX75
+..
+
+# ./usr/share/groff_font/devX75-12
+devX75-12
+# ./usr/share/groff_font/devX75-12
+..
 
 # ./usr/share/groff_font/devascii
 devascii
@@ -1113,6 +1165,12 @@ devascii
 
 # ./usr/share/groff_font/devdvi
 devdvi
+
+# ./usr/share/groff_font/devdvi/generate
+generate
+# ./usr/share/groff_font/devdvi/generate
+..
+
 # ./usr/share/groff_font/devdvi
 ..
 
@@ -1123,6 +1181,12 @@ devlatin1
 
 # ./usr/share/groff_font/devps
 devps
+
+# ./usr/share/groff_font/devps/generate
+generate
+# ./usr/share/groff_font/devps/generate
+..
+
 # ./usr/share/groff_font/devps
 ..
 
