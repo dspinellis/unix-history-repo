@@ -3,10 +3,11 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)spp_usrreq.c	7.1 (Berkeley) %G%
+ *	@(#)spp_usrreq.c	7.2 (Berkeley) %G%
  */
 
 #include "param.h"
+#include "systm.h"
 #include "dir.h"
 #include "user.h"
 #include "mbuf.h"
