@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)unistd.h	5.16 (Berkeley) %G%
+ *	@(#)unistd.h	5.17 (Berkeley) %G%
  */
 
 #ifndef _SYS_UNISTD_H_
@@ -87,6 +87,8 @@
 #define	_SC_2_LOCALEDEF		23
 #define	_SC_2_SW_DEV		24
 #define	_SC_2_UPE		25
+#define	_SC_STREAM_MAX		26
+#define	_SC_TZNAME_MAX		27
 
 /* configurable system strings */
 #define	_CS_PATH		 1
