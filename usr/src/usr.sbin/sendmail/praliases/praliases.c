@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-static	char sccsid[] = "@(#)praliases.c	5.1	%G%";
+static	char sccsid[] = "@(#)praliases.c	5.2	%G%";
 
 typedef struct { char *dptr; int dsize; } datum;
 datum	firstkey(), nextkey(), fetch();
@@ -33,7 +33,7 @@ main(argc, argv)
 		key.dsize = strlen(*argv)+1;
 		content = fetch(key);
 		if (content.dptr == 0)
-			printf("%s: No such key\n");
+			printf("%s: No such key\n", key.dptr);
 		else
 			printf("\n%s:%s\n", key.dptr, content.dptr);
 		argc--, argv++;
