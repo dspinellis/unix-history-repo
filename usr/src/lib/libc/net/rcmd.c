@@ -5,7 +5,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)rcmd.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)rcmd.c	5.11 (Berkeley) %G%";
 #endif LIBC_SCCS and not lint
 
 #include <stdio.h>
@@ -27,7 +27,7 @@ char	*index(), *sprintf();
 
 rcmd(ahost, rport, locuser, remuser, cmd, fd2p)
 	char **ahost;
-	int rport;
+	u_short rport;
 	char *locuser, *remuser, *cmd;
 	int *fd2p;
 {
@@ -184,7 +184,6 @@ ruserok(rhost, superuser, ruser, luser)
 {
 	FILE *hostf;
 	char fhost[MAXHOSTNAMELEN];
-	char ahost[MAXHOSTNAMELEN];
 	int first = 1;
 	register char *sp, *p;
 	int baselen = -1;
@@ -204,27 +203,9 @@ ruserok(rhost, superuser, ruser, luser)
 	hostf = superuser ? (FILE *)0 : fopen("/etc/hosts.equiv", "r");
 again:
 	if (hostf) {
-		while (fgets(ahost, sizeof (ahost), hostf)) {
-			char *user;
-
-			p = ahost;
-			while (*p != '\n' && *p != ' ' && *p != '\t' && *p != '\0')
-				*p++ = isupper(*p) ? tolower(*p) : *p;
-			if (*p == ' ' || *p == '\t') {
-				*p++ = '\0';
-				while (*p == ' ' || *p == '\t')
-					p++;
-				user = p;
-				while (*p != '\n' && *p != ' ' && *p != '\t' && *p != '\0')
-					p++;
-			} else
-				user = p;
-			*p = '\0';
-			if (_checkhost(fhost, ahost, baselen) &&
-			    !strcmp(ruser, *user ? user : luser)) {
-				(void) fclose(hostf);
-				return (0);
-			}
+		if (!_validuser(hostf, fhost, luser, ruser, baselen)) {
+			(void) fclose(hostf);
+			return(0);
 		}
 		(void) fclose(hostf);
 	}
@@ -246,6 +227,39 @@ again:
 			return(-1);
 		}
 		goto again;
+	}
+	return (-1);
+}
+
+_validuser(hostf, rhost, luser, ruser, baselen)
+char *rhost, *luser, *ruser;
+FILE *hostf;
+int baselen;
+{
+	char *user;
+	char ahost[MAXHOSTNAMELEN];
+	register char *p;
+
+	while (fgets(ahost, sizeof (ahost), hostf)) {
+		p = ahost;
+		while (*p != '\n' && *p != ' ' && *p != '\t' && *p != '\0') {
+			*p = isupper(*p) ? tolower(*p) : *p;
+			p++;
+		}
+		if (*p == ' ' || *p == '\t') {
+			*p++ = '\0';
+			while (*p == ' ' || *p == '\t')
+				p++;
+			user = p;
+			while (*p != '\n' && *p != ' ' && *p != '\t' && *p != '\0')
+				p++;
+		} else
+			user = p;
+		*p = '\0';
+		if (_checkhost(rhost, ahost, baselen) &&
+		    !strcmp(ruser, *user ? user : luser)) {
+			return (0);
+		}
 	}
 	return (-1);
 }
@@ -275,8 +289,10 @@ int len;
 		if ((domainp = index(ldomain, '.') + 1) == (char *)1)
 			return(0);
 		cp = domainp;
-		while (*cp)
-			*cp++ = isupper(*cp) ? tolower(*cp) : *cp;
+		while (*cp) {
+			*cp = isupper(*cp) ? tolower(*cp) : *cp;
+			cp++;
+		}
 	}
 	if (domainp == (char *)1)
 		return(0);
