@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)getpriority.2	6.5 (Berkeley) %G%
+.\"	@(#)getpriority.2	6.6 (Berkeley) %G%
 .\"
 .TH GETPRIORITY 2 ""
 .UC 4
@@ -11,6 +11,7 @@ getpriority, setpriority \- get/set program scheduling priority
 .SH SYNOPSIS
 .nf
 .ft B
+#include <sys/time.h>
 #include <sys/resource.h>
 .PP
 .ft B
