@@ -42,6 +42,7 @@ define(`VERSIONID', ``#####  $1  #####'')
 define(`LOCAL_RULE_3', `divert(2)')
 define(`LOCAL_RULE_0', `divert(3)')
 define(`LOCAL_CONFIG', `divert(6)')
+define(`LOCAL_NET_CONFIG', `define(`_LOCAL_RULES_', 1)divert(1)')
 define(`UUCPSMTP', `R DOL(*) < @ $1 .UUCP > DOL(*)	DOL(1) < @ $2 > DOL(2)')
 define(`CONCAT', `$1$2$3$4$5$6$7')
 define(`DOL', ``$'$1')
@@ -96,4 +97,4 @@ define(`confREFUSE_LA', `12')
 define(`confSEPARATE_PROC', `False')
 
 divert(0)dnl
-VERSIONID(`@(#)cf.m4	6.3 (Berkeley) %G%')
+VERSIONID(`@(#)cf.m4	6.4 (Berkeley) %G%')
