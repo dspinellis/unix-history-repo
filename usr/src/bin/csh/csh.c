@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)csh.c 4.13 %G%";
+static	char *sccsid = "@(#)csh.c 4.14 %G%";
 
 #include "sh.h"
 #include <sys/ioctl.h>
@@ -728,7 +728,7 @@ process(catch)
 			chkstop--;
 		if (neednote)
 			pnote();
-		if (intty && evalvec == 0) {
+		if (intty && prompt && evalvec == 0) {
 			mailchk();
 			/*
 			 * If we are at the end of the input buffer
