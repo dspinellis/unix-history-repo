@@ -10,7 +10,7 @@
 #undef isdigit
 
 /*
- * Sccs Id = "@(#)def.h	2.6 %G%";
+ * Sccs Id = "@(#)def.h	2.7 %G%";
  */
 
 /*
@@ -190,6 +190,14 @@ struct grouphead {
 #define	NOVAR	((struct var *) 0)	/* The nil pointer to variables */
 #define	NOGRP	((struct grouphead *) 0)/* The nil grouphead pointer */
 #define	NOGE	((struct group *) 0)	/* The nil group pointer */
+
+/*
+ * Structure of the hash table of ignored header fields
+ */
+struct ignore {
+	struct ignore	*i_link;	/* Next ignored field in bucket */
+	char		*i_field;	/* This ignored field */
+};
 
 /*
  * Token values returned by the scanner used for argument lists.
