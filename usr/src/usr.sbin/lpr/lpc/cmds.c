@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)cmds.c	4.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmds.c	4.3 (Berkeley) %G%";
 #endif
 
 /*
@@ -402,7 +402,6 @@ startpr(enable)
 		SD = DEFSPOOL;
 	if ((LO = pgetstr("lo", &bp)) == NULL)
 		LO = DEFLOCK;
-	RM = host;
 	(void) sprintf(line, "%s/%s", SD, LO);
 	printf("%s:\n", printer);
 
@@ -415,7 +414,7 @@ startpr(enable)
 		else
 			printf("\tprinting enabled\n");
 	}
-	if (!startdaemon())
+	if (!startdaemon(host))
 		printf("\tcouldn't start daemon\n");
 	else
 		printf("\tdaemon started\n");

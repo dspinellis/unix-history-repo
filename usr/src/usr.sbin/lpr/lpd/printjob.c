@@ -1,4 +1,4 @@
-/*	printjob.c	4.5	83/05/23	*/
+/*	printjob.c	4.6	83/06/02	*/
 /*
  * printjob -- print jobs in the queue.
  *
@@ -8,30 +8,29 @@
 
 #include "lp.h"
 
-#define DORETURN	0	/* absorb fork error */
-#define DOABORT		1	/* abort if dofork fails */
+#define DORETURN	0		/* absorb fork error */
+#define DOABORT		1		/* abort if dofork fails */
 
-char	title[80];		/* ``pr'' title */
-FILE	*cfp;			/* control file */
-int	pfd;			/* printer file descriptor */
-int	ofd;			/* output filter file descriptor */
-int	lfd;			/* lock file descriptor */
-int	pid;			/* pid of lpd process */
-int	prchild;		/* id of pr process */
-int	child;			/* id of any filters */
-int	ofilter;		/* id of output filter, if any */
-int	tof;			/* true if at top of form */
-int	remote;			/* non zero if sending files to remote */
+static char	title[80];		/* ``pr'' title */
+static FILE	*cfp;			/* control file */
+static int	pfd;			/* printer file descriptor */
+static int	ofd;			/* output filter file descriptor */
+static int	lfd;			/* lock file descriptor */
+static int	pid;			/* pid of lpd process */
+static int	prchild;		/* id of pr process */
+static int	child;			/* id of any filters */
+static int	ofilter;		/* id of output filter, if any */
+static int	tof;			/* true if at top of form */
+static int	remote;			/* true if sending files to remote */
 
-extern	banner();		/* big character printer */
-char	logname[32];		/* user's login name */
-char	jobname[32];		/* job or file name */
-char	class[32];		/* classification field */
-char	width[10] = "-w";	/* page width in characters */
-char	length[10] = "-l";	/* page length in lines */
-char	pxwidth[10] = "-x";	/* page width in pixels */
-char	pxlength[10] = "-y";	/* page length in pixels */
-char	indent[10] = "-i0";	/* indentation size in characters */
+static char	logname[32];		/* user's login name */
+static char	jobname[32];		/* job or file name */
+static char	class[32];		/* classification field */
+static char	width[10] = "-w";	/* page width in characters */
+static char	length[10] = "-l";	/* page length in lines */
+static char	pxwidth[10] = "-x";	/* page width in pixels */
+static char	pxlength[10] = "-y";	/* page length in pixels */
+static char	indent[10] = "-i0";	/* indentation size in characters */
 
 printjob()
 {
@@ -43,9 +42,11 @@ printjob()
 	extern int onintr();
 
 	init();					/* set up capabilities */
-	(void) close(2);			/* set up log file */
-	(void) open(LF, FWRONLY|FAPPEND, 0);
-	dup2(2, 1);				/* closes original connection */
+	(void) close(1);			/* set up log file */
+	(void) close(2);
+	if (open(LF, FWRONLY|FAPPEND, 0) < 0)
+		(void) open("/dev/null", FWRONLY);
+	dup(1);
 	pid = getpid();				/* for use with lprm */
 	setpgrp(0, pid);
 	sigset(SIGINT, onintr);
@@ -163,6 +164,7 @@ static char ifonts[4][18] = {
  * Returns 0 if everthing was OK, 1 if we should try to reprint the job and
  * -1 if a non-recoverable error occured.
  */
+static
 printit(file)
 	char *file;
 {
@@ -321,6 +323,7 @@ pass2:
  * Note: all filters take stdin as the file, stdout as the printer,
  * stderr as the log file, and must not ignore SIGINT.
  */
+static
 print(format, file)
 	int format;
 	char *file;
@@ -505,6 +508,7 @@ start:
  * Return -1 if a non-recoverable error occured, 1 if a recoverable error and
  * 0 if all is well.
  */
+static
 sendit(file)
 	char *file;
 {
@@ -573,6 +577,7 @@ sendit(file)
  * Send a data file to the remote machine and spool it.
  * Return positive if we should try resending.
  */
+static
 sendfile(type, file)
 	char type, *file;
 {
@@ -640,6 +645,7 @@ noresponse()
 /*
  * Banner printing stuff
  */
+static
 banner(name1, name2)
 	char *name1, *name2;
 {
@@ -680,7 +686,7 @@ banner(name1, name2)
 	tof = 1;
 }
 
-char *
+static char *
 scnline(key, p, c)
 	register char key, *p;
 	char c;
@@ -696,6 +702,7 @@ scnline(key, p, c)
 
 #define TRC(q)	(((q)-' ')&0177)
 
+static
 scan_out(scfd, scsp, dlm)
 	int scfd;
 	char *scsp, dlm;
@@ -729,6 +736,7 @@ scan_out(scfd, scsp, dlm)
 	}
 }
 
+static
 dropit(c)
 	char c;
 {
@@ -753,6 +761,7 @@ dropit(c)
  * sendmail ---
  *   tell people about job completion
  */
+static
 sendmail(bombed)
 	int bombed;
 {
@@ -804,6 +813,7 @@ sendmail(bombed)
 /*
  * dofork - fork with retries on failure
  */
+static
 dofork(action)
 	int action;
 {
@@ -838,6 +848,7 @@ dofork(action)
 /*
  * Cleanup child processes when a SIGINT is caught.
  */
+static
 onintr()
 {
 	kill(0, SIGINT);
@@ -848,6 +859,7 @@ onintr()
 	exit(0);
 }
 
+static
 init()
 {
 	int status;
@@ -918,6 +930,7 @@ init()
 /*
  * Acquire line printer or remote connection.
  */
+static
 openpr()
 {
 	register int i, n;
@@ -1015,6 +1028,7 @@ struct bauds {
 /*
  * setup tty lines.
  */
+static
 setty()
 {
 	struct sgttyb ttybuf;
