@@ -1,11 +1,11 @@
-.\" Copyright (c) 1983 Regents of the University of California.
+.\" Copyright (c) 1983,1986 Regents of the University of California.
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)d.t	6.1 (Berkeley) %G%
+.\"	@(#)d.t	6.2 (Berkeley) %G%
 .\"
 .nr H2 1
-.ds RH "Out of band data
+.\".ds RH "Out of band data
 .NH
 \s+2Out of band data\s0
 .PP
@@ -28,12 +28,18 @@ to be transmitted out of the normal sequencing and flow control
 constraints of the data stream.  A minimum of 1 byte of out of
 band data and one outstanding out of band message are expected to
 be supported by the protocol supporting a stream socket.
-It is a protocols perogative to support larger sized messages, or
+It is a protocol's prerogative to support larger-sized messages, or
 more than one outstanding out of band message at a time.
 .PP
-Out of band data is maintained by the protocol and usually not
-stored in the socket's send queue.  The PRU_SENDOOB and PRU_RCVOOB
+Out of band data is maintained by the protocol and is usually not
+stored in the socket's receive queue.
+A socket-level option, SO_OOBINLINE,
+is provided to force out-of-band data to be placed in the normal
+receive queue when urgent data is received;
+this sometimes amelioriates problems due to loss of data
+when multiple out-of-band
+segments are received before the first has been passed to the user.
+The PRU_SENDOOB and PRU_RCVOOB
 requests to the \fIpr_usrreq\fP routine are used in sending and
 receiving data.
-.ds RH "Trailer protocols
-.bp
+'ne 2i

@@ -1,11 +1,11 @@
-.\" Copyright (c) 1983 Regents of the University of California.
+.\" Copyright (c) 1983,1986 Regents of the University of California.
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)c.t	6.1 (Berkeley) %G%
+.\"	@(#)c.t	6.2 (Berkeley) %G%
 .\"
 .nr H2 1
-.ds RH "Buffering and congestion control
+.\".ds RH "Buffering and congestion control
 .NH
 \s+2Buffering and congestion control\s0
 .PP
@@ -41,22 +41,30 @@ connection level buffering.
 .NH 2
 Memory management
 .PP
-The basic memory allocation routines place no restrictions on
-the amount of space which may be allocated.  Any request made
-is filled until the system memory allocator starts refusing
-to allocate additional memory.  When the current quota of memory
-is insufficient to satisfy an mbuf allocation request, the
-allocator requests enough new pages from the system to satisfy
-the current request only.  All memory owned by the network is
-described by a private page table used in remapping pages to
+The basic memory allocation routines manage a private page map,
+the size of which determines the maximum amount of memory
+that may be allocated by the network.
+A small amount of memory is allocated at boot time
+to initialize the mbuf and mbuf page cluster free lists.
+When the free lists are exhausted, more memory is requested
+from the system memory allocator if space remains in the map.
+If memory cannot be allocated,
+callers may block awaiting free memory,
+or the failure may be reflected to the caller immediately.
+The allocator will not block awaiting free map entries, however,
+as exhaustion of the page map usually indicates that buffers have been lost
+due to a ``leak.''
+The private page table is used by the network buffer management
+routines in remapping pages to
 be logically contiguous as the need arises.  In addition, an
 array of reference counts parallels the page table and is used
-when multiple copies of a page are present.
+when multiple references to a page are present.
 .PP
 Mbufs are 128 byte structures, 8 fitting in a 1Kbyte
-page of memory.  When data is placed in mbufs, if possible,
+page of memory.  When data is placed in mbufs,
 it is copied or remapped into logically contiguous pages of
-memory from the network page pool.  Data smaller than the size
+memory from the network page pool if possible.
+Data smaller than half of the size
 of a page is copied into one or more 112 byte mbuf data areas. 
 .NH 2
 Protocol buffering policies
@@ -67,9 +75,7 @@ amounts define the high and low water marks used by the socket routines
 in deciding when to block and unblock a process.  The reservation
 of space does not currently
 result in any action by the memory management
-routines, though it is clear if one imposed an upper
-bound on the total amount of physical memory allocated to the network,
-reserving memory would become important.
+routines.
 .PP
 Protocols which provide connection level flow control do this
 based on the amount of space in the associated socket queues.  That
@@ -105,7 +111,7 @@ the queue lengths were incorporated mainly as a safeguard mechanism.
 Packet forwarding
 .PP
 When packets can not be forwarded because of memory limitations,
-the system generates a ``source quench'' message.  In addition,
+the system attempts to generate a ``source quench'' message.  In addition,
 any other problems encountered during packet forwarding are also
 reflected back to the sender in the form of ICMP packets.  This
 helps hosts avoid unneeded retransmissions.
@@ -114,5 +120,4 @@ Broadcast packets are never forwarded due to possible dire
 consequences.  In an early stage of network development, broadcast
 packets were forwarded and a ``routing loop'' resulted in network
 saturation and every host on the network crashing.
-.ds RH "Out of band data
-.bp
+'ne 2i

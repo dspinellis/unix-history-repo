@@ -1,11 +1,11 @@
-.\" Copyright (c) 1983 Regents of the University of California.
+.\" Copyright (c) 1983,1986 Regents of the University of California.
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)e.t	6.1 (Berkeley) %G%
+.\"	@(#)e.t	6.2 (Berkeley) %G%
 .\"
 .nr H2 1
-.ds RH "Trailer protocols
+.\".ds RH "Trailer protocols
 .NH
 \s+2Trailer protocols\s0
 .PP
@@ -14,7 +14,7 @@ Consequently, a great deal of effort was spent
 in minimizing such operations.  The VAX architecture
 provides virtual memory hardware organized in
 page units.  To cut down on copy operations, data
-is kept in page sized units on page-aligned
+is kept in page-sized units on page-aligned
 boundaries whenever possible.  This allows data
 to be moved in memory simply by remapping the page
 instead of copying.  The mbuf and network
@@ -26,7 +26,7 @@ Data enters the system in two ways: from the user,
 or from the network (hardware interface).  When data
 is copied from the user's address space
 into the system it is deposited in pages (if sufficient
-data is present to fill an entire page).
+data is present).
 This encourages the user to transmit information in
 messages which are a multiple of the system page size.
 .PP
@@ -39,18 +39,18 @@ Finally, the data, if any, follows these headers.  Since
 the header information may be variable length, DMA'ing the eventual
 data for the user into a page aligned area of
 memory is impossible without
-a priori knowledge of the format (e.g. supporting
+\fIa priori\fP knowledge of the format (e.g., by supporting
 only a single protocol header format).
 .PP
 To allow variable length header information to
 be present and still ensure page alignment of data,
 a special local network encapsulation may be used.
-This encapsulation, termed a \fItrailer protocol\fP,
+This encapsulation, termed a \fItrailer protocol\fP [Leffler84],
 places the variable length header information after
 the data.  A fixed size local network
 header is then prepended to the resultant packet. 
 The local network header contains the size of the
-data portion, and a new \fItrailer protocol
+data portion (in units of 512 bytes), and a new \fItrailer protocol
 header\fP, inserted before the variable length
 information, contains the size of the variable length
 header information.  The following trailer
@@ -65,13 +65,13 @@ struct {
 .DE
 .PP
 The processing of the trailer protocol is very
-simple.  On output, the local network header indicates
+simple.  On output, the local network header indicates that
 a trailer encapsulation is being used.
-The protocol identifier also includes an indication
-of the number of data pages present (before the trailer
-protocol header).  The trailer protocol header is
-initialized to contain the actual protocol and
-variable length header size, and appended to the data
+The header also includes an indication
+of the number of data pages present before the trailer
+protocol header.  The trailer protocol header is
+initialized to contain the actual protocol identifier and the
+variable length header size, and is appended to the data
 along with the variable length header information.
 .PP
 On input, the interface routines identify the
@@ -91,12 +91,11 @@ to be performed at a known offset from the first data page
 being received.  Should the local network header be
 variable length this scheme fails. 
 .PP
-Statistics collected indicate as much as 200Kb/s
+Statistics collected indicate that as much as 200Kb/s
 can be gained by using a trailer protocol with
 1Kbyte packets.  The average size of the variable
 length header was 40 bytes (the size of a
 minimal TCP/IP packet header).  If hardware
 supports larger sized packets, even greater gains
 may be realized.
-.ds RH Acknowledgements
-.bp
+'ne 2i
