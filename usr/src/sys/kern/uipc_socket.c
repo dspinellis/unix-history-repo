@@ -1,4 +1,4 @@
-/*	uipc_socket.c	4.73	83/03/19	*/
+/*	uipc_socket.c	4.74	83/05/18	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -101,6 +101,7 @@ solisten(so, backlog)
 #define	SOMAXCONN	5
 	so->so_qlimit = MIN(backlog, SOMAXCONN);
 	so->so_options |= SO_NEWFDONCONN;
+	splx(s);
 	return (0);
 }
 
