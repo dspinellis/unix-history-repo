@@ -1,4 +1,4 @@
-static char sccsid[] = "@(#)apply.c	4.1	(Berkeley)	%G%";
+static char sccsid[] = "@(#)apply.c	4.2	(Berkeley)	%G%";
 
 /*%cc -s -O %
  * apply - apply a command to a set of arguments
@@ -15,6 +15,8 @@ char	defargs=1;
 #define	DEFARGCHAR	'%'
 char	argchar=DEFARGCHAR;
 int	nchars;
+extern	char *getenv();
+
 main(argc, argv)
 	char *argv[];
 {
