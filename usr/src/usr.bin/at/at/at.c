@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)at.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)at.c	5.7 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -27,13 +27,13 @@ static char sccsid[] = "@(#)at.c	5.6 (Berkeley) %G%";
  *				University of California @ Berkeley
  *
  */
-#include <stdio.h>
-#include <ctype.h>
-#include <signal.h>
-#include <pwd.h>
 #include <sys/param.h>
 #include <sys/time.h>
 #include <sys/file.h>
+#include <sys/signal.h>
+#include <stdio.h>
+#include <ctype.h>
+#include <pwd.h>
 
 #define HOUR		100		/* 1 hour (using military time) */
 #define HALFDAY		(12 * HOUR)	/* half a day (12 hours) */
