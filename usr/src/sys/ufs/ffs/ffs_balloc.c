@@ -1,4 +1,4 @@
-/*	ffs_balloc.c	5.1	82/07/15	*/
+/*	ffs_balloc.c	5.2	82/09/25	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -31,7 +31,7 @@ bmap(ip, bn, rwflg, size)
 	struct buf *bp, *nbp;
 	struct fs *fs;
 	int j, sh;
-	daddr_t nb, *bap, pref, blkpref();
+	daddr_t nb, lbn, *bap, pref, blkpref();
 
 	if (bn < 0) {
 		u.u_error = EFBIG;
@@ -51,7 +51,7 @@ bmap(ip, bn, rwflg, size)
 		osize = blksize(fs, ip, nb);
 		if (osize < fs->fs_bsize && osize > 0) {
 			bp = realloccg(ip, ip->i_db[nb],
-				nb == 0 ? 0 : ip->i_db[nb - 1] + fs->fs_frag,
+				blkpref(ip, nb, nb, &ip->i_db[0]),
 				osize, fs->fs_bsize);
 			ip->i_size = (nb + 1) * fs->fs_bsize;
 			ip->i_db[nb] = dbtofsb(fs, bp->b_blkno);
@@ -63,30 +63,29 @@ bmap(ip, bn, rwflg, size)
 	 * The first NDADDR blocks are direct blocks
 	 */
 	if (bn < NDADDR) {
-		i = bn;
-		nb = ip->i_db[i];
+		nb = ip->i_db[bn];
 		if (rwflg == B_READ) {
 			if (nb == 0)
 				return ((daddr_t)-1);
 			goto gotit;
 		}
-		if (nb == 0 || ip->i_size < (i + 1) * fs->fs_bsize) {
+		if (nb == 0 || ip->i_size < (bn + 1) * fs->fs_bsize) {
 			if (nb != 0) {
 				/* consider need to reallocate a frag */
 				osize = fragroundup(fs, blkoff(fs, ip->i_size));
 				nsize = fragroundup(fs, size);
 				if (nsize <= osize)
 					goto gotit;
-				bp = realloccg(ip, nb, i == 0 ?
-					0 : ip->i_db[i - 1] + fs->fs_frag,
+				bp = realloccg(ip, nb,
+					blkpref(ip, bn, bn, &ip->i_db[0]),
 					osize, nsize);
 			} else {
-				if (ip->i_size < (i + 1) * fs->fs_bsize)
+				if (ip->i_size < (bn + 1) * fs->fs_bsize)
 					nsize = fragroundup(fs, size);
 				else
 					nsize = fs->fs_bsize;
-				bp = alloc(ip, i > 0 ?
-					ip->i_db[i - 1] + fs->fs_frag : 0,
+				bp = alloc(ip,
+					blkpref(ip, bn, bn, &ip->i_db[0]),
 					nsize);
 			}
 			if (bp == NULL)
@@ -101,13 +100,13 @@ bmap(ip, bn, rwflg, size)
 				bwrite(bp);
 			else
 				bdwrite(bp);
-			ip->i_db[i] = nb;
+			ip->i_db[bn] = nb;
 			ip->i_flag |= IUPD|ICHG;
 		}
 gotit:
-		if (i < NDADDR - 1) {
-			rablock = fsbtodb(fs, ip->i_db[i+1]);
-			rasize = blksize(fs, ip, i+1);
+		if (bn < NDADDR - 1) {
+			rablock = fsbtodb(fs, ip->i_db[bn + 1]);
+			rasize = blksize(fs, ip, bn + 1);
 		}
 		return (nb);
 	}
@@ -115,7 +114,9 @@ gotit:
 	/*
 	 * Determine how many levels of indirection.
 	 */
+	pref = 0;
 	sh = 1;
+	lbn = bn;
 	bn -= NDADDR;
 	for (j = NIADDR; j>0; j--) {
 		sh *= NINDIR(fs);
@@ -133,8 +134,11 @@ gotit:
 	 */
 	nb = ip->i_ib[NIADDR - j];
 	if (nb == 0) {
-		if (rwflg==B_READ ||
-		    (bp = alloc(ip, (daddr_t)0, fs->fs_bsize)) == NULL)
+		if (rwflg == B_READ)
+			return ((daddr_t)-1);
+		pref = blkpref(ip, lbn, 0, 0);
+	        bp = alloc(ip, pref, fs->fs_bsize);
+		if (bp == NULL)
 			return ((daddr_t)-1);
 		nb = dbtofsb(fs, bp->b_blkno);
 		/*
@@ -164,11 +168,11 @@ gotit:
 				brelse(bp);
 				return ((daddr_t)-1);
 			}
-			if (i % (fs->fs_fsize / sizeof(daddr_t)) == 0 ||
-			    bap[i - 1] == 0)
-				pref = blkpref(ip->i_fs);
-			else
-				pref = bap[i - 1] + fs->fs_frag;
+			if (pref == 0)
+				if (j < NIADDR)
+					pref = blkpref(ip, lbn, 0, 0);
+				else
+					pref = blkpref(ip, lbn, i, &bap[0]);
 		        nbp = alloc(ip, pref, fs->fs_bsize);
 			if (nbp == NULL) {
 				brelse(bp);
