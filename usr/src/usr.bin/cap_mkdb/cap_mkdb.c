@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)cap_mkdb.c	1.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)cap_mkdb.c	1.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -32,7 +32,7 @@ static void	 err __P((int, const char *, ...));
 static void	 getnamefield __P((char **, char *));
 static void	 usage __P((void));
 
-int docapdbunlink;
+int docapdbunlink, printnl;
 char *capdb, **inputfiles;
 
 /*
@@ -48,7 +48,7 @@ main(argc, argv)
 	char *argv[];
 {
 	int c;
-	char *outname;
+	char *outname, *bak;
 
 	outname = NULL;
 	while ((c = getopt(argc, argv, "f:")) != EOF) {
@@ -76,6 +76,25 @@ main(argc, argv)
 	if ((capdb = malloc(strlen(outname) + CAPDBNAMEEXTLEN + 1)) == NULL)
 		err(1, "%s", strerror(errno));
 	(void)sprintf(capdb, "%s.db", outname);
+
+	/* Create the backup: outname.db.BAK */
+
+	if ((bak = malloc(strlen(outname) + CAPDBNAMEEXTLEN + 5)) == NULL)
+		err(1, "%s", strerror(errno));
+	(void)sprintf(bak, "%s.db.BAK", outname);
+	
+	/* 
+	 * We want to avoid the confusion of where the capability record 
+	 * is being read from.  Since we intend to read the ascii file, we
+	 * should make sure that the corresponding .db file is not present to
+	 * override.
+         */
+	if (unlink(bak) != 0 && errno != ENOENT)
+		err(1, "unlink: %s -- %s", strerror(errno), bak);
+	if (link(capdb, bak) != 0 && errno != ENOENT)
+		err(1, "link: %s -- %s", strerror(errno), bak);
+	if (errno != ENOENT && unlink(capdb) != 0)
+		err(1, "unlink: %s -- %s", strerror(errno), capdb);
 
         db_build(inputfiles);
 	exit(0);
@@ -145,6 +164,7 @@ db_build(inputfiles)
 			continue;
 		}
 		printf("Hashed %d capability records.\r", i++);
+		printnl = 1;
 		fflush(stdout);
 
 		/*
@@ -235,7 +255,9 @@ err(fmt, va_alist)
 #else
 	va_start(ap);
 #endif
-	(void)fprintf(stderr, "\n");
+
+	if (printnl)
+		(void)fprintf(stderr, "\n");
 	(void)fprintf(stderr, "cap_mkdb: ");
 	(void)vfprintf(stderr, fmt, ap);
 	va_end(ap);
