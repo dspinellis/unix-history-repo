@@ -1,0 +1,14 @@
+% diagram 8
+
+\verbatim
+: 'append - stupid append editor for MH - /jlr'
+case $# in
+   1|2) case $# in
+            1) F=$1; echo -n "Append file: " 1>&2; read A ;;
+            2) F=$2; A=$1 ;;
+        esac
+        cat $A < /dev/null >> $F ;;
+     *) echo "append: arg count" 1>&2 ; exit 1 ;;
+esac
+exit
+?endverbatim

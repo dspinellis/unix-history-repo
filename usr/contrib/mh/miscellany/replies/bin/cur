@@ -1,0 +1,17 @@
+: run this script through /bin/sh
+: read in the current message, rn-style
+LINK="@"
+
+# Skip headers, then print out the body lines prepended with "> "
+sed -n '
+:header
+/^$/b eohdr
+n
+b header
+:eohdr
+n
+b body
+:body
+s/^/> /p
+n
+b body' $LINK

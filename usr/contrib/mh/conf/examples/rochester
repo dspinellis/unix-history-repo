@@ -1,0 +1,9 @@
+bin	/usr/new/mh.6.beta
+bboards	off
+etc	/usr/new/lib/mh.6.beta
+mail	/usr/spool/mail
+manuals	new
+mts	sendmail/smtp
+pop	on
+options	BSD42 DUMB MHE MHRC
+options locname='"Rochester.ARPA"'

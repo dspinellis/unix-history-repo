@@ -1,0 +1,6 @@
+localname:	nrtc
+mmdfldir:	@(MHDROPATH)
+mmdflfil:	@(MHDROPFIL)
+hostable:	@(MHETCPATH)/hosts
+servers:	nrtc localhost \01localnet
+pophost:	nrtc

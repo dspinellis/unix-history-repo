@@ -1,0 +1,10 @@
+bin	/usr/mmdf/mhbin
+bboards	on
+bbhome	/usr/bboards
+etc	/usr/mmdf/mhlib
+mail	
+manuals	local
+mts	mmdf2
+options	BSD42
+options	MHE
+ldoptlibs	-ldbm

@@ -1,0 +1,6 @@
+localname:	name-of-pop-service-host
+mmdfldir:	@(MHDROPATH)
+mmdflfil:	@(MHDROPFIL)
+hostable:	@(MHETCPATH)/hosts
+servers:	name-of-smtp-service-host localhost \01localnet
+pophost:	name-of-pop-service-host

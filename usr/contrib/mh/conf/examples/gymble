@@ -1,0 +1,7 @@
+bin	/usr/new/mh
+bboards	off
+etc	/usr/new/lib/mh
+mail	/usr/spool/mail
+manuals	new
+mts	sendmail
+options	BSD42 COMPAT

@@ -1,0 +1,319 @@
+[ emh.doc - Fri Oct  7 11:26:35 1983 - another interface to MH - /mtr ]
+
+
+    The emh package is yet another emacs-based interface to the Rand MH
+    system.  The notion behind emh is that you never wait for a command
+    to finish -- you tell emh to start a command, and then at a later
+    time, emh will tell you what happened.  Further, emh doesn't try
+    to make emacs into a powerful environment to access MH.  Instead,
+    emh adds some basic front-end facilities for MH that allows you do
+    simple things with mail while running emacs.  In short, the emh
+    philosophy is to provide a fast mail handling capacity that doesn't
+    slow down your other editing tasks.  This gives emh a much
+    different "feel" than Brien Reid's MHE package.
+
+
+			    Getting Started
+
+    emh is composed of a few MLisp files that get loaded in when you
+    need them.  If you have the directory where these files are kept in
+    your $EPATH envariable, then you can use
+
+	ESC-X load emh.ml
+
+    to load the bootstrap in.  If you don't have this directory in your
+    $EPATH envariable, then you can use the "emh" shell script.  This
+    script defines your $EPATH envariable appropriately, and then
+    invokes emacs, telling it to load the emh.ml file.
+
+
+			     Command style
+
+    All emh commands do not prompt you for arguments when invoked from
+    the keyboard.  However if you want to be asked for additional
+    arguments, you can use the ^U- prefix.  For example, by default
+    ^X-r will read mail from your +inbox folder.  By using ^U-^X-r, you
+    will be asked which folder should be used to read mail from.
+
+    Most emh commands do not take effect immediately.  Instead, they
+    start a background process, and report back when that process
+    finishes.  This allows you to continue doing other editing work.
+    When emh reports on the status of a completed activity, it pops up
+    a new window on your screen.  To prevent confusion, you will never
+    be placed in this window.  Instead, the context will remain the
+    window that you were using when the process terminated.
+
+
+				Buffers
+
+    The buffers that emh creates for your use come in several
+    varieties.  You can determine what the rules are for using a buffer
+    by looking at its mode-string.  This is displayed in the mode-line
+    for each window.  Further, the mode-line may contain additional
+    information for you.
+
+    Listings
+
+	 mode:  (emh)
+
+	 buffers:  MH help, all scan listings, all message listings
+
+	 comments:  In emh mode, there is a special keymap interpreting
+	 your commands.  The commands available to you are described in
+	 the "emh mode commands" section.  When you enter a keystroke
+	 in such a buffer, the command that gets invoked uses the
+	 folder associated with the buffer for its execution context.
+
+    Folder List
+
+	 mode:  (Normal)
+
+	 buffers:  MH folders
+
+	 comments:  This buffer contains the results of the list
+	 folders command.  There is no special interpretation of its
+	 contents.
+
+    Message Drafts
+
+	 mode:  usually (Text)
+
+	 buffers:  all compose, forward, and reply drafts
+
+	 comments:  After mh has built a draft buffer for you, you edit
+	 the message draft.  You can automatically have these buffers
+	 created in a special mode (see the "Customization" section).
+	 ^X-^S is bound in these buffers to send the draft.
+
+    Process Handling
+
+	 mode:  (status: "condition"), "condition" is usually Running
+	 or Exited
+
+	 buffers:  any buffer that emh is using to run an asynchronous
+	 command
+
+	 comments:  You never edit anything in these buffers.  They are
+	 manipulated solely by emh.
+
+
+			  Top level commands
+
+    The emh package provides three commands that are defined globally
+    for you.
+
+    Listing Folders
+
+	 Keystrokes:  ^X-f
+
+	 Arguments:  By default, all of your folders are listed.  If
+	 you use the ^U- prefix, then you will be asked to supply
+	 options for the MH folders command.
+
+	 Function: A listing of all of your MH folders is started.  When
+	 the folder listing is completed, it will appear on your
+	 screen.
+
+    Reading Mail
+
+	 Keystrokes:  ^X-r
+
+	 Arguments:  By default, your +inbox folder is consulted.  If
+	 you use the ^U- prefix, then you will be asked which folder
+	 should be used.  
+
+	 Function: If you have already started to read mail from this
+	 folder, then the scan listing generated appears on the screen
+	 and you are placed in this context.  If not, then a scan
+	 listing is started.  When the scan listing is completed, it
+	 will appear on your screen. To perform actions in the context
+	 of this folder, place the cursor in this window.  [N.B.: This
+	 command does incorporate mail from your maildrop.  Use the
+	 incorporate mail command for that.]
+
+    Incorporate Mail
+
+	 Keystrokes:  ^X-i
+
+	 Arguments:  By default mail is incorporated from your MH
+	 maildrop to your +inbox folder.  If you use the ^U- prefix,
+	 then you will be asked to specify the folder that should be
+	 used, and the maildrop that should be used (such as a packed
+	 file).
+
+	 Function:  The inc command is started.  When inc finishes, if
+	 there was mail to incorporate then a new scan listing is
+	 started.  Otherwise a process buffer summarizing the results
+	 of inc's execution appears on the screen.
+
+    Sending Mail
+
+	 Keystrokes:  ^X-m
+
+	 Arguments:  By default, your components file is used as the
+	 skeleton for the message draft.  If you use the ^U- prefix,
+	 then you will be asked which file should be used.
+
+	 Function:  A draft buffer is created and appears on the
+	 screen.  [N.B.: Unlike every other emh command, this command
+	 will place you into the buffer IMMEDIATELY.]  You now edit the
+	 message draft in any fashion you wish.  When you are ready to
+	 send the draft, use ^X-^S.  This makes the draft buffer
+	 disappear from the screen.  The posting process for the
+	 message draft is now started.  When the posting process has
+	 finished, a process buffer summarizing the results of the
+	 posting appears on the screen.  If the message draft was
+	 successfully posted, the draft buffer is removed.  Otherwise,
+	 the message draft is NOT removed.  You can fix the problems,
+	 and try again (using ^X-^S).  Inside the process buffer, ^X-@
+	 is bound to a function that will make the message draft appear
+	 on your screen.
+
+
+			   emh mode commands
+
+    When you are in a buffer in emh mode, a special keymap is used.
+    Only the printing-characters is affected, the bindings of the
+    control-characters default to the global keymap.  Most printing
+    characters are bound to "illegal-operation", which means that emacs
+    will beep at you if you use them.  The commands available in emh
+    mode allow you to handle messages within an individual folder.  
+
+    Most of the commands reference the current message.  The current
+    message is denoted in the folder's scan listing as having a '+'
+    after the message number.  As you would expect the previous message
+    is the one on the line directly above the current message, and the
+    next message is the one on the line directly below the current
+    message. To change the current message, use the usual emacs cursor
+    motion commands (^N and ^P) and then invoke an mhe mode command.
+    When the command finishes, the '+' will be updated.  Only two
+    mhe mode commands do not update the current message, the delete and
+    move message commands.
+
+    Display [Current, Next, Previous] Message
+
+	 Keystrokes:  s (also S) for cur message, n (also N or ^F) for
+	 next message, p (also P or ^B or ^H) for prev message
+
+	 Arguments:  By default, no special arguments are given to
+	 show.  If you use the ^U- prefix, then you will be asked to
+	 supply options for the MH show command.
+
+	 Function:  A listing of the current (or next, or prev) message
+	 is started.  When the listing is completed, it will appear on
+	 your screen.
+
+    Compose Message
+
+	 Keystrokes:  c (also C)
+
+	 Comments:  This is identical to the send mail command.
+
+    Forward Current Message
+
+	 Keystrokes:  f (also F)
+
+	 Arguments:  By default, no special arguments are given to
+	 forw.  If you use the ^U -prefix, then you will be asked to
+	 supply options for the MH forw command.  This is useful if you
+	 wish to forward more than one message in the message draft.
+	 You can give a message list as the additional arguments to
+	 forw.
+
+	 Function:  A draft buffer for the current message is prepared
+	 in forwarding format.  When the message draft is completed,
+	 it will appear on your screen.  You then edit the draft buffer
+	 and use ^X-^S to send the message draft.  Inside the draft
+	 buffer, ^X-@ is bound to a function that will make the message
+	 being forwarded appear on your screen.
+
+    Reply to Current Message
+
+	 Keystrokes:  r (also R)
+
+	 Arguments:  By default, no special arguments are given to
+	 repl.  If you use the ^U -prefix, then you will be asked to
+	 supply options for the MH repl command.
+
+	 Function:  A draft buffer for the current message is prepared
+	 in reply format.  When the message draft is completed,
+	 it will appear on your screen.  You then edit the draft buffer
+	 and use ^X-^S to send the message draft.  Inside the draft
+	 buffer, ^X-@ is bound to a function that will make the message
+	 being forwarded appear on your screen.
+
+    Delete Current Message
+
+	 Keystrokes:  d (also D)
+
+	 Arguments:  By default, no special arguments are given to rmm.
+	 If you use the ^U -prefix, then you will be asked to supply
+	 options for the MH rmm command.
+
+	 Function:  The scan listing for the current folder is updated.
+	 If the current folder is read-only, then nothing else happens.
+	 Otherwise, the rmm command is started.  When rmm finishes, if
+	 it was successful, nothing happens.  Otherwise, a process
+	 buffer summarizing the results of rmm's execution appears on
+	 the screen.
+
+    Move Current Message
+
+	 Keystrokes:  m (also M)
+
+	 Arguments:  You are prompted for the name of the destination
+	 folder.  By default, no special arguments are given to file.
+	 If you use the ^U- prefix, then you will be asked to supply
+	 options for the MH file command.
+
+	 Function:  The scan listing for the current folder is updated.
+	 The file command is started (if the current folder is
+	 read-only, then -link is used, otherwise -nolink is used).
+	 When file finishes, if it was successful, nothing happens,
+	 Otherwise a process buffer summarizing the results of file's
+	 execution appears on the screen.
+
+    Incorporate New Mail
+
+	 Keystrokes:  i (also I)
+
+	 Comments:  This is identical to the incorporate mail command.
+
+    Display Help
+
+	 Keystrokes:  ? (also h or H)
+
+	 Arguments:  none
+
+	 Function:  A buffer summarizing the top level and emh mode
+	 commands appears on your screen.
+
+
+			     Customization
+
+    At present, the emh package contains two hooks for user
+    customization.
+
+    Loading Customizations
+
+	 When emh is loaded, emacs will look for a file called
+	 "emh-custom.ml" and try to load its contents.  This is done
+	 after everything has been set-up, just at the end of emh's
+	 initialization.
+
+    Automode for Message Drafts
+
+	 When a draft buffer has been built, but before it appears on
+	 your screen, emh will see if a variable called
+	 "&mh-draft-automode" exists.  If so, the contents of this
+	 variable is executed.  If not, then the default text-mode is
+	 invoked.  Hence, if you have a text mode that you like to use
+	 on message drafts, you can have emh invoke this mode for you
+	 in the context of the draft buffer.  Including something like
+
+		(declare-global &mh-draft-automode)
+		(setq &mh-draft-automode "(my-text-mode)")
+		(autoload "my-text-mode" "my-text-mode.ml")
+
+	 in your emh-custom.ml file would place each draft buffer in
+	 my-text mode.

@@ -1,0 +1,14 @@
+bin	/usr/local/bin
+bboards	off
+editor	prompter
+etc	/usr/local/lib/mh
+ccoptions	-I/usr/src/Mail/4.3sendmail/include
+ldoptlibs	-lndir
+mail	/usr/mail
+mandir	/usr/man/local
+manuals	standard
+mts	sendmail
+options	SYS5
+options	MHRC MORE='"/usr/bin/more"'
+ranlib	off
+ldoptions -s

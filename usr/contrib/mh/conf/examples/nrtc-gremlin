@@ -1,0 +1,14 @@
+bin	/usr/uci
+bboards	on
+etc	/usr/uci/lib/mh
+mail	mailbox
+manuals	local
+mts	mmdf2/smtp
+options	MTR
+options	BSD42
+options	DUMB ISI MHE MHRC OVERHEAD UCI WHATNOW
+pop	on
+popbboards on
+options	DPOP RPOP
+ccoptions -20
+ldoptions -ns

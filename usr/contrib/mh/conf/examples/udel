@@ -1,0 +1,11 @@
+bin	/usr/uci
+bboards	on
+etc	/usr/uci/lib/mh
+mail	.mail
+manuals	local
+mts	mmdf2/smtp
+options	BSD42
+options	MHE UCI WHATNOW OVERHEAD RPOP
+pop	on
+popbboards on
+ldoptions -ns

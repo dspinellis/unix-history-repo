@@ -1,0 +1,11 @@
+bin     /usr/local.new
+bboards	on
+bbhome	/usr/bboards
+etc     /usr/local/lib/mh.5
+mail    /usr/spool/mhmail
+manuals new
+mts     mmdf2
+options COMPAT
+options	BSD42
+options MHE
+ldoptlibs	-ldbm

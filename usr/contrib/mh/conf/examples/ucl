@@ -1,0 +1,11 @@
+bin     /usr/bin/mh
+bboards off
+etc     /usr/lib/mh
+mail    .mail
+manuals standard
+mts     mmdf2
+options BSD42
+options MHE
+# options UCI
+# Purdue IBIS library for remote file access (yeah!)
+ldoptlibs	-ldbm
