@@ -1,4 +1,4 @@
-/*	conf.c	4.1	%G%	*/
+/*	conf.c	4.2	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -18,7 +18,7 @@
 int	nulldev();
 int	nodev();
 
-#include "hp.h"
+#include "../conf/hp.h"
 #if NHP > 0
 int	hpstrategy(),hpread(),hpwrite(),hpintr();
 struct	buf	hptab;
@@ -30,7 +30,7 @@ struct	buf	hptab;
 #define	hptab		0
 #endif
  
-#include "ht.h"
+#include "../conf/ht.h"
 #if NHT > 0
 int	htopen(),htclose(),htstrategy(),htread(),htwrite();
 struct	buf	httab;
@@ -43,7 +43,7 @@ struct	buf	httab;
 #define	httab		0
 #endif
 
-#include "up.h"
+#include "../conf/up.h"
 #if NUP > 0
 int	upstrategy(),upread(),upwrite(),upreset();
 struct	buf	uptab;
@@ -71,7 +71,7 @@ struct bdevsw	bdevsw[] =
 
 int	cnopen(),cnclose(),cnread(),cnwrite(),cnioctl();
 
-#include "dh.h"
+#include "../conf/dh.h"
 #if NDH11 == 0
 #define	dhopen	nodev
 #define	dhclose	nodev
@@ -107,7 +107,7 @@ int	syopen(),syread(),sywrite(),syioctl();
 
 int 	mmread(),mmwrite();
 
-#include "va.h"
+#include "../conf/va.h"
 #if NVA > 0
 int	vaopen(),vaclose(),vawrite(),vaioctl(),vareset();
 #else
@@ -119,7 +119,7 @@ int	vaopen(),vaclose(),vawrite(),vaioctl(),vareset();
 #define	vareset	nulldev
 #endif
 
-#include "vp.h"
+#include "../conf/vp.h"
 #if NVP > 0
 int	vpopen(),vpclose(),vpwrite(),vpioctl(),vpreset();
 #else
