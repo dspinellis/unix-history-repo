@@ -1,4 +1,4 @@
-/*	vd.c	1.11	86/11/03	*/
+/*	vd.c	1.12	86/11/03	*/
 
 #include "dk.h"
 #if NVD > 0
@@ -362,17 +362,33 @@ vdstrategy(bp)
 	register fs_tab *fs;
 	register int blks, bn, s;
 
-	if (bp->b_bcount == 0 || vi == 0 || vi->ui_alive == 0)
+	if (bp->b_bcount == 0 || vi == 0 || vi->ui_alive == 0) {
+		bp->b_error = ENXIO;
 		goto bad;
+	}
 	ui = &vdunit_info[unit];
 	fs = &ui->info;
 	par = &fs->partition[FILSYS(bp->b_dev)];
 	blks = (bp->b_bcount + DEV_BSIZE-1) >> DEV_BSHIFT;
-	if (bp->b_blkno + blks >= par->par_len) {
+	if ((unsigned) bp->b_blkno + blks > par->par_len) {
+		if (bp->b_blkno == par->par_len) {
+			bp->b_resid = bp->b_bcount;
+			goto done;
+		}
+#ifdef notdef
+		/*
+		 * I'm not sure I want to smash bp->b_bcount.
+		 */
 		blks = par->par_len - bp->b_blkno;
-		if (blks <= 0)
+		if (blks <= 0) {
+			bp->b_error = EINVAL;
 			goto bad;
+		}
 		bp->b_bcount = blks * DEV_BSIZE;
+#else
+		bp->b_error = EINVAL;
+		goto bad;
+#endif
 	}
 	bn = bp->b_blkno + par->par_start;
 	bn *= ui->sec_per_blk;
@@ -397,8 +413,8 @@ vdstrategy(bp)
 		splx(s);
 	return;
 bad:	
-	bp->b_flags |= B_ERROR, bp->b_error = ENXIO;
-	bp->b_resid = bp->b_bcount;
+	bp->b_flags |= B_ERROR;
+done:
 	iodone(bp);
 }
 
