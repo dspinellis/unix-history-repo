@@ -530,7 +530,7 @@ char	*argv[];
 	return -1;
     }
     data_length = strlen(data_array);
-    if ((i = find_input_area()) == -1) {		/* Get an input area */
+    if ((i = find_input_area(0)) == -1) {		/* Get an input area */
 	if (send_key(clear_index) == -1) {
 	    return -1;
 	}
