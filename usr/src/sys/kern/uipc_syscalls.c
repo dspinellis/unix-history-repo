@@ -1,4 +1,4 @@
-/*	uipc_syscalls.c	4.41	83/01/13	*/
+/*	uipc_syscalls.c	4.42	83/01/13	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -446,7 +446,7 @@ setsockopt()
 		int	valsize;
 	} *uap = (struct a *)u.u_ap;
 	struct file *fp;
-	struct mbuf *m;
+	struct mbuf *m = NULL;
 
 	fp = getf(uap->s);
 	if (fp == 0)
@@ -459,18 +459,22 @@ setsockopt()
 		u.u_error = EINVAL;
 		return;
 	}
-	m = m_get(M_WAIT, MT_SOOPTS);
-	if (m == 0) {
-		u.u_error = ENOBUFS;
-		return;
+	if (uap->val) {
+		m = m_get(M_WAIT, MT_SOOPTS);
+		if (m == 0) {
+			u.u_error = ENOBUFS;
+			return;
+		}
+		u.u_error = copyin(uap->val, mtod(m, caddr_t),
+		  (u_int)uap->valsize);
+		if (u.u_error)
+			goto bad;
+		m->m_len = uap->valsize;
 	}
-	u.u_error = copyin(uap->val, mtod(m, caddr_t), (u_int)uap->valsize);
-	if (u.u_error)
-		goto bad;
-	m->m_len = uap->valsize;
 	u.u_error = sosetopt(fp->f_socket, uap->level, uap->name, m);
 bad:
-	(void) m_free(m);
+	if (m != NULL)
+		(void) m_free(m);
 }
 
 getsockopt()
@@ -483,7 +487,7 @@ getsockopt()
 		int	*avalsize;
 	} *uap = (struct a *)u.u_ap;
 	struct file *fp;
-	struct mbuf *m;
+	struct mbuf *m = NULL;
 	int valsize;
 
 	fp = getf(uap->s);
@@ -493,31 +497,32 @@ getsockopt()
 		u.u_error = ENOTSOCK;
 		return;
 	}
-	u.u_error = copyin((caddr_t)uap->avalsize, (caddr_t)&valsize,
-		sizeof (valsize));
-	if (u.u_error)
-		return;
-	if (useracc((caddr_t)uap->val, (u_int)valsize, B_WRITE) == 0) {
-		u.u_error = EFAULT;
-		return;
-	}
-	m = m_get(M_WAIT, MT_SOOPTS);
-	if (m == 0) {
-		u.u_error = ENOBUFS;
-		return;
+	if (uap->val) {
+		u.u_error = copyin((caddr_t)uap->avalsize, (caddr_t)&valsize,
+			sizeof (valsize));
+		if (u.u_error)
+			return;
+		m = m_get(M_WAIT, MT_SOOPTS);
+		if (m == NULL) {
+			u.u_error = ENOBUFS;
+			return;
+		}
 	}
 	u.u_error = sogetopt(fp->f_socket, uap->level, uap->name, m);
 	if (u.u_error)
 		goto bad;
-	if (valsize > m->m_len)
-		valsize = m->m_len;
-	u.u_error = copyout(mtod(m, caddr_t), uap->val, (u_int)valsize);
-	if (u.u_error)
-		goto bad;
-	u.u_error = copyout((caddr_t)&valsize, (caddr_t)uap->avalsize,
-	    sizeof (valsize));
+	if (uap->val) {
+		if (valsize > m->m_len)
+			valsize = m->m_len;
+		u.u_error = copyout(mtod(m, caddr_t), uap->val, (u_int)valsize);
+		if (u.u_error)
+			goto bad;
+		u.u_error = copyout((caddr_t)&valsize, (caddr_t)uap->avalsize,
+		    sizeof (valsize));
+	}
 bad:
-	(void) m_free(m);
+	if (m != NULL)
+		(void) m_free(m);
 }
 
 pipe()

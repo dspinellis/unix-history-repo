@@ -1,4 +1,4 @@
-/*	uipc_socket.c	4.68	83/01/13	*/
+/*	uipc_socket.c	4.69	83/01/13	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -547,22 +547,24 @@ sosetopt(so, level, optname, m)
 	int level, optname;
 	struct mbuf *m;
 {
-	int optval;
 
 	if (level != SOL_SOCKET)
 		return (EINVAL);	/* XXX */
-	if (m->m_len != sizeof (int))
-		return (EINVAL);
-	optval = *mtod(m, int *);
 	switch (optname) {
 
 	case SO_DEBUG:
 		so->so_options |= SO_DEBUG;
 		break;
 
+	case SO_KEEPALIVE:
+		so->so_options |= SO_KEEPALIVE;
+		break;
+
 	case SO_LINGER:
+		if (m == NULL || m->m_len != sizeof (int))
+			return (EINVAL);
 		so->so_options |= SO_LINGER;
-		so->so_linger = optval;
+		so->so_linger = *mtod(m, int *);
 		break;
 
 	case SO_DONTLINGER:
@@ -589,7 +591,6 @@ sogetopt(so, level, optname, m)
 	int level, optname;
 	struct mbuf *m;
 {
-	int *optval;
 
 	if (level != SOL_SOCKET)
 		return (EINVAL);	/* XXX */
@@ -602,7 +603,7 @@ sogetopt(so, level, optname, m)
 	case SO_LINGER:
 		if ((so->so_options & optname) == 0)
 			return (ENOPROTOOPT);
-		if (optname == SO_LINGER) {
+		if (optname == SO_LINGER && m != NULL) {
 			*mtod(m, int *) = so->so_linger;
 			m->m_len = sizeof (so->so_linger);
 		}
