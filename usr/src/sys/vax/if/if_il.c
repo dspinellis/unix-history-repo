@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if_il.c	6.12 (Berkeley) %G%
+ *	@(#)if_il.c	6.13 (Berkeley) %G%
  */
 
 #include "il.h"
@@ -244,6 +244,32 @@ ilinit(unit)
 	while ((addr->il_csr & IL_CDONE) == 0)
 		;
 	/*
+	 * If we must reprogram this board's physical ethernet
+	 * address (as for secondary XNS interfaces), we do so
+	 * before putting it on line, and starting receive requests.
+	 * If you try this on an older 1010 board, it will total
+	 * wedge the board.
+	 */
+	if (is->is_flags & ILF_SETADDR) {
+		bcopy((caddr_t)is->is_addr, (caddr_t)&is->is_stats,
+							sizeof is->is_addr);
+		addr->il_bar = is->is_ubaddr & 0xffff;
+		addr->il_bcr = sizeof is->is_addr;
+		addr->il_csr = ((is->is_ubaddr >> 2) & IL_EUA)|ILC_LDPA;
+		if (ilwait(ui, "setaddr"))
+			return;
+		addr->il_bar = is->is_ubaddr & 0xffff;
+		addr->il_bcr = sizeof (struct il_stats);
+		addr->il_csr = ((is->is_ubaddr >> 2) & IL_EUA)|ILC_STAT;
+		if (ilwait(ui, "verifying setaddr"))
+			return;
+		if (bcmp((caddr_t)is->is_stats.ils_addr, (caddr_t)is->is_addr,
+						sizeof (is->is_addr)) != 0) {
+			printf("il%d: setaddr didn't work\n", ui->ui_unit);
+			return;
+		}
+	}
+	/*
 	 * Set board online.
 	 * Hang receive buffer and start any pending
 	 * writes by faking a transmit complete.
@@ -262,8 +288,6 @@ ilinit(unit)
 	is->is_flags = ILF_OACTIVE;
 	is->is_if.if_flags |= IFF_RUNNING;
 	is->is_flags |= ILF_RUNNING;
-	if (is->is_flags & ILF_SETADDR)
-		(void) il_setaddr(is->is_addr, is->is_if.if_unit);
 	is->is_lastcmd = 0;
 	ilcint(unit);
 	splx(s);
@@ -699,8 +723,8 @@ ilioctl(ifp, cmd, data)
 				ina->x_host = * (union ns_host *) 
 				     (il_softc[ifp->if_unit].is_addr);
 			} else {
-			    return
 				il_setaddr(ina->x_host.c_host, ifp->if_unit);
+				return (0);
 			}
 			break;
 		    }
@@ -734,35 +758,13 @@ u_char *physaddr;
 int unit;
 {
 	register struct il_softc *is = &il_softc[unit];
-	register struct uba_device *ui = ilinfo[unit];
-	register struct ildevice *addr= (struct ildevice *)ui->ui_addr;
-	int error = 0, ubaddr;
 	
 	if (! (is->is_flags & ILF_RUNNING))
 		return;
 		
-	bcopy((caddr_t)physaddr, (caddr_t)&is->is_stats, sizeof is->is_addr);
-	addr->il_bar = is->is_ubaddr & 0xffff;
-	addr->il_bcr = sizeof is->is_addr;
-	addr->il_csr = ((is->is_ubaddr >> 2) & IL_EUA)|ILC_LDPA;
-	if (ilwait(ui, "setaddr"))
-		error = EADDRNOTAVAIL;
-	addr->il_bar = is->is_ubaddr & 0xffff;
-	addr->il_bcr = sizeof (struct il_stats);
-	addr->il_csr = ((is->is_ubaddr >> 2) & IL_EUA)|ILC_STAT;
-	if (ilwait(ui, "status"))
-		error = ESRCH;
-	if (is->is_flags & ILF_STATPENDING)
-		is->is_flags &= ~ILF_STATPENDING;
-	if (error == 0 &&
-	    bcmp((caddr_t)is->is_stats.ils_addr, (caddr_t)physaddr,
-						sizeof (is->is_addr)) == 0) {
-		is->is_flags |= ILF_SETADDR;
-		bcopy(physaddr, is->is_addr, sizeof is->is_addr);
-	} else {
-		error = EBUSY;
-		printf("il%d: setaddr didn't work\n", ui->ui_unit);
-	}
-	return (error);
+	bcopy((caddr_t)physaddr, (caddr_t)is->is_addr, sizeof is->is_addr);
+	is->is_flags &= ~ILF_RUNNING;
+	is->is_flags |= ILF_SETADDR;
+	ilinit(unit);
 }
 #endif
