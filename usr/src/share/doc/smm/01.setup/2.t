@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)2.t	6.8 (Berkeley) %G%
+.\"	@(#)2.t	6.9 (Berkeley) %G%
 .\"
 .ds lq ``
 .ds rq ''
@@ -715,7 +715,14 @@ dd if=root.image of=/dev/rz1c bs=20b
 .DE
 The actual special file syntax will vary depending on unit numbers and
 the version of ULTRIX that is running.
-This system is now ready to boot.
+This system is now ready to boot. You can boot the kernel with one of the
+following PROM commands. If you are booting on a 3100, the disk must be SCSI
+id zero due to a bug.
+.DS
+.ft CW
+DEC 3100:    boot \-f rz(0,0,0)vmunix
+DEC 5000:    boot 5/rz0/vmunix
+.DE
 You will probably want to change the disk label
 to create reasonable partitions for your machine (see section 4.2).
 You can then proceed to section 2.5 to install the rest of the system.
@@ -791,7 +798,7 @@ Label the disk.
 .DE
 Supported disk types are listed in
 .Pn /etc/disktab .
-.IP 3)
+.IP 2)
 Restore the root filesystem.
 .DS
 .ft CW
@@ -821,14 +828,14 @@ When the restore finishes, clean up with:
 # umount /a
 # fsck /dev/rz?a
 .DE
-.IP 4)
+.IP 3)
 Reset the system and initialize the PROM monitor to boot automatically.
 .DS
 .ft CW
 DEC 3100:	setenv bootpath boot \-f rz(0,?,0)vmunix
 DEC 5000:	setenv bootpath 5/rz?/vmunix -a
 .DE
-.IP 5)
+.IP 4)
 After booting UNIX, you will need to create
 .Pn /dev/mouse
 to run X windows as in the following example.
