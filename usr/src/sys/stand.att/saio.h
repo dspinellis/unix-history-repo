@@ -3,23 +3,29 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)saio.h	7.4 (Berkeley) %G%
+ *	@(#)saio.h	7.5 (Berkeley) %G%
  */
 
 /*
  * Header file for standalone package
  */
 
+#include "saerrno.h"
+
+#define	UNIX	"/vmunix"
+
 /*
- * Io block: includes an
- * inode, cells for the use of seek, etc,
+ * Io block: includes an inode, cells for the use of seek, etc.,
  * and a buffer.
  */
 struct	iob {
 	int	i_flgs;		/* see F_ below */
-	struct	inode i_ino;	/* inode, if file */
+	int	i_adapt;	/* adapter */
+	int	i_ctlr;		/* controller */
 	int	i_unit;		/* pseudo device unit */
+	int	i_part;		/* disk partition */
 	daddr_t	i_boff;		/* block offset on device */
+	struct	inode i_ino;	/* inode, if file */
 	daddr_t	i_cyloff;	/* cylinder offset on device */
 	off_t	i_offset;	/* seek offset in file */
 	daddr_t	i_bn;		/* 1st block # of next read */
@@ -43,6 +49,7 @@ struct	iob {
 #define F_FILE		0x8	/* file instead of device */
 #define F_NBSF		0x10	/* no bad sector forwarding */
 #define F_SSI		0x40	/* set skip sector inhibit */
+
 /* io types */
 #define	F_RDDATA	0x0100	/* read data */
 #define	F_WRDATA	0x0200	/* write data */
@@ -51,6 +58,11 @@ struct	iob {
 #define F_HCHECK	0x1000	/* perform check of header and data */
 
 #define	F_TYPEMASK	0xff00
+
+/*
+ * Lseek call.
+ */
+#define	L_SET		0	/* absolute offset */
 
 /*
  * Device switch.
@@ -81,10 +93,10 @@ struct st {
 #endif
 
 /*
- * Request codes. Must be the same a F_XXX above
+ * Request codes. Must be the same as F_XXX above
  */
-#define	READ	1
-#define	WRITE	2
+#define	READ	F_READ
+#define	WRITE	F_WRITE
 
 #define	NBUFS	4
 
@@ -93,22 +105,6 @@ daddr_t	blknos[NBUFS];
 
 #define	NFILES	4
 struct	iob iob[NFILES];
-
-extern	int errno;	/* just like unix */
-
-/* error codes */
-#define	EBADF	1	/* bad file descriptor */
-#define	EOFFSET	2	/* relative seek not supported */
-#define	EDEV	3	/* improper device specification on open */
-#define	ENXIO	4	/* unknown device specified */
-#define	EUNIT	5	/* improper unit specification */
-#define	ESRCH	6	/* directory search for file failed */
-#define	EIO	7	/* generic error */
-#define	ECMD	10	/* undefined driver command */
-#define	EBSE	11	/* bad sector error */
-#define	EWCK	12	/* write check error */
-#define	EECC	13	/* uncorrectable ecc error */
-#define	EHER	14	/* hard error */
 
 /* ioctl's -- for disks just now */
 #define	SAIOHDR		(('d'<<8)|1)	/* next i/o includes header */
