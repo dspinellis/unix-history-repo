@@ -1,4 +1,4 @@
-/*	pcb.h	6.1	83/07/29	*/
+/*	pcb.h	6.2	84/07/31	*/
 
 /*
  * VAX process control block
@@ -52,12 +52,10 @@ struct pcb
 
 #define	aston() \
 	{ \
-		u.u_pcb.pcb_p0lr = (u.u_pcb.pcb_p0lr &~ AST_CLR) | AST_USER; \
 		mtpr(ASTLVL, ASTLVL_USER); \
 	}
 
 #define	astoff() \
 	{ \
-		u.u_pcb.pcb_p0lr = (u.u_pcb.pcb_p0lr &~ AST_CLR) | AST_NONE; \
 		mtpr(ASTLVL, ASTLVL_NONE); \
 	}
