@@ -4,9 +4,9 @@
  * specifies the terms and conditions for redistribution.
  */
 
-static char sccsid[] = "@(#)ops.vax.c 5.4 %G%";
+static char sccsid[] = "@(#)ops.vax.c 5.5 %G%";
 
-static char rcsid[] = "$Header: ops.c,v 1.5 84/12/26 10:41:07 linton Exp $";
+static char rcsid[] = "$Header: ops.vax.c,v 1.3 88/10/26 19:12:17 donn Exp $";
 
 /*
  * Machine operators.
@@ -297,7 +297,7 @@ typedef unsigned char VaxOpcode;
 #define LONGDISPDEF 0xF /* *LD(r) */
 
 #define is_branch_disp(arg) ((arg & ACCB) != 0)
-#define typelen(arg)        (arg & 07)
+#define typelen(arg)        (arg & 0xF)
 #define regnm(mode)	    (mode & 0xF)
 #define addrmode(mode)      (mode >> 4)
 
@@ -307,8 +307,8 @@ typedef unsigned char VaxOpcode;
 
 typedef struct {
     char *iname;
-    char format;
-    char val;
+    unsigned char format;
+    unsigned char val;
     char numargs;
     char argtype[6];
 } Optab;
