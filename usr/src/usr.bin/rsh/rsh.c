@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rsh.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)rsh.c	5.7 (Berkeley) 9/20/88";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -37,6 +37,14 @@ static char sccsid[] = "@(#)rsh.c	5.7 (Berkeley) %G%";
 #include <signal.h>
 #include <pwd.h>
 #include <netdb.h>
+
+#ifdef	KERBEROS
+#include <kerberos/krb.h>
+char	krb_realm[REALM_SZ];
+int	use_kerberos = 1, encrypt = 0;
+CREDENTIALS	cred;
+Key_schedule	schedule;
+#endif	/* KERBEROS */
 
 /*
  * rsh - remote shell
@@ -118,6 +126,27 @@ another:
 		argv++, argc--;
 		goto another;
 	}
+
+#ifdef	KERBEROS
+	if(argc > 0 && !strcmp(*argv, "-x")) {
+		encrypt = 1;
+		des_set_key(cred.session, schedule);
+		argv++, argc--;
+		goto another;
+	}
+
+	if(argc > 0 && !strcmp(*argv, "-k")) {
+		argv++, argc--;
+		if(argc <= 0 || (**argv == '-')) {
+			fprintf(stderr, "-k option requires an argument\n");
+			exit(1);
+		}
+		strncpy(krb_realm, *argv, REALM_SZ);
+		argv++, argc--;
+		goto another;
+	}
+#endif
+
 	if (host == 0)
 		goto usage;
 	if (argv[0] == 0) {
@@ -143,15 +172,79 @@ another:
 		if (ap[1])
 			*cp++ = ' ';
 	}
+#ifdef	KERBEROS
+	sp = getservbyname("kshell", "tcp");
+	if (sp == NULL) {
+		use_kerberos = 0;
+		old_warning("kshell service unknown");
+		sp = getservbyname("shell", "tcp");
+	}
+#else
 	sp = getservbyname("shell", "tcp");
+#endif
+
 	if (sp == 0) {
 		fprintf(stderr, "rsh: shell/tcp: unknown service\n");
 		exit(1);
 	}
+
+#ifdef	KERBEROS
+try_connect:
+	if(use_kerberos) {
+		rem = KSUCCESS;
+		if(krb_realm[0] == '\0') {
+			rem = krb_get_lrealm(krb_realm, 1);
+		}
+
+		if(rem == KSUCCESS) {
+			if(encrypt) {
+				rem = krcmd_mutual(
+					&host, sp->s_port,
+					user ? user : pwd->pw_name,
+					args,
+					&rfd2,
+					krb_realm,
+					&cred, schedule);
+			} else {
+				rem = krcmd(
+					&host,
+					sp->s_port,
+					user ? user : pwd->pw_name,
+					args,
+					&rfd2,
+					krb_realm
+				);
+			}
+		} else {
+			fprintf(stderr,
+			    "%s: error getting local realm %s\n",
+			    argv0[0], krb_err_txt[rem]);
+			exit(1);
+		}
+		if((rem < 0) && errno == ECONNREFUSED) {
+			use_kerberos = 0;
+			old_warning("remote host doesn't support Kerberos");
+			goto try_connect;
+		}
+
+	} else {
+		if(encrypt) {
+			fprintf(stderr,"The -x flag requires Kerberos authentication\n");
+			exit(1);
+		}
+        	rem = rcmd(&host, sp->s_port, pwd->pw_name,
+	    		user ? user : pwd->pw_name, args, &rfd2);
+	}
+
+#else
+			   
         rem = rcmd(&host, sp->s_port, pwd->pw_name,
-	    user ? user : pwd->pw_name, args, &rfd2);
+		user ? user : pwd->pw_name, args, &rfd2);
+#endif
+
         if (rem < 0)
                 exit(1);
+
 	if (rfd2 < 0) {
 		fprintf(stderr, "rsh: can't establish stderr\n");
 		exit(2);
@@ -248,7 +341,11 @@ another:
 	exit(0);
 usage:
 	fprintf(stderr,
+#ifdef	KERBEROS
+	    "usage: rsh host [ -l login ] [ -n ] [ -k realm ] command\n");
+#else
 	    "usage: rsh host [ -l login ] [ -n ] command\n");
+#endif
 	exit(1);
 }
 
@@ -258,3 +355,12 @@ sendsig(signo)
 
 	(void) write(rfd2, &signo, 1);
 }
+
+#ifdef	KERBEROS
+int
+old_warning(str)
+	char	*str;
+{
+	fprintf(stderr,"Warning: %s, using standard rsh", str);
+}
+#endif
