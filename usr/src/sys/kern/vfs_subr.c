@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_subr.c	8.17 (Berkeley) %G%
+ *	@(#)vfs_subr.c	8.18 (Berkeley) %G%
  */
 
 /*
@@ -143,7 +143,7 @@ vfs_unbusy(mp)
  * Lookup a mount point by filesystem identifier.
  */
 struct mount *
-getvfs(fsid)
+vfs_getvfs(fsid)
 	fsid_t *fsid;
 {
 	register struct mount *mp;
@@ -160,14 +160,15 @@ getvfs(fsid)
  * Get a new unique fsid
  */
 void
-getnewfsid(mp, mtype)
+vfs_getnewfsid(mp)
 	struct mount *mp;
-	int mtype;
 {
 static u_short xxxfs_mntid;
 
 	fsid_t tfsid;
+	int mtype;
 
+	mtype = mp->mnt_vfc->vfc_typenum;
 	mp->mnt_stat.f_fsid.val[0] = makedev(nblkdev + mtype, 0);
 	mp->mnt_stat.f_fsid.val[1] = mtype;
 	if (xxxfs_mntid == 0)
@@ -175,7 +176,7 @@ static u_short xxxfs_mntid;
 	tfsid.val[0] = makedev(nblkdev + mtype, xxxfs_mntid);
 	tfsid.val[1] = mtype;
 	if (mountlist.tqh_first != NULL) {
-		while (getvfs(&tfsid)) {
+		while (vfs_getvfs(&tfsid)) {
 			tfsid.val[0]++;
 			xxxfs_mntid++;
 		}
@@ -1130,6 +1131,51 @@ printlockedvnodes()
 	}
 }
 #endif
+
+/*
+ * Top level filesystem related information gathering.
+ */
+int
+vfs_sysctl(name, namelen, oldp, oldlenp, newp, newlen, p)
+	int *name;
+	u_int namelen;
+	void *oldp;
+	size_t *oldlenp;
+	void *newp;
+	size_t newlen;
+	struct proc *p;
+{
+	struct ctldebug *cdp;
+	struct vfsconf *vfsp;
+
+	/* all sysctl names at this level are at least name and field */
+	if (namelen < 2)
+		return (ENOTDIR);		/* overloaded */
+	if (name[0] != VFS_GENERIC) {
+		for (vfsp = vfsconf; vfsp; vfsp = vfsp->vfc_next)
+			if (vfsp->vfc_typenum == name[0])
+				break;
+		if (vfsp == NULL)
+			return (EOPNOTSUPP);
+		return ((*vfsp->vfc_vfsops->vfs_sysctl)(&name[1], namelen - 1,
+		    oldp, oldlenp, newp, newlen, p));
+	}
+	switch (name[1]) {
+	case VFS_MAXTYPENUM:
+		return (sysctl_rdint(oldp, oldlenp, newp, maxvfsconf));
+	case VFS_CONF:
+		if (namelen < 3)
+			return (ENOTDIR);	/* overloaded */
+		for (vfsp = vfsconf; vfsp; vfsp = vfsp->vfc_next)
+			if (vfsp->vfc_typenum == name[2])
+				break;
+		if (vfsp == NULL)
+			return (EOPNOTSUPP);
+		return (sysctl_rdstruct(oldp, oldlenp, newp, vfsp,
+		    sizeof(struct vfsconf)));
+	}
+	return (EOPNOTSUPP);
+}
 
 int kinfo_vdebug = 1;
 int kinfo_vgetfailed;
