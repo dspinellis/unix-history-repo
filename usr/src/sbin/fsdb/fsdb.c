@@ -15,7 +15,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)fsdb.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)fsdb.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -3404,7 +3404,7 @@ OTX:
 				printf("       bs: ");
 				print(ip->di_blocks, 12, -8, 0);
 				printf("   sz : ");
-				print(ip->di_size, 12, -8, 0);
+				print((int)ip->di_size, 12, -8, 0);
 				printf("\n");
 				if (ip->di_mode & IFCHR) {
 					printf("maj: ");
