@@ -1,14 +1,14 @@
 /*-
  * Copyright (c) 1992 Keith Muller.
- * Copyright (c) 1992 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1992, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * Keith Muller of the University of California, San Diego.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)extern.h	1.5 (Berkeley) %G%
+ *	@(#)extern.h	8.1 (Berkeley) %G%
  */
 
 /*

@@ -1,7 +1,7 @@
 /*-
  * Copyright (c) 1992 Keith Muller.
- * Copyright (c) 1992 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1992, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * Keith Muller of the University of California, San Diego.
@@ -10,7 +10,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cache.c	1.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)cache.c	8.1 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
