@@ -11,9 +11,10 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)mount.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)mount.c	5.11 (Berkeley) %G%";
 #endif not lint
 
+#include "pathnames.h"
 #include <sys/param.h>
 #include <sys/file.h>
 #include <sys/time.h>
@@ -44,6 +45,8 @@ static char sccsid[] = "@(#)mount.c	5.10 (Berkeley) %G%";
 	(!strcmp(type, FSTAB_RW) || !strcmp(type, FSTAB_RQ))
 
 static int fake, verbose, mnttype;
+char **envp;
+
 #ifdef NFS
 int xdr_dir(), xdr_fh();
 char *getnfsargs();
@@ -68,9 +71,10 @@ int retrycnt = 10000;
 int opflags = 0;
 #endif
 
-main(argc, argv)
+main(argc, argv, arge)
 	int argc;
 	char **argv;
+	char **arge;
 {
 	extern char *optarg;
 	extern int optind;
@@ -79,8 +83,9 @@ main(argc, argv)
 	int all, ch, rval, sfake, i;
 	long mntsize;
 	struct statfs statfsbuf, *mntbuf;
-	char *type;
+	char *type, *options = NULL;
 
+	envp = arge;
 	all = 0;
 	type = NULL;
 	mnttype = MOUNT_UFS;
@@ -101,18 +106,27 @@ main(argc, argv)
 		case 'w':
 			type = FSTAB_RW;
 			break;
-#ifdef NFS
-		case 't':
-			if (!strcmp(optarg, "nfs"))
-				mnttype = MOUNT_NFS;
-			break;
 		case 'o':
-			getoptions(optarg, &nfsargs, &opflags, &retrycnt);
+			options = optarg;
 			break;
-#endif
+		case 't':
+			if (!strcmp(optarg, "ufs")) {
+				mnttype = MOUNT_UFS;
+				break;
+			}
+			if (!strcmp(optarg, "nfs")) {
+				mnttype = MOUNT_NFS;
+				break;
+			}
+			if (!strcmp(optarg, "mfs")) {
+				mnttype = MOUNT_MFS;
+				break;
+			}
+			/* fall through */
 		case '?':
 		default:
 			usage();
+			/* NOTREACHED */
 		}
 	argc -= optind;
 	argv += optind;
@@ -127,20 +141,8 @@ main(argc, argv)
 			/* `/' is special, it's always mounted */
 			if (!strcmp(fs->fs_file, "/"))
 				fake = 1;
-#ifdef NFS
-			if (index(fs->fs_spec, '@') != NULL) {
-				if (fs->fs_vfstype != NULL &&
-				    strcmp(fs->fs_vfstype, "nfs"))
-					continue;
-				if (fs->fs_mntops != NULL)
-					getoptions(fs->fs_mntops, &nfsargs,
-						&opflags, &retrycnt);
-				mnttype = MOUNT_NFS;
-			} else
-				mnttype = MOUNT_UFS;
-#endif
 			rval |= mountfs(fs->fs_spec, fs->fs_file,
-			    type ? type : fs->fs_type);
+			    type ? type : fs->fs_type, options, fs->fs_mntops);
 		}
 		exit(rval);
 	}
@@ -163,7 +165,7 @@ main(argc, argv)
 				exit(1);
 			}
 			if ((mntsize = getfsstat(mntbuf, i)) < 0) {
-				perror("df");
+				perror("mount");
 				exit(1);
 			}
 		} while (i == mntsize * sizeof(struct statfs));
@@ -194,24 +196,23 @@ main(argc, argv)
 			exit(1);
 		}
 		exit(mountfs(fs->fs_spec, fs->fs_file,
-		    type ? type : fs->fs_type));
+		    type ? type : fs->fs_type, options, fs->fs_mntops));
 	}
 
 	if (argc != 2)
 		usage();
 
-	exit(mountfs(argv[0], argv[1], type ? type : "rw"));
+	exit(mountfs(argv[0], argv[1], type ? type : "rw", options, NULL));
 }
 
-static
-mountfs(spec, name, type)
-	char *spec, *name, *type;
+mountfs(spec, name, type, options, mntopts)
+	char *spec, *name, *type, *options, *mntopts;
 {
 	extern int errno;
 	register int cnt;
-	int flags;
+	int flags, argc, status, i;
 	struct ufs_args args;
-	char *argp;
+	char *argp, *argv[50];
 
 	if (!fake) {
 		flags = 0;
@@ -219,16 +220,53 @@ mountfs(spec, name, type)
 			flags |= M_RDONLY;
 		switch (mnttype) {
 		case MOUNT_UFS:
+			if (options)
+				getufsopts(options, &flags);
+			if (mntopts)
+				getufsopts(mntopts, &flags);
 			args.fspec = spec;
 			argp = (caddr_t)&args;
 			break;
 
 #ifdef NFS
 		case MOUNT_NFS:
+			if (options)
+				getnfsopts(options, &nfsargs, &opflags,
+					&retrycnt);
+			if (mntopts)
+				getnfsopts(mntopts, &nfsargs, &opflags,
+					&retrycnt);
 			if (argp = getnfsargs(spec, name, type))
 				break;
 			return (1);
 #endif /* NFS */
+
+#ifdef MFS
+		case MOUNT_MFS:
+			argv[0] = "memfs";
+			argc = 1;
+			if (options)
+				argc += getmfsopts(options, &argv[argc]);
+			if (mntopts)
+				argc += getmfsopts(mntopts, &argv[argc]);
+			argv[argc++] = spec;
+			argv[argc++] = name;
+			if (i = vfork()) {
+				if (i == -1) {
+					perror("mount: vfork for memfs");
+					return (1);
+				}
+				if (waitpid(i, &status, 0) != -1 &&
+				    WIFEXITED(status) &&
+				    WEXITSTATUS(status) != 0)
+					return (WEXITSTATUS(status));
+				spec = "memfs";
+				goto out;
+			}
+			execve(_PATH_MEMFS, argv, envp);
+			perror(_PATH_MEMFS);
+			exit (1);
+#endif /* MFS */
 
 		default:
 			if (opflags & ISBGRND)
@@ -255,9 +293,9 @@ mountfs(spec, name, type)
 			}
 			return(1);
 		}
-
 	}
 
+out:
 	if (verbose)
 		prmount(spec, name, type);
 
@@ -298,7 +336,88 @@ usage()
 	exit(1);
 }
 
+getufsopts(options, flagp)
+	char *options;
+	long *flagp;
+{
+
+	return;
+}
+
+#ifdef MFS
+getmfsopts(options, argv)
+	char *options;
+	char **argv;
+{
+	register int argc = 0;
+	register char *opt;
+	char *strtok();
+
+	for (opt = strtok(options, ","); opt; opt = strtok(NULL, ",")) {
+		if (opt[0] != '-')
+			continue;
+		argv[argc++] = opt;
+		if (opt[2] == '\0' || opt[2] != '=')
+			continue;
+		opt[2] = '\0';
+		argv[argc++] = &opt[3];
+	}
+	return (argc);
+}
+#endif /* MFS */
+
 #ifdef NFS
+/*
+ * Handle the getoption arg.
+ * Essentially update "opflags", "retrycnt" and "nfsargs"
+ */
+getnfsopts(optarg, nfsargsp, opflagsp, retrycntp)
+	char *optarg;
+	struct nfs_args *nfsargsp;
+	int *opflagsp;
+	int *retrycntp;
+{
+	register char *cp, *nextcp;
+	int num;
+	char *nump;
+
+	cp = optarg;
+	while (cp != NULL && *cp != '\0') {
+		if ((nextcp = index(cp, ',')) != NULL)
+			*nextcp++ = '\0';
+		if ((nump = index(cp, '=')) != NULL) {
+			*nump++ = '\0';
+			num = atoi(nump);
+		} else
+			num = -1;
+		/*
+		 * Just test for a string match and do it
+		 */
+		if (!strcmp(cp, "bg")) {
+			*opflagsp |= BGRND;
+		} else if (!strcmp(cp, "soft")) {
+			nfsargsp->flags |= NFSMNT_SOFT;
+		} else if (!strcmp(cp, "intr")) {
+			nfsargsp->flags |= NFSMNT_INT;
+		} else if (!strcmp(cp, "retry") && num > 0) {
+			*retrycntp = num;
+		} else if (!strcmp(cp, "rsize") && num > 0) {
+			nfsargsp->rsize = num;
+			nfsargsp->flags |= NFSMNT_RSIZE;
+		} else if (!strcmp(cp, "wsize") && num > 0) {
+			nfsargsp->wsize = num;
+			nfsargsp->flags |= NFSMNT_WSIZE;
+		} else if (!strcmp(cp, "timeo") && num > 0) {
+			nfsargsp->timeo = num;
+			nfsargsp->flags |= NFSMNT_TIMEO;
+		} else if (!strcmp(cp, "retrans") && num > 0) {
+			nfsargsp->retrans = num;
+			nfsargsp->flags |= NFSMNT_RETRANS;
+		}
+		cp = nextcp;
+	}
+}
+
 char *
 getnfsargs(spec)
 	char *spec;
@@ -408,56 +527,5 @@ xdr_fh(xdrsp, np)
 	if (np->stat)
 		return (1);
 	return (xdr_opaque(xdrsp, (caddr_t)&(np->nfh), NFSX_FH));
-}
-
-/*
- * Handle the getoption arg.
- * Essentially update "opflags", "retrycnt" and "nfsargs"
- */
-getoptions(optarg, nfsargsp, opflagsp, retrycntp)
-	char *optarg;
-	struct nfs_args *nfsargsp;
-	int *opflagsp;
-	int *retrycntp;
-{
-	register char *cp, *nextcp;
-	int num;
-	char *nump;
-
-	cp = optarg;
-	while (cp != NULL && *cp != '\0') {
-		if ((nextcp = index(cp, ',')) != NULL)
-			*nextcp++ = '\0';
-		if ((nump = index(cp, '=')) != NULL) {
-			*nump++ = '\0';
-			num = atoi(nump);
-		} else
-			num = -1;
-		/*
-		 * Just test for a string match and do it
-		 */
-		if (!strcmp(cp, "bg")) {
-			*opflagsp |= BGRND;
-		} else if (!strcmp(cp, "soft")) {
-			nfsargsp->flags |= NFSMNT_SOFT;
-		} else if (!strcmp(cp, "intr")) {
-			nfsargsp->flags |= NFSMNT_INT;
-		} else if (!strcmp(cp, "retry") && num > 0) {
-			*retrycntp = num;
-		} else if (!strcmp(cp, "rsize") && num > 0) {
-			nfsargsp->rsize = num;
-			nfsargsp->flags |= NFSMNT_RSIZE;
-		} else if (!strcmp(cp, "wsize") && num > 0) {
-			nfsargsp->wsize = num;
-			nfsargsp->flags |= NFSMNT_WSIZE;
-		} else if (!strcmp(cp, "timeo") && num > 0) {
-			nfsargsp->timeo = num;
-			nfsargsp->flags |= NFSMNT_TIMEO;
-		} else if (!strcmp(cp, "retrans") && num > 0) {
-			nfsargsp->retrans = num;
-			nfsargsp->flags |= NFSMNT_RETRANS;
-		}
-		cp = nextcp;
-	}
 }
 #endif /* NFS */
