@@ -36,10 +36,11 @@
  *
  * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
  * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         1       00089
+ * CURRENT PATCH LEVEL:         2       00108
  * --------------------         -----   ----------------------
  *
  * 27 Feb 93    Joerg Wunsch	Implement strtod, fix atof.
+ * 28 Mar 93	Jordan Hubbard	Fix stdtod bug with endp, remove warnings.
  *
  */
 
@@ -153,7 +154,7 @@ strtod(p, endp)
 	/* according to ANSI, check for over-/underflow */
 	if(exp > 0) {
 		if(endp)
-			*endp = oldp;
+			*endp = (char *)oldp;
 		errno = ERANGE;
 		return neg < 0? -HUGE_VAL: HUGE_VAL;
 	}
@@ -166,7 +167,7 @@ strtod(p, endp)
 	fl = ldexp(fl, bexp);
 
 	if(endp)
-		*endp = p;
+		*endp = (char *)(p - 1);
 	return neg < 0 ? -fl : fl;
 }
 
