@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)cons.c	7.9 (Berkeley) %G%
+ *	@(#)cons.c	7.10 (Berkeley) %G%
  */
 
 /*
@@ -125,7 +125,7 @@ cnrint(dev)
 
 	if (cnpolling)
 		return;
-	c = mfpr(RXDB)&0xff;
+	c = mfpr(RXDB);
 	if (c&RXDB_ID) {
 #if VAX780
 		if (cpu == VAX_780)
@@ -133,6 +133,7 @@ cnrint(dev)
 #endif
 		return;
 	}
+	c &= 0xff;
 	tp = &cons;
 #ifdef KADB
 	if (!kdbrintr(c, tp))
