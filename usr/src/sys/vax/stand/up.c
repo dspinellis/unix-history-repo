@@ -1,4 +1,4 @@
-/*	up.c	4.10	83/03/01	*/
+/*	up.c	4.11	83/03/02	*/
 
 /*
  * UNIBUS peripheral standalone driver
@@ -126,7 +126,7 @@ restart:
 	o = io->i_cc + (upaddr->upwc * sizeof (short));
 	upaddr->upba = info + o;
 	bn = io->i_bn + o / sectsiz;
-	if (updebug[unit] & (UPF_ECCDEBUG|UPF_BSEDEBUG))
+	if (doprintf && updebug[unit] & (UPF_ECCDEBUG|UPF_BSEDEBUG))
 		printf("upwc=%d o=%d i_bn=%d bn=%d\n",
 			upaddr->upwc, o, io->i_bn, bn);
 	while((upaddr->upds & UPDS_DRY) == 0)
