@@ -1,5 +1,4 @@
-
-/* display.c -
+/* @(#)display.c	1.2	%G%
  *
  * Copyright -C- 1982 Barry S. Roitblat
  *
@@ -70,7 +69,7 @@ int layer;
 }  /* end ScreenAdd */
 
 
-
+
 DISScreenErase(element,layer)
 ELT *element;
 int layer;
@@ -120,7 +119,7 @@ int layer;
     }  /* end if */
 }  /* end ScreenErase */
 
-
+
 DISDisplaySet(element)
 ELT *element;
 /*

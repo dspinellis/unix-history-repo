@@ -1,5 +1,4 @@
-
-/* findaed.c -
+/* @(#)findaed.c	1.2	%G%
  *
  * Copyright -C- 1982 Barry S. Roitblat
  *
@@ -20,7 +19,7 @@ extern char *ttyname();
 /* imports from config.c */
 
 extern char GDisplays[];
-
+
 char *
 FindAED()
 
