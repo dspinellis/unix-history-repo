@@ -1,7 +1,7 @@
 # include	"../hdr/defines.h"
-# include	"dir.h"
+# include	<ndir.h>
 
-SCCSID(@(#)dofile.c	1.1);
+SCCSID(@(#)dofile.c	1.2);
 
 int	nfiles;
 char	had_dir;
@@ -15,9 +15,8 @@ int (*func)();
 	extern char *Ffile;
 	char str[FILESIZE];
 	char ibuf[FILESIZE];
-	char	dbuf[BUFSIZ];
-	FILE *iop;
-	struct dir dir[2];
+	DIR *dir;
+	struct direct *dp;
 	register char *s;
 	int fd;
 
@@ -34,22 +33,19 @@ int (*func)();
 	else if (exists(p) && (Statbuf.st_mode & S_IFMT) == S_IFDIR) {
 		had_dir = 1;
 		Ffile = p;
-		if((iop = fopen(p,"r")) == NULL)
+		if((dir = opendir(p)) == 0)
 			return;
-		setbuf(iop,dbuf);
-		dir[1].d_ino = 0;
-		fread(dir,sizeof(dir[0]),1,iop);   /* skip "."  */
-		fread(dir,sizeof(dir[0]),1,iop);   /* skip ".."  */
-		while(fread(dir,sizeof(dir[0]),1,iop) == 1) {
-			if(dir[0].d_ino == 0) continue;
-			sprintf(str,"%s/%s",p,dir[0].d_name);
+		(void) readdir(dir);	/* skip . */
+		(void) readdir(dir);	/* and .. */
+		while (dp = readdir(dp)) {
+			sprintf(str,"%s/%s", p, dp->d_name);
 			if(sccsfile(str)) {
 				Ffile = str;
 				(*func)(str);
 				nfiles++;
 			}
 		}
-		fclose(iop);
+		closedir(dir);
 	}
 	else {
 		Ffile = p;
