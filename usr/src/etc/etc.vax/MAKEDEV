@@ -1,5 +1,5 @@
 #! /bin/sh
-#	@(#)MAKEDEV	4.13	%G%
+#	@(#)MAKEDEV	4.14	%G%
 #
 # Device "make" file.  Valid arguments:
 #	std	standard devices (for 730 must be followed by tu0 & tu1)
@@ -10,7 +10,6 @@
 #	ts*	unibus ts11
 #	mt*	massbus tu78
 #	ut*	unibus tu45 emulations (e.g.si 9700)
-#	tu*	730 tu58 console cassettes (tu0 in front, tu1 on side)
 #	uu*	tu58 cassettes on dl11 controller
 # Disks:
 #	hp*	massbus rm??
@@ -40,6 +39,8 @@ std)
 	/etc/mknod console	c 0 0
 	/etc/mknod drum		c 7 0	; chmod 644 drum
 	/etc/mknod floppy	c 8 0
+	/etc/mknod tu0		b 8 0
+	/etc/mknod tu1		b 8 1
 	/etc/mknod kUmem	c 3 3	;: no one has ever tried using this
 	/etc/mknod kmem		c 3 1	; chmod 644 kmem
 	/etc/mknod mem		c 3 0	; chmod 644 mem
