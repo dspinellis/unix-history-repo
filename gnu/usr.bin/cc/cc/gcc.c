@@ -1179,7 +1179,7 @@ static char *standard_startfile_prefix_1 = "/lib/";
 static char *standard_startfile_prefix_2 = "/usr/lib/";
 
 #ifndef TOOLDIR_BASE_PREFIX
-#define TOOLDIR_BASE_PREFIX "/usr/local/"
+#define TOOLDIR_BASE_PREFIX "/usr/libexec/"
 #endif
 static char *tooldir_base_prefix = TOOLDIR_BASE_PREFIX;
 static char *tooldir_prefix;
