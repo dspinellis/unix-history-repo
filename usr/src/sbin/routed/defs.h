@@ -1,4 +1,4 @@
-/*	defs.h	4.6	82/06/05	*/
+/*	defs.h	4.7	82/06/08	*/
 
 /*
  * Internal data structure definitions for
@@ -27,13 +27,13 @@ struct rt_entry {
 		struct {
 			u_long	rtu_hash;
 			struct	sockaddr rtu_dst;
-			struct	sockaddr rtu_gateway;
+			struct	sockaddr rtu_router;
 			short	rtu_flags;
-			short	rtu_retry;
-			short	rtu_timer;
 			short	rtu_state;
+			int	rtu_timer;
 			int	rtu_metric;
 			struct	ifnet *rtu_ifp;
+			struct	sockaddr rtu_newrouter;
 		} rtu_entry;
 	} rt_rtu;
 };
@@ -41,13 +41,13 @@ struct rt_entry {
 #define	rt_rt		rt_rtu.rtu_rt			/* pass to ioctl */
 #define	rt_hash		rt_rtu.rtu_entry.rtu_hash	/* for net or host */
 #define	rt_dst		rt_rtu.rtu_entry.rtu_dst	/* match value */
-#define	rt_gateway	rt_rtu.rtu_entry.rtu_gateway	/* who to forward to */
+#define	rt_router	rt_rtu.rtu_entry.rtu_router	/* who to forward to */
 #define	rt_flags	rt_rtu.rtu_entry.rtu_flags	/* kernel flags */
-#define	rt_retry	rt_rtu.rtu_entry.rtu_retry	/* retries of ioctl */
 #define	rt_timer	rt_rtu.rtu_entry.rtu_timer	/* for invalidation */
 #define	rt_state	rt_rtu.rtu_entry.rtu_state	/* see below */
 #define	rt_metric	rt_rtu.rtu_entry.rtu_metric	/* cost of route */
 #define	rt_ifp		rt_rtu.rtu_entry.rtu_ifp	/* interface to take */
+#define	rt_newrouter	rt_rtu.rtu_entry.rtu_newrouter	/* for change's */
 
 #define	ROUTEHASHSIZ	19
 
@@ -57,7 +57,8 @@ struct rt_entry {
 #define	RTS_DELRT	0x1		/* delete pending */
 #define	RTS_CHGRT	0x2		/* change command pending */
 #define	RTS_ADDRT	0x4		/* add command pending */
-#define	RTS_HIDDEN	0x8		/* don't send to router */
+#define	RTS_PASSIVE	0x8		/* don't send to router */
+#define	RTS_INTERFACE	0x10		/* route is for an interface */
 
 struct	rthash nethash[ROUTEHASHSIZ], hosthash[ROUTEHASHSIZ];
 struct	rt_entry *rtlookup(), *rtfind();
