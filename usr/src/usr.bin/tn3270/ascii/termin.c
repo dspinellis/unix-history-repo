@@ -138,18 +138,20 @@ TerminalIn()
     int work = 0;
     register struct astosc *ptr;
 
-    if (*ourPHead == ' ') {
-	ptr = spacePTR;
-    } else {
-	ptr = &astosc[*ourPHead];
-    }
-
     while (!EmptyChar) {			/* send up the link */
+	if (*ourPHead == ' ') {
+	    ptr = spacePTR;
+	} else {
+	    ptr = &astosc[*ourPHead];
+	}
 	if (AcceptKeystroke(ptr->scancode, ptr->shiftstate) == 1) {
 	    ourPHead++;
 	    work = 1;
+	} else {
+	    break;
 	}
     }
+
     if (EmptyChar) {
 	FlushChar();
     }
