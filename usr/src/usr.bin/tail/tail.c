@@ -1,4 +1,6 @@
-static char *sccsid = "@(#)tail.c	4.5 (Berkeley) %G%";
+#ifndef lint
+static char *sccsid = "@(#)tail.c	4.6 (Berkeley) %G%";
+#endif
 /* tail command 
  *
  *	tail where [file]
@@ -18,6 +20,7 @@ static char *sccsid = "@(#)tail.c	4.5 (Berkeley) %G%";
 #include	<ctype.h>
 #include	<sys/types.h>
 #include	<sys/stat.h>
+#include	<sys/file.h>
 #include	<errno.h>
 
 #define LBIN 8193
@@ -55,13 +58,13 @@ char **argv;
 	if(!fromend&&n>0)
 		n--;
 	if(argc>2) {
-		close(0);
+		(void)close(0);
 		if(open(argv[2],0)!=0) {
 			perror(argv[2]);
 			exit(1);
 		}
 	}
-	lseek(0,(long)0,1);
+	(void)lseek(0,(off_t)0,L_INCR);
 	piped = errno==ESPIPE;
 	bylines = -1; bkwds = 0;
 	while(*arg)
@@ -111,10 +114,10 @@ char **argv;
 				}
 			} while(*p++ != '\n');
 		}
-		write(1,p,j);
+		(void)write(1,p,j);
 	} else  if(n>0) {
 		if(!piped)
-			fstat(0,&statb);
+			(void)fstat(0,&statb);
 		if(piped||(statb.st_mode&S_IFMT)==S_IFCHR)
 			while(n>0) {
 				i = n>BUFSIZ?BUFSIZ:n;
@@ -124,11 +127,11 @@ char **argv;
 				n -= i;
 			}
 		else
-			lseek(0,n,0);
+			(void)lseek(0,(off_t)n,L_SET);
 	}
 copy:
 	while((i=read(0,bin,BUFSIZ))>0)
-		write(1,bin,i);
+		(void)write(1,bin,i);
 	fexit();
 
 			/*seek from end*/
@@ -137,11 +140,11 @@ keep:
 	if(n <= 0)
 		fexit();
 	if(!piped) {
-		fstat(0,&statb);
+		(void)fstat(0,&statb);
 		/* If by lines, back up 1 buffer: else back up as needed */
 		di = bylines?BUFSIZ:n;
 		if(statb.st_size > di)
-			lseek(0,-di,2);
+			(void)lseek(0,(off_t)-di,L_XTND);
 		if(!bylines)
 			goto copy;
 	}
@@ -176,17 +179,18 @@ brka:
 			do {
 				if(--k<0) {
 					if(partial) {
-						if(bkwds) write(1,bin,lastnl+1);
+						if(bkwds) 
+						    (void)write(1,bin,lastnl+1);
 						goto brkb;
 					}
 					k = LBIN -1;
 				}
 			} while(bin[k]!='\n'&&k!=i);
 			if(bkwds && j>0){
-				if(k<lastnl) write(1,&bin[k+1],lastnl-k);
+				if(k<lastnl) (void)write(1,&bin[k+1],lastnl-k);
 				else {
-					write(1,&bin[k+1],LBIN-k-1);
-					write(1,bin,lastnl+1);
+					(void)write(1,&bin[k+1],LBIN-k-1);
+					(void)write(1,bin,lastnl+1);
 				}
 			}
 		} while(j++<n&&k!=i);
@@ -198,10 +202,10 @@ brkb:
 		} while(bin[k]!='\n'&&k!=i);
 	}
 	if(k<i)
-		write(1,&bin[k+1],i-k-1);
+		(void)write(1,&bin[k+1],i-k-1);
 	else {
-		write(1,&bin[k+1],LBIN-k-1);
-		write(1,bin,i);
+		(void)write(1,&bin[k+1],LBIN-k-1);
+		(void)write(1,bin,i);
 	}
 	fexit();
 errcom:
@@ -215,6 +219,6 @@ fexit()
 	for (;;)
 	{	sleep(1);
 		while ((n = read (0, bin, BUFSIZ)) > 0)
-			write (1, bin, n);
+			(void)write (1, bin, n);
 	}
 }
