@@ -4,13 +4,14 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)hpib.c	7.3 (Berkeley) %G%
+ *	@(#)hpib.c	7.4 (Berkeley) %G%
  */
 
 /*
  * HPIB driver
  */
-#include "sys/reboot.h"
+#include <sys/param.h>
+#include <sys/reboot.h>
 #include "../dev/device.h"
 #include "hpibvar.h"
 
@@ -143,12 +144,12 @@ hpibgo(unit, sec, addr, count, flag)
 	slave = hpibslave(unit);
 	unit = hpibunit(unit);
 	if (hpib_softc[unit].sc_type == HPIBC)
-		if (flag == READ)
+		if (flag == F_READ)
 			fhpibrecv(unit, slave, sec, addr, count);
 		else
 			fhpibsend(unit, slave, sec, addr, count);
 	else
-		if (flag == READ)
+		if (flag == F_READ)
 			nhpibrecv(unit, slave, sec, addr, count);
 		else
 			nhpibsend(unit, slave, sec, addr, count);

@@ -11,12 +11,13 @@
  *
  * from: Utah $Hdr: rd.c 1.14 89/02/27$
  *
- *	@(#)rd.c	7.2 (Berkeley) %G%
+ *	@(#)rd.c	7.3 (Berkeley) %G%
  */
 
 /*
  * CS80/SS80 disk driver
  */
+#include <sys/param.h>
 #include "saio.h"
 #include "samachdep.h"
 
@@ -205,7 +206,7 @@ rdstrategy(io, func)
 	rd_ioc.c_nop2 = C_NOP;
 	rd_ioc.c_slen = C_SLEN;
 	rd_ioc.c_len = io->i_cc;
-	rd_ioc.c_cmd = func == READ ? C_READ : C_WRITE;
+	rd_ioc.c_cmd = func == F_READ ? C_READ : C_WRITE;
 retry:
 	hpibsend(unit, C_CMD, &rd_ioc.c_unit, sizeof(rd_ioc)-2);
 	hpibswait(unit);
