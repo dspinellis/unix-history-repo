@@ -1,0 +1,113 @@
+00000000 t crt0.o
+00000044 t t.o
+00000044 - 00 0000    SO t.c
+00000000 - 00 0000  LSYM int:t1=r1;-2147483648;2147483647;
+00000000 - 00 0000  LSYM char:t2=r2;0;127;
+00000000 - 00 0000  LSYM long:t3=r1;-2147483648;2147483647;
+00000000 - 00 0000  LSYM short:t4=r1;-32768;32767;
+00000000 - 00 0000  LSYM unsigned char:t5=r1;0;255;
+00000000 - 00 0000  LSYM unsigned short:t6=r1;0;65535;
+00000000 - 00 0000  LSYM unsigned long:t7=r1;0;-1;
+00000000 - 00 0000  LSYM unsigned int:t8=r1;0;-1;
+00000000 - 00 0000  LSYM float:t9=r1;4;0;
+00000000 - 00 0000  LSYM double:t10=r1;8;0;
+00000000 - 00 0000  LSYM void:t11=11
+00000000 - 00 0000  LSYM ???:t12=1
+fffffb05 - 00 0014  LSYM _iobuf:T13=s20_cnt:1,0,32;_ptr:14=*2,32,32;_base:14,64,32;_bufsiz:1,96,32;_flag:4,128,16;_file:2,144,8;;
+00000000 - 00 0014  GSYM _iob:G15=ar1;0;19;13
+fffffb05 - 00 0000  LSYM Blah:t17=*16
+fffffb05 - 00 0004  LSYM nest:T19=s4a:1,0,32;;
+fffffb05 - 00 000c  LSYM recursive:T18=s12val:1,0,32;next:20=*18,32,32;n:19,64,32;;
+00000000 - 00 000c  GSYM r:G18
+fffffb05 - 00 0004  LSYM Integer:t1
+fffffb05 - 00 0008  LSYM blah:T21=s8x:1,0,32;y:1,32,32;;
+00000000 - 00 0008  GSYM z:G21
+00000000 - 00 0004  GSYM array:G22=ar1;0;9;1
+00000000 - 00 0004  GSYM i:G1
+00000044 - 00 0004   FUN main:F1
+00000004 - 00 0004  PSYM argc:p1
+00000008 - 00 0001  PSYM argv:p23=*14
+00000046 - 00 0016 SLINE 
+00000048 - 00 0017 SLINE 
+fffffff8 - 00 0008  LSYM p:21
+00000048 - 00 0018 SLINE 
+fffffff4 - 00 0004  LSYM a:1
+fffffff0 - 00 0004  LSYM b:1
+00000048 - 00 0019 SLINE 
+fffffb05 - 00 0004  LSYM color:T24=eRED:0,GREEN:1,BLUE:2,
+fffffb05 - 00 0004  LSYM Color:t24
+00000048 - 00 001a SLINE 
+ffffffec - 00 0004  LSYM c:24
+00000048 - 00 001b SLINE 
+ffffffe4 - 00 0008  LSYM x:10
+00000048 - 00 001c SLINE 
+ffffffe0 - 00 0004  LSYM y:9
+00000048 - 00 001d SLINE 
+00000048 - 00 001e SLINE 
+00000004 - 00 0002 LBRAC 
+0000005b - 00 001f SLINE 
+00000061 - 00 0020 SLINE 
+00000075 - 00 0021 SLINE 
+00000075 - 00 0022 SLINE 
+000000a1 - 00 0023 SLINE 
+000000a5 - 00 0024 SLINE 
+000000ad - 00 0025 SLINE 
+000000b5 - 00 0026 SLINE 
+000000bc - 00 0027 SLINE 
+00000078 - 00 0002 RBRAC 
+000000c4 t -lg
+000000d0 t abort.o
+000000d8 t printf.o
+00000100 t doprnt.o
+0000096c t flsbuf.o
+00000ba0 t exit.o
+00000bac t data.o
+00000bac t fstat.o
+00000bbc t isatty.o
+00000bdc t close.o
+00000bf0 t stty.o
+00000c1c t ioctl.o
+00000c2c t malloc.o
+00000e58 t Osbrk.o
+00000e88 t udiv.o
+00000eb0 t write.o
+00000ec0 t cerror.o
+00001004 D _environ
+00000000 T start
+00000044 T _main
+00000ba0 T _exit
+00001008 D mcount
+000011ec B _r
+000011fc B _z
+00001204 B _array
+00001030 D _i
+000000d8 T _printf
+00001054 D __iob
+0000096c T __flsbuf
+000000d0 T _abort
+0000122c B __dbargs
+000000c4 T __dbsubc
+000000cf T __dbsubn
+00000200 T __doprnt
+00000eb8 T _write
+00000bb4 T _fstat
+00000bbc T _isatty
+0000142c B __sobuf
+00000c2c T _malloc
+00000aca T _fflush
+00000b24 T __cleanup
+00000b46 T _fclose
+000011e4 D __lastbuf
+00000be4 T _close
+00000d98 T _free
+0000342c B __sibuf
+00000ec0 T cerror
+00000c06 T _gtty
+00000bf0 T _stty
+00000c24 T _ioctl
+00000e88 T udiv
+00000e58 T _sbrk
+00000db4 T _realloc
+00005448 B _end
+000011e8 D curbrk
+0000542c B _errno
