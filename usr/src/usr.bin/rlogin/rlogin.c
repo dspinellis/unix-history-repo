@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rlogin.c	5.32.1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)rlogin.c	5.33 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -52,7 +52,7 @@ static char sccsid[] = "@(#)rlogin.c	5.32.1.1 (Berkeley) %G%";
 
 CREDENTIALS cred;
 Key_schedule schedule;
-int use_kerberos = 1, encrypt;
+int use_kerberos = 1, doencrypt;
 char dst_realm_buf[REALM_SZ], *dest_realm = NULL;
 extern char *krb_realmofhost();
 #endif
@@ -186,11 +186,11 @@ main(argc, argv)
 	sp = NULL;
 #ifdef KERBEROS
 	if (use_kerberos) {
-		sp = getservbyname((encrypt ? "eklogin" : "klogin"), "tcp");
+		sp = getservbyname((doencrypt ? "eklogin" : "klogin"), "tcp");
 		if (sp == NULL) {
 			use_kerberos = 0;
 			warning("can't get entry for %s/tcp service",
-			    encrypt ? "eklogin" : "klogin");
+			    doencrypt ? "eklogin" : "klogin");
 		}
 	}
 #endif
@@ -332,19 +332,20 @@ setsignal(sig, act)
 done(status)
 	int status;
 {
-	int w;
+	int w, wstatus;
 
 	mode(0);
 	if (child > 0) {
 		/* make sure catch_child does not snap it up */
 		(void)signal(SIGCHLD, SIG_DFL);
 		if (kill(child, SIGKILL) >= 0)
-			while ((w = wait((union wait *)0)) > 0 && w != child);
+			while ((w = wait(&wstatus)) > 0 && w != child);
 	}
 	exit(status);
 }
 
 int dosigwinch;
+void sigwinch();
 
 /*
  * This is called when the reader process gets the out-of-band (urgent)
@@ -353,8 +354,6 @@ int dosigwinch;
 void
 writeroob()
 {
-	void sigwinch();
-
 	if (dosigwinch == 0) {
 		sendwindow();
 		(void)signal(SIGWINCH, sigwinch);
@@ -369,7 +368,8 @@ catch_child()
 	int pid;
 
 	for (;;) {
-		pid = wait3(&status, WNOHANG|WUNTRACED, (struct rusage *)0);
+		pid = wait3((int *)&status,
+		    WNOHANG|WUNTRACED, (struct rusage *)0);
 		if (pid == 0)
 			return;
 		/* if the child (reader) dies, just quit */
