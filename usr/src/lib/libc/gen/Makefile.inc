@@ -1,4 +1,4 @@
-#	@(#)Makefile.inc	8.1 (Berkeley) %G%
+#	@(#)Makefile.inc	8.2 (Berkeley) %G%
 
 # machine-independent gen sources
 .PATH: ${.CURDIR}/${MACHINE}/gen ${.CURDIR}/gen
@@ -14,7 +14,8 @@ SRCS+=	alarm.c assert.c clock.c closedir.c confstr.c crypt.c ctermid.c \
 	setmode.c siginterrupt.c siglist.c signal.c sigsetjmp.c \
 	sigsetops.c sleep.c sysconf.c sysctl.c syslog.c telldir.c \
 	termios.c time.c times.c timezone.c ttyname.c ttyslot.c ualarm.c \
-	unvis.c usleep.c utime.c valloc.c vis.c wait.c wait3.c waitpid.c
+	uname.c unvis.c usleep.c utime.c valloc.c vis.c wait.c wait3.c \
+	waitpid.c
 
 # machine-dependent gen sources
 .include "${.CURDIR}/${MACHINE}/gen/Makefile.inc"
@@ -37,8 +38,8 @@ MAN3+=	alarm.0 clock.0 confstr.0 crypt.0 ctermid.0 ctime.0 daemon.0 \
 	raise.0 scandir.0 setjmp.0 setmode.0 siginterrupt.0 signal.0 \
 	sigsetops.0 sleep.0 sysconf.0 sysctl.0 syslog.0 tcgetpgrp.0 \
 	tcsendbreak.0 tcsetattr.0 tcsetpgrp.0 time.0 times.0 timezone.0 \
-	ttyname.0 tzset.0 ualarm.0 unvis.0 usleep.0 utime.0 valloc.0 \
-	vis.0
+	ttyname.0 tzset.0 ualarm.0 uname.0 unvis.0 usleep.0 utime.0 \
+	valloc.0 vis.0
 
 MLINKS+=crypt.3 encrypt.3 crypt.3 setkey.3
 MLINKS+=ctime.3 asctime.3 ctime.3 difftime.3 ctime.3 gmtime.3 \
