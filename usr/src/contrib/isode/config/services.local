@@ -1,0 +1,41 @@
+###############################################################################
+#
+# isoservices - ISODE Services Database
+#
+#	Mappings between services, selectors, and programs
+#
+#
+# $Header: /f/osi/config/RCS/services.local,v 7.1 91/02/22 09:16:50 mrose Interim $
+#
+#
+# $Log:	services.local,v $
+# Revision 7.1  91/02/22  09:16:50  mrose
+# Interim 6.8
+# 
+# Revision 7.0  89/11/23  21:26:17  mrose
+# Release 6.0
+# 
+###############################################################################
+
+
+###############################################################################
+#
+# Syntax:
+#
+#	<provider>/<entity> <selector> <arg0> <arg1> ... <argn>
+#
+#	Each token is separated by LWSP, though double-quotes may be
+#	used to prevent separation
+#
+###############################################################################
+
+
+###############################################################################
+# locally defined services
+#	(this section is usually empty...)
+###############################################################################
+
+
+
+# local additions end here (do not remove this line)
+

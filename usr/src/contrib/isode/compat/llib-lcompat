@@ -1,0 +1,786 @@
+/* llib-licompat - lint library for -licompat */
+
+/* 
+ * $Header: /f/osi/compat/RCS/llib-lcompat,v 7.10 91/02/22 09:15:28 mrose Interim $
+ *
+ *
+ * $Log:	llib-lcompat,v $
+ * Revision 7.10  91/02/22  09:15:28  mrose
+ * Interim 6.8
+ * 
+ * Revision 7.9  91/01/14  13:32:39  mrose
+ * kerberos
+ * 
+ * Revision 7.8  91/01/07  12:39:53  mrose
+ * update
+ * 
+ * Revision 7.7  90/12/23  18:39:38  mrose
+ * update
+ * 
+ * Revision 7.6  90/11/21  11:35:26  mrose
+ * update
+ * 
+ * Revision 7.5  90/08/08  14:02:57  mrose
+ * stuff
+ * 
+ * Revision 7.4  90/02/19  13:07:13  mrose
+ * update
+ * 
+ * Revision 7.3  90/01/11  18:35:13  mrose
+ * real-sync
+ * 
+ * Revision 7.2  89/12/19  16:17:55  mrose
+ * dgram
+ * 
+ * Revision 7.1  89/11/30  23:53:14  mrose
+ * pa2str
+ * 
+ * Revision 7.0  89/11/23  21:23:14  mrose
+ * Release 6.0
+ * 
+ */
+
+/*
+ *				  NOTICE
+ *
+ *    Acquisition, use, and distribution of this module and related
+ *    materials are subject to the restrictions of a license agreement.
+ *    Consult the Preface in the User's Manual for the full terms of
+ *    this agreement.
+ *
+ */
+
+
+/* LINTLIBRARY */
+
+#include <varargs.h>
+#include "manifest.h"
+#include "general.h"
+#include "isoaddrs.h"
+#include "isoservent.h"
+#include "logger.h"
+#ifdef	TCP
+#include "internet.h"
+#endif
+#ifdef	X25
+#include "x25.h"
+#endif
+#ifdef	TP4
+#include "tp4.h"
+#endif
+
+/*  */
+
+/*    EMULATION */
+
+#ifdef	SYS5
+int	dup2 (d1, d2)
+int	d1,
+	d2;
+{
+    return dup2 (d1, d2);
+}
+#endif
+
+
+#ifndef	SWABLIB
+#undef	ntohs
+u_short	ntohs (netshort) u_short netshort; { return ntohs (netshort); }
+
+#undef	htons
+u_short	htons (hostshort) u_short hostshort; { return htons (hostshort); }
+
+#undef	ntohl
+u_long	ntohl (netlong) u_long netlong; { return ntohl (netlong); }
+
+#undef	htonl
+u_long	htonl (hostlong) u_long hostlong; { return htonl (hostlong); }
+#endif
+
+
+int	ll_open (lp)
+LLog   *lp;
+{
+    return ll_open (lp);
+}
+
+
+int	ll_close (lp)
+LLog   *lp;
+{
+    return ll_close (lp);
+}
+
+
+/* VARARGS4 */
+
+int	ll_log (lp, event, what, fmt)
+LLog   *lp;
+int	event;
+char   *what,
+       *fmt;
+{
+    return ll_log (lp, event, what, fmt);
+}
+
+
+int	_ll_log (lp, event, ap)
+LLog   *lp;
+int	event;
+va_list ap;
+{
+    return _ll_log (lp, event, ap);
+}
+
+
+void	ll_hdinit (lp, prefix)
+LLog   *lp;
+char   *prefix;
+{
+    ll_hdinit (lp, prefix);
+}
+
+
+void	ll_dbinit (lp, prefix)
+LLog   *lp;
+char   *prefix;
+{
+    ll_dbinit (lp, prefix);
+}
+
+
+/* VARARGS2 */
+
+int	ll_printf (lp, fmt)
+LLog   *lp;
+char   *fmt;
+{
+    return ll_printf (lp, fmt);
+}
+
+
+int	ll_sync (lp)
+LLog   *lp;
+{
+    return ll_sync (lp);
+}
+
+
+/* VARARGS1 */
+
+char   *ll_preset (fmt)
+char   *fmt;
+{
+    return ll_preset (fmt);
+}
+
+
+int	ll_check (lp)
+LLog   *lp;
+{
+    return ll_check (lp);
+}
+
+
+int	ll_defmhdr (bufferp, headerp, dheaderp)
+char   *bufferp,
+       *headerp,
+       *dheaderp;
+{
+    return ll_defmhdr (bufferp, headerp, dheaderp);
+}
+
+
+IFP	ll_setmhdr (make_header_routine) 
+IFP	make_header_routine;
+{
+    return ll_setmhdr (make_header_routine);
+}
+
+
+int	selsocket (nfds, rfds, wfds, efds, secs)
+int	nfds;
+fd_set *rfds,
+       *wfds,
+       *efds;
+int	secs;
+{
+    return selsocket (nfds, rfds, wfds, efds, secs);
+}
+
+
+IFP	set_check_fd (fd, fnx, data)
+int	fd;
+IFP	fnx;
+caddr_t data;
+{
+    return set_check_fd (fd, fnx, data);
+}
+
+
+int	xselect (nfds, rfds, wfds, efds, secs)
+int	nfds;
+fd_set *rfds,
+       *wfds,
+       *efds;
+int	secs;
+{
+    return xselect (nfds, rfds, wfds, efds, secs);
+}
+
+
+#ifdef	BSDSIGS
+#ifdef	AIX
+IFP	signal (sig, func)
+int	sig;
+IFP	func;
+{
+    return signal (sig, func);
+}
+#endif
+#else
+int	sigblock (mask)
+int	mask;
+{
+    return sigblock (mask);
+}
+
+int	sigsetmask (mask)
+int	mask;
+{
+    return sigsetmask (mask);
+}
+#endif
+
+/*    UTILITY */
+
+void	asprintf (bp, ap)
+char   *bp;
+va_list	ap;
+{
+    asprintf (bp, ap);
+}
+
+
+void	_asprintf (bp, what, ap)
+char   *bp,
+       *what;
+va_list	ap;
+{
+    _asprintf (bp, what, ap);
+}
+
+
+int	expode (a, b, n)
+char   *a;
+u_char *b;
+int	n;
+{
+    return explode (a, b, n);
+}
+
+
+int	implode (a, b, n)
+u_char *a;
+char   *b;
+int	n;
+{
+    return implode (a, b, n);
+}
+
+
+char   *_isodefile (path, file)
+char   *path,
+       *file;
+{
+    return _isodefile (path, file);
+}
+
+
+char   *getlocalhost ()
+{
+    return getlocalhost ();
+}
+
+
+char   *sel2str (sel, len, quoted)
+char   *sel;
+int	len,
+	quoted;
+{
+    return sel2str (sel, len, quoted);
+}
+
+
+char   *sys_errname (i)
+int	i;
+{
+    return sys_errname (i);
+}
+
+
+char  *sprintb (v, bits)
+int	v;
+char   *bits;
+{
+    return sprintb (v, bits);
+}
+
+
+int	str2elem (s, elements)
+char   *s;
+unsigned int elements[];
+{
+    return str2elem (s, elements);
+}
+
+
+int	str2sel (s, quoted, sel, n)
+char   *s,
+       *sel;
+int	quoted,
+	n;
+{
+    return str2sel (s, quoted, sel, n);
+}
+
+
+int	str2vecX (s, vec, nmask, mask, brk, docomma)
+char   *s,
+      **vec,
+    	brk;
+int	nmask,
+       *mask,
+	docomma;
+{
+    return str2vecX (s, vec, nmask, mask, brk, docomma);
+}
+
+
+int	chkpassword (usrname, pwpass, usrpass)
+char   *usrname;
+char   *pwpass;
+char   *usrpass;
+{
+    return chkpassword (usrname, pwpass, usrpass);
+}
+
+
+char   *getpassword (prompt)
+char   *prompt;
+{
+    return getpassword (prompt);
+}
+
+
+int	baduser (file, user)
+char   *file,
+       *user;
+{
+    return baduser (file, user);
+}
+
+
+int	setenv (name, value)
+char   *name,
+       *value;
+{
+    return setenv (name, value);
+}
+
+
+int	unsetenv (name)
+char   *name;
+{
+    unsetenv (name);
+}
+
+
+#include "cmd_srch.h"
+
+int	cmd_src (str, cmd)
+char   *str;
+CMD_TABLE *cmd;
+{
+    return cmd_src (str, cmd);
+}
+
+
+int	lexequ (str1, str2)
+char   *str1,
+       *str2;
+{
+    return lexequ (str1, str2);
+}
+
+
+int	lexnequ (str1, str2, len)
+char   *str1,
+       *str2;
+int	len;
+{
+    return lexnequ (str1, str2, len);
+}
+
+
+int	log_tai (lgptr, av, ac)
+LLog   *lgptr;
+char  **av;
+int	ac;
+{
+    log_tai (lgptr, av, ac);
+}
+
+
+char   *rcmd_srch (val, cmd)
+int	val;
+CMD_TABLE *cmd;
+{
+    return rcmd_srch (val, cmd);
+}
+
+
+char   *strdup (str)
+char   *str;
+{
+    return strdup (str);
+}
+
+
+int	sstr2arg (srcptr, maxpf, argv, dlmstr)
+char   *srcptr;
+int	maxpf;
+char   *argv[],
+       *dlmstr;
+{
+    return sstr2arg (srcptr, maxpf, argv, dlmstr);
+}
+
+
+char   *smalloc (size)
+int	size;
+{
+    return smalloc (size);
+}
+
+
+char   *isodesetailor (file)
+char   *file;
+{
+    return isodesetailor (file);
+}
+
+
+void	isodetailor (myname, wantuser)
+char   *myname;
+int	wantuser;
+{
+    isodetailor (myname, wantuser);
+}
+
+int	isodesetvar (name, value, dynamic)
+char   *name,
+       *value;
+int	dynamic;
+{
+    return isodesetvar (name, value, dynamic);
+}
+
+
+void	isodexport (myname)
+char   *myname;
+{
+    isodexport (myname);
+}
+
+
+/*    ISOSERVENT */
+
+int     setisoservent (f)
+int     f;
+{
+    return setisoservent (f);
+}
+
+
+int     endisoservent () {
+    return endisoservent ();
+}
+
+
+struct isoservent  *getisoservent () {
+    return getisoservent ();
+}
+
+
+struct isoservent  *getisoserventbyname (entity, provider)
+char   *entity,
+       *provider;
+{
+    return getisoserventbyname (entity, provider);
+}
+
+
+struct isoservent  *getisoserventbyselector (provider, selector, selectlen)
+char   *provider,
+       *selector;
+int	selectlen;
+{
+    return getisoserventbyselector (provider, selector, selectlen);
+}
+
+
+struct isoservent  *getisoserventbyport (provider, port)
+char   *provider;
+unsigned short port;
+{
+    return getisoserventbyport (provider, port);
+}
+
+/*    NETWORK */
+
+struct PSAPaddr *str2paddr (str)
+char   *str;
+{
+    return str2paddr (str);
+}
+
+
+struct TSAPaddr *str2taddr (str)
+char   *str;
+{
+    return str2taddr (str);
+}
+
+
+char   *_paddr2str (pa, na, compact)
+struct PSAPaddr *pa;
+struct NSAPaddr *na;
+int	compact;
+{
+    return _paddr2str (pa, na, compact);
+}
+
+
+char   *saddr2str (sa)
+struct SSAPaddr *sa;
+{
+    return saddr2str (sa);
+}
+
+
+char   *taddr2str (ta)
+struct TSAPaddr *ta;
+{
+    return taddr2str (ta);
+}
+
+
+struct NSAPaddr *na2norm (na)
+struct NSAPaddr *na;
+{
+    return na2norm (na);
+}
+
+
+int	norm2na (p, len, na)
+char   *p;
+int	len;
+struct NSAPaddr *na;
+{
+    return norm2na (p, len, na);
+}
+
+
+char   *na2str (na)
+struct NSAPaddr *na;
+{
+    return na2str (na);
+}
+
+
+char   *pa2str (pa)
+struct PSAPaddr *pa;
+{
+    return pa2str (pa);
+}
+
+/*    TCP */
+
+#ifdef	TCP
+
+int	start_tcp_client (sock, priv)
+struct sockaddr_in *sock;
+int	priv;
+{
+    return start_tcp_client (sock, priv);
+}
+
+
+int	start_tcp_server (sock, backlog, opt1, opt2)
+struct sockaddr_in *sock;
+int	backlog,
+    	opt1,
+    	opt2;
+{
+    return start_tcp_server (sock, backlog, opt1, opt2);
+}
+
+
+#ifndef	join_tcp_client
+int	join_tcp_client (fd, sock)
+int	fd;
+struct sockaddr_in *sock;
+{
+    return join_tcp_client (fd, sock);
+}
+#endif
+
+
+struct hostent *gethostbystring (s)
+char   *s;
+{
+    return gethostbystring (s);
+}
+
+
+#ifdef	EXOS
+struct hostent *gethostbyaddr (addr, len, type)
+char   *addr;
+int	len,
+	type;
+{
+    return gethostbyaddr (addr, len, type);
+}
+
+
+struct hostent *gethostbyname (name)
+char   *name;
+{
+    return gethostbyname (name);
+}
+
+
+struct servent *getservbyname (name, proto)
+char   *name,
+       *proto;
+{
+    return getservbyname (name, proto);
+}
+
+
+char   *inet_ntoa (in)
+struct in_addr in;
+{
+    return inet_ntoa (in);
+}
+
+
+u_long	inet_addr (cp)
+char   *cp;
+{
+    return inet_addr (cp);
+}
+#endif
+
+#endif
+
+/*    DGRAM */
+
+#if	defined(SOCKETS) && (defined(TCP) || defined(CLTS))
+
+#ifdef	TCP
+int	start_udp_server (sock, backlog, opt1, opt2)
+struct sockaddr_in *sock;
+int	backlog,
+	opt1,
+	opt2;
+{
+    return start_udp_server (sock, backlog, opt1, opt2);
+}
+#endif
+
+
+#ifdef	CLTS
+int	start_clts_server (sock, backlog, opt1, opt2)
+union sockaddr_osi *sock;
+int	backlog,
+	opt1,
+	opt2;
+{
+    return start_clts_server (sock, backlog, opt1, opt2);
+}
+#endif
+
+
+int	join_dgram_aux (fd, sock, newfd)
+int	fd,
+	newfd;
+struct sockaddr *sock;
+{
+    return join_dgram_aux (fd, sock, newfd);
+}
+
+
+int	read_dgram_socket (fd, qb)
+int	fd;
+struct qbuf **qb;
+{
+    return read_dgram_socket (fd, qb);
+}
+
+
+int	hack_dgram_socket (fd, sock)
+int	fd;
+struct sockaddr *sock;
+{
+    return hack_dgram_socket (fd, sock);
+}
+
+
+int	write_dgram_socket (fd, qb)
+int	fd;
+struct qbuf *qb;
+{
+    return write_dgram_socket (fd, qb);
+}
+
+
+int	close_dgram_socket (fd)
+int	fd;
+{
+    return close_dgram_socket (fd);
+}
+
+
+int	select_dgram_socket (nfds, rfds, wfds, efds, secs)
+int	nfds;
+fd_set *rfds,
+       *wfds,
+       *efds;
+int	secs;
+{
+    return select_dgram_socket (nfds, rfds, wfds, efds, secs);
+}
+#endif
+
+/*    X.25 */
+
+#ifdef	X25
+CONN_DB *gen2if (generic, specific, context)
+struct NSAPaddr *generic;
+CONN_DB *specific;
+int	context;
+{
+    return gen2if (generic, specific, context);
+}
+
+
+struct NSAPaddr *if2gen (generic, specific, context)
+struct NSAPaddr *generic;
+CONN_DB *specific;
+int	context;
+{
+    return if2gen (generic, specific, context);
+}
+#endif
