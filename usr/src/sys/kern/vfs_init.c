@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_init.c	7.2 (Berkeley) %G%
+ *	@(#)vfs_init.c	7.3 (Berkeley) %G%
  */
 
 
@@ -18,7 +18,6 @@
 #include <sys/time.h>
 #include <sys/vnode.h>
 #include <sys/stat.h>
-#include <sys/specdev.h>
 #include <sys/namei.h>
 #include <sys/ucred.h>
 #include <sys/buf.h>
