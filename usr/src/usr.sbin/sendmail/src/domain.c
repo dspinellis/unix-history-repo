@@ -10,9 +10,9 @@
 
 #ifndef lint
 #if NAMED_BIND
-static char sccsid[] = "@(#)domain.c	8.23 (Berkeley) %G% (with name server)";
+static char sccsid[] = "@(#)domain.c	8.24 (Berkeley) %G% (with name server)";
 #else
-static char sccsid[] = "@(#)domain.c	8.23 (Berkeley) %G% (without name server)";
+static char sccsid[] = "@(#)domain.c	8.24 (Berkeley) %G% (without name server)";
 #endif
 #endif /* not lint */
 
@@ -513,7 +513,7 @@ cnameloop:
 				qtype == T_ANY ? "ANY" : qtype == T_A ? "A" :
 				qtype == T_MX ? "MX" : "???");
 		ret = res_querydomain(host, *dp, C_IN, qtype,
-				      &answer.qb2, sizeof(answer.qb2));
+				      answer.qb2, sizeof(answer.qb2));
 		if (ret <= 0)
 		{
 			if (tTd(8, 7))
