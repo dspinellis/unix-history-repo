@@ -291,7 +291,7 @@ main(argc, argv)
 	for (nentries = 0; p = kvm_nextproc(); ++nentries) {
 		kinfo[nentries].ki_p = p;
 		kinfo[nentries].ki_e = kvm_geteproc(p);
-		if (needuser)
+		if (needuser || needcomm)
 			saveuser(&kinfo[nentries]);
 	}
 	/*
