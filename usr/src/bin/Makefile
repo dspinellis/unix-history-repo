@@ -1,4 +1,4 @@
-#	Makefile	4.14	83/07/03
+#	Makefile	4.15	83/07/03
 #
 DESTDIR=
 CFLAGS=	-O
@@ -37,15 +37,14 @@ ${STD} mv cp:
 
 # take care with cp and mv, install uses them
 install:
-	install cp ${DESTDIR}/bin/newcp; \
-		mv ${DESTDIR}/bin/newcp ${DESTDIR}/bin/cp; \
-		strip ${DESTDIR}/bin/cp
+	install -s cp ${DESTDIR}/bin/newcp; \
+		mv ${DESTDIR}/bin/newcp ${DESTDIR}/bin/cp;
 	rm -f ${DESTDIR}/bin/mv; cp mv ${DESTDIR}/bin/mv; rm -f mv; \
 		strip ${DESTDIR}/bin/mv
 	for i in ${SUBDIR}; do \
 		(cd $$i; make ${MFLAGS} DESTDIR=${DESTDIR} install); done
 	for i in ${SCRIPT}; do (install -c $$i.sh ${DESTDIR}/bin/$$i); done
-	for i in ${STD} ${NSTD}; do (install $$i ${DESTDIR}/bin/$$i); done
+	for i in ${STD} ${NSTD}; do (install -s $$i ${DESTDIR}/bin/$$i); done
 	for i in ${SETUID}; do (chown root ${DESTDIR}/bin/$$i; \
 		chmod 4755 ${DESTDIR}/bin/$$i); done
 	rm -f ${DESTDIR}/bin/[; ln ${DESTDIR}/bin/test ${DESTDIR}/bin/[
