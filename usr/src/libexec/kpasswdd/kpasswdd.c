@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)kpasswdd.c	1.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)kpasswdd.c	1.3 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -30,8 +30,8 @@ static char sccsid[] = "@(#)kpasswdd.c	1.2 (Berkeley) %G%";
 #include <sys/types.h>
 #include <sys/time.h>
 #include <syslog.h>
-#include <kerberos/krb.h>
-#include <kerberos/krb_db.h>
+#include <krb.h>
+#include <krb_db.h>
 #include <sys/resource.h>
 #include <sys/signal.h>
 #include <netinet/in.h>
@@ -67,12 +67,12 @@ main()
 	signal(SIGHUP, SIG_IGN);
 	signal(SIGINT, SIG_IGN);
 	signal(SIGTSTP, SIG_IGN);
-	if(setrlimit(RLIMIT_CORE, &rl) < 0) {
+	if (setrlimit(RLIMIT_CORE, &rl) < 0) {
 		syslog(LOG_ERR, "setrlimit: %m");
 		exit(1);
 	}
 
-	if(getpeername(0, &foreign, &foreign_len) < 0) {
+	if (getpeername(0, &foreign, &foreign_len) < 0) {
 		syslog(LOG_ERR,"getpeername: %m");
 		exit(1);
 	}
@@ -93,7 +93,7 @@ main()
 	);
 
 
-	if(rval != KSUCCESS) {
+	if (rval != KSUCCESS) {
 		syslog(LOG_ERR, "krb_recvauth: %s", krb_err_txt[rval]);
 		cleanup();
 		exit(1);
@@ -101,7 +101,7 @@ main()
 
 
 	/* get master key */
-	if(kdb_get_master_key(0, master_key, master_key_schedule) != 0) {
+	if (kdb_get_master_key(0, master_key, master_key_schedule) != 0) {
 		syslog(LOG_ERR, "couldn't get master key");
 		cleanup();
 		exit(1);
@@ -111,7 +111,7 @@ main()
 	   kdb_get_master_key(master_key, master_key_schedule, NULL);
 
 
-	if(mkeyversion < 0) {
+	if (mkeyversion < 0) {
 		syslog(LOG_NOTICE, "couldn't verify master key");
 		cleanup();
 		exit(1);
@@ -126,7 +126,7 @@ main()
 		&more
 	);
 
-	if(rval != 1 || (more != 0)) {
+	if (rval != 1 || (more != 0)) {
 		syslog(LOG_NOTICE, "more than 1 entry for %s.%s",
 			kdata.pname, kdata.pinst);
 		cleanup();
@@ -147,7 +147,7 @@ main()
 
 	random_key(kpwd_data.random_key);
 	strcpy(kpwd_data.secure_msg, SECURE_STRING);
-	if(des_write(0, &kpwd_data, sizeof(kpwd_data)) != sizeof(kpwd_data)) {
+	if (des_write(0, &kpwd_data, sizeof(kpwd_data)) != sizeof(kpwd_data)) {
 		syslog(LOG_ERR, "error writing initial data");
 		cleanup();
 		exit(1);
@@ -160,7 +160,7 @@ main()
 
 	key_sched(kpwd_data.random_key, random_sched);
 	des_set_key(kpwd_data.random_key, random_sched);
-	if(des_read(0, &ud_data, sizeof(ud_data)) != sizeof(ud_data)) {
+	if (des_read(0, &ud_data, sizeof(ud_data)) != sizeof(ud_data)) {
 		syslog(LOG_ERR, "update aborted");
 		cleanup();
 		exit(1);
@@ -168,7 +168,7 @@ main()
 
 	/* validate info string by looking at the embedded string */
 
-	if(strcmp(ud_data.secure_msg, SECURE_STRING)) {
+	if (strcmp(ud_data.secure_msg, SECURE_STRING)) {
 		syslog(LOG_NOTICE, "invalid update from %s",
 			inet_ntoa(foreign.sin_addr));
 		cleanup();
@@ -185,7 +185,7 @@ main()
 		&principal_data.key_high, 4);
 	bzero(key, sizeof(key));
 	principal_data.key_version++;
-	if(kerb_put_principal(&principal_data, 1)) {
+	if (kerb_put_principal(&principal_data, 1)) {
 		syslog(LOG_ERR, "couldn't write new record for %s.%s",
 			principal_data.name, principal_data.instance);
 		cleanup();
@@ -221,7 +221,7 @@ send_ack(remote, msg)
 {
 	int	cc;
 	cc = des_write(remote, msg, strlen(msg) + 1);
-	if(cc <= 0) {
+	if (cc <= 0) {
 		syslog(LOG_ERR, "error writing ack");
 		cleanup();
 		exit(1);
