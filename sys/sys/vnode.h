@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vnode.h	7.39 (Berkeley) 6/27/91
- *	$Id: vnode.h,v 1.8 1993/12/19 22:54:04 alm Exp $
+ *	$Id: vnode.h,v 1.9 1994/01/14 16:25:49 davidg Exp $
  */
 
 #ifndef _SYS_VNODE_H_
@@ -139,6 +139,7 @@ struct vattr {
 		u_quad_t v;
 		u_long val[2];
 	}		va_qbytes;	/* bytes of disk space held by file */
+	u_int		va_vaflags;	/* operations flags, see below */
 };
 #if BYTE_ORDER == LITTLE_ENDIAN
 #define	va_size		va_qsize.val[0]
@@ -151,6 +152,11 @@ struct vattr {
 #define	va_bytes	va_qbytes.val[1]
 #define	va_bytes_rsv	va_qbytes.val[0]
 #endif
+
+/*
+ * Flags for va_vaflags.
+ */
+#define VA_UTIMES_NULL	0x01		/* utimes argument was NULL */
 
 /*
  * Operations on vnodes.

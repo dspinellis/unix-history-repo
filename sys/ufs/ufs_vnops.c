@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)ufs_vnops.c	7.64 (Berkeley) 5/16/91
- *	$Id: ufs_vnops.c,v 1.12 1994/01/15 18:27:21 jkh Exp $
+ *	$Id: ufs_vnops.c,v 1.13 1994/01/17 02:20:12 jkh Exp $
  */
 
 #include "param.h"
@@ -296,7 +296,9 @@ ufs_setattr(vp, vap, cred, p)
 	}
 	if (vap->va_atime.tv_sec != VNOVAL || vap->va_mtime.tv_sec != VNOVAL) {
 		if (cred->cr_uid != ip->i_uid &&
-		    (error = suser(cred, &p->p_acflag)))
+		    (error = suser(cred, &p->p_acflag)) &&
+		    ((vap->va_vaflags & VA_UTIMES_NULL) == 0 || 
+	            (error = VOP_ACCESS(vp, VWRITE, cred, p))))
 			return (error);
 		if (vap->va_atime.tv_sec != VNOVAL)
 			ip->i_flag |= IACC;
