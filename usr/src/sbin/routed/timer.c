@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)timer.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)timer.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -37,17 +37,11 @@ again:
 		for (; rt != (struct rt_entry *)rh; rt = rt->rt_forw) {
 			/*
 			 * We don't advance time on a routing entry for
-			 * a passive gateway or that for our only interface. 
-			 * The latter is excused because we don't act as
-			 * a routing information supplier and hence would
-			 * time it out.  This is fair as if it's down
-			 * we're cut off from the world anyway and it's
-			 * not likely we'll grow any new hardware in
-			 * the mean time.
+			 * a passive gateway, or any interface if we're
+			 * not acting as supplier.
 			 */
 			if (!(rt->rt_state & RTS_PASSIVE) &&
-			    (externalinterfaces > 1 ||
-			    !(rt->rt_state & RTS_INTERFACE)))
+			    (supplier || !(rt->rt_state & RTS_INTERFACE)))
 				rt->rt_timer += TIMER_RATE;
 			if (rt->rt_timer >= EXPIRE_TIME)
 				rt->rt_metric = HOPCNT_INFINITY;

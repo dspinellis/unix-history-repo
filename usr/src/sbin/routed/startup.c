@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)startup.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)startup.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -119,6 +119,14 @@ ifinit()
 		if ((ifs.int_flags & IFF_POINTOPOINT) == 0 ||
 		    if_ifwithaddr(&ifs.int_dstaddr) == 0)
 			externalinterfaces++;
+		/*
+		 * If we have a point-to-point link, we want to act
+		 * as a supplier even if it's our only interface,
+		 * as that's the only way our peer on the other end
+		 * can tell that the link is up.
+		 */
+		if ((ifs.int_flags & IFF_POINTOPOINT) && supplier < 0)
+			supplier = 1;
 		ifp->int_name = malloc(strlen(ifr->ifr_name) + 1);
 		if (ifp->int_name == 0) {
 			fprintf(stderr, "routed: ifinit: out of memory\n");
