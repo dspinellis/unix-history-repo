@@ -1,7 +1,17 @@
+/*
+ * Copyright (c) 1980 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ */
+
+#ifndef lint
+static char sccsid[] = "@(#)case.c	5.1 (Berkeley) %G%";
+#endif not lint
+
 /* Copyright (c) 1979 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)case.c 2.1 %G%";
+static char sccsid[] = "@(#)case.c 5.1 %G%";
 #endif
 
 #include "whoami.h"
