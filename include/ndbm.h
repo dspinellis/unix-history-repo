@@ -1,6 +1,6 @@
 /*-
- * Copyright (c) 1990 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1990, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * Margo Seltzer.
@@ -33,13 +33,12 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)ndbm.h	5.6 (Berkeley) 4/3/91
+ *	@(#)ndbm.h	8.1 (Berkeley) 6/2/93
  */
 
 #ifndef _NDBM_H_
 #define	_NDBM_H_
 
-#include <sys/cdefs.h>
 #include <db.h>
 
 /* Map dbm interface onto db(3). */
@@ -61,6 +60,7 @@ typedef struct {
 } datum;
 
 typedef DB DBM;
+#define	dbm_pagfno(a)	DBM_PAGFNO_NOT_AVAILABLE
 
 __BEGIN_DECLS
 void	 dbm_close __P((DBM *));
@@ -71,6 +71,7 @@ long	 dbm_forder __P((DBM *, datum));
 datum	 dbm_nextkey __P((DBM *));
 DBM	*dbm_open __P((const char *, int, int));
 int	 dbm_store __P((DBM *, datum, datum, int));
+int	 dbm_dirfno __P((DBM *));
 __END_DECLS
 
 #endif /* !_NDBM_H_ */

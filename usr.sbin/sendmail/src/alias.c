@@ -248,7 +248,7 @@ initaliases(aliasfile, init)
 	    (void) strcpy(buf, aliasfile);
 	    (void) strcat(buf, DBEXTENSION);
 	    if (aliasdb) aliasdb->close (aliasdb);
-	    aliasdb = btree_open (buf, O_RDWR, DBMMODE, 0);
+	    aliasdb = dbopen(buf, O_RDWR, DBMMODE, DB_BTREE, 0);
 	    if (aliasdb == NULL)
 	      {
 		syserr("Cannot open database %s", buf);
@@ -281,7 +281,7 @@ initaliases(aliasfile, init)
 			dbminit(aliasfile);
 # endif NDBM
 # ifdef USE_DB
-			aliasdb = btree_open (buf, O_RDWR, DBMMODE, 0);
+			aliasdb = dbopen(buf, O_RDWR, DBMMODE, DB_BTREE, 0);
 			if (aliasdb == NULL)
 			  {
 			    syserr("Cannot open database %s", buf);
@@ -352,7 +352,7 @@ initaliases(aliasfile, init)
 #endif LOG
 		readaliases(aliasfile, TRUE);
 # ifdef USE_DB
-		aliasdb->sync (aliasdb);
+		aliasdb->sync (aliasdb, 0);
 # endif USE_DB
 	}
 #else /* defined (DBM) || defined (USE_DB) */
@@ -451,7 +451,7 @@ readaliases(aliasfile, init)
 		/* unconditionally remove the database file so that a
 		   corrupt file cannot cause the following open to fail */
 		unlink (line);
-		aliasdb = btree_open (line, O_RDWR|O_CREAT, DBMMODE, 0);
+		aliasdb = dbopen(line, O_RDWR|O_CREAT, DBMMODE, DB_BTREE, 0);
 		if (aliasdb == NULL)
 		{
 			syserr("Cannot open database file %s", line);
@@ -599,7 +599,7 @@ readaliases(aliasfile, init)
 			content.size = rhssize;
 			content.data = rhs;
 
-			aliasdb->put (aliasdb, &key, &content, R_PUT);
+			aliasdb->put (aliasdb, &key, &content, 0);
 		}
 		else
 # endif USE_DB
@@ -637,7 +637,7 @@ readaliases(aliasfile, init)
 
 		key.size = 2;
 		key.data = "@";
-		aliasdb->put (aliasdb, &key, &key, R_PUT);
+		aliasdb->put (aliasdb, &key, &key, 0);
 
 		/* restore the old signal */
 		(void) signal(SIGINT, oldsigint);

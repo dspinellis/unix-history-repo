@@ -77,8 +77,8 @@ main(argc, argv)
 	(void)sprintf(dbtemp, "%s/kvm_%s.tmp", _PATH_VARRUN, nlistname);
 	(void)sprintf(dbname, "%s/kvm_%s.db", _PATH_VARRUN, nlistname);
 	(void)umask(0);
-	db = hash_open(dbtemp, O_CREAT|O_WRONLY|O_EXCL,
-	    S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH, NULL);
+	db = dbopen(dbtemp, O_CREAT|O_RDWR|O_EXCL,
+	    S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH, DB_HASH, NULL);
 	if (!db) {
 		(void)fprintf(stderr,
 		    "kvm_mkdb: %s: %s\n", dbtemp, strerror(errno));

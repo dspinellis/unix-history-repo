@@ -158,7 +158,7 @@ __initdb()
 	char *p;
 
 	p = (geteuid()) ? _PATH_MP_DB : _PATH_SMP_DB;
-	_pw_db = hash_open(p, O_RDONLY, 0, NULL);
+	_pw_db = dbopen(p, O_RDONLY, 0, DB_HASH, NULL);
 	if (_pw_db)
 		return(1);
 	if (!warned)

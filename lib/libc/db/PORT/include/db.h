@@ -38,8 +38,7 @@
 
 #include <sys/types.h>
 #include <sys/cdefs.h>
-
-#include "compat.h"
+#include <machine/endian.h>
 
 #define	RET_ERROR	-1		/* Return values. */
 #define	RET_SUCCESS	 0

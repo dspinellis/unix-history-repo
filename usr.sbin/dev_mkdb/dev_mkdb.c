@@ -92,7 +92,7 @@ main(argc, argv)
 
 	(void)snprintf(dbtmp, sizeof(dbtmp), "%s/dev.tmp", _PATH_VARRUN);
 	(void)snprintf(dbname, sizeof(dbtmp), "%s/dev.db", _PATH_VARRUN);
-	db = hash_open(dbtmp, O_CREAT|O_WRONLY|O_EXCL, DEFFILEMODE,
+	db = dbopen(dbtmp, O_CREAT|O_RDWR|O_EXCL, DEFFILEMODE, DB_HASH,
 	    (HASHINFO *)NULL);
 	if (!db)
 		error(dbtmp);

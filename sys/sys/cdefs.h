@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1991 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1991, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)cdefs.h	7.6 (Berkeley) 5/4/91
+ *	@(#)cdefs.h	8.1 (Berkeley) 6/2/93
  */
 
 #ifndef	_CDEFS_H_
@@ -74,5 +74,21 @@
 #define	volatile
 #endif	/* !__GNUC__ */
 #endif	/* !(__STDC__ || __cplusplus) */
+
+/*
+ * GCC has extensions for declaring functions as `pure' (always returns
+ * the same value given the same inputs, i.e., has no external state and
+ * no side effects) and `dead' (nonreturning).  These mainly affect
+ * optimization and warnings.  Unfortunately, GCC complains if these are
+ * used under strict ANSI mode (`gcc -ansi -pedantic'), hence we need to
+ * define them only if compiling without this.
+ */
+#if defined(__GNUC__) && !defined(__STRICT_ANSI__)
+#define __dead __volatile
+#define __pure __const
+#else
+#define __dead
+#define __pure
+#endif
 
 #endif /* !_CDEFS_H_ */
