@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)traceroute.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)traceroute.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -252,132 +252,124 @@ int datalen;			/* How much data */
 
 char *source = 0;
 char *hostname;
-char hnamebuf[MAXHOSTNAMELEN];
 
 int nprobes = 3;
 int max_ttl = 30;
 u_short ident;
 u_short port = 32768+666;	/* start udp dest port # for probe packets */
-
 int options;			/* socket options */
 int verbose;
 int waittime = 5;		/* time to wait for response (in seconds) */
 int nflag;			/* print addresses numerically */
 
-char usage[] =
- "Usage: traceroute [-dnrv] [-w wait] [-m max_ttl] [-p port#] [-q nqueries] [-t tos] [-s src_addr] host [data size]\n";
-
-
 main(argc, argv)
 	char *argv[];
 {
-	struct sockaddr_in from;
-	char **av = argv;
-	struct sockaddr_in *to = (struct sockaddr_in *) &whereto;
-	int on = 1;
-	struct protoent *pe;
-	int ttl, probe, i;
-	int seq = 0;
-	int tos = 0;
+	extern char *optarg;
+	extern int optind;
 	struct hostent *hp;
+	struct protoent *pe;
+	struct sockaddr_in from, *to;
+	int ch, i, on, probe, seq, tos, ttl;
 
-	argc--, av++;
-	while (argc && *av[0] == '-')  {
-		while (*++av[0])
-			switch (*av[0]) {
-			case 'd':
-				options |= SO_DEBUG;
-				break;
-			case 'm':
-				argc--, av++;
-				max_ttl = atoi(av[0]);
-				if (max_ttl <= 1) {
-					Fprintf(stderr, "max ttl must be >1\n");
-					exit(1);
-				}
-				goto nextarg;
-			case 'n':
-				nflag++;
-				break;
-			case 'p':
-				argc--, av++;
-				port = atoi(av[0]);
-				if (port < 1) {
-					Fprintf(stderr, "port must be >0\n");
-					exit(1);
-				}
-				goto nextarg;
-			case 'q':
-				argc--, av++;
-				nprobes = atoi(av[0]);
-				if (nprobes < 1) {
-					Fprintf(stderr, "nprobes must be >0\n");
-					exit(1);
-				}
-				goto nextarg;
-			case 'r':
-				options |= SO_DONTROUTE;
-				break;
-			case 's':
-				/*
-				 * set the ip source address of the outbound
-				 * probe (e.g., on a multi-homed host).
-				 */
-				argc--, av++;
-				source = av[0];
-				goto nextarg;
-			case 't':
-				argc--, av++;
-				tos = atoi(av[0]);
-				if (tos < 0 || tos > 255) {
-					Fprintf(stderr, "tos must be 0 to 255\n");
-					exit(1);
-				}
-				goto nextarg;
-			case 'v':
-				verbose++;
-				break;
-			case 'w':
-				argc--, av++;
-				waittime = atoi(av[0]);
-				if (waittime <= 1) {
-					Fprintf(stderr, "wait must be >1 sec\n");
-					exit(1);
-				}
-				goto nextarg;
+	on = 1;
+	seq = tos = 0;
+	to = (struct sockaddr_in *)&whereto;
+	while ((ch = getopt(argc, argv, "dm:np:q:rs:t:w:v")) != EOF)
+		switch(ch) {
+		case 'd':
+			options |= SO_DEBUG;
+			break;
+		case 'm':
+			max_ttl = atoi(optarg);
+			if (max_ttl <= 1) {
+				Fprintf(stderr,
+				    "traceroute: max ttl must be >1.\n");
+				exit(1);
 			}
-	nextarg:
-		argc--, av++;
-	}
-	if (argc < 1)  {
-		Printf(usage);
-		exit(1);
-	}
+			break;
+		case 'n':
+			nflag++;
+			break;
+		case 'p':
+			port = atoi(optarg);
+			if (port < 1) {
+				Fprintf(stderr,
+				    "traceroute: port must be >0.\n");
+				exit(1);
+			}
+			break;
+		case 'q':
+			nprobes = atoi(optarg);
+			if (nprobes < 1) {
+				Fprintf(stderr,
+				    "traceroute: nprobes must be >0.\n");
+				exit(1);
+			}
+			break;
+		case 'r':
+			options |= SO_DONTROUTE;
+			break;
+		case 's':
+			/*
+			 * set the ip source address of the outbound
+			 * probe (e.g., on a multi-homed host).
+			 */
+			source = optarg;
+			break;
+		case 't':
+			tos = atoi(optarg);
+			if (tos < 0 || tos > 255) {
+				Fprintf(stderr,
+				    "traceroute: tos must be 0 to 255.\n");
+				exit(1);
+			}
+			break;
+		case 'v':
+			verbose++;
+			break;
+		case 'w':
+			waittime = atoi(optarg);
+			if (waittime <= 1) {
+				Fprintf(stderr,
+				    "traceroute: wait must be >1 sec.\n");
+				exit(1);
+			}
+			break;
+		default:
+			usage();
+		}
+	argc -= optind;
+	argv += optind;
+
+	if (argc < 1) 
+		usage();
+
 	setlinebuf (stdout);
 
 	(void) bzero((char *)&whereto, sizeof(struct sockaddr));
 	to->sin_family = AF_INET;
-	to->sin_addr.s_addr = inet_addr(av[0]);
-	if (to->sin_addr.s_addr != -1) {
-		(void) strcpy(hnamebuf, av[0]);
-		hostname = hnamebuf;
-	} else {
-		hp = gethostbyname(av[0]);
+	to->sin_addr.s_addr = inet_addr(*argv);
+	if (to->sin_addr.s_addr != -1) 
+		hostname = *argv;
+	else {
+		hp = gethostbyname(*argv);
 		if (hp) {
 			to->sin_family = hp->h_addrtype;
 			bcopy(hp->h_addr, (caddr_t)&to->sin_addr, hp->h_length);
 			hostname = hp->h_name;
 		} else {
-			Printf("%s: unknown host %s\n", argv[0], av[0]);
+			(void)fprintf(stderr,
+			    "traceroute: unknown host %s\n", *argv);
 			exit(1);
 		}
 	}
-
-	if (argc >= 2)
-		datalen = atoi(av[1]);
+	if (*++argv) 
+		datalen = atoi(*argv);
 	if (datalen < 0 || datalen >= MAXPACKET - sizeof(struct opacket)) {
-		Fprintf(stderr, "traceroute: packet size must be 0 <= s < %ld\n",
-			MAXPACKET - sizeof(struct opacket));
+		Fprintf(stderr,
+		    "traceroute: packet size must be 0 <= s < %ld.\n",
+		    MAXPACKET - sizeof(struct opacket));
 		exit(1);
 	}
 	datalen += sizeof(struct opacket);
@@ -781,4 +773,12 @@ inetname(in)
 			C(in.s_addr >> 16), C(in.s_addr >> 8), C(in.s_addr));
 	}
 	return (line);
+}
+
+usage()
+{
+	(void)fprintf(stderr, 
+"usage: traceroute [-dnrv] [-m max_ttl] [-p port#] [-q nqueries]\n\t\
+[-s src_addr] [-t tos] [-w wait] host [data size]\n");
+	exit(1);
 }
