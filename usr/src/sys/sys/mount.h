@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mount.h	8.7 (Berkeley) %G%
+ *	@(#)mount.h	8.8 (Berkeley) %G%
  */
 
 #ifndef KERNEL
@@ -73,7 +73,7 @@ struct statfs {
 	"ufs",		/*  1 MOUNT_UFS */ \
 	"nfs",		/*  2 MOUNT_NFS */ \
 	"mfs",		/*  3 MOUNT_MFS */ \
-	"pc",		/*  4 MOUNT_PC */ \
+	"msdos",	/*  4 MOUNT_MSDOS */ \
 	"lfs",		/*  5 MOUNT_LFS */ \
 	"lofs",		/*  6 MOUNT_LOFS */ \
 	"fdesc",	/*  7 MOUNT_FDESC */ \

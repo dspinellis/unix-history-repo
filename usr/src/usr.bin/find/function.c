@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)function.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)function.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -400,7 +400,7 @@ c_fstype(arg)
 		}
 		break;
 	case 'p':
-		if (!strcmp(arg, "pc")) {
+		if (!strcmp(arg, "msdos")) {
 			new->flags = F_MTTYPE;
 			new->mt_data = MOUNT_MSDOS;
 			return (new);
