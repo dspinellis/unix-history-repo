@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.4 (Berkeley) %G%
+#	@(#)Makefile	5.5 (Berkeley) %G%
 
 MAN1=	roffbib.0
 
@@ -12,8 +12,8 @@ beforeinstall:
 	(cd ${.CURDIR}/../papers; \
 	    install -c -o ${BINOWN} -g ${BINGRP} -m 444 \
 	    INDEX Rbstjissue Rv7man ${DESTDIR}/usr/share/dict/papers)
-	-/usr/libexec/mkey /usr/share/dict/papers/R* | (cd /var/db; \
-	    /usr/libexec/inv -v -h997 -n Ind; chmod 444 Ind*)
+	-/usr/old/libexec/mkey /usr/share/dict/papers/R* | (cd /var/db; \
+	    /usr/old/libexec/inv -v -h997 -n Ind; chmod 444 Ind*)
 
 .include "../../Makefile.inc"
 .include <bsd.prog.mk>
