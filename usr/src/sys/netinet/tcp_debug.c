@@ -14,15 +14,22 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)tcp_debug.c	7.4 (Berkeley) %G%
+ *	@(#)tcp_debug.c	7.5 (Berkeley) %G%
  */
+
+#ifdef TCPDEBUG
+/* load symbolic names */
+#define PRUREQUESTS
+#define TCPSTATES
+#define	TCPTIMERS
+#define	TANAMES
+#endif
 
 #include "param.h"
 #include "systm.h"
 #include "mbuf.h"
 #include "socket.h"
 #include "socketvar.h"
-#define PRUREQUESTS
 #include "protosw.h"
 #include "errno.h"
 
@@ -35,17 +42,16 @@
 #include "in_pcb.h"
 #include "ip_var.h"
 #include "tcp.h"
-#define TCPSTATES
 #include "tcp_fsm.h"
 #include "tcp_seq.h"
-#define	TCPTIMERS
 #include "tcp_timer.h"
 #include "tcp_var.h"
 #include "tcpip.h"
-#define	TANAMES
 #include "tcp_debug.h"
 
+#ifdef TCPDEBUG
 int	tcpconsdebug = 0;
+#endif
 /*
  * Tcp debug routines
  */
@@ -74,6 +80,7 @@ tcp_trace(act, ostate, tp, ti, req)
 	else
 		bzero((caddr_t)&td->td_ti, sizeof (*ti));
 	td->td_req = req;
+#ifdef TCPDEBUG
 	if (tcpconsdebug == 0)
 		return;
 	if (tp)
@@ -131,4 +138,5 @@ tcp_trace(act, ostate, tp, ti, req)
 	    tp->snd_max);
 	printf("\tsnd_(wl1,wl2,wnd) (%x,%x,%x)\n",
 	    tp->snd_wl1, tp->snd_wl2, tp->snd_wnd);
+#endif /* TCPDEBUG */
 }
