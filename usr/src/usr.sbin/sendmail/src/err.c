@@ -1,10 +1,10 @@
 # include <stdio.h>
 # include "dlvrmail.h"
 # ifdef LOG
-# include <log.h>
+# include <syslog.h>
 # endif LOG
 
-static char	SccsId[] = "@(#)err.c	2.2	%G%";
+static char	SccsId[] = "@(#)err.c	2.3	%G%";
 
 /*
 **  SYSERR -- Print error message.
@@ -57,7 +57,7 @@ syserr(fmt, a, b, c, d, e)
 	}
 
 # ifdef LOG
-	logmsg(LOG_ERR, "%s->%s: %s", From.q_paddr, To, errbuf);
+	syslog(LOG_ERR, "%s->%s: %s", From.q_paddr, To, errbuf);
 # endif LOG
 	errno = 0;
 	return (-1);
