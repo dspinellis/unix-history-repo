@@ -4,7 +4,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)op.me	6.2 (Berkeley) %G%
+.\"	@(#)op.me	6.3 (Berkeley) %G%
 .\"
 .\" eqn op.me | pic | troff -me
 .eh 'SMM:07-%''Sendmail Installation and Operation Guide'
@@ -40,9 +40,9 @@ University of California, Berkeley
 Mammoth Project
 eric@CS.Berkeley.EDU
 .sp
-Version 6.2
+Version 6.3
 .sp
-For Sendmail Version 6.1
+For Sendmail Version 6.6
 .)l
 .sp 2
 .pp
@@ -1413,9 +1413,7 @@ offset by the message class times the
 .q "work class factor"
 and the number of recipients times the
 .q "work recipient factor."
-The priority plus the creation time of the message
-(in seconds since January 1, 1970)
-are used to order the queue.
+The priority is used to order the queue.
 Higher numbers for the priority mean that the message will be processed later
 when running the queue.
 .pp
@@ -1439,12 +1437,12 @@ can be set in the configuration file using the
 and
 .b z
 options respectively.
-They default to 1000 (for the recipient factor)
+They default to 30000 (for the recipient factor)
 and 1800
 (for the class factor).
 The initial priority is:
 .EQ
-pri = size - (class times z) + (nrcpt times y)
+pri = size - (class times bold z) + (nrcpt times bold y)
 .EN
 (Remember, higher values for this parameter actually mean
 that the job will be treated with lower priority.)
@@ -1460,6 +1458,9 @@ This is added to the priority,
 so it normally decreases the precedence of the job,
 on the grounds that jobs that have failed many times
 will tend to fail again in the future.
+The
+.b Z
+option defaults to 90000.
 .sh 2 "Load Limiting"
 .pp
 .i Sendmail
@@ -1486,14 +1487,14 @@ plus one
 exceeds the priority of the message \(em
 that is, the message is queued iff:
 .EQ
-pri > QF over { LA - x + 1 }
+pri > bold q over { LA - bold x + 1 }
 .EN
 The
 .b q
-option defaults to 10000,
-so each point of load average is worth 10000
+option defaults to 200000,
+so each point of load average is worth 200000
 priority points
-(as described above, that is, bytes + seconds + offsets).
+(as described above).
 .pp
 For drastic cases,
 the
@@ -2885,6 +2886,7 @@ in the current directory.
 Set the blank substitution character to
 .i c .
 Unquoted spaces in addresses are replaced by this character.
+Defaults to space (i.e., no change is made).
 .ip c
 If an outgoing mailer is marked as being expensive,
 don't connect immediately.
@@ -2910,6 +2912,7 @@ i	Deliver interactively (synchronously)
 b	Deliver in background (asynchronously)
 q	Just queue the message (deliver during queue run)
 .)b
+Defaults to ``b''.
 .ip D
 If set,
 rebuild the alias database if necessary and possible.
@@ -2958,6 +2961,7 @@ Set the default group id
 for mailers to run in
 to
 .i n .
+Defaults to 1.
 .ip G
 Allow fuzzy matching on the GECOS field.
 If this flag is set,
@@ -2975,6 +2979,7 @@ The maximum hop count.
 Messages that have been processed more than
 .i N
 times are assumed to be in a loop and are rejected.
+Defaults to 25.
 .ip H\fIfile\fP
 Specify the help file
 for SMTP.
@@ -3046,6 +3051,7 @@ The default is five minutes.
 .ip L\fIn\fP
 Set the default log level to
 .i n .
+Defaults to 9.
 .ip m
 Send to me too,
 even if I am in an alias expansion.
@@ -3087,7 +3093,7 @@ and the load average limit
 flag)
 to determine the maximum message priority
 that will be sent.
-Defaults to 10000.
+Defaults to 600000.
 .ip Q\fIdir\fP
 Use the named
 .i dir
@@ -3096,6 +3102,7 @@ as the queue directory.
 Timeout reads after
 .i time
 interval.
+Defaults to two hours.
 .ip s
 Be super-safe when running things,
 i.e.,
@@ -3121,6 +3128,7 @@ Set the queue timeout to
 After this interval,
 messages that have not been successfully sent
 will be returned to the sender.
+Defaults to three days.
 .ip u\fIn\fP
 Set the default userid for mailers to
 .i n .
@@ -3128,6 +3136,7 @@ Mailers without the
 .i S
 flag in the mailer definition
 will run as this user.
+Defaults to 1.
 .ip U\fIudbspec\fP
 The user database specification.
 .ip v
@@ -3147,10 +3156,12 @@ When the system load average exceeds
 .i LA ,
 just queue messages
 (i.e., don't try to send them).
+Defaults to 8.
 .ip X\fILA\fP
 When the system load average exceeds
 .i LA ,
 refuse incoming SMTP connections.
+Defaults to 12.
 .ip y\fIfact\fP
 The indicated
 .i fact or
@@ -3159,6 +3170,7 @@ is added to the priority (thus
 the priority of the job)
 for each recipient,
 i.e., this value penalizes jobs with large numbers of recipients.
+Defaults to 30000.
 .ip Y
 If set,
 deliver each job that is run from the queue in a separate process.
@@ -3175,6 +3187,7 @@ and the
 lines in the configuration file)
 and subtracted from the priority.
 Thus, messages with a higher Priority: will be favored.
+Defaults to 1800.
 .ip Z\fIfact\fP
 The
 .i fact or
@@ -3185,6 +3198,7 @@ each time a job is processed,
 its priority will be decreased by the indicated value.
 In most environments this should be positive,
 since hosts that are down are all too often down for a long time.
+Defaults to 90000.
 .ip 8
 Preserve eight bits of data in the body on input.
 Normally the input is stripped to seven bits as per RFC822.
@@ -3249,13 +3263,18 @@ the message class is set to
 Higher numbers mean higher precedence.
 Numbers less than zero
 have the special property
-that error messages will not be returned.
+that if an error occurs during processing
+the body of the message will not be returned;
+this is expected to be used for
+.q "bulk"
+mail such as through mailing lists.
 The default precedence is zero.
 For example,
 our list of precedences is:
 .(b
 Pfirst-class=0
 Pspecial-delivery=100
+Pbulk=\-60
 Pjunk=\-100
 .)b
 .sh 3 "V \*- configuration version level"
@@ -4692,6 +4711,93 @@ The
 .i av
 is a list of arguments passed in from the rewrite line.
 The lookup function should return a pointer to the new value.
+.sh 3 "Queueing Function"
+.pp
+The routine
+.i shouldqueue
+is called to decide if a message should be queued
+or processed immediately.
+Typically this compares the message priority to the current load average.
+The default definition is:
+.(b
+bool
+shouldqueue(pri, ctime)
+	long pri;
+	time_t ctime;
+{
+	if (CurrentLA < QueueLA)
+		return (FALSE);
+	return (pri > (QueueFactor / (CurrentLA \- QueueLA + 1)));
+}
+.)b
+If the current load average
+(global variable
+.i CurrentLA ,
+which is set before this function is called)
+is less than the threshold load average
+(option
+.b x ,
+variable
+.i QueueLA ),
+.i shouldqueue
+returns
+.sm FALSE
+immediately
+(that is, it should
+.i not
+queue).
+Otherwise, it computes the function based on the message priority,
+the queue factor
+(option
+.b q ,
+global variable
+.i QueueFactor ),
+and the current and threshold load averages.
+.pp
+An implementation wishing to take the actual age of the message into account
+can also use the
+.i ctime
+parameter,
+which is the time that the message was first submitted to
+.i sendmail .
+Note that the
+.i pri
+parameter is already weighted
+by the number of times the message has been tried
+(although this tends to lower the priority of the message with time);
+the expectation is that the
+.i ctime
+would be used as an
+.q "escape clause"
+to ensure that messages are eventually processed.
+.sh 3 "Refusing Incoming SMTP Connections"
+.pp
+The function
+.i refuseconnections
+returns
+.sm TRUE
+if incoming SMTP connections should be refused.
+The current implementation is based exclusively on the current load average
+and the refuse load average option
+(option
+.b X ,
+global variable
+.i RefuseLA ):
+.(b
+bool
+refuseconnections()
+{
+	return (CurrentLA > RefuseLA);
+}
+.)b
+A more clever implementation
+could look at more system resources.
+.sh 3 "Load Average Computation"
+.pp
+The routine
+.i getla
+returns the current load average (as a rounded integer).
+The distribution includes several possible implementations.
 .sh 2 "Configuration in src/daemon.c"
 .pp
 The file
@@ -5192,7 +5298,7 @@ A transcript of the current session.
 .\"Eric Allman
 .\"Britton-Lee, Inc.
 .\".sp
-.\"Version 6.2
+.\"Version 6.3
 .\".ce 0
 .pn 2
 .bp
