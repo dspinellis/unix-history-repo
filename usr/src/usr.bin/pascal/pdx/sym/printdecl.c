@@ -1,9 +1,9 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)printdecl.c 1.1 %G%";
+static char sccsid[] = "@(#)printdecl.c 1.2 %G%";
 
 /*
- * print out the type of a symbol
+ * Print out the type of a symbol.
  */
 
 #include "defs.h"
@@ -17,94 +17,94 @@ static char sccsid[] = "@(#)printdecl.c 1.1 %G%";
 printdecl(s)
 SYM *s;
 {
-	register SYM *t;
-	BOOLEAN semicolon;
+    register SYM *t;
+    BOOLEAN semicolon;
 
-	semicolon = TRUE;
-	switch(s->class) {
-		case CONST:
-			if (s->type->class == SCAL) {
-				printf("(enumeration constant, ord %ld)",
-					s->symvalue.iconval);
-			} else {
-				printf("const %s = ", s->symbol);
-				if (s->type == t_real->type) {
-					printf("%g", s->symvalue.fconval);
-				} else {
-					printf("%ld", s->symvalue.iconval);
-				}
-			}
-			break;
+    semicolon = TRUE;
+    switch(s->class) {
+	case CONST:
+	    t = rtype(s->type);
+	    if (t->class == SCAL) {
+		printf("(enumeration constant, ord %ld)", s->symvalue.iconval);
+	    } else {
+		printf("const %s = ", s->symbol);
+		if (t == t_real) {
+		    printf("%g", s->symvalue.fconval);
+		} else {
+		    printordinal(s->symvalue.iconval, t);
+		}
+	    }
+	    break;
 
-		case TYPE:
-			printf("type %s = ", s->symbol);
-			printtype(s, s->type);
-			break;
+	case TYPE:
+	    printf("type %s = ", s->symbol);
+	    printtype(s, s->type);
+	    break;
 
-		case VAR:
-			if (isparam(s)) {
-				printf("(parameter) %s : ", s->symbol);
-			} else {
-				printf("var %s : ", s->symbol);
-			}
-			printtype(s, s->type);
-			break;
+	case VAR:
+	    if (isparam(s)) {
+		printf("(parameter) %s : ", s->symbol);
+	    } else {
+		printf("var %s : ", s->symbol);
+	    }
+	    printtype(s, s->type);
+	    break;
 
-		case REF:
-			printf("(var parameter) %s : ", s->symbol);
-			printtype(s, s->type);
-			break;
+	case REF:
+	    printf("(var parameter) %s : ", s->symbol);
+	    printtype(s, s->type);
+	    break;
 
-		case RANGE:
-		case ARRAY:
-		case RECORD:
-		case VARNT:
-		case PTR:
-			printtype(s, s);
-			semicolon = FALSE;
-			break;
+	case RANGE:
+	case ARRAY:
+	case RECORD:
+	case VARNT:
+	case PTR:
+	    printtype(s, s);
+	    semicolon = FALSE;
+	    break;
 
-		case FVAR:
-			printf("(function variable) %s : ", s->symbol);
-			printtype(s, s->type);
-			break;
+	case FVAR:
+	    printf("(function variable) %s : ", s->symbol);
+	    printtype(s, s->type);
+	    break;
 
-		case FIELD:
-			printf("(field) %s : ", s->symbol);
-			printtype(s, s->type);
-			break;
+	case FIELD:
+	    printf("(field) %s : ", s->symbol);
+	    printtype(s, s->type);
+	    break;
 
-		case PROC:
-			printf("procedure %s", s->symbol);
-			listparams(s);
-			break;
+	case PROC:
+	    printf("procedure %s", s->symbol);
+	    listparams(s);
+	    break;
 
-		case PROG:
-			printf("program %s", s->symbol);
-			t = s->chain;
-			if (t != NIL) {
-				printf("(%s", t->symbol);
-				for (t = t->chain; t != NIL; t = t->chain) {
-					printf(", %s", t->symbol);
-				}
-				printf(")");
-			}
-			break;
+	case PROG:
+	    printf("program %s", s->symbol);
+	    t = s->chain;
+	    if (t != NIL) {
+		printf("(%s", t->symbol);
+		for (t = t->chain; t != NIL; t = t->chain) {
+		    printf(", %s", t->symbol);
+		}
+		printf(")");
+	    }
+	    break;
 
-		case FUNC:
-			printf("function %s", s->symbol);
-			listparams(s);
-			printf(" : ");
-			printtype(s, s->type);
-			break;
+	case FUNC:
+	    printf("function %s", s->symbol);
+	    listparams(s);
+	    printf(" : ");
+	    printtype(s, s->type);
+	    break;
 
-		default:
-			error("class %s in printdecl", classname(s));
-	}
-	if (semicolon) {
-		putchar(';');
-	}
-	putchar('\n');
+	default:
+	    error("class %s in printdecl", classname(s));
+    }
+    if (semicolon) {
+	putchar(';');
+    }
+    putchar('\n');
 }
 
 /*
@@ -119,99 +119,95 @@ LOCAL printtype(s, t)
 SYM *s;
 SYM *t;
 {
-	register SYM *tmp;
+    register SYM *tmp;
+    long r0, r1;
 
-	tmp = findtype(t);
-	if (tmp != NIL && tmp != s) {
-		printf("%s", tmp->symbol);
-		return;
-	}
-	switch(t->class) {
-		case VAR:
-		case CONST:
-		case FUNC:
-		case PROC:
-			panic("printtype: class %s", classname(t));
-			break;
+    tmp = findtype(t);
+    if (tmp != NIL && tmp != s) {
+	printf("%s", tmp->symbol);
+	return;
+    }
+    switch(t->class) {
+	case VAR:
+	case CONST:
+	case FUNC:
+	case PROC:
+	    panic("printtype: class %s", classname(t));
+	    break;
 
-		case ARRAY:
-			printf("array[");
-			tmp = t->chain;
-			for (;;) {
-				printtype(tmp, tmp);
-				tmp = tmp->chain;
-				if (tmp == NIL) {
-					break;
-				}
-				printf(", ");
-			}
-			printf("] of ");
-			printtype(t, t->type);
-			break;
-
-		case RECORD:
-			printf("record\n");
-			if (t->chain != NIL) {
-				printtype(t->chain, t->chain);
-			}
-			printf("end");
-			break;
-
-		case FIELD:
-			if (t->chain != NIL) {
-				printtype(t->chain, t->chain);
-			}
-			printf("\t%s : ", t->symbol);
-			printtype(t, t->type);
-			printf(";\n");
-			break;
-
-		case RANGE: {
-			long r0, r1;
-
-			r0 = t->symvalue.rangev.lower;
-			r1 = t->symvalue.rangev.upper;
-			if (t == t_char) {
-				printf("'%c'..'%c'", (char) r0, (char) r1);
-			} else {
-				printf("%ld..%ld", r0, r1);
-			}
-			break;
+	case ARRAY:
+	    printf("array[");
+	    tmp = t->chain;
+	    for (;;) {
+		printtype(tmp, tmp);
+		tmp = tmp->chain;
+		if (tmp == NIL) {
+		    break;
 		}
+		printf(", ");
+	    }
+	    printf("] of ");
+	    printtype(t, t->type);
+	    break;
 
-		case PTR:
-			putchar('^');
-			printtype(t, t->type);
-			break;
+	case RECORD:
+	    printf("record\n");
+	    if (t->chain != NIL) {
+		printtype(t->chain, t->chain);
+	    }
+	    printf("end");
+	    break;
 
-		case TYPE:
-			if (t->symbol != NIL) {
-				printf("%s", t->symbol);
-			} else {
-				printtype(t, t->type);
-			}
-			break;
+	case FIELD:
+	    if (t->chain != NIL) {
+		printtype(t->chain, t->chain);
+	    }
+	    printf("\t%s : ", t->symbol);
+	    printtype(t, t->type);
+	    printf(";\n");
+	    break;
 
-		case SCAL:
-			printf("(");
-			t = t->type->chain;
-			if (t != NIL) {
-				printf("%s", t->symbol);
-				t = t->chain;
-				while (t != NIL) {
-					printf(", %s", t->symbol);
-					t = t->chain;
-				}
-			} else {
-				panic("empty enumeration");
-			}
-			printf(")");
-			break;
+	case RANGE:
+	    r0 = t->symvalue.rangev.lower;
+	    r1 = t->symvalue.rangev.upper;
+	    printordinal(r0, rtype(t->type));
+	    printf("..");
+	    printordinal(r1, rtype(t->type));
+	    break;
 
-		default:
-			printf("(class %d)", t->class);
-			break;
-	}
+	case PTR:
+	    putchar('^');
+	    printtype(t, t->type);
+	    break;
+
+	case TYPE:
+	    if (t->symbol != NIL) {
+		printf("%s", t->symbol);
+	    } else {
+		printtype(t, t->type);
+	    }
+	    break;
+
+	case SCAL:
+	    printf("(");
+	    t = t->type->chain;
+	    if (t != NIL) {
+		printf("%s", t->symbol);
+		t = t->chain;
+		while (t != NIL) {
+		    printf(", %s", t->symbol);
+		    t = t->chain;
+		}
+	    } else {
+		panic("empty enumeration");
+	    }
+	    printf(")");
+	    break;
+
+	default:
+	    printf("(class %d)", t->class);
+	    break;
+    }
 }
 
 /*
@@ -222,36 +218,36 @@ SYM *t;
 listparams(s)
 SYM *s;
 {
-	SYM *t;
+    SYM *t;
 
-	if (s->chain != NIL) {
-		putchar('(');
-		for (t = s->chain; t != NIL; t = t->chain) {
-			switch (t->class) {
-				case REF:
-					printf("var ");
-					break;
+    if (s->chain != NIL) {
+	putchar('(');
+	for (t = s->chain; t != NIL; t = t->chain) {
+	    switch (t->class) {
+		case REF:
+		    printf("var ");
+		    break;
 
-				case FPROC:
-					printf("procedure ");
-					break;
+		case FPROC:
+		    printf("procedure ");
+		    break;
 
-				case FFUNC:
-					printf("function ");
-					break;
+		case FFUNC:
+		    printf("function ");
+		    break;
 
-				case VAR:
-					break;
+		case VAR:
+		    break;
 
-				default:
-					panic("unexpected class %d for parameter", t->class);
-			}
-			printf("%s : ", t->symbol);
-			printtype(t, t->type);
-			if (t->chain != NIL) {
-				printf("; ");
-			}
-		}
-		putchar(')');
+		default:
+		    panic("unexpected class %d for parameter", t->class);
+	    }
+	    printf("%s : ", t->symbol);
+	    printtype(t, t->type);
+	    if (t->chain != NIL) {
+		printf("; ");
+	    }
 	}
+	putchar(')');
+    }
 }
