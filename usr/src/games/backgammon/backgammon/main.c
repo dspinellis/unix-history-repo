@@ -1,4 +1,4 @@
-static char sccsid[] = "	main.c	4.1	82/05/11	";
+static char sccsid[] = "	main.c	4.2	82/11/22	";
 
 #include <stdio.h>
 #include "back.h"
@@ -60,7 +60,7 @@ char	**argv;
 	register int	i;		/* non-descript index */
 	register int	l;		/* non-descript index */
 	register char	c;		/* non-descript character storage */
-	int	t[2];			/* time vector */
+	long	t;			/* time for random num generator */
 
 	/* initialization */
 	bflag = 2;					/* default no board */
@@ -94,8 +94,8 @@ char	**argv;
 							 * for text */
 	if (tflag)
 		begscr = 0;
-	time (t);
-	srand (t[0]^t[1]);				/* 'random' seed */
+	t = time(0);
+	srandom(t);					/* 'random' seed */
 
 #ifdef V7
 	while (*++argv != 0)				/* process arguments */

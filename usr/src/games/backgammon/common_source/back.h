@@ -1,10 +1,10 @@
 /*
- *	back.h	4.1	82/05/11
+ *	back.h	4.2	82/11/22
  */
 
 #include <sgtty.h>
 
-#define rnum(r)	(rand(0)/(32767/r+1))
+#define rnum(r)	(random()%r)
 #define D0	dice[0]
 #define D1	dice[1]
 #define swap	{D0 ^= D1; D1 ^= D0; D0 ^= D1; d0 = 1-d0;}
