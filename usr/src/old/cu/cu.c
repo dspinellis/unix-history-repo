@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)cu.c	4.4 (Berkeley) 81/07/02";
+static	char *sccsid = "@(#)cu.c	4.5 (Berkeley) 81/07/02";
 #include <stdio.h>
 #include <signal.h>
 #include <sgtty.h>
@@ -199,7 +199,7 @@ char *av[];
 	efk = fk;
 	wr();
 	mode(0);
-	kill(fk, SIGKILL);
+	if (fk != -1) kill(fk, SIGKILL);
 	wait((int *)NULL);
 	stbuf.sg_ispeed = 0;
 	stbuf.sg_ospeed = 0;
@@ -412,7 +412,7 @@ A:
 			fprintf(fp,"%s\n",(b[1]=='>'?&b[2]: &b[1] ));
 			if(dbflag) prf("name to be written in temporary:"),prf(&b[2]);
 			fclose(fp);
-			kill(efk,SIGEMT);
+			if (efk != -1) kill(efk,SIGEMT);
 			}
 			break;
 #ifdef SIGTSTP
