@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)csh.h	5.16 (Berkeley) %G%
+ *	@(#)csh.h	5.17 (Berkeley) %G%
  */
 
 /*
@@ -177,7 +177,7 @@ sig_t parterm;			/* Parents terminate catch */
  * Lexical definitions.
  *
  * All lexical space is allocated dynamically.
- * The eighth/sizteenth bit of characters is used to prevent recognition,
+ * The eighth/sixteenth bit of characters is used to prevent recognition,
  * and eventually stripped.
  */
 #define	META		0200
@@ -458,7 +458,7 @@ Char    HISTSUB;		/* auto-substitute character */
 #define str2short(a) 		(a)
 #define blk2short(a) 		saveblk(a)
 #define short2blk(a) 		saveblk(a)
-#define short2str(a) 		trim(a)
+#define short2str(a) 		strip(a)
 #else
 #define Strchr(a, b)		s_strchr(a, b)
 #define Strrchr(a, b) 		s_strrchr(a, b)
