@@ -1,5 +1,5 @@
 #ifndef	lint
-static char *sccsid = "@(#)write.c	4.11 %G%";
+static char *sccsid = "@(#)write.c	4.12 %G%";
 #endif
 /*
  * write to another user
@@ -57,6 +57,8 @@ main(argc, argv)
 		histtya = argv[2];
 	if ((uf = fopen("/etc/utmp", "r")) == NULL) {
 		perror("write: Can't open /etc/utmp");
+		if (histtya == 0)
+			exit(10);
 		goto cont;
 	}
 	mytty = ttyname(2);
@@ -123,26 +125,18 @@ main(argc, argv)
 	nomat:
 		;
 	}
-cont:
+	fclose(uf);
 	if (logcnt==0) {
-		fprintf(stderr, "write: %s not logged in\n", him);
+		fprintf(stderr, "write: %s not logged in%s\n", him,
+			histtya ? " on that tty" : "");
 		exit(1);
 	}
-	if (uf != NULL)
-		fclose(uf);
 	if (histtya==0 && logcnt > 1) {
 		fprintf(stderr,
 		"write: %s logged in more than once ... writing to %s\n",
 			him, histty+5);
 	}
-	if (logcnt == 0) {
-		printf(him);
-		if (histtya)
-			printf(" not on that tty\n");
-		else
-			printf(" not logged in\n");
-		exit(1);
-	}
+cont:
 	if (access(histty, 0) < 0) {
 		fprintf(stderr, "write: No such tty\n");
 		exit(1);
