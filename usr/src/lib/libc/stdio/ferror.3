@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)ferror.3	6.1 (Berkeley) %G%
+.\"	@(#)ferror.3	6.2 (Berkeley) %G%
 .\"
 .TH FERROR 3S  ""
 .UC 4
@@ -51,7 +51,7 @@ the error indication lasts until
 the stream is closed.
 .PP
 .I Clearerr
-resets the error indication on the named
+resets the error and end-of-file indicators on the named
 .IR stream .
 .PP
 .I Fileno
@@ -61,7 +61,8 @@ associated with the
 see
 .IR  open (2).
 .PP
-These functions
+Currently all of these functions except
+.I clearerr
 are implemented as macros;
 they cannot be redeclared.
 .SH "SEE ALSO"
