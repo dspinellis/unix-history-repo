@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tty.c	7.14 (Berkeley) %G%
+ *	@(#)tty.c	7.15 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -235,7 +235,7 @@ ttioctl(tp, com, data, flag)
 	extern int nldisp;
 	int softset = 0;
 	int soft;
-	int s;
+	int s, error;
 
 
 	/*
@@ -465,8 +465,8 @@ ttioctl(tp, com, data, flag)
 			if (constty != NULL)
 				return (EBUSY);
 #ifndef	UCONSOLE
-			if (!suser())
-				return (EPERM);
+			if (error = suser(u.u_cred, &u.u_acflag))
+				return (error);
 #endif
 			constty = tp;
 		} else if (tp == constty)

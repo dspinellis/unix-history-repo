@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_acct.c	7.3 (Berkeley) %G%
+ *	@(#)kern_acct.c	7.4 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -33,40 +33,40 @@ sysacct()
 	} *uap = (struct a *)u.u_ap;
 	register struct nameidata *ndp = &u.u_nd;
 
-	if (suser()) {
-		if (savacctp) {
-			acctp = savacctp;
-			savacctp = NULL;
-		}
-		if (uap->fname==NULL) {
-			if (ip = acctp) {
-				acctp = NULL;
-				irele(ip);
-			}
-			return;
-		}
-		ndp->ni_nameiop = LOOKUP | FOLLOW;
-		ndp->ni_segflg = UIO_USERSPACE;
-		ndp->ni_dirp = uap->fname;
-		ip = namei(ndp);
-		if (ip == NULL)
-			return;
-		if ((ip->i_mode&IFMT) != IFREG) {
-			u.u_error = EACCES;
-			iput(ip);
-			return;
-		}
-		if (ip->i_fs->fs_ronly) {
-			u.u_error = EROFS;
-			iput(ip);
-			return;
-		}
-		if (acctp && (acctp->i_number != ip->i_number ||
-		    acctp->i_dev != ip->i_dev))
-			irele(acctp);
-		acctp = ip;
-		iunlock(ip);
+	if (u.u_error = suser(u.u_cred, &u.u_acflag))
+		return;
+	if (savacctp) {
+		acctp = savacctp;
+		savacctp = NULL;
 	}
+	if (uap->fname==NULL) {
+		if (ip = acctp) {
+			acctp = NULL;
+			irele(ip);
+		}
+		return;
+	}
+	ndp->ni_nameiop = LOOKUP | FOLLOW;
+	ndp->ni_segflg = UIO_USERSPACE;
+	ndp->ni_dirp = uap->fname;
+	ip = namei(ndp);
+	if (ip == NULL)
+		return;
+	if ((ip->i_mode&IFMT) != IFREG) {
+		u.u_error = EACCES;
+		iput(ip);
+		return;
+	}
+	if (ip->i_fs->fs_ronly) {
+		u.u_error = EROFS;
+		iput(ip);
+		return;
+	}
+	if (acctp && (acctp->i_number != ip->i_number ||
+	    acctp->i_dev != ip->i_dev))
+		irele(acctp);
+	acctp = ip;
+	iunlock(ip);
 }
 
 int	acctsuspend = 2;	/* stop accounting when < 2% free space left */

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ufs_vnops.c	7.5 (Berkeley) %G%
+ *	@(#)ufs_vnops.c	7.6 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -41,8 +41,9 @@ chdir()
 chroot()
 {
 
-	if (suser())
-		chdirec(&u.u_rdir);
+	if (u.u_error = suser(u.u_cred, &u.u_acflag))
+		return;
+	chdirec(&u.u_rdir);
 }
 
 /*
@@ -208,7 +209,7 @@ mknod()
 	} *uap = (struct a *)u.u_ap;
 	register struct nameidata *ndp = &u.u_nd;
 
-	if (!suser())
+	if (u.u_error = suser(u.u_cred, &u.u_acflag))
 		return;
 	ndp->ni_nameiop = CREATE;
 	ndp->ni_segflg = UIO_USERSPACE;
@@ -260,7 +261,8 @@ link()
 	ip = namei(ndp);	/* well, this routine is doomed anyhow */
 	if (ip == NULL)
 		return;
-	if ((ip->i_mode&IFMT) == IFDIR && !suser()) {
+	if ((ip->i_mode&IFMT) == IFDIR &&
+	    (u.u_error = suser(u.u_cred, &u.u_acflag))) {
 		iput(ip);
 		return;
 	}
@@ -362,7 +364,8 @@ unlink()
 	if (ip == NULL)
 		return;
 	dp = ndp->ni_pdir;
-	if ((ip->i_mode&IFMT) == IFDIR && !suser())
+	if ((ip->i_mode&IFMT) == IFDIR &&
+	    (u.u_error = suser(u.u_cred, &u.u_acflag)))
 		goto out;
 	/*
 	 * Don't unlink a mounted file.
@@ -562,7 +565,8 @@ fchmod()
 	if (fp == NULL)
 		return;
 	ip = (struct inode *)fp->f_data;
-	if (u.u_uid != ip->i_uid && !suser())
+	if (u.u_uid != ip->i_uid &&
+	    (u.u_error = suser(u.u_cred, &u.u_acflag)))
 		return;
 	ILOCK(ip);
 	u.u_error = chmod1(ip, uap->fmode);
@@ -663,7 +667,8 @@ chown1(ip, uid, gid)
 	 * the caller must be superuser or the call fails.
 	 */
 	if ((u.u_uid != ip->i_uid || uid != ip->i_uid ||
-	    !groupmember((gid_t)gid)) && !suser())
+	    !groupmember((gid_t)gid)) &&
+	    (u.u_error = suser(u.u_cred, &u.u_acflag)))
 		return (u.u_error);
 #ifdef QUOTA
 	if (ip->i_uid == uid)		/* this just speeds things a little */
@@ -1127,7 +1132,8 @@ maknode(mode, ndp)
 	ip->i_nlink = 1;
 	ip->i_uid = u.u_uid;
 	ip->i_gid = pdir->i_gid;
-	if (ip->i_mode & ISGID && !groupmember(ip->i_gid) && !suser())
+	if (ip->i_mode & ISGID && !groupmember(ip->i_gid) &&
+	    (u.u_error = suser(u.u_cred, &u.u_acflag)))
 		ip->i_mode &= ~ISGID;
 #ifdef QUOTA
 	ip->i_dquot = inoquota(ip);

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)lfs_vfsops.c	7.11 (Berkeley) %G%
+ *	@(#)lfs_vfsops.c	7.12 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -356,7 +356,7 @@ getmdev(pdev, fname)
 	register struct inode *ip;
 	register struct nameidata *ndp = &u.u_nd;
 
-	if (!suser())
+	if (u.u_error = suser(u.u_cred, &u.u_acflag))
 		return (u.u_error);
 	ndp->ni_nameiop = LOOKUP | FOLLOW;
 	ndp->ni_segflg = UIO_USERSPACE;

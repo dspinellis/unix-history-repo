@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_resource.c	7.3 (Berkeley) %G%
+ *	@(#)kern_resource.c	7.4 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -140,7 +140,7 @@ donice(p, n)
 		n = PRIO_MAX;
 	if (n < PRIO_MIN)
 		n = PRIO_MIN;
-	if (n < p->p_nice && !suser()) {
+	if (n < p->p_nice && suser(u.u_cred, &u.u_acflag)) {
 		u.u_error = EACCES;
 		return;
 	}
@@ -168,7 +168,7 @@ setrlimit()
 	if (u.u_error)
 		return;
 	if (alim.rlim_cur > alimp->rlim_max || alim.rlim_max > alimp->rlim_max)
-		if (!suser())
+		if (u.u_error = suser(u.u_cred, &u.u_acflag))
 			return;
 	switch (uap->which) {
 

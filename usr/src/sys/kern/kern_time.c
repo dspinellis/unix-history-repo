@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_time.c	7.7 (Berkeley) %G%
+ *	@(#)kern_time.c	7.8 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -61,12 +61,11 @@ settimeofday()
 			return;
 		setthetime(&atv);
 	}
-	if (uap->tzp && suser()) {
-		u.u_error = copyin((caddr_t)uap->tzp, (caddr_t)&atz,
-			sizeof (atz));
-		if (u.u_error == 0)
-			tz = atz;
-	}
+	if (uap->tzp == 0 || (u.u_error = suser(u.u_cred, &u.u_acflag)))
+		return;
+	u.u_error = copyin((caddr_t)uap->tzp, (caddr_t)&atz, sizeof (atz));
+	if (u.u_error == 0)
+		tz = atz;
 }
 
 setthetime(tv)
@@ -74,7 +73,7 @@ setthetime(tv)
 {
 	int s;
 
-	if (!suser())
+	if (u.u_error = suser(u.u_cred, &u.u_acflag))
 		return;
 /* WHAT DO WE DO ABOUT PENDING REAL-TIME TIMEOUTS??? */
 	boottime.tv_sec += tv->tv_sec - time.tv_sec;
@@ -97,7 +96,7 @@ adjtime()
 	register long ndelta;
 	int s;
 
-	if (!suser()) 
+	if (u.u_error = suser(u.u_cred, &u.u_acflag))
 		return;
 	u.u_error = copyin((caddr_t)uap->delta, (caddr_t)&atv,
 		sizeof (struct timeval));

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)vfs_vnops.c	7.2 (Berkeley) %G%
+ *	@(#)vfs_vnops.c	7.3 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -124,23 +124,25 @@ owner(fname, follow)
 		return (NULL);
 	if (u.u_uid == ip->i_uid)
 		return (ip);
-	if (suser())
-		return (ip);
-	iput(ip);
-	return (NULL);
+	if (u.u_error = suser(u.u_cred, &u.u_acflag)) {
+		iput(ip);
+		return (NULL);
+	}
+	return (ip);
 }
 
 /*
- * Test if the current user is the
- * super user.
+ * Test if the current user is the super user.
  */
-suser()
+suser(uid, acflag)
+	uid_t uid;
+	short *acflag;
 {
 
-	if (u.u_uid == 0) {
-		u.u_acflag |= ASU;
-		return (1);
+	if (uid == 0) {
+		if (acflag)
+			*acflag |= ASU;
+		return (0);
 	}
-	u.u_error = EPERM;
-	return (0);
+	return (EPERM);
 }

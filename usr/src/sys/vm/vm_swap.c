@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)vm_swap.c	7.3 (Berkeley) %G%
+ *	@(#)vm_swap.c	7.4 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -84,7 +84,7 @@ swapon()
 	register struct swdevt *sp;
 	register struct nameidata *ndp = &u.u_nd;
 
-	if (!suser())
+	if (u.u_error = suser(u.u_cred, &u.u_acflag))
 		return;
 	ndp->ni_nameiop = LOOKUP | FOLLOW;
 	ndp->ni_segflg = UIO_USERSPACE;
