@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	6.1 (Berkeley) %G%
+ *	@(#)conf.h	6.2 (Berkeley) %G%
  */
 
 /*
@@ -27,7 +27,6 @@
 # define MAXRWSETS	100		/* max # of sets of rewriting rules */
 # define MAXPRIORITIES	25		/* max values for Precedence: field */
 # define MAXTRUST	30		/* maximum number of trusted users */
-# define MAXUSERENVIRON	40		/* max # of items in user environ */
 # define MAXMXHOSTS	20		/* max # of MX records */
 # define SMTPLINELIM	990		/* maximum SMTP line length */
 # define MAXKEY		128		/* maximum size of a database key */
