@@ -865,6 +865,9 @@ int main(argc, argv)
 	    char *name = argv[optind];	/* next file name            */
 	    infile[0] = fopen(name, "r");
 	    if (!infile[0]) cantread(name);
+	    sp = -1;			/* stack pointer initialized */
+	    fp = 0; 			/* frame pointer initialized */
+	    ilevel = 0;			/* reset input file stack ptr*/
 #ifndef	NO__FILE
 	    dodefine("__FILE__", name);
 #endif
@@ -877,10 +880,13 @@ int main(argc, argv)
 	    putback(EOF);		/* eof is a must !!	     */
 	    pbstr(m4wraps); 		/* user-defined wrapup act   */
 	    macro();			/* last will and testament   */
-	} else {			/* default wrap-up: undivert */
-	    for (n = 1; n < MAXOUT; n++)
-		if (outfile[n] != NULL) getdiv(n);
 	}
+
+	if (active != stdout)
+	    active = stdout;		/* reset output just in case */
+
+	for (n = 1; n < MAXOUT; n++)	/* default wrap-up: undivert */
+	    if (outfile[n] != NULL) getdiv(n);
 
 	if (outfile[0] != NULL) {	/* remove bitbucket if used  */
 	    (void) fclose(outfile[0]);
