@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)date.c	4.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)date.c	4.12 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -134,7 +134,8 @@ main(argc, argv)
 		if (bind(sock, (struct sockaddr *)&sin, sizeof (sin)) >= 0)
 			break;
 		if (errno != EADDRINUSE) {
-			perror("bind");
+			if (errno != EADDRNOTAVAIL)
+				perror("bind");
 			(void) close(sock);
 			goto oldway;
 		}
