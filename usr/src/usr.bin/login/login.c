@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)login.c	5.44 (Berkeley) %G%";
+static char sccsid[] = "@(#)login.c	5.45 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -429,7 +429,6 @@ main(argc, argv)
 		(void)printf("Warning: no Kerberos tickets issued\n");
 #endif
 
-#if BSD > 43
 	if (pwd->pw_change || pwd->pw_expire)
 		(void)gettimeofday(&tp, (struct timezone *)NULL);
 	if (pwd->pw_change)
@@ -456,7 +455,6 @@ main(argc, argv)
 			    months[ttp->tm_mon], ttp->tm_mday,
 			    TM_YEAR_BASE + ttp->tm_year);
 		}
-#endif
 
 	/* nothing else left to fail -- really log in */
 	{
@@ -530,10 +528,8 @@ main(argc, argv)
 	strcpy(tbuf + 1, (p = rindex(pwd->pw_shell, '/')) ?
 	    p + 1 : pwd->pw_shell);
 
-#if	BSD > 43
 	if (setlogname(pwd->pw_name, strlen(pwd->pw_name)) < 0)
 		syslog(LOG_ERR, "setlogname() failure: %m");
-#endif
 
 	/* discard permissions last so can't get killed and drop core */
 	(void)setuid(pwd->pw_uid);
