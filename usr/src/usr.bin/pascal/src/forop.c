@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)forop.c 1.14 %G%";
+static char sccsid[] = "@(#)forop.c 1.15 %G%";
 
 #include	"whoami.h"
 #include	"0.h"
@@ -328,7 +328,7 @@ nogood:
 	     *	replace them with the shadow's offset,
 	     *	and mark the for variable as being a for variable.
 	     */
-	shadownlp -> nl_flags = forvar -> nl_flags;
+	shadownlp -> nl_flags |= NLFLAGS(forvar -> nl_flags);
 	*forvar = *shadownlp;
 	forvar -> symbol = saved_nl.symbol;
 	forvar -> nl_next = saved_nl.nl_next;
@@ -417,7 +417,7 @@ nogood:
 byebye:
 	noreach = 0;
 	if (forvar != NIL) {
-	    saved_nl.nl_flags |= forvar -> nl_flags & (NUSED|NMOD);
+	    saved_nl.nl_flags |= NLFLAGS(forvar -> nl_flags) & (NUSED|NMOD);
 	    *forvar = saved_nl;
 	}
 	if ( goc != gocnt ) {
