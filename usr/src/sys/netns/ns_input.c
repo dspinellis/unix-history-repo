@@ -363,7 +363,7 @@ idp_forward(idp)
 		register int shift;
 		x.l = 0; x.c[0] = agedelta;
 		shift = (((((int)ntohs(idp->idp_len))+1)>>1)-2) & 0xf;
-		x.l = idp->idp_sum + (x.l << shift);
+		x.l = idp->idp_sum + (x.s[0] << shift);
 		x.l = x.s[0] + x.s[1];
 		x.l = x.s[0] + x.s[1];
 		if (x.l==0xffff) idp->idp_sum = 0; else idp->idp_sum = x.l;
