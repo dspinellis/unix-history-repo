@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)hostname.c	1.1 1.1 82/04/08"; 
+static char *sccsid = "@(#)hostname.c	1.2 1.2 83/01/02"; 
 /*
  * hostname -- get (or set hostname)
  */
@@ -8,16 +8,16 @@ char hostname[32];
 extern int errno;
 
 main(argc,argv)
-char *argv[];
+	char *argv[];
 {
 	argc--;
 	argv++;
-	if(argc) {
-		if(sethostname(*argv,strlen(*argv)+1))
+	if (argc) {
+		if (sethostname(*argv,strlen(*argv)))
 			perror("sethostname");
 	} else {
 		gethostname(hostname,sizeof(hostname));
 		printf("%s\n",hostname);
 	}
-	return(errno);
+	exit(errno);
 }
