@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)mp.c	7.11 (Berkeley) %G%
+ *	@(#)mp.c	7.12 (Berkeley) %G%
  */
 
 #include "mp.h"
@@ -258,8 +258,9 @@ restart:
 	}
 	while ((mode&O_NONBLOCK) == 0 && (tp->t_cflag&CLOCAL) == 0 &&  
 	    (tp->t_state & TS_CARR_ON) == 0) {
-		if (error = tsleep((caddr_t)&tp->t_rawq, TTIPRI | PCATCH,
-		    ttopen, 0))
+		if ((error = tsleep((caddr_t)&tp->t_rawq, TTIPRI | PCATCH,
+				    ttopen, 0)) ||
+		    (error = ttclosed(tp)))
 			goto bad;
 		/*
 		 * a mpclose() might have disabled port. if so restart

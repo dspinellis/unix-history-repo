@@ -11,7 +11,7 @@
  *
  * from: $Hdr: dcm.c 1.17 89/10/01$
  *
- *	@(#)dcm.c	7.2 (Berkeley) %G%
+ *	@(#)dcm.c	7.3 (Berkeley) %G%
  */
 
 /*
@@ -288,8 +288,9 @@ dcmopen(dev, flag)
 	while (!(flag&O_NONBLOCK) && !(tp->t_cflag&CLOCAL) &&
 	       (tp->t_state & TS_CARR_ON) == 0) {
 		tp->t_state |= TS_WOPEN;
-		if (error = tsleep((caddr_t)&tp->t_rawq, TTIPRI | PCATCH,
-				   ttopen, 0)) {
+		if ((error = tsleep((caddr_t)&tp->t_rawq, TTIPRI | PCATCH,
+				   ttopen, 0)) ||
+		    (error = ttclosed(tp))) {
 			tp->t_state &= ~TS_WOPEN;
 			(void) spl0();
 			return (error);
