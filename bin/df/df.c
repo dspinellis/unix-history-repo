@@ -199,9 +199,9 @@ prtstat(sfsp, maxwidth)
 	used = sfsp->f_blocks - sfsp->f_bfree;
 	availblks = sfsp->f_bavail + used;
 	(void)printf(" %*ld %7ld %7ld", headerlen,
-	    sfsp->f_blocks * sfsp->f_fsize / blocksize,
-	    used * sfsp->f_fsize / blocksize,
-	    sfsp->f_bavail * sfsp->f_fsize / blocksize);
+	    (long)((double)sfsp->f_blocks * (double)sfsp->f_fsize / (double)blocksize),
+	    (long)((double)used * (double)sfsp->f_fsize / (double)blocksize),
+	    (long)((double)sfsp->f_bavail * (double)sfsp->f_fsize / (double)blocksize));
 	(void)printf(" %5.0f%%",
 	    availblks == 0 ? 100.0 : (double)used / (double)availblks * 100.0);
 	if (iflag) {
