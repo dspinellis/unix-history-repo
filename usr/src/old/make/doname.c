@@ -1,6 +1,7 @@
-static	char *sccsid = "@(#)doname.c	4.7 (Berkeley) 85/08/30";
+static	char *sccsid = "@(#)doname.c	4.8 (Berkeley) 85/09/18";
 #include "defs"
 #include <strings.h>
+#include <signal.h>
 
 /*  BASIC PROCEDURE.  RECURSIVE.  */
 
@@ -10,6 +11,8 @@ p->done = 1   file in process of being updated
 p->done = 2   file already exists in current state
 p->done = 3   file make failed
 */
+
+extern char *sys_siglist[];
 
 doname(p, reclevel, tval)
 register struct nameblock *p;
@@ -266,9 +269,17 @@ if(noexflag) return(0);
 
 if( status = dosys(comstring, nohalt) )
 	{
-	if( status>>8 )
-		printf("*** Error code %d", status>>8 );
-	else	printf("*** Termination code %d", status );
+	unsigned sig = status & 0177;
+	if( sig ) {
+		if (sig < NSIG && sys_siglist[sig] != NULL &&
+		    *sys_siglist[sig] != '\0')
+			printf("*** %s", sys_siglist[sig]);
+		else
+			printf("*** Signal %d", sig);
+		if (status & 0200)
+			printf(" - core dumped");
+	} else
+		printf("*** Exit %d", status>>8 );
 
 	if(nohalt) printf(" (ignored)\n");
 	else	printf("\n");
