@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_vnops.c	7.35 (Berkeley) %G%
+ *	@(#)vfs_vnops.c	7.36 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -27,29 +27,31 @@ struct 	fileops vnops =
  * Common code for vnode open operations.
  * Check permissions, and call the VOP_OPEN or VOP_CREATE routine.
  */
-vn_open(ndp, p, fmode, cmode)
+vn_open(ndp, fmode, cmode)
 	register struct nameidata *ndp;
-	struct proc *p;
 	int fmode, cmode;
 {
 	register struct vnode *vp;
-	register struct ucred *cred = p->p_ucred;
+	register struct proc *p = ndp->ni_cnd.cn_proc;
+	register struct ucred *cred = ndp->ni_cnd.cn_cred;
 	struct vattr vat;
 	struct vattr *vap = &vat;
 	int error;
 
 	if (fmode & O_CREAT) {
-		ndp->ni_nameiop = CREATE | LOCKPARENT | LOCKLEAF;
+		ndp->ni_cnd.cn_nameiop = CREATE;
+		ndp->ni_cnd.cn_flags = LOCKPARENT | LOCKLEAF;
 		if ((fmode & O_EXCL) == 0)
-			ndp->ni_nameiop |= FOLLOW;
-		if (error = namei(ndp, p))
+			ndp->ni_cnd.cn_flags |= FOLLOW;
+		if (error = namei(ndp))
 			return (error);
 		if (ndp->ni_vp == NULL) {
 			VATTR_NULL(vap);
 			vap->va_type = VREG;
 			vap->va_mode = cmode;
 			LEASE_CHECK(ndp->ni_dvp, p, cred, LEASE_WRITE);
-			if (error = VOP_CREATE(ndp->ni_dvp, &ndp->ni_vp, &ndp->ni_cnd, vap))
+			if (error = VOP_CREATE(ndp->ni_dvp, &ndp->ni_vp,
+			    &ndp->ni_cnd, vap))
 				return (error);
 			fmode &= ~O_TRUNC;
 			vp = ndp->ni_vp;
@@ -68,8 +70,9 @@ vn_open(ndp, p, fmode, cmode)
 			fmode &= ~O_CREAT;
 		}
 	} else {
-		ndp->ni_nameiop = LOOKUP | FOLLOW | LOCKLEAF;
-		if (error = namei(ndp, p))
+		ndp->ni_cnd.cn_nameiop = LOOKUP;
+		ndp->ni_cnd.cn_flags = FOLLOW | LOCKLEAF;
+		if (error = namei(ndp))
 			return (error);
 		vp = ndp->ni_vp;
 	}
