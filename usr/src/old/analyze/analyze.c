@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)analyze.c	4.2 (Berkeley) %G%";
+static char *sccsid = "@(#)analyze.c	4.3 (Berkeley) %G%";
 #include <stdio.h>
 #include <sys/param.h>
 #include <sys/dir.h>
@@ -29,9 +29,12 @@ int	uflg;
 
 #define	clear(x)	((int)x & 0x7fffffff)
 
-struct	proc proc[NPROC];
-struct	text text[NTEXT];
-struct	map swapmap[SMAPSIZ];
+struct	proc *proc;
+int	nproc;
+struct	text *text;
+int	ntext;
+struct	mapent *swapmap;
+int	nswapmap;
 struct	cmap *cmap;
 int	ecmx;
 struct	pte *usrpt;
@@ -57,13 +60,12 @@ struct	paginfo {
 #define	ZFREE	6
 #define	ZINTRAN	7
 
-#define	NDBLKS	(2*SMAPSIZ)
 struct	dblks {
 	short	d_first;
 	short	d_size;
 	char	d_type;
 	char	d_index;
-} dblks[NDBLKS];
+} *dblks;
 int	ndblks;
 
 #define	DFREE	0
@@ -103,6 +105,12 @@ struct	nlist nl[] = {
 	{ "_ecmap" },
 #define	X_SWAPMAP 9
 	{ "_swapmap" },
+#define	X_NPROC 10
+	{ "_nproc" },
+#define	X_NTEXT 11
+	{ "_ntext" },
+#define	X_NSWAPMAP 12
+	{ "_nswapmap" },
 	{ 0 }
 };
 
@@ -192,15 +200,33 @@ usage:
 	}
 	vprintf("usrpt %x\nUsrptma %x\nfirstfree %x\nmaxfree %x\nfreemem %x\n",
 		    usrpt, Usrptma, firstfree, maxfree, freemem);
-	lseek(fcore, (long)clear(nl[X_PROC].n_value), 0);
-	if (read(fcore, (char *)proc, sizeof proc) != sizeof proc) {
+	{ struct proc *aproc; 
+	  lseek(fcore, (long)clear(nl[X_PROC].n_value), 0);
+	  read(fcore, (char *)&aproc, sizeof aproc);
+	  lseek(fcore, (long)clear(nl[X_NPROC].n_value), 0);
+	  read(fcore, (char *)&nproc, sizeof nproc);
+	  printf("%d procs\n", nproc);
+	  proc = (struct proc *)calloc(nproc, sizeof (struct proc));
+	  lseek(fcore, (long)clear(aproc), 0);
+	  if (read(fcore, (char *)proc, nproc * sizeof (struct proc))
+	    != nproc * sizeof (struct proc)) {
 	 	perror("proc read");
 		exit(1);
+	  }
 	}
-	lseek(fcore, (long)clear(nl[X_TEXT].n_value), 0);
-	if (read(fcore, (char *)text, sizeof text) != sizeof text) {
+	{ struct text *atext;
+	  lseek(fcore, (long)clear(nl[X_TEXT].n_value), 0);
+	  read(fcore, (char *)&atext, sizeof atext);
+	  lseek(fcore, (long)clear(nl[X_NTEXT].n_value), 0);
+	  read(fcore, (char *)&ntext, sizeof ntext);
+	  printf("%d texts\n", ntext);
+	  text = (struct text *)calloc(ntext, sizeof (struct text));
+	  lseek(fcore, (long)clear(atext), 0);
+	  if (read(fcore, (char *)text, ntext * sizeof (struct text))
+	    != ntext * sizeof (struct text)) {
 		perror("text read");
 		exit(1);
+	  }
 	}
 	i = (get(nl[X_ECMAP].n_value) - get(nl[X_CMAP].n_value));
 	ecmx = i / sizeof (struct cmap);
@@ -214,12 +240,23 @@ usage:
 		perror("cmap read");
 		exit(1);
 	}
-	lseek(fcore, (long)clear(nl[X_SWAPMAP].n_value), 0);
-	if (read(fcore, (char *)swapmap, sizeof swapmap) != sizeof swapmap) {
+	{ struct mapent *aswapmap;
+	  lseek(fcore, (long)clear(nl[X_SWAPMAP].n_value), 0);
+	  read(fcore, (char *)&aswapmap, sizeof aswapmap);
+	  lseek(fcore, (long)clear(nl[X_NSWAPMAP].n_value), 0);
+	  read(fcore, (char *)&nswapmap, sizeof nswapmap);
+	  nswapmap--;
+	  printf("%d swapmap entries\n", nswapmap);
+	  swapmap = (struct mapent *)calloc(nswapmap, sizeof (struct mapent));
+	  dblks = (struct dblks *)calloc(2 * nswapmap, sizeof (struct dblks));
+	  lseek(fcore, (long)clear(aswapmap+1), 0);
+	  if (read(fcore, (char *)swapmap, nswapmap * sizeof (struct mapent))
+	    != nswapmap * sizeof (struct mapent)) {
 		perror("swapmap read");
 		exit(1);
+	  }
 	}
-	for (p = &proc[1]; p < &proc[NPROC]; p++) {
+	for (p = &proc[1]; p < proc+nproc; p++) {
 		p->p_p0br = (struct pte *)clear(p->p_p0br);
 		p->p_addr = (struct pte *)clear(p->p_addr);
 		if (p->p_stat == 0)
@@ -299,7 +336,7 @@ usage:
 		vprintf("\n");
 		vprintf("\n");
 	}
-	for (xp = &text[0]; xp < &text[NTEXT]; xp++)
+	for (xp = &text[0]; xp < text+ntext; xp++)
 		if (xp->x_iptr) {
 			for (i = 0; i < xp->x_size; i += DMTEXT)
 				duse(xp->x_daddr[i],
@@ -375,8 +412,8 @@ duse(first, size, type, index)
 	if (fswap == -1)
 		return;
 	dp = &dblks[ndblks];
-	if (++ndblks > NDBLKS) {
-		fprintf(stderr, "too many disk blocks, increase NDBLKS\n");
+	if (++ndblks > 2*nswapmap) {
+		fprintf(stderr, "too many disk blocks\n");
 		exit(1);
 	}
 	dp->d_first = first;
@@ -394,7 +431,7 @@ dsort(d, e)
 
 dmcheck()
 {
-	register struct map *smp;
+	register struct mapent *smp;
 	register struct dblks *d, *e;
 
 	for (smp = swapmap; smp->m_size; smp++)
