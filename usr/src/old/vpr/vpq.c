@@ -1,6 +1,8 @@
-/*
+/* vpq.c		%G%
  * Varian and Versatec queue
  */
+
+static char vpqSCCSid[] = "@(#)vpq.c	1.2\t%G%";
 
 #include <sys/types.h>
 #include <dir.h>
@@ -124,7 +126,8 @@ process()
 			strcpy(username, line+1);
 			break;
 
-		case 'B':
+		case 'C':
+		case 'V':
 		case 'F':
 		case 'G':
 		case 'P':
