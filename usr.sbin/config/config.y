@@ -31,6 +31,7 @@
 %token	MACHINE
 %token	MAJOR
 %token	MASTER
+%token	MAXFDESCS
 %token	MAXUSERS
 %token	MINOR
 %token	MINUS
@@ -200,6 +201,8 @@ Config_spec:
 	      = { zone = -$3; dst = $5; check_tz(); } |
 	TIMEZONE MINUS FPNUMBER DST
 	      = { zone = -$3; dst = 1; check_tz(); } |
+	MAXFDESCS NUMBER
+	      = { maxfdescs = $2; }; |
 	MAXUSERS NUMBER
 	      = { maxusers = $2; };
 

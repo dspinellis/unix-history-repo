@@ -55,6 +55,8 @@ static char sccsid[] = "@(#)mkmakefile.c	5.33 (Berkeley) 7/1/91";
 #include "y.tab.h"
 #include "config.h"
 
+#define DEF_MAXFDESCS	2048
+
 #define next_word(fp, wd) \
 	{ register char *word = get_word(fp); \
 	  if (word == (char *)EOF) \
@@ -183,6 +185,10 @@ makefile()
 		up = &users[MACHINE_VAX-1];
 	} else
 		up = &users[machine-1];
+	if (maxfdescs == 0) {
+		printf("maxfdescs not specifid; %d assumed\n", DEF_MAXFDESCS);
+		maxfdescs = DEF_MAXFDESCS;
+	}
 	if (maxusers == 0) {
 		printf("maxusers not specified; %d assumed\n", up->u_default);
 		maxusers = up->u_default;
@@ -191,8 +197,8 @@ makefile()
 		maxusers = up->u_min;
 	} else if (maxusers > up->u_max)
 		printf("warning: maxusers > %d (%d)\n", up->u_max, maxusers);
-	fprintf(ofp, "PARAM=-DTIMEZONE=%d -DDST=%d -DMAXUSERS=%d\n",
-	    zone, dst, maxusers);
+	fprintf(ofp, "PARAM=-DTIMEZONE=%d -DDST=%d -DMAXUSERS=%d -DMAXFDESCS=%d\n",
+	    zone, dst, maxusers, maxfdescs);
 	for (op = mkopt; op; op = op->op_next)
 		fprintf(ofp, "%s=%s\n", op->op_name, op->op_value);
 	if (debugging)

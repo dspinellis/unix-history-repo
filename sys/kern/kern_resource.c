@@ -191,6 +191,7 @@ setrlimit(p, uap, retval)
 	struct rlimit alim;
 	register struct rlimit *alimp;
 	extern unsigned maxdmap;
+	extern int maxfdescs;
 	int error;
 
 	if (uap->which >= RLIM_NLIMITS)
@@ -217,6 +218,12 @@ setrlimit(p, uap, retval)
 			alim.rlim_max = maxdmap;
 		break;
 
+	case RLIMIT_OFILE:
+		if (alim.rlim_cur > maxfdescs)
+			alim.rlim_cur = maxfdescs;
+		if (alim.rlim_max > maxfdescs)
+			alim.rlim_max = maxfdescs;
+		break;
 	case RLIMIT_STACK:
 		if (alim.rlim_cur > maxdmap)
 			alim.rlim_cur = maxdmap;

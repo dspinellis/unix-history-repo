@@ -191,6 +191,7 @@ int	dst;
 int	profiling;
 int	debugging;
 
+int	maxfdescs;
 int	maxusers;
 
 #define eq(a,b)	(!strcmp(a,b))
