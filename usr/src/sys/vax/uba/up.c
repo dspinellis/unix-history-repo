@@ -1,6 +1,6 @@
-int	cs1del;
+int	csdel3 = 100;
 int	printsw;
-/*	%H%	3.2	%G%	*/
+/*	%H%	3.3	%G%	*/
 
 /*
  * Emulex UNIBUS disk driver with overlapped seeks and ECC recovery.
@@ -212,7 +212,7 @@ int	up_ubinfo;		/* Information about UBA usage saved here */
  * variables control the delay, DELAY(n) is approximately n usec.
  */
 int	idelay = 500;		/* Delay after PRESET or DCLR */
-int	sdelay = 500;		/* Delay after selecting drive in upcs2 */
+int	sdelay = 125;		/* Delay after selecting drive in upcs2 */
 int	iedel1 = 500;
 int	iedel2 = 500;
 int	iedel3 = 0;
@@ -363,9 +363,7 @@ register unit;
 search:
 	upaddr->updc = cn;
 	upaddr->upda = sn;
-	if (cs1del&8) DELAY(500);
 	upaddr->upcs1 = IE|SEARCH|GO;
-	if (cs1del&8) DELAY(500);
 	/*
 	 * Mark this unit busy.
 	 */
@@ -474,16 +472,14 @@ loop:
 	upaddr->updc = cn;
 	upaddr->upda = (tn << 8) + sn;
 	upaddr->upba = up_ubinfo;
-	if (cs1del&1) DELAY(500);
 	upaddr->upwc = -bp->b_bcount / sizeof (short);
 	cmd = (up_ubinfo >> 8) & 0x300;
 	if (bp->b_flags & B_READ)
 		cmd |= IE|RCOM|GO;
 	else
 		cmd |= IE|WCOM|GO;
-	if (cs1del&1) DELAY(500);
 	upaddr->upcs1 = cmd;
-	if (cs1del&1) DELAY(500);
+	if (csdel3) DELAY(csdel3);
 	/*
 	 * This is a controller busy situation.
 	 * Record in dk slot NUP+DK_N (after last drive)
@@ -525,9 +521,9 @@ upintr()
 		 * completes; check for it anyways.
 		 */
 		if ((upaddr->upcs1 & RDY) == 0) {
-			printf("upintr b_active && !RDY\n");
-			goto out;
-		}
+			printf("!RDY in upintr: cs1 %o\n", upaddr->upcs1);
+printf("as=%d act %d %d %d\n", as, uptab.b_active, uputab[0].b_active, uputab[1].b_active);
+}
 		/*
 		 * Mark controller or drive not busy, and check for an
 		 * error condition which may have resulted from the transfer.
@@ -622,9 +618,7 @@ upintr()
 			dp->b_errcnt = 0;
 			dp->b_actf = bp->av_forw;
 			bp->b_resid = (-upaddr->upwc * sizeof(short));
-			if (cs1del&2) DELAY(500);
 			upaddr->upcs1 = IE;
-			if (cs1del&2) DELAY(500);
 			iodone(bp);
 			if(dp->b_actf)
 				upustart(unit);
@@ -636,6 +630,8 @@ upintr()
 	else {
 		if (printsw&64) printf("cs1 %o\n", upaddr->upcs1);
 		if (upaddr->upcs1 & TRE) {
+			printf("TRE in upintr: cs1 %o\n", upaddr->upcs1);
+printf("as=%d act %d %d %d\n", as, uptab.b_active, uputab[0].b_active, uputab[1].b_active);
 			upaddr->upcs1 = TRE;
 			DELAY(idelay);
 			if (printsw&64) printf("after TRE cs1 %o\n", upaddr->upcs1);
@@ -651,19 +647,20 @@ upintr()
 	 */
 	for (unit = 0; unit < NUP; unit++)
 		if (as & (1<<unit))
-			if (uputab[unit].b_active == 1)
+			if (uputab[unit].b_active == 1) {
+				upaddr->upas = 1<<unit;
 				upustart(unit);
-			else {
+			} else {
+			printf("as in upintr: cs1 %o\n", upaddr->upcs1);
+printf("as=%d act %d %d %d\n", as, uptab.b_active, uputab[0].b_active, uputab[1].b_active);
 				upaddr->upas = 1<<unit;
 				DELAY(1000);
 			}
 	if (uptab.b_actf && uptab.b_active == 0)
 		upstart();
 out:
-	if (cs1del&4) DELAY(500);
 	if ((upaddr->upcs1&IE) == 0)
 		upaddr->upcs1 = IE;
-	if (cs1del&4) DELAY(500);
 	if (printsw&128) printf("exit cs1 %o\n", upaddr->upcs1);
 }
 
