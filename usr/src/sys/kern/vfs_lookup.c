@@ -1,4 +1,4 @@
-/*	vfs_lookup.c	6.9	84/07/02	*/
+/*	vfs_lookup.c	6.10	84/07/04	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -177,7 +177,7 @@ namei(func, flag, follow)
 	} else
 		dp = u.u_cdir;
 	fs = dp->i_fs;
-	ilock(dp);
+	ILOCK(dp);
 	dp->i_count++;
 	u.u_pdir = (struct inode *)0xc0000000;		/* illegal */
 
@@ -281,7 +281,7 @@ dirloop2:
 
 				/*
 				 * Get the next inode in the path.
-				 * See comment above other `iunlock' code for
+				 * See comment above other `IUNLOCK' code for
 				 * an explaination of the locking protocol.
 				 */
 				pdp = dp;
@@ -290,22 +290,13 @@ dirloop2:
 					panic("nami: null cache ino");
 				if (pdp == dp)
 					dp->i_count++;
-				else if (dp->i_count) {
-					dp->i_count++;
+				else {
 					if (isdotdot) {
-						iunlock(pdp);
-						ilock(dp);
-					} else {
-						ilock(dp);
-						iunlock(pdp);
-					}
-				} else {
-					if (isdotdot) {
-						iunlock(pdp);
+						IUNLOCK(pdp);
 						igrab(dp);
 					} else {
 						igrab(dp);
-						iunlock(pdp);
+						IUNLOCK(pdp);
 					}
 				}
 
@@ -316,7 +307,7 @@ dirloop2:
 				 */
 				if (ncp->nc_id != ncp->nc_ip->i_id) {
 					iput(dp);
-					ilock(pdp);
+					ILOCK(pdp);
 					dp = pdp;
 					nchstats.ncs_falsehits++;
 				} else {
@@ -640,7 +631,7 @@ found:
 			   mount[i].m_dev == dp->i_dev) {
 				iput(dp);
 				dp = mount[i].m_inodp;
-				ilock(dp);
+				ILOCK(dp);
 				dp->i_count++;
 				fs = dp->i_fs;
 				cp -= 2;     /* back over .. */
@@ -698,7 +689,7 @@ found:
 	 */
 	pdp = dp;
 	if (isdotdot) {
-		iunlock(pdp);	/* race to get the inode */
+		IUNLOCK(pdp);	/* race to get the inode */
 		dp = iget(dp->i_dev, fs, u.u_dent.d_ino);
 		if (dp == NULL)
 			goto bad2;
@@ -706,7 +697,7 @@ found:
 		dp->i_count++;	/* we want ourself, ie "." */
 	} else {
 		dp = iget(dp->i_dev, fs, u.u_dent.d_ino);
-		iunlock(pdp);
+		IUNLOCK(pdp);
 		if (dp == NULL)
 			goto bad2;
 	}
@@ -785,11 +776,11 @@ haveino:
 				cp++;
 			if ((dp = u.u_rdir) == NULL)
 				dp = rootdir;
-			ilock(dp);
+			ILOCK(dp);
 			dp->i_count++;
 		} else {
 			dp = pdp;
-			ilock(dp);
+			ILOCK(dp);
 		}
 		fs = dp->i_fs;
 		goto dirloop;
