@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)candidate.c	1.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)candidate.c	1.3 (Berkeley) %G%";
 #endif not lint
 
 #include "globals.h"
@@ -50,66 +50,72 @@ election()
 	(void)strcpy(msg.tsp_name, hostname);
 	broadcast(&msg);
 
-loop:
-	wait.tv_sec = ELECTIONWAIT;
-	wait.tv_usec = 0;
-	resp = readmsg(TSP_ANY, (char *)ANYADDR, &wait);
-	if (resp != NULL) {
-		switch (resp->tsp_type) {
+	do {
+		wait.tv_sec = ELECTIONWAIT;
+		wait.tv_usec = 0;
+		resp = readmsg(TSP_ANY, (char *)ANYADDR, &wait);
+		if (resp != NULL) {
+			switch (resp->tsp_type) {
 
-		case TSP_ACCEPT:
-			(void) addmach(resp->tsp_name);
-			break;
-		case TSP_MASTERUP:
-		case TSP_MASTERREQ:
-			/*
-			 * If a timedaemon is coming up at the same time,
-			 * give up the candidature: it will be the master.
-			 */
-			ret = SLAVE;
-			break;
-		case TSP_QUIT:
-		case TSP_REFUSE:
-			/*
-			 * Collision: change value of election timer 
-			 * using exponential backoff.
-			 * The value of timer will be recomputed (in slave.c)
-			 * using the original interval when election will 
-			 * be successfully completed.
-			 */
-			backoff *= 2;
-			delay2 = casual((long)MINTOUT, 
-						(long)(MAXTOUT * backoff));
-			ret = SLAVE;
-			break;
-		case TSP_ELECTION:
-			/* no master for another round */
-			msg.tsp_type = TSP_REFUSE;
-			(void)strcpy(msg.tsp_name, hostname);
-			server = from;
-			answer = acksend(&msg, resp->tsp_name, TSP_ACK);
-			if (answer == NULL) {
-				syslog(LOG_ERR, "error in election");
-			} else {
+			case TSP_ACCEPT:
 				(void) addmach(resp->tsp_name);
+				break;
+
+			case TSP_MASTERUP:
+			case TSP_MASTERREQ:
+				/*
+				 * If a timedaemon is coming up at the same time,
+				 * give up the candidature: it will be the master.
+				 */
+				ret = SLAVE;
+				break;
+
+			case TSP_QUIT:
+			case TSP_REFUSE:
+				/*
+				 * Collision: change value of election timer 
+				 * using exponential backoff.
+				 * The value of timer will be recomputed (in slave.c)
+				 * using the original interval when election will 
+				 * be successfully completed.
+				 */
+				backoff *= 2;
+				delay2 = casual((long)MINTOUT, 
+							(long)(MAXTOUT * backoff));
+				ret = SLAVE;
+				break;
+
+			case TSP_ELECTION:
+				/* no master for another round */
+				msg.tsp_type = TSP_REFUSE;
+				(void)strcpy(msg.tsp_name, hostname);
+				server = from;
+				answer = acksend(&msg, resp->tsp_name, TSP_ACK);
+				if (answer == NULL) {
+					syslog(LOG_ERR, "error in election");
+				} else {
+					(void) addmach(resp->tsp_name);
+				}
+				break;
+
+			case TSP_SLAVEUP:
+				(void) addmach(resp->tsp_name);
+				break;
+
+			case TSP_DATE:
+			case TSP_DATEREQ:
+				break;
+
+			default:
+				if (trace) {
+					fprintf(fd, "candidate: ");
+					print(resp);
+				}
+				break;
 			}
-			break;
-		case TSP_SLAVEUP:
-			(void) addmach(resp->tsp_name);
-			break;
-		case TSP_DATE:
-		case TSP_DATEREQ:
-			break;
-		default:
-			if (trace) {
-				fprintf(fd, "candidate: ");
-				print(resp);
-			}
+		} else {
 			break;
 		}
-
-		if (ret == MASTER)
-			goto loop;
-	}
+	} while (ret == MASTER);
 	return(ret);
 }
