@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid ="@(#)local.c	1.16 (Berkeley) %G%";
+static char *sccsid ="@(#)local.c	1.17 (Berkeley) %G%";
 #endif lint
 
 # include "pass1.h"
@@ -185,9 +185,9 @@ clocal(p) register NODE *p; {
 			if( r->in.left->in.op == PLUS || r->in.left->in.op == MINUS ) 
 				if( ISPTR(r->in.type) ) {
 					if( ISUNSIGNED(p->in.left->in.type) )
-						p->in.left->in.type = UNSIGNED;
+						p->in.left->in.type = UCHAR;
 					else
-						p->in.left->in.type = INT;
+						p->in.left->in.type = CHAR;
 				}
 		break;
 		}
@@ -251,11 +251,11 @@ incode( p, sz ) register NODE *p; {
 	/* inoff is updated to have the proper final value */
 	/* we also assume sz  < SZINT */
 
+	inoff += sz;
 	if(nerrors) return;
 	if((sz+inwd) > SZINT) cerror("incode: field > int");
 	word |= ((unsigned)(p->tn.lval<<(32-sz))) >> (32-sz-inwd);
 	inwd += sz;
-	inoff += sz;
 	if(inoff%SZINT == 0) {
 		printf( "	.long	0x%lx\n", word);
 		word = inwd = 0;
@@ -269,7 +269,7 @@ fincode( d, sz ) double d; {
 	/* on the target machine, write it out in octal! */
 
 
-	if (nerrors) return;
+	if(!nerrors)
 	printf("	%s	0%c%.20e\n", sz == SZDOUBLE ? ".double" : ".float",
 		sz == SZDOUBLE ? 'd' : 'f', d);
 	inoff += sz;
@@ -312,9 +312,9 @@ vfdzero( n ){ /* define n bits of zeros in a vfd */
 
 	if( n <= 0 ) return;
 
+	inoff += n;
 	if (nerrors) return;
 	inwd += n;
-	inoff += n;
 	if( inoff%ALINT ==0 ) {
 		printf( "	.long	0x%lx\n", word );
 		word = inwd = 0;
