@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)bad144.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)bad144.c	5.12 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -140,7 +140,7 @@ usage:
 		printf("cartridge serial number: %d(10)\n", oldbad.bt_csn);
 		switch (oldbad.bt_flag) {
 
-		case -1:
+		case (u_short)-1:
 			printf("alignment cartridge\n");
 			break;
 
