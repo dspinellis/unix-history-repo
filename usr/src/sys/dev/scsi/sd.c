@@ -9,13 +9,13 @@
  * All advertising materials mentioning features or use of this software
  * must display the following acknowledgement:
  *	This product includes software developed by the University of
- *	California, Lawrence Berkeley Laboratories.
+ *	California, Lawrence Berkeley Laboratory.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sd.c	5.3 (Berkeley) %G%
+ *	@(#)sd.c	5.4 (Berkeley) %G%
  *
- * from: $Header: sd.c,v 1.18 92/06/11 17:55:56 torek Exp $
+ * from: $Header: sd.c,v 1.24 92/11/19 04:37:33 torek Exp $
  */
 
 /*
@@ -38,14 +38,14 @@
 #include <sys/ioctl.h>
 #include <sys/malloc.h>
 
+#include <dev/scsi/scsi.h>
+#include <dev/scsi/disk.h>
+#include <dev/scsi/scsivar.h>
+#include <dev/scsi/scsi_ioctl.h>
+
 #include <machine/cpu.h>
 
-#include "scsi.h"
-#include "disk.h"
-#include "scsivar.h"
-#include "scsi_ioctl.h"
-
-#include "sdtrace.h"
+#include <dev/scsi/sdtrace.h>
 
 #ifdef sparc					/* XXX */
 #define SUN_LABEL_HACK				/* XXX */
@@ -105,9 +105,7 @@ static struct unitdriver sdunitdriver = { /*sdgo, sdintr*/ sdreset };
 /* definition of the disk driver, for kernel */
 void	sdstrategy __P((struct buf *));
 
-#ifdef notyet
-static struct sddkdriver = { sdstrategy };
-#endif
+static struct dkdriver sddkdriver = { sdstrategy };
 
 #ifdef DEBUG
 int sddebug = 1;
@@ -247,12 +245,6 @@ sdattach(parent, self, aux)
 		    sa->sa_si.si_version);
 	}
 
-#ifdef notyet
-	sc->sc_dk.dk_driver = &sddkdriver;
-	dk_establish(&sc->sc_dk);
-	/* READ DISK LABEL HERE, UNLESS REMOVABLE MEDIUM... NEEDS THOUGHT */
-#endif
-
 	CDB10(&cap)->cdb_lun_rel = sc->sc_unit.u_unit << 5;
 	i = (*sc->sc_unit.u_hbd->hd_icmd)(sc->sc_unit.u_hba,
 	    sc->sc_unit.u_targ, &cap, (char *)capbuf, sizeof capbuf, B_READ);
@@ -267,6 +259,7 @@ sdattach(parent, self, aux)
 		sc->sc_blks = 318664;
 		sc->sc_blksize = 1024;
 	} else {
+		/* XXX shouldn't bail for removable media */
 		printf(": unable to determine drive capacity [sts=%x]\n", i);
 		return;
 	}
@@ -284,9 +277,14 @@ sdattach(parent, self, aux)
 		sc->sc_blks <<= sc->sc_bshift;
 	}
 	sc->sc_type = sa->sa_si.si_type;	/* sufficient? */
-	sc->sc_dk.dk_wpms = 32 * (60 * DEV_BSIZE / 2);	/* XXX */
 
+	sc->sc_dk.dk_driver = &sddkdriver;
+#ifdef notyet
+	dk_establish(&sc->sc_dk);
+	/* READ DISK LABEL HERE, UNLESS REMOVABLE MEDIUM... NEEDS THOUGHT */
+#else
 	sc->sc_dk.dk_label.d_secsize = 512;	/* XXX */
+	sc->sc_dk.dk_bps = (3600/60) * 32 * 512;/* XXX */
 
 #ifdef SUN_LABEL_HACK
 	sector = (caddr_t)malloc(sc->sc_blksize, M_DEVBUF, M_NOWAIT);
@@ -306,6 +304,7 @@ sdattach(parent, self, aux)
 		    sc->sc_dk.dk_dev.dv_xname);
 	free(sector, M_DEVBUF);
 #endif
+#endif /* notyet */
 }
 
 /*
@@ -363,12 +362,14 @@ sdlblkstrat(bp, bsize)
 {
 	register int bn, resid, boff, count;
 	register caddr_t addr, cbuf;
-	struct buf tbp;
+	struct buf *tbp;
 
+	/* should probably use geteblk() here, but I fear consequences */
 	cbuf = (caddr_t)malloc(bsize, M_DEVBUF, M_WAITOK);
-	bzero((caddr_t)&tbp, sizeof tbp);
-	tbp.b_proc = curproc;
-	tbp.b_dev = bp->b_dev;
+	tbp = (struct buf *)malloc(sizeof *tbp, M_DEVBUF, M_WAITOK);
+	bzero((caddr_t)tbp, sizeof *tbp);
+	tbp->b_proc = curproc;
+	tbp->b_dev = bp->b_dev;
 	bn = bp->b_blkno;
 	resid = bp->b_bcount;
 	addr = bp->b_un.b_addr;
@@ -384,20 +385,20 @@ sdlblkstrat(bp, bsize)
 			struct sd_softc *sc = sdcd.cd_devs[sdunit(bp->b_dev)];
 			sc->sc_partials++;
 			count = min(resid, bsize - boff);
-			tbp.b_flags = B_BUSY | B_READ;
-			tbp.b_blkno = bn - btodb(boff);
-			tbp.b_un.b_addr = cbuf;
-			tbp.b_bcount = bsize;
+			tbp->b_flags = B_BUSY | B_READ;
+			tbp->b_blkno = bn - btodb(boff);
+			tbp->b_un.b_addr = cbuf;
+			tbp->b_bcount = bsize;
 #ifdef DEBUG
 			if (sddebug & SDB_PARTIAL)
 				printf(" readahead: bn %x cnt %x off %x addr %x\n",
-				       tbp.b_blkno, count, boff, addr);
+				       tbp->b_blkno, count, boff, addr);
 #endif
-			sdstrategy(&tbp);
-			biowait(&tbp);
-			if (tbp.b_flags & B_ERROR) {
+			sdstrategy(tbp);
+			biowait(tbp);
+			if (tbp->b_flags & B_ERROR) {
 				bp->b_flags |= B_ERROR;
-				bp->b_error = tbp.b_error;
+				bp->b_error = tbp->b_error;
 				break;
 			}
 			if (bp->b_flags & B_READ) {
@@ -408,25 +409,25 @@ sdlblkstrat(bp, bsize)
 #ifdef DEBUG
 			if (sddebug & SDB_PARTIAL)
 				printf(" writeback: bn %x cnt %x off %x addr %x\n",
-				       tbp.b_blkno, count, boff, addr);
+				       tbp->b_blkno, count, boff, addr);
 #endif
 		} else {
 			count = resid & ~(bsize - 1);
-			tbp.b_blkno = bn;
-			tbp.b_un.b_addr = addr;
-			tbp.b_bcount = count;
+			tbp->b_blkno = bn;
+			tbp->b_un.b_addr = addr;
+			tbp->b_bcount = count;
 #ifdef DEBUG
 			if (sddebug & SDB_PARTIAL)
 				printf(" fulltrans: bn %x cnt %x addr %x\n",
-				       tbp.b_blkno, count, addr);
+				       tbp->b_blkno, count, addr);
 #endif
 		}
-		tbp.b_flags = B_BUSY | (bp->b_flags & B_READ);
-		sdstrategy(&tbp);
-		biowait(&tbp);
-		if (tbp.b_flags & B_ERROR) {
+		tbp->b_flags = B_BUSY | (bp->b_flags & B_READ);
+		sdstrategy(tbp);
+		biowait(tbp);
+		if (tbp->b_flags & B_ERROR) {
 			bp->b_flags |= B_ERROR;
-			bp->b_error = tbp.b_error;
+			bp->b_error = tbp->b_error;
 			break;
 		}
 done:
@@ -440,6 +441,7 @@ done:
 #endif
 	}
 	free(cbuf, M_DEVBUF);
+	free((caddr_t)tbp, M_DEVBUF);
 	biodone(bp);
 }
 
@@ -764,13 +766,17 @@ sdioctl(dev_t dev, int cmd, register caddr_t data, int flag, struct proc *p)
 #define cdb ((struct scsi_cdb *)data)
 		/*
 		 * Save what user gave us as SCSI cdb to use with next
-		 * read or write to the char device.
+		 * read or write to the char device.  Be sure to replace
+		 * the lun field with the actual unit number.
 		 */
 		if (sc->sc_format_pid != p->p_pid)
 			return (EPERM);
 		if (legal_cmds[cdb->cdb_bytes[0]] == 0)
 			return (EINVAL);
 		sc->sc_cmd = *cdb;
+		sc->sc_cmd.cdb_bytes[1] =
+		    (sc->sc_cmd.cdb_bytes[1] & ~(7 << 5)) |
+		    (sc->sc_unit.u_unit << 5);
 #undef	cdb
 		break;
 
