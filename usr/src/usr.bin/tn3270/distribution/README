@@ -1,0 +1,22 @@
+There are 3 interfaces we define.
+
+One is that between the host computer and the 3274 controller.  This
+interface specifies the AIDs, orders, commands, attributes, WCC, formats
+of various read and write commands, etc., that are transmitted to and
+from the host.  Additionally, the mapping between EBCDIC and the
+internal 3270 display code occurs at this interface.
+
+The logic for this interface is in outbound.c and inbound.c.  The interface
+is parameterized in 3270.h and ebc_disp.[hc].
+
+The second interface is between the keyboard and the 3274 controller.
+This interface specifies which keyboard scan codes perform which
+function (either are a character like A, or some function like EEOF, or
+some AID-generating function like CLEAR or PFK1).
+
+The logic for this interface is in inbound.c, and is parameterized in
+kbd3270.h and hits.c.
+
+The third and last interface is between the screen and the 3274 controller.
+This interface specifies the internal 3270 display code, error messages
+which may be presented to the screen by the 3274, and the bell.
