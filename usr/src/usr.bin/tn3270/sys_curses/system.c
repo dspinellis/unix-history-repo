@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)system.c	4.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)system.c	4.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -25,12 +25,12 @@ static char sccsid[] = "@(#)system.c	4.1 (Berkeley) %G%";
 #define fd_set fdset_t
 #endif  /* defined(pyr) */
 
-#if	!defined(sun) && !defined(pyr)
-#include <sys/inode.h>
-#else	/* !defined(sun) */
+/*
+ * Wouldn't it be nice if these REALLY were in <sys/inode.h>?  Or,
+ * equivalently, if <sys/inode.h> REALLY existed?
+ */
 #define	IREAD	00400
 #define	IWRITE	00200
-#endif	/* !defined(sun) */
 
 #include <sys/file.h>
 #include <sys/time.h>
@@ -490,6 +490,11 @@ shell_continue()
 	break;
     case UNCONNECTED:
 	if (doconnect() == -1) {
+	    kill_connection();
+	    return -1;
+	}
+	/* At this point, it is possible that we've gone away */
+	if (shell_active == 0) {
 	    kill_connection();
 	    return -1;
 	}
