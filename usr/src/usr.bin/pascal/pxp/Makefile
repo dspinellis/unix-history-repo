@@ -1,4 +1,4 @@
-SCCSID = "@(#)Makefile	1.11 (Berkeley) %G%"
+SCCSID = "@(#)Makefile	1.12 (Berkeley) %G%"
 DESTDIR=
 ED=	-ex
 AS=	-as
@@ -55,7 +55,7 @@ clean:
 	-rm -f *.o x* y.tab.c y.tab.h opcode.h
 
 install: a.out
-	cp a.out ${DESTDIR}/usr/ucb/pxp
+	install a.out ${DESTDIR}/usr/ucb/pxp
 #	cp a.outNOID /usr/ucb/pxp34
 
 print:
