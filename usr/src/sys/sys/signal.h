@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)signal.h	7.6 (Berkeley) %G%
+ *	@(#)signal.h	7.7 (Berkeley) %G%
  */
 
 #ifndef	NSIG
@@ -158,5 +158,16 @@ struct	sigcontext {
  * get signal action for process and signal; currently only for current process
  */
 #define SIGACTION(p, sig)	(u.u_signal[(sig)])
+
+/*
+ * Determine signal that should be delivered to process p, the current process,
+ * 0 if none.  If there is a pending stop signal with default action,
+ * the process stops in issig().
+ */
+#define	CURSIG(p) \
+	(((p)->p_sig == 0 || \
+	    ((p)->p_flag&STRC) == 0 && ((p)->p_sig &~ (p)->p_sigmask) == 0) ? \
+	    0 : issig())
+
 #endif
 #endif
