@@ -1,8 +1,49 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd2.c	3.15 83/12/02";
+static	char *sccsid = "@(#)cmd2.c	3.16 83/12/06";
 #endif
 
 #include "defs.h"
+
+char *help_shortcmd[] = {
+	"{1-9}   Select window {1-9} and return to conversation mode.",
+	"%{1-9}  Select window {1-9} but stay in command mode.",
+	"escape  Return to conversation mode",
+	"        and don't change the current window.",
+	"^^      Return to conversation mode",
+	"        and change to previously selected window.",
+	"c{1-9}  Close window {1-9}.",
+	"C       Close all windows.",
+	"S       Show all windows in sequence.",
+	"L       List all windows with their labels.",
+	"w       Open a new window.",
+	"m{1-9}  Move window {1-9}.",
+	"M{1-9}  Move window {1-9} to previous position.",
+	"v       List all variables.",
+	"{^Y^E}  Scroll {up, down} one line",
+	"{^U^D}  Scroll {up, down} half a window.",
+	"{^B^F}  Scroll {up, down} a full window.",
+	"{hjkl}  Move cursor {left, down, up, right}.",
+	"^L      Redraw screen.",
+	"^Z      Suspend.",
+	"q       Quit.",
+	0
+};
+char *help_longcmd[] = {
+	":%{1-9}               Select window {1-9}.",
+	":buffer lines         Set the default window buffer size.",
+	":close {1-9}          Close window.",
+	":cursor modes         Set the cursor modes.",
+	":escape C             Set escape character to C.",
+	":label {1-9} string   Label window {1-9}.",
+	":source filename      Execute commands in ``filename''.",
+	":terse [off]          Turn on (or off) terse mode.",
+	":window row col nrow ncol [nline label]",
+	"                      Open a window at ``row'', ``col''",
+	"                      of size ``nrow'', ``ncol'',",
+	"                      with ``nline'', and ``label''.",
+	":write {1-9} string   Write ``string'' to window {1-9}.",
+	0
+};
 
 struct ww *getwin();
 struct ww *openwin();
@@ -35,19 +76,30 @@ dohelp()
 	wwprintf(w, "^L      Redraw screen.\r\n");
 	wwprintf(w, "^Z      Suspend.\r\n");
 	wwprintf(w, ".       Quit.\r\n");
-	waitnl(w);
-	wwprintf(w, "Long commands:\r\n\n");
-	wwprintf(w, ":terse [off]            Turn on (or off) terse mode.\r\n");
-	wwprintf(w, ":refresh {1-9} [off]    Turn on (or off) refresh after every newline\r\n");
-	wwprintf(w, "                        for window {1-9}.\r\n");
-	wwprintf(w, ":label {1-9} string     Label window {1-9}.\r\n");
-	wwprintf(w, ":escape C               Set escape character to C.\r\n");
-	wwprintf(w, ":%%{1-9}                 Select window {1-9}.\r\n");
-	wwprintf(w, ":window r c nr nc       Open a window at row r column c\r\n");
-	wwprintf(w, "                        with nr rows and nc colomns\r\n");
-	wwprintf(w, ":source filename        Execute the commands in `filename'.\r\n");
-	waitnl(w);
+	help_print(w, "Short commands", help_shortcmd);
+	help_print(w, "Long commands", help_longcmd);
 	closewin(w);
+}
+
+help_print(w, name, list)
+register struct ww *w;
+char *name;
+char **list;
+{
+	register char **p;
+	char firsttime = 1;
+
+	for (p = list; *p;) {
+		(void) wwprintf(w, "%s:%s\n\n",
+			name, firsttime ? "" : " (continued)");
+		firsttime = 0;
+		while (*p && w->ww_cur.r < w->ww_w.b - 2) {
+			(void) wwputs(*p++, w);
+			(void) wwputc('\n', w);
+		}
+		waitnl(w);
+		(void) wwputs("\033E", w);	/* clear and home cursor */
+	}
 }
 
 #ifndef O_4_1A
