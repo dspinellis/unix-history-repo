@@ -2,7 +2,7 @@
 
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)commands.y 1.5 %G%";
+static char sccsid[] = "@(#)commands.y 1.6 %G%";
 
 /*
  * Yacc grammar for debugger commands.
@@ -293,18 +293,14 @@ command:
 }
 ;
 runcommand:
-    run shellmode arglist
+    run { arginit(); } arglist
 |
-    RUN
-{
-	fflush(stdout);
-}
+    run
 ;
 run:
-    RUN
+    RUN shellmode
 {
 	fflush(stdout);
-	arginit();
 }
 ;
 arglist:
