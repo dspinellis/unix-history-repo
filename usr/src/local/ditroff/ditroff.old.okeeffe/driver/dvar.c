@@ -1,4 +1,4 @@
-/*	dvar.c	1.4	83/08/12
+/*	dvar.c	1.5	83/08/23
  *
  * Varian driver for the new troff
  *
@@ -76,7 +76,7 @@ x ..\n	device control functions:
 #define  vmot(n)	vgoto(vpos + n)
 
 
-char	SccsId[]= "dvar.c	1.4	83/08/12";
+char	SccsId[]= "dvar.c	1.5	83/08/23";
 
 int	output	= 0;	/* do we do output at all? */
 int	nolist	= 0;	/* output page list if > 0 */
@@ -141,6 +141,7 @@ char *	buf0p = &buffer[0];	/* Zero origin in circular buffer  */
 char *	calloc();
 char *	nalloc();
 char *	allpanic();
+char *	operand();
 
 struct header {
 	short	magic;
@@ -186,54 +187,71 @@ char *argv[];
 {
 	FILE *fp;
 
-	while (argc > 1 && argv[1][0] == '-') {
-		switch (argv[1][1]) {
+	while (--argc > 0 && **++argv == '-') {
+		switch ((*argv)[1]) {
 		case 'F':
-			bitdir = argv[2];
-			argv++;
-			argc--;
+			bitdir = operand(&argc, &argv));
 			break;
 		case 'f':
-			fontdir = argv[2];
-			argv++;
-			argc--;
+			fontdir = operand(&argc, &argv));
 			break;
 		case 'o':
-			outlist(&argv[1][2]);
+			outlist(operand(&argc, &argv));
 			break;
 #ifdef DEBUGABLE
 		case 'd':
-			dbg = atoi(&argv[1][2]);
+			dbg = atoi(operand(&argc, &argv));
 			if (dbg == 0) dbg = 1;
 			break;
 #endif
 		case 's':
-			spage = atoi(&argv[1][2]);
+			spage = atoi(operand(&argc, &argv));
 			if (spage <= 0)
 				spage = 9999;
 			break;
 		}
-		argc--;
-		argv++;
 	}
 
 /* noversatec
 	ioctl(OUTFILE, VSETSTATE, pltmode);
 noversatec */
 
-	if (argc <= 1)
+	if (argc < 1)
 		conv(stdin);
 	else
-		while (--argc > 0) {
-			if (strcmp(*++argv, "-") == 0)
+		while (argc--) {
+			if (strcmp(*argv, "-") == 0)
 				fp = stdin;
 			else if ((fp = fopen(*argv, "r")) == NULL)
 				error(FATAL, "can't open %s", *argv);
 			conv(fp);
 			fclose(fp);
+			argv++;
 		}
 	exit(0);
 }
+
+
+/*----------------------------------------------------------------------------*
+ | Routine:	char  * operand (& argc,  & argv)
+ |
+ | Results:	returns address of the operand given with a command-line
+ |		option.  It uses either "-Xoperand" or "-X operand", whichever
+ |		is present.  The program is terminated if no option is present.
+ |
+ | Side Efct:	argc and argv are updated as necessary.
+ *----------------------------------------------------------------------------*/
+
+char *operand(argcp, argvp)
+int * argcp;
+char ***argvp;
+{
+	if ((**argvp)[2]) return(**argvp + 2); /* operand immediately follows */
+	if ((--*argcp) <= 0)			/* no operand */
+	    error (FATAL, "command-line option operand missing.\n");
+	return(*(++(*argvp)));			/* operand next word */
+}
+
 
 outlist(s)	/* process list of page numbers to be printed */
 char *s;
