@@ -1,0 +1,384 @@
+	What's here, what you've got,
+	What's working, what's not.
+
+	Rob Gingell -- April 1991
+
+The dynamic linking/shared libraries stuff is arrayed in the distribution
+as listed below.  It's pulled "as is" from our source tree and trimmed back
+a bit to remove the extraneous stuff.
+
+	./bin/		The command "ldd", which (when given a dynamically
+			linked program) lists what it depends upon.
+
+	./lang/ld/	The source for "ld".  I've gotten rid of things
+			like "source browser" support and the like, so
+			that it's basically our version of the BSD 4.x
+			"ld" + dynamic linking.  If you want to do more
+			cleaning up, you can probably simply delete the
+			file extra.c and incl.c along with the references
+			to their entry points in ld.c.  These things handle
+			"#ident" string support and dbx include files,
+			respectively.  The latter is rumored to have bugs
+			for extremely large files.
+
+	./lang/rtld/	The source of "ld.so" -- the dynamic loader.
+			The Makefile supplied assumes that there's
+			a libc_pic.a -- which is an archive of the -pic
+			objects that make up the C library.  This is
+			because ld.so's construction involves linking
+			against this archive in order to pick up -pic'ized
+			versions of system call stubs and one or two library
+			functions.  You can probably fake this out with
+			a few hand-written routines to get started.
+
+	./lib/		The crt0 files for SPARC and the M68K Suns.
+
+	./man/		"man" page sources for everything here as well
+			as auxiliary things.
+
+	./usr.lib/	Source for "libdl" (which isn't much.)
+
+There's also a copy of the tutorial pages from one of our manuals included
+with the donation letter.  We're not expecting you to be able to use the
+text of this literally, in part because it's not all that great and in part
+because there's a context for it.  It's basically a cut-and-paste job of
+the 1987 USENIX paper that originally described this, along with some fun
+facts about how to build .sa files and the like.
+
+While it's not expected that these will be immediately useful to you, they
+did compile and link and work (except for ld.so, which needs the C library
+routines described above), in the source tree I'm providing.  Note that this
+uses Sun's "make".
+
+Here's a summary listing of the known problems:
+
+	- _init/_fini support does not really exist;
+	- ld can write an output file even when there are errors (1050797);
+	- some really trivial .so's can cause the loader to bomb (1041946);
+	- there's an uninitialized variable (1050594).
+
+The ()-enclosed numbers reference Sun bug reports, the text of which is
+attached to this.  The dlopen(3) man page talks about the use of _init/_fini.
+It lies.  We did actually build the support at one point, but through a
+SNAFU it never got integrated.  However, we didn't go rectify it right away
+because as it turned out the infrastructure really needed to make this work
+just isn't here.  crt0's have to call an _init too, but they don't.  And
+the loader (or someone) would have to be taught how to construct one
+from (say) C++ static construction routines -- but it doesn't.  My advice,
+rip the reference out of the man page.  If or when the rest of the 
+infrastructure gets put into place, adding the code to do this is
+pretty trivial.
+
+Here are things that I would suggest be ideal things to "be improved"
+for inclusion in 4.4BSD, in priority order.
+
+	- Do what SVR4 (and I think OSF) do for program start-up.  In SVR4,
+	  rather than embed the bootstrap with every dynamically linked
+	  program through crt0 as SunOS 4.x does, extend the notion of
+	  "interpreter" to binary programs.  BSD supports the #! form of
+	  "interpreter" specification for scripts.  SVR4 took this and
+	  (in the context of a new object file format) allowed a binary
+	  to specify its "interpreter."  This way, the mechanics of invoking
+	  the loader could be eliminated from all the programs.
+
+	  Although we never had to, if we ever decided we wanted to change
+	  those mechanics it would have been a royal pain with the approach
+	  in SunOS.
+
+	  A way you might do this is by having dynamically linked executables
+	  have different magic numbers, and either have the kernel interpret
+	  the numbers as "use ld.so" or else provide a field that holds the
+	  specification of the interpreter.  (The latter is what's done with
+	  ELF files in SVR4.)
+
+	- Another improvement in SVR4 over what's in SunOS 4.x is the
+	  _DYNAMIC structure is specified as a list of attribute-value
+	  pairs.  This simplifies evolution of the interface a little
+	  bit.  
+
+	- The use of .sa files is, of course, a crock.  But there's no
+	  alternative if a constraint is "use the a.out format."  If you
+	  have an object file format that tells you some type and size
+	  information (as SVR4 does with ELF), you can get rid of .sa
+	  files.  I'll be glad to talk with you (or whomever) more about
+	  how to pursue this if you like.  This is the hardest of the changes
+	  listed here, which is why I've listed it last.  In terms of
+	  "customer happiness", it'd probably be the most important.
+
+ Bug Id:     1050797
+ Product:  sunos
+ Category:  compiler
+ Subcategory:  linker
+ Release summary: 4.1
+ Bug/Rfe:  bug
+ State:  dispatched
+ Synopsis:  linker generates final output file upon errors during link.
+ Keywords:  link, linker, a.out
+ Severity:  3
+ Priority:  3
+ Responsible Manager:  gingell
+ Description:
+Linker creates final output file even if there's linkage
+errors like an unresolved symbols. This can affect make
+by causing it to think that target is  up to date.
+
+To Reproduce:
+1) Create the following files.
+==================================================
+
+babyblues:135 !more
+more *.c
+::::::::::::::
+t1.c
+::::::::::::::
+main()
+{
+        printf("\nMain");
+
+        a();
+
+}
+::::::::::::::
+t2.c
+::::::::::::::
+b()
+{
+        printf("\nIn t2.c b()");
+}
+babyblues:136 
+
+babyblues:136 more Makefile
+t:      t1.o t2.o        
+        cc -o t t1.o t2.o
+
+t1.o:    
+        cc -c t1.c
+ 
+t2.o: 
+        cc -c t2.c
+
+2) Run make.
+==================================================
+
+
+babyblues:139 make
+cc -c t1.c
+cc -c t2.c
+cc -o t t1.o t2.o
+ld: Undefined symbol 
+   _a 
+*** Error code 2
+make: Fatal error: Command failed for target `t'
+babyblues:140 ls -l t
+-rw-rw-r--  1 yip         24576 Jan 29 12:46 t
+babyblues:141 make
+`t' is up to date.
+babyblues:142
+ Work around:
+Remove the target file.
+ Bug End:
+
+ Bug Id:     1041946
+ Product:  sunos
+ Category:  compiler
+ Subcategory:  linker
+ Release summary: 1.0, 4.0.3
+ Bug/Rfe:  bug
+ State:  dispatched
+ Synopsis:  Small shared library with static external variables segmentation faults
+ Keywords:  faults, segmentati, external, static, library, shared
+ Severity:  3
+ Priority:  3
+ Responsible Manager:  gingell
+ Description:
+It works if static is removed from: static int lucky_number;
+
+
+--------------------------- begin file "foo.c" -----------------------------
+
+static int lucky_number;
+
+int get_lucky_number()
+{
+  return(lucky_number);
+}
+
+void set_lucky_number(n)
+     int n;
+{
+  lucky_number = n;
+}
+
+----------------------------- end file "foo.c" ------------------------------
+--------------------------- begin file "foo.h" ------------------------------
+extern int get_lucky_number();
+extern void set_lucky_number();
+----------------------------- end file "foo.h" ------------------------------
+--------------------------- begin file "baz.c" ------------------------------
+#include "foo.h"
+
+char buff[128];
+
+main()
+{
+  int n;
+
+  printf("What is your lucky number? ");
+  gets(buff);
+  sscanf(buff, "%d", &n);
+  set_lucky_number(n);
+  printf("Feeling lucky yet ? ");	/* pause for multi process testing */
+  gets(buff);
+  printf("Your lucky number is %d\n", get_lucky_number());
+}
+----------------------------- end file "baz.c" ------------------------------
+--------------------------- begin file "Makefile" ---------------------------
+CFLAGS =
+
+V = 0.0
+
+all:	baz # static_baz
+
+foo.o:	foo.c
+	cc $(CFLAGS) -c -pic foo.c
+
+libfoo.so.$(V):	foo.o
+		ld -o $@ -assert pure-text foo.o
+
+baz.o:	baz.c
+	cc $(CFLAGS) -c baz.c
+
+baz:	baz.o libfoo.so.$(V) Makefile
+	cc -o $@ $(CFLAGS) -L. baz.o -lfoo
+
+static_baz:	baz.o foo.o
+		cc -o $@ $(CFLAGS) baz.o foo.o -Bstatic
+clean:
+	rm -f *.o baz *.so.* *~ core
+
+----------------------------- end file "Makefile" ---------------------------
+
+                                            - WADEJ 15:26 28-Jun-90 -
+wadej 45: make
+cc  -c baz.c
+cc  -c -pic foo.c
+ld -o libfoo.so.0.0 -assert pure-text foo.o
+cc -o baz  -L. baz.o -lfoo
+wadej 46: ls
+Makefile	baz.c		foo.c		foo.o
+baz		baz.o		foo.h		libfoo.so.0.0
+wadej 47: baz
+What is your lucky number? 3
+Segmentationfault (core dumped)
+wadej 48:
+The description field as copied from bug report 1044969 follows:
+When an initialized static variable is in a C source program, and the program is compiled PIC, the linker, ld, is generating an incorrect relocation if the static variable is initialized in the source code rather than programmatically. To illustrate the effect, compile the following file as pic code:
+
+static int static_k = 20;
+
+int get_static_k()
+{
+  return(static_k);
+}
+
+
+Now, run ld over the compiled .o file to create a .so as follows:
+	ld -o <file>.so <file>.o
+Now write a main program which uses dlopen() and dlsym() to dynamically
+link the file, look up the symbol _get_static_k, call the result as a
+function, and print the result. Here is some code which does this:
+
+#include <stdio.h>
+#include <dlfcn.h>
+
+typedef int (*int_fn)();
+
+main(argc,argv)
+     int argc;
+     char** argv;
+{
+
+  void* handle;
+  void* sym;
+  int ret;
+
+  if( --argc <= 0) {
+    fprintf(stderr,"dyltest:Need at least 2 arguments.\n");
+    exit(1);
+  }
+
+  handle = dlopen((++argv)[0],1);
+
+  while(*(++argv) != 0) {
+    sym = dlsym(handle,*argv);
+    
+    printf("Found symbol %s:\n",*argv);
+    printf("Executing as function...\n");
+    ret = (*(int_fn)sym)();
+    printf("Result:%d\n\n",ret);
+  }
+    
+  exit(0);
+}
+You will find that the return value is 32, not 20. Note that if you programmatically initialize the static variable, it works correctly.
+
+If you follow through the dynamic linking and invocation, you will find that the static linker ld has generated a SPARC_32 relocation in the dynamic relocation table for the static variable static_k. The code which accesses static_k in the function assumes what is there is a pointer to where the value is, rather than the value itself. When the relocation is done, a random address is put into static_k. This address consists of the base address of the dynamically linked file in memory and the bits for the actual value of static_k. When the code in the function goes to get the value of static_k, it gets, instead, whatever is at the bogus address. Result: a random value.
+
+This effect goes away if the value 20 is *assigned* to static_k first, then read.
+ Work around:
+From gingell@speed.Eng Fri Jul 13 11:33:51 1990
+
+The customer is seeing some sort of bug that causes simple .so's with
+only a few static variables to have a misconstructed GOT.  You can file
+a bug report, though it's highly unlikely that it will get fixed before
+"5.0", where it is already fixed.
+
+It's unlikely that most people building .so's will encounter this bug, because
+most .so's are more complex than this and aren't exposed to the problem.
+The workaround for this person would be to add a global variable that is
+unlikely to pollute any name space, and to reference that variable.  For
+instance:
+
+	int __foo_c_dummy;
+	static int lucky_number;
+
+	get_lucky_number()
+	{
+		return (__foo_c_dummy = lucky_number);
+	}
+
+	...
+ Bug End:
+
+ Bug Id:     1050594
+ Product:  sunos
+ Category:  compiler
+ Subcategory:  linker
+ Release summary: 4.1
+ Bug/Rfe:  bug
+ State:  dispatched
+ Synopsis:  Uninitialized struct slot causes intermittent failures
+ Keywords:  failures, intermitte, slot, struct, uninitiali
+ Severity:  3
+ Priority:  3
+ Responsible Manager:  gingell
+ Description:
+In the source file ld.c in subroutine getlibname(),
+around line 1120, mymalloc() used to build a struct ldlib
+node, but that node's ll_flag and ll_type fields are not
+initialized.  For small runs of ld, this doesn't matter,
+because the bits start out as zero, but if some other linker
+module does a "free", those bits might be garbage.
+
+Certain large runs of ld produce seemingly inexplicable error
+messages, often "can't open foo.sa" or some anomaly accessing
+an archive member at the wrong access.  This is often caused
+by these garbage flag values.
+ Work around:
+The work around has been to rearrange the command lines of affected link
+runs, until the problem seems to go away.
+ Suggested fix:
+The fix is simple.  Initialize the ll_flag and ll_type fields
+of the all newly-allocated struct ldlib nodes to 0.  (Or initialize
+the ll_type flag to the variable "kind"; I don't care.)
+ Bug End:
