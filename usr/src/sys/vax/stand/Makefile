@@ -1,101 +1,84 @@
-#	Makefile	4.13	81/12/01
+#	Makefile	4.14	82/07/15
 
-DESTDIR=
+DESTDIR=/
 CFLAGS=	-O -DSTANDALONE ${COPTS} 
-COPTS=	-DVAX780 -DVAX750 -DVAX7ZZ
+COPTS=	-DVAX780 -DVAX750 -DVAX730
 RELOC=	70000
 SRCS=	sys.c conf.c prf.c machdep.c \
-	autoconf.c hp.c ht.c mba.c mt.c rk.c tm.c ts.c up.c uba.c uda.c ut.c
-DRIVERS=autoconf.o hp.o ht.o mba.o mt.o rk.o tm.o ts.o up.o uba.o uda.o ut.o
+	autoconf.c hp.c ht.c idc.c mba.c mt.c rk.c tm.c ts.c \
+	up.c uba.c uda.c ut.c
+DRIVERS=autoconf.o hp.o ht.o idc.o mba.o mt.o rk.o tm.o ts.o \
+	up.o uba.o uda.o ut.o
 
-ALL=	/usr/lib/libsa.a srt0.o boot cat ls icheck mkfs restor \
-	tpicheck tpmkfs tprestor sboot
+ALL=	/usr/lib/libsa.a srt0.o boot tpboot copy tpcopy boothp boothk bootup
 
 all: ${ALL}
 
 /usr/lib/libsa.a: sys.o conf.o ${DRIVERS} prf.o machdep.o
-	ar crv ${DESTDIR}/usr/lib/libsa.a $?
-	ranlib ${DESTDIR}/usr/lib/libsa.a
+	ar crv /usr/lib/libsa.a $?
+	ranlib /usr/lib/libsa.a
 
-${DRIVERS}:
+${DRIVERS}: savax.h
 	cc -c -S ${COPTS} $*.c
 	/lib/c2 -i $*.s | as -o $*.o
 	rm $*.s
 
-boot:	boot.o relsrt0.o ${DESTDIR}/usr/lib/libsa.a
-	ld -N -T ${RELOC} relsrt0.o boot.o -lsa -lc
-	cp a.out b.out; strip b.out; dd if=b.out of=boot ibs=32 skip=1; rm b.out
+# startups
 
-sboot:	boot.c relsrt0.o ${DESTDIR}/usr/lib/libsa.a
-	cp boot.c sboot.c; chmod +w sboot.c
-	cc -c -O -DJUSTASK sboot.c
-	rm sboot.c
-	ld -N -T ${RELOC} relsrt0.o sboot.o -lsa -lc
-	cp a.out b.out; strip b.out; dd if=b.out of=sboot ibs=32 skip=1; rm b.out
-
-cat:	cat.o srt0.o ${DESTDIR}/usr/lib/libsa.a
-	ld -N srt0.o cat.o -lsa -lc
-	cp a.out b.out; strip b.out; dd if=b.out of=cat ibs=32 skip=1; rm b.out
-
-ls:	ls.o srt0.o ${DESTDIR}/usr/lib/libsa.a
-	ld -N srt0.o ls.o -lsa -lc
-	cp a.out b.out; strip b.out; dd if=b.out of=ls ibs=32 skip=1; rm b.out
-
-imptst: imptst.o srt0.o 
-	ld -N srt0.o imptst.o -lsa -lc
-	cp a.out b.out; strip b.out; dd if=b.out of=imptst ibs=32 skip=1; rm b.out
-
-mkfs.o:	/usr/src/cmd/mkfs.c
-	cc ${CFLAGS} -c /usr/src/cmd/mkfs.c
-
-mkfs:	mkfs.o srt0.o ${DESTDIR}/usr/lib/libsa.a
-	ld -N srt0.o mkfs.o -lsa -lc
-	cp a.out b.out; strip b.out; dd if=b.out of=mkfs ibs=32 skip=1; rm b.out
-
-restor.o: /usr/src/cmd/restor.c
-	cc ${CFLAGS} -c /usr/src/cmd/restor.c
-
-restor:	restor.o srt0.o ${DESTDIR}/usr/lib/libsa.a
-	ld -N srt0.o restor.o -lsa -lc
-	cp a.out b.out; strip b.out; dd if=b.out of=restor ibs=32 skip=1; rm b.out
-
-icheck.o: /usr/src/cmd/icheck.c
-	cc ${CFLAGS} -c /usr/src/cmd/icheck.c
-
-icheck: icheck.o srt0.o ${DESTDIR}/usr/lib/libsa.a
-	ld -N srt0.o icheck.o -lsa -lc
-	cp a.out b.out; strip b.out; dd if=b.out of=icheck ibs=32 skip=1; rm b.out
-
-tpmkfs:	mkfs.o tpsrt0.o ${DESTDIR}/usr/lib/libsa.a
-	ld -N tpsrt0.o mkfs.o -lsa -lc
-	cp a.out b.out; strip b.out; dd if=b.out of=tpmkfs ibs=32 skip=1; rm b.out
-
-tprestor: restor.o tpsrt0.o ${DESTDIR}/usr/lib/libsa.a
-	ld -N tpsrt0.o restor.o -lsa -lc
-	cp a.out b.out; strip b.out; dd if=b.out of=tprestor ibs=32 skip=1; rm b.out
-
-tpicheck: icheck.o tpsrt0.o ${DESTDIR}/usr/lib/libsa.a
-	ld -N tpsrt0.o icheck.o -lsa -lc
-	cp a.out b.out; strip b.out; dd if=b.out of=tpicheck ibs=32 skip=1; rm b.out
-
-srt0.o: srt0.c
+srt0.o: srt0.c ../h/mtpr.h ../h/cpu.h
 	cc -E -DRELOC=0x${RELOC} ${COPTS} srt0.c | as -o srt0.o
 
-tpsrt0.o: srt0.c
+tpsrt0.o: srt0.c ../h/mtpr.h ../h/cpu.h
 	cc -E -DRELOC=0x${RELOC} -DTP ${COPTS} srt0.c | as -o tpsrt0.o 
 
-relsrt0.o: srt0.c
+relsrt0.o: srt0.c ../h/mtpr.h ../h/cpu.h
 	cc -E -DRELOC=0x${RELOC} -DREL ${COPTS} srt0.c | as -o relsrt0.o
 
+# bootable from tape
+
+tpboot:	tpboot.o relsrt0.o /usr/lib/libsa.a
+	ld -N -T ${RELOC} relsrt0.o tpboot.o -lsa -lc
+	cp a.out b.out; strip b.out; dd if=b.out of=tpboot ibs=32 skip=1; rm b.out
+
+tpboot.o: boot.c ../h/param.h ../h/inode.h ../h/fs.h
+tpboot.o: saio.h ../h/reboot.h ../h/vm.h 
+	cp boot.c tpboot.c; chmod +w tpboot.c
+	cc -c -O -DJUSTASK tpboot.c
+	rm tpboot.c
+
+tpcopy:	copy.c tpsrt0.o /usr/lib/libsa.a
+	cp copy.c tpcopy.c; chmod +w tpcopy.c
+	cc -c -O tpcopy.c
+	rm tpcopy.c
+	ld -N tpsrt0.o tpcopy.o -lsa -lc
+	cp a.out b.out; strip b.out; dd if=b.out of=tpcopy ibs=32 skip=1; rm b.out
+
+# bootable from floppy or real disks
+
+boot:	boot.o relsrt0.o bootconf.o /usr/lib/libsa.a
+	ld -N -T ${RELOC} -o boot relsrt0.o boot.o bootconf.o -lsa -lc
+
+bootconf.o: conf.c ../h/param.h ../h/inode.h ../h/pte.h
+bootconf.o: ../h/fs.h saio.h ../h/mbareg.h
+	cp conf.c bootconf.c
+	cc -c ${COPTS} -DBOOT bootconf.c
+	rm bootconf.c
+
+copy:	copy.o srt0.o conf.o /usr/lib/libsa.a
+	ld -N -o copy srt0.o copy.o conf.o -lsa -lc
+
+# bootstrap from ether
+
+### not yet, rosin, not yet ###
+
 print:
-	@pr -f makefile
-	@/usr/ucb/ls -l | pr -f
-	@pr -f *.h *.c
+	@pr makefile
+	@ls -l | pr 
+	@pr *.h *.c
 
 clean:
 	rm -f *.o *.exe *.i
-	rm -f a.out b.out boot cat ls icheck mkfs restor rpboot \
-	    tpicheck tpmkfs tprestor sboot
+	rm -f a.out b.out boot cat tpboot tpcopy
 
 lint:
 	lint ${COPTS} -hxbn boot.c ${SRCS} | \
@@ -103,8 +86,57 @@ lint:
 	    grep -v 'struct/union .* never defined'
 
 install: ${ALL}
-	cp tprestor ${DESTDIR}/tp/restor
-	cp tpicheck ${DESTDIR}/tp/icheck
-	cp tpmkfs ${DESTDIR}/tp/mkfs
-	cp sboot ${DESTDIR}/tp/boot
-	cp boot icheck mkfs restor cat ls ../floppy
+	cp tpcopy ${DESTDIR}/tp/copy
+	cp tpboot ${DESTDIR}/tp/boot
+	cp boot copy ../floppy
+	cp bootup boothk boothp ${DESTDIR}/usr/mdec
+
+# beware...
+
+boothk.o: xxboot.c
+	cc -c -S ${COPTS} -DBOOTRK xxboot.c
+	/lib/c2 -i xxboot.s | as -o boothk.o
+	rm -f xxboot.s
+
+boothk: relsrt0.o boothk.o confrk.o
+	ld -N -T ${RELOC} relsrt0.o boothk.o confrk.o -lsa -lc
+	cp a.out b.out; strip b.out; dd if=b.out of=boothk ibs=32 skip=1; rm b.out
+
+boothp.o: xxboot.c
+	cc -c -S ${COPTS} -DBOOTHP xxboot.c
+	/lib/c2 -i xxboot.s | as -o boothp.o
+	rm -f xxboot.s
+
+boothp: relsrt0.o boothp.o confhp.o
+	ld -N -T ${RELOC} relsrt0.o boothp.o confhp.o -lsa -lc
+	cp a.out b.out; strip b.out; dd if=b.out of=boothp ibs=32 skip=1; rm b.out
+
+bootup.o: xxboot.c
+	cc -c -S ${COPTS} -DBOOTUP xxboot.c
+	/lib/c2 -i xxboot.s | as -o bootup.o
+	/lib/c2 -i xxboot.s | as -o upboot.o
+	rm -f xxboot.s
+
+bootup: relsrt0.o bootup.o confup.o
+	ld -N -T ${RELOC} relsrt0.o bootup.o confup.o -lsa -lc
+	cp a.out b.out; strip b.out; dd if=b.out of=bootup ibs=32 skip=1; rm b.out
+
+boothp.o: xxboot.c ../h/param.h ../h/inode.h ../h/pte.h ../h/reboot.h
+boothp.o: ../h/fs.h saio.h
+boothk.o: xxboot.c ../h/param.h ../h/inode.h ../h/pte.h ../h/reboot.h
+boothk.o: ../h/fs.h saio.h
+bootup.o: xxboot.c ../h/param.h ../h/inode.h ../h/pte.h ../h/reboot.h
+
+confrk.o: confrk.c ../h/param.h ../h/fs.h ../h/pte.h ../h/inode.h saio.h
+	$(CC) -c $(CFLAGS) confrk.c
+confhp.o: confhp.c ../h/param.h ../h/fs.h ../h/pte.h ../h/inode.h saio.h
+	$(CC) -c $(CFLAGS) confhp.c
+confup.o: confup.c ../h/param.h ../h/fs.h ../h/pte.h ../h/inode.h saio.h
+	$(CC) -c $(CFLAGS) confup.c
+
+confrk.c: confxx.c
+	sed -e 's/XX/hk/' -e 's/xx/rk/g' <confxx.c >confrk.c
+confhp.c: confxx.c
+	sed -e 's/XX/hp/' -e 's/xx/hp/g' <confxx.c >confhp.c
+confup.c: confxx.c
+	sed -e 's/XX/up/' -e 's/xx/up/g' <confxx.c >confup.c

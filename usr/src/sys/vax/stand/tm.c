@@ -1,4 +1,4 @@
-/*	tm.c	4.6	81/12/01	*/
+/*	tm.c	4.7	82/07/15	*/
 
 /*
  * TM11/TE??
@@ -8,6 +8,7 @@
 #include "../h/inode.h"
 #include "../h/pte.h"
 #include "../h/ubareg.h"
+#include "../h/fs.h"
 #include "saio.h"
 #include "savax.h"
 

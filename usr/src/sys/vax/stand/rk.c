@@ -1,4 +1,4 @@
-/*	rk.c	4.4	81/07/25	*/
+/*	rk.c	4.5	82/07/15	*/
 
 /*
  * RK611/RK07
@@ -9,6 +9,7 @@
 #include "../h/inode.h"
 #include "../h/pte.h"
 #include "../h/ubareg.h"
+#include "../h/fs.h"
 #include "saio.h"
 #include "savax.h"
 

@@ -1,4 +1,4 @@
-/*	ut.c	4.2	81/12/15	*/
+/*	ut.c	4.3	82/07/15	*/
 
 /*
  * SI Model 9700 -- emulates TU45 on the UNIBUS
@@ -8,6 +8,7 @@
 #include "../h/inode.h"
 #include "../h/pte.h"
 #include "../h/ubareg.h"
+#include "../h/fs.h"
 #include "saio.h"
 #include "savax.h"
 
@@ -96,7 +97,7 @@ retry:
 	if (errcnt)
 		printf(" recovered by retry\n");
 	return (func == READ ?
-		io->io_cc - ((-addr->utfc) & 0xffff) : -addr->utwc << 1);
+		io->i_cc - ((-addr->utfc) & 0xffff) : -addr->utwc << 1);
 }
 
 utquiet(addr)

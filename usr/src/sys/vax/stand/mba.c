@@ -1,9 +1,10 @@
-/*	mba.c	4.3	81/03/15	*/
+/*	mba.c	4.4	82/07/15	*/
 
 #include "../h/param.h"
 #include "../h/inode.h"
 #include "../h/pte.h"
 #include "../h/mbareg.h"
+#include "../h/fs.h"
 #include "../h/mtpr.h"
 #include "../h/vm.h"
 #include "saio.h"
