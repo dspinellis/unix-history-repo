@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_serv.c	7.40.1.1 (Berkeley) %G%
+ *	@(#)nfs_serv.c	7.41 (Berkeley) %G%
  */
 
 /*
@@ -36,9 +36,9 @@
 #include "mount.h"
 #include "mbuf.h"
 
-#include "../ufs/quota.h"
-#include "../ufs/inode.h"
-#include "../ufs/dir.h"
+#include "ufs/ufs/quota.h"
+#include "ufs/ufs/inode.h"
+#include "ufs/ufs/dir.h"
 
 #include "nfsv2.h"
 #include "nfs.h"
