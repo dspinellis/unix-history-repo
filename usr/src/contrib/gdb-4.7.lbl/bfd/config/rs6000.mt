@@ -1,0 +1,2 @@
+# Target:  IBM RS/6000 running AIX
+TDEFAULTS = -DDEFAULT_VECTOR=rs6000coff_vec
