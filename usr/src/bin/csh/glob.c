@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)glob.c	5.33 (Berkeley) %G%";
+static char sccsid[] = "@(#)glob.c	5.34 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -60,6 +60,7 @@ static Char	*globtilde __P((Char **, Char *));
 static Char	**libglob __P((Char **));
 static Char	**globexpand __P((Char **));
 static int	globbrace __P((Char *, Char *, Char ***));
+static void	expbrace __P((Char ***, Char ***, int));
 static void	pword __P((void));
 static void	psave __P((int));
 static void	backeval __P((Char *, bool));
@@ -121,7 +122,7 @@ globbrace(s, p, bl)
 		continue;
 	    if (*pe == EOS) {
 		blkfree(nv);
-		return (-LBRK);
+		return (-RBRK);
 	    }
 	}
 	else if (*pe == LBRC)
@@ -178,10 +179,79 @@ globbrace(s, p, bl)
 		}
 	    }
 	    break;
+	default:
+	    break;
 	}
     *vl = NULL;
     *bl = nv;
     return (len);
+}
+
+
+static void
+expbrace(nvp, elp, size)
+    Char ***nvp, ***elp;
+    int size;
+{
+    Char **vl, **el, **nv, *s;
+
+    vl = nv = *nvp;
+    if (elp != NULL)
+	el = *elp;
+    else
+	for (el = vl; *el; el++)
+	    continue;
+
+    for (s = *vl; s; s = *++vl) {
+	Char   *b;
+	Char  **vp, **bp;
+
+	/* leave {} untouched for find */
+	if (s[0] == '{' && (s[1] == '\0' || (s[1] == '}' && s[2] == '\0')))
+	    continue;
+	if (b = Strchr(s, '{')) {
+	    Char  **bl;
+	    int     len;
+
+	    if ((len = globbrace(s, b, &bl)) < 0) {
+		xfree((ptr_t) nv);
+		stderror(ERR_MISSING, -len);
+	    }
+	    xfree((ptr_t) s);
+	    if (len == 1) {
+		*vl-- = *bl;
+		xfree((ptr_t) bl);
+		continue;
+	    }
+	    len = blklen(bl);
+	    if (&el[len] >= &nv[size]) {
+		int     l, e;
+
+		l = &el[len] - &nv[size];
+		size += GLOBSPACE > l ? GLOBSPACE : l;
+		l = vl - nv;
+		e = el - nv;
+		nv = (Char **) xrealloc((ptr_t) nv, (size_t)
+					size * sizeof(Char *));
+		vl = nv + l;
+		el = nv + e;
+	    }
+	    vp = vl--;
+	    *vp = *bl;
+	    len--;
+	    for (bp = el; bp != vp; bp--)
+		bp[len] = *bp;
+	    el += len;
+	    vp++;
+	    for (bp = bl + 1; *bp; *vp++ = *bp++)
+		continue;
+	    xfree((ptr_t) bl);
+	}
+
+    }
+    if (elp != NULL)
+	*elp = el;
+    *nvp = nv;
 }
 
 static Char **
@@ -236,50 +306,8 @@ globexpand(v)
      */
     el = vl;
     vl = nv;
-    for (s = *vl; s; s = *++vl) {
-	Char   *b;
-	Char  **vp, **bp;
+    expbrace(&vl, &el, size);
 
-	if ((b = Strchr(s, LBRC)) != NULL && b[1] != '\0' && b[1] != RBRC) {
-	    Char  **bl;
-	    int     len;
-
-	    if ((len = globbrace(s, b, &bl)) < 0) {
-		blkfree(nv);
-		stderror(ERR_MISSING, -len);
-	    }
-	    xfree((ptr_t) s);
-	    if (len == 1) {
-		*vl-- = *bl;
-		xfree((ptr_t) bl);
-		continue;
-	    }
-	    len = blklen(bl);
-	    if (&el[len] >= &nv[size]) {
-		int     l, e;
-
-		l = &el[len] - &nv[size];
-		size += GLOBSPACE > l ? GLOBSPACE : l;
-		l = vl - nv;
-		e = el - nv;
-		nv = (Char **) xrealloc((ptr_t) nv, (size_t)
-					size * sizeof(Char *));
-		vl = nv + l;
-		el = nv + e;
-	    }
-	    vp = vl--;
-	    *vp = *bl;
-	    len--;
-	    for (bp = el; bp != vp; bp--)
-		bp[len] = *bp;
-	    el += len;
-	    vp++;
-	    for (bp = bl + 1; *bp; *vp++ = *bp++)
-		continue;
-	    xfree((ptr_t) bl);
-	}
-
-    }
 
     /*
      * Step 3: expand ~
@@ -321,6 +349,8 @@ handleone(str, vl, action)
     case G_IGNORE:
 	str = Strsave(strip(*vlp));
 	blkfree(vl);
+	break;
+    default:
 	break;
     }
     return (str);
@@ -509,11 +539,31 @@ tglob(t)
 	if (*p == '~' || *p == '=')
 	    gflag |= G_CSH;
 	else if (*p == '{' &&
-		 (p[1] == '\0' || p[1] == '}' && p[2] == '\0'))
+		 (p[1] == '\0' || (p[1] == '}' && p[2] == '\0')))
 	    continue;
-	while (c = *p++)
-	    if (isglob(c))
-		gflag |= (c == '{' || c == '`') ? G_CSH : G_GLOB;
+	while (c = *p++) {
+	    /*
+	     * eat everything inside the matching backquotes
+	     */
+	    if (c == '`') {
+		gflag |= G_CSH;
+		while (*p && *p != '`') 
+		    if (*p++ == '\\') {
+			if (*p)		/* Quoted chars */
+			    p++;
+			else
+			    break;
+		    }
+		if (*p)			/* The matching ` */
+		    p++;
+		else
+		    break;
+	    }
+	    else if (c == '{')
+		gflag |= G_CSH;
+	    else if (isglob(c))
+		gflag |= G_GLOB;
+	}
     }
 }
 
@@ -531,7 +581,9 @@ dobackp(cp, literal)
     Char   *ep, word[MAXPATHLEN];
 
     if (pargv) {
+#ifdef notdef
 	abort();
+#endif
 	blkfree(pargv);
     }
     pargsiz = GLOBSPACE;
@@ -727,12 +779,37 @@ pword()
     pnleft = MAXPATHLEN - 4;
 }
 
-int
+int 
 Gmatch(string, pattern)
+    Char *string, *pattern;
+{
+    Char **blk, **p;
+    int	   gpol = 1, gres = 0;
+
+    if (*pattern == '^') {
+	gpol = 0;
+	pattern++;
+    }
+
+    blk = (Char **) xmalloc(GLOBSPACE * sizeof(Char *));
+    blk[0] = Strsave(pattern);
+    blk[1] = NULL;
+
+    expbrace(&blk, NULL, GLOBSPACE);
+
+    for (p = blk; *p; p++)
+	gres |= pmatch(string, *p);
+
+    blkfree(blk);
+    return(gres == gpol);
+} 
+
+int
+pmatch(string, pattern)
     register Char *string, *pattern;
 {
     register Char stringc, patternc;
-    int     match;
+    int     match, negate_range;
     Char    rangec;
 
     for (;; ++string) {
@@ -754,24 +831,25 @@ Gmatch(string, pattern)
 	    return (0);
 	case '[':
 	    match = 0;
+	    if (negate_range = (*pattern == '^'))
+		pattern++;
 	    while (rangec = *pattern++) {
 		if (rangec == ']')
-		    if (match)
-			break;
-		    else
-			return (0);
+		    break;
 		if (match)
 		    continue;
-		if (rangec == '-' && *(pattern - 2) != '[' && *pattern != ']') {
+		if (rangec == '-' && *(pattern-2) != '[' && *pattern  != ']') {
 		    match = (stringc <= (*pattern & TRIM) &&
-			     (*(pattern - 2) & TRIM) <= stringc);
+			      (*(pattern-2) & TRIM) <= stringc);
 		    pattern++;
 		}
-		else
-		    match = (stringc == rangec);
+		else 
+		    match = (stringc == (rangec & TRIM));
 	    }
 	    if (rangec == 0)
 		stderror(ERR_NAME | ERR_MISSING, ']');
+	    if (match == negate_range)
+		return (0);
 	    break;
 	default:
 	    if ((patternc & TRIM) != stringc)
@@ -810,7 +888,7 @@ Gcat(s1, s2)
 #ifdef FILEC
 int
 sortscmp(a, b)
-    register void *a, *b;
+    register const ptr_t a, b;
 {
 #if defined(NLS) && !defined(NOSTRCOLL)
     char    buf[2048];
