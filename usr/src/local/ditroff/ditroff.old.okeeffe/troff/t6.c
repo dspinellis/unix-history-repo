@@ -1,4 +1,4 @@
-/*	t6.c	1.7	(Berkeley)	84/04/13	*/
+/*	t6.c	1.8	(Berkeley)	85/04/30	*/
 #include "tdef.h"
 extern
 #include "d.h"
@@ -610,6 +610,8 @@ int pos, font;
 	    if (fontlab[i] == font) {		/* list of fonts and see if */
 		register char *c;		/* it's already here to swap */
 
+		if (pos == i) return(i);	/* already there, forget it */
+
 #define ptrswap(x, y) { c = x; x = y; y = c; }
 #define fptrswap(x, y) { c = (char*) (x); x = y; y = (struct font *) c; }
 
@@ -618,6 +620,7 @@ int pos, font;
 		ptrswap(kerntab[pos], kerntab[i]);
 		ptrswap(fitab[pos], fitab[i]);
 		ptfpcmd(pos, shortname);
+		fontlab[i] = fontlab[pos];
 						/* tell driver about the swap */
 		shortname[0] = fontlab[pos] & BMASK;
 		shortname[1] = fontlab[pos] >> BYTE;
