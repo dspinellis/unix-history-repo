@@ -1,7 +1,8 @@
-/*	%H%	3.12	kern_clock.c	*/
+/*	%H%	3.13	kern_clock.c	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
+#include "../h/dk.h"
 #include "../h/callo.h"
 #include "../h/seg.h"
 #include "../h/dir.h"
