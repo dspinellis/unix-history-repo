@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)bugfiler.c	4.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)bugfiler.c	4.9 (Berkeley) %G%";
 #endif
 
 /*
@@ -403,19 +403,13 @@ chkindex(hp)
 	if (debug)
 		printf("chkindex(%s)\n", hp->h_info);
 	/*
-	 * Strip of leading "/", "usr/", "src/" or "sys/".
+	 * Strip of leading "/", "usr/", or "src/".
 	 */
 	cp1 = hp->h_info;
 	while (*cp1 == '/')
 		cp1++;
-	while (substr(cp1, "usr/") || substr(cp1, "src/") || substr(cp1, "sys/"))
+	while (substr(cp1, "usr/") || substr(cp1, "src/"))
 		cp1 += 4;
-	/* 
-	 * Don't toss "sys/" if nothing else is given for
-	 * a folder name, this is a valid folder as well.
-	 */
-	if (index(cp1, '/') == NULL && substr(cp1 - 4, "sys/"))
-		cp1 -= 4;
 	/*
 	 * Read the folder name and remove it from the index line.
 	 */
