@@ -1,4 +1,4 @@
-/*	kern_physio.c	4.37	82/12/17	*/
+/*	kern_physio.c	4.38	83/01/17	*/
 
 #include "../machine/pte.h"
 
@@ -213,7 +213,7 @@ nextiov:
 		uio->uio_resid -= c;
 		uio->uio_offset += c;
 		/* temp kludge for tape drives */
-		if (bp->b_resid || bp->b_flags&B_ERROR)
+		if (bp->b_resid || (bp->b_flags&B_ERROR))
 			break;
 	}
 	bp->b_flags &= ~(B_BUSY|B_WANTED|B_PHYS);
@@ -226,12 +226,20 @@ nextiov:
 	goto nextiov;
 }
 
+#define	MAXPHYS	(63 * 1024)
+
+/* network disk brain damage */
+#include "nd.h"
+#if NND > 0
+#define	MAXPHYS	(32 * 1024)
+#endif
+
 unsigned
 minphys(bp)
 	struct buf *bp;
 {
 
-	if (bp->b_bcount > 63 * 1024)
-		bp->b_bcount = 63 * 1024;
+	if (bp->b_bcount > MAXPHYS)
+		bp->b_bcount = MAXPHYS;
 }
 
