@@ -25,6 +25,7 @@ static	char	sccsid[] = "@(#)outbound.c	3.1  10/29/86";
 
 
 #include <stdio.h>
+#include <dos.h>
 #include "../general.h"
 
 #include "../telnet.ext"
@@ -39,6 +40,8 @@ static	char	sccsid[] = "@(#)outbound.c	3.1  10/29/86";
 #include "../keyboard/map3270.ext"
 
 #include "../system/globals.h"
+
+#include "video.h"
 
 extern void EmptyTerminal();
 
@@ -59,6 +62,7 @@ typedef struct {
 } ScreenBuffer;
 
 ScreenBuffer Screen[MAXNUMBERLINES*MAXNUMBERCOLUMNS];
+ScreenBuffer saveScreen[sizeof Screen/sizeof Screen[0]];
 
 /* Variables for transparent mode */
 
@@ -93,6 +97,117 @@ int	where;		/* cursor address */
 		from, where, ScreenLine(where), ScreenLineOffset(where));
 	OurExitString(stderr, foo, 1);
 	/* NOTREACHED */
+}
+
+/*
+ * Routines to deal with the screen.  These routines are lifted
+ * from mskermit.
+ */
+
+#define	CRT_STATUS	0x3da		/* Color card */
+#define	DISPLAY_ENABLE	0x08		/* Enable */
+#define	scrseg()	((crt_mode == 7)? 0xb000 : 0xb800)
+#define	scrwait()	if (crt_mode != 7) { \
+			    while ((inp(CRT_STATUS)&DISPLAY_ENABLE) == 0) { \
+				; \
+			    } \
+			}
+static int
+    		crt_mode,
+		crt_cols,
+		crt_lins,
+		curpage;
+
+/*
+ * Set the cursor position to where it belongs.
+ */
+
+static void
+setcursor(row, column, page)
+int
+    row,
+    column,
+    page;
+{
+    union REGS inregs, outregs;
+
+    inregs.h.dh = row;
+    inregs.h.dl = column;
+    inregs.h.bh = page;
+    inregs.h.ah = SetCursorPosition;
+
+    int86(BIOS_VIDEO, &inregs, &outregs);
+}
+/*
+ * Read the state of the video system.  Put the cursor somewhere
+ * reasonable.
+ */
+
+static void
+scrini()
+{
+    union REGS inregs, outregs;
+
+    inregs.h.ah = CurrentVideoState;
+    int86(BIOS_VIDEO, &inregs, &outregs);
+
+    crt_mode = outregs.h.al;
+    crt_cols = outregs.h.ah;
+    crt_lins = 25;
+    curpage = outregs.h.bh;
+
+    inregs.h.ah = ReadCursorPosition;
+    inregs.h.bh = curpage;
+
+    int86(BIOS_VIDEO, &inregs, &outregs);
+
+    if (outregs.h.dh > crt_lins) {
+	outregs.h.dh = crt_lins;
+    }
+    if (outregs.h.dl > crt_cols) {
+	outregs.h.dl = crt_cols;
+    }
+    inregs.h.dh = outregs.h.dh;
+    inregs.h.dl = outregs.h.dl;
+    inregs.h.bh = curpage;
+
+    inregs.h.ah = SetCursorPosition;
+    int86(BIOS_VIDEO, &inregs, &outregs);
+}
+
+
+static void
+scrwrite(source, length, offset)
+ScreenBuffer *source;
+int
+	length,
+	offset;
+{
+    struct SREGS segregs;
+
+    segread(&segregs);		/* read the current segment register */
+
+    scrwait();
+    movedata(segregs.ds, source, scrseg(), offset, length);
+}
+
+static void
+scrsave(buffer)
+ScreenBuffer *buffer;
+{
+    struct SREGS segregs;
+
+    segread(&segregs);		/* read the current segment register */
+
+    scrwait();
+    movedata(scrseg(), 0, segregs.ds, buffer, scrseg(), 0, crt_cols*crt_lins*2);
+}
+
+static void
+scrrest(buffer)
+ScreenBuffer *buffer;
+{
+    scrwrite(buffer, 2*crt_cols*crt_lins, 0);
 }
 
 static void
@@ -186,7 +301,7 @@ TryToSend()
     }
     terminalCursorAddress = CorrectTerminalCursor();
     scrwrite(Screen+Lowest, sizeof Screen[0]*(Highest-Lowest), Lowest);
-    VideoSetCursorPosition(ScreenLine(terminalCursorAddress),
+    setcursor(ScreenLine(terminalCursorAddress),
 		    ScreenLineOffset(terminalCursorAddress), 0);
     Lowest = HighestScreen()+1;
     Highest = LowestScreen()-1;
@@ -207,7 +322,7 @@ InitTerminal()
 	NumberLines = 24;	/* XXX */
 	NumberColumns = 80;	/* XXX */
 	scrini();
-	savescr();		/* Save the screen buffer away */
+	scrsave(saveScreen);	/* Save the screen buffer away */
 	ClearArray(Screen);
 	terminalCursorAddress = SetBufferAddress(0,0);
 	screenInitd = 1;
@@ -224,8 +339,8 @@ StopScreen(doNewLine)
 int doNewLine;
 {
     if (screenInitd && !screenStopped) {
-	scrrest();
-	VideoSetCursorPosition(NumberLines-1, NumberColumns-1, 0);
+	scrrest(saveScreen);
+	setcursor(NumberLines-1, NumberColumns-1, 0);
     }
 }
 
