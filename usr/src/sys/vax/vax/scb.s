@@ -1,4 +1,4 @@
-/*	scb.s	4.7	81/03/09	*/
+/*	scb.s	4.8	81/04/02	*/
 
 /*
  * System control block
@@ -10,7 +10,7 @@ _scb:	.globl	_scb
 
 #define	STRAY	.long	_Xstray+HALT
 #define	STRAY8	STRAY;STRAY;STRAY;STRAY;STRAY;STRAY;STRAY;STRAY
-#define	STRAY16	STRAY8;STRAY8
+#define	STRAY15	STRAY;STRAY;STRAY;STRAY;STRAY;STRAY;STRAY;STRAY8
 #define	KS(a)	.long	_X/**/a
 #define	IS(a)	.long	_X/**/a+INTSTK
 #define	STOP(a)	.long	_X/**/a+HALT
@@ -31,10 +31,10 @@ _scb:	.globl	_scb
 /* 0d0 */	STRAY;		STRAY;		STRAY;		STRAY;
 /* 0e0 */	STRAY;		STRAY;		STRAY;		STRAY;
 /* 0f0 */	IS(consdin);	IS(consdout);	IS(cnrint);	IS(cnxint);
-/* 100 */	STRAY16;		/* ipl 0x14, nexus 0-15 */
-/* 140 */	STRAY16;		/* ipl 0x15, nexus 0-15 */
-/* 180 */	STRAY16;		/* ipl 0x16, nexus 0-15 */
-/* 1c0 */	STRAY16;		/* ipl 0x17, nexus 0-15 */
+/* 100 */	IS(nexzvec); STRAY15;		/* ipl 0x14, nexus 0-15 */
+/* 140 */	IS(nexzvec); STRAY15;		/* ipl 0x15, nexus 0-15 */
+/* 180 */	IS(nexzvec); STRAY15;		/* ipl 0x16, nexus 0-15 */
+/* 1c0 */	IS(nexzvec); STRAY15;		/* ipl 0x17, nexus 0-15 */
 
 	.globl	_UNIvec
 _UNIvec:	.space	512		# 750 unibus intr vector
