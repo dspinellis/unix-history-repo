@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)predicates.c 1.1 %G%";
+static char sccsid[] = "@(#)predicates.c 1.2 %G%";
 
 /*
  * The basic tests on a symbol.
@@ -9,6 +9,7 @@ static char sccsid[] = "@(#)predicates.c 1.1 %G%";
 #include "defs.h"
 #include "sym.h"
 #include "symtab.h"
+#include "btypes.h"
 #include "classes.h"
 #include "sym.rep"
 
@@ -85,6 +86,9 @@ register SYM *t1, *t2;
 		  (t2->class == SCAL || t2->class == CONST)) {
 			return TRUE;
 		}
+		if (t1->type == t_char && t1->class == ARRAY && t2->class == ARRAY) {
+			return TRUE;
+		}
 	}
 /*
  * A kludge here for "nil".  Should be handled better.
@@ -117,7 +121,7 @@ SYM *f;
 		return(FALSE);
 	} else {
 		t = rtype(s->type);
-		if (t == NIL || t->class == FILET) {
+		if (t == NIL || t->class == FILET || t->class == SET) {
 			return(FALSE);
 		} else {
 			return(TRUE);

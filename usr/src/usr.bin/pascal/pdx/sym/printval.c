@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)printval.c 1.1 %G%";
+static char sccsid[] = "@(#)printval.c 1.2 %G%";
 
 /*
  * Print out the value at the top of the stack using the given type.
@@ -31,7 +31,7 @@ SYM *s;
 			if (t==t_char || (t->class==RANGE && t->type==t_char)) {
 				len = size(s);
 				sp -= len;
-				printf("'%s'", sp);
+				printf("'%.*s'", len, sp);
 				break;
 			} else {
 				printarray(s);
