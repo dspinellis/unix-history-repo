@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)lfs_inode.c	7.17 (Berkeley) %G%
+ *	@(#)lfs_inode.c	7.18 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -618,54 +618,6 @@ indirtrunc(ip, bn, lastbn, level, countp)
 	FREE(copy, M_TEMP);
 	*countp = blocksreleased;
 	return (allerror);
-}
-
-/*
- * Remove any inodes in the inode cache belonging to dev.
- *
- * There should not be any active ones, return error if any are found
- * (nb: this is a user error, not a system err).
- */
-int busyprt = 0;	/* patch to print out busy inodes */
-
-#ifdef QUOTA
-iflush(mp, iq)
-	struct mount *mp;
-	struct inode *iq;
-#else
-iflush(mp)
-	struct mount *mp;
-#endif
-{
-	register struct vnode *vp, *nvp;
-	register struct inode *ip;
-	int busy = 0;
-
-	for (vp = mp->m_mounth; vp; vp = nvp) {
-		nvp = vp->v_mountf;
-		ip = VTOI(vp);
-#ifdef QUOTA
-		if (ip == iq)
-			continue;
-#endif
-		if (vp->v_count) {
-			busy++;
-			if (!busyprt)
-				continue;
-			printf("%s %d on dev 0x%x count %d type %d\n",
-			    "iflush: busy inode ", ip->i_number, ip->i_dev,
-			    vp->v_count, vp->v_type);
-			continue;
-		}
-		/*
-		 * With v_count == 0, all we need to do is clear out the
-		 * vnode data structures and we are done.
-		 */
-		vgone(vp);
-	}
-	if (busy)
-		return (EBUSY);
-	return (0);
 }
 
 /*
