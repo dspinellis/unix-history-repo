@@ -11,7 +11,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)res_debug.c	5.22 (Berkeley) %G%";
+static char sccsid[] = "@(#)res_debug.c	5.23 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #if defined(lint) && !defined(DEBUG)
@@ -23,7 +23,7 @@ static char sccsid[] = "@(#)res_debug.c	5.22 (Berkeley) %G%";
 #include <stdio.h>
 #include <arpa/nameser.h>
 
-extern char *p_cdname(), *p_rr(), *p_type(), *p_class();
+extern char *p_cdname(), *p_rr(), *p_type(), *p_class(), *p_time();
 extern char *inet_ntoa();
 
 char *_res_opcodes[] = {
@@ -205,7 +205,7 @@ p_rr(cp, msg, file)
 	cp += sizeof(u_short);
 	fprintf(file,", class = %s", p_class(class = _getshort(cp)));
 	cp += sizeof(u_short);
-	fprintf(file,", ttl = %u", _getlong(cp));
+	fprintf(file,", ttl = %s", p_time(cp));
 	cp += sizeof(u_long);
 	fprintf(file,", dlen = %d\n", dlen = _getshort(cp));
 	cp += sizeof(u_short);
@@ -268,13 +268,13 @@ p_rr(cp, msg, file)
 		cp = p_cdname(cp, msg, file);
 		fprintf(file,"\n\tserial=%ld", _getlong(cp));
 		cp += sizeof(u_long);
-		fprintf(file,", refresh=%ld", _getlong(cp));
+		fprintf(file,", refresh=%s", p_time(cp));
 		cp += sizeof(u_long);
-		fprintf(file,", retry=%ld", _getlong(cp));
+		fprintf(file,", retry=%s", p_time(cp));
 		cp += sizeof(u_long);
-		fprintf(file,", expire=%ld", _getlong(cp));
+		fprintf(file,", expire=%s", p_time(cp));
 		cp += sizeof(u_long);
-		fprintf(file,", min=%ld\n", _getlong(cp));
+		fprintf(file,", min=%s\n", p_time(cp));
 		cp += sizeof(u_long);
 		break;
 
@@ -353,7 +353,7 @@ p_rr(cp, msg, file)
 #endif
 }
 
-static	char nbuf[20];
+static	char nbuf[40];
 
 /*
  * Return a string for the type
@@ -436,4 +436,48 @@ p_class(class)
 		(void)sprintf(nbuf, "%d", class);
 		return(nbuf);
 	}
+}
+
+/*
+ * Return a mnemonic for a time to live
+ */
+char
+*p_time(value)
+	u_long value;
+{
+	int secs, mins, hours;
+	register char *p;
+
+	secs = value % 60;
+	value /= 60;
+	mins = value % 60;
+	value /= 60;
+	hours = value % 24;
+	value /= 24;
+
+#define	PLURALIZE(x)	x, (x == 1) ? "" : "s"
+	p = nbuf;
+	if (value) {
+		(void)sprintf(p, "%d day%s", PLURALIZE(value));
+		while (*++p);
+	}
+	if (hours) {
+		if (p != nbuf)
+			*p++ = ' ';
+		(void)sprintf(p, "%d hour%s", PLURALIZE(hours));
+		while (*++p);
+	}
+	if (mins) {
+		if (p != nbuf)
+			*p++ = ' ';
+		(void)sprintf(p, "%d min%s", PLURALIZE(mins));
+		while (*++p);
+	}
+	if (secs) {
+		if (p != nbuf)
+			*p++ = ' ';
+		(void)sprintf(p, "%d sec%s", PLURALIZE(secs));
+		while (*++p);
+	}
+	return(nbuf);
 }
