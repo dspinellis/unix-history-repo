@@ -1,11 +1,11 @@
 #ifndef lint
-static	char *sccsid = "@(#)sync.c	2.3 83/12/17";
+static	char *sccsid = "@(#)sync.c	2.4 84/01/27";
 #endif
 
 #include "externs.h"
 
 static char sync_buf[BUFSIZE];
-static char *sync_bufp = sync_buf;
+static char *sync_bp = sync_buf;
 static char sync_lock[25];
 static char sync_file[25];
 static long sync_seek;
@@ -86,15 +86,15 @@ char isstr;
 int a, b, c, d;
 {
 	if (isstr)
-		(void) sprintf(sync_bufp, "%d %d %d %s\n",
+		(void) sprintf(sync_bp, "%d %d %d %s\n",
 			type, ship->file->index, isstr, a);
 	else
-		(void) sprintf(sync_bufp, "%d %d %d %d %d %d %d\n",
+		(void) sprintf(sync_bp, "%d %d %d %d %d %d %d\n",
 			type, ship->file->index, isstr, a, b, c, d);
-	while (*sync_bufp++)
+	while (*sync_bp++)
 		;
-	sync_bufp--;
-	if (sync_bufp >= &sync_buf[sizeof sync_buf])
+	sync_bp--;
+	if (sync_bp >= &sync_buf[sizeof sync_buf])
 		abort();
 	sync_update(type, ship, a, b, c, d);
 }
@@ -134,11 +134,11 @@ Sync()
 			(void) fscanf(sync_fp, "%d%d%d%d", &a, &b, &c, &d);
 		sync_update(type, SHIP(shipnum), a, b, c, d);
 	}
-	if (sync_bufp != sync_buf) {
+	if (sync_bp != sync_buf) {
 		(void) fseek(sync_fp, 0L, 2);
 		(void) fputs(sync_buf, sync_fp);
 		(void) fflush(sync_fp);
-		sync_bufp = sync_buf;
+		sync_bp = sync_buf;
 	}
 	sync_seek = ftell(sync_fp);
 	(void) unlink(sync_lock);
