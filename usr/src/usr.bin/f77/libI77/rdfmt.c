@@ -1,5 +1,5 @@
 /*
-char id_rdfmt[] = "@(#)rdfmt.c	1.4";
+char id_rdfmt[] = "@(#)rdfmt.c	1.5";
  *
  * formatted read routines
  */
@@ -63,7 +63,8 @@ rd_ned(p,ptr) char *ptr; struct syl *p;
 	case TR:
 	case X:
 		cursor += p->p1;
-		tab = (p->op==TR);
+		/* tab = (p->op==TR); This voids '..,tl6,1x,..' sequences */
+		tab = YES;
 		return(OK);
 	case T:
 		if(p->p1) cursor = p->p1 - recpos - 1;
@@ -85,6 +86,7 @@ rd_ned(p,ptr) char *ptr; struct syl *p;
 rd_mvcur()
 {	int n;
 	if(tab) return((*dotab)());
+	if (cursor < 0) return(errno=F_ERSEEK);
 	while(cursor--) if((n=(*getn)()) < 0) return(n);
 	return(cursor=0);
 }
