@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)events.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)events.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 static char rcsid[] = "$Header: events.c,v 1.5 84/12/26 10:39:26 linton Exp $";
@@ -456,7 +456,7 @@ Cmdlist actions;
     p->temporary = false;
     if (tracebpts) {
 	if (e == nil) {
-	    printf("new bp at 0x%x for event ??\n", addr, e->id);
+	    printf("new bp at 0x%x for event ??\n", addr);
 	} else {
 	    printf("new bp at 0x%x for event %d\n", addr, e->id);
 	}

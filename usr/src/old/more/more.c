@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)more.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)more.c	5.8 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -257,7 +257,7 @@ char *argv[];
 		    if(clreol) cleareol();
 		    printf("%s\n", fnames[fnum]);
 		    if(clreol) cleareol();
-		    printf("::::::::::::::\n", fnames[fnum]);
+		    printf("::::::::::::::\n",);
 		    if (left > Lpp - 4)
 			left = Lpp - 4;
 		}
