@@ -1,4 +1,4 @@
-/*	uipc_usrreq.c	1.1	82/10/28	*/
+/*	uipc_usrreq.c	1.2	82/11/03	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -16,11 +16,11 @@
  */
 
 /*ARGSUSED*/
-uipc_usrreq(so, req, m, addr)
+uipc_usrreq(so, req, m, nam, opt)
 	struct socket *so;
 	int req;
-	struct mbuf *m;
-	caddr_t addr;
+	struct mbuf *m, *nam;
+	struct socketopt *opt;
 {
 	struct unpcb *unp = sotounpcb(so);
 	register struct socket *so2;
@@ -35,7 +35,7 @@ uipc_usrreq(so, req, m, addr)
 			error = EINVAL;
 			break;
 		}
-		error = unp_attach(so, (struct sockaddr *)addr);
+		error = unp_attach(so);
 		break;
 
 	case PRU_DETACH:
@@ -43,7 +43,7 @@ uipc_usrreq(so, req, m, addr)
 		break;
 
 	case PRU_CONNECT:
-		error = unp_connect(so, (struct sockaddr_un *)addr);
+		error = unp_connect(so, nam);
 		break;
 
 	case PRU_DISCONNECT:
@@ -52,7 +52,7 @@ uipc_usrreq(so, req, m, addr)
 
 /* BEGIN QUESTIONABLE */
 	case PRU_ACCEPT: {
-		struct sockaddr_un *soun = (struct sockaddr_un *)addr;
+		struct sockaddr_un *soun = mtod(nam, struct sockaddr_un *);
 
 		if (soun) {
 			bzero((caddr_t)soun, sizeof (*soun));
@@ -103,12 +103,12 @@ uipc_usrreq(so, req, m, addr)
 		switch (so->so_type) {
 
 		case SOCK_DGRAM:
-			if (addr) {
+			if (nam) {
 				if (unp->unp_conn) {
 					error = EISCONN;
 					break;
 				}
-				error = unp_connect(so, addr);
+				error = unp_connect(so, nam);
 				if (error)
 					break;
 			} else {
@@ -119,8 +119,8 @@ uipc_usrreq(so, req, m, addr)
 			}
 			so2 = unp->unp_conn->unp_socket;
 			if (sbspace(&so2->so_rcv) > 0)		/* XXX */
-				sbappendaddr(so2, m, addr);	/* XXX */
-			if (addr)
+				sbappendaddr(so2, m, nam);	/* XXX */
+			if (nam)
 				unp_disconnect(so);
 			break;
 
