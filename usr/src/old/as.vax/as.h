@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)as.h	5.1 (Berkeley) %G%
+ *	@(#)as.h	5.2 (Berkeley) %G%
  */
 
 #define	reg	register
@@ -59,7 +59,7 @@
 #define	XFORW	0x20	/* Was forward-referenced when undefined */
 
 #define	ERR	(-1)
-#define	NBPW	32	/* Bits per word */
+#define	NBWD	32	/* Bits per word */
 
 #define	AMASK	017
 

@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)asjxxx.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)asjxxx.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include	<stdio.h>
@@ -176,7 +176,7 @@ jalign(xp, sp)
 		}
 		xp->e_xvalue = maxalign;
 	}
-	flushfield(NBPW/4);
+	flushfield(NBWD/4);
 	if (passno == 1) {
 		sp->s_tag = JXALIGN;
 		sp->s_jxfear = (1 << xp->e_xvalue) - 1;

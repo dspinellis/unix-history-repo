@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)asparse.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)asparse.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -140,7 +140,7 @@ yyparse()
 			}
 restlab:
 			shift;
-			flushfield(NBPW/4);
+			flushfield(NBWD/4);
 			if ((np->s_type&XTYPE)!=XUNDEF) {
 				if (  (np->s_type&XTYPE) != dotp->e_xtype 
 				   || np->s_value != dotp->e_xvalue
@@ -278,7 +278,7 @@ restlab:
 	}
 	if (seg_type == IDATA)
 		seg_number += NLOC;
-	flushfield(NBPW/4);
+	flushfield(NBWD/4);
 	dotp = &usedot[seg_number];
 	if (passno==2) {	/* go salt away in pass 2*/
 		txtfil = usefile[seg_number];
@@ -294,10 +294,10 @@ restlab:
 	 *	exprlist:  empty | exprlist outexpr
 	 *	outexpr:   <expr> | <expr> : <expr>
 	 */
-   case IBYTE:	curlen = NBPW/4; goto elist;
-   case IWORD:	curlen = NBPW/2; goto elist;
-   case IINT:	curlen = NBPW;   goto elist;
-   case ILONG:	curlen = NBPW;   goto elist;
+   case IBYTE:	curlen = NBWD/4; goto elist;
+   case IWORD:	curlen = NBWD/2; goto elist;
+   case IINT:	curlen = NBWD;   goto elist;
+   case ILONG:	curlen = NBWD;   goto elist;
 
    elist:
 	seg_type = val;
@@ -338,9 +338,9 @@ restlab:
 			if (bitoff)
 				yyerror("Illegal relocation in field");
 			switch(curlen){
-				case NBPW/4:	reloc_how = TYPB; break;
-				case NBPW/2:	reloc_how = TYPW; break;
-				case NBPW:	reloc_how = TYPL; break;
+				case NBWD/4:	reloc_how = TYPB; break;
+				case NBWD/2:	reloc_how = TYPW; break;
+				case NBWD:	reloc_how = TYPL; break;
 			}
 			if (passno == 1){
 				dotp->e_xvalue += ty_nbyte[reloc_how];
@@ -372,7 +372,7 @@ restlab:
 	}	/* there existed an expression at all */
 
 	flushfield(curlen);
-	if ( ( curlen == NBPW/4) && bitoff)
+	if ( ( curlen == NBWD/4) && bitoff)
 		dotp->e_xvalue ++;
 	break;
 	/*end of case IBYTE, IWORD, ILONG, IINT*/
@@ -384,7 +384,7 @@ restlab:
 		yyerror("Space size not absolute");
 	space_value = locxp->e_xvalue;
   ospace:
-	flushfield(NBPW/4);
+	flushfield(NBWD/4);
 	{
 		static char spacebuf[128];
 		while (space_value > sizeof(spacebuf)){
@@ -417,7 +417,7 @@ restlab:
 	expr(locxp, val);
 	if (passno == 2 && (locxp->e_xtype & XTYPE) != XABS)	/* tekmdp */
 		yyerror("Fill value not absolute");
-	flushfield(NBPW/4);
+	flushfield(NBWD/4);
 	dotp->e_xvalue += fill_rep * fill_size;
 	if (passno == 2) {
 		while(fill_rep-- > 0)
@@ -436,7 +436,7 @@ restlab:
 	 */
 	while (val == STRING){
 		int	mystrlen;
-		flushfield(NBPW/4);
+		flushfield(NBWD/4);
 		if (bitoff)
 			dotp->e_xvalue++;
 		stringp = (struct strdesc *)yylval;
