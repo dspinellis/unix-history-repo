@@ -1,4 +1,4 @@
-/*	if_uba.c	4.6	81/12/09	*/
+/*	if_uba.c	4.7	81/12/21	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -197,7 +197,6 @@ if_wubaput(ifu, m)
 	int x, cc;
 
 COUNT(IF_WUBAPUT);
-	ifu->ifu_xswapd = 0;
 	cp = ifu->ifu_w.ifrw_addr;
 	while (m) {
 		dp = mtod(m, char *);
