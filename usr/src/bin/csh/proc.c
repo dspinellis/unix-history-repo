@@ -5,12 +5,13 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)proc.c	5.11 (Berkeley) %G%";
+static char *sccsid = "@(#)proc.c	5.12 (Berkeley) %G%";
 #endif
 
 #include "sh.h"
 #include "sh.dir.h"
 #include "sh.proc.h"
+#include <string.h>
 #include <sys/wait.h>
 #include <sys/ioctl.h>
 
@@ -817,7 +818,6 @@ pkill(v, signum)
 	int pid, err = 0;
 	long omask;
 	char *cp;
-	extern char *sys_errlist[];
 
 	omask = sigmask(SIGCHLD);
 	if (setintr)
@@ -843,8 +843,7 @@ pkill(v, signum)
 				}
 			}
 			if (killpg(pp->p_jobid, signum) < 0) {
-				printf("%s: ", cp);
-				printf("%s\n", sys_errlist[errno]);
+				printf("%s: %s\n", cp, strerror(errno));
 				err++;
 			}
 			if (signum == SIGTERM || signum == SIGHUP)
@@ -854,8 +853,7 @@ pkill(v, signum)
 		else {
 			pid = atoi(cp);
 			if (kill(pid, signum) < 0) {
-				printf("%d: ", pid);
-				printf("%s\n", sys_errlist[errno]);
+				printf("%d: %s\n", pid, strerror(errno));
 				err++;
 				goto cont;
 			}
@@ -1066,10 +1064,10 @@ pfork(t, wanttty)
 			(void) signal(SIGINT, SIG_IGN);
 			(void) signal(SIGQUIT, SIG_IGN);
 		}
-		if (wanttty > 0)
-			(void) ioctl(FSHTTY, TIOCSPGRP, (char *)&pgrp);
 		if (wanttty >= 0 && tpgrp >= 0)
 			(void) setpgrp(0, pgrp);
+		if (wanttty > 0)
+			(void) ioctl(FSHTTY, TIOCSPGRP, (char *)&pgrp);
 		if (tpgrp > 0)
 			tpgrp = 0;		/* gave tty away */
 		/*
