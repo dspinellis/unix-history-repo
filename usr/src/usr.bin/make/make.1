@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)make.1	5.4 (Berkeley) %G%
+.\"     @(#)make.1	5.5 (Berkeley) %G%
 .\"
 .Dd 
 .Dt MAKE 1
@@ -24,8 +24,12 @@
 .Sh DESCRIPTION
 .Nm Make
 is a program designed to simplify the maintenance of other programs.
-Its input is a ``makefile'' which specifies files that programs and
-other files are dependent upon.
+Its input is a list of specifications as to the files upon which programs
+and other files depend.
+If the file ``makefile'' exists, it is read for this list of specifications.
+If it does not exist, the file ``Makefile'' is read.
+If the file ``.depend'' exists, it is read (see
+.Xr mkdep 1) .
 .Pp
 This manual page is intended as a reference document only.
 For a more thorough description of
@@ -82,9 +86,7 @@ makefiles.
 .Tp Cx Fl f
 .Ar makefile
 .Cx
-Specify a makefile to read.
-If no makefile is specified, the files ``makefile'' and ``Makefile''
-are searched for, in that order.
+Specify a makefile to read instead of the default ``makefile'' and ``Makefile''.
 If
 .Ar makefile
 is ``\-'', standard input is read.
@@ -689,20 +691,19 @@ and
 .Sh FILES
 .Dw /usr/share/mk
 .Di L
-.Dp Pa /usr/share/mk
+.Dp /usr/share/mk
 system makefile directory
-.Dp Pa sys.mk
-include system makefile
-.Dp Pa bsd.mk
-BSD source tree template
-.Dp Pa subdir.mk
-BSD source tree subdirectory template
+.Dp .depend
+list of dependencies
+.Dp Makefile
+list of dependencies
+.Dp makefile
+list of dependencies
+.Dp sys.mk
+system makefile
 .Dp
 .Sh SEE ALSO
+.Xr mkdep 1
 .Sh HISTORY
 .Nm Make
 appeared in Version 7 AT&T UNIX.
-The
-.Nm make
-this man page describes is derived from code contributed by Adam
-de Boor.
