@@ -1,4 +1,4 @@
-#	@(#)Makefile	1.15 (Berkeley) %G%
+#	@(#)Makefile	1.16 (Berkeley) %G%
 
 PROG=	ccom
 MIP=	${.CURDIR}/../mip
@@ -9,9 +9,6 @@ OBJS+=	cgram.o rodata.o
 NOMAN=	noman
 .PATH:	${MIP}
 CLEANFILES+=cgram.c gram.in rodata.c pcctokens pcclocal.h
-
-cgram.o: cgram.c
-	${CC} ${CFLAGS} -c ${.ALLSRC}
 
 rodata.c cgram.c: ${MIP}/cgram.y pcctokens
 	cat pcctokens ${MIP}/cgram.y > gram.in
