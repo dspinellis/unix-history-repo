@@ -1,4 +1,4 @@
-/*	if_vv.c	4.20	83/05/27	*/
+/*	if_vv.c	4.21	83/06/12	*/
 
 #include "vv.h"
 
@@ -21,6 +21,7 @@
 #include "../h/errno.h"
 #include "../h/time.h"
 #include "../h/kernel.h"
+#include "../h/ioctl.h"
 
 #include "../net/if.h"
 #include "../net/netisr.h"
@@ -55,8 +56,7 @@
 #define	VVMTU	(1024+512)
 #define VVMRU	(1024+512+16)	/* space for trailer */
 
-int vv_dotrailer = 0,		/* 1 => do trailer protocol */
-    vv_tracehdr = 0,		/* 1 => trace headers (slowly!!) */
+int vv_tracehdr = 0,		/* 1 => trace headers (slowly!!) */
     vv_tracetimeout = 1;	/* 1 => trace input error-rate limiting */
     vv_logreaderrors = 0;	/* 1 => log all read errors */
 
@@ -82,7 +82,7 @@ u_short vvstd[] = { 0 };
 struct	uba_driver vvdriver =
 	{ vvprobe, 0, vvattach, 0, vvstd, "vv", vvinfo };
 #define	VVUNIT(x)	minor(x)
-int	vvinit(),vvoutput(),vvreset();
+int	vvinit(),vvioctl(),vvoutput(),vvreset();
 
 /*
  * Software status of each interface.
@@ -164,21 +164,12 @@ vvattach(ui)
 	struct uba_device *ui;
 {
 	register struct vv_softc *vs = &vv_softc[ui->ui_unit];
-	register struct sockaddr_in *sin;
 
 	vs->vs_if.if_unit = ui->ui_unit;
 	vs->vs_if.if_name = "vv";
 	vs->vs_if.if_mtu = VVMTU;
-	vs->vs_if.if_net = ui->ui_flags;
-	vs->vs_if.if_host[0] = 0;	/* this will be reset in vvinit() */
-	sin = (struct sockaddr_in *)&vs->vs_if.if_addr;
-	sin->sin_family = AF_INET;
-	sin->sin_addr = if_makeaddr(vs->vs_if.if_net, vs->vs_if.if_host[0]);
-	sin = (struct sockaddr_in *)&vs->vs_if.if_broadaddr;
-	sin->sin_family = AF_INET;
-	sin->sin_addr = if_makeaddr(vs->vs_if.if_net, VV_BROADCAST);
-	vs->vs_if.if_flags = IFF_BROADCAST;
 	vs->vs_if.if_init = vvinit;
+	vs->vs_if.if_ioctl = vvioctl;
 	vs->vs_if.if_output = vvoutput;
 	vs->vs_if.if_reset = vvreset;
 	vs->vs_ifuba.ifu_flags = UBA_CANTWAIT | UBA_NEEDBDP | UBA_NEED16;
@@ -220,6 +211,8 @@ vvinit(unit)
 	int ubainfo, s;
 	int vvtimeout();
 
+	if (vs->vs_if.if_net == 0)
+		return;
 	addr = (struct vvreg *)ui->ui_addr;
 	if (if_ubainit(&vs->vs_ifuba, ui->ui_ubanum,
 	    sizeof (struct vv_header), (int)btoc(VVMTU)) == 0) { 
@@ -237,6 +230,9 @@ vvinit(unit)
 	sin = (struct sockaddr_in *)&vs->vs_if.if_addr;
 	sin->sin_family = AF_INET;
 	sin->sin_addr = if_makeaddr(vs->vs_if.if_net, vs->vs_if.if_host[0]);
+	sin = (struct sockaddr_in *)&vs->vs_if.if_broadaddr;
+	sin->sin_family = AF_INET;
+	sin->sin_addr = if_makeaddr(vs->vs_if.if_net, VV_BROADCAST);
 
 	/*
 	 * Reset the interface, and join the ring
@@ -254,13 +250,13 @@ vvinit(unit)
 	 */
 	s = splimp();
 	ubainfo = vs->vs_ifuba.ifu_r.ifrw_info;
-	addr->vviba = (u_short) ubainfo;
-	addr->vviea = (u_short) (ubainfo >> 16);
+	addr->vviba = (u_short)ubainfo;
+	addr->vviea = (u_short)(ubainfo >> 16);
 	addr->vviwc = -(sizeof (struct vv_header) + VVMTU) >> 1;
 	addr->vvicsr = VV_IEN | VV_CONF | VV_DEN | VV_ENB;
 	vs->vs_iactive = ACTIVE;
 	vs->vs_oactive = 1;
-	vs->vs_if.if_flags |= IFF_UP;
+	vs->vs_if.if_flags |= IFF_UP | IFF_RUNNING;
 	vvxint(unit);
 	splx(s);
 	if_rtinit(&vs->vs_if, RTF_UP);
@@ -270,6 +266,7 @@ vvinit(unit)
  * vvidentify() - return our host address
  */
 vvidentify(unit)
+	int unit;
 {
 	register struct vv_softc *vs = &vv_softc[unit];
 	register struct uba_device *ui = vvinfo[unit];
@@ -285,7 +282,7 @@ vvidentify(unit)
 	attempts = 0;		/* total attempts, including bad msg type */
 	m = m_get(M_DONTWAIT, MT_HEADER);
 	if (m == NULL)
-		panic("vvinit: can't get mbuf");
+		return (0);
 	m->m_next = 0;
 	m->m_off = MMINOFF;
 	m->m_len = sizeof(struct vv_header);
@@ -659,8 +656,9 @@ vvrint(unit)
 	if (len > VVMRU || len <= 0)
 		goto dropit;
 #define	vvdataaddr(vv, off, type)	((type)(((caddr_t)((vv)+1)+(off))))
-	if (vv_dotrailer && vv->vh_type >= RING_IPTrailer &&
-	     vv->vh_type < RING_IPTrailer+RING_IPNTrailer){
+	if ((ifp->if_flags & IFF_NOTRAILERS) == 0)
+	if (vv->vh_type >= RING_IPTrailer &&
+	     vv->vh_type < RING_IPTrailer+RING_IPNTrailer) {
 		off = (vv->vh_type - RING_IPTrailer) * 512;
 		if (off > VVMTU)
 			goto dropit;
@@ -860,6 +858,35 @@ qfull:
 bad:
 	m_freem(m0);
 	return(error);
+}
+
+/*
+ * Process an ioctl request.
+ */
+vvioctl(ifp, cmd, data)
+	register struct ifnet *ifp;
+	int cmd;
+	caddr_t data;
+{
+	struct ifreq *ifr = (struct ifreq *)data;
+	int s = splimp(), error = 0;
+
+	switch (cmd) {
+
+	case SIOCSIFADDR:
+		/* too difficult to change addr while running */
+		if ((ifp->if_flags & IFF_RUNNING) == 0) {
+			ifp->if_net = in_netof(ifr->ifr_addr.sin_addr);
+			vvinit(ifp->if_unit);
+		} else
+			error = EINVAL;
+		break;
+
+	default:
+		error = EINVAL;
+	}
+	splx(s);
+	return (error);
 }
 
 /*
