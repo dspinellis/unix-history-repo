@@ -1,0 +1,117 @@
+# An awk script for printing a pretty report of UUCP activities from the
+# UUCP SYSLOG - Erik E. Fair	October 2, 1984
+#
+# v7 UUCP
+$4 == "received" {
+	sysname[$2] = $2;
+	by_rec[$2] += $6;
+	sec_rec[$2] += $8;
+	sys_xf[$2] ++;
+}
+#
+# 4.2 BSD UUCP
+$5 == "received" {
+	sysname[$2] = $2;
+	by_rec[$2] += $7;
+	sec_rec[$2] += $9;
+	sys_xf[$2] ++;
+}
+#
+# System V UUCP
+$6 == "<-" {
+	$1 = substr($1, 1, (index($1, "!") - 1));
+	sysname[$1] = $1;
+	by_rec[$1] += $7;
+	sec_rec[$1] += $9;
+	sys_xf[$1] ++;
+}
+#
+# v7 UUCP
+$4 == "sent" {
+	sysname[$2] = $2;
+	by_xmt[$2] += $6;
+	sec_xmt[$2] += $8;
+	sys_xf[$2] ++;
+}
+#
+# 4.2 BSD UUCP
+$5 == "sent" {
+	sysname[$2] = $2;
+	by_xmt[$2] += $7;
+	sec_xmt[$2] += $9;
+	sys_xf[$2] ++;
+}
+#
+# System V UUCP
+$6 == "->" {
+	$1 = substr($1, 1, (index($1, "!") - 1));
+	sysname[$1] = $1;
+	by_xmt[$1] += $7;
+	sec_xmt[$1] += $9;
+	sys_xf[$1] ++;
+}
+END {
+#
+# print a report header
+	printf("System     Xfers  Bytes rec  Bytes xmt   Connect  Avg Xf  Avg rec  Avg xmt\n")
+	for(i in sysname) {
+#
+# sort report by most connect time (selection sort)
+		first = 0;
+		for(j in sysname) {
+			if (sys_xf[j] > 0) {
+				tmp1 = sec_xmt[j];
+				tmp2 = sec_rec[j];
+# Stupid AWK bug - needs a simple expression
+				time = (tmp1 + tmp2);
+				if (time > first) {
+					first = time;
+					sys = sysname[j];
+				}
+			}
+		}
+#
+# 4.2 BSD awk seems to have problems. This check should not be necessary.
+# Oddly enough, this problem also shows up in System V. WHY???
+		if (sys_xf[sys] != 0) {
+#
+# time for some bean counting
+			tmp1       = sec_xmt[sys];
+			tmp2       = sec_rec[sys];
+# Stupid AWK bug - needs a simple expression
+			time       = (tmp1 + tmp2);
+			hours      = time / 3600;
+			sec        = time % 3600;
+			min        = sec / 60;
+			sec        %= 60;
+			tot_xf     += sys_xf[sys];
+			tot_by_rec += by_rec[sys];
+			tot_by_xmt += by_xmt[sys];
+			tot_time   += time;
+#
+# protect myself against mathematical crime (divide by zero)
+			if (sec_rec[sys] == 0)
+				sec_rec[sys] = 1;
+			if (sec_xmt[sys] == 0)
+				sec_xmt[sys] = 1;
+#
+# print a pretty system report (god what an awful printf format...)
+			printf("%-8s%8d%11d%11d%4d:%.2d:%.2d%8d%9d%9d\n", \
+sysname[sys], sys_xf[sys], by_rec[sys], by_xmt[sys], hours, min, sec, \
+((by_rec[sys] + by_xmt[sys]) / sys_xf[sys]), \
+(by_rec[sys]  / sec_rec[sys]), \
+(by_xmt[sys]  / sec_xmt[sys]));
+#
+# make certain we will not see this system again... (selection sort)
+			sys_xf[sys] = 0;
+		}
+	}
+#
+# calculate time split for total time (and print totals [*shudder*])
+	hours = tot_time / 3600;
+	sec = tot_time % 3600;
+	min = sec / 60;
+	sec %= 60;
+	printf("\n%-8s%8d%11d%11d%4d:%.2d:%.2d\n", \
+	"TOTALS", tot_xf, tot_by_rec, tot_by_xmt, hours, min, sec);
+}
