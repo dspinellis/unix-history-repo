@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)resume.c 1.7 %G%";
+static char sccsid[] = "@(#)resume.c 1.8 %G%";
 
 /*
  * resume execution, first setting appropriate registers
@@ -19,11 +19,14 @@ static char sccsid[] = "@(#)resume.c 1.7 %G%";
 #       include "pxinfo.h"
 #   endif
 
+#ifdef vax
 LOCAL ADDRESS fetchpc();
+#endif
+
+LOCAL ADDRESS *pcaddr;
 
 /*
- * If we hit a breakpoint, px's pc points at a halt instruction,
- * this must be avoided when restarting.
+ * Resume execution, set (get) pcode location counter before (after) resuming.
  */
 
 resume()
@@ -39,17 +42,24 @@ resume()
 	}
 	pcont(p);
 #       if (isvaxpx)
-	    if (p->status == STOPPED) {
-		if (isbperr()) {
-		    pc = p->reg[11];
-		} else {
-		    dread(&pcframe, PCADDRP, sizeof(pcframe));
-		    pcframe++;
-		    pc = fetchpc(pcframe);
+#           ifdef sun
+		if (pcaddr == 0) {
+		    dread(&pcaddr, PCADDRP, sizeof(pcaddr));
 		}
-		pc -= (sizeof(char) + ENDOFF);
-	    }
-#       else
+		dread(&pc, pcaddr, sizeof(pc));
+#           else ifdef vax
+		if (p->status == STOPPED) {
+		    if (isbperr()) {
+			pc = p->reg[11];
+		    } else {
+			dread(&pcframe, PCADDRP, sizeof(pcframe));
+			pcframe++;
+			pc = fetchpc(pcframe);
+		    }
+		    pc -= (sizeof(char) + ENDOFF);
+		}
+#           endif
+#       else /* compiled code */
 	    pc = process->pc;
 #       endif
 	if (option('e')) {
@@ -65,13 +75,23 @@ resume()
 	if (option('r') && p->signo != 0) {
 	    choose();
 	}
-	if (isbperr()) {
-	    p->pc++;
-	}
+
+    /*
+     * If px implements a breakpoint by executing a halt instruction
+     * (which is true on the VAX), the real pc must be incremented to
+     * skip over it.  On other machines (such as SUNs), px sends itself
+     * a signal and no incrementing is needed.
+     */
+#       ifdef vax
+	    if (isbperr()) {
+		p->pc++;
+	    }
+#       endif
 #   endif
 }
 
 # if (isvaxpx)
+# ifdef vax
 
 /*
  * Find the location in the Pascal object where execution was suspended.
@@ -128,6 +148,8 @@ ADDRESS *framep;
     }
     return(r);
 }
+
+# endif
 
 /*
  * Under the -r option, we offer the opportunity to just get
