@@ -16,7 +16,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)getpwent.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)getpwent.c	5.13 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -179,11 +179,13 @@ scanpw()
 {
 	register char *cp;
 	long atol();
+	char *bp;
 	char *fgets(), *strsep(), *index();
 
 	for (;;) {
 		if (!(fgets(line, sizeof(line), _pw_fp)))
 			return(0);
+		bp = line;
 		/* skip lines that are too big */
 		if (!index(line, '\n')) {
 			int ch;
@@ -192,26 +194,26 @@ scanpw()
 				;
 			continue;
 		}
-		_pw_passwd.pw_name = strsep(line, ":\n");
-		_pw_passwd.pw_passwd = strsep((char *)NULL, ":\n");
-		if (!(cp = strsep((char *)NULL, ":\n")))
+		_pw_passwd.pw_name = strsep(&bp, ":\n");
+		_pw_passwd.pw_passwd = strsep(&bp, ":\n");
+		if (!(cp = strsep(&bp, ":\n")))
 			continue;
 		_pw_passwd.pw_uid = atoi(cp);
-		if (!(cp = strsep((char *)NULL, ":\n")))
+		if (!(cp = strsep(&bp, ":\n")))
 			continue;
 		_pw_passwd.pw_gid = atoi(cp);
 		if (_pw_master) {
-			_pw_passwd.pw_class = strsep((char *)NULL, ":\n");
-			if (!(cp = strsep((char *)NULL, ":\n")))
+			_pw_passwd.pw_class = strsep(&bp, ":\n");
+			if (!(cp = strsep(&bp, ":\n")))
 				continue;
 			_pw_passwd.pw_change = atol(cp);
-			if (!(cp = strsep((char *)NULL, ":\n")))
+			if (!(cp = strsep(&bp, ":\n")))
 				continue;
 			_pw_passwd.pw_expire = atol(cp);
 		}
-		_pw_passwd.pw_gecos = strsep((char *)NULL, ":\n");
-		_pw_passwd.pw_dir = strsep((char *)NULL, ":\n");
-		_pw_passwd.pw_shell = strsep((char *)NULL, ":\n");
+		_pw_passwd.pw_gecos = strsep(&bp, ":\n");
+		_pw_passwd.pw_dir = strsep(&bp, ":\n");
+		_pw_passwd.pw_shell = strsep(&bp, ":\n");
 		if (!_pw_passwd.pw_shell)
 			continue;
 		return(1);
