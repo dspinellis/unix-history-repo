@@ -1,55 +1,24 @@
-# @(#)Makefile	1.4 %G%
+# @(#)Makefile	1.5 %G%
 
 CFLAGS=		-O
 OBJS=		battlestar.o com1.o com2.o com3.o com4.o com5.o com6.o com7.o \
 		init.o cypher.o getcom.o parse.o room.o save.o fly.o misc.o \
-		globals.o \
-		wlist.o dayfile.o nightfile.o dayobjs.o nightobjs.o
+		globals.o dayfile.o nightfile.o dayobjs.o nightobjs.o words.o
 CFILES=		battlestar.c com1.c com2.c com3.c com4.c com5.c com6.c com7.c \
 		init.c cypher.c getcom.c parse.c room.c save.c fly.c misc.c \
-		globals.c
+		globals.c dayfile.c nightfile.c dayobjs.c nightobjs.c words.c
 LIBS=		-lcurses -ltermlib
 LINTFLAGS=	-h
-JUNKFILES=	battlestar tags mkfile mkwlist mkobjs \
-		wlist.c dayfile.c nightfile.c dayobjs.c nightobjs.c
-DATAFILES=	dayfile nightfile battlewords dayobjs nightobjs
+JUNKFILES=	battlestar tags
 DIR=		$(DESTDIR)/usr/games
 LOGFILE=	$(DIR)/lib/battlestar.log
 MAN=		$(DESTDIR)/usr/man/man6/battlestar.6
 
-battlestar: ${OBJS}
-	cc ${OBJS} ${LIBS} -o battlestar
+battlestar: $(OBJS)
+	cc -o battlestar $(OBJS) $(LIBS)
 
-mkfile: mkfile.c
-	$(CC) $(CFLAGS) -o mkfile mkfile.c
-
-dayfile.o: dayfile mkfile
-	mkfile dayfile
-	$(CC) $(CFLAGS) -c dayfile.c
-	rm dayfile.c
-
-nightfile.o: nightfile mkfile
-	mkfile nightfile
-	$(CC) $(CFLAGS) -c nightfile.c
-	rm nightfile.c
-
-mkwlist: mkwlist.c
-	$(CC) $(CFLAGS) -o mkwlist mkwlist.c
-
-wlist.c: battlewords mkwlist
-	mkwlist battlewords
-
-mkobjs: mkobjs.c
-	$(CC) $(CFLAGS) -o mkobjs mkobjs.c
-
-dayobjs.c: dayobjs mkobjs
-	mkobjs dayobjs
-
-nightobjs.c: nightobjs mkobjs
-	mkobjs nightobjs
-
-lint: ${CFILES} 
-	lint ${LINTFLAGS} ${CFILES} ${LIBS} 
+lint: $(CFILES) 
+	lint $(LINTFLAGS) $(CFILES) $(LIBS) 
 
 install: battlestar $(MAN) $(LOGFILE)
 	install -s battlestar $(DIR)/battlestar
@@ -62,4 +31,4 @@ man $(MAN):
 	install -c battlestar.6 $(MAN)
 
 clean:
-	rm -f ${OBJS} ${JUNKFILES}
+	rm -f $(OBJS) $(JUNKFILES)
