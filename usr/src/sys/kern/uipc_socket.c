@@ -1,4 +1,4 @@
-/*	uipc_socket.c	4.64	82/11/13	*/
+/*	uipc_socket.c	4.65	82/12/05	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -604,31 +604,6 @@ soioctl(so, cmd, data)
 			return ((*so->so_proto->pr_usrreq)(so, PRU_SHUTDOWN,
 			    (struct mbuf *)0, (struct mbuf *)0,
 			    (struct socketopt *)0));
-		break;
-	}
-
-	case SIOCSENDOOB: {
-		char oob = *(char *)data;
-		struct mbuf *m = m_get(M_DONTWAIT);
-
-		if (m == 0)
-			return (ENOBUFS);
-		m->m_len = 1;
-		*mtod(m, char *) = oob;
-		return ((*so->so_proto->pr_usrreq)(so, PRU_SENDOOB,
-		    m, (struct mbuf *)0, (struct socketopt *)0));
-	}
-
-	case SIOCRCVOOB: {
-		struct mbuf *m = m_get(M_WAIT);
-
-		if (m == 0)
-			return (ENOBUFS);
-		*mtod(m, caddr_t) = 0;
-		(*so->so_proto->pr_usrreq)(so, PRU_RCVOOB,
-		    m, (struct mbuf *)0, (struct socketopt *)0);
-		*(char *)data = *mtod(m, char *);
-		(void) m_free(m);
 		break;
 	}
 
