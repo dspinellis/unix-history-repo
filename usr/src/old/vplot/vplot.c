@@ -1,23 +1,13 @@
-/*  VPLOT: version 4.1				updated %G%
+/*  VPLOT: version 4.2				updated %G%
  *
  *  Reads standard graphics input and produces a plot on the
  *  Varian or Versatec
- *  -- creates in /usr/tmp a raster file of 500 1K-blocks.
  */
 #include <stdio.h>
 #include <signal.h>
 #include <vfont.h>
 
 #define LPR "/usr/ucb/lpr"
-#define VAX		/* Machine Flag (don't simulate VM on vax) */
-
-#ifdef VAX
-#define NB	1024		/* Number of blocks in virtual memory */
-#else
-#define	NB	88		/* Number of blocks kept in memory */
-#endif
-#define BSIZ	512		/* Size of blocks */
-#define LOGBSIZ	9		/* log base 2 of BSIZ */
 
 #define	mapx(x)	((DevRange*((x)-botx)/del)+centx)
 #define	mapy(y)	((DevRange*(del-(y)+boty)/del)-centy)
@@ -32,7 +22,8 @@ char *Sid = "@(#)\t%G%";
 int	linmod	= SOLID;
 int	done1;
 char	chrtab[][16];
-char	blocks[NB][BSIZ];
+char	*obuf;
+int	bufsize;
 int	lastx;
 int	lasty;
 int	radius, startx, starty, endx, endy;
@@ -49,20 +40,12 @@ double	del;
 int	warned = 0;	/* Indicates whether the warning message about
 			 * unimplemented routines has been printed */
 
-#ifdef VAX
-char	dirty[NB];		/* marks if a block has been written into */
-#else
-struct	buf {
-	int	bno;
-	char	*block;
-} bufs[NB];
-#endif
-
 FILE	*infile;
-int	fd;
+FILE	*pfp;			/* output file */
 char	picture[] = "/usr/tmp/rastAXXXXXX";
 int	run = 13;		/* index of 'a' in picture[] */
 int	DevRange = 1536;	/* output array size (square) in pixels */
+int	DevRange8 = 1536/8;	/* output array size in bytes */
 int	BytesPerLine = 264;	/* Bytes per raster line (physical) */
 int	lparg = 7;		/* index into lpargs */
 
@@ -80,9 +63,8 @@ int argc;
 char **argv;
 {
 	extern int cleanup();
-	extern char *malloc();
-	register i, j;
-	register char *arg;
+	register char *cp1, *arg;
+	register i;
 	int again;
 
 	infile = stdin;
@@ -91,12 +73,14 @@ char **argv;
 		arg = *++argv;
 		switch (*++arg) {
 		case 'W':
-			DevRange = 2047;
+			DevRange = 2048;
+			DevRange8 = 2048/8;
 			BytesPerLine = 880;
 			lpargs[1] = "-Pversatec";
 			break;
 		case 'V':
 			DevRange = 1536;
+			DevRange8 = 1536/8;
 			BytesPerLine = 264;
 			lpargs[1] = "-Pvarian";
 			break;
@@ -126,60 +110,34 @@ char **argv;
 	if (signal(SIGINT, SIG_IGN) != SIG_IGN)
 		signal(SIGINT, cleanup);
 	mktemp(picture);
+	if ((obuf = (char *) malloc(bufsize = DevRange * DevRange8)) == NULL) {
+		fprintf(stderr, "vplot: ran out of memory\n");
+		cleanup();
+	}
 	do {
-		if ((fd = creat(picture, 0666)) < 0) {
-			fprintf(stderr, "can't create %s\n", picture);
+		if ((pfp = fopen(picture, "w")) == NULL) {
+			fprintf(stderr, "vplot: can't create %s\n", picture);
 			cleanup();
 		}
-#ifndef VAX
-		close(fd);
-		if ((fd = open(picture, 2)) < 0) {
-			fprintf(stderr, "can't reopen %s\n", picture);
-			cleanup();
-		}
-#endif
 		i = strlen(picture) + 1;
-		if ((arg = malloc(i)) == NULL) {
+		if ((arg = (char *) malloc(i)) == NULL) {
 			fprintf(stderr, "ran out of memory\n");
 			cleanup();
 		}
 		strcpy(arg, picture);
 		lpargs[lparg++] = arg;
 		picture[run]++;
-		for (i=0; i<NB; i++) {
-#ifdef VAX
-			dirty[i] = 0;
-			for (j=0; j<BSIZ; ++j)
-				blocks[i][j] = 0;
-#else
-			bufs[i].bno = -1;
-			bufs[i.block = blocks[i];
-#endif
-		}
-#ifdef NOHOLES
-		/* clear the entire file */
-		for (i=0; i<BSIZ; i++)
-			blocks[0][i] = '\0';
-		for (i=0; i<1024; i++)
-			write(fd, blocks[0], BSIZ);
-#endif
+		arg = &obuf[bufsize];
+		for (cp1 = obuf; cp1 < arg; )
+			*cp1++ = 0;
 
 		again = getpict();
 
-		for (i=0; i<NB; i++) {
-#ifdef VAX
-			if (dirty[i]) {		/* write out non-zero blocks */
-				zseek(fd, i);
-				write(fd, blocks[i], BSIZ);
-			}
-#else
-			if (bufs[i].bno != -1) {
-				zseek(fd, bufs[i].bno);
-				write(fd, bufs[i].blocks[i], BSIZ);
-			}
-#endif
+		for (cp1 = obuf; cp1 < arg; cp1 += DevRange8) {
+			fwrite(cp1, sizeof(char), DevRange8, pfp);
+			fseek(pfp, (long) BytesPerLine - DevRange8, 1);
 		}
-		close(fd);
+		fclose(pfp);
 	} while (again);
 	lpargs[lparg] = 0;
 	execv(LPR, lpargs);
@@ -493,52 +451,12 @@ circle(x,y,c)
 point(x, y)
 register int x, y;
 {
-	register unsigned bno, byte;
+	register unsigned byte;
 
-	byte = y * BytesPerLine + (x >> 3);
-	bno = byte >> LOGBSIZ;
-	byte &= BSIZ - 1;
-	if (bno >= 1024)
-		return;
-#ifndef VAX
-	if (bno != bufs[0].bno)
-		getblk(bno);
-	bufs[0].block[byte] |= 1 << (7 - (x & 07));
-#else
-	blocks[bno][byte] |= 1 << (7 - (x & 07));
-	dirty[bno] = 1;
-#endif
+	byte = y * DevRange8 + (x >> 3);
+	if (byte < bufsize)
+		obuf[byte] |= 1 << (7 - (x & 07));
 }
-
-#ifndef VAX
-getblk(b)
-register b;
-{
-	register struct buf *bp1;
-	register char *tp;
-
-loop:
-	for (bp1 = bufs; bp1 < &bufs[NB]; bp1++) {
-		if (bp1->bno == b || bp1->bno == -1) {
-			tp = bp1->block;
-			while (bp1 > bufs) {
-				bp1->bno = (bp1-1)->bno;
-				bp1->block = (bp1-1)->block;
-				bp1--;
-			}
-			bp1->bno = b;
-			bp1->block = tp;
-			return;
-		}
-	}
-	zseek(fd, bufs[NB-1].bno);
-	write(fd, bufs[NB-1].block, BSIZ);
-	zseek(fd, b);
-	read(fd, bufs[NB-1].block, BSIZ);
-	bufs[NB-1].bno = b;
-	goto loop;
-}
-#endif
 
 cleanup()
 {
@@ -547,11 +465,6 @@ cleanup()
 		picture[run]--;
 	}
 	exit(1);
-}
-
-zseek(a, b)
-{
-	return(lseek(a, (long)b*BSIZ, 0));
 }
 
 getinteger(f)
