@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)put.c 1.22 %G%";
+static char sccsid[] = "@(#)put.c 1.23 %G%";
 
 #include "whoami.h"
 #include "opcode.h"
@@ -586,7 +586,7 @@ putstr(sptr, padding)
 				    if (*++strptr)
 					    w |= *strptr << 8;
 				    else {
-					    w |= ' \0';
+					    w |= ' ' << 8;
 					    pad--;
 				    }
 				    word(w);
@@ -607,14 +607,18 @@ putstr(sptr, padding)
 		    } while (*strptr++);
 #		endif DEC11
 		while (pad > 1) {
-			word('  ');
+#			ifdef DEC11
+			    word(' ' | (' ' << 8));
+#			else
+			    word((' ' << 8) | ' ');
+#			endif DEC11
 			pad -= 2;
 		}
 		if (pad == 1)
 #			ifdef DEC11
 			    word(' ');
 #			else
-			    word(' \0');
+			    word(' ' << 8);
 #			endif DEC11
 		else
 			word(0);
