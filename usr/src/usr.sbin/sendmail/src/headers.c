@@ -1,7 +1,7 @@
 # include <errno.h>
 # include "sendmail.h"
 
-SCCSID(@(#)headers.c	3.20		%G%);
+SCCSID(@(#)headers.c	3.21		%G%);
 
 /*
 **  CHOMPHEADER -- process and save a header line.
@@ -177,7 +177,7 @@ addheader(field, value, e)
 	h = (HDR *) xalloc(sizeof *h);
 	h->h_field = field;
 	h->h_value = newstr(value);
-	h->h_link = NULL;
+	h->h_link = *hp;
 	h->h_flags = hi->hi_flags | H_DEFAULT;
 	h->h_mflags = hi->hi_mflags;
 	*hp = h;

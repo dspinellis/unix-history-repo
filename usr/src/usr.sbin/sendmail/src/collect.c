@@ -1,7 +1,7 @@
 # include <errno.h>
 # include "sendmail.h"
 
-SCCSID(@(#)collect.c	3.41		%G%);
+SCCSID(@(#)collect.c	3.42		%G%);
 
 /*
 **  COLLECT -- read & parse message header & make temp file.
@@ -271,6 +271,23 @@ maketemp(from)
 		/* we don't have a good way to do canonical conversion ....
 		define('d', newstr(arpatounix(p)));
 		.... so we will ignore the problem for the time being */
+	}
+
+	if (hvalue("to") == NULL && hvalue("cc") == NULL &&
+	    hvalue("bcc") == NULL && hvalue("apparently-to") == NULL)
+	{
+		register ADDRESS *q;
+
+		/* create an Apparently-To: field */
+		/*    that or reject the message.... */
+		for (q = CurEnv->e_sendqueue; q != NULL; q = q->q_next)
+		{
+# ifdef DEBUG
+			if (Debug > 1)
+				printf("Adding Apparently-To: %s\n", q->q_paddr);
+# endif DEBUG
+			addheader("apparently-to", q->q_paddr, CurEnv);
+		}
 	}
 
 	/* check for hop count overflow */
