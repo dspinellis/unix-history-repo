@@ -1,4 +1,4 @@
-	@(#)syscalls.master	7.34 (Berkeley) %G%
+	@(#)syscalls.master	7.35 (Berkeley) %G%
 ; System call name/number master file.
 ; Processed to created init_sysent.c, syscalls.c and syscall.h.
 
@@ -163,8 +163,8 @@
 123	STD	3 fchown
 124	STD	2 fchmod
 125	COMPAT	6 recvfrom
-126	LIBCOMPAT	2 setreuid
-127	LIBCOMPAT	2 setregid
+126	OBSOL	2 setreuid
+127	OBSOL	2 setregid
 128	STD	2 rename
 129	STD	2 truncate
 130	STD	2 ftruncate
