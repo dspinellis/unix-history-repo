@@ -1,4 +1,4 @@
-/*	if_il.c	4.22	83/06/12	*/
+/*	if_il.c	4.23	83/06/13	*/
 
 #include "il.h"
 
@@ -619,7 +619,6 @@ ilioctl(ifp, cmd, data)
 	caddr_t data;
 {
 	register struct ifreq *ifr = (struct ifreq *)data;
-	register struct sockaddr_in *sin;
 	int s = splimp(), error = 0;
 
 	switch (cmd) {
@@ -627,13 +626,7 @@ ilioctl(ifp, cmd, data)
 	case SIOCSIFADDR:
 		if (ifp->if_flags & IFF_RUNNING)
 			if_rtinit(ifp, -1);	/* delete previous route */
-		ifp->if_addr = ifr->ifr_addr;
-		ifp->if_net = in_netof(ifr->ifr_addr);
-		ifp->if_host[0] = in_lnaof(ifr->ifr_addr);
-		sin = (struct sockaddr_in *)&ifp->if_broadaddr;
-		sin->sin_family = AF_INET;
-		sin->sin_addr = if_makeaddr(ifp->if_net, INADDR_ANY);
-		ifp->if_flags |= IFF_BROADCAST;
+		ilsetaddr(ifp, (struct sockaddr_in *)&ifr->ifr_addr);
 		ilinit(ifp->if_unit);
 		break;
 
@@ -642,4 +635,18 @@ ilioctl(ifp, cmd, data)
 	}
 	splx(s);
 	return (error);
+}
+
+ilsetaddr(ifp, sin);
+	register struct ifnet *ifp;
+	register struct sockaddr_in *sin;
+{
+
+	ifp->if_addr = *(struct sockaddr *)sin;
+	ifp->if_net = in_netof(sin->sin_addr);
+	ifp->if_host[0] = in_lnaof(sin->sin_addr);
+	sin = (struct sockaddr_in *)&ifp->if_broadaddr;
+	sin->sin_family = AF_INET;
+	sin->sin_addr = if_makeaddr(ifp->if_net, INADDR_ANY);
+	ifp->if_flags |= IFF_BROADCAST;
 }

@@ -1,4 +1,4 @@
-/*	if_dmc.c	4.26	83/05/27	*/
+/*	if_dmc.c	4.27	83/06/12	*/
 
 #include "dmc.h"
 #if NDMC > 0
@@ -10,7 +10,7 @@ int dmcdebug = 0;
  * TODO
  *	allow more than one outstanding read or write.
  *
- * UNTESTED WITH 4.1C
+ * UNTESTED WITH 4.2
  */
 #include "../machine/pte.h"
 
@@ -22,7 +22,8 @@ int dmcdebug = 0;
 #include "../h/protosw.h"
 #include "../h/socket.h"
 #include "../h/vmmac.h"
-#include <errno.h>
+#include "../h/ioctl.h"
+#include "../h/errno.h"
 
 #include "../net/if.h"
 #include "../net/netisr.h"
@@ -44,14 +45,12 @@ int dmcdebug = 0;
 /*
  * Driver information for auto-configuration stuff.
  */
-int	dmcprobe(), dmcattach(), dmcinit(), dmcoutput(), dmcreset();
+int	dmcprobe(), dmcattach(), dmcinit(), dmcioctl();
+int	dmcoutput(), dmcreset();
 struct	uba_device *dmcinfo[NDMC];
 u_short	dmcstd[] = { 0 };
 struct	uba_driver dmcdriver =
 	{ dmcprobe, 0, dmcattach, 0, dmcstd, "dmc", dmcinfo };
-
-#define	DMC_AF	0xff		/* 8 bits of address type in ui_flags */
-#define	DMC_NET	0xffffff00	/* 24 bits of net number in ui_flags */
 
 /*
  * DMC software status per interface.
@@ -122,18 +121,13 @@ dmcattach(ui)
 	register struct uba_device *ui;
 {
 	register struct dmc_softc *sc = &dmc_softc[ui->ui_unit];
-	register struct sockaddr_in *sin;
 
 	sc->sc_if.if_unit = ui->ui_unit;
 	sc->sc_if.if_name = "dmc";
 	sc->sc_if.if_mtu = DMCMTU;
-	sc->sc_if.if_net = (ui->ui_flags & DMC_NET) >> 8;
-	sc->sc_if.if_host[0] = 17;	/* random number */
-	sin = (struct sockaddr_in *)&sc->sc_if.if_addr;
-	sin->sin_family = AF_INET;
-	sin->sin_addr = if_makeaddr(sc->sc_if.if_net, sc->sc_if.if_host[0]);
 	sc->sc_if.if_init = dmcinit;
 	sc->sc_if.if_output = dmcoutput;
+	sc->sc_if.if_ioctl = dmcioctl;
 	sc->sc_if.if_reset = dmcreset;
 	/* DON'T KNOW IF THIS WILL WORK WITH A BDP AT HIGH SPEEDS */
 	sc->sc_ifuba.ifu_flags = UBA_NEEDBDP | UBA_CANTWAIT;
@@ -165,34 +159,42 @@ dmcinit(unit)
 	register struct dmc_softc *sc = &dmc_softc[unit];
 	register struct uba_device *ui = dmcinfo[unit];
 	register struct dmcdevice *addr;
+	register struct ifnet *ifp = &sc->sc_if;
+	struct sockaddr_in *sin;
 	int base;
 
 	printd("dmcinit\n");
-	if ((sc->sc_flag&DMCBMAPPED) == 0) {
-		sc->sc_ubinfo = uballoc(ui->ui_ubanum,
-		    (caddr_t)&dmc_base[unit], sizeof (struct dmc_base), 0);
-		sc->sc_flag |= DMCBMAPPED;
-	}
-	if (if_ubainit(&sc->sc_ifuba, ui->ui_ubanum, 0,
-	    (int)btoc(DMCMTU)) == 0) {
-		printf("dmc%d: can't initialize\n", unit);
-		sc->sc_if.if_flags &= ~IFF_UP;
+	sin = (struct sockaddr_in *)&ifp->if_addr;
+	if (sin->sin_addr.s_addr == 0)
 		return;
+	if ((ifp->if_flags & IFF_RUNNING) == 0) {
+		if ((sc->sc_flag&DMCBMAPPED) == 0) {
+			sc->sc_ubinfo = uballoc(ui->ui_ubanum,
+			    (caddr_t)&dmc_base[unit],
+			    sizeof (struct dmc_base), 0);
+			sc->sc_flag |= DMCBMAPPED;
+		}
+		if (if_ubainit(&sc->sc_ifuba, ui->ui_ubanum, 0,
+		    (int)btoc(DMCMTU)) == 0) {
+			printf("dmc%d: can't initialize\n", unit);
+			ifp->if_flags &= ~IFF_UP;
+			return;
+		}
+		addr = (struct dmcdevice *)ui->ui_addr;
+		addr->bsel2 |= DMC_IEO;
+		base = sc->sc_ubinfo & 0x3ffff;
+		printd("  base 0x%x\n", base);
+		dmcload(sc, DMC_BASEI, base, (base>>2)&DMC_XMEM);
+		dmcload(sc, DMC_CNTLI, 0, DMC_USEMAINT ? DMC_MAINT : 0);
+		base = sc->sc_ifuba.ifu_r.ifrw_info & 0x3ffff;
+		dmcload(sc, DMC_READ, base, ((base>>2)&DMC_XMEM)|DMCMTU);
+		printd("  first read queued, addr 0x%x\n", base);
+		ifp->if_flags |= IFF_UP|IFF_RUNNING;
 	}
-	addr = (struct dmcdevice *)ui->ui_addr;
-	addr->bsel2 |= DMC_IEO;
-	base = sc->sc_ubinfo & 0x3ffff;
-	printd("  base 0x%x\n", base);
-	dmcload(sc, DMC_BASEI, base, (base>>2)&DMC_XMEM);
-	dmcload(sc, DMC_CNTLI, 0, DMC_USEMAINT ? DMC_MAINT : 0);
-	base = sc->sc_ifuba.ifu_r.ifrw_info & 0x3ffff;
-	dmcload(sc, DMC_READ, base, ((base>>2)&DMC_XMEM)|DMCMTU);
-	printd("  first read queued, addr 0x%x\n", base);
-	sc->sc_if.if_flags |= IFF_UP;
 	/* set up routing table entry */
-	if ((sc->sc_if.if_flags & IFF_ROUTE) == 0) {
-		rtinit(&sc->sc_if.if_addr, &sc->sc_if.if_addr, RTF_HOST|RTF_UP);
-		sc->sc_if.if_flags |= IFF_ROUTE;
+	if ((ifp->if_flags & IFF_ROUTE) == 0) {
+		rtinit(sin, sin, RTF_HOST|RTF_UP);
+		ifp->if_flags |= IFF_ROUTE;
 	}
 }
 
@@ -425,4 +427,39 @@ dmcoutput(ifp, m, dst)
 		dmcstart(ifp->if_unit);
 	splx(s);
 	return (0);
+}
+
+/*
+ * Process an ioctl request.
+ */
+dmcioctl(ifp, cmd, data)
+	register struct ifnet *ifp;
+	int cmd;
+	caddr_t data;
+{
+	struct ifreq *ifr = (struct ifreq *)data;
+	struct sockaddr_in *sin;
+	int s = splimp(), error = 0;
+
+	switch (cmd) {
+
+	case SIOCSIFADDR:
+		if (ifp->if_flags & IFF_RUNNING)
+			if_rtinit(ifp, -1);	/* delete previous route */
+		sin = (struct sockaddr_in *)&ifr->ifr_addr;
+		ifp->if_addr = *sin;
+		ifp->if_net = in_netof(sin->sin_addr);
+		ifp->if_host[0] = in_lnaof(sin->sin_addr);
+		dmcinit(ifp->if_unit);
+		break;
+
+	case SIOCSIFDSTADDR:
+		ifp->if_dstaddr = ifr->ifr_dstaddr;
+		break;
+
+	default:
+		error = EINVAL;
+	}
+	splx(s);
+	return (error);
 }
