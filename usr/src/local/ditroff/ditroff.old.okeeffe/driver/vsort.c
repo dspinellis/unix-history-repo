@@ -1,4 +1,4 @@
-/* vsort.c	1.5	83/09/23
+/* vsort.c	1.6	83/10/22
  *
  *	Sorts and shuffles ditroff output for versatec wide printer.  It
  *	puts pages side-by-side on the output, and fits as many as it can
@@ -14,7 +14,7 @@
 #include	<math.h>
 
 
-#define DEBUGABLE	/* compile-time flag for debugging */
+/* #define DEBUGABLE	/* compile-time flag for debugging */
 #define	FATAL	1
 #define	NVLIST	3000	/* size of list of vertical spans */
 #define	OBUFSIZ	250000	/* size of character buffer before sorting */
@@ -26,7 +26,7 @@
 #define WIDTH	7040	/* number of pixels across the page */
 #define HALF	(INCH/2)
 #ifndef DEBUGABLE
-#define BAND	3	/* or defined below.... */
+#define BAND	2	/* or defined below.... */
 #endif
 #define NLINES	(int)(BAND * INCH)	/* number of pixels in each band */
 
@@ -37,7 +37,7 @@
 
 #ifdef DEBUGABLE
 int	dbg = 0;	/* debug flag != 0 means do debug output */
-float	BAND = 3.0;
+float	BAND = 2.0;
 #endif
 
 
@@ -53,8 +53,8 @@ int	vpos	= 0;	/* current vertical position (down positive) */
 
 int	maxh	= 0;	/* farthest right we've gone on the current span */
 int	leftmarg= 0;	/* current page offset */
-int	pageno	= 0;	/* number of pages on this horizontal span */
 int	spanno	= 0;	/* current span number for driver in 'p#' commands */
+int	pageno	= 0;	/* number of pages spread across a physical page */
 
 
 struct vlist {
@@ -169,8 +169,10 @@ register FILE *fp;
 #ifdef DEBUGABLE
 	    if (dbg > 2) fprintf(stderr, "%c i=%d V=%d\n", c, op-obuf, vpos);
 #endif
-	    if (op > obuf + obufsiz)
+	    if (op > obuf + obufsiz) {
+		error(!FATAL, "buffer overflow %d.", op - (obuf + obufsiz));
 		oflush();
+	    }
 	    switch (c) {
 		case '\n':	/* let text input through */
 		case '\t':
@@ -226,10 +228,10 @@ register FILE *fp;
 						/* put line on its own spread */
 				if (m < 0) {
 				    startspan(vpos + m);
-				    vlp->d = vpos - m;
+				    vlp->d = vpos + thick/2;
 				} else {
 				    startspan(vpos);
-				    vlp->d = vpos + m;
+				    vlp->d = vpos + m + thick/2;
 				}
 				sprintf(op, "V%dD%s", vpos, buf);
 				op += strlen(op);
@@ -238,8 +240,8 @@ register FILE *fp;
 				break;
 			case 'c':	/* circle */
 				sscanf(buf+1, "%d", &n);	/* put circle */
-				startspan(vpos - n/2);		/* on its own */
-				vlp->d = vpos + n/2;		/* spread */
+				startspan(vpos - (n + thick)/2);/* on its own */
+				vlp->d = vpos + (n + thick)/2;	/* spread */
 				sprintf(op, "V%dD%s", vpos, buf);
 				op += strlen(op);
 				hmot(n);
@@ -247,8 +249,8 @@ register FILE *fp;
 				break;
 			case 'e':	/* ellipse */
 				sscanf(buf+1, "%d %d", &m, &n);	/* same here */
-				startspan(vpos - n/2);
-				vlp->d = vpos + n/2;
+				startspan(vpos - (n + thick)/2);
+				vlp->d = vpos + (n + thick)/2;
 				sprintf(op, "V%dD%s", vpos, buf);
 				op += strlen(op);
 				hmot(m);
@@ -305,8 +307,8 @@ register FILE *fp;
 		case 's':
 			*op++ = c;
 			size = getnumber(fp);
-			up = (size * INCH) / POINT;
-			down = up / 3;
+			up = (size * INCH) / POINT;	/* rough estimate */
+			down = up / 3;			/* of max up/down */
 			break;
 		case 'f':
 			*op++ = c;
@@ -349,8 +351,20 @@ register FILE *fp;
 	}
 }
 
-		/* set the "u" and "d" parts of the vlist given the current */
-setlimit()	/* up and down limits set by the point size */
+
+/*----------------------------------------------------------------------------*
+ | Routine:	setlimit
+ |
+ | Results:	using "up" and "down" set by point size changes, set the
+ |		maximum rise and/or fall of a vertical extent
+ |
+ | Side Efct:	may set vlp's u and/or d
+ |
+ | Bugs:	assumes all text of a particular point size is of the same
+ |		maximum rise fall above and below the text base line
+ *----------------------------------------------------------------------------*/
+
+setlimit()
 {
 	register int upv = vpos - up;
 	register int downv = vpos + down;
@@ -360,14 +374,33 @@ setlimit()	/* up and down limits set by the point size */
 }
 
 
-arcbounds(h, v, h1, v1)		/* make a circle out of the arc to estimate */
-int h, v, h1, v1;		/* how far up/down the arc will span */
+/*----------------------------------------------------------------------------*
+ | Routine:	arcbounds (h, v, h1, v1)
+ |
+ | Results:	using the horizontal positions of the starting and ending
+ |		points relative to the center and vertically relative to
+ |		each other, arcbounds calculates the upper and lower extent
+ |		of the arc which is one of:  starting point, ending point
+ |		or center + rad for bottom, and center - rad for top.
+ |
+ | Side Efct:	sets vlp's v, u and d
+ *----------------------------------------------------------------------------*/
+
+arcbounds(h, v, h1, v1)
+int h, v, h1, v1;
 {
-	register int center = vpos + v;
-	register int rad = ((int) sqrt ((double) (h*h + v*v))) >> 1;
-						/* set the vertical extents */
-	vlp->v = vlp->u = (center - rad) < 0 ? 0 : center - rad;
-	vlp->d = center + rad;
+	register int rad = ((int) (sqrt ((double) (h*h + v*v)) + 0.5)) >> 1;
+	register int i = ((h >= 0) << 2) | ((h1 < 0) << 1) | ((v + v1) < 0);
+
+			/* i is a set of flags for the points being on the */
+			/* left of the center point, and which is higher */
+
+	v1 += vpos + v;		/* v1 is vertical position of ending point */
+	vlp->v = vpos;		/* set vertical starting position of arc */
+
+				/* test relative positions for maximums */
+	vlp->u = (((i&3)==1) ? v1 : (((i&5)==4) ? vpos : vpos+v-rad)) - thick/2;
+	vlp->d = (((i&3)==2) ? v1 : (((i&5)==1) ? vpos : vpos+v-rad)) - thick/2;
 }
 
 
@@ -499,23 +532,24 @@ register int n;
 t_page(n)
 int n;
 {
-    register int x;
+    static int first = 1;		/* flag to catch the 1st time through */
 
-    pageno++;
-    if (maxh > (WIDTH - INCH)	/* if we're close to the edge */
-	    || n == 1		/* or if i think we'll go over with this page */
-	    || leftmarg + leftmarg / pageno > (WIDTH - INCH)) {
-	oflush();				/* make it a REAL page-break */
-	sprintf(op, "p%d\n", ++spanno);
+    				/* if we're near the edge, we'll go over on */
+    if (leftmarg + 2*(pageno ? leftmarg/pageno : 0) > WIDTH	/* this page, */
+	  || maxh > WIDTH - INCH || first) {	/* or this is the first page */
+	sprintf(op, "p%d\n", spanno++);		/* make it a REAL page-break */
 	op += strlen(op);
-	pageno = leftmarg = maxh = 0;
-    } else {					    /* x = last page's width */
-	x = (maxh - leftmarg + (HALF - 1)) / HALF;	/*  (in half-inches) */
-	if (x > 12 && x <= 17)
+	oflush();
+	first = pageno = leftmarg = maxh = 0;
+    } else {			    /* x = last page's width (in half-inches) */
+	register int x = (maxh - leftmarg + (HALF - 1)) / HALF;
+
+	if (x > 11 && x <= 17)
 	    leftmarg += (8 * INCH) + HALF; 		/* if close to 8.5"  */
 	else						/* then make it so   */
 	    leftmarg = ((maxh + HALF) / HALF) * HALF;	/* else set it to the */
-    }							/* nearest half-inch */
+	pageno++;					/* nearest half-inch */
+    }
 }
 
 
