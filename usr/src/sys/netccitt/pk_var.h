@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pk_var.h	7.7 (Berkeley) %G%
+ *	@(#)pk_var.h	7.8 (Berkeley) %G%
  */
 
 
@@ -42,24 +42,23 @@ struct pklcd {
 	char	lcd_windowsize;		/* Window size - both directions */
         octet	lcd_closed_user_group;	/* Closed user group specification */
 	char	lcd_flags;		/* copy of sockaddr_x25 op_flags */
-	struct	x25_packet *lcd_template;/* Address of current packet */
+	struct	mbuf *lcd_template;	/* Address of response packet */
 	struct	socket *lcd_so;		/* Socket addr for connection */
 	struct	sockaddr_x25 *lcd_craddr;/* Calling address pointer */
 	struct	sockaddr_x25 *lcd_ceaddr;/* Called address pointer */
+	struct	mbuf *lcd_facilities;	/* user supplied facilities for cr */
 	time_t	lcd_stime;		/* time circuit established */
 	long    lcd_txcnt;		/* Data packet transmit count */
 	long    lcd_rxcnt;		/* Data packet receive count */
 	short   lcd_intrcnt;		/* Interrupt packet transmit count */
 	struct	pklcd *lcd_listen;	/* Next lcd on listen queue */
 	struct	pkcb *lcd_pkp;		/* Network this lcd is attached to */
-	struct	mbuf *lcd_ifrag;	/* IP, CLNP reassembly */
+	struct	mbuf *lcd_cps;		/* Complete Packet Sequence reassembly*/
+	long	lcd_cpsmax;		/* Max length for CPS */
 	struct	sockaddr_x25 lcd_faddr;	/* Remote Address (Calling) */
 	struct	sockaddr_x25 lcd_laddr;	/* Local Address (Called) */
 	struct	sockbuf lcd_sb;		/* alternate for datagram service */
 };
-
-#define X25_DG_CIRCUIT	0x10		/* lcd_flag: used for datagrams */
-#define X25_DG_ROUTING	0x20		/* lcd_flag: peer addr not yet known */
 
 /*
  * Per network information, allocated dynamically
