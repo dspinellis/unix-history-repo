@@ -1,5 +1,5 @@
 
-static char sccsid[] = "	bcd.c	4.1	82/10/24	";
+static char sccsid[] = "	bcd.c	4.2	88/06/11	";
 
 int chtab[] = {
 00000, /*   */
@@ -111,7 +111,7 @@ char *argv[];
 			if (c>='a'-040) c = c - 040;
 			if (c<0 | c>137) c = 0;
 			if ((chtab[c]>>(j-1))&1) 
-				puts("[]");
+				puts("[\010\01\01\01\01\01]");
 			else
 				putchar(j>3?'0'+j-3:' ');
 		}
