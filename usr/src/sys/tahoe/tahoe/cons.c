@@ -1,4 +1,4 @@
-/*	cons.c	1.7	87/02/21	*/
+/*	cons.c	1.8	87/03/04	*/
 
 /*
  * Tahoe console processor driver
@@ -31,7 +31,9 @@ int	timeout();
 struct	tty CPtty;
 struct	tty cons;
 struct	tty RLtty;
-struct	tty *constty[3] = { &CPtty, &cons, &RLtty };
+struct	tty *cntty[3] = { &CPtty, &cons, &RLtty };
+
+struct	tty *constty = 0;	/* virtual console */
 
 struct	consoftc {
 	char	cs_flags;
@@ -85,7 +87,7 @@ cnopen(dev, flag)
 
 	if (unit > CPREMOT) 
 		return (ENXIO);
-	tp = constty[unit];
+	tp = cntty[unit];
 	if (tp->t_state&TS_XCLUDE && u.u_uid != 0)
 		return (EBUSY);
 	cnpostread(unit);		/* post request for input */
@@ -117,7 +119,7 @@ cnpostread(unit)
 cnclose(dev)
 	dev_t dev;
 {
-	register struct tty *tp = constty[minor(dev)];
+	register struct tty *tp = cntty[minor(dev)];
 
 	(*linesw[tp->t_line].l_close)(tp);
 	ttyclose(tp);
@@ -128,8 +130,10 @@ cnread(dev, uio)
 	dev_t dev;
 	struct uio *uio;
 {
-	struct tty *tp = constty[minor(dev)];
+	struct tty *tp = cntty[minor(dev)];
 
+	if (constty && minor(dev) == CPCONS)
+		tp = constty;
 	return ((*linesw[tp->t_line].l_read)(tp, uio));
 }
 
@@ -138,7 +142,7 @@ cnwrite(dev, uio)
 	dev_t dev;
 	struct uio *uio;
 {
-	struct tty *tp = constty[minor(dev)];
+	struct tty *tp = cntty[minor(dev)];
 
 	return ((*linesw[tp->t_line].l_write)(tp, uio));
 }
@@ -168,7 +172,7 @@ cnrint(dev)
 	mtpr(CPMDCB, vtoph((struct proc *)0, (unsigned)&consin[unit]));
 	cnlast = &consin[unit].cp_hdr;
 
-	tp = constty[unit];
+	tp = cntty[unit];
 #ifdef KDB
 	if (unit == CPCONS && kdbrintr(c, tp))
 		return;
@@ -180,7 +184,7 @@ cnioctl(dev, cmd, addr, flag)
 	dev_t dev;
 	caddr_t addr;
 {
-	register struct tty *tp = constty[minor(dev)];
+	register struct tty *tp = cntty[minor(dev)];
 	register error;
  
 	error = (*linesw[tp->t_line].l_ioctl)(tp, cmd, addr);
@@ -210,7 +214,7 @@ cnxint(dev)
 #ifdef CPPERF
 	scope_in(unit == CPCONS ? 1 : 2);
 #endif
-	tp = constty[unit];
+	tp = cntty[unit];
 	tp->t_state &= ~TS_BUSY;
 	consoftc[unit].cs_timo = 0;
 	if (tp->t_line)
