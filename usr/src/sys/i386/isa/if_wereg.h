@@ -7,7 +7,7 @@
  *
  * %sccs.include.noredist.c%
  *
- *	@(#)if_wereg.h	5.1 (Berkeley) %G%
+ *	@(#)if_wereg.h	5.2 (Berkeley) %G%
  */
 
 /*
@@ -17,7 +17,7 @@
 /*
  * Memory Select Register (MSR)
  */
-union wd_mem_sel {
+union we_mem_sel {
     struct memory_decode {
         u_char msd_addr:6,		/* Memory decode bits		*/
 	       msd_enable:1,		/* Memory (RAM) enable		*/
@@ -32,16 +32,16 @@ union wd_mem_sel {
 /*
  * receive ring discriptor
  *
- * The National Semiconductor NS32490 Network interface controller uses
+ * The National Semiconductor DS8390 Network interface controller uses
  * the following receive ring headers.  The way this works is that the
  * memory on the interface card is chopped up into 256 bytes blocks.
- * A contiuguous portion of those blocks are marked for receive packets
+ * A contiguous portion of those blocks are marked for receive packets
  * by setting start and end block #'s in the NIC.  For each packet that
  * is put into the receive ring, one of these headers (4 bytes each) is
  * tacked onto the front.
  */
-struct wd_ring	{
-	struct wdr_status {		/* received packet status	*/
+struct we_ring	{
+	struct wer_status {		/* received packet status	*/
 	    u_char rs_prx:1,		    /* packet received intack	*/
 		   rs_crc:1,		    /* crc error		*/
 	           rs_fae:1,		    /* frame alignment error	*/
@@ -50,15 +50,15 @@ struct wd_ring	{
 	           rs_phy:1,		    /* packet received intack	*/
 	           rs_dis:1,		    /* packet received intack	*/
 	           rs_dfr:1;		    /* packet received intack	*/
-	} wd_rcv_status;		/* received packet status	*/
-	u_char	wd_next_packet;		/* pointer to next packet	*/
-	u_short	wd_count;		/* bytes in packet (length + 4)	*/
+	} we_rcv_status;		/* received packet status	*/
+	u_char	we_next_packet;		/* pointer to next packet	*/
+	u_short	we_count;		/* bytes in packet (length + 4)	*/
 };
 
 /*
  * Command word definition
  */
-union wd_command {
+union we_command {
     struct command_decode {
 	u_char csd_stp:1,		/* STOP!			*/
 	       csd_sta:1,		/* START!			*/
@@ -77,7 +77,7 @@ union wd_command {
 /*
  * Interrupt status definition
  */
-union wd_interrupt {
+union we_interrupt {
     struct interrupt_decode {
 	u_char isd_prx:1,		/* Packet received		*/
 	       isd_ptx:1,		/* Packet transmitted		*/
@@ -102,7 +102,7 @@ union wd_interrupt {
 /*
  * Status word definition (transmit)
  */
-union wdt_status {
+union wet_status {
     struct tstat {
 	u_char tsd_ptx:1,		/* Packet transmitted intack	*/
 	       tsd_dfr:1,		/* Non deferred transmition	*/
@@ -129,6 +129,7 @@ union wdt_status {
  */
 #define	WD_STARLAN	0x02		/* WD8003S Identification	*/
 #define	WD_ETHER	0x03		/* WD8003E Identification	*/
+#define	WD_ETHER2	0x05		/* WD8003EBT Identification	*/
 #define WD_CHECKSUM	0xFF		/* Checksum byte		*/
 #define WD_PAGE_SIZE	256		/* Size of RAM pages in bytes	*/
 #define WD_TXBUF_SIZE	6		/* Size of TX buffer in pages	*/
@@ -215,4 +216,4 @@ union wdt_status {
 #define WD_I_CNTE	0x20		/* Counter overflow enable	*/
 #define WD_I_RDCE	0x40		/* Dma complete enable		*/
 #define WD_I_RES	0x80		/* reserved...			*/
-#define	WD_I_CONFIG	(WD_I_PRXE|WD_I_PTXE|WD_I_RXEE|WD_I_TXEE)
+#define WD_I_CONFIG     (WD_I_PRXE|WD_I_PTXE|WD_I_RXEE|WD_I_TXEE)
