@@ -1,0 +1,8 @@
+##  $Revision: 1.4 $
+##  hosts.nntp - names and addresses that feed us news
+##  Format
+##	<host>:
+##	<host>:<password>
+##  <host> can be a name or IP address; no wildcards.  Any hosts not
+##  listed here are handed off to nnrpd.
+news.foo.com:
