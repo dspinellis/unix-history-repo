@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_syscalls.c	8.23 (Berkeley) %G%
+ *	@(#)vfs_syscalls.c	8.24 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -907,13 +907,13 @@ out:
 /*
  * Delete a whiteout from the filesystem.
  */
-struct unwhiteout_args {
+struct undelete_args {
 	char	*path;
 };
 /* ARGSUSED */
-unwhiteout(p, uap, retval)
+undelete(p, uap, retval)
 	struct proc *p;
-	struct unwhiteout_args *uap;
+	struct undelete_args *uap;
 	int *retval;
 {
 	int error;
