@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)fts.c	5.20 (Berkeley) %G%";
+static char sccsid[] = "@(#)fts.c	5.21 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -230,12 +230,6 @@ fts_read(sp)
 	/* Save and zero out user instructions. */
 	instr = p->fts_instr;
 	p->fts_instr = FTS_NOINSTR;
-
-	/* If used fts_link pointer for cycle detection, restore it. */
-	if (sp->fts_savelink) {
-		p->fts_link = sp->fts_savelink;
-		sp->fts_savelink = NULL;
-	}
 
 	/* Any type of file may be re-visited; re-stat and re-turn. */
 	if (instr == FTS_AGAIN) {
@@ -656,12 +650,11 @@ fts_stat(sp, p, follow)
 
 		dev = p->fts_statb.st_dev;
 		ino = p->fts_statb.st_ino;
-		for (t = p->fts_parent; t->fts_level > FTS_ROOTLEVEL;
+		for (t = p->fts_parent; t->fts_level >= FTS_ROOTLEVEL;
 		    t = t->fts_parent)
 			if (ino == t->fts_statb.st_ino &&
 			    dev == t->fts_statb.st_dev) {
-				sp->fts_savelink = p->fts_link;
-				p->fts_link = t;
+				p->fts_cycle = t;
 				return(FTS_DC);
 			}
 		return(FTS_D);
