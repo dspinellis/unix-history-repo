@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: locore.s 1.66 92/12/22$
  *
- *	@(#)locore.s	8.5 (Berkeley) %G%
+ *	@(#)locore.s	8.6 (Berkeley) %G%
  */
 
 /*
@@ -1096,7 +1096,7 @@ Lnocache0:
   	clrw	sp@-			| vector offset/frame type
 	clrl	sp@-			| PC - filled in by "execve"
   	movw	#PSL_USER,sp@-		| in user mode
-	clrw	sp@-			| pad SR to longword
+	clrl	sp@-			| pad word
 	lea	sp@(-64),sp		| construct space for D0-D7/A0-A7
 	pea	sp@			| addr of space for D0
 	jbsr	_main			| main(firstaddr, r0)
@@ -1109,7 +1109,7 @@ Lnoflush:
 	movl	sp@(60),a0		| grab and load
 	movl	a0,usp			|   user SP
 	moveml	sp@+,#0x7FFF		| load most registers (all but SSP)
-	addql	#6,sp			| pop SSP and align word
+	addql	#8,sp			| pop SSP and pad word
   	rte
 
 /*
