@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: mem.c 1.14 90/10/12$
  *
- *	@(#)mem.c	7.11 (Berkeley) %G%
+ *	@(#)mem.c	7.12 (Berkeley) %G%
  */
 
 /*
@@ -42,6 +42,7 @@ mmrw(dev, uio, flags)
 	register struct iovec *iov;
 	int error = 0;
 	caddr_t zbuf = NULL;
+	int kernloc;
 	extern u_int lowram;
 
 	while (uio->uio_resid > 0 && error == 0) {
@@ -77,11 +78,12 @@ mmrw(dev, uio, flags)
 
 /* minor device 1 is kernel memory */
 		case 1:
+			kernloc = uio->uio_offset;
 			c = min(iov->iov_len, MAXPHYS);
-			if (!kernacc((caddr_t)uio->uio_offset, c,
+			if (!kernacc((caddr_t)kernloc, c,
 			    uio->uio_rw == UIO_READ ? B_READ : B_WRITE))
 				return (EFAULT);
-			error = uiomove((caddr_t)uio->uio_offset, (int)c, uio);
+			error = uiomove((caddr_t)kernloc, (int)c, uio);
 			continue;
 
 /* minor device 2 is EOF/RATHOLE */
