@@ -147,6 +147,7 @@ setthetime(p)
 
 	if (t = index(p, '.')) {		/* .ss */
 		*t++ = '\0';
+		lt->tm_sec = ATOI2(t);
 		if (lt->tm_sec > 61)
 			badformat();
 	} else
