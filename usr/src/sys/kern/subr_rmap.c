@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)subr_rmap.c	7.1 (Berkeley) %G%
+ *	@(#)subr_rmap.c	7.2 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -72,6 +72,8 @@ rminit(mp, size, addr, name, mapsize)
 	 */
 	ep->m_size = size;
 	ep->m_addr = addr;
+	(++ep)->m_size = 0;
+	ep->m_addr = 0;
 }
 
 /*
