@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_vnops.c	7.34 (Berkeley) %G%
+ *	@(#)vfs_vnops.c	7.35 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -49,12 +49,12 @@ vn_open(ndp, p, fmode, cmode)
 			vap->va_type = VREG;
 			vap->va_mode = cmode;
 			LEASE_CHECK(ndp->ni_dvp, p, cred, LEASE_WRITE);
-			if (error = VOP_CREATE(ndp, vap, p))
+			if (error = VOP_CREATE(ndp->ni_dvp, &ndp->ni_vp, &ndp->ni_cnd, vap))
 				return (error);
 			fmode &= ~O_TRUNC;
 			vp = ndp->ni_vp;
 		} else {
-			VOP_ABORTOP(ndp);
+			VOP_ABORTOP(ndp->ni_dvp, &ndp->ni_cnd);
 			if (ndp->ni_dvp == ndp->ni_vp)
 				vrele(ndp->ni_dvp);
 			else
