@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)rec_put.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)rec_put.c	5.3 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -52,8 +52,13 @@ __rec_put(dbp, key, data, flags)
 			goto einval;
 		nrec = t->bt_rcursor;
 		break;
-	case 0:
 	case R_IAFTER:
+		if ((nrec = *(recno_t *)key->data) == 0) {
+			nrec = 1;
+			flags = R_IBEFORE;
+		}
+		break;
+	case 0:
 	case R_IBEFORE:
 		if ((nrec = *(recno_t *)key->data) == 0)
 			goto einval;
@@ -70,8 +75,8 @@ einval:		errno = EINVAL;
 	}
 
 	/*
-	 * Make sure that records up to and including the put record are already
- 	 * in the database.  If skipping records, create empty ones.
+	 * Make sure that records up to and including the put record are
+	 * already in the database.  If skipping records, create empty ones.
 	 */
 	if (nrec > t->bt_nrecs) {
 		if (t->bt_irec(t, nrec) == RET_ERROR)
@@ -80,8 +85,8 @@ einval:		errno = EINVAL;
 			tdata.data = NULL;
 			tdata.size = 0;
 			while (nrec > t->bt_nrecs)
-				if (__rec_iput(t, nrec, &tdata, 0)
-				    != RET_SUCCESS)
+				if (__rec_iput(t,
+				    nrec, &tdata, 0) != RET_SUCCESS)
 					return (RET_ERROR);
 		}
 	}
