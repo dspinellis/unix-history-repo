@@ -5,12 +5,16 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)machdep.c	1.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)machdep.c	1.7 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
 #include <ctype.h>
 #include "inline.h"
+
+extern char *strcpy();
+extern char *strcat();
+extern char *index();
 
 /*
  * The routines and tables in this file must be rewritten
@@ -67,9 +71,27 @@ doreplaceon(cp)
 	char *cp;
 {
 
-	if (bcmp(cp, "calls\t$", 7) == 0)
-		return (cp + 7);
-	return (0);
+	if (bcmp(cp, "calls\t", 6) != 0)
+		return (0);
+	if ((cp = index(cp + 6, ',')) == 0)
+		return (0);
+	return (++cp);
+}
+
+/*
+ * Find out how many arguments the function is being called with.
+ * A return value of -1 indicates that the count can't be determined.
+ */
+int
+countargs(cp)
+	char *cp;
+{
+
+	if ((cp = index(cp, '$')) == 0)
+		return (-1);
+	if (!isdigit(*++cp))
+		return (-1);
+	return (atoi(cp));
 }
 
 /*
@@ -92,7 +114,7 @@ nextarg(argc, argv)
 /*
  * Determine whether the current line pushes an argument.
  */
- ispusharg(argc, argv)
+ispusharg(argc, argv)
 	int argc;
 	char *argv[];
 {
@@ -168,10 +190,10 @@ rewrite(instbuf, argc, argv, target)
 		sprintf(instbuf, "\t%s\t%s", argv[0], argv[1]);
 		argc -= 2, argv += 2;
 		while (argc-- > 0) {
-			strcat(instbuf, ",");
-			strcat(instbuf, *argv++);
+			(void) strcat(instbuf, ",");
+			(void) strcat(instbuf, *argv++);
 		}
-		strcat(instbuf, "\n");
+		(void) strcat(instbuf, "\n");
 		fprintf(stderr, "rewrite?-> %s", instbuf);
 		return;
 	}
@@ -180,6 +202,7 @@ rewrite(instbuf, argc, argv, target)
 /*
  * Do any necessary post expansion cleanup.
  */
+/*ARGSUSED*/
 cleanup(numargs)
 	int numargs;
 {
@@ -216,6 +239,25 @@ doreplaceon(cp)
 }
 
 /*
+ * Find out how many arguments the function is being called with.
+ * A return value of -1 indicates that the count can't be determined.
+ */
+/* ARGSUSED */
+int
+countargs(cp)
+	char *cp;
+{
+
+	/*
+	 * TODO
+	 * Figure out what the count should be. 
+	 * Probably have to read the next instruction here
+	 * instead of in cleanup() below.
+	 */
+	return (-1);
+}
+
+/*
  * Find the next argument to the function being expanded.
  */
 nextarg(argc, argv)
@@ -239,7 +281,7 @@ nextarg(argc, argv)
 /*
  * Determine whether the current line pushes an argument.
  */
- ispusharg(argc, argv)
+ispusharg(argc, argv)
 	int argc;
 	char *argv[];
 {
@@ -330,10 +372,10 @@ rewrite(instbuf, argc, argv, target)
 		sprintf(instbuf, "\t%s\t%s", argv[0], argv[1]);
 		argc -= 2, argv += 2;
 		while (argc-- > 0) {
-			strcat(instbuf, ",");
-			strcat(instbuf, *argv++);
+			(void) strcat(instbuf, ",");
+			(void) strcat(instbuf, *argv++);
 		}
-		strcat(instbuf, "\n");
+		(void) strcat(instbuf, "\n");
 		fprintf(stderr, "rewrite?-> %s", instbuf);
 		return;
 	}
@@ -345,6 +387,7 @@ rewrite(instbuf, argc, argv, target)
 cleanup(numargs)
 	int numargs;
 {
+	extern int lineno;
 	
 	if (numargs == 0)
 		return;
@@ -355,5 +398,6 @@ cleanup(numargs)
 	 *	CHECK THAT INSTRUCTION IS A POP
 	 */
 	fgets(line[bufhead], MAXLINELEN, stdin);
+	lineno++;
 }
 #endif mc68000

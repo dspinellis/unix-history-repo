@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	1.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	1.9 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -37,6 +37,11 @@ struct stats {
 	int	lostmodified;	/* mergers inhibited by intervening mod */
 	int	savedpush;	/* successful push/pop merger */
 } stats;
+
+extern char *strcpy();
+
+char *whoami;
+int lineno = 0;
 int dflag;
 
 main(argc, argv)
@@ -51,6 +56,7 @@ main(argc, argv)
 	int size;
 	extern char *index();
 
+	whoami = argv[0];
 	if (argc > 1 && bcmp(argv[1], "-d", 3) == 0)
 		dflag++, argc--, argv++;
 	if (argc > 1)
@@ -83,6 +89,7 @@ main(argc, argv)
 	buftail = bufhead = 0;
 	bufp = line[0];
 	while (fgets(bufp, MAXLINELEN, stdin)) {
+		lineno++;
 		lp = index(bufp, LABELCHAR);
 		if (lp != NULL) {
 			for (cp = bufp; cp < lp; cp++)
@@ -94,7 +101,7 @@ main(argc, argv)
 					emptyqueue();
 					continue;
 				}
-				strcpy(bufp, lp);
+				(void) strcpy(bufp, lp);
 				*lp++ = '\n';
 				*lp = '\0';
 				emptyqueue();
@@ -108,6 +115,10 @@ main(argc, argv)
 		}
 		for (pp = patshdr[hash(cp, &size)]; pp; pp = pp->next) {
 			if (pp->size == size && bcmp(pp->name, cp, size) == 0) {
+				if (argcounterr(pp->args, countargs(bufp), pp->name)) {
+					pp = NULL;
+					break;
+				}
 				expand(pp->replace);
 				bufp = line[bufhead];
 				break;
@@ -120,7 +131,8 @@ main(argc, argv)
 	}
 	emptyqueue();
 	if (dflag)
-		fprintf(stderr, "inline: %s %d, %s %d, %s %d, %s %d\n",
+		fprintf(stderr, "%s: %s %d, %s %d, %s %d, %s %d\n",
+			whoami,
 			"attempts", stats.attempted,
 			"finished", stats.finished,
 			"inhibited", stats.lostmodified,
@@ -248,6 +260,37 @@ copyline(from, to)
 	*to++ = *from++;
 	*to = '\0';
 	return (from);
+}
+
+/*
+ * Check for a disparity between the number of arguments a function
+ * is called with and the number which we expect to see.
+ * If the error is unrecoverable, return 1, otherwise 0.
+ */
+argcounterr(args, callargs, name)
+	int args, callargs;
+	char *name;
+{
+	register char *cp;
+	char namebuf[MAXLINELEN];
+
+	if (args == callargs)
+		return (0);
+	cp = strcpy(namebuf, name);
+	while (*cp != '\0' && *cp != '\n')
+		++cp;
+	if (*cp == '\n')
+		*cp = '\0';
+	if (callargs >= 0) {
+		fprintf(stderr,
+		"%s: error: arg count mismatch, %d != %d for '%s' at line %d\n",
+			whoami, callargs, args, namebuf, lineno);
+		return (1);
+	}
+	fprintf(stderr,
+		"%s: warning: can't verify arg count for '%s' at line %d\n",
+		whoami, namebuf, lineno);
+	return (0);
 }
 
 /*
