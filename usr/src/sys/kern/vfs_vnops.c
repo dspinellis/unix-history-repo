@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_vnops.c	7.33 (Berkeley) %G%
+ *	@(#)vfs_vnops.c	7.34 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -48,6 +48,7 @@ vn_open(ndp, p, fmode, cmode)
 			VATTR_NULL(vap);
 			vap->va_type = VREG;
 			vap->va_mode = cmode;
+			LEASE_CHECK(ndp->ni_dvp, p, cred, LEASE_WRITE);
 			if (error = VOP_CREATE(ndp, vap, p))
 				return (error);
 			fmode &= ~O_TRUNC;
@@ -94,6 +95,7 @@ vn_open(ndp, p, fmode, cmode)
 	if (fmode & O_TRUNC) {
 		VATTR_NULL(vap);
 		vap->va_size = 0;
+		LEASE_CHECK(vp, p, cred, LEASE_WRITE);
 		if (error = VOP_SETATTR(vp, vap, cred, p))
 			goto bad;
 	}
@@ -185,10 +187,13 @@ vn_rdwr(rw, vp, base, len, offset, segflg, ioflg, cred, aresid, p)
 	auio.uio_segflg = segflg;
 	auio.uio_rw = rw;
 	auio.uio_procp = p;
-	if (rw == UIO_READ)
+	if (rw == UIO_READ) {
+		LEASE_CHECK(vp, p, cred, LEASE_READ);
 		error = VOP_READ(vp, &auio, ioflg, cred);
-	else
+	} else {
+		LEASE_CHECK(vp, p, cred, LEASE_WRITE);
 		error = VOP_WRITE(vp, &auio, ioflg, cred);
+	}
 	if (aresid)
 		*aresid = auio.uio_resid;
 	else
@@ -213,6 +218,7 @@ vn_read(fp, uio, cred)
 	VOP_LOCK(vp);
 	uio->uio_offset = fp->f_offset;
 	count = uio->uio_resid;
+	LEASE_CHECK(vp, uio->uio_procp, cred, LEASE_READ);
 	error = VOP_READ(vp, uio, (fp->f_flag & FNONBLOCK) ? IO_NDELAY : 0,
 		cred);
 	fp->f_offset += count - uio->uio_resid;
@@ -238,6 +244,7 @@ vn_write(fp, uio, cred)
 	VOP_LOCK(vp);
 	uio->uio_offset = fp->f_offset;
 	count = uio->uio_resid;
+	LEASE_CHECK(vp, uio->uio_procp, cred, LEASE_WRITE);
 	error = VOP_WRITE(vp, uio, ioflag, cred);
 	if (ioflag & IO_APPEND)
 		fp->f_offset = uio->uio_offset;
@@ -396,7 +403,7 @@ vn_fhtovp(fhp, lockflag, vpp)
 
 	if ((mp = getvfs(&fhp->fh_fsid)) == NULL)
 		return (ESTALE);
-	if (VFS_FHTOVP(mp, &fhp->fh_fid, vpp))
+	if (VFS_FHTOVP(mp, &fhp->fh_fid, 0, vpp))
 		return (ESTALE);
 	if (!lockflag)
 		VOP_UNLOCK(*vpp);
