@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)main.c	3.11 83/09/14";
+static	char *sccsid = "@(#)main.c	3.12 83/09/19";
 #endif
 
 #include "defs.h"
@@ -42,7 +42,7 @@ char **argv;
 				dflag++;
 				break;
 			case 'D':
-				debug++;
+				debug = !debug;
 				break;
 			case 'x':
 				xflag++;
