@@ -12,25 +12,25 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)startslip.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)startslip.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
-#include <sys/signal.h>
+#include <sgtty.h>
 #include <sys/socket.h>
 #include <sys/syslog.h>
 #include <netinet/in.h>
 #include <net/if.h>
 #include <net/if_slvar.h>
-#include <sgtty.h>
 #include <netdb.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
+#include <signal.h>
 
 #define DEFAULT_BAUD    B9600
 int     speed = DEFAULT_BAUD;
-int     slipdisc = SLIPDISC;
+int	hup;
 #ifdef DEBUG
 int	debug = 1;
 #undef LOG_ERR
@@ -49,7 +49,7 @@ main(argc, argv)
 {
 	extern char *optarg;
 	extern int optind;
-	int ch;
+	int ch, disc;
 	int fd = -1, sighup();
 	FILE *wfd;
 	char *dialerstring = 0, buf[BUFSIZ];
@@ -77,7 +77,7 @@ main(argc, argv)
 	openlog("startslip", LOG_PID, LOG_DAEMON);
 
 #if BSD <= 43
-	if (debug == 0 && (fd = open("/dev/tty", 0))) {
+	if (debug == 0 && (fd = open("/dev/tty", 0)) >= 0) {
 		ioctl(fd, TIOCNOTTY, 0);
 		close(fd);
 	}
@@ -85,6 +85,7 @@ main(argc, argv)
 
 	signal(SIGHUP, sighup);
 restart:
+	hup = 0;
 	printd("restart\n");
 	if (fd >= 0)
 		close(fd);
@@ -101,6 +102,17 @@ restart:
 		}
 	}
 	printd("open %d\n", fd);
+	if (debug) {
+		if (ioctl(fd, TIOCGETD, &disc) < 0)
+			perror("ioctl(TIOCSETD)");
+		printf("disc was %d\n", disc);
+	}
+	disc = TTYDISC;
+	if (ioctl(fd, TIOCSETD, &disc) < 0) {
+	        perror("ioctl(TIOCSETD)");
+		syslog(LOG_ERR, "startslip: %s: ioctl (TIOCSETD 0): %m\n",
+		    argv[0]);
+	}
 	if (dialerstring) {
 		(void) write(fd, dialerstring, strlen(dialerstring));
 		(void) write(fd, "\n", 1);
@@ -122,7 +134,7 @@ restart:
 	/*
 	 * Log in
 	 */
-	wfd = fdopen(fd, "w");
+	wfd = fdopen(fd, "w+");
 	printd("fdopen\n");
 	if (wfd == NULL) {
 		syslog(LOG_ERR, "startslip: can't fdopen slip line\n");
@@ -130,6 +142,8 @@ restart:
 	}
 	putc('\n', wfd);
 	while (fflush(wfd), getline(buf, BUFSIZ, fd) != NULL) {
+		if (hup != 0)
+			goto restart;
 	        if (bcmp(&buf[1], "ogin:", 5) == 0) {
 	                fprintf(wfd, "%s\r", argv[1]);
 	                continue;
@@ -144,45 +158,61 @@ restart:
 	/*
 	 * Attach
 	 */
-	if (ioctl(fd, TIOCSETD, &slipdisc) < 0) {
+	disc = SLIPDISC;
+	if (ioctl(fd, TIOCSETD, &disc) < 0) {
 	        perror("ioctl(TIOCSETD)");
-		syslog(LOG_ERR, "startslip: %s: ioctl (TIOCSETD): %m\n",
+		syslog(LOG_ERR, "startslip: %s: ioctl (TIOCSETD SLIP): %m\n",
 		    argv[0]);
 	        exit(1);
 	}
-	slipdisc = SC_COMPRESS;
-	if (ioctl(fd, SLIOCSFLAGS, (caddr_t)&slipdisc) < 0) {
+	printd("setd\n");
+	disc = SC_COMPRESS;
+	if (ioctl(fd, SLIOCSFLAGS, (caddr_t)&disc) < 0) {
 	        perror("ioctl(SLIOCFLAGS)");
 		syslog(LOG_ERR, "ioctl (SLIOCSFLAGS): %m");
 		exit(1);
 	}
-	printd("setd\n");
 	if (!first++) {
 		if (fork() > 0)
 			exit(0);
 #ifdef TIOCSCTTY
 		if (setsid() == -1)
 			perror("setsid");
-		if (ioctl(fd, TIOCSCTTY, 0) < 0)
-			perror("ioctl (TIOCSCTTY)");
 #endif
 		if (debug == 0) {
 			close(0);
 			close(1);
 			close(2);
+			(void) open("/dev/null", O_RDWR);
+			(void) dup2(0, 1);
+			(void) dup2(0, 2);
 		}
 	}
+#ifdef TIOCSCTTY
+	if (ioctl(fd, TIOCSCTTY, 0) < 0)
+		perror("ioctl (TIOCSCTTY)");
+#endif
 	(void) system("ifconfig sl0 up");
-	sigpause(0L);
+	while (hup == 0)
+		sigpause(0L);
 	printd("fclose\n");
 	fclose(wfd);
+#ifdef TIOCSCTTY
+	if (fork() > 0)
+		exit(0);
+	if (setsid() == -1)
+		perror("setsid");
+	sleep(5);
+#endif
 	goto restart;
 }
 
 sighup()
 {
 
+	printd("hup\n");
 	syslog(LOG_INFO, "startslip: hangup signal\n");
+	hup = 1;
 }
 
 getline(buf, size, fd)
@@ -193,6 +223,8 @@ getline(buf, size, fd)
 
 	size--;
 	for (i = 0; i < size; i++) {
+		if (hup)
+			return (0);
 	        if (read(fd, &buf[i], 1) == 1) {
 	                buf[i] &= 0177;
 	                if (buf[i] == '\r')
@@ -201,13 +233,14 @@ getline(buf, size, fd)
 	                        continue;
 	                buf[i + 1] = '\0';
 			if (debug)
-				fprintf(stderr, "Got %d: \"%s\"\n", i, buf);
+				fprintf(stderr, "Got %d: \"%s\"\n", i + 1, buf);
 	                return (i+1);
 	        }
 	        perror("read");
+		sleep(5*60);
 	        i--;
 	}
-	return(NULL);
+	return (0);
 }
 
 usage()
