@@ -205,5 +205,7 @@ main()
 	printf("Disconnected from keyboard.\n");
     }
 
+    (void) api_finish();
+
     return 0;
 }

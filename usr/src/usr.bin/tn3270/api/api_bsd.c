@@ -8,6 +8,20 @@
 #include "api_exch.h"
 
 
+int
+api_close_api()
+{
+    if (api_exch_outcommand(EXCH_CMD_DISASSOCIATE) == -1) {
+	return -1;
+    } else if (api_exch_flush() == -1) {
+	return -1;
+    } else {
+	return 0;
+    }
+}
+
+
+int
 api_open_api(string)
 char	*string;		/* if non-zero, where to connect to */
 {
@@ -52,20 +66,20 @@ char	*string;		/* if non-zero, where to connect to */
 	return -1;
     }
     /* Now, try application level connection */
-    if (api_exch_init(sock) == -1) {
+    if (api_exch_init(sock, "client") == -1) {
 	return -1;
     }
-    if (api_exch_outcommand(EXCH_ASSOCIATE) == -1) {
+    if (api_exch_outcommand(EXCH_CMD_ASSOCIATE) == -1) {
 	return -1;
     }
-    while ((i = api_exch_inbyte()) != EXCH_ASSOCIATED) {
+    while ((i = api_exch_nextcommand()) != EXCH_CMD_ASSOCIATED) {
 	struct storage_descriptor sd;
 	int passwd_length;
 	char *passwd, *getpass();
 	char buffer[200];
 
 	switch (i) {
-	case EXCH_REJECTED:
+	case EXCH_CMD_REJECTED:
 	    if (api_exch_intype(EXCH_TYPE_STORE_DESC,
 					sizeof sd, (char *)&sd) == -1) {
 		return -1;
@@ -76,11 +90,11 @@ char	*string;		/* if non-zero, where to connect to */
 	    }
 	    buffer[sd.length] = 0;
 	    fprintf(stderr, "%s\n", buffer);
-	    if (api_exch_outcommand(EXCH_ASSOCIATE) == -1) {
+	    if (api_exch_outcommand(EXCH_CMD_ASSOCIATE) == -1) {
 		return -1;
 	    }
 	    break;
-	case EXCH_SEND_AUTH:
+	case EXCH_CMD_SEND_AUTH:
 	    if (api_exch_intype(EXCH_TYPE_STORE_DESC, sizeof sd, (char *)&sd) == -1) {
 		return -1;
 	    }
@@ -112,7 +126,7 @@ char	*string;		/* if non-zero, where to connect to */
 		}
 	    }
 	    sd.length = htons(passwd_length);
-	    if (api_exch_outcommand(EXCH_AUTH) == -1) {
+	    if (api_exch_outcommand(EXCH_CMD_AUTH) == -1) {
 		return -1;
 	    }
 	    if (api_exch_outtype(EXCH_TYPE_STORE_DESC, sizeof sd, (char *)&sd) == -1) {
@@ -142,7 +156,7 @@ struct SREGS *sregs;
     struct storage_descriptor sd;
     int i;
 
-    if (api_exch_outcommand(EXCH_REQUEST) == -1) {
+    if (api_exch_outcommand(EXCH_CMD_REQUEST) == -1) {
 	return -1;
     }
     if (api_exch_outtype(EXCH_TYPE_REGS, sizeof *regs, (char *)regs) == -1) {
@@ -155,15 +169,15 @@ struct SREGS *sregs;
     if (api_exch_outtype(EXCH_TYPE_STORE_DESC, sizeof sd, (char *)&sd) == -1) {
 	return -1;
     }
-    while ((i = api_exch_inbyte()) != EXCH_REPLY) {
+    while ((i = api_exch_nextcommand()) != EXCH_CMD_REPLY) {
 	switch (i) {
-	case EXCH_GIMME:
+	case EXCH_CMD_GIMME:
 	    if (api_exch_intype(EXCH_TYPE_STORE_DESC, sizeof sd, (char *)&sd)
 					== -1) {
 		return -1;
 	    }
 	    /*XXX validity check GIMME? */
-	    if (api_exch_outcommand(EXCH_HEREIS) == -1) {
+	    if (api_exch_outcommand(EXCH_CMD_HEREIS) == -1) {
 		return -1;
 	    }
 	    if (api_exch_outtype(EXCH_TYPE_STORE_DESC, sizeof sd, (char *)&sd)
@@ -175,7 +189,7 @@ struct SREGS *sregs;
 		return -1;
 	    }
 	    break;
-	case EXCH_HEREIS:
+	case EXCH_CMD_HEREIS:
 	    if (api_exch_intype(EXCH_TYPE_STORE_DESC, sizeof sd, (char *)&sd)
 					== -1) {
 		return -1;

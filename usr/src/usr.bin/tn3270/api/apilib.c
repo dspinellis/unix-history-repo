@@ -296,6 +296,22 @@ ReadOiaGroupParms *parms;
 }
 
 /*
+ * The "we are done" routine.  This gets called last.
+ */
+
+api_finish()
+{
+#if	defined(unix)
+    if (api_close_api() == -1) {
+	return -1;
+    } else {
+	return 0;
+    }
+#endif	/* defined(unix) */
+}
+
+
+/*
  * The initialization routine.  Be sure to call this first.
  */
 
