@@ -1,0 +1,112 @@
+*** ../../doc-2.0/doc	Tue Sep 11 16:13:36 1990
+--- doc	Wed Dec 26 14:44:00 1990
+***************
+*** 2,6 ****
+  ##################################################################
+  #
+! #       Doc - Version  2.0.1 (9/14/90)
+  #	      [Version 2.0 8/22/90]
+  #             [Version 1.1 5/17/90]
+--- 2,7 ----
+  ##################################################################
+  #
+! #       Doc - Version 2.0.1.3 (12/26/90) knutson@mcc.com
+! #	      [Version  2.0.1 (9/14/90)]
+  #	      [Version 2.0 8/22/90]
+  #             [Version 1.1 5/17/90]
+***************
+*** 55,59 ****
+  ##
+  #set auxd=/nfs/u5/hotz/auto/
+! set auxd=""
+  
+  ######## Number of dig retries
+--- 56,60 ----
+  ##
+  #set auxd=/nfs/u5/hotz/auto/
+! set auxd="/usr/local/lib/doc/"
+  
+  ######## Number of dig retries
+***************
+*** 306,312 ****
+  
+  if ($#sns > 1) then
+!   @ ffwarn++
+!   echo "WARNING: Found $#sns unique SOA serial #'s for $dad" >> log.$dom
+!   if ($wflag) echo "WARNING: Found $#sns unique SOA serial #'s for $dad"
+    if ($ddflag) echo "DDBUG: 7"
+  else if ($sns != "") then
+--- 307,313 ----
+  
+  if ($#sns > 1) then
+!   # @ ffwarn++
+!   echo "NOTE: Found $#sns unique SOA serial #'s for $dad" >> log.$dom
+!   # if ($wflag) echo "WARNING: Found $#sns unique SOA serial #'s for $dad"
+    if ($ddflag) echo "DDBUG: 7"
+  else if ($sns != "") then
+***************
+*** 1005,1013 ****
+       echo -n "ERROR: " >> log.$dom
+       echo "$i claims to be authoritative, but does not appear in" >> log.$dom
+!      echo "NS list from authoritative servers" >> log.$dom
+       if ($eflag) then
+          echo -n "ERROR: "
+          echo "$i claims to be authoritative, but does not appear in"
+!         echo "NS list from authoritative servers"
+       endif
+       if ($ddflag) echo "DDBUG: 37"
+--- 1006,1014 ----
+       echo -n "ERROR: " >> log.$dom
+       echo "$i claims to be authoritative, but does not appear in" >> log.$dom
+!      echo "  === NS list from authoritative servers" >> log.$dom
+       if ($eflag) then
+          echo -n "ERROR: "
+          echo "$i claims to be authoritative, but does not appear in"
+!         echo "  === NS list from authoritative servers"
+       endif
+       if ($ddflag) echo "DDBUG: 37"
+***************
+*** 1080,1083 ****
+--- 1081,1085 ----
+  (rm $dom.* &) >& /dev/null
+  set isok=1
++ set exitstatus=0
+  echo "Summary:" >> log.$dom
+  echo "Summary:"
+***************
+*** 1086,1089 ****
+--- 1088,1092 ----
+     echo "   YIKES: doc aborted while testing $dom  parent $dad"
+     set isok=0
++    set exitstatus=100
+  endif
+  if ($fferror) then
+***************
+*** 1091,1094 ****
+--- 1094,1098 ----
+     echo "   ERRORS found for $dom (count: $fferror)"
+     set isok=0
++    @ exitstatus = $exitstatus + 50 + $fferror
+  endif
+  if ($ffwarn) then
+***************
+*** 1096,1099 ****
+--- 1100,1104 ----
+     echo "   WARNINGS issued for $dom (count: $ffwarn)"
+     set isok=0
++    @ exitstatus = $exitstatus + 10 + $ffwarn
+  endif
+  if ($isok) then
+***************
+*** 1115,1119 ****
+  rm logXX.$dom
+  
+! exit 0
+  
+  show:
+--- 1120,1124 ----
+  rm logXX.$dom
+  
+! exit $exitstatus
+  
+  show:
