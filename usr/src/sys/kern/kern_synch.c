@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_synch.c	8.6 (Berkeley) %G%
+ *	@(#)kern_synch.c	8.7 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -141,7 +141,7 @@ schedcpu(arg)
 	register unsigned int newcpu;
 
 	wakeup((caddr_t)&lbolt);
-	for (p = (struct proc *)allproc; p != NULL; p = p->p_next) {
+	for (p = allproc.lh_first; p != 0; p = p->p_list.le_next) {
 		/*
 		 * Increment time in/out of memory and sleep time
 		 * (if sleeping).  We ignore overflow; with 16-bit int's
