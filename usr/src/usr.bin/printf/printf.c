@@ -5,18 +5,23 @@
  * %sccs.include.redist.c%
  */
 
+#ifndef BUILTIN
 #ifndef lint
 char copyright[] =
 "@(#) Copyright (c) 1989 The Regents of the University of California.\n\
  All rights reserved.\n";
 #endif /* not lint */
+#endif
 
 #ifndef lint
-static char sccsid[] = "@(#)printf.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)printf.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
+#include <errno.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #define PF(f, func) { \
 	if (fieldwidth) \
@@ -30,22 +35,35 @@ static char sccsid[] = "@(#)printf.c	5.9 (Berkeley) %G%";
 		(void)printf(f, func); \
 }
 
-char **gargv;
+static int	 asciicode __P((void));
+static void	 err __P((const char *fmt, ...));
+static void	 escape __P((char *));
+static int	 getchr __P((void));
+static double	 getdouble __P((void));
+static int	 getint __P((void));
+static long	 getlong __P((void));
+static char	*getstr __P((void));
+static char	*mklong __P((char *, int));
 
+static char **gargv;
+
+int
+#ifdef BUILTIN
+progprintf(argc, argv)
+#else
 main(argc, argv)
+#endif
 	int argc;
 	char **argv;
 {
 	static char *skip1, *skip2;
 	register char *format, *fmt, *start;
 	register int end, fieldwidth, precision;
-	char convch, nextch, *getstr(), *index(), *mklong();
-	double getdouble();
-	long getlong();
+	char convch, nextch;
 
 	if (argc < 2) {
-		fprintf(stderr, "usage: printf format [arg ...]\n");
-		exit(1);
+		(void)fprintf(stderr, "usage: printf format [arg ...]\n");
+		return (1);
 	}
 
 	/*
@@ -68,15 +86,14 @@ next:		for (start = fmt;; ++fmt) {
 			if (!*fmt) {
 				/* avoid infinite loop */
 				if (end == 1) {
-					fprintf(stderr,
-					    "printf: missing format character.\n");
-					exit(1);
+					err("missing format character");
+					return (1);
 				}
 				end = 1;
 				if (fmt > start)
 					(void)printf("%s", start);
 				if (!*gargv)
-					exit(0);
+					return (0);
 				fmt = format;
 				goto next;
 			}
@@ -103,8 +120,8 @@ next:		for (start = fmt;; ++fmt) {
 		/* skip to conversion char */
 		for (; index(skip2, *fmt); ++fmt);
 		if (!*fmt) {
-			fprintf(stderr, "printf: missing format character.\n");
-			exit(1);
+			err("missing format character");
+			return (1);
 		}
 
 		convch = *fmt;
@@ -112,54 +129,65 @@ next:		for (start = fmt;; ++fmt) {
 		*fmt = '\0';
 		switch(convch) {
 		case 'c': {
-			char p = getchr();
+			char p;
+
+			p = getchr();
 			PF(start, p);
 			break;
 		}
 		case 's': {
-			char *p = getstr();
+			char *p;
+
+			p = getstr();
 			PF(start, p);
 			break;
 		}
 		case 'd': case 'i': case 'o': case 'u': case 'x': case 'X': {
-			char *f = mklong(start, convch);
-			long p = getlong();
+			long p;
+			char *f;
+			
+			if ((f = mklong(start, convch)) == NULL)
+				return (1);
+			p = getlong();
 			PF(f, p);
 			break;
 		}
 		case 'e': case 'E': case 'f': case 'g': case 'G': {
-			double p = getdouble();
+			double p;
+
+			p = getdouble();
 			PF(start, p);
 			break;
 		}
 		default:
-			fprintf(stderr, "printf: illegal format character.\n");
-			exit(1);
+			err("illegal format character.\n");
+			return (1);
 		}
 		*fmt = nextch;
 	}
 	/* NOTREACHED */
 }
 
-char *
+static char *
 mklong(str, ch)
-	char *str, ch;
+	char *str;
+	int ch;
 {
+	register char *copy;
 	int len;
-	char *copy, *malloc();
 
 	len = strlen(str) + 2;
-	if (!(copy = malloc((u_int)len))) {	/* never freed; XXX */
-		fprintf(stderr, "printf: out of memory.\n");
-		exit(1);
-	}
-	bcopy(str, copy, len - 3);
-	copy[len - 3] = 'l';
-	copy[len - 2] = ch;
-	copy[len - 1] = '\0';
+	if (copy = malloc((u_int)len)) {	/* never freed; XXX */
+		bcopy(str, copy, len - 3);
+		copy[len - 3] = 'l';
+		copy[len - 2] = ch;
+		copy[len - 1] = '\0';
+	} else
+		err("%s", strerror(errno));
 	return(copy);
 }
 
+static void
 escape(fmt)
 	register char *fmt;
 {
@@ -220,14 +248,15 @@ escape(fmt)
 	*store = '\0';
 }
 
+static int
 getchr()
 {
 	if (!*gargv)
-		return((int)'\0');
+		return('\0');
 	return((int)**gargv++);
 }
 
-char *
+static char *
 getstr()
 {
 	if (!*gargv)
@@ -236,6 +265,7 @@ getstr()
 }
 
 static char *number = "+-.0123456789";
+static int
 getint()
 {
 	if (!*gargv)
@@ -245,11 +275,9 @@ getint()
 	return(asciicode());
 }
 
-long
+static long
 getlong()
 {
-	long atol();
-
 	if (!*gargv)
 		return((long)0);
 	if (index(number, **gargv))
@@ -257,11 +285,9 @@ getlong()
 	return((long)asciicode());
 }
 
-double
+static double
 getdouble()
 {
-	double atof();
-
 	if (!*gargv)
 		return((double)0);
 	if (index(number, **gargv))
@@ -269,13 +295,41 @@ getdouble()
 	return((double)asciicode());
 }
 
+static int
 asciicode()
 {
-	register char ch;
+	register int ch;
 
 	ch = **gargv;
 	if (ch == '\'' || ch == '"')
 		ch = (*gargv)[1];
 	++gargv;
 	return(ch);
+}
+
+#if __STDC__
+#include <stdarg.h>
+#else
+#include <varargs.h>
+#endif
+
+static void
+#if __STDC__
+err(const char *fmt, ...)
+#else
+err(fmt, va_alist)
+	char *fmt;
+	va_dcl
+#endif
+{
+	va_list ap;
+#if __STDC__
+	va_start(ap, fmt);
+#else
+	va_start(ap);
+#endif
+	(void)fprintf(stderr, "printf: ");
+	(void)vfprintf(stderr, fmt, ap);
+	va_end(ap);
+	(void)fprintf(stderr, "\n");
 }
