@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)copy.c	7.4 (Berkeley) %G%
+ *	@(#)copy.c	7.5 (Berkeley) %G%
  */
 
 /*
