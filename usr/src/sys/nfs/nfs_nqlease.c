@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_nqlease.c	7.15 (Berkeley) %G%
+ *	@(#)nfs_nqlease.c	7.16 (Berkeley) %G%
  */
 
 /*
@@ -228,10 +228,8 @@ nqsrv_getlease(vp, duration, flags, nd, nam, cachablep, frev, cred)
 		} else {
 			lp->lc_flag |= LC_NONCACHABLE;
 			nqsrv_locklease(lp);
-			VOP_UNLOCK(vp);
 			nqsrv_send_eviction(vp, lp, nd->nd_slp, nam, cred);
 			nqsrv_waitfor_expiry(lp);
-			VOP_LOCK(vp);
 			nqsrv_unlocklease(lp);
 		}
 doreply:
@@ -729,28 +727,20 @@ nqnfsrv_vacated(nfsd, mrep, md, dpos, cred, nam, mrq)
 
 	fhp = &nfh.fh_generic;
 	nfsm_srvmtofh(fhp);
-	if (error = nfsrv_fhtovp(fhp, FALSE, &vp, cred, nfsd->nd_slp, nam, &rdonly))
-		return (error);
 	m_freem(mrep);
-	tlp = vp->v_lease;
-	if (tlp == (struct nqlease *)0) {
-		/*
-		 * Find the lease by searching the hash list.
-		 */
-		for (lp = nqfhead[NQFHHASH(fhp->fh_fid.fid_data)]; lp;
-		     lp = lp->lc_fhnext)
-			if (fhp->fh_fsid.val[0] == lp->lc_fsid.val[0] &&
-			    fhp->fh_fsid.val[1] == lp->lc_fsid.val[1] &&
-			    !bcmp(fhp->fh_fid.fid_data, lp->lc_fiddata,
-				  MAXFIDSZ)) {
-				/* Found it */
-				lp->lc_vp = vp;
-				vp->v_lease = lp;
-				tlp = lp;
-				break;
-			}
-	}
-	vrele(vp);
+	/*
+	 * Find the lease by searching the hash list.
+	 */
+	for (lp = nqfhead[NQFHHASH(fhp->fh_fid.fid_data)]; lp;
+	     lp = lp->lc_fhnext)
+		if (fhp->fh_fsid.val[0] == lp->lc_fsid.val[0] &&
+		    fhp->fh_fsid.val[1] == lp->lc_fsid.val[1] &&
+		    !bcmp(fhp->fh_fid.fid_data, lp->lc_fiddata,
+			  MAXFIDSZ)) {
+			/* Found it */
+			tlp = lp;
+			break;
+		}
 	if (tlp) {
 		lp = tlp;
 		len = 1;
