@@ -1,0 +1,3 @@
+LDFLAGS = -lmalloc
+RANLIB = echo
+INSTALL = cp
