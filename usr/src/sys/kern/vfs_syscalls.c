@@ -1,4 +1,4 @@
-/*	vfs_syscalls.c	3.4	%G%	*/
+/*	vfs_syscalls.c	3.5	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -65,7 +65,7 @@ off_t pipeadj;
 	register struct buf *bp;
 	struct stat ds;
 
-	IUPDAT(ip, &time, &time);
+	IUPDAT(ip, &time, &time, 0);
 	/*
 	 * first copy from inode table
 	 */

@@ -1,4 +1,4 @@
-/*	subr_xxx.c	3.2	%G%	*/
+/*	subr_xxx.c	3.3	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -45,7 +45,15 @@ daddr_t bn;
 			if(rwflg==B_READ || (bp = alloc(dev))==NULL)
 				return((daddr_t)-1);
 			nb = dbtofsb(bp->b_blkno);
-			bdwrite(bp);
+			if ((ip->i_mode&IFMT) == IFDIR)
+				/*
+				 * Write directory blocks synchronously
+				 * so they never appear with garbage in
+				 * them on the disk.
+				 */
+				bwrite(bp);
+			else
+				bdwrite(bp);
 			ip->i_un.i_addr[i] = nb;
 			ip->i_flag |= IUPD|ICHG;
 		}
@@ -76,14 +84,18 @@ daddr_t bn;
 	}
 
 	/*
-	 * fetch the address from the inode
+	 * fetch the first indirect block
 	 */
 	nb = ip->i_un.i_addr[NADDR-j];
 	if(nb == 0) {
 		if(rwflg==B_READ || (bp = alloc(dev))==NULL)
 			return((daddr_t)-1);
 		nb = dbtofsb(bp->b_blkno);
-		bdwrite(bp);
+		/*
+		 * Write synchronously so that indirect blocks
+		 * never point at garbage.
+		 */
+		bwrite(bp);
 		ip->i_un.i_addr[NADDR-j] = nb;
 		ip->i_flag |= IUPD|ICHG;
 	}
@@ -107,7 +119,15 @@ daddr_t bn;
 				return((daddr_t)-1);
 			}
 			nb = dbtofsb(nbp->b_blkno);
-			bdwrite(nbp);
+			if (j < 3 || (ip->i_mode&IFMT) == IFDIR)
+				/*
+				 * Write synchronously so indirect blocks
+				 * never point at garbage and blocks
+				 * in directories never contain garbage.
+				 */
+				bwrite(nbp);
+			else
+				bdwrite(nbp);
 			bap[i] = nb;
 			bdwrite(bp);
 		} else

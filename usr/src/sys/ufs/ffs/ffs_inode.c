@@ -1,4 +1,4 @@
-/*	ffs_inode.c	3.4	%G%	*/
+/*	ffs_inode.c	3.5	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -178,7 +178,7 @@ register struct inode *ip;
 			ip->i_flag |= IUPD|ICHG;
 			ifree(ip->i_dev, ip->i_number);
 		}
-		IUPDAT(ip, &time, &time);
+		IUPDAT(ip, &time, &time, 0);
 		prele(ip);
 		i = INOHASH(ip->i_dev, ip->i_number);
 		x = ip - inode;
@@ -208,10 +208,13 @@ done:
  * an inode structure.
  * If any is on, update the inode
  * with the current time.
+ * If waitfor is given, then must insure
+ * i/o order so wait for write to complete.
  */
-iupdat(ip, ta, tm)
+iupdat(ip, ta, tm, waitfor)
 register struct inode *ip;
 time_t *ta, *tm;
+int waitfor;
 {
 	register struct buf *bp;
 	struct dinode *dp;
@@ -250,7 +253,10 @@ time_t *ta, *tm;
 		if(ip->i_flag&ICHG)
 			dp->di_ctime = time;
 		ip->i_flag &= ~(IUPD|IACC|ICHG);
-		bdwrite(bp);
+		if (waitfor)
+			bwrite(bp);
+		else
+			bdwrite(bp);
 	}
 }
 
@@ -269,12 +275,30 @@ register struct inode *ip;
 	register i;
 	dev_t dev;
 	daddr_t bn;
+	struct inode itmp;
 
 	if (ip->i_vfdcnt)
 		panic("itrunc");
 	i = ip->i_mode & IFMT;
 	if (i!=IFREG && i!=IFDIR)
 		return;
+
+	/*
+	 * Clean inode on disk before freeing blocks
+	 * to insure no duplicates if system crashes.
+	 */
+	itmp = *ip;
+	itmp.i_size = 0;
+	for (i = 0; i < NADDR; i++)
+		itmp.i_un.i_addr[i] = 0;
+	itmp.i_flag |= ICHG|IUPD;
+	iupdat(&itmp, &time, &time, 1);
+	ip->i_flag &= ~(IUPD|IACC|ICHG);
+
+	/*
+	 * Now return blocks to free list... if machine
+	 * crashes, they will be harmless MISSING blocks.
+	 */
 	dev = ip->i_dev;
 	for(i=NADDR-1; i>=0; i--) {
 		bn = ip->i_un.i_addr[i];
@@ -300,7 +324,10 @@ register struct inode *ip;
 		}
 	}
 	ip->i_size = 0;
-	ip->i_flag |= ICHG|IUPD;
+	/*
+	 * Inode was written and flags updated above.
+	 * No need to modify flags here.
+	 */
 }
 
 tloop(dev, bn, f1, f2)
@@ -357,6 +384,12 @@ maknode(mode)
 	ip->i_nlink = 1;
 	ip->i_uid = u.u_uid;
 	ip->i_gid = u.u_gid;
+
+	/*
+	 * Make sure inode goes to disk before directory entry.
+	 */
+	iupdat(ip, &time, &time, 1);
+
 	wdir(ip);
 	return(ip);
 }
