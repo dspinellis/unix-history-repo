@@ -1,4 +1,4 @@
-static char *sccsid ="@(#)stty.c	4.3 (Berkeley) %G%";
+static char *sccsid ="@(#)stty.c	4.4 (Berkeley) %G%";
 /*
  * set teletype modes
  */
@@ -113,6 +113,8 @@ struct
 	"-ctlecho",	0, 0, 0, LCTLECH,
 	"pendin",	0, 0, LPENDIN, 0,
 	"-pendin",	0, 0, 0, LPENDIN,
+	"decctlq",	0, 0, LDECCTQ, 0,
+	"-decctlq",	0, 0, 0, LDECCTQ,
 	0,
 };
 
@@ -219,6 +221,19 @@ char	**iargv;
 				perror("ioctl");
 			continue;
 		}
+		if (eq("dec")){
+			mode.sg_erase = 0177;
+			mode.sg_kill = CTRL(u);
+			tc.t_intrc = CTRL(c);
+			ldisc = NTTYDISC;
+			lmode &= ~LPRTERA;
+			lmode |= LCRTBS|LCTLECH|LDECCTQ;
+			if (mode.sg_ospeed >= B1200)
+				lmode |= LCRTERA|LCRTKIL;
+			if (ioctl(1, TIOCSETD, &ldisc)<0)
+				perror("ioctl");
+			continue;
+		}
 		for (sp = special; sp->name; sp++)
 			if (eq(sp->name)) {
 				if (--argc == 0)
@@ -226,7 +241,7 @@ char	**iargv;
 				if (**++argv == 'u')
 					*sp->cp = 0377;
 				else if (**argv == '^')
-					*sp->cp = ((*argv)[1] == '?') ?
+					*sp->cp = (*(argv[1]) == '?') ?
 					    0177 : (*argv)[1] & 037;
 				else
 					*sp->cp = **argv;
