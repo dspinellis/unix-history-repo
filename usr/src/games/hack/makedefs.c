@@ -1,21 +1,28 @@
 /* Copyright (c) Stichting Mathematisch Centrum, Amsterdam, 1985. */
 /* makedefs.c - version 1.0.2 */
 
+#include <stdio.h>
+
 /* construct definitions of object constants */
-#define	DEF_FILE	"def.objects.h"
 #define	LINSZ	1000
 #define	STRSZ	40
 
 int fd;
 char string[STRSZ];
 
-main(){
+main(argc, argv)
+	int argc;
+	char **argv;
+{
 register int index = 0;
 register int propct = 0;
 register char *sp;
-	fd = open(DEF_FILE, 0);
-	if(fd < 0) {
-		perror(DEF_FILE);
+	if (argc != 2) {
+		(void)fprintf(stderr, "usage: makedefs file\n");
+		exit(1);
+	}
+	if ((fd = open(argv[1], 0)) < 0) {
+		perror(argv[1]);
 		exit(1);
 	}
 	skipuntil("objects[] = {");
