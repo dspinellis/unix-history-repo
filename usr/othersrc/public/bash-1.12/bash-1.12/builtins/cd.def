@@ -1,0 +1,588 @@
+This file is cd.def, from which is created cd.c.  It implements the
+builtins "cd", "pwd", "pushd", "popd", and "dirs" in Bash.
+
+Copyright (C) 1987, 1989, 1991 Free Software Foundation, Inc.
+
+This file is part of GNU Bash, the Bourne Again SHell.
+
+Bash is free software; you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free
+Software Foundation; either version 1, or (at your option) any later
+version.
+
+Bash is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or
+FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+for more details.
+
+You should have received a copy of the GNU General Public License along
+with Bash; see the file COPYING.  If not, write to the Free Software
+Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+
+$PRODUCES cd.c
+
+#include <stdio.h>
+#include <sys/param.h>
+#include "../shell.h"
+#include "../maxpath.h"
+
+static int change_to_directory (), cd_to_string ();
+
+/* Keeps track of the current working directory. */
+extern char *the_current_working_directory;
+
+/* By default, follow the symbolic links as if they were real directories
+   while hacking the `cd' command.  This means that `cd ..' moves up in
+   the string of symbolic links that make up the current directory, instead
+   of the absolute directory.  The shell variable `nolinks' controls this
+   flag. */
+int follow_symbolic_links = 1;
+
+$BUILTIN cd
+$FUNCTION cd_builtin
+$SHORT_DOC cd [dir]
+Change the current directory to DIR.  The variable $HOME is the
+default DIR.  The variable $CDPATH defines the search path for
+the directory containing DIR.  Alternative directory names are
+separated by a colon (:).  A null directory name is the same as
+the current directory, i.e. `.'.  If DIR begins with a slash (/),
+then $CDPATH is not used.  If the directory is not found, and the
+shell variable `cdable_vars' exists, then try the word as a variable
+name.  If that variable has a value, then cd to the value of that
+variable.
+$END
+
+int
+cd_builtin (list)
+     WORD_LIST *list;
+{
+  char *dirname;
+
+  {
+    extern int restricted;
+    if (restricted)
+      {
+	builtin_error ("Privileged command");
+	return (EXECUTION_FAILURE);
+      }
+  }
+
+  if (list)
+    {
+      char *extract_colon_unit ();
+      char *path_string = get_string_value ("CDPATH");
+      char *path;
+      int index = 0;
+
+      dirname = list->word->word;
+
+      if (path_string && !absolute_pathname (dirname))
+	{
+	  while ((path = extract_colon_unit (path_string, &index)))
+	    {
+	      char *dir;
+
+	      if (*path && (*path == '~'))
+		{
+		  char *tilde_expand (), *te_string = tilde_expand (path);
+
+		  free (path);
+		  path = te_string;
+		}
+
+	      if (!*path)
+		{
+		  free (path);
+		  path = savestring ("."); /* by definition. */
+		}
+
+	      dir = (char *)alloca (2 + strlen (dirname) + strlen (path));
+
+	      if (!dir)
+		fatal_error ("Out of memory");
+
+	      strcpy (dir, path);
+	      if (path[strlen (path) - 1] != '/')
+		strcat (dir, "/");
+	      strcat (dir, dirname);
+	      free (path);
+
+	      if (change_to_directory (dir))
+		{
+		  if (strncmp (dir, "./", 2) != 0)
+		    printf ("%s\n", dir);
+		  dirname = dir;
+
+		  goto bind_and_exit;
+		}
+	    }
+	}
+
+      if (!change_to_directory (dirname))
+	{
+	  /* Maybe this is `cd -', equivalent to `cd $OLDPWD' */
+	  if (dirname[0] == '-' && dirname[1] == '\0')
+	    {
+	      char *t = get_string_value ("OLDPWD");
+
+	      if (t && change_to_directory (t))
+		goto bind_and_exit;
+	    }
+
+	  /* If the user requests it, then perhaps this is the name of
+	     a shell variable, whose value contains the directory to
+	     change to.  If that is the case, then change to that
+	     directory. */
+	  if (find_variable ("cdable_vars"))
+	    {
+	      char *t = get_string_value (dirname);
+
+	      if (t && change_to_directory (t))
+		{
+		  printf ("%s\n", t);
+		  goto bind_and_exit;
+		}
+	    }
+
+	  file_error (dirname);
+	  return (EXECUTION_FAILURE);
+	}
+      goto bind_and_exit;
+    }
+  else
+    {
+      dirname = get_string_value ("HOME");
+
+      if (!dirname)
+	return (EXECUTION_FAILURE);
+
+      if (!change_to_directory (dirname))
+	{
+	  file_error (dirname);
+	  return (EXECUTION_FAILURE);
+	}
+
+    bind_and_exit:
+      {
+	char *get_working_directory (), *get_string_value ();
+	char *directory = get_working_directory ("cd");
+
+	bind_variable ("OLDPWD", get_string_value ("PWD"));
+	bind_variable ("PWD", directory);
+
+	if (directory)
+	  free (directory);
+      }
+      return (EXECUTION_SUCCESS);
+    }
+}
+
+$BUILTIN pwd
+$FUNCTION pwd_builtin
+$SHORT_DOC pwd
+Print the current working directory.
+$END
+
+/* Non-zero means that pwd always give verbatim directory, regardless of
+   symbolic link following. */
+static int verbatim_pwd = 1;
+
+/* Print the name of the current working directory. */
+pwd_builtin (list)
+     WORD_LIST *list;
+{
+  char *get_working_directory (), *getwd (), *directory;
+
+  no_args (list);
+
+  if (verbatim_pwd)
+    {
+      char *buffer = (char *)xmalloc (MAXPATHLEN);
+      directory = getwd (buffer);
+
+      if (!directory)
+	{
+	  builtin_error ("%s", buffer);
+	  free (buffer);
+	}
+    }
+  else
+    {
+      directory = get_working_directory ("pwd");
+    }
+
+  if (directory)
+    {
+      printf ("%s\n", directory);
+      fflush (stdout);
+      free (directory);
+      return (EXECUTION_SUCCESS);
+    }
+  else
+    return (EXECUTION_FAILURE);
+}
+
+$BUILTIN pushd
+$FUNCTION pushd_builtin
+$DEPENDS_ON PUSHD_AND_POPD
+$SHORT_DOC pushd [dir | +n | -n]
+Adds a directory to the top of the directory stack, or rotates
+the stack, making the new top of the stack the current working
+directory.  With no arguments, exchanges the top two directories.
+
++n	Rotates the stack so that the Nth directory (counting
+	from the left of the list shown by `dirs') is at the top.
+
+-n	Rotates the stack so that the Nth directory (counting
+	from the right) is at the top.
+
+dir	adds DIR to the directory stack at the top, making it the
+	new current working directory.
+
+You can see the directory stack with the `dirs' command.
+If the variable `pushd_silent' is not set and the pushd command
+was successful, a `dirs' is be performed as well.
+$END
+
+#if defined (PUSHD_AND_POPD)
+/* Some useful commands whose behaviour has been observed in Csh. */
+
+/* The list of remembered directories. */
+static char **pushd_directory_list = (char **)NULL;
+
+/* Number of existing slots in this list. */
+static int directory_list_size = 0;
+
+/* Offset to the end of the list. */
+static int directory_list_offset = 0;
+
+pushd_builtin (list)
+     WORD_LIST *list;
+{
+  char *temp, *current_directory, *get_working_directory ();
+  int j = directory_list_offset - 1;
+  char direction = '+';
+
+  /* If there is no argument list then switch current and
+     top of list. */
+  if (!list)
+    {
+      if (!directory_list_offset)
+	{
+	  builtin_error ("No other directory");
+	  return (EXECUTION_FAILURE);
+	}
+
+      current_directory = get_working_directory ("pushd");
+      if (!current_directory)
+	return (EXECUTION_FAILURE);
+
+      temp = pushd_directory_list[j];
+      pushd_directory_list[j] = current_directory;
+      goto change_to_temp;
+    }
+  else
+    {
+      direction = *(list->word->word);
+      if (direction == '+' || direction == '-')
+	{
+	  int num;
+	  if (1 == sscanf (&(list->word->word)[1], "%d", &num))
+	    {
+	      if (direction == '-')
+		num = directory_list_offset - num;
+
+	      if (num > directory_list_offset || num < 0)
+		{
+		  if (!directory_list_offset)
+		    builtin_error ("Directory stack empty");
+		  else
+		    builtin_error ("Stack contains only %d directories",
+				    directory_list_offset + 1);
+		  return (EXECUTION_FAILURE);
+		}
+	      else
+		{
+		  /* Rotate the stack num times.  Remember, the
+		     current directory acts like it is part of the
+		     stack. */
+		  temp = get_working_directory ("pushd");
+
+		  if (!num)
+		    goto change_to_temp;
+
+		  do
+		    {
+		      char *top =
+			pushd_directory_list[directory_list_offset - 1];
+
+		      for (j = directory_list_offset - 2; j > -1; j--)
+			pushd_directory_list[j + 1] = pushd_directory_list[j];
+
+		      pushd_directory_list[j + 1] = temp;
+
+		      temp = top;
+		      num--;
+		    }
+		  while (num);
+
+		  temp = savestring (temp);
+		change_to_temp:
+		  {
+		    int tt = EXECUTION_FAILURE;
+
+		    if (temp)
+		      {
+			tt = cd_to_string (temp);
+			free (temp);
+		      }
+
+		    if ((tt == EXECUTION_SUCCESS) &&
+			(!find_variable ("pushd_silent")))
+		      dirs_builtin ((WORD_LIST *)NULL);
+
+		    return (tt);
+		  }
+		}
+	    }
+	}
+
+      /* Change to the directory in list->word->word.  Save the current
+	 directory on the top of the stack. */
+      current_directory = get_working_directory ("pushd");
+      if (!current_directory)
+	return (EXECUTION_FAILURE);
+
+      if (cd_builtin (list) == EXECUTION_SUCCESS)
+	{
+	  if (directory_list_offset == directory_list_size)
+	    {
+	      pushd_directory_list = (char **)
+		xrealloc (pushd_directory_list,
+			  (directory_list_size += 10) * sizeof (char *));
+	    }
+	  pushd_directory_list[directory_list_offset++] = current_directory;
+
+	  if (!find_variable ("pushd_silent"))
+	    dirs_builtin ((WORD_LIST *)NULL);
+
+	  return (EXECUTION_SUCCESS);
+	}
+      else
+	{
+	  free (current_directory);
+	  return (EXECUTION_FAILURE);
+	}
+    }
+}
+#endif /* PUSHD_AND_POPD */
+
+$BUILTIN dirs
+$FUNCTION dirs_builtin
+$DEPENDS_ON PUSHD_AND_POPD
+$SHORT_DOC dirs [-l]
+Display the list of currently remembered directories.  Directories
+find their way onto the list with the `pushd' command; you can get
+back up through the list with the `popd' command.
+
+The -l flag specifies that `dirs' should not print shorthand versions
+of directories which are relative to your home directory.  This means
+that `~/bin' might be displayed as `/homes/bfox/bin'.
+$END
+
+#if defined (PUSHD_AND_POPD)
+/* Print the current list of directories on the directory stack. */
+dirs_builtin (list)
+     WORD_LIST *list;
+{
+  register int i, format = 0;
+  char *temp, *polite_directory_format (), *get_working_directory ();
+
+  /* Maybe do long form? */
+  if (list)
+    {
+      if (strcmp (list->word->word, "-l") == 0)
+	format++;
+      else if (!format || list->next)
+	{
+	  bad_option (list->word->word);
+	  return (EXECUTION_FAILURE);
+	}
+    }
+
+  /* The first directory printed is always the current working directory. */
+  temp = get_working_directory ("dirs");
+  if (!temp)
+    temp = savestring ("<no directory>");
+  printf ("%s", format ? temp : polite_directory_format (temp));
+  free (temp);
+
+  /* Now print any directories in the array. */
+  for (i = (directory_list_offset - 1); i > -1; i--)
+    printf (" %s", format ? pushd_directory_list[i] :
+	    polite_directory_format (pushd_directory_list[i]));
+
+  putchar ('\n');
+  fflush (stdout);
+  return (EXECUTION_SUCCESS);
+}
+#endif /* PUSHD_AND_POPD */
+
+$BUILTIN popd
+$FUNCTION popd_builtin
+$DEPENDS_ON PUSHD_AND_POPD
+$SHORT_DOC popd [+n | -n]
+Removes entries from the directory stack.  With no arguments,
+removes the top directory from the stack, and cd's to the new
+top directory.
+
++n	removes the Nth entry counting from the left of the list
+	shown by `dirs', starting with zero.  For example: `popd +0'
+	removes the first directory, `popd +1' the second.
+
+-n	removes the Nth entry counting from the right of the list
+	shown by `dirs', starting with zero.  For example: `popd -0'
+	removes the last directory, `popd -1' the next to last.
+
+You can see the directory stack with the `dirs' command.
+If the variable 'pushd_silent' is not set and the popd command
+was successful, a 'dirs' will be performed as well..
+$END
+
+#if defined (PUSHD_AND_POPD)
+/* Pop the directory stack, and then change to the new top of the stack.
+   If LIST is non-null it should consist of a word +N or -N, which says
+   what element to delete from the stack.  The default is the top one. */
+popd_builtin (list)
+     WORD_LIST *list;
+{
+  register int i;
+  int which = 0;
+  char direction = '+';
+
+  if (list)
+    {
+      direction = *(list->word->word);
+
+      if ((direction != '+' && direction != '-') ||
+	  (1 != sscanf (&((list->word->word)[1]), "%d", &which)))
+	{
+	  builtin_error ("bad arg `%s'", list->word->word);
+	  return (EXECUTION_FAILURE);
+	}
+    }
+
+  if (which > directory_list_offset || (!directory_list_offset && !which))
+    {
+      if (!directory_list_offset)
+	builtin_error ("Directory stack empty");
+      else
+	builtin_error ("Stack contains only %d directories",
+			directory_list_offset + 1);
+      return (EXECUTION_FAILURE);
+    }
+
+  /* Handle case of no specification, or top of stack specification. */
+  if ((direction == '+' && which == 0) ||
+      (direction == '-' && which == directory_list_offset))
+    {
+      i = cd_to_string (pushd_directory_list[directory_list_offset - 1]);
+      if (i != EXECUTION_SUCCESS)
+	return (i);
+      free (pushd_directory_list[--directory_list_offset]);
+    }
+  else
+    {
+      /* Since an offset other than the top directory was specified,
+	 remove that directory from the list and shift the remainder
+	 of the list into place. */
+
+      if (direction == '+')
+	i = directory_list_offset - which;
+      else
+	i = which;
+
+      free (pushd_directory_list[i]);
+      directory_list_offset--;
+
+      /* Shift the remainder of the list into place. */
+      for (; i < directory_list_offset; i++)
+	pushd_directory_list[i] = pushd_directory_list[i + 1];
+    }
+
+  if (!find_variable ("pushd_silent"))
+    dirs_builtin ((WORD_LIST *)NULL);
+
+  return (EXECUTION_SUCCESS);
+}
+#endif /* PUSHD_AND_POPD */
+
+/* Do the work of changing to the directory NEWDIR.  Handle symbolic
+   link following, etc. */
+static int
+change_to_directory (newdir)
+     char *newdir;
+{
+  char *get_working_directory (), *make_absolute ();
+  char *t;
+
+  if (follow_symbolic_links)
+    {
+      if (!the_current_working_directory)
+	{
+	  t = get_working_directory ("cd_links");
+	  if (t)
+	    free (t);
+	}
+
+      if (the_current_working_directory)
+	t = make_absolute (newdir, the_current_working_directory);
+      else
+	t = savestring (newdir);
+
+      /* Get rid of trailing `/'. */
+      {
+	register int len_t = strlen (t);
+	if (len_t > 1)
+	  {
+	    --len_t;
+	    if (t[len_t] == '/')
+	      t[len_t] = '\0';
+	  }
+      }
+
+      if (chdir (t) < 0)
+	{
+	  free (t);
+	  return (0);
+	}
+
+      if (the_current_working_directory)
+	strcpy (the_current_working_directory, t);
+
+      free (t);
+      return (1);
+    }
+  else
+    {
+      if (chdir (newdir) < 0)
+	return (0);
+      else
+	return (1);
+    }
+}
+
+/* Switch to the directory in NAME.  This uses the cd_builtin to do the work,
+   so if the result is EXECUTION_FAILURE then an error message has already
+   been printed. */
+static int
+cd_to_string (name)
+     char *name;
+{
+  extern WORD_LIST *make_word_list ();
+  WORD_LIST *tlist = make_word_list (make_word (name), NULL);
+  int result = (cd_builtin (tlist));
+  dispose_words (tlist);
+  return (result);
+}
+
