@@ -1,9 +1,10 @@
 #ifndef lint
-static	char *sccsid = "@(#)expand.c	4.11 (Berkeley) 84/12/06";
+static	char *sccsid = "@(#)expand.c	4.12 (Berkeley) 85/02/04";
 #endif
 
 #include "defs.h"
 
+#define	GAVSIZ	NCARGS / 6
 #define LC '{'
 #define RC '}'
 
@@ -31,6 +32,8 @@ char	*index();
  * wh = E_SHELL if expanding shell characters.
  * wh = E_TILDE if expanding `~'.
  * or any of these or'ed together.
+ *
+ * Major portions of this were snarfed from csh/sh.glob.c.
  */
 struct namelist *
 expand(list, wh)
@@ -101,18 +104,18 @@ expstr(s)
 	if ((which & E_VARS) && (cp = index(s, '$')) != NULL) {
 		*cp++ = '\0';
 		if (*cp == '\0') {
-			error("no variable name after '$'\n");
+			yyerror("no variable name after '$'");
 			return;
 		}
 		if (*cp == LC) {
 			cp++;
 			if ((tail = index(cp, RC)) == NULL) {
-				error("unmatched %c\n", *cp);
+				yyerror("unmatched '{'");
 				return;
 			}
 			*tail++ = savec = '\0';
 			if (*cp == '\0') {
-				error("no variable name after '$'\n");
+				yyerror("no variable name after '$'");
 				return;
 			}
 		} else {
@@ -153,7 +156,8 @@ expstr(s)
 			*cp1 = '\0';
 			if (pw == NULL || strcmp(pw->pw_name, buf+1) != 0) {
 				if ((pw = getpwnam(buf+1)) == NULL) {
-					error("unknown user %s\n", buf+1);
+					strcat(buf, ": unknown user name");
+					yyerror(buf+1);
 					return;
 				}
 			}
@@ -279,7 +283,9 @@ matchdir(pattern)
 patherr1:
 	closedir(dirp);
 patherr2:
-	error("%s: %s\n", path, sys_errlist[errno]);
+	strcat(path, ": ");
+	strcat(path, sys_errlist[errno]);
+	yyerror(path);
 }
 
 execbrc(p, s)
@@ -309,12 +315,14 @@ execbrc(p, s)
 			for (pe++; *pe && *pe != ']'; pe++)
 				continue;
 			if (!*pe)
-				error("Missing ]\n");
+				yyerror("Missing ']'");
 			continue;
 		}
 pend:
-	if (brclev || !*pe)
-		fatal("Missing }\n");
+	if (brclev || !*pe) {
+		yyerror("Missing '}'");
+		return (0);
+	}
 	for (pl = pm = p; pm <= pe; pm++)
 		switch (*pm & (QUOTE|TRIM)) {
 
@@ -353,7 +361,7 @@ doit:
 			for (pm++; *pm && *pm != ']'; pm++)
 				continue;
 			if (!*pm)
-				error("Missing ]\n");
+				yyerror("Missing ']'");
 			continue;
 		}
 	return (0);
@@ -409,8 +417,10 @@ amatch(s, p)
 					if (scc == (lc = cc))
 						ok++;
 			}
-			if (cc == 0)
-				fatal("Missing ]\n");
+			if (cc == 0) {
+				yyerror("Missing ']'");
+				return (0);
+			}
 			continue;
 
 		case '*':
@@ -429,7 +439,7 @@ amatch(s, p)
 			return (scc == '\0');
 
 		default:
-			if (c != scc)
+			if ((c & TRIM) != scc)
 				return (0);
 			continue;
 
@@ -489,8 +499,10 @@ smatch(s, p)
 					if (scc == (lc = cc))
 						ok++;
 			}
-			if (cc == 0)
-				fatal("Missing ]\n");
+			if (cc == 0) {
+				yyerror("Missing ']'");
+				return (0);
+			}
 			continue;
 
 		case '*':
@@ -526,7 +538,7 @@ Cat(s1, s2)
 
 	nleft -= len;
 	if (nleft <= 0 || ++eargc >= GAVSIZ)
-		error("Arguments too long\n");
+		yyerror("Arguments too long");
 	eargv[eargc] = 0;
 	eargv[eargc - 1] = s = malloc(len);
 	if (s == NULL)
@@ -543,9 +555,11 @@ addpath(c)
 {
 
 	if (pathp >= lastpathp)
-		fatal("Pathname too long\n");
-	*pathp++ = c;
-	*pathp = '\0';
+		yyerror("Pathname too long");
+	else {
+		*pathp++ = c;
+		*pathp = '\0';
+	}
 }
 
 /*
@@ -581,7 +595,7 @@ exptilde(buf, file)
 			s3 = NULL;
 		if (pw == NULL || strcmp(pw->pw_name, file) != 0) {
 			if ((pw = getpwnam(file)) == NULL) {
-				error("unknown user %s\n", file);
+				error("%s: unknown user name\n", file);
 				if (s3 != NULL)
 					*s3 = '/';
 				return(NULL);

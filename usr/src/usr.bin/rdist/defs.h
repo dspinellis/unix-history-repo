@@ -1,12 +1,11 @@
-/*	defs.h	4.14	84/06/28	*/
+/*	defs.h	4.15	85/02/04	*/
 
 #include <stdio.h>
 #include <ctype.h>
 #include <errno.h>
 #include <pwd.h>
 #include <grp.h>
-#include <signal.h>
-#include <sys/types.h>
+#include <sys/param.h>
 #include <sys/dir.h>
 #include <sys/stat.h>
 #include <sys/time.h>
@@ -43,8 +42,6 @@
 	/* table sizes */
 #define HASHSIZE	1021
 #define INMAX	3500
-#define NCARGS	10240
-#define GAVSIZ	NCARGS / 6
 
 	/* option flags */
 #define VERIFY	0x1
