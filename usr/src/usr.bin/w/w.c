@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)w.c	5.35 (Berkeley) %G%";
+static char sccsid[] = "@(#)w.c	5.36 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -92,6 +92,8 @@ static void	 pr_header __P((kvm_t *, time_t *, int));
 static struct stat
 		*ttystat __P((char *));
 static void	 usage __P((int));
+
+char *fmt_argv __P((char **, char *, int));
 
 int
 main(argc, argv)
@@ -243,8 +245,6 @@ main(argc, argv)
 	if (argwidth < 4)
 		argwidth = 8;
 	for (ep = ehead; ep != NULL; ep = ep->next) {
-		char *fmt_argv();
-
 		if (ep->kp == NULL) {
 			ep->args = "-";
 			continue;
@@ -321,10 +321,17 @@ pr_header(kd, nowp, nusers)
 	double avenrun[3];
 	time_t uptime;
 	int days, hrs, i, mins;
-	char buf[256];
+	char buf[256], fmt[10];
 
-	/* Print time of day. */
-	(void)strftime(buf, sizeof(buf), "%l:w.cp", localtime(nowp));
+	/*
+	 * Print time of day.
+	 *
+	 * Note, SCCS forces the string manipulation below, as it
+	 * replaces w.c with file information.
+	 */
+	(void)strcpy(fmt, "%l:%%%p");
+	fmt[4] = 'M';
+	(void)strftime(buf, sizeof(buf), fmt, localtime(nowp));
 	(void)printf("%s ", buf);
 
 	/*
