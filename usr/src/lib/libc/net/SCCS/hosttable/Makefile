@@ -9,8 +9,9 @@
 # software without specific prior written permission. This software
 # is provided ``as is'' without express or implied warranty.
 #
-#	@(#)Makefile	5.6 (Berkeley) %G%
+#	@(#)Makefile	5.7 (Berkeley) %G%
 #
+DEFS=	-DLIBC_SCCS
 CFLAGS=	-O ${DEFS}
 OBJS=	gethostnamadr.o gethostent.o
 SRCS=	gethostnamadr.c gethostent.c
