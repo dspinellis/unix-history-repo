@@ -12,29 +12,27 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mkdir.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)mkdir.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
 #include <sys/stat.h>
 
+#include <err.h>
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-int exitval;
-
-void build __P((char *));
-void usage __P((void));
-void err __P((const char *, ...));
+int	build __P((char *));
+void	usage __P((void));
 
 int
 main(argc, argv)
 	int argc;
 	char *argv[];
 {
-	int ch, pflag;
+	int ch, exitval, pflag;
 
 	pflag = 0;
 	while ((ch = getopt(argc, argv, "p")) != EOF)
@@ -50,15 +48,17 @@ main(argc, argv)
 	if (!*(argv += optind))
 		usage();
 
-	for (; *argv; ++argv)
+	for (exitval = 0; *argv; ++argv)
 		if (pflag)
-			build(*argv);
-		else if (mkdir(*argv, S_IRWXU | S_IRWXG | S_IRWXO) < 0)
-			err("%s: %s", *argv, strerror(errno));
+			exitval |= build(*argv);
+		else if (mkdir(*argv, S_IRWXU | S_IRWXG | S_IRWXO) < 0) {
+			warn("%s", *argv);
+			exitval = 1;
+		}
 	exit(exitval);
 }
 
-void
+int
 build(path)
 	char *path;
 {
@@ -76,49 +76,24 @@ build(path)
 			if (stat(path, &sb)) {
 				if (errno != ENOENT || mkdir(path,
 				    S_IRWXU | S_IRWXG | S_IRWXO) < 0) {
-					err("%s: %s", path, strerror(errno));
-					return;
+					warn("%s", path);
+					return (1);
 				}
 				create = 1;
 			}
 			if (!(*p = savech))
 				break;
 		}
-	if (!create)
-		err("%s: %s", path, strerror(EEXIST));
+	if (!create) {
+		warnx("%s: %s", path, strerror(EEXIST));
+		return (1);
+	}
+	return (0);
 }
 
 void
 usage()
 {
 	(void)fprintf(stderr, "usage: mkdir [-p] directory ...\n");
-	exit(1);
-}
-
-#if __STDC__
-#include <stdarg.h>
-#else
-#include <varargs.h>
-#endif
-
-void
-#if __STDC__
-err(const char *fmt, ...)
-#else
-err(fmt, va_alist)
-	char *fmt;
-	va_dcl
-#endif
-{
-	va_list ap;
-#if __STDC__
-	va_start(ap, fmt);
-#else
-	va_start(ap);
-#endif
-	(void)fprintf(stderr, "mkdir: ");
-	(void)vfprintf(stderr, fmt, ap);
-	va_end(ap);
-	(void)fprintf(stderr, "\n");
-	exitval = 1;
+	exit (1);
 }
