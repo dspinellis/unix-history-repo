@@ -1,4 +1,6 @@
-(Version 5.4 of %G%)
+(Version 5.5 of %G%)
 
 Multi-token class matches.  IDA implementation is simple, but too
 stupid.
+
+RFC 931 validation.

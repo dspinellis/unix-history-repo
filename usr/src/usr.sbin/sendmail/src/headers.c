@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)headers.c	5.27 (Berkeley) %G%";
+static char sccsid[] = "@(#)headers.c	5.28 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/param.h>
@@ -508,7 +508,7 @@ crackaddr(addr)
 
 
 		/* check for characters that may have to be quoted */
-		if (strchr(".'@,;:\\[]<>()", c) != NULL)
+		if (strchr(".'@,;:\\()", c) != NULL)
 		{
 			/*
 			**  If these occur as the phrase part of a <>
