@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_vnops.c	7.81 (Berkeley) %G%
+ *	@(#)ufs_vnops.c	7.82 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -554,9 +554,9 @@ ufs_remove(dvp, vp, cnp)
  * link vnode call
  */
 int
-ufs_link(vp, tdvp, cnp)
-	register struct vnode *vp;   /* source vnode */
+ufs_link(tdvp, vp, cnp)
 	struct vnode *tdvp;
+	register struct vnode *vp;   /* source vnode */
 	struct componentname *cnp;
 {
 	register struct inode *ip;
