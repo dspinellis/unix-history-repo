@@ -1,4 +1,4 @@
-/*	if_loop.c	6.4	85/04/27	*/
+/*	if_loop.c	6.5	85/05/30	*/
 
 /*
  * Loopback interface driver for protocol testing and timing.
@@ -29,8 +29,6 @@
 #include "../netns/ns_if.h"
 #endif
 
-#define	LONET	127
-#define	LOHOST	1			/* can't be 0, that's broadcast */
 #define	LOMTU	(1024+512)
 
 struct	ifnet loif;
