@@ -1,4 +1,4 @@
-/*	uipc_syscalls.c	4.5	81/11/20	*/
+/*	uipc_syscalls.c	4.6	81/11/20	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -352,3 +352,24 @@ COUNT(SRECEIVE);
 	if (uap->asa)
 		(void) copyout((caddr_t)&sa, (caddr_t)uap->asa, sizeof (sa));
 }
+
+/*
+ * Get socket address.
+ */
+ssocketaddr()
+{
+	register struct a {
+		int	fdes;
+		struct	sockaddr *asa;
+	} *uap = (struct a *)u.u_ap;
+	register struct file *fp;
+COUNT(SSOCKETADDR);
+
+	fp = getf(uap->fdes);
+	if (fp == 0)
+		return;
+	if ((fp->f_flag & FSOCKET) == 0) {
+		u.u_error = ENOTSOCK;
+		return;
+	}
+	copyout(fp->f_socket->f_
