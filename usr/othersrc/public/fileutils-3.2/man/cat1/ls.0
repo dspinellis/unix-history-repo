@@ -1,0 +1,264 @@
+
+
+
+LS(1L)                                                     LS(1L)
+
+
+NNAAMMEE
+       ls, dir, vdir - list contents of directories
+
+SSYYNNOOPPSSIISS
+       llss  [-abcdgiklmnpqrstuxABCFLNQRSUX1]  [-w  cols] [-T cols]
+       [-I pattern] [--all]  [--escape]  [--directory]  [--inode]
+       [--kilobytes]  [--numeric-uid-gid]  [--hide-control-chars]
+       [--reverse]   [--size]   [--width=cols]   [--tabsize=cols]
+       [--almost-all]  [--ignore-backups]  [--classify]  [--file-
+       type]   [--ignore=pattern]   [--dereference]   [--literal]
+       [--quote-name]                               [--recursive]
+       [--sort={none,time,size,extension}]                [--for-
+       mat={long,verbose,commas,across,vertical,single-column}]
+       [--time={atime,access,use,ctime,status}] [path...]
+
+DDEESSCCRRIIPPTTIIOONN
+       This manual page documents the GNU version of llss.  ddiirr and
+       vvddiirr are versions of llss with different default output for-
+       mats.  These programs list each given  file  or  directory
+       path.   Directory contents are sorted alphabetically.  For
+       llss, files are by default listed in columns, sorted  verti-
+       cally,  if  the  standard  output is a terminal; otherwise
+       they are listed one per  line.   For  ddiirr,  files  are  by
+       default  listed  in columns, sorted vertically.  For vvddiirr,
+       files are by default listed in long format.
+
+   OOPPTTIIOONNSS
+       -_a, --_a_l_l
+              List all files in directories, including all  files
+              that start with `.'.
+
+       -_b, --_e_s_c_a_p_e
+              Quote  nongraphic  characters  in  file names using
+              alphabetic and octal backslash sequences like those
+              used in C.
+
+       -_c, --_t_i_m_e=_c_t_i_m_e, --_t_i_m_e=_s_t_a_t_u_s
+              Sort  directory  contents  according  to the files'
+              status change  time  instead  of  the  modification
+              time.   If  the  long listing format is being used,
+              print the status change time instead of the modifi-
+              cation time.
+
+       -_d, --_d_i_r_e_c_t_o_r_y
+              List  directories  like  other  files,  rather than
+              listing their contents.
+
+       -_g     Ignored; for Unix compatibility.
+
+       -_i, --_i_n_o_d_e
+              Print the index number of each file to the left  of
+              the file name.
+
+
+
+
+
+                                                                1
+
+
+
+
+
+LS(1L)                                                     LS(1L)
+
+
+       -_k, --_k_i_l_o_b_y_t_e_s
+              If file sizes are being listed, print them in kilo-
+              bytes.  This  overrides  the  environment  variable
+              POSIXLY_CORRECT.
+
+       -_l, --_f_o_r_m_a_t=_l_o_n_g, --_f_o_r_m_a_t=_v_e_r_b_o_s_e
+              In  addition  to  the  name of each file, print the
+              file type, permissions, number of hard links, owner
+              name, group name, size in bytes, and timestamp (the
+              modification time unless other times are selected).
+              For  files  with  a time that is more than 6 months
+              old or more than 1 hour into the future, the times-
+              tamp  contains the year instead of the time of day.
+
+       -_m, --_f_o_r_m_a_t=_c_o_m_m_a_s
+              List files horizontally, with as many as  will  fit
+              on each line, separated by commas.
+
+       -_n, --_n_u_m_e_r_i_c-_u_i_d-_g_i_d
+              List  the numeric UID and GID instead of the names.
+
+       -_p     Append a character to each file name indicating the
+              file type.
+
+       -_q, --_h_i_d_e-_c_o_n_t_r_o_l-_c_h_a_r_s
+              Print  question marks instead of nongraphic charac-
+              ters in file names.
+
+       -_r, --_r_e_v_e_r_s_e
+              Sort directory contents in reverse order.
+
+       -_s, --_s_i_z_e
+              Print the size of each file in  1K  blocks  to  the
+              left of the file name.  If the environment variable
+              POSIXLY_CORRECT is set, 512-byte  blocks  are  used
+              instead.
+
+       -_t, --_s_o_r_t=_t_i_m_e
+              Sort  directory  contents  by  timestamp instead of
+              alphabetically, with the newest files listed first.
+
+       -_u, --_t_i_m_e=_a_t_i_m_e, --_t_i_m_e=_a_c_c_e_s_s, --_t_i_m_e=_u_s_e
+              Sort  directory  contents  according  to the files'
+              last access time instead of the modification  time.
+              If the long listing format is being used, print the
+              last access time instead of the modification  time.
+
+       -_x, --_f_o_r_m_a_t=_a_c_r_o_s_s, --_f_o_r_m_a_t=_h_o_r_i_z_o_n_t_a_l
+              List the files in columns, sorted horizontally.
+
+       -_A, --_a_l_m_o_s_t-_a_l_l
+              List  all  files  in directories except for `.' and
+              `..'.
+
+
+
+
+                                                                2
+
+
+
+
+
+LS(1L)                                                     LS(1L)
+
+
+       -_B, --_i_g_n_o_r_e-_b_a_c_k_u_p_s
+              Do not list files that end with  `~',  unless  they
+              are given on the command line.
+
+       -_C, --_f_o_r_m_a_t=_v_e_r_t_i_c_a_l
+              List files in columns, sorted vertically.
+
+       -_F, --_c_l_a_s_s_i_f_y
+              Append a character to each file name indicating the
+              file type.  For regular files that are  executable,
+              append a `*'.  The file type indicators are `/' for
+              directories, `@' for symbolic links, `|' for FIFOs,
+              `=' for sockets, and nothing for regular files.
+
+       -_L, --_d_e_r_e_f_e_r_e_n_c_e
+              List  the files linked to by symbolic links instead
+              of listing the contents of the links.
+
+       -_N, --_l_i_t_e_r_a_l
+              Do not quote file names.
+
+       -_Q, --_q_u_o_t_e-_n_a_m_e
+              Enclose file names in double quotes and quote  non-
+              graphic characters as in C.
+
+       -_R, --_r_e_c_u_r_s_i_v_e
+              List the contents of all directories recursively.
+
+       -_S, --_s_o_r_t=_s_i_z_e
+              Sort  directory  contents  by  file size instead of
+              alaphabetically,  with  the  largest  files  listed
+              first.
+
+       -_U, --_s_o_r_t=_n_o_n_e
+              Do not sort directory contennts.
+
+       -_X, --_s_o_r_t=_e_x_t_e_n_s_i_o_n
+              Sort  directory  contents  alphabetically  by  file
+              extension (characters after the  last  `.');  files
+              with no extension are sorted first.
+
+       -_1, --_f_o_r_m_a_t=_s_i_n_g_l_e-_c_o_l_u_m_n
+              List one file per line.
+
+       -_w, --_w_i_d_t_h _c_o_l_s
+              Assume  the  screen  is  _c_o_l_s  columns  wide.   The
+              default is taken from the terminal driver if possi-
+              ble;  otherwise the environment variable CCOOLLUUMMNNSS is
+              used if it is set; otherwise the default is 80.
+
+       -_T, --_t_a_b_s_i_z_e _c_o_l_s
+              Assume that each tabstop is _c_o_l_s columns wide.  The
+              default is 8.
+
+
+
+
+                                                                3
+
+
+
+
+
+LS(1L)                                                     LS(1L)
+
+
+       -_I, --_i_g_n_o_r_e _p_a_t_t_e_r_n
+              Do  not list files whose names match the shell pat-
+              tern _p_a_t_t_e_r_n unless they are given on  the  command
+              line.   As  in the shell, an initial `.' in a file-
+              name does not match a wildcard at the start of _p_a_t-
+              _t_e_r_n.
+
+BBUUGGSS
+       On  BSD systems, the -_s option reports sizes that are half
+       the correct values for files that are NFS-mounted from HP-
+       UX  systems.   On HP-UX systems, it reports sizes that are
+       twice the correct values for files  that  are  NFS-mounted
+       from BSD systems.  This is due to a flaw in HP-UX; it also
+       affects the HP-UX llss program.
+
+       The long-named options can be introduced with `+' as  well
+       as  `--', for compatibility with previous releases.  Even-
+       tually support for `+' will  be  removed,  because  it  is
+       incompatible with the POSIX.2 standard.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                                                4
+
+

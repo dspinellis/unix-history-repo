@@ -1,0 +1,132 @@
+
+
+
+DU(1L)                                                     DU(1L)
+
+
+NNAAMMEE
+       du - summarize disk usage
+
+SSYYNNOOPPSSIISS
+       dduu [-abcklsxDLS] [--all] [--total] [--count-links] [--sum-
+       marize]   [--bytes]   [--kilobytes]    [--one-file-system]
+       [--separate-dirs]   [--dereference]   [--dereference-args]
+       [path...]
+
+DDEESSCCRRIIPPTTIIOONN
+       This manual page documents the GNU version of dduu.  dduu dis-
+       plays  the  amount of disk space used by each argument and
+       for each subdirectory of directory arguments.   The  space
+       is  measured  in 1K blocks by default, unless the environ-
+       ment  variable  POSIXLY_CORRECT  is  set,  in  which  case
+       512-byte blocks are used.
+
+   OOPPTTIIOONNSS
+       -_a, --_a_l_l
+              Display counts for all files, not just directories.
+
+       -_b, --_b_y_t_e_s
+              Print sizes in bytes.
+
+       -_c, --_t_o_t_a_l
+              Write a grand total of all of the  arguments  after
+              all  arguments  have  been  processed.  This can be
+              used to find out the disk  usage  of  a  directory,
+              with some files excluded.
+
+       -_k, --_k_i_l_o_b_y_t_e_s
+              Print sizes in kilobytes.  This overrides the envi-
+              ronment variable POSIXLY_CORRECT.
+
+       -_l, --_c_o_u_n_t-_l_i_n_k_s
+              Count the size of all  files,  even  if  they  have
+              appeared already in another hard link.
+
+       -_s, --_s_u_m_m_a_r_i_z_e
+              Display only a total for each argument.
+
+       -_x, --_o_n_e-_f_i_l_e-_s_y_s_t_e_m
+              Skip  directories that are on different filesystems
+              from the one that the argument being  processed  is
+              on.
+
+       -_D, --_d_e_r_e_f_e_r_e_n_c_e-_a_r_g_s
+              Dereference  symbolic  links  that are command line
+              arguments.  Does not affect other  symbolic  links.
+              This  is  helpful for finding out the disk usage of
+              directories like /usr/tmp where they  are  symbolic
+              links.
+
+
+
+
+
+                                                                1
+
+
+
+
+
+DU(1L)                                                     DU(1L)
+
+
+       -_L, --_d_e_r_e_f_e_r_e_n_c_e
+              Dereference  symbolic  links  (show  the disk space
+              used by the file or directory that the link  points
+              to instead of the space used by the link).
+
+       -_S, --_s_e_p_a_r_a_t_e-_d_i_r_s
+              Count  the  size  of each directory separately, not
+              including the sizes of subdirectories.
+
+BBUUGGSS
+       On BSD systems, dduu reports sizes that are half the correct
+       values  for files that are NFS-mounted from HP-UX systems.
+       On HP-UX systems, it reports sizes that are twice the cor-
+       rect  values  for files that are NFS-mounted from BSD sys-
+       tems.  This is due to a flaw in HP-UX; it also affects the
+       HP-UX dduu program.
+
+       The  long-named options can be introduced with `+' as well
+       as `--', for compatibility with previous releases.   Even-
+       tually  support  for  `+'  will  be removed, because it is
+       incompatible with the POSIX.2 standard.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                                                2
+
+

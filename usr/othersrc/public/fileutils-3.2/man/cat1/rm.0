@@ -1,0 +1,132 @@
+
+
+
+RM(1L)                                                     RM(1L)
+
+
+NNAAMMEE
+       rm - remove files
+
+SSYYNNOOPPSSIISS
+       rrmm   [-dfirvR]   [--directory]  [--force]  [--interactive]
+       [--recursive] [--verbose] path...
+
+DDEESSCCRRIIPPTTIIOONN
+       This manual page documents the  GNU  version  of  rrmm.   rrmm
+       removes  each  given file.  By default, it does not remove
+       directories.
+
+       If a file is unwritable, the standard input is a tty,  and
+       the -_f or --_f_o_r_c_e option is not given, rrmm prompts the user
+       for whether to remove the file.  If the response does  not
+       begin with `y' or `Y', the file is skipped.
+
+       GNU  rrmm,  like every program that uses the getopt function
+       to parse its arguments, lets you  use  the  --  option  to
+       indicate that all following arguments are non-options.  To
+       remove a file called `-f' in the  current  directory,  you
+       could type either
+              rm -- -f
+       or
+              rm ./-f
+       The Unix rrmm program's use of a single `-' for this purpose
+       predates the development of the getopt standard syntax.
+
+   OOPPTTIIOONNSS
+       -_d, --_d_i_r_e_c_t_o_r_y
+              Remove  directories  with   `unlink'   instead   of
+              `rmdir',  and don't require a directory to be empty
+              before trying to unlink it.   Only  works  for  the
+              super-user.   Because  unlinking a directory causes
+              any files in the deleted directory to become unref-
+              erenced,  it  is  wise to ffsscckk the filesystem after
+              doing this.
+
+       -_f, --_f_o_r_c_e
+              Ignore nonexistent files and never prompt the user.
+
+       -_i, --_i_n_t_e_r_a_c_t_i_v_e
+              Prompt   whether  to  remove  each  file.   If  the
+              response does not begin with `y' or `Y',  the  file
+              is skipped.
+
+       -_r, -_R, --_r_e_c_u_r_s_i_v_e
+              Remove the contents of directories recursively.
+
+       -_v, --_v_e_r_b_o_s_e
+              Print the name of each file before removing it.
+
+       The  long-named options can be introduced with `+' as well
+       as  `--',  for  compatibility  with   previous   releases.
+
+
+
+                                                                1
+
+
+
+
+
+RM(1L)                                                     RM(1L)
+
+
+       Eventually  support for `+' will be removed, because it is
+       incompatible with the POSIX.2 standard.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                                                2
+
+

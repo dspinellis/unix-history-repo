@@ -1,0 +1,198 @@
+
+
+
+CP(1L)                                                     CP(1L)
+
+
+NNAAMMEE
+       cp - copy files
+
+SSYYNNOOPPSSIISS
+       ccpp [options] source dest
+       ccpp [options] source... directory
+       Options:
+       [-abdfilprsuvxPR]    [-S    backup-suffix]    [-V    {num-
+       bered,existing,simple}]   [--backup]    [--no-dereference]
+       [--force] [--interactive] [--one-file-system] [--preserve]
+       [--recursive]  [--update]  [--verbose]   [--suffix=backup-
+       suffix]     [--version-control={numbered,existing,simple}]
+       [--archive] [--path] [--link] [--symbolic-link]
+
+DDEESSCCRRIIPPTTIIOONN
+       This manual page documents the GNU version of ccpp.  If  the
+       last  argument names an existing directory, ccpp copies each
+       other given file into a file with the same  name  in  that
+       directory.   Otherwise,  if  only  two files are given, it
+       copies the first onto the second.  It is an error  if  the
+       last  argument  is not a directory and more than two files
+       are given.  By default, it does not copy directories.
+
+   OOPPTTIIOONNSS
+       -_a, --_a_r_c_h_i_v_e
+              Preserve as much as possible of the  structure  and
+              attributes  of the original files in the copy.  The
+              same as -_d_p_R.
+
+       -_b, --_b_a_c_k_u_p
+              Make backups of files that are about  to  be  over-
+              written or removed.
+
+       -_d, --_n_o-_d_e_r_e_f_e_r_e_n_c_e
+              Copy  symbolic  links as symbolic links rather than
+              copying the files that they point to, and  preserve
+              hard link relationships between source files in the
+              copies.
+
+       -_f, --_f_o_r_c_e
+              Remove existing destination files.
+
+       -_i, --_i_n_t_e_r_a_c_t_i_v_e
+              Prompt whether to overwrite existing regular desti-
+              nation files.
+
+       -_l, --_l_i_n_k
+              Make   hard   links   instead  of  copies  of  non-
+              directories.
+
+       -_P, --_p_a_t_h
+              Form the  pathname  of  each  destination  file  by
+              appending  to  the target directory a slash and the
+              pathname of the source  file.   The  last  argument
+
+
+
+                                                                1
+
+
+
+
+
+CP(1L)                                                     CP(1L)
+
+
+              given  to ccpp must be the name of an existing direc-
+              tory.  For example, the command  `cp  --path  a/b/c
+              existing_dir'  copies  the  file  _a/_b/_c  to  _e_x_i_s_t-
+              _i_n_g__d_i_r/_a/_b/_c, creating  any  missing  intermediate
+              directories.
+
+       -_p, --_p_r_e_s_e_r_v_e
+              Preserve  the original files' owner, group, permis-
+              sions, and timestamps.
+
+       -_r     Copy  directories  recursively,  copying  all  non-
+              directories as if they were regular files.
+
+       -_s, --_s_y_m_b_o_l_i_c-_l_i_n_k
+              Make  symbolic  links  instead  of  copies  of non-
+              directories.  All source  files  must  be  absolute
+              pathnames  (starting  with `/') unless the destina-
+              tion files are in the current directory.
+
+       -_u, --_u_p_d_a_t_e
+              Do not copy a nondirectory  that  has  an  existing
+              destination  with  the  same  or newer modification
+              time.
+
+       -_v, --_v_e_r_b_o_s_e
+              Print the name of each file before copying it.
+
+       -_x, --_o_n_e-_f_i_l_e-_s_y_s_t_e_m
+              Skip subdirectories that are on different  filesys-
+              tems from the one that the copy started on.
+
+       -_R, --_r_e_c_u_r_s_i_v_e
+              Copy directories recursively.
+
+       -_S, --_s_u_f_f_i_x _b_a_c_k_u_p-_s_u_f_f_i_x
+              The  suffix used for making simple backup files can
+              be set with  the  SSIIMMPPLLEE__BBAACCKKUUPP__SSUUFFFFIIXX  environment
+              variable,  which  can be overridden by this option.
+              If neither of those is given, the default  is  `~',
+              as it is in Emacs.
+
+       -_V, --_v_e_r_s_i_o_n-_c_o_n_t_r_o_l {_n_u_m_b_e_r_e_d,_e_x_i_s_t_i_n_g,_s_i_m_p_l_e}
+              The  type  of backups made can be set with the VVEERR--
+              SSIIOONN__CCOONNTTRROOLL environment  variable,  which  can  be
+              overridden  by  this option.  If VVEERRSSIIOONN__CCOONNTTRROOLL is
+              not set and this option is not given,  the  default
+              backup  type  is `existing'.  The value of the VVEERR--
+              SSIIOONN__CCOONNTTRROOLL environment variable and the  argument
+              to  this  option  are  like the GNU Emacs `version-
+              control' variable;  they  also  recognize  synonyms
+              that  are  more  descriptive.  The valid values are
+              (unique abbreviations are accepted):
+
+
+
+
+
+                                                                2
+
+
+
+
+
+CP(1L)                                                     CP(1L)
+
+
+              `t' or `numbered'
+                     Always make numbered backups.
+
+              `nil' or `existing'
+                     Make numbered backups of files that  already
+                     have them, simple backups of the others.
+
+              `never' or `simple'
+                     Always make simple backups.
+
+       The  long-named options can be introduced with `+' as well
+       as `--', for compatibility with previous releases.   Even-
+       tually  support  for  `+'  will  be removed, because it is
+       incompatible with the POSIX.2 standard.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                                                3
+
+

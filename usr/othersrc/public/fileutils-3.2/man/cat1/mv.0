@@ -1,0 +1,132 @@
+
+
+
+MV(1L)                                                     MV(1L)
+
+
+NNAAMMEE
+       mv - rename files
+
+SSYYNNOOPPSSIISS
+       mmvv [options] source dest
+       mmvv [options] source... directory
+       Options:
+       [-bfiuv]       [-S      backup-suffix]      [-V      {num-
+       bered,existing,simple}] [--backup]  [--force]  [--interac-
+       tive]   [--update]   [--verbose]  [--suffix=backup-suffix]
+       [--version-control={numbered,existing,simple}]
+
+DDEESSCCRRIIPPTTIIOONN
+       This manual page documents the GNU version of mmvv.  If  the
+       last  argument  names an existing directory, mmvv moves each
+       other given file into a file with the same  name  in  that
+       directory.   Otherwise,  if  only  two files are given, it
+       moves the first onto the second.  It is an  error  if  the
+       last  argument  is not a directory and more than two files
+       are given.  It can move only regular files across filesys-
+       tems.
+
+       If a destination file is unwritable, the standard input is
+       a tty, and the -_f or  --_f_o_r_c_e  option  is  not  given,  mmvv
+       prompts  the  user  for whether to overwrite the file.  If
+       the response does not begin with `y' or `Y', the  file  is
+       skipped.
+
+   OOPPTTIIOONNSS
+       -_b, --_b_a_c_k_u_p
+              Make backups of files that are about to be removed.
+
+       -_f, --_f_o_r_c_e
+              Remove existing destination files and never  prompt
+              the user.
+
+       -_i, --_i_n_t_e_r_a_c_t_i_v_e
+              Prompt  whether  to overwrite each destination file
+              that already exists.   If  the  response  does  not
+              begin with `y' or `Y', the file is skipped.
+
+       -_u, --_u_p_d_a_t_e
+              Do  not  move  a  nondirectory that has an existing
+              destination with the  same  or  newer  modification
+              time.
+
+       -_v, --_v_e_r_b_o_s_e
+              Print the name of each file before moving it.
+
+       -_S, --_s_u_f_f_i_x _b_a_c_k_u_p-_s_u_f_f_i_x
+              The  suffix used for making simple backup files can
+              be set with  the  SSIIMMPPLLEE__BBAACCKKUUPP__SSUUFFFFIIXX  environment
+              variable,  which  can be overridden by this option.
+              If neither of those is given, the default  is  `~',
+
+
+
+                                                                1
+
+
+
+
+
+MV(1L)                                                     MV(1L)
+
+
+              as it is in Emacs.
+
+       -_V, --_v_e_r_s_i_o_n-_c_o_n_t_r_o_l {_n_u_m_b_e_r_e_d,_e_x_i_s_t_i_n_g,_s_i_m_p_l_e}
+              The  type  of backups made can be set with the VVEERR--
+              SSIIOONN__CCOONNTTRROOLL environment  variable,  which  can  be
+              overridden  by  this option.  If VVEERRSSIIOONN__CCOONNTTRROOLL is
+              not set and this option is not given,  the  default
+              backup  type  is `existing'.  The value of the VVEERR--
+              SSIIOONN__CCOONNTTRROOLL environment variable and the  argument
+              to  this  option  are  like the GNU Emacs `version-
+              control' variable;  they  also  recognize  synonyms
+              that  are  more  descriptive.  The valid values are
+              (unique abbreviations are accepted):
+
+              `t' or `numbered'
+                     Always make numbered backups.
+
+              `nil' or `existing'
+                     Make numbered backups of files that  already
+                     have them, simple backups of the others.
+
+              `never' or `simple'
+                     Always make simple backups.
+
+       The  long-named options can be introduced with `+' as well
+       as `--', for compatibility with previous releases.   Even-
+       tually  support  for  `+'  will  be removed, because it is
+       incompatible with the POSIX.2 standard.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                                                2
+
+

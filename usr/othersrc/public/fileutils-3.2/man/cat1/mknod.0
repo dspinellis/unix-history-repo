@@ -1,0 +1,66 @@
+
+
+
+MKNOD(1L)                                               MKNOD(1L)
+
+
+NNAAMMEE
+       mknod - make special files
+
+SSYYNNOOPPSSIISS
+       mmkknnoodd [-m mode] [--mode=mode] path {bcu} major minor
+       mmkknnoodd [-m mode] [--mode=mode] path p
+
+DDEESSCCRRIIPPTTIIOONN
+       This  manual  page  documents  the  GNU  version of mmkknnoodd.
+       mmkknnoodd creates a FIFO, character  special  file,  or  block
+       special  file  with  the  given pathname.  By default, the
+       mode of created files is 0666 minus the bits  set  in  the
+       umask.
+
+       The  argument after the path specifies the type of file to
+       make:
+       p for a FIFO
+       b for a block (buffered) special file
+       c or u for a character (unbuffered) special file
+
+       When making a block or character special file,  the  major
+       and  minor  device  numbers  must  be given after the file
+       type.
+
+   OOPPTTIIOONNSS
+       -_m, --_m_o_d_e _m_o_d_e
+              Set the mode of created files  to  _m_o_d_e,  which  is
+              symbolic  as  in chmod and uses the default mode as
+              the point of departure.
+
+       The long-named options can be introduced with `+' as  well
+       as  `--', for compatibility with previous releases.  Even-
+       tually support for `+' will  be  removed,  because  it  is
+       incompatible with the POSIX.2 standard.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                                                1
+
+
