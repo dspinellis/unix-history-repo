@@ -1,4 +1,4 @@
-\"	@(#)gathering.me	1.5 %G%
+\"	@(#)gathering.me	1.6 %G%
 .sh 1 "Gathering Profile Data"
 .pp
 Routine calls or statement executions can be measured by having a
@@ -31,7 +31,7 @@ We are interested in gathering three pieces of information during
 program execution: call counts and execution times for 
 each profiled routine, and the arcs of the dynamic call graph
 traversed by this execution of the program.
-By post-processing of this data we can construct the dynamic call
+By post-processing of this data we can build the dynamic call
 graph for this execution of the program and propagate times along
 the edges of this graph to attribute times for routines to the
 routines that invoke them.
@@ -43,7 +43,7 @@ time it is invoked.
 The volume of data thus produced would be unmanageably large,
 and the time required to record it would overwhelm the running
 time of most programs.
-Similarly, the monitoring routine can not perform the analysis of
+Similarly, the monitoring routine can not do the analysis of
 the profiling data (e.g. assembling the call graph, propagating
 times around it, discovering cycles, etc.) during program
 execution.
@@ -54,7 +54,7 @@ This file is then processed by a separate program to produce the
 listing of the profile data.
 An advantage of this approach is that the profile data for
 several executions of a program can be combined by the
-post-processing to provide a profile of a large number of
+post-processing to provide a profile of many
 executions.
 .pp
 The execution time monitoring consists of three parts.
@@ -71,7 +71,7 @@ The \fBgprof\fP monitoring routine counts the number of times
 each profiled routine is called.
 The monitoring routine also records the arc in the call graph
 that activated the profiled routine.
-In fact, the count is associated with the arc in the call graph
+The count is associated with the arc in the call graph
 rather than with the routine.
 Call counts for routines can then be determined by summing the counts
 on arcs directed into that routine.
@@ -177,7 +177,7 @@ We have adjusted the granularity of the histogram so that
 program counter values map one-to-one onto the histogram.
 We make the simplifying assumption that all calls to a specific
 routine require the same amount of time to execute.
-This assumption may disguise the fact that some calls
+This assumption may disguise that some calls
 (or worse, some call sites) always invoke a routine
 such that its execution is faster (or slower)
 than the average time for that routine.

@@ -1,11 +1,11 @@
-\"	@(#)intro.me	1.5 %G%
+\"	@(#)intro.me	1.6 %G%
 .ls 2
 .sh 1 "Programs to be Profiled"
 .pp
 Software research environments
 normally include many large programs
 both for  production use and for experimental investigation.
-These programs are typically very modular,
+These programs are typically modular,
 in accordance with generally accepted principles
 of good program design.
 Often they consist of numerous small routines
@@ -31,7 +31,7 @@ are found to dominate its execution time.
 The purpose of the \fBgprof\fP profiling tool is to 
 help the user evaluate alternative implementations
 of abstractions.
-In fact, we developed this tool in response to our efforts 
+We developed this tool in response to our efforts 
 to improve a code generator we were writing [Graham82].
 .pp
 The \fBgprof\fP design takes advantage of the fact that the programs
@@ -44,7 +44,7 @@ The profile can be used to compare and assess the costs of
 various implementations.
 .pp
 The profiler can be linked into a program without
-special planning on the part of the programmer.
+special planning by the programmer.
 The overhead for using \fBgprof\fP is low;
 both in terms of added execution time and the
 volume of profiling information recorded.
