@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)lfs_inode.c	7.27 (Berkeley) %G%
+ *	@(#)lfs_inode.c	7.28 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -255,20 +255,15 @@ ufs_inactive(vp)
 #endif
 	}
 	IUPDAT(ip, &time, &time, 0);
+	IUNLOCK(ip);
+	ip->i_flag = 0;
 	/*
 	 * If we are done with the inode, reclaim it
 	 * so that it can be reused immediately.
 	 */
-	if (vp->v_usecount == 0 && ip->i_mode == 0) {
-		vinvalbuf(vp, 0);
-		IUNLOCK(ip);
-		ip->i_flag = 0;
-		if ((vp->v_flag & VXLOCK) == 0)
-			vgone(vp);
-		return (error);
-	}
-	IUNLOCK(ip);
-	ip->i_flag = 0;
+	if (vp->v_usecount == 0 && ip->i_mode == 0 &&
+	    (vp->v_flag & VXLOCK) == 0)
+		vgone(vp);
 	return (error);
 }
 
