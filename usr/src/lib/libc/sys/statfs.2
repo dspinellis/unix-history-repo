@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)statfs.2	6.6 (Berkeley) %G%
+.\"	@(#)statfs.2	6.7 (Berkeley) %G%
 .\"
 .Dd 
 .Dt STATFS 2
@@ -36,8 +36,8 @@ typedef quad fsid_t;
 struct statfs {
 short	f_type;		  /* type of filesystem (see below) */
 short	f_flags;	  /* copy of mount flags */
-long	f_fsize;	  /* fundamental file system block size */
-long	f_bsize;	  /* optimal transfer block size */
+long	f_bsize;	  /* fundamental file system block size */
+long	f_iosize;	  /* optimal transfer block size */
 long	f_blocks;	  /* total data blocks in file system */
 long	f_bfree;	  /* free blocks in fs */
 long	f_bavail;	  /* free blocks avail to non-superuser */
