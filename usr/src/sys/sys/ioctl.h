@@ -1,4 +1,4 @@
-/*	ioctl.h	4.7	81/03/17	*/
+/*	ioctl.h	4.8	81/08/31	*/
 /*
  * ioctl definitions, and special character and local tty definitions
  */
@@ -39,6 +39,7 @@ struct ltchars {
 #define	LCTLECH	0010000		/* echo control characters as ^X */
 #define	LPENDIN	0020000		/* tp->t_rawq is waiting to be reread */
 #define	LDECCTQ 0040000		/* only ^Q starts after ^S */
+#define	LNOFLSH 0100000		/* dont flush output on signals */
 
 /* local state */
 #define	LSBKSL	01		/* state bit for lowercase backslash work */
