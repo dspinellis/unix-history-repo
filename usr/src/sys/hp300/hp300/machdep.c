@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: machdep.c 1.51 89/11/28$
  *
- *	@(#)machdep.c	7.8 (Berkeley) %G%
+ *	@(#)machdep.c	7.9 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -68,6 +68,11 @@ int	bufpages = 0;
 #endif
 int	msgbufmapped;		/* set when safe to use msgbuf */
 int	physmem = MAXMEM;	/* max supported memory, changes to actual */
+/*
+ * safepri is a safe priority for sleep to set for a spin-wait
+ * during autoconfiguration or after a panic.
+ */
+int   safepri = PSL_LOWIPL;
 
 extern	u_int lowram;
 
