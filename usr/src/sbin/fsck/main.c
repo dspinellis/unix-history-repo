@@ -1,4 +1,4 @@
-char version[] = "@(#)main.c	2.19	(Berkeley)	%G%";
+char version[] = "@(#)main.c	2.20	(Berkeley)	%G%";
 
 #include <stdio.h>
 #include <ctype.h>
@@ -81,7 +81,7 @@ daddr_t	duplist[DUPTBLSIZE];	/* dup block table */
 daddr_t	*enddup;		/* next entry in dup table */
 daddr_t	*muldup;		/* multiple dups part of table */
 
-#define	MAXLNCNT	50	/* num zero link cnts to remember */
+#define	MAXLNCNT	500	/* num zero link cnts to remember */
 ino_t	badlncnt[MAXLNCNT];	/* table of inos with zero link cnts */
 ino_t	*badlnp;		/* next entry in table */
 
@@ -1302,12 +1302,9 @@ readdir(dirp)
 		dirp->loc += DIRBLKSIZ;
 		filsize -= DIRBLKSIZ;
 		if (dirp->fix == DONTKNOW) {
-			pwarn("DIRECTORY %D CORRUPTED", dirp->number);
+			pfatal("DIRECTORY %D CORRUPTED", dirp->number);
 			dirp->fix = NOFIX;
-			if (preen) {
-				printf(" (SALVAGED)\n");
-				dirp->fix = FIX;
-			} else if (reply("SALVAGE") != 0)
+			if (reply("SALVAGE") != 0)
 				dirp->fix = FIX;
 		}
 		if (dirp->fix != FIX)
@@ -1333,12 +1330,9 @@ readdir(dirp)
 		dirp->loc += size;
 		filsize -= size;
 		if (dirp->fix == DONTKNOW) {
-			pwarn("DIRECTORY %D CORRUPTED", dirp->number);
+			pfatal("DIRECTORY %D CORRUPTED", dirp->number);
 			dirp->fix = NOFIX;
-			if (preen) {
-				printf(" (SALVAGED)\n");
-				dirp->fix = FIX;
-			} else if (reply("SALVAGE") != 0)
+			if (reply("SALVAGE") != 0)
 				dirp->fix = FIX;
 		}
 		if (dirp->fix == FIX) {
