@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)pl_1.c	1.7 83/05/20";
+static	char *sccsid = "@(#)pl_1.c	1.8 83/05/20";
 #endif
 
 #include "player.h"
@@ -194,6 +194,7 @@ int conditions;
 	signal(SIGINT, SIG_IGN);
 	signal(SIGQUIT, SIG_IGN);
 	signal(SIGALRM, SIG_IGN);
+	signal(SIGCHLD, SIG_IGN);
 
 	if (conditions != -1) {
 		capn = scene[game].ship[player].file -> captain;
@@ -232,15 +233,20 @@ int conditions;
 			Signal("It looks like you've had it!", -1, 0);
 			if (conditions == 1)
 				Signal("Your ship was captured.", -1, 0);
-			if (conditions == 2)
+			else if (conditions == 2)
 				Signal("No more enemies.", -1, 0);
-			if (conditions == 3)
+			else if (conditions == 3)
 				Signal("Hurricane!  All ships destroyed.",
-				-1, 0);
+					-1, 0);
+			else if (conditions == 4)
+				Signal("The driver died.", -1, 0);
 			move(0, LINES-1);
 			scroll = LINES;
 			clearline();
 			refresh();
+		} else {
+			if (conditions == 4)
+				printf("The driver died.\n");
 		}
 		fclose(syncfile);
 	}
@@ -255,6 +261,22 @@ int conditions;
 choke()
 {
 	leave(0);
+}
+
+#include <wait.h>
+
+child()
+{
+	union wait status;
+	int pid;
+
+	signal(SIGCHLD, SIG_IGN);
+	do {
+		pid = wait3(&status, WNOHANG|WUNTRACED, 0);
+		if (pid < 0 || pid > 0 && !WIFSTOPPED(status))
+			leave(4);
+	} while (pid != 0);
+	signal(SIGCHLD, child);
 }
 
 grapungrap()
@@ -453,6 +475,7 @@ reprint:
 	signal(SIGHUP, choke);
 	signal(SIGINT, choke);
 	signal(SIGQUIT, choke);
+	signal(SIGCHLD, child);
 
 	Write(FILES + player, 1, 0, "begin");  /* he now exists */
 	if (people)
