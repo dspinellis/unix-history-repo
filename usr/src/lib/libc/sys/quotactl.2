@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)quotactl.2	6.5 (Berkeley) %G%
+.\"	@(#)quotactl.2	6.6 (Berkeley) %G%
 .\"
 .TH QUOTA 2 ""
 .UC 5
@@ -14,7 +14,7 @@ quota \- manipulate disk quotas
 .PP
 .B quota(cmd, uid, arg, addr)
 .B int cmd, uid, arg;
-.B caddr_t addr;
+.B char *addr;
 .fi
 .SH DESCRIPTION
 The
