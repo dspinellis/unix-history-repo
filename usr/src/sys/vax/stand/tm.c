@@ -1,4 +1,4 @@
-/*	tm.c	4.3	81/03/15	*/
+/*	tm.c	4.4	81/04/03	*/
 
 /*
  * TM11/TE??
@@ -24,8 +24,7 @@ tmopen(io)
 	skip = io->i_boff;
 	while (skip--) {
 		io->i_cc = 0;
-		while (tmstrategy(io, TM_SFORW))
-			;
+		tmstrategy(io, TM_SFORW);
 	}
 }
 
@@ -67,14 +66,14 @@ retry:
 		if (word&TM_CUR)
 			break;
 	}
-		;
 	ubafree(io, info);
 	word = tmaddr->tmer;
+	printf("tmer %b\n", word, TMER_BITS);
 	if (word&TMER_EOT)
 		return(0);
 	if (word < 0) {
 		if (errcnt == 0)
-			printf("te error: er=%o", tmaddr->tmer);
+			printf("te error: er=%b", tmaddr->tmer, TMER_BITS);
 		if (errcnt==10) {
 			printf("\n");
 			return(-1);
