@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)param.c	7.12 (Berkeley) %G%
+ *	@(#)param.c	7.13 (Berkeley) %G%
  */
 
 #ifndef lint
@@ -64,7 +64,7 @@ int	nproc = NPROC;
 #define	NTEXT (36 + MAXUSERS)
 int	ntext = NTEXT;
 #define NVNODE (NPROC + NTEXT + 300)
-int	desiredvnodes = NVNODE;
+long	desiredvnodes = NVNODE;
 int	nfile = 16 * (NPROC + 16 + MAXUSERS) / 10 + 32;
 int	ncallout = 16 + NPROC;
 int	nclist = 60 + 12 * MAXUSERS;
