@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)login.c	5.56 (Berkeley) %G%";
+static char sccsid[] = "@(#)login.c	5.57 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -193,23 +193,21 @@ main(argc, argv)
 			failures = 0;
 		}
 		(void)strcpy(tbuf, username);
+
 		if (pwd = getpwnam(username))
 			salt = pwd->pw_passwd;
-		else {
-			/* take up the right amount of time */
-			(void)crypt(getpass("Password:"), "xx");
-			goto faked;
-		}
+		else
+			salt = "xx";
 
 		/* if user not super-user, check for disabled logins */
-		if (pwd->pw_uid)
+		if (!pwd || pwd->pw_uid)
 			checknologin();
 
 		/*
 		 * Disallow automatic login to root; if not invoked by
 		 * root, disallow if the uid's differ.
 		 */
-		if (fflag) {
+		if (pwd && fflag) {
 			passwd_req =
 #ifndef	KERBEROS
 			     pwd->pw_uid == 0 ||
@@ -221,14 +219,14 @@ main(argc, argv)
 		 * If no pre-authentication and a password exists
 		 * for this user, prompt for one and verify it.
 		 */
-		if (!passwd_req || !*pwd->pw_passwd)
+		if (pwd && (!passwd_req || !*pwd->pw_passwd))
 			break;
 
 		/*
 		 * If trying to log in as root, but with insecure terminal,
 		 * refuse the login attempt.
 		 */
-		if (pwd->pw_uid == 0 && !rootterm(tty)) {
+		if (pwd && pwd->pw_uid == 0 && !rootterm(tty)) {
 			(void)fprintf(stderr,
 			    "%s login refused on this terminal.\n",
 			    pwd->pw_name);
@@ -244,20 +242,26 @@ main(argc, argv)
 		}
 
 		(void)setpriority(PRIO_PROCESS, 0, -4);
+
 		p = getpass("Password:");
 
+		if (pwd) {
 #ifdef KERBEROS
-		rval = klogin(pwd, localhost, p);
-		if (rval == 1)
-			rval = strcmp(crypt(p, salt), pwd->pw_passwd);
+			rval = klogin(pwd, localhost, p);
+			if (rval == 1)
+				rval = strcmp(crypt(p, salt), pwd->pw_passwd);
 #else
-		rval = strcmp(crypt(p, salt), pwd->pw_passwd);
+			rval = strcmp(crypt(p, salt), pwd->pw_passwd);
 #endif
+		}
 		bzero(p, strlen(p));
-		if (!rval)
+
+		(void)setpriority(PRIO_PROCESS, 0, 0);
+
+		if (pwd && !rval)
 			break;
 
-faked:		(void)printf("Login incorrect\n");
+		(void)printf("Login incorrect\n");
 		failures++;
 		/* we allow 10 tries, but after 3 we start backing off */
 		if (++cnt > 3) {
@@ -272,9 +276,6 @@ faked:		(void)printf("Login incorrect\n");
 
 	/* committed to login -- turn off timeout */
 	(void)alarm((u_int)0);
-
-	/* reset priority */
-	(void)setpriority(PRIO_PROCESS, 0, 0);
 
 	/* paranoia... */
 	endpwent();
