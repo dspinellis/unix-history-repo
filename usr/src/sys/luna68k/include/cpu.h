@@ -11,9 +11,9 @@
  * %sccs.include.redist.c%
  *
  * from: Utah $Hdr: cpu.h 1.16 91/03/25$
- * from: hp300/include/cpu.h	7.14 (Berkeley) 5/20/93
+ * from: hp300/include/cpu.h	8.2 (Berkeley) 9/23/93
  *
- *	@(#)cpu.h	8.2 (Berkeley) %G%
+ *	@(#)cpu.h	8.3 (Berkeley) %G%
  */
 
 /*
