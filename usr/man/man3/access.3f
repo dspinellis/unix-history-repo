@@ -1,0 +1,115 @@
+.ds f. access.3f.raw
+.TH ACCESS 3F "19 January 1983"
+.SH NAME
+access \- determine accessability of a file
+.SH SYNOPSIS
+.B integer function access (name, mode)
+.br
+.B character*(*) name, mode
+.SH DESCRIPTION
+.I Access
+checks the given file,
+.I name,
+for accessability with respect to the caller according to
+.I mode.
+.I Mode
+may include in any order and in any combination one or more of:
+.sp 1
+.TS
+.if \n+(b.=1 .nr d. \n(.c-\n(c.-1
+.de 35
+.ps \n(.s
+.vs \n(.vu
+.in \n(.iu
+.if \n(.u .fi
+.if \n(.j .ad
+.if \n(.j=0 .na
+..
+.nf
+.nr #~ 0
+.if n .nr #~ 0.6n
+.ds #d .d
+.if \(ts\n(.z\(ts\(ts .ds #d nl
+.fc
+.nr 33 \n(.s
+.rm 80 81
+.nr 80 0
+.nr 38 \w\fBr\fR
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \w\fBw\fR
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \w\fBx\fR
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \w(blank)
+.if \n(80<\n(38 .nr 80 \n(38
+.80
+.rm 80
+.nr 81 0
+.nr 38 \wtest for read permission
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \wtest for write permission
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \wtest for execute permission
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \wtest for existence
+.if \n(81<\n(38 .nr 81 \n(38
+.81
+.rm 81
+.nr 38 1n
+.nr 79 0
+.nr 40 \n(79+(0*\n(38)
+.nr 80 +\n(40
+.nr 41 \n(80+(3*\n(38)
+.nr 81 +\n(41
+.nr TW \n(81
+.if t .if (\n(TW+\n(.o)>7.65i .tm Table at line 24 file access.3f.raw is too wide - \n(TW units
+.nr #I \n(.i
+.in +(\n(.lu-\n(TWu-\n(.iu)/2u
+.fc  
+.nr #T 0-1
+.nr #a 0-1
+.eo
+.de T#
+.ds #d .d
+.if \(ts\n(.z\(ts\(ts .ds #d nl
+.mk ##
+.nr ## -1v
+.ls 1
+.ls
+..
+.ec
+.ta \n(80u \n(81u 
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'\fBr\fR\h'|\n(41u'test for read permission
+.ta \n(80u \n(81u 
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'\fBw\fR\h'|\n(41u'test for write permission
+.ta \n(80u \n(81u 
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'\fBx\fR\h'|\n(41u'test for execute permission
+.ta \n(80u \n(81u 
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'(blank)\h'|\n(41u'test for existence
+.fc
+.nr T. 1
+.T# 1
+.in \n(#Iu
+.35
+.TE
+.if \n-(b.=0 .nr c. \n(.c-\n(d.-7
+.sp 1
+.PP
+An error code is returned if either argument is illegal, or if the file
+can not be accessed in all of the specified modes.
+0 is returned if the specified access would be successful.
+.SH FILES
+.ie \nM /usr/ucb/lib/libU77.a
+.el /usr/lib/libU77.a
+.SH "SEE ALSO"
+access(2), perror(3F)
+.SH BUGS
+Pathnames can be no longer than 127 characters.

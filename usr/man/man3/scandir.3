@@ -1,0 +1,43 @@
+.TH SCANDIR 3  "19 January 1983"
+.SH NAME
+scandir \- scan a directory
+.SH SYNOPSIS
+.nf
+.B #include <sys/types.h>
+.B #include <dir.h>
+.PP
+.B scandir(dirname, namelist, select, compar)
+.B char *dirname;
+.B struct direct *(*namelist[]);
+.B int (*select)();
+.B int (*compar)();
+.PP
+.B alphasort(d1, d2)
+.B struct direct **d1, **d2;
+.fi
+.SH DESCRIPTION
+.I Scandir
+reads the directory dirname and builds an array of pointers to directory
+entries using
+.IR malloc (3).
+The third parameter is a pointer to a routine which is called with a
+pointer to a directory entry and should return a non zero
+value if the directory entry should be included in the array.
+If this pointer is null, then all the directory entries will be included.
+The last argument is a pointer to a routine which is passed to
+.IR qsort (3)
+to sort the completed array. If this pointer is null, the array is not sorted.
+.I Alphasort
+is a routine which will sort the array alphabetically.
+.PP
+.I Scandir
+returns the number of entries in the array and a pointer to the
+array through the parameter namelist.
+.SH "SEE ALSO"
+directory(3),
+malloc(3),
+qsort(3)
+.SH DIAGNOSTICS
+Returns \-1 if the directory cannot be opened for reading or if
+.IR malloc (3)
+cannot allocate enough memory to hold all the data structures.

@@ -1,0 +1,112 @@
+.TH INET 3N "9 February 1983"
+.UC 4.2
+.SH NAME
+inet_addr, inet_network, inet_makeaddr, inet_lnaof, inet_netof \- Internet address manipulation routines
+.SH SYNOPSIS
+.B "#include <sys/socket.h>
+.br
+.B "#include <netinet/in.h>
+.PP
+.B "struct in_addr
+.B "inet_addr(cp)
+.br
+.B "char *cp;
+.PP
+.B "int
+.B "inet_network(cp)
+.br
+.B "char *cp;
+.PP
+.B "struct in_addr
+.B "inet_makeaddr(net, lna)
+.br
+.B "int net, lna;
+.PP
+.B "int
+.B "inet_lnaof(in)
+.br
+.B "struct in_addr in;
+.PP
+.B "int
+.B "inet_netof(in)
+.br
+.B "struct in_addr in;
+.SH DESCRIPTION
+The routines
+.I inet_addr
+and
+.I inet_network
+each interpret character strings representing
+numbers expressed in the Internet standard \*(lq.\*(rq
+notation, returning numbers suitable for use
+as Internet addresses and Internet network
+numbers, respectively.  The routine
+.I inet_makeaddr
+takes an Internet network number and a local
+network address and constructs an Internet address
+from it.  The routines
+.I inet_netof
+and
+.I inet_lnaof
+break apart Internet host addresses, returning
+the network number and local network address part,
+respectively.
+.PP
+All Internet address are returned in network
+order (bytes ordered from left to right).
+All network numbers and local address parts are
+returned as machine format integer values.
+.SH "INTERNET ADDRESSES"
+Values specified using the \*(lq.\*(rq notation take one
+of the following forms:
+.RS
+.nf
+a.b.c.d
+a.b.c
+a.b
+a
+.RE
+.fi
+When four parts are specified, each is interpreted
+as a byte of data and assigned, from left to right,
+to the four bytes of an Internet address.  Note
+that when an Internet address is viewed as a 32-bit
+integer quantity on the VAX the bytes referred to
+above appear as \*(lqd.c.b.a\*(rq.  That is, VAX bytes are
+ordered from right to left.
+.PP
+When a three part address is specified, the last
+part is interpreted as a 16-bit quantity and placed
+in the right most two bytes of the network address.
+This makes the three part address format convenient
+for specifying Class B network addresses as
+\*(lq128.net.host\*(rq.
+.PP
+When a two part address is supplied, the last part
+is interpreted as a 24-bit quantity and placed in
+the right most three bytes of the network address.
+This makes the two part address format convenient
+for specifying Class A network addresses as
+\*(lqnet.host\*(rq.
+.PP
+When only one part is given, the value is stored
+directly in the network address without any byte
+rearrangement.
+.PP
+All numbers supplied as \*(lqparts\*(rq in a \*(lq.\*(rq notation
+may be decimal, octal, or hexadecimal, as specified
+in the C language (i.e. a leading 0x or 0X implies
+hexadecimal; otherwise, a leading 0 implies octal;
+otherwise, the number is interpreted as decimal).
+.SH "SEE ALSO"
+gethostent(3N), getnetent(3N), hosts(5), networks(5),
+.SH DIAGNOSTICS
+The value \-1 is returned by
+.I inet_addr
+and
+.I inet_network
+for malformed requests.
+.SH BUGS
+The problem of host byte ordering versus network byte ordering is
+confusing.  A simple way to specify Class C network addresses in a manner
+similar to that for Class B and Class A is needed.
