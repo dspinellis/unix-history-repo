@@ -7,6 +7,4 @@
  * For more info on this and all of my stuff, mail edjames@berkeley.edu.
  */
 
-extern char	SPECIAL_DIR[];
-
 extern int	NUM_SCORES;
