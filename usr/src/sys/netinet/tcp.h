@@ -1,4 +1,4 @@
-/* tcp.h 1.17 81/11/18 */
+/* tcp.h 1.18 81/11/24 */
 
 /*
  * TCP header.
@@ -13,12 +13,12 @@ struct tcphdr {
 		th_x2:4,		/* (unused) */
 		th_off:4;		/* data offset */
 	u_char	th_flags;
-#define	TH_FIN	001
-#define	TH_SYN	002
-#define	TH_RST	004
-#define	TH_EOL	010
-#define	TH_ACK	020
-#define	TH_URG	040
+#define	TH_FIN	0x01
+#define	TH_SYN	0x02
+#define	TH_RST	0x04
+#define	TH_PUSH	0x08
+#define	TH_ACK	0x10
+#define	TH_URG	0x20
 	u_short	th_win;			/* window */
 	u_short	th_sum;			/* checksum */
 	u_short	th_urp;			/* urgent pointer */

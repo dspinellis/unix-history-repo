@@ -1,4 +1,4 @@
-/*	tcp_output.c	4.16	81/11/23	*/
+/*	tcp_output.c	4.17	81/11/24	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -57,23 +57,6 @@ COUNT(TCP_SNDNULL);
 
 	(void) tcp_output(tp, 0, 0, (struct mbuf *)0);
         tp->tc_flags &= ~TC_ACK_DUE;
-}
-
-tcp_sndrst(tp, n)
-	register struct tcpcb *tp;
-	register struct tcpiphdr *n;
-{
-COUNT(TCP_SNDRST);
-
-        /* don't send a reset in response to a reset */
-	if (n->ti_flags&TH_RST)
-		return;
-	tp->tc_flags |= TC_SND_RST;
-	if (n->ti_flags&TH_ACK)
-		tp->snd_nxt = n->ti_ackno;
-	tp->tc_flags &= ~TC_SYN_RCVD;
-	tcp_sndnull(tp);
-	tp->tc_flags &= ~TC_SND_RST;
 }
 
 /*
@@ -155,47 +138,6 @@ COUNT(TCP_SEND);
 	tp->snd_hi = MAX(tp->snd_nxt, tp->snd_hi);
 	return (1);
 }
-
-/*
- * Create template to be used to send tcp packets on a connection.
- * Call after host entry created, allocates an mbuf and fills
- * in a skeletal tcp/ip header, minimizing the amount of work
- * necessary when the connection is used.
- */
-struct tcpiphdr *
-tcp_template(tp)
-	struct tcpcb *tp;
-{
-	register struct inpcb *inp = tp->t_inpcb;
-	register struct mbuf *m;
-	register struct tcpiphdr *n;
-
-COUNT(TCP_TEMPLATE);
-	m = m_get(1);
-	if (m == 0)
-		return (0);
-	m->m_off = MMAXOFF - sizeof (struct tcpiphdr);
-	m->m_len = sizeof (struct tcpiphdr);
-	n = mtod(m, struct tcpiphdr *);
-	n->ti_next = n->ti_prev = 0;
-	n->ti_x1 = 0;
-	n->ti_pr = IPPROTO_TCP;
-	n->ti_len = htons(sizeof (struct tcpiphdr) - sizeof (struct ip));
-	n->ti_src = inp->inp_laddr;
-	n->ti_dst = inp->inp_faddr;
-	n->ti_sport = inp->inp_lport;
-	n->ti_dport = inp->inp_fport;
-	n->ti_seq = 0;
-	n->ti_ackno = 0;
-	n->ti_x2 = 0;
-	n->ti_off = 5;
-	n->ti_flags = 0;
-	n->ti_win = 0;
-	n->ti_sum = 0;
-	n->ti_urp = 0;
-	return (n);
-}
-
 tcp_output(tp, flags, len, dat)
 	register struct tcpcb *tp;
 	register int flags;
@@ -206,9 +148,6 @@ tcp_output(tp, flags, len, dat)
 	register struct mbuf *m;
 	struct socket *so = tp->t_inpcb->inp_socket;
 	register struct ip *ip;
-#ifdef TCPDEBUG
-	struct tcp_debug tdb;
-#endif
 COUNT(TCP_OUTPUT);
 
 	if ((t = tp->t_template) == 0)
@@ -242,16 +181,8 @@ COUNT(TCP_OUTPUT);
 	if (tp->rcv_nxt + t->ti_win > tp->rcv_adv)
 		tp->rcv_adv = tp->rcv_nxt + t->ti_win;
 	if (len)
-		t->ti_len = htons((u_short)(len + TCPSIZE));
+		t->ti_len = htons((u_short)(len + sizeof (struct tcphdr)));
 	t->ti_win = htons(t->ti_win);
-#ifdef TCPDEBUG
-	if ((so->so_options & SO_DEBUG) || tcpconsdebug) {
-		t->ti_seq = tp->snd_nxt;
-		t->ti_ackno = tp->rcv_nxt;
-		tdb_setup(tp, t, INSEND, &tdb);
-		tdb_stuff(&tdb, -2);
-	}
-#endif
 	t->ti_seq = htonl(tp->snd_nxt);
 	t->ti_ackno = htonl(tp->rcv_nxt);
 	t->ti_sum = 0;		/* gratuitous? */
@@ -266,11 +197,4 @@ COUNT(TCP_OUTPUT);
 	ip->ip_ttl = MAXTTL;
 	ip_send(ip);
 	return (1);
-}
-
-tcp_fasttimo()
-{
-
-COUNT(TCP_FASTTIMO);
-	/* someday do delayed ack processing here */
 }
