@@ -1,4 +1,4 @@
-/*	uba.c	4.57	82/11/13	*/
+/*	uba.c	4.58	82/11/26	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -125,7 +125,7 @@ ubasetup(uban, bp, flags)
 			return (0);
 		}
 		uh->uh_mrwant++;
-		sleep((caddr_t)uh->uh_map, PSWP);
+		sleep((caddr_t)&uh->uh_mrwant, PSWP);
 	}
 	bdp = 0;
 	if (flags & UBA_NEEDBDP) {
@@ -136,7 +136,7 @@ ubasetup(uban, bp, flags)
 				return (0);
 			}
 			uh->uh_bdpwant++;
-			sleep((caddr_t)uh->uh_map, PSWP);
+			sleep((caddr_t)&uh->uh_bdpwant, PSWP);
 		}
 		uh->uh_bdpfree &= ~(1 << (bdp-1));
 	} else if (flags & UBA_HAVEBDP)
@@ -229,7 +229,7 @@ ubarelse(uban, amr)
 		uh->uh_bdpfree |= 1 << (bdp-1);		/* atomic */
 		if (uh->uh_bdpwant) {
 			uh->uh_bdpwant = 0;
-			wakeup((caddr_t)uh->uh_map);
+			wakeup((caddr_t)&uh->uh_bdpwant);
 		}
 	}
 	/*
@@ -250,7 +250,7 @@ ubarelse(uban, amr)
 	 */
 	if (uh->uh_mrwant) {
 		uh->uh_mrwant = 0;
-		wakeup((caddr_t)uh->uh_map);
+		wakeup((caddr_t)&uh->uh_mrwant);
 	}
 	while (uh->uh_actf && ubago(uh->uh_actf))
 		;
