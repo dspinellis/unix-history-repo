@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)2.t	6.22 (Berkeley) %G%
+.\"	@(#)2.t	6.23 (Berkeley) %G%
 .\"
 .ds lq ``
 .ds rq ''
@@ -234,7 +234,8 @@ Step 1: selecting and formatting a disk.
 For your first system you will have to obtain a formatted disk
 of a type given in the ``supported hardware'' list above.
 If you want to load an entire binary system
-(i.e., everything except /usr/src),
+(i.e., everything except
+.Pn /usr/src ),
 on the single disk you will need a minimum of 290MB,
 ruling out anything smaller than a 7959B/S disk.
 The disklabel included in the bootstrap root image is laid out
@@ -353,14 +354,14 @@ After providing the kernel name, the machine will boot \*(4B with
 output that looks about like this:
 .DS
 .B
-597316+34120+139288 start 0xfe8019ec
+597480+34120+139288 start 0xfe8019ec
 Copyright (c) 1982, 1986, 1989, 1991, 1993
 	The Regents of the University of California.
 Copyright (c) 1992 Hewlett-Packard Company
 Copyright (c) 1992 Motorola Inc.
 All rights reserved.
 
-4.4BSD UNIX #1: Thu Jul  8 11:41:34 PDT 1993
+4.4BSD UNIX #1: Tue Jul 20 11:40:36 PDT 1993
     mckusick@vangogh.CS.Berkeley.EDU:/usr/obj/sys/compile/GENERIC.hp300
 HP9000/433 (33MHz MC68040 CPU+MMU+FPU, 4k on-chip physical I/D caches)
 real mem = xxx
@@ -511,7 +512,9 @@ This information is written with
 .Xr disklabel (8).
 .PP
 The root image just loaded includes a ``generic'' label intended to allow
-easy installation of / and /usr and may not be suitable for the actual
+easy installation of the root and
+.Pn /usr
+and may not be suitable for the actual
 disk on which it was installed.
 In particular,
 it may make your disk appear larger or smaller than its real size.
@@ -529,8 +532,10 @@ especially if you do not know how to use
 If you choose to edit this label,
 you can fill in correct geometry information from
 .Pn /etc/disktab .
-You may also want to rework the ``e'' and ``f'' partitions used for
-loading /usr and /var.
+You may also want to rework the ``e'' and ``f'' partitions used for loading
+.Pn /usr
+and
+.Pn /var .
 You should not attempt to, and
 .Xr disklabel
 will not let you, modify the ``a'', ``b'' and ``d'' partitions.
@@ -571,8 +576,10 @@ described starting in section 2.5 below.
 Note that where the disk name ``sd'' is used throughout section 2.5,
 you should substitute the name ``rd'' if you are running on an HP-IB disk.
 Also, if you are loading on a single disk with the default disklabel,
-/var should be restored to the ``f'' partition and
-/usr to the ``e'' partition.
+.Pn /var
+should be restored to the ``f'' partition and
+.Pn /usr
+to the ``e'' partition.
 .NH 2
 Booting the SPARC
 .NH 3
@@ -652,11 +659,6 @@ requires much more disk space than SunOS does.
 It is currently difficult (though not completely impossible) to
 run \*(4B diskless.  These instructions assume you will have a local
 boot, swap, and root filesystem.
-.IP 6)
-Although serial consoles are supposed to be supported,
-last-minute testing showed otherwise.
-You will therefore need a keyboard, frame buffer, and video display,
-at least to get started.
 .NH 3
 The Procedure
 .PP
@@ -677,7 +679,8 @@ Use the SunOS
 to build the root filesystem.  You may also
 want to build other filesystems at the same time.  (By default, the
 \*(4B
-.Xr newfs builds a filesystem that SunOS will not handle; if you
+.Xr newfs
+builds a filesystem that SunOS will not handle; if you
 plan to switch OSes back and forth you may want to sacrifice the
 performance gain from the new filesystem format for compatibility.)
 You can build an old-format filesystem on \*(4B by giving the \-O
@@ -714,7 +717,7 @@ bootstrap code on the distribution.  Note that the SunOS
 .Pn /boot
 does not handle the new \*(4B filesystem format.
 .IP 5)
-Mount the new root and restore the root.
+Mount the new root and restore its contents.
 .DS
 .ft CW
 # mount /dev/sd3a /mnt
@@ -736,8 +739,11 @@ ok boot disk3 -s			[for new proms]
 .LP
 To install the remaining filesystems, use the procedure described
 starting in section 2.5.
-In these instructions, /usr should be loaded into the ``e'' partition
-and /var in the ``f'' partition.
+In these instructions,
+.Pn /usr
+should be loaded into the ``e'' partition and
+.Pn /var
+in the ``f'' partition.
 .LP
 After completing the filesystem installation you may want
 to set up \*(4B to reboot automatically:
@@ -901,8 +907,11 @@ Next you should proceed to section 2.4.3 to build a disk-based root filesystem.
 Procedure C: bootstrap over the network
 .PP
 You will need a host machine that is running the \fIbootp\fP server 
-with the vmunix.net file installed in the default directory defined by the
-configuration file for \fIbootp\fP.
+with the
+.Pn vmunix.net
+file installed in the default directory defined by the
+configuration file for
+.Xr bootp .
 Here are two example PROM commands to boot across the net:
 .DS
 .ft CW
@@ -1013,19 +1022,19 @@ UNIX typically uses only 3 or 4 partitions.
 For instance, the first partition, \*(Dk0a,
 is used for a root filesystem, a backup thereof,
 or a small filesystem like,
-.Pn /tmp ;
+.Pn /var/tmp ;
 the second partition, \*(Dk0b,
 is used for paging and swapping; and
-a third partition, typically \*(Dk0g,
+a third partition, typically \*(Dk0e,
 holds a user filesystem.
 .PP
 The space available on a disk varies per device.
 Each disk typically has a paging area of 30 to 100 megabytes
 and a root filesystem of about 17 megabytes.
 .\" XXX check
-The distributed system binaries occupy about 150 (175 with X11R5) megabytes
+The distributed system binaries occupy about 150 (180 with X11R5) megabytes
 .\" XXX check
-while the major sources occupy another 250 (310 with X11R5) megabytes.
+while the major sources occupy another 250 (340 with X11R5) megabytes.
 .PP
 Be aware that the disks have their sizes
 measured in disk sectors (usually 512 bytes), while the UNIX filesystem
@@ -1053,7 +1062,7 @@ for what is required; secondarily, throughput should be maximized.
 Paging space is an important parameter.
 The system, as distributed, sizes the configured
 paging areas each time the system is booted.  Further,
-multiple paging areas of different size may be interleaved.
+multiple paging areas of different sizes may be interleaved.
 .PP
 Many common system programs (C, the editor, the assembler etc.)
 create intermediate files in the
@@ -1293,65 +1302,82 @@ Each filesystem must also be added to the file
 .Pn /etc/fstab
 so that it will be checked and mounted when the system is bootstrapped.
 .PP
-As an example, consider a system with two disks.
-On the first disk, \*(Dk0,
-we will put the root filesystem in \*(Dk0a, and the
+First we will consider a system with a single disk.
+There is little real choice on how to do the layout;
+the root filesystem goes in the ``a'' partition,
 .Pn /usr
-filesystem in \*(Dk0g, which has enough space to hold it and then some.
-The
+goes in the ``e'' partition, and
+.Pn /var
+fills out the remainder of the disk in the ``f'' partition.
+This is the organization used if you loaded the disk-image root filesystem.
+With the addition of a memory-based
 .Pn /tmp
-directory will be a memory-based filesystem.
-If we had only one disk we would put user files and
-.Pn /var
-in the \*(Dk0g partition with the system source and binaries.
-.PP
-If we had a second disk, we would place
-.Pn /usr
-in \*(Dk1g.
-We would put user files in \*(Dk0g, calling the filesystem
-.Pn /var/users .
-We would put the
-.Pn /var
-filesystem in \*(Dk1a.
-We would also interleave the paging
-between the 2 disk's.
-To do this we would build a system configuration that specified:
-.DS
-config	vmunix	root on \*(Dk0 swap on \*(Dk0 and \*(Dk1
-.DE
-to get the swap interleaved, and
-.Pn /etc/fstab
-would then contain
+filesystem, its fstab entry would be as follows:
 .TS
 center;
 lfC lfC l l n n.
 /dev/\*(Dk0a	/	ufs	rw	1	1
 /dev/\*(Dk0b	none	swap	sw	0	0
 /dev/\*(Dk0b	/tmp	mfs	rw,-s=14000,-b=8192,-f=1024,-T=sd660	0	0
-/dev/\*(Dk1a	/var	ufs	rw	1	2
-/dev/\*(Dk0g	/var/users	ufs	rw	1	2
-/dev/\*(Dk1b	none	swap	sw	0	0
-/dev/\*(Dk1g	/usr	ufs	ro	1	2
+/dev/\*(Dk0e	/usr	ufs	ro	1	2
+/dev/\*(Dk0f	/var	ufs	rw	1	2
 .TE
-We could set
-.Pn /var
-to be symbolic link into the
+.PP
+If we had a second disk, we would split the load between the drives.
+On the second disk, we place the
 .Pn /usr
-filesystem and
-keep a backup copy of the root
-filesystem in the \*(Dk1a disk partition.
+and
+.Pn /var
+filesystems in their usual \*(Dk1e and \*(Dk1f
+partitions respectively.
+The \*(Dk1b partition would be used as a second paging area,
+and the \*(Dk1a partition left as a spare root filesystem
+(alternatively \*(Dk1a could be used for
+.Pn /var/tmp ).
+The first disk still holds the
+the root filesystem in \*(Dk0a, and the primary swap area in \*(Dk0b.
+The \*(Dk0e partition is used to hold home directories in
+.Pn /var/users .
+The \*(Dk0f partition can be used for
+.Pn /usr/src
+or alternately the \*(Dk0e partition can be extended to cover
+the rest of the disk with
+.Xr disklabel (8).
+As before, the
+.Pn /tmp
+directory is a memory-based filesystem.
+Note that to interleave the paging between the two disks
+you must build a system configuration that specifies:
+.DS
+config	vmunix	root on \*(Dk0 swap on \*(Dk0 and \*(Dk1
+.DE
+The
+.Pn /etc/fstab
+file would then contain
+.TS
+center;
+lfC lfC l l n n.
+/dev/\*(Dk0a	/	ufs	rw	1	1
+/dev/\*(Dk0b	none	swap	sw	0	0
+/dev/\*(Dk1b	none	swap	sw	0	0
+/dev/\*(Dk0b	/tmp	mfs	rw,-s=14000,-b=8192,-f=1024,-T=sd660	0	0
+/dev/\*(Dk1e	/usr	ufs	ro	1	2
+/dev/\*(Dk0f	/usr/src	ufs	rw	1	2
+/dev/\*(Dk1f	/var	ufs	rw	1	2
+/dev/\*(Dk0e	/var/users	ufs	rw	1	2
+.TE
 .PP
 To make the
-.Pn /var/users
+.Pn /var
 filesystem we would do:
 .DS
 \fB#\fP \fIcd /dev\fP
 \fB#\fP \fIMAKEDEV \*(Dk1\fP
 \fB#\fP \fIdisklabel -wr \*(Dk1 "disk type" "disk name"\fP
-\fB#\fP \fInewfs \*(Dk1g\fP
+\fB#\fP \fInewfs \*(Dk1f\fP
 (information about filesystem prints out)
-\fB#\fP \fImkdir /var/users\fP
-\fB#\fP \fImount /dev/\*(Dk1g /var/users\fP
+\fB#\fP \fImkdir /var\fP
+\fB#\fP \fImount /dev/\*(Dk1f /var\fP
 .DE
 .NH 2
 Installing the rest of the system
@@ -1394,7 +1420,10 @@ machine.
 See sections 4.4 and 5 for more information on setting up the network.
 .PP
 Assuming a directly connected tape drive, here is how to extract and
-install /var and /usr:
+install
+.Pn /var
+and
+.Pn /usr :
 .br
 .ne 5
 .DS
@@ -1419,14 +1448,13 @@ lw(2i) l.
 \fB#\fP \fInewfs r\*(Dk#p\fP	(create empty user filesystem)
 (as before \fI\*(Dk\fP is the disk type, \fI#\fP is the unit number,
 \fIp\fP is the partition)
-\fB#\fP \fImount /dev/\*(Dk#p /mnt\fP	(mount the new /usr in tmp location)
+\fB#\fP \fImount /dev/\*(Dk#p /mnt\fP	(mount the new /usr in temporary location)
 \fB#\fP \fIcd /mnt\fP	(make /mnt the current directory)
 \fB#\fP \fImt -f /dev/nr\*(Mt0 fsf\fP	(space to end of previous tape file)
 \fB#\fP \fItar xbpf 40 /dev/nr\*(Mt0\fP	(extract all of usr except usr/src)
 (this takes about 15-20 minutes)
 \fB#\fP \fIcd /\fP	(make / the current directory)
-\fB#\fP \fIumount /dev/\*(Dk#p\fP	(unmount from tmp mount point)
-(ignore ``fstab'' error message)
+\fB#\fP \fIumount /mnt\fP	(unmount from temporary mount point)
 \fB#\fP \fIrm -r /usr/*\fP	(remove excess bootstrap binaries)
 \fB#\fP \fImount /dev/\*(Dk#p /usr\fP	(remount /usr)
 .TE
@@ -1443,71 +1471,56 @@ to extract
 it may be repositioned by the following commands.
 .DS
 \fB#\fP \fImt -f /dev/nr\*(Mt0 rew\fP
-\fB#\fP \fImt -f /dev/nr\*(Mt0 fsf 3\fP
+\fB#\fP \fImt -f /dev/nr\*(Mt0 fsf 1\fP
 .DE
-The data on the fifth tape file has now been extracted.
+The data on the second and third tape files has now been extracted.
 If you are using 6250bpi tapes, the first reel of the
 distribution is no longer needed; you should now mount the second
 reel instead.  The installation procedure continues from this
 point on the 8mm tape.
+The next step is to extract the sources.
+As previously noted,
+.Pn /usr/src
+.\" XXX Check
+requires about 250-350Mb of space.
+Ideally sources should be in a separate filesystem;
+if you plan to put them into your
+.Pn /usr
+filesystem, it will need at least 500Mb of space.
+Assuming that you will be using a separate filesystem on \*(Dk0f for
+.Pn /usr/src ,
+you will start by creating and mounting it:
 .DS
-.TS
-lw(2i) l.
-\fB#\fP \fImkdir src\fP	(make directory for source)
-\fB#\fP \fIcd src\fP	(make source directory the current directory)
+\fB#\fP \fInewfs \*(Dk0f\fP
+(information about filesystem prints out)
+\fB#\fP \fImkdir /usr/src\fP
+\fB#\fP \fImount /dev/\*(Dk0f /usr/src\fP
+.DE
+.LP
+First you will extract the kernel source:
+.DS
+\fB#\fP \fImkdir /usr/src/sys\fP
+\fB#\fP \fIchmod 755 /usr/src/sys\fP
+\fB#\fP \fIcd /usr/src/sys\fP
 \fB#\fP \fImt -f /dev/nr\*(Mt0 fsf\fP	(space to end of previous tape file)
-\fB#\fP \fItar xpbf 40 /dev/rmt12\fP 	(extract the system source)
-(this takes about 5-10 minutes)
-\fB#\fP \fIcd /\fP	(change directory, back to the root)
-\fB#\fP \fIchmod 755  /usr/src\fP
-\fB#\fP \fIumount /dev/\*(Dk#p\fP	(unmount /usr)
-.TE
-.DE
-.PP
-You can check the consistency of the
-.Pn /usr
-filesystem by doing
-.DS
-\fB#\fP \fIfsck /dev/r\*(Dk#p\fP
-.DE
-The output from
-.Xr fsck
-should look something like:
-.DS
-.B
-** /dev/r\*(Dk#p
-** Last Mounted on /usr
-** Phase 1 - Check Blocks and Sizes
-** Phase 2 - Check Pathnames
-** Phase 3 - Check Connectivity
-** Phase 4 - Check Reference Counts
-** Phase 5 - Check Cyl groups
-671 files, 3497 used, 137067 free (75 frags, 34248 blocks)
-.R
-.DE
-.PP
-If there are inconsistencies in the filesystem, you may be prompted
-to apply corrective action; see the
-.Xr fsck (8)
-or \fIFsck \(en The UNIX File System Check Program\fP (SMM:3) for more details.
-.PP
-To use the
-.Pn /usr
-filesystem, you should now remount it with:
-.DS
-\fB#\fP \fImount /dev/\*(Dk#p /usr\fP
+\fB#\fP \fItar xpbf 40 /dev/nr\*(Mt0\fP	(extract the kernel sources)
 .DE
 .PP
 If you are using 6250bpi tapes, the second reel of the
 distribution is no longer needed; you should now mount the third
 reel instead.  The installation procedure continues from this
 point on the 8mm tape.
+.PP
+The next tar file contains the sources for the utilities.
+It is extracted as follows:
 .DS
-\fB#\fP \fImkdir /usr/src/sys\fP
-\fB#\fP \fIchmod 755 /usr/src/sys\fP
-\fB#\fP \fIcd /usr/src/sys\fP
-\fB#\fP \fImt -f /dev/nr\*(Mt0 fsf\fP
-\fB#\fP \fItar xpbf 40 /dev/nr\*(Mt0\fP
+.TS
+lw(2i) l.
+\fB#\fP \fIcd /usr/src\fP
+\fB#\fP \fImt -f /dev/nr\*(Mt0 fsf\fP	(space to end of previous tape file)
+\fB#\fP \fItar xpbf 40 /dev/rmt12\fP 	(extract the utility source)
+(this takes about 30-60 minutes)
+.TE
 .DE
 .PP
 If you received a distribution on 8mm Exabyte tape,
@@ -1519,12 +1532,62 @@ format.  As distributed, X11R5 should be placed in
 .Pn /usr/src/X11R5 .
 .DS
 \fB#\fP \fIcd /usr/src\fP
-\fB#\fP \fImt -f /dev/nr\*(Mt0 fsf\fP
-\fB#\fP \fItar xpbf 40 /dev/nr\*(Mt0\fP
+\fB#\fP \fImt -f /dev/nr\*(Mt0 fsf\fP	(space to end of previous tape file)
+\fB#\fP \fItar xpbf 40 /dev/nr\*(Mt0\fP	(extract the X11R5 source)
 .DE
-Many of the X11 utilities search using the path /usr/X11,
+Many of the X11 utilities search using the path
+.Pn /usr/X11 ,
 so be sure that you have a symbolic link that points at
 the location of your X11 binaries (here, X11R5).
+.PP
+Having now completed the extraction of the sources, 
+you may want to verify that your
+.Pn /usr/src
+filesystem is consistent.
+To do so, you must unmount it, and run
+.Xr fsck (8);
+assuming that you used \*(Dk0f you would proceed as follows:
+.DS
+.TS
+lw(2i) l.
+\fB#\fP \fIcd /\fP	(change directory, back to the root)
+\fB#\fP \fIumount /usr/src\fP	(unmount /usr/src)
+\fB#\fP \fIfsck /dev/r\*(Dk0f\fP
+.TE
+.DE
+The output from
+.Xr fsck
+should look something like:
+.DS
+.B
+** /dev/r\*(Dk0f
+** Last Mounted on /usr/src
+** Phase 1 - Check Blocks and Sizes
+** Phase 2 - Check Pathnames
+** Phase 3 - Check Connectivity
+** Phase 4 - Check Reference Counts
+** Phase 5 - Check Cyl groups
+23000 files, 261000 used, 39000 free (2200 frags, 4600 blocks)
+.R
+.DE
+.PP
+If there are inconsistencies in the filesystem, you may be prompted
+to apply corrective action; see the
+.Xr fsck (8)
+or \fIFsck \(en The UNIX File System Check Program\fP (SMM:3) for more details.
+.PP
+To use the
+.Pn /usr/src
+filesystem, you should now remount it with:
+.DS
+\fB#\fP \fImount /dev/\*(Dk0f /usr/src\fP
+.DE
+or if you have made an entry for it in
+.Pn /etc/fstab
+you can remount it with:
+.DS
+\fB#\fP \fImount /usr/src\fP
+.DE
 .NH 2
 Additional conversion information
 .PP
