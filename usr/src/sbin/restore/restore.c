@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)restore.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)restore.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 #include "restore.h"
@@ -45,7 +45,7 @@ addfile(name, ino, type)
 	char buf[100];
 
 	if (BIT(ino, dumpmap) == 0) {
-		vprintf(stdout, "%s: not on the tape\n", name);
+		dprintf(stdout, "%s: not on the tape\n", name);
 		return (descend);
 	}
 	if (!mflag) {
