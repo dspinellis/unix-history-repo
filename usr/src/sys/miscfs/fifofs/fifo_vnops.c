@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fifo_vnops.c	8.9 (Berkeley) %G%
+ *	@(#)fifo_vnops.c	8.10 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -119,8 +119,6 @@ fifo_open(ap)
 	int error;
 	static char openstr[] = "fifo";
 
-	if ((ap->a_mode & (FREAD|FWRITE)) == (FREAD|FWRITE))
-		return (EINVAL);
 	if ((fip = vp->v_fifoinfo) == NULL) {
 		MALLOC(fip, struct fifoinfo *, sizeof(*fip), M_VNODE, M_WAITOK);
 		vp->v_fifoinfo = fip;
@@ -148,7 +146,6 @@ fifo_open(ap)
 		wso->so_state |= SS_CANTRCVMORE;
 		rso->so_state |= SS_CANTSENDMORE;
 	}
-	error = 0;
 	if (ap->a_mode & FREAD) {
 		fip->fi_readers++;
 		if (fip->fi_readers == 1) {
@@ -156,36 +153,44 @@ fifo_open(ap)
 			if (fip->fi_writers > 0)
 				wakeup((caddr_t)&fip->fi_writers);
 		}
-		if (ap->a_mode & O_NONBLOCK)
-			return (0);
+	}
+	if (ap->a_mode & FWRITE) {
+		fip->fi_writers++;
+		if (fip->fi_writers == 1) {
+			fip->fi_readsock->so_state &= ~SS_CANTRCVMORE;
+			if (fip->fi_readers > 0)
+				wakeup((caddr_t)&fip->fi_readers);
+		}
+	}
+	if ((ap->a_mode & FREAD) && (ap->a_mode & O_NONBLOCK) == 0) {
 		while (fip->fi_writers == 0) {
 			VOP_UNLOCK(vp, 0, p);
 			error = tsleep((caddr_t)&fip->fi_readers,
 			    PCATCH | PSOCK, openstr, 0);
 			vn_lock(vp, LK_EXCLUSIVE | LK_RETRY, p);
 			if (error)
-				break;
+				goto bad;
 		}
-	} else {
-		fip->fi_writers++;
-		if (fip->fi_readers == 0 && (ap->a_mode & O_NONBLOCK)) {
-			error = ENXIO;
-		} else {
-			if (fip->fi_writers == 1) {
-				fip->fi_readsock->so_state &= ~SS_CANTRCVMORE;
-				if (fip->fi_readers > 0)
-					wakeup((caddr_t)&fip->fi_readers);
+	}
+	if (ap->a_mode & FWRITE) {
+		if (ap->a_mode & O_NONBLOCK) {
+			if (fip->fi_readers == 0) {
+				error = ENXIO;
+				goto bad;
 			}
+		} else {
 			while (fip->fi_readers == 0) {
 				VOP_UNLOCK(vp, 0, p);
 				error = tsleep((caddr_t)&fip->fi_writers,
 				    PCATCH | PSOCK, openstr, 0);
 				vn_lock(vp, LK_EXCLUSIVE | LK_RETRY, p);
 				if (error)
-					break;
+					goto bad;
 			}
 		}
 	}
+	return (0);
+bad:
 	if (error)
 		VOP_CLOSE(vp, ap->a_mode, ap->a_cred, p);
 	return (error);
@@ -276,14 +281,23 @@ fifo_ioctl(ap)
 	} */ *ap;
 {
 	struct file filetmp;
+	int error;
 
 	if (ap->a_command == FIONBIO)
 		return (0);
-	if (ap->a_fflag & FREAD)
+	if (ap->a_fflag & FREAD) {
 		filetmp.f_data = (caddr_t)ap->a_vp->v_fifoinfo->fi_readsock;
-	else
+		error = soo_ioctl(&filetmp, ap->a_command, ap->a_data, ap->a_p);
+		if (error)
+			return (error);
+	}
+	if (ap->a_fflag & FWRITE) {
 		filetmp.f_data = (caddr_t)ap->a_vp->v_fifoinfo->fi_writesock;
-	return (soo_ioctl(&filetmp, ap->a_command, ap->a_data, ap->a_p));
+		error = soo_ioctl(&filetmp, ap->a_command, ap->a_data, ap->a_p);
+		if (error)
+			return (error);
+	}
+	return (0);
 }
 
 /* ARGSUSED */
@@ -297,12 +311,21 @@ fifo_select(ap)
 	} */ *ap;
 {
 	struct file filetmp;
+	int ready;
 
-	if (ap->a_fflags & FREAD)
+	if (ap->a_fflags & FREAD) {
 		filetmp.f_data = (caddr_t)ap->a_vp->v_fifoinfo->fi_readsock;
-	else
+		ready = soo_select(&filetmp, ap->a_which, ap->a_p);
+		if (ready)
+			return (ready);
+	}
+	if (ap->a_fflags & FWRITE) {
 		filetmp.f_data = (caddr_t)ap->a_vp->v_fifoinfo->fi_writesock;
-	return (soo_select(&filetmp, ap->a_which, ap->a_p));
+		ready = soo_select(&filetmp, ap->a_which, ap->a_p);
+		if (ready)
+			return (ready);
+	}
+	return (0);
 }
 
 int
@@ -355,14 +378,15 @@ fifo_close(ap)
 	register struct fifoinfo *fip = vp->v_fifoinfo;
 	int error1, error2;
 
+	if (ap->a_fflag & FREAD) {
+		fip->fi_readers--;
+		if (fip->fi_readers == 0)
+			socantsendmore(fip->fi_writesock);
+	}
 	if (ap->a_fflag & FWRITE) {
 		fip->fi_writers--;
 		if (fip->fi_writers == 0)
 			socantrcvmore(fip->fi_readsock);
-	} else {
-		fip->fi_readers--;
-		if (fip->fi_readers == 0)
-			socantsendmore(fip->fi_writesock);
 	}
 	if (vp->v_usecount > 1)
 		return (0);
