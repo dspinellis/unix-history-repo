@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)traverse.c	1.13 (Berkeley) %G%";
+static	char *sccsid = "@(#)traverse.c	1.14 (Berkeley) %G%";
 
 #include "dump.h"
 
@@ -52,18 +52,21 @@ add(ip)
 	register struct	dinode	*ip;
 {
 	register int i;
+	long filesize;
 
 	if(BIT(ino, nodmap))
 		return;
 	nsubdir = 0;
 	dadded = 0;
+	filesize = ip->di_size;
 	for (i = 0; i < NDADDR; i++) {
 		if (ip->di_db[i] != 0)
-			dsrch(ip->di_db[i], dblksize(sblock, ip, i));
+			dsrch(ip->di_db[i], dblksize(sblock, ip, i), filesize);
+		filesize -= sblock->fs_bsize;
 	}
 	for (i = 0; i < NIADDR; i++) {
 		if (ip->di_ib[i] != 0)
-			indir(ip->di_ib[i], i);
+			indir(ip->di_ib[i], i, &filesize);
 	}
 	if(dadded) {
 		nadded++;
@@ -77,9 +80,9 @@ add(ip)
 			BIC(ino, dirmap);
 }
 
-indir(d, n)
+indir(d, n, filesize)
 	daddr_t d;
-	int n;
+	int n, *filesize;
 {
 	register i;
 	daddr_t	idblk[MAXNINDIR];
@@ -89,14 +92,15 @@ indir(d, n)
 		for(i=0; i < NINDIR(sblock); i++) {
 			d = idblk[i];
 			if(d != 0)
-				dsrch(d, sblock->fs_bsize);
+				dsrch(d, sblock->fs_bsize, *filesize);
+			*filesize -= sblock->fs_bsize;
 		}
 	} else {
 		n--;
 		for(i=0; i < NINDIR(sblock); i++) {
 			d = idblk[i];
 			if(d != 0)
-				indir(d, n);
+				indir(d, n, filesize);
 		}
 	}
 }
@@ -231,9 +235,9 @@ spclrec()
 	taprec((char *)&spcl);
 }
 
-dsrch(d, size)
+dsrch(d, size, filesize)
 	daddr_t d;
-	int size;
+	int size, filesize;
 {
 	register struct direct *dp;
 	long loc;
@@ -242,10 +246,14 @@ dsrch(d, size)
 	if(dadded)
 		return;
 	bread(fsbtodb(sblock, d), dblk, size);
-	for (loc = 0; loc < size; ) {
+	if (filesize > size)
+		filesize = size;
+	for (loc = 0; loc < filesize; ) {
 		dp = (struct direct *)(dblk + loc);
-		if (dp->d_reclen == 0)
+		if (dp->d_reclen == 0) {
+			msg("corrupted directory, inumber %d\n", ino);
 			break;
+		}
 		loc += dp->d_reclen;
 		if(dp->d_ino == 0)
 			continue;
