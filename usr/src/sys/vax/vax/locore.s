@@ -1,7 +1,7 @@
 /*
  * Machine Language Assist for UC Berkeley Virtual Vax/Unix
  *
- *	locore.s	4.4	%G%
+ *	locore.s		4.5	%G%
  */
 
 	.set	HIGH,31		# mask for total disable
@@ -51,7 +51,11 @@ Scbbase:
 	.long	Xstray + INTSTK		# unused
 	.long	Xstray + INTSTK		# unused
 	.long	Xstray + INTSTK		# unused
+#if VAX==750
+	.long	Xwtime + INTSTK		# write timeout
+#else
 	.long	Xstray + INTSTK		# unused
+#endif
 	.long	Xstray + INTSTK		# unused
 	.long	Xstray + INTSTK		# unused
 	.long	Xstray + INTSTK		# unused
@@ -249,11 +253,7 @@ UBVEC:
 	.long	Xubastray + INTSTK		# unused
 	.long	Xubastray + INTSTK		# unused
 	.long	Xubastray + INTSTK		# unused
-#ifdef notdef
-	.long	Xemintr + INTSTK
-#else
-	.long	Xubastray + INTSTK		# unused
-#endif
+	.long	Xupintr + INTSTK		# Emulex SC-11/21
 /* 0xb0 */
 	.long	Xubastray + INTSTK		# unused
 	.long	Xubastray + INTSTK		# unused
@@ -634,6 +634,16 @@ Xubastray:
 	rei
 #endif
 
+	.align	2
+	.globl	Xwtime
+Xwtime:
+	pushr	$0x3f
+	pushl	6*4(sp)			# push pc
+	pushab	wtime
+	calls	$2,_printf
+	popr	$0x3f
+	halt
+	rei
 
 #if VAX==780
 /*
@@ -752,6 +762,7 @@ ubapass:
 	calls	$0,_ubareset
 	brw 	int_ret
 #endif
+
 #if VAX==750
 /*
  * Console data storage
@@ -786,6 +797,23 @@ Xdzxint:
 Xrkintr:
 	pushr	$0x3f
 	calls	$0,_rkintr
+	jbr	int_ret
+
+Xobiint:
+	.align	2
+	halt
+
+Xoboint:
+	.align	2
+	halt
+
+/*
+ * Emulex SC-11/21
+ */
+	.align	2
+Xupintr:
+	pushr	$0x3f
+	calls	$0,_upintr
 	jbr	int_ret
 
 /*
@@ -1790,6 +1818,7 @@ SBIflt:	.asciz	"UBA SBI Fault SR %X CNFGR %X\n"
 UBAmsg:	.asciz	"UBA error SR %x, FMER %x, FUBAR %o\n"
 straym:	.asciz	"Stray Interrupt\n"
 ZERmsg:	.asciz	"ZERO VECTOR "
+wtime:	.asciz	"write timeout %X\n"
 
 #if VAX==750
 UBAstraym: .asciz "Stray UBA Interrupt\n"
