@@ -1,4 +1,4 @@
-#	@(#)Makefile.inc	5.20 (Berkeley) %G%
+#	@(#)Makefile.inc	5.21 (Berkeley) %G%
 
 # gen sources
 .PATH: ${.CURDIR}/${MACHINE}/gen ${.CURDIR}/gen ${.CURDIR}/gen/regexp
@@ -47,12 +47,12 @@ MAN3+=	alarm.0 clock.0 crypt.0 ctermid.0 ctime.0 ctype.0 directory.0 \
 	ldexp.0 modf.0 nice.0 nlist.0 pause.0 popen.0 psignal.0 \
 	raise.0 regexp.0 scandir.0 setjmp.0 setmode.0 setuid.0 \
 	siginterrupt.0 signal.0 sigsetops.0 sleep.0 syslog.0 time.0 \
-	times.0 tolower.0 toupper.0 ttyname.0 tzset.0 ualarm.0 unvis.0 \
-	usleep.0 utime.0 valloc.0 vis.0
+	times.0 timezone.0 tolower.0 toupper.0 ttyname.0 tzset.0 \
+	ualarm.0 unvis.0 usleep.0 utime.0 valloc.0 vis.0
 
 MLINKS=	crypt.3 encrypt.3 crypt.3 setkey.3
 MLINKS+=ctime.3 asctime.3 ctime.3 difftime.3 ctime.3 gmtime.3 \
-	ctime.3 localtime.3 ctime.3 mktime.3 ctime.3 timezone.3
+	ctime.3 localtime.3 ctime.3 mktime.3
 MLINKS+=directory.3 closedir.3 directory.3 dirfd.3 directory.3 opendir.3 \
 	directory.3 readdir.3 directory.3 rewinddir.3 directory.3 seekdir.3 \
 	directory.3 telldir.3
