@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_extern.h	7.16 (Berkeley) %G%
+ *	@(#)ufs_extern.h	7.17 (Berkeley) %G%
  */
 
 struct buf;
@@ -58,6 +58,7 @@ void	 ufs_ihashinit __P((void));
 void	 ufs_ihashins __P((struct inode *));
 void	 ufs_ihashrem __P((struct inode *));
 void	 ufs_ilock __P((struct inode *));
+int	 ufs_inactive __P((struct vop_inactive_args *));
 int	 ufs_init __P((void));
 int	 ufs_ioctl __P((struct vop_ioctl_args *));
 void	 ufs_iput __P((struct inode *));
