@@ -1,5 +1,5 @@
 #ifndef lint
-static	char sccsid[] = "@(#)ar.c 4.4 %G%";
+static	char sccsid[] = "@(#)ar.c	4.5 (Berkeley) %G%";
 #endif
 
 /*
@@ -63,6 +63,7 @@ int	tf2;
 int	qf;
 int	bastate;
 char	buf[BUFSIZ];
+int	truncate;			/* ok to truncate argument filenames */
 
 char	*trim();
 char	*mktemp();
@@ -315,6 +316,7 @@ qcmd()
 		fprintf(stderr, "ar: abi not allowed with q\n");
 		done(1);
 	}
+	truncate++;
 	getqf();
 	for(i=0; signum[i]; i++)
 		signal(signum[i], SIG_IGN);
@@ -442,6 +444,7 @@ cleanup()
 {
 	register i, f;
 
+	truncate++;
 	for(i=0; i<namc; i++) {
 		file = namv[i];
 		if(file == 0)
@@ -670,6 +673,7 @@ char *s;
 {
 	register char *p1, *p2;
 
+	/* Strip trailing slashes */
 	for(p1 = s; *p1; p1++)
 		;
 	while(p1 > s) {
@@ -677,10 +681,25 @@ char *s;
 			break;
 		*p1 = 0;
 	}
+
+	/* Find last component of path; do not zap the path */
 	p2 = s;
 	for(p1 = s; *p1; p1++)
 		if(*p1 == '/')
 			p2 = p1+1;
+
+	/*
+	 * Truncate name if too long, only if we are doing an 'add'
+	 * type operation. We only allow 15 cause rest of ar
+	 * isn't smart enough to deal with non-null terminated
+	 * names.  Need an exit status convention...
+	 * Need yet another new archive format...
+	 */
+	if (truncate && strlen(p2) > sizeof(arbuf.ar_name) - 1) {
+		fprintf(stderr, "ar: filename %s truncated to ", p2);
+		*(p2 + sizeof(arbuf.ar_name) - 1) = '\0';
+		fprintf(stderr, "%s\n", p2);
+	}
 	return(p2);
 }
 
