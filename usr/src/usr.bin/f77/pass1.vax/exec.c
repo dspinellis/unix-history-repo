@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)exec.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)exec.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -15,6 +15,11 @@ static char sccsid[] = "@(#)exec.c	5.3 (Berkeley) %G%";
  * F77 compiler, pass 1.
  *
  * University of Utah CS Dept modification history:
+ * 
+ * $Log:	exec.c,v $
+ * Revision 5.2  85/08/10  04:07:36  donn
+ * Changed an error message to correct spelling and be more accurate.
+ * From Jerry Berkman.
  * 
  * Revision 2.3  85/03/18  08:03:31  donn
  * Hacks for conversions from type address to numeric type -- prevent addresses
@@ -243,7 +248,7 @@ if(lp->tag != TPRIM)
 else if(lp->namep->vclass!=CLVAR && lp->argsp)
 	{
 	if(parstate >= INEXEC)
-		err("assignment to an undimensioned array");
+		err("undimensioned array or statement function out of order");
 	else
 		mkstfunct(lp, rp);
 	}
