@@ -1,3 +1,13 @@
+/*-
+ * Copyright (c) 1990 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * This code is derived from software contributed to Berkeley by
+ * Ed James.
+ *
+ * %sccs.include.redist.c%
+ */
+
 /*
  * Copyright (c) 1987 by Ed James, UC Berkeley.  All rights reserved.
  *
@@ -6,6 +16,16 @@
  *
  * For more info on this and all of my stuff, mail edjames@berkeley.edu.
  */
+
+#ifndef lint
+char copyright[] =
+"@(#) Copyright (c) 1990 The Regents of the University of California.\n\
+ All rights reserved.\n";
+#endif /* not lint */
+
+#ifndef lint
+static char sccsid[] = "@(#)main.c	5.3 (Berkeley) %G%";
+#endif /* not lint */
 
 #include "include.h"
 #include "pathnames.h"

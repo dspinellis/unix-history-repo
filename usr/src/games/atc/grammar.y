@@ -1,3 +1,13 @@
+/*-
+ * Copyright (c) 1990 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * This code is derived from software contributed to Berkeley by
+ * Ed James.
+ *
+ * %sccs.include.redist.c%
+ */
+
 /*
  * Copyright (c) 1987 by Ed James, UC Berkeley.  All rights reserved.
  *
@@ -24,6 +34,10 @@
 
 %{
 #include "include.h"
+
+#ifndef lint
+static char sccsid[] = "@(#)grammar.y	5.2 (Berkeley) %G%";
+#endif /* not lint */
 
 int	errors = 0;
 int	line = 1;
