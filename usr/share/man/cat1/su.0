@@ -1,0 +1,76 @@
+SU(1)                        BSD Reference Manual                        SU(1)
+
+NNAAMMEE
+     ssuu - substitute user identity
+
+SSYYNNOOPPSSIISS
+     ssuu [--KKffllmm] [_l_o_g_i_n]
+
+DDEESSCCRRIIPPTTIIOONN
+     SSuu requests the Kerberos password for _l_o_g_i_n (or for ``_l_o_g_i_n.root'', if no
+     login is provided), and switches to that user and group ID after obtain-
+     ing a Kerberos ticket granting ticket.  A shell is then executed.  SSuu
+     will resort to the local password file to find the password for _l_o_g_i_n if
+     there is a Kerberos error.  If ssuu is executed by root, no password is re-
+     quested and a shell with the appropriate user ID is executed; no addi-
+     tional Kerberos tickets are obtained.
+
+     By default, the environment is unmodified with the exception of USER,
+     HOME, and SHELL. HOME and SHELL are set to the target login's default
+     values.  USER is set to the target login, unless the target login has a
+     user ID of 0, in which case it is unmodified.  The invoked shell is the
+     target login's.  This is the traditional behavior of ssuu.
+
+     The options are as follows:
+
+     --KK      Do not attempt to use Kerberos to authenticate the user.
+
+     --ff      If the invoked shell is csh(1),  this option prevents it from
+             reading the ``_._c_s_h_r_c'' file.
+
+     --ll      Simulate a full login.  The environment is discarded except for
+             HOME, SHELL, PATH, TERM, and USER. HOME and SHELL are modified as
+             above.  USER is set to the target login.  PATH is set to
+             ``_/_b_i_n_:_/_u_s_r_/_b_i_n''. TERM is imported from your current environ-
+             ment.  The invoked shell is the target login's, and ssuu will
+             change directory to the target login's home directory.
+
+     --mm      Leave the environment unmodified.  The invoked shell is your lo-
+             gin shell, and no directory changes are made.  As a security pre-
+             caution, if the target user's shell is a non-standard shell (as
+             defined by getusershell(3))  and the caller's real uid is non-
+             zero, ssuu will fail.
+
+     The --ll and --mm options are mutually exclusive; the last one specified
+     overrides any previous ones.
+
+     Only users in group 0 (normally ``wheel'') can ssuu to ``root''.
+
+     By default (unless the prompt is reset by a startup file) the super-user
+     prompt is set to ``##'' to remind one of its awesome power.
+
+SSEEEE AALLSSOO
+     csh(1),  login(1),  sh(1),  kinit(1),  kerberos(1),  passwd(5),
+     group(5),  environ(7)
+
+EENNVVIIRROONNMMEENNTT
+     Environment variables used by ssuu:
+
+     HOME  Default home directory of real user ID unless modified as specified
+           above.
+
+     PATH  Default search path of real user ID unless modified as specified
+           above.
+
+     TERM  Provides terminal type which may be retained for the substituted
+
+           user ID.
+
+     USER  The user ID is always the effective ID (the target user ID) after
+           an ssuu unless the user ID is 0 (root).
+
+HHIISSTTOORRYY
+     A ssuu command appeared in Version 7 AT&T UNIX.  The version desribed here
+     is an adaptation of the MIT Athena Kerberos command.
+
+4.4BSD                           June 6, 1993                                2
