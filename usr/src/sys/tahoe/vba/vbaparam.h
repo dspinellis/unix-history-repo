@@ -1,4 +1,4 @@
-/*	vbaparam.h	1.1	86/01/21	*/
+/*	vbaparam.h	1.2	86/12/08	*/
 
 /*
  * Parameters related to the VERSAbus i/o configuration.
@@ -22,16 +22,40 @@ extern	caddr_t	vmem1, vmemend;
 extern	struct pte VBmap[];
 extern	caddr_t vbbase, vbend; 
 
+/*
+ * The following macros relate to the segmentation of the VERSAbus
+ * i/o space.
+ *
+ * The VERSAbus adapter segments the i/o space (as seen by the cpu)
+ * into three regions.  Cpu accesses to the upper 64Kb of the i/o space
+ * generate VERSAbus cycles with a 16-bit address and a non-privileged
+ * short i/o space address modifier.  Accesses to the next 1Mb - 64Kb
+ * generate 24-bit addresses and a non-privileged standard address
+ * modifier.  Accesses to the remainder of the 1Gb i/o space generate
+ * 32-bit addresses with a non-privileged extended address modifier.
+ * Beware that 32-bit addresses generated from this region always have
+ * zero in the upper 2 bits; e.g. a reference to physical address fe000000
+ * results in a VERSAbus address of 3e000000.
+ */
+#define	VBIO16BIT(a)	(0xfffe0000 <= ((unsigned)(a)))
+#define	VBIO24BIT(a) \
+    (0xff000000 <= ((unsigned)(a)) && ((unsigned)(a)) < 0xfffe0000)
+#define	VBIO32BIT(a)	(((unsigned)(a)) < 0xff000000)
+
 /* 
  * The following constants define the fixed size map of the
  * VERSAbus i/o space.  The values should reflect the range
- * of i/o addresses used by all the controllers handled in
- * the system as specified in the ubminit structure in ioconf.c.
+ * of i/o addresses used by all the controllers unprepared
+ * to allocate and initialize their own page maps.
  */
 #define VBIOBASE	0xfff00000	/* base of VERSAbus address space */
 #define VBIOEND		0xffffee45	/* last address in mapped space */
-/* number of entries in the system page pable for i/o space */
+/* number of entries in the system page table for i/o space */
 #define VBIOSIZE	btoc(VBIOEND-VBIOBASE)
+/* is device in mapped region */
+#define	VBIOMAPPED(a) \
+    (VBIOBASE <= ((unsigned)(a)) && ((unsigned)(a)) <= VBIOEND) 
+#define	vboff(addr)	((int)(((caddr_t)(addr)) - VBIOBASE))
 
 /*
  * Page table map sizes.
