@@ -51,6 +51,7 @@
 
 CC	= cc
 PRINT	= print
+ACTION = sccs tell
 
 DEFINES = -DSLOWSCREEN
 DEFINES = -DSLOWSCREEN
@@ -66,6 +67,7 @@ CFLAGS	= $(OPTIMIZE) $(INCLUDES) $(DEFINES)
 LINTFLAGS	= -hbxaz
 # How to install the bloody thing...
 
+DIRPATH=.
 DESTDIR=
 
 BINDIR		= $(DESTDIR)/usr/ucb
@@ -77,14 +79,26 @@ LIBCURSES	= -lcurses
 LIBTERM		= -ltermlib
 
 # The source files...
-ALLH =
+ALLH = telnet.ext
 
 TNMAIN = ../telnet.c
 TNMAIN = telnet.c
 MSMAIN = ascii/mset.c
 
+ALLC = ${TNMAIN}
+
+ALLO	= telnet.o mset.o
+
+ALLPRINT =	${ALLH} ${ALLC}
+
+ALLSOURCE =	${ALLPRINT} makefile makefile.mak README
+
 # The places where the various components live...
 SUBDIR =	ascii ctlr sys general api
+
+# The following are directories we don't do regular make's in, but
+# we do make everywhere, print, and sourcelist in.
+EXTRADIR =	apilib sys_dos tools
 
 # The libraries we use.  The order here is important.
 # ctlr.lib and sys.lib should come first, then api.lib
@@ -93,10 +107,6 @@ SUBLIB =	ctlr/ctlr.lib sys/sys.lib \
 		api/api.lib \
 		ascii/ascii.lib general/general.lib
 
-
-ALLC = ${TNMAIN} ${MSMAIN}
-
-ALLO	= telnet.o mset.o
 
 .s.o:
 	/lib/cpp -E $< | as -o $@
@@ -134,23 +144,31 @@ install:
 action:
 	${ACTION}
 
-everywhere:
-	for i in ${SUBDIR} tools; do (echo "[$$i]"; cd $$i; make ${MFLAGS} action "ACTION=${ACTION}"); done
+everywhere:	action
+	for i in ${SUBDIR} ${EXTRADIR}; \
+		do (echo "[$$i]"; cd $$i; make ${MFLAGS} action \
+						"ACTION=${ACTION}"); done
 
 clean:
 	rm -f $(ALLO) mset tn3270 errs makefile.bak
-	for i in ${SUBDIR} tools; do (cd $$i; make ${MFLAGS} clean); done
+	for i in ${SUBDIR} ${EXTRADIR}; do (cd $$i; make ${MFLAGS} clean); done
 	rm -f t1 tmp/*.o
 	-rmdir tmp
 
 print:
-	${PRINT} ${ALLH} ${MSMAIN} ${TNMAIN}
-	for i in ${SUBDIR}; \
+	${PRINT} ${ALLPRINT}
+	for i in ${SUBDIR} ${EXTRADIR}; \
 			do (cd $$i; make ${MFLAGS} "PRINT=${PRINT}" print); done
-	cd tools; make ${MFLAGS} "PRINT=${PRINT}" print
 
 tags:	${ALLC} ${ALLH}
 	ctags -t ${ALLC} ${ALLH}
+
+sourcelist:
+	for i in ${ALLSOURCE}; \
+		do (echo ${DIRPATH}/$$i); done
+	for i in ${SUBDIR} ${EXTRADIR}; \
+		do (cd $$i; make ${MFLAGS} "DIRPATH=${DIRPATH}/$$i" \
+							    sourcelist); done
 
 lint:
 	lint ${LINTFLAGS} ${INCLUDES} ${DEFINES} -DTN3270 \
