@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <signal.h>
@@ -90,12 +90,11 @@ main(argc, argv)  char **argv; {
 		} else if (state == 0 || iflag == 0 || ! rootshell)
 			exitshell(2);
 		reset();
-#if ATTY
 		if (exception == EXINT
-		 && (! attyset() || equal(termval(), "emacs"))) {
-#else
-		if (exception == EXINT) {
+#if ATTY
+		 && (! attyset() || equal(termval(), "emacs"))
 #endif
+		 ) {
 			out2c('\n');
 			flushout(&errout);
 		}
