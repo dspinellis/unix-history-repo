@@ -213,6 +213,7 @@ loop:
 				printf ("null_node_find: vget failed.\n");
 				goto loop;
 			};
+			a->null_isinactive = 0;
 			return (vp);
 		}
 	}
