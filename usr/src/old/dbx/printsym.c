@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)printsym.c 1.2 %G%";
+static char sccsid[] = "@(#)printsym.c 1.3 %G%";
 
 /*
  * Printing of symbolic information.
@@ -21,6 +21,15 @@ static char sccsid[] = "@(#)printsym.c 1.2 %G%";
 
 #ifndef public
 #endif
+
+/*
+ * Maximum number of arguments to a function.
+ * This is used as a check for the possibility that the stack has been
+ * overwritten and therefore a saved argument pointer might indicate
+ * to an absurdly large number of arguments.
+ */
+
+#define MAXARGSPASSED 20
 
 /*
  * Return a pointer to the string for the name of the class that
@@ -137,6 +146,9 @@ Frame frame;
 	    }
 	}
 	if (m > 0) {
+	    if (m > MAXARGSPASSED) {
+		m = MAXARGSPASSED;
+	    }
 	    if (f->chain != nil) {
 		printf(", ");
 	    }
@@ -340,6 +352,11 @@ Symbol s;
 	case PROC:
 	case FUNC:
 	    printf("address\t0x%x\n", s->symvalue.funcv.beginaddr);
+	    if (nosource(s)) {
+		printf("does not have source information\n");
+	    } else {
+		printf("has source information\n");
+	    }
 	    break;
 
 	case RANGE:
