@@ -1,6 +1,6 @@
 # include	"../hdr/defines.h"
 
-SCCSID(@(#)permiss.c	1.1);
+SCCSID(@(#)permiss.c	1.2);
 
 finduser(pkt)
 register struct packet *pkt;
