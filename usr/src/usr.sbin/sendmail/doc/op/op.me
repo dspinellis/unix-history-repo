@@ -4,7 +4,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)op.me	8.4 (Berkeley) %G%
+.\"	@(#)op.me	8.5 (Berkeley) %G%
 .\"
 .\" eqn op.me | pic | troff -me
 .eh 'SMM:08-%''Sendmail Installation and Operation Guide'
@@ -43,7 +43,7 @@ University of California, Berkeley
 Mammoth Project
 eric@CS.Berkeley.EDU
 .sp
-Version 8.4
+Version 8.5
 .sp
 For Sendmail Version 8.4
 .)l
@@ -2376,7 +2376,8 @@ The
 .b $#
 syntax should
 .i only
-be used in ruleset zero.
+be used in ruleset zero
+or a subroutine of ruleset zero.
 It causes evaluation of the ruleset to terminate immediately,
 and signals to sendmail that the address has completely resolved.
 The complete syntax is:
@@ -6542,7 +6543,7 @@ A transcript of the current session.
 .\"Eric Allman
 .\"Britton-Lee, Inc.
 .\".sp
-.\"Version 8.4
+.\"Version 8.5
 .\".ce 0
 .bp 2
 .ce
