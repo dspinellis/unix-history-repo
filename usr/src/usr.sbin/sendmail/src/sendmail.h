@@ -7,7 +7,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	3.113		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	3.114		%G%";
 # endif lint
 # else  _DEFINE
 # define EXTERN extern
@@ -51,7 +51,7 @@ typedef int	BITMAP[BITMAPBYTES / sizeof (int)];
 #define clrbitn(bit, map)	(map)[_BITWORD(bit)] &= ~_BITBIT(bit)
 
 /* clear an entire bit map */
-#define clrbitmap(map)		bzero((char *) map, BITMAPBYTES / sizeof (int))
+#define clrbitmap(map)		bzero((char *) map, BITMAPBYTES)
 /*
 **  Address structure.
 **	Addresses are stored internally in this structure.
