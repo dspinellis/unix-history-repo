@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_vfsops.c	7.70 (Berkeley) %G%
+ *	@(#)ffs_vfsops.c	7.71 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -43,10 +43,13 @@ struct vfsops ufs_vfsops = {
 	ufs_quotactl,
 	ffs_statfs,
 	ffs_sync,
+	ffs_vget,
 	ffs_fhtovp,
 	ffs_vptofh,
 	ffs_init,
 };
+
+extern u_long nextgennumber;
 
 /*
  * Called by main() when ufs is going to be mounted as root.
@@ -196,9 +199,6 @@ ffs_mountfs(devvp, mp, p)
 	struct mount *mp;
 	struct proc *p;
 {
-	USES_VOP_CLOSE;
-	USES_VOP_IOCTL;
-	USES_VOP_OPEN;
 	register struct ufsmount *ump;
 	struct buf *bp;
 	register struct fs *fs;
@@ -347,7 +347,6 @@ ffs_unmount(mp, mntflags, p)
 	int mntflags;
 	struct proc *p;
 {
-	USES_VOP_CLOSE;
 	extern int doforce;
 	register struct ufsmount *ump;
 	register struct fs *fs;
@@ -428,8 +427,6 @@ ffs_sync(mp, waitfor, cred, p)
 	struct ucred *cred;
 	struct proc *p;
 {
-	USES_VOP_ISLOCKED;
-	USES_VOP_FSYNC;
 	extern int syncprt;
 	register struct vnode *vp;
 	register struct inode *ip;
@@ -489,6 +486,124 @@ loop:
 }
 
 /*
+ * Look up a FFS dinode number to find its incore vnode.
+ * If it is not in core, read it in from the specified device.
+ * If it is in core, wait for the lock bit to clear, then
+ * return the inode locked. Detection and handling of mount
+ * points must be done by the calling routine.
+ */
+int
+ffs_vget(mp, ino, vpp)
+	struct mount *mp;
+	ino_t ino;
+	struct vnode **vpp;
+{
+	register struct fs *fs;
+	register struct inode *ip;
+	struct ufsmount *ump;
+	struct buf *bp;
+	struct dinode *dp;
+	struct vnode *vp;
+	union ihead *ih;
+	dev_t dev;
+	int i, type, error;
+
+	ump = VFSTOUFS(mp);
+	dev = ump->um_dev;
+	if ((*vpp = ufs_ihashget(dev, ino)) != NULL)
+		return (0);
+
+	/* Allocate a new vnode/inode. */
+	if (error = getnewvnode(VT_UFS, mp, ffs_vnodeop_p, &vp)) {
+		*vpp = NULL;
+		return (error);
+	}
+	type = ump->um_devvp->v_tag == VT_MFS ? M_MFSNODE : M_FFSNODE; /* XXX */
+	MALLOC(ip, struct inode *, sizeof(struct inode), type, M_WAITOK);
+	vp->v_data = ip;
+	ip->i_vnode = vp;
+	ip->i_flag = 0;
+	ip->i_devvp = 0;
+	ip->i_mode = 0;
+	ip->i_diroff = 0;
+	ip->i_lockf = 0;
+	ip->i_fs = fs = ump->um_fs;
+	ip->i_dev = dev;
+	ip->i_number = ino;
+#ifdef QUOTA
+	for (i = 0; i < MAXQUOTAS; i++)
+		ip->i_dquot[i] = NODQUOT;
+#endif
+	/*
+	 * Put it onto its hash chain and lock it so that other requests for
+	 * this inode will block if they arrive while we are sleeping waiting
+	 * for old data structures to be purged or for the contents of the
+	 * disk portion of this inode to be read.
+	 */
+	ufs_ihashins(ip);
+
+	/* Read in the disk contents for the inode, copy into the inode. */
+	if (error = bread(ump->um_devvp, fsbtodb(fs, itod(fs, ino)),
+	    (int)fs->fs_bsize, NOCRED, &bp)) {
+		/*
+		 * The inode does not contain anything useful, so it would
+		 * be misleading to leave it on its hash chain. It will be
+		 * returned to the free list by ufs_iput().
+		 */
+		remque(ip);
+		ip->i_forw = ip;
+		ip->i_back = ip;
+
+		/* Unlock and discard unneeded inode. */
+		ufs_iput(ip);
+		brelse(bp);
+		*vpp = NULL;
+		return (error);
+	}
+	dp = bp->b_un.b_dino;
+	dp += itoo(fs, ino);
+	ip->i_din = *dp;
+	brelse(bp);
+
+	/*
+	 * Initialize the vnode from the inode, check for aliases.
+	 * Note that the underlying vnode may have changed.
+	 */
+	if (error = ufs_vinit(mp, ffs_specop_p, FFS_FIFOOPS, &vp)) {
+		ufs_iput(ip);
+		*vpp = NULL;
+		return (error);
+	}
+	/*
+	 * Finish inode initialization now that aliasing has been resolved.
+	 */
+	ip->i_devvp = ump->um_devvp;
+	VREF(ip->i_devvp);
+	/*
+	 * Set up a generation number for this inode if it does not
+	 * already have one. This should only happen on old filesystems.
+	 */
+	if (ip->i_gen == 0) {
+		if (++nextgennumber < (u_long)time.tv_sec)
+			nextgennumber = time.tv_sec;
+		ip->i_gen = nextgennumber;
+		if ((vp->v_mount->mnt_flag & MNT_RDONLY) == 0)
+			ip->i_flag |= IMOD;
+	}
+	/*
+	 * Ensure that uid and gid are correct. This is a temporary
+	 * fix until fsck has been changed to do the update.
+	 */
+	if (fs->fs_inodefmt < FS_44INODEFMT) {		/* XXX */
+		ip->i_uid = ip->i_din.di_ouid;		/* XXX */
+		ip->i_gid = ip->i_din.di_ogid;		/* XXX */
+	}						/* XXX */
+
+	*vpp = vp;
+	return (0);
+}
+
+/*
  * File handle to vnode
  *
  * Have to be really careful about stale file handles:
@@ -502,7 +617,6 @@ ffs_fhtovp(mp, fhp, vpp)
 	struct fid *fhp;
 	struct vnode **vpp;
 {
-	USES_VOP_VGET;
 	register struct inode *ip;
 	register struct ufid *ufhp;
 	struct fs *fs;
@@ -514,7 +628,7 @@ ffs_fhtovp(mp, fhp, vpp)
 	if (ufhp->ufid_ino < ROOTINO ||
 	    ufhp->ufid_ino >= fs->fs_ncg * fs->fs_ipg)
 		return (EINVAL);
-	if (error = FFS_VGET(mp, ufhp->ufid_ino, &nvp)) {
+	if (error = VFS_VGET(mp, ufhp->ufid_ino, &nvp)) {
 		*vpp = NULLVP;
 		return (error);
 	}
