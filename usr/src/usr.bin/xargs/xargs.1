@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)xargs.1	5.3 (Berkeley) %G%
+.\"	@(#)xargs.1	5.4 (Berkeley) %G%
 .\"
 .TH XARGS 1 ""
 .UC 7
@@ -14,13 +14,13 @@
 xargs \- construct argument list(s) and execute utility.
 .SH SYNOPSIS
 .ft B
-xargs [\-ft] [\-n number] [\-s size] [utility [argument ...]]
+xargs [\-ft] [[\-x] \-n number] [\-s size] [utility [argument ...]]
 .ft R
 .SH DESCRIPTION
 The
-.I xargs utility
-reads space, tab, and newline delimited arguments from the standard
-input and executes the specified
+.I xargs
+utility reads space, tab, newline and end-of-file delimited arguments
+from the standard input and executes the specified
 .I utility
 with them as arguments.
 .PP
@@ -33,53 +33,70 @@ The
 .I utility
 is repeatedly executed until standard input is exhausted.
 .PP
-Spaces and tabs may be embedded in arguments using single (`` ' '') or
-double (``"'') quotes or backslashes (``\e'').
-Single or double quotes escape all characters to the next matching quote
-character, backslashes escape the next character.
-Newlines may not be escaped.
+Spaces, tabs and newlines may be embedded in arguments using single (`` ' '')
+or double (``"'') quotes or backslashes (``\e'').
+Single quotes escape all non-single quote characters, excluding newlines,
+up to the matching single quote.
+Double quotes escape all non-double quote characters, excluding newlines,
+up to the matching double quote.
+Any single character, including newlines, may be escaped by a backslash.
 .PP
 The options are as follows:
 .TP
--f
+\-f
 Force
 .I xargs
 to ignore the exit status returned by
 .IR utility .
-Normally a nonzero exit status will cause
+By default,
 .I xargs
-to exit immediately with an error status.
+will exit immediately if
+.I utility
+exits with a non-zero exit status.
+This does not include ignoring
+.I utility
+exiting due to a signal or without calling
+.IR exit (2).
 .TP
--n number
-Set the maximum number of arguments used from standard input for
-each invocation of the utility.
+\-n number
+Set the maximum number of arguments taken from standard input for each
+invocation of the utility.
 An invocation of
 .I utility
 will use less than
 .I number
 standard input arguments if the number of bytes accumulated (see the
 .I \-s
-option) exceeds the specified size or the last invocation of
-.I utility
-has fewer than
-.I number
-arguments remaining.
-The default value for
-.I number
-is 255.
-.TP
--s size
-Set the maximum number of bytes to which the last component of the
-.I utility
-name, the command-line arguments, and the arguments read in from
-standard input may sum.
-The default value for
+option) exceeds the specified
 .I size
-is 2048.
+or there are fewer than
+.I number
+arguments remaining for the last invocation of
+.IR utility .
+The current default value for
+.I number
+is 5000.
 .TP
--t
+\-s size
+Set the maximum number of bytes for the command line length provided to
+.IR utility .
+The sum of the length of the utility name and the arguments passed to
+.I utility
+(including NULL terminators) will be less than or equal to this number.
+The current default value for
+.I size
+is ARG_MAX - 2048.
+.TP
+\-t
 Echo the command to be executed to standard error immediately before it
 is executed.
+.TP
+\-x
+Force
+.I xargs
+to terminate immediately if a command line containing
+.I number
+arguments will not fit in the specified (or default) command line length.
 .PP
 If no
 .I utility
@@ -87,13 +104,30 @@ is specified,
 .IR echo (1)
 is used.
 .PP
-.I Utility
-should never read from the standard input.
+Undefined behavior may occur if
+.I utility
+reads from the standard input.
 .PP
 .I Xargs
-exits with 0 if no error occurred, and 1 otherwise.
+exits with an exit status of 0 if no error occurs.
+If
+.I utility
+cannot be invoked, is terminated by a signal or terminates without
+calling
+.IR exit (2),
+.I xargs
+exits with an exit status of 127.
+If
+.I utility
+exits with an exit status other than 0,
+.I xargs
+exits with that exit status.
+Otherwise,
+.I xargs
+exits with an exit status of 1.
 .SH "SEE ALSO"
-echo(1)
+.IR echo (1),
+.IR find (1)
 .SH STANDARDS
 The
 .I xargs
