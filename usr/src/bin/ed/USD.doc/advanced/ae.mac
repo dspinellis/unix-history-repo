@@ -1,4 +1,4 @@
-.\"	@(#)ae.mac	5.1 (Berkeley) %G%
+.\"	@(#)ae.mac	6.1 (Berkeley) %G%
 .\"
 .tr _\(em
 .de UL
@@ -29,8 +29,8 @@
 .tr --
 .if n .ls 2
 ..
-.if t .ds B \s6\|\v'.1m'\(sq\v'-.1m'\|\s0
-.if n .ds B []
+.if t .ds BL \s6\|\v'.1m'\(sq\v'-.1m'\|\s0
+.if n .ds BL []
 .if t .ds m \(mi
 .if n .ds m -
 .if t .ds n \(no
@@ -45,8 +45,9 @@
 .if n .ds a @
 .if t .ds . \s+2\fB.\fP\s-2
 .if n .ds . .
-.if t .ds e \z\e\h'2u'\e
+.if t .ds e \z\e\h'1u'\e
 .if n .ds e \e
 .hy 14
 .	2=not last lines; 4= no -xx; 8=no xx-
 .tr *\(**
+
