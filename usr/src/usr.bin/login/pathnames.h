@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)pathnames.h	5.3 (Berkeley) %G%
+ *	@(#)pathnames.h	5.4 (Berkeley) %G%
  */
 
 #include <paths.h>
@@ -23,4 +23,3 @@
 #define	_PATH_HUSHLOGIN	".hushlogin"
 #define	_PATH_MAILDIR	"/var/spool/mail"
 #define	_PATH_MOTDFILE	"/etc/motd"
-#define	_PATH_NOLOGIN	"/etc/nologin"
