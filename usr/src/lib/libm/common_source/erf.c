@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)erf.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)erf.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 /* Modified Nov 30, 1992 P. McILROY:
@@ -233,7 +233,7 @@ rd11 =	-2.06466642800404317677021026611e+006,
 rd12 =	 7.78293889471135381609201431274e+006,
 rd13 =	-1.42821001129434127360582351685e+007;
 
-double nerf(x)
+double erf(x)
 	double x;
 {
 	double R,S,P,Q,ax,s,y,z,r,fabs(),exp();
@@ -291,7 +291,7 @@ double nerf(x)
 		return (z-one);
 }
 
-double nerfc(x) 
+double erfc(x) 
 	double x;
 {
 	double R,S,P,Q,s,ax,y,z,r,fabs(),exp__D();
