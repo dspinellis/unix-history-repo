@@ -70,35 +70,9 @@ struct	uba_driver dpdriver =
 	{ dpprobe, 0, dpattach, 0, dpstd, "dp", dpinfo };
 
 /*
- * debug info
- */
-struct	dpstat {
-	long	start;
-	long	nohdr;
-	long	init;
-	long	rint;
-	long	xint;
-	long	reset;
-	long	ioctl;
-	long	down;
-	long	mchange;
-	long	timeout;
-	long	rsm;
-	long	rem;
-	long	rsmchr;
-	long	rga;
-} dpstat;
-/*
  * Pdma structures for fast interrupts.
  */
 struct	pdma dppdma[2*NDP];
-
-/* error reporting intervals */
-#define DPI_RPNBFS	50
-#define DPI_RPDSC	1
-#define DPI_RPTMO	10
-#define DPI_RPDCK	10
-
 
 /*
  * DP software status per interface.
@@ -123,14 +97,43 @@ struct dp_softc {
 #define DPS_RESTART	1
 #define DPS_ACTIVE	2
 #define DPS_XEM		3		/* transmitting CRC, etc. */
-	int	dp_errors[4];		/* non-fatal error counters */
-#define dp_datck dp_errors[0]
-#define dp_timeo dp_errors[1]
-#define dp_nobuf dp_errors[2]
-#define dp_disc  dp_errors[3]
+	short	dp_olen;		/* length of last packet sent */
+	short	dp_ilen;		/* length of last packet recvd */
 	char	dp_obuf[DP_MTU+8];
 	char	dp_ibuf[DP_MTU+8];
 } dp_softc[NDP];
+
+/*
+ * Debug info
+ */
+struct	dpstat {
+	long	start;
+	long	nohdr;
+	long	init;
+	long	rint;
+	long	xint;
+	long	reset;
+	long	ioctl;
+	long	down;
+	long	mchange;
+	long	timeout;
+	long	rsm;
+	long	rem;
+	long	remchr;
+	long	rga;
+	long	xem;
+	long	rovr;
+} dpstat;
+
+short dp_ilb = 0;
+short dp_log = 1;
+
+#define _offsetof(t, m) ((int)((caddr_t)&((t *)0)->m))
+int dp_sizes[] = {
+	sizeof(dp_softc[0]), sizeof(struct ifnet),
+	_offsetof(struct dp_softc, dp_obuf[0]),
+	_offsetof(struct dp_softc, dp_ibuf[0]),
+	};
 
 dpprobe(reg, ui)
 	caddr_t reg;
@@ -239,11 +242,12 @@ dpinit(unit)
 	pdp->p_mem = pdp->p_end = dp->dp_ibuf + DP_MTU + 8;
 
 	addr->dpclr = DP_CLR;
-	DELAY(1000);
+	DELAY(5000);
 	/* DP_ATA = 0, DP_CHRM = 0, DP_SSLM = 1, (enable aborts),
 			    CRC = CCIIT, initially all ones, 2nd addr = 0 */
 	addr->dpsar = DP_SSLM | DP_IDLE;
-	addr->dpclr = 0;
+	addr->dpclr = DP_XE | dp_ilb;
+	addr->dptdsr = DP_XSM;
 	/* enable receiver, receive interrupt, DTR, RTS */
 	addr->dprcsr = DP_RIE | DP_MIE | DP_RE | DP_DTR | DP_RTS;
 	dpstart(&dp->dp_if);
@@ -272,7 +276,7 @@ dpstart(ifp)
 	 */
 	dpstat.start++;
 	if ((dp->dp_if.if_flags & IFF_OACTIVE) ||
-	    ! (dp->dp_if.if_flags & IFF_RUNNING))
+	    (dp->dp_if.if_flags & IFF_RUNNING) == 0)
 		goto out;
 	IF_DEQUEUE(&dp->dp_if.if_snd, m);
 	if (m == 0)
@@ -287,31 +291,36 @@ dpstart(ifp)
 		m = m0;
 		dpstat.nohdr++;
 	}
-	if (len == 0)
+	if (len < 2)
 		goto out;
 	if (len > DP_MTU) {
 		error = EINVAL;
 		goto out;
 	}
-	dppdma[2*unit].p_mem = 1 + (cp = dp->dp_obuf);
+	dppdma[2*unit].p_mem = cp = dp->dp_obuf;
 	while (m) {
 		struct mbuf *n;
 		bcopy(mtod(m, caddr_t), (caddr_t)cp, m->m_len);
 		cp += m->m_len;
 		MFREE(m, n); m = n;
 	}
-	dppdma[2*unit].p_end = cp;
+	dppdma[2*unit].p_end = cp - 1;
 	dp->dp_if.if_flags |= IFF_OACTIVE;
 	dp->dp_ostate = DPS_ACTIVE;
 	dp->dp_if.if_collisions--;
+	dp->dp_olen = len;
+	if (dp_log) {
+		register u_char *p = (u_char *)dp->dp_obuf;
+		log(LOG_DEBUG, "dpoutput(%d):%x %x %x %x %x\n",
+			len, p[0], p[1], p[2], p[3], p[4]);
+	}
 	addr->dpsar = DP_SSLM | DP_IDLE;
 	addr->dprcsr = DP_RIE | DP_MIE | DP_RE | DP_DTR | DP_RTS;
-	addr->dpclr = DP_XIE | DP_XE;
-	addr->dptdsr = DP_XSM | (0xff & *cp);
+	addr->dpclr = DP_XIE | DP_XE | dp_ilb;
+	addr->dptdsr = DP_XSM;
 out:
 	return (error);
 }
-long dp_rdsr;
 /*
  * Receive done or error interrupt
  */
@@ -323,7 +332,6 @@ register struct dpdevice *addr;
 	short rdsr = addr->dprdsr, rcsr = pdma->p_arg;
 
 	dpstat.rint++;
-dp_rdsr = rdsr;
 	splx(dp->dp_ipl);
 	if (rdsr & DP_RGA) {
 		/* DP_ATA = 0, DP_CHRM = 0, DP_SSLM = 1, (enable aborts),
@@ -339,23 +347,27 @@ dp_rdsr = rdsr;
 		if (rcsr & DP_RDR) {
 		    dp->dp_ibuf[0] = rdsr & DP_RBUF;
 		    pdma->p_mem++;
-		    dpstat.rsmchr++;
 		}
 		dp->dp_flags &= ~DPF_FLUSH;
 		return;
 	}
 	if (rdsr & DP_REM) { /* Received End of Message */
 		dpstat.rem++;
+		if (rcsr & DP_RDR) {
+		    *(pdma->p_mem++) = rdsr;
+		    dpstat.remchr++;
+		}
+		dp->dp_ilen = pdma->p_mem - dp->dp_ibuf;
 		if (rdsr & DP_REC || dp->dp_flags & DPF_FLUSH) {
 			dp->dp_if.if_ierrors++;
 		} else
-			dpinput(&dp->dp_if,
-				pdma->p_mem - dp->dp_ibuf, dp->dp_ibuf);
+			dpinput(&dp->dp_if, dp->dp_ilen, dp->dp_ibuf);
 		pdma->p_mem = pdma->p_end;
 		dp->dp_flags &= ~ DPF_FLUSH;
 		return;
 	}
 	if (rdsr & DP_ROVR) {
+		dpstat.rovr++;
 		dp->dp_flags |= DPF_FLUSH;
 		return;
 	}
@@ -369,10 +381,8 @@ dp_rdsr = rdsr;
 	}
 	dp->dp_flags |= DPF_FLUSH;
 	if (pdma->p_mem != pdma->p_end)
-		log("dp%d: unexplained receiver interrupt\n", unit);
+		log(LOG_DEBUG, "dp%d: unexplained receiver interrupt\n", unit);
 }
-int dp_fill;
-
 /*
  * Transmit complete or error interrupt
  */
@@ -386,7 +396,7 @@ register struct dpdevice *addr;
 	splx(dp->dp_ipl);
 	dpstat.xint++;
 	if (addr->dptdsr & DP_XERR) {
-		log("if_dp%d: data late\n", unit);
+		log(LOG_DEBUG, "if_dp%d: data late\n", unit);
 	restart:
 		pdma->p_mem = dp->dp_obuf;
 		addr->dptdsr = DP_XSM;
@@ -397,33 +407,33 @@ register struct dpdevice *addr;
 
 	case DPS_ACTIVE:
 		if (pdma->p_mem != pdma->p_end) {
-			log("if_dp%d: misc error in dpxint\n", unit);
+			log(LOG_DEBUG, "if_dp%d: misc error in dpxint\n", unit);
 			goto restart;
 		}
-		addr->dpclr = DP_XIE; /* &= ~DP_XE */
-		addr->dptdsr = DP_XEM;
+		addr->dpsar = DP_IDLE|DP_SSLM;
+		addr->dpclr = DP_XE | DP_XIE | dp_ilb;
+		addr->dptdsr = DP_XEM | (0xff & pdma->p_mem[0]);
+		addr->dprcsr = DP_RIE | DP_MIE | DP_RE | DP_DTR | DP_RTS;
 		dp->dp_ostate = DPS_XEM;
 		break;
 
 	case DPS_XEM:
+		dpstat.xem++;
 		dp->dp_if.if_opackets++;
+		dp->dp_ostate = DPS_IDLE;
 		dp->dp_if.if_flags &= ~IFF_OACTIVE;
 		if (dp->dp_if.if_snd.ifq_len)
 			dpstart(&dp->dp_if);
 		else {
-			if (dp_fill) {
-				addr->dpsar = DP_IDLE|DP_SSLM;
-				addr->dptdsr = DP_XABO;
-			} else {
-				addr->dptdsr = 0;
-			}
-			addr->dpclr = 0;
-			dp->dp_ostate = DPS_IDLE;
+			addr->dpsar = DP_IDLE|DP_SSLM;
+			addr->dpclr = DP_XE | dp_ilb;
+			addr->dptdsr = DP_XSM;
+			addr->dprcsr = DP_RIE | DP_MIE | DP_RE | DP_DTR|DP_RTS;
 		}
 		break;
 
 	default:
-		log("if_dp%d: impossible state in dpxint\n");
+		log(LOG_DEBUG, "if_dp%d: impossible state in dpxint\n");
 	}
 }
 /*
@@ -504,9 +514,15 @@ caddr_t buffer;
 	register struct ifqueue *inq;
 	register struct mbuf *m;
 	extern struct ifqueue hdintrq, ipintrq;
-	int netisr;
+	int isr;
 
 	ifp->if_ipackets++;
+	if (dp_log) {
+		register u_char *p = (u_char *)buffer;
+		log(LOG_DEBUG, "dpinput(%d):%x %x %x %x %x\n",
+			len, p[0], p[1], p[2], p[3], p[4]);
+	}
+	
     {
 	register struct ifaddr *ifa = ifp->if_addrlist;
 	register u_char *cp = (u_char *)buffer;
@@ -520,10 +536,10 @@ caddr_t buffer;
 		buffer += 4;
 		len -= 4;
 		inq = &ipintrq;
-		netisr = NETISR_IP;
+		isr = NETISR_IP;
 	} else {
 		inq = &hdintrq;
-		netisr = NETISR_CCITT;
+		isr = NETISR_CCITT;
 	}
     }
 	if (len <= 0)
@@ -538,7 +554,7 @@ caddr_t buffer;
 		m_freem(m);
 	} else {
 		IF_ENQUEUE(inq, m);
-		schednetisr(netisr);
+		schednetisr(isr);
 	}
 }
 
