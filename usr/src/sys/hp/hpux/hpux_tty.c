@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: hpux_tty.c 1.7 89/04/11$
  *
- *	@(#)hpux_tty.c	7.1 (Berkeley) %G%
+ *	@(#)hpux_tty.c	7.2 (Berkeley) %G%
  */
 
 /*
@@ -33,6 +33,13 @@
 
 #include "hpux.h"
 #include "hpux_termio.h"
+
+/*
+ * XXX should just include syscontext.h but RETURN definition clashes
+ * with defined constant in tty.h
+ */
+#undef RETURN
+#define RETURN(value)	{ u.u_error = (value); return (u.u_error); }
 
 char hpuxtobsdbaud[32] = {
 	B0,	B50,	B75,	B110,	B134,	B150,	B200,	B300,
@@ -73,7 +80,7 @@ hpuxtermio(fp, com, data)
 		char bsdt_werasc;
 		char bsdt_lnextc;
 	} ltc;
-	int lmode, (*ioctlrout)();
+	int lmode, error, (*ioctlrout)();
 	register u_short flag;
 	register struct hpuxtermio *tiop;
 
@@ -83,7 +90,7 @@ hpuxtermio(fp, com, data)
 	case HPUXTCGETA:
 		/* get everything we might need */
 		bzero(data, sizeof(struct hpuxtermio));
-		if (u.u_error = ioctlrout(fp, TIOCGETP, (caddr_t)&sg))
+		if (error = ioctlrout(fp, TIOCGETP, (caddr_t)&sg))
 			break;
 		(void) ioctlrout(fp, TIOCGETC, (caddr_t)&tc);
 		(void) ioctlrout(fp, TIOCLGET, (caddr_t)&lmode);
@@ -176,7 +183,7 @@ hpuxtermio(fp, com, data)
 	case HPUXTCSETAW:
 	case HPUXTCSETAF:
 		/* get old lmode and determine if we are a tty */
-		if (u.u_error = ioctlrout(fp, TIOCLGET, (caddr_t)&lmode))
+		if (error = ioctlrout(fp, TIOCLGET, (caddr_t)&lmode))
 			break;
 		(void) ioctlrout(fp, TIOCGLTC, (caddr_t)&ltc);
 
@@ -195,7 +202,7 @@ hpuxtermio(fp, com, data)
 		tc.bsdt_brkc = tiop->c_cc[HPUXVEOL];
 		ltc.bsdt_suspc = CSUSP;
 		ltc.bsdt_dsuspc = CDSUSP;
-		ltc.bsdt_flushc = CFLUSH;
+		ltc.bsdt_flushc = CDISCARD;
 		ltc.bsdt_lnextc = CLNEXT;
 
 		/* set flags */
@@ -274,53 +281,36 @@ hpuxtermio(fp, com, data)
 			(void) ioctlrout(fp, TIOCHPCL, (caddr_t)0);
 		break;
 
-	case HPUXTIOCGETP:
-		u.u_error = ioctlrout(fp, TIOCGETP, (caddr_t)&sg);
-		if (u.u_error)
-			break;
-		flag = sg.sg_flags;
-		sg.sg_flags &= ~(V7_HUPCL|V7_XTABS|V7_NOAL);
-		if (flag & XTABS)
-			sg.sg_flags |= V7_XTABS;
-		bcopy((caddr_t)&sg, data, sizeof sg);
-		break;
-
-	case HPUXTIOCSETP:
-		bcopy(data, (caddr_t)&sg, sizeof sg);
-		flag = sg.sg_flags;
-		sg.sg_flags &= ~(V7_HUPCL|V7_XTABS|V7_NOAL);
-		if (flag & V7_XTABS)
-			sg.sg_flags |= XTABS;
-		u.u_error = ioctlrout(fp, TIOCSETP, (caddr_t)&sg);
-		if (flag & V7_HUPCL)
-			(void) ioctlrout(fp, TIOCHPCL, (caddr_t)0);
-		break;
-
 	default:
+		error = EINVAL;
 		break;
 	}
-	return(u.u_error);
+	return(error);
 }
 
 /* #ifdef COMPAT */
-ohpuxgtty()
-{
-	struct a {
+ohpuxgtty(p, uap, retval)
+	struct proc *p;
+	struct args {
 		int	fdes;
 		caddr_t	cmarg;
-	} *uap = (struct a *)u.u_ap;
+	} *uap;
+	int *retval;
+{
 
-	getsettty(uap->fdes, HPUXTIOCGETP, uap->cmarg);
+	RETURN (getsettty(uap->fdes, HPUXTIOCGETP, uap->cmarg));
 }
 
-ohpuxstty()
-{
-	struct a {
+ohpuxstty(p, uap, retval)
+	struct proc *p;
+	struct args {
 		int	fdes;
 		caddr_t	cmarg;
-	} *uap = (struct a *)u.u_ap;
+	} *uap;
+	int *retval;
+{
 
-	getsettty(uap->fdes, HPUXTIOCSETP, uap->cmarg);
+	RETURN (getsettty(uap->fdes, HPUXTIOCSETP, uap->cmarg));
 }
 
 /*
@@ -334,38 +324,41 @@ getsettty(fdes, com, cmarg)
 	register struct file *fp;
 	struct hpuxsgttyb hsb;
 	struct sgttyb sb;
+	int error;
 
-	if ((unsigned)fdes >= NOFILE || (fp = u.u_ofile[fdes]) == NULL) {
-		u.u_error = EBADF;
-		return;
-	}
-	if ((fp->f_flag & (FREAD|FWRITE)) == 0) {
-		u.u_error = EBADF;
-		return;
-	}
+	if ((unsigned)fdes >= NOFILE || (fp = u.u_ofile[fdes]) == NULL)
+		return (EBADF);
+	if ((fp->f_flag & (FREAD|FWRITE)) == 0)
+		return (EBADF);
 	if (com == HPUXTIOCSETP) {
-		u.u_error = copyin(cmarg, (caddr_t)&hsb, sizeof hsb);
-		if (u.u_error)
-			return;
+		if (error = copyin(cmarg, (caddr_t)&hsb, sizeof hsb))
+			return (error);
 		sb.sg_ispeed = hsb.sg_ispeed;
 		sb.sg_ospeed = hsb.sg_ospeed;
 		sb.sg_erase = hsb.sg_erase;
 		sb.sg_kill = hsb.sg_kill;
-		sb.sg_flags = (short) hsb.sg_flags;
+		sb.sg_flags = hsb.sg_flags & ~(V7_HUPCL|V7_XTABS|V7_NOAL);
+		if (hsb.sg_flags & V7_XTABS)
+			sb.sg_flags |= XTABS;
+		if (hsb.sg_flags & V7_HUPCL)
+			(void)(*fp->f_ops->fo_ioctl)(fp, TIOCHPCL, (caddr_t)0);
 		com = TIOCSETP;
 	} else {
 		bzero((caddr_t)&hsb, sizeof hsb);
 		com = TIOCGETP;
 	}
-	u.u_error = (*fp->f_ops->fo_ioctl)(fp, com, (caddr_t)&sb);
-	if (u.u_error == 0 && com == TIOCGETP) {
+	error = (*fp->f_ops->fo_ioctl)(fp, com, (caddr_t)&sb);
+	if (error == 0 && com == TIOCGETP) {
 		hsb.sg_ispeed = sb.sg_ispeed;
 		hsb.sg_ospeed = sb.sg_ospeed;
 		hsb.sg_erase = sb.sg_erase;
 		hsb.sg_kill = sb.sg_kill;
-		hsb.sg_flags = (int) sb.sg_flags;
-		u.u_error = copyout((caddr_t)&hsb, cmarg, sizeof hsb);
+		hsb.sg_flags = sb.sg_flags & ~(V7_HUPCL|V7_XTABS|V7_NOAL);
+		if (sb.sg_flags & XTABS)
+			hsb.sg_flags |= V7_XTABS;
+		error = copyout((caddr_t)&hsb, cmarg, sizeof hsb);
 	}
+	return (error);
 }
 /* #endif */
 #endif

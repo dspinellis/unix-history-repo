@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: hpux_compat.c 1.33 89/08/23$
  *
- *	@(#)hpux_compat.c	7.6 (Berkeley) %G%
+ *	@(#)hpux_compat.c	7.7 (Berkeley) %G%
  */
 
 /*
@@ -85,10 +85,14 @@ short bsdtohpuxerrnomap[NERR] = {
 /*70*/   70,  71,BERR,BERR,BERR,BERR,BERR,  46,BERR
 };
 
-notimp(code, nargs)
+notimp(p, uap, retval, code, nargs)
+	struct proc *p;
+	int *uap, *retval;
+	int code, nargs;
 {
+	int error = 0;
 #ifdef DEBUG
-	int *argp = u.u_ap;
+	register int *argp = uap;
 	extern char *hpuxsyscallnames[];
 
 	printf("HPUX %s(", hpuxsyscallnames[code]);
@@ -100,16 +104,17 @@ notimp(code, nargs)
 	printf("\n");
 	switch (unimpresponse) {
 	case 0:
-		nosys();
+		error = nosys(p, uap, retval);
 		break;
 	case 1:
-		u.u_error = EINVAL;
+		error = EINVAL;
 		break;
 	}
 #else
-	nosys();
+	error = nosys(p, uap, retval);
 #endif
-	uprintf("HPUX system call %d not implemented\n", code);
+	uprintf("HP-UX system call %d not implemented\n", code);
+	RETURN (error);
 }
 
 /*
@@ -118,84 +123,89 @@ notimp(code, nargs)
  * handling it in the C library stub.  We also need to map any
  * termination signal from BSD to HPUX.
  */
-hpuxwait3()
-{
-	struct a {
+hpuxwait3(p, uap, retval)
+	struct proc *p;
+	struct args {
 		int	*status;
 		int	options;
 		int	rusage;
-	} *uap = (struct a *)u.u_ap;
-
+	} *uap;
+	int *retval;
+{
 	/* rusage pointer must be zero */
-	if (uap->rusage) {
-		u.u_error = EINVAL;
-		return;
-	}
+	if (uap->rusage)
+		RETURN (EINVAL);
 	u.u_ar0[PS] = PSL_ALLCC;
 	u.u_ar0[R0] = uap->options;
 	u.u_ar0[R1] = uap->rusage;
-	hpuxwait();
+	RETURN (hpuxwait(p, uap, retval));
 }
 
-hpuxwait()
-{
-	int sig, *statp;
-	struct a {
+hpuxwait(p, uap, retval)
+	struct proc *p;
+	struct args {
 		int	*status;
-	} *uap = (struct a *)u.u_ap;
+	} *uap;
+	int *retval;
+{
+	int sig, *statp, error;
 
 	statp = uap->status;	/* owait clobbers first arg */
-	owait();
+	error = owait(p, uap, retval);
 	/*
 	 * HP-UX wait always returns EINTR when interrupted by a signal
 	 * (well, unless its emulating a BSD process, but we don't bother...)
 	 */
-	if (u.u_error == ERESTART)
-		u.u_error = EINTR;
-	if (u.u_error)
-		return;
-	sig = u.u_r.r_val2 & 0xFF;
+	if (error == ERESTART)
+		error = EINTR;
+	if (error)
+		RETURN (error);
+	sig = retval[1] & 0xFF;
 	if (sig == WSTOPPED) {
-		sig = (u.u_r.r_val2 >> 8) & 0xFF;
-		u.u_r.r_val2 = (bsdtohpuxsig(sig) << 8) | WSTOPPED;
+		sig = (retval[1] >> 8) & 0xFF;
+		retval[1] = (bsdtohpuxsig(sig) << 8) | WSTOPPED;
 	} else if (sig)
-		u.u_r.r_val2 = (u.u_r.r_val2 & 0xFF00) |
+		retval[1] = (retval[1] & 0xFF00) |
 			bsdtohpuxsig(sig & 0x7F) | (sig & 0x80);
 	if (statp)
-		if (suword((caddr_t)statp, u.u_r.r_val2))
-			u.u_error = EFAULT;
+		if (suword((caddr_t)statp, retval[1]))
+			error = EFAULT;
+	RETURN (error);
 }
 
-hpuxwaitpid()
-{
-	int sig, *statp;
-	struct a {
+hpuxwaitpid(p, uap, retval)
+	struct proc *p;
+	struct args {
 		int	pid;
 		int	*status;
 		int	options;
 		struct	rusage *rusage;	/* wait4 arg */
-	} *uap = (struct a *)u.u_ap;
+	} *uap;
+	int *retval;
+{
+	int sig, *statp, error;
 
 	uap->rusage = 0;
-	wait4();
+	error = wait4(p, uap, retval);
 	/*
 	 * HP-UX wait always returns EINTR when interrupted by a signal
 	 * (well, unless its emulating a BSD process, but we don't bother...)
 	 */
-	if (u.u_error == ERESTART)
-		u.u_error = EINTR;
-	if (u.u_error)
-		return;
-	sig = u.u_r.r_val2 & 0xFF;
+	if (error == ERESTART)
+		error = EINTR;
+	if (error)
+		RETURN (error);
+	sig = retval[1] & 0xFF;
 	if (sig == WSTOPPED) {
-		sig = (u.u_r.r_val2 >> 8) & 0xFF;
-		u.u_r.r_val2 = (bsdtohpuxsig(sig) << 8) | WSTOPPED;
+		sig = (retval[1] >> 8) & 0xFF;
+		retval[1] = (bsdtohpuxsig(sig) << 8) | WSTOPPED;
 	} else if (sig)
-		u.u_r.r_val2 = (u.u_r.r_val2 & 0xFF00) |
+		retval[1] = (retval[1] & 0xFF00) |
 			bsdtohpuxsig(sig & 0x7F) | (sig & 0x80);
 	if (statp)
-		if (suword((caddr_t)statp, u.u_r.r_val2))
-			u.u_error = EFAULT;
+		if (suword((caddr_t)statp, retval[1]))
+			error = EFAULT;
+	RETURN (error);
 }
 
 /*
@@ -205,7 +215,7 @@ hpuxwaitpid()
  */
 hpuxopen(p, uap, retval)
 	struct proc *p;
-	struct args {
+	register struct args {
 		char	*fname;
 		int	mode;
 		int	crtmode;
@@ -233,14 +243,16 @@ hpuxopen(p, uap, retval)
 	RETURN (open(p, uap, retval));
 }
 
-hpuxfcntl()
-{
-	register struct a {
+hpuxfcntl(p, uap, retval)
+	struct proc *p;
+	register struct args {
 		int	fdes;
 		int	cmd;
 		int	arg;
-	} *uap = (struct a *)u.u_ap;
-	int mode;
+	} *uap;
+	int *retval;
+{
+	int mode, error;
 
 	switch (uap->cmd) {
 	case F_SETFL:
@@ -252,20 +264,20 @@ hpuxfcntl()
 	case F_SETFD:
 		break;
 	default:
-		u.u_error = EINVAL;
-		return;
+		RETURN (EINVAL);
 	}
-	fcntl();
-	if (u.u_error == 0 && uap->arg == F_GETFL) {
-		mode = u.u_r.r_val1;
-		u.u_r.r_val1 &= ~(FCREAT|FTRUNC|FEXCL|FUSECACHE);
+	error = fcntl(p, uap, retval);
+	if (error == 0 && uap->arg == F_GETFL) {
+		mode = *retval;
+		*retval &= ~(FCREAT|FTRUNC|FEXCL|FUSECACHE);
 		if (mode & FCREAT)
-			u.u_r.r_val1 |= HPUXFCREAT;
+			*retval |= HPUXFCREAT;
 		if (mode & FTRUNC)
-			u.u_r.r_val1 |= HPUXFTRUNC;
+			*retval |= HPUXFTRUNC;
 		if (mode & FEXCL)
-			u.u_r.r_val1 |= HPUXFEXCL;
+			*retval |= HPUXFEXCL;
 	}
+	RETURN (error);
 }
 
 /*
@@ -275,97 +287,116 @@ hpuxfcntl()
  * not entirely correct, since the behavior is only defined
  * for pipes and tty type devices.
  */
-hpuxread()
-{
-	struct a {
+hpuxread(p, uap, retval)
+	struct proc *p;
+	struct args {
 		int	fd;
-	} *uap = (struct a *)u.u_ap;
+	} *uap;
+	int *retval;
+{
+	int error;
 
-	read();
-	if (u.u_error == EWOULDBLOCK &&
+	error = read(p, uap, retval);
+	if (error == EWOULDBLOCK &&
 	    u.u_ofile[uap->fd]->f_type == DTYPE_VNODE) {
-		u.u_error = 0;
-		u.u_r.r_val1 = 0;
+		error = 0;
+		*retval = 0;
 	}
+	RETURN (error);
 }
 
-hpuxwrite()
-{
-	struct a {
+hpuxwrite(p, uap, retval)
+	struct proc *p;
+	struct args {
 		int	fd;
-	} *uap = (struct a *)u.u_ap;
+	} *uap;
+	int *retval;
+{
+	int error;
 
-	write();
-	if (u.u_error == EWOULDBLOCK &&
+	error = write(p, uap, retval);
+	if (error == EWOULDBLOCK &&
 	    u.u_ofile[uap->fd]->f_type == DTYPE_VNODE) {
-		u.u_error = 0;
-		u.u_r.r_val1 = 0;
+		error = 0;
+		*retval = 0;
 	}
+	RETURN (error);
 }
 
-hpuxreadv()
-{
-	struct a {
+hpuxreadv(p, uap, retval)
+	struct proc *p;
+	struct args {
 		int	fd;
-	} *uap = (struct a *)u.u_ap;
+	} *uap;
+	int *retval;
+{
+	int error;
 
-	readv();
-	if (u.u_error == EWOULDBLOCK &&
+	error = readv(p, uap, retval);
+	if (error == EWOULDBLOCK &&
 	    u.u_ofile[uap->fd]->f_type == DTYPE_VNODE) {
-		u.u_error = 0;
-		u.u_r.r_val1 = 0;
+		error = 0;
+		*retval = 0;
 	}
+	RETURN (error);
 }
 
-hpuxwritev()
-{
-	struct a {
+hpuxwritev(p, uap, retval)
+	struct proc *p;
+	struct args {
 		int	fd;
-	} *uap = (struct a *)u.u_ap;
+	} *uap;
+	int *retval;
+{
+	int error;
 
-	writev();
-	if (u.u_error == EWOULDBLOCK &&
+	error = writev(p, uap, retval);
+	if (error == EWOULDBLOCK &&
 	    u.u_ofile[uap->fd]->f_type == DTYPE_VNODE) {
-		u.u_error = 0;
-		u.u_r.r_val1 = 0;
+		error = 0;
+		*retval = 0;
 	}
+	RETURN (error);
 }
 
 /*
  * 4.3bsd dup allows dup2 to come in on the same syscall entry
  * and hence allows two arguments.  HPUX dup has only one arg.
  */
-hpuxdup()
-{
-	register struct a {
+hpuxdup(p, uap, retval)
+	struct proc *p;
+	register struct args {
 		int	i;
-	} *uap = (struct a *)u.u_ap;
+	} *uap;
+	int *retval;
+{
 	struct file *fp;
-	int j;
+	int fd, error;
 
-	if ((unsigned)uap->i >= NOFILE || (fp = u.u_ofile[uap->i]) == NULL) {
-		u.u_error = EBADF;
-		return;
-	}
-	u.u_error = ufalloc(0, &j);
-	if (u.u_error)
-		return;
-	u.u_r.r_val1 = j;
-	u.u_ofile[j] = fp;
-	u.u_pofile[j] = u.u_pofile[uap->i] &~ UF_EXCLOSE;
+	if ((unsigned)uap->i >= NOFILE || (fp = u.u_ofile[uap->i]) == NULL)
+		RETURN (EBADF);
+	if (error = ufalloc(0, &fd))
+		RETURN (error);
+	*retval = fd;
+	u.u_ofile[fd] = fp;
+	u.u_pofile[fd] = u.u_pofile[uap->i] &~ UF_EXCLOSE;
 	fp->f_count++;
-	if (j > u.u_lastfile)
-		u.u_lastfile = j;
+	if (fd > u.u_lastfile)
+		u.u_lastfile = fd;
+	RETURN (0);
 }
 
-hpuxuname()
-{
-	register struct a {
+hpuxuname(p, uap, retval)
+	struct proc *p;
+	register struct args {
 		struct hpuxutsname *uts;
 		int dev;
 		int request;
-	} *uap = (struct a *)u.u_ap;
+	} *uap;
+	int *retval;
+{
 	register int i;
+	int error;
 
 	switch (uap->request) {
 	/* uname */
@@ -391,63 +422,73 @@ hpuxuname()
 		case HP_370:
 			protoutsname.machine[6] = '7';
 			break;
+		/* includes 345 */
+		case HP_375:
+			protoutsname.machine[6] = '7';
+			protoutsname.machine[7] = '5';
+			break;
 		}
 		/* copy hostname (sans domain) to nodename */
 		for (i = 0; i < 9 && hostname[i] != '.'; i++)
 			protoutsname.nodename[i] = hostname[i];
-		u.u_error = copyout((caddr_t)&protoutsname, (caddr_t)uap->uts,
-				    sizeof(struct hpuxutsname));
+		error = copyout((caddr_t)&protoutsname, (caddr_t)uap->uts,
+				sizeof(struct hpuxutsname));
 		break;
 	/* ustat - who cares? */
 	case 2:
 	default:
-		u.u_error = EINVAL;
+		error = EINVAL;
 		break;
 	}
+	RETURN (error);
 }
 
-hpuxstat()
-{
-	struct a {
+hpuxstat(p, uap, retval)
+	struct proc *p;
+	struct args {
 		char	*fname;
 		struct hpuxstat *hsb;
-	} *uap = (struct a *)u.u_ap;
-
-	u.u_error = hpuxstat1(uap->fname, uap->hsb, FOLLOW);
+	} *uap;
+	int *retval;
+{
+	RETURN (hpuxstat1(uap->fname, uap->hsb, FOLLOW));
 }
 
-hpuxlstat()
-{
-	struct a {
+hpuxlstat(p, uap, retval)
+	struct proc *p;
+	struct args {
 		char	*fname;
-		struct	hpuxstat *hsb;
-	} *uap = (struct a *) u.u_ap;
-
-	u.u_error = hpuxstat1(uap->fname, uap->hsb, NOFOLLOW);
+		struct hpuxstat *hsb;
+	} *uap;
+	int *retval;
+{
+	RETURN (hpuxstat1(uap->fname, uap->hsb, NOFOLLOW));
 }
 
-hpuxfstat()
-{
-	register struct file *fp;
-	register struct a {
+hpuxfstat(p, uap, retval)
+	struct proc *p;
+	register struct args {
 		int	fdes;
 		struct	hpuxstat *hsb;
-	} *uap = (struct a *)u.u_ap;
+	} *uap;
+	int *retval;
+{
+	register struct file *fp;
 	struct stat sb;
+	int error;
 
 	if ((unsigned)uap->fdes >= NOFILE ||
-	    (fp = u.u_ofile[uap->fdes]) == NULL) {
-		u.u_error = EBADF;
-		return;
-	}
+	    (fp = u.u_ofile[uap->fdes]) == NULL)
+		RETURN (EBADF);
+
 	switch (fp->f_type) {
 
 	case DTYPE_VNODE:
-		u.u_error = vn_stat((struct vnode *)fp->f_data, &sb);
+		error = vn_stat((struct vnode *)fp->f_data, &sb);
 		break;
 
 	case DTYPE_SOCKET:
-		u.u_error = soo_stat((struct socket *)fp->f_data, &sb);
+		error = soo_stat((struct socket *)fp->f_data, &sb);
 		break;
 
 	default:
@@ -455,80 +496,83 @@ hpuxfstat()
 		/*NOTREACHED*/
 	}
 	/* is this right for sockets?? */
-	if (u.u_error == 0)
-		u.u_error = bsdtohpuxstat(&sb, uap->hsb);
+	if (error == 0)
+		error = bsdtohpuxstat(&sb, uap->hsb);
+	RETURN (error);
 }
 
-hpuxulimit()
-{
-	struct a {
+hpuxulimit(p, uap, retval)
+	struct proc *p;
+	register struct args {
 		int	cmd;
 		long	newlimit;
-	} *uap = (struct a *)u.u_ap;
+	} *uap;
+	int *retval;
+{
 	struct rlimit *limp;
+	int error = 0;
 
 	limp = &u.u_rlimit[RLIMIT_FSIZE];
 	switch (uap->cmd) {
 	case 2:
 		uap->newlimit *= 512;
 		if (uap->newlimit > limp->rlim_max &&
-		    (u.u_error = suser(u.u_cred, &u.u_acflag)))
+		    (error = suser(u.u_cred, &u.u_acflag)))
 			break;
 		limp->rlim_cur = limp->rlim_max = uap->newlimit;
 		/* else fall into... */
 
 	case 1:
-		u.u_r.r_off = limp->rlim_max / 512;
+		u.u_r.r_off = limp->rlim_max / 512;		/* XXX */
 		break;
 
 	case 3:
 		limp = &u.u_rlimit[RLIMIT_DATA];
-		u.u_r.r_off = ctob(u.u_tsize) + limp->rlim_max;
+		u.u_r.r_off = ctob(u.u_tsize) + limp->rlim_max;	/* XXX */
 		break;
 
 	default:
-		u.u_error = EINVAL;
+		error = EINVAL;
 		break;
 	}
+	RETURN (error);
 }
 
 /*
  * Map "real time" priorities 0 (high) thru 127 (low) into nice
  * values -16 (high) thru -1 (low).
  */
-hpuxrtprio()
-{
-	register struct a {
+hpuxrtprio(cp, uap, retval)
+	struct proc *cp;
+	register struct args {
 		int pid;
 		int prio;
-	} *uap = (struct a *)u.u_ap;
+	} *uap;
+	int *retval;
+{
 	struct proc *p;
-	int nice;
+	int nice, error;
 
 	if (uap->prio < RTPRIO_MIN && uap->prio > RTPRIO_MAX &&
-	    uap->prio != RTPRIO_NOCHG && uap->prio != RTPRIO_RTOFF) {
-		u.u_error = EINVAL;
-		return;
-	}
+	    uap->prio != RTPRIO_NOCHG && uap->prio != RTPRIO_RTOFF)
+		RETURN (EINVAL);
 	if (uap->pid == 0)
-		p = u.u_procp;
-	else if ((p = pfind(uap->pid)) == 0) {
-		u.u_error = ESRCH;
-		return;
-	}
+		p = cp;
+	else if ((p = pfind(uap->pid)) == 0)
+		RETURN (ESRCH);
 	nice = p->p_nice;
 	if (nice < NZERO)
-		u.u_r.r_val1 = (nice + 16) << 3;
+		*retval = (nice + 16) << 3;
 	else
-		u.u_r.r_val1 = RTPRIO_RTOFF;
+		*retval = RTPRIO_RTOFF;
 	switch (uap->prio) {
 
 	case RTPRIO_NOCHG:
-		return;
+		RETURN (0);
 
 	case RTPRIO_RTOFF:
 		if (nice >= NZERO)
-			return;
+			RETURN (0);
 		nice = NZERO;
 		break;
 
@@ -536,20 +580,20 @@ hpuxrtprio()
 		nice = (uap->prio >> 3) - 16;
 		break;
 	}
-	donice(p, nice);
-	if (u.u_error == EACCES)
-		u.u_error = EPERM;
+	error = donice(cp, p, nice);
+	if (error == EACCES)
+		error = EPERM;
+	RETURN (error);
 }
 
-/*
- * Kudos to HP folks for using such mnemonic names so I could figure
- * out what this guy does.
- */
-hpuxadvise()
-{
-	struct a {
+hpuxadvise(p, uap, retval)
+	struct proc *p;
+	struct args {
 		int	arg;
-	} *uap = (struct a *) u.u_ap;
+	} *uap;
+	int *retval;
+{
+	int error = 0;
 
 	switch (uap->arg) {
 	case 0:
@@ -562,19 +606,23 @@ hpuxadvise()
 		DCIA();
 		break;
 	default:
-		u.u_error = EINVAL;
+		error = EINVAL;
 		break;
 	}
+	RETURN (error);
 }
 
-hpuxptrace()
-{
-	struct a {
+hpuxptrace(p, uap, retval)
+	struct proc *p;
+	struct args {
 		int	req;
 		int	pid;
 		int	*addr;
 		int	data;
-	} *uap = (struct a *)u.u_ap;
+	} *uap;
+	int *retval;
+{
+	int error;
 
 	if (uap->req == PT_STEP || uap->req == PT_CONTINUE) {
 		if (uap->data) {
@@ -583,58 +631,70 @@ hpuxptrace()
 				uap->data = NSIG;
 		}
 	}
-	ptrace();
+	error = ptrace(p, uap, retval);
+	RETURN (error);
 }
 
-hpuxgetdomainname()
-{
-	register struct a {
+hpuxgetdomainname(p, uap, retval)
+	struct proc *p;
+	register struct args {
 		char	*domainname;
 		u_int	len;
-	} *uap = (struct a *)u.u_ap;
-
+	} *uap;
+	int *retval;
+{
 	if (uap->len > domainnamelen + 1)
 		uap->len = domainnamelen + 1;
-	u.u_error = copyout(domainname, uap->domainname, uap->len);
+	RETURN (copyout(domainname, uap->domainname, uap->len));
 }
 
-hpuxsetdomainname()
-{
-	register struct a {
+hpuxsetdomainname(p, uap, retval)
+	struct proc *p;
+	register struct args {
 		char	*domainname;
 		u_int	len;
-	} *uap = (struct a *)u.u_ap;
+	} *uap;
+	int *retval;
+{
+	int error;
 
-	if (u.u_error = suser(u.u_cred, &u.u_acflag))
-		return;
-	if (uap->len > sizeof (domainname) - 1) {
-		u.u_error = EINVAL;
-		return;
-	}
+	if (error = suser(u.u_cred, &u.u_acflag))
+		RETURN (error);
+	if (uap->len > sizeof (domainname) - 1)
+		RETURN (EINVAL);
 	domainnamelen = uap->len;
-	u.u_error = copyin(uap->domainname, domainname, uap->len);
+	error = copyin(uap->domainname, domainname, uap->len);
 	domainname[domainnamelen] = 0;
+	RETURN (error);
 }
 
 #ifdef SYSVSHM
-hpuxshmat()
+hpuxshmat(p, uap, retval)
+	struct proc *p;
+	int *uap, *retval;
 {
-	shmat(u.u_ap);
+	RETURN (shmat(p, uap, retval));
 }
 
-hpuxshmctl()
+hpuxshmctl(p, uap, retval)
+	struct proc *p;
+	int *uap, *retval;
 {
-	shmctl(u.u_ap);
+	RETURN (shmctl(p, uap, retval));
 }
 
-hpuxshmdt()
+hpuxshmdt(p, uap, retval)
+	struct proc *p;
+	int *uap, *retval;
 {
-	shmdt(u.u_ap);
+	RETURN (shmdt(p, uap, retval));
 }
 
-hpuxshmget()
+hpuxshmget(p, uap, retval)
+	struct proc *p;
+	int *uap, *retval;
 {
-	shmget(u.u_ap);
+	RETURN (shmget(p, uap, retval));
 }
 #endif
 
@@ -642,38 +702,44 @@ hpuxshmget()
  * Fake semaphore routines, just don't return an error.
  * Should be adequate for starbase to run.
  */
-hpuxsemctl()
-{
-	struct a {
+hpuxsemctl(p, uap, retval)
+	struct proc *p;
+	struct args {
 		int semid;
 		u_int semnum;
 		int cmd;
 		int arg;
-	} *uap = (struct a *)u.u_ap;
-
+	} *uap;
+	int *retval;
+{
 	/* XXX: should do something here */
+	RETURN (0);
 }
 
-hpuxsemget()
-{
-	struct a {
+hpuxsemget(p, uap, retval)
+	struct proc *p;
+	struct args {
 		key_t key;
 		int nsems;
 		int semflg;
-	} *uap = (struct a *)u.u_ap;
-
+	} *uap;
+	int *retval;
+{
 	/* XXX: should do something here */
+	RETURN (0);
 }
 
-hpuxsemop()
-{
-	struct a {
+hpuxsemop(p, uap, retval)
+	struct proc *p;
+	struct args {
 		int semid;
 		struct sembuf *sops;
 		u_int nsops;
-	} *uap = (struct a *)u.u_ap;
-
+	} *uap;
+	int *retval;
+{
 	/* XXX: should do something here */
+	RETURN (0);
 }
 
 /* convert from BSD to HPUX errno */
@@ -767,15 +833,17 @@ hpuxtobsdioctl(com)
  *	no FIOCLEX/FIONCLEX/FIONBIO/FIOASYNC/FIOGETOWN/FIOSETOWN
  *	the sgttyb struct is 2 bytes longer
  */
-hpuxioctl()
-{
-	register struct file *fp;
-	struct a {
+hpuxioctl(p, uap, retval)
+	struct proc *p;
+	register struct args {
 		int	fdes;
 		int	cmd;
 		caddr_t	cmarg;
-	} *uap = (struct a *)u.u_ap;
-	register int com;
+	} *uap;
+	int *retval;
+{
+	register struct file *fp;
+	register int com, error;
 	register u_int size;
 	caddr_t memp = 0;
 #define STK_PARAMS	128
@@ -785,20 +853,14 @@ hpuxioctl()
 	com = uap->cmd;
 
 	/* XXX */
-	if (com == HPUXTIOCGETP || com == HPUXTIOCSETP) {
-		getsettty(uap->fdes, com, uap->cmarg);
-		return;
-	}
+	if (com == HPUXTIOCGETP || com == HPUXTIOCSETP)
+		RETURN (getsettty(uap->fdes, com, uap->cmarg));
 
 	if ((unsigned)uap->fdes >= NOFILE ||
-	    (fp = u.u_ofile[uap->fdes]) == NULL) {
-		u.u_error = EBADF;
-		return;
-	}
-	if ((fp->f_flag & (FREAD|FWRITE)) == 0) {
-		u.u_error = EBADF;
-		return;
-	}
+	    (fp = u.u_ofile[uap->fdes]) == NULL)
+		RETURN (EBADF);
+	if ((fp->f_flag & (FREAD|FWRITE)) == 0)
+		RETURN (EBADF);
 
 	/*
 	 * Interpret high order word to find
@@ -806,29 +868,26 @@ hpuxioctl()
 	 * user's address space.
 	 */
 	size = IOCPARM_LEN(com);
-	if (size > IOCPARM_MAX) {
-		u.u_error = EFAULT;
-		return;
-	}
+	if (size > IOCPARM_MAX)
+		RETURN (ENOTTY);
 	if (size > sizeof (stkbuf)) {
-		memp = (caddr_t)malloc((u_long)IOCPARM_MAX, M_IOCTLOPS,
-		    M_WAITOK);
+		memp = (caddr_t)malloc((u_long)size, M_IOCTLOPS, M_WAITOK);
 		data = memp;
 	}
 	if (com&IOC_IN) {
 		if (size) {
-			u.u_error = copyin(uap->cmarg, data, (u_int)size);
-			if (u.u_error) {
+			error = copyin(uap->cmarg, data, (u_int)size);
+			if (error) {
 				if (memp)
 					free(memp, M_IOCTLOPS);
-				return;
+				RETURN (error);
 			}
 		} else
 			*(caddr_t *)data = uap->cmarg;
 	} else if ((com&IOC_OUT) && size)
 		/*
-		 * Zero the buffer on the stack so the user
-		 * always gets back something deterministic.
+		 * Zero the buffer so the user always
+		 * gets back something deterministic.
 		 */
 		bzero(data, size);
 	else if (com&IOC_VOID)
@@ -838,7 +897,7 @@ hpuxioctl()
 
 	case HPUXTIOCCONS:
 		*(int *)data = 1;
-		u.u_error = (*fp->f_ops->fo_ioctl)(fp, TIOCCONS, data);
+		error = (*fp->f_ops->fo_ioctl)(fp, TIOCCONS, data);
 		break;
 
 	/* BSD-style job control ioctls */
@@ -854,8 +913,8 @@ hpuxioctl()
 	case HPUXTIOCGLTC:
 	case HPUXTIOCSPGRP:
 	case HPUXTIOCGPGRP:
-		u.u_error = (*fp->f_ops->fo_ioctl)(fp, hpuxtobsdioctl(com), data);
-		if (u.u_error == 0 && com == HPUXTIOCLGET) {
+		error = (*fp->f_ops->fo_ioctl)(fp, hpuxtobsdioctl(com), data);
+		if (error == 0 && com == HPUXTIOCLGET) {
 			*(int *)data &= LTOSTOP;
 			if (*(int *)data & LTOSTOP)
 				*(int *)data = HPUXLTOSTOP;
@@ -867,102 +926,105 @@ hpuxioctl()
 	case HPUXTCSETA:
 	case HPUXTCSETAW:
 	case HPUXTCSETAF:
-		u.u_error = hpuxtermio(fp, com, data);
+		error = hpuxtermio(fp, com, data);
 		break;
 
 	default:
-		u.u_error = (*fp->f_ops->fo_ioctl)(fp, com, data);
+		error = (*fp->f_ops->fo_ioctl)(fp, com, data);
 		break;
 	}
 	/*
 	 * Copy any data to user, size was
 	 * already set and checked above.
 	 */
-	if (u.u_error == 0 && (com&IOC_OUT) && size)
-		u.u_error = copyout(data, uap->cmarg, (u_int)size);
+	if (error == 0 && (com&IOC_OUT) && size)
+		error = copyout(data, uap->cmarg, (u_int)size);
 	if (memp)
 		free(memp, M_IOCTLOPS);
+	RETURN (error);
 }
 
 /*
  * Man page lies, behaviour here is based on observed behaviour.
  */
-hpuxgetcontext()
-{
-	struct a {
+hpuxgetcontext(p, uap, retval)
+	struct proc *p;
+	struct args {
 		char *buf;
 		int len;
-	} *uap = (struct a *)u.u_ap;
+	} *uap;
+	int *retval;
+{
 	int error = 0;
 	register int len;
 
 	len = MIN(uap->len, sizeof(hpuxcontext));
 	if (len)
 		error = copyout(hpuxcontext, uap->buf, (u_int)len);
-	if (!error)
-		u.u_r.r_val1 = sizeof(hpuxcontext);
-	return(error);
+	if (error == 0)
+		*retval = sizeof(hpuxcontext);
+	RETURN (error);
 }
 
 /*
  * XXX: simple recognition hack to see if we can make grmd work.
  */
-hpuxlockf()
-{
-	struct a {
+hpuxlockf(p, uap, retval)
+	struct proc *p;
+	struct args {
 		int fd;
 		int func;
 		long size;
-	} *uap = (struct a *)u.u_ap;
+	} *uap;
+	int *retval;
+{
 #ifdef DEBUG
 	log(LOG_DEBUG, "%d: lockf(%d, %d, %d)\n",
-	    u.u_procp->p_pid, uap->fd, uap->func, uap->size);
+	    p->p_pid, uap->fd, uap->func, uap->size);
 #endif
-	return(0);
+	RETURN (0);
 }
 
 /*
  * This is the equivalent of BSD getpgrp but with more restrictions.
  * Note we do not check the real uid or "saved" uid.
  */
-hpuxgetpgrp2()
+hpuxgetpgrp2(cp, uap, retval)
+	struct proc *cp;
+	register struct args {
+		int pid;
+	} *uap;
+	int *retval;
 {
 	register struct proc *p;
-	register struct a {
-		int pid;
-	} *uap = (struct a *)u.u_ap;
 
 	if (uap->pid == 0)
-		uap->pid = u.u_procp->p_pid;
+		uap->pid = cp->p_pid;
 	p = pfind(uap->pid);
-	if (p == 0) {
-		u.u_error = ESRCH;
-		return;
-	}
-	if (u.u_uid && p->p_uid != u.u_uid && !inferior(p)) {
-		u.u_error = EPERM;
-		return;
-	}
-	u.u_r.r_val1 = p->p_pgid;
+	if (p == 0)
+		RETURN (ESRCH);
+	if (u.u_uid && p->p_uid != u.u_uid && !inferior(p))
+		RETURN (EPERM);
+	*retval = p->p_pgid;
+	RETURN (0);
 }
 
 /*
  * This is the equivalent of BSD setpgrp but with more restrictions.
  * Note we do not check the real uid or "saved" uid or pgrp.
  */
-hpuxsetpgrp2()
-{
-	struct a {
+hpuxsetpgrp2(p, uap, retval)
+	struct proc *p;
+	struct args {
 		int	pid;
 		int	pgrp;
-	} *uap = (struct a *)u.u_ap;
-
+	} *uap;
+	int *retval;
+{
 	/* empirically determined */
-	if (uap->pgrp < 0 || uap->pgrp >= 30000) {
-		u.u_error = EINVAL;
-		return;
-	}
-	setpgrp();
+	if (uap->pgrp < 0 || uap->pgrp >= 30000)
+		RETURN (EINVAL);
+	RETURN (setpgrp(p, uap, retval));
 }
 
 /*
@@ -1151,157 +1213,134 @@ struct	ohpuxstat {
 };
 
 /*
- * Right now the following two routines are the same as the 4.3
- * osetuid/osetgid calls.  Eventually they need to be changed to
- * implement the notion of "saved" ids (whatever that means).
- */
-ohpuxsetuid()
-{
-	register uid;
-	register struct a {
-		int	uid;
-	} *uap = (struct a *)u.u_ap;
-
-	uid = uap->uid;
-	if (uid != u.u_procp->p_ruid && uid != u.u_cred->cr_uid &&
-	    (u.u_error = suser(u.u_cred, &u.u_acflag)))
-		return;
-	if (u.u_cred->cr_ref > 1)
-		u.u_cred = crcopy(u.u_cred);
-	u.u_cred->cr_uid = uid;
-	u.u_procp->p_uid = uid;
-	u.u_procp->p_ruid = uid;
-}
-
-ohpuxsetgid()
-{
-	register gid;
-	register struct a {
-		int	gid;
-	} *uap = (struct a *)u.u_ap;
-
-	gid = uap->gid;
-	if (u.u_procp->p_rgid != gid && u.u_cred->cr_groups[0] != gid &&
-	    (u.u_error = suser(u.u_cred, &u.u_acflag)))
-		return;
-	if (u.u_cred->cr_ref > 1)
-		u.u_cred = crcopy(u.u_cred);
-	u.u_procp->p_rgid = gid;
-	u.u_cred->cr_groups[0] = gid;
-}
-
-/*
  * SYS V style setpgrp()
  */
-ohpuxsetpgrp()
+ohpuxsetpgrp(p, uap, retval)
+	register struct proc *p;
+	int *uap, *retval;
 {
-	register struct proc *p = u.u_procp;
-
 	if (p->p_pid != p->p_pgid)
 		pgmv(p, p->p_pid, 0);
-	u.u_r.r_val1 = p->p_pgid;
+	*retval = p->p_pgid;
 }
 
-ohpuxtime()
-{
-	register struct a {
+ohpuxtime(p, uap, retval)
+	struct proc *p;
+	register struct args {
 		long	*tp;
-	} *uap = (struct a *)u.u_ap;
+	} *uap;
+	int *retval;
+{
+	int error;
 
 	if (uap->tp)
-		u.u_error = copyout((caddr_t)&time.tv_sec, (caddr_t)uap->tp,
-				    sizeof (long));
-	u.u_r.r_time = time.tv_sec;
+		error = copyout((caddr_t)&time.tv_sec, (caddr_t)uap->tp,
+				sizeof (long));
+	u.u_r.r_time = time.tv_sec;		/* XXX */
+	RETURN (error);
 }
 
-ohpuxstime()
-{
-	register struct a {
+ohpuxstime(p, uap, retval)
+	struct proc *p;
+	register struct args {
 		int	time;
-	} *uap = (struct a *)u.u_ap;
+	} *uap;
+	int *retval;
+{
 	struct timeval tv;
-	int s;
+	int s, error;
 
 	tv.tv_sec = uap->time;
 	tv.tv_usec = 0;
-	u.u_error = suser(u.u_cred, &u.u_acflag);
-	if (u.u_error)
-		return;
+	if (error = suser(u.u_cred, &u.u_acflag))
+		RETURN (error);
 
 	/* WHAT DO WE DO ABOUT PENDING REAL-TIME TIMEOUTS??? */
 	boottime.tv_sec += tv.tv_sec - time.tv_sec;
 	s = splhigh(); time = tv; splx(s);
 	resettodr();
+	RETURN (0);
 }
 
-ohpuxftime()
-{
-	register struct a {
+ohpuxftime(p, uap, retval)
+	struct proc *p;
+	register struct args {
 		struct	hpuxtimeb *tp;
 	} *uap;
+	int *retval;
+{
 	struct hpuxtimeb tb;
 	int s;
 
-	uap = (struct a *)u.u_ap;
 	s = splhigh();
 	tb.time = time.tv_sec;
 	tb.millitm = time.tv_usec / 1000;
 	splx(s);
 	tb.timezone = tz.tz_minuteswest;
 	tb.dstflag = tz.tz_dsttime;
-	u.u_error = copyout((caddr_t)&tb, (caddr_t)uap->tp, sizeof (tb));
+	RETURN (copyout((caddr_t)&tb, (caddr_t)uap->tp, sizeof (tb)));
 }
 
-ohpuxalarm()
-{
-	register struct a {
+ohpuxalarm(p, uap, retval)
+	register struct proc *p;
+	register struct args {
 		int	deltat;
-	} *uap = (struct a *)u.u_ap;
-	register struct proc *p = u.u_procp;
+	} *uap;
+	int *retval;
+{
 	int s = splhigh();
 
 	untimeout(realitexpire, (caddr_t)p);
 	timerclear(&p->p_realtimer.it_interval);
-	u.u_r.r_val1 = 0;
+	*retval = 0;
 	if (timerisset(&p->p_realtimer.it_value) &&
 	    timercmp(&p->p_realtimer.it_value, &time, >))
-		u.u_r.r_val1 = p->p_realtimer.it_value.tv_sec - time.tv_sec;
+		*retval = p->p_realtimer.it_value.tv_sec - time.tv_sec;
 	if (uap->deltat == 0) {
 		timerclear(&p->p_realtimer.it_value);
 		splx(s);
-		return;
+		RETURN (0);
 	}
 	p->p_realtimer.it_value = time;
 	p->p_realtimer.it_value.tv_sec += uap->deltat;
 	timeout(realitexpire, (caddr_t)p, hzto(&p->p_realtimer.it_value));
 	splx(s);
+	RETURN (0);
 }
 
-ohpuxnice()
-{
-	register struct a {
+ohpuxnice(p, uap, retval)
+	register struct proc *p;
+	register struct args {
 		int	niceness;
-	} *uap = (struct a *)u.u_ap;
-	register struct proc *p = u.u_procp;
+	} *uap;
+	int *retval;
+{
+	int error;
 
-	donice(p, (p->p_nice-NZERO)+uap->niceness);
-	u.u_r.r_val1 = p->p_nice - NZERO;
+	error = donice(p, p, (p->p_nice-NZERO)+uap->niceness);
+	if (error == 0)
+		*retval = p->p_nice - NZERO;
+	RETURN (error);
 }
 
-ohpuxtimes()
-{
-	register struct a {
+ohpuxtimes(p, uap, retval)
+	struct proc *p;
+	register struct args {
 		struct	tms *tmsb;
-	} *uap = (struct a *)u.u_ap;
+	} *uap;
+	int *retval;
+{
 	struct tms atms;
+	int error;
 
 	atms.tms_utime = scale50(&u.u_ru.ru_utime);
 	atms.tms_stime = scale50(&u.u_ru.ru_stime);
 	atms.tms_cutime = scale50(&u.u_cru.ru_utime);
 	atms.tms_cstime = scale50(&u.u_cru.ru_stime);
-	u.u_error = copyout((caddr_t)&atms, (caddr_t)uap->tmsb, sizeof (atms));
-	if (u.u_error == 0)
-		u.u_r.r_time = scale50(&time) - scale50(&boottime);
+	error = copyout((caddr_t)&atms, (caddr_t)uap->tmsb, sizeof (atms));
+	if (error == 0)
+		u.u_r.r_time = scale50(&time) - scale50(&boottime); /* XXX */
+	RETURN (error);
 }
 
 scale50(tvp)
@@ -1321,22 +1360,24 @@ scale50(tvp)
  * Set IUPD and IACC times on file.
  * Can't set ICHG.
  */
-ohpuxutime()
-{
+ohpuxutime(p, uap, retval)
+	struct proc *p;
 	register struct a {
 		char	*fname;
 		time_t	*tptr;
-	} *uap = (struct a *)u.u_ap;
+	} *uap;
+	int *retval;
+{
 	struct vattr vattr;
 	time_t tv[2];
 	register struct vnode *vp;
 	register struct nameidata *ndp = &u.u_nd;
+	int error;
 
 	if (uap->tptr) {
-		u.u_error =
-			copyin((caddr_t)uap->tptr, (caddr_t)tv, sizeof (tv));
-		if (u.u_error)
-			return;
+		error = copyin((caddr_t)uap->tptr, (caddr_t)tv, sizeof (tv));
+		if (error)
+			RETURN (error);
 	} else
 		tv[0] = tv[1] = time.tv_sec;
 	ndp->ni_nameiop = LOOKUP | FOLLOW | LOCKLEAF;
@@ -1347,19 +1388,21 @@ ohpuxutime()
 	vattr.va_atime.tv_usec = 0;
 	vattr.va_mtime.tv_sec = tv[1];
 	vattr.va_mtime.tv_usec = 0;
-	if (u.u_error = namei(ndp))
-		return;
+	if (error = namei(ndp))
+		RETURN (error);
 	vp = ndp->ni_vp;
 	if (vp->v_mount->mnt_flag & MNT_RDONLY)
-		u.u_error = EROFS;
+		error = EROFS;
 	else
-		u.u_error = VOP_SETATTR(vp, &vattr, ndp->ni_cred);
+		error = VOP_SETATTR(vp, &vattr, ndp->ni_cred);
 	vput(vp);
+	RETURN (error);
 }
 
-ohpuxpause()
+ohpuxpause(p, uap, retval)
+	struct proc *p;
+	int *uap, *retval;
 {
-
 	(void) tsleep((caddr_t)&u, PPAUSE | PCATCH, "pause", 0);
 	/* always return EINTR rather than ERESTART... */
 	RETURN (EINTR);
@@ -1368,44 +1411,45 @@ ohpuxpause()
 /*
  * The old fstat system call.
  */
-ohpuxfstat()
-{
-	register struct a {
+ohpuxfstat(p, uap, retval)
+	struct proc *p;
+	register struct args {
 		int	fd;
 		struct ohpuxstat *sb;
-	} *uap = (struct a *)u.u_ap;
+	} *uap;
+	int *retval;
+{
 	struct file *fp;
-	extern struct file *getinode();
 
-	if ((unsigned)uap->fd >= NOFILE || (fp = u.u_ofile[uap->fd]) == NULL) {
-		u.u_error = EBADF;
-		return;
-	}
-	if (fp->f_type != DTYPE_VNODE) {
-		u.u_error = EINVAL;
-		return;
-	}
-	u.u_error = ohpuxstat1((struct vnode *)fp->f_data, uap->sb);
+	if ((unsigned)uap->fd >= NOFILE || (fp = u.u_ofile[uap->fd]) == NULL)
+		RETURN (EBADF);
+	if (fp->f_type != DTYPE_VNODE)
+		RETURN (EINVAL);
+	RETURN (ohpuxstat1((struct vnode *)fp->f_data, uap->sb));
 }
 
 /*
  * Old stat system call.  This version follows links.
  */
-ohpuxstat()
-{
-	register struct a {
+ohpuxstat(p, uap, retval)
+	struct proc *p;
+	register struct args {
 		char	*fname;
 		struct ohpuxstat *sb;
-	} *uap = (struct a *)u.u_ap;
+	} *uap;
+	int *retval;
+{
 	register struct nameidata *ndp = &u.u_nd;
+	int error;
 
 	ndp->ni_nameiop = LOOKUP | LOCKLEAF | FOLLOW;
 	ndp->ni_segflg = UIO_USERSPACE;
 	ndp->ni_dirp = uap->fname;
-	if (u.u_error = namei(ndp))
-		return;
-	u.u_error = ohpuxstat1(ndp->ni_vp, uap->sb);
+	if (error = namei(ndp))
+		RETURN (error);
+	error = ohpuxstat1(ndp->ni_vp, uap->sb);
 	vput(ndp->ni_vp);
+	RETURN (error);
 }
 
 int
