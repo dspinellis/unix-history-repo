@@ -1,0 +1,87 @@
+Installation Instructions
+
+1.  Install the kernel part of this distribution.  A reboot is not
+    required.
+
+
+
+2.  Examine the various makefiles in this directory and subdirectories
+    and if all appears to be well, type "make install".
+
+
+
+3.  Edit /etc/rc.local; You will need to add the following lines:
+
+if [ -f /etc/x29d ]; then
+	/etc/x29d -r -c 1980 "/bin/login login -f"		>/dev/console
+	echo -n ' x29d'						>/dev/console
+fi
+if [ -f /etc/nimd ]; then
+	/etc/nimd -c 1980 /dev/ptyq0				>/dev/console
+	/etc/nimd -c 1980 /dev/ptyq1				>/dev/console
+	/etc/nimd -c 1980 /dev/ptyq2				>/dev/console
+	echo -n ' nimd'						>/dev/console
+fi
+
+/etc/x29d is the call-in server and /etc/nimd is used for making out-calls
+to other sites.  Removing the "-r" flag to x29d will cause the kernel X.25
+software to clear incoming collect (ie. reverse charged) X.29 calls.
+The exact number of nim daemons started, pseudo-tty devices used, and
+parameter support are installation dependent.  This example starts
+three daemons that support the 1980 CCITT ITI parameter set.
+
+
+
+4. Optional: compile and install dist/bin/login.c (see makefile in that
+   directory).  This modified login program more gracefully handles
+   incoming X.29 calls.
+
+
+   
+5. If you run 'tip' then add these lines to /etc/remote:
+
+nimd|pad|NIM Daemon:\
+	:hw:dv=/dev/ttyq0,/dev/ttyq1,/dev/ttyq2:
+
+Make sure that the 'dv' entry lists the slave devices corresponding to
+the master pseudo-tty devices that the nim daemons are connected to.
+
+Additional lines like the following can be added if you have the version
+of tip locally modified at UBC and wish to simplify connection procedures
+to other remote hosts:
+
+datapacinfo|Datapac help:\
+	:cm=NIM p\s92100086:tc=nimd:
+ubcg-mts|ubc-mtsg|mts-g|U of British Columbia MTS-g:\
+	:cm=NIM call\subcg-mts:\
+	:tc=nimd:
+
+
+
+6. Edit /etc/x25hosts.  This step is optional.  The X.29 callin server uses
+   the information in this file to map an X.121 address to host name and
+   the nimd needs the same information to do the opposite with the "call"
+   command (see above example with 'ubcg-mts').  Add to the hosts file an
+   entry for each remote host that the X.121 address is known.  The flags
+   before the X.121 address must be either an 'r' (reverse charge), or 's'
+   (hi priority), or a 'p' (also hi priority).  The "hi priority" flag is
+   specific X.25(1976) DTE's attached to Canada's Datapac network; all other
+   sites can ignore this flag.  Some examples:
+
+#
+# Datapac hosts
+#
+68100124		camosun		# Camosun College, Victoria BC
+p,92100086		datapacinfo	# Datapac help
+r,67200040		ubcg-mts	# UBC MTS system 'G'
+#
+# US CCITT hosts
+#
+s,1311060700067		cornell		# Cornell University, Ithaca NY
+s,1311061700139		mit-multics	# Mass Institute of Tech
+
+
+
+7. Reboot with the new system.  The log file (default /usr/spool/log/nimd_log)
+   will contain a record of routine nimd server activity and any serious
+   problems.  This file should be periodically truncated.
