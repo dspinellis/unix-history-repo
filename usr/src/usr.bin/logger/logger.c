@@ -1,18 +1,24 @@
 /*
  * Copyright (c) 1983 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms are permitted
+ * provided that this notice is preserved and that due credit is given
+ * to the University of California at Berkeley. The name of the University
+ * may not be used to endorse or promote products derived from this
+ * software without specific prior written permission. This software
+ * is provided ``as is'' without express or implied warranty.
  */
 
 #ifndef lint
 char copyright[] =
 "@(#) Copyright (c) 1983 Regents of the University of California.\n\
  All rights reserved.\n";
-#endif not lint
+#endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)logger.c	6.4 (Berkeley) %G%";
-#endif not lint
+static char sccsid[] = "@(#)logger.c	6.5 (Berkeley) %G%";
+#endif /* not lint */
 
 #include <stdio.h>
 #include <syslog.h>
@@ -29,91 +35,71 @@ main(argc, argv)
 	int argc;
 	char **argv;
 {
-	char buf[200];
-	char *tag;
-	register char *p;
+	extern char *optarg;
+	extern int optind;
 	int pri = LOG_NOTICE;
-	int logflags = 0;
-	extern char *getlogin();
+	int ch, logflags = 0;
+	char *tag, buf[200], *getlogin();
 
-	/* initialize */
-	tag = getlogin();
-
-	/* crack arguments */
-	while (--argc > 0)
-	{
-		p = *++argv;
-		if (*p != '-')
-			break;
-
-		switch (*++p)
-		{
-		  case '\0':		/* dummy */
-			/* this can be used to give null parameters */
-			break;
-
-		  case 't':		/* tag */
-			if (argc > 1 && argv[1][0] != '-')
-			{
-				argc--;
-				tag = *++argv;
-			}
-			else
-				tag = NULL;
-			break;
-
-		  case 'p':		/* priority */
-			if (argc > 1 && argv[1][0] != '-')
-			{
-				argc--;
-				pri = pencode(*++argv);
+	tag = NULL;
+	while ((ch = getopt(argc, argv, "f:ip:t:")) != EOF)
+		switch((char)ch) {
+		case 'f':		/* file to log */
+			if (freopen(optarg, "r", stdin) == NULL) {
+				fprintf("logger: ");
+				perror(optarg);
+				exit(1);
 			}
 			break;
-
-		  case 'i':		/* log process id also */
+		case 'i':		/* log process id also */
 			logflags |= LOG_PID;
 			break;
-
-		  case 'f':		/* file to log */
-			if (argc > 1 && argv[1][0] != '-')
-			{
-				argc--;
-				if (freopen(*++argv, "r", stdin) == NULL)
-				{
-					fprintf("logger: ");
-					perror(*argv);
-					exit(1);
-				}
-			}
+		case 'p':		/* priority */
+			pri = pencode(optarg);
 			break;
-
-		  default:
-			fprintf(stderr, "logger: unknown flag -%s\n", p);
+		case 't':		/* tag */
+			tag = optarg;
 			break;
+		case '?':
+		default:
+			usage();
 		}
-	}
+	argc -= optind;
+	argv += optind;
 
 	/* setup for logging */
-	openlog(tag, logflags, 0);
+	openlog(tag ? tag : getlogin(), logflags, 0);
 	(void) fclose(stdout);
 
 	/* log input line if appropriate */
-	if (argc > 0)
-	{
-		char buf[120];
+	if (argc > 0) {
+		register char *p, *endp;
+		int len;
 
-		buf[0] = '\0';
-		while (argc-- > 0)
-		{
-			strcat(buf, " ");
-			strcat(buf, *argv++);
+		for (p = buf, endp = buf + sizeof(buf) - 1;;) {
+			len = strlen(*argv);
+			if (p + len < endp) {
+				bcopy(*argv++, p, len);
+				p += len;
+				if (!--argc)
+					break;
+				*p++ = ' ';
+			}
+			else {
+				*--p = '\0';
+				syslog(pri, buf);
+				p = buf;
+			}
 		}
-		syslog(pri, buf + 1);
+		if (p != buf) {
+			*p = '\0';
+			syslog(pri, buf);
+		}
 		exit(0);
 	}
 
 	/* main loop */
-	while (fgets(buf, sizeof buf, stdin) != NULL)
+	while (fgets(buf, sizeof(buf), stdin) != NULL)
 		syslog(pri, buf);
 
 	exit(0);
@@ -169,26 +155,24 @@ struct code	FacNames[] = {
 pencode(s)
 	register char *s;
 {
-	register char *p;
-	int lev;
-	int fac;
-	char buf[100];
+	char *save;
+	int fac, lev;
 
-	for (p = buf; *s && *s != '.'; )
-		*p++ = *s++;
-	*p = '\0';
-	if (*s++) {
-		fac = decode(buf, FacNames);
+	for (save = s; *s && *s != '.'; ++s);
+	if (*s) {
+		*s = '\0';
+		fac = decode(save, FacNames);
 		if (fac < 0)
-			bailout("unknown facility name: ", buf);
-		for (p = buf; *p++ = *s++; )
-			continue;
-	} else
+			bailout("unknown facility name: ", save);
+		*s++ = '.';
+	}
+	else {
 		fac = 0;
-	lev = decode(buf, PriNames);
+		s = save;
+	}
+	lev = decode(s, PriNames);
 	if (lev < 0)
-		bailout("unknown priority name: ", buf);
-
+		bailout("unknown priority name: ", save);
 	return ((lev & LOG_PRIMASK) | (fac & LOG_FACMASK));
 }
 
@@ -198,26 +182,27 @@ decode(name, codetab)
 	struct code *codetab;
 {
 	register struct code *c;
-	register char *p;
-	char buf[40];
 
 	if (isdigit(*name))
 		return (atoi(name));
 
-	(void) strcpy(buf, name);
-	for (p = buf; *p; p++)
-		if (isupper(*p))
-			*p = tolower(*p);
 	for (c = codetab; c->c_name; c++)
-		if (!strcmp(buf, c->c_name))
+		if (!strcasecmp(name, c->c_name))
 			return (c->c_val);
 
 	return (-1);
 }
 
-bailout(a, b)
-	char *a, *b;
+bailout(msg, arg)
+	char *msg, *arg;
 {
-	fprintf(stderr, "logger: %s%s\n", a, b);
+	fprintf(stderr, "logger: %s%s\n", msg, arg);
+	exit(1);
+}
+
+usage()
+{
+	fputs("logger: [-i] [-f file] [-p pri] [-t tag] [ message ... ]\n",
+	    stderr);
 	exit(1);
 }
