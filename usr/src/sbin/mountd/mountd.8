@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)mountd.8	8.1 (Berkeley) %G%
+.\"     @(#)mountd.8	8.2 (Berkeley) %G%
 .\"
 .Dd 
 .Dt MOUNTD 8
@@ -33,11 +33,10 @@ Options and operands available for
 .Nm mountd :
 .Bl -tag -width Ds
 .It Fl n
-The
-.Fl n
-option allows non-root mount requests to be served.
-This should only be specified if there are clients such as PC's,
-that require it.
+Do not require that clients make mount requests from reserved ports.
+(Normally, only mount requsts from reserved ports are accepted.)
+This option should only be specified if there are clients, such as PC's,
+that need it.
 .It Ar exportsfile
 The
 .Ar exportsfile
