@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)trace.h	7.3 (Berkeley) %G%
+ *	@(#)trace.h	7.4 (Berkeley) %G%
  */
 
 /*
@@ -78,7 +78,7 @@ struct	proc *traceproc;
 int	tracebuf[TRCSIZ];
 unsigned tracex;
 int	tracewhich;
-#define	pack(v,b)	(((v)->v_mount->m_stat.f_fsid.val[0])<<16)|(b)
+#define	pack(v,b)	(((v)->v_mount->mnt_stat.f_fsid.val[0])<<16)|(b)
 #define	trace(a,b,c)	if (traceflags[a]) trace1(a,b,c)
 #else
 #define	trace(a,b,b)	;
