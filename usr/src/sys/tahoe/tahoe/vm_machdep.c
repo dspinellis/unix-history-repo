@@ -1,4 +1,4 @@
-/*	vm_machdep.c	1.3	86/01/12	*/
+/*	vm_machdep.c	1.4	86/01/24	*/
 
 #include "../machine/pte.h"
 
@@ -282,16 +282,8 @@ dkeyrelease(key)
 	splx(s);	
 }
 
-struct	keystats {
-	long	ks_allocs;	/* number of keys allocated */
-	long	ks_free;	/* key allocated from free slot */
-	long	ks_norefs;	/* key marked in use, but refcnt 0 */
-	long	ks_taken;	/* key taken from single process */
-	long	ks_shared;	/* key taken from multiple processes */
-};
 struct	keystats ckeystats;
 struct	keystats dkeystats;
-
 /* 
  * Get a code key.
  */
