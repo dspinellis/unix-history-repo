@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)route.h	8.3.1.1 (Berkeley) %G%
+ *	@(#)route.h	8.4 (Berkeley) %G%
  */
 
 /*
@@ -151,8 +151,6 @@ struct rt_msghdr {
 #define RTM_NEWADDR	0xc	/* address being added to iface */
 #define RTM_DELADDR	0xd	/* address being removed from iface */
 #define RTM_IFINFO	0xe	/* iface going up/down etc. */
-#define RTM_ADDPKT	0xf	/* Add Route based on entire packet hdr */
-#define RTM_DELPKT	0x10	/* Delete Route base on entire packet hdr */
 
 #define RTV_MTU		0x1	/* init or lock _mtu */
 #define RTV_HOPCOUNT	0x2	/* init or lock _hopcount */
@@ -191,10 +189,6 @@ struct rt_msghdr {
 struct rt_addrinfo {
 	int	rti_addrs;
 	struct	sockaddr *rti_info[RTAX_MAX];
-	int	rti_flags;
-	struct	ifaddr *rti_ifa;
-	struct	ifnet *rti_ifp;
-	struct	rt_msghdr *rti_rtm;
 };
 
 struct route_cb {
@@ -233,7 +227,7 @@ struct rtentry *
 	 rtalloc1 __P((struct sockaddr *, int));
 void	 rtfree __P((struct rtentry *));
 int	 rtinit __P((struct ifaddr *, int, int));
-int	 rtioctl __P((int, caddr_t, struct proc *));
+int	 rtioctl __P((u_long, caddr_t, struct proc *));
 int	 rtredirect __P((struct sockaddr *, struct sockaddr *,
 	    struct sockaddr *, int, struct sockaddr *, struct rtentry **));
 int	 rtrequest __P((int, struct sockaddr *,

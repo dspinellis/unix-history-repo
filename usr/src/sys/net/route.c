@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)route.c	8.2.1.1 (Berkeley) %G%
+ *	@(#)route.c	8.3 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -75,26 +75,18 @@ rtalloc1(dst, report)
 	struct rt_addrinfo info;
 	int  s = splnet(), err = 0, msgtype = RTM_MISS;
 
-	bzero((caddr_t)&info, sizeof(info));
-	info.rti_info[RTAX_DST] = dst;
 	if (rnh && (rn = rnh->rnh_matchaddr((caddr_t)dst, rnh)) &&
 	    ((rn->rn_flags & RNF_ROOT) == 0)) {
 		newrt = rt = (struct rtentry *)rn;
 		if (report && (rt->rt_flags & RTF_CLONING)) {
-			info.rti_ifa = rt->rt_ifa;
-			info.rti_ifp = rt->rt_ifp;
-			info.rti_flags = rt->rt_flags & ~RTF_CLONING;
-			info.rti_info[RTAX_GATEWAY] = rt->rt_gateway;
-			if ((info.rti_info[RTAX_NETMASK] = rt->rt_genmask) == 0)
-				info.rti_flags |= RTF_HOST;
-			err = rtrequest1(RTM_RESOLVE, &info, &newrt);
+			err = rtrequest(RTM_RESOLVE, dst, SA(0),
+					      SA(0), 0, &newrt);
 			if (err) {
 				newrt = rt;
 				rt->rt_refcnt++;
 				goto miss;
 			}
-			newrt->rt_rmx = rt->rt_rmx;
-			if (rt->rt_flags & RTF_XRESOLVE) {
+			if ((rt = newrt) && (rt->rt_flags & RTF_XRESOLVE)) {
 				msgtype = RTM_RESOLVE;
 				goto miss;
 			}
@@ -103,6 +95,8 @@ rtalloc1(dst, report)
 	} else {
 		rtstat.rts_unreach++;
 	miss:	if (report) {
+			bzero((caddr_t)&info, sizeof(info));
+			info.rti_info[RTAX_DST] = dst;
 			rt_missmsg(msgtype, &info, 0, err);
 		}
 	}
@@ -248,7 +242,7 @@ out:
 */
 int
 rtioctl(req, data, p)
-	int req;
+	u_long req;
 	caddr_t data;
 	struct proc *p;
 {
@@ -301,63 +295,21 @@ ifa_ifwithroute(flags, dst, gateway)
 	return (ifa);
 }
 
-int
-rtgateinfo(info)
-	register struct rt_addrinfo *info;
-{
-	struct ifaddr *ifa;
-	struct ifnet *ifp;
-	int error = 0;
-/* Sleazy use of local variables throughout this function and next, XXX!!!! */
-#define dst	info->rti_info[RTAX_DST]
-#define gateway	info->rti_info[RTAX_GATEWAY]
-#define netmask	info->rti_info[RTAX_NETMASK]
-#define ifaaddr	info->rti_info[RTAX_IFA]
-#define ifpaddr	info->rti_info[RTAX_IFP]
-#define flags	info->rti_flags
-
-	/* ifp may be specified by sockaddr_dl
-		   when protcol address is ambiguous */
-	if (info->rti_ifp == 0 && ifpaddr) {
-		ifa = ifa_ifwithnet(ifpaddr);
-		info->rti_ifp = ifa ? ifa->ifa_ifp : 0;
-	}
-	if (info->rti_ifa == 0) {
-		struct sockaddr *sa;
-		if (ifp = info->rti_ifp) {
-			sa = ifaaddr ? ifaaddr : (gateway ? gateway : dst);
-			info->rti_ifa = ifaof_ifpforaddr(sa, ifp);
-		} else
-			info->rti_ifa = ifa_ifwithroute(flags, dst, gateway);
-	}
-	if (ifa = info->rti_ifa) {
-		if (info->rti_ifp == 0)
-			info->rti_ifp = ifa->ifa_ifp;
-		if (gateway == 0)
-		    gateway = ifa->ifa_addr;
-	} else
-		error = ENETUNREACH;
-	return error;
-}
-
-
 #define ROUNDUP(a) (a>0 ? (1 + (((a) - 1) | (sizeof(long) - 1))) : sizeof(long))
 
 int
-rtrequest1(req, info, ret_nrt)
-	int req;
-	register struct rt_addrinfo *info;
+rtrequest(req, dst, gateway, netmask, flags, ret_nrt)
+	int req, flags;
+	struct sockaddr *dst, *gateway, *netmask;
 	struct rtentry **ret_nrt;
 {
 	int s = splnet(); int error = 0;
 	register struct rtentry *rt;
 	register struct radix_node *rn;
 	register struct radix_node_head *rnh;
+	struct ifaddr *ifa;
 	struct sockaddr *ndst;
-	struct ifaddr *ifa = info->rti_ifa;
-	struct ifnet *ifp;
 #define senderr(x) { error = x ; goto bad; }
-#define RTE(x) ((struct rtentry *)x)
 
 	if ((rnh = rt_tables[dst->sa_family]) == 0)
 		senderr(ESRCH);
@@ -365,37 +317,18 @@ rtrequest1(req, info, ret_nrt)
 		netmask = 0;
 	switch (req) {
 	case RTM_DELETE:
-		if ((ifaaddr || ifpaddr) && rnh->rnh_delete1) {
-			extern struct radix_node_head *mask_rnhead;
-			if (error = rtgateinfo(info))
-				senderr(error);
-			ifa = info->rti_ifa;
-			ifp = info->rti_ifp;
-			if (netmask && (rn = rn_search(netmask,
-                                            mask_rnhead->rnh_treetop)))
-                                netmask = SA(rn->rn_key);
-			for (rn = rnh->rnh_matchaddr(dst, rnh); rn;
-						    rn = rn->rn_dupedkey) {
-				/* following test includes case netmask == 0 */
-				if (SA(rn->rn_mask) == netmask &&
-				    ((ifaaddr && ifa == RTE(rn)->rt_ifa) ||
-				     (!ifaaddr && ifp == RTE(rn)->rt_ifp)))
-					break;
-			if (rn == 0 || (rn = rnh->rnh_delete1(rn, rnh)) == 0)
-				senderr(ESRCH);
-			}
-		} else if ((rn = rnh->rnh_deladdr(dst, netmask, rnh)) == 0)
+		if ((rn = rnh->rnh_deladdr(dst, netmask, rnh)) == 0)
 			senderr(ESRCH);
 		if (rn->rn_flags & (RNF_ACTIVE | RNF_ROOT))
 			panic ("rtrequest delete");
-		rt = RTE(rn);
+		rt = (struct rtentry *)rn;
 		rt->rt_flags &= ~RTF_UP;
 		if (rt->rt_gwroute) {
 			rt = rt->rt_gwroute; RTFREE(rt);
-			(rt = RTE(rn))->rt_gwroute = 0;
+			(rt = (struct rtentry *)rn)->rt_gwroute = 0;
 		}
 		if ((ifa = rt->rt_ifa) && ifa->ifa_rtrequest)
-			ifa->ifa_rtrequest(RTM_DELETE, rt, info);
+			ifa->ifa_rtrequest(RTM_DELETE, rt, SA(0));
 		rttrash++;
 		if (ret_nrt)
 			*ret_nrt = rt;
@@ -405,14 +338,20 @@ rtrequest1(req, info, ret_nrt)
 		}
 		break;
 
+	case RTM_RESOLVE:
+		if (ret_nrt == 0 || (rt = *ret_nrt) == 0)
+			senderr(EINVAL);
+		ifa = rt->rt_ifa;
+		flags = rt->rt_flags & ~RTF_CLONING;
+		gateway = rt->rt_gateway;
+		if ((netmask = rt->rt_genmask) == 0)
+			flags |= RTF_HOST;
+		goto makeroute;
 
 	case RTM_ADD:
-		if (ifa == 0) {
-			if (error = rtgateinfo(info))
-				senderr(error);
-			ifa = info->rti_ifa;
-		}
-	case RTM_RESOLVE:
+		if ((ifa = ifa_ifwithroute(flags, dst, gateway)) == 0)
+			senderr(ENETUNREACH);
+	makeroute:
 		R_Malloc(rt, struct rtentry *, sizeof(*rt));
 		if (rt == 0)
 			senderr(ENOBUFS);
@@ -439,8 +378,10 @@ rtrequest1(req, info, ret_nrt)
 		ifa->ifa_refcnt++;
 		rt->rt_ifa = ifa;
 		rt->rt_ifp = ifa->ifa_ifp;
+		if (req == RTM_RESOLVE)
+			rt->rt_rmx = (*ret_nrt)->rt_rmx; /* copy metrics */
 		if (ifa->ifa_rtrequest)
-			ifa->ifa_rtrequest(req, rt, info);
+			ifa->ifa_rtrequest(req, rt, SA(ret_nrt ? *ret_nrt : 0));
 		if (ret_nrt) {
 			*ret_nrt = rt;
 			rt->rt_refcnt++;
@@ -450,28 +391,6 @@ rtrequest1(req, info, ret_nrt)
 bad:
 	splx(s);
 	return (error);
-#undef dst
-#undef gateway
-#undef netmask
-#undef ifaaddr
-#undef ifpaddr
-#undef flags
-}
-
-int
-rtrequest(req, dst, gateway, netmask, flags, ret_nrt)
-	int req, flags;
-	struct sockaddr *dst, *gateway, *netmask;
-	struct rtentry **ret_nrt;
-{
-	struct rt_addrinfo info;
-
-	bzero((caddr_t)&info, sizeof(info));
-	info.rti_flags = flags;
-	info.rti_info[RTAX_DST] = dst;
-	info.rti_info[RTAX_GATEWAY] = gateway;
-	info.rti_info[RTAX_NETMASK] = netmask;
-	return rtrequest1(req, info, ret_nrt);
 }
 
 int
