@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)cap_mkdb.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)cap_mkdb.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -183,10 +183,10 @@ db_build(inputfiles)
 			}
 	}
 	if (capdbp->close(capdbp) < 0)
-		err(1, "%s", strerror(errno));
+		err(1, "%s: %s", capdb, strerror(errno));
 
 	if (st == -1)
-		err(1, "%s", strerror(errno));
+		err(1, "file argument: %s", strerror(errno));
 	if (st == -2)
 		err(1, "potential reference loop detected");
 
