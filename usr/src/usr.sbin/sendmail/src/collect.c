@@ -3,7 +3,7 @@
 # include <errno.h>
 # include "sendmail.h"
 
-static char	SccsId[] = "@(#)collect.c	3.9	%G%";
+static char	SccsId[] = "@(#)collect.c	3.10	%G%";
 
 /*
 **  COLLECT -- read & parse message header & make temp file.
@@ -114,7 +114,7 @@ maketemp(from)
 		**  Snarf header away.
 		*/
 
-		if (bitset(H_EOH, chompheader(buf, 0)))
+		if (bitset(H_EOH, chompheader(buf, FALSE)))
 			break;
 	}
 
@@ -327,7 +327,7 @@ isheader(s)
 **
 **	Parameters:
 **		line -- header as a text line.
-**		stat -- bits to set in the h_flags field.
+**		def -- if set, this is a default value.
 **
 **	Returns:
 **		flags for this header.
@@ -336,9 +336,9 @@ isheader(s)
 **		The header is saved on the header list.
 */
 
-chompheader(line, stat)
+chompheader(line, def)
 	char *line;
-	int stat;
+	bool def;
 {
 	register char *p;
 	extern int errno;
@@ -397,11 +397,13 @@ chompheader(line, stat)
 		h->h_field = newstr(fname);
 		h->h_value = NULL;
 		h->h_link = NULL;
-		h->h_flags = hi->hi_flags | stat;
+		h->h_flags = hi->hi_flags;
 		h->h_mflags = hi->hi_mflags;
 	}
+	if (def)
+		h->h_flags |= H_DEFAULT;
 	else
-		h->h_flags &= ~H_DEFAULT;
+		h->h_flags &= ~H_CHECK;
 	if (h->h_value != NULL)
 		free(h->h_value);
 	h->h_value = newstr(fvalue);
