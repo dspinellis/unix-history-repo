@@ -1,1419 +1,674 @@
 /*
- * Copyright (c) 1980 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+ * Copyright (c) 1989 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms is permitted
+ * provided that all copyright information, including this notice,
+ * is retained in all such forms, and that any documentation,
+ * advertising or other materials related to such distribution and
+ * use acknowledge that the software was
+ * developed by the University of California, Berkeley.  The name
+ * of the University may not be used to endorse or promote products
+ * derived from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
 
 #ifndef lint
 char copyright[] =
-"@(#) Copyright (c) 1980 Regents of the University of California.\n\
+"@(#) Copyright (c) 1989 The Regents of the University of California.\n\
  All rights reserved.\n";
-#endif not lint
+#endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ps.c	5.20 (Berkeley) %G%";
-#endif not lint
-
+static char sccsid[] = "@(#)ps.c	1.8 (Berkeley) 2/16/90";
+#endif /* not lint */
 #include <sys/param.h>
 #include <sys/types.h>
 #include <sys/ioctl.h>
 #include <sys/tty.h>
 #include <sys/user.h>
 #include <sys/proc.h>
-#include <dirent.h>
 #include <sys/vm.h>
 #include <sys/text.h>
 #include <sys/stat.h>
 #include <sys/mbuf.h>
 #include <machine/pte.h>
-#include <a.out.h>
+#include <nlist.h>
 #include <pwd.h>
 #include <math.h>
 #include <errno.h>
 #include <stdio.h>
 #include <ctype.h>
-#include "pathnames.h"
+#include <kvm.h>
 
-char *nl_names[] = {
-
-/*
- * The following are used for symbolic wchan's
- */
-	"_vnode",
-#define X_VNODE		0
-	"_file",
-#define X_FILE		1
-	"_cfree",
-#define X_CFREE		2
-	"_callout",
-#define X_CALLOUT	3
-	"_swapmap",
-#define X_SWAPMAP	4
-	"_argmap",
-#define X_ARGMAP	5
-	"_kernelmap",
-#define X_KERNELMAP	6
-	"_mbmap",
-#define X_MBMAP		7
-	"_namecache",
-#define X_NCH		8
-	"_quota",
-#define X_QUOTA		9
-	"_dquot",
-#define X_DQUOT		10
-	"_swbuf",
-#define X_SWBUF		11
-	"_buf",
-#define X_BUF		12
-	"_cmap",
-#define X_CMAP		13
-	"_buffers",
-#define X_BUFFERS	14
-
-/*
- * These are used for interpreting raw memory (-k)
- */
-	"_Sysmap",
-#define	X_SYSMAP	15
-	"_Syssize",
-#define	X_SYSSIZE	16
-
-/*
- * These should be obtained from getdynamicsysinfo()
- */
-	"_ecmx",
-#define	X_ECMX		17
-	"_ccpu",
-#define	X_CCPU		18
-	"_fscale",
-#define X_FSCALE	19
-
-/*
- * Here to end should be replaced by getproc info()
- */
-
-/* This is used to find the prog args and user area */
-	"_Usrptmap",
-#define	X_USRPTMAP	20
-	"_usrpt",
-#define	X_USRPT		21
-
-/* This is used to extract the process table */
-	"_nproc",
-#define	X_NPROC		22
-	"_proc",
-#define	X_PROC		23
-
-/* These are used to extract the text table */
-	"_ntext",
-#define	X_NTEXT		24
-	"_text",
-#define	X_TEXT		25
-
-/*
- * These are used by vstodb to interpret the swap area 
- * while searching for the command
- */
-	"_nswap",
-#define	X_NSWAP		26
-	"_dmmin",
-#define	X_DMMIN		27
-	"_dmmax",
-#define	X_DMMAX		28
-	""
+struct usave {
+	struct	proc *u_procp;
+	struct	timeval u_start;
+	struct	rusage u_ru;
+	struct	rusage u_cru;
+	short	u_cmask;
+	char	u_acflag;
 };
 
-struct nlist *nl;			/* all because we can't init unions */
-int nllen;				/* # of nlist entries */
-
-struct	savcom {
-	union {
-		struct	lsav *lp;
-		float	u_pctcpu;
-		struct	vsav *vp;
-		int	s_ssiz;
-	} s_un;
-	struct	asav *ap;
-} *savcom;
-
-struct	asav {
-	char	*a_cmdp;
-	int	a_flag;
-	short	a_stat, a_uid, a_pid, a_nice, a_pri, a_slptime, a_time;
-	size_t	a_size, a_rss, a_tsiz, a_txtrss;
-	short	a_xccount;
-	char	a_tty[MAXNAMLEN+1];
-	int   	a_pgid;
-	int     a_session;
-	dev_t   a_ttyd;
-	int     a_tsession;
-	int   	a_tpgid;
-	time_t	a_cpu;
-	size_t	a_maxrss;
-	pid_t   a_ppid;
-};
-
-char	*lhdr;
-int	wcwidth;		/* width of the wchan field for sprintf*/
-struct	lsav {
-	u_char	l_cpu;
-	int	l_addr;
-	caddr_t	l_wchan;
-};
-
-char	*uhdr;
-char	*shdr;
-char	*jhdr;
-
-char	*vhdr;
-struct	vsav {
-	u_int	v_majflt;
-	size_t	v_swrss, v_txtswrss;
-	float	v_pctcpu;
-};
-
-#define	NPROC	16
-
-struct	proc proc[NPROC];		/* a few, for less syscalls */
-struct	proc *mproc;
-struct	text *text;
-
-union {
-	struct	user user;
-	char	upages[UPAGES][NBPG];
-} user;
-#define u	user.user
-
-#ifndef	PSFILE
-char	*psdb	= _PATH_PSDATABASE;
-#else
-char	*psdb	= PSFILE;
-#endif
-
-int	chkpid = -1;
-int	aflg, cflg, eflg, gflg, kflg, lflg, nflg, sflg,
-	uflg, vflg, xflg, Uflg, jflg;
-int	nchans;				/* total # of wait channels */
-char	*tptr;
-char	*gettty(), *getcmd(), *getname(), *savestr(), *state();
-char	*rindex(), *calloc(), *sbrk(), *strcpy(), *strcat(), *strncat();
-char	*strncpy(), *index(), *ttyname(), mytty[MAXPATHLEN+1];
-char	*malloc(), *getchan();
-long	lseek();
-off_t	vtophys();
-double	pcpu(), pmem();
-int	wchancomp();
-int	pscomp();
-int	nswap;
-struct	text *atext;
-fixpt_t	ccpu;
-int	ecmx;
-struct	pte *Usrptmap, *usrpt;
-int	nproc, ntext, fscale;
-int	dmmin, dmmax;
-struct	pte *Sysmap;
-int	Syssize;
-
-int	nttys;
-
-struct	ttys {
-	dev_t	ttyd;
-	int cand;
-	char	name[MAXNAMLEN+1];
-} *allttys;
-int cand[16] = {-1, -1, -1, -1, -1, -1, -1, -1,
-		-1, -1, -1, -1, -1, -1, -1, -1};
-struct lttys {
-	struct ttys ttys;
-	struct lttys *next;
-} *lallttys;
-
 /*
- * struct for the symbolic wait channel info
- *
- * WNAMESIZ is the max # of chars saved of the symbolic wchan gleaned
- * from the namelist.  Normally, only WSNAMESIZ are printed in the long
- * format, unless the terminal width is greater than WTSIZ wide.
+ * to compute offset in common structures
  */
-#define WNAMESIZ	12
-#define WSNAMESIZ	6
-#define WTSIZ		95
+#define	POFF(x)		((int)&((struct proc *)0)->x)
+#define	EOFF(x)		((int)&((struct eproc *)0)->x)
+#define	UOFF(x)		((int)&((struct usave *)0)->x)
+#define	ROFF(x)		((int)&((struct rusage *)0)->x)
 
-struct wchan {
-	char	wc_name[WNAMESIZ+1];	/* symbolic name */
-	caddr_t wc_caddr;		/* addr in kmem */
-} *wchanhd;				/* an array sorted by wc_caddr */
+enum type	{ CHAR, UCHAR, SHORT, USHORT, LONG, ULONG, KPTR };
 
-#define NWCINDEX	10		/* the size of the index array */
+#define	UIDFMT	"u"
+#define UIDLEN	5
+#define PIDFMT	"d"
+#define PIDLEN	5
+#define	USERLEN	8
 
-caddr_t wchan_index[NWCINDEX];		/* used to speed searches */
-/*
- * names listed here are not kept as wait channels -- this is used to 
- * remove names that confuse ps, like symbols that define the end of an
- * array that happen to be equal to the next symbol.
- */
-char *wchan_stop_list[] = {
-	"umbabeg",
-	"umbaend",
-	"calimit",
+int needuser, needcomm, neednlist;
+
+int 	command(), ucomm(), logname(), pvar(), evar(), uvar(), rvar(), uname(), 
+	runame(), state(), pri(), tdev(), tname(), longtname(), started(),
+	lstarted(), wchan(), vsize(), rssize(), p_rssize(), cputime(), 
+	pmem(), pcpu(), pagein(), maxrss(), tsize(), trss();
+	/**
+	utime(), stime(), ixrss(), idrss(), isrss();
+	**/
+
+struct	usave *saveuser();
+char	*saveargs();
+
+struct var {
+	char	*name[8];	/* name(s) of variable */
+	char	*header;	/* default header */
+	int	flag;
+#define	USER	0x01	/* requires user structure */
+#define	TEXT	0x02	/* requires text table */
+#define	LJUST	0x04	/* right adjust on output */
+#define	COMM	0x08	/* requires exec arguments and environment (XXX) */
+#define	NLIST	0x10	/* requires nlist to get extra variables */
+	int	(*oproc)();	/* output routine */
+	short	width;		/* printing width */
+	/*
+	 * The following (optional) elements are hooks for passing information
+	 * to the generic output routines: pvar, evar, uvar (those which print
+	 * simple elements from well known structures: proc, eproc, usave)
+	 */
+	int	off;		/* offset in structure */
+	enum	type type;	/* type of element */
+	char	*fmt;		/* printf format */
+	/*
+	 * glue to link selected fields together
+	 */
+	struct	var *next;
+}  var[] = {
+	{{"command", "comm", "args"}, "COMMAND", USER|LJUST|COMM, 
+		command, 16}, 
+	{{"ucomm"}, "COMMAND",	LJUST, ucomm, MAXCOMLEN},
+	{{"logname"}, "LOGNAME", LJUST, logname, MAXLOGNAME},
+	{{"flag"}, "F", 0, pvar, 7, POFF(p_flag), LONG, "x"},
+	{{"uid"}, "UID", 0, pvar, UIDLEN, POFF(p_uid),USHORT, UIDFMT},
+	{{"ruid"}, "RUID", 0, pvar, UIDLEN, POFF(p_ruid), USHORT, UIDFMT},
+	{{"svuid"}, "SVUID", 0, pvar, UIDLEN, POFF(p_svuid), USHORT, UIDFMT},
+	{{"rgid"}, "RGID", 0, pvar, UIDLEN, POFF(p_rgid), USHORT, UIDFMT},
+	{{"svgid"}, "SVGID", 0, pvar, UIDLEN, POFF(p_svgid), USHORT, UIDFMT},
+	{{"pid"}, "PID", 0, pvar, PIDLEN, POFF(p_pid),SHORT, PIDFMT},
+	{{"ppid"}, "PPID", 0, pvar, PIDLEN, POFF(p_ppid), SHORT, PIDFMT},
+	{{"cp", "cpu"}, "CP", 0, pvar, 3, POFF(p_cpu), UCHAR, "d"},
+	{{"xstat"}, "XSTAT", 0, pvar, 4, POFF(p_xstat), USHORT, "x"},
+	{{"poip"}, "POIP", 0, pvar, 4, POFF(p_poip), SHORT, "d"},
+	{{"nwchan"}, "WCHAN", 0, pvar, 6, POFF(p_wchan), KPTR, "x"},
+	{{"wchan"}, "WCHAN", LJUST, wchan, 6},
+	{{"rlink"}, "RLINK", 0, pvar, 8, POFF(p_rlink), KPTR, "x"},
+	{{"ktrace", "traceflag"}, "KTRACE",
+		0, pvar, 8, POFF(p_traceflag), LONG, "x"},
+	{{"ktracep", "tracep"}, "KTRACEP",
+		0, pvar, 8, POFF(p_tracep), LONG, "x"},
+	{{"cursig"}, "CURSIG",
+		0, pvar, 2, POFF(p_cursig), CHAR, "d"},
+	{{"sig", "pending"}, "PENDING",
+		0, pvar, 8, POFF(p_sig), LONG, "x"},
+	{{"sigmask", "blocked"}, "BLOCKED",
+		0, pvar, 8, POFF(p_sigmask), LONG, "x"},
+	{{"sigignore", "ignored"}, "IGNORED",
+		0, pvar, 8, POFF(p_sigignore), LONG, "x"},
+	{{"sigcatch", "caught"}, "CAUGHT",
+		0, pvar, 8, POFF(p_sigcatch), LONG, "x"},
+	{{"user", "uname"}, "USER", LJUST, uname, USERLEN},
+	{{"ruser", "runame"}, "RUSER", LJUST, runame, USERLEN},
+	{{"pgid"}, "PGID", 0, evar, PIDLEN, EOFF(e_pgid), USHORT, PIDFMT},
+	{{"jobc"}, "JOBC", 0, evar, 4, EOFF(e_jobc), SHORT, "d"},
+	{{"sess", "session"}, "SESS", 0, evar, 6, EOFF(e_sess), KPTR, "x"},
+	{{"tdev", "dev"}, "TDEV", 0, tdev, 4},
+	{{"tname", "tty", "tt"}, "TT", LJUST, tname, 2},
+	{{"longtname", "longtty"}, "TT", LJUST, longtname, 8},
+	{{"tpgid"}, "TPGID", 0, evar, 4, EOFF(e_tpgid), USHORT, PIDFMT},
+	{{"tsession", "tsess"}, "TSESS", 
+		0, evar, 6, EOFF(e_tsess), KPTR, "x"},
+	{{"paddr", "procaddr"}, "PADDR",
+		0, evar, 6, EOFF(e_paddr), KPTR, "x"},
+	{{"state", "stat"}, "STAT", 0, state, 3},
+	{{"pri"}, "PRI", 0, pri, 3},
+	{{"usrpri"}, "UPR", 0, pvar, 3, POFF(p_usrpri), CHAR, "d"},
+	{{"nice", "ni"}, "NI", 0, pvar, 2, POFF(p_nice), CHAR, "d"}, 
+	{{"vsize", "vsz"}, "VSZ", 0, vsize, 5},
+	{{"rssize", "rsz"}, "RSZ", 0, rssize, 4},
+	{{"rss", "p_rss"}, "RSS", 0, p_rssize, 4},
+	{{"u_procp", "uprocp"}, "UPROCP",
+		USER, uvar, 6, UOFF(u_procp), KPTR, "x"},
+	{{"umask", "u_cmask"}, "UMASK",
+		USER, uvar, 3, UOFF(u_cmask), CHAR, "o"},
+	{{"acflag", "acflg"}, "ACFLG",
+		USER, uvar, 3, UOFF(u_acflag), SHORT, "x"},
+	{{"start"}, "STARTED", USER|LJUST, started, 8},
+	{{"lstart"}, "STARTED", USER|LJUST, lstarted, 28},
+	{{"cputime", "time"}, "TIME", USER, cputime, 6},
+	{{"p_ru"}, "P_RU", 0, pvar, 6, POFF(p_ru), KPTR, "x"},
+	{{"pcpu", "%cpu"}, "%CPU", NLIST, pcpu, 4},
+	{{"pmem", "%mem"}, "%MEM", NLIST, pmem, 4},
+	{{"sl", "slp", "slptime"}, "SL",
+		0, pvar, 3, POFF(p_slptime), CHAR, "d"},
+	{{"re", "resident"}, "RE",
+		0, pvar, 3, POFF(p_time), CHAR, "d"},
+	{{"pagein", "majflt"}, "PAGEIN", USER, pagein, 6},
+	{{"lim", "maxrss"}, "LIM", 0, maxrss, 5},
+	{{"tsiz"}, "TSIZ", 0, tsize, 4},
+	{{"trs"}, "TRS", 0, trss, 3},
+	/***
+	{{"utime"}, "UTIME", USER, utime, 4},
+	{{"stime"}, "STIME", USER, stime, 4},
+	{{"ixrss"}, "IXRSS", USER, ixrss, 4},
+	{{"idrss"}, "IDRSS", USER, idrss, 4},
+	{{"isrss"}, "ISRSS", USER, isrss, 4},
+	***/
+	{{"minflt"}, "MINFLT", 
+		USER, rvar, 4, ROFF(ru_minflt), LONG, "d"},
+	{{"majflt"}, "MAJFLT", 
+		USER, rvar, 4, ROFF(ru_majflt), LONG, "d"},
+	{{"nswap"}, "NSWAP", 	
+		USER, rvar, 4, ROFF(ru_nswap), LONG, "d"},
+	{{"inblock", "inblk"}, "INBLK", 	
+		USER, rvar, 4, ROFF(ru_inblock), LONG, "d"},
+	{{"oublock", "oublk"}, "OUBLK", 
+		USER, rvar, 4, ROFF(ru_oublock), LONG, "d"},
+	{{"msgsnd"}, "MSGSND", 
+		USER, rvar, 4, ROFF(ru_msgsnd), LONG, "d"},
+	{{"msgrcv"}, "MSGRCV", 
+		USER, rvar, 4, ROFF(ru_msgrcv), LONG, "d"},
+	{{"nsignals", "nsigs"}, "NSIGS", 
+		USER, rvar, 4, ROFF(ru_nsignals), LONG, "d"},
+	{{"nvcsw", "vcsw"}, "VCSW", 
+		USER, rvar, 5, ROFF(ru_nvcsw), LONG, "d"},
+	{{"nivcsw", "ivcsw"}, "IVCSW", 
+		USER, rvar, 5, ROFF(ru_nivcsw), LONG, "d"},
 	NULL
 };
 
-int	npr;
+/* 
+ * combination variables 
+ */
+struct combovar {
+	char *name;
+	char *replace;
+} combovar[] = {
+	"RUSAGE", "minflt majflt nswap inblock oublock \
+		msgsnd msgrcv nsigs nvcsw nivcsw",
+	0, 0
+};
+#define DFMT	"pid tname stat cputime comm"
+#define LFMT \
+	"flag uid pid ppid cp pri nice vsz rss wchan stat tname cputime comm"
+#define	JFMT	"user pid ppid pgid sess jobc stat tname cputime comm"
+#define	SFMT	"user pid cursig sig sigmask sigignore sigcatch tname comm"
+#define	VFMT \
+	"pid tt stat time sl re pagein vsz rss lim tsiz trs %cpu %mem comm"
+#define UFMT \
+	"uname pid %cpu %mem vsz rss tt stat start time comm"
 
-int	cmdstart;
-int	twidth;
-struct	winsize win;
-char	*kmemf, *memf, *swapf, *nlistf;
-int	kmem, mem, swap = -1;
-int	rawcpu, sumcpu;
+struct kinfo {
+	struct proc *ki_p;	/* proc structure */
+	struct eproc *ki_e;	/* extra stuff */
+	struct usave *ki_u;	/* interesting parts of user */
+	char *ki_args;		/* exec args (should be char **) */
+	char *ki_env;		/* environment (should be char **) */
+} *kinfo;
 
-int	pcbpf;
-int	argaddr;
+struct	var *vhead, *vtail;
+int	termwidth;	/* width of screen (0 == infinity) */
+#define UNLIMITED	0
+int	totwidth;	/* calculated width of requested variables */
+int	sumrusage;
+int	rawcpu;
+int	sortby;
+#define	SORTMEM	1
+#define	SORTCPU 2
 
-#define	pgtok(a)	((a)/(1024/NBPG))
+int	uid = -1;
+dev_t	ttydev = NODEV;
+int	pid = -1;
+int	all;
+int	xflg;
+int	prtheader;
+int	lineno;
 
-main(argc, argv)
-	char **argv;
+/*
+ * variables retrieved via nlist
+ */
+struct	nlist psnl[] = {
+	{"_ecmx"},
+#define	X_ECMX		0
+	{"_fscale"},
+#define	X_FSCALE	1
+	{"_ccpu"},
+#define	X_CCPU		2
+	{NULL}
+};
+int	fscale;
+int	ecmx;
+fixpt_t	ccpu;
+
+#define USAGE	"ps [ -(o|O) fmt ] [ -wlvujnsaxSCLmcr ] [ -p pid ] [ -t tty ]"
+
+main (argc, argv) 
+	char *argv[];
 {
-	register int i, j;
-	register char *ap;
-	int uid;
-	off_t procp;
-	int width;
+	extern char *optarg;
+	extern int optind;
+	int ch; 
+	register i;
+	register struct var *v;
+	register struct proc *p;
+	struct winsize ws;
+	struct kinfo_proc *kprocs;
+	int nentries;
+	int fmt = 0;
+	int pscomp();
+	int what, flag;
+	char *kludge_oldps_options();
 
-	if (ioctl(1, TIOCGWINSZ, &win) == -1)
-		twidth = 80;
+	if ((ioctl(1, TIOCGWINSZ, &ws) == -1 && 
+	     ioctl(2, TIOCGWINSZ, &ws) == -1 &&
+	     ioctl(0, TIOCGWINSZ, &ws) == -1) ||
+	     ws.ws_col == 0)
+		termwidth = 79;
 	else
-		twidth = (win.ws_col == 0 ? 80 : win.ws_col);
-	argc--, argv++;
-	if (argc > 0) {
-		ap = argv[0];
-		while (*ap) switch (*ap++) {
+		termwidth = ws.ws_col - 1;
+	if (argc > 1)
+		argv[1] = kludge_oldps_options(argv[1]);
 
+	while ((ch = getopt(argc, argv, "o:O:wlvujnsaxt:p:SCLmchT")) != EOF)
+		switch((char)ch) {
+		case 'o':
+			parsefmt(optarg);
+			fmt++;
+			break;
+		case 'O':
+			parsefmt("pid");
+			parsefmt(optarg);
+			parsefmt("stat tt time command");
+			fmt++;
+			break;
+		case 'w':
+			if (termwidth < 131)
+				termwidth = 131;
+			else
+				termwidth = UNLIMITED;
+			break;
+		case 'l':
+			parsefmt(LFMT);
+			fmt++;
+			break;
+		case 'v':
+			parsefmt(VFMT);
+			sortby = SORTMEM;
+			fmt++;
+			break;
+		case 'u':
+			parsefmt(UFMT);
+			sortby = SORTCPU;
+			fmt++;
+			break;
+		case 'j':
+			parsefmt(JFMT);
+			fmt++;
+			break;
+		case 's':
+			parsefmt(SFMT);
+			fmt++;
+			break;
+		case 'T':
+		case 't': {
+			struct stat stbuf;
+			char *tname, *ttyname();
+			char termname[MAXPATHLEN+1];
+
+			if (ch == 'T') {
+				if ((tname = ttyname(0)) == NULL)
+					error("<stdin>: not a terminal");
+			} else 
+				tname = optarg;
+			if (strlen(tname) == 2) {
+				if (strcmp(tname, "co") == 0)
+					strcpy(termname, "/dev/console");
+				else {
+					strcpy(termname, "/dev/tty");
+					strcat(termname, tname);
+				}
+			} else if (*tname != '/') {
+				strcpy(termname, "/dev/");
+				strcat(termname, tname);
+			} else
+				strcpy(termname, tname);
+			if (stat(termname, &stbuf) == -1)
+				syserror(termname);
+			if ((stbuf.st_mode&S_IFMT) != S_IFCHR)
+				error("%s: not a terminal", termname);
+			ttydev = stbuf.st_rdev;
+			break;
+		}
+		case 'p':
+			pid = atoi(optarg);
+			break;
+		case 'S':
+			sumrusage++;
+			break;
 		case 'C':
 			rawcpu++;
 			break;
-		case 'S':
-			sumcpu++;
-			break;
+		case 'L': {
+			int i = 0;
+			struct combovar *cb = &combovar[0];
+			char *cp;
 
-		case 'U':
-			Uflg++;
-			break;
-
-		case 'a':
-			aflg++;
-			break;
-		case 'c':
-			cflg = !cflg;
-			break;
-		case 'e':
-			eflg++;
-			break;
-		case 'g':
-			gflg++;
-			break;
-		case 'j':
-			jflg++;
-			break;
-		case 'k':
-			kflg++;
-			break;
-		case 'l':
-			lflg++;
-			break;
-		case 'n':
-			nflg++;
-			break;
-		case 's':
-			sflg++;
-			break;
-		case 't':
-			if (*ap)
-				tptr = ap;
-			else if ((tptr = ttyname(0)) != 0) {
-				tptr = strcpy(mytty, tptr);
-				if (strncmp(tptr, _PATH_DEV,
-				    sizeof(_PATH_DEV) - 1) == 0)
-					tptr += 5;
+			v = &var[0];
+			for (;;) {
+				if (v->name[0] != NULL) {
+					cp = v->name[0];
+					v++;
+				} else if (cb->name != NULL) {
+					cp = cb->name;
+					cb++;
+				} else
+					break;
+				if (termwidth && 
+				   (i += strlen(cp)+1) > termwidth)
+					i = strlen(cp), printf("\n");
+				printf("%s ", cp);
 			}
-			if (strncmp(tptr, "tty", 3) == 0)
-				tptr += 3;
-			aflg++;
-			gflg++;
-			if (tptr && *tptr == '?')
-				xflg++;
-			while (*ap)
-				ap++;
-			break;
-		case 'u': 
-			uflg++;
-			break;
-		case 'v':
-			cflg = 1;
-			vflg++;
-			break;
-		case 'w':
-			if (twidth < 132)
-				twidth = 132;
-			else
-				twidth = BUFSIZ;
+			printf("\n");
+			exit(0);
+		}
+		case 'a':
+			all++;
 			break;
 		case 'x':
 			xflg++;
 			break;
-		default:
-			if (!isdigit(ap[-1]))
-				break;
-			chkpid = atoi(--ap);
-			*ap = 0;
-			aflg++;
-			xflg++;
+		case 'm':
+			sortby = SORTMEM;
 			break;
-		}
-	}
-	openfiles(argc, argv);
-	getkvars(argc, argv);
-	uid = getuid();
-	printhdr();
-	procp = getw(nl[X_PROC].n_value);
-	nproc = getw(nl[X_NPROC].n_value);
-	savcom = (struct savcom *)calloc((unsigned) nproc, sizeof (*savcom));
-	for (i=0; i<nproc; i += NPROC) {
-		klseek(kmem, (long)procp, 0);
-		j = nproc - i;
-		if (j > NPROC)
-			j = NPROC;
-		j *= sizeof (struct proc);
-		if (read(kmem, (char *)proc, j) != j) {
-			cantread("proc table", kmemf);
+		case 'c':
+			sortby = SORTCPU;
+			break;
+		case 'h':
+			prtheader = ws.ws_row > 5 ? ws.ws_row : 22;
+			break;
+		case '?':
+		default:
+			fprintf(stderr, "usage: %s\n", USAGE);
 			exit(1);
 		}
-		procp += j;
-		for (j = j / sizeof (struct proc) - 1; j >= 0; j--) {
-			mproc = &proc[j];
-			if (mproc->p_stat == 0 ||
-			    mproc->p_pgrp == 0 && xflg == 0)
-				continue;
-			if (tptr == 0 && gflg == 0 && xflg == 0 &&
-			    mproc->p_ppid == 1)
-				continue;
-			if (uid != mproc->p_uid && aflg==0)
-				continue;
-			if (chkpid != -1 && chkpid != mproc->p_pid)
-				continue;
-			if (vflg && gflg == 0 && xflg == 0) {
-				if (mproc->p_stat == SZOMB ||
-				    mproc->p_flag&SWEXIT)
-					continue;
-				if (mproc->p_slptime > MAXSLP &&
-				    (mproc->p_stat == SSLEEP ||
-				     mproc->p_stat == SSTOP))
-				continue;
-			}
-			save();
+	argc -= optind;
+	argv += optind;
+	
+	if (*argv) {
+		char *nlistf, *memf = NULL, *swapf = NULL;
+
+		nlistf = *argv++;
+		if (*argv) {
+			memf = *argv++;
+			if (*argv)
+				swapf = *argv++;
 		}
+		if (kvm_openfiles(nlistf, memf, swapf) == -1)
+			error("kvm_openfiles: %s", kvm_geterr());
 	}
-	width = twidth - cmdstart - 2;
-	if (width < 0)
-		width = 0;
-	qsort((char *) savcom, npr, sizeof(savcom[0]), pscomp);
-	for (i=0; i<npr; i++) {
-		register struct savcom *sp = &savcom[i];
-		if (lflg)
-			lpr(sp);
-		else if (jflg)
-			jpr(sp);
-		else if (vflg)
-			vpr(sp);
-		else if (uflg)
-			upr(sp);
-		else
-			spr(sp);
-		if (sp->ap->a_stat == SZOMB)
-			printf(" %.*s", twidth - cmdstart - 2, "<defunct>");
-		else if (sp->ap->a_flag & SWEXIT)
-			printf(" %.*s", twidth - cmdstart - 2, "<exiting>");
-		else if (sp->ap->a_pid == 0)
-			printf(" %.*s", twidth - cmdstart - 2, "swapper");
-		else if (sp->ap->a_pid == 2)
-			printf(" %.*s", twidth - cmdstart - 2, "pagedaemon");
-		else
-			printf(" %.*s", twidth - cmdstart - 2, sp->ap->a_cmdp);
-		printf("\n");
-	}
-	exit(npr == 0);
-}
 
-getw(loc)
-	unsigned long loc;
-{
-	int word;
+	if (!fmt)
+		parsefmt(DFMT);
 
-	klseek(kmem, (long)loc, 0);
-	if (read(kmem, (char *)&word, sizeof (word)) != sizeof (word))
-		printf("error reading kmem at %x\n", loc);
-	return (word);
-}
-
-klseek(fd, loc, off)
-	int fd;
-	long loc;
-	int off;
-{
-	if (kflg) {
-		if ((loc = vtophys(loc)) == -1)
-			return;
-	}
-	(void) lseek(fd, (long)loc, off);
-}
-
-/*
- * Version allows change of db format w/o temporarily bombing ps's
- */
-char thisversion[4] = "V2";		/* length must remain 4 */
-
-writepsdb(unixname)
-	char *unixname;
-{
-	register FILE *fp;
-	struct lttys *lt;
-	struct stat stb;
-
-	setgid(getgid());
-	setuid(getuid());
-	if ((fp = fopen(psdb, "w")) == NULL) {
-		perror(psdb);
-		exit(1);
-	} else
-		fchmod(fileno(fp), 0644);
-
-	fwrite(thisversion, sizeof thisversion, 1, fp);
-	fwrite(unixname, strlen(unixname) + 1, 1, fp);
-	if (stat(unixname, &stb) < 0)
-		stb.st_mtime = 0;
-	fwrite((char *) &stb.st_mtime, sizeof stb.st_mtime, 1, fp);
-
-	fwrite((char *) &nllen, sizeof nllen, 1, fp);
-	fwrite((char *) nl, sizeof (struct nlist), nllen, fp);
-	fwrite((char *) cand, sizeof (cand), 1, fp);
-	fwrite((char *) &nttys, sizeof nttys, 1, fp);
-	for (lt = lallttys ; lt ; lt = lt->next)
-		fwrite((char *)&lt->ttys, sizeof (struct ttys), 1, fp);
-	fwrite((char *) &nchans, sizeof nchans, 1, fp);
-	fwrite((char *) wchanhd, sizeof (struct wchan), nchans, fp);
-	fwrite((char *) wchan_index, sizeof (caddr_t), NWCINDEX, fp);
-	fclose(fp);
-}
-
-readpsdb(unixname)
-	char *unixname;
-{
-	register i;
-	register FILE *fp;
-	char unamebuf[BUFSIZ];
-	char *p	= unamebuf;
-	char dbversion[sizeof thisversion];
-	struct stat stb;
-	time_t dbmtime;
-	extern int errno;
-
-	if ((fp = fopen(psdb, "r")) == NULL) {
-		if (errno == ENOENT)
-			return (0);
-		perror(psdb);
-		exit(1);
-	}
+	if (!all && ttydev == NODEV && pid == -1)  /* XXX - should be cleaner */
+		uid = getuid();
 
 	/*
-	 * Does the db file match this unix?
+	 * scan requested variables, noting what structures are needed,
+	 * and adjusting header widths as appropiate.
 	 */
-	fread(dbversion, sizeof dbversion, 1, fp);
-	if (bcmp(thisversion, dbversion, sizeof thisversion))
-		goto bad;
-	while ((*p = getc(fp)) != '\0')
-		p++;
-	if (strcmp(unixname, unamebuf))
-		goto bad;
-	fread((char *) &dbmtime, sizeof dbmtime, 1, fp);
-	if (stat(unixname, &stb) < 0)
-		stb.st_mtime = 0;
-	if (stb.st_mtime != dbmtime)
-		goto bad;
-
-	fread((char *) &nllen, sizeof nllen, 1, fp);
-	nl = (struct nlist *) malloc (nllen * sizeof (struct nlist));
-	fread((char *) nl, sizeof (struct nlist), nllen, fp);
-	fread((char *) cand, sizeof (cand), 1, fp);
-	fread((char *) &nttys, sizeof nttys, 1, fp);
-	allttys = (struct ttys *)malloc(sizeof(struct ttys)*nttys);
-	if (allttys == NULL) {
-		fprintf(stderr, "ps: Can't malloc space for tty table\n");
+	scanvars();
+	if (sortby == SORTCPU)
+		neednlist = 1;
+	if (neednlist)
+		donlist();
+	/*
+	 * get proc list
+	 */
+	if (uid != -1) {
+		what = KINFO_PROC_UID;
+		flag = uid;
+	} else if (ttydev != NODEV) {
+		what = KINFO_PROC_TTY;
+		flag = ttydev;
+	} else if (pid != -1) {
+		what = KINFO_PROC_PID;
+		flag = pid;
+	}
+	/*
+	 * select procs
+	 */
+	if ((nentries = kvm_getprocs(what, flag)) == -1) {
+		fprintf(stderr, "ps: %s\n", kvm_geterr());
 		exit(1);
 	}
-	fread((char *) allttys, sizeof (struct ttys), nttys, fp);
-	fread((char *) &nchans, sizeof nchans, 1, fp);
-	wchanhd = (struct wchan *) malloc(nchans * sizeof (struct wchan));
-	if (wchanhd == NULL) {
-		fprintf(stderr, "ps: Can't malloc space for wait channels\n");
-		nflg++;
-		fseek(fp, (long) nchans * sizeof (struct wchan), 1);
-	} else
-		fread((char *) wchanhd, sizeof (struct wchan), nchans, fp);
-	fread((char *) wchan_index, sizeof (caddr_t), NWCINDEX, fp);
-	fclose(fp);
-	return(1);
+	kinfo = (struct kinfo *)malloc(nentries * sizeof (struct kinfo));
+	if (kinfo == NULL)
+		error("out of memory");
+	i = 0;
+	while ((p = kvm_nextproc()) != NULL) {
+		kinfo[i].ki_p = p;
+		kinfo[i].ki_e = kvm_geteproc(p);
+		if (needuser)
+			saveuser(&kinfo[i]);
+		i++;
+	}
+	nentries = i;
+	/*
+	 * print header
+	 */
+	printheader();
+	if (nentries == 0)
+		exit(0);
+	/*
+	 * sort proc list
+	 */
+	qsort(kinfo, nentries, sizeof (struct kinfo), pscomp);
+	/*
+	 * for each proc, call each variable output function.
+	 */
+	for (i = 0; i < nentries; i++) {
+		if (xflg == 0 && kinfo[i].ki_e->e_tdev == NODEV)
+			continue;
+		for (v = vhead; v != NULL; v = v->next) {
+			(*v->oproc)(&kinfo[i], v);
+			if (v->next != NULL)
+				putchar(' ');
+		}
+		putchar('\n');
+		if (prtheader && lineno++ == prtheader-4) {
+			putchar('\n');
+			printheader();
+			lineno = 0;
+		}
+	}
 
-bad:
-	fclose(fp);
-	return(0);
+	exit(0);
 }
 
-openfiles(argc, argv)
-	char **argv;
+#define FMTSEP	" \t,\n"
+
+parsefmt(fmt)
+	char *fmt;
 {
-
-	kmemf = _PATH_KMEM;
-	if (kflg)
-		kmemf = argc > 2 ? argv[2] : _PATH_VMCORE;
-	kmem = open(kmemf, 0);
-	if (kmem < 0) {
-		perror(kmemf);
-		exit(1);
+	register char *f = fmt, *cp, *hp;
+	struct var *v;
+	char *strtok(), *index();
+	char newbuf[1024], *nb = newbuf; /* XXX */
+	char *lookupcombo();
+	struct var *lookupvar();
+	
+	/*
+	 * strtok is not &^%^& re-entrant, so we have
+	 * only one level of expansion, looking for combo
+	 * variables once here, and expanding the string
+	 * before really parsing it.  With strtok_r,
+	 * you would move the expansion to before the
+	 * lookupvar inside the 2nd while loop with a
+	 * recursive call to parsefmt.
+	 */
+	while ((cp = strtok(f, FMTSEP)) != NULL) {
+		if ((hp = lookupcombo(cp)) == NULL);
+			hp = cp;
+		if (((nb + strlen(hp)) - newbuf) >= 1024)
+			error("format too large");
+		strcpy(nb, hp);
+		while (*nb)
+			nb++;
+		*nb++ = ' ';
+		*nb =  '\0';
+		f = NULL;
 	}
-	if (kflg)  {
-		mem = kmem;
-		memf = kmemf;
-	} else {
-		memf = _PATH_MEM;
-		mem = open(memf, 0);
-		if (mem < 0) {
-			perror(memf);
-			exit(1);
-		}
-	}
-	if (kflg == 0 || argc > 3) {
-		swapf = argc>3 ? argv[3]: _PATH_DRUM;
-		swap = open(swapf, 0);
-		if (swap < 0) {
-			perror(swapf);
-			exit(1);
-		}
-	}
-}
-
-getkvars(argc, argv)
-	char **argv;
-{
-	int faildb = 0;			/* true if psdatabase init failed */
-	int i;
-
-	nlistf = argc > 1 ? argv[1] : _PATH_UNIX;
-	if (Uflg) {
-		init_nlist();
-		nlist(nlistf, nl);
-		getvchans();
-		getdev();
-		writepsdb(nlistf);
-		exit (0);
-	} else if (!readpsdb(nlistf)) {
-		init_nlist();
-		if (!kflg)
-			nl[X_SYSMAP].n_un.n_name = "";
-		faildb = 1;
-		nlist(nlistf, nl);
-		nttys = 0;
-		getdev();
-	}
-
-	if (nl[0].n_type == 0) {
-		fprintf(stderr, "%s: No namelist\n", nlistf);
-		exit(1);
-	}
-	if (kflg) {
-		/* We must do the sys map first because klseek uses it */
-		long	addr;
-
-		Syssize = nl[X_SYSSIZE].n_value;
-		Sysmap = (struct pte *)
-			calloc((unsigned) Syssize, sizeof (struct pte));
-		if (Sysmap == NULL) {
-			fprintf(stderr, "Out of space for Sysmap\n");
-			exit(1);
-		}
-		addr = (long) nl[X_SYSMAP].n_value;
-		addr &= ~KERNBASE;
-		(void) lseek(kmem, addr, 0);
-		read(kmem, (char *) Sysmap, Syssize * sizeof (struct pte));
-	}
-	if (faildb)
-		getvchans();
-	usrpt = (struct pte *)nl[X_USRPT].n_value;
-	Usrptmap = (struct pte *)nl[X_USRPTMAP].n_value;
-	klseek(kmem, (long)nl[X_NSWAP].n_value, 0);
-	if (read(kmem, (char *)&nswap, sizeof (nswap)) != sizeof (nswap)) {
-		cantread("nswap", kmemf);
-		exit(1);
-	}
-	klseek(kmem, (long)nl[X_CCPU].n_value, 0);
-	if (read(kmem, (char *)&ccpu, sizeof (ccpu)) != sizeof (ccpu)) {
-		cantread("ccpu", kmemf);
-		exit(1);
-	}
-	klseek(kmem, (long)nl[X_ECMX].n_value, 0);
-	if (read(kmem, (char *)&ecmx, sizeof (ecmx)) != sizeof (ecmx)) {
-		cantread("ecmx", kmemf);
-		exit(1);
-	}
-	if (uflg || vflg) {
-		ntext = getw(nl[X_NTEXT].n_value);
-		text = (struct text *)
-			calloc((unsigned) ntext, sizeof (struct text));
-		if (text == 0) {
-			fprintf(stderr, "no room for text table\n");
-			exit(1);
-		}
-		atext = (struct text *)getw(nl[X_TEXT].n_value);
-		klseek(kmem, (long)atext, 0);
-		if (read(kmem, (char *)text, ntext * sizeof (struct text))
-		    != ntext * sizeof (struct text)) {
-			cantread("text table", kmemf);
-			exit(1);
-		}
-	}
-	dmmin = getw(nl[X_DMMIN].n_value);
-	dmmax = getw(nl[X_DMMAX].n_value);
-	fscale = getw(nl[X_FSCALE].n_value);
-}
-
-/*
- * get the valloc'ed kernel variables for symbolic wait channels
- */
-getvchans()
-{
-	int i, tmp;
-
-	if (nflg)
-		return;
-
-#define addv(i) 	addchan(&nl[i].n_un.n_name[1], getw(nl[i].n_value))
-	addv(X_VNODE);
-	addv(X_FILE);
-	addv(X_PROC);
-	addv(X_TEXT);
-	addv(X_CFREE);
-	addv(X_CALLOUT);
-	addv(X_SWAPMAP);
-	addv(X_ARGMAP);
-	addv(X_KERNELMAP);
-	addv(X_MBMAP);
-	addv(X_NCH);
-	if (nl[X_QUOTA].n_value != 0) {	/* these are #ifdef QUOTA */
-		addv(X_QUOTA);
-		addv(X_DQUOT);
-	}
-	addv(X_SWBUF);
-	addv(X_BUF);
-	addv(X_CMAP);
-	addv(X_BUFFERS);
-	qsort(wchanhd, nchans, sizeof (struct wchan), wchancomp);
-	for (i = 0; i < NWCINDEX; i++) {
-		tmp = i * nchans;
-		wchan_index[i] = wchanhd[tmp / NWCINDEX].wc_caddr;
-	}
-#undef addv
-}
-printhdr()
-{
-	char *hdr;
-
-	if (sflg+lflg+vflg+uflg > 1) {
-		fprintf(stderr, "ps: specify only one of s,l,v and u\n");
-		exit(1);
-	}
-	if (lflg) {
-		if (nflg)
-			wcwidth = 6;
-		else if (twidth > WTSIZ)
-			wcwidth = -WNAMESIZ;
-		else
-			wcwidth = -WSNAMESIZ;
-		if ((hdr = malloc(strlen(lhdr) + WNAMESIZ)) == NULL) {
-			fprintf(stderr, "ps: out of memory\n");
-			exit(1);
-		}
-		(void)sprintf(hdr, lhdr, wcwidth, "WCHAN");
-	} else if (vflg)
-		hdr = vhdr;
-	else if (jflg) {
-		hdr = jhdr;
-	} else if (uflg) {
-		/* add enough on so that it can hold the sprintf below */
-		if ((hdr = malloc(strlen(uhdr) + 10)) == NULL) {
-			fprintf(stderr, "ps: out of memory\n");
-			exit(1);
-		}
-		(void)sprintf(hdr, uhdr, nflg ? " UID" : "USER    ");
-	} else
-		hdr = shdr;
-	if (lflg+vflg+uflg+sflg+jflg == 0)	/* this code is ICK */
-		hdr += strlen("SSIZ ");
-	cmdstart = strlen(hdr);
-	printf("%s COMMAND\n", hdr);
-	(void) fflush(stdout);
-}
-
-cantread(what, fromwhat)
-	char *what, *fromwhat;
-{
-
-	fprintf(stderr, "ps: error reading %s from %s\n", what, fromwhat);
-}
-
-struct	direct *dbuf;
-int	dialbase;
-
-getdev()
-{
-	register DIR *df;
-	struct ttys *t;
-	struct lttys *lt;
-
-	if (chdir(_PATH_DEV) < 0) {
-		perror(_PATH_DEV);
-		exit(1);
-	}
-	dialbase = -1;
-	if ((df = opendir(".")) == NULL) {
-		fprintf(stderr, "ps: can't open . in %s\n", _PATH_DEV);
-		exit(1);
-	}
-	while ((dbuf = readdir(df)) != NULL) 
-		maybetty();
-	closedir(df);
-	allttys = (struct ttys *)malloc(sizeof(struct ttys)*nttys);
-	if (allttys == NULL) {
-		fprintf(stderr, "ps: can't malloc space for tty table\n");
-		exit(1);
-	}
-	for (lt = lallttys, t = allttys; lt ; lt = lt->next, t++)
-		*t = lt->ttys;
-}
-
-/*
- * Attempt to avoid stats by guessing minor device
- * numbers from tty names.  Console is known,
- * know that r(hp|up|mt) are unlikely as are different mem's,
- * floppy, null, tty, etc.
- */
-maybetty()
-{
-	register char *cp = dbuf->d_name;
-	static struct lttys *dp;
-	struct lttys *olddp;
-	int x;
-	struct stat stb;
-
-	switch (cp[0]) {
-
-	case 'c':
-		if (!strcmp(cp, "console")) {
-			x = 0;
-			goto donecand;
-		}
-		/* cu[la]? are possible!?! don't rule them out */
-		break;
-
-	case 'd':
-		if (!strcmp(cp, "drum"))
-			return;
-		break;
-
-	case 'f':
-		if (!strcmp(cp, "floppy"))
-			return;
-		break;
-
-	case 'k':
-		cp++;
-		if (*cp == 'U')
-			cp++;
-		goto trymem;
-
-	case 'r':
-		cp++;
-#define is(a,b) cp[0] == 'a' && cp[1] == 'b'
-		if (is(h,p) || is(r,a) || is(u,p) || is(h,k) 
-		    || is(r,b) || is(m,t)) {
-			cp += 2;
-			if (isdigit(*cp) && cp[2] == 0)
-				return;
-		}
-		break;
-
-	case 'm':
-trymem:
-		if (cp[0] == 'm' && cp[1] == 'e' && cp[2] == 'm' && cp[3] == 0)
-			return;
-		if (cp[0] == 'm' && cp[1] == 't')
-			return;
-		break;
-
-	case 'n':
-		if (!strcmp(cp, "null"))
-			return;
-		if (!strncmp(cp, "nrmt", 4))
-			return;
-		break;
-
-	case 'p':
-		if (cp[1] && cp[1] == 't' && cp[2] == 'y')
-			return;
-		break;
-
-	case 'v':
-		if ((cp[1] == 'a' || cp[1] == 'p') && isdigit(cp[2]) &&
-		    cp[3] == 0)
-			return;
-		break;
-	}
-	cp = dbuf->d_name + dbuf->d_namlen - 1;
-	x = 0;
-	if (cp[-1] == 'd') {
-		if (dialbase == -1) {
-			if (stat("ttyd0", &stb) == 0)
-				dialbase = stb.st_rdev & 017;
-			else
-				dialbase = -2;
-		}
-		if (dialbase == -2)
-			x = 0;
-		else
-			x = 11;
-	}
-	if (cp > dbuf->d_name && isdigit(cp[-1]) && isdigit(*cp))
-		x += 10 * (cp[-1] - ' ') + cp[0] - '0';
-	else if (*cp >= 'a' && *cp <= 'f')
-		x += 10 + *cp - 'a';
-	else if (isdigit(*cp))
-		x += *cp - '0';
-	else
-		x = -1;
-donecand:
-	olddp = dp;
-	dp = (struct lttys *)malloc(sizeof(struct lttys));
-	if (dp == NULL) {
-		fprintf(stderr, "ps: Can't malloc space for tty table\n");
-		exit(1);
-	}
-	if (lallttys == NULL)
-		lallttys = dp;
-	nttys++;
-	if (olddp)
-		olddp->next = dp;
-	dp->next = NULL;
-	(void) strcpy(dp->ttys.name, dbuf->d_name);
-	if (Uflg) {
-		if (stat(dp->ttys.name, &stb) == 0 &&
-		   (stb.st_mode&S_IFMT)==S_IFCHR)
-			dp->ttys.ttyd = x = stb.st_rdev;
+	f = newbuf;
+	while ((cp = strtok(f, FMTSEP)) != NULL) {
+		if (hp = index(cp, '='))
+			*hp++ = '\0';
+		v = lookupvar(cp);
+		if (v == NULL)
+			error("unknown variable in format: %s", cp);
+		if (v->next != NULL || vtail == v)
+			error("can't specify a variable twice: %s", cp);
+		if (hp)
+			v->header = hp;
+		if (vhead == NULL)
+			vhead = vtail = v;
 		else {
-			nttys--;
-			if (lallttys == dp)
-				lallttys = NULL;
-			free(dp);
-			dp = olddp;
-			if (dp)
-				dp->next = NULL;
-			return;
+			vtail->next = v;
+			vtail = v;
+		}
+		f = NULL;	/* for strtok */
+	}
+
+}
+
+scanvars()
+{
+	register i;
+	register struct var *v;
+
+	for (v = vhead; v != NULL; v = v->next) {
+		i = strlen(v->header);
+		if (v->width < i)
+			v->width = i;
+		totwidth += v->width + 1;	/* +1 for space */
+		if (v->flag & USER)
+			needuser = 1;
+		if (v->flag & COMM)
+			needcomm = 1;
+		if (v->flag & NLIST)
+			neednlist = 1;
+	}
+	totwidth--;
+}
+printheader()
+{
+	register struct var *v;
+
+	for (v = vhead; v != NULL; v = v->next) {
+		if (v->flag & LJUST) {
+			if (v->next == NULL)	/* last one */
+				printf("%s", v->header);
+			else
+				printf("%-*s",v->width, v->header);
+		} else
+			printf("%*s",v->width, v->header);
+		if (v->next != NULL)
+			putchar(' ');
+	}
+	putchar('\n');
+}
+
+command(k, v) 
+	struct kinfo *k;
+	struct var *v;
+{
+
+	if (v->next == NULL) {		
+		/* last field */
+		if (termwidth == UNLIMITED)
+			printf("%s", k->ki_args);
+		else {
+			register left = termwidth - (totwidth - v->width);
+			register char *cp = k->ki_args;
+
+			if (left < 1)	/* already wrapped, just use std width */
+				left = v->width;
+			while (left-- && *cp)
+				putchar(*cp++);
 		}
 	} else
-		dp->ttys.ttyd = -1;
-	if (x == -1)
-		return;
-	x &= 017;
-	dp->ttys.cand = cand[x];
-	cand[x] = nttys-1;
+		printf("%-*.*s", v->width, v->width, k->ki_args);
+		
 }
 
-char *
-gettty(dev)
-	dev_t dev;
+ucomm(k, v) 
+	struct kinfo *k;
+	struct var *v;
 {
-	register char *p;
-	register struct ttys *dp;
-	struct stat stb;
-	int x;
 
-	x = dev & 017;
-	for (dp = &allttys[cand[x]]; dp != &allttys[-1];
-	     dp = &allttys[dp->cand]) {
-		if (dp->ttyd == -1) {
-			if (stat(dp->name, &stb) == 0 &&
-			   (stb.st_mode&S_IFMT)==S_IFCHR)
-				dp->ttyd = stb.st_rdev;
-			else
-				dp->ttyd = -2;
-		}
-		if (dp->ttyd == dev)
-			goto found;
-	}
-	/* ick */
-	for (dp = allttys; dp < &allttys[nttys]; dp++) {
-		if (dp->ttyd == -1) {
-			if (stat(dp->name, &stb) == 0 &&
-			   (stb.st_mode&S_IFMT)==S_IFCHR)
-				dp->ttyd = stb.st_rdev;
-			else
-				dp->ttyd = -2;
-		}
-		if (dp->ttyd == dev)
-			goto found;
-	}
-	return ("?");
-found:
-	p = dp->name;
-	if (p[0]=='t' && p[1]=='t' && p[2]=='y')
-		p += 3;
-	return (p);
+	printf("%-*s", v->width, k->ki_p->p_comm);
 }
 
-save()
+logname(k, v) 
+	struct kinfo *k;
+	struct var *v;
 {
-	register struct savcom *sp;
-	register struct asav *ap;
-	register char *cp;
-	register struct text *xp;
-	char *ttyp = "?", *cmdp;
-	struct pgrp pgrp;
-	struct pgrp tpgrp;
-	struct session session;
-	struct tty tty;
-	int hasctty = 0;
 
-	if (mproc->p_stat != SZOMB && getu() == 0)
-		return;
-	sp = &savcom[npr];
-	sp->ap = ap = (struct asav *)calloc(1, sizeof (struct asav));
-	ap->a_pgid = -1;
-	ap->a_session = -1;
-	ap->a_ttyd = -1;
-	ap->a_tsession = -1;
-	ap->a_tpgid = -1;
-	klseek(kmem, mproc->p_pgrp, 0);
-	if (read(kmem, &pgrp, sizeof(pgrp)) != sizeof(pgrp))
-		fprintf(stderr, "ps: can't read pgrp\n");
-	else {
-		ap->a_pgid = pgrp.pg_id;
-		ap->a_session = (int)pgrp.pg_session;
-		klseek(kmem, pgrp.pg_session, 0);
-		if (read(kmem, &session, sizeof(session)) != sizeof(session))
-			fprintf(stderr, "ps: can't read session\n");
-		else {
-			if (session.s_ttyp != 0) {
-				klseek(kmem, session.s_ttyp, 0);
-				if (read(kmem, &tty, sizeof(tty)) == sizeof(tty)) {
-					ttyp = gettty(tty.t_dev);
-					ap->a_ttyd = tty.t_dev;
-					ap->a_tsession = (int)tty.t_session;
-					if (tty.t_pgrp != 0) {
-						klseek(kmem, tty.t_pgrp, 0);
-						if (read(kmem, &tpgrp, sizeof(tpgrp)) ==
-						    sizeof(tpgrp))
-							ap->a_tpgid = tpgrp.pg_id;
-					}
-				} else
-					fprintf(stderr, "ps: can't read tty\n");
-			}
-		}
-	}
-	if (xflg == 0 && ttyp[0] == '?' || tptr && strncmp(tptr, ttyp, 2))
-		return;
-	cmdp = getcmd();
-	if (cmdp == 0)
-		return;
-	sp->ap->a_cmdp = cmdp;
-#define e(a,b) ap->a = mproc->b
-	e(a_flag, p_flag); e(a_stat, p_stat); e(a_nice, p_nice);
-	e(a_uid, p_uid); e(a_pid, p_pid); e(a_pri, p_pri);
-	e(a_slptime, p_slptime); e(a_time, p_time);
-	ap->a_tty[0] = ttyp[0];
-	ap->a_tty[1] = ttyp[1] ? ttyp[1] : ' ';
-	if (ap->a_stat == SZOMB) {
-		ap->a_cpu = 0;
-	} else {
-		ap->a_size = mproc->p_dsize + mproc->p_ssize;
-		e(a_rss, p_rssize); 
-		ap->a_cpu = u.u_ru.ru_utime.tv_sec + u.u_ru.ru_stime.tv_sec;
-		if (sumcpu)
-			ap->a_cpu += u.u_cru.ru_utime.tv_sec + u.u_cru.ru_stime.tv_sec;
-		if (mproc->p_textp && text) {
-			xp = &text[mproc->p_textp - atext];
-			ap->a_tsiz = xp->x_size;
-			ap->a_txtrss = xp->x_rssize;
-			ap->a_xccount = xp->x_ccount;
-		}
-	}
-	e(a_ppid, p_ppid); 
-#undef e
-	ap->a_maxrss = mproc->p_maxrss;
-	if (lflg) {
-		register struct lsav *lp;
-
-		sp->s_un.lp = lp = (struct lsav *)
-			calloc(1, sizeof (struct lsav));
-#define e(a,b) lp->a = mproc->b
-		e(l_cpu, p_cpu);
-		if (ap->a_stat != SZOMB)
-			e(l_wchan, p_wchan);
-#undef e
-		lp->l_addr = pcbpf;
-	} else if (vflg) {
-		register struct vsav *vp;
-
-		sp->s_un.vp = vp = (struct vsav *)
-			calloc(1, sizeof (struct vsav));
-#define e(a,b) vp->a = mproc->b
-		if (ap->a_stat != SZOMB) {
-			e(v_swrss, p_swrss);
-			vp->v_majflt = u.u_ru.ru_majflt;
-			if (mproc->p_textp)
-				vp->v_txtswrss = xp->x_swrss;
-		}
-		vp->v_pctcpu = pcpu();
-#undef e
-	} else if (uflg)
-		sp->s_un.u_pctcpu = pcpu();
-	else if (sflg) {
-		if (ap->a_stat != SZOMB) {
-			for (cp = (char *)u.u_stack;
-			    cp < &user.upages[UPAGES][0]; )
-				if (*cp++)
-					break;
-			sp->s_un.s_ssiz = (&user.upages[UPAGES][0] - cp);
-		}
-	}
-
-	npr++;
+	printf("%-*s", v->width, k->ki_p->p_logname);
 }
 
-double
-pmem(ap)
-	register struct asav *ap;
+state(k, v)
+	struct kinfo *k;
+	struct var *v;
 {
-	double fracmem;
-	int szptudot;
+	char buf[6];
+	char *cp = buf;
+	struct proc *p = k->ki_p;
 
-	if ((ap->a_flag&SLOAD) == 0)
-		fracmem = 0.0;
-	else {
-		szptudot = UPAGES + clrnd(ctopt(ap->a_size+ap->a_tsiz));
-		fracmem = ((float)ap->a_rss+szptudot)/CLSIZE/ecmx;
-		if (ap->a_xccount)
-			fracmem += ((float)ap->a_txtrss)/CLSIZE/
-			    ap->a_xccount/ecmx;
-	}
-	return (100.0 * fracmem);
-}
-
-#define	fxtofl(fixpt)	((double) fixpt / fscale)
-double
-pcpu()
-{
-	time_t time;
-
-	time = mproc->p_time;
-	if (time == 0 || (mproc->p_flag&SLOAD) == 0)
-		return (0.0);
-	if (rawcpu)
-		return (100.0 * fxtofl(mproc->p_pctcpu));
-	return (100.0 * fxtofl(mproc->p_pctcpu) /
-	        (1.0 - exp(time * log(fxtofl(ccpu)))));
-}
-#undef fxtofl
-
-getu()
-{
-	struct pte *pteaddr, apte;
-	struct pte arguutl[UPAGES+CLSIZE];
-	register int i;
-	int ncl, size;
-
-	size = sflg ? ctob(UPAGES) : sizeof (struct user);
-	if ((mproc->p_flag & SLOAD) == 0) {
-		if (swap < 0)
-			return (0);
-		(void) lseek(swap, (long)dtob(mproc->p_swaddr), 0);
-		if (read(swap, (char *)&user.user, size) != size) {
-			fprintf(stderr, "ps: cant read u for pid %d from %s\n",
-			    mproc->p_pid, swapf);
-			return (0);
-		}
-		pcbpf = 0;
-		argaddr = 0;
-		return (1);
-	}
-	pteaddr = &Usrptmap[btokmx(mproc->p_p0br) + mproc->p_szpt - 1];
-	klseek(kmem, (long)pteaddr, 0);
-	if (read(kmem, (char *)&apte, sizeof(apte)) != sizeof(apte)) {
-		printf("ps: cant read indir pte to get u for pid %d from %s\n",
-		    mproc->p_pid, kmemf);
-		return (0);
-	}
-	lseek(mem,
-	    (long)ctob(apte.pg_pfnum+1) - (UPAGES+CLSIZE) * sizeof (struct pte),
-		0);
-	if (read(mem, (char *)arguutl, sizeof(arguutl)) != sizeof(arguutl)) {
-		printf("ps: cant read page table for u of pid %d from %s\n",
-		    mproc->p_pid, memf);
-		return (0);
-	}
-	if (arguutl[0].pg_fod == 0 && arguutl[0].pg_pfnum)
-		argaddr = ctob(arguutl[0].pg_pfnum);
-	else
-		argaddr = 0;
-	pcbpf = arguutl[CLSIZE].pg_pfnum;
-	ncl = (size + NBPG*CLSIZE - 1) / (NBPG*CLSIZE);
-	while (--ncl >= 0) {
-		i = ncl * CLSIZE;
-		lseek(mem, (long)ctob(arguutl[CLSIZE+i].pg_pfnum), 0);
-		if (read(mem, user.upages[i], CLSIZE*NBPG) != CLSIZE*NBPG) {
-			printf("ps: cant read page %d of u of pid %d from %s\n",
-			    arguutl[CLSIZE+i].pg_pfnum, mproc->p_pid, memf);
-			return(0);
-		}
-	}
-	return (1);
-}
-
-char *
-getcmd()
-{
-	char cmdbuf[CLSIZE*NBPG];
-	union {
-		char	argc[CLSIZE*NBPG];
-		int	argi[CLSIZE*NBPG/sizeof (int)];
-	} argspac;
-	register char *cp;
-	register int *ip;
-	char c;
-	int nbad;
-	struct dblock db;
-	char *file;
-
-	if (mproc->p_stat == SZOMB || mproc->p_flag&(SSYS|SWEXIT))
-		return ("");
-	if (cflg) {
-		(void) strncpy(cmdbuf, mproc->p_comm, sizeof (mproc->p_comm));
-		return (savestr(cmdbuf));
-	}
-	if ((mproc->p_flag & SLOAD) == 0 || argaddr == 0) {
-		if (swap < 0)
-			goto retucomm;
-		vstodb(0, CLSIZE, &u.u_smap, &db, 1);
-		(void) lseek(swap, (long)dtob(db.db_base), 0);
-		if (read(swap, (char *)&argspac, sizeof(argspac))
-		    != sizeof(argspac))
-			goto bad;
-		file = swapf;
-	} else {
-		lseek(mem, (long)argaddr, 0);
-		if (read(mem, (char *)&argspac, sizeof (argspac))
-		    != sizeof (argspac))
-			goto bad;
-		file = memf;
-	}
-	ip = &argspac.argi[CLSIZE*NBPG/sizeof (int)];
-	ip -= 2;		/* last arg word and .long 0 */
-	while (*--ip)
-		if (ip == argspac.argi)
-			goto retucomm;
-	*(char *)ip = ' ';
-	ip++;
-	nbad = 0;
-	for (cp = (char *)ip; cp < &argspac.argc[CLSIZE*NBPG]; cp++) {
-		c = *cp & 0177;
-		if (c == 0)
-			*cp = ' ';
-		else if (c < ' ' || c > 0176) {
-			if (++nbad >= 5*(eflg+1)) {
-				*cp++ = ' ';
-				break;
-			}
-			*cp = '?';
-		} else if (eflg == 0 && c == '=') {
-			while (*--cp != ' ')
-				if (cp <= (char *)ip)
-					break;
-			break;
-		}
-	}
-	*cp = 0;
-	while (*--cp == ' ')
-		*cp = 0;
-	cp = (char *)ip;
-	(void) strncpy(cmdbuf, cp, &argspac.argc[CLSIZE*NBPG] - cp);
-	if (cp[0] == '-' || cp[0] == '?' || cp[0] <= ' ') {
-		(void) strcat(cmdbuf, " (");
-		(void) strncat(cmdbuf, mproc->p_comm, sizeof(mproc->p_comm));
-		(void) strcat(cmdbuf, ")");
-	}
-	return (savestr(cmdbuf));
-
-bad:
-	fprintf(stderr, "ps: error locating command name for pid %d from %s\n",
-	    mproc->p_pid, file);
-retucomm:
-	(void) strcpy(cmdbuf, " (");
-	(void) strncat(cmdbuf, mproc->p_comm, sizeof (mproc->p_comm));
-	(void) strcat(cmdbuf, ")");
-	return (savestr(cmdbuf));
-}
-
-char	*lhdr =
-"      F  UID   PID  PPID CP PRI NI ADDR    SZ  RSS %*sSTAT TT  TIME";
-lpr(sp)
-	struct savcom *sp;
-{
-	register struct asav *ap = sp->ap;
-	register struct lsav *lp = sp->s_un.lp;
-
-	printf("%7x %4d %5u %5u %2d %3d %2d %4x %5d %4d",
-	    (ap->a_flag &~ SPTECHG),				/* XXX */
-	    ap->a_uid, ap->a_pid, ap->a_ppid,
-	    lp->l_cpu > 99 ? 99 : lp->l_cpu, ap->a_pri-PZERO,
-	    ap->a_nice, lp->l_addr, pgtok(ap->a_size), pgtok(ap->a_rss));
-	if (lp->l_wchan == 0)
-		printf(" %*s", wcwidth, "");
-	else if (nflg)
-		printf(" %*x", wcwidth, (int)lp->l_wchan&~KERNBASE);
-	else
-		printf(" %*.*s", wcwidth, abs(wcwidth), getchan(lp->l_wchan));
-	printf(" %-2.3s ", state(ap));
-	ptty(ap->a_tty);
-	ptime(ap);
-}
-
-char *jhdr = 
-" UID   PID  PPID  PGID SESSION STAT TT TPGID TSESSION  TIME";
-jpr(sp)
-	struct savcom *sp;
-{
-	register struct asav *ap = sp->ap;
-
-	printf("%4d %5u %5u %5u %8x %-2.3s ", ap->a_uid, ap->a_pid, ap->a_ppid,
-		ap->a_pgid, ap->a_session, state(ap));
-	ptty(ap->a_tty);
-	if (ap->a_tpgid == -1)
-		printf("   -   ");
-	else
-		printf(" %5u ", ap->a_tpgid);
-	if (ap->a_tsession == -1)
-		printf("     -    ");
-	else
-		printf("%8x ", ap->a_tsession);
-	ptime(ap);
-}
-
-ptty(tp)
-	char *tp;
-{
-
-	printf("%-2.2s", tp);
-}
-
-ptime(ap)
-	struct asav *ap;
-{
-
-	printf(" %3ld:%02ld", ap->a_cpu / 60, ap->a_cpu % 60);
-}
-
-char	*uhdr =
-"%s   PID %%CPU %%MEM    SZ   RSS TT STAT TIME";
-upr(sp)
-	struct savcom *sp;
-{
-	register struct asav *ap = sp->ap;
-	int vmsize, rmsize;
-
-	vmsize = pgtok((ap->a_size + ap->a_tsiz));
-	rmsize = pgtok(ap->a_rss);
-	if (ap->a_xccount)
-		rmsize += pgtok(ap->a_txtrss/ap->a_xccount);
-	if (nflg)
-		printf("%4d ", ap->a_uid);
-	else
-		printf("%-8.8s ", getname(ap->a_uid));
-	printf("%5d %4.1f %4.1f %5d %5d",
-	    ap->a_pid, sp->s_un.u_pctcpu, pmem(ap), vmsize, rmsize);
-	putchar(' ');
-	ptty(ap->a_tty);
-	printf(" %-2.3s", state(ap));
-	ptime(ap);
-}
-
-char *vhdr =
-" SIZE  PID TT STAT TIME SL RE PAGEIN  SIZE   RSS   LIM TSIZ TRS %CPU %MEM"+5;
-vpr(sp)
-	struct savcom *sp;
-{
-	register struct vsav *vp = sp->s_un.vp;
-	register struct asav *ap = sp->ap;
-
-	printf("%5u ", ap->a_pid);
-	ptty(ap->a_tty);
-	printf(" %-2.3s", state(ap));
-	ptime(ap);
-	printf(" %2d %2d %6d %5d %5d",
-	   ap->a_slptime > 99 ? 99 : ap-> a_slptime,
-	   ap->a_time > 99 ? 99 : ap->a_time, vp->v_majflt,
-	   pgtok(ap->a_size), pgtok(ap->a_rss));
-	if (ap->a_maxrss == (RLIM_INFINITY/NBPG))
-		printf("    xx");
-	else
-		printf(" %5d", pgtok(ap->a_maxrss));
-	printf(" %4d %3d %4.1f %4.1f",
-	   pgtok(ap->a_tsiz), pgtok(ap->a_txtrss), vp->v_pctcpu, pmem(ap));
-}
-
-char	*shdr =
-"SSIZ   PID TT STAT  TIME";
-spr(sp)
-	struct savcom *sp;
-{
-	register struct asav *ap = sp->ap;
-
-	if (sflg)
-		printf("%4d ", sp->s_un.s_ssiz);
-	printf("%5u", ap->a_pid);
-	putchar(' ');
-	ptty(ap->a_tty);
-	printf(" %-2.3s", state(ap));
-	ptime(ap);
-}
-
-char *
-state(ap)
-	register struct asav *ap;
-{
-	static char res[5];
-	char *cp = res;
-
-	switch (ap->a_stat) {
+	switch (p->p_stat) {
 
 	case SSTOP:
 		*cp = 'T';
 		break;
 
 	case SSLEEP:
-		if (ap->a_pri >= PZERO)
-			if (ap->a_slptime >= MAXSLP)
+		if (p->p_pri > PZERO)
+			if (p->p_slptime >= MAXSLP)
 				*cp = 'I';
 			else
 				*cp = 'S';
-		else if (ap->a_flag & SPAGE)
+		else if (p->p_flag & SPAGE)
 			*cp = 'P';
 		else
 			*cp = 'D';
@@ -1433,138 +688,473 @@ state(ap)
 		*cp = '?';
 	}
 	cp++;
-	if (ap->a_flag & SLOAD) {
-		if (ap->a_rss > ap->a_maxrss)
+	if (p->p_flag & SLOAD) {
+		if (p->p_rssize > p->p_maxrss)
 			*cp++ = '>';
 	} else
 		*cp++ = 'W';
-	if (ap->a_nice < NZERO)
+	if (p->p_nice < NZERO)
 		*cp++ = '<';
-	else if (ap->a_nice > NZERO)
+	else if (p->p_nice > NZERO)
 		*cp++ = 'N';
-	if (ap->a_flag & SUANOM)
+	if (p->p_flag & SUANOM)
 		*cp++ = 'A';
-	else if (ap->a_flag & SSEQL)
+	else if (p->p_flag & SSEQL)
 		*cp++ = 'S';
+	if (p->p_flag&SCTTY && k->ki_e->e_tpgid == k->ki_e->e_pgid)
+		*cp++ = '+';
 	*cp = '\0';
-	return (res);
+	printf("%-*s", v->width, buf);
+}
+
+pri(k, v)
+	struct kinfo *k;
+	struct var *v;
+{
+
+	printf("%*d", v->width, k->ki_p->p_pri - PZERO);
+}
+
+uname(k, v)
+	struct kinfo *k;
+	struct var *v;
+{
+
+	printf("%-*s", v->width, user_from_uid(k->ki_p->p_uid, 0));
+}
+
+runame(k, v)
+	struct kinfo *k;
+	struct var *v;
+{
+
+	printf("%-*s", v->width, user_from_uid(k->ki_p->p_ruid, 0));
+}
+
+tdev(k, v)
+	struct kinfo *k;
+	struct var *v;
+{
+	dev_t dev = k->ki_e->e_tdev;
+
+	if (dev == NODEV)
+		printf("%*s", v->width, "??");
+	else {
+		char buff[16];
+
+		sprintf(buff, "%d/%d", major(dev), minor(dev));
+		printf("%*s", v->width, buff);
+	}
+}
+
+char *devname();
+
+tname(k, v)
+	struct kinfo *k;
+	struct var *v;
+{
+	dev_t dev = k->ki_e->e_tdev;
+	char *tname;
+
+	if (dev == NODEV || (tname = devname(dev, 1)) == NULL)
+		printf("%-*s", v->width, "??");
+	else {
+		if (strncmp(tname, "tty", 3) == 0)
+			tname += 3;
+		printf("%-*.*s", v->width, v->width, tname);
+	}
+}
+
+longtname(k, v)
+	struct kinfo *k;
+	struct var *v;
+{
+	dev_t dev = k->ki_e->e_tdev;
+	char *tname;
+
+	if (dev == NODEV || (tname = devname(dev, 1)) == NULL)
+		printf("%-*s", v->width, "??");
+	else
+		printf("%-*s", v->width, tname);
+}
+
+#include <sys/time.h>
+
+started(k, v)
+	struct kinfo *k;
+	struct var *v;
+{
+	extern char *attime();
+
+	printf("%-*s", v->width, k->ki_u ? 
+		attime(&k->ki_u->u_start.tv_sec) : "-");
+		
+}
+
+lstarted(k, v)
+	struct kinfo *k;
+	struct var *v;
+{
+	extern char *ctime();
+	char *tp; 
+
+	if (k->ki_u)
+		(tp = ctime(&k->ki_u->u_start.tv_sec))[24] = '\0';
+	else
+		tp = "-";
+	printf("%-*s", v->width, tp);
+}
+
+wchan(k, v)
+	struct kinfo *k;
+	struct var *v;
+{
+
+	if (k->ki_p->p_wchan) {
+		if (k->ki_p->p_pri > PZERO)
+			printf("%-*.*s", v->width, v->width, k->ki_e->e_wmesg);
+		else
+			printf("%*x", v->width, 
+				(int)k->ki_p->p_wchan &~ KERNBASE);
+	} else
+		printf("%-*s", v->width, "-");
+}
+
+#define pgtok(a)        ((a)/(1024/NBPG))
+
+vsize(k, v)
+	struct kinfo *k;
+	struct var *v;
+{
+
+	printf("%*d", v->width, 
+		pgtok(k->ki_p->p_dsize + k->ki_p->p_ssize + k->ki_e->e_xsize));
+}
+
+rssize(k, v)
+	struct kinfo *k;
+	struct var *v;
+{
+
+	printf("%*d", v->width, 
+		pgtok(k->ki_p->p_rssize + (k->ki_e->e_xccount ? 
+		      (k->ki_e->e_xrssize / k->ki_e->e_xccount) : 0)));
+}
+
+p_rssize(k, v)		/* doesn't account for text */
+	struct kinfo *k;
+	struct var *v;
+{
+
+	printf("%*d", v->width, pgtok(k->ki_p->p_rssize));
+}
+
+cputime(k, v)
+	struct kinfo *k;
+	struct var *v;
+{
+	long secs;
+	char obuff[8];
+
+	if (k->ki_p->p_stat == SZOMB || k->ki_u == NULL)
+		secs = 0;
+	else {
+		secs = k->ki_u->u_ru.ru_utime.tv_sec + 
+			k->ki_u->u_ru.ru_stime.tv_sec;
+		if (sumrusage)
+			secs += k->ki_u->u_cru.ru_utime.tv_sec + 
+				k->ki_u->u_cru.ru_stime.tv_sec;
+	}
+	sprintf(obuff, "%3ld:%02ld", secs/60, secs%60);
+	printf("%*s", v->width, obuff);
+}
+
+double
+getpcpu(k)
+	struct kinfo *k;
+{
+	/*
+	 * note: this routine requires ccpu and fscale
+	 * be initialized.  If you call this routine from
+	 * somewhere new, insure that the "neednlist" flag
+	 * gets set.
+	 */
+	struct proc *p = k->ki_p;
+#define	fxtofl(fixpt)	((double)(fixpt) / fscale)
+
+	if (p->p_time == 0 || (p->p_flag&SLOAD) == 0)
+		return (0.0);
+	if (rawcpu)
+		return (100.0 * fxtofl(p->p_pctcpu));
+	return (100.0 * fxtofl(p->p_pctcpu) /
+		(1.0 - exp(p->p_time * log(fxtofl(ccpu)))));
+}
+
+pcpu(k, v)
+	struct kinfo *k;
+	struct var *v;
+{
+
+	printf("%*.1f", v->width, getpcpu(k));
+}
+
+double
+getpmem(k, v)
+	struct kinfo *k;
+	struct var *v;
+{
+	struct proc *p = k->ki_p;
+	struct eproc *e = k->ki_e;
+	double fracmem;
+	int szptudot;
+	/*
+	 * note: this routine requires that ecmx
+	 * be initialized.  If you call this routine from
+	 * somewhere new, insure that the "neednlist" flag
+	 * gets set.
+	 */
+
+	if (p->p_flag&SLOAD == 0)
+		return (0.0);
+	szptudot = UPAGES + clrnd(ctopt(p->p_dsize + p->p_ssize + e->e_xsize));
+	fracmem = ((float)p->p_rssize + szptudot)/CLSIZE/ecmx;
+	if (p->p_textp && e->e_xccount)
+		fracmem += ((float)e->e_xrssize)/CLSIZE/e->e_xccount/ecmx;
+	return (100.0 * fracmem);
+}
+
+pmem(k, v)
+	struct kinfo *k;
+	struct var *v;
+{
+
+	printf("%*.1f", v->width, getpmem(k));
+}
+
+pagein(k, v)
+	struct kinfo *k;
+	struct var *v;
+{
+
+	printf("%*d", v->width, k->ki_u ? k->ki_u->u_ru.ru_majflt : 0);
+}
+
+maxrss(k, v)
+	struct kinfo *k;
+	struct var *v;
+{
+
+	if (k->ki_p->p_maxrss != (RLIM_INFINITY/NBPG))
+		printf("%*d", v->width, pgtok(k->ki_p->p_maxrss));
+	else
+		printf("%*s", v->width, "-");
+}
+
+tsize(k, v)
+	struct kinfo *k;
+	struct var *v;
+{
+	
+	printf("%*d", v->width, pgtok(k->ki_e->e_xsize));
+}
+
+trss(k, v)
+	struct kinfo *k;
+	struct var *v;
+{
+
+	printf("%*d", v->width, pgtok(k->ki_e->e_xrssize));
 }
 
 /*
- * Given a base/size pair in virtual swap area,
- * return a physical base/size pair which is the
- * (largest) initial, physically contiguous block.
+ * Generic output routines.  Print fields from various prototype
+ * structures.
  */
-vstodb(vsbase, vssize, dmp, dbp, rev)
-	register int vsbase;
-	int vssize;
-	struct dmap *dmp;
-	register struct dblock *dbp;
+pvar(k, v) 
+	struct kinfo *k;
+	struct var *v;
 {
-	register int blk = dmmin;
-	register swblk_t *ip = dmp->dm_map;
-
-	vsbase = ctod(vsbase);
-	vssize = ctod(vssize);
-	if (vsbase < 0 || vsbase + vssize > dmp->dm_size)
-		panic("vstodb");
-	while (vsbase >= blk) {
-		vsbase -= blk;
-		if (blk < dmmax)
-			blk *= 2;
-		ip++;
-	}
-	if (*ip <= 0 || *ip + blk > nswap)
-		panic("vstodb *ip");
-	dbp->db_size = min(vssize, blk - vsbase);
-	dbp->db_base = *ip + (rev ? blk - (vsbase + dbp->db_size) : vsbase);
+ 
+	printval((char *)((char *)k->ki_p + v->off), v);
 }
 
-/*ARGSUSED*/
-panic(cp)
+evar(k, v) 
+	struct kinfo *k;
+	struct var *v;
+{
+ 
+	printval((char *)((char *)k->ki_e + v->off), v);
+}
+
+uvar(k, v) 
+	struct kinfo *k;
+	struct var *v;
+{
+ 
+	if (k->ki_u)
+		printval((char *)((char *)k->ki_u + v->off), v);
+	else
+		printf("%*s", v->width, "-");
+}
+
+rvar(k, v)
+	struct kinfo *k;
+	struct var *v;
+{
+	
+	if (k->ki_u)
+		printval((char *)((char *)(&k->ki_u->u_ru) + v->off), v);
+	else
+		printf("%*s", v->width, "-");
+}
+
+char *
+lookupcombo(cp)
 	char *cp;
 {
+	register struct combovar *cv = &combovar[0];
 
-#ifdef DEBUG
-	printf("%s\n", cp);
-#endif
+	for (; cv->name; cv++)
+		if (strcmp(cp, cv->name) == 0)
+			return (cv->replace);
+	return (NULL);
 }
 
-min(a, b)
+struct var *
+lookupvar(cp)
+	char *cp;
 {
+	register int i, j;
 
-	return (a < b ? a : b);
+	for (i=0; var[i].name[0] != NULL; i++)
+		for (j=0; var[i].name[j] != NULL; j++)
+			if (strcmp(cp, var[i].name[j]) == 0)
+				return (&var[i]);
+	return (NULL);
 }
 
-pscomp(s1, s2)
-	struct savcom *s1, *s2;
+printval(bp, v)
+	char *bp;
+	struct var *v;
 {
-	register int i;
+	static char ofmt[16] = "%";
+	char *cp = ofmt+1;
 
-	if (uflg)
-		return (s2->s_un.u_pctcpu > s1->s_un.u_pctcpu ? 1 : -1);
-	if (vflg)
-		return (vsize(s2) - vsize(s1));
-	i = s1->ap->a_ttyd - s2->ap->a_ttyd;
+	if (v->flag & LJUST)
+		*cp++ = '-';
+	*cp++ = '*';
+	*cp++ = *v->fmt;
+	*cp++ = '\0';
+
+	switch (v->type) {
+	case CHAR:
+		printf(ofmt, v->width, *(char *)bp);
+		break;
+
+	case UCHAR:
+		printf(ofmt, v->width, *(u_char *)bp);
+		break;
+
+	case SHORT:
+		printf(ofmt, v->width, *(short *)bp);
+		break;
+
+	case USHORT:
+		printf(ofmt, v->width, *(u_short *)bp);
+		break;
+
+	case LONG:
+		printf(ofmt, v->width, *(long *)bp);
+		break;
+
+	case ULONG:
+		printf(ofmt, v->width, *(u_long *)bp);
+		break;
+
+	case KPTR:
+		printf(ofmt, v->width, *(u_long *)bp &~ KERNBASE);
+		break;
+
+	default:
+		error("unknown type %d", v->type);
+	}
+}
+
+/* XXX - redo */
+struct usave *
+saveuser(ki) 
+	struct kinfo *ki;
+{
+	register struct usave *usp;
+	register struct user *up;
+	
+	if ((usp = (struct usave *)calloc(1, sizeof (struct usave))) == NULL) {
+		fprintf(stderr, "ps: out of memory\n");
+		exit(1);
+	}
+	ki->ki_u = usp;
+	up = kvm_getu(ki->ki_p);
+	/*
+	 * save arguments if needed
+	 */
+	if (needcomm)
+		ki->ki_args = saveargs(ki->ki_p, up);
+	else
+		ki->ki_args = NULL;
+	if (up != NULL) { 
+		/*
+		 * save important fields
+		 */
+		usp->u_procp = up->u_procp;
+		usp->u_start = up->u_start;
+		usp->u_ru = up->u_ru;
+		usp->u_cru = up->u_cru;
+		usp->u_cmask = up->u_cmask;
+		usp->u_acflag = up->u_acflag;
+	}
+	return;
+}
+
+char *
+saveargs(p, up)
+	struct proc *p;
+	struct user *up;
+{
+	char *savestr();
+
+	return(savestr(kvm_getargs(p, up)));
+}
+	
+
+pscomp(k1, k2)
+	struct kinfo *k1, *k2;
+{
+	int i;
+#define VSIZE(k) ((k)->ki_p->p_dsize + (k)->ki_p->p_ssize + (k)->ki_e->e_xsize)
+
+	if (sortby == SORTCPU)
+		return (getpcpu(k2) - getpcpu(k1));
+	if (sortby == SORTMEM)
+		return (VSIZE(k2) - VSIZE(k1));
+	i =  k1->ki_e->e_tdev - k2->ki_e->e_tdev;
 	if (i == 0)
-		i = s1->ap->a_pid - s2->ap->a_pid;
+		i = k1->ki_p->p_pid - k2->ki_p->p_pid;
 	return (i);
 }
 
-vsize(sp)
-	struct savcom *sp;
+donlist()
 {
-	register struct asav *ap = sp->ap;
-	register struct vsav *vp = sp->s_un.vp;
-	
-	if (ap->a_flag & SLOAD)
-		return (ap->a_rss +
-		    ap->a_txtrss / (ap->a_xccount ? ap->a_xccount : 1));
-	return (vp->v_swrss + (ap->a_xccount ? 0 : vp->v_txtswrss));
-}
-
-#include <utmp.h>
-
-struct	utmp utmp;
-#define	NMAX	(sizeof (utmp.ut_name))
-#define SCPYN(a, b)	strncpy(a, b, NMAX)
-
-#define NUID	64
-
-struct ncache {
-	int	uid;
-	char	name[NMAX+1];
-} nc[NUID];
-
-/*
- * This function assumes that the password file is hashed
- * (or some such) to allow fast access based on a uid key.
- */
-char *
-getname(uid)
-{
-	register struct passwd *pw;
-	struct passwd *getpwent();
-	register int cp;
-#ifdef notdef
-	extern int _pw_stayopen;
-
-	_pw_stayopen = 1;
-#endif
-
-#if	(((NUID) & ((NUID) - 1)) != 0)
-	cp = uid % (NUID);
-#else
-	cp = uid & ((NUID) - 1);
-#endif
-	if (uid >= 0 && nc[cp].uid == uid && nc[cp].name[0])
-		return (nc[cp].name);
-	pw = getpwuid(uid);
-	if (!pw)
-		return (0);
-	nc[cp].uid = uid;
-	SCPYN(nc[cp].name, pw->pw_name);
-	return (nc[cp].name);
+	if (kvm_nlist(psnl) != 0)
+		error("can't get namelist");
+	if (kvm_read(psnl[X_FSCALE].n_value, &fscale, sizeof(int)) !=
+	    sizeof (int))
+		error("error reading fscale: %s", kvm_geterr());
+	if (kvm_read(psnl[X_ECMX].n_value, &ecmx, sizeof(int)) !=
+	    sizeof (int))
+		error("error reading ecmx: %s", kvm_geterr());
+	if (kvm_read(psnl[X_CCPU].n_value, &ccpu, sizeof(fixpt_t)) !=
+	    sizeof (fixpt_t))
+		error("error reading ccpu: %s", kvm_geterr());
 }
 
 char *
@@ -1580,244 +1170,81 @@ savestr(cp)
 	return (dp);
 }
 
-/*
- * This routine was stolen from adb to simulate memory management
- * on the VAX.
- */
-off_t
-vtophys(loc)
-long	loc;
+error(a, b, c, d, e)
+	char *a, *b, *c, *d, *e;
 {
-	register	p;
-	off_t	newloc;
+	fprintf(stderr, "ps: ");
+	fprintf(stderr, a, b, c, d, e);
+	fprintf(stderr, "\n");
+	exit(1);
+}
 
-	newloc = loc & ~KERNBASE;
-	p = btop(newloc);
-	if ((loc & KERNBASE) == 0) {
-		fprintf(stderr, "Vtophys: translating non-kernel address\n");
-		return((off_t) -1);
-	}
-	if (p >= Syssize) {
-		fprintf(stderr, "Vtophys: page out of bound (%d>=%d)\n",
-			p, Syssize);
-		return((off_t) -1);
-	}
-	if (Sysmap[p].pg_v == 0
-	&& (Sysmap[p].pg_fod || Sysmap[p].pg_pfnum == 0)) {
-		fprintf(stderr, "Vtophys: page not valid\n");
-		return((off_t) -1);
-	}
-	loc = (long) (ptob(Sysmap[p].pg_pfnum) + (loc & PGOFSET));
-	return(loc);
+syserror(a)
+	char *a;
+{
+	extern errno;
+
+	error("%s: %s", a, strerror(errno));
 }
 
 /*
- * since we can't init unions, the cleanest way to use a.out.h instead
- * of nlist.h (required since nlist() uses some defines) is to do a
- * runtime copy into the nl array -- sigh
- */
-init_nlist()
-{
-	register struct nlist *np;
-	register char **namep;
-
-	nllen = sizeof nl_names / sizeof (char *);
-	np = nl = (struct nlist *) malloc(nllen * sizeof (struct nlist));
-	if (np == NULL) {
-		fprintf(stderr, "ps: out of memory allocating namelist\n");
-		exit(1);
-	}
-	namep = &nl_names[0];
-	while (nllen > 0) {
-		np->n_un.n_name = *namep;
-		if (**namep == '\0')
-			break;
-		namep++;
-		np++;
-	}
-}
-
-/*
- * nlist - retreive attributes from name list (string table version)
- * 	modified to add wait channels - Charles R. LaBrec 8/85
- */
-nlist(name, list)
-	char *name;
-	struct nlist *list;
-{
-	register struct nlist *p, *q;
-	register char *s1, *s2;
-	register n, m;
-	int maxlen, nreq;
-	FILE *f;
-	FILE *sf;
-	off_t sa;		/* symbol address */
-	off_t ss;		/* start of strings */
-	int type;
-	struct exec buf;
-	struct nlist space[BUFSIZ/sizeof (struct nlist)];
-	char nambuf[BUFSIZ];
-
-	maxlen = 0;
-	for (q = list, nreq = 0; q->n_un.n_name && q->n_un.n_name[0]; q++, nreq++) {
-		q->n_type = 0;
-		q->n_value = 0;
-		q->n_desc = 0;
-		q->n_other = 0;
-		n = strlen(q->n_un.n_name);
-		if (n > maxlen)
-			maxlen = n;
-	}
-	f = fopen(name, "r");
-	if (f == NULL)
-		return (-1);
-	fread((char *)&buf, sizeof buf, 1, f);
-	if (N_BADMAG(buf)) {
-		fclose(f);
-		return (-1);
-	}
-	sf = fopen(name, "r");
-	if (sf == NULL) {
-		/* ??? */
-		fclose(f);
-		return(-1);
-	}
-	sa = N_SYMOFF(buf);
-	ss = sa + buf.a_syms;
-	n = buf.a_syms;
-	fseek(f, sa, 0);
-	while (n) {
-		m = sizeof (space);
-		if (n < m)
-			m = n;
-		if (fread((char *)space, m, 1, f) != 1)
-			break;
-		n -= m;
-		for (q = space; (m -= sizeof(struct nlist)) >= 0; q++) {
-			if (q->n_un.n_strx == 0 || q->n_type & N_STAB)
-				continue;
-			/*
-			 * since we know what type of symbols we will get,
-			 * we can make a quick check here -- crl
-			 */
-			type = q->n_type & (N_TYPE | N_EXT);
-			if ((q->n_type & N_TYPE) != N_ABS
-			    && type != (N_EXT | N_DATA)
-			    && type != (N_EXT | N_BSS))
-				continue;
-			fseek(sf, ss+q->n_un.n_strx, 0);
-			fread(nambuf, maxlen+1, 1, sf);
-			/* if using wchans, add it to the list of channels */
-			if (!nflg)
-				addchan(&nambuf[1], (caddr_t) q->n_value);
-			for (p = list; p->n_un.n_name && p->n_un.n_name[0]; p++) {
-				s1 = p->n_un.n_name;
-				s2 = nambuf;
-				if (strcmp(p->n_un.n_name, nambuf) == 0) {
-					p->n_value = q->n_value;
-					p->n_type = q->n_type;
-					p->n_desc = q->n_desc;
-					p->n_other = q->n_other;
-					--nreq;
-					break;
-				}
-			}
-		}
-	}
-alldone:
-	fclose(f);
-	fclose(sf);
-	return (nreq);
-}
-
-/*
- * add the given channel to the channel list
- */
-addchan(name, caddr)
-char *name;
-caddr_t caddr;
-{
-	static int left = 0;
-	register struct wchan *wp;
-	register char **p;
-
-	for (p = wchan_stop_list; *p; p++) {
-		if (**p != *name)	/* quick check first */
-			continue;
-		if (strncmp(name, *p, WNAMESIZ) == 0)
-			return;		/* if found, don't add */
-	}
-	if (left == 0) {
-		if (wchanhd) {
-			left = 100;
-			wchanhd = (struct wchan *) realloc(wchanhd,
-				(nchans + left) * sizeof (struct wchan));
-		} else {
-			left = 600;
-			wchanhd = (struct wchan *) malloc(left
-				* sizeof (struct wchan));
-		}
-		if (wchanhd == NULL) {
-			fprintf(stderr, "ps: out of memory allocating wait channels\n");
-			nflg++;
-			return;
-		}
-	}
-	left--;
-	wp = &wchanhd[nchans++];
-	strncpy(wp->wc_name, name, WNAMESIZ);
-	wp->wc_name[WNAMESIZ] = '\0';
-	wp->wc_caddr = caddr;
-}
-
-/*
- * returns the symbolic wait channel corresponding to chan
+ * ICK (all for getopt), would rather hide the ugliness
+ * here than taint the main code.
+ *
+ *  ps foo -> ps -foo
+ *  ps 34 -> ps -p34
+ *
+ * The old convention that 't' with no trailing tty arg means the users
+ * tty, is only supported if argv[1] doesn't begin with a '-'.  This same
+ * feature is available with the option 'T', which takes no argument.
  */
 char *
-getchan(chan)
-register caddr_t chan;
+kludge_oldps_options(s)
+	char *s;
 {
-	register i, iend;
-	register char *prevsym;
-	register struct wchan *wp;
+	int len = strlen(s), numlen = 0;
+	char *newopts, *ns, *cp;
 
-	prevsym = "???";		/* nothing, to begin with */
-	if (chan) {
-		for (i = 0; i < NWCINDEX; i++)
-			if ((unsigned) chan < (unsigned) wchan_index[i])
-				break;
-		iend = i--;
-		if (i < 0)		/* can't be found */
-			return prevsym;
-		iend *= nchans;
-		iend /= NWCINDEX;
-		i *= nchans;
-		i /= NWCINDEX;
-		wp = &wchanhd[i];
-		for ( ; i < iend; i++, wp++) {
-			if ((unsigned) wp->wc_caddr > (unsigned) chan)
-				break;
-			prevsym = wp->wc_name;
+	if ((newopts = ns = (char *)malloc(len+2)) == NULL)
+		error("out of memory");
+	/*
+	 * options begin with '-'
+	 */
+	if (*s != '-')
+		*ns++ = '-';	/* add option flag */
+	/*
+	 * gaze to end of argv[1]
+	 */
+	cp = s + len - 1;
+	/*
+	 * if last letter is a 't' flag with no argument (in the context
+	 * of the oldps options -- option string NOT starting with a '-' --
+	 * then convert to 'T' (meaning *this* terminal, i.e. ttyname(0).
+	 */
+	if (*cp == 't' && *s != '-')
+		*cp = 'T';
+	else {
+		/*
+		 * otherwise check for trailing number, which *may* be a
+		 * pid.
+		 */
+		while (isdigit(*cp)) {
+			--cp;
+			numlen++;
 		}
 	}
-	return prevsym;
-}
+	cp++;
+	bcopy(s, ns, cp - s);	/* copy everything up to trailing number */
+	while (*ns)
+		ns++;
+	/*
+	 * if there's a trailing number, and not a preceding 'p' (pid) or
+	 * 't' (tty) flag, then assume it's a pid and insert a 'p' flag.
+	 */
+	if (isdigit(*cp) && (cp == s || *(cp-1) != 't' && *(cp-1) != 'p' &&
+	   ((cp-1) == s || *(cp-2) != 't')))
+		*ns++ = 'p';
+	strcat(ns, cp);		/* and append the number */
 
-/*
- * used in sorting the wait channel array
- */
-int
-wchancomp (w1, w2)
-struct wchan *w1, *w2;
-{
-	register unsigned c1, c2;
-
-	c1 = (unsigned) w1->wc_caddr;
-	c2 = (unsigned) w2->wc_caddr;
-	if (c1 > c2)
-		return 1;
-	else if (c1 == c2)
-		return 0;
-	else
-		return -1;
+	return (newopts);
 }
