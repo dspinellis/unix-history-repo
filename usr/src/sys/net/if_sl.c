@@ -79,7 +79,6 @@ struct sl_softc {
 
 /* flags */
 #define	SC_ESCAPED	0x0001	/* saw a FRAME_ESCAPE */
-#define	SC_OACTIVE	0x0002	/* output tty is active */
 
 #define FRAME_END	 	0300		/* Frame End */
 #define FRAME_ESCAPE		0333		/* Frame Esc */
@@ -224,7 +223,7 @@ sloutput(ifp, m, dst)
 		return (ENOBUFS);
 	}
 	IF_ENQUEUE(&ifp->if_snd, m);
-	if ((sc->sc_flags & SC_OACTIVE) == 0) {
+	if (sc->sc_ttyp->t_outq.c_cc == 0) {
 		splx(s);
 		slstart(sc->sc_ttyp);
 	} else
@@ -244,7 +243,7 @@ slstart(tp)
 	register struct mbuf *m;
 	register int len;
 	register u_char *cp;
-	int flush, nd, np, n, s;
+	int nd, np, n, s;
 	struct mbuf *m2;
 	extern int cfreecount;
 
@@ -269,8 +268,7 @@ slstart(tp)
 		 * If system is getting low on clists
 		 * and we have something running already, stop here.
 		 */
-		if (cfreecount < CLISTRESERVE + SLMTU &&
-		    sc->sc_flags & SC_OACTIVE)
+		if (cfreecount < CLISTRESERVE + SLMTU && tp->t_outq.c_cc == 0)
 			return;
 
 		/*
@@ -278,22 +276,16 @@ slstart(tp)
 		 */
 		s = splimp();
 		IF_DEQUEUE(&sc->sc_if.if_snd, m);
-		if (m == NULL) {
-			if (tp->t_outq.c_cc == 0)
-				sc->sc_flags &= ~SC_OACTIVE;
-			splx(s);
-			return;
-		}
-		flush = !(sc->sc_flags & SC_OACTIVE);
-		sc->sc_flags |= SC_OACTIVE;
 		splx(s);
+		if (m == NULL)
+			return;
 
 		/*
 		 * The extra FRAME_END will start up a new packet, and thus
 		 * will flush any accumulated garbage.  We do this whenever
 		 * the line may have been idle for some time.
 		 */
-		if (flush)
+		if (tp->t_outq.c_cc == 0)
 			(void) putc(FRAME_END, &tp->t_outq);
 
 		while (m) {
@@ -361,10 +353,7 @@ slinit(sc)
 	struct mbuf *p;
 
 	if (sc->sc_buf == (char *) 0) {
-		int s = splimp();
-
 		MCLALLOC(p, 1);
-		splx(s);
 		if (p) {
 			sc->sc_buf = (char *)p;
 			sc->sc_mp = sc->sc_buf + sizeof(struct ifnet *);
