@@ -1,0 +1,1804 @@
+SLAVE
+910308191832Z
+domainComponent=uk
+objectClass= top & thornObject & domain & quipuObject & quipuNonLeafObject
+seeAlso= cn=Maned Sloth
+info= Experimental part of the DIT.
+lastModifiedTime= 910219084529Z
+lastModifiedBy= c=GB@o=X-Tel Services Ltd@cn=Camayoc
+domainComponent= uk
+associatedName= c=GB
+acl= others # read # child &\
+	group # c=GB@o=Edinburgh University@cn=X500-control # write # child &\
+	others # read # entry &\
+	group # c=GB@o=Edinburgh University@cn=X500-control # write # entry &\
+	others # read # default &\
+	group # c=GB@o=Edinburgh University@cn=X500-control # write # default
+masterDSA= cn=Passionflower Leaf Beetle
+
+o=Cosine
+objectClass= top & organization & quipuObject & quipuNonLeafObject
+l= Europe
+o= Cosine
+description= The European COSINE project
+lastModifiedTime= 910225082246Z
+lastModifiedBy= c=GB@o=X-Tel Services Ltd@cn=Camayoc
+acl= 
+masterDSA= cn=Giant Tortoise
+slaveDSA= cn=False Cobra
+
+o=Internet
+objectClass= top & organization & quipuObject & quipuNonLeafObject
+o= Internet
+description= The world-wide Internet
+lastModifiedTime= 900427122054Z
+lastModifiedBy= c=GB@o=University College London@ou=Computer Science@cn=incads
+acl= others # read # child &\
+	others # read # entry &\
+	group # c=US@cn=Manager # write # entry &\
+	others # read # default &\
+	group # c=US@cn=Manager # write # default
+masterDSA= cn=Alpaca
+slaveDSA= cn=Giant Tortoise &\
+	cn=Giant Anteater &\
+	cn=Fruit Bat
+
+l=North America
+objectClass= top & locality & quipuObject & quipuNonLeafObject
+l= North America
+description= The North American Continent
+lastModifiedTime= 891204164105Z
+lastModifiedBy= c=GB@o=University College London@ou=Computer Science@cn=incads
+acl= others # read # child &\
+	others # read # entry &\
+	group # c=US@cn=Manager # write # entry &\
+	others # read # default &\
+	group # c=US@cn=Manager # write # default
+masterDSA= cn=Alpaca
+slaveDSA= cn=Giant Tortoise &\
+	cn=Giant Anteater &\
+	cn=Fruit Bat
+
+c=AT
+objectClass= top & country & thornObject & domainRelatedObject & quipuObject & friendlyCountry & quipuNonLeafObject
+c= AT
+lastModifiedTime= 910122094341Z
+lastModifiedBy= c=GB@o=X-Tel Services Ltd@cn=Camayoc
+associatedDomain= at
+acl= others # read # child &\
+	group # c=AT@cn=DS-Manager # add # child &\
+	others # read # entry &\
+	group # c=AT@cn=DS-Manager # write # entry &\
+	others # read # default &\
+	group # c=AT@cn=DS-Manager # write # default
+masterDSA= cn=Piranah
+co= Oesterreich &\
+	Austria &\
+	AT
+
+c=AU
+objectClass= top & country & domainRelatedObject & quipuObject & friendlyCountry & quipuNonLeafObject
+c= AU
+description= The Great Country of Oz
+lastModifiedTime= 901116112817Z
+lastModifiedBy= c=GB@o=X-Tel Services Ltd@cn=Camayoc
+associatedDomain= oz &\
+	au
+acl= others # read # child &\
+	group # c=AU@cn=Manager # write # child &\
+	others # read # entry &\
+	group # c=AU@cn=Manager # write # entry &\
+	others # read # default &\
+	group # c=AU@cn=Manager # write # default
+masterDSA= cn=anaconda
+slaveDSA= cn=Vampire Bat &\
+	cn=Giant Tortoise &\
+	cn=Bush Dog
+co= Commonwealth of Australia &\
+	Australia &\
+	AU
+
+c=CA
+objectClass= top & country & domainRelatedObject & quipuObject & friendlyCountry & quipuNonLeafObject
+c= CA
+lastModifiedTime= 901116112841Z
+lastModifiedBy= c=GB@o=X-Tel Services Ltd@cn=Camayoc
+associatedDomain= ca
+acl= others # read # entry &\
+	group # c=CA@cn=Manager # write # entry &\
+	others # read # default &\
+	group # c=CA@cn=Manager # write # default
+masterDSA= cn=Wayne Gretzky
+slaveDSA= cn=Vampire Bat &\
+	cn=Giant Tortoise
+co= Canada
+
+c=CH
+objectClass= top & country & domainRelatedObject & quipuObject & friendlyCountry & quipuNonLeafObject
+c= CH
+lastModifiedTime= 910306120536Z
+lastModifiedBy= c=CH@o=Chinchilla Mgmt@cn=manager
+associatedDomain= ch
+treeStructure= top & alias & organization & person & applicationEntity & dSA & thornObject & thornPerson & quipuDSA & quipuObject & quipuNonLeafObject
+acl= others # read # child &\
+	group # c=CH@o=Chinchilla Mgmt@cn=Manager # write # child &\
+	group # c=CH@o=Chinchilla Mgmt@cn=Manager # write # entry &\
+	others # read # entry &\
+	group # c=CH@o=Chinchilla Mgmt@cn=Manager # write # default &\
+	others # read # default
+masterDSA= cn=Chinchilla
+slaveDSA= c=CH@cn=chin &\
+	c=CH@cn=chaos &\
+	c=CH@cn=Cat &\
+	cn=Vampire Bat &\
+	cn=Giant Tortoise &\
+	cn=Condor
+co= Switzerland &\
+	Svizzera &\
+	Suisse &\
+	Schweiz &\
+	CH
+
+c=DE
+objectClass= top & country & thornObject & domainRelatedObject & quipuObject & friendlyCountry & quipuNonLeafObject
+c= DE
+lastModifiedTime= 901212150501Z
+lastModifiedBy= c=DE@cn=ds-manager
+associatedDomain= de
+acl= group # c=DE@cn=ds-manager # add # child &\
+	others # read # child &\
+	group # c=DE@cn=ds-manager # write # entry &\
+	others # read # entry &\
+	group # c=DE@cn=ds-manager # write # default &\
+	others # read # default
+masterDSA= cn=Puma
+slaveDSA= c=DE@cn=uni-stuttgart.dsa &\
+	c=DE@cn=uni-regensburg.dsa &\
+	c=DE@cn=uni-dortmund.dsa &\
+	c=DE@cn=LRZ muenchen.dsa &\
+	c=DE@cn=ADW.dsa &\
+	cn=Vampire Bat &\
+	cn=Margay &\
+	cn=Giant Tortoise
+co= West Germany &\
+	FRG &\
+	Federal Republic of Germany &\
+	DE &\
+	Bundesrepublik Deutschland
+
+c=DK
+objectClass= top & country & domainRelatedObject & quipuObject & friendlyCountry & quipuNonLeafObject
+c= DK
+description= A flat country with high taxes and free hospitals
+lastModifiedTime= 901116112944Z
+lastModifiedBy= c=GB@o=X-Tel Services Ltd@cn=Camayoc
+associatedDomain= dk
+acl= others # read # entry &\
+	group # c=DK@cn=Manager # write # entry &\
+	others # read # default &\
+	group # c=DK@cn=Manager # write # default
+masterDSA= cn=Axolotl
+slaveDSA= cn=Vampire Bat &\
+	cn=Jaguar &\
+	cn=Hummingbird &\
+	cn=Giant Tortoise &\
+	cn=Elephant Seal &\
+	cn=Electric Eel
+co= The Kingdom of Denmark &\
+	DK &\
+	Denmark
+
+c=ES
+objectClass= top & country & domainRelatedObject & quipuObject & friendlyCountry & quipuNonLeafObject
+c= ES
+description= Spain
+lastModifiedTime= 910308191831Z
+lastModifiedBy= c=ES@o=Programa IRIS@cn=Ignacio Martinez
+associatedDomain= es
+acl= others # read # entry &\
+	group # c=ES@o=Programa IRIS@cn=Ignacio Martinez # write # entry &\
+	group # c=ES@o=Programa IRIS@cn=Ignacio Martinez # write # default &\
+	others # read # default
+masterDSA= cn=Iguana
+slaveDSA= cn=Giant Tortoise &\
+	cn=False Cobra &\
+	cn=Cayman
+co= Spain
+
+c=FI
+objectClass= top & country & domainRelatedObject & quipuObject & friendlyCountry & quipuNonLeafObject
+c= FI
+lastModifiedTime= 901116113021Z
+lastModifiedBy= c=GB@o=X-Tel Services Ltd@cn=Camayoc
+associatedDomain= fi
+acl= group # c=FI@cn=Directory Manager # write # child &\
+	others # read # child &\
+	others # read # entry &\
+	group # c=FI@cn=Directory Manager # write # entry &\
+	group # c=FI@cn=Directory Manager # write # default &\
+	others # read # default
+masterDSA= cn=Jaguar
+slaveDSA= cn=Vampire Bat &\
+	cn=Hummingbird &\
+	cn=Giant Tortoise &\
+	cn=Elephant Seal &\
+	cn=Electric Eel &\
+	cn=Axolotl &\
+	cn=Agouti
+co= Finland &\
+	FI
+
+c=GB
+objectClass= top & country & domainRelatedObject & quipuObject & friendlyCountry & quipuNonLeafObject
+c= GB
+lastModifiedTime= 910218114237Z
+lastModifiedBy= o=Cosine@ou=Paradise@cn=Camayoc
+associatedDomain= uk &\
+	gb
+treeStructure= top & locality & organization & thornObject & domainRelatedObject & quipuDSA & quipuObject & quipuNonLeafObject
+acl= group # c=GB@o=X-Tel Services Ltd@cn=Camayoc # write # entry &\
+	others # read # entry &\
+	group # c=GB@o=X-Tel Services Ltd@cn=Camayoc # write # default &\
+	others # read # default
+masterDSA= cn=Giant Tortoise
+slaveDSA= cn=Puma &\
+	cn=False Cobra &\
+	cn=Electric Eel
+co= Wales &\
+	United Kingdom of Great Britain and Northern Ireland &\
+	United Kingdom &\
+	UK &\
+	Scotland &\
+	Northern Ireland &\
+	Great Britain &\
+	GB &\
+	England
+
+c=IS
+objectClass= top & country & domainRelatedObject & quipuObject & friendlyCountry & quipuNonLeafObject
+c= IS
+description= Iceland
+lastModifiedTime= 901116113046Z
+lastModifiedBy= c=GB@o=X-Tel Services Ltd@cn=Camayoc
+associatedDomain= is
+acl= 
+masterDSA= cn=Elephant Seal
+slaveDSA= cn=Vampire Bat &\
+	cn=Giant Tortoise
+co= Iceland
+
+c=IT
+objectClass= top & country & domainRelatedObject & quipuObject & friendlyCountry & externalNonLeafObject
+c= IT
+lastModifiedTime= 910227131411Z
+lastModifiedBy= c=GB@o=X-Tel Services Ltd@cn=Camayoc
+associatedDomain= it
+acl= 
+co= Italy
+subordinateReference= c=IT@o=sw@cn=swdsa # "SWDSA"/"1"/X121+22221110283
+
+c=NL
+objectClass= top & country & domainRelatedObject & quipuObject & friendlyCountry & quipuNonLeafObject
+c= NL
+description= The Netherlands
+lastModifiedTime= 901116113104Z
+lastModifiedBy= c=GB@o=X-Tel Services Ltd@cn=Camayoc
+associatedDomain= nl
+acl= others # read # entry &\
+	group # c=NL@cn=Manager # write # entry &\
+	others # read # default &\
+	group # c=NL@cn=Manager # write # default
+masterDSA= cn=Hornero
+slaveDSA= cn=Vampire Bat &\
+	cn=Giant Tortoise &\
+	cn=Agouti
+co= The Kingdom of the Netherlands &\
+	Pays-Bas &\
+	Ollanda &\
+	Niederlande &\
+	Netherlands &\
+	Nederland &\
+	Koninkrijk der Nederlanden &\
+	Holland
+
+c=NO
+objectClass= top & country & domainRelatedObject & quipuObject & friendlyCountry & quipuNonLeafObject
+c= NO
+description= The land of the Vikings.
+lastModifiedTime= 901116113119Z
+lastModifiedBy= c=GB@o=X-Tel Services Ltd@cn=Camayoc
+associatedDomain= uninett &\
+	no
+acl= others # read # entry &\
+	group # c=NO@o=Universitetet i Oslo@cn=DSA Manager # write # entry &\
+	others # read # default &\
+	group # c=NO@o=Universitetet i Oslo@cn=DSA Manager # write # default
+masterDSA= cn=Electric Eel
+slaveDSA= cn=Vampire Bat &\
+	cn=Jaguar &\
+	cn=Hummingbird &\
+	cn=Giant Tortoise &\
+	cn=Elephant Seal &\
+	cn=Boa Constrictor &\
+	cn=Agouti
+co= The Kingdom of Norway &\
+	Norway &\
+	Norge &\
+	Noreg &\
+	NO
+
+c=SE
+objectClass= top & country & domainRelatedObject & quipuObject & friendlyCountry & quipuNonLeafObject
+c= SE
+lastModifiedTime= 901116113136Z
+lastModifiedBy= c=GB@o=X-Tel Services Ltd@cn=Camayoc
+associatedDomain= se
+acl= group # c=SE@cn=Manager # write # entry &\
+	others # read # entry &\
+	group # c=SE@cn=Manager # write # default &\
+	others # read # default
+masterDSA= cn=Hummingbird
+slaveDSA= cn=Vampire Bat &\
+	cn=Jaguar &\
+	cn=Giant Tortoise &\
+	cn=Elephant Seal &\
+	cn=Electric Eel &\
+	cn=Axolotl &\
+	cn=Agouti
+co= The Kingdom of Sweden &\
+	Sweden &\
+	SE
+
+c=US
+objectClass= top & country & domainRelatedObject & quipuObject & friendlyCountry & quipuNonLeafObject
+c= US
+description= Land of the Free and the Home of the Brave
+lastModifiedTime= 901116113152Z
+lastModifiedBy= c=GB@o=X-Tel Services Ltd@cn=Camayoc
+associatedDomain= us &\
+	net &\
+	mil &\
+	gov &\
+	edu &\
+	com &\
+	bitnet
+acl= others # read # entry &\
+	group # c=US@cn=Manager # write # entry &\
+	others # read # default &\
+	group # c=US@cn=Manager # write # default
+masterDSA= cn=Alpaca
+slaveDSA= cn=Vampire Bat &\
+	cn=Giant Tortoise &\
+	cn=Giant Anteater &\
+	cn=Fruit Bat &\
+	cn=Electric Eel
+co= USA &\
+	US &\
+	United States of America
+
+cn=Agouti
+objectClass= top & applicationEntity & dSA & domainRelatedObject & quipuDSA & quipuObject
+cn= Agouti
+l= NL
+description= Operated by NIKHEF-H this DSA is a slave for the Netherlands, a master for NIKHEF-H and other WCW Labs. &\
+	Apollo 4000 running SR10.2 BSD4.3, No X.25 (Yet)
+presentationAddress= '0101'H/TELEX+00728722+RFC-1006+03+192.16.186.25+17004
+supportedApplicationContext= X500DSP & X500DAP & quipuDSP
+userPassword= {CRYPT}SBSFQ\14QLPFP
+manager= c=NL@o=NIKHEF-H@cn=Manager
+lastModifiedTime= 900628080141Z
+lastModifiedBy= c=GB@o=University College London@ou=Computer Science@cn=Incads
+associatedDomain= nl
+acl= others # read # child &\
+	group # c=NL@cn=Manager # write # entry &\
+	others # read # entry &\
+	group # c=NL@cn=Manager # write # default &\
+	others # read # default
+eDBinfo= #cn=Hummingbird# &\
+	c=US#cn=Alpaca# &\
+	c=SE#cn=Hummingbird# &\
+	c=NO#cn=Electric Eel# &\
+	c=NL#cn=Hornero# &\
+	c=IS#cn=Elephant Seal# &\
+	c=GB#cn=Giant Tortoise# &\
+	c=FI#cn=Jaguar# &\
+	c=ES#cn=Iguana# &\
+	c=DK#cn=Axolotl# &\
+	c=DE#cn=Puma# &\
+	c=CA#cn=Wayne Gretzky# &\
+	c=AU#cn=anaconda#
+quipuVersion= quipu 6.0 \231 (sursun) of Thu Mar 22 12:47:36 MET 1990
+
+cn=Alpaca
+objectClass= top & applicationEntity & dSA & quipuDSA & quipuObject
+cn= Alpaca
+l= Troy, New York, US
+description= The Wily Alpaca &\
+	Operated by PSI Inc. &\
+	Master DSA for o=Internet &\
+	Master DSA for o=DMD under c=US &\
+	Master DSA for l=North America &\
+	Master DSA for c=US
+presentationAddress= '0101'H/TELEX+00728722+RFC-1006+03+192.33.4.20+17007
+supportedApplicationContext= X500DSP & X500DAP & quipuDSP
+userPassword= {CRYPT}BOSB\40B
+manager= c=US@cn=Manager
+lastModifiedTime= 910225231600Z
+lastModifiedBy= c=US@cn=Manager
+acl= others # read # entry &\
+	group # c=US@cn=Manager # write # entry &\
+	others # read # default &\
+	group # c=US@cn=Manager # write # default
+eDBinfo= ##c=US@cn=Boa Constrictor &\
+	##cn=Giant Anteater &\
+	##cn=Fruit Bat &\
+	#cn=Giant Tortoise# &\
+	o=Internet##c=US@cn=White-nosed Saki &\
+	o=Internet##c=US@cn=Condor &\
+	o=Internet##cn=Giant Tortoise &\
+	o=Internet##cn=Giant Anteater &\
+	o=Internet##cn=Fruit Bat &\
+	o=Cosine#cn=Giant Tortoise# &\
+	o=Cosine@ou=Paradise#cn=Giant Tortoise# &\
+	l=North America##c=US@cn=Condor &\
+	l=North America##cn=Giant Tortoise &\
+	l=North America##cn=Giant Anteater &\
+	l=North America##cn=Wayne Gretzky &\
+	l=North America##cn=Fruit Bat &\
+	c=US##c=US &\
+	c=US##cn=Giant Tortoise &\
+	c=US##cn=Giant Anteater &\
+	c=US##cn=Electric Eel &\
+	c=US##cn=Fruit Bat &\
+	c=US##cn=Agouti &\
+	c=US@o=DMD##c=US@cn=Juan Fernandez Fur Seal &\
+	c=US@o=DMD##c=US@cn=Boa Constrictor &\
+	c=US@o=DMD##c=US@cn=Condor &\
+	c=US@o=DMD##cn=Giant Tortoise &\
+	c=US@o=DMD##cn=Giant Anteater &\
+	c=US@o=DMD##cn=Fruit Bat &\
+	c=SE#cn=Hummingbird# &\
+	c=NO#cn=Electric Eel# &\
+	c=NL#cn=Hornero# &\
+	c=IS#cn=Elephant Seal# &\
+	c=GB#cn=Giant Tortoise# &\
+	c=FI#cn=Jaguar# &\
+	c=ES#cn=Iguana# &\
+	c=DK#cn=Axolotl# &\
+	c=DE#cn=Puma# &\
+	c=CH#cn=Chinchilla# &\
+	c=CA#cn=Wayne Gretzky# &\
+	c=AU#cn=Anaconda#
+quipuVersion= quipu 6.8 \23132 (osi.nyser.net) of Thu Mar 7 10:03:38 EST 1991
+relayDSA= cn=Giant Tortoise
+
+cn=Anaconda
+objectClass= top & applicationEntity & dSA & quipuDSA
+cn= Anaconda
+l= AU
+description= Master DSA for c=AU QUIPU namespace &\
+	Anaconda DSA, running X.25 and TCP/IP on brolga.cc.uq.oz.au &\
+	A large snake with a disgustingly rapacious appetite
+presentationAddress= '0101'H/TELEX+00728722+X.25(80)+01+50527372000048+PID+03018100|TELEX+00728722+RFC-1006+03+130.102.128.5+17705
+supportedApplicationContext= X500DSP & X500DAP & quipuDSP
+seeAlso= cn=Bush Dog
+userPassword= {CRYPT}BMB\40LMGB
+manager= c=AU@cn=Manager
+lastModifiedTime= 910108030325Z
+lastModifiedBy= c=AU@cn=Manager
+acl= others # read # child &\
+	others # read # entry &\
+	group # c=AU@cn=Manager # write # entry &\
+	others # read # default &\
+	group # c=AU@cn=Manager # write # default
+eDBinfo= ##c=AU@cn=Brown Pelican &\
+	##c=AU@cn=Tiger &\
+	##c=AU@cn=Guanaco &\
+	##c=AU@cn=Thylacine &\
+	##c=AU@cn=Macaw &\
+	##c=AU@cn=Axolotl &\
+	##c=AU@cn=Long Haired Spider Monkey &\
+	##c=AU@cn=Little Spotted Cat &\
+	##c=AU@cn=Maned Sloth &\
+	##cn=Bush Dog &\
+	#cn=Giant Tortoise# &\
+	c=AU##c=AU@cn=Brown Pelican &\
+	c=AU##c=AU@cn=Tiger &\
+	c=AU##c=AU@cn=Guanaco &\
+	c=AU##c=AU@cn=Thylacine &\
+	c=AU##c=AU@cn=Macaw &\
+	c=AU##c=AU@cn=Axolotl &\
+	c=AU##c=AU@cn=Long Haired Spider Monkey &\
+	c=AU##cn=Electric Eel &\
+	c=AU##cn=Alpaca &\
+	c=AU##cn=Giant Tortoise &\
+	c=AU##cn=Agouti &\
+	c=AU##cn=Fruit Bat &\
+	c=AU##cn=Giant Anteater &\
+	c=AU##c=AU@cn=Little Spotted Cat &\
+	c=AU##c=AU@cn=Maned Sloth &\
+	c=AU##cn=Bush Dog &\
+	c=AU@o=DMD##c=AU@cn=Brown Pelican &\
+	c=AU@o=DMD##c=AU@cn=Tiger &\
+	c=AU@o=DMD##c=AU@cn=Guanaco &\
+	c=AU@o=DMD##c=AU@cn=Thylacine &\
+	c=AU@o=DMD##c=AU@cn=Macaw &\
+	c=AU@o=DMD##c=AU@cn=Maned Sloth &\
+	c=AU@o=DMD##c=AU@cn=Long Haired Spider Monkey &\
+	c=AU@o=DMD##c=AU@cn=Axolotl &\
+	c=AU@o=DMD##cn=Bush Dog &\
+	c=AU@o=DMD##c=AU@cn=Little Spotted Cat
+quipuVersion= quipu 6.8 \23119 (brolga) of Sun Feb 24 07:59:47 EST 1991
+relayDSA= cn=Giant Tortoise
+
+cn=Axolotl
+objectClass= top & applicationEntity & dSA & quipuDSA
+cn= Axolotl
+l= DK
+description= Master DSA of c=DK &\
+	A Mexican land newt
+presentationAddress= '0101'H/TELEX+00728722+RFC-1006+03+129.142.96.41+17003
+supportedApplicationContext= X500DSP & X500DAP & quipuDSP
+userPassword= {CRYPT}b[LOLWO
+manager= c=DK@cn=Manager
+lastModifiedTime= 900509101311Z
+lastModifiedBy= c=GB@o=University College London@ou=Computer Science@cn=incads
+acl= others # read # child &\
+	group # c=DK@cn=Manager # write # entry &\
+	others # read # entry &\
+	group # c=DK@cn=Manager # write # default &\
+	others # read # default
+eDBinfo= #cn=Giant Tortoise# &\
+	c=SE#cn=Hummingbird# &\
+	c=NO#cn=Electric Eel# &\
+	c=IS#cn=Elephant Seal# &\
+	c=FI#cn=Jaguar# &\
+	c=DK##cn=Jaguar$cn=Electric Eel$cn=Hummingbird$cn=Elephant Seal &\
+	c=DK##cn=Alpaca$cn=Fruit Bat$cn=Giant Anteater$cn=Giant Tortoise &\
+	c=DK##cn=Agouti
+quipuVersion= quipu 6.1 \232 (dkuug) of Thu Mar 29 13:53:53 MET DST 1990
+
+cn=Boa Constrictor
+objectClass= top & applicationEntity & dSA & quipuDSA
+cn= Boa Constrictor
+l= Gaustadalleen 23, Blindern, Oslo, Norway
+description= Backup root DSA for Norway. Located in Oslo, at the Universtity of Oslo
+presentationAddress= '0101'H/TELEX+00728722+RFC-1006+03+129.240.2.40+2005|TELEX+00728722+X.25(80)+01+2422110733006+PID+03018100|TELEX+00728722+X.25(80)+06+20434240061006+PID+03018100
+supportedApplicationContext= X500DSP & X500DAP & quipuDSP
+seeAlso= cn=Electric Eel
+userPassword= {CRYPT}\40LMPWQJ\40WLQ
+manager= c=NO@o=Universitetet i Oslo@cn=Geir Pedersen &\
+	c=NO@o=UNINETT@cn=Directory Manager
+lastModifiedTime= 910221092503Z
+lastModifiedBy= c=NO@o=Universitetet i Oslo@cn=geir Pedersen
+acl= others # read # child &\
+	group # c=NO@o=Universitetet i Oslo@cn=Geir Pedersen # write # entry &\
+	others # read # entry &\
+	group # c=NO@o=Universitetet i Oslo@cn=Geir Pedersen # write # default &\
+	others # read # default
+eDBinfo= ##c=NO@cn=Little Spotted Cat$c=NO@cn=Mountain Tapir$c=NO@cn=Iguana$c=NO@cn=Bush Dog &\
+	#cn=Electric Eel# &\
+	c=US#cn=Electric Eel# &\
+	c=SE#cn=Electric Eel# &\
+	c=NO##c=NO@cn=Mountain Tapir$c=NO@cn=Iguana$c=NO@cn=Bush Dog &\
+	c=NO##cn=Axolotl &\
+	c=NO#cn=Electric Eel# &\
+	c=NO@o=Universitetsstudiene pa Kjeller#cn=Electric Eel# &\
+	c=NO@o=Universitetet i Trondheim#cn=Electric Eel# &\
+	c=NO@o=Universitetet i Tromso#cn=Electric Eel# &\
+	c=NO@o=Universitetet i Oslo## &\
+	c=NO@o=Universitetet i Bergen#cn=Electric Eel# &\
+	c=NO@o=UNINETT#cn=Electric Eel# &\
+	c=NO@o=Tromso Satelittstasjon#cn=Electric Eel# &\
+	c=NO@o=Teledirektoratets Forskningsavdeling#cn=Electric Eel# &\
+	c=NO@o=SINTEF#cn=Electric Eel# &\
+	c=NO@o=Senter for Industriforskning#cn=Electric Eel# &\
+	c=NO@o=Ostfold Distriktshoyskole#cn=Electric Eel# &\
+	c=NO@o=Norsk Regnesentral#cn=Electric Eel# &\
+	c=NO@o=Norges Handelshoyskole#cn=Electric Eel# &\
+	c=NO@o=More og Romsdal Teknologisenter#cn=Electric Eel# &\
+	c=NO@o=Hoyskolesenteret i Nordland#cn=Electric Eel# &\
+	c=NO@o=Hogskolesenteret i Rogaland#cn=Electric Eel# &\
+	c=NO@o=Forsvarets Forskningsinstitutt#cn=Electric Eel# &\
+	c=NO@o=Forskningsstiftelsen ved Universitetet i Tromso#cn=Electric Eel# &\
+	c=NO@o=Distriktshoyskolen i Molde#cn=Electric Eel# &\
+	c=NO@o=Distribusjonslister#cn=Electric Eel# &\
+	c=NO@o=Bergen Larerhogskole#cn=Electric Eel# &\
+	c=NO@o=Bergen Ingeniorhogskole#cn=Electric Eel# &\
+	c=NO@l=Vestfold fylke#cn=Electric Eel# &\
+	c=NO@l=Vest-Agder fylke#cn=Electric Eel# &\
+	c=NO@l=Troms fylke#cn=Electric Eel# &\
+	c=NO@l=Telemark fylke#cn=Electric Eel# &\
+	c=NO@l=Sogn og Fjordane fylke#cn=Electric Eel# &\
+	c=NO@l=Soer-Troendelag fylke#cn=Electric Eel# &\
+	c=NO@l=Rogaland fylke#cn=Electric Eel# &\
+	c=NO@l=Oslo fylke#cn=Electric Eel# &\
+	c=NO@l=Oppland fylke#cn=Electric Eel# &\
+	c=NO@l=Oestfold fylke#cn=Electric Eel# &\
+	c=NO@l=Nordland fylke#cn=Electric Eel# &\
+	c=NO@l=Nord-Troendelag fylke#cn=Electric Eel# &\
+	c=NO@l=Moere og Romsdal fylke#cn=Electric Eel# &\
+	c=NO@l=Hordaland fylke#cn=Electric Eel# &\
+	c=NO@l=Hedemark fylke#cn=Electric Eel# &\
+	c=NO@l=Finnmark fylke#cn=Electric Eel# &\
+	c=NO@l=Buskerud fylke#cn=Electric Eel# &\
+	c=NO@l=Aust-Agder fylke#cn=Electric Eel# &\
+	c=NO@l=Akershus fylke#cn=Electric Eel# &\
+	c=IS#cn=Electric Eel# &\
+	c=GB#cn=Electric Eel# &\
+	c=FI#cn=Electric Eel# &\
+	c=DK#cn=Electric Eel#
+quipuVersion= quipu 6.4 \2320 (sylow) of Fri Jul 6 03:46:41 MET DST 1990
+
+cn=Bush Dog
+objectClass= top & applicationEntity & dSA & quipuDSA
+cn= Bush Dog
+l= Adelaide, AU
+description= Slave for AU &\
+	A wild dog, rarely trainable
+presentationAddress= '0101'H/TELEX+00728722+RFC-1006+03+129.127.40.4+17003
+supportedApplicationContext= X500DSP & X500DAP & quipuDSP
+seeAlso= cn=Anaconda
+userPassword= {CRYPT}AVPKGLD
+manager= c=AU@cn=Manager
+lastModifiedTime= 910212045908Z
+lastModifiedBy= c=AU@cn=Manager
+acl= others # read # child &\
+	group # c=AU@cn=Manager # write # entry &\
+	others # read # entry &\
+	group # c=AU@cn=Manager # write # default &\
+	others # read # default
+eDBinfo= ##c=AU@cn=Long Haired Spider Monkey &\
+	##c=AU@cn=Brown Pelican &\
+	#cn=Anaconda# &\
+	c=AU##c=AU@cn=Long Haired Spider Monkey &\
+	c=AU##c=AU@cn=Brown Pelican &\
+	c=AU#cn=Anaconda# &\
+	c=AU@o=University of Queensland#c=AU@cn=Axolotl# &\
+	c=AU@o=University of Adelaide#c=AU@cn=Maned Sloth# &\
+	c=AU@o=Australian Academic and Research Network#c=AU@cn=Maned Sloth#
+quipuVersion= quipu 6.7 \2371 (yoyo.adelaide.edu.au) of Wed Nov 28 15:19:30 CST 1990
+
+cn=Cayman
+objectClass= top & applicationEntity & dSA & quipuDSA
+cn= Cayman
+l= ES
+o= Universidad Politecnica de Madrid
+ou= Departamento de Ingenieria de Sistemas Telematicos
+description= American reptile resembling an aligator.
+presentationAddress= '0101'H/TELEX+00728722+RFC-1006+03+138.4.2.20+17003|TELEX+00728722+X.25(80)+01+21452120224271+PID+03018100|TELEX+00728722+X.25(80)+06+2043145100001+PID+03018100
+seeAlso= cn=Iguana
+userPassword= {CRYPT}\40BZNBM
+manager= c=ES@o=Universidad Politecnica de Madrid@ou=Departamento de Ingenieria de Sistemas Telematicos@cn=Pedro Sandoval
+lastModifiedTime= 910115155549Z
+lastModifiedBy= c=ES@o=Universidad Politecnica de Madrid@ou=Departamento de Ingenieria de Sistemas Telematicos@cn=Pedro Sandoval
+acl= others # read # child &\
+	group # c=ES@o=Universidad Politecnica de Madrid@ou=Departamento de Ingenieria de Sistemas Telematicos@cn=Pedro Sandoval # write # entry &\
+	others # read # entry &\
+	group # c=ES@o=Universidad Politecnica de Madrid@ou=Departamento de Ingenieria de Sistemas Telematicos@cn=Pedro Sandoval # write # default &\
+	others # read # default
+eDBinfo= #cn=giant tortoise# &\
+	c=ES#cn=iguana# &\
+	c=ES@o=Universidad Politecnica de Madrid##
+quipuVersion= 6.1
+
+cn=Chinchilla
+objectClass= top & applicationEntity & dSA & quipuDSA
+cn= Chinchilla
+l= Zurich, CH
+description= squirrel-like animal with soft pale gray fur &\
+	DSA running at ETH Zurich on host ds, holding c=CH MASTER
+presentationAddress= TELEX+00728722+RFC-1006+03+129.132.101.8+17003|TELEX+00728722+X.25(80)+01+228479511033+PID+03018100
+supportedApplicationContext= X500DSP & X500DAP & quipuDSP
+seeAlso= cn=Condor
+userPassword= {CRYPT}\40KJM\40KJOOB
+manager= c=CH@o=Chinchilla Mgmt@cn=manager &\
+	c=CH@cn=manager
+lastModifiedTime= 910304184128Z
+lastModifiedBy= c=CH@o=Chinchilla Mgmt@cn=manager
+acl= others # read # entry &\
+	group # c=CH@o=Chinchilla Mgmt@cn=manager # write # entry &\
+	others # read # default &\
+	group # c=CH@o=Chinchilla Mgmt@cn=manager # write # default
+eDBinfo= ##cn=Condor$c=CH@cn=Cat &\
+	#cn=Giant Tortoise# &\
+	c=CH##c=CH@cn=chin &\
+	c=CH##c=CH@cn=chaos &\
+	c=CH##cn=Condor &\
+	c=CH##cn=Giant Anteater$cn=Fruit Bat$cn=Alpaca &\
+	c=CH##cn=Giant Tortoise &\
+	c=CH##cn=Agouti &\
+	c=CH##c=CH@cn=Cat &\
+	c=CH@o=Swiss PTT#c=CH@cn=Cat#cn=Chinchilla$cn=Condor &\
+	c=CH@o=ethz##cn=Condor &\
+	c=CH@o=ethz@ou=Werkstoffe##cn=Condor &\
+	c=CH@o=ethz@ou=Werkstoffe@ou=Polymere##cn=Condor &\
+	c=CH@o=ethz@ou=Werkstoffe@ou=Metallforschung##cn=Condor &\
+	c=CH@o=ethz@ou=Verwaltung##cn=Condor &\
+	c=CH@o=ethz@ou=Verwaltung@ou=VP-Forschung##cn=Condor &\
+	c=CH@o=ethz@ou=Verwaltung@ou=VP-Dienste##cn=Condor &\
+	c=CH@o=ethz@ou=Verwaltung@ou=Techn.Dienst##cn=Condor &\
+	c=CH@o=ethz@ou=Verwaltung@ou=Studienadministration##cn=Condor &\
+	c=CH@o=ethz@ou=Verwaltung@ou=Studentendienste##cn=Condor &\
+	c=CH@o=ethz@ou=Verwaltung@ou=Stab##cn=Condor &\
+	c=CH@o=ethz@ou=Verwaltung@ou=Schulrat##cn=Condor &\
+	c=CH@o=ethz@ou=Verwaltung@ou=Rektoratsdienste##cn=Condor &\
+	c=CH@o=ethz@ou=Verwaltung@ou=Rektorat##cn=Condor &\
+	c=CH@o=ethz@ou=Verwaltung@ou=Rechenzentren##cn=Condor &\
+	c=CH@o=ethz@ou=Verwaltung@ou=Praesidium##cn=Condor &\
+	c=CH@o=ethz@ou=Verwaltung@ou=Personal##cn=Condor &\
+	c=CH@o=ethz@ou=Verwaltung@ou=Informatikdienste##cn=Condor &\
+	c=CH@o=ethz@ou=Verwaltung@ou=Hausverwaltung##cn=Condor &\
+	c=CH@o=ethz@ou=Verwaltung@ou=H-berg-Koordination##cn=Condor &\
+	c=CH@o=ethz@ou=Verwaltung@ou=Finanzen##cn=Condor &\
+	c=CH@o=ethz@ou=Verwaltung@ou=ETH-Bibliothek##cn=Condor &\
+	c=CH@o=ethz@ou=Verwaltung@ou=Computer-Service##cn=Condor &\
+	c=CH@o=ethz@ou=Verwaltung@ou=Betriebsdienste##cn=Condor &\
+	c=CH@o=ethz@ou=Verwaltung@ou=Bauwesen##cn=Condor &\
+	c=CH@o=ethz@ou=Sport##cn=Condor &\
+	c=CH@o=ethz@ou=PSI##cn=Condor &\
+	c=CH@o=ethz@ou=Physik##cn=Condor &\
+	c=CH@o=ethz@ou=Physik@ou=Theorie##cn=Condor &\
+	c=CH@o=ethz@ou=Physik@ou=Quantenelektronik##cn=Condor &\
+	c=CH@o=ethz@ou=Physik@ou=Mittelenergiephysik##cn=Condor &\
+	c=CH@o=ethz@ou=Physik@ou=Hochenergiephysik##cn=Condor &\
+	c=CH@o=ethz@ou=Physik@ou=Astronomie##cn=Condor &\
+	c=CH@o=ethz@ou=Physik@ou=Anwendung##cn=Condor &\
+	c=CH@o=ethz@ou=Pharmazie##cn=Condor &\
+	c=CH@o=ethz@ou=Naturwissenschaften##cn=Condor &\
+	c=CH@o=ethz@ou=Naturwissenschaften@ou=Zellbiologie##cn=Condor &\
+	c=CH@o=ethz@ou=Naturwissenschaften@ou=Verhaltenswissenschaft##cn=Condor &\
+	c=CH@o=ethz@ou=Naturwissenschaften@ou=Toxikologie##cn=Condor &\
+	c=CH@o=ethz@ou=Naturwissenschaften@ou=Pflanzenwissenschaften##cn=Condor &\
+	c=CH@o=ethz@ou=Naturwissenschaften@ou=Molekularbiologie##cn=Condor &\
+	c=CH@o=ethz@ou=Naturwissenschaften@ou=Mineralogie##cn=Condor &\
+	c=CH@o=ethz@ou=Naturwissenschaften@ou=Kristallographie##cn=Condor &\
+	c=CH@o=ethz@ou=Naturwissenschaften@ou=Gewaesserschutz##cn=Condor &\
+	c=CH@o=ethz@ou=Naturwissenschaften@ou=Geophysik##cn=Condor &\
+	c=CH@o=ethz@ou=Naturwissenschaften@ou=Geologie##cn=Condor &\
+	c=CH@o=ethz@ou=Naturwissenschaften@ou=Geographie##cn=Condor &\
+	c=CH@o=ethz@ou=Naturwissenschaften@ou=Geobotanik##cn=Condor &\
+	c=CH@o=ethz@ou=Naturwissenschaften@ou=Entomologie##cn=Condor &\
+	c=CH@o=ethz@ou=Naturwissenschaften@ou=Biotechnologie##cn=Condor &\
+	c=CH@o=ethz@ou=Naturwissenschaften@ou=Arbeitsphysiologie##cn=Condor &\
+	c=CH@o=ethz@ou=Mathematik##cn=Condor &\
+	c=CH@o=ethz@ou=Mathematik@ou=Operations-Research##cn=Condor &\
+	c=CH@o=ethz@ou=Maschineningenieurwesen##cn=Condor &\
+	c=CH@o=ethz@ou=Maschineningenieurwesen@ou=Verfahrenstechnik##cn=Condor &\
+	c=CH@o=ethz@ou=Maschineningenieurwesen@ou=Umformtechnik##cn=Condor &\
+	c=CH@o=ethz@ou=Maschineningenieurwesen@ou=Textilmaschinenbau##cn=Condor &\
+	c=CH@o=ethz@ou=Maschineningenieurwesen@ou=Messtechnik##cn=Condor &\
+	c=CH@o=ethz@ou=Maschineningenieurwesen@ou=Mechanik##cn=Condor &\
+	c=CH@o=ethz@ou=Maschineningenieurwesen@ou=Materialpruefung##cn=Condor &\
+	c=CH@o=ethz@ou=Maschineningenieurwesen@ou=Leichtbau##cn=Condor &\
+	c=CH@o=ethz@ou=Maschineningenieurwesen@ou=Konstruktion##cn=Condor &\
+	c=CH@o=ethz@ou=Maschineningenieurwesen@ou=Fluiddynamik##cn=Condor &\
+	c=CH@o=ethz@ou=Maschineningenieurwesen@ou=Fertigungstechnik##cn=Condor &\
+	c=CH@o=ethz@ou=Maschineningenieurwesen@ou=Energietechnik##cn=Condor &\
+	c=CH@o=ethz@ou=Maschineningenieurwesen@ou=Biomedizin##cn=Condor &\
+	c=CH@o=ethz@ou=Maschineningenieurwesen@ou=Baustoffe##cn=Condor &\
+	c=CH@o=ethz@ou=Maschineningenieurwesen@ou=Antriebstechnik##cn=Condor &\
+	c=CH@o=ethz@ou=Landwirtschaft##cn=Condor &\
+	c=CH@o=ethz@ou=Landwirtschaft@ou=Nutztiere##cn=Condor &\
+	c=CH@o=ethz@ou=Landwirtschaft@ou=Mikrobiologie##cn=Condor &\
+	c=CH@o=ethz@ou=Landwirtschaft@ou=Lebensmittel##cn=Condor &\
+	c=CH@o=ethz@ou=Landwirtschaft@ou=Agrarwirtschaft##cn=Condor &\
+	c=CH@o=ethz@ou=Kulturtechnik##cn=Condor &\
+	c=CH@o=ethz@ou=Kulturtechnik@ou=Kulturtechnik##cn=Condor &\
+	c=CH@o=ethz@ou=Kulturtechnik@ou=Kartographie##cn=Condor &\
+	c=CH@o=ethz@ou=Kulturtechnik@ou=Geodaesie##cn=Condor &\
+	c=CH@o=ethz@ou=Informatik##cn=Condor &\
+	c=CH@o=ethz@ou=Informatik@ou=Wissensch.Rechnen##cn=Condor &\
+	c=CH@o=ethz@ou=Informatik@ou=Theorie##cn=Condor &\
+	c=CH@o=ethz@ou=Informatik@ou=Kommunikationssysteme##cn=Condor &\
+	c=CH@o=ethz@ou=Informatik@ou=Integr.Systeme##cn=Condor &\
+	c=CH@o=ethz@ou=Informatik@ou=Informationssysteme##cn=Condor &\
+	c=CH@o=ethz@ou=Informatik@ou=Computersysteme##cn=Condor &\
+	c=CH@o=ethz@ou=Geisteswissenschaften##cn=Condor &\
+	c=CH@o=ethz@ou=Forstwirtschaft##cn=Condor &\
+	c=CH@o=ethz@ou=Forstwirtschaft@ou=Waldforschung##cn=Condor &\
+	c=CH@o=ethz@ou=Elektrotechnik##cn=Condor &\
+	c=CH@o=ethz@ou=Elektrotechnik@ou=Signalverarbeitung##cn=Condor &\
+	c=CH@o=ethz@ou=Elektrotechnik@ou=Maschinen##cn=Condor &\
+	c=CH@o=ethz@ou=Elektrotechnik@ou=Kommunikation##cn=Condor &\
+	c=CH@o=ethz@ou=Elektrotechnik@ou=Feldtheorie##cn=Condor &\
+	c=CH@o=ethz@ou=Elektrotechnik@ou=Energieuebertragung##cn=Condor &\
+	c=CH@o=ethz@ou=Elektrotechnik@ou=Elektronik##cn=Condor &\
+	c=CH@o=ethz@ou=Elektrotechnik@ou=Automatik##cn=Condor &\
+	c=CH@o=ethz@ou=Chemie##cn=Condor &\
+	c=CH@o=ethz@ou=Bauingenieurwesen##cn=Condor &\
+	c=CH@o=ethz@ou=Bauingenieurwesen@ou=Verkehrsplanung##cn=Condor &\
+	c=CH@o=ethz@ou=Bauingenieurwesen@ou=Hydromechanik##cn=Condor &\
+	c=CH@o=ethz@ou=Bauingenieurwesen@ou=Grundbau##cn=Condor &\
+	c=CH@o=ethz@ou=Bauingenieurwesen@ou=Baustatik##cn=Condor &\
+	c=CH@o=ethz@ou=Bauingenieurwesen@ou=Bauplanung##cn=Condor &\
+	c=CH@o=ethz@ou=Architektur##cn=Condor &\
+	c=CH@o=ethz@ou=Architektur@ou=Hochbautechnik##cn=Condor &\
+	c=CH@o=ethz@ou=Architektur@ou=Geschichte##cn=Condor &\
+	c=CH@o=ethz@ou=Architektur@ou=Denkmalpflege##cn=Condor &\
+	c=CH@o=Condor Mgmt##cn=Condor &\
+	c=CH@o=Chinchilla Mgmt##cn=Condor &\
+	c=CH@o=Ascom Hasler AG##cn=Condor
+quipuVersion= quipu 6.1 \233 (ds) of Wed Aug 15 17:43:43 WET DST 1990
+
+cn=Condor
+objectClass= top & applicationEntity & dSA & quipuDSA
+cn= Condor
+o= ETH Zurich
+description= ugly tropical bird with almost featherless head &\
+	Type of very large Californian or South American vulture &\
+	large bird that feeds on dead bodies &\
+	DSA running at ETH Zurich on host ktik0 (Sun 3/470) &\
+	DSA holding subtree c=CH SLAVE
+presentationAddress= TELEX+00728722+RFC-1006+03+129.132.101.29+17003|TELEX+00728722+X.25(80)+01+22849911084131+PID+03018100
+supportedApplicationContext= X500DSP & X500DAP & quipuDSP
+seeAlso= cn=Chinchilla
+userPassword= {CRYPT}\40LMGLQ
+manager= c=CH@o=Condor Mgmt@cn=manager &\
+	c=CH@cn=manager
+lastModifiedTime= 910308091741Z
+lastModifiedBy= c=CH@o=Chinchilla Mgmt@cn=manager
+acl= group # c=CH@cn=manager # write # entry &\
+	others # read # entry &\
+	group # c=CH@o=Chinchilla Mgmt@cn=manager # write # entry &\
+	group # c=CH@cn=manager # write # default &\
+	others # read # default &\
+	group # c=CH@o=Chinchilla Mgmt@cn=manager # write # default
+eDBinfo= #cn=Chinchilla#c=CH@cn=Cat &\
+	c=CH##c=CH@cn=chaos &\
+	c=CH##c=CH@cn=Cat &\
+	c=CH#cn=Chinchilla# &\
+	c=CH@o=Swiss PTT#c=CH@cn=Cat# &\
+	c=CH@o=ethz#cn=Chinchilla# &\
+	c=CH@o=ethz@ou=Werkstoffe#cn=Chinchilla# &\
+	c=CH@o=ethz@ou=Werkstoffe@ou=Polymere#cn=Chinchilla# &\
+	c=CH@o=ethz@ou=Werkstoffe@ou=Metallforschung#cn=Chinchilla# &\
+	c=CH@o=ethz@ou=Verwaltung#cn=Chinchilla# &\
+	c=CH@o=ethz@ou=Verwaltung@ou=VP-Forschung#cn=Chinchilla# &\
+	c=CH@o=ethz@ou=Verwaltung@ou=VP-Dienste#cn=Chinchilla# &\
+	c=CH@o=ethz@ou=Verwaltung@ou=Techn.Dienst#cn=Chinchilla# &\
+	c=CH@o=ethz@ou=Verwaltung@ou=Studienadministration#cn=Chinchilla# &\
+	c=CH@o=ethz@ou=Verwaltung@ou=Studentendienste#cn=Chinchilla# &\
+	c=CH@o=ethz@ou=Verwaltung@ou=Stab#cn=Chinchilla# &\
+	c=CH@o=ethz@ou=Verwaltung@ou=Schulrat#cn=Chinchilla# &\
+	c=CH@o=ethz@ou=Verwaltung@ou=Rektoratsdienste#cn=Chinchilla# &\
+	c=CH@o=ethz@ou=Verwaltung@ou=Rektorat#cn=Chinchilla# &\
+	c=CH@o=ethz@ou=Verwaltung@ou=Rechenzentren#cn=Chinchilla# &\
+	c=CH@o=ethz@ou=Verwaltung@ou=Praesidium#cn=Chinchilla# &\
+	c=CH@o=ethz@ou=Verwaltung@ou=Personal#cn=Chinchilla# &\
+	c=CH@o=ethz@ou=Verwaltung@ou=Informatikdienste#cn=Chinchilla# &\
+	c=CH@o=ethz@ou=Verwaltung@ou=Hausverwaltung#cn=Chinchilla# &\
+	c=CH@o=ethz@ou=Verwaltung@ou=H-berg-Koordination#cn=Chinchilla# &\
+	c=CH@o=ethz@ou=Verwaltung@ou=Finanzen#cn=Chinchilla# &\
+	c=CH@o=ethz@ou=Verwaltung@ou=ETH-Bibliothek#cn=Chinchilla# &\
+	c=CH@o=ethz@ou=Verwaltung@ou=Computer-Service#cn=Chinchilla# &\
+	c=CH@o=ethz@ou=Verwaltung@ou=Betriebsdienste#cn=Chinchilla# &\
+	c=CH@o=ethz@ou=Verwaltung@ou=Bauwesen#cn=Chinchilla# &\
+	c=CH@o=ethz@ou=Sport#cn=Chinchilla# &\
+	c=CH@o=ethz@ou=PSI#cn=Chinchilla# &\
+	c=CH@o=ethz@ou=Physik#cn=Chinchilla# &\
+	c=CH@o=ethz@ou=Physik@ou=Theorie#cn=Chinchilla# &\
+	c=CH@o=ethz@ou=Physik@ou=Quantenelektronik#cn=Chinchilla# &\
+	c=CH@o=ethz@ou=Physik@ou=Mittelenergiephysik#cn=Chinchilla# &\
+	c=CH@o=ethz@ou=Physik@ou=Hochenergiephysik#cn=Chinchilla# &\
+	c=CH@o=ethz@ou=Physik@ou=Astronomie#cn=Chinchilla# &\
+	c=CH@o=ethz@ou=Physik@ou=Anwendung#cn=Chinchilla# &\
+	c=CH@o=ethz@ou=Pharmazie#cn=Chinchilla# &\
+	c=CH@o=ethz@ou=Naturwissenschaften#cn=Chinchilla# &\
+	c=CH@o=ethz@ou=Naturwissenschaften@ou=Zellbiologie#cn=Chinchilla# &\
+	c=CH@o=ethz@ou=Naturwissenschaften@ou=Verhaltenswissenschaft#cn=Chinchilla# &\
+	c=CH@o=ethz@ou=Naturwissenschaften@ou=Toxikologie#cn=Chinchilla# &\
+	c=CH@o=ethz@ou=Naturwissenschaften@ou=Pflanzenwissenschaften#cn=Chinchilla# &\
+	c=CH@o=ethz@ou=Naturwissenschaften@ou=Molekularbiologie#cn=Chinchilla# &\
+	c=CH@o=ethz@ou=Naturwissenschaften@ou=Mineralogie#cn=Chinchilla# &\
+	c=CH@o=ethz@ou=Naturwissenschaften@ou=Kristallographie#cn=Chinchilla# &\
+	c=CH@o=ethz@ou=Naturwissenschaften@ou=Gewaesserschutz#cn=Chinchilla# &\
+	c=CH@o=ethz@ou=Naturwissenschaften@ou=Geophysik#cn=Chinchilla# &\
+	c=CH@o=ethz@ou=Naturwissenschaften@ou=Geologie#cn=Chinchilla# &\
+	c=CH@o=ethz@ou=Naturwissenschaften@ou=Geographie#cn=Chinchilla# &\
+	c=CH@o=ethz@ou=Naturwissenschaften@ou=Geobotanik#cn=Chinchilla# &\
+	c=CH@o=ethz@ou=Naturwissenschaften@ou=Entomologie#cn=Chinchilla# &\
+	c=CH@o=ethz@ou=Naturwissenschaften@ou=Biotechnologie#cn=Chinchilla# &\
+	c=CH@o=ethz@ou=Naturwissenschaften@ou=Arbeitsphysiologie#cn=Chinchilla# &\
+	c=CH@o=ethz@ou=Mathematik#cn=Chinchilla# &\
+	c=CH@o=ethz@ou=Mathematik@ou=Operations-Research#cn=Chinchilla# &\
+	c=CH@o=ethz@ou=Maschineningenieurwesen#cn=Chinchilla# &\
+	c=CH@o=ethz@ou=Maschineningenieurwesen@ou=Verfahrenstechnik#cn=Chinchilla# &\
+	c=CH@o=ethz@ou=Maschineningenieurwesen@ou=Umformtechnik#cn=Chinchilla# &\
+	c=CH@o=ethz@ou=Maschineningenieurwesen@ou=Textilmaschinenbau#cn=Chinchilla# &\
+	c=CH@o=ethz@ou=Maschineningenieurwesen@ou=Messtechnik#cn=Chinchilla# &\
+	c=CH@o=ethz@ou=Maschineningenieurwesen@ou=Mechanik#cn=Chinchilla# &\
+	c=CH@o=ethz@ou=Maschineningenieurwesen@ou=Materialpruefung#cn=Chinchilla# &\
+	c=CH@o=ethz@ou=Maschineningenieurwesen@ou=Leichtbau#cn=Chinchilla# &\
+	c=CH@o=ethz@ou=Maschineningenieurwesen@ou=Konstruktion#cn=Chinchilla# &\
+	c=CH@o=ethz@ou=Maschineningenieurwesen@ou=Fluiddynamik#cn=Chinchilla# &\
+	c=CH@o=ethz@ou=Maschineningenieurwesen@ou=Fertigungstechnik#cn=Chinchilla# &\
+	c=CH@o=ethz@ou=Maschineningenieurwesen@ou=Energietechnik#cn=Chinchilla# &\
+	c=CH@o=ethz@ou=Maschineningenieurwesen@ou=Biomedizin#cn=Chinchilla# &\
+	c=CH@o=ethz@ou=Maschineningenieurwesen@ou=Baustoffe#cn=Chinchilla# &\
+	c=CH@o=ethz@ou=Maschineningenieurwesen@ou=Antriebstechnik#cn=Chinchilla# &\
+	c=CH@o=ethz@ou=Landwirtschaft#cn=Chinchilla# &\
+	c=CH@o=ethz@ou=Landwirtschaft@ou=Nutztiere#cn=Chinchilla# &\
+	c=CH@o=ethz@ou=Landwirtschaft@ou=Mikrobiologie#cn=Chinchilla# &\
+	c=CH@o=ethz@ou=Landwirtschaft@ou=Lebensmittel#cn=Chinchilla# &\
+	c=CH@o=ethz@ou=Landwirtschaft@ou=Agrarwirtschaft#cn=Chinchilla# &\
+	c=CH@o=ethz@ou=Kulturtechnik#cn=Chinchilla# &\
+	c=CH@o=ethz@ou=Kulturtechnik@ou=Kulturtechnik#cn=Chinchilla# &\
+	c=CH@o=ethz@ou=Kulturtechnik@ou=Kartographie#cn=Chinchilla# &\
+	c=CH@o=ethz@ou=Kulturtechnik@ou=Geodaesie#cn=Chinchilla# &\
+	c=CH@o=ethz@ou=Informatik#cn=Chinchilla# &\
+	c=CH@o=ethz@ou=Informatik@ou=Wissensch.Rechnen#cn=Chinchilla# &\
+	c=CH@o=ethz@ou=Informatik@ou=Theorie#cn=Chinchilla# &\
+	c=CH@o=ethz@ou=Informatik@ou=Kommunikationssysteme#cn=Chinchilla# &\
+	c=CH@o=ethz@ou=Informatik@ou=Integr.Systeme#cn=Chinchilla# &\
+	c=CH@o=ethz@ou=Informatik@ou=Informationssysteme#cn=Chinchilla# &\
+	c=CH@o=ethz@ou=Informatik@ou=Computersysteme#cn=Chinchilla# &\
+	c=CH@o=ethz@ou=Geisteswissenschaften#cn=Chinchilla# &\
+	c=CH@o=ethz@ou=Forstwirtschaft#cn=Chinchilla# &\
+	c=CH@o=ethz@ou=Forstwirtschaft@ou=Waldforschung#cn=Chinchilla# &\
+	c=CH@o=ethz@ou=Elektrotechnik#cn=Chinchilla# &\
+	c=CH@o=ethz@ou=Elektrotechnik@ou=Signalverarbeitung#cn=Chinchilla# &\
+	c=CH@o=ethz@ou=Elektrotechnik@ou=Maschinen#cn=Chinchilla# &\
+	c=CH@o=ethz@ou=Elektrotechnik@ou=Kommunikation#cn=Chinchilla# &\
+	c=CH@o=ethz@ou=Elektrotechnik@ou=Feldtheorie#cn=Chinchilla# &\
+	c=CH@o=ethz@ou=Elektrotechnik@ou=Energieuebertragung#cn=Chinchilla# &\
+	c=CH@o=ethz@ou=Elektrotechnik@ou=Elektronik#cn=Chinchilla# &\
+	c=CH@o=ethz@ou=Elektrotechnik@ou=Automatik#cn=Chinchilla# &\
+	c=CH@o=ethz@ou=Chemie#cn=Chinchilla# &\
+	c=CH@o=ethz@ou=Bauingenieurwesen#cn=Chinchilla# &\
+	c=CH@o=ethz@ou=Bauingenieurwesen@ou=Verkehrsplanung#cn=Chinchilla# &\
+	c=CH@o=ethz@ou=Bauingenieurwesen@ou=Hydromechanik#cn=Chinchilla# &\
+	c=CH@o=ethz@ou=Bauingenieurwesen@ou=Grundbau#cn=Chinchilla# &\
+	c=CH@o=ethz@ou=Bauingenieurwesen@ou=Baustatik#cn=Chinchilla# &\
+	c=CH@o=ethz@ou=Bauingenieurwesen@ou=Bauplanung#cn=Chinchilla# &\
+	c=CH@o=ethz@ou=Architektur#cn=Chinchilla# &\
+	c=CH@o=ethz@ou=Architektur@ou=Hochbautechnik#cn=Chinchilla# &\
+	c=CH@o=ethz@ou=Architektur@ou=Geschichte#cn=Chinchilla# &\
+	c=CH@o=ethz@ou=Architektur@ou=Denkmalpflege#cn=Chinchilla# &\
+	c=CH@o=Condor Mgmt#cn=Chinchilla# &\
+	c=CH@o=Chinchilla Mgmt#cn=Chinchilla# &\
+	c=CH@o=Ascom Hasler AG#cn=Chinchilla#
+quipuVersion= quipu 6.1 \232 (ktik0) of Fri Mar 16 19:49:13 MET 1990
+
+cn=Coypu
+objectClass= top & applicationEntity & dSA & quipuDSA
+cn= Thorn Bug &\
+	Coypu
+l= London, GB
+description= Thorn Bug - Moth whose shape closely resembles a Thorn. &\
+	DSA acting as Thorn reference point into Quipu DIT. &\
+	Coypu - Aquatic rodent
+presentationAddress= TELEX+00728722+RFC-1006+03+128.16.5.31+17003|TELEX+00728722+X.25(80)+02+00000511160035|X121+23421920030035|NS+5400728722041280160050311700400000
+supportedApplicationContext= X500DSP & X500DAP & quipuDSP
+userPassword= {CRYPT}SJYBQQL
+manager= c=GB@o=University College London@ou=Computer Science@cn=incads
+lastModifiedTime= 910218133933Z
+lastModifiedBy= c=GB@o=University College London@ou=Computer Science@cn=Incads
+acl= others # read # child &\
+	group # c=GB@o=University College London@ou=Computer Science@cn=incads # write # entry &\
+	others # read # entry &\
+	group # c=GB@o=University College London@ou=Computer Science@cn=incads # write # default &\
+	others # read # default
+eDBinfo= #cn=False Cobra#
+quipuVersion= quipu 6.8 \23126 (bells.cs.ucl.ac.uk) of Thu Mar 7 09:42:02 GMT 1991
+
+cn=Electric Eel
+objectClass= top & applicationEntity & dSA & quipuDSA
+cn= Electric Eel
+l= NO
+description= Snake-like fish with electrical tendancies &\
+	Master root DSA for Norway. &\
+	Located in Trondheim, at the University of Trondheim
+presentationAddress= '0101'H/TELEX+00728722+RFC-1006+03+129.241.1.99+2005|TELEX+00728722+X.25(80)+01+242253024222+PID+03018100|TELEX+00728722+X.25(80)+06+2043424000222+PID+03018100
+supportedApplicationContext= X500DSP & X500DAP & quipuDSP
+seeAlso= cn=Boa Constrictor
+userPassword= {CRYPT}FFO
+manager= c=NO@o=Universitetet i Oslo@cn=Geir Pedersen &\
+	c=NO@o=UNINETT@cn=Directory Manager
+lastModifiedTime= 910225103142Z
+lastModifiedBy= c=NO@o=Universitetet i Oslo@cn=Geir Pedersen
+acl= others # read # child &\
+	others # read # entry &\
+	group # c=NO@o=Universitetet i Oslo@cn=Geir Pedersen # write # entry &\
+	others # read # default &\
+	group # c=NO@o=Universitetet i Oslo@cn=Geir Pedersen # write # default
+eDBinfo= ##c=NO@cn=Bush Dog &\
+	##c=NO@cn=Mountain Tapir &\
+	##c=NO@cn=Iguana &\
+	##cn=Boa Constrictor &\
+	##c=NO@cn=Little Spotted Cat &\
+	#cn=Giant tortoise# &\
+	c=US##c=NO@cn=Iguana &\
+	c=US##cn=Boa Constrictor &\
+	c=US##c=NO@cn=Little Spotted Cat &\
+	c=US#cn=Fruit Bat# &\
+	c=SE##c=NO@cn=Iguana &\
+	c=SE##c=NO@cn=Mountain Tapir &\
+	c=SE##cn=Boa Constrictor &\
+	c=SE##c=NO@cn=Little Spotted Cat &\
+	c=SE#cn=Hummingbird# &\
+	c=NO##cn=Boa Constrictor &\
+	c=NO##cn=Giant Tortoise &\
+	c=NO##cn=Elephant Seal &\
+	c=NO##cn=Hummingbird &\
+	c=NO##cn=Anaconda &\
+	c=NO##cn=Axolotl &\
+	c=NO##cn=Jaguar &\
+	c=NO##cn=Agouti &\
+	c=NO##c=NO@cn=Little Spotted Cat &\
+	c=NO##cn=Giant Anteater &\
+	c=NO##cn=Fruit Bat$cn=Alpaca &\
+	c=NO##c=NO@cn=Mountain Tapir &\
+	c=NO##c=NO@cn=Iguana &\
+	c=NO@o=Universitetsstudiene pa Kjeller##cn=Boa Constrictor &\
+	c=NO@o=Universitetet i Trondheim##cn=Boa Constrictor &\
+	c=NO@o=Universitetet i Tromso##cn=Boa Constrictor &\
+	c=NO@o=Universitetet i Bergen##cn=Boa Constrictor &\
+	c=NO@o=UNINETT##cn=Boa Constrictor &\
+	c=NO@o=Tromso Satelittstasjon##cn=Boa Constrictor &\
+	c=NO@o=Teledirektoratets Forskningsavdeling##cn=Boa Constrictor &\
+	c=NO@o=SINTEF##cn=Boa Constrictor &\
+	c=NO@o=Senter for Industriforskning##cn=Boa Constrictor &\
+	c=NO@o=Ostfold Distriktshoyskole##cn=Boa Constrictor &\
+	c=NO@o=Norsk Regnesentral##cn=Boa Constrictor &\
+	c=NO@o=Norsk Regnesentral##c=NO@cn=Little Spotted Cat &\
+	c=NO@o=Norges Handelshoyskole##cn=Boa Constrictor &\
+	c=NO@o=More og Romsdal Teknologisenter##cn=Boa Constrictor &\
+	c=NO@o=Hoyskolesenteret i Nordland##cn=Boa Constrictor &\
+	c=NO@o=Hogskolesenteret i Rogaland##cn=Boa Constrictor &\
+	c=NO@o=Forsvarets Forskningsinstitutt##cn=Boa Constrictor &\
+	c=NO@o=Forskningsstiftelsen ved Universitetet i Tromso##cn=Boa Constrictor &\
+	c=NO@o=Distriktshoyskolen i Molde##cn=Boa Constrictor &\
+	c=NO@o=Distribusjonslister##cn=Boa Constrictor &\
+	c=NO@o=Bergen Larerhogskole##cn=Boa Constrictor &\
+	c=NO@o=Bergen Ingeniorhogskole##cn=Boa Constrictor &\
+	c=NO@l=Vestfold fylke##cn=Boa Constrictor &\
+	c=NO@l=Vest-Agder fylke##cn=Boa Constrictor &\
+	c=NO@l=Troms fylke##cn=Boa Constrictor &\
+	c=NO@l=Telemark fylke##cn=Boa Constrictor &\
+	c=NO@l=Sogn og Fjordane fylke##cn=Boa Constrictor &\
+	c=NO@l=Soer-Troendelag fylke##cn=Boa Constrictor &\
+	c=NO@l=Rogaland fylke##cn=Boa Constrictor &\
+	c=NO@l=Oslo fylke##cn=Boa Constrictor &\
+	c=NO@l=Oppland fylke##cn=Boa Constrictor &\
+	c=NO@l=Oestfold fylke##cn=Boa Constrictor &\
+	c=NO@l=Nordland fylke##cn=Boa Constrictor &\
+	c=NO@l=Nord-Troendelag fylke##cn=Boa Constrictor &\
+	c=NO@l=Moere og Romsdal fylke##cn=Boa Constrictor &\
+	c=NO@l=Hordaland fylke##cn=Boa Constrictor &\
+	c=NO@l=Hedemark fylke##cn=Boa Constrictor &\
+	c=NO@l=Finnmark fylke##cn=Boa Constrictor &\
+	c=NO@l=Buskerud fylke##cn=Boa Constrictor &\
+	c=NO@l=Aust-Agder fylke##cn=Boa Constrictor &\
+	c=NO@l=Akershus fylke##cn=Boa Constrictor &\
+	c=NL##c=NO@cn=Little Spotted Cat$c=NO@cn=Iguana &\
+	c=IT##c=NO@cn=Little Spotted Cat$c=NO@cn=Iguana &\
+	c=IS##c=NO@cn=Iguana &\
+	c=IS##c=NO@cn=Mountain Tapir &\
+	c=IS##cn=Boa Constrictore &\
+	c=IS##c=NO@cn=Little Spotted Cat &\
+	c=IS#cn=Elephant Seal# &\
+	c=GB##c=NO@cn=Iguana &\
+	c=GB##cn=Boa Constrictor &\
+	c=GB##c=NO@cn=Little Spotted Cat &\
+	c=GB#cn=Giant Tortoise# &\
+	c=FR##c=NO@cn=Little Spotted Cat$c=NO@cn=Iguana &\
+	c=FI##c=NO@cn=Iguana &\
+	c=FI##c=NO@cn=Mountain Tapir &\
+	c=FI##cn=Boa Constrictor &\
+	c=FI##c=NO@cn=Little Spotted Cat &\
+	c=FI#cn=Jaguar# &\
+	c=ES##c=NO@cn=Iguana &\
+	c=ES##c=NO@cn=Little Spotted Cat &\
+	c=DK##c=NO@cn=Iguana &\
+	c=DK##c=NO@cn=Little Spotted Cat &\
+	c=DK#cn=Axolotl# &\
+	c=DE##c=NO@cn=Iguana &\
+	c=DE##c=NO@cn=Little Spotted Cat
+quipuVersion= quipu 6.4 \2319 (nac) of Mon Jun 18 03:32:58 MET DST 1990
+
+cn=Elephant Seal
+objectClass= top & applicationEntity & dSA & quipuDSA
+cn= Elephant Seal
+l= IS
+description= University of Iceland &\
+	Seal.
+presentationAddress= TELEX+00728722+RFC-1006+03+130.208.165.63+17003
+supportedApplicationContext= X500DSP & X500DAP & quipuDSP
+userPassword= {CRYPT}WLV\40BM
+manager= c=IS@o=HI@ou=RHI@cn=Gardar Nielsen
+lastModifiedTime= 910301163414Z
+lastModifiedBy= o=Cosine@ou=Paradise@cn=Camayoc
+acl= others # read # child &\
+	others # read # entry &\
+	group # c=IS@o=HI@ou=RHI@cn=Gardar Nielsen # write # entry &\
+	others # read # default &\
+	group # c=IS@o=HI@ou=RHI@cn=Gardar Nielsen # write # default
+eDBinfo= #cn=giant tortoise# &\
+	c=IS##cn=Giant tortoise &\
+	c=IS##cn=Agouti &\
+	c=IS##cn=Giant Anteater$cn=Fruit Bat$cn=Alpaca
+quipuVersion= quipu 6.1 \232 (isgate) of Wed Mar 21 10:52:01 WET 1990
+
+cn=False Cobra
+objectClass= top & applicationEntity & dSA & quipuDSA
+cn= False Cobra
+description= Soon to be Giant Tortoise &\
+	Cosine Paradise DSA
+presentationAddress= TELEX+00728722+RFC-1006+03+128.16.5.31+2005|TELEX+00728722+X.25(80)+02+00000511160045|X121+23421920030045|TELEX+00728722+X.25(80)+06+20433450420145
+supportedApplicationContext= X500DSP & X500DAP & quipuDSP
+userPassword= {CRYPT}\40LAQB
+manager= c=GB@o=X-Tel Services Ltd@cn=Camayoc &\
+	c=GB@o=University College London@ou=Computer Science@cn=Incads
+lastModifiedTime= 910225082418Z
+lastModifiedBy= c=GB@o=X-Tel Services Ltd@cn=Camayoc
+acl= others # read # child &\
+	group # c=GB@o=X-Tel Services@cn=Camayoc # write # entry &\
+	others # read # entry &\
+	group # c=GB@o=X-Tel Services@cn=Camayoc # write # default &\
+	others # read # default
+eDBinfo= ##cn=Elephant Seal$cn=Alpaca$cn=Fruit Bat$cn=Giant Anteater &\
+	##cn=Vampire Bat$cn=Puma$cn=Hummingbird$cn=Chinchilla &\
+	##cn=Jaguar$cn=anaconda$cn=Iguana$cn=cayman$cn=Wayne Gretzky &\
+	##cn=Hornero$cn=Axolotl$cn=Coypu$cn=Bush Dog$cn=Pangolin &\
+	##c=GB &\
+	##cn=Maned Sloth &\
+	##cn=Electric Eel &\
+	##cn=Toucan &\
+	##c=GB@o=X-Tel Services Ltd &\
+	##cn=False Cobra &\
+	#cn=Giant Tortoise# &\
+	domainComponent=UK#cn=Giant Tortoise#cn=Vampire Bat &\
+	o=Internet#cn=Giant Tortoise#cn=Vampire Bat &\
+	o=cosine#cn=Giant Tortoise# &\
+	o=cosine@ou=paradise#cn=Giant Tortoise# &\
+	l=North America#cn=Giant Tortoise#cn=Vampire Bat &\
+	c=US#cn=Giant Tortoise#cn=Vampire Bat &\
+	c=SE#cn=Giant Tortoise#cn=Vampire Bat$c=GB@cn=La Plata Otter &\
+	c=NO#cn=Giant Tortoise#cn=Vampire Batc=GB@cn=La Plata Otter &\
+	c=NL#cn=Giant Tortoise#cn=Vampire Bat$c=GB@cn=Honey Bear$c=GB@cn=La Plata Otter &\
+	c=IS#cn=Giant Tortoise#cn=Vampire Bat &\
+	c=GB##cn=Fruit Bat$cn=Alpaca$cn=Giant Anteater &\
+	c=GB##c=GB &\
+	c=GB##cn=Agouti &\
+	c=GB##cn=Maned Sloth &\
+	c=GB##cn=Vampire Bat &\
+	c=GB##cn=Puma &\
+	c=GB##cn=Electric Eel &\
+	c=GB##cn=Toucan &\
+	c=GB##c=GB@o=X-Tel Services Ltd &\
+	c=GB##cn=False Cobra &\
+	c=GB##c=GB@cn=Honey Bear &\
+	c=GB#cn=Giant Tortoise# &\
+	c=GB@o=Joint Network Team## &\
+	c=FI#cn=Giant Tortoise#cn=Vampire Bat$c=GB@cn=La Plata Otter &\
+	c=ES#cn=Giant Tortoise#cn=Vampire Bat &\
+	c=DK#cn=Giant Tortoise#cn=Vampire Bat &\
+	c=DE#cn=Giant Tortoise#cn=Vampire Bat$c=GB@cn=La Plata Otter &\
+	c=CH#cn=Giant Tortoise#cn=Vampire Bat$c=GB@cn=La Plata Otter &\
+	c=CA#cn=Giant Tortoise#cn=Vampire Bat$c=GB@cn=Honey Bear$c=GB@cn=La Plata Otter &\
+	c=AU#cn=Giant Tortoise#cn=Vampire Bat$c=GB@cn=Honey Bear$c=GB@cn=La Plata Otter &\
+	c=AT#cn=Giant Tortoise#cn=Vampire Bat
+quipuVersion= quipu 6.8 \23126 (bells.cs.ucl.ac.uk) of Thu Mar 7 09:42:02 GMT 1991
+
+cn=Fruit Bat
+objectClass= top & applicationEntity & dSA & quipuDSA & quipuObject
+cn= Fruit Bat
+l= Troy, New York, US
+description= The Mischievous Varmint &\
+	Slave DSA for o=DMD under c=US &\
+	Slave DSA for o=CNRI under c=US &\
+	Slave DSA for c=US in the New York area &\
+	Operated by PSI Inc. &\
+	Master DSA for cn=RFC Documents under o=Internet &\
+	Master DSA for cn=FYI Documents under o=Internet
+presentationAddress= '0101'H/TELEX+00728722+RFC-1006+03+136.161.128.3+17007
+supportedApplicationContext= X500DSP & X500DAP & quipuDSP
+userPassword= {CRYPT}EQVJWABW
+manager= c=US@cn=Manager
+lastModifiedTime= 910227053118Z
+lastModifiedBy= c=US@cn=Manager
+acl= group # c=US@cn=Manager # write # entry &\
+	others # read # entry &\
+	group # c=US@cn=Manager # write # default &\
+	others # read # default
+eDBinfo= ##c=US &\
+	#cn=Giant Tortoise# &\
+	o=Internet#cn=Alpaca# &\
+	o=Internet@cn=RFC Documents##cn=Giant Anteater &\
+	o=Internet@cn=FYI Documents##cn=Giant Anteater &\
+	o=Cosine#cn=Giant Tortoise# &\
+	o=Cosine@ou=Paradise#cn=Giant Tortoise# &\
+	l=North America#cn=Alpaca# &\
+	c=US##c=US &\
+	c=US#cn=Alpaca# &\
+	c=US@o=DMD#cn=Alpaca# &\
+	c=US@o=Corporation for National Research Initiatives#c=US@cn=Marine Otter# &\
+	c=SE#cn=Hummingbird# &\
+	c=NO#cn=Electric Eel# &\
+	c=NL#cn=Hornero# &\
+	c=IS#cn=Elephant Seal# &\
+	c=GB#cn=Giant Tortoise# &\
+	c=FI#cn=Jaguar# &\
+	c=ES#cn=Iguana# &\
+	c=DK#cn=Axolotl# &\
+	c=DE#cn=Puma# &\
+	c=CH#cn=Chinchilla# &\
+	c=CA#cn=Wayne Gretzky# &\
+	c=AU#cn=Anaconda#
+quipuVersion= quipu 6.8 \23126 (uu.psi.com) of Thu Mar 7 09:16:13 EST 1991
+
+cn=Giant Anteater
+objectClass= top & applicationEntity & dSA & quipuDSA & quipuObject
+cn= Giant Anteater
+l= Santa Clara, California, US
+description= The Endangered Giant Anteater &\
+	Slave DSA for o=PSI under c=US &\
+	Slave DSA for o=NYSERNet Inc. under c=US &\
+	Slave DSA for o=DMD under c=US &\
+	Slave DSA for o=Anterior Technology under c=US &\
+	Slave DSA for cn=RFC Documents under o=Internet &\
+	Slave DSA for cn=FYI Documents under o=Internet &\
+	Slave DSA for c=US on the West Coast &\
+	Operated by PSI Inc.
+presentationAddress= '0101'H/TELEX+00728722+RFC-1006+03+192.70.139.20+17007
+supportedApplicationContext= X500DSP & X500DAP & quipuDSP
+userPassword= {CRYPT}BMWFBWFQ
+manager= c=US@cn=Manager
+lastModifiedTime= 910306070344Z
+lastModifiedBy= c=US@cn=Manager
+acl= group # c=US@cn=Manager # write # entry &\
+	others # read # entry &\
+	group # c=US@cn=Manager # write # default &\
+	others # read # default
+eDBinfo= ##c=US &\
+	#cn=Giant Tortoise# &\
+	o=Internet#cn=Alpaca# &\
+	o=Internet@cn=RFC Documents#cn=Fruit Bat# &\
+	o=Internet@cn=FYI Documents#cn=Fruit Bat# &\
+	o=Cosine#cn=Giant Tortoise# &\
+	o=Cosine@ou=Paradise#cn=Giant Tortoise# &\
+	l=North America#cn=Alpaca# &\
+	c=US##c=US &\
+	c=US#cn=Alpaca# &\
+	c=US@o=Performance Systems International#c=US@cn=Spectacled Bear# &\
+	c=US@o=Performance Systems International@ou=Sales#c=US@cn=Spectacled Bear# &\
+	c=US@o=Performance Systems International@ou=Research and Development#c=US@cn=Spectacled Bear# &\
+	c=US@o=Performance Systems International@ou=Research and Development@ou=Santa Clara#c=US@cn=Spectacled Bear# &\
+	c=US@o=Performance Systems International@ou=Research and Development@ou=Reston#c=US@cn=Spectacled Bear# &\
+	c=US@o=Performance Systems International@ou=Research and Development@ou=Mountain View#c=US@cn=Spectacled Bear# &\
+	c=US@o=Performance Systems International@ou=PSITech#c=US@cn=Spectacled Bear# &\
+	c=US@o=Performance Systems International@ou=Operations#c=US@cn=Spectacled Bear# &\
+	c=US@o=Performance Systems International@ou=Operations@ou=System Administration#c=US@cn=Spectacled Bear# &\
+	c=US@o=Performance Systems International@ou=Operations@ou=Network Operations#c=US@cn=Spectacled Bear# &\
+	c=US@o=Performance Systems International@ou=Operations@ou=Field Service#c=US@cn=Spectacled Bear# &\
+	c=US@o=Performance Systems International@ou=Business Operations#c=US@cn=Spectacled Bear# &\
+	c=US@o=Performance Systems International@ou=Administration#c=US@cn=Spectacled Bear# &\
+	c=US@o=Performance Systems International@ou=Administration@ou=Troy#c=US@cn=Spectacled Bear# &\
+	c=US@o=Performance Systems International@ou=Administration@ou=Reston#c=US@cn=Spectacled Bear# &\
+	c=US@o=NYSERNet Inc.#c=US@cn=Spectacled Bear# &\
+	c=US@o=NYSERNet Inc.@ou=Board of Directors#c=US@cn=Spectacled Bear# &\
+	c=US@o=NYSERNet Inc.@ou=Administration#c=US@cn=Spectacled Bear# &\
+	c=US@o=DMD#cn=Alpaca# &\
+	c=US@o=Anterior Technology#c=US@cn=Juan Fernandez Fur Seal# &\
+	c=SE#cn=Hummingbird# &\
+	c=NO#cn=Electric Eel# &\
+	c=NL#cn=Hornero# &\
+	c=IS#cn=Elephant Seal# &\
+	c=GB#cn=Giant Tortoise# &\
+	c=FI#cn=Jaguar# &\
+	c=ES#cn=Iguana# &\
+	c=DK#cn=Axolotl# &\
+	c=DE#cn=Puma# &\
+	c=CH#cn=Chinchilla# &\
+	c=CA#cn=Wayne Gretzky# &\
+	c=AU#cn=Anaconda#
+quipuVersion= quipu 6.8 \23121 (wp2) of Thu Mar 7 06:05:23 PST 1991
+
+cn=Giant Tortoise
+objectClass= top & applicationEntity & dSA & quipuDSA
+cn= Testudo Giganteus &\
+	Giant Tortoise
+l= GB
+description= tough scaly legs &\
+	Slow moving Reptile &\
+	Protective high domed shell &\
+	long lifespan, typically 150 years &\
+	DSA holding root of DIT and c=GB as Master &\
+	Cosine Paradise DSA
+presentationAddress= TELEX+00728722+RFC-1006+03+128.86.8.55+17003|TELEX+00728722+X.25(80)+06+20433450400255|X121+23421920014855|TELEX+00728722+X.25(80)+02+000040010550
+supportedApplicationContext= X500DSP & X500DAP & quipuDSP
+seeAlso= cn=Vampire Bat
+userPassword= {CRYPT}dJBMW\03wLQWLJPF
+manager= o=Cosine@ou=Paradise@cn=Camayoc &\
+	c=GB@o=X-Tel Services Ltd@cn=Camayoc
+lastModifiedTime= 910308143912Z
+lastModifiedBy= c=GB@o=X-Tel Services Ltd@cn=Camayoc
+acl= others # read # child &\
+	others # read # entry &\
+	others # read # default
+eDBinfo= ##cn=Giant Anteater$cn=Fruit Bat$cn=Alpaca$cn=Elephant Seal &\
+	##cn=Chinchilla$cn=Hummingbird$cn=Puma$cn=Vampire Bat &\
+	##cn=Wayne Gretzky$cn=cayman$cn=Iguana$cn=anaconda$cn=Jaguar &\
+	##cn=Pangolin$cn=Bush Dog$cn=Coypu$cn=Axolotl$cn=Hornero &\
+	##c=GB &\
+	##cn=Maned Sloth &\
+	##cn=Electric Eel &\
+	##cn=Toucan &\
+	##c=GB@o=X-Tel Services Ltd &\
+	##cn=False Cobra &\
+	domainComponent=UK#cn=Passionflower Leaf Beetle#cn=False Cobra &\
+	o=Internet#cn=Alpaca#cn=False Cobra &\
+	o=Cosine##cn=Alpaca$cn=Fruit Bat$cn=Giant Anteater$cn=False Cobra &\
+	o=Cosine@ou=Paradise##cn=Alpaca$cn=Fruit Bat$cn=Giant Anteater$cn=False Cobra &\
+	l=North America#cn=Alpaca#cn=False Cobra &\
+	c=US#cn=Alpaca#cn=False Cobra$cn=Vampire Bat &\
+	c=US@o=DMD#cn=Alpaca# &\
+	c=SE#cn=Hummingbird#cn=False Cobra$cn=Vampire Bat$c=GB@cn=La Plata Otter &\
+	c=NO#cn=Electric Eel#cn=False Cobra$cn=Vampire Bat$c=GB@cn=La Plata Otter &\
+	c=NL#cn=Hornero#cn=False Cobra$cn=Vampire Bat$c=GB@cn=La Plata Otter &\
+	c=IS#cn=Elephant Seal#cn=False Cobra$cn=Vampire Bat &\
+	c=GB##cn=Giant Anteater$cn=Alpaca$cn=Fruit Bat &\
+	c=GB##c=GB &\
+	c=GB##cn=Agouti &\
+	c=GB##cn=Maned Sloth &\
+	c=GB##cn=Vampire Bat &\
+	c=GB##cn=Puma &\
+	c=GB##cn=Electric Eel &\
+	c=GB##cn=Toucan &\
+	c=GB##c=GB@o=X-Tel Services Ltd &\
+	c=GB##cn=False Cobra &\
+	c=GB##c=GB@cn=Honey Bear &\
+	c=GB@o=X-Tel Services Ltd#cn=Vampire Bat# &\
+	c=GB@o=X-Tel Services Ltd@cn=trellis#cn=Vampire Bat# &\
+	c=GB@o=X-Tel Services Ltd@cn=lancaster#cn=Vampire Bat# &\
+	c=FI#cn=Jaguar#cn=False Cobra$cn=Vampire Bat$c=GB@cn=La Plata Otter &\
+	c=ES#cn=Iguana#cn=False Cobra$cn=Vampire Bat &\
+	c=DK#cn=Axolotl#cn=False Cobra$cn=Vampire Bat &\
+	c=DE#cn=Puma#cn=False Cobra$cn=Vampire Bat$c=GB@cn=La Plata Otter &\
+	c=CH#cn=Chinchilla#cn=False Cobra$cn=Vampire Bat$c=GB@cn=La Plata Otter &\
+	c=CA#cn=Wayne Gretzky#cn=False Cobra$c=GB@cn=La Plata Otter$cn=Vampire Bat$c=GB@cn=Honey Bear &\
+	c=AU#cn=anaconda#cn=False Cobra$c=GB@cn=La Plata Otter$cn=Vampire Bat$c=GB@cn=Honey Bear &\
+	c=AT#cn=Piranah#cn=Vampire Bat$cn=False Cobra
+quipuVersion= quipu 6.8 \23125 (cosine-dsa.ulcc.ac.uk) of Thu Mar 7 09:43:37 GMT 1991
+
+cn=Hornero
+objectClass= top & applicationEntity & dSA & quipuDSA & quipuObject
+cn= Hornero
+l= NL
+description= SUN 4/330 with SUNLINK X25 over 64 K &\
+	Operated by Surfnet this DSA masters the Netherlands.
+presentationAddress= '0101'H/TELEX+00728722+RFC-1006+03+192.65.81.4+17004|X121+20412911028420
+supportedApplicationContext= X500DSP & X500DAP & quipuDSP
+userPassword= {CRYPT}kLQMFQL
+manager= c=NL@cn=Manager
+lastModifiedTime= 900927095207Z
+lastModifiedBy= c=NL@cn=manager
+acl= others # read # child &\
+	group # c=NL@cn=Manager # write # entry &\
+	others # read # entry &\
+	group # c=NL@cn=Manager # write # default &\
+	others # read # default
+eDBinfo= #cn=Giant Tortoise# &\
+	c=NL##cn=Giant Anteater$cn=Fruit Bat$cn=Alpaca &\
+	c=NL##cn=Giant Tortoise &\
+	c=NL##cn=Agouti
+quipuVersion= quipu 6.0 \231 (sursun) of Thu Mar 22 12:47:36 MET 1990
+
+cn=Hummingbird
+objectClass= top & applicationEntity & dSA & quipuDSA
+cn= Hummingbird
+l= SE
+description= very small bird with bright colours &\
+	MASTER DSA for c=SE &\
+	DSA Located at the University of Umea,Sweden
+presentationAddress= '0101'H/TELEX+00728722+RFC-1006+03+130.239.1.15+2005|X121+240374810306
+supportedApplicationContext= X500DSP & X500DAP & quipuDSP
+userPassword= {CRYPT}KVNNJMDAJQG
+manager= c=SE@cn=Manager
+lastModifiedTime= 901210084954Z
+lastModifiedBy= c=SE@cn=manager
+acl= others # read # child &\
+	group # c=SE@cn=Manager # write # entry &\
+	others # read # entry &\
+	group # c=SE@cn=Manager # write # default &\
+	others # read # default
+eDBinfo= ##c=SE@cn=woolly spider &\
+	##c=SE@cn=rockhopper &\
+	##cn=Agouti &\
+	##c=SE@cn=llama &\
+	##c=SE@cn=jaguarundi &\
+	##c=SE@cn=maned wolf &\
+	##c=SE@cn=guanaco &\
+	##c=SE@cn=capybara &\
+	#cn=Giant tortoise# &\
+	c=SE##c=SE@cn=woolly spider &\
+	c=SE##c=SE@cn=rockhopper &\
+	c=SE##cn=Axolotl &\
+	c=SE##c=SE@cn=llama &\
+	c=SE##c=SE@cn=jaguarundi &\
+	c=SE##c=SE@cn=capybara &\
+	c=SE##cn=Agouti &\
+	c=SE##c=SE@cn=maned wolf &\
+	c=SE##c=SE@cn=guanaco &\
+	c=SE##cn=Electric Eel &\
+	c=SE##cn=Jaguar &\
+	c=SE##cn=Alpaca &\
+	c=SE##cn=Elephant Seal &\
+	c=SE##cn=Giant Anteater &\
+	c=SE##cn=Fruit Bat &\
+	c=SE@o=Uppsala Universitet#c=SE@cn=Llama# &\
+	c=SE@o=UDAC#c=SE@cn=woolly spider# &\
+	c=SE@o=Telub Teknik AB#c=SE@cn=capybara# &\
+	c=SE@o=Televerket#c=SE@cn=maned wolf# &\
+	c=SE@o=Nexus Communications AB#c=SE@cn=guanaco# &\
+	c=SE@o=Chalmers#c=SE@cn=Rockhopper# &\
+	c=NO#cn=Electric Eel# &\
+	c=IS#cn=Elephant Seal# &\
+	c=FI#cn=Jaguar# &\
+	c=DK#cn=Axolotl#
+quipuVersion= quipu 6.1
+
+cn=Iguana
+objectClass= top & applicationEntity & dSA & quipuDSA
+cn= Iguana
+l= ES
+description= Sort of ugly lizard &\
+	DSA for C=ES
+presentationAddress= '0101'H/TELEX+00728722+X.25(80)+06+2043145100102+PID+03018100|TELEX+00728722+X.25(80)+01+21452160234012+PID+03018100|TELEX+00728722+RFC-1006+03+130.206.1.2+17003
+supportedApplicationContext= X500DSP & X500DAP & quipuDSP
+seeAlso= cn=Cayman
+userPassword= {CRYPT}JDVBMB
+manager= c=ES@o=Programa IRIS@cn=Ignacio Martinez
+lastModifiedTime= 910308191015Z
+lastModifiedBy= c=ES@o=Programa IRIS@cn=Ignacio Martinez
+acl= others # read # child &\
+	group # c=ES@o=Programa IRIS@cn=Ignacio Martinez # write # entry &\
+	others # read # entry &\
+	group # c=ES@o=Programa IRIS@cn=Ignacio Martinez # write # default &\
+	others # read # default
+eDBinfo= #cn=Giant Tortoise# &\
+	c=ES##cn=Cayman &\
+	c=ES##cn=Giant Tortoise$cn=Fruit Bat$cn=Alpaca &\
+	c=ES##cn=Giant Tortoise &\
+	c=ES##cn=Agouti &\
+	c=ES@o=Programa IRIS##
+quipuVersion= 6.1
+
+cn=inca dove
+objectClass= top & alias & quipuObject
+aliasedObjectName= cn=Giant Tortoise
+cn= Inca Dove
+lastModifiedTime= 910218152401Z
+lastModifiedBy= o=Cosine@ou=Paradise@cn=Camayoc
+acl= 
+
+cn=Jaguar
+objectClass= top & applicationEntity & dSA & quipuDSA
+cn= Jaguar
+description= The Jaguar DSA. Located at Tampere Univ of Technology, Finland. &\
+	MASTER DSA for c=FI &\
+	A big cat.
+presentationAddress= '0101'H/TELEX+00728722+RFC-1006+03+128.214.1.1+17003|X121+24432315101520|NS+39246f0000010900000002000112821400100100
+supportedApplicationContext= X500DSP & X500DAP & quipuDSP
+userPassword= {CRYPT}IBDVBQ
+manager= c=FI@cn=Directory Manager
+lastModifiedTime= 910227125859Z
+lastModifiedBy= c=FI@cn=Directory Manager
+acl= others # read # child &\
+	group # c=FI@cn=Directory Manager # write # entry &\
+	others # read # entry &\
+	group # c=FI@cn=Directory Manager # write # default &\
+	others # read # default
+eDBinfo= #cn=Giant tortoise#c=FI@cn=Puma$c=FI@cn=Woolly Monkey$c=FI@cn=Owl$c=FI@cn=Unicorn$c=FI@cn=Rhea$c=FI@cn=Ilves$c=FI@cn=Galapagos Penguin$c=FI@cn=Condor$c=FI@cn=Piranha$c=FI@cn=Axolotl &\
+	c=SE#cn=Hummingbird# &\
+	c=NO#cn=Electric Eel# &\
+	c=IS#cn=Elephant Seal# &\
+	c=FI##cn=Axolotl$cn=Giant Tortoise$cn=Alpaca$cn=Fruit Bat$cn=Giant Anteater$c=FI@cn=Rhea$cn=Electric Eel$cn=Hummingbird$cn=Elephant Seal$cn=Agouti &\
+	c=FI##c=FI@cn=Puma$c=FI@cn=Condor$c=FI@cn=Galapagos Penguin$c=FI@cn=Ilves$c=FI@cn=Unicorn$c=FI@cn=Owl$c=FI@cn=Woolly Monkey$c=FI@cn=Piranha$c=FI@cn=Axolotl &\
+	c=DK#cn=Axolotl#
+quipuVersion= quipu 6.8 \23121 (etana) of Thu Feb 28 11:37:22 EET 1991
+
+cn=Maned Sloth
+objectClass= top & applicationEntity & dSA & quipuDSA
+cn= Maned Sloth
+l= GB
+o= Edinburgh University
+description= Laid back, shaggy and slumbersome creature &\
+	DSA holding NRS info during development
+presentationAddress= TELEX+00728722+X.25(80)+02+00001500003005
+supportedApplicationContext= X500DSP & X500DAP & quipuDSP
+seeAlso= c=GB@o=Edinburgh University@cn=X500-control
+userPassword= {CRYPT}NBMFG\03POLWK
+manager= c=GB@o=Edinburgh University@cn=X500-control
+lastModifiedTime= 900924144314Z
+lastModifiedBy= c=GB@o=Edinburgh University@cn=X500-control
+acl= others # read # child &\
+	others # read # entry &\
+	group # c=GB@o=Edinburgh University@cn=X500-control # write # entry &\
+	others # read # default &\
+	group # c=GB@o=Edinburgh University@cn=X500-control # write # default &\
+	group # c=GB@o=Edinburgh University@cn=X500-control # write # attributes # accessControlList$userPassword &\
+	others # compare # attributes # accessControlList$userPassword
+eDBinfo= #cn=Giant Tortoise# &\
+	domainComponent=UK##cn=Giant Tortoise
+quipuVersion= quipu 6.1
+
+cn=Margay
+objectClass= top & applicationEntity & dSA & quipuDSA
+knowledgeInformation= {T.61}s=kolvenbach;ou=eana;ou=f3;p=gmd;a=dbp;c=de
+cn= margay
+l= Birlinghoven, DE
+o= GMD &\
+	Gesellschaft fuer Mathematik und Datenverarbeitung
+ou= Gruppenunterstuetzungssystem &\
+	F3
+description= slave DSA for c=DE running at GMD-GUS
+presentationAddress= '0101'H/TELEX+00728722+X.25(80)+01+26245050211470+PID+03018100|TELEX+00728722+X.25(80)+06+2043624211470+PID+03018100|TELEX+00728722+RFC-1006+03+129.26.128.3+17003
+supportedApplicationContext= X500DSP & X500DAP & quipuDSP
+seeAlso= cn=Puma
+userPassword= {CRYPT}NBQDBZ
+manager= c=DE@o=GMD@ou=f3@cn=ds-manager &\
+	c=DE@cn=ds-manager
+lastModifiedTime= 910124112346Z
+lastModifiedBy= c=DE@cn=ds-manager
+acl= others # read # child &\
+	group # c=DE@o=gmd@ou=f3@cn=ds-manager$c=DE@cn=ds-manager # write # entry &\
+	others # read # entry &\
+	group # c=DE@o=gmd@ou=f3@cn=ds-manager$c=DE@cn=ds-manager # write # default &\
+	others # read # default
+eDBinfo= #cn=puma# &\
+	c=DE#cn=puma# &\
+	c=DE@o=uni-stuttgart#c=DE@cn=uni-stuttgart.dsa# &\
+	c=DE@o=uni-regensburg#c=DE@cn=uni-regensburg.dsa# &\
+	c=DE@o=uni-dortmund#c=DE@cn=uni-dortmund.dsa# &\
+	c=DE@o=tu-berlin#c=DE@cn=tu-berlin.dsa# &\
+	c=DE@o=lrz-muenchen#c=DE@cn=lrz-muenchen.dsa# &\
+	c=DE@o=gmd#cn=puma# &\
+	c=DE@o=gmd@ou=z1##cn=puma &\
+	c=DE@o=gmd@ou=wv##cn=puma &\
+	c=DE@o=gmd@ou=stab##cn=puma &\
+	c=DE@o=gmd@ou=fs.ka##cn=puma &\
+	c=DE@o=gmd@ou=fs.infow##cn=puma &\
+	c=DE@o=gmd@ou=fokus#cn=puma# &\
+	c=DE@o=gmd@ou=first#cn=puma# &\
+	c=DE@o=gmd@ou=f4##cn=puma &\
+	c=DE@o=gmd@ou=f3##cn=puma &\
+	c=DE@o=gmd@ou=f2##cn=puma &\
+	c=DE@o=gmd@ou=f1##cn=puma &\
+	c=DE@o=gmd@ou=eis##cn=puma &\
+	c=DE@o=gmd@ou=br##cn=puma
+quipuVersion= Quipu 6.1
+
+cn=Pangolin
+objectClass= top & applicationEntity & dSA & quipuDSA & quipuObject
+cn= Pangolin
+l= Ontario, CA
+o= Northern Telecom
+description= The Endangered pangolin &\
+	Root DSA for Northern Telecom and Bell-Northern Telecom Offices Worldwide (CA, US, GB, ...)
+presentationAddress= '0101'H/TELEX+00728722+RFC-1006+03+192.58.194.71+2005|NS+54053317501f0471280001560200500000
+supportedApplicationContext= X500DSP & X500DAP & quipuDSP
+userPassword= {CRYPT}SBMDLOJM
+manager= c=GB@o=Bell-Northern Research@cn=Manager
+lastModifiedTime= 910123213000Z
+lastModifiedBy= c=CA@o=northern telecom@cn=manager
+acl= others # read # child &\
+	group # c=CA@o=Northern Telecom@cn=Manager # write # entry &\
+	others # read # entry &\
+	group # c=CA@o=Northern Telecom@cn=Manager # write # default &\
+	others # read # default
+eDBinfo= #cn=Giant Tortoise#c=GB@cn=Axolotl &\
+	c=US#c=US@cn=Llama# &\
+	c=US@o=Northern Telecom#c=US@cn=Llama# &\
+	c=US@o=Bell-Northern Research#c=US@cn=Llama# &\
+	c=GB#c=GB@cn=Axolotl# &\
+	c=GB@o=Northern Telecom#c=GB@cn=Axolotl# &\
+	c=GB@o=Bell-Northern Research#c=GB@cn=Axolotl# &\
+	c=CA#c=CA@cn=Macaw# &\
+	c=CA@o=Northern Telecom#c=CA@cn=Macaw# &\
+	c=CA@o=Bell-Northern Research#c=CA@cn=Macaw#
+quipuVersion= quipu 6.1+
+
+cn=Passionflower Leaf Beetle
+objectClass= top & applicationEntity & dSA & quipuDSA
+cn= Passionflower Leaf Beetle &\
+	cn=Passionflower Leaf Beetle
+description= Test DSA holding domain component stuff for Mr. D. Plant, UCL.
+presentationAddress= TELEX+00728722+RFC-1006+03+128.16.8.29+34251|X121+23421920030049|TELEX+00728722+X.25(80)+02+00000511160049|TELEX+00728722+X.25(80)+06+20433450420149
+supportedApplicationContext= X500DSP & X500DAP & quipuDSP
+userPassword= {CRYPT}GVMD
+manager= c=GB@o=University College London@ou=Computer Science@cn=incads
+lastModifiedTime= 910306164445Z
+lastModifiedBy= c=GB@o=X-Tel Services Ltd@cn=Camayoc
+acl= others # read # child &\
+	group # c=GB@o=University College London@ou=Computer Science@cn=incads # write # entry &\
+	others # read # entry &\
+	group # c=GB@o=University College London@ou=Computer Science@cn=incads # write # default &\
+	others # read # default
+eDBinfo= #c=GB@cn=Vicuna# &\
+	domainComponent=uk##c=GB@cn=Vicuna &\
+	domainComponent=uk@domainComponent=ac##c=GB@cn=Vicuna &\
+	c=GB#c=GB@cn=vicuna# &\
+	c=GB@o=University College London#c=GB@cn=vicuna# &\
+	c=GB@o=University College London@ou=Computer Science#c=GB@cn=vicuna#
+quipuVersion= quipu 6.8
+
+cn=Piranah
+objectClass= top & applicationEntity & dSA & quipuDSA & quipuObject
+cn= Piranah
+l= Graz
+o= Technische Universitaet Graz
+ou= Zentrum fuer Elektronische Datenverarbeitung
+description= Master DSA for c=AT
+presentationAddress= '0101'H/TELEX+00728722+X.25(80)+01+2322631101089+PID+03018100|TELEX+00728722+RFC-1006+03+129.27.2.8+17003
+supportedApplicationContext= X500DSP & X500DAP & quipuDSP
+userPassword= {CRYPT}sJQBMBK
+manager= c=AT@cn=DS-Manager
+lastModifiedTime= 910122094552Z
+lastModifiedBy= c=GB@o=X-Tel Services Ltd@cn=Camayoc
+acl= others # read # child &\
+	others # read # entry &\
+	group # c=AT@cn=DS-Manager # write # entry &\
+	others # read # default &\
+	group # c=AT@cn=DS-Manager # write # default
+eDBinfo= #cn=Giant tortoise# &\
+	c=AT##cn=Giant Tortoise
+quipuVersion= quipu 6.7 \2367 (fstgss01) of Mon Jan 14 18:18:20 MET 1991
+
+cn=Puma
+objectClass= top & applicationEntity & dSA & quipuDSA & quipuObject
+knowledgeInformation= {T.61}wenzel\40fokus.berlin.gmd.dbp.de
+cn= Puma
+l= Berlin, DE
+o= GMD
+ou= fokus
+description= Master DSA for c=DE &\
+	Large carnivorous animal, cougar &\
+	DSA running at GMD/FOKUS on host SADIR &\
+	Driven by the VERDI 3 Project of the German Research Network (DFN)
+presentationAddress= '0101'H/TELEX+00728722+X.25(80)+01+26245050230303+PID+03018100|TELEX+00728722+X.25(80)+06+2043624230303+PID+03018100|TELEX+00728722+RFC-1006+03+129.26.128.3+17007|NS+54889469011920351490271700300000
+supportedApplicationContext= X500DSP & X500DAP & quipuDSP
+seeAlso= c=DE@o=gmd@ou=fokus &\
+	cn=Margay
+userPassword= {CRYPT}PMLLSZ
+manager= c=DE@o=GMD@ou=FOKUS@cn=ds-manager &\
+	c=DE@cn=ds-manager
+lastModifiedTime= 910221110919Z
+lastModifiedBy= c=DE@cn=ds-manager
+acl= others # read # child &\
+	others # read # entry &\
+	group # c=DE@cn=ds-manager$c=DE@o=gmd@ou=fokus@cn=ds-manager # write # entry &\
+	others # read # default &\
+	group # c=DE@cn=ds-manager$c=DE@o=gmd@ou=fokus@cn=ds-manager # write # default
+eDBinfo= ##c=DE@cn=tu-berlin.dsa &\
+	##c=DE@cn=ADW.dsa &\
+	##c=DE@cn=lrz-muenchen.dsa &\
+	##c=DE@cn=uni-dortmund.dsa &\
+	##c=DE@cn=uni-regensburg.dsa &\
+	##c=DE@cn=uni-stuttgart.dsa &\
+	##cn=margay &\
+	##c=DE@cn=Uni-Hildesheim.dsa &\
+	#cn=Giant tortoise# &\
+	c=GB#cn=Giant Tortoise# &\
+	c=DE##c=DE@cn=tu-berlin.dsa &\
+	c=DE##c=DE@cn=ADW.dsa &\
+	c=DE##c=DE@cn=lrz-muenchen.dsa &\
+	c=DE##c=DE@cn=uni-dortmund.dsa &\
+	c=DE##c=DE@cn=uni-regensburg.dsa &\
+	c=DE##c=DE@cn=uni-stuttgart.dsa &\
+	c=DE##cn=margay &\
+	c=DE##cn=Agouti &\
+	c=DE##cn=Giant Anteater$cn=Fruit Bat$cn=Alpaca$cn=Giant Tortoise &\
+	c=DE##c=DE@cn=Uni-Hildesheim.dsa &\
+	c=DE@o=uni-stuttgart#c=DE@cn=uni-stuttgart.dsa# &\
+	c=DE@o=uni-regensburg#c=DE@cn=uni-regensburg.dsa# &\
+	c=DE@o=uni-hildesheim#c=DE@cn=uni-hildesheim.dsa# &\
+	c=DE@o=uni-dortmund#c=DE@cn=uni-dortmund.dsa# &\
+	c=DE@o=tu-berlin#c=DE@cn=tu-berlin.dsa# &\
+	c=DE@o=lrz-muenchen#c=DE@cn=lrz-muenchen.dsa# &\
+	c=DE@o=gmd##cn=margay &\
+	c=DE@o=gmd@ou=z1#cn=margay# &\
+	c=DE@o=gmd@ou=wv#cn=margay# &\
+	c=DE@o=gmd@ou=stab#cn=margay# &\
+	c=DE@o=gmd@ou=fs.ka#cn=margay# &\
+	c=DE@o=gmd@ou=fs.infow#cn=margay# &\
+	c=DE@o=gmd@ou=fokus##cn=margay &\
+	c=DE@o=gmd@ou=first##cn=margay &\
+	c=DE@o=gmd@ou=f4#cn=margay# &\
+	c=DE@o=gmd@ou=f3#cn=margay# &\
+	c=DE@o=gmd@ou=f2#cn=margay# &\
+	c=DE@o=gmd@ou=f1#cn=margay# &\
+	c=DE@o=gmd@ou=eis#cn=margay# &\
+	c=DE@o=gmd@ou=br#cn=margay# &\
+	c=DE@o=fh-regensburg#c=DE@cn=uni-regensburg.dsa# &\
+	c=DE@o=ADW#c=DE@cn=ADW.dsa#
+quipuVersion= quipu 6.1 (sadir) of Tue Mar 20 08:24:46 MET 1990
+
+cn=Vampire Bat
+objectClass= top & applicationEntity & dSA & thornObject & quipuDSA
+cn= Vampire Bat &\
+	Desmodus Rotundus
+l= GB
+o= X-Tel Services Ltd
+description= Large bat, often found around necks but too small to cause serious blood loss &\
+	DSA acting a second c=GB access point
+presentationAddress= NS+5400737346031282430090011700300000|TELEX+00728722+X.25(80)+02+00002100102998|TELEX+00728722+X.25(80)+06+20433450210398
+supportedApplicationContext= X500DSP & X500DAP & quipuDSP
+userPassword= {CRYPT}ABW
+photo= {FILE}
+manager= c=GB@o=X-Tel Services Ltd@cn=Camayoc
+lastModifiedTime= 910307155148Z
+lastModifiedBy= c=GB@o=X-Tel Services Ltd@cn=Camayoc
+acl= others # read # child &\
+	others # read # entry &\
+	group # c=GB@o=X-Tel Services Ltd@cn=Camayoc # write # entry &\
+	others # read # default &\
+	group # c=GB@o=X-Tel Services Ltd@cn=Camayoc # write # default
+eDBinfo= #cn=Giant Tortoise#c=GB@cn=Fruit Bat$c=GB@cn=Thin-spined Porcupine &\
+	c=US#cn=Giant Tortoise# &\
+	c=SE#cn=Giant Tortoise# &\
+	c=NO#cn=Giant Tortoise# &\
+	c=NL#cn=Giant Tortoise# &\
+	c=IS#cn=Giant Tortoise# &\
+	c=GB#cn=Inca Dove#c=GB@cn=Thin-spined Porcupine$c=GB@cn=Fruit Bat &\
+	c=GB@o=X-Tel Services Ltd##cn=Giant Tortoise$c=GB@cn=Fruit Bat$c=GB@cn=Thin-spined Porcupine &\
+	c=GB@o=X-Tel Services Ltd@cn=trellis##cn=Giant Tortoise$c=GB@cn=Fruit Bat$c=GB@cn=Thin-spined Porcupine &\
+	c=GB@o=X-Tel Services Ltd@cn=lancaster##cn=Giant Tortoise$c=GB@cn=Fruit Bat$c=GB@cn=Thin-spined Porcupine &\
+	c=GB@o=Nottingham University@ou=Academic Departments#c=GB@cn=Fruit Bat# &\
+	c=GB@o=Nottingham University@ou=Academic Departments@ou=Computer Science#c=GB@cn=Fruit Bat# &\
+	c=GB@l=Nottingham##c=GB@cn=Thin-spined Porcupine$c=GB@cn=Fruit Bat &\
+	c=FI#cn=Giant Tortoise# &\
+	c=ES#cn=Giant Tortoise# &\
+	c=DK#cn=Giant Tortoise# &\
+	c=DE#cn=Giant Tortoise# &\
+	c=CH#cn=Giant Tortoise# &\
+	c=CA#cn=Giant Tortoise# &\
+	c=AU#cn=Giant Tortoise# &\
+	c=AT#cn=Giant Tortoise#
+quipuVersion= quipu 6.8 \23143 (lancaster) of Thu Mar 7 14:58:52 GMT 1991
+relayDSA= cn=Giant Tortoise
+
+cn=Wayne Gretzky
+objectClass= top & applicationEntity & dSA & quipuDSA & quipuObject
+cn= Wayne Gretzky
+l= CA
+description= The Great One, Number 99 &\
+	Master DSA for c=CA
+presentationAddress= '0101'H/TELEX+00728722+RFC-1006+03+128.100.100.1+17007
+supportedApplicationContext= X500DSP & X500DAP & quipuDSP
+userPassword= {CRYPT}DQFWYHZ
+manager= c=CA@cn=Manager
+lastModifiedTime= 901207210845Z
+lastModifiedBy= c=CA@cn=manager
+acl= others # read # child &\
+	others # read # entry &\
+	group # c=CA@cn=Manager # write # entry &\
+	others # read # default &\
+	group # c=CA@cn=Manager # write # default
+eDBinfo= ##c=CA@cn=Brown Howler Monkey &\
+	##c=CA@cn=Rockhopper Penguin &\
+	##c=CA@cn=Black Wolf &\
+	##c=CA@cn=Guanaco &\
+	##c=CA@cn=Macaw &\
+	##c=CA@cn=George Armstrong &\
+	#cn=Giant Tortoise# &\
+	l=North America#cn=Alpaca# &\
+	c=CA##c=CA@cn=Brown Howler Monkey &\
+	c=CA##c=CA@cn=Rockhopper Penguin &\
+	c=CA##c=CA@cn=Black Wolf &\
+	c=CA##c=CA@cn=Guanaco &\
+	c=CA##c=CA@cn=Macaw &\
+	c=CA##c=CA@cn=George Armstrong &\
+	c=CA##cn=Giant Tortoise &\
+	c=CA##cn=Agouti &\
+	c=CA##cn=Alpaca$cn=Fruit Bat$cn=Giant Anteater &\
+	c=CA@o=University of Western Ontario#c=CA@cn=Rockhopper Penguin# &\
+	c=CA@o=University of Toronto#c=CA@cn=George Armstrong# &\
+	c=CA@o=Software Kinetics Limited#c=CA@cn=Guanaco# &\
+	c=CA@o=Simon Fraser University#c=CA@cn=Black Wolf# &\
+	c=CA@o=Queen's University#c=CA@cn=Brown Howler Monkey# &\
+	c=CA@o=Northern Telecom#c=CA@cn=Macaw# &\
+	c=CA@o=Bell-Northern Research#c=CA@cn=Macaw#
+quipuVersion= quipu 6.1
+
