@@ -1,0 +1,139 @@
+$Revision: 1.7 $
+Matthias Urlichs, <urlichs@smurf.sub.org>.
+July 8
+
+This patch to C News expire.c (6Jul91 patchdate) teaches expire to
+interact with innd.  You will also need to add "lib/inndcomm.o" to
+your libcnews.a
+
+****WARNING****
+    If you install this patch, make sure that your doexpire script does
+    NOT call updatemin or upact!
+
+*** expire.c.orig	Tue Jul  9 15:57:21 1991
+--- expire.c	Wed Jul 10 16:26:26 1991
+***************
+*** 6,11 ****
+--- 6,16 ----
+   * is arbitrarily hard when control files get complex, to hell with it.
+   */
+  
++ /*
++  * Extended by Matthias Urlichs (urlichs@smurf.sub.org) to talk to innd.
++  */
++ #define INND
++ 
+  #include <stdio.h>
+  #include <ctype.h>
+  #include <string.h>
+***************
+*** 240,246 ****
+--- 245,256 ----
+  
+  	(void) umask(newsumask());
+  	doit();			/* side effect: newslock() */
++ #ifdef INND
++ 	if(nlocked && ICCgo("expiring") < 0)
++ 		fail("ctlinnd go failed", "");
++ #else
+  	newsunlock();
++ #endif
+  
+  	if (latest > time((time_t *)NULL)) {
+  		complain("some article arrival dates are in the future!", "");
+***************
+*** 471,476 ****
+--- 481,490 ----
+  		if (dbzagain("history.n", "history") < 0)
+  			fail("dbzagain(history.n) failed", "");
+  	}
++ #ifdef INND
++ 	if (ICCopen() < 0)
++ 		fail("ICCopen() failed", "");
++ #endif
+  
+  	cd(artfile((char *)NULL));
+  	while ((line = readline(old)) != NULL) {
+***************
+*** 713,718 ****
+--- 733,746 ----
+  							p = strchr(p+1, '.'))
+  				*p = '/';
+  			expire(name, dir);
++ #ifdef INND
++ 			if(!nlocked && nleft == 0 && srcc == '\0') {
++ 				if(expdebug)
++ 					fprintf(stderr,"Cancelling %s '%s'\n",
++ 						name,msgid);
++ 				ICCcancel(msgid);
++ 			}
++ #endif
+  			if (dir != NULL && printexpiring)
+  				printstuff(msgid, name, recdate);
+  			nexpired++;
+***************
+*** 729,735 ****
+  	if (nleft == 0)
+  		return(NULL);
+  	*dst++ = '\0';
+! 	if (leaders && nleft == 1 && nexpired > 0)	/* aging leader */
+  		return(doarticle(oldnames, recdate, expdate, msgid));
+  	return(oldnames);
+  }
+--- 757,767 ----
+  	if (nleft == 0)
+  		return(NULL);
+  	*dst++ = '\0';
+! 	if (
+! #ifndef INND
+! 	leaders &&
+! #endif
+! 	    nleft == 1 && nexpired > 0)	/* aging leader */
+  		return(doarticle(oldnames, recdate, expdate, msgid));
+  	return(oldnames);
+  }
+***************
+*** 1174,1181 ****
+--- 1206,1218 ----
+  		(void) unlink("history.n.dir");
+  		(void) unlink("history.n.pag");
+  	}
++ #ifdef INND
++ 	(void) ICCclose();
++ #endif
+  	errno = saveerr;
++ #ifndef INND
+  	errunlock(s1, s2);
++ #endif
+  	/* NOTREACHED */
+  }
+  
+***************
+*** 1265,1270 ****
+--- 1302,1311 ----
+  	/* EOF. */
+  	if (nlocked)
+  		return;		/* We're really done. */
++ #ifdef INND
++ 	if (!rebuild)		/* save the rest for next time */
++ 		return;
++ #endif
+  
+  	/* EOF but we haven't locked yet.  Lock and try again. */
+  	(void) signal(SIGINT, SIG_IGN);
+***************
+*** 1271,1277 ****
+--- 1312,1323 ----
+  	(void) signal(SIGQUIT, SIG_IGN);
+  	(void) signal(SIGHUP, SIG_IGN);
+  	(void) signal(SIGTERM, SIG_IGN);
++ #ifdef INND
++ 	if (ICCpause("expiring") < 0)
++ 		fail("ctlinnd pause failed!", "");
++ #else
+  	newslock();
++ #endif
+  	nlocked = 1;
+  	refill(fd);
+  }
+
