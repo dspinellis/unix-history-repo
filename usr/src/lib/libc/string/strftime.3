@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)strftime.3	5.1 (Berkeley) %G%
+.\"	@(#)strftime.3	5.2 (Berkeley) %G%
 .\"
 .TH STRFTIME 3 "%Q"
 .AT 3
@@ -72,12 +72,15 @@ is the first three characters.
 .B %B
 is replaced by the full month name.
 .TP
-.B %b
+.B %b or %h
 is replaced by the abbreviated month name, where the abbreviation is
 the first three characters.
 .TP
 .B %c
 is equivalent to ``%a %b %d %X %Z %Y''.
+.TP
+.B %D
+is replaced by the date in the format ``mm/dd/yy''.
 .TP
 .B %d
 is replaced by the day of the month as a decimal number (01-31).
@@ -91,17 +94,32 @@ is replaced by the hour (12-hour clock) as a decimal number (01-12).
 .B %j
 is replaced by the day of the year as a decimal number (001-366).
 .TP
+.B %M
+is replaced by the minute as a decimal number (00-59).
+.TP
 .B %m
 is replaced by the month as a decimal number (01-12).
 .TP
-.B %M
-is replaced by the minute as a decimal number (00-59).
+.B %n
+is replaced by a newline.
 .TP
 .B %p
 is replaced by either ``AM'' or ``PM'' as appropriate.
 .TP
+.B %R
+is equivalent to ``%H:%M''.
+.TP
+.B %r
+is equivalent to ``%I:%M:%S %p''.
+.TP
+.B %t
+is replaced by a tab.
+.TP
 .B %S
 is replaced by the second as a decimal number (00-60).
+.TP
+.B %T or %X
+is equivalent to ``%H:%M:%S''.
 .TP
 .B %U
 is replaced by the week number of the year (Sunday as the first day of
@@ -114,9 +132,6 @@ the week) as a decimal number (00-53).
 .B %w
 is replaced by the weekday (Sunday as the first day of the week)
 as a decimal number (0-6).
-.TP
-.B %X
-is equivalent to ``%H:%M:%S''.
 .TP
 .B %x
 is equivalent to ``%a %b %d %Y''.
