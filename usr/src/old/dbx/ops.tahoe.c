@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ops.tahoe.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)ops.tahoe.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -115,9 +115,13 @@ typedef struct {
 #define	SYSSIZE	151		/* # of system calls */
 #endif
 
+#ifndef ADBINSTRS
+#define ADBINSTRS "../../bin/adb/adb.tahoe/instrs"
+#endif
+
 public Optab optab[] = {
 #define OP(a,b,c,d,e,f,g,h,i) {a,b,c,d,e,f,g,h,i}
-#include "../../bin/adb/adb.tahoe/instrs"
+#include ADBINSTRS
 0};
 
 /*
