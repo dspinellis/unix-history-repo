@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_bio.c	7.38 (Berkeley) %G%
+ *	@(#)vfs_bio.c	7.39 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -15,6 +15,44 @@
 #include "mount.h"
 #include "trace.h"
 #include "resourcevar.h"
+
+/*
+ * Initialize buffers and hash links for buffers.
+ */
+bufinit()
+{
+	register int i;
+	register struct buf *bp, *dp;
+	register struct bufhd *hp;
+	int base, residual;
+
+	for (hp = bufhash, i = 0; i < BUFHSZ; i++, hp++)
+		hp->b_forw = hp->b_back = (struct buf *)hp;
+
+	for (dp = bfreelist; dp < &bfreelist[BQUEUES]; dp++) {
+		dp->b_forw = dp->b_back = dp->av_forw = dp->av_back = dp;
+		dp->b_flags = B_HEAD;
+	}
+	base = bufpages / nbuf;
+	residual = bufpages % nbuf;
+	for (i = 0; i < nbuf; i++) {
+		bp = &buf[i];
+		bp->b_dev = NODEV;
+		bp->b_bcount = 0;
+		bp->b_rcred = NOCRED;
+		bp->b_wcred = NOCRED;
+		bp->b_dirtyoff = 0;
+		bp->b_dirtyend = 0;
+		bp->b_un.b_addr = buffers + i * MAXBSIZE;
+		if (i < residual)
+			bp->b_bufsize = (base + 1) * CLBYTES;
+		else
+			bp->b_bufsize = base * CLBYTES;
+		binshash(bp, &bfreelist[BQ_AGE]);
+		bp->b_flags = B_BUSY|B_INVAL;
+		brelse(bp);
+	}
+}
 
 /*
  * Find the block in the buffer pool.
