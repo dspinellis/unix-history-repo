@@ -9,7 +9,7 @@
  */
 
 #if !defined(lint) && !defined(SCCSID)
-static char sccsid[] = "@(#)tty.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)tty.c	5.4 (Berkeley) %G%";
 #endif /* not lint && not SCCSID */
 
 /* 
@@ -746,15 +746,15 @@ tty_bind_char(el)
 	if (new[0] == old[0])
 	    continue;
 	/* Put the old default binding back, and set the new binding */
-	key_clear(el, map, old);
+	key_clear(el, map, (char *)old);
 	map[old[0]] = dmap[old[0]];
-	key_clear(el, map, new);
+	key_clear(el, map, (char *)new);
 	/* MAP_VI == 1, MAP_EMACS == 0... */
 	map[new[0]] = tp->bind[el->el_map.type];
 	if (dalt) {
-	    key_clear(el, alt, old);
+	    key_clear(el, alt, (char *)old);
 	    alt[old[0]] = dalt[old[0]];
-	    key_clear(el, alt, new);
+	    key_clear(el, alt, (char *)new);
 	    alt[new[0]] = tp->bind[el->el_map.type+1];
 	}
     }
