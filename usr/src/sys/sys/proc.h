@@ -1,4 +1,4 @@
-/*	proc.h	4.13	82/09/04	*/
+/*	proc.h	4.14	82/09/06	*/
 
 #include "mush.h"
 #include "mu_msg.h"
@@ -59,6 +59,7 @@ struct	proc {
 	mmsgbuf	p_mb;		/* pending message */
 	int	p_msgflgs;	/* message flags */
 	struct	itimerval p_realtimer;
+	int	p_XXX;		/* XXX */
 	struct	timeval p_seltimer;
 };
 

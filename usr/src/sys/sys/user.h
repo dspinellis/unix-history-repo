@@ -1,4 +1,4 @@
-/*	user.h	4.17	82/09/04	*/
+/*	user.h	4.18	82/09/06	*/
 
 #include <sys/pcb.h>
 #include <sys/dmap.h>
@@ -77,6 +77,7 @@ struct	user {
 	struct	rusage u_ru;		/* stats for this proc */
 	struct	rusage u_cru;		/* sum of stats for reaped children */
 	struct	itimerval u_timer[3];
+	int	u_XXX[3];
 	time_t	u_start;
 	short	u_acflag;
 
