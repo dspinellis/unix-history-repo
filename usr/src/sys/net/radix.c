@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)radix.c	7.7 (Berkeley) %G%
+ *	@(#)radix.c	7.8 (Berkeley) %G%
  */
 
 /*
@@ -382,7 +382,7 @@ struct radix_node *head;
 	if (t->rn_r == saved_tt) x = t->rn_l; else x = t->rn_r;
 	/* Promote general routes from below */
 	if (x->rn_b < 0) { 
-		if (x->rn_mask && (x->rn_b >= b_leaf)) {
+		if (x->rn_mask && (x->rn_b >= b_leaf) && x->rn_mklist == 0) {
 			MKGet(m);
 			if (m) {
 				Bzero(m, sizeof *m);
@@ -534,20 +534,18 @@ on1:
 	 */
 	if (t->rn_mklist) {
 		if (x->rn_b >= 0) {
-			if (m = x->rn_mklist) {
-				while (m->rm_mklist)
-					m = m->rm_mklist;
-				m->rm_mklist = t->rn_mklist;
-			} else
-				x->rn_mklist = m;
+			for (mp = &x->rn_mklist; m = *mp;)
+				mp = &m->rm_mklist;
+			*mp = t->rn_mklist;
 		} else {
 			for (m = t->rn_mklist; m;) {
 				struct radix_mask *mm = m->rm_mklist;
 				if (m == x->rn_mklist && (--(m->rm_refs) < 0)) {
 					x->rn_mklist = 0;
 					MKFree(m);
-				} else
-					printf("rn_delete: Orphaned mask\n");
+				} else 
+					printf("%s %x at %x\n",
+					    "rn_delete: Orphaned Mask", m, x);
 				m = mm;
 			}
 		}
