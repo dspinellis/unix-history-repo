@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: rd.c 1.38 90/10/12$
  *
- *	@(#)rd.c	7.11 (Berkeley) %G%
+ *	@(#)rd.c	7.12 (Berkeley) %G%
  */
 
 /*
@@ -1131,7 +1131,8 @@ rddump(dev)
 #endif
 			return (EIO);
 		}
-		pmap_enter(pmap_kernel(), vmmap, maddr, VM_PROT_READ, TRUE);
+		pmap_enter(pmap_kernel(), (vm_offset_t)vmmap, maddr,
+		    VM_PROT_READ, TRUE);
 		hpibsend(hp->hp_ctlr, hp->hp_slave, C_EXEC, vmmap, NBPG);
 		if (hpibswait(hp->hp_ctlr, hp->hp_slave)) {
 #ifdef DEBUG
