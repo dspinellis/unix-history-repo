@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)tftpd.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)tftpd.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -250,11 +250,17 @@ validate_access(filename, mode)
 {
 	struct stat stbuf;
 	int	fd;
-	char **dirp = dirs;
+	char *cp, **dirp;
 
 	if (*filename != '/')
 		return (EACCESS);
-	for (; *dirp; dirp++)
+	/*
+	 * prevent tricksters from getting around the directory restrictions
+	 */
+	for (cp = filename + 1; *cp; cp++)
+		if(*cp == '.' && strncmp(cp-1, "/../", 4) == 0)
+			return(EACCESS);
+	for (dirp = dirs; *dirp; dirp++)
 		if (strncmp(filename, *dirp, strlen(*dirp)) == 0)
 			break;
 	if (*dirp==0 && dirp!=dirs)
