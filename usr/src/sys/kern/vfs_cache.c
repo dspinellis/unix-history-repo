@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_cache.c	7.11 (Berkeley) %G%
+ *	@(#)vfs_cache.c	7.12 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -171,6 +171,10 @@ cache_enter(dvp, vp, cnp)
 	register struct namecache *ncp;
 	union nchash *nhp;
 
+#ifdef DIAGNOSTIC
+	if (cnp->cn_namelen > NCHNAMLEN)
+		panic("cache_enter: name too long");
+#endif
 	if (!doingcache)
 		return;
 	/*
