@@ -5,7 +5,7 @@
    Please mail all suggestions and additions to FreeBSD-FAQ@freefall.cdrom.com
 
 
-Revision: $Id: FreeBSD.FAQ,v 1.9 1994/04/19 20:01:42 csgr Exp $
+Revision: $Id: FreeBSD.FAQ,v 1.10 1994/04/19 22:06:06 wollman Exp $
 
 
 Table of Contents
@@ -376,12 +376,10 @@ information.
 
 3.2	What about other commercial quality development systems for FreeBSD?
 
-ParcPlace Systems, Inc. provides their excellent `Object Interface & Object
-Builder' GUI development environment free of charge to FreeBSD users.  Using
-OI, you can develop Motif or OpenLook compliant applications in C++ with all
-the benefits of a true GUI object hierarchy.  This will be announced and
-made available as part of the FreeBSD distribution very soon.
-
+ParcPlace Systems, Inc., who currently provides their excellent
+`Object Interface & Object Builder' GUI development environment
+free of charge to Linux users, is considering the the FreeBSD
+platform and will make their intentions known fairly shortly.
 
 
 
