@@ -8,7 +8,7 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(`@(#)proto.m4	8.74 (Berkeley) %G%')
+VERSIONID(`@(#)proto.m4	8.75 (Berkeley) %G%')
 
 MAILER(local)dnl
 
@@ -426,7 +426,7 @@ R$@			$@ <@>
 R$*			$: $1 <@>			mark addresses
 R$* < $* > $* <@>	$: $1 < $2 > $3			unmark <addr>
 R$* :: $* <@>		$: $1 :: $2			unmark node::addr
-R:include: $* <@>	$: :include: $1			unmark :include:...
+R:`include': $* <@>	$: :`include': $1			unmark :include:...
 R$* : $* <@>		$: $2				strip colon if marked
 R$* <@>			$: $1				unmark
 R$* ;			$: $1				strip trailing semi
