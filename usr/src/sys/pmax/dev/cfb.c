@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)cfb.c	7.5 (Berkeley) %G%
+ *	@(#)cfb.c	7.6 (Berkeley) %G%
  */
 
 /*
@@ -106,22 +106,16 @@ static void cfbConfigMouse(), cfbDeconfigMouse();
 extern void fbKbdEvent(), fbMouseEvent(), fbMouseButtons();
 void cfbKbdEvent(), cfbMouseEvent(), cfbMouseButtons();
 #if NDC > 0
-#include <machine/dc7085cons.h>
-extern void dcPutc();
 extern void (*dcDivertXInput)();
 extern void (*dcMouseEvent)();
 extern void (*dcMouseButtons)();
 #endif
 #if NSCC > 0
-#include <pmax/dev/sccreg.h>
-extern void sccPutc();
 extern void (*sccDivertXInput)();
 extern void (*sccMouseEvent)();
 extern void (*sccMouseButtons)();
 #endif
 #if NDTOP > 0
-#include <pmax/dev/dtopreg.h>
-extern void dtopKBDPutc();
 extern void (*dtopDivertXInput)();
 extern void (*dtopMouseEvent)();
 extern void (*dtopMouseButtons)();
@@ -366,8 +360,14 @@ cfbLoadCursor(cursor)
 		while (j < 4) {
 			out = 0;
 			for (i = 0; i < 4; i++) {
+#ifdef CURSOR_EL
 				out = (out << 2) | ((ap & 0x1) << 1) |
 					(bp & 0x1);
+#else
+				out = ((out >> 2) & 0x3f) |
+					((ap & 0x1) << 7) |
+					((bp & 0x1) << 6);
+#endif
 				ap >>= 1;
 				bp >>= 1;
 			}
@@ -457,31 +457,16 @@ cfbinit(cp)
 
 	fp->isMono = 0;
 	fp->fr_addr = (char *)(cp + CFB_OFFSET_VRAM);
-	fp->fbu = &cfbu;
+	/*
+	 * Must be in Uncached space or the Xserver sees a stale version of
+	 * the event queue and acts totally wacko. I don't understand this,
+	 * since the R3000 uses a physical address cache?
+	 */
+	fp->fbu = (struct fbuaccess *)
+		MACH_PHYS_TO_UNCACHED(MACH_CACHED_TO_PHYS(&cfbu));
 	fp->posCursor = cfbPosCursor;
-	switch (pmax_boardtype) {
-#if NDC > 0
-	case DS_3MAX:
-		fp->KBDPutc = dcPutc;
-		fp->kbddev = makedev(DCDEV, DCKBD_PORT);
-		break;
-#endif
-#if NSCC > 0
-	case DS_3MIN:
-		fp->KBDPutc = sccPutc;
-		fp->kbddev = makedev(SCCDEV, SCCKBD_PORT);
-		break;
-#endif
-#if NDTOP > 0
-	case DS_MAXINE:
-		fp->KBDPutc = dtopKBDPutc;
-		fp->kbddev = makedev(DTOPDEV, DTOPKBD_PORT);
-		break;
-#endif
-	default:
-		printf("Can't cofigure keyboard/mouse\n");
+	if (tb_kbdmouseconfig(fp))
 		return (0);
-	};
 
 	/*
 	 * Initialize the screen.

@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)dtop.c	7.1 (Berkeley) %G%
+ *	@(#)dtop.c	7.2 (Berkeley) %G%
  */
 
 /* 
@@ -41,6 +41,29 @@
  *	Hardware-level operations for the Desktop serial line
  *	bus (i2c aka ACCESS).
  */
+/************************************************************
+Copyright 1987 by Digital Equipment Corporation, Maynard, Massachusetts,
+and the Massachusetts Institute of Technology, Cambridge, Massachusetts.
+
+                        All Rights Reserved
+
+Permission to use, copy, modify, and distribute this software and its 
+documentation for any purpose and without fee is hereby granted, 
+provided that the above copyright notice appear in all copies and that
+both that copyright notice and this permission notice appear in 
+supporting documentation, and that the names of Digital or MIT not be
+used in advertising or publicity pertaining to distribution of the
+software without specific, written prior permission.  
+
+DIGITAL DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING
+ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS, IN NO EVENT SHALL
+DIGITAL BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR
+ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS,
+WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION,
+ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS
+SOFTWARE.
+
+********************************************************/
 
 #include <dtop.h>
 #if NDTOP > 0
@@ -80,6 +103,7 @@ int dtopparam		__P((struct tty *, struct termios *));
 int dtopstop		__P((struct tty *, int));
 void dtopstart		__P((struct tty *));
 void dtopKBDPutc	__P((dev_t, int));
+static void dtop_keyboard_repeat __P((dtop_device_t));
 
 struct	tty dtop_tty[NDTOP];
 void	(*dtopDivertXInput)();	/* X windows keyboard input routine */
@@ -119,7 +143,19 @@ struct dtop_softc {
 
 typedef struct dtop_softc *dtop_softc_t;
 struct tty dtop_tty[NDTOP];
-static int dtopenabled = 0;
+
+/*
+ * lk201 keyboard divisions and up/down mode key bitmap.
+ */
+#define NUMDIVS 14
+static u_char divbeg[NUMDIVS] = {0xbf, 0x91, 0xbc, 0xbd, 0xb0, 0xad, 0xa6,
+				 0xa9, 0x88, 0x56, 0x63, 0x6f, 0x7b, 0x7e};
+static u_char divend[NUMDIVS] = {0xff, 0xa5, 0xbc, 0xbe, 0xb2, 0xaf, 0xa8,
+				 0xac, 0x90, 0x62, 0x6e, 0x7a, 0x7d, 0x87};
+/*
+ * Initial defaults, groups 5 and 6 are up/down
+ */
+static u_long keymodes[8] = {0, 0, 0, 0, 0, 0x0003e000, 0, 0};
 
 /*
  * Definition of the driver for the auto-configuration program.
@@ -163,7 +199,9 @@ dtopprobe(cp)
 	 * poke it now.
 	 */
 	dtopintr(dtopunit);
-	dtopenabled = 1;
+	dtop->probed_once = 1;
+	printf("dtop%d at nexus0 csr 0x%x priority %d\n",
+		cp->pmax_unit, cp->pmax_addr, cp->pmax_pri);
 	return (1);
 }
 
@@ -300,7 +338,7 @@ dtopintr(unit)
 
 	dtop = &dtop_softc[unit];
 	if (dtop_get_packet(dtop, &msg) < 0) {
-		if (dtopenabled)
+		if (dtop->probed_once)
 			printf("%s", "dtop: overrun (or stray)\n");
 		return;
 	}
@@ -360,11 +398,46 @@ dtopKBDPutc(dev, c)
 	dev_t dev;
 	int c;
 {
+	register int i;
+	static int param = 0, cmd, mod, typ;
+	static u_char parms[2];
 
 	/*
-	 * Not yet, someday we will know how to send commands to the
-	 * LK501 over the Access bus.
+	 * Emulate the lk201 command codes.
 	 */
+	if (param == 0) {
+		typ = (c & 0x1);
+		cmd = ((c >> 3) & 0xf);
+		mod = ((c >> 1) & 0x3);
+	} else
+		parms[param - 1] = (c & 0x7f);
+	if (c & 0x80) {
+		if (typ) {
+			/*
+			 * A peripheral command code. Someday this driver
+			 * should know how to send commands to the lk501,
+			 * but until then this is all essentially a no-op.
+			 */
+			;
+		} else {
+			/*
+			 * Set modes. These have to be emulated in software.
+			 */
+			if (cmd > 0 && cmd < 15) {
+				cmd--;
+				if (mod & 0x2)
+				   for (i = divbeg[cmd]; i <= divend[cmd]; i++)
+					keymodes[i >> 5] |=
+						(1 << (i & 0x1f));
+				else
+				   for (i = divbeg[cmd]; i <= divend[cmd]; i++)
+					keymodes[i >> 5] &=
+						~(1 << (i & 0x1f));
+			}
+		}
+		param = 0;
+	} else if (++param > 2)
+		param = 2;
 }
 
 /*
@@ -404,13 +477,13 @@ dtop_get_packet(dtop, pkt)
 	 * the average packet exactly one word long, too.
 	 */
 	for (max = 0; (max < DTOP_MAX_POLL) && !DTOP_RX_AVAIL(poll); max++)
-		DELAY(16);
+		DELAY(1);
 	if (max == DTOP_MAX_POLL)
 		goto bad;
 	pkt->src_address = DTOP_GET_BYTE(data);
 
 	for (max = 0; (max < DTOP_MAX_POLL) && !DTOP_RX_AVAIL(poll); max++)
-		DELAY(16);
+		DELAY(1);
 	if (max == DTOP_MAX_POLL)
 		goto bad;
 	pkt->code.bits = DTOP_GET_BYTE(data);
@@ -423,7 +496,7 @@ dtop_get_packet(dtop, pkt)
 	for (i = 0; i < len; i++) {
 again:
 		for (max = 0; (max < DTOP_MAX_POLL) && !DTOP_RX_AVAIL(poll); max++)
-			DELAY(16);
+			DELAY(1);
 		if (max == DTOP_MAX_POLL)
 			goto bad;
 		if (c == DTOP_ESC_CHAR) {
@@ -551,24 +624,34 @@ dtop_locator_handler(dev, msg, event, outc)
 	register MouseReport *mrp = &currentRep;
 
 	if (dtopMouseButtons) {
+		mrp->state = 0;
 		/*
 		 * Do the position first
 		 */
 		coord = GET_SHORT(msg->body[2], msg->body[3]);
-		mrp->dx = coord;
-		if (coord != 0)
+		if (coord < 0) {
+			coord = -coord;
 			moved = 1;
+		} else if (coord > 0) {
+			mrp->state |= MOUSE_X_SIGN;
+			moved = 1;
+		}
+		mrp->dx = (coord & 0x1f);
 		coord = GET_SHORT(msg->body[4], msg->body[5]);
-		coord = - coord;
-		mrp->dy = coord;
-		if (coord != 0)
+		if (coord < 0) {
+			coord = -coord;
 			moved = 1;
+		} else if (coord > 0) {
+			mrp->state |= MOUSE_Y_SIGN;
+			moved = 1;
+		}
+		mrp->dy = (coord & 0x1f);
 	
 		/*
 		 * Time for the buttons now
 		 */
 		buttons = GET_SHORT(msg->body[0], msg->body[1]);
-		mrp->state = MOUSE_Y_SIGN | MOUSE_X_SIGN | (buttons & 0x7);
+		mrp->state |= (buttons & 0x7);
 		if (moved)
 			(*dtopMouseEvent)(mrp);
 		(*dtopMouseButtons)(mrp);
@@ -600,63 +683,6 @@ dtop_keyboard_handler(dev, msg, event, outc)
 	 * emulate the stateful lk201, since the X11R5 X servers
 	 * only know about the lk201... (oh well)
 	 */
-	if (event != DTOP_EVENT_RECEIVE_PACKET) {
-		switch (event) {
-		case DTOP_EVENT_POLL:
-		    {
-			register unsigned int	t, t0;
-
-			/*
-			 * Note we will always have at least the
-			 * end-of-list marker present (a zero)
-			 * Here stop and trigger of autorepeat.
-			 * Do not repeat shift keys, either.
-			 */
-			{
-				register unsigned char	uc, i = 0;
-
-rpt_char:
-				uc = dev->keyboard.last_codes[i];
-
-				if (uc == DTOP_KBD_EMPTY) {
-					dev->keyboard.k_ar_state = K_AR_OFF;
-					return 0;
-				}
-				if ((uc >= KEY_R_SHIFT) && (uc <= KEY_R_ALT)) {
-					/* sometimes swapped. Grrr. */
-					if (++i < dev->keyboard.last_codes_count) 
-						goto rpt_char;
-					dev->keyboard.k_ar_state = K_AR_OFF;
-					return 0;
-				}
-				c = uc;
-			}
-
-			/*
-			 * Got a char. See if enough time from stroke,
-			 * or from last repeat.
-			 */
-			t0 = (dev->keyboard.k_ar_state == K_AR_TRIGGER) ? 30 : 500;
-			t = TO_MS(time);
-			if ((t - dev->keyboard.last_msec) < t0)
-				return 0;
-
-			dev->keyboard.k_ar_state = K_AR_TRIGGER;
-
-			if (dtopDivertXInput) {
-				(*dtopDivertXInput)(KEY_REPEAT);
-				return (0);
-			}
-			if ((outc = kbdMapChar(KEY_REPEAT)) >= 0)
-				(*linesw[tp->t_line].l_rint)(outc, tp);
-			return 0;
-		    }
-		default:
-			printf("Unknown dtop keyb\n");
-		}
-		return -1;
-	}
-
 	msg_len = msg->code.val.len;
 
 	/* Check for errors */
@@ -724,14 +750,10 @@ rpt_char:
 	ls = &dev->keyboard.last_codes[dev->keyboard.last_codes_count - 1];
 	for ( ; ls >= le; ls--)
 	    if (c = *ls) {
-		/*
-		 * If there are no other down/up keys currently down, we
-		 * should actually generate a KEY_UP, but that would require
-		 * a lot more state.
-		 */
 		(void) kbdMapChar(c);			
 
-		if (outc == 0 && dtopDivertXInput)
+		if (outc == 0 && dtopDivertXInput &&
+		    (keymodes[(c >> 5) & 0x7] & (1 << (c & 0x1f))))
 			(*dtopDivertXInput)(c);
 	    }
 	/*
@@ -765,7 +787,7 @@ rpt_char:
 }
 
 /*
- * Polled operations: we must do autorepeat by hand. Sigh.
+ * Timeout routine to do autorepeat.
  */
 void
 dtop_keyboard_autorepeat(arg)
@@ -776,7 +798,7 @@ dtop_keyboard_autorepeat(arg)
 
 	s = spltty();
 	if (dev->keyboard.k_ar_state != K_AR_IDLE)
-		(void)dtop_keyboard_handler(dev, 0, DTOP_EVENT_POLL, 0);
+		dtop_keyboard_repeat(dev);
 
 	if (dev->keyboard.k_ar_state == K_AR_OFF)
 		dev->keyboard.k_ar_state = K_AR_IDLE;
@@ -784,5 +806,44 @@ dtop_keyboard_autorepeat(arg)
 		timeout(dtop_keyboard_autorepeat, dev, dev->keyboard.poll_frequency);
 
 	splx(s);
+}
+
+/*
+ * See if an autorepeat is required.
+ */
+static void
+dtop_keyboard_repeat(dev)
+	dtop_device_t dev;
+{
+	register int i, c;
+	register u_int t, t0;
+	struct tty *tp = dtop_tty;
+
+	for (i = 0; i < dev->keyboard.last_codes_count; i++) {
+		c = (int)dev->keyboard.last_codes[i];
+		if (c != DTOP_KBD_EMPTY &&
+		    (keymodes[(c >> 5) & 0x7] & (1 << (c & 0x1f))) == 0) {
+			/*
+			 * Got a char. See if enough time from stroke,
+			 * or from last repeat.
+			 */
+			t0 = (dev->keyboard.k_ar_state == K_AR_TRIGGER) ? 30 : 500;
+			t = TO_MS(time);
+			if ((t - dev->keyboard.last_msec) < t0)
+				return;
+
+			dev->keyboard.k_ar_state = K_AR_TRIGGER;
+
+			if (dtopDivertXInput) {
+				(*dtopDivertXInput)(KEY_REPEAT);
+				return;
+			}
+
+			if ((c = kbdMapChar(KEY_REPEAT)) >= 0)
+				(*linesw[tp->t_line].l_rint)(c, tp);
+			return;
+		}
+	}
+	dev->keyboard.k_ar_state = K_AR_OFF;
 }
 #endif

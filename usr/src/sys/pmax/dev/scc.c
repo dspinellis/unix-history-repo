@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)scc.c	7.1 (Berkeley) %G%
+ *	@(#)scc.c	7.2 (Berkeley) %G%
  */
 
 /* 
@@ -151,11 +151,18 @@ sccprobe(cp)
 	struct termios cterm;
 	int s;
 
-printf("scc probe addr=0x%x\n",cp->pmax_addr);
 	if (cp->pmax_unit >= NSCC)
 		return (0);
 	if (badaddr(cp->pmax_addr, 2))
 		return (0);
+
+	/*
+	 * For a remote console, wait a while for previous output to
+	 * complete.
+	 */
+	if (major(cn_tab.cn_dev) == SCCDEV && cn_tab.cn_screen == 0 &&
+		SCCUNIT(cn_tab.cn_dev) == cp->pmax_unit)
+		DELAY(10000);
 
 	sc = &scc_softc[cp->pmax_unit];
 	pdp = &sc->scc_pdma[0];
@@ -168,16 +175,12 @@ printf("scc probe addr=0x%x\n",cp->pmax_addr);
 		pdp->p_fcn = (void (*)())0;
 		tp->t_addr = (caddr_t)pdp;
 		tp->t_dev = (dev_t)((cp->pmax_unit << 1) | cntr);
-printf("for dev=0x%x\n",tp->t_dev);
 		pdp++, tp++;
 	}
 	sc->scc_softCAR = cp->pmax_flags | 0x2;
 
 	/* reset chip */
 	sccreset(sc);
-
-	printf("scc%d at nexus0 csr 0x%x priority %d\n",
-		cp->pmax_unit, cp->pmax_addr, cp->pmax_pri);
 
 	/*
 	 * Special handling for consoles.
@@ -190,6 +193,7 @@ printf("for dev=0x%x\n",tp->t_dev);
 				cterm.c_cflag = CS8;
 				cterm.c_ospeed = cterm.c_ispeed = 4800;
 				(void) sccparam(&ctty, &cterm);
+				DELAY(1000);
 				KBDReset(ctty.t_dev, sccPutc);
 				splx(s);
 			} else if (cp->pmax_unit == 1) {
@@ -198,6 +202,7 @@ printf("for dev=0x%x\n",tp->t_dev);
 				cterm.c_cflag = CS8 | PARENB | PARODD;
 				cterm.c_ospeed = cterm.c_ispeed = 4800;
 				(void) sccparam(&ctty, &cterm);
+				DELAY(1000);
 				MouseInit(ctty.t_dev, sccPutc, sccGetc);
 				splx(s);
 			}
@@ -208,9 +213,12 @@ printf("for dev=0x%x\n",tp->t_dev);
 		cterm.c_cflag = CS8;
 		cterm.c_ospeed = cterm.c_ispeed = 9600;
 		(void) sccparam(&ctty, &cterm);
+		DELAY(1000);
 		cn_tab.cn_disabled = 0;
 		splx(s);
 	}
+	printf("scc%d at nexus0 csr 0x%x priority %d\n",
+		cp->pmax_unit, cp->pmax_addr, cp->pmax_pri);
 	return (1);
 }
 
@@ -271,7 +279,7 @@ sccreset(sc)
 
 	/* interrupt conditions */
 	val =	SCC_WR1_RXI_ALL_CHAR | SCC_WR1_PARITY_IE |
-		SCC_WR1_EXT_IE | SCC_WR1_TX_IE;		
+		SCC_WR1_EXT_IE;
 	sc->scc_wreg[SCC_CHANNEL_A].wr1 = val;
 	sc->scc_wreg[SCC_CHANNEL_B].wr1 = val;
 }
@@ -287,12 +295,10 @@ sccopen(dev, flag, mode, p)
 	int s, error = 0;
 
 	unit = SCCUNIT(dev);
-printf("sccopen\n");
 	if (unit >= NSCC)
 		return (ENXIO);
 	line = SCCLINE(dev);
 	sc = &scc_softc[unit];
-printf("paddr=0x%x\n",sc->scc_pdma[line].p_addr);
 	if (sc->scc_pdma[line].p_addr == (void *)0)
 		return (ENXIO);
 	tp = &scc_tty[minor(dev)];
@@ -300,7 +306,6 @@ printf("paddr=0x%x\n",sc->scc_pdma[line].p_addr);
 	tp->t_oproc = sccstart;
 	tp->t_param = sccparam;
 	tp->t_dev = dev;
-printf("openinscc\n");
 	if ((tp->t_state & TS_ISOPEN) == 0) {
 		tp->t_state |= TS_WOPEN;
 		ttychars(tp);
@@ -623,9 +628,25 @@ sccintr(unit)
 				MachEmptyWriteBuffer();
 			}
 		}
-	    } else if (rr2 == SCC_RR2_A_RECV_DONE) {
-		tp = &scc_tty[unit | SCC_CHANNEL_A];
-		SCC_READ_DATA(regs, SCC_CHANNEL_A, cc);
+	    } else if (rr2 == SCC_RR2_A_RECV_DONE ||
+		rr2 == SCC_RR2_B_RECV_DONE || rr2 == SCC_RR2_A_RECV_SPECIAL ||
+		rr2 == SCC_RR2_B_RECV_SPECIAL) {
+		if (rr2 == SCC_RR2_A_RECV_DONE || rr2 == SCC_RR2_A_RECV_SPECIAL)
+			chan = SCC_CHANNEL_A;
+		else
+			chan = SCC_CHANNEL_B;
+		tp = &scc_tty[unit | chan];
+		SCC_READ_DATA(regs, chan, cc);
+		if (rr2 == SCC_RR2_A_RECV_SPECIAL ||
+			rr2 == SCC_RR2_B_RECV_SPECIAL) {
+			SCC_READ_REG(regs, chan, SCC_RR1, rr1);
+			SCC_WRITE_REG(regs, chan, SCC_RR0, SCC_RESET_ERROR);
+			if ((rr1 & SCC_RR1_RX_OVERRUN) && overrun == 0) {
+				log(LOG_WARNING, "scc%d,%d: silo overflow\n",
+					unit >> 1, chan);
+				overrun = 1;
+			}
+		}
 
 		/*
 		 * Keyboard needs special treatment.
@@ -692,16 +713,12 @@ sccintr(unit)
 #endif
 				continue;
 		}
-		(*linesw[tp->t_line].l_rint)(cc, tp);
-	    } else if (rr2 == SCC_RR2_B_RECV_DONE) {
-		tp = &scc_tty[unit | SCC_CHANNEL_B];
-		SCC_READ_DATA(regs, SCC_CHANNEL_B, cc);
-		if (!(tp->t_state & TS_ISOPEN)) {
-			wakeup((caddr_t)&tp->t_rawq);
-#ifdef PORTSELECTOR
-			if (!(tp->t_state & TS_WOPEN))
-#endif
-				continue;
+		if (rr2 == SCC_RR2_A_RECV_SPECIAL ||
+			rr2 == SCC_RR2_B_RECV_SPECIAL) {
+			if (rr1 & SCC_RR1_PARITY_ERR)
+				cc |= TTY_PE;
+			if (rr1 & SCC_RR1_FRAME_ERR)
+				cc |= TTY_FE;
 		}
 		(*linesw[tp->t_line].l_rint)(cc, tp);
 	    } else if ((rr2 == SCC_RR2_A_EXT_STATUS) || (rr2 == SCC_RR2_B_EXT_STATUS)) {
@@ -709,24 +726,6 @@ sccintr(unit)
 			SCC_CHANNEL_A : SCC_CHANNEL_B;
 		SCC_WRITE_REG(regs, chan, SCC_RR0, SCC_RESET_EXT_IP);
 		scc_modem_intr(unit | chan);
-	    } else if ((rr2 == SCC_RR2_A_RECV_SPECIAL) || (rr2 == SCC_RR2_B_RECV_SPECIAL)) {
-		chan = (rr2 == SCC_RR2_A_RECV_SPECIAL) ?
-			SCC_CHANNEL_A : SCC_CHANNEL_B;
-		tp = &scc_tty[unit | chan];
-		SCC_READ_REG(regs, chan, SCC_RR1, rr1);
-		SCC_WRITE_REG(regs, chan, SCC_RR0, SCC_RESET_ERROR);
-		if ((rr1 & SCC_RR1_RX_OVERRUN) && overrun == 0) {
-			log(LOG_WARNING, "scc%d,%d: silo overflow\n", unit >> 1,
-				chan);
-			overrun = 1;
-			continue;
-		}
-		cc = 0;
-		if (rr1 & SCC_RR1_PARITY_ERR)
-			cc |= TTY_PE;
-		if (rr1 & SCC_RR1_FRAME_ERR)
-			cc |= TTY_FE;
-		(*linesw[tp->t_line].l_rint)(cc, tp);
 	    }
 	}
 }
@@ -740,7 +739,7 @@ sccstart(tp)
 	register struct scc_softc *sc;
 	register int cc, chan;
 	u_char temp;
-	int s;
+	int s, sendone;
 
 	dp = (struct pdma *)tp->t_addr;
 	regs = (scc_regmap_t *)dp->p_addr;
@@ -795,14 +794,15 @@ sccstart(tp)
 	 * Enable transmission and send the first char, as required.
 	 */
 	chan = SCCLINE(tp->t_dev);
+	SCC_READ_REG(regs, chan, SCC_RR0, temp);
+	sendone = (temp & SCC_RR0_TX_EMPTY);
 	SCC_READ_REG(regs, chan, SCC_RR15, temp);
 	temp |= SCC_WR15_TX_UNDERRUN_IE;
 	SCC_WRITE_REG(regs, chan, SCC_WR15, temp);
 	temp = sc->scc_wreg[chan].wr1 | SCC_WR1_TX_IE;
 	SCC_WRITE_REG(regs, chan, SCC_WR1, temp);
 	sc->scc_wreg[chan].wr1 = temp;
-	SCC_READ_REG(regs, chan, SCC_RR0, temp);
-	if (temp & SCC_RR0_TX_EMPTY) {
+	if (sendone) {
 #ifdef DIAGNOSTIC
 		if (cc == 0)
 			panic("sccstart: No chars");
@@ -977,24 +977,29 @@ sccPutc(dev, c)
 	int c;
 {
 	register scc_regmap_t *regs;
-	register int timeout, line;
+	register int line;
 	register u_char value;
 	int s;
 
 	s = spltty();
 	line = SCCLINE(dev);
 	regs = (scc_regmap_t *)scc_softc[SCCUNIT(dev)].scc_pdma[line].p_addr;
+
 	/*
 	 * Wait for transmitter to be not busy.
 	 */
-	timeout = 1000000;
 	do {
 		SCC_READ_REG(regs, line, SCC_RR0, value);
-	} while ((value & SCC_RR0_TX_EMPTY) == 0 && --timeout > 0);
-	if (timeout == 0)
-		printf("sccPutc: timeout waiting for TRDY\n");
-	else
-		SCC_WRITE_DATA(regs, line, c);
+		if (value & SCC_RR0_TX_EMPTY)
+			break;
+		DELAY(100);
+	} while (1);
+
+	/*
+	 * Send the char.
+	 */
+	SCC_WRITE_DATA(regs, line, c);
+	MachEmptyWriteBuffer();
 	splx(s);
 }
 #endif /* NSCC */

@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)asc.c	7.8 (Berkeley) %G%
+ *	@(#)asc.c	7.9 (Berkeley) %G%
  */
 
 /* 
@@ -111,31 +111,7 @@
 #include <pmax/pmax/kmin.h>
 #include <pmax/pmax/pmaxtype.h>
 
-#define ASC_OFFSET_53C94	0x0		/* from module base */
-#define ASC_OFFSET_DMAR		0x40000		/* DMA Address Register */
-#define ASC_OFFSET_RAM		0x80000		/* SRAM Buffer */
-#define ASC_OFFSET_ROM		0xc0000		/* Diagnostic ROM */
-
-#define	ASC_RAM_SIZE		0x20000		/* 128k (32k*32) */
-
 #define	readback(a)	{ register int foo; foo = (a); }
-/*
- * DMA Address Register
- */
-#define ASC_DMAR_MASK		0x1ffff		/* 17 bits, 128k */
-#define ASC_DMAR_WRITE		0x80000000	/* DMA direction bit */
-#define	ASC_DMA_ADDR(x)		((unsigned)(x) & ASC_DMAR_MASK)
-
-/*
- * Synch xfer parameters, and timing conversions
- */
-#define SCSI_MIN_PERIOD		50	/* in 4 nsecs units */
-#define ASC_MIN_PERIOD25	5	/* in CLKS/BYTE, 1 CLK = 40nsecs */
-#define ASC_MIN_PERIOD12	3	/* in CLKS/BYTE, 1 CLK = 80nsecs */
-#define ASC_MAX_PERIOD25	35	/* in CLKS/BYTE, 1 CLK = 40nsecs */
-#define ASC_MAX_PERIOD12	18	/* in CLKS/BYTE, 1 CLK = 80nsecs */
-#define ASC_MAX_OFFSET		15	/* pure number */
-
 extern int pmax_boardtype;
 
 /*
@@ -389,7 +365,6 @@ typedef struct scsi_state {
 #define DID_SYNC	0x20	/* true if synchronous offset was negotiated */
 #define TRY_SYNC	0x40	/* true if try neg. synchronous offset */
 
-#define ASC_NCMD	7
 /*
  * State kept for each active SCSI host interface (53C94).
  */
@@ -428,7 +403,8 @@ typedef struct asc_softc *asc_softc_t;
 #define	ASCDMA_READ	1
 #define	ASCDMA_WRITE	2
 static void tb_dma_start(), tb_dma_end(), asic_dma_start(), asic_dma_end();
-u_long asc_iobuf[33792];
+extern u_long asc_iomem;
+extern u_long asic_base;
 
 /*
  * Definition of the controller for the auto-configuration program.
@@ -450,7 +426,7 @@ asc_probe(cp)
 	register asc_softc_t asc;
 	register asc_regmap_t *regs;
 	int unit, id, s, i;
-	u_int bufadr;
+	int bufsiz;
 
 	if ((unit = cp->pmax_unit) >= NASC)
 		return (0);
@@ -471,15 +447,13 @@ asc_probe(cp)
 	switch (pmax_boardtype) {
 	case DS_3MIN:
 	case DS_MAXINE:
+	case DS_3MAXPLUS:
 	    if (unit == 0) {
-		bufadr = MACH_PHYS_TO_UNCACHED(MACH_CACHED_TO_PHYS(asc_iobuf));
-		bufadr = (bufadr + NBPG - 1) & ~(NBPG - 1);
-		asc->buff = (u_char *)bufadr;
-		*((volatile int *)MACH_PHYS_TO_UNCACHED(KMIN_REG_SCSI_DMAPTR))
-			= -1;
-		*((volatile int *)MACH_PHYS_TO_UNCACHED(KMIN_REG_SCSI_DMANPTR))
-			= -1;
-		*((volatile int *)MACH_PHYS_TO_UNCACHED(KMIN_REG_SCSI_SCR)) = 0;
+		asc->buff = (u_char *)MACH_PHYS_TO_UNCACHED(asc_iomem);
+		bufsiz = 8192;
+		*((volatile int *)ASIC_REG_SCSI_DMAPTR(asic_base)) = -1;
+		*((volatile int *)ASIC_REG_SCSI_DMANPTR(asic_base)) = -1;
+		*((volatile int *)ASIC_REG_SCSI_SCR(asic_base)) = 0;
 		asc->dma_start = asic_dma_start;
 		asc->dma_end = asic_dma_end;
 		break;
@@ -491,6 +465,7 @@ asc_probe(cp)
 	default:
 	    asc->dmar = (volatile int *)(cp->pmax_addr + ASC_OFFSET_DMAR);
 	    asc->buff = (u_char *)(cp->pmax_addr + ASC_OFFSET_RAM);
+	    bufsiz = PER_TGT_DMA_SIZE;
 	    asc->dma_start = tb_dma_start;
 	    asc->dma_end = tb_dma_end;
 	};
@@ -500,6 +475,7 @@ asc_probe(cp)
 	 */
 	switch (pmax_boardtype) {
 	case DS_3MAX:
+	case DS_3MAXPLUS:
 		asc->min_period = ASC_MIN_PERIOD25;
 		asc->max_period = ASC_MAX_PERIOD25;
 		asc->ccf = ASC_CCF(25);
@@ -551,15 +527,14 @@ asc_probe(cp)
 	 * This way we will eventually be able to attach/detach
 	 * drives on-fly.  And 18k/target is plenty for normal use.
 	 */
-#define PER_TGT_DMA_SIZE	((ASC_RAM_SIZE/7) & ~(sizeof(int)-1))
 
 	/*
 	 * Give each target its own DMA buffer region.
 	 * We may want to try ping ponging buffers later.
 	 */
 	for (i = 0; i < ASC_NCMD; i++) {
-		asc->st[i].dmaBufAddr = asc->buff + PER_TGT_DMA_SIZE * i;
-		asc->st[i].dmaBufSize = PER_TGT_DMA_SIZE;
+		asc->st[i].dmaBufAddr = asc->buff + bufsiz * i;
+		asc->st[i].dmaBufSize = bufsiz;
 	}
 	printf("asc%d at nexus0 csr 0x%x priority %d SCSI id %d\n",
 		unit, cp->pmax_addr, cp->pmax_pri, id);
@@ -621,7 +596,8 @@ asc_reset(asc, regs)
 	regs->asc_sel_timo = asc->timeout_250;
 	/* restore our ID */
 	regs->asc_cnfg1 = asc->myid | ASC_CNFG1_P_CHECK;
-	regs->asc_cnfg2 = /* ASC_CNFG2_RFB | */ ASC_CNFG2_SCSI2;
+	/* include ASC_CNFG2_SCSI2 if you want to allow SCSI II commands */
+	regs->asc_cnfg2 = /* ASC_CNFG2_RFB | ASC_CNFG2_SCSI2 | */ ASC_CNFG2_EPL;
 	regs->asc_cnfg3 = 0;
 	/* zero anything else */
 	ASC_TC_PUT(regs, 0);
@@ -966,7 +942,18 @@ again:
 			return;
 
 		default:
-			goto abort;
+			/*
+			 * On rare occasions my RZ24 does a disconnect during
+			 * data in phase and the following seems to keep it
+			 * happy.
+			 * XXX Should a scsi disk ever do this??
+			 */
+			asc->script = &asc_scripts[SCRIPT_RESEL];
+			asc->state = ASC_STATE_RESEL;
+			state->flags |= DISCONN;
+			regs->asc_cmd = ASC_CMD_ENABLE_SEL;
+			readback(regs->asc_cmd);
+			return;
 		}
 	}
 
@@ -1750,12 +1737,12 @@ asic_dma_start(asc, state, cp, flag)
 	int flag;
 {
 	register volatile u_int *ssr = (volatile u_int *)
-		MACH_PHYS_TO_UNCACHED(KMIN_REG_CSR);
+		ASIC_REG_CSR(asic_base);
 	u_int phys, nphys;
 
 	/* stop DMA engine first */
 	*ssr &= ~ASIC_CSR_DMAEN_SCSI;
-	* ((volatile int *)MACH_PHYS_TO_UNCACHED(KMIN_REG_SCSI_SCR)) = 0;
+	* ((volatile int *)ASIC_REG_SCSI_SCR(asic_base)) = 0;
 
 	phys = MACH_CACHED_TO_PHYS(cp);
 	cp = (caddr_t)pmax_trunc_page(cp + NBPG);
@@ -1764,9 +1751,9 @@ asic_dma_start(asc, state, cp, flag)
 	asc->dma_next = cp;
 	asc->dma_xfer = state->dmalen - (nphys - phys);
 
-	*(volatile int *)MACH_PHYS_TO_UNCACHED(KMIN_REG_SCSI_DMAPTR) =
+	*(volatile int *)ASIC_REG_SCSI_DMAPTR(asic_base) =
 		ASIC_DMA_ADDR(phys);
-	*(volatile int *)MACH_PHYS_TO_UNCACHED(KMIN_REG_SCSI_DMANPTR) =
+	*(volatile int *)ASIC_REG_SCSI_DMANPTR(asic_base) =
 		ASIC_DMA_ADDR(nphys);
 	if (flag == ASCDMA_READ)
 		*ssr |= ASIC_CSR_SCSI_DIR | ASIC_CSR_DMAEN_SCSI;
@@ -1782,38 +1769,39 @@ asic_dma_end(asc, state, flag)
 	int flag;
 {
 	register volatile u_int *ssr = (volatile u_int *)
-		MACH_PHYS_TO_UNCACHED(KMIN_REG_CSR);
+		ASIC_REG_CSR(asic_base);
 	int nb;
 
 	*ssr &= ~ASIC_CSR_DMAEN_SCSI;
-	*((volatile int *)MACH_PHYS_TO_UNCACHED(KMIN_REG_SCSI_DMAPTR)) = -1;
-	*((volatile int *)MACH_PHYS_TO_UNCACHED(KMIN_REG_SCSI_DMANPTR)) = -1;
+	*((volatile int *)ASIC_REG_SCSI_DMAPTR(asic_base)) = -1;
+	*((volatile int *)ASIC_REG_SCSI_DMANPTR(asic_base)) = -1;
 	MachEmptyWriteBuffer();
 
 	if (flag == ASCDMA_READ) {
 		MachFlushDCache(MACH_PHYS_TO_CACHED(
 		    MACH_UNCACHED_TO_PHYS(state->dmaBufAddr)), state->dmalen);
-		if (nb = *((int *)MACH_PHYS_TO_UNCACHED(KMIN_REG_SCSI_SCR))) {
+		if (nb = *((int *)ASIC_REG_SCSI_SCR(asic_base))) {
 			/* pick up last upto6 bytes, sigh. */
 			register u_short *to;
 			register int w;
 	
 			/* Last byte really xferred is.. */
 			to = (u_short *)(state->dmaBufAddr + state->dmalen - (nb << 1));
-			w = *(int *)MACH_PHYS_TO_UNCACHED(KMIN_REG_SCSI_SDR0);
+			w = *(int *)ASIC_REG_SCSI_SDR0(asic_base);
 			*to++ = w;
 			if (--nb > 0) {
 				w >>= 16;
 				*to++ = w;
 			}
 			if (--nb > 0) {
-				w = *(int *)MACH_PHYS_TO_UNCACHED(KMIN_REG_SCSI_SDR1);
+				w = *(int *)ASIC_REG_SCSI_SDR1(asic_base);
 				*to++ = w;
 			}
 		}
 	}
 }
 
+#ifdef notdef
 /*
  * Called by asic_intr() for scsi dma pointer update interrupts.
  */
@@ -1826,20 +1814,17 @@ asc_dma_intr()
 	asc->dma_xfer -= NBPG;
 	if (asc->dma_xfer <= -NBPG) {
 		volatile u_int *ssr = (volatile u_int *)
-			MACH_PHYS_TO_UNCACHED(KMIN_REG_CSR);
+			ASIC_REG_CSR(asic_base);
 		*ssr &= ~ASIC_CSR_DMAEN_SCSI;
 	} else {
 		asc->dma_next += NBPG;
 		next_phys = MACH_CACHED_TO_PHYS(asc->dma_next);
 	}
-#ifdef notdef
-	else
-		next_phys = MACH_CACHED_TO_PHYS(asc_iobuf);
-#endif
-	*(volatile int *)MACH_PHYS_TO_UNCACHED(KMIN_REG_SCSI_DMANPTR) =
+	*(volatile int *)ASIC_REG_SCSI_DMANPTR(asic_base) =
 		ASIC_DMA_ADDR(next_phys);
 	MachEmptyWriteBuffer();
 }
+#endif
 
 #ifdef DEBUG
 asc_DumpLog(str)
