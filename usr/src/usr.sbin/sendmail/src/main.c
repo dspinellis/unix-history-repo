@@ -13,7 +13,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.33 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.34 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -90,7 +90,7 @@ main(argc, argv, envp)
 	bool queuemode = FALSE;		/* process queue requests */
 	bool nothaw;
 	static bool reenter = FALSE;
-	char jbuf[30];			/* holds MyHostName */
+	char jbuf[60];			/* holds MyHostName */
 	extern bool safefile();
 	extern time_t convtime();
 
