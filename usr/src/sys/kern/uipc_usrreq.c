@@ -1,4 +1,4 @@
-/*	uipc_usrreq.c	6.3	84/02/15	*/
+/*	uipc_usrreq.c	6.4	84/05/02	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -441,6 +441,7 @@ unp_drop(unp, errno)
 	unp_disconnect(unp);
 	if (so->so_head) {
 		so->so_pcb = (caddr_t) 0;
+		m_freem(unp->unp_remaddr);
 		(void) m_free(dtom(unp));
 		sofree(so);
 	}
