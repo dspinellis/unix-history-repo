@@ -1,4 +1,4 @@
-/*	@(#)if_qe.c	6.1 (Berkeley) %G% */
+/*	@(#)if_qe.c	6.2 (Berkeley) %G% */
 
 /* from  @(#)if_qe.c	1.15	(ULTRIX)	4/16/86 */
  
@@ -219,10 +219,14 @@ qeprobe(reg)
 	register struct qedevice *addr = (struct qedevice *)reg;
 	register struct qe_ring *rp; 
 	register struct qe_ring *prp; 	/* physical rp 		*/
-	register int i, j, ncl;
+	register int i, j;
 	static int next=0;		/* softc index		*/
 	register struct qe_softc *sc = &qe_softc[next++];
  
+#ifdef lint
+	br = 0; cvec = br; br = cvec;
+	qeintr(i);
+#endif
 	/*
 	 * Set the address mask for the particular cpu
 	 */
@@ -449,8 +453,8 @@ qestart(dev)
 	register struct qedevice *addr;
 	register struct qe_ring *rp;
 	register index;
-	struct mbuf *m, *m0;
-	int buf_addr, len, j,  s;
+	struct mbuf *m;
+	int buf_addr, len, s;
  
 	 
 	s = splimp();
@@ -528,7 +532,6 @@ qeintr(unit)
 	int unit;
 {
 	register struct qe_softc *sc = &qe_softc[unit];
-	register struct ifnet *ifp = &sc->is_if;
 	struct qedevice *addr = (struct qedevice *)qeinfo[unit]->ui_addr;
 	int s, buf_addr, csr;
  
@@ -558,11 +561,9 @@ qetint(unit)
 	int unit;
 {
 	register struct qe_softc *sc = &qe_softc[unit];
-	register struct mbuf *mp, *mp0;
-	register first, index;
 	register struct qe_ring *rp;
 	register struct ifxmt *ifxp;
-	int i, status1, status2, setupflag;
+	int status1, setupflag;
 	short len;
  
  
@@ -622,11 +623,9 @@ qerint(unit)
 	int unit;
 {
 	register struct qe_softc *sc = &qe_softc[unit];
-	register struct ifnet *ifp = &sc->is_if;
 	register struct qe_ring *rp;
 	int len, status1, status2;
 	int bufaddr;
-	struct ether_header *eh;
  
 	/*
 	 * Traverse the receive ring looking for packets to pass back.
@@ -686,7 +685,6 @@ qeoutput(ifp, m0, dst)
 	int type, s, error;
 	u_char edst[6];
 	struct in_addr idst;
-	struct protosw *pr;
 	register struct qe_softc *is = &qe_softc[ifp->if_unit];
 	register struct mbuf *m = m0;
 	register struct ether_header *eh;
@@ -810,7 +808,7 @@ qeioctl(ifp, cmd, data)
 {
 	struct qe_softc *sc = &qe_softc[ifp->if_unit];
 	struct ifaddr *ifa = (struct ifaddr *)data;
-	int i, s = splimp(), error = 0;
+	int s = splimp(), error = 0;
  
 	switch (cmd) {
  
@@ -855,7 +853,7 @@ qeioctl(ifp, cmd, data)
 		error = EINVAL;
  
 	}
-done:	splx(s);
+	splx(s);
 	return (error);
 }
  
@@ -885,7 +883,7 @@ qe_setaddr(physaddr, unit)
  */
 qeinitdesc( rp, buf, len )
 	register struct qe_ring *rp;
-	char *buf; 			/* mapped address	*/
+	char *addr; 			/* mapped address	*/
 	int len;
 {
 	/*
@@ -895,8 +893,8 @@ qeinitdesc( rp, buf, len )
  
 	if( len ) {
 		rp->qe_buf_len = -(len/2);
-		rp->qe_addr_lo = (short)buf;
-		rp->qe_addr_hi = (short)((int)buf >> 16);
+		rp->qe_addr_lo = (short)addr;
+		rp->qe_addr_hi = (short)((int)addr >> 16);
 	}
 }
 /*
@@ -906,7 +904,7 @@ qeinitdesc( rp, buf, len )
 qesetup( sc )
 struct qe_softc *sc;
 {
-	int i, j, offset = 0, next = 3;
+	register i, j;
  
 	/*
 	 * Copy the target address to the rest of the entries in this row.
@@ -935,9 +933,8 @@ qeread(sc, ifrw, len)
 	struct ifrw *ifrw;
 	int len;
 {
-	struct ether_header *eh, swloop_eh;
-    	struct mbuf *m, *swloop_tmp1, *swloop_tmp2;
-	struct protosw *pr;
+	struct ether_header *eh;
+    	struct mbuf *m;
 	int off, resid;
 	struct ifqueue *inq;
  
