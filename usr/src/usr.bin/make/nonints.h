@@ -1,6 +1,6 @@
 /*-
- * Copyright (c) 1988, 1989, 1990 The Regents of the University of California.
- * Copyright (c) 1988, 1989 by Adam de Boor
+ * Copyright (c) 1988, 1989, 1990, 1993
+ *	The Regents of the University of California.  All rights reserved.
  * Copyright (c) 1989 by Berkeley Softworks
  * All rights reserved.
  *
@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nonints.h	5.7 (Berkeley) %G%
+ *	@(#)nonints.h	8.1 (Berkeley) %G%
  */
 
 char **brk_string(), *emalloc(), *str_concat();

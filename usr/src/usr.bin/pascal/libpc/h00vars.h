@@ -1,10 +1,10 @@
 /*-
- * Copyright (c) 1979 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1979, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)h00vars.h	1.12 (Berkeley) %G%
+ *	@(#)h00vars.h	8.1 (Berkeley) %G%
  */
 
 #include <stdio.h>
