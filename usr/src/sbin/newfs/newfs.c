@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)newfs.c	8.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)newfs.c	8.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #ifndef lint
@@ -76,19 +76,6 @@ void	fatal();
  * per group.
  */
 #define	DESCPG		16	/* desired fs_cpg */
-
-/*
- * MINFREE gives the minimum acceptable percentage of file system
- * blocks which may be free. If the freelist drops below this level
- * only the superuser may continue to allocate blocks. This may
- * be set to 0 if no reserve of free blocks is deemed necessary,
- * however throughput drops by fifty percent if the file system
- * is run at between 95% and 100% full; thus the default value of
- * fs_minfree is 5%. With 5% free space, fragmentation is not a
- * problem, so we choose to optimize for time.
- */
-#define MINFREE		5
-#define DEFAULTOPT	FS_OPTTIME
 
 /*
  * ROTDELAY gives the minimum number of milliseconds to initiate
