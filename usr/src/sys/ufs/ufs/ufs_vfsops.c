@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ufs_vfsops.c	7.13 (Berkeley) %G%
+ *	@(#)ufs_vfsops.c	7.14 (Berkeley) %G%
  */
 
 
@@ -557,13 +557,18 @@ ufs_fhtovp(mp, fhp, vpp)
  * Vnode pointer to File handle, should never happen.
  */
 /* ARGSUSED */
-ufs_vptofh(mp, fhp, vpp)
-	struct mount *mp;
+ufs_vptofh(vp, fhp)
+	struct vnode *vp;
 	struct fid *fhp;
-	struct vnode **vpp;
 {
+	register struct inode *ip = VTOI(vp);
+	register struct ufid *ufhp;
 
-	return (EINVAL);
+	ufhp = (struct ufid *)fhp;
+	ufhp->ufid_len = sizeof(struct ufid);
+	ufhp->ufid_ino = ip->i_number;
+	ufhp->ufid_gen = ip->i_gen;
+	return (0);
 }
 
 /*
