@@ -1,4 +1,4 @@
-(setq SCCS-runFp.l "@(#)runFp.l	1.1	%G%")
+(setq SCCS-runFp.l "@(#)runFp.l	1.2	%G%")
 ;  FP interpreter/compiler
 ;  Copyright (c) 1982  Scott B. Baden
 ;  Berkeley, California
@@ -28,7 +28,7 @@
 	 (setup)					; set up FP syntax funnies
 	 (init)
 	 (Tyi)
-	 (msg N "FP, v. 4.2, (4/27/83)" N (B 6))))
+	 (msg N "FP, v. 4.2, (4/28/83)" N (B 6))))
   
   (setq user-top-level 'res_fp)		; from now on just resume FP--
   ; no need for extensive initializations
