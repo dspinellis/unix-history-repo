@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)param.c	7.19 (Berkeley) %G%
+ *	@(#)param.c	7.20 (Berkeley) %G%
  */
 
 #include "sys/param.h"
@@ -40,26 +40,26 @@ int	hz = HZ;
 int	tick = 1000000 / HZ;
 int	tickadj = 240000 / (60 * HZ);		/* can adjust 240ms in 60s */
 struct	timezone tz = { TIMEZONE, DST };
-#define	NPROC (20 + 8 * MAXUSERS)
+#define	NPROC (20 + 16 * MAXUSERS)
 int	maxproc = NPROC;
-#define NTEXT 100			/* actually the object cache */
-#define NVNODE (NPROC + NTEXT + 300)
+#define	NTEXT (80 + NPROC / 8)			/* actually the object cache */
+#define	NVNODE (NPROC + NTEXT + 100)
 long	desiredvnodes = NVNODE;
-int	maxfiles = 3 * (NPROC + 16 + MAXUSERS) + 32;
+int	maxfiles = 3 * (NPROC + MAXUSERS) + 80;
 int	ncallout = 16 + NPROC;
 int	nclist = 60 + 12 * MAXUSERS;
-int     nmbclusters = NMBCLUSTERS;
+int	nmbclusters = NMBCLUSTERS;
 int	fscale = FSCALE;	/* kernel uses `FSCALE', user uses `fscale' */
 
 /*
- * Values in support of System V compatible shared memory.
+ * Values in support of System V compatible shared memory.	XXX
  */
 #ifdef SYSVSHM
 #define	SHMMAX	(SHMMAXPGS*NBPG)
-#define SHMMIN	1
-#define SHMMNI	32			/* <= SHMMMNI in shm.h */
+#define	SHMMIN	1
+#define	SHMMNI	32			/* <= SHMMMNI in shm.h */
 #define	SHMSEG	8
-#define SHMALL	(SHMMAXPGS/CLSIZE)
+#define	SHMALL	(SHMMAXPGS/CLSIZE)
 
 struct	shminfo shminfo = {
 	SHMMAX,
@@ -81,7 +81,6 @@ int	nbuf, nswbuf;
  * them here forces loader errors if this file is omitted
  * (if they've been externed everywhere else; hah!).
  */
-struct	file *file, *fileNFILE;
 struct 	callout *callout;
 struct	cblock *cfree;
 struct	buf *buf, *swbuf;
