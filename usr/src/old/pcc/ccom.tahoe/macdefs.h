@@ -1,4 +1,4 @@
-/*	macdefs.h	1.4	87/12/10	*/
+/*	macdefs.h	1.5	87/12/10	*/
 
 #ifndef _MACDEFS_
 #define _MACDEFS_
@@ -61,6 +61,7 @@ typedef	long	OFFSZ;		/* size in which offsets are kept */
 #define ASSTRINGS		/* assembler handles string initializations */
 #define STABDOT			/* assembler understands .stabd */
 #define LCOMM			/* assembler supports .lcomm */
+#define SPRECC			/* double only arithmetic not supported */
 
 #define ENUMSIZE(high,low) INT	/* enums are always stored in full int */
 
