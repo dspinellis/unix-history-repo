@@ -15,9 +15,10 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)cksum.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)cksum.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
+#include <sys/cdefs.h>
 #include <sys/types.h>
 #include <fcntl.h>
 #include <unistd.h>
@@ -25,6 +26,7 @@ static char sccsid[] = "@(#)cksum.c	5.2 (Berkeley) %G%";
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
+#include "extern.h"
 
 main(argc, argv)
 	int argc;
@@ -34,9 +36,26 @@ main(argc, argv)
 	u_long len, val;
 	register int ch, fd, rval;
 	char *fn;
+	int (*cfncn) __P((int, unsigned long *, unsigned long *));
+	void (*pfncn) __P((char *, unsigned long, unsigned long));
 
-	while ((ch = getopt(argc, argv, "")) != EOF)
+	cfncn = crc;
+	pfncn = pcrc;
+	while ((ch = getopt(argc, argv, "o:")) != EOF)
 		switch(ch) {
+		case 'o':
+			if (*optarg == '1') {
+				cfncn = csum1;
+				pfncn = psum1;
+			} else if (*optarg == '2') {
+				cfncn = csum2;
+				pfncn = psum2;
+			} else {
+				(void)fprintf(stderr,
+				    "cksum: illegal argument to -o option\n");
+				usage();
+			}
+			break;
 		case '?':
 		default:
 			usage();
@@ -57,12 +76,12 @@ main(argc, argv)
 				continue;
 			}
 		}
-		if (crc(fd, &val, &len)) {
+		if (cfncn(fd, &val, &len)) {
 			(void)fprintf(stderr,
 			    "cksum: %s: %s\n", fn, strerror(errno));
 			rval = 1;
 		} else
-			(void)printf("%lu %lu %s\n", val, len, fn);
+			pfncn(fn, val, len);
 		(void)close(fd);
 	} while (*argv);
 	exit(rval);
@@ -70,6 +89,6 @@ main(argc, argv)
 
 usage()
 {
-	(void)fprintf(stderr, "usage: cksum [file ...]\n");
+	(void)fprintf(stderr, "usage: cksum [-o 1 | 2] [file ...]\n");
 	exit(1);
 }
