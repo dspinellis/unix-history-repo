@@ -24,7 +24,7 @@ screenlib:	$(ALLO)
 	ranlib screenlib
 
 clean:
-	rm -f $(ALLO) disp_asc.out errs makefile.bak screenlib
+	rm -f $(ALLO) errs makefile.bak screenlib
 
 print:
 	${PRINT} ${ALLC} ${ALLH}
@@ -42,11 +42,6 @@ lint:
 
 .DEFAULT:
 	sccs get $<
-
-disp_asc.out:	../ctlr/ebc_disp.o
-	(cd ../tools; make mkdstoas $(MFLAGS) )
-	-/bin/rm $@
-	../tools/mkdstoas > $@
 
 depend:
 	grep '^#include' ${ALLC} ${ALLH} | grep -v '<' | \
@@ -66,8 +61,8 @@ depend:
 
 # DO NOT DELETE THIS LINE
 
-termout.o: ../general.h ../telnet.ext ../ctlr/hostctlr.h ../ctlr/inbound.ext
+termout.o: ../general/general.h ../telnet.ext ../ascii/disp_asc.h
+termout.o: ../ascii/map3270.ext ../ctlr/hostctlr.h ../ctlr/inbound.ext
 termout.o: ../ctlr/oia.h ../ctlr/options.ext ../ctlr/outbound.ext
-termout.o: ../ctlr/screen.h ../keyboard/map3270.ext ../system/globals.h video.h
-termout.o: disp_asc.out
-system.o: ../api/api.h spint.h
+termout.o: ../ctlr/screen.h ../general/globals.h video.h
+system.o: ../general/general.h ../api/api.h spint.h ../general/globals.h

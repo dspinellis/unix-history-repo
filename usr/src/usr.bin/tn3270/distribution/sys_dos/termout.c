@@ -30,14 +30,15 @@ static	char	sccsid[] = "@(#)outbound.c	3.1  10/29/86";
 
 #include "../telnet.ext"
 
+#include "../ascii/disp_asc.h"
+#include "../ascii/map3270.ext"
+
 #include "../ctlr/hostctlr.h"
 #include "../ctlr/inbound.ext"
 #include "../ctlr/oia.h"
 #include "../ctlr/options.ext"
 #include "../ctlr/outbound.ext"
 #include "../ctlr/screen.h"
-
-#include "../ascii/map3270.ext"
 
 #include "../general/globals.h"
 
@@ -63,11 +64,6 @@ typedef struct {
 
 ScreenBuffer Screen[MAXNUMBERLINES*MAXNUMBERCOLUMNS];
 ScreenBuffer saveScreen[sizeof Screen/sizeof Screen[0]];
-
-/* Variables for transparent mode */
-
-#include "disp_asc.out"
-
 
 /* OurExitString - designed to keep us from going through infinite recursion */
 
