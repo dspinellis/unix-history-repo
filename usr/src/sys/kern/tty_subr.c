@@ -1,4 +1,4 @@
-/*	tty_subr.c	6.6	84/11/15	*/
+/*	tty_subr.c	6.7	84/12/20	*/
 
 #include "param.h"
 #include "systm.h"
@@ -18,7 +18,7 @@ getc(p)
 	register struct cblock *bp;
 	register int c, s;
 
-	s = spl5();
+	s = spltty();
 	if (p->c_cc <= 0) {
 		c = -1;
 		p->c_cc = 0;
@@ -64,11 +64,12 @@ q_to_b(q, cp, cc)
 {
 	register struct cblock *bp;
 	register int s;
+	register nc;
 	char *acp;
 
 	if (cc <= 0)
 		return(0);
-	s = spl5();
+	s = spltty();
 	if (q->c_cc <= 0) {
 		q->c_cc = 0;
 		q->c_cf = q->c_cl = NULL;
@@ -76,12 +77,18 @@ q_to_b(q, cp, cc)
 		return(0);
 	}
 	acp = cp;
-	cc++;
 
-	while (--cc) {
-		*cp++ = *q->c_cf++;
-		if (--q->c_cc <= 0) {
-			bp = (struct cblock *)(q->c_cf-1);
+	while (cc) {
+		nc = sizeof(struct cblock) - ((int)q->c_cf & CROUND);
+		nc = MIN(nc, cc);
+		nc = MIN(nc, q->c_cc);
+		(void) bcopy(q->c_cf, cp, (unsigned)nc);
+		q->c_cf += nc;
+		q->c_cc -= nc;
+		cc -= nc;
+		cp += nc;
+		if (q->c_cc <= 0) {
+			bp = (struct cblock *)(q->c_cf - 1);
 			bp = (struct cblock *)((int)bp & ~CROUND);
 			q->c_cf = q->c_cl = NULL;
 			bp->c_next = cfreelist;
@@ -121,7 +128,7 @@ ndqb(q, flag)
 	register cc;
 	int s;
 
-	s = spl5();
+	s = spltty();
 	if (q->c_cc <= 0) {
 		cc = -q->c_cc;
 		goto out;
@@ -163,7 +170,7 @@ ndflush(q, cc)
 	char *end;
 	int rem, s;
 
-	s = spl5();
+	s = spltty();
 	if (q->c_cc <= 0) {
 		goto out;
 	}
@@ -217,7 +224,7 @@ putc(c, p)
 	register char *cp;
 	register s;
 
-	s = spl5();
+	s = spltty();
 	if ((cp = p->c_cl) == NULL || p->c_cc < 0 ) {
 		if ((bp = cfreelist) == NULL) {
 			splx(s);
@@ -259,45 +266,43 @@ b_to_q(cp, cc, q)
 {
 	register char *cq;
 	register struct cblock *bp;
-	register s, acc;
+	register s, nc;
+	int acc;
 
 	if (cc <= 0)
-		return (0);
-	while (cc > 0) {
-		s = spl6();
-		if ((cq = q->c_cl) == NULL || q->c_cc < 0) {
-			if ((bp = cfreelist) == NULL) {
-				splx(s);
-				break;
-			}
-			q->c_cf = cq = bp->c_info;
-			goto middle;
-		}
+		return(0);
+	acc = cc;
+	s = spltty();
+	if ((cq = q->c_cl) == NULL || q->c_cc < 0) {
+		if ((bp = cfreelist) == NULL) 
+			goto out;
+		cfreelist = bp->c_next;
+		cfreecount -= CBSIZE;
+		bp->c_next = NULL;
+		q->c_cf = cq = bp->c_info;
+	}
+
+	while (cc) {
 		if (((int)cq & CROUND) == 0) {
-			bp = &((struct cblock *)cq)[-1];
-			if ((bp->c_next = cfreelist) == NULL) {
-				splx(s);
-				break;
-			}
+			bp = (struct cblock *) cq - 1;
+			if ((bp->c_next = cfreelist) == NULL) 
+				goto out;
 			bp = bp->c_next;
-			cq = bp->c_info;
-	middle:
 			cfreelist = bp->c_next;
 			cfreecount -= CBSIZE;
 			bp->c_next = NULL;
-			acc = MIN(cc, CBSIZE);
-		} else {
-			acc = (char *)((int)&cq[CBSIZE] &~ CROUND) - cq;
-			if (acc > cc)
-				acc = cc;
+			cq = bp->c_info;
 		}
-		bcopy((caddr_t)cp, cq, acc);
-		q->c_cl = &cq[acc];
-		q->c_cc += acc;
-		splx(s);
-		cp += acc;
-		cc -= acc;
+		nc = MIN(cc, sizeof(struct cblock) - ((int)cq & CROUND));
+		(void) bcopy(cp, cq, (unsigned)nc);
+		cp += nc;
+		cq += nc;
+		cc -= nc;
 	}
+out:
+	q->c_cl = cq;
+	q->c_cc += acc - cc;
+	splx(s);
 	return (cc);
 }
 
@@ -333,7 +338,7 @@ unputc(p)
 	register int c, s;
 	struct cblock *obp;
 
-	s = spl5();
+	s = spltty();
 	if (p->c_cc <= 0)
 		c = -1;
 	else {
@@ -367,59 +372,123 @@ unputc(p)
 /*
  * Put the chars in the from que
  * on the end of the to que.
- *
- * SHOULD JUST USE q_to_b AND THEN b_to_q HERE.
  */
 catq(from, to)
 	struct clist *from, *to;
 {
-	register c;
+	char bbuf[CBSIZE*4];
+	register s, c;
 
-	while ((c = getc(from)) >= 0)
-		(void) putc(c, to);
+	s = spltty();
+	if (to->c_cc == 0) {
+		*to = *from;
+		from->c_cc = 0;
+		from->c_cf = NULL;
+		from->c_cl = NULL;
+		splx(s);
+		return;
+	}
+	splx(s);
+	while (from->c_cc > 0) {
+		c = q_to_b(from, bbuf, sizeof bbuf);
+		(void) b_to_q(bbuf, c, to);
+	}
 }
 
+#ifdef unneeded
 /*
  * Integer (short) get/put
  * using clists
  */
-typedef	short word_t;
-union chword {
-	word_t	word;
-	struct {
-		char	Ch[sizeof (word_t)];
-	} Cha;
-#define	ch	Cha.Ch
-};
+typedef	u_short word_t;
 
 getw(p)
 	register struct clist *p;
 {
-	register int i;
-	union chword x;
+	register int s, c;
+	register struct cblock *bp;
 
-	if (p->c_cc < sizeof (word_t))
-		return (-1);
-	for (i = 0; i < sizeof (word_t); i++)
-		x.ch[i] = getc(p);
-	return (x.word);
+	if (p->c_cc <= 1)
+		return(-1);
+	if (p->c_cc & 01) {
+		c = getc(p);
+		return(c | (getc(p)<<8));
+	}
+	s = spltty();
+	c = *((word_t *)p->c_cf);
+	p->c_cf += sizeof(word_t);
+	p->c_cc -= sizeof(word_t);
+	if (p->c_cc <= 0) {
+		bp = (struct cblock *)(p->c_cf-1);
+		bp = (struct cblock *) ((int)bp & ~CROUND);
+		p->c_cf = NULL;
+		p->c_cl = NULL;
+		bp->c_next = cfreelist;
+		cfreelist = bp;
+		cfreecount += CBSIZE;
+		if (cwaiting) {
+			wakeup(&cwaiting);
+			cwaiting = 0;
+		}
+	} else if (((int)p->c_cf & CROUND) == 0) {
+		bp = (struct cblock *)(p->c_cf);
+		bp--;
+		p->c_cf = bp->c_next->c_info;
+		bp->c_next = cfreelist;
+		cfreelist = bp;
+		cfreecount += CBSIZE;
+		if (cwaiting) {
+			wakeup(&cwaiting);
+			cwaiting = 0;
+		}
+	}
+	splx(s);
+	return (c);
 }
 
 putw(c, p)
 	register struct clist *p;
+	word_t c;
 {
 	register s;
-	register int i;
-	union chword x;
+	register struct cblock *bp;
+	register char *cp;
 
-	s = spl5();
+	s = spltty();
 	if (cfreelist==NULL) {
 		splx(s);
 		return(-1);
 	}
-	x.word = c;
-	for (i = 0; i < sizeof (word_t); i++)
-		(void) putc(x.ch[i], p);
+	if (p->c_cc & 01) {
+		(void) putc(c, p);
+		(void) putc(c>>8, p);
+	} else {
+		if ((cp = p->c_cl) == NULL || p->c_cc < 0 ) {
+			if ((bp = cfreelist) == NULL) {
+				splx(s);
+				return (-1);
+			}
+			cfreelist = bp->c_next;
+			cfreecount -= CBSIZE;
+			bp->c_next = NULL;
+			p->c_cf = cp = bp->c_info;
+		} else if (((int)cp & CROUND) == 0) {
+			bp = (struct cblock *)cp - 1;
+			if ((bp->c_next = cfreelist) == NULL) {
+				splx(s);
+				return (-1);
+			}
+			bp = bp->c_next;
+			cfreelist = bp->c_next;
+			cfreecount -= CBSIZE;
+			bp->c_next = NULL;
+			cp = bp->c_info;
+		}
+		*(word_t *)cp = c;
+		p->c_cl = cp + sizeof(word_t);
+		p->c_cc += sizeof(word_t);
+	}
 	splx(s);
 	return (0);
 }
+#endif unneeded
