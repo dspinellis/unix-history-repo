@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)param.h	7.25 (Berkeley) %G%
+ *	@(#)param.h	7.26 (Berkeley) %G%
  */
 
 #define	BSD	199207		/* System version (year & month). */
@@ -146,11 +146,8 @@
 #define	roundup(x, y)	((((x)+((y)-1))/(y))*(y))
 #define powerof2(x)	((((x)-1)&(x))==0)
 
-/* Macros for fast min/max: with inline expansion, the "function" is faster. */
-#ifdef KERNEL
-#define	MIN(a,b) min((a), (b))
-#define	MAX(a,b) max((a), (b))
-#else
+/* Macros for min/max. */
+#ifndef KERNEL
 #define	MIN(a,b) (((a)<(b))?(a):(b))
 #define	MAX(a,b) (((a)>(b))?(a):(b))
 #endif
