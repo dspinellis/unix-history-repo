@@ -1,9 +1,11 @@
 #
+/*	@(#)tty_pty.c	1.2	1.2	%G%	*/
 /*
  * Pseudo-teletype Driver
  * (Actually two drivers, requiring two entries in 'cdevsw')
  *
  * Overhauled, and ported to VAX/VMUNIX (V7) Bruce Borden, July 80
+ * Modified and integrated into 4bsd by Kipp Hickman and Michael Toy
  */
 #include "../h/param.h"
 #include "../h/systm.h"
