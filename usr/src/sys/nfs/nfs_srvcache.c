@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_srvcache.c	7.4 (Berkeley) %G%
+ *	@(#)nfs_srvcache.c	7.5 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -223,10 +223,11 @@ loop:
 /*
  * Update a request cache entry after the rpc has been done
  */
-nfsrv_updatecache(nam, xid, proc, repstat, repmbuf)
+nfsrv_updatecache(nam, xid, proc, repvalid, repstat, repmbuf)
 	struct mbuf *nam;
 	u_long xid;
 	int proc;
+	int repvalid;
 	int repstat;
 	struct mbuf *repmbuf;
 {
@@ -247,16 +248,25 @@ loop:
 			}
 			rp->rc_flag |= RC_LOCKED;
 			rp->rc_state = RC_DONE;
-			rp->rc_timestamp = time.tv_sec;
-			if (nonidempotent[proc]) {
-				if (repliesstatus[proc]) {
-					rp->rc_status = repstat;
-					rp->rc_flag |= RC_REPSTATUS;
-				} else {
-					rp->rc_reply = NFSMCOPY(repmbuf, 0,
-							M_COPYALL, M_WAIT);
-					rp->rc_flag |= RC_REPMBUF;
+			/*
+			 * If we have a valid reply update status and save
+			 * the reply for non-idempotent rpc's. Otherwise
+			 * invalidate entry by setting the timestamp to nil.
+			 */
+			if (repvalid) {
+				rp->rc_timestamp = time.tv_sec;
+				if (nonidempotent[proc]) {
+					if (repliesstatus[proc]) {
+						rp->rc_status = repstat;
+						rp->rc_flag |= RC_REPSTATUS;
+					} else {
+						rp->rc_reply = NFSMCOPY(repmbuf,
+							0, M_COPYALL, M_WAIT);
+						rp->rc_flag |= RC_REPMBUF;
+					}
 				}
+			} else {
+				rp->rc_timestamp = 0;
 			}
 			rp->rc_flag &= ~RC_LOCKED;
 			if (rp->rc_flag & RC_WANTED) {
