@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_sysctl.c	7.21 (Berkeley) %G%
+ *	@(#)kern_sysctl.c	7.22 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -131,6 +131,11 @@ kinfo_doproc(op, where, acopysize, arg, aneeded)
 	doingzomb = 0;
 again:
 	for (; p != NULL; p = p->p_nxt) {
+		/*
+		 * Skip embryonic processes.
+		 */
+		if (p->p_stat == SIDL)
+			continue;
 		/* 
 		 * TODO - make more efficient (see notes below).
 		 * do by session. 
