@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_malloc.c	8.1 (Berkeley) %G%
+ *	@(#)kern_malloc.c	8.2 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -177,7 +177,7 @@ malloc(size, type, flags)
 	freep->type = WEIRD_ADDR >> 16;
 #endif
 #if BYTE_ORDER == LITTLE_ENDIAN
-	freep->type = WEIRD_ADDR;
+	freep->type = (short)WEIRD_ADDR;
 #endif
 	if (((long)(&freep->next)) & 0x2)
 		freep->next = (caddr_t)((WEIRD_ADDR >> 16)|(WEIRD_ADDR << 16));
