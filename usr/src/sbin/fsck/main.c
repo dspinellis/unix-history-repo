@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)main.c	2.8	(Berkeley)	%G%";
+static	char sccsid[] = "@(#)main.c	2.9	(Berkeley)	%G%";
 
 #include <stdio.h>
 #include <ctype.h>
@@ -725,13 +725,18 @@ out5:
 		sbdirty();
 	}
 	ckfini();
-	sync();
-	if (dfile.mod && preen == 0)
-		printf("\n***** FILE SYSTEM WAS MODIFIED *****\n");
 	free(blockmap);
 	free(freemap);
 	free(statemap);
 	free(lncntp);
+	if (dfile.mod)
+		if (preen)
+			printf("\n***** FILE SYSTEM WAS MODIFIED *****\n");
+		else if (hotroot) {
+			printf("\n***** BOOT UNIX (NO SYNC!) *****\n");
+			exit(4);
+		}
+	sync();
 }
 
 /* VARARGS1 */
