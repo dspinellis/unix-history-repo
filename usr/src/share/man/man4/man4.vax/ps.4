@@ -2,14 +2,14 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)ps.4	6.1 (Berkeley) %G%
+.\"	@(#)ps.4	6.2 (Berkeley) %G%
 .\"
 .TH PS 4 ""
 .UC 5
 .SH NAME
 ps \- Evans and Sutherland Picture System 2 graphics device interface
 .SH SYNOPSIS
-.B "device ps0 at uba? csr 0172460 vector psintr"
+.B "device ps0 at uba? csr 0172460 vector psclockintr pssystemintr"
 .SH DESCRIPTION
 The
 .I ps
