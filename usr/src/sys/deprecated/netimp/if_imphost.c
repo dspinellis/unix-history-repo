@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if_imphost.c	6.6 (Berkeley) %G%
+ *	@(#)if_imphost.c	6.7 (Berkeley) %G%
  */
 
 #include "imp.h"
@@ -217,7 +217,7 @@ hostslowtimo()
 		for (; hm->hm_count > 0 && hp < lp; hp++) {
 			if (hp->h_timer && --hp->h_timer == 0) {
 				if (hp->h_rfnm)
-				    log(KERN_RECOV,
+				    log(LOG_WARNING,
 					"imp?: host %x, lost %d rfnms\n",
 					ntohl(hp->h_addr.s_addr), hp->h_rfnm);
 				hostrelease(hp);
