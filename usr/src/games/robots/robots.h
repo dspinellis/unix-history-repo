@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)robots.h	5.3 (Berkeley) %G%
+ *	@(#)robots.h	5.4 (Berkeley) %G%
  */
 
 # include	<curses.h>
@@ -39,7 +39,6 @@
 # define	MAXSCORES	(Y_SIZE - 2)
 # define	MAXNAME		16
 # define	MS_NAME		"Ten"
-# define	SCOREFILE	"/usr/games/lib/robots_roll"
 
 /*
  * characters on screen
