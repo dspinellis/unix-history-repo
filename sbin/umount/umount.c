@@ -56,7 +56,6 @@ static char sccsid[] = "@(#)umount.c	5.16 (Berkeley) 6/3/91";
 #include <nfs/rpcv2.h>
 #endif
 
-#include <fstab.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -123,12 +122,9 @@ main(argc, argv)
 	if (all) {
 		if (argc > 0)
 			usage();
-		if (setfsent() == 0)
-			perror(FSTAB), exit(1);
-		umountall(typelist);
-		exit(0);
-	} else
-		setfsent();
+		errs += umountall(typelist);
+		exit(errs);
+	}
 	while (argc > 0) {
 		if (umountfs(*argv++, 0) == 0)
 			errs++;
@@ -154,60 +150,26 @@ usage()
 umountall(typelist)
 	char **typelist;
 {
-	register struct fstab *fs;
-	struct fstab *allocfsent();
+	int		i, mntsize, errors;
+	struct statfs	*mntbuf;
 
-	if ((fs = getfsent()) == (struct fstab *)0)
-		return;
-	fs = allocfsent(fs);
-	umountall(typelist);
-	if (strcmp(fs->fs_file, "/") == 0) {
-		freefsent(fs);
-		return;
+	if ((mntsize = getmntinfo(&mntbuf, MNT_NOWAIT)) == 0) {
+		fprintf(stderr, "umount: cannot get mount information.\n");
+		exit(1);
 	}
-	if (strcmp(fs->fs_type, FSTAB_RW) &&
-	    strcmp(fs->fs_type, FSTAB_RO) &&
-	    strcmp(fs->fs_type, FSTAB_RQ)) {
-		freefsent(fs);
-		return;
+	for (i=errors=0; i< mntsize; i++) {
+		if (badtype(mntbuf[i].f_type, typelist) ||
+		    (strcmp(mntbuf[i].f_mntonname, "/") == 0))
+			continue;
+		if (!fake && unmount(mntbuf[i].f_mntonname, fflag) < 0) {
+			perror(mntbuf[i].f_mntonname);
+			errors ++;
+		}
+		if (vflag)
+			fprintf(stderr, "%s: Unmounted from %s\n",
+				mntbuf[i].f_mntfromname, mntbuf[i].f_mntonname);
 	}
-	(void) umountfs(fs->fs_file, typelist);
-	freefsent(fs);
-}
-
-struct fstab *
-allocfsent(fs)
-	register struct fstab *fs;
-{
-	register struct fstab *new;
-	register char *cp;
-
-	new = (struct fstab *)malloc((unsigned)sizeof (*fs));
-	cp = (char *)malloc((unsigned)strlen(fs->fs_file) + 1);
-	strcpy(cp, fs->fs_file);
-	new->fs_file = cp;
-	cp = (char *)malloc((unsigned)strlen(fs->fs_type) + 1);
-	strcpy(cp, fs->fs_type);
-	new->fs_type = cp;
-	cp = (char *)malloc((unsigned)strlen(fs->fs_spec) + 1);
-	strcpy(cp, fs->fs_spec);
-	new->fs_spec = cp;
-	new->fs_passno = fs->fs_passno;
-	new->fs_freq = fs->fs_freq;
-	return (new);
-}
-
-freefsent(fs)
-	register struct fstab *fs;
-{
-
-	if (fs->fs_file)
-		free(fs->fs_file);
-	if (fs->fs_spec)
-		free(fs->fs_spec);
-	if (fs->fs_type)
-		free(fs->fs_type);
-	free((char *)fs);
+	return errors;
 }
 
 umountfs(name, typelist)
