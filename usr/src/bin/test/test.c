@@ -15,15 +15,18 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)test.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)test.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
 #include <sys/stat.h>
+
+#include <err.h>
 #include <errno.h>
+#include <limits.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
 
 #include "operators.h"
 
@@ -61,10 +64,9 @@ struct filestat {
 	struct stat stat;	/* Status info on file. */
 };
 
-static void	err __P((const char *, ...));
 static int	expr_is_false __P((struct value *));
 static void	expr_operator __P((int, struct value *, struct filestat *));
-static int	int_tcheck __P((char *));
+static void	get_int __P((char *, long *));
 static int	lookup_op __P((char *, char *const *));
 static void	overflow __P((void));
 static int	posix_binary_op __P((char **));
@@ -84,14 +86,12 @@ main(argc, argv)
 	char  c, **ap, *opname, *p;
 	int binary, nest, op, pri, ret_val, skipping;
 
-	if ((p = argv[0]) == NULL) {
-		err("test: argc is zero.\n");
-		exit(2);
-	}
+	if ((p = argv[0]) == NULL)
+		errx(2, "test: argc is zero");
 
 	if (*p != '\0' && p[strlen(p) - 1] == '[') {
 		if (strcmp(argv[--argc], "]"))
-			err("missing ]");
+			errx(2, "missing ]");
 		argv[argc] = NULL;
 	}
 	ap = argv + 1;
@@ -109,8 +109,7 @@ main(argc, argv)
 		return (1);
 		break;
 	case 1:				/* % test arg */
-		/* MIPS machine returns NULL of '[ ]' is called. */
-		return (argv[1] == 0 || *argv[1] == '\0') ? 1 : 0;
+		return (argv[1] == NULL || *argv[1] == '\0') ? 1 : 0;
 		break;
 	case 2:				/* % test op arg */
 		opname = argv[1];
@@ -204,17 +203,15 @@ main(argc, argv)
 				valsp--;
 				c = op_argflag[opsp->op];
 				if (c == OP_INT) {
-					if (valsp->type == STRING &&
-					    int_tcheck(valsp->u.string))
-						valsp->u.num =
-						    atol(valsp->u.string);
+					if (valsp->type == STRING)
+						get_int(valsp->u.string,
+						    &valsp->u.num);
 					valsp->type = INTEGER;
 				} else if (c >= OP_STRING) {	
 					            /* OP_STRING or OP_FILE */
 					if (valsp->type == INTEGER) {
 						if ((p = malloc(32)) == NULL)
-							err("%s",
-							    strerror(errno));
+							err(2, NULL);
 #ifdef SHELL
 						fmtstr(p, 32, "%d", 
 						    valsp->u.num);
@@ -475,9 +472,9 @@ posix_binary_op(argv)
 	op += FIRST_BINARY_OP;
 	c = op_argflag[op];
 
-	if (c == OP_INT && int_tcheck(argv[0]) && int_tcheck(argv[2])) {
-		v[0].u.num = atol(argv[0]);
-		v[1].u.num = atol(argv[2]);
+	if (c == OP_INT) {
+		get_int(argv[0], &v[0].u.num);
+		get_int(argv[2], &v[1].u.num);
 	} else {
 		v[0].u.string = argv[0];
 		v[1].u.string = argv[2];
@@ -489,55 +486,40 @@ posix_binary_op(argv)
 /*
  * Integer type checking.
  */
-static int
-int_tcheck(v)
+static void
+get_int(v, lp)
 	char *v;
+	long *lp;
 {
-	char *p;
+	long val;
+	char *ep;
 
-	for (p = v; *p != '\0'; p++)
-		if (!isdigit(*p))
-			err("illegal operand \"%s\" -- expected integer.", v);
-	return (1);
+	for (; *v && isspace(*v); ++v);
+	if (isdigit(*v)) {
+		errno = 0;
+		val = strtol(v, &ep, 10);
+		if (*ep != '\0')
+			errx(2, "%s: trailing non-numeric characters", v);
+		if (errno == ERANGE) {
+			if (val == LONG_MIN)
+				errx(2, "%s: underflow", v);
+			if (val == LONG_MAX)
+				errx(2, "%s: overflow", v);
+		}
+		*lp = val;
+		return;
+	}
+	errx(2, "%s: expected integer", v);
 }
 
 static void
 syntax()
 {
-	err("syntax error");
+	err(2, "syntax error");
 }
 
 static void
 overflow()
 {
-	err("expression is too complex");
-}
-
-#if __STDC__
-#include <stdarg.h>
-#else
-#include <varargs.h>
-#endif
-
-void
-#if __STDC__
-err(const char *fmt, ...)
-#else
-err(fmt, va_alist)
-	char *fmt;
-        va_dcl
-#endif
-{
-	va_list ap;
-#if __STDC__
-	va_start(ap, fmt);
-#else
-	va_start(ap);
-#endif
-	(void)fprintf(stderr, "test: ");
-	(void)vfprintf(stderr, fmt, ap);
-	va_end(ap);
-	(void)fprintf(stderr, "\n");
-	exit(2);
-	/* NOTREACHED */
+	err(2, "expression is too complex");
 }
