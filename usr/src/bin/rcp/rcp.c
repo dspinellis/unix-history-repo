@@ -1,10 +1,10 @@
 #ifndef lint
-static char sccsid[] = "@(#)rcp.c	4.2 82/05/05";
+static char sccsid[] = "@(#)rcp.c	4.3 82/05/09";
 #endif
 
 #include <stdio.h>
 #include <signal.h>
-#include <sys/types.h>
+#include <sys/param.h>
 #include <sys/stat.h>
 #include <sys/ioctl.h>
 #include <net/in.h>
@@ -282,7 +282,7 @@ notreg:
 	}
 }
 
-#include <ndir.h>
+#include <dir.h>
 
 rsource(name, mode)
 	char *name;
