@@ -47,8 +47,8 @@
     ---- this really the first step in the work that's 
          been done on sun-lamp to add kernel function
          prototypes.                                 */
-__volatile void kexit __P((struct proc *, int));
-__volatile void cpu_exit __P((struct proc *));
+void	kexit __P((struct proc *, int));
+void	cpu_exit __P((struct proc *));
 void    swtch __P((void));
 
 

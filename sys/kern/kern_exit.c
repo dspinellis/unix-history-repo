@@ -66,7 +66,7 @@ struct rexit_args {
 	int	rval;
 };
 /* ARGSUSED */
-volatile void
+void
 rexit(p, uap, retval)
 	struct proc *p;
 	struct rexit_args *uap;
@@ -83,7 +83,7 @@ rexit(p, uap, retval)
  * and parent's lists.  Save exit status and rusage for wait().
  * Check for child processes and orphan them.
  */
-volatile void
+void
 kexit(p, rv)
 	register struct proc *p;
 	int rv;
@@ -91,6 +91,9 @@ kexit(p, rv)
 	register struct proc *q, *nq;
 	register struct proc **pp;
 	int s;
+
+	acct(p);	/* do process accounting -- must be done before
+			   address space is released */
 
 #ifdef PGINPROF
 	vmsizmon();
