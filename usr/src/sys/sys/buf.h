@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)buf.h	7.5 (Berkeley) %G%
+ *	@(#)buf.h	7.6 (Berkeley) %G%
  */
 
 /*
@@ -140,6 +140,7 @@ unsigned minphys();
 #define	B_HEAD		0x040000	/* a buffer header, not a buffer */
 #define	B_BAD		0x100000	/* bad block revectoring in progress */
 #define	B_CALL		0x200000	/* call b_iodone from iodone */
+#define	B_RAW		0x400000	/* set by physio for raw transfers */
 
 /*
  * Insq/Remq for the buffer hash lists.
