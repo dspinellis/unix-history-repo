@@ -1,3 +1,4 @@
+#	@(#)Makefile	1.2 (Berkeley) %G%
 # transcript/Makefile.bsd
 #
 # Copyright 1985 (C) Adobe Systems Incorporated
@@ -30,7 +31,6 @@ programs:
 	. ./config; cd src; make ${MFLAGS} programs
 
 install:
-	-. ./config; mv $$PSLIBDIR $$PSLIBDIR.old
 	-. ./config; mkdir $$PSLIBDIR; chown $$OWNER $$PSLIBDIR; \
 		chgrp $$GROUP $$PSLIBDIR; chmod 755 $$PSLIBDIR
 	. ./config; cd src; make ${MFLAGS} install

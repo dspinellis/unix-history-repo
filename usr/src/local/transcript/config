@@ -1,4 +1,6 @@
 #! /bin/sh
+# @(#)config	1.2 (Berkeley) %G%
+#
 # Copyright (c) 1985 Adobe Systems Incorporated
 # PostScript and TranScript are trademarks of Adobe Systems Incorporated
 # RCSID: $Header: config.bsd,v 2.1 85/11/24 12:34:56 shore Rel $
@@ -34,8 +36,8 @@ PSLIBDIR=/usr/local/lib/ps
 # OWNER GROUP
 #	User and group names for installed files
 #	On BSD systems, this is typically "root" and "staff"
-OWNER=root
-GROUP=staff
+OWNER=bin
+GROUP=bin
 
 # PSTEMPDIR
 #	The temporary directory you want TranScript filters to use
@@ -52,9 +54,9 @@ PSTEMPDIR=/tmp
 #MAN1=/usr/man/man1
 #MAN7=/usr/man/man7
 #MAN8=/usr/man/man8
-MAN1=/usr/man/manl
-MAN7=/usr/man/manl
-MAN8=/usr/man/manl
+MAN1=/usr/local/man/man1
+MAN7=/usr/local/man/man7
+MAN8=/usr/local/man/man8
 
 # DITDIR
 #	DITDIR/devpsc is where the "ditroff" fonts used by 
