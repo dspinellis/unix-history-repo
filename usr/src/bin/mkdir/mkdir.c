@@ -1,10 +1,12 @@
-static char *sccsid = "@(#)mkdir.c	4.1 (Berkeley) %G%";
+static char *sccsid = "@(#)mkdir.c	4.2 (Berkeley) %G%";
 /*
 ** make directory
 */
 
 #include	<signal.h>
 #include	<stdio.h>
+#include	<sys/types.h>
+#include	<stat.h>
 
 int	Errors = 0;
 char	*strcat();
@@ -33,6 +35,7 @@ mkdir(d)
 char *d;
 {
 	char pname[128], dname[128];
+	struct stat statblk;
 	register i, slash = 0;
 
 	pname[0] = '\0';
@@ -52,7 +55,9 @@ char *d;
 		++Errors;
 		return;
 	}
-	chown(d, getuid(), getgid());
+	(void) stat(d,&statblk);
+	
+	chown(d, getuid(), (int) statblk.st_gid);
 	strcpy(dname, d);
 	strcat(dname, "/.");
 	if((link(d, dname)) < 0) {
