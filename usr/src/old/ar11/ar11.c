@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)ar11.c	4.1 (Berkeley) %G%";
+static char *sccsid = "@(#)ar11.c	4.2 (Berkeley) %G%";
 /* ar11 - archiver for PDP-11 formatted archives */
 
 #include <signal.h>
@@ -427,7 +427,7 @@ movefil(f)
 	for(i=0; i<14; i++)
 		if(arbuf.ar_name[i] = *cp)
 			cp++;
-	x.w1 = stbuf.st_size;
+	ar_size = x.w1 = stbuf.st_size;
 	arbuf.ar_size1 = x.h2;
 	arbuf.ar_size2 = x.h1;
 	x.w1 = stbuf.st_mtime;
