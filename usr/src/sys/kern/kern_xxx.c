@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_xxx.c	7.3 (Berkeley) %G%
+ *	@(#)kern_xxx.c	7.4 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -36,12 +36,11 @@ gethostname()
 		char	*hostname;
 		u_int	len;
 	} *uap = (struct a *)u.u_ap;
-	register u_int len;
 
-	len = uap->len;
-	if (len > hostnamelen + 1)
-		len = hostnamelen + 1;
-	u.u_error = copyout((caddr_t)hostname, (caddr_t)uap->hostname, len);
+	if (uap->len > hostnamelen + 1)
+		uap->len = hostnamelen + 1;
+	u.u_error = copyout((caddr_t)hostname, (caddr_t)uap->hostname,
+		uap->len);
 }
 
 sethostname()
