@@ -9,7 +9,7 @@
 # software without specific prior written permission. This software
 # is provided ``as is'' without express or implied warranty.
 #
-#	@(#)Makefile	5.10 (Berkeley) %G%
+#	@(#)Makefile	5.10.1.1 (Berkeley) %G%
 #
 DESTDIR=
 CFLAGS=	-O
@@ -19,7 +19,7 @@ LIBC=	/lib/libc.a
 #
 # doctor removed until lisp works
 SUBDIR=	adventure atc backgammon battlestar boggle btlgammon canfield \
-	cribbage dm fortune gnuchess hack hangman hunt larn mille monop \
+	cribbage dm fortune hack hangman hunt mille monop \
 	phantasia quiz robots rogue sail snake trek \
 	games.${MACHINE}
 
@@ -111,17 +111,19 @@ ppt: ppt.c /usr/include/stdio.h
 primes: primes.c /usr/include/stdio.h /usr/include/math.h
 rain: rain.c /usr/include/sys/types.h /usr/include/stdio.h /usr/include/sgtty.h
 rain: /usr/include/sys/ioctl.h /usr/include/sys/ttychars.h
-rain: /usr/include/sys/ttydev.h /usr/include/signal.h
-rain: /usr/include/machine/trap.h
+rain: /usr/include/sys/ttydefaults.h /usr/include/sys/ttydev.h
+rain: /usr/include/signal.h /usr/include/machine/trap.h
 worm: worm.c /usr/include/ctype.h /usr/include/curses.h /usr/include/stdio.h
 worm: /usr/include/sgtty.h /usr/include/sys/ioctl.h /usr/include/sys/ttychars.h
-worm: /usr/include/sys/ttydev.h /usr/include/signal.h
-worm: /usr/include/machine/trap.h
+worm: /usr/include/sys/ttydefaults.h /usr/include/sys/ttydev.h
+worm: /usr/include/signal.h /usr/include/machine/trap.h
 worms: worms.c /usr/include/sys/types.h /usr/include/stdio.h
 worms: /usr/include/sgtty.h /usr/include/sys/ioctl.h
-worms: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
-worms: /usr/include/signal.h /usr/include/machine/trap.h
+worms: /usr/include/sys/ttychars.h /usr/include/sys/ttydefaults.h
+worms: /usr/include/sys/ttydev.h /usr/include/signal.h
+worms: /usr/include/machine/trap.h
 wump: wump.c /usr/include/stdio.h /usr/include/sgtty.h /usr/include/sys/ioctl.h
-wump: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
+wump: /usr/include/sys/ttychars.h /usr/include/sys/ttydefaults.h
+wump: /usr/include/sys/ttydev.h
 
 # IF YOU PUT ANYTHING HERE IT WILL GO AWAY
