@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)quota.h	6.2 (Berkeley) %G%
+ *	@(#)quota.h	6.3 (Berkeley) %G%
  */
 
 /*
@@ -22,7 +22,7 @@
 struct quota {
 	struct	quota *q_forw, *q_back;	/* hash chain, MUST be first */
 	short	q_cnt;			/* ref count (# processes) */
-	short	q_uid;			/* real uid of owner */
+	uid_t	q_uid;			/* real uid of owner */
 	int	q_flags;		/* struct management flags */
 #define	Q_LOCK	0x01		/* quota struct locked (for disc i/o) */
 #define	Q_WANT	0x02		/* issue a wakeup when lock goes off */
@@ -90,7 +90,7 @@ struct	dquot {
 #define	DQ_BLKS		0x10		/* has been warned about blk limit */
 #define	DQ_INODS	0x20		/* has been warned about inode limit */
 	short	dq_cnt;			/* count of active references */
-	short	dq_uid;			/* user this applies to */
+	uid_t	dq_uid;			/* user this applies to */
 	dev_t	dq_dev;			/* filesystem this relates to */
 	struct dqblk dq_dqb;		/* actual usage & quotas */
 };

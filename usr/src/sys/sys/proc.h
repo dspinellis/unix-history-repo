@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)proc.h	6.4 (Berkeley) %G%
+ *	@(#)proc.h	6.5 (Berkeley) %G%
  */
 
 /*
@@ -33,7 +33,7 @@ struct	proc {
 	int	p_sigignore;	/* signals being ignored */
 	int	p_sigcatch;	/* signals being caught by user */
 	int	p_flag;
-	short	p_uid;		/* user id, used to direct tty signals */
+	uid_t	p_uid;		/* user id, used to direct tty signals */
 	short	p_pgrp;		/* name of process group leader */
 	short	p_pid;		/* unique process id */
 	short	p_ppid;		/* process id of parent */
