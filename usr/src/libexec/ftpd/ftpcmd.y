@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1980 Regents of the University of California.
+ * Copyright (c) 1985 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
@@ -12,7 +12,7 @@
 %{
 
 #ifndef lint
-static	char sccsid[] = "@(#)ftpcmd.y	5.2 (Berkeley) %G%";
+static	char sccsid[] = "@(#)ftpcmd.y	5.3 (Berkeley) %G%";
 #endif
 
 #include <sys/types.h>
@@ -37,14 +37,19 @@ extern	int type;
 extern	int form;
 extern	int debug;
 extern	int timeout;
+extern  int pdata;
 extern	char hostname[];
 extern	char *globerr;
 extern	int usedefault;
+extern	int unique;
+extern  int transflag;
+extern  char tmpline[];
 char	**glob();
 
 static	int cmd_type;
 static	int cmd_form;
 static	int cmd_bytesz;
+char cbuf[512];
 
 char	*index();
 %}
@@ -61,7 +66,7 @@ char	*index();
 	MRSQ	MRCP	ALLO	REST	RNFR	RNTO
 	ABOR	DELE	CWD	LIST	NLST	SITE
 	STAT	HELP	NOOP	XMKD	XRMD	XPWD
-	XCUP
+	XCUP	STOU
 
 	LEXERR
 
@@ -77,6 +82,7 @@ cmd:		USER SP username CRLF
 		= {
 			extern struct passwd *getpwnam();
 
+			logged_in = 0;
 			if (strcmp($3, "ftp") == 0 ||
 			  strcmp($3, "anonymous") == 0) {
 				if ((pw = getpwnam("ftp")) != NULL) {
@@ -84,13 +90,19 @@ cmd:		USER SP username CRLF
 					reply(331,
 				  "Guest login ok, send ident as password.");
 				}
+				else {
+					reply(530, "User %s unknown.", $3);
+				}
 			} else if (checkuser($3)) {
 				guest = 0;
 				pw = getpwnam($3);
-				reply(331, "Password required for %s.", $3);
+				if (pw == NULL) {
+					reply(530, "User %s unknown.", $3);
+				}
+				else {
+				    reply(331, "Password required for %s.", $3);
+				}
 			}
-			if (pw == NULL)
-				reply(530, "User %s unknown.", $3);
 			free($3);
 		}
 	|	PASS SP password CRLF
@@ -101,7 +113,15 @@ cmd:		USER SP username CRLF
 	|	PORT SP host_port CRLF
 		= {
 			usedefault = 0;
+			if (pdata > 0) {
+				(void) close(pdata);
+			}
+			pdata = -1;
 			ack($1);
+		}
+	|	PASV CRLF
+		= {
+			passive();
 		}
 	|	TYPE SP type_code CRLF
 		= {
@@ -214,6 +234,10 @@ cmd:		USER SP username CRLF
 			if ($4 != NULL)
 				free($4);
 		}
+	|	ABOR CRLF
+		= {
+			ack($1);
+		}
 	|	CWD check_login CRLF
 		= {
 			if ($2)
@@ -262,6 +286,16 @@ cmd:		USER SP username CRLF
 		= {
 			if ($2)
 				cwd("..");
+		}
+	|	STOU check_login SP pathname CRLF
+		= {
+			if ($2 && $4 != NULL) {
+				unique++;
+				store($4, "w");
+				unique = 0;
+			}
+			if ($4 != NULL)
+				free($4);
 		}
 	|	QUIT CRLF
 		= {
@@ -464,7 +498,7 @@ struct tab cmdtab[] = {		/* In order defined in RFC 765 */
 	{ "REIN", REIN, ARGS, 0,	"(reinitialize server state)" },
 	{ "QUIT", QUIT, ARGS, 1,	"(terminate service)", },
 	{ "PORT", PORT, ARGS, 1,	"<sp> b0, b1, b2, b3, b4" },
-	{ "PASV", PASV, ARGS, 0,	"(set server in passive mode)" },
+	{ "PASV", PASV, ARGS, 1,	"(set server in passive mode)" },
 	{ "TYPE", TYPE, ARGS, 1,	"<sp> [ A | E | I | L ]" },
 	{ "STRU", STRU, ARGS, 1,	"(specify file structure)" },
 	{ "MODE", MODE, ARGS, 1,	"(specify transfer mode)" },
@@ -482,7 +516,7 @@ struct tab cmdtab[] = {		/* In order defined in RFC 765 */
 	{ "REST", REST, STR1, 0,	"(restart command)" },
 	{ "RNFR", RNFR, STR1, 1,	"<sp> file-name" },
 	{ "RNTO", RNTO, STR1, 1,	"<sp> file-name" },
-	{ "ABOR", ABOR, ARGS, 0,	"(abort operation)" },
+	{ "ABOR", ABOR, ARGS, 1,	"(abort operation)" },
 	{ "DELE", DELE, STR1, 1,	"<sp> file-name" },
 	{ "CWD",  CWD,  OSTR, 1,	"[ <sp> directory-name]" },
 	{ "XCWD", CWD,	OSTR, 1,	"[ <sp> directory-name ]" },
@@ -492,10 +526,15 @@ struct tab cmdtab[] = {		/* In order defined in RFC 765 */
 	{ "STAT", STAT, OSTR, 0,	"(get server status)" },
 	{ "HELP", HELP, OSTR, 1,	"[ <sp> <string> ]" },
 	{ "NOOP", NOOP, ARGS, 1,	"" },
+	{ "MKD",  XMKD, STR1, 1,	"<sp> path-name" },
 	{ "XMKD", XMKD, STR1, 1,	"<sp> path-name" },
+	{ "RMD",  XRMD, STR1, 1,	"<sp> path-name" },
 	{ "XRMD", XRMD, STR1, 1,	"<sp> path-name" },
+	{ "PWD",  XPWD, ARGS, 1,	"(return current directory)" },
 	{ "XPWD", XPWD, ARGS, 1,	"(return current directory)" },
+	{ "CDUP", XCUP, ARGS, 1,	"(change to parent directory)" },
 	{ "XCUP", XCUP, ARGS, 1,	"(change to parent directory)" },
+	{ "STOU", STOU, STR1, 1,	"<sp> file-name" },
 	{ NULL,   0,    0,    0,	0 }
 };
 
@@ -522,13 +561,29 @@ getline(s, n, iop)
 	register FILE *iop;
 {
 	register c;
-	register char *cs;
+	register char *cs, ch;
 
 	cs = s;
-	while (--n > 0 && (c = getc(iop)) >= 0) {
+	for (c = 0; tmpline[c] != '\0' && --n > 0; ++c) {
+		*cs++ = tmpline[c];
+		if (tmpline[c] == '\n') {
+			*cs++ = '\0';
+			if (debug) {
+				fprintf(stderr, "FTPD: command: %s", s);
+			}
+			tmpline[0] = '\0';
+			return(s);
+		}
+		if (c == 0) {
+			tmpline[0] = '\0';
+		}
+	}
+	while (--n > 0 && read(fileno(iop),&ch,1) >= 0) {
+		c = 0377 & ch;
 		while (c == IAC) {
-			c = getc(iop);	/* skip command */
-			c = getc(iop);	/* try next char */
+			read(fileno(iop),&ch,1);	/* skip command */
+			read(fileno(iop),&ch,1);	/* try next char */
+			c = 0377 & ch;
 		}
 		*cs++ = c;
 		if (c=='\n')
@@ -566,7 +621,6 @@ toolong()
 
 yylex()
 {
-	static char cbuf[512];
 	static int cpos, state;
 	register char *cp;
 	register struct tab *p;
@@ -591,7 +645,10 @@ yylex()
 			if (index(cbuf, ' '))
 				cpos = index(cbuf, ' ') - cbuf;
 			else
+				cpos = index(cbuf, '\n') - cbuf;
+			if (cpos == 0) {
 				cpos = 4;
+			}
 			c = cbuf[cpos];
 			cbuf[cpos] = '\0';
 			upper(cbuf);

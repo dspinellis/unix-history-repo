@@ -1,17 +1,17 @@
 /*
- * Copyright (c) 1983 Regents of the University of California.
+ * Copyright (c) 1985 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
 
 #ifndef lint
 char copyright[] =
-"@(#) Copyright (c) 1983 Regents of the University of California.\n\
+"@(#) Copyright (c) 1985 Regents of the University of California.\n\
  All rights reserved.\n";
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)ftpd.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)ftpd.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -28,6 +28,7 @@ static char sccsid[] = "@(#)ftpd.c	5.1 (Berkeley) %G%";
 
 #include <arpa/ftp.h>
 #include <arpa/inet.h>
+#include <arpa/telnet.h>
 
 #include <stdio.h>
 #include <signal.h>
@@ -35,6 +36,7 @@ static char sccsid[] = "@(#)ftpd.c	5.1 (Berkeley) %G%";
 #include <setjmp.h>
 #include <netdb.h>
 #include <errno.h>
+#include <strings.h>
 
 /*
  * File containing login names
@@ -48,8 +50,10 @@ extern	char *sys_errlist[];
 extern	char *crypt();
 extern	char version[];
 extern	char *home;		/* pointer to home directory for glob */
-extern	FILE *popen(), *fopen();
+extern	FILE *popen(), *fopen(), *freopen();
 extern	int pclose(), fclose();
+extern	char *getline();
+extern	char cbuf[];
 
 struct	sockaddr_in ctrl_addr;
 struct	sockaddr_in data_source;
@@ -59,7 +63,7 @@ struct	sockaddr_in his_addr;
 struct	hostent *hp;
 
 int	data;
-jmp_buf	errcatch;
+jmp_buf	errcatch, urgcatch;
 int	logged_in;
 struct	passwd *pw;
 int	debug;
@@ -72,6 +76,10 @@ int	form;
 int	stru;			/* avoid C keyword */
 int	mode;
 int	usedefault = 1;		/* for data transfers */
+int	pdata;			/* for passive mode */
+int	unique;
+int	transflag;
+char	tmpline[7];
 char	hostname[32];
 char	remotehost[32];
 
@@ -88,6 +96,7 @@ int	swaitint = SWAITINT;
 
 int	lostconn();
 int	reapchild();
+int	myoob();
 FILE	*getdatasock(), *dataconn();
 
 main(argc, argv)
@@ -95,6 +104,7 @@ main(argc, argv)
 	char *argv[];
 {
 	int options = 0, addrlen;
+	long pgid;
 	char *cp;
 
 	addrlen = sizeof (his_addr);
@@ -126,6 +136,7 @@ main(argc, argv)
 
 		case 'l':
 			logging = 1;
+			(void) freopen("/tmp/ftplog", "a", stderr);
 			break;
 
 		case 't':
@@ -143,6 +154,13 @@ nextopt:
 	}
 	signal(SIGPIPE, lostconn);
 	signal(SIGCHLD, SIG_IGN);
+	if (signal(SIGURG, myoob) < 0) {
+		perror("signal");
+	}
+	pgid = getpid();
+	if (ioctl(fileno(stdin), SIOCSPGRP, (char *) &pgid) < 0) {
+		perror("ioctl");
+	}
 	dolog(&his_addr);
 	/* do telnet option negotiation here */
 	/*
@@ -154,6 +172,7 @@ nextopt:
 	form = FORM_N;
 	stru = STRU_F;
 	mode = MODE_S;
+	tmpline[0] = '\0';
 	gethostname(hostname, sizeof (hostname));
 	reply(220, "%s FTP server (%s) ready.",
 		hostname, version);
@@ -259,7 +278,7 @@ retrieve(cmd, name)
 {
 	FILE *fin, *dout;
 	struct stat st;
-	int (*closefunc)();
+	int (*closefunc)(), tmp;
 
 	if (cmd == 0) {
 #ifdef notdef
@@ -289,11 +308,15 @@ retrieve(cmd, name)
 	dout = dataconn(name, st.st_size, "w");
 	if (dout == NULL)
 		goto done;
-	if (send_data(fin, dout) || ferror(dout))
+	if ((tmp = send_data(fin, dout)) > 0 || ferror(dout) > 0) {
 		reply(550, "%s: %s.", name, sys_errlist[errno]);
-	else
+	}
+	else if (tmp == 0) {
 		reply(226, "Transfer complete.");
-	fclose(dout), data = -1;
+	}
+	fclose(dout);
+	data = -1;
+	pdata = -1;
 done:
 	(*closefunc)(fin);
 }
@@ -302,7 +325,8 @@ store(name, mode)
 	char *name, *mode;
 {
 	FILE *fout, *din;
-	int (*closefunc)(), dochown = 0;
+	int (*closefunc)(), dochown = 0, tmp;
+	char *gunique(), *local;
 
 #ifdef notdef
 	/* no remote command execution -- it's a security hole */
@@ -313,25 +337,40 @@ store(name, mode)
 	{
 		struct stat st;
 
-		if (stat(name, &st) < 0)
+		local = name;
+		if (stat(name, &st) < 0) {
 			dochown++;
-		fout = fopen(name, mode), closefunc = fclose;
+		}
+		else if (unique) {
+			if ((local = gunique(name)) == NULL) {
+				return;
+			}
+			dochown++;
+		}
+		fout = fopen(local, mode), closefunc = fclose;
 	}
 	if (fout == NULL) {
-		reply(550, "%s: %s.", name, sys_errlist[errno]);
+		reply(550, "%s: %s.", local, sys_errlist[errno]);
 		return;
 	}
-	din = dataconn(name, (off_t)-1, "r");
+	din = dataconn(local, (off_t)-1, "r");
 	if (din == NULL)
 		goto done;
-	if (receive_data(din, fout) || ferror(fout))
-		reply(550, "%s: %s.", name, sys_errlist[errno]);
-	else
+	if ((tmp = receive_data(din, fout)) > 0 || ferror(fout) > 0) {
+		reply(550, "%s: %s.", local, sys_errlist[errno]);
+	}
+	else if (tmp == 0 && !unique) {
 		reply(226, "Transfer complete.");
-	fclose(din), data = -1;
+	}
+	else if (tmp == 0 && unique) {
+		reply(226, "Transfer complete (unique file name:%s).", local);
+	}
+	fclose(din);
+	data = -1;
+	pdata = -1;
 done:
 	if (dochown)
-		(void) chown(name, pw->pw_uid, -1);
+		(void) chown(local, pw->pw_uid, -1);
 	(*closefunc)(fout);
 }
 
@@ -376,6 +415,24 @@ dataconn(name, size, mode)
 		sprintf (sizebuf, " (%ld bytes)", size);
 	else
 		(void) strcpy(sizebuf, "");
+	if (pdata > 0) {
+		struct sockaddr_in from;
+		int s, fromlen = sizeof(from);
+
+		s = accept(pdata, &from, &fromlen, 0);
+		if (s < 0) {
+			reply(425, "Can't open data connection.");
+			(void) close(pdata);
+			pdata = -1;
+			return(NULL);
+		}
+		(void) close(pdata);
+		pdata = s;
+		reply(150, "Openning data connection for %s (%s,%d)%s.",
+		     name, inet_ntoa(from.sin_addr.s_addr),
+		     ntohs(from.sin_port), sizebuf);
+		return(fdopen(pdata, mode));
+	}
 	if (data >= 0) {
 		reply(125, "Using existing data connection for %s%s.",
 		    name, sizebuf);
@@ -397,7 +454,7 @@ dataconn(name, size, mode)
 	    name, inet_ntoa(data_dest.sin_addr.s_addr),
 	    ntohs(data_dest.sin_port), sizebuf);
 	data = fileno(file);
-	while (connect(data, &data_dest, sizeof (data_dest), 0) < 0) {
+	while (connect(data, &data_dest, sizeof (data_dest)) < 0) {
 		if (errno == EADDRINUSE && retry < swaitmax) {
 			sleep(swaitint);
 			retry += swaitint;
@@ -427,21 +484,30 @@ send_data(instr, outstr)
 	int netfd, filefd, cnt;
 	char buf[BUFSIZ];
 
+	transflag++;
+	if (setjmp(urgcatch)) {
+		transflag = 0;
+		return(-1);
+	}
 	switch (type) {
 
 	case TYPE_A:
 		while ((c = getc(instr)) != EOF) {
 			if (c == '\n') {
-				if (ferror (outstr))
+				if (ferror (outstr)) {
+					transflag = 0;
 					return (1);
+				}
 				putc('\r', outstr);
 			}
 			putc(c, outstr);
-			if (c == '\r')
-				putc ('\0', outstr);
+		/*	if (c == '\r')			*/
+		/*		putc ('\0', outstr);	*/
 		}
-		if (ferror (instr) || ferror (outstr))
+		transflag = 0;
+		if (ferror (instr) || ferror (outstr)) {
 			return (1);
+		}
 		return (0);
 		
 	case TYPE_I:
@@ -449,12 +515,17 @@ send_data(instr, outstr)
 		netfd = fileno(outstr);
 		filefd = fileno(instr);
 
-		while ((cnt = read(filefd, buf, sizeof (buf))) > 0)
-			if (write(netfd, buf, cnt) < 0)
+		while ((cnt = read(filefd, buf, sizeof (buf))) > 0) {
+			if (write(netfd, buf, cnt) < 0) {
+				transflag = 0;
 				return (1);
+			}
+		}
+		transflag = 0;
 		return (cnt < 0);
 	}
 	reply(504,"Unimplemented TYPE %d in send_data", type);
+	transflag = 0;
 	return (1);
 }
 
@@ -474,35 +545,49 @@ receive_data(instr, outstr)
 	char buf[BUFSIZ];
 
 
+	transflag++;
+	if (setjmp(urgcatch)) {
+		transflag = 0;
+		return(-1);
+	}
 	switch (type) {
 
 	case TYPE_I:
 	case TYPE_L:
-		while ((cnt = read(fileno(instr), buf, sizeof buf)) > 0)
-			if (write(fileno(outstr), buf, cnt) < 0)
+		while ((cnt = read(fileno(instr), buf, sizeof buf)) > 0) {
+			if (write(fileno(outstr), buf, cnt) < 0) {
+				transflag = 0;
 				return (1);
+			}
+		}
+		transflag = 0;
 		return (cnt < 0);
 
 	case TYPE_E:
 		reply(504, "TYPE E not implemented.");
+		transflag = 0;
 		return (1);
 
 	case TYPE_A:
 		while ((c = getc(instr)) != EOF) {
 			if (c == '\r') {
-				if (ferror (outstr))
+				if (ferror (outstr)) {
+					transflag = 0;
 					return (1);
+				}
 				if ((c = getc(instr)) != '\n')
 					putc ('\r', outstr);
-				if (c == '\0')
-					continue;
+			/*	if (c == '\0')			*/
+			/*		continue;		*/
 			}
 			putc (c, outstr);
 		}
+		transflag = 0;
 		if (ferror (instr) || ferror (outstr))
 			return (1);
 		return (0);
 	}
+	transflag = 0;
 	fatal("Unknown type in receive_data.");
 	/*NOTREACHED*/
 }
@@ -559,7 +644,7 @@ replystr(s)
 ack(s)
 	char *s;
 {
-	reply(200, "%s command okay.", s);
+	reply(200, "%s command successful.", s);
 }
 
 nack(s)
@@ -570,7 +655,11 @@ nack(s)
 
 yyerror()
 {
-	reply(500, "Command not understood.");
+	char *cp;
+
+	cp = index(cbuf,'\n');
+	*cp = '\0';
+	reply(500, "'%s': command not understood.",cbuf);
 }
 
 delete(name)
@@ -877,4 +966,165 @@ checkuser(name)
 	}
 	fclose(fd);
 	return (!found);
+}
+
+myoob()
+{
+	char mark, *cp;
+	int aflag = 0, count = 0, iacflag = 0, c;
+
+	if (!transflag) {
+		for (;;) {
+			if (ioctl(fileno(stdin), SIOCATMARK, &mark) < 0) {
+				perror("ioctl");
+				break;
+			}
+			if (mark) {
+				break;
+			}
+			read(fileno(stdin), &mark, 1);
+			c = 0377 & mark;
+		}
+		recv(fileno(stdin), &mark, 1, MSG_OOB);
+		c = 0377 & mark;
+		read(fileno(stdin), &mark, 1);
+		return;
+	}
+	for (;;) {
+		if (ioctl(fileno(stdin), SIOCATMARK, &mark) < 0) {
+			perror("ioctl");
+			break;
+		}
+		if (mark) {
+			break;
+		}
+		read(fileno(stdin), &mark, 1);
+		c = 0377 & mark;
+		if (c == IAC) {
+			aflag++;
+		}
+		else if (c == IP) {
+			aflag++;
+		}
+	}
+	recv(fileno(stdin), &mark, 1, MSG_OOB);
+	c = 0377 & mark;
+	if (c == IAC) {
+		aflag++;
+	}
+	read(fileno(stdin), &mark, 1);
+	c = 0377 & mark;
+	if (c == DM) {
+		aflag++;
+	}
+	if (aflag != 4) {
+		return;
+	}
+	cp = tmpline;
+	(void) getline(cp, 7, stdin);
+	upper(cp);
+	if (strcmp(cp, "ABOR\r\n")) {
+		return;
+	}
+	tmpline[0] = '\0';
+	reply(426,"Transfer aborted. Data connection closed.");
+	reply(226,"Abort successful");
+	longjmp(urgcatch, 1);
+}
+
+passive()
+{
+	int len;
+	struct sockaddr_in tmp;
+	register char *p, *a;
+
+	pdata = socket(AF_INET, SOCK_STREAM, 0);
+	if (pdata < 0) {
+		reply(451, "Can't open passive connection");
+		return;
+	}
+	tmp = ctrl_addr;
+	tmp.sin_port = 0;
+	seteuid(0);
+	if (bind(pdata, (char *) &tmp, sizeof(tmp), 0) < 0) {
+		seteuid(pw->pw_uid);
+		(void) close(pdata);
+		pdata = -1;
+		reply(451, "Can't open passive connection");
+		return;
+	}
+	seteuid(pw->pw_uid);
+	len = sizeof(tmp);
+	if (getsockname(pdata, (char *) &tmp, &len) < 0) {
+		(void) close(pdata);
+		pdata = -1;
+		reply(451, "Can't open passive connection");
+		return;
+	}
+	if (listen(pdata, 1) < 0) {
+		(void) close(pdata);
+		pdata = -1;
+		reply(451, "Can't open passive connection");
+		return;
+	}
+	a = (char *) &tmp.sin_addr;
+	p = (char *) &tmp.sin_port;
+
+#define UC(b) (((int) b) & 0xff)
+
+	reply(227, "Entering Passive Mode (%d,%d,%d,%d,%d,%d)", UC(a[0]),
+		UC(a[1]), UC(a[2]), UC(a[3]), UC(p[0]), UC(p[1]));
+}
+
+char *
+gunique(local)
+	char *local;
+{
+	static char new[MAXPATHLEN];
+	char *cp = rindex(local, '/');
+	int d, count=0;
+	char ext = '1';
+
+	if (cp) {
+		*cp = '\0';
+	}
+	d = access(cp ? local : ".", 2);
+	if (cp) {
+		*cp = '/';
+	}
+	if (d < 0) {
+		perror(local);
+		return((char *) 0);
+	}
+	(void) strcpy(new, local);
+	cp = new + strlen(new);
+	*cp++ = '.';
+	while (!d) {
+		if (++count == 100) {
+			reply(451, "Unique file name not cannot be created.");
+			return((char *) 0);
+		}
+		*cp++ = ext;
+		*cp = '\0';
+		if (ext == '9') {
+			ext = '0';
+		}
+		else {
+			ext++;
+		}
+		if ((d = access(new, 0)) < 0) {
+			break;
+		}
+		if (ext != '0') {
+			cp--;
+		}
+		else if (*(cp - 2) == '.') {
+			*(cp - 1) = '1';
+		}
+		else {
+			*(cp - 2) = *(cp - 2) + 1;
+			cp--;
+		}
+	}
+	return(new);
 }
