@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)bad144.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)bad144.c	5.13 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -43,6 +43,7 @@ static char sccsid[] = "@(#)bad144.c	5.12 (Berkeley) %G%";
 int	fflag, add, copy, verbose, nflag;
 int	compare();
 int	dups;
+int	badfile = -1;		/* copy of badsector table to use, -1 if any */
 #define MAXSECSIZE	1024
 struct	dkbad curbad, oldbad;
 #define	DKBAD_MAGIC	0
@@ -86,6 +87,10 @@ main(argc, argv)
 				verbose++;
 				break;
 			    default:
+				if (**argv >= '0' && **argv <= '4') {
+					badfile = **argv - '0';
+					break;
+				}
 				goto usage;
 			}
 			(*argv)++;
@@ -233,7 +238,11 @@ usage:
 		}
 		shift(f, nbad, nbad-new);
 	}
-	for (i = 0; i < 10 && i < dp->d_nsectors; i += 2) {
+	if (badfile == -1)
+		i = 0;
+	else
+		i = badfile * 2;
+	for (; i < 10 && i < dp->d_nsectors; i += 2) {
 		if (lseek(f, dp->d_secsize * (size - dp->d_nsectors + i),
 		    L_SET) < 0)
 			Perror("lseek");
@@ -247,6 +256,8 @@ usage:
 			    i/2);
 			perror(msg);
 		}
+		if (badfile != -1)
+			break;
 	}
 #ifdef vax
 	if (nflag == 0 && fflag)
@@ -264,7 +275,11 @@ struct dkbad *bad;
 	daddr_t sn;
 	char msg[80];
 
-	for (i = 0; i < 10 && i < dp->d_nsectors; i += 2) {
+	if (badfile == -1)
+		i = 0;
+	else
+		i = badfile * 2;
+	for (; i < 10 && i < dp->d_nsectors; i += 2) {
 		sn = size - dp->d_nsectors + i;
 		if (lseek(f, sn * dp->d_secsize, L_SET) < 0)
 			Perror("lseek");
@@ -275,6 +290,8 @@ struct dkbad *bad;
 		}
 		(void)sprintf(msg, "bad144: read bad sector file at sn %d", sn);
 		perror(msg);
+		if (badfile != -1)
+			break;
 	}
 	fprintf(stderr, "bad144: %s: can't read bad block info\n", name);
 	exit(1);
@@ -386,11 +403,12 @@ daddr_t s1, s2;
 			exit(20);
 		}
 	}
-	if (lseek(f, dp->d_secsize * s1, L_SET) < 0)
-		Perror("lseek");
-	for (tries = 0; tries < RETRIES; tries++)
+	for (tries = 0; tries < RETRIES; tries++) {
+		if (lseek(f, dp->d_secsize * s1, L_SET) < 0)
+			Perror("lseek");
 		if ((n = read(f, buf, dp->d_secsize)) == dp->d_secsize)
 			break;
+	}
 	if (n != dp->d_secsize) {
 		fprintf(stderr, "bad144: can't read sector, %d: ", s1);
 		if (n < 0)
