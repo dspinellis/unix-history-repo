@@ -1,4 +1,4 @@
-SCCSID = "@(#)Makefile	1.4 (Berkeley) %G%"
+SCCSID = "@(#)Makefile	1.5 (Berkeley) %G%"
 DESTDIR=
 ED=	-ex
 AS=	-as
@@ -24,7 +24,7 @@ doprnt.o: doprnt.c
 	-rm -f doprnt.s
 
 y.tab.c: pas.y
-	${EYACC} pas.y
+	${EYACC} pas.y >/dev/null
 	${ED} - y.tab.c < gram
 
 version: version.c Version.o
