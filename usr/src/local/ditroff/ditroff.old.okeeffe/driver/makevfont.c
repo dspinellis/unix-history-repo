@@ -54,7 +54,7 @@
 #include <ctype.h>
 #include <vfont.h>
 
-char 	sccsid[] = "@(#)makevfont.c	1.2	(Berkeley)	%G%";
+char 	sccsid[] = "@(#)makevfont.c	1.3	(Berkeley)	%G%";
 
 #define MAGICN		0436	/* font file magic number */
 #define PCNTUP		62	/* percent of maximum height for an ascender */
