@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)commands.c	1.27 (Berkeley) %G%";
+static char sccsid[] = "@(#)commands.c	1.28 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -596,6 +596,13 @@ static struct togglelist Togglelist[] = {
 	    lclchars,
 		&localchars,
 		    "recognize certain control characters" },
+#ifdef	KERBEROS
+    { "kerberos",
+	"toggle use of Kerberos authentication",
+	    0,
+		&kerberized,
+		    "use Kerberos authentication" },
+#endif
     { " ", "", 0 },		/* empty line */
 #if	defined(unix) && defined(TN3270)
     { "apitrace",
@@ -1765,7 +1772,7 @@ static char
 #endif	/* defined(TN3270) && defined(unix) */
 #if	defined(unix)
 	zhelp[] =	"suspend telnet",
-#endif	/* defined(unix */
+#endif	/* defined(unix) */
 	shellhelp[] =	"invoke a subshell",
 	modestring[] = "try to enter line-by-line or character-at-a-time mode";
 
