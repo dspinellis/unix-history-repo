@@ -1,6 +1,10 @@
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)ecvt.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)ecvt.c	5.2 (Berkeley) %G%";
 #endif LIBC_SCCS and not lint
+
+#if defined(hp300) && !defined(IEEE)
+#define	IEEE	1
+#endif
 
 /*
  *	ecvt converts to decimal
@@ -11,7 +15,13 @@ static char sccsid[] = "@(#)ecvt.c	5.1 (Berkeley) %G%";
 
 char	*cvt();
 
+#ifdef IEEE
+#include <signal.h>
+#define	NDIG	512
+#else
 #define	NDIG	80
+#endif
+
 char*
 ecvt(arg, ndigits, decpt, sign)
 double arg;
@@ -39,6 +49,11 @@ int ndigits, *decpt, *sign;
 	static char buf[NDIG];
 	double modf();
 
+#ifdef IEEE
+	/* XXX */
+	if (isspecial(arg, buf))
+		return(buf);
+#endif
 	if (ndigits<0)
 		ndigits = 0;
 	if (ndigits>=NDIG-1)
@@ -106,3 +121,29 @@ int ndigits, *decpt, *sign;
 	*p = '\0';
 	return(buf);
 }
+
+#ifdef IEEE
+struct IEEEdp {
+	unsigned sign:1,
+		 exp:11,
+		 manh:20,
+		 manl:32;
+};
+
+isspecial(f, bp)
+	double f;
+	char *bp;
+{
+	register struct IEEEdp *ip = (struct IEEEdp *) &f;
+
+	if (ip->exp != 0x7ff)
+		return(0);
+	if (ip->manh || ip->manl)
+		strcpy(bp, "NaN");
+	else if (ip->sign)
+		strcpy(bp, "-Infinity");
+	else
+		strcpy(bp, "Infinity");
+	return(1);
+}
+#endif
