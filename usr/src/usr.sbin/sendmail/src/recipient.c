@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	8.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)recipient.c	8.13 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -50,6 +50,12 @@ sendtolist(list, ctladdr, sendq, e)
 	char delimiter;		/* the address delimiter */
 	int naddrs;
 	char *oldto = e->e_to;
+
+	if (list == NULL)
+	{
+		syserr("sendtolist: null list");
+		return 0;
+	}
 
 	if (tTd(25, 1))
 	{
