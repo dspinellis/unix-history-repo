@@ -1,4 +1,4 @@
-/*	if.h	4.9	82/03/15	*/
+/*	if.h	4.10	82/03/19	*/
 
 /*
  * Structures defining a network interface, providing a packet
@@ -97,10 +97,10 @@ struct ifnet {
 #define	IFQ_MAXLEN	50
 
 #ifdef KERNEL
+struct	ifqueue rawintrq;		/* raw packet input queue */
 #ifdef INET
 struct	ifqueue	ipintrq;		/* ip packet input queue */
 #endif
-struct	ifqueue rawintrq;		/* raw packet input queue */
 struct	ifnet *ifnet;
 struct	ifnet *if_ifwithaddr(), *if_ifonnetof(), *if_gatewayfor();
 struct	in_addr if_makeaddr();
