@@ -29,7 +29,7 @@ SOFTWARE.
  *
  * $Header: tp_subr.c,v 5.3 88/11/18 17:28:43 nhall Exp $
  * $Source: /usr/argo/sys/netiso/RCS/tp_subr.c,v $
- *	@(#)tp_subr.c	7.6 (Berkeley) %G%
+ *	@(#)tp_subr.c	7.7 (Berkeley) %G%
  *
  * The main work of data transfer is done here.
  * These routines are called from tp.trans.
@@ -823,43 +823,3 @@ done:
 		}
 	}
 }
-
-/* class zero version */
-void
-tp0_stash( tpcb, e )
-	register struct tp_pcb		*tpcb;
-	register struct tp_event	*e;
-{
-#ifndef lint
-#define E e->ATTR(DT_TPDU)
-#else lint
-#define E e->ev_union.EV_DT_TPDU
-#endif lint
-
-	IFPERF(tpcb)
-		PStat(tpcb, Nb_from_ll) += E.e_datalen;
-		tpmeas(tpcb->tp_lref, TPtime_from_ll, &e->e_time,
-				E.e_seq, PStat(tpcb, Nb_from_ll), E.e_datalen);
-	ENDPERF
-
-	IFDEBUG(D_STASH)
-		printf("stash EQ: seq 0x%x datalen 0x%x eot 0x%x", 
-		E.e_seq, E.e_datalen, E.e_eot);
-	ENDDEBUG
-
-	IFTRACE(D_STASH)
-		tptraceTPCB(TPPTmisc, "stash EQ: seq len eot", 
-		E.e_seq, E.e_datalen, E.e_eot, 0);
-	ENDTRACE
-
-	if ( E.e_eot ) {
-		register struct mbuf *n = E.e_data;
-		n->m_flags |= M_EOR;
-		n->m_act = MNULL; /* set on tp_input */
-	}
-	sbappend(&tpcb->tp_sock->so_rcv, E.e_data);
-	IFDEBUG(D_STASH)
-		dump_mbuf(tpcb->tp_sock->so_rcv.sb_mb, 
-			"stash 0: so_rcv after appending");
-	ENDDEBUG
-} 
