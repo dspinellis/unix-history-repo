@@ -1,6 +1,5 @@
-#	@(#)Makefile	5.20 (Berkeley) %G%
+#	@(#)Makefile	5.21 (Berkeley) %G%
 
-# BROKEN: tn3270
 SUBDIR=	apply ar at awk banner basename bc bdes biff cal calendar cap_mkdb \
 	checknr chflags chpass cksum col colcrt colrm column comm compress \
 	cpio cpp ctags cut dc deroff diction diff dirname du env error ex \
@@ -12,7 +11,7 @@ SUBDIR=	apply ar at awk banner basename bc bdes biff cal calendar cap_mkdb \
 	printf ptx quota ranlib ratfor rdist renice rev rlogin rsh ruptime \
 	rwho sccs script sed shar showmount size soelim sort spell spline \
 	split strings strip struct su talk tcopy tee telnet tftp \
-	time tip touch tput tr true tset tsort tty ul uname unexpand \
+	time tip tn3270 touch tput tr true tset tsort tty ul uname unexpand \
 	unifdef uniq units unvis users uucp uudecode uuencode vacation \
 	vgrind vis vmstat w wall wc what whereis who whois window write \
 	xargs xinstall xsend xstr yacc yes
