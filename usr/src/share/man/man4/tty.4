@@ -1,10 +1,10 @@
-.\" Copyright (c) 1980 Regents of the University of California.
+.\" Copyright (c) 1983 Regents of the University of California.
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)tty.4	6.1 (Berkeley) 5/15/85
+.\"	@(#)tty.4	6.3 (Berkeley) %G%
 .\"
-.TH TTY 4 "May 15, 1985"
+.TH TTY 4 ""
 .UC 4
 .SH NAME
 tty \- general terminal interface
@@ -767,7 +767,7 @@ LFLUSHO	000200	Output is being flushed
 LNOHANG	000400	Don't send hangup when carrier drops
 LETXACK	001000	Diablo style buffer hacking (unimplemented)
 LCRTKIL	002000	BS-space-BS erase entire line on line kill
-LINTRUP	004000	Generate interrupt SIGTINT when input ready to read
+LPASS8	004000	Pass all 8 bits through on input, in any mode
 LCTLECH	010000	Echo input control chars as ^X, delete as ^?
 LPENDIN	020000	Retype pending input at next read or input character
 LDECCTQ	040000	Only ^Q restarts output after ^S, like DEC systems

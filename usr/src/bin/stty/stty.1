@@ -1,8 +1,8 @@
-.\" Copyright (c) 1980 Regents of the University of California.
+.\" Copyright (c) 1983 Regents of the University of California.
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)stty.1	6.1 (Berkeley) %G%
+.\"	@(#)stty.1	6.2 (Berkeley) %G%
 .\"
 .TH STTY 1 ""
 .UC 4
@@ -383,15 +383,13 @@ Input is not pending.
 .br
 .ns
 .TP 10
-.B intrup
-Send a signal (SIGTINT) to the terminal control process group whenever
-an input record (line in cooked mode, character in cbreak or raw mode)
-is available for reading.
+.B pass8
+Passes all 8 bits through on input, in any mode.
 .br
 .ns
 .TP 10
-.B \-intrup
-Don't send input available interrupts.
+.B \-pass8
+Strips the 0200 bit on input except in raw mode.
 .br
 .ns
 .TP 10
