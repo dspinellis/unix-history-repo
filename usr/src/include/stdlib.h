@@ -4,12 +4,17 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)stdlib.h	5.13 (Berkeley) %G%
+ *	@(#)stdlib.h	5.14 (Berkeley) %G%
  */
 
 #ifndef _STDLIB_H_
 #define _STDLIB_H_
 #include <sys/types.h>
+
+#ifdef	_SIZE_T_
+typedef	_SIZE_T_	size_t;
+#undef	_SIZE_T_
+#endif
 
 #ifdef	_WCHAR_T_
 typedef	_WCHAR_T_	wchar_t;
@@ -20,6 +25,7 @@ typedef struct {
 	int quot;		/* quotient */
 	int rem;		/* remainder */
 } div_t;
+
 typedef struct {
 	long quot;		/* quotient */
 	long rem;		/* remainder */
@@ -62,7 +68,7 @@ unsigned long
 	 strtoul __P((const char *, char **, int));
 int	 system __P((const char *));
 
-/* these are currently just stubs */
+/* These are currently just stubs. */
 int	 mblen __P((const char *, size_t));
 size_t	 mbstowcs __P((wchar_t *, const char *, size_t));
 int	 wctomb __P((char *, wchar_t));
@@ -73,16 +79,17 @@ size_t	 wcstombs __P((char *, const wchar_t *, size_t));
 void	 cfree __P((void *));
 int	 putenv __P((const char *));
 int	 setenv __P((const char *, const char *, int));
-#endif /* not ANSI */
+#endif
 
 #if !defined(_ANSI_SOURCE) && !defined(_POSIX_SOURCE)
-void	*alloca __P((size_t));	/* built-in for gcc */
-extern	 char *optarg;			/* getopt(3) external variables */
-extern	 int optind;
-extern	 int opterr;
+extern char *optarg;			/* getopt(3) external variables */
+extern int opterr, optind;
 int	 getopt __P((int, char * const *, const char *));
-extern	 char *suboptarg;		/* getsubopt(3) external variable */
+
+extern char *suboptarg;			/* getsubopt(3) external variable */
 int	 getsubopt __P((char **, char * const *, char **));
+
+void	*alloca __P((size_t));	/* built-in for gcc */
 int	 heapsort __P((void *, size_t, size_t,
 	    int (*)(const void *, const void *)));
 char	*initstate __P((unsigned, char *, int));
@@ -91,8 +98,7 @@ long	 random __P((void));
 char	*setstate __P((char *));
 void	 srandom __P((unsigned));
 void	 unsetenv __P((const char *));
-#endif /* neither ANSI nor POSIX */
-
+#endif
 __END_DECLS
 
 #endif /* _STDLIB_H_ */
