@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cmdtab.c	2.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmdtab.c	2.2 (Berkeley) %G%";
 #endif not lint
 
 #include "timedc.h"
@@ -27,7 +27,6 @@ struct cmd cmdtab[] = {
 	{ "testing",	testinghelp,	testing,	1 },
 	{ "tracing",	tracinghelp,	tracing,	1 },
 	{ "?",		helphelp,	help,		0 },
-	{ 0 },
 };
 
 int	NCMDS = sizeof (cmdtab) / sizeof (cmdtab[0]);

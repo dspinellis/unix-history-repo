@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)timedc.c	2.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)timedc.c	2.2 (Berkeley) %G%";
 #endif not lint
 
 #include "timedc.h"
@@ -124,11 +124,13 @@ getcmd(name)
 	register char *p, *q;
 	register struct cmd *c, *found;
 	register int nmatches, longest;
+	extern int NCMDS;
 
 	longest = 0;
 	nmatches = 0;
 	found = 0;
-	for (c = cmdtab; p = c->c_name; c++) {
+	for (c = cmdtab; c < &cmdtab[NCMDS]; c++) {
+		p = c->c_name;
 		for (q = name; *q == *p++; q++)
 			if (*q == 0)		/* exact match? */
 				return(c);
