@@ -18,7 +18,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)command.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)command.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -48,7 +48,6 @@ extern int scroll;
 extern char *first_cmd;
 extern char *every_first_cmd;
 extern char *current_file;
-extern char *editor;
 extern int screen_trashed;	/* The screen has been overwritten */
 
 static char cmdbuf[120];	/* Buffer for holding a multi-char command */
@@ -676,18 +675,8 @@ again:		if (sigs)
 				error("Cannot edit standard input");
 				break;
 			}
-			/*
-			 * Try to pass the line number to the editor.
-			 */
 			cmd_exec();
-			c = currline(MIDDLE);
-			if (c == 0)
-				(void)sprintf(cmdbuf, "%s %s",
-					editor, current_file);
-			else
-				(void)sprintf(cmdbuf, "%s +%d %s",
-					editor, c, current_file);
-			lsystem(cmdbuf);
+			editfile();
 			ch_init(0, 0);
 			clr_linenum();
 			break;
@@ -790,4 +779,29 @@ again:		if (sigs)
 			break;
 		}
 	}
+}
+
+static
+editfile()
+{
+	static int dolinenumber;
+	static char *editor;
+	int c;
+	char buf[MAXPATHLEN], *getenv();
+
+	if (editor == NULL) {
+		editor = getenv("EDITOR");
+		/* pass the line number to vi */
+		if (editor == NULL || *editor == '\0') {
+			editor = "/usr/ucb/vi";
+			dolinenumber = 1;
+		}
+		else
+			dolinenumber = 0;
+	}
+	if (dolinenumber && (c = currline(MIDDLE)))
+		(void)sprintf(buf, "%s +%d %s", editor, c, current_file);
+	else
+		(void)sprintf(buf, "%s %s", editor, current_file);
+	lsystem(buf);
 }
