@@ -8,11 +8,11 @@
  * %sccs.include.redist.c%
  */
 
-#if defined(LIBC_SCCS) && !defined(lint)
-	ASMSTR("@(#)rindex.s	5.1 (Berkeley) %G%")
-#endif /* LIBC_SCCS and not lint */
-
 #include "DEFS.h"
+
+#if defined(LIBC_SCCS) && !defined(lint)
+	ASMSTR("@(#)rindex.s	5.2 (Berkeley) %G%")
+#endif /* LIBC_SCCS and not lint */
 
 LEAF(rindex)
 	move	v0, zero		# default if not found

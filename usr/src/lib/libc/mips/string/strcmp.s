@@ -8,11 +8,11 @@
  * %sccs.include.redist.c%
  */
 
-#if defined(LIBC_SCCS) && !defined(lint)
-	ASMSTR("@(#)strcmp.s	5.1 (Berkeley) %G%")
-#endif /* LIBC_SCCS and not lint */
-
 #include "DEFS.h"
+
+#if defined(LIBC_SCCS) && !defined(lint)
+	ASMSTR("@(#)strcmp.s	5.2 (Berkeley) %G%")
+#endif /* LIBC_SCCS and not lint */
 
 /*
  * NOTE: this version assumes unsigned chars in order to be "8 bit clean".
