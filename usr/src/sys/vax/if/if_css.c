@@ -1,4 +1,4 @@
-/*      if_css.c     4.3     82/10/10     */
+/*      if_css.c     4.4     82/10/23     */
 
 #include "css.h"
 
@@ -130,7 +130,7 @@ cssattach(ui)
         } *ifimp;
 
 COUNT(CSSATTACH);
-        if ((ifimp = (struct ifimpcb *)impattach(ui)) == 0)
+        if ((ifimp = (struct ifimpcb *)impattach(ui, cssreset)) == 0)
                 panic("cssattach");             /* XXX */
         sc->css_if = &ifimp->ifimp_if;
         ip = &ifimp->ifimp_impcb;
