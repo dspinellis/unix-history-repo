@@ -54,7 +54,7 @@ LDADD+=	-L${.CURDIR}/../curses/obj -L${.CURDIR}/../curses \
 	-lregex -lcurses -ltermlib -lutil
 SPECHDR=excmd.h options.h
 CLEANFILES+=${SPECHDR}
-LINKS=	${BINDIR}/vi ${BINDIR}/ex ${BINDIR}/view
+LINKS=	${BINDIR}/vi ${BINDIR}/ex ${BINDIR}/vi ${BINDIR}/view
 
 all: vi vi.1
 
