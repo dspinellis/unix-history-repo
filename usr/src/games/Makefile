@@ -1,4 +1,4 @@
-#	Makefile	4.14	84/09/07
+#	Makefile	4.15	84/12/03
 #
 DESTDIR=
 CFLAGS=	-O
@@ -9,7 +9,7 @@ WORK=	aard ddl mpu
 
 # Programs that live in subdirectories, and have makefiles of their own.
 #
-SUBDIR=	adventure backgammon boggle compat cribbage doctor fortune \
+SUBDIR=	adventure backgammon battlestar boggle compat cribbage doctor fortune \
 	hangman hunt mille monop quiz rogue sail snake trek zork
 
 # Shell scripts that need only be installed and are never removed.
