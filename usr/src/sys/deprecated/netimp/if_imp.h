@@ -1,4 +1,4 @@
-/*	if_imp.h	4.1	82/02/03	*/
+/*	if_imp.h	4.2	82/02/03	*/
 
 /*
  * Structure of IMP 1822 long leader.
@@ -22,7 +22,7 @@ struct imp_leader {
 	u_short	il_length;	/* message length */
 };
 
-#define	IMP_DROPCNT	3	/* # of noops from imp to ignore */
+#define	IMP_DROPCNT	2	/* # of noops from imp to ignore */
 #define	IMP_MTU		1019	/* max message size (bytes) */
 
 /*
