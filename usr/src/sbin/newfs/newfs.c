@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)newfs.c	6.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)newfs.c	6.9 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -27,6 +27,8 @@ static char sccsid[] = "@(#)newfs.c	6.8 (Berkeley) %G%";
 
 #include <stdio.h>
 #include <ctype.h>
+
+#define COMPAT			/* allow non-labeled disks */
 
 /*
  * The following two constants set the default block and fragment sizes.
@@ -109,6 +111,9 @@ int	maxcontig = MAXCONTIG;	/* max contiguous blocks to allocate */
 int	rotdelay = ROTDELAY;	/* rotational delay between blocks */
 int	bbsize = BBSIZE;	/* boot block size */
 int	sbsize = SBSIZE;	/* superblock size */
+#ifdef COMPAT
+int	unlabelled;
+#endif
 
 char	device[MAXPATHLEN];
 
@@ -290,7 +295,12 @@ next:
 		argc--, argv++;
 	}
 	if (argc < 1) {
+#ifdef COMPAT
+		fprintf(stderr,
+		"usage: newfs [ fsoptions ] special-device [device-type]\n");
+#else
 		fprintf(stderr, "usage: newfs [ fsoptions ] special-device\n");
+#endif
 		fprintf(stderr, "where fsoptions are:\n");
 		fprintf(stderr, "\t-N do not create file system, %s\n",
 			"just print out parameters");
@@ -341,7 +351,11 @@ next:
 	cp = index(argv[0], '\0') - 1;
 	if (cp == 0 || (*cp < 'a' || *cp > 'h') && !isdigit(*cp))
 		fatal("%s: can't figure out file system partition", argv[0]);
+#ifdef COMPAT
+	lp = getdisklabel(special, fsi, argv[1]);
+#else
 	lp = getdisklabel(special, fsi);
+#endif
 	if (isdigit(*cp))
 		pp = &lp->d_partitions[0];
 	else
@@ -442,10 +456,31 @@ next:
 	exit(0);
 }
 
+#ifdef COMPAT
+struct disklabel *
+getdisklabel(s, fd, type)
+	char *s, *type;
+	int fd;
+{
+	static struct disklabel lab;
+	struct disklabel *getdiskbyname();
+
+	if (ioctl(fd, DIOCGDINFO, (char *)&lab) < 0) {
+		if (type == NULL) {
+			perror("ioctl (GDINFO)");
+			fatal(
+		   "%s: can't read disk label; disk type must be specified", s);
+		}
+		unlabelled++;
+		return (getdiskbyname(type));
+	}
+	return (&lab);
+}
+#else
 struct disklabel *
 getdisklabel(s, fd)
 	char *s;
-	int	fd;
+	int fd;
 {
 	static struct disklabel lab;
 
@@ -455,6 +490,7 @@ getdisklabel(s, fd)
 	}
 	return (&lab);
 }
+#endif
 
 rewritelabel(s, fd, lp)
 	char *s;
@@ -462,6 +498,10 @@ rewritelabel(s, fd, lp)
 	register struct disklabel *lp;
 {
 
+#ifdef COMPAT
+	if (unlabelled)
+		return;
+#endif
 	lp->d_checksum = 0;
 	lp->d_checksum = dkcksum(lp);
 	if (ioctl(fd, DIOCWDINFO, (char *)lp) < 0) {
@@ -493,7 +533,10 @@ rewritelabel(s, fd, lp)
 		*(struct disklabel *)(blk + LABELOFFSET) = *lp;
 		alt = lp->d_ncylinders * lp->d_secpercyl - lp->d_nsectors;
 		for (i = 1; i < 11 && i < lp->d_nsectors; i += 2) {
-			lseek(cfd, (off_t)(alt + i) * lp->d_secsize, L_SET);
+			if (lseek(cfd, (off_t)(alt + i) * lp->d_secsize, L_SET) == -1) {
+				perror("lseek to badsector area");
+				exit(30);
+			}
 			if (write(cfd, blk, lp->d_secsize) < lp->d_secsize) {
 				int oerrno = errno;
 				fprintf(stderr, "alternate label %d ", i/2);
