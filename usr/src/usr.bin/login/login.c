@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)login.c	5.49 (Berkeley) %G%";
+static char sccsid[] = "@(#)login.c	5.50 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -63,7 +63,7 @@ int	timeout = 300;
 
 struct	passwd *pwd;
 int	failures;
-char	term[64], *hostname, *username, *tty;
+char	term[64], *envinit[1], *hostname, *username, *tty;
 
 struct	sgttyb sgttyb;
 struct	tchars tc = {
@@ -96,7 +96,7 @@ main(argc, argv)
 	register char *p;
 	int ask, fflag, hflag, pflag, rflag, cnt;
 	int quietlog, passwd_req, ioctlval, timedout();
-	char *domain, *salt, *envinit[1], *ttyn, *pp;
+	char *domain, *salt, *ttyn, *pp;
 	char tbuf[MAXPATHLEN + 2], tname[sizeof(_PATH_TTY) + 10];
 	char localhost[MAXHOSTNAMELEN];
 	char *ctime(), *ttyname(), *stypeof(), *crypt(), *getpass();
