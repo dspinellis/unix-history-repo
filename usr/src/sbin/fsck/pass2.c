@@ -1,5 +1,5 @@
 #ifndef lint
-static char version[] = "@(#)pass2.c	3.4 (Berkeley) %G%";
+static char version[] = "@(#)pass2.c	3.5 (Berkeley) %G%";
 #endif
 
 #include <sys/param.h>
@@ -24,11 +24,39 @@ pass2()
 	switch (statemap[ROOTINO]) {
 
 	case USTATE:
-		errexit("ROOT INODE UNALLOCATED. TERMINATING.\n");
+		pfatal("ROOT INODE UNALLOCATED");
+		if (reply("ALLOCATE") == 0)
+			errexit("");
+		if (allocdir(ROOTINO, ROOTINO) != ROOTINO)
+			errexit("CANNOT ALLOCATE ROOT INODE\n");
+		descend(&rootdesc, ROOTINO);
+		break;
+
+	case DCLEAR:
+		pfatal("DUPS/BAD IN ROOT INODE");
+		if (reply("REALLOCATE")) {
+			freeino(ROOTINO);
+			if (allocdir(ROOTINO, ROOTINO) != ROOTINO)
+				errexit("CANNOT ALLOCATE ROOT INODE\n");
+			descend(&rootdesc, ROOTINO);
+			break;
+		}
+		if (reply("CONTINUE") == 0)
+			errexit("");
+		statemap[ROOTINO] = DSTATE;
+		descend(&rootdesc, ROOTINO);
+		break;
 
 	case FSTATE:
 	case FCLEAR:
 		pfatal("ROOT INODE NOT DIRECTORY");
+		if (reply("REALLOCATE")) {
+			freeino(ROOTINO);
+			if (allocdir(ROOTINO, ROOTINO) != ROOTINO)
+				errexit("CANNOT ALLOCATE ROOT INODE\n");
+			descend(&rootdesc, ROOTINO);
+			break;
+		}
 		if (reply("FIX") == 0)
 			errexit("");
 		dp = ginode(ROOTINO);
@@ -41,14 +69,6 @@ pass2()
 	case DSTATE:
 		descend(&rootdesc, ROOTINO);
 		break;
-
-	case DCLEAR:
-		pfatal("DUPS/BAD IN ROOT INODE");
-		printf("\n");
-		if (reply("CONTINUE") == 0)
-			errexit("");
-		statemap[ROOTINO] = DSTATE;
-		descend(&rootdesc, ROOTINO);
 
 	default:
 		errexit("BAD STATE %d FOR ROOT INODE", statemap[ROOTINO]);
