@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)login.c	5.75 (Berkeley) %G%";
+static char sccsid[] = "@(#)login.c	5.76 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -198,15 +198,14 @@ main(argc, argv)
 			fflag = 0;
 			getloginname();
 		}
+		rootlogin = 0;
 #ifdef	KERBEROS
 		if ((instance = index(username, '.')) != NULL) {
 			if (strncmp(instance, ".root", 5) == 0)
-				rootlogin++;
+				rootlogin = 1;
 			*instance++ = '\0';
-		} else {
-			rootlogin = 0;
+		} else
 			instance = "";
-		}
 #endif
 		if (strlen(username) > UT_NAMESIZE)
 			username[UT_NAMESIZE] = '\0';
@@ -240,8 +239,6 @@ main(argc, argv)
 		fflag = 0;
 		if (pwd && pwd->pw_uid == 0)
 			rootlogin = 1;
-		else
-			rootlogin = 0;
 
 		(void)setpriority(PRIO_PROCESS, 0, -4);
 
@@ -252,11 +249,8 @@ main(argc, argv)
 			rval = klogin(pwd, instance, localhost, p);
 			if (rval == 0)
 				authok = 1;
-			else if (rval == 1) {
-				if (pwd->pw_uid != 0)
-					rootlogin = 0;
+			else if (rval == 1)
 				rval = strcmp(crypt(p, salt), pwd->pw_passwd);
-			}
 #else
 			rval = strcmp(crypt(p, salt), pwd->pw_passwd);
 #endif
@@ -441,7 +435,7 @@ main(argc, argv)
 	if (setlogin(pwd->pw_name) < 0)
 		syslog(LOG_ERR, "setlogin() failure: %m");
 
-	/* discard permissions last so can't get killed and drop core */
+	/* Discard permissions last so can't get killed and drop core. */
 	if (rootlogin)
 		(void) setuid(0);
 	else
