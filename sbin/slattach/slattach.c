@@ -79,7 +79,7 @@ char copyright[] =
 
 #ifndef lint
 static char sccsid[] = "@(#)slattach.c	4.6 (Berkeley) 6/1/90";
-static char rcsid[] = "$Header: /a/cvs/386BSD/src/sbin/slattach/slattach.c,v 1.7 1993/09/08 06:12:05 rich Exp $";
+static char rcsid[] = "$Header: /a/cvs/386BSD/src/sbin/slattach/slattach.c,v 1.8 1993/09/10 17:56:41 rgrimes Exp $";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -121,6 +121,7 @@ int	redial_on_startup = 0;	/* iff non-zero execute redial_cmd on startup */
 int	speed = DEFAULT_BAUD;
 int	slflags = 0;		/* compression flags */
 int	unit = -1;		/* slip device unit number */
+int	foreground = 0;
 FILE	*console;
 
 char	devname[32];
@@ -135,6 +136,7 @@ usage: %s [-achlnz] [-e command] [-r command] [-s speed] [-u command] device\n\
   -a      -- autoenable VJ compression\n\
   -c      -- enable VJ compression\n\
   -e ECMD -- run ECMD before exiting\n\
+  -f      -- run in "foreground" (don't detach from controlling tty)\n\
   -h      -- turn on cts/rts style flow control\n\
   -l      -- disable modem control (CLOCAL) and ignore carrier detect\n\
   -n      -- throw out ICMP packets\n\
@@ -163,6 +165,9 @@ int main(int argc, char **argv)
 			break;
 		case 'e':
 			exit_cmd = (char*) strdup (optarg);
+			break;
+		case 'f':
+			foreground = 1;
 			break;
 		case 'h':
 			flow_control |= CRTSCTS;
@@ -207,7 +212,8 @@ int main(int argc, char **argv)
 		dev = devname;
 	}
 
-	daemon(0,0);		/* fork, setsid, chdir /, and close std*. */
+	if (!foreground)
+		daemon(0,0);		/* fork, setsid, chdir /, and close std*. */
 
 	/* Note: daemon() closes stderr, so log errors from here on. */
 	(void)sprintf(name,"slattach[%d]", getpid());
@@ -327,8 +333,7 @@ void sighup_handler()
 		       unit,dev,redial_cmd);
 		system(redial_cmd);
 	} else {
-		syslog(LOG_NOTICE,"No redial phone number or command. aborting.",dev);
-		exit_handler(0);
+		syslog(LOG_NOTICE,"Warning: No redial phone number or command.",dev);
 	}
 	setup_line();
 	attach_line();
