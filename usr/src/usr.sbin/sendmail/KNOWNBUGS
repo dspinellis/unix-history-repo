@@ -1,7 +1,7 @@
 
 
 	     K N O W N   B U G S   I N   S E N D M A I L
-			     (for 8.6.6)
+			     (for 8.6.7)
 
 
 The following are bugs or deficiencies in sendmail that I am aware of
@@ -128,4 +128,4 @@ This list is not guaranteed to be complete.
   file descriptors per list).  This is particularly egregious if
   you have your connection cache set to be large.
 
-(Version 8.17, last updated %G%)
+(Version 8.18, last updated %G%)
