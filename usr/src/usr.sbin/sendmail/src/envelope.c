@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)envelope.c	5.30 (Berkeley) %G%";
+static char sccsid[] = "@(#)envelope.c	5.31 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -41,7 +41,7 @@ newenvelope(e)
 	extern ENVELOPE BlankEnvelope;
 
 	parent = CurEnv;
-	if (e == CurEnv)
+	if (e == CurEnv && e->e_parent != NULL)
 		parent = e->e_parent;
 	clearenvelope(e, TRUE);
 	if (e == CurEnv)
@@ -50,7 +50,8 @@ newenvelope(e)
 		bcopy((char *) &CurEnv->e_from, (char *) &e->e_from, sizeof e->e_from);
 	e->e_parent = parent;
 	e->e_ctime = curtime();
-	e->e_msgpriority = parent->e_msgsize;
+	if (parent != NULL)
+		e->e_msgpriority = parent->e_msgsize;
 	e->e_puthdr = putheader;
 	e->e_putbody = putbody;
 	if (CurEnv->e_xfp != NULL)

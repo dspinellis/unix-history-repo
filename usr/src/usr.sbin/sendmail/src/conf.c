@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	5.41 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	5.42 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/ioctl.h>
@@ -69,6 +69,7 @@ struct hdrinfo	HdrInfo[] =
 	"resent-cc",		H_RCPT|H_RESENT,
 	"bcc",			H_RCPT|H_ACHECK,
 	"resent-bcc",		H_RCPT|H_ACHECK|H_RESENT,
+	"apparently-to",	H_RCPT,
 		/* message identification and control */
 	"message-id",		0,
 	"resent-message-id",	H_RESENT,
@@ -756,3 +757,27 @@ unsetenv(name)
 }
 
 #endif /* UNSETENV */
+/*
+**  GETDTABLESIZE -- return number of file descriptors
+**
+**	Only on non-BSD systems
+**
+**	Parameters:
+**		none
+**
+**	Returns:
+**		size of file descriptor table
+**
+**	Side Effects:
+**		none
+*/
+
+#ifdef SYSTEM5
+
+int
+getdtablesize()
+{
+	return NOFILE;
+}
+
+#endif
