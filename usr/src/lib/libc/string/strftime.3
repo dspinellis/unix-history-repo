@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)strftime.3	5.3 (Berkeley) %G%
+.\"	@(#)strftime.3	5.4 (Berkeley) %G%
 .\"
 .TH STRFTIME 3 "%Q"
 .AT 3
@@ -76,6 +76,10 @@ is replaced by the full month name.
 is replaced by the abbreviated month name, where the abbreviation is
 the first three characters.
 .TP
+.B %C
+is equivalent to ``%a %b %e %H:%M:%S %Y'' (the format produced by
+.IR asctime (3).
+.TP
 .B %c
 is equivalent to ``%m/%d/%y''.
 .TP
@@ -85,6 +89,10 @@ is replaced by the date in the format ``mm/dd/yy''.
 .B %d
 is replaced by the day of the month as a decimal number (01-31).
 .TP
+.B %e
+is replaced by the day of month as a decimal number (1-31); single
+digits are preceded by a blank.
+.TP
 .B %H
 is replaced by the hour (24-hour clock) as a decimal number (00-23).
 .TP
@@ -93,6 +101,14 @@ is replaced by the hour (12-hour clock) as a decimal number (01-12).
 .TP
 .B %j
 is replaced by the day of the year as a decimal number (001-366).
+.TP
+.B %k
+is replaced by the hour (24-hour clock) as a decimal number (0-23);
+single digits are preceded by a blank.
+.TP
+.B %l
+is replaced by the hour (12-hour clock) as a decimal number (01-12);
+single digits are preceded by a blank.
 .TP
 .B %M
 is replaced by the minute as a decimal number (00-59).
@@ -148,4 +164,4 @@ is replaced by the time zone name.
 .B %%
 is replaced by ``%''.
 .SH "SEE ALSO"
-date(1), printf(1), printf(3)
+date(1), ctime(3), printf(1), printf(3)
