@@ -1,9 +1,10 @@
-/*
- * Copyright (c) 1982, 1986, 1989 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+/*-
+ * Copyright (c) 1982, 1986, 1989 The Regents of the University of California.
+ * All rights reserved.
  *
- *	@(#)sys_process.c	7.20 (Berkeley) %G%
+ * %sccs.include.proprietary.c%
+ *
+ *	@(#)sys_process.c	7.21 (Berkeley) %G%
  */
 
 #define IPCREG
