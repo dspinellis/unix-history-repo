@@ -1,4 +1,4 @@
-/*	ufs_vnops.c	4.60	83/06/12	*/
+/*	ufs_vnops.c	4.61	83/07/09	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
