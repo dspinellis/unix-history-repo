@@ -1,9 +1,16 @@
-#	@(#)VERSION	5.8 (Berkeley) %G%
+#	@(#)VERSION	5.9 (Berkeley) %G%
 
 This is version 1.5 of the Berkeley DB code.
 
 If your version of the DB code doesn't have a copy of
 this version file, it's really old, please update it!
+
+New versions of this software are periodically made
+available by anonymous ftp from ftp.cs.berkeley.edu,
+in the file ucb/4bsd/db.tar.Z, or from ftp.uu.net.
+
+Email questions may be addressed to Keith Bostic at
+bostic@cs.berkeley.edu.
 
 ============================================
 1.4 -> 1.5	23 May 1993
