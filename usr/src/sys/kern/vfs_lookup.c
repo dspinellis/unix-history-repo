@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)vfs_lookup.c	7.5 (Berkeley) %G%
+ *	@(#)vfs_lookup.c	7.6 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -18,9 +18,13 @@
 #include "uio.h"
 #include "kernel.h"
 #include "malloc.h"
+#ifdef KTRACE
+#include "proc.h"
+#include "ktrace.h"
+#endif
 
 struct	buf *blkatoff();
-int	dirchk = 0;
+int	dirchk = 1;
 
 /*
  * Structures associated with name cacheing.
@@ -166,6 +170,10 @@ namei(ndp)
 		u.u_error = error;
 		goto bad;
 	}
+#ifdef KTRACE
+	if (KTRPOINT(u.u_procp, KTR_NAMEI))
+		ktrnamei(u.u_procp->p_tracep, nbp);
+#endif
 
 	/*
 	 * Get starting directory.
@@ -422,6 +430,9 @@ dirloop2:
 	endsearch = roundup(dp->i_size, DIRBLKSIZ);
 	enduseful = 0;
 
+#ifdef NAMEI_DIAGNOSTIC
+	printf("{%s}:\n", ndp->ni_dent.d_name);
+#endif
 searchloop:
 	while (ndp->ni_offset < endsearch) {
 		/*
@@ -496,6 +507,9 @@ searchloop:
 		 * Check for a name match.
 		 */
 		if (ep->d_ino) {
+#ifdef NAMEI_DIAGNOSTIC
+			printf("{%s} ", ep->d_name);
+#endif
 			if (ep->d_namlen == ndp->ni_dent.d_namlen &&
 			    !bcmp(ndp->ni_dent.d_name, ep->d_name,
 				(unsigned)ep->d_namlen))
@@ -507,6 +521,9 @@ searchloop:
 		if (ep->d_ino)
 			enduseful = ndp->ni_offset;
 	}
+#ifdef NAMEI_DIAGNOSTIC
+	printf("\nnotfound\n");
+#endif
 /* notfound: */
 	/*
 	 * If we started in the middle of the directory and failed
@@ -567,6 +584,9 @@ searchloop:
 	u.u_error = ENOENT;
 	goto bad;
 found:
+#ifdef NAMEI_DIAGNOSTIC
+	printf("\nfound\n");
+#endif
 	if (numdirpasses == 2)
 		nchstats.ncs_pass2++;
 	/*
