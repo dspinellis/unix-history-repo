@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)mv.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)mv.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -144,7 +144,8 @@ move(source, target)
 	if (rename(source, target) >= 0)
 		return (0);
 	if (errno != EXDEV) {
-		Perror2(source, "rename");
+		Perror2(errno == ENOENT && targetexists == 0 ? target : source,
+		    "rename");
 		return (1);
 	}
 	if (ISDIR(s1)) {
