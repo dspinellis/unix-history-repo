@@ -1,13 +1,13 @@
 /*
- * Copyright (c) 1992 The Regents of the University of California
- * All rights reserved.
+ * Copyright (c) 1992, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software donated to Berkeley by
  * the UCLA Ficus project.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)umap_vnops.c	7.1 (Berkeley) %G%
+ *	@(#)umap_vnops.c	8.1 (Berkeley) %G%
  */
 
 /*
