@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ip_input.c	7.26 (Berkeley) %G%
+ *	@(#)ip_input.c	7.27 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -56,6 +56,7 @@ int	ipsendredirects = IPSENDREDIRECTS;
 #endif
 int	ipforwarding = IPFORWARDING;
 int	ipsendredirects = IPSENDREDIRECTS;
+int	ip_defttl = IPDEFTTL;
 #ifdef DIAGNOSTIC
 int	ipprintfs = 0;
 #endif
@@ -1137,4 +1138,36 @@ ip_forward(m, srcrt)
 		break;
 	}
 	icmp_error(mcopy, type, code, dest, destifp);
+}
+
+ip_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
+	int *name;
+	u_int namelen;
+	void *oldp;
+	size_t *oldlenp;
+	void *newp;
+	size_t newlen;
+{
+	extern int ip_ttl;
+
+	/* all sysctl names at this level are terminal */
+	if (namelen != 1)
+		return (ENOTDIR);
+
+	switch (name[0]) {
+	case IPCTL_FORWARDING:
+		return (sysctl_int(oldp, oldlenp, newp, newlen, &ipforwarding));
+	case IPCTL_SENDREDIRECTS:
+		return (sysctl_int(oldp, oldlenp, newp, newlen,
+			&ipsendredirects));
+	case IPCTL_DEFTTL:
+		return (sysctl_int(oldp, oldlenp, newp, newlen, &ip_defttl));
+#ifdef notyet
+	case IPCTL_DEFMTU:
+		return (sysctl_int(oldp, oldlenp, newp, newlen, &ip_mtu));
+#endif
+	default:
+		return (EOPNOTSUPP);
+	}
+	/* NOTREACHED */
 }
