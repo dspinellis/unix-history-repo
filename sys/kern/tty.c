@@ -32,7 +32,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)tty.c	7.44 (Berkeley) 5/28/91
- *	$Id: tty.c,v 1.8 1993/11/14 23:29:31 ache Exp $
+ *	$Id: tty.c,v 1.9 1993/11/25 01:33:25 wollman Exp $
  */
 
 #include "param.h"
@@ -1285,7 +1285,7 @@ ttread(tp, uio, flag)
 	register long lflag;
 	register u_char *cc = tp->t_cc;
 	register struct proc *p = curproc;
-	int s, first, error = 0;
+	int s, first, error = 0, not_enough;
 
 loop:
 	lflag = tp->t_lflag;
@@ -1317,6 +1317,7 @@ loop:
 	 * else use the raw queue.
 	 */
 	qp = lflag&ICANON ? &tp->t_can : &tp->t_raw;
+	not_enough = lflag&ICANON ? 0 : (int) cc[VMIN] - 1;
 
 	/*
 	 * If there is no input, sleep on rawq
@@ -1324,7 +1325,7 @@ loop:
 	 * If we have data, we don't need to check for carrier.
 	 */
 	s = spltty();
-	if (RB_LEN(qp) <= 0) {
+	if (RB_LEN(qp) <= not_enough) {
 		int carrier;
 
 		carrier = (tp->t_state&TS_CARR_ON) || (tp->t_cflag&CLOCAL);
@@ -1332,10 +1333,16 @@ loop:
 			splx(s);
 			return (0);	/* EOF */
 		}
-		if (flag & IO_NDELAY) {
+		if (   (flag&IO_NDELAY)
+		    || !(lflag&ICANON) && cc[VMIN] == 0
+		   ) {
 			splx(s);
 			return (EWOULDBLOCK);
 		}
+		/*
+		 * XXX: needs some extention here,
+		 * now always acts like cc[VTIME] == 0 (inactive)
+		 */
 		error = ttysleep(tp, (caddr_t)&tp->t_raw, TTIPRI | PCATCH,
 		    carrier ? ttyin : ttopen, 0);
 		splx(s);
