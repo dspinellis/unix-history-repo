@@ -6,7 +6,7 @@
 # include <ctype.h>
 # include "sendmail.h"
 
-SCCSID(@(#)util.c	4.2		%G%);
+SCCSID(@(#)util.c	4.3		%G%);
 
 /*
 **  STRIPQUOTES -- Strip quotes & quote bits from a string.
@@ -619,7 +619,8 @@ xunlink(f)
 **		fp -- file to read from.
 **
 **	Returns:
-**		NULL on error (including timeout).
+**		NULL on error (including timeout).  This will also leave
+**			buf containing a null string.
 **		buf otherwise.
 **
 **	Side Effects:
@@ -650,17 +651,22 @@ sfgets(buf, siz, fp)
 	}
 
 	/* try to read */
-	do
+	p = NULL;
+	while (p == NULL && !feof(fp) && !ferror(fp))
 	{
 		errno = 0;
 		p = fgets(buf, siz, fp);
-	} while (p == NULL && errno == EINTR);
+		if (errno == EINTR)
+			clearerr(fp);
+	}
 
 	/* clear the event if it has not sprung */
 	clrevent(ev);
 
 	/* clean up the books and exit */
 	LineNumber++;
+	if (p == NULL)
+		buf[0] = '\0';
 	return (p);
 }
 
