@@ -1,6 +1,6 @@
     /* Copyright (c) 1980 Regents of the University of California */
 
-    /*	static	char sccsid[] = "@(#)pc3.h 1.1 %G%"; */
+    /*	static	char sccsid[] = "@(#)pc3.h 1.2 %G%"; */
 
     /*
      *	a symbol table entry.
@@ -21,8 +21,9 @@ struct symbol {
     }			sym_un;
 };
 
-#define	NIL	0
-
+    /*
+     *	struct for an argument .o file.
+     */
 struct fileinfo {
     FILE		*file;
     char		*name;
@@ -30,6 +31,9 @@ struct fileinfo {
     off_t		nextoffset;
 };
 
+    /*
+     *	old archive magic for error detection.
+     */
 #define	OARMAG	0177545
 
     /*
@@ -38,9 +42,11 @@ struct fileinfo {
 #define	SHORT_ABS( n )	( n & 077777 )
 
     /*
-     *	a prime number which rounds a struct symboltableinfo up to ~BUFSIZ
+     *	a prime number which gets sizeof( struct symboltableinfo )
+     *	up to a multiple of BUFSIZ.
      */
 #define	SYMBOLPRIME	1021
+
     /*
      *	number of entries used in this symbol table,
      *	a chain to the next symbol table,
@@ -59,7 +65,8 @@ struct symboltableinfo {
 #define	SYMBOLALLOC	BUFSIZ
 
     /*
-     *	a prime number which rounds a struct stringtableinfo up to ~BUFSIZ
+     *	a prime number which gets sizeof( struct stringtableinfo )
+     *	up to a multiple of BUFSIZ.
      */
 #define	STRINGPRIME	1021
 
@@ -79,6 +86,11 @@ struct stringtableinfo {
      *	allocate this much and hack it up into strings.
      */
 #define	CHARALLOC	BUFSIZ
+
+    /*
+     *	uninitialized pointer
+     */
+#define	NIL	0
 
     /*
      *	an enumeration for error types
