@@ -1,4 +1,4 @@
-/*	config.h	4.1	85/03/19	*/
+/*	config.h	4.2	85/04/08	*/
 
 #ifndef _CONFIG_
 #define	_CONFIG_
@@ -9,13 +9,13 @@
 /*
  * These flags control global compiler operation.
  */
-#ifndef FORT
-#define	ONEPASS		1		/* one-pass compiler */
-#endif
 #define	BUFSTDERR	1		/* buffer output to stderr */
 #define STDPRTREE	1		/* means include prtree */
 #define NESTCALLS	1		/* disallow two concurrent store()'s */
 #define	FLEXNAMES	1		/* arbitrary length identifiers */
+#ifdef FORT
+#define	NOMAIN		1		/* use f1 main routine */
+#endif
 
 /*
  * Table sizes.
