@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)tth19.c	3.4 83/08/15";
+static	char *sccsid = "@(#)tth19.c	3.5 83/08/17";
 #endif
 
 #include "ww.h"
@@ -255,6 +255,7 @@ tt_h19()
 	tt.tt_putc = h19_putc;
 	tt.tt_ncol = 80;
 	tt.tt_nrow = 24;
+	tt.tt_availmodes = WWM_REV;
 	tt.tt_frame = h19_frame;
 	return 0;
 }
