@@ -1,10 +1,10 @@
 /*
- * Copyright (c) 1982, 1986, 1988 Regents of the University of California.
+ * Copyright (c) 1982, 1986, 1988, 1993 Regents of the University of California.
  * All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ip_input.c	7.24 (Berkeley) %G%
+ *	@(#)ip_input.c	7.25 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -143,6 +143,10 @@ next:
 		goto next;
 	}
 	ip = mtod(m, struct ip *);
+	if (ip->ip_v != IPVERSION) {
+		ipstat.ips_badvers++;
+		goto bad;
+	}
 	hlen = ip->ip_hl << 2;
 	if (hlen < sizeof(struct ip)) {	/* minimum header length */
 		ipstat.ips_badhlen++;
@@ -157,9 +161,6 @@ next:
 	}
 	if (ip->ip_sum = in_cksum(m, hlen)) {
 		ipstat.ips_badsum++;
-		goto bad;
-	}
-	if (ip->ip_v != IPVERSION) {
 		goto bad;
 	}
 
@@ -331,9 +332,9 @@ found:
 		 * convert offset of this to bytes.
 		 */
 		ip->ip_len -= hlen;
-		((struct ipasfrag *)ip)->ipf_mff = 0;
+		((struct ipasfrag *)ip)->ipf_mff &= ~1;
 		if (ip->ip_off & IP_MF)
-			((struct ipasfrag *)ip)->ipf_mff = 1;
+			((struct ipasfrag *)ip)->ipf_mff |= 1;
 		ip->ip_off <<= 3;
 
 		/*
@@ -341,7 +342,7 @@ found:
 		 * or if this is not the first fragment,
 		 * attempt reassembly; if it succeeds, proceed.
 		 */
-		if (((struct ipasfrag *)ip)->ipf_mff || ip->ip_off) {
+		if (((struct ipasfrag *)ip)->ipf_mff & 1 || ip->ip_off) {
 			ipstat.ips_fragments++;
 			ip = ip_reass((struct ipasfrag *)ip, fp);
 			if (ip == 0)
@@ -459,7 +460,7 @@ insert:
 			return (0);
 		next += q->ip_len;
 	}
-	if (q->ipf_prev->ipf_mff)
+	if (q->ipf_prev->ipf_mff & 1)
 		return (0);
 
 	/*
@@ -485,6 +486,7 @@ insert:
 	 */
 	ip = fp->ipq_next;
 	ip->ip_len = next;
+	ip->ipf_mff &= ~1;
 	((struct ip *)ip)->ip_src = fp->ipq_src;
 	((struct ip *)ip)->ip_dst = fp->ipq_dst;
 	remque(fp);
