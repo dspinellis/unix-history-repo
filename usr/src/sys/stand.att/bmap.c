@@ -4,7 +4,7 @@
  *
  * %sccs.include.proprietary.c%
  *
- *	@(#)bmap.c	7.1 (Berkeley) %G%
+ *	@(#)bmap.c	7.2 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -45,14 +45,14 @@ bmap(io, bn)
 		bn -= sh;
 	}
 	if (j == 0) {
-		printf("bn ovf %D\n", bn);
+		printf("bn ovf %ld\n", bn);
 		return ((daddr_t)0);
 	}
 
 	/* Get the first indirect block address. */
 	nb = ip->di_ib[NIADDR - j];
 	if (nb == 0) {
-		printf("bn void %D\n",bn);
+		printf("bn void %ld\n",bn);
 		return ((daddr_t)0);
 	}
 
@@ -65,7 +65,7 @@ bmap(io, bn)
 			if (devread(io) != io->i_fs.fs_bsize) {
 				if (io->i_error)
 					errno = io->i_error;
-				printf("bn %D: read error\n", io->i_bn);
+				printf("bn %ld: read error\n", io->i_bn);
 				return ((daddr_t)0);
 			}
 			blknos[j] = nb;
@@ -75,7 +75,7 @@ bmap(io, bn)
 		i = (bn / sh) % NINDIR(&io->i_fs);
 		nb = bap[i];
 		if(nb == 0) {
-			printf("bn void %D\n",bn);
+			printf("bn void %ld\n",bn);
 			return ((daddr_t)0);
 		}
 	}
