@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mkpar.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)mkpar.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "defs.h"
@@ -216,7 +216,7 @@ remove_conflicts()
 {
     register int i;
     register int symbol;
-    register action *p, *q;
+    register action *p, *pref;
 
     SRtotal = 0;
     RRtotal = 0;
@@ -226,79 +226,63 @@ remove_conflicts()
     {
 	SRcount = 0;
 	RRcount = 0;
-	for (p = parser[i]; p; p = q->next)
+	symbol = -1;
+	for (p = parser[i]; p; p = p->next)
 	{
-	    symbol = p->symbol;
-	    q = p;
-	    while (q->next && q->next->symbol == symbol)
-		q = q->next;
-	    if (i == final_state && symbol == 0)
-		end_conflicts(p, q);
-	    else if (p != q)
-		resolve_conflicts(p, q);
+	    if (p->symbol != symbol)
+	    {
+		pref = p;
+		symbol = p->symbol;
+	    }
+	    else if (i == final_state && symbol == 0)
+	    {
+		SRcount++;
+		p->suppressed = 1;
+	    }
+	    else if (pref->action_code == SHIFT)
+	    {
+		if (pref->prec > 0 && p->prec > 0)
+		{
+		    if (pref->prec < p->prec)
+		    {
+			pref->suppressed = 2;
+			pref = p;
+		    }
+		    else if (pref->prec > p->prec)
+		    {
+			p->suppressed = 2;
+		    }
+		    else if (pref->assoc == LEFT)
+		    {
+			pref->suppressed = 2;
+			pref = p;
+		    }
+		    else if (pref->assoc == RIGHT)
+		    {
+			p->suppressed = 2;
+		    }
+		    else
+		    {
+			pref->suppressed = 2;
+			p->suppressed = 2;
+		    }
+		}
+		else
+		{
+		    SRcount++;
+		    p->suppressed = 1;
+		}
+	    }
+	    else
+	    {
+		RRcount++;
+		p->suppressed = 1;
+	    }
 	}
 	SRtotal += SRcount;
 	RRtotal += RRcount;
 	SRconflicts[i] = SRcount;
 	RRconflicts[i] = RRcount;
-    }
-}
-
-
-end_conflicts(p, q)
-register action *p, *q;
-{
-    for (;;)
-    {
-	SRcount++;
-	p->suppressed = 1;
-	if (p == q) break;
-	p = p->next;
-    }
-}
-
-
-resolve_conflicts(first, last)
-register action *first, *last;
-{
-    register action *p;
-    register int count;
-
-    count = 1;
-    for (p = first; p != last; p = p->next)
- 	++count;
-    assert(count > 1);
-
-    if (first->action_code == SHIFT && count == 2 &&
-	    first->prec > 0 && last->prec > 0)
-    {
-	if (first->prec == last->prec)
-	{
-	    if (first->assoc == LEFT)
-		first->suppressed = 2;
-	    else if (first->assoc == RIGHT)
-		last->suppressed = 2;
-	    else
-	    {
-		first->suppressed = 2;
-		last->suppressed = 2;
-		first->action_code = ERROR;
-		last->action_code = ERROR;
-	    }
-	}
-	else if (first->prec < last->prec)
-	    first->suppressed = 2;
-	else
-	    last->suppressed = 2;
-    }
-    else
-    {
-	if (first->action_code == SHIFT)
-	    SRcount += (count - 1);
-        else
-	    RRcount += (count - 1);
-	for (p = first; p != last; p = p->next, p->suppressed = 1)
-	    continue;
     }
 }
 
