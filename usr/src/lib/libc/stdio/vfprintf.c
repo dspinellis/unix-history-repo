@@ -11,7 +11,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)vfprintf.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)vfprintf.c	5.12 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -171,7 +171,7 @@ flags:		switch (*++fmt) {
 		case 's':
 			if (!(t = va_arg(argp, char *)))
 				t = "(null)";
-			if ((size = strlen(t)) < prec)
+			if ((size = strlen(t)) > prec && prec >= 0)
 				size = prec;
 pforw:			if (!ladjust && width)
 				for (n = size; n++ < width;)
