@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)procfs_vnops.c	8.5 (Berkeley) %G%
+ *	@(#)procfs_vnops.c	8.6 (Berkeley) %G%
  *
  * From:
  *	$Id: procfs_vnops.c,v 3.2 1993/12/15 09:40:17 jsp Exp $
@@ -291,9 +291,16 @@ procfs_getattr(ap)
 	int error;
 
 	/* first check the process still exists */
-	procp = PFIND(pfs->pfs_pid);
-	if (procp == 0)
-		return (ENOENT);
+	switch (pfs->pfs_type) {
+	case Proot:
+		procp = 0;
+		break;
+
+	default:
+		procp = PFIND(pfs->pfs_pid);
+		if (procp == 0)
+			return (ENOENT);
+	}
 
 	error = 0;
 
@@ -307,6 +314,22 @@ procfs_getattr(ap)
 	vap->va_flags = 0;
 	vap->va_blocksize = PAGE_SIZE;
 	vap->va_bytes = vap->va_size = 0;
+
+	/*
+	 * If the process has exercised some setuid or setgid
+	 * privilege, then rip away read/write permission so
+	 * that only root can gain access.
+	 */
+	switch (pfs->pfs_type) {
+	case Pregs:
+	case Pfpregs:
+	case Pmem:
+		if (procp->p_flag & P_SUGID)
+			vap->va_mode &= ~((VREAD|VWRITE)|
+					  ((VREAD|VWRITE)>>3)|
+					  ((VREAD|VWRITE)>>6));
+		break;
+	}
 
 	/*
 	 * Make all times be current TOD.
