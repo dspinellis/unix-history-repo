@@ -1,46 +1,68 @@
-.\"	@(#)xsend.1	6.3 (Berkeley) %G%
+.\" Copyright (c) 1990, 1991 Regents of the University of California.
+.\" All rights reserved.
 .\"
-.TH XSEND 1 ""
-.AT 3
-.SH NAME
-xsend, xget, enroll \- secret mail
-.SH SYNOPSIS
-.B xsend
-person
-.br
-.B xget
-.br
-.B enroll
-.SH DESCRIPTION
-These commands implement a secure communication
-channel;
-it is like
-.IR mail (1),
-but no one can read the messages except the intended recipient.
-The method embodies a public-key cryptosystem using knapsacks.
-.PP
-To receive messages, use
-.IR enroll ;
-it asks you for a password that you must subsequently quote
-in order to receive secret mail.
-.PP
-To receive secret mail,
-use
-.IR xget .
-It asks for your password, then gives you the messages.
-.PP
-To send secret mail, use
-.IR xsend
-in the same manner as the ordinary mail command.
-(However, it will accept only one target).
-A message announcing the receipt of secret mail is also sent
-by ordinary mail.
-.SH FILES
-/usr/spool/secretmail/*.key: keys
-.br
-/usr/spool/secretmail/*.[0-9]: messages
-.SH SEE ALSO
-mail (1)
-.SH BUGS
-It should be integrated with ordinary mail.
-The announcement of secret mail makes traffic analysis possible.
+.\" %sccs.include.redist.roff%
+.\"
+.\"     @(#)xsend.1	6.2 (Berkeley) %G%
+.\"
+.Dd 
+.Dt XSEND 1
+.Os
+.Sh NAME
+.Nm xsend ,
+.Nm xget ,
+.Nm enroll
+.Nd private encrypted mail
+.Sh SYNOPSIS
+.Nm xsend
+.Ar person
+.Nm xget
+.Nm enroll
+.Sh DESCRIPTION
+The
+.Nm xsend ,
+.Nm xget ,
+and
+.Nm enroll
+utilities
+initiate and conduct encrypted mail on top of the
+regular
+.Xr mail 1
+system. To get started, one
+enrolls with the utility
+.Nm enroll
+which requests a password which is
+then required before the enrollee can read mail sent
+via
+.Nm xsend .
+.Pp
+.Nm Xsend
+is used just like mail, but
+will not
+.Ql cc
+messages.
+The regular
+.Xr mail 1
+facilities delivermail stating when encrypted mail has arrived.
+.Pp
+The
+.Nm xget
+command is
+used to read the encrypted mail; it
+requests the enrolled password before allowing
+the receipt of mail
+sent with
+.Nm xsend .
+.Pp
+.Sh FILES
+.Bl -tag -width /var/spool/secretmail/*.key:keys -compact
+.It Pa /var/spool/secretmail/*.key: keys
+.It Pa /var/spool/secretmail/*.[0-9]: messages
+.El
+.Sh SEE ALSO
+.Xr mail 1
+.Sh HISTORY
+The
+.Nm
+command appeared in
+.At v7 .
