@@ -1,0 +1,24 @@
+#print
+This directory contains a file named "markets" which
+has a 'q' on the last line where it should have a 'p'.
+Rewrite the corrected version on a new file named
+"nmark".  Then type "ready".
+#create Ref
+shop-rite
+acme
+kings
+a&p
+finast
+pathmark
+#create markets
+shop-rite
+acme
+kings
+a&p
+finast
+qathmark
+#user
+#cmp nmark Ref
+#log
+#next
+30.2h 5

@@ -1,0 +1,90 @@
+#print
+Remember the search for blank lines with nothing on them? /^$/.
+Pick up the file "table" and delete all blank lines; then rewrite
+it and type "ready".
+#create Ref
+Albany NY 12201
+Atlanta GA 30301
+Baltimore MD 21233
+Boston MA 02109
+Bridgeport CN 06601
+Buffalo NY 14240
+Camden NJ 08101
+Chicago IL 60607
+Dallas TX 75221
+Denver CO 80201
+Detroit MI 48226
+Elizabeth NJ 07207
+Hartford CN 06101
+Houston TX 77052
+Indianapolis IN 46204
+Jersey City NJ 07303
+Los Angeles CA 90053
+Miami FL 33101
+Milwaukee WI 53201
+Minneapolis MN 55401
+New York NY 10001
+Newark NJ 07101
+Paterson NJ 07510
+Philadelphia PA 19104
+Phoenix AR 85026
+Pittsburgh PA 15230
+Providence RI 02904
+Rochester NY 14603
+San Diego CA 92101
+San Francisco CA 94101
+Seattle WA 98101
+St. Louis MO 63166
+Syracuse NY 13201
+Trenton NJ 08608
+Utica NY 13503
+Washington DC 20013
+Yonkers NY 10598
+#create table
+Albany NY 12201
+Atlanta GA 30301
+Baltimore MD 21233
+Boston MA 02109
+Bridgeport CN 06601
+Buffalo NY 14240
+Camden NJ 08101
+Chicago IL 60607
+
+Dallas TX 75221
+Denver CO 80201
+Detroit MI 48226
+
+Elizabeth NJ 07207
+Hartford CN 06101
+Houston TX 77052
+Indianapolis IN 46204
+Jersey City NJ 07303
+Los Angeles CA 90053
+Miami FL 33101
+
+Milwaukee WI 53201
+Minneapolis MN 55401
+New York NY 10001
+Newark NJ 07101
+Paterson NJ 07510
+Philadelphia PA 19104
+Phoenix AR 85026
+Pittsburgh PA 15230
+
+
+Providence RI 02904
+Rochester NY 14603
+San Diego CA 92101
+San Francisco CA 94101
+Seattle WA 98101
+St. Louis MO 63166
+Syracuse NY 13201
+Trenton NJ 08608
+Utica NY 13503
+Washington DC 20013
+Yonkers NY 10598
+#user
+#cmp table Ref
+#log
+#next
+70.2g 5
