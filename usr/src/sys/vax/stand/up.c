@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)up.c	7.7 (Berkeley) %G%
+ *	@(#)up.c	7.8 (Berkeley) %G%
  */
 
 /*
@@ -33,9 +33,9 @@
 
 #define	MAXUNIT		8
 #define	MAXCTLR		1	/* all addresses must be specified */
-u_short	ubastd[MAXCTLR] = { 0776700 };
-struct	disklabel uplabel[MAXNUBA][MAXCTLR][MAXUNIT];
-char	lbuf[SECTSIZ];
+static u_short	upstd[MAXCTLR] = { 0776700 };
+static struct	disklabel uplabel[MAXNUBA][MAXCTLR][MAXUNIT];
+static char	lbuf[SECTSIZ];
 
 extern	struct st upst[];
 
@@ -79,7 +79,7 @@ upopen(io)
 	unit = io->i_unit;
 	if ((u_int)unit >= MAXUNIT)
 		return (EUNIT);
-	upaddr = (struct updevice *)ubamem(uba, ubastd[ctlr]);
+	upaddr = (struct updevice *)ubamem(uba, upstd[ctlr]);
 	upaddr->upcs2 = unit;
 	while ((upaddr->upcs1 & UP_DVA) == 0);
 	sc = &up_softc[uba][ctlr][unit];
@@ -160,7 +160,7 @@ upstrategy(io, func)
 	int doprintf = 0;
 #endif
 
-	upaddr = (struct updevice *)ubamem(io->i_adapt, ubastd[io->i_ctlr]);
+	upaddr = (struct updevice *)ubamem(io->i_adapt, upstd[io->i_ctlr]);
 	sc = &up_softc[io->i_adapt][io->i_ctlr][unit];
 	lp = &uplabel[io->i_adapt][io->i_ctlr][unit];
 	sectsiz = SECTSIZ;
@@ -370,7 +370,7 @@ upecc(io, flag)
 	unit = io->i_unit;
 	sc = &up_softc[io->i_adapt][io->i_ctlr][unit];
 	lp = &uplabel[io->i_adapt][io->i_ctlr][unit];
-	up = (struct updevice *)ubamem(io->i_adapt, ubastd[io->i_ctlr]);
+	up = (struct updevice *)ubamem(io->i_adapt, upstd[io->i_ctlr]);
 	twc = up->upwc;
 	npf = ((twc * sizeof(short)) + io->i_cc) / sectsiz;
 	if (flag == ECC)
@@ -490,7 +490,7 @@ upstart(io, bn, lp)
 	register struct up_softc *sc;
 	int sn, tn;
 
-	upaddr = (struct updevice *)ubamem(io->i_adapt, ubastd[io->i_ctlr]);
+	upaddr = (struct updevice *)ubamem(io->i_adapt, upstd[io->i_ctlr]);
 	sc = &up_softc[io->i_adapt][io->i_ctlr][io->i_unit];
 	sn = bn % lp->d_secpercyl;
 	tn = sn / lp->d_nsectors;
