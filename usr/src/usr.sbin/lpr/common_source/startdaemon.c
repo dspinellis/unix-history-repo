@@ -1,16 +1,17 @@
-/*	startdaemon.c	4.4	83/05/27	*/
+/*	startdaemon.c	4.5	83/06/02	*/
 /*
  * Tell the printer daemon that there are new files in the spool directory.
  */
 
 #include "lp.h"
 
-startdaemon()
+startdaemon(ahost)
+	char *ahost;
 {
 	register int rem, i, err = 0;
 	char buf[BUFSIZ];
 
-	rem = getport(host);
+	rem = getport(ahost);
 	if (rem < 0) {
 		perr();
 		return(0);

@@ -1,4 +1,4 @@
-/*	lprm.c	4.3	83/05/26	*/
+/*	lprm.c	4.4	83/06/02	*/
 /*
  * lprm - remove the current user's spool entry
  *
@@ -15,13 +15,13 @@
 /*
  * Stuff for handling job specifications
  */
-char	*user[MAXUSERS];		/* users to process */
-int	users;				/* # of users in user array */
-int	requ[MAXREQUESTS];		/* job number of spool entries */
-int	requests;			/* # of spool requests */
+char	*user[MAXUSERS];	/* users to process */
+int	users;			/* # of users in user array */
+int	requ[MAXREQUESTS];	/* job number of spool entries */
+int	requests;		/* # of spool requests */
+char	*person;		/* name of person doing lprm */
 
-extern char	*person;		/* name of person doing lprm */
-char		luser[16];		/* buffer for person */
+static char	luser[16];	/* buffer for person */
 
 struct passwd *getpwuid();
 
@@ -32,7 +32,6 @@ main(argc, argv)
 	struct passwd *p;
 	struct direct **files;
 	int nitems, assasinated = 0;
-	int select();
 
 	name = argv[0];
 	gethostname(host, sizeof(host));
@@ -81,6 +80,7 @@ main(argc, argv)
 	rmjob();
 }
 
+static
 usage()
 {
 	printf("usage: lprm [-] [-Pprinter] [[job #] [user] ...]\n");

@@ -1,4 +1,4 @@
-/*	lpd.c	4.3	83/05/26	*/
+/*	lpd.c	4.4	83/06/02	*/
 /*
  * lpd -- line printer daemon.
  *
@@ -36,9 +36,10 @@
 
 #include "lp.h"
 
-int	lflag;					/* log requests flag */
-char	*logfile = DEFLOGF;
-struct	sockaddr_in sin = { AF_INET };
+static int	lflag;				/* log requests flag */
+static char	*logfile = DEFLOGF;
+static struct	sockaddr_in sin = { AF_INET };
+
 int	reapchild();
 char	*ntoa();
 
@@ -104,6 +105,10 @@ main(argc, argv)
 	}
 #endif
 	(void) umask(0);
+	/*
+	 * Restart all the printers.
+	 */
+	startup();
 	f = socket(AF_INET, SOCK_STREAM, 0);
 	if (f < 0) {
 		logerror("socket");
@@ -118,11 +123,6 @@ main(argc, argv)
 		logerror("bind");
 		exit(1);
 	}
-	/*
-	 * Restart all the printers and tell everyone that we are
-	 * up and running.
-	 */
-	startup();
 	/*
 	 * Main loop: listen, accept, do a request, continue.
 	 */
@@ -148,6 +148,7 @@ main(argc, argv)
 	}
 }
 
+static
 reapchild()
 {
 	union wait status;
@@ -163,10 +164,11 @@ char	*user[MAXUSERS];	/* users to process */
 int	users;			/* # of users in user array */
 int	requ[MAXREQUESTS];	/* job number of spool entries */
 int	requests;		/* # of spool requests */
+char	*person;		/* name of person doing lprm */
 
-char	fromb[32];		/* buffer for client's machine name */
-char	cbuf[BUFSIZ];		/* command line buffer */
-char	*cmdnames[] = {
+static char	fromb[32];	/* buffer for client's machine name */
+static char	cbuf[BUFSIZ];	/* command line buffer */
+static char	*cmdnames[] = {
 	"null",
 	"printjob",
 	"recvjob",
@@ -175,6 +177,7 @@ char	*cmdnames[] = {
 	"rmjob"
 };
 
+static
 doit(f, fromaddr)
 	int f;
 	struct sockaddr_in *fromaddr;
@@ -182,7 +185,6 @@ doit(f, fromaddr)
 	register char *cp;
 	register struct hostent *hp;
 	register int n;
-	extern char *person;
 	char c;
 
 	dup2(f, 1);
@@ -292,6 +294,7 @@ doit(f, fromaddr)
  * Make a pass through the printcap database and start printing any
  * files left from the last time the machine went down.
  */
+static
 startup()
 {
 	char buf[BUFSIZ];
@@ -323,6 +326,7 @@ startup()
 /*
  * Check to see if the from host has access to the line printer.
  */
+static
 chkhost()
 {
 	register FILE *hostf;
@@ -350,7 +354,7 @@ chkhost()
  * Convert network-format internet address
  * to base 256 d.d.d.d representation.
  */
-char *
+static char *
 ntoa(in)
 	struct in_addr in;
 {
@@ -379,6 +383,7 @@ log(msg, a1, a2, a3)
 	fflush(stderr);
 }
 
+static
 logerror(msg)
 	char *msg;
 {

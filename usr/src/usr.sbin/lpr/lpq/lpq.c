@@ -1,4 +1,4 @@
-/*	lpq.c	4.3	83/05/26	*/
+/*	lpq.c	4.4	83/06/02	*/
 /*
  * Spool Queue examination program
  *
@@ -15,26 +15,26 @@ int	users;			/* # of users in user array */
 int	requ[MAXREQUESTS];	/* job number of spool entries */
 int	requests;		/* # of spool requests */
 
-int	repeat;			/* + flag indicator */
-int	slptime = 30;		/* pause between screen refereshes */
-int	lflag;			/* long output option */
+static int	repeat;		/* + flag indicator */
+static int	slptime = 30;	/* pause between screen refereshes */
+static int	lflag;		/* long output option */
 
 /*
  * Termcap stuff for fancy display
  */
 #ifdef TERMCAP
 struct sgttyb sbuf;
-unsigned ospeed;
-int	dumb;			/* whether to use capabilities */
-char	PC;			/* pad character for output */
-char	*UP;			/* up one line */
-char	*BC;			/* backspace character, other than \b */
-char	*CM;			/* cursor motion */
-char	*CL;			/* clear display */
-char	*TI;			/* terminal init for CM */
-char	*TE;			/* terminal clear for CM */
-char	*SO;			/* stand out start */
-char	*SE;			/* stand out end */
+static unsigned ospeed;
+static int	dumb;		/* whether to use capabilities */
+static char	PC;		/* pad character for output */
+static char	*UP;		/* up one line */
+static char	*BC;		/* backspace character, other than \b */
+static char	*CM;		/* cursor motion */
+static char	*CL;		/* clear display */
+static char	*TI;		/* terminal init for CM */
+static char	*TE;		/* terminal clear for CM */
+static char	*SO;		/* stand out start */
+static char	*SE;		/* stand out end */
 
 char	*tgetstr();
 int	putch();		/* for tputs' */
@@ -117,6 +117,7 @@ main(argc, argv)
 		displayq(lflag);
 }
 
+static
 usage()
 {
 	printf("usage: lpq [-Pprinter] [-l] [+[n]] [user...] [job...]\n");
@@ -126,6 +127,7 @@ usage()
 /*
  * If we have the capability, print this in standout mode
  */
+static
 standout(f, s, a1, a2)
 	FILE *f;
 	char *s;
@@ -142,13 +144,13 @@ standout(f, s, a1, a2)
 }
 
 #ifdef TERMCAP
-char *
+static char *
 capstrings[] = {
 	"bc", "cl", "cm", "so", "se", "ti", "te", "up",
 	0
 };
 
-char **
+static char **
 caps[] = {
 	&BC, &CL, &CM, &SO, &SE, &TI, &TE, &UP,
 };
@@ -158,6 +160,7 @@ caps[] = {
  *   position cursor at the top; if these aren't available
  *   we say the terminal is dumb and let things scroll
  */
+static
 termcap()
 {
 	char *term, tbuf[BUFSIZ];
@@ -165,7 +168,6 @@ termcap()
 	register short columns;
 	char *bp = buf;
 	register char **p, ***q, *cp;
-	extern int SIZCOL;
 
 	ioctl(0, TIOCGETP, (char *)&sbuf);
 	ospeed = sbuf.sg_ospeed;
@@ -174,8 +176,6 @@ termcap()
 			**q = tgetstr(*p, &bp);
 		if ((cp = tgetstr("pc", &bp)) != NULL)
 			PC = *cp;
-		if ((columns = tgetnum("co")) >= 0)
-			SIZCOL = columns-18;
 	}
 	return(CL == NULL || CM == NULL);
 }
@@ -183,6 +183,7 @@ termcap()
 /*
  * Putchar writearound for tputs
  */
+static
 putch(c)
 	char c;
 {

@@ -1,12 +1,13 @@
-/*	displayq.c	4.4	83/05/27	*/
+/*	displayq.c	4.5	83/06/02	*/
 /*
  * Routines to display the state of the queue.
  */
 
 #include "lp.h"
 
-#define	JOBCOL		40	/* column for job # in -l format */
-#define OWNCOL		7	/* start of Owner column in normal */
+#define JOBCOL	40	/* column for job # in -l format */
+#define OWNCOL	7	/* start of Owner column in normal */
+#define SIZCOL	62	/* start of Size column in normal */
 
 /*
  * Stuff for handling job specifications
@@ -16,19 +17,18 @@ extern int	users;		/* # of users in user array */
 extern int	requ[];		/* job number of spool entries */
 extern int	requests;	/* # of spool requests */
 
-int	lflag;			/* long output option */
-char	current[40];		/* current file being printed */
-int	garbage;		/* # of garbage cf files */
-int	rank;			/* order to be printed (-1=none, 0=active) */
-long	totsize;		/* total print job size in bytes */
-int	first;			/* first file in ``files'' column? */
-int	col;			/* column on screen */
-int	SIZCOL = 62;		/* start of Size column in normal */
-int	sendtorem;		/* are we sending to a remote? */
-char	file[132];		/* print file name */
+static int	lflag;		/* long output option */
+static char	current[40];	/* current file being printed */
+static int	garbage;	/* # of garbage cf files */
+static int	rank;		/* order to be printed (-1=none, 0=active) */
+static long	totsize;	/* total print job size in bytes */
+static int	first;		/* first file in ``files'' column? */
+static int	col;		/* column on screen */
+static int	sendtorem;	/* are we sending to a remote? */
+static char	file[132];	/* print file name */
 
-char	*head0 = "Rank   Owner      Job  Files";
-char	*head1 = "Total Size\n";
+static char	*head0 = "Rank   Owner      Job  Files";
+static char	*head1 = "Total Size\n";
 
 /*
  * Display the current state of the queue. Format = 1 if long format.
@@ -166,6 +166,7 @@ displayq(format)
 /*
  * Print the header for the short listing format
  */
+static
 header()
 {
 	printf(head0);
@@ -174,6 +175,7 @@ header()
 	printf(head1);
 }
 
+static
 inform(cf)
 	char *cf;
 {
@@ -236,6 +238,7 @@ inform(cf)
 	}
 }
 
+static
 inlist(name, file)
 	char *name, *file;
 {
@@ -261,6 +264,7 @@ inlist(name, file)
 	return(0);
 }
 
+static
 show(nfile, file, copies)
 	register char *nfile, *file;
 {
@@ -275,6 +279,7 @@ show(nfile, file, copies)
 /*
  * Fill the line with blanks to the specified column
  */
+static
 blankfill(n)
 	register int n;
 {
@@ -285,6 +290,7 @@ blankfill(n)
 /*
  * Give the abbreviated dump of the file names
  */
+static
 dump(nfile, file, copies)
 	char *nfile, *file;
 {
@@ -316,6 +322,7 @@ dump(nfile, file, copies)
 /*
  * Print the long info about the file
  */
+static
 ldump(nfile, file, copies)
 	char *nfile, *file;
 {
@@ -337,6 +344,7 @@ ldump(nfile, file, copies)
  * Print the job's rank in the queue,
  *   update col for screen management
  */
+static
 prank(n)
 {
 	char line[100];

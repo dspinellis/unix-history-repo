@@ -1,4 +1,4 @@
-/*	recvjob.c	4.2	83/05/16	*/
+/*	recvjob.c	4.3	83/06/02	*/
 /*
  * Receive printer jobs from the network, queue them and
  * start the printer daemon.
@@ -6,8 +6,8 @@
 
 #include "lp.h"
 
-char    tfname[40];		/* tmp copy of cf before linking */
-char    *dfname;		/* data files */
+static char    tfname[40];	/* tmp copy of cf before linking */
+static char    *dfname;		/* data files */
 
 recvjob()
 {
@@ -50,6 +50,7 @@ char	*sp = "";
  * Read printer jobs sent by lpd and copy them to the spooling directory.
  * Return the number of jobs successfully transfered.
  */
+static
 readjob(printer)
 	char *printer;
 {
@@ -112,6 +113,7 @@ readjob(printer)
 /*
  * Read files send by lpd and copy them to the spooling directory.
  */
+static
 readfile(file, size)
 	char *file;
 	int size;
