@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)union_subr.c	1.9 (Berkeley) %G%
+ *	@(#)union_subr.c	2.1 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -37,6 +37,20 @@ union_init()
 	unvplock = 0;
 }
 
+static void
+union_remlist(un)
+	struct union_node *un;
+{
+	struct union_node **unpp;
+
+	for (unpp = &unhead; *unpp != 0; unpp = &(*unpp)->un_next) {
+		if (*unpp == un) {
+			*unpp = un->un_next;
+			break;
+		}
+	}
+}
+
 /*
  * allocate a union_node/vnode pair.  the vnode is
  * referenced and locked.  the new vnode is returned
@@ -47,6 +61,7 @@ union_init()
  * layer object to be created at a later time.  (uppervp)
  * and (lowervp) reference the upper and lower layer objects
  * being mapped.  either, but not both, can be nil.
+ * if supplied, (uppervp) is locked.
  * the reference is either maintained in the new union_node
  * object which is allocated, or they are vrele'd.
  *
@@ -99,50 +114,102 @@ loop:
 		    (UNIONTOV(un)->v_mount == mp)) {
 			if (vget(UNIONTOV(un), 0))
 				goto loop;
-			if (UNIONTOV(un) != undvp)
-				VOP_LOCK(UNIONTOV(un));
-
-			/*
-			 * Save information about the upper layer.
-			 */
-			if (uppervp != un->un_uppervp) {
-				if (un->un_uppervp)
-					vrele(un->un_uppervp);
-				un->un_uppervp = uppervp;
-			} else if (uppervp) {
-				vrele(uppervp);
-			}
-
-			/*
-			 * Save information about the lower layer.
-			 * This needs to keep track of pathname
-			 * and directory information which union_vn_create
-			 * might need.
-			 */
-			if (lowervp != un->un_lowervp) {
-				if (un->un_lowervp) {
-					vrele(un->un_lowervp);
-					free(un->un_path, M_TEMP);
-					vrele(un->un_dirvp);
-				}
-				un->un_lowervp = lowervp;
-				if (cnp && (lowervp != NULLVP) &&
-				    (lowervp->v_type == VREG)) {
-					un->un_hash = cnp->cn_hash;
-					un->un_path = malloc(cnp->cn_namelen+1,
-							M_TEMP, M_WAITOK);
-					bcopy(cnp->cn_nameptr, un->un_path,
-							cnp->cn_namelen);
-					un->un_path[cnp->cn_namelen] = '\0';
-					VREF(dvp);
-					un->un_dirvp = dvp;
-				}
-			} else if (lowervp) {
-				vrele(lowervp);
-			}
-			*vpp = UNIONTOV(un);
-			return (0);
+			break;
 		}
+	}
+
+	if (un) {
+		/*
+		 * Obtain a lock on the union_node.
+		 * uppervp is locked, though un->un_uppervp
+		 * may not be.  this doesn't break the locking
+		 * hierarchy since in the case that un->un_uppervp
+		 * is not yet locked it will be vrele'd and replaced
+		 * with uppervp.
+		 */
+
+		if ((dvp != NULLVP) && (uppervp == dvp)) {
+			/*
+			 * Access ``.'', so (un) will already
+			 * be locked.  Since this process has
+			 * the lock on (uppervp) no other
+			 * process can hold the lock on (un).
+			 */
+#ifdef DIAGNOSTIC
+			if ((un->un_flags & UN_LOCKED) == 0)
+				panic("union: . not locked");
+			else if (curproc && un->un_pid != curproc->p_pid &&
+				    un->un_pid > -1 && curproc->p_pid > -1)
+				panic("union: allocvp not lock owner");
+#endif
+		} else {
+			if (un->un_flags & UN_LOCKED) {
+				vrele(UNIONTOV(un));
+				un->un_flags |= UN_WANT;
+				sleep((caddr_t) &un->un_flags, PINOD);
+				goto loop;
+			}
+			un->un_flags |= UN_LOCKED;
+
+#ifdef DIAGNOSTIC
+			if (curproc)
+				un->un_pid = curproc->p_pid;
+			else
+				un->un_pid = -1;
+#endif
+		}
+
+		/*
+		 * At this point, the union_node is locked,
+		 * un->un_uppervp may not be locked, and uppervp
+		 * is locked or nil.
+		 */
+
+		/*
+		 * Save information about the upper layer.
+		 */
+		if (uppervp != un->un_uppervp) {
+			if (un->un_uppervp)
+				vrele(un->un_uppervp);
+			un->un_uppervp = uppervp;
+		} else if (uppervp) {
+			vrele(uppervp);
+		}
+
+		if (un->un_uppervp) {
+			un->un_flags |= UN_ULOCK;
+			un->un_flags &= ~UN_KLOCK;
+		}
+
+		/*
+		 * Save information about the lower layer.
+		 * This needs to keep track of pathname
+		 * and directory information which union_vn_create
+		 * might need.
+		 */
+		if (lowervp != un->un_lowervp) {
+			if (un->un_lowervp) {
+				vrele(un->un_lowervp);
+				free(un->un_path, M_TEMP);
+				vrele(un->un_dirvp);
+			}
+			un->un_lowervp = lowervp;
+			if (cnp && (lowervp != NULLVP) &&
+			    (lowervp->v_type == VREG)) {
+				un->un_hash = cnp->cn_hash;
+				un->un_path = malloc(cnp->cn_namelen+1,
+						M_TEMP, M_WAITOK);
+				bcopy(cnp->cn_nameptr, un->un_path,
+						cnp->cn_namelen);
+				un->un_path[cnp->cn_namelen] = '\0';
+				VREF(dvp);
+				un->un_dirvp = dvp;
+			}
+		} else if (lowervp) {
+			vrele(lowervp);
+		}
+		*vpp = UNIONTOV(un);
+		return (0);
 	}
 
 	/*
@@ -157,8 +224,18 @@ loop:
 	unvplock |= UN_LOCKED;
 
 	error = getnewvnode(VT_UNION, mp, union_vnodeop_p, vpp);
-	if (error)
+	if (error) {
+		if (uppervp) {
+			if (dvp == uppervp)
+				vrele(uppervp);
+			else
+				vput(uppervp);
+		}
+		if (lowervp)
+			vrele(lowervp);
+
 		goto out;
+	}
 
 	MALLOC((*vpp)->v_data, void *, sizeof(struct union_node),
 		M_TEMP, M_WAITOK);
@@ -173,7 +250,15 @@ loop:
 	un->un_uppervp = uppervp;
 	un->un_lowervp = lowervp;
 	un->un_openl = 0;
-	un->un_flags = 0;
+	un->un_flags = UN_LOCKED;
+	if (un->un_uppervp)
+		un->un_flags |= UN_ULOCK;
+#ifdef DIAGNOSTIC
+	if (curproc)
+		un->un_pid = curproc->p_pid;
+	else
+		un->un_pid = -1;
+#endif
 	if (cnp && (lowervp != NULLVP) && (lowervp->v_type == VREG)) {
 		un->un_hash = cnp->cn_hash;
 		un->un_path = malloc(cnp->cn_namelen+1, M_TEMP, M_WAITOK);
@@ -191,12 +276,6 @@ loop:
 	for (pp = &unhead; *pp; pp = &(*pp)->un_next)
 		continue;
 	*pp = un;
-
-	un->un_flags |= UN_LOCKED;
-
-#ifdef DIAGNOSTIC
-	un->un_pid = curproc->p_pid;
-#endif
 
 	if (xlowervp)
 		vrele(xlowervp);
@@ -216,15 +295,9 @@ int
 union_freevp(vp)
 	struct vnode *vp;
 {
-	struct union_node **unpp;
 	struct union_node *un = VTOUNION(vp);
 
-	for (unpp = &unhead; *unpp != 0; unpp = &(*unpp)->un_next) {
-		if (*unpp == un) {
-			*unpp = un->un_next;
-			break;
-		}
-	}
+	union_remlist(un);
 
 	FREE(vp->v_data, M_TEMP);
 	vp->v_data = 0;
@@ -504,7 +577,12 @@ void
 union_removed_upper(un)
 	struct union_node *un;
 {
-	vrele(un->un_uppervp);
+	if (un->un_flags & UN_ULOCK) {
+		un->un_flags &= ~UN_ULOCK;
+		vput(un->un_uppervp);
+	} else {
+		vrele(un->un_uppervp);
+	}
 	un->un_uppervp = NULLVP;
 }
 
