@@ -26,7 +26,7 @@ SOFTWARE.
  */
 /* $Header: iso.h,v 4.9 88/09/11 18:06:38 hagens Exp $ */
 /* $Source: /usr/argo/sys/netiso/RCS/iso.h,v $ */
-/*	@(#)iso.h	7.4 (Berkeley) %G% */
+/*	@(#)iso.h	7.5 (Berkeley) %G% */
 
 #ifndef __ISO__
 #define __ISO__
@@ -140,10 +140,17 @@ extern	struct protosw isosw[];
 #else
 /* user utilities definitions from the iso library */
 
-char *iso_ntoa();
-struct hostent *iso_gethostbyname(), *iso_gethostbyaddr();
+#include <sys/cdefs.h>
 
-#endif KERNEL
+__BEGIN_DECLS
+struct iso_addr *iso_addr __P((const char *));
+char *iso_ntoa __P((const struct iso_addr *));
+
+/* THESE DON'T EXIST YET */
+struct hostent *iso_gethostbyname(), *iso_gethostbyaddr();
+__END_DECLS
+
+#endif /* KERNEL */
 
 #define _offsetof(t, m) ((int)((caddr_t)&((t *)0)->m))
 #endif __ISO__
