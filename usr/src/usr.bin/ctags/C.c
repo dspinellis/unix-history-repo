@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)C.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)C.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -318,8 +318,10 @@ str_entry(c)
 			while (GETC(!=,EOF))
 				if (!iswhite(c))
 					break;
-			if (c != (int)'{')
+			if (c != (int)'{') {
+				(void)ungetc(c, inf);
 				return(NO);
+			}
 	}
 	*sp = EOS;
 	pfnote(tok,curline);
