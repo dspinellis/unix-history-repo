@@ -24,6 +24,12 @@ action:
 test:	apilib.a test.o
 	${CC} ${CFLAGS} -o $@ test.o apilib.a
 
+t1:	apilib.a t1.o
+	${CC} ${CFLAGS} -o $@ t1.o apilib.a
+
+t2:	apilib.a t2.o
+	${CC} ${CFLAGS} -o $@ t2.o apilib.a
+
 print:
 	${PRINT} ${ALLPRINT}
 
