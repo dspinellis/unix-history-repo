@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs.h	7.21 (Berkeley) %G%
+ *	@(#)lfs.h	7.22 (Berkeley) %G%
  */
 
 #define	LFS_LABELPAD	8192		/* LFS label size */
@@ -297,6 +297,7 @@ struct segment {
 	struct buf	**start_bpp;	/* pointer to first bp in this set */
 	struct buf	*ibp;		/* buffer pointer to inode page */
 	struct finfo	*fip;		/* current fileinfo pointer */
+	struct vnode	*vp;		/* vnode being gathered */
 	void	*segsum;		/* segment summary info */
 	u_long	ninodes;		/* number of inodes in this segment */
 	u_long	seg_bytes_left;		/* bytes left in segment */
