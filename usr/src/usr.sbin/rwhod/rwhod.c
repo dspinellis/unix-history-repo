@@ -126,6 +126,10 @@ main()
 		syslog(LOG_ERR, "socket: %m");
 		exit(1);
 	}
+	if (setsockopt(s, SOL_SOCKET, SO_BROADCAST, 0, 0) < 0) {
+		syslog(LOG_ERR, "setsockopt SO_BROADCAST: %m");
+		exit(1);
+	}
 	hp = gethostbyname(myname);
 	if (hp == NULL) {
 		syslog(LOG_ERR, "%s: don't know my own name", myname);
