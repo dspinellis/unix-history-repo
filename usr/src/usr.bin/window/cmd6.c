@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd6.c	3.4 84/01/11";
+static	char *sccsid = "@(#)cmd6.c	3.5 84/01/12";
 #endif
 
 #include "defs.h"
@@ -56,8 +56,10 @@ debug_str()
 		error("Can't open string window: %s.", wwerror());
 		return;
 	}
-	for (s = str_head.s_forw; s != &str_head; s = s->s_forw)
-		more(w, "(0x%x)\t\"%s\"\n", s->s_data, s->s_data);
+	for (s = str_head.s_forw; s != &str_head; s = s->s_forw) {
+		more(w);
+		(void) wwprintf(w, "(0x%x)\t\"%s\"\n", s->s_data, s->s_data);
+	}
 	waitnl(w);
 	closeiwin(w);
 }
