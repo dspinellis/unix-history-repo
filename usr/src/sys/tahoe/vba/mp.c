@@ -9,7 +9,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)mp.c	7.1 (Berkeley) %G%
+ *	@(#)mp.c	7.2 (Berkeley) %G%
  */
 
 #include "mp.h"
@@ -320,7 +320,7 @@ mpioctl(dev, cmd, data, flag)
 	error = ttioctl(tp, cmd, data, flag);
 	if (error >= 0) {
 		if (cmd == TIOCSETP || cmd == TIOCSETN || cmd == TIOCLBIS ||
-		    cmd == TIOCLBIC || cmd == TIOCLSET) {
+		    cmd == TIOCLBIC || cmd == TIOCLSET || cmd == TIOCSETC) {
 			ev = mpparam(unit);
 			if (ev == 0)
 				error = ENOBUFS;
@@ -378,9 +378,12 @@ mpparam(unit)
 	tp = &mp_tty[unit];
 	/* YUCK */
 	asp = &ms->ms_async[port][mp->mp_on?mp->mp_on-1:MPINSET-1];
-	asp->ap_xon = tp->t_startc;
-	asp->ap_xoff = tp->t_stopc;
-	asp->ap_xena = ((tp->t_flags & RAW) ? MPA_DIS : MPA_ENA);
+	asp->ap_xon = (u_char)tp->t_startc;
+	asp->ap_xoff = (u_char)tp->t_stopc;
+	if ((tp->t_flags & RAW) || (tp->t_stopc == -1) || (tp->t_startc == -1))
+		asp->ap_xena = MPA_DIS;
+	else
+		asp->ap_xena = MPA_ENA;
 	asp->ap_xany = ((tp->t_flags & DECCTQ) ? MPA_DIS : MPA_ENA);
 #ifdef notnow
 	if (tp->t_flags & (RAW|LITOUT|PASS8)) {
