@@ -3,7 +3,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)deliver.c	3.152		%G%);
+SCCSID(@(#)deliver.c	3.153		%G%);
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -1023,7 +1023,7 @@ putfromline(fp, m)
 		else
 		{
 			*bang++ = '\0';
-			(void) sprintf(xbuf, "From %s  $d remote from %s\n", buf, bang);
+			(void) sprintf(xbuf, "From %s  $d remote from %s\n", bang, buf);
 			template = xbuf;
 		}
 	}
