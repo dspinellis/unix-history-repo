@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_slvar.h	8.2 (Berkeley) %G%
+ *	@(#)if_slvar.h	8.3 (Berkeley) %G%
  *
  * $Header: if_slvar.h,v 1.3 89/05/31 02:25:18 van Exp $
  */
@@ -40,24 +40,6 @@ struct sl_softc {
 #define	SC_COMPRESS	IFF_LINK0	/* compress TCP traffic */
 #define	SC_NOICMP	IFF_LINK1	/* supress ICMP traffic */
 #define	SC_AUTOCOMP	IFF_LINK2	/* auto-enable TCP compression */
-
-/* this stuff doesn't belong here... */
-#define	SLIOCGUNIT	_IOR('t', 88, int)	/* get slip unit number */
-
-/*
- * definitions of the pseudo- link-level header attached to slip
- * packets grabbed by the packet filter (bpf) traffic monitor.
- * These definitions pulled from BPF's "slip.h" by cgd.
- */
-#define	SLIP_HDRLEN	16		/* BPF SLIP header length */
-
-/* offsets into BPF SLIP header */
-#define	SLX_DIR		0		/* direction; see below */
-#define	SLX_CHDR	1		/* compressed header data */
-#define	CHDR_LEN	15		/* length of compressed header data */
-
-#define	SLIPDIR_IN	0		/* incoming */
-#define	SLIPDIR_OUT	1		/* outgoing */
 
 #ifdef KERNEL
 void	slattach __P((void));
