@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)telnetd.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)telnetd.c	5.9 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -22,6 +22,7 @@ static char sccsid[] = "@(#)telnetd.c	5.8 (Berkeley) %G%";
 #include <sys/wait.h>
 #include <sys/file.h>
 #include <sys/stat.h>
+#include <sys/time.h>
 
 #include <netinet/in.h>
 
@@ -52,6 +53,7 @@ char	ptyibuf[BUFSIZ], *ptyip = ptyibuf;
 char	ptyobuf[BUFSIZ], *pfrontp = ptyobuf, *pbackp = ptyobuf;
 char	netibuf[BUFSIZ], *netip = netibuf;
 char	netobuf[BUFSIZ], *nfrontp = netobuf, *nbackp = netobuf;
+char	*neturg = 0;		/* one past last bye of urgent data */
 int	pcc, ncc;
 
 int	pty, net;
@@ -59,13 +61,70 @@ int	inter;
 extern	char **environ;
 extern	int errno;
 char	*line;
+int	SYNCHing = 0;		/* we are in TELNET SYNCH mode */
+/*
+ * The following are some clocks used to decide how to interpret
+ * the relationship between various variables.
+ */
 
+struct {
+    int
+	system,			/* what the current time is */
+	echotoggle,		/* last time user entered echo character */
+	modenegotiated,		/* last time operating mode negotiated */
+	didnetreceive,		/* last time we read data from network */
+	gotDM;			/* when did we last see a data mark */
+} clocks;
+
+#define	settimer(x)	clocks.x = clocks.system++
+
 main(argc, argv)
 	char *argv[];
 {
 	struct sockaddr_in from;
 	int on = 1, fromlen;
 
+#if	defined(DEBUG)
+	{
+	    int s, ns, foo;
+	    struct servent *sp;
+	    static struct sockaddr_in sin = { AF_INET };
+
+	    sp = getservbyname("telnet", "tcp");
+	    if (sp == 0) {
+		    fprintf(stderr, "telnetd: tcp/telnet: unknown service\n");
+		    exit(1);
+	    }
+	    sin.sin_port = sp->s_port;
+	    argc--, argv++;
+	    if (argc > 0) {
+		    sin.sin_port = atoi(*argv);
+		    sin.sin_port = htons((u_short)sin.sin_port);
+	    }
+
+	    s = socket(AF_INET, SOCK_STREAM, 0);
+	    if (s < 0) {
+		    perror("telnetd: socket");;
+		    exit(1);
+	    }
+	    if (bind(s, &sin, sizeof sin) < 0) {
+		perror("bind");
+		exit(1);
+	    }
+	    if (listen(s, 1) < 0) {
+		perror("listen");
+		exit(1);
+	    }
+	    foo = sizeof sin;
+	    ns = accept(s, &sin, &foo);
+	    if (ns < 0) {
+		perror("accept");
+		exit(1);
+	    }
+	    dup2(ns, 0);
+	    close(s);
+	}
+#endif	/* defined(DEBUG) */
 	openlog("telnetd", LOG_PID | LOG_ODELAY, LOG_DAEMON);
 	fromlen = sizeof (from);
 	if (getpeername(0, &from, &fromlen) < 0) {
@@ -174,6 +233,35 @@ fatalperror(f, msg, errno)
 	fatal(f, buf);
 }
 
+
+/*
+ * Check a descriptor to see if out of band data exists on it.
+ */
+
+
+stilloob(s)
+int	s;		/* socket number */
+{
+    static struct timeval timeout = { 0 };
+    fd_set	excepts;
+    int value;
+
+    do {
+	FD_ZERO(&excepts);
+	FD_SET(s, &excepts);
+	value = select(s+1, (fd_set *)0, (fd_set *)0, &excepts, &timeout);
+    } while ((value == -1) && (errno = EINTR));
+
+    if (value < 0) {
+	fatalperror(pty, "select", errno);
+    }
+    if (FD_ISSET(s, &excepts)) {
+	return 1;
+    } else {
+	return 0;
+    }
+}
+
 /*
  * Main loop.  Select from pty and network, and
  * hand data to telnet receiver finite state machine.
@@ -191,10 +279,10 @@ telnet(f, p)
 	setpgrp(0, 0);
 
 	/*
-	 * Request to do remote echo.
+	 * Request to do remote echo and to suppress go ahead.
 	 */
 	dooption(TELOPT_ECHO);
-	myopts[TELOPT_ECHO] = 1;
+	dooption(TELOPT_SGA);
 	/*
 	 * Show banner that getty never gave.
 	 */
@@ -202,47 +290,125 @@ telnet(f, p)
 	sprintf(nfrontp, BANNER, hostname, "");
 	nfrontp += strlen(nfrontp);
 	for (;;) {
-		int ibits = 0, obits = 0;
+		fd_set ibits, obits, xbits;
 		register int c;
 
+		if (ncc < 0 && pcc < 0)
+			break;
+
+		FD_ZERO(&ibits);
+		FD_ZERO(&obits);
+		FD_ZERO(&xbits);
 		/*
 		 * Never look for input if there's still
 		 * stuff in the corresponding output buffer
 		 */
-		if (nfrontp - nbackp || pcc > 0)
-			obits |= (1 << f);
-		else
-			ibits |= (1 << p);
-		if (pfrontp - pbackp || ncc > 0)
-			obits |= (1 << p);
-		else
-			ibits |= (1 << f);
-		if (ncc < 0 && pcc < 0)
-			break;
-		select(16, &ibits, &obits, 0, 0);
-		if (ibits == 0 && obits == 0) {
+		if (nfrontp - nbackp || pcc > 0) {
+			FD_SET(f, &obits);
+		} else {
+			FD_SET(p, &ibits);
+		}
+		if (pfrontp - pbackp || ncc > 0) {
+			FD_SET(p, &obits);
+		} else {
+			FD_SET(f, &ibits);
+		}
+		if (!SYNCHing) {
+			FD_SET(f, &xbits);
+		}
+		if ((c = select(16, &ibits, &obits, &xbits,
+						(struct timeval *)0)) < 1) {
+			if (c == -1) {
+				if (errno == EINTR) {
+					continue;
+				}
+			}
 			sleep(5);
 			continue;
 		}
 
 		/*
+		 * Any urgent data?
+		 */
+		if (FD_ISSET(net, &xbits)) {
+		    SYNCHing = 1;
+		}
+
+		/*
 		 * Something to read from the network...
 		 */
-		if (ibits & (1 << f)) {
-			ncc = read(f, netibuf, BUFSIZ);
-			if (ncc < 0 && errno == EWOULDBLOCK)
-				ncc = 0;
-			else {
-				if (ncc <= 0)
-					break;
-				netip = netibuf;
+		if (FD_ISSET(net, &ibits)) {
+#if	!defined(IOCTL_TO_DO_UNIX_OOB_IN_TCP_WAY)
+			/*
+			 * In 4.2 (and some early 4.3) systems, the
+			 * OOB indication and data handling in the kernel
+			 * is such that if two separate TCP Urgent requests
+			 * come in, one byte of TCP data will be overlaid.
+			 * This is fatal for Telnet, but we try to live
+			 * with it.
+			 *
+			 * In addition, in 4.2 (and...), a special protocol
+			 * is needed to pick up the TCP Urgent data in
+			 * the correct sequence.
+			 *
+			 * What we do is:  if we think we are in urgent
+			 * mode, we look to see if we are "at the mark".
+			 * If we are, we do an OOB receive.  If we run
+			 * this twice, we will do the OOB receive twice,
+			 * but the second will fail, since the second
+			 * time we were "at the mark", but there wasn't
+			 * any data there (the kernel doesn't reset
+			 * "at the mark" until we do a normal read).
+			 * Once we've read the OOB data, we go ahead
+			 * and do normal reads.
+			 *
+			 * There is also another problem, which is that
+			 * since the OOB byte we read doesn't put us
+			 * out of OOB state, and since that byte is most
+			 * likely the TELNET DM (data mark), we would
+			 * stay in the TELNET SYNCH (SYNCHing) state.
+			 * So, clocks to the rescue.  If we've "just"
+			 * received a DM, then we test for the
+			 * presence of OOB data when the receive OOB
+			 * fails (and AFTER we did the normal mode read
+			 * to clear "at the mark").
+			 */
+		    if (SYNCHing) {
+			int atmark;
+
+			ioctl(net, SIOCATMARK, (char *)&atmark);
+			if (atmark) {
+			    ncc = recv(net, netibuf, sizeof (netibuf), MSG_OOB);
+			    if ((ncc == -1) && (errno == EINVAL)) {
+				ncc = read(net, netibuf, sizeof (netibuf));
+				if (clocks.didnetreceive < clocks.gotDM) {
+				    SYNCHing = stilloob(net);
+				}
+			    }
+			} else {
+			    ncc = read(net, netibuf, sizeof (netibuf));
 			}
+		    } else {
+			ncc = read(net, netibuf, sizeof (netibuf));
+		    }
+		    settimer(didnetreceive);
+#else	/* !defined(IOCTL_TO_DO_UNIX_OOB_IN_TCP_WAY) */
+		    ncc = read(net, netibuf, sizeof (netibuf));
+#endif	/* !defined(IOCTL_TO_DO_UNIX_OOB_IN_TCP_WAY) */
+		    if (ncc < 0 && errno == EWOULDBLOCK)
+			ncc = 0;
+		    else {
+			if (ncc <= 0) {
+			    break;
+			}
+			netip = netibuf;
+		    }
 		}
 
 		/*
 		 * Something to read from the pty...
 		 */
-		if (ibits & (1 << p)) {
+		if (FD_ISSET(p, &ibits)) {
 			pcc = read(p, ptyibuf, BUFSIZ);
 			if (pcc < 0 && errno == EWOULDBLOCK)
 				pcc = 0;
@@ -268,11 +434,11 @@ telnet(f, p)
 					*nfrontp++ = '\0';
 			}
 		}
-		if ((obits & (1 << f)) && (nfrontp - nbackp) > 0)
+		if (FD_ISSET(f, &obits) && (nfrontp - nbackp) > 0)
 			netflush();
 		if (ncc > 0)
 			telrcv();
-		if ((obits & (1 << p)) && (pfrontp - pbackp) > 0)
+		if (FD_ISSET(p, &obits) && (pfrontp - pbackp) > 0)
 			ptyflush();
 	}
 	cleanup();
@@ -295,7 +461,6 @@ telrcv()
 {
 	register int c;
 	static int state = TS_DATA;
-	struct sgttyb b;
 
 	while (ncc > 0) {
 		if ((&ptyobuf[BUFSIZ] - pfrontp) < 2)
@@ -357,22 +522,49 @@ telrcv()
 				break;
 
 			/*
+			 * Abort Output
+			 */
+			case AO: {
+					struct ltchars tmpltc;
+
+					ptyflush();	/* half-hearted */
+					ioctl(pty, TIOCGLTC, &tmpltc);
+					if (tmpltc.t_flushc != '\377') {
+						*pfrontp++ = tmpltc.t_flushc;
+					}
+					*nfrontp++ = IAC;
+					*nfrontp++ = DM;
+					neturg = nfrontp;
+					break;
+				}
+
+			/*
 			 * Erase Character and
 			 * Erase Line
 			 */
 			case EC:
-			case EL:
-				ptyflush();	/* half-hearted */
-				ioctl(pty, TIOCGETP, &b);
-				*pfrontp++ = (c == EC) ?
-					b.sg_erase : b.sg_kill;
-				break;
+			case EL: {
+					struct sgttyb b;
+					char ch;
+
+					ptyflush();	/* half-hearted */
+					ioctl(pty, TIOCGETP, &b);
+					ch = (c == EC) ?
+						b.sg_erase : b.sg_kill;
+					if (ch != '\377') {
+						*pfrontp++ = ch;
+					}
+					break;
+				}
 
 			/*
 			 * Check for urgent data...
 			 */
 			case DM:
+				SYNCHing = stilloob(net);
+				settimer(gotDM);
 				break;
+
 
 			/*
 			 * Begin option subnegotiation...
@@ -576,6 +768,7 @@ ptyflush()
 		pbackp = pfrontp = ptyobuf;
 }
 
+#if	0
 netflush()
 {
 	int n;
@@ -592,6 +785,55 @@ netflush()
 	if (nbackp == nfrontp)
 		nbackp = nfrontp = netobuf;
 }
+#else	/* 0 */
+
+
+/*
+ *  netflush
+ *		Send as much data as possible to the network,
+ *	handling requests for urgent data.
+ */
+
+
+netflush()
+{
+    int n;
+
+    if ((n = nfrontp - nbackp) > 0) {
+	if (!neturg) {
+	    n = write(net, nbackp, n);	/* normal write */
+	} else {
+	    n = neturg - nbackp;
+	    /*
+	     * In 4.2 (and 4.3) systems, there is some question about
+	     * what byte in a sendOOB operation is the "OOB" data.
+	     * To make ourselves compatible, we only send ONE byte
+	     * out of band, the one WE THINK should be OOB (though
+	     * we really have more the TCP philosophy of urgent data
+	     * rather than the Unix philosophy of OOB data).
+	     */
+	    if (n > 1) {
+		n = send(net, nbackp, n-1, 0);	/* send URGENT all by itself */
+	    } else {
+		n = send(net, nbackp, n, MSG_OOB);	/* URGENT data */
+	    }
+	}
+    }
+    if (n < 0) {
+	if (errno == EWOULDBLOCK)
+	    return;
+	/* should blow this guy away... */
+	return;
+    }
+    nbackp += n;
+    if (nbackp >= neturg) {
+	neturg = 0;
+    }
+    if (nbackp == nfrontp) {
+	nbackp = nfrontp = netobuf;
+    }
+}
+#endif	/* 0 */
 
 cleanup()
 {
