@@ -1,6 +1,6 @@
 /*
  *	Copyright (c) 1982 Regents of the University of California
- *	@(#)instrs.h 4.1 %G%
+ *	@(#)instrs.h 4.2 %G%
  */
 /*
  *	Argument data types
