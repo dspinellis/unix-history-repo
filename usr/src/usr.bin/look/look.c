@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)look.c	4.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)look.c	4.6 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/types.h>
@@ -32,7 +32,7 @@ main(argc, argv)
 {
 	extern char	*optarg;
 	extern int	optind;
-	static char	*filename = "/usr/dict/words";
+	static char	*filename = "/usr/share/dict/words";
 	register off_t	bot, mid, top;
 	register int	c;
 	struct stat	sb;
