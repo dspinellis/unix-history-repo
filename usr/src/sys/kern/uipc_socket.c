@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)uipc_socket.c	7.19 (Berkeley) %G%
+ *	@(#)uipc_socket.c	7.20 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -286,17 +286,13 @@ bad:
  * must check for short counts if EINTR/ERESTART are returned.
  * Data and control buffers are freed on return.
  */
-sosend(so, addr, uio, top, control, flags/*, sbwait_func, sbwait_arg*/)
+sosend(so, addr, uio, top, control, flags)
 	register struct socket *so;
 	struct mbuf *addr;
 	struct uio *uio;
 	struct mbuf *top;
 	struct mbuf *control;
 	int flags;
-/*
-	int (*sbwait_func)();
-	caddr_t sbwait_arg;
-*/
 {
 	struct mbuf **mp;
 	register struct mbuf *m;
@@ -343,12 +339,7 @@ restart:
 			if (so->so_state & SS_NBIO)
 				snderr(EWOULDBLOCK);
 			sbunlock(&so->so_snd);
-/*
-			if (sbwait_func)
-				error = (*sbwait_func)(&so->so_snd, sbwait_arg);
-			else
-*/
-				error = sbwait(&so->so_snd);
+			error = sbwait(&so->so_snd);
 			splx(s);
 			if (error)
 				goto out;
@@ -357,15 +348,15 @@ restart:
 		splx(s);
 		mp = &top;
 		space -= clen;
-		if (uio == NULL) {
+		do {
+		    if (uio == NULL) {
 			/*
 			 * Data is prepackaged in "top".
 			 */
 			resid = 0;
 			if (flags & MSG_EOR)
 				top->m_flags |= M_EOR;
-		} else do {
-		   do {
+		    } else do {
 			if (top == 0) {
 				MGETHDR(m, M_WAIT, MT_DATA);
 				mlen = MHLEN;
@@ -455,27 +446,24 @@ out:
  * and thus we must maintain consistency of the sockbuf during that time.
  * 
  * The caller may receive the data as a single mbuf chain by supplying
- * an mbuf **mp for use in returning the chain.  The uio is then used
+ * an mbuf **mp0 for use in returning the chain.  The uio is then used
  * only for the count in uio_resid.
  */
-soreceive(so, paddr, uio, mp, controlp, flagsp/*, sbwait_func, sbwait_arg*/)
+soreceive(so, paddr, uio, mp0, controlp, flagsp)
 	register struct socket *so;
 	struct mbuf **paddr;
 	struct uio *uio;
-	struct mbuf **mp;
+	struct mbuf **mp0;
 	struct mbuf **controlp;
 	int *flagsp;
-/*
-	int (*sbwait_func)();
-	caddr_t sbwait_arg;
-*/
 {
-	register struct mbuf *m;
-	register int resid, flags, len, error, s, offset;
+	register struct mbuf *m, **mp;
+	register int flags, len, error, s, offset;
 	struct protosw *pr = so->so_proto;
 	struct mbuf *nextrecord;
 	int moff, type;
 
+	mp = mp0;
 	if (paddr)
 		*paddr = 0;
 	if (controlp)
@@ -502,8 +490,7 @@ bad:
 	}
 	if (mp)
 		*mp = (struct mbuf *)0;
-	resid = uio->uio_resid;
-	if (so->so_state & SS_ISCONFIRMING && resid)
+	if (so->so_state & SS_ISCONFIRMING && uio->uio_resid)
 		(*pr->pr_usrreq)(so, PRU_RCVD, (struct mbuf *)0,
 		    (struct mbuf *)0, (struct mbuf *)0);
 
@@ -513,8 +500,10 @@ restart:
 	s = splnet();
 
 	m = so->so_rcv.sb_mb;
-	if (m == 0 || (so->so_rcv.sb_cc < resid && 
-	    so->so_rcv.sb_cc < so->so_rcv.sb_lowat)) {
+	if (m == 0 || (so->so_rcv.sb_cc < uio->uio_resid && 
+	    so->so_rcv.sb_cc < so->so_rcv.sb_lowat) ||
+	    ((flags & MSG_WAITALL) && so->so_rcv.sb_cc < uio->uio_resid &&
+	    so->so_rcv.sb_hiwat >= uio->uio_resid && !sosendallatonce(so))) {
 #ifdef DIAGNOSTIC
 		if (m == 0 && so->so_rcv.sb_cc)
 			panic("receive 1");
@@ -531,19 +520,14 @@ restart:
 			error = ENOTCONN;
 			goto release;
 		}
-		if (resid == 0)
+		if (uio->uio_resid == 0)
 			goto release;
 		if (so->so_state & SS_NBIO) {
 			error = EWOULDBLOCK;
 			goto release;
 		}
 		sbunlock(&so->so_rcv);
-/*
-		if (sbwait_func)
-			error = (*sbwait_func)(&so->so_rcv, sbwait_arg);
-		else
-*/
-			error = sbwait(&so->so_rcv);
+		error = sbwait(&so->so_rcv);
 		splx(s);
 		if (error)
 			return (error);
@@ -607,7 +591,7 @@ panic("receive 3a");
 	}
 	moff = 0;
 	offset = 0;
-	while (m && m->m_type == type && resid > 0 && error == 0) {
+	while (m && m->m_type == type && uio->uio_resid > 0 && error == 0) {
 		if (m->m_type == MT_OOBDATA)
 			flags |= MSG_OOB;
 #ifdef DIAGNOSTIC
@@ -616,7 +600,7 @@ panic("receive 3a");
 #endif
 		type = m->m_type;
 		so->so_state &= ~SS_RCVATMARK;
-		len = resid;
+		len = uio->uio_resid;
 		if (so->so_oobmark && len > so->so_oobmark - offset)
 			len = so->so_oobmark - offset;
 		if (len > m->m_len - moff)
@@ -632,9 +616,9 @@ panic("receive 3a");
 		if (mp == 0) {
 			splx(s);
 			error = uiomove(mtod(m, caddr_t) + moff, (int)len, uio);
-			resid = uio->uio_resid;
 			s = splnet();
-		}
+		} else
+			uio->uio_resid -= len;
 		if (len == m->m_len - moff) {
 			if (m->m_flags & M_EOR)
 				flags |= MSG_EOR;
@@ -647,7 +631,8 @@ panic("receive 3a");
 				if (mp) {
 					*mp = m;
 					mp = &m->m_next;
-					m = m->m_next;
+					so->so_rcv.sb_mb = m = m->m_next;
+					*mp = (struct mbuf *)0;
 				} else {
 					MFREE(m, so->so_rcv.sb_mb);
 					m = so->so_rcv.sb_mb;
@@ -659,6 +644,8 @@ panic("receive 3a");
 			if (flags & MSG_PEEK)
 				moff += len;
 			else {
+				if (mp)
+					*mp = m_copym(m, 0, len, M_WAIT);
 				m->m_data += len;
 				m->m_len -= len;
 				so->so_rcv.sb_cc -= len;
@@ -678,19 +665,17 @@ panic("receive 3a");
 			break;
 		/*
 		 * If the MSG_WAITALL flag is set (for non-atomic socket),
-		 * we must not quit until "resid == 0" or an error
+		 * we must not quit until "uio->uio_resid == 0" or an error
 		 * termination.  If a signal/timeout occurs, return
-		 * prematurely but without error.
+		 * with a short count but without error.
 		 * Keep sockbuf locked against other readers.
 		 */
-		while (flags & MSG_WAITALL && m == 0 && resid > 0 &&
+		while (flags & MSG_WAITALL && m == 0 && uio->uio_resid > 0 &&
 		    !sosendallatonce(so)) {
 			error = sbwait(&so->so_rcv);
 			if (error) {
 				sbunlock(&so->so_rcv);
 				splx(s);
-				if (mp)
-					*mp = (struct mbuf *)0;
 				return (0);
 			}
 			if (m = so->so_rcv.sb_mb)
@@ -700,8 +685,6 @@ panic("receive 3a");
 			continue;
 		}
 	}
-	if (mp)
-		*mp = (struct mbuf *)0;
 	if ((flags & MSG_PEEK) == 0) {
 		if (m == 0)
 			so->so_rcv.sb_mb = nextrecord;
