@@ -21,7 +21,7 @@ Berkeley, California  94720
 .(f
 This is
 .if \n(DR draft
-version 3.11,
+version 3.12,
 last modified on %G%.
 .if \n(DR Please do not distribute this version without permission
 .if \n(DR of the author.
@@ -924,26 +924,26 @@ M\&uucp	/usr/bin/uux	rsDxm	$U!$f	...uucp\&mail - $h!rmail ($u)
 .sp \n(psu
 ### rewriting rules
 .ta \w'R\&CSVAX:$-h!$+u  'u +\w'$#berk$@ing70$:$+u@$+h  'u
-R\&$-h.$+u	$+h:$+u	change "." to ":"
-R\&$=C:$+u@$-h	$+u@$+h	delete ing70: on arpanet addresses
-R\&$+u@$=A	ing70:$+u	delete local arpa hosts
-R\&$+u@$-h	$#berk$@ing70$:$+u@$+h	send arpa mail to ing70
-R\&$+h^$+u	$+h!$+u	change "^" to "!"
-R\&$-x!$=U!$+y	csvax:$+y	delete uucp loops through csvax
-R\&$-h!$+u	csvax:$+h!$+u	send uucp mail to csvax
-R\&$-x:$-h:$+u	$+h:$+u	delete multiple berk hosts
-R\&$=B:$+u	$+u	delete local berk hosts
-R\&$-h:$+u	$#berk$@$+h$:$+u	resolve berk mail
-R\&$+u	$#local$:$+u	resolve local mail
+R\&$-.$+	$1:$2	change "." to ":"
+R\&$=C:$+@$-	$2@$3	delete ing70: on arpanet addresses
+R\&$+@$=A	ing70:$1	delete local arpa hosts
+R\&$+@$-	$#berk$@ing70$:$1@$2	send arpa mail to ing70
+R\&$+^$+	$1!$2	change "^" to "!"
+R\&$-!$=U!$+	csvax:$3	delete uucp loops through csvax
+R\&$-!$+	csvax:$1!$2	send uucp mail to csvax
+R\&$-:$-:$+	$2:$3	delete multiple berk hosts
+R\&$=B:$+	$2	delete local berk hosts
+R\&$-:$+	$#berk$@$1$:$2	resolve berk mail
+R\&$+	$#local$:$1	resolve local mail
 .sp \n(psu
 ### rewriting rules for from host
 S\&1
-R\&ing70:$+u@$-h	$+u@$+h	arpanet mail is automatic
-R\&CSVAX:$-h!$+u	$+h!$+u	uucp mail is automatic
+R\&ing70:$+@$-	$1@$2	arpanet mail is automatic
+R\&CSVAX:$-!$+	$1!$2	uucp mail is automatic
 .sp \n(psu
 ### rewriting rules for translated sender
 S\&2
-R\&$-x:$-h:$+u	$+h:$+u	delete multiple berknet hosts
+R\&$-x:$-:$+	$2:$3	delete multiple berknet hosts
 .sz
 .sp
 .ce
@@ -1398,8 +1398,8 @@ The dollar escapes have the following meanings\**:
 .)f
 .(b
 .ta 6n
-$-x	Match a single word (and call it x).
-$+x	Match one or more words (and call them x).
+$-	Match a single word.
+$+	Match one or more words.
 $=c	Match any word in class c (see below).
 .)b
 The case of letters is ignored in pattern matching
@@ -1411,13 +1411,13 @@ the input is rewritten as defined by the right hand side (RHS).
 Acceptable escapes in the RHS are:
 .(b
 .ta \w'$#mailer  'u
-$+x	Replace from corresponding match in LHS.
+$+	Replace from corresponding match in LHS.
 $#mailer	Canonical mailer name.
 $@host	Canonical host name.
 $:user	Canonical user name.
 .)b
-The replacement from the LHS to the RHS does not use macros,
-and there are no name conflicts.
+The substitution from LHS to RHS is done by the index
+of indefinite matches on the LHS.
 Each pattern reexecutes until it fails.
 As soon as the input resolves to a canonical name
 (i.e.,
@@ -1688,17 +1688,17 @@ and with multiple users listed.
 .(b
 .sz -2
 .ta \w'[88]  'u +\w'R\&CSVAX:$-h!$+u  'u +\w'$#berk$@ing70$:$+u@$+h  'u
-[1]	R\&$-h.$+u	$+h:$+u	change "." to ":"
-[2]	R\&$=C:$+u@$-h	$+u@$+h	delete ing70: on arpanet addresses
-[3]	R\&$+u@$=A	ing70:$+u	delete local arpa hosts
-[4]	R\&$+u@$-h	$#berk$@ing70$:$+u@$+h	send arpa mail to ing70
-[5]	R\&$+h^$+u	$+h!$+u	change "^" to "!"
-[6]	R\&$-x!$=U!$+y	csvax:$+y	delete uucp loops through csvax
-[7]	R\&$-h!$+u	csvax:$+h!$+u	send uucp mail to csvax
-[8]	R\&$-x:$-h:$+u	$+h:$+u	delete multiple berk hosts
-[9]	R\&$=B:$+u	$+u	delete local berk hosts
-[10]	R\&$-h:$+u	$#berk$@$+h$:$+u	resolve berk mail
-[11]	R\&$+u	$#local$:$+u	resolve local mail
+[1]	R\&$-.$+	$1:$2	change "." to ":"
+[2]	R\&$=C:$+@$-	$2@$3	delete ing70: on arpanet addresses
+[3]	R\&$+@$=A	ing70:$1	delete local arpa hosts
+[4]	R\&$+@$-	$#berk$@ing70$:$1@$2	send arpa mail to ing70
+[5]	R\&$+^$+	$1!$2	change "^" to "!"
+[6]	R\&$-!$=U!$+	csvax:$3	delete uucp loops through csvax
+[7]	R\&$-!$+	csvax:$1!$2	send uucp mail to csvax
+[8]	R\&$-:$-:$+	$2:$3	delete multiple berk hosts
+[9]	R\&$=B:$+	$2	delete local berk hosts
+[10]	R\&$-:$+	$#berk$@$1$:$2	resolve berk mail
+[11]	R\&$+	$#local$:$1	resolve local mail
 .sz
 .)b
 The first rule translates dots to colons.
@@ -1755,8 +1755,8 @@ to make the transformation.
 .sz -2
 .ta \w'R\&CSVAX:$-h!$+u  'u +\w'$+u@$+h  'u
 S\&1
-R\&ing70:$+u@$-h	$+u@$+h	arpanet mail is automatic
-R\&CSVAX:$-h!$+u	$+h!$+u	uucp mail is automatic
+R\&ing70:$+@$-	$1@$2	arpanet mail is automatic
+R\&CSVAX:$-!$+	$1!$2	uucp mail is automatic
 .sz
 .)b
 The
