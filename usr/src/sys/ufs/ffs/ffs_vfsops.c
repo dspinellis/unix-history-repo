@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ffs_vfsops.c	7.10 (Berkeley) %G%
+ *	@(#)ffs_vfsops.c	7.11 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -146,7 +146,8 @@ mountfs(dev, ronly, ip)
 		error = EINVAL;		/* also needs translation */
 		goto out;
 	}
-	mp->m_fs = (struct fs *)malloc(fs->fs_sbsize, M_SUPERBLK, M_WAITOK);
+	mp->m_fs = (struct fs *)malloc((u_long)fs->fs_sbsize, M_SUPERBLK,
+	    M_WAITOK);
 	bcopy((caddr_t)bp->b_un.b_addr, (caddr_t)mp->m_fs,
 	   (u_int)fs->fs_sbsize);
 	brelse(bp);
@@ -187,7 +188,8 @@ mountfs(dev, ronly, ip)
 		fs->fs_dbsize = size;
 	}
 	blks = howmany(fs->fs_cssize, fs->fs_fsize);
-	base = space = (caddr_t)malloc(fs->fs_cssize, M_SUPERBLK, M_WAITOK);
+	base = space = (caddr_t)malloc((u_long)fs->fs_cssize, M_SUPERBLK,
+	    M_WAITOK);
 	if (space == NULL) {
 		error = ENOMEM;
 		goto out;
@@ -202,7 +204,7 @@ mountfs(dev, ronly, ip)
 #else SECSIZE
 		bp = bread(dev, fsbtodb(fs, fs->fs_csaddr + i), size);
 		if (bp->b_flags&B_ERROR) {
-			free(base, M_SUPERBLK);
+			free((caddr_t)base, M_SUPERBLK);
 			goto out;
 		}
 		bcopy((caddr_t)bp->b_un.b_addr, space, (u_int)size);

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ufs_disksubr.c	7.6 (Berkeley) %G%
+ *	@(#)ufs_disksubr.c	7.7 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -187,7 +187,7 @@ setdisklabel(olp, nlp, openmask)
 	if (nlp->d_magic != DISKMAGIC || nlp->d_magic2 != DISKMAGIC ||
 	    dkcksum(nlp) != 0)
 		return (EINVAL);
-	while ((i = ffs(openmask)) != 0) {
+	while ((i = ffs((long)openmask)) != 0) {
 		i--;
 		openmask &= ~(1 << i);
 		if (nlp->d_npartitions <= i)
