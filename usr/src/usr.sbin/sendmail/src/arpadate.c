@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)arpadate.c	6.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)arpadate.c	6.6 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -321,7 +321,7 @@ arpatounix(s, e)
 
 	/* now must have date */
 	tm.tm_mday = atoi(p);
-	while (isdigit((int) *p))		/* skip over date */
+	while (isascii(*p) && isdigit(*p))	/* skip over date */
 		p++;
 	p = nextatom(p);			/* point to month name */
 	for (tm.tm_mon = 0; MonthList[tm.tm_mon]; tm.tm_mon++)
@@ -362,28 +362,28 @@ arpatounix(s, e)
 			tm.tm_year += ((gmt->tm_year - tm.tm_year) / 100) * 100;
 		}
 	}
-	while (isdigit((int) *p))	/* skip over year */
+	while (isascii(*p) && isdigit(*p))	/* skip over year */
 		p++;
-	p = nextatom(p);		/* hours */
+	p = nextatom(p);			/* hours */
 	tm.tm_hour = atoi(p);
-	while (isdigit((int) *p))	/* skip over hours */
+	while (isascii(*p) && isdigit(*p))	/* skip over hours */
 		p++;
-	p = nextatom(p);		/* colon */
+	p = nextatom(p);			/* colon */
 	if (*p == ':')
 		p = nextatom(++p);
-	p = nextatom(p);		/* minutes */
+	p = nextatom(p);			/* minutes */
 	tm.tm_min = atoi(p);
-	while (isdigit((int) *p))	/* skip over minutes */
+	while (isascii(*p) && isdigit(*p))	/* skip over minutes */
 		p++;
-	p = nextatom(p);		/* colon or zone */
-	if (*p == ':')			/* have seconds field */
+	p = nextatom(p);			/* colon or zone */
+	if (*p == ':')				/* have seconds field */
 	{
 		p = nextatom(++p);
 		tm.tm_sec = atoi(p);
-		while (isdigit((int) *p))	/* skip over seconds */
+		while (isascii(*p) && isdigit(*p))	/* skip over seconds */
 			p++;
 	}
-	p = nextatom(p);		/* zone */
+	p = nextatom(p);			/* zone */
 
 	if (*p == '+')
 	{

@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)convtime.c	6.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)convtime.c	6.2 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <ctype.h>
@@ -46,7 +46,7 @@ convtime(p)
 	while (*p != '\0')
 	{
 		t = 0;
-		while (isdigit(c = *p++))
+		while (isascii(c = *p++) && isdigit(c))
 			t = t * 10 + (c - '0');
 		if (c == '\0')
 			p--;

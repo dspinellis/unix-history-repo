@@ -8,9 +8,9 @@
 
 #ifndef lint
 #ifdef USERDB
-static char sccsid [] = "@(#)udb.c	6.6 (Berkeley) %G% (with USERDB)";
+static char sccsid [] = "@(#)udb.c	6.7 (Berkeley) %G% (with USERDB)";
 #else
-static char sccsid [] = "@(#)udb.c	6.6 (Berkeley) %G% (without USERDB)";
+static char sccsid [] = "@(#)udb.c	6.7 (Berkeley) %G% (without USERDB)";
 #endif
 #endif
 
@@ -606,7 +606,7 @@ _udb_parsespec(udbspec, opt, maxopts)
 	{
 		register char *p;
 
-		while (isspace(*spec))
+		while (isascii(*spec) && isspace(*spec))
 			spec++;
 		spec_end = strchr(spec, ':');
 		if (spec_end != NULL)

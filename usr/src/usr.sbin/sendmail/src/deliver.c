@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	6.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	6.17 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -175,10 +175,17 @@ deliver(firstto, editfcn)
 
 	for (mvp = m->m_argv; (p = *++mvp) != NULL; )
 	{
-		while ((p = strchr(p, '\001')) != NULL)
-			if (*++p == 'u')
-				break;
-		if (p != NULL)
+		/* can't use strchr here because of sign extension problems */
+		while (*p != '\0')
+		{
+			if ((*p++ & 0377) == MACROEXPAND)
+			{
+				if (*p == 'u')
+					break;
+			}
+		}
+
+		if (*p != '\0')
 			break;
 
 		/* this entry is safe -- go ahead and process it */
@@ -1105,7 +1112,7 @@ putmessage(fp, m, xdot)
 	struct mailer *m;
 	bool xdot;
 {
-	char *template = "\001l\n";
+	char *template = "\201l\n";
 	char buf[BUFSIZ];
 
 	/*
@@ -1127,7 +1134,7 @@ putmessage(fp, m, xdot)
 			char *sys = macvalue('g');
 			char *bang = index(sys, '!');
 
-		expand("\001<", buf, &buf[sizeof buf - 1], e);
+		expand("\201<", buf, &buf[sizeof buf - 1], e);
 		bang = strchr(buf, '!');
 			if (bang == NULL)
 				syserr("No ! in UUCP! (%s)", sys);

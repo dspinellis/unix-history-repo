@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)savemail.c	6.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)savemail.c	6.6 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/types.h>
@@ -156,7 +156,7 @@ savemail(e)
 				break;
 			}
 
-			expand("\001n", buf, &buf[sizeof buf - 1], e);
+			expand("\201n", buf, &buf[sizeof buf - 1], e);
 			printf("\r\nMessage from %s...\r\n", buf);
 			printf("Errors occurred while sending mail.\r\n");
 			if (e->e_xfp != NULL)
@@ -261,7 +261,7 @@ savemail(e)
 
 				/* we have a home directory; open dead.letter */
 				define('z', p, e);
-				expand("\001z/dead.letter", buf, &buf[sizeof buf - 1], e);
+				expand("\201z/dead.letter", buf, &buf[sizeof buf - 1], e);
 				Verbose = TRUE;
 				message(Arpa_Info, "Saving message in %s", buf);
 				Verbose = oldverb;
@@ -370,8 +370,8 @@ returntosender(msg, sendbody)
 
 	ErrorMessage = msg;
 	SendBody = sendbody;
-	define('g', "\001f", e);
-	define('<', "\001f", e);
+	define('g', "\201f", e);
+	define('<', "\201f", e);
 
 	/* fake up an address header for the from person */
 	bmove((char *) &CurEnv->e_from, (char *) &to_addr, sizeof to_addr);
