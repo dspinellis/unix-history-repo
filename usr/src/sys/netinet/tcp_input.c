@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tcp_input.c	6.12 (Berkeley) %G%
+ *	@(#)tcp_input.c	6.13 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -36,6 +36,126 @@ struct	tcpiphdr tcp_saveti;
 extern	tcpnodelack;
 
 struct	tcpcb *tcp_newtcpcb();
+
+/*
+ * Insert segment ti into reassembly queue of tcp with
+ * control block tp.  Return TH_FIN if reassembly now includes
+ * a segment with FIN.  The macro form does the common case inline
+ * (segment is the next to be received on an established connection,
+ * and the queue is empty), avoiding linkage into and removal
+ * from the queue and repetition of various conversions.
+ */
+#define	TCP_REASS(tp, ti, m, so, flags) { \
+	if ((ti)->ti_seq == (tp)->rcv_nxt && \
+	    (tp)->seg_next == (struct tcpiphdr *)(tp) && \
+	    (tp)->t_state == TCPS_ESTABLISHED) { \
+		(tp)->rcv_nxt += (ti)->ti_len; \
+		flags = (ti)->ti_flags & TH_FIN; \
+		sbappend(&(so)->so_rcv, (m)); \
+		sorwakeup(so); \
+	} else \
+		(flags) = tcp_reass((tp), (ti)); \
+}
+
+tcp_reass(tp, ti)
+	register struct tcpcb *tp;
+	register struct tcpiphdr *ti;
+{
+	register struct tcpiphdr *q;
+	struct socket *so = tp->t_inpcb->inp_socket;
+	struct mbuf *m;
+	int flags;
+
+	/*
+	 * Call with ti==0 after become established to
+	 * force pre-ESTABLISHED data up to user socket.
+	 */
+	if (ti == 0)
+		goto present;
+
+	/*
+	 * Find a segment which begins after this one does.
+	 */
+	for (q = tp->seg_next; q != (struct tcpiphdr *)tp;
+	    q = (struct tcpiphdr *)q->ti_next)
+		if (SEQ_GT(q->ti_seq, ti->ti_seq))
+			break;
+
+	/*
+	 * If there is a preceding segment, it may provide some of
+	 * our data already.  If so, drop the data from the incoming
+	 * segment.  If it provides all of our data, drop us.
+	 */
+	if ((struct tcpiphdr *)q->ti_prev != (struct tcpiphdr *)tp) {
+		register int i;
+		q = (struct tcpiphdr *)q->ti_prev;
+		/* conversion to int (in i) handles seq wraparound */
+		i = q->ti_seq + q->ti_len - ti->ti_seq;
+		if (i > 0) {
+			if (i >= ti->ti_len)
+				goto drop;
+			m_adj(dtom(ti), i);
+			ti->ti_len -= i;
+			ti->ti_seq += i;
+		}
+		q = (struct tcpiphdr *)(q->ti_next);
+	}
+
+	/*
+	 * While we overlap succeeding segments trim them or,
+	 * if they are completely covered, dequeue them.
+	 */
+	while (q != (struct tcpiphdr *)tp) {
+		register int i = (ti->ti_seq + ti->ti_len) - q->ti_seq;
+		if (i <= 0)
+			break;
+		if (i < q->ti_len) {
+			q->ti_seq += i;
+			q->ti_len -= i;
+			m_adj(dtom(q), i);
+			break;
+		}
+		q = (struct tcpiphdr *)q->ti_next;
+		m = dtom(q->ti_prev);
+		remque(q->ti_prev);
+		m_freem(m);
+	}
+
+	/*
+	 * Stick new segment in its place.
+	 */
+	insque(ti, q->ti_prev);
+
+present:
+	/*
+	 * Present data to user, advancing rcv_nxt through
+	 * completed sequence space.
+	 */
+	if (TCPS_HAVERCVDSYN(tp->t_state) == 0)
+		return (0);
+	ti = tp->seg_next;
+	if (ti == (struct tcpiphdr *)tp || ti->ti_seq != tp->rcv_nxt)
+		return (0);
+	if (tp->t_state == TCPS_SYN_RECEIVED && ti->ti_len)
+		return (0);
+	do {
+		tp->rcv_nxt += ti->ti_len;
+		flags = ti->ti_flags & TH_FIN;
+		remque(ti);
+		m = dtom(ti);
+		ti = (struct tcpiphdr *)ti->ti_next;
+		if (so->so_state & SS_CANTRCVMORE)
+			m_freem(m);
+		else
+			sbappend(&so->so_rcv, m);
+	} while (ti != (struct tcpiphdr *)tp && ti->ti_seq == tp->rcv_nxt);
+	sorwakeup(so);
+	return (flags);
+drop:
+	m_freem(dtom(ti));
+	return (0);
+}
+
 /*
  * TCP input routine, follows pages 65-76 of the
  * protocol specification dated September, 1981 very closely.
@@ -104,11 +224,13 @@ tcp_input(m0)
 	tlen -= off;
 	ti->ti_len = tlen;
 	if (off > sizeof (struct tcphdr)) {
-		if ((m = m_pullup(m, sizeof (struct ip) + off)) == 0) {
-			tcpstat.tcps_hdrops++;
-			return;
+		if (m->m_len < sizeof(struct ip) + off) {
+			if ((m = m_pullup(m, sizeof (struct ip) + off)) == 0) {
+				tcpstat.tcps_hdrops++;
+				return;
+			}
+			ti = mtod(m, struct tcpiphdr *);
 		}
-		ti = mtod(m, struct tcpiphdr *);
 		om = m_get(M_DONTWAIT, MT_DATA);
 		if (om == 0)
 			goto drop;
@@ -177,6 +299,7 @@ tcp_input(m0)
 		inp = (struct inpcb *)so->so_pcb;
 		inp->inp_laddr = ti->ti_dst;
 		inp->inp_lport = ti->ti_dport;
+		inp->inp_options = ip_srcroute();
 		tp = intotcpcb(inp);
 		tp->t_state = TCPS_LISTEN;
 	}
@@ -200,8 +323,10 @@ tcp_input(m0)
 	/*
 	 * Calculate amount of space in receive window,
 	 * and then do TCP input processing.
+	 * Receive window is amount of space in rcv queue,
+	 * but not less than advertised window.
 	 */
-	tp->rcv_wnd = sbspace(&so->so_rcv);
+	tp->rcv_wnd = MAX(sbspace(&so->so_rcv), tp->rcv_adv - tp->rcv_nxt);
 	if (tp->rcv_wnd < 0)
 		tp->rcv_wnd = 0;
 
@@ -250,7 +375,6 @@ tcp_input(m0)
 		if (tp->t_template == 0) {
 			in_pcbdisconnect(inp);
 			dropsocket = 0;		/* socket is already gone */
-			inp->inp_laddr = laddr;
 			tp = 0;
 			goto drop;
 		}
@@ -282,8 +406,7 @@ tcp_input(m0)
 	 */
 	case TCPS_SYN_SENT:
 		if ((tiflags & TH_ACK) &&
-/* this should be SEQ_LT; is SEQ_LEQ for BBN vax TCP only */
-		    (SEQ_LT(ti->ti_ack, tp->iss) ||
+		    (SEQ_LEQ(ti->ti_ack, tp->iss) ||
 		     SEQ_GT(ti->ti_ack, tp->snd_max)))
 			goto dropwithreset;
 		if (tiflags & TH_RST) {
@@ -544,17 +667,15 @@ trimthenstep6:
 				/*
 				 * If we can't receive any more
 				 * data, then closing user can proceed.
+				 * Starting the timer is contrary to the
+				 * specification, but if we don't get a FIN
+				 * we'll hang forever.
 				 */
-				if (so->so_state & SS_CANTRCVMORE)
+				if (so->so_state & SS_CANTRCVMORE) {
 					soisdisconnected(so);
+					tp->t_timer[TCPT_2MSL] = TCPTV_MAXIDLE;
+				}
 				tp->t_state = TCPS_FIN_WAIT_2;
-				/*
-				 * This is contrary to the specification,
-				 * but if we haven't gotten our FIN in 
-				 * 5 minutes, it's not forthcoming.
-				tp->t_timer[TCPT_2MSL] = 5 * 60 * PR_SLOWHZ;
-				 * MUST WORRY ABOUT ONE-WAY CONNECTIONS.
-				 */
 			}
 			break;
 
@@ -639,7 +760,7 @@ step6:
 			if (so->so_oobmark == 0)
 				so->so_state |= SS_RCVATMARK;
 			sohasoutofband(so);
-			tp->t_oobflags &= ~TCPOOB_HAVEDATA;
+			tp->t_oobflags &= ~(TCPOOB_HAVEDATA | TCPOOB_HADDATA);
 		}
 		/*
 		 * Remove out of band data so doesn't get presented to user.
@@ -662,7 +783,7 @@ badurp:							/* XXX */
 	 */
 	if ((ti->ti_len || (tiflags&TH_FIN)) &&
 	    TCPS_HAVERCVDFIN(tp->t_state) == 0) {
-		tiflags = tcp_reass(tp, ti);
+		TCP_REASS(tp, ti, m, so, tiflags);
 		if (tcpnodelack == 0)
 			tp->t_flags |= TF_DELACK;
 		else
@@ -853,110 +974,6 @@ tcp_pulloutofband(so, ti)
 			break;
 	}
 	panic("tcp_pulloutofband");
-}
-
-/*
- * Insert segment ti into reassembly queue of tcp with
- * control block tp.  Return TH_FIN if reassembly now includes
- * a segment with FIN.
- */
-tcp_reass(tp, ti)
-	register struct tcpcb *tp;
-	register struct tcpiphdr *ti;
-{
-	register struct tcpiphdr *q;
-	struct socket *so = tp->t_inpcb->inp_socket;
-	struct mbuf *m;
-	int flags;
-
-	/*
-	 * Call with ti==0 after become established to
-	 * force pre-ESTABLISHED data up to user socket.
-	 */
-	if (ti == 0)
-		goto present;
-
-	/*
-	 * Find a segment which begins after this one does.
-	 */
-	for (q = tp->seg_next; q != (struct tcpiphdr *)tp;
-	    q = (struct tcpiphdr *)q->ti_next)
-		if (SEQ_GT(q->ti_seq, ti->ti_seq))
-			break;
-
-	/*
-	 * If there is a preceding segment, it may provide some of
-	 * our data already.  If so, drop the data from the incoming
-	 * segment.  If it provides all of our data, drop us.
-	 */
-	if ((struct tcpiphdr *)q->ti_prev != (struct tcpiphdr *)tp) {
-		register int i;
-		q = (struct tcpiphdr *)q->ti_prev;
-		/* conversion to int (in i) handles seq wraparound */
-		i = q->ti_seq + q->ti_len - ti->ti_seq;
-		if (i > 0) {
-			if (i >= ti->ti_len)
-				goto drop;
-			m_adj(dtom(ti), i);
-			ti->ti_len -= i;
-			ti->ti_seq += i;
-		}
-		q = (struct tcpiphdr *)(q->ti_next);
-	}
-
-	/*
-	 * While we overlap succeeding segments trim them or,
-	 * if they are completely covered, dequeue them.
-	 */
-	while (q != (struct tcpiphdr *)tp) {
-		register int i = (ti->ti_seq + ti->ti_len) - q->ti_seq;
-		if (i <= 0)
-			break;
-		if (i < q->ti_len) {
-			q->ti_seq += i;
-			q->ti_len -= i;
-			m_adj(dtom(q), i);
-			break;
-		}
-		q = (struct tcpiphdr *)q->ti_next;
-		m = dtom(q->ti_prev);
-		remque(q->ti_prev);
-		m_freem(m);
-	}
-
-	/*
-	 * Stick new segment in its place.
-	 */
-	insque(ti, q->ti_prev);
-
-present:
-	/*
-	 * Present data to user, advancing rcv_nxt through
-	 * completed sequence space.
-	 */
-	if (TCPS_HAVERCVDSYN(tp->t_state) == 0)
-		return (0);
-	ti = tp->seg_next;
-	if (ti == (struct tcpiphdr *)tp || ti->ti_seq != tp->rcv_nxt)
-		return (0);
-	if (tp->t_state == TCPS_SYN_RECEIVED && ti->ti_len)
-		return (0);
-	do {
-		tp->rcv_nxt += ti->ti_len;
-		flags = ti->ti_flags & TH_FIN;
-		remque(ti);
-		m = dtom(ti);
-		ti = (struct tcpiphdr *)ti->ti_next;
-		if (so->so_state & SS_CANTRCVMORE)
-			m_freem(m);
-		else
-			sbappend(&so->so_rcv, m);
-	} while (ti != (struct tcpiphdr *)tp && ti->ti_seq == tp->rcv_nxt);
-	sorwakeup(so);
-	return (flags);
-drop:
-	m_freem(dtom(ti));
-	return (0);
 }
 
 /*
