@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	8.29 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	8.30 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	8.29 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	8.30 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -95,21 +95,21 @@ queueup(e, queueall, announce)
 					break;
 #ifdef LOG
 				if (LogLevel > 0 && (i % 32) == 0)
-					syslog(LOG_ALERT, "queueup: cannot create %s: %s",
+					syslog(LOG_ALERT, "queueup: cannot create %s, uid=%d: %s",
+						tf, geteuid(), errstring(errno));
+#endif
+			}
+			else
+			{
+				if (lockfile(fd, tf, NULL, LOCK_EX|LOCK_NB))
+					break;
+#ifdef LOG
+				else if (LogLevel > 0 && (i % 32) == 0)
+					syslog(LOG_ALERT, "queueup: cannot lock %s: %s",
 						tf, errstring(errno));
 #endif
-				continue;
+				close(fd);
 			}
-
-			if (lockfile(fd, tf, NULL, LOCK_EX|LOCK_NB))
-				break;
-#ifdef LOG
-			else if (LogLevel > 0 && (i % 32) == 0)
-				syslog(LOG_ALERT, "queueup: cannot lock %s: %s",
-					tf, errstring(errno));
-#endif
-
-			close(fd);
 
 			if ((i % 32) == 31)
 			{
@@ -122,7 +122,8 @@ queueup(e, queueall, announce)
 		if (fd < 0 || (tfp = fdopen(fd, "w")) == NULL)
 		{
 			printopenfds(TRUE);
-			syserr("!queueup: cannot create queue temp file %s", tf);
+			syserr("!queueup: cannot create queue temp file %s, uid=%d",
+				tf, geteuid());
 		}
 	}
 
@@ -153,8 +154,8 @@ queueup(e, queueall, announce)
 		e->e_df = newstr(e->e_df);
 		fd = open(e->e_df, O_WRONLY|O_CREAT, FileMode);
 		if (fd < 0 || (dfp = fdopen(fd, "w")) == NULL)
-			syserr("!queueup: cannot create data temp file %s",
-				e->e_df);
+			syserr("!queueup: cannot create data temp file %s, uid=%d",
+				e->e_df, geteuid());
 		(*e->e_putbody)(dfp, FileMailer, e, NULL);
 		(void) xfclose(dfp, "queueup dfp", e->e_id);
 		e->e_putbody = putbody;
@@ -322,7 +323,8 @@ queueup(e, queueall, announce)
 		/* rename (locked) tf to be (locked) qf */
 		qf = queuename(e, 'q');
 		if (rename(tf, qf) < 0)
-			syserr("cannot rename(%s, %s), df=%s", tf, qf, e->e_df);
+			syserr("cannot rename(%s, %s), df=%s, uid=%d",
+				tf, qf, e->e_df, geteuid());
 
 		/* close and unlock old (locked) qf */
 		if (e->e_lockfp != NULL)
