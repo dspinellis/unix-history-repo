@@ -4,7 +4,7 @@
  *
  * %sccs.include.proprietary.c%
  *
- *	@(#)kern_exec.c	7.69 (Berkeley) %G%
+ *	@(#)kern_exec.c	7.70 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -690,10 +690,7 @@ getxfile(p, vp, ep, paged, ssize, uid, gid)
 	}
 	if (error) {
 badmap:
-		printf("pid %d: VM allocation failure\n", p->p_pid);
-		uprintf("sorry, pid %d was killed in exec: VM allocation\n",
-			p->p_pid);
-		psignal(p, SIGKILL);
+		killproc(p, "VM allocation in exec");
 		p->p_flag |= SKEEP;
 		return(error);
 	}

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_sig.c	7.51 (Berkeley) %G%
+ *	@(#)kern_sig.c	7.52 (Berkeley) %G%
  */
 
 #define	SIGPROP		/* include signal properties table */
@@ -23,6 +23,7 @@
 #include <sys/kernel.h>
 #include <sys/wait.h>
 #include <sys/ktrace.h>
+#include <sys/syslog.h>
 
 #include <machine/cpu.h>
 
@@ -1034,6 +1035,19 @@ psig(sig)
 		p->p_stats->p_ru.ru_nsignals++;
 		sendsig(action, sig, returnmask, 0);
 	}
+}
+
+/*
+ * Kill the current process for stated reason.
+ */
+killproc(p, why)
+	struct proc *p;
+	char *why;
+{
+
+	log(LOG_ERR, "pid %d was killed: %s\n", p->p_pid, why);
+	uprintf("sorry, pid %d was killed: %s\n", p->p_pid, why);
+	psignal(p, SIGKILL);
 }
 
 /*
