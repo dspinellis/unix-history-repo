@@ -1,8 +1,9 @@
-/*	confxx.c	4.1	82/07/19	*/
+/*	confxx.c	4.2	82/12/17	*/
+
+#include "../machine/pte.h"
 
 #include "../h/param.h"
 #include "../h/inode.h"
-#include "../h/pte.h"
 #include "../h/fs.h"
 #include "saio.h"
 

@@ -1,8 +1,9 @@
-/*	conf.c	4.13	82/11/13	*/
+/*	conf.c	4.14	82/12/17	*/
+
+#include "../machine/pte.h"
 
 #include "../h/param.h"
 #include "../h/inode.h"
-#include "../h/pte.h"
 #include "../h/fs.h"
 
 #include "../vaxmba/mbareg.h"

@@ -1,12 +1,12 @@
-/*	rk.c	4.6	82/11/13	*/
+/*	rk.c	4.7	82/12/17	*/
 
 /*
  * RK611/RK07
  */
+#include "../machine/pte.h"
 
 #include "../h/param.h"
 #include "../h/inode.h"
-#include "../h/pte.h"
 #include "../h/fs.h"
 
 #include "../vaxuba/ubareg.h"

@@ -1,11 +1,11 @@
-/*	mt.c	4.3	82/11/13	*/
+/*	mt.c	4.4	82/12/17	*/
 
 /*
  * TM78/TU78 tape driver
  */
+#include "../machine/pte.h"
 
 #include "../h/param.h"
-#include "../h/pte.h"
 #include "../h/inode.h"
 #include "../h/fs.h"
 

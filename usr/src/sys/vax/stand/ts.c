@@ -1,12 +1,12 @@
-/*	ts.c	4.6	82/11/13	*/
+/*	ts.c	4.7	82/12/17	*/
 
 /*
  * TS11 tape driver
  */
+#include "../machine/pte.h"
 
 #include "../h/param.h"
 #include "../h/inode.h"
-#include "../h/pte.h"
 #include "../h/fs.h"
 
 #include "../vaxuba/tsreg.h"

@@ -1,12 +1,12 @@
-/*	ut.c	4.4	82/11/13	*/
+/*	ut.c	4.5	82/12/17	*/
 
 /*
  * SI Model 9700 -- emulates TU45 on the UNIBUS
  */
+#include "../machine/pte.h"
 
 #include "../h/param.h"
 #include "../h/inode.h"
-#include "../h/pte.h"
 #include "../h/fs.h"
 
 #include "../vaxuba/ubareg.h"

@@ -1,8 +1,9 @@
-/*	mba.c	4.5	82/11/13	*/
+/*	mba.c	4.6	82/12/17	*/
+
+#include "../machine/pte.h"
 
 #include "../h/param.h"
 #include "../h/inode.h"
-#include "../h/pte.h"
 #include "../h/fs.h"
 #include "../h/vm.h"
 

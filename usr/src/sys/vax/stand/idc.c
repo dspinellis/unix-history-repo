@@ -1,12 +1,12 @@
-/*	idc.c	4.4	82/11/19	*/
+/*	idc.c	4.5	82/12/17	*/
 
 /*
  * IDC (RB730)
  */
+#include "../machine/pte.h"
 
 #include "../h/param.h"
 #include "../h/inode.h"
-#include "../h/pte.h"
 #include "../h/fs.h"
 
 #include "../vaxuba/idcreg.h"
