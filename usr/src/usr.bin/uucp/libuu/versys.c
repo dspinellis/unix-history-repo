@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)versys.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)versys.c	5.6 (Berkeley) %G%";
 #endif
 
 #include "uucp.h"
@@ -32,7 +32,7 @@ register char **nameptr;
 	DEBUG (11, "After Alias: %s\n", *nameptr);
 	name = *nameptr;			/* dereference */
 
-	if (strncmp(name, Myname, MAXBASENAME) == 0)
+	if (name[0] == '\0' || strncmp(name, Myname, MAXBASENAME) == 0)
 		return SUCCESS;
 
 	fp = fopen(SYSFILE, "r");
@@ -44,7 +44,8 @@ register char **nameptr;
 		getargs(line, targs, 100);
 		if (strncmp(name, targs[0], MAXBASENAME) == SAME) {
 			fclose(fp);
-			strncpy(PhoneNumber, targs[F_PHONE], MAXPH);
+			if (targs[F_PHONE])
+				strncpy(PhoneNumber, targs[F_PHONE], MAXPH);
 			return SUCCESS;
 		}
 	}
