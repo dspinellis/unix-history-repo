@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)pk0.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)pk0.c	5.4 (Berkeley) %G%";
 #endif
 
 #include "uucp.h"
@@ -14,7 +14,6 @@ char mask[8] = { 1, 2, 4, 010, 020, 040, 0100, 0200 };
 
 struct pack *pklines[NPLINES];
 int	pkactive;
-long chksum();
 
 /*
  * receive control messages
@@ -210,17 +209,15 @@ free:
 }
 
 /*ARGSUSED*/
-pkread(ipk, ibuf, icount)
-int icount;
+pkread(pk, ibuf, icount)
+register struct pack *pk;
 char *ibuf;
-struct pack *ipk;
+int icount;
 {
-	register struct pack *pk;
 	register x;
 	int is, cc, xfr, count;
 	char *cp, **bp;
 
-	pk = ipk;
 	xfr = 0;
 	count = 0;
 	while (pkaccept(pk) == 0)
@@ -272,18 +269,16 @@ struct pack *ipk;
 }
 
 /*ARGSUSED*/
-pkwrite(ipk, ibuf, icount)
-struct pack *ipk;
+pkwrite(pk, ibuf, icount)
+register struct pack *pk;
 char *ibuf;
 int icount;
 {
-	register struct pack *pk;
 	register x;
 	int partial;
 	caddr_t cp;
 	int cc, fc, count;
 
-	pk = ipk;
 	if (pk->p_state&DOWN || !pk->p_state&LIVE) {
 		return -1;
 	}
@@ -346,8 +341,6 @@ register struct pack *pk;
 	}
 	return i;
 }
-
-
 
 pkoutput(pk)
 register struct pack *pk;
@@ -456,17 +449,13 @@ out:
  *	releasing space and turning off line discipline
  */
 /*ARGSUSED*/
-pkclose(ipk, ibuf, icount)
-struct pack *ipk;
-char *ibuf;
-int icount;
+pkclose(pk)
+register struct pack *pk;
 {
-	register struct pack *pk;
 	register i;
 	char **bp;
 	int rcheck = 0;
 
-	pk = ipk;
 	pk->p_state |= DRAINO;
 
 	/*
@@ -530,18 +519,6 @@ register struct pack *pk;
 
 	pk->p_ps = pk->p_pr =  pk->p_rpr = 0;
 	pk->p_nxtps = 1;
-}
-
-pkline(pk)
-register struct pack *pk;
-{
-	register i;
-
-	for(i=0;i<NPLINES;i++) {
-		if (pklines[i]==pk)
-			return i;
-	}
-	return -i;
 }
 
 #ifndef BSD4_2
