@@ -4,20 +4,18 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_subr.c	7.16 (Berkeley) %G%
+ *	@(#)ffs_subr.c	7.17 (Berkeley) %G%
  */
 
 #include <sys/param.h>
-#include <sys/buf.h>
-
-#include <ufs/ufs/quota.h>
-#include <ufs/ufs/inode.h>
-
 #include <ufs/ffs/fs.h>
 #include <ufs/ffs/ffs_extern.h>
 
 #ifdef KERNEL
+#include <sys/buf.h>
 #include <sys/vnode.h>
+#include <ufs/ufs/quota.h>
+#include <ufs/ufs/inode.h>
 
 /*
  * Return buffer with the contents of block "offset" from the beginning of
