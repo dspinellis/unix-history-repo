@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- * from: Utah $Hdr: cpu.h 1.13 89/06/23$
+ * from: Utah $Hdr: cpu.h 1.16 91/03/25$
  *
- *	@(#)cpu.h	7.5 (Berkeley) %G%
+ *	@(#)cpu.h	7.6 (Berkeley) %G%
  */
 
 /*
@@ -124,7 +124,7 @@ extern unsigned char ssir;
 
 #ifdef KERNEL
 extern	int machineid, mmutype, ectype;
-extern	unsigned long DIObase;
+extern	char *intiobase, *intiolimit;
 
 /* what is this supposed to do? i.e. how is it different than startrtclock? */
 #define	enablertclock()
@@ -133,26 +133,57 @@ extern	unsigned long DIObase;
 
 /* physical memory sections */
 #define	ROMBASE		(0x00000000)
-#define	IOBASE		(0x00200000)
-#define	IOTOP		(0x01000000)
+#define	INTIOBASE	(0x00400000)
+#define	INTIOTOP	(0x00600000)
+#define	EXTIOBASE	(0x00600000)
+#define	EXTIOTOP	(0x20000000)
 #define	MAXADDR		(0xFFFFF000)
 
-/* DIO space stuff */
-#define	INTERNALHPIB	(0x00478000)
-#define	EXTIOBASE	(0x00600000)
-#define	IOCARDSIZE	(0x10000)
-#define	IOMAPSIZE	(btoc(IOTOP-IOBASE))
-#define	IOP(x)		((x) - IOBASE)
-#define	IOV(x)		(((x) - IOBASE) + DIObase)
-#define	UNIOV(x)	((x) - DIObase + IOBASE)
+/*
+ * Internal IO space:
+ *
+ * Ranges from 0x400000 to 0x600000 (IIOMAPSIZE).
+ *
+ * Internal IO space is mapped in the kernel from ``intiobase'' to
+ * ``intiolimit'' (defined in locore.s).  Since it is always mapped,
+ * conversion between physical and kernel virtual addresses is easy.
+ */
+#define	ISIIOVA(va) \
+	((char *)(va) >= intiobase && (char *)(va) < intiolimit)
+#define	IIOV(pa)	((int)(pa)-INTIOBASE+(int)intiobase)
+#define	IIOP(va)	((int)(va)-(int)intiobase+INTIOBASE)
+#define	IIOPOFF(pa)	((int)(pa)-INTIOBASE)
+#define	IIOMAPSIZE	btoc(INTIOTOP-INTIOBASE)	/* 2mb */
 
-/* DIO II uncached address space */
+/*
+ * External IO space:
+ *
+ * DIO ranges from select codes 0-63 at physical addresses given by:
+ *	0x600000 + (sc - 32) * 0x10000
+ * DIO cards are addressed in the range 0-31 [0x600000-0x800000) for
+ * their control space and the remaining areas, [0x200000-0x400000) and
+ * [0x800000-0x1000000), are for additional space required by a card;
+ * e.g. a display framebuffer.
+ *
+ * DIO-II ranges from select codes 132-255 at physical addresses given by:
+ *	0x1000000 + (sc - 132) * 0x400000
+ * The address range of DIO-II space is thus [0x1000000-0x20000000).
+ *
+ * DIO/DIO-II space is too large to map in its entirety, instead devices
+ * are mapped into kernel virtual address space allocated from a range
+ * of EIOMAPSIZE pages (vmparam.h) starting at ``extiobase''.
+ */
+#define	DIOBASE		(0x600000)
+#define	DIOTOP		(0x1000000)
+#define	DIOCSIZE	(0x10000)
 #define	DIOIIBASE	(0x01000000)
 #define	DIOIITOP	(0x20000000)
 #define	DIOIICSIZE	(0x00400000)
 
-/* base/offsets for longword read/write (for locore.s) */
-#define	MMUBASE		IOP(0x5F4000)
+/*
+ * HP MMU
+ */
+#define	MMUBASE		IIOPOFF(0x5F4000)
 #define	MMUSSTP		0x0
 #define	MMUUSTP		0x4
 #define	MMUTBINVAL	0x8
@@ -172,6 +203,9 @@ extern	unsigned long DIObase;
 #define	MMU_FAULT	(MMU_PTF|MMU_PF|MMU_WPF|MMU_BERR)
 #define	MMU_ENAB	(MMU_UMEN|MMU_SMEN|MMU_IEN|MMU_FPE)
 
+/*
+ * 68851 and 68030 MMU
+ */
 #define	PMMU_LVLMASK	0x0007
 #define	PMMU_INV	0x0400
 #define	PMMU_WP		0x0800
@@ -179,7 +213,6 @@ extern	unsigned long DIObase;
 #define	PMMU_SO		0x2000
 #define	PMMU_LV		0x4000
 #define	PMMU_BE		0x8000
-
 #define	PMMU_FAULT	(PMMU_WP|PMMU_INV)
 
 /* 680X0 function codes */
