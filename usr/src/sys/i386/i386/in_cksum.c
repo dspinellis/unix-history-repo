@@ -5,7 +5,7 @@
  * %sccs.include.redist.c%
  *
  * from tahoe:	in_cksum.c	1.2	86/01/05
- *	@(#)in_cksum.c	1.3 (Berkeley) %G%
+ *	@(#)in_cksum.c	7.1 (Berkeley) %G%
  */
 
 #include "param.h"
