@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)savemail.c	8.27 (Berkeley) %G%";
+static char sccsid[] = "@(#)savemail.c	8.28 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -769,7 +769,7 @@ errbody(mci, e)
 pruneroute(addr)
 	char *addr;
 {
-#ifdef NAMED_BIND
+#if NAMED_BIND
 	char *start, *at, *comma;
 	char c;
 	int rcode;

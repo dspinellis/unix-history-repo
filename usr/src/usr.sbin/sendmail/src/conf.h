@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.95 (Berkeley) %G%
+ *	@(#)conf.h	8.96 (Berkeley) %G%
  */
 
 /*
@@ -54,12 +54,20 @@
 # define NETUNIX	1	/* include unix domain support */
 # define NETINET	1	/* include internet support */
 # define SETPROCTITLE	1	/* munge argv to display current status */
-# define NAMED_BIND	1	/* use Berkeley Internet Domain Server */
 # define MATCHGECOS	1	/* match user names from gecos field */
 # define XDEBUG		1	/* enable extended debugging */
-
 # ifdef NEWDB
 # define USERDB		1	/* look in user database (requires NEWDB) */
+# endif
+
+/**********************************************************************
+**  0/1 Compilation options.
+**	#define these to 1 if they are available;
+**	#define them to 0 otherwise.
+**********************************************************************/
+
+# ifndef NAMED_BIND
+#  define NAMED_BIND	1	/* use Berkeley Internet Domain Server */
 # endif
 
 /*
