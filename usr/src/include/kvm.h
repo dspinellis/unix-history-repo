@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kvm.h	5.10 (Berkeley) %G%
+ *	@(#)kvm.h	5.11 (Berkeley) %G%
  */
 
 #ifndef _KVM_H_
@@ -26,6 +26,7 @@ int	  kvm_close __P((kvm_t *));
 char	**kvm_getargv __P((kvm_t *, const struct kinfo_proc *, int));
 char	**kvm_getenvv __P((kvm_t *, const struct kinfo_proc *, int));
 char	 *kvm_geterr __P((kvm_t *));
+int	  kvm_getloadavg __P((kvm_t *, double [], int));
 char	 *kvm_getfiles __P((kvm_t *, int, int, int *));
 struct kinfo_proc *
 	  kvm_getprocs __P((kvm_t *, int, int, int *));
