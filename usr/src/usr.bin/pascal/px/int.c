@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)int.c 1.5 %G%";
+static char sccsid[] = "@(#)int.c 1.6 %G%";
 
 /*
  * px - interpreter for Berkeley Pascal
@@ -32,6 +32,7 @@ main(ac,av)
 
 {
 	register char *objprog, *file;
+	char *name;
 	register long bytesread, bytestoread, block;
 	register FILE *prog;
 	struct	 pxhdr pxhd;
@@ -51,17 +52,21 @@ main(ac,av)
 	if (!strcmp(_argv[0], "pdx")) {
 		_mode = PDX;
 		_argv += 2; _argc -= 2;
+		name = _argv[0];
 	} else if (!strcmp(_argv[0], "pix")) {
 		_mode = PIX;
 		_argv++; _argc--;
+		name = _argv[0];
 	} else if (!strcmp(_argv[0], "pipe")) {
 		_mode = PIPE;
 		file = "PIPE";
 		_argv++; _argc--;
+		name = _argv[0];
 	} else {
 		_mode = PX;
 		if (_argc <= 1)
 			file = "obj";
+		name = file;
 	}
 
 	/*
@@ -82,11 +87,11 @@ main(ac,av)
 		}
 	}
 	if (pxhd.magicnum != MAGICNUM) {
-		fprintf(stderr,"%s is not a Pascal interpreter file\n",file);
+		fprintf(stderr,"%s is not a Pascal interpreter file\n",name);
 		exit(1);
 	}
 	if (pxhd.maketime < createtime) {
-		fprintf(stderr,"%s is obsolete and must be recompiled\n",file);
+		fprintf(stderr,"%s is obsolete and must be recompiled\n",name);
 		exit(1);
 	}
 
