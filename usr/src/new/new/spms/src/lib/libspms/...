@@ -1,0 +1,6 @@
+...|:^^:dp=.:dt=project:dd=SPMS Utility Operations:
+....|:^^:dp=../../..:
+src|:dp=src:dt=clean/libsrc/print.3/src/update.200:dd=libspms.a source:
+test|:dp=test:dt=:dd=libspms.a test archives:
+work|:dp=work:dt=test.2:dd=libspms.a workbench:
+lib|:dp=lib:dt=lib:dd=libspms.a makefile templates:
