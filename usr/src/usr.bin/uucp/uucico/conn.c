@@ -1,6 +1,3 @@
-#ifndef lint
-static char sccsid[] = "@(#)conn.c	5.10 (Berkeley) %G%";
-#endif
 
 #include <signal.h>
 #include "uucp.h"
@@ -61,31 +58,39 @@ alarmtr()
  */
 #define PCP_BAUD	3
 #define PCP_PHONE	4
-#define PCP_CALLBACK	8
-#define PCP_CITY	10
-#define PCP_RPHONE	12
-#define NPCFIELDS	15
+#define PCP_CITY	14
+#define PCP_PASSWORD	16
+#define PCP_RPHONE	20
+#define NPCFIELDS	23
 
 static char *PCFlds[] = {
 	"PC-PURSUIT",
 	"Any",
 	"ACU",
 	"1200",
-	CNULL,	/* <--- **** Welcome to Telenet PC Pursuit ***** */
+	CNULL,
+	CNULL,
+	"P_ZERO",	/* Telenet insists on zero parity */
 	"ABORT",
-	"Good",	/* Abort of Good bye! */
-	")", 	/* <--- Enter your 7-digit phone number (xxx-xxxx) */
-	CNULL,	/* ---> 528-1234 */
-	"call?", 	/* <--- Which city do you wish to call? */
-	CNULL,	/* ---> CHICAGO */
-	")", 	/* <--- Enter the phone number you wish to call (xxx-xxxx) */
-	CNULL,	/* ---> 690-7171 */
-	"R)?", 	/* <--- You are #1 in the queue. Do you want to wait, or Restart (Y/N/R)? */
-	"Y",
-	CNULL 	/* <--- .....Good Bye! */
+	"BUSY",		/* Abort on Busy Signal */
+	CNULL,
+	"\\d\\d\\r\\d\\r",	/* Get telenet's attention */
+	"TERMINAL=~3-\r-TERM~3-\r-TERM~5", 	/* Terminal type ? */
+	"\\r",
+	"@",		/* telenet's prompt */
+	"D/DCWAS/21,telenetloginstring", /* overwritten later */
+	"PASSWORD",
+	CNULL,		/* telenet password */
+	"CONNECTED",	/* We're now talking to a Hayes in the remote city */
+	"ATZ",		/* Reset it */
+	"OK",
+	"ATDT6907171", /* overwritten */
+	"CONNECT",	
+	"\\d\\r",		/* We're in !*/
+	CNULL,
 };
 
-static char PCP_brand[20];
+static char PCP_brand[25];
 
 /*
  *	place a telephone call to system and login, etc.
@@ -141,6 +146,7 @@ keeplooking:
 			FILE *dfp;
 			int status;
 			static struct Devices dev;
+
 			dfp = fopen(DEVFILE, "r");
 			ASSERT(dfp != NULL, "Can't open", DEVFILE, 0);
 			while ((status=rddev(dfp, &dev)) != FAIL
@@ -156,25 +162,28 @@ keeplooking:
 			}
 			PCFlds[PCP_BAUD] = dev.D_class;
 			PCFlds[PCP_PHONE] = dev.D_calldev;
-			PCFlds[PCP_CALLBACK] = dev.D_arg[D_CHAT];
-			PCFlds[PCP_CITY] = Flds[F_CLASS];
-			PCFlds[PCP_RPHONE] = Flds[F_PHONE];
+			sprintf(PCFlds[PCP_CITY], "c d/%s%s,%s",
+				Flds[F_CLASS],
+				index(Flds[F_CLASS], '/') == NULL ? "/12" : "",
+				dev.D_arg[D_CHAT]);
+			PCFlds[PCP_PASSWORD] = dev.D_line;
+			strncpy(&PCFlds[PCP_RPHONE][4], Flds[F_PHONE], 7);
 			strncpy(PCP_brand, dev.D_brand, sizeof(PCP_brand));
-			if ((fcode = getto(PCFlds)) < 0)
-				continue;
-			Dcf = fcode;
-			fcode = login(NPCFIELDS, PCFlds, Dcf);
-			clsacu(); /* Hang up, they'll call back */
-			if (fcode != SUCCESS) {
-				fcode = CF_DIAL;
+			if ((fcode = getto(PCFlds)) < 0) {
+				rmlock(PCP);
 				continue;
 			}
-			Flds[F_CLASS] = dev.D_class;
-			Flds[F_PHONE] = dev.D_line;
-			
-		} /* end PC Pursuit */
-		if ((fcode = getto(Flds)) > 0) 
+			Dcf = fcode;
+			fcode = login(NPCFIELDS, PCFlds, Dcf);
+			if (fcode == SUCCESS)
+				break;
+			fcode = CF_DIAL;
+			rmlock(PCP);
+			/* end PC Pursuit */
+		} else if ((fcode = getto(Flds)) > 0)  {
+			Dcf = fcode;
 			break;
+		}
 	}
 
 	if (nf <= 0) {
@@ -182,20 +191,10 @@ keeplooking:
 		return fcode ? fcode : nf;
 	}
 
-	Dcf = fcode;
 
-	if (fcode >= 0 && snccmp(LineType, PCP) == SAME) {
-		AbortOn = "Good";	/* .... Good Bye */
-		fcode = expect("****~300", Dcf);
-		if (fcode != SUCCESS) {
-			DEBUG(4, "\nexpect timed out\n", CNULL);
-			fcode = CF_DIAL;
-		}
-	}
 	if (fcode >= 0) {
 		DEBUG(4, "login %s\n", "called");
-		fcode = login(nf, Flds, Dcf);
-	}
+		fcode = login(nf, Flds, Dcf); }
 	if (fcode < 0) {
 		clsacu();
 		if (fcode == ABORT) {
@@ -419,6 +418,8 @@ int nf, fn;
 	AbortOn = NULL;
 	for (k = F_LOGIN; k < nf; k += 2) {
 		want = flds[k];
+		if (want == NULL)
+			want = "";
 		ok = FAIL;
 		while (ok != SUCCESS) {
 			altern = index(want, '-');
@@ -443,7 +444,9 @@ int nf, fn;
 				sendthem(altern, fn);
 			} else
 				if (ok == ABORT) {
-					logent("LOGIN ABORTED", _FAILED);
+					char sbuf[MAXFULLNAME];
+					sprintf(sbuf, "LOGIN ABORTED on \"%s\"",						AbortOn);
+					logent(sbuf, _FAILED);
 					return ABORT;
 				}
 		}
