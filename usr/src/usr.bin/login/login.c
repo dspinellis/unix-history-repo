@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)login.c	5.32.1.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)login.c	5.35 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -50,15 +50,16 @@ static char sccsid[] = "@(#)login.c	5.32.1.2 (Berkeley) %G%";
 #include <setjmp.h>
 #include <stdio.h>
 #include <strings.h>
+#include "pathnames.h"
+
+#ifdef	KERBEROS
+#include <kerberos/krb.h>
+#include <sys/termios.h>
+char	realm[REALM_SZ];
+int	kerror = KSUCCESS, notickets = 1;
+#endif
 
 #define	TTYGRPNAME	"tty"		/* name of group to own ttys */
-
-#define	MOTDFILE	"/etc/motd"
-#define	MAILDIR		"/usr/spool/mail"
-#define	NOLOGIN		"/etc/nologin"
-#define	HUSHLOGIN	".hushlogin"
-#define	LASTLOG		"/usr/adm/lastlog"
-#define	BSHELL		"/bin/sh"
 
 /*
  * This bounds the time given to login.  Not a define so it can
@@ -228,6 +229,32 @@ main(argc, argv)
 		p = crypt(pp, salt);
 		setpriority(PRIO_PROCESS, 0, 0);
 
+#ifdef	KERBEROS
+
+		/*
+		 * If not present in pw file, act as we normally would.
+		 * If we aren't Kerberos-authenticated, try the normal
+		 * pw file for a password.  If that's ok, log the user
+		 * in without issueing any tickets.
+		 */
+
+		if (pwd && !krb_get_lrealm(realm,1)) {
+			/* get TGT for local realm
+			 * be careful about uid's here for ticket
+			 * file ownership
+			 */
+			(void) setreuid(geteuid(),pwd->pw_uid);
+			kerror = krb_get_pw_in_tkt(
+				pwd->pw_name, "", realm,
+				"krbtgt", realm, DEFAULT_TKT_LIFE, pp);
+			(void) setuid(0);
+			if (kerror == INTK_OK) {
+				bzero(pp, strlen(pp));
+				notickets = 0;	/* user got ticket */
+				break;
+			}
+		}
+#endif
 		(void) bzero(pp, strlen(pp));
 		if (pwd && !strcmp(p, pwd->pw_passwd))
 			break;
@@ -286,6 +313,11 @@ main(argc, argv)
 		printf("Logging in with home = \"/\".\n");
 	}
 
+#ifdef KERBEROS
+	if (notickets)
+		printf("Warning: no Kerberos tickets issued\n");
+#endif
+
 #define	TWOWEEKS	(14*24*60*60)
 	if (pwd->pw_change || pwd->pw_expire)
 		(void)gettimeofday(&tp, (struct timezone *)NULL);
@@ -323,7 +355,7 @@ main(argc, argv)
 		login(&utmp);
 	}
 
-	quietlog = access(HUSHLOGIN, F_OK) == 0;
+	quietlog = access(_PATH_HUSHLOGIN, F_OK) == 0;
 	dolastlog(quietlog);
 
 	if (!hflag) {					/* XXX */
@@ -343,7 +375,7 @@ main(argc, argv)
 	(void)setuid(pwd->pw_uid);
 
 	if (*pwd->pw_shell == '\0')
-		pwd->pw_shell = BSHELL;
+		pwd->pw_shell = _PATH_BSHELL;
 	/* turn on new line discipline for the csh */
 	else if (!strcmp(pwd->pw_shell, "/bin/csh")) {
 		ioctlval = NTTYDISC;
@@ -374,7 +406,7 @@ main(argc, argv)
 		struct stat st;
 
 		motd();
-		(void)sprintf(tbuf, "%s/%s", MAILDIR, pwd->pw_name);
+		(void)sprintf(tbuf, "%s/%s", _PATH_MAILDIR, pwd->pw_name);
 		if (stat(tbuf, &st) == 0 && st.st_size != 0)
 			printf("You have %smail.\n",
 			    (st.st_mtime > st.st_atime) ? "new " : "");
@@ -444,7 +476,7 @@ motd()
 	int (*oldint)(), sigint();
 	char tbuf[8192];
 
-	if ((fd = open(MOTDFILE, O_RDONLY, 0)) < 0)
+	if ((fd = open(_PATH_MOTDFILE, O_RDONLY, 0)) < 0)
 		return;
 	oldint = signal(SIGINT, sigint);
 	if (setjmp(motdinterrupt) == 0)
@@ -464,7 +496,7 @@ checknologin()
 	register int fd, nchars;
 	char tbuf[8192];
 
-	if ((fd = open(NOLOGIN, O_RDONLY, 0)) >= 0) {
+	if ((fd = open(_PATH_NOLOGIN, O_RDONLY, 0)) >= 0) {
 		while ((nchars = read(fd, tbuf, sizeof(tbuf))) > 0)
 			(void)write(fileno(stdout), tbuf, nchars);
 		sleepexit(0);
@@ -478,7 +510,7 @@ dolastlog(quiet)
 	int fd;
 	char *ctime();
 
-	if ((fd = open(LASTLOG, O_RDWR, 0)) >= 0) {
+	if ((fd = open(_PATH_LASTLOG, O_RDWR, 0)) >= 0) {
 		(void)lseek(fd, (off_t)pwd->pw_uid * sizeof(ll), L_SET);
 		if (!quiet) {
 			if (read(fd, (char *)&ll, sizeof(ll)) == sizeof(ll) &&
