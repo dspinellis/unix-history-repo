@@ -1,7 +1,7 @@
-#	@(#)Makefile	5.1 (Berkeley) %G%
+#	@(#)Makefile	5.2 (Berkeley) %G%
 
-PCC=	${.CURDIR}/../../../libexec/pcc
-MIP=	${.CURDIR}/../../../libexec/mip
+MIP=	${.CURDIR}/../../../libexec/pcc/mip
+CCOM=	${.CURDIR}/../../../libexec/pcc/ccom.vax
 
 PROG=	lintpass1
 CFLAGS+=-I${MIP} -I. -I${.CURDIR}
@@ -26,11 +26,13 @@ rodata.c cgram.c: pcclocal.h pcctokens
 	    yytable yycheck
 	mv y.tab.c cgram.c
 
-pcclocal.h: ${PCC}/localdefs.h /usr/include/pcc.h
-	cat /usr/include/pcc.h ${PCC}/localdefs.h | \
+pcclocal.h: ${CCOM}/localdefs.h /usr/include/pcc.h
+	cat ${.ALLSRC} | \
 	   egrep '^#[ 	]*(define[ 	][ 	]*PCC(F|T|TM|OM)?_|ifdef|ifndef|endif)' | \
 	   sed -e 's/PCC[A-Z]*_//' > ${.TARGET}
 
-pcctokens: ${PCC}/localdefs.h /usr/include/pcc.h
-	cat /usr/include/pcc.h ${PCC}/localdefs.h | \
-	    egrep '^#[ 	]*define[ 	][ 	]*PCC_' | sed -e 's/^#[ 	]*define[ 	][ 	]*PCC_/%term	/' > ${.TARGET}
+pcctokens: ${CCOM}/localdefs.h /usr/include/pcc.h
+	cat ${.ALLSRC} | \
+	    egrep '^#[ 	]*define[ 	][ 	]*PCC_' | \
+	    sed -e 's/^#[ 	]*define[ 	][ 	]*PCC_/%term	/' > \
+	    ${.TARGET}
