@@ -4,7 +4,9 @@ SUBDIR=	csu.${MACHINE} libc libcurses libm \
 	libresolv librpc libtelnet libterm libutil liby
 
 .if exists(libcrypt)
+.if !defined(NOCRYPT)
 SUBDIR+= libcrypt
+.endif
 .endif
 
 .include <bsd.subdir.mk>
