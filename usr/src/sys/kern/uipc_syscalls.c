@@ -1,4 +1,4 @@
-/*	uipc_syscalls.c	6.4	84/08/29	*/
+/*	uipc_syscalls.c	6.5	84/09/04	*/
 
 #include "param.h"
 #include "systm.h"
@@ -599,15 +599,14 @@ setsockopt()
 		}
 		u.u_error =
 		    copyin(uap->val, mtod(m, caddr_t), (u_int)uap->valsize);
-		if (u.u_error)
-			goto bad;
+		if (u.u_error) {
+			(void) m_free(m);
+			return;
+		}
 		m->m_len = uap->valsize;
 	}
 	u.u_error =
 	    sosetopt((struct socket *)fp->f_data, uap->level, uap->name, m);
-bad:
-	if (m != NULL)
-		(void) m_free(m);
 }
 
 getsockopt()
@@ -631,17 +630,13 @@ getsockopt()
 			sizeof (valsize));
 		if (u.u_error)
 			return;
-		m = m_get(M_WAIT, MT_SOOPTS);
-		if (m == NULL) {
-			u.u_error = ENOBUFS;
-			return;
-		}
-	}
+	} else
+		valsize = 0;
 	u.u_error =
-	    sogetopt((struct socket *)fp->f_data, uap->level, uap->name, m);
+	    sogetopt((struct socket *)fp->f_data, uap->level, uap->name, &m);
 	if (u.u_error)
 		goto bad;
-	if (uap->val) {
+	if (uap->val && valsize && m != NULL) {
 		if (valsize > m->m_len)
 			valsize = m->m_len;
 		u.u_error = copyout(mtod(m, caddr_t), uap->val, (u_int)valsize);

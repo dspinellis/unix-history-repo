@@ -1,4 +1,4 @@
-/*	uipc_socket.c	6.7	84/08/29	*/
+/*	uipc_socket.c	6.8	84/09/04	*/
 
 #include "param.h"
 #include "systm.h"
@@ -600,64 +600,85 @@ sosetopt(so, level, optname, m)
 	int level, optname;
 	register struct mbuf *m;
 {
+	int error = 0;
 
-	if (level != SOL_SOCKET)
-		return (EINVAL);	/* XXX */
+	if (level != SOL_SOCKET) {
+		error = EINVAL;
+		goto bad;
+	}
 	switch (optname) {
+
+	case SO_LINGER:
+		if (m == NULL || m->m_len != sizeof (struct linger)) {
+			error = EINVAL;
+			goto bad;
+		}
+		so->so_linger = mtod(m, struct linger *)->l_linger;
+		/* fall thru... */
 
 	case SO_DEBUG:
 	case SO_KEEPALIVE:
 	case SO_DONTROUTE:
 	case SO_USELOOPBACK:
+	case SO_BROADCAST:
 	case SO_REUSEADDR:
-		so->so_options |= optname;
-		break;
-
-	case SO_LINGER:
-		if (m == NULL || m->m_len != sizeof (int))
-			return (EINVAL);
-		so->so_options |= SO_LINGER;
-		so->so_linger = *mtod(m, int *);
-		break;
-
-	case SO_DONTLINGER:
-		so->so_options &= ~SO_LINGER;
-		so->so_linger = 0;
+		if (m == NULL || m->m_len < sizeof (int)) {
+			error = EINVAL;
+			goto bad;
+		}
+		if (*mtod(m, int *))
+			so->so_options |= optname;
+		else
+			so->so_options &= ~optname;
 		break;
 
 	default:
-		return (EINVAL);
+		error = ENOPROTOOPT;
+		break;
 	}
-	return (0);
+bad:
+	if (m)
+		(void) m_free(m);
+	return (error);
 }
 
-sogetopt(so, level, optname, m)
+sogetopt(so, level, optname, mp)
 	register struct socket *so;
 	int level, optname;
-	register struct mbuf *m;
+	struct mbuf **mp;
 {
+	register struct mbuf *m;
 
 	if (level != SOL_SOCKET)
-		return (EINVAL);	/* XXX */
+		return (EINVAL);		/* XXX */
 	switch (optname) {
+
+	case SO_LINGER:
+		m = m_get(M_WAIT, MT_SOOPTS);
+		if (m == NULL)
+			return (ENOBUFS);
+		m->m_len = sizeof (struct linger);
+		mtod(m, struct linger *)->l_onoff = so->so_options & SO_LINGER;
+		mtod(m, struct linger *)->l_linger = so->so_linger;
+		break;
 
 	case SO_USELOOPBACK:
 	case SO_DONTROUTE:
 	case SO_DEBUG:
 	case SO_KEEPALIVE:
-	case SO_LINGER:
 	case SO_REUSEADDR:
-		if ((so->so_options & optname) == 0)
-			return (ENOPROTOOPT);
-		if (optname == SO_LINGER && m != NULL) {
-			*mtod(m, int *) = so->so_linger;
-			m->m_len = sizeof (so->so_linger);
-		}
+	case SO_BROADCAST:
+		m = m_get(M_WAIT, MT_SOOPTS);
+		if (m == NULL)
+			return (ENOBUFS);
+		m->m_len = sizeof (int);
+		*mtod(m, int *) = so->so_options & optname;
 		break;
 
 	default:
-		return (EINVAL);
+		return (ENOPROTOOPT);
 	}
+	*mp = m;
 	return (0);
 }
 
