@@ -1,6 +1,6 @@
 # Makefile for f77 math & startup lib, libF77.a
 #
-# @(#)Makefile	1.3 (Berkeley) %G%
+# @(#)Makefile	1.4 (Berkeley) %G%
 
 CFLAGS	      = -O
 
@@ -141,9 +141,7 @@ OBJS	      = abort_.o \
 		s_stop.o \
 		short_.o \
 		signal_.o \
-		sinh.o \
 		subout.o \
-		tanh.o \
 		traper_.o \
 		trapov_.o \
 		trpfpe_.o \
@@ -282,9 +280,7 @@ SRCS	      = abort_.c \
 		s_stop.c \
 		short_.c \
 		signal_.c \
-		sinh.c \
 		subout.c \
-		tanh.c \
 		traper_.c \
 		trapov_.c \
 		trpfpe_.c \
