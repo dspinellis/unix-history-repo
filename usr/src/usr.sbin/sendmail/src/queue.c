@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	6.2 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	6.3 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	6.2 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	6.3 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -881,6 +881,8 @@ readqf(e)
 	ctladdr = NULL;
 	while ((bp = fgetfolded(buf, sizeof buf, qfp)) != NULL)
 	{
+		struct stat st;
+
 		if (tTd(40, 4))
 			printf("+++++ %s\n", bp);
 		switch (bp[0])
@@ -914,6 +916,8 @@ readqf(e)
 			e->e_dfp = fopen(e->e_df, "r");
 			if (e->e_dfp == NULL)
 				syserr("readqf: cannot open %s", e->e_df);
+			if (fstat(fileno(e->e_dfp), &st) >= 0)
+				e->e_msgsize = st.st_size;
 			break;
 
 		  case 'T':		/* init time */

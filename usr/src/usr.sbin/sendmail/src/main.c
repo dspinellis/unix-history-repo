@@ -13,7 +13,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	6.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	6.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -137,7 +137,6 @@ main(argc, argv, envp)
 	extern void intsig();
 	extern char **myhostname();
 	extern char *arpadate();
-	extern char **environ;
 	extern char *optarg;
 
 	/*
@@ -243,19 +242,6 @@ main(argc, argv, envp)
 
 	if (!nothaw)
 		readconfig = !thaw(FreezeFile, argv0);
-
-	/* strip out "dangerous" environment variables */
-	(void) unsetenv("FS");
-	for (i = 1; (p = envp[i++]) != NULL;)
-	{
-		if (strncmp(p, "LD_", 3) == 0)
-		{
-			/* hack: change this name to be non-special */
-			p[0] = '\201';
-			continue;
-		}
-	}
-	environ = envp;
 
 # ifdef SETPROCTITLE
 	/*
