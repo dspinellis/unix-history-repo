@@ -1,4 +1,4 @@
-/*	uipc_socket.c	6.4	84/04/30	*/
+/*	uipc_socket.c	6.5	84/08/21	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -315,7 +315,10 @@ restart:
 		else {
 			space = sbspace(&so->so_snd);
 			if (space <= 0 ||
-			    sosendallatonce(so) && space < uio->uio_resid) {
+			   (sosendallatonce(so) && space < uio->uio_resid) ||
+			   (uio->uio_resid >= CLBYTES && space < CLBYTES &&
+			   so->so_snd.sb_cc >= CLBYTES &&
+			   (so->so_state & SS_NBIO) == 0)) {
 				if (so->so_state & SS_NBIO) {
 					if (first)
 						error = EWOULDBLOCK;
@@ -364,15 +367,17 @@ nopages:
 			mp = &m->m_next;
 			space -= len;
 		}
-		if (dontroute)
-			so->so_options |= SO_DONTROUTE;
-		s = splnet();
-		error = (*so->so_proto->pr_usrreq)(so,
-		    (flags & MSG_OOB) ? PRU_SENDOOB : PRU_SEND,
-		    top, (caddr_t)nam, rights);
-		splx(s);
-		if (dontroute)
-			so->so_options &= ~SO_DONTROUTE;
+		if (top) {
+			if (dontroute)
+				so->so_options |= SO_DONTROUTE;
+			s = splnet();
+			error = (*so->so_proto->pr_usrreq)(so,
+			    (flags & MSG_OOB) ? PRU_SENDOOB : PRU_SEND,
+			    top, (caddr_t)nam, rights);
+			splx(s);
+			if (dontroute)
+				so->so_options &= ~SO_DONTROUTE;
+		}
 		top = 0;
 		first = 0;
 		if (error)
