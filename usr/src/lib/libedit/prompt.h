@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)prompt.h	5.2 (Berkeley) %G%
+ *	@(#)prompt.h	5.3 (Berkeley) %G%
  */
 
 /*

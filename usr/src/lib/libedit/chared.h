@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)chared.h	5.2 (Berkeley) %G%
+ *	@(#)chared.h	5.3 (Berkeley) %G%
  */
 
 /*
@@ -39,6 +39,7 @@
 typedef struct c_macro_t {
     int    level;
     char **macro;
+    char  *nline;
 } c_macro_t;
 
 /* 
@@ -100,9 +101,9 @@ typedef struct el_chared_t {
 #define MODE_REPLACE	1
 #define MODE_REPLACE_1	2
 
+#include "common.h"
 #include "vi.h"
 #include "emacs.h"
-#include "common.h"
 #include "search.h"
 #include "fcns.h"
 

@@ -14,12 +14,12 @@ char copyright[] =
  All rights reserved.\n";
 #endif /* not lint */
 
-#ifndef lint
-static char sccsid[] = "@(#)test.c	5.2 (Berkeley) %G%";
-#endif /* not lint */
+#if !defined(lint) && !defined(SCCSID)
+static char sccsid[] = "@(#)test.c	5.3 (Berkeley) %G%";
+#endif /* not lint && not SCCSID */
 
 /*
- * el.test.c: A little test program
+ * test.c: A little test program
  */
 #include "sys.h"
 #include <stdio.h>
@@ -124,12 +124,18 @@ main(argc, argv)
     el_set(el, EL_ADDFN, "ed-complete", "Complete argument", complete);
 
     el_set(el, EL_BIND, "^I", "ed-complete", NULL);/* Bind tab to it 	*/
+
     /*
      * Bind j, k in vi command mode to previous and next line, instead
      * of previous and next history.
      */
     el_set(el, EL_BIND, "-a", "k", "ed-prev-line", NULL);
     el_set(el, EL_BIND, "-a", "j", "ed-next-line", NULL);
+
+    /*
+     * Source the user's defaults file.
+     */
+    el_source(el, NULL);
 
     while ((buf = el_gets(el, &num)) != NULL && num != 0)  {
 	int ac;

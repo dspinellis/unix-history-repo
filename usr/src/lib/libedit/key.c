@@ -8,13 +8,13 @@
  * %sccs.include.redist.c%
  */
 
-#ifndef lint
-static char sccsid[] = "@(#)key.c	5.1 (Berkeley) %G%";
-#endif /* not lint */
+#if !defined(lint) && !defined(SCCSID)
+static char sccsid[] = "@(#)key.c	5.2 (Berkeley) %G%";
+#endif /* not lint && not SCCSID */
 
 /*
- * el.key.c: This module contains the procedures for maintaining
- *	      the extended-key map.
+ * key.c: This module contains the procedures for maintaining
+ *	  the extended-key map.
  *
  *      An extended-key (key) is a sequence of keystrokes introduced 
  *	with an sequence introducer and consisting of an arbitrary 
@@ -62,8 +62,6 @@ private	int	       node__delete	__P((key_node_t **, char *));
 private	int	       node_lookup 	__P((EditLine *, char *, key_node_t *,
 					     int));
 private	int	       node_enum	__P((EditLine *, key_node_t *, int));
-private	void	       key_kprint	__P((EditLine *, char *, 
-					     key_value_t *, int));
 private	int	       key__decode_char	__P((char *, int, int));
 
 #define KEY_BUFSIZ	EL_BUFSIZ
@@ -132,35 +130,8 @@ protected void
 key_reset(el)
     EditLine *el;
 {
-    static char strA[] = {033, '[', 'A', '\0'};
-    static char strB[] = {033, '[', 'B', '\0'};
-    static char strC[] = {033, '[', 'C', '\0'};
-    static char strD[] = {033, '[', 'D', '\0'};
-    static char stOA[] = {033, 'O', 'A', '\0'};
-    static char stOB[] = {033, 'O', 'B', '\0'};
-    static char stOC[] = {033, 'O', 'C', '\0'};
-    static char stOD[] = {033, 'O', 'D', '\0'};
-
     node__put(el->el_key.map);
     el->el_key.map = NULL;
-	key_add(el, strA, key_map_cmd(el, ED_PREV_HISTORY), XK_CMD);
-	key_add(el, strB, key_map_cmd(el, ED_NEXT_HISTORY), XK_CMD);
-	key_add(el, strC, key_map_cmd(el, ED_NEXT_CHAR),    XK_CMD);
-	key_add(el, strD, key_map_cmd(el, ED_PREV_CHAR),    XK_CMD);
-	key_add(el, stOA, key_map_cmd(el, ED_PREV_HISTORY), XK_CMD);
-	key_add(el, stOB, key_map_cmd(el, ED_NEXT_HISTORY), XK_CMD);
-	key_add(el, stOC, key_map_cmd(el, ED_NEXT_CHAR),    XK_CMD);
-	key_add(el, stOD, key_map_cmd(el, ED_PREV_CHAR),    XK_CMD);
-    if (el->el_map.type == MAP_VI) {
-	key_add(el, &strA[1], key_map_cmd(el, ED_PREV_HISTORY), XK_CMD);
-	key_add(el, &strB[1], key_map_cmd(el, ED_NEXT_HISTORY), XK_CMD);
-	key_add(el, &strC[1], key_map_cmd(el, ED_NEXT_CHAR),    XK_CMD);
-	key_add(el, &strD[1], key_map_cmd(el, ED_PREV_CHAR),    XK_CMD);
-	key_add(el, &stOA[1], key_map_cmd(el, ED_PREV_HISTORY), XK_CMD);
-	key_add(el, &stOB[1], key_map_cmd(el, ED_NEXT_HISTORY), XK_CMD);
-	key_add(el, &stOC[1], key_map_cmd(el, ED_NEXT_CHAR),    XK_CMD);
-	key_add(el, &stOD[1], key_map_cmd(el, ED_PREV_CHAR),    XK_CMD);
-    }
     return;
 }
 
@@ -583,7 +554,7 @@ node_enum(el, ptr, cnt)
  *	Print the specified key and its associated
  *	function specified by val
  */
-private void
+protected void
 key_kprint(el, key, val, ntype)
     EditLine      *el;
     char          *key;

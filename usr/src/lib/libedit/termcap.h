@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)termcap.h	5.1 (Berkeley) %G%
+ *	@(#)termcap.h	5.2 (Berkeley) %G%
  */
 
 /*

@@ -8,13 +8,13 @@
  * %sccs.include.redist.c%
  */
 
-#ifndef lint
-static char sccsid[] = "@(#)read.c	5.1 (Berkeley) %G%";
-#endif /* not lint */
+#if !defined(lint) && !defined(SCCSID)
+static char sccsid[] = "@(#)read.c	5.2 (Berkeley) %G%";
 
+#endif /* not lint && not SCCSID */
 /*
- * el.read.c: Clean this junk up! This is horrible code.
- *	      Terminal read functions
+ * read.c: Clean this junk up! This is horrible code.
+ *	   Terminal read functions
  */
 #include "sys.h"
 #include <sys/errno.h>
@@ -24,6 +24,10 @@ extern int errno;
 #include "el.h"
 
 #define OKCMD -1
+
+private int read__fixio		__P((int, int));
+private int read_preread	__P((EditLine *));
+private int read_getcmd		__P((EditLine *, el_action_t *, char *));
 
 #ifdef DEBUG_EDIT
 private void
@@ -41,46 +45,95 @@ read_debug(el)
 	(void) fprintf(el->el_errfile, "lastchar > limit\r\n");
     if (el->el_line.limit != &el->el_line.buffer[EL_BUFSIZ - 2])
 	(void) fprintf(el->el_errfile, "limit != &buffer[EL_BUFSIZ-2]\r\n");
-#ifdef notyet
-    if ((!DoingArg) && (Argument != 1))
-	(void) fprintf(el->el_errfile, "(!DoingArg) && (Argument != 1)\r\n");
-    if (CcKeyMap[0] == 0)
-	(void) fprintf(el->el_errfile, "CcKeyMap[0] == 0 (maybe not inited)\r\n");
-#endif
 }
-#endif
+#endif /* DEBUG_EDIT */
 
-#ifdef notyet
-int
-el_preread(el)
+/* read__fixio():
+ *	Try to recover from a read error
+ */
+private int
+read__fixio(fd, e)
+    int fd, e;
 {
-    long    chrs = 0;
-    static Char *Input_Line = NULL;
+    switch (e) {
+    case -1:	/* Make sure that the code is reachable */
 
-    if (Input_Line)
-	xfree((ptr_t) Input_Line);
-    Input_Line = NULL;
+#ifdef EWOULDBLOCK
+    case EWOULDBLOCK:
+# define TRY_AGAIN
+#endif /* EWOULDBLOCK */
 
-    if (Tty_raw_mode)
+#if defined(POSIX) && defined(EAGAIN)
+# if defined(EWOULDBLOCK) && EWOULDBLOCK != EAGAIN
+    case EAGAIN:
+#  define TRY_AGAIN
+# endif /* EWOULDBLOCK && EWOULDBLOCK != EAGAIN */
+#endif /* POSIX && EAGAIN */
+
+	e = 0;
+#ifdef TRY_AGAIN
+# if defined(F_SETFL) && defined(O_NDELAY)
+	if ((e = fcntl(fd, F_GETFL, 0)) == -1)
+	    return -1;
+
+	if (fcntl(fd, F_SETFL, e & ~O_NDELAY) == -1)
+	    return -1;
+	else 
+	    e = 1;
+# endif /* F_SETFL && O_NDELAY */
+
+# ifdef FIONBIO
+	if (ioctl(fd, FIONBIO, (ioctl_t) &e) == -1)
+	    return -1;
+	else
+	    e = 1;
+# endif	/* FIONBIO */
+
+#endif /* TRY_AGAIN */
+	return e ? 0 : -1;
+
+    case EINTR:
+	return 0;
+
+    default:
+	return -1;
+    }
+}
+
+
+/* read_preread():
+ *	Try to read the stuff in the input queue;
+ */
+private int
+read_preread(el)
+    EditLine *el;
+{
+    int    chrs = 0;
+
+    if (el->el_chared.c_macro.nline) {
+	el_free((ptr_t) el->el_chared.c_macro.nline);
+	el->el_chared.c_macro.nline = NULL;
+    }
+
+    if (el->el_tty.t_mode == ED_IO)
 	return 0;
 
 #ifdef FIONREAD
-    (void) ioctl(SHIN, FIONREAD, &chrs);
+    (void) ioctl(el->el_infd, FIONREAD, (ioctl_t) &chrs);
     if (chrs > 0) {
-	char    buf[BUFSIZE];
+	char    buf[EL_BUFSIZ];
 
-	chrs = read(SHIN, buf, (size_t) min(chrs, BUFSIZE - 1));
+	chrs = read(el->el_infd, buf, (size_t) MIN(chrs, EL_BUFSIZ - 1));
 	if (chrs > 0) {
 	    buf[chrs] = '\0';
-	    Input_Line = Strsave(str2short(buf));
-	    PushMacro(Input_Line);
+	    el->el_chared.c_macro.nline = strdup(buf);
+	    el_push(el->el_chared.c_macro.nline);
 	}
     }
 #endif  /* FIONREAD */
+
     return chrs > 0;
 }
-#endif
-
 
 
 /* el_push():
@@ -103,8 +156,12 @@ el_push(el, str)
     }
 }
 
+
+/* read_getcmd():
+ *	Return next command from the input stream.
+ */
 private int
-el_getcmd(el, cmdnum, ch)
+read_getcmd(el, cmdnum, ch)
     EditLine *el;
     el_action_t *cmdnum;
     char *ch;
@@ -167,24 +224,17 @@ el_getc(el, cp)
     char *cp;
 {
     int num_read;
-#if defined(EWOULDBLOCK) || (defined(POSIX) && defined(EAGAIN))
-# if defined(FIONBIO) || (defined(F_SETFL) && defined(O_NDELAY))
-#  define TRY_AGAIN
-    int     tried = 0;
-# endif /* FIONBIO || (F_SETFL && O_NDELAY) */
-#endif /* EWOULDBLOCK || (POSIX && EAGAIN) */
     unsigned char tcp;
+    int tried = 0;
 
     c_macro_t *ma = &el->el_chared.c_macro;
 
     term__flush();
     for (;;) {
-#ifdef notyet
 	if (ma->level < 0) {
-	    if (!el_preread(el))
+	    if (!read_preread(el))
 		break;
 	}
-#endif
 	if (ma->level < 0) 
 	    break;
    
@@ -201,54 +251,23 @@ el_getc(el, cp)
 
 #ifdef DEBUG_READ
     (void) fprintf(el->el_errfile, "Turning raw mode on\n");
-#endif
+#endif /* DEBUG_READ */
     if (tty_rawmode(el) < 0)	/* make sure the tty is set up correctly */
-	return 0;		/* oops: SHIN was closed */
+	return 0;
 
 #ifdef DEBUG_READ
     (void) fprintf(el->el_errfile, "Reading a character\n");
-#endif
+#endif /* DEBUG_READ */
     while ((num_read = read(el->el_infd, (char *) &tcp, 1)) == -1)
-	switch (errno) {
-	    /*
-	     * Someone might have set our file descriptor to non blocking From
-	     * Gray Watson (gray%antr.uucp@med.pitt.edu), Thanks!!!
-	     */
-#ifdef EWOULDBLOCK
-	case EWOULDBLOCK:
-#endif /* EWOULDBLOCK */
-#if defined(POSIX) && defined(EAGAIN)
-# if defined(EWOULDBLOCK) && EAGAIN != EWOULDBLOCK
-	case EAGAIN:
-# endif /* EWOULDBLOCK && EAGAIN != EWOULDBLOCK */
-#endif /* POSIX && EAGAIN */
-#ifdef TRY_AGAIN
-	    if (!tried) {
-# if defined(F_SETFL) && defined(O_NDELAY)
-		(void) fcntl(SHIN, F_SETFL,
-			     fcntl(SHIN, F_GETFL, 0) & ~O_NDELAY);
-# endif /* F_SETFL && O_NDELAY */
-# ifdef FIONBIO
-		(void) ioctl(SHIN, FIONBIO, (ioctl_t) & tried);
-# endif /* FIONBIO */
-		tried = 1;
-		break;
-	    }
-	    *cp = tcp;
-	    return (num_read);
-#endif /* TRY_AGAIN */
-	case EINTR:
-	    break;
-	default:
-#ifdef DEBUG_EDIT
-	    (void) fprintf(el->el_errfile, "GetNextChar(): errno == %d\n", errno);
-#endif /* DEBUG_EDIT */
-	    *cp = tcp;
-	    return num_read;
+	if (!tried && read__fixio(el->el_infd, errno) == 0)
+	    tried = 1;
+	else {
+	    *cp = '\0';
+	    return -1;
 	}
 #ifdef DEBUG_READ
     (void) fprintf(el->el_errfile, "Got it %c\n", tcp);
-#endif
+#endif /* DEBUG_READ */
     *cp = tcp;
     return num_read;
 }
@@ -271,12 +290,11 @@ el_gets(el, nread)
     re_clear_display(el);		/* reset the display stuff */
     ch_reset(el);
 
-#ifdef notyet
 #ifdef FIONREAD
-    if (!Tty_raw_mode && ma->level < 0) {
+    if (el->el_tty.t_mode == EX_IO && ma->level < 0) {
 	long    chrs = 0;
 
-	(void) ioctl(SHIN, FIONREAD, (ioctl_t) & chrs);
+	(void) ioctl(el->el_infd, FIONREAD, (ioctl_t) &chrs);
 	if (chrs == 0) {
 	    if (tty_rawmode(el) < 0) {
 		if (nread)
@@ -285,27 +303,27 @@ el_gets(el, nread)
 	    }
 	}
     }
-#endif
-#endif
+#endif /* FIONREAD */
 
     re_refresh(el);			/* print the prompt */
 
     for (num = OKCMD; num == OKCMD;) {	/* while still editing this line */
 #ifdef DEBUG_EDIT
 	read_debug(el);
-#endif
+#endif /* DEBUG_EDIT */
 	/* if EOF or error */
-	if ((num = el_getcmd(el, &cmdnum, &ch)) != OKCMD) {
+	if ((num = read_getcmd(el, &cmdnum, &ch)) != OKCMD) {
 #ifdef DEBUG_READ
 	    (void) fprintf(el->el_errfile, "Returning from el_gets %d\n", num);
-#endif
+#endif /* DEBUG_READ */
 	    break;
 	}
 
 	if (cmdnum >= el->el_map.nfunc) {	/* BUG CHECK command */
 #ifdef DEBUG_EDIT
-	    (void) fprintf(el->el_errfile, "ERROR: illegal command from key 0%o\r\n", ch);
-#endif
+	    (void) fprintf(el->el_errfile, 
+			   "ERROR: illegal command from key 0%o\r\n", ch);
+#endif /* DEBUG_EDIT */
 	    continue;		/* try again */
 	}
 
@@ -321,7 +339,7 @@ el_gets(el, nread)
 	    else
 		(void) fprintf(el->el_errfile, "Error command = %d\n", cmdnum);
 	}
-#endif
+#endif /* DEBUG_READ */
 	retval = (*el->el_map.func[cmdnum])(el, ch);
 
 	/* save the last command here */
@@ -356,19 +374,6 @@ el_gets(el, nread)
 
 	case CC_NEWLINE:	/* normal end of line */
 	    num = el->el_line.lastchar - el->el_line.buffer;	
-	    /* return the number of chars read */
-#ifdef notyet
-	    /*
-	     * For continuation lines, we set the prompt to prompt 2
-	     */
-	    if (imode) {
-		if (!Strcmp(*(imode->vec), STRinsert))
-		    inputmode = MODE_INSERT;
-		else if (!Strcmp(*(imode->vec), STRoverwrite))
-		    inputmode = MODE_REPLACE;
-	    }
-	    printprompt(1, NULL);
-#endif
 	    break;
 
 	case CC_FATAL:		/* fatal error, reset to known state */
@@ -387,7 +392,7 @@ el_gets(el, nread)
 	default:		/* functions we don't know about */
 #ifdef DEBUG_READ
 	    (void) fprintf(el->el_errfile, "*** editor ERROR ***\r\n\n");
-#endif
+#endif /* DEBUG_READ */
 	    el->el_state.argument = 1;
 	    el->el_state.doingarg = 0;
 	    term_beep(el);

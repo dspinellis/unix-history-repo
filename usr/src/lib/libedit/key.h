@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)key.h	5.1 (Berkeley) %G%
+ *	@(#)key.h	5.2 (Berkeley) %G%
  */
 
 /*
@@ -47,6 +47,8 @@ protected void		key_clear	__P((EditLine *, el_action_t *,
 					     char *));
 protected int		key_delete	__P((EditLine *, char *));
 protected void		key_print	__P((EditLine *, char *));
+protected void	        key_kprint	__P((EditLine *, char *, 
+					     key_value_t *, int));
 protected char 	       *key__decode_str	__P((char *, char *, char *));
 
 #endif /* _h_el_key */

@@ -8,12 +8,12 @@
  * %sccs.include.redist.c%
  */
 
-#ifndef lint
-static char sccsid[] = "@(#)emacs.c	5.1 (Berkeley) %G%";
-#endif /* not lint */
+#if !defined(lint) && !defined(SCCSID)
+static char sccsid[] = "@(#)emacs.c	5.2 (Berkeley) %G%";
+#endif /* not lint && not SCCSID */
 
 /* 
- * el.emacs.c: Emacs functions
+ * emacs.c: Emacs functions
  */
 #include "sys.h"
 #include "el.h"

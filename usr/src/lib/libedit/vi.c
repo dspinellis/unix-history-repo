@@ -8,12 +8,12 @@
  * %sccs.include.redist.c%
  */
 
-#ifndef lint
-static char sccsid[] = "@(#)vi.c	5.1 (Berkeley) %G%";
-#endif /* not lint */
+#if !defined(lint) && !defined(SCCSID)
+static char sccsid[] = "@(#)vi.c	5.2 (Berkeley) %G%";
+#endif /* not lint && not SCCSID */
 
 /*
- * el.vi.c: Vi mode commands.
+ * vi.c: Vi mode commands.
  */
 #include "sys.h"
 #include "el.h"

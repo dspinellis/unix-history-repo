@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)histedit.h	5.2 (Berkeley) %G%
+ *	@(#)histedit.h	5.3 (Berkeley) %G%
  */
 
 /*
@@ -33,21 +33,6 @@ typedef struct lineinfo {
     const char *lastchar;
 } LineInfo;
 
-/*
- * el_set/el_get parameters
- */
-#define EL_PROMPT	0
-#define EL_FILE		1
-#define EL_TERMINAL	2
-#define EL_EDITOR	3
-#define EL_SIGNAL	4
-#define	EL_BIND		5
-#define	EL_TELLTC	6
-#define	EL_SETTC	7
-#define	EL_ECHOTC	8
-#define	EL_SETTY	9
-#define	EL_ADDFN	10
-#define EL_HIST		11
 
 /*
  * EditLine editor function return codes.
@@ -87,6 +72,27 @@ int		 el_parse	__P((EditLine *, int, char **));
  * Low level editline access function
  */
 int 		 el_set		__P((EditLine *, int, ...));
+
+/*
+ * el_set/el_get parameters
+ */
+#define EL_PROMPT	0	/* , el_pfunc_t);		*/
+#define EL_TERMINAL	1	/* , const char *);		*/
+#define EL_EDITOR	2	/* , const char *);		*/
+#define EL_SIGNAL	3	/* , int);			*/
+#define	EL_BIND		4	/* , const char *, ..., NULL);	*/
+#define	EL_TELLTC	5	/* , const char *, ..., NULL);	*/
+#define	EL_SETTC	6	/* , const char *, ..., NULL);	*/
+#define	EL_ECHOTC	7	/* , const char *, ..., NULL);	*/
+#define	EL_SETTY	8	/* , const char *, ..., NULL);	*/
+#define	EL_ADDFN	9	/* , const char *, const char *	*/
+				/* , el_func_t);		*/
+#define EL_HIST		10	/* , hist_fun_t, const char *);	*/
+
+/*
+ * Source named file or $PWD/.editrc or $HOME/.editrc
+ */
+int		el_source	__P((EditLine *, const char *));
 
 /*
  * Must be called when the terminal changes size; If EL_SIGNAL

@@ -8,12 +8,12 @@
  * %sccs.include.redist.c%
  */
 
-#ifndef lint
-static char sccsid[] = "@(#)refresh.c	5.1 (Berkeley) %G%";
-#endif /* not lint */
+#if !defined(lint) && !defined(SCCSID)
+static char sccsid[] = "@(#)refresh.c	5.2 (Berkeley) %G%";
+#endif /* not lint && not SCCSID */
 
 /*
- * ed.refresh.c: Lower level screen refreshing functions
+ * refresh.c: Lower level screen refreshing functions
  */
 #include "sys.h"
 #include <stdio.h>

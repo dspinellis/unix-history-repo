@@ -8,9 +8,9 @@
  * %sccs.include.redist.c%
  */
 
-#ifndef lint
-static char sccsid[] = "@(#)tokenizer.c	5.1 (Berkeley) %G%";
-#endif /* not lint */
+#if !defined(lint) && !defined(SCCSID)
+static char sccsid[] = "@(#)tokenizer.c	5.2 (Berkeley) %G%";
+#endif /* not lint && not SCCSID */
 
 /*
  * tokenize.c: Bourne shell like tokenizer

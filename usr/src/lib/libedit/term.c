@@ -8,15 +8,14 @@
  * %sccs.include.redist.c%
  */
 
-#ifndef lint
-static char sccsid[] = "@(#)term.c	5.1 (Berkeley) %G%";
-#endif /* not lint */
+#if !defined(lint) && !defined(SCCSID)
+static char sccsid[] = "@(#)term.c	5.2 (Berkeley) %G%";
+#endif /* not lint && not SCCSID */
 
 /*
- * el.term.c: Editor/termcap-curses interface
- *	      We have to declare a static variable here, since the
- *	      termcap putchar routine does not take an argument!
- *	      To do: Add the settc echotc and gettc functions
+ * term.c: Editor/termcap-curses interface
+ *	   We have to declare a static variable here, since the
+ *	   termcap putchar routine does not take an argument!
  */
 #include "sys.h"
 #include <stdio.h>
@@ -221,7 +220,8 @@ private	void	term_free_display	__P((EditLine *));
 private	void	term_alloc_display	__P((EditLine *));
 private	void	term_alloc		__P((EditLine *,
 					     struct termcapstr *, char *)); 
-private  void	term_get_termcap	__P((EditLine *, char *));
+private void	term_init_arrow		__P((EditLine *));
+private void	term_reset_arrow	__P((EditLine *));
 
 
 private FILE *term_outfile = NULL;	/* XXX: How do we fix that? */
@@ -277,13 +277,15 @@ term_init(el)
 {
     el->el_term.t_buf = (char *)  el_malloc(TC_BUFSIZE);
     el->el_term.t_cap = (char *)  el_malloc(TC_BUFSIZE);
+    el->el_term.t_fkey = (fkey_t *) el_malloc(4 * sizeof(fkey_t));
     el->el_term.t_loc = 0;
     el->el_term.t_str = (char **) el_malloc(T_str * sizeof(char*));
     (void) memset(el->el_term.t_str, 0, T_str * sizeof(char*));
     el->el_term.t_val = (int *)   el_malloc(T_val * sizeof(int));
     (void) memset(el->el_term.t_val, 0, T_val * sizeof(char*));
     term_outfile = el->el_outfile;
-    term_get_termcap(el, NULL);
+    (void) term_set(el, NULL);
+    term_init_arrow(el);
     return 0;
 }
 
@@ -772,11 +774,11 @@ term_clear_to_bottom(el)
 #endif
 
 
-/* term_get_termcap():
- *	Read in the terminal capabilities
+/* term_set():
+ *	Read in the terminal capabilities from the requested terminal
  */
-private void
-term_get_termcap(el, term)
+protected int
+term_set(el, term)
     EditLine *el;
     char *term;
 {
@@ -844,8 +846,9 @@ term_get_termcap(el, term)
     (void) term_get_size(el, &lins, &cols);/* get the correct window size */
     term_change_size(el, lins, cols);
     (void) sigprocmask(SIG_SETMASK, &oset, NULL);
-    term_bind_arrows(el);
-} /* end term_get_termcap */
+    term_bind_arrow(el);
+    return 0;
+} /* end term_set */
 
 
 /* term_get_size():
@@ -906,25 +909,145 @@ term_change_size(el, lins, cols)
 } /* end term_change_size */
 
 
-/* term_bind_arrows():
+/* term_init_arrow():
+ *	Initialize the arrow key bindings from termcap
+ */
+private void
+term_init_arrow(el)
+    EditLine *el;
+{
+    fkey_t *arrow = el->el_term.t_fkey;
+
+    arrow[A_K_DN].name    = "down";
+    arrow[A_K_DN].fun.cmd = ED_NEXT_HISTORY;
+    arrow[A_K_DN].type    = XK_CMD;
+
+    arrow[A_K_UP].name    = "up";
+    arrow[A_K_UP].fun.cmd = ED_PREV_HISTORY;
+    arrow[A_K_UP].type    = XK_CMD;
+
+    arrow[A_K_LT].name    = "left";
+    arrow[A_K_LT].fun.cmd = ED_PREV_CHAR;
+    arrow[A_K_LT].type    = XK_CMD;
+
+    arrow[A_K_RT].name    = "right";
+    arrow[A_K_RT].fun.cmd = ED_NEXT_CHAR;
+    arrow[A_K_RT].type    = XK_CMD;
+
+}
+
+
+/* term_reset_arrow():
+ *	Reset arrow key bindings
+ */
+private void
+term_reset_arrow(el) 
+    EditLine *el;
+{
+    fkey_t *arrow = el->el_term.t_fkey;
+    static char strA[] = {033, '[', 'A', '\0'};
+    static char strB[] = {033, '[', 'B', '\0'};
+    static char strC[] = {033, '[', 'C', '\0'};
+    static char strD[] = {033, '[', 'D', '\0'};
+    static char stOA[] = {033, 'O', 'A', '\0'};
+    static char stOB[] = {033, 'O', 'B', '\0'};
+    static char stOC[] = {033, 'O', 'C', '\0'};
+    static char stOD[] = {033, 'O', 'D', '\0'};
+
+    key_add(el, strA, &arrow[A_K_UP].fun, arrow[A_K_UP].type);
+    key_add(el, strB, &arrow[A_K_DN].fun, arrow[A_K_DN].type);
+    key_add(el, strC, &arrow[A_K_RT].fun, arrow[A_K_RT].type);
+    key_add(el, strD, &arrow[A_K_LT].fun, arrow[A_K_LT].type);
+    key_add(el, stOA, &arrow[A_K_UP].fun, arrow[A_K_UP].type);
+    key_add(el, stOB, &arrow[A_K_DN].fun, arrow[A_K_DN].type);
+    key_add(el, stOC, &arrow[A_K_RT].fun, arrow[A_K_RT].type);
+    key_add(el, stOD, &arrow[A_K_LT].fun, arrow[A_K_LT].type);
+
+    if (el->el_map.type == MAP_VI) {
+	key_add(el, &strA[1], &arrow[A_K_UP].fun, arrow[A_K_UP].type);
+	key_add(el, &strB[1], &arrow[A_K_DN].fun, arrow[A_K_DN].type);
+	key_add(el, &strC[1], &arrow[A_K_RT].fun, arrow[A_K_RT].type);
+	key_add(el, &strD[1], &arrow[A_K_LT].fun, arrow[A_K_LT].type);
+	key_add(el, &stOA[1], &arrow[A_K_UP].fun, arrow[A_K_UP].type);
+	key_add(el, &stOB[1], &arrow[A_K_DN].fun, arrow[A_K_DN].type);
+	key_add(el, &stOC[1], &arrow[A_K_RT].fun, arrow[A_K_RT].type);
+	key_add(el, &stOD[1], &arrow[A_K_LT].fun, arrow[A_K_LT].type);
+    }
+}
+
+
+/* term_set_arrow():
+ *	Set an arrow key binding
+ */
+protected int
+term_set_arrow(el, name, fun, type)
+    EditLine *el;
+    char *name;
+    key_value_t *fun;
+    int type;
+{
+    fkey_t *arrow = el->el_term.t_fkey;
+    int i;
+
+    for (i = 0; i < A_K_NKEYS; i++)
+	if (strcmp(name, arrow[i].name) == 0) {
+	    arrow[i].fun  = *fun;
+	    arrow[i].type = type;
+	    return 0;
+	}
+    return -1;
+}
+
+
+/* term_clear_arrow():
+ *	Clear an arrow key binding
+ */
+protected int
+term_clear_arrow(el, name)
+    EditLine *el;
+    char *name;
+{
+    fkey_t *arrow = el->el_term.t_fkey;
+    int i;
+
+    for (i = 0; i < A_K_NKEYS; i++)
+	if (strcmp(name, arrow[i].name) == 0) {
+	    arrow[i].type = XK_NOD;
+	    return 0;
+	}
+    return -1;
+}
+
+
+/* term_print_arrow():
+ *	Print the arrow key bindings
+ */
+protected void
+term_print_arrow(el, name)
+    EditLine *el;
+    char *name;
+{
+    int i;
+    fkey_t *arrow = el->el_term.t_fkey;
+
+    for (i = 0; i < A_K_NKEYS; i++)
+	if (*name == '\0' || strcmp(name, arrow[i].name) == 0)
+	    if (arrow[i].type != XK_NOD)
+		key_kprint(el, arrow[i].name, &arrow[i].fun, arrow[i].type);
+}
+
+
+/* term_bind_arrow():
  *	Bind the arrow keys
  */
 protected void
-term_bind_arrows(el)
+term_bind_arrow(el)
     EditLine *el;
 {
     el_action_t *map, *dmap;
     int     i, j;
     char   *p;
-    static struct {
-	int     key, fun;
-    }       ar[] =
-    {
-	{ T_kd, ED_NEXT_HISTORY },
-	{ T_ku, ED_PREV_HISTORY },
-	{ T_kl, ED_PREV_CHAR    },
-	{ T_kr, ED_NEXT_CHAR    }
-    };
+    fkey_t *arrow = el->el_term.t_fkey;
 
     /* Check if the components needed are initialized */
     if (el->el_term.t_buf == NULL || el->el_map.key == NULL)
@@ -933,8 +1056,10 @@ term_bind_arrows(el)
     map  = el->el_map.type == MAP_VI ? el->el_map.alt : el->el_map.key;
     dmap = el->el_map.type == MAP_VI ? el->el_map.vic : el->el_map.emacs;
 
+    term_reset_arrow(el);
+
     for (i = 0; i < 4; i++) {
-	p = el->el_term.t_str[ar[i].key];
+	p = el->el_term.t_str[arrow[i].key];
 	if (p && *p) {
 	    j = (unsigned char) *p;
 	    /*
@@ -946,13 +1071,21 @@ term_bind_arrows(el)
 	     *	  ED_SEQUENCE_LEAD_IN
 	     * 2. They are single arrow keys pointing to an unassigned key.
 	     */
-	    if (p[1] && (dmap[j] == map[j] || map[j] == ED_SEQUENCE_LEAD_IN)) {
-		key_add(el, p, key_map_cmd(el, ar[i].fun), XK_CMD);
-		map[j] = ED_SEQUENCE_LEAD_IN;
-	    }
-	    else if (map[j] == ED_UNASSIGNED) {
+	    if (arrow[i].type == XK_NOD)
 		key_clear(el, map, p);
-		map[j] = ar[i].fun;
+	    else {
+		if (p[1] && (dmap[j] == map[j] || 
+			     map[j] == ED_SEQUENCE_LEAD_IN)) {
+		    key_add(el, p, &arrow[i].fun, arrow[i].type);
+		    map[j] = ED_SEQUENCE_LEAD_IN;
+		}
+		else if (map[j] == ED_UNASSIGNED) {
+		    key_clear(el, map, p);
+		    if (arrow[i].type == XK_CMD)
+			map[j] = arrow[i].fun.cmd;
+		    else
+			key_add(el, p, &arrow[i].fun, arrow[i].type);
+		}
 	    }
 	}
     }
