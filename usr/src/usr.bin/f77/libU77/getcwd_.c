@@ -90,7 +90,7 @@ char *n;
 }
 
 /*
-char id_getcwd[] = "@(#)getcwd_.c	1.1";
+char id_getcwd[] = "@(#)getcwd_.c	1.2";
  * Get pathname of current working directory.
  *
  * calling sequence:
@@ -106,7 +106,7 @@ extern int errno;
 long
 getcwd_(path, len)
 char *path;
-int len;
+long len;
 {
 	char *p;
 
