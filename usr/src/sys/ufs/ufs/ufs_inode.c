@@ -1,4 +1,4 @@
-/*	ufs_inode.c	6.9	84/07/20	*/
+/*	ufs_inode.c	6.10	84/08/03	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -14,7 +14,7 @@
 #endif
 #include "../h/kernel.h"
 
-#define	INOHSZ	64
+#define	INOHSZ	512
 #if	((INOHSZ&(INOHSZ-1)) == 0)
 #define	INOHASH(dev,ino)	(((dev)+(ino))&(INOHSZ-1))
 #else
