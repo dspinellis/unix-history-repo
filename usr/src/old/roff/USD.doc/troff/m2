@@ -1,4 +1,4 @@
-.\"	@(#)m2	6.1 (Berkeley) %G%
+.\"	@(#)m2	6.2 (Berkeley) %G%
 .\"
 .tr |
 .rm mx
@@ -330,7 +330,7 @@ upper-case sequential alphabetic
 according to the format specified by \fBaf\fR.
 .h1
 .bt
-\fB&nr\fI|R|\(+-N|M\fR	-	\fBu\fR	\
+\fB&nr\fI|R|\(+-N|M\fR	-	-	\fBu\fR	\
 The number register \fIR\fR is assigned the value \fI\(+-N\fR
 with respect to the previous value, if any.
 The increment for auto-incrementing is set to \fIM\fR.
