@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)sync.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)sync.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "externs.h"
@@ -121,7 +121,7 @@ Write(type, ship, isstr, a, b, c, d)
 
 Sync()
 {
-	int (*sighup)(), (*sigint)();
+	sig_t sighup, sigint;
 	register n;
 	int type, shipnum, isstr, a, b, c, d;
 	char buf[80];
