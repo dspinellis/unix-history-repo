@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)disktab	4.16 (Berkeley) %G%
+#	@(#)disktab	4.17 (Berkeley) %G%
 #
 # Disk geometry and partition layout tables. 
 # Key:
@@ -52,7 +52,7 @@
 # NOTE: c partitions include bad-sector replacement areas!
 rm03|RM03|DEC RM03:\
 	:ty=removable:ns#32:nt#5:nc#823:sf:\
-	:dt=SMD:d0#0:d1#1:d2#4:d3#7:\
+	:dt=smd:d0#0:d1#3:d2#10:d3#6:\
 	:pa#15884:oa#0:ba#8192:fa#1024:\
 	:pb#33440:ob#16000:bb#8192:fb#1024:tb=swap:\
 	:pc#131680:oc#0:bc#8192:fc#1024:\
@@ -63,7 +63,7 @@ rm03|RM03|DEC RM03:\
 #	:pc#131520:oc#0:bc#8192:fc#1024:
 rm05|RM05|DEC RM05:\
 	:ty=removable:ns#32:nt#19:nc#823:sf:\
-	:dt=SMD:d0#0:d1#1:d2#4:d3#7:\
+	:dt=smd:d0#0:d1#3:d2#10:d3#6:\
 	:pa#15884:oa#0:ba#8192:fa#1024:\
 	:pb#33440:ob#16416:bb#8192:fb#1024:tb=swap:\
 	:pc#500384:oc#0:bc#8192:fc#1024:\
@@ -75,7 +75,7 @@ rm05|RM05|DEC RM05:\
 #	:pc#500224:oc#0:bc#8192:fc#1024:
 rp06|RP06|DEC RP06:\
 	:ty=removable:ns#22:nt#19:nc#815:sf:\
-	:dt=SMD:d0#0:d1#1:d2#4:d3#7:\
+	:dt=smd:d0#0:d1#3:d2#10:d3#6:\
 	:pa#15884:oa#0:ba#8192:fa#1024:\
 	:pb#33440:ob#15884:bb#8192:fb#1024:tb=swap:\
 	:pc#340670:oc#0:bc#8192:fc#1024:\
@@ -86,7 +86,7 @@ rp06|RP06|DEC RP06:\
 #	:pc#340516:oc#0:bc#8192:fc#1024:
 rm80|RM80|DEC RM80:\
 	:ty=winchester:ns#31:nt#14:nc#559:sf:\
-	:dt=SMD:d0#1:d1#1:d2#4:d3#7:\
+	:dt=smd:d0#0:d1#3:d2#10:d3#6:\
 	:pa#15884:oa#0:ba#8192:fa#1024:\
 	:pb#33440:ob#16058:bb#8192:fb#1024:tb=swap:\
 	:pc#242606:oc#0:bc#8192:fc#1024:\
@@ -97,7 +97,7 @@ rm80|RM80|DEC RM80:\
 #	:pc#242420:oc#0:bc#8192:fc#1024:
 rp05|RP05|DEC RP05:\
 	:ty=removable:ns#22:nt#19:nc#411:sf:\
-	:dt=SMD:d0#0:d1#1:d2#4:d3#7:\
+	:dt=smd:d0#0:d1#3:d2#10:d3#6:\
 	:pa#15884:oa#0:ba#8192:fa#1024:\
 	:pb#33440:ob#15884:bb#8192:fb#1024:tb=swap:\
 	:pc#171798:oc#0:bc#8192:fc#1024:\
@@ -108,7 +108,7 @@ rp05|RP05|DEC RP05:\
 #	:pc#171644:oc#0:bc#8192:fc#1024:
 rp07|RP07|DEC RP07:\
 	:ty=winchester:ns#50:nt#32:nc#630:sf:\
-	:dt=SMD:d0#0:d1#1:d2#4:d3#7:\
+	:dt=smd:d0#0:d1#3:d2#10:d3#6:\
 	:pa#15884:oa#0:ba#8192:fa#1024:\
 	:pb#66880:ob#16000:bb#8192:fb#1024:tb=swap:\
 	:pc#1008000:oc#0:bc#8192:fc#1024:\
@@ -122,7 +122,7 @@ ml11|ml11a|ml11b|ML11A|ML11B|DEC disk emulator:\
 	:ty=simulated:dt=SMD:ns#1:nt#1:nc#2000:
 9775|CDC 9775:\
 	:ty=winchester:ns#32:nt#40:nc#842:sf:\
-	:dt=SMD:d0#0:d1#1:d2#4:d3#7:\
+	:dt=smd:d0#0:d1#3:d2#10:d3#6:\
 	:pa#15884:oa#0:ba#8192:fa#1024:\
 	:pb#66880:ob#16640:bb#8192:fb#1024:tb=swap:\
 	:pc#1077760:oc#0:bc#8192:fc#1024:\
@@ -134,7 +134,7 @@ ml11|ml11a|ml11b|ML11A|ML11B|DEC disk emulator:\
 #	:pc#1077600:oc#0:bc#8192:fc#1024:
 9730|CDC 9730:\
 	:ty=removable:ns#32:nt#10:nc#823:sf:\
-	:dt=SMD:d0#0:d1#1:d2#4:d3#7:\
+	:dt=smd:d0#0:d1#3:d2#10:d3#6:\
 	:pa#15884:oa#0:ba#8192:fa#1024:\
 	:pb#33440:ob#16000:bb#8192:fb#1024:tb=swap:\
 	:pc#263360:oc#0:bc#8192:fc#1024:\
@@ -145,7 +145,7 @@ ml11|ml11a|ml11b|ML11A|ML11B|DEC disk emulator:\
 #	:pc#263200:oc#0:bc#8192:fc#1024:
 capricorn|330|Capricorn|Ampex Capricorn:\
 	:ty=winchester:ns#32:nt#16:nc#1024:sf:\
-	:dt=smd:d0#0:d1#1:d2#4:d3#7:\
+	:dt=smd:d0#0:d1#3:d2#10:d3#6:\
 	:pa#15884:oa#0:ba#8192:fa#1024:\
 	:pb#33440:ob#16384:bb#8192:fb#1024:tb=swap:\
 	:pc#524488:oc#0:bc#8192:fc#1024:\
@@ -157,7 +157,7 @@ capricorn|330|Capricorn|Ampex Capricorn:\
 #	:pc#524128:oc#0:bc#8192:fc#1024:
 eagle|Eagle|2351|2351A|Fujitsu Eagle 2351A (48 sectors):\
 	:ty=winchester:ns#48:nt#20:nc#842:rm#3961:sf:\
-	:dt=smd:d0#0:d1#3:d2#8:d3#15:\
+	:dt=smd:d0#0:d1#6:d2#17:d3#7:\
 	:pa#15884:oa#0:ba#8192:fa#1024:\
 	:pb#66880:ob#16320:bb#8192:fb#1024:tb=swap:\
 	:pc#808320:oc#0:bc#8192:fc#1024:\
@@ -169,7 +169,7 @@ eagle|Eagle|2351|2351A|Fujitsu Eagle 2351A (48 sectors):\
 #	:pc#808128:oc#0:bc#8192:fc#1024:
 2361|doubleeagle|Fujitsu 2361 (Double Eagle, 64 sectors):\
 	:ty=winchester:ns#64:nt#20:nc#842:sf:\
-	:dt=SMD:d0#0:d1#3:d2#8:d3#15:\
+	:dt=smd:d0#0:d1#6:d2#17:d3#7:\
 	:pa#15884:oa#0:ba#8192:fa#1024:\
 	:pb#66880:ob#16640:bb#8192:fb#1024:tb=swap:\
 	:pc#1077760:oc#0:bc#8192:fc#1024:\
@@ -182,7 +182,7 @@ eagle|Eagle|2351|2351A|Fujitsu Eagle 2351A (48 sectors):\
 
 2361a|doubleeagle|Fujitsu 2361 (Double Eagle, 68 sectors):\
 	:ty=winchester:ns#68:nt#20:nc#842:sf:\
-	:dt=SMD:d0#0:d1#3:d2#8:d3#15:\
+	:dt=smd:d0#0:d1#6:d2#17:d3#7:\
 	:pa#15884:oa#0:ba#8192:fa#1024:\
 	:pb#66880:ob#16320:bb#8192:fb#1024:tb=swap:\
 	:pc#1145120:oc#0:bc#8192:fc#1024:\
@@ -236,7 +236,7 @@ rk07|RK07|DEC RK07:\
 #
 160|fuji|fuji160|Fujitsu 160:\
 	:ty=winchester:ns#32:nt#10:nc#823:sf:\
-	:dt=SMD:d0#0:d1#1:d2#4:d3#7:\
+	:dt=smd:d0#0:d1#3:d2#10:d3#6:\
 	:pa#15884:oa#0:ba#8192:fa#1024:\
 	:pb#33440:ob#16000:bb#8192:fb#1024:tb=swap:\
 	:pc#263360:oc#0:bc#8192:fc#1024:\
@@ -247,7 +247,7 @@ rk07|RK07|DEC RK07:\
 #	:pc#263200:oc#0:bc#8192:fc#1024:
 9300|Ampex 9300:\
 	:ty=removable:ns#32:nt#19:nc#815:sf:\
-	:dt=SMD:d0#0:d1#1:d2#4:d3#7:\
+	:dt=smd:d0#0:d1#3:d2#10:d3#6:\
 	:pa#15884:oa#0:ba#8192:fa#1024:\
 	:pb#33440:ob#16416:bb#8192:fb#1024:tb=swap:\
 	:pc#495520:oc#0:bc#8192:fc#1024:\
@@ -259,7 +259,7 @@ rk07|RK07|DEC RK07:\
 #	:pc#495360:oc#0:bc#8192:fc#1024:
 9766|CDC 9766:\
 	:ty=removable:ns#32:nt#19:nc#823:sf:\
-	:dt=SMD:d0#0:d1#1:d2#4:d3#7:\
+	:dt=smd:d0#0:d1#3:d2#10:d3#6:\
 	:pa#15884:oa#0:ba#8192:fa#1024:\
 	:pb#33440:ob#16416:bb#8192:fb#1024:tb=swap:\
 	:pc#500384:oc#0:bc#8192:fc#1024:\
@@ -271,7 +271,7 @@ rk07|RK07|DEC RK07:\
 #	:pc#500224:oc#0:bc#8192:fc#1024:
 980|9762|AMPEX DM980|CDC 9762:\
 	:ty=removable:ns#32:nt#5:nc#823:sf:\
-	:dt=SMD:d0#0:d1#1:d2#4:d3#7:\
+	:dt=smd:d0#0:d1#3:d2#10:d3#6:\
 	:pa#15884:oa#0:ba#8192:fa#1024:\
 	:pb#33440:ob#16000:bb#8192:fb#1024:tb=swap:\
 	:pc#131680:oc#0:bc#8192:fc#1024:\
