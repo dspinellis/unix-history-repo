@@ -1,5 +1,5 @@
 /* STARTUP PROCEDURE FOR UNIX FORTRAN PROGRAMS */
-char id_libF77[] = "@(#)main.c	2.12	%G%";
+char id_libF77[] = "@(#)main.c	2.13	%G%";
 
 #include <stdio.h>
 #include <signal.h>
@@ -41,19 +41,11 @@ struct action {
 	{"Hangup", 0},			/* SIGHUP  */
 	{"Interrupt!", 0},		/* SIGINT  */
 	{"Quit!", 1},			/* SIGQUIT */
-#ifdef	UCBVAX
 	{"Illegal ", 1},		/* SIGILL  */
-#else	UCBVAX
-	{"Illegal instruction", 1},	/* SIGILL  */
-#endif	UCBVAX
 	{"Trace Trap", 1},		/* SIGTRAP */
 	{"IOT Trap", 1},		/* SIGIOT  */
 	{"EMT Trap", 1},		/* SIGEMT  */
-#ifdef	UCBVAX
 	{"Arithmetic Exception", 1},	/* SIGFPE  */
-#else	UCBVAX
-	{"Floating Point Exception", 1},/* SIGFPE  */
-#endif	UCBVAX
 	{ 0, 0},			/* SIGKILL */
 	{"Bus error", 1},		/* SIGBUS  */
 	{"Segmentation violation", 1},	/* SIGSEGV */
@@ -64,13 +56,12 @@ struct action {
 	{"Sig 16", 0},			/* unassigned */
 };
 
-#ifdef	UCBVAX
 struct action act_fpe[] = {
 	{"Integer overflow", 1},
 	{"Integer divide by 0", 1},
-	{"Floating point overflow", 1},
-	{"Floating divide by zero", 1},
-	{"Floating point underflow", 1},
+	{"Floating point overflow trap", 1},
+	{"Floating divide by zero trap", 1},
+	{"Floating point underflow trap", 1},
 	{"Decimal overflow", 1},
 	{"Subscript range", 1},
 	{"Floating point overflow", 0},
@@ -83,7 +74,6 @@ struct action act_ill[] = {
 	{"instruction", 1},
 	{"operand", 0},
 };
-#endif	UCBVAX
 
 sigdie(s, t, pc)
 int s; int t; long pc;
@@ -94,7 +84,6 @@ register struct action *act = &sig_act[s-1];
 
 if (act->mesg)
 	{
-#ifdef	UCBVAX
 	fprintf(units[STDERR].ufd, "*** %s", act->mesg);
 	if (s == SIGFPE)
 		{
@@ -112,9 +101,6 @@ if (act->mesg)
 			fprintf(units[STDERR].ufd, "compat mode: Code=%d", t);
 		}
 	putc('\n', units[STDERR].ufd);
-#else	UCBVAX
-	fprintf(units[STDERR].ufd, "*** %s\n", act->mesg);
-#endif	UCBVAX
 	}
 f_exit();
 _cleanup();
