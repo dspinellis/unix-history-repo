@@ -1,4 +1,4 @@
-.\"	@(#)getpass.3	6.1 (Berkeley) %G%
+.\"	@(#)getpass.3	6.2 (Berkeley) %G%
 .\"
 .TH GETPASS 3  ""
 .AT 3
@@ -19,6 +19,9 @@ after prompting with the null-terminated string
 and disabling echoing.
 A pointer is returned to a null-terminated string
 of at most 8 characters.
+A calling process should zero the password as soon
+as possible to avoid leaving the cleartext password
+visible in the process' address space.
 .SH FILES
 /dev/tty
 .SH "SEE ALSO"
