@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: machdep.c 1.51 89/11/28$
  *
- *	@(#)machdep.c	7.4 (Berkeley) %G%
+ *	@(#)machdep.c	7.5 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -312,8 +312,9 @@ vmtime(otime, olbolt, oicr)
 /*
  * Clear registers on exec
  */
-setregs(entry)
+setregs(entry, retval)
 	u_long entry;
+	int retval[2];
 {
 	u.u_ar0[PC] = entry & ~1;
 #ifdef FPCOPROC
@@ -325,11 +326,11 @@ setregs(entry)
 	if (u.u_procp->p_flag & SHPUX) {
 
 		u.u_ar0[A0] = 0;	/* not 68010 (bit 31), no FPA (30) */
-		u.u_r.r_val1 = 0;	/* no float card */
+		retval[0] = 0;		/* no float card */
 #ifdef FPCOPROC
-		u.u_r.r_val2 = 1;	/* yes 68881 */
+		retval[1] = 1;		/* yes 68881 */
 #else
-		u.u_r.r_val2 = 0;	/* no 68881 */
+		retval[1] = 0;		/* no 68881 */
 #endif
 	}
 	/*
