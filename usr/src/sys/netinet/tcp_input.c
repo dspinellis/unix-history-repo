@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)tcp_input.c	7.15.1.3 (Berkeley) %G%
+ *	@(#)tcp_input.c	7.21 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -397,6 +397,7 @@ findpcb:
 		am->m_len = sizeof (struct sockaddr_in);
 		sin = mtod(am, struct sockaddr_in *);
 		sin->sin_family = AF_INET;
+		sin->sin_len = sizeof(*sin);
 		sin->sin_addr = ti->ti_src;
 		sin->sin_port = ti->ti_sport;
 		laddr = inp->inp_laddr;
@@ -1268,6 +1269,7 @@ tcp_mss(tp)
 		/* No route yet, so try to acquire one */
 		if (inp->inp_faddr.s_addr != INADDR_ANY) {
 			ro->ro_dst.sa_family = AF_INET;
+			ro->ro_dst.sa_len = sizeof(ro->ro_dst);
 			((struct sockaddr_in *) &ro->ro_dst)->sin_addr =
 				inp->inp_faddr;
 			rtalloc(ro);
