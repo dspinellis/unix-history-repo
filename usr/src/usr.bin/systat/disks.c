@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)disks.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)disks.c	5.15 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -42,7 +42,7 @@ static struct nlist namelist[] = {
 #define	X_VBDINIT	(X_DK_WPMS+1)
 	{ "_vbdinit" },
 #endif
-#ifdef hp300
+#if defined(hp300) || defined(luna68k)
 #define X_HPDINIT       (X_DK_WPMS+1)
         { "_hp_dinit" }, 
 #endif
