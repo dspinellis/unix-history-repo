@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)cmds.c	4.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmds.c	4.10 (Berkeley) %G%";
 #endif
 
 /*
@@ -703,7 +703,7 @@ mls(argc, argv)
 	dest = argv[argc - 1];
 	argv[argc - 1] = NULL;
 	if (strcmp(dest, "-"))
-		if (globulize(&dest) && confirm("local-file", dest))
+		if (!globulize(&dest) || !confirm("local-file", dest))
 			return;
 	cmd = argv[0][1] == 'l' ? "NLST" : "LIST";
 	for (mode = "w"; cp = remglob(argc, argv); mode = "a")
