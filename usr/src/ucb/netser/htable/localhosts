@@ -1,0 +1,73 @@
+#
+# Berkeley Host Database
+#
+127.0		localhost
+#
+# Berkeley Local Net 46 -- 3Mb/s Ethernet
+#
+46.4		ucbarpa arpa
+46.5		ucbcad cad coke ucbcoke
+46.6		ucbernie ernie
+46.7		ucbmonet monet
+46.9		ucbesvax esvax
+46.10		ucbvax vax
+46.11		ucbkim kim
+46.12		ucbcalder calder
+46.13		ucbdali dali
+46.14		ucbmatisse matisse
+46.15		ucbmedea medea
+46.19		ucbingres ingres
+46.20		ucboz oz
+46.21		ucbear ear
+46.22		ucbdegas degas
+46.23		ucbturner turner
+46.24		ucbmiro miro
+46.25		ucbjade jade
+46.26		ucbstatvax statvax
+46.27		ucbic ic
+#
+# Berkeley Local Net 99 -- Ungermann-Bass
+#
+99.2.0.93	ucbmatisse-un matisse-un
+99.2.0.86	ucbdali-un dali-un
+#
+# Berkeley Local Net 98 -- 3Com 10Mb/s Ethernet
+#
+98.0.2.80	ucbmatisse-ec matisse-ec
+98.0.2.67	ucbmonet-ec monet-ec
+#
+# Berkeley Local Net 97 -- Interlan 10Mb/s Ethernet
+#
+97.128.1.69	ucbmonet-il monet-il
+97.128.1.65	ucbmatisse-il matisse-il
+#
+# Berkeley Local Net 96 -- CAD 10Mb/s Ethernet
+#
+96.5.0.128	ucbic ic tab ucbtab
+96.5.0.129	ucbicw icw sprite ucbsprite
+96.5.0.130	ucbcad-ec cad-ec coke-ec ucbcoke-ec
+#
+# Berkeley Class C Local Net 1 -- 3Mb/s Ethernet
+#
+192.0.46.1		ucbmatisse-en2 matisse-en2
+192.0.46.2		ucbcalder-en2 calder-en2
+192.0.46.3		ucbmonet-en2 monet-en2
+#
+# Berkeley Local Net 125 -- SUN 10Mb/s Ethernet
+#
+125.0.20.137	ucbmike mike
+125.0.17.146	ucbrob rob
+125.0.20.71	ucbchip chip
+#
+# Berkeley Local Net 89 -- Computer Center 10Mb/s Ethernet
+#
+89.4.0.153	ucbruby ruby Ruby ucbruby-ec ruby-ec
+89.4.0.21	ucbamber amber Amber
+89.6.0.38	ucbcoral coral Coral
+89.6.0.35	ucbtopaz topaz Topaz
+89.6.0.37	ucbivory ivory Ivory
+89.4.0.119	ucblapis lapis Lapis
+89.6.0.33	ucbjade-ec jade-ec
+#
+# Off Campus Hosts and Networks (from SRI-NIC hostname server)
+#
