@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	8.7 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	8.8 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	8.7 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	8.8 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -86,25 +86,41 @@ queueup(e, queueall, announce)
 	else
 	{
 		/* get a locked tf file */
-		for (i = 100; --i >= 0; )
+		for (i = 0; i < 128; i++)
 		{
 			fd = open(tf, O_CREAT|O_WRONLY|O_EXCL, FileMode);
 			if (fd < 0)
 			{
-				if (errno == EEXIST)
-					continue;
-notemp:
-				syserr("!queueup: cannot create temp file %s", tf);
+				if (errno != EEXIST)
+					break;
+#ifdef LOG
+				if (LogLevel > 0 && (i % 32) == 0)
+					syslog(LOG_ALERT, "queueup: cannot create %s: %s",
+						tf, errstring(errno));
+#endif
+				continue;
 			}
 
 			if (lockfile(fd, tf, LOCK_EX|LOCK_NB))
 				break;
+#ifdef LOG
+			else if (LogLevel > 0 && (i % 32) == 0)
+				syslog(LOG_ALERT, "queueup: cannot lock %s: %s",
+					tf, errstring(errno));
+#endif
 
 			close(fd);
-			sleep(i);
+
+			if ((i % 32) == 31)
+			{
+				/* save the old temp file away */
+				(void) rename(tf, queuename(e, 'T'));
+			}
+			else
+				sleep(i % 32);
 		}
 		if (fd < 0)
-			goto notemp;
+			syserr("!queueup: cannot create temp file %s", tf);
 
 		tfp = fdopen(fd, "w");
 	}
