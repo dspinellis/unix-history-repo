@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rlogind.c	5.38 (Berkeley) %G%";
+static char sccsid[] = "@(#)rlogind.c	5.39 (Berkeley) %G%";
 #endif /* not lint */
 
 #ifdef KERBEROS
@@ -30,8 +30,8 @@ static char sccsid[] = "@(#)rlogind.c	5.38 (Berkeley) %G%";
  *	$Source: /mit/kerberos/ucb/mit/rlogind/RCS/rlogind.c,v $
  *	$Header: rlogind.c,v 5.0 89/06/26 18:31:01 kfall Locked $
  */
-
 #endif
+
 /*
  * remote login server:
  *	\0
@@ -58,6 +58,7 @@ static char sccsid[] = "@(#)rlogind.c	5.38 (Berkeley) %G%";
 #include <syslog.h>
 #include <strings.h>
 #include <stdio.h>
+#include <unistd.h>
 #include "pathnames.h"
 
 #ifndef TIOCPKT_WINDOW
@@ -142,13 +143,13 @@ main(argc, argv)
 #ifdef	KERBEROS
 	if (use_kerberos && vacuous) {
 		usage();
-		fatal("only one of -k and -v allowed");
+		fatal(STDERR_FILENO, "only one of -k and -v allowed", 0);
 	}
 #endif
 	fromlen = sizeof (from);
 	if (getpeername(0, &from, &fromlen) < 0) {
 		syslog(LOG_ERR,"Can't get peer name of remote host: %m");
-		fatalperror("Can't get peer name of remote host");
+		fatal(STDERR_FILENO, "Can't get peer name of remote host", 1);
 	}
 	if (keepalive &&
 	    setsockopt(0, SOL_SOCKET, SO_KEEPALIVE, &on, sizeof (on)) < 0)
@@ -181,7 +182,7 @@ doit(f, fromp)
 		exit(1);
 #ifdef	KERBEROS
 	if (vacuous)
-		fatal(f, "Remote host requires Kerberos authentication");
+		fatal(f, "Remote host requires Kerberos authentication", 0);
 #endif
 
 	alarm(0);
@@ -222,9 +223,9 @@ doit(f, fromp)
 		if (retval == 0 && hostok)
 			authenticated++;
 		else if (retval > 0)
-			fatal(f, krb_err_txt[retval]);
+			fatal(f, krb_err_txt[retval], 0);
 		else if(!hostok)
-			fatal(f, "krlogind: Host address mismatch.");
+			fatal(f, "krlogind: Host address mismatch.", 0);
 	} else
 #endif
 	{
@@ -233,7 +234,7 @@ doit(f, fromp)
 	        fromp->sin_port < IPPORT_RESERVED/2) {
 		    syslog(LOG_NOTICE, "Connection from %s on illegal port",
 			    inet_ntoa(fromp->sin_addr));
-		    fatal(f, "Permission denied");
+		    fatal(f, "Permission denied", 0);
 	    }
 #ifdef IP_OPTIONS
 	    {
@@ -292,31 +293,34 @@ doit(f, fromp)
 gotpty:
 	(void) ioctl(p, TIOCSWINSZ, &win);
 	netf = f;
-	line[strlen("/dev/")] = 't';
+	line[sizeof(_PATH_DEV) - 1] = 't';
 	t = open(line, O_RDWR);
 	if (t < 0)
-		fatalperror(f, line);
+		fatal(f, line, 1);
 	if (fchmod(t, 0))
-		fatalperror(f, line);
+		fatal(f, line, 1);
 	(void)signal(SIGHUP, SIG_IGN);
 	vhangup();
 	(void)signal(SIGHUP, SIG_DFL);
 	t = open(line, O_RDWR);
 	if (t < 0)
-		fatalperror(f, line);
+		fatal(f, line, 1);
 	setup_term(t);
 
 	pid = fork();
 	if (pid < 0)
-		fatalperror(f, "");
+		fatal(f, "", 1);
 	if (pid == 0) {
 		if (setsid() < 0)
-			fatalperror(f, "setsid");
+			fatal(f, "setsid", 1);
 		if (ioctl(t, TIOCSCTTY, 0) < 0)
-			fatalperror(f, "ioctl(sctty)");
-		close(f), close(p);
-		dup2(t, 0), dup2(t, 1), dup2(t, 2);
-		close(t);
+			fatal(f, "ioctl(sctty)", 1);
+		(void)close(f);
+		(void)close(p);
+		dup2(t, STDIN_FILENO);
+		dup2(t, STDOUT_FILENO);
+		dup2(t, STDERR_FILENO);
+		(void)close(t);
 
 		if (authenticated)
 			execl(_PATH_LOGIN, "login", "-p",
@@ -324,7 +328,7 @@ gotpty:
 		else
 			execl(_PATH_LOGIN, "login", "-p",
 			    "-h", hp->h_name, lusername, 0);
-		fatalperror(2, _PATH_LOGIN);
+		fatal(STDERR_FILENO, _PATH_LOGIN, 1);
 		/*NOTREACHED*/
 	}
 	close(t);
@@ -381,7 +385,7 @@ control(pty, cp, n)
  * rlogin "protocol" machine.
  */
 protocol(f, p)
-	int f, p;
+	register int f, p;
 {
 	char pibuf[1024], fibuf[1024], *pbp, *fbp;
 	register pcc = 0, fcc = 0;
@@ -394,45 +398,44 @@ protocol(f, p)
 	 */
 	(void) signal(SIGTTOU, SIG_IGN);
 	for (;;) {
-		int ibits, obits, ebits;
+		fd_set ibits, obits, ebits;
 
-		ibits = 0;
-		obits = 0;
+		FD_ZERO(&ibits);
+		FD_ZERO(&obits);
 		if (fcc)
-			obits |= pmask;
+			FD_SET(p, &obits);
 		else
-			ibits |= fmask;
+			FD_SET(f, &ibits);
 		if (pcc >= 0)
 			if (pcc)
-				obits |= fmask;
+				FD_SET(f, &obits);
 			else
-				ibits |= pmask;
-		ebits = pmask;
-		if (select(nfd, &ibits, obits ? &obits : (int *)NULL,
-		    &ebits, 0) < 0) {
+				FD_SET(p, &ibits);
+		FD_SET(p, &ebits);
+		if ((n = select(nfd, &ibits, &obits, &ebits, 0)) < 0) {
 			if (errno == EINTR)
 				continue;
-			fatalperror(f, "select");
+			fatal(f, "select", 1);
 		}
-		if (ibits == 0 && obits == 0 && ebits == 0) {
+		if (n == 0) {
 			/* shouldn't happen... */
 			sleep(5);
 			continue;
 		}
 #define	pkcontrol(c)	((c)&(TIOCPKT_FLUSHWRITE|TIOCPKT_NOSTOP|TIOCPKT_DOSTOP))
-		if (ebits & pmask) {
+		if (FD_ISSET(p, &ebits)) {
 			cc = read(p, &cntl, 1);
 			if (cc == 1 && pkcontrol(cntl)) {
 				cntl |= oobdata[0];
 				send(f, &cntl, 1, MSG_OOB);
 				if (cntl & TIOCPKT_FLUSHWRITE) {
 					pcc = 0;
-					ibits &= ~pmask;
+					FD_CLR(p, &ibits);
 				}
 			}
 		}
-		if (ibits & fmask) {
-#ifdef	KERBEROS
+		if (FD_ISSET(f, &ibits)) {
+#ifdef KERBEROS
 			if (encrypt)
 				fcc = des_read(f, fibuf, sizeof(fibuf));
 			else
@@ -463,7 +466,7 @@ protocol(f, p)
 					}
 			}
 		}
-		if (ibits & pmask) {
+		if (FD_ISSET(p, &ibits)) {
 			pcc = read(p, pibuf, sizeof (pibuf));
 			pbp = pibuf;
 			if (pcc < 0 && errno == EWOULDBLOCK)
@@ -472,10 +475,10 @@ protocol(f, p)
 				break;
 			else if (pibuf[0] == 0) {
 				pbp++, pcc--;
-#ifdef	KERBEROS
+#ifdef KERBEROS
 				if (!encrypt)
 #endif
-					obits |= fmask;	/* try a write */
+					FD_SET(f, &obits);	/* try write */
 			} else {
 				if (pkcontrol(pibuf[0])) {
 					pibuf[0] |= oobdata[0];
@@ -484,8 +487,8 @@ protocol(f, p)
 				pcc = 0;
 			}
 		}
-		if ((obits & fmask) && pcc > 0) {
-#ifdef	KERBEROS
+		if ((FD_ISSET(f, &obits)) && pcc > 0) {
+#ifdef KERBEROS
 			if (encrypt)
 				cc = des_write(f, pbp, pcc);
 			if (cc > 0) {
@@ -507,7 +510,7 @@ cleanup()
 {
 	char *p;
 
-	p = line + sizeof("/dev/") - 1;
+	p = line + sizeof(_PATH_DEV) - 1;
 	if (logout(p))
 		logwtmp(p, "", "");
 	(void)chmod(line, 0666);
@@ -519,37 +522,26 @@ cleanup()
 	exit(1);
 }
 
-fatal(f, msg)
-	int f;
+fatal(f, msg, syserr)
+	int f, syserr;
 	char *msg;
 {
+	int len;
 	char buf[BUFSIZ];
 
 	buf[0] = '\01';		/* error indicator */
-	(void) sprintf(buf + 1, "rlogind: %s.\r\n", msg);
-	(void) write(f, buf, strlen(buf));
-	exit(1);
-}
-
-fatalperror(f, msg)
-	int f;
-	char *msg;
-{
-	char buf[BUFSIZ];
-	extern int sys_nerr;
-	extern char *sys_errlist[];
-
-	if ((unsigned)errno < sys_nerr)
-		(void) sprintf(buf, "%s: %s", msg, sys_errlist[errno]);
+	if (syserr)
+		len = sprintf(buf + 1, "rlogind: %s: %s.\r\n",
+		    msg, strerror(errno));
 	else
-		(void) sprintf(buf, "%s: Error %d", msg, errno);
-	fatal(f, buf);
+		len = sprintf(buf + 1, "rlogind: %s.\r\n", msg);
+	(void) write(f, buf, len);
+	exit(1);
 }
 
 do_rlogin(host)
 	char *host;
 {
-
 	getstr(rusername, sizeof(rusername), "remuser too long");
 	getstr(lusername, sizeof(lusername), "locuser too long");
 	getstr(term+ENVSIZE, sizeof(term)-ENVSIZE, "Terminal type too long");
@@ -574,7 +566,7 @@ getstr(buf, cnt, errmsg)
 		if (read(0, &c, 1) != 1)
 			exit(1);
 		if (--cnt < 0)
-			fatal(1, errmsg);
+			fatal(STDOUT_FILENO, errmsg, 0);
 		*buf++ = c;
 	} while (c != 0);
 }
@@ -688,15 +680,14 @@ do_krb_login(host, dest, encrypt)
 	return(0);
 
 }
-
 #endif /* KERBEROS */
 
 usage()
 {
-#ifdef	KERBEROS
-	syslog(LOG_ERR, "usage: rlogind [-k | -v] [-a] [-l] [-n]");
+#ifdef KERBEROS
+	syslog(LOG_ERR, "usage: rlogind [-aln] [-k | -v]");
 #else
-	syslog(LOG_ERR, "usage: rlogind [-a] [-l] [-n]");
+	syslog(LOG_ERR, "usage: rlogind [-aln]");
 #endif
 }
 
