@@ -38,7 +38,7 @@
  *
  *	from: @(#)vm_machdep.c	7.3 (Berkeley) 5/13/91
  *	Utah $Hdr: vm_machdep.c 1.16.1.1 89/06/23$
- *	$Id: vm_machdep.c,v 1.23 1994/05/25 08:06:59 swallace Exp $
+ *	$Id: vm_machdep.c,v 1.24 1994/05/25 11:23:20 davidg Exp $
  */
 
 #include "npx.h"
@@ -179,21 +179,18 @@ vm_bounce_page_free(pa, count)
  * allocate count bounce buffer kva pages
  */
 vm_offset_t
-vm_bounce_kva(count, waitok)
-	int count;
+vm_bounce_kva(size, waitok)
+	int size;
 	int waitok;
 {
-	int tofree;
 	int i;
 	int startfree;
 	vm_offset_t kva = 0;
 	int s = splbio();
-	int size = count;
-	startfree = 0;
 more:
-	if (!bmfreeing && (tofree = kvasfreecnt)) {
+	if (!bmfreeing && kvasfreecnt) {
 		bmfreeing = 1;
-		for (i = startfree; i < kvasfreecnt; i++) {
+		for (i = 0; i < kvasfreecnt; i++) {
 			/*
 			 * if we have a kva of the right size, no sense
 			 * in freeing/reallocating...
@@ -210,11 +207,6 @@ more:
 				kmem_free_wakeup(io_map, kvaf[i].addr,
 					kvaf[i].size);
 			}
-		}
-		if (kvasfreecnt != tofree) {
-			startfree = i;
-			bmfreeing = 0;
-			goto more;
 		}
 		kvasfreecnt = 0;
 		bmfreeing = 0;
@@ -240,7 +232,7 @@ more:
 }
 
 /*
- * same as vm_bounce_kva -- but really allocate
+ * same as vm_bounce_kva -- but really allocate (but takes pages as arg)
  */
 vm_offset_t
 vm_bounce_kva_alloc(count) 
@@ -253,7 +245,7 @@ int count;
 		kva = (vm_offset_t) malloc(count*NBPG, M_TEMP, M_WAITOK);
 		return kva;
 	}
-	kva = vm_bounce_kva(count, 1);
+	kva = vm_bounce_kva(count*NBPG, 1);
 	for(i=0;i<count;i++) {
 		pa = vm_bounce_page_find(1);
 		pmap_kenter(kva + i * NBPG, pa);
@@ -280,7 +272,7 @@ vm_bounce_kva_alloc_free(kva, count)
 		pa = pmap_kextract(kva + i * NBPG);
 		vm_bounce_page_free(pa, 1);
 	}
-	vm_bounce_kva_free(kva, count);
+	vm_bounce_kva_free(kva, count*NBPG, 0);
 }
 
 /*
@@ -304,11 +296,22 @@ vm_bounce_alloc(bp)
 	if (bouncepages == 0)
 		return;
 
+	if (bp->b_flags & B_BOUNCE) {
+		printf("vm_bounce_alloc: called recursively???\n");
+		return;
+	}
+
 	if (bp->b_bufsize < bp->b_bcount) {
-		printf("vm_bounce_alloc: b_bufsize(%d) < b_bcount(%d) !!!!\n",
+		printf("vm_bounce_alloc: b_bufsize(0x%x) < b_bcount(0x%x) !!!!\n",
 			bp->b_bufsize, bp->b_bcount);
+		panic("vm_bounce_alloc");
 		bp->b_bufsize = bp->b_bcount;
 	}
+
+	if( bp->b_bufsize != bp->b_bcount) {
+		printf("size: %d, count: %d\n", bp->b_bufsize, bp->b_bcount);
+	}
+		
 
 	vastart = (vm_offset_t) bp->b_un.b_addr;
 	vaend = (vm_offset_t) bp->b_un.b_addr + bp->b_bufsize;
@@ -459,6 +462,8 @@ vm_bounce_free(bp)
 	return;
 }
 
+#endif /* NOBOUNCE */
+
 /*
  * init the bounce buffer system
  */
@@ -470,6 +475,7 @@ vm_bounce_init()
 	io_map = kmem_suballoc(kernel_map, &minaddr, &maxaddr, MAXBKVA * NBPG, FALSE);
 	kvasfreecnt = 0;
 
+#ifndef NOBOUNCE
 	if (bouncepages == 0)
 		return;
 	
@@ -479,16 +485,14 @@ vm_bounce_init()
 	if (!bounceallocarray)
 		panic("Cannot allocate bounce resource array\n");
 
-	bzero(bounceallocarray, bounceallocarraysize * sizeof(long));
-
+	bzero(bounceallocarray, bounceallocarraysize * sizeof(unsigned));
 
 	bouncepa = pmap_kextract((vm_offset_t) bouncememory);
 	bouncepaend = bouncepa + bouncepages * NBPG;
 	bouncefree = bouncepages;
+#endif
 
 }
-
-#endif /* NOBOUNCE */
 
 
 static void
@@ -597,7 +601,7 @@ insert:
 	 * read clustering with new read-ahead disk drives hurts mostly, so
 	 * we don't bother...
 	 */
-	if( bp->b_flags & B_READ)
+	if( bp->b_flags & (B_READ|B_SYNC))
 		goto nocluster;
 	/*
 	 * we currently only cluster I/O transfers that are at page-aligned
@@ -627,20 +631,27 @@ insert:
 			(((vm_offset_t) ap->b_un.b_addr & PAGE_MASK) == 0) &&
 			(ap->b_bcount + bp->b_bcount < maxio)) {
 
+			/*
+			 * something is majorly broken in the upper level
+			 * fs code...  blocks can overlap!!!  this detects
+			 * the overlap and does the right thing.
+			 */
+			if( ap->av_forw &&
+				bp->b_pblkno + ((bp->b_bcount / DEV_BSIZE) > ap->av_forw->b_pblkno))  {
+				goto nocluster;
+			}
+
 			orig1begin = (vm_offset_t) ap->b_un.b_addr;
 			orig1pages = ap->b_bcount / PAGE_SIZE;
 
 			orig2begin = (vm_offset_t) bp->b_un.b_addr;
 			orig2pages = bp->b_bcount / PAGE_SIZE;
+
 			/*
 			 * see if we can allocate a kva, if we cannot, the don't
 			 * cluster.
 			 */
-#ifndef NOBOUNCE
 			kvanew = vm_bounce_kva( PAGE_SIZE * (orig1pages + orig2pages), 0);
-#else
-			kvanew = NULL;
-#endif
 			if( !kvanew) {
 				goto nocluster;
 			}
@@ -653,9 +664,7 @@ insert:
 				 */
 				newbp = (struct buf *)trypbuf();
 				if( !newbp) {
-#ifndef NOBOUNCE
 					vm_bounce_kva_free( kvanew, PAGE_SIZE * (orig1pages + orig2pages), 1);
-#endif
 					goto nocluster;
 				}
 
@@ -704,9 +713,7 @@ insert:
 				/*
 				 * free the old kva
 				 */
-#ifndef NOBOUNCE
 				vm_bounce_kva_free( orig1begin, ap->b_bufsize, 0);
-#endif
 				--clstats[ap->b_bcount/PAGE_SIZE];
 
 				ap->b_un.b_addr = (caddr_t) kvanew;
@@ -738,6 +745,15 @@ insert:
 			(((vm_offset_t) ap->av_forw->b_un.b_addr & PAGE_MASK) == 0) &&
 			(ap->av_forw->b_bcount + bp->b_bcount < maxio)) {
 
+			/*
+			 * something is majorly broken in the upper level
+			 * fs code...  blocks can overlap!!!  this detects
+			 * the overlap and does the right thing.
+			 */
+			if( (ap->b_pblkno + (ap->b_bcount / DEV_BSIZE)) > bp->b_pblkno) {
+				goto nocluster;
+			}
+
 			orig1begin = (vm_offset_t) bp->b_un.b_addr;
 			orig1pages = bp->b_bcount / PAGE_SIZE;
 
@@ -748,11 +764,7 @@ insert:
 			 * see if we can allocate a kva, if we cannot, the don't
 			 * cluster.
 			 */
-#ifndef NOBOUNCE
 			kvanew = vm_bounce_kva( PAGE_SIZE * (orig1pages + orig2pages), 0);
-#else
-			kvanew = NULL;
-#endif
 			if( !kvanew) {
 				goto nocluster;
 			}
@@ -767,9 +779,7 @@ insert:
 				 */
 				newbp = (struct buf *)trypbuf();
 				if( !newbp) {
-#ifndef NOBOUNCE
 					vm_bounce_kva_free( kvanew, PAGE_SIZE * (orig1pages + orig2pages), 1);
-#endif
 					goto nocluster;
 				}
 
@@ -807,9 +817,7 @@ insert:
 
 				cldiskvamerge( kvanew, orig1begin, orig1pages, orig2begin, orig2pages);
 				ap = ap->av_forw;
-#ifndef NOBOUNCE
 				vm_bounce_kva_free( orig2begin, ap->b_bufsize, 0);
-#endif
 
 				ap->b_un.b_addr = (caddr_t) kvanew;
 				bp->av_forw = ap->b_clusterf;
