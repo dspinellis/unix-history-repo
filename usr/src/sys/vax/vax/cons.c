@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)cons.c	7.5 (Berkeley) %G%
+ *	@(#)cons.c	7.6 (Berkeley) %G%
  */
 
 /*
@@ -53,8 +53,13 @@ cnopen(dev, flag)
 	tp->t_oproc = cnstart;
 	if ((tp->t_state&TS_ISOPEN) == 0) {
 		ttychars(tp);
+		tp->t_iflag = TTYDEF_IFLAG|ICRNL;
+		tp->t_oflag = TTYDEF_OFLAG|OPOST|ONLCR;
+		tp->t_lflag = TTYDEF_LFLAG;
+		tp->t_cflag = CS8|CREAD;
+		tp->t_ispeed = tp->t_ospeed = TTYDEF_SPEED;
 		tp->t_state = TS_ISOPEN|TS_CARR_ON;
-		tp->t_flags = EVENP|ECHO|XTABS|CRMOD;
+		ttsetwater(tp);
 	}
 	if (tp->t_state&TS_XCLUDE && u.u_uid != 0)
 		return (EBUSY);
@@ -77,21 +82,23 @@ cnclose(dev)
 }
 
 /*ARGSUSED*/
-cnread(dev, uio)
+cnread(dev, uio, flag)
 	dev_t dev;
 	struct uio *uio;
+	int flag;
 {
 	register struct tty *tp = &cons;
 
 	if (consops && minor(dev) == 0)
-		return ((*consops->d_read)(dev, uio));
-	return ((*linesw[tp->t_line].l_read)(tp, uio));
+		return ((*consops->d_read)(dev, uio, flag));
+	return ((*linesw[tp->t_line].l_read)(tp, uio, flag));
 }
 
 /*ARGSUSED*/
-cnwrite(dev, uio)
+cnwrite(dev, uio, flag)
 	dev_t dev;
 	struct uio *uio;
+	int flag;
 {
 	register struct tty *tp = &cons;
 
@@ -100,9 +107,9 @@ cnwrite(dev, uio)
 		    (TS_CARR_ON | TS_ISOPEN))
 			tp = constty;
 		else if (consops)
-			return ((*consops->d_write)(dev, uio));
+			return ((*consops->d_write)(dev, uio, flag));
 	}
-	return ((*linesw[tp->t_line].l_write)(tp, uio));
+	return ((*linesw[tp->t_line].l_write)(tp, uio, flag));
 }
 
 static	int cnpolling = 0;
@@ -132,6 +139,16 @@ cnrint(dev)
 #ifdef KADB
 	if (!kdbrintr(c, tp))
 #endif
+	if ((tp->t_cflag&CSIZE) == CS7) {
+		if (tp->t_cflag&PARENB) {
+			if ((tp->t_cflag&PARODD) && 
+			    (partab[c&0177]&0200) == (c&0200))
+				c |= TTY_PE;
+			else if ((partab[c&0177]&0200) != (c&0200))
+				c |= TTY_PE;
+		}
+		c &= ~0200;
+	}
 	(*linesw[tp->t_line].l_rint)(c, tp);
 }
 
@@ -203,15 +220,22 @@ cnstart(tp)
 	if (consdone == 0)
 		goto out;
 	c = getc(&tp->t_outq) & 0xff;
-	if ((tp->t_flags & (RAW|LITOUT)) == 0) {
-		if (c <= 0177)
-			c |= (partab[c] & 0200);
-		else {
-			timeout(ttrstrt, (caddr_t)tp, (c&0177));
-			tp->t_state |= TS_TIMEOUT;
-			goto out;
+#ifdef notdef
+	if (tp->t_cflag&PARENB && ((tp->t_cflag&CSIZE)==CS7)) {
+		c &= 0177;
+		c |= (tp->t_cflag&PARODD ? ~partab[c] : partab[c]) & 0200;
 		}
+#else
+	if ((tp->t_cflag&CSIZE) == CS7) {
+		if (tp->t_cflag&PARENB) {
+			if (tp->t_cflag&PARODD)
+				c = (~(partab[c&0177])&0200)|(c&0177);
+			else
+				c = (partab[c&0177]&0200)|(c&0177);
+		} else
+			c &= 0177;
 	}
+#endif
 	mtpr(TXDB, c);
 	consdone = 0;
 	tp->t_state |= TS_BUSY;
