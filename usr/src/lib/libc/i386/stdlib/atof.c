@@ -33,6 +33,14 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00089
+ * --------------------         -----   ----------------------
+ *
+ * 27 Feb 93    Joerg Wunsch	Implement strtod, fix atof.
+ *
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
@@ -47,6 +55,8 @@ static char sccsid[] = "@(#)atof.c	5.2 (Berkeley) 4/12/91";
 #include <stdlib.h>
 #include <math.h>
 #include <ctype.h>
+#include <errno.h>
+#include <stdio.h>
 
 static double twoemax = 9007199254740992.;	/*2^53*/
 
@@ -79,8 +89,9 @@ static struct {
 };
 
 double
-atof(p)
+strtod(p, endp)
 	register const char *p;
+	char **endp;
 {
 	register int c;
 	register int exp = 0;
@@ -90,6 +101,7 @@ atof(p)
 	int bexp;
 	int neg = 1;
 	int negexp = 1;
+	const char *oldp = p;
 
 	while (isspace(*p))
 		++p;
@@ -138,6 +150,14 @@ atof(p)
 		exp >>= 1;
 	}
 
+	/* according to ANSI, check for over-/underflow */
+	if(exp > 0) {
+		if(endp)
+			*endp = oldp;
+		errno = ERANGE;
+		return neg < 0? -HUGE_VAL: HUGE_VAL;
+	}
+
 	if (bexp < 0)
 		fl /= flexp;
 	else
@@ -145,5 +165,16 @@ atof(p)
 
 	fl = ldexp(fl, bexp);
 
+	if(endp)
+		*endp = p;
 	return neg < 0 ? -fl : fl;
 }
+
+
+double
+atof(p)
+	const char *p;
+{
+	return strtod(p, (char **)NULL);
+}
+

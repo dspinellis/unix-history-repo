@@ -30,7 +30,15 @@ the GNU General Public License, version 2, 1991.
  * Revision 3.1  91/06/07  10:39:33  brennan
  * VERSION 0.995
  * 
-*/
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00089
+ * --------------------         -----   ----------------------
+ *
+ * 01 Mar 93    Chris Demetriou		Adjust to life with strtod in libc
+ *
+ */
 
 /* BSD UNIX on 386BSD */
 
@@ -43,7 +51,7 @@ the GNU General Public License, version 2, 1991.
 #define   FPE_ZERODIVIDE   FPE_FLTDIV_FAULT
 #define   FPE_OVERFLOW     FPE_FLTOVF_FAULT
 
-#define   HAVE_STRTOD		0
+#define   HAVE_STRTOD		1
 #define   HAVE_MATHERR		0
 
 #define   HAVE_FMOD		1
