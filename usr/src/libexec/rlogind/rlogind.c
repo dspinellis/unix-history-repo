@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rlogind.c	5.21 (Berkeley) %G%";
+static char sccsid[] = "@(#)rlogind.c	5.22 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -31,7 +31,7 @@ static char sccsid[] = "@(#)rlogind.c	5.21 (Berkeley) %G%";
  *	remuser\0
  *	locuser\0
  *	terminal_type/speed\0
- *	data (not used currently)
+ *	data
  */
 
 #include <stdio.h>
@@ -52,7 +52,10 @@ static char sccsid[] = "@(#)rlogind.c	5.21 (Berkeley) %G%";
 #include <netdb.h>
 #include <syslog.h>
 #include <strings.h>
-#include <utmp.h>
+
+#ifndef TIOCPKT_WINDOW
+#define TIOCPKT_WINDOW 0x80
+#endif
 
 #ifdef	KERBEROS
 #include <sys/param.h>
@@ -64,7 +67,7 @@ KTEXT		ticket;
 u_char		auth_buf[sizeof(AUTH_DAT)];
 u_char		tick_buf[sizeof(KTEXT_ST)];
 Key_schedule	schedule;
-int		encrypt = 0, retval;
+int		encrypt, retval;
 int		do_krb_login();
 
 #define		OLD_RCMD		0x00
@@ -72,19 +75,14 @@ int		do_krb_login();
 #define		KERB_RCMD_MUTUAL	0x02
 #endif	/* KERBEROS */
 
-char	*envinit[2];
-struct	utmp utmp;
-#define	NMAX sizeof(utmp.ut_name)
+char	*env[2];
+#define	NMAX 30
 char	lusername[NMAX+1], rusername[NMAX+1];
 static	char term[64] = "TERM=";
 #define	ENVSIZE	(sizeof("TERM=")-1)	/* skip null for concatenation */
 int	keepalive = 1;
 
 #define	SUPERUSER(pwd)	((pwd)->pw_uid == 0)
-
-#ifndef TIOCPKT_WINDOW
-#define TIOCPKT_WINDOW 0x80
-#endif
 
 extern	int errno;
 int	reapchild();
@@ -145,7 +143,7 @@ doit(f, fromp)
 	struct sockaddr_in *fromp;
 {
 	int i, p, t, pid, on = 1;
-	int	authenticated = 0;
+	int authenticated = 0;
 	register struct hostent *hp;
 	struct hostent hostent;
 	char c;
@@ -202,9 +200,9 @@ doit(f, fromp)
 	    fromp->sin_port < IPPORT_RESERVED/2)
 		fatal(f, "Permission denied");
 	write(f, "", 1);
+#endif
 	if (do_rlogin(hp->h_name) == 0)
 		authenticated++;
-#endif
 
 	for (c = 'p'; c <= 's'; c++) {
 		struct stat stb;
@@ -260,10 +258,10 @@ gotpty:
 		close(t);
 		if (authenticated)
 			execl("/bin/login", "login", "-p", "-f",
-			    "-h", hp->h_name, pwd->pw_name, 0);
+			    "-h", hp->h_name, lusername, 0);
 		else
 			execl("/bin/login", "login", "-p", "-h", hp->h_name,
-			    pwd->pw_name, 0);
+			    lusername, 0);
 		fatalperror(2, "/bin/login");
 		/*NOTREACHED*/
 	}
@@ -280,7 +278,6 @@ gotpty:
 	else
 #endif
 		ioctl(f, FIONBIO, &on);
-
 	ioctl(p, FIONBIO, &on);
 	ioctl(p, TIOCPKT, &on);
 	signal(SIGTSTP, SIG_IGN);
@@ -507,62 +504,54 @@ fatalperror(f, msg)
 	fatal(f, buf);
 }
 
-
-int
 do_rlogin(host)
-	char	*host;
+	char *host;
 {
-	getstr(rusername, sizeof(rusername), "remuser");
-	getstr(lusername, sizeof(lusername), "locuser");
-	getstr(term+ENVSIZE, sizeof(term)-ENVSIZE, "Terminal type");
 
-	if(getuid()) {
-		pwd = &nouser;
+	getstr(rusername, sizeof(rusername), "remuser too long");
+	getstr(lusername, sizeof(lusername), "locuser too long");
+	getstr(term+ENVSIZE, sizeof(term)-ENVSIZE, "Terminal type too long");
+
+	if (getuid())
 		return(-1);
-	}
 	pwd = getpwnam(lusername);
-	if(pwd == NULL) {
-		pwd = &nouser;
-		pwd->pw_name = lusername;	/* pass on to login */
+	if (pwd == NULL)
 		return(-1);
-	}
 	return(ruserok(host, SUPERUSER(pwd), rusername, lusername));
 }
 
 
-getstr(buf, cnt, err)
-	char	*buf;
-	int	cnt;
-	char	*err;
+getstr(buf, cnt, errmsg)
+	char *buf;
+	int cnt;
+	char *errmsg;
 {
-	char	c;
+	char c;
+
 	do {
-		if(read(0, &c, 1) != 1)
+		if (read(0, &c, 1) != 1)
 			exit(1);
-		if(--cnt < 0) {
-			printf("%s too long\r\n", err);
-			exit(1);
-		}
+		if (--cnt < 0)
+			fatal(1, errmsg);
 		*buf++ = c;
-	} while(c != 0);
+	} while (c != 0);
 }
 
-extern	char	**environ;
+extern	char **environ;
 
 setup_term(fd)
-	int	fd;
+	int fd;
 {
-	struct	termios	tt;
-	struct	sgttyb	tp;
-	register char	*cp = index(term+ENVSIZE, '/'), **cpp;
-	char		*speed;
+	struct termios tt;
+	register char *cp = index(term+ENVSIZE, '/');
+	char *speed;
 
 	tcgetattr(fd, &tt);
-	if(cp) {
+	if (cp) {
 		*cp++ = '\0';
 		speed = cp;
 		cp = index(speed, '/');
-		if(cp)
+		if (cp)
 			*cp++ = '\0';
 		cfsetspeed(&tt, atoi(speed));
 	}
@@ -571,9 +560,9 @@ setup_term(fd)
 	tt.c_lflag = ISIG|ICANON|ECHO;
 	tcsetattr(fd, TCSADFLUSH, &tt);
 
-	envinit[0] = term;
-	envinit[1] = 0;
-	environ = envinit;
+	env[0] = term;
+	env[1] = 0;
+	environ = env;
 }
 
 #ifdef	KERBEROS
@@ -587,33 +576,27 @@ setup_term(fd)
  * Return -1 on valid authentication, no authorization
  * Return >0 for error conditions
  */
-
-int
 do_krb_login(host, dest, encrypt)
-	char			*host;
-	struct	sockaddr_in	*dest;
-	int			encrypt;
+	char *host;
+	struct sockaddr_in *dest;
+	int encrypt;
 {
-	int	rc;
-	char	instance[INST_SZ], version[VERSION_SIZE];
-	long	authopts = 0L;	/* !mutual */
-	struct	sockaddr_in	faddr;
+	int rc;
+	char instance[INST_SZ], version[VERSION_SIZE];
+	long authopts = 0L;	/* !mutual */
+	struct sockaddr_in faddr;
 
-	if(getuid()) {
-		pwd = &nouser;
+	if (getuid())
 		return(KFAILURE);
-	}
 
 	kdata = (AUTH_DAT *) auth_buf;
 	ticket = (KTEXT) tick_buf;
 	strcpy(instance, "*");
 
-	if(encrypt) {
+	if (encrypt) {
 		rc = sizeof(faddr);
-		if(getsockname(0, &faddr, &rc)) {
-			pwd = &nouser;
+		if (getsockname(0, &faddr, &rc))
 			return(-1);
-		}
 		authopts = KOPT_DO_MUTUAL;
 		rc = krb_recvauth(
 			authopts, 0,
@@ -630,29 +613,22 @@ do_krb_login(host, dest, encrypt)
 			kdata, "", (bit_64 *) 0, version);
 	}
 
-	if(rc != KSUCCESS) {
-		pwd = &nouser;
+	if (rc != KSUCCESS)
 		return(rc);
-	}
 
-	if((rc = krb_kntoln(kdata, rusername)) != KSUCCESS) {
-		pwd = &nouser;
+	if ((rc = krb_kntoln(kdata, rusername)) != KSUCCESS)
 		return(rc);
-	}
 
 	getstr(lusername, sizeof(lusername), "locuser");
 	/* get the "cmd" in the rcmd protocol */
 	getstr(term+ENVSIZE, sizeof(term)-ENVSIZE, "Terminal type");
 
 	pwd = getpwnam(lusername);
-	if(pwd == NULL) {
-		pwd = &nouser;
-		pwd->pw_name = lusername;
+	if (pwd == NULL)
 		return(-1);
-	}
 
 	/* XXX need to use something other than ruserok */
 	/* returns -1 for invalid authentication */
 	return(ruserok(host, SUPERUSER(pwd), rusername, lusername));
 }
-#endif
+#endif /* KERBEROS */
