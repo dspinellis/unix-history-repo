@@ -1,17 +1,26 @@
-#! /bin/sh
-#	@(#)plot.sh	4.1	(Berkeley)	%G%
+#!/bin/sh
+#	@(#)plot.sh	4.2	(Berkeley)	%G%
 #
-PATH=/bin:/usr/bin
+PATH=/bin:/usr/bin:/usr/ucb
 case $1 in
 -T*)	t=$1
 	shift ;;
 *)	t=-T$TERM
 esac
 case $t in
--T450)	exec t450 $*;;
--T300)	exec t300 $*;;
--T300S|-T300s)	exec t300s $*;;
--Tver)	exec vplot $*;;
+-T450)			exec t450 $*;;
+-T300)			exec t300 $*;;
+-T300S|-T300s)		exec t300s $*;;
+-Tver)			exec lpr -Pversatec -g $*;;
+-Tvar)			exec lpr -Pvarian -g $*;;
 -Ttek|-T4014|-T)	exec tek $* ;;
-*)  echo plot: terminal type $t not known 1>&2; exit 1
+-Tbitgraph|-Tbg)	exec bgplot $*;;
+-Tgigi|-Tvt125)		exec gigiplot $*;;
+-Taed)			exec aedplot $*;;
+-Thp7221|-Thp7|-Th7)	exec hp7221plot $*;;
+-Thp|-T2648|-T2648a|-Thp2648|-Thp2648a|h8)
+			exec hpplot $*;;
+-Tcrt)			exec crtplot $*;;
+-Tdumb|un|unknown)	exec dumbplot $*;;
+*)  			exec crtplot $*;;
 esac
