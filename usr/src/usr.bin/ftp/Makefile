@@ -1,4 +1,4 @@
-#	@(#)Makefile	4.4	%G%
+#	@(#)Makefile	4.5	%G%
 #
 ALL=	ftp
 DESTDIR=
@@ -7,7 +7,7 @@ CFLAGS=	-O
 all:	${ALL}
 
 ftp:	cmds.o cmdtab.o ftp.o glob.o main.o
-	${CC} cmds.o cmdtab.o ftp.o glob.o main.o -o ftp -ljobs
+	${CC} cmds.o cmdtab.o ftp.o glob.o main.o -o ftp 
 
 ftp.o:	/usr/include/arpa/ftp.h ftp_var.h
 cmds.o:	/usr/include/arpa/ftp.h ftp_var.h
