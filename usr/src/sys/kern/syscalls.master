@@ -1,4 +1,4 @@
-	@(#)syscalls.master	7.40 (Berkeley) %G%
+	@(#)syscalls.master	7.41 (Berkeley) %G%
 ; System call name/number master file.
 ; Processed to created init_sysent.c, syscalls.c and syscall.h.
 
@@ -92,8 +92,8 @@
 60	STD	1 umask
 61	STD	1 chroot
 62	COMPAT	2 fstat
-63	STD	4 getkerninfo
-64	STD	0 getpagesize
+63	COMPAT	4 getkerninfo
+64	COMPAT	0 getpagesize
 65	STD	2 msync
 66	STD	0 vfork
 67	OBSOL	0 vread
@@ -116,8 +116,8 @@
 84	COMPAT	0 wait
 85	STD	1 swapon
 86	STD	2 getitimer
-87	STD	2 gethostname
-88	STD	2 sethostname
+87	COMPAT	2 gethostname
+88	COMPAT	2 sethostname
 89	STD	0 getdtablesize
 90	STD	2 dup2
 91	UNIMPL	2 getdopt
@@ -179,8 +179,8 @@
 139	OBSOL	0 4.2 sigreturn
 140	STD	2 adjtime
 141	COMPAT	3 getpeername
-142	STD	0 gethostid
-143	STD	1 sethostid
+142	COMPAT	0 gethostid
+143	COMPAT	1 sethostid
 144	STD	2 getrlimit
 145	STD	2 setrlimit
 146	COMPAT	2 killpg
