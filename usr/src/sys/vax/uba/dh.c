@@ -1,4 +1,4 @@
-/*	dh.c	3.3	%H%	*/
+/*	dh.c	3.4	%H%	*/
 
 /*
  *	DH-11 driver
@@ -28,7 +28,7 @@ struct cblock {
 };
 
 struct	tty dh11[NDH11];
-int	dhchars[(NDH11+15)/16];
+int	dhact;
 int	ndh11	= NDH11;
 int	dhstart();
 int	ttrstrt();
@@ -55,13 +55,6 @@ extern struct cblock cfree[];
 #define	OVERRUN	040000
 #define	XINT	0100000
 #define	SSPEED	7	/* standard speed: 300 baud */
-
-#ifdef ERNIE
-#define	DHTIME	2		/* Since Berknet packets are only 100 chars */
-#else
-#define	DHTIME	6
-#endif
-extern int dhtimer();
 
 /*
  * DM control bits
@@ -99,7 +92,7 @@ dhopen(dev, flag)
 	register struct tty *tp;
 	register d;
 	register struct device *addr;
-	static	timer_on;
+	static getcbase;
 	int s;
 
 	d = minor(dev) & 0177;
@@ -115,13 +108,13 @@ dhopen(dev, flag)
 	tp->t_iproc = NULL;
 	tp->t_state |= WOPEN;
 	s = spl6();
-	if (!timer_on) {
-		timer_on++;
-		timeout(dhtimer, (caddr_t)0, DHTIME);
+	if (!getcbase) {
+		getcbase++;
 		cbase = (short)uballoc((caddr_t)cfree, NCLIST*sizeof(struct cblock), 0);
 	}
 	splx(s);
 	addr->un.dhcsr |= IENAB;
+	dhact |= (1<<(d>>4));
 	if ((tp->t_state&ISOPEN) == 0) {
 		ttychars(tp);
 		tp->t_ispeed = SSPEED;
@@ -186,12 +179,13 @@ dhrint(dev)
 	register struct tty *tp;
 	register short c;
 	register struct device *addr;
+	register struct tty *tp0;
 
 	addr = DHADDR;
 	addr += minor(dev) & 0177;
+	tp0 = &dh11[((minor(dev)&0177)<<4)];
 	while ((c = addr->dhnxch) < 0) {	/* char. present */
-		tp = &dh11[((minor(dev)&0177)<<4) + ((c>>8)&017)];
-		dhchars[minor(dev)&0177]++;
+		tp = tp0 + ((c>>8)&017);
 		if (tp >= &dh11[NDH11])
 			continue;
 		if((tp->t_state&ISOPEN)==0) {
@@ -210,12 +204,12 @@ dhrint(dev)
 			else
 				c = 0177;	/* DEL (intr) */
 #ifdef BERKNET
-			if (tp->t_line == BNETLDIS) {
-				c &= 0177;
-				NETINPUT(c, tp);
-			} else
+		if (tp->t_line == BNETLDIS) {
+			c &= 0177;
+			NETINPUT(c, tp);
+		} else
 #endif
-				(*linesw[tp->t_line].l_rint)(c,tp);
+			(*linesw[tp->t_line].l_rint)(c,tp);
 	}
 }
 
@@ -432,24 +426,20 @@ register struct tty *tp;
 	splx(s);
 }
 
-int	minsilo = 16;
+int	dhsilo = 16;
 /*ARGSUSED*/
 dhtimer(dev)
 {
-register d,cc;
-register struct device *addr;
+	register d,cc;
+	register struct device *addr;
+
 	addr = DHADDR; d = 0;
 	do {
-		cc = dhchars[d];
-		dhchars[d] = 0;
-		if (cc > 8*DHTIME)
-			cc = 32; else
-			if (cc > 3*DHTIME)
-				cc = 16; else
-				cc = minsilo;
-		addr->dhsilo = cc;
+		if (dhact & (1<<d)) {
+			addr->dhsilo = dhsilo;
+			dhrint(d);
+		}
+		d++;
 		addr++;
-		dhrint(d++);
 	} while (d < (NDH11+15)/16);
-	timeout(dhtimer, (caddr_t)0, DHTIME);
 }
