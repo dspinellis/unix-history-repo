@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ip_output.c	7.4 (Berkeley) %G%
+ *	@(#)ip_output.c	7.5 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -102,7 +102,10 @@ ip_output(m, opt, ro, flags)
 		if (ro->ro_rt == 0)
 			rtalloc(ro);
 		if (ro->ro_rt == 0 || (ifp = ro->ro_rt->rt_ifp) == 0) {
-			error = ENETUNREACH;
+			if (in_localaddr(ip->ip_dst))
+				error = EHOSTUNREACH;
+			else
+				error = ENETUNREACH;
 			goto bad;
 		}
 		ro->ro_rt->rt_use++;
