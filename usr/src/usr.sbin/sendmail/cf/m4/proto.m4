@@ -8,8 +8,7 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(@(#)proto.m4	2.28 (Berkeley) %G%)
-define(`DOIT', `dnl')dnl
+VERSIONID(`@(#)proto.m4	2.29 (Berkeley) %G%')
 
 MAILER(local)dnl
 
