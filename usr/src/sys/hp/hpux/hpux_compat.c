@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: hpux_compat.c 1.33 89/08/23$
  *
- *	@(#)hpux_compat.c	7.3 (Berkeley) %G%
+ *	@(#)hpux_compat.c	7.4 (Berkeley) %G%
  */
 
 /*
@@ -115,8 +115,10 @@ notimp(code, nargs)
 /*
  * HPUX versions of wait and wait3 actually pass the parameters
  * (status pointer, options, rusage) into the kernel rather than
- * handling it in the C library stub.  We also need to map any
- * termination signal from BSD to HPUX.
+ * handling it in the C library stub.  For now, use COMPAT_43 version
+ * of wait (owait), as it's most convenient (it leaves the status
+ * in rval2 where we can muck with it before copying out).
+ * We also need to map any termination signal from BSD to HPUX.
  */
 hpuxwait3()
 {
@@ -150,10 +152,8 @@ hpuxwait()
 	 * HP-UX wait always returns EINTR when interrupted by a signal
 	 * (well, unless its emulating a BSD process, but we don't bother...)
 	 */
-	if (u.u_eosys == RESTARTSYS) {
-		u.u_eosys = NORMALRETURN;
+	if (u.u_error == ERESTART)
 		u.u_error = EINTR;
-	}
 	if (u.u_error)
 		return;
 	sig = u.u_r.r_val2 & 0xFF;
@@ -1329,8 +1329,9 @@ ohpuxutime()
 ohpuxpause()
 {
 
-	for (;;)
-		sleep((caddr_t)&u, PSLEP);
+	(void) tsleep((caddr_t)&u, PPAUSE | PCATCH, "pause", 0);
+	/* always return EINTR rather than ERESTART... */
+	RETURN (EINTR);
 }
 
 /*
