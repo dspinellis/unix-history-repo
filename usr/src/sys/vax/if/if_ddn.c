@@ -1,4 +1,4 @@
-
+/*	@(#)if_ddn.c	6.2 (Berkeley) %G% */
 
 
 /************************************************************************\
@@ -63,31 +63,37 @@ Revision History:
 #if NDDN > 0
 #include "../machine/pte.h"
 
-#include "../h/param.h"
-#include "../h/systm.h"
-#include "../h/mbuf.h"
-#include "../h/buf.h"
-#include "../h/protosw.h"
-#include "../h/socket.h"
-#include "../h/vmmac.h"
-#include "../h/errno.h"
-#include "../h/time.h"
-#include "../h/kernel.h"
-#include "../h/ioctl.h"
+#include "param.h"
+#include "systm.h"
+#include "mbuf.h"
+#include "buf.h"
+#include "protosw.h"
+#include "socket.h"
+#include "vmmac.h"
+#include "errno.h"
+#include "time.h"
+#include "kernel.h"
+#include "ioctl.h"
 
 #include "../net/if.h"
 #include "../net/netisr.h"
 #include "../net/route.h"
+
+#ifdef	BBNNET
+#define	INET
+#endif
+#ifdef	INET
 #include "../netinet/in.h"
 #include "../netinet/in_systm.h"
+#include "../netinet/in_var.h"
 #include "../netinet/ip.h"
-#include "../netinet/ip_var.h"
+#endif
 
 #include "../vax/cpu.h"
 #include "../vax/mtpr.h"
-#include "../vaxif/if_ddnreg.h"
-#include "../vaxif/if_ddnvar.h"
-#include "../vaxif/if_uba.h"
+#include "if_ddnreg.h"
+#include "if_ddnvar.h"
+#include "if_uba.h"
 #include "../vaxuba/ubareg.h"
 #include "../vaxuba/ubavar.h"
 
@@ -236,6 +242,7 @@ struct ddn_softc	/* device control structure */
     struct sioq		ddn_sioq;	/* start I/O queue */
     int			ddn_vector;	/* UNIBUS interrupt vector */
     u_short		ddn_flags;	/* misc flags */
+    struct in_addr	ddn_ipaddr;	/* local IP address */
   } ddn_softc[NDDN];
 
 
@@ -313,7 +320,7 @@ struct uba_device *ui;
     ds->ddn_if.if_output = ddnoutput;	/* set output routine addr */
     ds->ddn_if.if_reset = ddnreset;	/* set reset routine addr */
     ds->ddn_if.if_watchdog = ddntimer;	/* set timer routine addr */
-    if_attach(&ds->ddn_if);		/* attach new network device */
+    if_attach(&ds->ddn_if);
   }
 
 
@@ -370,7 +377,6 @@ int unit;
     register struct ddn_softc *ds = &ddn_softc[unit];
     register struct ddn_cb *dc;
     register struct uba_device *ui = ddninfo[unit];
-    struct sockaddr_in *sin;
     int lcn, s;
 
 #ifdef DDNDEBUG
@@ -380,8 +386,7 @@ printf("ddn%d: ddninit()\n", unit);
   }
 #endif DDNDEBUG
 
-    sin = (struct sockaddr_in *)&ds->ddn_if.if_addr;
-    if (in_netof(sin->sin_addr) == 0)	/* if we have no internet addr */
+    if (ds->ddn_if.if_addrlist == 0)	/* if we have no internet addr */
 	return;				/*   don't init yet */
 
     dc = ds->ddn_cb;			/* setup ptr to first LCN cntl block */
@@ -443,8 +448,6 @@ printf("ddn%d: ddninit()\n", unit);
     splx(s);
 
     ddntimer(unit);			/* start timers */
-
-    if_rtinit(&ds->ddn_if, RTF_UP);	/* init route */
   }
 
 
@@ -593,41 +596,32 @@ printf("ddntimer()\n");
 \***********************************************************************/
 
 ddnioctl(ifp, cmd, data)
-register struct ifnet *ifp;
-int cmd;
-caddr_t data;
-  {
-    struct ifreq *ifr = (struct ifreq *)data;
-    struct sockaddr_in *sin = (struct sockaddr_in *)&ifr->ifr_addr;
-    int s = splimp(), error = 0;
+	register struct ifnet *ifp;
+	int cmd;
+	caddr_t data;
+{
+	struct ifaddr *ifa = (struct ifaddr *) data;
+	int s = splimp(), error = 0;
+	struct endevice *enaddr;
 
-#ifdef DDNDEBUG
-if (ddn_debug > 0)
-  {
-printf("ddn%d: ioctl()\n", ifp->if_unit);
-  }
-#endif DDNDEBUG
+	switch (cmd) {
 
-    switch (cmd)
-      {
-    case SIOCSIFADDR:
-	if (ifp->if_flags & IFF_RUNNING)
-	    if_rtinit(ifp, -1);		/* delete previous route */
-	ifp->if_addr = *(struct sockaddr *)sin;
-	ifp->if_net = in_netof(sin->sin_addr);
-	ifp->if_host[0] = in_lnaof(sin->sin_addr);
-	if (ifp->if_flags & IFF_RUNNING)
-	    if_rtinit(ifp, RTF_UP);
-	else
-	    ddninit(ifp->if_unit);
-	break;
-    default:
-	error = EINVAL;
-      }
+	case SIOCSIFADDR:
+		if (ifa->ifa_addr.sa_family != AF_INET)
+			return(EINVAL);
+		ifp->if_flags |= IFF_UP;
+		if ((ifp->if_flags & IFF_RUNNING) == 0)
+			ddninit(ifp->if_unit);
+		ddn_softc[ifp->if_unit].ddn_ipaddr = IA_SIN(ifa)->sin_addr;
+		break;
 
-    splx(s);
-    return (error);
-  }
+	default:
+		error = EINVAL;
+		break;
+	}
+	splx(s);
+	return (error);
+}
 
 
 /***********************************************************************\
@@ -818,9 +812,6 @@ printf("locate_x25_lcn()\n");
   }
 #endif DDNDEBUG
 
-    ip_addr.s_net = 0;			/* DDN X.25 doesn't know net number */
-					/*   (assumes Class A network number) */
-
     dc = &(ds->ddn_cb[1]);
     for(lcn = 1; lcn <= NDDNCH; lcn++)	/* scan LCN table for addr match */
       {
@@ -875,7 +866,17 @@ struct in_addr ip_addr;
 u_char x25addr[];
   {
     register int temp;
+    union {
+	struct in_addr ip;
+	struct {	 /*   (assumes Class A network number) */
+	    u_char s_net;
+	    u_char s_host;
+	    u_char s_lh;
+	    u_char s_impno;
+	} imp;
+    } imp_addr;
 
+    imp_addr.ip = ip_addr;
     x25addr[0] = 14;		/* set addr length */
 
     x25addr[1] = 0;		/* clear DNIC */
@@ -883,18 +884,18 @@ u_char x25addr[];
     x25addr[3] = 0;
     x25addr[4] = 0;
 
-    if (ip_addr.s_host < 64)	/* Physical:  0000 0 IIIHH00 [SS]	*/
-      {				/*   s_impno -> III, s_host -> HH	*/
+    if (imp_addr.imp.s_host < 64)	/* Physical:  0000 0 IIIHH00 [SS] */
+      {					/*   s_impno -> III, s_host -> HH */
     	x25addr[5] = 0;		/* set flag bit */
-    	x25addr[6] = ip_addr.s_impno / 100;
-    	x25addr[7] = (ip_addr.s_impno % 100) / 10;
-    	x25addr[8] = ip_addr.s_impno % 10;
-    	x25addr[9] = ip_addr.s_host / 10;
-    	x25addr[10] = ip_addr.s_host % 10;
+    	x25addr[6] = imp_addr.imp.s_impno / 100;
+    	x25addr[7] = (imp_addr.imp.s_impno % 100) / 10;
+    	x25addr[8] = imp_addr.imp.s_impno % 10;
+    	x25addr[9] = imp_addr.imp.s_host / 10;
+    	x25addr[10] = imp_addr.imp.s_host % 10;
       }
     else			/* Logical:   0000 1 RRRRR00 [SS]	*/
       {				/*   s_host * 256 + s_impno -> RRRRR	*/
-    	temp = (ip_addr.s_host << 8) + ip_addr.s_impno;
+    	temp = (imp_addr.imp.s_host << 8) + imp_addr.imp.s_impno;
     	x25addr[5] = 1;
     	x25addr[6] = temp / 10000;
     	x25addr[7] = (temp % 10000) / 1000;
@@ -938,7 +939,15 @@ static int convert_x25_addr(x25addr)
 u_char x25addr[];
   {
     register int cnt, temp;
-    struct in_addr ipaddr;
+    union {
+	struct in_addr ip;
+	struct {	 /*   (assumes Class A network number) */
+	    u_char s_net;
+	    u_char s_host;
+	    u_char s_lh;
+	    u_char s_impno;
+	} imp;
+    } imp_addr;
 
     if (((cnt = x25addr[0]) < 12) || (cnt > 14))
       {
@@ -949,13 +958,13 @@ u_char x25addr[];
     switch(x25addr[5] & 0x0f)
       {
     case 0:			/* Physical:  0000 0 IIIHH00 [SS]	*/
-	ipaddr.s_impno =
+	imp_addr.imp.s_impno =
 		((int)(x25addr[6] & 0x0f) * 100) +
 		((int)(x25addr[7] & 0x0f) * 10)  +
 		((int)(x25addr[8] & 0x0f));
     	
 
-    	ipaddr.s_host =
+    	imp_addr.imp.s_host =
     		((int)(x25addr[9] & 0x0f) * 10) +
 		((int)(x25addr[10] & 0x0f));
         break;
@@ -966,16 +975,16 @@ u_char x25addr[];
     		+ ((int)(x25addr[9] & 0x0f) * 10)
 		+ ((int)(x25addr[10] & 0x0f));
 
-    	ipaddr.s_host = temp >> 8;
-    	ipaddr.s_impno = temp & 0xff;
+    	imp_addr.imp.s_host = temp >> 8;
+    	imp_addr.imp.s_impno = temp & 0xff;
     	break;
     default:
     	printf("DDN: illegal X25 address format!\n");
     	return(0);
       }
 
-    ipaddr.s_lh = 0;
-    ipaddr.s_net = 0;
+    imp_addr.imp.s_lh = 0;
+    imp_addr.imp.s_net = 0;
 
 #ifdef DDNDEBUG
 if (ddn_debug > 4)
@@ -983,12 +992,12 @@ if (ddn_debug > 4)
 printf("convert_x25_addr():  ");
 prt_bytes(&x25addr[1], cnt);
 printf(" ==> ");
-prt_addr(ipaddr);
+prt_addr(imp_addr.ip);
 printf("\n");
   }
 #endif DDNDEBUG
 
-    return(ipaddr.s_addr);
+    return(imp_addr.ip.s_addr);
   }
 
 
@@ -1008,7 +1017,6 @@ register struct ddn_cb *dc;
   {
     register struct mbuf *m_callbfr;
     register u_char *cb;
-    struct sockaddr_in *our_addr;
 
     MGET(m_callbfr, M_DONTWAIT, MT_DATA);  /* try to get call cmnd buffer */
     if (m_callbfr == 0)
@@ -1016,8 +1024,7 @@ register struct ddn_cb *dc;
 
     cb = mtod(m_callbfr, u_char *);
 
-    our_addr = (struct sockaddr_in *)&(ds->ddn_if.if_addr);
-    convert_ip_addr(our_addr->sin_addr, cb_calling_addr);
+    convert_ip_addr(ds->ddn_ipaddr, cb_calling_addr);
 
     cb_protocol[0] = 4;
     cb_protocol[1] = X25_PROTO_IP;	/* protocol = IP */
@@ -1257,7 +1264,7 @@ int unit, chan, cc, rcnt;
     	    ds->ddn_if.if_ipackets++;
 	    dc->dc_state = LC_DATA_IDLE;
 	    dc->dc_timer = TMO_DATA_IDLE;
-    	    m = if_rubaget(&(dc->dc_ifuba), rcnt, 0);
+    	    m = if_rubaget(&(dc->dc_ifuba), rcnt, 0, &ds->ddn_if);
     	    if (m)
     	      {
     		if (IF_QFULL(inq))
