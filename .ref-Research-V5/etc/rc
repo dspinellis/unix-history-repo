@@ -1,5 +1,0 @@
-rm -f /etc/mtab
-chdir /tmp
-rm -f [a-t]* [x-z]* v*
-chdir /
-/etc/update
