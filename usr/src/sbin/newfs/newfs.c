@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)newfs.c	4.1 %G%";
+static char sccsid[] = "@(#)newfs.c	4.2 %G%";
 #endif
 
 /*
@@ -197,10 +197,8 @@ again:
 	}
 	if (verbose)
 		printf("%s\n", cmd);
-#ifdef notdef
 	if (status = system(cmd))
 		exit(status);
-#endif
 	if (*cp == 'a') {
 		char type[3];
 
@@ -250,18 +248,16 @@ installboot(dev, type)
 		exit(2);
 	}
 	close(fd);
-#ifdef notdef
-	fd = open(special, 1);
+	fd = open(dev, 1);
 	if (fd < 0) {
-		fprintf(stderr, "makefs: "); perror(special);
+		fprintf(stderr, "makefs: "); perror(dev);
 		exit(1);
 	}
 	if (write(fd, bootimage, BBSIZE) != BBSIZE) {
-		fprintf(stderr, "makefs: "); perror(special);
+		fprintf(stderr, "makefs: "); perror(dev);
 		exit(2);
 	}
 	close(fd);
-#endif
 }
 
 /*VARARGS*/
