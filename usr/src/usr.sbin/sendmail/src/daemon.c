@@ -12,9 +12,9 @@
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	8.41 (Berkeley) %G% (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.42 (Berkeley) %G% (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	8.41 (Berkeley) %G% (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.42 (Berkeley) %G% (without daemon mode)";
 #endif
 #endif /* not lint */
 
@@ -90,6 +90,9 @@ getrequests()
 	bool refusingconnections = TRUE;
 	FILE *pidf;
 	int socksize;
+#ifdef XDEBUG
+	bool j_has_dot;
+#endif
 	extern void reapchild();
 
 	/*
@@ -195,6 +198,13 @@ getrequests()
 		fclose(pidf);
 	}
 
+#ifdef XDEBUG
+	{
+		char *j = macvalue('j', CurEnv);
+
+		j_has_dot = j != NULL && strchr(j, '.') != NULL;
+	}
+#endif
 
 	if (tTd(15, 1))
 		printf("getrequests: %d\n", DaemonSocket);

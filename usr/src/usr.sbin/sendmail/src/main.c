@@ -13,7 +13,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	8.54 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	8.55 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -129,7 +129,7 @@ main(argc, argv, envp)
 	extern char *getcfname();
 	extern char *optarg;
 	extern char **environ;
-	extern void dumpstate();
+	extern void sigusr1();
 
 	/*
 	**  Check to see if we reentered.
@@ -151,7 +151,7 @@ main(argc, argv, envp)
 
 	/* arrange to dump state on signal */
 #ifdef SIGUSR1
-	setsignal(SIGUSR1, dumpstate);
+	setsignal(SIGUSR1, sigusr1);
 #endif
 
 	/* in 4.4BSD, the table can be huge; impose a reasonable limit */
@@ -1406,22 +1406,28 @@ auth_warning(e, msg, va_alist)
 	}
 }
 /*
-**  DUMPSTATE -- dump state on user signal
+**  DUMPSTATE -- dump state
 **
 **	For debugging.
 */
 
 void
-dumpstate()
+dumpstate(when)
+	char *when;
 {
 #ifdef LOG
 	register char *j = macvalue('j', CurEnv);
 	register STAB *s;
 
-	syslog(LOG_DEBUG, "--- dumping state on user signal: $j = %s ---", j);
-	s = stab(j, ST_CLASS, ST_FIND);
-	if (s == NULL || !bitnset('w', s->s_class))
-		syslog(LOG_DEBUG, "*** $j not in $=w ***");
+	syslog(LOG_DEBUG, "--- dumping state on %s: $j = %s ---",
+		when,
+		j == NULL ? "<NULL>" : j);
+	if (j != NULL)
+	{
+		s = stab(j, ST_CLASS, ST_FIND);
+		if (s == NULL || !bitnset('w', s->s_class))
+			syslog(LOG_DEBUG, "*** $j not in $=w ***");
+	}
 	syslog(LOG_DEBUG, "--- open file descriptors: ---");
 	printopenfds(TRUE);
 	syslog(LOG_DEBUG, "--- connection cache: ---");
@@ -1441,4 +1447,11 @@ dumpstate()
 	}
 	syslog(LOG_DEBUG, "--- end of state dump ---");
 #endif
+}
+
+
+void
+sigusr1()
+{
+	dumpstate("user signal");
 }
