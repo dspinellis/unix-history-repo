@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	8.70 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	8.71 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	8.70 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	8.71 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -693,6 +693,7 @@ orderq(doall)
 		    !strcontainedin(QueueLimitId, d->d_name))
 			continue;
 
+#ifdef PICKY_QF_NAME_CHECK
 		/*
 		**  Check queue name for plausibility.  This handles
 		**  both old and new type ids.
@@ -711,11 +712,11 @@ orderq(doall)
 		{
 			if (Verbose)
 				printf("orderq: bogus qf name %s\n", d->d_name);
-#ifdef LOG
-			if (LogLevel > 3)
-				syslog(LOG_CRIT, "orderq: bogus qf name %s",
+# ifdef LOG
+			if (LogLevel > 0)
+				syslog(LOG_ALERT, "orderq: bogus qf name %s",
 					d->d_name);
-#endif
+# endif
 			if (strlen(d->d_name) > MAXNAME)
 				d->d_name[MAXNAME] = '\0';
 			strcpy(lbuf, d->d_name);
@@ -723,8 +724,9 @@ orderq(doall)
 			(void) rename(d->d_name, lbuf);
 			continue;
 		}
+#endif
 
-		/* yes -- open control file (if not too many files) */
+		/* open control file (if not too many files) */
 		if (++wn >= QUEUESIZE)
 			continue;
 
@@ -1209,7 +1211,7 @@ readqf(e)
 		return FALSE;
 	}
 
-	if (st.st_uid != geteuid())
+	if (st.st_uid != geteuid() || bitset(S_IWOTH|S_IWGRP, st.st_mode))
 	{
 # ifdef LOG
 		if (LogLevel > 0)
@@ -1833,6 +1835,7 @@ loseqfile(e, why)
 	register ENVELOPE *e;
 	char *why;
 {
+	char *p;
 	char buf[40];
 
 	if (e == NULL || e->e_id == NULL)
@@ -1840,8 +1843,11 @@ loseqfile(e, why)
 	if (strlen(e->e_id) > sizeof buf - 4)
 		return;
 	strcpy(buf, queuename(e, 'q'));
-	rename(buf, queuename(e, 'Q'));
+	p = queuename(e, 'Q');
+	if (rename(buf, p) < 0)
+		syserr("cannot rename(%s, %s), uid=%d", buf, p, geteuid());
 #ifdef LOG
-	syslog(LOG_ALERT, "Losing %s: %s", buf, why);
+	else if (LogLevel > 0)
+		syslog(LOG_ALERT, "Losing %s: %s", buf, why);
 #endif
 }
