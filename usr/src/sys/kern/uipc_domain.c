@@ -1,4 +1,4 @@
-/*	uipc_domain.c	5.8	83/02/10	*/
+/*	uipc_domain.c	5.9	83/03/15	*/
 
 #include "../h/param.h"
 #include "../h/socket.h"
@@ -53,7 +53,7 @@ pffindtype(family, type)
 	return (0);
 found:
 	for (pr = dp->dom_protosw; pr < dp->dom_protoswNPROTOSW; pr++)
-		if (pr->pr_type == type)
+		if (pr->pr_type && pr->pr_type == type)
 			return (pr);
 	return (0);
 }
