@@ -1,4 +1,4 @@
-/*	ht.c	6.3	84/08/29	*/
+/*	ht.c	6.4	85/03/13	*/
 
 #include "tu.h"
 #if NHT > 0
@@ -25,6 +25,7 @@
 #include "mtio.h"
 #include "cmap.h"
 #include "uio.h"
+#include "tty.h"
 
 #include "../vax/cpu.h"
 #include "mbareg.h"
@@ -64,6 +65,7 @@ struct	tu_softc {
 	short	sc_dens;
 	struct	mba_device *sc_mi;
 	int	sc_slave;
+	struct	tty *sc_ttyp;		/* record user's tty for errors */
 } tu_softc[NTU];
 short	tutoht[NTU];
 
@@ -139,6 +141,7 @@ htopen(dev, flag)
 	sc->sc_nxrec = INF;
 	sc->sc_flags = 0;
 	sc->sc_dens = dens;
+	sc->sc_ttyp = u.u_ttyp;
 	return (0);
 }
 
@@ -323,7 +326,7 @@ htdtint(mi, mbsr)
 			    (mbs&MBSR_EBITS) == (MBSR_DTABT|MBSR_MBEXC) &&
 			    (ds&HTDS_MOL))
 				goto noprint;
-			printf("tu%d: hard error bn%d mbsr=%b er=%b ds=%b\n",
+			tprintf(sc->sc_ttyp, "tu%d: hard error bn%d mbsr=%b er=%b ds=%b\n",
 			    TUUNIT(bp->b_dev), bp->b_blkno,
 			    mbsr, mbsr_bits,
 			    sc->sc_erreg, hter_bits,
@@ -386,7 +389,7 @@ htndtint(mi)
 	if ((ds & (HTDS_ERR|HTDS_MOL)) != HTDS_MOL) {
 		if ((ds & HTDS_MOL) == 0 && sc->sc_openf > 0)
 			sc->sc_openf = -1;
-		printf("tu%d: hard error bn%d er=%b ds=%b\n",
+		tprintf(sc->sc_ttyp, "tu%d: hard error bn%d er=%b ds=%b\n",
 		    TUUNIT(bp->b_dev), bp->b_blkno,
 		    sc->sc_erreg, hter_bits, sc->sc_dsreg, htds_bits);
 		bp->b_flags |= B_ERROR;
