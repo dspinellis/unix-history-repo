@@ -1,9 +1,20 @@
 #
-# Copyright (c) 1987 Regents of the University of California.
-# All rights reserved.  The Berkeley software License Agreement
-# specifies the terms and conditions for redistribution.
+# Copyright (c) 1988 The Regents of the University of California.
+# All rights reserved.
 #
-#	@(#)Makefile	5.4	(Berkeley)	%G%
+# Redistribution and use in source and binary forms are permitted
+# provided that the above copyright notice and this paragraph are
+# duplicated in all such forms and that any documentation,
+# advertising materials, and other materials related to such
+# distribution and use acknowledge that the software was developed
+# by the University of California, Berkeley.  The name of the
+# University may not be used to endorse or promote products derived
+# from this software without specific prior written permission.
+# THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+# IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+# WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+#
+#	@(#)Makefile	5.5 (Berkeley) %G%
 #
 # make file for intermachine communications package
 #
@@ -49,9 +60,6 @@ all: aculib/aculib.a tip
 tip: ${OBJS} ${LIBC}
 	${CC} -o $@ ${OBJS} aculib/aculib.a
 
-remcap.o: remcap.c
-	${CC} -c -DBUFSIZ=1024 ${CFLAGS} remcap.c
-
 # acutab is configuration dependent, and so depends on the makefile
 acutab.o: Makefile
 acutab.o: acutab.c
@@ -64,11 +72,15 @@ log.o remote.o: Makefile
 aculib/aculib.a: FRC
 	cd aculib; make ${MFLAGS}
 
-clean: FRC
+clean:
 	rm -f ${OBJS} core tip
 	cd aculib; make ${MFLAGS} clean
 
-depend: FRC
+cleandir: clean
+	rm -f ${MAN} tags .depend
+	cd aculib; make ${MFLAGS} cleandir
+
+depend:
 	mkdep ${CFLAGS} ${SRCS}
 	cd aculib; make ${MFLAGS} depend
 
@@ -77,85 +89,10 @@ install: FRC
 	install -s -o uucp -g daemon -m 4711 tip ${DESTDIR}/usr/bin/tip
 	rm -f ${DESTDIR}/usr/bin/cu
 	ln ${DESTDIR}/usr/bin/tip ${DESTDIR}/usr/bin/cu
-#	cp /dev/null ${DESTDIR}/${ADM}/aculog
-#	chown ${OWNER} ${DESTDIR}/${ADM}/aculog
-#	chmod 600 ${DESTDIR}/${ADM}/aculog
-#	@echo "create /etc/remote and /etc/phones"
 
-lint: FRC
+lint:
 	lint ${CFLAGS} ${SRCS}
 
-tags: FRC
+tags:
 	ctags ${SRCS}
-
-FRC:
-
-# DO NOT DELETE THIS LINE -- mkdep uses it.
-# DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
-
-acu.o: acu.c tip.h /usr/include/sys/types.h /usr/include/sys/file.h
-acu.o: /usr/include/sgtty.h /usr/include/sys/ioctl.h
-acu.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
-acu.o: /usr/include/signal.h /usr/include/stdio.h /usr/include/pwd.h
-acu.o: /usr/include/ctype.h /usr/include/setjmp.h /usr/include/errno.h
-acutab.o: acutab.c tip.h /usr/include/sys/types.h /usr/include/sys/file.h
-acutab.o: /usr/include/sgtty.h /usr/include/sys/ioctl.h
-acutab.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
-acutab.o: /usr/include/signal.h /usr/include/stdio.h /usr/include/pwd.h
-acutab.o: /usr/include/ctype.h /usr/include/setjmp.h /usr/include/errno.h
-cmds.o: cmds.c tip.h /usr/include/sys/types.h /usr/include/sys/file.h
-cmds.o: /usr/include/sgtty.h /usr/include/sys/ioctl.h
-cmds.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
-cmds.o: /usr/include/signal.h /usr/include/stdio.h /usr/include/pwd.h
-cmds.o: /usr/include/ctype.h /usr/include/setjmp.h /usr/include/errno.h
-cmdtab.o: cmdtab.c tip.h /usr/include/sys/types.h /usr/include/sys/file.h
-cmdtab.o: /usr/include/sgtty.h /usr/include/sys/ioctl.h
-cmdtab.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
-cmdtab.o: /usr/include/signal.h /usr/include/stdio.h /usr/include/pwd.h
-cmdtab.o: /usr/include/ctype.h /usr/include/setjmp.h /usr/include/errno.h
-cu.o: cu.c tip.h /usr/include/sys/types.h /usr/include/sys/file.h
-cu.o: /usr/include/sgtty.h /usr/include/sys/ioctl.h /usr/include/sys/ttychars.h
-cu.o: /usr/include/sys/ttydev.h /usr/include/signal.h /usr/include/stdio.h
-cu.o: /usr/include/pwd.h /usr/include/ctype.h /usr/include/setjmp.h
-cu.o: /usr/include/errno.h
-hunt.o: hunt.c tip.h /usr/include/sys/types.h /usr/include/sys/file.h
-hunt.o: /usr/include/sgtty.h /usr/include/sys/ioctl.h
-hunt.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
-hunt.o: /usr/include/signal.h /usr/include/stdio.h /usr/include/pwd.h
-hunt.o: /usr/include/ctype.h /usr/include/setjmp.h /usr/include/errno.h
-log.o: log.c tip.h /usr/include/sys/types.h /usr/include/sys/file.h
-log.o: /usr/include/sgtty.h /usr/include/sys/ioctl.h
-log.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
-log.o: /usr/include/signal.h /usr/include/stdio.h /usr/include/pwd.h
-log.o: /usr/include/ctype.h /usr/include/setjmp.h /usr/include/errno.h
-partab.o: partab.c
-remcap.o: remcap.c /usr/include/sys/file.h /usr/include/ctype.h
-remote.o: remote.c tip.h /usr/include/sys/types.h /usr/include/sys/file.h
-remote.o: /usr/include/sgtty.h /usr/include/sys/ioctl.h
-remote.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
-remote.o: /usr/include/signal.h /usr/include/stdio.h /usr/include/pwd.h
-remote.o: /usr/include/ctype.h /usr/include/setjmp.h /usr/include/errno.h
-tip.o: tip.c tip.h /usr/include/sys/types.h /usr/include/sys/file.h
-tip.o: /usr/include/sgtty.h /usr/include/sys/ioctl.h
-tip.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
-tip.o: /usr/include/signal.h /usr/include/stdio.h /usr/include/pwd.h
-tip.o: /usr/include/ctype.h /usr/include/setjmp.h /usr/include/errno.h
-tipout.o: tipout.c tip.h /usr/include/sys/types.h /usr/include/sys/file.h
-tipout.o: /usr/include/sgtty.h /usr/include/sys/ioctl.h
-tipout.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
-tipout.o: /usr/include/signal.h /usr/include/stdio.h /usr/include/pwd.h
-tipout.o: /usr/include/ctype.h /usr/include/setjmp.h /usr/include/errno.h
-uucplock.o: uucplock.c /usr/include/sys/types.h /usr/include/sys/stat.h
-uucplock.o: /usr/include/stdio.h
-value.o: value.c tip.h /usr/include/sys/types.h /usr/include/sys/file.h
-value.o: /usr/include/sgtty.h /usr/include/sys/ioctl.h
-value.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
-value.o: /usr/include/signal.h /usr/include/stdio.h /usr/include/pwd.h
-value.o: /usr/include/ctype.h /usr/include/setjmp.h /usr/include/errno.h
-vars.o: vars.c tip.h /usr/include/sys/types.h /usr/include/sys/file.h
-vars.o: /usr/include/sgtty.h /usr/include/sys/ioctl.h
-vars.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
-vars.o: /usr/include/signal.h /usr/include/stdio.h /usr/include/pwd.h
-vars.o: /usr/include/ctype.h /usr/include/setjmp.h /usr/include/errno.h
-
-# IF YOU PUT ANYTHING HERE IT WILL GO AWAY
+	cd aculib; make ${MFLAGS} tags
