@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_vfsops.c	7.82 (Berkeley) %G%
+ *	@(#)ffs_vfsops.c	7.83 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -127,7 +127,7 @@ ffs_mount(mp, path, data, ndp, p)
 	struct ufsmount *ump;
 	register struct fs *fs;
 	u_int size;
-	int error;
+	int error, flags;
 
 	if (error = copyin(data, (caddr_t)&args, sizeof (struct ufs_args)))
 		return (error);
@@ -138,7 +138,21 @@ ffs_mount(mp, path, data, ndp, p)
 	if (mp->mnt_flag & MNT_UPDATE) {
 		ump = VFSTOUFS(mp);
 		fs = ump->um_fs;
-		if (fs->fs_ronly && (mp->mnt_flag & MNT_RDONLY) == 0)
+		error = 0;
+		if (fs->fs_ronly == 0 && (mp->mnt_flag & MNT_RDONLY)) {
+			flags = WRITECLOSE;
+			if (mp->mnt_flag & MNT_FORCE)
+				flags |= FORCECLOSE;
+			if (vfs_busy(mp))
+				return (EBUSY);
+			error = ffs_flushfiles(mp, flags, p);
+			vfs_unbusy(mp);
+		}
+		if (!error && (mp->mnt_flag & MNT_RELOAD))
+			error = ffs_reload(mp, ndp->ni_cnd.cn_cred, p);
+		if (error)
+			return (error);
+		if (fs->fs_ronly && (mp->mnt_flag & MNT_WANTRDWR))
 			fs->fs_ronly = 0;
 		if (args.fspec == 0) {
 			/*
@@ -196,6 +210,112 @@ ffs_mount(mp, path, data, ndp, p)
 	    &size);
 	bzero(mp->mnt_stat.f_mntfromname + size, MNAMELEN - size);
 	(void)ffs_statfs(mp, &mp->mnt_stat, p);
+	return (0);
+}
+
+/*
+ * Reload all incore data for a filesystem (used after running fsck on
+ * the root filesystem and finding things to fix). The filesystem must
+ * be mounted read-only.
+ *
+ * Things to do to update the mount:
+ *	1) invalidate all cached meta-data.
+ *	2) re-read superblock from disk.
+ *	3) re-read summary information from disk.
+ *	4) invalidate all inactive vnodes.
+ *	5) invalidate all cached file data.
+ *	6) re-read inode data for all active vnodes.
+ */
+ffs_reload(mountp, cred, p)
+	register struct mount *mountp;
+	struct ucred *cred;
+	struct proc *p;
+{
+	register struct vnode *vp, *nvp, *devvp;
+	struct inode *ip;
+	struct dinode *dp;
+	struct csum *space;
+	struct buf *bp;
+	struct fs *fs;
+	int i, blks, size, error;
+
+	if ((mountp->mnt_flag & MNT_RDONLY) == 0)
+		return (EINVAL);
+	/*
+	 * Step 1: invalidate all cached meta-data.
+	 */
+	devvp = VFSTOUFS(mountp)->um_devvp;
+	if (vinvalbuf(devvp, 0, cred, p))
+		panic("ffs_reload: dirty1");
+	/*
+	 * Step 2: re-read superblock from disk.
+	 */
+	if (error = bread(devvp, SBLOCK, SBSIZE, NOCRED, &bp))
+		return (error);
+	fs = bp->b_un.b_fs;
+	if (fs->fs_magic != FS_MAGIC || fs->fs_bsize > MAXBSIZE ||
+	    fs->fs_bsize < sizeof(struct fs)) {
+		brelse(bp);
+		return (EIO);		/* XXX needs translation */
+	}
+	fs = VFSTOUFS(mountp)->um_fs;
+	bcopy((caddr_t)&fs->fs_csp[0], (caddr_t)&bp->b_un.b_fs->fs_csp[0],
+	    sizeof(fs->fs_csp));
+	bcopy((caddr_t)bp->b_un.b_addr, (caddr_t)fs, (u_int)fs->fs_sbsize);
+	if (fs->fs_sbsize < SBSIZE)
+		bp->b_flags |= B_INVAL;
+	brelse(bp);
+	ffs_oldfscompat(fs);
+	/*
+	 * Step 3: re-read summary information from disk.
+	 */
+	blks = howmany(fs->fs_cssize, fs->fs_fsize);
+	space = fs->fs_csp[0];
+	for (i = 0; i < blks; i += fs->fs_frag) {
+		size = fs->fs_bsize;
+		if (i + fs->fs_frag > blks)
+			size = (blks - i) * fs->fs_fsize;
+		if (error = bread(devvp, fsbtodb(fs, fs->fs_csaddr + i), size,
+		    NOCRED, &bp))
+			return (error);
+		bcopy((caddr_t)bp->b_un.b_addr, fs->fs_csp[fragstoblks(fs, i)],
+		    (u_int)size);
+		brelse(bp);
+	}
+loop:
+	for (vp = mountp->mnt_mounth; vp; vp = nvp) {
+		nvp = vp->v_mountf;
+		/*
+		 * Step 4: invalidate all inactive vnodes.
+		 */
+		if (vp->v_usecount == 0) {
+			vgone(vp);
+			continue;
+		}
+		/*
+		 * Step 5: invalidate all cached file data.
+		 */
+		if (vget(vp))
+			goto loop;
+		if (vinvalbuf(vp, 0, cred, p))
+			panic("ffs_reload: dirty2");
+		/*
+		 * Step 6: re-read inode data for all active vnodes.
+		 */
+		ip = VTOI(vp);
+		if (error = bread(devvp, fsbtodb(fs, itod(fs, ip->i_number)),
+		    (int)fs->fs_bsize, NOCRED, &bp)) {
+			vput(vp);
+			return (error);
+		}
+		dp = bp->b_un.b_dino;
+		dp += itoo(fs, ip->i_number);
+		ip->i_din = *dp;
+		brelse(bp);
+		vput(vp);
+		if (vp->v_mount != mountp)
+			goto loop;
+	}
 	return (0);
 }
 
@@ -319,8 +439,30 @@ ffs_mountfs(devvp, mp, p)
 	for (i = 0; i < MAXQUOTAS; i++)
 		ump->um_quotas[i] = NULLVP;
 	devvp->v_specflags |= SI_MOUNTEDON;
+	ffs_oldfscompat(fs);
+	return (0);
+out:
+	if (bp)
+		brelse(bp);
+	(void)VOP_CLOSE(devvp, ronly ? FREAD : FREAD|FWRITE, NOCRED, p);
+	if (ump) {
+		free(ump->um_fs, M_UFSMNT);
+		free(ump, M_UFSMNT);
+		mp->mnt_data = (qaddr_t)0;
+	}
+	return (error);
+}
 
-	/* Sanity checks for old file systems.			   XXX */
+/*
+ * Sanity checks for old file systems.
+ *
+ * XXX - goes away some day.
+ */
+ffs_oldfscompat(fs)
+	struct fs *fs;
+{
+	int i;
+
 	fs->fs_npsect = max(fs->fs_npsect, fs->fs_nsect);	/* XXX */
 	fs->fs_interleave = max(fs->fs_interleave, 1);		/* XXX */
 	if (fs->fs_postblformat == FS_42POSTBLFMT)		/* XXX */
@@ -338,16 +480,6 @@ ffs_mountfs(devvp, mp, p)
 	}							/* XXX */
 
 	return (0);
-out:
-	if (bp)
-		brelse(bp);
-	(void)VOP_CLOSE(devvp, ronly ? FREAD : FREAD|FWRITE, NOCRED, p);
-	if (ump) {
-		free(ump->um_fs, M_UFSMNT);
-		free(ump, M_UFSMNT);
-		mp->mnt_data = (qaddr_t)0;
-	}
-	return (error);
 }
 
 /*
@@ -359,17 +491,47 @@ ffs_unmount(mp, mntflags, p)
 	int mntflags;
 	struct proc *p;
 {
-	extern int doforce;
 	register struct ufsmount *ump;
 	register struct fs *fs;
-	int i, error, flags, ronly;
+	int error, flags, ronly;
 
 	flags = 0;
 	if (mntflags & MNT_FORCE) {
-		if (!doforce || mp == rootfs)
+		if (mp == rootfs)
 			return (EINVAL);
 		flags |= FORCECLOSE;
 	}
+	if (error = ffs_flushfiles(mp, flags, p))
+		return (error);
+	ump = VFSTOUFS(mp);
+	fs = ump->um_fs;
+	ronly = !fs->fs_ronly;
+	ump->um_devvp->v_specflags &= ~SI_MOUNTEDON;
+	error = VOP_CLOSE(ump->um_devvp, ronly ? FREAD : FREAD|FWRITE,
+		NOCRED, p);
+	vrele(ump->um_devvp);
+	free(fs->fs_csp[0], M_UFSMNT);
+	free(fs, M_UFSMNT);
+	free(ump, M_UFSMNT);
+	mp->mnt_data = (qaddr_t)0;
+	mp->mnt_flag &= ~MNT_LOCAL;
+	return (error);
+}
+
+/*
+ * Flush out all the files in a filesystem.
+ */
+ffs_flushfiles(mp, flags, p)
+	register struct mount *mp;
+	int flags;
+	struct proc *p;
+{
+	extern int doforce;
+	register struct ufsmount *ump;
+	int i, error;
+
+	if (!doforce)
+		flags &= ~FORCECLOSE;
 	ump = VFSTOUFS(mp);
 		return (error);
 #ifdef QUOTA
@@ -387,10 +549,6 @@ ffs_unmount(mp, mntflags, p)
 		 */
 	}
 #endif
-	if (error = vflush(mp, NULLVP, flags))
-		return (error);
-	fs = ump->um_fs;
-	ronly = !fs->fs_ronly;
  * Get file system statistics.
  */
 int
