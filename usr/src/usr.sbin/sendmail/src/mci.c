@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mci.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)mci.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -104,6 +104,7 @@ mci_scan(savemci)
 	{
 		/* first call */
 		MciCache = (MCI **) xalloc(MaxMciCache * sizeof *MciCache);
+		bzero((char *) MciCache, MaxMciCache * sizeof *MciCache);
 		return (&MciCache[0]);
 	}
 
