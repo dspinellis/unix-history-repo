@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tty_pty.c	8.1 (Berkeley) %G%
+ *	@(#)tty_pty.c	7.30 (Berkeley) %G%
  */
 
 /*
@@ -574,14 +574,14 @@ ptyioctl(dev, cmd, data, flag, p)
 		if (*(int *)data) {
 			if (pti->pt_flags & PF_PKT) {
 				pti->pt_send |= TIOCPKT_IOCTL;
-				ptcwakeup(tp);
+				ptcwakeup(tp, FREAD);
 			}
 			tp->t_lflag |= EXTPROC;
 		} else {
 			if ((tp->t_state & EXTPROC) &&
 			    (pti->pt_flags & PF_PKT)) {
 				pti->pt_send |= TIOCPKT_IOCTL;
-				ptcwakeup(tp);
+				ptcwakeup(tp, FREAD);
 			}
 			tp->t_lflag &= ~EXTPROC;
 		}
@@ -779,6 +779,7 @@ ptyioctl(dev, cmd, data, flag, p)
 		case TIOCLSET:
 #endif
 			pti->pt_send |= TIOCPKT_IOCTL;
+			ptcwakeup(tp, FREAD);
 		default:
 			break;
 		}
