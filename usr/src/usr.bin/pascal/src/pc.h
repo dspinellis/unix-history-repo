@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-/* static	char sccsid[] = "@(#)pc.h 1.3 %G%"; */
+/* static	char sccsid[] = "@(#)pc.h 1.4 %G%"; */
 
     /*
      *		random constants for pc
@@ -50,6 +50,7 @@ struct rtlocals {
      *	formats for various names
      *	    NAMEFORMAT		arbitrary length strings.
      *	    EXTFORMAT		for externals, a preceding underscore.
+     *	    LABELFORMAT		for label names, a preceding dollar-sign.
      *	    PREFIXFORMAT	used to print made up names with prefixes.
      *	    LABELPREFIX		with getlab() makes up label names.
      *	    LLABELPREFIX	with getlab() makes up sdb labels.
@@ -59,6 +60,7 @@ struct rtlocals {
      */
 #define	NAMEFORMAT	"%s"
 #define	EXTFORMAT	"_%s"
+#define	LABELFORMAT	"$%s"
 #define	PREFIXFORMAT	"%s%d"
 #define	LABELPREFIX	"L"
 #define	LLABELPREFIX	"LL"
