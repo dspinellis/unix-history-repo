@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)disklabel.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)disklabel.c	5.13 (Berkeley) %G%";
 /* from static char sccsid[] = "@(#)disklabel.c	1.2 (Symmetric) 11/28/85"; */
 #endif
 
@@ -84,7 +84,7 @@ main(argc, argv)
 	extern int optind;
 	register struct disklabel *lp;
 	FILE *t;
-	int ch, f;
+	int ch, f, error = 0;
 	char *name = 0, *type;
 
 	while ((ch = getopt(argc, argv, "NRWerw")) != EOF)
@@ -154,8 +154,7 @@ main(argc, argv)
 		if (argc != 1)
 			usage();
 		lp = readlabel(f);
-		if (edit(lp))
-			writelabel(f, bootarea, lp);
+		error = edit(lp, f);
 		break;
 	case NOWRITE: {
 		int flag = 0;
@@ -168,7 +167,7 @@ main(argc, argv)
 			usage();
 		lp = readlabel(f);
 		display(stdout, lp);
-		(void) checklabel(lp);
+		error = checklabel(lp);
 		break;
 	case RESTORE:
 #ifdef BOOT
@@ -195,7 +194,7 @@ main(argc, argv)
 		if (!(t = fopen(argv[1],"r")))
 			Perror(argv[1]);
 		if (getasciilabel(t, lp))
-			writelabel(f, bootarea, lp);
+			error = writelabel(f, bootarea, lp);
 		break;
 	case WRITE:
 		type = argv[1];
@@ -216,7 +215,7 @@ main(argc, argv)
 		lp = makebootarea(bootarea, &lab);
 		*lp = lab;
 		if (checklabel(lp) == 0)
-			writelabel(f, bootarea, lp);
+			error = writelabel(f, bootarea, lp);
 		break;
 	case WRITEABLE: {
 		int flag = 1;
@@ -225,7 +224,7 @@ main(argc, argv)
 		break;
 	}
 	}
-	exit(0);
+	exit(error);
 }
 
 /*
@@ -299,8 +298,10 @@ writelabel(f, boot, lp)
 		 * label.
 		 */
 		if (ioctl(f, DIOCSDINFO, lp) < 0 &&
-		    errno != ENODEV && errno != ENOTTY)
-			Perror("ioctl DIOCSDINFO");
+		    errno != ENODEV && errno != ENOTTY) {
+			l_perror("ioctl DIOCSDINFO");
+			return (1);
+		}
 		(void)lseek(f, (off_t)0, L_SET);
 		/*
 		 * write enable label sector before write (if necessary),
@@ -309,12 +310,16 @@ writelabel(f, boot, lp)
 		flag = 1;
 		if (ioctl(f, DIOCWLABEL, &flag) < 0)
 			perror("ioctl DIOCWLABEL");
-		if (write(f, boot, lp->d_bbsize) != lp->d_bbsize)
-			Perror("write");
+		if (write(f, boot, lp->d_bbsize) != lp->d_bbsize) {
+			perror("write");
+			return (1);
+		}
 		flag = 0;
 		(void) ioctl(f, DIOCWLABEL, &flag);
-	} else if (ioctl(f, DIOCWDINFO, lp) < 0)
-		Perror("ioctl DIOCWDINFO");
+	} else if (ioctl(f, DIOCWDINFO, lp) < 0) {
+		l_perror("ioctl DIOCWDINFO");
+		return (1);
+	}
 #ifdef vax
 	if (lp->d_type == DTYPE_SMD && lp->d_flags & D_BADSECT) {
 		daddr_t alt;
@@ -331,6 +336,43 @@ writelabel(f, boot, lp)
 		}
 	}
 #endif
+	return (0);
+}
+
+l_perror(s)
+	char *s;
+{
+	int saverrno = errno;
+
+	fprintf(stderr, "disklabel: %s: ", s);
+
+	switch (saverrno) {
+
+	case ESRCH:
+		fprintf(stderr, "No disk label on disk;\n");
+		fprintf(stderr,
+		    "use \"disklabel -r\" to install initial label\n");
+		break;
+
+	case EINVAL:
+		fprintf(stderr, "Label magic number or checksum is wrong!\n");
+		fprintf(stderr, "(disklabel or kernel is out of date?)\n");
+		break;
+
+	case EBUSY:
+		fprintf(stderr, "Open partition would move or shrink\n");
+		break;
+
+	case EXDEV:
+		fprintf(stderr,
+	"Labeled partition or 'a' partition must start at beginning of disk\n");
+		break;
+
+	default:
+		errno = saverrno;
+		perror((char *)NULL);
+		break;
+	}
 }
 
 /*
@@ -530,8 +572,9 @@ display(f, lp)
 	fflush(f);
 }
 
-edit(lp)
+edit(lp, f)
 	struct disklabel *lp;
+	int f;
 {
 	register int c;
 	struct disklabel label;
@@ -542,7 +585,7 @@ edit(lp)
 	fd = fopen(tmpfil, "w");
 	if (fd == NULL) {
 		fprintf(stderr, "%s: Can't create\n", tmpfil);
-		return (0);
+		return (1);
 	}
 	(void)fchmod(fd, 0600);
 	display(fd, lp);
@@ -559,8 +602,10 @@ edit(lp)
 		bzero((char *)&label, sizeof(label));
 		if (getasciilabel(fd, &label)) {
 			*lp = label;
-			(void) unlink(tmpfil);
-			return (1);
+			if (writelabel(f, bootarea, lp) == 0) {
+				(void) unlink(tmpfil);
+				return (0);
+			}
 		}
 		printf("re-edit the label? [y]: "); fflush(stdout);
 		c = getchar();
@@ -571,7 +616,7 @@ edit(lp)
 			break;
 	}
 	(void) unlink(tmpfil);
-	return (0);
+	return (1);
 }
 
 editit()
