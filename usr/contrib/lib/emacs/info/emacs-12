@@ -1,0 +1,1664 @@
+Info file emacs, produced by texinfo-format-buffer   -*-Text-*-
+from file emacs.tex
+
+This file documents the GNU Emacs editor.
+
+Copyright (C) 1985, 1986 Richard M. Stallman.
+
+Permission is granted to make and distribute verbatim copies of
+this manual provided the copyright notice and this permission notice
+are preserved on all copies.
+
+Permission is granted to copy and distribute modified versions of this
+manual under the conditions for verbatim copying, provided also that the
+sections entitled "The GNU Manifesto", "Distribution" and "GNU Emacs
+General Public License" are included exactly as in the original, and
+provided that the entire resulting derived work is distributed under the
+terms of a permission notice identical to this one.
+
+Permission is granted to copy and distribute translations of this manual
+into another language, under the above conditions for modified versions,
+except that the sections entitled "The GNU Manifesto", "Distribution"
+and "GNU Emacs General Public License" may be included in a translation
+approved by the author instead of in the original English.
+
+
+File: emacs  Node: Glossary, Prev: Intro, Up: Top, Next: Key Index
+
+Glossary
+********
+
+Abbrev     
+     An abbrev is a text string which expands into a different text string
+     when present in the buffer.  For example, you might define a short
+     word as an abbrev for a long phrase that you want to insert
+     frequently.  *Note Abbrevs::.
+     
+Aborting     
+     Aborting means getting out of a recursive edit (q.v.).  The
+     commands `C-]' and `M-x top-level' are used for this.
+     *Note Quitting::.
+     
+Auto Fill mode     
+     Auto Fill mode is a minor mode in which text that you insert is
+     automatically broken into lines of fixed width.  *Note Filling::.
+     
+Auto Saving     
+     Auto saving is when Emacs automatically stores the contents of an
+     Emacs buffer in a specially-named file so that the information will
+     not be lost if the buffer is lost due to a system error or user error.
+     *Note Auto Save::.
+     
+Backup File     
+     A backup file records the contents that a file had before the current
+     editing session.  Emacs makes backup files automatically to help you
+     track down or cancel changes you later regret making.  *Note Backup::.
+     
+Balance Parentheses     
+     Emacs can balance parentheses manually or automatically.  Manual
+     balancing is done by the commands to move over balanced expressions
+     (*Note Lists::).  Automatic balancing is done by blinking the
+     parenthesis that matches one just inserted (*Note Matching Parens: Matching.).
+     
+Bind     
+     To bind a key is to change its binding (q.v.).  *Note Rebinding::.
+     
+Binding     
+     A key gets its meaning in Emacs by having a binding which is a
+     command (q.v.), a Lisp function that is run when the key is typed.
+     *Note Binding: Commands.  Customization often involves rebinding a
+     character to a different command function.  The bindings of all keys
+     are recorded in the keymaps (q.v.).  *Note Keymaps::.
+     
+Blank Lines     
+     Blank lines are lines that contain only whitespace.  Emacs has several
+     commands for operating on the blank lines in the buffer.
+     
+Buffer     
+     The buffer is the basic editing unit; one buffer corresponds to one
+     piece of text being edited.  You can have several buffers, but at any
+     time you are editing only one, the `selected' buffer, though several
+     can be visible when you are using multiple windows.  *Note Buffers::.
+     
+Buffer Selection History     
+     Emacs keeps a buffer selection history which records how recently each
+     Emacs buffer has been selected.  This is used for choosing a buffer to
+     select.  *Note Buffers::.
+     
+C-     
+     `C' in the name of a character is an abbreviation for Control.
+     *Note C-: Characters.
+     
+C-M-     
+     `C-M-' in the name of a character is an abbreviation for
+     Control-Meta.  *Note C-M-: Characters.
+     
+Case Conversion     
+     Case conversion means changing text from upper case to lower case or
+     vice versa.  *Note Case::, for the commands for case conversion.
+     
+Characters     
+     Characters form the contents of an Emacs buffer; also, Emacs commands
+     are invoked by keys (q.v.), which are sequences of one or more
+     characters.  *Note Characters::.
+     
+Command     
+     A command is a Lisp function specially defined to be able to serve as
+     a key binding in Emacs.  When you type a key (q.v.), its binding
+     (q.v.) is looked up in the relevant keymaps (q.v.) to find the
+     command to run.  *Note Commands::.
+     
+Command Name     
+     A command name is the name of a Lisp symbol which is a command
+     (*Note Commands::).  You can invoke any command by its name using
+     `M-x' (*Note M-x::).
+     
+Comments     
+     A comment is text in a program which is intended only for humans
+     reading the program, and is marked specially so that it will be
+     ignored when the program is loaded or compiled.  Emacs offers special
+     commands for creating, aligning and killing comments.
+     *Note Comments::.
+     
+Compilation     
+     Compilation is the process of creating an executable program from
+     source code.  Emacs has commands for compiling files of Emacs Lisp
+     code (*Note Lisp Libraries::) and programs in C and other languages
+     (*Note Compilation::).
+     
+Complete Key     
+     A complete key is a character or sequence of characters which, when typed
+     by the user, fully specifies one action to be performed by Emacs.  For
+     example, `X' and `Control-f' and `Control-x m' are keys.  Keys
+     derive their meanings from being bound (q.v.) to commands (q.v.).
+     Thus, `X' is conventionally bound to a command to insert `X' in
+     the buffer; `C-x m' is conventionally bound to a command to begin
+     composing a mail message. *Note Keys::.
+     
+Completion     
+     Completion is what Emacs does when it automatically fills out an
+     abbreviation for a name into the entire name.  Completion is done for
+     minibuffer (q.v.) arguments when the set of possible valid inputs is
+     known; for example, on command names, buffer names, and file names.
+     Completion occurs when TAB, SPC or RET is typed.  *Note Completion::.
+     
+Continuation Line     
+     When a line of text is longer than the width of the screen, it
+     takes up more than one screen line when displayed.  We say that the
+     text line is continued, and all screen lines used for it after the
+     first are called continuation lines.  *Note Continuation: Basic.
+     
+Control-Character     
+     ASCII characters with octal codes 0 through 037, and also code 0177,
+     do not have graphic images assigned to them.  These are the control
+     characters.  Any control character can be typed by holding down the
+     CTRL key and typing some other character; some have special keys on
+     the keyboard.  RET, TAB, ESC, LFD and DEL are all control characters.
+     *Note Characters::.
+     
+Copyleft     
+     A copyleft is a notice giving the public legal permission to redistribute
+     a program or other work of art.  Copylefts are used by leftists to enrich
+     the public just as copyrights are used by rightists to gain power over
+     the public.
+     
+Current Buffer     
+     The current buffer in Emacs is the Emacs buffer on which most editing
+     commands operate.  You can select any Emacs buffer as the current one.
+     *Note Buffers::.
+     
+Current Line     
+     The line point is on (*Note Point::).
+     
+Current Paragraph     
+     The paragraph that point is in.  If point is between paragraphs, the
+     current paragraph is the one that follows point.  *Note Paragraphs::.
+     
+Current Defun     
+     The defun (q.v.) that point is in.  If point is between defuns, the
+     current defun is the one that follows point.  *Note Defuns::.
+     
+Cursor     
+     The cursor is the rectangle on the screen which indicates the position
+     called point (q.v.) at which insertion and deletion takes place.
+     The cursor is on or under the character that follows point.  Often
+     people speak of `the cursor' when, strictly speaking, they mean
+     `point'.  *Note Cursor: Basic.
+     
+Customization     
+     Customization is making minor changes in the way Emacs works.  It is
+     often done by setting variables (*Note Variables::) or by rebinding
+     keys (*Note Keymaps::).
+     
+Default Argument     
+     The default for an argument is the value that will be assumed if you
+     do not specify one.  When the minibuffer is used to read an argument,
+     the default argument is used if you just type RET.
+     *Note Minibuffer::.
+     
+Default Directory     
+     When you specify a file name that does not start with `/' or `~',
+     it is interpreted relative to the current buffer's default directory.
+     *Note Default Directory: Minibuffer File.
+     
+Defun     
+     A defun is a list at the top level of parenthesis or bracket structure
+     in a program.  It is so named because most such lists in Lisp programs
+     are calls to the Lisp function `defun'.  *Note Defuns::.
+     
+DEL     
+     DEL is a character that runs the command to delete one character of
+     text.  *Note DEL: Basic.
+     
+Deletion     
+     Deletion means erasing text without saving it.  Emacs deletes text
+     only when it is expected not to be worth saving (all whitespace, or
+     only one character).  The alternative is killing (q.v.).
+     *Note Deletion: Killing.
+     
+Deletion of Files     
+     Deleting a file means erasing it from the file system.
+     *Note Misc File Ops::.
+     
+Deletion of Messages     
+     Deleting a message means flagging it to be eliminated from your mail
+     file.  This can be undone by undeletion until the mail file is expunged.
+     *Note Rmail Deletion::.
+     
+Deletion of Windows     
+     Deleting a window means eliminating it from the screen.  Other windows
+     expand to use up the space.  The deleted window can never come back,
+     but no actual text is thereby lost.  *Note Windows::.
+     
+Directory     
+     Files in the Unix file system are grouped into file directories.
+     *Note Directories: ListDir.
+     
+Dired     
+     Dired is the Emacs facility that displays the contents of a file
+     directory and allows you to "edit the directory", performing
+     operations on the files in the directory.  *Note Dired::.
+     
+Disabled Command     
+     A disabled command is one that you may not run without special
+     confirmation.  The usual reason for disabling a command is that it is
+     confusing for beginning users.  *Note Disabling::.
+     
+Dribble File     
+     A file into which Emacs writes all the characters that the user types
+     on the keyboard.  Dribble files are used to make a record for
+     debugging Emacs bugs.  Emacs does not make a dribble file unless you
+     tell it to.  *Note Bugs::.
+     
+Echo Area     
+     The echo area is the bottom line of the screen, used for echoing the
+     arguments to commands, for asking questions, and printing brief
+     messages (including error messages).  *Note Echo Area::.
+     
+Echoing     
+     Echoing is acknowledging the receipt of commands by displaying them
+     (in the echo area).  Emacs never echoes single-character keys; longer
+     keys echo only if you pause while typing them.
+     
+Error     
+     An error occurs when an Emacs command cannot execute in the current
+     circumstances.  When an error occurs, execution of the command stops
+     (unless the command has been programmed to do otherwise) and Emacs
+     reports the error by printing an error message (q.v.).  Type-ahead
+     is discarded.  Then Emacs is ready to read another editing command.
+     
+Error Messages     
+     Error messages are single lines of output printed by Emacs when the
+     user asks for something impossible to do (such as, killing text
+     forward when point is at the end of the buffer).  They appear in the
+     echo area, accompanied by a beep.
+     
+ESC     
+     ESC is a character, used to end incremental searches and as a
+     prefix for typing Meta characters on keyboards lacking a META
+     key.  Unlike the META key (which, like the SHIFT key, is held
+     down while another character is typed), the ESC key is pressed
+     once and applies to the next character typed.
+     
+Fill Prefix     
+     The fill prefix is a string that should be expected at the beginning
+     of each line when filling is done.  It is not regarded as part of the
+     text to be filled.  *Note Filling::.
+     
+Filling     
+     Filling text means moving text from line to line so that all the lines
+     are approximately the same length.  *Note Filling::.
+     
+Global     
+     Global means `independent of the current environment; in effect
+     throughout Emacs'.  It is the opposite of local (q.v.).  Particular
+     examples of the use of `global' appear below.
+     
+Global Abbrev     
+     A global definition of an abbrev (q.v.) is effective in all major
+     modes that do not have local (q.v.) definitions for the same abbrev.
+     *Note Abbrevs::.
+     
+Global Keymap     
+     The global keymap (q.v.) contains key bindings that are in effect
+     except when overridden by local key bindings in a major mode's local
+     keymap (q.v.).  *Note Keymaps::.
+     
+Global Substitution     
+     Global substitution means replacing each occurrence of one string by
+     another string through a large amount of text.  *Note Replace::.
+     
+Global Variable     
+     The global value of a variable (q.v.) takes effect in all buffers
+     that do not have their own local (q.v.) values for the variable.
+     *Note Variables::.
+     
+Graphic Character     
+     Graphic characters are those assigned pictorial images rather than
+     just names.  All the non-Meta (q.v.) characters except for the
+     Control (q.v.) characters are graphic characters.  These include
+     letters, digits, punctuation, and spaces; they do not include
+     RET or ESC.  In Emacs, typing a graphic character inserts
+     that character (in ordinary editing modes).  *Note Basic Editing: Basic.
+     
+Grinding     
+     Grinding means adjusting the indentation in a program to fit the
+     nesting structure.  *Note Grinding: Indentation.
+     
+Hardcopy     
+     Hardcopy means printed output.  Emacs has commands for making printed
+     listings of text in Emacs buffers.  *Note Hardcopy::.
+     
+HELP     
+     You can type HELP at any time to ask what options you have, or
+     to ask what any command does.  HELP is really `Control-h'.
+     *Note Help::.
+     
+Inbox     
+     An inbox is a file in which mail is delivered by the operating system.
+     Rmail transfers mail from inboxes to mail files (q.v.) in which the
+     mail is then stored permanently or until explicitly deleted.
+     *Note Rmail Inbox::.
+     
+Indentation     
+     Indentation means blank space at the beginning of a line.  Most
+     programming languages have conventions for using indentation to
+     illuminate the structure of the program, and Emacs has special
+     features to help you set up the correct indentation.
+     *Note Indentation::.
+     
+Insertion     
+     Insertion means copying text into the buffer, either from the keyboard
+     or from some other place in Emacs.
+     
+Justification     
+     Justification means adding extra spaces to lines of text to make them
+     come exactly to a specified width.  *Note Justification: Filling.
+     
+Keyboard Macros     
+     Keyboard macros are a way of defining new Emacs commands from
+     sequences of existing ones, with no need to write a Lisp program.
+     *Note Keyboard Macros::.
+     
+Key     
+     A key is a sequence of characters that, when input to Emacs, specify
+     or begin to specify a single action for Emacs to perform.  That is,
+     the sequence is not more than a single unit.  If the key is enough to
+     specify one action, it is a complete key (q.v.); if it is less than
+     enough, it is a prefix key (q.v.).  *Note Keys::.
+     
+Keymap     
+     The keymap is the data structure that records the bindings (q.v.) of
+     keys to the commands that they run.  For example, the keymap binds the
+     character `C-n' to the command function `next-line'.
+     *Note Keymaps::.
+     
+Kill Ring     
+     The kill ring is where all text you have killed recently is saved.
+     You can reinsert any of the killed text still in the ring; this is
+     called yanking (q.v.).  *Note Yanking::.
+     
+Killing     
+     Killing means erasing text and saving it on the kill ring so it can be
+     yanked (q.v.) later.  Some other systems call this "cutting".
+     Most Emacs commands to erase text do killing, as opposed to deletion
+     (q.v.).  *Note Killing::.
+     
+Killing Jobs     
+     Killing a job (such as, an invocation of Emacs) means making it cease
+     to exist.  Any data within it, if not saved in a file, is lost.
+     *Note Exiting::.
+     
+List     
+     A list is, approximately, a text string beginning with an open
+     parenthesis and ending with the matching close parenthesis.  In C mode
+     and other non-Lisp modes, groupings surrounded by other kinds of matched
+     delimiters appropriate to the language, such as braces, are also
+     considered lists.  Emacs has special commands for many operations on
+     lists.  *Note Lists::.
+     
+Local     
+     Local means `in effect only in a particular context'; the relevant
+     kind of context is a particular function execution, a particular
+     buffer, or a particular major mode.  It is the opposite of `global'
+     (q.v.).  Specific uses of `local' in Emacs terminology appear below.
+     
+Local Abbrev     
+     A local abbrev definition is effective only if a particular major mode
+     is selected.  In that major mode, it overrides any global definition
+     for the same abbrev.  *Note Abbrevs::.
+     
+Local Keymap     
+     A local keymap is used in a particular major mode; the key bindings
+     (q.v.) in the current local keymap override global bindings of the
+     same keys.  *Note Keymaps::.
+     
+Local Variable     
+     A local value of a variable (q.v.) applies to only one buffer.
+     *Note Locals::.
+     
+M-     
+     `M-' in the name of a character is an abbreviation for META,
+     one of the modifier keys that can accompany any character.
+     *Note Characters::.
+     
+M-C-     
+     `M-C-' in the name of a character is an abbreviation for
+     Control-Meta; it means the same thing as `C-M-'.  If your
+     terminal lacks a real META key, you type a Control-Meta character by
+     typing ESC and then typing the corresponding Control character.
+     *Note C-M-: Characters.
+     
+M-x     
+     `M-x' is the key which is used to call an Emacs command by name.
+     This is how commands that are not bound to keys are called.
+     *Note M-x::.
+     
+Mail     
+     Mail means messages sent from one user to another through the computer
+     system, to be read at the recipient's convenience.  Emacs has commands for
+     composing and sending mail, and for reading and editing the mail you have
+     received.  *Note Sending Mail::.  *Note Rmail::, for how to read mail.
+     
+Mail File     
+     A mail file is a file which is edited using Rmail and in which Rmail
+     stores mail.  *Note Rmail::.
+     
+Major Mode     
+     The major modes are a mutually exclusive set of options each of which
+     configures Emacs for editing a certain sort of text.  Ideally, each
+     programming language has its own major mode.  *Note Major Modes::.
+     
+Mark     
+     The mark points to a position in the text.  It specifies one end of
+     the region (q.v.), point being the other end.  Many commands operate
+     on all the text from point to the mark.  *Note Mark::.
+     
+Mark Ring     
+     The mark ring is used to hold several recent previous locations of the
+     mark, just in case you want to move back to them.  *Note Mark Ring::.
+     
+Message     
+     See `mail'.
+     
+Meta     
+     Meta is the name of a modifier bit which a command character may have.
+     It is present in a character if the character is typed with the
+     META key held down.  Such characters are given names that start
+     with `Meta-'.  For example, `Meta-<' is typed by holding down
+     META and at the same time typing `<' (which itself is done,
+     on most terminals, by holding down SHIFT and typing `,').
+     *Note Meta: Characters.
+     
+Meta Character     
+     A Meta character is one whose character code includes the Meta bit.
+     
+Minibuffer     
+     The minibuffer is the window that appears when necessary inside the
+     echo area (q.v.), used for reading arguments to commands.
+     *Note Minibuffer::.
+     
+Minor Mode     
+     A minor mode is an optional feature of Emacs which can be switched on
+     or off independently of all other features.  Each minor mode has a
+     command to turn it on or off.  *Note Minor Modes::.
+     
+Mode Line     
+     The mode line is the line at the bottom of each text window (q.v.),
+     which gives status information on the buffer displayed in that window.
+     *Note Mode Line::.
+     
+Modified Buffer     
+     A buffer (q.v.) is modified if its text has been changed since the
+     last time the buffer was saved (or since when it was created, if it
+     has never been saved).  *Note Saving::.
+     
+Moving Text     
+     Moving text means erasing it from one place and inserting it in
+     another.  This is done by killing (q.v.) and then yanking (q.v.).
+     *Note Killing::.
+     
+Named Mark     
+     A named mark is a register (q.v.) in its role of recording a
+     location in text so that you can move point to that location.
+     *Note Registers::.
+     
+Narrowing     
+     Narrowing means creating a restriction (q.v.) that limits editing in
+     the current buffer to only a part of the text in the buffer.  Text
+     outside that part is inaccessible to the user until the boundaries are
+     widened again, but it is still there, and saving the file saves it
+     all.  *Note Narrowing::.
+     
+Newline     
+     LFD characters in the buffer terminate lines of text and are
+     called newlines.  *Note Newline: Characters.
+     
+Numeric Argument     
+     A numeric argument is a number, specified before a command, to change
+     the effect of the command.  Often the numeric argument serves as a
+     repeat count.  *Note Arguments::.
+     
+Option     
+     An option is a variable (q.v.) that exists so that you can customize
+     Emacs by giving it a new value.  *Note Variables::.
+     
+Overwrite Mode     
+     Overwrite mode is a minor mode.  When it is enabled, ordinary text
+     characters replace the existing text after point rather than pushing
+     it to the right.  *Note Minor Modes::.
+     
+Page     
+     A page is a unit of text, delimited by formfeed characters (ASCII
+     Control-L, code 014) coming at the beginning of a line.  Some Emacs
+     commands are provided for moving over and operating on pages.
+     *Note Pages::.
+     
+Paragraphs     
+     Paragraphs are the medium-size unit of English text.  There are
+     special Emacs commands for moving over and operating on paragraphs.
+     *Note Paragraphs::.
+     
+Parsing     
+     We say that Emacs parses words or expressions in the text being
+     edited.  Really, all it knows how to do is find the other end of a
+     word or expression.  *Note Syntax::.
+     
+Point     
+     Point is the place in the buffer at which insertion and deletion
+     occur.  Point is considered to be between two characters, not at one
+     character.  The terminal's cursor (q.v.) indicates the location of
+     point.  *Note Point: Basic.
+     
+Prefix Key     
+     A prefix key is a key (q.v.) whose sole function is to introduce a
+     set of multi-character keys.  `Control-x' is an example of prefix
+     key; thus, any two-character sequence starting with `C-x' is also
+     a legitimate key.  *Note Keys::.
+     
+Primary Mail File     
+     Your primary mail file is the file named `RMAIL' in your home
+     directory, where all mail that you receive is stored by Rmail unless you
+     make arrangements to do otherwise.  *Note Rmail::.
+     
+Prompt     
+     A prompt is text printed to ask the user for input.  Printing a prompt
+     is called prompting.  Emacs prompts always appear in the echo area
+     (q.v.).  One kind of prompting happens when the minibuffer is used
+     to read an argument (*Note Minibuffer::); the echoing which happens
+     when you pause in the middle of typing a multicharacter key is also a
+     kind of prompting (*Note Echo Area::).
+     
+Quitting     
+     Quitting means cancelling a partially typed command or a running
+     command, using `C-g'.  *Note Quitting::.
+     
+Quoting     
+     Quoting means depriving a character of its usual special significance.
+     In Emacs this is usually done with `Control-q'.  What constitutes special
+     significance depends on the context and on convention.  For example,
+     an "ordinary" character as an Emacs command inserts itself; so in
+     this context, a special character is any character that does not
+     normally insert itself (such as DEL, for example), and quoting
+     it makes it insert itself as if it were not special.  Not all contexts
+     allow quoting.  *Note Quoting: Basic.
+     
+Read-only Buffer     
+     A read-only buffer is one whose text you are not allowed to change.
+     Normally Emacs makes buffers read-only when they contain text which
+     has a special significance to Emacs; for example, Dired buffers.
+     Visiting a file that is write protected also makes a read-only buffer.
+     *Note Buffers::.
+     
+Recursive Editing Level     
+     A recursive editing level is a state in which part of the execution of
+     a command involves asking the user to edit some text.  This text may
+     or may not be the same as the text to which the command was applied.
+     The mode line indicates recursive editing levels with square brackets
+     (`[' and `]').  *Note Recursive Edit::.
+     
+Redisplay     
+     Redisplay is the process of correcting the image on the screen to
+     correspond to changes that have been made in the text being edited.
+     *Note Redisplay: Screen.
+     
+Regexp     
+     See `regular expression'.
+     
+Region     
+     The region is the text between point (q.v.) and the mark (q.v.).
+     Many commands operate on the text of the region.  *Note Region: Mark.
+     
+Registers     
+     Registers are named slots in which text or buffer positions or
+     rectangles can be saved for later use.  *Note Registers::.
+     
+Regular Expression     
+     A regular expression is a pattern that can match various text strings;
+     for example, `l[0-9]+' matches `l' followed by one or more
+     digits.  *Note Regexps::.
+     
+Replacement     
+     See `global substitution'.
+     
+Restriction     
+     A buffer's restriction is the amount of text, at the beginning or the
+     end of the buffer, that is temporarily invisible and inaccessible.
+     Giving a buffer a nonzero amount of restriction is called narrowing
+     (q.v.).  *Note Narrowing::.
+     
+RET     
+     RET is a character than in Emacs runs the command to insert a
+     newline into the text.  It is also used to terminate most arguments
+     read in the minibuffer (q.v.).  *Note Return: Characters.
+     
+Saving     
+     Saving a buffer means copying its text into the file that was visited
+     (q.v.) in that buffer.  This is the way text in files actually gets
+     changed by your Emacs editing.  *Note Saving::.
+     
+Scrolling     
+     Scrolling means shifting the text in the Emacs window so as to see a
+     different part of the buffer.  *Note Scrolling: Display.
+     
+Searching     
+     Searching means moving point to the next occurrence of a specified
+     string.  *Note Search::.
+     
+Selecting     
+     Selecting a buffer means making it the current (q.v.) buffer.
+     *Note Selecting: Buffers.
+     
+Self-documentation     
+     Self-documentation is the feature of Emacs which can tell you what any
+     command does, or give you a list of all commands related to a topic
+     you specify.  You ask for self-documentation with the help character,
+     `C-h'.  *Note Help::.
+     
+Sentences     
+     Emacs has commands for moving by or killing by sentences.
+     *Note Sentences::.
+     
+Sexp     
+     A sexp (short for `s-expression') is the basic syntactic unit of Lisp
+     in its textual form: either a list, or Lisp atom.  Many Emacs commands
+     operate on sexps.  The term `sexp' is generalized to languages other
+     than Lisp, to mean a syntactically recognizable expression.
+     *Note Sexps: Lists.
+     
+Simultaneous Editing     
+     Simultaneous editing means two users modifying the same file at once.
+     Simultaneous editing if not detected can cause one user to lose his
+     work.  Emacs detects all cases of simultaneous editing and warns the
+     user to investigate them.  *Note Simultaneous Editing: Interlocking.
+     
+String     
+     A string is a kind of Lisp data object which contains a sequence of
+     characters.  Many Emacs variables are intended to have strings as
+     values.  The Lisp syntax for a string consists of the characters in
+     the string with a `"' before and another `"' after.  A
+     `"' that is part of the string must be written as `\"' and a
+     `\' that is part of the string must be written as `\\'.  All
+     other characters, including newline, can be included just by writing
+     them inside the string; however, escape sequences as in C, such as
+     `\n' for newline or `\241' using an octal character code,
+     are allowed as well.
+     
+String Substitution     
+     See `global substitution'.
+     
+Syntax Table     
+     The syntax table tells Emacs which characters are part of a word,
+     which characters balance each other like parentheses, etc.
+     *Note Syntax::.
+     
+Tag Table     
+     A tag table is a file that serves as an index to the function
+     definitions in one or more other files.  *Note Tags::.
+     
+Termscript File     
+     A termscript file contains a record of all characters sent by Emacs to
+     the terminal.  It is used for tracking down bugs in Emacs redisplay.
+     Emacs does not make a termscript file unless you tell it to.
+     *Note Bugs::.
+     
+Text     
+     Two meanings (*Note Text::):
+     
+        * Data consisting of a sequence of characters, as opposed to binary
+          numbers, images, graphics commands, executable programs, and the like.
+          The contents of an Emacs buffer are always text in this sense.
+        * Data consisting of written human language, as opposed to programs,
+          or following the stylistic conventions of human language.
+     
+Top Level     
+     Top level is the normal state of Emacs, in which you are editing the
+     text of the file you have visited.  You are at top level whenever you
+     are not in a recursive editing level (q.v.) or the minibuffer
+     (q.v.), and not in the middle of a command.  You can get back to top
+     level by aborting (q.v.) and quitting (q.v.).  *Note Quitting::.
+     
+Transposition     
+     Transposing two units of text means putting each one into the place
+     formerly occupied by the other.  There are Emacs commands to transpose
+     two adjacent characters, words, sexps (q.v.) or lines
+     (*Note Transpose::).
+     
+Truncation     
+     Truncating text lines in the display means leaving out any text on a
+     line that does not fit within the right margin of the window
+     displaying it.  See also `continuation line'.
+     *Note Truncation: Basic.
+     
+Undoing     
+     Undoing means making your previous editing go in reverse, bringing
+     back the text that existed earlier in the editing session.
+     *Note Undo::.
+     
+Variable     
+     A variable is an object in Lisp that can store an arbitrary value.
+     Emacs uses some variables for internal purposes, and has others (known
+     as `options' (q.v.)) just so that you can set their values to
+     control the behavior of Emacs.  The variables used in Emacs that you
+     are likely to be interested in are listed in the Variables Index in
+     this manual.  *Note Variables::, for information on variables.
+     
+Visiting     
+     Visiting a file means loading its contents into a buffer (q.v.)
+     where they can be edited.  *Note Visiting::.
+     
+Whitespace     
+     Whitespace is any run of consecutive formatting characters (space,
+     tab, newline, and backspace).
+     
+Widening     
+     Widening is removing any restriction (q.v.) on the current buffer;
+     it is the opposite of narrowing (q.v.).  *Note Narrowing::.
+     
+Window     
+     Emacs divides the screen into one or more windows, each of which can
+     display the contents of one buffer (q.v.) at any time.
+     *Note Screen::, for basic information on how Emacs uses the screen.
+     *Note Windows::, for commands to control the use of windows.
+     
+Word Abbrev     
+     Synonymous with `abbrev'.
+     
+Word Search     
+     Word search is searching for a sequence of words, considering the
+     punctuation between them as insignificant.  *Note Word Search::.
+     
+Yanking     
+     Yanking means reinserting text previously killed.  It can be used to
+     undo a mistaken kill, or for copying or moving text.  Some other
+     systems call this "pasting".  *Note Yanking::.
+
+
+File: emacs  Node: Key Index, Prev: Glossary, Up: Top, Next: Command Index
+
+Key (Character) Index
+*********************
+
+* Menu:
+
+* ! (query-replace): Query Replace.
+* , (query-replace): Query Replace.
+* . (query-replace): Query Replace.
+* ^ (query-replace): Query Replace.
+* > (Rmail): Rmail Motion.
+* . (Rmail): Rmail Scrolling.
+* " (TeX mode): TeX Editing.
+* a (Rmail): Rmail Labels.
+* C-]: Quitting.
+* C-]: Recursive Edit.
+* c (Rmail): Rmail Reply.
+* C-_: Undo.
+* C-a: Basic.
+* C-b: Basic.
+* C-c ; (Fortran mode): Fortran Comments.
+* C-c ' (Picture mode): Insert in Picture.
+* C-c . (Picture mode): Insert in Picture.
+* C-c / (Picture mode): Insert in Picture.
+* C-c < (Picture mode): Insert in Picture.
+* C-c > (Picture mode): Insert in Picture.
+* C-c \ (Picture mode): Insert in Picture.
+* C-c ^ (Picture mode): Insert in Picture.
+* C-c ` (Picture mode): Insert in Picture.
+* C-c C-\ (Shell mode): Shell Mode.
+* C-c C-b (Outline mode): Outline Motion.
+* C-c C-b (Picture mode): Insert in Picture.
+* C-c C-b (TeX mode): TeX Print.
+* C-c C-c (Edit Abbrevs): Editing Abbrevs.
+* C-c C-c (Edit Tab Stops): Tab Stops.
+* C-c C-c (Mail mode): Mail Mode.
+* C-c C-c (Occur mode): Other Repeating Search.
+* C-c C-c (Shell mode): Shell Mode.
+* C-c C-d (Picture mode): Basic Picture.
+* C-c C-d (Shell mode): Shell Mode.
+* C-c C-f C-c (Mail mode): Mail Mode.
+* C-c C-f C-s (Mail mode): Mail Mode.
+* C-c C-f C-t (Mail mode): Mail Mode.
+* C-c C-f (LaTeX mode): TeX Editing.
+* C-c C-f (Outline mode): Outline Motion.
+* C-c C-f (Picture mode): Insert in Picture.
+* C-c C-h (Outline mode): Outline Visibility.
+* C-c C-i (Outline mode): Outline Visibility.
+* C-c C-k (Picture mode): Rectangles in Picture.
+* C-c C-k (TeX mode): TeX Print.
+* C-c C-l (TeX mode): TeX Print.
+* C-c C-n (Fortran mode): Fortran Motion.
+* C-c C-n (Outline mode): Outline Motion.
+* C-c C-o (Shell mode): Shell Mode.
+* C-c C-p (Fortran mode): Fortran Motion.
+* C-c C-p (Outline mode): Outline Motion.
+* C-c C-p (TeX mode): TeX Print.
+* C-c C-q (Mail mode): Mail Mode.
+* C-c C-q (TeX mode): TeX Print.
+* C-c C-r (Fortran mode): Fortran Columns.
+* C-c C-r (Shell mode): Shell Mode.
+* C-c C-r (TeX mode): TeX Print.
+* C-c C-s (Mail mode): Mail Mode.
+* C-c C-s (Outline mode): Outline Visibility.
+* C-c C-u (Outline mode): Outline Motion.
+* C-c C-u (Shell mode): Shell Mode.
+* C-c C-w (Fortran mode): Fortran Columns.
+* C-c C-w (Mail mode): Mail Mode.
+* C-c C-w (Picture mode): Rectangles in Picture.
+* C-c C-w (Shell mode): Shell Mode.
+* C-c C-x (Picture mode): Rectangles in Picture.
+* C-c C-y (Mail mode): Mail Mode.
+* C-c C-y (Mail mode): Rmail Reply.
+* C-c C-y (Picture mode): Rectangles in Picture.
+* C-c C-y (Shell mode): Shell Mode.
+* C-c C-z (Shell mode): Shell Mode.
+* C-c: Keys.
+* C-c TAB (Picture mode): Tabs in Picture.
+* C-d: Killing.
+* C-d (Rmail): Rmail Deletion.
+* C-e: Basic.
+* C-f: Basic.
+* C-g: Minibuffer.
+* C-h a: Help.
+* C-h b: Help.
+* C-h c: Help.
+* C-h C-c: Help.
+* C-h C-d: Help.
+* C-h C-w: Help.
+* C-h f: Documentation.
+* C-h f: Help.
+* C-h i: Help.
+* C-h k: Help.
+* C-h: Keys.
+* C-h l: Help.
+* C-h m: Help.
+* C-h n: Help.
+* C-h s: Syntax Change.
+* C-h t: Basic.
+* C-h t: Help.
+* C-h v: Documentation.
+* C-h v: Examining.
+* C-h v: Help.
+* C-h w: Help.
+* C-k: Killing.
+* C-k: Killing.
+* C-l: Basic.
+* C-l (query-replace): Query Replace.
+* C-l: Scrolling.
+* C-M-\: Indentation Commands.
+* C-M-@@: Lists.
+* C-M-@@: Marking Objects.
+* C-M-\: Multi-line Indent.
+* C-M-a: Defuns.
+* C-M-a (Fortran mode): Fortran Motion.
+* C-M-b: Lists.
+* C-M-c: Recursive Edit.
+* C-M-d: Lists.
+* C-M-e: Defuns.
+* C-M-e (Fortran mode): Fortran Motion.
+* C-M-f: Lists.
+* C-M-h: Defuns.
+* C-M-h (Fortran mode): Fortran Motion.
+* C-M-h: Marking Objects.
+* C-M-k: Killing.
+* C-M-k: Lists.
+* C-M-l (Rmail): Rmail Labels.
+* C-M-l (Rmail): Rmail Make Summary.
+* C-M-n: Lists.
+* C-M-n (Rmail): Rmail Labels.
+* C-M-o: Indentation Commands.
+* C-M-p: Lists.
+* C-M-p (Rmail): Rmail Labels.
+* C-M-q (Fortran mode): ForIndent Commands.
+* C-M-q: Multi-line Indent.
+* C-M-r (Rmail): Rmail Make Summary.
+* C-M-s: Regexp Search.
+* C-M-t: Lists.
+* C-M-t: Transpose.
+* C-M-u: Lists.
+* C-M-v: Minibuffer Edit.
+* C-M-v: Other Window.
+* C-M-w: Appending Kills.
+* C-M-x: External Lisp.
+* C-M-x: Lisp Eval.
+* C-n: Basic.
+* C-n (Rmail summary): Rmail Summary Edit.
+* C-o: Blank Lines.
+* C-o (Rmail): Rmail Output.
+* C-p: Basic.
+* C-p (Rmail summary): Rmail Summary Edit.
+* C-q: Basic.
+* C-r: Incremental Search.
+* C-r (query-replace): Query Replace.
+* C-s: Incremental Search.
+* C-SPC: Setting Mark.
+* C-t: Basic.
+* C-t: Transpose.
+* C-u - C-x ;: Comments.
+* C-u: Arguments.
+* C-u C-@@: Mark Ring.
+* C-u C-SPC: Mark Ring.
+* C-u TAB: Multi-line Indent.
+* C-v: Scrolling.
+* C-w: Killing.
+* C-w (query-replace): Query Replace.
+* C-x (: Basic Kbd Macro.
+* C-x ): Basic Kbd Macro.
+* C-x @}: Change Window.
+* C-x ^: Change Window.
+* C-x ;: Comments.
+* C-x `: Compilation.
+* C-x +: Defining Abbrevs.
+* C-x -: Defining Abbrevs.
+* C-x .: Fill Prefix.
+* C-x <: Horizontal Scrolling.
+* C-x >: Horizontal Scrolling.
+* C-x [: Pages.
+* C-x ]: Pages.
+* C-x =: Position Info.
+* C-x /: RegPos.
+* C-x $: Selective Display.
+* C-x 0: Change Window.
+* C-x 1: Change Window.
+* C-x 2: Split Window.
+* C-x 4 .: Find Tag.
+* C-x 4 b: Select Buffer.
+* C-x 4 d: Dired Enter.
+* C-x 4 f: Visiting.
+* C-x 4 m: Sending Mail.
+* C-x 4: Pop Up Window.
+* C-x 5: Split Window.
+* C-x a: Accumulating Text.
+* C-x b: Select Buffer.
+* C-x C-a: Defining Abbrevs.
+* C-x C-b: List Buffers.
+* C-x C-c: Exiting.
+* C-x C-d: ListDir.
+* C-x C-e: Lisp Eval.
+* C-x C-f: Visiting.
+* C-x C-h: Defining Abbrevs.
+* C-x C-l: Case.
+* C-x C-o: Blank Lines.
+* C-x C-o: Killing.
+* C-x C-p: Marking Objects.
+* C-x C-p: Pages.
+* C-x C-q: Misc Buffer.
+* C-x C-s: Saving.
+* C-x C-t: Transpose.
+* C-x C-u: Case.
+* C-x C-v: Visiting.
+* C-x C-w: Saving.
+* C-x C-x: Setting Mark.
+* C-x d: Dired Enter.
+* C-x DEL: Kill Errors.
+* C-x DEL: Killing.
+* C-x DEL: Sentences.
+* C-x e: Basic Kbd Macro.
+* C-x ESC: Repetition.
+* C-x f: Fill Commands.
+* C-x g: RegText.
+* C-x h: Marking Objects.
+* C-x j: RegPos.
+* C-x k: Kill Buffer.
+* C-x: Keys.
+* C-x l: Pages.
+* C-x m: Sending Mail.
+* C-x n: Narrowing.
+* C-x o: Other Window.
+* C-x q: Kbd Macro Query.
+* C-x s: Saving.
+* C-x TAB: Indentation Commands.
+* C-x u: Undo.
+* C-x w: Narrowing.
+* C-x x: RegText.
+* C-y: Kill Ring.
+* C-z: Exiting.
+* d (Rmail): Rmail Deletion.
+* d (Rmail summary): Rmail Summary Edit.
+* DEL: Basic.
+* DEL: Kill Errors.
+* DEL: Killing.
+* DEL: Major Modes.
+* DEL: Program Modes.
+* DEL (query-replace): Query Replace.
+* DEL (Rmail): Rmail Scrolling.
+* DEL (Rmail summary): Rmail Summary Edit.
+* e (Rmail): Rmail Deletion.
+* ESC: Keys.
+* ESC (query-replace): Query Replace.
+* f (Rmail): Rmail Reply.
+* g (Rmail): Rmail Files.
+* h (Rmail): Rmail Make Summary.
+* Help: Help.
+* i (Rmail): Rmail Files.
+* j (Rmail): Rmail Motion.
+* j (Rmail summary): Rmail Summary Edit.
+* k (rmail): Rmail Labels.
+* l (Rmail): Rmail Make Summary.
+* LFD: Basic Indent.
+* LFD: Indentation.
+* LFD: Major Modes.
+* LFD (TeX mode): TeX Editing.
+* M-(: Balanced Editing.
+* M-): Balanced Editing.
+* M-<: Basic.
+* M->: Basic.
+* M-;: Comments.
+* M-/: Dynamic Abbrevs.
+* M-': Expanding Abbrevs.
+* M-.: Find Tag.
+* M-\: Indentation Commands.
+* M-^: Indentation Commands.
+* M-\: Killing.
+* M-^: Killing.
+* M-@@: Marking Objects.
+* M-?: Nroff Mode.
+* M-[: Paragraphs.
+* M-]: Paragraphs.
+* M-=: Position Info.
+* M-%: Query Replace.
+* m (Rmail): Rmail Reply.
+* M-~: Saving.
+* M-!: Single Shell.
+* M-|: Single Shell.
+* M-$: Spelling.
+* M-,: Tags Search.
+* M-@{ (TeX mode): TeX Editing.
+* M-@} (TeX mode): TeX Editing.
+* M-@@: Words.
+* M-1: Arguments.
+* M-a: Sentences.
+* M-b: Words.
+* M-c: Case.
+* M-d: Killing.
+* M-d: Words.
+* M-DEL: Kill Errors.
+* M-DEL: Killing.
+* M-DEL: Words.
+* M-e: Sentences.
+* M-ESC: Lisp Eval.
+* M-f: Words.
+* M-g: Fill Commands.
+* M-h: Marking Objects.
+* M-h: Paragraphs.
+* M-i: Tab Stops.
+* M-k: Killing.
+* M-k: Sentences.
+* M-l: Case.
+* M-LFD: Comments.
+* M-LFD (Fortran mode): ForIndent Commands.
+* M-m: Indentation Commands.
+* M-n: Nroff Mode.
+* M-n: Repetition.
+* M-n (Rmail): Rmail Motion.
+* M-p: Nroff Mode.
+* M-p: Repetition.
+* M-p (Rmail): Rmail Motion.
+* M-q: Fill Commands.
+* M-r: Basic.
+* M-s: Fill Commands.
+* M-s (Rmail): Rmail Motion.
+* M-SPC: Killing.
+* M-@t{-}: Arguments.
+* M-@t{-} M-c: Fixing Case.
+* M-@t{-} M-l: Fixing Case.
+* M-@t{-} M-u: Fixing Case.
+* M-t: Transpose.
+* M-t: Words.
+* M-TAB: Lisp Completion.
+* M-TAB: Tabs in Picture.
+* M-u: Case.
+* M-v: Scrolling.
+* M-w: Kill Ring.
+* M-x: M-x.
+* M-y: Earlier Kills.
+* M-z: Killing.
+* n (Rmail): Rmail Motion.
+* n (Rmail summary): Rmail Summary Edit.
+* o (Rmail): Rmail Output.
+* p (Rmail): Rmail Motion.
+* p (Rmail summary): Rmail Summary Edit.
+* q (Rmail): Rmail.
+* q (Rmail summary): Rmail Summary Edit.
+* r (Rmail): Rmail Reply.
+* RET: Basic.
+* RET (Shell mode): Shell Mode.
+* s (Rmail): Rmail.
+* SPC: Completion.
+* SPC (query-replace): Query Replace.
+* SPC (Rmail): Rmail Scrolling.
+* SPC (Rmail summary): Rmail Summary Edit.
+* t (Rmail): Rmail Editing.
+* TAB: Basic Indent.
+* TAB: Completion.
+* TAB: Indentation.
+* TAB: Indentation.
+* TAB: Major Modes.
+* TAB: Text Mode.
+* u (Rmail): Rmail Deletion.
+* u (Rmail summary): Rmail Summary Edit.
+* w (Rmail): Rmail Editing.
+* x (Rmail summary): Rmail Summary Edit.
+
+
+File: emacs  Node: Command Index, Prev: Key Index, Up: Top, Next: Variable Index
+
+Command and Function Index
+**************************
+
+* Menu:
+
+* abbrev-mode: Abbrevs.
+* abbrev-mode: Minor Modes.
+* abbrev-prefix-mark: Expanding Abbrevs.
+* abort-recursive-edit: Quitting.
+* abort-recursive-edit: Recursive Edit.
+* add-change-log-entry: Change Log.
+* add-global-abbrev: Defining Abbrevs.
+* add-mode-abbrev: Defining Abbrevs.
+* add-name-to-file: Misc File Ops.
+* append-next-kill: Appending Kills.
+* append-to-buffer: Accumulating Text.
+* append-to-file: Accumulating Text.
+* append-to-file: Misc File Ops.
+* apropos: Help.
+* ask-user-about-lock: Interlocking.
+* auto-fill-mode: Auto Fill.
+* auto-fill-mode: Minor Modes.
+* auto-save-mode: Auto Save Control.
+* back-to-indentation: Indentation Commands.
+* backward-char: Basic.
+* backward-delete-char-untabify: Program Modes.
+* backward-kill-sentence: Kill Errors.
+* backward-kill-sentence: Killing.
+* backward-kill-sentence: Sentences.
+* backward-kill-word: Kill Errors.
+* backward-kill-word: Killing.
+* backward-kill-word: Words.
+* backward-list: Lists.
+* backward-page: Pages.
+* backward-paragraph: Paragraphs.
+* backward-sentence: Sentences.
+* backward-sexp: Lists.
+* backward-text-line: Nroff Mode.
+* backward-up-list: Lists.
+* backward-word: Words.
+* batch-byte-compile: Compiling Libraries.
+* beginning-of-buffer: Basic.
+* beginning-of-defun: Defuns.
+* beginning-of-fortran-subprogram: Fortran Motion.
+* beginning-of-line: Basic.
+* buffer-menu: Several Buffers.
+* byte-compile-file: Compiling Libraries.
+* byte-recompile-directory: Compiling Libraries.
+* call-last-kbd-macro: Basic Kbd Macro.
+* cancel-debug-on-entry: Lisp Debug.
+* capitalize-word: Case.
+* capitalize-word: Fixing Case.
+* center-line: Fill Commands.
+* c-indent-line: Basic Indent.
+* clear-rectangle: Rectangles.
+* command-apropos: Help.
+* compare-windows: Other Window.
+* compile: Compilation.
+* convert-mocklisp-buffer: Mocklisp.
+* copy-file: Misc File Ops.
+* copy-last-shell-input: Shell Mode.
+* copy-region-as-kill: Kill Ring.
+* copy-to-buffer: Accumulating Text.
+* copy-to-register: RegText.
+* count-lines-page: Pages.
+* count-lines-region: Position Info.
+* count-matches: Other Repeating Search.
+* count-text-lines: Nroff Mode.
+* dabbrev-expand: Dynamic Abbrevs.
+* debug: Lisp Debug.
+* debug-on-entry: Lisp Debug.
+* default-value: Locals.
+* define-abbrevs: Saving Abbrevs.
+* define-key: Rebinding.
+* delete-backward-char: Basic.
+* delete-backward-char: Kill Errors.
+* delete-backward-char: Killing.
+* delete-blank-lines: Blank Lines.
+* delete-blank-lines: Killing.
+* delete-char: Basic Picture.
+* delete-char: Killing.
+* delete-file: Misc File Ops.
+* delete-horizontal-space: Indentation Commands.
+* delete-horizontal-space: Killing.
+* delete-indentation: Indentation Commands.
+* delete-indentation: Killing.
+* delete-matching-lines: Other Repeating Search.
+* delete-non-matching-lines: Other Repeating Search.
+* delete-other-windows: Change Window.
+* delete-rectangle: Rectangles.
+* delete-window: Change Window.
+* describe-bindings: Help.
+* describe-copying: Help.
+* describe-distribution: Help.
+* describe-function: Documentation.
+* describe-function: Help.
+* describe-key: Help.
+* describe-key-briefly: Help.
+* describe-mode: Help.
+* describe-no-warranty: Help.
+* describe-syntax: Syntax Change.
+* describe-variable: Documentation.
+* describe-variable: Examining.
+* describe-variable: Help.
+* digit-argument: Arguments.
+* dired: Dired Enter.
+* dired-other-window: Dired Enter.
+* dired-other-window: Pop Up Window.
+* disable-command: Disabling.
+* disassemble: Compiling Libraries.
+* display-time: Mode Line.
+* dissociated-press: Dissociated Press.
+* do-auto-save: Auto Save Control.
+* doctor: Total Frustration.
+* downcase-region: Case.
+* downcase-word: Case.
+* downcase-word: Fixing Case.
+* down-list: Lists.
+* edit-abbrevs: Editing Abbrevs.
+* edit-abbrevs-redefine: Editing Abbrevs.
+* edit-options: Edit Options.
+* edit-picture: Picture.
+* edit-tab-stops: Tab Stops.
+* edit-tab-stops: Text Mode.
+* edit-tab-stops-note-changes: Tab Stops.
+* edt-emulation-off: Emulation.
+* edt-emulation-on: Emulation.
+* electric-nroff-mode: Nroff Mode.
+* emacs-lisp-mode: Lisp Eval.
+* emacs-version: Bugs.
+* enable-command: Disabling.
+* end-kbd-macro: Basic Kbd Macro.
+* end-of-buffer: Basic.
+* end-of-defun: Defuns.
+* end-of-fortran-subprogram: Fortran Motion.
+* end-of-line: Basic.
+* enlarge-window: Change Window.
+* enlarge-window-horizontally: Change Window.
+* eval-current-buffer: Lisp Eval.
+* eval-defun: Lisp Eval.
+* eval-expression: Lisp Eval.
+* eval-last-sexp: Lisp Eval.
+* eval-region: Lisp Eval.
+* exchange-point-and-mark: Setting Mark.
+* execute-extended-command: M-x.
+* exit-recursive-edit: Recursive Edit.
+* expand-abbrev: Expanding Abbrevs.
+* expand-region-abbrevs: Expanding Abbrevs.
+* fill-individual-paragraphs: Fill Prefix.
+* fill-paragraph: Fill Commands.
+* fill-region: Fill Commands.
+* fill-region-as-paragraph: Fill Commands.
+* find-alternate-file: Visiting.
+* find-file: Visiting.
+* find-file-other-window: Pop Up Window.
+* find-file-other-window: Visiting.
+* find-tag: Find Tag.
+* find-tag-other-window: Find Tag.
+* find-tag-other-window: Pop Up Window.
+* fortran-column-ruler: Fortran Columns.
+* fortran-comment-region: Fortran Comments.
+* fortran-create-window: Fortran Columns.
+* fortran-indent-line: ForIndent Commands.
+* fortran-indent-subprogram: ForIndent Commands.
+* fortran-mode: Fortran.
+* fortran-next-statement: Fortran Motion.
+* fortran-previous-statement: Fortran Motion.
+* fortran-split-line: ForIndent Commands.
+* forward-char: Basic.
+* forward-list: Lists.
+* forward-page: Pages.
+* forward-paragraph: Paragraphs.
+* forward-sentence: Sentences.
+* forward-sexp: Lists.
+* forward-text-line: Nroff Mode.
+* forward-word: Words.
+* global-set-key: Rebinding.
+* goto-char: Basic.
+* goto-line: Basic.
+* hanoi: Amusements.
+* help-with-tutorial: Basic.
+* help-with-tutorial: Help.
+* hide-body: Outline Visibility.
+* hide-entry: Outline Visibility.
+* hide-leaves: Outline Visibility.
+* hide-subtree: Outline Visibility.
+* indent-c-exp: Multi-line Indent.
+* indented-text-mode: Text Mode.
+* indent-for-comment: Comments.
+* indent-new-comment-line: Comments.
+* indent-new-line: Indentation.
+* indent-region: Indentation Commands.
+* indent-region: Multi-line Indent.
+* indent-relative: Indentation Commands.
+* indent-rigidly: Indentation Commands.
+* indent-sexp: Multi-line Indent.
+* info: Help.
+* insert-abbrevs: Saving Abbrevs.
+* insert-file: Misc File Ops.
+* insert-kbd-macro: Save Kbd Macro.
+* insert-parentheses: Balanced Editing.
+* insert-register: RegText.
+* interrupt-shell-subjob: Shell Mode.
+* inverse-add-global-abbrev: Defining Abbrevs.
+* inverse-add-mode-abbrev: Defining Abbrevs.
+* isearch-backward: Incremental Search.
+* isearch-backward-regexp: Regexp Search.
+* isearch-forward: Incremental Search.
+* isearch-forward-regexp: Regexp Search.
+* just-one-space: Killing.
+* kbd-macro-query: Kbd Macro Query.
+* kill-all-abbrevs: Defining Abbrevs.
+* kill-buffer: Kill Buffer.
+* kill-comment: Comments.
+* kill-compilation: Compilation.
+* kill-line: Killing.
+* kill-line: Killing.
+* kill-local-variable: Locals.
+* kill-output-from-shell: Shell Mode.
+* kill-rectangle: Rectangles.
+* kill-region: Killing.
+* kill-sentence: Killing.
+* kill-sentence: Sentences.
+* kill-sexp: Killing.
+* kill-sexp: Lists.
+* kill-some-buffers: Kill Buffer.
+* kill-word: Killing.
+* kill-word: Words.
+* LaTeX-mode: TeX Mode.
+* latex-mode: TeX Mode.
+* lisp-complete-symbol: Lisp Completion.
+* lisp-indent-line: Basic Indent.
+* lisp-interaction-mode: Lisp Interaction.
+* lisp-mode: External Lisp.
+* lisp-send-defun: External Lisp.
+* list-abbrevs: Editing Abbrevs.
+* list-buffers: List Buffers.
+* list-command-history: Repetition.
+* list-directory: ListDir.
+* list-matching-lines: Other Repeating Search.
+* list-options: Edit Options.
+* list-tags: List Tags.
+* load: Loading.
+* load-file: Loading.
+* load-library: Loading.
+* local-set-key: Rebinding.
+* lpr-buffer: Hardcopy.
+* lpr-region: Hardcopy.
+* mail: Sending Mail.
+* mail-cc: Mail Mode.
+* mail-fill-yanked-message: Mail Mode.
+* mail-other-window: Pop Up Window.
+* mail-other-window: Sending Mail.
+* mail-send: Mail Mode.
+* mail-send-and-exit: Mail Mode.
+* mail-signature: Mail Mode.
+* mail-subject: Mail Mode.
+* mail-to: Mail Mode.
+* mail-yank-original: Mail Mode.
+* mail-yank-original: Rmail Reply.
+* make-local-variable: Locals.
+* make-symbolic-link: Misc File Ops.
+* make-variable-buffer-local: Locals.
+* manual-entry: Documentation.
+* mark-defun: Defuns.
+* mark-defun: Marking Objects.
+* mark-fortran-subprogram: Fortran Motion.
+* mark-page: Marking Objects.
+* mark-page: Pages.
+* mark-paragraph: Marking Objects.
+* mark-paragraph: Paragraphs.
+* mark-sexp: Lists.
+* mark-sexp: Marking Objects.
+* mark-whole-buffer: Marking Objects.
+* mark-word: Marking Objects.
+* mark-word: Words.
+* minibuffer-complete: Completion.
+* minibuffer-complete-word: Completion.
+* modify-syntax-entry: Syntax Change.
+* move-over-close-and-reindent: Balanced Editing.
+* move-to-window-line: Basic.
+* name-last-kbd-macro: Save Kbd Macro.
+* narrow-to-region: Narrowing.
+* negative-argument: Arguments.
+* newline: Basic.
+* newline-and-indent: Basic Indent.
+* next-complex-command: Repetition.
+* next-error: Compilation.
+* next-file: Tags Stepping.
+* next-line: Basic.
+* not-modified: Saving.
+* nroff-mode: Nroff Mode.
+* occur: Other Repeating Search.
+* open-dribble-file: Bugs.
+* open-line: Blank Lines.
+* open-rectangle: Rectangles.
+* open-termscript: Bugs.
+* other-window: Other Window.
+* outline-backward-same-level: Outline Motion.
+* outline-forward-same-level: Outline Motion.
+* outline-next-visible-heading: Outline Motion.
+* outline-previous-visible-heading: Outline Motion.
+* outline-up-heading: Outline Motion.
+* overwrite-mode: Minor Modes.
+* picture-backward-clear-column: Basic Picture.
+* picture-backward-column: Basic Picture.
+* picture-clear-column: Basic Picture.
+* picture-clear-line: Basic Picture.
+* picture-clear-rectangle: Rectangles in Picture.
+* picture-clear-rectangle-to-register: Rectangles in Picture.
+* picture-forward-column: Basic Picture.
+* picture-motion: Insert in Picture.
+* picture-motion-reverse: Insert in Picture.
+* picture-move-down: Basic Picture.
+* picture-movement-down: Insert in Picture.
+* picture-movement-left: Insert in Picture.
+* picture-movement-ne: Insert in Picture.
+* picture-movement-nw: Insert in Picture.
+* picture-movement-right: Insert in Picture.
+* picture-movement-se: Insert in Picture.
+* picture-movement-sw: Insert in Picture.
+* picture-movement-up: Insert in Picture.
+* picture-move-up: Basic Picture.
+* picture-newline: Basic Picture.
+* picture-open-line: Basic Picture.
+* picture-set-tab-stops: Tabs in Picture.
+* picture-tab: Tabs in Picture.
+* picture-tab-search: Tabs in Picture.
+* picture-yank-rectangle: Rectangles in Picture.
+* picture-yank-rectangle-from-register: Rectangles in Picture.
+* plain-TeX-mode: TeX Mode.
+* plain-tex-mode: TeX Mode.
+* point-to-register: RegPos.
+* prepend-to-buffer: Accumulating Text.
+* previous-complex-command: Repetition.
+* previous-line: Basic.
+* print-buffer: Hardcopy.
+* print-region: Hardcopy.
+* query-replace: Query Replace.
+* query-replace-regexp: Query Replace.
+* quietly-read-abbrev-file: Saving Abbrevs.
+* quit-shell-subjob: Shell Mode.
+* quoted-insert: Basic.
+* read-abbrev-file: Saving Abbrevs.
+* recenter: Basic.
+* recenter: Scrolling.
+* recover-file: Recover.
+* register-to-point: RegPos.
+* rename-buffer: Misc Buffer.
+* rename-file: Misc File Ops.
+* repeat-complex-command: Repetition.
+* replace-regexp: Unconditional Replace.
+* replace-string: Unconditional Replace.
+* re-search-backward: Regexp Search.
+* re-search-forward: Regexp Search.
+* revert-buffer: Reverting.
+* rmail: Rmail.
+* rmail-add-label: Rmail Labels.
+* rmail-beginning-of-message: Rmail Scrolling.
+* rmail-continue: Rmail Reply.
+* rmail-delete-backward: Rmail Deletion.
+* rmail-delete-forward: Rmail Deletion.
+* rmail-edit-current-message: Rmail Editing.
+* rmail-expunge: Rmail Deletion.
+* rmail-forward: Rmail Reply.
+* rmail-get-new-mail: Rmail Files.
+* rmail-input: Rmail Files.
+* rmail-kill-label: Rmail Labels.
+* rmail-last-message: Rmail Motion.
+* rmail-mail: Rmail Reply.
+* rmail-next-labeled-message: Rmail Labels.
+* rmail-next-message: Rmail Motion.
+* rmail-next-undeleted-message: Rmail Motion.
+* rmail-output: Rmail Output.
+* rmail-output-to-rmail-file: Rmail Output.
+* rmail-previous-labeled-message: Rmail Labels.
+* rmail-previous-message: Rmail Motion.
+* rmail-previous-undeleted-message: Rmail Motion.
+* rmail-quit: Rmail.
+* rmail-reply: Rmail Reply.
+* rmail-save: Rmail.
+* rmail-search: Rmail Motion.
+* rmail-show-message: Rmail Motion.
+* rmail-summary: Rmail Make Summary.
+* rmail-summary-by-labels: Rmail Labels.
+* rmail-summary-by-labels: Rmail Make Summary.
+* rmail-summary-by-recipients: Rmail Make Summary.
+* rmail-summary-delete-forward: Rmail Summary Edit.
+* rmail-summary-exit: Rmail Summary Edit.
+* rmail-summary-goto-msg: Rmail Summary Edit.
+* rmail-summary-next-all: Rmail Summary Edit.
+* rmail-summary-next-msg: Rmail Summary Edit.
+* rmail-summary-previous-all: Rmail Summary Edit.
+* rmail-summary-previous-msg: Rmail Summary Edit.
+* rmail-summary-quit: Rmail Summary Edit.
+* rmail-summary-scroll-down: Rmail Summary Edit.
+* rmail-summary-scroll-up: Rmail Summary Edit.
+* rmail-summary-undelete: Rmail Summary Edit.
+* rmail-toggle-header: Rmail Editing.
+* rmail-undelete-previous-message: Rmail Deletion.
+* run-lisp: External Lisp.
+* save-buffer: Saving.
+* save-buffers-kill-emacs: Exiting.
+* save-some-buffers: Saving.
+* scroll-down: Scrolling.
+* scroll-left: Horizontal Scrolling.
+* scroll-other-window: Other Window.
+* scroll-right: Horizontal Scrolling.
+* scroll-up: Scrolling.
+* search-backward: Nonincremental Search.
+* search-forward: Nonincremental Search.
+* self-insert: Basic.
+* send-shell-input: Shell Mode.
+* set-comment-column: Comments.
+* set-fill-column: Fill Commands.
+* set-fill-prefix: Fill Prefix.
+* set-gnu-bindings: Emulation.
+* set-goal-column: Basic.
+* set-gosmacs-bindings: Emulation.
+* set-mark-command: Setting Mark.
+* setq-default: Locals.
+* set-rmail-inbox-list: Rmail Files.
+* set-selective-display: Selective Display.
+* set-variable: Examining.
+* set-visited-file-name: Saving.
+* shell: Interactive Shell.
+* shell-command: Single Shell.
+* shell-command-on-region: Single Shell.
+* shell-send-eof: Shell Mode.
+* show-all: Outline Visibility.
+* show-branches: Outline Visibility.
+* show-children: Outline Visibility.
+* show-entry: Outline Visibility.
+* show-output-from-shell: Shell Mode.
+* show-subtree: Outline Visibility.
+* sort-columns: Sorting.
+* sort-fields: Sorting.
+* sort-lines: Sorting.
+* sort-numeric-fields: Sorting.
+* sort-pages: Sorting.
+* sort-paragraphs: Sorting.
+* spell-buffer: Spelling.
+* spell-region: Spelling.
+* spell-string: Spelling.
+* spell-word: Spelling.
+* split-line: Indentation Commands.
+* split-window-horizontally: Split Window.
+* split-window-vertically: Split Window.
+* start-kbd-macro: Basic Kbd Macro.
+* stop-shell-subjob: Shell Mode.
+* substitute-key-definition: Rebinding.
+* suspend-emacs: Exiting.
+* switch-to-buffer: Select Buffer.
+* switch-to-buffer-other-window: Pop Up Window.
+* switch-to-buffer-other-window: Select Buffer.
+* tabify: Just Spaces.
+* tab-to-tab-stop: Tab Stops.
+* tab-to-tab-stop: Text Mode.
+* tags-apropos: List Tags.
+* tags-loop-continue: Tags Search.
+* tags-query-replace: Tags Search.
+* tags-search: Tags Search.
+* TeX-buffer: TeX Print.
+* TeX-close-LaTeX-block: TeX Editing.
+* TeX-insert-braces: TeX Editing.
+* TeX-insert-quote: TeX Editing.
+* TeX-kill-job: TeX Print.
+* TeX-mode: TeX Mode.
+* tex-mode: TeX Mode.
+* TeX-print: TeX Print.
+* TeX-recenter-output-buffer: TeX Print.
+* TeX-region: TeX Print.
+* TeX-show-print-queue: TeX Print.
+* TeX-terminate-paragraph: TeX Editing.
+* text-mode: Text Mode.
+* toggle-read-only: Misc Buffer.
+* top-level: Quitting.
+* top-level: Recursive Edit.
+* transpose-chars: Basic.
+* transpose-chars: Transpose.
+* transpose-lines: Transpose.
+* transpose-sexps: Lists.
+* transpose-sexps: Transpose.
+* transpose-words: Transpose.
+* transpose-words: Words.
+* undigestify-rmail-message: Rmail Digest.
+* undo: Undo.
+* unexpand-abbrev: Expanding Abbrevs.
+* universal-argument: Arguments.
+* untabify: Just Spaces.
+* upcase-region: Case.
+* upcase-word: Case.
+* upcase-word: Fixing Case.
+* up-list: TeX Editing.
+* validate-TeX-buffer: TeX Editing.
+* view-buffer: Misc Buffer.
+* view-emacs-news: Help.
+* view-file: Misc File Ops.
+* view-lossage: Help.
+* view-register: Registers.
+* vi-mode: Emulation.
+* vip-mode: Emulation.
+* visit-tags-table: Select Tag Table.
+* what-cursor-position: Position Info.
+* what-line: Position Info.
+* what-page: Position Info.
+* where-is: Help.
+* widen: Narrowing.
+* word-search-backward: Word Search.
+* word-search-forward: Word Search.
+* write-abbrev-file: Saving Abbrevs.
+* write-file: Saving.
+* write-region: Misc File Ops.
+* Yank: Kill Ring.
+* yank-pop: Earlier Kills.
+* yank-rectangle: Rectangles.
+* yow: Amusements.
+* zap-to-char: Killing.
+
+

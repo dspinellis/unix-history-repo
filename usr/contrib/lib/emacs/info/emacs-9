@@ -1,0 +1,1138 @@
+Info file emacs, produced by texinfo-format-buffer   -*-Text-*-
+from file emacs.tex
+
+This file documents the GNU Emacs editor.
+
+Copyright (C) 1985, 1986 Richard M. Stallman.
+
+Permission is granted to make and distribute verbatim copies of
+this manual provided the copyright notice and this permission notice
+are preserved on all copies.
+
+Permission is granted to copy and distribute modified versions of this
+manual under the conditions for verbatim copying, provided also that the
+sections entitled "The GNU Manifesto", "Distribution" and "GNU Emacs
+General Public License" are included exactly as in the original, and
+provided that the entire resulting derived work is distributed under the
+terms of a permission notice identical to this one.
+
+Permission is granted to copy and distribute translations of this manual
+into another language, under the above conditions for modified versions,
+except that the sections entitled "The GNU Manifesto", "Distribution"
+and "GNU Emacs General Public License" may be included in a translation
+approved by the author instead of in the original English.
+
+
+File: emacs  Node: Mail Format, Prev: Sending Mail, Up: Sending Mail, Next: Mail Headers
+
+The Format of the Mail Buffer
+=============================
+
+  In addition to the "text" or contents, a message has "header
+fields" which say who sent it, when, to whom, why, and so on.  Some header
+fields such as the date and sender are created automatically after the
+message is sent.  Others, such as the recipient names, must be specified by
+you in order to send the message properly.
+
+  Mail mode provides a few commands to help you edit some header fields,
+and some are preinitialized in the buffer automatically at times.  You can
+insert or edit any header fields using ordinary editing commands.
+
+  The line in the buffer that says
+
+     --text follows this line--
+
+is a special delimiter that separates the headers you have specified from
+the text.  Whatever follows this line is the text of the message; the
+headers precede it.  The delimiter line itself does not appear in the
+message actually sent.  The text used for the delimiter line is controlled
+by the variable `mail-header-separator'.
+
+Here is an example of what the headers and text in the `*mail*' buffer
+might look like.
+
+     To: rms@mc
+     CC: mly@mc, rg@oz
+     Subject: The Emacs Manual
+     --Text follows this line--
+     Please ignore this message.
+
+
+File: emacs  Node: Mail Headers, Prev: Mail Format, Up: Sending Mail, Next: Mail Mode
+
+Mail Header Fields
+==================
+
+  There are several header fields you can use in the `*mail*' buffer.
+Each header field starts with a field name at the beginning of a line,
+terminated by a colon.  It does not matter whether you use upper or lower
+case in the field name.  After the colon and optional whitespace comes the
+contents of the field.
+
+`To'     
+     This field contains the mailing addresses to which the message is
+     addressed.
+     
+`Subject'     
+     The contents of the `Subject' field should be a piece of text
+     that says what the message is about.  The reason `Subject' fields
+     are useful is that most mail-reading programs can provide a summary of
+     messages, listing the subject of each message but not its text.
+     
+`CC'     
+     This field contains additional mailing addresses to send the message
+     to, but whose readers should not regard the message as addressed to
+     them.
+     
+`BCC'     
+     This field contains additional mailing addresses to send the message
+     to, but which should not appear in the header of the message actually
+     sent.
+     
+`FCC'     
+     This field contains the name of one file (in Unix mail file format) to
+     which a copy of the message should be appended when the message is
+     sent.
+     
+`From'     
+     Use the `From' field to say who you are, when the account you are
+     using to send the mail is not your own.  The contents of the
+     `From' field should be a valid mailing address, since replies
+     will normally go there.
+     
+`Reply-To'     
+     Use the `Reply-to' field to direct replies to a different
+     address, not your own.  There is no difference between `From' and
+     `Reply-to' in their effect on where replies go, but they convey a
+     different meaning to the human who reads the message.
+     
+`In-Reply-To'     
+     This field contains a piece of text describing a message you are
+     replying to.  Some mail systems can use this information to correlate
+     related pieces of mail.  Normally this field is filled in by Rmail
+     when you are replying to a message in Rmail, and you never need to
+     think about it (*Note Rmail::).
+
+The `To', `CC', `BCC' and `FCC' fields can appear
+any number of times, to specify many places to send the message.
+
+The `To', `CC', and `BCC' fields can have continuation lines.  All the
+lines starting with whitespace, following the line on which the field
+starts, are considered part of the field.  For example,
+
+     To: foo@here, this@there,
+       me@gnu.cambridge.mass.usa.earth.spiral3281
+
+If you have a `~/.mailrc' file, Emacs will scan it for mail aliases
+the first time you try to send mail in an Emacs session.  Aliases found
+in the `To', `CC', and `BCC' fields will be expanded where
+appropriate.
+
+  If the variable `mail-archive-file-name' is non-`nil', it should be a
+string naming a file; every time you start to edit a message to send,
+an `FCC' field will be put in for that file.  Unless you remove the
+`FCC' field, every message will be written into that file when it is
+sent.
+
+
+File: emacs  Node: Mail Mode, Prev: Mail Headers, Up: Sending Mail
+
+Mail Mode
+=========
+
+  The major mode used in the `*mail*' buffer is Mail mode, which is
+much like Text mode except that various special commands are provided on
+the `C-c' prefix.  These commands all have to do specifically with
+editing or sending the message.
+
+`C-c C-s'     
+     Send the message, and leave the `*mail*' buffer selected
+     (`mail-send').
+`C-c C-c'     
+     Send the message, and select some other buffer (`mail-send-and-exit').
+`C-c C-f C-t'     
+     Move to the `To' header field, creating one if there is none
+     (`mail-to').
+`C-c C-f C-s'     
+     Move to the `Subject' header field, creating one if there is
+     none (`mail-subject').
+`C-c C-f C-c'     
+     Move to the `CC' header field, creating one if there is none
+     (`mail-cc').
+`C-c C-w'     
+     Insert the file `~/.signature' at the end of the message text
+     (`mail-signature').
+`C-c C-y'     
+     Yank the selected message from Rmail (`mail-yank-original').
+     This command does nothing unless your command to start sending a
+     message was issued with Rmail.
+`C-c C-q'     
+     Fill all paragraphs of yanked old messages, each individually
+     (`mail-fill-yanked-message').
+
+  There are two ways to send the message.  `C-c C-s' (`mail-send')
+sends the message and marks the `*mail*' buffer unmodified, but leaves
+that buffer selected so that you can modify the message (perhaps with new
+recipients) and send it again.  `C-c C-c' (`mail-send-and-exit')
+sends and then deletes the window (if there is another window) or switches
+to another buffer.  It puts the `*mail*' buffer at the lowest priority
+for automatic reselection, since you are finished with using it.  This is
+the usual way to send the message.
+
+  Mail mode provides some other special commands that are useful for
+editing the headers and text of the message before you send it.  There are
+three commands defined to move point to particular header fields, all based
+on the prefix `C-c C-f' (`C-f' is for "field").  They are
+`C-c C-f C-t' (`mail-to') to move to the `To' field, `C-c
+C-f C-s' (`mail-subject') for the `Subject' field, and `C-c
+C-f C-c' (`mail-cc') for the `CC' field.  These fields have
+special motion commands because they are the most common fields for the
+user to want to edit.
+
+  `C-c C-w' (`mail-signature') adds a standard piece text at the end of the
+message to say more about who you are.  The text comes from the file
+`.signature' in your home directory.
+
+  When mail sending is invoked from the Rmail mail reader using an Rmail
+command, `C-c C-y' can be used inside the `*mail*' buffer to insert the
+text of the message you are replying to.  Normally it indents each line of
+that message four spaces and eliminates most header fields.  A numeric
+argument specifies the number of spaces to indent.  An argument of just
+`C-u' says not to indent at all and not to eliminate anything.  `C-c C-y'
+always uses the current message from the `RMAIL' buffer, so you can insert
+several old messages by selecting one in `RMAIL', switching to `*mail*' and
+yanking it, then switching back to `RMAIL' to select another.
+
+  After using `C-c C-y', the command `C-c C-q' (`mail-fill-yanked-message') can
+be used to fill the paragraphs of the yanked old message or messages.  One
+use of `C-c C-q' fills all such paragraphs, each one separately.
+
+  Turning on Mail mode (which `C-x m' does automatically) calls the
+value of `text-mode-hook', if it is not void or `nil', and then calls
+the value of `mail-mode-hook' if that is not void or `nil'.
+
+
+File: emacs  Node: Rmail, Prev: Sending Mail, Up: Top, Next: Recursive Edit
+
+Reading Mail with Rmail
+***********************
+
+  Rmail is an Emacs subsystem for reading and disposing of mail that you
+receive.  Rmail stores mail messages in files called Rmail files.  Reading
+the message in an Rmail file is done in a special major mode, Rmail mode,
+which redefines most letters to run commands for managing mail.  To enter
+Rmail, type `M-x rmail'.  This reads your primary mail file, merges
+new mail in from your inboxes, displays the first new message, and lets
+you begin reading.
+
+  Using Rmail in the simplest fashion, you have one Rmail file `~/RMAIL'
+in which all of your mail is saved.  It is called your "primary mail
+file".  In more sophisticated usage, you can copy messages into other Rmail
+files and then edit those files with Rmail.
+
+  Rmail displays only one message at a time.  It is called the "current
+message".  Rmail mode's special commands can do such things as move to
+another message, delete the message, copy the message into another file, or
+send a reply.
+
+  Within the Rmail file, messages are arranged sequentially in order
+of receipt.  They are also assigned consecutive integers as their
+"message numbers".  The number of the current message is displayed
+in Rmail's mode line, followed by the total number of messages in the
+file.  You can move to a message by specifying its message number
+using the `j' key (*Note Rmail Motion::).
+
+  Following the usual conventions of Emacs, changes in an Rmail file become
+permanent only when the file is saved.  You can do this with `s'
+(`rmail-save'), which also expunges deleted messages from the file
+first (*Note Rmail Deletion::).  To save the file without expunging, use
+`C-x C-s'.  Rmail saves the Rmail file spontaneously when moving new
+mail from an inbox file (*Note Rmail Inbox::).
+
+  You can exit Rmail with `q' (`rmail-quit'); this expunges and saves the
+Rmail file and then switches to another buffer.  But there is no need to
+`exit' formally.  If you switch from Rmail to editing in other buffers, and
+never happen to switch back, you have exited.  Just make sure to save the
+Rmail file eventually (like any other file you have changed).  `C-x s'
+is a good enough way to do this (*Note Saving::).
+
+* Menu:
+
+* Scroll: Rmail Scrolling.   Scrolling through a message.
+* Motion: Rmail Motion.      Moving to another message.
+* Deletion: Rmail Deletion.  Deleting and expunging messages.
+* Inbox: Rmail Inbox.        How mail gets into the Rmail file.
+* Files: Rmail Files.        Using multiple Rmail files.
+* Output: Rmail Output.	     Copying message out to files.
+* Labels: Rmail Labels.      Classifying messages by labeling them.
+* Summary: Rmail Summary.    Summaries show brief info on many messages.
+* Reply: Rmail Reply.        Sending replies to messages you are viewing.
+* Editing: Rmail Editing.    Editing message text and headers in Rmail.
+* Digest: Rmail Digest.      Extracting the messages from a digest message.
+
+
+File: emacs  Node: Rmail Scrolling, Prev: Rmail, Up: Rmail, Next: Rmail Motion
+
+Scrolling Within a Message
+==========================
+
+  When Rmail displays a message that does not fit on the screen, it is
+necessary to scroll through it.  This could be done with `C-v', `M-v'
+and `M-<', but in Rmail scrolling is so frequent that it deserves to be
+easier to type.
+
+`SPC'     
+     Scroll forward (`scroll-up').
+`DEL'     
+     Scroll backward (`scroll-down').
+`.'     
+     Scroll to start of message (`rmail-beginning-of-message').
+
+  Since the most common thing to do while reading a message is to scroll
+through it by screenfuls, Rmail makes SPC and DEL synonyms of
+`C-v' (`scroll-up') and `M-v' (`scroll-down')
+
+  The command `.' (`rmail-beginning-of-message') scrolls back to the
+beginning of the selected message.  This is not quite the same as `M-<':
+for one thing, it does not set the mark; for another, it resets the buffer
+boundaries to the current message if you have changed them.
+
+
+File: emacs  Node: Rmail Motion, Prev: Rmail Scrolling, Up: Rmail, Next: Rmail Deletion
+
+Moving Among Messages
+=====================
+
+  The most basic thing to do with a message is to read it.  The way to do
+this in Rmail is to make the message current.  You can make any message
+current given its message number using the `j' command, but the usual
+thing to do is to move sequentially through the file, since this is the
+order of receipt of messages.  When you enter Rmail, you are positioned at
+the first new message (new messages are those received since the previous
+use of Rmail), or at the last message if there are no new messages this
+time.  Move forward to see the other new messages; move backward to
+reexamine old messages.
+
+`n'     
+     Move to the next nondeleted message, skipping any intervening deleted 
+     messages (`rmail-next-undeleted-message').
+`p'     
+     Move to the previous nondeleted message 
+     (`rmail-previous-undeleted-message').
+`M-n'     
+     Move to the next message, including deleted messages
+     (`rmail-next-message').
+`M-p'     
+     Move to the previous message, including deleted messages
+     (`rmail-previous-message').
+`j'     
+     Move to the first message.  With argument N, move to
+     message number N (`rmail-show-message').
+`>'     
+     Move to the last message (`rmail-last-message').
+     
+`M-s REGEXP RET'     
+     Move to the next message containing a match for REGEXP
+     (`rmail-search').  If REGEXP is empty, the last regexp used is
+     used again.
+     
+`- M-s REGEXP RET'     
+     Move to the previous message containing a match for REGEXP.
+     If REGEXP is empty, the last regexp used is used again.
+
+  `n' and `p' are the usual way of moving among messages in Rmail.  They
+move through the messages sequentially, but skip over deleted messages,
+which is usually what you want to do.  Their command definitions are named
+`rmail-next-undeleted-message' and `rmail-previous-undeleted-message'.  If
+you do not want to skip deleted messages---for example, if you want to move
+to a message to undelete it---use the variants `M-n' and `M-p'
+(`rmail-next-message' and `rmail-previous-message').  A numeric argument to
+any of these commands serves as a repeat count.
+
+  In Rmail, you can specify a numeric argument by typing the digits.
+It is not necessary to type `C-u' first.
+
+  The `M-s' (`rmail-search') command is Rmail's version of search.  The
+usual incremental search command `C-s' works in Rmail, but it searches
+only within the current message.  The purpose of `M-s' is to search for
+another message.  It reads a regular expression (*Note Regexps::)
+nonincrementally, then searches starting at the beginning of the following
+message for a match.  The message containing the match is selected.
+
+  To search backward in the file for another message, give `M-s' a
+negative argument.  In Rmail this can be done with `- M-s'.
+
+  It is also possible to search for a message based on labels.
+*Note Rmail Labels::.
+
+  To move to a message specified by absolute message number, use `j'
+(`rmail-show-message') with the message number as argument.  With no
+argument, `j' selects the first message.  `>' (`rmail-last-message') selects
+the last message.
+
+
+File: emacs  Node: Rmail Deletion, Prev: Rmail Motion, Up: Rmail, Next: Rmail Inbox
+
+Deleting Messages
+=================
+
+  When you no longer need to keep a message, you can "delete" it.  This
+flags it as ignorable, and some Rmail commands will pretend it is no longer
+present; but it still has its place in the Rmail file, and still has its
+message number.
+
+  "Expunging" the Rmail file actually removes the deleted messages.
+The remaining messages are renumbered consecutively.  Expunging is the only
+action that changes the message number of any message, except for
+undigestifying (*Note Rmail Digest::).
+
+`d'     
+     Delete the current message, and move to the next nondeleted message
+     (`rmail-delete-forward').
+`C-d'     
+     Delete the current message, and move to the previous nondeleted
+     message (`rmail-delete-backward').
+`u'     
+     Undelete the current message, or move back to a deleted message and
+     undelete it (`rmail-undelete-previous-message').
+`x'     
+`e'     
+     Expunge the Rmail file (`rmail-expunge').  These two
+     commands are synonyms.
+
+  There are two Rmail commands for deleting messages.  Both delete the
+current message and select another message.  `d' (`rmail-delete-forward')
+moves to the following message, skipping messages already deleted, while
+`C-d' (`rmail-delete-backward') moves to the previous nondeleted message.
+If there is no nondeleted message to move to in the specified direction,
+the message that was just deleted remains current.
+
+  To make all the deleted messages finally vanish from the Rmail file,
+type `e' (`rmail-expunge').  Until you do this, you can still "undelete"
+the deleted messages.
+
+  To undelete, type
+`u' (`rmail-undelete-previous-message'), which is designed to cancel the
+effect of a `d' command (usually).  It undeletes the current message
+if the current message is deleted.  Otherwise it moves backward to previous
+messages until a deleted message is found, and undeletes that message.
+
+  You can usually undo a `d' with a `u' because the `u' moves back to and
+undeletes the message that the `d' deleted.  But this does not work when
+the `d' skips a few already-deleted messages that follow the message being
+deleted; then the `u' command will undelete the last of the messages that
+were skipped.  There is no clean way to avoid this problem.  However, by
+repeating the `u' command, you can eventually get back to the message that
+you intended to undelete.  You can also reach that message with `M-p'
+commands and then type `u'.
+
+  A deleted message has the `deleted' attribute, and as a result
+`deleted' appears in the mode line when the current message is
+deleted.  In fact, deleting or undeleting a message is nothing more than
+adding or removing this attribute.  *Note Rmail Labels::.
+
+
+File: emacs  Node: Rmail Inbox, Prev: Rmail Deletion, Up: Rmail, Next: Rmail Files
+
+Rmail Files and Inboxes
+=======================
+
+  Unix places incoming mail for you in a file that we call your "inbox".
+When you start up Rmail, it copies the new messages from your inbox into
+your primary mail file, an Rmail file, which also contains other messages
+saved from previous Rmail sessions.  It is in this file that you actually
+read the mail with Rmail.  This operation is called "getting new mail".
+It can be repeated at any time using the `g' key in Rmail.  The inbox
+file name is `/usr/spool/mail/USERNAME' in Berkeley Unix,
+`/usr/mail/USERNAME' in system V.
+
+  There are two reason for having separate Rmail files and inboxes.
+
+  1. The format in which Unix delivers the mail in the inbox is not
+     adequate for Rmail mail storage.  It has no way to record attributes
+     (such as `deleted') or user-specified labels; it has no way to record
+     old headers and reformatted headers; it has no way to record cached
+     summary line information.
+     
+  2. It is very cumbersome to access an inbox file without danger of losing
+     mail, because it is necessary to interlock with mail delivery.
+     Moreover, different Unix systems use different interlocking
+     techniques.  The strategy of moving mail out of the inbox once and for
+     all into a separate Rmail file avoids the need for interlocking in all
+     the rest of Rmail, since only Rmail operates on the Rmail file.
+
+  When getting new mail, Rmail first copies the new mail from the inbox
+file to the Rmail file; then it saves the Rmail file; then it deletes the
+inbox file.  This way, a system crash may cause duplication of mail between
+the inbox and the Rmail file, but cannot lose mail.
+
+  Copying mail from an inbox in the system's mailer directory actually puts
+it in an intermediate file `~/.newmail'.  This is because the
+interlocking is done by a C program that copies to another file.
+`~/.newmail' is deleted after mail merging is successful.  If there is
+a crash at the wrong time, this file will continue to exist and will be
+used as an inbox the next time you get new mail.
+
+
+File: emacs  Node: Rmail Files, Prev: Rmail Inbox, Up: Rmail, Next: Rmail Output
+
+Multiple Mail Files
+===================
+
+  Rmail operates by default on your "primary mail file", which is named
+`~/RMAIL' and receives your incoming mail from your system inbox file.
+But you can also have other mail files and edit them with Rmail.  These
+files can receive mail through their own inboxes, or you can move messages
+into them by explicit command in Rmail (*Note Rmail Output::).
+
+`i FILE RET'     
+     Read FILE into Emacs and run Rmail on it (`rmail-input').
+     
+`M-x set-rmail-inbox-list RET FILES RET'     
+     Specify inbox file names for current Rmail file to get mail from.
+     
+`g'     
+     Merge new mail from current Rmail file's inboxes
+     (`rmail-get-new-mail').
+     
+`C-u g FILE'     
+     Merge new mail from inbox file FILE.
+
+  To run Rmail on a file other than your primary mail file, you may use the
+`i' (`rmail-input') command in Rmail.  This visits the file, puts it in
+Rmail mode, and then gets new mail from the file's inboxes if any.
+You can also use `M-x rmail-input' even when not in Rmail.
+
+  The file you read with `i' does not have to be in Rmail file format.
+It could also be Unix mail format, or mmdf format; or it could be a mixture
+of all three, as long as each message belongs to one of the three formats.
+Rmail recognizes all three and converts all the messages to proper Rmail
+format before showing you the file.
+
+  Each Rmail file can contain a list of inbox file names; you can specify
+this list with `M-x set-rmail-inbox-list RET FILES RET'.  The argument can
+contain any number of file names, separated by commas.  It can also be
+empty, which specifies that this file should have no inboxes.  Once a list
+of inboxes is specified, the Rmail file remembers it permanently until it
+is explicitly changed.
+
+  If an Rmail file has inboxes, new mail is merged in from the inboxes when
+the Rmail file is brought into Rmail, and when the `g' (`rmail-get-new-mail')
+command is used.  If the Rmail file specifies no inboxes, then no new mail
+is merged in at these times.  A special exception is made for your primary
+mail file in using the standard system inbox for it if it does not specify
+any.
+
+  To merge mail from a file that is not the usual inbox, give the `g'
+key a numeric argument, as in `C-u g'.  Then it reads a file name and
+merges mail from that file.  The inbox file is not deleted or changed in
+any way when `g' with an argument is used.  This is, therefore, a
+general way of merging one file of messages into another.
+
+
+File: emacs  Node: Rmail Output, Prev: Rmail Files, Up: Rmail, Next: Rmail Labels
+
+Copying Messages Out to Files
+=============================
+
+`o FILE RET'     
+     Append a copy of the current message to the file FILE,
+     writing it in Rmail file format (`rmail-output-to-rmail-file').
+     
+`C-o FILE RET'     
+     Append a copy of the current message to the file FILE,
+     writing it in Unix mail file format (`rmail-output').
+
+  If an Rmail file has no inboxes, how does it get anything in it?  By
+explicit `o' commands.
+
+  `o' (`rmail-output-to-rmail-file') appends the current message
+in Rmail format to the end of the specified file.  This is the best command
+to use to move messages between Rmail files.  If the other Rmail file is
+currently visited, the copying is done into the other file's Emacs buffer
+instead.  You should eventually save it on disk.
+
+  The `C-o' (`rmail-output') command in Rmail appends a copy of the current
+message to a specified file, in Unix mail file format.  This is useful for
+moving messages into files to be read by other mail processors that do not
+understand Rmail format.
+
+  Copying a message with `o' or `C-o' gives the original copy of the
+message the `filed' attribute, so that `filed' appears in the mode
+line when such a message is current.
+
+  Normally you should use only `o' to output messages to other Rmail
+files, never `C-o'.  But it is also safe if you always use `C-o',
+never `o'.  When a file is visited in Rmail, the last message is
+checked, and if it is in Unix format, the entire file is scanned and all
+Unix-format messages are converted to Rmail format.  (The reason for
+checking the last message is that scanning the file is slow and most Rmail
+files have only Rmail format messages.)  If you use `C-o' consistently,
+the last message is sure to be in Unix format, so Rmail will convert all
+messages properly.
+
+  The case where you might want to use `C-o' always, instead of `o'
+always, is when you or other users want to append mail to the same file
+from other mail processors.  Other mail processors probably do not know
+Rmail format but do know Unix format.
+
+  In any case, always use `o' to add to an Rmail file that is being
+visited in Rmail.  Adding messages with `C-o' to the actual disk file
+will trigger a "simultaneous editing" warning when you ask to save the
+Emacs buffer, and will be lost if you do save.
+
+
+File: emacs  Node: Rmail Labels, Prev: Rmail Output, Up: Rmail, Next: Rmail Summary
+
+Labels
+======
+
+  Each message can have various "labels" assigned to it as a means of
+classification.  A label has a name; different names mean different labels.
+Any given label is either present or absent on a particular message.  A few
+label names have standard meanings and are given to messages automatically
+by Rmail when appropriate; these special labels are called "attributes".
+All other labels are assigned by the user.
+
+`a LABEL RET'     
+     Assign the label LABEL to the current message (`rmail-add-label').
+`k LABEL RET'     
+     Remove the label LABEL from the current message (`rmail-kill-label').
+`C-M-n LABELS RET'     
+     Move to the next message that has one of the labels LABELS
+     (`rmail-next-labeled-message').
+`C-M-p LABELS RET'     
+     Move to the previous message that has one of the labels LABELS
+     (`rmail-previous-labeled-message').
+`C-M-l LABELS RET'     
+     Make a summary of all messages containing any of the labels LABELS
+     (`rmail-summary-by-labels').
+
+Specifying an empty string for one these commands means to use the last
+label specified for any of these commands.
+
+  The `a' (`rmail-add-label') and `k' (`rmail-kill-label') commands allow
+you to assign or remove any label on the current message.  If the LABEL
+argument is empty, it means to assign or remove the same label most
+recently assigned or removed.
+
+  Once you have given messages labels to classify them as you wish, there
+are two ways to use the labels: in moving and in summaries.
+
+  The command `C-M-n LABELS RET' (`rmail-next-labeled-message') moves to
+the next message that has one of the labels LABELS.  LABELS is one or more
+label names, separated by commas.  `C-M-p'
+(`rmail-previous-labeled-message') is similar, but moves backwards to
+previous messages.  A preceding numeric argument to either one serves as a
+repeat count.
+
+  The command `C-M-l LABELS RET' (`rmail-summary-by-labels') displays a
+summary containing only the messages that have at least one of a specified
+set of messages.  The argument LABELS is one or more label names, separated
+by commas.  *Note Rmail Summary::, for information on summaries.
+
+  If the LABELS argument to `C-M-n', `C-M-p' or `C-M-l' is empty, it means
+to use the last set of labels specified for any of these commands.
+
+  Some labels such as `deleted' and `filed' have built-in meanings and
+are assigned to or removed from messages automatically at appropriate
+times; these labels are called "attributes".  Here is a list of Rmail
+attributes:
+
+`unseen'     
+     Means the message has never been current.  Assigned to messages when
+     they come from an inbox file, and removed when a message is made
+     current.
+`deleted'     
+     Means the message is deleted.  Assigned by deletion commands and
+     removed by undeletion commands (*Note Rmail Deletion::).
+`filed'     
+     Means the message has been copied to some other file.  Assigned by the
+     file output commands (*Note Rmail Files::).
+`answered'     
+     Means you have mailed an answer to the message.  Assigned by the `r'
+     command (`rmail-reply').  *Note Rmail Reply::.
+`forwarded'     
+     Means you have forwarded the message to other users.  Assigned by the
+     `f' command (`rmail-forward').  *Note Rmail Reply::.
+`edited'     
+     Means you have edited the text of the message within Rmail.
+     *Note Rmail Editing::.
+
+  All other labels are assigned or removed only by the user, and it is up
+to the user to decide what they mean.
+
+
+File: emacs  Node: Rmail Summary, Prev: Rmail Labels, Up: Rmail, Next: Rmail Reply
+
+Summaries
+=========
+
+  A "summary" is a buffer containing one line per message that Rmail
+can make and display to give you an overview of the mail in an Rmail file.
+Each line shows the message number, the sender, the labels, and the
+subject.  When the summary buffer is selected, various commands can be used
+to select messages by moving in the summary buffer, or delete or undelete
+messages.
+
+  A summary buffer applies to a single Rmail file only; if you are
+editing multiple Rmail files, they have separate summary buffers.  The
+summary buffer name is made by appending `-summary' to the Rmail buffer's
+name.  Only one summary buffer will be displayed at a time unless you make
+several windows and select the summary buffers by hand.
+
+* Menu:
+
+* Rmail Make Summary::  Making various sorts of summaries.
+* Rmail Summary Edit::  Manipulating messages from the summary.
+
+
+File: emacs  Node: Rmail Make Summary, Prev: Rmail Summary, Up: Rmail Summary, Next: Rmail Summary Edit
+
+Making Summaries
+----------------
+
+  Here are the commands to create a summary for the current Rmail file.
+Summaries do not update automatically; to make an updated summary, you
+must use one of these commands again.
+
+`h'     
+`C-M-h'     
+     Summarize all messages (`rmail-summary').
+`l LABELS RET'     
+`C-M-l LABELS RET'     
+     Summarize message that have one or more of the specified labels
+     (`rmail-summary-by-labels').
+`C-M-r RCPTS RET'     
+     Summarize messages that have one or more of the specified recipients
+     (`rmail-summary-by-recipients')
+
+  The `h' or `C-M-h' (`rmail-summary') command fills the summary buffer
+for the current Rmail file with a summary of all the messages in the file.
+It then displays and selects the summary buffer in another window.
+
+  `C-M-l LABELS RET' (`rmail-summary-by-labels') makes a partial summary
+mentioning only the messages that have one or more of the labels LABELS.
+LABELS should contain label names separated by commas.
+
+  `C-M-r RCPTS RET' (`rmail-summary-by-recipients') makes a partial summary
+mentioning only the messages that have one or more of the recipients RCPTS.
+RCPTS should contain mailing addresses separated by commas.
+
+  Note that there is only one summary buffer for any Rmail file; making one
+kind of summary discards any previously made summary.
+
+
+File: emacs  Node: Rmail Summary Edit, Prev: Rmail Make Summary, Up: Rmail Summary
+
+Editing in Summaries
+--------------------
+
+  Summary buffers are given the major mode Rmail Summary mode, which
+provides the following special commands:
+
+`j'     
+     Select the message described by the line that point is on
+     (`rmail-summary-goto-msg').
+`C-n'     
+     Move to next line and select its message in Rmail
+     (`rmail-summary-next-all').
+`C-p'     
+     Move to previous line and select its message
+     (`rmail-summary-previous-all').
+`n'     
+     Move to next line, skipping lines saying `deleted', and select its
+     message (`rmail-summary-next-msg').
+`p'     
+     Move to previous line, skipping lines saying `deleted', and select
+     its message (`rmail-summary-previous-msg').
+`d'     
+     Delete the current line's message, then do like `n'
+     (`rmail-summary-delete-forward').
+`u'     
+     Undelete and select this message or the previous deleted message in
+     the summary (`rmail-summary-undelete').
+`SPC'     
+     Scroll the other window (presumably Rmail) forward
+     (`rmail-summary-scroll-msg-up').
+`DEL'     
+     Scroll the other window backward (`rmail-summary-scroll-msg-down').
+`x'     
+     Kill the summary window (`rmail-summary-exit').
+`q'     
+     Exit Rmail (`rmail-summary-quit').
+
+  The keys `C-n' and `C-p' are modified in Rmail Summary mode so that in
+addition to moving point in the summary buffer they also cause the line's
+message to become current in the associated Rmail buffer.  That buffer is
+also made visible in another window if it is not already so.
+
+  `n' and `p' are similar to `C-n' and `C-p', but skip lines that say
+`message deleted'.  They are like the `n' and `p' keys of Rmail itself.
+Note, however, that in a partial summary these commands move only among the
+message listed in the summary.
+
+  The other Emacs cursor motion commands are not changed in Rmail Summary
+mode, so it is easy to get the point on a line whose message is not
+selected in Rmail.  This can also happen if you switch to the Rmail window
+and switch messages there.  To get the Rmail buffer back in sync with the
+summary, use the `j' (`rmail-summary-goto-msg') command, which selects
+in Rmail the message of the current summary line.
+
+  Deletion and undeletion can also be done from the summary buffer.  They
+always work based on where point is located in the summary buffer, ignoring
+which message is selected in Rmail.  `d' (`rmail-summary-delete-forward')
+deletes the current line's message, then moves to the next line whose
+message is not deleted and selects that message.  The inverse of this is
+`u' (`rmail-summary-undelete'), which moves back (if necessary) to a line
+whose message is deleted, undeletes that message, and selects it in Rmail.
+
+  When moving through messages with the summary buffer, it is convenient to
+be able to scroll the message while remaining in the summary window.  The
+commands SPC (`rmail-summary-scroll-up') and DEL
+(`rmail-summary-scroll-down') do this.  They scroll the message just as
+those same keys do when the Rmail buffer is selected.
+
+  When you are finished using the summary, type `x' (`rmail-summary-exit')
+to kill the summary buffer's window.
+
+  You can also exit Rmail while in the summary.  `q' (`rmail-summary-quit')
+kills the summary window, then saves the Rmail file and switches to another
+buffer.
+
+
+File: emacs  Node: Rmail Reply, Prev: Rmail Summary, Up: Rmail, Next: Rmail Editing
+
+Sending Replies
+===============
+
+  Rmail has several commands that use Mail mode to send outgoing mail.
+*Note Sending Mail::, for information on using Mail mode.  What are
+documented here are the special commands of Rmail for entering Mail mode.
+Note that the usual keys for sending mail, `C-x m' and `C-x 4 m', are
+available in Rmail mode and work just as they usually do.
+
+`m'     
+     Send a message (`rmail-mail').
+`c'     
+     Continue editing already started outgoing message (`rmail-continue').
+`r'     
+     Send a reply to the current Rmail message (`rmail-reply').
+`f'     
+     Forward current message to other users (`rmail-forward').
+
+  The most common reason to send a message while in Rmail is to reply to
+the message you are reading.  To do this, type `r' (`rmail-reply').  This
+displays the `*mail*' buffer in another window, much like `C-x 4 m', but
+preinitializes the `Subject', `To', `CC' and `In-reply-to' header fields
+based on the message being replied to.  The `To' field is given the sender
+of that message, and the `CC' gets all the recipients of that message (but
+recipients that match elements of the list `rmail-dont-reply-to' are
+omitted; by default, this list contains your own mailing address).
+
+  Once you have initialized the `*mail*' buffer this way, sending the
+mail goes as usual (*Note Sending Mail::).  You can edit the presupplied
+header fields if they are not right for you.
+
+  One additional Mail mode command is available when mailing is invoked
+from Rmail: `C-c C-y' (`mail-yank-original') inserts into the outgoing
+message a copy of the current Rmail message; normally this is the message
+you are replying to, but you can also switch to the Rmail buffer, select a
+different message, switch back, and yank new current message.  Normally the
+yanked message is indented four spaces and has most header fields deleted
+from it; an argument to `C-c y' specifies the amount to indent, and `C-u
+C-c C-y' does not indent at all and does not delete any header fields.
+
+  Another frequent reason to send mail in Rmail is to forward the current
+message to other users.  `f' (`rmail-forward') makes this easy by
+preinitializing the `*mail*' buffer with the current message as the text,
+and a subject designating a forwarded message.  All you have to do is fill
+in the recipients and send.
+
+  The `m' (`rmail-mail') command is used to start editing an outgoing
+message that is not a reply.  It leaves the header fields empty.  Its only
+difference from `C-x 4 m' is that it makes the Rmail buffer accessible for
+`C-c y', just as `r' does.  Thus, `m' can be used to reply to or forward a
+message; it can do anything `r' or `f' can do.
+
+  The `c' (`rmail-continue') command resumes editing the `*mail*' buffer,
+to finish editing an outgoing message you were already composing, or to
+alter a message you have sent.
+
+
+File: emacs  Node: Rmail Editing, Prev: Rmail Reply, Up: Rmail, Next: Rmail Digest
+
+Editing Within a Message
+========================
+
+  Rmail mode provides a few special commands for moving within and editing
+the current message.  In addition, the usual Emacs commands are available
+(except for a few, such as `C-M-n' and `C-M-h', that are redefined by Rmail for
+other purposes).  However, the Rmail buffer is normally read-only, and to
+alter it you must use the Rmail command `w' described below.
+
+`t'     
+     Toggle display of original headers (`rmail-toggle-headers').
+`w'     
+     Edit current message (`rmail-edit-current-message').
+
+  Rmail reformats the header of each message before displaying it.
+Normally this involves deleting most header fields, on the grounds that
+they are not interesting.  The variable `rmail-ignored-headers' should
+contain a regexp that matches the header fields to discard in this way.
+The original headers are saved permanently, and to see what they look like,
+use the `t' (`rmail-toggle-headers') command.  This discards the reformatted
+headers of the current message and displays it with the original headers.
+Repeating `t' reformats the message again.  Selecting the message again
+also reformats.
+
+  The Rmail buffer is normally read only, and most of the characters you
+would type to modify it (including most letters) are redefined as Rmail
+commands.  This is usually not a problem since it is rare to want to change
+the text of a message.  When you do want to do this, the way is to type
+`w' (`rmail-edit-current-message'), which changes from Rmail mode into
+Rmail Edit mode, another major mode which is nearly the same as Text mode.
+The mode line illustrates this change.
+
+  In Rmail Edit mode, letters insert themselves as usual and the Rmail
+commands are not available.  When you are finished editing the message and
+are ready to go back to Rmail, type `C-c C-c', which switches back to
+Rmail mode.  Alternatively, you can return to Rmail mode but cancel all the
+editing that you have done by typing `C-c C-]'.
+
+  Entering Rmail Edit mode calls with no arguments the value of the variable
+`text-mode-hook', if that value exists and is not `nil'; then it
+does the same with the variable `rmail-edit-mode-hook'.  It adds the
+attribute `edited' to the message.
+
+
+File: emacs  Node: Rmail Digest, Prev: Rmail Editing, Up: Rmail
+
+Digest Messages
+===============
+
+  A "digest message" is a message which exists to contain and carry
+several other messages.  Digests are used on moderated mailing lists; all
+the messages that arrive for the list during a period of time such as one
+day are put inside a single digest which is then sent to the subscribers.
+Transmitting the single digest uses much less computer time than
+transmitting the individual messages even though the total size is the
+same, because the per-message overhead in network mail transmission is
+considerable.
+
+  When you receive a digest message, the most convenient way to read it is
+to "undigestify" it: to turn it back into many individual messages.
+Then you can read and delete the individual messages as it suits you.
+
+  To undigestify a message, select it and then type `M-x
+undigestify-rmail-message'.  This copies each submessage as a separate
+Rmail message and inserts them all following the digest.  The digest
+message itself is flagged as deleted.
+
+
+File: emacs  Node: Recursive Edit, Prev: Rmail, Up: Top, Next: Narrowing
+
+Recursive Editing Levels
+========================
+
+  A "recursive edit" is a situation in which you are using Emacs
+commands to perform arbitrary editing while in the middle of another Emacs
+command.  For example, when you type `C-r' inside of a `query-replace',
+you enter a recursive edit in which you can change the current buffer.  On
+exiting from the recursive edit, you go back to the `query-replace'.
+
+  "Exiting" the recursive edit means returning to the unfinished
+command, which continues execution.  For example, exiting the recursive
+edit requested by `C-r' in `query-replace' causes query replacing
+to resume.  Exiting is done with `C-M-c' (`exit-recursive-edit').
+
+  You can also "abort" the recursive edit.  This is like exiting, but
+also quits the unfinished command immediately.  Use the command `C-]'
+(`abort-recursive-edit') for this.  *Note Quitting::.
+
+  The mode line shows you when you are in a recursive edit by displaying
+square brackets around the parentheses that always surround the major and
+minor mode names.  Every window's mode line shows this, in the same way,
+since being in a recursive edit is true of Emacs as a whole rather than
+any particular buffer.
+
+  It is possible to be in recursive edits within recursive edits.  For
+example, after typing `C-r' in a `query-replace', you might type a
+command that entered the debugger.  In such circumstances, two or more sets
+of square brackets appear in the mode line.  Exiting the inner recursive
+edit (such as, with the debugger `c' command) would resume the command
+where it called the debugger.  After the end of this command, you would be
+able to exit the first recursive edit.  Aborting also gets out of only one
+level of recursive edit; it returns immediately to the command level of the
+previous recursive edit.  So you could immediately abort that one too.
+
+  Alternatively, the command `M-x top-level' aborts all levels of
+recursive edits, returning immediately to the top level command reader.
+
+  The text being edited inside the recursive edit need not be the same text
+that you were editing at top level.  It depends on what the recursive edit
+is for.  If the command that invokes the recursive edit selects a different
+buffer first, that is the buffer you will edit recursively.  In any case,
+you can switch buffers within the recursive edit in the normal manner (as
+long as the buffer-switching keys have not been rebound).  You could
+probably do all the rest of your editing inside the recursive edit,
+visiting files and all.  But this could have surprising effects (such as
+stack overflow) from time to time.  So remember to exit or abort the
+recursive edit when you no longer need it.
+
+  In general, GNU Emacs tries to avoid using recursive edits.  It is
+usually preferable to allow the user to switch among the possible editing
+modes in any order he likes.  With recursive edits, the only way to get to
+another state is to go "back" to the state that the recursive edit was
+invoked from.
+
+
+File: emacs  Node: Narrowing, Prev: Recursive Edit, Up: Top, Next: Sorting
+
+Narrowing
+=========
+
+  "Narrowing" means focusing in on some portion of the buffer, making
+the rest temporarily invisible and inaccessible.  Cancelling the narrowing,
+and making the entire buffer once again visible, is called "widening".
+The amount of narrowing in effect in a buffer at any time is called the
+buffer's "restriction".
+
+`C-x n'     
+     Narrow down to between point and mark (`narrow-to-region').
+`C-x w'     
+     Widen to make the entire buffer visible again (`widen').
+
+  When you have narrowed down to a part of the buffer, that part appears to
+be all there is.  You can't see the rest, you can't move into it (motion
+commands won't go outside the visible part), you can't change it in any
+way.  However, it is not gone, and if you save the file all the invisible
+text will be saved.  In addition to sometimes making it easier to
+concentrate on a single subroutine or paragraph by eliminating clutter,
+narrowing can be used to restrict the range of operation of a replace
+command or repeating keyboard macro.  The word `Narrow' appears in the
+mode line whenever narrowing is in effect.
+
+  The primary narrowing command is `C-x n' (`narrow-to-region').
+It sets the current buffer's restrictions so that the text in the current
+region remains visible but all text before the region or after the region
+is invisible.  Point and mark do not change.
+
+  Because narrowing can easily confuse users who do not understand it,
+`narrow-to-region' is normally a disabled command.  Attempting to use
+this command asks for confirmation and gives you the option of enabling it;
+once you enable the command, confirmation will no longer be required for
+it.  *Note Disabling::.
+
+  The way to undo narrowing is to widen with `C-x w' (`widen').
+This makes all text in the buffer accessible again.
+
+  You can get information on what part of the buffer you are narrowed down
+to using the `C-x =' command.  *Note Position Info::.
+
+
+File: emacs  Node: Sorting, Prev: Narrowing, Up: Top, Next: Shell
+
+Sorting Text
+============
+
+  Emacs provides several commands for sorting text in the buffer.  All
+operate on the contents of the region (the text between point and the
+mark).  They divide the text of the region into many "sort records",
+identify a "sort key" for each record, and then reorder the records
+into the order determined by the sort keys.  The records are ordered so
+that their keys are in alphabetical order, or, for numeric sorting, in
+numeric order.  In alphabetic sorting, all upper case letters `A' through
+`Z' come before lower case `a', in accord with the ASCII character
+sequence.
+
+  The various sort commands differ in how they divide the text into sort
+records and in which part of each record is used as the sort key.  Most of
+the commands make each line a separate sort record, but some commands use
+paragraphs or pages as sort records.  Most of the sort commands use each
+entire sort record as its own sort key, but some use only a portion of the
+record as the sort key.
+
+`M-x sort-lines'     
+     Divide the region into lines, and sort by comparing the entire
+     text of a line.  A prefix argument means sort into descending order.
+     
+`M-x sort-paragraphs'     
+     Divide the region into paragraphs, and sort by comparing the entire
+     text of a paragraph (except for leading blank lines).  A prefix
+     argument means sort into descending order.
+     
+`M-x sort-pages'     
+     Divide the region into pages, and sort by comparing the entire
+     text of a page (except for leading blank lines).  A prefix
+     argument means sort into descending order.
+     
+`M-x sort-fields'     
+     Divide the region into lines, and sort by comparing the contents of
+     one field in each line.  Fields are defined as separated by
+     whitespace, so the first run of consecutive non-whitespace characters
+     in a line constitutes field 1, the second such run constitutes field
+     2, etc.
+     
+     You specify which field to sort by with a numeric argument: 1 to sort
+     by field 1, etc.  A negative argument means sort into descending
+     order.  Thus, minus 2 means sort by field 2 in reverse-alphabetical
+     order.
+     
+`M-x sort-numeric-fields'     
+     Like `M-x sort-fields' except the specified field is converted
+     to a number for each line, and the numbers are compared.  `10'
+     comes before `2' when considered as text, but after it when
+     considered as a number.
+     
+`M-x sort-columns'     
+     Like `M-x sort-fields' except that the text within each line
+     used for comparison comes from a fixed range of columns.  See below
+     for an explanation.
+
+For example, if the buffer contains
+
+     On systems where clash detection (locking of files being edited) is
+     implemented, Emacs also checks the first time you modify a buffer
+     whether the file has changed on disk since it was last visited or
+     saved.  If it has, you are asked to confirm that you want to change
+     the buffer.
+
+then if you apply `M-x sort-lines' to the entire buffer you get
+
+     On systems where clash detection (locking of files being edited) is
+     implemented, Emacs also checks the first time you modify a buffer
+     saved.  If it has, you are asked to confirm that you want to change
+     the buffer.
+     whether the file has changed on disk since it was last visited or
+
+where the upper case `O' comes before all lower case letters.  If you apply
+instead `C-u 2 M-x sort-fields' you get
+
+     implemented, Emacs also checks the first time you modify a buffer
+     saved.  If it has, you are asked to confirm that you want to change
+     the buffer.
+     On systems where clash detection (locking of files being edited) is
+     whether the file has changed on disk since it was last visited or
+
+where the sort keys were `Emacs', `If', `buffer', `systems' and `the'.
+
+  `M-x sort-columns' requires more explanation.  You specify the
+columns by putting point at one of the columns and the mark at the other
+column.  Because this means you cannot put point or the mark at the
+beginning of the first line to sort, this command uses an unusual
+definition of `region': all of the line point is in is considered part of
+the region, and so is all of the line the mark is in.
+
+  For example, to sort a table by information found in columns 10 to 15,
+you could put the mark on column 10 in the first line of the table, and
+point on column 15 in the last line of the table, and then use this command.
+Or you could put the mark on column 15 in the first line and point on
+column 10 in the last line.
+
+  This can be thought of as sorting the rectangle specified by point and
+the mark, except that the text on each line to the left or right of the
+rectangle moves along with the text inside the rectangle.
+*Note Rectangles::.
+
+

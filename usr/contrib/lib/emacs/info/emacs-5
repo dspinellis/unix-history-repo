@@ -1,0 +1,1153 @@
+Info file emacs, produced by texinfo-format-buffer   -*-Text-*-
+from file emacs.tex
+
+This file documents the GNU Emacs editor.
+
+Copyright (C) 1985, 1986 Richard M. Stallman.
+
+Permission is granted to make and distribute verbatim copies of
+this manual provided the copyright notice and this permission notice
+are preserved on all copies.
+
+Permission is granted to copy and distribute modified versions of this
+manual under the conditions for verbatim copying, provided also that the
+sections entitled "The GNU Manifesto", "Distribution" and "GNU Emacs
+General Public License" are included exactly as in the original, and
+provided that the entire resulting derived work is distributed under the
+terms of a permission notice identical to this one.
+
+Permission is granted to copy and distribute translations of this manual
+into another language, under the above conditions for modified versions,
+except that the sections entitled "The GNU Manifesto", "Distribution"
+and "GNU Emacs General Public License" may be included in a translation
+approved by the author instead of in the original English.
+
+
+File: emacs  Node: Reverting, Prev: Saving, Up: Files, Next: Auto Save
+
+Reverting a Buffer
+==================
+
+  If you have made extensive changes to a file and then change your mind
+about them, you can get rid of them by reading in the previous version of
+the file.  To do this, use `M-x revert-buffer', which operates on the
+current buffer.  Since this is a very dangerous thing to do, you must
+confirm it with `yes'.
+
+  If the current buffer has been auto-saved more recently than it has been
+saved for real, `revert-buffer' offers to read the auto save file
+instead of the visited file (*Note Auto Save::).  This question comes
+before the usual request for confirmation, and demands `y' or `n'
+as an answer.  If you have started to type `yes' for confirmation
+without realizing that the other question was going to be asked, the
+`y' will answer that question, but the `es' will not be valid
+confirmation.  So you will have a chance to cancel the operation with
+`C-g' and try it again with the answers that you really intend.
+
+  `revert-buffer' keeps point at the same distance (measured in
+characters) from the beginning of the file.  If the file was edited only
+slightly, you will be at approximately the same piece of text after
+reverting as before.  If you have made drastic changes, the same value of
+point in the old file may address a totally different piece of text.
+
+  A buffer reverted from its visited file is marked "not modified" until
+another change is made.
+
+  Some kinds of buffers whose contents reflect data bases other than files,
+such as Dired buffers, can also be reverted.  For them, reverting means
+recalculating their contents from the appropriate data base.  Buffers
+created randomly with `C-x b' cannot be reverted; `revert-buffer'
+reports an error when asked to do so.
+
+
+File: emacs  Node: Auto Save, Prev: Reverting, Up: Files, Next: ListDir
+
+Auto-Saving: Protection Against Disasters
+=========================================
+
+  Emacs saves all the visited files from time to time (based on counting
+your keystrokes) without being asked.  This is called "auto-saving".
+It prevents you from losing more than a limited amount of work if the
+system crashes.
+
+  When Emacs determines that it is time for auto-saving, each buffer is
+considered, and is auto-saved if auto-saving is turned on for it and it has
+been changed since the last time it was auto-saved.  If any auto-saving is
+done, the message `Auto-saving...' is displayed in the echo area until
+auto-saving is finished.  Errors occurring during auto-saving are caught
+so that they do not interfere with the execution of commands you have been
+typing.
+
+* Menu:
+
+* Files: Auto Save Files.
+* Control: Auto Save Control.
+* Recover::		Recovering text from auto-save files.
+
+
+File: emacs  Node: Auto Save Files, Prev: Auto Save, Up: Auto Save, Next: Auto Save Control
+
+Auto-Save Files
+---------------
+
+  Auto-saving does not normally save in the files that you visited, because
+it can be very undesirable to save a program that is in an inconsistent
+state when you have made half of a planned change.  Instead, auto-saving
+is done in a different file called the "auto-save file", and the
+visited file is changed only when you request saving explicitly (such as
+with `C-x C-s').
+
+  Normally, the auto-save file name is made by appending `#' to the
+front and rear of the visited file name.  Thus, a buffer visiting file
+`foo.c' would be auto-saved in a file `#foo.c#'.  Most buffers
+that are not visiting files are auto-saved only if you request it
+explicitly; when they are auto-saved, the auto-save file name is made by
+appending `#%' to the front and `#' to the rear of buffer name.
+For example, the `*mail*' buffer in which you compose messages to be
+sent is auto-saved in a file named `#%*mail*#'.  Auto-save file names
+are made this way unless you reprogram parts of Emacs to do something
+different (the functions `make-auto-save-file-name' and
+`auto-save-file-name-p').  The file name to be used for auto-saving
+in a buffer is calculated when auto-saving is turned on in that buffer.
+
+  If you want auto-saving to be done in the visited file, set the variable
+`auto-save-visited-file-name' to be non-`nil'.  In this mode,
+there is really no difference between auto-saving and explicit saving.
+
+  A buffer's auto-save file is deleted when you save the buffer in its
+visited file.  To inhibit this, set the variable `delete-auto-save-files'
+to `nil'.  Changing the visited file name with `C-x C-w' or
+`set-visited-file-name' renames any auto-save file to go with
+the new visited name.
+
+
+File: emacs  Node: Auto Save Control, Prev: Auto Save Files, Up: Auto Save, Next: Recover
+
+Controlling Auto-Saving
+-----------------------
+
+  Each time you visit a file, auto-saving is turned on for that file's
+buffer if the variable `auto-save-default' is non-`nil' (but not
+in batch mode; *Note Entering Emacs::).  The default for this variable is
+`t', so auto-saving is the usual practice for file-visiting buffers.
+Auto-saving can be turned on or off for any existing buffer with the
+command `M-x auto-save-mode'.  Like other minor mode commands, `M-x
+auto-save-mode' turns auto-saving on with a positive argument, off with a
+zero or negative argument; with no argument, it toggles.
+
+  Emacs does auto-saving periodically based on counting how many characters
+you have typed since the last time auto-saving was done.  The variable
+`auto-save-interval' specifies how many characters there are between
+auto-saves.  By default, it is 300.  Emacs also auto-saves whenever you
+call the function `do-auto-save'.
+
+  Emacs also does auto-saving whenever it gets a fatal error.  This
+includes killing the Emacs job with a shell command such as `kill
+%emacs', or disconnecting a phone line or network connection.
+
+
+File: emacs  Node: Recover, Prev: Auto Save Control, Up: Auto Save
+
+Recovering Data from Auto-Saves
+-------------------------------
+
+  The way to use the contents of an auto-save file to recover from a loss
+of data is with the command `M-x recover-file RET FILE RET'.  This visits
+FILE and then (after your confirmation) restores the contents from from its
+auto-save file `#FILE#'.  You can then save with `C-x C-s' to put the
+recovered text into FILE itself.  For example, to recover file `foo.c' from
+its auto-save file `#foo.c#', do:
+
+     M-x recover-file RET foo.c RET
+     C-x C-s
+
+  Before asking for confirmation, `M-x recover-file' displays a
+directory listing describing the specified file and the auto-save file,
+so you can compare their sizes and dates.  If the auto-save file
+is older, `M-x recover-file' does not offer to read it.
+
+  Auto-saving is disabled by `M-x recover-file' because using
+this command implies that the auto-save file contains valuable data
+from a past session.  If you save the data in the visited file and
+then go on to make new changes, you should turn auto-saving back on
+with `M-x auto-save-mode'.
+
+
+File: emacs  Node: ListDir, Prev: Auto Save, Up: Files, Next: Dired
+
+Listing a File Directory
+========================
+
+  Files are classified by Unix into "directories".  A "directory
+listing" is a list of all the files in a directory.  Emacs provides
+directory listings in brief format (file names only) and verbose format
+(sizes, dates, and authors included).
+
+`C-x C-d DIR-OR-PATTERN'     
+     Print a brief directory listing (`list-directory').
+`C-u C-x C-d DIR-OR-PATTERN'     
+     Print a verbose directory listing.
+
+  The command to print a directory listing is `C-x C-d' (`list-directory').
+It reads using the minibuffer a file name which is either a directory to be
+listed or a wildcard-containing pattern for the files to be listed.  For
+example,
+
+     C-x C-d /u2/emacs/etc RET
+
+lists all the files in directory `/u2/emacs/etc'.  An example of
+specifying a file name pattern is
+
+     C-x C-d /u2/emacs/src/*.c RET
+
+  Normally, `C-x C-d' prints a brief directory listing containing just
+file names.  A numeric argument (regardless of value) tells it to print a
+verbose listing (like `ls -l').
+
+  The text of a directory listing is obtained by running `ls' in an
+inferior process.  Two Emacs variables control the switches passed to
+`ls': `list-directory-brief-switches' is a string giving the
+switches to use in brief listings (`"-CF"' by default), and
+`list-directory-verbose-switches' is a string giving the switches to
+use in a verbose listing (`"-l"' by default).
+
+
+File: emacs  Node: Dired, Prev: ListDir, Up: Files, Next: Misc File Ops
+
+Dired, the Directory Editor
+===========================
+
+  Dired makes it easy to delete or visit many of the files in a single
+directory at once.  It makes an Emacs buffer containing a listing of the
+directory.  You can use the normal Emacs commands to move around in this
+buffer, and special Dired commands to operate on the files.
+
+* Menu:
+
+* Enter: Dired Enter.         How to invoke Dired.
+* Edit: Dired Edit.           Editing the Dired buffer.
+* Deletion: Dired Deletion.   Deleting files with Dired.
+* Immed: Dired Immed.         Other file operations through Dired.
+
+
+File: emacs  Node: Dired Enter, Prev: Dired, Up: Dired, Next: Dired Edit
+
+Entering Dired
+--------------
+
+  To invoke dired, do `C-x d' or `M-x dired'.  The command reads a
+directory name or wildcard file name pattern as a minibuffer argument just
+like the `list-directory' command, `C-x C-d'.  Where `dired'
+differs from `list-directory' is in naming the buffer after the
+directory name or the wildcard pattern used for the listing, and putting
+the buffer into Dired mode so that the special commands of Dired are
+available in it.  The variable `dired-listing-switches' is a string
+used as an argument to `ls' in making the directory; this string
+must contain `-l'.
+
+  To display the Dired buffer in another window rather than in the selected
+window, use `C-x 4 d' (`dired-other-window)' instead of `C-x d'.
+
+
+File: emacs  Node: Dired Edit, Prev: Dired Enter, Up: Dired, Next: Dired Deletion
+
+Editing in Dired
+----------------
+
+  Once the Dired buffer exists, you can switch freely between it and other
+Emacs buffers.  Whenever the Dired buffer is selected, certain special
+commands are provided that operate on files that are listed.  The Dired
+buffer is "read-only", and inserting text in it is not useful, so
+ordinary printing characters such as `d' and `x' are used for Dired
+commands.  Most Dired commands operate on the file described by the line
+that point is on.  Some commands perform operations immediately; others
+"flag" the file to be operated on later.
+
+  Most Dired commands that operate on the current line's file also treat a
+numeric argument as a repeat count, meaning to act on the files of the
+next few lines.  A negative argument means to operate on the files of the
+preceding lines, and leave point on the first of those lines.
+
+  All the usual Emacs cursor motion commands are available in Dired
+buffers.  Some special purpose commands are also provided.  The keys
+`C-n' and `C-p' are redefined so that they try to position
+the cursor at the beginning of the filename on the line, rather than
+at the beginning of the line.
+
+  For extra convenience, SPC and `n' in Dired are equivalent to `C-n'.  `p'
+is equivalent to `C-p'.  Moving by lines is done so often in Dired that it
+deserves to be easy to type.  DEL (move up and unflag) is often useful
+simply for moving up.
+
+  The `g' command in Dired runs `revert-buffer' to reinitialize
+the buffer from the actual disk directory and show any changes made in the
+directory by programs other than Dired.  All deletion flags in the Dired
+buffer are lost when this is done.
+
+
+File: emacs  Node: Dired Deletion, Prev: Dired Edit, Up: Dired, Next: Dired Immed
+
+Deleting Files with Dired
+-------------------------
+
+  The primary use of Dired is to flag files for deletion and then delete
+them.
+
+`d'     
+     Flag this file for deletion.
+`u'     
+     Remove deletion-flag on this line.
+`DEL'     
+     Remove deletion-flag on previous line, moving point to that line.
+`x'     
+     Delete the files that are flagged for deletion.
+`#'     
+     Flag all auto-save files (files whose names start and end with `#')
+     for deletion (*Note Auto Save::).
+`~'     
+     Flag all backup files (files whose names end with `~') for deletion
+     (*Note Backup::).
+`. (Period)'     
+     Flag excess numeric backup files for deletion.  The oldest and newest
+     few backup files of any one file are exempt; the middle ones are flagged.
+
+  You can flag a file for deletion by moving to the line describing the
+file and typing `d' or `C-d'.  The deletion flag is visible as a
+`D' at the beginning of the line.  Point is moved to the beginning of
+the next line, so that repeated `d' commands flag successive files.
+
+  The files are flagged for deletion rather than deleted immediately to
+avoid the danger of deleting a file accidentally.  Until you direct Dired
+to delete the flagged files, you can remove deletion flags using the
+commands `u' and DEL.  `u' works just like `d', but
+removes flags rather than making flags.  DEL moves upward, removing
+flags; it is like `u' with numeric argument automatically negated.
+
+  To delete the flagged files, type `x'.  This command first displays a
+list of all the file names flagged for deletion, and requests confirmation
+with `yes'.  Once you confirm, all the flagged files are deleted, and their
+lines are deleted from the text of the Dired buffer.  The shortened Dired
+buffer remains selected.  If you answer `no' or quit with `C-g', you
+return immediately to Dired, with the deletion flags still present and no
+files actually deleted.
+
+  The `#', `~' and `.' commands flag many files for deletion, based on
+their names.  These commands are useful precisely because they do not
+actually delete any files; you can remove the deletion flags from any
+flagged files that you really wish to keep.
+
+  `#' flags for deletion all files that appear to have been made by
+auto-saving (that is, files whose names begin and end with `#').
+`~' flags for deletion all files that appear to have been made as
+backups for files that were edited (that is, files whose names end with
+`~').
+
+  `.' (Period) flags just some of the backup files for deletion: only
+numeric backups that are not among the oldest few nor the newest few
+backups of any one file.  Normally `dired-kept-versions' (not
+`kept-new-versions'; that applies only when saving) specifies the number of
+newest versions of each file to keep, and `kept-old-versions' specifies the
+number of oldest versions to keep.  Period with a positive numeric
+argument, as in `C-u 3 .', specifies the number of newest versions to keep,
+overriding `dired-kept-versions'.  A negative numeric argument overrides
+`kept-old-versions', using minus the value of the argument to specify the
+number of oldest versions of each file to keep.
+
+
+File: emacs  Node: Dired Immed, Prev: Dired Deletion, Up: Dired
+
+Immediate File Operations in Dired
+----------------------------------
+
+  Some file operations in Dired take place immediately when they are
+requested.
+
+`c'     
+     Copies the file described on the current line.  You must supply a file name
+     to copy to, using the minibuffer.
+`f'     
+     Visits the file described on the current line.  It is just like typing
+     `C-x C-f' and supplying that file name.  If the file on this line is a
+     subdirectory, `f' actually causes Dired to be invoked on that
+     subdirectory.  *Note Visiting::.
+`o'     
+     Like `f', but uses another window to display the file's buffer.  The
+     Dired buffer remains visible in the first window.  This is like using
+     `C-x 4 C-f' to visit the file.  *Note Windows::.
+`r'     
+     Renames the file described on the current line.  You must supply a file
+     name to rename to, using the minibuffer.
+`v'     
+     Views the file described on this line using `M-x view-file'.  Viewing
+     a file is like visiting it, but is slanted toward moving around in the
+     file conveniently and does not allow changing the file.  *Note View
+     File: Misc File Ops.  Viewing a file that is a directory runs Dired on
+     that directory.
+
+
+File: emacs  Node: Misc File Ops, Prev: Dired, Up: Files
+
+Miscellaneous File Operations
+=============================
+
+  Emacs has commands for performing many other operations on files.
+All operate on one file; they do not accept wild card file names.
+
+  `M-x view-file' allows you to scan or read a file by sequential
+screenfuls.  It reads a file name argument using the minibuffer.  After
+reading the file into an Emacs buffer, `view-file' reads and displays
+one windowful.  You can then type SPC to scroll forward one windowful,
+or DEL to scroll backward.  Various other commands are provided for
+moving around in the file, but none for changing it; type `C-h' while
+viewing for a list of them.  They are mostly the same as normal Emacs
+cursor motion commands.  To exit from viewing, type `C-c'.
+
+  `M-x insert-file' inserts a copy of the contents of the specified
+file into the current buffer at point, leaving point unchanged before the
+contents and the mark after them.  *Note Mark::.
+
+  `M-x write-region' is the inverse of `M-x insert-file'; it copies
+the contents of the region into the specified file.  `M-x append-to-file'
+adds the text of the region to the end of the specified file.
+
+  `M-x delete-file' deletes the specified file, like the `rm'
+command in the shell.  If you are deleting many files in one directory, it
+may be more convenient to use Dired (*Note Dired::).
+
+  `M-x rename-file' reads two file names OLD and NEW using
+the minibuffer, then renames file OLD as NEW.  If a file named
+NEW already exists, you must confirm with `yes' or renaming is not
+done; this is because renaming causes the old meaning of the name NEW
+to be lost.  If OLD and NEW are on different file systems, the
+file OLD is copied and deleted.
+
+  The similar command `M-x add-name-to-file' is used to add an
+additional name to an existing file without removing its old name.
+The new name must belong on the same file system that the file is on.
+
+  `M-x copy-file' reads the file OLD and writes a new file named
+NEW with the same contents.  Confirmation is required if a file named
+NEW already exists, because copying has the consequence of overwriting
+the old contents of the file NEW.
+
+  `M-x make-symbolic-link' reads two file names OLD and LINKNAME,
+and then creates a symbolic link named LINKNAME and pointing at OLD.
+The effect is that future attempts to open file LINKNAME will refer
+to whatever file is named OLD at the time the opening is done, or
+will get an error if the name OLD is not in use at that time.
+Confirmation is required when creating the link if LINKNAME is in
+use.  Note that not all systems support symbolic links.
+
+
+File: emacs  Node: Buffers, Prev: Files, Up: Top, Next: Windows
+
+Using Multiple Buffers
+**********************
+
+  The text you are editing in Emacs resides in an object called a
+"buffer".  Each time you visit a file, a buffer is created to hold the
+file's text.  Each time you invoke Dired, a buffer is created to hold the
+directory listing.  If you send a message with `C-x m', a buffer named
+`*mail*' is used to hold the text of the message.  When you ask for a
+command's documentation, that appears in a buffer called `*Help*'.
+
+  At any time, one and only one buffer is "selected".  It is also
+called the "current buffer".  Often we say that a command operates on
+"the buffer" as if there were only one; but really this means that the
+command operates on the selected buffer (most commands do).
+
+  When Emacs makes multiple windows, each window has a chosen buffer which
+is displayed there, but at any time only one of the windows is selected and
+its chosen buffer is the selected buffer.  Each window's mode line displays
+the name of the buffer that the window is displaying (*Note Windows::).
+
+  Each buffer has a name, which can be of any length, and you can select
+any buffer by giving its name.  Most buffers are made by visiting files,
+and their names are derived from the files' names.  But you can also create
+an empty buffer with any name you want.  A newly started Emacs has a buffer
+named `*scratch*' which can be used for evaluating Lisp expressions in
+Emacs.  The distinction between upper and lower case matters in buffer
+names.
+
+  Each buffer records individually what file it is visiting, whether it is
+modified, and what major mode and minor modes are in effect in it
+(*Note Major Modes::).  Any Emacs variable can be made "local to" a
+particular buffer, meaning its value in that buffer can be different from
+the value in other buffers.  *Note Locals::.
+
+* Menu:
+
+* Select Buffer::   Creating a new buffer or reselecting an old one.
+* List Buffers::    Getting a list of buffers that exist.
+* Misc Buffer::     Renaming; changing read-onliness; copying text.
+* Kill Buffer::     Killing buffers you no longer need.
+* Several Buffers:: How to go through the list of all buffers
+                     and operate variously on several of them.
+
+
+File: emacs  Node: Select Buffer, Prev: Buffers, Up: Buffers, Next: List Buffers
+
+Creating and Selecting Buffers
+==============================
+
+`C-x b BUFFER RET'     
+     Select or create a buffer named BUFFER (`switch-to-buffer').
+`C-x 4 b BUFFER RET'     
+     Similar but select a buffer named BUFFER in another window
+     (`switch-to-buffer-other-window').
+
+  To select the buffer named BUFNAME, type `C-x b BUFNAME RET'.  This is
+the command `switch-to-buffer' with argument BUFNAME.  You can use
+completion on an abbreviation for the buffer name you want (*Note
+Completion::).  An empty argument to `C-x b' specifies the most recently
+selected buffer that is not displayed in any window.
+
+  Most buffers are created by visiting files, or by Emacs commands that
+want to display some text, but you can also create a buffer explicitly by
+typing `C-x b BUFNAME RET'.  This makes a new, empty buffer which
+is not visiting any file, and selects it for editing.  Such buffers are
+used for making notes to yourself.  If you try to save one, you are asked
+for the file name to use.  The new buffer's major mode is determined by the
+value of `default-major-mode' (*Note Major Modes::).
+
+  Note that `C-x C-f', and any other command for visiting a file, can
+also be used to switch buffers.  *Note Visiting::.
+
+
+File: emacs  Node: List Buffers, Prev: Select Buffer, Up: Buffers, Next: Misc Buffer
+
+Listing Existing Buffers
+========================
+
+`C-x C-b'     
+     List the existing buffers (`list-buffers').
+
+  To print a list of all the buffers that exist, type `C-x C-b'.  Each line
+in the list shows one buffer's name, major mode and visited file.  `*' at
+the beginning of a line indicates the buffer is "modified".  If several
+buffers are modified, it may be time to save some with `C-x s' (*Note
+Saving::).  `%' indicates a read-only buffer.  `.'  marks the selected
+buffer.  Here is an example of a buffer list:
+
+      MR Buffer         Size  Mode           File
+      -- ------         ----  ----           ----
+     .*  emacs.tex      383402 Texinfo       /u2/emacs/man/emacs.tex
+         *Help*         1287  Fundamental	
+         files.el       23076 Emacs-Lisp     /u2/emacs/lisp/files.el
+       % RMAIL          64042 RMAIL          /u/rms/RMAIL
+      *% man            747   Dired		
+         net.emacs      343885 Fundamental   /u/rms/net.emacs
+         fileio.c       27691 C              /u2/emacs/src/fileio.c
+         NEWS           67340 Text           /u2/emacs/etc/NEWS
+         *scratch*	   0	 Lisp Interaction 
+
+Note that the buffer `*Help*' was made by a help request; it is not
+visiting any file.  The buffer `man' was made by Dired on the
+directory `/u2/emacs/man/'.
+
+
+File: emacs  Node: Misc Buffer, Prev: List Buffers, Up: Buffers, Next: Kill Buffer
+
+Miscellaneous Buffer Operations
+===============================
+
+`C-x C-q'     
+     Toggle read-only status of buffer (`toggle-read-only').
+`M-x rename-buffer'     
+     Change the name of the current buffer.
+`M-x view-buffer'     
+     Scroll through a buffer.
+
+  A buffer can be "read-only", which means that commands to change its
+text are not allowed.  Normally, read-only buffers are made by subsystems
+such as Dired and Rmail that have special commands to operate on the text;
+a read-only buffer is also made if you visit a file that is protected so
+you cannot write it.  If you wish to make changes in a read-only buffer,
+use the command `C-x C-q' (`toggle-read-only').  It makes a
+read-only buffer writable, and makes a writable buffer read-only.  This
+works by setting the variable `buffer-read-only', which has a local
+value in each buffer and makes the buffer read-only if its value is
+non-`nil'.
+
+  `M-x rename-buffer' changes the name of the current buffer.  Specify
+the new name as a minibuffer argument.  There is no default.  If you
+specify a name that is in use for some other buffer, an error happens and
+no renaming is done.
+
+  `M-x view-buffer' is much like `M-x view-file' (*Note Misc File Ops::)
+except that it examines an already existing Emacs buffer.  View mode
+provides commands for scrolling through the buffer conveniently but not
+for changing it. When you exit View mode, the value of point that resulted
+from your perusal remains in effect.
+
+  The commands `C-x a' (`append-to-buffer') and `M-x insert-buffer' can be
+used to copy text from one buffer to another.  *Note Accumulating Text::.
+
+
+File: emacs  Node: Kill Buffer, Prev: Misc Buffer, Up: Buffers, Next: Several Buffers
+
+Killing Buffers
+===============
+
+  After you use Emacs for a while, you may accumulate a large number of
+buffers.  You may then find it convenient to eliminate the ones you no
+longer need.  There are several commands provided for doing this.
+
+`C-x k'     
+     Kill a buffer, specified by name (`kill-buffer').
+`M-x kill-some-buffers'     
+     Offer to kill each buffer, one by one.
+
+
+  `C-x k' (`kill-buffer') kills one buffer, whose name you specify
+in the minibuffer.  The default, used if you type just RET in the
+minibuffer, is to kill the current buffer.  If the current buffer is
+killed, another buffer is selected; a buffer that has been selected
+recently but does not appear in any window now is chosen to be selected.
+If the buffer being killed is modified (has unsaved editing) then you are
+asked to confirm with `yes' before the buffer is killed.
+
+  The command `M-x kill-some-buffers' asks about each buffer, one by
+one.  An answer of `y' means to kill the buffer.  Killing the current
+buffer or a buffer containing unsaved changes selects a new buffer or asks
+for confirmation just like `kill-buffer'.
+
+
+File: emacs  Node: Several Buffers, Prev: Kill Buffer, Up: Buffers
+
+Operating on Several Buffers
+============================
+
+  The "buffer-menu" facility is like a "Dired for buffers"; it allows
+you to request operations on various Emacs buffers by editing an Emacs
+buffer containing a list of them.  You can save buffers, kill them
+(here called "deleting" them, for consistency with Dired), or display
+them.
+
+`M-x buffer-menu'     
+     Begin editing a buffer listing all Emacs buffers.
+
+  The command `buffer-menu' writes a list of all Emacs buffers into
+the buffer `*Buffer List*', and selects that buffer in Buffer Menu
+mode.  The buffer is read-only, and can only be changed through the special
+commands described in this section.  Most of these commands are graphic
+characters.  The usual Emacs cursor motion commands can be used in the
+`*Buffer List*' buffer.  The following special commands apply to the
+buffer described on the current line.
+
+`d'     
+     Request to delete (kill) the buffer, then move down.  The request
+     shows as a `D' on the line, before the buffer name.  Requested
+     deletions take place when the `x' command is used.
+`k'     
+     Synonym for `d'.
+`C-d'     
+     Like `d' but move up afterwards instead of down.
+`s'     
+     Request to save the buffer.  The request shows as an `S' on the
+     line.  Requested saves take place when the `x' command is used.
+     You may request both saving and deletion for the same buffer.
+`~'     
+     Mark buffer "unmodified".  The command `~' does this
+     immediately when typed.
+`x'     
+     Perform previously requested deletions and saves.
+`u'     
+     Remove any request made for the current line, and move down.
+`DEL'     
+     Move to previous line and remove any request made for that line.
+
+  All the commands that put in or remove flags to request later operations
+also move down a line, and accept a numeric argument as a repeat count,
+unless otherwise specified.
+
+  There are also special commands to use the buffer list to select another
+buffer, and to specify one or more other buffers for display in additional
+windows.
+
+`1'     
+     Select the buffer in a full-screen window.  This command takes effect
+     immediately.
+`2'     
+     Immediately set up two windows, with this buffer in one, and the
+     previously selected buffer (aside from the buffer `*Buffer List*')
+     in the other.
+`f'     
+     Immediately select the buffer in place of the `*Buffer List*' buffer.
+`o'     
+     Immediately select the buffer in another window as if by `C-x 4 b',
+     leaving `*Buffer List*' visible.
+`q'     
+     Immediately select this buffer, and also display in other windows any
+     buffers previously flagged with the `m' command.  If there are no
+     such buffers, this command is equivalent to `1'.
+`m'     
+     Flag this buffer to be displayed in another window if the `q'
+     command is used.  The request shows as a `>' at the beginning of
+     the line.  The same buffer may not have both a delete request and a
+     display request.
+
+  All that `buffer-menu' does directly is create and select a suitable
+buffer, and turn on Buffer Menu mode.  Everything else described above is
+implemented by the special commands provided in Buffer Menu mode.  One
+consequence of this is that you can switch from the `*Buffer List*'
+buffer to another Emacs buffer, and edit there.  You can reselect the
+`buffer-menu' buffer later, to perform the operations already
+requested, or you can kill it, or pay no further attention to it.
+
+  The only difference between `buffer-menu' and `list-buffers' is
+that `buffer-menu' selects the `*Buffer List*' buffer and
+`list-buffers' does not.  If you run `list-buffers' (that is,
+type `C-x C-b') and select the buffer list manually, you can use all of
+the commands described here.
+
+
+File: emacs  Node: Windows, Prev: Buffers, Up: Top, Next: Major Modes
+
+Multiple Windows
+****************
+
+  Emacs can split the screen into two or many windows, which can display
+parts of different buffers, or different parts of one buffer.
+
+* Menu:
+
+* Basic Window::     Introduction to Emacs windows.
+* Split Window::     New windows are made by splitting existing windows.
+* Other Window::     Moving to another window or doing something to it.
+* Pop Up Window::    Finding a file or buffer in another window.
+* Change Window::    Deleting windows and changing their sizes.
+
+
+File: emacs  Node: Basic Window, Prev: Windows, Up: Windows, Next: Split Window
+
+Concepts of Emacs Windows
+=========================
+
+  When multiple windows are being displayed, each window has an Emacs
+buffer designated for display in it.  The same buffer may appear in more
+than one window; if it does, any changes in its text are displayed in all
+the windows where it appears.  But the windows showing the same buffer can
+show different parts of it, because each window has its own value of point.
+
+  At any time, one of the windows is the "selected window"; the buffer
+this window is displaying is the current buffer.  The terminal's cursor
+shows the location of point in this window.  Each other window has a
+location of point as well, but since the terminal has only one cursor there
+is no way to show where those locations are.
+
+  Commands to move point affect the value of point for the selected Emacs
+window only.  They do not change the value of point in any other Emacs
+window, even one showing the same buffer.  The same is true for commands
+such as `C-x b' to change the selected buffer in the selected window;
+they do not affect other windows at all.  However, there are other commands
+such as `C-x 4 b' that select a different window and switch buffers in
+it.  Also, all commands that display information in a window, including
+(for example) `C-h f' (`describe-function') and `C-x C-b'
+(`list-buffers'), work by switching buffers in a nonselected window
+without affecting the selected window.
+
+  Each window has its own mode line, which displays the buffer name,
+modification status and major and minor modes of the buffer that is
+displayed in the window.  *Note Mode Line::, for full details on the mode
+line.
+
+
+File: emacs  Node: Split Window, Prev: Basic Window, Up: Windows, Next: Other Window
+
+Splitting Windows
+=================
+
+`C-x 2'     
+     Split the selected window into two windows, one above the other
+     (`split-window-vertically').
+`C-x 5'     
+     Split the selected window into two windows positioned side by side
+     (`split-window-horizontally').
+
+  The command `C-x 2' (`split-window-vertically') breaks the
+selected window into two windows, one above the other.  Both windows start
+out displaying the same buffer, with the same value of point.  By default
+the two windows each get half the height of the window that was split; a
+numeric argument specifies how many lines to give to the top window.
+
+  `C-x 5' (`split-window-horizontally') breaks the selected
+window into two side-by-side windows.  A numeric argument specifies
+how many columns to give the one on the left.  A line of vertical bars
+separates the two windows.  Windows that are not the full width of the
+screen have mode lines, but they are truncated; also, they do not
+always appear in inverse video, because, the Emacs display routines
+have not been taught how to display a region of inverse video that is
+only part of a line on the screen.
+
+  When a window is less than the full width, text lines too long to fit are
+frequent.  Continuing all those lines might be confusing.  The variable
+`truncate-partial-width-windows' can be set non-`nil' to force truncation
+in all windows less than the full width of the screen, independent of the
+buffer being displayed and its value for `truncate-lines'.  *Note
+Continuation Lines::.
+
+  Horizontal scrolling is often used in side-by-side windows.
+*Note Display::.
+
+
+File: emacs  Node: Other Window, Prev: Split Window, Up: Windows, Next: Pop Up Window
+
+Using Other Windows
+===================
+
+`C-x o'     
+     Select another window (`other-window').  That is `o', not zero.
+`C-M-v'     
+     Scroll the next window (`scroll-other-window').
+`M-x compare-windows'     
+     Find next place where the text in the selected window does not match
+     the text in the next window.
+
+  To select a different window, use `C-x o' (`other-window').
+That is an `o', for `other', not a zero.  When there are more than two
+windows, this command moves through all the windows in a cyclic order,
+generally top to bottom and left to right.  From the rightmost and
+bottommost window, it goes back to the one at the upper left corner.  A
+numeric argument means to move several steps in the cyclic order of
+windows.  A negative argument moves around the cycle in the opposite order.
+When the minibuffer is active, the minibuffer is the last window in the
+cycle; you can switch from the minibuffer window to one of the other
+windows, and later switch back and finish supplying the minibuffer argument
+that is requested.  *Note Minibuffer Edit::.
+
+  The usual scrolling commands (*Note Display::) apply to the selected
+window only, but there is one command to scroll the next window.
+`C-M-v' (`scroll-other-window') scrolls the window that `C-x o'
+would select.  It takes arguments, positive and negative, like `C-v'.
+
+  The command `M-x compare-windows' compares the text in the current
+window with that in the next window.  Comparison starts at point in each
+window.  Point moves forward in each window, a character at a time in each
+window, until the next characters in the two windows are different.  Then
+the command is finished.
+
+
+File: emacs  Node: Pop Up Window, Prev: Other Window, Up: Windows, Next: Change Window
+
+Displaying in Another Window
+============================
+
+  `C-x 4' is a prefix key for commands that select another window
+(splitting the window if there is only one) and select a buffer in that
+window.  Different `C-x 4' commands have different ways of finding the
+buffer to select.
+
+`C-x 4 b BUFNAME RET'     
+     Select buffer BUFNAME in another window.  This runs 
+     `switch-to-buffer-other-window'.
+`C-x 4 f FILENAME RET'     
+     Visit file FILENAME and select its buffer in another window.  This
+     runs `find-file-other-window'.  *Note Visiting::.
+`C-x 4 d DIRECTORY RET'     
+     Select a Dired buffer for directory DIRECTORY in another window.
+     This runs `dired-other-window'.  *Note Dired::.
+`C-x 4 m'     
+     Start composing a mail message in another window.  This runs
+     `mail-other-window', and its same-window version is `C-x m'
+     (*Note Sending Mail::).
+`C-x 4 .'     
+     Find a tag in the current tag table in another window.  This runs
+     `find-tag-other-window', the multiple-window variant of `M-.'
+     (*Note Tags::).
+
+
+File: emacs  Node: Change Window, Prev: Pop Up Window, Up: Windows
+
+Deleting and Rearranging Windows
+================================
+
+`C-x 0'     
+     Get rid of the selected window (`kill-window').  That is a zero.
+`C-x 1'     
+     Get rid of all windows except the selected one (`delete-other-windows').
+`C-x ^'     
+     Make the selected window taller, at the expense of the other(s)
+     (`enlarge-window').
+`C-x }'     
+     Make the selected window wider (`enlarge-window-horizontally').
+
+  To delete a window, type `C-x 0' (`delete-window').  (That is a
+zero.)  The space occupied by the deleted window is distributed among the
+other active windows (but not the minibuffer window, even if that is active
+at the time).  Once a window is deleted, its attributes are forgotten;
+there is no automatic way to make another window of the same shape or
+showing the same buffer.  But the buffer continues to exist, and you can
+select it in any window with `C-x b'.
+
+  `C-x 1' (`delete-other-windows') is more powerful than `C-x 0';
+it deletes all the windows except the selected one (and the minibuffer);
+the selected window expands to use the whole screen except for the echo
+area.
+
+  To readjust the division of space among existing windows, use `C-x ^'
+(`enlarge-window').  It makes the currently selected window get one
+line bigger, or as many lines as is specified with a numeric argument.
+With a negative argument, it makes the selected window smaller.  `C-x
+}' (`enlarge-window-horizontally') makes the selected window wider
+by the specified number of columns.  The extra screen space given to a
+window comes from one of its neighbors, if that is possible; otherwise, all
+the competing windows are shrunk in the same proportion.  If this makes any
+windows too small, those windows are deleted and their space is divided up.
+The minimum size is specified by the variables `window-min-height' and
+`window-min-width'.
+
+
+File: emacs  Node: Major Modes, Prev: Windows, Up: Top, Next: Indentation
+
+Major Modes
+***********
+
+  Emacs has many different "major modes", each of which customizes
+Emacs for editing text of a particular sort.  The major modes are mutually
+exclusive, and each buffer has one major mode at any time.  The mode line
+normally contains the name of the current major mode, in parentheses.
+*Note Mode Line::.
+
+  The least specialized major mode is called "Fundamental mode".  This
+mode has no mode-specific redefinitions or variable settings, so that each
+Emacs command behaves in its most general manner, and each option is in its
+default state.  For editing any specific type of text, such as Lisp code or
+English text, you should switch to the appropriate major mode, such as Lisp
+mode or Text mode.
+
+  Selecting a major mode changes the meanings of a few keys to become more
+specifically adapted to the language being edited.  The ones which are
+changed frequently are TAB, DEL, and LFD.  In addition,
+the commands which handle comments use the mode to determine how comments
+are to be delimited.  Many major modes redefine the syntactical properties
+of characters appearing in the buffer.  *Note Syntax::.
+
+  The major modes fall into three major groups.  Lisp mode (which has
+several variants), C mode and Muddle mode are for specific programming
+languages.  Text mode, Nroff mode, TeX mode and Outline mode are for
+editing English text.  The remaining major modes are not intended for use
+on users' files; they are used in buffers created for specific purposes by
+Emacs, such as Dired mode for buffers made by Dired (*Note Dired::), and
+Mail mode for buffers made by `C-x m' (*Note Sending Mail::), and Shell
+mode for buffers used for communicating with an inferior shell process
+(*Note Interactive Shell::).
+
+  Most programming language major modes specify that only blank lines
+separate paragraphs.  This is so that the paragraph commands remain useful.
+*Note Paragraphs::.  They also cause Auto Fill mode to use the definition of
+TAB to indent the new lines it creates.  This is because most lines
+in a program are usually indented.  *Note Indentation::.
+
+* Menu:
+
+* Choosing Modes::     How major modes are specified or chosen.
+
+
+File: emacs  Node: Choosing Modes, Prev: Major Modes, Up: Major Modes
+
+How Major Modes are Chosen
+==========================
+
+  You can select a major mode explicitly for the current buffer, but
+most of the time Emacs determines which mode to use based on the file
+name or some text in the file.
+
+  Explicit selection of a new major mode is done with a `M-x' command.
+From the name of a major mode, add `-mode' to get the name of a
+command to select that mode.  Thus, you can enter Lisp mode by executing
+`M-x lisp-mode'.
+
+  When you visit a file, Emacs usually chooses the right major mode based
+on the file's name.  For example, files whose names end in `.c' are
+edited in C mode.  The correspondence between file names and major mode is
+controlled by the variable `auto-mode-alist'.  Its value is a list in
+which each element has the form
+
+     (REGEXP . MODE-FUNCTION)
+
+For example, one element normally found in the list has the form
+`("\\.c$" . c-mode)', and it is responsible for selecting C mode
+for files whose names end in `.c'.  (Note that `\\' is needed in
+Lisp syntax to include a `\' in the string, which is needed to
+suppress the special meaning of `.' in regexps.)  The only practical
+way to change this variable is with Lisp code.
+
+  You can specify which major mode should be used for editing a certain
+file by a special sort of text in the first nonblank line of the file.  The
+mode name should appear in this line both preceded and followed by
+`-*-'.  Other text may appear on the line as well.  For example,
+
+     ;-*-Lisp-*-
+
+tells Emacs to use Lisp mode.  Note how the semicolon is used to make Lisp
+treat this line as a comment.  Such an explicit specification overrides any
+defaulting based on the file name.
+
+  Another format of mode specification is
+
+     -*-Mode: MODENAME;-*-
+
+which allows other things besides the major mode name to be specified.
+However, Emacs does not look for anything except the mode name.
+
+The major mode can also be specified in a local variables list.
+*Note File Variables::.
+
+  When a file is visited that does not specify a major mode to use, or when
+a new buffer is created with `C-x b', the major mode used is that
+specified by the variable `default-major-mode'.  Normally this value
+is the symbol `fundamental-mode', which specifies Fundamental mode.
+If `default-major-mode' is `nil', the major mode is taken from
+the previously selected buffer.
+
+
+File: emacs  Node: Indentation, Prev: Major Modes, Up: Top, Next: Text
+
+Indentation
+***********
+
+`TAB'     
+     Indent current line "appropriately" in a mode-dependent fashion.
+`LFD'     
+     Perform RET followed by TAB (`newline-and-indent').
+`M-^'     
+     Merge two lines (`delete-indentation').  This would cancel out
+     the effect of LFD.
+`C-M-o'     
+     Split line at point; text on the line after point becomes a new line
+     indented to the same column that it now starts in (`split-line').
+`M-m'     
+     Move (forward or back) to the first nonblank character on the current
+     line (`back-to-indentation').
+`C-M-\'     
+     Indent several lines to same column (`indent-region').
+`C-x TAB'     
+     Shift block of lines rigidly right or left (`indent-rigidly').
+`M-i'     
+     Indent from point to the next prespecified tab stop column
+     (`tab-to-tab-stop').
+`M-x indent-relative'     
+     Indent from point to under an indentation point in the previous line.
+
+  Most programming languages have some indentation convention.  For Lisp
+code, lines are indented according to their nesting in parentheses.  The
+same general idea is used for C code, though many details are different.
+
+  Whatever the language, to indent a line, use the TAB command.  Each
+major mode defines this command to perform the sort of indentation
+appropriate for the particular language.  In Lisp mode, TAB aligns
+the line according to its depth in parentheses.  No matter where in the
+line you are when you type TAB, it aligns the line as a whole.  In C
+mode, TAB implements a subtle and sophisticated indentation style that
+knows about many aspects of C syntax.
+
+  In Text mode, TAB runs the command `tab-to-tab-stop', which
+indents to the next tab stop column.  You can set the tab stops with
+`M-x edit-tab-stops'.
+
+* Menu:
+
+* Indentation Commands:: Various commands and techniques for indentation.
+* Tab Stops::            You can set arbitrary "tab stops" and then
+                         indent to the next tab stop when you want to.
+* Just Spaces::          You can request indentation using just spaces.
+
+
+File: emacs  Node: Indentation Commands, Prev: Indentation, Up: Indentation, Next: Tab Stops
+
+Indentation Commands and Techniques
+===================================
+
+  If you just want to insert a tab character in the buffer, you can type
+`C-q TAB'.
+
+  To move over the indentation on a line, do `Meta-m'
+(`back-to-indentation').  This command, given anywhere on a line,
+positions point at the first nonblank character on the line.
+
+  To insert an indented line before the current line, do `C-a C-o
+TAB'.  To make an indented line after the current line, use `C-e
+LFD'.
+
+  `C-M-o' (`split-line') moves the text from point to the end of
+the line vertically down, so that the current line becomes two lines.
+`C-M-o' first moves point forward over any spaces and tabs.  Then it
+inserts after point a newline and enough indentation to reach the same
+column point is on.  Point remains before the inserted newline; in this
+regard, `C-M-o' resembles `C-o'.
+
+  To join two lines cleanly, use the `Meta-^' (`delete-indentation')
+command to delete the indentation at the front of the current line, and the
+line boundary as well.  They are replaced by a single space, or by no space
+if at the beginning of a line or before a `)' or after a `('.  To
+delete just the indentation of a line, go to the beginning of the line and
+use `Meta-\' (`delete-horizontal-space'), which deletes all spaces
+and tabs around the cursor.
+
+  There are also commands for changing the indentation of several lines at
+once.  `Control-Meta-\' (`indent-region') gives each line which begins in
+the region the "usual" indentation by invoking TAB at the beginning of the
+line.  A numeric argument specifies the column to indent to, and each line
+is shifted left or right so that its first nonblank character appears in
+that column.  `C-x TAB' (`indent-rigidly') moves all of the lines in the
+region right by its argument (left, for negative arguments).  The whole
+group of lines moves rigidly sideways, which is how the command gets its
+name.
+
+  `M-x indent-relative' indents at point based on the previous line
+(actually, the last nonempty line.)  It inserts whitespace at point, moving
+point, until it is underneath an indentation point in the previous line.
+An indentation point is the end of a sequence of whitespace or the end of
+the line.  If point is farther right than any indentation point in the
+previous line, the whitespace before point is deleted and the first
+indentation point then applicable is used.  If no indentation point is
+applicable even then, `tab-to-tab-stop' is run (see next section).
+
+  `indent-relative' is the definition of TAB in Indented Text
+mode.  *Note Text::.
+
+
+File: emacs  Node: Tab Stops, Prev: Indentation Commands, Up: Indentation, Next: Just Spaces
+
+Tab Stops
+=========
+
+  For typing in tables, you can use Text mode's definition of TAB,
+`tab-to-tab-stop'.  This command inserts indentation before point,
+enough to reach the next tab stop column.  If you are not in Text mode,
+this function can be found on `M-i' anyway.
+
+  The tab stops used by `M-i' can be set arbitrarily by the user.
+They are stored in a variable called `tab-stop-list', as a list of
+column-numbers in increasing order.
+
+  The convenient way to set the tab stops is using `M-x edit-tab-stops',
+which creates and selects a buffer containing a description of the tab stop
+settings.  You can edit this buffer to specify different tab stops, and
+then type `C-c C-c' to make those new tab stops take effect.  In the
+tab stop buffer, `C-c C-c' runs the function
+`edit-tab-stops-note-changes' rather than its usual definition
+`save-buffer'.  `edit-tab-stops' records which buffer was current
+when you invoked it, and stores the tab stops back in that buffer; normally
+all buffers share the same tab stops and changing them in one buffer
+affects all, but if you happen to make `tab-stop-list' local in one
+buffer then `edit-tab-stops' in that buffer will edit the local
+settings.
+
+  Here is what the text representing the tab stops looks like for ordinary
+tab stops every eight columns.
+
+             :       :       :       :       :       :
+     0         1         2         3         4        
+     0123456789012345678901234567890123456789012345678
+     To install changes, type C-c C-c
+
+  The first line contains a colon at each tab stop.  The remaining lines
+are present just to help you see where the colons are and know what to do.
+
+  Note that the tab stops that control `tab-to-tab-stop' have nothing
+to do with displaying tab characters in the buffer.  *Note Display Vars::,
+for more information on that.
+
+

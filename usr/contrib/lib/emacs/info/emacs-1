@@ -1,0 +1,1139 @@
+Info file emacs, produced by texinfo-format-buffer   -*-Text-*-
+from file emacs.tex
+
+This file documents the GNU Emacs editor.
+
+Copyright (C) 1985, 1986 Richard M. Stallman.
+
+Permission is granted to make and distribute verbatim copies of
+this manual provided the copyright notice and this permission notice
+are preserved on all copies.
+
+Permission is granted to copy and distribute modified versions of this
+manual under the conditions for verbatim copying, provided also that the
+sections entitled "The GNU Manifesto", "Distribution" and "GNU Emacs
+General Public License" are included exactly as in the original, and
+provided that the entire resulting derived work is distributed under the
+terms of a permission notice identical to this one.
+
+Permission is granted to copy and distribute translations of this manual
+into another language, under the above conditions for modified versions,
+except that the sections entitled "The GNU Manifesto", "Distribution"
+and "GNU Emacs General Public License" may be included in a translation
+approved by the author instead of in the original English.
+
+
+File: emacs  Node: Top, Up: (DIR), Next: Distrib
+
+The Emacs Editor
+****************
+
+Emacs is the extensible, customizable, self-documenting real-time
+display editor.  This Info file describes how to edit with Emacs
+and some of how to customize it, but not how to extend it.
+
+* Menu:
+
+* Distrib::     How to get the latest Emacs distribution.
+* License::     The GNU Emacs General Public License gives you permission
+		to redistribute GNU Emacs on certain terms; and also
+		explains that there is no warranty.
+* Intro::       An introduction to Emacs concepts.
+* Glossary::    The glossary.
+* Manifesto::   What's GNU?  Gnu's Not Unix!
+
+Indexes, nodes containing large menus
+* Key Index::      An item for each standard Emacs key sequence.
+* Command Index::  An item for each command name.
+* Variable Index:: An item for each documented variable.
+* Concept Index::  An item for each concept.
+
+Important General Concepts
+* Screen::      How to interpret what you see on the screen.
+* Characters::  Emacs's character sets for file contents and for keyboard.
+* Keys::        Key sequences: what you type to request one editing action.
+* Commands::    Commands: named functions run by key sequences to do editing.
+* Entering Emacs::    Starting Emacs from the shell.
+* Command Switches::  Hairy startup options.
+* Exiting::     Stopping or killing Emacs.
+* Basic::       The most basic editing commands.
+* Undo::        Undoing recently made changes in the text.
+* Minibuffer::  Entering arguments that are prompted for.
+* M-x::         Invoking commands by their names.
+* Help::        Commands for asking Emacs about its commands.
+
+Important Text-Changing Commands
+* Mark::        The mark: how to delimit a "region" of text.
+* Killing::     Killing text.
+* Yanking::     Recovering killed text.  Moving text.
+* Accumulating Text::
+                Other ways of copying text.
+* Rectangles::  Operating on the text inside a rectangle on the screen.
+* Registers::   Saving a text string or a location in the buffer.
+* Display::     Controlling what text is displayed.
+* Search::      Finding or replacing occurrences of a string.
+* Fixit::       Commands especially useful for fixing typos.
+
+Larger Units of Text
+* Files::       All about handling files.
+* Buffers::     Multiple buffers; editing several files at once.
+* Windows::     Viewing two pieces of text at once.
+
+Advanced Features
+* Major Modes:: Text mode vs. Lisp mode vs. C mode ...
+* Indentation:: Editing the white space at the beginnings of lines.
+* Text::        Commands and modes for editing English.
+* Programs::    Commands and modes for editing programs.
+* Running::     Compiling, running and debugging programs.
+* Abbrevs::     How to define text abbreviations to reduce
+                 the number of characters you must type.
+* Picture::     Editing pictures made up of characters
+                 using the quarter-plane screen model.
+* Sending Mail::Sending mail in Emacs.
+* Rmail::       Reading mail in Emacs.
+* Recursive Edit::
+                A command can allow you to do editing
+                 "within the command".  This is called a
+                 `recursive editing level'.
+* Narrowing::   Restricting display and editing to a portion
+                 of the buffer.
+* Sorting::	Sorting lines, paragraphs or pages within Emacs.
+* Shell::       Executing shell commands from Emacs.
+* Hardcopy::	Printing buffers or regions.
+* Dissociated Press::  Dissociating text for fun.
+* Amusements::         Various games and hacks.
+* Emulation::	       Emulating some other editors with Emacs.
+* Customization::      Modifying the behavior of Emacs.
+
+Recovery from Problems.
+* Quitting::    Quitting and aborting.
+* Lossage::     What to do if Emacs is hung or malfunctioning.
+* Bugs::        How and when to report a bug.
+
+Here are some other nodes which are really inferiors of the ones
+already listed, mentioned here so you can get to them in one step:
+
+Subnodes of Screen
+* Point::	The place in the text where editing commands operate.
+* Echo Area::   Short messages appear at the bottom of the screen.
+* Mode Line::	Interpreting the mode line.
+
+Subnodes of Basic
+* Blank Lines:: Commands to make or delete blank lines.
+* Continuation Lines:: Lines too wide for the screen.
+* Position Info::      What page, line, row, or column is point on?
+* Arguments::          Giving numeric arguments to commands.
+
+Subnodes of Minibuffer
+* Minibuffer File::    Entering file names with the minibuffer.
+* Minibuffer Edit::    How to edit in the minibuffer.
+* Completion::  An abbreviation facility for minibuffer input.
+* Repetition::  Re-executing previous commands that used the minibuffer.
+
+Subnodes of Mark
+* Setting Mark::       Commands to set the mark.
+* Using Region::       Summary of ways to operate on contents of the region.
+* Marking Objects::    Commands to put region around textual units.
+* Mark Ring::          Previous mark positions saved so you can go back there.
+
+Subnodes of Yanking
+* Kill Ring::          Where killed text is stored.  Basic yanking.
+* Appending Kills::    Several kills in a row all yank together.
+* Earlier Kills::      Yanking something killed some time ago.
+
+Subnodes of Registers
+* RegPos::             Saving positions in registers.
+* RegText::            Saving text in registers.
+* RegRect::            Saving rectangles in registers.
+
+Subnodes of Display
+* Scrolling::	           Moving text up and down in a window.
+* Horizontal Scrolling::   Moving text left and right in a window.
+* Selective Display::      Hiding lines with lots of indentation.
+* Display Vars::           Information on variables for customizing display.
+
+Subnodes of Search
+* Incremental Search::     Search happens as you type the string.
+* Nonincremental Search::  Specify entire string and then search.
+* Word Search:: 	   Search for sequence of words.
+* Regexp Search::	   Search for match for a regexp.
+* Regexps::     	   Syntax of regular expressions.
+* Search Case::		   To ignore case while searching, or not.
+* Replace::     	   Search, and replace some or all matches.
+* Unconditional Replace::  Everything about replacement except for querying.
+* Query Replace::          How to use querying.
+* Other Repeating Search:: Operating on all matches for some regexp.
+
+Subnodes of Fixit
+* Kill Errors:: Commands to kill a batch of recently entered text.
+* Transpose::   Exchanging two characters, words, lines, lists...
+* Fixing Case:: Correcting case of last word entered.
+* Spelling::    Apply spelling checker to a word, or a whole file.
+
+Subnodes of Files
+* File Names::  How to type and edit file name arguments.
+* Visiting::    Visiting a file prepares Emacs to edit the file.
+* Saving::      Saving makes your changes permanent.
+* Backup::      How Emacs saves the old version of your file.
+* Interlocking::How Emacs protects against simultaneous editing
+                 of one file by two users.
+* Reverting::   Reverting cancels all the changes not saved.
+* Auto Save::   Auto Save periodically protects against loss of data.
+* ListDir::     Listing the contents of a file directory.
+* Dired::       "Editing" a directory to delete, rename, etc.
+                 the files in it.
+* Misc File Ops:: Other things you can do on files.
+
+Subnodes of Buffers
+* Select Buffer::   Creating a new buffer or reselecting an old one.
+* List Buffers::    Getting a list of buffers that exist.
+* Misc Buffer::     Renaming; changing read-only status.
+* Kill Buffer::     Killing buffers you no longer need.
+* Several Buffers:: How to go through the list of all buffers
+                     and operate variously on several of them.
+
+Subnodes of Windows
+* Basic Window::    Introduction to Emacs windows.
+* Split Window::    New windows are made by splitting existing windows.
+* Other Window::    Moving to another window or doing something to it.
+* Pop Up Window::   Finding a file or buffer in another window.
+* Change Window::   Deleting windows and changing their sizes.
+
+Subnodes of Indentation
+* Indentation Commands:: Various commands and techniques for indentation.
+* Tab Stops::   You can set arbitrary "tab stops" and then
+                 indent to the next tab stop when you want to.
+* Just Spaces:: You can request indentation using just spaces.
+
+Subnodes of Text
+* Text Mode::   The major mode for editing text files.
+* Nroff Mode::  The major mode for editing input to the formatter nroff.
+* TeX Mode::    The major mode for editing input to the formatter TeX.
+* Outline Mode::The major mode for editing outlines.
+* Words::       Moving over and killing words.
+* Sentences::   Moving over and killing sentences.
+* Paragraphs::	Moving over paragraphs.
+* Pages::	Moving over pages.
+* Filling::     Filling or justifying text
+* Case::        Changing the case of text
+
+Subnodes of Programs
+* Program Modes::       Major modes for editing programs.
+* Lists::       Expressions with balanced parentheses.
+                 There are editing commands to operate on them.
+* Defuns::      Each program is made up of separate functions.
+                 There are editing commands to operate on them.
+* Grinding::    Adjusting indentation to show the nesting.
+* Matching::    Insertion of a close-delimiter flashes matching open.
+* Comments::    Inserting, illing and aligning comments.
+* Balanced Editing::    Inserting two matching parentheses at once, etc.
+* Lisp Completion::     Completion on symbol names in Lisp code.
+* Documentation::       Getting documentation of functions you plan to call.
+* Change Log::  Maintaining a change history for your program.
+* Tags::        Go direct to any function in your program in one
+                 command.  Tags remembers which file it is in.
+* Fortran::	Fortran mode and its special features.
+
+Subnodes of Running
+* Compilation::       Compiling programs in languages other than Lisp
+                       (C, Pascal, etc.)
+* Lisp Modes::        Various modes for editing Lisp programs, with
+                       different facilities for running the Lisp programs.
+* Lisp Libraries::    Creating Lisp programs to run in Emacs.
+* Lisp Interaction::  Executing Lisp in an Emacs buffer.
+* Lisp Eval::         Executing a single Lisp expression in Emacs.
+* Lisp Debug::        Debugging Lisp programs running in Emacs.
+* External Lisp::     Communicating through Emacs with a separate Lisp.
+
+Subnodes of Abbrevs
+* Defining Abbrevs::  Defining an abbrev, so it will expand when typed.
+* Expanding Abbrevs:: Controlling expansion: prefixes, canceling expansion.
+* Editing Abbrevs::   Viewing or editing the entire list of defined abbrevs.
+* Saving Abbrevs::    Saving the entire list of abbrevs for another session.
+* Dynamic Abbrevs::   Abbreviations for words already in the buffer.
+
+Subnodes of Picture
+* Basic Picture::     Basic concepts and simple commands of Picture Mode.
+* Insert in Picture:: Controlling direction of cursor motion
+                       after "self-inserting" characters.
+* Tabs in Picture::   Various features for tab stops and indentation.
+* Rectangles in Picture:: Clearing and superimposing rectangles.
+
+Subnodes of Sending Mail
+* Mail Format::       Format of the mail being composed.
+* Mail Headers::      Details of allowed mail header fields.
+* Mail Mode::         Special commands for editing mail being composed.
+
+Subnodes of Rmail
+* Rmail Scrolling::   Scrolling through a message.
+* Rmail Motion::      Moving to another message.
+* Rmail Deletion::    Deleting and expunging messages.
+* Rmail Inbox::       How mail gets into the Rmail file.
+* Rmail Files::       Using multiple Rmail files.
+* Rmail Output::      Copying message out to files.
+* Rmail Labels::      Classifying messages by labeling them.
+* Rmail Summary::     Summaries show brief info on many messages.
+* Rmail Reply::       Sending replies to messages you are viewing.
+* Rmail Editing::     Editing message text and headers in Rmail.
+* Rmail Digest::      Extracting the messages from a digest message.
+
+Subnodes of Shell
+* Single Shell::      Commands to run one shell command and return.
+* Interactive Shell:: Permanent shell taking input via Emacs.
+* Shell Mode::        Special Emacs commands used with permanent shell.
+
+Subnodes of Customization
+* Minor Modes::       Each minor mode is one feature you can turn on
+                       independently of any others.
+* Variables::         Many Emacs commands examine Emacs variables
+                       to decide what to do; by setting variables,
+                       you can control their functioning.
+* Examining::         Examining or setting one variable's value.
+* Edit Options::      Examining or editing list of all variables' values.
+* Locals::            Per-buffer values of variables.
+* File Variables::    How files can specify variable values.
+* Keyboard Macros::   A keyboard macro records a sequence of keystrokes
+                       to be replayed with a single command.
+* Key Bindings::      The keymaps say what command each key runs.
+                       By changing them, you can "redefine keys".
+* Keymaps::           Definition of the keymap data structure.
+* Rebinding::         How to redefine one key's meaning conveniently.
+* Disabling::         Disabling a command means confirmation is required
+                       before it can be executed.  This is done to protect
+                       beginners from surprises.
+* Syntax::            The syntax table controls how words and expressions
+                       are parsed.
+* Init File::         How to write common customizations in the `.emacs' file.
+
+Subnodes of Lossage (and recovery)
+* Stuck Recursive::   `[...]' in mode line around the parentheses.
+* Screen Garbled::    Garbage on the screen.
+* Text Garbled::      Garbage in the text.
+* Unasked-for Search::Spontaneous entry to incremental search.
+* Emergency Escape::  Emergency escape---
+                       What to do if Emacs stops responding.
+* Total Frustration:: When you are at your wits' end.
+
+
+
+File: emacs  Node: Distrib, Prev: Top, Up: Top, Next: License
+
+Distribution
+************
+
+GNU Emacs is "free"; this means that everyone is free to use it and
+free to redistribute it on a free basis.  GNU Emacs is not in the public
+domain; it is copyrighted and there are restrictions on its distribution,
+but these restrictions are designed to permit everything that a good
+cooperating citizen would want to do.  What is not allowed is to try to
+prevent others from further sharing any version of GNU Emacs that they
+might get from you.  The precise conditions are found in the GNU Emacs
+General Public License that comes with Emacs and also appears following
+this section.
+
+The easiest way to get a copy of GNU Emacs is from someone else who has it.
+You need not ask for permission to do so, or tell any one else; just copy
+it.
+
+If you have access to the Internet, you can get the latest distribution
+version of GNU Emacs from host `prep.ai.mit.edu' using anonymous
+login.  See the file `/u2/emacs/GETTING.GNU.SOFTWARE' on that host
+to find out about your options for copying and which files to use.
+
+You may also receive GNU Emacs when you buy a computer.  Computer
+manufacturers are free to distribute copies on the same terms that apply to
+everyone else.  These terms require them to give you the full sources,
+including whatever changes they may have made, and to permit you to
+redistribute the GNU Emacs received from them under the usual terms of the
+General Public License.  In other words, the program must be free for you
+when you get it, not just free for the manufacturer.
+
+If you cannot get a copy in any of those ways, you can order one from the
+Free Software Foundation.  Though Emacs itself is free, our distribution
+service is not.  An order form is included at the end of manuals printed by
+the Foundation.  It is also included in the file `etc/DISTRIB' in the
+Emacs distribution.  For further information, write to
+
+     Free Software Foundation
+     675 Mass Ave
+     Cambridge, MA 02139
+     USA
+
+The income from distribution fees goes to support the foundation's
+purpose: the development of more free software to distribute just like
+GNU Emacs.
+
+If you find GNU Emacs useful, please send a donation to the Free
+Software Foundation.  This will help support development of the rest of the
+GNU system, and other useful software beyond that.  Your donation is tax
+deductible.
+
+
+File: emacs  Node: License, Prev: Distrib, Up: Top, Next: Intro
+
+GNU Emacs General Public License
+********************************
+                          (Clarified 11 Feb 1988)
+
+  The license agreements of most software companies keep you at the
+mercy of those companies.  By contrast, our general public license is
+intended to give everyone the right to share GNU Emacs.  To make
+sure that you get the rights we want you to have, we need to make
+restrictions that forbid anyone to deny you these rights or to ask you
+to surrender the rights.  Hence this license agreement.
+
+  Specifically, we want to make sure that you have the right to give
+away copies of Emacs, that you receive source code or else can get it
+if you want it, that you can change Emacs or use pieces of it in new
+free programs, and that you know you can do these things.
+
+  To make sure that everyone has such rights, we have to forbid you to
+deprive anyone else of these rights.  For example, if you distribute
+copies of Emacs, you must give the recipients all the rights that you
+have.  You must make sure that they, too, receive or can get the
+source code.  And you must tell them their rights.
+
+  Also, for our own protection, we must make certain that everyone
+finds out that there is no warranty for GNU Emacs.  If Emacs is
+modified by someone else and passed on, we want its recipients to know
+that what they have is not what we distributed, so that any problems
+introduced by others will not reflect on our reputation.
+
+  Therefore we (Richard Stallman and the Free Software Foundation, Inc.)
+make the following terms which say what you must do to be allowed to
+distribute or change GNU Emacs.
+
+
+Copying Policies
+================
+
+  1. You may copy and distribute verbatim copies of GNU Emacs source code as you
+     receive it, in any medium, provided that you conspicuously and
+     appropriately publish on each file a valid copyright notice "Copyright
+     (C) 1988 Free Software Foundation, Inc." (or with whatever year
+     is appropriate); keep intact the notices on all files that
+     refer to this License Agreement and to the absence of any warranty; and
+     give any other recipients of the GNU Emacs program a copy of this License
+     Agreement along with the program.  You may charge a distribution fee
+     for the physical act of transferring a copy.
+     
+  2. You may modify your copy or copies of GNU Emacs source code or
+     any portion of it, and copy and distribute such modifications under
+     the terms of Paragraph 1 above, provided that you also do the following:
+     
+        * cause the modified files to carry prominent notices stating
+          who last changed such files and the date of any change; and
+          
+        * cause the whole of any work that you distribute or publish, that
+          in whole or in part contains or is a derivative of GNU Emacs or any
+          part thereof, to be licensed at no charge to all third parties on
+          terms identical to those contained in this License Agreement
+          (except that you may choose to grant more extensive warranty
+          protection to some or all third parties, at your option).
+          
+        * if the modified program serves as a debugger, cause it, when
+          started running in the simplest and usual way, to print an
+          announcement including a valid copyright notice "Copyright
+          (C) 1988 Free Software Foundation, Inc." (or with the
+          year that is appropriate), saying that there is no warranty (or
+          else, saying that you provide a warranty) and that users may
+          redistribute the program under these conditions, and telling the
+          user how to view a copy of this License Agreement.
+          
+        * You may charge a distribution fee for the physical act of
+          transferring a copy, and you may at your option offer warranty
+          protection in exchange for a fee.
+     
+     Mere aggregation of another unrelated program with this program (or its
+     derivative) on a volume of a storage or distribution medium does not bring
+     the other program under the scope of these terms.
+     
+  3. You may copy and distribute GNU Emacs (or a portion or derivative of it,
+     under Paragraph 2) in object code or executable form under the terms
+     of Paragraphs 1 and 2 above provided that you also do one of the
+     following:
+     
+        * accompany it with the complete corresponding machine-readable
+          source code, which must be distributed under the terms of
+          Paragraphs 1 and 2 above; or,
+          
+        * accompany it with a written offer, valid for at least three
+          years, to give any third party free (except for a nominal
+          shipping charge) a complete machine-readable copy of the
+          corresponding source code, to be distributed under the terms of
+          Paragraphs 1 and 2 above; or,
+          
+        * accompany it with the information you received as to where the
+          corresponding source code may be obtained.  (This alternative is
+          allowed only for noncommercial distribution and only if you
+          received the program in object code or executable form alone.)
+     
+     For an executable file, complete source code means all the source code
+     for all modules it contains; but, as a special exception, it need not
+     include source code for modules which are standard libraries that
+     accompany the operating system on which the executable file runs.
+     
+  4. You may not copy, sublicense, distribute or transfer GNU Emacs except
+     as expressly provided under this License Agreement.  Any attempt
+     otherwise to copy, sublicense, distribute or transfer GNU Emacs is
+     void and your rights to use GNU Emacs under this License agreement
+     shall be automatically terminated.  However, parties who have received
+     computer software programs from you with this License Agreement will
+     not have their licenses terminated so long as such parties remain in
+     full compliance.
+     
+  5. If you wish to incorporate parts of GNU Emacs into other free programs
+     whose distribution conditions are different, write to the Free Software
+     Foundation.  We have not yet worked out a simple rule that can be stated
+     here, but we will often permit this.  We will be guided by the two goals of
+     preserving the free status of all derivatives of our free software and of
+     promoting the sharing and reuse of software.
+
+Your comments and suggestions about our licensing policies and our
+software are welcome!  Please contact the Free Software Foundation, Inc.,
+675 Mass Ave, Cambridge, MA 02139.
+
+
+NO WARRANTY
+===========
+
+  BECAUSE GNU EMACS IS LICENSED FREE OF CHARGE, WE PROVIDE ABSOLUTELY
+NO WARRANTY, TO THE EXTENT PERMITTED BY APPLICABLE STATE LAW.  EXCEPT
+WHEN OTHERWISE STATED IN WRITING, FREE SOFTWARE FOUNDATION, INC,
+RICHARD M. STALLMAN AND/OR OTHER PARTIES PROVIDE GNU EMACS "AS IS"
+WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING,
+BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS FOR A PARTICULAR PURPOSE.  THE ENTIRE RISK AS TO THE QUALITY
+AND PERFORMANCE OF THE PROGRAM IS WITH YOU.  SHOULD THE GNU EMACS
+PROGRAM PROVE DEFECTIVE, YOU ASSUME THE COST OF ALL NECESSARY
+SERVICING, REPAIR OR CORRECTION.
+
+ IN NO EVENT UNLESS REQUIRED BY APPLICABLE LAW WILL FREE SOFTWARE
+FOUNDATION, INC., RICHARD M. STALLMAN, AND/OR ANY OTHER PARTY WHO MAY
+MODIFY AND REDISTRIBUTE GNU EMACS AS PERMITTED ABOVE, BE LIABLE TO YOU
+FOR DAMAGES, INCLUDING ANY LOST PROFITS, LOST MONIES, OR OTHER
+SPECIAL, INCIDENTAL OR CONSEQUENTIAL DAMAGES ARISING OUT OF THE USE OR
+INABILITY TO USE (INCLUDING BUT NOT LIMITED TO LOSS OF DATA OR DATA
+BEING RENDERED INACCURATE OR LOSSES SUSTAINED BY THIRD PARTIES OR A
+FAILURE OF THE PROGRAM TO OPERATE WITH PROGRAMS NOT DISTRIBUTED BY
+FREE SOFTWARE FOUNDATION, INC.) THE PROGRAM, EVEN IF YOU HAVE BEEN
+ADVISED OF THE POSSIBILITY OF SUCH DAMAGES, OR FOR ANY CLAIM BY ANY
+OTHER PARTY.
+
+
+File: emacs  Node: Intro, Prev: License, Up: Top, Next: Glossary
+
+Introduction
+************
+
+  You are reading about GNU Emacs, the GNU incarnation of the advanced,
+self-documenting, customizable, extensible real-time display editor Emacs.
+(The `G' in `GNU' is not silent.)
+
+  We say that Emacs is a "display" editor because normally the text
+being edited is visible on the screen and is updated automatically as you
+type your commands.  *Note Display: Screen.
+
+  We call it a "real-time" editor because the display is updated very
+frequently, usually after each character or pair of characters you
+type.  This minimizes the amount of information you must keep in your
+head as you edit.  *Note Real-time: Basic.
+
+  We call Emacs advanced because it provides facilities that go beyond
+simple insertion and deletion: filling of text; automatic indentation of
+programs; viewing two or more files at once; and dealing in terms of
+characters, words, lines, sentences, paragraphs, and pages, as well as
+expressions and comments in several different programming languages.  It is
+much easier to type one command meaning "go to the end of the paragraph"
+than to find that spot with simple cursor keys.
+
+  "Self-documenting" means that at any time you can type a special
+character, `Control-h', to find out what your options are.  You can
+also use it to find out what any command does, or to find all the commands
+that pertain to a topic.  *Note Help::.
+
+  "Customizable" means that you can change the definitions of Emacs
+commands in little ways.  For example, if you use a programming language in
+which comments start with `<**' and end with `**>', you can tell
+the Emacs comment manipulation commands to use those strings
+(*Note Comments::).  Another sort of customization is rearrangement of the
+command set.  For example, if you prefer the four basic cursor motion
+commands (up, down, left and right) on keys in a diamond pattern on the
+keyboard, you can have it.  *Note Customization::.
+
+  "Extensible" means that you can go beyond simple customization and
+write entirely new commands, programs in the Lisp language to be run by
+Emacs's own Lisp interpreter.  Emacs is an "on-line extensible" system,
+which means that it is divided into many functions that call each other,
+any of which can be redefined in the middle of an editing session.  Any
+part of Emacs can be replaced without making a separate copy of all of
+Emacs.  Most of the editing commands of Emacs are written in Lisp already;
+the few exceptions could have been written in Lisp but are written in C for
+efficiency.  Although only a programmer can write an extension, anybody can
+use it afterward.
+
+
+File: emacs  Node: Screen, Prev: Concept Index, Up: Top, Next: Characters
+
+
+The Organization of the Screen
+******************************
+
+  Emacs divides the screen into several areas, each of which contains
+its own sorts of information.  The biggest area, of course, is the one
+in which you usually see the text you are editing.
+
+  When you are using Emacs, the screen is divided into a number of
+"windows".  Initially there is one text window occupying all but the
+last line, plus the special "echo area" or "minibuffer window" in
+the last line.  The text window can be subdivided horizontally or
+vertically into multiple text windows, each of which can be used for a
+different file (*Note Windows::).  The window that the cursor is in is the
+"selected window", in which editing takes place.  The other windows are
+just for reference unless you select one of them.
+
+  Each text window's last line is a "mode line" which describes what is
+going on in that window.  It is in inverse video if the terminal supports
+that, and contains text that starts like `-----Emacs: SOMETHING'.  Its
+purpose is to indicate what buffer is being displayed above it in the
+window; what major and minor modes are in use; and whether the buffer's
+text has been changed.
+
+* Menu:
+
+* Point::	The place in the text where editing commands operate.
+* Echo Area::   Short messages appear at the bottom of the screen.
+* Mode Line::	Interpreting the mode line.
+
+
+File: emacs  Node: Point, Prev: Screen, Up: Screen, Next: Echo Area
+
+Point
+=====
+
+  When Emacs is running, the terminal's cursor shows the location at
+which editing commands will take effect.  This location is called
+"point".  Other commands move point through the text, so that you
+can edit at different places in it.
+
+  While the cursor appears to point AT a character, point should be
+thought of as BETWEEN two characters; it points BEFORE the character
+that the cursor appears on top of.  Sometimes people speak of "the
+cursor" when they mean "point", or speak of commands that move point as
+"cursor motion" commands.
+
+  Terminals have only one cursor, and when output is in progress it must
+appear where the typing is being done.  This does not mean that point is
+moving.  It is only that Emacs has no way to show you the location of point
+except when the terminal is idle.
+
+  If you are editing several files in Emacs, each file has its own point
+location.  A file that is not being displayed remembers where point is so
+that it can be seen when you look at that file again.
+
+  When there are multiple text windows, each window has its own point
+location.  The cursor shows the location of point in the selected window.
+This also is how you can tell which window is selected.  If the same buffer
+appears in more than one window, point can be moved in each window
+independently.
+
+  The term `point' comes from the character `.', which was the
+command in TECO (the language in which the original Emacs was written)
+for accessing the value now called `point'.
+
+
+File: emacs  Node: Echo Area, Prev: Point, Up: Screen, Next: Mode Line
+
+The Echo Area
+=============
+
+  The line at the bottom of the screen (below the mode line) is the
+"echo area".  It is used to display small amounts of text for several
+purposes.
+
+  "Echoing" means printing out the characters that you type.  Emacs
+never echoes single-character commands, and multi-character commands are
+echoed only if you pause while typing them.  As soon as you pause for more
+than a second in the middle of a command, all the characters of the command
+so far are echoed.  This is intended to "prompt" you for the rest of
+the command.  Once echoing has started, the rest of the command is echoed
+immediately when you type it.  This behavior is designed to give confident
+users fast response, while giving hesitant users maximum feedback.  You
+can change this behavior by setting a variable (*Note Display Vars::).
+
+  If a command cannot be executed, it may print an "error message" in
+the echo area.  Error messages are accompanied by a beep or by flashing the
+screen.  Also, any input you have typed ahead is thrown away when an error
+happens.
+
+  Some commands print informative messages in the echo area.  These
+messages look much like error messages, but they are not announced with a
+beep and do not throw away input.  Sometimes the message tells you what the
+command has done, when this is not obvious from looking at the text being
+edited.  Sometimes the sole purpose of a command is to print a message
+giving you specific information.  For example, the command `C-x =' is
+used to print a message describing the character position of point in the
+text and its current column in the window.  Commands that take a long time
+often display messages ending in `...' while they are working, and
+add `done' at the end when they are finished.
+
+  The echo area is also used to display the "minibuffer", a window that
+is used for reading arguments to commands, such as the name of a file to be
+edited.  When the minibuffer is in use, the echo area begins with a prompt
+string that usually ends with a colon; also, the cursor appears in that line
+because it is the selected window.  You can always get out of the
+minibuffer by typing `C-g'.  *Note Minibuffer::.
+
+
+File: emacs  Node: Mode Line, Prev: Echo Area, Up: Screen
+
+The Mode Line
+=============
+
+  Each text window's last line is a "mode line" which describes what is
+going on in that window.  When there is only one text window, the mode line
+appears right above the echo area.  The mode line is in inverse video if
+the terminal supports that, starts and ends with dashes, and contains text
+like `Emacs: SOMETHING'.
+
+  If a mode line has something else in place of `Emacs: SOMETHING',
+then the window above it is in a special subsystem such as Dired.  The mode
+line then indicates the status of the subsystem.
+
+  Normally, the mode line has the following appearance:
+
+     --CH-Emacs: BUF      (MAJOR MINOR)----POS------
+
+This gives information about the buffer being displayed in the window: the
+buffer's name, what major and minor modes are in use, whether the buffer's
+text has been changed, and how far down the buffer you are currently
+looking.
+
+  CH contains two stars `**' if the text in the buffer has been
+edited (the buffer is "modified"), or `--' if the buffer has not been
+edited.  Exception: for a read-only buffer, it is `%%'.
+
+  BUF is the name of the window's chosen "buffer".  The chosen buffer
+in the selected window (the window that the cursor is in) is also Emacs's
+selected buffer, the one that editing takes place in.  When we speak of
+what some command does to "the buffer", we are talking about the
+currently selected buffer.  *Note Buffers::.
+
+  POS tells you whether there is additional text above the top of the
+screen, or below the bottom.  If your file is small and it is all on the
+screen, POS is `All'.  Otherwise, it is `Top' if you are looking at the
+beginning of the file, `Bot' if you are looking at the end of the file, or
+`NN%', where NN is the percentage of the file above the top of the screen.
+
+  MAJOR is the name of the "major mode" in effect in the buffer.  At any
+time, each buffer is in one and only one of the possible major modes.  The
+major modes available include Fundamental mode (the least specialized),
+Text mode, Lisp mode, and C mode.  *Note Major Modes::, for details of how
+the modes differ and how to select one.
+
+  MINOR is a list of some of the "minor modes" that are turned on
+at the moment in the window's chosen buffer.  `Fill' means that Auto
+Fill mode is on.  `Abbrev' means that Word Abbrev mode is on.
+`Ovwrt' means that Overwrite mode is on.  *Note Minor Modes::, for more
+information.  `Narrow' means that the buffer being displayed has
+editing restricted to only a portion of its text.  This is not really a
+minor mode, but is like one.  *Note Narrowing::.  `Def' means that a
+keyboard macro is being defined.  *Note Keyboard Macros::.
+
+  Some buffers display additional information after the minor modes.  For
+example, Rmail buffers display the current message number and the total
+number of messages.  Compilation buffers and Shell mode display the status
+of the subprocess.
+
+  In addition, if Emacs is currently inside a recursive editing level,
+square brackets (`[...]') appear around the parentheses that surround the
+modes.  If Emacs is in one recursive editing level within another, double
+square brackets appear, and so on.  Since this information pertains to
+Emacs in general and not to any one buffer, the square brackets appear in
+every mode line on the screen or not in any of them.  *Note Recursive
+Edit::.
+
+  Emacs can optionally display the time and system load in all mode lines.
+To enable this feature, type `M-x display-time'.  The information added
+to the mode line usually appears after the file name, before the mode names
+and their parentheses.  It looks like this:
+
+     HH:MMpm L.LL [D]
+
+(Some fields may be missing if your operating system cannot support them.)
+HH and MM are the hour and minute, followed always by `am'
+or `pm'.  L.LL is the average number of running processes in the
+whole system recently.  D is an approximate index of the ratio of
+disk activity to cpu activity for all users.
+
+The word `Mail' appears after the load level if there is mail for
+you that you have not read yet.
+
+  Customization note: the variable `mode-line-inverse-video' controls
+whether the mode line is displayed in inverse video (assuming the terminal
+supports it); `nil' means no inverse video.  The default is `t'.
+
+
+
+File: emacs  Node: Characters, Prev: Screen, Up: Top, Next: Keys
+
+The Emacs Character Set
+=======================
+
+  GNU Emacs uses the ASCII character set, which defines 128 different
+character codes.  Some of these codes are assigned graphic symbols such as
+`a' and `='; the rest are control characters, such as `Control-a' (also
+called `C-a' for short).  `C-a' gets its name from the fact that you type
+it by holding down the CTRL key and then pressing `a'.  There is no
+distinction between `C-a' and `C-A'; they are the same character.
+
+  Some control characters have special names, and special keys you can type
+them with: RET, TAB, LFD, DEL and ESC.  The space character is usually
+referred to below as SPC, even though strictly speaking it is a graphic
+character whose graphic happens to be blank.
+
+  Emacs extends the 7-bit ASCII code to an 8-bit code by adding an extra
+bit to each character.  This makes 256 possible command characters.  The
+additional bit is called Meta.  Any ASCII character can be made Meta;
+examples of Meta characters include `Meta-a' (`M-a', for short), `M-A' (not
+the same character as `M-a', but those two characters normally have the
+same meaning in Emacs), `M-RET', and `M-C-a'.  For traditional reasons,
+`M-C-a' is usually called `C-M-a'; logically speaking, the order in which
+the modifier keys CTRL and META are mentioned does not matter.
+
+  Some terminals have a META key, and allow you to type Meta characters by
+holding this key down.  Thus, `Meta-a' is typed by holding down META and
+pressing `a'.  The META key works much like the SHIFT key.  Such a key is
+not always labeled META, however, as this function is often a special
+option for a key with some other primary purpose.
+
+  If there is no META key, you can still type Meta characters using
+two-character sequences starting with ESC.  Thus, to enter `M-a', you could
+type `ESC a'.  To enter `C-M-a', you would type `ESC C-a'.  ESC is allowed
+on terminals with Meta keys, too, in case you have formed a habit of using
+it.
+
+  Emacs believes the terminal has a META key if the variable
+`meta-flag' is non-`nil'.  Normally this is set automatically
+according to the termcap entry for your terminal type.  However, sometimes
+the termcap entry is wrong, and then it is useful to set this variable
+yourself.  *Note Variables::, for how to do this.
+
+  Emacs buffers also use an 8-bit character set, because bytes have 8 bits,
+but only the ASCII characters are considered meaningful.  ASCII graphic
+characters in Emacs buffers are displayed with their graphics.  LFD
+is the same as a newline character; it is displayed by starting a new line.
+TAB is displayed by moving to the next tab stop column (usually every
+8 columns).  Other control characters are displayed as a caret (`^')
+followed by the non-control version of the character; thus, `C-a' is
+displayed as `^A'.  Non-ASCII characters 128 and up are displayed with
+octal escape sequences; thus, character code 243 (octal), also called
+`M-#' when used as an input character, is displayed as `\243'.
+
+
+File: emacs  Node: Keys, Prev: Characters, Up: Top, Next: Commands
+
+Keys
+====
+
+  A "complete key"---where `key' is short for "key sequence"---is a
+sequence of keystrokes that are understood by Emacs as a unit, as a single
+command (possibly undefined).  Most single characters constitute complete
+keys in the standard Emacs command set; there are also some multi-character
+keys.  Examples of complete keys are `C-a', `X', RET, `C-x C-f' and `C-x 4
+C-f'.
+
+  A "prefix key" is a sequence of keystrokes that are the beginning of
+a complete key, but not a whole one.  Prefix keys and complete keys are
+collectively called "keys".
+
+  A prefix key is the beginning of a series of longer sequences that are
+valid keys; adding any single character to the end of the prefix gives a
+valid key, which could be defined as an Emacs command, or could be a prefix
+itself.  For example, `C-x' is standardly defined as a prefix, so
+`C-x' and the next input character combine to make a two-character key.
+There are 256 different two-character keys starting with `C-x', one for
+each possible second character.  Many of these two-character keys starting
+with `C-x' are standardly defined as Emacs commands.  Notable examples
+include `C-x C-f' and `C-x s' (*Note Files::).
+
+  Adding one character to a prefix key does not have to form a complete
+key.  It could make another, longer prefix.  For example, `C-x 4' is itself
+a prefix that leads to 256 different three-character keys, including `C-x 4
+f', `C-x 4 b' and so on.  It would be possible to define one of those
+three-character sequences as a prefix, creating a series of four-character
+keys, but we did not define any of them this way.
+
+  By contrast, the two-character sequence `C-f C-k' is not a key, because
+the `C-f' is a complete key in itself.  It's impossible to give `C-f C-k'
+an independent meaning as a command as long as `C-f' retains its meaning.
+`C-f C-k' is two commands.
+
+  All told, the prefix keys in Emacs are `C-c', `C-x', `C-h', `C-x 4', and
+ESC.  But this is not built in; it is just a matter of Emacs's standard key
+bindings.  In customizing Emacs, you could make new prefix keys, or
+eliminate these.  *Note Key Bindings::.
+
+  Whether a sequence is a key can be changed by customization.  For
+example, if you redefine `C-f' as a prefix, `C-f C-k' automatically
+becomes a key (complete, unless you define it too as a prefix).
+Conversely, if you remove the prefix definition of `C-x 4', then
+`C-x 4 f' (or `C-x 4 ANYTHING') is no longer a key.
+
+
+File: emacs  Node: Commands, Prev: Keys, Up: Top, Next: Entering Emacs
+
+Keys and Commands
+=================
+
+  This manual is full of passages that tell you what particular keys do.
+But Emacs does not assign meanings to keys directly.  Instead, Emacs
+assigns meanings to "functions", and then gives keys their meanings by
+"binding" them to functions. 
+
+  A function is a Lisp object that can be executed as a program.  Usually
+it is a Lisp symbol which has been given a function definition; every
+symbol has a name, usually made of a few English words separated by dashes,
+such as `next-line' or `forward-word'.  It also has a
+"definition" which is a Lisp program; this is what makes the function
+do what it does.  Only some functions can be the bindings of keys; these
+are functions whose definitions use `interactive' to specify how to
+call them interactively.  Such functions are called "commands", and
+their names are "command names".  More information on this subject will
+appear in the GNU Emacs Lisp Manual (which is not yet written).
+
+  The bindings between keys and functions are recorded in various tables
+called "keymaps".  *Note Keymaps::.
+
+  When we say that "`C-n' moves down vertically one line" we are glossing
+over a distinction that is irrelevant in ordinary use but is vital in
+understanding how to customize Emacs.  It is the function `next-line' that
+is programmed to move down vertically.  `C-n' has this effect because it is
+bound to that function.  If you rebind `C-n' to the function `forward-word'
+then `C-n' will move forward by words instead.  Rebinding keys is a common
+method of customization.
+
+  In the rest of this manual, we usually ignore this subtlety to keep
+things simple.  To give the customizer the information he needs, we
+state the name of the command which really does the work in parentheses
+after mentioning the key that runs it.  For example, we will say that
+"The command `C-n' (`next-line') moves point vertically down,"
+meaning that `next-line' is a command that moves vertically down
+and `C-n' is a key that is standardly bound to it.
+
+  While we are on the subject of information for customization only, it's a
+good time to tell you about "variables".  Often the description of a
+command will say, "To change this, set the variable `mumble-foo'."
+A variable is a name used to remember a value.  Most of the variables
+documented in this manual exist just to facilitate customization: some
+command or other part of Emacs examines the variable and behaves
+differently accordingly.  Until you are interested in customizing, you can
+ignore the information about variables.  When you are ready to be
+interested, read the basic information on variables, and then the
+information on individual variables will make sense.  *Note Variables::.
+
+
+File: emacs  Node: Entering Emacs, Prev: Commands, Up: Top, Next: Exiting
+
+Entering and Exiting Emacs
+**************************
+
+  The usual way to invoke Emacs is just to type `emacs RET' at
+the shell.  Emacs clears the screen and then displays an initial advisor
+message and copyright notice.  You can begin typing Emacs commands
+immediately afterward.
+
+  Some operating systems insist on discarding all type-ahead when Emacs
+starts up; they give Emacs no way to prevent this.  Therefore, it is
+wise to wait until Emacs clears the screen before typing your first
+editing command.
+
+  Before Emacs reads the first command, you have not had a chance to give a
+command to specify a file to edit.  But Emacs must always have a current
+buffer for editing.  In an attempt to do something useful, Emacs presents a
+buffer named `*scratch*' which is in Lisp Interaction mode; you can
+use it to type Lisp expressions and evaluate them, or you can ignore that
+capability and simply doodle.  (You can specify a different major mode for
+this buffer by setting the variable `initial-major-mode' in your init
+file.  *Note Init File::.)
+
+  It is also possible to specify files to be visited, Lisp files to be
+loaded, and functions to be called, by giving Emacs arguments in the
+shell command line.  *Note Command Switches::.
+
+
+File: emacs  Node: Exiting, Prev: Entering Emacs, Up: Top, Next: Command Switches
+
+Exiting Emacs
+=============
+
+  There are two commands for exiting Emacs because there are two kinds of
+exiting: "suspending" Emacs and "killing" Emacs.  "Suspending" means
+stopping Emacs temporarily and returning control to its superior (usually
+the shell), allowing you to resume editing later in the same Emacs job,
+with the same files, same kill ring, same undo history, and so on.  This is
+the usual way to exit.  "Killing" Emacs means destroying the Emacs job.
+You can run Emacs again later, but you will get a fresh Emacs; there is no
+way to resume the same editing session after it has been killed.
+
+`C-z'     
+     Suspend Emacs (`suspend-emacs').
+`C-x C-c'     
+     Kill Emacs (`save-buffers-kill-emacs').
+
+  To suspend Emacs, type `C-z' (`suspend-emacs').  This takes
+you back to the shell from which you invoked Emacs.  You can resume
+Emacs with the command `%emacs' if you are using the C shell.
+
+  On systems that do not permit programs to be suspended, `C-z' runs an
+inferior shell that communicates directly with the terminal, and Emacs
+waits until you exit the subshell.  The only way on these systems to get
+back to the shell from which Emacs was run (to log out, for example) is to
+kill Emacs.  `C-d' or `exit' are typical commands to exit a
+subshell.
+
+  To kill Emacs, type `C-x C-c' (`save-buffers-kill-emacs').  A
+two-character key is used for this to make it harder to type.  Unless a
+numeric argument is used, this command first offers to save any modified
+buffers.  If you do not save them all, it asks for reconfirmation with
+`yes' before killing Emacs, since any changes not saved before that will be
+lost forever.  Also, if any subprocesses are still running, `C-x C-c'
+asks for confirmation about them, since killing Emacs will kill the
+subprocesses immediately.
+
+  In most programs running on Unix, certain characters may instantly
+suspend or kill the program.  (In Berkeley Unix these characters are
+normally `C-z' and `C-c'.)  This Unix feature is turned off
+while you are in Emacs.  The meanings of `C-z' and `C-x C-c' as
+keys in Emacs were inspired by the standard Berkeley Unix meanings of
+`C-z' and `C-c', but that is their only relationship with
+Unix.  You could customize these keys to do anything (*Note Keymaps::).
+
+
+
+File: emacs  Node: Command Switches, Prev: Exiting, Up: Top, Next: Basic
+
+Command Line Switches and Arguments
+===================================
+
+  
+  GNU Emacs supports command line arguments to request various actions
+when invoking Emacs.  These are for compatibility with other editors and
+for sophisticated activities.  They are not needed for ordinary editing
+with Emacs, so new users can skip this section.
+
+  You may be used to using command line arguments with other editors
+to specify which file to edit.  That's because many other editors are
+designed to be started afresh each time you want to edit.  You
+edit one file and then exit the editor.  The next time you want to edit
+either another file or the same one, you must run the editor again.
+With these editors, it makes sense to use a command line argument
+to say which file to edit.
+
+  The recommended way to use GNU Emacs is to start it only once, just after
+you log in, and do all your editing in the same Emacs process.  Each time
+you want to edit a different file, you visit it with the existing Emacs,
+which eventually comes to have many files in it ready for editing.  Usually
+you do not kill the Emacs until you are about to log out.
+
+  When files are nearly always read by typing commands to an editor that is
+already running, command line arguments for specifying a file when the
+editor is started are seldom needed.
+
+  Emacs accepts command-line arguments that specify files to visit,
+functions to call, and other activities and operating modes.
+
+  The command arguments are processed in the order they appear in the
+command argument list; however, certain arguments (the ones in the second
+table) must be at the front of the list if they are used.
+
+  Here are the arguments allowed:
+
+`FILE'     
+     Visit FILE using `find-file'.  *Note Visiting::.
+     
+`+LINENUM FILE'     
+     Visit FILE using `find-file', then go to line number
+     LINENUM in it.
+     
+`-l FILE'     
+`-load FILE'     
+     Load a file FILE of Lisp code with the function `load'.
+     *Note Lisp Libraries::.
+     
+`-f FUNCTION'     
+`-funcall FUNCTION'     
+     Call Lisp function FUNCTION with no arguments.
+     
+`-i FILE'     
+`-insert FILE'     
+     Insert the contents of FILE into the current buffer.
+     This is like what `M-x insert-buffer' does; *Note Misc File Ops::.
+     
+`-kill'     
+     Exit from Emacs without asking for confirmation.
+
+  The remaining switches are recognized only at the beginning of the
+command line.  If more than one of them appears, they must appear in the
+order that they appear in this table.
+
+`-t DEVICE'     
+     Use DEVICE as the device for terminal input and output.
+     
+`-d DISPLAY'     
+     When running with the X window system, use the display named DISPLAY
+     to make the window that serves as Emacs's terminal.
+     
+`-batch'     
+     Run Emacs in "batch mode", which means that the text being edited is
+     not displayed and the standard Unix interrupt characters such as `C-z'
+     and `C-c' continue to have their normal effect.  Emacs in batch mode
+     outputs to `stdout' only what would normally be printed in the echo
+     area under program control.
+     
+     Batch mode is used for running programs written in Emacs Lisp from
+     shell scripts, makefiles, and so on.  Normally the `-l' switch
+     or `-f' switch will be used as well, to invoke a Lisp program
+     to do the batch processing.
+     
+     `-batch' implies `-q' (do not load an init file).  It also causes
+     Emacs to kill itself after all command switches have been processed.  In
+     addition, auto-saving is not done except in buffers for which it has been
+     explicitly requested.
+     
+`-q'     
+`-no-init-file'     
+     Do not load your Emacs init file `~/.emacs'.
+     
+`-u USER'     
+`-user USER'     
+     Load USER's Emacs init file `~USER/.emacs' instead of
+     your own.
+
+  Note that the init file can get access to the command line argument
+values as the elements of a list in the variable `command-line-args'.
+(The arguments in the second table above will already have been processed
+and will not be in the list.)  The init file can override the normal
+processing of the other arguments by setting this variable.
+
+  One way to use command switches is to visit many files automatically:
+
+     emacs *.c
+
+passes each `.c' file as a separate argument to Emacs, so that Emacs
+visits each file (*Note Visiting::).
+  
+  Here is an advanced example that assumes you have a Lisp program
+file called `hack-c-program.el' which, when loaded, performs some
+useful operation on current buffer, expected to be a C program.
+
+     emacs -batch foo.c -l hack-c-program -f save-buffer -kill > log
+
+Here Emacs is told to visit `foo.c', load `hack-c-program.el'
+(which makes changes in the visited file), save `foo.c' (note that
+`save-buffer' is the function that `C-x C-s' is bound to), and
+then exit to the shell that this command was done with.  `-batch'
+guarantees there will be no problem redirecting output to `log',
+because Emacs will not assume that it has a display terminal to work with.
+
+

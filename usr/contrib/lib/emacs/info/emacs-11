@@ -1,0 +1,1155 @@
+Info file emacs, produced by texinfo-format-buffer   -*-Text-*-
+from file emacs.tex
+
+This file documents the GNU Emacs editor.
+
+Copyright (C) 1985, 1986 Richard M. Stallman.
+
+Permission is granted to make and distribute verbatim copies of
+this manual provided the copyright notice and this permission notice
+are preserved on all copies.
+
+Permission is granted to copy and distribute modified versions of this
+manual under the conditions for verbatim copying, provided also that the
+sections entitled "The GNU Manifesto", "Distribution" and "GNU Emacs
+General Public License" are included exactly as in the original, and
+provided that the entire resulting derived work is distributed under the
+terms of a permission notice identical to this one.
+
+Permission is granted to copy and distribute translations of this manual
+into another language, under the above conditions for modified versions,
+except that the sections entitled "The GNU Manifesto", "Distribution"
+and "GNU Emacs General Public License" may be included in a translation
+approved by the author instead of in the original English.
+
+
+File: emacs  Node: Syntax Change, Prev: Syntax Entry, Up: Syntax
+
+Altering Syntax Information
+---------------------------
+
+  It is possible to alter a character's syntax table entry by storing a new
+number in the appropriate element of the syntax table, but it would be hard
+to determine what number to use.  Therefore, Emacs provides a command that
+allows you to specify the syntactic properties of a character in a
+convenient way.
+
+  `M-x modify-syntax-entry' is the command to change a character's
+syntax.  It can be used interactively, and is also the means used by major
+modes to initialize their own syntax tables.  Its first argument is the
+character to change.  The second argument is a string that specifies the
+new syntax.  When called from Lisp code, there is a third, optional
+argument, which specifies the syntax table in which to make the change.  If
+not supplied, or if this command is called interactively, the third
+argument defaults to the current buffer's syntax table.
+
+  1. The first character in the string specifies the syntactic class.  It
+     is one of the characters in the previous table (*Note Syntax Entry::).
+     
+  2. The second character is the matching delimiter.  For a character that
+     is not an opening or closing delimiter, this should be a space, and may
+     be omitted if no following characters are needed.
+     
+  3. The remaining characters are flags.  The flag characters allowed are
+     
+     `1'     
+          Flag this character as the first of a two-character comment starting sequence.
+     `2'     
+          Flag this character as the second of a two-character comment starting sequence.
+     `3'     
+          Flag this character as the first of a two-character comment ending sequence.
+     `4'     
+          Flag this character as the second of a two-character comment ending sequence.
+
+  A description of the contents of the current syntax table can be
+displayed with `C-h s' (`describe-syntax').  The description of
+each character includes both the string you would have to give to
+`modify-syntax-entry' to set up that character's current syntax, and
+some English to explain that string if necessary.
+
+
+File: emacs  Node: Init File, Prev: Syntax, Up: Customization
+
+The Init File, .emacs
+=====================
+
+  When Emacs is started, it normally loads the file `.emacs' in your
+home directory.  This file, if it exists, should contain Lisp code.  It is
+called your "init file".  The command line switches `-q' and
+`-u' can be used to tell Emacs whether to load an init file
+(*Note Entering Emacs::).
+
+  There can also be a "default init file", which is the library named
+`default.el', found via the standard search path for libraries.  The
+Emacs distribution contains no such library; your site may create one for
+local customizations.  If this library exists, it is loaded whenever you
+start Emacs.  But your init file, if any, is loaded first; if it sets
+`inhibit-default-init' non-`nil', then `default' is not
+loaded.
+
+  If you have a large amount of code in your `.emacs' file, you
+should move it into another file named `SOMETHING.el',
+byte-compile it (*Note Lisp Libraries::), and make your `.emacs'
+file load the other file using `load'.
+
+* Menu:
+
+* Init Syntax::     Syntax of constants in Emacs Lisp.
+* Init Examples::   How to do some things with an init file.
+* Terminal Init::   Each terminal type can have an init file.
+
+
+File: emacs  Node: Init Syntax, Prev: Init File, Up: Init File, Next: Init Examples
+
+Init File Syntax
+----------------
+
+  The `.emacs' file contains one or more Lisp function call
+expressions.  Each of these consists of a function name followed by
+arguments, all surrounded by parentheses.  For example, `(setq
+fill-column 60)' represents a call to the function `setq' which is
+used to set the variable `fill-column' (*Note Filling::) to 60.
+
+  The second argument to `setq' is an expression for the new value of
+the variable.  This can be a constant, a variable, or a function call
+expression.  In `.emacs', constants are used most of the time.  They can be:
+
+Numbers:     
+     Numbers are written in decimal, with an optional initial minus sign.
+     
+Strings:     
+     Lisp string syntax is the same as C string syntax with a few extra
+     features.  Use a double-quote character to begin and end a string constant.
+     
+     Newlines and special characters may be present literally in strings.  They
+     can also be represented as backslash sequences: `\n' for newline,
+     `\b' for backspace, `\r' for carriage return, `\t' for tab,
+     `\f' for formfeed (control-l), `\e' for escape, `\\' for a
+     backslash, `\"' for a double-quote, or `\OOO' for the
+     character whose octal code is OOO.  Backslash and double-quote are
+     the only characters for which backslash sequences are mandatory.
+     
+     `\C-' can be used as a prefix for a control character, as in `\C-s'
+     for ASCII Control-S, and `\M-' can be used as a prefix for a meta
+     character, as in `\M-a' for Meta-A or `\M-\C-a' for Control-Meta-A.
+     
+Characters:     
+     Lisp character constant syntax consists of a `?' followed by
+     either a character or an escape sequence starting with `\'.
+     Examples: `?x', `?\n', `?\"', `?\)'.  Note that
+     strings and characters are not interchangeable in Lisp; some contexts
+     require one and some contexts require the other.
+     
+True:     
+     `t' stands for `true'.
+     
+False:     
+     `nil' stands for `false'.
+     
+Other Lisp objects:     
+     Write a single-quote (') followed by the Lisp object you want.
+
+
+File: emacs  Node: Init Examples, Prev: Init Syntax, Up: Init File, Next: Terminal Init
+
+Init File Examples
+------------------
+
+  Here are some examples of doing certain commonly desired things with
+Lisp expressions:
+
+   * Make TAB in C mode just insert a tab if point is in the middle of a
+     line.
+     
+          (setq c-tab-always-indent nil)
+     
+     Here we have a variable whose value is normally `t' for `true'
+     and the alternative is `nil' for `false'.
+     
+   * Make searches case sensitive by default (in all buffers that do not
+     override this).
+     
+          (setq-default case-fold-search nil)
+     
+     This sets the default value, which is effective in all buffers that do
+     not have local values for the variable.  Setting `case-fold-search'
+     with `setq' affects only the current buffer's local value, which
+     is not what you probably want to do in an init file.
+     
+   * Make Text mode the default mode for new buffers.
+     
+          (setq default-major-mode 'text-mode)
+     
+     Note that `text-mode' is used because it is the command for entering
+     the mode we want.  A single-quote is written before it to make a symbol
+     constant; otherwise, `text-mode' would be treated as a variable name.
+     
+   * Turn on Auto Fill mode automatically in Text mode and related modes.
+     
+          (setq text-mode-hook
+            '(lambda () (auto-fill-mode 1)))
+     
+     Here we have a variable whose value should be a Lisp function.  The
+     function we supply is a list starting with `lambda', and a single
+     quote is written in front of it to make it (for the purpose of this
+     `setq') a list constant rather than an expression.  Lisp functions
+     are not explained here, but for mode hooks it is enough to know that
+     `(auto-fill-mode 1)' is an expression that will be executed when
+     Text mode is entered, and you could replace it with any other expression
+     that you like, or with several expressions in a row.
+     
+          (setq text-mode-hook 'turn-on-auto-fill)
+     
+     This is another way to accomplish the same result.
+     `turn-on-auto-fill' is a symbol whose function definition is
+     `(lambda () (auto-fill-mode 1))'.
+     
+   * Load the installed Lisp library named `foo' (actually a file
+     `foo.elc' or `foo.el' in a standard Emacs directory).
+     
+          (load "foo")
+     
+     When the argument to `load' is a relative pathname, not starting
+     with `/' or `~', `load' searches the directories in
+     `load-path' (*Note Loading::).
+     
+   * Load the compiled Lisp file `foo.elc' from your home directory.
+     
+          (load "~/foo.elc")
+     
+     Here an absolute file name is used, so no searching is done.
+     
+   * Rebind the key `C-x l' to run the function `make-symbolic-link'.
+     
+          (global-set-key "\C-xl" 'make-symbolic-link)
+     
+     or
+     
+          (define-key global-map "\C-xl" 'make-symbolic-link)
+     
+     Note once again the single-quote used to refer to the symbol
+     `make-symbolic-link' instead of its value as a variable.
+     
+   * Do the same thing for C mode only.
+     
+          (define-key c-mode-map "\C-xl" 'make-symbolic-link)
+     
+   * Redefine all keys which now run `next-line' in Fundamental mode
+     so that they run `forward-line' instead.
+     
+          (substitute-key-definition 'next-line 'forward-line
+                                     global-map)
+     
+   * Make `C-x C-v' undefined.
+     
+          (global-unset-key "\C-x\C-v")
+     
+     One reason to undefine a key is so that you can make it a prefix.
+     Simply defining `C-x C-v ANYTHING' would make `C-x C-v'
+     a prefix, but `C-x C-v' must be freed of any non-prefix definition
+     first.
+     
+   * Make `$' have the syntax of punctuation in Text mode.
+     Note the use of a character constant for `$'.
+     
+          (modify-syntax-entry ?\$ "." text-mode-syntax-table)
+     
+   * Enable the use of the command `eval-expression' without confirmation.
+     
+          (put 'eval-expression 'disabled nil)
+
+
+File: emacs  Node: Terminal Init, Prev: Init Examples, Up: Init File
+
+Terminal-specific Initialization
+--------------------------------
+
+  Each terminal type can have a Lisp library to be loaded into Emacs when
+it is run on that type of terminal.  For a terminal type named TERMTYPE,
+the library is called `term/TERMTYPE' and it is found by searching the
+directories `load-path' as usual and trying the suffixes `.elc' and `.el'.
+Normally it appears in the subdirectory `term' of the directory where most
+Emacs libraries are kept.
+
+  The usual purpose of the terminal-specific library is to define the
+escape sequences used by the terminal's function keys using the library
+`keypad.el'.  See the file `term/vt100.el' for an example of how this is
+done.
+
+  When the terminal type contains a hyphen, only the part of the name
+before the first hyphen is significant in choosing the library name.  Thus,
+terminal types `aaa-48' and `aaa-30-rv' both use the library `term/aaa'.
+The code in the library can use `(getenv "TERM")' to find the full terminal
+type name.
+
+  The library's name is constructed by concatenating the value of the
+variable `term-file-prefix' and the terminal type.  Your `.emacs'
+file can prevent the loading of the terminal-specific library by setting
+`term-file-prefix' to `nil'.
+
+  The value of the variable `term-setup-hook', if not `nil', is called as a
+function of no arguments at the end of Emacs initialization, after both
+your `.emacs' file and any terminal-specific library have been read in.
+You can set the value in the `.emacs' file to override part of any of the
+terminal-specific libraries and to define initializations for terminals
+that do not have a library.
+
+
+
+File: emacs  Node: Quitting, Prev: Customization, Up: Top, Next: Lossage
+
+Quitting and Aborting
+=====================
+
+`C-g'     
+     Quit.  Cancel running or partially typed command.
+`C-]'     
+     Abort innermost recursive editing level and cancel the command which
+     invoked it (`abort-recursive-edit').
+`M-x top-level'     
+     Abort all recursive editing levels that are currently executing.
+`C-x u'     
+     Cancel an already-executed command, usually (`undo').
+
+  There are two ways of cancelling commands which are not finished
+executing: "quitting" with `C-g', and "aborting" with `C-]'
+or `M-x top-level'.  Quitting is cancelling a partially typed command
+or one which is already running.  Aborting is getting out of a recursive
+editing level and cancelling the command that invoked the recursive edit.
+
+  Quitting with `C-g' is used for getting rid of a partially typed
+command, or a numeric argument that you don't want.  It also stops a
+running command in the middle in a relatively safe way, so you can use it
+if you accidentally give a command which takes a long time.  In particular,
+it is safe to quit out of killing; either your text will ALL still be
+there, or it will ALL be in the kill ring (or maybe both).  Quitting
+an incremental search does special things documented under searching; in
+general, it may take two successive `C-g' characters to get out of a
+search.  `C-g' works by setting the variable `quit-flag' to
+`t' the instant `C-g' is typed; Emacs Lisp checks this variable
+frequently and quits if it is non-`nil'.  `C-g' is only actually
+executed as a command if it is typed while Emacs is waiting for input.
+
+  If you quit twice in a row before the first `C-g' is recognized, you
+activate the "emergency escape" feature and return to the shell.
+*Note Emergency Escape::.
+
+  Aborting with `C-]' (`abort-recursive-edit') is used to get out
+of a recursive editing level and cancel the command which invoked it.
+Quitting with `C-g' does not do this, and could not do this, because it
+is used to cancel a partially typed command within the recursive
+editing level.  Both operations are useful.  For example, if you are in the
+Emacs debugger (*Note Lisp Debug::) and have typed `C-u 8' to enter a
+numeric argument, you can cancel that argument with `C-g' and remain in
+the debugger.
+
+  The command `M-x top-level' is equivalent to "enough" `C-]'
+commands to get you out of all the levels of recursive edits that you are
+in.  `C-]' gets you out one level at a time, but `M-x top-level'
+goes out all levels at once.  Both `C-]' and `M-x top-level' are
+like all other commands, and unlike `C-g', in that they are effective
+only when Emacs is ready for a command.  `C-]' is an ordinary key and
+has its meaning only because of its binding in the keymap.
+*Note Recursive Edit::.
+
+  `C-x u' (`undo') is not strictly speaking a way of cancelling a
+command, but you can think of it as cancelling a command already finished
+executing.  *Note Undo::.
+
+
+File: emacs  Node: Lossage, Prev: Quitting, Up: Top, Next: Bugs
+
+Dealing with Emacs Trouble
+==========================
+
+  This section describes various conditions in which Emacs fails to work,
+and how to recognize them and correct them.
+
+* Menu:
+
+* Stuck Recursive::    `[...]' in mode line around the parentheses
+* Screen Garbled::     Garbage on the screen
+* Text Garbled::       Garbage in the text
+* Unasked-for Search:: Spontaneous entry to incremental search
+* Emergency Escape::   Emergency escape---
+                        What to do if Emacs stops responding
+* Total Frustration::  When you are at your wits' end.
+
+
+File: emacs  Node: Stuck Recursive, Prev: Lossage, Up: Lossage, Next: Screen Garbled
+
+Recursive Editing Levels
+------------------------
+
+  Recursive editing levels are important and useful features of Emacs, but
+they can seem like malfunctions to the user who does not understand them.
+
+  If the mode line has square brackets `[...]' around the parentheses
+that contain the names of the major and minor modes, you have entered a
+recursive editing level.  If you did not do this on purpose, or if you
+don't understand what that means, you should just get out of the recursive
+editing level.  To do so, type `M-x top-level'.  This is called getting
+back to top level.  *Note Recursive Edit::.
+
+
+File: emacs  Node: Screen Garbled, Prev: Stuck Recursive, Up: Lossage, Next: Text Garbled
+
+Garbage on the Screen
+---------------------
+
+  If the data on the screen looks wrong, the first thing to do is see
+whether the text is really wrong.  Type `C-l', to redisplay the entire
+screen.  If it appears correct after this, the problem was entirely in the
+previous screen update.
+
+  Display updating problems often result from an incorrect termcap entry
+for the terminal you are using.  The file `etc/TERMS' in the Emacs
+distribution gives the fixes for known problems of this sort.
+`INSTALL' contains general advice for these problems in one of its
+sections.  Very likely there is simply insufficient padding for certain
+display operations.  To investigate the possibility that you have this sort
+of problem, try Emacs on another terminal made by a different manufacturer.
+If problems happen frequently on one kind of terminal but not another kind,
+it is likely to be a bad termcap entry, though it could also be due to a
+bug in Emacs that appears for terminals that have or that lack specific
+features.
+
+
+File: emacs  Node: Text Garbled, Prev: Screen Garbled, Up: Lossage, Next: Unasked-for Search
+
+Garbage in the Text
+-------------------
+
+  If `C-l' shows that the text is wrong, try undoing the changes to it
+using `C-x u' until it gets back to a state you consider correct.  Also
+try `C-h l' to find out what command you typed to produce the observed
+results.
+
+  If a large portion of text appears to be missing at the beginning or
+end of the buffer, check for the word `Narrow' in the mode line.
+If it appears, the text is still present, but marked off-limits.
+To make it visible again, type `C-x w'.  *Note Narrowing::.
+
+
+File: emacs  Node: Unasked-for Search, Prev: Text Garbled, Up: Lossage, Next: Emergency Escape
+
+Spontaneous Entry to Incremental Search
+---------------------------------------
+
+  If Emacs spontaneously displays `I-search:' at the bottom of the
+screen, it means that the terminal is sending `C-s' and `C-q'
+according to the poorly designed xon/xoff "flow control" protocol.  You
+should try to prevent this by putting the terminal in a mode where it will
+not use flow control or giving it enough padding that it will never send a
+`C-s'.  If that cannot be done, you must tell Emacs to expect flow
+control to be used, until you can get a properly designed terminal.
+
+  Information on how to do these things can be found in the file
+`INSTALL' in the Emacs distribution.
+
+
+File: emacs  Node: Emergency Escape, Prev: Unasked-for Search, Up: Lossage, Next: Total Frustration
+
+Emergency Escape
+----------------
+
+  Because at times there have been bugs causing Emacs to loop without
+checking `quit-flag', a special feature causes Emacs to be suspended
+immediately if you type a second `C-g' while the flag is already set,
+so you can always get out of GNU Emacs.  Normally Emacs recognizes and
+clears `quit-flag' (and quits!) quickly enough to prevent this from
+happening.
+
+  When you resume Emacs after a suspension caused by multiple `C-g', it
+asks two questions before going back to what it had been doing:
+
+     Auto-save? (y or n)
+     Abort (and dump core)? (y or n)
+
+Answer each one with `y' or `n' followed by RET.
+
+  Saying `y' to `Auto-save?' causes immediate auto-saving of all
+modified buffers in which auto-saving is enabled.
+
+  Saying `y' to `Abort (and dump core)?' causes an illegal instruction to be
+executed, dumping core.  This is to enable a wizard to figure out why Emacs
+was failing to quit in the first place.  Execution does not continue
+after a core dump.  If you answer `n', execution does continue.  With
+luck, GNU Emacs will ultimately check `quit-flag' and quit normally.
+If not, and you type another `C-g', it is suspended again.
+
+  If Emacs is not really hung, just slow, you may invoke the double
+`C-g' feature without really meaning to.  Then just resume and answer
+`n' to both questions, and you will arrive at your former state.
+Presumably the quit you requested will happen soon.
+
+  The double-`C-g' feature may be turned off when Emacs is running under
+a window system, since the window system always enables you to kill Emacs
+or to create another window and run another program.
+
+
+File: emacs  Node: Total Frustration, Prev: Emergency Escape, Up: Lossage
+
+Help for Total Frustration
+--------------------------
+
+  If using Emacs (or something else) becomes terribly frustrating and none
+of the techniques described above solve the problem, Emacs can still help
+you.
+
+  First, if the Emacs you are using is not responding to commands, type
+`C-g C-g' to get out of it and then start a new one.
+
+  Second, type `M-x doctor RET'.
+
+  The doctor will make you feel better.  Each time you say something to
+the doctor, you must end it by typing RET RET.  This lets the
+doctor know you are finished.
+
+
+File: emacs  Node: Bugs, Prev: Lossage, Up: Top, Next: Manifesto
+
+Reporting Bugs
+==============
+
+  Sometimes you will encounter a bug in Emacs.  Although we cannot promise
+we can or will fix the bug, and we might not even agree that it is a bug,
+we want to hear about bugs you encounter in case we do want to fix them.
+
+  To make it possible for us to fix a bug, you must report it.  In order
+to do so effectively, you must know when and how to do it.
+
+
+When Is There a Bug
+-------------------
+
+  If Emacs executes an illegal instruction, or dies with an operating
+system error message that indicates a problem in the program (as opposed to
+something like "disk full"), then it is certainly a bug.
+
+  If Emacs updates the display in a way that does not correspond to what is
+in the buffer, then it is certainly a bug.  If a command seems to do the
+wrong thing but the problem corrects itself if you type `C-l', it is a
+case of incorrect display updating.
+
+  Taking forever to complete a command can be a bug, but you must make
+certain that it was really Emacs's fault.  Some commands simply take a long
+time.  Type `C-g' and then `C-h l' to see whether the input Emacs
+received was what you intended to type; if the input was such that you
+KNOW it should have been processed quickly, report a bug.  If you
+don't know whether the command should take a long time, find out by looking
+in the manual or by asking for assistance.
+
+  If a command you are familiar with causes an Emacs error message in a
+case where its usual definition ought to be reasonable, it is probably a
+bug.
+
+  If a command does the wrong thing, that is a bug.  But be sure you know
+for certain what it ought to have done.  If you aren't familiar with the
+command, or don't know for certain how the command is supposed to work,
+then it might actually be working right.  Rather than jumping to
+conclusions, show the problem to someone who knows for certain.
+
+  Finally, a command's intended definition may not be best for editing
+with.  This is a very important sort of problem, but it is also a matter of
+judgment.  Also, it is easy to come to such a conclusion out of ignorance
+of some of the existing features.  It is probably best not to complain
+about such a problem until you have checked the documentation in the usual
+ways, feel confident that you understand it, and know for certain that what
+you want is not available.  If you are not sure what the command is
+supposed to do after a careful reading of the manual, check the index and
+glossary for any terms that may be unclear.  If you still do not
+understand, this indicates a bug in the manual.  The manual's job is to
+make everything clear.  It is just as important to report documentation
+bugs as program bugs.
+
+  If the on-line documentation string of a function or variable disagrees
+with the manual, one of them must be wrong, so report the bug.
+
+
+How to Report a Bug
+-------------------
+
+  When you decide that there is a bug, it is important to report it and to
+report it in a way which is useful.  What is most useful is an exact
+description of what commands you type, starting with the shell command to
+run Emacs, until the problem happens.  Always include the version number
+of Emacs that you are using; type `M-x emacs-version' to print this.
+
+  The most important principle in reporting a bug is to report FACTS,
+not hypotheses or categorizations.  It is always easier to report the facts,
+but people seem to prefer to strain to posit explanations and report
+them instead.  If the explanations are based on guesses about how Emacs is
+implemented, they will be useless; we will have to try to figure out what
+the facts must have been to lead to such speculations.  Sometimes this is
+impossible.  But in any case, it is unnecessary work for us.
+
+  For example, suppose that you type `C-x C-f /glorp/baz.ugh
+RET', visiting a file which (you know) happens to be rather large,
+and Emacs prints out `I feel pretty today'.  The best way to report
+the bug is with a sentence like the preceding one, because it gives all the
+facts and nothing but the facts.
+
+  Do not assume that the problem is due to the size of the file and say,
+"When I visit a large file, Emacs prints out `I feel pretty today'."
+This is what we mean by "guessing explanations".  The problem is just as
+likely to be due to the fact that there is a `z' in the file name.  If
+this is so, then when we got your report, we would try out the problem with
+some "large file", probably with no `z' in its name, and not find
+anything wrong.  There is no way in the world that we could guess that we
+should try visiting a file with a `z' in its name.
+
+  Alternatively, the problem might be due to the fact that the file starts
+with exactly 25 spaces.  For this reason, you should make sure that you
+inform us of the exact contents of any file that is needed to reproduce the
+bug.  What if the problem only occurs when you have typed the `C-x C-a'
+command previously?  This is why we ask you to give the exact sequence of
+characters you typed since starting to use Emacs.
+
+  You should not even say "visit a file" instead of `C-x C-f' unless you
+know that it makes no difference which visiting command is used.
+Similarly, rather than saying "if I have three characters on the line," say
+"after I type `RET A B C RET C-p'," if that is the way you entered the
+text.
+
+  If you are not in Fundamental mode when the problem occurs, you should
+say what mode you are in.
+
+  If the manifestation of the bug is an Emacs error message, it is
+important to report not just the text of the error message but a backtrace
+showing how the Lisp program in Emacs arrived at the error.  To make the
+backtrace, you must execute the Lisp expression `(setq debug-on-error t)'
+before the error happens (that is to say, you must execute that expression
+and then make the bug happen).  This causes the Lisp debugger to run
+(*Note Lisp Debug::).  The debugger's backtrace can be copied as text into
+the bug report.  This use of the debugger is possible only if you know how
+to make the bug happen again.  Do note the error message the first time the
+bug happens, so if you can't make it happen again, you can report at least
+that.
+
+  Check whether any programs you have loaded into the Lisp world, including
+your `.emacs' file, set any variables that may affect the functioning
+of Emacs.  Also, see whether the problem happens in a freshly started Emacs
+without loading your `.emacs' file (start Emacs with the `-q' switch
+to prevent loading the init file.)  If the problem does NOT occur
+then, it is essential that we know the contents of any programs that you
+must load into the Lisp world in order to cause the problem to occur.
+
+  If the problem does depend on an init file or other Lisp programs that
+are not part of the standard Emacs system, then you should make sure it is
+not a bug in those programs by complaining to their maintainers first.
+After they verify that they are using Emacs in a way that is supposed to
+work, they should report the bug.
+
+  If you can tell us a way to cause the problem without visiting any files,
+please do so.  This makes it much easier to debug.  If you do need files,
+make sure you arrange for us to see their exact contents.  For example, it
+can often matter whether there are spaces at the ends of lines, or a
+newline after the last line in the buffer (nothing ought to care whether
+the last line is terminated, but tell that to the bugs).
+
+  The easy way to record the input to Emacs precisely is to to write a
+dribble file; execute the Lisp expression
+
+     (open-dribble-file "~/dribble")
+
+using `Meta-ESC' or from the `*scratch*' buffer just after starting
+Emacs.  From then on, all Emacs input will be written in the specified
+dribble file until the Emacs process is killed.
+
+  For possible display bugs, it is important to report the terminal type
+(the value of environment variable `TERM'), the complete termcap entry
+for the terminal from `/etc/termcap' (since that file is not identical
+on all machines), and the output that Emacs actually sent to the terminal.
+The way to collect this output is to execute the Lisp expression
+
+     (open-termscript "~/termscript")
+
+using `Meta-ESC' or from the `*scratch*' buffer just after starting Emacs.
+From then on, all output from Emacs to the terminal will be written in the
+specified termscript file as well, until the Emacs process is killed.  If
+the problem happens when Emacs starts up, put this expression into your
+`.emacs' file so that the termscript file will be open when Emacs displays
+the screen for the first time.  Be warned: it is often difficult, and
+sometimes impossible, to fix a terminal-dependent bug without access to a
+terminal of the type that stimulates the bug.
+
+  The address for reporting bugs is
+
+     GNU Emacs Bugs
+     545 Tech Sq, rm 703
+     Cambridge, MA 02139
+
+or send email to `mit-eddie!bug-gnu-emacs' (Usenet) or
+`bug-gnu-emacs@prep.ai.mit.edu' (Internet).
+
+  Once again, we do not promise to fix the bug; but if the bug is serious,
+or ugly, or easy to fix, chances are we will want to.
+
+
+
+File: emacs  Node: Manifesto, Prev: Bugs, Up: Top
+
+The GNU Manifesto
+*****************
+
+
+What's GNU?  Gnu's Not Unix!
+============================
+
+GNU, which stands for Gnu's Not Unix, is the name for the complete
+Unix-compatible software system which I am writing so that I can give it
+away free to everyone who can use it.  Several other volunteers are helping
+me.  Contributions of time, money, programs and equipment are greatly
+needed.
+
+So far we have an Emacs text editor with Lisp for writing editor commands,
+a source level debugger, a yacc-compatible parser generator, a linker, and
+around 35 utilities.  A shell (command interpreter) is nearly completed.  A
+new portable optimizing C compiler has compiled itself and may be released
+this year.  An initial kernel exists but many more features are needed to
+emulate Unix.  When the kernel and compiler are finished, it will be
+possible to distribute a GNU system suitable for program development.  We
+will use TeX as our text formatter, but an nroff is being worked on.  We
+will use the free, portable X window system as well.  After this we will
+add a portable Common Lisp, an Empire game, a spreadsheet, and hundreds of
+other things, plus on-line documentation.  We hope to supply, eventually,
+everything useful that normally comes with a Unix system, and more.
+
+GNU will be able to run Unix programs, but will not be identical to Unix.
+We will make all improvements that are convenient, based on our experience
+with other operating systems.  In particular, we plan to have longer
+filenames, file version numbers, a crashproof file system, filename
+completion perhaps, terminal-independent display support, and perhaps
+eventually a Lisp-based window system through which several Lisp programs
+and ordinary Unix programs can share a screen.  Both C and Lisp will be
+available as system programming languages.  We will try to support UUCP,
+MIT Chaosnet, and Internet protocols for communication.
+
+GNU is aimed initially at machines in the 68000/16000 class with virtual
+memory, because they are the easiest machines to make it run on.  The extra
+effort to make it run on smaller machines will be left to someone who wants
+to use it on them.
+
+To avoid horrible confusion, please pronounce the `G' in the word `GNU'
+when it is the name of this project.
+
+
+Why I Must Write GNU
+====================
+
+I consider that the golden rule requires that if I like a program I must
+share it with other people who like it.  Software sellers want to divide
+the users and conquer them, making each user agree not to share with
+others.  I refuse to break solidarity with other users in this way.  I
+cannot in good conscience sign a nondisclosure agreement or a software
+license agreement.  For years I worked within the Artificial Intelligence
+Lab to resist such tendencies and other inhospitalities, but eventually
+they had gone too far: I could not remain in an institution where such
+things are done for me against my will.
+
+So that I can continue to use computers without dishonor, I have decided to
+put together a sufficient body of free software so that I will be able to
+get along without any software that is not free.  I have resigned from the
+AI lab to deny MIT any legal excuse to prevent me from giving GNU away.
+
+
+Why GNU Will Be Compatible with Unix
+====================================
+
+Unix is not my ideal system, but it is not too bad.  The essential features
+of Unix seem to be good ones, and I think I can fill in what Unix lacks
+without spoiling them.  And a system compatible with Unix would be
+convenient for many other people to adopt.
+
+
+How GNU Will Be Available
+=========================
+
+GNU is not in the public domain.  Everyone will be permitted to modify and
+redistribute GNU, but no distributor will be allowed to restrict its
+further redistribution.  That is to say, proprietary modifications will not
+be allowed.  I want to make sure that all versions of GNU remain free.
+
+
+Why Many Other Programmers Want to Help
+=======================================
+
+I have found many other programmers who are excited about GNU and want to
+help.
+
+Many programmers are unhappy about the commercialization of system
+software.  It may enable them to make more money, but it requires them to
+feel in conflict with other programmers in general rather than feel as
+comrades.  The fundamental act of friendship among programmers is the
+sharing of programs; marketing arrangements now typically used essentially
+forbid programmers to treat others as friends.  The purchaser of software
+must choose between friendship and obeying the law.  Naturally, many decide
+that friendship is more important.  But those who believe in law often do
+not feel at ease with either choice.  They become cynical and think that
+programming is just a way of making money.
+
+By working on and using GNU rather than proprietary programs, we can be
+hospitable to everyone and obey the law.  In addition, GNU serves as an
+example to inspire and a banner to rally others to join us in sharing.
+This can give us a feeling of harmony which is impossible if we use
+software that is not free.  For about half the programmers I talk to, this
+is an important happiness that money cannot replace.
+
+
+How You Can Contribute
+======================
+
+I am asking computer manufacturers for donations of machines and money.
+I'm asking individuals for donations of programs and work.
+
+One consequence you can expect if you donate machines is that GNU will run
+on them at an early date.  The machines should be complete, ready to use
+systems, approved for use in a residential area, and not in need of
+sophisticated cooling or power.
+
+I have found very many programmers eager to contribute part-time work for
+GNU.  For most projects, such part-time distributed work would be very hard
+to coordinate; the independently-written parts would not work together.
+But for the particular task of replacing Unix, this problem is absent.  A
+complete Unix system contains hundreds of utility programs, each of which
+is documented separately.  Most interface specifications are fixed by Unix
+compatibility.  If each contributor can write a compatible replacement for
+a single Unix utility, and make it work properly in place of the original
+on a Unix system, then these utilities will work right when put together.
+Even allowing for Murphy to create a few unexpected problems, assembling
+these components will be a feasible task.  (The kernel will require closer
+communication and will be worked on by a small, tight group.)
+
+If I get donations of money, I may be able to hire a few people full or
+part time.  The salary won't be high by programmers' standards, but I'm
+looking for people for whom building community spirit is as important as
+making money.  I view this as a way of enabling dedicated people to devote
+their full energies to working on GNU by sparing them the need to make a
+living in another way.
+
+
+Why All Computer Users Will Benefit
+===================================
+
+Once GNU is written, everyone will be able to obtain good system software
+free, just like air.
+
+This means much more than just saving everyone the price of a Unix license.
+It means that much wasteful duplication of system programming effort will
+be avoided.  This effort can go instead into advancing the state of the
+art.
+
+Complete system sources will be available to everyone.  As a result, a user
+who needs changes in the system will always be free to make them himself,
+or hire any available programmer or company to make them for him.  Users
+will no longer be at the mercy of one programmer or company which owns the
+sources and is in sole position to make changes.
+
+Schools will be able to provide a much more educational environment by
+encouraging all students to study and improve the system code.  Harvard's
+computer lab used to have the policy that no program could be installed on
+the system if its sources were not on public display, and upheld it by
+actually refusing to install certain programs.  I was very much inspired by
+this.
+
+Finally, the overhead of considering who owns the system software and what
+one is or is not entitled to do with it will be lifted.
+
+Arrangements to make people pay for using a program, including licensing of
+copies, always incur a tremendous cost to society through the cumbersome
+mechanisms necessary to figure out how much (that is, which programs) a
+person must pay for.  And only a police state can force everyone to obey
+them.  Consider a space station where air must be manufactured at great
+cost: charging each breather per liter of air may be fair, but wearing the
+metered gas mask all day and all night is intolerable even if everyone can
+afford to pay the air bill.  And the TV cameras everywhere to see if you
+ever take the mask off are outrageous.  It's better to support the air
+plant with a head tax and chuck the masks.
+
+Copying all or parts of a program is as natural to a programmer as
+breathing, and as productive.  It ought to be as free.
+
+
+Some Easily Rebutted Objections to GNU's Goals
+==============================================
+
+     "Nobody will use it if it is free, because that means they can't rely
+     on any support."
+     
+     "You have to charge for the program to pay for providing the
+     support."
+
+If people would rather pay for GNU plus service than get GNU free without
+service, a company to provide just service to people who have obtained GNU
+free ought to be profitable.
+
+We must distinguish between support in the form of real programming work
+and mere handholding.  The former is something one cannot rely on from a
+software vendor.  If your problem is not shared by enough people, the
+vendor will tell you to get lost.
+
+If your business needs to be able to rely on support, the only way is to
+have all the necessary sources and tools.  Then you can hire any available
+person to fix your problem; you are not at the mercy of any individual.
+With Unix, the price of sources puts this out of consideration for most
+businesses.  With GNU this will be easy.  It is still possible for there to
+be no available competent person, but this problem cannot be blamed on
+distibution arrangements.  GNU does not eliminate all the world's problems,
+only some of them.
+
+Meanwhile, the users who know nothing about computers need handholding:
+doing things for them which they could easily do themselves but don't know
+how.
+
+Such services could be provided by companies that sell just hand-holding
+and repair service.  If it is true that users would rather spend money and
+get a product with service, they will also be willing to buy the service
+having got the product free.  The service companies will compete in quality
+and price; users will not be tied to any particular one.  Meanwhile, those
+of us who don't need the service should be able to use the program without
+paying for the service.
+
+     "You cannot reach many people without advertising,
+     and you must charge for the program to support that."
+     
+     "It's no use advertising a program people can get free."
+
+There are various forms of free or very cheap publicity that can be used to
+inform numbers of computer users about something like GNU.  But it may be
+true that one can reach more microcomputer users with advertising.  If this
+is really so, a business which advertises the service of copying and
+mailing GNU for a fee ought to be successful enough to pay for its
+advertising and more.  This way, only the users who benefit from the
+advertising pay for it.
+
+On the other hand, if many people get GNU from their friends, and such
+companies don't succeed, this will show that advertising was not really
+necessary to spread GNU.  Why is it that free market advocates don't want
+to let the free market decide this?
+
+     "My company needs a proprietary operating system
+     to get a competitive edge."
+
+GNU will remove operating system software from the realm of competition.
+You will not be able to get an edge in this area, but neither will your
+competitors be able to get an edge over you.  You and they will compete in
+other areas, while benefitting mutually in this one.  If your business is
+selling an operating system, you will not like GNU, but that's tough on
+you.  If your business is something else, GNU can save you from being
+pushed into the expensive business of selling operating systems.
+
+I would like to see GNU development supported by gifts from many
+manufacturers and users, reducing the cost to each.
+
+     "Don't programmers deserve a reward for their creativity?"
+
+If anything deserves a reward, it is social contribution.  Creativity can
+be a social contribution, but only in so far as society is free to use the
+results.  If programmers deserve to be rewarded for creating innovative
+programs, by the same token they deserve to be punished if they restrict
+the use of these programs.
+
+     "Shouldn't a programmer be able to ask for a reward for his creativity?"
+
+There is nothing wrong with wanting pay for work, or seeking to maximize
+one's income, as long as one does not use means that are destructive.  But
+the means customary in the field of software today are based on
+destruction.
+
+Extracting money from users of a program by restricting their use of it is
+destructive because the restrictions reduce the amount and the ways that
+the program can be used.  This reduces the amount of wealth that humanity
+derives from the program.  When there is a deliberate choice to restrict,
+the harmful consequences are deliberate destruction.
+
+The reason a good citizen does not use such destructive means to become
+wealthier is that, if everyone did so, we would all become poorer from the
+mutual destructiveness.  This is Kantian ethics; or, the Golden Rule.
+Since I do not like the consequences that result if everyone hoards
+information, I am required to consider it wrong for one to do so.
+Specifically, the desire to be rewarded for one's creativity does not
+justify depriving the world in general of all or part of that creativity.
+
+     "Won't programmers starve?"
+
+I could answer that nobody is forced to be a programmer.  Most of us cannot
+manage to get any money for standing on the street and making faces.  But
+we are not, as a result, condemned to spend our lives standing on the
+street making faces, and starving.  We do something else.
+
+But that is the wrong answer because it accepts the questioner's implicit
+assumption: that without ownership of software, programmers cannot possibly
+be paid a cent.  Supposedly it is all or nothing.
+
+The real reason programmers will not starve is that it will still be
+possible for them to get paid for programming; just not paid as much as
+now.
+
+Restricting copying is not the only basis for business in software.  It is
+the most common basis because it brings in the most money.  If it were
+prohibited, or rejected by the customer, software business would move to
+other bases of organization which are now used less often.  There are
+always numerous ways to organize any kind of business.
+
+Probably programming will not be as lucrative on the new basis as it is
+now.  But that is not an argument against the change.  It is not considered
+an injustice that sales clerks make the salaries that they now do.  If
+programmers made the same, that would not be an injustice either.  (In
+practice they would still make considerably more than that.)
+
+     "Don't people have a right to control how their creativity is used?"
+
+"Control over the use of one's ideas" really constitutes control over
+other people's lives; and it is usually used to make their lives more
+difficult.
+
+People who have studied the issue of intellectual property rights carefully
+(such as lawyers) say that there is no intrinsic right to intellectual
+property.  The kinds of supposed intellectual property rights that the
+government recognizes were created by specific acts of legislation for
+specific purposes.
+
+For example, the patent system was established to encourage inventors to
+disclose the details of their inventions.  Its purpose was to help society
+rather than to help inventors.  At the time, the life span of 17 years for
+a patent was short compared with the rate of advance of the state of the
+art.  Since patents are an issue only among manufacturers, for whom the
+cost and effort of a license agreement are small compared with setting up
+production, the patents often do not do much harm.  They do not obstruct
+most individuals who use patented products.
+
+The idea of copyright did not exist in ancient times, when authors
+frequently copied other authors at length in works of non-fiction.  This
+practice was useful, and is the only way many authors' works have survived
+even in part.  The copyright system was created expressly for the purpose
+of encouraging authorship.  In the domain for which it was
+invented---books, which could be copied economically only on a printing
+press---it did little harm, and did not obstruct most of the individuals
+who read the books.
+
+All intellectual property rights are just licenses granted by society
+because it was thought, rightly or wrongly, that society as a whole would
+benefit by granting them.  But in any particular situation, we have to ask:
+are we really better off granting such license?  What kind of act are we
+licensing a person to do?
+
+The case of programs today is very different from that of books a hundred
+years ago.  The fact that the easiest way to copy a program is from one
+neighbor to another, the fact that a program has both source code and
+object code which are distinct, and the fact that a program is used rather
+than read and enjoyed, combine to create a situation in which a person who
+enforces a copyright is harming society as a whole both materially and
+spiritually; in which a person should not do so regardless of whether the
+law enables him to.
+
+     "Competition makes things get done better."
+
+The paradigm of competition is a race: by rewarding the winner, we
+encourage everyone to run faster.  When capitalism really works this way,
+it does a good job; but its defenders are wrong in assuming it always works
+this way.  If the runners forget why the reward is offered and become
+intent on winning, no matter how, they may find other strategies---such as,
+attacking other runners.  If the runners get into a fist fight, they will
+all finish late.
+
+Proprietary and secret software is the moral equivalent of runners in a
+fist fight.  Sad to say, the only referee we've got does not seem to
+object to fights; he just regulates them ("For every ten yards you run,
+you can fire one shot").  He really ought to break them up, and penalize
+runners for even trying to fight.
+
+     "Won't everyone stop programming without a monetary incentive?"
+
+Actually, many people will program with absolutely no monetary incentive.
+Programming has an irresistible fascination for some people, usually the
+people who are best at it.  There is no shortage of professional musicians
+who keep at it even though they have no hope of making a living that way.
+
+But really this question, though commonly asked, is not appropriate to the
+situation.  Pay for programmers will not disappear, only become less.  So
+the right question is, will anyone program with a reduced monetary
+incentive?  My experience shows that they will.
+
+For more than ten years, many of the world's best programmers worked at the
+Artificial Intelligence Lab for far less money than they could have had
+anywhere else.  They got many kinds of non-monetary rewards: fame and
+appreciation, for example.  And creativity is also fun, a reward in itself.
+
+Then most of them left when offered a chance to do the same interesting
+work for a lot of money.
+
+What the facts show is that people will program for reasons other than
+riches; but if given a chance to make a lot of money as well, they will
+come to expect and demand it.  Low-paying organizations do poorly in
+competition with high-paying ones, but they do not have to do badly if the
+high-paying ones are banned.
+
+     "We need the programmers desperately.  If they demand that we
+     stop helping our neighbors, we have to obey."
+
+You're never so desperate that you have to obey this sort of demand.
+Remember: millions for defense, but not a cent for tribute!
+
+     "Programmers need to make a living somehow."
+
+In the short run, this is true.  However, there are plenty of ways that
+programmers could make a living without selling the right to use a program.
+This way is customary now because it brings programmers and businessmen the
+most money, not because it is the only way to make a living.  It is easy to
+find other ways if you want to find them.  Here are a number of examples.
+
+A manufacturer introducing a new computer will pay for the porting of
+operating systems onto the new hardware.
+
+The sale of teaching, hand-holding and maintenance services could also
+employ programmers.
+
+People with new ideas could distribute programs as freeware, asking for
+donations from satisfied users, or selling hand-holding services.  I have
+met people who are already working this way successfully.
+
+Users with related needs can form users' groups, and pay dues.  A group
+would contract with programming companies to write programs that the
+group's members would like to use.
+
+All sorts of development can be funded with a Software Tax:
+
+     Suppose everyone who buys a computer has to pay x percent of
+     the price as a software tax.  The government gives this to
+     an agency like the NSF to spend on software development.
+     
+     But if the computer buyer makes a donation to software development
+     himself, he can take a credit against the tax.  He can donate to
+     the project of his own choosing---often, chosen because he hopes to
+     use the results when it is done.  He can take a credit for any amount
+     of donation up to the total tax he had to pay.
+     
+     The total tax rate could be decided by a vote of the payers of
+     the tax, weighted according to the amount they will be taxed on.
+     
+     The consequences:
+     
+        * The computer-using community supports software development.
+        * This community decides what level of support is needed.
+        * Users who care which projects their share is spent on
+          can choose this for themselves.
+
+In the long run, making programs free is a step toward the post-scarcity
+world, where nobody will have to work very hard just to make a living.
+People will be free to devote themselves to activities that are fun, such
+as programming, after spending the necessary ten hours a week on required
+tasks such as legislation, family counseling, robot repair and asteroid
+prospecting.  There will be no need to be able to make a living from
+programming.
+
+We have already greatly reduced the amount of work that the whole society
+must do for its actual productivity, but only a little of this has
+translated itself into leisure for workers because much nonproductive
+activity is required to accompany productive activity.  The main causes of
+this are bureaucracy and isometric struggles against competition.  Free
+software will greatly reduce these drains in the area of software
+production.  We must do this, in order for technical gains in productivity
+to translate into less work for us.
+
+
