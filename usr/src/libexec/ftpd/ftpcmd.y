@@ -6,7 +6,7 @@
 %{
 
 #ifndef lint
-static char sccsid[] = "@(#)ftpcmd.y	4.7 83/02/02";
+static char sccsid[] = "@(#)ftpcmd.y	4.8 83/02/21";
 #endif
 
 #include <sys/types.h>
@@ -177,12 +177,12 @@ cmd:		USER SP username CRLF
 	|	NLST check_login CRLF
 		= {
 			if ($2)
-				retrieve("/bin/ls -C", "");
+				retrieve("/bin/ls", "");
 		}
 	|	NLST check_login SP pathname CRLF
 		= {
 			if ($2 && $4 != NULL)
-				retrieve("/bin/ls -C %s", $4);
+				retrieve("/bin/ls %s", $4);
 			if ($4 != NULL)
 				free($4);
 		}
