@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)n7.c	2.1 (CWI) 85/07/18";
+static char sccsid[] = "@(#)n7.c	2.2 (CWI) 85/12/12";
 #endif lint
 #include "tdef.h"
 #ifdef NROFF
@@ -30,8 +30,11 @@ tbreak()
 	register int resol = 0;
 
 	trap = 0;
-	if (nb)
-		return;
+	if (nb) {
+		if( dip == d && numtab[NL].val == -1)
+			newline(1);
+		else return;
+	}
 	if (dip == d && numtab[NL].val == -1) {
 		newline(1);
 		return;
