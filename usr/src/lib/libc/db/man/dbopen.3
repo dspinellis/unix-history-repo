@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)dbopen.3	5.10 (Berkeley) %G%
+.\"	@(#)dbopen.3	5.11 (Berkeley) %G%
 .\"
 .TH DB 3  ""
 .UC 7
@@ -40,11 +40,6 @@ These formats are described in more detail below.
 .PP
 Access to all file types is based on key/data pairs.
 .PP
-All access methods store any database metadata in architecture-independent
-formats.
-(Obviously, portability of the data forming the key/data pairs is the
-concern of the application program.)
-.PP
 Each routine opens
 .I file
 for reading and/or writing.
@@ -60,7 +55,7 @@ routine, however, only the O_CREAT, O_EXCL, O_RDONLY, O_RDWR, O_TRUNC
 and O_WRONLY flags are meaningful.
 The argument
 .I openinfo
-is a pointer to a access method specific structure described below.
+is a pointer to an access method specific structure described below.
 .PP
 The open routines return a pointer to a DB structure on success and NULL
 on error.
@@ -84,7 +79,7 @@ int (*sync)(const DB *db);
 .RE
 } DB;
 .PP
-The elements of this structure consist of a pointer to a access method
+The elements of this structure consist of a pointer to an access method
 specific structure and a set of routines which perform various functions.
 All of these routines take a pointer to a structure as returned by
 one of the open routines, one or more pointers to key/data structures,
@@ -313,6 +308,8 @@ u_int psize;
 u_int cachesize;
 .br
 int (*compare)(const void *, const void *);
+.br
+char *lorder;
 .RE
 } BTREEINFO;
 .PP
@@ -331,15 +328,6 @@ key, i.e. one with the same key and different data as another entry.
 Note, the order of retrieval of key/data pairs with duplicate keys is
 undefined.
 .RE
-.TP
-psize
-Page size is the size in bytes of the pages used for nodes in the tree.
-If the  file already exists, the specified value is ignored and the
-value specified when the tree was created is used.
-If
-.I psize
-is zero, an appropriate page size is chosen (based on the system memory
-and/or file system constraints), but will never be less than 512 bytes.
 .TP
 cachesize
 A suggested maximum size, in bytes, of the memory cache.
@@ -364,6 +352,27 @@ is opened.
 If no comparison function is specified,
 .IR strcmp (3)
 is used.
+.TP
+lorder
+The byte order for 4-byte integers in the stored database metadata.
+Each character of the string represents a byte and should be one of the
+characters '1', '2', '3' or '4'.
+If
+.I lorder
+is NULL (no order is specified) network order (``4321'') is used.
+If the  file already exists, the specified value is ignored and the
+value specified when the tree was created is used.
+(Obviously, portability of the data forming the key/data pairs is the
+concern of the application program.)
+.TP
+psize
+Page size is the size in bytes of the pages used for nodes in the tree.
+If the  file already exists, the specified value is ignored and the
+value specified when the tree was created is used.
+If
+.I psize
+is zero, an appropriate page size is chosen (based on the system memory
+and/or file system constraints), but will never be less than 512 bytes.
 .PP
 If the pointer to the
 .I openinfo
@@ -412,6 +421,8 @@ int ffactor;
 int nelem;
 .br
 u_long (*hash)(const void *, const size_t);
+.br
+char *lorder;
 .RE
 } HASHINFO;
 .PP
@@ -443,6 +454,18 @@ user may find that the built-in hash function does poorly on a particular
 data set.
 User specified hash functions must take two arguments (a pointer to a byte
 string and a length) and return an u_long to be used as the hash value.
+.TP
+lorder
+The byte order for 4-byte integers in the stored database metadata.
+Each character of the string represents a byte and should be one of the
+characters '1', '2', '3' or '4'.
+If
+.I lorder
+is NULL (no order is specified) network order (``4321'') is used.
+If the  file already exists, the specified value is ignored and the
+value specified when the tree was created is used.
+(Obviously, portability of the data forming the key/data pairs is the
+concern of the application program.)
 .TP
 nelem
 .I Nelem
