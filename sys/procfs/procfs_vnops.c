@@ -27,7 +27,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *	$Id: procfs_vnops.c,v 1.1 1993/12/12 12:26:41 davidg Exp $
+ *	$Id: procfs_vnops.c,v 1.2 1993/12/19 00:54:37 wollman Exp $
  */
 
 /*
@@ -340,13 +340,13 @@ pfs_getattr (vp, vap, cred, p)
 	vap->va_flags = pfsp->pfs_vflags;
 
 	if (vp->v_flag & VROOT) {
-		vap->va_mode = 0755;
+		vap->va_mode = 0750; /* /proc = rwxr-x--- */
 		vap->va_nlink = 2;
 		vap->va_size =
 			roundup((2+nprocs)*sizeof(struct pfsdent), DIRBLKSIZ);
 		vap->va_size_rsv = 0;
 		vap->va_uid = 0;
-		vap->va_gid = 0;
+		vap->va_gid = 2; /* XXX group kmem */
 		vap->va_bytes = 0;
 		vap->va_atime = vap->va_mtime = vap->va_ctime = time; /*XXX*/
 		vap->va_rdev = makedev(255, 255);
@@ -355,7 +355,7 @@ pfs_getattr (vp, vap, cred, p)
 
 
 	vap->va_rdev = makedev(255, pfsp->pfs_pid);
-	vap->va_mode = 0600;
+	vap->va_mode = 0644;
 	procp = pfsp->pfs_pid?pfind(pfsp->pfs_pid):&proc0;
 	if (!procp)
 		return ESRCH;
