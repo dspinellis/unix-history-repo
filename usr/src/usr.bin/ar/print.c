@@ -9,30 +9,30 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)print.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)print.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
-#include <fcntl.h>
-#include <unistd.h>
+
 #include <dirent.h>
+#include <fcntl.h>
 #include <stdio.h>
+#include <unistd.h>
+
 #include "archive.h"
 #include "extern.h"
-
-extern CHDR chdr;			/* converted header */
-extern char *archive;			/* archive name */
 
 /*
  * print --
  *	Prints archive members on stdout - if member names given only
  *	print those members, otherwise print all members.
  */
+int
 print(argv)
 	char **argv;
 {
 	CF cf;
-	register int afd, all;
+	int afd, all;
 	char *file;
 
 	afd = open_archive(O_RDONLY);
@@ -58,7 +58,7 @@ print(argv)
 
 	if (*argv) {
 		orphans(argv);
-		return(1);
+		return (1);
 	}
-	return(0);
+	return (0);
 }

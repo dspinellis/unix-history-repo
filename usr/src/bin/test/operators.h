@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)operators.h	8.1 (Berkeley) %G%
+ *	@(#)operators.h	8.2 (Berkeley) %G%
  */
 
 #define	NOT		0
@@ -45,7 +45,7 @@
 #define	OP_STRING	2	/* arguments to operator are string */
 #define	OP_FILE		3	/* argument is a file name */
 
-extern char *const unary_op[];
-extern char *const binary_op[];
+extern const char *const unary_op[];
+extern const char *const binary_op[];
 extern const char op_priority[];
 extern const char op_argflag[];

@@ -9,34 +9,34 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)contents.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)contents.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/stat.h>
 #include <sys/time.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <tzfile.h>
-#include <dirent.h>
+
 #include <ar.h>
+#include <dirent.h>
+#include <fcntl.h>
 #include <stdio.h>
 #include <string.h>
+#include <tzfile.h>
+#include <unistd.h>
+
 #include "archive.h"
 #include "extern.h"
-
-extern CHDR chdr;			/* converted header */
-extern char *archive;			/* archive name */
 
 /*
  * contents --
  *	Handles t[v] option - opens the archive and then reads headers,
  *	skipping member contents.
  */
+int
 contents(argv)
-	register char **argv;
+	char **argv;
 {
-	register int afd, all;
+	int afd, all;
 	struct tm *tp;
 	char *file, buf[25];
 	
@@ -64,7 +64,7 @@ next:		skip_arobj(afd);
 
 	if (*argv) {
 		orphans(argv);
-		return(1);
+		return (1);
 	}
-	return(0);
+	return (0);
 }

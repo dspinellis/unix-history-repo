@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)modes.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)modes.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -167,8 +167,8 @@ msearch(argvp, ip)
 	char ***argvp;
 	struct info *ip;
 {
-	register struct modes *mp;
-	register char *name;
+	struct modes *mp;
+	char *name;
 
 	name = **argvp;
 

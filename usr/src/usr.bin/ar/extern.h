@@ -4,17 +4,25 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)extern.h	8.1 (Berkeley) %G%
+ *	@(#)extern.h	8.2 (Berkeley) %G%
  */
 
-#include <sys/cdefs.h>
+int	append __P((char **));
+void	badfmt __P((void));
+int	compare __P((char *));
+int	contents __P((char **));
+int	delete __P((char **));
+void	error __P((char *));
+int	extract __P((char **));
+char   *files __P((char **argv));
+int	move __P((char **));
+void	orphans __P((char **argv));
+int	print __P((char **));
+int	replace __P((char **));
+char   *rname __P((char *));
+int	tmp __P((void));
 
-__BEGIN_DECLS
-void	 badfmt __P((void));
-void	 error __P((char *));
-void	 orphans __P((char **argv));
-int	 compare __P((char *));
-int	 tmp __P((void));
-char	*files __P((char **argv));
-char	*rname __P((char *));
-__END_DECLS
+extern char *archive;
+extern char *posarg, *posname;		/* positioning file name */
+extern char *tname;                     /* temporary file "name" */
+extern CHDR chdr;			/* converted header */

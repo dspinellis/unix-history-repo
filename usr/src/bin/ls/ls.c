@@ -15,7 +15,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ls.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)ls.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -79,7 +79,7 @@ main(argc, argv)
 	if (isatty(STDOUT_FILENO)) {
 		if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &win) == -1 ||
 		    !win.ws_col) {
-			if (p = getenv("COLUMNS"))
+			if ((p = getenv("COLUMNS")) != NULL)
 				termwidth = atoi(p);
 		}
 		else
@@ -246,8 +246,8 @@ traverse(argc, argv, options)
 	int argc, options;
 	char *argv[];
 {
-	register FTS *ftsp;
-	register FTSENT *p, *chp;
+	FTS *ftsp;
+	FTSENT *p, *chp;
 	int ch_options;
 
 	if ((ftsp =
@@ -264,7 +264,7 @@ traverse(argc, argv, options)
 	 */
 	ch_options = !f_recursive && options & FTS_NOSTAT ? FTS_NAMEONLY : 0;
 
-	while (p = fts_read(ftsp))
+	while ((p = fts_read(ftsp)) != NULL)
 		switch (p->fts_info) {
 		case FTS_DC:
 			warnx("%s: directory causes a cycle", p->fts_name);
@@ -308,15 +308,14 @@ traverse(argc, argv, options)
  */
 static void
 display(p, list)
-	register FTSENT *p;
-	FTSENT *list;
+	FTSENT *p, *list;
 {
-	register FTSENT *cur;
 	struct stat *sp;
 	DISPLAY d;
+	FTSENT *cur;
 	NAMES *np;
-	u_long btotal, maxblock, maxinode, maxlen, maxnlink;
 	u_quad_t maxsize;
+	u_long btotal, maxblock, maxinode, maxlen, maxnlink;
 	int bcfile, flen, glen, ulen, maxflags, maxgroup, maxuser;
 	int entries, needstats;
 	char *user, *group, *flags, buf[20];	/* 32 bits == 10 digits */
@@ -456,7 +455,7 @@ static int
 mastercmp(a, b)
 	const FTSENT **a, **b;
 {
-	register int a_info, b_info;
+	int a_info, b_info;
 
 	a_info = (*a)->fts_info;
 	if (a_info == FTS_ERR)

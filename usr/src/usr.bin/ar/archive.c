@@ -9,28 +9,29 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)archive.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)archive.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/stat.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <errno.h>
-#include <dirent.h>
+
 #include <ar.h>
+#include <dirent.h>
+#include <err.h>
+#include <errno.h>
+#include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
+
 #include "archive.h"
 #include "extern.h"
-
-extern CHDR chdr;			/* converted header */
-extern char *archive;			/* archive name */
 
 typedef struct ar_hdr HDR;
 static char hb[sizeof(HDR) + 1];	/* real header */
 
+int
 open_archive(mode)
 	int mode;
 {
@@ -43,8 +44,7 @@ open_archive(mode)
 		if ((fd = open(archive, mode, DEFFILEMODE)) >= 0) {
 			/* POSIX.2 puts create message on stderr. */
 			if (!(options & AR_C))
-				(void)fprintf(stderr,
-				    "ar: creating archive %s.\n", archive);
+				warnx("creating archive %s", archive);
 			created = 1;
 			goto opened;
 		}
@@ -77,19 +77,20 @@ opened:	if (flock(fd, LOCK_EX|LOCK_NB) && errno != EOPNOTSUPP)
 			badfmt();
 	} else if (write(fd, ARMAG, SARMAG) != SARMAG)
 		error(archive);
-	return(fd);
+	return (fd);
 }
 
 void
 close_archive(fd)
 	int fd;
 {
+
 	(void)close(fd);			/* Implicit unlock. */
 }
 
 /* Convert ar header field to an integer. */
 #define	AR_ATOI(from, to, len, base) { \
-	bcopy(from, buf, len); \
+	memmove(buf, from, len); \
 	buf[len] = '\0'; \
 	to = strtol(buf, (char **)NULL, base); \
 }
@@ -98,18 +99,18 @@ close_archive(fd)
  * get_arobj --
  *	read the archive header for this member
  */
+int
 get_arobj(fd)
 	int fd;
 {
 	struct ar_hdr *hdr;
-	register int len, nr;
-	register char *p;
-	char buf[20];
+	int len, nr;
+	char *p, buf[20];
 
 	nr = read(fd, hb, sizeof(HDR));
 	if (nr != sizeof(HDR)) {
 		if (!nr)
-			return(0);
+			return (0);
 		if (nr < 0)
 			error(archive);
 		badfmt();
@@ -151,13 +152,13 @@ get_arobj(fd)
 		chdr.size -= len;
 	} else {
 		chdr.lname = 0;
-		bcopy(hdr->ar_name, chdr.name, sizeof(hdr->ar_name));
+		memmove(chdr.name, hdr->ar_name, sizeof(hdr->ar_name));
 
 		/* Strip trailing spaces, null terminate. */
 		for (p = chdr.name + sizeof(hdr->ar_name) - 1; *p == ' '; --p);
 		*++p = '\0';
 	}
-	return(1);
+	return (1);
 }
 
 static int already_written;
@@ -166,12 +167,13 @@ static int already_written;
  * put_arobj --
  *	Write an archive member to a file.
  */
+void
 put_arobj(cfp, sb)
 	CF *cfp;
 	struct stat *sb;
 {
-	register int lname;
-	register char *name;
+	int lname;
+	char *name;
 	struct ar_hdr *hdr;
 	off_t size;
 
@@ -193,8 +195,7 @@ put_arobj(cfp, sb)
 		if (options & AR_TR) {
 			if (lname > OLDARMAXNAME) {
 				(void)fflush(stdout);
-				(void)fprintf(stderr,
-				    "ar: warning: %s truncated to %.*s\n",
+				warnx("warning: %s truncated to %.*s\n",
 				    name, OLDARMAXNAME, name);
 				(void)fflush(stderr);
 			}
@@ -202,7 +203,7 @@ put_arobj(cfp, sb)
 			    sb->st_uid, sb->st_gid, sb->st_mode, sb->st_size,
 			    ARFMAG);
 			lname = 0;
-		} else if (lname > sizeof(hdr->ar_name) || index(name, ' '))
+		} else if (lname > sizeof(hdr->ar_name) || strchr(name, ' '))
 			(void)sprintf(hb, HDR1, AR_EFMT1, lname,
 			    sb->st_mtimespec.ts_sec, sb->st_uid, sb->st_gid,
 			    sb->st_mode, sb->st_size + lname, ARFMAG);
@@ -244,13 +245,14 @@ put_arobj(cfp, sb)
  *	because 16-bit word addressed copies were faster?)  Anyhow, it should
  *	have been ripped out long ago.
  */
+void
 copy_ar(cfp, size)
 	CF *cfp;
 	off_t size;
 {
 	static char pad = '\n';
-	register off_t sz;
-	register int from, nr, nw, off, to;
+	off_t sz;
+	int from, nr, nw, off, to;
 	char buf[8*1024];
 	
 	if (!(sz = size))

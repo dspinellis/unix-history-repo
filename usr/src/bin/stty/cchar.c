@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cchar.c	8.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)cchar.c	8.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -56,16 +56,22 @@ struct cchar cchars2[] = {
 	{ NULL },
 };
 
+static int
+c_cchar(a, b)
+        const void *a, *b;
+{
+
+        return (strcmp(((struct cchar *)a)->name, ((struct cchar *)b)->name));
+}
+
 int
 csearch(argvp, ip)
 	char ***argvp;
 	struct info *ip;
 {
-	register struct cchar *cp;
-	struct cchar tmp;
+	struct cchar *cp, tmp;
 	long val;
 	char *arg, *ep, *name;
-	static int c_cchar __P((const void *, const void *));
 		
 	name = **argvp;
 
@@ -110,11 +116,4 @@ csearch(argvp, ip)
 		ip->t.c_cc[cp->sub] = arg[0];
 	ip->set = 1;
 	return (1);
-}
-
-static int
-c_cchar(a, b)
-        const void *a, *b;
-{
-        return (strcmp(((struct cchar *)a)->name, ((struct cchar *)b)->name));
 }

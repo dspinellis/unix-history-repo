@@ -9,25 +9,27 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)misc.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)misc.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
-#include <sys/errno.h>
-#include <signal.h>
+
 #include <dirent.h>
-#include <unistd.h>
+#include <err.h>
+#include <errno.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
+
 #include "archive.h"
 #include "extern.h"
 #include "pathnames.h"
 
-extern CHDR chdr;			/* converted header */
-extern char *archive;			/* archive name */
 char *tname = "temporary file";		/* temporary file "name" */
 
+int
 tmp()
 {
 	extern char *envtmp;
@@ -44,7 +46,7 @@ tmp()
 	if (envtmp)
 		(void)sprintf(path, "%s/%s", envtmp, _NAME_ARTMP);
 	else
-		bcopy(_PATH_ARTMP, path, sizeof(_PATH_ARTMP));
+		strcpy(path, _PATH_ARTMP);
 	
 	sigfillset(&set);
 	(void)sigprocmask(SIG_BLOCK, &set, &oset);
@@ -52,7 +54,7 @@ tmp()
 		error(tname);
         (void)unlink(path);
 	(void)sigprocmask(SIG_SETMASK, &oset, NULL);
-	return(fd);
+	return (fd);
 }
 
 /*
@@ -64,55 +66,57 @@ char *
 files(argv)
 	char **argv;
 {
-	register char **list;
-	char *p;
+	char **list, *p;
 
 	for (list = argv; *list; ++list)
 		if (compare(*list)) {
 			p = *list;
-			for (; list[0] = list[1]; ++list);
-			return(p);
+			for (; list[0] = list[1]; ++list)
+				continue;
+			return (p);
 		}
-	return(NULL);
+	return (NULL);
 }
 
 void
 orphans(argv)
 	char **argv;
 {
+
 	for (; *argv; ++argv)
-		(void)fprintf(stderr,
-		    "ar: %s: not found in archive.\n", *argv);
+		warnx("%s: not found in archive", *argv);
 }
 
 char *
 rname(path)
 	char *path;
 {
-	register char *ind;
+	char *ind;
 
-	return((ind = rindex(path, '/')) ? ind + 1 : path);
+	return ((ind = strrchr(path, '/')) ? ind + 1 : path);
 }
 
+int
 compare(dest)
 	char *dest;
 {
+
 	if (options & AR_TR)
-		return(!strncmp(chdr.name, rname(dest), OLDARMAXNAME));
-	return(!strcmp(chdr.name, rname(dest)));
+		return (!strncmp(chdr.name, rname(dest), OLDARMAXNAME));
+	return (!strcmp(chdr.name, rname(dest)));
 }
 
 void
 badfmt()
 {
-	errno = EFTYPE;
-	error(archive);
+
+	errx(1, "%s: %s", archive, strerror(EFTYPE));
 }
 
 void
 error(name)
 	char *name;
 {
-	(void)fprintf(stderr, "ar: %s: %s\n", name, strerror(errno));
-	exit(1);
+
+	errx(1, "%s", name);
 }

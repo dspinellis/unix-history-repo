@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)apropos.c	8.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)apropos.c	8.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -20,6 +20,7 @@ static char sccsid[] = "@(#)apropos.c	8.5 (Berkeley) %G%";
 
 #include <ctype.h>
 #include <err.h>
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -27,17 +28,18 @@ static char sccsid[] = "@(#)apropos.c	8.5 (Berkeley) %G%";
 #include "../man/config.h"
 #include "../man/pathnames.h"
 
-#define	MAXLINELEN	1024			/* max line handled */
-
 static int *found, foundman;
+
+void apropos __P((char **, char *, int));
+void lowstr __P((char *, char *));
+int match __P((char *, char *));
+void usage __P((void));
 
 int
 main(argc, argv)
 	int argc;
 	char *argv[];
 {
-	extern char *optarg;
-	extern int optind;
 	ENTRY *ep;
 	TAG *tp;
 	int ch, rv;
@@ -86,11 +88,9 @@ main(argc, argv)
 			apropos(argv, ep->s, 0);
 	}
 
-	if (!foundman) {
-		(void)fprintf(stderr,
-		    "apropos: no %s file found.\n", _PATH_WHATIS);
-		exit(1);
-	}
+	if (!foundman)
+		errx(1, "no %s file found", _PATH_WHATIS);
+
 	rv = 1;
 	for (p = argv; *p; ++p)
 		if (found[p - argv])
@@ -100,15 +100,16 @@ main(argc, argv)
 	exit(rv);
 }
 
+void
 apropos(argv, path, buildpath)
 	char **argv, *path;
 	int buildpath;
 {
-	register char *end, *name, **p;
-	char buf[MAXLINELEN + 1], wbuf[MAXLINELEN + 1];
+	char *end, *name, **p;
+	char buf[LINE_MAX + 1], wbuf[LINE_MAX + 1];
 
 	for (name = path; name; name = end) {	/* through name list */
-		if (end = index(name, ':'))
+		if (end = strchr(name, ':'))
 			*end++ = '\0';
 
 		if (buildpath) {
@@ -125,9 +126,8 @@ apropos(argv, path, buildpath)
 
 		/* for each file found */
 		while (fgets(buf, sizeof(buf), stdin)) {
-			if (!index(buf, '\n')) {
-				(void)fprintf(stderr,
-				    "apropos: %s line too long.\n", name);
+			if (!strchr(buf, '\n')) {
+				warnx("%s: line too long", name);
 				continue;
 			}
 			lowstr(buf, wbuf);
@@ -150,31 +150,33 @@ apropos(argv, path, buildpath)
  * match --
  *	match anywhere the string appears
  */
+int
 match(bp, str)
-	register char *bp, *str;
+	char *bp, *str;
 {
-	register int len;
-	register char test;
+	int len;
+	char test;
 
 	if (!*bp)
-		return(0);
+		return (0);
 	/* backward compatible: everything matches empty string */
 	if (!*str)
-		return(1);
+		return (1);
 	for (test = *str++, len = strlen(str); *bp;)
 		if (test == *bp++ && !strncmp(bp, str, len))
-			return(1);
-	return(0);
+			return (1);
+	return (0);
 }
 
 /*
  * lowstr --
  *	convert a string to lower case
  */
+void
 lowstr(from, to)
-	register char *from, *to;
+	char *from, *to;
 {
-	register char ch;
+	char ch;
 
 	while ((ch = *from++) && ch != '\n')
 		*to++ = isupper(ch) ? tolower(ch) : ch;
@@ -185,8 +187,10 @@ lowstr(from, to)
  * usage --
  *	print usage message and die
  */
+void
 usage()
 {
+
 	(void)fprintf(stderr,
 	    "usage: apropos [-C file] [-M path] [-m path] keyword ...\n");
 	exit(1);

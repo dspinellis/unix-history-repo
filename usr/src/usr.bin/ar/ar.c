@@ -15,24 +15,28 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ar.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)ar.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
-#include <sys/errno.h>
-#include <dirent.h>
-#include <stdio.h>
+
 #include <ar.h>
-#include <string.h>
-#include <stdlib.h>
+#include <dirent.h>
+#include <err.h>
 #include <paths.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+
 #include "archive.h"
 #include "extern.h"
 
 CHDR chdr;
 u_int options;
 char *archive, *envtmp, *posarg, *posname;
-static void badoptions(), usage();
+static void badoptions __P((char *));
+static void usage __P((void));
 
 /*
  * main --
@@ -40,15 +44,14 @@ static void badoptions(), usage();
  *	functions.  Some hacks that let us be backward compatible with 4.3 ar
  *	option parsing and sanity checking.
  */
+int
 main(argc, argv)
 	int argc;
 	char **argv;
 {
-	extern int optind;
 	int c;
 	char *p;
-	int (*fcall)(), append(), contents(), delete(), extract(),
-	    move(), print(), replace();
+	int (*fcall) __P((char **));
 
 	if (argc < 3)
 		usage();
@@ -58,10 +61,8 @@ main(argc, argv)
 	 * Fix it, if necessary.
 	*/
 	if (*argv[1] != '-') {
-		if (!(p = malloc((u_int)(strlen(argv[1]) + 2)))) {
-			(void)fprintf(stderr, "ar: %s.\n", strerror(errno));
-			exit(1);
-		}
+		if (!(p = malloc((u_int)(strlen(argv[1]) + 2))))
+			err(1, NULL);
 		*p = '-';
 		(void)strcpy(p + 1, argv[1]);
 		argv[1] = p;
@@ -132,21 +133,18 @@ main(argc, argv)
 
 	/* One of -dmpqrtx required. */
 	if (!(options & (AR_D|AR_M|AR_P|AR_Q|AR_R|AR_T|AR_X))) {
-		(void)fprintf(stderr,
-		    "ar: one of options -dmpqrtx is required.\n");
+		warnx("one of options -dmpqrtx is required");
 		usage();
 	}
 	/* Only one of -a and -bi allowed. */
 	if (options & AR_A && options & AR_B) {
-		(void)fprintf(stderr,
-		    "ar: only one of -a and -[bi] options allowed.\n");
+		warnx("only one of -a and -[bi] options allowed");
 		usage();
 	}
 	/* -ab require a position argument. */
 	if (options & (AR_A|AR_B)) {
 		if (!(posarg = *argv++)) {
-			(void)fprintf(stderr,
-			    "ar: no position operand specified.\n");
+			warnx("no position operand specified");
 			usage();
 		}
 		posname = rname(posarg);
@@ -174,13 +172,13 @@ main(argc, argv)
 		badoptions("-x");
 
 	if (!(archive = *argv++)) {
-		(void)fprintf(stderr, "ar: no archive specified.\n");
+		warnx("no archive specified");
 		usage();
 	}
 
 	/* -dmqr require a list of archive elements. */
 	if (options & (AR_D|AR_M|AR_Q|AR_R) && !*argv) {
-		(void)fprintf(stderr, "ar: no archive members specified.\n");
+		warnx("no archive members specified");
 		usage();
 	}
 
@@ -191,14 +189,15 @@ static void
 badoptions(arg)
 	char *arg;
 {
-	(void)fprintf(stderr,
-	    "ar: illegal option combination for %s.\n", arg);
+
+	warnx("illegal option combination for %s", arg);
 	usage();
 }
 
 static void
 usage()
 {
+
 	(void)fprintf(stderr, "usage:  ar -d [-Tv] archive file ...\n");
 	(void)fprintf(stderr, "\tar -m [-Tv] archive file ...\n");
 	(void)fprintf(stderr, "\tar -m [-abiTv] position archive file ...\n");

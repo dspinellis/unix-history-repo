@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)archive.h	8.1 (Berkeley) %G%
+ *	@(#)archive.h	8.2 (Berkeley) %G%
  */
 
 /* Ar(1) options. */
@@ -69,13 +69,11 @@ typedef struct {
 
 #include <sys/cdefs.h>
 
-__BEGIN_DECLS
+struct stat;
+
 void	close_archive __P((int));
-void	skip_arobj __P((int));
-int	copy_ar __P((CF *, off_t));
+void	copy_ar __P((CF *, off_t));
 int	get_arobj __P((int));
 int	open_archive __P((int));
-struct stat;
-int	put_arobj __P((CF *, struct stat *));
-__END_DECLS
-
+void	put_arobj __P((CF *, struct stat *));
+void	skip_arobj __P((int));
