@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_vnops.c	7.107 (Berkeley) %G%
+ *	@(#)ufs_vnops.c	7.108 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -1448,7 +1448,7 @@ ufs_readdir(ap)
 			aiov.iov_len = count;
 			MALLOC(dirbuf, caddr_t, count, M_TEMP, M_WAITOK);
 			aiov.iov_base = dirbuf;
-			error = VOP_READ(ap->a_vp, uio, 0, ap->a_cred);
+			error = VOP_READ(ap->a_vp, &auio, 0, ap->a_cred);
 			if (error == 0) {
 				readcnt = count - auio.uio_resid;
 				edp = (struct dirent *)&dirbuf[readcnt];
