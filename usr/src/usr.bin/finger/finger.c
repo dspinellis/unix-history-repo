@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)finger.c	4.4 (Berkeley) %G%";
+static char *sccsid = "@(#)finger.c	4.5 (Berkeley) %G%";
 #endif
 
 /*  This is a finger program.  It prints out useful information about users
@@ -850,7 +850,7 @@ decode( pers )
 
 {
 	struct  passwd		*pwdt = pers->pwd;
-	char			buffer[ 40 ],  *bp,  *gp,  *lp;
+	char			buffer[ 256 ],  *bp,  *gp,  *lp;
 	char			*phone();
 	int			alldigits;
 	int			len;
