@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)intro.3	6.5 (Berkeley) %G%
+.\"	@(#)intro.3	6.6 (Berkeley) %G%
 .\"
 .sh 1 Usage
 .pp
@@ -26,7 +26,7 @@ Since it must allocate space for the windows,
 it can overflow core when attempting to do so.
 On this rather rare occasion,
 .Fn initscr
-returns CURSES_ERR.
+returns ERR.
 .Fn Initscr
 must
 .bi always
@@ -90,14 +90,14 @@ and
 .Fn move .
 .Fn Addch
 adds a character at the current \*y,
-returning CURSES_ERR if it would cause the window to illegally scroll,
+returning ERR if it would cause the window to illegally scroll,
 .i i.e. ,
 printing a character in the lower right-hand corner
 of a terminal which automatically scrolls
 if scrolling is not allowed.
 .Fn Move
 changes the current \*y to whatever you want them to be.
-It returns CURSES_ERR if you try to move off the window.
+It returns ERR if you try to move off the window.
 As mentioned above, you can combine the two into
 .Fn mvaddch
 to do both things in one call.
