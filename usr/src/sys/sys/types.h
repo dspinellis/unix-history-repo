@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)types.h	7.3 (Berkeley) %G%
+ *	@(#)types.h	7.4 (Berkeley) %G%
  */
 
 #ifndef _TYPES_
@@ -41,10 +41,12 @@ typedef	u_long	ino_t;
 typedef	long	swblk_t;
 typedef	long	size_t;
 typedef	long	time_t;
+typedef	u_long	clock_t;
 typedef	short	dev_t;
 typedef	long	off_t;
 typedef	u_short	uid_t;
 typedef	u_short	gid_t;
+typedef	short	pid_t;
 
 #define	NBBY	8		/* number of bits in a byte */
 /*
