@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)swapgeneric.c	7.4 (Berkeley) %G%
+ *	@(#)swapgeneric.c	7.5 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -43,7 +43,7 @@ struct	genericconf {
 	dev_t	gc_root;
 } genericconf[] = {
 	{ (caddr_t)&vddriver,	"dk",	makedev(1, 0),	},
-	{ (caddr_t)&hdcdriver,	"hd",	makedev(1, 0),	},
+	{ (caddr_t)&hdcdriver,	"hd",	makedev(2, 0),	},
 	{ 0 },
 };
 
@@ -63,10 +63,13 @@ retry:
 		printf("root device? ");
 		gets(name);
 		for (gc = genericconf; gc->gc_driver; gc++)
-		    for (cp = name, gp = gc->gc_name; *cp == *gp; cp++, gp++)
-			if (*gp == 0)
-				goto gotit;
-		printf("use dk%%d\n");
+			for (cp = name, gp = gc->gc_name; *cp == *gp; cp++)
+				if (!*++gp)
+					goto gotit;
+		printf("use");
+		for (gc = genericconf; gc->gc_driver; gc++)
+			printf(" %s%%d", gc->gc_name);
+		printf("\n");
 		goto retry;
 gotit:
 		cp = name + 2;
@@ -104,39 +107,44 @@ doswap:
 		rootdev = dumpdev;
 }
 
-gets(cp)
-	char *cp;
+gets(buf)
+	char *buf;
 {
+	register int c;
 	register char *lp;
-	register c;
 
-	lp = cp;
-	for (;;) {
+	for (lp = buf;;) {
 		printf("%c", c = cngetc()&0177);
 		switch (c) {
 		case '\n':
 		case '\r':
-			*lp++ = '\0';
+			*lp = '\0';
 			return;
 		case '\b':
 		case '\177':
-			if (lp > cp) {
-				printf(" \b");
-				lp--;
+			if (lp > buf) {
+				--lp;
+				printf("\b \b");
 			}
-			continue;
+			break;
 		case '#':
-			lp--;
-			if (lp < cp)
-				lp = cp;
-			continue;
+			if (lp > buf)
+				--lp;
+			break;
+		case 'r'&037:
+			*lp = 0;
+			printf("\n");
+			printf("%s", buf);
+			break;
 		case '@':
 		case 'u'&037:
-			lp = cp;
+		case 'w'&037:
+			lp = buf;
 			printf("%c", '\n');
-			continue;
+			break;
 		default:
 			*lp++ = c;
 		}
 	}
+	/* NOTREACHED */
 }
