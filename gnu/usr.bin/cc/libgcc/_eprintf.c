@@ -82,7 +82,6 @@ typedef union
 } DIunion;
 extern DItype __fixunssfdi (SFtype a);
 extern DItype __fixunsdfdi (DFtype a);
-typedef	 	size_t;
 typedef long fpos_t;		 
 struct __sbuf {
 	unsigned char *_base;
