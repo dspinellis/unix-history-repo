@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)vmstat.c	4.11 (Berkeley) %G%";
+static	char *sccsid = "@(#)vmstat.c	4.12 (Berkeley) %G%";
 #endif
 
 #include <stdio.h>
@@ -43,14 +43,16 @@ struct nlist nl[] = {
 	{ "_pgintime" },
 #define X_HZ		12
 	{ "_hz" },
+#define	X_PHZ		13
+	{ "_phz" },
 #ifdef vax
-#define X_MBDINIT	13
+#define X_MBDINIT	14
 	{ "_mbdinit" },
-#define X_UBDINIT	14
+#define X_UBDINIT	15
 	{ "_ubdinit" },
 #endif
 #ifdef sun
-#define X_MBDINIT	13
+#define X_MBDINIT	14
 	{ "_mbdinit" },
 #endif
 	{ "" },
@@ -61,6 +63,15 @@ char dr_unit[DK_NDRIVE];
 double	stat1();
 int	firstfree, maxfree;
 int	hz;
+int	phz;
+int	HZ;
+#ifdef sun
+#define	INTS(x)	(x)
+#endif
+#ifdef vax
+#define	INTS(x)	((x) - (hz + phz))
+#endif
+
 struct
 {
 	int	busy;
@@ -83,7 +94,6 @@ int	zero;
 int	deficit;
 double	etime;
 int 	mf;
-int	swflag;
 
 main(argc, argv)
 	int argc;
@@ -99,9 +109,6 @@ main(argc, argv)
 	long t;
 	extern char _sobuf[];
 
-#ifdef sun
-	swflag = 1;
-#endif
 	setbuf(stdout, _sobuf);
 	nlist("/vmunix", nl);
 	if(nl[0].n_type == 0) {
@@ -119,11 +126,6 @@ main(argc, argv)
 		char *cp = *argv++;
 		argc--;
 		while (*++cp) switch (*cp) {
-
-		case 'S':
-			swflag = 1 - swflag;
-			break;
-
 
 		case 't':
 			dotimes();
@@ -159,6 +161,9 @@ main(argc, argv)
 	read(mf, &boottime, sizeof boottime);
 	lseek(mf, (long)nl[X_HZ].n_value, 0);
 	read(mf, &hz, sizeof hz);
+	lseek(mf, (long)nl[X_PHZ].n_value, 0);
+	read(mf, &phz, sizeof phz);
+	HZ = phz ? phz : hz;
 	for (i = 0; i < DK_NDRIVE; i++) {
 		strcpy(dr_name[i], "xx");
 		dr_unit[i] = i;
@@ -175,8 +180,7 @@ reprint:
 	/* s1 = z; */
 printf("\
  procs     memory                       page      disk  faults          cpu\n\
- r b w   avm  fre  %5s  pi  po  fr  de  sr %c%d %c%d %c%d %c%d  in  sy  cs us sy id\n\
-", swflag ? "si so" : "re at",
+ r b w   avm  fre  re at  pi  po  fr  de  sr %c%d %c%d %c%d %c%d  in  sy  cs us sy id\n",
  dr_name[0][0], dr_unit[0], dr_name[1][0], dr_unit[1], dr_name[2][0], dr_unit[2], dr_name[3][0], dr_unit[3]);
 loop:
 	lseek(mf, (long)nl[X_CPTIME].n_value, 0);
@@ -214,26 +218,16 @@ loop:
 	printf("%2d%2d%2d", total.t_rq, total.t_dw+total.t_pw, total.t_sw);
 #define pgtok(a) ((a)*NBPG/1024)
 	printf("%6d%5d", pgtok(total.t_avm), pgtok(total.t_free));
-	printf("%4d%3d",
-	    swflag ?
-	        sum.v_swpin-osum.v_swpin :
-	        (rate.v_pgrec - (rate.v_xsfrec+rate.v_xifrec))/nintv,
-	    swflag ?
-		sum.v_swpout-osum.v_swpout :
-	        (rate.v_xsfrec+rate.v_xifrec)/nintv);
+	printf("%4d%3d", (rate.v_pgrec - (rate.v_xsfrec+rate.v_xifrec))/nintv,
+	    (rate.v_xsfrec+rate.v_xifrec)/nintv);
 	printf("%4d", pgtok(rate.v_pgpgin)/nintv);
 	printf("%4d%4d%4d%4d", pgtok(rate.v_pgpgout)/nintv,
 	    pgtok(rate.v_dfree)/nintv, pgtok(deficit), rate.v_scan/nintv);
-	etime /= (float) hz;
+	etime /= (float) HZ;
 	for(i=0; i<4; i++)
 		stats(i);
-#ifdef sun
-	printf("%4d%4d", (rate.v_intr/nintv), rate.v_syscall/nintv);
-#endif
-#ifdef vax
-	printf("%4d%4d", (rate.v_intr/nintv) - hz, rate.v_syscall/nintv);
-#endif
-	printf("%4d", rate.v_swtch/nintv);
+	printf("%4d%4d%4d", INTS(rate.v_intr/nintv), rate.v_syscall/nintv,
+	    rate.v_swtch/nintv);
 	for(i=0; i<CPUSTATES; i++) {
 		float f = stat1(i);
 		if (i == 0) {		/* US+NI */
