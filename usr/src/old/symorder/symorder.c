@@ -1,9 +1,11 @@
 #ifndef lint
-static char *sccsid = "@(#)symorder.c	4.4 (Berkeley) %G%";
+static char *sccsid = "@(#)symorder.c	4.5 (Berkeley) %G%";
 #endif
+
 /*
  * symorder - reorder symbol table
  */
+
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -13,51 +15,50 @@ static char *sccsid = "@(#)symorder.c	4.4 (Berkeley) %G%";
 
 struct	nlist order[SPACE];
 
-char	*savestr();
-struct	nlist nl1, nl2;
+char	*savestr(), *index(), *malloc();
 struct	exec exec;
-FILE	*strf;
-off_t	sa, ss;
+off_t	sa;
 struct	stat stb;
 int	nsym = 0;
 int	symfound = 0;
+char	*strings;
+char	*newstrings;
+struct	nlist *symtab;
+struct	nlist *newtab;
+int	symsize;
 char	asym[BUFSIZ];
 
 main(argc, argv)
 	char **argv;
 {
-	register struct nlist *p, *q;
+	register char *ns;
+	register struct nlist *symp;
+	register struct nlist *p;
 	register FILE *f;
-	register int na, i, j;
-	int maxlen;
+	register int i;
 	int n, o;
 
-	if(argc != 3) {
+	if (argc != 3) {
 		fprintf(stderr, "Usage: symorder orderlist file\n");
 		exit(1);
 	}
-	if((f = fopen(argv[1], "r")) == NULL) {
+	if ((f = fopen(argv[1], "r")) == NULL) {
 		perror(argv[1]);
 		exit(1);
 	}
-	maxlen = 0;
-	for(p = order; fgets(asym, sizeof asym, f) != NULL; p++, nsym++) {
-		for(i = 0; asym[i] && asym[i] != '\n'; i++)
+	for (p = order; fgets(asym, sizeof asym, f) != NULL; p++, nsym++) {
+		for (i = 0; asym[i] && asym[i] != '\n'; i++)
 			continue;
 		if (asym[i] == '\n')
 			asym[i] = 0;
 		p->n_un.n_name = savestr(asym);
-		if (maxlen < strlen(p->n_un.n_name))
-			maxlen = strlen(p->n_un.n_name);
 	}
 	fclose(f);
-	if((f = fopen(argv[2], "r")) == NULL)
+	if ((f = fopen(argv[2], "r")) == NULL)
 		perror(argv[2]), exit(1);
-	if((strf = fopen(argv[2], "r")) == NULL)
+	if ((o = open(argv[2], 1)) < 0)
 		perror(argv[2]), exit(1);
-	if((o = open(argv[2], 1)) < 0)
-		perror(argv[2]), exit(1);
-	if((fread(&exec, sizeof exec, 1, f)) != 1 || N_BADMAG(exec)) {
+	if ((fread(&exec, sizeof exec, 1, f)) != 1 || N_BADMAG(exec)) {
 		fprintf(stderr, "symorder: %s: bad format\n", argv[2]);
 		exit(1);
 	}
@@ -67,58 +68,140 @@ main(argc, argv)
 	}
 	fstat(fileno(f), &stb);
 	if (stb.st_size < N_STROFF(exec)+sizeof(off_t)) {
-		fprintf(stderr, "symorder: %s is in old format or truncated\n", argv[2]);
+		fprintf(stderr, "symorder: %s is in old format or truncated\n",
+		    argv[2]);
 		exit(1);
 	}
 	sa = N_SYMOFF(exec);
-	na = sa;
-	ss = sa + exec.a_syms;
 	fseek(f, sa, 0);
 	n = exec.a_syms;
-	while(n && symfound < nsym) {
-		if(fread(&nl1, sizeof nl1, 1, f) != 1) {
-			fprintf(stderr, "Short file "); perror(argv[2]);
+	symtab = (struct nlist *)malloc(n);
+	if (symtab == (struct nlist *)0) {
+		fprintf(stderr, "symorder: Out of core, no space for symtab\n");
+		exit(1);
+	}
+	if (fread((char *)symtab, 1, n, f) != n) {
+		fprintf(stderr, "symorder: Short file "); perror(argv[2]);
+		exit(1);
+	}
+	if (fread((char *)&symsize, sizeof (int), 1, f) != 1 ||
+	    symsize <= 0) {
+		fprintf(stderr, "symorder: No strings "); perror(argv[2]);
+		exit(1);
+	}
+	strings = malloc(symsize);
+	if (strings == (char *)0) {
+		fprintf(stderr,"symorder: Out of core, no space for strings\n");
+		exit(1);
+	}
+	if (fread(strings, 1, symsize, f) != symsize) {
+		fprintf(stderr, "symorder: Truncated strings "); 
+		perror(argv[2]);
+		exit(1);
+	}
+
+	newtab = (struct nlist *)malloc(n);
+	if (newtab == (struct nlist *)0) {
+		fprintf(stderr,
+		    "symorder: Out of core, no space for new symtab\n");
+		exit(1);
+	}
+	i = n / sizeof (struct nlist);
+	reorder(symtab, newtab, i);
+	free((char *)symtab);
+	symtab = newtab;
+
+	newstrings = malloc(symsize);
+	if (newstrings == (char *)0) {
+		fprintf(stderr,
+		    "symorder: Out of core, no space for newstrings\n");
+		exit(1);
+	}
+	ns = newstrings;
+	for (symp = symtab; --i >= 0; symp++) {
+		if (symp->n_un.n_strx == 0)
+			continue;
+		symp->n_un.n_strx -= sizeof (int);
+		if ((unsigned)symp->n_un.n_strx >= symsize) {
+			fprintf(stderr,"symorder: Corrupted string pointers\n");
 			exit(1);
 		}
-		na += sizeof nl1;
-		n -= sizeof nl1;
-		if (nl1.n_un.n_strx == 0 || nl1.n_type & N_STAB)
-			continue;
-		fseek(strf, ss+nl1.n_un.n_strx, 0);
-		fread(asym, maxlen+1, 1, strf);
-		for(j = 0; j < nsym; j++) {
-			for(i = 0; asym[i]; i++)
-				if(asym[i] != order[j].n_un.n_name[i])
-					goto cont;
-			if (order[j].n_un.n_name[i])
-				goto cont;
-			if (order[j].n_value)
-				goto cont;
-			order[j].n_value = 1;
-			fseek(f, (i = (sa+(j * sizeof nl1))), 0);
-			if(fread(&nl2, sizeof nl2, 1, f) != 1)
-				printf("Read err on 2nd asym\n");
-			lseek(o, i, 0);
-			if(write(o, &nl1, sizeof nl1) == -1)
-				perror("write1");
-			lseek(o, na-sizeof nl1, 0);
-			if(write(o, &nl2, sizeof nl2) == -1)
-				perror("write2");
-			fseek(f, 0, 0);
-			fseek(f, na, 0);
-			symfound++;
-			break;
-	cont:           ;
-
+		strcpy(ns, &strings[symp->n_un.n_strx]);
+		symp->n_un.n_strx = (ns - newstrings) + sizeof (int);
+		ns = index(ns, 0) + 1;
+		if (ns > &newstrings[symsize]) {
+			fprintf(stderr, "symorder: Strings grew longer!\n");
+			exit(1);
 		}
 	}
-	if(symfound < nsym) {
-		fprintf(stderr, "%d symbol(s) not found:\n", nsym - symfound);
+
+	lseek(o, sa, 0);
+	if (write(o, (char *)symtab, n) != n) {
+		fprintf(stderr, "symorder: Write failed "); perror(argv[2]);
+		exit(1);
+	}
+	if (write(o, (char *)&symsize, sizeof (int)) != sizeof (int)) {
+		fprintf(stderr, "symorder: Write failed "); perror(argv[2]);
+		exit(1);
+	}
+	if (write(o, newstrings, symsize) != symsize) {
+		fprintf(stderr, "symorder: Write failed "); perror(argv[2]);
+		exit(1);
+	}
+	if ((i = nsym - symfound) > 0) {
+		fprintf(stderr, "symorder: %d symbol%s not found:\n",
+		    i, i == 1 ? "" : "s");
 		for (i = 0; i < nsym; i++) {
 			if (order[i].n_value == 0)
 				printf("%s\n", order[i].n_un.n_name);
 		}
 	}
+	exit(0);
+}
+
+reorder(st1, st2, n)
+	register struct nlist *st1, *st2;
+	register n;
+{
+	register struct nlist *stp = st2 + nsym;
+	register i;
+
+	while (--n >= 0) {
+		i = inlist(st1);
+		if (i == -1)
+			*stp++ = *st1++;
+		else
+			st2[i] = *st1++;
+	}
+}
+
+inlist(p)
+	register struct nlist *p;
+{
+	register char *nam;
+	register struct nlist *op;
+
+	if (p->n_type & N_STAB)
+		return (-1);
+	if (p->n_un.n_strx == 0)
+		return (-1);
+
+	nam = &strings[p->n_un.n_strx - sizeof(int)];
+	if (nam >= &strings[symsize]) {
+		fprintf(stderr, "symorder: corrupt symtab\n");
+		exit(1);
+	}
+
+	for (op = &order[nsym]; --op >= order; ) {
+		if (strcmp(op->n_un.n_name, nam) != 0)
+			continue;
+		if (op->n_value == 0) {
+			op->n_value++;
+			symfound++;
+		}
+		return (op - order);
+	}
+	return (-1);
 }
 
 #define	NSAVETAB	4096
