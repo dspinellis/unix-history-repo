@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)stty.1	6.2 (Berkeley) %G%
+.\"	@(#)stty.1	6.3 (Berkeley) %G%
 .\"
 .TH STTY 1 ""
 .UC 4
@@ -17,10 +17,23 @@ sets certain I/O options on the current output terminal,
 placing its output on the diagnostic output.
 With no argument, it reports the speed of the terminal and the
 settings of the options which are different from their defaults.
-With the argument ``all'', all normally used option settings are reported.
-With the argument ``everything'', everything
+Use of one of the following options modifies the output as described:
+.TP 10
+.B all
+All normally used option settings are reported.
+.TP 10
+.B everything
+Everything
 .I stty
 knows about is printed.
+.TP 10
+.B speed
+The terminal speed alone is printed on the standard output.
+.TP 10
+.B size
+The terminal (window) sizes are printed on the standard output,
+first rows and then columns.
+.sp
 The option strings are
 selected from the following set:
 .TP  10
@@ -191,7 +204,7 @@ set end of file character to
 set break character to
 .I c
 (default undefined.)
-This character is an extra wakeup causing character.
+This character is an additional character causing wakeup.
 .br
 .ns
 .TP 10
@@ -270,6 +283,15 @@ hang up phone line immediately
 .br
 Set terminal baud rate to the number given, if possible.
 (These are the speeds supported by the DH-11 interface).
+.TP 10
+.BI rows \ n\fR
+The terminal size is recorded as having
+.I n
+rows.
+.BI columns \ n\fR
+The terminal size is recorded as having
+.I n
+columns.
 .PP
 A teletype driver which supports the job control processing of
 .IR csh (1)
