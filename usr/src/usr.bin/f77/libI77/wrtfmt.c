@@ -1,5 +1,5 @@
 /*
-char id_wrtfmt[] = "@(#)wrtfmt.c	1.7";
+char id_wrtfmt[] = "@(#)wrtfmt.c	1.8";
  *
  * formatted write routines
  */
@@ -160,7 +160,10 @@ wrt_E(p,w,d,e,len,expch) ufloat *p; ftnlen len; char expch;
 
 	if((len==sizeof(float)?p->pf:p->pd)==0.0)
 	{
+		n = cblank;
+		cblank = 1;	/* force '0' fill */
 		wrt_F(p,w-(e+2),d,len);
+		cblank = n;
 		PUT(expch)
 		PUT('+')
 /*		for(i=0;i<(e-1);i++)PUT(' ')
