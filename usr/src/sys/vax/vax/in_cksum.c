@@ -1,4 +1,4 @@
-/*	in_cksum.c	6.2	84/08/28	*/
+/*	in_cksum.c	6.3	85/05/01	*/
 
 #include "types.h"
 #include "mbuf.h"
@@ -70,14 +70,18 @@ in_cksum(m, len)
 		 */
 		while ((mlen -= 32) >= 0) {
 #undef ADD
-			asm("clrl r0");		/* clears carry */
+#ifdef unneeded		 /* The loop construct clears carry for us... */
+			asm("bicpsr $1");		/* clears carry */
+#endif
 #define ADD		asm("adwc (r9)+,r8;");
 			ADD; ADD; ADD; ADD; ADD; ADD; ADD; ADD;
 			asm("adwc $0,r8");
 		}
 		mlen += 32;
 		while ((mlen -= 8) >= 0) {
-			asm("clrl r0");
+#ifdef unneeded		 /* The loop construct clears carry for us... */
+			asm("bicpsr $1");		/* clears carry */
+#endif
 			ADD; ADD;
 			asm("adwc $0,r8");
 		}
