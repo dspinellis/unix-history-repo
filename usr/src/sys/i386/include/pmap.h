@@ -19,15 +19,11 @@
  *
  * from hp300:	@(#)pmap.h	7.2 (Berkeley) 12/16/90
  *
- *	@(#)pmap.h	1.4 (Berkeley) %G%
+ *	@(#)pmap.h	1.5 (Berkeley) %G%
  */
 
 #ifndef	_PMAP_MACHINE_
 #define	_PMAP_MACHINE_	1
-
-#include "sys/lock.h"
-#include "machine/vmparam.h"
-#include "vm/vm_statistics.h"
 
 /*
  * 386 page table entry and page table directory
@@ -154,11 +150,9 @@ extern int IdlePTD;
 /*
  * Pmap stuff
  */
-#define PMAP_NULL	((pmap_t) 0)
 
 struct pmap {
 	pd_entry_t		*pm_pdir;	/* KVA of page directory */
-	/* caddr_t			*pm_ptobj;	/* page table object */
 	boolean_t		pm_pdchanged;	/* pdir changed */
 	short			pm_dref;	/* page directory ref count */
 	short			pm_count;	/* pmap reference count */
@@ -178,7 +172,7 @@ extern pmap_t		kernel_pmap;
 	if ((pmapp) != PMAP_NULL /*&& (pmapp)->pm_pdchanged */) {  \
 		(pcbp)->pcb_cr3 = \
 		    pmap_extract(kernel_pmap, (pmapp)->pm_pdir); \
-		if ((pmapp) == u.u_procp->p_map->pmap) \
+		if ((pmapp) == &curproc->p_vmspace->vm_pmap) \
 			load_cr3((pcbp)->pcb_cr3); \
 		(pmapp)->pm_pdchanged = FALSE; \
 	}

@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)trap.h	5.3 (Berkeley) %G%
+ *	@(#)trap.h	5.4 (Berkeley) %G%
  */
 
 /*
@@ -65,3 +65,6 @@
 #define	    BUS_SEGNP_FAULT	T_SEGNPFLT	/* segment not present */
 #define	    BUS_STK_FAULT	T_STKFLT	/* stack segment */
 #define	    BUS_SEGM_FAULT	T_RESERVED	/* segment protection base */
+
+/* Trap's coming from user mode */
+#define	T_USER	0x100
