@@ -1,4 +1,4 @@
-/*	ioctl.h	4.28	83/03/19	*/
+/*	ioctl.h	4.29	83/03/19	*/
 /*
  * Ioctl definitions
  */
@@ -207,5 +207,5 @@ struct ltchars {
 #define	SIOCGIFDSTADDR	_IOR(s,15, struct ifreq)/* get point-point address */
 #define	SIOCSIFFLAGS	_IOW(s,16, struct ifreq)/* set interface flags */
 #define	SIOCGIFFLAGS	_IOR(s,17, struct ifreq)/* get interface flags */
-#define	SIOCGIFCONF	_IOR(s,20, struct ifconf)/* get interface list */
+#define	SIOCGIFCONF	_IOWR(s,20,struct ifconf)/* get interface list */
 #endif
