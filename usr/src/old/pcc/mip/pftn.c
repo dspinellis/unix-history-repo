@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid ="@(#)pftn.c	1.28 (Berkeley) %G%";
+static char *sccsid ="@(#)pftn.c	1.29 (Berkeley) %G%";
 #endif lint
 
 # include "pass1.h"
@@ -217,10 +217,6 @@ defid( q, class ) register NODE *q; register int class; {
 		break;
 
 	case MOE:
-		if( scl == class ){
-			if( p->offset!= strucoff++ ) break;
-			psave( idp );
-			}
 		break;
 
 	case EXTDEF:
