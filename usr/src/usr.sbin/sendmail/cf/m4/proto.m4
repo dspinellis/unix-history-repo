@@ -8,7 +8,7 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(`@(#)proto.m4	8.73 (Berkeley) %G%')
+VERSIONID(`@(#)proto.m4	8.74 (Berkeley) %G%')
 
 MAILER(local)dnl
 
@@ -86,6 +86,7 @@ CPBITNET
 
 ')dnl
 ifdef(`DECNET_RELAY',
+`define(`_USE_DECNET_SYNTAX_')dnl
 # DECnet relay host
 DC`'DECNET_RELAY
 CPDECNET
@@ -463,9 +464,10 @@ R$- ! $+		$@ $>96 $2 < @ $1 .UUCP >	resolve uucp names
 R$+ . $- ! $+		$@ $>96 $3 < @ $1 . $2 >		domain uucps
 R$+ ! $+		$@ $>96 $2 < @ $1 .UUCP >	uucp subdomains
 ')
-ifdef(`DECNET_RELAY',
+ifdef(`_USE_DECNET_SYNTAX_',
 `# convert node::user addresses into a domain-based address
 R$- :: $+		$@ $>96 $2 < @ $1 .DECNET >	resolve DECnet names
+R$- . $- :: $+		$@ $>96 $3 < @ $1.$2 .DECNET >	numeric DECnet addr
 ',
 	`dnl')
 # if we have % signs, take the rightmost one
@@ -549,6 +551,10 @@ ifdef(`_NO_UUCP_', `dnl',
 `# UUCP must always be presented in old form
 R$+ @ $- . UUCP		$2!$1				u@h.UUCP => h!u')
 
+ifdef(`_USE_DECNET_SYNTAX_',
+`# put DECnet back in :: form
+R$+ @ $+ . DECNET	$2 :: $1			u@h.DECNET => h::u',
+	`dnl')
 # delete duplicate local names
 R$+ % $=w @ $=w		$1 @ $j				u%host@host => u@host
 
