@@ -10,7 +10,7 @@ extern "C" {
 
 #define errno_h 1
 
-extern char*    sys_errlist[];
+extern const char* const    sys_errlist[];
 extern int      sys_nerr;
 #ifndef errno                  
 extern int      errno;
