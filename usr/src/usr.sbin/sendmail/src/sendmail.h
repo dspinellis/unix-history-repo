@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 1983 Eric P. Allman
+ * Copyright (c) 1983, 1995 Eric P. Allman
  * Copyright (c) 1988, 1993
  *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	8.122 (Berkeley) %G%
+ *	@(#)sendmail.h	8.123 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	8.122		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	8.123		%G%";
 # endif
 # else /*  _DEFINE */
 # define EXTERN extern
