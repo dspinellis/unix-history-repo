@@ -25,8 +25,8 @@ static void movetous(char *, int, int, int);
 static void movetothem(int, int, char *, int);
 #endif	/* defined(LINT_ARGS) */
 
-#define	access(foo,length)	(foo)
-#define	unaccess(foo,goo,length)
+#define	access_api(foo,length)	(foo)
+#define	unaccess_api(foo,goo,length)
 
 static void
 movetous(parms, es, di, length)
@@ -50,12 +50,10 @@ int length;
 }
 #endif	/* defined(MSDOS) */
 
-/* No Unix version yet... */
-
 #if	defined(unix)
-#define	access(f,l)	(f)
-
+extern char *access_api(), *unaccess_api();
 #endif	/* defined(unix) */
+
 
 /*
  * Supervisor Services.
@@ -401,13 +399,13 @@ int what_is_user;
 	}
 	input = (char far *) &Host[source->begin];
 	access_pointer = target->buffer;
-	output = access(target->buffer, access_length);
+	output = access_api(target->buffer, access_length);
     } else {
 	if (source->characteristics&CHARACTERISTIC_EAB) {
 	    access_length *= 2;
 	}
 	access_pointer = source->buffer;
-	input = access(source->buffer, access_length);
+	input = access_api(source->buffer, access_length);
 	output = (char far *) &Host[target->begin];
     }
     while (length--) {
@@ -425,9 +423,9 @@ int what_is_user;
 	}
     }
     if (what_is_user == USER_IS_TARGET) {
-	unaccess(target->buffer, access_pointer, access_length);
+	unaccess_api(target->buffer, access_pointer, access_length);
     } else {
-	unaccess(source->buffer, access_pointer, access_length);
+	unaccess_api(source->buffer, access_pointer, access_length);
     }
 }
 
