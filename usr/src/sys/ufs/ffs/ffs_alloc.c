@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_alloc.c	7.29 (Berkeley) %G%
+ *	@(#)ffs_alloc.c	7.30 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -584,7 +584,7 @@ ffs_fragextend(ip, cg, bprev, osize, nsize)
  * Check to see if a block of the apprpriate size is available,
  * and if it is, allocate it.
  */
-daddr_t
+static daddr_t
 ffs_alloccg(ip, cg, bpref, size)
 	struct inode *ip;
 	int cg;
