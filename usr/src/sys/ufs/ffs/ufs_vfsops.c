@@ -1,4 +1,4 @@
-/*	ufs_vfsops.c	6.5	84/07/08	*/
+/*	ufs_vfsops.c	6.6	84/07/08	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -24,6 +24,7 @@ smount()
 	register struct fs *fs;
 	register char *cp;
 	register struct nameidata *ndp = &u.u_nd;
+	u_int len;
 
 	u.u_error = getmdev(&dev, uap->fspec);
 	if (u.u_error)
@@ -42,8 +43,8 @@ smount()
 	fs = mountfs(dev, uap->ronly, ip);
 	if (fs == 0)
 		return;
-	bzero(fs->fs_fsmnt, sizeof(fs->fs_fsmnt));
-	copyinstr(uap->freg, fs->fs_fsmnt, sizeof(fs->fs_fsmnt));
+	(void) copyinstr(uap->freg, fs->fs_fsmnt, sizeof(fs->fs_fsmnt)-1, &len);
+	bzero(fs->fs_fsmnt, sizeof (fs->fs_fsmnt) - len);
 }
 
 /* this routine has races if running twice */

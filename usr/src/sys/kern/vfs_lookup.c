@@ -1,4 +1,4 @@
-/*	vfs_lookup.c	6.12	84/07/08	*/
+/*	vfs_lookup.c	6.13	84/07/08	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -157,9 +157,11 @@ namei(ndp)
 	else
 		freenamebuf = nbp->av_forw;
 	if (ndp->ni_segflg == UIO_SYSSPACE)
-		error = copystr(ndp->ni_dirp, nbp->b_un.b_addr, MAXPATHLEN);
+		error = copystr(ndp->ni_dirp, nbp->b_un.b_addr, MAXPATHLEN,
+		    (u_int *)0);
 	else
-		error = copyinstr(ndp->ni_dirp, nbp->b_un.b_addr, MAXPATHLEN);
+		error = copyinstr(ndp->ni_dirp, nbp->b_un.b_addr, MAXPATHLEN,
+		    (u_int *)0);
 	if (error) {
 		u.u_error = error;
 		goto bad;
