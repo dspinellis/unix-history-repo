@@ -13,7 +13,7 @@
 
 #ifndef lint
 static char sccsid[] =
-"@(#)trig.c	1.2 (Berkeley) 8/22/85; 1.5 (ucb.elefunt) %G%";
+"@(#)trig.c	1.2 (Berkeley) 8/22/85; 1.6 (ucb.elefunt) %G%";
 #endif not lint
 
 /* SIN(X), COS(X), TAN(X)
@@ -144,6 +144,10 @@ PIo2   =  1.5707963267948965580E0     , /*Hex  2^  0   *  1.921FB54442D18 */
 PI3o4  =  2.3561944901923448370E0     , /*Hex  2^  1   *  1.2D97C7F3321D2 */
 PI     =  3.1415926535897931160E0     , /*Hex  2^  1   *  1.921FB54442D18 */
 PI2    =  6.2831853071795862320E0     ; /*Hex  2^  2   *  1.921FB54442D18 */
+#ifdef NATIONAL
+static long    fmaxx[] = { 0xffffffff, 0x7fefffff};
+#define   fmax    (*(double*)fmaxx)
+#endif	/* NATIONAL */
 #endif
 static double zero=0, one=1, negone= -1, half=1.0/2.0, 
 	      small=1E-10, /* 1+small**2==1; better values for small:
@@ -173,7 +177,10 @@ double x;
 	z  = z*half ;		/* Next get c = cos(x) accurately */
 	c  = (z >= thresh )? half-((z-half)-cc) : one-(z-cc);
 	if (k==0) return ( x + (x*(z-(cc-ss)))/c );  /* sin/cos */
-	return( c/(x+x*ss) );	/*                  ... cos/sin */
+#ifdef NATIONAL
+	else if(x==0.0) return copysign(fmax,x);  /* no inf on 32k */
+#endif	/* NATIONAL */
+	else return( c/(x+x*ss) );	/*          ... cos/sin */
 
 
 }
