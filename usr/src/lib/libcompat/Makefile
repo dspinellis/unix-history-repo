@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.14 (Berkeley) %G%
+#	@(#)Makefile	5.15 (Berkeley) %G%
 
 LIB=compat
 CFLAGS+=-DLIBC_SCCS -DSYSLIBC_SCCS
@@ -20,7 +20,8 @@ MAN3+=	ftime.0 getpw.0 stty.0 vlimit.0 vtimes.0
 MLINKS+=stty.3 gtty.3
 
 # compat 4.3 sources
-SRCS+=	ecvt.c gcvt.c lsearch.c regex.c rexec.c sibuf.c sobuf.c strout.c
+SRCS+=	cfree.c ecvt.c gcvt.c lsearch.c regex.c rexec.c sibuf.c sobuf.c \
+	strout.c
 
 .if	(${MACHINE} == "hp300" || ${MACHINE} == "luna68k")
 SRCS+=	insque.s remque.s
