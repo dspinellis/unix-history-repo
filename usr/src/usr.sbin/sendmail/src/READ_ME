@@ -4,7 +4,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)READ_ME	8.43 (Berkeley) %G%
+#	@(#)READ_ME	8.44 (Berkeley) %G%
 #
 
 This directory contains the source files for sendmail.
@@ -13,29 +13,19 @@ For detailed instructions, please read the document ../doc/op.me:
 
 	eqn ../doc/op.me | pic | ditroff -me
 
-The Makefile is for the new (4.4BSD) Berkeley make, available from
-ftp.uu.net in the directory /systems/unix/bsd-sources/usr.bin/make.
-(Paul Southworth <pauls@umich.edu> published a description of porting
-this make in comp.unix.bsd.)  This Makefile has assumptions about the
-4.4 file system layout built in.
+The Makefile is for the new (4.4BSD) Berkeley make and uses syntax
+that is not recognized by older makes.  It also has assumptions
+about the 4.4 file system layout built in.  See below for details
+about other Makefiles.
 
 There is also a Makefile.dist which is much less clever, but works on
 the old traditional make.  You can use this using:
 
 	make -f Makefile.dist
 
-     <<<<<<<<<<<<<<<<<<<<  IMPORTANT  >>>>>>>>>>>>>>>>>>>>
-There are a bunch of other Makefiles for other systems -- these are
-the ones that I use, they have "Berkeley quirks" in them, and I don't
-guarantee that they will work unmodified in your environment.  However,
-they are all designed for the old make and can be used to help you get
-started.  They have names like "Makefile.HPUX".  Many of them include
--I/usr/sww/include/db and -L/usr/sww/lib -- this is Berkeley's
-location for the new database libraries, described below.  You don't
-have to remove these definitions if you don't have these directories.
-Please look for an appropriate Makefile before you start trying to
-compile with Makefile or Makefile.dist.
-     <<<<<<<<<<<<<<<<<<<<<<<<<<*>>>>>>>>>>>>>>>>>>>>>>>>>>
+**************************************************
+**  Read below for more details of Makefiles.	**
+**************************************************
 
 There is also a shell script (makesendmail) that tries to be clever
 about using object subdirectories.  It's pretty straightforward, and
@@ -55,6 +45,54 @@ very suspicious of gcc -O.
 **  IMPORTANT:  Read the appropriate paragraphs in the section on	**
 **  ``Operating System and Compile Quirks''.				**
 **************************************************************************
+
+
++-----------+
+| MAKEFILES |
++-----------+
+
+The "Makefile"s in these directories are from 4.4 BSD, and hence
+really only work properly if you are on a 4.4 system.  In particular,
+they use new syntax that will not be recognized on old make programs,
+and some of them do things like ``.include ../../Makefile.inc'' to
+pick up some system defines.  If you are getting sendmail separately,
+these files won't be included in the distribution, as they are
+outside of the sendmail tree.
+
+Instead, you should use one of the other Makefiles, such as
+Makefile.SunOS for a SunOS system, and so forth.  These should
+work with the version of make that is appropriate for that
+system.
+
+There are a bunch of other Makefiles for other systems with names
+like Makefile.HPUX for an HP-UX system.  They use the version of
+make that is native for that system.  These are the Makefiles that
+I use, and they have "Berkeley quirks" in them.  I can't guarantee
+that they will work unmodified in your environment.  Many of them
+include -I/usr/sww/include/db and -L/usr/sww/lib -- this is Berkeley's
+location (the ``Software Warehouse'') for the new database libraries,
+described below.  You don't have to remove these definitions if you
+don't have these directories.
+
+Please look for an appropriate Makefile before you start trying to
+compile with Makefile or Makefile.dist.
+
+If you want to port the new Berkeley make, you can get it from
+ftp.uu.net in the directory /systems/unix/bsd-sources/usr.bin/make.
+Diffs and instructions for building this version of make under
+SunOS 4.1.x are available on ftp.css.itd.umich.edu in
+/pub/systems/sun/Net2-make.sun4.diff.Z.  Diffs and instructions
+for building this version of make under IBM AIX 3.2.4 are available
+on ftp.uni-stuttgart.de in /sw/src/patches/bsd-make-rus-patches.
+Paul Southworth <pauls@umich.edu> published a description of porting
+this make in comp.unix.bsd.
+
+The complete text of the Makefile.inc that is in the parent of the
+sendmail directory is:
+
+	#	@(#)Makefile.inc	8.1 (Berkeley) 6/6/93
+
+	BINDIR?=	/usr/sbin
 
 
 +----------------------+
@@ -678,4 +716,4 @@ version.c	The version number and information about this
 
 Eric Allman
 
-(Version 8.43, last update %G% 06:07:47)
+(Version 8.44, last update %G% 10:56:36)
