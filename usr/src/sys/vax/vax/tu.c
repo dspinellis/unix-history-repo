@@ -1,4 +1,4 @@
-/*	tu.c	4.6	82/05/27	*/
+/*	tu.c	4.7	82/08/22	*/
 
 #if defined(VAX750) || defined(VAX730)
 /*
@@ -30,7 +30,9 @@ int	tudebug;	/* printd */
 
 #define	NTU	((cpu == VAX_750) ? 1 : 2)
 #define DNUM    01      /* mask for drive number (should match NTU) */
+#ifndef MRSP
 #define	MRSP	(cpu != VAX_750)
+#endif
 #define	NTUBLK	512		/* number of blocks on a TU58 cassette */
 #define WRV     02              /* bit in minor dev => write w. read verify */
 #define NTUQ    2               /* # of blocks which can be queued up */
@@ -67,36 +69,47 @@ struct packet tudata;		/* a command or data returned from TU58 */
  * State information
  */
 struct tu {
-	u_char	*rbptr;		/* pointer to buffer for read */
-	int	rcnt;		/* how much to read */
-	u_char	*wbptr;		/* pointer to buffer for write */
-	int	wcnt;		/* how much to write */
-	int	state;		/* current state of tansfer operation */
-	int	flag;		/* read in progress flag */
-	char	*addr;		/* real buffer data address */
-	int	count;		/* real requested count */
-	int	serrs;		/* count of soft errors */
-	int	cerrs;		/* count of checksum errors */
-	int	herrs;		/* count of hard errors */
-	char    dopen[2];       /* drive is open */
+	u_char	*tu_rbptr;	/* pointer to buffer for read */
+	int	tu_rcnt;	/* how much to read */
+	u_char	*tu_wbptr;	/* pointer to buffer for write */
+	int	tu_wcnt;	/* how much to write */
+	int	tu_state;	/* current tu_state of tansfer operation */
+	int	tu_flag;	/* read in progress flag */
+	char	*tu_addr;	/* real buffer data address */
+	int	tu_count;	/* real requested count */
+	int	tu_serrs;	/* count of soft errors */
+	int	tu_cerrs;	/* count of checksum errors */
+	int	tu_herrs;	/* count of hard errors */
+	char    tu_dopen[2];	/* drive is open */
 } tu;
 
 /*
  * States
  */
-#define	INIT1	0		/* sending nulls */
-#define	INIT2	1		/* sending inits */
-#define	IDLE	2		/* initialized, no transfer in progress */
-#define	SENDH	3		/* sending header */
-#define	SENDD	4		/* sending data */
-#define	SENDC	5		/* sending checksum */
-#define	SENDR	6		/* sending read command packet */
-#define	SENDW	7		/* sending write command packet */
-#define	GETH	8		/* reading header */
-#define	GETD	9		/* reading data */
-#define	GETC	10		/* reading checksum */
-#define	GET	11		/* reading an entire packet */
-#define	WAIT	12		/* waiting for continue */
+#define	TUS_INIT1	0	/* sending nulls */
+#define	TUS_INIT2	1	/* sending inits */
+#define	TUS_IDLE	2	/* initialized, no transfer in progress */
+#define	TUS_SENDH	3	/* sending header */
+#define	TUS_SENDD	4	/* sending data */
+#define	TUS_SENDC	5	/* sending checksum */
+#define	TUS_SENDR	6	/* sending read command packet */
+#define	TUS_SENDW	7	/* sending write command packet */
+#define	TUS_GETH	8	/* reading header */
+#define	TUS_GETD	9	/* reading data */
+#define	TUS_GETC	10	/* reading checksum */
+#define	TUS_GET		11	/* reading an entire packet */
+#define	TUS_WAIT	12	/* waiting for continue */
+
+#define	TUS_NSTATES	13
+char *tustates[TUS_NSTATES] = {
+	"INIT1", "INIT2", "IDLE", "SENDH", "SENDD", "SENDC", "SENDR",
+	"SENDW", "GETH", "GETD", "GETC", "GET", "WAIT"
+};
+#define	printstate(state) \
+	if ((state) < TUS_NSTATES) \
+		printf("%s", tustates[(state)]); \
+	else \
+		printf("%d", (state));
 
 /*
  * Packet Flags
@@ -145,7 +158,7 @@ tuopen(dev, flag)
 #ifdef lint
 	turintr(); tuwintr();
 #endif
-	if ((minor(dev)&DNUM) >= NTU || tu.dopen[minor(dev)&DNUM]) {
+	if ((minor(dev)&DNUM) >= NTU || tu.tu_dopen[minor(dev)&DNUM]) {
 		u.u_error = ENXIO;
 		return;
 	}
@@ -153,22 +166,33 @@ tuopen(dev, flag)
 		tutimer++;
 		timeout(tuwatch, (caddr_t)0, hz);
 	}
-	tu.dopen[minor(dev)&DNUM]++;
+	tu.tu_dopen[minor(dev)&DNUM]++;
 	s = splx(TUIPL);
-	if (tu.state != IDLE) {
-		tureset();
-		sleep((caddr_t)&tu, PZERO+1);
-		tutab.b_active = NULL;
-		if (tu.state != IDLE) {		/* couldn't initialize */
-			u.u_error = ENXIO;
-			tu.state = INIT1;
-			tu.dopen[minor(dev)&DNUM] = 0;
-			tu.rcnt = tu.wcnt = 0;
-			mtpr(CSTS, 0);
-			mtpr(CSRS, 0);
-		}
-	} else
+	/*
+	 * If the cassette's already initialized,
+	 * just enable interrupts and return.
+	 */
+	if (tu.tu_state == TUS_IDLE) {
 		mtpr(CSRS, IE);
+		splx(s);
+		return;
+	}
+
+	/* 
+	 * Must initialize, reset the cassette
+	 * and wait for things to settle down.
+	 */
+	tureset();
+	sleep((caddr_t)&tu, PZERO+1);
+	tutab.b_active = NULL;
+	if (tu.tu_state != TUS_IDLE) {
+		u.u_error = ENXIO;
+		tu.tu_state = TUS_INIT1;
+		tu.tu_dopen[minor(dev)&DNUM] = 0;
+		tu.tu_rcnt = tu.tu_wcnt = 0;
+		mtpr(CSTS, 0);
+		mtpr(CSRS, 0);
+	}
 	splx(s);
 }
 
@@ -182,13 +206,17 @@ tuclose(dev)
 		mtpr(CSRS, 0);
 		tutimer = 0;
 	}
-	if (tu.serrs + tu.cerrs + tu.herrs != 0) {	/* any errors ? */
+	if (tu.tu_serrs + tu.tu_cerrs + tu.tu_herrs != 0) {
+		/*
+		 * A tu58 is like nothing ever seen before;
+		 * I guess this is appropriate then...
+		 */
 		uprintf(
 		   "tu%d: %d soft errors, %d chksum errors, %d hard errors\n",
-			minor(dev), tu.serrs, tu.cerrs, tu.herrs);
-		tu.serrs = tu.cerrs = tu.herrs = 0;
+			minor(dev), tu.tu_serrs, tu.tu_cerrs, tu.tu_herrs);
+		tu.tu_serrs = tu.tu_cerrs = tu.tu_herrs = 0;
 	}
-	tu.dopen[minor(dev)&DNUM] = 0;
+	tu.tu_dopen[minor(dev)&DNUM] = 0;
 }
 
 /*
@@ -197,11 +225,11 @@ tuclose(dev)
 tureset()
 {
 
-	tu.state = INIT1;
-	tu.wbptr = tunull;
-	tu.wcnt = sizeof tunull;
+	tu.tu_state = TUS_INIT1;
+	tu.tu_wbptr = tunull;
+	tu.tu_wcnt = sizeof (tunull);
 	tucmd.pk_flag = TUF_CMD;
-	tucmd.pk_mcount = sizeof tucmd - 4;
+	tucmd.pk_mcount = sizeof (tucmd) - 4;
 	tucmd.pk_mod = 0;
 	tucmd.pk_seq = 0;
 	tucmd.pk_sw = MRSP ? TUSW_MRSP : 0;
@@ -209,7 +237,6 @@ tureset()
 	mtpr(CSRS, 0);
 	mtpr(CSTS, IE|BREAK);
 	tuxintr();		/* start output */
-	return;
 }
 
 /*
@@ -220,7 +247,7 @@ tustrategy(bp)
 {
 	register int s;
 
-	if (bp->b_blkno >= NTUBLK) {	/* block number out of range? */
+	if (bp->b_blkno >= NTUBLK) {
 		bp->b_flags |= B_ERROR;
 		iodone(bp);
 		return;
@@ -248,7 +275,7 @@ tustart()
 
 	if ((bp = tutab.b_actf) == NULL)
 		return;
-	if (tu.state != IDLE) {
+	if (tu.tu_state != TUS_IDLE) {
 		tureset();
 		return;
 	}
@@ -259,16 +286,16 @@ tustart()
 	    TUMD_WRV : 0;
 	tucmd.pk_unit = (minor(bp->b_dev)&DNUM);
 	tucmd.pk_sw = MRSP ? TUSW_MRSP : 0;
-	tucmd.pk_count = tu.count = bp->b_bcount;
+	tucmd.pk_count = tu.tu_count = bp->b_bcount;
 	tucmd.pk_block = bp->b_blkno;
 	tucmd.pk_chksum =
 	    tuchk(*((short *)&tucmd), (caddr_t)&tucmd.pk_op,
 		(int)tucmd.pk_mcount);
-	tu.state = bp->b_flags&B_READ ? SENDR : SENDW;
-	tu.addr = bp->b_un.b_addr;
-	tu.count = bp->b_bcount;
-	tu.wbptr = (u_char *)&tucmd;
-	tu.wcnt = sizeof tucmd;
+	tu.tu_state = bp->b_flags&B_READ ? TUS_SENDR : TUS_SENDW;
+	tu.tu_addr = bp->b_un.b_addr;
+	tu.tu_count = bp->b_bcount;
+	tu.tu_wbptr = (u_char *)&tucmd;
+	tu.tu_wcnt = sizeof (tucmd);
 	tuxintr();
 }
 
@@ -286,103 +313,115 @@ turintr()
 			;
 		mtpr(CSTD, TUF_CONT);	/* ACK */
 	}
-	if (tu.rcnt) {			/* still waiting for data? */
-		*tu.rbptr++ = c;	/* yup, put it there */
-		if (--tu.rcnt)		/* decrement count, any left? */
+	if (tu.tu_rcnt) {		/* still waiting for data? */
+		*tu.tu_rbptr++ = c;	/* yup, put it there */
+		if (--tu.tu_rcnt)	/* decrement count, any left? */
 			return;		/* get some more */
 	}
 
 	/*
 	 * We got all the data we were expecting for now,
-	 * switch on the state of the transfer.
+	 * switch on the tu_state of the transfer.
 	 */
-	switch(tu.state) {
+	switch(tu.tu_state) {
 
-	case INIT2:
-		if (c == TUF_CONT)	/* did we get the expected continue? */
-			tu.state = IDLE;
-		else
-			tu.state = INIT1;	/* bad news... */
-		tu.flag = 0;
+	/*
+	 * If we get an unexpected "continue",
+	 * start all over again...
+	 */
+	case TUS_INIT2:
+		tu.tu_state = c == TUF_CONT ? TUS_IDLE : TUS_INIT1;
+		tu.tu_flag = 0;
 		wakeup((caddr_t)&tu);
 		tustart();
 		break;
 
-	case WAIT:			/* waiting for continue */
+	/*
+	 * Only transition from this state
+	 * is on a "continue", so if we don't
+	 * get it, reset the world.
+	 */
+	case TUS_WAIT:			/* waiting for continue */
 		if (c != TUF_CONT) {
-			tu.state = INIT1;	/* bad news... */
+			tu.tu_state = TUS_INIT1;
 			break;
 		}
-		tu.flag = 0;
+		tu.tu_flag = 0;
 		tudata.pk_flag = TUF_DATA;
-		tudata.pk_mcount = MIN(128, tu.count);
+		tudata.pk_mcount = MIN(128, tu.tu_count);
 		tudata.pk_chksum =
-		    tuchk(*((short *)&tudata), (caddr_t)tu.addr,
+		    tuchk(*((short *)&tudata), (caddr_t)tu.tu_addr,
 			(int)tudata.pk_mcount);
-		tu.state = SENDH;
-		tu.wbptr = (u_char *)&tudata;
-		tu.wcnt = 2;
+		tu.tu_state = TUS_SENDH;
+		tu.tu_wbptr = (u_char *)&tudata;
+		tu.tu_wcnt = 2;
 		tuxintr();
 		break;
 
-	case SENDW:
-		if (c == TUF_CONT) {
-			tureset();
-			break;
-		} else
+	case TUS_SENDW:
+		if (c != TUF_CONT)
 			goto bad;
-
-	case GETH:		/* got header, get data */
-		if (tudata.pk_flag == TUF_DATA)		/* data message? */
-			tu.rbptr = (u_char *)tu.addr;	/* yes put in buffer */
-		tu.rcnt = tudata.pk_mcount;		/* amount to get */
-		tu.state = GETD;
+		tureset();
 		break;
 
-	case GETD:		/* got data, get checksum */
-		tu.rbptr = (u_char *)&tudata.pk_chksum;
-		tu.rcnt = sizeof tudata.pk_chksum;
-		tu.state = GETC;
+	/*
+	 * Got header, now get data; amount to
+	 * fetch is include in packet.
+	 */
+	case TUS_GETH:
+		if (tudata.pk_flag == TUF_DATA)
+			tu.tu_rbptr = (u_char *)tu.tu_addr;
+		tu.tu_rcnt = tudata.pk_mcount;
+		tu.tu_state = TUS_GETD;
 		break;
 
-	case GET:
-	case GETC:		/* got entire packet */
+	/*
+	 * Got the data, now fetch the checksum.
+	 */
+	case TUS_GETD:
+		tu.tu_rbptr = (u_char *)&tudata.pk_chksum;
+		tu.tu_rcnt = sizeof (tudata.pk_chksum);
+		tu.tu_state = TUS_GETC;
+		break;
+
+	case TUS_GET:
+	case TUS_GETC:
+		/* got entire packet */
 #ifdef notdef
 		if (tudata.pk_chksum !=
 		    tuchk(*((short *)&tudata),
-		     tudata.pk_flag == TUF_DATA ? tu.addr : &tudata.pk_op,
+		     tudata.pk_flag == TUF_DATA ? tu.tu_addr : &tudata.pk_op,
 		     (int)tudata.pk_mcount))
-			tu.cerrs++;
+			tu.tu_cerrs++;
 #endif
 		if (tudata.pk_flag == TUF_DATA) {
 			/* data packet, advance to next */
-			tu.addr += tudata.pk_mcount;
-			tu.count -= tudata.pk_mcount;
-			tu.state = GETH;
-			tu.rbptr = (u_char *)&tudata;	/* next packet */
-			tu.rcnt = 2;
+			tu.tu_addr += tudata.pk_mcount;
+			tu.tu_count -= tudata.pk_mcount;
+			tu.tu_state = TUS_GETH;
+			tu.tu_rbptr = (u_char *)&tudata; /* next packet */
+			tu.tu_rcnt = 2;
 		} else if (tudata.pk_flag==TUF_CMD && tudata.pk_op==TUOP_END) {
 			/* end packet, idle and reenable transmitter */
-			tu.state = IDLE;
-			tu.flag = 0;
+			tu.tu_state = TUS_IDLE;
+			tu.tu_flag = 0;
 			mtpr(CSTS, IE);
 			printd("ON ");
 			if ((bp = tutab.b_actf) == NULL) {
-				printf("tu: no bp!\n");
-				printf("active %d\n", tutab.b_active);
+				printf("tu: no bp, active %d\n",tutab.b_active);
 				tustart();
 				return;
 			}
 			if (tudata.pk_mod > 1) {        /* hard error */
 				bp->b_flags |= B_ERROR;
-				tu.herrs++;
+				tu.tu_herrs++;
 				harderr(bp, "tu");
 				printf("  pk_mod %o\n", tudata.pk_mod&0377);
 			} else if (tudata.pk_mod > 0)	/* soft error */
-				tu.serrs++;
+				tu.tu_serrs++;
 			tutab.b_active = NULL;
 			tutab.b_actf = bp->av_forw;
-			bp->b_resid = tu.count;
+			bp->b_resid = tu.tu_count;
 			if ((bp->b_flags&B_READ) == 0)
 				tu_vee(&pcnt[minor(bp->b_dev)&DNUM]);
 			iodone(bp);
@@ -391,19 +430,20 @@ turintr()
 			printf("neither data nor end: %o %o\n",
 			    tudata.pk_flag&0xff, tudata.pk_op&0xff);
 			mtpr(CSRS, 0);		/* flush the rest */
-			tu.state = INIT1;
+			tu.tu_state = TUS_INIT1;
 		}
 		break;
 
-	case IDLE:
-	case INIT1:
+	case TUS_IDLE:
+	case TUS_INIT1:
 		break;
 
-	bad:
 	default:
+bad:
 		if (c == TUF_INITF) {
-			printf("TU protocol error, state %d\n", tu.state);
-			printf("%o %d %d\n",
+			printf("tu protocol error, state=");
+			printstate(tu.tu_state);
+			printf(", op=%x, cnt=%d, block=%d\n",
 			    tucmd.pk_op, tucmd.pk_count, tucmd.pk_block);
 			tutab.b_active = NULL;
 			if (bp = tutab.b_actf) {
@@ -413,10 +453,13 @@ turintr()
 					tu_vee(&pcnt[minor(bp->b_dev)&DNUM]);
 				iodone(bp);
 			}
-			tu.state = INIT1;
+			tu.tu_state = TUS_INIT1;
 		} else {
-			printf("TU receive state error %d %o\n", tu.state, c);
-		/*	tu.state = INIT1; */
+			printf("tu receive state error, state=");
+			printf(", byte=%x\n", c);
+#ifdef notdef
+			tu.tu_state = TUS_INIT1; */
+#endif
 			wakeup((caddr_t)&tu);
 		}
 	}
@@ -429,89 +472,126 @@ tuxintr()
 {
 
 top:
-	if (tu.wcnt) {
+	if (tu.tu_wcnt) {
 		/* still stuff to send, send one byte */
 		while ((mfpr(CSTS) & READY) == 0)
 			;
-		mtpr(CSTD, *tu.wbptr++);
-		tu.wcnt--;
+		mtpr(CSTD, *tu.tu_wbptr++);
+		tu.tu_wcnt--;
 		return;
 	}
 
 	/*
 	 * Last message byte was sent out.
-	 * Switch on state of transfer.
+	 * Switch on tu_state of transfer.
 	 */
-	printd("tuxintr: state %d\n", tu.state);
-	switch(tu.state) {
+	if (tudebug) {
+		printf("tuxintr: state=");
+		printstate(tu.tu_state);
+	}
+	switch(tu.tu_state) {
 
-	case INIT1:		/* two nulls sent, remove break, send inits */
+	/*
+	 * Two nulls have been sent, remove break, and send inits
+	 */
+	case TUS_INIT1:	
 		mtpr(CSTS, IE);
 		printd("ON2 ");
-		tu.state = INIT2;
-		tu.wbptr = tuinit;
-		tu.wcnt = sizeof tuinit;
+		tu.tu_state = TUS_INIT2;
+		tu.tu_wbptr = tuinit;
+		tu.tu_wcnt = sizeof (tuinit);
 		goto top;
 
-	case INIT2:		/* inits sent, wait for continue */
+	/*
+	 * Inits have been sent, wait for a continue msg.
+	 */
+	case TUS_INIT2:	
 		(void) mfpr(CSRD);
 		mtpr(CSRS, IE);
-		tu.flag = 1;
+		tu.tu_flag = 1;
 		break;
 
-	case IDLE:		/* stray interrupt? */
+	case TUS_IDLE:		/* stray interrupt? */
 		break;
 
-	case SENDR:		/* read cmd packet sent, get ready for data */
-		tu.state = GETH;
-		tu.rbptr = (u_char *)&tudata;
-		tu.rcnt = 2;
-		tu.flag = 1;
+	/*
+	 * Read cmd packet sent, get ready for data
+	 */
+	case TUS_SENDR:
+		tu.tu_state = TUS_GETH;
+		tu.tu_rbptr = (u_char *)&tudata;
+		tu.tu_rcnt = 2;
+		tu.tu_flag = 1;
 		mtpr(CSTS, 0);	/* disable transmitter interrupts */
 		printd("OFF ");
 		break;
 
-	case SENDW:		/* write cmd packet sent, wait for continue */
-		tu.state = WAIT;
-		tu.flag = 1;
+	/*
+	 * Write cmd packet sent, wait for continue
+	 */
+	case TUS_SENDW:	
+		tu.tu_state = TUS_WAIT;
+		tu.tu_flag = 1;
 		if ((mfpr(CSRS)&IE) == 0) {
 			printf("NO IE\n");
 			mtpr(CSRS, IE);
 		}
 		break;
 
-	case SENDH:		/* header sent, send data */
-		tu.state = SENDD;
-		tu.wbptr = (u_char *)tu.addr;
-		tu.wcnt = tudata.pk_mcount;
+	/*
+	 * Header sent, send data.
+	 */
+	case TUS_SENDH:
+		tu.tu_state = TUS_SENDD;
+		tu.tu_wbptr = (u_char *)tu.tu_addr;
+		tu.tu_wcnt = tudata.pk_mcount;
 		goto top;
 
-	case SENDD:		/* data sent, send checksum */
-		tu.state = SENDC;
-		tu.wbptr = (u_char *)&tudata.pk_chksum;
-		tu.wcnt = sizeof tudata.pk_chksum;
+	/*
+	 * Data sent, follow with checksum.
+	 */
+	case TUS_SENDD:	
+		tu.tu_state = TUS_SENDC;
+		tu.tu_wbptr = (u_char *)&tudata.pk_chksum;
+		tu.tu_wcnt = sizeof tudata.pk_chksum;
 		goto top;
 
-	case SENDC:		/* checksum sent, wait for continue */
-		tu.addr += tudata.pk_mcount;	/* update buffer address */
-		tu.count -= tudata.pk_mcount;	/* and count */
-		if (tu.count == 0) {		/* all done? */
-			tu.state = GET;		/* set up to get end packet */
-			tu.rbptr = (u_char *)&tudata;
-			tu.rcnt = sizeof tudata;
-			tu.flag = 1;
-			mtpr(CSTS, 0);
-			printd("OFF2 ");
-		} else {
-			tu.state = WAIT;	/* wait for continue */
-			tu.flag = 1;
+	/* 
+	 * Checksum sent, wait for continue.
+	 */
+	case TUS_SENDC:
+		/*
+		 * Updata buffer address and count.
+		 */
+		tu.tu_addr += tudata.pk_mcount;
+		tu.tu_count -= tudata.pk_mcount;
+		if (tu.tu_count) {
+			tu.tu_state = TUS_WAIT;
+			tu.tu_flag = 1;
+			break;
 		}
+
+		/*
+		 * End of transmission, get ready for end packet.
+		 */
+		tu.tu_state = TUS_GET;
+		tu.tu_rbptr = (u_char *)&tudata;
+		tu.tu_rcnt = sizeof (tudata);
+		tu.tu_flag = 1;
+		mtpr(CSTS, 0);
+		printd("OFF2 ");
 		break;
 
-	default:	/* random interrupt, probably from MRSP ACK */
+	/*
+	 * Random interrupt, probably from MRSP ACK
+	 */
+	default:
 		break;
 	}
-	printd("  new state %d\n", tu.state);
+	if (tudebug) {
+		printd("  new tu_state=");
+		printstate(tu.tu_state);
+	}
 }
 
 /*
@@ -560,59 +640,63 @@ tuwatch()
 	register struct buf *bp;
 
 	if (tutimer == 0) {
-		tu.flag = 0;
+		tu.tu_flag = 0;
 		return;
 	}
-	if (tu.flag)
-		tu.flag++;
-	if (tu.flag > 40) {
-		printf("tu: read stalled\n");
-		printf("%X %X %X %X %X %X %X %X\n", tu.rbptr, tu.rcnt,
-		tu.wbptr, tu.wcnt, tu.state, tu.flag, tu.addr, tu.count);
-		tu.flag = 0;
-		s = splx(TUIPL);
-		(void) mfpr(CSRD);
-		mtpr(CSRS, IE);		/* in case we were flushing */
-		mtpr(CSTS, IE);
-		tu.state = IDLE;
-		if (tutab.b_active) {
-			if (++tutab.b_errcnt > 1) {
-				if (bp = tutab.b_actf) {
-					bp->b_flags |= B_ERROR;
-					if ((bp->b_flags&B_READ) == 0)
-						tu_vee(&pcnt[minor(bp->b_dev)&DNUM]);
-					iodone(bp);
-				}
-			} else
-				tustart();
-		} else
-			wakeup((caddr_t)&tu);
-		splx(s);
+	if (tu.tu_flag)
+		tu.tu_flag++;
+	if (tu.tu_flag <= 40) {
+		timeout(tuwatch, (caddr_t)0, hz);
+		return;
 	}
+	printf("tu: read stalled\n");
+	printf("%X %X %X %X %X %X %X %X\n", tu.tu_rbptr, tu.tu_rcnt,
+		tu.tu_wbptr, tu.tu_wcnt, tu.tu_state, tu.tu_flag,
+		tu.tu_addr, tu.tu_count);
+	tu.tu_flag = 0;
+	s = splx(TUIPL);
+	(void) mfpr(CSRD);
+	mtpr(CSRS, IE);		/* in case we were flushing */
+	mtpr(CSTS, IE);
+	tu.tu_state = TUS_IDLE;
+	if (!tutab.b_active) {
+		wakeup((caddr_t)&tu);
+		goto retry;
+	}
+	if (++tutab.b_errcnt <= 1) {
+		tustart();
+		goto retry;
+	}
+	if (bp = tutab.b_actf) {
+		bp->b_flags |= B_ERROR;
+		if ((bp->b_flags&B_READ) == 0)
+			tu_vee(&pcnt[minor(bp->b_dev)&DNUM]);
+		iodone(bp);
+	}
+retry:
+	splx(s);
 	timeout(tuwatch, (caddr_t)0, hz);
 }
 
 tu_pee(cp)
-char *cp;
+	char *cp;
 {
 	register int s;
 
 	s = splx(TUIPL);
-	if (++(*cp) > NTUQ) {
+	if (++(*cp) > NTUQ)
 		sleep(cp, PRIBIO);
-	}
 	splx(s);
 }
 
 tu_vee(cp)
-char *cp;
+	char *cp;
 {
 	register int s;
 
 	s = splx(TUIPL);
-	if (--(*cp) <= NTUQ) {
+	if (--(*cp) <= NTUQ)
 		wakeup(cp);
-	}
 	splx(s);
 }
 #endif

@@ -1,4 +1,4 @@
-/*	lpa.c	4.4	82/08/13	*/
+/*	lpa.c	4.5	82/08/22	*/
 #include "lpa.h"
 #if NLPA > 0
 
@@ -292,8 +292,9 @@ TRACER("CLOSE\n");
  *		first write is the microcode
  *		second write is the dispatch table
  */
-lpawrite(dev)
-dev_t dev;
+lpawrite(dev, uio)
+	dev_t dev;
+	struct uio *uio;
 {
 	register int unit = LPAUNIT(dev);
 	register struct lpa_softc *sc = &lpa_softc[unit];
@@ -308,27 +309,28 @@ TRACER("WRITE\n");
 		return;
 	}
 	if ((f & MCODE) == 0) {
-		lpamcode(lpaaddr, sc);
+		lpamcode(lpaaddr, sc, uio);
 		return;
 	}
 	if ((f & DMDT) == 0) {
-		lpadmdt(lpaaddr, sc, ui->ui_ubanum);
+		lpadmdt(lpaaddr, sc, ui->ui_ubanum, uio);
 		return;
 	}
 	/* writes are only for microcode and dedicated mode dispatch table */
 	u.u_error = ENXIO;
 }
 
-lpamcode(lpaaddr, sc)
-register struct lpadevice *lpaaddr;
-register struct lpa_softc *sc;
+lpamcode(lpaaddr, sc, uio)
+	register struct lpadevice *lpaaddr;
+	register struct lpa_softc *sc;
+	struct uio *uio;
 {
 	short v, r;
 	register int mcaddr;
 
 	mcaddr = 0;
-	while (u.u_count) {
-		iomove(&v, 2, B_WRITE);		/* get next microcode word */
+	while (uio->uio_resid) {
+		uiomove(&v, 2, UIO_WRITE, uio);	/* get next microcode word */
 		lpaaddr->lcim = 0;		/* load microcode word */
 		lpaaddr->lrda = mcaddr;
 		lpaaddr->lms = v;
@@ -352,10 +354,11 @@ register struct lpa_softc *sc;
 TRACER("MCODE\n");
 }
 
-lpadmdt(lpaaddr, sc, ubanum)
-register struct lpadevice *lpaaddr;
-register struct lpa_softc *sc;
-register short ubanum;
+lpadmdt(lpaaddr, sc, ubanum, uio)
+	register struct lpadevice *lpaaddr;
+	register struct lpa_softc *sc;
+	register short ubanum;
+	struct uio *uio;
 {
 	register short *p;
 	register int n;
@@ -372,8 +375,8 @@ register short ubanum;
 	*p++ = ADIO3;
 	*p++ = ADIO4;
 	*p++ = ADIO5;
-	n = min(u.u_count, 256);	/* dedicated mode dispatch table */
-	iomove((char *) p, n, B_WRITE);
+	n = min(uio->uio_resid, 256);	/* dedicated mode dispatch table */
+	uiomove((char *)p, n, UIO_WRITE, uio);
 	n >>= 1;
 	p += n;
 	while (n++ < 128)
@@ -477,12 +480,11 @@ TRACER("IOCTL OUT\n");
 }
 
 /*
- *	read
- *		read 1 character only - the next available buffer number
+ * Lparead reads 1 character only -- the next available buffer number.
  */
 lparead(dev, uio)
-dev_t dev;
-struct uio *uio;
+	dev_t dev;
+	struct uio *uio;
 {
 	register int unit = LPAUNIT(dev);
 	register struct lpa_softc *sc = &lpa_softc[unit];
@@ -518,17 +520,17 @@ TRACER("SLEEP\n");
 		(void) spl0();
 	}
 TRACERN("READ %d\n", sc->sc_ubufn);
-	uiomove(&sc->sc_ubufn, 1, B_READ, uio);
+	uiomove(&sc->sc_ubufn, 1, UIO_READ, uio);
 }
 
 /*
- *	execute a command and wait for completion
+ * Execute a lpa command and wait for completion.
  */
 lpacmd(bp, lpaaddr, sc, ubanum)
-register struct buf *bp;
-register struct lpadevice *lpaaddr;
-register struct lpa_softc *sc;
-register short ubanum;
+	register struct buf *bp;
+	register struct lpadevice *lpaaddr;
+	register struct lpa_softc *sc;
+	register short ubanum;
 {
 	int ubareg;
 

@@ -1,4 +1,4 @@
-/*	ct.c	4.8	82/07/15	*/
+/*	ct.c	4.9	82/08/22	*/
 
 #include "ct.h"
 #if NCT > 0
@@ -90,13 +90,14 @@ ctclose(dev)
 	ctintr(dev);
 }
 
-ctwrite(dev)
+ctwrite(dev, uio)
 	dev_t dev;
+	struct uio *uio;
 {
 	register struct ct_softc *sc = &ct_softc[CTUNIT(dev)];
 	register int c;
 
-	while ((c=cpass()) >= 0) {
+	while ((c=cupass(uio)) >= 0) {
 		(void) spl5();
 		while (sc->sc_oq.c_cc > CATHIWAT)
 			sleep((caddr_t)&sc->sc_oq, PCAT);

@@ -1,4 +1,4 @@
-/*	tty_bk.c	4.3	82/08/13	*/
+/*	tty_bk.c	4.4	82/08/22	*/
 
 #include "bk.h"
 
@@ -100,7 +100,7 @@ bkread(tp, uio)
 	splx(s);
 	if (tp->t_line != NETLDISC)
 		return (-1);
-	u.u_error = copyuout(uio, tp->t_bufp->b_un.b_addr, tp->t_inbuf);
+	u.u_error = uiomove(tp->t_bufp->b_un.b_addr, tp->t_inbuf, UIO_READ, uio);
 	tp->t_cp = (char *)tp->t_bufp->b_un.b_addr;
 	tp->t_inbuf = 0;
 	tp->t_rec = 0;

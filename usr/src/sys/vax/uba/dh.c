@@ -1,4 +1,4 @@
-/*	dh.c	4.48	82/08/13	*/
+/*	dh.c	4.49	82/08/22	*/
 
 #include "dh.h"
 #if NDH > 0
@@ -319,13 +319,14 @@ dhread(dev, uio)
 	return ((*linesw[tp->t_line].l_read)(tp, uio));
 }
 
-dhwrite(dev)
+dhwrite(dev, uio)
 	dev_t dev;
+	struct uio *uio;
 {
 	register struct tty *tp;
 
 	tp = &dh11[minor(dev)];
-	(*linesw[tp->t_line].l_write)(tp);
+	(*linesw[tp->t_line].l_write)(tp, uio);
 }
 
 /*

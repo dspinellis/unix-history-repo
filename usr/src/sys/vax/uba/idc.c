@@ -1,4 +1,4 @@
-/*	idc.c	4.3	82/08/13	*/
+/*	idc.c	4.4	82/08/22	*/
 
 #include "rb.h"
 #if NIDC > 0
@@ -640,15 +640,16 @@ idcread(dev, uio)
 		physio(idcstrategy, &ridcbuf[unit], dev, B_READ, minphys, uio);
 }
 
-idcwrite(dev)
+idcwrite(dev, uio)
 	dev_t dev;
+	struct uio *uio;
 {
 	register int unit = minor(dev) >> 3;
 
 	if (unit >= NRB)
 		u.u_error = ENXIO;
 	else
-		physio(idcstrategy, &ridcbuf[unit], dev, B_WRITE, minphys, 0);
+		physio(idcstrategy, &ridcbuf[unit], dev, B_WRITE, minphys, uio);
 }
 
 idcecc(ui)

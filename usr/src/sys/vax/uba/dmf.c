@@ -1,4 +1,4 @@
-/*	dmf.c	4.6	82/08/13	*/
+/*	dmf.c	4.7	82/08/22	*/
 
 #include "dmf.h"
 #if NDMF > 0
@@ -309,13 +309,14 @@ dmfread(dev, uio)
 	return ((*linesw[tp->t_line].l_read)(tp, uio));
 }
 
-dmfwrite(dev)
+dmfwrite(dev, uio)
 	dev_t dev;
+	struct uio *uio;
 {
 	register struct tty *tp;
 
 	tp = &dmf_tty[minor(dev)];
-	(*linesw[tp->t_line].l_write)(tp);
+	(*linesw[tp->t_line].l_write)(tp, uio);
 }
 
 /*

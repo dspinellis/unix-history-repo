@@ -1,4 +1,4 @@
-/*	ts.c	4.27	82/08/13	*/
+/*	ts.c	4.28	82/08/22	*/
 
 #include "ts.h"
 #if NTS > 0
@@ -701,14 +701,15 @@ tsread(dev, uio)
 	physio(tsstrategy, &rtsbuf[TSUNIT(dev)], dev, B_READ, minphys, uio);
 }
 
-tswrite(dev)
+tswrite(dev, uio)
 	dev_t dev;
+	struct uio *uio;
 {
 
-	tsphys(dev, 0);
+	u.u_error = tsphys(dev, uio);
 	if (u.u_error)
 		return;
-	physio(tsstrategy, &rtsbuf[TSUNIT(dev)], dev, B_WRITE, minphys, 0);
+	physio(tsstrategy, &rtsbuf[TSUNIT(dev)], dev, B_WRITE, minphys, uio);
 }
 
 /*
@@ -725,15 +726,10 @@ tsphys(dev, uio)
 	register struct ts_softc *sc;
 	register struct uba_device *ui;
 
-	if (tsunit >= NTS || (ui=tsdinfo[tsunit]) == 0 || ui->ui_alive == 0) {
-		u.u_error = ENXIO;
+	if (tsunit >= NTS || (ui=tsdinfo[tsunit]) == 0 || ui->ui_alive == 0)
 		return (ENXIO);
-	}
 	sc = &ts_softc[tsunit];
-	if (uio)
-		a = bdbtofsb(uio->uio_offset >> 9);
-	else
-		a = bdbtofsb(u.u_offset >> 9);
+	a = bdbtofsb(uio->uio_offset >> 9);
 	sc->sc_blkno = a;
 	sc->sc_nxrec = a + 1;
 	return (0);

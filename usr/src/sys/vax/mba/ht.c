@@ -1,4 +1,4 @@
-/*	ht.c	4.26	82/08/13	*/
+/*	ht.c	4.27	82/08/22	*/
 
 #include "tu.h"
 #if NHT > 0
@@ -425,10 +425,10 @@ htread(dev, uio)
 htwrite(dev)
 {
 
-	htphys(dev, 0);
+	u.u_error = htphys(dev, uio);
 	if (u.u_error)
 		return;
-	physio(htstrategy, &rhtbuf[HTUNIT(dev)], dev, B_WRITE, minphys, 0);
+	physio(htstrategy, &rhtbuf[HTUNIT(dev)], dev, B_WRITE, minphys, uio);
 }
 
 htphys(dev, uio)
@@ -441,14 +441,9 @@ htphys(dev, uio)
 	daddr_t a;
 
 	htunit = HTUNIT(dev);
-	if (htunit >= NHT || (mi = htinfo[htunit]) == 0 || mi->mi_alive == 0) {
-		u.u_error = ENXIO;
+	if (htunit >= NHT || (mi = htinfo[htunit]) == 0 || mi->mi_alive == 0)
 		return (ENXIO);
-	}
-	if (uio)
-		a = uio->uio_offset >> 9;
-	else
-		a = u.u_offset >> 9;
+	a = uio->uio_offset >> 9;
 	sc = &tu_softc[TUUNIT(dev)];
 	sc->sc_blkno = bdbtofsb(a);
 	sc->sc_nxrec = bdbtofsb(a)+1;

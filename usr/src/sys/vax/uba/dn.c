@@ -1,4 +1,4 @@
-/*	dn.c	4.5	82/07/15	*/
+/*	dn.c	4.6	82/08/22	*/
 
 #include "dn.h"
 #if NDN > 0
@@ -109,8 +109,9 @@ dnclose(dev, flag)
 	dp->dn_reg[DNREG(dev)] = MENABLE;
 }
 
-dnwrite(dev)
+dnwrite(dev, uio)
 	dev_t dev;
+	struct uio *uio;
 {
 	register u_short *dnreg;
 	register int cc;
@@ -121,9 +122,9 @@ dnwrite(dev)
 
 	dp = (struct dndevice *)dninfo[DNUNIT(dev)]->ui_addr;
 	dnreg = &(dp->dn_reg[DNREG(dev)]);
-	cc = MIN(u.u_count, OBUFSIZ);
+	cc = MIN(uio->uio_resid, OBUFSIZ);
 	cp = buf;
-	iomove(cp, (unsigned)cc, B_WRITE);
+	u.u_error = uiomove(cp, (unsigned)cc, UIO_WRITE, uio);
 	if (u.u_error)
 		return;
 	while ((*dnreg & (PWI|ACR|DSS)) == 0 && cc >= 0) {
