@@ -98,6 +98,7 @@ prog/gdb                Gary Jennejohn          gj@pcs.dec.com
 prog/man                Jordan Hubbard          jkh@freefall.cdrom.com
 prog/telnet		Garrett Wollman		wollman@lcs.mit.edu
 sys/fd                  Serge V.Vakulenko       vak@cronyx.msk.su
+sys/fd                  J"org Wunsch            joerg_wunsch@uriah.sax.de
 sys/i386                David Greenman          davidg@root.com
 sys/i386/isa/sound	Steven Wallace		swallace@freefall.cdrom.com
 sys/kern                David Greenman          davidg@root.com
