@@ -1,4 +1,4 @@
-/*	dz.c	3.6	%H%	*/
+/*	dz.c	3.7	%H%	*/
 
 /*
  *  DZ-11 Driver
@@ -207,7 +207,7 @@ dzrint(dev)
 #ifdef IIASA
 					continue;
 #else
-					c = 0177;	/* tun.t_intrc? */
+					c = tun.t_intrc;
 #endif
 			if (c&OVERRUN)
 				printf("o");
@@ -403,12 +403,16 @@ dzscan()
 		} else {
 			if ((tp->t_state & CARR_ON)) {
 				/* carrier lost */
+/*
 				if (tp->t_state&ISOPEN &&
 				    (tp->t_local&LNOHANG) == 0) {
+ */
 					gsignal(tp->t_pgrp, SIGHUP);
 					dzaddr->dzdtr &= ~bit;
 					flushtty(tp);
+/*
 				}
+ */
 				tp->t_state &= ~CARR_ON;
 			}
 		}
