@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-static char SccsId[] = "@(#)stab.c	3.1	%G%";
+static char SccsId[] = "@(#)stab.c	3.2	%G%";
 
 /*
 **  STAB -- manage the symbol table
@@ -34,8 +34,9 @@ stab(name, op)
 	register STAB *s = SymTab;
 	register STAB **ps = &SymTab;
 	extern char *newstr();
+	extern bool sameword();
 
-	while (s != NULL && strcmp(name, s->s_name) != '\0')
+	while (s != NULL && sameword(name, s->s_name))
 	{
 		ps = &s->s_next;
 		s = s->s_next;
@@ -46,6 +47,7 @@ stab(name, op)
 	/* make new entry */
 	s = (STAB *) xalloc(sizeof *s);
 	s->s_name = newstr(name);
+	makelower(s->s_name);
 	s->s_type = 0;
 	s->s_class = 0;
 	s->s_next = NULL;
