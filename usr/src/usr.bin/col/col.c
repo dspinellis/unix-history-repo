@@ -15,13 +15,14 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)col.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)col.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
-#include <errno.h>
 #include <ctype.h>
+#include <err.h>
 #include <string.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #define	BS	'\b'		/* backspace */
 #define	TAB	'\t'		/* tab */
@@ -60,28 +61,34 @@ struct line_str {
 	int	l_max_col;		/* max column in the line */
 };
 
-LINE *alloc_line();
-void *xmalloc();
+LINE   *alloc_line __P((void));
+void	dowarn __P((int));
+void	flush_line __P((LINE *));
+void	flush_lines __P((int));
+void	flush_blanks __P((void));
+void	free_line __P((LINE *));
+void	usage __P((void));
+void	wrerr __P((void));
+void   *xmalloc __P((void *, size_t));
 
-CSET last_set;			/* char_set of last char printed */
-LINE *lines;
-int compress_spaces;		/* if doing space -> tab conversion */
-int fine;			/* if `fine' resolution (half lines) */
-int max_bufd_lines;		/* max # lines to keep in memory */
-int nblank_lines;		/* # blanks after last flushed line */
-int no_backspaces;		/* if not to output any backspaces */
+CSET	last_set;		/* char_set of last char printed */
+LINE   *lines;
+int	compress_spaces;	/* if doing space -> tab conversion */
+int	fine;			/* if `fine' resolution (half lines) */
+int	max_bufd_lines;		/* max # lines to keep in memory */
+int	nblank_lines;		/* # blanks after last flushed line */
+int	no_backspaces;		/* if not to output any backspaces */
 
 #define	PUTC(ch) \
 	if (putchar(ch) == EOF) \
 		wrerr();
 
+int
 main(argc, argv)
 	int argc;
 	char **argv;
 {
-	extern int optind;
-	extern char *optarg;
-	register int ch;
+	int ch;
 	CHAR *c;
 	CSET cur_set;			/* current character set */
 	LINE *l;			/* current line */
@@ -216,7 +223,7 @@ main(argc, argv)
 						}
 					} else {
 						if (!warned++)
-							warn(cur_line);
+							dowarn(cur_line);
 						cur_line -= nmove;
 					}
 				}
@@ -281,6 +288,7 @@ main(argc, argv)
 	exit(0);
 }
 
+void
 flush_lines(nflush)
 	int nflush;
 {
@@ -307,6 +315,7 @@ flush_lines(nflush)
  * is the number of half line feeds, otherwise it is the number of whole line
  * feeds.
  */
+void
 flush_blanks()
 {
 	int half, i, nb;
@@ -335,6 +344,7 @@ flush_blanks()
  * Write a line to stdout taking care of space to tab conversion (-h flag)
  * and character set shifts.
  */
+void
 flush_line(l)
 	LINE *l;
 {
@@ -362,7 +372,7 @@ flush_line(l)
 			count = (int *)xmalloc((void *)count,
 			    (unsigned)sizeof(int) * count_size);
 		}
-		bzero((char *)count, sizeof(int) * l->l_max_col + 1);
+		memset((char *)count, 0, sizeof(int) * l->l_max_col + 1);
 		for (i = nchars, c = l->l_line; --i >= 0; c++)
 			count[c->c_column]++;
 
@@ -448,13 +458,15 @@ alloc_line()
 	l = line_freelist;
 	line_freelist = l->l_next;
 
-	bzero(l, sizeof(LINE));
-	return(l);
+	memset(l, 0, sizeof(LINE));
+	return (l);
 }
 
+void
 free_line(l)
 	LINE *l;
 {
+
 	l->l_next = line_freelist;
 	line_freelist = l;
 }
@@ -464,29 +476,33 @@ xmalloc(p, size)
 	void *p;
 	size_t size;
 {
-	if (!(p = (void *)realloc(p, size))) {
-		(void)fprintf(stderr, "col: %s.\n", strerror(ENOMEM));
-		exit(1);
-	}
-	return(p);
+
+	if (!(p = (void *)realloc(p, size)))
+		err(1, NULL);
+	return (p);
 }
 
+void
 usage()
 {
+
 	(void)fprintf(stderr, "usage: col [-bfx] [-l nline]\n");
 	exit(1);
 }
 
+void
 wrerr()
 {
+
 	(void)fprintf(stderr, "col: write error.\n");
 	exit(1);
 }
 
-warn(line)
+void
+dowarn(line)
 	int line;
 {
-	(void)fprintf(stderr,
-	    "col: warning: can't back up %s.\n", line < 0 ?
-	    "past first line" : "-- line already flushed");
+
+	warnx("warning: can't back up %s",
+		line < 0 ? "past first line" : "-- line already flushed");
 }

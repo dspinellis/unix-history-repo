@@ -12,23 +12,26 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)cmp.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmp.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
 #include <sys/stat.h>
+
+#include <err.h>
 #include <fcntl.h>
-#include <errno.h>
-#include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
+
 #include "extern.h"
 
 int	lflag, sflag;
 
 static void usage __P((void));
 
+int
 main(argc, argv)
 	int argc;
 	char *argv[];
@@ -58,7 +61,7 @@ endargs:
 	argc -= optind;
 
 	if (lflag && sflag)
-		err("only one of -l and -s may be specified");
+		errx(ERR_EXIT, "only one of -l and -s may be specified");
 
 	if (argc < 2 || argc > 4)
 		usage();
@@ -71,28 +74,29 @@ endargs:
 		file1 = "stdin";
 	}
 	else if ((fd1 = open(file1, O_RDONLY, 0)) < 0)
-		err("%s: %s", file1, strerror(errno));
+		err(ERR_EXIT, "%s", file1);
 	if (strcmp(file2 = argv[1], "-") == 0) {
 		if (special)
-			err("standard input may only be specified once");
+			errx(ERR_EXIT,
+				"standard input may only be specified once");
 		special = 1;
 		fd2 = 0;
 		file2 = "stdin";
 	}
 	else if ((fd2 = open(file2, O_RDONLY, 0)) < 0)
-		err("%s: %s", file2, strerror(errno));
+		err(ERR_EXIT, "%s", file2);
 
 	skip1 = argc > 2 ? strtol(argv[2], NULL, 10) : 0;
 	skip2 = argc == 4 ? strtol(argv[3], NULL, 10) : 0;
 
 	if (!special) {
 		if (fstat(fd1, &sb1))
-			err("%s: %s", file1, strerror(errno));
+			err(ERR_EXIT, "%s", file1);
 		if (!S_ISREG(sb1.st_mode))
 			special = 1;
 		else {
 			if (fstat(fd2, &sb2))
-				err("%s: %s", file2, strerror(errno));
+				err(ERR_EXIT, "%s", file2);
 			if (!S_ISREG(sb2.st_mode))
 				special = 1;
 		}
@@ -109,7 +113,8 @@ endargs:
 static void
 usage()
 {
+
 	(void)fprintf(stderr,
 	    "usage: cmp [-l | s] file1 file2 [skip1 [skip2]]\n");
-	exit(2);
+	exit(ERR_EXIT);
 }
