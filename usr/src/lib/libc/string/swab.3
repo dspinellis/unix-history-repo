@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)swab.3	6.5 (Berkeley) %G%
+.\"     @(#)swab.3	6.6 (Berkeley) %G%
 .\"
 .Dd 
 .Dt SWAB 3
@@ -14,7 +14,7 @@
 .Sh SYNOPSIS
 .Fd #include <string.h>
 .Ft void
-.Fn swab "const char *src" "char *dst" "size_t len"
+.Fn swab "const void *src" "void *dst" "size_t len"
 .Sh DESCRIPTION
 The function
 .Fn swab
