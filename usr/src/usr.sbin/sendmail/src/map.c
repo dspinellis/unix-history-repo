@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)map.c	8.72 (Berkeley) %G%";
+static char sccsid[] = "@(#)map.c	8.73 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -2606,6 +2606,8 @@ prog_map_lookup(map, name, av, statp)
 	register char *p;
 	int fd;
 	auto pid_t pid;
+	char *rval;
+	int stat;
 	char *argv[MAXPV + 1];
 	char buf[MAXLINE];
 
@@ -2627,20 +2629,31 @@ prog_map_lookup(map, name, av, statp)
 	pid = prog_open(argv, &fd, CurEnv);
 	if (pid < 0)
 	{
-		if (tTd(38, 9))
+		if (!bitset(MF_OPTIONAL, map->map_mflags))
+			syserr("prog_map_lookup(%s) failed (%s) -- closing",
+				map->map_mname, errstring(errno));
+		else if (tTd(38, 9))
 			printf("prog_map_lookup(%s) failed (%s) -- closing",
 				map->map_mname, errstring(errno));
 		map->map_mflags &= ~(MF_VALID|MF_OPEN);
+		*statp = EX_OSFILE;
 		return NULL;
 	}
 	i = read(fd, buf, sizeof buf - 1);
-	if (i <= 0 && tTd(38, 2))
-		printf("prog_map_lookup(%s): read error %s\n",
+	if (i < 0)
+	{
+		syserr("prog_map_lookup(%s): read error %s\n",
 			map->map_mname, errstring(errno));
+		rval = NULL;
+	}
+	else if (i == 0 && tTd(38, 2))
+	{
+		printf("prog_map_lookup(%s): empty answer\n",
+			map->map_mname);
+		rval = NULL;
+	}
 	if (i > 0)
 	{
-		char *rval;
-
 		buf[i] = '\0';
 		p = strchr(buf, '\n');
 		if (p != NULL)
@@ -2655,17 +2668,31 @@ prog_map_lookup(map, name, av, statp)
 		/* now flush any additional output */
 		while ((i = read(fd, buf, sizeof buf)) > 0)
 			continue;
-		close(fd);
-
-		/* and wait for the process to terminate */
-		*statp = waitfor(pid);
-
-		return rval;
 	}
 
+	/* wait for the process to terminate */
 	close(fd);
-	*statp = waitfor(pid);
-	return NULL;
+	stat = waitfor(pid);
+
+	if (stat == -1)
+	{
+		syserr("prog_map_lookup(%s): wait error %s\n",
+			map->map_mname, errstring(errno));
+		*statp = EX_SOFTWARE;
+		rval = NULL;
+	}
+	else if (WIFEXITED(*statp))
+	{
+		*statp = WEXITSTATUS(*statp);
+	}
+	else
+	{
+		syserr("prog_map_lookup(%s): child died on signal %d",
+			map->map_mname, *statp);
+		*statp = EX_UNAVAILABLE;
+		rval = NULL;
+	}
+	return rval;
 }
 /*
 **  Sequenced map type.
