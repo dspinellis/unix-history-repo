@@ -4,7 +4,7 @@
  * specifies the terms and conditions for redistribution.
  */
 
-static char sccsid[] = "@(#)runtime.vax.c 5.1 %G%";
+static char sccsid[] = "@(#)runtime.vax.c 5.2 %G%";
 
 static char rcsid[] = "$Header: runtime.c,v 1.5 84/12/26 10:41:52 linton Exp $";
 
@@ -610,7 +610,11 @@ Node arglist;
     int argc, args_size;
 
     savesp = sp;
-    argc = evalargs(proc, arglist);
+    if (varIsSet("$unsafecall")) {
+	argc = unsafe_evalargs(proc, arglist);
+    } else {
+	argc = evalargs(proc, arglist);
+    }
     args_size = sp - savesp;
     setreg(STKP, reg(STKP) - args_size);
     dwrite(savesp, reg(STKP), args_size);
