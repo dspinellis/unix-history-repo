@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_sig.c	7.29 (Berkeley) %G%
+ *	@(#)kern_sig.c	7.30 (Berkeley) %G%
  */
 
 #define	SIGPROP		/* include signal properties table */
@@ -22,6 +22,8 @@
 #include "kernel.h"
 #include "wait.h"
 #include "ktrace.h"
+
+#include "machine/cpu.h"
 
 #include "vm/vm.h"
 #include "kinfo_proc.h"
@@ -711,7 +713,7 @@ psignal(p, sig)
 		 * It will either never be noticed, or noticed very soon.
 		 */
 		if (p == curproc)
-			aston();
+			signotify(p);
 		goto out;
 	}
 	/*NOTREACHED*/
@@ -1000,15 +1002,15 @@ coredump(p)
 	itrunc(ip, (u_long)0);
 	VOP_SETATTR(vp, &vattr, cred, p);
 	p->p_acflag |= ACORE;
-	bcopy(p, &u.u_kproc.kp_proc, sizeof(struct proc));
-	fill_eproc(p, &u.u_kproc.kp_eproc);
+	bcopy(p, &p->p_addr->u_kproc.kp_proc, sizeof(struct proc));
+	fill_eproc(p, &p->p_addr->u_kproc.kp_eproc);
 #ifdef HPUXCOMPAT
 	/*
 	 * BLETCH!  If we loaded from an HPUX format binary file
 	 * we have to dump an HPUX style user struct so that the
 	 * HPUX debuggers can grok it.
 	 */
-	if (u.u_pcb.pcb_flags & PCB_HPUXBIN)
+	if (p->p_addr->u_pcb.pcb_flags & PCB_HPUXBIN)
 		error = hpuxdumpu(vp, cred);
 	else
 #endif
