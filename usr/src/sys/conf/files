@@ -62,10 +62,6 @@ kern/vm_sw.c		standard
 kern/vm_swap.c		standard
 kern/vm_swp.c		standard
 kern/vm_text.c		standard
-ufs/quota_kern.c	standard
-ufs/quota_subr.c	standard
-ufs/quota_sys.c		standard
-ufs/quota_ufs.c		standard
 ufs/ufs_alloc.c		standard
 ufs/ufs_bmap.c		standard
 ufs/ufs_disksubr.c	standard
@@ -75,6 +71,7 @@ ufs/ufs_subr.c		standard
 ufs/ufs_tables.c	standard
 ufs/ufs_vfsops.c	standard
 ufs/ufs_vnops.c		standard
+ufs/ufs_quota.c		optional quota
 ufs/mfs_vnops.c		optional mfs
 ufs/mfs_vfsops.c	optional mfs
 nfs/nfs_bio.c		optional nfs
