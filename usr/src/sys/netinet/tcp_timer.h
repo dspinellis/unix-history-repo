@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tcp_timer.h	6.6 (Berkeley) %G%
+ *	@(#)tcp_timer.h	6.7 (Berkeley) %G%
  */
 
 /*
@@ -51,7 +51,7 @@
  * amount of time, then we drop the connection.
  */
 
-#define	TCP_TTL		15		/* time to live for TCP segs */
+#define	TCP_TTL		30		/* time to live for TCP segs */
 /*
  * Time constants.
  */
