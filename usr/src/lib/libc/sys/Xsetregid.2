@@ -2,17 +2,21 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)Xsetregid.2	6.1 (Berkeley) %G%
+.\"	@(#)Xsetregid.2	6.2 (Berkeley) %G%
 .\"
 .TH SETREGID 2 ""
 .UC 5
 .SH NAME
 setregid \- set real and effective group ID
 .SH SYNOPSIS
+.nf
+.ft B
+#include <sys/types.h>
+.PP
 .ft B
 setregid(rgid, egid)
 .br
-int rgid, egid;
+gid_t rgid, egid;
 .ft R
 .SH DESCRIPTION
 The real and effective group ID's of the current process

@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)getgid.2	6.1 (Berkeley) %G%
+.\"	@(#)getgid.2	6.2 (Berkeley) %G%
 .\"
 .TH GETGID 2 ""
 .UC 5
@@ -11,12 +11,16 @@ getgid, getegid \- get group identity
 .SH SYNOPSIS
 .nf
 .ft B
+#include <sys/types.h>
+.PP
+.nf
+.ft B
 gid = getgid()
-int gid;
+gid_t gid;
 .PP
 .ft B
 egid = getegid()
-int egid;
+gid_t egid;
 .fi
 .SH DESCRIPTION
 .I Getgid
