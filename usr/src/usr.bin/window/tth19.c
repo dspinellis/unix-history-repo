@@ -1,8 +1,9 @@
 #ifndef lint
-static	char *sccsid = "@(#)tth19.c	3.3 83/08/12";
+static	char *sccsid = "@(#)tth19.c	3.4 83/08/15";
 #endif
 
 #include "ww.h"
+#include "tt.h"
 
 /*
 kb|h19|heath|h19-b|h19b|heathkit|heath-19|z19|zenith:
@@ -184,22 +185,6 @@ out:
 
 h19_init()
 {
-	float cpms = (float) wwbaud / 10000;	/* char per ms */
-
-	h19_msp10c = 10 / cpms;			/* ms per 10 char */
-#ifdef notdef
-	tt.tt_ILmf = cpms;			/* 1 ms */
-	tt.tt_ILov = 2;
-	tt.tt_ICmf = cpms * 1.5 ;		/* 1.5 ms */
-	tt.tt_ICov = 2;
-	tt.tt_DCmf = 0;
-	tt.tt_DCov = 2;
-#endif
-	return 0;
-}
-
-h19_reset()
-{
 	esc();
 	pc(x);
 	pc(4);
@@ -213,7 +198,7 @@ h19_reset()
 	h19_modes = 0;
 }
 
-h19_cleanup()
+h19_end()
 {
 	SETMODES(0);
 	SETINSERT(0);
@@ -251,6 +236,9 @@ h19_delchar()
 
 tt_h19()
 {
+	float cpms = (float) wwbaud / 10000;	/* char per ms */
+
+	h19_msp10c = 10 / cpms;			/* ms per 10 char */
 	tt.tt_setinsert = h19_setinsert;
 	tt.tt_setmodes = h19_setmodes;
 	tt.tt_insline = h19_insline;
@@ -258,12 +246,11 @@ tt_h19()
 	tt.tt_delchar = h19_delchar;
 	tt.tt_blank = h19_blank;
 	tt.tt_init = h19_init;
-	tt.tt_cleanup = h19_cleanup;
+	tt.tt_end = h19_end;
 	tt.tt_clreol = h19_clreol;
 	tt.tt_clreos = h19_clreos;
 	tt.tt_clear = h19_clear;
 	tt.tt_move = h19_move;
-	tt.tt_reset = h19_reset;
 	tt.tt_write = h19_write;
 	tt.tt_putc = h19_putc;
 	tt.tt_ncol = 80;

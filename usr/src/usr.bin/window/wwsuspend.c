@@ -1,8 +1,9 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwsuspend.c	3.1 83/08/11";
+static	char *sccsid = "@(#)wwsuspend.c	3.2 83/08/15";
 #endif
 
 #include "ww.h"
+#include "tt.h"
 #include <signal.h>
 
 #define mask(s)	(1<<(SIG/**/s-1))

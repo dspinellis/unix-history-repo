@@ -1,8 +1,9 @@
 #ifndef lint
-static	char *sccsid = "@(#)ttinit.c	3.3 83/08/15";
+static	char *sccsid = "@(#)ttinit.c	3.4 83/08/15";
 #endif
 
 #include "ww.h"
+#include "tt.h"
 
 ttinit()
 {
@@ -31,7 +32,5 @@ ttinit()
 			break;
 	if (tp->tt_name == 0)
 		return -1;
-	if ((*tp->tt_func)() < 0)
-		return -1;
-	return (*tt.tt_init)();
+	return (*tp->tt_func)();
 }

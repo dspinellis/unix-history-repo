@@ -1,8 +1,9 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwscroll.c	3.1 83/08/12";
+static	char *sccsid = "@(#)wwscroll.c	3.2 83/08/15";
 #endif
 
 #include "ww.h"
+#include "tt.h"
 
 /*
  * Scroll down one line, starting at 'line'.

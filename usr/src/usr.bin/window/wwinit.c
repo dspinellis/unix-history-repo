@@ -1,8 +1,9 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwinit.c	3.2 83/08/12";
+static	char *sccsid = "@(#)wwinit.c	3.3 83/08/15";
 #endif
 
 #include "ww.h"
+#include "tt.h"
 
 struct ww_tty wwoldtty;
 struct ww_tty wwwintty;
