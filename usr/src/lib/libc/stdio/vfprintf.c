@@ -11,7 +11,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)vfprintf.c	5.23 (Berkeley) %G%";
+static char sccsid[] = "@(#)vfprintf.c	5.24 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -19,7 +19,12 @@ static char sccsid[] = "@(#)vfprintf.c	5.23 (Berkeley) %G%";
 #include <stdio.h>
 #include <ctype.h>
 
-#define	MAXBUF		512
+/* 11-bit exponent (VAX G floating point) is 308 decimal digits */
+#define	MAXEXP		308
+/* 128 bit fraction takes up 39 decimal digits; max reasonable precision */
+#define	MAXFRACT	39
+
+#define	BUF		(MAXEXP+MAXFRACT+1)	/* + decimal point */
 
 #define	PUTC(ch)	{++cnt; putc((char)ch, fp);}
 
@@ -46,8 +51,8 @@ _doprnt(fmt0, argp, fp)
 	register char *t;
 	double _double;
 	u_long _ulong;
-	int base, flags, prec, size, width;
-	char padc, sign, *digs, buf[MAXBUF], *_cvt();
+	int base, flags, fpprec, prec, size, width;
+	char padc, sign, *digs, buf[BUF], *_cvt();
 
 	fmt = fmt0;
 	digs = "0123456789abcdef";
@@ -72,7 +77,7 @@ _doprnt(fmt0, argp, fp)
 		if (!ch)
 			return(cnt);
 
-		flags = width = 0;
+		flags = fpprec = width = 0;
 		prec = -1;
 		padc = ' ';
 		sign = '\0';
@@ -163,6 +168,15 @@ rflag:		switch (*++fmt) {
 		case 'g':
 		case 'G':
 			_double = va_arg(argp, double);
+			/*
+			 * don't bother to do unrealistic precision; just
+			 * pad it with zeroes later.  This keeps buffer size
+			 * rational.
+			 */
+			if (prec > MAXFRACT) {
+				fpprec = prec - MAXFRACT;
+				prec = MAXFRACT;
+			}
 			size = _cvt(_double, prec, flags, *fmt, padc, &sign,
 			    buf, buf + sizeof(buf)) - buf;
 			t = buf;
@@ -220,21 +234,7 @@ rflag:		switch (*++fmt) {
 			}
 			else
 				size = strlen(t);
-pforw:			if (!(flags&LADJUST) && width)
-				for (n = size; n++ < width;)
-					PUTC(padc);
-			if (fp->_cnt - (n = size) >= 0) {
-				cnt += n;
-				fp->_cnt -= n;
-				bcopy(t, fp->_ptr, n);
-				fp->_ptr += n;
-			}
-			else for (; n--; ++t)
-				PUTC(*t);
-			if (flags&LADJUST)
-				while (width-- > size)
-					PUTC(' ');
-			break;
+			goto pforw;
 		case 'u':
 			ARG();
 			base = 10;
@@ -259,13 +259,14 @@ nosign:			sign = NULL;
 number:			if (!_ulong && !prec)
 				break;
 
-			t = buf + MAXBUF - 1;
+			t = buf + BUF - 1;
 			do {
 				*t-- = digs[_ulong % base];
 				_ulong /= base;
 			} while(_ulong);
-			for (size = buf + MAXBUF - 1 - t; size < prec; ++size)
+			for (size = buf + BUF - 1 - t; size < prec; ++size)
 				*t-- = '0';
+			digs = "0123456789abcdef";
 
 			/* alternate mode for hex and octal numbers */
 			if (flags&ALT)
@@ -275,38 +276,51 @@ number:			if (!_ulong && !prec)
 					if (padc == ' ') {
 						*t-- = *fmt;
 						*t-- = '0';
+						size += 2;
 					}
 					else {
 						PUTC('0');
 						PUTC(*fmt);
+						width -= 2;
 					}
-					width -= 2;
 					break;
 				case 8:
 					if (t[1] != '0') {
 						*t-- = '0';
-						--width;
+						++size;
 					}
 					break;
 				}
 
 			if (sign) {
 				/* avoid "0000-3" */
-				if (padc == ' ')
+				if (padc == ' ') {
 					*t-- = sign;
-				else
+					++size;
+				}
+				else {
 					PUTC(sign);
-				--width;
+					--width;
+				}
 			}
+			++t;
 
-			if (!(flags&LADJUST))
-				while (size++ < width)
+pforw:			if (!(flags&LADJUST) && width)
+				for (n = size + fpprec; n++ < width;)
 					PUTC(padc);
-			while (++t < buf + MAXBUF)
+			if (fp->_cnt - (n = size) >= 0) {
+				cnt += n;
+				fp->_cnt -= n;
+				bcopy(t, fp->_ptr, n);
+				fp->_ptr += n;
+			}
+			else for (; n--; ++t)
 				PUTC(*t);
-			while (width-- > size)
-				PUTC(' ');
-			digs = "0123456789abcdef";
+			while (fpprec--)
+				PUTC('0');
+			if (flags&LADJUST)
+				for (n = size + fpprec; ++n < width;)
+					PUTC(' ');
 			break;
 		case '\0':		/* "%?" prints ?, unless ? is NULL */
 			return(cnt);
