@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.10 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -108,7 +108,8 @@ sendall(e, mode)
 	**	is instantiated in the queue as a recipient.
 	*/
 
-	if (!MeToo && !bitset(QQUEUEUP, e->e_from.q_flags))
+	if (!bitset(EF_METOO, e->e_flags) &&
+	    !bitset(QQUEUEUP, e->e_from.q_flags))
 	{
 		if (tTd(13, 5))
 		{
@@ -1695,7 +1696,7 @@ mailfile(filename, ctladdr, e)
 			if (e->e_dfp == NULL)
 			{
 				syserr("mailfile: Cannot open %s for %s from %s",
-					e->e_df, e->e_to, e->e_from);
+					e->e_df, e->e_to, e->e_from.q_paddr);
 			}
 		}
 
