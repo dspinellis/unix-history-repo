@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)t8.c	4.3 %G%";
+static char sccsid[] = "@(#)t8.c	4.4 %G%";
 #endif
 
  /* t8.c: write out one line of output table */
@@ -12,7 +12,7 @@ putline(i, nl)
 	/* i is line number for deciding format */
 	/* nl is line number for finding data   usually identical */
 {
-int c, lf, ct, form, lwid, vspf, ip, cmidx, exvspen, vforml;
+int c, lf, ct, form, lwid, vspf, ip = -1, cmidx, exvspen, vforml;
 int vct, chfont;
 char *s, *size, *fn;
 watchout=vspf=exvspen=0;
