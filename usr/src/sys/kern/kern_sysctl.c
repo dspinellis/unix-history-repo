@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_sysctl.c	7.42 (Berkeley) %G%
+ *	@(#)kern_sysctl.c	7.43 (Berkeley) %G%
  */
 
 /*
@@ -233,24 +233,6 @@ kern_sysctl(name, namelen, oldp, oldlenp, newp, newlen, p)
 #else
 		return (sysctl_rdint(oldp, oldlenp, newp, 0));
 #endif
-	case KERN_LINK_MAX:
-		return (sysctl_rdint(oldp, oldlenp, newp, LINK_MAX));
-	case KERN_MAX_CANON:
-		return (sysctl_rdint(oldp, oldlenp, newp, MAX_CANON));
-	case KERN_MAX_INPUT:
-		return (sysctl_rdint(oldp, oldlenp, newp, MAX_INPUT));
-	case KERN_NAME_MAX:
-		return (sysctl_rdint(oldp, oldlenp, newp, NAME_MAX));
-	case KERN_PATH_MAX:
-		return (sysctl_rdint(oldp, oldlenp, newp, PATH_MAX));
-	case KERN_PIPE_BUF:
-		return (sysctl_rdint(oldp, oldlenp, newp, PIPE_BUF));
-	case KERN_CHOWN_RESTRICTED:
-		return (sysctl_rdint(oldp, oldlenp, newp, 1));
-	case KERN_NO_TRUNC:
-		return (sysctl_rdint(oldp, oldlenp, newp, 1));
-	case KERN_VDISABLE:
-		return (sysctl_rdint(oldp, oldlenp, newp, _POSIX_VDISABLE));
 	default:
 		return (EOPNOTSUPP);
 	}
