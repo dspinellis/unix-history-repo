@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)lastcomm.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)lastcomm.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -71,8 +71,9 @@ main(argc, argv)
 			if (argc > 1 && !ok(argc, argv, acp))
 				continue;
 			x = expand(acp->ac_utime) + expand(acp->ac_stime);
-			printf("%-*s %s %-*s %-*s %6.2f secs %.16s\n",
-				fldsiz(acct, ac_comm), acp->ac_comm,
+			printf("%-*.*s %s %-*s %-*s %6.2f secs %.16s\n",
+				fldsiz(acct, ac_comm), fldsiz(acct, ac_comm),
+				acp->ac_comm,
 				flagbits(acp->ac_flag),
 				fldsiz(utmp, ut_name), getname(acp->ac_uid),
 				fldsiz(utmp, ut_line), getdev(acp->ac_tty),
