@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)cat.1	4.1 (Berkeley) %G%
+.\"	@(#)cat.1	5.1 (Berkeley) %G%
 .\"
-.TH CAT 1 
+.TH CAT 1 "18 January 1983"
 .UC 4
 .SH NAME
 cat \- catenate and print
@@ -25,62 +25,56 @@ file ...
 .I Cat
 reads each
 .I file
-in sequence
-and writes it on the standard output.
-Thus
+in sequence and displays it on the standard output.  Thus
 .PP
 .ti+15n
 cat file
 .PP
-prints the file, and
+displays the file on the standard output, and
 .PP
 .ti+15n
 cat file1 file2 >file3
 .PP
 concatenates the first two files and places the result on the third.
 .PP
-If no input file is given,
-or if the argument `\-' is encountered,
+If no input file is given, or if the argument `\-' is encountered,
 .I cat
-reads from the standard
-input file.
+reads from the standard input file.
 Output is buffered in 1024-byte blocks unless the standard
-output is a terminal, in which case it is line buffered.
-The
+output is a terminal, in which case it is line buffered.  The
 .B \-u
-option causes the output to be completely unbuffered.
+option makes the output completely unbuffered.
 .PP
-The option
+The
 .B \-n
-causes the output lines to be numbered sequentially from 1.
-Giving
+option displays the output lines preceded by lines numbers, numbered
+sequentially from 1.  Specifying the 
 .B \-b
-with
+option with the
 .B \-n
-causes numbers to be omitted from blank lines.
+option omits the line numbers from blank lines.
 .PP
-The option
+The
 .B \-s
-causes the output to be single spaced by crushing out multiple adjacent
-empty lines.
+option crushes out multiple adjacent empty lines so that the
+output is displayed single spaced.
 .PP
-The option
+The
 .B \-v
-causes non-printing characters to be printed in a visible way.
+option displays non-printing characters so that they are visible.
 Control characters print like ^X for control-x; the delete character
 (octal 0177) prints as ^?.
 Non-ascii characters (with the high bit set) are printed as M-
-(for meta) followed by the character of the low 7 bits.
-A
+(for meta) followed by the character of the low 7 bits.  A
 .B \-e
-option may be given with
+option may be given with the
 .B \-v
-and causes the ends of lines to be followed by the character `$';
-the
+option, which displays a `$' character at the end of each line.
+Specifying the 
 .B \-t
-option with
+option with the
 .B \-v
-causes tabs to be printed as ^I.
+option displays tab characters as ^I.
 .PP
 .SH "SEE ALSO"
 cp(1), ex(1), more(1), pr(1), tail(1)
