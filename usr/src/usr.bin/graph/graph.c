@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)graph.c	4.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)graph.c	5.1 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <stdio.h>
@@ -24,7 +24,7 @@ struct xy {
 	int	xlbf;	/*flag:explicit lower bound*/
 	int 	xubf;	/*flag:explicit upper bound*/
 	int	xqf;	/*flag:explicit quantum*/
-	double const (*xf)();	/*transform function, e.g. log*/
+	double __pure (*xf)();	/*transform function, e.g. log*/
 	float	xa,xb;	/*scaling coefficients*/
 	float	xlb,xub;	/*lower and upper bound*/
 	float	xquant;	/*quantum*/
@@ -39,7 +39,7 @@ struct val {
 	int lblptr;
 } *xx;
 
-char *labs;
+char *labels;
 int labsiz;
 
 int tick = 50;
@@ -73,7 +73,7 @@ int mode = 1;
 char *realloc();
 char *malloc();
 
-double ident(x)
+double __pure ident(x)
 double x;
 {
 	return(x);
@@ -88,8 +88,8 @@ char *argv[];
 	init(&yd);
 	xd.xsize = yd.xsize = 1.;
 	xx = (struct val *)malloc((unsigned)sizeof(struct val));
-	labs = malloc(1);
-	labs[labsiz++] = 0;
+	labels = malloc(1);
+	labels[labsiz++] = 0;
 	setopt(argc,argv);
 	if(erasf)
 		erase();
@@ -304,13 +304,13 @@ copystring(k)
 	register i;
 	int q;
 
-	temp = realloc(labs,(unsigned)(labsiz+1+k));
+	temp = realloc(labels,(unsigned)(labsiz+1+k));
 	if(temp==0)
 		return(0);
-	labs = temp;
+	labels = temp;
 	q = labsiz;
 	for(i=0;i<=k;i++)
-		labs[labsiz++] = labbuf[i];
+		labels[labsiz++] = labbuf[i];
 	return(q);
 }
 
@@ -681,7 +681,7 @@ symbol(ix,iy,k)
 	} 
 	else {
 		move(ix,iy);
-		label(k>=0?labs+k:plotsymb);
+		label(k>=0?labels+k:plotsymb);
 		move(ix,iy);
 		return(!brkf|k<0);
 	}
