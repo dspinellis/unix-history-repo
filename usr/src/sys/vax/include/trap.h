@@ -1,12 +1,14 @@
-/*	trap.h	4.5	81/03/03	*/
+/*	trap.h	4.6	81/03/03	*/
 
 /*
  * Trap type values
  */
 
+/* The first three constant values are known to the real world <signal.h> */
 #define	RESADFLT	0		/* reserved addressing fault */
 #define	PRIVINFLT	1		/* privileged instruction fault */
 #define	RESOPFLT	2		/* reserved operand fault */
+/* End of known constants */
 #define	BPTFLT		3		/* bpt instruction fault */
 #define	XFCFLT		4		/* xfc instruction fault */
 #define	SYSCALL		5		/* chmk instruction (syscall trap) */
