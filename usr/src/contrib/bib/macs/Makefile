@@ -1,7 +1,7 @@
 #
-#	@(#)Makefile	1.8	93/05/27
+#	@(#)Makefile	1.9	93/06/07
 #
-DEST	      = $(DESTDIR)/lib/bmac
+DEST	      = $(DEST_LIB)/bmac
 
 MAKEFILE      = Makefile
 
@@ -58,7 +58,7 @@ install:	bibinc.fullnames bibinc.shortnames tibinc.fullnames tibinc.shortnames
 		cp bibinc.fulllocal $(DEST)/tibmacs
 		cp bibinc.shortlocal $(DEST)/tibmacs
 		@echo Installing in $(DEST)
-		./Install $(DEST) $(BIBSRCS) ;
+		csh -f ./Install $(DEST) $(BIBSRCS) ;
 
 $(DEST):
 		mkdir $(DEST)
