@@ -8,7 +8,7 @@ hp300/hp300/kgdb_glue.c		optional kgdb compile-with "${NORMAL_C} -fno-defer-pop"
 hp300/hp300/kgdb_stub.c		optional kgdb
 hp300/hp300/machdep.c		standard config-dependent
 hp300/hp300/mem.c		standard
-hp300/hp300/ns_cksum.c		optional ns
+netns/ns_cksum.c		optional ns
 hp300/hp300/oc_cksum.s		optional inet
 hp300/hp300/pmap.c		standard
 hp300/hp300/sys_machdep.c	standard
