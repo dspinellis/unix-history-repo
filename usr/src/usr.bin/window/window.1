@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)window.1	6.15 (Berkeley) %G%
+.\"	@(#)window.1	6.16 (Berkeley) %G%
 .\"
 .Dd 
 .Dt WINDOW 1
@@ -294,6 +294,13 @@ Move the cursor of the current window down by one line.
 Move the cursor of the current window up by one line.
 .It Ic l
 Move the cursor of the current window right by one column.
+.It Ic y
+Yank.  The user is prompted to enter two points within the current
+window.  Then the content of the current window between those two points
+is saved in the yank buffer.
+.It Ic p
+Put.  The content of the yank buffer is written to the current
+window as input.
 .It Ic ^S
 Stop output in the current window.
 .It Ic ^Q
