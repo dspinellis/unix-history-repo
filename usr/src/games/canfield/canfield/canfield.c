@@ -139,6 +139,7 @@ int status = INSTRUCTIONBOX;
 #define costofrunthroughhand	 5
 #define costofinformation	 1
 #define secondsperdollar	60
+#define maxtimecharge		 3
 #define valuepercardup	 	 5
 /*
  * Variables associated with betting 
@@ -954,7 +955,7 @@ showcards()
 	register struct cardtype *ptr;
 	int row;
 
-	if (!Cflag)
+	if (!Cflag || cardsoff == 52)
 		return;
 	for (ptr = talon; ptr != NIL; ptr = ptr->next) {
 		ptr->visible = TRUE;
@@ -1004,9 +1005,11 @@ updatebettinginfo()
 	time(&now);
 	dollars = (now - acctstart) / secondsperdollar;
 	if (dollars > 0) {
+		acctstart += dollars * secondsperdollar;
+		if (dollars > maxtimecharge)
+			dollars = maxtimecharge;
 		this.thinktime += dollars;
 		total.thinktime += dollars;
-		acctstart += dollars * secondsperdollar;
 	}
 	thiscosts = this.hand + this.inspection + this.game +
 		this.runs + this.information + this.thinktime;
@@ -1520,6 +1523,7 @@ finish()
 	int row, col;
 
 	if (cardsoff == 52) {
+		getcmd(moverow, movecol, "Hit return to exit");
 		clear();
 		refresh();
 		move(originrow, origincol);
