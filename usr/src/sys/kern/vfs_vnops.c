@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_vnops.c	7.9 (Berkeley) %G%
+ *	@(#)vfs_vnops.c	7.10 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -30,7 +30,6 @@
 #include "socketvar.h"
 #include "mount.h"
 #include "vnode.h"
-#include "../ufs/inode.h"
 #include "../ufs/fs.h"
 #include "../ufs/quota.h"
 #include "ioctl.h"
@@ -241,22 +240,22 @@ vn_stat(vp, sb)
 	mode = vap->va_mode;
 	switch (vp->v_type) {
 	case VREG:
-		mode |= IFREG;
+		mode |= S_IFREG;
 		break;
 	case VDIR:
-		mode |= IFDIR;
+		mode |= S_IFDIR;
 		break;
 	case VBLK:
-		mode |= IFBLK;
+		mode |= S_IFBLK;
 		break;
 	case VCHR:
-		mode |= IFCHR;
+		mode |= S_IFCHR;
 		break;
 	case VLNK:
-		mode |= IFLNK;
+		mode |= S_IFLNK;
 		break;
 	case VSOCK:
-		mode |= IFSOCK;
+		mode |= S_IFSOCK;
 		break;
 	default:
 		return (EBADF);
@@ -475,7 +474,6 @@ vn_fhtovp(fhp, lockflag, vpp)
 	struct vnode **vpp;
 {
 	register struct mount *mp;
-	int error;
 
 	if ((mp = getvfs(&fhp->fh_fsid)) == NULL)
 		return (ESTALE);
@@ -525,43 +523,6 @@ forceclose(dev)
 			continue;
 		fp->f_flag &= ~(FREAD|FWRITE);
 	}
-}
-
-/*
- * Vnode reference, just increment the count
- */
-void vref(vp)
-	struct vnode *vp;
-{
-
-	vp->v_count++;
-}
-
-/*
- * Vnode release, just decrement the count and call VOP_INACTIVE()
- */
-void vrele(vp)
-	register struct vnode *vp;
-{
-
-	if (vp == NULL)
-		return;
-	vp->v_count--;
-	if (vp->v_count < 0)
-		printf("inode %d, bad ref count %d\n",
-			VTOI(vp)->i_number, vp->v_count);
-	if (vp->v_count == 0)
-		VOP_INACTIVE(vp);
-}
-
-/*
- * vput(), just unlock and vrele()
- */
-vput(vp)
-	register struct vnode *vp;
-{
-	VOP_UNLOCK(vp);
-	vrele(vp);
 }
 
 /*
