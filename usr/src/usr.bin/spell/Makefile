@@ -1,4 +1,6 @@
-#	@(#)Makefile	4.1	%G%
+#	@(#)Makefile	4.2	%G%
+
+CFLAGS= -O
 
 all:	spell hlist hlista hlistb hstop spellin spellout
 
@@ -14,12 +16,12 @@ install:	all
 clean:	
 	rm -f spell spellin hlista hlistb hlist hstop spellout
 
-spell: spell.c
-	cc -s -O spell.c -o spell
-spellin: spellin.c
-	cc -O -s spellin.c -o spellin
-spellout: spellout.c
-	cc -O -s spellout.c -o spellout
+spell: spell.o
+	cc spell.o -o spell
+spellin: spellin.o
+	cc spellin.o -o spellin
+spellout: spellout.o
+	cc spellout.o -o spellout
 
 hlist: /usr/dict/words spellin
 	spellin </usr/dict/words >hlist
