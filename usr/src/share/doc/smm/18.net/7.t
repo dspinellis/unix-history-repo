@@ -1,11 +1,11 @@
-.\" Copyright (c) 1983 Regents of the University of California.
+.\" Copyright (c) 1983,1986 Regents of the University of California.
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)7.t	6.1 (Berkeley) %G%
+.\"	@(#)7.t	6.2 (Berkeley) %G%
 .\"
 .nr H2 1
-.ds RH "Socket/protocol interface
+.\".ds RH "Socket/protocol interface
 .NH
 \s+2Socket/protocol interface\s0
 .PP
@@ -42,14 +42,18 @@ module are possible:
 A call on the user request routine is of the form,
 .DS
 ._f
-error = (*protosw[].pr_usrreq)(up, req, m, addr, rights);
-int error; struct socket *up; int req; struct mbuf *m, *rights; caddr_t addr;
+error = (*protosw[].pr_usrreq)(so, req, m, addr, rights);
+int error; struct socket *so; int req; struct mbuf *m, *addr, *rights;
 .DE
-The mbuf chain, \fIm\fP, and the address are optional parameters.
+The mbuf data chain \fIm\fP is supplied for output operations
+and for certain other operations where it is to receive a result.
+The address \fIaddr\fP is supplied for address-oriented requests
+such as PRU_BIND and PRU_CONNECT.
 The \fIrights\fP parameter is an optional pointer to an mbuf
-chain containing user specified capabilities (see the \fIsendmsg\fP
+chain containing user-specified capabilities (see the \fIsendmsg\fP
 and \fIrecvmsg\fP system calls).  The protocol is responsible for
-disposal of both mbuf chains.  A non-zero return value gives a
+disposal of the data mbuf chains on output operations.
+A non-zero return value gives a
 UNIX error number which should be passed to higher level software.
 The following paragraphs describe each
 of the requests possible.
@@ -70,8 +74,8 @@ deallocate any resources assigned to the socket.
 .IP PRU_BIND
 .br
 When a socket is initially created it has no address bound
-to it.  This request indicates an address should be bound to
-an existing socket.  The protocol module must verify the
+to it.  This request indicates that an address should be bound to
+an existing socket.  The protocol module must verify that the
 requested address is valid and available for use.
 .IP PRU_LISTEN
 .br
@@ -86,8 +90,8 @@ The ``connect'' request indicates the user wants to a establish
 an association.  The \fIaddr\fP parameter supplied describes
 the peer to be connected to.  The effect of a connect request
 may vary depending on the protocol.  Virtual circuit protocols,
-such as TCP [Postel80b], use this request to initiate establishment of a
-TCP connection.  Datagram protocols, such as UDP [Postel79], simply
+such as TCP [Postel81b], use this request to initiate establishment of a
+TCP connection.  Datagram protocols, such as UDP [Postel80], simply
 record the peer's address in a private data structure and use
 it to tag all outgoing packets.  There are no restrictions
 on how many times a connect request may be used after an attach.
@@ -115,7 +119,8 @@ This call is used to indicate no more data will be sent and/or
 received (the \fIaddr\fP parameter indicates the direction of
 the shutdown, as encoded in the \fIsoshutdown\fP system call).
 The protocol may, at its discretion, deallocate any data
-structures related to the shutdown.
+structures related to the shutdown and/or notify a connected peer
+of the shutdown.
 .IP PRU_RCVD
 .br
 This request is made only if the protocol entry in the protocol
@@ -127,7 +132,7 @@ data transfer, etc.
 .IP PRU_SEND
 .br
 Each user request to send data is translated into one or more
-PRU_SEND requests (a protocol may indicate a single user
+PRU_SEND requests (a protocol may indicate that a single user
 send request must be translated into a single PRU_SEND request by
 specifying the PR_ATOMIC flag in its protocol description).
 The data to be sent is presented to the protocol as a list of
@@ -149,30 +154,36 @@ interface.  The \fIaddr\fP parameter contains a pointer to a static
 kernel data area where relevant information may be obtained or returned.
 The \fIm\fP parameter contains the actual \fIioctl\fP request code
 (note the non-standard calling convention).
+The \fIrights\fP parameter contains a pointer to an \fIifnet\fP structure
+if the \fIioctl\fP operation pertains to a particular network interface.
 .IP PRU_SENSE
 .br
 The ``sense'' request is generated when the user makes an \fIfstat\fP
 system call on a socket; it requests status of the associated socket. 
-There currently is no common format for the status returned. 
-Information which might be returned includes per-connection statistics,
-protocol state, resources currently in use by the connection, the
-optimal transfer size for the connection (based on windowing information
-and maximum packet size).  The \fIaddr\fP parameter contains a pointer
+This currently returns a standard \fIstat\fP structure.
+It typically contains only the
+optimal transfer size for the connection (based on buffer size,
+windowing information and maximum packet size).
+The \fIm\fP parameter contains a pointer
 to a static kernel data area where the status buffer should be placed.
 .IP PRU_RCVOOB
 .br
 Any ``out-of-band'' data presently available is to be returned.  An
-mbuf is passed in to the protocol module and the protocol
+mbuf is passed to the protocol module, and the protocol
 should either place
 data in the mbuf or attach new mbufs to the one supplied if there is
 insufficient space in the single mbuf.
+An error may be returned if out-of-band data is not (yet) available
+or has already been consumed.
+The \fIaddr\fP parameter contains any options such as MSG_PEEK
+to examine data without consuming it.
 .IP PRU_SENDOOB
 .br
 Like PRU_SEND, but for out-of-band data.
 .IP PRU_SOCKADDR
 .br
 The local address of the socket is returned, if any is currently
-bound to the it.  The address format (protocol specific) is returned
+bound to it.  The address (with protocol specific format) is returned
 in the \fIaddr\fP parameter.
 .IP PRU_PEERADDR
 .br
@@ -195,12 +206,12 @@ they are handed to the \fIpr_usrreq\fP routine solely for convenience
 in tracing a protocol's operation (e.g. PRU_SLOWTIMO).
 .IP PRU_FASTTIMO
 .br
-A ``fast timeout'' has occured.  This request is made when a timeout
+A ``fast timeout'' has occurred.  This request is made when a timeout
 occurs in the protocol's \fIpr_fastimo\fP routine.  The \fIaddr\fP
 parameter indicates which timer expired.
 .IP PRU_SLOWTIMO
 .br
-A ``slow timeout'' has occured.  This request is made when a timeout
+A ``slow timeout'' has occurred.  This request is made when a timeout
 occurs in the protocol's \fIpr_slowtimo\fP routine.  The \fIaddr\fP
 parameter indicates which timer expired.
 .IP PRU_PROTORCV
@@ -214,5 +225,4 @@ This request allows a protocol to send data destined for another
 protocol module, not a user.  The details of how data is marked
 ``addressed to protocol'' instead of ``addressed to user'' are
 left to the protocol modules.  No protocols currently use this facility.
-.ds RH "Protocol/protocol interface
-.bp
+'ne 2i

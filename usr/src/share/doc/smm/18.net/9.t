@@ -1,8 +1,8 @@
-.\" Copyright (c) 1983 Regents of the University of California.
+.\" Copyright (c) 1983,1986 Regents of the University of California.
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)9.t	6.1 (Berkeley) %G%
+.\"	@(#)9.t	6.2 (Berkeley) %G%
 .\"
 .nr H2 1
 .ds RH "Protocol/network-interface
@@ -17,13 +17,13 @@ any routing decisions have been made before handing a packet
 to a network interface, in fact this is absolutely necessary
 in order to locate any interface at all (unless, of course,
 one uses a single ``hardwired'' interface).  There are two
-cases to be concerned with, transmission of a packet,
+cases with which to be concerned, transmission of a packet
 and receipt of a packet; each will be considered separately.
 .NH 2
 Packet transmission
 .PP
 Assuming a protocol has a handle on an interface, \fIifp\fP,
-a (struct ifnet *),
+a (struct ifnet\ *),
 it transmits a fully formatted packet with the following call,
 .DS
 error = (*ifp->if_output)(ifp, m, dst)
@@ -32,18 +32,20 @@ int error; struct ifnet *ifp; struct mbuf *m; struct sockaddr *dst;
 The output routine for the network interface transmits the packet
 \fIm\fP to the \fIdst\fP address, or returns an error indication
 (a UNIX error number).  In reality transmission may
-not be immediate, or successful; normally the output
+not be immediate or successful; normally the output
 routine simply queues the packet on its send queue and primes
 an interrupt driven routine to actually transmit the packet.
-For unreliable mediums, such as the Ethernet, ``successful''
-transmission simply means the packet has been placed on the cable
+For unreliable media, such as the Ethernet, ``successful''
+transmission simply means that the packet has been placed on the cable
 without a collision.  On the other hand, an 1822 interface guarantees
 proper delivery or an error indication for each message transmitted.
 The model employed in the networking system attaches no promises
 of delivery to the packets handed to a network interface, and thus
 corresponds more closely to the Ethernet.  Errors returned by the
-output routine are normally trivial in nature (no buffer space, 
+output routine are only those that can be detected immediately,
+and are normally trivial in nature (no buffer space, 
 address format not handled, etc.).
+No indication is received if errors are detected after the call has returned.
 .NH 2
 Packet reception
 .PP
@@ -52,20 +54,27 @@ These protocols deal with internetwork addressing and are responsible
 for the delivery of incoming packets to the proper protocol processing
 modules.  In the PUP model [Boggs78] these protocols are termed Level
 1 protocols,
-in the ISO model, network layer protocols.  In our system each such
+in the ISO model, network layer protocols.  In this system each such
 protocol module has an input packet queue assigned to it.  Incoming
-packets received by a network interface are queued up for the protocol
-module and a VAX software interrupt is posted to initiate processing.  
+packets received by a network interface are queued for the protocol
+module, and a VAX software interrupt is posted to initiate processing.  
 .PP
-Three macros are available for queueing and dequeueing packets,
+Three macros are available for queuing and dequeuing packets:
 .IP "IF_ENQUEUE(ifq, m)"
 .br
 This places the packet \fIm\fP at the tail of the queue \fIifq\fP.
 .IP "IF_DEQUEUE(ifq, m)"
 .br
 This places a pointer to the packet at the head of queue \fIifq\fP 
-in \fIm\fP.  A zero value will be returned in \fIm\fP if the queue
-is empty.
+in \fIm\fP
+and removes the packet from the queue.
+A zero value will be returned in \fIm\fP if the queue is empty.
+.IP "IF_DEQUEUEIF(ifq, m, ifp)"
+.br
+Like IF_DEQUEUE, this removes the next packet from the head of a queue
+and returns it in \fIm\fP.
+A pointer to the interface on which the packet was received
+is placed in \fIifp\fP, a (struct ifnet\ *).
 .IP "IF_PREPEND(ifq, m)"
 .br
 This places the packet \fIm\fP at the head of the queue \fIifq\fP.
@@ -73,8 +82,8 @@ This places the packet \fIm\fP at the head of the queue \fIifq\fP.
 Each queue has a maximum length associated with it as a simple form
 of congestion control.  The macro IF_QFULL(ifq) returns 1 if the queue
 is filled, in which case the macro IF_DROP(ifq) should be used to
-bump a count of the number of packets dropped and the offending
-packet dropped.  For example, the following code fragment is commonly
+increment the count of the number of packets dropped, and the offending
+packet is dropped.  For example, the following code fragment is commonly
 found in a network interface's input routine,
 .DS 
 ._f
@@ -84,5 +93,4 @@ if (IF_QFULL(inq)) {
 } else
 	IF_ENQUEUE(inq, m);
 .DE
-.ds RH "Gateways and routing
-.bp
+'ne 2i

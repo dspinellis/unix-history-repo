@@ -1,16 +1,16 @@
-.\" Copyright (c) 1983 Regents of the University of California.
+.\" Copyright (c) 1983,1986 Regents of the University of California.
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)b.t	6.1 (Berkeley) %G%
+.\"	@(#)b.t	6.2 (Berkeley) %G%
 .\"
 .nr H2 1
-.ds RH "Raw sockets
+.\".ds RH "Raw sockets
 .NH
 \s+2Raw sockets\s0
 .PP
-A raw socket is a mechanism which allows users direct access
-to a lower level protocol.  Raw sockets are intended for knowledgeable
+A raw socket is an object which allows users direct access
+to a lower-level protocol.  Raw sockets are intended for knowledgeable
 processes which wish to take advantage of some protocol
 feature not directly accessible through the normal interface, or 
 for the development of new protocols built atop existing lower level
@@ -20,33 +20,40 @@ The raw IP socket interface attempts to provide an identical interface
 to the one a protocol would have if it were resident in the kernel.
 .PP
 The raw socket support is built around a generic raw socket interface,
-and (possibly) augmented by protocol-specific processing routines.
+(possibly) augmented by protocol-specific processing routines.
 This section will describe the core of the raw socket interface.
 .NH 2
 Control blocks
 .PP
-Every raw socket has a protocol control block of the following form,
+Every raw socket has a protocol control block of the following form:
 .DS
-.if t .ta .5i 1.25i 2.9i
-.if n .ta .7i 1.75i 4.0i
+.ta \w'struct  'u +\w'caddr_t  'u +\w'sockproto rcb_proto;    'u 
 struct rawcb {
 	struct	rawcb *rcb_next;	/* doubly linked list */
 	struct	rawcb *rcb_prev;
 	struct	socket *rcb_socket;	/* back pointer to socket */
 	struct	sockaddr rcb_faddr;	/* destination address */
 	struct	sockaddr rcb_laddr;	/* socket's address */
+	struct	sockproto rcb_proto;	/* protocol family, protocol */
 	caddr_t	rcb_pcb;		/* protocol specific stuff */
+	struct	mbuf *rcb_options;	/* protocol specific options */
+	struct	route rcb_route;	/* routing information */
 	short	rcb_flags;
 };
 .DE
 All the control blocks are kept on a doubly linked list for
 performing lookups during packet dispatch.  Associations may
 be recorded in the control block and used by the output routine
-in preparing packets for transmission.  The addresses are also
+in preparing packets for transmission.
+The \fIrcb_proto\fP structure contains the protocol family and protocol
+number with which the raw socket is associated.
+The protocol, family and addresses are
 used to filter packets on input; this will be described in more
-detail shortly.  If any protocol specific information is required,
+detail shortly.  If any protocol-specific information is required,
 it may be attached to the control block using the \fIrcb_pcb\fP
-field. 
+field.
+Protocol-specific options for transmission in outgoing packets
+may be stored in \fIrcb_options\fP.
 .PP
 A raw socket interface is datagram oriented.  That is, each send
 or receive on the socket requires a destination address.  This
@@ -55,20 +62,14 @@ and automatically installed in the outgoing packet by the output
 routine.  Since it is not possible to determine whether an address
 is present or not in the control block, two flags, RAW_LADDR and
 RAW_FADDR, indicate if a local and foreign address are present.
-Another flag, RAW_DONTROUTE, indicates if routing should be performed
-on outgoing packets.  If it is, a route is expected to be 
-allocated for each
-``new'' destination address.  That is, the first time a packet is
-transmitted a route is determined, and thereafter each time the
-destination address stored in \fIrcb_route\fP differs from
-\fIrcb_faddr\fP, or \fIrcb_route.ro_rt\fP is zero, the old
-route is discarded and a new one allocated. 
+Routing is expected to be performed by the underlying protocol
+if necessary.
 .NH 2
 Input processing
 .PP
 Input packets are ``assigned'' to raw sockets based on a simple
 pattern matching scheme.  Each network interface or protocol
-gives packets
+gives unassigned packets
 to the raw input routine with the call:
 .DS
 raw_input(m, proto, src, dst)
@@ -108,10 +109,9 @@ form which may be ``block compared''.
 Output processing
 .PP
 On output the raw \fIpr_usrreq\fP routine 
-passes the packet and raw control block to the
+passes the packet and a pointer to the raw control block to the
 raw protocol output routine for any processing required before
 it is delivered to the appropriate network interface.  The
 output routine is normally the only code required to implement
 a raw socket interface.
-.ds RH "Buffering and congestion control
-.bp
+'ne 2i
