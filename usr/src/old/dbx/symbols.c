@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)symbols.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)symbols.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 static char rcsid[] = "$Header: symbols.c,v 1.6 84/12/26 10:42:31 linton Exp $";
@@ -52,8 +52,8 @@ typedef enum { R_CONST, R_TEMP, R_ARG, R_ADJUST } Rangetype;
 struct Symbol {
     Name name;
     Language language;
-    Symclass class : 8;
-    Integer level : 8;
+    Symclass class;
+    Integer level;
     Symbol type;
     Symbol chain;
     union {
