@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd2.c	3.1 83/08/11";
+static	char *sccsid = "@(#)cmd2.c	3.2 83/08/12";
 #endif
 
 #include "defs.h"
@@ -139,7 +139,7 @@ c_list()
 	for (n = 0, i = 0; i < NWINDOW; i++)
 		if (window[i] != 0)
 			n++;
-	if ((w = openiwin(MIN(n, 1) + 2, "Active Windows")) == 0) {
+	if ((w = openiwin(MAX(n, 1) + 2, "Active Windows")) == 0) {
 		error("Can't open listing window.");
 		return;
 	}
