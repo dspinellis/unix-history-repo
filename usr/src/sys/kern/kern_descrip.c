@@ -1,4 +1,4 @@
-/*	kern_descrip.c	6.1	83/07/29	*/
+/*	kern_descrip.c	6.2	83/09/25	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -122,7 +122,7 @@ fcntl()
 		return;
 	pop = &u.u_pofile[uap->fdes];
 	switch(uap->cmd) {
-	case 0:
+	case F_DUPFD:
 		i = uap->arg;
 		if (i < 0 || i > NOFILE) {
 			u.u_error = EINVAL;
@@ -133,19 +133,19 @@ fcntl()
 		dupit(i, fp, *pop);
 		break;
 
-	case 1:
+	case F_GETFD:
 		u.u_r.r_val1 = *pop & 1;
 		break;
 
-	case 2:
+	case F_SETFD:
 		*pop = (*pop &~ 1) | (uap->arg & 1);
 		break;
 
-	case 3:
+	case F_GETFL:
 		u.u_r.r_val1 = fp->f_flag+FOPEN;
 		break;
 
-	case 4:
+	case F_SETFL:
 		fp->f_flag &= FCNTLCANT;
 		fp->f_flag |= (uap->arg-FOPEN) &~ FCNTLCANT;
 		u.u_error = fset(fp, FNDELAY, fp->f_flag & FNDELAY);
@@ -156,12 +156,12 @@ fcntl()
 			(void) fset(fp, FNDELAY, 0);
 		break;
 
-	case 5:
-		u.u_error = fsetown(fp, uap->arg);
+	case F_GETOWN:
+		u.u_error = fgetown(fp, &u.u_r.r_val1);
 		break;
 
-	case 6:
-		u.u_error = fgetown(fp, &u.u_r.r_val1);
+	case F_SETOWN:
+		u.u_error = fsetown(fp, uap->arg);
 		break;
 
 	default:
