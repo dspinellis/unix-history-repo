@@ -8,7 +8,7 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(`@(#)proto.m4	8.11 (Berkeley) %G%')
+VERSIONID(`@(#)proto.m4	8.12 (Berkeley) %G%')
 
 MAILER(local)dnl
 
@@ -367,7 +367,7 @@ R$@			$@ <@>
 R$*:;$*			$@ $1 :; <@>
 
 # basic textual canonicalization -- note RFC733 heuristic here
-R$*<$*>$*<$*>$*		<$2>$3$4$5			strip multiple <> <>
+R$*<$*>$*<$*>$*		$2$3<$4>$5			strip multiple <> <>
 R$*<$*<$+>$*>$*		<$3>$5				2-level <> nesting
 R$*<>$*			$@ <@>				MAIL FROM:<> case
 R$*<$+>$*		$2				basic RFC821/822 parsing
