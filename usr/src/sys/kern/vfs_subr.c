@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_subr.c	7.8 (Berkeley) %G%
+ *	@(#)vfs_subr.c	7.9 (Berkeley) %G%
  */
 
 /*
@@ -28,6 +28,7 @@
 #include "namei.h"
 #include "ucred.h"
 #include "errno.h"
+#include "malloc.h"
 
 /*
  * Remove a mount point from the list of mounted filesystems.
@@ -167,15 +168,24 @@ ndrele(ndp)
  * Routines having to do with the management of the vnode table.
  */
 struct vnode *vfreeh, **vfreet;
-extern struct vnodeops dead_vnodeops;
+extern struct vnodeops dead_vnodeops, blk_vnodeops;
+struct speclist *speclisth;
+struct speclist {
+	struct speclist *sl_next;
+	struct vnode *sl_vp;
+};
 
 /*
- * Build vnode free list.
+ * Initialize the vnode structures and initialize each file system type.
  */
-vhinit()
+vfsinit()
 {
 	register struct vnode *vp = vnode;
+	struct vfsops **vfsp;
 
+	/*
+	 * Build vnode free list.
+	 */
 	vfreeh = vp;
 	vfreet = &vp->v_freef;
 	vp->v_freeb = &vfreeh;
@@ -188,6 +198,18 @@ vhinit()
 	}
 	vp--;
 	vp->v_freef = NULL;
+	/*
+	 * Initialize the vnode name cache
+	 */
+	nchinit();
+	/*
+	 * Initialize each file system type.
+	 */
+	for (vfsp = &vfssw[0]; vfsp <= &vfssw[MOUNT_MAXTYPE]; vfsp++) {
+		if (*vfsp == NULL)
+			continue;
+		(*(*vfsp)->vfs_init)();
+	}
 }
 
 /*
@@ -206,21 +228,22 @@ getnewvnode(tag, mp, vops, vpp)
 		*vpp = 0;
 		return (ENFILE);
 	}
-	if (vp->v_count || VOP_RECLAIM(vp))
+	if (vp->v_count)
 		panic("free vnode isn't");
 	if (vq = vp->v_freef)
 		vq->v_freeb = &vfreeh;
 	vfreeh = vq;
 	vp->v_freef = NULL;
 	vp->v_freeb = NULL;
-	vp->v_type = VNON;
+	if (vp->v_type != VNON)
+		vgone(vp);
 	vp->v_flag = 0;
 	vp->v_shlockc = 0;
 	vp->v_exlockc = 0;
 	vp->v_socket = 0;
-	vp->v_op = vops;
 	cache_purge(vp);
 	vp->v_tag = tag;
+	vp->v_op = vops;
 	vp->v_mount = mp;
 	insmntque(vp, mp);
 	VREF(vp);
@@ -266,21 +289,108 @@ insmntque(vp, mp)
 }
 
 /*
- * Grab a particular vnode from the free list.
+ * Create a vnode for a block device.
+ * Used for root filesystem, argdev, and swap areas.
+ * Also used for memory file system special devices.
+ */
+bdevvp(dev, vpp)
+	dev_t dev;
+	struct vnode **vpp;
+{
+	register struct inode *ip;
+	register struct vnode *vp;
+	struct vnode *nvp;
+	int error;
+
+	error = getnewvnode(VT_NON, (struct mount *)0, &blk_vnodeops, &nvp);
+	if (error) {
+		*vpp = 0;
+		return (error);
+	}
+	vp = nvp;
+	vp->v_type = VBLK;
+	vp->v_rdev = dev;
+	if (nvp = checkalias(vp, (struct mount *)0)) {
+		vput(vp);
+		vp = nvp;
+	}
+	*vpp = vp;
+	return (0);
+}
+
+/*
+ * Check to see if the new vnode represents a special device
+ * for which we already have a vnode (either because of
+ * bdevvp() or because of a different vnode representing
+ * the same block device). If such an alias exists, deallocate
+ * the existing contents and return the aliased inode. The
+ * caller is responsible for filling it with its new contents.
+ */
+struct vnode *
+checkalias(nvp, mp)
+	register struct vnode *nvp;
+	struct mount *mp;
+{
+	register struct vnode *vp;
+	register struct speclist *slp;
+
+	if (nvp->v_type != VBLK && nvp->v_type != VCHR)
+		return ((struct vnode *)0);
+loop:
+	for (slp = speclisth; slp; slp = slp->sl_next) {
+		vp = slp->sl_vp;
+		if (nvp->v_rdev != vp->v_rdev ||
+		    nvp->v_type != vp->v_type)
+			continue;
+		if (vget(vp))
+			goto loop;
+		break;
+	}
+	if (slp == NULL) {
+		MALLOC(slp, struct speclist *, sizeof(*slp), M_VNODE, M_WAITOK);
+		slp->sl_vp = nvp;
+		slp->sl_next = speclisth;
+		speclisth = slp;
+		return ((struct vnode *)0);
+	}
+	vclean(vp);
+	vp->v_op = nvp->v_op;
+	vp->v_tag = nvp->v_tag;
+	nvp->v_type = VNON;
+	insmntque(vp, mp);
+	return (vp);
+}
+
+/*
+ * Grab a particular vnode from the free list, increment its
+ * reference count and lock it. The vnode lock bit is set the
+ * vnode is being eliminated in vgone. The process is awakened
+ * when the transition is completed, and an error returned to
+ * indicate that the vnode is no longer usable (possibly having
+ * been changed to a new file system type).
  */
 vget(vp)
 	register struct vnode *vp;
 {
 	register struct vnode *vq;
 
-	if (vq = vp->v_freef)
-		vq->v_freeb = vp->v_freeb;
-	else
-		vfreet = vp->v_freeb;
-	*vp->v_freeb = vq;
-	vp->v_freef = NULL;
-	vp->v_freeb = NULL;
+	if (vp->v_flag & VXLOCK) {
+		vp->v_flag |= VXWANT;
+		sleep((caddr_t)vp, PINOD);
+		return (1);
+	}
+	if (vp->v_count == 0) {
+		if (vq = vp->v_freef)
+			vq->v_freeb = vp->v_freeb;
+		else
+			vfreet = vp->v_freeb;
+		*vp->v_freeb = vq;
+		vp->v_freef = NULL;
+		vp->v_freeb = NULL;
+	}
 	VREF(vp);
+	VOP_LOCK(vp);
+	return (0);
 }
 
 /*
@@ -312,37 +422,136 @@ void vrele(vp)
 {
 
 	if (vp == NULL)
-		return;
+		panic("vrele: null vp");
 	vp->v_count--;
 	if (vp->v_count < 0)
 		printf("vnode bad ref count %d, type %d, tag %d\n",
 			vp->v_count, vp->v_type, vp->v_tag);
 	if (vp->v_count > 0)
 		return;
-	VOP_INACTIVE(vp);
 	if (vfreeh == (struct vnode *)0) {
 		/*
 		 * insert into empty list
 		 */
 		vfreeh = vp;
 		vp->v_freeb = &vfreeh;
-		vp->v_freef = NULL;
-		vfreet = &vp->v_freef;
-	} else if (vp->v_type == VNON) {
-		/*
-		 * insert at head of list
-		 */
-		vp->v_freef = vfreeh;
-		vp->v_freeb = &vfreeh;
-		vfreeh->v_freeb = &vp->v_freef;
-		vfreeh = vp;
 	} else {
 		/*
 		 * insert at tail of list
 		 */
 		*vfreet = vp;
 		vp->v_freeb = vfreet;
-		vp->v_freef = NULL;
-		vfreet = &vp->v_freef;
 	}
+	vp->v_freef = NULL;
+	vfreet = &vp->v_freef;
+	VOP_INACTIVE(vp);
+}
+
+/*
+ * Disassociate the underlying file system from a vnode.
+ * If this operation is done on an active vnode (i.e. v_count > 0)
+ * then the vnode must be delivered locked.
+ */
+void vclean(vp)
+	register struct vnode *vp;
+{
+	struct vnodeops *origops;
+
+	while (vp->v_flag & VXLOCK) {
+		vp->v_flag |= VXWANT;
+		sleep((caddr_t)vp, PINOD);
+	}
+	vp->v_flag |= VXLOCK;
+	/*
+	 * Prevent any further operations on the vnode from
+	 * being passed through to the old file system.
+	 */
+	origops = vp->v_op;
+	vp->v_op = &dead_vnodeops;
+	vp->v_tag = VT_NON;
+	/*
+	 * If purging an active vnode, it must be unlocked and
+	 * deactivated before being reclaimed.
+	 */
+	if (vp->v_count > 0) {
+		(*(origops->vn_unlock))(vp);
+		(*(origops->vn_inactive))(vp);
+	}
+	/*
+	 * Reclaim the vnode.
+	 */
+	if ((*(origops->vn_reclaim))(vp))
+		panic("vclean: cannot reclaim");
+	/*
+	 * Done with purge, notify sleepers in vget of the grim news.
+	 */
+	vp->v_flag &= ~VXLOCK;
+	if (vp->v_flag & VXWANT) {
+		vp->v_flag &= ~VXWANT;
+		wakeup((caddr_t)vp);
+	}
+}
+
+/*
+ * Eliminate all activity associated with a vnode
+ * in preparation for reuse.
+ */
+void vgone(vp)
+	register struct vnode *vp;
+{
+	register struct speclist *slp;
+	struct speclist *pslp;
+	register struct vnode *vq;
+
+	if (vp->v_count > 0)
+		panic("vgone: cannot reclaim");
+	/*
+	 * Clean out the filesystem specific data.
+	 */
+	vclean(vp);
+	/*
+	 * Delete from old mount point vnode list, if on one.
+	 */
+	if (vp->v_mountb) {
+		if (vq = vp->v_mountf)
+			vq->v_mountb = vp->v_mountb;
+		*vp->v_mountb = vq;
+		vp->v_mountf = NULL;
+		vp->v_mountb = NULL;
+	}
+	/*
+	 * If special device, remove it from special device alias list.
+	 */
+	if (vp->v_type == VBLK || vp->v_type == VCHR) {
+		if (speclisth->sl_vp == vp) {
+			slp = speclisth;
+			speclisth = slp->sl_next;
+		} else {
+			for (slp = speclisth; slp;
+			     pslp = slp, slp = slp->sl_next) {
+				if (slp->sl_vp != vp)
+					continue;
+				pslp->sl_next = slp->sl_next;
+				break;
+			}
+			if (slp == NULL)
+				panic("missing bdev");
+		}
+		FREE(slp, M_VNODE);
+	}
+	/*
+	 * If it is on the freelist, move it to the head of the list.
+	 */
+	if (vp->v_freeb) {
+		if (vq = vp->v_freef)
+			vq->v_freeb = vp->v_freeb;
+		else
+			vfreet = vp->v_freeb;
+		*vp->v_freeb = vq;
+		vp->v_freef = vfreeh;
+		vp->v_freeb = &vfreeh;
+		vfreeh->v_freeb = &vp->v_freef;
+		vfreeh = vp;
+	}
+	vp->v_type = VNON;
 }
