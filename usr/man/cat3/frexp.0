@@ -1,0 +1,66 @@
+
+
+
+FREXP(3)	    UNIX Programmer's Manual		 FREXP(3)
+
+
+
+NNAAMMEE
+     frexp, ldexp, modf - split into mantissa and exponent
+
+SSYYNNOOPPSSIISS
+     ddoouubbllee ffrreexxpp((vvaalluuee,, eeppttrr))
+     ddoouubbllee vvaalluuee;;
+     iinntt **eeppttrr;;
+
+     ddoouubbllee llddeexxpp((vvaalluuee,, eexxpp))
+     ddoouubbllee vvaalluuee;;
+
+     ddoouubbllee mmooddff((vvaalluuee,, iippttrr))
+     ddoouubbllee vvaalluuee,, **iippttrr;;
+
+DDEESSCCRRIIPPTTIIOONN
+     Every nonzero number can be written uniquely as _x * 2^_n,
+     where the ``mantissa'' (fraction) _x is in the range 0.5 <=
+     |x| < 1.0, and the ``exponent'' _n is an integer.  _F_r_e_x_p
+     returns the mantissa of a double _v_a_l_u_e, and stores the
+     exponent indirectly in the location pointed to by _e_p_t_r.  If
+     _v_a_l_u_e is 0, both results returned by _f_r_e_x_p are 0.
+
+     _L_d_e_x_p returns the quantity _v_a_l_u_e * 2^_e_x_p.
+
+     _M_o_d_f returns the signed fractional part of _v_a_l_u_e and stores
+     the integer part indirectly in the location pointed to by
+     _i_p_t_r.
+
+DDIIAAGGNNOOSSTTIICCSS
+     If _l_d_e_x_p would cause overflow, HHUUGGEE is returned and _e_r_r_n_o is
+     set to EERRAANNGGEE.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		 April 13, 1987                         1
+
+
+

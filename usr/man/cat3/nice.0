@@ -1,0 +1,66 @@
+
+
+
+NICE(3C)	    UNIX Programmer's Manual		 NICE(3C)
+
+
+
+NNAAMMEE
+     nice - set program priority
+
+SSYYNNOOPPSSIISS
+     nniiccee((iinnccrr))
+
+DDEESSCCRRIIPPTTIIOONN
+     TThhiiss iinntteerrffaaccee iiss oobbssoolleetteedd bbyy sseettpprriioorriittyy((22))..
+
+     The scheduling priority of the process is augmented by _i_n_c_r.
+     Positive priorities get less service than normal.	Priority
+     10 is recommended to users who wish to execute long-running
+     programs without flak from the administration.
+
+     Negative increments are ignored except on behalf of the
+     super-user.  The priority is limited to the range -20 (most
+     urgent) to 20 (least).
+
+     The priority of a process is passed to a child process by
+     _f_o_r_k(2).  For a privileged process to return to normal
+     priority from an unknown state, _n_i_c_e should be called suc-
+     cessively with arguments -40 (goes to priority -20 because
+     of truncation), 20 (to get to 0), then 0 (to maintain compa-
+     tibility with previous versions of this call).
+
+SSEEEE AALLSSOO
+     nice(1), setpriority(2), fork(2), renice(8)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		   May 9, 1985				1
+
+
+

@@ -1,0 +1,66 @@
+
+
+
+J0(3M)		    UNIX Programmer's Manual		   J0(3M)
+
+
+
+NNAAMMEE
+     j0, j1, jn, y0, y1, yn - bessel functions
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<mmaatthh..hh>>
+
+     ddoouubbllee jj00((xx))
+     ddoouubbllee xx;;
+
+     ddoouubbllee jj11((xx))
+     ddoouubbllee xx;;
+
+     ddoouubbllee jjnn((nn,,xx))
+     iinntt nn;;
+     ddoouubbllee xx;;
+
+     ddoouubbllee yy00((xx))
+     ddoouubbllee xx;;
+
+     ddoouubbllee yy11((xx))
+     ddoouubbllee xx;;
+
+     ddoouubbllee yynn((nn,,xx))
+     iinntt nn;;
+     ddoouubbllee xx;;
+
+DDEESSCCRRIIPPTTIIOONN
+     These functions calculate Bessel functions of the first and
+     second kinds for real arguments and integer orders.
+
+DDIIAAGGNNOOSSTTIICCSS
+     On a VAX, negative arguments cause y0, y1 and yn to return
+     the reserved operand and set _e_r_r_n_o to EDOM.
+
+SSEEEE AALLSSOO
+     math(3M), infnan(3M)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  May 12, 1986				1
+
+
+

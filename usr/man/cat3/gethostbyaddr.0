@@ -1,0 +1,198 @@
+
+
+
+GETHOSTBYNAME(3N)   UNIX Programmer's Manual	GETHOSTBYNAME(3N)
+
+
+
+NNAAMMEE
+     gethostbyname, gethostbyaddr, gethostent, sethostent,
+     endhostent, herror - get network host entry
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<nneettddbb..hh>>
+
+     eexxtteerrnn iinntt hh__eerrrrnnoo;;
+
+     ssttrruucctt hhoosstteenntt **ggeetthhoossttbbyynnaammee((nnaammee))
+     cchhaarr **nnaammee;;
+
+     ssttrruucctt hhoosstteenntt **ggeetthhoossttbbyyaaddddrr((aaddddrr,, lleenn,, ttyyppee))
+     cchhaarr **aaddddrr;; iinntt lleenn,, ttyyppee;;
+
+     ssttrruucctt hhoosstteenntt **ggeetthhoosstteenntt(())
+
+     sseetthhoosstteenntt((ssttaayyooppeenn))
+     iinntt ssttaayyooppeenn;;
+
+     eennddhhoosstteenntt(())
+
+     hheerrrroorr((ssttrriinngg))
+     cchhaarr **ssttrriinngg;;
+
+DDEESSCCRRIIPPTTIIOONN
+     _G_e_t_h_o_s_t_b_y_n_a_m_e and _g_e_t_h_o_s_t_b_y_a_d_d_r each return a pointer to an
+     object with the following structure describing an internet
+     host referenced by name or by address, respectively.  This
+     structure contains either the information obtained from the
+     name server, _n_a_m_e_d(8), or broken-out fields from a line in
+     /_e_t_c/_h_o_s_t_s.  If the local name server is not running these
+     routines do a lookup in /_e_t_c/_h_o_s_t_s.
+
+	  struct    hostent {
+	       char *h_name;  /* official name of host */
+	       char **h_aliases;   /* alias list */
+	       int  h_addrtype;    /* host address type */
+	       int  h_length; /* length of address */
+	       char **h_addr_list; /* list of addresses from name server */
+	  };
+	  #define   h_addr  h_addr_list[0]   /* address, for backward compatibility */
+
+     The members of this structure are:
+
+     h_name	  Official name of the host.
+
+     h_aliases	  A zero terminated array of alternate names  for
+		  the host.
+
+     h_addrtype   The type of address being  returned;	currently
+		  always AF_INET.
+
+
+
+Printed 7/9/88		  April 5, 1988                         1
+
+
+
+
+
+
+GETHOSTBYNAME(3N)   UNIX Programmer's Manual	GETHOSTBYNAME(3N)
+
+
+
+     h_length	  The length, in bytes, of the address.
+
+     h_addr_list  A zero terminated array  of  network	addresses
+		  for  the  host.  Host addresses are returned in
+		  network byte order.
+
+     h_addr	  The first address in h_addr_list; this  is  for
+		  backward compatiblity.
+
+     When using the nameserver, _g_e_t_h_o_s_t_b_y_n_a_m_e will search for the
+     named  host in the current domain and its parents unless the
+     name ends in a dot.  If the name contains no dot, and if the
+     environment  variable  ``HOSTALAIASES'' contains the name of
+     an alias file, the alias file will first be searched for  an
+     alias  matching  the  input  name.   See _h_o_s_t_n_a_m_e(7) for the
+     domain search procedure and the alias file format.
+
+     _S_e_t_h_o_s_t_e_n_t may be used to request the use of a connected TCP
+     socket  for queries.  If the _s_t_a_y_o_p_e_n flag is non-zero, this
+     sets the option to send all queries to the name server using
+     TCP and to retain the connection after each call to _g_e_t_h_o_s_t_-
+     _b_y_n_a_m_e or _g_e_t_h_o_s_t_b_y_a_d_d_r.  Otherwise, queries  are	performed
+     using UDP datagrams.
+
+     _E_n_d_h_o_s_t_e_n_t closes the TCP connection.
+
+DDIIAAGGNNOOSSTTIICCSS
+     Error return status from _g_e_t_h_o_s_t_b_y_n_a_m_e and _g_e_t_h_o_s_t_b_y_a_d_d_r  is
+     indicated by return of a null pointer.  The external integer
+     _h__e_r_r_n_o may then be checked to see whether this  is  a  tem-
+     porary  failure  or an invalid or unknown host.  The routine
+     _h_e_r_r_o_r can be used to print an error message describing  the
+     failure.  If its argument _s_t_r_i_n_g is non-NULL, it is printed,
+     followed by a colon and  a  space.   The  error  message  is
+     printed with a trailing newline.
+
+     _h__e_r_r_n_o can have the following values:
+
+	  HOST_NOT_FOUND  No such host is known.
+
+	  TRY_AGAIN	  This is usually a temporary  error  and
+			  means  that  the  local  server did not
+			  receive a response from  an  authorita-
+			  tive	server.   A  retry  at some later
+			  time may succeed.
+
+	  NO_RECOVERY	  Some	unexpected  server  failure   was
+			  encountered.	This is a non-recoverable
+			  error.
+
+	  NO_DATA	  The requested name is  valid	but  does
+			  not  have  an IP address; this is not a
+
+
+
+Printed 7/9/88		  April 5, 1988                         2
+
+
+
+
+
+
+GETHOSTBYNAME(3N)   UNIX Programmer's Manual	GETHOSTBYNAME(3N)
+
+
+
+			  temporary error. This  means	that  the
+			  name	is  known  to the name server but
+			  there is  no	address  associated  with
+			  this	name.  Another type of request to
+			  the name server using this domain  name
+			  will	result in an answer; for example,
+			  a mail-forwarder may be registered  for
+			  this domain.
+
+FFIILLEESS
+     /etc/hosts
+
+SSEEEE AALLSSOO
+     resolver(3), hosts(5), hostname(7), named(8)
+
+CCAAVVEEAATT
+     _G_e_t_h_o_s_t_e_n_t is defined, and  _s_e_t_h_o_s_t_e_n_t  and  _e_n_d_h_o_s_t_e_n_t  are
+     redefined,  when  _l_i_b_c  is built to use only the routines to
+     lookup in /_e_t_c/_h_o_s_t_s and not the name server.
+
+     _G_e_t_h_o_s_t_e_n_t reads the next line of	/_e_t_c/_h_o_s_t_s,  opening  the
+     file if necessary.
+
+     _S_e_t_h_o_s_t_e_n_t is redefined to open and rewind the file.  If the
+     _s_t_a_y_o_p_e_n  argument is non-zero, the hosts data base will not
+     be closed after each call to _g_e_t_h_o_s_t_b_y_n_a_m_e or _g_e_t_h_o_s_t_b_y_a_d_d_r.
+     _E_n_d_h_o_s_t_e_n_t is redefined to close the file.
+
+BBUUGGSS
+     All information is contained in a static area so it must  be
+     copied if it is to be saved.  Only the Internet address for-
+     mat is currently understood.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  April 5, 1988                         3
+
+
+

@@ -1,0 +1,66 @@
+
+
+
+ABORT(3)	    UNIX Programmer's Manual		 ABORT(3)
+
+
+
+NNAAMMEE
+     abort - generate a fault
+
+DDEESSCCRRIIPPTTIIOONN
+     _A_b_o_r_t executes an instruction which is illegal in user mode.
+     This causes a signal that normally terminates the process
+     with a core dump, which may be used for debugging.
+
+SSEEEE AALLSSOO
+     adb(1), sigvec(2), exit(2)
+
+DDIIAAGGNNOOSSTTIICCSS
+     Usually ``Illegal instruction - core dumped'' from the
+     shell.
+
+BBUUGGSS
+     The abort() function does not flush standard I/O buffers.
+     Use _f_f_l_u_s_h(3S).
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  May 27, 1986				1
+
+
+

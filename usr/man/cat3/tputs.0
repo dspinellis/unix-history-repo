@@ -1,0 +1,198 @@
+
+
+
+TERMCAP(3X)	    UNIX Programmer's Manual	      TERMCAP(3X)
+
+
+
+NNAAMMEE
+     tgetent, tgetnum, tgetflag, tgetstr, tgoto, tputs - terminal
+     independent operation routines
+
+SSYYNNOOPPSSIISS
+     cchhaarr PPCC;;
+     cchhaarr **BBCC;;
+     cchhaarr **UUPP;;
+     sshhoorrtt oossppeeeedd;;
+
+     ttggeetteenntt((bbpp,, nnaammee))
+     cchhaarr **bbpp,, **nnaammee;;
+
+     ttggeettnnuumm((iidd))
+     cchhaarr **iidd;;
+
+     ttggeettffllaagg((iidd))
+     cchhaarr **iidd;;
+
+     cchhaarr **
+     ttggeettssttrr((iidd,, aarreeaa))
+     cchhaarr **iidd,, ****aarreeaa;;
+
+     cchhaarr **
+     ttggoottoo((ccmm,, ddeessttccooll,, ddeessttlliinnee))
+     cchhaarr **ccmm;;
+
+     ttppuuttss((ccpp,, aaffffccnntt,, oouuttcc))
+     rreeggiisstteerr cchhaarr **ccpp;;
+     iinntt aaffffccnntt;;
+     iinntt ((**oouuttcc))(());;
+
+DDEESSCCRRIIPPTTIIOONN
+     These functions extract and use capabilities from a terminal
+     capability data base, usually /etc/termcap, the format of
+     which is described in _t_e_r_m_c_a_p(5).	These are low level rou-
+     tines; see _c_u_r_s_e_s(3X) for a higher level package.
+
+     _T_g_e_t_e_n_t extracts the entry for terminal _n_a_m_e into the buffer
+     at _b_p. _B_p should be a character buffer of size 1024 and must
+     be retained through all subsequent calls to _t_g_e_t_n_u_m, _t_g_e_t_-
+     _f_l_a_g, and _t_g_e_t_s_t_r. _T_g_e_t_e_n_t returns -1 if none of the termcap
+     data base files could be opened, 0 if the terminal name
+     given does not have an entry, and 1 if all goes well.  It
+     will look in the environment for a TERMCAP variable.  If
+     found, and the value does not begin with a slash, and the
+     terminal type _n_a_m_e is the same as the environment string
+     TERM, the TERMCAP string is used instead of reading a
+     termcap file.  If it does begin with a slash, the string is
+     used as a path name of the termcap file to search.  If
+     TERMCAP does not begin with a slash and _n_a_m_e is different
+     from TERM, _t_g_e_t_e_n_t searches the files $HOME/.termcap and
+
+
+
+Printed 7/9/88	       September 14, 1987			1
+
+
+
+
+
+
+TERMCAP(3X)	    UNIX Programmer's Manual	      TERMCAP(3X)
+
+
+
+     /etc/termcap, in that order, unless the environment variable
+     TERMPATH exists, in which case it specifies a list of file
+     pathnames (separated by spaces or colons) to be searched
+     instead.  Whenever multiple files are searched and a ttcc
+     field occurs in the requested entry, the entry it names must
+     be found in the same file or one of the succeeding files.
+     This can speed up entry into programs that call _t_g_e_t_e_n_t, as
+     well as help debug new terminal descriptions or make one for
+     your terminal if you can't write the file /etc/termcap.
+
+     _T_g_e_t_n_u_m gets the numeric value of capability _i_d, returning
+     -1 if is not given for the terminal.  _T_g_e_t_f_l_a_g returns 1 if
+     the specified capability is present in the terminal's entry,
+     0 if it is not.  _T_g_e_t_s_t_r returns the string value of the
+     capability _i_d, places it in the buffer at _a_r_e_a, and advances
+     the _a_r_e_a pointer.	It decodes the abbreviations for this
+     field described in _t_e_r_m_c_a_p(5), except for cursor addressing
+     and padding information.  _T_g_e_t_s_t_r returns NULL if the capa-
+     bility was not found.
+
+     _T_g_o_t_o returns a cursor addressing string decoded from _c_m to
+     go to column _d_e_s_t_c_o_l in line _d_e_s_t_l_i_n_e. It uses the external
+     variables UUPP (from the uupp capability) and BBCC (if bbcc is given
+     rather than bbss) if necessary to avoid placing \\nn, ^^DD or ^^@@
+     in the returned string.  (Programs which call tgoto should
+     be sure to turn off the XTABS bit(s), since _t_g_o_t_o may now
+     output a tab.  Note that programs using termcap should in
+     general turn off XTABS anyway since some terminals use
+     control-I for other functions, such as nondestructive
+     space.) If a %% sequence is given which is not understood,
+     then _t_g_o_t_o returns "OOPS".
+
+     _T_p_u_t_s decodes the leading padding information of the string
+     _c_p; _a_f_f_c_n_t gives the number of lines affected by the opera-
+     tion, or 1 if this is not applicable, _o_u_t_c is a routine
+     which is called with each character in turn.  The external
+     variable _o_s_p_e_e_d should contain the output speed of the ter-
+     minal as encoded by _s_t_t_y(3).  The external variable PPCC
+     should contain a pad character to be used (from the ppcc capa-
+     bility) if a null (^^@@) is inappropriate.
+
+FFIILLEESS
+     /usr/lib/libtermcap.a  -ltermcap library (also known as
+     -ltermlib)
+     /etc/termcap	    standard terminal capability data
+     base
+     $HOME/.termcap	    user's terminal capability data base
+
+SSEEEE AALLSSOO
+     ex(1), curses(3X), termcap(5)
+
+
+
+
+
+Printed 7/9/88	       September 14, 1987			2
+
+
+
+
+
+
+TERMCAP(3X)	    UNIX Programmer's Manual	      TERMCAP(3X)
+
+
+
+AAUUTTHHOORR
+     William Joy
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88	       September 14, 1987			3
+
+
+

@@ -1,0 +1,66 @@
+
+
+
+UALARM(3)	    UNIX Programmer's Manual		UALARM(3)
+
+
+
+NNAAMMEE
+     ualarm - schedule signal after specified time
+
+SSYYNNOOPPSSIISS
+     uunnssiiggnneedd uuaallaarrmm((vvaalluuee,, iinntteerrvvaall))
+     uunnssiiggnneedd vvaalluuee;;
+     uunnssiiggnneedd iinntteerrvvaall;;
+
+DDEESSCCRRIIPPTTIIOONN
+     TThhiiss iiss aa ssiimmpplliiffiieedd iinntteerrffaaccee ttoo sseettiittiimmeerr((22))..
+
+     _U_a_l_a_r_m causes signal SIGALRM, see _s_i_g_n_a_l(3C), to be sent to
+     the invoking process in a number of microseconds given by
+     the _v_a_l_u_e argument.  Unless caught or ignored, the signal
+     terminates the process.
+
+     If the _i_n_t_e_r_v_a_l argument is non-zero, the SIGALRM signal
+     will be sent to the process every _i_n_t_e_r_v_a_l microseconds
+     after the timer expires (e.g. after _v_a_l_u_e microseconds have
+     passed).
+
+     Because of scheduling delays, resumption of execution of
+     when the signal is caught may be delayed an arbitrary
+     amount.  The longest specifiable delay time (on the vax) is
+     2147483647 microseconds.
+
+     The return value is the amount of time previously remaining
+     in the alarm clock.
+
+SSEEEE AALLSSOO
+     getitimer(2), setitimer(2), sigpause(2), sigvec(2),
+     signal(3C), sleep(3), alarm(3), usleep(3)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  May 13, 1986				1
+
+
+

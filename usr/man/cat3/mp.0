@@ -1,0 +1,132 @@
+
+
+
+MP(3X)		    UNIX Programmer's Manual		   MP(3X)
+
+
+
+NNAAMMEE
+     madd, msub, mult, mdiv, pow, gcd, invert, rpow, msqrt, mcmp,
+     move, min, omin, fmin, m_in, mout, omout, fmout, m_out,
+     sdiv, itom - multiple precision integer arithmetic
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<mmpp..hh>>
+     ##iinncclluuddee <<ssttddiioo..hh>>
+
+     ttyyppeeddeeff ssttrruucctt mmiinntt {{ iinntt lleenn;; sshhoorrtt **vvaall;; }} MMIINNTT;;
+
+     mmaadddd((aa,, bb,, cc))
+     mmssuubb((aa,, bb,, cc))
+     mmuulltt((aa,, bb,, cc))
+     mmddiivv((aa,, bb,, qq,, rr))
+     ppooww((aa,, bb,, mm,, cc))
+     ggccdd((aa,, bb,, cc))
+     iinnvveerrtt((aa,, bb,, cc))
+     rrppooww((aa,, nn,, cc))
+     mmssqqrrtt((aa,, bb,, rr))
+     mmccmmpp((aa,, bb))
+     mmoovvee((aa,, bb))
+     mmiinn((aa))
+     oommiinn((aa))
+     ffmmiinn((aa,, ff))
+     mm__iinn((aa,, nn,, ff))
+     mmoouutt((aa))
+     oommoouutt((aa))
+     ffmmoouutt((aa,, ff))
+     mm__oouutt((aa,, nn,, ff))
+     MMIINNTT **aa,, **bb,, **cc,, **mm,, **qq,, **rr;;
+     FFIILLEE **ff;;
+     iinntt nn;;
+
+     ssddiivv((aa,, nn,, qq,, rr))
+     MMIINNTT **aa,, **qq;;
+     sshhoorrtt nn;;
+     sshhoorrtt **rr;;
+
+     MMIINNTT **iittoomm((nn))
+
+DDEESSCCRRIIPPTTIIOONN
+     These routines perform arithmetic on integers of arbitrary
+     length.  The integers are stored using the defined type
+     _M_I_N_T.  Pointers to a _M_I_N_T can be initialized using the func-
+     tion _i_t_o_m which sets the initial value to _n.  After that,
+     space is managed automatically by the routines.
+
+     _m_a_d_d, _m_s_u_b and _m_u_l_t assign to _c the sum, difference and pro-
+     duct, respectively, of _a and _b.  _m_d_i_v assigns to _q and _r the
+     quotient and remainder obtained from dividing _a by _b.  _s_d_i_v
+     is like _m_d_i_v except that the divisor is a short integer _n
+
+
+
+Printed 7/9/88		  June 4, 1986				1
+
+
+
+
+
+
+MP(3X)		    UNIX Programmer's Manual		   MP(3X)
+
+
+
+     and the remainder is placed in a short whose address is
+     given as _r.  _m_s_q_r_t produces the integer square root of _a in
+     _b and places the remainder in _r.  _r_p_o_w calculates in _c the
+     value of _a raised to the (``regular'' integral) power _n,
+     while _p_o_w calculates this with a full multiple precision
+     exponent _b and the result is reduced modulo _m.  _g_c_d returns
+     the greatest common denominator of _a and _b in _c, and _i_n_v_e_r_t
+     computes _c such that _a*_c mod _b = 1, for _a and _b relatively
+     prime.  _m_c_m_p returns a negative, zero or positive integer
+     value when _a is less than, equal to or greater than _b,
+     respectively.  _m_o_v_e copies _a to _b.  _m_i_n and _m_o_u_t do decimal
+     input and output while _o_m_i_n and _o_m_o_u_t do octal input and
+     output.  More generally, _f_m_i_n and _f_m_o_u_t do decimal input and
+     output using file _f, and _m__i_n and _m__o_u_t do I/O with arbi-
+     trary radix _n.  On input, records should have the form of
+     strings of digits terminated by a newline; output records
+     have a similar form.
+
+     Programs which use the multiple-precision arithmetic library
+     must be loaded using the loader flag -_l_m_p.
+
+FFIILLEESS
+     /usr/include/mp.h	 include file
+     /usr/lib/libmp.a	 object code library
+
+SSEEEE AALLSSOO
+     dc(1), bc(1)
+
+DDIIAAGGNNOOSSTTIICCSS
+     Illegal operations and running out of memory produce mes-
+     sages and core images.
+
+BBUUGGSS
+     Bases for input and output should be <= 10.
+
+     _d_c(1) and _b_c(1) don't use this library.
+
+     The input and output routines are a crock.
+
+     _p_o_w is also the name of a standard math library routine.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  June 4, 1986				2
+
+
+

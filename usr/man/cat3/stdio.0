@@ -1,0 +1,198 @@
+
+
+
+STDIO(3S)	    UNIX Programmer's Manual		STDIO(3S)
+
+
+
+NNAAMMEE
+     stdio - standard buffered input/output package
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssttddiioo..hh>>
+
+     FFIILLEE **ssttddiinn;;
+     FFIILLEE **ssttddoouutt;;
+     FFIILLEE **ssttddeerrrr;;
+
+DDEESSCCRRIIPPTTIIOONN
+     The functions described in section 3S constitute a user-
+     level buffering scheme.  The in-line macros _g_e_t_c and
+     _p_u_t_c(3S) handle characters quickly.  The higher level rou-
+     tines _g_e_t_s, _f_g_e_t_s, _s_c_a_n_f, _f_s_c_a_n_f, _f_r_e_a_d, _p_u_t_s, _f_p_u_t_s,
+     _p_r_i_n_t_f, _f_p_r_i_n_t_f, _f_w_r_i_t_e all use _g_e_t_c and _p_u_t_c; they can be
+     freely intermixed.
+
+     A file with associated buffering is called a _s_t_r_e_a_m, and is
+     declared to be a pointer to a defined type FFIILLEE.  _F_o_p_e_n(3S)
+     creates certain descriptive data for a stream and returns a
+     pointer to designate the stream in all further transactions.
+     There are three normally open streams with constant pointers
+     declared in the include file and associated with the stan-
+     dard open files:
+
+     ssttddiinn     standard input file
+     ssttddoouutt    standard output file
+     ssttddeerrrr    standard error file
+
+     A constant `pointer' NNUULLLL (0) designates no stream at all.
+
+     An integer constant EEOOFF (-1) is returned upon end of file or
+     error by integer functions that deal with streams.
+
+     Any routine that uses the standard input/output package must
+     include the header file <_s_t_d_i_o._h> of pertinent macro defini-
+     tions.  The functions and constants mentioned in sections
+     labeled 3S are declared in the include file and need no
+     further declaration.  The constants, and the following
+     `functions' are implemented as macros; redeclaration of
+     these names is perilous: _g_e_t_c, _g_e_t_c_h_a_r, _p_u_t_c, _p_u_t_c_h_a_r, _f_e_o_f,
+     _f_e_r_r_o_r, _f_i_l_e_n_o.
+
+SSEEEE AALLSSOO
+     open(2), close(2), read(2), write(2), fread(3S), fseek(3S),
+     f*(3S)
+
+DDIIAAGGNNOOSSTTIICCSS
+     The value EEOOFF is returned uniformly to indicate that a FFIILLEE
+     pointer has not been initialized with _f_o_p_e_n, input (output)
+     has been attempted on an output (input) stream, or a FFIILLEE
+
+
+
+Printed 7/9/88		  May 13, 1986				1
+
+
+
+
+
+
+STDIO(3S)	    UNIX Programmer's Manual		STDIO(3S)
+
+
+
+     pointer designates corrupt or otherwise unintelligible FFIILLEE
+     data.
+
+     For purposes of efficiency, this implementation of the stan-
+     dard library has been changed to line buffer output to a
+     terminal by default and attempts to do this transparently by
+     flushing the output whenever a _r_e_a_d(2) from the standard
+     input is necessary.  This is almost always transparent, but
+     may cause confusion or malfunctioning of programs which use
+     standard i/o routines but use _r_e_a_d(2) themselves to read
+     from the standard input.
+
+     In cases where a large amount of computation is done after
+     printing part of a line on an output terminal, it is neces-
+     sary to _f_f_l_u_s_h(3S) the standard output before going off and
+     computing so that the output will appear.
+
+BBUUGGSS
+     The standard buffered functions do not interact well with
+     certain other library and system functions, especially _v_f_o_r_k
+     and _a_b_o_r_t.
+
+LLIISSTT OOFF FFUUNNCCTTIIOONNSS
+     _N_a_m_e	 _A_p_p_e_a_r_s _o_n _P_a_g_e    _D_e_s_c_r_i_p_t_i_o_n
+     clearerr	   ferror.3s	stream status inquiries
+     fclose	   fclose.3s	close or flush a stream
+     fdopen	   fopen.3s	open a stream
+     feof	   ferror.3s	stream status inquiries
+     ferror	   ferror.3s	stream status inquiries
+     fflush	   fclose.3s	close or flush a stream
+     fgetc	   getc.3s	get character or word from stream
+     fgets	   gets.3s	get a string from a stream
+     fileno	   ferror.3s	stream status inquiries
+     fopen	   fopen.3s	open a stream
+     fprintf	   printf.3s	formatted output conversion
+     fputc	   putc.3s	put character or word on a stream
+     fputs	   puts.3s	put a string on a stream
+     fread	   fread.3s	buffered binary input/output
+     freopen	   fopen.3s	open a stream
+     fscanf	   scanf.3s	formatted input conversion
+     fseek	   fseek.3s	reposition a stream
+     ftell	   fseek.3s	reposition a stream
+     fwrite	   fread.3s	buffered binary input/output
+     getc	   getc.3s	get character or word from stream
+     getchar	   getc.3s	get character or word from stream
+     gets	   gets.3s	get a string from a stream
+     getw	   getc.3s	get character or word from stream
+     printf	   printf.3s	formatted output conversion
+     putc	   putc.3s	put character or word on a stream
+     putchar	   putc.3s	put character or word on a stream
+     puts	   puts.3s	put a string on a stream
+     putw	   putc.3s	put character or word on a stream
+
+
+
+Printed 7/9/88		  May 13, 1986				2
+
+
+
+
+
+
+STDIO(3S)	    UNIX Programmer's Manual		STDIO(3S)
+
+
+
+     rewind	   fseek.3s	reposition a stream
+     scanf	   scanf.3s	formatted input conversion
+     setbuf	   setbuf.3s	assign buffering to a stream
+     setbuffer	   setbuf.3s	assign buffering to a stream
+     setlinebuf    setbuf.3s	assign buffering to a stream
+     sprintf	   printf.3s	formatted output conversion
+     sscanf	   scanf.3s	formatted input conversion
+     ungetc	   ungetc.3s	push character back into input stream
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  May 13, 1986				3
+
+
+

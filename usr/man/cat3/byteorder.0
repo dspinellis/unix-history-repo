@@ -1,0 +1,66 @@
+
+
+
+BYTEORDER(3N)	    UNIX Programmer's Manual	    BYTEORDER(3N)
+
+
+
+NNAAMMEE
+     htonl, htons, ntohl, ntohs - convert values between host and
+     network byte order
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssyyss//ttyyppeess..hh>>
+     ##iinncclluuddee <<nneettiinneett//iinn..hh>>
+
+     nneettlloonngg == hhttoonnll((hhoossttlloonngg));;
+     uu__lloonngg nneettlloonngg,, hhoossttlloonngg;;
+
+     nneettsshhoorrtt == hhttoonnss((hhoossttsshhoorrtt));;
+     uu__sshhoorrtt nneettsshhoorrtt,, hhoossttsshhoorrtt;;
+
+     hhoossttlloonngg == nnttoohhll((nneettlloonngg));;
+     uu__lloonngg hhoossttlloonngg,, nneettlloonngg;;
+
+     hhoossttsshhoorrtt == nnttoohhss((nneettsshhoorrtt));;
+     uu__sshhoorrtt hhoossttsshhoorrtt,, nneettsshhoorrtt;;
+
+DDEESSCCRRIIPPTTIIOONN
+     These routines convert 16 and 32 bit quantities between net-
+     work byte order and host byte order.  On machines such as
+     the SUN these routines are defined as null macros in the
+     include file <_n_e_t_i_n_e_t/_i_n._h>.
+
+     These routines are most often used in conjunction with
+     Internet addresses and ports as returned by
+     _g_e_t_h_o_s_t_b_y_n_a_m_e(3N) and _g_e_t_s_e_r_v_e_n_t(3N).
+
+SSEEEE AALLSSOO
+     gethostbyname(3N), getservent(3N)
+
+BBUUGGSS
+     The VAX handles bytes backwards from most everyone else in
+     the world.  This is not expected to be fixed in the near
+     future.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  May 15, 1986				1
+
+
+

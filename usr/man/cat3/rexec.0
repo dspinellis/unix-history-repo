@@ -1,0 +1,66 @@
+
+
+
+REXEC(3)	    UNIX Programmer's Manual		 REXEC(3)
+
+
+
+NNAAMMEE
+     rexec - return stream to a remote command
+
+SSYYNNOOPPSSIISS
+     rreemm == rreexxeecc((aahhoosstt,, iinnppoorrtt,, uusseerr,, ppaasssswwdd,, ccmmdd,, ffdd22pp));;
+     cchhaarr ****aahhoosstt;;
+     iinntt iinnppoorrtt;;
+     cchhaarr **uusseerr,, **ppaasssswwdd,, **ccmmdd;;
+     iinntt **ffdd22pp;;
+
+DDEESSCCRRIIPPTTIIOONN
+     _R_e_x_e_c looks up the host *_a_h_o_s_t using _g_e_t_h_o_s_t_b_y_n_a_m_e(3N),
+     returning -1 if the host does not exist.  Otherwise *_a_h_o_s_t
+     is set to the standard name of the host.  If a username and
+     password are both specified, then these are used to authen-
+     ticate to the foreign host; otherwise the environment and
+     then the user's ._n_e_t_r_c file in his home directory are
+     searched for appropriate information.  If all this fails,
+     the user is prompted for the information.
+
+     The port _i_n_p_o_r_t specifies which well-known DARPA Internet
+     port to use for the connection; the call
+     ``getservbyname("exec", "tcp")'' (see _g_e_t_s_e_r_v_e_n_t(3N)) will
+     return a pointer to a structure, which contains the neces-
+     sary port.  The protocol for connection is described in
+     detail in _r_e_x_e_c_d(8C).
+
+     If the connection succeeds, a socket in the Internet domain
+     of type SOCK_STREAM is returned to the caller, and given to
+     the remote command as ssttddiinn and ssttddoouutt.  If _f_d_2_p is non-
+     zero, then an auxiliary channel to a control process will be
+     setup, and a descriptor for it will be placed in *_f_d_2_p.  The
+     control process will return diagnostic output from the com-
+     mand (unit 2) on this channel, and will also accept bytes on
+     this channel as being UNIX signal numbers, to be forwarded
+     to the process group of the command.  The diagnostic infor-
+     mation returned does not include remote authorization
+     failure, as the secondary connection is set up after author-
+     ization has been verified.  If _f_d_2_p is 0, then the ssttddeerrrr
+     (unit 2 of the remote command) will be made the same as the
+     ssttddoouutt and no provision is made for sending arbitrary sig-
+     nals to the remote process, although you may be able to get
+     its attention by using out-of-band data.
+
+SSEEEE AALLSSOO
+     rcmd(3), rexecd(8C)
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  May 14, 1986				1
+
+
+

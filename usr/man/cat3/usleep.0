@@ -1,0 +1,66 @@
+
+
+
+USLEEP(3)	    UNIX Programmer's Manual		USLEEP(3)
+
+
+
+NNAAMMEE
+     usleep - suspend execution for interval
+
+SSYYNNOOPPSSIISS
+     uusslleeeepp((uusseeccoonnddss))
+     uunnssiiggnneedd uusseeccoonnddss;;
+
+DDEESSCCRRIIPPTTIIOONN
+     The current process is suspended from execution for the
+     number of microseconds specified by the argument.	The
+     actual suspension time may be an arbitrary amount longer
+     because of other activity in the system or because of the
+     time spent in processing the call.
+
+     The routine is implemented by setting an interval timer and
+     pausing until it occurs.  The previous state of this timer
+     is saved and restored.  If the sleep time exceeds the time
+     to the expiration of the previous timer, the process sleeps
+     only until the signal would have occurred, and the signal is
+     sent a short time later.
+
+     This routine is implemented using _s_e_t_i_t_i_m_e_r(2); it requires
+     eight system calls each time it is invoked.  A similar but
+     less compatible function can be obtained with a single
+     _s_e_l_e_c_t(2); it would not restart after signals, but would not
+     interfere with other uses of _s_e_t_i_t_i_m_e_r.
+
+SSEEEE AALLSSOO
+     setitimer(2), getitimer(2), sigpause(2), ualarm(3),
+     sleep(3), alarm(3)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  May 15, 1986				1
+
+
+

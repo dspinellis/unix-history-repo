@@ -1,0 +1,198 @@
+
+
+
+EXP(3M)             UNIX Programmer's Manual		  EXP(3M)
+
+
+
+NNAAMMEE
+     exp, expm1, log, log10, log1p, pow - exponential, logarithm,
+     power
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<mmaatthh..hh>>
+
+     ddoouubbllee eexxpp((xx))
+     ddoouubbllee xx;;
+
+     ddoouubbllee eexxppmm11((xx))
+     ddoouubbllee xx;;
+
+     ddoouubbllee lloogg((xx))
+     ddoouubbllee xx;;
+
+     ddoouubbllee lloogg1100((xx))
+     ddoouubbllee xx;;
+
+     ddoouubbllee lloogg11pp((xx))
+     ddoouubbllee xx;;
+
+     ddoouubbllee ppooww((xx,,yy))
+     ddoouubbllee xx,,yy;;
+
+DDEESSCCRRIIPPTTIIOONN
+     Exp returns the exponential function of x.
+
+     Expm1 returns exp(x)-1 accurately even for tiny x.
+
+     Log returns the natural logarithm of x.
+
+     Log10 returns the logarithm of x to base 10.
+
+     Log1p returns log(1+x) accurately even for tiny x.
+
+     Pow(x,y) returns x**y.
+
+EERRRROORR ((dduuee ttoo RRoouunnddooffff eettcc..))
+     exp(x), log(x), expm1(x) and log1p(x) are accurate to within
+     an _u_l_p, and log10(x) to within about 2 _u_l_ps; an _u_l_p is one
+     _Unit in the _Last _Place.  The error in pow(x,y) is below
+     about 2 _u_l_ps when its magnitude is moderate, but increases
+     as pow(x,y) approaches the over/underflow thresholds until
+     almost as many bits could be lost as are occupied by the
+     floating-point format's exponent field; that is 8 bits for
+     VAX D and 11 bits for IEEE 754 Double.  No such drastic loss
+     has been exposed by testing; the worst errors observed have
+     been below 20 _u_l_ps for VAX D, 300 _u_l_ps for IEEE 754 Double.
+     Moderate values of pow are accurate enough that
+     pow(integer,integer) is exact until it is bigger than 2**56
+     on a VAX, 2**53 for IEEE 754.
+
+
+
+Printed 7/9/88		  May 27, 1986				1
+
+
+
+
+
+
+EXP(3M)             UNIX Programmer's Manual		  EXP(3M)
+
+
+
+DDIIAAGGNNOOSSTTIICCSS
+     Exp, expm1 and pow return the reserved operand on a VAX when
+     the correct value would overflow, and they set _e_r_r_n_o to
+     ERANGE.  Pow(x,y) returns the reserved operand on a VAX and
+     sets _e_r_r_n_o to EDOM when x < 0 and y is not an integer.
+
+     On a VAX, _e_r_r_n_o is set to EDOM and the reserved operand is
+     returned by log unless x > 0, by log1p unless x > -1.
+
+NNOOTTEESS
+     The functions exp(x)-1 and log(1+x) are called expm1 and
+     logp1 in BASIC on the Hewlett-Packard HP-71B and APPLE
+     Macintosh, EXP1 and LN1 in Pascal, exp1 and log1 in C on
+     APPLE Macintoshes, where they have been provided to make
+     sure financial calculations of ((1+x)**n-1)/x, namely
+     expm1(n*log1p(x))/x, will be accurate when x is tiny.  They
+     also provide accurate inverse hyperbolic functions.
+
+     Pow(x,0) returns x**0 = 1 for all x including x = 0, Infin-
+     ity (not found on a VAX), and _N_a_N (the reserved operand on a
+     VAX).  Previous implementations of pow may have defined x**0
+     to be undefined in some or all of these cases.  Here are
+     reasons for returning x**0 = 1 always:
+
+     (1) Any program that already tests whether x is zero (or
+	 infinite or _N_a_N) before computing x**0 cannot care
+	 whether 0**0 = 1 or not. Any program that depends upon
+	 0**0 to be invalid is dubious anyway since that
+	 expression's meaning and, if invalid, its consequences
+	 vary from one computer system to another.
+
+     (2) Some Algebra texts (e.g. Sigler's) define x**0 = 1 for
+	 all x, including x = 0.  This is compatible with the
+	 convention that accepts a[0] as the value of polynomial
+	 p(x) = a[0]*x**0 + a[1]*x**1 + a[2]*x**2 +...+ a[n]*x**n
+
+	 at x = 0 rather than reject a[0]*0**0 as invalid.
+
+     (3) Analysts will accept 0**0 = 1 despite that x**y can
+	 approach anything or nothing as x and y approach 0
+	 independently.  The reason for setting 0**0 = 1 anyway
+	 is this:
+
+	 If x(z) and y(z) are _a_n_y functions analytic (expandable
+	 in power series) in z around z = 0, and if there x(0) =
+	 y(0) = 0, then x(z)**y(z) -> 1 as z -> 0.
+
+     (4) If 0**0 = 1, then infinity**0 = 1/0**0 = 1 too; and then
+	 _N_a_N**0 = 1 too because x**0 = 1 for all finite and
+	 infinite x, i.e., independently of x.
+
+
+
+
+
+Printed 7/9/88		  May 27, 1986				2
+
+
+
+
+
+
+EXP(3M)             UNIX Programmer's Manual		  EXP(3M)
+
+
+
+SSEEEE AALLSSOO
+     math(3M), infnan(3M)
+
+AAUUTTHHOORR
+     Kwok-Choi Ng, W. Kahan
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  May 27, 1986				3
+
+
+

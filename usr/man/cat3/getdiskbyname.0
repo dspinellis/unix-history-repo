@@ -1,0 +1,66 @@
+
+
+
+GETDISKBYNAME(3)    UNIX Programmer's Manual	 GETDISKBYNAME(3)
+
+
+
+NNAAMMEE
+     getdiskbyname - get generic disk description by its name
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssyyss//ddiisskkllaabbeell..hh>>
+
+     ssttrruucctt ddiisskkllaabbeell **
+     ggeettddiisskkbbyynnaammee((nnaammee))
+     cchhaarr **nnaammee;;
+
+DDEESSCCRRIIPPTTIIOONN
+     _G_e_t_d_i_s_k_b_y_n_a_m_e takes a disk name (e.g. rm03) and returns a
+     prototype disk label describing its geometry information and
+     the standard disk partition tables.  All information is
+     obtained from the _d_i_s_k_t_a_b(5) file.
+
+SSEEEE AALLSSOO
+     disklabel(5), disktab(5), disklabel(8)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  June 18, 1987                         1
+
+
+

@@ -1,0 +1,132 @@
+
+
+
+VLIMIT(3C)	    UNIX Programmer's Manual	       VLIMIT(3C)
+
+
+
+NNAAMMEE
+     vlimit - control maximum system resource consumption
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssyyss//vvlliimmiitt..hh>>
+
+     vvlliimmiitt((rreessoouurrccee,, vvaalluuee))
+
+DDEESSCCRRIIPPTTIIOONN
+     TThhiiss ffaacciilliittyy iiss ssuuppeerrsseeddeedd bbyy ggeettrrlliimmiitt((22))..
+
+     Limits the consumption by the current process and each pro-
+     cess it creates to not individually exceed _v_a_l_u_e on the
+     specified _r_e_s_o_u_r_c_e. If _v_a_l_u_e is specified as -1, then the
+     current limit is returned and the limit is unchanged.  The
+     resources which are currently controllable are:
+
+     LIM_NORAISE    A pseudo-limit; if set non-zero then the lim-
+		    its may not be raised.  Only the super-user
+		    may remove the _n_o_r_a_i_s_e restriction.
+
+     LIM_CPU	    the maximum number of cpu-seconds to be used
+		    by each process
+
+     LIM_FSIZE	    the largest single file which can be created
+
+     LIM_DATA	    the maximum growth of the data+stack region
+		    via _s_b_r_k(2) beyond the end of the program
+		    text
+
+     LIM_STACK	    the maximum size of the automatically-
+		    extended stack region
+
+     LIM_CORE	    the size of the largest core dump that will
+		    be created.
+
+     LIM_MAXRSS     a soft limit for the amount of physical
+		    memory (in bytes) to be given to the program.
+		    If memory is tight, the system will prefer to
+		    take memory from processes which are exceed-
+		    ing their declared LIM_MAXRSS.
+
+     Because this information is stored in the per-process infor-
+     mation this system call must be executed directly by the
+     shell if it is to affect all future processes created by the
+     shell; _l_i_m_i_t is thus a built-in command to _c_s_h(1).
+
+     The system refuses to extend the data or stack space when
+     the limits would be exceeded in the normal way; a _b_r_e_a_k call
+     fails if the data space limit is reached, or the process is
+     killed when the stack limit is reached (since the stack can-
+     not be extended, there is no way to send a signal!).
+
+
+
+Printed 7/9/88		  May 12, 1986				1
+
+
+
+
+
+
+VLIMIT(3C)	    UNIX Programmer's Manual	       VLIMIT(3C)
+
+
+
+     A file i/o operation which would create a file which is too
+     large will cause a signal SIGXFSZ to be generated, this nor-
+     mally terminates the process, but may be caught.  When the
+     cpu time limit is exceeded, a signal SIGXCPU is sent to the
+     offending process; to allow it time to process the signal it
+     is given 5 seconds grace by raising the cpu time limit.
+
+SSEEEE AALLSSOO
+     csh(1)
+
+BBUUGGSS
+     LIM_NORAISE no longer exists.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  May 12, 1986				2
+
+
+

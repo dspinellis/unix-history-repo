@@ -1,0 +1,66 @@
+
+
+
+TTYNAME(3)	    UNIX Programmer's Manual	       TTYNAME(3)
+
+
+
+NNAAMMEE
+     ttyname, isatty, ttyslot - find name of a terminal
+
+SSYYNNOOPPSSIISS
+     cchhaarr **ttttyynnaammee((ffiilleeddeess))
+
+     iissaattttyy((ffiilleeddeess))
+
+     ttttyysslloott(())
+
+DDEESSCCRRIIPPTTIIOONN
+     _T_t_y_n_a_m_e returns a pointer to the null-terminated path name
+     of the terminal device associated with file descriptor
+     _f_i_l_e_d_e_s (this is a system file descriptor and has nothing to
+     do with the standard I/O FILE typedef).
+
+     _I_s_a_t_t_y returns 1 if _f_i_l_e_d_e_s is associated with a terminal
+     device, 0 otherwise.
+
+     _T_t_y_s_l_o_t returns the number of the entry in the _t_t_y_s(5) file
+     for the control terminal of the current process.
+
+FFIILLEESS
+     /dev/*
+     /etc/ttys
+
+SSEEEE AALLSSOO
+     ioctl(2), ttys(5)
+
+DDIIAAGGNNOOSSTTIICCSS
+     _T_t_y_n_a_m_e returns a null pointer (0) if _f_i_l_e_d_e_s does not
+     describe a terminal device in directory `/dev'.
+
+     _T_t_y_s_l_o_t returns 0 if `/etc/ttys' is inaccessible or if it
+     cannot determine the control terminal.
+
+BBUUGGSS
+     The return value points to static data whose content is
+     overwritten by each call.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  May 15, 1985				1
+
+
+

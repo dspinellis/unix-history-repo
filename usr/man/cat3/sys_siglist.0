@@ -1,0 +1,66 @@
+
+
+
+PSIGNAL(3)	    UNIX Programmer's Manual	       PSIGNAL(3)
+
+
+
+NNAAMMEE
+     psignal, sys_siglist - system signal messages
+
+SSYYNNOOPPSSIISS
+     ppssiiggnnaall((ssiigg,, ss))
+     uunnssiiggnneedd ssiigg;;
+     cchhaarr **ss;;
+
+     cchhaarr **ssyyss__ssiigglliisstt[[]];;
+
+DDEESSCCRRIIPPTTIIOONN
+     _P_s_i_g_n_a_l produces a short message on the standard error file
+     describing the indicated signal.  First the argument string
+     _s is printed, then a colon, then the name of the signal and
+     a new-line.  Most usefully, the argument string is the name
+     of the program which incurred the signal.	The signal number
+     should be from among those found in <_s_i_g_n_a_l._h>.
+
+     To simplify variant formatting of signal names, the vector
+     of message strings _s_y_s__s_i_g_l_i_s_t is provided; the signal
+     number can be used as an index in this table to get the sig-
+     nal name without the newline.  The define NSIG defined in
+     <_s_i_g_n_a_l._h> is the number of messages provided for in the
+     table; it should be checked because new signals may be added
+     to the system before they are added to the table.
+
+SSEEEE AALLSSOO
+     sigvec(2), perror(3)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  May 15, 1985				1
+
+
+

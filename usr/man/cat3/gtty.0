@@ -1,0 +1,66 @@
+
+
+
+STTY(3C)	    UNIX Programmer's Manual		 STTY(3C)
+
+
+
+NNAAMMEE
+     stty, gtty - set and get terminal state (defunct)
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssggttttyy..hh>>
+
+     ssttttyy((ffdd,, bbuuff))
+     iinntt ffdd;;
+     ssttrruucctt ssggttttyybb **bbuuff;;
+
+     ggttttyy((ffdd,, bbuuff))
+     iinntt ffdd;;
+     ssttrruucctt ssggttttyybb **bbuuff;;
+
+DDEESSCCRRIIPPTTIIOONN
+     TThhiiss iinntteerrffaaccee iiss oobbssoolleetteedd bbyy iiooccttll((22))..
+
+     _S_t_t_y sets the state of the terminal associated with _f_d.
+     _G_t_t_y retrieves the state of the terminal associated with _f_d.
+     To set the state of a terminal the call must have write per-
+     mission.
+
+     The _s_t_t_y call is actually ``ioctl(fd, TIOCSETP, buf)'',
+     while the _g_t_t_y call is ``ioctl(fd, TIOCGETP, buf)''.  See
+     _i_o_c_t_l(2) and _t_t_y(4) for an explanation.
+
+DDIIAAGGNNOOSSTTIICCSS
+     If the call is successful 0 is returned, otherwise -1 is
+     returned and the global variable _e_r_r_n_o contains the reason
+     for the failure.
+
+SSEEEE AALLSSOO
+     ioctl(2), tty(4)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  May 15, 1985				1
+
+
+

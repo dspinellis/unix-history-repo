@@ -1,0 +1,132 @@
+
+
+
+GETNETENT(3N)	    UNIX Programmer's Manual	    GETNETENT(3N)
+
+
+
+NNAAMMEE
+     getnetent, getnetbyaddr, getnetbyname, setnetent, endnetent
+     - get network entry
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<nneettddbb..hh>>
+
+     ssttrruucctt nneetteenntt **ggeettnneetteenntt(())
+
+     ssttrruucctt nneetteenntt **ggeettnneettbbyynnaammee((nnaammee))
+     cchhaarr **nnaammee;;
+
+     ssttrruucctt nneetteenntt **ggeettnneettbbyyaaddddrr((nneett,, ttyyppee))
+     lloonngg nneett;;
+     iinntt ttyyppee;;
+
+     sseettnneetteenntt((ssttaayyooppeenn))
+     iinntt ssttaayyooppeenn;;
+
+     eennddnneetteenntt(())
+
+DDEESSCCRRIIPPTTIIOONN
+     _G_e_t_n_e_t_e_n_t, _g_e_t_n_e_t_b_y_n_a_m_e, and _g_e_t_n_e_t_b_y_a_d_d_r each return a
+     pointer to an object with the following structure containing
+     the broken-out fields of a line in the network data base,
+     /_e_t_c/_n_e_t_w_o_r_k_s.
+
+	  struct    netent {
+	       char	 *n_name;  /* official name of net */
+	       char	 **n_aliases;	/* alias list */
+	       int	 n_addrtype;	/* net number type */
+	       unsigned long  n_net;	     /* net number */
+	  };
+
+     The members of this structure are:
+
+     n_name	 The official name of the network.
+
+     n_aliases	 A zero terminated list of  alternate  names  for
+		 the network.
+
+     n_addrtype  The  type  of	the  network   number	returned;
+		 currently only AF_INET.
+
+     n_net	 The  network  number.	  Network   numbers   are
+		 returned in machine byte order.
+
+     _G_e_t_n_e_t_e_n_t reads the next line of the file, opening the  file
+     if necessary.
+
+     _S_e_t_n_e_t_e_n_t opens and rewinds the file.  If the _s_t_a_y_o_p_e_n  flag
+     is non-zero, the net data base will not be closed after each
+
+
+
+Printed 7/9/88		  May 19, 1986				1
+
+
+
+
+
+
+GETNETENT(3N)	    UNIX Programmer's Manual	    GETNETENT(3N)
+
+
+
+     call to _g_e_t_n_e_t_b_y_n_a_m_e or _g_e_t_n_e_t_b_y_a_d_d_r.
+
+     _E_n_d_n_e_t_e_n_t closes the file.
+
+     _G_e_t_n_e_t_b_y_n_a_m_e and _g_e_t_n_e_t_b_y_a_d_d_r sequentially search	from  the
+     beginning	of  the  file  until  a  matching net name or net
+     address and type is found,  or  until  EOF  is  encountered.
+     Network numbers are supplied in host order.
+
+FFIILLEESS
+     /etc/networks
+
+SSEEEE AALLSSOO
+     networks(5)
+
+DDIIAAGGNNOOSSTTIICCSS
+     Null pointer (0) returned on EOF or error.
+
+BBUUGGSS
+     All information is contained in a static area so it must  be
+     copied  if it is to be saved.  Only Internet network numbers
+     are currently understood.	Expecting network numbers to  fit
+     in no more than 32 bits is probably naive.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  May 19, 1986				2
+
+
+

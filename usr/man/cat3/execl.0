@@ -1,0 +1,132 @@
+
+
+
+EXECL(3)	    UNIX Programmer's Manual		 EXECL(3)
+
+
+
+NNAAMMEE
+     execl, execv, execle, execlp, execvp, exec, execve, exect,
+     environ - execute a file
+
+SSYYNNOOPPSSIISS
+     eexxeeccll((nnaammee,, aarrgg00,, aarrgg11,, ......,, aarrggnn,, 00))
+     cchhaarr **nnaammee,, **aarrgg00,, **aarrgg11,, ......,, **aarrggnn;;
+
+     eexxeeccvv((nnaammee,, aarrggvv))
+     cchhaarr **nnaammee,, **aarrggvv[[]];;
+
+     eexxeeccllee((nnaammee,, aarrgg00,, aarrgg11,, ......,, aarrggnn,, 00,, eennvvpp))
+     cchhaarr **nnaammee,, **aarrgg00,, **aarrgg11,, ......,, **aarrggnn,, **eennvvpp[[]];;
+
+     eexxeecctt((nnaammee,, aarrggvv,, eennvvpp))
+     cchhaarr **nnaammee,, **aarrggvv[[]],, **eennvvpp[[]];;
+
+     eexxtteerrnn cchhaarr ****eennvviirroonn;;
+
+DDEESSCCRRIIPPTTIIOONN
+     These routines provide various interfaces to the _e_x_e_c_v_e sys-
+     tem call.	Refer to _e_x_e_c_v_e(2) for a description of their
+     properties; only brief descriptions are provided here.
+
+     _E_x_e_c in all its forms overlays the calling process with the
+     named file, then transfers to the entry point of the core
+     image of the file.  There can be no return from a successful
+     exec; the calling core image is lost.
+
+     The _n_a_m_e argument is a pointer to the name of the file to be
+     executed.	The pointers _a_r_g[_0], _a_r_g[_1] ...  address null-
+     terminated strings.  Conventionally _a_r_g[_0] is the name of
+     the file.
+
+     Two interfaces are available.  _e_x_e_c_l is useful when a known
+     file with known arguments is being called; the arguments to
+     _e_x_e_c_l are the character strings constituting the file and
+     the arguments; the first argument is conventionally the same
+     as the file name (or its last component).	A 0 argument must
+     end the argument list.
+
+     The _e_x_e_c_v version is useful when the number of arguments is
+     unknown in advance; the arguments to _e_x_e_c_v are the name of
+     the file to be executed and a vector of strings containing
+     the arguments.  The last argument string must be followed by
+     a 0 pointer.
+
+     The _e_x_e_c_t version is used when the executed file is to be
+     manipulated with _p_t_r_a_c_e(2).  The program is forced to single
+     step a single instruction giving the parent an opportunity
+     to manipulate its state.  On the VAX-11 this is done by set-
+     ting the trace bit in the process status longword.
+
+
+
+Printed 7/9/88		 April 25, 1986                         1
+
+
+
+
+
+
+EXECL(3)	    UNIX Programmer's Manual		 EXECL(3)
+
+
+
+     When a C program is executed, it is called as follows:
+
+	  main(argc, argv, envp)
+	  int argc;
+	  char **argv, **envp;
+
+     where _a_r_g_c is the argument count and _a_r_g_v is an array of
+     character pointers to the arguments themselves.  As indi-
+     cated, _a_r_g_c is conventionally at least one and the first
+     member of the array points to a string containing the name
+     of the file.
+
+     _A_r_g_v is directly usable in another _e_x_e_c_v because _a_r_g_v[_a_r_g_c]
+     is 0.
+
+     _E_n_v_p is a pointer to an array of strings that constitute the
+     _e_n_v_i_r_o_n_m_e_n_t of the process.  Each string consists of a name,
+     an "=", and a null-terminated value.  The array of pointers
+     is terminated by a null pointer.  The shell _s_h(1) passes an
+     environment entry for each global shell variable defined
+     when the program is called.  See _e_n_v_i_r_o_n(7) for some conven-
+     tionally used names.  The C run-time start-off routine
+     places a copy of _e_n_v_p in the global cell _e_n_v_i_r_o_n, which is
+     used by _e_x_e_c_v and _e_x_e_c_l to pass the environment to any sub-
+     programs executed by the current program.
+
+     _E_x_e_c_l_p and _e_x_e_c_v_p are called with the same arguments as
+     _e_x_e_c_l and _e_x_e_c_v, but duplicate the shell's actions in
+     searching for an executable file in a list of directories.
+     The directory list is obtained from the environment.
+
+FFIILLEESS
+     /bin/sh  shell, invoked if command file found by _e_x_e_c_l_p or
+     _e_x_e_c_v_p
+
+SSEEEE AALLSSOO
+     execve(2), fork(2), environ(7), csh(1)
+
+DDIIAAGGNNOOSSTTIICCSS
+     If the file cannot be found, if it is not executable, if it
+     does not start with a valid magic number (see _a._o_u_t(5)), if
+     maximum memory is exceeded, or if the arguments require too
+     much space, a return constitutes the diagnostic; the return
+     value is -1.  Even for the super-user, at least one of the
+     execute-permission bits must be set for a file to be exe-
+     cuted.
+
+BBUUGGSS
+     If _e_x_e_c_v_p is called to execute a file that turns out to be a
+     shell command file, and if it is impossible to execute the
+     shell, the values of _a_r_g_v[_0] and _a_r_g_v[-_1] will be modified
+     before return.
+
+
+
+Printed 7/9/88		 April 25, 1986                         2
+
+
+

@@ -1,0 +1,66 @@
+
+
+
+ABS(3)		    UNIX Programmer's Manual		   ABS(3)
+
+
+
+NNAAMMEE
+     abs - integer absolute value
+
+SSYYNNOOPPSSIISS
+     aabbss((ii))
+     iinntt ii;;
+
+DDEESSCCRRIIPPTTIIOONN
+     _A_b_s returns the absolute value of its integer operand.
+
+SSEEEE AALLSSOO
+     floor(3M) for _f_a_b_s
+
+BBUUGGSS
+     Applying the _a_b_s function to the most negative integer gen-
+     erates a result which is the most negative integer.  That
+     is,
+
+     abs(0x80000000)
+
+     returns 0x80000000 as a result.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  May 15, 1985				1
+
+
+
