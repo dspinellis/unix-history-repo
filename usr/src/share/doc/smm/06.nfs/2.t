@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)2.t	5.2 (Berkeley) %G%
+.\"	@(#)2.t	5.3 (Berkeley) %G%
 .\"
 .sh 1 "Not Quite NFS, Crash Tolerant Cache Consistency for NFS"
 .pp
@@ -107,7 +107,7 @@ It is used
 by the client to determine whether or not cached data for the file is
 stale.
 Generating this value is easier said than done. The current implementation
-uses the following technique, which I believe to be adequate.
+uses the following technique, which is believed to be adequate.
 The high order longword is stored in the ufs inode and is initialized to one
 when an inode is first allocated.
 The low order longword is stored in main memory only and is initialized to
@@ -173,7 +173,14 @@ There is another failure condition that can occur when the server is congested.
 The worst case scenario would have the client pushing dirty writes to the server
 but a large request queue on the server delays these writes for more than
 \fBwrite_slack\fR seconds. It is hoped that a congestion control scheme using
-the \fBtry_again_later\fR RPC reply can minimize the risk of this occurrence.
+the \fBtry_again_later\fR RPC reply after booting combined with
+the following lease termination rule for write caching leases
+can minimize the risk of this occurrence.
+A write caching lease is only terminated on the server when there are have
+been no writes to the file and the server has not been overloaded during
+the previous write_slack seconds. The server has not been overloaded
+is approximated by a test for sleeping nfsd(s) at the end of the write_slack
+period.
 .sh 2 "Server Disk Full"
 .pp
 There is a serious unresolved problem for delayed write caching with respect to
@@ -195,6 +202,50 @@ file(s) to call fsync and check for an error return from it instead of close.
 The protocol specification is identical to that of NFS [Sun89] except for
 the following changes.
 .ip \(bu
+RPC Information
+.(l
+        Program Number 300105
+        Version Number 1
+.)l
+.ip \(bu
+Readdir_and_Lookup RPC
+.(l
+        struct readdirlookargs {
+                fhandle file;
+                nfscookie cookie;
+                unsigned count;
+                unsigned duration;
+        };
+
+        struct entry {
+                unsigned cachable;
+                unsigned duration;
+                modifyrev rev;
+                fhandle entry_fh;
+                nqnfs_fattr entry_attrib;
+                unsigned fileid;
+                filename name;
+                nfscookie cookie;
+                entry *nextentry;
+        };
+
+        union readdirlookres switch (stat status) {
+        case NFS_OK:
+                struct {
+                        entry *entries;
+                        bool eof;
+                } readdirlookok;
+        default:
+                void;
+        };
+
+        readdirlookres
+        NQNFSPROC_READDIRLOOK(readdirlookargs) = 18;
+.)l
+Reads entries in a directory in a manner analogous to the NFSPROC_READDIR RPC
+in NFS, but returns the file handle and attributes of each entry as well.
+This allows the attribute and lookup caches to be primed.
+.ip \(bu
 Get Lease RPC
 .(l
         struct getleaseargs {
@@ -205,16 +256,16 @@ Get Lease RPC
 
         union getleaseres switch (stat status) {
         case NFS_OK:
-                boolean cachable;
+                bool cachable;
                 unsigned duration;
                 modifyrev rev;
-                fattr attributes;
+                nqnfs_fattr attributes;
         default:
                 void;
         };
 
         getleaseres
-        NQNFSPROC_GETLEASE(getleaseargs) = 18;
+        NQNFSPROC_GETLEASE(getleaseargs) = 19;
 .)l
 Gets a lease for "file" valid for "duration" seconds from when the lease
 was issued on the server\**.
@@ -228,7 +279,7 @@ The modify revision level and attributes for the file are also returned.
 Eviction Message
 .(l
         void
-        NQNFSPROC_EVICTION (fhandle) = 19;
+        NQNFSPROC_EVICTED (fhandle) = 21;
 .)l
 This message is sent from the server to the client. When the client receives
 the message, it should flush data associated with the file represented by
@@ -243,26 +294,43 @@ Vacated Message
 This message is sent from the client to the server in response to the
 \fBEviction Message\fR. See above.
 .ip \(bu
+Access RPC
+.(l
+        struct accessargs {
+                fhandle file;
+                bool read_access;
+                bool write_access;
+                bool exec_access;
+        };
+
+        stat
+        NQNFSPROC_ACCESS(accessargs) = 22;
+.)l
+The access RPC does permission checking on the server for the given type
+of access required by the client for the file.
+Use of this RPC avoids accessibility problems caused by client->server uid
+mapping.
+.ip \(bu
 Piggybacked Get Lease Request
 .pp
 The piggybacked get lease request is functionally equivalent to the Get Lease
 RPC except that is attached to one of the other NQNFS RPC requests as follows.
-A getleaserequest is prepended to all of the NFS request arguments for NQNFS
+A getleaserequest is prepended to all of the request arguments for NQNFS
 and a getleaserequestres is inserted in all NFS result structures just after
 the "stat" field only if "stat == NFS_OK".
 .(l
         union getleaserequest switch (cachetype type) {
-        case NQNFS_READCACHE:
-        case NQNFS_WRITECACHE:
+        case NQLREAD:
+        case NQLWRITE:
                 unsigned duration;
         default:
                 void;
         };
 
         union getleaserequestres switch (cachetype type) {
-        case NQNFS_READCACHE:
-        case NQNFS_WRITECACHE:
-                boolean cachable;
+        case NQLREAD:
+        case NQLWRITE:
+                bool cachable;
                 unsigned duration;
                 modifyrev rev;
         default:
@@ -273,33 +341,22 @@ The get lease request applies to the file that the attached RPC operates on
 and the file attributes remain in the same location as for the NFS RPC reply
 structure.
 .ip \(bu
-Write and Setattr RPCs
+Three additional "stat" values
 .pp
-The Write and Setattr RPCs return a modified "attrstat" with a "modifyrev"
-added
+Three additional values have been added to the enumerated type "stat".
 .(l
-        union modattrstat switch (stat status) {
-        case NFS_OK:
-                union getleaserequestres piggy;
-                fattr attributes;
-                modifyrev rev;
-        default:
-                void;
-        };
+        NQNFS_EXPIRED=500
+        NQNFS_TRYLATER=501
+        NQNFS_AUTHERR=502
 .)l
-.lp
-Note that I have included the "getleaserequestres" union in the above
-as it is positioned in all NQNFS RPC replies.
-Also, the modifyrev in "piggy" will not be the same as "rev", since
-any piggybacked lease is acquired before the write operation.
-.ip \(bu
-An additional "stat" value
-.pp
-An additional value has been added to the enumerated type "stat"
-NQNFS_TRYAGAINLATER=501.
-This value is returned by the server when it wishes the client to retry the
+The "expired" value indicates that a lease has expired.
+The "try later"
+value is returned by the server when it wishes the client to retry the
 RPC request after a short delay. It is used during crash recovery (Section 2)
 and may also be useful for server congestion control.
+The "authetication error" value is returned for kerberized mount points to
+indicate that there is no cached authentication mapping and a Kerberos ticket
+for the principal is required.
 .sh 2 "Data Types"
 .ip \(bu
 cachetype
@@ -319,6 +376,127 @@ modifyrev
 .)l
 The "modifyrev" is a unsigned quadword integer value that is never zero
 and increases every time the corresponding file is modified on the server.
+.ip \(bu
+nqnfs_time
+.(l
+        struct nqnfs_time {
+                unsigned seconds;
+                unsigned nano_seconds;
+        };
+.)l
+For NQNFS times are handled at nano second resolution instead of micro second
+resolution for NFS.
+.ip \(bu
+nqnfs_fattr
+.(l
+        struct nqnfs_fattr {
+                ftype type;
+                unsigned mode;
+                unsigned nlink;
+                unsigned uid;
+                unsigned gid;
+                unsigned hyper size;
+                unsigned blocksize;
+                unsigned rdev;
+                unsigned hyper bytes;
+                unsigned fsid;
+                unsigned fileid;
+                nqnfs_time atime;
+                nqnfs_time mtime;
+                nqnfs_time ctime;
+                unsigned flags;
+                unsigned generation;
+                modifyrev rev;
+        };
+.)l
+The nqnfs_fattr structure is modified from the NFS fattr so that it stores
+the file size as a 64bit quantity and the storage occupied as a 64bit number
+of bytes. It also has fields added for the 4.4BSD va_flags and va_gen fields
+as well as the file's modify rev level.
+.ip \(bu
+nqnfs_sattr
+.(l
+        struct nqnfs_sattr {
+                unsigned mode;
+                unsigned uid;
+                unsigned gid;
+                unsigned hyper size;
+                nqnfs_time atime;
+                nqnfs_time mtime;
+                unsigned flags;
+                unsigned rdev;
+        };
+.)l
+The nqnfs_sattr structure is modified from the NFS sattr structure in the
+same manner as fattr.
+.lp
+The arguments to several of the NFS RPCs have been modified as well. Mostly,
+these are minor changes to use 64bit file offsets or similar. The modified
+argument structures follow.
+.ip \(bu
+Lookup RPC
+.(l
+        struct lookup_diropargs {
+                unsigned duration;
+                fhandle dir;
+                filename name;
+        };
+
+        union lookup_diropres switch (stat status) {
+        case NFS_OK:
+                struct {
+                        union getleaserequestres lookup_lease;
+                        fhandle file;
+                        nqnfs_fattr attributes;
+                } lookup_diropok;
+        default:
+                void;
+        };
+
+.)l
+The additional "duration" argument tells the server to get a lease for the
+name being looked up if it is non-zero and the lease is specified
+in "lookup_lease".
+.ip \(bu
+Read RPC
+.(l
+        struct nqnfs_readargs {
+                fhandle file;
+                unsigned hyper offset;
+                unsigned count;
+        };
+.)l
+.ip \(bu
+Write RPC
+.(l
+        struct nqnfs_writeargs {
+                fhandle file;
+                unsigned hyper offset;
+                bool append;
+                nfsdata data;
+        };
+.)l
+The "append" argument is true for apeend only write operations.
+.ip \(bu
+Get Filesystem Attributes RPC
+.(l
+        union nqnfs_statfsres (stat status) {
+        case NFS_OK:
+                struct {
+                        unsigned tsize;
+                        unsigned bsize;
+                        unsigned blocks;
+                        unsigned bfree;
+                        unsigned bavail;
+                        unsigned files;
+                        unsigned files_free;
+                } info;
+        default:
+                void;
+        };
+.)l
+The "files" field is the number of files in the file system and the "files_free"
+is the number of additional files that can be created.
 .sh 1 "Summary"
 .pp
 The configuration and tuning of an NFS environment tends to be a bit of a

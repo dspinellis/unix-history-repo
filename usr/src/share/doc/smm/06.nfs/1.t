@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)1.t	5.2 (Berkeley) %G%
+.\"	@(#)1.t	5.3 (Berkeley) %G%
 .\"
 .sh 1 "NFS Implementation"
 .pp
@@ -212,7 +212,7 @@ fragments must be received within a fairly short ``time to live''.
 If one fragment is lost/damaged in transit,
 the entire RPC must be retransmitted and redone.
 This problem can be exaggerated by a network interface on the receiver that
-cannot handle the reception of back to back network packets. [Kent87]
+cannot handle the reception of back to back network packets. [Kent87a]
 .pp
 There are several tuning mount
 options on the client side that can prove useful when trying to
@@ -288,7 +288,7 @@ than NFS over UDP
 unless the client or server processor runs at less than 5-10MIPS. For a
 slow processor, the extra CPU overhead of using TCP transport will become
 significant and TCP transport may only be useful when the client
-to server interconnect traverses congestions gateways.
+to server interconnect traverses congested gateways.
 The main problem with using TCP transport is that it is only supported
 between BSD clients and servers.\**
 .(f
