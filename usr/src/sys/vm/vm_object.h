@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_object.h	8.1 (Berkeley) %G%
+ *	@(#)vm_object.h	8.2 (Berkeley) %G%
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -43,6 +43,7 @@
 #ifndef	_VM_OBJECT_
 #define	_VM_OBJECT_
 
+#include <vm/vm_page.h>
 #include <vm/vm_pager.h>
 
 /*
@@ -52,8 +53,8 @@
  */
 
 struct vm_object {
-	queue_chain_t		memq;		/* Resident memory */
-	queue_chain_t		object_list;	/* list of all objects */
+	struct pglist		memq;		/* Resident memory */
+	TAILQ_ENTRY(vm_object)	object_list;	/* list of all objects */
 	u_short			flags;		/* see below */
 	u_short			paging_in_progress; /* Paging (in or out) so
 						    don't collapse or destroy */
@@ -68,7 +69,7 @@ struct vm_object {
 	vm_offset_t		paging_offset;	/* Offset into paging space */
 	struct vm_object	*shadow;	/* My shadow */
 	vm_offset_t		shadow_offset;	/* Offset in shadow */
-	queue_chain_t		cached_list;	/* for persistence */
+	TAILQ_ENTRY(vm_object)	cached_list;	/* for persistence */
 };
 /*
  * Flags
@@ -77,19 +78,23 @@ struct vm_object {
 #define OBJ_INTERNAL	0x0002	/* internally created object */
 #define OBJ_ACTIVE	0x0004	/* used to mark active objects */
 
+TAILQ_HEAD(vm_object_hash_head, vm_object_hash_entry);
+
 struct vm_object_hash_entry {
-	queue_chain_t		hash_links;	/* hash chain links */
-	vm_object_t		object;		/* object we represent */
+	TAILQ_ENTRY(vm_object_hash_entry)  hash_links;	/* hash chain links */
+	vm_object_t			   object;	/* object represened */
 };
 
 typedef struct vm_object_hash_entry	*vm_object_hash_entry_t;
 
 #ifdef	KERNEL
-queue_head_t	vm_object_cached_list;	/* list of objects persisting */
+TAILQ_HEAD(object_q, vm_object);
+
+struct object_q	vm_object_cached_list;	/* list of objects persisting */
 int		vm_object_cached;	/* size of cached list */
 simple_lock_data_t	vm_cache_lock;	/* lock for object cache */
 
-queue_head_t	vm_object_list;		/* list of allocated objects */
+struct object_q	vm_object_list;		/* list of allocated objects */
 long		vm_object_count;	/* count of all objects */
 simple_lock_data_t	vm_object_list_lock;
 					/* lock for object list and count */
