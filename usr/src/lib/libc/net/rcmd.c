@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)rcmd.c	5.26 (Berkeley) %G%";
+static char sccsid[] = "@(#)rcmd.c	5.27 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -40,7 +40,8 @@ rcmd(ahost, rport, locuser, remuser, cmd, fd2p)
 	struct sockaddr_in sin, from;
 	fd_set reads;
 	long oldmask;
-	int s, lport, pid, timo;
+	pid_t pid;
+	int s, lport, timo;
 	char c;
 
 	pid = getpid();
@@ -159,7 +160,7 @@ rcmd(ahost, rport, locuser, remuser, cmd, fd2p)
 	}
 	if (c != 0) {
 		while (read(s, &c, 1) == 1) {
-			(void) write(2, &c, 1);
+			(void)write(STDERR_FILENO, &c, 1);
 			if (c == '\n')
 				break;
 		}
@@ -190,7 +191,7 @@ rresvport(alport)
 		return (-1);
 	for (;;) {
 		sin.sin_port = htons((u_short)*alport);
-		if (bind(s, (struct sockaddr *)&sin, sizeof (sin)) >= 0)
+		if (bind(s, (struct sockaddr *)&sin, sizeof(sin)) >= 0)
 			return (s);
 		if (errno != EADDRINUSE) {
 			(void)close(s);
