@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)kern_resource.c	7.13 (Berkeley) 5/9/91
- *	$Id$
+ *	$Id: kern_resource.c,v 1.5 1993/10/16 15:24:26 rgrimes Exp $
  */
 
 #include "param.h"
@@ -333,7 +333,7 @@ ruadd(ru, ru2)
 	if (ru->ru_maxrss < ru2->ru_maxrss)
 		ru->ru_maxrss = ru2->ru_maxrss;
 	ip = &ru->ru_first; ip2 = &ru2->ru_first;
-	for (i = &ru->ru_last - &ru->ru_first; i > 0; i--)
+	for (i = &ru->ru_last - &ru->ru_first; i >= 0; i--)	/* Yuval fix */
 		*ip++ += *ip2++;
 }
 
