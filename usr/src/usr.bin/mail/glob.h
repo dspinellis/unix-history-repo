@@ -4,7 +4,7 @@
  */
 
 /*
- * Sccs Id = "@(#)glob.h	1.1 %G%";
+ * Sccs Id = "@(#)glob.h	1.2 %G%";
  */
 
 int	msgCount;			/* Count of messages read in */
@@ -17,10 +17,12 @@ char	nosrc;				/* Don't source /usr/lib/Mail.rc */
 int	selfsent;			/* User sent self something */
 int	senderr;			/* An error while checking */
 int	edit;				/* Indicates editing a file */
+int	readonly;			/* Will be unable to rewrite file */
 int	noreset;			/* String resets suspended */
 int	sourcing;			/* Currently reading variant file */
 FILE	*itf;				/* Input temp file buffer */
 FILE	*otf;				/* Output temp file buffer */
+FILE	*pipef;				/* Pipe file we have opened */
 int	image;				/* File descriptor for image of msg */
 FILE	*input;				/* Current command input file */
 char	*editfile;			/* Name of file being edited */
