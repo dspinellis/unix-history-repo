@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rm.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)rm.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -117,9 +117,13 @@ rmtree(argv)
 	while (p = fts_read(fts)) {
 		switch (p->fts_info) {
 		case FTS_DNR:
+			if (!fflag || errno != ENOENT) {
+				warn("%s", p->fts_path);
+				eval = 1;
+			}
+			continue;
 		case FTS_ERR:
 			err(1, "%s", p->fts_path);
-
 		case FTS_NS:
 			/*
 			 * FTS_NS: assume that if can't stat the file, it
@@ -132,7 +136,6 @@ rmtree(argv)
 				eval = 1;
 			}
 			continue;
-
 		case FTS_D:
 			/* Pre-order: give user chance to skip. */
 			if (iflag && !check(p->fts_path, p->fts_accpath,
@@ -141,14 +144,12 @@ rmtree(argv)
 				p->fts_number = SKIPPED;
 			}
 			continue;
-
 		case FTS_DP:
 			/* Post-order: see if user skipped. */
 			if (p->fts_number == SKIPPED)
 				continue;
 			break;
 		}
-
 		if (!fflag &&
 		    !check(p->fts_path, p->fts_accpath, p->fts_statp))
 			continue;
