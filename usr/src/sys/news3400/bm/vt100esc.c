@@ -9,7 +9,7 @@
  *
  * from: $Hdr: vt100esc.c,v 4.300 91/06/09 06:14:59 root Rel41 $ SONY
  *
- *	@(#)vt100esc.c	7.2 (Berkeley) %G%
+ *	@(#)vt100esc.c	7.3 (Berkeley) %G%
  */
 
 /*
@@ -120,6 +120,8 @@ struct	key_pad	key_pad[] = {
 static	char	esc_buf[ESC_BUF_SIZ];
 static	char	*esc_bp = esc_buf;
 extern	char	c_pos_mess[];
+
+static change_csr_key_pad(), change_aux_key_pad(), itoa();
 
 Key_string	key_str;
 Pfk_string	pfk_str;
