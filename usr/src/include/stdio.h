@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)stdio.h	5.23 (Berkeley) %G%
+ *	@(#)stdio.h	5.24 (Berkeley) %G%
  */
 
 #ifndef	_STDIO_H_
@@ -261,6 +261,7 @@ int	 snprintf __P((char *, size_t, const char *, ...));
 int	 vsnprintf __P((char *, size_t, const char *, _BSD_VA_LIST_));
 int	 vscanf __P((const char *, _BSD_VA_LIST_));
 int	 vsscanf __P((const char *, const char *, _BSD_VA_LIST_));
+FILE	*zopen __P((const char *, const char *, int));
 __END_DECLS
 
 /*
