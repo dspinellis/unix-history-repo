@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)exp.c	4.2 (Berkeley) %G%";
+static	char *sccsid = "@(#)exp.c	4.3 (Berkeley) %G%";
 #endif
 
 #include "sh.h"
@@ -346,6 +346,8 @@ exp6(vp, ignore)
 	int ccode, i;
 	register char *cp, *dp, *ep;
 
+	if (**vp == 0)
+		bferr("Expression syntax");
 	if (eq(**vp, "!")) {
 		(*vp)++;
 		cp = exp6(vp, ignore);
