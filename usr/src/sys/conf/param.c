@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)param.c	7.15 (Berkeley) %G%
+ *	@(#)param.c	7.16 (Berkeley) %G%
  */
 
 #ifndef lint
@@ -13,21 +13,21 @@ char copyright[] =
  All rights reserved.\n";
 #endif not lint
 
-#include "../sys/param.h"
-#include "../sys/systm.h"
-#include "../sys/socket.h"
-#include "../sys/user.h"
-#include "../sys/proc.h"
-#include "../sys/vnode.h"
-#include "../sys/file.h"
-#include "../sys/callout.h"
-#include "../sys/clist.h"
-#include "../sys/mbuf.h"
-#include "../ufs/quota.h"
-#include "../sys/kernel.h"
+#include "sys/param.h"
+#include "sys/systm.h"
+#include "sys/socket.h"
+#include "sys/user.h"
+#include "sys/proc.h"
+#include "sys/vnode.h"
+#include "sys/file.h"
+#include "sys/callout.h"
+#include "sys/clist.h"
+#include "sys/mbuf.h"
+#include "ufs/quota.h"
+#include "sys/kernel.h"
 #ifdef SYSVSHM
 #include "machine/vmparam.h"
-#include "../sys/shm.h"
+#include "sys/shm.h"
 #endif
 
 /*
