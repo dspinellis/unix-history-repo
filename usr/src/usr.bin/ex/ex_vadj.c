@@ -115,7 +115,15 @@ vreopen(p, lineno, l)
 	 *		necessary to determine which way to go.
 	 */
 	vigoto(p, 0);
+#ifdef TRACE
+	if (trace)
+		fprintf(trace, "before pline in vreopen\n");
+#endif
 	pline(lineno);
+#ifdef TRACE
+	if (trace)
+		fprintf(trace, "after pline in vreopen\n");
+#endif
 
 	/*
 	 * When we are typing part of a line for hardcopy open, don't
@@ -362,8 +370,8 @@ vrollup(dl)
 	cnt = dl - (splitw ? WECHO : WBOT);
 	if (splitw && (state == VISUAL || state == CRTOPEN))
 		holdupd = 1;
-	vscroll(cnt);
 	vmoveitup(cnt, 1);
+	vscroll(cnt);
 	destline = dl - cnt, destcol = dc;
 }
 

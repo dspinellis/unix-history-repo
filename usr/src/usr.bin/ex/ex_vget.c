@@ -63,6 +63,11 @@ getbr()
 	char ch;
 	register int c, d;
 	register char *colp;
+#define BEEHIVE
+#ifdef BEEHIVE
+	static char Peek2key;
+#endif
+	extern short slevel, ttyindes;
 
 getATTN:
 	if (Peekkey) {
@@ -70,6 +75,13 @@ getATTN:
 		Peekkey = 0;
 		return (c);
 	}
+#ifdef BEEHIVE
+	if (Peek2key) {
+		c = Peek2key;
+		Peek2key = 0;
+		return (c);
+	}
+#endif
 	if (vglobp) {
 		if (*vglobp)
 			return (lastvgk = *vglobp++);
@@ -84,15 +96,36 @@ getATTN:
 		if (inopen == -1)	/* don't screw up undo for esc esc */
 			vundkind = VMANY;
 		inopen = 1;	/* restore old setting now that macro done */
+		vch_mac = VC_NOTINMAC;
 	}
 	flusho();
 again:
-	if (read(0, &ch, 1) != 1) {
+	if (read(slevel == 0 ? 0 : ttyindes, &ch, 1) != 1) {
 		if (errno == EINTR)
 			goto getATTN;
 		error("Input read error");
 	}
 	c = ch & TRIM;
+#ifdef BEEHIVE
+	if (XB && slevel==0 && c == ESCAPE) {
+		if (read(0, &Peek2key, 1) != 1)
+			goto getATTN;
+		Peek2key &= TRIM;
+		switch (Peek2key) {
+		case 'C':	/* SPOW mode sometimes sends \EC for space */
+			c = ' ';
+			Peek2key = 0;
+			break;
+		case 'q':	/* f2 -> ^C */
+			c = CTRL(c);
+			Peek2key = 0;
+			break;
+		case 'p':	/* f1 -> esc */
+			Peek2key = 0;
+			break;
+		}
+	}
+#endif
 
 #ifdef UCVISUAL
 	/*
@@ -218,6 +251,8 @@ readecho(c)
 	}
 	OP = Pline; Pline = normline;
 	ignore(vgetline(0, genbuf + 1, &waste));
+	if (Outchar == termchar)
+		putchar('\n');
 	vscrap();
 	Pline = OP;
 	if (Peekkey != ATTN && Peekkey != QUIT && Peekkey != CTRL(h)) {
@@ -243,7 +278,7 @@ blewit:
 setLAST()
 {
 
-	if (vglobp)
+	if (vglobp || vmacp)
 		return;
 	lastreg = vreg;
 	lasthad = Xhadcnt;
@@ -387,12 +422,19 @@ map(c,maps)
 	if (trace)
 		fprintf(trace,"map(%c): ",c);
 #endif
+	/*
+	 * If c==0, the char came from getesc typing escape.  Pass it through
+	 * unchanged.  0 messes up the following code anyway.
+	 */
+	if (c==0)
+		return(0);
+
 	b[0] = c;
 	b[1] = 0;
 	for (d=0; maps[d].mapto; d++) {
 #ifdef MDEBUG
 		if (trace)
-			fprintf(trace,"d=%d, ",d);
+			fprintf(trace,"\ntry '%s', ",maps[d].cap);
 #endif
 		if (p = maps[d].cap) {
 			for (q=b; *p; p++, q++) {
@@ -402,6 +444,8 @@ map(c,maps)
 #endif
 				if (*q==0) {
 					/*
+					 * Is there another char waiting?
+					 *
 					 * This test is oversimplified, but
 					 * should work mostly. It handles the
 					 * case where we get an ESCAPE that
@@ -410,9 +454,13 @@ map(c,maps)
 					if ((c=='#' ? peekkey() : fastpeekkey()) == 0) {
 #ifdef MDEBUG
 						if (trace)
-							fprintf(trace,"fpk=0: return %c",c);
+							fprintf(trace,"fpk=0: return '%c'",c);
 #endif
 						/*
+						 * Nothing waiting.  Push back
+						 * what we peeked at & return
+						 * failure (c).
+						 *
 						 * We want to be able to undo
 						 * commands, but it's nonsense
 						 * to undo part of an insertion
@@ -427,11 +475,11 @@ map(c,maps)
 				if (*p != *q)
 					goto contin;
 			}
-			macpush(maps[d].mapto,1);
+			macpush(maps[d].mapto,maps == arrows);
 			c = getkey();
 #ifdef MDEBUG
-	if (trace)
-		fprintf(trace,"Success: return %c",c);
+			if (trace)
+				fprintf(trace,"Success: push(%s), return %c",maps[d].mapto, c);
 #endif
 			return(c);	/* first char of map string */
 			contin:;
@@ -439,7 +487,7 @@ map(c,maps)
 	}
 #ifdef MDEBUG
 	if (trace)
-		fprintf(trace,"Fail: return %c",c); /* DEBUG */
+		fprintf(trace,"Fail: push(%s), return %c", &b[1], c);
 #endif
 	macpush(&b[1],0);
 	return(c);
@@ -462,11 +510,13 @@ int canundo;
 
 	if (st==0 || *st==0)
 		return;
+#ifdef notdef
 	if (!value(UNDOMACRO))
 		canundo = 0;
+#endif
 #ifdef TRACE
 	if (trace)
-		fprintf(trace, "macpush(%s), canundo=%d",st,canundo);
+		fprintf(trace, "macpush(%s), canundo=%d\n",st,canundo);
 #endif
 	if ((vmacp ? strlen(vmacp) : 0) + strlen(st) > BUFSIZ)
 		error("Macro too long@ - maybe recursive?");
@@ -481,20 +531,50 @@ int canundo;
 	vmacp = vmacbuf;
 	/* arrange to be able to undo the whole macro */
 	if (canundo) {
+#ifdef notdef
 		otchng = tchng;
 		vsave();
 		saveall();
 		inopen = -1;	/* no need to save since it had to be 1 or -1 before */
 		vundkind = VMANY;
+#endif
+		vch_mac = VC_NOCHANGE;
 	}
 }
 
 #ifdef TRACE
+visdump(s)
+char *s;
+{
+	register int i;
+
+	if (!trace) return;
+
+	fprintf(trace, "\n%s: basWTOP=%d, basWLINES=%d, WTOP=%d, WBOT=%d, WLINES=%d, WCOLS=%d, WECHO=%d\n",
+		s, basWTOP, basWLINES, WTOP, WBOT, WLINES, WCOLS, WECHO);
+	fprintf(trace, "   vcnt=%d, vcline=%d, cursor=%d, wcursor=%d, wdot=%d\n",
+		vcnt, vcline, cursor-linebuf, wcursor-linebuf, wdot-zero);
+	for (i=0; i<TUBELINES; i++)
+		if (vtube[i] && *vtube[i])
+			fprintf(trace, "%d: '%s'\n", i, vtube[i]);
+	tvliny();
+}
+
 vudump(s)
 char *s;
 {
-	if (trace)
-		fprintf(trace, "%s: undkind=%d, vundkind=%d, unddel=%d, undap1=%d, undap2=%d, dot=%d, dol=%d, unddol=%d, truedol=%d\n", s, undkind, vundkind, lineno(unddel), lineno(undap1), lineno(undap2), lineno(dot), lineno(dol), lineno(unddol), lineno(truedol));
+	register line *p;
+
+	if (!trace) return;
+
+	fprintf(trace, "\n%s: undkind=%d, vundkind=%d, unddel=%d, undap1=%d, undap2=%d,\n",
+		s, undkind, vundkind, lineno(unddel), lineno(undap1), lineno(undap2));
+	fprintf(trace, "  undadot=%d, dot=%d, dol=%d, unddol=%d, truedol=%d\n",
+		lineno(undadot), lineno(dot), lineno(dol), lineno(unddol), lineno(truedol));
+	fprintf(trace, "  [");
+	for (p=zero+1; p<=truedol; p++)
+		fprintf(trace, "%o ", *p);
+	fprintf(trace, "]\n");
 }
 #endif
 

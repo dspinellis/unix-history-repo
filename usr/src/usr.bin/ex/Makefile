@@ -1,4 +1,4 @@
-VERSION=3.3
+VERSION=3.4
 #
 # Ex skeletal makefile for version 7
 #
@@ -41,7 +41,7 @@ CXREF=	${BINDIR}/cxref
 INCLUDE=/usr/include
 PR=	pr
 OBJS=	ex.o ex_addr.o ex_cmds.o ex_cmds2.o ex_cmdsub.o ex_data.o ex_get.o \
-	ex_io.o ex_put.o ex_re.o ex_set.o ex_subr.o ex_temp.o ex_tty.o \
+	ex_io.o ex_put.o ex_re.o ex_set.o ex_subr.o ex_temp.o ex_tty.o ex_unix.o \
 	ex_v.o ex_vadj.o ex_vget.o ex_vmain.o ex_voperate.o \
 	ex_vops.o ex_vops2.o ex_vops3.o ex_vput.o ex_vwind.o \
 	printf.o strings.o
@@ -91,15 +91,17 @@ clean:
 	-rm -f *.o x*.[cs]
 
 ninstall: a.out
-	-rm -f ${NBINDIR}/ex ${NBINDIR}/vi
+	-rm -f ${NBINDIR}/ex ${NBINDIR}/vi ${DESTDIR}${NBINDIR}/view
 	cp a.out ${NBINDIR}/ex
 #	-cp ex${VERSION}strings ${LIBDIR}/ex${VERSION}strings
 	ln ${NBINDIR}/ex ${NBINDIR}/vi
+	ln ${DESTDIR}${NBINDIR}/ex ${DESTDIR}${NBINDIR}/view
 	chmod 1755 ${NBINDIR}/ex
 
 install: a.out exrecover expreserve
 	-rm -f ${DESTDIR}${BINDIR}/ex
 	-rm -f ${DESTDIR}${BINDIR}/vi
+	-rm -f ${DESTDIR}${BINDIR}/view
 	-rm -f ${DESTDIR}${BINDIR}/edit
 	-rm -f ${DESTDIR}${BINDIR}/e
 	-rm -f ${DESTDIR}/usr/bin/ex
@@ -108,6 +110,7 @@ install: a.out exrecover expreserve
 	ln ${DESTDIR}${BINDIR}/ex ${DESTDIR}${BINDIR}/edit
 	ln ${DESTDIR}${BINDIR}/ex ${DESTDIR}${BINDIR}/e
 	ln ${DESTDIR}${BINDIR}/ex ${DESTDIR}${BINDIR}/vi
+	ln ${DESTDIR}${BINDIR}/ex ${DESTDIR}${BINDIR}/view
 	ln ${DESTDIR}${BINDIR}/ex ${DESTDIR}/usr/bin/ex
 	chmod 1755 ${DESTDIR}${BINDIR}/ex
 	cp exrecover ${DESTDIR}${LIBDIR}/ex${VERSION}recover

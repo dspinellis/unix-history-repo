@@ -137,6 +137,8 @@ getblock(atl, iof)
 	int iof;
 {
 	register int bno, off;
+        register char *p1, *p2;
+        register int n;
 	
 	bno = (atl >> OFFBTS) & BLKMSK;
 	off = (atl << SHFT) & LBTMSK;
@@ -157,24 +159,48 @@ getblock(atl, iof)
 		return (obuff + off);
 	if (iof == READ) {
 		if (hitin2 == 0) {
-			if (ichang2)
+			if (ichang2) {
+				if(xtflag)
+					crblock(tperm, ibuff2, CRSIZE, (long)0);
 				blkio(iblock2, ibuff2, write);
+			}
 			ichang2 = 0;
 			iblock2 = bno;
 			blkio(bno, ibuff2, read);
+			if(xtflag)
+				crblock(tperm, ibuff2, CRSIZE, (long)0);
 			hitin2 = 1;
 			return (ibuff2 + off);
 		}
 		hitin2 = 0;
-		if (ichanged)
+		if (ichanged) {
+			if(xtflag)
+				crblock(tperm, ibuff, CRSIZE, (long)0);
 			blkio(iblock, ibuff, write);
+		}
 		ichanged = 0;
 		iblock = bno;
 		blkio(bno, ibuff, read);
+		if(xtflag)
+			crblock(tperm, ibuff, CRSIZE, (long)0);
 		return (ibuff + off);
 	}
-	if (oblock >= 0)
-		blkio(oblock, obuff, write);
+	if (oblock >= 0) {
+		if(xtflag) {
+			/*
+			 * Encrypt block before writing, so some devious
+			 * person can't look at temp file while editing.
+			 */
+			p1 = obuff;
+			p2 = crbuf;
+			n = CRSIZE;
+			while(n--)
+				*p2++ = *p1++;
+			crblock(tperm, crbuf, CRSIZE, (long)0);
+			blkio(oblock, crbuf, write);
+		} else
+			blkio(oblock, obuff, write);
+	}
 	oblock = bno;
 	return (obuff + off);
 }
@@ -217,6 +243,8 @@ synctmp()
 		if (*bp < 0) {
 			tline = (tline + OFFMSK) &~ OFFMSK;
 			*bp = ((tline >> OFFBTS) & BLKMSK);
+			if (*bp > NMBLKS)
+				error(" Tmp file too large");
 			tline += INCRMT;
 			oblock = *bp + 1;
 			bp[1] = -1;
@@ -572,4 +600,148 @@ int buflen;
 	if (partreg(c)) p--;
 	*p = '\0';
 	getDOT();
+}
+
+/*
+ * Encryption routines.  These are essentially unmodified from ed.
+ */
+
+/*
+ * crblock: encrypt/decrypt a block of text.
+ * buf is the buffer through which the text is both input and
+ * output. nchar is the size of the buffer. permp is a work
+ * buffer, and startn is the beginning of a sequence.
+ */
+crblock(permp, buf, nchar, startn)
+char *permp;
+char *buf;
+int nchar;
+long startn;
+{
+	register char *p1;
+	int n1;
+	int n2;
+	register char *t1, *t2, *t3;
+
+	t1 = permp;
+	t2 = &permp[256];
+	t3 = &permp[512];
+
+	n1 = startn&0377;
+	n2 = (startn>>8)&0377;
+	p1 = buf;
+	while(nchar--) {
+		*p1 = t2[(t3[(t1[(*p1+n1)&0377]+n2)&0377]-n2)&0377]-n1;
+		n1++;
+		if(n1==256){
+			n1 = 0;
+			n2++;
+			if(n2==256) n2 = 0;
+		}
+		p1++;
+	}
+}
+
+/*
+ * makekey: initialize buffers based on user key a.
+ */
+makekey(a, b)
+char *a, *b;
+{
+       register int i;
+	long t;
+	char temp[KSIZE + 1];
+
+	for(i = 0; i < KSIZE; i++)
+		temp[i] = *a++;
+	time(&t);
+	t += getpid();
+	for(i = 0; i < 4; i++)
+		temp[i] ^= (t>>(8*i))&0377;
+	crinit(temp, b);
+}
+
+/*
+ * crinit: besides initializing the encryption machine, this routine
+ * returns 0 if the key is null, and 1 if it is non-null.
+ */
+crinit(keyp, permp)
+char    *keyp, *permp;
+{
+       register char *t1, *t2, *t3;
+	register i;
+	int ic, k, temp;
+	unsigned random;
+	char buf[13];
+	long seed;
+
+	t1 = permp;
+	t2 = &permp[256];
+	t3 = &permp[512];
+	if(*keyp == 0)
+		return(0);
+	strncpy(buf, keyp, 8);
+	while (*keyp)
+		*keyp++ = '\0';
+
+	buf[8] = buf[0];
+	buf[9] = buf[1];
+	domakekey(buf);
+
+	seed = 123;
+	for (i=0; i<13; i++)
+		seed = seed*buf[i] + i;
+	for(i=0;i<256;i++){
+		t1[i] = i;
+		t3[i] = 0;
+	}
+	for(i=0; i<256; i++) {
+		seed = 5*seed + buf[i%13];
+		random = seed % 65521;
+		k = 256-1 - i;
+		ic = (random&0377) % (k+1);
+		random >>= 8;
+		temp = t1[k];
+		t1[k] = t1[ic];
+		t1[ic] = temp;
+		if(t3[k]!=0) continue;
+		ic = (random&0377) % k;
+		while(t3[ic]!=0) ic = (ic+1) % k;
+		t3[k] = ic;
+		t3[ic] = k;
+	}
+	for(i=0; i<256; i++)
+		t2[t1[i]&0377] = i;
+	return(1);
+}
+
+/*
+ * domakekey: the following is the major nonportable part of the encryption
+ * mechanism. A 10 character key is supplied in buffer.
+ * This string is fed to makekey (an external program) which
+ * responds with a 13 character result. This result is placed
+ * in buffer.
+ */
+domakekey(buffer)
+char *buffer;
+{
+       int pf[2];
+
+	if (pipe(pf)<0)
+		pf[0] = pf[1] = -1;
+	if (fork()==0) {
+		close(0);
+		close(1);
+		dup(pf[0]);
+		dup(pf[1]);
+		execl("/usr/lib/makekey", "-", 0);
+		execl("/lib/makekey", "-", 0);
+		exit(1);
+	}
+	write(pf[1], buffer, 10);
+	if (wait((int *)NULL)==-1 || read(pf[0], buffer, 13)!=13)
+		error("crypt: cannot generate key");
+	close(pf[0]);
+	close(pf[1]);
+	/* end of nonportable part */
 }

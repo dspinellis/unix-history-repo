@@ -52,6 +52,8 @@ char	tttrace[]	= { '/','d','e','v','/','t','t','y','x','x',0 };
  *			data base, grabbing of tty modes (at beginning
  *			and after escapes).
  *
+ * ex_unix.c		Routines for the ! command and its variations.
+ *
  * ex_v*.c		Visual/open mode routines... see ex_v.c for a
  *			guide to the overall organization.
  */
@@ -59,12 +61,11 @@ char	tttrace[]	= { '/','d','e','v','/','t','t','y','x','x',0 };
 /*
  * Main procedure.  Process arguments and then
  * transfer control to the main command processing loop
- * in the routine commands.  We are entered as either "ex", "edit" or "vi"
- * and the distinction is made here.  Actually, we are "vi" if
- * there is a 'v' in our name, and "edit" if there is a 'd' in our
- * name.  For edit we just diddle options; for vi we actually
- * force an early visual command, setting the external initev so
- * the q command in visual doesn't give command mode.
+ * in the routine commands.  We are entered as either "ex", "edit", "vi"
+ * or "view" and the distinction is made here.  Actually, we are "vi" if
+ * there is a 'v' in our name, "view" is there is a 'w', and "edit" if
+ * there is a 'd' in our name.  For edit we just diddle options;
+ * for vi we actually force an early visual command.
  */
 main(ac, av)
 	register int ac;
@@ -88,33 +89,37 @@ main(ac, av)
 	 * get messed up if an interrupt comes in quickly.
 	 */
 	gTTY(1);
+#ifndef USG3TTY
 	normf = tty.sg_flags;
+#else
+	normf = tty;
+#endif
 	ppid = getpid();
 	/*
-	 * Defend against d's, v's, and a's in directories of
+	 * Defend against d's, v's, w's, and a's in directories of
 	 * path leading to our true name.
 	 */
 	av[0] = tailpath(av[0]);
-	ivis = any('v', av[0]);
 
 	/*
-	 * For debugging take files out of . if name is a.out.
-	 * If a 'd' in our name, then set options for edit.
+	 * Figure out how we were invoked: ex, edit, vi, view.
 	 */
-#ifndef VMUNIX
-	if (av[0][0] == 'a')
-		erpath = tailpath(erpath);
-#endif
-	if (ivis) {
-#ifdef notdef
-		options[BEAUTIFY].odefault = value(BEAUTIFY) = 1;
-#endif
-	} else if (any('d', av[0])) {
+	ivis = any('v', av[0]);	/* "vi" */
+	if (any('w', av[0]))	/* "view" */
+		value(READONLY) = 1;
+	if (any('d', av[0])) {	/* "edit" */
 		value(OPEN) = 0;
 		value(REPORT) = 1;
 		value(MAGIC) = 0;
 	}
 
+#ifndef VMUNIX
+	/*
+	 * For debugging take files out of . if name is a.out.
+	 */
+	if (av[0][0] == 'a')
+		erpath = tailpath(erpath);
+#endif
 	/*
 	 * Open the error message file.
 	 */
@@ -137,6 +142,10 @@ main(ac, av)
 	ruptible = signal(SIGINT, SIG_IGN) == SIG_DFL;
 	if (signal(SIGTERM, SIG_IGN) == SIG_DFL)
 		signal(SIGTERM, onhup);
+#ifdef TIOCLGET
+	if (signal(SIGTSTP, SIG_IGN) == SIG_DFL)
+		signal(SIGTSTP, onsusp), dosusp++;
+#endif
 
 	/*
 	 * Initialize end of core pointers.
@@ -160,6 +169,10 @@ main(ac, av)
 			value(AUTOPRINT) = 0;
 			fast++;
 		} else switch (c) {
+
+		case 'R':
+			value(READONLY) = 1;
+			break;
 
 #ifdef TRACE
 		case 'T':
@@ -212,6 +225,11 @@ main(ac, av)
 				defwind = 10*defwind + *cp - '0';
 			break;
 
+		case 'x':
+			/* -x: encrypted mode */
+			xflag = 1;
+			break;
+
 		default:
 			smerror("Unknown option %s\n", av[0]);
 			break;
@@ -221,6 +239,11 @@ main(ac, av)
 	if (ac && av[0][0] == '+') {
 		firstpat = &av[0][1];
 		ac--, av++;
+	}
+
+	if(xflag){
+		key = getpass(KEYPROMPT);
+		kflag = crinit(key, perm);
 	}
 
 	/*
@@ -258,19 +281,24 @@ main(ac, av)
 		setrupt();
 		intty = isatty(0);
 		value(PROMPT) = intty;
+		if (cp = getenv("SHELL"))
+			CP(shell, cp);
 		if (fast || !intty)
 			setterm("dumb");
 		else {
 			gettmode();
-			if ((cp = getenv("TERM")) != 0)
+			if ((cp = getenv("TERM")) != 0 && *cp)
 				setterm(cp);
 		}
 	}
 	if (setexit() == 0 && !fast && intty)
-		if (globp = getenv("EXINIT"))
+		if ((globp = getenv("EXINIT")) && *globp)
 			commands(1,1);
-		else if ((cp = getenv("HOME")) != 0)
-			source(strcat(strcpy(genbuf, cp), "/.exrc"), 1);
+		else {
+			globp = 0;
+			if ((cp = getenv("HOME")) != 0 && *cp)
+				source(strcat(strcpy(genbuf, cp), "/.exrc"), 1);
+		}
 
 	/*
 	 * Initial processing.  Handle tag, recover, and file argument
@@ -342,9 +370,21 @@ init()
 	undkind = UNDNONE;
 	chng = 0;
 	edited = 0;
+#ifdef USG
+	signal (SIGHUP, SIG_IGN);
+#endif
+#ifdef USG3TTY
+#ifndef USG
+	signal (SIGHUP, SIG_IGN);
+#endif
+#endif
 	for (i = 0; i <= 'z'-'a'+1; i++)
 		names[i] = 1;
 	anymarks = 0;
+        if(xflag) {
+                xtflag = 1;
+                makekey(key, tperm);
+        }
 }
 
 /*
@@ -360,6 +400,11 @@ init()
 onhup()
 {
 
+	/*
+	 * USG tty driver can send multiple HUP's!!
+	 */
+	signal(SIGINT, SIG_IGN);
+	signal(SIGHUP, SIG_IGN);
 	if (chng == 0) {
 		cleanup(1);
 		exit(0);
@@ -410,12 +455,17 @@ onintr()
 setrupt()
 {
 
-	if (ruptible)
+	if (ruptible) {
 #ifndef CBREAK
 		signal(SIGINT, onintr);
 #else
 		signal(SIGINT, inopen ? vintr : onintr);
 #endif
+#ifdef TIOCLGET
+		if (dosusp)
+			signal(SIGTSTP, onsusp);
+#endif
+	}
 }
 
 preserve()

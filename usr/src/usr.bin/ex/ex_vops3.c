@@ -322,11 +322,11 @@ lmatchp(addr)
 	register int i;
 	register char *parens, *cp;
 
-	for (cp = cursor; !any(*cp, "({)}");)
+	for (cp = cursor; !any(*cp, "({[)}]");)
 		if (*cp++ == 0)
 			return (0);
 	lf = 0;
-	parens = any(*cp, "()") ? "()" : "{}";
+	parens = any(*cp, "()") ? "()" : any(*cp, "[]") ? "[]" : "{}";
 	if (*cp == parens[1]) {
 		dir = -1;
 		llimit = one;
@@ -369,6 +369,12 @@ lsmatch(cp)
 		vgoto(l, c);
 		if (i)
 			goim();
+	}
+	else {
+		strcLIN(sp);
+		strcpy(scurs, genbuf);
+		if (!lmatchp((line *) 0))
+			beep();
 	}
 	strcLIN(sp);
 	wdot = 0;
@@ -456,7 +462,7 @@ lnext()
 		if (*wcursor)
 			return (1);
 		if (wdot >= llimit) {
-			if (wcursor > linebuf)
+			if (lf == vmove && wcursor > linebuf)
 				wcursor--;
 			return (0);
 		}

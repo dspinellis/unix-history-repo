@@ -194,12 +194,8 @@ slobber(c)
  * The output buffer is initialized with a useful error
  * message so we don't have to keep it in data space.
  */
-static	char linb[66] = {
-	'E', 'r', 'r', 'o', 'r', ' ', 'm', 'e', 's', 's', 'a', 'g', 'e', ' ',
-	'f', 'i', 'l', 'e', ' ', 'n', 'o', 't', ' ',
-	'a', 'v', 'a', 'i', 'l', 'a', 'b', 'l', 'e', '\n', 0
-};
-static	char *linp = linb + 33;
+static	char linb[66];
+static	char *linp = linb;
 
 /*
  * Phadnl records when we have already had a complete line ending with \n.
@@ -344,8 +340,14 @@ fgoto()
 		if (AM == 0) {
 			while (l > 0) {
 				if (pfast)
-					putch('\r');
-				putch('\n');
+					if (xCR)
+						tputs(xCR, 0, putch);
+					else
+						putch('\r');
+				if (xNL)
+					tputs(xNL, 0, putch);
+				else
+					putch('\n');
 				l--;
 			}
 			outcol = 0;
@@ -366,7 +368,28 @@ fgoto()
 			destcol = c;
 		}
 		while (l > LINES - 1) {
-			putch('\n');
+			/*
+			 * The following linefeed (or simulation thereof)
+			 * is supposed to scroll up the screen, since we
+			 * are on the bottom line.  We make the assumption
+			 * that linefeed will scroll.  If ns is in the
+			 * capability list this won't work.  We should
+			 * probably have an sc capability but sf will
+			 * generally take the place if it works.
+			 *
+			 * Superbee glitch:  in the middle of the screen we
+			 * have to use esc B (down) because linefeed screws up
+			 * in "Efficient Paging" (what a joke) mode (which is
+			 * essential in some SB's because CRLF mode puts garbage
+			 * in at end of memory), but you must use linefeed to
+			 * scroll since down arrow won't go past memory end.
+			 * I turned this off after recieving Paul Eggert's
+			 * Superbee description which wins better.
+			 */
+			if (xNL /* && !XB */ && pfast)
+				tputs(xNL, 0, putch);
+			else
+				putch('\n');
 			l--;
 			if (pfast == 0)
 				outcol = 0;
@@ -423,40 +446,74 @@ plod(cnt)
 	plodcnt = plodflg = cnt;
 	soutcol = outcol;
 	soutline = outline;
+	/*
+	 * Consider homing and moving down/right from there, vs moving
+	 * directly with local motions to the right spot.
+	 */
 	if (HO) {
+		/*
+		 * i is the cost to home and tab/space to the right to
+		 * get to the proper column.  This assumes ND space costs
+		 * 1 char.  So i+destcol is cost of motion with home.
+		 */
 		if (GT)
-		i = (destcol / value(HARDTABS)) + (destcol % value(HARDTABS));
+			i = (destcol / value(HARDTABS)) + (destcol % value(HARDTABS));
 		else
 			i = destcol;
-	if (destcol >= outcol) {
-		j = destcol / value(HARDTABS) - outcol / value(HARDTABS);
-		if (GT && j)
-			j += destcol % value(HARDTABS);
+		/*
+		 * j is cost to move locally without homing
+		 */
+		if (destcol >= outcol) {	/* if motion is to the right */
+			j = destcol / value(HARDTABS) - outcol / value(HARDTABS);
+			if (GT && j)
+				j += destcol % value(HARDTABS);
 			else
 				j = destcol - outcol;
-	} else
+		} else
+			/* leftward motion only works if we can backspace. */
 			if (outcol - destcol <= i && (BS || BC))
-				i = j = outcol - destcol;
+				i = j = outcol - destcol; /* cheaper to backspace */
 			else
-				j = i + 1;
+				j = i + 1; /* impossibly expensive */
+
+		/* k is the absolute value of vertical distance */
 		k = outline - destline;
 		if (k < 0)
 			k = -k;
 		j += k;
-		if (i + destline < j) {
+
+		/*
+		 * Decision.  We may not have a choice if no UP.
+		 */
+		if (i + destline < j || (!UP && destline < outline)) {
+			/*
+			 * Cheaper to home.  Do it now and pretend it's a
+			 * regular local motion.
+			 */
 			tputs(HO, 0, plodput);
 			outcol = outline = 0;
 		} else if (LL) {
+			/*
+			 * Quickly consider homing down and moving from there.
+			 * Assume cost of LL is 2.
+			 */
 			k = (LINES - 1) - destline;
-			if (i + k + 2 < j) {
+			if (i + k + 2 < j && (k<=0 || UP)) {
 				tputs(LL, 0, plodput);
 				outcol = 0;
 				outline = LINES - 1;
 			}
 		}
-	}
+	} else
+	/*
+	 * No home and no up means it's impossible, so we return an
+	 * incredibly big number to make cursor motion win out.
+	 */
+		if (!UP && destline < outline)
+			return (500);
 	if (GT)
-	i = destcol % value(HARDTABS) + destcol / value(HARDTABS);
+		i = destcol % value(HARDTABS)
+		    + destcol / value(HARDTABS);
 	else
 		i = destcol;
 /*
@@ -486,9 +543,19 @@ plod(cnt)
 	 * a return preliminarily.
 	 */
 	if (j > i + 1 || outcol > destcol && !BS && !BC) {
-		plodput('\r');
+		/*
+		 * BUG: this doesn't take the (possibly long) length
+		 * of xCR into account.
+		 */
+		if (xCR)
+			tputs(xCR, 0, plodput);
+		else
+			plodput('\r');
 		if (NC) {
-			plodput('\n');
+			if (xNL)
+				tputs(xNL, 0, plodput);
+			else
+				plodput('\n');
 			outline++;
 		}
 		outcol = 0;
@@ -496,7 +563,10 @@ plod(cnt)
 dontcr:
 	while (outline < destline) {
 		outline++;
-		plodput('\n');
+		if (xNL && pfast)
+			tputs(xNL, 0, plodput);
+		else
+			plodput('\n');
 		if (plodcnt < 0)
 			goto out;
 		if (NONL || pfast == 0)
@@ -529,7 +599,7 @@ dontcr:
 	}
 	if (GT && !insmode && destcol - outcol > 1) {
 	for (;;) {
-		i = (outcol / value(HARDTABS) + 1) * value(HARDTABS);
+		i = tabcol(outcol, value(HARDTABS));
 		if (i > destcol)
 			break;
 			if (TA)
@@ -562,10 +632,6 @@ dontcr:
 		 * a null or a tab we want to print a space.  Other random
 		 * chars we use space for instead, too.
 		 */
-#ifdef TRACE
-		if (trace)
-			fprintf(trace, "ND: inopen=%d, i=%d, outline=%d, outcol=%d\n", inopen, i, outline, outcol);
-#endif
 		if (!inopen || vtube[outline]==NULL ||
 			(i=vtube[outline][outcol]) < ' ')
 			i = ' ';
@@ -668,7 +734,7 @@ putch(c)
 	int c;
 {
 
-	*obp++ = c;
+	*obp++ = c & 0177;
 	if (obp >= &obuf[sizeof obuf])
 		flusho();
 }
@@ -676,16 +742,6 @@ putch(c)
 /*
  * Miscellaneous routines related to output.
  */
-
-/*
- * Cursor motion.
- */
-char *
-cgoto()
-{
-
-	return (tgoto(CM, destcol, destline));
-}
 
 /*
  * Put with padding
@@ -747,7 +803,13 @@ pstart()
 	flusho();
 	pfast = 1;
 	normtty++;
+#ifndef USG3TTY
 	tty.sg_flags = normf & ~(ECHO|XTABS|CRMOD);
+#else
+	tty = normf;
+	tty.c_oflag &= ~(ONLCR|TAB3);
+	tty.c_lflag &= ~ECHO;
+#endif
 	sTTY(1);
 }
 
@@ -769,42 +831,116 @@ pstop()
 /*
  * Prep tty for open mode.
  */
+ttymode
 ostart()
 {
-	int f;
+	ttymode f;
 
 	if (!intty)
 		error("Open and visual must be used interactively");
 	gTTY(1);
 	normtty++;
+#ifndef USG3TTY
 	f = tty.sg_flags;
-#ifdef CBREAK
-	tty.sg_flags = (normf &~ (ECHO|XTABS|CRMOD)) | CBREAK;
+	tty.sg_flags = (normf &~ (ECHO|XTABS|CRMOD)) |
+# ifdef CBREAK
+							CBREAK;
+# else
+							RAW;
+# endif
+# ifdef TIOCGETC
+	ttcharoff();
+# endif
 #else
-	tty.sg_flags = (normf &~ (ECHO|XTABS|CRMOD)) | RAW;
-#endif
-#ifdef EATQS
-	nttyc.t_quitc = nttyc.t_startc = nttyc.t_stopc = '\377';
+	f = tty;
+	tty = normf;
+	tty.c_iflag &= ~ICRNL;
+	tty.c_lflag &= ~(ECHO|ICANON);
+	tty.c_oflag &= ~TAB3;
+	tty.c_cc[VMIN] = 1;
+	tty.c_cc[VTIME] = 1;
+	ttcharoff();
 #endif
 	sTTY(1);
-	putpad(VS);
-	putpad(KS);
+	tostart();
 	pfast |= 2;
 	return (f);
 }
+
+/* actions associated with putting the terminal in open mode */
+tostart()
+{
+	putpad(VS);
+	putpad(KS);
+	if (!value(MESG))
+		chmod(ttynbuf, 0611);	/* 11 = urgent only allowed */
+}
+
+/*
+ * Turn off start/stop chars if they aren't the default ^S/^Q.
+ * This is so idiots who make esc their start/stop don't lose.
+ * We always turn off quit since datamedias send ^\ for their
+ * right arrow key.
+ */
+#ifdef TIOCGETC
+ttcharoff()
+{
+	nttyc.t_quitc = '\377';
+	if (nttyc.t_startc != CTRL(q))
+		nttyc.t_startc = '\377';
+	if (nttyc.t_stopc != CTRL(s))
+		nttyc.t_stopc = '\377';
+# ifdef TIOCLGET
+	nlttyc.t_suspc = '\377';	/* ^Z */
+	nlttyc.t_dsuspc = '\377';	/* ^Y */
+	nlttyc.t_flushc = '\377';	/* ^O */
+	nlttyc.t_lnextc = '\377';	/* ^V */
+# endif
+}
+#endif
+
+#ifdef USG3TTY
+ttcharoff()
+{
+	tty.c_cc[VQUIT] = '\377';
+# ifdef VSTART
+	/*
+	 * The following is sample code if USG ever lets people change
+	 * their start/stop chars.  As long as they can't we can't get
+	 * into trouble so we just leave them alone.
+	 */
+	if (tty.c_cc[VSTART] != CTRL(q))
+		tty.c_cc[VSTART] = '\377';
+	if (tty.c_cc[VSTOP] != CTRL(s))
+		tty.c_cc[VSTOP] = '\377';
+# endif
+}
+#endif
 
 /*
  * Stop open, restoring tty modes.
  */
 ostop(f)
-	int f;
+	ttymode f;
 {
 
+#ifndef USG3TTY
 	pfast = (f & CRMOD) == 0;
+#else
+	pfast = (f.c_oflag & OCRNL) == 0;
+#endif
 	termreset(), fgoto(), flusho();
 	normal(f);
+	tostop();
+}
+
+/* Actions associated with putting the terminal in the right mode. */
+tostop()
+{
 	putpad(VE);
 	putpad(KE);
+	if (!value(MESG))
+		chmod(ttynbuf, ttymesg);
 }
 
 #ifndef CBREAK
@@ -833,7 +969,7 @@ vraw()
  * Restore flags to normal state f.
  */
 normal(f)
-	int f;
+	ttymode f;
 {
 
 	if (normtty > 0) {
@@ -845,18 +981,31 @@ normal(f)
 /*
  * Straight set of flags to state f.
  */
+ttymode
 setty(f)
-	int f;
+	ttymode f;
 {
+#ifndef USG3TTY
 	register int ot = tty.sg_flags;
-
-#ifdef EATQS
-	if (f == normf)
-		nttyc = ottyc;
-	else
-		nttyc.t_quitc = nttyc.t_startc = nttyc.t_stopc = '\377';
+#else
+	ttymode ot;
+	ot = tty;
 #endif
+
+#ifndef USG3TTY
+	if (f == normf) {
+		nttyc = ottyc;
+# ifdef TIOCLGET
+		nlttyc = olttyc;
+# endif
+	} else
+		ttcharoff();
 	tty.sg_flags = f;
+#else
+	if (tty.c_lflag & ICANON)
+		ttcharoff();
+	tty = f;
+#endif
 	sTTY(1);
 	return (ot);
 }
@@ -864,32 +1013,63 @@ setty(f)
 gTTY(i)
 	int i;
 {
+	char *tn;
+	struct stat sbuf;
 
+#ifndef USG3TTY
 	ignore(gtty(i, &tty));
-#ifdef EATQS
+# ifdef TIOCGETC
 	ioctl(i, TIOCGETC, &ottyc);
 	nttyc = ottyc;
+# endif
+# ifdef TIOCLGET
+	ioctl(i, TIOCGLTC, &olttyc);
+	nlttyc = olttyc;
+# endif
+#else
+	ioctl(i, TCGETA, &tty);
 #endif
+	if ((tn=ttyname(0)) == NULL && (tn=ttyname(1)) == NULL && (tn=ttyname(2)) == NULL)
+		tn = "/dev/tty";
+	strcpy(ttynbuf, tn);
+	stat(ttynbuf, &sbuf);
+	ttymesg = sbuf.st_mode & 0777;
 }
 
+/*
+ * sTTY: set the tty modes on file descriptor i to be what's
+ * currently in global "tty".  (Also use nttyc if needed.)
+ */
 sTTY(i)
 	int i;
 {
 
-/*
- * Bug in USG tty driver, put out a null char as a patch.
- */
-#ifdef USG
-	if (tty.sg_ospeed == B1200)
-		write(1, "", 1);
-#endif
-#ifdef TIOCSETN
+#ifndef USG3TTY
+# ifdef USG
+	/* Bug in USG tty driver, put out a DEL as a patch. */
+	if (tty.sg_ospeed >= B1200)
+		write(1, "\377", 1);
+# endif
+
+# ifdef TIOCSETN
+	/* Don't flush typeahead if we don't have to */
 	ioctl(i, TIOCSETN, &tty);
-#else
+# else
+	/* We have to.  Too bad. */
 	stty(i, &tty);
-#endif
-#ifdef EATQS
+# endif
+
+# ifdef TIOCGETC
+	/* Update the other random chars while we're at it. */
 	ioctl(i, TIOCSETC, &nttyc);
+# endif
+# ifdef TIOCLGET
+	ioctl(i, TIOCSLTC, &nlttyc);
+# endif
+
+#else
+	/* USG 3 very simple: just set everything */
+	ioctl(i, TCSETAW, &tty);
 #endif
 }
 
@@ -900,4 +1080,40 @@ noonl()
 {
 
 	putchar(Outchar != termchar ? ' ' : '\n');
+}
+
+#ifdef TIOCLGET
+/*
+ * We have just gotten a susp.  Suspend and prepare to resume.
+ */
+onsusp()
+{
+	ttymode f;
+
+	f = setty(normf);
+	vnfl();
+	putpad(TE);
+	flush();
+
+	signal(SIGTSTP, SIG_DFL);
+	kill(0, SIGTSTP);
+
+	/* the pc stops here */
+
+	signal(SIGTSTP, onsusp);
+	vcontin(0);
+	setty(f);
+	if (!inopen)
+		error(0);
+	else {
+		if (vcnt < 0) {
+			vcnt = -vcnt;
+			if (state == VISUAL)
+				vclear();
+			else if (state == CRTOPEN)
+				vcnt = 0;
+		}
+		vdirty(0, LINES);
+		vrepaint(cursor);
+	}
 }

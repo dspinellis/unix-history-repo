@@ -192,9 +192,12 @@ address(inline)
 			addr = dot;
 			if (inline && execute(0, dot)) {
 				if (c == '/') {
-					while (loc1 <= inline)
+					while (loc1 <= inline) {
+						if (loc1 == loc2)
+							loc2++;
 						if (!execute(1))
 							goto nope;
+					}
 					break;
 				} else if (loc1 < inline) {
 					char *last;
@@ -202,6 +205,8 @@ doques:
 
 					do {
 						last = loc1;
+						if (loc1 == loc2)
+							loc2++;
 						if (!execute(1))
 							break;
 					} while (loc1 < inline);

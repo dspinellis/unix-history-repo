@@ -56,6 +56,21 @@ column(cp)
 	return (qcolumn(cp, (char *) 0));
 }
 
+/*
+ * Ignore a comment to the end of the line.
+ * This routine eats the trailing newline so don't call newline().
+ */
+comment()
+{
+	register int c;
+
+	do {
+		c = getchar();
+	} while (c != '\n' && c != EOF);
+	if (c == EOF)
+		ungetchar(c);
+}
+
 Copy(to, from, size)
 	register char *from, *to;
 	register int size;
@@ -179,6 +194,8 @@ ignnEOF()
 
 	if (c == EOF)
 		ungetchar(c);
+	else if (c=='"')
+		comment();
 }
 
 iswhite(c)
@@ -437,13 +454,15 @@ putmk1(addr, n)
 	int n;
 {
 	register line *markp;
+	register oldglobmk;
 
+	oldglobmk = *addr & 1;
 	*addr &= ~1;
 	for (markp = (anymarks ? names : &names['z'-'a'+1]);
 	  markp <= &names['z'-'a'+1]; markp++)
 		if (*markp == *addr)
 			*markp = n;
-	*addr = n;
+	*addr = n | oldglobmk;
 }
 
 char *
@@ -684,6 +703,25 @@ syserror()
 		error("System error %d", e);
 }
 
+/*
+ * Return the column number that results from being in column col and
+ * hitting a tab, where tabs are set every ts columns.  Work right for
+ * the case where col > COLUMNS, even if ts does not divide COLUMNS.
+ */
+tabcol(col, ts)
+int col, ts;
+{
+	int offset, result;
+
+	if (col >= COLUMNS) {
+		offset = COLUMNS * (col/COLUMNS);
+		col -= offset;
+	} else
+		offset = 0;
+	result = col + ts - (col % ts) + offset;
+	return (result);
+}
+
 char *
 vfindcol(i)
 	int i;
@@ -767,4 +805,3 @@ markit(addr)
 	if (addr != dot && addr >= one && addr <= dol)
 		markDOT();
 }
-

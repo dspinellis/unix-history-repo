@@ -175,8 +175,13 @@ error(str, inf)
 {
 
 	fprintf(stderr, str, inf);
+#ifndef USG3TTY
 	gtty(2, &tty);
 	if ((tty.sg_flags & RAW) == 0)
+#else
+	ioctl(2, TCGETA, &tty);
+	if (tty.c_lflag & ICANON)
+#endif
 		fprintf(stderr, "\n");
 	exit(1);
 }

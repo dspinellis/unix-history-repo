@@ -39,6 +39,7 @@ endcmd(ch)
 		return (1);
 	
 	case '|':
+	case '"':
 		endline = 0;
 		return (1);
 	}
@@ -102,6 +103,10 @@ erewind()
 error0()
 {
 
+	if (laste) {
+		laste = 0;
+		sync();
+	}
 	if (vcatch) {
 		if (splitw == 0)
 			fixech();
@@ -118,10 +123,6 @@ error0()
 	setoutt();
 	flush();
 	resetflav();
-	if (laste) {
-		laste = 0;
-		sync();
-	}
 	if (!SO || !SE)
 		dingdong();
 	if (inopen) {
@@ -132,8 +133,10 @@ error0()
 		COLUMNS = OCOLUMNS;
 		undvis();
 		ostop(normf);
+		/* ostop should be doing this
 		putpad(VE);
 		putpad(KE);
+		*/
 		putnl();
 	}
 	inopen = 0;
@@ -158,7 +161,7 @@ error1(str)
 		io = -1;
 	}
 	die = (getpid() != ppid);	/* Only children die */
-	inglobal = 0;
+	inappend = inglobal = 0;
 	globp = vglobp = vmacp = 0;
 	if (vcatch && !die) {
 		inopen = 1;
@@ -228,10 +231,12 @@ makargs()
  */
 next()
 {
+	extern short isalt;	/* defined in ex_io.c */
 
 	if (argc == 0)
 		error("No more files@to edit");
 	morargc = argc;
+	isalt = (strcmp(altfile, args)==0) + 1;
 	if (savedfile[0])
 		CP(altfile, savedfile);
 	CP(savedfile, args);
@@ -276,6 +281,11 @@ newline()
 		case ' ':
 		case '\t':
 			continue;
+
+		case '"':
+			comment();
+			setflav();
+			return;
 
 		default:
 			if (!endcmd(c))
@@ -378,7 +388,7 @@ skipend()
 {
 
 	pastwh();
-	return (endcmd(peekchar()));
+	return (endcmd(peekchar()) && peekchar() != '"');
 }
 
 /*
@@ -503,10 +513,13 @@ vcontin(ask)
 			}
 		}
 		vclrech(1);
-		if (ask && Peekkey != ':') {
+		if (Peekkey != ':') {
 			putpad(TI);
+			tostart();
+			/* replaced by ostart.
 			putpad(VS);
 			putpad(KS);
+			*/
 		}
 	}
 }
@@ -525,8 +538,11 @@ vnfl()
 			vmoveitup(1, 0);
 		vgoto(WECHO, 0);
 		vclrbyte(vtube[WECHO], WCOLS);
+		tostop();
+		/* replaced by the ostop above
 		putpad(VE);
 		putpad(KE);
+		*/
 	}
 	flush();
 }

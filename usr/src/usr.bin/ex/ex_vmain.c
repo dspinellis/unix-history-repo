@@ -24,6 +24,8 @@ vmain()
 	int shouldpo = 0;
 	int onumber, olist, (*OPline)(), (*OPutchar)();
 
+	vch_mac = VC_NOTINMAC;
+
 	/*
 	 * If we started as a vi command (on the command line)
 	 * then go process initial commands (recover, next or tag).
@@ -121,6 +123,7 @@ reread:
 			fprintf(trace,"pcb=%c,",peekkey());
 #endif
 		op = getkey();
+		maphopcnt = 0;
 		do {
 			/*
 			 * Keep mapping the char as long as it changes.
@@ -144,6 +147,8 @@ reread:
 			}
 			if (!value(REMAP))
 				break;
+			if (++maphopcnt > 256)
+				error("Infinite macro loop");
 		} while (c != op);
 
 		/*
@@ -378,14 +383,12 @@ reread:
 
 		/*
 		 * ^F		Window forwards, with 2 lines of continuity.
-		 *		Count gives new screen size.
+		 *		Count repeats.
 		 */
 		case CTRL(f):
 			vsave();
-			if (hadcnt)
-				vsetsiz(cnt);
 			if (vcnt > 2) {
-				dot += (vcnt - vcline) - 2;
+				dot += (vcnt - vcline) - 2 + (cnt-1)*basWLINES;
 				vcnt = vcline = 0;
 			}
 			vzop(0, 0, '+');
@@ -397,10 +400,8 @@ reread:
 		 */
 		case CTRL(b):
 			vsave();
-			if (hadcnt)
-				vsetsiz(cnt);
 			if (one + vcline != dot && vcnt > 2) {
-				dot -= vcline - 2;
+				dot -= vcline - 2 + (cnt-1)*basWLINES;
 				vcnt = vcline = 0;
 			}
 			vzop(0, 0, '^');
@@ -453,6 +454,7 @@ reread:
 			if (cnt > (i = dol - dot + 1))
 				cnt = i;
 			vsave();
+			vmacchng(1);
 			setLAST();
 			cursor = strend(linebuf);
 			vremote(cnt, join, 0);
@@ -488,6 +490,7 @@ reread:
 		case 'O':
 		case 'o':
 			voOpen(c, cnt);
+			vmacchng(1);
 			continue;
 
 		/*
@@ -506,6 +509,7 @@ reread:
 		case '~':
 			{
 				char mbuf[4];
+				setLAST();
 				mbuf[0] = 'r';
 				mbuf[1] = *cursor;
 				mbuf[2] = cursor[1]==0 ? 0 : ' ';
@@ -574,6 +578,7 @@ insrt:
 			 * is doomed, unless R when all is, and save the
 			 * current line in a the undo temporary buffer.
 			 */
+			vmacchng(1);
 			setLAST();
 			vcursat(cursor);
 			prepapp();
@@ -644,6 +649,17 @@ insrt:
 		 */
 		case 'Q':
 			vsave();
+			/*
+			 * If we are in the middle of a macro, throw away
+			 * the rest and fix up undo.
+			 * This code copied from getbr().
+			 */
+			if (vmacp) {
+				vmacp = 0;
+				if (inopen == -1)	/* don't screw up undo for esc esc */
+					vundkind = VMANY;
+				inopen = 1;	/* restore old setting now that macro done */
+			}
 			return;
 
 
@@ -671,7 +687,9 @@ insrt:
 		case 'P':
 		case 'p':
 			vmoving = 0;
+#ifdef notdef
 			forbid (!vreg && value(UNDOMACRO) && inopen < 0);
+#endif
 			/*
 			 * If previous delete was partial line, use an
 			 * append or insert to put it back so as to
@@ -689,7 +707,13 @@ insrt:
 			 * sure there is something to put back.
 			 */
 			forbid (!vreg && unddol == dol);
+			/*
+			 * If we just did a macro the whole buffer is in
+			 * the undo save area.  We don't want to put THAT.
+			 */
+			forbid (vundkind == VMANY && undkind==UNDALL);
 			vsave();
+			vmacchng(1);
 			setLAST();
 			i = 0;
 			if (vreg && partreg(vreg) || !vreg && pkill[0]) {
@@ -836,6 +860,19 @@ gogo:
 			vsave();
 			goto doinit;
 
+#ifdef TIOCLGET
+		/*
+		 * ^Z:	suspend editor session and temporarily return
+		 * 	to shell.  Only works on Berkeley tty driver.
+		 */
+		case CTRL(z):
+			forbid(dosusp == 0 || !ldisc);
+			vsave();
+			oglobp = globp;
+			globp = "stop";
+			goto gogo;
+#endif
+
 		/*
 		 * :		Read a command from the echo area and
 		 *		execute it in command mode.
@@ -850,6 +887,7 @@ gogo:
 				esave[0] = 0;
 				goto fixup;
 			}
+			getDOT();
 			/*
 			 * Use the visual undo buffer to store the global
 			 * string for command mode, since it is idle right now.
@@ -1037,7 +1075,7 @@ fixup:
 		 * u		undo the last changing command.
 		 */
 		case 'u':
-			vundo();
+			vundo(1);
 			continue;
 
 		/*

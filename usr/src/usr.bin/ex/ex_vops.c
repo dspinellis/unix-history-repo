@@ -50,10 +50,12 @@ vUndo()
 	}
 	vdirty(vcline, 1);
 	vsyncCL();
+	cursor = linebuf;
 	vfixcurs();
 }
 
-vundo()
+vundo(show)
+bool show;	/* if true update the screen */
 {
 	register int cnt;
 	register line *addr;
@@ -88,22 +90,29 @@ vundo()
 		 * with dol through unddol-1.  Hack screen image to
 		 * reflect this replacement.
 		 */
-		vreplace(undap1 - addr, undap2 - undap1,
-		    undkind == UNDPUT ? 0 : unddol - dol);
+		if (show)
+			if (undkind == UNDMOVE)
+				vdirty(0, LINES);
+			else
+				vreplace(undap1 - addr, undap2 - undap1,
+				    undkind == UNDPUT ? 0 : unddol - dol);
 		savenote = notecnt;
 		undo(1);
-		if (vundkind != VMCHNG || addr != dot)
+		if (show && (vundkind != VMCHNG || addr != dot))
 			killU();
 		vundkind = VMANY;
 		cnt = dot - addr;
 		if (cnt < 0 || cnt > vcnt || state != VISUAL) {
-			vjumpto(dot, NOSTR, '.');
+			if (show)
+				vjumpto(dot, NOSTR, '.');
 			break;
 		}
 		if (!savenote)
 			notecnt = 0;
-		vcline = cnt;
-		vrepaint(vmcurs);
+		if (show) {
+			vcline = cnt;
+			vrepaint(vmcurs);
+		}
 		vmcurs = 0;
 		break;
 
@@ -116,6 +125,8 @@ vundo()
 		strcLIN(temp);
 		cp = vUA1; vUA1 = vUD1; vUD1 = cp;
 		cp = vUA2; vUA2 = vUD2; vUD2 = cp;
+		if (!show)
+			break;
 		cursor = vUD1;
 		if (state == HARDOPEN) {
 			doomed = 0;
@@ -146,6 +157,94 @@ vundo()
 
 	case VNONE:
 		beep();
+		break;
+	}
+}
+
+/*
+ * Routine to handle a change inside a macro.
+ * Fromvis is true if we were called from a visual command (as
+ * opposed to an ex command).  This has nothing to do with being
+ * in open/visual mode as :s/foo/bar is not fromvis.
+ */
+vmacchng(fromvis)
+bool fromvis;
+{
+	line *savedot, *savedol;
+	char *savecursor;
+	int nlines, more;
+	register line *a1, *a2;
+	char ch;	/* DEBUG */
+	int copyw(), copywR();
+
+	if (!inopen)
+		return;
+	if (!vmacp)
+		vch_mac = VC_NOTINMAC;
+#ifdef TRACE
+	if (trace)
+		fprintf(trace, "vmacchng, vch_mac=%d, linebuf='%s', *dot=%o\n", vch_mac, linebuf, *dot);
+#endif
+	if (vmacp && fromvis)
+		vsave();
+#ifdef TRACE
+	if (trace)
+		fprintf(trace, "after vsave, linebuf='%s', *dot=%o\n", linebuf, *dot);
+#endif
+	switch(vch_mac) {
+	case VC_NOCHANGE:
+		vch_mac = VC_ONECHANGE;
+		break;
+	case VC_ONECHANGE:
+		/* Save current state somewhere */
+#ifdef TRACE
+		vudump("before vmacchng hairy case");
+#endif
+		savedot = dot; savedol = dol; savecursor = cursor;
+		nlines = dol - zero;
+		while ((line *) endcore - truedol < nlines)
+			morelines();
+		copyw(truedol+1, zero+1, nlines);
+		truedol += nlines;
+
+#ifdef TRACE
+		visdump("before vundo");
+#endif
+		/* Restore state as it was at beginning of macro */
+		vundo(0);
+#ifdef TRACE
+		visdump("after vundo");
+		vudump("after vundo");
+#endif
+
+		/* Do the saveall we should have done then */
+		saveall();
+#ifdef TRACE
+		vudump("after saveall");
+#endif
+
+		/* Restore current state from where saved */
+		more = savedol - dol; /* amount we shift everything by */
+		if (more)
+			(*(more>0 ? copywR : copyw))(savedol+1, dol+1, truedol-dol);
+		unddol += more; truedol += more;
+
+		truedol -= nlines;
+		copyw(zero+1, truedol+1, nlines);
+		dot = savedot; dol = savedol ; cursor = savecursor;
+		vch_mac = VC_MANYCHANGE;
+
+		/* Arrange that no further undo saving happens within macro */
+		otchng = tchng;	/* Copied this line blindly - bug? */
+		inopen = -1;	/* no need to save since it had to be 1 or -1 before */
+		vundkind = VMANY;
+#ifdef TRACE
+		vudump("after vmacchng");
+#endif
+		break;
+	case VC_NOTINMAC:
+	case VC_MANYCHANGE:
+		/* Nothing to do for various reasons. */
 		break;
 	}
 }

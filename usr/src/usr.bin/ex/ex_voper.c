@@ -106,11 +106,13 @@ operate(c, cnt)
 	 */
 	case 'r':
 		vrep(cnt);
+		vmacchng(1);
 		return;
 
 	default:
 		goto nocount;
 	}
+	vmacchng(1);
 	/*
 	 * Had an operator, so accept another count.
 	 * Multiply counts together.
@@ -413,6 +415,7 @@ deleteit:
 	case 'x':
 		if (margin())
 			goto errlab;
+		vmacchng(1);
 		while (cnt > 0 && !margin())
 			wcursor += dir, cnt--;
 		opf = deleteop;

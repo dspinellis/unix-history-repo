@@ -115,10 +115,28 @@ vclrech(didphys)
 		 * since we don't really know whats out there.
 		 * Vigoto might decide (incorrectly) to do nothing.
 		 */
-		if (DB)
-			vgoto(WECHO, 0), vputp(CD ? CD : CE, 1);
-		else
-			vigoto(WECHO, 0), vclreol();
+		if (DB) {
+			vgoto(WECHO, 0);
+			vputp(CD ? CD : CE, 1);
+		} else {
+			if (XT) {
+				/*
+				 * This code basically handles the t1061
+				 * where positioning at (0, 0) won't work
+				 * because the terminal won't let you put
+				 * the cursor on it's magic cookie.
+				 *
+				 * Should probably be XS above, or even a
+				 * new X? glitch, but right now t1061 is the
+				 * only terminal with XT.
+				 */
+				vgoto(WECHO, 0);
+				vputp(DL, 1);
+			} else {
+				vigoto(WECHO, 0);
+				vclreol();
+			}
+		}
 		splitw = 0;
 		didphys = 1;
 	}
@@ -399,11 +417,11 @@ vgoto(y, x)
  */
 vgotab()
 {
-	register int i = (LINE(vcline) - destline) * WCOLS + destcol;
+	register int i = tabcol(destcol, value(TABSTOP)) - destcol;
 
 	do
 		(*Outchar)(QUOTE);
-	while (++i % value(TABSTOP));
+	while (--i);
 }
 
 /*
@@ -443,7 +461,7 @@ vmaktop(p, cp)
 	register int i;
 	char temp[TUBECOLS];
 
-	if (vtube[p] == cp)
+	if (p < 0 || vtube[p] == cp)
 		return;
 	for (i = ZERO; i <= WECHO; i++)
 		if (vtube[i] == cp) {
@@ -542,7 +560,7 @@ vinschar(c)
 		 * use QUOTE here since we really need to print blanks.
 		 * QUOTE|' ' is the representation of this.
 		 */
-		inssiz = value(TABSTOP) - inscol % value(TABSTOP);
+		inssiz = tabcol(inscol, value(TABSTOP)) - inscol;
 		c = ' ' | QUOTE;
 	} else
 		inssiz = 1;
@@ -618,7 +636,7 @@ vinschar(c)
 		 * line is now deeper.  We then do the shift
 		 * implied by the insertion.
 		 */
-		if (inssiz >= doomed + value(TABSTOP) - tabstart % value(TABSTOP)) {
+		if (inssiz >= doomed + tabcol(tabstart, value(TABSTOP)) - tabstart) {
 			if (IN)
 				vrigid();
 			vneedpos(value(TABSTOP));

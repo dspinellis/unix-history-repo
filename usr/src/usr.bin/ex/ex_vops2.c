@@ -407,6 +407,7 @@ vgetline(cnt, gcursor, aescaped)
 	register char *cp;
 	int x, y, iwhite;
 	char *iglobp;
+	char cstr[2];
 	int (*OO)() = Outchar;
 
 	/*
@@ -442,12 +443,18 @@ vgetline(cnt, gcursor, aescaped)
 			if (cnt == 0)
 				goto vadone;
 		}
-		ch = c = getkey() & (QUOTE|TRIM);
+		c = getkey();
+		if (c != ATTN)
+			c &= (QUOTE|TRIM);
+		ch = c;
+		maphopcnt = 0;
 		if (vglobp == 0 && Peekkey == 0)
 			while ((ch = map(c, immacs)) != c) {
 				c = ch;
 				if (!value(REMAP))
 					break;
+				if (++maphopcnt > 256)
+					error("Infinite macro loop");
 			}
 		if (!iglobp) {
 
@@ -457,10 +464,17 @@ vgetline(cnt, gcursor, aescaped)
 			 * from untyped input when we started.
 			 * Map users erase to ^H, kill to -1 for switch.
 			 */
+#ifndef USG3TTY
 			if (c == tty.sg_erase)
 				c = CTRL(h);
 			else if (c == tty.sg_kill)
 				c = -1;
+#else
+			if (c == tty.c_cc[VERASE])
+				c = CTRL(h);
+			else if (c == tty.c_cc[VKILL])
+				c = -1;
+#endif
 			switch (c) {
 
 			/*
@@ -544,7 +558,12 @@ vbackup:
 				putchar('\\');
 				vcsync();
 				c = getkey();
+#ifndef USG3TTY
 				if (c == tty.sg_erase || c == tty.sg_kill) {
+#else
+				if (c == tty.c_cc[VERASE]
+				    || c == tty.c_cc[VKILL]) {
+#endif
 					vgoto(y, x);
 					if (doomed >= 0)
 						doomed++;
@@ -584,16 +603,85 @@ vbackup:
 		 * If we get a blank not in the echo area
 		 * consider splitting the window in the wrapmargin.
 		 */
-		if (c == ' ' && !splitw) {
-			if (gobblebl) {
+		if (c != NL && !splitw) {
+			if (c == ' ' && gobblebl) {
 				gobbled = 1;
 				continue;
 			}
-			if (value(WRAPMARGIN) && outcol >= OCOLUMNS - value(WRAPMARGIN)) {
-				c = NL;
-				gobblebl = 2;
+			if (/* c <= ' ' && */ value(WRAPMARGIN) &&
+				outcol >= OCOLUMNS - value(WRAPMARGIN)) {
+				/*
+				 * At end of word and hit wrapmargin.
+				 * Move the word to next line and keep going.
+				 */
+				wdkind = 1;
+				*gcursor++ = c;
+				*gcursor = 0;
+				/*
+				 * Find end of previous word if we are past it.
+				 */
+				for (cp=gcursor; cp>ogcursor && isspace(cp[-1]); cp--)
+					;
+				if (outcol - (gcursor-cp) >= OCOLUMNS - value(WRAPMARGIN)) {
+					/*
+					 * Find beginning of previous word.
+					 */
+					for (; cp>ogcursor && !isspace(cp[-1]); cp--)
+						;
+					if (cp <= ogcursor) {
+						/*
+						 * There is a single word that
+						 * is too long to fit.  Just
+						 * let it pass, but beep for
+						 * each new letter to warn
+						 * the luser.
+						 */
+						c = *--gcursor;
+						*gcursor = 0;
+						beep();
+						goto dontbreak;
+					}
+					/*
+					 * Save it for next line.
+					 */
+					macpush(cp, 0);
+					cp--;
+				}
+				macpush("\n", 0);
+				/*
+				 * Erase white space before the word.
+				 */
+				while (cp > ogcursor && isspace(cp[-1]))
+					cp--;	/* skip blank */
+				gobblebl = 3;
+				goto vbackup;
 			}
+		dontbreak:;
 		}
+
+		/*
+		 * Word abbreviation mode.
+		 */
+		cstr[0] = c;
+		if (anyabbrs && gcursor > ogcursor && !wordch(cstr) && wordch(gcursor-1)) {
+				int wdtype, abno;
+
+				cstr[1] = 0;
+				wdkind = 1;
+				cp = gcursor - 1;
+				for (wdtype = wordch(cp - 1);
+				    cp > ogcursor && wordof(wdtype, cp - 1); cp--)
+					;
+				*gcursor = 0;
+				for (abno=0; abbrevs[abno].mapto; abno++) {
+					if (eq(cp, abbrevs[abno].cap)) {
+						macpush(cstr, 0);
+						macpush(abbrevs[abno].mapto);
+						goto vbackup;
+					}
+				}
+		}
+
 		switch (c) {
 
 		/*
@@ -702,22 +790,22 @@ vbackup:
 			}
 def:
 			putchar(c);
+			flush();
 noput:
 			if (gcursor > &genbuf[LBSIZE - 2])
 				error("Line too long");
 			*gcursor++ = c & TRIM;
 			vcsync();
-#ifdef LISPCODE
 			if (value(SHOWMATCH) && !iglobp)
 				if (c == ')' || c == '}')
 					lsmatch(gcursor);
-#endif
 			continue;
 		}
 	}
 vadone:
 	*gcursor = 0;
-	Outchar = OO;
+	if (Outchar != termchar)
+		Outchar = OO;
 	endim();
 	return (gcursor);
 }
