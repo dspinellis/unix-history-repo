@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)rl.c	7.4 (Berkeley) %G%
+ *	@(#)rl.c	7.5 (Berkeley) %G%
  */
 
 /*
@@ -99,7 +99,7 @@ rlstrategy(io, func)
 	int com;
 	daddr_t bn;
 	short cn, sn, head;
-	int diff, ubinfo, ubaddr, errcnt = 0;
+	int diff, ubinfo, ubaaddr, errcnt = 0;
 
 	rladdr = (struct rldevice *)ubamem(io->i_adapt, rlstd[io->i_ctlr]);
 	st = &rl_stat[io->i_ctlr];
@@ -110,7 +110,7 @@ retry:
 	sn = (bn % 20) << 1;
 	head = (bn / 20) & 1;
 	st->rl_bleft = io->i_cc;	/* total number of bytes to trans */
-	ubaddr = ubinfo;
+	ubaaddr = ubinfo;
 
 stupid_rl:
 	/* find out how many cylinders to seek */
@@ -142,9 +142,9 @@ noseek:
 
 	rladdr->rlda.rw = (st->rl_cylnhd << 6) | sn;
 	rladdr->rlmp.rw = -(st->rl_bpart >> 1);
-	rladdr->rlba = ubaddr;
+	rladdr->rlba = ubaaddr;
 
-	com = (st->rl_dn << 8) | ((ubaddr>>12)&RL_BAE);
+	com = (st->rl_dn << 8) | ((ubaaddr>>12)&RL_BAE);
 
 	if (func == READ)
 		com |= RL_READ;
@@ -203,7 +203,7 @@ noseek:
 		 */
 		ubafree(io, ubinfo);
 
-		ubaddr = ubinfo + io->i_cc - st->rl_bleft;
+		ubaaddr = ubinfo + io->i_cc - st->rl_bleft;
 
 		goto stupid_rl;
 	}
