@@ -1,11 +1,11 @@
-SCCSID = @(#)Makefile	1.20 (Berkeley) %G%
+SCCSID = @(#)Makefile	1.21 (Berkeley) %G%
 
 DFLAGS = 
 CFLAGS = -O ${DFLAGS}
 LINTFLAGS = -x -a -n ${DFLAGS}
 
 RM=	/bin/rm -f
-INSTALL=cp
+INSTALL=install
 PR=pr
 
 GPROFHDRS =	gprof.h vax.h
@@ -17,10 +17,10 @@ GPROFOBJS =	gprof.o arcs.o dfn.o lookup.o calls.o hertz.o \
 gprof: ${GPROFOBJS}
 	cc -o gprof ${CFLAGS} ${GPROFOBJS}
 
-install: gprof gprof.flat.blurb gprof.callg.blurb
-	${INSTALL} gprof ${DESTDIR}/usr/ucb/gprof
-	cp gprof.flat.blurb ${DESTDIR}/usr/lib
-	cp gprof.callg.blurb ${DESTDIR}/usr/lib
+install: gprof gprof.flat gprof.callg
+	install -s gprof ${DESTDIR}/usr/ucb/gprof
+	install -c gprof.flat ${DESTDIR}/usr/lib
+	install -c gprof.callg ${DESTDIR}/usr/lib
 
 clean:
 	${RM} ${GPROFOBJS} errs gprof
@@ -33,7 +33,7 @@ print:
 	@ ${PR} makefile
 	@ ${PR} gcrt0.h
 	@ ${PR} ${GPROFHDRS} ${GPROFSRCS}
-	@ ${PR} gprof.flat.blurb gprof.callg.blurb
+	@ ${PR} gprof.flat gprof.callg
 
 lint:
 	lint ${LINTFLAGS} ${DFLAGS} ${GPROFSRCS}
