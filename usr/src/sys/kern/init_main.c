@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)init_main.c	7.53 (Berkeley) %G%
+ *	@(#)init_main.c	7.54 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -241,10 +241,12 @@ main()
 	swapinit();
 
 	/*
-	 * Now can look at time, having had a chance
-	 * to verify the time from the file system.
+	 * Now can look at time, having had a chance to verify the time
+	 * from the file system.  Reset p->p_rtime as it may have been
+	 * munched in swtch() after the time got set.
 	 */
 	p->p_stats->p_start = runtime = mono_time = boottime = time;
+	p->p_rtime.tv_sec = p->p_rtime.tv_usec = 0;
 
 	/*
 	 * make init process
