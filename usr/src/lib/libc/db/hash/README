@@ -1,4 +1,4 @@
-#	@(#)README	5.2 (Berkeley) %G%
+#	@(#)README	5.3 (Berkeley) %G%
 
 This package implements a superset of the hsearch and dbm/ndbm libraries.
 
@@ -25,10 +25,11 @@ Backward Compatibility Routines:
 Misc:
 	byte_order.c
 
-Compatibilty routines:
+Compatibility routines:
 	mkstemp.c
 
 	ansi.h
+	bsd.h
 	cdefs.h
 	endian.h
 	posix.h
@@ -87,6 +88,7 @@ some of the compatibility files provided.  The files are as follows:
 	mkstemp.c	Mkstemp/mktemp library routine.
 
 	ansi.h		Map bcopy and friends to memcpy and friends.
+	bsd.h		Map various new BSD things to old things.
 	cdefs.h		Handle the function prototypes in other include files.
 	endian.h	Handle byte ordering.  Be sure to set BYTE_ORDER in
 			endian.h appropriately for your machine.  If you don't
@@ -94,6 +96,10 @@ some of the compatibility files provided.  The files are as follows:
 			byte_order.c and run it.  It should tell you.
 	posix.h		Map various POSIX 1003.1 things to old-style things.
 	unistd.h	POSIX 1003.1 definitions.
+
+If you are not running on the current BSD release (4.3BSD-Reno+), you will
+need to include bsd.h in hash.h.  Depending on what system you are running
+on, you will need to add the other compatibility h files in hash.h.
 
 The file search.h is provided for using the hsearch compatible interface
 on BSD systems.  On System V derived systems, search.h should appear in 
