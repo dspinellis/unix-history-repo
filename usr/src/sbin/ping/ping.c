@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ping.c	4.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)ping.c	4.12 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -190,9 +190,10 @@ char *argv[];
 
 	for (;;) {
 		int len = sizeof (packet);
-		int fromlen = sizeof (from);
+		int fromlen;
 		int cc;
 
+		fromlen = sizeof (from);
 		if ( (cc=recvfrom(s, packet, len, 0, &from, &fromlen)) < 0) {
 			if( errno == EINTR )
 				continue;
