@@ -66,17 +66,13 @@ kern/kern_subr.c	standard
 kern/kern_synch.c	standard
 kern/kern_time.c	standard
 kern/kern_xxx.c		standard
-kern/quota_kern.c	standard
-kern/quota_subr.c	standard
-kern/quota_sys.c	standard
-kern/quota_ufs.c	standard
+kern/spec_vnops.c	standard
 kern/subr_log.c		standard
 kern/subr_mcount.c	optional profiling-routine
 kern/subr_prf.c		standard
 kern/subr_rmap.c	standard
 kern/subr_xxx.c		standard
 kern/sys_generic.c	standard
-kern/sys_inode.c	standard
 kern/sys_process.c	standard
 kern/sys_socket.c	standard
 kern/tty.c		standard
@@ -86,18 +82,12 @@ kern/tty_pty.c		optional pty
 kern/tty_subr.c		standard
 kern/tty_tb.c		optional tb
 kern/tty_tty.c		standard
-kern/ufs_alloc.c	standard
-kern/ufs_bio.c		standard
-kern/ufs_bmap.c		standard
-kern/ufs_disksubr.c	standard
-kern/ufs_fio.c		standard
-kern/ufs_inode.c	standard
-kern/ufs_mount.c	standard
-kern/ufs_namei.c	standard
-kern/ufs_subr.c		standard
-kern/ufs_syscalls.c	standard
-kern/ufs_tables.c	standard
-kern/ufs_xxx.c		standard
+kern/vfs_cache.c	standard
+kern/vfs_conf.c		standard
+kern/vfs_lookup.c	standard
+kern/vfs_subr.c		standard
+kern/vfs_syscalls.c	standard
+kern/vfs_vnops.c	standard
 kern/uipc_domain.c	standard
 kern/uipc_mbuf.c	standard
 kern/uipc_proto.c	standard
@@ -117,6 +107,21 @@ kern/vm_sw.c		standard
 kern/vm_swap.c		standard
 kern/vm_swp.c		standard
 kern/vm_text.c		standard
+ufs/quota_kern.c	standard
+ufs/quota_subr.c	standard
+ufs/quota_sys.c		standard
+ufs/quota_ufs.c		standard
+ufs/ufs_alloc.c		standard
+ufs/ufs_bio.c		standard
+ufs/ufs_bmap.c		standard
+ufs/ufs_disksubr.c	standard
+ufs/ufs_inode.c		standard
+ufs/ufs_io.c		standard
+ufs/ufs_lookup.c	standard
+ufs/ufs_subr.c		standard
+ufs/ufs_tables.c	standard
+ufs/ufs_vfsops.c	standard
+ufs/ufs_vnops.c		standard
 netiso/clnp_debug.c	optional iso
 netiso/clnp_er.c	optional iso
 netiso/clnp_frag.c	optional iso
