@@ -19,7 +19,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)print.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)print.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -45,7 +45,8 @@ printlong(stats, num)
 	LS *stats;
 	register int num;
 {
-	(void)printf("total %lu\n", stats[0].lstat.st_btotal);
+	if (f_total)
+		(void)printf("total %lu\n", stats[0].lstat.st_btotal);
 	for (; num--; ++stats) {
 		if (f_inode)
 			(void)printf("%6lu ", stats->lstat.st_ino);
@@ -101,7 +102,7 @@ printcol(stats, num)
 	if (num % numcols)
 		++numrows;
 
-	if (f_size)
+	if (f_size && f_total)
 		(void)printf("total %lu\n", stats[0].lstat.st_btotal);
 	for (row = 0; row < numrows; ++row) {
 		endcol = colwidth;
