@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)dmf.c	7.7 (Berkeley) %G%
+ *	@(#)dmf.c	7.8 (Berkeley) %G%
  */
 
 /*
@@ -51,7 +51,6 @@
 #include "dmreg.h"
 
 extern	int dmx_timeout;		/* silo timeout, in ms */
-extern	char dmx_speeds[];
 int	dmfstart();
 
 /*
@@ -190,6 +189,7 @@ dmfopen(dev, flag)
 	register struct dmfdevice *addr;
 	register struct uba_device *ui;
 	int s;
+	int dmxparam();
 
 	unit = minor(dev);
 	if (unit & 0200)
@@ -204,6 +204,7 @@ dmfopen(dev, flag)
 	tp->t_addr = (caddr_t)(&addr->dmfa);
 	tp->t_oproc = dmfstart;
 	tp->t_dev = dev;			/* needed before dmxopen */
+	tp->t_param = dmxparam;
 
 	/*
 	 * While setting up state for this uba,
@@ -217,7 +218,7 @@ dmfopen(dev, flag)
 	}
 	splx(s);
 
-	return (dmxopen(tp, sc));
+	return (dmxopen(tp, sc, flag));
 }
 
 /*
@@ -238,7 +239,7 @@ dmfclose(dev, flag)
 	dmxclose(&dmf_tty[unit]);
 }
 
-dmfread(dev, uio)
+dmfread(dev, uio, flag)
 	dev_t dev;
 	struct uio *uio;
 {
@@ -247,7 +248,7 @@ dmfread(dev, uio)
 	if (minor(dev) & 0200)
 		return(ENXIO);
 	tp = &dmf_tty[minor(dev)];
-	return ((*linesw[tp->t_line].l_read)(tp, uio));
+	return ((*linesw[tp->t_line].l_read)(tp, uio, flag));
 }
 
 dmfwrite(dev, uio)
@@ -358,7 +359,7 @@ dmfreset(uban)
 		tp = &dmf_tty[dmf * 8];
 		for (i = 0; i < 8; i++, tp++) {
 			if (tp->t_state & (TS_ISOPEN|TS_WOPEN)) {
-				dmxparam(tp);
+				dmxparam(tp, &tp->t_termios);
 				(void) dmxmctl(tp, DMF_ON, DMSET);
 				tp->t_state &= ~TS_BUSY;
 				dmfstart(tp);

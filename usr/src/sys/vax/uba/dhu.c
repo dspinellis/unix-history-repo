@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)dhu.c	7.6 (Berkeley) %G%
+ *	@(#)dhu.c	7.7 (Berkeley) %G%
  */
 
 /*
@@ -108,6 +108,8 @@ struct speedtab dhuspeedtab[] = {
 	110,	2,
 	75,	1,
 	0,	0,
+	EXTA,	14,
+	EXTB,	9,
 	-1,	-1,
 };
 
@@ -258,7 +260,8 @@ dhuopen(dev, flag)
 	if ((dhumctl(dev, DHU_ON, DMSET) & DHU_CAR) ||
 	    (dhusoftCAR[dhu] & (1<<(unit&0xf))))
 		tp->t_state |= TS_CARR_ON;
-	while ((tp->t_state & TS_CARR_ON) == 0) {
+	while (!(flag&O_NONBLOCK) && !(tp->t_cflag&CLOCAL) &&
+	       (tp->t_state & TS_CARR_ON) == 0) {
 		tp->t_state |= TS_WOPEN;
 		sleep((caddr_t)&tp->t_rawq, TTIPRI);
 	}
@@ -298,22 +301,22 @@ dhuclose(dev, flag)
 	ttyclose(tp);
 }
 
-dhuread(dev, uio)
+dhuread(dev, uio, flag)
 	dev_t dev;
 	struct uio *uio;
 {
 	register struct tty *tp = &dhu_tty[UNIT(dev)];
 
-	return ((*linesw[tp->t_line].l_read)(tp, uio));
+	return ((*linesw[tp->t_line].l_read)(tp, uio, flag));
 }
 
-dhuwrite(dev, uio)
+dhuwrite(dev, uio, flag)
 	dev_t dev;
 	struct uio *uio;
 {
 	register struct tty *tp = &dhu_tty[UNIT(dev)];
 
-	return ((*linesw[tp->t_line].l_write)(tp, uio));
+	return ((*linesw[tp->t_line].l_write)(tp, uio, flag));
 }
 
 /*
@@ -368,47 +371,16 @@ dhurint(dhu)
 #endif
 				continue;
 		}
-#ifdef COMPAT_43
-		if (tp->t_line != POSXDISC) {
-			if (creg & DHU_RB_PE)
-				if ((tp->t_flags&(EVENP|ODDP)) == EVENP ||
-				    (tp->t_flags&(EVENP|ODDP)) == ODDP)
-					continue;
-			if ((creg & DHU_RB_DO) && overrun == 0) {
-				log(LOG_WARNING, "dhu%d: silo overflow\n", dhu);
-				overrun = 1;
-			}
-			if (creg & DHU_RB_FE)
-				/*
-				 * At framing error (break) generate
-				 * a null (in raw mode, for getty), or a
-				 * interrupt (in cooked/cbreak mode).
-				 */
-				if (tp->t_flags&RAW)
-					c = 0;
-				else
-					c = tp->t_intrc;
-		} else {
-#endif /*COMPAT_43*/
-			if (creg & DHU_RB_PE)
-				c |= TTY_PE;
-			if (creg & DHU_RB_DO && overrun == 0) {
-				log(LOG_WARNING, "dhu%d: silo overflow\n", dhu);
-				overrun = 1;
-			}
-			if (creg & DHU_RB_FE)
-				c |= TTY_FE;
-#ifdef COMPAT_43
+		if (creg & DHU_RB_PE)
+			c |= TTY_PE;
+		if (creg & DHU_RB_DO && overrun == 0) {
+			log(LOG_WARNING, "dhu%d: silo overflow\n", dhu);
+			overrun = 1;
 		}
-#endif
+		if (creg & DHU_RB_FE)
+			c |= TTY_FE;
 
-#if NBK > 0
-		if (tp->t_line == NETLDISC) {
-			c &= 0x7f;
-			BKINPUT(c, tp);
-		} else
-#endif
-			(*linesw[tp->t_line].l_rint)(c, tp);
+		(*linesw[tp->t_line].l_rint)(c, tp);
 	}
 }
 
@@ -568,11 +540,8 @@ dhuparam(tp, want)
 	}
 	if (cflag&CSTOPB)
 		lpar |= DHU_LP_TWOSB;
-	if (cflag&CREAD)
-		addr->dhucsr = DHU_SELECT(unit) | DHU_IE;
-	else
-		addr->dhucsr = DHU_SELECT(unit) | DHU_CS_TIE;
 
+	addr->dhucsr = DHU_SELECT(unit) | DHU_IE;
 	addr->dhulpr = lpar;
 	splx(s);
 }
@@ -671,7 +640,7 @@ dhustart(tp)
 	 */
 	if (tp->t_outq.c_cc == 0)
 		goto out;
-	if (!(tp->t_oflag & OPOST))
+	if (1 || !(tp->t_oflag & OPOST))	/*XXX*/
 		nch = ndqb(&tp->t_outq, 0);
 	else {
 		nch = ndqb(&tp->t_outq, 0200);

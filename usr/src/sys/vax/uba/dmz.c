@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)dmz.c	7.5 (Berkeley) %G%
+ *	@(#)dmz.c	7.6 (Berkeley) %G%
  */
 
 /*
@@ -42,7 +42,6 @@
 #include "dmreg.h"
 
 extern	int dmx_timeout;		/* silo timeout, in ms */
-extern	char dmx_speeds[];
 int	dmzstart();
 
 /*
@@ -139,6 +138,7 @@ dmzopen(dev, flag)
 	int unit, dmz;
 	struct uba_device *ui;
 	int s;
+	int dmxparam();
 
 	unit = minor(dev);
 	dmz = DMZ(unit);
@@ -150,6 +150,7 @@ dmzopen(dev, flag)
 	tp->t_addr = (caddr_t)sc->dmx_octet;
 	tp->t_oproc = dmzstart;
 	tp->t_dev = dev;			/* needed before dmxopen */
+	tp->t_param = dmxparam;
 
 	/*
 	 * While setting up state for this uba,
@@ -163,7 +164,7 @@ dmzopen(dev, flag)
 	}
 	splx(s);
 
-	return (dmxopen(tp, sc));
+	return (dmxopen(tp, sc, flag));
 }
 
 /*
@@ -178,14 +179,14 @@ dmzclose(dev, flag)
 	dmxclose(&dmz_tty[minor(dev)]);
 }
 
-dmzread(dev, uio)
+dmzread(dev, uio, flag)
 	dev_t dev;
 	struct uio *uio;
 {
 	register struct tty *tp;
 
 	tp = &dmz_tty[minor(dev)];
-	return ((*linesw[tp->t_line].l_read)(tp, uio));
+	return ((*linesw[tp->t_line].l_read)(tp, uio, flag));
 }
 
 dmzwrite(dev, uio)
@@ -337,7 +338,7 @@ dmzreset(uban)
 		tp = &dmz_tty[dmz * 24];
 		for (i = 0; i < 24; i++, tp++) {
 			if (tp->t_state & (TS_ISOPEN | TS_WOPEN)) {
-				dmxparam(tp);
+				dmxparam(tp, &tp->t_termios);
 				(void) dmxmctl(tp, DMF_ON, DMSET);
 				tp->t_state &= ~TS_BUSY;
 				dmzstart(tp);

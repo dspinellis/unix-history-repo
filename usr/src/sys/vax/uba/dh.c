@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)dh.c	7.7 (Berkeley) %G%
+ *	@(#)dh.c	7.8 (Berkeley) %G%
  */
 
 #include "dh.h"
@@ -55,11 +55,11 @@ struct	uba_driver dmdriver =
 	{ dmprobe, 0, dmattach, 0, dmstd, "dm", dminfo };
 
 #ifndef	PORTSELECTOR
-#define	ISPEED	B9600
-#define	IFLAGS	(EVENP|ODDP|ECHO)
+#define	ISPEED	TTYDEF_SPEED
+#define	LFLAG	TTYDEF_LFLAG
 #else
 #define	ISPEED	B4800
-#define	IFLAGS	(EVENP|ODDP)
+#define	LFLAG	(TTYDEF_LFLAG&~ECHO)
 #endif
 
 #define	FASTTIMER	(hz/30)		/* scan rate with silos on */
@@ -80,6 +80,27 @@ int	dhhighrate = 100;		/* silo on if dhchars > dhhighrate */
 int	dhlowrate = 75;			/* silo off if dhrate < dhlowrate */
 static short timerstarted;
 int	dhstart(), ttrstrt();
+
+struct speedtab dhspeedtab[] = {
+	19200,	14,
+	9600,	13,
+	4800,	12,
+	2400,	11,
+	1800,	10,
+	1200,	9,
+	600,	8,
+	300,	7,
+	200,	6,
+	150,	5,
+	134,	4,
+	110,	3,
+	75,	2,
+	50,	1,
+	0,	0,
+	EXTA,	14,
+	EXTB,	15,
+	-1,	-1
+};
 
 /*
  * The clist space is mapped by one terminal driver onto each UNIBUS.
@@ -181,6 +202,7 @@ dhopen(dev, flag)
 	register struct dhdevice *addr;
 	register struct uba_device *ui;
 	int s;
+	int dhparam();
 
 	unit = minor(dev);
 	dh = unit >> 4;
@@ -192,6 +214,8 @@ dhopen(dev, flag)
 	addr = (struct dhdevice *)ui->ui_addr;
 	tp->t_addr = (caddr_t)addr;
 	tp->t_oproc = dhstart;
+	tp->t_param = dhparam;
+	tp->t_dev = dev;
 	tp->t_state |= TS_WOPEN;
 	/*
 	 * While setting up state for this uba and this dh,
@@ -220,21 +244,24 @@ dhopen(dev, flag)
 		ttychars(tp);
 #ifndef PORTSELECTOR
 		if (tp->t_ispeed == 0) {
+#endif
+			tp->t_iflag = TTYDEF_IFLAG;
+			tp->t_oflag = TTYDEF_OFLAG;
+			tp->t_cflag = TTYDEF_CFLAG;
+			tp->t_lflag = LFLAG;
+			tp->t_ispeed = tp->t_ospeed = ISPEED;
+#ifdef PORTSELECTOR
+			tp->t_cflag |= HUPCL;
 #else
-			tp->t_state |= TS_HUPCLS;
-#endif PORTSELECTOR
-			tp->t_ispeed = ISPEED;
-			tp->t_ospeed = ISPEED;
-			tp->t_flags = IFLAGS;
-#ifndef PORTSELECTOR
 		}
-#endif PORTSELECTOR
-		dhparam(unit);
+#endif
+		dhparam(tp, &tp->t_termios);
+		ttsetwater(tp);
 	}
 	/*
 	 * Wait for carrier, then process line discipline specific open.
 	 */
-	dmopen(dev);
+	dmopen(dev, flag);
 	return ((*linesw[tp->t_line].l_open)(dev, tp));
 }
 
@@ -253,27 +280,27 @@ dhclose(dev, flag)
 	tp = &dh11[unit];
 	(*linesw[tp->t_line].l_close)(tp);
 	((struct dhdevice *)(tp->t_addr))->dhbreak &= ~(1<<(unit&017));
-	if (tp->t_state&TS_HUPCLS || (tp->t_state&TS_ISOPEN)==0)
+	if (tp->t_cflag&HUPCL || (tp->t_state&TS_ISOPEN)==0)
 		dmctl(unit, DML_OFF, DMSET);
 	ttyclose(tp);
 }
 
-dhread(dev, uio)
+dhread(dev, uio, flag)
 	dev_t dev;
 	struct uio *uio;
 {
 	register struct tty *tp = &dh11[minor(dev)];
 
-	return ((*linesw[tp->t_line].l_read)(tp, uio));
+	return ((*linesw[tp->t_line].l_read)(tp, uio, flag));
 }
 
-dhwrite(dev, uio)
+dhwrite(dev, uio, flag)
 	dev_t dev;
 	struct uio *uio;
 {
 	register struct tty *tp = &dh11[minor(dev)];
 
-	return ((*linesw[tp->t_line].l_write)(tp, uio));
+	return ((*linesw[tp->t_line].l_write)(tp, uio, flag));
 }
 
 /*
@@ -283,7 +310,7 @@ dhrint(dh)
 	int dh;
 {
 	register struct tty *tp;
-	register c;
+	register c, cc;
 	register struct dhdevice *addr;
 	register struct tty *tp0;
 	register struct uba_device *ui;
@@ -308,31 +335,16 @@ dhrint(dh)
 #endif
 				continue;
 		}
-		if (c & DH_PE)
-			if ((tp->t_flags&(EVENP|ODDP))==EVENP
-			 || (tp->t_flags&(EVENP|ODDP))==ODDP )
-				continue;
-		if ((c & DH_DO) && overrun == 0) {
+		cc = c&0xff;
+		if (c&DH_PE)
+			cc |= TTY_PE;
+		if ((c&DH_DO) && overrun == 0) {
 			log(LOG_WARNING, "dh%d: silo overflow\n", dh);
 			overrun = 1;
 		}
-		if (c & DH_FE)
-			/*
-			 * At framing error (break) generate
-			 * a null (in raw mode, for getty), or a
-			 * interrupt (in cooked/cbreak mode).
-			 */
-			if (tp->t_flags&RAW)
-				c = 0;
-			else
-				c = tp->t_intrc;
-#if NBK > 0
-		if (tp->t_line == NETLDISC) {
-			c &= 0177;
-			BKINPUT(c, tp);
-		} else
-#endif
-			(*linesw[tp->t_line].l_rint)(c, tp);
+		if (c&DH_FE)
+			cc |= TTY_FE;
+		(*linesw[tp->t_line].l_rint)(cc, tp);
 	}
 }
 
@@ -352,12 +364,8 @@ dhioctl(dev, cmd, data, flag)
 	if (error >= 0)
 		return (error);
 	error = ttioctl(tp, cmd, data, flag);
-	if (error >= 0) {
-		if (cmd == TIOCSETP || cmd == TIOCSETN || cmd == TIOCLBIS ||
-		    cmd == TIOCLBIC || cmd == TIOCLSET)
-			dhparam(unit);
+	if (error >= 0)
 		return (error);
-	}
 	switch (cmd) {
 
 	case TIOCSBRK:
@@ -386,41 +394,55 @@ dhioctl(dev, cmd, data, flag)
  * Set parameters from open or stty into the DH hardware
  * registers.
  */
-dhparam(unit)
-	register int unit;
-{
+dhparam(tp, t)
 	register struct tty *tp;
+	register struct termios *t;
+{
 	register struct dhdevice *addr;
 	register int lpar;
+	register int cflag = t->c_cflag;
+	int unit = minor(tp->t_dev);
 	int s;
+	int ispeed = ttspeedtab(t->c_ispeed, dhspeedtab);
+	int ospeed = ttspeedtab(t->c_ospeed, dhspeedtab);
 
-	tp = &dh11[unit];
-	addr = (struct dhdevice *)tp->t_addr;
+	/* check requested parameters */
+	if (ospeed < 0 || ispeed < 0 || (cflag&CSIZE) == CS5)
+		return(EINVAL);
+	if (ispeed == 0)
+		ispeed = ospeed;
+	/* and copy to tty */
+	tp->t_ispeed = t->c_ispeed;
+	tp->t_ospeed = t->c_ospeed;
+	tp->t_cflag = cflag;
 	/*
 	 * Block interrupts so parameters will be set
 	 * before the line interrupts.
 	 */
+	addr = (struct dhdevice *)tp->t_addr;
 	s = spl5();
 	addr->un.dhcsrl = (unit&0xf) | DH_IE;
-	if ((tp->t_ispeed)==0) {
-		tp->t_state |= TS_HUPCLS;
+	if (ospeed == 0) {
+		tp->t_cflag |= HUPCL;
 		dmctl(unit, DML_OFF, DMSET);
 		splx(s);
-		return;
+		return 0;
 	}
-	lpar = ((tp->t_ospeed)<<10) | ((tp->t_ispeed)<<6);
-	if ((tp->t_ispeed) == B134)
-		lpar |= BITS6|PENABLE|HDUPLX;
-	else if (tp->t_flags & (RAW|LITOUT|PASS8))
-		lpar |= BITS8;
-	else
-		lpar |= BITS7|PENABLE;
-	if ((tp->t_flags&EVENP) == 0)
+	lpar = (ospeed<<10) | (ispeed<<6);
+	switch (cflag&CSIZE) {
+	case CS6:	lpar |= BITS6; break;
+	case CS7:	lpar |= BITS7; break;
+	case CS8:	lpar |= BITS8; break;
+	}
+	if (cflag&PARENB)
+		lpar |= PENABLE;
+	if (cflag&PARODD)
 		lpar |= OPAR;
-	if ((tp->t_ospeed) == B110)
+	if (cflag&CSTOPB)
 		lpar |= TWOSB;
 	addr->dhlpr = lpar;
 	splx(s);
+	return 0;
 }
 
 /*
@@ -503,7 +525,7 @@ dhstart(tp)
 	 * If there are sleepers, and output has drained below low
 	 * water mark, wake up the sleepers.
 	 */
-	if (tp->t_outq.c_cc<=TTLOWAT(tp)) {
+	if (tp->t_outq.c_cc<=tp->t_lowat) {
 		if (tp->t_state&TS_ASLEEP) {
 			tp->t_state &= ~TS_ASLEEP;
 			wakeup((caddr_t)&tp->t_outq);
@@ -520,7 +542,7 @@ dhstart(tp)
 	 */
 	if (tp->t_outq.c_cc == 0)
 		goto out;
-	if (tp->t_flags & (RAW|LITOUT))
+	if (1 || !(tp->t_oflag&OPOST))	/*XXX*/
 		nch = ndqb(&tp->t_outq, 0);
 	else {
 		nch = ndqb(&tp->t_outq, 0200);
@@ -681,7 +703,7 @@ dhtimer()
 /*
  * Turn on the line associated with dh dev.
  */
-dmopen(dev)
+dmopen(dev, flag)
 	dev_t dev;
 {
 	register struct tty *tp;
@@ -710,7 +732,8 @@ dmopen(dev)
 		if ((addr->dmlstat & DML_CAR) || (dhsoftCAR[dm] & (1 << unit)))
 			tp->t_state |= TS_CARR_ON;
 		addr->dmcsr = DM_IE|DM_SE;
-		if (tp->t_state & TS_CARR_ON)
+		if (tp->t_state&TS_CARR_ON || flag&O_NONBLOCK || 
+		    tp->t_cflag&CLOCAL)
 			break;
 		sleep((caddr_t)&tp->t_rawq, TTIPRI);
 	}
