@@ -12,7 +12,7 @@
  *
  * from: Utah $Hdr: trap.c 1.32 91/04/06$
  *
- *	@(#)trap.c	7.5 (Berkeley) %G%
+ *	@(#)trap.c	7.6 (Berkeley) %G%
  */
 
 #include <machine/fix_machine_type.h>
@@ -69,7 +69,6 @@ extern void MachKernIntr();
 extern void MachUserIntr();
 extern void MachTLBModException();
 extern void MachTLBMissException();
-static void MemErrorInterrupt();
 extern unsigned MachEmulateBranch();
 
 void (*machExceptionTable[])() = {
@@ -219,7 +218,7 @@ trap(statusReg, causeReg, vadr, pc, args)
 			pa = entry & PG_FRAME;
 			if (!IS_VM_PHYSADDR(pa))
 				panic("trap: kmod");
-			PHYS_TO_VM_PAGE(pa)->clean = FALSE;
+			PHYS_TO_VM_PAGE(pa)->flags &= ~PG_CLEAN;
 #endif
 			return (pc);
 		}
@@ -235,7 +234,8 @@ trap(statusReg, causeReg, vadr, pc, args)
 		extern pmap_hash_t zero_pmap_hash;
 		extern pmap_t cur_pmap;
 
-		if (cur_pmap->pm_hash == zero_pmap_hash)
+		if (cur_pmap->pm_hash == zero_pmap_hash ||
+		    cur_pmap->pm_hash == (pmap_hash_t)0)
 			panic("tlbmod");
 #endif
 		hp = &((pmap_hash_t)PMAP_HASH_UADDR)[PMAP_HASH(vadr)];
@@ -260,7 +260,7 @@ trap(statusReg, causeReg, vadr, pc, args)
 		pa = hp->pmh_pte[i].low & PG_FRAME;
 		if (!IS_VM_PHYSADDR(pa))
 			panic("trap: umod");
-		PHYS_TO_VM_PAGE(pa)->clean = FALSE;
+		PHYS_TO_VM_PAGE(pa)->flags &= ~PG_CLEAN;
 #endif
 		if (!USERMODE(statusReg))
 			return (pc);
@@ -286,8 +286,14 @@ trap(statusReg, causeReg, vadr, pc, args)
 			}
 			goto err;
 		}
+		/*
+		 * It is an error for the kernel to access user space except
+		 * through the copyin/copyout routines.
+		 */
+		if ((i = ((struct pcb *)UADDR)->pcb_onfault) == 0)
+			goto err;
 		/* check for fuswintr() or suswintr() getting a page fault */
-		if ((i = ((struct pcb *)UADDR)->pcb_onfault) == 4)
+		if (i == 4)
 			return (onfault_table[i]);
 		goto dofault;
 
@@ -365,24 +371,6 @@ trap(statusReg, causeReg, vadr, pc, args)
 	    }
 
 	case T_ADDR_ERR_LD+T_USER:	/* misaligned or kseg access */
-		if (vadr == KERNBASE) {
-			struct args {
-				int	i[1];
-			} args;
-			int rval[2];
-
-			/*
-			 * Assume a signal handler is trying to return
-			 * (see sendsig() and sigreturn()). We have to
-			 * pop the sigframe struct to get the address of
-			 * the sigcontext.
-			 */
-			args.i[0] = p->p_md.md_regs[SP] + 4 * sizeof(int);
-			(void) sigreturn(curproc, &args, rval);
-			goto out;
-		}
-		/* FALLTHROUGH */
-
 	case T_ADDR_ERR_ST+T_USER:	/* misaligned or kseg access */
 	case T_BUS_ERR_IFETCH+T_USER:	/* BERR asserted to cpu */
 	case T_BUS_ERR_LD_ST+T_USER:	/* BERR asserted to cpu */
@@ -550,20 +538,24 @@ printf("EINVAL: pid=%d, code=%d\n", p->p_pid, code);
 		splx(s);
 		}
 #endif
-		if (i == ERESTART)
+		switch (i) {
+		case 0:
+			locr0[V0] = rval[0];
+			locr0[V1] = rval[1];
+			locr0[A3] = 0;
+			break;
+
+		case ERESTART:
 			locr0[PC] = pc;
-		else if (i != EJUSTRETURN) {
-			if (i) {
-				locr0[V0] = i;
-				locr0[A3] = 1;
-			} else {
-				locr0[V0] = rval[0];
-				locr0[V1] = rval[1];
-				locr0[A3] = 0;
-			}
+			break;
+
+		case EJUSTRETURN:
+			break;	/* nothing to do */
+
+		default:
+			locr0[V0] = i;
+			locr0[A3] = 1;
 		}
-		/* else if (i == EJUSTRETURN) */
-			/* nothing to do */
 	done:
 #ifdef KTRACE
 		if (KTRPOINT(p, KTR_SYSRET))
@@ -724,8 +716,11 @@ out:
 	/*
 	 * If profiling, charge system time to the trapped pc.
 	 */
-	if (p->p_flag & SPROFIL)
-		addupc_task(p, pc, (int)(p->p_sticks - sticks));
+	if (p->p_flag & SPROFIL) {
+		extern int psratio;
+
+		addupc_task(p, pc, (int)(p->p_sticks - sticks) * psratio);
+	}
 	curpri = p->p_pri;
 	return (pc);
 }
@@ -1046,29 +1041,6 @@ vmUserUnmap()
 			MachTLBFlushPID(id);
 	}
 	UserMapPid = 0;
-}
-#endif
-
-/*
- *----------------------------------------------------------------------
- *
- * MemErrorInterrupt --
- *
- *	Handler an interrupt for the control register.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-#ifdef NOTDEF
-static void
-MemErrorInterrupt()
-{
-
 }
 #endif
 
