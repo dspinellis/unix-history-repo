@@ -1,4 +1,4 @@
-/*	conf.c	3.7	%G%	*/
+/*	conf.c	3.8	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -130,35 +130,6 @@ struct	linesw linesw[] =
 };
  
 int	nldisp = 3;
-dev_t	rootdev	= makedev(0, 0);
-dev_t	pipedev	= makedev(0, 0);
-dev_t	argdev = makedev(0, 1);
-
-/*
- * Swapdev is a fake device implemented
- * in sw.c used only internally to get to swstrategy.
- * It cannot be provided to the users, because the
- * swstrategy routine munches the b_dev and b_blkno entries
- * before calling the appropriate driver.  This would horribly
- * confuse, e.g. the hashing routines as well as the placement
- * of the block on the d_tab chains.  Instead, /dev/drum is
- * provided as a character (raw) device.
- */
-dev_t	swapdev = makedev(4, 0);
-
-/*
- * Nswap is the basic number of blocks of swap per
- * swap device, and is multipliet by nswdev after
- * nswdev is determined at boot.
- */
-int	nswap = 33440;
-
-struct	swdevt swdevt[] =
-{
-	makedev(0, 1),	0,		/* rp0b */
-	makedev(2, 9),  0,		/* up1b */
-	0,		0,
-};
  
 struct	buf	buf[NBUF];
 struct	file	file[NFILE];
@@ -172,6 +143,18 @@ struct	acct	acctbuf;
 struct	inode	*acctp;
  
 int	mem_no = 3; 	/* major device number of memory special file */
+
+/*
+ * Swapdev is a fake device implemented
+ * in sw.c used only internally to get to swstrategy.
+ * It cannot be provided to the users, because the
+ * swstrategy routine munches the b_dev and b_blkno entries
+ * before calling the appropriate driver.  This would horribly
+ * confuse, e.g. the hashing routines as well as the placement
+ * of the block on the d_tab chains.  Instead, /dev/drum is
+ * provided as a character (raw) device.
+ */
+dev_t	swapdev = makedev(4, 0);
 
 
 extern struct user u;
