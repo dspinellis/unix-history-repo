@@ -8,7 +8,7 @@
 # include "sendmail.h"
 # include "conf.h"
 
-SCCSID(@(#)util.c	3.23		%G%);
+SCCSID(@(#)util.c	3.24		%G%);
 
 /*
 **  STRIPQUOTES -- Strip quotes & quote bits from a string.
@@ -621,4 +621,46 @@ static
 readtimeout()
 {
 	longjmp(TimeoFrame, 1);
+}
+/*
+**  FGETFOLDED -- like fgets, but know about folded lines.
+**
+**	Parameters:
+**		buf -- place to put result.
+**		n -- bytes available.
+**		f -- file to read from.
+**
+**	Returns:
+**		buf on success, NULL on error or EOF.
+**
+**	Side Effects:
+**		buf gets lines from f, with continuation lines (lines
+**		with leading white space) appended.  CRLF's are mapped
+**		into single newlines.  Any trailing NL is stripped.
+*/
+
+char *
+fgetfolded(buf, n, f)
+	char *buf;
+	register int n;
+	FILE *f;
+{
+	register char *p = buf;
+	register int i;
+
+	n--;
+	while (fgets(p, n, f) != NULL)
+	{
+		fixcrlf(p, TRUE);
+		i = fgetc(f);
+		if (i != EOF)
+			ungetc(i, f);
+		if (i != ' ' && i != '\t')
+			return (buf);
+		i = strlen(p);
+		p += i;
+		*p++ = '\n';
+		n -= i + 1;
+	}
+	return (NULL);
 }

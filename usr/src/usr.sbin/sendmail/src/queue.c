@@ -5,10 +5,10 @@
 # include <errno.h>
 
 # ifndef QUEUE
-SCCSID(@(#)queue.c	3.32		%G%	(no queueing));
+SCCSID(@(#)queue.c	3.33		%G%	(no queueing));
 # else QUEUE
 
-SCCSID(@(#)queue.c	3.32		%G%);
+SCCSID(@(#)queue.c	3.33		%G%);
 
 /*
 **  QUEUEUP -- queue a message up for future transmission.
@@ -592,7 +592,7 @@ readqf(cf)
 	char *cf;
 {
 	register FILE *f;
-	char buf[MAXLINE];
+	char buf[MAXFIELD];
 	register char *p;
 	register int i;
 	extern ADDRESS *sendto();
@@ -614,23 +614,8 @@ readqf(cf)
 
 	if (Verbose)
 		printf("\nRunning %s\n", cf);
-	p = buf;
-	while (fgets(p, sizeof buf - (p - buf), f) != NULL)
+	while (fgetfolded(buf, sizeof buf, f) != NULL)
 	{
-		/*
-		**  Collect any continuation lines...
-		*/
-
-		i = fgetc(f);
-		if (i != EOF)
-			ungetc(i, f);
-		if (i == ' ' || i == '\t')
-		{
-			p += strlen(p);
-			continue;
-		}
-		fixcrlf(p, TRUE);
-
 		switch (buf[0])
 		{
 		  case 'R':		/* specify recipient */
