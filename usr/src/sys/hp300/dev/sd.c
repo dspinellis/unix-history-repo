@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sd.c	7.14 (Berkeley) %G%
+ *	@(#)sd.c	7.15 (Berkeley) %G%
  */
 
 /*
@@ -27,6 +27,7 @@ static char rcsid[] = "$Header: /usr/src/sys/hp300/dev/RCS/sd.c,v 1.2 92/04/10 2
 #include "sys/disklabel.h"
 #include "sys/malloc.h"
 #include "sys/proc.h"
+#include "sys/ioctl.h"
 
 #include "hp/dev/device.h"
 #include "scsireg.h"
