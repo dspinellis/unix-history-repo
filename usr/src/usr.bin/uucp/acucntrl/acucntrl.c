@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)acucntrl.c	5.14	(Berkeley) %G%";
+static char sccsid[] = "@(#)acucntrl.c	5.15	(Berkeley) %G%";
 #endif
 
 /*  acucntrl - turn around tty line between dialin and dialout
@@ -126,10 +126,10 @@ char usage[] = "Usage: acucntrl {dis|en}able ttydX\n";
 struct utmp utmp;
 char resettty, resetmodem;
 int etcutmp;
-extern int errno;
-extern char *sys_errlist[];
 off_t utmploc;
 off_t ttyslnbeg;
+extern int errno;
+extern char *sys_errlist[];
 off_t lseek();
 
 #define NAMSIZ	sizeof(utmp.ut_name)
@@ -149,7 +149,7 @@ int argc; char *argv[];
 	char *rindex();
 
 	/* check input arguments */
-	if (argc!=3) {
+	if (argc!=3 && argc != 4) {
 		fprintf(stderr, usage);
 		exit(1);
 	}
@@ -166,12 +166,6 @@ int argc; char *argv[];
 
 	device = rindex(argv[2], '/');
 	device = (device == NULL) ? argv[2]: device+1;
-
-	/* only recognize devices of the form ttydX */
-	if (strncmp(device, "ttyd", 4)!=0) {
-		fprintf(stderr, "Bad Device Name %s", device);
-		exit(1);
-	}
 
 	opnttys(device);
 
@@ -196,6 +190,9 @@ int argc; char *argv[];
 		fprintf(stderr, "cannot get uid name\n");
 		exit(1);
 	}
+
+	if (strcmp(p, "uucp") == 0 && argc == 4)
+		p = argv[3];
 
 	/*  to upper case */
 	i = 0;
