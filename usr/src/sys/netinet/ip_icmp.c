@@ -1,4 +1,4 @@
-/*	ip_icmp.c	4.12	82/01/19	*/
+/*	ip_icmp.c	4.13	82/04/07	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -63,12 +63,11 @@ COUNT(ICMP_ERROR);
 	nip = (struct ip *)mtod(m, struct ip *);
 	*nip = *oip;
 	icmp_reflect(nip);
-	return;
 
+free:
 	/*
 	 * Discard mbufs of original datagram
 	 */
-free:
 	m_freem(dtom(oip));
 }
 
