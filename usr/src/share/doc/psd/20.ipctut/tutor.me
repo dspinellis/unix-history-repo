@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)tutor.me	8.2 (Berkeley) %G%
+.\"	@(#)tutor.me	8.3 (Berkeley) %G%
 .\"
 .oh 'Introductory 4.4BSD IPC''PSD:20-%'
 .eh 'PSD:20-%''Introductory 4.4BSD IPC'
@@ -658,55 +658,6 @@ together with their parameters.  The parameters for each system call
 reflect the differences in function of the different calls.
 In the examples given in this paper, the calls \fIread()\fP and 
 \fIwrite()\fP have been used whenever possible.
-.(z
-.ft CW
-	/*
-	 * The variable descriptor may be the descriptor of either a file
-	 * or of a socket.
-	 */
-	cc = read(descriptor, buf, nbytes)
-	int cc, descriptor; char *buf; int nbytes;
-
-	/*
-	 * An iovec can include several source buffers.
-	 */
-	cc = readv(descriptor, iov, iovcnt)
-	int cc, descriptor; struct iovec *iov; int iovcnt;
-
-	cc = write(descriptor, buf, nbytes)
-	int cc, descriptor; char *buf; int nbytes;
-
-	cc = writev(descriptor, iovec, ioveclen)
-	int cc, descriptor; struct iovec *iovec; int ioveclen;
-
-	/*
-	 * The variable ``sock'' must be the descriptor of a socket.
-	 * Flags may include MSG_OOB and MSG_PEEK.
-	 */
-	cc = send(sock, msg, len, flags)
-	int cc, sock; char *msg; int len, flags; 
-
-	cc = sendto(sock, msg, len, flags, to, tolen)
-	int cc, sock; char *msg; int len, flags;
-	struct sockaddr *to; int tolen;
-
-	cc = sendmsg(sock, msg, flags)
-	int cc, sock; struct msghdr msg[]; int flags;
-
-	cc = recv(sock, buf, len, flags)
-	int cc, sock; char *buf; int len, flags;
-
-	cc = recvfrom(sock, buf, len, flags, from, fromlen)
-	int cc, sock; char *buf; int len, flags;
-	struct sockaddr *from; int *fromlen;
-
-	cc = recvmsg(sock, msg, flags)
-	int cc, socket; struct msghdr msg[]; int flags;
-.ft
-.sp 1
-.ce 1
-Figure 10\ \ Varieties of read and write commands
-.)z
 .b
 .sh 1 "Choices"
 .r
@@ -830,7 +781,7 @@ Figure 1\ \ Use of a pipe
 .(z
 .so fig2.pic
 .ce 2
-Figure 2\ \ Sharing a pipe between parent and child
+\s10Figure 2\ \ Sharing a pipe between parent and child\s0
 .ce 0
 .)z
 .(z
@@ -843,7 +794,7 @@ Figure 3\ \ Use of a socketpair
 .(z
 .so fig3.pic
 .ce 1
-Figure 4\ \ Sharing a socketpair between parent and child
+\s10Figure 4\ \ Sharing a socketpair between parent and child\s0
 .)z
 .(z
 .ft CW
@@ -897,7 +848,7 @@ Figure 7c\ \ Using select() to check for pending connections
 .so fig8.pic
 .sp
 .ce 1
-Figure 8\ \ Establishing a stream connection
+\s10Figure 8\ \ Establishing a stream connection\s0
 .)z
 .(z
 .ft CW
@@ -912,3 +863,53 @@ Figure 9a\ \ Initiating a UNIX domain stream connection
 .ce 1
 Figure 9b\ \ Accepting a UNIX domain stream connection
 .)z
+.(z
+.ft CW
+	/*
+	 * The variable descriptor may be the descriptor of either a file
+	 * or of a socket.
+	 */
+	cc = read(descriptor, buf, nbytes)
+	int cc, descriptor; char *buf; int nbytes;
+
+	/*
+	 * An iovec can include several source buffers.
+	 */
+	cc = readv(descriptor, iov, iovcnt)
+	int cc, descriptor; struct iovec *iov; int iovcnt;
+
+	cc = write(descriptor, buf, nbytes)
+	int cc, descriptor; char *buf; int nbytes;
+
+	cc = writev(descriptor, iovec, ioveclen)
+	int cc, descriptor; struct iovec *iovec; int ioveclen;
+
+	/*
+	 * The variable ``sock'' must be the descriptor of a socket.
+	 * Flags may include MSG_OOB and MSG_PEEK.
+	 */
+	cc = send(sock, msg, len, flags)
+	int cc, sock; char *msg; int len, flags; 
+
+	cc = sendto(sock, msg, len, flags, to, tolen)
+	int cc, sock; char *msg; int len, flags;
+	struct sockaddr *to; int tolen;
+
+	cc = sendmsg(sock, msg, flags)
+	int cc, sock; struct msghdr msg[]; int flags;
+
+	cc = recv(sock, buf, len, flags)
+	int cc, sock; char *buf; int len, flags;
+
+	cc = recvfrom(sock, buf, len, flags, from, fromlen)
+	int cc, sock; char *buf; int len, flags;
+	struct sockaddr *from; int *fromlen;
+
+	cc = recvmsg(sock, msg, flags)
+	int cc, socket; struct msghdr msg[]; int flags;
+.ft
+.sp 1
+.ce 1
+Figure 10\ \ Varieties of read and write commands
+.)z
+.bp
