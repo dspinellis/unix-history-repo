@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)mtree.8	5.4 (Berkeley) %G%
+.\"	@(#)mtree.8	5.5 (Berkeley) %G%
 .\"
 .TH MTREE 8 ""
 .UC 7
@@ -97,6 +97,9 @@ The size, in bytes, of the file.
 .B link
 The file a symbolic link is expected to reference.
 .TP
+.B time
+The last modification time of the file.
+.TP
 .B type
 The type of the file; may be set to any one of the following:
 .RS
@@ -173,6 +176,10 @@ chmod(1), chown(1), chgrp(1), cksum(1), find(1), stat(2), fts(3), mkproto(8)
 The
 .I cksum
 keyword is not yet implemented.
+.br
+The
+.I time
+keyword should be specifiable in human readable terms.
 .SH EXAMPLE
 .nf
 #	  fs: /a/staff/rick/mybin

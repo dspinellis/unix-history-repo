@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)create.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)create.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -127,6 +127,8 @@ cwalk()
 		}
 		LABEL;
 		(void)printf("size=%ld", p->fts_statb.st_size);
+		LABEL;
+		(void)printf("time=%ld", p->fts_statb.st_mtime);
 
 		if (p->fts_info == FTS_SL || p->fts_info == FTS_SLNONE) {
 			LABEL;
