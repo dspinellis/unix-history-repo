@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)map.c	8.44 (Berkeley) %G%";
+static char sccsid[] = "@(#)map.c	8.45 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -1370,39 +1370,14 @@ char *
 nisplus_default_domain()
 {
 	static char default_domain[MAXNAME] = "";
-	nis_result *res = NULL;
 	char *p;
 
 	if (default_domain[0] != '\0')
 		return(default_domain);
 	
-	if (VendorCode == VENDOR_SUN && ConfigLevel < 2)
-	{
-		/* for old config, user nis+ local directory        */
-		/* have to be backward compatible with bugs too :-( */
-		p = nis_local_directory();
-		strcpy(default_domain, p);
-		return default_domain;
-	}
-
-	if ((p = macvalue('m', CurEnv)) == NULL)
-	{
-		p = nis_local_directory();
-		strcpy(default_domain, p);
-		return default_domain;
-	}
-
+	p = nis_local_directory();
 	strcpy(default_domain, p);
-	if (PARTIAL_NAME(default_domain))
-		strcat(default_domain, ".");
-
-	res = nis_lookup(default_domain, FOLLOW_LINKS);
-	if (res->status == NIS_NOTFOUND)
-	{
-		p = nis_local_directory();
-		strcpy(default_domain, p);
-	}
-	return(default_domain);
+	return default_domain;
 }
 
 #endif /* NISPLUS */
