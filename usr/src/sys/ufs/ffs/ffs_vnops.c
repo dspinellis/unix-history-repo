@@ -1,4 +1,4 @@
-/*	ffs_vnops.c	4.52	83/03/21	*/
+/*	ffs_vnops.c	4.53	83/03/22	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -969,7 +969,7 @@ rename()
 	 * parent) then the user must have write permission.
 	 */
 	parentdifferent = oldparent != dp->i_number;
-	if (parentdifferent && access(ip, IWRITE))
+	if (doingdirectory && parentdifferent && access(ip, IWRITE))
 		goto bad;
 	/*
 	 * 2) If target doesn't exist, link the target
