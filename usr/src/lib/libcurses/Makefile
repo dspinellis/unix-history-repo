@@ -1,7 +1,7 @@
 #
 # cursor package maker
 #
-# @(#)Makefile	1.5 (Berkeley) %G%
+# @(#)Makefile	1.6 (Berkeley) %G%
 #
 HEADERS=curses.h unctrl.h cr_ex.h
 CFILES=	box.c clear.c initscr.c endwin.c mvprintw.c mvscanw.c mvwin.c \
@@ -26,6 +26,7 @@ POBJS=	box.p clear.p initscr.p endwin.p mvprintw.p mvscanw.p mvwin.p \
 CTAGS=	ctags
 CC=	cc
 LINT=	lint
+LPASS1=	/usr/lib/lint/lint1
 AR=	ar
 RM=	rm
 LN=	ln
@@ -83,7 +84,7 @@ tar:
 	tar crvf curses.tar Makefile tags ${HEADERS} curses.ext ${CFILES} llib-lcurses
 
 llib-lcurses.ln: llib-lcurses
-	-(/lib/cpp -C -Dlint llib-lcurses | /usr/lib/lpass1 > llib-lcurses.ln ) 2>&1 | grep -v warning
+	-(/lib/cpp -C -Dlint llib-lcurses | ${LPASS1} > llib-lcurses.ln ) 2>&1 | grep -v warning
 
 install:
 	install -c crlib ${DESTDIR}/usr/lib/libcurses.a
