@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)map.c	8.33 (Berkeley) %G%";
+static char sccsid[] = "@(#)map.c	8.34 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -1474,8 +1474,8 @@ ni_map_open(map, mode)
 	if (map->map_domain == NULL)
 		map->map_domain = NETINFO_DEFAULT_PROPERTY;
 
-	if (map->map_sepchar == '\0' && bitset(MF_ALIAS, map->map_mflags))
-		map->map_sepchar = ',';
+	if (map->map_coldelim == '\0' && bitset(MF_ALIAS, map->map_mflags))
+		map->map_coldelim = ',';
 
 	return TRUE;
 }
