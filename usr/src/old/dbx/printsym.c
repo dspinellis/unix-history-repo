@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)printsym.c 1.6 %G%";
+static char sccsid[] = "@(#)printsym.c 1.7 %G%";
 
 /*
  * Printing of symbolic information.
@@ -100,7 +100,7 @@ Symbol s;
     Boolean isindirect;
 
     printf("returning ");
-    if (s->class == FUNC) {
+    if (s->class == FUNC && (!istypename(s->type,"void"))) {
 	len = size(s->type);
 	if (canpush(len)) {
 	    t = rtype(s->type);
@@ -209,20 +209,24 @@ Frame frame;
     } else {
 	printf("%s = ", symname(s));
     }
-    if (isvarparam(s)) {
-	rpush(address(s, frame), sizeof(Address));
-	addr = pop(Address);
-	len = size(s->type);
+    if(s->type->class == ARRAY && (! istypename(s->type->type,"char")) ) {
+	printf(" ARRAY ");
     } else {
-	addr = address(s, frame);
-	len = size(s);
-    }
-    if (canpush(len)) {
-	rpush(addr, len);
-	printval(s->type);
-    } else {
-	printf("*** expression too large ***");
-    }
+       if (isvarparam(s)) {
+	   rpush(address(s, frame), sizeof(Address));
+	   addr = pop(Address);
+	   len = size(s->type);
+       } else {
+	   addr = address(s, frame);
+	   len = size(s);
+       }
+       if (canpush(len)) {
+	   rpush(addr, len);
+	   printval(s->type);
+       } else {
+	   printf("*** expression too large ***");
+       }
+   }
 }
 
 /*
