@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mci.c	8.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)mci.c	8.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -269,25 +269,59 @@ mci_get(host, m)
 **		none.
 */
 
-mci_dump(mci)
+mci_dump(mci, logit)
 	register MCI *mci;
+	bool logit;
 {
+	register char *p;
+	char *sep;
+	char buf[1000];
 	extern char *ctime();
 
-	printf("MCI@%x: ", mci);
+	sep = logit ? " " : "\n\t";
+	p = buf;
+	sprintf(p, "MCI@%x: ", mci);
+	p += strlen(p);
 	if (mci == NULL)
 	{
-		printf("NULL\n");
-		return;
+		sprintf(p, "NULL");
+		goto printit;
 	}
-	printf("flags=%o, errno=%d, herrno=%d, exitstat=%d, state=%d, pid=%d,\n",
+	sprintf(p, "flags=%o, errno=%d, herrno=%d, exitstat=%d, state=%d, pid=%d,%s",
 		mci->mci_flags, mci->mci_errno, mci->mci_herrno,
-		mci->mci_exitstat, mci->mci_state, mci->mci_pid);
-	printf("\tmaxsize=%ld, phase=%s, mailer=%s,\n",
+		mci->mci_exitstat, mci->mci_state, mci->mci_pid, sep);
+	p += strlen(p);
+	sprintf(p, "maxsize=%ld, phase=%s, mailer=%s,%s",
 		mci->mci_maxsize,
 		mci->mci_phase == NULL ? "NULL" : mci->mci_phase,
-		mci->mci_mailer == NULL ? "NULL" : mci->mci_mailer->m_name);
-	printf("\thost=%s, lastuse=%s\n",
+		mci->mci_mailer == NULL ? "NULL" : mci->mci_mailer->m_name,
+		sep);
+	p += strlen(p);
+	sprintf(p, "host=%s, lastuse=%s",
 		mci->mci_host == NULL ? "NULL" : mci->mci_host,
 		ctime(&mci->mci_lastuse));
+printit:
+	if (logit)
+		syslog(LOG_INFO, "%s", buf);
+	else
+		printf("%s\n", buf);
+}
+/*
+**  MCI_DUMP_ALL -- print the entire MCI cache
+**
+**	Parameters:
+**		logit -- if set, log the result instead of printing
+**			to stdout.
+**
+**	Returns:
+**		none.
+*/
+
+mci_dump_all(logit)
+	bool logit;
+{
+	register int i;
+
+	for (i = 0; i < MaxMciCache; i++)
+		mci_dump(MciCache[i], logit);
 }

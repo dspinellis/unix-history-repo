@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.34 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.35 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -343,7 +343,6 @@ sendenvelope(e, mode)
 
 		/* now drop the envelope in the parent */
 		e->e_flags |= EF_INQUEUE|EF_KEEPQUEUE;
-		e->e_flags &= ~EF_FATALERRS;
 		dropenvelope(e);
 
 		/* and reacquire in the child */
