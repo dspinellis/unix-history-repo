@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)ftell.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)ftell.c	8.2 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <stdio.h>
@@ -21,7 +21,7 @@ static char sccsid[] = "@(#)ftell.c	8.1 (Berkeley) %G%";
  */
 long
 ftell(fp)
-	register const FILE *fp;
+	register FILE *fp;
 {
 	register fpos_t pos;
 
