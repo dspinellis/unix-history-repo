@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)at.c	4.1 (Berkeley) %G%";
+static char *sccsid = "@(#)at.c	4.2 (Berkeley) %G%";
 /*
  * at time mon day
  * at time wday
@@ -329,7 +329,7 @@ char *dir;
 	register i;
 
 	for (i=0; ; i += 53) {
-		sprintf(fname, "%s/%.2d%.3d%.4d%.2d", dir, y, d, t,
+		sprintf(fname, "%s/%02d.%03d.%04d.%02d", dir, y, d, t,
 		   (getpid()+i)%100);
 		if (access(fname, 0) == -1)
 			return;
