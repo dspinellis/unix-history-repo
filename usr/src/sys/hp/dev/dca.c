@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)dca.c	7.3 (Berkeley) %G%
+ *	@(#)dca.c	7.4 (Berkeley) %G%
  */
 
 #include "dca.h"
@@ -142,6 +142,7 @@ dcaopen(dev, flag)
 	tp->t_param = dcaparam;
 	tp->t_dev = dev;
 	if ((tp->t_state & TS_ISOPEN) == 0) {
+		tp->t_state |= TS_WOPEN;
 		ttychars(tp);
 		tp->t_iflag = TTYDEF_IFLAG;
 		tp->t_oflag = TTYDEF_OFLAG;

@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vx.c	7.7 (Berkeley) %G%
+ *	@(#)vx.c	7.8 (Berkeley) %G%
  */
 
 #include "vx.h"
@@ -226,8 +226,8 @@ vxopen(dev, flag)
 	tp->t_param = vxparam;
 	tp->t_dev = dev;
 	s = spl8();
-	tp->t_state |= TS_WOPEN;
 	if ((tp->t_state&TS_ISOPEN) == 0) {
+		tp->t_state |= TS_WOPEN;
 		ttychars(tp);
 		if (tp->t_ispeed == 0) {
 			tp->t_iflag = TTYDEF_IFLAG;
@@ -242,6 +242,7 @@ vxopen(dev, flag)
 	vcmodem(dev, VMOD_ON);
 	while (!(flag&O_NONBLOCK) && !(tp->t_cflag&CLOCAL) && 
 	      (tp->t_state&TS_CARR_ON) == 0)
+		tp->t_state |= TS_WOPEN;
 		if ((error = tsleep((caddr_t)&tp->t_rawq, TTIPRI | PCATCH,
 				    ttopen, 0)) ||
 		    (error = ttclosed(tp)))
