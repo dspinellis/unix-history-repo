@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)disklabel.h	7.20 (Berkeley) %G%
+ *	@(#)disklabel.h	7.21 (Berkeley) %G%
  */
 
 /*
