@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 1990, 1993
+ * Copyright (c) 1990, 1993, 1994
  *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
@@ -7,12 +7,12 @@
 
 #ifndef lint
 static char copyright[] =
-"@(#) Copyright (c) 1990, 1993\n\
+"@(#) Copyright (c) 1990, 1993, 1994\n\
 	The Regents of the University of California.  All rights reserved.\n";
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mail.local.c	8.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)mail.local.c	8.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -186,7 +186,14 @@ deliver(fd, name)
 	(void)snprintf(path, sizeof(path), "%s/%s", _PATH_MAILDIR, name);
 
 	/*
-	 * If the mailbox is a linked or a symlink, fail.
+	 * If the mailbox is linked or a symlink, fail.  There's an obvious
+	 * race here, that the file was replaced with a symbolic link after
+	 * the lstat returned, but before the open.  Mail.local cannot detect
+	 * this race.  Furthermore, it's a symptom of a larger problem, that
+	 * the mail spooling directory is writeable by the wrong users.  NB:
+	 * if that directory is writeable, system security is compromised for
+	 * other reasons, and it cannot be fixed here.  Be that as it may, we
+	 * we make the race harder by checking after the open as well.
 	 *
 	 * If we created the mailbox, set the owner/group.  If that fails,
 	 * just return.  Another process may have already opened it, so we
@@ -210,8 +217,16 @@ deliver(fd, name)
 		e_to_sys(errno);
 		warn("%s: linked file", path);
 		return;
-	} else
+	} else {
 		mbfd = open(path, O_APPEND|O_WRONLY, 0);
+		if (mbfd != -1 && (lstat(path, &sb) ||
+		    sb.st_nlink != 1 || S_ISLNK(sb.st_mode))) {
+			e_to_sys(errno);
+			warn("%s: missing or linked file", path);
+			(void)close(mbfd);
+			return;
+		}
+	}
 
 	if (mbfd == -1) {
 		e_to_sys(errno);
