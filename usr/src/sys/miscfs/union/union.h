@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)union.h	1.9 (Berkeley) %G%
+ *	@(#)union.h	2.1 (Berkeley) %G%
  */
 
 struct union_args {
@@ -56,8 +56,17 @@ struct union_node {
 #endif
 };
 
-#define UN_WANT 0x01
-#define UN_LOCKED 0x02
+#define UN_WANT		0x01
+#define UN_LOCKED	0x02
+#define UN_ULOCK	0x04		/* Upper node is locked */
+#define UN_KLOCK	0x08		/* Keep upper node locked on vput */
+
+#define LOCKUVP(un) \
+		(((un)->un_flags & UN_ULOCK) ? \
+		  (0) : \
+		  (((un)->un_flags |= UN_ULOCK), VOP_LOCK((un)->un_uppervp)))
+#define UNLOCKUVP(un) \
+		((un)->un_flags &= ~UN_ULOCK)
 
 extern int union_allocvp __P((struct vnode **, struct mount *,
 				struct vnode *, struct vnode *,

@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)union_vfsops.c	1.9 (Berkeley) %G%
+ *	@(#)union_vfsops.c	2.1 (Berkeley) %G%
  */
 
 /*
@@ -309,6 +309,7 @@ union_root(mp, vpp)
 	 * Return locked reference to root.
 	 */
 	VREF(um->um_uppervp);
+	VOP_LOCK(um->um_uppervp);
 	if (um->um_lowervp)
 		VREF(um->um_lowervp);
 	error = union_allocvp(vpp, mp,
