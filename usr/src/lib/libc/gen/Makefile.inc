@@ -1,24 +1,19 @@
-#	@(#)Makefile.inc	5.28 (Berkeley) %G%
+#	@(#)Makefile.inc	5.29 (Berkeley) %G%
 
 # machine-independent gen sources
-.PATH: ${.CURDIR}/${MACHINE}/gen ${.CURDIR}/gen ${.CURDIR}/gen/regexp
+.PATH: ${.CURDIR}/${MACHINE}/gen ${.CURDIR}/gen
 
 SRCS+=	alarm.c assert.c clock.c closedir.c crypt.c ctermid.c ctime.c \
-	ctype.c ctype_case.c \
-	difftime.c disklabel.c errlst.c exec.c fnmatch.c frexp.c fstab.c \
-	fts.c getcwd.c getgrent.c getgrouplist.c getlogin.c getmntinfo.c \
-	getnetgrent.c getpass.c getpwent.c getttyent.c getusershell.c glob.c \
-	initgroups.c isatty.c isctype.c isinf.c mktemp.c nice.c nlist.c \
-	opendir.c pause.c popen.c psignal.c raise.c readdir.c \
-	rewinddir.c scandir.c seekdir.c setjmperr.c \
-	setmode.c setrgid.c setruid.c siginterrupt.c \
-	siglist.c signal.c sigsetops.c sleep.c syslog.c telldir.c \
-	termios.c time.c times.c timezone.c ttyname.c ttyslot.c \
-	ualarm.c unvis.c usleep.c utime.c valloc.c vis.c wait.c wait3.c \
-	waitpid.c
-
-# gen/regexp sources
-SRCS+=	regerror.c regexp.c regsub.c
+	ctype.c ctype_case.c difftime.c disklabel.c errlst.c exec.c \
+	fnmatch.c frexp.c fstab.c fts.c getcwd.c getgrent.c getgrouplist.c \
+	getlogin.c getmntinfo.c getnetgrent.c getpass.c getpwent.c \
+	getttyent.c getusershell.c glob.c initgroups.c isatty.c isctype.c \
+	isinf.c mktemp.c nice.c nlist.c opendir.c pause.c popen.c \
+	psignal.c raise.c readdir.c rewinddir.c scandir.c seekdir.c \
+	setjmperr.c setmode.c setrgid.c setruid.c siginterrupt.c siglist.c \
+	signal.c sigsetops.c sleep.c syslog.c telldir.c termios.c time.c \
+	times.c timezone.c ttyname.c ttyslot.c ualarm.c unvis.c usleep.c \
+	utime.c valloc.c vis.c wait.c wait3.c waitpid.c
 
 # machine-dependent gen sources
 .include "${.CURDIR}/${MACHINE}/gen/Makefile.inc"
@@ -37,7 +32,7 @@ MAN3+=	alarm.0 clock.0 crypt.0 ctermid.0 ctime.0 ctype.0 directory.0 \
 	getpwent.0 getttyent.0 getusershell.0 glob.0 initgroups.0 isalnum.0 \
 	isalpha.0 isascii.0 isblank.0 iscntrl.0 isdigit.0 isgraph.0 isinf.0 \
 	islower.0 isprint.0 ispunct.0 isspace.0 isupper.0 isxdigit.0 ldexp.0 \
-	modf.0 nice.0 nlist.0 pause.0 popen.0 psignal.0 raise.0 regexp.0 \
+	modf.0 nice.0 nlist.0 pause.0 popen.0 psignal.0 raise.0 \
 	scandir.0 setjmp.0 setmode.0 setuid.0 siginterrupt.0 signal.0 \
 	sigsetops.0 sleep.0 syslog.0 tcgetpgrp.0 tcsendbreak.0 tcsetattr.0 \
 	tcsetpgrp.0 time.0 times.0 timezone.0 tolower.0 toupper.0 ttyname.0 \
@@ -66,8 +61,6 @@ MLINKS+=getusershell.3 endusershell.3 getusershell.3 setusershell.3
 MLINKS+=glob.3 globfree.3
 MLINKS+=popen.3 pclose.3
 MLINKS+=psignal.3 sys_siglist.3
-MLINKS+=regexp.3 regcomp.3 regexp.3 regexec.3 regexp.3 regsub.3 \
-	regexp.3 regerror.3
 MLINKS+=scandir.3 alphasort.3
 MLINKS+=setjmp.3 _longjmp.3 setjmp.3 _setjmp.3 setjmp.3 longjmp.3 \
 	setjmp.3 longjmperr.3 setjmp.3 longjmperror.3
