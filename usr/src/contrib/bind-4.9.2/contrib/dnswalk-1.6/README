@@ -1,0 +1,275 @@
+		dnswalk 1.6 - July 1993
+
+Author: David Barr <barr@pop.psu.edu>
+$Id: README,v 1.1 1993/07/21 14:39:25 barr Exp barr $
+
+INTRO
+
+dnswalk is a DNS debugger.  It performs zone transfers of specified
+domains, and checks the database in numerous ways for internal
+consistency, as well as accuracy.
+
+dnswalk requires perl and dig.  (Tested under perl-4.036, dig 2.0, and
+the dig shipped with BIND 4.9.x) If you do not have these tools, get
+them.  (perl is assumed to be in /usr/local/bin, edit the first line of
+dnswalk if it is not)
+
+They can be found by anonymous ftp at:
+ftp.uu.net:/networking/ip/dns/dig.2.0.tar.Z
+ftp.uu.net:/systems/gnu/perl-*.tar.Z
+gatekeeper.dec.com:/pub/BSD/bind/4.9/4.9.*.tar.Z
+
+	dnswalk works much better if you use the dig that is packaged
+with the BIND 4.9.x distribution.  (It is much less buggy than its
+predecessor)
+
+	dnswalk is not for the faint of heart.  It should NOT be
+used without a firm knowledge of the DNS RFC's.  If you use this
+tool for cracking or otherwise evil purposes, the author hereby
+considers you a slime-ball.  See the end of this README file for
+a list of good reading material.
+
+	dnswalk is not the be-all end-all tool for checking the
+integrity of your DNS database.  I would suggest it be used after
+using 'doc', written by Steve Hotz (hotz@isi.edu) and Paul Mockapetris
+(pvm@isi.edu).  It can be found via FTP from:
+ftp.uu.net:/networking/ip/dns/doc.2.0.tar.Z
+
+	dnswalk is not a replacement for doc.  This was written to
+check individual database entries, while 'doc' ensures that the overall
+database structure and authority records are consistent.  dnswalk may
+not even function correctly if authority records are missing or
+incorrect.
+
+	This program may be freely distributed, as long as this notice
+and documentation are distributed with the program.  This program is
+released as-is, with no warranty expressed or implied.  Some assembly
+required, contents may settle during shipment.  This program can be
+found at ftp.pop.psu.edu:/pub/src/dnswalk/dnswalk.1.6.tar.Z,
+ftp.univ-lyon1.fr:/pub/mirrors/unix/dnswalk, and probably also in
+ftp.uu.net:/networking/ip/dns.
+
+USAGE
+
+	Invoke dnswalk as follows:
+
+dnswalk [-fradm] domain [> logfile]
+
+	dnswalk tends to produce lots of output, so I'd suggest
+redirecting this into a file of your choice.  I debated using doc's
+strategy of automatically putting it in a logfile, but decided not
+to.  (The author reserves the right to change his mind)  For small,
+mostly-correct domains it is pretty manageable, however.  For larger
+domains, use the included 'do-dnswalk' script as a guide.
+
+Options:
+	-f	Force a zone transfer from an authoritative nameserver.
+		dnswalk normally will look in its saved 'axfr' file
+		for each domain and use that. (if it exists)
+	-r	Recursively descend sub-domains of the specified
+		domain.  Use with caution and care.
+	-a	Turn on warning of duplicate A records.  (see below)
+	-d	Some debugging.  (Use only if redirecting stdout)
+	-m	Perform checks only if the zone has been modified since
+		the previous run.
+	-F	perform "fascist" checking.  When checking an A record,
+		compare the PTR name for each IP address with the forward
+		name and report mismatches.  (see below)  I recommend
+		you try this option at least once to see what sorts of
+		errors pop up - you might be surprised!.
+	-l	Perform "lame delegation" checking.  For every NS record,
+		check to see that the listed host is indeed returning
+		authoritative answers for this domain.  Inspiration for
+		this comes from the guys at the Univ. of Michigan.
+
+
+The domain name specified on the command line MUST end with a '.'.
+You can specify a forward domain, such as "dnswalk pop.psu.edu."
+or a reverse domain, such as "dnswalk 155.118.128.in-addr.arpa."
+
+What dnswalk will do is if it is checking "pop.psu.edu.", it will
+do a zone transfer of the data from the authoritative nameserver and
+put it in the file "edu/psu/pop/axfr".  (relative to the current directory)
+If dnswalk is run again, it will use this file instead of asking the
+nameserver again.  You can override this with the '-f' switch.  It
+will also do a zone transfer again later if the serial number in the
+file is less than what is returned from the server.
+
+As a result, if you use the recursive option, you will get a directory
+tree corresponding exactly to the DNS hierarchy.  Again, I must stress
+that you use the recursive option with care, and the author calls you
+a slime-ball again if you use this for evil purposes.
+
+
+WHAT DNSWALK CHECKS FOR..
+
+*  all PTR records that look like a full IP address point back to a
+forward name.  In other words, "3.155.118.128.in-addr.arpa."
+will be checked, but "155.118.128.in-addr.arpa." will NOT be checked.
+(For those people who give their subnets a name)  Addresses ending
+in .0 are also NOT checked.
+[ reports error as "X PTR Y: unknown host" ]
+
+*  PTR records are listed as IP addresses in forward name.  In other
+words if 4.3.2.1.in-addr.arpa. points to "foo.org", but "foo.org"
+doesn't have "1.2.3.4" listed in its forward A records then it will
+ be an error.
+[ reports error as "X PTR Y: forward matching A record not found" ]
+
+*  PTR records do not point to a CNAME.
+[ reports error as "X PTR Y: CNAME (to Z)" ]
+
+*  CNAMEs point to a host with an A record.
+[ reports error as "X CNAME Y: unknown host" ]
+
+*  CNAMEs do not point to another CNAME.
+[ reports error as "X CNAME Y: CNAME (to Z)" ]
+
+*  MXs point to a host with an A record.
+[ reports error as "X MX Y: unknown host" ]
+
+*  MXs do not point to a CNAME.
+[ reports error as "X MX Y: CNAME (to Z)" ]
+
+*  A records have some corresponding PTR record.  (Not necessarily
+of the same name, of course)
+[ reports error as "X A Y: no PTR record" ]
+
+*  Reports any packet size errors listed in dig zone transfer output
+(Could be caused by a corrupted zone file, or invalid syntax used)
+
+*  That there is more than one authoritative nameserver for a zone.
+It does not check if the machine is on a separate network (yet).
+A site should ALWAYS have a secondary nameserver.  It SHOULD be
+on a different network than the primary.
+
+(with -a switch)
+*  duplicate A records listed for a given host.  NOTE: this is most
+often caused by the practice of always putting A records for all
+secondaries after NS glue records.  While this is not an error, it is
+usually redundant and makes changing IP addresses later more difficult,
+since they occur more than one time in the file (and in multiple
+files).  This checking needs more work.  (Mostly because of a quirk in
+BIND that reports cached A records in a zone transfer even though they
+don't exist in the original zone file.  I might just end up skipping this
+check altogether.)
+[ reports error as "X: possible duplicate A record (glue of Z?)" 
+where Z is the previous zone listed in the file ]
+
+(with -F switch)
+* perform "fascist" checking.  When checking an A record, compare the PTR
+  name for each IP address with the forward name.  This WILL result in
+  needless errors (like if you have an A record for your domain name
+  pointing to your main server, or have A records like "mailhost" or
+  "ns" defined to point to your mail or DNS server) but will catch little
+  errors that may have crept in if you have an A record pointing to a host
+  that you didn't intend to.
+[ reports error as "X A Y: points to Z" where Z is the "canonical" name
+  as returned by gethostbyaddr() ]
+
+(with -l switch)
+* Lame delegations.  A lame delegation is when a domain says "this
+server is a secondary for zone Z" but the listed server is not giving
+out authoritative data for zone Z.  This is usually the result of
+a lack of communication on the part of the respective hostmasters.
+Lame delegations are not fatal problems, they just tend to create
+significant increases in DNS traffic.
+[ reports error as "X NS Y: lame NS delegation" where X is the domain,
+and Y is the lame nameserver ]
+
+* Nameserver errors.  Any errors while contacting other nameservers
+(like connection refused or timeout) will be reported.  This could
+mean a lame delegation, or simply that the host is temporarily
+unreachable.
+[ reports error as "X NS Y: nameserver error (lame?)" followed by the
+error message from dig]
+
+*** NOTICE ***
+	I fully realize that while some of the above rules are not
+in violation of an RFC, it might be wise to reconsider their usage anyway.
+dnswalk was written to be a tool to let the hostmaster decide what are 
+troublesome areas, not as a program that has all the answers.
+*** NOTICE ***
+
+
+CAVEATS
+
+	If a domain "foo.edu" lists "ns.bar.foo.edu" as authoritative for
+a zone "bar.foo.edu", but "ns.bar.foo.edu" isn't, then the the dig of
+the zone transfer will hang.  (This was the case here for a subdomain
+that moved into a new set of IP addresses, but the parent nameserver still
+had the old authority records pointing to their nameservers which weren't
+answering to the old reverse domain anymore.)  If this happens, you can
+hit ^C while the transfer is going on and dnswalk will abort that server.
+(It will also remove the partial axfr file)  Hopefully I can figure a
+more elegant way around this.  (or fix dig so that it doesn't hang)
+
+This program was tested with data from the psu.edu domain.  If your
+site does things differently than the way we do things, then you
+may see it report things as errors, when in fact they are "okay".
+If you notice something not being reported, or something reported that
+is not an error, please send me output!  I fully admit that I'm not
+an expert in DNS and the requirements.  My rules tend to be skewed to
+my personal feelings about what "nice" DNS databases look like.  Others
+are free to differ.  (and tell me so)
+
+BUGS
+	I should get around to writing a real man page.
+
+	dnswalk will make the directory tree before it has a chance to
+find out that you gave it a bogus domain name.
+
+	When checking lots of hosts and lots of options, it is very
+slow.  Running dnswalk on a machine with a local nameserver helps
+considerably.
+
+	Perl's gethostby{name,addr}() routine doesn't seem to
+consistently return an error whenever it is unable to resolve an
+address.  Argh.  This will mean lots of "no PTR record" and "host unknown"
+errors if a server is unavailable, or for some reason the lookup fails.
+
+	I really need to rewrite this all to not rely on dig, and use
+bind.pl instead.
+
+OTHER SOURCES
+
+RFC 1034 - "DOMAIN NAMES - CONCEPTS AND FACILITIES"
+
+RFC 1035 - "DOMAIN NAMES - IMPLEMENTATION AND SPECIFICATION"
+
+RFC 1123 - "Requirements for Internet Hosts -- Application and Support"
+
+Paul Albits, Cricket Liu: "DNS and BIND" O'Reilly & Associates.
+
+[the author recommends copies by your favorite bathroom and/or nightstand]
+
+David Barr - System Administrator
+The Pennsylvania State University Population Research Institute
+<barr@pop.psu.edu>
+
+Thanks:
+
+Bill Fenner - tips with perl
+
+BUGS FIXED
+
+added equal() routine and changed all string comparisons to use it
+instead.  equal() does case-insensitive comparisons.  This was causing
+several problems with mixed case host and domain names in various
+places.
+
+checks for invalid PTR records now skip addresses ending in ".0".
+
+shortened error messages so they are more likely to fit in 80 columns
+
+handles failed zone transfers better.  You can't trust dig to return
+a non-zero return code if the transfer fails, so I parse the output
+myself to see if it contains an SOA record to prove that it is 'valid'.
+
+sorts output by zone.  Also displays server of authority and the
+contact for the zone.  (So you know who to bug :-) )
+
+produced erroneous warnings regarding having only one authoratative
+nameserver for a zone.  It now warns correctly.
+
+[ BUGS now moved to CHANGES file ]
