@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)hash.c	5.21 (Berkeley) %G%";
+static char sccsid[] = "@(#)hash.c	5.22 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -293,9 +293,8 @@ init_htab(nelem)
 	 */
 	nelem = (nelem - 1) / hashp->FFACTOR + 1;
 
-	l2 = __log2(nelem);
+	l2 = __log2(MAX(nelem, 2));
 	nbuckets = 1 << l2;
-	nbuckets = MAX(nbuckets, 2);
 
 	hashp->SPARES[l2] = l2 + 1;
 	hashp->SPARES[l2 + 1] = l2 + 1;
@@ -755,8 +754,8 @@ __expand_table()
 	 * * increases), we need to copy the current contents of the spare
 	 * split bucket to the next bucket.
 	 */
-	spare_ndx = __log2(hashp->MAX_BUCKET);
-	if ( spare_ndx > hashp->OVFL_POINT ) {
+	spare_ndx = __log2(hashp->MAX_BUCKET + 1);
+	if (spare_ndx > hashp->OVFL_POINT) {
 		hashp->SPARES[spare_ndx] = hashp->SPARES[hashp->OVFL_POINT];
 		hashp->OVFL_POINT = spare_ndx;
 	}
