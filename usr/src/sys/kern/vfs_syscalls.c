@@ -1,4 +1,4 @@
-/*	vfs_syscalls.c	6.16	85/02/22	*/
+/*	vfs_syscalls.c	6.17	85/03/19	*/
 
 #include "param.h"
 #include "systm.h"
@@ -124,7 +124,10 @@ copen(mode, arg, fname)
 	ndp->ni_segflg = UIO_USERSPACE;
 	ndp->ni_dirp = fname;
 	if (mode&FCREAT) {
-		ndp->ni_nameiop = CREATE | FOLLOW;
+		if (mode & FEXCL)
+			ndp->ni_nameiop = CREATE;
+		else
+			ndp->ni_nameiop = CREATE | FOLLOW;
 		ip = namei(ndp);
 		if (ip == NULL) {
 			if (u.u_error)
