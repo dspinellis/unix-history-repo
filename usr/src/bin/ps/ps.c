@@ -14,23 +14,6 @@ char copyright[] =
 static char sccsid[] = "@(#)ps.c	5.4 (Berkeley) %G%";
 #endif not lint
 
-/*
- * ps
- *
- * $Log:	ps.c,v $
- * Revision 5.2.1.4  85/08/25  22:25:43  crl
- * 'n' flag now also causes usernames to be printed as uid's.
- * 
- * Revision 5.2.1.3  85/08/10  01:33:18  crl
- * Implemented the wait channel stop list in addchan() and the index table
- * 	in getchan()
- * 
- * Revision 5.2.1.2  85/08/05  23:40:34  crl
- * Cut down # of calls to realloc by allocating in bigger chunks in
- * 	addchan().
- * If terminal width > WTSIZ, use a wider field for wchan.
- * 
- */
 #include <stdio.h>
 #include <ctype.h>
 #include <a.out.h>
@@ -1401,84 +1384,46 @@ vsize(sp)
 	return (vp->v_swrss + (ap->a_xccount ? 0 : vp->v_txtswrss));
 }
 
-#define	NMAX	8	/* sizeof loginname (should be sizeof (utmp.ut_name)) */
-#define NUID	2048	/* must not be a multiple of 5 */
+#include <utmp.h>
 
-struct nametable {
-	char	nt_name[NMAX+1];
-	int	nt_uid;
-} nametable[NUID];
+struct	utmp utmp;
+#define	NMAX	(sizeof (utmp.ut_name))
+#define SCPYN(a, b)	strncpy(a, b, NMAX)
 
-struct nametable *
-findslot(uid)
-int	uid;
-{
-	register struct nametable	*n, *start;
+#define NUID	64
 
-	/*
-	 * find the uid or an empty slot.
-	 * return NULL if neither found.
-	 */
+struct ncache {
+	int	uid;
+	char	name[NMAX+1];
+} nc[NUID];
 
-	n = start = nametable + (uid % (NUID - 20));
-	while (n->nt_name[0] && n->nt_uid != uid) {
-		if ((n += 5) >= &nametable[NUID])
-			n -= NUID;
-		if (n == start)
-			return((struct nametable *)NULL);
-	}
-	return(n);
-}
-
+/*
+ * This function assumes that the password file is hashed
+ * (or some such) to allow fast access based on a uid key.
+ */
 char *
 getname(uid)
 {
-	register struct passwd		*pw;
-	static				init = 0;
-	struct passwd			*getpwent();
-	register struct nametable	*n;
-	extern int			_pw_stayopen;
+	register struct passwd *pw;
+	struct passwd *getpwent();
+	register int cp;
+	extern int _pw_stayopen;
 
-	/*
-	 * find uid in hashed table; add it if not found.
-	 * return pointer to name.
-	 */
+	_pw_stayopen = 1;
 
-	if ((n = findslot(uid)) == NULL)
-		return((char *)NULL);
-
-	if (n->nt_name[0])	/* occupied? */
-		return(n->nt_name);
-
-	switch (init) {
-		case 0:
-			setpwent();
-			_pw_stayopen = 1;
-			init = 1;
-			/* intentional fall-thru */
-		case 1:
-			while (pw = getpwent()) {
-				if (pw->pw_uid < 0)
-					continue;
-				if ((n = findslot(pw->pw_uid)) == NULL) {
-					endpwent();
-					init = 2;
-					return((char *)NULL);
-				}
-				if (n->nt_name[0])
-					continue;	/* duplicate, not uid */
-				strncpy(n->nt_name, pw->pw_name, NMAX);
-				n->nt_uid = pw->pw_uid;
-				if (pw->pw_uid == uid)
-					return (n->nt_name);
-			}
-			endpwent();
-			init = 2;
-			/* intentional fall-thru */
-		case 2:
-			return ((char *)NULL);
-	}
-	/* NOTREACHED */
+#if	(((NUID) & ((NUID) - 1)) != 0)
+	cp = uid % (NUID);
+#else
+	cp = uid & ((NUID) - 1);
+#endif
+	if (uid >= 0 && nc[cp].uid == uid && nc[cp].name[0])
+		return (nc[cp].name);
+	pw = getpwuid(uid);
+	if (!pw)
+		return (0);
+	nc[cp].uid = uid;
+	SCPYN(nc[cp].name, pw->pw_name);
+	return (nc[cp].name);
 }
 
 char *
