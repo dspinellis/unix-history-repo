@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_sig.c	7.8 (Berkeley) %G%
+ *	@(#)kern_sig.c	7.9 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -794,11 +794,12 @@ core()
 	   (ip->i_mode&IFMT) != IFREG ||
 	   ip->i_nlink != 1) {
 		u.u_error = EFAULT;
-		goto out;
+		vput(vp);
+		return (EFAULT);
 	}
 #ifdef MMAP
 	{ register int fd;
-	/* unmasp funky devices in the user's address space */
+	/* unmap funky devices in the user's address space */
 	for (fd = 0; fd < u.u_lastfile; fd++)
 		if (u.u_ofile[fd] && (u.u_pofile[fd] & UF_MAPPED))
 			munmapfd(fd);
@@ -820,7 +821,4 @@ core()
 		    (caddr_t)ctob(sptov(u.u_procp, u.u_ssize - 1)),
 		    (int)ctob(u.u_ssize),
 		    (off_t)ctob(UPAGES)+ctob(u.u_dsize), 0, (int *)0);
-out:
-	iput(ip);
-	return (u.u_error == 0);
 }
