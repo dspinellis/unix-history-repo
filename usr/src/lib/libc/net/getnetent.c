@@ -1,4 +1,4 @@
-/*	getnetent.c	4.6	82/12/17	*/
+/*	getnetent.c	4.7	83/01/02	*/
 
 #include <stdio.h>
 #include <sys/socket.h>
@@ -64,19 +64,18 @@ again:
 	net.n_net = inet_network(cp);
 	net.n_addrtype = AF_INET;
 	q = net.n_aliases = net_aliases;
-	if (p != NULL) {
+	if (p != NULL) 
 		cp = p;
-		while (*cp) {
-			if (*cp == ' ' || *cp == '\t') {
-				cp++;
-				continue;
-			}
-			if (q < &net_aliases[MAXALIASES - 1])
-				*q++ = cp;
-			cp = any(cp, " \t");
-			if (*cp != NULL)
-				*cp++ = '\0';
+	while (cp && *cp) {
+		if (*cp == ' ' || *cp == '\t') {
+			cp++;
+			continue;
 		}
+		if (q < &net_aliases[MAXALIASES - 1])
+			*q++ = cp;
+		cp = any(cp, " \t");
+		if (cp != NULL)
+			*cp++ = '\0';
 	}
 	*q = NULL;
 	return (&net);
