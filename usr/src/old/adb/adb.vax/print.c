@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)print.c 4.1 %G%";
+static	char sccsid[] = "@(#)print.c 4.2 %G%";
 /*
  *
  *	UNIX debugger
@@ -32,30 +32,30 @@ L_INT		localval;
 BKPTR		bkpthead;
 
 REGLIST reglist [] = {
-		"p1lr", P1LR,
-		"p1br",P1BR,
-		"p0lr", P0LR,
-		"p0br",P0BR,
-		"ksp",KSP,
-		"esp",ESP,
-		"ssp",SSP,
-		"psl", PSL,
-		"pc", PC,
-		"usp",USP,
-		"fp", FP,
-		"ap", AP,
-		"r11", R11,
-		"r10", R10,
-		"r9", R9,
-		"r8", R8,
-		"r7", R7,
-		"r6", R6,
-		"r5", R5,
-		"r4", R4,
-		"r3", R3,
-		"r2", R2,
-		"r1", R1,
-		"r0", R0,
+	"p1lr",	P1LR,	&pcb.pcb_p1lr,
+	"p1br",	P1BR,	&pcb.pcb_p1br,
+	"p0lr",	P0LR,	&pcb.pcb_p0lr,
+	"p0br",	P0BR,	&pcb.pcb_p0br,
+	"ksp",	KSP,	&pcb.pcb_ksp,
+	"esp",	ESP,	&pcb.pcb_esp,
+	"ssp",	SSP,	&pcb.pcb_ssp,
+	"psl",	PSL,	&pcb.pcb_psl,
+	"pc",	PC,	&pcb.pcb_pc,
+	"usp",	USP,	&pcb.pcb_usp,
+	"fp",	FP,	&pcb.pcb_fp,
+	"ap",	AP,	&pcb.pcb_ap,
+	"r11",	R11,	&pcb.pcb_r11,
+	"r10",	R10,	&pcb.pcb_r10,
+	"r9",	R9,	&pcb.pcb_r9,
+	"r8",	R8,	&pcb.pcb_r8,
+	"r7",	R7,	&pcb.pcb_r7,
+	"r6",	R6,	&pcb.pcb_r6,
+	"r5",	R5,	&pcb.pcb_r5,
+	"r4",	R4,	&pcb.pcb_r4,
+	"r3",	R3,	&pcb.pcb_r3,
+	"r2",	R2,	&pcb.pcb_r2,
+	"r1",	R1,	&pcb.pcb_r1,
+	"r0",	R0,	&pcb.pcb_r0,
 };
 
 char		lastc;
@@ -346,15 +346,15 @@ printregs()
 	L_INT		v;
 
 	FOR p=reglist; p < &reglist[24]; p++
-	DO	printf("%s%6t%R %16t", p->rname, v= *(ADDR *)(((ADDR)&u)+p->roffs));
+	DO	v = kcore ? *p->rkern : *(ADDR *)(((ADDR)&u)+p->roffs);
+		printf("%s%6t%R %16t", p->rname, v);
 		valpr(v,(p->roffs==PC?ISYM:DSYM));
 		printc(EOR);
 	OD
 	printpc();
 }
 
-getreg(regnam)
-{
+getreg(regnam) {
 	REG REGPTR	p;
 	REG STRING	regptr;
 	CHAR	*olp;
@@ -372,7 +372,7 @@ getreg(regnam)
 			OD
 			IF *regptr
 			THEN lp=olp;
-			ELSE return(p->roffs);
+			ELSE return(kcore ? (int)p->rkern : p->roffs);
 			FI
 		FI
 	OD

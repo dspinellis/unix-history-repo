@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)setup.c 4.1 %G%";
+static	char sccsid[] = "@(#)setup.c 4.2 %G%";
 /*
  * adb - routines to read a.out+core at startup
  */
@@ -96,11 +96,25 @@ setcor()
 	if (fcor != -1 && INKERNEL(filhdr.a_entry)) {
 		struct stat stb;
 
+		kernel = 1;
 		fstat(fcor, &stb);
+		if (stb.st_mode & S_IFREG)
+			kcore = 1;
+		/* this is phoney baloney... it is boogered in access.c */
 		datmap.b1 = 0;
 		datmap.e1 = -1;
-		if ((stb.st_mode&S_IFMT) == S_IFREG)
-			datmap.b1 = 0x80000000;
+		/* end phoney baloney */
+		lookup("_Sysmap");
+		sbr = cursym->n_value;
+		lookup("_Syssize");
+		slr = cursym->n_value;
+		printf("sbr %X slr %X\n", sbr, slr);
+		lookup("_masterpcbb");
+		printf("masterpcbb at %X\n", cursym->n_value);
+		physrw(fcor, cursym->n_value&0x7fffffff, &masterpcbb, 1);
+		printf("masterpcbb value %X\n", masterpcbb);
+		var[varchk('p')] = masterpcbb;
+		getpcb();
 		return;
 	}
 	if (read(fcor, (char *)&u, ctob(UPAGES))!=ctob(UPAGES) ||
@@ -135,6 +149,16 @@ setcor()
 	if (filhdr.a_magic && u.u_exdata.ux_mag &&
 	    filhdr.a_magic != u.u_exdata.ux_mag)
 		printf("corefile not from this program");
+}
+
+getpcb()
+{
+	printf("getpcb: masterpcbb is %X\n", masterpcbb);
+	lseek(fcor, masterpcbb&~0x80000000, 0);
+	read(fcor, &pcb, sizeof (struct pcb));
+	printf("p0br %X p0lr %X p1br %X p1lr %X\n",
+	    pcb.pcb_p0br, pcb.pcb_p0lr, pcb.pcb_p1br, pcb.pcb_p1lr);
+	pcb.pcb_p0lr &= ~AST_CLR;
 }
 
 create(f)

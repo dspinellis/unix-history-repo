@@ -1,5 +1,5 @@
 #
-#	Makefile	4.1	81/05/14
+#	Makefile	4.2	81/05/14
 #
 DESTDIR= 
 CFLAGS=	-O -w
@@ -24,7 +24,7 @@ message.o:	mac.h mode.h message.c
 	${CC} -c -R message.c
 opset.o:	defs.h opset.c
 optab.o:	defs.h optab.c
-	${CC} -S -R  optab.c
+	${CC} -c -R  optab.c
 output.o:	defs.h output.c
 pcs.o:		defs.h pcs.c
 print.o:	defs.h print.c
