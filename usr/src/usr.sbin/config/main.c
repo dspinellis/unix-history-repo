@@ -11,13 +11,18 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.7 (Berkeley) %G%";
 #endif not lint
 
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <sys/file.h>
 #include <stdio.h>
 #include <ctype.h>
 #include "y.tab.h"
 #include "config.h"
+
+static char *PREFIX;
 
 /*
  * Config builds a set of files for building a UNIX
@@ -28,19 +33,44 @@ main(argc, argv)
 	char **argv;
 {
 
-	if (argc > 1 && eq("-p", argv[1])) {
-		profiling++;
-		argc--, argv++;
-	}
-	if (argc != 2) {
-		fprintf(stderr, "usage: config [ -p ] sysname\n");
+	extern char *optarg;
+	extern int optind;
+	struct stat buf;
+	int ch;
+	char *p;
+
+	while ((ch = getopt(argc, argv, "p")) != EOF)
+		switch((char)ch) {
+		case 'p':
+			profiling++;
+			break;
+		case '?':
+		default:
+			goto usage;
+		}
+	argc -= optind;
+	argv += optind;
+
+	if (argc != 1) {
+usage:		fputs("usage: config [-p] sysname\n", stderr);
 		exit(1);
 	}
-	PREFIX = argv[1];
-	if (freopen(argv[1], "r", stdin) == NULL) {
-		perror(argv[1]);
+
+	if (freopen(PREFIX = *argv, "r", stdin) == NULL) {
+		perror(PREFIX);
 		exit(2);
 	}
+	if (stat(p = path((char *)NULL), &buf)) {
+		if (mkdir(p, 0755)) {
+			perror(p);
+			exit(2);
+		}
+	}
+	else if ((buf.st_mode & S_IFMT) != S_IFDIR) {
+		fprintf(stderr, "config: %s isn't a directory.\n", p);
+		exit(2);
+	}
+
 	dtab = NULL;
 	confp = &conf_list;
 	if (yyparse())
@@ -69,7 +99,7 @@ main(argc, argv)
 	{
 	char xxx[80];
 
-	(void) symlink("../h", path("sys"));	
+	(void) symlink("../h", path("sys"));
 	(void) sprintf(xxx, "../%s", machinename);
 	(void) symlink(xxx, path("machine"));
 	}
@@ -127,7 +157,9 @@ path(file)
 	cp = malloc((unsigned)(strlen(PREFIX)+strlen(file)+5));
 	(void) strcpy(cp, "../");
 	(void) strcat(cp, PREFIX);
-	(void) strcat(cp, "/");
-	(void) strcat(cp, file);
+	if (file) {
+		(void) strcat(cp, "/");
+		(void) strcat(cp, file);
+	}
 	return (cp);
 }
