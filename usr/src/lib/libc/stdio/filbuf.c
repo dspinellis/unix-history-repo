@@ -1,4 +1,4 @@
-/* @(#)filbuf.c	4.10 (Berkeley) %G% */
+/* @(#)filbuf.c	4.11 (Berkeley) %G% */
 #include	<stdio.h>
 #include	<sys/types.h>
 #include	<sys/stat.h>
@@ -9,7 +9,9 @@ register FILE *iop;
 {
 	int size;
 	struct stat stbuf;
-	extern char *_smallbuf();
+	static char *smallbuf;
+	static int nfiles;
+	char c;
 
 	if (iop->_flag & _IORW)
 		iop->_flag |= _IOREAD;
@@ -21,7 +23,11 @@ register FILE *iop;
 tryagain:
 	if (iop->_base==NULL) {
 		if (iop->_flag&_IONBF) {
-			iop->_base = _smallbuf(iop);
+			if (nfiles <= 0)
+				nfiles = getdtablesize();
+			if (smallbuf == NULL)
+				smallbuf = malloc(nfiles * sizeof *smallbuf);
+			iop->_base = smallbuf ? &smallbuf[fileno(iop)] : &c;
 			goto tryagain;
 		}
 		if (fstat(fileno(iop), &stbuf) < 0 || stbuf.st_blksize <= NULL)
@@ -44,6 +50,8 @@ tryagain:
 	iop->_cnt = read(fileno(iop), iop->_base,
 		iop->_flag & _IONBF ? 1 : iop->_bufsiz);
 	iop->_ptr = iop->_base;
+	if (iop->_flag & _IONBF && iop->_base == &c)
+		iop->_base = NULL;
 	if (--iop->_cnt < 0) {
 		if (iop->_cnt == -1) {
 			iop->_flag |= _IOEOF;
