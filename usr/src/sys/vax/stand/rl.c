@@ -1,4 +1,4 @@
-/*	rl.c	4.1	83/02/08	*/
+/*	rl.c	4.2	83/02/16	*/
 
 /*
  * Standalone RL02 disk driver
@@ -204,4 +204,13 @@ rlwait(rladdr)
 
 	while ((rladdr->rlcs & RL_CRDY) == 0)
 		continue;
+}
+
+rlioctl(io, cmd, arg)
+	struct iob *io;
+	int cmd;
+	caddr_t arg;
+{
+
+	return (ECMD);
 }

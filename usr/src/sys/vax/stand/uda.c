@@ -1,4 +1,4 @@
-/*	uda.c	4.6	83/02/16	*/
+/*	uda.c	4.7	83/02/16	*/
 
 /*
  * UDA50/RAxx disk device driver
@@ -42,7 +42,7 @@ int uda_off[] = { 0, 15884, 0, -1, -1, -1, 49324, 131404 };
 
 struct mscp *udcmd();
 
-udopen(io)
+raopen(io)
 	register struct iob *io;
 {
 	register struct mscp *mp;
@@ -112,7 +112,7 @@ udcmd(op)
 	return(mp);
 }
 
-udstrategy(io, func)
+rastrategy(io, func)
 	register struct iob *io;
 {
 	register struct mscp *mp;
@@ -134,7 +134,7 @@ udstrategy(io, func)
 }
 
 /*ARGSUSED*/
-udioctl(io, cmd, arg)
+raioctl(io, cmd, arg)
 	struct iob *io;
 	int cmd;
 	caddr_t arg;

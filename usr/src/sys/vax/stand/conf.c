@@ -1,4 +1,4 @@
-/*	conf.c	4.16	83/02/16	*/
+/*	conf.c	4.17	83/02/16	*/
 
 #include "../machine/pte.h"
 
@@ -81,8 +81,9 @@ int	hpstrategy(), hpopen(), hpioctl();
 #endif
 int	upstrategy(), upopen(), upioctl();
 int	rkstrategy(), rkopen(), rkioctl();
-int	udstrategy(), udopen(), udioctl();
+int	rastrategy(), raopen(), raioctl();
 int	idcstrategy(), idcopen(), idcioctl();
+int	rlstrategy(), rlopen(), rlioctl();
 #ifndef BOOT
 int	tmstrategy(), tmopen(), tmclose();
 int	tsstrategy(), tsopen(), tsclose();
@@ -99,10 +100,11 @@ struct devsw devsw[] = {
 #endif
 	{ "up",	upstrategy,	upopen,		nullsys,	upioctl },
 	{ "hk",	rkstrategy,	rkopen,		nullsys,	rkioctl },
-	{ "ra",	udstrategy,	udopen,		nullsys,	udioctl },
+	{ "ra",	rastrategy,	raopen,		nullsys,	raioctl },
 #if defined(VAX730)
 	{ "rb",	idcstrategy,	idcopen,	nullsys,	idcioctl },
 #endif
+	{ "rl",	rlstrategy,	rlopen,		nullsys,	rlioctl },
 #ifndef BOOT
 	{ "ts",	tsstrategy,	tsopen,		tsclose,	nullioctl },
 #if defined(VAX780) || defined(VAX750)

@@ -1,4 +1,4 @@
-/*	bootxx.c	4.1	82/07/19	*/
+/*	bootxx.c	4.2	83/02/16	*/
 
 #include "../h/param.h"
 #include "../h/inode.h"
@@ -16,6 +16,12 @@ char bootprog[] = "hp(0,0)boot";
 #endif
 #ifdef	BOOTUP
 char bootprog[] = "up(0,0)boot";
+#endif
+#ifdef	BOOTRA
+char bootprog[] = "ra(0,0)boot";
+#endif
+#ifdef	BOOTRL
+char bootprog[] = "rl(0,0)boot";
 #endif
 
 /*
