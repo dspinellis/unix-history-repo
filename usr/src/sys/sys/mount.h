@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mount.h	7.20 (Berkeley) %G%
+ *	@(#)mount.h	7.21 (Berkeley) %G%
  */
 
 typedef quad fsid_t;			/* file system id type */
@@ -42,6 +42,7 @@ struct statfs {
 	char	f_mntonname[MNAMELEN];	/* directory on which mounted */
 	char	f_mntfromname[MNAMELEN];/* mounted filesystem */
 };
+
 /*
  * File system types.
  */
@@ -78,20 +79,24 @@ struct mount {
 #define	MNT_NOEXEC	0x00000004	/* can't exec from filesystem */
 #define	MNT_NOSUID	0x00000008	/* don't honor setuid bits on fs */
 #define	MNT_NODEV	0x00000010	/* don't interpret special files */
+
 /*
  * exported mount flags.
  */
 #define	MNT_EXPORTED	0x00000100	/* file system is exported */
 #define	MNT_EXRDONLY	0x00000200	/* exported read only */
+
 /*
  * Flags set by internal operations.
  */
 #define	MNT_LOCAL	0x00001000	/* filesystem is stored locally */
 #define	MNT_QUOTA	0x00002000	/* quotas are enabled on filesystem */
+
 /*
  * Mask of flags that are visible to statfs()
  */
 #define	MNT_VISFLAGMASK	0x0000ffff
+
 /*
  * filesystem control flags.
  *
@@ -109,46 +114,28 @@ struct mount {
 /*
  * Operations supported on mounted file system.
  */
+#ifdef __STDC__
 struct nameidata;
+#endif
+
 struct vfsops {
-	int	(*vfs_mount)__P((
-			struct mount *mp,
-			char *path,
-			caddr_t data,
-			struct nameidata *ndp,
-			struct proc *p));
-	int	(*vfs_start)__P((
-			struct mount *mp,
-			int flags,
-			struct proc *p));
-	int	(*vfs_unmount)__P((
-			struct mount *mp,
-			int mntflags,
-			struct proc *p));
-	int	(*vfs_root)__P((
-			struct mount *mp,
-			struct vnode **vpp));
-	int	(*vfs_quotactl)__P((
-			struct mount *mp,
-			int cmds,
-			int uid,		/* should be uid_t */
-			caddr_t arg,
-			struct proc *p));
-	int	(*vfs_statfs)__P((
-			struct mount *mp,
-			struct statfs *sbp,
-			struct proc *p));
-	int	(*vfs_sync)__P((
-			struct mount *mp,
-			int waitfor));
-	int	(*vfs_fhtovp)__P((
-			struct mount *mp,
-			struct fid *fhp,
-			struct vnode **vpp));
-	int	(*vfs_vptofh)__P((
-			struct vnode *vp,
-			struct fid *fhp));
-	int	(*vfs_init)__P(());
+	int	(*vfs_mount)	__P((struct mount *mp, char *path, caddr_t data,
+				    struct nameidata *ndp, struct proc *p));
+	int	(*vfs_start)	__P((struct mount *mp, int flags,
+				    struct proc *p));
+	int	(*vfs_unmount)	__P((struct mount *mp, int mntflags,
+				    struct proc *p));
+	int	(*vfs_root)	__P((struct mount *mp, struct vnode **vpp));
+			/* int uid,		should be uid_t */
+	int	(*vfs_quotactl)	__P((struct mount *mp, int cmds, int uid,
+				    caddr_t arg, struct proc *p));
+	int	(*vfs_statfs)	__P((struct mount *mp, struct statfs *sbp,
+				    struct proc *p));
+	int	(*vfs_sync)	__P((struct mount *mp, int waitfor));
+	int	(*vfs_fhtovp)	__P((struct mount *mp, struct fid *fhp,
+				    struct vnode **vpp));
+	int	(*vfs_vptofh)	__P((struct vnode *vp, struct fid *fhp));
+	int	(*vfs_init)	__P(());
 };
 
 #define VFS_MOUNT(MP, PATH, DATA, NDP, P) \
@@ -216,16 +203,16 @@ typedef union nfsv2fh nfsv2fh_t;
  * Arguments to mount NFS
  */
 struct nfs_args {
-	struct sockaddr		*addr;		/* file server address */
-	int			sotype;		/* Socket type */
-	int			proto;		/* and Protocol */
-	nfsv2fh_t		*fh;		/* File handle to be mounted */
-	int			flags;		/* flags */
-	int			wsize;		/* write size in bytes */
-	int			rsize;		/* read size in bytes */
-	int			timeo;		/* initial timeout in .1 secs */
-	int			retrans;	/* times to retry send */
-	char			*hostname;	/* server's name */
+	struct sockaddr	*addr;		/* file server address */
+	int		sotype;		/* Socket type */
+	int		proto;		/* and Protocol */
+	nfsv2fh_t	*fh;		/* File handle to be mounted */
+	int		flags;		/* flags */
+	int		wsize;		/* write size in bytes */
+	int		rsize;		/* read size in bytes */
+	int		timeo;		/* initial timeout in .1 secs */
+	int		retrans;	/* times to retry send */
+	char		*hostname;	/* server's name */
 };
 /*
  * NFS mount option flags
@@ -255,7 +242,8 @@ void	vfs_unlock __P((struct mount *mp)); /* unlock a vfs */
 struct	mount *getvfs __P((fsid_t *fsid));  /* return vfs given fsid */
 struct	mount *rootfs;			    /* ptr to root mount structure */
 struct	vfsops *vfssw[];		    /* mount filesystem type table */
-#else
+
+#else /* KERNEL */
 
 #include <sys/cdefs.h>
 
@@ -269,4 +257,4 @@ int	statfs __P((const char *, struct statfs *));
 int	unmount __P((const char *, int));
 __END_DECLS
 
-#endif
+#endif /* KERNEL */
