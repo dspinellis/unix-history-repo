@@ -1,3 +1,10 @@
+/*
+ * Copyright (c) 1982, 1986 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ * 		@(#)qduser.h	1.3  Berkeley  %G%
+ */
 /************************************************************************
  *									*
  *			Copyright (c) 1986 by				*
@@ -28,7 +35,7 @@
 ***************************************************************************/
 
 /***************************************************************************
-*	revision history:
+*	revision history: (belongs in sccs)
 ****************************************************************************
 *
 * 21 jul 86  ram    fixed define of CURSOR_MIN_Y
