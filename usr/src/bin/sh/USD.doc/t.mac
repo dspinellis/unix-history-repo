@@ -1,6 +1,6 @@
 .\" %sccs.include.proprietary.roff%
 .\"
-.\"	@(#)t.mac	6.2 (Berkeley) %G%
+.\"	@(#)t.mac	8.1 (Berkeley) %G%
 .\"
 .ds ZZ \fB.\|.\|.\fP
 .ds ST \v'.3m'\s+2*\s0\v'-.3m'
