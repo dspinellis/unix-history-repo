@@ -10,7 +10,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)machdep.c	7.15 (Berkeley) %G%
+ *	@(#)machdep.c	7.16 (Berkeley) %G%
  */
 
 /* from: Utah $Hdr: machdep.c 1.63 91/04/24$ */
@@ -98,6 +98,10 @@ static u_int tc_slot_phys_base [TC_MAX_SLOTS] = {
 	KN02_PHYS_TC_4_START, KN02_PHYS_TC_5_START,
 	KN02_PHYS_TC_6_START, KN02_PHYS_TC_7_START
 };
+
+/* the following is used externally (sysctl_hw) */
+char	machine[] = "DEC";	/* cpu "architecture" */
+char	cpu_model[30];
 
 vm_map_t buffer_map;
 
@@ -338,6 +342,7 @@ mach_init(argc, argv, code, cv)
 		Mach_clock_addr = (volatile struct chiptime *)
 			MACH_PHYS_TO_UNCACHED(KN01_SYS_CLOCK);
 		pmax_slot_hand_fill();
+		strcpy(cpu_model, "3100");
 		break;
 
 #ifdef DS5000
@@ -370,6 +375,7 @@ mach_init(argc, argv, code, cv)
 		/* clear any memory errors from probes */
 		*(unsigned *)MACH_PHYS_TO_UNCACHED(KN02_SYS_ERRADR) = 0;
 		}
+		strcpy(cpu_model, "5000/200");
 		break;
 
 	case DS_3MIN:	/* DS5000/1xx 3min */
@@ -410,6 +416,7 @@ mach_init(argc, argv, code, cv)
 		*(u_int *)ASIC_REG_INTR(asic_base) = 0;
 		/* clear any memory errors from probes */
 		*(unsigned *)MACH_PHYS_TO_UNCACHED(KMIN_REG_TIMEOUT) = 0;
+		strcpy(cpu_model, "5000/1xx");
 		break;
 
 	case DS_MAXINE:	/* DS5000/xx maxine */
@@ -442,6 +449,7 @@ mach_init(argc, argv, code, cv)
 		*(u_int *)ASIC_REG_INTR(asic_base) = 0;
 		/* clear any memory errors from probes */
 		*(unsigned *)MACH_PHYS_TO_UNCACHED(XINE_REG_TIMEOUT) = 0;
+		strcpy(cpu_model, "5000/25");
 		break;
 
 #ifdef DS5000_240
@@ -477,6 +485,7 @@ mach_init(argc, argv, code, cv)
 		*(u_int *)ASIC_REG_INTR(asic_base) = 0;
 		/* clear any memory errors from probes */
 		*(unsigned *)MACH_PHYS_TO_UNCACHED(KN03_SYS_ERRADR) = 0;
+		strcpy(cpu_model, "5000/240");
 		break;
 #endif /* DS5000_240 */
 #endif /* DS5000 */
