@@ -7,11 +7,11 @@
  *
  * %sccs.include.386.c%
  *
- *	@(#)wd.c	5.1 (Berkeley) %G%
+ *	@(#)wd.c	5.2 (Berkeley) %G%
  */
+
 #include "wd.h"
 #if	NWD > 0
-#define WDDEBUG
 
 #include "param.h"
 #include "dkbad.h"
@@ -163,9 +163,9 @@ wdstrategy(bp)
 	int	s;
 
 	if ((unit >= NWD) || (bp->b_blkno < 0)) {
-		dprintf(DDSK,"wdstrat: unit = %d, blkno = %d, bcount = %d\n",
+		printf("wdstrat: unit = %d, blkno = %d, bcount = %d\n",
 			unit, bp->b_blkno, bp->b_bcount);
-		dprintf(DDSK,"wd:error in wdstrategy\n");
+		pg("wd:error in wdstrategy");
 		bp->b_flags |= B_ERROR;
 		goto bad;
 	}
@@ -183,17 +183,13 @@ wdstrategy(bp)
 	 */
 	blknum = (unsigned long) bp->b_blkno * DEV_BSIZE / du->dk_dd.dk_secsize;
 	if (((u_long) bp->b_blkno * DEV_BSIZE % du->dk_dd.dk_secsize != 0) ||
-	    bp->b_bcount >= MAXTRANSFER * CLBYTES /*||
-	    bp->b_bcount % du->dk_dd.dk_secsize*/) {
+	    bp->b_bcount >= MAXTRANSFER * CLBYTES) {
 		bp->b_flags |= B_ERROR;
-printf("wdstrat: blknum %d bcount %d blkno %d ", blknum,
-bp->b_bcount, bp->b_blkno);
 		goto bad;
 	}
 	nblocks = du->dk_dd.dk_partition[xunit].nblocks;
 	cyloff = du->dk_dd.dk_partition[xunit].cyloff;
 	if (blknum + (bp->b_bcount / du->dk_dd.dk_secsize) > nblocks) {
-		dprintf(DDSK,"blknum = %d, fssize = %d\n", blknum, nblocks);
 		if (blknum == nblocks)
 			bp->b_resid = bp->b_bcount;
 		else
@@ -430,7 +426,7 @@ wdintr()
 	}
 	if (status & (WDCS_ERR | WDCS_ECCCOR)) {
 #ifdef	WDDEBUG
-		dprintf(DDSK|DPAUSE,"error %x\n", wd_errstat);
+		printf("error %x\n", wd_errstat);
 #endif
 		/*if (bp->b_flags & B_FORMAT) {
 			du->dk_status = status;
@@ -477,7 +473,7 @@ wdintr()
 
 /*dprintf(DDSK,"addr %x\n", (int)bp->b_un.b_addr + du->dk_skip * 512);*/
 		insw(wdc+wd_data,(int)bp->b_un.b_addr + du->dk_skip * 512 ,chk);
-		du->dk_bc -= chk;
+		du->dk_bc -= 2*chk;
 		while(chk++ < 256) insw(wdc+wd_data,&dummy,1);
 	}
 
@@ -497,7 +493,8 @@ wdintr()
 			wdtab.b_errcnt = 0;
 
 			/* see if more to transfer */
-			if (du->dk_skip < bp->b_bcount / 512) {
+			/*if (du->dk_skip < (bp->b_bcount + 511) / 512) {*/
+			if (du->dk_bc > 0) {
 				wdstart();
 				return;		/* next chunk is started */
 			}
@@ -535,7 +532,7 @@ wdopen(dev, flags)
 	int i, error = 0;
 
 	unit = WDUNIT(dev);
-dprintf(DDSK,"wdopen %x\n",unit);
+/*dprintf(DDSK,"wdopen %x\n",unit);*/
 	if (unit >= NWD) return (ENXIO) ;
 	du = &wddrives[unit];
 	if (du->dk_open){
@@ -637,7 +634,7 @@ wdcontrol(bp)
 	int s, cnt;
 	extern int bootdev, cyloffset;
 
-	cyloffset=290;
+	cyloffset=0;
 	du = &wddrives[WDUNIT(bp->b_dev)];
 	unit = du->dk_unit;
 	switch (DISKSTATE(du->dk_state)) {
@@ -838,7 +835,7 @@ wdsize(dev)
 	register struct disk *du;
 	register val ;
 
-	return(8704);
+	return(12144);
 #ifdef notdef
 	if (unit >= NWD) return(-1);
 	if (wddrives[unit].dk_state == 0) /*{
@@ -918,7 +915,7 @@ wddump(dev)			/* dump core after a system crash */
 		head = (blknum % secpercyl) / secpertrk;
 		sector = blknum % secpertrk;
 		sector++;		/* origin 1 */
-		cylin += cyloff + 290;
+		cylin += cyloff;
 
 		/* 
 		 * See if the current block is in the bad block list.
