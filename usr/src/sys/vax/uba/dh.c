@@ -1,4 +1,4 @@
-/*	dh.c	3.1	%H%	*/
+/*	dh.c	3.2	%H%	*/
 
 /*
  *	DH-11 driver
@@ -49,6 +49,8 @@ extern struct cblock cfree[];
 #define	HDUPLX	040000
 
 #define	IENAB	030100
+#define	NXM	02000
+#define	CLRNXM	0400
 #define	PERROR	010000
 #define	FRERROR	020000
 #define	OVERRUN	040000
@@ -306,6 +308,10 @@ dhxint(dev)
 	d = minor(dev) & 0177;
 	addr = DHADDR + d;
 	addr->un.dhcsr &= (short)~XINT;
+	if (addr->un.dhcsr & NXM) {
+		addr->un.dhcsr |= CLRNXM;
+		printf("dh clr NXM\n");
+	}
 	sbar = &dhsar[d];
 	bar = *sbar & ~addr->dhbar;
 	d <<= 4; ttybit = 1;
@@ -433,6 +439,7 @@ register struct device *addr;
 				cc = 0;
 		addr->dhsilo = cc;
 		addr++;
+		dhxint(d);		/* in case lost interrupt */
 		dhrint(d++);
 	} while (d < (NDH11+15)/16);
 	timeout(dhtimer, (caddr_t)0, DHTIME);
