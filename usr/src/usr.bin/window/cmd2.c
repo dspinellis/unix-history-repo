@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd2.c	3.3 83/08/16";
+static	char *sccsid = "@(#)cmd2.c	3.4 83/08/16";
 #endif
 
 #include "defs.h"
@@ -14,34 +14,34 @@ c_help()
 		error("Can't open help window.");
 		return;
 	}
-	(void) wwprintf(w, "The escape character is %s, which gets you into command mode.\r\n\n",
+	(void) wwprintf(w, "The escape character is %s, which gets you into command mode.\n\n",
 		unctrl(escapec));
-	(void) wwprintf(w, "Short commands:\r\n\n");
-	(void) wwprintf(w, "{1-9}   Select window {1-9} and return to conversation mode.\r\n");
-	(void) wwprintf(w, "%%{1-9}  Select window {1-9}.\r\n");
-	(void) wwprintf(w, "c{1-9}  Close window {1-9}.\r\n");
-	(void) wwprintf(w, "C       Close all windows.\r\n");
-	(void) wwprintf(w, "S       Show all windows in sequence.\r\n");
-	(void) wwprintf(w, "L       List all windows with their labels.\r\n");
-	(void) wwprintf(w, "w       Open a new window.\r\n");
-	(void) wwprintf(w, "[^U^D]  Scroll [up, down] half a window.\r\n");
-	(void) wwprintf(w, "[^B^F]  Scroll [up, down] a full window.\r\n");
-	(void) wwprintf(w, "[hjkl]  Move cursor [left, down, up, right].\r\n");
-	(void) wwprintf(w, "escape  Exit command mode.\r\n");
-	(void) wwprintf(w, "^L      Redraw screen.\r\n");
-	(void) wwprintf(w, "^Z      Suspend.\r\n");
-	(void) wwprintf(w, ".       Quit.\r\n");
+	(void) wwprintf(w, "Short commands:\n\n");
+	(void) wwprintf(w, "{1-9}   Select window {1-9} and return to conversation mode.\n");
+	(void) wwprintf(w, "%%{1-9}  Select window {1-9}.\n");
+	(void) wwprintf(w, "c{1-9}  Close window {1-9}.\n");
+	(void) wwprintf(w, "C       Close all windows.\n");
+	(void) wwprintf(w, "S       Show all windows in sequence.\n");
+	(void) wwprintf(w, "L       List all windows with their labels.\n");
+	(void) wwprintf(w, "w       Open a new window.\n");
+	(void) wwprintf(w, "[^U^D]  Scroll [up, down] half a window.\n");
+	(void) wwprintf(w, "[^B^F]  Scroll [up, down] a full window.\n");
+	(void) wwprintf(w, "[hjkl]  Move cursor [left, down, up, right].\n");
+	(void) wwprintf(w, "escape  Exit command mode.\n");
+	(void) wwprintf(w, "^L      Redraw screen.\n");
+	(void) wwprintf(w, "^Z      Suspend.\n");
+	(void) wwprintf(w, ".       Quit.\n");
 	waitnl(w);
-	(void) wwprintf(w, "Long commands:\r\n\n");
-	(void) wwprintf(w, ":terse [off]            Turn on (or off) terse mode.\r\n");
-	(void) wwprintf(w, ":refresh {1-9} [off]    Turn on (or off) refresh after every newline\r\n");
-	(void) wwprintf(w, "                        for window {1-9}.\r\n");
-	(void) wwprintf(w, ":label {1-9} string     Label window {1-9}.\r\n");
-	(void) wwprintf(w, ":escape C               Set escape character to C.\r\n");
-	(void) wwprintf(w, ":%%{1-9}                 Select window {1-9}.\r\n");
-	(void) wwprintf(w, ":window r c nr nc       Open a window at row r column c\r\n");
-	(void) wwprintf(w, "                        with nr rows and nc colomns\r\n");
-	(void) wwprintf(w, ":source filename        Execute the commands in `filename'.\r\n");
+	(void) wwprintf(w, "Long commands:\n\n");
+	(void) wwprintf(w, ":terse [off]            Turn on (or off) terse mode.\n");
+	(void) wwprintf(w, ":refresh {1-9} [off]    Turn on (or off) refresh after every newline\n");
+	(void) wwprintf(w, "                        for window {1-9}.\n");
+	(void) wwprintf(w, ":label {1-9} string     Label window {1-9}.\n");
+	(void) wwprintf(w, ":escape C               Set escape character to C.\n");
+	(void) wwprintf(w, ":%%{1-9}                 Select window {1-9}.\n");
+	(void) wwprintf(w, ":window r c nr nc       Open a window at row r column c\n");
+	(void) wwprintf(w, "                        with nr rows and nc colomns\n");
+	(void) wwprintf(w, ":source filename        Execute the commands in `filename'.\n");
 	waitnl(w);
 	closeiwin(w);
 }
@@ -68,15 +68,15 @@ c_time(flag)
 	}
 	(void) getrusage(flag, &rusage);
 
-	(void) wwprintf(w, "time\t\tutime\t\tstime\t\tmaxrss\tixrss\tidrss\tisrss\r\n");
+	(void) wwprintf(w, "time\t\tutime\t\tstime\t\tmaxrss\tixrss\tidrss\tisrss\n");
 	(void) wwprintf(w, "%-16s", strtime(&timeval));
 	(void) wwprintf(w, "%-16s", strtime(&rusage.ru_utime));
 	(void) wwprintf(w, "%-16s", strtime(&rusage.ru_stime));
-	(void) wwprintf(w, "%D\t%D\t%D\t%D\r\n",
+	(void) wwprintf(w, "%D\t%D\t%D\t%D\n",
 		rusage.ru_maxrss, rusage.ru_ixrss,
 		rusage.ru_idrss, rusage.ru_isrss);
-	(void) wwprintf(w, "minflt\tmajflt\tnswap\tinblk\toublk\tmsgsnd\tmsgrcv\tnsigs\tnvcsw\tnivcsw\r\n");
-	(void) wwprintf(w, "%D\%D\t%D\t%D\t%D\t%D\t%D\t%D\t%D\t%D\t%D\r\n",
+	(void) wwprintf(w, "minflt\tmajflt\tnswap\tinblk\toublk\tmsgsnd\tmsgrcv\tnsigs\tnvcsw\tnivcsw\n");
+	(void) wwprintf(w, "%D\t%D\t%D\t%D\t%D\t%D\t%D\t%D\t%D\t%D\n",
 		rusage.ru_minflt, rusage.ru_majflt, rusage.ru_nswap,
 		rusage.ru_inblock, rusage.ru_oublock,
 		rusage.ru_msgsnd, rusage.ru_msgrcv, rusage.ru_nsignals,
@@ -123,10 +123,10 @@ c_stat()
 		error("Can't open statistics window.");
 		return;
 	}
-	(void) wwprintf(w, "nread\tnreadz\tnreade\tnreadc\tnwrite\tnwritec\tntouched\tnmiss\r\n");
-	(void) wwprintf(w, "%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\r\n",
+	(void) wwprintf(w, "nread\tnreadz\tnreade\tnreadc\tnwrite\tnwritec\tnupdt\tntouch\tnmiss\n");
+	(void) wwprintf(w, "%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\n",
 		nread, nreadz, nreade, nreadc, wwnwrite, wwnwritec,
-		wwntouched, wwnmiss);
+		wwnupdate, wwntouched, wwnmiss);
 	waitnl(w);
 	closeiwin(w);
 }
@@ -145,12 +145,12 @@ c_list()
 		return;
 	}
 	if (n == 0) {
-		(void) wwputs("No windows.\r\n", w);
+		(void) wwputs("No windows.\n", w);
 	} else {
 		for (i = 0; i < NWINDOW; i++) {
 			if (window[i] == 0)
 				continue;
-			(void) wwprintf(w, "%c   %s\r\n", i + '1',
+			(void) wwprintf(w, "%c   %s\n", i + '1',
 				window[i]->ww_label ? window[i]->ww_label
 					: "(No label)");
 		}
@@ -187,9 +187,7 @@ char *label;
 
 	if ((w = wwopen(0, nrow, wwncol, 2, 0, 0)) == 0)
 		return 0;
-	/*
 	w->ww_mapnl = 1;
-	*/
 	w->ww_hasframe = 1;
 	w->ww_id = -1;
 	w->ww_center = 1;
@@ -208,7 +206,7 @@ register struct ww *w;
 		wwadd(w, framewin);
 		reframe();
 	}
-	(void) wwputs("\r\nType return to continue: ", w);
+	(void) wwputs("\nType return to continue: ", w);
 	wwcurtowin(w);
 	while (bgetc() < 0)
 		bread();
