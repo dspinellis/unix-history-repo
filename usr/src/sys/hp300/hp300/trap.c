@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: trap.c 1.32 91/04/06$
  *
- *	@(#)trap.c	7.17 (Berkeley) %G%
+ *	@(#)trap.c	7.18 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -105,7 +105,7 @@ trap(type, code, v, frame)
 	syst = p->p_stime;
 	if (USERMODE(frame.f_sr)) {
 		type |= T_USER;
-		p->p_regs = frame.f_regs;
+		p->p_md.md_regs = frame.f_regs;
 	}
 	switch (type) {
 
@@ -447,7 +447,7 @@ syscall(code, frame)
 	syst = p->p_stime;
 	if (!USERMODE(frame.f_sr))
 		panic("syscall");
-	p->p_regs = frame.f_regs;
+	p->p_md.md_regs = frame.f_regs;
 	opc = frame.f_pc - 2;
 	systab = sysent;
 	numsys = nsysent;

@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: hpux_compat.c 1.41 91/04/06$
  *
- *	@(#)hpux_compat.c	7.17 (Berkeley) %G%
+ *	@(#)hpux_compat.c	7.18 (Berkeley) %G%
  */
 
 /*
@@ -149,9 +149,9 @@ hpuxwait3(p, uap, retval)
 	/* rusage pointer must be zero */
 	if (uap->rusage)
 		return (EINVAL);
-	p->p_regs[PS] = PSL_ALLCC;
-	p->p_regs[R0] = uap->options;
-	p->p_regs[R1] = uap->rusage;
+	p->p_md.md_regs[PS] = PSL_ALLCC;
+	p->p_md.md_regs[R0] = uap->options;
+	p->p_md.md_regs[R1] = uap->rusage;
 	return (hpuxwait(p, uap, retval));
 }
 
@@ -1254,7 +1254,7 @@ struct bsdfp {
 hpuxtobsduoff(off)
 	int *off;
 {
-	register int *ar0 = curproc->p_regs;
+	register int *ar0 = curproc->p_md.md_regs;
 	struct hpuxfp *hp;
 	struct bsdfp *bp;
 	register u_int raddr;
@@ -1351,8 +1351,8 @@ hpuxdumpu(vp, cred)
 	 * HPUX order.  Note that HPUX saves the SR as 2 bytes not 4
 	 * so we have to move it up.
 	 */
-	faku->hpuxu_ar0 = p->p_regs;
-	foop = (short *) p->p_regs;
+	faku->hpuxu_ar0 = p->p_md.md_regs;
+	foop = (short *) p->p_md.md_regs;
 	foop[32] = foop[33];
 	foop[33] = foop[34];
 	foop[34] = foop[35];
