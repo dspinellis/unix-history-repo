@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)savecore.c	8.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)savecore.c	8.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -108,7 +108,7 @@ main(argc, argv)
 
 	openlog("savecore", LOG_PERROR, LOG_DAEMON);
 
-	while ((ch = getopt(argc, argv, "cdfNvz")) != EOF)
+	while ((ch = getopt(argc, argv, "cdfN:vz")) != EOF)
 		switch(ch) {
 		case 'c':
 			clear = 1;
