@@ -10,7 +10,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tar.c	1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)tar.c	1.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -132,7 +132,7 @@ tar_trail(buf, in_resync, cnt)
 
 /*
  * ul_oct()
- *	convert an unsigned long to an octal string. one of many oddball field
+ *	convert an unsigned long to an octal string. many oddball field
  *	termination characters are used by the various versions of tar in the
  *	different fields. term selects which kind to use. str is BLANK padded
  *	at the front to len. we are unable to use only one format as many old
@@ -433,7 +433,7 @@ tar_rd(arcn, buf)
 	arcn->sb.st_gid = (gid_t)asc_ul(hd->gid, sizeof(hd->gid), OCT);
 	arcn->sb.st_size = (size_t)asc_ul(hd->size, sizeof(hd->size), OCT);
 	arcn->sb.st_mtime = (time_t)asc_ul(hd->mtime, sizeof(hd->mtime), OCT);
-	arcn->sb.st_atime = arcn->sb.st_mtime;
+	arcn->sb.st_ctime = arcn->sb.st_atime = arcn->sb.st_mtime;
 
 	/*
 	 * have to look at the last character, it may be a '/' and that is used
@@ -464,6 +464,7 @@ tar_rd(arcn, buf)
 		arcn->ln_nlen = l_strncpy(arcn->ln_name, hd->linkname,
 			sizeof(hd->linkname));
 		arcn->ln_name[arcn->ln_nlen] = '\0';
+
 		/*
 		 * no idea of what type this thing really points at, but
 		 * we set something for printing only.
@@ -503,7 +504,7 @@ tar_rd(arcn, buf)
 	 * strip off any trailing slash.
 	 */
 	if (*pt == '/') {
-		*pt = '\0'; /* remove trailing / */
+		*pt = '\0'; 
 		--arcn->nlen;
 	}
 	return(0);
@@ -806,19 +807,20 @@ ustar_rd(arcn, buf)
 	arcn->name[arcn->nlen] = '\0';
 
 	/*
-	 * follow the spec to the letter, we should only have mode bits, strip
+	 * follow the spec to the letter. we should only have mode bits, strip
 	 * off all other crud we may be passed.
 	 */
 	arcn->sb.st_mode = (mode_t)(asc_ul(hd->mode, sizeof(hd->mode), OCT) &
 	    0xfff);
 	arcn->sb.st_size = (size_t)asc_ul(hd->size, sizeof(hd->size), OCT);
 	arcn->sb.st_mtime = (time_t)asc_ul(hd->mtime, sizeof(hd->mtime), OCT);
-	arcn->sb.st_atime = arcn->sb.st_mtime;
+	arcn->sb.st_ctime = arcn->sb.st_atime = arcn->sb.st_mtime;
 
 	/*
 	 * If we can find the ascii names for gname and uname in the password
 	 * and group files we will use the uid's and gid they bind. Otherwise
-	 * we use the uid and gid values stored in the header.
+	 * we use the uid and gid values stored in the header. (This is what
+	 * the posix spec wants).
 	 */
 	hd->gname[sizeof(hd->gname) - 1] = '\0';
 	if (gid_name(hd->gname, &(arcn->sb.st_gid)) < 0)
