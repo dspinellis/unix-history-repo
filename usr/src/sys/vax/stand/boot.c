@@ -1,4 +1,4 @@
-/*	boot.c	4.2	%G% */
+/*	boot.c	4.2	81/03/15	*/
 
 #include "../h/param.h"
 #include "../h/ino.h"
@@ -21,7 +21,7 @@ char	devname[][2] = {
 	'h','p',	/* 0 = hp */
 	0,0,		/* 1 = ht */
 	'u','p',	/* 2 = up */
-	'r','k',	/* 3 = rk */
+	'h','k',	/* 3 = hk */
 };
 
 char line[100] = "xx(0,0)vmunix";
@@ -40,10 +40,8 @@ main()
 		    && devname[devtype][0]) {
 			line[0] = devname[devtype][0];
 			line[1] = devname[devtype][1];
-		} else {
-			printf("DID YOU MEAN ``BOOT ANY?'' (Bad devtype (r10=%x))\n", devtype);
+		} else
 			howto = RB_SINGLE|RB_ASKNAME;
-		}
 	}
 #endif
 	retry = 0;
