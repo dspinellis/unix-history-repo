@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)trpt.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)trpt.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
@@ -76,6 +76,7 @@ again:
 	}
 	if (argc > 0 && !strcmp(*argv, "-f")) {
 		follow++, argc--, argv++;
+		setlinebuf(stdout);
 		goto again;
 	}
 	if (argc > 0 && !strcmp(*argv, "-s")) {
@@ -125,8 +126,8 @@ again:
 		exit(2);
 	}
 	if (mask) {
-		nl[0].n_value &= 0x7fffffff;
-		nl[1].n_value &= 0x7fffffff;
+		nl[0].n_value &= ~KERNBASE;
+		nl[1].n_value &= ~KERNBASE;
 	}
 	(void) lseek(0, nl[1].n_value, 0);
 	if (read(0, &tcp_debx, sizeof (tcp_debx)) != sizeof (tcp_debx)) {
