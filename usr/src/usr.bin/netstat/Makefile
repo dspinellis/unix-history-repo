@@ -1,3 +1,4 @@
+# @(#)Makefile	4.2 %G%
 OBJS=	host.o inet.o if.o main.o mbuf.o route.o
 CFLAGS=-O
 DESTDIR=/usr/ucb
@@ -14,4 +15,4 @@ install: netstat
 	install -s netstat ${DESTDIR}
 
 clean:
-	rm -f *.o core a.out
+	rm -f *.o core a.out errs
