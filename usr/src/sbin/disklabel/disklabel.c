@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)disklabel.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)disklabel.c	5.11 (Berkeley) %G%";
 /* from static char sccsid[] = "@(#)disklabel.c	1.2 (Symmetric) 11/28/85"; */
 #endif
 
@@ -60,7 +60,6 @@ char	*bootxx;
 char	*dkname;
 char	*specname;
 char	tmpfil[] = "/tmp/EdDk.aXXXXXX";
-char	*sprintf();
 
 extern	int errno;
 char	namebuf[BBSIZE], *np = namebuf;
@@ -107,14 +106,14 @@ main(argc, argv)
 
 	dkname = argv[0];
 	if (dkname[0] != '/') {
-		sprintf(np, "/dev/r%s%c", dkname, RAWPARTITION);
+		(void)sprintf(np, "/dev/r%s%c", dkname, RAWPARTITION);
 		specname = np;
 		np += strlen(specname) + 1;
 	} else
 		specname = dkname;
 	f = open(specname, op == READ ? O_RDONLY : O_RDWR);
 	if (f < 0 && errno == ENOENT && dkname[0] != '/') {
-		sprintf(specname, "/dev/r%s", dkname);
+		(void)sprintf(specname, "/dev/r%s", dkname);
 		np = namebuf + strlen(specname) + 1;
 		f = open(specname, op == READ ? O_RDONLY : O_RDWR);
 	}
@@ -297,15 +296,15 @@ makebootarea(boot, dp)
 			*np++ = *p++;
 		*np++ = '\0';
 
-		sprintf(np, "%s/%sboot", BOOTDIR, dkbasename);
+		(void)sprintf(np, "%s/%sboot", BOOTDIR, dkbasename);
 		if (access(np, F_OK) < 0 && dkbasename[0] == 'r')
 			dkbasename++;
 		xxboot = np;
-		sprintf(xxboot, "%s/%sboot", BOOTDIR, dkbasename);
+		(void)sprintf(xxboot, "%s/%sboot", BOOTDIR, dkbasename);
 		np += strlen(xxboot) + 1;
 
 		bootxx = np;
-		sprintf(bootxx, "%s/boot%s", BOOTDIR, dkbasename);
+		(void)sprintf(bootxx, "%s/boot%s", BOOTDIR, dkbasename);
 		np += strlen(bootxx) + 1;
 	}
 

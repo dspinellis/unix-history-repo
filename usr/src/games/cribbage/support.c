@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)support.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)support.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include	<curses.h>
@@ -94,7 +94,7 @@ char		*s;
     static char		prompt[BUFSIZ];
 
     prhand(hand, CINHAND, Playwin, FALSE);
-    sprintf(prompt, "Your %s scores ", s);
+    (void)sprintf(prompt, "Your %s scores ", s);
     i = scorehand(hand, turnover, CINHAND, strcmp(s, "crib") == 0, explain);
     if ((j = number(0, 29, prompt)) == 19)
 	j = 0;

@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)get_date.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)get_date.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -47,7 +47,7 @@ get_date(datebuffer)
 	
 	/* format is '8:10pm on Sunday, 16 Sept 1973' */
 
-	sprintf(datebuffer, "%d:%02d%s on %s, %d %s %d",
+	(void)sprintf(datebuffer, "%d:%02d%s on %s, %d %s %d",
 		realhour,
 		tmp->tm_min,
 		zone,

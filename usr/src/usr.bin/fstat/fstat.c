@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)fstat.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)fstat.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -517,9 +517,11 @@ struct socket *sock;
 	if (dom.dom_family == AF_INET)	
 		strcpy(dname, "inet");
 
-	if (so.so_type < 1 || so.so_type > STYPEMAX)
-		stype = (char *)sprintf(emalloc(10),"unk%d", so.so_type);
-	else
+	if (so.so_type < 1 || so.so_type > STYPEMAX) {
+		
+		stype = emalloc(10);
+		(void)sprintf(stype,"unk%d", so.so_type);
+	} else
 		stype = stypename[so.so_type];
 
 	/* print sock type, sock state, and domain name */
@@ -585,6 +587,8 @@ struct socket *sock;
 char *
 getinetproto(number)
 {
+	char	*cp;
+
 	switch(number) {
 	case 0:	 return("ip");
 	case 1:	 return("icmp");
@@ -595,7 +599,9 @@ getinetproto(number)
 	case 17: return("udp");
 	case 22: return("idp");
 	case 255: return("raw");
-	default: return((char *)sprintf(emalloc(16),"%d",number));
+	default:
+		(void)sprintf(emalloc(16),"%d",number);
+		return(cp);
 	}
 }
 		

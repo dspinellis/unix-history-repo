@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -70,7 +70,7 @@ main(argc, argv)
 	char xxx[80];
 
 	(void) symlink("../h", path("sys"));	
-	sprintf(xxx, "../%s", machinename);
+	(void) sprintf(xxx, "../%s", machinename);
 	(void) symlink(xxx, path("machine"));
 	}
 	makefile();			/* build Makefile */

@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mkioconf.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)mkioconf.c	5.6 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -444,7 +444,8 @@ intv(dev)
 
 	if (dev->d_vec == 0)
 		return ("     0");
-	return (sprintf(buf, "%sint%d", dev->d_name, dev->d_unit));
+	(void) sprintf(buf, "%sint%d", dev->d_name, dev->d_unit);
+	return (buf);
 }
 
 char *
@@ -455,5 +456,6 @@ qu(num)
 		return ("'?'");
 	if (num == UNKNOWN)
 		return (" -1");
-	return (sprintf(errbuf, "%3d", num));
+	(void) sprintf(errbuf, "%3d", num);
+	return (errbuf);
 }

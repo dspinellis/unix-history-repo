@@ -9,7 +9,7 @@
 
 
 #ifndef lint
-static char sccsid[] = "@(#)trace.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)trace.c	5.7 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -264,7 +264,7 @@ union ns_net val;
 {
 	static char buf[100];
 	net.net_e = val;
-	sprintf(buf, "%lx", ntohl(net.long_e));
+	(void)sprintf(buf, "%lx", ntohl(net.long_e));
 	return (buf);
 }
 
@@ -275,7 +275,7 @@ struct ns_addr *addr;
 {
     static char buf[100];
 
-    sprintf(buf, "%s#%x:%x:%x:%x:%x:%x",
+    (void)sprintf(buf, "%s#%x:%x:%x:%x:%x:%x",
 	xns_nettoa(addr->x_net),
 	addr->x_host.c_host[0], addr->x_host.c_host[1], 
 	addr->x_host.c_host[2], addr->x_host.c_host[3], 

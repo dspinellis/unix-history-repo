@@ -70,7 +70,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)config.y	5.4 (Berkeley) %G%
+ *	@(#)config.y	5.5 (Berkeley) %G%
  */
 
 #include "config.h"
@@ -347,7 +347,11 @@ Opt_value:
 	ID
 	      = { $$ = val_id = ns($1); } |
 	NUMBER
-	      = { char nb[16]; $$ = val_id = ns(sprintf(nb, "%d", $1)); };
+	      = {
+		char nb[16];
+	        (void) sprintf(nb, "%d", $1);
+		$$ = val_id = ns(nb);
+	      } ;
 
 
 Save_id:
@@ -431,9 +435,11 @@ Dev_info:
 Con_info:
 	AT Dev NUMBER
 	      = {
-		if (eq(cur.d_name, "mba") || eq(cur.d_name, "uba"))
-			yyerror(sprintf(errbuf,
-			    "%s must be connected to a nexus", cur.d_name));
+		if (eq(cur.d_name, "mba") || eq(cur.d_name, "uba")) {
+			(void) sprintf(errbuf,
+				"%s must be connected to a nexus", cur.d_name);
+			yyerror(errbuf);
+		}
 		cur.d_conn = connect($2, $3);
 		} |
 	AT NEXUS NUMBER
@@ -615,13 +621,15 @@ connect(dev, num)
 		if ((num != dp->d_unit) || !eq(dev, dp->d_name))
 			continue;
 		if (dp->d_type != CONTROLLER && dp->d_type != MASTER) {
-			yyerror(sprintf(errbuf,
-			    "%s connected to non-controller", dev));
+			(void) sprintf(errbuf,
+			    "%s connected to non-controller", dev);
+			yyerror(errbuf);
 			return (0);
 		}
 		return (dp);
 	}
-	yyerror(sprintf(errbuf, "%s %d not defined", dev, num));
+	(void) sprintf(errbuf, "%s %d not defined", dev, num);
+	yyerror(errbuf);
 	return (0);
 }
 
@@ -643,7 +651,8 @@ huhcon(dev)
 		if (eq(dp->d_name, dev))
 			break;
 	if (dp == 0) {
-		yyerror(sprintf(errbuf, "no %s's to wildcard", dev));
+		(void) sprintf(errbuf, "no %s's to wildcard", dev);
+		yyerror(errbuf);
 		return (0);
 	}
 	oldtype = dp->d_type;
@@ -764,7 +773,7 @@ checksystemspec(fl)
 		swap = newswap();
 		dev = fl->f_rootdev;
 		if (minor(dev) & 07) {
-			sprintf(buf, 
+			(void) sprintf(buf, 
 "Warning, swap defaulted to 'b' partition with root on '%c' partition",
 				(minor(dev) & 07) + 'a');
 			yyerror(buf);
@@ -806,7 +815,7 @@ checksystemspec(fl)
 		for (; p && p->f_type == SWAPSPEC; p = p->f_next)
 			if (fl->f_dumpdev == p->f_swapdev)
 				return;
-		sprintf(buf, "Warning, orphaned dump device, %s",
+		(void) sprintf(buf, "Warning, orphaned dump device, %s",
 			"do you know what you're doing");
 		yyerror(buf);
 	}

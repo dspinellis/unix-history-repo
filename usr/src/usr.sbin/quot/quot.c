@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)quot.c	4.12 (Berkeley) 87/02/23";
+static char *sccsid = "@(#)quot.c	4.13 (Berkeley) 87/10/22";
 #endif
 
 /*
@@ -111,7 +111,7 @@ quotall()
 		cp = rindex(fs->fs_spec, '/');
 		if (cp == 0)
 			continue;
-		sprintf(dev, "/dev/r%s", cp + 1);
+		(void)sprintf(dev, "/dev/r%s", cp + 1);
 		if (check(dev, fs->fs_file) == 0)
 			report();
 	}

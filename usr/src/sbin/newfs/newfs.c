@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)newfs.c	6.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)newfs.c	6.14 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -129,7 +129,6 @@ char	device[MAXPATHLEN];
 extern	int errno;
 char	*index();
 char	*rindex();
-char	*sprintf();
 
 main(argc, argv)
 	int argc;
@@ -373,7 +372,8 @@ next:
 		special = cp + 1;
 	if (*special == 'r' && special[1] != 'a' && special[1] != 'b')
 		special++;
-	special = sprintf(device, "/dev/r%s", special);
+	(void)sprintf(device, "/dev/r%s", special);
+	special = device;
 	if (!Nflag) {
 		fso = open(special, O_WRONLY);
 		if (fso < 0) {

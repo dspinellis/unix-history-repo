@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)inetd.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)inetd.c	5.11 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -696,9 +696,9 @@ setproctitle(a, s)
 	cp = Argv[0];
 	size = sizeof(sin);
 	if (getpeername(s, &sin, &size) == 0)
-		sprintf(buf, "-%s [%s]", a, inet_ntoa(sin.sin_addr)); 
+		(void) sprintf(buf, "-%s [%s]", a, inet_ntoa(sin.sin_addr)); 
 	else
-		sprintf(buf, "-%s", a); 
+		(void) sprintf(buf, "-%s", a); 
 	strncpy(cp, buf, LastArg - cp);
 	cp += strlen(cp);
 	while (cp < LastArg)
@@ -905,7 +905,7 @@ daytime_stream(s, sep)		/* Return human-readable time of day */
 
 	clock = time((time_t *) 0);
 
-	sprintf(buffer, "%.24s\r\n", ctime(&clock));
+	(void) sprintf(buffer, "%.24s\r\n", ctime(&clock));
 	(void) write(s, buffer, strlen(buffer));
 }
 
@@ -925,7 +925,7 @@ daytime_dg(s, sep)		/* Return human-readable time of day */
 	size = sizeof(sa);
 	if (recvfrom(s, buffer, sizeof(buffer), 0, &sa, &size) < 0)
 		return;
-	sprintf(buffer, "%.24s\r\n", ctime(&clock));
+	(void) sprintf(buffer, "%.24s\r\n", ctime(&clock));
 	(void) sendto(s, buffer, strlen(buffer), 0, &sa, sizeof(sa));
 }
 

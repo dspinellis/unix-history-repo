@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)telnetd.c	5.22 (Berkeley) %G%";
+static char sccsid[] = "@(#)telnetd.c	5.23 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -413,7 +413,7 @@ telnet(f, p)
 	 * WE, the server, sends it; it does NOT mean that the client will
 	 * echo the terminal input).
 	 */
-	sprintf(nfrontp, doopt, TELOPT_ECHO);
+	(void) sprintf(nfrontp, doopt, TELOPT_ECHO);
 	nfrontp += sizeof doopt-2;
 	hisopts[TELOPT_ECHO] = OPT_YES_BUT_ALWAYS_LOOK;
 
@@ -857,7 +857,7 @@ willoption(option)
 	} else {
 		hisopts[option] = OPT_NO;
 	}
-	sprintf(nfrontp, fmt, option);
+	(void) sprintf(nfrontp, fmt, option);
 	nfrontp += sizeof (dont) - 2;
 }
 
@@ -882,7 +882,7 @@ wontoption(option)
 
 	fmt = dont;
 	hisopts[option] = OPT_NO;
-	sprintf(nfrontp, fmt, option);
+	(void) sprintf(nfrontp, fmt, option);
 	nfrontp += sizeof (doopt) - 2;
 }
 
@@ -920,7 +920,7 @@ dooption(option)
 	} else {
 	    myopts[option] = OPT_NO;
 	}
-	sprintf(nfrontp, fmt, option);
+	(void) sprintf(nfrontp, fmt, option);
 	nfrontp += sizeof (doopt) - 2;
 }
 
@@ -946,7 +946,7 @@ int option;
     } else {
 	myopts[option] = OPT_YES;
     }
-    sprintf(nfrontp, fmt, option);
+    (void) sprintf(nfrontp, fmt, option);
     nfrontp += sizeof (wont) - 2;
 }
 

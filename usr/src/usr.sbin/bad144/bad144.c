@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)bad144.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)bad144.c	5.11 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -107,7 +107,7 @@ usage:
 		exit(1);
 	}
 	if (argv[0][0] != '/')
-		sprintf(name, "/dev/r%s%s", argv[0], RAWPART);
+		(void)sprintf(name, "/dev/r%s%s", argv[0], RAWPART);
 	else
 		strcpy(name, argv[0]);
 	f = open(name, argc == 1? O_RDONLY : O_RDWR);

@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)rexecd.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)rexecd.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/ioctl.h>
@@ -29,7 +29,7 @@ static char sccsid[] = "@(#)rexecd.c	5.4 (Berkeley) %G%";
 
 extern	errno;
 struct	passwd *getpwnam();
-char	*crypt(), *rindex(), *strncat(), *sprintf();
+char	*crypt(), *rindex(), *strncat();
 /*VARARGS1*/
 int	error();
 

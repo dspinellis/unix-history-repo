@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)icheck.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)icheck.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 
@@ -196,11 +196,11 @@ check(file)
 				d = cgbase(&sblock, c);
 			else
 				d = cgsblock(&sblock, c);
-			sprintf(buf, "spare super block %d", c);
+			(void)sprintf(buf, "spare super block %d", c);
 			for (; d < cgd; d += sblock.fs_frag)
 				chk(d, buf, sblock.fs_bsize);
 			d = cgimin(&sblock, c);
-			sprintf(buf, "cylinder group %d", c);
+			(void)sprintf(buf, "cylinder group %d", c);
 			while (cgd < d) {
 				chk(cgd, buf, sblock.fs_bsize);
 				cgd += sblock.fs_frag;
@@ -208,7 +208,7 @@ check(file)
 			d = cgdmin(&sblock, c);
 			i = INOPB(&sblock);
 			for (; cgd < d; cgd += sblock.fs_frag) {
-				sprintf(buf, "inodes %d-%d", ino, ino + i);
+				(void)sprintf(buf, "inodes %d-%d", ino, ino + i);
 				chk(cgd, buf, sblock.fs_bsize);
 				ino += i;
 			}
@@ -340,7 +340,7 @@ pass1(ip)
 		if (db == 0)
 			continue;
 		siz = dblksize(&sblock, ip, i);
-		sprintf(buf, "logical data block %d", i);
+		(void)sprintf(buf, "logical data block %d", i);
 		chk(db, buf, siz);
 		if (siz == sblock.fs_bsize)
 			nblock++;
@@ -362,7 +362,7 @@ pass1(ip)
 			if (i == 0) {
 				lbn = NDADDR + j;
 				siz = dblksize(&sblock, ip, lbn);
-				sprintf(buf, "logical data block %d", lbn);
+				(void)sprintf(buf, "logical data block %d", lbn);
 				chk(ib, buf, siz);
 				if (siz == sblock.fs_bsize)
 					nblock++;
@@ -381,7 +381,7 @@ pass1(ip)
 					continue;
 				lbn = NDADDR + NINDIR(&sblock) * (i + j) + k;
 				siz = dblksize(&sblock, ip, lbn);
-				sprintf(buf, "logical data block %d", lbn);
+				(void)sprintf(buf, "logical data block %d", lbn);
 				chk(ib, buf, siz);
 				if (siz == sblock.fs_bsize)
 					nblock++;
