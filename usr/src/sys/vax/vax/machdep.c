@@ -1,4 +1,4 @@
-/*	machdep.c	6.14	85/04/28	*/
+/*	machdep.c	6.15	85/06/03	*/
 
 #include "reg.h"
 #include "pte.h"
@@ -262,6 +262,24 @@ vmtime(otime, olbolt, oicr)
 		return(((time.tv_sec-otime)*60 + lbolt-olbolt)*16667 + mfpr(ICR)-oicr);
 }
 #endif
+
+/*
+ * Clear registers on exec
+ */
+setregs(entry)
+	u_long entry;
+{
+#ifdef notdef
+	register int *rp;
+
+	/* should pass args to init on the stack */
+	/* should also fix this code before using it, it's wrong */
+	/* wanna clear the scb? */
+	for (rp = &u.u_ar0[0]; rp < &u.u_ar0[16];)
+		*rp++ = 0;
+#endif
+	u.u_ar0[PC] = entry + 2;
+}
 
 /*
  * Send an interrupt to process.
