@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_vnops.c	7.78 (Berkeley) %G%
+ *	@(#)nfs_vnops.c	7.79 (Berkeley) %G%
  */
 
 /*
@@ -319,22 +319,36 @@ nfs_close (ap)
  * nfs getattr call from vfs.
  */
 int
-nfs_getattr (ap)
+nfs_getattr(ap)
 	struct vop_getattr_args *ap;
 {
+	register struct vnode *vp = ap->a_vp;
+	register struct nfsnode *np = VTONFS(vp);
 	register caddr_t cp;
 	caddr_t bpos, dpos;
 	int error = 0;
 	struct mbuf *mreq, *mrep, *md, *mb, *mb2;
 	
-	/* First look in the cache.. */
-	if (nfs_getattrcache(ap->a_vp, ap->a_vap) == 0)
+	/*
+	 * Update local times for special files.
+	 */
+	if (np->n_flag & (NACC | NUPD)) {
+		if (np->n_flag & NACC)
+			np->n_atim = time;
+		if (np->n_flag & NUPD)
+			np->n_mtim = time;
+		np->n_flag |= NCHG;
+	}
+	/*
+	 * First look in the cache.
+	 */
+	if (nfs_getattrcache(vp, ap->a_vap) == 0)
 		return (0);
 	nfsstats.rpccnt[NFSPROC_GETATTR]++;
-	nfsm_reqhead(ap->a_vp, NFSPROC_GETATTR, NFSX_FH);
-	nfsm_fhtom(ap->a_vp);
-	nfsm_request(ap->a_vp, NFSPROC_GETATTR, ap->a_p, ap->a_cred);
-	nfsm_loadattr(ap->a_vp, ap->a_vap);
+	nfsm_reqhead(vp, NFSPROC_GETATTR, NFSX_FH);
+	nfsm_fhtom(vp);
+	nfsm_request(vp, NFSPROC_GETATTR, ap->a_p, ap->a_cred);
+	nfsm_loadattr(vp, ap->a_vap);
 	nfsm_reqdone;
 	return (error);
 }
