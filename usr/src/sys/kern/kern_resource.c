@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_resource.c	6.7 (Berkeley) %G%
+ *	@(#)kern_resource.c	6.8 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -155,7 +155,7 @@ setrlimit()
 	} *uap = (struct a *)u.u_ap;
 	struct rlimit alim;
 	register struct rlimit *alimp;
-	extern int maxdmap;
+	extern unsigned maxdmap;
 
 	if (uap->which >= RLIM_NLIMITS) {
 		u.u_error = EINVAL;
