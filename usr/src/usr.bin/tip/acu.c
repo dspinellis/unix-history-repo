@@ -1,4 +1,4 @@
-/*	acu.c	4.6	82/02/02	*/
+/*	acu.c	4.7	82/07/29	*/
 #include "tip.h"
 #include <setjmp.h>
 
@@ -61,7 +61,7 @@ connect()
 		return ("unknown ACU type");
 	if (*cp != '@') {
 		while (*cp) {
-			for (phnum = cp; any(*cp, "0123456789-*="); cp++)
+			for (phnum = cp; any(*cp, "0123456789-*=&%"); cp++)
 				;
 			if (*cp)
 				*cp++ = '\0';
@@ -96,7 +96,7 @@ connect()
 				fclose(fd);
 				return ("missing phone number");
 			}
-			for (phnum = cp; any(*cp, "0123456789-*="); cp++)
+			for (phnum = cp; any(*cp, "0123456789-*=&%"); cp++)
 				;
 			*cp = '\0';
 			
