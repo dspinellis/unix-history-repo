@@ -1,12 +1,12 @@
-#	@(#)Makefile	4.9	(Berkeley)	%G%
+#	Makefile	4.10	83/07/09
 #
 DESTDIR=
 CFLAGS=	-O
 
 # Programs that live in subdirectories, and have makefiles of their own.
 #
-SUBDIR=	lib2648 libF77 libI77 libU77 libdbm libg libln libm libmp \
-	libnm libplot libcurses libtermlib lpr sendmail
+SUBDIR=	lib2648 libF77 libI77 libU77 libcurses libdbm libg libln \
+	libm libmp libnm libpc libplot libtermlib lpr sendmail
 
 # Shell scripts that need only be installed and are never removed.
 #
