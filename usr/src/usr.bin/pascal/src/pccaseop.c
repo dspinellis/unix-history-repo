@@ -1,6 +1,6 @@
 /* Copyright (c) 1980 Regents of the University of California */
 
-static	char sccsid[] = "@(#)pccaseop.c 1.8.1.2 %G%";
+static	char sccsid[] = "@(#)pccaseop.c 1.10 %G%";
 
 #include "whoami.h"
 #ifdef PC
@@ -27,12 +27,7 @@ struct ct {
      *	the P2FORCE operator puts its operand into a register.
      *	these to keep from thinking of it as r0 all over.
      */
-#ifdef vax
-#   define	FORCENAME	"r0"
-#endif vax
-#ifdef mc68000
-#   define	FORCENAME	"d0"
-#endif mc68000
+#define	FORCENAME	"r0"
 
     /*
      *	given a tree for a case statement, generate code for it.
@@ -110,6 +105,7 @@ pccaseop( tcase )
 	putRV( 0 , cbn , exprnlp -> value[ NL_OFFS ] ,
 			exprnlp -> extra_flags , P2INT );
 	(void) rvalue( (int *) tcase[2] , NIL , RREQ );
+	sconv(exprctype, P2INT);
 	putop( P2ASSIGN , P2INT );
 	putop( P2FORCE , P2INT );
 	putdot( filename , line );
@@ -249,27 +245,8 @@ directsw( ctab , count )
     long	i;
     long	j;
 
-#   ifdef vax
-	putprintf("	casel	%s,$%d,$%d" , 0 , FORCENAME ,
-		ctab[1].cconst , ctab[ count ].cconst - ctab[1].cconst );
-#   endif vax
-#   ifdef mc68000
-	    /*
-	     *	subl	to make d0 a 0-origin byte offset.
-	     *	cmpl	check against upper limit.
-	     *	bhi	error if out of bounds.
-	     *	addw	to make d0 a 0-origin word offset.
-	     *	movw	pick up a jump-table entry
-	     *	jmp	and indirect through it.
-	     */
-	putprintf("	subl	#%d,%s", 0, ctab[1].cconst, FORCENAME);
-	putprintf("	cmpl	#%d,%s", 0,
-		ctab[count].cconst - ctab[1].cconst, FORCENAME);
-	putprintf("	bhi	%s%d", 0, LABELPREFIX, ctab[0].clabel);
-	putprintf("	addw	%s,%s", 0, FORCENAME, FORCENAME);
-	putprintf("	movw	pc@(6,%s:w),%s", 0, FORCENAME, FORCENAME);
-	putprintf("	jmp	pc@(2,%s:w)", 0, FORCENAME);
-#   endif mc68000
+    putprintf( "	casel	%s,$%d,$%d" , 0 , FORCENAME ,
+	    ctab[1].cconst , ctab[ count ].cconst - ctab[1].cconst );
     putlab( fromlabel );
     i = 1;
     j = ctab[1].cconst;
@@ -288,12 +265,7 @@ directsw( ctab , count )
 	}
 	j++;
     }
-#   ifdef vax
-	    /*
-	     *	execution continues here if value not in range of case.
-	     */
-	putjbr( ctab[0].clabel );
-#   endif vax
+    putjbr( ctab[0].clabel );
 }
 
     /*
@@ -318,36 +290,22 @@ bsrecur( deflabel , ctab , count )
 {
 
     if ( count <= 0 ) {
-	putjbr(deflabel);
+	putprintf( "	jbr	L%d" , 0 , deflabel );
 	return;
     } else if ( count == 1 ) {
-#	ifdef vax
-	    putprintf("	cmpl	%s,$%d", 0, FORCENAME, ctab[1].cconst);
-	    putprintf("	jeql	%s%d", 0, LABELPREFIX, ctab[1].clabel);
-	    putjbr(deflabel);
-#	endif vax
-#	ifdef mc68000
-	    putprintf("	cmpl	#%d,%s", 0, ctab[1].cconst, FORCENAME);
-	    putprintf("	jeq	L%d", 0, LABELPREFIX, ctab[1].clabel);
-	    putjbr(deflabel);
-#	endif mc68000
+	putprintf( "	cmpl	%s,$%d" , 0 , FORCENAME , ctab[1].cconst );
+	putprintf( "	jeql	L%d" , 0 , ctab[1].clabel );
+	putprintf( "	jbr	L%d" , 0 , deflabel );
 	return;
     } else {
 	int	half = ( count + 1 ) / 2;
 	int	gtrlabel = getlab();
 
-#	ifdef vax
-	    putprintf("	cmpl	%s,$%d", 0, FORCENAME, ctab[half].cconst);
-	    putprintf("	jgtr	%s%d", 0, LABELPREFIX, gtrlabel);
-	    putprintf("	jeql	%s%d", 0, LABELPREFIX, ctab[half].clabel);
-#	endif vax
-#	ifdef mc68000
-	    putprintf("	cmpl	#%d,%s", 0, ctab[half].cconst, FORCENAME);
-	    putprintf("	jgt	%s%d", 0, LABELPREFIX, gtrlabel);
-	    putprintf("	jeq	%s%d", 0, LABELPREFIX, ctab[half].clabel);
-#	endif mc68000
+	putprintf( "	cmpl	%s,$%d" , 0 , FORCENAME , ctab[ half ].cconst );
+	putprintf( "	jgtr	L%d" , 0 , gtrlabel );
+	putprintf( "	jeql	L%d" , 0 , ctab[ half ].clabel );
 	bsrecur( deflabel , &ctab[0] , half - 1 );
-	putlab(gtrlabel);
+	putprintf( "L%d:" , 0 , gtrlabel );
 	bsrecur( deflabel , &ctab[ half ] , count - half );
 	return;
     }
@@ -360,16 +318,10 @@ itesw( ctab , count )
     int	i;
 
     for ( i = 1 ; i <= count ; i++ ) {
-#	ifdef vax
-	    putprintf("	cmpl	%s,$%d", 0, FORCENAME, ctab[i].cconst);
-	    putprintf("	jeql	%s%d", 0, LABELPREFIX, ctab[i].clabel);
-#	endif vax
-#	ifdef mc68000
-	    putprintf("	cmpl	#%d,%s", 0, ctab[i].cconst, FORCENAME);
-	    putprintf("	jeq	%s%d", 0, LABELPREFIX, ctab[i].clabel);
-#	endif mc68000
+	putprintf( "	cmpl	%s,$%d" , 0 , FORCENAME , ctab[ i ].cconst );
+	putprintf( "	jeql	L%d" , 0 , ctab[ i ].clabel );
     }
-    putjbr(ctab[0].clabel);
+    putprintf( "	jbr	L%d" , 0 , ctab[0].clabel );
     return;
 }
 int
