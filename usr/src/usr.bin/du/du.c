@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1989, 1993
+ * Copyright (c) 1989, 1993, 1994
  *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
@@ -10,12 +10,12 @@
 
 #ifndef lint
 static char copyright[] =
-"@(#) Copyright (c) 1989, 1993\n\
+"@(#) Copyright (c) 1989, 1993, 1994\n\
 	The Regents of the University of California.  All rights reserved.\n";
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)du.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)du.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -37,27 +37,32 @@ main(argc, argv)
 	int argc;
 	char *argv[];
 {
-	register FTS *fts;
-	register FTSENT *p;
-	register int listdirs, listfiles;
+	FTS *fts;
+	FTSENT *p;
 	long blocksize;
-	int aflag, ch, ftsoptions, notused, sflag;
+	int ftsoptions, listdirs, listfiles;
+	int Hflag, Lflag, Pflag, aflag, ch, notused, rval, sflag;
 	char **save;
 
-	ftsoptions = FTS_PHYSICAL;
 	save = argv;
-	aflag = sflag = 0;
-	while ((ch = getopt(argc, argv, "Hahsx")) != EOF)
-		switch(ch) {
+	Hflag = Lflag = Pflag = aflag = sflag = 0;
+	ftsoptions = FTS_PHYSICAL;
+	while ((ch = getopt(argc, argv, "HLPasx")) != EOF)
+		switch (ch) {
 		case 'H':
-			ftsoptions |= FTS_COMFOLLOW;
+			Hflag = 1;
+			Lflag = Pflag = 0;
+			break;
+		case 'L':
+			Lflag = 1;
+			Hflag = Pflag = 0;
+			break;
+		case 'P':
+			Pflag = 1;
+			Hflag = Lflag = 0;
 			break;
 		case 'a':
 			aflag = 1;
-			break;
-		case 'h':
-			ftsoptions &= ~FTS_PHYSICAL;
-			ftsoptions |= FTS_LOGICAL;
 			break;
 		case 's':
 			sflag = 1;
@@ -69,7 +74,27 @@ main(argc, argv)
 		default:
 			usage();
 		}
+	argc -= optind;
 	argv += optind;
+
+	/*
+	 * XXX
+	 * Because of the way that fts(3) works, logical walks will not count
+	 * the blocks actually used by symbolic links.  We rationalize this by
+	 * noting that users computing logical sizes are likely to do logical
+	 * copies, so not counting the links is correct.  The real reason is
+	 * that we'd have to re-implement the kernel's symbolic link traversing
+	 * algorithm to get this right.  If, for example, you have relative
+	 * symbolic links referencing other relative symbolic links, it gets
+	 * very nasty, very fast.  The bottom line is that it's documented in
+	 * the man page, so it's a feature.
+	 */
+	if (Hflag)
+		ftsoptions |= FTS_COMFOLLOW;
+	if (Lflag) {
+		ftsoptions &= ~FTS_PHYSICAL;
+		ftsoptions |= FTS_LOGICAL;
+	}
 
 	if (aflag) {
 		if (sflag)
@@ -92,11 +117,11 @@ main(argc, argv)
 	blocksize /= 512;
 
 	if ((fts = fts_open(argv, ftsoptions, NULL)) == NULL)
-		err(1, "");
+		err(1, NULL);
 
-	while (p = fts_read(fts))
-		switch(p->fts_info) {
-		case FTS_D:
+	for (rval = 0; (p = fts_read(fts)) != NULL;)
+		switch (p->fts_info) {
+		case FTS_D:			/* Ignore. */
 			break;
 		case FTS_DP:
 			p->fts_parent->fts_number += 
@@ -111,10 +136,14 @@ main(argc, argv)
 				    howmany(p->fts_number, blocksize),
 				    p->fts_path);
 			break;
-		case FTS_DNR:
+		case FTS_DC:			/* Ignore. */
+			break;
+		case FTS_DNR:			/* Warn, continue. */
 		case FTS_ERR:
 		case FTS_NS:
+			errno = p->fts_errno;
 			warn("%s", p->fts_path);
+			rval = 1;
 			break;
 		default:
 			if (p->fts_statp->st_nlink > 1 && linkchk(p))
@@ -130,7 +159,7 @@ main(argc, argv)
 			p->fts_parent->fts_number += p->fts_statp->st_blocks;
 		}
 	if (errno)
-		err(1, "");
+		err(1, "fts_read");
 	exit(0);
 }
 
@@ -151,7 +180,7 @@ linkchk(p)
 
 	ino = p->fts_statp->st_ino;
 	dev = p->fts_statp->st_dev;
-	if (start = files)
+	if ((start = files) != NULL)
 		for (fp = start + nfiles - 1; fp >= start; --fp)
 			if (ino == fp->inode && dev == fp->dev)
 				return(1);
@@ -168,6 +197,7 @@ linkchk(p)
 void
 usage()
 {
-	(void)fprintf(stderr, "usage: du [-a | -s] [-Hhx] [file ...]\n");
+	(void)fprintf(stderr,
+"usage: du [-H | -L | -P] [-a | -s] [-x] [file ...]\n");
 	exit(1);
 }
