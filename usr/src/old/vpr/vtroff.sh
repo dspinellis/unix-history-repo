@@ -5,9 +5,9 @@
 umask 0
 set flags=() noglob length=() fonts=() fontf=()
 unset t
-set macp = (/usr/lib/tmac/tmac.vcat)
-set sort = (/usr/lib/rvsort)
-set lpr = (/usr/ucb/lpr -Pvarian)
+set macp = (/usr/share/tmac/tmac.vcat)
+set sort = (/usr/libexec/rvsort)
+set lpr = (/usr/bin/lpr -Pvarian)
 set troff = (/usr/bin/troff)
 top:
 	if ($#argv > 0) then
@@ -21,13 +21,13 @@ top:
 			shift argv
 			goto top
 		case -V:
-			set sort = (/usr/lib/rvsort)
-			set lpr = (/usr/ucb/lpr -Pvarian)
+			set sort = (/usr/libexec/rvsort)
+			set lpr = (/usr/bin/lpr -Pvarian)
 			shift argv
 			goto top
 		case -W:
-			set sort = (/usr/lib/vsort -W)
-			set lpr = (/usr/ucb/lpr -Pversatec)
+			set sort = (/usr/libexec/vsort -W)
+			set lpr = (/usr/bin/lpr -Pversatec)
 			shift argv
 			goto top
 		case -h:

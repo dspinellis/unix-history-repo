@@ -3,10 +3,10 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.9	(Berkeley)	%G%
+#	@(#)Makefile	5.10	(Berkeley)	%G%
 #
 CFLAGS=	-O
-LIBC=	/lib/libc.a
+LIBC=	/usr/lib/libc.a
 SUBDIR=	vtools vtools/fed man
 SHELLS=	rvtroff.sh vprint.sh vtroff.sh vpq.sh vpr.sh vprm.sh
 SRCS=	vpac.c vpd.c vpq.c vpr.c vprm.c
@@ -51,6 +51,7 @@ install: FRC
 	install -c -o bin -g bin -m 755 vpq.sh ${DESTDIR}/usr/old/vpq
 	install -c -o bin -g bin -m 755 vpr.sh ${DESTDIR}/usr/old/vpr
 	install -c -o bin -g bin -m 755 vprm.sh ${DESTDIR}/usr/old/vprm
+	install -c -o bin -g bin -m 755 tmac.vcat ${DESTDIR}/usr/share/tmac/
 
 lint: FRC
 	for i in ${SUBDIR}; do (cd $$i; make ${MFLAGS} lint); done
