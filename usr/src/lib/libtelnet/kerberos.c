@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)kerberos.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)kerberos.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -201,9 +201,10 @@ kerberos4_send(ap)
 		register int i;
 
 		des_key_sched(cred.session, sched);
-		des_set_random_generator_seed(cred.session);
-		des_new_random_key(challenge);
-		des_ecb_encrypt(challenge, session_key, sched, 1);
+		des_init_random_number_generator(cred.session);
+		des_new_random_key(session_key);
+		des_ecb_encrypt(session_key, session_key, sched, 0);
+		des_ecb_encrypt(session_key, challenge, sched, 0);
 		/*
 		 * Increment the challenge by 1, and encrypt it for
 		 * later comparison.
@@ -296,6 +297,11 @@ kerberos4_is(ap, data, cnt)
 			break;
 		}
 
+		/*
+		 * Initialize the random number generator since it's
+		 * used later on by the encryption routine.
+		 */
+		des_init_random_number_generator(session_key);
 		des_key_sched(session_key, sched);
 		bcopy((void *)data, (void *)datablock, sizeof(Block));
 		/*
@@ -313,7 +319,7 @@ kerberos4_is(ap, data, cnt)
 		 * increment by one, re-encrypt it and send it back.
 		 */
 		des_ecb_encrypt(datablock, challenge, sched, 0);
-		for (r = 7; r >= 0; r++) {
+		for (r = 7; r >= 0; r--) {
 			register int t;
 			t = (unsigned int)challenge[r] + 1;
 			challenge[r] = t;	/* ignore overflow */

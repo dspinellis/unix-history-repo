@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)rsaencpwd.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)rsaencpwd.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 
@@ -226,7 +226,7 @@ rsaencpwd_is(ap, data, cnt)
 
 		/*
 		 * If we are doing mutual authentication, get set up to send
-		 * the challange, and verify it when the response comes back.
+		 * the challenge, and verify it when the response comes back.
 		 */
 		if ((ap->way & AUTH_HOW_MASK) == AUTH_HOW_ONE_WAY) {
 		  register int i;
