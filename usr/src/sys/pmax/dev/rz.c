@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)rz.c	8.2 (Berkeley) %G%
+ *	@(#)rz.c	8.3 (Berkeley) %G%
  */
 
 /*
@@ -101,13 +101,19 @@ struct	rz_softc {
 	ScsiGroup1Cmd sc_rwcmd;		/* SCSI cmd if not in "format" mode */
 	struct	scsi_fmt_cdb sc_cdb;	/* SCSI cmd if in "format" mode */
 	struct	scsi_fmt_sense sc_sense;	/* sense data from last cmd */
+	u_char	sc_capbuf[8];		/* buffer for SCSI_READ_CAPACITY */
 } rz_softc[NRZ];
 
 /* sc_flags values */
-#define	RZF_ALIVE		0x01	/* drive found and ready */
-#define	RZF_SENSEINPROGRESS	0x02	/* REQUEST_SENSE command in progress */
-#define	RZF_HAVELABEL		0x04	/* valid label found on disk */
-#define	RZF_WLABEL		0x08	/* label is writeable */
+#define	RZF_ALIVE		0x0001	/* drive found and ready */
+#define	RZF_SENSEINPROGRESS	0x0002	/* REQUEST_SENSE command in progress */
+#define	RZF_ALTCMD		0x0004	/* alternate command in progress */
+#define	RZF_HAVELABEL		0x0008	/* valid label found on disk */
+#define	RZF_WLABEL		0x0010	/* label is writeable */
+#define	RZF_WAIT		0x0020	/* waiting for sc_tab to drain */
+#define	RZF_REMOVEABLE		0x0040	/* disk is removable */
+#define	RZF_TRYSYNC		0x0080	/* try synchronous operation */
+#define	RZF_NOERR		0x0100	/* don't print error messages */
 
 #ifdef DEBUG
 int	rzdebug = 3;
@@ -146,6 +152,116 @@ static char legal_cmds[256] = {
 };
 
 /*
+ * Test to see if the unit is ready and if not, try to make it ready.
+ * Also, find the drive capacity.
+ */
+static int
+rzready(sc)
+	register struct rz_softc *sc;
+{
+	register int tries, i;
+	ScsiClass7Sense *sp;
+
+	/* don't print SCSI errors */
+	sc->sc_flags |= RZF_NOERR;
+
+	/* see if the device is ready */
+	for (tries = 10; ; ) {
+		sc->sc_cdb.len = sizeof(ScsiGroup0Cmd);
+		scsiGroup0Cmd(SCSI_TEST_UNIT_READY, sc->sc_rwcmd.unitNumber,
+			0, 0, (ScsiGroup0Cmd *)sc->sc_cdb.cdb);
+		sc->sc_buf.b_flags = B_BUSY | B_PHYS | B_READ;
+		sc->sc_buf.b_bcount = 0;
+		sc->sc_buf.b_un.b_addr = (caddr_t)0;
+		sc->sc_buf.b_actf = (struct buf *)0;
+		sc->sc_tab.b_actf = &sc->sc_buf;
+
+		sc->sc_cmd.cmd = sc->sc_cdb.cdb;
+		sc->sc_cmd.cmdlen = sc->sc_cdb.len;
+		sc->sc_cmd.buf = (caddr_t)0;
+		sc->sc_cmd.buflen = 0;
+		/* setup synchronous data transfers if the device supports it */
+		if (tries == 10 && (sc->sc_flags & RZF_TRYSYNC))
+			sc->sc_cmd.flags = SCSICMD_USE_SYNC;
+		else
+			sc->sc_cmd.flags = 0;
+
+		(*sc->sc_sd->sd_cdriver->d_start)(&sc->sc_cmd);
+		if (!biowait(&sc->sc_buf))
+			break;
+		if (--tries < 0)
+			return (0);
+		if (!(sc->sc_sense.status & SCSI_STATUS_CHECKCOND))
+			goto again;
+		sp = (ScsiClass7Sense *)sc->sc_sense.sense;
+		if (sp->error7 != 0x70)
+			goto again;
+		if (sp->key == SCSI_CLASS7_UNIT_ATTN && tries != 9) {
+			/* drive recalibrating, give it a while */
+			DELAY(1000000);
+			continue;
+		}
+		if (sp->key == SCSI_CLASS7_NOT_READY) {
+			ScsiStartStopCmd *cp;
+
+			/* try to spin-up disk with start/stop command */
+			sc->sc_cdb.len = sizeof(ScsiGroup0Cmd);
+			cp = (ScsiStartStopCmd *)sc->sc_cdb.cdb;
+			cp->command = SCSI_START_STOP;
+			cp->unitNumber = sc->sc_rwcmd.unitNumber;
+			cp->immed = 0;
+			cp->loadEject = 0;
+			cp->start = 1;
+			cp->pad1 = 0;
+			cp->pad2 = 0;
+			cp->pad3 = 0;
+			cp->pad4 = 0;
+			cp->control = 0;
+			sc->sc_buf.b_flags = B_BUSY | B_PHYS | B_READ;
+			sc->sc_buf.b_bcount = 0;
+			sc->sc_buf.b_un.b_addr = (caddr_t)0;
+			sc->sc_buf.b_actf = (struct buf *)0;
+			sc->sc_tab.b_actf = &sc->sc_buf;
+			rzstart(sc->sc_cmd.unit);
+			if (biowait(&sc->sc_buf))
+				return (0);
+			continue;
+		}
+	again:
+		DELAY(1000);
+	}
+
+	/* print SCSI errors */
+	sc->sc_flags &= ~RZF_NOERR;
+
+	/* find out how big a disk this is */
+	sc->sc_cdb.len = sizeof(ScsiGroup1Cmd);
+	scsiGroup1Cmd(SCSI_READ_CAPACITY, sc->sc_rwcmd.unitNumber, 0, 0,
+		(ScsiGroup1Cmd *)sc->sc_cdb.cdb);
+	sc->sc_buf.b_flags = B_BUSY | B_PHYS | B_READ;
+	sc->sc_buf.b_bcount = sizeof(sc->sc_capbuf);
+	sc->sc_buf.b_un.b_addr = (caddr_t)sc->sc_capbuf;
+	sc->sc_buf.b_actf = (struct buf *)0;
+	sc->sc_tab.b_actf = &sc->sc_buf;
+	sc->sc_flags |= RZF_ALTCMD;
+	rzstart(sc->sc_cmd.unit);
+	sc->sc_flags &= ~RZF_ALTCMD;
+	if (biowait(&sc->sc_buf) || sc->sc_buf.b_resid != 0)
+		return (0);
+	sc->sc_blks = ((sc->sc_capbuf[0] << 24) | (sc->sc_capbuf[1] << 16) |
+		(sc->sc_capbuf[2] << 8) | sc->sc_capbuf[3]) + 1;
+	sc->sc_blksize = (sc->sc_capbuf[4] << 24) | (sc->sc_capbuf[5] << 16) |
+		(sc->sc_capbuf[6] << 8) | sc->sc_capbuf[7];
+
+	sc->sc_bshift = 0;
+	for (i = sc->sc_blksize; i > DEV_BSIZE; i >>= 1)
+		++sc->sc_bshift;
+	sc->sc_blks <<= sc->sc_bshift;
+
+	return (1);
+}
+
+/*
  * Test to see if device is present.
  * Return true if found and initialized ok.
  */
@@ -153,9 +269,8 @@ rzprobe(sd)
 	register struct scsi_device *sd;
 {
 	register struct rz_softc *sc = &rz_softc[sd->sd_unit];
-	register int tries, i;
+	register int i;
 	ScsiInquiryData inqbuf;
-	u_char capbuf[8];
 	ScsiClass7Sense *sp;
 
 	/* init some parameters that don't change */
@@ -166,6 +281,7 @@ rzprobe(sd)
 
 	/* try to find out what type of device this is */
 	sc->sc_format_pid = 1;		/* force use of sc_cdb */
+	sc->sc_flags = RZF_NOERR;	/* don't print SCSI errors */
 	sc->sc_cdb.len = sizeof(ScsiGroup0Cmd);
 	scsiGroup0Cmd(SCSI_INQUIRY, sd->sd_slave, 0, sizeof(inqbuf),
 		(ScsiGroup0Cmd *)sc->sc_cdb.cdb);
@@ -189,89 +305,13 @@ rzprobe(sd)
 		goto bad;
 	}
 	sc->sc_type = inqbuf.type;
+	if (inqbuf.flags & SCSI_SYNC)
+		sc->sc_flags |= RZF_TRYSYNC;
 
-	/* see if device is ready */
-	for (tries = 10; ; ) {
-		sc->sc_cdb.len = sizeof(ScsiGroup0Cmd);
-		scsiGroup0Cmd(SCSI_TEST_UNIT_READY, sd->sd_slave, 0, 0,
-			(ScsiGroup0Cmd *)sc->sc_cdb.cdb);
-		sc->sc_buf.b_flags = B_BUSY | B_PHYS | B_READ;
-		sc->sc_buf.b_bcount = 0;
-		sc->sc_buf.b_un.b_addr = (caddr_t)0;
-		sc->sc_buf.b_actf = (struct buf *)0;
-		sc->sc_tab.b_actf = &sc->sc_buf;
-
-		sc->sc_cmd.cmd = sc->sc_cdb.cdb;
-		sc->sc_cmd.cmdlen = sc->sc_cdb.len;
-		sc->sc_cmd.buf = (caddr_t)0;
-		sc->sc_cmd.buflen = 0;
-		/* setup synchronous data transfers if the device supports it */
-		if (tries == 10 && (inqbuf.flags & SCSI_SYNC))
-			sc->sc_cmd.flags = SCSICMD_USE_SYNC;
-		else
-			sc->sc_cmd.flags = 0;
-
-		(*sc->sc_sd->sd_cdriver->d_start)(&sc->sc_cmd);
-		if (!biowait(&sc->sc_buf))
-			break;
-		if (--tries < 0)
+	if (!inqbuf.rmb) {
+		if (!rzready(sc))
 			goto bad;
-		if (!(sc->sc_sense.status & SCSI_STATUS_CHECKCOND))
-			goto again;
-		sp = (ScsiClass7Sense *)sc->sc_sense.sense;
-		if (sp->error7 != 0x70)
-			goto again;
-		if (sp->key == SCSI_CLASS7_UNIT_ATTN && tries != 9) {
-			/* drive recalibrating, give it a while */
-			DELAY(1000000);
-			continue;
-		}
-		if (sp->key == SCSI_CLASS7_NOT_READY) {
-			ScsiStartStopCmd *cp;
-
-			/* try to spin-up disk with start/stop command */
-			sc->sc_cdb.len = sizeof(ScsiGroup0Cmd);
-			cp = (ScsiStartStopCmd *)sc->sc_cdb.cdb;
-			cp->command = SCSI_START_STOP;
-			cp->unitNumber = sd->sd_slave;
-			cp->immed = 0;
-			cp->loadEject = 0;
-			cp->start = 1;
-			cp->pad1 = 0;
-			cp->pad2 = 0;
-			cp->pad3 = 0;
-			cp->pad4 = 0;
-			cp->control = 0;
-			sc->sc_buf.b_flags = B_BUSY | B_PHYS | B_READ;
-			sc->sc_buf.b_bcount = 0;
-			sc->sc_buf.b_un.b_addr = (caddr_t)0;
-			sc->sc_buf.b_actf = (struct buf *)0;
-			sc->sc_tab.b_actf = &sc->sc_buf;
-			rzstart(sd->sd_unit);
-			if (biowait(&sc->sc_buf))
-				goto bad;
-			continue;
-		}
-	again:
-		DELAY(1000);
 	}
-
-	/* find out how big a disk this is */
-	sc->sc_cdb.len = sizeof(ScsiGroup1Cmd);
-	scsiGroup1Cmd(SCSI_READ_CAPACITY, sd->sd_slave, 0, 0,
-		(ScsiGroup1Cmd *)sc->sc_cdb.cdb);
-	sc->sc_buf.b_flags = B_BUSY | B_PHYS | B_READ;
-	sc->sc_buf.b_bcount = sizeof(capbuf);
-	sc->sc_buf.b_un.b_addr = (caddr_t)capbuf;
-	sc->sc_buf.b_actf = (struct buf *)0;
-	sc->sc_tab.b_actf = &sc->sc_buf;
-	rzstart(sd->sd_unit);
-	if (biowait(&sc->sc_buf) || sc->sc_buf.b_resid != 0)
-		goto bad;
-	sc->sc_blks = ((capbuf[0] << 24) | (capbuf[1] << 16) |
-		(capbuf[2] << 8) | capbuf[3]) + 1;
-	sc->sc_blksize = (capbuf[4] << 24) | (capbuf[5] << 16) |
-		(capbuf[6] << 8) | capbuf[7];
 
 	printf("rz%d at %s%d drive %d slave %d", sd->sd_unit,
 		sd->sd_cdriver->d_name, sd->sd_ctlr, sd->sd_drive,
@@ -300,19 +340,18 @@ rzprobe(sd)
 		printf(" %s %s rev %s", vid, pid, revl);
 	}
 	printf(", %d %d byte blocks\n", sc->sc_blks, sc->sc_blksize);
-	if (sc->sc_blksize != DEV_BSIZE) {
+	if (!inqbuf.rmb && sc->sc_blksize != DEV_BSIZE) {
 		if (sc->sc_blksize < DEV_BSIZE) {
 			printf("rz%d: need %d byte blocks - drive ignored\n",
 				sd->sd_unit, DEV_BSIZE);
 			goto bad;
 		}
-		for (i = sc->sc_blksize; i > DEV_BSIZE; i >>= 1)
-			++sc->sc_bshift;
-		sc->sc_blks <<= sc->sc_bshift;
 	}
 	sc->sc_wpms = 32 * (60 * DEV_BSIZE / 2);	/* XXX */
 	sc->sc_format_pid = 0;
-	sc->sc_flags = RZF_ALIVE;
+	sc->sc_flags |= RZF_ALIVE;
+	if (inqbuf.rmb)
+		sc->sc_flags |= RZF_REMOVEABLE;
 	sc->sc_buf.b_flags = 0;
 	return (1);
 
@@ -504,7 +543,8 @@ rzstart(unit)
 	sc->sc_cmd.buf = bp->b_un.b_addr;
 	sc->sc_cmd.buflen = bp->b_bcount;
 
-	if (sc->sc_format_pid || (sc->sc_flags & RZF_SENSEINPROGRESS)) {
+	if (sc->sc_format_pid ||
+	    (sc->sc_flags & (RZF_SENSEINPROGRESS | RZF_ALTCMD))) {
 		sc->sc_cmd.flags = !(bp->b_flags & B_READ) ?
 			SCSICMD_DATA_TO_DEVICE : 0;
 		sc->sc_cmd.cmd = sc->sc_cdb.cdb;
@@ -558,7 +598,6 @@ rzdone(unit, error, resid, status)
 	register struct rz_softc *sc = &rz_softc[unit];
 	register struct buf *bp = sc->sc_tab.b_actf;
 	register struct scsi_device *sd = sc->sc_sd;
-	extern int cold;
 
 	if (bp == NULL) {
 		printf("rz%d: bp == NULL\n", unit);
@@ -582,14 +621,14 @@ rzdone(unit, error, resid, status)
 			 */
 			sc->sc_sense.sense[0] = 0x70;
 			sc->sc_sense.sense[2] = SCSI_CLASS7_NO_SENSE;
-		} else if (!cold) {
+		} else if (!(sc->sc_flags & RZF_NOERR)) {
 			printf("rz%d: ", unit);
 			scsiPrintSense((ScsiClass7Sense *)sc->sc_sense.sense,
 				sizeof(sc->sc_sense.sense) - resid);
 		}
 	} else if (error || (status & SCSI_STATUS_CHECKCOND)) {
 #ifdef DEBUG
-		if (!cold && (rzdebug & RZB_ERROR))
+		if (!(sc->sc_flags & RZF_NOERR) && (rzdebug & RZB_ERROR))
 			printf("rz%d: error %d scsi status 0x%x\n",
 				unit, error, status);
 #endif
@@ -654,6 +693,27 @@ rzgetinfo(dev)
 	part = rzpart(dev);
 	sc->sc_flags |= RZF_HAVELABEL;
 
+	if (sc->sc_type == SCSI_ROM_TYPE) {
+		lp->d_type = DTYPE_SCSI;
+		lp->d_secsize = sc->sc_blksize;
+		lp->d_nsectors = 100;
+		lp->d_ntracks = 1;
+		lp->d_ncylinders = (sc->sc_blks / 100) + 1;
+		lp->d_secpercyl	= 100;
+		lp->d_secperunit = sc->sc_blks;
+		lp->d_rpm = 300;
+		lp->d_interleave = 1;
+		lp->d_flags = D_REMOVABLE;
+		lp->d_npartitions = 1;
+		lp->d_partitions[0].p_offset = 0;
+		lp->d_partitions[0].p_size = sc->sc_blks;
+		lp->d_partitions[0].p_fstype = FS_ISO9660;
+		lp->d_magic = DISKMAGIC;
+		lp->d_magic2 = DISKMAGIC;
+		lp->d_checksum = dkcksum(lp);
+		return;
+	}
+
 	lp->d_type = DTYPE_SCSI;
 	lp->d_secsize = DEV_BSIZE;
 	lp->d_secpercyl = 1 << sc->sc_bshift;
@@ -669,23 +729,21 @@ rzgetinfo(dev)
 		return;
 
 	printf("rz%d: WARNING: %s\n", unit, msg);
-	sc->sc_label.d_magic = DISKMAGIC;
-	sc->sc_label.d_magic2 = DISKMAGIC;
-	sc->sc_label.d_type = DTYPE_SCSI;
-	sc->sc_label.d_subtype = 0;
-	sc->sc_label.d_typename[0] = '\0';
-	sc->sc_label.d_secsize = DEV_BSIZE;
-	sc->sc_label.d_secperunit = sc->sc_blks;
-	sc->sc_label.d_npartitions = MAXPARTITIONS;
-	sc->sc_label.d_bbsize = BBSIZE;
-	sc->sc_label.d_sbsize = SBSIZE;
+	lp->d_magic = DISKMAGIC;
+	lp->d_magic2 = DISKMAGIC;
+	lp->d_type = DTYPE_SCSI;
+	lp->d_subtype = 0;
+	lp->d_typename[0] = '\0';
+	lp->d_secsize = DEV_BSIZE;
+	lp->d_secperunit = sc->sc_blks;
+	lp->d_npartitions = MAXPARTITIONS;
+	lp->d_bbsize = BBSIZE;
+	lp->d_sbsize = SBSIZE;
 	for (i = 0; i < MAXPARTITIONS; i++) {
-		sc->sc_label.d_partitions[i].p_size =
-			rzdefaultpart[i].nblocks;
-		sc->sc_label.d_partitions[i].p_offset =
-			rzdefaultpart[i].strtblk;
+		lp->d_partitions[i].p_size = rzdefaultpart[i].nblocks;
+		lp->d_partitions[i].p_offset = rzdefaultpart[i].strtblk;
 	}
-	sc->sc_label.d_partitions[RAWPART].p_size = sc->sc_blks;
+	lp->d_partitions[RAWPART].p_size = sc->sc_blks;
 }
 
 int
@@ -703,6 +761,12 @@ rzopen(dev, flags, mode, p)
 
 	if (unit >= NRZ || !(sc->sc_flags & RZF_ALIVE))
 		return (ENXIO);
+
+	/* make sure disk is ready */
+	if (sc->sc_flags & RZF_REMOVEABLE) {
+		if (!rzready(sc))
+			return (ENXIO);
+	}
 
 	/* try to read disk label and partition table information */
 	part = rzpart(dev);
@@ -802,6 +866,9 @@ rzwrite(dev, uio)
 	struct uio *uio;
 {
 	register struct rz_softc *sc = &rz_softc[rzunit(dev)];
+
+	if (sc->sc_type == SCSI_ROM_TYPE)
+		return (EROFS);
 
 	if (sc->sc_format_pid && sc->sc_format_pid != curproc->p_pid)
 		return (EPERM);
