@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_vfsops.c	8.1 (Berkeley) %G%
+ *	@(#)nfs_vfsops.c	8.2 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -229,9 +229,8 @@ nfs_mountroot()
 
 	if (vfs_lock(mp))
 		panic("nfs_mountroot: vfs_lock");
-	rootfs = mp;
-	mp->mnt_next = mp;
-	mp->mnt_prev = mp;
+	TAILQ_INSERT_TAIL(&mountlist, mp, mnt_list);
+	mp->mnt_flag |= MNT_ROOTFS;
 	mp->mnt_vnodecovered = NULLVP;
 	vfs_unlock(mp);
 	rootvp = vp;
@@ -271,9 +270,9 @@ nfs_mountdiskless(path, which, mountflag, sin, args, vpp)
 	    M_MOUNT, M_NOWAIT);
 	if (mp == NULL)
 		panic("nfs_mountroot: %s mount malloc", which);
+	bzero((char *)mp, (u_long)sizeof(struct mount));
 	mp->mnt_op = &nfs_vfsops;
 	mp->mnt_flag = mountflag;
-	mp->mnt_mounth = NULLVP;
 
 	MGET(m, MT_SONAME, M_DONTWAIT);
 	if (m == NULL)
@@ -518,7 +517,7 @@ nfs_unmount(mp, mntflags, p)
 	extern int doforce;
 
 	if (mntflags & MNT_FORCE) {
-		if (!doforce || mp == rootfs)
+		if (!doforce || (mp->mnt_flag & MNT_ROOTFS))
 			return (EINVAL);
 		flags |= FORCECLOSE;
 	}
@@ -621,16 +620,18 @@ nfs_sync(mp, waitfor, cred, p)
 	 * Force stale buffer cache information to be flushed.
 	 */
 loop:
-	for (vp = mp->mnt_mounth; vp; vp = vp->v_mountf) {
+	for (vp = mp->mnt_vnodelist.lh_first;
+	     vp != NULL;
+	     vp = vp->v_mntvnodes.le_next) {
 		/*
 		 * If the vnode that we are about to sync is no longer
 		 * associated with this mount point, start over.
 		 */
 		if (vp->v_mount != mp)
 			goto loop;
-		if (VOP_ISLOCKED(vp) || vp->v_dirtyblkhd.le_next == NULL)
+		if (VOP_ISLOCKED(vp) || vp->v_dirtyblkhd.lh_first == NULL)
 			continue;
-		if (vget(vp))
+		if (vget(vp, 1))
 			goto loop;
 		if (error = VOP_FSYNC(vp, cred, waitfor, p))
 			allerror = error;
