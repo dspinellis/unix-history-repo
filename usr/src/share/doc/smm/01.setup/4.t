@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)4.t	6.12 (Berkeley) %G%
+.\"	@(#)4.t	6.13 (Berkeley) %G%
 .\"
 .ds LH "Installing/Operating \*(4B
 .ds CF \*(Dy
@@ -58,6 +58,16 @@ ufs		local filesystems broken down as follows
 	lfs	log-based filesystem
 	mfs	memory based filesystem
 nfs		Sun-compatible network filesystem
+miscfs		miscellaneous filesystems
+	deadfs	where old vnodes go to die
+	fdesc	access to per-process file descriptors
+	fifofs	IEEE Std1003.1 FIFOs
+	kernfs	filesystem access to kernel data structures
+	lofs	loopback filesystem
+	nullfs	another loopback filesystem
+	portal	associate processes with filesystem locations
+	specfs	device special files
+	umapfs	provide alternate uid/gid mappings
 dev		generic device drivers (SCSI, vnode, concatenated disk)
 .TE
 .LP
@@ -75,6 +85,7 @@ A separate subdirectory is provided for each machine architecture
 .TS
 l l.
 hp300	HP 9000/300 series of Motorola 68000-based machines
+hp	code common to both HP 68k and (non-existant) PA-RISC ports
 i386	Intel 386/486-based PC machines
 luna68k	Omron 68000-based workstations
 news3400	Sony News MIPS-based workstations
@@ -91,7 +102,6 @@ l l.
 include	exported machine-dependent header files
 hp300	machine-dependent support code and private header files
 dev	device drivers
-hpux	emulation for HP-UX system calls
 conf	configuration files
 stand	machine-dependent standalone code
 .TE
