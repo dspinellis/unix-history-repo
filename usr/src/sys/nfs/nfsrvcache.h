@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfsrvcache.h	7.4 (Berkeley) %G%
+ *	@(#)nfsrvcache.h	7.5 (Berkeley) %G%
  */
 
 /*
@@ -15,11 +15,12 @@
  */
 
 #define	NFSRVCACHESIZ	256
-#define	NFSRCHSZ	256
 
 struct nfsrvcache {
-	struct	nfsrvcache *rc_chain[2];	/* Hash chain links */
-	struct	nfsrvcache *rc_lchain[2];	/* Lru list */
+	struct	nfsrvcache *rc_forw;		/* Hash chain links */
+	struct	nfsrvcache **rc_back;		/* Hash chain links */
+	struct	nfsrvcache *rc_next;		/* Lru list */
+	struct	nfsrvcache **rc_prev;		/* Lru list */
 	u_long	rc_xid;				/* rpc id number */
 	time_t	rc_timestamp;			/* Time stamp */
 	union {
@@ -32,10 +33,6 @@ struct nfsrvcache {
 	u_char	rc_flag;		/* Flag bits */
 };
 
-#define	rc_forw		rc_chain[0]
-#define	rc_back		rc_chain[1]
-#define	rc_next		rc_lchain[0]
-#define	rc_prev		rc_lchain[1]
 #define	rc_reply	rc_un.ru_repmb
 #define	rc_status	rc_un.ru_repstat
 #define	rc_inetaddr	rc_haddr.had_inetaddr

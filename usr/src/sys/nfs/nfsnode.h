@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfsnode.h	7.26 (Berkeley) %G%
+ *	@(#)nfsnode.h	7.27 (Berkeley) %G%
  */
 
 /*
@@ -30,7 +30,8 @@ struct sillyrename {
  */
 
 struct nfsnode {
-	struct	nfsnode *n_chain[2];	/* must be first */
+	struct	nfsnode *n_forw;	/* hash, forward */
+	struct	nfsnode **n_back;	/* hash, backward */
 	nfsv2fh_t n_fh;			/* NFS File Handle */
 	long	n_flag;			/* Flag for locking.. */
 	struct	vnode *n_vnode;		/* vnode associated with this node */
@@ -67,9 +68,6 @@ struct nfsnode {
 #define	n_expiry	n_un.un_nqnfs.un_expiry
 #define	n_tnext		n_un.un_nqnfs.un_tnext
 #define	n_tprev		n_un.un_nqnfs.un_tprev
-
-#define	n_forw		n_chain[0]
-#define	n_back		n_chain[1]
 
 #ifdef KERNEL
 /*
