@@ -1,4 +1,4 @@
-#	@(#)Makefile	7.15 (Berkeley) %G%
+#	@(#)Makefile	7.16 (Berkeley) %G%
 
 RELOC=		800
 MTBOOTRELOC=	e0000
@@ -15,8 +15,8 @@ CFLAGS=	-DSTANDALONE -DCOMPAT_42 -DTAHOE -DRELOC=0x${RELOC} ${COPTS}
 SUBDIR=	vdformat
 ALL=	boot cat copy ls
 
-SRCS=	boot.c cat.c conf.c copy.c dev.c getfile.c gets.c ls.c prf.c \
-	srt0.c sys.c vd.c cy.c hd.c
+SRCS=	boot.c cat.c conf.c copy.c dev.c getfile.c gets.c ls.c printf.c \
+	prf.c srt0.c sys.c vd.c cy.c hd.c
 DRIVERS=cy.o vd.o hd.o
 
 #all: srt0.o libsa.a ${ALL} ${SUBDIR}
@@ -28,7 +28,7 @@ ${SUBDIR}:
 machdep.o: machdep.c ../include/mtpr.h ../tahoe/mem.h ../tahoe/SYS.h
 	${CC} -E ${CFLAGS} machdep.c | ${AS}  -o machdep.o
 
-libsa.a: conf.o dev.o getfile.o gets.o machdep.o prf.o printn.o sys.o \
+libsa.a: conf.o dev.o getfile.o gets.o machdep.o prf.o printf.o sys.o \
 	${DRIVERS}
 	ar crv $@ $?
 	ranlib $@
