@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)dbtest.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)dbtest.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -36,7 +36,7 @@ void	 get __P((DB *, DBT *));
 void	 put __P((DB *, DBT *, DBT *));
 void	 rem __P((DB *, DBT *));
 void	*rfile __P((char *, size_t *));
-void	 seq __P((DB *));
+void	 seq __P((DB *, DBT *));
 u_int	 setflags __P((char *));
 void	*setinfo __P((DBTYPE, char *));
 void	 usage __P((void));
@@ -108,6 +108,11 @@ main(argc, argv)
 	    (p = fgets(buf, sizeof(buf), stdin)) != NULL; ++lineno) {
 		len = strlen(buf);
 		switch(*p) {
+		case 'e':			/* echo */
+			if (state != COMMAND)
+				err("line %lu: not expecting command", lineno);
+			(void)write(ofd, p + 1, len - 1);
+			break;
 		case 'g':			/* get */
 			if (state != COMMAND)
 				err("line %lu: not expecting command", lineno);
@@ -129,10 +134,14 @@ main(argc, argv)
 		case 's':			/* seq */
 			if (state != COMMAND)
 				err("line %lu: not expecting command", lineno);
-			seq(dbp);
+			if (flags == R_CURSOR) {
+				state = KEY;
+				command = SEQ;
+			} else
+				seq(dbp, &key);
 			break;
 		case 'f':
-			flags |= setflags(p + 1);
+			flags = setflags(p + 1);
 			break;
 		case 'D':			/* data file */
 			if (state != DATA)
@@ -166,25 +175,7 @@ main(argc, argv)
 				err("line %lu: 'K' not available for recno",
 				    lineno);
 			key.data = rfile(p + 1, &key.size);
-			switch(command) {
-			case GET:
-				get(dbp, &key);
-				free(key.data);
-				state = COMMAND;
-				break;
-			case PUT:
-				state = DATA;
-				break;
-			case REMOVE:
-				rem(dbp, &key);
-				free(key.data);
-				state = COMMAND;
-				break;
-			default:
-				err("line %lu: command doesn't take a key",
-				    lineno);
-			}
-			break;
+			goto key;
 		case 'k':			/* key */
 			if (state != KEY)
 				err("line %lu: not expecting a key", lineno);
@@ -197,7 +188,7 @@ main(argc, argv)
 				key.data = xmalloc(p + 1, len - 1);
 				key.size = len - 1;
 			}
-			switch(command) {
+key:			switch(command) {
 			case GET:
 				get(dbp, &key);
 				if (type != DB_RECNO)
@@ -213,6 +204,12 @@ main(argc, argv)
 					free(key.data);
 				state = COMMAND;
 				break;
+			case SEQ:
+				seq(dbp, &key);
+				if (type != DB_RECNO)
+					free(key.data);
+				state = COMMAND;
+				break;
 			default:
 				err("line %lu: command doesn't take a key",
 				    lineno);
@@ -220,12 +217,15 @@ main(argc, argv)
 			break;
 		default:
 			err("line %lu: %s: unknown command character",
-			    *p, lineno);
+			    p, lineno);
 		}
 	}
 	(void)close(ofd);
 	exit(0);
 }
+
+#define	NOOVERWRITE	"put failed, would overwrite key\n"
+#define	NOSUCHKEY	"get failed, no such key\n"
 
 void
 get(dbp, kp)
@@ -234,9 +234,17 @@ get(dbp, kp)
 {
 	DBT data;
 
-	if (dbp->get(dbp, kp, &data, flags) == -1)
+	switch(dbp->get(dbp, kp, &data, flags)) {
+	case 0:
+		(void)write(ofd, data.data, data.size);
+		break;
+	case -1:
 		err("line %lu: get: %s", lineno, strerror(errno));
-	(void)write(ofd, data.data, data.size);
+		/* NOTREACHED */
+	case 1:
+		(void)write(ofd, NOSUCHKEY, sizeof(NOSUCHKEY) - 1);
+		break;
+	}
 }
 
 void
@@ -244,8 +252,16 @@ put(dbp, kp, dp)
 	DB *dbp;
 	DBT *kp, *dp;
 {
-	if (dbp->put(dbp, kp, dp, flags) == -1)
+	switch(dbp->put(dbp, kp, dp, flags)) {
+	case 0:
+		break;
+	case -1:
 		err("line %lu: put: %s", lineno, strerror(errno));
+		/* NOTREACHED */
+	case 1:
+		(void)write(ofd, NOOVERWRITE, sizeof(NOOVERWRITE) - 1);
+		break;
+	}
 }
 
 void
@@ -253,26 +269,36 @@ rem(dbp, kp)
 	DB *dbp;
 	DBT *kp;
 {
-	if (dbp->del(dbp, kp, flags) == -1)
+	switch(dbp->del(dbp, kp, flags)) {
+	case 0:
+		break;
+	case -1:
 		err("line %lu: get: %s", lineno, strerror(errno));
+		/* NOTREACHED */
+	case 1:
+		(void)write(ofd, NOSUCHKEY, sizeof(NOSUCHKEY) - 1);
+		break;
+	}
 }
 
 void
-seq(dbp)
+seq(dbp, kp)
 	DB *dbp;
+	DBT *kp;
 {
-	DBT key, data;
-	size_t len;
-	char nbuf[20];
+	DBT data;
 
-	if (dbp->seq(dbp, &key, &data, flags) == -1)
+	switch(dbp->seq(dbp, kp, &data, flags)) {
+	case 0:
+		(void)write(ofd, data.data, data.size);
+		break;
+	case -1:
 		err("line %lu: seq: %s", lineno, strerror(errno));
-	if (type == DB_RECNO) {
-		len = sprintf(nbuf, "%lu\n", *(u_long *)key.data);
-		(void)write(ofd, nbuf, len);
-	} else
-		(void)write(ofd, key.data, key.size);
-	(void)write(ofd, data.data, data.size);
+		/* NOTREACHED */
+	case 1:
+		(void)write(ofd, NOSUCHKEY, sizeof(NOSUCHKEY) - 1);
+		break;
+	}
 }
 	
 u_int
