@@ -1,25 +1,26 @@
 #ifndef lint
-static char *sccsid = "@(#)mount.c	4.9 (Berkeley) %G%";
+static char *sccsid = "@(#)mount.c	4.10 (Berkeley) %G%";
 #endif
 
 /*
  * mount
  */
+#include <sys/param.h>
+
 #include <stdio.h>
 #include <fstab.h>
+#include <mtab.h>
 
-#define	NMOUNT	16
-#define	NAMSIZ	32
+#define	DNMAX	(sizeof (mtab[0].m_dname) - 1)
+#define	PNMAX	(sizeof (mtab[0].m_path) - 1)
 
-struct mtab {
-	char	file[NAMSIZ];
-	char	spec[NAMSIZ];
-} mtab[NMOUNT];
+struct	mtab mtab[NMOUNT];
 
 int	all;
 int	ro;
 int	fake;
 int	verbose;
+char	*index(), *rindex();
 
 main(argc, argv)
 	int argc;
@@ -28,13 +29,14 @@ main(argc, argv)
 	register struct mtab *mp;
 	register char *np;
 	int mf;
+	char *type = FSTAB_RW;
 
 	mf = open("/etc/mtab", 0);
-	read(mf, (char *)mtab, NMOUNT*2*NAMSIZ);
-	if (argc==1) {
+	read(mf, (char *)mtab, sizeof (mtab));
+	if (argc == 1) {
 		for (mp = mtab; mp < &mtab[NMOUNT]; mp++)
-			if (mp->file[0])
-				printf("%s on %s\n", mp->spec, mp->file);
+			if (mp->m_path[0] != '\0')
+				prmtab(mp);
 		exit(0);
 	}
 top:
@@ -45,7 +47,7 @@ top:
 			goto top;
 		}
 		if (!strcmp(argv[1], "-r")) {
-			ro++;
+			type = FSTAB_RO;
 			argc--, argv++;
 			goto top;
 		}
@@ -68,72 +70,94 @@ top:
 		close(2); dup(1);
 		if (setfsent() == 0)
 			perror(FSTAB), exit(1);
-		while ( (fsp = getfsent()) != 0) {
+		while ((fsp = getfsent()) != 0) {
 			if (strcmp(fsp->fs_file, "/") == 0)
 				continue;
-			ro = !strcmp(fsp->fs_type, FSTAB_RO);
-			if (ro==0 && strcmp(fsp->fs_type, FSTAB_RW) &&
+			if (strcmp(fsp->fs_type, FSTAB_RO) &&
+			    strcmp(fsp->fs_type, FSTAB_RW) &&
 			    strcmp(fsp->fs_type, FSTAB_RQ))
 				continue;
-			mountfs(fsp->fs_spec, fsp->fs_file, ro);
+			mountfs(fsp->fs_spec, fsp->fs_file, fsp->fs_type);
 		}
+		exit(0);
+	}
+	if (argc == 2) {
+		struct fstab *fs;
+
+		if (setfsent() == 0)
+			perror(FSTAB), exit(1);
+		fs = getfsfile(argv[1]);
+		if (fs == NULL)
+			goto argcnt;
+		mountfs(fs->fs_spec, fs->fs_file, type);
 		exit(0);
 	}
 	if (argc != 3) {
 argcnt:
 		fprintf(stderr,
-	    "usage: mount [ -a ] [ -r ] [ -f ] [ -v ] [ special dir ]\n");
+    "usage: mount [ -a ] [ -r ] [ -f ] [ -v ] [ special dir ] [ dir ]\n");
 		exit(1);
 	}
-	mountfs(argv[1], argv[2], ro);
+	mountfs(argv[1], argv[2], type);
 }
 
-mountfs(spec, name, ro)
-	char *spec, *name;
+prmtab(mp)
+	register struct mtab *mp;
+{
+
+	printf("%s on %s", mp->m_dname, mp->m_path);
+	if (strcmp(mp->m_type, FSTAB_RO) == 0)
+		printf("\t(read-only)");
+	if (strcmp(mp->m_type, FSTAB_RQ) == 0)
+		printf("\t(with quotas)");
+	putchar('\n');
+}
+
+mountfs(spec, name, type)
+	char *spec, *name, *type;
 {
 	register char *np;
 	register struct mtab *mp;
 	int mf;
 
-	if (fake==0) {
-		if (mount(spec, name, ro) < 0) {
+	if (!fake) {
+		if (mount(spec, name, strcmp(type, FSTAB_RO) == 0) < 0) {
 			fprintf(stderr, "%s on ", spec);
 			perror(name);
 			return;
 		}
+		/* we don't do quotas.... */
+		if (strcmp(type, FSTAB_RQ) == 0)
+			type = FSTAB_RW;
 	}
-	if (verbose)
-		fprintf(stderr, "%s on %s%s\n", spec, name,
-		    ro ? " read only" : "");
-	np = spec;
-	while (*np++)
-		;
-	np--;
+	np = index(spec, '\0');
 	while (*--np == '/')
 		*np = '\0';
-	while (np > spec && *--np != '/')
-		;
-	if (*np == '/')
-		np++;
-	spec = np;
+	np = rindex(spec, '/');
+	if (np) {
+		*np++ = '\0';
+		spec = np;
+	}
 	for (mp = mtab; mp < &mtab[NMOUNT]; mp++)
-		if (!strcmp(mp->spec, spec))
+		if (strcmp(mp->m_dname, spec) == 0)
 			goto replace;
 	for (mp = mtab; mp < &mtab[NMOUNT]; mp++)
-		if (mp->file[0] == 0)
+		if (mp->m_path[0] == '\0')
 			goto replace;
 	return;
 replace:
-	for (np = mp->spec; np < &mp->spec[NAMSIZ-1];)
-		if ((*np++ = *spec++) == 0)
-			spec--;
-	for (np = mp->file; np < &mp->file[NAMSIZ-1];)
-		if ((*np++ = *name++) == 0)
-			name--;
-	mp = &mtab[NMOUNT];
-	while ((--mp)->file[0] == 0);
+	strncpy(mp->m_dname, spec, DNMAX);
+	mp->m_dname[DNMAX] = '\0';
+	strncpy(mp->m_path, name, PNMAX);
+	mp->m_path[PNMAX] = '\0';
+	strcpy(mp->m_type, type);
+	if (verbose)
+		prmtab(mp);
+	mp = mtab + NMOUNT - 1;
+	while (mp > mtab && mp->m_path[0] == '\0')
+		--mp;
 	mf = creat("/etc/mtab", 0644);
-	write(mf, (char *)mtab, (mp-mtab+1)*2*NAMSIZ);
+	write(mf, (char *)mtab, (mp - mtab + 1) * sizeof (struct mtab));
 	close(mf);
 	return;
 }
