@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readcf.c	6.22 (Berkeley) %G%";
+static char sccsid[] = "@(#)readcf.c	6.23 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -1168,6 +1168,10 @@ setoption(opt, val, sticky)
 		CheckAliases = atobool(val);
 		break;
 
+	  case 'O':		/* daemon options */
+		setdaemonoptions(val);
+		break;
+
 	  case 'o':		/* assume old style headers */
 		if (atobool(val))
 			CurEnv->e_flags |= EF_OLDSTYLE;
@@ -1258,6 +1262,10 @@ setoption(opt, val, sticky)
 	  case 'u':		/* set default uid */
 		DefUid = atoi(val);
 		setdefuser();
+		break;
+
+	  case 'V':		/* fallback MX host */
+		FallBackMX = newstr(val);
 		break;
 
 	  case 'v':		/* run in verbose mode */
