@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)null_vfsops.c	1.5 (Berkeley) %G%
+ *	@(#)null_vfsops.c	1.6 (Berkeley) %G%
  *
  * @(#)lofs_vfsops.c	1.2 (Berkeley) 6/18/92
  * $Id: lofs_vfsops.c,v 1.9 1992/05/30 10:26:24 jsp Exp jsp $
@@ -44,7 +44,7 @@ nullfs_mount(mp, path, data, ndp, p)
 	struct null_args args;
 	struct vnode *lowerrootvp, *vp;
 	struct vnode *nullm_rootvp;
-	struct null_mount *amp;
+	struct null_mount *xmp;
 	u_int size;
 
 #ifdef NULLFS_DIAGNOSTIC
@@ -77,32 +77,17 @@ nullfs_mount(mp, path, data, ndp, p)
 	 * Sanity check on lower vnode
 	 */
 	lowerrootvp = ndp->ni_vp;
-#ifdef NULLFS_DIAGNOSTIC
-	printf("vp = %x, check for VDIR...\n", lowerrootvp);
-#endif
+
 	vrele(ndp->ni_dvp);
-	ndp->ni_dvp = 0;
+	ndp->ni_dvp = NULL;
 
-	/*
-	 * NEEDSWORK: Is this check really necessary, or just not
-	 * the way it's been?
-	 */
-	if (lowerrootvp->v_type != VDIR) {
-		vput(lowerrootvp);
-		return (EINVAL);
-	}
-
-#ifdef NULLFS_DIAGNOSTIC
-	printf("mp = %x\n", mp);
-#endif
-
-	amp = (struct null_mount *) malloc(sizeof(struct null_mount),
+	xmp = (struct null_mount *) malloc(sizeof(struct null_mount),
 				M_UFSMNT, M_WAITOK);	/* XXX */
 
 	/*
-	 * Save reference to underlying lower FS
+	 * Save reference to underlying FS
 	 */
-	amp->nullm_vfs = lowerrootvp->v_mount;
+	xmp->nullm_vfs = lowerrootvp->v_mount;
 
 	/*
 	 * Save reference.  Each mount also holds
@@ -118,7 +103,7 @@ nullfs_mount(mp, path, data, ndp, p)
 	 */
 	if (error) {
 		vrele(lowerrootvp);
-		free(amp, M_UFSMNT);	/* XXX */
+		free(xmp, M_UFSMNT);	/* XXX */
 		return (error);
 	}
 
@@ -128,10 +113,10 @@ nullfs_mount(mp, path, data, ndp, p)
 	 */
 	nullm_rootvp = vp;
 	nullm_rootvp->v_flag |= VROOT;
-	amp->nullm_rootvp = nullm_rootvp;
+	xmp->nullm_rootvp = nullm_rootvp;
 	if (NULLVPTOLOWERVP(nullm_rootvp)->v_mount->mnt_flag & MNT_LOCAL)
 		mp->mnt_flag |= MNT_LOCAL;
-	mp->mnt_data = (qaddr_t) amp;
+	mp->mnt_data = (qaddr_t) xmp;
 	getnewfsid(mp, MOUNT_LOFS);
 
 	(void) copyinstr(path, mp->mnt_stat.f_mntonname, MNAMELEN - 1, &size);
@@ -200,13 +185,6 @@ nullfs_unmount(mp, mntflags, p)
 		return (EBUSY);
 	if (error = vflush(mp, nullm_rootvp, flags))
 		return (error);
-
-#ifdef NULLFS_DIAGNOSTIC
-	/*
-	 * Flush any remaining vnode references
-	 */
-	null_node_flushmp (mp);
-#endif
 
 #ifdef NULLFS_DIAGNOSTIC
 	vprint("alias root of lower", nullm_rootvp);

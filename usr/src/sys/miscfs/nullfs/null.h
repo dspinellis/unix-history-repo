@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lofs.h	1.1 (Berkeley) 6/3/92
+ *	@(#)null.h	1.7 (Berkeley) %G%
  *
  * $Id: lofs.h,v 1.8 1992/05/30 10:05:43 jsp Exp jsp $
  */
@@ -31,7 +31,6 @@ struct null_node {
 	struct null_node	*null_back;
 	struct vnode	        *null_lowervp;	/* VREFed once */
 	struct vnode		*null_vnode;	/* Back pointer */
-	int			null_isinactive;
 };
 
 extern int null_node_create __P((struct mount *mp, struct vnode *target, struct vnode **vpp));
