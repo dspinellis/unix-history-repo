@@ -1,0 +1,198 @@
+
+
+
+DIST(1)                BSD Reference Manual               DIST(1)
+
+
+NNAAMMEE
+       dist - redistribute a message to additional addresses
+
+SSYYNNOOPPSSIISS
+       dist    [+folder]    [msg]    [-annotate]    [-noannotate]
+            [-draftfolder +folder]            [-draftmessage msg]
+            [-nodraftfolder]      [-editor editor]      [-noedit]
+            [-form formfile]       [-inplace]        [-noinplace]
+            [-whatnowproc program] [-nowhatnowproc] [-help]
+
+DDEESSCCRRIIPPTTIIOONN
+       _D_i_s_t  is  similar to _f_o_r_w.  It prepares the specified mes-
+       sage for redistribution to addresses that (presumably) are
+       not on the original address list.
+
+       The default message form contains the following elements:
+
+            Resent-To:
+            Resent-cc:
+
+       If  the  file  named  "distcomps"  exists in the user's MH
+       directory, it will be  used  instead  of  this  form.   In
+       either  case,  the file specified by `-form formfile' will
+       be used if given.  The form used will be prepended to  the
+       message being resent.
+
+       If  the  draft already exists, _d_i_s_t will ask you as to the
+       disposition of the draft.  A  reply  of  qquuiitt  will  abort
+       _d_i_s_t,  leaving  the draft intact; rreeppllaaccee will replace the
+       existing draft with a blank skeleton; and lliisstt  will  dis-
+       play the draft.
+
+       Only  those  addresses  in "Resent-To:", "Resent-cc:", and
+       "Resent-Bcc:" will be sent.  Also, a  "Resent-Fcc: folder"
+       will  be honored (see _s_e_n_d (1)).  Note that with _d_i_s_t, the
+       draft should contain  only  "Resent-xxx:"  fields  and  no
+       body.   The  headers  and the body of the original message
+       are copied to the draft when the  message  is  sent.   Use
+       care in constructing the headers for the redistribution.
+
+       If  the  `-annotate'  switch  is given, the  message being
+       distributed will be annotated with the lines:
+
+            Resent: date
+            Resent: addrs
+
+       where  each  address  list  contains  as  many  lines   as
+       required.   This  annotation will be done only if the mes-
+       sage is sent directly from _d_i_s_t.  If the  message  is  not
+       sent  immediately  from  _d_i_s_t,  "comp -use" may be used to
+       re-edit  and  send  the  constructed  message,   but   the
+
+
+
+[mh.6]                        MH.6.8                            1
+
+
+
+
+
+
+
+
+DIST(1)                BSD Reference Manual               DIST(1)
+
+
+       annotations  won't  take  place.   The  '-inplace'  switch
+       causes annotation to be done in place in order to preserve
+       links to the annotated message.
+
+       See  _c_o_m_p (1)  for  a  description  of  the  `-editor' and
+       `-noedit' switches.  Note that while in  the  editor,  the
+       message being resent is available through a link named "@"
+       (assuming the default  _w_h_a_t_n_o_w_p_r_o_c ).   In  addition,  the
+       actual pathname of the message is stored in the envariable
+       $$eeddiittaalltt, and the pathname of the  folder  containing  the
+       message is stored in the envariable $$mmhhffoollddeerr.
+
+       The    `-draftfolder +folder'    and   `-draftmessage msg'
+       switches invoke the _M_H draft folder facility.  This is  an
+       advanced   (and   highly  useful)  feature.   Consult  the
+       AAddvvaanncceedd FFeeaattuurreess section of the _M_H manual for more infor-
+       mation.
+
+       Upon exiting from the editor, _d_i_s_t will invoke the _w_h_a_t_n_o_w
+       program.  See _w_h_a_t_n_o_w (1) for a  discussion  of  available
+       options.   The invocation of this program can be inhibited
+       by using the `-nowhatnowproc' switch.  (In truth of  fact,
+       it  is  the _w_h_a_t_n_o_w program which starts the initial edit.
+       Hence, `-nowhatnowproc' will prevent any edit from  occur-
+       ring.)
+
+FFIILLEESS
+       /usr/contrib/mh-6.8/lib/distcomps         The message skeleton
+       or <mh-dir>/distcomps                     Rather than the standard skeleton
+       $HOME/.mh_profile                         The user profile
+       <mh-dir>/draft                            The draft file
+
+PPRROOFFIILLEE CCOOMMPPOONNEENNTTSS
+       Path:                To determine the user's MH directory
+       Current-Folder:      To find the default current folder
+       Draft-Folder:        To find the default draft-folder
+       Editor:              To override the default editor
+       fileproc:            Program to refile the message
+       whatnowproc:         Program to ask the "What now?" questions
+
+SSEEEE AALLSSOO
+       comp(1), forw(1), repl(1), send(1), whatnow(1)
+
+DDEEFFAAUULLTTSS
+       `+folder' defaults to the current folder
+       `msg' defaults to cur
+       `-noannotate'
+       `-nodraftfolder'
+       `-noinplace'
+
+
+
+
+
+[mh.6]                        MH.6.8                            2
+
+
+
+
+
+
+
+
+DIST(1)                BSD Reference Manual               DIST(1)
+
+
+CCOONNTTEEXXTT
+       If  a  folder is given, it will become the current folder.
+       The message distributed will become the current message.
+
+HHIISSTTOORRYY
+       _D_i_s_t originally used headers of the form "Distribute-xxx:"
+       instead  of  "Resent-xxx:".   In order to conform with the
+       ARPA Internet standard, RFC-822, the "Resent-xxx:" form is
+       now  used.   _D_i_s_t  will  recognize  "Distribute-xxx:" type
+       headers and automatically convert them to "Resent-xxx:".
+
+BBUUGGSS
+       _D_i_s_t does not _r_i_g_o_r_o_u_s_l_y  check  the  message  being  dis-
+       tributed for adherence to the transport standard, but _p_o_s_t
+       called by _s_e_n_d does.  The  _p_o_s_t  program  will  balk  (and
+       rightly  so)  at poorly formatted messages, and _d_i_s_t won't
+       correct things for you.
+
+       If _w_h_a_t_n_o_w_p_r_o_c is _w_h_a_t_n_o_w, then _d_i_s_t uses a built-in _w_h_a_t_-
+       _n_o_w, it does not actually run the _w_h_a_t_n_o_w program.  Hence,
+       if you define your own _w_h_a_t_n_o_w_p_r_o_c, don't call it  _w_h_a_t_n_o_w
+       since _d_i_s_t won't run it.
+
+       If  your  current  working  directory is not writable, the
+       link named "@" is not available.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[mh.6]                        MH.6.8                            3
+
+
+
+
+

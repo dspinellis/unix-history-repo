@@ -1,0 +1,132 @@
+
+
+
+MSGCHK(1)              BSD Reference Manual             MSGCHK(1)
+
+
+NNAAMMEE
+       msgchk - check for messages
+
+SSYYNNOOPPSSIISS
+       msgchk    [-date]    [-nodate]   [-notify all/mail/nomail]
+            [-nonotify all/mail/nomail] [-host host] [-user user]
+            [-apop]   [-noapop]   [-rpop]  [-norpop]  [users ...]
+            [-help]
+
+DDEESSCCRRIIPPTTIIOONN
+       The _m_s_g_c_h_k program checks all known mail  drops  for  mail
+       waiting for you.  For those drops which have mail for you,
+       _m_s_g_c_h_k will indicate if it believes that you have seen the
+       mail in question before.
+
+       The  `-notify type'  switch  indicates  under what circum-
+       stances _m_s_g_c_h_k should produce a message.  The  default  is
+       `-notify all'  which says that _m_s_g_c_h_k should always report
+       the status of the users maildrop.  Other values for `type'
+       include  `mail'  which  says that _m_s_g_c_h_k should report the
+       status of waiting mail;  and,  `nomail'  which  says  that
+       _m_s_g_c_h_k  should  report the status of empty maildrops.  The
+       `-nonotify type'  switch  has  the  inverted   sense,   so
+       `-nonotify all'  directs _m_s_g_c_h_k to never report the status
+       of maildrops.  This is useful if the user wishes to  check
+       _m_s_g_c_h_k's  exit  status.   A non-zero exit status indicates
+       that mail was nnoott waiting for at least one  of  the  indi-
+       cated users.
+
+       If _m_s_g_c_h_k produces output, then the `-date' switch directs
+       _m_s_g_c_h_k to print out the last date mail was read,  if  this
+       can be determined.
+
+       If the local host is configured as a POP client, or if the
+       `-host host' switch is given, _m_s_g_c_h_k will  query  the  POP
+       service  host  as  to  the status of mail waiting.  If the
+       `-user user' switch is not given, then the  current  user-
+       name is used.  Normally, _m_s_g_c_h_k will prompt for a password
+       to use.  However, if the `-apop' switch is  given,  _m_s_g_c_h_k
+       will  generate  authentication  credentials to provide for
+       origin authentication and replay protection, but which  do
+       not  involve sending a password in the clear over the net-
+       work.  Otherwise, if the `-rpop'  switch  is  given,  then
+       _m_s_g_c_h_k will try to use a "trusted" connection (ala the BSD
+       r-commands).
+
+FFIILLEESS
+       $HOME/.mh_profile                         The user profile
+       /usr/contrib/mh-6.8/lib/mtstailor         tailor file
+       /var/mail/$USER                           Location of mail drop
+
+
+
+
+[mh.6]                        MH.6.8                            1
+
+
+
+
+
+
+
+
+MSGCHK(1)              BSD Reference Manual             MSGCHK(1)
+
+
+PPRROOFFIILLEE CCOOMMPPOONNEENNTTSS
+       None
+
+SSEEEE AALLSSOO
+       _P_o_s_t _O_f_f_i_c_e _P_r_o_t_o_c_o_l _- _v_e_r_s_i_o_n _3 (aka RFC-1081),
+       inc(1)
+
+DDEEFFAAUULLTTSS
+       `user' defaults to the current user
+       `-date'
+       `-notify all'
+       `-rpop'
+
+CCOONNTTEEXXTT
+       None
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[mh.6]                        MH.6.8                            2
+
+
+
+
+
