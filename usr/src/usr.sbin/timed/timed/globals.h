@@ -4,9 +4,9 @@
  * specifies the terms and conditions for redistribution.
  */
 
-/*	@(#)globals.h	1.1	(Berkeley)	%G%	*/
+/*	@(#)globals.h	1.2	(Berkeley)	%G%	*/
 
-#include <sys/types.h>
+#include <sys/param.h>
 #include <stdio.h>
 #include <sys/time.h>
 #include <errno.h>
@@ -30,3 +30,23 @@ extern int errno;
 #define UNREACHABLE	2
 #define NONSTDTIME	3
 #define HOSTDOWN 	0x7fffffff
+
+#define OFF	0
+#define ON	1
+
+#define SLAVE 	1
+#define MASTER	2
+#define IGNORE	4
+#define ALL	(SLAVE|MASTER|IGNORE)
+
+#define NHOSTS		30	/* max number of hosts controlled by timed */
+
+struct host {
+	char *name;
+	char *addr;
+	int length;
+	long delta;
+	u_short seq;
+};
+
+u_long	mynet, netmask;
