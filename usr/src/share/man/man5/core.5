@@ -1,0 +1,42 @@
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)core.5	4.1 (Berkeley) %G%
+.\"
+.TH CORE 5 
+.UC 4
+.SH NAME
+core \- format of memory image file
+.SH DESCRIPTION
+UNIX
+writes out a memory image of a terminated
+process when any of various errors occur.
+See
+.IR signal (2)
+for the list of reasons;
+the most common are memory violations, illegal
+instructions, bus errors, and user-generated
+quit signals.
+The memory image is called `core' and is written in the process's
+working directory (provided it can be; normal
+access controls apply).
+.PP
+The maximum size of a
+.I core
+file is limited by
+.IR vlimit (2) .
+Files which would be larger than the limit are not created.
+.PP
+The core file consists of the \fIu.\fR area, which currently consists
+of 6 pages, beginning with a \fIuser\fR structure as given in
+/usr/include/sys/user.h.
+The kernel stack grows from the end of this 6 page region.
+The remainder of the core file consists first of the data pages and then
+the stack pages of the process image.
+.PP
+In general the debugger
+.IR adb (1)
+is sufficient to deal with core images.
+.SH "SEE ALSO"
+adb(1), signal(2), vlimit(2)
