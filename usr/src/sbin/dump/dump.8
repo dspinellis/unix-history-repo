@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)dump.8	6.10 (Berkeley) %G%
+.\"     @(#)dump.8	6.11 (Berkeley) %G%
 .\"
 .Dd 
 .Dt DUMP 8
@@ -71,6 +71,8 @@ the last file name will used for all remaining volumes after prompting
 for media changes.
 If the name of the file is of the form
 .Dq host:file ,
+or
+.Dq user@host:file ,
 .Nm dump
 writes to the named file on the remote host using
 .Xr rmt 8 .
