@@ -1,8 +1,8 @@
 #ifndef lint
-    static	char *sccsid = "@(#)lookup.c	1.1 (Berkeley) %G%";
+    static	char *sccsid = "@(#)lookup.c	1.2 (Berkeley) %G%";
 #endif lint
 
-#include "dprof.h"
+#include "gprof.h"
 
     /*
      *	look up an address in a sorted-by-address namelist

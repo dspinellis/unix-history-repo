@@ -1,8 +1,8 @@
 #ifndef lint
-    static	char *sccsid = "@(#)gprof.c	1.1 (Berkeley) %G%";
+    static	char *sccsid = "@(#)gprof.c	1.2 (Berkeley) %G%";
 #endif lint
 
-#include "dprof.h"
+#include "gprof.h"
 
 main(argc, argv)
 	int argc;
@@ -33,10 +33,10 @@ main(argc, argv)
 	a_outname  = A_OUTNAME;
     }
     if ( *argv != 0 ) {
-	dmonname = *argv;
+	gmonname = *argv;
 	argv++;
     } else {
-	dmonname = DMONNAME;
+	gmonname = GMONNAME;
     }
 	/*
 	 *	get information about a.out file.
@@ -45,7 +45,7 @@ main(argc, argv)
 	/*
 	 *	get information about mon.out file(s).
 	 */
-    getpfile( dmonname );
+    getpfile( gmonname );
 	/*
 	 *	assign samples to procedures
 	 */
@@ -260,7 +260,7 @@ getsymtab(nfile)
 }
 
     /*
-     *	information from a dmon.out file is in two parts:
+     *	information from a gmon.out file is in two parts:
      *	an array of sampling hits within pc ranges,
      *	and the arcs.
      */
