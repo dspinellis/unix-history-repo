@@ -1,4 +1,4 @@
-/*	raw_usrreq.c	4.21	82/10/20	*/
+/*	raw_usrreq.c	4.22	82/10/20	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -243,7 +243,7 @@ raw_usrreq(so, req, m, nam, opt)
 		break;
 
 	case PRU_SOCKADDR:
-		bcopy((caddr_t)&rp->rcb_laddr, mtod(nam, struct sockaddr *),
+		bcopy((caddr_t)&rp->rcb_laddr, mtod(nam, caddr_t),
 		    sizeof (struct sockaddr));
 		nam->m_len = sizeof (struct sockaddr);
 		break;

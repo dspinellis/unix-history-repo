@@ -1,4 +1,4 @@
-/*	uipc_socket.c	4.57	82/10/20	*/
+/*	uipc_socket.c	4.58	82/10/20	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -145,7 +145,7 @@ soclose(so, exiting)
 		so->so_options |= SO_KEEPALIVE;
 	if (so->so_state & SS_ISCONNECTED) {
 		if ((so->so_state & SS_ISDISCONNECTING) == 0) {
-			error = sodisconnect(so, (struct sockaddr *)0);
+			error = sodisconnect(so, (struct mbuf *)0);
 			if (error) {
 				if (exiting)
 					goto drop;

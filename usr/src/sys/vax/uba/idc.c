@@ -1,4 +1,4 @@
-/*	idc.c	4.8	82/10/17	*/
+/*	idc.c	4.9	82/10/20	*/
 
 #include "rb.h"
 #if NIDC > 0
@@ -147,13 +147,13 @@ idcslave(ui, reg)
 	ui->ui_type = 0;
 	idcaddr->idcmpr = IDCGS_GETSTAT;
 	idcaddr->idccsr = IDC_GETSTAT|(ui->ui_slave<<8);
-	idcwait(idcaddr, 0);
+	(void) idcwait(idcaddr, 0);
 	i = idcaddr->idcmpr;
 	idcaddr->idccsr = IDC_CRDY|(1<<(ui->ui_slave+16));
 	/* read header to synchronize microcode */
-	idcwait(idcaddr, 0);
+	(void) idcwait(idcaddr, 0);
 	idcaddr->idccsr = (ui->ui_slave<<8)|IDC_RHDR;
-	idcwait(idcaddr, 0);
+	(void) idcwait(idcaddr, 0);
 	if (idcaddr->idccsr & IDC_ERR)
 		return (0);
 	i = idcaddr->idcmpr;		/* read header word 1 */
@@ -467,7 +467,7 @@ top:
 			if (er & IDC_DE) {
 				idcaddr->idcmpr = IDCGS_GETSTAT;
 				idcaddr->idccsr = IDC_GETSTAT|(unit<<8);
-				idcwait(idcaddr, 0);
+				(void) idcwait(idcaddr, 0);
 				ds = idcaddr->idcmpr;
 				idcaddr->idccsr =
 				    IDC_IE|IDC_CRDY|(1<<(unit+16));
@@ -628,7 +628,7 @@ cont:
 	printd("\n");
 	if (um->um_tab.b_actf && um->um_tab.b_active == 0) {
 		trace("stum",um->um_tab.b_actf);
-		idcstart(um);
+		(void) idcstart(um);
 	}
 }
 
@@ -790,7 +790,7 @@ idcdump(dev)
 	idcaddr->idccs1 = IDC_CCLR;
 	idcaddr->idccs2 = unit;
 	idcaddr->idccs1 = idctypes[ui->ui_type]|IDC_DCLR|IDC_GO;
-	idcwait(idcaddr);
+	(void) idcwait(idcaddr);
 	dbsize = 20 or 31;
 ***/
 	st = &idcst[ui->ui_type];
@@ -820,7 +820,7 @@ idcdump(dev)
 		*--rp = 0;
 		*--rp = -blk*NBPG / sizeof (short);
 		*--rp = idctypes[ui->ui_type]|IDC_GO|IDC_WRITE;
-		idcwait(idcaddr);
+		(void) idcwait(idcaddr);
 ***/
 		if (idcaddr->idccsr & IDC_ERR)
 			return (EIO);

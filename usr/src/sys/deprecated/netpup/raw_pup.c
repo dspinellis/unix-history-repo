@@ -1,4 +1,4 @@
-/*	raw_pup.c	4.14	82/10/09	*/
+/*	raw_pup.c	4.15	82/10/20	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -50,13 +50,13 @@ rpup_output(m, so)
 	for (len = 0, n = m; n; n = n->m_next)
 		len += n->m_len;
 	pup->pup_length = len;
-#if vax || pdp11
+#if vax || pdp11 || ns16032
 	pup->pup_length = htons(pup->pup_length);
 #endif
 	/* assume user generates PUP checksum. */
 	dst = (struct sockaddr_pup *)&rp->rcb_faddr;
 	pup->pup_dport = dst->spup_addr;
-	ifp = if_ifonnetof(pup->pup_dnet);
+	ifp = if_ifonnetof((int)pup->pup_dnet);
 	if (ifp) {
 		if (rp->rcb_flags & RAW_LADDR) {
 			register struct sockaddr_pup *src;
