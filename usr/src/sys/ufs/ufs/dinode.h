@@ -1,4 +1,4 @@
-/*	dinode.h	3.2	%H%	*/
+/*	dinode.h	3.3	%H%	*/
 
 /*
  * The I node is the focus of all
@@ -39,13 +39,17 @@ struct	inode
 	off_t	i_size;		/* size of file */
 	union {
 		struct {
-			daddr_t	i_addr[NADDR];	/* if normal file/directory */
-			daddr_t	i_lastr;	/* last logical block read (for read-ahead) */
-		};
+			daddr_t	I_addr[NADDR];	/* if normal file/directory */
+			daddr_t	I_lastr;	/* last logical block read (for read-ahead) */
+		} i_f;
+#define	i_addr	i_f.I_addr
+#define	i_lastr	i_f.I_lastr
 		struct {
-			daddr_t	i_rdev;		/* i_addr[0] */
-			struct	group i_group;	/* multiplexor group file */
-		};
+			daddr_t	I_rdev;		/* i_addr[0] */
+			struct	group I_group;	/* multiplexor group file */
+		} i_d;
+#define	i_rdev	i_d.I_rdev
+#define	i_group	i_d.I_group
 	} i_un;
 	short	i_vfdcnt;	/* number of fd's vreading this inode */
 	short	i_hlink;	/* link in hash chain (iget/iput/ifind) */
