@@ -1,5 +1,5 @@
 /* Copyright (c) 1980 Regents of the University of California */
-static	char sccsid[] = "@(#)aspseudo.c 4.2 %G%";
+static	char sccsid[] = "@(#)aspseudo.c 4.3 %G%";
 #include <stdio.h>
 #include "as.h"
 
@@ -21,6 +21,7 @@ PSEUDO(".byte",		0,	IBYTE),
 PSEUDO(".word",		0,	IWORD),
 PSEUDO(".long",		0,	ILONG),
 PSEUDO(".int",		0,	IINT),
+PSEUDO(".quad",		0,	IQUAD),
 PSEUDO(".data",		0,	IDATA),
 PSEUDO(".globl",	0,	IGLOBAL),
 PSEUDO(".set",		0,	ISET),
