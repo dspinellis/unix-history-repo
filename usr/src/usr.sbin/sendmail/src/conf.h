@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.142 (Berkeley) %G%
+ *	@(#)conf.h	8.143 (Berkeley) %G%
  */
 
 /*
@@ -19,6 +19,8 @@
 # include <sys/wait.h>
 # include <fcntl.h>
 # include <signal.h>
+# include <netdb.h>
+# include <pwd.h>
 
 /**********************************************************************
 **  Table sizes, etc....

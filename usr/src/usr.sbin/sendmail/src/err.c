@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)err.c	8.31 (Berkeley) %G%";
+static char sccsid[] = "@(#)err.c	8.32 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -102,7 +102,7 @@ syserr(fmt, va_alist)
 	}
 
 # ifdef LOG
-	pw = getpwuid(getuid());
+	pw = sm_getpwuid(getuid());
 	if (pw != NULL)
 		uname = pw->pw_name;
 	else

@@ -7,14 +7,13 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.142 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.143 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
 # include "pathnames.h"
 # include <sys/ioctl.h>
 # include <sys/param.h>
-# include <netdb.h>
 
 /*
 **  CONF.C -- Sendmail Configuration Tables.
@@ -693,7 +692,7 @@ username()
 		myname = getlogin();
 		if (myname == NULL || myname[0] == '\0')
 		{
-			pw = getpwuid(RealUid);
+			pw = sm_getpwuid(RealUid);
 			if (pw != NULL)
 				myname = newstr(pw->pw_name);
 		}
@@ -702,10 +701,10 @@ username()
 			uid_t uid = RealUid;
 
 			myname = newstr(myname);
-			if ((pw = getpwnam(myname)) == NULL ||
+			if ((pw = sm_getpwnam(myname)) == NULL ||
 			      (uid != 0 && uid != pw->pw_uid))
 			{
-				pw = getpwuid(uid);
+				pw = sm_getpwuid(uid);
 				if (pw != NULL)
 					myname = newstr(pw->pw_name);
 			}

@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)map.c	8.50 (Berkeley) %G%";
+static char sccsid[] = "@(#)map.c	8.51 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -2026,8 +2026,6 @@ user_map_open(map, mode)
 **  USER_MAP_LOOKUP -- look up a user in the passwd file.
 */
 
-#include <pwd.h>
-
 char *
 user_map_lookup(map, key, av, statp)
 	MAP *map;
@@ -2041,7 +2039,7 @@ user_map_lookup(map, key, av, statp)
 		printf("user_map_lookup(%s, %s)\n",
 			map->map_mname, key);
 
-	pw = getpwnam(key);
+	pw = sm_getpwnam(key);
 	if (pw == NULL)
 		return NULL;
 	if (bitset(MF_MATCHONLY, map->map_mflags))
