@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid ="@(#)code.c	1.5 (Berkeley) %G%";
+static char *sccsid ="@(#)code.c	1.6 (Berkeley) %G%";
 #endif lint
 
 # include "pass1.h"
@@ -19,6 +19,7 @@ int labelno;
 branch( n ){
 	/* output a branch to label n */
 	/* exception is an ordinary function branching to retlab: then, return */
+	if( nerrors ) return;
 	if( n == retlab && !strftn ){
 		putstr( "	ret\n" );
 		}
@@ -43,6 +44,7 @@ locctr( l ){
 	if( l == lastloc ) return(l);
 	temp = lastloc;
 	lastloc = l;
+	if( nerrors ) return(temp);
 	switch( l ){
 
 	case PROG:
@@ -74,10 +76,12 @@ locctr( l ){
 	return( temp );
 	}
 
+#ifndef deflab
 deflab( n ){
 	/* output something to define the current position as label n */
 	printf( "L%d:\n", n );
 	}
+#endif deflab
 
 int crslab = 10;
 
@@ -162,6 +166,7 @@ bfcode( a, n ) int a[]; {
 	int off;
 	char *toreg();
 
+	if( nerrors ) return;
 	locctr( PROG );
 	p = &stab[curftn];
 	putstr( "	.align	1\n");
@@ -213,7 +218,7 @@ bfcode( a, n ) int a[]; {
 			}
 
 		}
-	if (gdebug) {
+	if (gdebug && !nerrors) {
 #ifdef STABDOT
 		pstabdot(N_SLINE, lineno);
 #else
@@ -238,17 +243,23 @@ ejobcode( flag ){
 	/* flag is 1 if errors, 0 if none */
 	}
 
+#ifndef aobeg
 aobeg(){
 	/* called before removing automatics from stab */
 	}
+#endif aobeg
 
+#ifndef aocode
 aocode(p) struct symtab *p; {
 	/* called when automatic p removed from stab */
 	}
+#endif aocode
 
+#ifndef aoend
 aoend(){
 	/* called after removing all automatics from stab */
 	}
+#endif aoend
 
 defnam( p ) register struct symtab *p; {
 	/* define the current location as the name p->sname */
@@ -268,6 +279,7 @@ static	int	lastoctal = 0;
 
 	/* put byte i+1 in a string */
 
+	if ( nerrors ) return;
 #ifdef ASSTRINGS
 
 	i &= 077;
@@ -399,6 +411,7 @@ genswitch(p,n) register struct sw *p;{
 	register CONSZ j, range;
 	register dlab, swlab;
 
+	if( nerrors ) return;
 	range = p[n].sval-p[1].sval;
 
 	if( range>0 && range <= 3*n && n>=4 ){ /* implement a direct switch */
