@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)machdep.c	7.10 (Berkeley) %G%
+ *	@(#)machdep.c	7.11 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -228,6 +228,7 @@ again:
 	callfree = callout;
 	for (i = 1; i < ncallout; i++)
 		callout[i-1].c_next = &callout[i];
+	callout[i-1].c_next = NULL;
 
 	/*printf("avail mem = %d\n", ptoa(vm_page_free_count));*/
 	printf("using %d buffers containing %d bytes of memory\n",
