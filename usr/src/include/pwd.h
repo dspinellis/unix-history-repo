@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pwd.h	5.8 (Berkeley) %G%
+ *	@(#)pwd.h	5.9 (Berkeley) %G%
  */
 
 #include <sys/types.h>
@@ -41,13 +41,12 @@ struct passwd {
 #include <sys/cdefs.h>
 
 __BEGIN_DECLS
-struct passwd *getpwuid __P((uid_t));
-struct passwd *getpwnam __P((const char *));
+struct passwd	*getpwuid __P((uid_t));
+struct passwd	*getpwnam __P((const char *));
 #ifndef _POSIX_SOURCE
-struct passwd *getpwent __P((void));
-int setpwent __P((void));
-void endpwent __P((void));
-void setpwfile __P((const char *));
-int setpassent __P((int));
+struct passwd	*getpwent __P((void));
+int		 setpassent __P((int));
+int		 setpwent __P((void));
+void		 endpwent __P((void));
 #endif
 __END_DECLS
