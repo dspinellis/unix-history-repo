@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)hys.c	4.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)hys.c	4.3 (Berkeley) %G%";
 #endif
 
 #include "../condevs.h"
@@ -39,6 +39,9 @@ int toneflag;
 	int	dh = -1;
 	extern errno;
 	char dcname[20];
+	char cbuf[MAXPH];
+	register char *cp;
+	register int i;
 
 	sprintf(dcname, "/dev/%s", dev->D_line);
 	DEBUG(4, "dc - %s\n", dcname);
@@ -76,11 +79,34 @@ int toneflag;
 		write(dh, telno, strlen(telno));
 		write(dh, "\r", 1);
 
-		if (expect("CONNECT", dh) != 0) {
+		if (setjmp(Sjbuf)) {
+			logent(dcname, "TIMEOUT");
+			strcpy(devSel, dev->D_line);
+			hyscls(dh);
+			return CF_DIAL;
+		}
+		signal(SIGALRM, alarmtr);
+		alarm(MAXMSGTIME);
+		cp = cbuf;
+		while (read(dh, cp ,1) == 1)
+			if (*cp >= ' ')
+				break;
+		cp++;
+		while (cp < &cbuf[MAXPH] && read(dh, cp, 1) == 1 && *cp++ != '\n')
+			;
+		alarm(0);
+		*cp = '\0';
+		if (strncmp(cbuf, "CONNECT", 7) != 0) {
 			logent("HSM no carrier", _FAILED);
 			strcpy(devSel, dev->D_line);
 			hyscls(dh);
 			return CF_DIAL;
+		}
+		DEBUG(4,"\nGOT: %s", cbuf);
+		i = atoi(&cbuf[8]);
+		if (i > 0 && i != dev->D_speed) {	
+			DEBUG(4,"Baudrate reset to %d\n", i);
+			fixline(dh, i);
 		}
 
 	}
