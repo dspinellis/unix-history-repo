@@ -9,9 +9,10 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)bdinit.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)bdinit.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
+#include <string.h>
 #include "gomoku.h"
 
 bdinit(bp)
@@ -31,6 +32,7 @@ bdinit(bp)
 	}
 
 	/* fill entire board with EMPTY spots */
+	memset(frames, 0, sizeof(frames));
 	cbp = frames;
 	for (j = 0; ++j < BSZ1; sp++) {			/* for each row */
 		for (i = 0; ++i < BSZ1; sp++) {		/* for each column */
@@ -99,16 +101,10 @@ bdinit(bp)
 			for (r = 4; --r >= 0; ) {
 				if (sp->s_flg & (BFLAG << r))
 					continue;
-				cbp->c_next = (struct combostr *)0;
-				cbp->c_prev = (struct combostr *)0;
-				cbp->c_link[0] = (struct combostr *)0;
-				cbp->c_link[1] = (struct combostr *)0;
 				cbp->c_combo.s = sp->s_fval[BLACK][r].s;
 				cbp->c_vertex = sp - board;
 				cbp->c_nframes = 1;
 				cbp->c_dir = r;
-				cbp->c_flg = 0;
-				cbp->c_refcnt = 0;
 				sp->s_frame[r] = cbp;
 				cbp++;
 			}
@@ -130,13 +126,20 @@ bdinit(bp)
 
 /*
  * Initialize the overlap array.
- * Each entry in the array is a bit mask with four bits corresponding
- * to whether frame A overlaps frame B. The four combinations are
- * whether A and B are open ended (length 6) or closed (length 5).
- *	0	A open and B open
- *	1	A open and B closed
- *	2	A closed and B open
- *	3	A closed and B closed
+ * Each entry in the array is a bit mask with eight bits corresponding
+ * to whether frame B overlaps frame A (as indexed by overlap[A * FAREA + B]).
+ * The eight bits coorespond to whether A and B are open ended (length 6) or
+ * closed (length 5).
+ *	0	A closed and B closed
+ *	1	A closed and B open
+ *	2	A open and B closed
+ *	3	A open and B open
+ *	4	A closed and B closed and overlaps in more than one spot
+ *	5	A closed and B open and overlaps in more than one spot
+ *	6	A open and B closed and overlaps in more than one spot
+ *	7	A open and B open and overlaps in more than one spot
+ * As pieces are played, it can make frames not overlap if there are no
+ * common open spaces shared between the two frames.
  */
 init_overlap()
 {
@@ -144,33 +147,72 @@ init_overlap()
 	register struct combostr *cbp;
 	register int i, f, r, n, d1, d2;
 	int mask, bmask, vertex, s;
-	char *str;
+	u_char *str;
 	short *ip;
 
 	memset(overlap, 0, sizeof(overlap));
 	memset(intersect, 0, sizeof(intersect));
 	str = &overlap[FAREA * FAREA];
 	ip = &intersect[FAREA * FAREA];
-	for (cbp = frames + FAREA; --cbp >= frames; ) {
+	for (cbp = frames + FAREA; --cbp >= frames; ) {		/* each frame */
 	    str -= FAREA;
 	    ip -= FAREA;
 	    sp1 = &board[vertex = cbp->c_vertex];
 	    d1 = dd[r = cbp->c_dir];
-	    s = sp1->s_fval[BLACK][r].c.b;
-	    for (i = 5 + s; --i >= 0; sp1 += d1, vertex += d1) {
-		mask = (s && i == 0) ? 0xC : 0xF;
+	    /*
+	     * s = 5 if closed, 6 if open.
+	     * At this point black & white are the same.
+	     */
+	    s = 5 + sp1->s_fval[BLACK][r].c.b;
+	    /* for each spot in frame A */
+	    for (i = 0; i < s; i++, sp1 += d1, vertex += d1) {
+		/* the sixth spot in frame A only overlaps if it is open */
+		mask = (i == 5) ? 0xC : 0xF;
+		/* for each direction */
 		for (r = 4; --r >= 0; ) {
 		    bmask = BFLAG << r;
 		    sp2 = sp1;
 		    d2 = dd[r];
-		    for (f = 6; --f >= 0; sp2 -= d2) {
+		    /* for each frame that intersects at spot sp1 */
+		    for (f = 0; f < 6; f++, sp2 -= d2) {
 			if (sp2->s_occ == BORDER)
 			    break;
 			if (sp2->s_flg & bmask)
 			    continue;
 			n = sp2->s_frame[r] - frames;
-			str[n] |= (f == 0) ? mask & 0x5 : mask;
 			ip[n] = vertex;
+			str[n] |= (f == 5) ? mask & 0xA : mask;
+			if (r == cbp->c_dir) {
+			    /* compute the multiple spot overlap values */
+			    switch (i) {
+			    case 0:	/* sp1 is the first spot in A */
+				if (f == 4)
+				    str[n] |= 0xA0;
+				else if (f != 5)
+				    str[n] |= 0xF0;
+				break;
+			    case 1:	/* sp1 is the second spot in A */
+				if (f == 5)
+				    str[n] |= 0xA0;
+				else
+				    str[n] |= 0xF0;
+				break;
+			    case 4:	/* sp1 is the penultimate spot in A */
+				if (f == 0)
+				    str[n] |= 0xC0;
+				else
+				    str[n] |= 0xF0;
+				break;
+			    case 5:	/* sp1 is the last spot in A */
+				if (f == 1)
+				    str[n] |= 0xC0;
+				else if (f != 0)
+				    str[n] |= 0xF0;
+				break;
+			    default:
+				str[n] |= 0xF0;
+			    }
+			}
 		    }
 		}
 	    }

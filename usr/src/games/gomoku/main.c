@@ -15,7 +15,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <stdio.h>
@@ -38,18 +38,22 @@ char	*prog;			/* name of program */
 FILE	*debugfp;		/* file for debug output */
 FILE	*inputfp;		/* file for debug input */
 
-char	*color[]	= { "black", "white", "empty", "border" };
 char	pdir[4]		= "-\\|/";
 char	fmtbuf[128];
 
 struct	spotstr	board[BAREA];		/* info for board */
 struct	combostr frames[FAREA];		/* storage for all frames */
 struct	combostr *sortframes[2];	/* sorted list of non-empty frames */
-char	overlap[FAREA * FAREA];		/* true if frame [a][b] overlap */
+u_char	overlap[FAREA * FAREA];		/* true if frame [a][b] overlap */
 short	intersect[FAREA * FAREA];	/* frame [a][b] intersection */
 int	movelog[BSZ * BSZ];		/* log of all the moves */
 int	movenum;			/* current move number */
 char	*plyr[2];			/* who's who */
+
+extern void quit();
+#ifdef DEBUG
+extern void whatsup();
+#endif
 
 main(argc, argv)
 	int argc;
@@ -58,7 +62,6 @@ main(argc, argv)
 	char buf[128];
 	int color, curmove, i, ch;
 	int input[2];
-	extern void whatsup(), quit();
 	static char *fmt[2] = {
 		"%3d %-6s",
 		"%3d        %-6s"
@@ -95,7 +98,6 @@ main(argc, argv)
 	if (argc) {
 		if ((inputfp = fopen(*argv, "r")) == NULL)
 			err(1, "%s", *argv);
-		test = 3;
 	}
 
 	if (!debug)
@@ -118,10 +120,10 @@ again:
 		signal(SIGINT, quit);
 #endif
 
-		if (test == 0) {
+		if (inputfp == NULL && test == 0) {
 			for (;;) {
 				ask("black or white? ");
-				getline(buf, sizeof buf);
+				getline(buf, sizeof(buf));
 				if (buf[0] == 'b' || buf[0] == 'B') {
 					color = BLACK;
 					break;
@@ -138,7 +140,7 @@ again:
 		}
 	} else {
 		setbuf(stdout, 0);
-		getline(buf, sizeof buf);
+		getline(buf, sizeof(buf));
 		if (strcmp(buf, "black") == 0)
 			color = BLACK;
 		else if (strcmp(buf, "white") == 0)
@@ -151,25 +153,26 @@ again:
 		}
 	}
 
-	switch (test) {
-	case 0: /* user verses program */
-		input[color] = USER;
-		input[!color] = PROGRAM;
-		break;
-
-	case 1: /* user verses user */
-		input[BLACK] = USER;
-		input[WHITE] = USER;
-		break;
-
-	case 2: /* program verses program */
-		input[BLACK] = PROGRAM;
-		input[WHITE] = PROGRAM;
-		break;
-
-	case 3: /* user verses program */
+	if (inputfp) {
 		input[BLACK] = INPUTF;
 		input[WHITE] = INPUTF;
+	} else {
+		switch (test) {
+		case 0: /* user verses program */
+			input[color] = USER;
+			input[!color] = PROGRAM;
+			break;
+
+		case 1: /* user verses user */
+			input[BLACK] = USER;
+			input[WHITE] = USER;
+			break;
+
+		case 2: /* program verses program */
+			input[BLACK] = PROGRAM;
+			input[WHITE] = PROGRAM;
+			break;
+		}
 	}
 	if (interactive) {
 		plyr[BLACK] = input[BLACK] == USER ? "you" : prog;
@@ -178,22 +181,38 @@ again:
 	}
 
 	for (color = BLACK; ; color = !color) {
+	top:
 		switch (input[color]) {
 		case INPUTF: /* input comes from a file */
 			curmove = readinput(inputfp);
 			if (curmove != ILLEGAL)
 				break;
-			input[color] = USER;
-			input[!color] = PROGRAM;
-			plyr[color] = "you";
+			switch (test) {
+			case 0: /* user verses program */
+				input[color] = USER;
+				input[!color] = PROGRAM;
+				break;
+
+			case 1: /* user verses user */
+				input[BLACK] = USER;
+				input[WHITE] = USER;
+				break;
+
+			case 2: /* program verses program */
+				input[BLACK] = PROGRAM;
+				input[WHITE] = PROGRAM;
+				break;
+			}
+			plyr[BLACK] = input[BLACK] == USER ? "you" : prog;
+			plyr[WHITE] = input[WHITE] == USER ? "you" : prog;
 			bdwho(1);
-			/* FALLTHROUGH */
+			goto top;
 
 		case USER: /* input comes from standard input */
 		getinput:
 			if (interactive)
 				ask("move? ");
-			if (!getline(buf, sizeof buf)) {
+			if (!getline(buf, sizeof(buf))) {
 				curmove = RESIGN;
 				break;
 			}
@@ -205,7 +224,7 @@ again:
 					FILE *fp;
 
 					ask("save file name? ");
-					(void)getline(buf, sizeof buf);
+					(void)getline(buf, sizeof(buf));
 					if ((fp = fopen(buf, "w")) == NULL) {
 						log("cannot create save file");
 						goto getinput;
@@ -258,14 +277,14 @@ again:
 		if (i != RESIGN) {
 		replay:
 			ask("replay? ");
-			if (getline(buf, sizeof buf) &&
+			if (getline(buf, sizeof(buf)) &&
 			    buf[0] == 'y' || buf[0] == 'Y')
 				goto again;
 			if (strcmp(buf, "save") == 0) {
 				FILE *fp;
 
 				ask("save file name? ");
-				(void)getline(buf, sizeof buf);
+				(void)getline(buf, sizeof(buf));
 				if ((fp = fopen(buf, "w")) == NULL) {
 					log("cannot create save file");
 					goto replay;
@@ -302,7 +321,7 @@ void
 whatsup(signum)
 	int signum;
 {
-	int i, pnum, n;
+	int i, pnum, n, s1, s2, d1, d2;
 	struct spotstr *sp;
 	FILE *fp;
 	char *str;
@@ -313,9 +332,11 @@ whatsup(signum)
 		quit();
 top:
 	ask("cmd? ");
-	if (!getline(fmtbuf, 128))
+	if (!getline(fmtbuf, sizeof(fmtbuf)))
 		quit();
 	switch (*fmtbuf) {
+	case '\0':
+		goto top;
 	case 'q':		/* conservative quit */
 		quit();
 	case 'd':		/* set debug level */
@@ -331,6 +352,12 @@ top:
 			board[movelog[movenum - 1]].s_occ = EMPTY;
 			bdisp();
 		}
+		goto top;
+	case 's':		/* suggest a move */
+		i = fmtbuf[1] == 'b' ? BLACK : WHITE;
+		sprintf(fmtbuf, "suggest %c %s", i == BLACK ? 'B' : 'W',
+			stoc(pickmove(i)));
+		dlog(fmtbuf);
 		goto top;
 	case 'f':		/* go forward a move */
 		board[movelog[movenum - 1]].s_occ = movenum & 1 ? BLACK : WHITE;
@@ -355,6 +382,32 @@ top:
 		bdump(fp);
 		fclose(fp);
 		goto top;
+	case 'o':
+		n = 0;
+		for (str = fmtbuf + 1; *str; str++)
+			if (*str == ',') {
+				for (d1 = 0; d1 < 4; d1++)
+					if (str[-1] == pdir[d1])
+						break;
+				str[-1] = '\0';
+				sp = &board[s1 = ctos(fmtbuf + 1)];
+				n = (sp->s_frame[d1] - frames) * FAREA;
+				*str++ = '\0';
+				break;
+			}
+		sp = &board[s2 = ctos(str)];
+		while (*str)
+			str++;
+		for (d2 = 0; d2 < 4; d2++)
+			if (str[-1] == pdir[d2])
+				break;
+		n += sp->s_frame[d2] - frames;
+		str = fmtbuf;
+		sprintf(str, "overlap %s%c,", stoc(s1), pdir[d1]);
+		str += strlen(str);
+		sprintf(str, "%s%c = %x", stoc(s2), pdir[d2], overlap[n]);
+		dlog(fmtbuf);
+		goto top;
 	case 'p':
 		sp = &board[i = ctos(fmtbuf + 1)];
 		sprintf(fmtbuf, "V %s %x/%d %d %x/%d %d %d %x", stoc(i),
@@ -372,31 +425,23 @@ top:
 			sp->s_fval[WHITE][2].s, sp->s_fval[WHITE][3].s);
 		dlog(fmtbuf);
 		goto top;
-	case 'P':
-		sp = &board[i = ctos(fmtbuf + 1)];
-		for (pnum = BLACK; pnum <= WHITE; pnum++) {
-			for (ep = sp->s_empty[pnum]; ep; ep = ep->e_next) {
-				cbp = ep->e_combo;
-				str = fmtbuf;
-				sprintf(str, "C%c %s", "BW"[pnum], stoc(i));
-				str += strlen(str);
-				if (cbp->c_nframes == 2) {
-					sprintf(str, " %s%c",
-						stoc(cbp->c_link[0]->c_vertex),
-						pdir[cbp->c_link[0]->c_dir]);
-					str += strlen(str);
-					sprintf(str, " %s%c %x/%d",
-						stoc(cbp->c_link[1]->c_vertex),
-						pdir[cbp->c_link[1]->c_dir],
-						cbp->c_combo.s, cbp->c_nframes);
-				} else {
-					sprintf(str, " %s%c %x/%d",
-						stoc(cbp->c_vertex),
-						pdir[ep->e_frame->c_dir],
-						cbp->c_combo.s, cbp->c_nframes);
-				}
-				dlog(fmtbuf);
+	case 'e':	/* e {b|w} [0-9] spot */
+		str = fmtbuf + 1;
+		if (*str >= '0' && *str <= '9')
+			n = *str++ - '0';
+		else
+			n = 0;
+		sp = &board[i = ctos(str)];
+		for (ep = sp->s_empty; ep; ep = ep->e_next) {
+			cbp = ep->e_combo;
+			if (n) {
+				if (cbp->c_nframes > n)
+					continue;
+				if (cbp->c_nframes != n)
+					break;
 			}
+			printcombo(cbp, fmtbuf);
+			dlog(fmtbuf);
 		}
 		goto top;
 	default:
@@ -420,7 +465,7 @@ dlog(str)
 
 	if (debugfp)
 		fprintf(debugfp, "%s\n", str);
-	else if (interactive)
+	if (interactive)
 		dislog(str);
 	else
 		fprintf(stderr, "%s\n", str);
