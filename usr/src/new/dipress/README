@@ -1,0 +1,22 @@
+This is the Xerox Webster Research Center Interpress tools distribution for
+4.3bsd Unix.  See manual pages for specifics.   If you have an older version
+of this software, you might want to look at the file called "CHANGES" which
+is in this directory.
+
+Distribution is currently done by:
+	Xerox Systems Institute
+	475 Oakmead Parkway
+	Sunnyvale, CA  94086
+	ATTN: Pam Cance
+
+
+Bugs and any fixes should be sent to:
+	Imaging System Research Area
+	Webster Research Center
+	Mailstop 128-29E
+	800 Phillips Road
+	Rochester, NY  14580
+
+	IPToolkit^.wbst@xerox.com	(Arpa Internet)
+
+The installation and user's manual is in the doc subdirectory.
