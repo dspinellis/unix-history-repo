@@ -1,0 +1,22 @@
+.TH ARCV 1M
+.SH NAME
+arcv \- convert archives to new format
+.SH SYNOPSIS
+.B arcv
+file ...
+.SH DESCRIPTION
+.I Arcv
+converts archive files
+(see
+.IR ar (1),
+.IR ar (5))
+from 6th edition to 7th edition format.
+The conversion is done in place, and the command
+refuses to alter a file not in old archive format.
+.PP
+Old archives are marked with a magic number of 0177555 at the start;
+new archives have 0177545.
+.SH FILES
+/tmp/v*, temporary copy
+.SH SEE ALSO
+ar(1), ar(5)
