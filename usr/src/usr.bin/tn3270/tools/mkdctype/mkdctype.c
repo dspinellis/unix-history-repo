@@ -8,7 +8,7 @@ extern unsigned char ectype[256];
 void
 main()
 {
-    static unsigned char dctype[192] = 0;
+    static unsigned char dctype[192] = { 0 };
     int i;
     char *orbar;
     int type;

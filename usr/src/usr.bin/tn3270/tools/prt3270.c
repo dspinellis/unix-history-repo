@@ -6,8 +6,9 @@ static	char	sccsid[] = "@(#)prt3270.c	3.1  10/29/86";
 #if defined(unix)
 #endif
 #include <stdio.h>
-#include <curses.h>
 #include <ctype.h>
+
+#include "../general.h"
 
 #include "../ascii/ascebc.h"
 #include "../ctlr/hostctlr.h"
@@ -490,7 +491,7 @@ int old,
 	    if (outbound+count == outnext) {
 		outnext = outbound;
 	    } else {
-		bcopy(outbound+count, outbound, outnext-(outbound+count));
+		memcpy(outbound, outbound+count, outnext-(outbound+count));
 		outnext = outbound+count;
 	    }
 	} else {
@@ -499,7 +500,7 @@ int old,
 	    if (inbound+count == innext) {
 		innext = inbound;
 	    } else {
-		bcopy(inbound+count, inbound, innext-(inbound+count));
+		memcpy(inbound, inbound+count, innext-(inbound+count));
 		innext = inbound+count;
 	    }
 	}
@@ -520,7 +521,7 @@ main()
     int new;
     int c, c1;
 
-    bzero(Orders, sizeof Orders);
+    memset(Orders, 0, sizeof Orders);
     Orders[ORDER_SF] = Orders[ORDER_SBA] = Orders[ORDER_IC]
 	    = Orders[ORDER_PT] = Orders[ORDER_RA] = Orders[ORDER_EUA]
 	    = Orders[ORDER_YALE] = 1;

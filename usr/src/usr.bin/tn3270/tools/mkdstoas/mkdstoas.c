@@ -1,11 +1,15 @@
 #include <stdio.h>
+#if	defined(unix)
 #include <strings.h>
+#else	/* defined(unix) */
+#include <string.h>
+#endif	/* defined(unix) */
 #include <ctype.h>
 #include "../ascii/ascebc.h"
 #include "../ctlr/ebc_disp.h"
 
 
-void
+int
 main()
 {
     int i;
@@ -26,4 +30,6 @@ main()
 	printf("\t0x%2x,", ' ');
     }
     printf("\n};\n");
+
+    return 0;
 }
