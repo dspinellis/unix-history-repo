@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ip_input.c	7.6 (Berkeley) %G%
+ *	@(#)ip_input.c	7.6.1.1 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -841,10 +841,6 @@ ip_forward(ip, ifp)
 		m_freem(dtom(ip));
 		return;
 #endif
-	}
-	if (in_canforward(ip->ip_dst) == 0) {
-		m_freem(dtom(ip));
-		return;
 	}
 	if (ip->ip_ttl <= IPTTLDEC) {
 		type = ICMP_TIMXCEED, code = ICMP_TIMXCEED_INTRANS;
