@@ -6,7 +6,7 @@
  * Use and redistribution is subject to the Berkeley Software License
  * Agreement and your Software Agreement with AT&T (Western Electric).
  *
- *	@(#)vfs_bio.c	7.49 (Berkeley) %G%
+ *	@(#)vfs_bio.c	7.50 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -75,7 +75,6 @@ bread(vp, blkno, size, cred, bpp)
 	long secsize;
 #endif SECSIZE
 {
-	USES_VOP_STRATEGY;
 	struct proc *p = curproc;		/* XXX */
 	register struct buf *bp;
 
@@ -118,7 +117,6 @@ breadn(vp, blkno, size, rablkno, rabsize, num, cred, bpp)
 	struct ucred *cred;
 	struct buf **bpp;
 {
-	USES_VOP_STRATEGY;
 	struct proc *p = curproc;		/* XXX */
 	register struct buf *bp, *rabp;
 	register int i;
@@ -193,7 +191,6 @@ breadn(vp, blkno, size, rablkno, rabsize, num, cred, bpp)
 bwrite(bp)
 	register struct buf *bp;
 {
-	USES_VOP_STRATEGY;
 	struct proc *p = curproc;		/* XXX */
 	register int flag;
 	int s, error = 0;
@@ -256,7 +253,6 @@ vn_bwrite(ap)
 bdwrite(bp)
 	register struct buf *bp;
 {
-	USES_VOP_IOCTL;
 	struct proc *p = curproc;		/* XXX */
 
 	if ((bp->b_flags & B_DELWRI) == 0) {

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)init_main.c	7.48 (Berkeley) %G%
+ *	@(#)init_main.c	7.49 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -64,7 +64,6 @@ struct	timeval boottime;
  */
 main()
 {
-	USES_VOP_UNLOCK;
 	register int i;
 	register struct proc *p;
 	register struct filedesc0 *fdp;
