@@ -1,4 +1,4 @@
-/*	inode.h	3.1	%H%	*/
+/*	inode.h	3.2	%H%	*/
 
 /*
  * The I node is the focus of all
@@ -73,6 +73,7 @@ struct	inode *namei();
 #define	IWANT	020		/* some process waiting on lock */
 #define	ITEXT	040		/* inode is pure text prototype */
 #define	ICHG	0100		/* inode has been changed */
+#define	IPIPE	0200		/* inode is a pipe */
 
 /* modes */
 #define	IFMT	0170000		/* type of file */
