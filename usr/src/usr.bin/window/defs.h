@@ -1,4 +1,4 @@
-/*	@(#)defs.h	1.7 83/07/28		*/
+/*	@(#)defs.h	1.8 83/07/29		*/
 
 #include "ww.h"
 #include <signal.h>
@@ -24,6 +24,10 @@ int ibufc;
 struct ww *selwin;
 struct ww *cmdwin;
 
+char *shell;
+char *shellname;
+
 char quit;
 char terse;
+char debug;
 char escapec;
