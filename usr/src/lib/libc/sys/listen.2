@@ -1,0 +1,58 @@
+.\" Copyright (c) 1983 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)listen.2	5.1 (Berkeley) %G%
+.\"
+.TH LISTEN 2 "12 February 1983"
+.UC 5
+.SH NAME
+listen \- listen for connections on a socket
+.SH SYNOPSIS
+.nf
+.ft B
+listen(s, backlog)
+int s, backlog;
+.fi
+.SH DESCRIPTION
+To accept connections, a socket
+is first created with
+.IR socket (2),
+a backlog for incoming connections is specified with
+.IR listen (2)
+and then the connections are
+accepted with
+.IR accept (2).
+The
+.I listen
+call applies only to sockets of type
+SOCK_STREAM
+or
+SOCK_PKTSTREAM.
+.PP
+The
+.I backlog
+parameter defines the maximum length the queue of
+pending connections may grow to.
+If a connection
+request arrives with the queue full the client will
+receive an error with an indication of ECONNREFUSED.
+.SH "RETURN VALUE
+A 0 return value indicates success; \-1 indicates an error.
+.SH "ERRORS
+The call fails if:
+.TP 20
+[EBADF]
+The argument \fIs\fP is not a valid descriptor.
+.TP 20
+[ENOTSOCK]
+The argument \fIs\fP is not a socket.
+.TP 20
+[EOPNOTSUPP]
+The socket is not of a type that supports the operation \fIlisten\fP.
+.SH "SEE ALSO"
+accept(2), connect(2), socket(2)
+.SH BUGS
+The
+.I backlog
+is currently limited (silently) to 5.
