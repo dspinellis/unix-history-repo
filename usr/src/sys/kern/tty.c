@@ -1,4 +1,4 @@
-/*	tty.c	3.13	%G%	*/
+/*	tty.c	3.14	%G%	*/
 
 /*
  * general TTY subroutines
@@ -338,7 +338,7 @@ caddr_t addr;
 		break;
 
 	case TIOCFLUSH:
-		flushtty(tp);
+		flushtty(tp, FREAD|FWRITE);
 		break;
 
 	/*
@@ -465,14 +465,14 @@ register struct tty *tp;
 		tp->t_state |= ASLEEP;
 		sleep((caddr_t)&tp->t_outq, TTOPRI);
 	}
-	flushtty(tp);
+	flushtty(tp, FREAD|FWRITE);
 	(void) spl0();
 }
 
 /*
  * flush all TTY queues
  */
-flushtty(tp)
+flushtty(tp, rw)
 register struct tty *tp;
 {
 	register s;
@@ -480,19 +480,26 @@ register struct tty *tp;
 	if (tp->t_line == NETLDISC)
 		return;
 	s = spl6();
-	while (getc(&tp->t_canq) >= 0)
-		;
-	wakeup((caddr_t)&tp->t_rawq);
-	wakeup((caddr_t)&tp->t_outq);
-	tp->t_state &= ~TTSTOP;
-	(*cdevsw[major(tp->t_dev)].d_stop)(tp);
-	while (getc(&tp->t_outq) >= 0)
-		;
-	while (getc(&tp->t_rawq) >= 0)
-		;
-	tp->t_delct = 0;
-	tp->t_rocount = 0;		/* local */
-	tp->t_lstate = 0;
+	if (rw & FREAD) {
+		while (getc(&tp->t_canq) >= 0)
+			;
+		wakeup((caddr_t)&tp->t_rawq);
+	}
+	if (rw & FWRITE) {
+		wakeup((caddr_t)&tp->t_outq);
+		tp->t_state &= ~TTSTOP;
+		(*cdevsw[major(tp->t_dev)].d_stop)(tp);
+		while (getc(&tp->t_outq) >= 0)
+			;
+	}
+	if (rw & FREAD) {
+		while (getc(&tp->t_rawq) >= 0)
+			;
+		tp->t_delct = 0;
+		tp->t_rocount = 0;		/* local */
+		tp->t_rocol = 0;
+		tp->t_lstate = 0;
+	}
 	splx(s);
 }
 
@@ -633,7 +640,7 @@ register struct tty *tp;
 				return;
 		}
 		if (c==tun.t_quitc || c==tun.t_intrc) {
-			flushtty(tp);
+			flushtty(tp, FREAD|FWRITE);
 			c = (c==tun.t_intrc) ? SIGINT:SIGQUIT;
 			if (tp->t_chan)
 				scontrol(tp->t_chan, M_SIG, c);
@@ -645,7 +652,7 @@ register struct tty *tp;
 			c = '\n';
 	}
 	if (tp->t_rawq.c_cc>TTYHOG) {
-		flushtty(tp);
+		flushtty(tp, FREAD|FWRITE);
 		return;
 	}
 	if (t_flags&LCASE && c>='A' && c<='Z')
@@ -676,7 +683,7 @@ register struct tty *tp;
 	register x;
 	x = q1.c_cc + q2.c_cc;
 	if (q1.c_cc > TTYHOG) {
-		flushtty(tp);
+		flushtty(tp, FREAD|FWRITE);
 		tp->t_state &= ~TBLOCK;
 	}
 	if (x >= TTYHOG/2) {
