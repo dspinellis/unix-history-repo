@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)diffreg.c 4.7 %G%";
+static	char sccsid[] = "@(#)diffreg.c 4.8 %G%";
 
 #include "diff.h"
 /*
@@ -310,7 +310,7 @@ int *c;
 stone(a,n,b,c)
 int *a;
 int *b;
-int *c;
+register int *c;
 {
 	register int i, k,y;
 	int j, l;
@@ -368,7 +368,10 @@ int *c;
 		return(k+1);
 	i = 0;
 	j = k+1;
-	while((l=(i+j)/2) > i) {
+	while (1) {
+		l = i + j;
+		if ((l >>= 1) <= i) 
+			break;
 		t = clist[c[l]].y;
 		if(t > y)
 			j = l;
@@ -728,7 +731,7 @@ char *s;
  * summing 1-s complement in 16-bit hunks 
  */
 readhash(f)
-FILE *f;
+register FILE *f;
 {
 	long sum;
 	register unsigned shift;
@@ -739,7 +742,7 @@ FILE *f;
 	if(!bflag) for(shift=0;(t=getc(f))!='\n';shift+=7) {
 		if(t==-1)
 			return(0);
-		sum += (long)t << (shift%=HALFLONG);
+		sum += (long)t << (shift &= HALFLONG - 1);
 	}
 	else for(shift=0;;) {
 		switch(t=getc(f)) {
@@ -754,7 +757,7 @@ FILE *f;
 				shift += 7;
 				space = 0;
 			}
-			sum += (long)t << (shift%=HALFLONG);
+			sum += (long)t << (shift &= HALFLONG - 1);
 			shift += 7;
 			continue;
 		case '\n':
