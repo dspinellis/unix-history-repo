@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)setterm.c	5.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)setterm.c	5.17 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/ioctl.h>
@@ -83,10 +83,9 @@ setterm(type)
 		COLS = strtol(p, NULL, 10);
 
 	/*
-	 * XXX
-	 * Historically, curses fails if rows <= 5, cols <= 4.
+	 * Want cols > 4, otherwise things will fail.
 	 */
-	if (LINES <= 5 || COLS <= 4)
+	if (COLS <= 4)
 		return (ERR);
 
 #ifdef DEBUG
