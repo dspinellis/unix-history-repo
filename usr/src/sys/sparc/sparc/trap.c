@@ -13,9 +13,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)trap.c	7.4 (Berkeley) %G%
+ *	@(#)trap.c	7.5 (Berkeley) %G%
  *
- * from: $Header: trap.c,v 1.33 92/11/26 03:05:09 torek Exp $
+ * from: $Header: trap.c,v 1.34 93/05/28 04:34:50 torek Exp $
  */
 
 #include <sys/param.h>
@@ -53,8 +53,8 @@ int	rwindow_debug = 0;
  * seems to imply that we should do this, and it does make sense.
  */
 struct	fpstate initfpstate = {
-	~0, ~0, ~0, ~0, ~0, ~0, ~0, ~0, ~0, ~0, ~0, ~0, ~0, ~0, ~0, ~0,
-	~0, ~0, ~0, ~0, ~0, ~0, ~0, ~0, ~0, ~0, ~0, ~0, ~0, ~0, ~0, ~0,
+	{ ~0, ~0, ~0, ~0, ~0, ~0, ~0, ~0, ~0, ~0, ~0, ~0, ~0, ~0, ~0, ~0,
+	  ~0, ~0, ~0, ~0, ~0, ~0, ~0, ~0, ~0, ~0, ~0, ~0, ~0, ~0, ~0, ~0 }
 };
 
 /*
