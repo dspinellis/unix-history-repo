@@ -1,7 +1,7 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)conv.c 2.1 %G%";
+static char sccsid[] = "@(#)conv.c 2.2 %G%";
 #endif
 
 #include "whoami.h"
@@ -9,7 +9,7 @@ static char sccsid[] = "@(#)conv.c 2.1 %G%";
 #include "0.h"
 #include "opcode.h"
 #ifdef PC
-#   include	"pcops.h"
+#   include	<pcc.h>
 #endif PC
 #include "tree_ty.h"
 
@@ -250,13 +250,13 @@ precheck( p , name1 , name2 )
 	}
 	switch ( p -> class ) {
 	    case CRANGE:
-		putleaf( P2ICON , 0 , 0 , ADDTYPE( P2FTN | P2INT , P2PTR )
+		putleaf( PCC_ICON , 0 , 0 , PCCM_ADDTYPE( PCCTM_FTN | PCCT_INT , PCCTM_PTR )
 			    , name1);
 		break;
 	    case RANGE:
 		if ( p != nl + T4INT ) {
-		    putleaf( P2ICON , 0 , 0 ,
-			    ADDTYPE( P2FTN | P2INT , P2PTR ),
+		    putleaf( PCC_ICON , 0 , 0 ,
+			    PCCM_ADDTYPE( PCCTM_FTN | PCCT_INT , PCCTM_PTR ),
 			    p -> range[0] != 0 ? name1 : name2 );
 		}
 		break;
@@ -297,31 +297,31 @@ postcheck(need, have)
     switch ( need -> class ) {
 	case RANGE:
 	    if ( need != nl + T4INT ) {
-		sconv(p2type(have), P2INT);
+		sconv(p2type(have), PCCT_INT);
 		if (need -> range[0] != 0 ) {
-		    putleaf( P2ICON , (int) need -> range[0] , 0 , P2INT ,
+		    putleaf( PCC_ICON , (int) need -> range[0] , 0 , PCCT_INT ,
 							(char *) 0 );
-		    putop( P2LISTOP , P2INT );
+		    putop( PCC_CM , PCCT_INT );
 		}
-		putleaf( P2ICON , (int) need -> range[1] , 0 , P2INT ,
+		putleaf( PCC_ICON , (int) need -> range[1] , 0 , PCCT_INT ,
 				(char *) 0 );
-		putop( P2LISTOP , P2INT );
-		putop( P2CALL , P2INT );
-		sconv(P2INT, p2type(have));
+		putop( PCC_CM , PCCT_INT );
+		putop( PCC_CALL , PCCT_INT );
+		sconv(PCCT_INT, p2type(have));
 	    }
 	    break;
 	case CRANGE:
-	    sconv(p2type(have), P2INT);
+	    sconv(p2type(have), PCCT_INT);
 	    p = need->nptr[0];
 	    putRV(p->symbol, (p->nl_block & 037), p->value[0],
 		    p->extra_flags, p2type( p ) );
-	    putop( P2LISTOP , P2INT );
+	    putop( PCC_CM , PCCT_INT );
 	    p = need->nptr[1];
 	    putRV(p->symbol, (p->nl_block & 037), p->value[0],
 		    p->extra_flags, p2type( p ) );
-	    putop( P2LISTOP , P2INT );
-	    putop( P2CALL , P2INT );
-	    sconv(P2INT, p2type(have));
+	    putop( PCC_CM , PCCT_INT );
+	    putop( PCC_CALL , PCCT_INT );
+	    sconv(PCCT_INT, p2type(have));
 	    break;
 	case SCAL:
 	    break;

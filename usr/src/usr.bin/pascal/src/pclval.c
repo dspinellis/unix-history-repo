@@ -1,7 +1,7 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
 #ifndef lint
-static	char sccsid[] = "@(#)pclval.c 2.1 %G%";
+static	char sccsid[] = "@(#)pclval.c 2.2 %G%";
 #endif
 
 #include "whoami.h"
@@ -15,7 +15,7 @@ static	char sccsid[] = "@(#)pclval.c 2.1 %G%";
 	 *	and the rest of the file
 	 */
 #   include	"pc.h"
-#   include	"pcops.h"
+#   include	<pcc.h>
 
 extern	int flagwas;
 /*
@@ -163,9 +163,9 @@ pclvalue( var , modflag , required )
 					firstsymbol = 0;
 				} else {
 					if (o) {
-					    putleaf( P2ICON , o , 0 , P2INT
+					    putleaf( PCC_ICON , o , 0 , PCCT_INT
 						    , (char *) 0 );
-					    putop( P2PLUS , P2PTR | P2CHAR );
+					    putop( PCC_PLUS , PCCTM_PTR | PCCT_CHAR );
 					}
 				}
 				    /*
@@ -188,12 +188,12 @@ pclvalue( var , modflag , required )
 					 * but i have to do this for
 					 * regular pointers.
 					 */
-				    putop( P2UNARY P2MUL , p2type( p ) );
+				    putop( PCCOM_UNARY PCC_MUL , p2type( p ) );
 				    if ( opt( 't' ) ) {
-					putop( P2CALL , P2INT );
+					putop( PCC_CALL , PCCT_INT );
 				    }
 				} else {
-				    putop( P2CALL , P2INT );
+				    putop( PCC_CALL , PCCT_INT );
 				}
 				f = o = 0;
 				continue;
@@ -205,9 +205,9 @@ pclvalue( var , modflag , required )
 					firstsymbol = 0;
 				} else {
 					if (o) {
-					    putleaf( P2ICON , o , 0 , P2INT
+					    putleaf( PCC_ICON , o , 0 , PCCT_INT
 						    , (char *) 0 );
-					    putop( P2PLUS , P2INT );
+					    putop( PCC_PLUS , PCCT_INT );
 					}
 				}
 				s = arycod( p , co->ary_node.expr_list, s);
@@ -246,11 +246,11 @@ pclvalue( var , modflag , required )
 		}
 	} else {
 		if (o) {
-		    putleaf( P2ICON , o , 0 , P2INT , (char *) 0 );
-		    putop( P2PLUS , P2INT );
+		    putleaf( PCC_ICON , o , 0 , PCCT_INT , (char *) 0 );
+		    putop( PCC_PLUS , PCCT_INT );
 		}
 		if ( required == RREQ ) {
-		    putop( P2UNARY P2MUL , p2type( p -> type ) );
+		    putop( PCCOM_UNARY PCC_MUL , p2type( p -> type ) );
 		}
 	}
 	return ( p -> type );
@@ -370,13 +370,13 @@ nilfnil( p , c , modflag , firstp , r2 )
 	if ( co->tag == T_PTR ) {
 	    if ( p -> class == PTR ) {
 		    if ( opt( 't' ) ) {
-			putleaf( P2ICON , 0 , 0
-			    , ADDTYPE( P2FTN | P2INT , P2PTR )
+			putleaf( PCC_ICON , 0 , 0
+			    , PCCM_ADDTYPE( PCCTM_FTN | PCCT_INT , PCCTM_PTR )
 			    , "_NIL" );
 		    }
 	    } else {
-		    putleaf( P2ICON , 0 , 0
-			, ADDTYPE( P2FTN | P2INT , P2PTR )
+		    putleaf( PCC_ICON , 0 , 0
+			, PCCM_ADDTYPE( PCCTM_FTN | PCCT_INT , PCCTM_PTR )
 			, "_FNIL" );
 	    }
 	}

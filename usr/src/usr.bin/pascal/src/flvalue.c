@@ -1,7 +1,7 @@
 /* Copyright (c) 1980 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)flvalue.c 2.1 %G%";
+static char sccsid[] = "@(#)flvalue.c 2.2 %G%";
 #endif
 
 #include "whoami.h"
@@ -12,7 +12,7 @@ static char sccsid[] = "@(#)flvalue.c 2.1 %G%";
 #include "tree_ty.h"
 #ifdef PC
 #   include "pc.h"
-#   include "pcops.h"
+#   include <pcc.h>
 #endif PC
 #include "tmps.h"
 
@@ -85,19 +85,19 @@ flvalue( r , formalp )
 			(void) put(2, O_FSAV | bn << 8, (long)p->value[NL_ENTLOC]);
 #		    endif OBJ
 #		    ifdef PC
-			putleaf( P2ICON , 0 , 0 ,
-			    ADDTYPE( P2PTR , ADDTYPE( P2FTN , P2PTR|P2STRTY ) ) ,
+			putleaf( PCC_ICON , 0 , 0 ,
+			    PCCM_ADDTYPE( PCCTM_PTR , PCCM_ADDTYPE( PCCTM_FTN , PCCTM_PTR|PCCT_STRTY ) ) ,
 			    "_FSAV" );
 			sprintf( extname , "%s" , FORMALPREFIX );
 			sextname( &extname[ strlen( extname ) ] ,
 				    p -> symbol , bn );
-			putleaf( P2ICON , 0 , 0 , p2type( p ) , extname );
-			putleaf( P2ICON , bn , 0 , P2INT , (char *) 0 );
-			putop( P2LISTOP , P2INT );
+			putleaf( PCC_ICON , 0 , 0 , p2type( p ) , extname );
+			putleaf( PCC_ICON , bn , 0 , PCCT_INT , (char *) 0 );
+			putop( PCC_CM , PCCT_INT );
 			putLV( (char *) 0 , cbn , tempnlp -> value[NL_OFFS] ,
-				tempnlp -> extra_flags , P2STRTY );
-			putop( P2LISTOP , P2INT );
-			putop( P2CALL , P2PTR | P2STRTY );
+				tempnlp -> extra_flags , PCCT_STRTY );
+			putop( PCC_CM , PCCT_INT );
+			putop( PCC_CALL , PCCTM_PTR | PCCT_STRTY );
 #		    endif PC
 		    return p;
 	    default:

@@ -1,7 +1,7 @@
 /* Copyright (c) 1983 Regents of the University of California */
 
 #ifndef lint
-static	char sccsid[] = "@(#)sconv.c 2.1 %G%";
+static	char sccsid[] = "@(#)sconv.c 2.2 %G%";
 #endif
 
     /*
@@ -13,7 +13,7 @@ static	char sccsid[] = "@(#)sconv.c 2.1 %G%";
 #include	"whoami.h"
 #ifdef PC
 #include	"0.h"
-#include	"pcops.h"
+#include	<pcc.h>
 
     /*
      *	this routine enforces ``the usual arithmetic conversions''
@@ -39,12 +39,12 @@ tuac(thistype, thattype, resulttypep, resultp2typep)
     if (isnta(thistype,"sbcid") || isnta(thattype,"sbcid")) {
 	return;
     }
-    if (thisp2type == P2CHAR || thisp2type == P2SHORT) {
-	*resultp2typep = P2INT;
+    if (thisp2type == PCCT_CHAR || thisp2type == PCCT_SHORT) {
+	*resultp2typep = PCCT_INT;
 	*resulttypep = nl + T4INT;
     }
-    if (*resultp2typep == P2INT && thatp2type == P2DOUBLE) {
-	*resultp2typep = P2DOUBLE;
+    if (*resultp2typep == PCCT_INT && thatp2type == PCCT_DOUBLE) {
+	*resultp2typep = PCCT_DOUBLE;
 	*resulttypep = nl + TDOUBLE;
     }
     sconv(thisp2type, *resultp2typep);
@@ -65,26 +65,26 @@ sconv(fromp2type, top2type)
 {
 
     switch (top2type) {
-	case P2CHAR:
-	case P2SHORT:
-	case P2INT:
+	case PCCT_CHAR:
+	case PCCT_SHORT:
+	case PCCT_INT:
 	    switch (fromp2type) {
-		case P2CHAR:
-		case P2SHORT:
-		case P2INT:
-		case P2DOUBLE:
+		case PCCT_CHAR:
+		case PCCT_SHORT:
+		case PCCT_INT:
+		case PCCT_DOUBLE:
 			return;	/* pass1 knows how to do these */
 		default:
 			return;
 	    }
-	case P2DOUBLE:
+	case PCCT_DOUBLE:
 	    switch (fromp2type) {
-		case P2CHAR:
-		case P2SHORT:
-		case P2INT:
-			putop(P2SCONV, P2DOUBLE);
+		case PCCT_CHAR:
+		case PCCT_SHORT:
+		case PCCT_INT:
+			putop(PCC_SCONV, PCCT_DOUBLE);
 			return;
-		case P2DOUBLE:
+		case PCCT_DOUBLE:
 			return;
 		default:
 			return;
@@ -105,50 +105,50 @@ sconv(fromp2type, top2type)
 {
 
     switch (top2type) {
-	case P2CHAR:
+	case PCCT_CHAR:
 	    switch (fromp2type) {
-		case P2CHAR:
+		case PCCT_CHAR:
 			return;
-		case P2SHORT:
-		case P2INT:
-		case P2DOUBLE:
-			putop(P2SCONV, P2CHAR);
+		case PCCT_SHORT:
+		case PCCT_INT:
+		case PCCT_DOUBLE:
+			putop(PCC_SCONV, PCCT_CHAR);
 			return;
 		default:
 			return;
 	    }
-	case P2SHORT:
+	case PCCT_SHORT:
 	    switch (fromp2type) {
-		case P2SHORT:
+		case PCCT_SHORT:
 			return;
-		case P2CHAR:
-		case P2INT:
-		case P2DOUBLE:
-			putop(P2SCONV, P2SHORT);
+		case PCCT_CHAR:
+		case PCCT_INT:
+		case PCCT_DOUBLE:
+			putop(PCC_SCONV, PCCT_SHORT);
 			return;
 		default:
 			return;
 	    }
-	case P2INT:
+	case PCCT_INT:
 	    switch (fromp2type) {
-		case P2INT:
+		case PCCT_INT:
 			return;
-		case P2CHAR:
-		case P2SHORT:
-		case P2DOUBLE:
-			putop(P2SCONV, P2INT);
+		case PCCT_CHAR:
+		case PCCT_SHORT:
+		case PCCT_DOUBLE:
+			putop(PCC_SCONV, PCCT_INT);
 			return;
 		default:
 			return;
 	    }
-	case P2DOUBLE:
+	case PCCT_DOUBLE:
 	    switch (fromp2type) {
-		case P2DOUBLE:
+		case PCCT_DOUBLE:
 			return;
-		case P2CHAR:
-		case P2SHORT:
-		case P2INT:
-			putop(P2SCONV, P2DOUBLE);
+		case PCCT_CHAR:
+		case PCCT_SHORT:
+		case PCCT_INT:
+			putop(PCC_SCONV, PCCT_DOUBLE);
 			return;
 		default:
 			return;

@@ -1,7 +1,7 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)fend.c 2.2 %G%";
+static char sccsid[] = "@(#)fend.c 2.3 %G%";
 #endif
 
 #include "whoami.h"
@@ -21,7 +21,7 @@ int	bodycnts[ DSPLYSZ ];
 
 #ifdef PC
 #   include "pc.h"
-#   include "pcops.h"
+#   include <pcc.h>
 #endif PC
 
 #ifdef OBJ
@@ -194,10 +194,10 @@ funcend(fp, bundle, endline)
 #		endif OBJ
 #		ifdef PC
 		    if ( opt( 'b' ) != 1 ) {
-			putleaf( P2ICON , 0 , 0
-				, ADDTYPE( P2FTN | P2INT , P2PTR ) , "_BUFF" );
-			putleaf( P2ICON , opt( 'b' ) , 0 , P2INT , (char *) 0 );
-			putop( P2CALL , P2INT );
+			putleaf( PCC_ICON , 0 , 0
+				, PCCM_ADDTYPE( PCCTM_FTN | PCCT_INT , PCCTM_PTR ) , "_BUFF" );
+			putleaf( PCC_ICON , opt( 'b' ) , 0 , PCCT_INT , (char *) 0 );
+			putop( PCC_CALL , PCCT_INT );
 			putdot( filename , line );
 		    }
 #		endif PC
@@ -238,22 +238,22 @@ funcend(fp, bundle, endline)
 			    (void) put(1, O_DEFNAME);
 #			endif OBJ
 #			ifdef PC
-			    putleaf( P2ICON , 0 , 0
-				    , ADDTYPE( P2FTN | P2INT , P2PTR )
+			    putleaf( PCC_ICON , 0 , 0
+				    , PCCM_ADDTYPE( PCCTM_FTN | PCCT_INT , PCCTM_PTR )
 				    , "_DEFNAME" );
 			    putLV( p -> symbol , bn , iop -> value[NL_OFFS] ,
 				    iop -> extra_flags , p2type( iop ) );
 			    putCONG( p -> symbol , strlen( p -> symbol )
 				    , LREQ );
-			    putop( P2LISTOP , P2INT );
-			    putleaf( P2ICON , strlen( p -> symbol )
-				    , 0 , P2INT , (char *) 0 );
-			    putop( P2LISTOP , P2INT );
-			    putleaf( P2ICON
+			    putop( PCC_CM , PCCT_INT );
+			    putleaf( PCC_ICON , strlen( p -> symbol )
+				    , 0 , PCCT_INT , (char *) 0 );
+			    putop( PCC_CM , PCCT_INT );
+			    putleaf( PCC_ICON
 				, text(iop->type) ? 0 : width(iop->type->type)
-				, 0 , P2INT , (char *) 0 );
-			    putop( P2LISTOP , P2INT );
-			    putop( P2CALL , P2INT );
+				, 0 , PCCT_INT , (char *) 0 );
+			    putop( PCC_CM , PCCT_INT );
+			    putop( PCC_CALL , PCCT_INT );
 			    putdot( filename , line );
 #			endif PC
 		}
@@ -279,14 +279,14 @@ funcend(fp, bundle, endline)
 #	endif OBJ
 #	ifdef PC
 	    if ( fp -> class == PROG && monflg ) {
-		putleaf( P2ICON , 0 , 0 , ADDTYPE( P2FTN | P2INT , P2PTR )
+		putleaf( PCC_ICON , 0 , 0 , PCCM_ADDTYPE( PCCTM_FTN | PCCT_INT , PCCTM_PTR )
 			, "_PMFLUSH" );
-		putleaf( P2ICON , cnts , 0 , P2INT , (char *) 0 );
-		putleaf( P2ICON , pfcnt , 0 , P2INT , (char *) 0 );
-		putop( P2LISTOP , P2INT );
-		putLV( PCPCOUNT , 0 , 0 , NGLOBAL , P2INT );
-		putop( P2LISTOP , P2INT );
-		putop( P2CALL , P2INT );
+		putleaf( PCC_ICON , cnts , 0 , PCCT_INT , (char *) 0 );
+		putleaf( PCC_ICON , pfcnt , 0 , PCCT_INT , (char *) 0 );
+		putop( PCC_CM , PCCT_INT );
+		putLV( PCPCOUNT , 0 , 0 , NGLOBAL , PCCT_INT );
+		putop( PCC_CM , PCCT_INT );
+		putop( PCC_CALL , PCCT_INT );
 		putdot( filename , line );
 	    }
 #	endif PC
@@ -419,7 +419,7 @@ funcend(fp, bundle, endline)
 		 */
 	    if ( monflg && fp -> class == PROG ) {
 		putprintf( "	.data" , 0 );
-		aligndot(P2INT);
+		aligndot(PCCT_INT);
 		putprintf( "	.comm	" , 1 );
 		putprintf( PCPCOUNT , 1 );
 		putprintf( ",%d" , 0 , ( cnts + 1 ) * sizeof (long) );
@@ -611,27 +611,27 @@ fp_entrycode(eecookiep)
 	 *	by calling blkclr( bytes of locals , starting local address );
 	 */
     if ( opt( 't' ) && ( -sizes[ cbn ].om_max ) > DPOFF1 ) {
-	putleaf( P2ICON , 0 , 0 , ADDTYPE( P2FTN | P2INT , P2PTR )
+	putleaf( PCC_ICON , 0 , 0 , PCCM_ADDTYPE( PCCTM_FTN | PCCT_INT , PCCTM_PTR )
 		, "_blkclr" );
-	putLV((char *) 0 , cbn , (int) sizes[ cbn ].om_max , NLOCAL , P2CHAR );
-	putleaf( P2ICON ,  (int) (( -sizes[ cbn ].om_max ) - DPOFF1)
-		, 0 , P2INT ,(char *) 0 );
-	putop( P2LISTOP , P2INT );
-	putop( P2CALL , P2INT );
+	putLV((char *) 0 , cbn , (int) sizes[ cbn ].om_max , NLOCAL , PCCT_CHAR );
+	putleaf( PCC_ICON ,  (int) (( -sizes[ cbn ].om_max ) - DPOFF1)
+		, 0 , PCCT_INT ,(char *) 0 );
+	putop( PCC_CM , PCCT_INT );
+	putop( PCC_CALL , PCCT_INT );
 	putdot( filename , line );
     }
 	/*
 	 *  set up goto vector if non-local goto to this frame
 	 */
     if ( parts[ cbn ] & NONLOCALGOTO ) {
-	putleaf( P2ICON , 0 , 0 , ADDTYPE( P2FTN | P2INT , P2PTR )
+	putleaf( PCC_ICON , 0 , 0 , PCCM_ADDTYPE( PCCTM_FTN | PCCT_INT , PCCTM_PTR )
 		, "_setjmp" );
-	putLV( (char *) 0 , cbn , GOTOENVOFFSET , NLOCAL , P2PTR|P2STRTY );
-	putop( P2CALL , P2INT );
-	putleaf( P2ICON , 0 , 0 , P2INT , (char *) 0 );
-	putop( P2NE , P2INT );
-	putleaf( P2ICON , setjmp0 , 0 , P2INT , (char *) 0 );
-	putop( P2CBRANCH , P2INT );
+	putLV( (char *) 0 , cbn , GOTOENVOFFSET , NLOCAL , PCCTM_PTR|PCCT_STRTY );
+	putop( PCC_CALL , PCCT_INT );
+	putleaf( PCC_ICON , 0 , 0 , PCCT_INT , (char *) 0 );
+	putop( PCC_NE , PCCT_INT );
+	putleaf( PCC_ICON , setjmp0 , 0 , PCCT_INT , (char *) 0 );
+	putop( PCC_CBRANCH , PCCT_INT );
 	putdot( filename , line );
 	    /*
 	     *	on non-local goto, setjmp returns with address to
@@ -650,10 +650,10 @@ fp_exitcode(eecookiep)
 	 *	call PCLOSE( ap ) to clean them up.
 	 */
     if ( dfiles[ cbn ] ) {
-	putleaf( P2ICON , 0 , 0 , ADDTYPE( P2FTN | P2INT , P2PTR )
+	putleaf( PCC_ICON , 0 , 0 , PCCM_ADDTYPE( PCCTM_FTN | PCCT_INT , PCCTM_PTR )
 		, "_PCLOSE" );
-	putleaf( P2REG , 0 , P2AP , ADDTYPE( P2CHAR , P2PTR ) , (char *) 0 );
-	putop( P2CALL , P2INT );
+	putleaf( PCC_REG , 0 , P2AP , PCCM_ADDTYPE( PCCT_CHAR , PCCTM_PTR ) , (char *) 0 );
+	putop( PCC_CALL , PCCT_INT );
 	putdot( filename , line );
     }
 	/*
@@ -679,7 +679,7 @@ fp_exitcode(eecookiep)
 			fvar -> value[ NL_OFFS ] ,
 			fvar -> extra_flags ,
 			(int) fvartype );
-		putop( P2FORCE , (int) fvartype );
+		putop( PCC_FORCE , (int) fvartype );
 		break;
 	    default:
 		label = (int) getlab();
@@ -689,17 +689,17 @@ fp_exitcode(eecookiep)
 		putprintf( "	.lcomm	%s,%d" , 0 ,
 			    (int) labelname , (int) lwidth( fvar -> type ) );
 		putprintf( "	.text" , 0 );
-		putleaf( P2NAME , 0 , 0 , (int) fvartype , labelname );
+		putleaf( PCC_NAME , 0 , 0 , (int) fvartype , labelname );
 		putLV( fvar -> symbol , ( fvar -> nl_block ) & 037 ,
 			fvar -> value[ NL_OFFS ] ,
 			fvar -> extra_flags ,
 			(int) fvartype );
-		putstrop( P2STASG , (int) ADDTYPE(fvartype, P2PTR) ,
+		putstrop( PCC_STASG , (int) PCCM_ADDTYPE(fvartype, PCCTM_PTR) ,
 			(int) lwidth( fvar -> type ) ,
 			align( fvar -> type ) );
 		putdot( filename , line );
-		putleaf( P2ICON , 0 , 0 , (int) ADDTYPE(fvartype, P2PTR), labelname );
-		putop( P2FORCE , (int) ADDTYPE(fvartype, P2PTR) );
+		putleaf( PCC_ICON , 0 , 0 , (int) PCCM_ADDTYPE(fvartype, PCCTM_PTR), labelname );
+		putop( PCC_FORCE , (int) PCCM_ADDTYPE(fvartype, PCCTM_PTR) );
 		break;
 	}
 	putdot( filename , line );
@@ -736,13 +736,13 @@ fp_formalentry(eecookiep)
     putprintf("	.align 1", 0);
     putprintf("%s%s:" , 0 , (int) FORMALPREFIX , (int) eecookiep -> extname );
     putprintf("	.word	%s%d", 0, (int) SAVE_MASK_LABEL, eecookiep -> savlabel );
-    putleaf( P2ICON , 0 , 0 , ADDTYPE( P2FTN | P2INT , P2PTR ) , "_FCALL" );
+    putleaf( PCC_ICON , 0 , 0 , PCCM_ADDTYPE( PCCTM_FTN | PCCT_INT , PCCTM_PTR ) , "_FCALL" );
     putRV((char *) 0 , cbn ,
 	eecookiep -> nlp -> value[ NL_OFFS ] + sizeof( struct formalrtn * ) ,
-	NPARAM , P2PTR | P2STRTY );
-    putRV((char *) 0, cbn, eecookiep -> nlp -> value[NL_OFFS], NPARAM, P2PTR|P2STRTY);
-    putop( P2LISTOP , P2INT );
-    putop( P2CALL , P2INT );
+	NPARAM , PCCTM_PTR | PCCT_STRTY );
+    putRV((char *) 0, cbn, eecookiep -> nlp -> value[NL_OFFS], NPARAM, PCCTM_PTR|PCCT_STRTY);
+    putop( PCC_CM , PCCT_INT );
+    putop( PCC_CALL , PCCT_INT );
     putdot( filename , line );
     putjbr( (long) eecookiep -> toplabel );
 }
@@ -848,27 +848,27 @@ fp_entrycode(eecookiep)
 	 *	by calling blkclr( bytes of locals , starting local address );
 	 */
     if ( opt( 't' ) && ( -sizes[ cbn ].om_max ) > DPOFF1 ) {
-	putleaf( P2ICON , 0 , 0 , ADDTYPE( P2FTN | P2INT , P2PTR )
+	putleaf( PCC_ICON , 0 , 0 , PCCM_ADDTYPE( PCCTM_FTN | PCCT_INT , PCCTM_PTR )
 		, "_blkclr" );
-	putLV( 0 , cbn , sizes[ cbn ].om_max , NLOCAL , P2CHAR );
-	putleaf( P2ICON ,  ( -sizes[ cbn ].om_max ) - DPOFF1
-		, 0 , P2INT , 0 );
-	putop( P2LISTOP , P2INT );
-	putop( P2CALL , P2INT );
+	putLV( 0 , cbn , sizes[ cbn ].om_max , NLOCAL , PCCT_CHAR );
+	putleaf( PCC_ICON ,  ( -sizes[ cbn ].om_max ) - DPOFF1
+		, 0 , PCCT_INT , 0 );
+	putop( PCC_CM , PCCT_INT );
+	putop( PCC_CALL , PCCT_INT );
 	putdot( filename , line );
     }
 	/*
 	 *  set up goto vector if non-local goto to this frame
 	 */
     if ( parts[ cbn ] & NONLOCALGOTO ) {
-	putleaf( P2ICON , 0 , 0 , ADDTYPE( P2FTN | P2INT , P2PTR )
+	putleaf( PCC_ICON , 0 , 0 , PCCM_ADDTYPE( PCCTM_FTN | PCCT_INT , PCCTM_PTR )
 		, "_setjmp" );
-	putLV( 0 , cbn , GOTOENVOFFSET , NLOCAL , P2PTR|P2STRTY );
-	putop( P2CALL , P2INT );
-	putleaf( P2ICON , 0 , 0 , P2INT , 0 );
-	putop( P2NE , P2INT );
-	putleaf( P2ICON , setjmp0 , 0 , P2INT , 0 );
-	putop( P2CBRANCH , P2INT );
+	putLV( 0 , cbn , GOTOENVOFFSET , NLOCAL , PCCTM_PTR|PCCT_STRTY );
+	putop( PCC_CALL , PCCT_INT );
+	putleaf( PCC_ICON , 0 , 0 , PCCT_INT , 0 );
+	putop( PCC_NE , PCCT_INT );
+	putleaf( PCC_ICON , setjmp0 , 0 , PCCT_INT , 0 );
+	putop( PCC_CBRANCH , PCCT_INT );
 	putdot( filename , line );
 	    /*
 	     *	on non-local goto, setjmp returns with address to
@@ -888,10 +888,10 @@ fp_exitcode(eecookiep)
 	 *	call PCLOSE( ap ) to clean them up.
 	 */
     if ( dfiles[ cbn ] ) {
-	putleaf( P2ICON , 0 , 0 , ADDTYPE( P2FTN | P2INT , P2PTR )
+	putleaf( PCC_ICON , 0 , 0 , PCCM_ADDTYPE( PCCTM_FTN | PCCT_INT , PCCTM_PTR )
 		, "_PCLOSE" );
-	putleaf( P2REG , 0 , P2AP , ADDTYPE( P2CHAR , P2PTR ) , 0 );
-	putop( P2CALL , P2INT );
+	putleaf( PCC_REG , 0 , P2AP , PCCM_ADDTYPE( PCCT_CHAR , PCCTM_PTR ) , 0 );
+	putop( PCC_CALL , PCCT_INT );
 	putdot( filename , line );
     }
 	/*
@@ -917,24 +917,24 @@ fp_exitcode(eecookiep)
 			fvar -> value[ NL_OFFS ] ,
 			fvar -> extra_flags ,
 			fvartype );
-		putop( P2FORCE , fvartype );
+		putop( PCC_FORCE , fvartype );
 		break;
 	    default:
 		label = getlab();
 		sprintf( labelname , PREFIXFORMAT , LABELPREFIX , label );
 		putprintf("	.lcomm	%s,%d", 0,
 			labelname, lwidth(fvar -> type));
-		putleaf( P2NAME , 0 , 0 , fvartype , labelname );
+		putleaf( PCC_NAME , 0 , 0 , fvartype , labelname );
 		putLV( fvar -> symbol , ( fvar -> nl_block ) & 037 ,
 			fvar -> value[ NL_OFFS ] ,
 			fvar -> extra_flags ,
 			fvartype );
-		putstrop( P2STASG , ADDTYPE(fvartype, P2PTR) ,
+		putstrop( PCC_STASG , PCCM_ADDTYPE(fvartype, PCCTM_PTR) ,
 			lwidth( fvar -> type ) ,
 			align( fvar -> type ) );
 		putdot( filename , line );
-		putleaf( P2ICON , 0 , 0 , ADDTYPE(fvartype, P2PTR), labelname );
-		putop( P2FORCE , ADDTYPE(fvartype, P2PTR) );
+		putleaf( PCC_ICON , 0 , 0 , PCCM_ADDTYPE(fvartype, PCCTM_PTR), labelname );
+		putop( PCC_FORCE , PCCM_ADDTYPE(fvartype, PCCTM_PTR) );
 		break;
 	}
 	putdot( filename , line );
@@ -969,16 +969,15 @@ fp_formalentry(eecookiep)
 	/* touch new end of stack, to break more stack space */
     putprintf("	tstb	sp@(-%s%d)", 0, PAGE_BREAK_LABEL, ftnno);
     putprintf("	moveml	#%s%d,sp@", 0, SAVE_MASK_LABEL, ftnno);
-    putleaf( P2ICON , 0 , 0 , ADDTYPE( P2FTN | P2INT , P2PTR ) , "_FCALL" );
+    putleaf( PCC_ICON , 0 , 0 , PCCM_ADDTYPE( PCCTM_FTN | PCCT_INT , PCCTM_PTR ) , "_FCALL" );
     putRV( 0 , cbn ,
 	eecookiep -> nlp -> value[ NL_OFFS ] + sizeof( struct formalrtn * ) ,
-	NPARAM , P2PTR | P2STRTY );
-    putRV(0, cbn, eecookiep -> nlp -> value[NL_OFFS], NPARAM, P2PTR|P2STRTY);
-    putop( P2LISTOP , P2INT );
-    putop( P2CALL , P2INT );
+	NPARAM , PCCTM_PTR | PCCT_STRTY );
+    putRV(0, cbn, eecookiep -> nlp -> value[NL_OFFS], NPARAM, PCCTM_PTR|PCCT_STRTY);
+    putop( PCC_CM , PCCT_INT );
+    putop( PCC_CALL , PCCT_INT );
     putdot( filename , line );
     putjbr( eecookiep -> toplabel );
 }
 #endif mc68000
 #endif PC
-

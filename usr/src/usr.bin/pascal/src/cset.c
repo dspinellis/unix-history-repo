@@ -1,7 +1,7 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)cset.c 2.1 %G%";
+static char sccsid[] = "@(#)cset.c 2.2 %G%";
 #endif
 
 #include "whoami.h"
@@ -12,7 +12,7 @@ static char sccsid[] = "@(#)cset.c 2.1 %G%";
 #include "tree_ty.h"
 #ifdef PC
 #include "pc.h"
-#include "pcops.h"
+#include <pcc.h>
 #include "align.h"
 #endif PC
 
@@ -417,7 +417,7 @@ postcset( r , csetp )
 		}
 		putprintf("	.text", 0);
 		sprintf( labelname , PREFIXFORMAT , LABELPREFIX , (char *) label );
-		putleaf( P2ICON , 0 , 0 , P2PTR | P2STRTY , labelname );
+		putleaf( PCC_ICON , 0 , 0 , PCCTM_PTR | PCCT_STRTY , labelname );
 #	    endif PC
 #	    ifdef OBJ
 		(void) put(2, O_CON, (int)(((set.uprbp >> LG2BITSLONG) + 1) *
@@ -433,20 +433,20 @@ postcset( r , csetp )
 #endif CONSETS
 	} else {
 #	    ifdef PC
-		putleaf( P2ICON , (int) csetp -> paircnt , 0 , P2INT , (char *) 0 );
-		putop( P2LISTOP , P2INT );
-		putleaf( P2ICON , (int) csetp -> singcnt , 0 , P2INT , (char *) 0 );
-		putop( P2LISTOP , P2INT );
+		putleaf( PCC_ICON , (int) csetp -> paircnt , 0 , PCCT_INT , (char *) 0 );
+		putop( PCC_CM , PCCT_INT );
+		putleaf( PCC_ICON , (int) csetp -> singcnt , 0 , PCCT_INT , (char *) 0 );
+		putop( PCC_CM , PCCT_INT );
 		for ( el = r->cset_node.el_list ; el != NIL ; el = el->list_node.next ) {
 		    e = el->list_node.list;
 		    if ( e->tag == T_RANG ) {
 			(void) rvalue( e->rang.expr2 , NLNIL , RREQ );
-			putop( P2LISTOP , P2INT );
+			putop( PCC_CM , PCCT_INT );
 			(void) rvalue( e->rang.expr1 , NLNIL , RREQ );
-			putop( P2LISTOP , P2INT );
+			putop( PCC_CM , PCCT_INT );
 		    } else {
 			(void) rvalue( e , NLNIL , RREQ );
-			putop( P2LISTOP , P2INT );
+			putop( PCC_CM , PCCT_INT );
 		    }
 		}
 #	    endif PC

@@ -1,7 +1,7 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
 #ifndef lint
-static	char sccsid[] = "@(#)call.c 2.1 %G%";
+static	char sccsid[] = "@(#)call.c 2.2 %G%";
 #endif
 
 #include "whoami.h"
@@ -11,7 +11,7 @@ static	char sccsid[] = "@(#)call.c 2.1 %G%";
 #include "objfmt.h"
 #ifdef PC
 #   include "pc.h"
-#   include "pcops.h"
+#   include <pcc.h>
 #endif PC
 #include "tmps.h"
 #include "tree_ty.h"
@@ -109,17 +109,17 @@ call(p, argv_node, porf, psbn)
 		tempdescrp = tmpalloc((long) (sizeof( struct formalrtn *)),
 					NLNIL, REGOK );
 		putRV((char *) 0 , cbn , tempdescrp -> value[ NL_OFFS ] ,
-			tempdescrp -> extra_flags , P2PTR|P2STRTY );
+			tempdescrp -> extra_flags , PCCTM_PTR|PCCT_STRTY );
 		putRV((char *) 0 , psbn , p -> value[ NL_OFFS ] ,
-			p -> extra_flags , P2PTR|P2STRTY );
-		putop( P2ASSIGN , P2PTR | P2STRTY );
+			p -> extra_flags , PCCTM_PTR|PCCT_STRTY );
+		putop( PCC_ASSIGN , PCCTM_PTR | PCCT_STRTY );
 	    }
 		/*
 		 *	if we have to store a temporary,
 		 *	temptype will be its type,
-		 *	otherwise, it's P2UNDEF.
+		 *	otherwise, it's PCCT_UNDEF.
 		 */
-	    temptype = P2UNDEF;
+	    temptype = PCCT_UNDEF;
 	    if ( porf == FUNC ) {
 		p_type_width = width( p -> type );
 		switch( p_type_class ) {
@@ -128,7 +128,7 @@ call(p, argv_node, porf, psbn)
 		    case TREC:
 		    case TFILE:
 		    case TARY:
-			temptype = P2STRTY;
+			temptype = PCCT_STRTY;
 			p_type_align = align( p -> type );
 			break;
 		    default:
@@ -137,7 +137,7 @@ call(p, argv_node, porf, psbn)
 			}
 			break;
 		}
-		if ( temptype != P2UNDEF ) {
+		if ( temptype != PCCT_UNDEF ) {
 		    tempnlp = tmpalloc(p_type_width, p -> type, NOREG);
 			/*
 			 *	temp
@@ -154,7 +154,7 @@ call(p, argv_node, porf, psbn)
 			 *	... p( ...
 			 */
 		    sextname( extname , p -> symbol , BLOCKNO(p -> nl_block) );
-		    putleaf( P2ICON , 0 , 0 , p2type( p ) , extname );
+		    putleaf( PCC_ICON , 0 , 0 , p2type( p ) , extname );
 		    break;
 		case FFUNC:
 		case FPROC:
@@ -164,29 +164,29 @@ call(p, argv_node, porf, psbn)
 			     */
 			    /* 	the descriptor */
 			putRV((char *) 0 , cbn , tempdescrp -> value[ NL_OFFS ] ,
-				tempdescrp -> extra_flags , P2PTR | P2STRTY );
+				tempdescrp -> extra_flags , PCCTM_PTR | PCCT_STRTY );
 			    /*	the entry address within the descriptor */
 			if ( FENTRYOFFSET != 0 ) {
-			    putleaf( P2ICON , FENTRYOFFSET , 0 , P2INT , 
+			    putleaf( PCC_ICON , FENTRYOFFSET , 0 , PCCT_INT , 
 						(char *) 0 );
-			    putop( P2PLUS , 
-				ADDTYPE(
-				    ADDTYPE( ADDTYPE( p2type( p ) , P2FTN ) ,
-					    P2PTR ) ,
-					P2PTR ) );
+			    putop( PCC_PLUS , 
+				PCCM_ADDTYPE(
+				    PCCM_ADDTYPE( PCCM_ADDTYPE( p2type( p ) , PCCTM_FTN ) ,
+					    PCCTM_PTR ) ,
+					PCCTM_PTR ) );
 			}
 			    /*
 			     *	indirect to fetch the formal entry address
 			     *	with the result type of the routine.
 			     */
 			if (p -> class == FFUNC) {
-			    putop( P2UNARY P2MUL ,
-				ADDTYPE(ADDTYPE(p2type(p -> type), P2FTN),
-					P2PTR));
+			    putop( PCCOM_UNARY PCC_MUL ,
+				PCCM_ADDTYPE(PCCM_ADDTYPE(p2type(p -> type), PCCTM_FTN),
+					PCCTM_PTR));
 			} else {
 				/* procedures are int returning functions */
-			    putop( P2UNARY P2MUL ,
-				ADDTYPE(ADDTYPE(P2INT, P2FTN), P2PTR));
+			    putop( PCCOM_UNARY PCC_MUL ,
+				PCCM_ADDTYPE(PCCM_ADDTYPE(PCCT_INT, PCCTM_FTN), PCCTM_PTR));
 			}
 			break;
 		default:
@@ -304,15 +304,15 @@ conf_err:			    if (p1->chain->type->class == CRANGE) {
 						putRV(p2->symbol, (p2->nl_block
 						    & 037), p2->value[0],
 						    p2->extra_flags,p2type(p2));
-						putop(P2LISTOP, P2INT);
+						putop(PCC_CM, PCCT_INT);
 					    }
 					} else {
-					    putleaf(P2ICON, q->range[0], 0,P2INT,0);
-					    putop( P2LISTOP , P2INT );
-					    putleaf(P2ICON, q->range[1], 0,P2INT,0);
-					    putop( P2LISTOP , P2INT );
-					    putleaf(P2ICON,aryconst(ctype,i),0,P2INT,0);
-					    putop( P2LISTOP , P2INT );
+					    putleaf(PCC_ICON, q->range[0], 0,PCCT_INT,0);
+					    putop( PCC_CM , PCCT_INT );
+					    putleaf(PCC_ICON, q->range[1], 0,PCCT_INT,0);
+					    putop( PCC_CM , PCCT_INT );
+					    putleaf(PCC_ICON,aryconst(ctype,i),0,PCCT_INT,0);
+					    putop( PCC_CM , PCCT_INT );
 					}
 #					endif PC
 					p1 = p1->chain->chain;
@@ -355,7 +355,7 @@ conf_err:			    if (p1->chain->type->class == CRANGE) {
 				case TDOUBLE:
 				q = stkrval(argv_node->list_node.list,
 						p1 -> type , (long) RREQ );
-				    sconv(p2type(q), P2DOUBLE);
+				    sconv(p2type(q), PCCT_DOUBLE);
 				    break;
 				default:
 				    q = rvalue(argv_node->list_node.list,
@@ -386,7 +386,7 @@ conf_err:			    if (p1->chain->type->class == CRANGE) {
 				case TREC:
 				case TSET:
 				case TSTR:
-					putstrop( P2STARG
+					putstrop( PCC_STARG
 					    , p2type( p1 -> type )
 					    , (int) lwidth( p1 -> type )
 					    , align( p1 -> type ) );
@@ -425,7 +425,7 @@ conf_err:			    if (p1->chain->type->class == CRANGE) {
 		if ( noarguments ) {
 			noarguments = FALSE;
 		} else {
-			putop( P2LISTOP , P2INT );
+			putop( PCC_CM , PCCT_INT );
 		}
 #	    endif PC
 	    argv_node = argv_node->list_node.next;
@@ -458,14 +458,14 @@ conf_err:			    if (p1->chain->type->class == CRANGE) {
 		 */
 	    if ( p -> class == FFUNC || p -> class == FPROC ) {
 		putRV((char *) 0 , cbn , tempdescrp -> value[ NL_OFFS ] ,
-			tempdescrp -> extra_flags , P2PTR|P2STRTY );
+			tempdescrp -> extra_flags , PCCTM_PTR|PCCT_STRTY );
 		if ( !noarguments ) {
-		    putop( P2LISTOP , P2INT );
+		    putop( PCC_CM , PCCT_INT );
 		}
 		noarguments = FALSE;
  		putLV((char *) 0 , cbn , savedispnp -> value[ NL_OFFS ] ,
- 			savedispnp -> extra_flags , P2PTR | P2STRTY );
- 		putop( P2LISTOP , P2INT );
+ 			savedispnp -> extra_flags , PCCTM_PTR | PCCT_STRTY );
+ 		putop( PCC_CM , PCCT_INT );
 	    }
 		/*
 		 *	do the actual call:
@@ -481,52 +481,52 @@ conf_err:			    if (p1->chain->type->class == CRANGE) {
 		    case TSCAL:
 		    case TDOUBLE:
 		    case TPTR:
-			putop( ( noarguments ? P2UNARY P2CALL : P2CALL ) ,
+			putop( ( noarguments ? PCCOM_UNARY PCC_CALL : PCC_CALL ) ,
 				(int) p_type_p2type );
 			if ( p -> class == FFUNC ) {
-			    putop( P2ASSIGN , (int) p_type_p2type );
+			    putop( PCC_ASSIGN , (int) p_type_p2type );
 			}
 			break;
 		    default:
-			putstrop( ( noarguments ? P2UNARY P2STCALL : P2STCALL ),
-				(int) ADDTYPE( p_type_p2type , P2PTR ) ,
+			putstrop( ( noarguments ? PCCOM_UNARY PCC_STCALL : PCC_STCALL ),
+				(int) PCCM_ADDTYPE( p_type_p2type , PCCTM_PTR ) ,
 				(int) p_type_width ,(int) p_type_align );
-			putstrop(P2STASG, (int) ADDTYPE(p_type_p2type, P2PTR),
+			putstrop(PCC_STASG, (int) PCCM_ADDTYPE(p_type_p2type, PCCTM_PTR),
 				(int) lwidth(p -> type), align(p -> type));
 			break;
 		}
 	    } else {
-		putop( ( noarguments ? P2UNARY P2CALL : P2CALL ) , P2INT );
+		putop( ( noarguments ? PCCOM_UNARY PCC_CALL : PCC_CALL ) , PCCT_INT );
 	    }
 		/*
 		 *	( t=p , ... , FRTN( t ) ...
 		 */
 	    if ( p -> class == FFUNC || p -> class == FPROC ) {
-		putop( P2COMOP , P2INT );
-		putleaf( P2ICON , 0 , 0 , ADDTYPE( P2FTN | P2INT , P2PTR ) ,
+		putop( PCC_COMOP , PCCT_INT );
+		putleaf( PCC_ICON , 0 , 0 , PCCM_ADDTYPE( PCCTM_FTN | PCCT_INT , PCCTM_PTR ) ,
 			"_FRTN" );
 		putRV((char *) 0 , cbn , tempdescrp -> value[ NL_OFFS ] ,
-			tempdescrp -> extra_flags , P2PTR | P2STRTY );
+			tempdescrp -> extra_flags , PCCTM_PTR | PCCT_STRTY );
  		putLV((char *) 0 , cbn , savedispnp -> value[ NL_OFFS ] ,
- 			savedispnp -> extra_flags , P2PTR | P2STRTY );
- 		putop( P2LISTOP , P2INT );
-		putop( P2CALL , P2INT );
-		putop( P2COMOP , P2INT );
+ 			savedispnp -> extra_flags , PCCTM_PTR | PCCT_STRTY );
+ 		putop( PCC_CM , PCCT_INT );
+		putop( PCC_CALL , PCCT_INT );
+		putop( PCC_COMOP , PCCT_INT );
 	    }
 		/*
 		 *	if required:
 		 *	either	... , temp )
 		 *	or	... , &temp )
 		 */
-	    if ( porf == FUNC && temptype != P2UNDEF ) {
-		if ( temptype != P2STRTY ) {
+	    if ( porf == FUNC && temptype != PCCT_UNDEF ) {
+		if ( temptype != PCCT_STRTY ) {
 		    putRV((char *) 0 , cbn , tempnlp -> value[ NL_OFFS ] ,
 			    tempnlp -> extra_flags , (int) p_type_p2type );
 		} else {
 		    putLV((char *) 0 , cbn , tempnlp -> value[ NL_OFFS ] ,
 			    tempnlp -> extra_flags , (int) p_type_p2type );
 		}
-		putop( P2COMOP , P2INT );
+		putop( PCC_COMOP , PCCT_INT );
 	    }
 	    if ( porf == PROC ) {
 		putdot( filename , line );

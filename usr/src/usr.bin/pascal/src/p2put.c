@@ -1,7 +1,7 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
 #ifndef lint
-static	char sccsid[] = "@(#)p2put.c 2.1 %G%";
+static	char sccsid[] = "@(#)p2put.c 2.2 %G%";
 #endif
 
     /*
@@ -14,18 +14,10 @@ static	char sccsid[] = "@(#)p2put.c 2.1 %G%";
 #ifdef PC
 #include	"0.h"
 #include	"objfmt.h"
-#include	"pcops.h"
+#include	<pcc.h>
 #include	"pc.h"
 #include	"align.h"
 #include	"tmps.h"
-
-    /*
-     *	mash into f77's format
-     *	lovely, isn't it?
-     */
-#define		TOF77( fop,val,rest )	( ( ( (rest) & 0177777 ) << 16 ) \
-					| ( ( (val) & 0377 ) << 8 )	 \
-					| ( (fop) & 0377 ) )
 
     /*
      *	emits an ftext operator and a string to the pcstream
@@ -37,10 +29,10 @@ puttext( string )
 
 	if ( !CGENNING )
 	    return;
-	p2word( TOF77( P2FTEXT , length , 0 ) );
+	p2word( PCCM_TRIPLE( PCCF_FTEXT , length , 0 ) );
 #	ifdef DEBUG
 	    if ( opt( 'k' ) ) {
-		fprintf( stdout , "P2FTEXT | %3d | 0	" , length );
+		fprintf( stdout , "PCCF_FTEXT | %3d | 0	" , length );
 	    }
 #	endif
 	p2string( string );
@@ -103,11 +95,11 @@ putlbracket(ftnno, sizesp)
 #   endif mc68000
     alignedframesize = roundup((int)(BITSPERBYTE * -sizesp->curtmps.om_off),
 	(long)(BITSPERBYTE * A_STACK));
-    p2word( TOF77( P2FLBRAC , maxtempreg , ftnno ) );
+    p2word( PCCM_TRIPLE( PCCF_FLBRAC , maxtempreg , ftnno ) );
     p2word(alignedframesize);
 #   ifdef DEBUG
 	if ( opt( 'k' ) ) {
-	    fprintf(stdout, "P2FLBRAC | %3d | %d	%d\n",
+	    fprintf(stdout, "PCCF_FLBRAC | %3d | %d	%d\n",
 		maxtempreg, ftnno, alignedframesize);
 	}
 #   endif
@@ -122,10 +114,10 @@ putrbracket( ftnno )
     int	ftnno;
     {
 
-	p2word( TOF77( P2FRBRAC , 0 , ftnno ) );
+	p2word( PCCM_TRIPLE( PCCF_FRBRAC , 0 , ftnno ) );
 #	ifdef DEBUG
 	    if ( opt( 'k' ) ) {
-		fprintf( stdout , "P2FRBRAC |   0 | %d\n" , ftnno );
+		fprintf( stdout , "PCCF_FRBRAC |   0 | %d\n" , ftnno );
 	    }
 #	endif
     }
@@ -136,10 +128,10 @@ putrbracket( ftnno )
 puteof()
     {
 	
-	p2word( P2FEOF );
+	p2word( PCCF_FEOF );
 #	ifdef DEBUG
 	    if ( opt( 'k' ) ) {
-		fprintf( stdout , "P2FEOF\n" );
+		fprintf( stdout , "PCCF_FEOF\n" );
 	    }
 #	endif
     }
@@ -158,10 +150,10 @@ putdot( filename , line )
 	if ( line < 0 ) {
 	    line = -line;
 	}
-	p2word( TOF77( P2FEXPR , length , line ) );
+	p2word( PCCM_TRIPLE( PCCF_FEXPR , length , line ) );
 #	ifdef DEBUG
 	    if ( opt( 'k' ) ) {
-		fprintf( stdout , "P2FEXPR | %3d | %d	" , length , line );
+		fprintf( stdout , "PCCF_FEXPR | %3d | %d	" , length , line );
 	    }
 #	endif
 	p2string( filename );
@@ -182,12 +174,12 @@ putleaf( op , lval , rval , type , name )
 	switch ( op ) {
 	    default:
 		panic( "[putleaf]" );
-	    case P2ICON:
-		p2word( TOF77( P2ICON , name != NIL , type ) );
+	    case PCC_ICON:
+		p2word( PCCM_TRIPLE( PCC_ICON , name != NIL , type ) );
 		p2word( lval );
 #		ifdef DEBUG
 		    if ( opt( 'k' ) ) {
-			fprintf( stdout , "P2ICON | %3d | 0x%x	" 
+			fprintf( stdout , "PCC_ICON | %3d | 0x%x	" 
 			       , name != NIL , type );
 			fprintf( stdout , "%d\n" , lval );
 		    }
@@ -195,13 +187,13 @@ putleaf( op , lval , rval , type , name )
 		if ( name )
 		    p2name( name );
 		break;
-	    case P2NAME:
-		p2word( TOF77( P2NAME , lval != 0 , type ) );
+	    case PCC_NAME:
+		p2word( PCCM_TRIPLE( PCC_NAME , lval != 0 , type ) );
 		if ( lval ) 
 		    p2word( lval );
 #		ifdef DEBUG
 		    if ( opt( 'k' ) ) {
-			fprintf( stdout , "P2NAME | %3d | 0x%x	" 
+			fprintf( stdout , "PCC_NAME | %3d | 0x%x	" 
 			       , lval != 0 , type );
 			if ( lval )
 			    fprintf( stdout , "%d	" , lval );
@@ -209,11 +201,11 @@ putleaf( op , lval , rval , type , name )
 #		endif
 		p2name( name );
 		break;
-	    case P2REG:
-		p2word( TOF77( P2REG , rval , type ) );
+	    case PCC_REG:
+		p2word( PCCM_TRIPLE( PCC_REG , rval , type ) );
 #		ifdef DEBUG
 		    if ( opt( 'k' ) ) {
-			fprintf( stdout , "P2REG | %3d | 0x%x\n" ,
+			fprintf( stdout , "PCC_REG | %3d | 0x%x\n" ,
 				rval , type );
 		    }
 #		endif
@@ -242,7 +234,7 @@ putRV( name , level , offset , other_flags , type )
 	    if ( ( offset < 0 ) || ( offset > P2FP ) ) {
 		panic( "putRV regvar" );
 	    }
-	    putleaf( P2REG , 0 , offset , type , (char *) 0 );
+	    putleaf( PCC_REG , 0 , offset , type , (char *) 0 );
 	    return;
 	}
 	if ( whereis( offset , other_flags ) == GLOBALVAR ) {
@@ -253,14 +245,14 @@ putRV( name , level , offset , other_flags , type )
 		} else {
 			printname = name;
 		}
-		putleaf( P2NAME , offset , 0 , type , printname );
+		putleaf( PCC_NAME , offset , 0 , type , printname );
 		return;
 	    } else {
 		panic( "putRV no name" );
 	    }
 	}
 	putLV( name , level , offset , other_flags , type );
-	putop( P2UNARY P2MUL , type );
+	putop( PCCOM_UNARY PCC_MUL , type );
     }
 
     /*
@@ -293,7 +285,7 @@ putLV( name , level , offset , other_flags , type )
 		} else {
 			printname = name;
 		}
-		putleaf( P2ICON , offset , 0 , ADDTYPE( type , P2PTR )
+		putleaf( PCC_ICON , offset , 0 , PCCM_ADDTYPE( type , PCCTM_PTR )
 			, printname );
 		return;
 	    } else {
@@ -301,36 +293,36 @@ putLV( name , level , offset , other_flags , type )
 	    }
 	case PARAMVAR:
 	    if ( level == cbn ) {
-		putleaf( P2REG, 0, P2AP, ADDTYPE( type , P2PTR ), (char *) 0 );
+		putleaf( PCC_REG, 0, P2AP, PCCM_ADDTYPE( type , PCCTM_PTR ), (char *) 0 );
 	    } else {
-		putleaf( P2NAME , (level * sizeof(struct dispsave)) + AP_OFFSET
-		    , 0 , P2PTR | P2CHAR , DISPLAYNAME );
+		putleaf( PCC_NAME , (level * sizeof(struct dispsave)) + AP_OFFSET
+		    , 0 , PCCTM_PTR | PCCT_CHAR , DISPLAYNAME );
 		parts[ level ] |= NONLOCALVAR;
 	    }
-	    putleaf( P2ICON , offset , 0 , P2INT , (char *) 0 );
-	    putop( P2PLUS , P2PTR | P2CHAR );
+	    putleaf( PCC_ICON , offset , 0 , PCCT_INT , (char *) 0 );
+	    putop( PCC_PLUS , PCCTM_PTR | PCCT_CHAR );
 	    break;
 	case LOCALVAR:
 	    if ( level == cbn ) {
-		putleaf( P2REG, 0, P2FP, ADDTYPE( type , P2PTR ), (char *) 0 );
+		putleaf( PCC_REG, 0, P2FP, PCCM_ADDTYPE( type , PCCTM_PTR ), (char *) 0 );
 	    } else {
-		putleaf( P2NAME , (level * sizeof(struct dispsave)) + FP_OFFSET
-		    , 0 , P2PTR | P2CHAR , DISPLAYNAME );
+		putleaf( PCC_NAME , (level * sizeof(struct dispsave)) + FP_OFFSET
+		    , 0 , PCCTM_PTR | PCCT_CHAR , DISPLAYNAME );
 		parts[ level ] |= NONLOCALVAR;
 	    }
-	    putleaf( P2ICON , -offset , 0 , P2INT , (char *) 0 );
-	    putop( P2MINUS , P2PTR | P2CHAR );
+	    putleaf( PCC_ICON , -offset , 0 , PCCT_INT , (char *) 0 );
+	    putop( PCC_MINUS , PCCTM_PTR | PCCT_CHAR );
 	    break;
 	case NAMEDLOCALVAR:
 	    if ( level == cbn ) {
-		putleaf( P2REG, 0, P2FP, ADDTYPE( type , P2PTR ), (char *) 0 );
+		putleaf( PCC_REG, 0, P2FP, PCCM_ADDTYPE( type , PCCTM_PTR ), (char *) 0 );
 	    } else {
-		putleaf( P2NAME , (level * sizeof(struct dispsave)) + FP_OFFSET
-		    , 0 , P2PTR | P2CHAR , DISPLAYNAME );
+		putleaf( PCC_NAME , (level * sizeof(struct dispsave)) + FP_OFFSET
+		    , 0 , PCCTM_PTR | PCCT_CHAR , DISPLAYNAME );
 		parts[ level ] |= NONLOCALVAR;
 	    }
-	    putleaf( P2ICON , 0 , 0 , P2INT , name );
-	    putop( P2MINUS , P2PTR | P2CHAR );
+	    putleaf( PCC_ICON , 0 , 0 , PCCT_INT , name );
+	    putop( PCC_MINUS , PCCTM_PTR | PCCT_CHAR );
 	    break;
     }
     return;
@@ -339,7 +331,7 @@ putLV( name , level , offset , other_flags , type )
     /*
      *	put out a floating point constant leaf node
      *	the constant is declared in aligned data space
-     *	and a P2NAME leaf put out for it
+     *	and a PCC_NAME leaf put out for it
      */
 putCON8( val )
     double	val;
@@ -361,7 +353,7 @@ putCON8( val )
 #	endif mc68000
 	putprintf( "	.text" , 0 );
 	sprintf( name , PREFIXFORMAT , LABELPREFIX , label );
-	putleaf( P2NAME , 0 , 0 , P2DOUBLE , name );
+	putleaf( PCC_NAME , 0 , 0 , PCCT_DOUBLE , name );
     }
 
 	/*
@@ -406,9 +398,9 @@ putCONG( string , length , required )
 	putprintf( "	.text"  , 0 );
 	sprintf( name , PREFIXFORMAT , LABELPREFIX , label );
 	if ( required == RREQ ) {
-	    putleaf( P2NAME , 0 , 0 , P2ARY | P2CHAR , name );
+	    putleaf( PCC_NAME , 0 , 0 , PCCTM_ARY | PCCT_CHAR , name );
 	} else {
-	    putleaf( P2ICON , 0 , 0 , P2PTR | P2CHAR , name );
+	    putleaf( PCC_ICON , 0 , 0 , PCCTM_PTR | PCCT_CHAR , name );
 	}
     }
 
@@ -446,33 +438,33 @@ typerecur( np , quals )
     {
 	
 	if ( np == NIL || quals > MAXQUALS ) {
-	    return P2UNDEF;
+	    return PCCT_UNDEF;
 	}
 	switch ( np -> class ) {
 	    case SCAL :
 	    case RANGE :
 	    case CRANGE :
 		if ( np -> type == ( nl + TDOUBLE ) ) {
-		    return P2DOUBLE;
+		    return PCCT_DOUBLE;
 		}
 		switch ( bytes( np -> range[0] , np -> range[1] ) ) {
 		    case 1:
-			return P2CHAR;
+			return PCCT_CHAR;
 		    case 2:
-			return P2SHORT;
+			return PCCT_SHORT;
 		    case 4:
-			return P2INT;
+			return PCCT_INT;
 		    default:
 			panic( "p2type int" );
 			/* NOTREACHED */
 		}
 	    case STR :
-		return ( P2ARY | P2CHAR );
+		return ( PCCTM_ARY | PCCT_CHAR );
 	    case RECORD :
 	    case SET :
-		return P2STRTY;
+		return PCCT_STRTY;
 	    case FILET :
-		return ( P2PTR | P2STRTY );
+		return ( PCCTM_PTR | PCCT_STRTY );
 	    case CONST :
 	    case VAR :
 	    case FIELD :
@@ -480,40 +472,40 @@ typerecur( np , quals )
 	    case TYPE :
 		switch ( nloff( np ) ) {
 		    case TNIL :
-			return ( P2PTR | P2UNDEF );
+			return ( PCCTM_PTR | PCCT_UNDEF );
 		    case TSTR :
-			return ( P2ARY | P2CHAR );
+			return ( PCCTM_ARY | PCCT_CHAR );
 		    case TSET :
-			return P2STRTY;
+			return PCCT_STRTY;
 		    default :
 			return ( p2type( np -> type ) );
 		}
 	    case REF:
 	    case WITHPTR:
 	    case PTR :
-		return ADDTYPE( typerecur( np -> type , quals + 1 ) , P2PTR );
+		return PCCM_ADDTYPE( typerecur( np -> type , quals + 1 ) , PCCTM_PTR );
 	    case ARRAY :
-		return ADDTYPE( typerecur( np -> type , quals + 1 ) , P2ARY );
+		return PCCM_ADDTYPE( typerecur( np -> type , quals + 1 ) , PCCTM_ARY );
 	    case FUNC :
 		    /*
 		     * functions are really pointers to functions
 		     * which return their underlying type.
 		     */
-		return ADDTYPE( ADDTYPE( typerecur( np -> type , quals + 2 ) ,
-					P2FTN ) , P2PTR );
+		return PCCM_ADDTYPE( PCCM_ADDTYPE( typerecur( np -> type , quals + 2 ) ,
+					PCCTM_FTN ) , PCCTM_PTR );
 	    case PROC :
 		    /*
 		     * procedures are pointers to functions 
 		     * which return integers (whether you look at them or not)
 		     */
-		return ADDTYPE( ADDTYPE( P2INT , P2FTN ) , P2PTR );
+		return PCCM_ADDTYPE( PCCM_ADDTYPE( PCCT_INT , PCCTM_FTN ) , PCCTM_PTR );
 	    case FFUNC :
 	    case FPROC :
 		    /*
 		     *	formal procedures and functions are pointers
 		     *	to structures which describe their environment.
 		     */
-		return ( P2PTR | P2STRTY );
+		return ( PCCTM_PTR | PCCT_STRTY );
 	    default :
 		panic( "p2type" );
 		/* NOTREACHED */
@@ -527,15 +519,15 @@ putop( op , type )
     int		op;
     int		type;
     {
-	extern char	*p2opnames[];
+	extern char	*p2opname();
 	
 	if ( !CGENNING )
 	    return;
-	p2word( TOF77( op , 0 , type ) );
+	p2word( PCCM_TRIPLE( op , 0 , type ) );
 #	ifdef DEBUG
 	    if ( opt( 'k' ) ) {
 		fprintf( stdout , "%s (%d) |   0 | 0x%x\n"
-			, p2opnames[ op ] , op , type );
+			, p2opname( op ) , op , type );
 	    }
 #	endif
     }
@@ -551,17 +543,17 @@ putstrop( op , type , size , alignment )
     int	size;
     int	alignment;
     {
-	extern char	*p2opnames[];
+	extern char	*p2opname();
 	
 	if ( !CGENNING )
 	    return;
-	p2word( TOF77( op , 0 , type ) );
+	p2word( PCCM_TRIPLE( op , 0 , type ) );
 	p2word( size );
 	p2word( alignment );
 #	ifdef DEBUG
 	    if ( opt( 'k' ) ) {
 		fprintf( stdout , "%s (%d) |   0 | 0x%x	%d %d\n"
-			, p2opnames[ op ] , op , type , size , alignment );
+			, p2opname( op ) , op , type , size , alignment );
 	    }
 #	endif
     }
@@ -569,120 +561,93 @@ putstrop( op , type , size , alignment )
     /*
      *	the string names of p2ops
      */
-char	*p2opnames[] = {
-	"",
-	"P2UNDEFINED",		/* 1 */
-	"P2NAME",		/* 2 */
-	"P2STRING",		/* 3 */
-	"P2ICON",		/* 4 */
-	"P2FCON",		/* 5 */
-	"P2PLUS",		/* 6 */
-	"",
-	"P2MINUS",		/* 8		also unary == P2NEG */
-	"",
-	"P2NEG",
-	"P2MUL",		/* 11		also unary == P2INDIRECT */
-	"",
-	"P2INDIRECT",
-	"P2AND",		/* 14		also unary == P2ADDROF */
-	"",
-	"P2ADDROF",
-	"P2OR",			/* 17 */
-	"",
-	"P2ER",			/* 19 */
-	"",
-	"P2QUEST",		/* 21 */
-	"P2COLON",		/* 22 */
-	"P2ANDAND",		/* 23 */
-	"P2OROR",		/* 24 */
-	"",			/* 25 */
-	"",			/* 26 */
-	"",			/* 27 */
-	"",			/* 28 */
-	"",			/* 29 */
-	"",			/* 30 */
-	"",			/* 31 */
-	"",			/* 32 */
-	"",			/* 33 */
-	"",			/* 34 */
-	"",			/* 35 */
-	"",			/* 36 */
-	"",			/* 37 */
-	"",			/* 38 */
-	"",			/* 39 */
-	"",			/* 40 */
-	"",			/* 41 */
-	"",			/* 42 */
-	"",			/* 43 */
-	"",			/* 44 */
-	"",			/* 45 */
-	"",			/* 46 */
-	"",			/* 47 */
-	"",			/* 48 */
-	"",			/* 49 */
-	"",			/* 50 */
-	"",			/* 51 */
-	"",			/* 52 */
-	"",			/* 53 */
-	"",			/* 54 */
-	"",			/* 55 */
-	"P2LISTOP",		/* 56 */
-	"",
-	"P2ASSIGN",		/* 58 */
-	"P2COMOP",		/* 59 */
-	"P2DIV",		/* 60 */
-	"",
-	"P2MOD",		/* 62 */
-	"",
-	"P2LS",			/* 64 */
-	"",
-	"P2RS",			/* 66 */
-	"",
-	"P2DOT",		/* 68 */
-	"P2STREF",		/* 69 */
-	"P2CALL",		/* 70		also unary */
-	"",
-	"P2UNARYCALL",
-	"P2FORTCALL",		/* 73		also unary */
-	"",
-	"P2UNARYFORTCALL",
-	"P2NOT",		/* 76 */
-	"P2COMPL",		/* 77 */
-	"P2INCR",		/* 78 */
-	"P2DECR",		/* 79 */
-	"P2EQ",			/* 80 */
-	"P2NE",			/* 81 */
-	"P2LE",			/* 82 */
-	"P2LT",			/* 83 */
-	"P2GE",			/* 84 */
-	"P2GT",			/* 85 */
-	"P2ULE",		/* 86 */
-	"P2ULT",		/* 87 */
-	"P2UGE",		/* 88 */
-	"P2UGT",		/* 89 */
-	"P2SETBIT",		/* 90 */
-	"P2TESTBIT",		/* 91 */
-	"P2RESETBIT",		/* 92 */
-	"P2ARS",		/* 93 */
-	"P2REG",		/* 94 */
-	"P2OREG",		/* 95 */
-	"P2CCODES",		/* 96 */
-	"P2FREE",		/* 97 */
-	"P2STASG",		/* 98 */
-	"P2STARG",		/* 99 */
-	"P2STCALL",		/* 100		also unary */
-	"",
-	"P2UNARYSTCALL",
-	"P2FLD",		/* 103 */
-	"P2SCONV",		/* 104 */
-	"P2PCONV",		/* 105 */
-	"P2PMCONV",		/* 106 */
-	"P2PVCONV",		/* 107 */
-	"P2FORCE",		/* 108 */
-	"P2CBRANCH",		/* 109 */
-	"P2INIT",		/* 110 */
-	"P2CAST",		/* 111 */
+
+struct p2op {
+    int op;
+    char *name;
+};
+
+static struct p2op	p2opnames[] = {
+	PCC_ERROR, "PCC_ERROR",
+	PCC_NAME, "PCC_NAME",
+	PCC_STRING, "PCC_STRING",
+	PCC_ICON, "PCC_ICON",
+	PCC_FCON, "PCC_FCON",
+	PCC_PLUS, "PCC_PLUS",
+	PCC_MINUS, "PCC_MINUS",
+	PCC_UMINUS, "PCC_UMINUS",
+	PCC_MUL, "PCC_MUL",
+	PCC_DEREF, "PCC_DEREF",
+	PCC_AND, "PCC_AND",
+	PCC_ADDROF, "PCC_ADDROF",
+	PCC_OR, "PCC_OR",
+	PCC_ER, "PCC_ER",
+	PCC_QUEST, "PCC_QUEST",
+	PCC_COLON, "PCC_COLON",
+	PCC_ANDAND, "PCC_ANDAND",
+	PCC_OROR, "PCC_OROR",
+	PCC_CM, "PCC_CM",
+	PCC_ASSIGN, "PCC_ASSIGN",
+	PCC_COMOP, "PCC_COMOP",
+	PCC_DIV, "PCC_DIV",
+	PCC_MOD, "PCC_MOD",
+	PCC_LS, "PCC_LS",
+	PCC_RS, "PCC_RS",
+	PCC_DOT, "PCC_DOT",
+	PCC_STREF, "PCC_STREF",
+	PCC_CALL, "PCC_CALL",
+	PCC_UCALL, "PCC_UCALL",
+	PCC_FORTCALL, "PCC_FORTCALL",
+	PCC_UFORTCALL, "PCC_UFORTCALL",
+	PCC_NOT, "PCC_NOT",
+	PCC_COMPL, "PCC_COMPL",
+	PCC_INCR, "PCC_INCR",
+	PCC_DECR, "PCC_DECR",
+	PCC_EQ, "PCC_EQ",
+	PCC_NE, "PCC_NE",
+	PCC_LE, "PCC_LE",
+	PCC_LT, "PCC_LT",
+	PCC_GE, "PCC_GE",
+	PCC_GT, "PCC_GT",
+	PCC_ULE, "PCC_ULE",
+	PCC_ULT, "PCC_ULT",
+	PCC_UGE, "PCC_UGE",
+	PCC_UGT, "PCC_UGT",
+	PCC_REG, "PCC_REG",
+	PCC_OREG, "PCC_OREG",
+	PCC_CCODES, "PCC_CCODES",
+	PCC_FREE, "PCC_FREE",
+	PCC_STASG, "PCC_STASG",
+	PCC_STARG, "PCC_STARG",
+	PCC_STCALL, "PCC_STCALL",
+	PCC_USTCALL, "PCC_USTCALL",
+	PCC_FLD, "PCC_FLD",
+	PCC_SCONV, "PCC_SCONV",
+	PCC_PCONV, "PCC_PCONV",
+	PCC_PMCONV, "PCC_PMCONV",
+	PCC_PVCONV, "PCC_PVCONV",
+	PCC_FORCE, "PCC_FORCE",
+	PCC_CBRANCH, "PCC_CBRANCH",
+	PCC_INIT, "PCC_INIT",
+	PCC_CAST, "PCC_CAST",
+	-1, ""
     };
+
+char *
+p2opname( op )
+    register int	op;
+    {
+	static char		*p2map[PCC_MAXOP+1];
+	static bool		mapready = FALSE;
+	register struct p2op	*pp;
+
+	if ( mapready == FALSE ) {
+	    for ( pp = p2opnames; pp->op >= 0; pp++ )
+		p2map[ pp->op ] = pp->name;
+	    mapready = TRUE;
+	}
+	return ( p2map[ op ] ? p2map[ op ] : "unknown" );
+    }
 
     /*
      *	low level routines
