@@ -5,7 +5,7 @@
  * %sccs.include.redist.c%
  */
 #ifndef lint
-static char sccsid[] = "@(#)tisink.c	7.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)tisink.c	7.3 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -39,7 +39,7 @@ struct  sockaddr_iso faddr, laddr = { sizeof(laddr), AF_ISO };
 struct  sockaddr_iso *siso = &laddr;
 
 long size, count = 10, forkp, confp, echop, mynamep, verbose = 1, playtag = 0;
-long records, intercept;
+long records, intercept = 0;
 
 char buf[2048];
 char your_it[] = "You're it!";
@@ -76,6 +76,8 @@ char *argv[];
 			av++;
 			sscanf(*av,"%ld",&size);
 			argc--;
+		} else if (strcmp(*av, "intercept")==0) {
+			intercept++;
 		}
 	}
 	if (Servername) {
@@ -143,7 +145,7 @@ tisink()
 		try (accept, (s, &faddr, &addrlen), "");
 		ns = x;
 		dumpit("connection from:", &faddr, sizeof faddr);
-		if (mynamep) {
+		if (mynamep || intercept) {
 			addrlen = sizeof(faddr);
 			try (getsockname, (ns, &faddr, &addrlen), "");
 			dumpit("connected as:", &faddr, addrlen);
