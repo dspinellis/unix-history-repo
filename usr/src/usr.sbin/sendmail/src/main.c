@@ -13,7 +13,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	8.113 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	8.114 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -361,7 +361,6 @@ main(argc, argv, envp)
 			if (p[1] != '\0')
 			{
 				define('m', newstr(&p[1]), CurEnv);
-				setclass('m', &p[1]);
 			}
 			while (p != NULL && strchr(&p[1], '.') != NULL)
 			{
@@ -671,6 +670,10 @@ main(argc, argv, envp)
 	vendor_pre_defaults(CurEnv);
 	readcf(getcfname(), safecf, CurEnv);
 	vendor_post_defaults(CurEnv);
+
+	/* set up the $=m class now, after .cf has a chance to redefine $m */
+	expand("\201m", jbuf, sizeof jbuf, CurEnv);
+	setclass('m', jbuf);
 
 	if (tTd(0, 1))
 	{
