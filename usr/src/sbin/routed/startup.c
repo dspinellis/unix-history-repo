@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)startup.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)startup.c	5.7 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -176,15 +176,11 @@ addrouteforif(ifp)
 		dst = (struct sockaddr *)&net;
 	}
 	rt = rtfind(dst);
-	if (rt && (rt->rt_state & RTS_INTERFACE))
+	if (rt &&
+	    (rt->rt_state & (RTS_INTERFACE | RTS_INTERNAL)) == RTS_INTERFACE)
 		return;
 	if (rt)
 		rtdelete(rt);
-	if (ifp->int_transitions++ > 0)
-		syslog(LOG_ERR, "re-installing interface %s", ifp->int_name);
-	rtadd(dst, &ifp->int_addr, ifp->int_metric,
-	    ifp->int_flags & (IFF_INTERFACE|IFF_PASSIVE|IFF_REMOTE|IFF_SUBNET));
-
 	/*
 	 * If interface on subnetted network,
 	 * install route to network as well.
@@ -193,13 +189,17 @@ addrouteforif(ifp)
 	if ((ifp->int_flags & (IFF_SUBNET|IFF_POINTOPOINT)) == IFF_SUBNET) {
 		net.sin_addr = inet_makeaddr(ifp->int_net, INADDR_ANY);
 		rt = rtfind(dst);
-		if (rt && (rt->rt_state & (RTS_INTERNAL | RTS_INTERFACE)) ==
-		    (RTS_INTERNAL | RTS_INTERFACE))
-			return;
-		rtadd(dst, &ifp->int_addr, ifp->int_metric,
-		    ((ifp->int_flags & (IFF_INTERFACE|IFF_REMOTE)) |
-			RTS_PASSIVE | RTS_INTERNAL | RTS_SUBNET));
+		if (rt == 0)
+			rtadd(dst, &ifp->int_addr, ifp->int_metric,
+			    ((ifp->int_flags & (IFF_INTERFACE|IFF_REMOTE)) |
+				RTS_PASSIVE | RTS_INTERNAL | RTS_SUBNET));
+		net.sin_addr = inet_makeaddr(ifp->int_subnet, INADDR_ANY);
 	}
+	if (ifp->int_transitions++ > 0)
+		syslog(LOG_ERR, "re-installing interface %s", ifp->int_name);
+	rtadd(dst, &ifp->int_addr, ifp->int_metric,
+	    ifp->int_flags & (IFF_INTERFACE|IFF_PASSIVE|IFF_REMOTE|IFF_SUBNET));
+
 }
 
 /*
