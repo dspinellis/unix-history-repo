@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)in_pcb.c	7.14 (Berkeley) %G%
+ *	@(#)in_pcb.c	7.15 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -15,6 +15,7 @@
 #include "socket.h"
 #include "socketvar.h"
 #include "ioctl.h"
+#include "errno.h"
 
 #include "../net/if.h"
 #include "../net/route.h"
