@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ns_ip.c	7.7 (Berkeley) %G%
+ *	@(#)ns_ip.c	7.8 (Berkeley) %G%
  */
 
 /*
@@ -155,7 +155,7 @@ idpip_input(m, ifp)
 	}
 	ip = mtod(m, struct ip *);
 	if (ip->ip_hl > (sizeof (struct ip) >> 2)) {
-		ip_stripoptions(ip, (struct mbuf *)0);
+		ip_stripoptions(m, (struct mbuf *)0);
 		if (m->m_len < s) {
 			if ((m = m_pullup(m, s)) == 0) {
 				nsipif.if_ierrors++;
@@ -263,7 +263,7 @@ nsipoutput(ifn, m, dst)
 	/*
 	 * Output final datagram.
 	 */
-	error =  (ip_output(m, (struct mbuf *)0, ro, SO_BROADCAST));
+	error =  (ip_output(m, (struct mbuf *)0, ro, SO_BROADCAST, NULL));
 	if (error) {
 		ifn->ifen_ifnet.if_oerrors++;
 		ifn->ifen_ifnet.if_ierrors = error;
