@@ -1,4 +1,4 @@
-/*	@(#)kdb_machdep.c	7.1 (Berkeley) %G%	*/
+/*	@(#)kdb_machdep.c	7.2 (Berkeley) %G%	*/
 
 #include "param.h"
 #include "conf.h"
@@ -12,15 +12,13 @@
 #include "ioctl.h"
 #include "tty.h"
 
-#include "../vax/cpu.h"
-#include "../vax/mtpr.h"
-#include "../vax/psl.h"
-#include "../vax/pte.h"
-#include "../vax/reg.h"
-#include "../vax/trap.h"
-
-#define	KDB_IPL		0xf	/* highest priority software interrupt */
-#define	setsoftkdb()	mtpr(SIRR, KDB_IPL)
+#include "cpu.h"
+#include "mtpr.h"
+#include "psl.h"
+#include "pte.h"
+#include "reg.h"
+#include "trap.h"
+#include "kdbparam.h"
 
 #define	KDBSPACE	1024	/* 1K of memory for breakpoint table */
 static	char kdbbuf[KDBSPACE];
@@ -74,7 +72,8 @@ kdb_init()
 }
 
 int	kdbactive = 0;
-#define	ESC	CTRL([)
+#define	ESC	`\033'
+
 /*
  * Process a keyboard interrupt from the console.
  * We look for an escape sequence which signals
@@ -96,13 +95,20 @@ kdbrintr(c, tp)
 	 * enable flag (RB_NOYSNC) is set.
 	 */
 	if ((boothowto&(RB_KDB|RB_NOSYNC)) != (RB_KDB|RB_NOSYNC) ||
-	    (c != 'k' && c != 'K' && c != CTRL(k))) {
+	    (c != 'k' && c != 'K' && c != CTRL('k'))) {
 		(*linesw[tp->t_line].l_rint)(ESC, tp);
 		return (0);
 	}
 	if (!kdbactive)
 		setsoftkdb();
 	return (1);
+}
+
+static int
+movpsl()
+{
+
+	asm("	movpsl	r0");		/* XXX */
 }
 
 #define	TYPE	SP+1
@@ -331,11 +337,9 @@ setpcb(locr0)
 	locr0[R9] = pcb->pcb_r9;
 	locr0[R10] = pcb->pcb_r10;
 	locr0[R11] = pcb->pcb_r11;
-	locr0[R12] = pcb->pcb_r12;
+	locr0[AP] = pcb->pcb_ap;
 	locr0[FP] = pcb->pcb_fp;
 	locr0[SP] = pcb->pcb_usp;
 	locr0[PC] = pcb->pcb_pc;
 	locr0[PS] = pcb->pcb_psl;
-	locr0[RACH] = pcb->pcb_ach;
-	locr0[RACL] = pcb->pcb_acl;
 }
