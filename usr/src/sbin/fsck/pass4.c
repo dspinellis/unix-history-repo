@@ -1,5 +1,5 @@
 #ifndef lint
-static char version[] = "@(#)pass4.c	3.2 (Berkeley) %G%";
+static char version[] = "@(#)pass4.c	3.3 (Berkeley) %G%";
 #endif
 
 #include <sys/param.h>
@@ -51,21 +51,27 @@ pass4()
 pass4check(idesc)
 	register struct inodesc *idesc;
 {
-	register daddr_t *dlp;
+	register struct dups *dlp;
 	int nfrags, res = KEEPON;
 	daddr_t blkno = idesc->id_blkno;
 
 	for (nfrags = idesc->id_numfrags; nfrags > 0; blkno++, nfrags--) {
-		if (outrange(blkno, 1))
+		if (outrange(blkno, 1)) {
 			res = SKIP;
-		else if (getbmap(blkno)) {
-			for (dlp = duplist; dlp < enddup; dlp++)
-				if (*dlp == blkno) {
-					*dlp = *--enddup;
-					return (KEEPON);
-				}
-			clrbmap(blkno);
-			n_blks--;
+		} else if (getbmap(blkno)) {
+			for (dlp = duplist; dlp; dlp = dlp->next) {
+				if (dlp->dup != blkno)
+					continue;
+				dlp->dup = duplist->dup;
+				dlp = duplist;
+				duplist = duplist->next;
+				free(dlp);
+				break;
+			}
+			if (dlp == 0) {
+				clrbmap(blkno);
+				n_blks--;
+			}
 		}
 	}
 	return (res);

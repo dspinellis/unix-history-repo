@@ -1,5 +1,5 @@
 #ifndef lint
-static char version[] = "@(#)pass1b.c	3.2 (Berkeley) %G%";
+static char version[] = "@(#)pass1b.c	3.3 (Berkeley) %G%";
 #endif
 
 #include <sys/param.h>
@@ -8,6 +8,7 @@ static char version[] = "@(#)pass1b.c	3.2 (Berkeley) %G%";
 #include "fsck.h"
 
 int	pass1bcheck();
+static  struct dups *duphead;
 
 pass1b()
 {
@@ -19,6 +20,7 @@ pass1b()
 	bzero((char *)&idesc, sizeof(struct inodesc));
 	idesc.id_type = ADDR;
 	idesc.id_func = pass1bcheck;
+	duphead = duplist;
 	inumber = 0;
 	for (c = 0; c < sblock.fs_ncg; c++) {
 		for (i = 0; i < sblock.fs_ipg; i++, inumber++) {
@@ -40,21 +42,25 @@ out1b:
 pass1bcheck(idesc)
 	register struct inodesc *idesc;
 {
-	register daddr_t *dlp;
+	register struct dups *dlp;
 	int nfrags, res = KEEPON;
 	daddr_t blkno = idesc->id_blkno;
 
 	for (nfrags = idesc->id_numfrags; nfrags > 0; blkno++, nfrags--) {
 		if (outrange(blkno, 1))
 			res = SKIP;
-		for (dlp = duplist; dlp < muldup; dlp++)
-			if (*dlp == blkno) {
+		for (dlp = duphead; dlp; dlp = dlp->next) {
+			if (dlp->dup == blkno) {
 				blkerr(idesc->id_number, "DUP", blkno);
-				*dlp = *--muldup;
-				*muldup = blkno;
-				if (muldup == duplist)
-					return (STOP);
+				dlp->dup = duphead->dup;
+				duphead->dup = blkno;
+				duphead = duphead->next;
 			}
+			if (dlp == muldup)
+				break;
+		}
+		if (muldup == 0 || duphead == muldup->next)
+			return (STOP);
 	}
 	return (res);
 }
