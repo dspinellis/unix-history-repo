@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)clean.h	5.4 (Berkeley) %G%
+ *	@(#)clean.h	5.5 (Berkeley) %G%
  */
 
 /*
@@ -82,11 +82,11 @@ int	 dump_summary __P((struct lfs *, SEGSUM *, u_long, daddr_t **));
 void	 err __P((const int, const char *, ...));
 int	 fs_getmntinfo __P((struct statfs **, int));
 int	 get __P((int, off_t, void *, size_t));
-FS_INFO	*get_fs_info __P((struct statfs *, int));
+FS_INFO	*get_fs_info __P((struct statfs *, int, int));
 int 	 lfs_segmapv __P((FS_INFO *, int, caddr_t, BLOCK_INFO **, int *));
-int	 mmap_segment __P((FS_INFO *, int, caddr_t *));
-void	 munmap_segment __P((FS_INFO *, caddr_t));
-void	 reread_fs_info __P((FS_INFO *, int));
+int	 mmap_segment __P((FS_INFO *, int, caddr_t *, int));
+void	 munmap_segment __P((FS_INFO *, caddr_t, int));
+void	 reread_fs_info __P((FS_INFO *, int, int));
 void	 toss __P((void *, int *, size_t,
 	      int (*)(const void *, const void *, const void *), void *));
 
