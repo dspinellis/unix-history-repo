@@ -8,7 +8,7 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(@(#)proto.m4	2.10 (Berkeley) %G%)
+VERSIONID(@(#)proto.m4	2.11 (Berkeley) %G%)
 
 
 ##################
@@ -32,7 +32,7 @@ ifdef(`CSNET_RELAY',
 CONCAT(DC, CSNET_RELAY)
 ')dnl
 # my official hostname ($w or $w.$D)
-Dj$w
+CONCAT(Dj$w, ifdef(`NEED_DOMAIN', .$D))
 
 # who I masquerade as (can be $j)
 CONCAT(DM, ifdef(`MASQUERADE_NAME', MASQUERADE_NAME, $j))
@@ -133,8 +133,8 @@ S6
 undivert(2)dnl
 
 # handle special cases for local names
-R$* < @ $=w > $*		$: $1 < @ $w > $3		no domain at all
-R$* < @ $=w .UUCP> $*		$: $1 < @ $w > $3		.UUCP domain
+R$* < @ $=w > $*		$: $1 < @ $j > $3		no domain at all
+R$* < @ $=w .UUCP> $*		$: $1 < @ $j > $3		.UUCP domain
 
 ifdef(`UUCP_RELAY',
 `# pass UUCP addresses straight through
@@ -172,7 +172,7 @@ R@$+:@$+:$+		@$1,@$2:$3			<route-addr> canonical
 R$+@$-.UUCP		$2!$1				u@h.UUCP => h!u
 
 # delete duplicate local names
-R$+%$=w@$=w		$1@$w				u%host@host => u@host
+R$+%$=w@$=w		$1@$j				u%host@host => u@host
 
 
 
@@ -199,11 +199,11 @@ R$*<@[$+]>$*		$#smtp$@[$2]$:$1@[$2]$3		numeric internet spec
 #R@			$#error$:Invalid address	handle <> form
 
 # now delete the local info -- note $=O to find characters that cause forwarding
-R<@$w>:$*		$@$>7$1				@here:... -> ...
-R$*$=O$*<@$w>		$@$>7$1$2$3			...@here -> ...
+R<@$j>:$*		$@$>7$1				@here:... -> ...
+R$*$=O$*<@$j>		$@$>7$1$2$3			...@here -> ...
 
 # short circuit local delivery so forwarded email works
-R$+<@$w>		$#local$:$1			local address
+R$+<@$j>		$#local$:$1			local address
 
 undivert(3)dnl
 
