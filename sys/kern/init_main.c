@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)init_main.c	7.41 (Berkeley) 5/15/91
- *	$Id: init_main.c,v 1.8 1993/10/26 21:59:44 nate Exp $
+ *	$Id: init_main.c,v 1.9 1993/11/25 01:32:46 wollman Exp $
  */
 
 #include "param.h"
@@ -85,6 +85,8 @@ extern	int (*mountroot)();
 
 struct	vnode *rootvp, *swapdev_vp;
 int	boothowto;
+
+struct	proc *updateproc;
 
 #if __GNUC__ >= 2
 void __main() {}
@@ -362,6 +364,20 @@ main()
 		p->p_flag |= SLOAD|SSYS;		/* XXX */
 		bcopy("pagedaemon", curproc->p_comm, sizeof ("pagedaemon"));
 		vm_pageout();
+		/*NOTREACHED*/
+	}
+
+	/*
+	 * Start update daemon (process 3).
+	 */
+	if (fork(p, (void *) NULL, rval))
+		panic("fork update");
+	if (rval[1]) {
+		p = curproc;
+		updateproc = p;
+		p->p_flag |= SLOAD|SSYS;
+		bcopy("update", p->p_comm, sizeof("update"));
+		vfs_update();
 		/*NOTREACHED*/
 	}
 

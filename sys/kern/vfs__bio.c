@@ -45,7 +45,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	$Id: vfs__bio.c,v 1.9 1993/11/07 21:44:47 wollman Exp $
+ *	$Id: vfs__bio.c,v 1.10 1993/11/25 01:33:39 wollman Exp $
  */
 
 #include "param.h"
@@ -587,30 +587,57 @@ biowait(register struct buf *bp)
 }
 
 /*
- * Finish up operations on a buffer, calling an optional
- * function (if requested), and releasing the buffer if
- * marked asynchronous. Then mark this buffer done so that
- * others biowait()'ing for it will notice when they are
- * woken up from sleep().
+ * Finish up operations on a buffer, calling an optional function
+ *	(if requested), and releasing the buffer if marked asynchronous.
+ *	Mark this buffer done so that others biowait()'ing for it will
+ *	notice when they are woken up from sleep().
  */
 void
 biodone(register struct buf *bp)
 {
-	int x;
+	bp->b_flags |= B_DONE;
 
-	x = splbio();
-	if (bp->b_flags & B_CALL) (*bp->b_iodone)(bp);
-	bp->b_flags &=  ~B_CALL;
-	if ((bp->b_flags & (B_READ|B_DIRTY)) == B_DIRTY)  {
-		bp->b_flags &=  ~B_DIRTY;
+	if ((bp->b_flags & B_READ) == 0)  {
 		vwakeup(bp);
 	}
-	if (bp->b_flags & B_ASYNC)
+
+	/* call optional completion function if requested */
+	if (bp->b_flags & B_CALL) {
+		bp->b_flags &= ~B_CALL;
+		(*bp->b_iodone)(bp);
+		return;
+	}
+
+/*
+ * For asynchronous completions, release the buffer now. The brelse
+ *	checks for B_WANTED and will do the wakeup there if necessary -
+ *	so no need to do a wakeup here in the async case.
+ */
+
+	if (bp->b_flags & B_ASYNC) {
 		brelse(bp);
-	bp->b_flags &=  ~B_ASYNC;
-	bp->b_flags |= B_DONE;
-	wakeup((caddr_t)bp);
-	splx(x);
+	} else {
+		bp->b_flags &= ~B_WANTED;
+		wakeup((caddr_t) bp);
+	}
+}
+
+/*
+ * Internel update daemon, process 3
+ *	The variable vfs_update_wakeup allows for internal syncs.
+ */
+int vfs_update_wakeup;
+extern int hz;
+
+void
+vfs_update() {
+	while(1) {
+		splbio();
+		tsleep((caddr_t)&vfs_update_wakeup, PRIBIO|PCATCH, "update", hz*30);
+		vfs_update_wakeup = 0;
+		spl0();
+		sync(curproc, NULL, NULL);
+	}
 }
 
 /*
