@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	4.11	(Berkeley)	%G%
+#	@(#)Makefile	4.12	(Berkeley)	%G%
 #
 # This high quality math library is intended to run on either a VAX in
 # D_floating format or a machine that conforms to the IEEE standard 754
@@ -65,10 +65,10 @@ depend: FRC
 install: FRC
 	-rm -f ${DESTDIR}/usr/lib/libnm.a ${DESTDIR}/usr/lib/libnm_p.a
 	install -o bin -g bin -m 644 libm.a ${DESTDIR}/usr/lib/libm.a
-	ln ${DESTDIR}/usr/lib/libm.a ${DESTDIR}/usr/lib/libnm.a
+#	ln ${DESTDIR}/usr/lib/libm.a ${DESTDIR}/usr/lib/libnm.a
 	ranlib ${DESTDIR}/usr/lib/libm.a
 	install -o bin -g bin -m 644 libm_p.a ${DESTDIR}/usr/lib/libm_p.a
-	ln ${DESTDIR}/usr/lib/libm_p.a ${DESTDIR}/usr/lib/libnm_p.a
+#	ln ${DESTDIR}/usr/lib/libm_p.a ${DESTDIR}/usr/lib/libnm_p.a
 	ranlib ${DESTDIR}/usr/lib/libm_p.a
 
 lint: FRC
