@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)machdep.c	7.8 (Berkeley) %G%
+ *	@(#)machdep.c	7.9 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -90,7 +90,7 @@ cpu_startup(firstaddr)
 
 	/* avail_end was pre-decremented in pmap_bootstrap to compensate */
 	for (i = 0; i < btoc(sizeof (struct msgbuf)); i++)
-		pmap_enter(pmap_kernel(), msgbufp, avail_end + i * NBPG,
+		pmap_enter(kernel_pmap, msgbufp, avail_end + i * NBPG,
 			   VM_PROT_ALL, TRUE);
 	msgbufmapped = 1;
 
