@@ -1,0 +1,27 @@
+cc -O -I../h -c scan.c
+cc -O -I../h -c interp.c
+cc -O -I../h -c startovqp.c
+cc -O -I../h -c strategy.c
+cc -O -I../h -c findsimps.c
+cc -O -I../h -c key.c
+cc -O -I../h -c string.c
+cc -O -I../h -c typecheck.c
+cc -O -I../h -c interp1.c
+cc -O -I../h -c equelpr.c
+cc -O -I../h -c prsym.c
+ar rvu ovqplib scan.o interp.o startovqp.o strategy.o findsimps.o key.o string.o typecheck.o interp1.o equelpr.o prsym.o
+r - scan.o
+r - interp.o
+r - startovqp.o
+r - strategy.o
+r - findsimps.o
+r - key.o
+r - string.o
+r - typecheck.o
+r - interp1.o
+r - equelpr.o
+r - prsym.o
+chmod 664 ovqplib
+ranlib ovqplib
+cp ovqplib ../../lib/ovqp
+ranlib ../../lib/ovqp
