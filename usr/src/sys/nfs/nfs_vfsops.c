@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_vfsops.c	7.14 (Berkeley) %G%
+ *	@(#)nfs_vfsops.c	7.15 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -26,27 +26,21 @@
 #include "proc.h"
 #include "uio.h"
 #include "ucred.h"
-#include "systm.h"
-#include "../ufs/dir.h"
+#include "ufs/dir.h"
 #include "namei.h"
 #include "vnode.h"
 #include "mount.h"
 #include "errno.h"
 #include "malloc.h"
-#include "mbuf.h"
 #include "buf.h"
+#include "mbuf.h"
 #undef	m_data
 #include "socket.h"
-#include "socketvar.h"
-#include "../netinet/in.h"
+#include "systm.h"
 #include "nfsv2.h"
 #include "nfsnode.h"
 #include "nfsmount.h"
 #include "nfs.h"
-
-#ifndef shouldbe
-#include "conf.h"
-#endif
 
 /*
  * nfs vfs operations.
@@ -73,7 +67,6 @@ struct vfsops nfs_vfsops = {
 	nfs_init,
 };
 
-extern struct nfsreq nfsreqh;
 static u_char nfs_mntid;
 
 /*
@@ -122,7 +115,7 @@ nfs_mount(mp, path, data, ndp)
 	bzero(&hst[len], MNAMELEN-len);
 	/* sockargs() call must be after above copyin() calls */
 	if (error = sockargs(&saddr, (caddr_t)args.addr,
-		sizeof (struct sockaddr_in), MT_SONAME))
+		sizeof (struct sockaddr), MT_SONAME))
 		return (error);
 	args.fh = &nfh;
 	error = mountnfs(&args, mp, saddr, pth, hst);
@@ -140,11 +133,11 @@ mountnfs(argp, mp, saddr, pth, hst)
 {
 	register struct nfsmount *nmp;
 	struct nfsnode *np;
-	fsid_t tfsid;
 	int error;
+	fsid_t tfsid;
 
-	nmp = (struct nfsmount *)malloc(sizeof (struct nfsmount), M_NFSMNT,
-	    M_WAITOK);
+	MALLOC(nmp, struct nfsmount *, sizeof *nmp, M_NFSMNT, M_WAITOK);
+	bzero((caddr_t)nmp, sizeof *nmp);
 	mp->m_data = (qaddr_t)nmp;
 	/*
 	 * Generate a unique nfs mount id. The problem is that a dev number
@@ -177,35 +170,56 @@ mountnfs(argp, mp, saddr, pth, hst)
 	mp->m_fsid.val[0] = tfsid.val[0];
 	nmp->nm_mountp = mp;
 	nmp->nm_flag = argp->flags;
-	nmp->nm_sockaddr = saddr;
-	/* Set up the sockets */
-	if (error = socreate(AF_INET, &nmp->nm_so, SOCK_DGRAM, 0))
-		goto bad;
-	if (error = soconnect(nmp->nm_so, saddr))
-		goto bad;
-	if ((argp->flags & NFSMNT_TIMEO) && argp->timeo >= 1)
-		nmp->nm_timeo = argp->timeo;
-	else
-		nmp->nm_timeo = NFS_TIMEO;
-	if ((argp->flags & NFSMNT_RETRANS) && argp->retrans > 0)
-		nmp->nm_retrans = argp->retrans;
-	else
-		nmp->nm_retrans = NFS_RETRANS;
-	if ((argp->flags & NFSMNT_WSIZE) &&
-	    argp->wsize <= NFS_MAXDATA && argp->wsize > 0 &&
-	   (argp->wsize & 0x1ff) == 0)
-		nmp->nm_wsize = argp->wsize;
-	else
-		nmp->nm_wsize = NFS_WSIZE;
-	if ((argp->flags & NFSMNT_RSIZE) &&
-	    argp->rsize <= NFS_MAXDATA && argp->rsize > 0 &&
-	   (argp->rsize & 0x1ff) == 0)
-		nmp->nm_rsize = argp->rsize;
-	else
-		nmp->nm_rsize = NFS_RSIZE;
+	nmp->nm_rto = NFS_TIMEO;
+	nmp->nm_rtt = -1;
+	nmp->nm_rttvar = nmp->nm_rto << 1;
+	nmp->nm_retry = NFS_RETRANS;
+	nmp->nm_wsize = NFS_WSIZE;
+	nmp->nm_rsize = NFS_RSIZE;
 	bcopy((caddr_t)argp->fh, (caddr_t)&nmp->nm_fh, sizeof(nfsv2fh_t));
-	bcopy(pth, nmp->nm_path, MNAMELEN);
-	bcopy(hst, nmp->nm_host, MNAMELEN);
+	bcopy(hst, nmp->nm_host, sizeof nmp->nm_host);
+	bcopy(pth, nmp->nm_path, sizeof nmp->nm_path);
+
+	if ((argp->flags & NFSMNT_TIMEO) && argp->timeo > 0) {
+		nmp->nm_rto = argp->timeo;
+		/* NFS timeouts are specified in 1/10 sec. */
+		nmp->nm_rto = (nmp->nm_rto * 10) / NFS_HZ;
+		if (nmp->nm_rto < NFS_MINTIMEO)
+			nmp->nm_rto = NFS_MINTIMEO;
+		else if (nmp->nm_rto > NFS_MAXTIMEO)
+			nmp->nm_rto = NFS_MAXTIMEO;
+		nmp->nm_rttvar = nmp->nm_rto << 1;
+	}
+
+	if ((argp->flags & NFSMNT_RETRANS) && argp->retrans >= 0) {
+		nmp->nm_retry = argp->retrans;
+		if (nmp->nm_retry > NFS_MAXREXMIT)
+			nmp->nm_retry = NFS_MAXREXMIT;
+	}
+
+	if ((argp->flags & NFSMNT_WSIZE) && argp->wsize > 0) {
+		nmp->nm_wsize = argp->wsize;
+		/* Round down to multiple of blocksize */
+		nmp->nm_wsize &= ~0x1ff;
+		if (nmp->nm_wsize <= 0)
+			nmp->nm_wsize = 512;
+		else if (nmp->nm_wsize > NFS_MAXDATA)
+			nmp->nm_wsize = NFS_MAXDATA;
+	}
+
+	if ((argp->flags & NFSMNT_RSIZE) && argp->rsize > 0) {
+		nmp->nm_rsize = argp->rsize;
+		/* Round down to multiple of blocksize */
+		nmp->nm_rsize &= ~0x1ff;
+		if (nmp->nm_rsize <= 0)
+			nmp->nm_rsize = 512;
+		else if (nmp->nm_rsize > NFS_MAXDATA)
+			nmp->nm_rsize = NFS_MAXDATA;
+	}
+	/* Set up the sockets and per-host congestion */
+	if (error = nfs_connect(nmp, saddr))
+		goto bad;
+
 	/*
 	 * Set to CLBYTES so that vinifod() doesn't get confused.
 	 * Actually any exact multiple of CLBYTES will do
@@ -225,10 +239,12 @@ mountnfs(argp, mp, saddr, pth, hst)
 	 * Unlock it, but keep the reference count.
 	 */
 	nfs_unlock(NFSTOV(np));
+
 	return (0);
 bad:
+	nfs_disconnect(nmp);
+	FREE(nmp, M_NFSMNT);
 	m_freem(saddr);
-	free((caddr_t)nmp, M_NFSMNT);
 	return (error);
 }
 
@@ -243,6 +259,7 @@ nfs_unmount(mp, flags)
 	register struct nfsreq *rep;
 	struct nfsreq *rep2;
 	struct nfsnode *np;
+	struct vnode *vp;
 	int error;
 	int s;
 
@@ -257,10 +274,10 @@ nfs_unmount(mp, flags)
 		return (EBUSY);
 	/*
 	 * Goes something like this..
-	 * - Decrement reference on the nfsnode representing remote root.
-	 *   Must do this first, otherwise vflush will return EBUSY.
-	 * - Call vflush() to clear out vnodes for this file system
-	 * - Flush out lookup cache
+	 * - Check for activity on the root vnode (other than ourselves).
+	 * - Call vflush() to clear out vnodes for this file system,
+	 *   except for the root vnode.
+	 * - Decrement reference on the vnode representing remote root.
 	 * - Close the socket
 	 * - Free up the data structures
 	 */
@@ -271,33 +288,21 @@ nfs_unmount(mp, flags)
 	 */
 	if (error = nfs_nget(mp, &nmp->nm_fh, &np))
 		return(error);
+	vp = NFSTOV(np);
+	if (vp->v_usecount > 2) {
+		vput(vp);
+		return (EBUSY);
+	}
+	if (error = vflush(mp, vp, flags)) {
+		vput(vp);
+		return (error);
+	}
 	/*
 	 * Get rid of two reference counts, and unlock it on the second.
 	 */
-	vrele(NFSTOV(np));
-	vput(NFSTOV(np));
-	if (error = vflush(mp, (struct vnode *)0, flags))
-		return (error);
-	/*
-	 * Scan the request list for any requests left hanging about
-	 */
-	s = splnet();
-	rep = nfsreqh.r_next;
-	while (rep && rep != &nfsreqh) {
-		if (rep->r_mntp == nmp) {
-			rep->r_prev->r_next = rep2 = rep->r_next;
-			rep->r_next->r_prev = rep->r_prev;
-			m_freem(rep->r_mreq);
-			if (rep->r_mrep != NULL)
-				m_freem(rep->r_mrep);
-			free((caddr_t)rep, M_NFSREQ);
-			rep = rep2;
-		} else
-			rep = rep->r_next;
-	}
-	splx(s);
-	soclose(nmp->nm_so);
-	m_freem(nmp->nm_sockaddr);
+	vrele(vp);
+	vput(vp);
+	nfs_disconnect(nmp);
 	free((caddr_t)nmp, M_NFSMNT);
 	return (0);
 }
