@@ -1,4 +1,4 @@
-/*	uipc_mbuf.c	1.16	81/11/22	*/
+/*	uipc_mbuf.c	1.17	81/11/26	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -8,7 +8,7 @@
 #include "../h/cmap.h"
 #include "../h/map.h"
 #include "../h/mbuf.h"
-#include "../net/inet_systm.h"		/* XXX */
+#include "../net/in_systm.h"		/* XXX */
 #include "../h/vm.h"
 
 m_reserve(mbufs)
@@ -18,7 +18,7 @@ m_reserve(mbufs)
 /*
 	printf("reserve %d\n", mbufs);
 */
-	if (mbstat.m_lowat + (mbufs>>1) > NMBPAGES * NMBPG - 32) 
+	if (mbstat.m_lowat + (mbufs>>1) > (NMBPAGES-32) * CLBYTES) 
 		return (0);
 	mbstat.m_hiwat += mbufs;
 	mbstat.m_lowat = mbstat.m_hiwat >> 1;
@@ -150,7 +150,7 @@ COUNT(M_COPY);
 		if (m->m_off > MMAXOFF) {
 			p = mtod(m, struct mbuf *);
 			n->m_off = ((int)p - (int)n) + off;
-			mprefcnt[mtopf(p)]++;
+			mclrefcnt[mtocl(p)]++;
 		} else {
 			n->m_off = MMINOFF;
 			bcopy(mtod(m, caddr_t)+off, mtod(n, caddr_t),
@@ -177,12 +177,12 @@ COUNT(MBUFINIT);
 	m = (struct mbuf *)&mbutl[0];  /* ->start of buffer virt mem */
 	(void) vmemall(&Mbmap[0], 2, proc, CSYS);
 	vmaccess(&Mbmap[0], (caddr_t)m, 2);
-	for (i=0; i < NMBPG; i++) {
+	for (i=0; i < CLBYTES / sizeof (struct mbuf); i++) {
 		m->m_off = 0;
 		(void) m_free(m);
 		m++;
 	}
-	(void) pg_alloc(3);
+	(void) m_pgalloc(3);
 	mbstat.m_pages = 4;
 	mbstat.m_bufs = 32;
 	mbstat.m_lowat = 16;
@@ -193,7 +193,7 @@ COUNT(MBUFINIT);
 	if ((i = rmalloc(mbmap, n)) == 0)
 		panic("mbinit");
 	j = i<<1;
-	m = pftom(i);
+	m = cltom(i);
 	/* should use vmemall sometimes */
 	if (memall(&Mbmap[j], k, proc, CSYS) == 0) {
 		printf("botch\n");
@@ -202,27 +202,27 @@ COUNT(MBUFINIT);
 	vmaccess(&Mbmap[j], (caddr_t)m, k);
 	for (j=0; j < n; j++) {
 		m->m_off = 0;
-		m->m_next = mpfree;
-		mpfree = m;
-		m += NMBPG;
-		nmpfree++;
+		m->m_next = mclfree;
+		mclfree = m;
+		m += CLBYTES / sizeof (*m);
+		nmclfree++;
 	}
 	}
 }
 
-pg_alloc(n)
+m_pgalloc(n)
 	register int n;
 {
 	register i, j, k;
 	register struct mbuf *m;
 	int bufs, s;
 
-COUNT(PG_ALLOC);
+COUNT(M_PGALLOC);
 	k = n << 1;
 	if ((i = rmalloc(mbmap, n)) == 0)
 		return (0);
 	j = i<<1;
-	m = pftom(i);
+	m = cltom(i);
 	/* should use vmemall sometimes */
 	if (memall(&Mbmap[j], k, proc, CSYS) == 0)
 		return (0);
@@ -239,6 +239,16 @@ COUNT(PG_ALLOC);
 	return (1);
 }
 
+/*ARGSUSED*/
+m_pgfree(addr, n)
+	caddr_t addr;
+	int n;
+{
+
+COUNT(M_PGFREE);
+	printf("m_pgfree %x %d\n", addr, n);
+}
+
 m_expand()
 {
 	register i;
@@ -247,10 +257,10 @@ m_expand()
 COUNT(M_EXPAND);
 	needs = need = mbstat.m_hiwat - mbstat.m_bufs;
 	needp = need >> 3;
-	if (pg_alloc(needp))
+	if (m_pgalloc(needp))
 		return (1);
-	for (i=0; i < needp; i++, need -= NMBPG)
-		if (pg_alloc(1) == 0)
+	for (i=0; i < needp; i++, need -= CLBYTES / sizeof (struct mbuf))
+		if (m_pgalloc(1) == 0)
 			goto steal;
 	return (need < needs);
 steal:
