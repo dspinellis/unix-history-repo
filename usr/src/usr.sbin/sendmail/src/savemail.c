@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)savemail.c	8.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)savemail.c	8.12 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -321,7 +321,9 @@ savemail(e)
 				e->e_to = buf;
 				q = NULL;
 				(void) sendtolist(buf, &e->e_from, &q, e);
-				if (q != NULL && deliver(e, q) == 0)
+				if (q != NULL &&
+				    !bitset(QBADADDR, q->q_flags) &&
+				    deliver(e, q) == 0)
 					state = ESM_DONE;
 				else
 					state = ESM_MAIL;
