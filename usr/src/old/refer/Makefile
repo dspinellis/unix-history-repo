@@ -1,4 +1,4 @@
-#	@(#)Makefile	4.3	(Berkeley)	83/05/08
+#	@(#)Makefile	4.4	(Berkeley)	83/06/22
 #
 DESTDIR=
 CFLAGS = -O
@@ -10,8 +10,8 @@ mkey: mkey1.o mkey2.o mkey3.o deliv2.o
 inv: inv1.o inv2.o inv3.o inv5.o inv6.o deliv2.o
 	cc inv?.o deliv2.o -o inv
 hunt: hunt1.o hunt2.o hunt3.o hunt5.o hunt6.o hunt7.o glue5.o
-hunt: refer3.o hunt9.o shell.o deliv2.o hunt8.o glue4.o
-	cc hunt?.o refer3.o glue5.o glue4.o shell.o deliv2.o -o hunt
+hunt: refer3.o hunt9.o shell.o deliv2.o hunt8.o glue4.o tick.o
+	cc hunt?.o refer3.o glue5.o glue4.o shell.o deliv2.o tick.o -o hunt
 
 glue3.o: refer..c
 hunt2.o: refer..c
