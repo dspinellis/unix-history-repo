@@ -1,4 +1,4 @@
-/*	kern_resource.c	3.1	%H%	*/
+/*	kern_resource.c	3.2	%H%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -68,7 +68,9 @@ acct()
 	acctbuf.ac_uid = u.u_ruid;
 	acctbuf.ac_gid = u.u_rgid;
 	acctbuf.ac_mem = 0;
-	acctbuf.ac_io = 0;
+	if (i = u.u_vm.vm_utime + u.u_vm.vm_stime)
+		acctbuf.ac_mem = (u.u_vm.vm_ixrss + u.u_vm.vm_idsrss) / i;
+	acctbuf.ac_io = compress(u.u_vm.vm_inblk + u.u_vm.vm_oublk);
 	acctbuf.ac_tty = u.u_ttyd;
 	acctbuf.ac_flag = u.u_acflag;
 	siz = ip->i_size;
