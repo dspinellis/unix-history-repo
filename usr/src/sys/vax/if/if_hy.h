@@ -1,4 +1,4 @@
-/*	if_hy.h	4.1	83/02/20	*/
+/*	if_hy.h	4.2	83/02/21	*/
 
 /*
  * Network Systems Corporation Hyperchannel
@@ -8,7 +8,7 @@
 #define HYRSIZE  37	/* max number of adapters in routing tables */
 
 struct hyroute {
-	time_t	hyr_lasttime;		/* last update time */
+	struct	timeval hyr_lasttime;		/* last update time */
 	struct hy_hash {
 		u_short hyr_flags;	/* status flags - see below */
 		u_short hyr_key;		/* desired address */
@@ -50,5 +50,5 @@ struct hyroute hy_route[NHY];
 
 #define HYRHASH(x) (((x) ^ ((x) >> 16)) % HYRSIZE)
 
-#define HYSETROUTE	('H'<<8) | 0x80
-#define HYGETROUTE	('H'<<8) | 0x81
+#define	HYSETROUTE	_IOW(H, 0x80, sizeof (struct hyroute))
+#define	HYGETROUTE	_IOR(H, 0x81, sizeof (struct hyroute))

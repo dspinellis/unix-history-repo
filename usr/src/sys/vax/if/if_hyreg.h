@@ -1,4 +1,4 @@
-/*	if_hyreg.h	4.1	83/02/20	*/
+/*	if_hyreg.h	4.2	83/02/21	*/
 
 /*
  * Network Systems Corporation Hyperchannel interface
@@ -15,34 +15,27 @@
  * The first adapters at Tek came with DR11Bs, and the code once worked,
  * but those have been upgraded to PI-13s.
  */
-
-#define	PI13		1	/* PI13 vs. DR11B device depandant code */
-#ifndef DEBUG
-/* #define	DEBUG		1	/* enable debugging code */
-#endif
+#define	PI13	1	/* PI13 vs. DR11B device depandant code */
 #ifndef HYLOG
-#define HYLOG		1	/* enable logging of errors */
+#define HYLOG	1	/* enable logging of errors */
 #endif
 
 /*
  * Structure of a HYPERchannel adapter header
  */
-
 struct	hy_hdr {
 	short	hyh_ctl;	/* control */
 	short	hyh_access;	/* access code */
 	union {			/* to/from addresses */
-		short hyh_addr;	/* full address */
-		char hyh_baddr[2];	/* adapter/port number from address */
+		short	hyh_addr;	/* full address */
+		char	hyh_baddr[2];	/* adapter/port number from address */
 	} hyhu_to, hyhu_from;
 #define	hyh_to		hyhu_to.hyh_addr
 #define	hyh_from	hyhu_from.hyh_addr
-
 #define	hyh_to_adapter	hyhu_to.hyh_baddr[0]
 #define	hyh_to_port	hyhu_to.hyh_baddr[1]
 #define	hyh_from_adapter hyhu_from.hyh_baddr[0]
 #define	hyh_from_port	hyhu_from.hyh_baddr[1]
-
 	short	hyh_param;	/* parameter (for loopback) */
 	char	hyh_type;	/* record type */
 	char	hyh_off;	/* offset from end of hy_hdr to ip data */
@@ -51,23 +44,19 @@ struct	hy_hdr {
 /*
  * Structure of a HYPERchannel message header (from software)
  */
-
-struct hym_data {	/* data on the head of software versions of packets */
-	short	hymd_mplen;	/* message proper length, if associated data, else 0 */
+struct	hym_data {
+	short	hymd_mplen;	/* message proper length, if associated data */
 };
-
-#define hym_mplen hym_d.hymd_mplen
 
 struct	hym_hdr {
-	struct hym_data hym_d;
-	struct hy_hdr hym_hdr;	/* hardware header, MUST BE LAST */
+	struct	hym_data hym_d;
+#define hym_mplen hym_d.hymd_mplen
+	struct	hy_hdr hym_hdr;	/* hardware header, MUST BE LAST */
 };
-
 
 /*
  * HYPERchannel header word control bits
  */
-
 #define	H_XTRUNKS	0x00F0	/* transmit trunks */
 #define H_RTRUNKS	0x000F	/* remote trunks to transmit on for loopback */
 #define H_ASSOC		0x0100	/* has associated data */
@@ -103,9 +92,9 @@ struct hy_status {
 };
 
 /*
- * get port number from status record
+ * Get port number from status record
  */
-#define PORTNUM(p) (((p)->hys_gen_status >> 6) & 0x03)
+#define PORTNUM(p)	(((p)->hys_gen_status >> 6) & 0x03)
 
 /*
  * The HYPERchannel driver sends and receives messages formatted:
@@ -175,27 +164,22 @@ struct hy_status {
  *	other	undefined, currently treated as normal packet
  *
  */
-
 #define MPSIZE		64	/* "Message Proper" size */
-
 #define MAXRETRY	4
 
 /*
- * device registers
+ * Device registers
  */
-
 struct	hydevice {
-		 short	hyd_wcr;	/* word count (negated) */
-	unsigned short	hyd_bar;	/* bus address bits 15-0 */
-	unsigned short	hyd_csr;	/* control and status */
-	unsigned short	hyd_dbuf;	/* data buffer */
+	short	hyd_wcr;	/* word count (negated) */
+	u_short	hyd_bar;	/* bus address bits 15-0 */
+	u_short	hyd_csr;	/* control and status */
+	u_short	hyd_dbuf;	/* data buffer */
 };
 
-
 /*
- * hyd_csr bit layout
+ * CSR bit layout
  */
-
 #define	S_ERROR	   0100000	/* error */
 #define	S_NEX	   0040000	/* non-existent memory error */
 #define	S_ATTN	   0020000	/* attn (always zero) */
@@ -222,26 +206,24 @@ struct	hydevice {
 #define	S_BURST	   0000002	/* burst mode DMA (not used) */
 #define	S_GO	   0000001	/* go */
 
-#define XBASHIFT	12	/* # bits to shift down to put unibus address bits 16/17 in right place in hyd_csr */
+#define XBASHIFT	12
 
 #define HY_CSR_BITS "\20\20ERROR\17NEX\16ATTN\15STKINTR\14RECV_DATA\13NORMAL\12ABNORMAL\11POWER\10READY\07IENABLE\06XBA17\05XBA16\04IATTN\03IWC\02BURST\01GO"
 
 /*
  * PI13 status conditions
  */
-
-#define	RECV_DATA(x)	(((x)->hyd_csr & S_A) != 0)	/* recieve data in adapter */
-#define	NORMAL(x)	(((x)->hyd_csr & S_B) != 0)	/* normal termination      */
-#define	ABNORMAL(x)	(((x)->hyd_csr & S_C) != 0)	/* abnormal termination    */
-#define	ERROR(x)	(((x)->hyd_csr & S_ERROR) != 0)	/* error condition   */
-#define	DONE(x)	(((x)->hyd_csr & (S_ERROR|S_B|S_C)) != 0)	/* operation done */
+#define	HYS_RECVDATA(x)	(((x)->hyd_csr & S_A) != 0)	/* get adapter data */
+#define	HYS_NORMAL(x)	(((x)->hyd_csr & S_B) != 0)	/* done normally */
+#define	HYS_ABNORMAL(x)	(((x)->hyd_csr & S_C) != 0)	/* done abnormally */
+#define	HYS_ERROR(x)	(((x)->hyd_csr & S_ERROR) != 0)	/* error condition */
+#define	HYS_DONE(x)	(((x)->hyd_csr & (S_ERROR|S_B|S_C)) != 0)
 
 /*
  * Function Codes for the Hyperchannel Adapter
  * The codes are offset so they can be "or"ed into
  * the reg data buffer
  */
-
 #define	HYF_XMITMSG	0x04	/* transmit message */
 #define	HYF_XMITDATA	0x08	/* transmit associated data */
 #define	HYF_XMITLSTDATA	0x0C	/* transmit last associated data */
@@ -275,21 +257,15 @@ struct	hydevice {
 #define	HYLINK_IP	0	/* Internet Protocol Packet */
 
 #ifdef HYLOG
-
 #define HYL_SIZE 16*1024
-
 struct hy_log {
-	struct hy_log *hyl_self;
-	unsigned char hyl_enable;		/* logging enabled? */
-	unsigned char hyl_onerr;		/* state to enter on error */
-	unsigned char *hyl_eptr;		/* &hy_log.hyl_buf[HYL_SIZE] */
-	unsigned char *hyl_ptr;			/* pointer into hyl_buf */
-	unsigned char hyl_buf[HYL_SIZE];	/* log buffer space */
+	struct	hy_log *hyl_self;
+	u_char	hyl_enable;		/* logging enabled? */
+	u_char	hyl_onerr;		/* state to enter on error */
+	u_char	*hyl_eptr;		/* &hy_log.hyl_buf[HYL_SIZE] */
+	u_char	*hyl_ptr;		/* pointer into hyl_buf */
+	u_char	hyl_buf[HYL_SIZE];	/* log buffer space */
 };
-
-#ifdef  KERNEL
-struct hy_log hy_log;
-#endif
 
 #define HYL_NOP		0
 #define HYL_UP		1	/* markup */
@@ -307,4 +283,7 @@ struct hy_log hy_log;
 #define HYL_CAUGHTSTATUS  4	/* one buffer of status captured */
 #define HYL_CATCHSTATUS	5	/* one buffer fill of status being captured */
 
+#ifdef  KERNEL
+struct hy_log hy_log;
+#endif
 #endif

@@ -1,4 +1,4 @@
-/*	if_vv.c	4.13	83/02/20	*/
+/*	if_vv.c	4.14	83/02/21	*/
 
 #include "vv.h"
 
@@ -8,9 +8,9 @@
  * V2LNI won't work if shortened to the obvious "v2".
  * Hence the subterfuge.
  *
- * MUST BE UPDATE FOR 4.1C
+ * UNTESTED WITH 4.1C
  */
-#include "../h/pte.h"
+#include "../machine/pte.h"
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -18,12 +18,13 @@
 #include "../h/buf.h"
 #include "../h/protosw.h"
 #include "../h/socket.h"
-#include "../h/cpu.h"
-#include "../h/mtpr.h"
 #include "../h/vmmac.h"
 #include "../h/errno.h"
+#include "../h/time.h"
+#include "../h/kernel.h"
 
 #include "../net/if.h"
+#include "../net/netisr.h"
 #include "../net/route.h"
 
 #include "../netinet/in.h"
@@ -31,17 +32,19 @@
 #include "../netinet/ip.h"
 #include "../netinet/ip_var.h"
 
-#include "../vaxif/if_vv.h"
-#include "../vaxif/if_uba.h"
+#include "../vax/mtpr.h"
+#include "../vax/cpu.h"
 
 #include "../vaxuba/ubareg.h"
 #include "../vaxuba/ubavar.h"
+
+#include "../vaxif/if_vv.h"
+#include "../vaxif/if_uba.h"
 
 /*
  * N.B. - if WIRECENTER is defined wrong, it can well break
  * the hardware!!
  */
-
 #define	WIRECENTER
 
 #ifdef WIRECENTER
@@ -63,9 +66,11 @@ int vv_dotrailer = 0,		/* 1 => do trailer protocol */
 
 int vv_ticking = 0;		/* error flywheel is running */
 
-#define VV_FLYWHEEL		3	/* interval in HZ - 50 msec.
-					   N.B. all times below are 
-					   in units of flywheel ticks */
+/*
+ * Interval in HZ - 50 msec.
+ * N.B. all times below are in units of flywheel ticks
+ */
+#define VV_FLYWHEEL		3
 #define	VV_ERRORTHRESHOLD	100	/* errors/flywheel-interval */
 #define	VV_MODE1ATTEMPTS	10	/* number mode 1 retries */
 #define	VV_MODE1DELAY		2	/* period interface is PAUSEd - 100ms */
@@ -112,21 +117,18 @@ struct	vv_softc {
 } vv_softc[NVV];
 
 /*
- * states of vs_iactive
+ * States of vs_iactive.
  */
-
 #define	ACTIVE	1		/* interface should post new receives */
 #define	PAUSE	0		/* interface should NOT post new receives */
 #define	OPEN	-1		/* PAUSE and open host relay */
 
 /*
- * recovery major states
+ * Recovery major states.
  */
-
 #define	MODE0	0		/* everything is wonderful */
 #define	MODE1	1		/* hopefully whatever will go away */
-#define	MODE2	2		/* drastic measures - open host relay 
-				   for increasing intervals */
+#define	MODE2	2		/* drastic measures - open host relay for increasing intervals */
 
 vvprobe(reg)
 	caddr_t reg;
@@ -170,19 +172,16 @@ vvattach(ui)
 	vs->vs_if.if_mtu = VVMTU;
 	vs->vs_if.if_net = ui->ui_flags;
 	vs->vs_if.if_host[0] = 0;	/* this will be reset in vvinit() */
-
 	sin = (struct sockaddr_in *)&vs->vs_if.if_addr;
 	sin->sin_family = AF_INET;
 	sin->sin_addr = if_makeaddr(vs->vs_if.if_net, vs->vs_if.if_host[0]);
-
 	sin = (struct sockaddr_in *)&vs->vs_if.if_broadaddr;
 	sin->sin_family = AF_INET;
 	sin->sin_addr = if_makeaddr(vs->vs_if.if_net, VV_BROADCAST);
 	vs->vs_if.if_flags = IFF_BROADCAST;
-
 	vs->vs_if.if_init = vvinit;
 	vs->vs_if.if_output = vvoutput;
-	vs->vs_if.if_ubareset = vvreset;
+	vs->vs_if.if_reset = vvreset;
 	vs->vs_ifuba.ifu_flags = UBA_CANTWAIT | UBA_NEEDBDP | UBA_NEED16;
 	if_attach(&vs->vs_if);
 }
@@ -224,19 +223,16 @@ vvinit(unit)
 		vs->vs_if.if_flags &= ~IFF_UP;
 		return;
 	}
-
-	if (vv_ticking++ == 0) timeout(vvtimeout, (caddr_t) 0, VV_FLYWHEEL);
-
+	if (vv_ticking++ == 0)
+		timeout(vvtimeout, (caddr_t) 0, VV_FLYWHEEL);
 	/*
-	 * discover our host address and post it
+	 * Discover our host address and post it
 	 */
-
 	vs->vs_if.if_host[0] = vvidentify(unit);
 	printf("vv%d: host %d\n", unit, vs->vs_if.if_host[0]);
 	sin = (struct sockaddr_in *)&vs->vs_if.if_addr;
 	sin->sin_family = AF_INET;
-	sin->sin_addr =
-	    if_makeaddr(vs->vs_if.if_net, vs->vs_if.if_host[0]);
+	sin->sin_addr = if_makeaddr(vs->vs_if.if_net, vs->vs_if.if_host[0]);
 
 	/*
 	 * Reset the interface, and join the ring
@@ -269,9 +265,8 @@ vvinit(unit)
 /*
  * vvidentify() - return our host address
  */
-
-vvidentify(unit) {
-
+vvidentify(unit)
+{
 	register struct vv_softc *vs = &vv_softc[unit];
 	register struct uba_device *ui = vvinfo[unit];
 	register struct vvreg *addr;
@@ -282,31 +277,25 @@ vvidentify(unit) {
 	/*
 	 * Build a multicast message to identify our address
 	 */
-
 	addr = (struct vvreg *)ui->ui_addr;
-
 	attempts = 0;		/* total attempts, including bad msg type */
 	retrying = 0;		/* first time through */
-	m = m_get(M_DONTWAIT);
+	m = m_get(M_DONTWAIT, MT_HEADER);
 	if (m == 0)
 		panic("vvinit: can't get mbuf");
 	m->m_next = 0;
 	m->m_off = MMINOFF;
 	m->m_len = sizeof(struct vv_header);
-
 	v = mtod(m, struct vv_header *);
 	v->vh_dhost = VV_BROADCAST;	/* multicast destination address */
 	v->vh_shost = 0;		/* will be overwritten with ours */
 	v->vh_version = RING_VERSION;
 	v->vh_type = RING_WHOAMI;
 	v->vh_info = 0;
-
 	/* map xmit message into uba */
-
 	vs->vs_olen =  if_wubaput(&vs->vs_ifuba, m);
 	if (vs->vs_ifuba.ifu_flags & UBA_NEEDBDP)
 		UBAPURGE(vs->vs_ifuba.ifu_uba, vs->vs_ifuba.ifu_w.ifrw_bdp);
-
 	/*
 	 * Reset interface, establish Digital Loopback Mode, and
 	 * send the multicast (to myself) with Input Copy enabled.
@@ -320,7 +309,6 @@ retry:
 	addr->vvicsr = VV_STE | VV_DEN | VV_ENB | VV_LPB;
 
 	/* let flag timers fire so ring will initialize */
-
 	sleep((caddr_t) &lbolt, PZERO);
 	sleep((caddr_t) &lbolt, PZERO);
 
@@ -330,7 +318,6 @@ retry:
 	addr->vvoea = (u_short) (ubainfo >> 16);
 	addr->vvowc = -((vs->vs_olen + 1) >> 1);
 	addr->vvocsr = VV_CPB | VV_DEN | VV_INR | VV_ENB;
-
 	/*
 	 * Wait for receive side to finish.
 	 * Extract source address (which will our own),
@@ -340,21 +327,17 @@ retry:
 	for (waitcount = 0; (addr->vvicsr & VV_RDY) == 0; waitcount++) {
 		if (waitcount < 10) {
 			DELAY(1000);
+			continue;
 		}
-		else {
-			if (attempts++ < 10){
-				goto retry;
-			}
-			else {
-				printf("vv%d: can't initialize\n", unit);
-				printf("vvinit loopwait: icsr = %b\n",
-					0xffff&(addr->vvicsr),VV_IBITS);
-				vs->vs_if.if_flags &= ~IFF_UP;
-				return;
-			}
+		if (attempts++ >= 10) {
+			printf("vv%d: can't initialize\n", unit);
+			printf("vvinit loopwait: icsr = %b\n",
+				0xffff&(addr->vvicsr), VV_IBITS);
+			vs->vs_if.if_flags &= ~IFF_UP;
+			return;
 		}
+		goto retry;
 	}
-
 	if (vs->vs_ifuba.ifu_flags & UBA_NEEDBDP)
 		UBAPURGE(vs->vs_ifuba.ifu_uba, vs->vs_ifuba.ifu_w.ifrw_bdp);
 	if (vs->vs_ifuba.ifu_xtofree)
@@ -362,16 +345,15 @@ retry:
 	if (vs->vs_ifuba.ifu_flags & UBA_NEEDBDP)
 		UBAPURGE(vs->vs_ifuba.ifu_uba, vs->vs_ifuba.ifu_r.ifrw_bdp);
 	m = if_rubaget(&vs->vs_ifuba, sizeof(struct vv_header), 0);
-	if (m)
+	if (m != NULL)
 		m_freem(m);
 	/*
-	 * check message type before we believe the source host address
+	 * Check message type before we believe the source host address
 	 */
 	v = (struct vv_header *)(vs->vs_ifuba.ifu_r.ifrw_addr);
-	if (v->vh_type == RING_WHOAMI)
-		return(v->vh_shost);
-	else
+	if (v->vh_type != RING_WHOAMI)
 		goto retry;
+	return(v->vh_shost);
 }
 
 /*
@@ -380,9 +362,8 @@ retry:
  * down for a while.  If the condition persists, the interface
  * is marked down.
  */
-
 vvtimeout(junk)
-int junk;
+	int junk;
 {
 	register struct vv_softc *vs;
 	register int i;
@@ -390,8 +371,7 @@ int junk;
 	int ubainfo;
 
 	timeout(vvtimeout, (caddr_t) 0, VV_FLYWHEEL);
-
-	for (i=0; i<NVV; i++) {
+	for (i = 0; i < NVV; i++) {
 		vs = &vv_softc[i];
 		addr = (struct vvreg *)vvinfo[i]->ui_addr;
 		if (vs->vs_if.if_flags & IFF_UP == 0) continue;
@@ -400,35 +380,32 @@ int junk;
 		/*
 		 * MODE0: generally OK, just check error rate 
 		 */
-
 		case MODE0:
 			if (vs->vs_dropped < VV_ERRORTHRESHOLD) {
 				vs->vs_dropped = 0;
 				continue;
 			}
-			else {
-				/* suspend reads for a while */
-				vvtrprintf("vv%d going MODE1 in vvtimeout\n",i);
-				vs->vs_major = MODE1;
-				vs->vs_iactive = PAUSE;	/* no new reads */
-				vs->vs_retry = VV_MODE1ATTEMPTS;
-				vs->vs_delayclock = VV_MODE1DELAY;
-				vs->vs_minor = 0;
-				continue;
-			}
+			/* suspend reads for a while */
+			vvtrprintf("vv%d going MODE1 in vvtimeout\n",i);
+			vs->vs_major = MODE1;
+			vs->vs_iactive = PAUSE;	/* no new reads */
+			vs->vs_retry = VV_MODE1ATTEMPTS;
+			vs->vs_delayclock = VV_MODE1DELAY;
+			vs->vs_minor = 0;
+			continue;
 
 		/*
 		 * MODE1: excessive error rate observed
 		 * Scheme: try simply suspending reads for a
 		 * short while a small number of times
 		 */
-
 		case MODE1:
 			if (vs->vs_delayclock > 0) {
 				vs->vs_delayclock--;
 				continue;
 			}
 			switch (vs->vs_minor) {
+
 			case 0:				/* reenable reads */
 				vvtrprintf("vv%d M1m0\n",i);
 				vs->vs_dropped = 0;
@@ -437,10 +414,12 @@ int junk;
 				ubainfo = vs->vs_ifuba.ifu_r.ifrw_info;
 				addr->vviba = (u_short) ubainfo;
 				addr->vviea = (u_short) (ubainfo >> 16);
-				addr->vviwc = -(sizeof (struct vv_header) + VVMTU) >> 1;
+				addr->vviwc =
+				  -(sizeof (struct vv_header) + VVMTU) >> 1;
 				addr->vvicsr = VV_RST | VV_CONF;
 				addr->vvicsr |= VV_IEN | VV_DEN | VV_ENB;
 				continue;
+
 			case 1:				/* see if it worked */
 				vvtrprintf("vv%d M1m1\n",i);
 				if (vs->vs_dropped < VV_ERRORTHRESHOLD) {
@@ -448,23 +427,20 @@ int junk;
 					vs->vs_major = MODE0;	/* yeah!! */
 					continue;
 				}
-				else {
-					if (vs->vs_retry -- > 0) {
-						vs->vs_dropped = 0;
-						vs->vs_iactive = PAUSE;
-						vs->vs_delayclock = VV_MODE1DELAY;
-						vs->vs_minor = 0; /* recheck */
-						continue;
-					}
-					else {
-						vs->vs_major = MODE2;
-						vs->vs_minor = 0;
-						vs->vs_dropped = 0;
-						vs->vs_iactive = OPEN;
-						vs->vs_delayrange = VV_MODE2DELAY;
-						vs->vs_delayclock = VV_MODE2DELAY;
-					}
+				if (vs->vs_retry -- > 0) {
+					vs->vs_dropped = 0;
+					vs->vs_iactive = PAUSE;
+					vs->vs_delayclock = VV_MODE1DELAY;
+					vs->vs_minor = 0; /* recheck */
+					continue;
 				}
+				vs->vs_major = MODE2;
+				vs->vs_minor = 0;
+				vs->vs_dropped = 0;
+				vs->vs_iactive = OPEN;
+				vs->vs_delayrange = VV_MODE2DELAY;
+				vs->vs_delayclock = VV_MODE2DELAY;
+				/* fall thru ... */
 			}
 
 		/*
@@ -474,13 +450,13 @@ int junk;
 		 * This allows broken networks to return to operation
 		 * without rebooting.
 		 */
-
 		case MODE2:
 			if (vs->vs_delayclock > 0) {
 				vs->vs_delayclock--;
 				continue;
 			}
 			switch (vs->vs_minor) {
+
 			case 0:		/* close relay and reenable reads */
 				vvtrprintf("vv%d M2m0\n",i);
 				vs->vs_dropped = 0;
@@ -489,10 +465,12 @@ int junk;
 				ubainfo = vs->vs_ifuba.ifu_r.ifrw_info;
 				addr->vviba = (u_short) ubainfo;
 				addr->vviea = (u_short) (ubainfo >> 16);
-				addr->vviwc = -(sizeof (struct vv_header) + VVMTU) >> 1;
+				addr->vviwc =
+				  -(sizeof (struct vv_header) + VVMTU) >> 1;
 				addr->vvicsr = VV_RST | VV_CONF;
 				addr->vvicsr |= VV_IEN | VV_DEN | VV_ENB;
 				continue;
+
 			case 1:				/* see if it worked */
 				vvtrprintf("vv%d M2m1\n",i);
 				if (vs->vs_dropped < VV_ERRORTHRESHOLD) {
@@ -500,18 +478,16 @@ int junk;
 					vs->vs_major = MODE0;	/* yeah!! */
 					continue;
 				}
-				else {
-					vvtrprintf("vv%d M2m1 ++ delay\n",i);
-					vs->vs_dropped = 0;
-					vs->vs_iactive = OPEN;
-					vs->vs_minor = 0;
-					if (vs->vs_delayrange < VV_MAXDELAY)
-						vs->vs_delayrange += (vs->vs_delayrange/2);
-					vs->vs_delayclock = vs->vs_delayrange;
-					continue;
-				}
+				vvtrprintf("vv%d M2m1 ++ delay\n",i);
+				vs->vs_dropped = 0;
+				vs->vs_iactive = OPEN;
+				vs->vs_minor = 0;
+				if (vs->vs_delayrange < VV_MAXDELAY)
+					vs->vs_delayrange +=
+					  (vs->vs_delayrange/2);
+				vs->vs_delayclock = vs->vs_delayrange;
+				continue;
 			}
-
 
 		default:
 			printf("vv%d: major state screwed\n", i);
@@ -541,28 +517,24 @@ vvstart(dev)
 
 	if (vs->vs_oactive)
 		goto restart;
-
 	/*
 	 * Not already active: dequeue another request
 	 * and map it to the UNIBUS.  If no more requests,
 	 * just return.
 	 */
 	IF_DEQUEUE(&vs->vs_if.if_snd, m);
-	if (m == 0) {
+	if (m == NULL) {
 		vs->vs_oactive = 0;
 		return;
 	}
 	dest = mtod(m, struct vv_header *)->vh_dhost;
 	vs->vs_olen = if_wubaput(&vs->vs_ifuba, m);
 	vs->vs_lastx = dest;
-
 restart:
-
 	/*
 	 * Have request mapped to UNIBUS for transmission.
 	 * Purge any stale data from this BDP, and start the otput.
 	 */
-
 	if (vs->vs_olen > VVMTU) {
 		printf("vv%d vs_olen: %d > VVMTU\n", unit, vs->vs_olen);
 		panic("vvdriver vs_olen botch");
@@ -650,11 +622,9 @@ vvrint(unit)
 	short resid;
 
 	vs->vs_if.if_ipackets++;
-
 	/*
 	 * Purge BDP; drop if input error indicated.
 	 */
-
 	if (vs->vs_ifuba.ifu_flags & UBA_NEEDBDP)
 		UBAPURGE(vs->vs_ifuba.ifu_uba, vs->vs_ifuba.ifu_r.ifrw_bdp);
 	if (addr->vvicsr & VVRERR) {
@@ -675,11 +645,8 @@ vvrint(unit)
 	 * carries the offset to the trailer data in trailer
 	 * format packets.
 	 */
-
 	vv = (struct vv_header *)(vs->vs_ifuba.ifu_r.ifrw_addr);
-
 	vvtracehdr("vi", vv);
-
 	resid = addr->vviwc;
 	if (resid)
 		resid |= 0176000;		/* ugly!!!! */
@@ -687,9 +654,7 @@ vvrint(unit)
 	len -= sizeof(struct vv_header);
 	if (len > VVMRU || len <= 0)
 		goto dropit;
-	
 #define	vvdataaddr(vv, off, type)	((type)(((caddr_t)((vv)+1)+(off))))
-
 	if (vv_dotrailer && vv->vh_type >= RING_IPTrailer &&
 	     vv->vh_type < RING_IPTrailer+RING_IPNTrailer){
 		off = (vv->vh_type - RING_IPTrailer) * 512;
@@ -700,16 +665,13 @@ vvrint(unit)
 		if (off + resid > len)
 			goto dropit;
 		len = off + resid;
-	} else {
+	} else
 		off = 0;
-	}
 	if (len == 0)
 		goto dropit;
-
 	m = if_rubaget(&vs->vs_ifuba, len, off);
-	if (m == 0)
+	if (m == NULL)
 		goto dropit;
-
 	if (off) {
 		m->m_off += 2 * sizeof(u_short);
 		m->m_len -= 2 * sizeof(u_short);
@@ -718,7 +680,6 @@ vvrint(unit)
 	/*
 	 * Demultiplex on packet type 
 	 */
-
 	switch (vv->vh_type) {
 
 #ifdef INET
@@ -735,10 +696,8 @@ vvrint(unit)
 	if (IF_QFULL(inq)) {
 		IF_DROP(inq);
 		m_freem(m);
-	} else {
+	} else
 		IF_ENQUEUE(inq, m);
-	}
-
 setup:
 	/*
 	 * Check the error rate and start recovery if needed
@@ -746,7 +705,6 @@ setup:
 	 * a lower ipl and never gets a chance to change the mode
 	 */
 	if (vs->vs_major == MODE0 && vs->vs_dropped > VV_ERRORTHRESHOLD) {
-
 		vvtrprintf("vv%d going MODE1 in vvrint\n",unit);
 		vs->vs_major = MODE1;
 		vs->vs_iactive = PAUSE;		/* no new reads */
@@ -755,13 +713,9 @@ setup:
 		vs->vs_minor = 0;
 		vs->vs_dropped = 0;
 	}
-
 	switch (vs->vs_iactive) {
 
-	case ACTIVE:
-
-		 /* Restart the read for next packet */
-
+	case ACTIVE:		/* Restart the read for next packet */
 		ubainfo = vs->vs_ifuba.ifu_r.ifrw_info;
 		addr->vviba = (u_short) ubainfo;
 		addr->vviea = (u_short) (ubainfo >> 16);
@@ -770,15 +724,11 @@ setup:
 		addr->vvicsr |= VV_IEN | VV_DEN | VV_ENB;
 		return;
 
-	case PAUSE:
-
-		/* requested to not start any new reads */
+	case PAUSE:		/* requested to not start any new reads */
 		vs->vs_dropped = 0;
 		return;
 
-	case OPEN:
-
-		/* request to open host relay */
+	case OPEN:		/* request to open host relay */
 		vs->vs_dropped = 0;
 		addr->vvicsr = 0;
 		return;
@@ -787,11 +737,9 @@ setup:
 		printf("vv%d: vs_iactive = %d\n", unit, vs->vs_iactive);
 		return;
 	}
-
 	/*
-	 * drop packet on floor -- count them!!
+	 * Drop packet on floor -- count them!!
 	 */
-
 dropit:
 	vs->vs_if.if_ierrors++;
 	vs->vs_dropped++;
@@ -800,7 +748,6 @@ dropit:
 		0xffff&(addr->vvicsr), VV_IBITS);
 	*/
 	goto setup;
-
 }
 
 /*
@@ -824,9 +771,6 @@ vvoutput(ifp, m0, dst)
 #ifdef INET
 	case AF_INET: {
 		dest = ((struct sockaddr_in *)dst)->sin_addr.s_addr;
-
-		/* check address range */
-
 		if ((dest = in_lnaof(*((struct in_addr *)&dest))) >= 0x100) {
 			error = EPERM;
 			goto bad;
@@ -864,7 +808,6 @@ gottrailertype:
 	m = m0->m_next;
 	m0->m_next = 0;
 	m0 = m;
-
 gottype:
 	/*
 	 * Add local net header.  If no space in first mbuf,
@@ -872,8 +815,8 @@ gottype:
 	 */
 	if (m->m_off > MMAXOFF ||
 	    MMINOFF + sizeof (struct vv_header) > m->m_off) {
-		m = m_get(M_DONTWAIT);
-		if (m == 0) {
+		m = m_get(M_DONTWAIT, MT_HEADER);
+		if (m == NULL) {
 			error = ENOBUFS;
 			goto bad;
 		}
@@ -907,7 +850,6 @@ gottype:
 		vvstart(ifp->if_unit);
 	splx(s);
 	return (0);
-
 qfull:
 	m0 = m;
 	splx(s);
