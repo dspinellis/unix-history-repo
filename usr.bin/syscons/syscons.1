@@ -42,12 +42,20 @@ seconds, or turns it
 .BI "\-m\ " 80x25|80x50
 Set screen size to 80x25 or 80x50 chars.
 .TP
-.BI "\-r\ " delay.repeat
-Sets keyboard
+.BI "\-r\ " [ delay.repeat | slow | fast | normal ]
+Set keyboard
 .I delay
 and
 .I repeat
-rates.
+rates, or use presets for
+.I slow,
+.I fast
+or
+.I normal.
+.TP
+.BI "\-S\ " scrmap
+Install screen output map file from
+.I scrmap
 .TP
 .BI "\-k\ " mapfile
 Install keyboard map file from
@@ -64,12 +72,17 @@ for
 Set current virtual screen to be
 .I scr#
 .TP
-.BI "\-f\ " FN#\ string
+.BI "\-F\ " FN#\ string
 Set function key
 .I FN#
 to send
 .I string
 .
+.PP
+.SH FILES
+/usr/share/syscons/fonts
+/usr/share/syscons/keymaps
+/usr/share/syscons/scrnmaps
 .PP
 .SH BUGS
 Sure to be some.
