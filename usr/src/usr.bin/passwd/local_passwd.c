@@ -6,62 +6,52 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)local_passwd.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)local_passwd.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
-#include <pwd.h>
+
+#include <ctype.h>
+#include <err.h>
 #include <errno.h>
+#include <pwd.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+#include <unistd.h>
 
-uid_t uid;
+#include <pw_copy.h>
+#include <pw_util.h>
 
-char *progname = "passwd";
-char *tempname;
+#include "extern.h"
 
-local_passwd(uname)
-	char *uname;
+static uid_t uid;
+
+char   *tempname;
+
+static unsigned char itoa64[] =		/* 0 ... 63 => ascii - 64 */
+	"./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+
+void
+to64(s, v, n)
+	char *s;
+	long v;
+	int n;
 {
-	struct passwd *pw;
-	int pfd, tfd;
-	char *getnewpasswd();
-
-	if (!(pw = getpwnam(uname))) {
-		(void)fprintf(stderr, "passwd: unknown user %s.\n", uname);
-		exit(1);
+	while (--n >= 0) {
+		*s++ = itoa64[v&0x3f];
+		v >>= 6;
 	}
-
-	uid = getuid();
-	if (uid && uid != pw->pw_uid) {
-		(void)fprintf(stderr, "passwd: %s\n", strerror(EACCES));
-		exit(1);
-	}
-
-	pw_init();
-	pfd = pw_lock();
-	tfd = pw_tmp();
-
-	/*
-	 * Get the new password.  Reset passwd change time to zero; when
-	 * classes are implemented, go and get the "offset" value for this
-	 * class and reset the timer.
-	 */
-	pw->pw_passwd = getnewpasswd(pw);
-	pw->pw_change = 0;
-	pw_copy(pfd, tfd, pw);
-
-	if (!pw_mkdb())
-		pw_error((char *)NULL, 0, 1);
-	exit(0);
 }
 
 char *
 getnewpasswd(pw)
-	register struct passwd *pw;
+	struct passwd *pw;
 {
-	register char *p, *t;
 	int tries;
-	char buf[_PASSWORD_LEN+1], salt[9], *crypt(), *getpass();
+	char *p, *t;
+	char buf[_PASSWORD_LEN+1], salt[9];
 
 	(void)printf("Changing local password for %s.\n", pw->pw_name);
 
@@ -101,19 +91,37 @@ getnewpasswd(pw)
 #else
 	to64(&salt[0], random(), 2);
 #endif
-	return(crypt(buf, salt));
+	return (crypt(buf, salt));
 }
 
-static unsigned char itoa64[] =		/* 0 ... 63 => ascii - 64 */
-	"./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
-
-to64(s, v, n)
-	register char *s;
-	register long v;
-	register int n;
+int
+local_passwd(uname)
+	char *uname;
 {
-	while (--n >= 0) {
-		*s++ = itoa64[v&0x3f];
-		v >>= 6;
-	}
+	struct passwd *pw;
+	int pfd, tfd;
+
+	if (!(pw = getpwnam(uname)))
+		errx(1, "unknown user %s", uname);
+
+	uid = getuid();
+	if (uid && uid != pw->pw_uid)
+		errx(1, "%s", strerror(EACCES));
+
+	pw_init();
+	pfd = pw_lock();
+	tfd = pw_tmp();
+
+	/*
+	 * Get the new password.  Reset passwd change time to zero; when
+	 * classes are implemented, go and get the "offset" value for this
+	 * class and reset the timer.
+	 */
+	pw->pw_passwd = getnewpasswd(pw);
+	pw->pw_change = 0;
+	pw_copy(pfd, tfd, pw);
+
+	if (!pw_mkdb())
+		pw_error((char *)NULL, 0, 1);
+	return (0);
 }
