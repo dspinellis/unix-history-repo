@@ -1,0 +1,35 @@
+.EQ
+sdefine << %{ < back 20 < }%
+sdefine >> %{ > back 20 > }%
+
+sdefine dot %accent "\fR\(a.\fP"%
+sdefine dotdot %accent "\fR\(ad\fP"%
+sdefine vec %accent {up 52 "\s[\En[.s]/2u]\(->\s0"}%
+sdefine dyad %accent {up 52 "\s[\En[.s]/2u]\(<>\s0"}%
+
+sdefine int %{type "operator" vcenter \(is}%
+sdefine sum %{type "operator" vcenter \[sum]}%
+sdefine prod %{type "operator" vcenter \[product]}%
+sdefine coprod %{type "operator" vcenter \[coproduct]}%
+
+sdefine cdot %type "binary" \(md%
+
+set num1 68
+set num2 39
+set denom1 69
+set denom2 34
+set sup1 41
+set sup2 36
+set sup3 29
+set sup_drop 39
+set sub_drop 5
+set axis_height 25
+set x_height 43
+set default_rule_thickness 4
+set big_op_spacing1 11
+set big_op_spacing2 16
+set big_op_spacing3 20
+set big_op_spacing4 60
+set big_op_spacing5 10
+
+.EN
