@@ -242,7 +242,7 @@ list are truncated to the size indicated by the key word:
 .TS
 center;
 c l
-rb n.
+cb n.
 keyword	length (bits)
 _
 \&.byte	8
@@ -263,6 +263,7 @@ may optionally be of the form:
 .(b
 .TS
 center;
+l.
 $expression sub 1$ : $expression sub 2$
 .TE
 .)b
@@ -274,7 +275,7 @@ which fits in the natural data size being assembled.
 Bits which are skipped because a field does not fit are filled with zeros.
 Thus,
 .q "\fB.byte\fP 123"
-is equivlent to
+is equivalent to
 .q "\fB.byte\fP 8:123" ,
 and
 .q "\fB.byte\fP 3:1,2:1,5:1"
@@ -297,7 +298,7 @@ lb l.
 .TE
 .in +2n
 .pp
-These intialize Bignums (see \(sc3.2.2)
+These initialize Bignums (see \(sc3.2.2)
 in successive locations whose size is a function on the key word.
 The type of the Bignums
 (determined by the exponent field, or lack thereof)
@@ -357,13 +358,18 @@ and that the \*(CL conventions for escaping are understood.)
 The
 .b .ascii
 directive is identical to:
-.ce 10
-\&\fB.byte\fP $string sub 0$\fB,\fP $string sub 1$\fB,\fP $...$
-.ce 0
+.br
+.b .byte
+$string sub 0$
+.b ,
+$string sub 1$
+.b ,
+$...$
+.br
 .in -2n
 .TS
 lb l.
-\&.comm	name\fB,\fP $expression$
+\&.comm	$name$\fB,\fP $expression$
 .TE
 .in +2n
 .pp
@@ -392,7 +398,7 @@ bytes.
 .in -2n
 .TS
 lb l.
-\&.lcomm	name\fB,\fP $expression$
+\&.lcomm	$name$\fB,\fP $expression$
 .TE
 .in +2n
 .pp
@@ -449,11 +455,11 @@ the most recent value replaces all previous values.
 .in -2n
 .TS
 lb l.
-\&.lsym	$name$\fB,\fP$ $expression$
+\&.lsym\&	$name$\fB,\fP $expression$
 .TE
 .in +2n
 .pp
-A unique and otherwise unreferenceable instance of the
+A unique and otherwise unreferencable instance of the
 ($name$, $expression$)
 pair is created in the symbol table.
 The Fortran 77 compiler uses this mechanism to pass local symbol definitions
@@ -481,7 +487,7 @@ NJ.  April 12, 1979.
 Katseff, H.P.
 .i "Symbol Table Format for Sdb",
 File 39394,
-Bell Laboratores, Holmdel, NJ. March 14, 1979.
+Bell Laboratories, Holmdel, NJ. March 14, 1979.
 .)f
 A
 .q stab
@@ -541,7 +547,7 @@ is used as tag specific information
 In the
 case of the
 .b .stabd
-directive, this expression is nonexistant, and
+directive, this expression is nonexistent, and
 is taken to be the value of the location counter
 at the following instruction.
 Since there is no associated name for a
@@ -561,6 +567,6 @@ $roman LL n bold :$
 .pp
 The
 .b .stabd
-directive is prefered,
+directive is preferred,
 because it does not clog the symbol
 table with labels used only for the stab symbol entries.
