@@ -1,8 +1,0 @@
-The files in this directory are shared with Intel Corporation's NINDY
-ROM monitor.  NINDY runs in an embedded system containing an Intel 960
-family processor, and talks to GDB over a serial line.
-
-Do not change these files without coordinating with Intel Corporation
-at 5200 N.E. Elam Young Parkway, Hillsboro, OR 97124.  The GNU960 tools
-group are the right people to talk to.  Maybe postmaster@ichips.intel.com
-can direct you to the current maintainers.

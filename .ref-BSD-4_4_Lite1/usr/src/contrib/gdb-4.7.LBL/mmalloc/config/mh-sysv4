@@ -1,8 +1,0 @@
-# SVR4 has mmap(), so compile according.
-HDEFINES = -DHAVE_MMAP
-
-# SVR4 does not have or need ranlib.
-RANLIB=echo >/dev/null
-
-# Use BSD compatible install program
-INSTALL = /usr/ucb/install -c

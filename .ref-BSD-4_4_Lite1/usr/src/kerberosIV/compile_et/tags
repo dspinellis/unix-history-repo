@@ -1,9 +1,0 @@
-Mcompile_et	compile_et.c	/^main(argc, argv)$/
-com_err	perror.c	/^com_err(whoami, code, message)$/
-error_message	error_message.c	/^error_message(code)$/
-error_table_name	et_name.c	/^error_table_name(num)$/
-init_error_table	init_et.c	/^init_error_table(msgs, base, count)$/
-perror	perror.c	/^perror(msg)$/
-reset_com_err_hook	perror.c	/^reset_com_err_hook()$/
-set_com_err_hook	perror.c	/^set_com_err_hook(new_proc)$/
-yyerror	compile_et.c	/^yyerror(s)$/

@@ -1,8 +1,0 @@
-Mstrfile	strfile.c	/^main(ac, av)$/
-add_offset	strfile.c	/^add_offset(fp, off)$/
-cmp_str	strfile.c	/^cmp_str(p1, p2)$/
-do_order	strfile.c	/^do_order()$/
-getargs	strfile.c	/^getargs(argc, argv)$/
-randomize	strfile.c	/^randomize()$/
-unctrl	strfile.c	/^unctrl(c)$/
-usage	strfile.c	/^usage()$/

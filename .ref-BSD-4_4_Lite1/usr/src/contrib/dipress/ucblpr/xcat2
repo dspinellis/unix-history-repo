@@ -1,6 +1,0 @@
-#!/bin/csh -f
-echo "Converting Ditroff Output" > /usr/spool/opd/status
-/usr/local/dipress -t -f /usr/local/lib/font > /tmp/xo$$
-echo "Transmitting to Printing Server" > /usr/spool/opd/status
-(/usr/new/xnsprint -n "$4@$6" -h darwin -b Ditroff -r /tmp/xo$$) > /usr/spool/opd/q
-(echo -n "$4@$6" "" ; date ) >> /usr/adm/xacct2

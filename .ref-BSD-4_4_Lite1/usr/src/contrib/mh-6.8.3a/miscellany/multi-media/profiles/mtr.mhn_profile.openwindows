@@ -1,4 +1,0 @@
-mhn-show-application/PostScript: gs -q -dSAFER -- '%F'
-mhn-show-multipart/enabled-mail: %pem_play -generic %F
-mhn-show-application/safe-tcl: %pst_play %a '%F'
-mhn-show-text/plain: mimeless "%d" text/%s '%F'

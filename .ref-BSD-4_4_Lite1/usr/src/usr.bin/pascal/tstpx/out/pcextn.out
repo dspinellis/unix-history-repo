@@ -1,8 +1,0 @@
-abc 
-abc def 
-abc
-at TELL foo at ->d<-
-after get foo at ->e<-
-after seek foo at ->d<-
-after reset foo at ->a<-
-after seek foo at ->d<-

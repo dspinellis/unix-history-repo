@@ -1,3 +1,0 @@
-Mbadsect	badsect.c	/^main(argc, argv)$/
-chkuse	badsect.c	/^chkuse(blkno, cnt)$/
-rdfs	badsect.c	/^rdfs(bno, size, bf)$/

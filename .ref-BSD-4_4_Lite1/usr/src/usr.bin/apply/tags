@@ -1,5 +1,0 @@
-Mapply	apply.c	/^main(argc, argv)$/
-addarg	apply.c	/^addarg(s, t)$/
-addc	apply.c	/^addc(c)$/
-docmd	apply.c	/^docmd(argc, argv)$/
-system	apply.c	/^system(s)$/

@@ -1,2 +1,0 @@
-Mkdestroy	kdestroy.c	/^main(argc, argv)$/
-usage	kdestroy.c	/^usage()$/

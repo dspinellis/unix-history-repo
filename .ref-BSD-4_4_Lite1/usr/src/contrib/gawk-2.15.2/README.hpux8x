@@ -1,4 +1,0 @@
-When compiling on HPPA machines running HP-UX 8.0x you should add the
-option: "+Obb1000".  The file awktab.c fails to compile without this
-option.  The option sets the maximum number of basic blocks allowed
-in a function to 1000.

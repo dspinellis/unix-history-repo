@@ -1,8 +1,0 @@
-Mmkhits	mkhits.c	/^main(argc, argv)$/
-add	dohits.c	/^add(first, second, value)$/
-dohash	dohits.c	/^dohash(seed, string)$/
-dohits	dohits.c	/^dohits(aidfile, fcnfile)$/
-doit	dohits.c	/^doit(hit, type, hits)$/
-savechr	dohits.c	/^char *savechr(c)$/
-scandefine	dohits.c	/^scandefine(file, prefix)$/
-scanwhite	dohits.c	/^scanwhite(file, prefix)$/

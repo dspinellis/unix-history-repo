@@ -1,7 +1,0 @@
-Mgcore	gcore.c	/^main(argc, argv)$/
-core	gcore.c	/^core(efd, fd, ki)$/
-datadump	gcore.c	/^datadump(efd, fd, p, addr, npage)$/
-err	gcore.c	/^err(fatal, fmt, va_alist)$/
-md_core	md-hp300.c	/^md_core(kd, fd, ki)$/
-usage	gcore.c	/^usage()$/
-userdump	gcore.c	/^userdump(fd, p, addr, npage)$/

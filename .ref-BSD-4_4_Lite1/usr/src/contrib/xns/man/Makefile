@@ -1,4 +1,0 @@
-all: 
-install:
-clean:
-depend:

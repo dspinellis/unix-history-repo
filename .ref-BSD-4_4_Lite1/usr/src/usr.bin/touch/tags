@@ -1,7 +1,0 @@
-ATOI2	touch.c	/^#define	ATOI2(ar)	((ar)[0] - '0') * 10 + ((ar)[1] /
-Mtouch	touch.c	/^main(argc, argv)$/
-rw	touch.c	/^rw(fname, sbp, force)$/
-stime_arg1	touch.c	/^stime_arg1(arg, tvp)$/
-stime_arg2	touch.c	/^stime_arg2(arg, year, tvp)$/
-stime_file	touch.c	/^stime_file(fname, tvp)$/
-usage	touch.c	/^usage()$/

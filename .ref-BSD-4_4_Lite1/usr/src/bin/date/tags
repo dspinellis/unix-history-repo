@@ -1,6 +1,0 @@
-ATOI2	date.c	/^#define	ATOI2(ar)	((ar)[0] - '0') * 10 + ((ar)[1] /
-Mdate	date.c	/^main(argc, argv)$/
-badformat	date.c	/^badformat()$/
-netsettime	netdate.c	/^netsettime(tval)$/
-setthetime	date.c	/^setthetime(p)$/
-usage	date.c	/^usage()$/

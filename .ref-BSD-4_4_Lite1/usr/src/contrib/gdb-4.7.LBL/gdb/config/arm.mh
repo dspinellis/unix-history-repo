@@ -1,3 +1,0 @@
-# Host: Acorn RISC machine running RISCiX (4.3bsd)
-XDEPFILES= infptrace.o inftarg.o fork-child.o arm-xdep.o arm-convert.o
-XM_FILE= xm-arm.h

@@ -1,8 +1,0 @@
-Mcompact	compact.c	/^main(argc, argv)$/
-compact	compact.c	/^compact(file)$/
-compress	compact.c	/^compress(uncfp, cfp)$/
-encode	compact.c	/^encode(ch)$/
-exch	../common_source/tree.c	/^exch(v, vs, x, w, ws)$/
-insert	../common_source/tree.c	/^insert(ch)$/
-setup	compact.c	/^setup(uncfp, ignore)$/
-uptree	../common_source/tree.c	/^uptree(ch)$/

@@ -1,7 +1,0 @@
-CTRL	tgoto.c	/^#define	CTRL(c)	((c) & 037)$/
-tgetent	termcap.c	/^tgetent(bp, name)$/
-tgetflag	termcap.c	/^tgetflag(id)$/
-tgetnum	termcap.c	/^tgetnum(id)$/
-tgetstr	termcap.c	/^tgetstr(id, area)$/
-tgoto	tgoto.c	/^tgoto(CM, destcol, destline)$/
-tputs	tputs.c	/^tputs(cp, affcnt, outc)$/

@@ -1,8 +1,0 @@
-#!/usr/bin/perl
-
-# $Header: ADB,v 4.0 91/03/20 01:08:34 lwall Locked $
-
-# This script is only useful when used in your crash directory.
-
-$num = shift;
-exec 'adb', '-k', "vmunix.$num", "vmcore.$num";

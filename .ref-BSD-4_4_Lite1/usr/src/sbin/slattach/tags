@@ -1,2 +1,0 @@
-Mslattach	slattach.c	/^main(argc, argv)$/
-findspeed	slattach.c	/^findspeed(speed)$/

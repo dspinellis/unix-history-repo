@@ -1,8 +1,0 @@
-whatis Color
-whatis main.c
-stop in f
-run
-where
-print c
-print main.c
-quit

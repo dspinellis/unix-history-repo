@@ -1,2 +1,0 @@
-Mchmod	chmod.c	/^main(argc, argv)$/
-usage	chmod.c	/^usage()$/

@@ -1,6 +1,0 @@
-Mcomsat	comsat.c	/^main(argc, argv)$/
-jkfprintf	comsat.c	/^jkfprintf(tp, name, offset)$/
-mailfor	comsat.c	/^mailfor(name)$/
-notify	comsat.c	/^notify(utp, offset)$/
-onalrm	comsat.c	/^onalrm(signo)$/
-reapchildren	comsat.c	/^reapchildren(signo)$/

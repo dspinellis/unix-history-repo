@@ -1,5 +1,0 @@
-# This will always be empty of defines in /usr/new/lib/bmac/?ibmacs.
-# In this manner, users can put a bibinc.fulllocal in their local directory,
-# and bibinc.fullnames will find it.  However, if the user does not
-# have a bibinc.fulllocal, bibinc.fullnames will find this one, which has
-# no defines

@@ -1,5 +1,0 @@
-Mhead	head.c	/^main(argc, argv)$/
-err	head.c	/^err(fatal, fmt, va_alist)$/
-head	head.c	/^head(fp, cnt)$/
-obsolete	head.c	/^obsolete(argv)$/
-usage	head.c	/^usage()$/

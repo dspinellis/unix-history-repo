@@ -1,3 +1,0 @@
-Mwall	wall.c	/^main(argc, argv)$/
-makemsg	wall.c	/^makemsg(fname)$/
-ttymsg	ttymsg.c	/^ttymsg(iov, iovcnt, line, tmout)$/

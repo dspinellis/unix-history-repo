@@ -1,8 +1,0 @@
-To: followup
-Subject: Re: %<{subject}%subject%|Orphaned response%>
-%<{followup-to}Newsgroups: %followup-to%|%<{newsgroups}Newgroups: %newsgroups%>%>
-%<{message-id}References: %message-id%<{references} %references%>%>
-%<{distribution}Distribution: %distribution%>
-Followup-to:
-Fcc: +posted
---------

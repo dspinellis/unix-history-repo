@@ -1,6 +1,0 @@
-Muuq	uuq.c	/^main(argc, argv)$/
-analjob	uuq.c	/^analjob(filename)$/
-gather	uuq.c	/^gather()$/
-getsys	uuq.c	/^getsys(s)$/
-isXfile	uuq.c	/^#define	isXfile(s)	(s[0]=='D' && s[strlen(s)-WSUFS/
-jcompare	uuq.c	/^jcompare(j1, j2)$/

@@ -1,4 +1,0 @@
-Mprimes	primes.c	/^main(argc, argv)$/
-primes	primes.c	/^primes(start, stop)$/
-read_num_buf	primes.c	/^read_num_buf()$/
-usage	primes.c	/^usage()$/

@@ -1,2 +1,0 @@
-Mrev	rev.c	/^main(argc, argv)$/
-usage	rev.c	/^usage()$/

@@ -1,4 +1,0 @@
-Mmount_null	mount_null.c	/^main(argc, argv)$/
-getmntopts	../mount/getmntopts.c	/^getmntopts(options, m0, flagp)$/
-subdir	mount_null.c	/^subdir(p, dir)$/
-usage	mount_null.c	/^usage()$/

@@ -1,9 +1,0 @@
-# Host: NYU Ultracomputer (AMD 29000 running Unix)
-CC=u3cc
-MUNCH_DEFINE="MUNCH_NM=u3nm"
-XDEPFILES= ultra3-xdep.o 
-XM_FILE= xm-ultra3.h
-NAT_FILE= nm-ultra3.h
-NATDEPFILES= exec.o infptrace.o inftarg.o fork-child.o ultra3-nat.o
-MH_CFLAGS = -DSYM1
-XM_CLIBS = -lsysv -ljobs -ltermlib 

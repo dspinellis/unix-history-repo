@@ -1,6 +1,0 @@
-# Host: Intel 386 running Mach
-
-XDEPFILES= 
-XM_FILE= xm-i386mach.h
-NAT_FILE= nm-i386mach.h
-NATDEPFILES= infptrace.o inftarg.o fork-child.o i386mach-nat.o
