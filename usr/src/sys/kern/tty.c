@@ -1,4 +1,4 @@
-/*	tty.c	4.38	82/12/19	*/
+/*	tty.c	4.39	83/01/17	*/
 
 #include "../machine/reg.h"
 
@@ -735,17 +735,17 @@ ttyinput(c, tp)
 	/*
 	 * Check for input buffer overflow
 	 */
-	if (tp->t_rawq.c_cc+tp->t_canq.c_cc >= TTYHOG)
+	if (tp->t_rawq.c_cc+tp->t_canq.c_cc >= TTYHOG) {
+		if (tp->t_line == NTTYDISC)
+			(void) ttyoutput(CTRL(g), tp);
 		goto endcase;
+	}
 
 	/*
 	 * Put data char in q for user and
 	 * wakeup on seeing a line delimiter.
 	 */
 	if (putc(c, &tp->t_rawq) >= 0) {
-		if (tp->t_rawq.c_cc + tp->t_canq.c_cc == TTYHOG
-		    && tp->t_line == NTTYDISC)
-			(void) ttyoutput(CTRL(g), tp);
 		if (ttbreakc(c, tp)) {
 			tp->t_rocount = 0;
 			catq(&tp->t_rawq, &tp->t_canq);
@@ -1460,7 +1460,7 @@ ttwakeup(tp)
 	wakeup((caddr_t)&tp->t_rawq);
 }
 
-#ifndef vax
+#if !defined(vax) && !defined(sun)
 scanc(size, cp, table, mask)
 	register int size;
 	register char *cp, table[];
