@@ -1,0 +1,858 @@
+
+
+
+MM(@MAN7EXT@)          BSD Reference Manual         MM(@MAN7EXT@)
+
+
+NNAAMMEE
+       mm - groff mm macros
+
+SSYYNNOOPPSSIISS
+       ggrrooffff --mm@@TTMMAACC__MM@@ [ _o_p_t_i_o_n_s...  ] [ _f_i_l_e_s...  ]
+
+DDEESSCCRRIIPPTTIIOONN
+       The groff mm macros are intended to be compatible with the
+       DWB mm macros with the following limitations:
+
+       ++oo      no letter macros implemented (yet).
+
+       ++oo      no Bell Labs localisms implemented.
+
+       ++oo      the macros OK and PM is not implemented.
+
+       ++oo      groff mm does not support cut marks
+
+       mm@@TTMMAACC__MM@@ is intended to be international. Therefore it is
+       possible  to  write short national macrofiles which change
+       all  english  text  to   the   preferred   language.   Use
+       mm@@TTMMAACC__MM@@ssee as an example.
+
+       Groff mm has several extensions:
+
+       AAPPPP nnaammee tteexxtt
+              Begin  an appendix with name _n_a_m_e. Automatic naming
+              occurs if _n_a_m_e is "". The appendixes starts with  AA
+              if  auto  is  used.   An new page is ejected, and a
+              header is also produced if the number variable  AApphh
+              is  non-zero.  This  is  the default.  The appendix
+              always appear in the 'List of contents'  with  cor-
+              rect  pagenumber.  The name _A_P_P_E_N_D_I_X can be changed
+              by setting the string AApppp to the desired text.
+
+       AAPPPPSSKK nnaammee ppaaggeess tteexxtt
+              Same as ..AAPPPP, but the pagenr  is  incremented  with
+              _p_a_g_e_s.   This  is  used when diagrams or other non-
+              formatted documents are included as appendixes.
+
+       BB11     Begin box (as the ms macro) Draws a box around  the
+              text.
+
+       BB22     End box. Finish the box.
+
+       BBVVLL    Start of broken variable-item list.  As VL but text
+              begins always at the next line
+
+       CCOOVVEERR [[aarrgg]]
+              CCOOVVEERR begins a coversheet definition. It is  impor-
+              tant  that  ..CCOOVVEERR  appears before any normal text.
+
+
+
+Groff Version @VERSION@      @MDATE@                            1
+
+
+
+
+
+
+
+
+MM(@MAN7EXT@)          BSD Reference Manual         MM(@MAN7EXT@)
+
+
+              ..CCOOVVEERR   uses   _a_r_g   to   build    the    filename
+              @TMAC_MDIR@/_a_r_g.cov.  Therefore  it  is possible to
+              create unlimited types of coversheets.   _m_s_._c_o_v  is
+              supposed  to  look  like the mmss coversheet.  ..CCOOVVEERR
+              requires a ..CCOOVVEENNDD at the end of  the  coverdefini-
+              tion.  Always use this order of the covermacros:
+              .COVER
+              .TL
+              .AF
+              .AU
+              .AT
+              .AS
+              .AE
+              .COVEND
+              However, only ..TTLL and ..AAUU are required.
+
+       CCOOVVEENNDD This  finish  the  cover description and prints the
+              cover-page.  It is defined in the cover file.
+
+       GGEETTHHNN rreeffnnaammee [[vvaarrnnaammee]]
+              Includes the headernumber where  the  corresponding
+              SSEETTRR  _r_e_f_n_a_m_e was placed. Will be X.X.X. in pass 1.
+              See IINNIITTRR.  If varname  is  used,  GGEETTHHNN  sets  the
+              stringvariable _v_a_r_n_a_m_e to the headernumber.
+
+       GGEETTPPNN rreeffnnaammee [[vvaarrnnaammee]]
+              Includes  the  pagenumber  where  the corresponding
+              SSEETTRR _r_e_f_n_a_m_e was placed. Will be 9999  in  pass  1.
+              See  IINNIITTRR.   If  varname  is  used, GGEETTPPNN sets the
+              stringvariable _v_a_r_n_a_m_e to the pagenumber.
+
+       GGEETTRR rreeffnnaammee
+              Combines GGEETTHHNN and GGEETTPPNN with  the  text  'chapter'
+              and ', page'.  The string _Q_r_f contains the text for
+              reference:
+                   .ds Qrf See chapter \\*[Qrfh], page \\*[Qrfp].
+              _Q_r_f  may  be  changed  to  support other languages.
+              Strings _Q_r_f_h and _Q_r_f_p are set by GGEETTRR and  contains
+              the page and headernumber.
+
+       GGEETTSSTT rreeffnnaammee [[vvaarrnnaammee]]
+              Includes  the string saved with the second argument
+              to ..SSEETTRR.  Will be dummystring in pass 1.  If  var-
+              name is used, GGEETTSSTT sets the stringvariable _v_a_r_n_a_m_e
+              to the saved string. See IINNIITTRR.
+
+       IINNIITTRR ffiilleennaammee
+              Initialize the refencemacros.  References  will  be
+              written  to _f_i_l_e_n_a_m_e_._t_m_p and _f_i_l_e_n_a_m_e_._q_r_f. Requires
+              two passes with groff.  The first looks for  refer-
+              ences  and  the second includes them.  IINNIITTRR can be
+
+
+
+Groff Version @VERSION@      @MDATE@                            2
+
+
+
+
+
+
+
+
+MM(@MAN7EXT@)          BSD Reference Manual         MM(@MAN7EXT@)
+
+
+              used several  times,  but  it  is  only  the  first
+              occurence  of IINNIITTRR that is active.  See also SSEETTRR,
+              GGEETTPPNN and GGEETTHHNN.
+
+       MMCC ccoolluummnn--ssiizzee [[ccoolluummnn--sseeppaarraattiioonn]]
+              Begin multiple columns. Return to normal with 1C.
+
+       MMTT [[aarrgg [[aaddddrreesssseeee]]]]
+              Memorandom type.  The _a_r_g is part of a filename  in
+              _@_T_M_A_C___M_D_I_R_@_/_*_._M_T.   Memorandum  type  0  thru 5 are
+              supported, including _"_s_t_r_i_n_g_".  _A_d_d_r_e_s_s_e just  sets
+              a variable, used in the AT&T macros.
+
+       MMOOVVEE yy--ppooss [[xx--ppooss [[lliinnee--lleennggtthh]]]]
+              Move  to  a  position, pageoffset set to _x_-_p_o_s.  If
+              _l_i_n_e_-_l_e_n_g_t_h is not given,  the  difference  between
+              current  and  new  pageoffset  is used.  Use PPGGFFOORRMM
+              without arguments to return to normal.
+
+       MMUULLBB ccww11 ssppaaccee11 [[ccww22 ssppaaccee22 [[ccww33 ......]]]]
+              Begin a special multi-column  mode.  Every  columns
+              width  must  be  specified.  Also the space between
+              the columns must be specified. The last column does
+              not need any space-definition. MULB starts a diver-
+              sion and MULE ends the  diversion  and  prints  the
+              columns.   The unit for width and space is 'n', but
+              MULB accepts all normal unitspecifications like 'c'
+              and  'i'.  MULB operates in a separate environment.
+
+       MMUULLNN   Begin the next column. This  is  the  only  way  to
+              switch column.
+
+       MMUULLEE   End the multi-column mode and print the columns.
+
+       PPGGFFOORRMM [[lliinneelleennggtthh [[ppaaggeelleennggtthh [[ppaaggeeooffffsseett]]]]]]
+              Sets   linelength,  pagelength  and/or  pageoffset.
+              This macro can be used for special formatting, like
+              letterheads  and other.  PPGGFFOORRMM can be used without
+              arguments to reset everything after a MMOOVVEE.
+
+       PPGGNNHH   No header is printed on the next page. Used to  get
+              rid  off  the  header  in  letters or other special
+              texts This macro must be used before  any  text  to
+              inhibit the pageheader on the first page.
+
+       SSEETTRR rreeffnnaammee [[ssttrriinngg]]
+              Remember the current header and page-number as ref-
+              name.  Saves _s_t_r_i_n_g if _s_t_r_i_n_g is defined. _s_t_r_i_n_g is
+              retrieved with ..GGEETTSSTT.  See IINNIITTRR.
+
+       TTAABB    reset  tabs to every 5n. Normally used to reset any
+
+
+
+Groff Version @VERSION@      @MDATE@                            3
+
+
+
+
+
+
+
+
+MM(@MAN7EXT@)          BSD Reference Manual         MM(@MAN7EXT@)
+
+
+              previous tabpositions.
+
+       VVEERRBBOONN [[ffllaagg [[ppooiinnttssiizzee [[ffoonntt]]]]]]
+              Begin verbatim output using courier font.   Usually
+              for  printing  programs.   All  character has equal
+              width.  The pointsize can be changed with the  sec-
+              ond argument. By specifying the font-argument it is
+              possible to use another font  instead  of  courier.
+              _f_l_a_g control several special features.  It contains
+              the sum of all wanted features.
+              ValueDescription
+              1    Enable the escape-character (\). This is  nor-
+                   mally turned off during verbose output.
+              2    Add en empty line before the verbose text.
+              4    Add en empty line after the verbose text.
+              8    Print  the  verbose  text with numbered lines.
+                   This adds four digitsized spaces in the begin-
+                   ning  of each line. Finer control is available
+                   with the string-variable VVeerrbbnnmm.  It  contains
+                   all  arguments  to the ttrrooffff-command ..nnmm, nor-
+                   mally '1'.
+              16   Indent the verbose text with five 'n':s.  This
+                   is  controlled  by  the number-variable VVeerrbbiinn
+                   (in units).
+
+       VVEERRBBOOFFFF
+              End verbatim output.
+
+
+       New variables in m@TMAC_M@:
+
+       AApppp    A string containing the word "APPENDIX".
+
+       AApphh    Print an appendix-page for every  new  appendix  if
+              this  numbervariable  is  non-zero.  No output will
+              occur if AApphh is zero, but there will always  be  an
+              appendix-entry in the 'List of contents'.
+
+       HHppss    Numbervariable with the heading pre-space level. If
+              the heading-level is less than  or  equal  to  HHppss,
+              then  two  lines  will  precede the section heading
+              instead of one. Default is first level  only.   The
+              real amount of lines is controlled by the variables
+              HHppss11 and HHppss22.
+
+       HHppss11   This is the number of lines preceding ..HH  when  the
+              heading-level  is  greater  than  HHppss.  Value is in
+              units, normally 0.5v.
+
+       HHppss22   This is the number of lines preceding ..HH  when  the
+              heading-level  is  less than or equal to HHppss. Value
+
+
+
+Groff Version @VERSION@      @MDATE@                            4
+
+
+
+
+
+
+
+
+MM(@MAN7EXT@)          BSD Reference Manual         MM(@MAN7EXT@)
+
+
+              is in units, normally 1v.
+
+       LLiiffgg   String containing _F_i_g_u_r_e.
+
+       LLiittbb   String containing _T_A_B_L_E.
+
+       LLiieexx   String containing _E_x_h_i_b_i_t.
+
+       LLiieecc   String containing _E_q_u_a_t_i_o_n.
+
+       LLiiccoonn  String containing _C_O_N_T_E_N_T_S.
+
+       LLsspp
+
+       The size of an empty line. Normally 0.5v, but it is 1v
+              if nn is set (..nnrrooffff).  MMOO11 -- MMOO1122 Strings  contain-
+              ing _J_a_n_u_a_r_y _t_o _D_e_c_e_m_b_e_r_.
+
+       QQrrff    String  containing  "See  chapter  \\*[Qrfh],  page
+              \\n[Qrfp].".
+
+       SSeeccttff  Flag  controlling  "section-figures".  A   non-zero
+              value enables this.  Se also register N.
+
+       SSeeccttpp  Flag controlling "section-page-numbers". A non-zero
+              value enables this.  Se also register N.
+
+       ..mmggmm   Always 1.
+
+       A file called llooccaallee or _l_a_n_g__llooccaallee is read after the ini-
+       tiation  of the global variables. It is therefore possible
+       to localize the macros with companyname and so on.
+
+
+
+
+       The following standard macros are implemented:
+
+       11CC     Begin one column processing
+
+       22CC     Begin two column processing
+
+       AAEE     Abstract end
+
+       AAFF [[nnaammee ooff ffiirrmm]]
+              Authors firm
+
+       AALL [[ttyyppee [[tteexxtt--iinnddeenntt [[11]]]]]]]]
+              Start autoincrement list
+
+
+
+
+
+Groff Version @VERSION@      @MDATE@                            5
+
+
+
+
+
+
+
+
+MM(@MAN7EXT@)          BSD Reference Manual         MM(@MAN7EXT@)
+
+
+       AASS [[aarrgg [[iinnddeenntt]]]]
+              Abstract start. Indent is specified in  'ens',  but
+              scaling is allowed.
+
+       AASSTT [[ttiittllee]]
+              Abstract title. Default is 'ABSTRACT'.
+
+       AATT ttiittllee11 [[ttiittllee22 ......]]
+              Authors title
+
+       AAUU nnaammee [[iinniittiiaallss [[lloocc [[ddeepptt [[eexxtt [[rroooomm [[aarrgg [[aarrgg
+              [[aarrgg]]]]]]]]]]]]]]]]
+              Author information
+
+       BB [[bboolldd--tteexxtt [[pprreevv--ffoonntt--tteexx [[......]]]]]]
+              Begin boldface No limit on the number of arguments.
+
+       BBEE     End bottom block
+
+       BBII [[bboolldd--tteexxtt [[iittaalliicc--tteexxtt [[bboolldd--tteexxtt [[......]]]]]]
+              Bold-italic.   No limit on the number of arguments.
+
+       BBLL [[tteexxtt--iinnddeenntt [[11]]]]
+              Start bullet list
+
+       BBRR [[bboolldd--tteexxtt [[rroommaann--tteexxtt [[bboolldd--tteexxtt [[......]]]]]]
+              Bold-roman.  No limit on the number of arguments.
+
+       BBSS     Bottom block start
+
+       DDEE     Display end
+
+       DDFF [[ffoorrmmaatt [[ffiillll [[rriinnddeenntt]]]]]]
+              Begin floating display (no nesting allowed)
+
+       DDLL [[tteexxtt--iinnddeenntt [[11]]]]
+              Dash list start
+
+       DDSS [[ffoorrmmaatt [[ffiillll [[rriinnddeenntt]]]]]]
+              Static display start.  Can now have unlimited nest-
+              ing. Also right adjusted text and block may be used
+              (R or RB as _f_o_r_m_a_t).
+
+       EECC [[ttiittllee [[oovveerrrriiddee [[ffllaagg [[rreeffnnaammee]]]]]]]]
+              Equation title.  If _r_e_f_n_a_m_e is used, then the equa-
+              tionnumber   is   saved  with  ..SSEETTRR,  and  can  be
+              retrieved with ..GGEETTSSTT _r_e_f_n_a_m_e.
+
+       EEFF [[aarrgg]]
+              Even-page footer.
+
+
+
+
+Groff Version @VERSION@      @MDATE@                            6
+
+
+
+
+
+
+
+
+MM(@MAN7EXT@)          BSD Reference Manual         MM(@MAN7EXT@)
+
+
+       EEHH [[aarrgg]]
+              Even-page header.
+
+       EENN     Equation end.
+
+       EEQQ [[llaabbeell]]
+              Equation start.
+
+       EEXX [[ttiittllee [[oovveerrrriiddee [[ffllaagg [[rreeffnnaammee]]]]]]]]
+              Exhibit  title.   If  _r_e_f_n_a_m_e  is  used,  then  the
+              exhibitnumber  is  saved  with  ..SSEETTRR,  and  can be
+              retrieved with ..GGEETTSSTT _r_e_f_n_a_m_e.
+
+       FFDD [[aarrgg [[11]]]]
+              Footnote default format.
+
+       FFEE     Footnote end.
+
+       FFGG [[ttiittllee [[oovveerrrriiddee [[ffllaagg [[rreeffnnaammee]]]]]]]]
+              Figure title.  If _r_e_f_n_a_m_e is used,  then  the  fig-
+              urenumber is saved with ..SSEETTRR, and can be retrieved
+              with ..GGEETTSSTT _r_e_f_n_a_m_e.
+
+       FFSS     Footnote start.  Footnotes in displays is now  pos-
+              sible.
+
+       HH lleevveell [[hheeaaddiinngg--tteexxtt [[hheeaaddiinngg--ssuuffffiixx]]]]
+              Numbered heading.
+
+       HHCC [[hhyyppeennaattiioonn--cchhaarraacctteerr]]
+              Set hypenation character.
+
+       HHMM [[aarrgg11 [[aarrgg22 [[...... [[aarrgg77]]]]]]]]
+              Heading mark style.
+
+       HHUU hheeaaddiinngg--tteexxtt
+              Unnumbered header.
+
+       HHXX ddlleevveell rrlleevveell hheeaaddiinngg--tteexxtt
+              Userdefined   heading  exit.   Called  just  before
+              printing the header.
+
+       HHYY ddlleevveell rrlleevveell hheeaaddiinngg--tteexxtt
+              Userdefined  heading  exit.   Called  just   before
+              printing the header.
+
+       HHZZ ddlleevveell rrlleevveell hheeaaddiinngg--tteexxtt
+              Userdefined heading exit.  Called just after print-
+              ing the header.
+
+
+
+
+
+Groff Version @VERSION@      @MDATE@                            7
+
+
+
+
+
+
+
+
+MM(@MAN7EXT@)          BSD Reference Manual         MM(@MAN7EXT@)
+
+
+       II [[iittaalliicc--tteexxtt [[pprreevv--ffoonntt--tteexxtt [[iittaalliicc--tteexxtt [[......]]]]]]
+              Italic.
+
+       IIBB [[iittaalliicc--tteexxtt [[bboolldd--tteexxtt [[iittaalliicc--tteexxtt [[......]]]]]]
+              Italic-bold
+
+       IIRR [[iittaalliicc--tteexxtt [[rroommaann--tteexxtt [[iittaalliicc--tteexxtt [[......]]]]]]
+              Italic-roman
+
+       LLBB tteexxtt--iinnddeenntt mmaarrkk--iinnddeenntt ppaadd ttyyppee [[mmaarrkk [[LLII--ssppaaccee [[LLBB--
+              ssppaaccee]]]]]]
+              List begin macro.
+
+       LLCC [[lliisstt lleevveell]]
+              List-status clear
+
+       LLEE     List end.
+
+       LLII [[mmaarrkk [[11]]]]
+              List item
+
+       MMLL mmaarrkk [[tteexxtt--iinnddeenntt]]
+              Marked list start
+
+       MMTT [[aarrgg [[aaddddrreesssseeee]]]]
+              Memorandom type. See above note about MT.
+
+       NNDD nneeww--ddaattee
+              New date.
+
+       OOFF [[aarrgg]]
+              Odd-page footer
+
+       OOHH [[aarrgg]]
+              Odd-page header
+
+       OOPP     Skip to odd page.
+
+       PP [[ttyyppee]]
+              Begin new paragraph.
+
+       PPEE     Picture end.
+
+       PPFF [[aarrgg]]
+              Page footer
+
+       PPHH [[aarrgg]]
+              Page header
+
+       PPSS     Picture start (from pic)
+
+
+
+
+Groff Version @VERSION@      @MDATE@                            8
+
+
+
+
+
+
+
+
+MM(@MAN7EXT@)          BSD Reference Manual         MM(@MAN7EXT@)
+
+
+       PPXX     Page-header user-defined exit.
+
+       RR      Roman.
+
+       RRBB [[rroommaann--tteexxtt [[bboolldd--tteexxtt [[rroommaann--tteexxtt [[......]]]]]]
+              Roman-bold.
+
+       RRDD [[pprroommpptt [[ddiivveerrssiioonn [[ssttrriinngg]]]]]]
+              Read to diversion and/or string.
+
+       RRFF     Reference end
+
+       RRII [[rroommaann--tteexxtt [[iittaalliicc--tteexxtt [[rroommaann--tteexxtt [[......]]]]]]
+              Roman-italic.
+
+       RRLL [[tteexxtt--iinnddeenntt [[11]]]]
+              Reference list start
+
+       RRPP [[aarrgg [[aarrgg]]]]
+              Produce reference page.
+
+       RRSS [[ssttrriinngg--nnaammee]]
+              Reference start.
+
+       SS [[ssiizzee [[ssppaacciinngg]]]]
+              Set  point  size and vertical spacing. If any argu-
+              ment is equal 'P', then the previous value is used.
+              A  'C'  means current value, and 'D' default value.
+              If '+' or '-' is used before the value, then incre-
+              ment  or  decrement  of  the  current value will be
+              done.
+
+       SSAA [[aarrgg]]
+              Set adjustment.
+
+       SSKK [[ppaaggeess]]
+              Skip pages.
+
+       SSMM ssttrriinngg11 [[ssttrriinngg22 [[ssttrriinngg33]]]]
+              Make a string smaller.
+
+       SSPP [[lliinneess]]
+              Space vertically. _l_i_n_e_s can have any scalingfactor,
+              like _3_i or _8_v.
+
+       TTBB [[ttiittllee [[oovveerrrriiddee [[ffllaagg [[rreeffnnaammee]]]]]]]]
+              Table   title.    If  _r_e_f_n_a_m_e  is  used,  then  the
+              tablenumber  is  saved  with  ..SSEETTRR,  and  can   be
+              retrieved with ..GGEETTSSTT _r_e_f_n_a_m_e.
+
+
+
+
+
+Groff Version @VERSION@      @MDATE@                            9
+
+
+
+
+
+
+
+
+MM(@MAN7EXT@)          BSD Reference Manual         MM(@MAN7EXT@)
+
+
+       TTCC [[sslleevveell [[ssppaacciinngg [[ttlleevveell [[ttaabb [[hh11 [[hh22 [[hh33 [[hh44
+              [[hh55]]]]]]]]]]]]]]]]]]
+              Table of contents.  All texts can be redefined, new
+              stringvariables  _L_i_f_g,  _L_i_t_b,  _L_i_e_x, _L_i_e_c and _L_i_c_o_n
+              contains "Figure", "TABLE",  "Exhibit",  "Equation"
+              and  "CONTENTS".   These  can be redefined to other
+              languages.
+
+       TTEE     Table end.
+
+       TTHH [[NN]] Table header.
+
+       TTLL     Begin title of memorandom.
+
+       TTMM [[nnuumm11 [[nnuumm22 [[......]]]]]]
+              Technical memorandumnumbers used in ..MMTT.  Unlimited
+              number of arguments may be given.
+
+       TTPP     Top of page user-defined macro.
+
+       TTSS [[HH]] Table start
+
+       TTXX     Userdefined table of contents exit.
+
+       TTYY     Userdefined tbale of contents exit (no "CONTENTS").
+
+       VVLL [[tteexxtt--iinnddeenntt [[mmaarrkk--iinnddeenntt [[11]]]]]]
+              Variable-item list start
+
+       VVMM [[ttoopp [[bboottttoomm]]]]
+              Vertical margin.
+
+       WWCC [[ffoorrmmaatt]]
+              Footnote and display width control.
+
+
+
+
+       Strings used in m@TMAC_M@:
+
+       EEMM     Em dash string
+
+       HHFF     Fontlist for headings, normally "2 2 2 2  2  2  2".
+              Nonnumeric fontnames may also be used.
+
+       HHPP     Pointsize  list for headings. Normally "0 0 0 0 0 0
+              0" which is the same as "10 10 10 10 10 10 10".
+
+       LLff     Contains "LIST OF FIGURES".
+
+       LLtt     Contains "LIST OF TABLES".
+
+
+
+Groff Version @VERSION@      @MDATE@                           10
+
+
+
+
+
+
+
+
+MM(@MAN7EXT@)          BSD Reference Manual         MM(@MAN7EXT@)
+
+
+       LLxx     Contains "LIST OF EXHIBITS".
+
+       LLee     Contains "LIST OF EQUATIONS".
+
+       RRpp     Contains "REFERENCES".
+
+       TTmm     Contains \(tm, trade mark.
+
+       Number variables used in m@TMAC_M@:
+
+       CCll==22   Contents level [0:7],  contents  saved  if  heading
+              level <= Cl
+
+       CCpp==00   Eject page between LIST OF XXXX if Cp == 0
+
+       DD==00    Debugflag,  values  >0  produces  varying degree of
+              debug. A value of 1  gives  information  about  the
+              progress of formatting.
+
+       DDee==00   Eject after floating display is output [0:1]
+
+       DDff==55   Floating keep output [0:5]
+
+       DDss==11   space before and after display if == 1 [0:1]
+
+       EEjj==00   Eject page
+
+       EEqq==00   Eqation lable adjust 0=left, 1=right
+
+       FFss==11   Footnote spacing
+
+       HH11--HH77  Heading counters
+
+       HHbb==22   Heading break level [0:7]
+
+       HHcc==00   Heading centering level, [0:7]
+
+       HHii==11   Heading  temporary indent [0:2] 0 -> 0 indent, left
+              margin
+              1 -> indent to right , like .P 1
+              2 -> indent to line up with text part of  preceding
+              heading
+
+       HHss==22   Heading space level [0:7]
+
+       HHtt==00   Heading numbering type 0 -> multiple (1.1.1 ...)
+              1 -> single
+
+       HHuu==22   Unnumbered heading level
+
+       HHyy==11   Hyphenation in body 0 -> no hyphenation
+
+
+
+Groff Version @VERSION@      @MDATE@                           11
+
+
+
+
+
+
+
+
+MM(@MAN7EXT@)          BSD Reference Manual         MM(@MAN7EXT@)
+
+
+              1 -> hyphenation 14 on
+
+       LLff==11,, LLtt==11,, LLxx==11,, LLee==00
+              Enables (1) or disables (0) the printing of List of
+              figures, List of tables, List of exhibits and  List
+              of equations.
+
+       LLii==66   List indent, used by .AL
+
+       LLss==9999  List space, if current listlevel > Ls then no spac-
+              ing will occur around lists.
+
+       NN==00    Numbering style [0:5] 0 == (default) normal  header
+              for all pages.
+              1  ==  header replaces footer on first page, header
+              is empty.
+              2 == page header is removed on the first page.
+              3 == "section-page" numbering enabled.
+              4 == page header is removed on the first page.
+              5 == "section-page" and "section-figure"  numbering
+              enabled.   Se  also  the  number-register Sectf and
+              Sectp.
+
+       NNpp==00   Numbered paragraphs.
+              0 == not numbered
+              1 == numbered in first level headings.
+
+       OOff==00   Format of figure,table,exhibit,equation titles.
+              0= ". "
+              1= " - "
+
+       PP      Current page-number, normally the same as %  unless
+              "section-page" numbering is enabled.
+
+       PPii==55   paragraph indent
+
+       PPss==11   paragraph spacing
+
+       PPtt==00   Paragraph type.
+              0 == left-justified
+              1 == indented .P
+              2 == indented .P except after .H, .DE or .LE.
+
+       SSii==55   Display indent.
+
+
+AAUUTTHHOORR
+       Jvrgen   Hdgg,   Lund   Institute  of  Technology,  Sweden
+       <jh@efd.lth.se>
+
+
+
+
+
+Groff Version @VERSION@      @MDATE@                           12
+
+
+
+
+
+
+
+
+MM(@MAN7EXT@)          BSD Reference Manual         MM(@MAN7EXT@)
+
+
+FFIILLEESS
+       @@MMAACCRROODDIIRR@@//ttmmaacc..@@TTMMAACC__MM@@
+
+       @@TTMMAACC__MMDDIIRR@@//**..ccoovv
+
+       @@TTMMAACC__MMDDIIRR@@//**..MMTT
+
+       @@TTMMAACC__MMDDIIRR@@//llooccaallee
+
+SSEEEE AALLSSOO
+       ggrrooffff(@MAN1EXT@), @@gg@@ttrrooffff(@MAN1EXT@),  @@gg@@ttbbll(@MAN1EXT@),
+       @@gg@@ppiicc(@MAN1EXT@), @@gg@@eeqqnn(@MAN1EXT@)
+       mmmm(@MAN7EXT@)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Groff Version @VERSION@      @MDATE@                           13
+
+
+
+
+
