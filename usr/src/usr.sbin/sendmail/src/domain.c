@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef NAMED_BIND
-static char sccsid[] = "@(#)domain.c	8.14 (Berkeley) %G% (with name server)";
+static char sccsid[] = "@(#)domain.c	8.15 (Berkeley) %G% (with name server)";
 #else
-static char sccsid[] = "@(#)domain.c	8.14 (Berkeley) %G% (without name server)";
+static char sccsid[] = "@(#)domain.c	8.15 (Berkeley) %G% (without name server)";
 #endif
 #endif /* not lint */
 
@@ -154,6 +154,12 @@ getmxrr(host, mxhosts, droplocalhost, rcode)
 
 			/* it might come up later; better queue it up */
 			*rcode = EX_TEMPFAIL;
+			break;
+
+		  default:
+			syserr("getmxrr: res_search (%s) failed with impossible h_errno (%d)\n",
+				host, h_errno);
+			*rcode = EX_OSERR;
 			break;
 		}
 
