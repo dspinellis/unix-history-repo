@@ -1,4 +1,4 @@
-/*	uipc_socket.c	4.52	82/10/09	*/
+/*	uipc_socket.c	4.53	82/10/16	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -392,6 +392,7 @@ soreceive(so, aname, uio, flags)
 
 restart:
 	sblock(&so->so_rcv);
+SBCHECK(&so->so_snd, "soreceive restart");
 	s = splnet();
 
 #define	rcverr(errno)	{ error = errno; splx(s); goto release; }
@@ -420,6 +421,7 @@ restart:
 	m = so->so_rcv.sb_mb;
 	if (m == 0)
 		panic("receive");
+SBCHECK(&so->so_snd, "soreceive havecc");
 	if (so->so_proto->pr_flags & PR_ADDR) {
 		if ((flags & SOF_PREVIEW) == 0) {
 			so->so_rcv.sb_cc -= m->m_len;
@@ -439,6 +441,9 @@ restart:
 				m = m_free(m);
 		if (m == 0)
 			panic("receive 2");
+		if ((flags & SOF_PREVIEW) == 0)
+			so->so_rcv.sb_mb = m;
+SBCHECK(&so->so_snd, "soreceive afteraddr");
 	}
 	eor = 0;
 	moff = 0;
@@ -450,7 +455,7 @@ restart:
 		so->so_state &= ~SS_RCVATMARK;
 		if (tomark && len > tomark)
 			len = tomark;
-		if (len > m->m_len - moff)
+		if (moff+len > m->m_len - moff)
 			len = m->m_len - moff;
 		splx(s);
 		uiomove(mtod(m, caddr_t) + moff, (int)len, UIO_READ, uio);
@@ -463,6 +468,7 @@ restart:
 				sbfree(&so->so_rcv, m);
 				MFREE(m, n);
 				m = n;
+				so->so_rcv.sb_mb = m;
 			}
 			moff = 0;
 		} else {
@@ -486,10 +492,10 @@ restart:
 			if (tomark == 0)
 				break;
 		}
+SBCHECK(&so->so_snd, "soreceive rcvloop");
 	} while (m && !eor);
 	if (flags & SOF_PREVIEW)
 		goto release;
-	so->so_rcv.sb_mb = m;
 	if ((so->so_proto->pr_flags & PR_ATOMIC) && eor == 0)
 		do {
 			if (m == 0)
@@ -499,6 +505,7 @@ restart:
 			so->so_rcv.sb_mb = m->m_next;
 			MFREE(m, n);
 			m = n;
+SBCHECK(&so->so_snd, "soreceive atomicloop");
 		} while (eor == 0);
 	if ((so->so_proto->pr_flags & PR_WANTRCVD) && so->so_pcb)
 		(*so->so_proto->pr_usrreq)(so, PRU_RCVD,

@@ -1,4 +1,4 @@
-/*	uipc_socket2.c	4.28	82/10/09	*/
+/*	uipc_socket2.c	4.29	82/10/16	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -360,6 +360,16 @@ sbappend(sb, m)
 {
 	register struct mbuf *n;
 
+SBCHECK(sb, "sbappend begin");
+#ifdef notdef
+{ struct mbuf *p;
+printf("sba: ");
+for (p = sb->sb_mb; p; p = p->m_next) printf("%x:(%x,%d) ",p,p->m_off,p->m_len);
+printf("+= ");
+for (p = m; p; p = p->m_next) printf("%x:(%x,%d) ",p,p->m_off,p->m_len);
+printf("\n");
+}
+#endif
 	n = sb->sb_mb;
 	if (n)
 		while (n->m_next)
@@ -388,6 +398,16 @@ sbappend(sb, m)
 		m = m->m_next;
 		n->m_next = 0;
 	}
+#ifdef notdef
+{ struct mbuf *p;
+printf("res: ");
+for (p = sb->sb_mb; p; p = p->m_next) printf("%x:(%x,%d) ",p,p->m_off,p->m_len);
+printf("+= ");
+for (p = m; p; p = p->m_next) printf("%x:(%x,%d) ",p,p->m_off,p->m_len);
+printf("\n");
+}
+#endif
+SBCHECK(sb, "sbappend end");
 }
 
 /*
@@ -404,6 +424,7 @@ sbappendaddr(sb, asa, m0)
 	register struct mbuf *m;
 	register int len = sizeof (struct sockaddr);
 
+SBCHECK(sb, "sbappendaddr begin");
 	m = m0;
 	if (m == 0)
 		panic("sbappendaddr");
@@ -426,7 +447,28 @@ sbappendaddr(sb, asa, m0)
 	m->m_act = (struct mbuf *)1;
 	sbappend(sb, m);
 	sbappend(sb, m0);
+SBCHECK(sb, "sbappendaddr end");
 	return (1);
+}
+
+SBCHECK(sb, str)
+	struct sockbuf *sb;
+	char *str;
+{
+	register int cnt = sb->sb_cc;
+	register int mbcnt = sb->sb_mbcnt;
+	register struct mbuf *m;
+
+	for (m = sb->sb_mb; m; m = m->m_next) {
+		cnt -= m->m_len;
+		mbcnt -= MSIZE;
+		if (m->m_off > MMAXOFF)
+			mbcnt -= CLBYTES;
+	}
+	if (cnt || mbcnt) {
+		printf("cnt %d mbcnt %d\n", cnt, mbcnt);
+		panic(str);
+	}
 }
 
 /*
