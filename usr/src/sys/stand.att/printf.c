@@ -4,13 +4,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)printf.c	5.1 (Berkeley) %G%
+ *	@(#)printf.c	5.2 (Berkeley) %G%
  */
 
-#include <sys/param.h>
-
 /*
- * Scaled down version of C Library printf.
+ * Scaled down version of printf(3).
  *
  * Used to print diagnostic information directly on the console tty.  Since
  * it is not interrupt driven, all system activities are suspended.  Printf
