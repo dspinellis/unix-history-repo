@@ -17,7 +17,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.33 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.34 (Berkeley) %G%";
 #endif /* not lint */
 
 /*-
@@ -121,7 +121,7 @@ MainParseArgs(argc, argv)
 {
 	extern int optind;
 	extern char *optarg;
-	char c;
+	int c;
 
 	optind = 1;	/* since we're called more than once */
 #ifdef notyet
@@ -129,7 +129,7 @@ MainParseArgs(argc, argv)
 #else
 # define OPTFLAGS "D:I:d:ef:ij:knqrst"
 #endif
-rearg:	while((c = getopt(argc, argv, OPTFLAGS)) != EOF) {
+rearg:	while ((c = getopt(argc, argv, OPTFLAGS)) != EOF) {
 		switch(c) {
 		case 'D':
 			Var_Set(optarg, "1", VAR_GLOBAL);
