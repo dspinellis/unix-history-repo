@@ -19,7 +19,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -241,11 +241,12 @@ char *argv[];
 		pbstr(m4wraps); 	/* user-defined wrapup act   */
 		macro();		/* last will and testament   */
 	}
-	else				/* default wrap-up: undivert */
-		for (n = 1; n < MAXOUT; n++)
-			if (outfile[n] != NULL)
-				getdiv(n);
 
+	if (active != stdout)
+		active = stdout;	/* reset output just in case */
+	for (n = 1; n < MAXOUT; n++)	/* default wrap-up: undivert */
+		if (outfile[n] != NULL)
+			getdiv(n);
 					/* remove bitbucket if used  */
 	if (outfile[0] != NULL) {
 		(void) fclose(outfile[0]);
