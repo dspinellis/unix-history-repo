@@ -466,7 +466,8 @@ main (argc, argv)
 	} else if (pid != -1) {
 		what = KINFO_PROC_PID;
 		flag = pid;
-	}
+	} else
+		what = KINFO_PROC_ALL;
 	/*
 	 * select procs
 	 */
@@ -826,7 +827,7 @@ wchan(k, v)
 		printf("%-*s", v->width, "-");
 }
 
-#define pgtok(a)        ((a)/(1024/NBPG))
+#define pgtok(a)        (((a)*NBPG)/1024)
 
 vsize(k, v)
 	struct kinfo *k;
