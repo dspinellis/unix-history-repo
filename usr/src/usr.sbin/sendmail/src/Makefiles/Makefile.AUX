@@ -5,7 +5,7 @@
 #  old make program (I recommend that you get and port the new make if you
 #  are going to be doing any signficant work on sendmail).
 #
-#	@(#)Makefile.AUX	8.6 (Berkeley) %G%
+#	@(#)Makefile.AUX	8.7 (Berkeley) %G%
 #
 
 # use O=-O (usual) or O=-g (debugging)
@@ -21,7 +21,7 @@ O=	-O
 DBMDEF=	-DNDBM
 
 # environment definitions (e.g., -D_AIX3)
-ENVDEF=
+ENVDEF=	-D_POSIX_SOURCE
 
 # see also conf.h for additional compilation flags
 
