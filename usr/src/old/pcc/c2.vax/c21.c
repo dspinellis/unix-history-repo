@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)c21.c 4.3 %G%";
+static	char sccsid[] = "@(#)c21.c 4.4 %G%";
 /* char C21[] = {"@(#)c21.c 1.83 80/10/16 21:18:22 JFR"}; /* sccs ident */
 
 /*
@@ -577,7 +577,7 @@ register struct node *p;
 		} else if (p->op==MOV && p->forw->op!=EXTV && p->forw->op!=EXTZV) {
 			/* superfluous fetch */
 			int nmatch;
-			char src[20];
+			char src[C2_ASIZE];
 	movit:
 			cp2=src; cp1=regs[RT1]; while (*cp2++= *cp1++);
 			splitrand(p->forw);
