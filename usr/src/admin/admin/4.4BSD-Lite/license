@@ -1,4 +1,4 @@
-.\"	@(#)license	1.2 (Berkeley) %G%
+.\"	@(#)license	1.3 (Berkeley) %G%
 .\"
 .nr LL 6.8i
 .OF '6 February 1991'''
@@ -28,7 +28,7 @@ having its principal office at
 \l'2.75i'\|,
 hereinafter called "LICENSEE",
 and shall become effective
-on the date of execution by THE REGENTS OF THE UNIVERSITY OF CALIFORNIA.
+on the date of execution by THE REGENTS.
 .nr FT HB
 .PP
 LICENSEE desires to obtain from THE REGENTS the Computer Programs
@@ -53,10 +53,9 @@ shall be perpetual.
 Upon termination of this Agreement,
 LICENSEE will
 cease to use and distribute the LICENSED MATERIAL.
-THE REGENTS may terminate this agreement by thirty (30)
-days notice to LICENSEE, if LICENSEE is in
-breach of this agreement and fails to correct
-such breach within that time.
+If THE REGENTS gives thirty (30) days' notice to LICENSEE of LICENSEE'S
+breach of this Agreement and LICENSEE fails to cure said breach within said
+thirty (30) day period, this Agreement shall terminate.
 .IP 3.
 .I Fee.
 LICENSEE shall pay THE REGENTS the sum of $850.00
@@ -105,11 +104,11 @@ thereto except as expressly set forth in this License Agreement.
 .I Warranty.
 THE REGENTS DOES NOT WARRANT THAT THE USE OF THE LICENSED MATERIAL
 WILL NOT INFRINGE ANY COPYRIGHT, TRADE SECRET, PATENT, OR OTHER
-PROPRIETARY RIGHT OF ANOTHER PARTY.
+PROPRIETARY OR CONTRACTUAL RIGHTS OF ANOTHER PARTY.
 THE LIMITATION OF LIABILITY SET FORTH IN THIS AGREEMENT IS APPLICABLE
 TO ANY CLAIM THAT 4.4BSD-LITE, OR ANY PORTION
 THEREOF, INFRINGES ANOTHER'S COPYRIGHT, TRADE SECRET, PATENT, OR OTHER
-PROPRIETARY RIGHT.
+PROPRIETARY OR CONTRACTUAL RIGHTS.
 .IP 8.
 .I Indemnification. 
 LICENSEE agrees to indemnify, defend and hold harmless The Regents of
@@ -128,7 +127,7 @@ with this Agreement. LICENSEE's obligations include, but are not limited to,
 its obligation to indemnify, defend, and hold The Regents of the University
 of California, their agents, officers and
 employees harmless in the case of any claim of copyright, trade secret,
-patent, or any other type of proprietary rights infringement
+patent, or any other type of proprietary or contractual rights infringement
 based in any manner on LICENSEE's use of 4.4BSD-LITE.
 .IP 9.
 .I Limitation
@@ -137,7 +136,7 @@ based in any manner on LICENSEE's use of 4.4BSD-LITE.
 THE REGENTS SHALL NOT BE LIABLE FOR ANY COSTS,
 DAMAGES, INCLUDING DIRECT, INDIRECT, SPECIAL,
 INCIDENTAL, OR CONSEQUENTIAL (INCLUDING LOST
-PROFITS), FEES INCLUDING, BUT NOT LIMITED TO,
+PROFITS), FEES, INCLUDING, BUT NOT LIMITED TO,
 ATTORNEY'S FEES, OR OTHER LIABILITY WITH RESPECT TO
 ANY CLAIM BY LICENSEE OR ANY THIRD PARTY ON
 ACCOUNT OF OR ARISING FROM THIS AGREEMENT OR USE
@@ -182,14 +181,18 @@ However, the name of the University may not be used to
 endorse or promote products derived from this software
 without specific prior written permission.
 .IP 11.
-.I Enhancements.
-LICENSEE may enhance, modify, or correct
-the LICENSED MATERIAL, may merge it into other material,
-and may use, reproduce, and distribute the LICENSED MATERIAL as
-modified.
-However, the modified version is still
-subject to the copyright and acknowledgement provisions
-noted in Section 10.
+.I Sublicensing 
+.I and 
+.I Modification 
+.I of 
+.I LICENSED 
+.I MATERIAL.  
+LICENSEE may use, enhance, modify, or correct the LICENSED MATERIAL, may merge
+the LICENSED MATERIAL into other material, and may sublicense the LICENSED
+MATERIAL to others in its original form, or as enhanced, modified, or corrected
+by LICENSEE.  The forgoing right is granted with the provision that the 
+sublicense contain the terms and conditions set forth in paragraphs 4, 5, 6, 
+7, 8, 9, and 10, of this Agreement.
 .IP 12.
 .I Source
 .I Code.
@@ -227,6 +230,7 @@ consent of  THE REGENTS.
 .HB
 .ps 10
 .LP
+.bp
 IN WITNESS WHEREOF, THE REGENTS
 and LICENSEE have executed this Agreement
 on the dates specified below.  The

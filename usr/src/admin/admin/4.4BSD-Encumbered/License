@@ -1,4 +1,4 @@
-.\" @(#)License	1.2 (CSRG - distribution) %G%
+.\" @(#)License	1.3 (CSRG - distribution) %G%
 .ND
 .po +0.34375i
 .nr PO +0.34375i
@@ -6,7 +6,8 @@
 .ps 14
 .ft B
 .ce
-LICENSE AGREEMENT
+.sp 2
+FOURTH BERKELEY DISTRIBUTION LICENSE AGREEMENT
 .ft R
 .sp 3
 .ps 12
@@ -16,12 +17,12 @@ LICENSE AGREEMENT
 .hy 0
 THIS LICENSE AGREEMENT is made and entered into
 by and between THE REGENTS OF THE UNIVERSITY
-OF CALIFORNIA, a California corporation, and
+OF CALIFORNIA, ('THE REGENTS') a California corporation, and
 \l'2.25i'
 \l'3.1i'\|, a \l'2.6i' having its
 principal office at \l'3.2i'\|, hereinafter
 ``LICENSEE'', and shall become effective
-on the date of execution by THE REGENTS OF THE UNIVERSITY OF CALIFORNIA.
+on the date of execution by THE REGENTS.
 .hy 14
 .sp 2
 .vs
@@ -76,15 +77,14 @@ sublicense the Fourth Berkeley Software Distribution, the components of
 which are described on the attached Schedule A, subject to the terms
 and conditions of this Agreement and LICENSEE hereby accepts such
 license solely upon such terms and conditions.
-.bp
 .PP
 \01.\ \ \fBTerm. \fR The term of this Agreement shall commence on the
 effective date hereof, and, unless sooner terminated as hereinafter set forth,
 shall terminate when LICENSEE's
 UNIX/32V, SYSTEM-III, or SYSTEM-V
 license terminates.
-LICENSEE may terminate this Agreement upon thirty (30) days written notice
-to The Regents of the University of California.
+Either THE REGENTS or LICENSEE may terminate this Agreement upon thirty 
+(30) days written notice to the other party.
 This license shall terminate thirty (30) days after notice from The
 Regents of the University of California to LICENSEE that LICENSEE
 is in breach of this Agreement unless within that time LICENSEE gives
@@ -97,7 +97,7 @@ and shall cease use and sublicensing thereof.
 .PP
 \02.\ \ \fBFees. \fRThe distribution fee for this license and delivery
 of one physical copy of the Fourth Berkeley Software Distribution is
-one thousand dollars ($2,000.00). LICENSEE may obtain additional copies
+two thousand dollars ($2,000.00). LICENSEE may obtain additional copies
 and new releases
 of the Fourth Berkeley Software Distribution which The Regents of
 the University of California may choose to make available
@@ -142,7 +142,6 @@ by this Agreement provided that such duplication is allowed under the terms
 of LICENSEE's
 UNIX/32V, SYSTEM-III, or SYSTEM-V license with
 AT&T.
-.bp
 .PP
 \06.\ \ \fBSublicensing by Licensee. \fR LICENSEE may sublicense the
 use of the Fourth Berkeley Software Distribution to third parties
@@ -160,7 +159,7 @@ UNIX/32V, SYSTEM-III, or SYSTEM-V, whichever is
 applicable;
 .IP (c)
 LICENSEE's sublicense contains the covenants and restrictions of
-paragraphs 7, 8, and 9.
+paragraphs 7, 8, 9, 10 , 11, 12, and 13.
 .RE
 .LP
 Material so sublicensed may be either modified or unmodified by
@@ -188,7 +187,7 @@ documentation provided to the LICENSEE as part of the Fourth Berkeley
 Software Distribution for those portions of said Distribution
 used by LICENSEE].''
 .PP
-\08.\ \ \fBLack of Warranty. \fR
+\08.\ \ \fBDisclaimer of Warranties. \fR
 The Fourth Berkeley Software Distribution is provided by The Regents
 of the University of California and the Other Contributors
 on an ``As Is'' basis.
@@ -206,19 +205,27 @@ WHATSOEVER, INCLUDING WITHOUT LIMITATION, THE CONDITION OF THE
 FOURTH BERKELEY SOFTWARE DISTRIBUTION,
 ITS MERCHANTABILITY OR ITS FITNESS FOR ANY PARTICULAR PURPOSE.
 .PP
-\09.\ \ \fBLack of Maintenance Services. \fR LICENSEE understands
+\09.\ \ \fBDisclaimer of Proprietary Rights Warrante. \fR THE REGENTS DOES NOT
+WARRANT THAT THE USE OF FOURTH BERKELEY SOFTWARE DISTRIBUTION WILL NOT 
+INFRINGE ON ANY PATENT, COPYRIGHT, TRADE SECRET, OR OTHER PROPRIETARY OR 
+CONTRACTUAL RIGHT OF ANOTHER PARTY.  THE LIMITATION OF LIABILITY SET FORTH IN 
+THIS AGREEMENT IS APPLICABLE TO ANY CLAIM THAT FOURTH BERKELEY SOFTWARE 
+DISTRIBUTION, OR ANY PORTION THEREOF, INFRINGES ANOTHER'S PATENT, COPYRIGHT,
+TRADE SECRET, OR OTHER PROPRIETARY OR CONTRACTUAL RIGHT.
+.PP
+10.\ \ \fBLack of Maintenance Services. \fR LICENSEE understands
 and agrees that The Regents of the University of California and the
 Other Contributors are
 under no obligation to provide either maintenance services,
 update services, notices of latent defects, or correction
 of defects for the Fourth Berkeley Software Distribution.
-.bp
 .PP
-10.\ \ \fBPatent, Trade Secret and Copyright Infringement.  \fRIf 
+11.\ \ \fBPatent, Trade Secret and Copyright Infringement.  \fRIf 
 The Regents of the University of California gives formal written
 notice to LICENSEE that there has been a claim, or is likely to
 be a claim, that the Fourth Berkeley Software Distribution infringes
-a U.S. patent, trade secret, or copyright, LICENSEE agrees to either:
+a patent, copyright, trade secret, or other contractual or proprietary right,
+LICENSEE agrees to either:
 .RS
 .IP (a)
 immediately cease use of, cease sublicensing of, and destroy
@@ -239,7 +246,7 @@ Berkeley Software Distribution which is, or is likely to become,
 subject to the claim of infringement.
 .RE
 .PP
-11.\ \ \fBLimitation of Liability. \fR LICENSEE agrees to
+12.\ \ \fBIndemnification. \fR LICENSEE agrees to
 indemnify, defend, and hold harmless The Regents of the University
 of California and the Other Contributors,
 their successors, agents,
@@ -247,8 +254,8 @@ officers, and employees, either in their individual capacities or
 by reason of their relationship to The Regents of the University
 of California or the Other Contributors, with respect to any expense,
 claim, liability, loss or
-damage (including any incidental or consequential damages) either
-direct or indirect, whether incurred, made or suffered by
+damages, including direct, indirect, special, incidental, or consequential
+(including lost profits) damges, whether incurred, made or suffered by
 LICENSEE or any of its sublicensees or by other third parties, in
 connection with or in any way arising out of the furnishing,
 sublicensing, performance or use of the Fourth Berkeley Software
@@ -257,41 +264,47 @@ LICENSEE's obligations under this paragraph include, but are not
 limited to, its obligation to indemnify, defend, and hold
 The Regents of the University of California and the Other Contributors,
 their agents, officers, and employees harmless in the
-case of any claim of copyright, trade secret, or patent
-infringement based in any manner on LICENSEE's use or sublicensing
-of the Fourth Berkeley Software Distribution.
+case of any claim of patent, copyright, trade secret, or other contractual
+or proprietary rights infringement based in any manner on LICENSEE's use or 
+sublicensing of the Fourth Berkeley Software Distribution.
 .PP
-12.\ \ \fBLegal Expenses. \fR  In case legal action is taken by
+13.\ \ \fBLimitation of Liability.\fR  THE REGENTS SHALL NOT BE LIABLE FOR ANY
+COSTS, DAMAGES, INCLUDING DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR 
+CONSEQUENTIAL (INCLUDING LOST PROFITS), FEES, INCLUDING, BUT NOT LIMITED TO,
+ATTORNEY'S FEES, OR OTHER LIABILITY WITH RESPECT TO ANY CLAIM BY LICENSEE OR
+ANY THIRD PARTY ON ACCOUNT OF OR ARISING FROM THIS AGREEMENT OR USE OF THE
+FOURTH BERKELEY SOFTWARE DISTRIBUTION.
+.PP
+14.\ \ \fBLegal Expenses. \fR  In case legal action is taken by
 either party to enforce this Agreement, all costs and expenses,
 including reasonable attorney's fees, incurred by the
 prevailing party in exercising any of its rights or
 remedies hereunder or in enforcing any of the terms,
 conditions, or provisions hereof shall be paid by the other party.
 .PP
-13.\ \ \fBSeverability. \fR  If any part, term or provision of
+15.\ \ \fBSeverability. \fR  If any part, term or provision of
 this Agreement shall be held illegal, unenforceable or in conflict
 with any law of a federal, state or local government having
 jurisdiction over this Agreement, the validity of the remaining
 portions or provisions shall not be affected thereby.
 .PP
-14.\ \ \fBGoverning Law. \fR  This Agreement shall be construed and
+16.\ \ \fBGoverning Law. \fR  This Agreement shall be construed and
 enforced according to the laws of California.
 If LICENSEE is located outside
 the United States of America, the parties hereto agree
 that any dispute arising in connection with this
 Agreement will be settled by the ICC Court of Arbitration.
 .PP
-15.\ \ \fBParagraph Headings. \fR  The headings herein are inserted for
+17.\ \ \fBParagraph Headings. \fR  The headings herein are inserted for
 convenience only and shall not be construed to limit or modify
 the scope of any provision of this Agreement.
-.bp
 .PP
-16.\ \ \fBEntire Agreement. \fR  This Agreement contains all the
+18.\ \ \fBEntire Agreement. \fR  This Agreement contains all the
 agreements, representations, and understandings of the parties hereto
 and supersedes any previous understandings, commitments or
 agreements, oral or written.
 .PP
-17.\ \ \fBAuthority. \fR  Each of the undersigned warrants that he/she
+19.\ \ \fBAuthority. \fR  Each of the undersigned warrants that he/she
 has the authority to bind to this Agreement the party which
 he/she represents.
 .sp 2
