@@ -1,0 +1,32 @@
+.TH CRC 1 OMEN 
+.SH NAME
+crc \- checksum files
+.SH SYNOPSIS
+.B crc
+file ...
+.SH DESCRIPTION
+For each file,
+.I crc\^
+calculates and prints a 32-bit CRC,
+the byte count, and the file name.
+It is typically used to validate files transferred between
+different systems, and is useful in detecting subtle disk corruption.
+.I Crc\^
+uses a checksum compatible with the
+DOS
+version of crc,
+the 32 bit CRC used by PKZIP version 0.9,
+as well as the "crc" command in ZCOMM and Professional-YAM
+(high reliability communications programs).
+
+The 32-bit CRC used is the frame
+check sequence in ADCCP (ANSI X3.66, also known as FIPS PUB 71
+and FED-STD-1003, the U.S. versions of CCITT's X.25 link-level
+protocol).
+
+32 bit CRC code courtesy Gary S. Brown.
+.SH BUGS
+Although most unlikely,
+files with different data may still produce the same crc value.
+.SH "SEE ALSO"
+chek(1), tocpm(1), sum(1), wc(1).
