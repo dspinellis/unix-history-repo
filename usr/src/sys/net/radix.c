@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)radix.c	7.11 (Berkeley) %G%
+ *	@(#)radix.c	7.12 (Berkeley) %G%
  */
 
 /*
@@ -606,17 +606,19 @@ rn_walk(rn, f, w)
 	caddr_t  w;
 {
 	int error;
+	struct radix_node *orn;
 	for (;;) {
 		while (rn->rn_b >= 0)
 			rn = rn->rn_l;	/* First time through node, go left */
-		if (error = (*f)(rn, w))
-			return (error);	/* Process Leaf */
-		while (rn->rn_p->rn_r == rn) {	/* if coming back from right */
+		for (orn = rn; rn; rn = rn->rn_dupedkey) /* Process Leaves */
+			if (!(rn->rn_flags & RNF_ROOT) && (error = (*f)(rn, w)))
+				return (error);
+		for (rn = orn; rn->rn_p->rn_r == rn; ) { /* If at right child */
 			rn = rn->rn_p;		/* go back up */
 			if (rn->rn_flags & RNF_ROOT)
 				return 0;
 		}
-		rn = rn->rn_p->rn_r;		/* otherwise, go right*/
+		rn = rn->rn_p->rn_r;		/* otherwhise, go right*/
 	}
 }
 char rn_zeros[MAXKEYLEN], rn_ones[MAXKEYLEN];

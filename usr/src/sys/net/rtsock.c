@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)rtsock.c	7.21 (Berkeley) %G%
+ *	@(#)rtsock.c	7.22 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -482,16 +482,11 @@ rt_dumpentry(rn, w)
 	register struct walkarg *w;
 {
 	register struct sockaddr *sa;
-	int n, error;
-
-    for (; rn; rn = rn->rn_dupedkey) {
-	int count = 0, size = sizeof(w->w_rtm);
+	int n, error, size = sizeof(w->w_rtm);
 	register struct rtentry *rt = (struct rtentry *)rn;
 
-	if (rn->rn_flags & RNF_ROOT)
-		continue;
 	if (w->w_op == KINFO_RT_FLAGS && !(rt->rt_flags & w->w_arg))
-		continue;
+		return 0;
 #define next(a, l) {size += (l); w->w_rtm.rtm_addrs |= (a); }
 	w->w_rtm.rtm_addrs = 0;
 	if (sa = rt_key(rt))
@@ -504,7 +499,7 @@ rt_dumpentry(rn, w)
 		next(RTA_GENMASK, ROUNDUP(sa->sa_len));
 	w->w_needed += size;
 	if (w->w_where == NULL || w->w_needed > 0)
-		continue;
+		return 0;
 	w->w_rtm.rtm_msglen = size;
 	w->w_rtm.rtm_flags = rt->rt_flags;
 	w->w_rtm.rtm_use = rt->rt_use;
@@ -528,7 +523,7 @@ rt_dumpentry(rn, w)
     w->w_where += n;}
 
 		next(&w->w_m, size); /* Copy rtmsg and sockaddrs back */
-		continue;
+		return 0;
 	}
 	next(&w->w_rtm, sizeof(w->w_rtm));
 	if (sa = rt_key(rt))
@@ -539,7 +534,6 @@ rt_dumpentry(rn, w)
 		next(sa, ROUNDUP(sa->sa_len));
 	if (sa = rt->rt_genmask)
 		next(sa, ROUNDUP(sa->sa_len));
-    }
 	return (0);
 #undef next
 }
