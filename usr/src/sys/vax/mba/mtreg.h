@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)mtreg.h	7.1 (Berkeley) %G%
+ *	@(#)mtreg.h	7.2 (Berkeley) %G%
  */
 
 /*
@@ -82,7 +82,8 @@ struct mtdevice {
 
 /* mter */
 #define	MTER_INTCODE	0377		/* mask for interrupt code */
-#define MTER_FAILCODE	0176000		/* failure code */
+#define	MTER_FAILCODE	0176000		/* failure code */
+#define	MTER_FSHIFT	10		/* shift to make units */
 
 /* interrupt codes */
 #define	MTER_DONE	001		/* operation complete */
