@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)func.c	4.14 (Berkeley) %G%";
+static	char *sccsid = "@(#)func.c	4.15 (Berkeley) %G%";
 #endif
 
 #include "sh.h"
@@ -888,20 +888,25 @@ dolimit(v)
 {
 	register struct limits *lp;
 	register int limit;
+	char hard = 0;
 
 	v++;
+	if (eq(*v, "-h")) {
+		hard = 1;
+		v++;
+	}
 	if (*v == 0) {
-		for (lp = limits+1; lp->limconst >= 0; lp++)
-			plim(lp);
+		for (lp = limits; lp->limconst >= 0; lp++)
+			plim(lp, hard);
 		return;
 	}
 	lp = findlim(v[0]);
 	if (v[1] == 0) {
-		plim(lp);
+		plim(lp,  hard);
 		return;
 	}
 	limit = getval(lp, v+1);
-	if (setlim(lp, limit) < 0)
+	if (setlim(lp, hard, limit) < 0)
 		error(NOSTR);
 }
 
@@ -984,19 +989,22 @@ limtail(cp, str0)
 		error("Bad scaling; did you mean ``%s''?", str0);
 }
 
-plim(lp)
+plim(lp, hard)
 	register struct limits *lp;
+	char hard;
 {
 	struct rlimit rlim;
+	int limit;
 
 	printf("%s \t", lp->limname);
 	(void) getrlimit(lp->limconst, &rlim);
-	if (rlim.rlim_cur == RLIM_INFINITY)
+	limit = hard ? rlim.rlim_max : rlim.rlim_cur;
+	if (limit == RLIM_INFINITY)
 		printf("unlimited");
 	else if (lp->limconst == RLIMIT_CPU)
-		psecs((long)rlim.rlim_cur);
+		psecs((long)limit);
 	else
-		printf("%d %s", rlim.rlim_cur / lp->limdiv, lp->limscale);
+		printf("%d %s", limit / lp->limdiv, lp->limscale);
 	printf("\n");
 }
 
@@ -1005,11 +1013,16 @@ dounlimit(v)
 {
 	register struct limits *lp;
 	int err = 0;
+	char hard = 0;
 
 	v++;
+	if (eq(*v, "-h")) {
+		hard = 1;
+		v++;
+	}
 	if (*v == 0) {
-		for (lp = limits+1; lp->limconst >= 0; lp++)
-			if (setlim(lp, (int)RLIM_INFINITY) < 0)
+		for (lp = limits; lp->limconst >= 0; lp++)
+			if (setlim(lp, hard, (int)RLIM_INFINITY) < 0)
 				err++;
 		if (err)
 			error(NOSTR);
@@ -1017,24 +1030,28 @@ dounlimit(v)
 	}
 	while (*v) {
 		lp = findlim(*v++);
-		if (setlim(lp, (int)RLIM_INFINITY) < 0)
+		if (setlim(lp, hard, (int)RLIM_INFINITY) < 0)
 			error(NOSTR);
 	}
 }
 
-setlim(lp, limit)
+setlim(lp, hard, limit)
 	register struct limits *lp;
+	char hard;
 {
 	struct rlimit rlim;
 
 	(void) getrlimit(lp->limconst, &rlim);
-  	if (limit == RLIM_INFINITY && geteuid() != 0)
+	if (hard)
+		rlim.rlim_max = limit;
+  	else if (limit == RLIM_INFINITY && geteuid() != 0)
  		rlim.rlim_cur = rlim.rlim_max;
  	else
  		rlim.rlim_cur = limit;
 	if (setrlimit(lp->limconst, &rlim) < 0) {
-		printf("%s: %s: Can't %s limit\n", bname, lp->limname,
-		    limit == RLIM_INFINITY ? "remove" : "set");
+		printf("%s: %s: Can't %s%s limit\n", bname, lp->limname,
+		    limit == RLIM_INFINITY ? "remove" : "set",
+		    hard ? " hard" : "");
 		return (-1);
 	}
 	return (0);
