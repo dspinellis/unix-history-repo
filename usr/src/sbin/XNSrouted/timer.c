@@ -1,6 +1,16 @@
+/*
+ * Copyright (c) 1985 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ * Includes material written at Cornell University by Bill Nesheim,
+ * by permission of the author.
+ */
+
+
 #ifndef lint
-static char rcsid[] = "$Header$";
-#endif
+static char sccsid[] = "@(#)timer.c	5.3 (Berkeley) %G%";
+#endif not lint
 
 /*
  * Routing Table Management Daemon
