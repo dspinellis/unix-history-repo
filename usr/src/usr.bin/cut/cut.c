@@ -32,6 +32,14 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00142
+ * --------------------         -----   ----------------------
+ *
+ * 20 Apr 93	Simon J Gerraty		cut -f1 outputs a field separator
+ *					before the first field.
  */
 
 #ifndef lint
@@ -212,7 +220,7 @@ f_cut(fp, fname)
 	int output;
 	char lbuf[_POSIX2_LINE_MAX + 1];
 
-	for (sep = dchar, output = 0; fgets(lbuf, sizeof(lbuf), fp);) {
+	for (sep = dchar, output = 0; fgets(lbuf, sizeof(lbuf), fp); output = 0) {
 		for (isdelim = 0, p = lbuf;; ++p) {
 			if (!(ch = *p)) {
 				(void)fprintf(stderr,
