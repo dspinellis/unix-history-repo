@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)ps.c	4.22 (Berkeley) %G%";
+static	char *sccsid = "@(#)ps.c	4.23 (Berkeley) %G%";
 #endif
 
 /*
@@ -1061,39 +1061,81 @@ vsize(sp)
 	return (vp->v_swrss + (ap->a_xccount ? 0 : vp->v_txtswrss));
 }
 
-#define	NMAX	8
-#define	NUID	2048
+#define	NMAX	8	/* sizeof loginname (should be sizeof (utmp.ut_name)) */
+#define NUID	2048	/* must not be a multiple of 5 */
 
-char	names[NUID][NMAX+1];
+struct nametable {
+	char	nt_name[NMAX+1];
+	int	nt_uid;
+} nametable[NUID];
 
-/*
- * Stolen from ls...
- */
+struct nametable *
+findslot(uid)
+unsigned short	uid;
+{
+	register struct nametable	*n, *start;
+
+	/*
+	 * find the uid or an empty slot.
+	 * return NULL if neither found.
+	 */
+
+	n = start = nametable + (uid % (NUID - 20));
+	while (n->nt_name[0] && n->nt_uid != uid) {
+		if ((n += 5) >= &nametable[NUID])
+			n -= NUID;
+		if (n == start)
+			return((struct nametable *)NULL);
+	}
+	return(n);
+}
+
 char *
 getname(uid)
 {
-	register struct passwd *pw;
-	static init;
-	struct passwd *getpwent();
+	register struct passwd		*pw;
+	static				init = 0;
+	struct passwd			*getpwent();
+	register struct nametable	*n;
 
-	if (uid >= 0 && uid < NUID && names[uid][0])
-		return (&names[uid][0]);
-	if (init == 2)
-		return (0);
-	if (init == 0)
-		setpwent(), init = 1;
-	while (pw = getpwent()) {
-		if (pw->pw_uid >= NUID)
-			continue;
-		if (names[pw->pw_uid][0])
-			continue;
-		(void) strncpy(names[pw->pw_uid], pw->pw_name, NMAX);
-		if (pw->pw_uid == uid)
-			return (&names[uid][0]);
+	/*
+	 * find uid in hashed table; add it if not found.
+	 * return pointer to name.
+	 */
+
+	if ((n = findslot(uid)) == NULL)
+		return((char *)NULL);
+
+	if (n->nt_name[0])	/* occupied? */
+		return(n->nt_name);
+
+	switch (init) {
+		case 0:
+			setpwent();
+			init = 1;
+			/* intentional fall-thru */
+		case 1:
+			while (pw = getpwent()) {
+				if (pw->pw_uid < 0)
+					continue;
+				if ((n = findslot(pw->pw_uid)) == NULL) {
+					endpwent();
+					init = 2;
+					return((char *)NULL);
+				}
+				if (n->nt_name[0])
+					continue;	/* duplicate, not uid */
+				strncpy(n->nt_name, pw->pw_name, NMAX);
+				n->nt_uid = pw->pw_uid;
+				if (pw->pw_uid == uid)
+					return (n->nt_name);
+			}
+			endpwent();
+			init = 2;
+			/* intentional fall-thru */
+		case 2:
+			return ((char *)NULL);
 	}
-	init = 2;
-	endpwent();
-	return (0);
 }
 
 char	*freebase;
