@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)dmesg.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)dmesg.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/cdefs.h>
@@ -26,7 +26,7 @@ static char sccsid[] = "@(#)dmesg.c	5.10 (Berkeley) %G%";
 
 struct nlist nl[] = {
 #define	X_MSGBUF	0
-	{ "_msgbuf" },
+	{ "_msgbufp" },
 	{ NULL },
 };
 
@@ -39,7 +39,7 @@ main(argc, argv)
 {
 	register int ch, newl, skip;
 	register char *p, *ep;
-	struct msgbuf cur;
+	struct msgbuf *bufp, cur;
 	char *memf, *nlistf;
 
 	memf = nlistf = NULL;
@@ -71,9 +71,10 @@ main(argc, argv)
 	if (kvm_nlist(nl) == -1)
 		err("kvm_nlist: %s", kvm_geterr());
 	if (nl[X_MSGBUF].n_type == 0)
-		err("s: msgbuf not found", nlistf ? nlistf : "namelist");
+		err("s: msgbufp not found", nlistf ? nlistf : "namelist");
 
-        kvm_read((void *)nl[X_MSGBUF].n_value, (void *)&cur, sizeof(cur));
+        kvm_read((void *)nl[X_MSGBUF].n_value, (void *)&bufp, sizeof(bufp));
+        kvm_read((void *)bufp, (void *)&cur, sizeof(cur));
 	if (cur.msg_magic != MSG_MAGIC)
 		err("magic number incorrect");
 	if (cur.msg_bufx >= MSG_BSIZE)
