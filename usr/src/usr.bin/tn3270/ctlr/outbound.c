@@ -20,7 +20,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)outbound.c	3.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)outbound.c	3.2 (Berkeley) %G%";
 #endif	/* lint */
 
 
@@ -422,14 +422,15 @@ int	control;				/* this buffer ended block? */
 		 */
 		i = WhereAttrByte(BufferAddress);
 		c = FieldAttributes(i);
-		for (i = Addr3270(buffer[0], buffer[1]); i != BufferAddress;
-				BufferAddress = ScreenInc(BufferAddress)) {
+		i = Addr3270(buffer[0], buffer[1]);
+		do {
 		    if (IsStartField(BufferAddress)) {
 			c = FieldAttributes(BufferAddress);
 		    } else if (!IsProtectedAttr(BufferAddress, c)) {
 			AddHost(BufferAddress, 0);
 		    }
-		}
+		    BufferAddress = ScreenInc(BufferAddress);
+		} while (i != BufferAddress);
 		buffer += 2;
 		count -= 2;
 		break;
