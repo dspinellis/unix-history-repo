@@ -1,4 +1,4 @@
-/*	lpf.c	4.1	81/05/09	*/
+/*	lpf.c	4.2	81/06/02	*/
 /*
  * lpf -- Line printer filter: handles underlines for those printers/
  *	  device drivers that won't
@@ -8,6 +8,7 @@
 #include <signal.h>
 
 #define	LINELN	132
+#define output(c) (putchar(c))
 
 char	linebuf[LINELN+2];
 int	ov;
@@ -117,6 +118,7 @@ putline()
 		exit(1);
 }
 
+#ifndef output
 output(c)
 register char c;
 {
@@ -145,3 +147,4 @@ register char c;
 	}
 	putchar(c);
 }
+#endif
