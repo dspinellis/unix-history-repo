@@ -14,7 +14,7 @@
 # WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF MERCHANTIBILITY AND
 # FITNESS FOR A PARTICULAR PURPOSE.
 #
-# @(#)Makefile	5.1 (Berkeley) %G%
+# @(#)Makefile	5.2 (Berkeley) %G%
 #
 
 CFLAGS=	-O
@@ -26,7 +26,7 @@ MAN=	rain.0
 all: rain
 
 rain: ${LIBC}
-	${CC} -o $@ ${CFLAGS} $@.c -ltermcap
+	${CC} -o $@ ${CFLAGS} $@.c -ltermcap -lcompat
 
 clean:
 	rm -f ${OBJS} core rain

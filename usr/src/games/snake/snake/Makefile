@@ -14,11 +14,10 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.8 (Berkeley) %G%
+#	@(#)Makefile	5.9 (Berkeley) %G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
-LIBS=	-lm -ltermcap
 SRCS1=	snake.c move.c
 OBJS1=	snake.o move.o
 SRCS2=	snscore.c
@@ -28,7 +27,7 @@ MAN=	snake.0
 all: snake snscore
 
 snake: ${OBJS1} ${LIBC}
-	${CC} -o $@ ${CFLAGS} ${OBJS1} ${LIBS}
+	${CC} -o $@ ${CFLAGS} ${OBJS1} -lm -ltermcap -lcompat
 
 snscore: ${OBJS2} ${LIBC}
 	${CC} -o $@ ${CFLAGS} ${OBJS2}

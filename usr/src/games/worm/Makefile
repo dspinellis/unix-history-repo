@@ -14,7 +14,7 @@
 # WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF MERCHANTIBILITY AND
 # FITNESS FOR A PARTICULAR PURPOSE.
 #
-# @(#)Makefile	5.1 (Berkeley) %G%
+# @(#)Makefile	5.2 (Berkeley) %G%
 #
 
 CFLAGS=	-O
@@ -26,7 +26,7 @@ MAN=	worm.0
 all: worm
 
 worm: ${LIBC}
-	${CC} -o $@ ${CFLAGS} $@.c -lcurses -ltermcap
+	${CC} -o $@ ${CFLAGS} $@.c -lcurses -ltermcap -lcompat
 
 clean:
 	rm -f ${OBJS} core worm

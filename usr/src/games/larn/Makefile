@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.6 (Berkeley) %G%
+#	@(#)Makefile	5.7 (Berkeley) %G%
 #
 # Configuration options
 #  
@@ -102,7 +102,7 @@ CFLAGS= -O ${OPTIONS} -DLARNHOME=\"${LARNHOME}/\"
 all: larn
 
 larn: ${OBJS} ${LIBC}
-	${CC} ${CFLAGS} ${OBJS} -o $@ -ltermcap
+	${CC} ${CFLAGS} ${OBJS} -o $@ -ltermcap -lcompat
 
 install: ${MAN}
 	-[ -d ${DESTDIR}/usr/games/lib/larnfiles ] || mkdir ${DESTDIR}/usr/games/lib/larnfiles

@@ -14,11 +14,10 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.6 (Berkeley) %G%
+#	@(#)Makefile	5.7 (Berkeley) %G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
-LIBS=	-lm
 SRCS=	abandon.c attack.c autover.c capture.c check_out.c checkcond.c \
 	compkl.c computer.c damage.c damaged.c dcrept.c destruct.c \
 	dock.c dumpgame.c dumpme.c dumpssradio.c events.c externs.c \
@@ -40,7 +39,7 @@ MAN=	trek.0
 all: trek
 
 trek: ${OBJS} ${LIBC}
-	${CC} ${CFLAGS} -o $@ ${OBJS} ${LIBS}
+	${CC} ${CFLAGS} -o $@ ${OBJS} -lm -lcompat
 
 clean:
 	rm -f ${OBJS} core trek

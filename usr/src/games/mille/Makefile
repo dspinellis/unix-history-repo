@@ -14,11 +14,10 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.8 (Berkeley) %G%
+#	@(#)Makefile	5.9 (Berkeley) %G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
-LIBS=	-lcurses -ltermlib
 SRCS=	comp.c end.c extern.c init.c mille.c misc.c move.c print.c \
 	roll.c save.c table.c types.c varpush.c
 MSRCS=	comp.c end.c extern.c init.c mille.c misc.c move.c print.c \
@@ -32,7 +31,7 @@ MAN=	mille.0
 all: mille
 
 mille: ${MOBJS} ${LIBC}
-	${CC} ${CFLAGS} -o $@ ${MOBJS} ${LIBS}
+	${CC} ${CFLAGS} -o $@ ${MOBJS} -lcurses -ltermlib -lcompat
 
 table: ${TOBJS} ${LIBC}
 	${CC} ${CFLAGS} -o $@ ${TOBJS}

@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.14 (Berkeley) %G%
+#	@(#)Makefile	5.15 (Berkeley) %G%
 #
 LIBC=	/lib/libc.a
 LIBS=	-ltermlib
@@ -35,10 +35,10 @@ MAN=	backgammon.0
 all: backgammon teachgammon
 
 backgammon: ${BOBJS} ${LIBC}
-	${CC} -o $@ ${BOBJS} ${LIBS}
+	${CC} -o $@ ${BOBJS} ${LIBS} -lcompat
 
 teachgammon: ${TOBJS} ${LIBC}
-	${CC} -o $@ ${TOBJS} ${LIBS}
+	${CC} -o $@ ${TOBJS} ${LIBS} -lcompat
 
 clean:
 	rm -f ${TOBJS} ${BOBJS} core teachgammon backgammon

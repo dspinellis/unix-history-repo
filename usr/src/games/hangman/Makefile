@@ -14,11 +14,10 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.5 (Berkeley) %G%
+#	@(#)Makefile	5.6 (Berkeley) %G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
-LIBS=	-lcurses -ltermlib
 SRCS=	endgame.c extern.c getguess.c getword.c main.c playgame.c \
 	prdata.c prman.c prword.c setup.c
 OBJS=	endgame.o extern.o getguess.o getword.o main.o playgame.o \
@@ -28,7 +27,7 @@ MAN=	hangman.0
 all: hangman
 
 hangman: ${OBJS} ${LIBC}
-	${CC} -o $@ ${CFLAGS} ${OBJS} ${LIBS}
+	${CC} -o $@ ${CFLAGS} ${OBJS} -lcurses -ltermlib -lcompat
 
 clean:
 	rm -f ${OBJS} core hangman
