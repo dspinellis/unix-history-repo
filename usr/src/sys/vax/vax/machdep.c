@@ -1,4 +1,4 @@
-/*	machdep.c	4.63	82/10/05	*/
+/*	machdep.c	4.64	82/10/13	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -7,20 +7,13 @@
 #include "../h/kernel.h"
 #include "../h/map.h"
 #include "../h/reg.h"
-#include "../h/mtpr.h"
-#include "../vax/clock.h"
 #include "../h/pte.h"
 #include "../h/vm.h"
 #include "../h/proc.h"
 #include "../h/psl.h"
 #include "../h/buf.h"
-#include "../h/ubavar.h"
-#include "../h/ubareg.h"
-#include "../h/cons.h"
 #include "../h/reboot.h"
 #include "../h/conf.h"
-#include "../h/mem.h"
-#include "../h/cpu.h"
 #include "../h/inode.h"
 #include "../h/file.h"
 #include "../h/text.h"
@@ -29,9 +22,17 @@
 #include "../h/cmap.h"
 #include <frame.h>
 #include "../h/mbuf.h"
-#include "../h/rpb.h"
 #include "../h/msgbuf.h"
 #include "../h/quota.h"
+
+#include "../vax/clock.h"
+#include "../vax/cons.h"
+#include "../vax/cpu.h"
+#include "../vax/mem.h"
+#include "../vax/mtpr.h"
+#include "../vax/rpb.h"
+#include "../vaxuba/ubavar.h"
+#include "../vaxuba/ubareg.h"
 
 int	icode[] =
 {

@@ -1,4 +1,4 @@
-/*	trap.c	4.17	82/09/12	*/
+/*	trap.c	4.18	82/10/13	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -8,12 +8,12 @@
 #include "../h/proc.h"
 #include "../h/reg.h"
 #include "../h/seg.h"
-#include "../h/trap.h"
+#include "../vax/trap.h"
 #include "../h/psl.h"
 #include "../h/pte.h"
-#include "../h/inline.h"
-#include "../h/mtpr.h"
 #include "../h/acct.h"
+
+#include "../vax/mtpr.h"
 
 #define	USER	040		/* user-mode flag added to type */
 
@@ -33,10 +33,10 @@ char	*trap_type[] = {
 	"Protection fault",
 	"Trace trap",
 	"Compatibility mode trap",
-/**					these never get to "default" case
+#ifdef notdef
 	"Page fault",
 	"Page table fault",
-**/
+#endif
 };
 #define	TRAP_TYPES	(sizeof trap_type / sizeof trap_type[0])
 
@@ -45,7 +45,9 @@ char	*trap_type[] = {
  */
 /*ARGSUSED*/
 trap(sp, type, code, pc, psl)
-unsigned code;
+	int sp, type;
+	unsigned code;
+	int pc, psl;
 {
 	register int *locr0 = ((int *)&psl)-PS;
 	register int i;

@@ -1,4 +1,4 @@
-/*	autoconf.c	4.41	82/07/21	*/
+/*	autoconf.c	4.42	82/10/13	*/
 
 /*
  * Setup the system to run on the current machine.
@@ -24,19 +24,20 @@
 #include "../h/param.h"
 #include "../h/systm.h"
 #include "../h/map.h"
-#include "../h/nexus.h"
 #include "../h/pte.h"
 #include "../h/buf.h"
-#include "../h/mbareg.h"
-#include "../h/mbavar.h"
 #include "../h/dk.h"
 #include "../h/vm.h"
-#include "../h/ubareg.h"
-#include "../h/ubavar.h"
-#include "../h/mtpr.h"
-#include "../h/cpu.h"
-#include "../h/scb.h"
-#include "../h/mem.h"
+
+#include "../vax/cpu.h"
+#include "../vax/mem.h"
+#include "../vax/mtpr.h"
+#include "../vax/nexus.h"
+#include "../vax/scb.h"
+#include "../vaxmba/mbareg.h"
+#include "../vaxmba/mbavar.h"
+#include "../vaxuba/ubareg.h"
+#include "../vaxuba/ubavar.h"
 
 /*
  * The following several variables are related to

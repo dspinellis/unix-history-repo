@@ -1,10 +1,11 @@
-/*	cpudata.c	4.6	82/05/26	*/
+/*	cpudata.c	4.7	82/10/13	*/
 
 #include "../h/param.h"
 #include "../h/pte.h"
-#include "../h/ubareg.h"
-#include "../h/nexus.h"
-#include "../h/cpu.h"
+
+#include "../vax/cpu.h"
+#include "../vax/nexus.h"
+#include "../vaxuba/ubareg.h"
 
 /*
  * Initialization of per-cpu data structures.

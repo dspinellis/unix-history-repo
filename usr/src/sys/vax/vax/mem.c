@@ -1,4 +1,4 @@
-/*	mem.c	4.4	82/08/22	*/
+/*	mem.c	4.5	82/10/13	*/
 
 /*
  * Memory special file
@@ -11,17 +11,18 @@
 #include "../h/buf.h"
 #include "../h/systm.h"
 #include "../h/pte.h"
-#include "../h/mtpr.h"
 #include "../h/vm.h"
 #include "../h/cmap.h"
 #include "../h/uio.h"
+
+#include "../vax/mtpr.h"
 
 mmread(dev, uio)
 	dev_t dev;
 	struct uio *uio;
 {
 
-	mmrw(dev, uio, UIO_READ);
+	return (mmrw(dev, uio, UIO_READ));
 }
 
 mmwrite(dev, uio)
@@ -29,7 +30,7 @@ mmwrite(dev, uio)
 	struct uio *uio;
 {
 
-	mmrw(dev, uio, UIO_WRITE);
+	return (mmrw(dev, uio, UIO_WRITE));
 }
 
 mmrw(dev, uio, rw)
@@ -40,8 +41,9 @@ mmrw(dev, uio, rw)
 	register int o;
 	register unsigned c, v;
 	register struct iovec *iov;
+	int error = 0;
 
-	while (uio->uio_resid > 0 && u.u_error == 0) {
+	while (uio->uio_resid > 0 && error == 0) {
 		iov = uio->uio_iov;
 		if (iov->iov_len == 0) {
 			uio->uio_iov++;
@@ -62,9 +64,7 @@ mmrw(dev, uio, rw)
 			o = (int)uio->uio_offset & PGOFSET;
 			c = min((unsigned)(NBPG - o), iov->iov_len);
 			c = min(c, (unsigned)(NBPG - ((int)iov->iov_base&PGOFSET)));
-			u.u_error = uiomove((caddr_t)&vmmap[o], c, rw, uio);
-			if (u.u_error)
-				goto fault;
+			error = uiomove((caddr_t)&vmmap[o], c, rw, uio);
 			continue;
 
 /* minor device 1 is kernel memory */
@@ -78,9 +78,7 @@ mmrw(dev, uio, rw)
 			c = iov->iov_len;
 			if (!kernacc((caddr_t)uio->uio_offset, c, rw == UIO_READ ? B_READ : B_WRITE))
 				goto fault;
-			u.u_error = uiomove((caddr_t)uio->uio_offset, c, rw, uio);
-			if (u.u_error)
-				goto fault;
+			error = uiomove((caddr_t)uio->uio_offset, c, rw, uio);
 			continue;
 
 /* minor device 2 is EOF/RATHOLE */
@@ -97,21 +95,20 @@ mmrw(dev, uio, rw)
 				goto fault;
 			if (!useracc(iov->iov_base, c, rw == UIO_READ ? B_WRITE : B_READ))
 				goto fault;
-			UNIcpy((caddr_t)uio->uio_offset, iov->iov_base,
+			error = UNIcpy((caddr_t)uio->uio_offset, iov->iov_base,
 			    c, rw);
 			break;
 		}
-		if (u.u_error)
-			goto fault;
+		if (error)
+			break;
 		iov->iov_base += c;
 		iov->iov_len -= c;
 		uio->uio_offset += c;
 		uio->uio_resid -= c;
 	}
-	return;
+	return (error);
 fault:
-	u.u_error = EFAULT;
-	return;
+	return (EFAULT);
 }
 
 /*
@@ -134,4 +131,5 @@ UNIcpy(uniadd, usradd, cnt, rw)
 	}
 	for (i = (cnt>>1); i > 0; i--)
 		*to++ = *from++;
+	return (0);
 }

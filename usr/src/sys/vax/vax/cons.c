@@ -1,4 +1,4 @@
-/*	cons.c	4.15	82/08/22	*/
+/*	cons.c	4.16	82/10/13	*/
 
 /*
  * Vax console driver and floppy interface
@@ -14,9 +14,10 @@
 #include "../h/proc.h"
 #include "../h/tty.h"
 #include "../h/systm.h"
-#include "../h/cons.h"
-#include "../h/mtpr.h"
-#include "../h/cpu.h"
+
+#include "../vax/cpu.h"
+#include "../vax/cons.h"
+#include "../vax/mtpr.h"
 
 struct	tty cons;
 int	cnstart();
@@ -25,11 +26,10 @@ char	partab[];
 
 /*ARGSUSED*/
 cnopen(dev, flag)
-dev_t dev;
+	dev_t dev;
 {
-	register struct tty *tp;
+	register struct tty *tp = &cons;
 
-	tp = &cons;
 	tp->t_oproc = cnstart;
 	if ((tp->t_state&TS_ISOPEN) == 0) {
 		ttychars(tp);
@@ -47,24 +47,22 @@ dev_t dev;
 
 /*ARGSUSED*/
 cnclose(dev)
-dev_t dev;
+	dev_t dev;
 {
-	register struct tty *tp;
+	register struct tty *tp = &cons;
 
-	tp = &cons;
 	(*linesw[tp->t_line].l_close)(tp);
 	ttyclose(tp);
 }
 
 /*ARGSUSED*/
 cnread(dev, uio)
-dev_t dev;
-struct uio *uio;
+	dev_t dev;
+	struct uio *uio;
 {
-	register struct tty *tp;
+	register struct tty *tp = &cons;
 
-	tp = &cons;
-	(*linesw[tp->t_line].l_read)(tp, uio);
+	return ((*linesw[tp->t_line].l_read)(tp, uio));
 }
 
 /*ARGSUSED*/
@@ -72,10 +70,9 @@ cnwrite(dev, uio)
 	dev_t dev;
 	struct uio *uio;
 {
-	register struct tty *tp;
+	register struct tty *tp = &cons;
 
-	tp = &cons;
-	(*linesw[tp->t_line].l_write)(tp, uio);
+	return ((*linesw[tp->t_line].l_write)(tp, uio));
 }
 
 /*
@@ -85,7 +82,7 @@ cnwrite(dev, uio)
  */
 /*ARGSUSED*/
 cnrint(dev)
-dev_t dev;
+	dev_t dev;
 {
 	register int c;
 	register struct tty *tp;
@@ -104,12 +101,11 @@ dev_t dev;
 
 /*ARGSUSED*/
 cnioctl(dev, cmd, addr, flag)
-dev_t dev;
-caddr_t addr;
+	dev_t dev;
+	caddr_t addr;
 {
-	register struct tty *tp;
+	register struct tty *tp = &cons;
  
-	tp = &cons;
 	cmd = (*linesw[tp->t_line].l_ioctl)(tp, cmd, addr);
 	if (cmd == 0)
 		return;
@@ -126,12 +122,11 @@ int	consdone = 1;
  */
 /*ARGSUSED*/
 cnxint(dev)
-dev_t dev;
+	dev_t dev;
 {
-	register struct tty *tp;
+	register struct tty *tp = &cons;
 
 	consdone++;
-	tp = &cons;
 	tp->t_state &= ~TS_BUSY;
 	if (tp->t_line)
 		(*linesw[tp->t_line].l_start)(tp);
@@ -144,10 +139,9 @@ dev_t dev;
 }
 
 cnstart(tp)
-register struct tty *tp;
+	register struct tty *tp;
 {
-	register c;
-	register s;
+	register int c, s;
 
 	s = spl5();
 	if (tp->t_state & (TS_TIMEOUT|TS_BUSY|TS_TTSTOP))
@@ -189,24 +183,24 @@ register struct tty *tp;
  * status.
  */
 cnputc(c)
-register c;
+	register int c;
 {
-	register s, timo;
+	register int s, timo;
 
 	timo = 30000;
 	/*
 	 * Try waiting for the console tty to come ready,
 	 * otherwise give up after a reasonable time.
 	 */
-	while((mfpr(TXCS)&TXCS_RDY) == 0)
+	while ((mfpr(TXCS)&TXCS_RDY) == 0)
 		if(--timo == 0)
 			break;
-	if(c == 0)
+	if (c == 0)
 		return;
 	s = mfpr(TXCS);
 	mtpr(TXCS, 0);
 	mtpr(TXDB, c&0xff);
-	if(c == '\n')
+	if (c == '\n')
 		cnputc('\r');
 	cnputc(0);
 	mtpr(TXCS, s);
