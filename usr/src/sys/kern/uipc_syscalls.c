@@ -3,7 +3,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)uipc_syscalls.c	8.3 (Berkeley) %G%
+ *	@(#)uipc_syscalls.c	8.4 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -331,7 +331,7 @@ free1:
 struct sendto_args {
 	int	s;
 	caddr_t	buf;
-	int	len;
+	size_t	len;
 	int	flags;
 	caddr_t	to;
 	int	tolen;
@@ -564,7 +564,7 @@ bad:
 struct recvfrom_args {
 	int	s;
 	caddr_t	buf;
-	int	len;
+	size_t	len;
 	int	flags;
 	caddr_t	from;
 	int	*fromlenaddr;
