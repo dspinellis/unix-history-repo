@@ -1,4 +1,4 @@
-/*	kdb_machdep.c	7.3	86/12/15	*/
+/*	kdb_machdep.c	7.4	87/03/13	*/
 
 #include "param.h"
 #include "conf.h"
@@ -12,15 +12,13 @@
 #include "ioctl.h"
 #include "tty.h"
 
-#include "../tahoe/cpu.h"
-#include "../tahoe/mtpr.h"
-#include "../tahoe/psl.h"
-#include "../tahoe/pte.h"
-#include "../tahoe/reg.h"
-#include "../tahoe/trap.h"
-
-#define	KDB_IPL		0xf	/* highest priority software interrupt */
-#define	setsoftkdb()	mtpr(SIRR, KDB_IPL)
+#include "cpu.h"
+#include "mtpr.h"
+#include "psl.h"
+#include "pte.h"
+#include "reg.h"
+#include "trap.h"
+#include "kdbparam.h"
 
 #define	KDBSPACE	1024	/* 1K of memory for breakpoint table */
 static	char kdbbuf[KDBSPACE];
@@ -86,17 +84,18 @@ kdbrintr(c, tp)
 {
 	static int escape = 0;
 
-	c &= 0177;			/* strip parity also */
-	if (!escape)
-		return (c == ESC &&  ++escape);
-	escape = 0;
 	/*
 	 * Transfer control to the debugger only if the
 	 * system was booted with RB_KDB and the trap
 	 * enable flag (RB_NOYSNC) is set.
 	 */
-	if ((boothowto&(RB_KDB|RB_NOSYNC)) != (RB_KDB|RB_NOSYNC) ||
-	    (c != 'k' && c != 'K' && c != CTRL(k))) {
+	if ((boothowto&(RB_KDB|RB_NOSYNC)) != (RB_KDB|RB_NOSYNC))
+		return (0);
+	c &= 0177;			/* strip parity also */
+	if (!escape)
+		return (c == ESC &&  ++escape);
+	escape = 0;
+	if ((c != 'k' && c != 'K' && c != CTRL(k))) {
 		(*linesw[tp->t_line].l_rint)(ESC, tp);
 		return (0);
 	}
@@ -200,7 +199,7 @@ kdbprinttrap(type, code)
 		if (type == T_ARITHTRAP && (unsigned)code < NCODES)
 			printf(", %s", code);
 		else if (code)
-			printf(", code = %d", code);
+			printf(", code = %x", code);
 		printf("\n");
 	}
 }

@@ -1,6 +1,4 @@
-/*	kdbparam.h	7.5	86/12/15	*/
-
-#include <sys/vm.h>
+/*	kdbparam.h	7.6	87/03/13	*/
 
 #define DBNAME "kdb\n"
 #define LPRMODE "%R"
@@ -16,6 +14,9 @@
 #define KCALL	0xcf
 #define CASEL	0xfc
 #define TBIT	0x10
+
+#define	KDB_IPL		0xf	/* highest priority software interrupt */
+#define	setsoftkdb()	mtpr(SIRR, KDB_IPL)
 
 #define	clrsstep()	(pcb.pcb_psl &= ~TBIT)
 #define	setsstep()	(pcb.pcb_psl |= TBIT)
@@ -53,6 +54,5 @@
 #define	INUDOT(x)	(((int)(x)&0xf0000000) == 0xb0000000)
 #define	INKERNEL(x)	(((int)(x)&0xf0000000) == 0xc0000000)
 
-#define	KERNBASE	0xc0000000
 #define	KERNOFF		(KERNBASE + 0x800)	/* start of kernel's text */
-#define	KVTOPH(x)	((x)&~ 0xc0000000)
+/* #define	KVTOPH(x)	((x)&~ 0xc0000000) sometimes */
