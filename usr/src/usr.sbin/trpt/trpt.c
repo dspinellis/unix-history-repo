@@ -164,7 +164,7 @@ tcp_trace(act, ostate, atp, tp, ti, req)
 		if (flags) {
 			char *cp = "<";
 #define pf(f) { if (ti->ti_flags&TH_/**/f) { printf("%s%s", cp, "f"); cp = ","; } }
-			pf(SYN); pf(ACK); pf(FIN); pf(RST); pf(URG);
+			pf(SYN); pf(ACK); pf(FIN); pf(RST); pf(PUSH); pf(URG);
 			printf(">");
 		}
 		break;
