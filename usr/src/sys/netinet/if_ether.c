@@ -4,14 +4,12 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_ether.c	7.15 (Berkeley) %G%
+ *	@(#)if_ether.c	7.16 (Berkeley) %G%
  */
 
 /*
  * Ethernet address resolution protocol.
  * TODO:
- *	run at splnet (add ARP protocol intr.)
- *	link entries onto hash chains, keep free list
  *	add "inuse/lock" bit (or ref. count) along with valid bit
  */
 
@@ -102,6 +100,8 @@ arp_rtrequest(req, rt, sa)
 	switch (req) {
 	case RTM_ADD:
 	case RTM_RESOLVE:
+		if ((rt->rt_flags & RTF_HOST) == 0) /* Route to IF? XXX*/
+			rt->rt_flags |= RTF_CLONING;
 		if (rt->rt_flags & RTF_CLONING) {
 			/*
 			 * Case 1: This route should come from a route to iface.
