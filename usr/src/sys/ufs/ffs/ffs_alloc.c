@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_alloc.c	8.5 (Berkeley) %G%
+ *	@(#)ffs_alloc.c	8.6 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -28,6 +28,7 @@ extern u_long nextgennumber;
 
 static daddr_t	ffs_alloccg __P((struct inode *, int, daddr_t, int));
 static daddr_t	ffs_alloccgblk __P((struct fs *, struct cg *, daddr_t));
+static daddr_t	ffs_clusteralloc __P((struct inode *, int, daddr_t, int));
 static ino_t	ffs_dirpref __P((struct fs *));
 static daddr_t	ffs_fragextend __P((struct inode *, int, long, int, int));
 static void	ffs_fserr __P((struct fs *, u_int, char *));
@@ -267,6 +268,153 @@ nospace:
 	 */
 	ffs_fserr(fs, cred->cr_uid, "file system full");
 	uprintf("\n%s: write failed, file system is full\n", fs->fs_fsmnt);
+	return (ENOSPC);
+}
+
+/*
+ * Reallocate a sequence of blocks into a contiguous sequence of blocks.
+ *
+ * The vnode and an array of buffer pointers for a range of sequential
+ * logical blocks to be made contiguous is given. The allocator attempts
+ * to find a range of sequential blocks starting as close as possible to
+ * an fs_rotdelay offset from the end of the allocation for the logical
+ * block immediately preceeding the current range. If successful, the
+ * physical block numbers in the buffer pointers and in the inode are
+ * changed to reflect the new allocation. If unsuccessful, the allocation
+ * is left unchanged. The success in doing the reallocation is returned.
+ * Note that the error return is not reflected back to the user. Rather
+ * the previous block allocation will be used.
+ */
+int
+ffs_reallocblks(ap)
+	struct vop_reallocblks_args /* {
+		struct vnode *a_vp;
+		struct cluster_save *a_buflist;
+	} */ *ap;
+{
+	struct fs *fs;
+	struct inode *ip;
+	struct vnode *vp;
+	struct buf *sbp, *ebp;
+	daddr_t *bap, *sbap, *ebap;
+	struct cluster_save *buflist;
+	daddr_t start_lbn, end_lbn, soff, eoff, newblk, blkno;
+	struct indir start_ap[NIADDR + 1], end_ap[NIADDR + 1], *idp;
+	int i, len, start_lvl, end_lvl, pref, ssize;
+
+	vp = ap->a_vp;
+	ip = VTOI(vp);
+	fs = ip->i_fs;
+	if (fs->fs_contigsumsize <= 0)
+		return (ENOSPC);
+	buflist = ap->a_buflist;
+	len = buflist->bs_nchildren;
+	start_lbn = buflist->bs_children[0]->b_lblkno;
+	end_lbn = start_lbn + len - 1;
+#ifdef DIAGNOSTIC
+	for (i = 1; i < len; i++)
+		if (buflist->bs_children[i]->b_lblkno != start_lbn + i)
+			panic("ffs_reallocblks: non-cluster");
+#endif
+	/*
+	 * If the latest allocation is in a new cylinder group, assume that
+	 * the filesystem has decided to move and do not force it back to
+	 * the previous cylinder group.
+	 */
+	if (dtog(fs, dbtofsb(fs, buflist->bs_children[0]->b_blkno)) !=
+	    dtog(fs, dbtofsb(fs, buflist->bs_children[len - 1]->b_blkno)))
+		return (ENOSPC);
+	if (ufs_getlbns(vp, start_lbn, start_ap, &start_lvl) ||
+	    ufs_getlbns(vp, end_lbn, end_ap, &end_lvl))
+		return (ENOSPC);
+	/*
+	 * Get the starting offset and block map for the first block.
+	 */
+	if (start_lvl == 0) {
+		sbap = &ip->i_db[0];
+		soff = start_lbn;
+	} else {
+		idp = &start_ap[start_lvl - 1];
+		if (bread(vp, idp->in_lbn, (int)fs->fs_bsize, NOCRED, &sbp)) {
+			brelse(sbp);
+			return (ENOSPC);
+		}
+		sbap = (daddr_t *)sbp->b_data;
+		soff = idp->in_off;
+	}
+	/*
+	 * Find the preferred location for the cluster.
+	 */
+	pref = ffs_blkpref(ip, start_lbn, soff, sbap);
+	/*
+	 * If the block range spans two block maps, get the second map.
+	 */
+	if (end_lvl == 0 || (idp = &end_ap[end_lvl - 1])->in_off >= len) {
+		ssize = len;
+	} else {
+		ssize = len - (idp->in_off + 1);
+		if (bread(vp, idp->in_lbn, (int)fs->fs_bsize, NOCRED, &ebp))
+			goto fail;
+		ebap = (daddr_t *)ebp->b_data;
+	}
+	/*
+	 * Search the block map looking for an allocation of the desired size.
+	 */
+	if ((newblk = (daddr_t)ffs_hashalloc(ip, dtog(fs, pref), (long)pref,
+	    len, (u_long (*)())ffs_clusteralloc)) == 0)
+		goto fail;
+	/*
+	 * We have found a new contiguous block.
+	 *
+	 * First we have to replace the old block pointers with the new
+	 * block pointers in the inode and indirect blocks associated
+	 * with the file.
+	 */
+	blkno = newblk;
+	for (bap = &sbap[soff], i = 0; i < len; i++, blkno += fs->fs_frag) {
+		if (i == ssize)
+			bap = ebap;
+#ifdef DIAGNOSTIC
+		if (buflist->bs_children[i]->b_blkno != fsbtodb(fs, *bap))
+			panic("ffs_reallocblks: alloc mismatch");
+#endif
+		*bap++ = blkno;
+	}
+	/*
+	 * Next we must write out the modified inode and indirect blocks.
+	 * The writes are synchronous since the old block values may have
+	 * been written to disk.
+	 *
+	 * These writes should be changed to be bdwrites (and the VOP_UPDATE
+	 * dropped) when a flag has been added to the buffers and inodes
+	 * to detect when they have been written. It should be set when the
+	 * cluster is started and cleared whenever the buffer or inode is
+	 * flushed. We can then check below to see if it is set, and do
+	 * the synchronous write only when it has been cleared.
+	 */
+	if (sbap != &ip->i_db[0]) {
+		bwrite(sbp);
+	} else {
+		ip->i_flag |= IN_CHANGE | IN_UPDATE;
+		VOP_UPDATE(vp, &time, &time, MNT_WAIT);
+	}
+	if (ssize < len)
+		bwrite(ebp);
+	/*
+	 * Last, free the old blocks and assign the new blocks to the buffers.
+	 */
+	for (blkno = newblk, i = 0; i < len; i++, blkno += fs->fs_frag) {
+		ffs_blkfree(ip, dbtofsb(fs, buflist->bs_children[i]->b_blkno),
+		    fs->fs_bsize);
+		buflist->bs_children[i]->b_blkno = fsbtodb(fs, blkno);
+	}
+	return (0);
+
+fail:
+	if (ssize < len)
+		brelse(ebp);
+	if (sbap != &ip->i_db[0])
+		brelse(sbp);
 	return (ENOSPC);
 }
 
@@ -703,12 +851,12 @@ ffs_alloccgblk(fs, cgp, bpref)
 	register struct cg *cgp;
 	daddr_t bpref;
 {
-	daddr_t bno;
+	daddr_t bno, blkno;
 	int cylno, pos, delta;
 	short *cylbp;
 	register int i;
 
-	if (bpref == 0) {
+	if (bpref == 0 || dtog(fs, bpref) != cgp->cg_cgx) {
 		bpref = cgp->cg_rotor;
 		goto norot;
 	}
@@ -788,7 +936,9 @@ norot:
 		return (NULL);
 	cgp->cg_rotor = bno;
 gotit:
-	ffs_clrblock(fs, cg_blksfree(cgp), (long)fragstoblks(fs, bno));
+	blkno = fragstoblks(fs, bno);
+	ffs_clrblock(fs, cg_blksfree(cgp), (long)blkno);
+	ffs_clusteracct(fs, cgp, blkno, -1);
 	cgp->cg_cs.cs_nbfree--;
 	fs->fs_cstotal.cs_nbfree--;
 	fs->fs_cs(fs, cgp->cg_cgx).cs_nbfree--;
@@ -797,6 +947,95 @@ gotit:
 	cg_blktot(cgp)[cylno]--;
 	fs->fs_fmod = 1;
 	return (cgp->cg_cgx * fs->fs_fpg + bno);
+}
+
+/*
+ * Determine whether a cluster can be allocated.
+ *
+ * We do not currently check for optimal rotational layout if there
+ * are multiple choices in the same cylinder group. Instead we just
+ * take the first one that we find following bpref.
+ */
+static daddr_t
+ffs_clusteralloc(ip, cg, bpref, len)
+	struct inode *ip;
+	int cg;
+	daddr_t bpref;
+	int len;
+{
+	register struct fs *fs;
+	register struct cg *cgp;
+	struct buf *bp;
+	int i, run, bno, bit, map;
+	u_char *mapp;
+
+	fs = ip->i_fs;
+	if (fs->fs_cs(fs, cg).cs_nbfree < len)
+		return (NULL);
+	if (bread(ip->i_devvp, fsbtodb(fs, cgtod(fs, cg)), (int)fs->fs_cgsize,
+	    NOCRED, &bp))
+		goto fail;
+	cgp = (struct cg *)bp->b_data;
+	if (!cg_chkmagic(cgp))
+		goto fail;
+	/*
+	 * Check to see if a cluster of the needed size (or bigger) is
+	 * available in this cylinder group.
+	 */
+	for (i = len; i <= fs->fs_contigsumsize; i++)
+		if (cg_clustersum(cgp)[i] > 0)
+			break;
+	if (i > fs->fs_contigsumsize)
+		goto fail;
+	/*
+	 * Search the cluster map to find a big enough cluster.
+	 * We take the first one that we find, even if it is larger
+	 * than we need as we prefer to get one close to the previous
+	 * block allocation. We do not search before the current
+	 * preference point as we do not want to allocate a block
+	 * that is allocated before the previous one (as we will
+	 * then have to wait for another pass of the elevator
+	 * algorithm before it will be read). We prefer to fail and
+	 * be recalled to try an allocation in the next cylinder group.
+	 */
+	if (dtog(fs, bpref) != cg)
+		bpref = 0;
+	else
+		bpref = fragstoblks(fs, dtogd(fs, blknum(fs, bpref)));
+	mapp = &cg_clustersfree(cgp)[bpref / NBBY];
+	map = *mapp++;
+	bit = 1 << (bpref % NBBY);
+	for (run = 0, i = bpref; i < cgp->cg_nclusterblks; i++) {
+		if ((map & bit) == 0) {
+			run = 0;
+		} else {
+			run++;
+			if (run == len)
+				break;
+		}
+		if ((i & (NBBY - 1)) != (NBBY - 1)) {
+			bit <<= 1;
+		} else {
+			map = *mapp++;
+			bit = 1;
+		}
+	}
+	if (i == cgp->cg_nclusterblks)
+		goto fail;
+	/*
+	 * Allocate the cluster that we have found.
+	 */
+	bno = cg * fs->fs_fpg + blkstofrags(fs, i - run + 1);
+	len = blkstofrags(fs, len);
+	for (i = 0; i < len; i += fs->fs_frag)
+		if (ffs_alloccgblk(fs, cgp, bno + i) != bno + i)
+			panic("ffs_clusteralloc: lost block");
+	brelse(bp);
+	return (bno);
+
+fail:
+	brelse(bp);
+	return (0);
 }
 
 /*
@@ -901,8 +1140,8 @@ ffs_blkfree(ip, bno, size)
 	register struct fs *fs;
 	register struct cg *cgp;
 	struct buf *bp;
-	int error, cg, blk, frags, bbase;
-	register int i;
+	daddr_t blkno;
+	int i, error, cg, blk, frags, bbase;
 
 	fs = ip->i_fs;
 	if ((u_int)size > fs->fs_bsize || fragoff(fs, size) != 0) {
@@ -935,12 +1174,14 @@ ffs_blkfree(ip, bno, size)
 	cgp->cg_time = time.tv_sec;
 	bno = dtogd(fs, bno);
 	if (size == fs->fs_bsize) {
-		if (ffs_isblock(fs, cg_blksfree(cgp), fragstoblks(fs, bno))) {
+		blkno = fragstoblks(fs, bno);
+		if (ffs_isblock(fs, cg_blksfree(cgp), blkno)) {
 			printf("dev = 0x%x, block = %d, fs = %s\n",
 			    ip->i_dev, bno, fs->fs_fsmnt);
 			panic("blkfree: freeing free block");
 		}
-		ffs_setblock(fs, cg_blksfree(cgp), fragstoblks(fs, bno));
+		ffs_setblock(fs, cg_blksfree(cgp), blkno);
+		ffs_clusteracct(fs, cgp, blkno, 1);
 		cgp->cg_cs.cs_nbfree++;
 		fs->fs_cstotal.cs_nbfree++;
 		fs->fs_cs(fs, cg).cs_nbfree++;
@@ -977,11 +1218,12 @@ ffs_blkfree(ip, bno, size)
 		/*
 		 * if a complete block has been reassembled, account for it
 		 */
-		if (ffs_isblock(fs, cg_blksfree(cgp),
-		    (daddr_t)fragstoblks(fs, bbase))) {
+		blkno = fragstoblks(fs, bbase);
+		if (ffs_isblock(fs, cg_blksfree(cgp), blkno)) {
 			cgp->cg_cs.cs_nffree -= fs->fs_frag;
 			fs->fs_cstotal.cs_nffree -= fs->fs_frag;
 			fs->fs_cs(fs, cg).cs_nffree -= fs->fs_frag;
+			ffs_clusteracct(fs, cgp, blkno, 1);
 			cgp->cg_cs.cs_nbfree++;
 			fs->fs_cstotal.cs_nbfree++;
 			fs->fs_cs(fs, cg).cs_nbfree++;
@@ -1123,6 +1365,88 @@ ffs_mapsearch(fs, cgp, bpref, allocsiz)
 	printf("bno = %d, fs = %s\n", bno, fs->fs_fsmnt);
 	panic("ffs_alloccg: block not in map");
 	return (-1);
+}
+
+/*
+ * Update the cluster map because of an allocation or free.
+ *
+ * Cnt == 1 means free; cnt == -1 means allocating.
+ */
+ffs_clusteracct(fs, cgp, blkno, cnt)
+	struct fs *fs;
+	struct cg *cgp;
+	daddr_t blkno;
+	int cnt;
+{
+	long *sump;
+	u_char *freemapp, *mapp;
+	int i, start, end, forw, back, map, bit;
+
+	if (fs->fs_contigsumsize <= 0)
+		return;
+	freemapp = cg_clustersfree(cgp);
+	sump = cg_clustersum(cgp);
+	/*
+	 * Allocate or clear the actual block.
+	 */
+	if (cnt > 0)
+		setbit(freemapp, blkno);
+	else
+		clrbit(freemapp, blkno);
+	/*
+	 * Find the size of the cluster going forward.
+	 */
+	start = blkno + 1;
+	end = start + fs->fs_contigsumsize;
+	if (end >= cgp->cg_nclusterblks)
+		end = cgp->cg_nclusterblks;
+	mapp = &freemapp[start / NBBY];
+	map = *mapp++;
+	bit = 1 << (start % NBBY);
+	for (i = start; i < end; i++) {
+		if ((map & bit) == 0)
+			break;
+		if ((i & (NBBY - 1)) != (NBBY - 1)) {
+			bit <<= 1;
+		} else {
+			map = *mapp++;
+			bit = 1;
+		}
+	}
+	forw = i - start;
+	/*
+	 * Find the size of the cluster going backward.
+	 */
+	start = blkno - 1;
+	end = start - fs->fs_contigsumsize;
+	if (end < 0)
+		end = -1;
+	mapp = &freemapp[start / NBBY];
+	map = *mapp--;
+	bit = 1 << (start % NBBY);
+	for (i = start; i > end; i--) {
+		if ((map & bit) == 0)
+			break;
+		if ((i & (NBBY - 1)) != 0) {
+			bit >>= 1;
+		} else {
+			map = *mapp--;
+			bit = 1 << (NBBY - 1);
+		}
+	}
+	back = start - i;
+	/*
+	 * Account for old cluster and the possibly new forward and
+	 * back clusters.
+	 */
+	i = back + forw + 1;
+	if (i > fs->fs_contigsumsize)
+		i = fs->fs_contigsumsize;
+	sump[i] += cnt;
+	if (back > 0)
+		sump[back] -= cnt;
+	if (forw > 0)
+		sump[forw] -= cnt;
 }
 
 /*

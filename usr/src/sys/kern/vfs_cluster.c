@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_cluster.c	8.5 (Berkeley) %G%
+ *	@(#)vfs_cluster.c	8.6 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -28,6 +28,7 @@ struct buf *cluster_rbuild __P((struct vnode *, u_quad_t, struct buf *,
 	    daddr_t, daddr_t, long, int, long));
 void	    cluster_wbuild __P((struct vnode *, struct buf *, long,
 	    daddr_t, int, daddr_t));
+struct cluster_save *cluster_collectbufs __P((struct vnode *, struct buf *));
 
 #ifdef DIAGNOSTIC
 /*
@@ -450,7 +451,7 @@ cluster_write(bp, filesize)
 {
         struct vnode *vp;
         daddr_t lbn;
-        int clen;
+        int maxclen, cursize;
 
         vp = bp->b_vp;
         lbn = bp->b_lblkno;
@@ -461,20 +462,61 @@ cluster_write(bp, filesize)
 
         if (vp->v_clen == 0 || lbn != vp->v_lastw + 1 ||
 	    (bp->b_blkno != vp->v_lasta + btodb(bp->b_bcount))) {
-		if (vp->v_clen != 0)
+		maxclen = MAXBSIZE / vp->v_mount->mnt_stat.f_iosize - 1;
+		if (vp->v_clen != 0) {
 			/*
-			 * Write is not sequential.
+			 * Next block is not sequential.
+			 *
+			 * If we are not writing at end of file, the process
+			 * seeked to another point in the file since its
+			 * last write, or we have reached our maximum
+			 * cluster size, then push the previous cluster.
+			 * Otherwise try reallocating to make it sequential.
 			 */
-			cluster_wbuild(vp, NULL, bp->b_bcount, vp->v_cstart,
-			    vp->v_lastw - vp->v_cstart + 1, lbn);
+			cursize = vp->v_lastw - vp->v_cstart + 1;
+			if ((lbn + 1) * bp->b_bcount != filesize ||
+			    lbn != vp->v_lastw + 1 || vp->v_clen <= cursize) {
+				cluster_wbuild(vp, NULL, bp->b_bcount,
+				    vp->v_cstart, cursize, lbn);
+			} else {
+				struct buf **bpp, **endbp;
+				struct cluster_save *buflist;
+
+				buflist = cluster_collectbufs(vp, bp);
+				endbp = &buflist->bs_children
+				    [buflist->bs_nchildren - 1];
+				if (VOP_REALLOCBLKS(vp, buflist)) {
+					/*
+					 * Failed, push the previous cluster.
+					 */
+					for (bpp = buflist->bs_children;
+					     bpp < endbp; bpp++)
+						brelse(*bpp);
+					free(buflist, M_SEGMENT);
+					cluster_wbuild(vp, NULL, bp->b_bcount,
+					    vp->v_cstart, cursize, lbn);
+				} else {
+					/*
+					 * Succeeded, keep building cluster.
+					 */
+					for (bpp = buflist->bs_children;
+					     bpp <= endbp; bpp++)
+						bdwrite(*bpp);
+					free(buflist, M_SEGMENT);
+					vp->v_lastw = lbn;
+					vp->v_lasta = bp->b_blkno;
+					return;
+				}
+			}
+		}
 		/*
 		 * Consider beginning a cluster.
+		 * If at end of file, make cluster as large as possible,
+		 * otherwise find size of existing cluster.
 		 */
-		if ((lbn + 1) * bp->b_bcount == filesize)
-			/* End of file, make cluster as large as possible */
-			clen = MAXBSIZE / vp->v_mount->mnt_stat.f_iosize - 1;
-		else if (VOP_BMAP(vp, lbn, NULL, &bp->b_blkno, &clen) ||
-			    bp->b_blkno == -1) {
+		if ((lbn + 1) * bp->b_bcount != filesize &&
+		    (VOP_BMAP(vp, lbn, NULL, &bp->b_blkno, &maxclen) ||
+		     bp->b_blkno == -1)) {
 			bawrite(bp);
 			vp->v_clen = 0;
 			vp->v_lasta = bp->b_blkno;
@@ -482,8 +524,8 @@ cluster_write(bp, filesize)
 			vp->v_lastw = lbn;
 			return;
 		}
-                vp->v_clen = clen;
-                if (clen == 0) {		/* I/O not contiguous */
+                vp->v_clen = maxclen;
+                if (maxclen == 0) {		/* I/O not contiguous */
 			vp->v_cstart = lbn + 1;
                         bawrite(bp);
                 } else {			/* Wait for rest of cluster */
@@ -650,4 +692,30 @@ redo:
 		start_lbn += 1;
 		goto redo;
 	}
+}
+
+/*
+ * Collect together all the buffers in a cluster.
+ * Plus add one additional buffer.
+ */
+struct cluster_save *
+cluster_collectbufs(vp, last_bp)
+	struct vnode *vp;
+	struct buf *last_bp;
+{
+	struct cluster_save *buflist;
+	daddr_t	lbn;
+	int i, len;
+
+	len = vp->v_lastw - vp->v_cstart + 1;
+	buflist = malloc(sizeof(struct buf *) * (len + 1) + sizeof(*buflist),
+	    M_SEGMENT, M_WAITOK);
+	buflist->bs_nchildren = 0;
+	buflist->bs_children = (struct buf **)(buflist + 1);
+	for (lbn = vp->v_cstart, i = 0; i < len; lbn++, i++)
+		    (void)bread(vp, lbn, last_bp->b_bcount, NOCRED,
+			&buflist->bs_children[i]);
+	buflist->bs_children[i] = last_bp;
+	buflist->bs_nchildren = i + 1;
+	return (buflist);
 }
