@@ -9,7 +9,7 @@
 #undef isdigit
 
 /*
- * Sccs Id = "@(#)def.h	1.2 %G%";
+ * Sccs Id = "@(#)def.h	1.3 %G%";
  */
 
 /*
@@ -98,6 +98,7 @@ struct cmd {
 #define	P	040		/* Autoprint dot after command */
 #define	I	0100		/* Interactive command bit */
 #define	M	0200		/* Illegal from send mode bit */
+#define	W	0400		/* Illegal when read only bit */
 
 /*
  * Oft-used mask values
@@ -243,6 +244,7 @@ char	*index();
 char	*nameof();
 char	*nextword();
 char	*getenv();
+char	*getfilename();
 char	*hcontents();
 char	*netmap();
 char	*netname();
