@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)cons.c	7.2 (Berkeley) %G%
+ *	@(#)cons.c	7.3 (Berkeley) %G%
  */
 
 /*
@@ -95,7 +95,8 @@ cnwrite(dev, uio)
 	register struct tty *tp = &cons;
 
 	if (minor(dev) == 0) {
-		if (constty)
+		if (constty && (constty->t_state & (TS_CARR_ON | TS_ISOPEN)) ==
+		    (TS_CARR_ON | TS_ISOPEN))
 			tp = constty;
 		else if (consops)
 			return ((*consops->d_write)(dev, uio));
