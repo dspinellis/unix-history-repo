@@ -22,6 +22,14 @@ static char rcsid[] = "$Header: /home/local/site/cron2.1/orig/RCS/crontab.c,v 2.
  * 
  * Revision 1.1  87/01/26  23:49:06  paul
  * Initial revision
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00131
+ * --------------------         -----   ----------------------
+ *
+ * 06 Apr 93	Adam Glass	Fixes so it compiles quitely
+ *
  */
 
 /* Copyright 1988,1990 by Paul Vixie
@@ -71,7 +79,7 @@ extern void	log_it();
 static char	*Options[] = {"???", "list", "delete", "replace"};
 #endif
 
-static void
+void
 usage()
 {
 	fprintf(stderr, "usage:  %s [-u user] ...\n", ProgramName);
@@ -86,8 +94,8 @@ main(argc, argv)
 	int	argc;
 	char	*argv[];
 {
-	void	parse_args(), set_cron_uid(), set_cron_cwd(),
-		list_cmd(), delete_cmd(), replace_cmd();
+        void parse_args(), set_cron_uid(), set_cron_cwd(),
+             list_cmd(), delete_cmd(), replace_cmd();
 
 	Pid = getpid();
 	ProgramName = argv[0];
@@ -117,7 +125,7 @@ main(argc, argv)
 }
 	
 
-static void
+ void
 parse_args(argc, argv)
 	int	argc;
 	char	*argv[];
@@ -219,7 +227,7 @@ parse_args(argc, argv)
 }
 
 
-static void
+ void
 list_cmd()
 {
 	extern	errno;
@@ -247,7 +255,7 @@ list_cmd()
 }
 
 
-static void
+ void
 delete_cmd()
 {
 	extern	errno;
@@ -269,7 +277,7 @@ delete_cmd()
 }
 
 
-static void
+ void
 check_error(msg)
 	char	*msg;
 {
@@ -278,10 +286,9 @@ check_error(msg)
 }
 
 
-static void
+ void
 replace_cmd()
 {
-	char	*sprintf();
 	entry	*load_entry();
 	int	load_env();
 	int	unlink();
@@ -318,7 +325,7 @@ replace_cmd()
 	fflush(tmp);  rewind(tmp);
 
 	if (ferror(tmp)) {
-		fprintf("%s: error while writing new crontab to %s\n",
+		fprintf(stderr, "%s: error while writing new crontab to %s\n",
 			ProgramName, tn);
 		fclose(tmp);  unlink(tn);
 		exit(ERROR_EXIT);
@@ -383,7 +390,7 @@ replace_cmd()
 }
 
 
-static void
+ void
 poke_daemon()
 {
 #if defined(BSD)
