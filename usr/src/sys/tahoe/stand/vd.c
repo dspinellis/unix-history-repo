@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vd.c	7.11 (Berkeley) %G%
+ *	@(#)vd.c	7.12 (Berkeley) %G%
  */
 
 /*
@@ -142,7 +142,7 @@ vdreset_ctlr(ctlr, unit)
 		vdaddr->vdtcf_dcb = AM_ENPDA;
 		vdaddr->vdtcf_trail = AM_ENPDA;
 		vdaddr->vdtcf_data = AM_ENPDA;
-		vdaddr->vdccf = CCF_SEN | CCF_DER | CCF_STS |
+		vdaddr->vdccf = CCF_SEN | CCF_DIU | CCF_STS |
 		    XMD_32BIT | BSZ_16WRD |
 		    CCF_ENP | CCF_EPE | CCF_EDE | CCF_ECE | CCF_ERR;
 	}
