@@ -1,4 +1,4 @@
-/*	@(#)ww.h	1.8 83/07/28		*/
+/*	@(#)ww.h	1.9 83/07/29		*/
 
 #include <stdio.h>
 #include <sgtty.h>
@@ -56,7 +56,7 @@ struct ww_tty {
 #define ISCTRL(c)	((c) < ' ' || (c) >= DEL)
 
 extern struct ww *wwhead, *curwin;
-extern struct ww_tty wwoldtty, wwnewtty;
+extern struct ww_tty wwoldtty, wwnewtty, wwwintty;
 extern int wwnwrite;
 extern int wwnwritec;
 extern int wwnrow, wwncol;		/* the screen size */

@@ -1,10 +1,11 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwinit.c	1.7 83/07/29";
+static	char *sccsid = "@(#)wwinit.c	1.8 83/07/29";
 #endif
 
 #include "ww.h"
 
 struct ww_tty wwoldtty;
+struct ww_tty wwwintty;
 struct ww_tty wwnewtty = {
 	{ 0, 0, -1, -1, 0 },
 	{ -1, -1, -1, -1, -1, -1 },
@@ -28,6 +29,8 @@ wwinit()
 	_wwdtablesize = getdtablesize();
 	if (wwgettty(0, &wwoldtty) < 0)
 		return -1;
+	wwwintty = wwoldtty;
+	wwwintty.ww_sgttyb.sg_flags &= ~XTABS;
 	wwnewtty.ww_sgttyb.sg_flags = wwoldtty.ww_sgttyb.sg_flags;
 	wwnewtty.ww_sgttyb.sg_ispeed = wwoldtty.ww_sgttyb.sg_ispeed;
 	wwnewtty.ww_sgttyb.sg_ospeed = wwoldtty.ww_sgttyb.sg_ospeed;
