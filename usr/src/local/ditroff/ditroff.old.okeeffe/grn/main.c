@@ -1,4 +1,4 @@
-/*	main.c	1.14	(Berkeley) 84/01/18
+/*	main.c	1.15	(Berkeley) 84/03/15
  *
  *	This file contains the main and file system dependent routines
  * for processing gremlin files into troff input.  The program watches
@@ -84,7 +84,7 @@ extern POINT *PTInit(), *PTMakePoint();
 #define BIG	999999999999.0		/* unweildly large floating number */
 
 
-char	SccsId[] = "main.c	1.14	84/01/18";
+char	SccsId[] = "main.c	1.15	84/03/15";
 
 char	*printer = DEFAULTDEV;	/* device to look up resolution of */
 char	*gremlib = GREMLIB;	/* place to find files after current dir. */
@@ -196,7 +196,7 @@ char **argv;
 		if (file[k] != NULL) {
 			if ((fp = fopen(file[k], "r")) == NULL) {
 			    error("can't open %s", file[k]);
-			    continue;
+			    exit(1);
 			}
 		} else {
 			fp = stdin;
@@ -246,7 +246,7 @@ char ***argvp;
 	if ((**argvp)[2]) return(**argvp + 2); /* operand immediately follows */
 	if ((--*argcp) <= 0) {			/* no operand */
 	    error("command-line option operand missing.");
-	    exit(1);
+	    exit(8);
 	}
 	return(*(++(*argvp)));			/* operand is next word */
 }
@@ -356,26 +356,28 @@ conv(fp, baseline)
 register FILE *fp;
 int baseline;
 {
-	register FILE *gfp = NULL;
-	register int done = 0;
-	register ELT *e;
-	ELT *PICTURE;
-	double temp;
-	POINT ptr;
+	register FILE *gfp = NULL;	/* input file pointer */
+	register int done = 0;		/* flag to remember if finished */
+	register ELT *e;	/* current element pointer */
+	ELT *PICTURE;		/* whole picture data base pointer */
+	double temp;		/* temporary calculating area */
+	POINT ptr;	/* coordinates of a point to pass to "mov" routine */
+	int flyback;	/* flag "want to end up at the top of the picture?" */
 
 
 	initpic();			/* set defaults, ranges, etc. */
 	strcpy (GScommand, inputline);	/* save ".GS" line for later */
 	do {
 	    done = (doinput(fp) == NULL);		     /* test for EOF */
-	    done |= (*c1 == '.' && *c2 == 'G' && *c3 == 'E');	 /*  and .GE */
+	    flyback = *c3 == 'F';			   /* and .GE or .GF */
+	    done |= (*c1 == '.' && *c2 == 'G' && (*c3 == 'E' || flyback));
 
 	    if (done) {
 		if (setdefault) savestate();
 
 		if (!gremlinfile[0]) {
-		    if(!setdefault) fprintf(stderr,
-			"at line %d: no picture filename.\n", baseline);
+		    if(!setdefault)
+			error("at line %d: no picture filename.\n", baseline);
 		    return;
 		}
 		if ((gfp = fopen(gremlinfile, "r")) == NULL) {
@@ -424,8 +426,9 @@ int baseline;
 					/*   and break (to make sure picture */
 					/*   starts on left), and put out the */
 					/*   user's ".GS" line. */
-		printf(".nr g1 %d\n.nr g2 %d\n", xright-xleft, ybottom-ytop);
-		printf(".br\n%s.nr g3 \\n(.f\n.nr g4 \\n(.s\n", GScommand);
+		printf(
+".br\n\\0\n.sp -1\n.nr g1 %du\n.nr g2 %du\n%s.nr g3 \\n(.f\n.nr g4 \\n(.s\n",
+			xright-xleft, ybottom-ytop, GScommand);
 
 		lastx = xleft;		/* note where we are, (upper left */
 		lastyline = lasty = ytop;	/* corner of the picture) */
@@ -435,13 +438,20 @@ int baseline;
 		    HGPrintElt(e);	/* traverse picture;  print elements */
 		    e = DBNextElt(e);
 		}
-					/* end picture at lower left */
-		ptr.x = leftpoint;
-		ptr.y = bottompoint;
+				/* decide where to end picture */
+		if (flyback) {		/* end piture at upper left */
+		    ptr.x = leftpoint;
+		    ptr.y = toppoint;
+		} else {		/* end picture at lower left */
+		    ptr.x = leftpoint;
+		    ptr.y = bottompoint;
+		}
 		tmove(&ptr);		/* restore default line parameters, */
-					/* put out the ".GE" line from user */
-					/* then restore everything to the way */
-					/* it was before the .GS */
+					/* restore everything to the way */
+					/* it was before the .GS, then put */
+					/* out the ".GE" line from user */
+		if (flyback)
+		    printf(".sp -1\n");
 		printf("\\D't %du'\\D's %du'\n", DEFTHICK, DEFSTYLE);
 		printf(".br\n.ft \\n(g3\n.ps \\n(g4\n%s", inputline);
 	    } else {
@@ -617,6 +627,8 @@ char *line;
 	    break;
 
 	default: 
+	    error("unknown command, %s, on line %d", str1, linenum);
+	    exit(8);
 	    break;
     };
 }
