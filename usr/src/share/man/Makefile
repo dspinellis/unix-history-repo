@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.10 (Berkeley) %G%
+#	@(#)Makefile	5.11 (Berkeley) %G%
 
 SUBDIR=	man1 man3 man3f man4 man5 man7 man8
 
@@ -9,7 +9,7 @@ afterinstall:
 makedb:
 	for file in `find /usr/share/man -type f -name '*.0' -print`; do \
 		sed -n -f /usr/share/man/makewhatis.sed $$file; \
-	done | sort -u > whatis.db
+	done | sort -u > /tmp/whatis.db
 	install -o ${BINOWN} -g ${BINGRP} -m 444 whatis.db \
 	    ${DESTDIR}/usr/share/man
 
