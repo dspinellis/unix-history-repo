@@ -1,4 +1,4 @@
-/*	sys_socket.c	4.5	83/06/13	*/
+/*	sys_socket.c	4.6	83/07/20	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -135,8 +135,10 @@ soo_stat(so, ub)
 soo_close(fp)
 	struct file *fp;
 {
-	int error = soclose((struct socket *)fp->f_data);
-
+	int error = 0;
+	
+	if (fp->f_data)
+		error = soclose((struct socket *)fp->f_data);
 	fp->f_data = 0;
 	return (error);
 }
