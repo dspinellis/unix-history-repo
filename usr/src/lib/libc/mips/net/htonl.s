@@ -8,11 +8,11 @@
  * %sccs.include.redist.c%
  */
 
-#if defined(LIBC_SCCS) && !defined(lint)
-	ASMSTR("@(#)htonl.s	5.1 (Berkeley) %G%")
-#endif /* LIBC_SCCS and not lint */
-
 #include "DEFS.h"
+
+#if defined(LIBC_SCCS) && !defined(lint)
+	ASMSTR("@(#)htonl.s	5.2 (Berkeley) %G%")
+#endif /* LIBC_SCCS and not lint */
 
 /*
  * netorder = htonl(hostorder)
