@@ -5,9 +5,9 @@
  * This code is derived from software contributed to Berkeley by
  * William Jolitz.
  *
- * %sccs.include.redist.c%
+ * %sccs.include.386.c%
  *
- *	@(#)icu.h	5.6 (Berkeley) %G%
+ *	@(#)icu.h	5.7 (Berkeley) %G%
  */
 
 /*
@@ -43,11 +43,18 @@ extern	unsigned short netmask; /* group of interrupts masked with splimp() */
 
 /* Mask a group of interrupts atomically */
 #define	INTR(unit,mask,offst) \
+	cli ; \
 	pushl	$0 ; \
+	nop ; \
 	pushl	$ T_ASTFLT ; \
+	nop ; \
 	pushal ; \
-	push	%ds ; \
-	push	%es ; \
+	nop ; \
+	movb	$0x20,%al ; \
+	outb	%al,$ IO_ICU1 ; \
+	outb	%al,$ IO_ICU2 ; \
+	pushl	%ds ; \
+	pushl	%es ; \
 	movw	$0x10, %ax ; \
 	movw	%ax, %ds ; \
 	movw	%ax,%es ; \
@@ -59,28 +66,19 @@ extern	unsigned short netmask; /* group of interrupts masked with splimp() */
 	orw	mask ,%ax ; \
 	movw	%ax,_cpl ; \
 	orw	_imen,%ax ; \
-	NOP ; \
 	outb	%al,$ IO_ICU1+1 ; \
-	NOP ; \
 	movb	%ah,%al ; \
 	outb	%al,$ IO_ICU2+1	; \
-	NOP	; \
-	inb	$0x84,%al ; \
-	sti
+	sti ;
 
 /* Interrupt vector exit macros */
 
 /* First eight interrupts (ICU1) */
 #define	INTREXIT1	\
-	movb	$0x20,%al ; \
-	outb	%al,$ IO_ICU1 ; \
 	jmp	doreti
 
 /* Second eight interrupts (ICU2) */
 #define	INTREXIT2	\
-	movb	$0x20,%al ; \
-	outb	%al,$ IO_ICU1 ; \
-	outb	%al,$ IO_ICU2 ; \
 	jmp	doreti
 
 #endif
