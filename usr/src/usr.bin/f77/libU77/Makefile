@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.5 (Berkeley) %G%
+#	@(#)Makefile	5.6 (Berkeley) %G%
 
 LIB=	U77
 SRCS=	access_.c alarm_.c chdir_.c chmod_.c ctime_.c dtime_.c etime_.c \
@@ -26,24 +26,15 @@ mkvers: mkvers.c
 
 .include <bsd.lib.mk>
 
-.c.o:
-	${CC} ${CFLAGS} -c ${.IMPSRC} -o ${.TARGET}
-	@${LD} -x -r ${.TARGET}
-	@mv a.out ${.TARGET}
-
-.c.po:
-	${CC} -p ${CFLAGS} -c ${.IMPSRC} -o ${.TARGET}
-	@${LD} -x -r ${.TARGET}
-	@mv a.out ${.TARGET}
-
-# Fortran compiler doesn't let you rename .o's, so we'll have to
-# rebuild the .o's each time.
+# Fortran compiler doesn't let you rename .o's, so we'll have to cheat.
 .f.o:
-	${FC} ${FFLAGS} -c ${.IMPSRC}
-	@${LD} -x -r ${.TARGET}
-	@mv a.out ${.TARGET}
+	${FC} -p ${FFLAGS} -c ${.IMPSRC}
+	${LD} -X -r ${.TARGET:S/.po/.o/}
+	mv a.out ${.TARGET}
 
 .f.po:
-	${FC} -p ${FFLAGS} -c ${.IMPSRC}
-	@${LD} -x -r ${.TARGET:S/.po/.o/}
-	@mv a.out ${.TARGET}
+	ln -s ${.IMPSRC} xxx.f
+	${FC} -p ${FFLAGS} -c xxx.f
+	${LD} -X -r xxx.o
+	mv a.out ${.TARGET}
+	rm -f xxx.f xxx.o
