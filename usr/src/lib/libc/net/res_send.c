@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)res_send.c	6.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)res_send.c	6.9 (Berkeley) %G%";
 #endif LIBC_SCCS and not lint
 
 /*
@@ -24,6 +24,8 @@ static char sccsid[] = "@(#)res_send.c	6.8 (Berkeley) %G%";
 
 extern int errno;
 
+static int s = -1;	/* socket used for communications */
+
 #define KEEPOPEN (RES_USEVC|RES_STAYOPEN)
 
 res_send(buf, buflen, answer, anslen)
@@ -34,7 +36,6 @@ res_send(buf, buflen, answer, anslen)
 {
 	register int n;
 	int retry, v_circuit, resplen, ns;
-	static int s = -1;
 	int gotsomewhere = 0;
 	u_short id, len;
 	char *cp;
@@ -92,7 +93,7 @@ res_send(buf, buflen, answer, anslen)
 			/*
 			 * Send length & message
 			 */
-			len = htons(buflen);
+			len = htons((u_short)buflen);
 			if (write(s, &len, sizeof(len)) != sizeof(len) ||
 				    write(s, buf, buflen) != buflen) {
 #ifdef DEBUG
@@ -122,7 +123,7 @@ res_send(buf, buflen, answer, anslen)
 				continue;
 			}
 			cp = answer;
-			resplen = len = ntohs(*(short *)cp);
+			resplen = len = ntohs(*(u_short *)cp);
 			while (len > 0 && (n = read(s, cp, len)) > 0) {
 				cp += n;
 				len -= n;
@@ -252,4 +253,19 @@ wait:
 	else
 		errno = ETIMEDOUT;
 	return (-1);
+}
+
+/*
+ * This routine is for closing the socket if a virtual circuit is used and
+ * the program wants to close it.  This provides support for endhostent()
+ * which expects to close the socket.
+ *
+ * This routine is not expected to be user visible.
+ */
+_res_close()
+{
+	if (s != -1) {
+		(void) close(s);
+		s = -1;
+	}
 }
