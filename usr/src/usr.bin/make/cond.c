@@ -21,7 +21,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cond.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)cond.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 /*-
@@ -33,11 +33,7 @@ static char sccsid[] = "@(#)cond.c	5.2 (Berkeley) %G%";
  *
  */
 
-#ifdef SYSV
-#include    <string.h>
-#else
 #include    <strings.h>
-#endif
 #include    "make.h"
 #include    <buf.h>
 #include    <ctype.h>

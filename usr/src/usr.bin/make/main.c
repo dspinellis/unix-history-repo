@@ -27,7 +27,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 /*-
@@ -912,12 +912,3 @@ Finish (errors)
 {
     Fatal ("%d error%s", errors, errors == 1 ? "" : "s");
 }
-
-#if defined(SYSV) || defined(is68k) && !defined(PROF)
-
-exit(status)
-{
-    _cleanup();
-    _exit(status);
-}
-#endif /* System V */
