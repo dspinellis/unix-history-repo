@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)tmps.c 1.4 %G%";
+static char sccsid[] = "@(#)tmps.c 1.5 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -16,16 +16,19 @@ static char sccsid[] = "@(#)tmps.c 1.4 %G%";
 #ifdef PC
 #ifdef VAX
 #    define MAXREGS 6
-#    define REGSIZ 4
+#    define MINREGSIZE 4
+#    define MAXREGSIZE 4
 #    define FIRSTREG 6
 #else
 #ifdef PDP11
 #    define MAXREGS 3
-#    define REGSIZ 2
+#    define MINREGSIZE 2
+#    define MAXREGSIZE 2
 #    define FIRSTREG 2
 #else
 #    define MAXREGS 0
-#    define REGSIZ 0
+#    define MINREGSIZE 0
+#    define MAXREGSIZE 0
 #    define FIRSTREG 0
 #endif PDP11
 #endif VAX
@@ -34,7 +37,7 @@ static char sccsid[] = "@(#)tmps.c 1.4 %G%";
 /*
  * allocate runtime temporary variables
  */
-long
+struct nl *
 tmpalloc(size, type, mode)
 	long size;
 	struct nl *type;
@@ -42,29 +45,30 @@ tmpalloc(size, type, mode)
 {
 	register struct om *op = &sizes[ cbn ];
 	register int offset;
+	register struct nl	*nlp;
 
 #	ifdef PC
-	    if (mode == REGOK && size <= REGSIZ &&
+	    if (mode == REGOK && size >= MINREGSIZE && size <= MAXREGSIZE &&
 		op->curtmps.reg_off < MAXREGS) {
 		    offset = op->curtmps.reg_off++;
 		    if ( offset > op->reg_max ) {
 			    op->reg_max = offset;
 		    }
-		    /*
-		     * the register number is encoded as an odd negative number
-		     * which can never appear as an address.
-		     */
-		    return -(((offset + FIRSTREG) << 1) + 1);
+		    nlp = defnl( 0 , VAR , type , offset + FIRSTREG );
+		    nlp -> extra_flags = NLOCAL | NREGVAR;
+		    return nlp;
 	    }
 #	endif PC
 	offset = op->curtmps.om_off -= leven( size );
 	if ( offset < op->om_max ) {
 	        op->om_max = offset;
 	}
+	nlp = defnl( 0 , VAR , type , offset );
 #	ifdef PC
+	    nlp -> extra_flags = NLOCAL;
 	    putlbracket( ftnno , -offset );
 #	endif PC
-	return offset;
+	return nlp;
 }
 
 /*
@@ -96,7 +100,7 @@ tmpfree(restore)
  */
 savmask()
 {
-	short mask;
+	int mask;
 	int i;
 
 	mask = RSAVEMASK;

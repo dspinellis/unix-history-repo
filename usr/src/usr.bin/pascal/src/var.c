@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)var.c 1.8 %G%";
+static char sccsid[] = "@(#)var.c 1.9 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -84,6 +84,7 @@ var(vline, vidl, vtype)
 	long w;
 	int o2;
 	int *ovidl = vidl;
+	struct nl	*vp;
 
 	np = gtype(vtype);
 	line = vline;
@@ -115,7 +116,7 @@ var(vline, vidl, vtype)
 			    o2 = op -> curtmps.om_off;
 		    }
 #		endif PC
-		enter(defnl(vidl[1], VAR, np, o2));
+		vp = enter(defnl(vidl[1], VAR, np, o2));
 		if ( np -> nl_flags & NFILES ) {
 		    dfiles[ cbn ] = TRUE;
 		}
@@ -127,6 +128,9 @@ var(vline, vidl, vtype)
 			putprintf( ",%d" , 0 , w );
 			putprintf( "	.text" , 0 );
 			stabgvar( vidl[1] , p2type( np ) , o2 , w , line );
+			vp -> extra_flags |= NGLOBAL;
+		    } else {
+			vp -> extra_flags |= NLOCAL;
 		    }
 #		endif PC
 	}

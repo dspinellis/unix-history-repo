@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)p2put.c 1.8 %G%";
+static	char sccsid[] = "@(#)p2put.c 1.9 %G%";
 
     /*
      *	functions to help pi put out
@@ -209,12 +209,14 @@ putleaf( op , lval , rval , type , name )
 
     /*
      *	rvalues are just lvalues with indirection, except
-     *	special case for named globals, whose names are their rvalues
+     *	special cases for registers and for named globals,
+     *	whose names are their rvalues.
      */
-putRV( name , level , offset , type )
+putRV( name , level , offset , extra_flags , type )
     char	*name;
     int		level;
     int		offset;
+    char	extra_flags;
     int		type;
     {
 	char	extname[ BUFSIZ ];
@@ -223,25 +225,28 @@ putRV( name , level , offset , type )
 
 	if ( !CGENNING )
 	    return;
-	if (whereis(offset) == REGVAR) {
-	    regnumber = ( - offset ) >> 1;
-	    if ( ( regnumber < 0 ) || ( regnumber > P2FP ) ) {
-		panic( "putRV regnumber" );
+	if ( extra_flags & NREGVAR ) {
+	    if ( ( offset < 0 ) || ( offset > P2FP ) ) {
+		panic( "putRV regvar" );
 	    }
-	    putleaf( P2REG , 0 , regnumber , type , 0 );
+	    putleaf( P2REG , 0 , offset , type , 0 );
 	    return;
 	}
-	if ( ( level <= 1 ) && ( name != 0 ) ) {
-	    if ( name[0] != '_' ) {
-		    sprintf( extname , EXTFORMAT , name );
-		    printname = extname;
+	if ( whereis( level , offset , extra_flags ) == GLOBALVAR ) {
+	    if ( name != 0 ) {
+		if ( name[0] != '_' ) {
+			sprintf( extname , EXTFORMAT , name );
+			printname = extname;
+		} else {
+			printname = name;
+		}
+		putleaf( P2NAME , offset , 0 , type , printname );
+		return;
 	    } else {
-		    printname = name;
+		panic( "putRV no name" );
 	    }
-	    putleaf( P2NAME , offset , 0 , type , printname );
-	    return;
 	}
-	putLV( name , level , offset , type );
+	putLV( name , level , offset , extra_flags , type );
 	putop( P2UNARY P2MUL , type );
     }
 
@@ -250,14 +255,12 @@ putRV( name , level , offset , type )
      *	given a level and offset
      *	special case for
      *	    named globals, whose lvalues are just their names as constants.
-     *	    negative offsets, that are offsets from the frame pointer.
-     *	    odd negative numbers are register variables.
-     *	    positive offsets, that are offsets from argument pointer.
      */
-putLV( name , level , offset , type )
+putLV( name , level , offset , extra_flags , type )
     char	*name;
     int		level;
     int		offset;
+    char	extra_flags;
     int		type;
 {
     char		extname[ BUFSIZ ];
@@ -265,18 +268,24 @@ putLV( name , level , offset , type )
 
     if ( !CGENNING )
 	return;
-    if ( ( level <= 1 ) && ( name != 0 ) ) {
-	if ( name[0] != '_' ) {
-		sprintf( extname , EXTFORMAT , name );
-		printname = extname;
-	} else {
-		printname = name;
-	}
-	putleaf( P2ICON , offset , 0 , ADDTYPE( type , P2PTR )
-		, printname );
-	return;
+    if ( extra_flags & NREGVAR ) {
+	panic( "putLV regvar" );
     }
-    switch(whereis(offset)) {
+    switch ( whereis( level , offset , extra_flags ) ) {
+	case GLOBALVAR:
+	    if ( ( name != 0 ) ) {
+		if ( name[0] != '_' ) {
+			sprintf( extname , EXTFORMAT , name );
+			printname = extname;
+		} else {
+			printname = name;
+		}
+		putleaf( P2ICON , offset , 0 , ADDTYPE( type , P2PTR )
+			, printname );
+		return;
+	    } else {
+		panic( "putLV no name" );
+	    }
 	case PARAMVAR:
 	    if ( level == cbn ) {
 		putleaf( P2REG , 0 , P2AP , ADDTYPE( type , P2PTR ) , 0 );
@@ -297,8 +306,6 @@ putLV( name , level , offset , type )
 	    putleaf( P2ICON , -offset , 0 , P2INT , 0 );
 	    putop( P2MINUS , P2PTR | P2CHAR );
 	    break;
-	case REGVAR:
-	    panic("putLV regvar");
     }
     return;
 }

@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)rval.c 1.11 %G%";
+static char sccsid[] = "@(#)rval.c 1.12 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -64,7 +64,7 @@ rvalue(r, contype , required )
 #	ifdef PC
 	    struct nl	*rettype;
 	    long	ctype;
-	    long	tempoff;
+	    struct nl	*tempnlp;
 #	endif PC
 
 	if (r == NIL)
@@ -149,11 +149,11 @@ rvalue(r, contype , required )
 #			   endif OBJ
 #			   ifdef PC
 				if ( required == RREQ ) {
-				    putRV( p -> symbol , bn , p -> value[0]
-					    , p2type( q ) );
+				    putRV( p -> symbol , bn , p -> value[0] ,
+					    p -> extra_flags , p2type( q ) );
 				} else {
-				    putLV( p -> symbol , bn , p -> value[0]
-					    , p2type( q ) );
+				    putLV( p -> symbol , bn , p -> value[0] ,
+					    p -> extra_flags , p2type( q ) );
 				}
 #			   endif PC
 			   return (q);
@@ -374,9 +374,10 @@ cstrng:
 			/*
 			 *	allocate a temporary and use it
 			 */
-			tempoff = tmpalloc(lwidth(csetd.csettype),
+			tempnlp = tmpalloc(lwidth(csetd.csettype),
 				csetd.csettype, NOREG);
-			putLV( 0 , cbn , tempoff , P2PTR|P2STRTY );
+			putLV( 0 , cbn , tempnlp -> value[ NL_OFFS ] ,
+				tempnlp -> extra_flags , P2PTR|P2STRTY );
 			setran( ( csetd.csettype ) -> type );
 			putleaf( P2ICON , set.lwrb , 0 , P2INT , 0 );
 			putop( P2LISTOP , P2INT );
@@ -581,8 +582,9 @@ cstrng:
 			    /*
 			     *	allocate a temporary and use it
 			     */
-			tempoff = tmpalloc(lwidth(contype), contype, NOREG);
-			putLV( 0 , cbn , tempoff , P2PTR|P2STRTY );
+			tempnlp = tmpalloc(lwidth(contype), contype, NOREG);
+			putLV( 0 , cbn , tempnlp -> value[ NL_OFFS ] ,
+				tempnlp -> extra_flags , P2PTR|P2STRTY );
 			p = rvalue( r[2] , contype , LREQ );
 			if ( isa( p , "t" ) ) {
 			    putop( P2LISTOP , P2INT );

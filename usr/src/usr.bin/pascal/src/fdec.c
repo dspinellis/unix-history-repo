@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)fdec.c 1.19 %G%";
+static char sccsid[] = "@(#)fdec.c 1.20 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -57,7 +57,7 @@ funcext(fp)
 		error("External procedures and functions are not standard");
 	} else {
 		if (cbn == 1) {
-			fp->ext_flags |= NEXTERN;
+			fp->extra_flags |= NEXTERN;
 			stabefunc( fp -> symbol , fp -> class , line );
 		}
 		else
@@ -83,6 +83,7 @@ funcbody(fp)
 	struct nl *fp;
 {
 	register struct nl *q, *p;
+	struct nl	*functemp;
 
 	cbn++;
 	if (cbn >= DSPLYSZ) {
@@ -108,6 +109,9 @@ funcbody(fp)
 	if (fp->class != PROG) {
 		for (q = fp->chain; q != NIL; q = q->chain) {
 			enter(q);
+#			ifdef PC
+			    q -> extra_flags |= NPARAM;
+#			endif PC
 		}
 	}
 	if (fp->class == FUNC) {
@@ -117,11 +121,17 @@ funcbody(fp)
 		enter(fp->ptr[NL_FVAR]);
 #		ifdef PC
 		    q = fp -> ptr[ NL_FVAR ];
-		    if (q -> type != NIL &&
-			q -> ptr[ NL_OFFS ] != tmpalloc(leven(roundup(
-			    (int)lwidth(q -> type), (long)align(q -> type))),
-			q -> type, NOREG))
+		    if (q -> type != NIL ) {
+			functemp = tmpalloc(
+					leven(
+					    roundup(
+						(int)lwidth(q -> type),
+						(long)align(q -> type))),
+					q -> type, NOREG);
+			if ( q -> ptr[NL_OFFS] != functemp->value[NL_OFFS] )
 			    panic("func var");
+		    }
+		    q -> extra_flags |= functemp -> extra_flags;
 #		endif PC
 	}
 #	ifdef PTREE
@@ -175,12 +185,14 @@ funcbody(fp)
 				
 				case FUNC:
 				case PROC:
-					if ((p->nl_flags & NFORWD) && ((p->ext_flags & NEXTERN) == 0))
+					if ((p->nl_flags & NFORWD) &&
+					    ((p->extra_flags & NEXTERN) == 0))
 						nerror("Unresolved forward declaration of %s %s", classes[p->class], p->symbol);
 					break;
 
 				case FVAR:
-					if (((p->nl_flags & NMOD) == 0) && ((p->chain->ext_flags & NEXTERN) == 0))
+					if (((p->nl_flags & NMOD) == 0) &&
+					    ((p->chain->extra_flags & NEXTERN) == 0))
 						nerror("No assignment to the function variable");
 					break;
 			    }

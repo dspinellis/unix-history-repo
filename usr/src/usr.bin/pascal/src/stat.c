@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)stat.c 1.4 %G%";
+static char sccsid[] = "@(#)stat.c 1.5 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -177,7 +177,7 @@ inccnt( counter )
 	    put(2, O_COUNT, counter );
 #	endif OBJ
 #	ifdef PC
-	    putRV( PCPCOUNT , 0 , counter * sizeof (long) , P2INT );
+	    putRV( PCPCOUNT , 0 , counter * sizeof (long) , NGLOBAL , P2INT );
 	    putleaf( P2ICON , 1 , 0 , P2INT , 0 );
 	    putop( P2ASG P2PLUS , P2INT );
 	    putdot( filename , line );
@@ -205,7 +205,7 @@ putline()
 		    putop( P2UNARY P2CALL , P2INT );
 		    putdot( filename , line );
 		} else {
-		    putRV( STMTCOUNT , 0 , 0 , P2INT );
+		    putRV( STMTCOUNT , 0 , 0 , NGLOBAL , P2INT );
 		    putleaf( P2ICON , 1 , 0 , P2INT , 0 );
 		    putop( P2ASG P2PLUS , P2INT );
 		    putdot( filename , line );
@@ -229,18 +229,19 @@ withop(s)
 {
 	register *p;
 	register struct nl *r;
-	int i;
+	struct nl	*tempnlp;
 	int *swl;
 
 	putline();
 	swl = withlist;
 	for (p = s[2]; p != NIL; p = p[2]) {
-		i = tmpalloc(sizeof(int *), INT_TYP, REGOK);
+		tempnlp = tmpalloc(sizeof(int *), INT_TYP, REGOK);
 #		ifdef OBJ
-		    put(2, O_LV | cbn <<8+INDX, i );
+		    put(2, O_LV | cbn <<8+INDX, tempnlp -> value[ NL_OFFS ] );
 #		endif OBJ
 #		ifdef PC
-		    putRV( 0 , cbn , i , P2PTR|P2STRTY );
+		    putRV( 0 , cbn , tempnlp -> value[ NL_OFFS ] ,
+			    tempnlp -> extra_flags , P2PTR|P2STRTY );
 #		endif PC
 		r = lvalue(p[1], MOD , LREQ );
 		if (r == NIL)
@@ -249,7 +250,10 @@ withop(s)
 			error("Variable in with statement refers to %s, not to a record", nameof(r));
 			continue;
 		}
-		r = defnl(0, WITHPTR, r, i);
+		r = defnl(0, WITHPTR, r, tempnlp -> value[ NL_OFFS ] );
+#		ifdef PC
+		    r -> extra_flags |= tempnlp -> extra_flags;
+#		endif PC
 		r->nl_next = withlist;
 		withlist = r;
 #		ifdef OBJ
@@ -317,8 +321,8 @@ asgnop(r)
 				 * see note in funchdr about fvar allocation.
 				 */
 			    p = p -> ptr[ NL_FVAR ];
-			    putRV( p -> symbol , bn , p -> value[ NL_OFFS ]
-					, p2type( p -> type ) );
+			    putRV( p -> symbol , bn , p -> value[ NL_OFFS ] ,
+				    p -> extra_flags , p2type( p -> type ) );
 			    asgnop1( r , p -> type );
 #			endif PC
 			return;

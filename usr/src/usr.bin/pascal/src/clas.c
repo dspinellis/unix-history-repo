@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)clas.c 1.3 %G%";
+static	char sccsid[] = "@(#)clas.c 1.4 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -208,25 +208,31 @@ nowexp(r)
 #endif
 
     /*
-     *	is a variable a local, a formal parameter, or a register temporary?
+     *	is a variable a local, a formal parameter, or a global?
      *	all this from just the offset:
+     *	    globals are at levels 0 or 1
      *	    positives are parameters
      *	    negative evens are locals
-     *	    negatives odds are encoded registers  ( see tmpalloc() ).
      */
-whereis( offset )
-    int	offset;
+whereis( level , offset , extra_flags )
+    int		level;
+    int		offset;
+    char	extra_flags;
 {
     
-    if ( offset >= 0 ) {
-	return PARAMVAR;
-    }
-    if ( offset & 1 ) {
-#	ifdef PC
-	    return REGVAR;
-#	else
-	    panic("whereis");
-#	endif PC
-    }
-    return LOCALVAR;
+#   ifdef OBJ
+	return ( offset >= 0 ? PARAMVAR : LOCALVAR );
+#   endif OBJ
+#   ifdef PC
+	switch ( extra_flags & ( NGLOBAL | NPARAM | NLOCAL ) ) {
+	    case NGLOBAL:
+		return GLOBALVAR;
+	    case NPARAM:
+		return PARAMVAR;
+	    case NLOCAL:
+		return LOCALVAR;
+	    default:
+		panic( "whereis" );
+	}
+#   endif PC
 }

@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)fend.c 1.7 %G%";
+static char sccsid[] = "@(#)fend.c 1.8 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -232,7 +232,7 @@ funcend(fp, bundle, endline)
 		    , "_blkclr" );
 	    putleaf( P2ICON ,  ( -sizes[ cbn ].om_max ) - DPOFF1
 		    , 0 , P2INT , 0 );
-	    putLV( 0 , cbn , sizes[ cbn ].om_max , P2CHAR );
+	    putLV( 0 , cbn , sizes[ cbn ].om_max , NLOCAL , P2CHAR );
 	    putop( P2LISTOP , P2INT );
 	    putop( P2CALL , P2INT );
 	    putdot( filename , line );
@@ -303,8 +303,8 @@ funcend(fp, bundle, endline)
 			    putleaf( P2ICON , 0 , 0
 				    , ADDTYPE( P2FTN | P2INT , P2PTR )
 				    , "_DEFNAME" );
-			    putLV( p -> symbol , bn , iop -> value[NL_OFFS]
-				    , p2type( iop ) );
+			    putLV( p -> symbol , bn , iop -> value[NL_OFFS] ,
+				    iop -> extra_flags , p2type( iop ) );
 			    putCONG( p -> symbol , strlen( p -> symbol )
 				    , LREQ );
 			    putop( P2LISTOP , P2INT );
@@ -350,7 +350,7 @@ funcend(fp, bundle, endline)
 		putleaf( P2ICON , cnts , 0 , P2INT , 0 );
 		putleaf( P2ICON , pfcnt , 0 , P2INT , 0 );
 		putop( P2LISTOP , P2INT );
-		putLV( PCPCOUNT , 0 , 0 , P2INT );
+		putLV( PCPCOUNT , 0 , 0 , NGLOBAL , P2INT );
 		putop( P2LISTOP , P2INT );
 		putop( P2CALL , P2INT );
 		putdot( filename , line );
@@ -401,7 +401,7 @@ funcend(fp, bundle, endline)
 					    }
 #					endif OBJ
 #					ifdef PC
-					    if (((p->nl_flags & NUSED) == 0) && ((p->ext_flags & NEXTERN) == 0)) {
+					    if (((p->nl_flags & NUSED) == 0) && ((p->extra_flags & NEXTERN) == 0)) {
 						warning();
 						nerror("%s %s is never used", classes[p->class], p->symbol);
 						break;
@@ -439,7 +439,7 @@ funcend(fp, bundle, endline)
 						nerror("Unresolved forward declaration of %s %s", classes[p->class], p->symbol);
 #					endif OBJ
 #					ifdef PC
-					    if ((p->nl_flags & NFORWD) && ((p->ext_flags & NEXTERN) == 0))
+					    if ((p->nl_flags & NFORWD) && ((p->extra_flags & NEXTERN) == 0))
 						nerror("Unresolved forward declaration of %s %s", classes[p->class], p->symbol);
 #					endif PC
 					break;
@@ -472,8 +472,8 @@ funcend(fp, bundle, endline)
 	    if ( dfiles[ cbn ] ) {
 		putleaf( P2ICON , 0 , 0 , ADDTYPE( P2FTN | P2INT , P2PTR )
 			, "_PCLOSE" );
-		putRV( DISPLAYNAME , 0 , cbn * sizeof( struct dispsave )
-			, P2PTR | P2CHAR );
+		putRV( DISPLAYNAME , 0 , cbn * sizeof( struct dispsave ) ,
+			NGLOBAL , P2PTR | P2CHAR );
 		putop( P2CALL , P2INT );
 		putdot( filename , line );
 	    }
@@ -496,8 +496,10 @@ funcend(fp, bundle, endline)
 		    case TSCAL:
 		    case TDOUBLE:
 		    case TPTR:
-			putRV( fvar -> symbol , ( fvar -> nl_block ) & 037
-				, fvar -> value[ NL_OFFS ] , fvartype );
+			putRV( fvar -> symbol , ( fvar -> nl_block ) & 037 ,
+				fvar -> value[ NL_OFFS ] ,
+				fvar -> extra_flags ,
+				fvartype );
 			break;
 		    default:
 			label = getlab();
@@ -508,8 +510,10 @@ funcend(fp, bundle, endline)
 				    labelname , lwidth( fvar -> type ) );
 			putprintf( "	.text" , 0 );
 			putleaf( P2NAME , 0 , 0 , fvartype , labelname );
-			putLV( fvar -> symbol , ( fvar -> nl_block ) & 037
-				, fvar -> value[ NL_OFFS ] , fvartype );
+			putLV( fvar -> symbol , ( fvar -> nl_block ) & 037 ,
+				fvar -> value[ NL_OFFS ] ,
+				fvar -> extra_flags ,
+				fvartype );
 			putstrop( P2STASG , fvartype , lwidth( fvar -> type ) ,
 				align( fvar -> type ) );
 			putdot( filename , line );
@@ -552,8 +556,10 @@ funcend(fp, bundle, endline)
 			"_FCALL" );
 		putRV( 0 , cbn ,
 		    fp -> value[ NL_OFFS ] + sizeof( struct formalrtn * ) ,
+		    NPARAM ,
 		    P2PTR | P2STRTY );
-		putRV( 0 , cbn , fp -> value[ NL_OFFS ] , P2PTR|P2STRTY );
+		putRV( 0 , cbn , fp -> value[ NL_OFFS ] ,
+			NPARAM , P2PTR|P2STRTY );
 		putop( P2LISTOP , P2INT );
 		putop( P2CALL , P2INT );
 		putdot( filename , line );

@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)call.c 1.13 %G%";
+static	char sccsid[] = "@(#)call.c 1.14 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -53,7 +53,7 @@ call(p, argv, porf, psbn)
 	int *r;
 	struct nl	*p_type_class = classify( p -> type );
 	bool chk = TRUE;
-	long	savedisp;	/* temporary to hold saved display */
+	struct nl	*savedispnp;	/* temporary to hold saved display */
 #	ifdef PC
 	    long	p_p2type = p2type( p );
 	    long	p_type_p2type = p2type( p -> type );
@@ -62,7 +62,7 @@ call(p, argv, porf, psbn)
 		/*
 		 *	these get used if temporaries and structures are used
 		 */
-	    long	tempoffset;
+	    struct nl	*tempnlp;
 	    long	temptype;	/* type of the temporary */
 	    long	p_type_width;
 	    long	p_type_align;
@@ -73,11 +73,12 @@ call(p, argv, porf, psbn)
 	    /*
 	     * allocate space to save the display for formal calls
 	     */
-	    savedisp = tmpalloc( sizeof display , NIL , NOREG );
+	    savedispnp = tmpalloc( sizeof display , NIL , NOREG );
 	}
 #	ifdef OBJ
 	    if (p->class == FFUNC || p->class == FPROC) {
-		put(2, O_LV | cbn << 8 + INDX , (int) savedisp );
+		put(2, O_LV | cbn << 8 + INDX ,
+			(int) savedispnp -> value[ NL_OFFS ] );
 		put(2, PTR_RV | psbn << 8+INDX, (int)p->value[NL_OFFS]);
 	    }
 	    if (porf == FUNC) {
@@ -114,12 +115,13 @@ call(p, argv, porf, psbn)
 			break;
 		}
 		if ( temptype != P2UNDEF ) {
-		    tempoffset = tmpalloc(p_type_width, p -> type, NOREG);
+		    tempnlp = tmpalloc(p_type_width, p -> type, NOREG);
 			/*
 			 *	temp
 			 *	for (temp = ...
 			 */
-		    putRV( 0 , cbn , tempoffset , temptype );
+		    putRV( 0 , cbn , tempnlp -> value[ NL_OFFS ] ,
+			    tempnlp -> extra_flags , temptype );
 		}
 	    }
 	    switch ( p -> class ) {
@@ -136,8 +138,8 @@ call(p, argv, porf, psbn)
 			    /*
 			     *	... ( p -> entryaddr )( ...
 			     */
-			putRV( 0 , psbn , ( p -> value[NL_OFFS] ) ,
-				P2PTR | P2STRTY );
+			putRV( 0 , psbn , p -> value[ NL_OFFS ] ,
+				p -> extra_flags , P2PTR | P2STRTY );
 			if ( FENTRYOFFSET != 0 ) {
 			    putleaf( P2ICON , FENTRYOFFSET , 0 , P2INT , 0 );
 			    putop( P2PLUS , 
@@ -292,7 +294,8 @@ call(p, argv, porf, psbn)
 #	ifdef OBJ
 	    if ( p -> class == FFUNC || p -> class == FPROC ) {
 		put(2, PTR_RV | psbn << 8+INDX, (int)p->value[NL_OFFS]);
-		put(2, O_LV | cbn << 8 + INDX , (int) savedisp );
+		put(2, O_LV | cbn << 8 + INDX ,
+			(int) savedispnp -> value[ NL_OFFS ] );
 		put(1, O_FCALL);
 		put(2, O_FRTN, even(width(p->type)));
 	    } else {
@@ -308,12 +311,14 @@ call(p, argv, porf, psbn)
 		 *	space into which to save the display.
 		 */
 	    if ( p -> class == FFUNC || p -> class == FPROC ) {
-		putRV( 0 , cbn , p -> value[ NL_OFFS ] , P2PTR|P2STRTY );
+		putRV( 0 , cbn , p -> value[ NL_OFFS ] ,
+			p -> extra_flags , P2PTR|P2STRTY );
 		if ( !noarguments ) {
 		    putop( P2LISTOP , P2INT );
 		}
 		noarguments = FALSE;
-		putLV( 0 , cbn , savedisp , P2PTR | P2STRTY );
+		putLV( 0 , cbn , savedispnp -> value[ NL_OFFS ] ,
+			savedispnp -> extra_flags , P2PTR | P2STRTY );
 		putop( P2LISTOP , P2INT );
 	    }
 		/*
@@ -353,8 +358,10 @@ call(p, argv, porf, psbn)
 	    if ( p -> class == FFUNC || p -> class == FPROC ) {
 		putleaf( P2ICON , 0 , 0 , ADDTYPE( P2FTN | P2INT , P2PTR ) ,
 			"_FRTN" );
-		putRV( 0 , psbn , p -> value[ NL_OFFS ] , P2PTR | P2STRTY );
-		putLV( 0 , cbn , savedisp , P2PTR | P2STRTY );
+		putRV( 0 , psbn , p -> value[ NL_OFFS ] ,
+			p -> extra_flags , P2PTR | P2STRTY );
+		putLV( 0 , cbn , savedispnp -> value[ NL_OFFS ] ,
+			savedispnp -> extra_flags , P2PTR | P2STRTY );
 		putop( P2LISTOP , P2INT );
 		putop( P2CALL , P2INT );
 		putop( P2COMOP , P2INT );
@@ -366,9 +373,11 @@ call(p, argv, porf, psbn)
 		 */
 	    if ( porf == FUNC && temptype != P2UNDEF ) {
 		if ( temptype != P2STRTY ) {
-		    putRV( 0 , cbn , tempoffset , p_type_p2type );
+		    putRV( 0 , cbn , tempnlp -> value[ NL_OFFS ] ,
+			    tempnlp -> extra_flags , p_type_p2type );
 		} else {
-		    putLV( 0 , cbn , tempoffset , p_type_p2type );
+		    putLV( 0 , cbn , tempnlp -> value[ NL_OFFS ] ,
+			    tempnlp -> extra_flags , p_type_p2type );
 		}
 		putop( P2COMOP , P2INT );
 	    }
