@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)time.h	7.9 (Berkeley) %G%
+ *	@(#)time.h	7.10 (Berkeley) %G%
  */
 
 #ifndef _SYS_TIME_H_
@@ -26,6 +26,15 @@ struct timespec {
 	long	ts_sec;		/* seconds */
 	long	ts_nsec;	/* and nanoseconds */
 };
+
+#define	TIMEVAL_TO_TIMESPEC(tv, ts) {					\
+	(ts)->ts_sec = (tv)->tv_sec;					\
+	(ts)->ts_nsec = (tv)->tv_usec * 1000;				\
+}
+#define	TIMESPEC_TO_TIMEVAL(tv, ts) {					\
+	(tv)->tv_sec = (ts)->ts_sec;					\
+	(tv)->tv_usec = (ts)->ts_nsec / 1000;				\
+}
 
 struct timezone {
 	int	tz_minuteswest;	/* minutes west of Greenwich */
