@@ -9,7 +9,7 @@
 */
 
 #ifndef lint
-static char	SccsId[] = "@(#)envelope.c	5.7 (Berkeley) %G%";
+static char	SccsId[] = "@(#)envelope.c	5.8 (Berkeley) %G%";
 #endif not lint
 
 #include <pwd.h>
@@ -52,7 +52,7 @@ newenvelope(e)
 		bcopy((char *) &CurEnv->e_from, (char *) &e->e_from, sizeof e->e_from);
 	e->e_parent = parent;
 	e->e_ctime = curtime();
-	e->e_msgpriority = parent->e_msgsize + e->e_ctime;
+	e->e_msgpriority = parent->e_msgsize;
 	e->e_puthdr = putheader;
 	e->e_putbody = putbody;
 	bh = BlankEnvelope.e_header;
