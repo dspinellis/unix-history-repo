@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)syslog.h	7.19 (Berkeley) %G%
+ *	@(#)syslog.h	7.20 (Berkeley) %G%
  */
 
 #define	_PATH_LOG	"/dev/log"
@@ -144,7 +144,7 @@ CODE facilitynames[] = {
 __BEGIN_DECLS
 void	closelog __P((void));
 void	openlog __P((const char *, int, int));
-void	setlogmask __P((int));
+int	setlogmask __P((int));
 void	syslog __P((int, const char *, ...));
 void	vsyslog __P((int, const char *, va_list));
 __END_DECLS
