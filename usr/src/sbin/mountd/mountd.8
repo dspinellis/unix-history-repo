@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)mountd.8	5.1 (Berkeley) %G%
+.\"	@(#)mountd.8	5.2 (Berkeley) %G%
 .\"
 .TH MOUNTD 8 ""
 .UC 7
@@ -21,6 +21,9 @@
 mountd \- service remote NFS mount requests
 .SH SYNOPSIS
 .B /sbin/mountd
+[
+exportsfile
+]
 .SH DESCRIPTION
 .I Mountd
 is the server for
@@ -30,9 +33,8 @@ mount requests from other client machines.
 listens for service requests at the port indicated in the
 .SM NFS
 server specification; see
-``Network File System Protocol Specification''
-in the Sun Microsystems manual
-``Networking on the Sun Workstation'', Part #800-1324-03, Rev B.
+``Network File System Protocol Specification, RFC1094''.
+The optional argument specifies an alternate location for the exports file.
 .SH FILES
 /etc/exports
 .SH SEE ALSO

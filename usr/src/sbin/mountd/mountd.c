@@ -25,7 +25,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)mountd.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)mountd.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -37,6 +37,7 @@ static char sccsid[] = "@(#)mountd.c	5.1 (Berkeley) %G%";
 #include <sys/types.h>
 #include <sys/ioctl.h>
 #include <sys/stat.h>
+#include <sys/file.h>
 #include <sys/dir.h>
 #include <sys/uio.h>
 #include <sys/namei.h>
@@ -50,6 +51,7 @@ static char sccsid[] = "@(#)mountd.c	5.1 (Berkeley) %G%";
 #include <rpc/pmap_prot.h>
 #include <nfs/rpcv2.h>
 #include <nfs/nfsv2.h>
+#include "pathnames.h"
 
 struct ufid {
 	u_short	ufid_len;
@@ -60,8 +62,6 @@ struct ufid {
  * Structures for keeping the mount list and export list
  */
 struct mountlist {
-	struct mountlist *ml_next;
-	struct mountlist *ml_prev;
 	char	ml_host[RPCMNT_NAMELEN+1];
 	char	ml_dirp[RPCMNT_PATHLEN+1];
 };
@@ -77,14 +77,14 @@ struct exportlist {
 
 struct grouplist {
 	struct grouplist *gr_next;
-	char	gr_name[RPCMNT_NAMELEN+1];
+	struct hostent *gr_hp;
 };
 
 /* Global defs */
 int xdr_fhs(), xdr_mlist(), xdr_dir(), xdr_explist();
 int mntsrv(), get_exportlist();
 struct exportlist exphead;
-struct mountlist mlhead;
+int mlfile;
 char exname[MAXPATHLEN];
 int def_rootuid = -2;
 extern int errno;
@@ -96,11 +96,9 @@ int debug = 0;
 
 /*
  * Mountd server for NFS mount protocol as described in:
- *  Networking on the Sun Workstation,
- *  Part #800-1324-03 Rev. B
- *  Network File System Protocol Specification Chap. 3
+ * NFS: Network File System Protocol Specification, RFC1094, Appendix A
  * The optional argument is the exports file name
- * default: /etc/exports
+ * default: _PATH_EXPORTS
  */
 main(argc, argv)
 	int argc;
@@ -133,15 +131,18 @@ main(argc, argv)
 		signal(SIGTERM, SIG_IGN);
 	}
 	openlog("mountd:", LOG_PID, LOG_DAEMON);
-	mlhead.ml_next = mlhead.ml_prev = (struct mountlist *)0;
 	exphead.ex_next = exphead.ex_prev = (struct exportlist *)0;
 	if (argc == 2) {
 		strncpy(exname, argv[1], MAXPATHLEN-1);
 		exname[MAXPATHLEN-1] = '\0';
 	} else
-		strcpy(exname, "/etc/exports");
+		strcpy(exname, _PATH_EXPORTS);
 	get_exportlist();
 	signal(SIGHUP, get_exportlist);
+	if ((mlfile = open(_PATH_RMOUNTLIST, (O_RDWR|O_CREAT), 0600)) < 0) {
+		syslog(LOG_ERR, "Can't open mountlist file");
+		exit(1);
+	}
 	if ((transp = svcudp_create(RPC_ANYSOCK)) == NULL) {
 		syslog(LOG_ERR, "Can't create socket");
 		exit(1);
@@ -162,65 +163,49 @@ mntsrv(rqstp, transp)
 	register struct svc_req *rqstp;
 	register SVCXPRT *transp;
 {
-	register struct mountlist *mlp;
-	register struct exportlist *ep;
 	register struct grouplist *grp;
-	struct mountlist *mlp2;
+	register u_long **addrp;
+	register struct exportlist *ep;
+	struct mountlist ml;
 	nfsv2fh_t nfh;
 	struct authunix_parms *ucr;
 	struct stat stb;
 	struct hostent *hp;
-	struct sockaddr_in saddr;
+	u_long saddr;
 	char dirpath[RPCMNT_PATHLEN+1];
 	int ok = 0;
 	int bad = ENOENT;
 	int omask;
-
-fprintf(stderr,"in mntsrv\n");
-	if (rqstp->rq_proc == NULLPROC) {
-		if (!svc_sendreply(transp, xdr_void, (caddr_t)0))
-			syslog(LOG_ERR, "Can't send reply");
-		return;
-	}
+	uid_t uid = -2;
 
 	/* Get authorization */
 	switch (rqstp->rq_cred.oa_flavor) {
 	case AUTH_UNIX:
 		ucr = (struct authunix_parms *)rqstp->rq_clntcred;
-		if (ucr->aup_uid == 0)
-			break;
-		/* Fall thru to */
-fprintf(stderr,"weak auth\n");
+		uid = ucr->aup_uid;
+		break;
 	case AUTH_NULL:
 	default:
-		svcerr_weakauth(transp);
-		return;
+		break;
 	}
 
-	saddr.sin_family = AF_INET;
-	saddr.sin_addr.s_addr = ntohl(transp->xp_raddr.sin_addr.s_addr);
-	saddr.sin_port = 0;
-	hp = gethostbyaddr((caddr_t)&saddr, transp->xp_addrlen, AF_INET);
-fprintf(stderr,"net_addr=0x%x\n",transp->xp_raddr.sin_addr.s_addr);
-fprintf(stderr,"aft gethost hp=0x%x\n",hp);
+	saddr = transp->xp_raddr.sin_addr.s_addr;
+	hp = (struct hostent *)0;
 	switch (rqstp->rq_proc) {
+	case NULLPROC:
+		if (!svc_sendreply(transp, xdr_void, (caddr_t)0))
+			syslog(LOG_ERR, "Can't send reply");
+		return;
 	case RPCMNT_MOUNT:
-fprintf(stderr,"in mnt req\n");
+		if (uid != 0) {
+			svcerr_weakauth(transp);
+			return;
+		}
 		if (!svc_getargs(transp, xdr_dir, dirpath)) {
 			svcerr_decode(transp);
 			return;
 		}
 
-fprintf(stderr,"dirpath=%s\n",dirpath);
-		/* If no hostname, return err */
-#ifdef notdef
-		if (hp == NULL) {
-			if (!svc_sendreply(transp, xdr_long, (caddr_t)&bad))
-				syslog(LOG_ERR, "Can't send reply");
-			return;
-		}
-
-#endif
 		/* Check to see if it's a valid dirpath */
 		if (stat(dirpath, &stb) < 0 || (stb.st_mode&S_IFMT) !=
 			S_IFDIR) {
@@ -229,7 +214,6 @@ fprintf(stderr,"dirpath=%s\n",dirpath);
 			return;
 		}
 
-fprintf(stderr,"Look in exports list\n");
 		/* Check in the exports list */
 		omask = sigblock(sigmask(SIGHUP));
 		ep = exphead.ex_next;
@@ -238,16 +222,26 @@ fprintf(stderr,"Look in exports list\n");
 				grp = ep->ex_groups;
 				if (grp == NULL)
 					break;
-				while (grp != NULL) {
-					if (!strcmp(grp->gr_name, hp->h_name))
+
+				/* Check for a host match */
+				addrp = (u_long **)grp->gr_hp->h_addr_list;
+				for (;;) {
+					if (**addrp == saddr)
 						break;
-					grp = grp->gr_next;
+					if (*++addrp == NULL)
+						if (grp = grp->gr_next) {
+							addrp = (u_long **)
+								grp->gr_hp->h_addr_list;
+						} else {
+							bad = EACCES;
+							if (!svc_sendreply(transp, xdr_long, (caddr_t)&bad))
+								syslog(LOG_ERR, "Can't send reply");
+							sigsetmask(omask);
+							return;
+						}
 				}
-				bad = EACCES;
-				if (!svc_sendreply(transp, xdr_long, (caddr_t)&bad))
-					syslog(LOG_ERR, "Can't send reply");
-				sigsetmask(omask);
-				return;
+				hp = grp->gr_hp;
+				break;
 			}
 			ep = ep->ex_next;
 		}
@@ -259,7 +253,6 @@ fprintf(stderr,"Look in exports list\n");
 			return;
 		}
 
-fprintf(stderr,"get file handle\n");
 		/* Get the file handle */
 		bzero((caddr_t)&nfh, sizeof(nfh));
 		if (getfh(dirpath, (fhandle_t *)&nfh) < 0) {
@@ -268,69 +261,58 @@ fprintf(stderr,"get file handle\n");
 				syslog(LOG_ERR, "Can't send reply");
 			return;
 		}
-{ struct ufid *ufp;
-ufp = (struct ufid *)&nfh.fh_generic;
-fprintf(stderr,"ftyp=%d fnum=%d\n",nfh.fh_generic.fh_fsid.val[1],
-nfh.fh_generic.fh_fsid.val[0]);
-fprintf(stderr,"fid num=%d gen=%d\n",ufp->ufid_ino,ufp->ufid_gen);
-}
+#ifdef notnow
+nfh.fh_generic.fh_fid.fid_gen = htonl(nfh.fh_generic.fh_fid.fid_gen);
+#endif
 		if (!svc_sendreply(transp, xdr_fhs, (caddr_t)&nfh))
 			syslog(LOG_ERR, "Can't send reply");
-		mlp = (struct mountlist *)malloc(sizeof(struct mountlist));
-fprintf(stderr,"add to list\n");
-#ifdef notdef
-		if (mlp != NULL) {
-			strcpy(mlp->ml_host, hp->h_name);
-			strcpy(mlp->ml_dirp, dirpath);
-			mlp->ml_prev = &mlhead;
-			mlp->ml_next = mlhead.ml_next;
-			if (mlhead.ml_next != NULL)
-				mlhead.ml_next->ml_prev = mlp;
-			mlhead.ml_next = mlp;
+		if (hp == NULL)
+			hp = gethostbyaddr((caddr_t)&saddr, sizeof(saddr), AF_INET);
+		if (hp) {
+			if (!fnd_mnt(hp->h_name, dirpath)) {
+				strcpy(ml.ml_host, hp->h_name);
+				strcpy(ml.ml_dirp, dirpath);
+				write(mlfile, (caddr_t)&ml, sizeof(ml));
+			}
 		}
-#endif
 		return;
 	case RPCMNT_DUMP:
 		if (!svc_sendreply(transp, xdr_mlist, (caddr_t)0))
 			syslog(LOG_ERR, "Can't send reply");
 		return;
 	case RPCMNT_UMOUNT:
+		if (uid != 0) {
+			svcerr_weakauth(transp);
+			return;
+		}
 		if (!svc_getargs(transp, xdr_dir, dirpath)) {
 			svcerr_decode(transp);
 			return;
 		}
-		if (hp != NULL) {
-			mlp = mlhead.ml_next;
-			while (mlp != NULL) {
-				if (!strcmp(mlp->ml_host, hp->h_name) &&
-				    !strcmp(mlp->ml_dirp, dirpath)) {
-					mlp->ml_prev->ml_next = mlp->ml_next;
-					if (mlp->ml_next != NULL)
-						mlp->ml_next->ml_prev =
-						   mlp->ml_prev;
-					free((caddr_t)mlp);
-					break;
-				}
-				mlp = mlp->ml_next;
-			}
+		hp = gethostbyaddr((caddr_t)&saddr, sizeof(saddr), AF_INET);
+		if (hp && fnd_mnt(hp->h_name, dirpath)) {
+			ml.ml_host[0] = '\0';
+			write(mlfile, (caddr_t)&ml, sizeof(ml));
 		}
 		if (!svc_sendreply(transp, xdr_void, (caddr_t)0))
 			syslog(LOG_ERR, "Can't send reply");
 		return;
 	case RPCMNT_UMNTALL:
-		if (hp != NULL) {
-			mlp = mlhead.ml_next;
-			while (mlp != NULL) {
-				if (!strcmp(mlp->ml_host, hp->h_name)) {
-					mlp2 = mlp;
-					mlp->ml_prev->ml_next = mlp->ml_next;
-					if (mlp->ml_next != NULL)
-						mlp->ml_next->ml_prev =
-						   mlp->ml_prev;
-					mlp = mlp->ml_next;
-					free((caddr_t)mlp2);
-				} else
-					mlp = mlp->ml_next;
+		if (uid != 0) {
+			svcerr_weakauth(transp);
+			return;
+		}
+		hp = gethostbyaddr((caddr_t)&saddr, sizeof(saddr), AF_INET);
+		if (hp) {
+			lseek(mlfile, (off_t)0, L_SET);
+			while (read(mlfile, (caddr_t)&ml, sizeof(ml)) ==
+				sizeof(ml)) {
+				if (!strcmp(hp->h_name, ml.ml_host)) {
+					lseek(mlfile, (off_t)-sizeof(ml),
+						L_INCR);
+					ml.ml_host[0] = '\0';
+					write(mlfile, (caddr_t)&ml, sizeof(ml));
+				}
 			}
 		}
 		if (!svc_sendreply(transp, xdr_void, (caddr_t)0))
@@ -367,7 +349,6 @@ xdr_fhs(xdrsp, nfh)
 
 	if (!xdr_long(xdrsp, &ok))
 		return (0);
-fprintf(stderr,"eo xdr_fhs\n");
 	return (xdr_opaque(xdrsp, (caddr_t)nfh, NFSX_FH));
 }
 
@@ -375,22 +356,23 @@ xdr_mlist(xdrsp, cp)
 	XDR *xdrsp;
 	caddr_t cp;
 {
-	register struct mountlist *mlp;
+	struct mountlist ml;
 	int true = 1;
 	int false = 0;
 	char *strp;
 
-	mlp = mlhead.ml_next;
-	while (mlp != NULL) {
-		if (!xdr_bool(xdrsp, &true))
-			return (0);
-		strp = &mlp->ml_host[0];
-		if (!xdr_string(xdrsp, &strp, RPCMNT_NAMELEN))
-			return (0);
-		strp = &mlp->ml_dirp[0];
-		if (!xdr_string(xdrsp, &strp, RPCMNT_PATHLEN))
-			return (0);
-		mlp = mlp->ml_next;
+	lseek(mlfile, (off_t)0, L_SET);
+	while (read(mlfile, (caddr_t)&ml, sizeof(ml)) == sizeof(ml)) {
+		if (ml.ml_host[0] != '\0') {
+			if (!xdr_bool(xdrsp, &true))
+				return (0);
+			strp = &ml.ml_host[0];
+			if (!xdr_string(xdrsp, &strp, RPCMNT_NAMELEN))
+				return (0);
+			strp = &ml.ml_dirp[0];
+			if (!xdr_string(xdrsp, &strp, RPCMNT_PATHLEN))
+				return (0);
+		}
 	}
 	if (!xdr_bool(xdrsp, &false))
 		return (0);
@@ -423,7 +405,7 @@ xdr_explist(xdrsp, cp)
 		while (grp != NULL) {
 			if (!xdr_bool(xdrsp, &true))
 				goto errout;
-			strp = &grp->gr_name[0];
+			strp = grp->gr_hp->h_name;
 			if (!xdr_string(xdrsp, &strp, RPCMNT_NAMELEN))
 				goto errout;
 			grp = grp->gr_next;
@@ -449,10 +431,14 @@ char line[LINESIZ];
  */
 get_exportlist()
 {
-	register struct exportlist *ep, *ep2;
+	register struct hostent *hp, *nhp;
+	register char **addrp, **naddrp;
+	register int i;
 	register struct grouplist *grp, *grp2;
+	register struct exportlist *ep, *ep2;
 	FILE *inf;
 	char *cp, *endcp;
+	char savedc;
 	int len;
 	int rootuid, exflags;
 
@@ -463,6 +449,12 @@ get_exportlist()
 	while (ep != NULL) {
 		grp = ep->ex_groups;
 		while (grp != NULL) {
+			addrp = grp->gr_hp->h_addr_list;
+			while (*addrp)
+				free(*addrp++);
+			free((caddr_t)grp->gr_hp->h_addr_list);
+			free(grp->gr_hp->h_name);
+			free((caddr_t)grp->gr_hp);
 			grp2 = grp;
 			grp = grp->gr_next;
 			free((caddr_t)grp2);
@@ -499,6 +491,8 @@ get_exportlist()
 		nextfield(&cp, &endcp);
 		len = endcp-cp;
 		while (len > 0) {
+			savedc = *endcp;
+			*endcp = '\0';
 			if (len <= RPCMNT_NAMELEN) {
 				if (*cp == '-') {
 					cp++;
@@ -516,17 +510,46 @@ get_exportlist()
 						  *cp, exname);
 						break;
 					};
-				} else {
-					grp = (struct grouplist *)malloc(*grp);
+				} else if (hp = gethostbyname(cp)) {
+					grp = (struct grouplist *)
+						malloc(sizeof(struct grouplist));
 					if (grp == NULL)
 						goto err;
-					bcopy(cp, grp->gr_name, len);
-					grp->gr_name[len] = '\0';
+					nhp = grp->gr_hp = (struct hostent *)
+						malloc(sizeof(struct hostent));
+					if (nhp == NULL)
+						goto err;
+					bcopy((caddr_t)hp, (caddr_t)nhp,
+						sizeof(struct hostent));
+					i = strlen(hp->h_name)+1;
+					nhp->h_name = (char *)malloc(i);
+					if (nhp->h_name == NULL)
+						goto err;
+					bcopy(hp->h_name, nhp->h_name, i);
+					addrp = hp->h_addr_list;
+					i = 1;
+					while (*addrp++)
+						i++;
+					naddrp = nhp->h_addr_list = (char **)
+						malloc(i*sizeof(char *));
+					if (naddrp == NULL)
+						goto err;
+					addrp = hp->h_addr_list;
+					while (*addrp) {
+						*naddrp = (char *)
+						    malloc(hp->h_length);
+						bcopy(*addrp, *naddrp,
+							hp->h_length);
+						addrp++;
+						naddrp++;
+					}
+					*naddrp = (char *)0;
 					grp->gr_next = ep->ex_groups;
 					ep->ex_groups = grp;
 				}
 			}
 			cp = endcp;
+			*cp = savedc;
 			nextfield(&cp, &endcp);
 			len = endcp-cp;
 		}
@@ -546,7 +569,7 @@ get_exportlist()
 	fclose(inf);
 	return;
 err:
-	syslog(LOG_ERR, "Bad /etc/exports, mountd Failed");
+	syslog(LOG_ERR, "Bad Exports File, mountd Failed");
 	exit(2);
 }
 
@@ -570,4 +593,38 @@ nextfield(cp, endcp)
 	while (*p != ' ' && *p != '\t' && *p != '\n' && *p != '\0')
 		p++;
 	*endcp = p;
+}
+
+/*
+ * Search the remote mounts file for a match.
+ * Iff found
+ *	- set file offset to record and return TRUE
+ * else
+ *	- set file offset to an unused record if found or eof otherwise
+ *	  and return FALSE
+ */
+fnd_mnt(host, dirp)
+	char *host;
+	char *dirp;
+{
+	struct mountlist ml;
+	off_t off, pos;
+
+	off = -1;
+	pos = 0;
+	lseek(mlfile, (off_t)0, L_SET);
+	while (read(mlfile, (caddr_t)&ml, sizeof(ml)) == sizeof(ml)) {
+		if (!strcmp(host, ml.ml_host) && !strcmp(dirp, ml.ml_dirp)) {
+			lseek(mlfile, (off_t)-sizeof(ml), L_INCR);
+			return (TRUE);
+		} else if (ml.ml_host[0] == '\0') {
+			off = pos;
+		}
+		pos += sizeof(ml);
+	}
+	if (off != -1)
+		lseek(mlfile, off, L_SET);
+	else
+		lseek(mlfile, (off_t)0, L_XTND);
+	return (FALSE);
 }
