@@ -1,4 +1,4 @@
-/*	hp.c	4.47	82/02/18	*/
+/*	hp.c	4.48	82/05/24	*/
 
 #ifdef HPDEBUG
 int	hpdebug;
@@ -69,6 +69,7 @@ struct	size {
 #endif
 	0,	0,
 }, rm5_sizes[8] = {
+#ifndef CAD
 	15884,	0,		/* A=cyl 0 thru 26 */
 	33440,	27,		/* B=cyl 27 thru 81 */
 	500384,	0,		/* C=cyl 0 thru 822 */
@@ -82,6 +83,21 @@ struct	size {
 	158688,	562,
 #endif
 	291346,	82,		/* H=cyl 82 thru 561 */
+#else
+	15884,	0,		/* A=cyl 0 thru 26 */
+	33440,	27,		/* B=cyl 27 thru 81 */
+	495520,	0,		/* C=cyl 0 thru 814 */
+	15884,	562,		/* D=cyl 562 thru 588 */
+	55936,	589,		/* E=cyl 589 thru 680 */
+#ifndef NOBADSECT
+	81376,	681,		/* F=cyl 681 thru 814 */
+	153728,	562,		/* G=cyl 562 thru 814 */
+#else
+	81472,	681,
+	153824,	562,
+#endif
+	291346,	82,		/* H=cyl 82 thru 561 */
+#endif
 }, rm80_sizes[8] = {
 	15884,	0,		/* A=cyl 0 thru 36 */
 	33440,	37,		/* B=cyl 37 thru 114 */
@@ -92,7 +108,7 @@ struct	size {
 	82080,	115,		/* G=cyl 115 thru 304 */
 	110143,	305,		/* H=cyl 305 thru 558 */
 }, hp7_sizes[8] = {
-	15844,	0,		/* A=cyl 0 thru 9 */
+	15884,	0,		/* A=cyl 0 thru 9 */
 	64000,	10,		/* B=cyl 10 thru 49 */
 	1008000,0,		/* C=cyl 0 thru 629 */
 	15884,	330,		/* D=cyl 330 thru 339 */
@@ -100,6 +116,37 @@ struct	size {
 	207850,	500,		/* F=cyl 500 thru 629 */
 	479850,	330,		/* G=cyl 330 thru 629 */
 	448000,	50,		/* H=cyl 50 thru 329 */
+}, si9775_sizes[8] = {
+	16640,	  0,		/* A=cyl   0 thru  12 */
+	34560,	 13,		/* B=cyl  13 thru  39 */
+	1079040,  0,		/* C=cyl   0 thru 842 - whole disk */
+	0,	  0,		/* D unused */
+	0,	  0,		/* E unused */
+	0,	  0,		/* F unused */
+	513280,	 40,		/* G=cyl  40 thru 440 */
+	513280,	441,		/* H=cyl 441 thru 841 */
+}, si9730_sizes[8] = {
+	15884,	0,		/* A=cyl 0 thru 49 */
+	33440,	50,		/* B=cyl 50 thru 154 */
+	263360,	0,		/* C=cyl 0 thru 822 */
+	0,	0,
+	0,	0,
+	0,	0,
+	0,	0,
+#ifndef NOBADSECT
+	213664,	155,		/* H=cyl 155 thru 822 */
+#else
+	213760,	155,
+#endif
+}, hpam_sizes[8] = {
+	15884,	0,		/* A=cyl 0 thru 31 */
+	33440,	32,		/* B=cyl 32 thru 97 */
+	524288,	0,		/* C=cyl 0 thru 1023 */
+	27786,	668,
+	27786,	723,
+	125440,	778,
+	181760,	668,		/* G=cyl 668 thru 1022 */
+	291346,	98,		/* H=cyl 98 thru 667 */
 };
 /* END OF STUFF WHICH SHOULD BE READ IN PER DISK */
 
@@ -109,9 +156,39 @@ struct	size {
 int	hpSDIST = _hpSDIST;
 int	hpRDIST = _hpRDIST;
 
-short	hptypes[] =
-	{ MBDT_RM03, MBDT_RM05, MBDT_RP06, MBDT_RM80, MBDT_RP05, MBDT_RP07,
-	  MBDT_ML11A, MBDT_ML11B, 0 };
+/*
+ * Table for converting Massbus drive types into
+ * indices into the partition tables.  Slots are
+ * left for those drives devined from other means
+ * (e.g. SI, AMPEX, etc.).
+ */
+short	hptypes[] = {
+#define	HPDT_RM03	0
+	MBDT_RM03,
+#define	HPDT_RM05	1
+	MBDT_RM05,
+#define	HPDT_RP06	2
+	MBDT_RP06,
+#define	HPDT_RM80	3
+	MBDT_RM80,
+#define	HPDT_RP05	4
+	MBDT_RP05,
+#define	HPDT_RP07	5
+	MBDT_RP07,
+#define	HPDT_ML11A	6
+	MBDT_ML11A,
+#define	HPDT_ML11B	7
+	MBDT_ML11B,
+#define	HPDT_9775	8
+	-1,
+#define	HPDT_9730	9
+	-1,
+#define	HPDT_CAPRICORN	10
+	-1,
+#define	HPDT_RM02	11
+	MBDT_RM02,		/* beware, actually capricorn */
+	0
+};
 struct	mba_device *hpinfo[NHP];
 int	hpattach(),hpustart(),hpstart(),hpdtint();
 struct	mba_driver hpdriver =
@@ -133,6 +210,9 @@ struct hpst {
 	50,	32,	50*32,	630,	hp7_sizes,	/* RP07 */
 	1,	1,	1,	1,	0,		/* ML11A */
 	1,	1,	1,	1,	0,		/* ML11B */
+	32,	40,	32*40,	843,	si9775_sizes,	/* 9775 */
+	32,	10,	32*10,	823,	si9730_sizes,	/* 9730 */
+	32,	16,	32*16,	1024,	hpam_sizes,	/* AMPEX capricorn */
 };
 
 u_char	hp_offset[16] = {
@@ -170,11 +250,65 @@ int	hpseek;
 hpattach(mi, slave)
 	struct mba_device *mi;
 {
-	if (hptypes[mi->mi_type] == MBDT_ML11B)
-		mi->mi_type--;	/* A CHEAT - ML11B D.T. SHOULD == ML11A */
-	if (ML11) {
-		register struct hpdevice *hpaddr =
-			(struct hpdevice *)mi->mi_drv;
+	register struct hpdevice *hpaddr = (struct hpdevice *)mi->mi_drv;
+
+	switch (mi->mi_type) {
+
+	/*
+	 * Model-byte processing for SI 9400 controllers.
+	 * NB:  Only deals with RM03 and RM05 emulations.
+	 */
+	case HPDT_RM03:
+	case HPDT_RM05: {
+		register int hpsn;
+
+		hpsn = hpaddr->hpsn;
+		if ((hpsn & SIMB_LU) != mi->mi_drive)
+			break;
+		switch ((hpsn & SIMB_MB) & ~(SIMB_S6|SIRM03|SIRM05)) {
+
+		case SI9775D:
+			printf("hp%d: si 9775 (direct)\n", mi->mi_unit);
+			mi->mi_type = HPDT_9775;
+			break;
+
+		case SI9730D:
+			printf("hp%d: si 9730 (direct)\n", mi->mi_unit);
+			mi->mi_type = HPDT_9730;
+			break;
+
+#ifdef CAD
+		case SI9766:
+			printf("hp%d: 9776/9300\n", mi->mi_unit);
+			mi->mi_type = HPDT_RM05;
+			break;
+
+		case SI9762:
+			printf("hp%d: 9762\n", mi->mi_unit);
+			mi->mi_type = HPDT_RM03;
+			break;
+#endif
+		}
+		break;
+		}
+
+	/*
+	 * CAPRICORN KLUDGE...poke the holding register
+	 * to find out the number of tracks.  If it's 15
+	 * we believe it's a Capricorn.
+	 */
+	case HPDT_RM02:
+		hpaddr->hpcs1 = HP_NOP;
+		hpaddr->hphr = HPHR_MAXTRAK;
+		if (hpaddr->hphr == 15) {
+			printf("hp%d: capricorn\n", mi->mi_unit);
+			mi->mi_type = HPDT_CAPRICORN;
+		}
+		hpaddr->hpcs1 = HP_DCLR|HP_GO;
+		break;
+
+	case HPDT_ML11A:
+	case HPDT_ML11B: {
 		register int trt, sz;
 
 		sz = hpaddr->hpmr & HPMR_SZ;
@@ -185,7 +319,12 @@ hpattach(mi, slave)
 			trt = (hpaddr->hpmr & HPMR_TRT) >> 8;
 			dk_mspw[mi->mi_dk] = 1.0 / (1<<(20-trt));
 		}
-	} else if (mi->mi_dk >= 0) {
+		/* A CHEAT - ML11B D.T. SHOULD == ML11A */
+		mi->mi_type = HPDT_ML11A;
+		break;
+		}
+	}
+	if (!ML11 && mi->mi_dk >= 0) {
 		register struct hpst *st = &hpst[mi->mi_type];
 
 		dk_mspw[mi->mi_dk] = 1.0 / 60 / (st->nsect * 256);
