@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)mem.c	7.1 (Berkeley) %G%
+ *	@(#)mem.c	7.2 (Berkeley) %G%
  */
 
 /*
@@ -24,26 +24,10 @@
 
 #include "mtpr.h"
 
-mmread(dev, uio)
+mmrw(dev, uio, flags)
 	dev_t dev;
 	struct uio *uio;
-{
-
-	return (mmrw(dev, uio, UIO_READ));
-}
-
-mmwrite(dev, uio)
-	dev_t dev;
-	struct uio *uio;
-{
-
-	return (mmrw(dev, uio, UIO_WRITE));
-}
-
-mmrw(dev, uio, rw)
-	dev_t dev;
-	struct uio *uio;
-	enum uio_rw rw;
+	int flags;
 {
 	register int o;
 	register u_int c, v;
@@ -69,13 +53,13 @@ mmrw(dev, uio, rw)
 			if (v >= physmem)
 				goto fault;
 			*(int *)mmap = v | PG_V |
-				(rw == UIO_READ ? PG_KR : PG_KW);
+				(uio->uio_rw == UIO_READ ? PG_KR : PG_KW);
 			mtpr(TBIS, vmmap);
 			o = (int)uio->uio_offset & PGOFSET;
 			c = (u_int)(NBPG - ((int)iov->iov_base & PGOFSET));
 			c = MIN(c, (u_int)(NBPG - o));
 			c = MIN(c, (u_int)iov->iov_len);
-			error = uiomove((caddr_t)&vmmap[o], (int)c, rw, uio);
+			error = uiomove((caddr_t)&vmmap[o], (int)c, uio);
 			continue;
 
 /* minor device 1 is kernel memory */
@@ -87,14 +71,15 @@ mmrw(dev, uio, rw)
 			    (caddr_t)uio->uio_offset < (caddr_t)&umbaend)
 				goto fault;
 			c = iov->iov_len;
-			if (!kernacc((caddr_t)uio->uio_offset, c, rw == UIO_READ ? B_READ : B_WRITE))
+			if (!kernacc((caddr_t)uio->uio_offset, c,
+			    uio->uio_rw == UIO_READ ? B_READ : B_WRITE))
 				goto fault;
-			error = uiomove((caddr_t)uio->uio_offset, (int)c, rw, uio);
+			error = uiomove((caddr_t)uio->uio_offset, (int)c, uio);
 			continue;
 
 /* minor device 2 is EOF/RATHOLE */
 		case 2:
-			if (rw == UIO_READ)
+			if (uio->uio_rw == UIO_READ)
 				return (0);
 			c = iov->iov_len;
 			break;
@@ -102,12 +87,14 @@ mmrw(dev, uio, rw)
 /* minor device 3 is unibus memory (addressed by shorts) */
 		case 3:
 			c = iov->iov_len;
-			if (!kernacc((caddr_t)uio->uio_offset, c, rw == UIO_READ ? B_READ : B_WRITE))
+			if (!kernacc((caddr_t)uio->uio_offset, c,
+			    uio->uio_rw == UIO_READ ? B_READ : B_WRITE))
 				goto fault;
-			if (!useracc(iov->iov_base, c, rw == UIO_READ ? B_WRITE : B_READ))
+			if (!useracc(iov->iov_base, c,
+			    uio->uio_rw == UIO_READ ? B_WRITE : B_READ))
 				goto fault;
 			error = UNIcpy((caddr_t)uio->uio_offset, iov->iov_base,
-			    (int)c, rw);
+			    (int)c, uio->uio_rw);
 			break;
 		}
 		if (error)

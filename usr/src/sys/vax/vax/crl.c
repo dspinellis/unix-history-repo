@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)crl.c	7.1 (Berkeley) %G%
+ *	@(#)crl.c	7.2 (Berkeley) %G%
  */
 /*
  * TO DO (tef  7/18/85):
@@ -63,9 +63,11 @@ crlclose(dev, flag)
 	crltab.crl_state = CRL_IDLE;
 }
 
-crloperation(rw, uio)
-	enum uio_rw rw;
+/*ARGSUSED*/
+crlrw(dev, uio, flag)
+	dev_t dev;
 	struct uio *uio;
+	int flag;
 {
 	register struct buf *bp;
 	register int i;
@@ -88,12 +90,12 @@ crloperation(rw, uio)
 			error = EIO;
 			break;
 		}
-		if (rw == UIO_WRITE) {
-			error = uiomove(bp->b_un.b_addr, i, UIO_WRITE, uio);
+		if (uio->uio_rw == UIO_WRITE) {
+			error = uiomove(bp->b_un.b_addr, i, uio);
 			if (error)
 				break;
 		}
-		bp->b_flags = rw == UIO_WRITE ? B_WRITE : B_READ;
+		bp->b_flags = uio->uio_rw == UIO_WRITE ? B_WRITE : B_READ;
 		s = spl4(); 
 		crlstart();
 		while ((bp->b_flags & B_DONE) == 0)
@@ -103,8 +105,8 @@ crloperation(rw, uio)
 			error = EIO;
 			break;
 		}
-		if (rw == UIO_READ) {
-			error = uiomove(bp->b_un.b_addr, i, UIO_READ, uio);
+		if (uio->uio_rw == UIO_READ) {
+			error = uiomove(bp->b_un.b_addr, i, uio);
 			if (error)
 				break;
 		}
@@ -112,24 +114,6 @@ crloperation(rw, uio)
 	crltab.crl_state &= ~CRL_BUSY;
 	wakeup((caddr_t)&crltab);
 	return (error);
-}
-
-/*ARGSUSED*/
-crlread(dev, uio)
-	dev_t dev;
-	struct uio *uio;
-{
-
-	return (crloperation(UIO_READ, uio));
-}
-
-/*ARGSUSED*/
-crlwrite(dev, uio)
-	dev_t dev;
-	struct uio *uio;
-{
-
-	return (crloperation(UIO_WRITE, uio));
 }
 
 crlstart()

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)flp.c	7.1 (Berkeley) %G%
+ *	@(#)flp.c	7.2 (Berkeley) %G%
  */
 
 #if VAX780
@@ -55,9 +55,11 @@ flclose(dev, flag)
 	fltab.fl_state = 0;
 }
 
-floperation(rw, uio)
-	enum uio_rw rw;
+/*ARGSUSED*/
+flrw(dev, uio, flag)
+	dev_t dev;
 	struct uio *uio;
+	int flag;
 {
 	register struct buf *bp;
 	register int i;
@@ -88,12 +90,12 @@ floperation(rw, uio)
 			error = ENXIO;
 			break;
 		}
-		if (rw == UIO_WRITE) {
-			error = uiomove(bp->b_un.b_addr, i, UIO_WRITE, uio);
+		if (uio->uio_rw == UIO_WRITE) {
+			error = uiomove(bp->b_un.b_addr, i, uio);
 			if (error)
 				break;
 		}
-		bp->b_flags = rw == UIO_WRITE ? B_WRITE : B_READ;
+		bp->b_flags = uio->uio_rw == UIO_WRITE ? B_WRITE : B_READ;
 		(void) spl4(); 
 		flstart();
 		while ((bp->b_flags & B_DONE) == 0)
@@ -103,8 +105,8 @@ floperation(rw, uio)
 			error = EIO;
 			break;
 		}
-		if (rw == UIO_READ) {
-			error = uiomove(bp->b_un.b_addr, i, UIO_READ, uio);
+		if (uio->uio_rw == UIO_READ) {
+			error = uiomove(bp->b_un.b_addr, i, uio);
 			if (error)
 				break;
 		}
@@ -112,24 +114,6 @@ floperation(rw, uio)
 	fltab.fl_state &= ~FL_BUSY;
 	wakeup((caddr_t)&fltab);
 	return (error);
-}
-
-/*ARGSUSED*/
-flread(dev, uio)
-	dev_t dev;
-	struct uio *uio;
-{
-
-	return (floperation(UIO_READ, uio));
-}
-
-/*ARGSUSED*/
-flwrite(dev, uio)
-	dev_t dev;
-	struct uio *uio;
-{
-
-	return (floperation(UIO_WRITE, uio));
 }
 
 flstart()
