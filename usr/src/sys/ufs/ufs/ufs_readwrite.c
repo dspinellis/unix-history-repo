@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_readwrite.c	8.5 (Berkeley) %G%
+ *	@(#)ufs_readwrite.c	8.6 (Berkeley) %G%
  */
 
 #ifdef LFS_READWRITE
@@ -47,7 +47,7 @@ READ(ap)
 	daddr_t lbn, nextlbn;
 	off_t bytesinfile;
 	long size, xfersize, blkoffset;
-	int nextsize, error;
+	int error;
 	u_short mode;
 
 	vp = ap->a_vp;
@@ -86,20 +86,17 @@ READ(ap)
 		(void)lfs_check(vp, lbn);
 		error = cluster_read(vp, ip->i_size, lbn, size, NOCRED, &bp);
 #else
-		if (lblktosize(fs, nextlbn) > ip->i_size) {
+		if (lblktosize(fs, nextlbn) > ip->i_size)
 			error = bread(vp, lbn, size, NOCRED, &bp);
-		} else {
-			if (doclusterread) {
-				error = cluster_read(vp,
-				    ip->i_size, lbn, size, NOCRED, &bp);
-			} else if (lbn - 1 == vp->v_lastr) {
-				nextsize = BLKSIZE(fs, ip, nextlbn);
-				error = breadn(vp, lbn,
-				    size, &nextlbn, &nextsize, 1, NOCRED, &bp);
-			} else {
-				error = bread(vp, lbn, size, NOCRED, &bp);
-			}
-		}
+		else if (doclusterread)
+			error = cluster_read(vp,
+			    ip->i_size, lbn, size, NOCRED, &bp);
+		else if (lbn - 1 == vp->v_lastr) {
+			int nextsize = BLKSIZE(fs, ip, nextlbn);
+			error = breadn(vp, lbn,
+			    size, &nextlbn, &nextsize, 1, NOCRED, &bp);
+		} else
+			error = bread(vp, lbn, size, NOCRED, &bp);
 #endif
 		if (error)
 			break;
