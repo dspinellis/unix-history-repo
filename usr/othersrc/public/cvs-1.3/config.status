@@ -1,0 +1,15 @@
+srcdir = .
+prefix = /usr/local
+exec_prefix = /usr/local
+includeopt = 
+VPATH = 
+CC = gcc
+RANLIB = ranlib
+YACC = yacc
+INSTALL = install -c
+INSTALLDATA = install -c -m 644
+DEFS =  -DDIRENT -DSTDC_HEADERS -DPOSIX -DFTIME_MISSING -DHAVE_TIMEZONE -DUTIME_NULL_MISSING
+LIBS = 
+LIBPROGS = 
+LIBOBJS =  regex.o
+CDEBUG = -g -O
