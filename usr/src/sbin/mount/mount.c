@@ -1,20 +1,9 @@
-static char *sccsid = "@(#)mount.c	4.1 (Berkeley) %G%";
+static char *sccsid = "@(#)mount.c	4.2 (Berkeley) %G%";
 #include <stdio.h>
 #include <fstab.h>
 
 /*
- *	Mount file systems.
- *
- *	mount -a	Mount all file systems, as determined from the
- *			file /etc/fstab.
- *	If the name entry in /etc/fstab is "/", don't mount.
- *	If the read only entry in /etc/fstab is "ro", mount read only
- *	The special file names in /etc/fstab are the block devices;
- *		this is what we want to mount.
- *	Tries to mount all of the files in /etc/fstab.
- *	
- *	mount special name	Mount special on name
- *	mount special name -r	Mount special on name, read/write
+ * mount
  */
 
 int	mountall;
@@ -62,18 +51,22 @@ char **argv;
 	} else {
 		FILE	*fs_file;
 		struct	fstab	fs;
-		if ( (fs_file = fopen(FSTAB, "r")) == NULL){
+		if ((fs_file = fopen(FSTAB, "r")) == NULL){
 			perror(FSTAB);
 			exit(1);
 		}
 		while (!feof(fs_file)){
+			int ro;
 			fscanf(fs_file, FSTABFMT, FSTABARG(&fs));
 			if (strcmp(fs.fs_file, "/") == 0)
 				continue;
+			ro = !strcmp(fs.fs_type, "ro");
+			if (ro==0 && strcmp(fs.fs_type, "rw"))
+				continue;
 			fprintf(stderr, "Mounting %s on %s %s",
 				fs.fs_file, fs.fs_spec,
-				FSRO(&fs) ? "(Read Only)\n" : "\n");
-			mountfs(fs.fs_spec, fs.fs_file, FSRO(&fs));
+				ro ? "(Read Only)\n" : "\n");
+			mountfs(fs.fs_spec, fs.fs_file, ro);
 		}
 		fclose(fs_file);
 	}
@@ -115,6 +108,7 @@ mountfs(spec, name, ro)
 			while ((--mp)->file[0] == 0);
 			mf = creat("/etc/mtab", 0644);
 			write(mf, (char *)mtab, (mp-mtab+1)*2*NAMSIZ);
+			return(0);
 		}
 	}
 	return(0);
