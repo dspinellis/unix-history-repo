@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.135 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.136 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -2603,7 +2603,7 @@ mailfile(filename, ctladdr, e)
 			}
 		}
 
-		if (SafeFileEnv != NULL && SafeFileEnv[0] != NULL)
+		if (SafeFileEnv != NULL && SafeFileEnv[0] != '\0')
 		{
 			int i;
 
