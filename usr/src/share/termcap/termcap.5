@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)termcap.5	6.1 (Berkeley) %G%
+.\"	@(#)termcap.5	6.2 (Berkeley) %G%
 .\"
 .tr ||
 .TH TERMCAP 5 ""
@@ -82,7 +82,7 @@ eo	str		Can erase overstrikes with a blank
 ff	str	(P*)	Hardcopy terminal page eject (default \fB^L\fR)
 hc	bool		Hardcopy terminal
 hd	str		Half-line down (forward 1/2 linefeed)
-ho	str		Home cursor (if no \fBcm\fR)
+ho	str		Home cursor
 hu	str		Half-line up (reverse 1/2 linefeed)
 hz	str		Hazeltine; can't print ~'s
 ic	str	(P)	Insert character
@@ -104,7 +104,7 @@ ks	str		Put terminal in \*(lqkeypad transmit\*(rq mode
 ku	str		Sent by terminal up arrow key
 l0-l9	str		Labels on \*(lqother\*(rq function keys
 li	num		Number of lines on screen or page
-ll	str		Last line, first column (if no \fBcm\fR)
+ll	str		Last line, first column
 ma	str		Arrow key map, used by vi version 2 only
 mi	bool		Safe to move while in insert mode
 ml	str		Memory lock on above cursor.
