@@ -5,10 +5,10 @@
 # include <errno.h>
 
 # ifndef QUEUE
-SCCSID(@(#)queue.c	3.43		%G%	(no queueing));
+SCCSID(@(#)queue.c	3.44		%G%	(no queueing));
 # else QUEUE
 
-SCCSID(@(#)queue.c	3.43		%G%);
+SCCSID(@(#)queue.c	3.44		%G%);
 
 /*
 **  QUEUEUP -- queue a message up for future transmission.
@@ -122,7 +122,9 @@ queueup(e, queueall)
 # endif DEBUG
 		if (queueall ? !bitset(QDONTSEND, q->q_flags) :
 			       bitset(QQUEUEUP, q->q_flags))
+		{
 			fprintf(tfp, "R%s\n", q->q_paddr);
+		}
 	}
 
 	/* output headers for this message */
@@ -139,8 +141,10 @@ queueup(e, queueall)
 			(void) expand(h->h_value, buf, &buf[sizeof buf], e);
 			fprintf(tfp, "%s: %s\n", h->h_field, buf);
 		}
-		else
+		else if (bitset(H_FROM|H_RCPT, h->h_flags))
 			commaize(h, h->h_value, tfp, e->e_oldstyle, NULL);
+		else
+			fprintf(tfp, "%s: %s\n", h->h_field, h->h_value);
 	}
 
 	/*
@@ -162,8 +166,9 @@ queueup(e, queueall)
 		syslog(LOG_DEBUG, "%s: queueup, qf=%s, df=%s\n", e->e_id, qf, e->e_df);
 # endif LOG
 
-	/* disconnect this temp file from the job */
+	/* disconnect this temp file from the job; don't requeue later */
 	e->e_df = NULL;
+	e->e_dontqueue = TRUE;
 }
 /*
 **  RUNQUEUE -- run the jobs in the queue.
