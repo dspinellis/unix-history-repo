@@ -1,0 +1,79 @@
+This is a list of user-visible changes between bash version 1.11 and the
+previous release, version 1.10, compiled by Chet Ramey.
+
+The shell language
+
+  o If redirections fail for an empty command, the command returns failure
+    and changes $?.  If command substitution took place while expanding the
+    redirections, the exit status of the command substitution becomes the
+    new value of $?.  Previously, $? was unchanged by empty commands.
+
+  o `case' statement pattern lists now allow an optional leading left
+    parenthesis.
+
+  o The shell grammar was changed to allow redirections before a ( ... )
+    subshell command.
+
+  o Lengthy $PATH searches are now interruptible.
+
+  o A new variable, `command_oriented_history'.  If set, the shell attempts
+    to store all lines of a multi-line command (e.g. a while loop or a
+    function definition) as a single history entry.
+
+Shell builtins
+
+  o `unalias' now has a -a option, which removes all alias definitions, and
+    recognizes `--' as the end of options.
+
+  o If the shell is compiled with DISABLED_BUILTINS defined (look in
+    config.h), `builtin xxx' will find xxx even if `enable -n xxx' has
+    already been executed.
+
+  o The `fc' output when listing history lines was changed to match the
+    Posix.2a specification.
+
+  o `jobs' now has a -x option.  `jobs -x command args' causes the shell to
+    replace all job control specifications (e.g. %%, %-) in `args' with the
+    appropriate process group identifier and execute `command' with the new
+    arguments.
+
+  o `jobs' recognizes `--' as the end of options.
+
+  o There is a new help topic that describes some of the shell variables
+    that bash uses.
+
+  o `set -b' is now equivalent to `set -o notify'.
+
+  o `shift' now allows the shift count to be 0, like most versions of sh.
+
+  o On machines that can set a process's maximum number of open files,
+    `ulimit -n newval' works as expected.
+
+Readline
+
+  o Dynamic history completion.  Bound to M-TAB in the emacs keymap.  This
+    will search the history list for completion strings for a partial
+    command.
+
+  o On termios/termio machines, readline no longer unconditionally enables
+    8-bit input by disabling ISTRIP -- you have to run `stty -istrip' on
+    xterms to use the meta key.  Readline will disable ISTRIP if the tty
+    driver indicates that the `character size' is 8 bits:
+		(tio.c_cflag & CSIZE) == CS8)
+
+    This was done to make readline usable on machines with hardwired 7-bit
+    terminals that put garbage in the eigth bit.
+
+  o An attempt at completion that expands to a single item will now cause
+    readline to simply insert that item into the buffer, even if the previous
+    command was another completion.  In the last release, completion
+    immediately following completion caused readline to list the possible
+    completions.
+
+  o The `call-last-kbd-macro' function is now bindable.
+
+  o Readline binds tio.c_cc[VLNEXT] to rl_quoted_insert and tio.c_cc[VWERASE]
+    to rl_unix_word_rubout on Posix termios systems that support them.
+
+  o Readline now uses tio.c_cc[VEOF] as the EOF character on termios systems
+
