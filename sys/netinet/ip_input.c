@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)ip_input.c	7.19 (Berkeley) 5/25/91
- *	$Id: ip_input.c,v 1.2 1993/10/16 18:26:14 rgrimes Exp $
+ *	$Id: ip_input.c,v 1.3 1993/11/07 17:47:58 wollman Exp $
  */
 
 #include "param.h"
@@ -59,13 +59,24 @@
 #ifndef	IPFORWARDING
 #ifdef GATEWAY
 #define	IPFORWARDING	1	/* forward IP packets not for us */
-#else /* GATEWAY */
+#else /* not GATEWAY */
 #define	IPFORWARDING	0	/* don't forward IP packets not for us */
-#endif /* GATEWAY */
-#endif /* IPFORWARDING */
+#endif /* not GATEWAY */
+#endif /* not IPFORWARDING */
+
+/*
+ * NB: RFC 1122, ``Requirements for Internet Hosts: Communication Layers'',
+ * absolutely forbids hosts (which are not acting as gateways) from sending
+ * ICMP redirects.
+ */
 #ifndef	IPSENDREDIRECTS
+#ifdef GATEWAY
 #define	IPSENDREDIRECTS	1
-#endif
+#else /* not GATEWAY */
+#define IPSENDREDIRECTS 0
+#endif /* not GATEWAY */
+#endif /* not IPSENDREDIRECTS */
+
 int	ipforwarding = IPFORWARDING;
 int	ipsendredirects = IPSENDREDIRECTS;
 #ifdef DIAGNOSTIC
