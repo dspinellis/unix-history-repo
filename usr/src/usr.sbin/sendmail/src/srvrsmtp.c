@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)srvrsmtp.c	5.29 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	5.30 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)srvrsmtp.c	5.29 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	5.30 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -184,7 +184,8 @@ smtp()
 				 * didn't know about alias,
 				 * or connected to an echo server
 				 */
-				message("553", "Local configuration error, hostname not recognized as local");
+				message("553", "%s config error: mail loops back to myself",
+					MyHostName);
 				break;
 			}
 			if (RealHostName != NULL && strcasecmp(p, RealHostName))
