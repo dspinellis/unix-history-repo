@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kgdb_glue.c	1.1 (Berkeley) %G%
+ *	@(#)kgdb_glue.c	7.1 (Berkeley) %G%
  */
 
 /*
@@ -14,8 +14,8 @@
 #ifdef KGDB
 
 #include "param.h"
-#include "frame.h"
-#include "machine/reg.h"
+#include "../include/frame.h"
+#include "../include/reg.h"
 
 #ifndef lint
 static char rcsid[] =
@@ -52,18 +52,6 @@ copywords(src, dst, nbytes)
 	} while (src < limit);
 	if (nbytes & 2)
 		*(u_short *)dst = *(u_short *)src;
-}
-
-/*
- * Decide what to do on panic.
- * For now, wait for debugger if kgdb_debug_init is set.
- */
-kgdb_panic()
-{
-	extern int kgdb_debug_init;
-
-	if (kgdb_debug_init)		/* XXX, need boot flag/sysctl */
-		asm("trap #15");
 }
 
 kgdb_trap_glue(type, frame)
