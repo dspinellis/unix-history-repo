@@ -2,7 +2,7 @@
 # include <ctype.h>
 # include "dlvrmail.h"
 
-static char	SccsId[] = "@(#)parseaddr.c	2.3	%G%";
+static char	SccsId[] = "@(#)parseaddr.c	2.4	%G%";
 
 /*
 **  PARSE -- Parse an address
@@ -479,7 +479,7 @@ prescan(addr, buf, buflim, delim)
 				*q++ = SPACESUB;
 			*q++ = c;
 		}
-		space = isspace(c);
+		space = isascii(c) && isspace(c);
 	}
 	*q = '\0';
 	if (c == '\0')
