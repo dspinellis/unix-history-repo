@@ -1,4 +1,4 @@
-/*	mtio.h	4.7	82/08/01	*/
+/*	mtio.h	4.8	82/10/31	*/
 
 /*
  * Structures and definitions for mag tape io control commands
@@ -38,12 +38,14 @@ struct	mtget	{
 /*
  * Constants for mt_type byte
  */
-#define MT_ISTS		01
-#define MT_ISHT		02
-#define MT_ISTM		03
-#define MT_ISMT		04
-#define MT_ISUT		05
+#define	MT_ISTS		0x01
+#define	MT_ISHT		0x02
+#define	MT_ISTM		0x03
+#define	MT_ISMT		0x04
+#define	MT_ISUT		0x05
+#define	MT_ISCPC	0x06
+#define	MT_ISAR		0x07
 
 /* mag tape io control commands */
-#define MTIOCTOP	_IOW(m, 1, struct mtop)		/* do a mag tape op */
-#define MTIOCGET	_IOR(m, 2, struct mtget)	/* get tape status */
+#define	MTIOCTOP	_IOW(m, 1, struct mtop)		/* do a mag tape op */
+#define	MTIOCGET	_IOR(m, 2, struct mtget)	/* get tape status */
