@@ -1,0 +1,59 @@
+!<arch>
+Iprmstring      418698378   968   27    100644  105       `
+aaa
+bbb|ccc
+ddd|eee:
+fff:lp=here:id=butnothere
+ggg|
+hhh|iii:lp=andhere
+
+:jjj
+kkk|lll|:lp:lp=andherealso:
+
+Oprmstring      418698378   968   27    100644  97        `
+aaa
+bbb|ccc
+ddd|eee:
+fff:id=butnothere
+ggg|
+hhh|iii:lp=andhere
+
+:jjj
+kkk|lll|:lp:lp=andherealso:
+
+Tprmstring.c    418698387   968   27    100644  439       `
+/*
+ * prmstring()
+ */
+#include <stdio.h>
+#include "path.h"
+#include "pdb.h"
+
+char *PGN = "Tprmstring";		/* program name */
+
+main()
+{
+	int closepdb();			/* close database */
+	PDB *mustopenpdb();		/* must open database or die */
+	PDB *pdbp;			/* database stream */
+	void prmstring();		/* remove string */
+	
+	pdbp = mustopenpdb("T_INPUT", ".", "rw");
+	prmstring("fff", "lp", pdbp);
+	prmstring("fff", "lp", pdbp);
+	closepdb(pdbp);
+	exit(0);
+}
+
+Tprmstring.sh   418870198   968   27    100755  155       `
+#!/bin/csh -f
+#
+# prmstring()
+#
+cp Iprmstring T_INPUT
+Tprmstring
+cat T_INPUT |& diff - Oprmstring
+set diffstatus = $status
+rm -f T_INPUT
+exit($diffstatus)
+

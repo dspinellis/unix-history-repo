@@ -1,0 +1,6 @@
+...|:^^:dp=.:dt=project:dd=SPMS Hash Table Operations:
+....|:^^:dp=../../..:
+src|:dp=src:dt=clean/libsrc/print.3/src/update.200:dd=libhash.a source:
+test|:dp=test:dt=:dd=libhash.a test cases:
+work|:dp=work:dt=test.2:dd=libhash.a workbench:
+lib|:dp=lib:dt=lib:dd=libhash.a makefile templates:

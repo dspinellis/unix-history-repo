@@ -1,0 +1,35 @@
+!<arch>
+Ippathhead      418696406   968   27    100644  44        `
+^aaa
+^aaa^
+^aaa^bbb
+^aaa^bbb^
+^aaa^bbb^^
+^
+
+Oppathhead      418696406   968   27    100644  32        `
+
+^aaa
+^aaa
+^aaa^bbb
+^aaa^bbb^
+
+
+Tppathhead.c    418696409   968   27    100644  307       `
+/*
+ * ppathhead()
+ */
+#include <stdio.h>
+#include "path.h"
+
+main()
+{
+	char *gets();			/* get a line from stdin */
+	char *ppathhead();		/* remove project pathname tail */
+	char pathname[PATHSIZE];	/* pathname input buffer */
+
+	while (gets(pathname) != NULL)
+		printf("%s\n",ppathhead(pathname));
+	exit(0);
+}
+

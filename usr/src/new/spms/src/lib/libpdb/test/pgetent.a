@@ -1,0 +1,84 @@
+!<arch>
+Ipgetent        418698250   968   27    100644  77        `
+aaa
+bbb|ccc
+ddd|eee:
+fff:lp=here:id=butnothere
+ggg|
+hhh|iii:lp=andhere
+
+:jjj
+
+Opgetent        418698250   968   27    100644  125       `
+aaa
+bbb|ccc
+ddd|eee:
+fff:lp=here:id=butnothere
+ggg|
+hhh|iii:lp=andhere
+
+:jjj
+1 2
+21 12
+Tpgetent: ./T_OUTPUT read access only
+
+Tpgetent.c      418698256   968   27    100644  1054      `
+/*
+ * mustopenpdb()
+ * pgetent()
+ * pputent()
+ */
+#include <stdio.h>
+#include "path.h"
+#include "pdb.h"
+
+char *PGN = "Tpgetent";			/* program name */
+
+main(argc, argv)
+	int argc;
+	char **argv;
+{
+	char *strcpy();			/* string copy */
+	int closepdb();			/* close database */
+	int pgetent();			/* load next entry into buffer */
+	int pputent();			/* write buffer to database */
+	PDB *mustopenpdb();		/* must open database */
+	PDB *ipdbp;			/* input database stream */
+	PDB *opdbp;			/* output database stream */
+
+	ipdbp = mustopenpdb(argv[1], ".", "r");
+	opdbp = mustopenpdb(argv[2], ".", "w");
+	printf("%o %o\n", ipdbp->flag, opdbp->flag);
+	while (pgetent(ipdbp) != EOF) 
+		{
+		strcpy(opdbp->pbuf, ipdbp->pbuf);
+		pputent(opdbp);
+		}
+	printf("%o %o\n", ipdbp->flag, opdbp->flag);
+	fflush(stdout);
+	closepdb(ipdbp);
+	closepdb(opdbp);
+
+	ipdbp = mustopenpdb(argv[1], ".", "r");
+	opdbp = mustopenpdb(argv[2], ".", "r");
+	while (pgetent(ipdbp) != EOF) 
+		{
+		strcpy(opdbp->pbuf, ipdbp->pbuf);
+		pputent(opdbp);
+		}
+	closepdb(ipdbp);
+	closepdb(opdbp);
+	exit(0);
+}
+Tpgetent.sh     418870186   968   27    100755  198       `
+#!/bin/csh -f
+#
+# mustopenpdb()
+# pgetent()
+# pputent()
+#
+Tpgetent Ipgetent T_OUTPUT >& T_ERROR
+cat T_OUTPUT T_ERROR | diff - Opgetent
+set diffstatus = $status
+rm T_ERROR T_OUTPUT
+exit($diffstatus)

@@ -1,0 +1,31 @@
+!<arch>
+Omustfopen      418696330   968   27    100644  29        `
+Tmustfopen: can't open ?????
+
+Tmustfopen.c    418696334   968   27    100644  222       `
+/*
+ * mustfopen()
+ */
+#include <stdio.h>
+
+char *PGN = "Tmustfopen";		/* program name */
+
+main()
+{
+	FILE *mustfopen();		/* must open file */
+	FILE *stream;			/* file stream */
+
+	stream = mustfopen("?????","r");
+	exit(0);
+}
+Tmustfopen.sh   418870308   968   27    100755  143       `
+#!/bin/csh -f
+#
+# mustfopen()
+#
+Tmustfopen >& T_OUTPUT
+cat T_OUTPUT | diff - Omustfopen
+set diffstatus = $status
+rm T_OUTPUT
+exit($diffstatus)
+

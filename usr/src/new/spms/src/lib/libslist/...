@@ -1,0 +1,6 @@
+...|:^^:dp=.:dt=project:dd=SPMS Singly-Linked List Operations:
+....|:^^:dp=../../..:
+src|:dp=src:dt=clean/libsrc/print.3/src/update.200:dd=libslist.a source:
+test|:dp=test:dt=:dd=libslist.a test cases:
+work|:dp=work:dt=test.2:dd=libslist.a workbench:
+lib|:dp=lib:dt=lib:dd=libslist.a makefile templates:
