@@ -12,9 +12,9 @@
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	8.40 (Berkeley) %G% (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.41 (Berkeley) %G% (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	8.40 (Berkeley) %G% (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.41 (Berkeley) %G% (without daemon mode)";
 #endif
 #endif /* not lint */
 
@@ -521,8 +521,20 @@ myhostname(hostbuf, size)
 	hp = gethostbyname(hostbuf);
 	if (hp != NULL)
 	{
-		(void) strncpy(hostbuf, hp->h_name, size - 1);
-		hostbuf[size - 1] = '\0';
+#ifdef NAMED_BIND
+		if (strchr(hp->h_name, '.') == NULL)
+		{
+			extern bool getcanonname();
+
+			(void) getcanonname(hostbuf, size, TRUE);
+		}
+		else
+#else
+		{
+			(void) strncpy(hostbuf, hp->h_name, size - 1);
+			hostbuf[size - 1] = '\0';
+		}
+#endif
 
 		if (hp->h_addrtype == AF_INET && hp->h_length == 4)
 		{
