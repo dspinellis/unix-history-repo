@@ -1,4 +1,3 @@
-NOPIC=  # XXX -- new ld doesn't handle shared g++ libraries yet.
 SUBDIR= libg++ genclass
 
 INCLUDEDIRS=	iostream libg++ g++-include
