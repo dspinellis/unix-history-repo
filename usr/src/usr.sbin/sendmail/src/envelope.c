@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)envelope.c	8.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)envelope.c	8.19 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -91,6 +91,10 @@ dropenvelope(e)
 			printaddr(e->e_sendqueue, TRUE);
 		}
 	}
+
+#ifdef XDEBUG
+	checkfd012("dropenvelope 1");
+#endif
 
 	/* we must have an id to remove disk files */
 	if (id == NULL)
@@ -197,6 +201,10 @@ dropenvelope(e)
 	if (saveit && e->e_errormode != EM_QUIET)
 		savemail(e);
 
+#ifdef XDEBUG
+	checkfd012("dropenvelope 2");
+#endif
+
 	/*
 	**  Arrange to send warning messages to postmaster as requested.
 	*/
@@ -237,6 +245,10 @@ dropenvelope(e)
 #endif /* QUEUE */
 	}
 
+#ifdef XDEBUG
+	checkfd012("dropenvelope 3");
+#endif
+
 	/* now unlock the job */
 	closexscript(e);
 	unlockqueue(e);
@@ -247,7 +259,7 @@ dropenvelope(e)
 	e->e_dfp = NULL;
 	e->e_id = e->e_df = NULL;
 #ifdef XDEBUG
-	checkfd012("dropenvelope");
+	checkfd012("dropenvelope 4");
 #endif
 }
 /*
