@@ -1,5 +1,5 @@
 #ifndef lint
-static	char sccsid[] = "@(#)comsat.c	4.12 (Berkeley) %G%";
+static	char sccsid[] = "@(#)comsat.c	4.13 (Berkeley) %G%";
 #endif
 
 #include <sys/types.h>
@@ -141,10 +141,9 @@ char	*cr;
 notify(utp, offset)
 	register struct utmp *utp;
 {
-	int fd, flags, n, err, msglen;
+	FILE *tp;
 	struct sgttyb gttybuf;
-	char tty[20], msgbuf[BUFSIZ];
-	char name[sizeof (utmp[0].ut_name) + 1];
+	char tty[20], name[sizeof (utmp[0].ut_name) + 1];
 	struct stat stb;
 
 	strcpy(tty, "/dev/");
@@ -154,56 +153,36 @@ notify(utp, offset)
 		dprintf("wrong mode\n");
 		return;
 	}
-	if ((fd = open(tty, O_WRONLY|O_NDELAY)) < 0) {
-		dprintf("%s: open failed\n", tty);
+	if (fork())
 		return;
+	signal(SIGALRM, SIG_DFL);
+	alarm(30);
+	if ((tp = fopen(tty,"w")) == 0) {
+		dprintf("fopen failed\n");
+		exit(-1);
 	}
-	if ((flags = fcntl(fd, F_GETFL, 0)) == -1) {
-		dprintf("fcntl(F_GETFL) failed %d\n", errno);
-		return;
-	}
-	ioctl(fd, TIOCGETP, &gttybuf);
+	ioctl(fileno(tp), TIOCGETP, &gttybuf);
 	cr = (gttybuf.sg_flags & CRMOD) ? "" : "\r";
 	strncpy(name, utp->ut_name, sizeof (utp->ut_name));
 	name[sizeof (name) - 1] = '\0';
-	sprintf(msgbuf, "%s\n\007New mail for %s@%s\007 has arrived:%s\n",
+	fprintf(tp,"%s\n\007New mail for %s@%s\007 has arrived:%s\n",
 	    cr, name, hostname, cr);
-	jkfprintf(msgbuf+strlen(msgbuf), name, offset);
-	if (fcntl(fd, F_SETFL, flags | FNDELAY) == -1)
-		goto oldway;
-	msglen = strlen(msgbuf);
-	n = write(fd, msgbuf, msglen);
-	err = errno;
-	(void) fcntl(fd, F_SETFL, flags);
-	(void) close(fd);
-	if (n == msglen)
-		return;
-	if (err != EWOULDBLOCK) {
-		dprintf("write failed %d\n", errno);
-		return;
-	}
-oldway:
-	if (fork()) {
-		(void) close(fd);
-		return;
-	}
-	signal(SIGALRM, SIG_DFL);
-	alarm(30);
-	(void) write(fd, msgbuf, msglen);
+	fprintf(tp,"----%s\n", cr);
+	jkfprintf(tp, name, offset);
 	exit(0);
 }
 
-jkfprintf(mp, name, offset)
-	register char *mp;
+jkfprintf(tp, name, offset)
+	register FILE *tp;
 {
 	register FILE *fi;
 	register int linecnt, charcnt;
 	char line[BUFSIZ];
 	int inheader;
 
-	dprintf("HERE %s's mail starting at %d\n", name, offset);
-
-	if ((fi = fopen(name, "r")) == NULL) {
+	dprintf("HERE %s's mail starting at %d\n",
+	    name, offset);
+	if ((fi = fopen(name,"r")) == NULL) {
 		dprintf("Cant read the mail\n");
 		return;
 	}
@@ -222,8 +201,7 @@ jkfprintf(mp, name, offset)
 		int cnt;
 
 		if (linecnt <= 0 || charcnt <= 0) {  
-			sprintf(mp, "...more...%s\n", cr);
-			mp += strlen(mp);
+			fprintf(tp,"...more...%s\n", cr);
 			return;
 		}
 		if (strncmp(line, "From ", 5) == 0)
@@ -244,10 +222,8 @@ jkfprintf(mp, name, offset)
 		cp = index(line, '\n');
 		if (cp)
 			*cp = '\0';
-		sprintf(mp, "%s%s\n", line, cr);
-		mp += strlen(mp);
+		fprintf(tp,"%s%s\n", line, cr);
 		linecnt--, charcnt -= strlen(line);
 	}
-	sprintf(mp, "----%s\n", cr);
-	mp += strlen(mp);
+	fprintf(tp,"----%s\n", cr);
 }
