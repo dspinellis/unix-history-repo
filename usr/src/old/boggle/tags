@@ -1,0 +1,24 @@
+Mboggle	boggle.c	/^main(argc, argv)$/
+aputuword	boggle.c	/^aputuword(ways)$/
+aputword	boggle.c	/^aputword(ways)$/
+clearscreen	boggle.c	/^clearscreen()$/
+col	boggle.c	/^#define col(x) (x%N)$/
+compare	boggle.c	/^compare(a, b)$/
+endline	boggle.c	/^endline()$/
+evalboard	boggle.c	/^evalboard (getword, putword)$/
+genboard	boggle.c	/^genboard()$/
+getdword	boggle.c	/^getdword()$/
+getuword	boggle.c	/^getuword()$/
+goodbye	boggle.c	/^goodbye(stat)$/
+interrupt	boggle.c	/^interrupt(sig)$/
+makelists	boggle.c	/^makelists()$/
+numways	boggle.c	/^numways(leaf, last)$/
+outword	boggle.c	/^outword(p)$/
+printboard	boggle.c	/^printboard()$/
+printdiff	boggle.c	/^printdiff()$/
+printinst	boggle.c	/^printinst()$/
+row	boggle.c	/^#define row(x) (x\/N)$/
+setup	boggle.c	/^setup()$/
+timeout	boggle.c	/^timeout(sig)$/
+tputword	boggle.c	/^tputword(ways)$/
+wordcomp	boggle.c	/^wordcomp(p, q)$/
