@@ -1,4 +1,4 @@
-#	@(#)rc	5.18 (Berkeley) %G%
+#	@(#)rc	5.19 (Berkeley) %G%
 
 # System startup script run by init on autoboot
 # or after single-user.
@@ -65,9 +65,8 @@ rm -f /var/spool/uucp/STST/*
 (cd /var/run; rm -rf *; cp /dev/null utmp; chmod 644 utmp)
 
 # set hostname, turn on network
-echo -n 'starting network'
+echo 'starting network'
 . /etc/netstart
-echo '.'
 
 mount -a -t nfs >/dev/null 2>&1 &	# XXX shouldn't need background
 
