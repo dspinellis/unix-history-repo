@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)cc.c 4.2 %G%";
+static	char sccsid[] = "@(#)cc.c 4.3 %G%";
 /*
  * cc - front end for C compiler
  */
@@ -6,7 +6,7 @@ static	char sccsid[] = "@(#)cc.c 4.2 %G%";
 #include <stdio.h>
 #include <ctype.h>
 #include <signal.h>
-#include <dir.h>
+#include <ndir.h>
 
 char	*cpp = "/lib/cpp";
 char	*ccom = "/lib/ccom";
@@ -306,7 +306,7 @@ char as[];
 		else
 			c++;
 	s -= 3;
-	if (c <= DIRSIZ && c > 2 && *s++ == '.')
+	if (c <= MAXNAMLEN && c > 2 && *s++ == '.')
 		return (*s);
 	return (0);
 }
