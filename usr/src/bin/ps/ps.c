@@ -498,7 +498,8 @@ main (argc, argv)
 	 * for each proc, call each variable output function.
 	 */
 	for (i = 0; i < nentries; i++) {
-		if (xflg == 0 && kinfo[i].ki_e->e_tdev == NODEV)
+		if (xflg == 0 && (kinfo[i].ki_e->e_tdev == NODEV ||
+		    (kinfo[i].ki_p->p_flag & SCTTY ) == 0))
 			continue;
 		for (v = vhead; v != NULL; v = v->next) {
 			(*v->oproc)(&kinfo[i], v);
