@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)genassym.c	7.5 (Berkeley) %G%
+ *	@(#)genassym.c	7.6 (Berkeley) %G%
  */
 
 #define KERNEL
@@ -87,6 +87,7 @@ main()
 	printf("#define\tU_PROCP %d\n", &up->u_procp);
 	printf("#define\tU_RU %d\n", &up->u_ru);
 	printf("#define\tRU_MINFLT %d\n", &rup->ru_minflt);
+	printf("#define\tSZ_CMAP %d\n", sizeof(struct cmap));
 	printf("#else\n");
 	printf("asm(\".set\tU_ARG,%d\");\n", up->u_arg);
 	printf("asm(\".set\tU_QSAVE,%d\");\n", &up->u_qsave);
