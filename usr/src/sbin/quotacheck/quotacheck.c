@@ -26,6 +26,7 @@ static char sccsid[] = "@(#)quotacheck.c	5.4 (Berkeley) %G%";
 #include <sys/fs.h>
 #include <sys/quota.h>
 #include <sys/stat.h>
+#include <sys/wait.h>
 #include <fstab.h>
 #include <pwd.h>
 
@@ -38,8 +39,6 @@ union {
 #define	ITABSZ	256
 struct	dinode	itab[ITABSZ];
 struct	dinode	*dp;
-long	blocks;
-dev_t	dev;
 
 #define LOGINNAMESIZE 8
 struct fileusage {
@@ -63,10 +62,12 @@ char *malloc(), *makerawname();
 
 int	vflag;		/* verbose */
 int	aflag;		/* all file systems */
+int	pflag;		/* fsck like parallel check */
 
 char *qfname = "quotas";
 char quotafile[MAXPATHLEN + 1];
 struct dqblk zerodqbuf;
+struct fileusage zerofileusage;
 
 main(argc, argv)
 	int argc;
@@ -87,41 +88,116 @@ again:
 		aflag++;
 		goto again;
 	}
+	if (argc > 0 && strcmp(*argv, "-p") == 0) {
+		pflag++;
+		goto again;
+	}
 	if (argc <= 0 && !aflag) {
 		fprintf(stderr, "Usage:\n\t%s\n\t%s\n",
-			"quotacheck [-v] -a",
-			"quotacheck [-v] filesys ...");
+			"quotacheck [-v] [-p] -a",
+			"quotacheck [-v] [-p] filesys ...");
 		exit(1);
 	}
 
 	setpwent();
 	while ((pw = getpwent()) != 0) {
 		fup = lookup(pw->pw_uid);
-		if (fup == 0)
+		if (fup == 0) {
 			fup = adduid(pw->pw_uid);
-		strncpy(fup->fu_name, pw->pw_name,
-			sizeof(fup->fu_name));
+			strncpy(fup->fu_name, pw->pw_name,
+				sizeof(fup->fu_name));
+		}
 	}
 	endpwent();
 
-	setfsent();
-	while ((fs = getfsent()) != NULL) {
-		if (aflag &&
-		    (fs->fs_type == 0 || strcmp(fs->fs_type, "rq") != 0))
-			continue;
-		if (!aflag &&
-		    !(oneof(fs->fs_file, argv, argc) ||
-		      oneof(fs->fs_spec, argv, argc)))
-			continue;
-		(void) sprintf(quotafile, "%s/%s", fs->fs_file, qfname);
-		errs += chkquota(fs->fs_spec, fs->fs_file, quotafile);
+	if (pflag)
+		errs = preen(argc, argv);
+	else {
+		if (setfsent() == 0) {
+			fprintf(stderr, "Can't open ");
+			perror(FSTAB);
+			exit(8);
+		}
+		while ((fs = getfsent()) != NULL) {
+			if (aflag &&
+			    (fs->fs_type == 0 ||
+			     strcmp(fs->fs_type, FSTAB_RQ) != 0))
+				continue;
+			if (!aflag &&
+			    !(oneof(fs->fs_file, argv, argc) ||
+			      oneof(fs->fs_spec, argv, argc)))
+				continue;
+			(void) sprintf(quotafile, "%s/%s", fs->fs_file, qfname);
+			errs += chkquota(fs->fs_spec, fs->fs_file, quotafile);
+		}
+		endfsent();
 	}
-	endfsent();
+
 	for (i = 0; i < argc; i++)
 		if ((done & (1 << i)) == 0)
 			fprintf(stderr, "%s not found in /etc/fstab\n",
 				argv[i]);
 	exit(errs);
+}
+
+preen(argc, argv)
+	int argc;
+	char **argv;
+{
+	register struct fstab *fs;
+	register int passno, anygtr;
+	register int errs;
+	union wait status;
+
+	passno = 1;
+	errs = 0;
+	do {
+		anygtr = 0;
+
+		if (setfsent() == 0) {
+			fprintf(stderr, "Can't open ");
+			perror(FSTAB);
+			exit(8);
+		}
+
+		while ((fs = getfsent()) != NULL) {
+			if (fs->fs_passno > passno)
+				anygtr = 1;
+
+			if (aflag &&
+			    (fs->fs_type == 0 ||
+			     strcmp(fs->fs_type, FSTAB_RQ) != 0))
+				continue;
+
+			if (!aflag &&
+			    !(oneof(fs->fs_file, argv, argc) ||
+			      oneof(fs->fs_spec, argv, argc)))
+				continue;
+
+			if (fs->fs_passno != passno)
+				continue;
+
+			switch (fork()) {
+			case -1:
+				perror("fork");
+				exit(8);
+				break;
+
+			case 0:
+				sprintf(quotafile, "%s/%s",
+					fs->fs_file, qfname);
+				exit(chkquota(fs->fs_spec,
+					fs->fs_file, quotafile));
+			}
+		}
+
+		while (wait(&status) != -1) 
+			errs += status.w_retcode;
+
+		passno++;
+	} while (anygtr);
+
+	return (errs);
 }
 
 chkquota(fsdev, fsfile, qffile)
@@ -142,7 +218,7 @@ chkquota(fsdev, fsfile, qffile)
 
 	rawdisk = makerawname(fsdev);
 	if (vflag)
-		fprintf(stdout, "*** Check quotas for %s (%s)\n", rawdisk, fsfile);
+		fprintf(stdout, "*** Checking quotas for %s (%s)\n", rawdisk, fsfile);
 	fi = open(rawdisk, 0);
 	if (fi < 0) {
 		perror(rawdisk);
@@ -174,7 +250,7 @@ chkquota(fsdev, fsfile, qffile)
 		close(fi);
 		return (1);
 	}
-	if (quota(Q_SYNC, 0, quotadev, 0) < 0 &&
+	if (quota(Q_SYNC, 0, quotadev, (caddr_t)0) < 0 &&
 	    errno == EINVAL && !warned && vflag) {
 		warned++;
 		fprintf(stdout,
@@ -194,17 +270,8 @@ chkquota(fsdev, fsfile, qffile)
 		if (i == 0)
 			dqbuf = zerodqbuf;
 		fup = lookup(uid);
-		if (fup == 0) {
-			if ((dqbuf.dqb_curinodes != 0 ||
-			    dqbuf.dqb_curblocks != 0) &&
-			    !feof(qf)) {
-				dqbuf.dqb_curinodes = 0;
-				dqbuf.dqb_curblocks = 0;
-				fseek(qf, (long)uid * sizeof(struct dqblk), 0);
-				fwrite(&dqbuf, sizeof(struct dqblk), 1, qf);
-			}
-			continue;
-		}
+		if (fup == 0)
+			fup = &zerofileusage;
 		if (dqbuf.dqb_curinodes == fup->fu_usage.du_curinodes &&
 		    dqbuf.dqb_curblocks == fup->fu_usage.du_curblocks) {
 			fup->fu_usage.du_curinodes = 0;
@@ -212,14 +279,19 @@ chkquota(fsdev, fsfile, qffile)
 			continue;
 		}
 		if (vflag) {
+			if (pflag)
+				printf("%s: ", rawdisk);
 			if (fup->fu_name[0] != '\0')
-				printf("%-10s fixed:", fup->fu_name);
+				printf("%-8s fixed:", fup->fu_name);
 			else
-				printf("#%-9d fixed:", uid);
-			fprintf(stdout, " inodes (old %d, new %d)",
-			    dqbuf.dqb_curinodes, fup->fu_usage.du_curinodes);
-			fprintf(stdout, " blocks (old %d, new %d)\n",
-			    dqbuf.dqb_curblocks, fup->fu_usage.du_curblocks);
+				printf("#%-7d fixed:", uid);
+			if (dqbuf.dqb_curinodes != fup->fu_usage.du_curinodes)
+				fprintf(stdout, "  inodes %d -> %d",
+					dqbuf.dqb_curinodes, fup->fu_usage.du_curinodes);
+			if (dqbuf.dqb_curblocks != fup->fu_usage.du_curblocks)
+				fprintf(stdout, "  blocks %d -> %d",
+					dqbuf.dqb_curblocks, fup->fu_usage.du_curblocks);
+			fprintf(stdout, "\n");
 		}
 		dqbuf.dqb_curinodes = fup->fu_usage.du_curinodes;
 		dqbuf.dqb_curblocks = fup->fu_usage.du_curblocks;
@@ -239,16 +311,13 @@ chkquota(fsdev, fsfile, qffile)
 acct(ip)
 	register struct dinode *ip;
 {
-	register n;
 	register struct fileusage *fup;
 
 	if (ip == NULL)
 		return;
 	if (ip->di_mode == 0)
 		return;
-	fup = lookup(ip->di_uid);
-	if (fup == 0)
-		fup = adduid(ip->di_uid);
+	fup = adduid(ip->di_uid);
 	fup->fu_usage.du_curinodes++;
 	if ((ip->di_mode & IFMT) == IFCHR || (ip->di_mode & IFMT) == IFBLK)
 		return;
@@ -291,7 +360,7 @@ bread(bno, buf, cnt)
 
 	lseek(fi, (long)dbtob(bno), 0);
 	if (read(fi, buf, cnt) != cnt) {
-		printf("read error %u\n", bno);
+		perror("read");
 		exit(1);
 	}
 }
