@@ -12,13 +12,15 @@ vax/tu.c		standard
 vax/udiv.s		standard
 vax/urem.s		standard
 vax/vm_machdep.c	standard
-vaxif/if_acc.c		optional acc imp inet device-driver
+vaxif/if_acc.c		optional acc imp device-driver
+vaxif/if_css.c		optional css imp device-driver
 vaxif/if_dmc.c		optional dmc device-driver
 vaxif/if_ec.c		optional ec device-driver
 vaxif/if_en.c		optional en inet device-driver
 vaxif/if_il.c		optional il device-driver
 vaxif/if_uba.c		optional inet device-driver
 vaxif/if_un.c		optional un device-driver
+vaxif/if_vv.c		optional vv device-driver
 vaxmba/hp.c		optional hp device-driver
 vaxmba/ht.c		optional tu device-driver
 vaxmba/mba.c		optional mba device-driver
