@@ -4,12 +4,12 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)op.me	5.15 (Berkeley) %G%
+.\"	@(#)op.me	5.16 (Berkeley) %G%
 .\"
 .\" eqn % | troff -me
 .\"if n .ls 2
 .\".he 'Sendmail Installation and Operation Guide''%'
-.\".fo 'Version 5.15''Last Mod %G%'
+.\".fo 'Version 5.16''Last Mod %G%'
 .eh 'SMM:07-%''Sendmail Installation and Operation Guide'
 .oh 'Sendmail Installation and Operation Guide''SMM:07-%'
 .nr si 3n
@@ -40,7 +40,7 @@ Eric Allman
 University of California, Berkeley
 Mammoth Project
 .sp
-Version 5.15
+Version 5.16
 .sp
 For Sendmail Version 5.61
 .)l
@@ -3053,6 +3053,15 @@ don't connect immediately.
 This requires that queueing be compiled in,
 since it will depend on a queue run process to
 actually send the mail.
+.ip C\fIN\fP
+Checkpoints the queue every
+.i N
+(default 10)
+addresses sent.
+If your system crashes during delivery to a large list,
+this prevents retransmission to any but the last
+.I N
+recipients.
 .ip d\fIx\fP
 Deliver in mode
 .i x .
@@ -3097,6 +3106,11 @@ Set the default group id
 for mailers to run in
 to
 .i n .
+.ip h\fIN\fP
+The maximum hop count.
+Messages that have been processed more than
+.i N
+times are assumed to be in a loop and are rejected.
 .ip H\fIfile\fP
 Specify the help file
 for SMTP.
@@ -3123,15 +3137,6 @@ Thus, you should
 set this option if you do not run the name server.
 .ip i
 Ignore dots in incoming messages.
-.ip k\fIN\fP
-Checkpoints the queue every
-.i N
-(default 10)
-addresses sent.
-If your system crashes during delivery to a large list,
-this prevents retransmission to any but the last
-.I N
-recipients.
 .ip L\fIn\fP
 Set the default log level to
 .i n .
@@ -3935,7 +3940,7 @@ A transcript of the current session.
 .\"Eric Allman
 .\"Britton-Lee, Inc.
 .\".sp
-.\"Version 5.15
+.\"Version 5.16
 .\".ce 0
 .pn 2
 .bp
