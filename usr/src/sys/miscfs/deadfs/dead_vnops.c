@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)dead_vnops.c	8.1 (Berkeley) %G%
+ *	@(#)dead_vnops.c	8.2 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -158,9 +158,9 @@ dead_read(ap)
 	if (chkvnlock(ap->a_vp))
 		panic("dead_read: lock");
 	/*
-	 * Return EOF for character devices, EIO for others
+	 * Return EOF for tty devices, EIO for others
 	 */
-	if (ap->a_vp->v_type != VCHR)
+	if ((ap->a_vp->v_flag & VISTTY) == 0)
 		return (EIO);
 	return (0);
 }
