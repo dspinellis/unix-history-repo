@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.3 (Berkeley) %G%
+#	@(#)Makefile	5.4 (Berkeley) %G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
@@ -25,7 +25,7 @@ MAN=	fsplit.0
 all: fsplit
 
 fsplit: ${SRCS} ${LIBC}
-	${CC} -o $@ ${CFLAGS} ${SRCS
+	${CC} -o $@ ${CFLAGS} ${SRCS}
 
 clean:
 	rm -f ${OBJS} core fsplit
