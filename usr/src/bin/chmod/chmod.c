@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)chmod.c	5.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)chmod.c	5.19 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -82,28 +82,14 @@ done:	argv += optind;
 		}
 		while (p = fts_read(fts))
 			switch(p->fts_info) {
-			case FTS_DNR:
-				(void)fprintf(stderr,
-				    "chmod: %s: unable to read.\n",
-				    p->fts_path);
-				break;
-			case FTS_DNX:
-				(void)fprintf(stderr,
-				    "chmod: %s: unable to search.\n",
-				    p->fts_path);
-				break;
 			case FTS_D:
-			case FTS_DC:
 				break;
+			case FTS_DNR:
 			case FTS_ERR:
+			case FTS_NS:
 				(void)fprintf(stderr, "chmod: %s: %s.\n",
 				    p->fts_path, strerror(errno));
 				exit(1);
-			case FTS_NS:
-				(void)fprintf(stderr,
-				    "chmod: %s: unable to stat.\n",
-				    p->fts_path);
-				break;
 			default:
 				if (chmod(p->fts_accpath, oct ? omode :
 				    getmode(set, p->fts_statb.st_mode)) &&
