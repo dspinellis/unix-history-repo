@@ -5,10 +5,10 @@
 # include <errno.h>
 
 # ifndef QUEUE
-SCCSID(@(#)queue.c	3.72		%G%	(no queueing));
+SCCSID(@(#)queue.c	3.73		%G%	(no queueing));
 # else QUEUE
 
-SCCSID(@(#)queue.c	3.72		%G%);
+SCCSID(@(#)queue.c	3.73		%G%);
 
 /*
 **  Work queue.
@@ -112,8 +112,15 @@ queueup(df)
 	{
 		extern bool bitzerop();
 
+		/* don't output null headers */
 		if (h->h_value == NULL || h->h_value[0] == '\0')
 			continue;
+
+		/* don't output resent headers on non-resent messages */
+		if (bitset(H_RESENT, h->h_flags) && !bitset(EF_RESENT, e->e_flags))
+			continue;
+
+		/* output this header */
 		fprintf(f, "H");
 	}
 
