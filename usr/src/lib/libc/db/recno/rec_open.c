@@ -9,12 +9,13 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)rec_open.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)rec_open.c	5.5 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
+
 #include <fcntl.h>
 #include <errno.h>
 #include <limits.h>
@@ -96,7 +97,7 @@ __rec_open(fname, flags, mode, openinfo)
 			goto err;
 		if (!(flags & (O_RDWR | O_WRONLY)))
 			SET(t, BTF_RDONLY);
-		if (sb.st_size > UINT_MAX) {
+		if (sb.st_size > SIZE_T_MAX) {
 			errno = EFBIG;
 			goto err;
 		}
