@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)rlogind.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)rlogind.c	5.10 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -199,6 +199,7 @@ protocol(f, p)
 	char pibuf[1024], fibuf[1024], *pbp, *fbp;
 	register pcc = 0, fcc = 0;
 	int cc;
+	char cntl;
 
 	/*
 	 * Must ignore SIGTTOU, otherwise we'll stop
@@ -208,8 +209,10 @@ protocol(f, p)
 	(void) signal(SIGTTOU, SIG_IGN);
 	send(f, oobdata, 1, MSG_OOB);	/* indicate new rlogin */
 	for (;;) {
-		int ibits = 0, obits = 0;
+		int ibits, obits, ebits;
 
+		ibits = 0;
+		obits = 0;
 		if (fcc)
 			obits |= (1<<p);
 		else
@@ -219,15 +222,28 @@ protocol(f, p)
 				obits |= (1<<f);
 			else
 				ibits |= (1<<p);
-		if (select(16, &ibits, &obits, 0, 0) < 0) {
+		ebits = (1<<p);
+		if (select(16, &ibits, &obits, &ebits, 0) < 0) {
 			if (errno == EINTR)
 				continue;
 			fatalperror(f, "select", errno);
 		}
-		if (ibits == 0 && obits == 0) {
+		if (ibits == 0 && obits == 0 && ebits == 0) {
 			/* shouldn't happen... */
 			sleep(5);
 			continue;
+		}
+#define	pkcontrol(c)	((c)&(TIOCPKT_FLUSHWRITE|TIOCPKT_NOSTOP|TIOCPKT_DOSTOP))
+		if (ebits & (1<<p)) {
+			cc = read(p, &cntl, 1);
+			if (cc == 1 && pkcontrol(cntl)) {
+				cntl |= oobdata[0];
+				send(f, &cntl, 1, MSG_OOB);
+				if (cntl & TIOCPKT_FLUSHWRITE) {
+					pcc = 0;
+					ibits &= ~(1<<p);
+				}
+			}
 		}
 		if (ibits & (1<<f)) {
 			fcc = read(f, fibuf, sizeof (fibuf));
@@ -276,7 +292,6 @@ protocol(f, p)
 			else if (pibuf[0] == 0)
 				pbp++, pcc--;
 			else {
-#define	pkcontrol(c)	((c)&(TIOCPKT_FLUSHWRITE|TIOCPKT_NOSTOP|TIOCPKT_DOSTOP))
 				if (pkcontrol(pibuf[0])) {
 					pibuf[0] |= oobdata[0];
 					send(f, &pibuf[0], 1, MSG_OOB);
