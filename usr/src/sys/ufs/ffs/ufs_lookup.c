@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ufs_lookup.c	7.21 (Berkeley) %G%
+ *	@(#)ufs_lookup.c	7.22 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -573,10 +573,12 @@ direnter(ip, ndp)
 		ndp->ni_uioseg = UIO_SYSSPACE;
 		error =
 		    ufs_write(ndp->ni_dvp, &ndp->ni_uio, IO_SYNC, ndp->ni_cred);
-		if (DIRBLKSIZ > dp->i_fs->fs_fsize)
+		if (DIRBLKSIZ > dp->i_fs->fs_fsize) {
 			panic("wdir: blksize"); /* XXX - should grow w/balloc */
-		else
+		} else {
 			dp->i_size = roundup(dp->i_size, DIRBLKSIZ);
+			dp->i_flag |= ICHG;
+		}
 		iput(dp);
 		return (error);
 	}

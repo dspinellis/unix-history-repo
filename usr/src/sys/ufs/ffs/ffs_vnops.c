@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ffs_vnops.c	7.43 (Berkeley) %G%
+ *	@(#)ffs_vnops.c	7.44 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -1231,10 +1231,12 @@ ufs_mkdir(ndp, vap)
 		dp->i_flag |= ICHG;
 		goto bad;
 	}
-	if (DIRBLKSIZ > dp->i_fs->fs_fsize)
+	if (DIRBLKSIZ > dp->i_fs->fs_fsize) {
 		panic("mkdir: blksize");     /* XXX - should grow w/balloc() */
-	else
+	} else {
 		ip->i_size = DIRBLKSIZ;
+		ip->i_flag |= ICHG;
+	}
 	/*
 	 * Directory all set up, now
 	 * install the entry for it in
