@@ -27,7 +27,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -283,7 +283,7 @@ loop:
 		break;
 	case 'A': case 'a':
 		logfile = open(namelogfile, 1);
-		if (lseek(logfile, (offset_t)0, 2) < 0)
+		if (lseek(logfile, (off_t)0, L_XTND) < 0)
 		{
 			close(logfile);
 			logfile = -1;
