@@ -56,6 +56,7 @@ kern/uipc_syscalls.c	standard
 kern/uipc_usrreq.c	standard
 kern/vfs_bio.c		standard
 kern/vfs_cache.c	standard
+kern/vfs_cluster.c	standard
 kern/vfs_conf.c		standard
 kern/vfs_init.c		standard
 kern/vfs_lookup.c	standard
