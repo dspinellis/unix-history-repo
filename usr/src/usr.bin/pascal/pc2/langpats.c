@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)langpats.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)langpats.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 #include "inline.h"
@@ -494,44 +494,33 @@ struct pats language_ptab[] = {
 "	movl	(sp)+,r0\n\
 	movl	(sp)+,r1\n\
 	movl	(sp)+,r2\n\
-	movl	(sp)+,r4\n\
-	movl	r0,r3\n\
-	clrl	r5\n\
+	movl	(sp)+,r3\n\
+	clrl	r4\n\
 1:\n\
-	orl3	(r1),(r2),(r3)\n\
-	addl2	$4,r1\n\
-	addl2	$4,r2\n\
-	addl2	$4,r3\n\
-	aoblss	r4,r5,1b\n" },
+	orl3	(r1)[r4],(r2)[r4],(r0)[r4]\n\
+	aoblss	r3,r4,1b\n" },
 
 	{ 4, "_SUBT\n",
 "	movl	(sp)+,r0\n\
 	movl	(sp)+,r1\n\
 	movl	(sp)+,r2\n\
-	movl	(sp)+,r4\n\
-	movl	r0,r3\n\
+	movl	(sp)+,r3\n\
+	decl	r3\n\
 1:\n\
-	mcoml	(r2),r5\n\
-	andl3	r5,(r1),(r3)\n\
-	addl2	$4,r1\n\
-	addl2	$4,r2\n\
-	addl2	$4,r3\n\
-	decl	r4\n\
-	jgtr	1b\n" },
+	mcoml	(r2)[r3],r4\n\
+	andl3	r4,(r1)[r3],(r0)[r3]\n\
+	decl	r3\n\
+	jgeq	1b\n" },
 
 	{ 4, "_MULT\n",
 "	movl	(sp)+,r0\n\
 	movl	(sp)+,r1\n\
 	movl	(sp)+,r2\n\
-	movl	(sp)+,r4\n\
-	movl	r0,r3\n\
-	clrl	r5\n\
+	movl	(sp)+,r3\n\
+	clrl	r4\n\
 1:\n\
-	andl3	(r1),(r2),(r3)\n\
-	addl2	$4,r1\n\
-	addl2	$4,r2\n\
-	addl2	$4,r3\n\
-	aoblss	r4,r5,1b\n" },
+	andl3	(r1)[r4],(r2)[r4],(r0)[r4]\n\
+	aoblss	r3,r4,1b\n" },
 
 	{ 4, "_IN\n",
 "	movl	(sp)+,r1\n\
