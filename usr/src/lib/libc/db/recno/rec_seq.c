@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)rec_seq.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)rec_seq.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -75,10 +75,10 @@ __rec_seq(dbp, key, data, flags)
 		return (RET_ERROR);
 	}
 	
-	if (nrec > t->bt_nrecs) {
+	if (t->bt_nrecs == 0 || nrec > t->bt_nrecs) {
 		if ((status = t->bt_irec(t, nrec)) != RET_SUCCESS)
 			return (status);
-		if (nrec > t->bt_nrecs)
+		if (t->bt_nrecs == 0 || nrec > t->bt_nrecs)
 			return (RET_SPECIAL);
 	}
 
@@ -86,6 +86,8 @@ __rec_seq(dbp, key, data, flags)
 		return (RET_ERROR);
 
 	if ((status = __rec_ret(t, e, data)) == RET_SUCCESS) {
+		key->size = sizeof(recno_t);
+		bcopy(&nrec, key->data, sizeof(recno_t));
 		t->bt_rcursor = nrec;
 		SET(t, BTF_SEQINIT);
 		UNSET(t, BTF_DELCRSR);
