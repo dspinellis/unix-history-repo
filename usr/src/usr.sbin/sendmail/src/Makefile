@@ -1,11 +1,12 @@
-#	@(#)Makefile	5.28 (Berkeley) %G%
+#	@(#)Makefile	5.29 (Berkeley) %G%
 
 PROG=	sendmail
 
 # define the database format to use for aliases et al.  Can be -DNEWDB (for
-# the new BSD database package -- this is preferred), -DNDBM for the 4.3BSD
-# database package, or -DDBM for the old putrescent V7 package.  You can
-# define both NEWDB and one of the other two during a transition period; old
+# the new BSD database package -- this is preferred) or -DNDBM for the NDBM
+# database package.  The old putrescent V7 DBM package is no longer
+# supported.
+# You can define both NEWDB and NDBM during a transition period; old
 # databases are read, but the new format will be used on any rebuilds.  On
 # really gnarly systems, you can set this to null; it will crawl like a high
 # spiral snail, but it will work.
