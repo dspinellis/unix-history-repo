@@ -4,7 +4,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)op.me	8.15 (Berkeley) %G%
+.\"	@(#)op.me	8.16 (Berkeley) %G%
 .\"
 .\" eqn op.me | pic | troff -me
 .eh 'SMM:08-%''Sendmail Installation and Operation Guide'
@@ -43,7 +43,7 @@ University of California, Berkeley
 Mammoth Project
 eric@CS.Berkeley.EDU
 .sp
-Version 8.15
+Version 8.16
 .sp
 For Sendmail Version 8.6
 .)l
@@ -4223,7 +4223,13 @@ and the third requires that
 .i sendmail
 be compiled with NIS support.
 All four accept as arguments the some optional flags
-and a filename (or a mapname for NIS).
+and a filename
+(or a mapname for NIS;
+the filename is the root of the database path,
+so that
+.q .db
+or some other extension appropriate for the database type
+will be added to get the actual database name).
 Known flags are:
 .ip "\-o"
 Indicates that this map is optional \*- that is,
@@ -4293,6 +4299,17 @@ the two
 .i db -based
 maps append
 .q \&.db .
+For example, the map specification
+.(b
+Kuucp dbm \-o \-N /usr/lib/uucpmap
+.)b
+specifies an optional map named
+.q uucp
+of class
+.q dbm ;
+it always has null bytes at the end of every string,
+and the data is located in
+/usr/lib/uucpmap.{dir,pag}.
 .pp
 The program
 .i makemap (8)
@@ -6281,7 +6298,7 @@ Craig Everhart, Transarc Corporation
 Tom Ivar Helbekkmo, Norwegian School of Economics
 Allan E. Johannesen, WPI
 Jonathan Kamens, OpenVision Technologies, Inc.
-Takahiro Kanbe, FujiXerox
+Takahiro Kanbe, Fuji Xerox Information Systems Co., Ltd.
 Brian Kantor, University of California, San Diego
 Murray S. Kucherawy, HookUp Communication Corp.
 Bruce Lilly, Sony U.S.
@@ -6706,7 +6723,7 @@ A transcript of the current session.
 .\"Eric Allman
 .\"Britton-Lee, Inc.
 .\".sp
-.\"Version 8.15
+.\"Version 8.16
 .\".ce 0
 .bp 2
 .ce
