@@ -1,4 +1,4 @@
-/*	vm_meter.c	4.2	%G%	*/
+/*	vm_meter.c	4.3	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -334,7 +334,7 @@ vmtotal()
 	total.t_avmtxt = 0;
 	total.t_rmtxt = 0;
 	total.t_armtxt = 0;
-	for (xp = &text[0]; xp < &text[NTEXT]; xp++)
+	for (xp = text; xp < textNTEXT; xp++)
 		if (xp->x_iptr) {
 			total.t_vmtxt += xp->x_size;
 			total.t_rmtxt += xp->x_rssize;
