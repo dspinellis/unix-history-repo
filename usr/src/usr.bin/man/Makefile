@@ -14,54 +14,46 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.5 (Berkeley) %G%
+#	@(#)Makefile	5.6 (Berkeley) %G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
-ASRCS=	apropos.c
-MSRCS=	man.c
+SRCS=	apropos.c whatis.c man.c
+MAN=	man.0 apropos.0 whatis.0
 
-all: man apropos
-
-apropos: ${LIBC}
-	${CC} -o $@ ${CFLAGS} ${ASRCS}
+all: man apropos whatis
 
 man: ${LIBC}
-	${CC} -o $@ ${CFLAGS} ${MSRCS}
+	${CC} -o $@ ${CFLAGS} $@.c
 
-clean: FRC
-	rm -f core apropos man
+apropos: ${LIBC}
+	${CC} -o $@ ${CFLAGS} $@.c
 
-depend: FRC
-	mkdep -p ${CFLAGS} ${ASRCS} ${MSRCS}
+whatis: ${LIBC}
+	${CC} -o $@ ${CFLAGS} $@.c
 
-install: FRC
-	rm -f ${DESTDIR}/usr/ucb/whatis ${DESTDIR}/usr/ucb/apropos
+clean:
+	rm -f core apropos whatis man
+
+cleandir: clean
+	rm -f ${MAN} tags .depend
+
+depend:
+	mkdep -p ${CFLAGS} ${SRCS}
+
+install: ${MAN}
 	install -s -o bin -g bin -m 755 apropos ${DESTDIR}/usr/ucb/apropos
+	install -s -o bin -g bin -m 755 whatis ${DESTDIR}/usr/ucb/whatis
 	install -s -o bin -g bin -m 755 man ${DESTDIR}/usr/ucb/man
-	ln ${DESTDIR}/usr/ucb/apropos ${DESTDIR}/usr/ucb/whatis
+	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat1
 
-lint: FRC
-	lint ${CFLAGS} ${ASRCS}
-	lint ${CFLAGS} ${MSRCS}
+lint:
+	lint ${CFLAGS} apropos.c
+	lint ${CFLAGS} whatis.c
+	lint ${CFLAGS} man.c
 
-tags: FRC
-	ctags ${ASRCS}
-	ctags ${MSRCS}
+tags:
+	ctags apropos.c
+	ctags -a whatis.c
+	ctags -a man.c
 	sort -o tags tags
-
-FRC:
-
-# DO NOT DELETE THIS LINE -- mkdep uses it.
-# DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
-
-apropos: apropos.c /usr/include/sys/param.h /usr/include/sys/types.h
-apropos: /usr/include/signal.h /usr/include/machine/trap.h
-apropos: /usr/include/machine/machparam.h /usr/include/machine/endian.h
-apropos: /usr/include/stdio.h /usr/include/ctype.h
-man: man.c /usr/include/sys/param.h /usr/include/sys/types.h
-man: /usr/include/signal.h /usr/include/machine/trap.h
-man: /usr/include/machine/machparam.h /usr/include/machine/endian.h
-man: /usr/include/sys/file.h /usr/include/stdio.h /usr/include/ctype.h
-
-# IF YOU PUT ANYTHING HERE IT WILL GO AWAY
