@@ -1,12 +1,28 @@
-/*	param.h	1.9	87/05/21	*/
+/*	param.h	1.10	87/10/28	*/
 
+#ifndef ENDIAN
 /*
  * Machine dependent constants for TAHOE.
  */
-
 #define	MACHINE	"tahoe"
 
-#ifndef ENDIAN
+#define	CHAR_BIT	NBBY
+#define	CHAR_MAX	0x7f
+#define	CHAR_MIN	0x80
+#define	CLK_TCK		UNDEFINED_FOR_NOW
+#define	INT_MAX		0x7fffffff
+#define	INT_MIN		0x80000000
+#define	LONG_MAX	0x7fffffff
+#define	LONG_MIN	0x80000000
+#define	SCHAR_MAX	0x7f
+#define	SCHAR_MIN	0x80
+#define	SHRT_MAX	0x7fff
+#define	SHRT_MIN	0x8000
+#define	UCHAR_MAX	0xff
+#define	UINT_MAX	0xffffffff
+#define	ULONG_MAX	0xffffffff
+#define	USHRT_MAX	0xffff
+
 /*
  * Definitions for byte order,
  * according to byte significance from low address to high.
