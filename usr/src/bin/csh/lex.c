@@ -6,10 +6,16 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)lex.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)lex.c	5.15 (Berkeley) %G%";
+#endif /* not lint */
 
-#endif				/* not lint */
-
+#include <sys/types.h>
+#include <sys/ioctl.h>
+#include <termios.h>
+#include <errno.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 #include "csh.h"
 #include "extern.h"
 
@@ -59,16 +65,16 @@ static Char peekc = 0, peekd = 0;
 static Char peekread = 0;
 
 /* (Tail of) current word from ! subst */
-static Char *exclp = (Char *) 0;
+static Char *exclp = NULL;
 
 /* The rest of the ! subst words */
-static struct wordent *exclnxt = (struct wordent *) 0;
+static struct wordent *exclnxt = NULL;
 
 /* Count of remaining words in ! subst */
 static int exclc = 0;
 
 /* "Globp" for alias resubstitution */
-static Char *alvecp = (Char *) 0;
+static Char *alvecp = NULL;
 
 /*
  * Labuf implements a general buffer for lookahead during lexical operations.

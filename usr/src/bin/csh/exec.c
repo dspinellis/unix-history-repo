@@ -6,17 +6,24 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)exec.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)exec.c	5.15 (Berkeley) %G%";
 #endif /* not lint */
 
+#include <sys/types.h>
+#include <dirent.h>
+#include <fcntl.h>
+#include <errno.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 #include "csh.h"
 #include "extern.h"
 
 /*
- * System level search and execute of a command.
- * We look in each directory for the specified command name.
- * If the name contains a '/' then we execute only the full path name.
- * If there is no search path then we execute only full path names.
+ * System level search and execute of a command.  We look in each directory
+ * for the specified command name.  If the name contains a '/' then we
+ * execute only the full path name.  If there is no search path then we
+ * execute only full path names.
  */
 
 /*
@@ -143,7 +150,7 @@ doexec(t)
      * We must do this AFTER any possible forking (like `foo` in glob) so that
      * this shell can still do subprocesses.
      */
-    (void) sigsetmask((sigmask_t) 0);
+    (void) sigsetmask((sigset_t) 0);
     /*
      * If no path, no words in path, or a / in the filename then restrict the
      * command search.

@@ -6,11 +6,18 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)sem.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)sem.c	5.15 (Berkeley) %G%";
 #endif /* not lint */
 
+#include <sys/param.h>
+#include <sys/ioctl.h>
+#include <sys/stat.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 #include "csh.h"
-#include "dir.h"
 #include "proc.h"
 #include "extern.h"
 
@@ -28,9 +35,9 @@ execute(t, wanttty, pipein, pipeout)
     int     pid = 0;
     int     pv[2];
 
-    static sigmask_t csigmask;
+    static sigset_t csigmask;
 
-    static sigmask_t ocsigmask;
+    static sigset_t ocsigmask;
     static int onosigchld = 0;
     static int nosigchld = 0;
 
@@ -119,7 +126,7 @@ execute(t, wanttty, pipein, pipeout)
 	    bifunc = isbfunc(t);
 	}
 	else {			/* not a command */
-	    bifunc = (struct biltins *) 0;
+	    bifunc = NULL;
 	}
 
 	/*
@@ -165,7 +172,7 @@ execute(t, wanttty, pipein, pipeout)
 	    else {
 		int     ochild, osetintr, ohaderr, odidfds;
 		int     oSHIN, oSHOUT, oSHDIAG, oOLDSTD, otpgrp;
-		sigmask_t omask;
+		sigset_t omask;
 
 		/*
 		 * Prepare for the vfork by saving everything that the child
@@ -449,7 +456,7 @@ doio(t, pipein, pipeout)
 	else {
 	    (void) close(0);
 	    (void) dup(OLDSTD);
-	    (void) ioctl(0, FIONCLEX, (char *) 0);
+	    (void) ioctl(0, FIONCLEX, NULL);
 	}
     }
     if (cp = t->t_drit) {
@@ -489,7 +496,7 @@ doio(t, pipein, pipeout)
     else {
 	(void) close(1);
 	(void) dup(SHOUT);
-	(void) ioctl(1, FIONCLEX, (char *) 0);
+	(void) ioctl(1, FIONCLEX, NULL);
     }
 
     (void) close(2);
@@ -498,7 +505,7 @@ doio(t, pipein, pipeout)
     }
     else {
 	(void) dup(SHDIAG);
-	(void) ioctl(2, FIONCLEX, (char *) 0);
+	(void) ioctl(2, FIONCLEX, NULL);
     }
     didfds = 1;
 }

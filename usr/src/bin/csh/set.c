@@ -6,9 +6,11 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)set.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)set.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
+#include <sys/types.h>
+#include <stdlib.h>
 #include "csh.h"
 #include "extern.h"
 
@@ -765,7 +767,7 @@ plist(p)
     register len;
 
     if (setintr)
-	(void) sigsetmask(sigblock((sigmask_t) 0) & ~sigmask(SIGINT));
+	(void) sigsetmask(sigblock((sigset_t) 0) & ~sigmask(SIGINT));
 
     for (;;) {
 	while (p->v_left)

@@ -6,14 +6,19 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)proc.c	5.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)proc.c	5.19 (Berkeley) %G%";
 #endif /* not lint */
 
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <errno.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <string.h>
 #include "csh.h"
 #include "dir.h"
 #include "proc.h"
 #include "extern.h"
-#include <sys/wait.h>
 
 #define BIGINDEX	9	/* largest desirable job index */
 
@@ -78,7 +83,7 @@ found:
     }
     else {
 	if (pp->p_flags & (PTIME | PPTIME) || adrof(STRtime))
-	    (void) gettimeofday(&pp->p_etime, (struct timezone *) 0);
+	    (void) gettimeofday(&pp->p_etime, NULL);
 
 	pp->p_rusage = ru;
 	if (WIFSIGNALED(w)) {
@@ -161,7 +166,7 @@ pnote()
 {
     register struct process *pp;
     int     flags;
-    sigmask_t omask;
+    sigset_t omask;
 
     neednote = 0;
     for (pp = proclist.p_next; pp != PNULL; pp = pp->p_next) {
@@ -184,7 +189,7 @@ void
 pwait()
 {
     register struct process *fp, *pp;
-    sigmask_t omask;
+    sigset_t omask;
 
     /*
      * Here's where dead procs get flushed.
@@ -215,7 +220,7 @@ pjwait(pp)
 {
     register struct process *fp;
     int     jobflags, reason;
-    sigmask_t omask;
+    sigset_t omask;
 
     while (pp->p_pid != pp->p_jobid)
 	pp = pp->p_friends;
@@ -299,7 +304,7 @@ void
 dowait()
 {
     register struct process *pp;
-    sigmask_t omask;
+    sigset_t omask;
 
     pjobs++;
     omask = sigblock(sigmask(SIGCHLD));
@@ -307,7 +312,7 @@ loop:
     for (pp = proclist.p_next; pp; pp = pp->p_next)
 	if (pp->p_pid &&	/* pp->p_pid == pp->p_jobid && */
 	    pp->p_flags & PRUNNING) {
-	    (void) sigpause((sigmask_t) 0);
+	    (void) sigpause((sigset_t) 0);
 	    goto loop;
 	}
     (void) sigsetmask(omask);
@@ -456,7 +461,7 @@ palloc(pid, t)
     }
     pp->p_next = proclist.p_next;
     proclist.p_next = pp;
-    (void) gettimeofday(&pp->p_btime, (struct timezone *) 0);
+    (void) gettimeofday(&pp->p_btime, NULL);
 }
 
 static void
@@ -904,7 +909,7 @@ pkill(v, signum)
     register struct process *pp, *np;
     register int jobflags = 0;
     int     pid, err1 = 0;
-    sigmask_t omask;
+    sigset_t omask;
     Char   *cp;
 
     omask = sigmask(SIGCHLD);
@@ -986,7 +991,7 @@ pstart(pp, foregnd)
     int     foregnd;
 {
     register struct process *np;
-    sigmask_t omask;
+    sigset_t omask;
     long    jobflags = 0;
 
     omask = sigblock(sigmask(SIGCHLD));
@@ -1130,7 +1135,7 @@ pfork(t, wanttty)
     register int pid;
     bool    ignint = 0;
     int     pgrp;
-    sigmask_t omask;
+    sigset_t omask;
 
     /*
      * A child will be uninterruptible only under very special conditions.
@@ -1227,7 +1232,7 @@ void
 pgetty(wanttty, pgrp)
     int     wanttty, pgrp;
 {
-    sigmask_t omask = 0;
+    sigset_t omask = 0;
 
     /*
      * christos: I am blocking the tty signals till I've set things
