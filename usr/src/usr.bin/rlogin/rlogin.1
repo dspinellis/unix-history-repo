@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)rlogin.1	6.9 (Berkeley) %G%
+.\"	@(#)rlogin.1	6.10 (Berkeley) %G%
 .\"
 .TH RLOGIN 1 ""
 .UC 5
@@ -63,6 +63,10 @@ where logins without passwords are to be permitted.
 If the originating user is not equivalent to the remote user, then
 a login and password will be prompted for on the remote machine as in
 .IR login (1).
+The
+.B -l
+option allows you to specify an alternative user name to
+be used when logging into the remote site.
 To avoid some security problems, the \&.rhosts file must be owned by
 either the remote user or root.
 .PP
