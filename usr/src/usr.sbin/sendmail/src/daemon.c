@@ -12,9 +12,9 @@
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	8.44 (Berkeley) %G% (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.45 (Berkeley) %G% (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	8.44 (Berkeley) %G% (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.45 (Berkeley) %G% (without daemon mode)";
 #endif
 #endif /* not lint */
 
@@ -476,38 +476,48 @@ myhostname(hostbuf, size)
 		(void) strcpy(hostbuf, "localhost");
 	}
 	hp = gethostbyname(hostbuf);
-	if (hp != NULL)
+	if (hp == NULL)
 	{
-		(void) strncpy(hostbuf, hp->h_name, size - 1);
-		hostbuf[size - 1] = '\0';
-#ifdef NAMED_BIND
-		/* if still no dot, try DNS directly (i.e., avoid NIS) */
-		if (strchr(hostbuf, '.') == NULL)
-		{
-			extern bool getcanonname();
+		syserr("!My host name (%s) does not seem to exist!", hostbuf);
+	}
+	(void) strncpy(hostbuf, hp->h_name, size - 1);
+	hostbuf[size - 1] = '\0';
 
-			(void) getcanonname(hostbuf, size, TRUE);
+#if NAMED_BIND
+	/* if still no dot, try DNS directly (i.e., avoid NIS problems) */
+	if (strchr(hostbuf, '.') == NULL)
+	{
+		extern bool getcanonname();
+		extern int h_errno;
+
+		/* try twice in case name server not yet started up */
+		if (!getcanonname(hostbuf, size, TRUE) &&
+		    UseNameServer &&
+		    (h_errno != TRY_AGAIN ||
+		     (sleep(30), !getcanonname(hostbuf, size, TRUE))))
+		{
+			errno = h_errno + E_DNSBASE;
+			syserr("!My host name (%s) not known to DNS",
+				hostbuf);
 		}
+	}
 #endif
 
-		if (hp->h_addrtype == AF_INET && hp->h_length == 4)
+	if (hp->h_addrtype == AF_INET && hp->h_length == 4)
+	{
+		register int i;
+
+		for (i = 0; hp->h_addr_list[i] != NULL; i++)
 		{
-			register int i;
+			char ipbuf[100];
 
-			for (i = 0; hp->h_addr_list[i] != NULL; i++)
-			{
-				char ipbuf[100];
-
-				sprintf(ipbuf, "[%s]",
-					inet_ntoa(*((struct in_addr *) hp->h_addr_list[i])));
-				setclass('w', ipbuf);
-			}
+			sprintf(ipbuf, "[%s]",
+				inet_ntoa(*((struct in_addr *) hp->h_addr_list[i])));
+			setclass('w', ipbuf);
 		}
-
-		return (hp->h_aliases);
 	}
-	else
-		return (NULL);
+
+	return (hp->h_aliases);
 }
 /*
 **  GETAUTHINFO -- get the real host name asociated with a file descriptor
