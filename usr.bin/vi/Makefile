@@ -1,5 +1,5 @@
 #	@(#)Makefile	8.30 (Berkeley) 3/22/94
-#	$Id: Makefile,v 1.15 1994/06/01 07:51:29 phk Exp $
+#	$Id: Makefile,v 1.16 1994/06/01 07:55:12 phk Exp $
 
 PROG=	nvi
 #CFLAGS=-g -DDEBUG
@@ -10,6 +10,7 @@ CFLAGS+=-I. -I${.CURDIR} -I${.CURDIR}/ex -I${.CURDIR}/vi
 	${.CURDIR}/svi ${.CURDIR}/xaw
 #CLEANFILES+=ex
 CLEANFILES+=vi.1 vi-ref.1
+MANSRC= `pwd`
 MAN1+=	vi.1 vi-ref.1
 
 MLINKS+=vi.1 nvi.1
