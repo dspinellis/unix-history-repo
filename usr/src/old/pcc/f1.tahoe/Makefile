@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.2 (Berkeley) %G%
+#	@(#)Makefile	5.3 (Berkeley) %G%
 
 PROG=	f1
 MIP=	${.CURDIR}/../mip
@@ -20,7 +20,8 @@ pcclocal.h: localdefs.h /usr/include/pcc.h
 	    egrep '^#[ 	]*(define[ 	][ 	]*PCC(F|T|TM|OM)?_|ifdef|ifndef|endif)' | \
 	    sed -e 's/PCC[A-Z]*_//' > ${.TARGET}
 
+.include <bsd.prog.mk>
+
 ${OBJS} .depend: pcclocal.h
 
-.include <bsd.prog.mk>
 
