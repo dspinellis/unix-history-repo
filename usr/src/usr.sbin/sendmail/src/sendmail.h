@@ -7,7 +7,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	3.83		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	3.84		%G%";
 # endif lint
 # else  _DEFINE
 # define EXTERN extern
@@ -33,7 +33,7 @@ static char SmailSccsId[] =	"@(#)sendmail.h	3.83		%G%";
 # define MAXPV		40		/* max # of parms to mailers */
 # define MAXHOP		30		/* max value of HopCount */
 # define MAXATOM	100		/* max atoms per address */
-# define MAXMAILERS	10		/* maximum mailers known to system */
+# define MAXMAILERS	25		/* maximum mailers known to system */
 # define SPACESUB	('.'|0200)	/* substitution for <lwsp> */
 /*
 **  Address structure.
