@@ -1,10 +1,8 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd.c	3.6 83/08/23";
+static	char *sccsid = "@(#)cmd.c	3.7 83/08/26";
 #endif
 
 #include "defs.h"
-
-struct ww *getwin();
 
 docmd()
 {
@@ -195,17 +193,17 @@ getwin()
 }
 
 setselwin(w)
+struct ww *w;
+{
+	if ((selwin = w) != 0)
+		front(w);
+}
+
+front(w)
 register struct ww *w;
 {
 	struct ww *oldselwin = selwin;
 
-	if (w == oldselwin)
-		return;
-	if (selwin = w) {
-		labelwin(w);
-		/* bring it to the top just below cmdwin */
-		wwsetcurwin(w);
-		wwsetcurwin(cmdwin);
 	}
 }
 
