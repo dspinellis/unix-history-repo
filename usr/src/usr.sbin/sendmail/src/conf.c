@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.151 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.152 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -2579,6 +2579,9 @@ resetlimits()
 char *
 getcfname()
 {
+	int i;
+	static char cbuf[200];
+
 	if (ConfFile != NULL)
 		return ConfFile;
 #ifdef NETINFO
@@ -2592,6 +2595,41 @@ getcfname()
 			return cflocation;
 	}
 #endif
+
+	/*
+	**  Try sendmail.8.6.12.cf, then sendmail.8.6.cf, then
+	**  sendmail.8.cf, and finally sendmail.cf.
+	**
+	**	I suppose it should really try a search path here --
+	**	e.g., /etc/sendmail.cf, /etc/mail/sendmail.cf,
+	**	/usr/lib/sendmail.cf, and so forth.
+	*/
+
+	strcpy(cbuf, _PATH_SENDMAILCF);
+	i = strlen(cbuf);
+	if (strcmp(&cbuf[i - 3], ".cf") == 0)
+	{
+		char *p;
+		extern char Version[];
+
+		strcpy(&cbuf[i - 2], Version);
+		p = strchr(&cbuf[i - 2], '/');
+		if (p != NULL)
+			*p = '\0';
+		p = &cbuf[strlen(cbuf)];
+		do
+		{
+			int fd;
+
+			strcpy(p, ".cf");
+			if ((fd = open(cbuf, O_RDONLY, 0)) >= 0)
+			{
+				close(fd);
+				return cbuf;
+			}
+			*p = '\0';
+		} while ((p = strrchr(&cbuf[i - 2], '.')) != NULL);
+	}
 	return _PATH_SENDMAILCF;
 }
 /*
