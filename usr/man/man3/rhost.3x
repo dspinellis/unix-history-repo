@@ -1,0 +1,42 @@
+.TH RHOST 3X "17 March 1982"
+.UC 4.1a Provisional
+.SH NAME
+rhost, raddr \- look up internet hosts by name or address
+.SH SYNOPSIS
+.ft B
+iaddr = rhost(aname)
+.br
+long iaddr;
+.br
+char **aname;
+.sp
+name = raddr(iaddr)
+.br
+long iaddr;
+.ft R
+.SH DESCRIPTION
+.I Rhost
+is given a pointer to a name for an Internet host
+and returns the 32 bit internet address in network byte order
+suitable for direct use in a \fBsockaddr_in\fR internet address as
+\fBsockaddr_in.sin_addr.s_addr\fR.  If the host name is not
+known then
+.I rhost
+returns \-1.
+If the host name is known then *aname is changed to point to
+the standard name of the specified host, which is the first
+name given in its entry in /usr/lib/hosts.
+The return value has been saved with \fImalloc\fP and is not destroyed
+on subsequent calls.
+.PP
+.I Raddr
+performs a similar function, but takes an Internet address, and
+looks up the name.
+.SH FILES
+/usr/lib/hosts
+.SH SEE ALSO
+rsh(1x), rlogin(1x), socket(2x)
+.SH BUGS
+A more general data base or server is needed.
+.PP
+This interface is provisional, and may be changed before the 4.2bsd release.
