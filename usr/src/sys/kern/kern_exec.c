@@ -1,4 +1,4 @@
-/*	kern_exec.c	6.8	84/11/20	*/
+/*	kern_exec.c	6.9	85/03/12	*/
 
 #include "../machine/reg.h"
 #include "../machine/pte.h"
@@ -461,6 +461,13 @@ setregs(entry)
 		u.u_signal[i] = SIG_DFL;
 		(void) spl0();
 	}
+	/*
+	 * Reset stack state to the user stack.
+	 * Clear set of signals caught on the signal stack.
+	 */
+	u.u_onstack = 0;
+	u.u_sigsp = 0;
+	u.u_sigonstack = 0;
 #ifdef notdef
 	/* should pass args to init on the stack */
 	for (rp = &u.u_ar0[0]; rp < &u.u_ar0[16];)
