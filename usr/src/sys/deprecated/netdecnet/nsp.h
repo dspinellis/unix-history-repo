@@ -1,4 +1,4 @@
-/*	nsp.h	1.2	82/05/15	*/
+/*	nsp.h	1.3	82/10/09	*/
 
 /*
  * DECnet Network Services Protocol definitions,

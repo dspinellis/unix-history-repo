@@ -1,4 +1,4 @@
-/*	if_imp.c	4.38	82/10/05	*/
+/*	if_imp.c	4.39	82/10/09	*/
 
 #include "imp.h"
 #if NIMP > 0
@@ -20,14 +20,15 @@
 #include "../h/cpu.h"
 #include "../h/mtpr.h"
 #include "../h/vmmac.h"
-#include "../net/in.h"
-#include "../net/in_systm.h"
+#include "../netinet/in.h"
+#include "../netinet/in_systm.h"
 #include "../net/if.h"
+#include "../net/netisr.h"
 /* define IMPLEADERS here to get leader printing code */
-#include "../net/if_imp.h"
-#include "../net/if_imphost.h"
-#include "../net/ip.h"
-#include "../net/ip_var.h"
+#include "../netimp/if_imp.h"
+#include "../netimp/if_imphost.h"
+#include "../netinet/ip.h"
+#include "../netinet/ip_var.h"
 #include "../net/route.h"
 #include <errno.h>
 

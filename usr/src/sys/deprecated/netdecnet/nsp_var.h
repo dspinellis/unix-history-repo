@@ -1,4 +1,4 @@
-/*	nsp_var.h	1.2	82/05/15	*/
+/*	nsp_var.h	1.3	82/10/09	*/
 
 /*
  * Kernel variables for NSP
