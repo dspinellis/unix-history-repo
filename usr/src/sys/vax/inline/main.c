@@ -1,7 +1,7 @@
 /* Copyright (c) 1984 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	1.6	(Berkeley)	%G%";
+static char sccsid[] = "@(#)main.c	1.7	(Berkeley)	%G%";
 #endif not lint
 
 #include <stdio.h>
@@ -75,15 +75,20 @@ main(argc, argv)
 	while (fgets(bufp, MAXLINELEN, stdin)) {
 		lp = index(bufp, LABELCHAR);
 		if (lp != NULL) {
-			bufp = newline();
-			if (*++lp == '\n') {
+			for (cp = bufp; cp < lp; cp++)
+				if (!isalnum(*cp))
+					break;
+			if (cp == lp) {
+				bufp = newline();
+				if (*++lp == '\n') {
+					emptyqueue();
+					continue;
+				}
+				strcpy(bufp, lp);
+				*lp++ = '\n';
+				*lp = '\0';
 				emptyqueue();
-				continue;
 			}
-			strcpy(bufp, lp);
-			*lp++ = '\n';
-			*lp = '\0';
-			emptyqueue();
 		}
 		for (cp = bufp; isspace(*cp); cp++)
 			/* void */;
