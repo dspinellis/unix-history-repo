@@ -5,25 +5,19 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)optr.c	5.3 (Berkeley) %G%";
-#endif not lint
+static char sccsid[] = "@(#)optr.c	5.4 (Berkeley) %G%";
+#endif /* not lint */
 
 #include "dump.h"
-#include <sys/time.h>
+#include <sys/wait.h>
+#include <errno.h>
+#include <grp.h>
+#include <varargs.h>
 #include "pathnames.h"
 
-/*
- *	This is from /usr/include/grp.h
- *	That defined struct group, which conflicts
- *	with the struct group defined in param.h
- */
-struct	Group { /* see getgrent(3) */
-	char	*gr_name;
-	char	*gr_passwd;
-	int	gr_gid;
-	char	**gr_mem;
-};
-struct	Group *getgrnam();
+static void alarmcatch();
+static void sendmes();
+
 /*
  *	Query the operator; This previously-fascist piece of code
  *	no longer requires an exact response.
@@ -37,39 +31,39 @@ struct	Group *getgrnam();
  */
 int	timeout;
 char	*attnmessage;		/* attention message */
+
+int
 query(question)
 	char	*question;
 {
 	char	replybuffer[64];
-	int	back;
+	int	back, errcount;
 	FILE	*mytty;
 
-	if ( (mytty = fopen(_PATH_TTY, "r")) == NULL){
-		msg("fopen on %s fails\n", _PATH_TTY);
-		abort();
-	}
+	if ((mytty = fopen(_PATH_TTY, "r")) == NULL)
+		quit("fopen on %s fails: %s\n", _PATH_TTY, strerror(errno));
 	attnmessage = question;
 	timeout = 0;
 	alarmcatch();
-	for(;;){
-		if ( fgets(replybuffer, 63, mytty) == NULL){
-			if (ferror(mytty)){
-				clearerr(mytty);
-				continue;
-			}
+	back = -1;
+	errcount = 0;
+	do {
+		if (fgets(replybuffer, 63, mytty) == NULL) {
+			clearerr(mytty);
+			if (++errcount > 30)	/* XXX	ugly */
+				quit("excessive operator query failures\n");
 		} else if (replybuffer[0] == 'y' || replybuffer[0] == 'Y') {
-				back = 1;
-				goto done;
+			back = 1;
 		} else if (replybuffer[0] == 'n' || replybuffer[0] == 'N') {
-				back = 0;
-				goto done;
+			back = 0;
 		} else {
-			fprintf(stderr, "  DUMP: \"Yes\" or \"No\"?\n");
-			fprintf(stderr,"  DUMP: %s: (\"yes\" or \"no\") ",
-			    question);
+			(void) fprintf(stderr,
+			    "  DUMP: \"Yes\" or \"No\"?\n");
+			(void) fprintf(stderr,
+			    "  DUMP: %s: (\"yes\" or \"no\") ", question);
 		}
-	}
-    done:
+	} while (back < 0);
+
 	/*
 	 *	Turn off the alarm, and reset the signal to trap out..
 	 */
@@ -86,11 +80,13 @@ char lastmsg[100];
  *	Alert the console operator, and enable the alarm clock to
  *	sleep for 2 minutes in case nobody comes to satisfy dump
  */
+static void
 alarmcatch()
 {
 	if (notify == 0) {
 		if (timeout == 0)
-			fprintf(stderr,"  DUMP: %s: (\"yes\" or \"no\") ",
+			(void) fprintf(stderr,
+			    "  DUMP: %s: (\"yes\" or \"no\") ",
 			    attnmessage);
 		else
 			msgtail("\7\7");
@@ -99,16 +95,18 @@ alarmcatch()
 			msgtail("\n");
 			broadcast("");		/* just print last msg */
 		}
-		fprintf(stderr,"  DUMP: %s: (\"yes\" or \"no\") ",
+		(void) fprintf(stderr,"  DUMP: %s: (\"yes\" or \"no\") ",
 		    attnmessage);
 	}
 	signal(SIGALRM, alarmcatch);
 	alarm(120);
 	timeout = 1;
 }
+
 /*
  *	Here if an inquisitive operator interrupts the dump program
  */
+void
 interrupt()
 {
 	msg("Interrupt received.\n");
@@ -121,20 +119,20 @@ interrupt()
  *	operators to the status of dump.
  *	This works much like wall(1) does.
  */
-struct	Group *gp;
+struct	group *gp;
 
 /*
  *	Get the names from the group entry "operator" to notify.
  */	
+void
 set_operators()
 {
 	if (!notify)		/*not going to notify*/
 		return;
 	gp = getgrnam(OPGRENT);
 	endgrent();
-	if (gp == (struct Group *)0){
-		msg("No group entry for %s.\n",
-			OPGRENT);
+	if (gp == NULL) {
+		msg("No group entry for %s.\n", OPGRENT);
 		notify = 0;
 		return;
 	}
@@ -147,6 +145,7 @@ struct tm *localclock;
  *	We fork a child to do the actual broadcasting, so
  *	that the process control groups are not messed up
  */
+void
 broadcast(message)
 	char	*message;
 {
@@ -156,6 +155,9 @@ broadcast(message)
 	int	nusers;
 	char	**np;
 	int	pid, s;
+
+	if (!notify || gp == NULL)
+		return;
 
 	switch (pid = fork()) {
 	case -1:
@@ -168,24 +170,22 @@ broadcast(message)
 		return;
 	}
 
-	if (!notify || gp == 0)
-		exit(0);
 	clock = time(0);
 	localclock = localtime(&clock);
 
-	if((f_utmp = fopen(_PATH_UTMP, "r")) == NULL) {
-		msg("Cannot open %s\n", _PATH_UTMP);
+	if ((f_utmp = fopen(_PATH_UTMP, "r")) == NULL) {
+		msg("Cannot open %s: %s\n", _PATH_UTMP, strerror(errno));
 		return;
 	}
 
 	nusers = 0;
-	while (!feof(f_utmp)){
+	while (!feof(f_utmp)) {
 		if (fread(&utmp, sizeof (struct utmp), 1, f_utmp) != 1)
 			break;
 		if (utmp.ut_name[0] == 0)
 			continue;
 		nusers++;
-		for (np = gp->gr_mem; *np; np++){
+		for (np = gp->gr_mem; *np; np++) {
 			if (strncmp(*np, utmp.ut_name, sizeof(utmp.ut_name)) != 0)
 				continue;
 			/*
@@ -194,17 +194,17 @@ broadcast(message)
 			if (strncmp(utmp.ut_line, DIALUP, strlen(DIALUP)) == 0)
 				continue;
 #ifdef DEBUG
-			msg("Message to %s at %s\n",
-				utmp.ut_name, utmp.ut_line);
-#endif DEBUG
+			msg("Message to %s at %s\n", *np, utmp.ut_line);
+#endif
 			sendmes(utmp.ut_line, message);
 		}
 	}
-	fclose(f_utmp);
+	(void) fclose(f_utmp);
 	Exit(0);	/* the wait in this same routine will catch this */
 	/* NOTREACHED */
 }
 
+static void
 sendmes(tty, message)
 	char *tty, *message;
 {
@@ -213,14 +213,16 @@ sendmes(tty, message)
 	int lmsg = 1;
 	FILE *f_tty;
 
-	strcpy(t, _PATH_DEV);
-	strcat(t, tty);
+	(void) strcpy(t, _PATH_DEV);
+	(void) strcat(t, tty);
 
-	if((f_tty = fopen(t, "w")) != NULL) {
+	if ((f_tty = fopen(t, "w")) != NULL) {
 		setbuf(f_tty, buf);
-		fprintf(f_tty, "\n\07\07\07Message from the dump program to all operators at %d:%02d ...\r\n\n  DUMP: NEEDS ATTENTION: "
-		       ,localclock->tm_hour
-		       ,localclock->tm_min);
+		(void) fprintf(f_tty,
+		    "\n\
+\7\7\7Message from the dump program to all operators at %d:%02d ...\r\n\n\
+DUMP: NEEDS ATTENTION: ",
+		    localclock->tm_hour, localclock->tm_min);
 		for (cp = lastmsg; ; cp++) {
 			if (*cp == '\0') {
 				if (lmsg) {
@@ -232,10 +234,10 @@ sendmes(tty, message)
 					break;
 			}
 			if (*cp == '\n')
-				putc('\r', f_tty);
-			putc(*cp, f_tty);
+				(void) putc('\r', f_tty);
+			(void) putc(*cp, f_tty);
 		}
-		fclose(f_tty);
+		(void) fclose(f_tty);
 	}
 }
 
@@ -245,12 +247,13 @@ sendmes(tty, message)
 
 time_t	tschedule = 0;
 
+void
 timeest()
 {
 	time_t	tnow, deltat;
 
 	time (&tnow);
-	if (tnow >= tschedule){
+	if (tnow >= tschedule) {
 		tschedule = tnow + 300;
 		if (blockswritten < 500)
 			return;	
@@ -262,7 +265,8 @@ timeest()
 	}
 }
 
-int blocksontape()
+int
+blocksontape()
 {
 	/*
 	 *	esize: total number of blocks estimated over all reels
@@ -274,34 +278,80 @@ int blocksontape()
 	 *	tapeno:	number of tapes written so far
 	 */
 	if (tapeno == etapes)
-		return(esize - (etapes - 1)*tsize);
-	return(tsize);
+		return (esize - (etapes - 1)*tsize);
+	return (tsize);
 }
 
-	/* VARARGS1 */
-	/* ARGSUSED */
-msg(fmt, a1, a2, a3, a4, a5)
-	char	*fmt;
-	int	a1, a2, a3, a4, a5;
+#ifdef lint
+
+/* VARARGS1 */
+void msg(fmt) char *fmt; { strcpy(lastmsg, fmt); }
+
+/* VARARGS1 */
+void msgtail(fmt) char *fmt; { fmt = fmt; }
+
+void quit(fmt) char *fmt; { msg(fmt); dumpabort(); }
+
+#else /* lint */
+
+void
+msg(va_alist)
+	va_dcl
 {
-	fprintf(stderr,"  DUMP: ");
+	va_list ap;
+	char *fmt;
+
+	(void) fprintf(stderr,"  DUMP: ");
 #ifdef TDEBUG
-	fprintf(stderr,"pid=%d ", getpid());
+	(void) fprintf(stderr, "pid=%d ", getpid());
 #endif
-	fprintf(stderr, fmt, a1, a2, a3, a4, a5);
-	fflush(stdout);
-	fflush(stderr);
-	sprintf(lastmsg, fmt, a1, a2, a3, a4, a5);
+	va_start(ap);
+	fmt = va_arg(ap, char *);
+	(void) vfprintf(stderr, fmt, ap);
+	va_end(ap);
+	(void) fflush(stdout);
+	(void) fflush(stderr);
+	va_start(ap);
+	fmt = va_arg(ap, char *);
+	(void) vsprintf(lastmsg, fmt, ap);
+	va_end(ap);
 }
 
-	/* VARARGS1 */
-	/* ARGSUSED */
-msgtail(fmt, a1, a2, a3, a4, a5)
-	char	*fmt;
-	int	a1, a2, a3, a4, a5;
+void
+msgtail(va_alist)
+	va_dcl
 {
-	fprintf(stderr, fmt, a1, a2, a3, a4, a5);
+	va_list ap;
+	char *fmt;
+
+	va_start(ap);
+	fmt = va_arg(ap, char *);
+	(void) vfprintf(stderr, fmt, ap);
+	va_end(ap);
 }
+
+void
+quit(va_alist)
+	va_dcl
+{
+	va_list ap;
+	char *fmt;
+
+	(void) fprintf(stderr,"  DUMP: ");
+#ifdef TDEBUG
+	(void) fprintf(stderr, "pid=%d ", getpid());
+#endif
+	va_start(ap);
+	fmt = va_arg(ap, char *);
+	vfprintf(stderr, fmt, ap);
+	va_end(ap);
+	(void) fflush(stdout);
+	(void) fflush(stderr);
+	dumpabort();
+}
+
+#endif /* lint */
+
 /*
  *	Tell the operator what has to be done;
  *	we don't actually do it
@@ -312,19 +362,13 @@ allocfsent(fs)
 	register struct fstab *fs;
 {
 	register struct fstab *new;
-	register char *cp;
-	char *malloc();
 
 	new = (struct fstab *)malloc(sizeof (*fs));
-	cp = malloc(strlen(fs->fs_file) + 1);
-	strcpy(cp, fs->fs_file);
-	new->fs_file = cp;
-	cp = malloc(strlen(fs->fs_type) + 1);
-	strcpy(cp, fs->fs_type);
-	new->fs_type = cp;
-	cp = malloc(strlen(fs->fs_spec) + 1);
-	strcpy(cp, fs->fs_spec);
-	new->fs_spec = cp;
+	if (new == NULL ||
+	    (new->fs_file = strdup(fs->fs_file)) == NULL ||
+	    (new->fs_type = strdup(fs->fs_type)) == NULL ||
+	    (new->fs_spec = strdup(fs->fs_spec)) == NULL)
+		quit("%s\n", strerror(errno));
 	new->fs_passno = fs->fs_passno;
 	new->fs_freq = fs->fs_freq;
 	return (new);
@@ -335,15 +379,17 @@ struct	pfstab {
 	struct	fstab *pf_fstab;
 };
 
-static	struct pfstab *table = NULL;
+static	struct pfstab *table;
 
+void
 getfstab()
 {
 	register struct fstab *fs;
 	register struct pfstab *pf;
 
 	if (setfsent() == 0) {
-		msg("Can't open %s for dump table information.\n", _PATH_FSTAB);
+		msg("Can't open %s for dump table information: %s\n",
+		    _PATH_FSTAB, strerror(errno));
 		return;
 	}
 	while (fs = getfsent()) {
@@ -352,7 +398,8 @@ getfstab()
 		    strcmp(fs->fs_type, FSTAB_RQ))
 			continue;
 		fs = allocfsent(fs);
-		pf = (struct pfstab *)malloc(sizeof (*pf));
+		if ((pf = (struct pfstab *)malloc(sizeof (*pf))) == NULL)
+			quit("%s\n", strerror(errno));
 		pf->pf_fstab = fs;
 		pf->pf_next = table;
 		table = pf;
@@ -379,17 +426,13 @@ fstabsearch(key)
 	register struct fstab *fs;
 	char *rawname();
 
-	if (table == NULL)
-		return ((struct fstab *)0);
-	for (pf = table; pf; pf = pf->pf_next) {
+	for (pf = table; pf != NULL; pf = pf->pf_next) {
 		fs = pf->pf_fstab;
-		if (strcmp(fs->fs_file, key) == 0)
+		if (strcmp(fs->fs_file, key) == 0 ||
+		    strcmp(fs->fs_spec, key) == 0 ||
+		    strcmp(rawname(fs->fs_spec), key) == 0)
 			return (fs);
-		if (strcmp(fs->fs_spec, key) == 0)
-			return (fs);
-		if (strcmp(rawname(fs->fs_spec), key) == 0)
-			return (fs);
-		if (key[0] != '/'){
+		if (key[0] != '/') {
 			if (*fs->fs_spec == '/' &&
 			    strcmp(fs->fs_spec + 1, key) == 0)
 				return (fs);
@@ -398,14 +441,15 @@ fstabsearch(key)
 				return (fs);
 		}
 	}
-	return (0);
+	return (NULL);
 }
 
 /*
  *	Tell the operator what to do
  */
+void
 lastdump(arg)
-	char	arg;		/* w ==> just what to do; W ==> most recent dumps */
+	char	arg;	/* w ==> just what to do; W ==> most recent dumps */
 {
 			char	*lastname;
 			char	*date;
@@ -423,50 +467,51 @@ lastdump(arg)
 	qsort(idatev, nidates, sizeof(struct idates *), idatesort);
 
 	if (arg == 'w')
-		fprintf(stdout, "Dump these file systems:\n");
+		(void) printf("Dump these file systems:\n");
 	else
-		fprintf(stdout, "Last dump(s) done (Dump '>' file systems):\n");
+		(void) printf("Last dump(s) done (Dump '>' file systems):\n");
 	lastname = "??";
-	ITITERATE(i, itwalk){
+	ITITERATE(i, itwalk) {
 		if (strncmp(lastname, itwalk->id_name, sizeof(itwalk->id_name)) == 0)
 			continue;
 		date = (char *)ctime(&itwalk->id_ddate);
-		date[16] = '\0';		/* blast away seconds and year */
+		date[16] = '\0';	/* blast away seconds and year */
 		lastname = itwalk->id_name;
 		dt = fstabsearch(itwalk->id_name);
-		dumpme = (  (dt != 0)
-			 && (dt->fs_freq != 0)
-			 && (itwalk->id_ddate < tnow - (dt->fs_freq*DAY)));
-		if ( (arg != 'w') || dumpme)
-		  fprintf(stdout,"%c %8s\t(%6s) Last dump: Level %c, Date %s\n",
-			dumpme && (arg != 'w') ? '>' : ' ',
-			itwalk->id_name,
-			dt ? dt->fs_file : "",
-			itwalk->id_incno,
-			date
-		    );
+		dumpme = (dt != NULL &&
+		    dt->fs_freq != 0 &&
+		    itwalk->id_ddate < tnow - (dt->fs_freq * DAY));
+		if (arg != 'w' || dumpme)
+			(void) printf(
+			    "%c %8s\t(%6s) Last dump: Level %c, Date %s\n",
+			    dumpme && (arg != 'w') ? '>' : ' ',
+			    itwalk->id_name,
+			    dt ? dt->fs_file : "",
+			    itwalk->id_incno,
+			    date);
 	}
 }
 
-int	idatesort(p1, p2)
-	struct	idates	**p1, **p2;
+int	idatesort(a1, a2)
+	void *a1, *a2;
 {
-	int	diff;
+	struct idates *d1 = *(struct idates **)a1, *d2 = *(struct idates **)a2;
+	int diff;
 
-	diff = strncmp((*p1)->id_name, (*p2)->id_name, sizeof((*p1)->id_name));
+	diff = strncmp(d1->id_name, d2->id_name, sizeof(d1->id_name));
 	if (diff == 0)
-		return ((*p2)->id_ddate - (*p1)->id_ddate);
+		return (d2->id_ddate - d1->id_ddate);
 	else
 		return (diff);
 }
 
-int max(a,b)
+int max(a, b)
 	int a, b;
 {
-	return(a>b?a:b);
+	return (a > b ? a : b);
 }
-int min(a,b)
+int min(a, b)
 	int a, b;
 {
-	return(a<b?a:b);
+	return (a < b ? a : b);
 }
