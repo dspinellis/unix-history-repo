@@ -1,0 +1,59 @@
+.\" Copyright (c) 1986, 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)usleep.3	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt USLEEP 3
+.Os BSD 4.3
+.Sh NAME
+.Nm usleep
+.Nd suspend execution for interval of microseconds
+.Sh SYNOPSIS
+.Fd #include <unistd.h>
+.Ft void
+.Fn usleep "u_int microseconds"
+.Sh DESCRIPTION
+The
+.Fn usleep
+function
+suspends execution of the calling process
+for
+.Fa microseconds
+of time.
+System activity or time spent in processing the
+call may lengthen the sleep slightly.
+.Pp
+If a timer is already running on the process its state is saved.
+If the value
+.Fa microseconds
+is more than or equal to the remaining clock time for the saved timer,
+the sleep time is set to
+the remaining clock time.
+The state of the previous timer
+is restored after
+.Fa microseconds
+has passed.
+.Pp
+This routine is implemented using 
+.Xr setitimer 2 ;
+it requires eight system calls each time it is invoked.
+A similar but less compatible function can be obtained with a single
+.Xr select 2 ;
+such a function would not restart after signals, but would not interfere
+with other uses of
+.Xr setitimer .
+.Sh SEE ALSO
+.Xr setitimer 2 ,
+.Xr getitimer 2 ,
+.Xr sigpause 2 ,
+.Xr ualarm 3 ,
+.Xr sleep 3 ,
+.Xr alarm 3
+.Sh HISTORY
+The
+.Fn usleep
+function appeared in 
+.Bx 4.3 .

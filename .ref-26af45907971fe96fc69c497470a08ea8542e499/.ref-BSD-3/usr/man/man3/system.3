@@ -1,0 +1,22 @@
+.TH SYSTEM 3
+.SH NAME
+system \- issue a shell command
+.SH SYNOPSIS
+.B system(string)
+.br
+.B char *string;
+.SH DESCRIPTION
+.I System
+causes the
+.I string
+to be given to
+.IR  sh (1)
+as input as if the string had been typed as a command
+at a terminal.
+The current process waits until the shell has
+completed, then returns the exit status of the shell.
+.SH "SEE ALSO"
+popen(3),
+exec(2), wait(2)
+.SH DIAGNOSTICS
+Exit status 127 indicates the shell couldn't be executed.

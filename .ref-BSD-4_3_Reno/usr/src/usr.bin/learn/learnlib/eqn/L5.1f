@@ -1,0 +1,11 @@
+#print
+Is the construction
+  a {sup pi +1}
+legal in neqn? Answer yes or no.
+#copyin
+#user
+#uncopyin
+#match no
+#log
+#next
+5.1g 10

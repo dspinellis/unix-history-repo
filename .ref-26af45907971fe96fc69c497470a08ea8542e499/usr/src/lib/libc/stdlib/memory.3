@@ -1,0 +1,44 @@
+.\" Copyright (c) 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)memory.3	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt MEMORY 3
+.Os BSD 4
+.Sh NAME
+.Nm malloc ,
+.Nm free ,
+.Nm realloc ,
+.Nm calloc ,
+.Nm alloca
+.Nd general memory allocation operations
+.Sh SYNOPSIS
+.Fd #include <stdlib.h>
+.Ft void *
+.Fn malloc "size_t size"
+.Ft void
+.Fn free "void *ptr"
+.Ft void *
+.Fn realloc "void *ptr" "size_t size"
+.Ft void *
+.Fn calloc "size_t nelem" "size_t elsize"
+.Ft void *
+.Fn alloca "size_t size"
+.Sh DESCRIPTION
+These functions allocate and free memory for the calling process.
+They are described in the
+individual manual pages.
+.Sh SEE ALSO
+.Xr calloc 3 ,
+.Xr free 3 ,
+.Xr malloc 3 ,
+.Xr realloc 3 ,
+.Xr alloca 3 ,
+.Sh STANDARDS
+These functions, with the exception of
+.Fn alloca
+conform to
+.St -ansiC .

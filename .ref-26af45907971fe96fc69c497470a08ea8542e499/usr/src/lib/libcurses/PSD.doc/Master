@@ -1,0 +1,28 @@
+.\" Copyright (c) 1980 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"	@(#)Master	8.2 (Berkeley) %G%
+.\"
+.ds Ln Screen Package
+.so macros
+.so c_macros
+.so intro.0
+.pn 3
+.bp
+.so intro.1
+.so intro.2.tbl
+.so intro.3
+.so intro.4
+.so intro.5
+.so intro.6
+.bp
+.so appen.A
+.pn 2
+.oh '\*(Ln''PS1:18-%'
+.eh 'PS1:18-%''\*(Ln'
+.bp
+.bi Contents
+.sp
+.xp

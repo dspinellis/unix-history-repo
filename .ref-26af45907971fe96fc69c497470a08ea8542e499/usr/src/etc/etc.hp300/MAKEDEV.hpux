@@ -1,0 +1,95 @@
+#!/bin/sh -
+#
+# Make HP-UX style interfaces for graphics input/output devices
+#
+#	@(#)MAKEDEV.hpux	5.1 (Berkeley) %G%
+#
+ln=ln
+mknod=/etc/mknod
+chmod=chmod
+GRF="0 1 2 3"
+HIL="1 2 3 4 5 6 7"
+
+for d in $GRF
+do
+	if [ -r /dev/grf${d} ]
+	then
+		case `grfinfo -t /dev/grf${d}` in
+		topcat)
+			$ln grf${d} crt9837
+			;;
+		catseye)
+			$ln grf${d} crt98550
+			;;
+		gatorbox)
+			$ln grf${d} crt98700
+			;;
+		renaissance)
+			$ln grf${d} crt98720
+			min=`expr 16 + $d`
+			$mknod ocrt98720 c 10 $min; $chmod 666 ocrt98720
+			if [ $d = "0" ]
+			then
+				$ln ocrt98720 ocrt
+			fi
+			$ln grf${d} crtren; $ln grf${d} crtrenreg
+			;;
+		davinci)
+			$ln grf${d} crt98730
+			min=`expr 16 + $d`
+			$mknod ocrt98730 c 10 $min; $chmod 666 ocrt98730
+			if [ $d = "0" ]
+			then
+				$ln ocrt98730 ocrt
+			fi
+			;;
+		*)
+			;;
+		esac
+	fi
+	if [ $d = "0" ]
+	then
+		$ln grf${d} crt
+	fi
+done
+
+kbdno=0
+knobno=1
+mouseno=0
+$ln hil0 rhil
+for d in $HIL
+do
+	if [ -r /dev/hil${d} ]
+	then
+		min=`expr $d \* 16`
+		case `hilinfo -t /dev/hil${d}` in
+		mouse)
+			if [ $mouseno = "0" ]
+			then
+				$mknod mouse c 14 $min
+				$chmod 666 mouse
+			fi
+			mouseno=`expr $mouseno + 1`
+			;;
+		keyboard)
+			if [ $kbdno = "0" ]
+			then
+				$mknod hilkbd c 14 $min
+				$chmod 666 hilkbd;
+			fi
+			kbdno=`expr $kbdno + 1`
+			;;
+		knobs)
+			$mknod knob${knobno} c 14 $min
+			$chmod 666 knob${knobno};
+			knobno=`expr $knobno + 1`
+			;;
+
+		button-box)
+			$mknod bbox c 14 $min
+			;;
+		*)
+			;;
+		esac
+	fi
+done

@@ -1,0 +1,184 @@
+.\" Copyright (c) 1992, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"	@(#)mount_nfs.8	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt MOUNT_NFS 8
+.Os BSD 4.4
+.Sh NAME
+.Nm mount_nfs
+.Nd mount nfs file systems
+.Sh SYNOPSIS
+.Nm mount_nfs
+.Op Fl bsiTMlqdckPK
+.Op Fl R Ar retrycnt
+.Op Fl r Ar readsize
+.Op Fl w Ar writesize
+.Op Fl t Ar timeout
+.Op Fl x Ar retrans
+.Op Fl g Ar maxgroups
+.Op Fl a Ar maxreadahead
+.Op Fl L Ar leaseterm
+.Op Fl D Ar deadthresh
+.Op Fl m Ar realm
+.Ar rhost:path node
+.Sh DESCRIPTION
+The
+.Nm mount_nfs
+command
+calls the
+.Xr mount 2
+system call to prepare and graft a
+remote nfs file system
+(rhost:path)
+on to the file system tree at the point
+.Ar node.
+This command is normally executed by
+.Xr mount 8
+setting the options with the
+.Fl o
+flag.
+It implements the mount protocol as described in RFC 1094, Appendix A.
+.Pp
+The options are:
+.Bl -tag -width indent
+.It Fl b
+If an initial attempt to contact the server fails, fork off a child to keep
+trying the mount in the background. Useful for
+.Xr fstab 5
+where the filesystem mount is not critical to multiuser operation.
+.It Fl s
+A soft mount, which implies that file system calls will fail
+after \fBRetry\fR round trip timeout intervals.
+.It Fl i
+An interruptible mount, which implies that file system calls that are delayed
+due to an unresponsive server will fail with EINTR when a termination signal
+is posted for the process.
+.It Fl T
+Use TCP transport instead of UDP.
+This is recommended for servers that are not on the
+same LAN cable as the client.
+(NB: This is NOT supported by most non-BSD servers.)
+.It Fl M
+Assume that other clients are not writing a file concurrently with this client.
+This implements a slightly less strict
+consistency criteria than 4.3BSD Reno did,
+that is more in line with most commercial client implementations.
+This is recommended for servers that do not support leasing.
+.It Fl d
+Do not estimate retransmit timeout dynamically.
+This may be useful for UDP
+mounts that exhibit high retry rates.
+.It Fl c
+For UDP mount points, do not do a
+.Xr connect 2.
+This must be used for servers that do not reply to requests from the standard
+port number.
+.It Fl P
+Use a reserved socket port number. This is useful for mounting servers that
+require clients to use a reserved port number.
+.It Fl K
+Pass Kerberos authenticators to the server for
+client-to-server user-credential mapping.
+This may only be used over TCP mounts between 4.4BSD clients and
+servers.
+.It Fl q
+Use the leasing extensions to the protocol to maintain cache consistency.
+This protocol, referred to as Not Quite Nfs (NQNFS),
+is only supported by 4.4BSD servers.
+.It Fl l
+Used with NQNFS to specify that the
+\fBReaddir_and_Lookup\fR RPC should be used.
+This option reduces RPC traffic for cases such as ``ls -l'',
+but increases the lease load on the server.
+This is recommended unless the server is complaining
+about excessive lease load.
+.It Fl k
+Used with NQNFS to specify ``get a lease'' for the file name being looked up.
+This is recommended unless the server is complaining about excessive lease
+load.
+.El
+.Pp
+The following arguments take a value parameter that is either a decimal
+number or a character string specified as =<value> after the option flag.
+.Bl -tag -width indent
+.It Fl R
+Set the retry count for doing the mount to <value>.
+.It Fl x
+Set the retransmit timeout count for soft mounts to <value>.
+.It Fl r
+Set the read data size to <value>.
+It should be a power of 2 greater than 512.
+This should be used for UDP mounts when the
+``fragments dropped due to timeout''
+value is getting large while actively using a mount point.
+(Use
+.Xr netstat 1
+with the
+.FL s
+option to see what the ``fragments dropped due to timeout'' value is.)
+.It Fl w
+Set the write data size to <value>.
+Ditto the comments w.r.t. the
+.Fl r
+option, but using the ``fragments dropped due to timeout'' value on the
+server instead of the client.
+Note that both the
+.Fl r
+and
+.Fl w
+options should only be used as a last ditch effort at improving performance
+when mounting servers that do not support TCP mounts.
+.It Fl t
+Set the initial retransmit timeout to <value>.
+May be useful for fine tuning UDP mounts over internetworks
+with high packet loss rates or an overloaded server.
+Try increasing the interval if
+.Xr nfsstat 1
+shows high retransmit rates while the file system is active or reducing the
+value if there is a low retransmit rate but long response delay observed.
+.It Fl g
+Set the maximum size of the group list for the credentials to <value>.
+This should be used for mounts on old servers that cannot handle a group list
+size of 16, as specified in RFC 1057.
+Try 8, if users in a lot of groups
+cannot get response from the mount point.
+.It Fl a
+Set the read-ahead count to <value>.
+This may be in the range of 0 - 4 and determines how many blocks
+will be read ahead when a large file is being read sequentially.
+This is recommended for mounts with a large
+bandwidth * delay product.
+.It Fl L
+Used with NQNFS to set the lease term to <value> seconds.
+Only use this argument for mounts with a large round trip delay.
+Values are normally in the 10-30 second range.
+.It Fl D
+Used with NQNFS to set the ``dead server threshold'' to <value> round trip
+timeout intervals.
+After a ``dead server threshold'' of retransmit timeouts,
+cached data for the unresponsive server is assumed to still be valid.
+Values may be set in the range of 1 - 9, with 9 referring to an ``infinite
+dead threshold'' (i.e. never assume cached data still valid).
+This option is not generally recommended and
+is really an experimental feature.
+.It Fl m
+Set the Kerberos realm to the string argument. Used with the
+.Fl K
+option for mounts to other realms.
+.El
+.Sh SEE ALSO
+.Xr mount 2 ,
+.Xr unmount 2 ,
+.Xr fstab 5
+.Sh BUGS
+Due to the way that Sun RPC is implemented on top of UDP (unreliable datagram)
+transport, tuning such mounts is really a black art that can only be expected
+to have limited success.
+For clients mounting servers that are not on the same
+LAN cable or that tend to be overloaded,
+TCP transport is strongly recommended,
+but unfortunately this is restricted to mostly 4.4BSD servers.

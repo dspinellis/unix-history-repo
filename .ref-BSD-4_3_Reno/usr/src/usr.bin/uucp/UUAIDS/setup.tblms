@@ -1,0 +1,269 @@
+.TL
+Setting up the Net
+.AU
+Tom Truscott
+.AI
+Duke University
+(now at the Research Triangle Institute, NC)
+January 1980
+(revised 1983 to better reflect reality)
+.SH
+Installing files and Programs.
+.PP
+This paper describes how to get the system named "xyz" on the uucp net.
+If you are on the net, stop reading!
+In chosing your system name, keep it short (no more than 7 characters long)
+and make it specific.
+That is, 'physics' is a poor uucp name!
+The University of California at Berkeley names their machines
+ucbvax, ucbcad, ucbmone, etc.
+A standard Seventh Edition
+.UX
+system is assumed.
+[Yup, this is ancient!  I have deleted useless paragraphs -- trt]
+The v7 C compiler MUST be used to recompile uucp;
+the Phototypesetter version fails.
+It is necessary to compile and install the mail, uucp, and news programs.
+In what follows, "/bin/..." can be replaced by "/usr/bin/...".
+.SH
+MAIL
+.PP
+Ignore this section if you machine already has a network
+mail program in place.
+First, you must tell your machine its name.
+Modern versions of UNIX use gethostname(II) or uname(II).
+Ancient versions use include files.
+If you are in the dark ages, edit /usr/include/whoami.h
+and change the system name to xyz.
+Do the same to /usr/include/ident.h
+(not currently used, by the way).
+Then recompile mail:
+.DS
+cd /usr/src/cmd
+cmake mail
+.DE
+and copy it to /bin.
+It should be setuid to root.
+The network uses a restricted version of mail,
+which is actually mail but invoked with a different name:
+.DS
+ln /bin/mail /bin/rmail
+.DE
+Mail should now be ready for the net.
+A newer version of mail, called Mail, should be used if you have it.
+It invokes a mail delivery program called delivermail
+or the newer one called sendmail.
+.SH
+UUCP
+.PP
+Read the documents on uucp and uucp implementation in the
+.I
+.UX
+Programmer's Manual.
+.R
+Also read the manual pages for uucp and uux.
+.NH 1
+Getting ready to install uucp
+.PP
+Edit /etc/passwd to add the user "uucp" to your system.
+Uucp should have unique user and group ids (for security).
+Duke's uucp and daemon have the same group id,
+so they can both access /dev/dn?
+which is not accessible by "others."
+Uucp will own the directories and other files of the uucp system.
+Actually, it is nice to also add the user "UUCP" as a synonym for "uucp",
+and put "UUCP" earlier in /etc/passwd.
+That way uucp will identified as UUCP in mail messages, etc.,
+which highlights the fact that the messages are machine generated.
+Here are typical lines:
+.DS L
+UUCP:iPkI/ZUX3YX2Y:4:19::/usr/spool/uucppublic:/usr/lib/uucp/uucico
+uucp:iPkI/ZUX3YX2Y:4:19::/usr/spool/uucppublic:/usr/lib/uucp/uucico
+.DE
+.NH 1
+Installing uucp programs
+.PP
+To install uucp, read the INSTALL file in the uucp directory
+and follow the instructions.
+It references other documentation, which should also be read.
+.NH 1
+Files in /usr/lib/uucp
+.PP
+All of these files should have the uid and gid of uucp,
+and should not be readable (or writable) by others.
+The files "L-devices" and "L-dialcodes"
+are needed only if xyz calls other systems.
+The file formats are described in the documentation
+and are straightforward.
+The USERFILE file should have one line for each system which calls xyz:
+.DS
+Uduke,duke  /usr/spool/uucppublic
+,xyz /
+.DE
+The first line of the sample USERFILE indicates
+that the duke system uses login name Uduke
+and can access the public directory.
+Here is a typical "Uduke" line in /etc/passwd:
+.DS L
+Uduke:PSB8EZ5w2tQ4I:4:19::/usr/spool/uucppublic:/usr/lib/uucp/uucico
+.DE
+This line differs from that for uucp
+only in having a different login name and password.
+The last line of USERFILE should be ",xyz /",
+which permits local users but not remote systems
+to access anything on xyz.
+[Actually, USERFILE is a real botch.  If you want security,
+never given anyone permission from '/'.]
+.PP
+The file L.sys has a line for each system
+with which xyz communicates.
+If xyz DOES NOT place calls to Duke
+then the L.sys line for Duke might be:
+.DS
+duke None ACU 300 123-4567 ogin Uxyz ssword fooha
+.DE
+This line indicates that xyz should never ("None") call Duke.
+If xyz DOES place calls to Duke
+then the line must be altered to so indicate.
+The documentation explains that case fairly well.
+.NH 1
+Getting it running
+.PP
+Uucp is now ready for execution.
+If Duke is to call xyz,
+the xyz system can request that Duke send mail
+to test its operation.
+/usr/spool/uucp/LOGFILE, SYSLOG, and ERRLOG
+are useful logs of uucp activity.
+If uucp does not work, and the problems cannot be resolved,
+xyz could give Duke another login on xyz
+so someone here can poke around
+and see what the problem might be.
+The login should have the same uid and gid as uucp
+but without a uucico "shell".
+.PP
+If xyz can place calls to another system,
+a good test is to try to place the call.
+Suppose xyz has both a call-out and a call-in line.
+Then an entry for the mythical system "foo"
+can be put in the L.sys and USERFILE files,
+and xyz can call itself as follows:
+.DS
+echo "test 1" | mail foo!root
+echo "test 2" | mail foo!xyz!root
+echo "test 3" | mail foo!foo!root
+.DE
+Mail sent from system xyz to itself
+causes a local invocation of mail.
+Mail sent to the mythical system "foo" will,
+however, place a call to send the mail.
+Uucp will complain about locking,
+and shell metacharacters may not work,
+but the communication should still succeed.
+Even if xyz has only a call-in or call-out unit
+it may be possible to fake the other one
+by putting a null modem between the two lines.
+[Unfortunately, the newest version of uucp
+botches loop testing fairly badly.
+But you can observe it successful connect.]
+.PP
+Also helpful is use of the "-x" debugging option.
+The debugging information produced by
+this blatant security hole
+is truly a wonder to behold.
+When it is in effect, the /usr/spool/uucp/AUDIT
+file at the remote end will also collect debugging information.
+.NH 1
+Cleaning up after uucp
+.PP
+Uucp will run okay without any cleanup;
+however, the uucp files can become immense.
+Duke runs several shell files via cron(8).
+These are in uuaids/uu.*.
+Systems which call Duke should run the following script occasionally:
+.DS
+/usr/lib/uucp/uucico -r1 -sduke
+.DE
+Systems which call-out can
+request uucp to transmit waiting files:
+.DS
+/usr/lib/uucp/uucico -r1
+.DE
+The standard version of cron runs with uid "daemon"
+which may not be able to run the cleanup or uucico scripts.
+The scripts could be run via at(1),
+or you could remove the "setuid(1);" at the start of cron.
+Then cron gives superuser privileges to its children.
+As a precaution, we run a program
+which does a setuid to uucp before invoking the scripts.
+.NH 1
+Obscure problems that can happen
+.PP
+When uucp logs in, it is greeted (in standard V7 systems)
+with the message of the day, "you have mail.", and so forth.
+Sometimes these messages cause uucp to fail.
+One cure is for login to suppress the messages
+when the user has a non-standard shell (e.g. uucico).
+.PP
+If you have implemented your own tty handler,
+be sure it supports 8 bit RAW input and output.
+You should compare your own handler
+with that of the standard tty.c,
+and make sure the RAW mode execution is the same.
+[This version does not yet support 7 bit datapath.]
+.SH
+USING THE NET
+.PP
+The simplest and least error-prone use of the net
+is that of sending mail from one system to another.
+A user on xyz can send a letter to Duke as follows:
+.DS
+echo "xyz lives" | mail duke!root
+.DE
+A letter can be sent to unc as follows:
+.DS
+echo "xyz lives on" | mail duke!unc!root
+.DE
+Here are some local network enthusiasts:
+[I only kept this around for historical interest.]
+.TS
+l l l.
+duke!swd	Steve Daniel	C version of news
+duke!jte	duke system administrator
+duke!trt	Tom Truscott	network enthusiast
+duke!unc!smb	Steve Bellovin	network news architecture
+duke!phs!dennis	Dennis Rockwell	V6/PWB UNIX enthusiast
+.TE
+.PP
+Uucp provides a convenient way
+to transfer files between systems.
+Files may be transferred by mailing them,
+but that can get annoying.
+Here are some hints for using uucp.
+.IP 1.
+By convention, the name "~uucp" may be used to access
+the public directory on any system.
+Thus,
+.ti +5
+uucp -m -d x.c duke!~uucp/xyz/
+.br
+copies the file x.c to the subdirectory xyz
+of Duke's public directory (/usr/spool/uucppublic).
+The "-m" option requests that mail be sent when x.c is transmitted.
+The "-d" option requests that the remote system
+create any directories that are needed
+(in this case, the subdirectory xyz).
+The final "/" in ".../xyz/"
+informs uucp that xyz is a directory and not an ordinary file.
+.IP 2.
+uucp -d -m x.c duke!unc!~uucp/xyz/
+.br
+will not work since uucp cannot handle "duke!unc!".
+Uucp and uux work only between two systems;
+they do not handle a system-pathname sequence as does mail.
+[See uusend for a uucp-like multi-hop copy program.]
+.SH
+NEWS
+.PP
+You are not running the distributed bulletin board?!
+Poor innocent.  Don't start.  You can never go back.

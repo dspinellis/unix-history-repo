@@ -1,0 +1,109 @@
+.\" Copyright (c) 1986, 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)np.4	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt NP 4 vax
+.Os BSD 4.2
+.Sh NAME
+.Nm np
+.Nd Interlan Np100 10 Mb/s Ethernet interface
+.Sh SYNOPSIS
+.Cd "device np0 at uba0 csr 166000 vector npintr"
+.Sh DESCRIPTION
+The
+.Nm np
+device provides access to an Interlan Np100 Ethernet interface
+for control functions.
+.Pp
+This interface is unusual in that it requires loading firmware
+into the controller before it may be used as a network link-level interface.
+This is accomplished by opening a character special device,
+and writing data to it.
+It is also possible to do post-mortem debugging of firmware failures
+by reading the local memory of the device.
+.\" .Pp
+.\" A program to load the image is provided in
+.\" .Pa /usr/src/new/np100 .
+.\" The sequence of commands would be:
+.\" .Bd -literal -offset indent
+.\" # ./npload np.image [/dev/np00]
+.\" # sleep 10
+.\" # ifconfig ix0 ...
+.\" .Ed
+.Pp
+Multiple control processes are allowed by opening separate
+minor devices; secondary interfaces are specified by shifting
+the interface number by 4 bits.
+.Pp
+The device also responds to commands passed through the driver
+by the following
+.Xr ioctl 2 Ns s :
+.Bl -tag -width NPNETBOOT
+.It Dv NPRESET
+kills off all active network processes.
+.It Dv NPSTART
+begins execution of the board at the specified address (usually
+.Li 0x400 ) .
+.It Dv NPNETBOOT
+downloads the image from a server on the network.
+[Contact
+.Tn MICOM-INTERLAN
+for details.]
+.El
+.Sh DIAGNOSTICS
+.Bl -diag
+.It np%d: Bad Maintenance command: %x!
+An invalid
+.Xr ioctl
+was passed to the np driver.
+.Pp
+.It np%d: Panic NP100 bad buffer chain.
+An error occurred in an read or write operation causing it to
+run out of buffers before it finished the operation.
+This indicates a kernel failure rather than a device failure.
+.Pp
+.It NP100 unit %d not found!
+A failure occurred during initialization, such that the unibus
+address expected for the board was found to be bad.
+Probably indicates hardware problems with the board, as do the following:
+.Pp
+.Bd -filled -offset indent -compact
+.It NP100 Unit %d timed out!
+.It NP100 Unit %d Failed diagnostics!
+.It Status from CSR0: %x.
+.Ed
+.Pp
+.It "Panic from NP100 unit %d!"
+.It "Panic Message: %s."
+An occurrence on the board was deemed serious enough
+to have the vax print it out.  
+.Pp
+.It NP100 unit #%d available!
+The board was successfully loaded and started.
+.Pp
+.It np%d: Bad Req: %x.
+The board made a maintenance request to the vax that it did not
+understand.
+.Pp
+.It np%d: No more room on Command Queue!
+The np driver allowed an internal resource to be exhausted.
+This should never happen.
+.El
+.Pp
+There are 110 other diagnostic messages that can be enabled
+by setting bits in a debugging mask.
+Consult the driver for details.
+.Sh SEE ALSO
+.Xr netintro 4 ,
+.Xr inet 4 ,
+.Xr arp 4 ,
+.Xr ix 4
+.Sh HISTORY
+The
+.Nm
+driver appeared in
+.Bx 4.3 .

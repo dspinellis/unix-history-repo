@@ -1,0 +1,51 @@
+.\" Copyright (c) 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"	@(#)lfs_cleanerd.8	8.1 (Berkeley) %G%
+.\"
+.Dd ""
+.Dt LFS_CLEANERD 8
+.Os BSD 4.4
+.Sh NAME
+.Nm lfs_cleanerd
+.Nd garbage collect a log-structured file system
+.Sh SYNOPSIS
+.Nm lfs_cleanerd
+.Op Fl ds
+.Pa node
+.Sh DESCRIPTION
+The
+.Nm lfs_cleanerd
+command starts a daemon process which garbage-collects
+the log-structed file system residing at the point named by
+.Ar node
+in the global file system namespace.
+This command is normally executed by
+.Xr mount_lfs 8
+when the log-structured file system is mounted.
+The daemon will exit within a few minutes
+of when the file system it was cleaning is unmounted.
+.Pp
+Garbage collection on a log-structured file system is done by scanning
+the file system's segments for active, i.e. referenced, data and copying
+it to new segments.
+When all of the active data in a given segment has been copied to a new
+segment that segment can be marked as empty, thus reclaiming the space
+taken by the inactive data which was in it.
+.Pp
+The following options are available:
+.Bl -tag -width indent
+.It Fl d
+Run in debug mode.
+Do not become a daemon process, and print debugging information.
+.It Fl s
+When cleaning the file system, read data in small chunks.
+.El
+.Sh SEE ALSO
+.Xr mount_lfs 8
+.Sh HISTORY
+The
+.Nm lfs_cleanerd
+utility first appeared in 4.4BSD.

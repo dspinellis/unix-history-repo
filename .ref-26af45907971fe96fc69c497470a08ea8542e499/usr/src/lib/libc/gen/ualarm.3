@@ -1,0 +1,64 @@
+.\" Copyright (c) 1986, 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)ualarm.3	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt UALARM 3
+.Os BSD 4.3
+.Sh NAME
+.Nm ualarm
+.Nd schedule signal after specified time
+.Sh SYNOPSIS
+.Fd #include <unistd.h>
+.Ft u_int 
+.Fn ualarm "u_int microseconds" "u_int interval"
+.Sh DESCRIPTION
+.Bf -symbolic
+This is a simplified interface to setitimer(2).
+.Ef
+.Pp
+The
+.Fn ualarm
+function
+waits a count of
+.Ar microseconds
+before asserting the terminating signal
+.Dv SIGALRM .
+System activity or time used in processing the call may cause a slight
+delay.
+.Pp
+If the
+.Fa interval
+argument is non-zero, the
+.Dv SIGALRM
+signal will be sent
+to the process every
+.Fa interval
+microseconds after the timer expires (e.g. after
+.Fa value
+microseconds have passed).
+.Sh RETURN VALUES
+When the signal has successfully been caught,
+.Fn alarm
+returns the amount of time left on the clock.
+The maximum mumber of
+.Ar microseconds
+allowed
+is 2147483647.
+.Sh SEE ALSO
+.Xr getitimer 2 ,
+.Xr setitimer 2 ,
+.Xr sigpause 2 ,
+.Xr sigvec 2 ,
+.Xr signal 3 ,
+.Xr sleep 3 ,
+.Xr alarm 3 ,
+.Xr usleep 3
+.Sh HISTORY
+The
+.Fn ualarm
+function appeared in 
+.Bx 4.3 .

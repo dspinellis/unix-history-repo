@@ -1,0 +1,98 @@
+.\" Copyright (c) 1990, 1991 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)fgetln.3	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt FGETLINE 3
+.Os
+.Sh NAME
+.Nm fgetline
+.Nd get a line from a stream
+.Sh SYNOPSIS
+.Fd #include <stdio.h>
+.Ft char *
+.Fn fgetline "FILE *stream" "size_t *len"
+.Sh DESCRIPTION
+The
+.Fn fgetline
+function
+returns a pointer to the next line from the stream referenced by
+.Fa stream .
+This line is
+.Em not
+a C string as it does not end with a terminating
+.Dv NUL
+character.
+The length of the line, including the final newline,
+is stored in the memory location to which
+.Fa len
+points.
+(Note, however, that if the line is the last
+in a file that does not end in a newline,
+the returned text will not contain a newline.)
+.Sh RETURN VALUES
+Upon successful completion a pointer is returned;
+this pointer becomes invalid after the next
+.Tn I/O
+operation on
+.Fa stream
+(whether successful or not)
+or as soon as the stream is closed.
+Otherwise,
+.Dv NULL
+is returned.
+The
+.Fn fgetline
+function
+does not distinguish between end-of-file and error; the routines
+.Xr feof 3
+and
+.Xr ferror 3
+must be used
+to determine which occurred.
+If an error occurrs, the global variable
+.Va errno
+is set to indicate the error.
+The end-of-file condition is remembered, even on a terminal, and all
+subsequent attempts to read will return
+.Dv NULL
+until the condition is
+cleared with
+.Xr clearerr 3 .
+.Pp
+The text to which the returned pointer points may be modified,
+provided that no changes are made beyond the returned size.
+These changes are lost as soon as the pointer becomes invalid.
+.Sh ERRORS
+.Bl -tag -width [EBADF]
+.It Bq Er EBADF
+The argument
+.Fa stream
+is not a stream open for reading.
+.El
+.Pp
+The
+.Fn fgetline
+function
+may also fail and set
+.Va errno
+for any of the errors specified for the routines
+.Xr fflush 3 ,
+.Xr malloc 3 ,
+.Xr read 2 ,
+.Xr stat 2 ,
+or
+.Xr realloc 3 .
+.Sh SEE ALSO
+.Xr ferror 3 ,
+.Xr fgets 3 ,
+.Xr fopen 3 ,
+.Xr putc 3
+.Sh HISTORY
+The
+.Fn fgetline
+function is
+.Ud .

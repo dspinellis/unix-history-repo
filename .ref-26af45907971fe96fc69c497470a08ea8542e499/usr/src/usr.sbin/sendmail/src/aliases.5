@@ -1,0 +1,78 @@
+.\" Copyright (c) 1985, 1991 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"     @(#)aliases.5	6.6 (Berkeley) %G%
+.\"
+.Dd 
+.Dt ALIASES 5
+.Os BSD 4
+.Sh NAME
+.Nm aliases
+.Nd aliases file for sendmail
+.Sh SYNOPSIS
+.Nm aliases
+.Sh DESCRIPTION
+This file describes user
+.Tn ID
+aliases used by
+.Pa /usr/sbin/sendmail .
+The file resides in
+.Pa /etc
+and
+is formatted as a series of lines of the form
+.Bd -filled -offset indent
+name: name_1, name2, name_3, . . .
+.Ed
+.Pp
+The
+.Em name
+is the name to alias, and the
+.Em name_n
+are the aliases for that name.
+Lines beginning with white space are continuation lines.
+Lines beginning with
+.Ql #
+are comments.
+.Pp
+Aliasing occurs only on local names.
+Loops can not occur, since no message will be sent to any person more than once.
+.Pp
+After aliasing has been done, local and valid recipients who have a
+.Dq Pa .forward
+file in their home directory have messages forwarded to the
+list of users defined in that file.
+.Pp
+This is only the raw data file; the actual aliasing information is
+placed into a binary format in the files
+.Pa /etc/aliases.dir
+and
+.Pa /etc/aliases.pag
+using the program
+.Xr newaliases 1 .
+A
+.Xr newaliases
+command should be executed each time the aliases file is changed for the
+change to take effect.
+.Sh SEE  ALSO
+.Xr newaliases 1 ,
+.Xr dbm 3 ,
+.Xr sendmail 8
+.Rs
+.%T "SENDMAIL Installation and Operation Guide"
+.Re
+.Rs
+.%T "SENDMAIL An Internetwork Mail Router"
+.Re
+.Sh BUGS
+Because of restrictions in
+.Xr dbm 3
+a single alias cannot contain more than about 1000 bytes of information.
+You can get longer aliases by ``chaining''; that is, make the last name in
+the alias be a dummy name which is a continuation alias.
+.Sh HISTORY
+The
+.Nm
+file format appeared in
+.Bx 4.0 .

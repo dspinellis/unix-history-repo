@@ -1,0 +1,30 @@
+.if n \{\
+.ND
+.rm CH
+.ll 6.5i
+.nr LL 7i
+.ad l
+.\}
+.so HEADERS
+.HE D
+.nr PS 11
+.nr VS 13
+.nr LL 7i
+.nr OI 0.5i
+.in 0.5i
+.ps 10p
+.nf
+Computer Systems Research Group
+457 Evans Hall
+Dept of EECS
+Berkeley, CA 94720
+.LP
+Dear Bill,
+.PP
+Please give a copy of the 386BSD system to Donn Seeley.
+He is covered under the University of Utah's AT&T source license.
+.sp 3
+.in +1.5i
+Sincerely,
+.sp .65 i
+Keith Bostic

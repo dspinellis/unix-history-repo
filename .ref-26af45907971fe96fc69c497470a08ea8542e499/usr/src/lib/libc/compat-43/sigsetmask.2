@@ -1,0 +1,56 @@
+.\" Copyright (c) 1983, 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)sigsetmask.2	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt SIGSETMASK 2
+.Os BSD 4.2
+.Sh NAME
+.Nm sigsetmask
+.Nd set current signal mask
+.Sh SYNOPSIS
+.Fd #include <signal.h>
+.Ft int
+.Fn sigsetmask "int mask"
+.Fn sigmask signum
+.Sh DESCRIPTION
+.Bf -symbolic
+This interface is made obsoleted by:
+.Ef
+.Xr sigprocmask 2 .
+.Pp
+.Fn Sigsetmask
+sets the current signal mask
+Signals are blocked from delivery if the
+corresponding bit in 
+.Fa mask
+is a 1; the macro
+.Fn sigmask
+is provided to construct the mask for a given
+.Fa signum .
+.Pp
+The system
+quietly disallows
+.Dv SIGKILL
+or
+.Dv SIGSTOP
+to be blocked.
+.Sh RETURN VALUES
+The previous set of masked signals is returned.
+.Sh SEE ALSO
+.Xr sigprocmask 2 ,
+.Xr kill 2 ,
+.Xr sigaction 2 ,
+.Xr sigsuspend 2 ,
+.Xr sigvec 2 ,
+.Xr sigblock 2 ,
+.Xr sigsetops 3
+.Sh HISTORY
+The
+.Nm
+function call appeared in
+.Bx 4.2
+and has been deprecated.

@@ -1,0 +1,40 @@
+.\" Copyright (c) 1990, 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" the American National Standards Committee X3, on Information
+.\" Processing Systems.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)clock.3	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt CLOCK 3
+.Os
+.Sh NAME
+.Nm clock
+.Nd determine processor time used
+.Sh SYNOPSIS
+.Fd #include <sys/types.h>
+.Ft clock_t
+.Fn clock void
+.Sh DESCRIPTION
+The
+.Fn clock
+function
+determines the amount of processor time used since the invocation of the
+calling process, measured in
+.Dv CLK_TCK Ns s.
+.Sh RETURN VALUES
+The
+.Fn clock
+function returns the amount of time used unless an error occurs, in which
+case the return value is \-1.
+.Sh SEE ALSO
+.Xr getrusage 2
+.Sh STANDARDS
+The
+.Fn clock
+function conforms to
+.St -ansiC .

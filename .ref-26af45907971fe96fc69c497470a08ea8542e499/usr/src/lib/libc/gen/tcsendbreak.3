@@ -1,0 +1,128 @@
+.\" Copyright (c) 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"	@(#)tcsendbreak.3	8.1 (Berkeley) %G%
+.\"
+.Dd ""
+.Dt TCSENDBREAK 3
+.Os
+.Sh NAME
+.Nm tcsendbreak ,
+.Nm tcdrain ,
+.Nm tcflush ,
+.Nm tcflow
+.Nd line control functions
+.Sh SYNOPSIS
+.Fd #include <termios.h>
+.Ft int
+.Fn tcdrain "int fd"
+.Ft int
+.Fn tcflow "int fd" "int action"
+.Ft int
+.Fn tcflush "int fd" "int action"
+.Ft int
+.Fn tcsendbreak "int fd" "int len"
+.Sh DESCRIPTION
+The
+.Nm tcdrain
+function waits until all output written to the terminal referenced by
+.Fa fd
+has been transmitted to the terminal.
+.Pp
+The
+.Nm tcflow
+function suspends transmission of data to or the reception of data from
+the terminal referenced by
+.Fa fd
+depending on the value of
+.Fa action .
+The value of
+.Fa action
+must be one of the following:
+.Bl -tag -width "TCIOFF"
+.It Fa TCOOFF
+Suspend output.
+.It Fa TCOON
+Restart suspended output.
+.It Fa TCIOFF
+Transmit a STOP character, which is intended to cause the terminal to stop
+transmitting data to the system.
+(See the description of IXOFF in the
+.Ql Input Modes
+section of
+.Xr termios 4 ).
+.It Fa TCION
+Transmit a START character, which is intended to cause the terminal to start
+transmitting data to the system.
+(See the description of IXOFF in the
+.Ql Input Modes
+section of
+.Xr termios 4 ).
+.El
+.Pp
+The
+.Nm tcflush
+function discards any data written to the terminal referenced by
+.Fa fd
+which has not been transmitted to the terminal, or any data received
+from the terminal but not yet read, depending on the value of
+.Fa action .
+The value of
+.Fa action
+must be one of the following:
+.Bl -tag -width "TCIOFLUSH"
+.It Fa TCIFLUSH
+Flush data received but not read.
+.It Fa TCOFLUSH
+Flush data written but not transmitted.
+.It Fa TCIOFLUSH
+Flush both data received but not read and data written but not transmitted.
+.El
+.Pp
+The
+.Nm tcsendbreak
+function transmits a continuous stream of zero-valued bits for four-tenths
+of a second to the terminal referenced by
+.Fa fd .
+The
+.Fa len
+parameter is ignored in this implementation.
+.Sh RETURN VALUES
+Upon successful completion, all of these functions return a value of zero.
+.Sh ERRORS
+If any error occurs, a value of -1 is returned and the global variable
+.Va errno
+is set to indicate the error, as follows:
+.Bl -tag -width Er
+.It Bq Er EBADF
+The
+.Fa fd
+argument is not a valid file descriptor.
+.It Bq Er EINVAL
+The
+.Fa action
+argument is not a proper value.
+.It Bq Er ENOTTY
+The file associated with
+.Fa fd
+is not a terminal.
+.It Bq Er EINTR
+A signal interrupted the
+.Nm tcdrain
+function.
+.El
+.Sh SEE ALSO
+.Xr tcsetattr 3 ,
+.Xr termios 4
+.Sh STANDARDS
+The
+.Nm tcsendbreak ,
+.Nm tcdrain ,
+.Nm tcflush
+and
+.Nm tcflow
+functions are expected to be compliant with the
+.St -p1003.1-88
+specification.

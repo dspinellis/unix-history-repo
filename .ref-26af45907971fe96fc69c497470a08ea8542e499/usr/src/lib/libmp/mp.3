@@ -1,0 +1,247 @@
+.\" Copyright (c) 1986, 1991 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.proprietary.roff%
+.\"
+.\"	@(#)mp.3	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt MP 3
+.Os BSD 4.3
+.Sh NAME
+.Nm fmin ,
+.Nm fmout ,
+.Nm gcd ,
+.Nm invert ,
+.Nm itom
+.Nm m_in ,
+.Nm m_out ,
+.Nm madd ,
+.Nm mcmp,
+.Nm mdiv ,
+.Nm min ,
+.Nm mout ,
+.Nm move ,
+.Nm msqrt ,
+.Nm msub ,
+.Nm mult ,
+.Nm omin ,
+.Nm omout ,
+.Nm pow ,
+.Nm rpow ,
+.Nm sdiv ,
+.Nd multiple precision integer arithmetic
+.Sh SYNOPSIS
+.Fd #include <mp.h>
+.Fd #include <stdio.h>
+.Fd "typedef struct mint { int len; short *val; } MINT;"
+.Fn madd "MINT *a" "MINT *b" "MINT *c"
+.Fn msub "MINT *a" "MINT *b" "MINT *c"
+.Fn mult "MINT *a" "MINT *b" "MINT *c"
+.Fn mdiv "MINT *a" "MINT *b" "MINT *q" "short r"
+.Fn pow "MINT *a" "MINT *b" m "MINT *c"
+.Fn gcd "MINT *a" "MINT *b" "MINT *c"
+.Fn invert "MINT *a" "MINT *b" "MINT *c"
+.Fn rpow "MINT *a" "short n" "MINT *c"
+.Fn msqrt "MINT *a" "MINT *b" "short r"
+.Fn mcmp "MINT *a" "MINT *b"
+.Fn move "MINT *a" "MINT *b"
+.Fn min "MINT *a"
+.Fn omin "MINT *a"
+.Fn fmin "MINT *a" "FILE *f"
+.Fn m_in "MINT *a" "int n" "FILE *f"
+.Fn mout "MINT *a"
+.Fn omout "MINT *a"
+.Fn fmout "MINT *a" "FILE *f"
+.Fn m_out "MINT *a" "int n" "FILE *f"
+.Fn sdiv "MINT *a" "short n" "MINT *q" "short r"
+.Fn itom "short n"
+.Sh DESCRIPTION
+.Bf -symbolic
+The interface for this library is expected to change.
+.Ef
+.Pp
+These functions operate on integers of variable length.
+The function
+.Fn itom
+allocates space for an integer of length
+.Fa n
+which may be accessed via the returned
+.Fa MINT
+pointer.
+The underlying storage scheme is transparent to the user.
+.Pp
+.Bl -tag -width "mdivXXX" -compact
+.It Fn fmin
+.It Fn fmout
+Convert decimal input and output using file
+.Fa f .
+.Pp
+.It Fn gcd
+Finds the greatest common denominator of
+.Fa a
+and
+.Fa b ,
+storing the result
+in
+.Fa c .
+.Pp
+.It Fn invert
+Computes
+.Fa c
+such that
+.Fa a Ns * Fa c No mod
+.Fa b
+= 1,
+for
+.Fa a
+and
+.Fa b
+relatively prime.
+.Pp
+.It Fn m_in
+.It Fn m_out
+.Tn I/O
+with arbitrary radix
+.Fa n .
+.Pp
+.It Fn madd
+The sum of
+.Fa a
+and
+.Fa b
+is stored in
+.Fa c .
+.Pp
+.It Fn mcmp
+Returns a negative, zero or positive integer value when
+.Fa a
+is less than, equal to or greater than
+.Fa b ,
+respectively.
+.It Fn move
+Copies
+.Fa a
+to
+.Fa b .
+.Pp
+.It Fn min
+.It Fn mout
+Convert decimal input and output.
+.Pp
+.It Fn mdiv
+Divides
+.Fa a
+by
+.Fa b
+and stores the quotient in
+.Fa q
+and the remainder in
+.Fa r .
+.Pp
+.It Fn msqrt
+Calculates the integer square root of
+.Fa a
+in
+.Fa b
+and places the remainder in
+.Fa r .
+.Pp
+.It Fn msub
+The difference of
+.Fa a
+and
+.Fa b
+is stored in
+.Fa c .
+.Pp
+.It Fn mult
+The product of
+.Fa a
+and
+.Fa b
+is stored in
+.Fa c .
+.Pp
+.It Fn omin
+.It Fn omout
+Convert octal input and output.
+.Pp
+.It Fn pow
+Calculates
+the value of
+.Fa a
+raised to the
+full multiple precision exponent
+.Fa b ,
+the result is reduced modulo
+.Fa m
+and stored in
+.Fa c .
+.Pp
+.It Fn rpow
+Calculates
+the value of
+.Fa a
+raised to the (``regular'' integral) power
+.Fa n
+and stores the result in
+.Fa c .
+.Pp
+.It Fn sdiv
+(Short divisor.)
+Divides
+.Fa a
+by the short integer
+.Fa b
+and stores the quotient in
+.Fa q
+and the remainder in short integer
+.Fa r .
+On input, records should have the form of
+strings of digits terminated by a newline;
+output records have a similar form.
+.El
+.Sh FILES
+.Bl -tag -width /usr/include/mp.h -compact
+.It Pa /usr/lib/libmp.a
+object code library
+.It Pa /usr/include/mp.h
+include file
+.El
+.Sh SEE ALSO
+.Xr dc 1 ,
+.Xr bc 1
+.Sh HISTORY
+A
+.Fn gcd ,
+.Fn itom ,
+.Fn madd ,
+.Fn mdiv ,
+.Fn min ,
+.Fn mout ,
+.Fn msqrt ,
+.Fn msub ,
+.Fn mult ,
+.Fn pow ,
+.Fn rpow ,
+and
+.Fn sdiv
+function appeared in
+.At v7 .
+.\" The rest of the functions appeared in
+.\" .Bx ??
+.Sh BUGS
+Bases for input and output should be <= 10.
+.Pp
+The interpreters
+.Xr dc 1
+and
+.Xr bc 1
+don't use this library.
+.Pp
+The input and output routines are a crock.
+.Pp
+The function name
+.Fn pow
+is also the name of a standard math library routine.

@@ -1,0 +1,30 @@
+.\" Copyright (c) 1983, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.proprietary.roff%
+.\"
+.\"	@(#)long.3	8.1 (Berkeley) %G%
+.\"
+.TH LONG 3F ""
+.UC 5
+.SH NAME
+long, short \- integer object conversion
+.SH SYNOPSIS
+.B integer*4 function long (int2)
+.br
+.B integer*2 int2
+.sp 1
+.B integer*2 function short (int4)
+.br
+.B integer*4 int4
+.SH DESCRIPTION
+These functions provide conversion between short and long integer objects.
+.I Long
+is useful when constants are used in calls to library routines and
+the code is to be compiled with ``-i2''.
+.I Short
+is useful in similar context when an otherwise long object must be
+passed as a short integer.
+.SH FILES
+.ie \nM /usr/ucb/lib/libF77.a
+.el /usr/lib/libF77.a

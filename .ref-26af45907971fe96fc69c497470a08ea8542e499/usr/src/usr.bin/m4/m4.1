@@ -1,0 +1,367 @@
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" The code is derived from software contributed to Berkeley by
+.\" Ozan Yigit at York University.
+.\"
+.\" %sccs.include.proprietary.man%
+.\"
+.\"	@(#)m4.1	6.12 (Berkeley) %G%
+.\"
+.Dd 
+.Os ATT 7
+.Dt M4 1
+.Sh NAME
+.Nm m4
+.Nd macro language preprocessor for
+.Xr ratfor 1
+and
+.Xr pascal 1
+.Sh SYNOPSIS
+.Nm m4
+.Op options
+.Sh DESCRIPTION
+.Nm M4
+is a macro language preprocessor for Ratfor, Pascal, and similar languages
+which do not have a built-in macro processing capability.
+.Nm M4
+reads standard input, and writes the results to the standard output.
+.Pp
+The options and their effects are as follows:
+.Pp
+.Sm off
+.Bl -tag -width _Dname[=Val]
+.It Fl D Ar name Op Ar \&=Val
+.Sm on
+Defines
+.Ar name
+to
+.Ar val
+or to null in
+the absence of
+.Ar val .
+.It Fl U Ns Ar name
+Undefines
+.Ar name .
+.El
+.Pp
+The
+.Nm m4
+processor provides a kind of
+.Nm C
+like syntax and
+some of the macro functions will
+be familiar:
+.Bl -tag -width \&undiver
+.It Ic define
+.Ar define(name [, val])
+the second argument is installed
+as the value of the macro
+whose name is the first argument.
+If there is no second argument,
+the value is null.
+Each occurrence of
+.Ic $ Ns Ar n
+in the replacement text,
+where
+.Ar n
+is a digit,
+is replaced by the
+.Ar n Ns 'th
+argument.
+Argument 0 is the name of the macro;
+missing arguments are replaced by the null string.
+.It Ic defn
+.Ar defn(name [, name ...])
+returns the quoted definition
+of its argument(s).
+Useful in renaming macros.
+.It Ic undefine
+.Ar undefine(name [, name ...])
+removes the definition of
+the macro(s) named.
+If there is
+more than one definition for the named macro, (due to previous use of
+.Ic pushdef )
+all definitions are removed.
+.It Ic  pushdef
+.Ar pushdef(name [, val])
+like
+.Ic define  ,
+but saves any previous definition by stacking the current definition.
+.It Ic popdef
+.Ar popdef(name [, name ...])
+removes current definition of its argument(s),
+exposing the previous one if any.
+.It Ic ifdef
+.Ar ifdef(name, if-def [, ifnot-def])
+if the first argument is defined,
+the value is the second argument,
+otherwise the third.
+If there is no third argument, the value is null.
+A word indicating the current operating system is predefined
+(e.g.
+.I unix
+or
+.IR vms ).
+.It Ic shift
+.Ar shift(arg, arg, arg, ...)
+returns all but its first argument.
+The other arguments are quoted and pushed back with
+commas in between.
+The quoting nullifies the effect of the extra scan that
+will subsequently be performed.
+.It Ic changequote
+.Ar changequote(lqchar, rqchar)
+change quote symbols to the
+first and second arguments.
+With no arguments, the quotes are reset back to the default
+characters (i.e.,
+.Ic \*(ga
+and
+.Ic \*(aa ).
+.It Ic changecom
+.Ar changecom(lcchar, rcchar)
+change left and right
+comment markers from the default
+.Ic #
+and
+.Ic newline  .
+With no arguments, the comment mechanism is reset back to
+the default characters.
+With one argument, the left marker becomes the argument and
+the right marker becomes newline.
+With two arguments, both markers are affected.
+.It Ic divert
+.Ar divert(divnum)
+.Nm m4
+maintains 10 output streams,
+numbered 0-9.  initially stream 0 is the current stream.
+The
+.Ic divert
+macro changes the current output stream to its (digit-string)
+argument.
+Output diverted to a stream other than 0 through 9
+disappears into bitbucket.
+.It Ic undivert
+.Ar undivert([divnum [, divnum ...])
+causes immediate output
+of text from diversions named as
+argument(s), or all diversions if no argument.
+Text may be undiverted into another diversion.
+Undiverting discards the diverted text. At the end of input processing,
+.Nm M4
+forces an automatic
+.Ic undivert  ,
+unless
+.Ic m4wrap
+is defined.
+.It Ic divnum
+.Ar divnum()
+returns the value of the current output stream.
+.It Ic dnl
+.Ar dnl()
+reads and discards characters up to and including the next newline.
+.It Ic ifelse
+.Ar ifelse(arg, arg, if-same [, ifnot-same \&| arg,\ arg\ ...])
+has
+three or more arguments.
+If the first argument is the same string as the second,
+then the value is the third argument.
+If not, and if there are more than four arguments, the process is
+repeated with arguments 4, 5, 6 and 7.
+Otherwise, the value is either the fourth string, or, if it is not present,
+null.
+.It Ic incr
+.Ar incr(num)
+returns the value of its argument incremented by 1.
+The value of the argument is calculated
+by interpreting an initial digit-string as a decimal number.
+.It Ic decr
+.Ar decr(num)
+returns the value of its argument decremented by 1.
+.It Ic eval
+.Ar eval(expression)
+evaluates its argument as a constant expression,
+using integer arithmetic.
+The evaluation mechanism is very similar to that of
+.Xr cpp
+(#if expression).
+The expression can involve only integer constants and character constants,
+possibly connected by the binary operators
+.Bd -literal -offset indent
+*     /     %     +     -     >>    <<    <     >
+      <=    >=    ==    !=    &     ^     &&
+.Ed
+.Pp
+or the unary operators
+.Ic  \&~ \&!
+or by the ternary operator
+.Ic  \&? \&:  .
+Parentheses may be used for grouping. Octal numbers may be specified as
+in C.
+.It Ic len
+.Ar len(string)
+returns the number of characters in its argument.
+.It Ic index
+.Ar index(search-string, string)
+returns the position
+in its first argument where the second argument
+begins (zero origin),
+or \-1 if the second argument does not occur.
+.It Ic substr
+.Ar substr(string, index [, length])
+returns a substring of its first argument.
+The second argument is a zero origin
+number selecting the first character (internally treated as an expression);
+the third argument indicates the length of the substring.
+A missing third argument is taken to be large enough to extend to
+the end of the first string.
+.It Ic translit
+.Ar translit(source, from [, to])
+transliterates
+the characters in its first argument
+from the set given by the second argument to the set given by the third.
+If the third argument is shorter than the second, all extra characters
+in the second argument are deleted from the first argument. If the third
+argument is missing altogether, all characters in the second argument are
+deleted from the first argument.
+.It Ic include
+.Ar include(filename)
+returns
+the contents of the file named in the argument.
+.It Ic sinclude
+.Ar sinclude(filename)
+is identical to
+.Ic include  ,
+except that it
+says nothing if the file is inaccessible.
+.It Ic paste
+.Ar paste(filename)
+returns
+the contents of the file named in the argument without any
+processing, unlike
+.Ic include .
+.It Ic spaste
+.Ar spaste(filename)
+is identical to
+.Ic paste  ,
+except that it says nothing if the file is inaccessible.
+.It Ic syscmd
+.Ar syscmd(command)
+executes the
+.Ux
+command given in the first argument.
+No value is returned.
+.It Ic sysval
+.Ar sysval()
+is the return code from the last call to
+.Ic syscmd  .
+.It Ic maketemp
+.Ar maketemp(string)
+fills in a string of
+.Li XXXXXX
+in its argument with the current process
+ID.
+.It Ic m4exit
+.Ar m4exit([exitcode])
+causes immediate exit from
+.Nm m4  .
+Argument 1, if given, is the exit code;
+the default is 0.
+.It Ic m4wrap
+.Ar m4wrap(m4-macro-or-built-in)
+argument 1 will be pushed back at final
+.Ic EOF  ;
+.Dl example: m4wrap(`dumptable()').
+.It Ic errprint
+.Ar errprint(str [, str, str, ...])
+prints its
+argument(s) on stderr. If there is more than one argument,
+each argument is separated by a space during the output.
+.It Ic dumpdef
+.Ar dumpdef([name, name, ...])
+prints current names and definitions,
+for the named items, or for all if no arguments are given.
+.El
+.Sh AUTHOR
+Ozan S. Yigit (oz)
+.Sh BUGS
+A sufficiently complex
+.Nm M4
+macro set is about as readable
+as
+.Tn APL  .
+.Pp
+All complex uses of
+.Nm M4
+require the ability to program in deep recursion.
+Previous lisp experience is recommended.
+.Sh EXAMPLES
+The following macro program illustrates the type of things that
+can be done with
+.Nm M4 .
+.Bd -literal -offset indent
+changequote(<,>) define(HASHVAL,99) dnl
+define(hash,<expr(str(substr($1,1),0)%HASHVAL)>) dnl
+define(str,
+	<ifelse($1,",$2,
+	\t<str(substr(<$1>,1),<expr($2+'substr($1,0,1)')>)>)
+	>) dnl
+define(KEYWORD,<$1,hash($1),>) dnl
+define(TSTART,
+<struct prehash {
+	char *keyword;
+	int   hashval;
+} keytab[] = {>) dnl
+define(TEND,<	"",0
+};>)
+dnl
+.Ed
+.Pp
+Thus a keyword table containing the keyword string and its pre-calculated
+hash value may be generated thus:
+.Bd -literal -offset indent
+TSTART
+	KEYWORD("foo")
+	KEYWORD("bar")
+	KEYWORD("baz")
+TEND
+.Ed
+.Pp
+which will expand into:
+.Bd -literal -offset indent
+struct prehash {
+	char *keyword;
+	int   hashval;
+} keytab[] = {
+	"foo",27,
+	"bar",12,
+	"baz",20,
+	"",0
+};
+.Ed
+.Pp
+Presumably, such a table would speed up the installation of the
+keywords into a dynamic hash table. (Note that the above macro
+cannot be used with
+.Nm m4  ,
+since
+.Ic eval
+does not handle character constants.)
+.Sh SEE ALSO
+.Xr cpp 1
+.Rs
+.%T "The M4 Macro Processor"
+.%A B. W. Kernighan
+.%A D. M. Ritchie.
+.Re
+.Sh HISTORY
+An
+.Nm M4
+command appeared in
+.At v7 .
+The
+.Nm M4
+command this page describes is derived from code contributed by
+Ozan S. Yigit.

@@ -1,0 +1,179 @@
+.\" Copyright (c) 1980, 1990 Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.proprietary.roff%
+.\"
+.\"	@(#)lint.1	6.6 (Berkeley) %G%
+.\"
+.Dd 
+.Dt LINT 1
+.Os BSD 4
+.Sh NAME
+.Nm lint
+.Nd "a C program verifier"
+.Sh SYNOPSIS
+.Nm lint
+.Op Fl abchnpuvx
+.Ar file ...
+.Sh DESCRIPTION
+.Nm Lint
+attempts to detect features of the C program
+.Ar files
+which are
+likely to be bugs, or non-portable, or wasteful.
+It also checks the type usage of the program more strictly
+than the compilers.
+Among the things which are currently found are
+unreachable statements,
+loops not entered at the top,
+automatic variables declared and not used,
+and logical expressions whose value is constant.
+Moreover, the usage of functions is checked to find
+functions which return values in some places and not in others,
+functions called with varying numbers of arguments,
+and functions whose values are not used.
+.Pp
+By default, it is assumed that all the
+.Ar files
+are to be loaded together; they are checked for
+mutual compatibility.
+Function definitions for certain libraries are available to
+.Nm lint  ;
+these libraries are referred to by a
+conventional name,
+such as `\-lm', in the style of
+.Xr ld  1  .
+Arguments ending in
+.Va .ln
+are also treated as library files.  To create lint libraries,
+use the
+.Fl C
+option:
+.Pp
+.Dl lint \-Cfoo files . . .
+.Pp
+where
+.Ar files
+are the C sources of library
+.Ar foo .
+The result is a file
+.Pa llib-lfoo .ln
+in the correct library format suitable for linting programs
+using
+.Ar foo .
+.Pp
+Any number of the options in the following list
+may be used.
+The
+.Fl D ,
+.Fl U
+and
+.Fl I
+options of
+.Xr cc  1
+are also recognized as separate arguments.
+.Bl -tag -width flag
+.It Fl p
+Attempt to check portability to the
+.Tn IBM
+and
+.Tn GCOS
+dialects of C.
+.It Fl h
+Apply a number of heuristic tests to attempt to
+intuit bugs, improve style, and reduce waste.
+.It Fl b
+Report
+.Ar break
+statements that cannot be reached.
+(This is not the default because, unfortunately,
+most
+.Xr lex 1
+and many
+.Xr yacc 1
+outputs produce dozens of such comments.)
+.It Fl v
+Suppress complaints about unused arguments in functions.
+.It Fl x
+Report variables referred to by extern declarations,
+but never used.
+.It Fl a
+Report assignments of long values to int variables.
+.It Fl c
+Complain about casts which have questionable portability.
+.It Fl u
+Do not complain about functions and variables used and not
+defined, or defined and not used (this is suitable for running
+.Nm lint
+on a subset of files out of a larger program).
+.It Fl n
+Do not check compatibility against the standard library.
+.It Fl z
+Do not complain about structures that are never defined (e.g.
+using a structure pointer without knowing its contents.).
+.El
+.Pp
+.Xr Exit  2
+and other functions which do not return
+are not understood; this causes various lies.
+.Pp
+Certain conventional comments in the C source
+will change the behavior of
+.Nm lint  :
+.Bl -tag -width Ds
+.It Li /*NOTREACHED*/
+at appropriate points
+stops comments about unreachable code.
+.It Li /*VARARGS n */
+suppresses
+the usual checking for variable numbers of arguments
+in the following function declaration.
+The data types of the first
+.Ar n
+arguments are checked;
+a missing
+.Ar n
+is taken to be 0.
+.It Li /*NOSTRICT*/
+shuts off strict type checking in the next expression.
+.It Li /*ARGSUSED*/
+turns on the
+.Fl v
+option for the next function.
+.It Li /*LINTLIBRARY*/
+at the beginning of a file shuts off complaints about
+unused functions in this file.
+.Sh AUTHOR
+S.C. Johnson.  Lint library construction implemented by Edward Wang.
+.Sh FILES
+.Bl -tag -width /usr/libdata/lint/llib-port.ln -compact
+.It Pa /usr/libdata/lint/llib-lc.ln
+Declarations for standard functions.
+.It Pa /usr/libdata/lint/llib-lc
+Human readable version of above.
+.It Pa /usr/lib/lintdata/llib-port.ln
+Declarations for portable functions.
+.It Pa /usr/lib/lintdata/llib-port
+Human readable.
+.It Pa llib-l*.ln
+Library created with
+.Fl C .
+.El
+.Sh SEE ALSO
+.Xr cc 1
+.Rs
+.%A S. C. Johnson,
+.%T "Lint, a C Program Checker"
+.Re
+.Sh HISTORY
+The
+.Nm lint
+program appeared in
+.At v7 .
+.Sh BUGS
+There are some things you just
+can't
+get lint to shut up about.
+.Pp
+.Li /*NOSTRICT*/
+is not implemented in the current version (alas).

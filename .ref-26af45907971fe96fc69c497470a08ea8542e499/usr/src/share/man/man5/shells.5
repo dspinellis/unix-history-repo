@@ -1,0 +1,39 @@
+.\" Copyright (c) 1986, 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"     @(#)shells.5	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt SHELLS 5
+.Os BSD 4.2
+.Sh NAME
+.Nm shells
+.Nd shell database
+.Sh DESCRIPTION
+The
+.Nm shells
+file contains a list of the shells on the system.
+For each shell a single line should be present, consisting of the
+shell's path, relative to root.
+.Pp
+A hash mark (``#'') indicates the beginning of a comment; subsequent
+characters up to the end of the line are not interpreted by the
+routines which search the file.
+Blank lines are also ignored.
+.Sh FILES
+.Bl -tag -width /etc/shells -compact
+.It Pa /etc/shells
+The
+.Nm shells
+file resides in
+.Pa /etc .
+.El
+.Sh SEE ALSO
+.Xr getusershell 3
+.Sh HISTORY
+The
+.Nm
+file format appeared in
+.Bx 4.3 tahoe .

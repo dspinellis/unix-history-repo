@@ -1,0 +1,14 @@
+#print
+You must always remember what the computer is expecting
+from you: shell commands, editor commands, or input
+text after an 'append'.    Suppose you are
+typing append text: what do you type to get
+back to where you can type editor commands?  Type
+"answer X" where "X" is replaced by what you type.
+#copyin
+#user
+#uncopyin
+#match .
+#log
+#next
+17.2b 5

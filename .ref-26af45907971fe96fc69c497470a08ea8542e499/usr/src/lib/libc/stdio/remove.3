@@ -1,0 +1,52 @@
+.\" Copyright (c) 1990, 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" Chris Torek and the American National Standards Committee X3,
+.\" on Information Processing Systems.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)remove.3	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt REMOVE 3
+.Os
+.Sh NAME
+.Nm remove
+.Nd remove directory entry
+.Sh SYNOPSIS
+.Fd #include <stdio.h>
+.Ft int
+.Fn remove "const char *path"
+.Sh DESCRIPTION
+The
+.Fn remove
+function
+is an alias for the 
+.Xr unlink 2
+system call.
+It deletes the file referenced by
+.Fa path .
+.Sh RETURN VALUES
+Upon successful completion, 
+.Fn remove
+returns 0.
+Otherwise, \-1 is returned and the global variable
+.Va errno
+is set to indicate the error.
+.Sh ERRORS
+The
+.Fn remove
+function
+may fail and set
+.Va errno
+for any of the errors specified for the routine
+.Xr unlink 2 .
+.Sh SEE ALSO
+.Xr unlink 2
+.Sh STANDARDS
+The
+.Fn remove
+function conforms to
+.St -ansiC .

@@ -1,0 +1,207 @@
+.\" Copyright (c) 1990, 1991 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" the Systems Programming Group of the University of Utah Computer
+.\" Science Department.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)st.4	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt ST 4 hp300
+.Os
+.Sh NAME
+.Nm \&st
+.Nd
+.Tn CCS SCSI
+tape driver
+.Sh SYNOPSIS
+.Cd "tape st0 at scsi? slave ?"
+.Sh DESCRIPTION
+The
+.Nm \&st
+driver was written especially to support the Exabyte
+.Tn EXB-8200 8MM
+Cartridge 
+Tape Subsystem.  It has several extensions specific to the Exabyte,
+but should support other tape drives as long has they follow
+the
+.Tn ANSI SCSI-I
+specification.  Besides extensive use with
+an Exabyte, the driver has been tested with an
+Archive
+.Tn QIC-24
+tape drive.
+The
+.Nm \&st
+tape interface provides a standard tape drive interface 
+as described in
+.Xr mtio 4
+with the following exceptions:
+.Bl -enum
+.It
+Density is dependent on device type.  Current Exabyte hardware has
+only one density. The
+.Tn EXB-8500
+drive, when released, will have a high
+density format of
+.Tn 5.6GB .
+On an Archive
+.Tn QIC-24
+drive the driver reads both
+.Tn QIC-11
+and
+.Tn QIC-24
+formats
+but writes only
+.Tn QIC-24 .
+.It
+Only the ``raw'' interface is supported.
+.El
+.Pp
+Special Exabyte Support:
+.Pp
+The
+.Dv MTIOCGET
+.Xr ioctl 2
+call on an Exabyte returns this structure:
+.Bd -literal
+struct	mtget {
+	short mt_type;   /* type of magtape device */
+	short mt_dsreg;  /* sc_flags */
+	short mt_erreg;  /* high 8 bytes error status */
+	/* low  8 bytes percentage of Rewrites
+	if writing, ECC errors if reading */
+	short mt_resid;  /* Mbyte until end of tape */
+};
+.Ed
+.Pp
+Bit 4 in the minor device number is used
+to select long filemarks or short filemarks. A long filemark occupies
+2.12 MBytes of space on the tape, while a short filemark occupies 488 KBytes.
+A long filemark includes an erase gap while the short filemark does not.
+The tape can be positioned on the
+.Tn BOT
+side of a long filemark allowing
+data to be appended with a write operation.  Since the short filemark does not
+contain an erase gap which would allow writing it is considered to be
+non-erasable.  If either type of filemark is followed by blank tape,
+data may be appended on its
+.Tn EOT
+side.
+.Pp
+Bit 5 in the minor device number selects fixed block mode with a block
+size of 1K.  Variable length records are the default if bit 5 is not
+set.
+.Pp
+For unit 0 here are the effects of minor device bits 2,3,4,5. For other
+units add the
+.Em unit#
+to each of the device names.
+.Bl -column norewind density filemarks -offset indent
+.Em norewind	high	short	fixed
+.Em 	density	filemarks	block mode
+rst0
+nrst0	X
+rst8		X
+nrst8	X	X
+rst16			X
+nrst16	X		X
+rst24		X	X
+nrst24	X	X	X
+rst32				X
+nrst32	X			X
+rst40		X		X
+nrst40	X	X		X
+rst48			X	X
+nrst48	X		X	X
+rst56		X	X	X
+nrst56	X	X	X	X
+.El
+.Sh SEE ALSO
+.Xr mt 1 ,
+.Xr tar 1 ,
+.Xr mtio 4 ,
+.Rs
+.%T EXB-8200 8MM Cartridge Tape Subsystem Interface User Manual.
+.Re
+.Sh HISTORY
+The
+.Nm \&st
+driver
+.Ud
+.Sh BUGS
+The
+.Tn HP
+98268
+.Tn SCSI
+controller hardware can not do odd length
+.Tn DMA
+transfers.  If odd length
+.Tn DMA I/O
+is requested the driver will use the
+"Program Transfer Mode" of the Fujitsu
+.Tn MB87030
+chip. Read requests are
+normally even length for which a
+.Tn DMA
+transfer is used. If, however, the
+driver detects that a odd length read has happened (when a even length
+was requested) it will issue the
+.Dv EIO
+error and the last byte of the read
+data will be 0x00. Odd length read requests must match the size of the
+requested data block on tape.
+.Pp
+The following only applies when using long filemarks. Short filemarks can
+not be overwritten.
+.Bd -filled -offset 4n
+Due to the helical scan and the erase mechanism, there is a writing
+limitation on Exabyte drives.
+.Dq Li tar r
+or
+.Dq Li tar u
+will not work
+.Pf ( Dq Li tar c
+is ok).  One can only start writing at  1) beginning of tape, 2) on the
+end of what was last written, 3) "front" side of a regular (long) filemark.
+Say you have a tape with 3 tar files on it, want to save the first
+file, and want to begin writing over the 2nd file.
+.Pp
+On a normal 1/4" or 1/2" drive you would do:
+.Pp
+.Li "mt fsf 1; tar cf /dev/nrst0 ..."
+.Pp
+but for an Exabyte you need to do:
+.Pp
+.Li "mt fsf 1; mt bsf 1; mt weof 1; tar cf /dev/nrst0 ..."
+.Pp
+The regular long filemark consists of an erased zone 3.8" long
+(needed to begin a write).  In this case, the first filemark is
+rewritten in place, which creates an erased zone
+.Em after
+it, clearing the
+way to write more on the tape.  The erase head is not helical.
+.Pp
+One can position a tape to the end of what was last written by reading
+until a
+.Tn \*qBLANK CHECK\*q
+error is returned.  Writing can be started at this
+point.  (This applies to both long and short filemarks.)  The tape does
+not become positioned somewhere down the "erased" area as does a
+conventional magtape.  One can issue multiple reads at the
+.Tn \*qBLANK CHECK\*q
+error, but the Exabyte stays positioned at the beginning of the
+blank area, ready to accept write commands.  File skip operations do
+not stop at blank tape and will run into old data or run to the end of
+the tape, so you have to be careful not to
+.Dq Li mt fsf too_many .
+.Ed
+.Pp
+Archive support gets confused if asked to moved more filemarks than there are
+on the tape.
+.Pp
+This man page needs some work.  Some of these are not really bugs,
+just unavoidable consequences of the hardware.

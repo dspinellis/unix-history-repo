@@ -1,0 +1,79 @@
+.\" Copyright (c) 1989, 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"     @(#)whatis.1	6.7 (Berkeley) %G%
+.\"
+.Dd 
+.Dt WHATIS 1
+.Os BSD 4
+.Sh NAME
+.Nm whatis
+.Nd describe what a command is
+.Sh SYNOPSIS
+.Nm whatis
+.Op Fl M Ar path
+.Op Fl m Ar path
+.Ar command Ar ...
+.Sh DESCRIPTION
+.Nm Whatis
+looks up a given command and gives the header line from the manual page.
+You can then use the
+.Xr man 1
+command to get more information.
+.Pp
+The options are as follows:
+.Bl -tag -width Fl
+.It Fl M Ar path
+Override the list of standard directories
+.Nm whatis
+searches for its database named
+.Dq Pa whatis.db .
+The supplied
+.Ar path
+must be a colon
+.Dq \&:
+separated list of directories.
+This search path may also be set using the environment variable
+.Ev MANPATH .
+.It Fl m Ar path
+Augment the list of standard directories
+.Nm whatis
+searches for its database named
+.Dq Pa whatis.db .
+The supplied
+.Ar path
+must be a colon
+.Dq \&:
+separated list of directories.
+These directories will be searched before the standard directories
+or the directories supplied with the
+.Fl M
+option or the
+.Ev MANPATH
+environment variable are searched.
+.El
+.Sh ENVIRONMENT
+.Bl -tag -width MANPATH
+.It Ev MANPATH
+The standard search path used by
+.Xr man 1
+may be overridden by specifying a path in the
+.Ev MANPATH
+environment variable.
+.El
+.Sh FILES
+.Bl -tag -width whatis.db
+.It Pa whatis.db
+name of the whatis database
+.El
+.Sh SEE ALSO
+.Xr apropos 1 ,
+.Xr man 1 ,
+.Xr whereis 1
+.Sh HISTORY
+The
+.Nm
+command appeared in
+.Bx 3.0 .

@@ -1,0 +1,82 @@
+.\" Copyright (c) 1986, 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)ex.4	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt EX 4 vax
+.Os BSD 4.2
+.Sh NAME
+.Nm ex
+.Nd Excelan 10 Mb/s Ethernet interface
+.Sh SYNOPSIS
+.Cd "device ex0 at uba0 csr 164000 vector excdint"
+.Sh DESCRIPTION
+The
+.Nm ex
+interface provides access to a 10 Mb/s Ethernet network through
+an Excelan controller used as a link-layer interface.
+.Pp
+Each of the host's network addresses
+is specified at boot time with an
+.Dv SIOCSIFADDR
+.Xr ioctl 2 .
+The
+.Nm ex
+interface employs the address resolution protocol described in
+.Xr arp 4
+to dynamically map between Internet and Ethernet addresses on the local
+network.
+.Pp
+The interface normally tries to use a
+.Dq trailer
+encapsulation
+to minimize copying data on input and output.
+The use of trailers is negotiated with
+.Tn ARP .
+This negotiation may be disabled, on a per-interface basis,
+by setting the
+.Dv IFF_NOTRAILERS
+flag with an
+.Dv SIOCSIFFLAGS
+.Xr ioctl .
+.Sh DIAGNOSTICS
+.Bl -diag
+.It "ex%d: HW %c.%c, NX %c.%c, hardware address %s."
+This provides firmware revisions levels, and is expected during
+autoconfiguration.
+.Pp
+.It ex%d: can't initialize.
+There was a failure in allocating unibus resources for the device.
+.Pp
+.It "ex%d: configuration failed; cc = %x."
+The hardware indicated an error when trying to initalize itself.
+The error code returned is described at length in the device
+Reference Manual.
+.Pp
+.It ex%d: receive error %b.
+The hardware indicated an error
+in reading a packet from the cable.
+Specific Error bits are provided
+.Pp
+.It ex%d: transmit error %b.
+The hardware indicated an error
+in transmitting a packet to the cable or an illegally sized packet.
+Specific Error bits are provided
+.Pp
+.It ex%d: can't handle af%d.
+The interface was handed
+a message with addresses formatted in an unsuitable address
+family; the packet was dropped.
+.El
+.Sh SEE ALSO
+.Xr netintro 4 ,
+.Xr inet 4 ,
+.Xr arp 4
+.Sh HISTORY
+The
+.Nm
+driver appeared in
+.Bx 4.3 .

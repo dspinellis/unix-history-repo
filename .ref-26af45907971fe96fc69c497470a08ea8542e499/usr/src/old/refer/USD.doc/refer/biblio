@@ -1,0 +1,19 @@
+%A Mike E. Lesk
+%T Some Applications of Inverted Indexes on the Unix System
+%J Unix Programmer's Manual
+%I Bell Laboratories
+%C Murray Hill, NJ
+%D 1978
+%V 2a
+%X Difficult to read paper that dwells on indexing strategies,
+giving little practical advice about using \efBrefer\efP.
+
+%A Alfred V. Aho
+%A Brian W. Kernighan
+%A Peter J. Weinberger
+%T Awk \(em A Pattern Scanning and Processing Language
+%J Unix Programmer's Manual
+%I Bell Laboratories
+%C Murray Hill, NJ
+%D 1978
+%V 2a

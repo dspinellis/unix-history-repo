@@ -1,0 +1,126 @@
+.\" Copyright (c) 1983, 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)ps.4	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt PS 4 vax
+.Os BSD 4.2
+.Sh NAME
+.Nm ps
+.Nd Evans and Sutherland Picture System 2 graphics device interface
+.Sh SYNOPSIS
+.Cd "device ps0 at uba? csr 0172460 vector psclockintr pssystemintr"
+.Sh DESCRIPTION
+The
+.Nm ps
+driver provides access
+to an Evans and
+Sutherland Picture System 2 graphics device.
+Each minor device is a new
+.Tn PS2 .
+When the device is opened, its interface registers are mapped,
+via virtual memory, into a user process's address space.
+This allows the user process very high bandwidth to the device
+with no system call overhead.
+.Pp
+.Tn DMA
+to and from the
+.Tn PS2
+is not supported. All read and write
+system calls will fail.
+All data is moved to and from the
+.Tn PS2
+via programmed
+.Tn I/O
+using
+the device's interface registers.
+.Pp
+Commands are fed to and from the driver using the following
+.Xr ioctl 2 Ns s :
+.Bl -tag -width PSIOSINGLEREFRESH
+.It Dv PSIOGETADDR
+Returns the virtual address through which the user process can access
+the device's interface registers.
+.It Dv PSIOAUTOREFRESH
+Start auto refreshing the screen.
+The argument is an address in user space where the following data resides.
+The first longword is a
+.Em count
+of the number of static refresh buffers.
+The next
+.Em count
+longwords are the addresses in refresh memory where
+the refresh buffers lie.
+The driver will cycle through these refresh buffers displaying them one by one
+on the screen.
+.It Dv PSIOAUTOMAP
+Start automatically passing the display file through the matrix processor and
+into the refresh buffer.
+The argument is an address in user memory where the following data resides.
+The first longword is a
+.Em count
+of the number of display files to operate on.
+The next
+.Em count
+longwords are the address of these display files.
+The final longword is the address in refresh buffer memory where transformed
+coordinates are to be placed if the driver is not in double buffer mode (see
+below).
+.It Dv PSIODOUBLEBUFFER
+Cause the driver to double buffer the output from the map that
+is going to the refresh buffer.
+The argument is again a user space address where the real arguments are stored.
+The first argument is the starting address of refresh memory where the two
+double buffers are located.
+The second argument is the length of each double buffer.
+The refresh mechanism displays the current double buffer, in addition
+to its static refresh lists, when in double buffer mode.
+.It Dv PSIOSINGLEREFRESH
+Single step the refresh process. That is, the driver does not continually
+refresh the screen.
+.It Dv PSIOSINGLEMAP
+Single step the matrix process.
+The driver does not automatically feed display files through the matrix unit.
+.It Dv PSIOSINGLEBUFFER
+Turn off double buffering.
+.It Dv PSIOTIMEREFRESH
+The argument is a count of the number of refresh interrupts to take
+before turning off the screen.  This is used to do time exposures.
+.It Dv PSIOWAITREFRESH
+Suspend the user process until a refresh interrupt has occurred.
+If in
+.Dv TIMEREFRESH
+mode, suspend until count refreshes have occurred.
+.It Dv PSIOSTOPREFRESH
+Wait for the next refresh, stop all refreshes, and then return to user process.
+.It Dv PSIOWAITMAP
+Wait until a map done interrupt has occurred.
+.It Dv PSIOSTOPMAP
+Wait for a map done interrupt, do not restart the map, and then
+return to the user.
+.El
+.Sh FILES
+.Bl -tag -width /dev/psxx
+.It Pa /dev/ps
+.El
+.Sh DIAGNOSTICS
+.Bl -diag
+.It ps device intr.
+.It ps dma intr.
+An interrupt was received from the device. 
+This shouldn't happen,
+check your device configuration for overlapping interrupt vectors.
+.El
+.Sh HISTORY
+The
+.Nm
+driver appeared in
+.Bx 4.2 .
+.Sh BUGS
+An invalid access (e.g., longword) to a mapped interface register
+can cause the system to crash with a machine check.
+A user process could possibly cause infinite interrupts hence
+bringing things to a crawl.

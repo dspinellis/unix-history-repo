@@ -1,0 +1,105 @@
+.\" Copyright (c) 1989, 1991 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"	@(#)nfsd.8	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt NFSD 8
+.Os
+.Sh NAME
+.Nm nfsd
+.Nd remote
+.Tn NFS
+server
+.Sh SYNOPSIS
+.Nm nfsd
+.Op Fl r
+.Op Fl u
+.Op Fl t
+.Op Ar numprocs
+.Sh DESCRIPTION
+.Nm Nfsd
+runs on a server machine to service
+.Tn NFS
+requests from client machines.
+At least one
+.Nm nfsd
+must be running for a machine to operate as a server.
+The options
+.Fl u
+and
+.Fl t
+are used to indicate which transport protocols are to be served.
+.Pp
+Options available to
+.Nm nfsd :
+.Bl -tag -width Ds
+.It Fl r
+Register the
+.Tn NFS
+service with
+.Xr portmap 8
+without creating any servers. This option can be used along with the
+.Fl u
+or
+.Fl t
+options to re-register NFS if the portmap server is restarted.
+.It Fl t
+Serve
+.Tn TCP NFS
+clients.
+.It Fl u
+Serve
+.Tn UDP NFS
+clients.
+.It Ar numprocs
+Specifies how many servers to fork off.
+.El
+.Pp
+If neither
+.Fl u
+or
+.Fl t
+are specified,
+.Ar numprocs
+servers for
+.Tn UDP
+transport are started. (compatibility)
+If
+.Ar numprocs
+is not specified, it defaults to 4.
+.Pp
+For example:
+.Bd -literal
+nfsd \-u \-t 6
+.Ed
+.Bl -item -offset indent
+.It
+Serves
+.Tn UDP
+and
+.Tn TCP
+transports using 6 daemons in the kernel.
+.Pp
+A server should typically run enough daemons to handle
+the maximum level of concurrency from its clients,
+typically four to six.
+.Pp
+.Nm Nfsd
+listens for service requests at the port indicated in the
+.Tn NFS
+server specification; see
+.%T "Network File System Protocol Specification" ,
+RFC1094.
+.Sh SEE ALSO
+.Xr nfsstat 1 ,
+.Xr nfssvc 2 ,
+.Xr mountd 8 ,
+.Xr portmap 8
+.Sh HISTORY
+The
+.Nm
+command is
+.Ud .

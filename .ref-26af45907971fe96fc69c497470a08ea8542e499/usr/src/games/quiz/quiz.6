@@ -1,0 +1,93 @@
+.\" Copyright (c) 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" Jim R. Oldroyd at The Instruction Set.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"	@(#)quiz.6	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt QUIZ 6
+.Os
+.Sh NAME
+.Nm quiz
+.Nd random knowledge tests
+.Sh SYNOPSIS
+.Nm quiz
+.Op Fl t
+.Op Fl i Ar file
+.Op Ar question answer
+.Sh DESCRIPTION
+The
+.Nm quiz
+utility tests your knowledge of random facts.
+It has a database of subjects from which you can choose.
+With no arguments,
+.Nm quiz
+displays the list of available subjects.
+.Pp
+The options are as follows:
+.Bl -tag -width indent
+.It Fl t
+Use tutorial mode, in which questions are repeated later if you didn't get
+them right the first time, and new questions are presented less frequently
+to help you learn the older ones.
+.It Fl i
+Specify an alternate index file.
+.El
+.Pp
+Subjects are divided into categories.
+You can pick any two categories from the same subject.
+.Nm Quiz
+will ask questions from the first category and it expects answers from
+the second category.
+For example, the command ``quiz victim killer'' asks questions which are
+the names of victims, and expects you to answer with the cause of their
+untimely demise, whereas the command ``quiz killer victim'' works the
+other way around.
+.Pp
+If you get the answer wrong,
+.Nm quiz
+lets you try again.
+To see the right answer, enter a blank line.
+.Sh "Index and Data File Syntax"
+The index and data files have a similar syntax.
+Lines in them consist of several categories separated by colons.
+The categories are regular expressions formed using the following
+meta-characters:
+.sp
+.Bl -tag -width "pat|pat" -compact -offset indent
+.It pat|pat
+alternate patterns
+.It {pat}
+optional pattern
+.It [pat]
+delimiters, as in pat[pat|pat]pat
+.El
+.Pp
+In an index file, each line represents a subject.
+The first category in each subject is the pathname of the data file for
+the subject.
+The remaining categories are regular expressions for the titles of each
+category in the subject.
+.Pp
+In data files, each line represents a question/answer set.
+Each category is the information for the question/answer for that category.
+.Pp
+The backslash character (``\e'') is used to quote syntactically significant
+characters, or at the end of a line to signify that a continuation line
+follows.
+.Pp
+If either a question or its answer is empty,
+.Nm quiz
+will refrain from asking it.
+.Sh FILES
+.Bl -tag -width /usr/share/games/quiz.db -compact
+.It Pa /usr/share/games/quiz.db
+The default index and data files.
+.El
+.Sh BUGS
+.Nm Quiz
+is pretty cynical about certain subjects.

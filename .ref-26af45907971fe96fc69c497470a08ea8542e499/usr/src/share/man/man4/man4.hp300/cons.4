@@ -1,0 +1,52 @@
+.\" Copyright (c) 1990, 1991 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" the Systems Programming Group of the University of Utah Computer
+.\" Science Department.
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)cons.4	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt CONS 4 hp300
+.Os
+.Sh NAME
+.Nm cons
+.Nd
+.Tn HP300
+console interface
+.Sh DESCRIPTION
+This release supports a
+.Dq virtual
+console device used for
+.Em kernel printf
+messages and accessed in user mode via
+.Pa /dev/console .
+It is virtual in the sense that it is attached to a hardware interface
+at boot time.
+Currently the choices are limited to:
+a bit-mapped display acting as an
+.Em internal terminal emulator
+.Dq Tn ITE ,
+the builtin serial interface
+.Xr dca 4 ,
+or a
+.Xr null 4
+console in that order.
+.Sh FILES
+.Bl -tag -width /dev/console
+.It Pa /dev/console
+.El
+.Sh SEE ALSO
+.Xr tty 4 ,
+.Xr reboot 8
+.Sh HISTORY
+The
+.Nm
+device
+.Ud
+.Sh BUGS
+You should be able to specify potential console devices at
+.Xr config 8
+time.

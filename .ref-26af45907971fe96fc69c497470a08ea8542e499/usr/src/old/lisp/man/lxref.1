@@ -1,0 +1,86 @@
+.\" Copyright (c) 1980, 1990 Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"     @(#)lxref.1	6.3 (Berkeley) %G%
+.\"
+.Dd 
+.Dt LXREF 1
+.Os BSD 4
+.Sh NAME
+.Nm lxref
+.Nd lisp cross reference program
+.Sh SYNOPSIS
+.Nm lxref
+.Op Fl Ns Ar N
+.Ar xref\-file ...
+.Op Fl a Ar source\-file ...
+.Sh DESCRIPTION
+.Nm Lxref
+reads cross reference file(s) written by the lisp compiler
+.Xr liszt 1
+and prints a cross reference listing on the standard output.
+.Xr Liszt 1
+will create a cross reference file during compilation when it is
+given the
+.Fl x
+switch.
+Cross reference files usually end in
+.Pa \&.x
+and consequently
+.Nm lxref
+will append a
+.Pa \&.x
+to the file names given if necessary.
+.Pp
+Options and arguments:
+.Bl -tag -width indent
+.It Fl Ar N
+The value
+.Ar N
+(a decimal integer)
+sets the
+.Em ignorelevel .
+If a function is called more than
+.Em ignorelevel
+times, the cross reference listing will just print the number of calls
+instead of listing each one of them.
+The default for
+.Em ignorelevel
+is 50.
+.It Fl a Ar source(s)
+Put limited cross reference information in the
+.Ar source(s)
+named.
+.Nm lxref
+will scan the source and when it comes across a definition of a function
+(that is a line beginning with
+.Li "`(def'"
+it will preceed that line with a list of the functions which call this
+function, written as a comment preceeded by
+.Li "`;.. '".
+All existing lines beginning with
+.Li "`;.. '"
+will be removed from the file.
+If the source file contains a line beginning
+.Li "`;.-'"
+then this will disable this annotation process from this point on until a
+.Li "`;.+'"
+is seen (however, lines beginning with
+.Li "`;.. '"
+will continue to be deleted).
+After the annoation is done, the original file
+.Pa foo.l
+is renamed to
+.Pa #.foo.l
+and the new file with annotation is named
+.Pa foo.l
+.El
+.Sh SEE ALSO
+.Xr lisp 1 ,
+.Xr liszt 1
+.Sh HISTORY
+.Nm Lxref
+appeared in
+.Bx 4.0 .

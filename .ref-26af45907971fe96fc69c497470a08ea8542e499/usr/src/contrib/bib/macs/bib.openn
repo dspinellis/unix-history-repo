@@ -1,0 +1,13 @@
+#
+#	"@(#)bib.openn	2.3	%G%";
+#
+#  standard open numeric format
+#
+SAD-2
+C1
+I bibinc.fullnames
+H
+T AT
+# a[ - amount to indent references
+.so \*(l]/bmac.open
+.nr a[ 5

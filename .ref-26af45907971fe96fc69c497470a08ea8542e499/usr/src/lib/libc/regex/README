@@ -1,0 +1,66 @@
+#	@(#)README	5.2 (Berkeley) %G%
+
+alpha2.1 release.
+Wed Sep 30 14:43:10 EDT 1992
+henry@zoo.toronto.edu
+
+New in alpha2.1:  Lots of little stuff, cleanup and fixes.  The one big
+thing is that regex.h is now generated, using mkh, rather than being
+supplied in the distribution; due to circularities in dependencies,
+you have to build regex.h explicitly by "make h".  The two known bugs
+have been fixed (and the regression test now checks for them), as has a
+problem with assertions not being suppressed in the absence of REDEBUG.
+No performance work yet.
+
+New in alpha2:  Backslash-anything is an ordinary character, not an
+error (except, of course, for the handful of backslashed metacharacters
+in BREs), which should reduce script breakage.  The regression test
+checks *where* null strings are supposed to match, and has generally
+been tightened up somewhat.  Small bug fixes in parameter passing (not
+harmful, but technically errors) and some other areas.  Debugging
+invoked by defining REDEBUG rather than not defining NDEBUG.
+
+New in alpha+3:  full prototyping for internal routines, using a little
+helper program, mkh, which extracts prototypes given in stylized comments.
+More minor cleanup.  Buglet fix:  it's CHAR_BIT, not CHAR_BITS.  Simple
+pre-screening of input when a literal string is known to be part of the
+RE; this does wonders for performance.
+
+New in alpha+2:  minor bits of cleanup.  Notably, the number "32" for the
+word width isn't hardwired into regexec.c any more, the public header
+file prototypes the functions if __STDC__ is defined, and some small typos
+in the manpages have been fixed.
+
+New in alpha+1:  improvements to the manual pages, and an important
+extension, the REG_STARTEND option to regexec().
+
+installation notes:
+--------
+If you have an ANSI compiler, delete limits.h, stdlib.h, and memmove.c
+(all of which are fakes for things not found on old systems), and in
+Makefile, take -Dconst= out of CFLAGS and -o out of MKHFLAGS and delete
+all references to memmove.  If you want the Berkeley __P macro used in
+prototypes, add -b to MKHFLAGS.
+
+Do not take -DPOSIX_MISTAKE out of CFLAGS.  You probably want to take
+-DREDEBUG out, to get rid of all the assertion tests, for building production
+versions after you've run the regression test.  (The regression test won't
+quite compile without it at the moment.)  You also probably want -O or
+some more complex variation for production compilation.
+
+Utils.h contains some things that just might have to be modified on
+some systems, as well as a nested include (ugh) of <assert.h>.
+
+Split.c is used for regression testing but is not part of the RE routines
+themselves.
+
+"make h" builds regex.h, which is needed for everything else.
+
+After that, just "make" will build regcomp.o, regexec.o, regfree.o,
+and regerror.o (the actual routines), bundle them together into a test
+program, and run a regression test on them.  No output is good output.
+
+"make o" builds just the .o files for the actual routines.
+
+Regex.h is for /usr/include.  All other .h files are internal only.
+--------

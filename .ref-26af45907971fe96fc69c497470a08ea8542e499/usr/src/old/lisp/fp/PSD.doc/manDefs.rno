@@ -1,0 +1,107 @@
+.\" Copyright (c) 1980 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"	@(#)manDefs.rno	6.4 (Berkeley) %G%
+.\"
+.sc
+.ta 1.0i 2.0i 3.0i 4.0i 5.0i 6.0i
+.m1 3
+.m2 2
+.m3 2
+.m4 3
+.fo''-%-''
+.de NS	\"   New section heading: enter in the table of contents
+.sh \\$1 "\\$2"
+.(x
+\\*($n.\\ \\ \\$2
+.)x
+..
+.de AP	\"   Appendix heading: enter in the table of contents
+.bp
+.sz +2
+.ce 1
+.b "\\$1"
+.sz -2
+.sp 2
+.(x
+\\$1\\ \\ 
+.)x
+..
+.de TC  \" Dump out table of contents
+.br
+.fi
+.bp
+.ls 1
+.ce 1
+.b "Table of Contents"
+.sp 2
+.xp
+.br
+.ls
+.bp
+..
+.de BB
+.sp 0.1i
+.ls 1
+.in +0.8i
+.xl -0.8i
+.ba +0.8i
+..
+.de EB
+.sp 0.3i
+.ls
+.xl +0.8i
+.br
+.in 0
+.ba -0.8i
+.lp
+..
+.ds bt \fB\s7\l'1.10m'\h'-0.55m'\L'-0.80m'\h'0.55m'\v'0.80m'\s0\fP
+.ds cm \h'-0.10m'\v'0.30m'\(de\h'0.10m'\v'-0.30m'
+.ds sa \s-4\v'-0.4m'a\v'0.4m'\s+4
+.ds sb \s-4\v'-0.4m'b\v'0.4m'\s+4
+.ds IE i.e.,
+.ds EG e.g.,
+.EQ
+delim $$
+define bottom "\*(bt"
+define compose "\*(cm"
+define equiv '~==~'
+define dd '"$$"'
+define df '"$fp"'
+define dl '"$"'
+define fs '<x sub 1 ,~x sub 2 ,...,~x sub k >'
+define qy '<y sub 1 ,~y sub 2 ,...,~y sub k >'
+define qz '<z sub 1 ,~z sub 2 ,...,~z sub k >'
+define T  'bold "T"'
+define F  'bold "F"'
+define nd '~ bold "and" ~'
+define rr '~ bold "or"~'
+define orsign % "\s-2\
+\h'.05m'\
+\v'.15m'\
+\z\
+\e\
+\e\
+\h'-.08m'\
+\z\(sl\
+\(sl\
+\h'-.1m'\
+\v'-.15m'\
+\s+2" %
+define andsign % "\s-2\
+\v'.15m'\
+\z\(sl\
+\(sl\
+\h'-.3m'\
+\z\e\
+\e\
+\v'-.15m'\
+\s+2" %
+define notmemberof ` \(mo back 80 size +2 / `
+define memberOf "^\(mo^"
+tdefine forAll % "\z\e\h'0.5m'\z\(sl\h'-.2m'\v'-0.3m'\s-4\(em\s0\v'0.3m'\h'0.25m'" ~%
+.EN
+.nr di \n(ii

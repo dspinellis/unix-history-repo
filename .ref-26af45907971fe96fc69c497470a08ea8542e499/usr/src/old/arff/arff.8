@@ -1,0 +1,123 @@
+.\" Copyright (c) 1980, 1991 Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)arff.8	6.5 (Berkeley) %G%
+.\"
+.Dd 
+.Dt ARFF 8
+.Os BSD 4
+.Sh NAME
+.Nm arff
+.Nd floppy archiver
+.Sh SYNOPSIS
+.Nm arff
+.Op Ar key
+.Op Ar name Ar ...
+.Sh DESCRIPTION
+.Nm Arff
+saves and restores files
+on
+.Tn VAX
+console media (the console floppy on the
+.Tn VAX
+11/780 and 785,
+the cassette on the 11/730, and the console RL02 on the 8600/8650).
+Its actions are controlled by the
+.Ar key
+argument.
+The
+.Ar key
+is a string of characters containing
+at most one function letter and possibly
+one or more function modifiers.
+Other arguments to the command are file
+names specifying which files are to be dumped or restored.
+The default options are correct for the RX01 floppy on the 780;
+for other console media, the
+.Fl f
+and
+.Fl m
+flags are required.
+.Pp
+Files names have restrictions, because of radix50 considerations.  They
+must be in the form 1-6 alphanumerics followed by
+.Ql \&.
+followed by
+0-3 alphanumerics.  Case distinctions are lost.  Only the trailing component
+of a pathname is used.
+.Pp
+The function portion of
+the key is specified by one of the following letters:
+.Bl -tag -width Ds
+.It Fl d
+The named files are deleted from the floppy.  Arff will combine contiguous
+deleted files into one empty entry in the rt-11 directory.
+.It Fl r
+The named files
+are replaced where found on the floppy, or added taking up
+the minimal possible portion of the first empty spot on the floppy.
+.It Fl t
+The names of the specified files are listed each time they occur
+on the floppy.
+If no file argument is given,
+all of the names on the floppy are listed.
+.It Fl x
+The named files are extracted from the floppy.
+.El
+.Pp
+The following characters may be used in addition to the letter
+which selects the function desired.
+.Bl -tag -width Ds
+.It Fl c
+causes
+.Nm arff
+to create a new directory on the floppy, effectively deleting
+all previously existing files.
+.It Fl f
+causes 
+.Nm arff
+to use the next argument as the name of the archive instead
+of
+.Pa /dev/floppy . 
+.It Fl m
+causes
+.Nm arff
+not to use the mapping algorithm employed in interleaving sectors
+around a floppy disk.  In conjunction with the 
+.Fl f
+option it may be
+used for extracting files from rt11 formatted cartridge disks, for
+example.
+It may also be used to speed up reading from and writing to 
+rx02 floppy disks, by using the `c' device instead of the `b' device.
+It must be used with TU58 or RL02 media.
+.It Fl v
+The
+.Fl v
+(verbose)
+option, when used with the
+.Fl t
+function gives more information about the
+floppy entries than just the name.
+.El
+.Sh FILES
+.Bl -tag -width /dev/floppyxxx -compact
+.It Pa /dev/floppy
+default floppy device
+.El
+.Sh SEE ALSO
+.Xr crl 4 ,
+.Xr fl 4 ,
+.Xr rx 4 ,
+.Xr tu 4 ,
+.Xr floppy 8 ,
+.Xr rxformat 8
+.Sh BUGS
+Device errors are handled ungracefully.
+.Sh HISTORY
+The
+.Nm
+command appeared in
+.Bx 4.0 .

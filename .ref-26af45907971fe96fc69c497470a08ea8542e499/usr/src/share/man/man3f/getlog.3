@@ -1,0 +1,26 @@
+.\" Copyright (c) 1983, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.proprietary.roff%
+.\"
+.\"	@(#)getlog.3	8.1 (Berkeley) %G%
+.\"
+.TH GETLOG 3F ""
+.UC 5
+.SH NAME
+getlog \- get user's login name
+.SH SYNOPSIS
+.B subroutine getlog (name)
+.br
+.B character*(*) name
+.sp 1
+.B character*(*) function getlog()
+.SH DESCRIPTION
+.I Getlog
+will return the user's login name or all blanks if
+the process is running detached from a terminal.
+.SH FILES
+.ie \nM /usr/ucb/lib/libU77.a
+.el /usr/lib/libU77.a
+.SH "SEE ALSO"
+getlogin(3)

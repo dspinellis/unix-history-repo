@@ -1,0 +1,44 @@
+.\" Copyright (c) 1989, 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"	@(#)operator.7	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt OPERATOR 7
+.Os
+.Sh NAME
+.Nm operator
+.Nd C operator precedence and order of evaluation
+.Sh DESCRIPTION
+.Bd -ragged -offset indent -compact
+.Bl -column "Operator    Associativity   "
+.It Operator	Associativity
+.It --------	-------------
+.It \&() [] -> .	left to right
+.It "! ~ ++ -- - (type) * & sizeof"	right to left
+.It \&* / %	left to right
+.It \&+ -	left to right
+.It \&<< >>	left to right
+.It \&< <= > >=	left to right
+.It \&== !=	left to right
+.It \&&	left to right
+.It \&^	left to right
+.It \&|	left to right
+.It \&&&	left to right
+.It \&||	left to right
+.It \&?:	right to left
+.It \&= += -= etc.	right to left
+.It \&,	left to right
+.El
+.Ed
+.Sh FILES
+.Bl -tag -width /usr/share/misc/operator -compact
+.It Pa /usr/share/misc/operator
+.El
+.Sh HISTORY
+The
+.Nm operator
+manual page is
+.Ud .

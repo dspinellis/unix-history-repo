@@ -1,0 +1,63 @@
+reading symbolic information ...
+struct simple simple;
+struct simple {
+    int a;
+    char b;
+    double c;
+    struct {
+        int a;
+        char b;
+        double c;
+    } d;
+    int e;
+    char f;
+    double g;
+};
+typedef struct first *First;
+typedef struct second *Second;
+struct first {
+    int a;
+    struct second *p;
+};
+struct second {
+    int b;
+    char c;
+};
+[1] stop in UseRecurStructs
+[1] stopped in UseRecurStructs at line 45
+   45       p = &b;
+stopped in UseRecurStructs at line 45
+   45       p = &b;
+stopped in UseRecurStructs at line 46
+   46       b.a = 3;
+stopped in UseRecurStructs at line 47
+   47       b.p = &list;
+stopped in UseRecurStructs at line 48
+   48       b.p->b = 4;
+stopped in UseRecurStructs at line 49
+   49       b.p->c = 'c';
+(a = 3, p = 0xbfffe720) 
+0xbfffe720 
+(b = 4, c = '\0') 
+4 
+'\0' 
+[3] stop in f
+[3] stopped in f at line 61
+   61       s.a = x;
+f(x = 3), line 61 in "struct.c"
+main(0x1, 0xbfffe7e4, 0xbfffe7ec), line 72 in "struct.c"
+stopped in f at line 61
+   61       s.a = x;
+stopped in f at line 62
+   62       s.g = 3.14;
+stopped in f at line 63
+   63       return s;
+stopped in f at line 64
+   64   }
+stopped in main at line 73
+   73       y = &x;
+stopped in main at line 74
+   74   }
+0xbfffe770 
+(a = 3, b = '\0', c = 0.0, d = (a = 0, b = '\0', c = 0.0), e = 4, f = 'c', g = 3.14) 
+

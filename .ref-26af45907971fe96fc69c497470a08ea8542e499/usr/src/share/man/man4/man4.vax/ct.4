@@ -1,0 +1,44 @@
+.\" Copyright (c) 1980, 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)ct.4	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt CT 4 vax
+.Os BSD 4
+.Sh NAME
+.Nm \&ct
+.Nd "C/A/T phototypesetter interface"
+.Sh SYNOPSIS
+.Cd "device ct0 at uba0 csr 0167760 vector ctintr"
+.Sh DESCRIPTION
+This is an interface to either a Graphic Systems
+.Tn C/A/T
+phototypesetter
+or an Autologic
+.Tn APS-Micro5
+using a
+.Tn DR-11 C
+interface.
+.Pp
+The
+.Nm \&ct
+is a write only device.
+.Sh FILES
+.Bl -tag -width /dev/catxx -compact
+.It Pa /dev/cat
+.El
+.Sh DIAGNOSTICS
+None.
+.Sh SEE ALSO
+.Xr troff 1
+.Rs
+.%T Phototypesetter interface specification
+.Re
+.Sh HISTORY
+The
+.Nm \&ct
+driver appeared in
+.Bx 4.1 .

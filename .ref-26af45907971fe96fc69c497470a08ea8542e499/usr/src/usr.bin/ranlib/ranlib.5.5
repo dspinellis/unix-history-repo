@@ -1,0 +1,44 @@
+.\" Copyright (c) 1990, 1991 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"     @(#)ranlib.5.5	5.2 (Berkeley) %G%
+.\"
+.Dd 
+.Dt RANLIB 5
+.Os
+.Sh NAME
+.Nm ranlib
+.Nd archive (library) table-of-contents format
+.Sh SYNOPSIS
+.Fd #include <ranlib.h>
+.Sh DESCRIPTION
+The archive table-of-contents command
+.Nm ranlib
+creates a table of contents for archives, containing object files, to
+be used by the link-editor
+.Xr ld 1 .
+It operates on archives created with the utility
+.Xr ar 1 .
+.Pp
+The
+.Nm Ranlib
+function
+prepends a new file to the archive which has three separate parts.
+The first part is a standard archive header, which has a special name
+field,  "__.SYMDEF".
+.Pp
+The second part is a ``long'' followed by a list of ranlib structures.
+The long is the size, in bytes, of the list of ranlib structures.
+Each of the ranlib structures consists of a zero based offset into the
+next section (a string table of symbols) and an offset from the beginning
+of the archive to the start of the archive file which defines the symbol.
+The actual number of ranlib structures is this number divided by the size
+of an individual ranlib structure.
+.Pp
+The third part is a ``long'' followed by a string table.
+The long is the size, in bytes of the string table.
+.Sh SEE ALSO
+.Xr ar 1 ,
+.Xr ranlib 1

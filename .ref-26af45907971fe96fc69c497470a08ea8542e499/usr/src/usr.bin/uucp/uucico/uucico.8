@@ -1,0 +1,273 @@
+.\" Copyright (c) 1988, 1991 Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)uucico.8	6.6 (Berkeley) %G%
+.\"
+.Dd 
+.Dt UUCICO 8
+.Os BSD 4.3
+.Sh NAME
+.Nm uucico ,
+.Nm uucpd
+.Nd transfer files queued by uucp or uux
+.Sh SYNOPSIS
+.Nm uucico
+.Op Fl L
+.Op Fl R
+.Op Fl d Ns Ar spooldir
+.Op Fl g Ns Ar grade
+.Op Fl r Ns Ar role
+.Op Fl s Ns Ar system
+.Op Fl x Ns Ar debug
+.Op Fl t Ns Ar turnaround
+.Nm uucpd
+.Sh DESCRIPTION
+.Nm Uucico
+performs the actual work involved in transferring files between
+systems.
+.Xr Uucp 1
+and
+.Xr uux 1
+merely queue requests for data transfer which
+.Nm uucico
+processes.
+.Pp
+The following options are available.
+.Bl -tag -width Ds
+.It Fl L
+Only call
+.Dq local
+sites. A site is considered local if the device-type field in
+.Xr L.sys 5
+is one of
+.Tn LOCAL , DIR
+or
+.Tn TCP .
+.It Fl R
+Reverse roles.  When used with the
+.Fl r Ns Ar 1
+option, this tells the remote system to begin sending its
+jobs first, instead of waiting for the local machine to finish.
+.It Fl d Ns Ar spooldir
+Use
+.Ar spooldir
+as the spool directory. The default is
+.Pa /var/spool/uucp.
+.It Fl g Ns Ar grade
+Only send jobs of grade
+.Ar grade
+or higher this transfer.
+The grade of a job is specified when the job is queued by
+.Xr uucp 1
+or
+.Xr uux 1 .
+.It Fl r Ns Ar role
+.Ar role
+is either 1 or 0; it indicates whether
+.Nm uucico
+is to start up in
+master or slave role, respectively. 1 is used when running
+.Nm uucico
+by hand or from
+.Xr cron 8 .
+0 is used when another system calls the local system.
+Slave role is the default.
+.It Fl s Ns Ar system
+Call only system
+.Ar system .
+If
+.Fl s
+is not specified, and
+.Fl r Ns Ar 1
+is specified,
+.Nm uucico
+will attempt to call all systems for which there is work.
+If
+.Fl s
+is specified, a call will be made even if there is
+no work for that system. This is useful for polling.
+.It Fl t Ns Ar turnaround
+Use
+.Ar turnaround
+as the line turnaround time (in minutes) instead of the default 30.  If
+.Ar turnaround
+is missing or 0, line turnaround will be disabled.
+After
+.Nm uucico
+has been running in slave role for
+.Ar turnaround
+minutes, it will attempt to run in master role by negotiating with the
+remote machine.
+In earlier versions of
+.Nm uucico ,
+a transfer of many large files in one direction would hold up mail
+going in the other direction.
+With the turnaround code working, the message flow will be more
+bidirectional in the short term.
+This option only works with newer
+.Nm uucico Ns 's
+and is ignored by older ones.
+.It Fl x Ns Ar debug
+Turn on debugging at level
+.Ar debug .
+Level 5 is a good start when trying to find out why a call
+failed. Level 9 is very detailed. Level 99 is absurdly verbose.
+If
+.Ar role
+is 1 (master), output is written to the standard error
+.Em stderr .
+If
+.Em stderr
+is unavailable, output is written to
+.Pa /var/spool/uucp/AUDIT/ Ns Ar system .
+When
+.Ar role
+is 0 (slave), debugging output is always written to the
+AUDIT
+file.
+.El
+.Pp
+If
+.Nm uucico
+receives a
+.Dv SIGFPE
+(see
+.Xr kill 1 ) ,
+it will toggle the debugging on or off.
+.Pp
+.Nm Uucpd
+is the server for supporting uucp connections over networks.
+.Nm Uucpd
+listens for service requests at the port indicated in the ``uucp''
+service specification; see
+.Xr services 5 .
+The server provides login name and password authentication before starting up
+.Nm uucico
+for the rest of the transaction.
+.Pp
+.Nm Uucico
+is commonly used either of two ways: as a daemon run periodically by
+.Xr cron 8
+to call out to remote systems, and as a ``shell'' for remote systems
+who call in.
+For calling out periodically, a typical line in
+.Xr crontab
+would be:
+.Bd -literal
+0    *    *    *    *    /usr/lib/uucp/uucico -r1
+.Ed
+.Pp
+This will run
+.Nm uucico
+every hour in master role.
+For each system that has transfer requests queued,
+.Nm uucico
+calls the system, logs in, and executes the transfers. The file
+.Xr L.sys 5
+is consulted for information about how to log in, while
+.Xr L-devices 5
+specifies available lines and modems for calling.
+.Pp
+For remote systems to dial in, an entry in the
+.Xr passwd 5
+file must be created, with a login ``shell'' of
+.Nm uucico .
+For example:
+.Bd -literal
+nuucp:Password:6:1::/var/spool/uucppublic:/usr/lib/uucp/uucico
+.Ed
+.Pp
+The
+.Tn UID
+for
+.Tn UUCP
+remote logins is not critical, so long as it differs from
+the
+.Tn UUCP
+Administrative login.
+The latter owns the
+.Tn UUCP
+files, and assigning
+this
+.Tn UID
+to a remote login would be an extreme security hazard.
+.Sh FILES
+.Bl -tag -width /var/spool/uucp/D.hostnameX/ -compact
+.It Pa /usr/lib/uucp/
+.Tn UUCP
+internal files/utilities
+.It Pa /usr/lib/uucp/L-devices
+Local device descriptions
+.It Pa /usr/lib/uucp/L-dialcodes
+Phone numbers and prefixes
+.It Pa /usr/lib/uucp/L.aliases
+Hostname aliases
+.It Pa /usr/lib/uucp/L.cmds
+Remote command permissions list
+.It Pa /usr/lib/uucp/L.sys
+Host connection specifications
+.It Pa /usr/lib/uucp/USERFILE
+Remote directory tree permissions list
+.It Pa /var/spool/uucp/
+Spool directory
+.It Pa /var/spool/uucp/AUDIT/*
+Debugging audit trails
+.It Pa /var/spool/uucp/C./
+Control files directory
+.It Pa /var/spool/uucp/D./
+Incoming data file directory
+.It Pa /var/spool/uucp/D.hostname/
+Outgoing data file directory
+.It Pa /var/spool/uucp/D.hostnameX/
+Outgoing execution file directory
+.It Pa /var/spool/uucp/CORRUPT/
+Place for corrupted C. and D. files
+.It Pa /var/spool/uucp/ERRLOG
+.Tn UUCP
+internal error log
+.It Pa /var/spool/uucp/LOGFILE
+.Tn UUCP
+system activity log
+.It Pa /var/spool/uucp/LCK/LCK..*
+Device lock files
+.It Pa /var/spool/uucp/
+.Tn SYSLOG
+File transfer statistics log
+.It Pa /var/spool/uucp/STST/*
+System status files
+.It Pa /var/spool/uucp/TM./
+File transfer temp directory
+.It Pa /var/spool/uucp/X./
+Incoming execution file directory
+.It Pa /var/spool/uucppublic
+Public access directory
+.El
+.Sh SEE ALSO
+.Xr uucp 1 ,
+.Xr uuq 1 ,
+.Xr uux 1 ,
+.Xr L-devices 5 ,
+.Xr L-dialcodes 5 ,
+.Xr L.aliases 5 ,
+.Xr L.cmds 5 ,
+.Xr L.sys 5 ,
+.Xr uuclean 8 ,
+.Xr uupoll 8 ,
+.Xr uusnap 8 ,
+.Xr uuxqt 8
+.Rs
+.%A D. A. Nowitz
+.%A M. E. Lesk
+.%T "A Dial-Up Network of UNIX Systems"
+.Re
+.Rs
+.%A D. A. Nowitz
+.%T "Uucp Implementation Description"
+.Re
+.Sh HISTORY
+The
+.Nm
+command appeared in
+.Bx 4.3 .

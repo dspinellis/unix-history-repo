@@ -1,0 +1,37 @@
+#	@(#)README.68040	7.2 (Berkeley) %G%
+
+In order to do floating point on the 68040 you need to incorporate the
+HP-UX 7.05 version of Motorola's FP emulation library as hpux_float.o
+in this directory.
+
+To build a new kernel using this library, set the option HPFPLIB in the
+config file.  You can build a kernel without the FP library by configuring
+a kernel without the HPFPLIB option, but be warned that many binaries will
+not run.
+
+We are required by Hewlett-Packard and Motorola to state the following
+items.
+
+1. No source code is being licensed.
+
+2. The object code can only be used for operation on Motorola M68040
+   based systems, and NOT ported to other architectures.
+
+3. Recipients of the code will not reverse compile or disassemble the
+   code, except to the extent that such restrictions may be prohibited
+   by law.
+
+4. The Motorola Inc. and Hewlett-Packard Company copyright notices will
+   be reproduced in the relevant bootup code.
+
+5. The code is provided ``AS IS'' without warranty or obligation of any
+   kind.  THERE SHALL BE NO LIABILITY FOR INCIDENTAL OR CONSEQUENTIAL
+   DAMAGE ARISING FROM OR RELATED TO USE OR POSSESSION OF THE CODE.  THE
+   IMPLIED WARRANTIES OF MERCHANTABILITY OR FITNESS FOR A PARTICULAR
+   PURPOSE ARE EXPRESSLY DISCLAIMED.
+
+6. Recipients of the code will adhere to the U.S. Export Administration
+   Laws and Regulations and will not export or re-export the code or any
+   technical data related to the code to any proscribed country listed in
+   the U.S. Export Administration Regulations unless properly authorized
+   as may be required by the U.S. Government.

@@ -1,0 +1,42 @@
+/*
+ *	@(#)err	5.1 (Berkeley) %G%
+ *
+ * Error routines can be tricky.  The following works in most cases,
+ * and can be easily adapted per program.  It allows both:
+ *
+ *	if ((fp = fopen(file, "r")) == NULL)
+ *		err("%s: %s", file, strerror(errno));
+ * and:
+ *	if ((p = malloc(sizeof(int))) == NULL)
+ *		err("%s", strerror(errno));
+ *
+ * Never use perror(3).
+ */
+#if __STDC__
+#include <stdarg.h>
+#else
+#include <varargs.h>
+#endif
+
+void
+#if __STDC__
+err(const char *fmt, ...)
+#else
+err(fmt, va_alist)
+	char *fmt;
+        va_dcl
+#endif
+{
+	va_list ap;
+#if __STDC__
+	va_start(ap, fmt);
+#else
+	va_start(ap);
+#endif
+	(void)fprintf(stderr, "program: ");
+	(void)vfprintf(stderr, fmt, ap);
+	va_end(ap);
+	(void)fprintf(stderr, "\n");
+	exit(1);
+	/* NOTREACHED */
+}

@@ -1,0 +1,52 @@
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" the Institute of Electrical and Electronics Engineers, Inc.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"	@(#)tty.1	6.5 (Berkeley) %G%
+.\"
+.Dd 
+.Dt TTY 1
+.Os
+.Sh NAME
+.Nm tty
+.Nd return user's terminal name
+.Sh SYNOPSIS
+.Nm tty
+.Op Fl s
+.Sh DESCRIPTION
+The
+.Nm tty
+utility writes the name of the terminal attached to standard input
+to standard output.
+The name that is written is the string returned by
+.Xr ttyname 3 .
+If the standard input is not a terminal, the message ``not a tty''
+is written.
+The options are as follows:
+.Bl -tag -width Ds
+.It Fl s
+Don't write the terminal name; only the exit status is affected
+when this option is specified.
+The
+.Fl s
+option is deprecated in favor of the
+.Dq Li "test -t 0"
+command.
+.El
+.Pp
+.Nm Tty
+exits 0 if the standard input is a terminal, 1 if the standard input is
+not a terminal, and >1 if an error occurs.
+.Sh SEE ALSO
+.Xr test 1 ,
+.Xr ttyname 3
+.Sh STANDARDS
+The
+.Nm tty
+function is expected to be
+.St -p1003.2
+compatible.

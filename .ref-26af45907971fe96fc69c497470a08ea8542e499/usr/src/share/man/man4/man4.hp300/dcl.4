@@ -1,0 +1,103 @@
+.\" Copyright (c) 1990, 1991 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" the Systems Programming Group of the University of Utah Computer
+.\" Science Department.
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)dcl.4	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt DCL 4 hp300
+.Os
+.Sh NAME
+.Nm dcl
+.Nd
+.Tn HP
+98628A communications link
+.Sh SYNOPSIS
+.Cd "device dcl0 at scode? flags 0x1"
+.Sh DESCRIPTION
+The 98628A is a buffered
+.Tn EIA
+.Tn RS-232C
+.Pf ( Tn CCITT
+.Tn V.28 )
+communications interface.
+It has one port with full modem control.
+.Pp
+Input and output for each line may set to one of following baud rates;
+0, 50, 75, 110, 134.5, 150, 200, 300, 600, 1200, 1800, 2400, 4800,
+9600, 19200.
+.Pp
+An optional argument
+.Ar flags
+may be set to 1 if the line should be treated as hard-wired with
+carrier always present, or to 0 if modem control is desired.
+.Pp
+Use
+.Tn HP
+cable "98626 & 98628 opts.002,
+.Tn RS232-C
+.Tn DCE CABLE ,
+5061-4216" to attach non-modem devices.
+Use
+.Tn HP
+cable "98626 & 98628 opts.001,
+.Tn RS232-C
+.Tn DTE CABLE ,
+5061-4215" to attach modems.
+.Pp
+The 98628A has a 256 byte input silo and a 256 output silo. Input interrupts
+happen on a per character basis.
+.Pp
+The high water and low water marks in the kernel tty routines are completely
+inappropriate for a device like this with a large input buffer.  Don't use
+tandem mode if possible.  A fast system can handle input at 19.2K baud without
+receive overflow.
+.Pp
+For output to devices that make heavy use of
+.Tn XON/XOFF
+a write size of less
+then 256 will improve performance marginally.
+.Sh FILES
+.Bl -tag -width /dev/ttyl[0-9] -compact
+.It Pa /dev/ttyl[0-9]
+.El
+.Sh DIAGNOSTICS
+.Bl -diag
+.It dcl%d: error 0x%x RESET CARD.
+Where the errors are encoded:
+.Bd -unfilled -offset indent
+0x06 card failure
+0x0d uart receive overflow
+0x0e receive overflow
+0x0f missing external clock
+0x10 cts false too long
+0x11 lost carrier
+0x12 activity timeout
+0x13 connection not established
+0x19 illegal databits/parity
+0x1a register address out of range
+0x1b register value out of range
+0x-- unknown error
+.Ed
+.El
+.Sh SEE ALSO
+.Xr tty 4
+.Sh HISTORY
+The
+.Nm
+driver
+.Ud
+.Sh BUGS
+Breaks received at a faster rate then 1 break every second will be 
+recognized as a single break.
+.Pp
+Console use is not supported.
+.Pp
+The
+.Tn RS-422/423/499 ,
+.Tn MTS-DSN/DL
+modes of the card are not supported.

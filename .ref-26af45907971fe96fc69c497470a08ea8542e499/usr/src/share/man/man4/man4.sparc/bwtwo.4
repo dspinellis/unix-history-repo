@@ -1,0 +1,33 @@
+.\" Copyright 1992 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" This software was developed by the Computer Systems Engineering group
+.\" at Lawrence Berkeley Laboratory under DARPA contract BG 91-66 and
+.\" contributed to Berkeley.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"     @(#)bwtwo.4	8.1 (Berkeley) %G%
+.\"
+.\" from: $Header: bwtwo.4,v 1.1 92/10/13 05:28:26 leres Exp $
+.\"
+.Dd 
+.Dt BWTWO 4 sparc
+.Os
+.Sh NAME
+.Nm bwtwo
+.Nd monochromatic frame buffer
+.Sh SYNOPSIS
+.Cd "bwtwo* at sbus? slot ? offset ?"
+.Sh DESCRIPTION
+The 
+.Nm
+is a memory based black and white frame buffer.
+It supports the minimal ioctl's needed to run X11.
+.Sh SEE ALSO
+.Xr cgthree 4
+.Sh HISTORY
+The
+.Nm
+driver is
+.Ud

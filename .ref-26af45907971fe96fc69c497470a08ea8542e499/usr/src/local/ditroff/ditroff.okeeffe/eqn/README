@@ -1,0 +1,65 @@
+The following is a quick synopsis of changes
+to eqn since the last version.
+Most of these changes owe thanks to Mary Carter,
+whose efforts during the summer of 1984 provided
+the impetus to start thinking about eqn again.
+
+1.  Fixed long-standing bug involving nested
+from-to constructs.
+
+2.  Output guaranteed to preserve font that was
+in effect upon entry (if there are no font changes
+within quoted strings).
+
+3.  The right delimiter is no longer significant
+within display equations.
+
+4.  Macros with arguments, as in grap and pic.
+Parentheses are treated somewhat differently:
+If an embedded left paren is found in a token,
+then the characters to its left are checked to
+see if they are a macro name.  If they are, the
+paren is assumed to mark the beginning of the 
+argument list.  Otherwise, the token is treated
+just like any other.
+
+5.  File inclusion:  include (or copy) "filename"
+is replaced by contents of file.  .EQ and .EN are
+ignored within inclusions.  Filename "-" is a synonym for
+standard input on the command line.
+
+6.  Font names can be given as strings, as in
+	font CW { ... } or gfont CW
+
+7.  Checks environment variable TYPESETTER;  default
+is still 202.
+
+8.  An optional separation distance can be specified
+for a pile or col:  lcol 33 {... above ...} adds 33/100 em
+of separation between the elements instead of the default;
+negative values permitted.
+pile, etc., have become synonyms for col, etc.
+
+9.  Eqn attempts to print appropriately for current size,
+obviating the need for most uses of size {...} and gsize.
+It won't always be right, but it will be close for documents
+printed in the usual range of sizes.
+
+10. A fair amount of fiddling has been done to details of
+positioning;  the output seems to be better looking.
+
+11. ifdef whatever / is replaced by this if defined /
+The proper TYPESETTER name is defined already.
+
+12. Error messages are somewhat better as well.  Errors
+passed on to troff will be identified by source file and
+line number in the eqn input.
+
+13. Tunable parameters have been (mostly) collected into
+a single file, tuning.c, to make it easier to adapt eqn
+to a new typesetter.
+
+14. As an interim fix, "lowbar" and "highbar" are synonymous
+with "bar", but force the bar to be either low (as over x)
+or high (as over X) regardless of the apparent height of
+the object.  This copes with {x sub 1} bar.

@@ -1,0 +1,63 @@
+.\" Copyright (c) 1990, 1991 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" the Systems Programming Group of the University of Utah Computer
+.\" Science Department.
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)dca.4	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt DCA 4 hp300
+.Os
+.Sh NAME
+.Nm dca
+.Nd
+.Tn HP 98644A
+communications interface
+.Sh SYNOPSIS
+.Cd "device dca0 at scode9 flags 0x1"
+.Sh DESCRIPTION
+The
+.Tn 98644A
+is a single port
+.Tn EIA
+.Tn RS-232C
+.Pf ( Tn CCITT
+.Tn V.28 )
+communications interface with a single character buffer.
+Such an interface is built-in to all series 300 machines.
+.Pp
+Input and output for each line may set to one of following baud rates;
+50, 75, 110, 134.5, 150, 300, 600, 1200, 1800, 2400, 4800, 9600 or
+19200.
+.Pp
+An optional argument
+.Ar flags
+may be set to 1 if the line should be treated as hard-wired
+with carrier always present or 0 if modem control is desired.
+.Sh FILES
+.Bl -tag -width Pa
+.It Pa /dev/tty0
+.El
+.Sh DIAGNOSTICS
+.Bl -diag
+.It dca%d: silo overflow.
+The single-character input
+.Dq silo
+has overflowed and incoming data has been lost.
+.El
+.Sh SEE ALSO
+.Xr tty 4
+.Sh HISTORY
+The
+.Nm
+driver
+.Ud
+.Sh BUGS
+Data loss is possible on busy systems with baud rates greater than 300.
+The
+.Nm dca
+has never been tested with modem control enabled or on anything but the
+built-in interface.

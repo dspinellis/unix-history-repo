@@ -1,0 +1,111 @@
+.\" Copyright 1991 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"     @(#)crontab.5	5.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt CRONTAB 8
+.Os
+.Sh NAME
+.Nm crontab
+.Nd chronological services schedule file
+.Sh SYNOPSIS
+.Nm crontab
+.Sh DESCRIPTION
+The
+.Nm crontab
+file contain the schedules used by the
+.Xr cron 8
+daemon.
+Each line in the schedule gives a time of execution
+and the command to be executed.
+.Pp
+A line consists of
+two fields giving the time,
+three fields giving the day,
+a user name field,
+and lastly the command to be
+executed.
+The first five fields are space
+or tab
+separated and may
+consist of a number,
+a comma separated list of numbers,
+or an asterisk meaning any or all possible values.
+The last field (the command field) may contain spaces.
+A field containing two hyphen separated numbers is treated as
+an inclusive range.
+.Pp
+The fields are:
+.Bl -enum -offset indent
+.It
+The minute of the hour, a number from 0 to 59.
+.It
+The hour, a number from 0 to 23.
+.It
+The day in terms of the month, a number from 1 to 31.
+.It
+The day in terms of the year, a number from 1 to 12.
+.It
+The day in terms of the week, a number from 1 to 7.
+Monday is considered day one, Sunday is day seven.
+.It
+The name of a user: the command will be run with the
+user's uid and permissions.
+.It
+The command to execute.  This field may be terminated with a
+newline of the
+.Ql %
+character.
+.El
+.Pp
+An optional file
+.Nm crontab.local
+may be created and used for addtional scheduling.
+.Sh EXAMPLES
+In the example below,
+the first field indicates the command should be executed at the hour,
+a quarter past the hour, on the half hour and at a quarter to the hour.
+The next four fields indicate the command should be run every hour,
+every day. The sixth field indicates the command is to be run with
+root privileges.
+.Bd -literal -offset indent
+0,15,30,45 * * * *      root /usr/libexec/atrun
+.Ed
+.Pp
+In this next exmaple,
+the first field indicates this command should be exectuted on the half hour.
+The second field constrains the hour to 3 A.M. The third and second
+fields indicate any day of the month and any day of the year, but are
+constrained by the fifth field to the sixth day of the week (Saturday).
+The command is to be executed with root privileges. The example shown here
+has been folded (spread across two lines) to make it readable.
+It must not be folded in the the
+.Nm crontab
+file.
+.Bd -literal -offset indent
+30 3 * * 6      root    /bin/sh /etc/weekly 2>&1 | tee
+	/var/log/weekly.out | mail -s "weekly output" root
+.Ed
+.Sh SEE ALSO
+.Xr cron 8
+.Xr rc 8
+.Sh FILES
+.Bl -tag -width /etc/crontab.local -compact
+.It Pa /etc/crontab
+General system tasks.
+.It Pa /etc/crontab.local
+Optional local tasks.
+.It Pa /etc/rc
+System initialization script (normally,
+.Nm cron
+is executed from this script.)
+.Sh HISTORY
+A
+.Nm crontab
+file appeared in
+.At v6 .
+This manual page is
+.Ud .

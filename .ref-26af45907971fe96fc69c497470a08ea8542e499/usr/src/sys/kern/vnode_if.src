@@ -1,0 +1,265 @@
+#
+# Copyright (c) 1992 The Regents of the University of California.
+# All rights reserved.
+#
+# %sccs.include.redist.sh%
+#
+#	@(#)vnode_if.src	7.6 (Berkeley) %G%
+#
+vop_lookup {
+	IN struct vnode *dvp;
+	INOUT struct vnode **vpp;
+	IN struct componentname *cnp;
+};
+
+vop_create {
+	IN WILLRELE struct vnode *dvp;
+	OUT struct vnode **vpp;
+	IN struct componentname *cnp;
+	IN struct vattr *vap;
+};
+
+vop_mknod {
+	IN WILLRELE struct vnode *dvp;
+	OUT WILLRELE struct vnode **vpp;
+	IN struct componentname *cnp;
+	IN struct vattr *vap;
+};
+
+vop_open {
+	IN struct vnode *vp;
+	IN int mode;
+	IN struct ucred *cred;
+	IN struct proc *p;
+};
+
+vop_close {
+	IN struct vnode *vp;
+	IN int fflag;
+	IN struct ucred *cred;
+	IN struct proc *p;
+};
+
+vop_access {
+	IN struct vnode *vp;
+	IN int mode;
+	IN struct ucred *cred;
+	IN struct proc *p;
+};
+
+vop_getattr {
+	IN struct vnode *vp;
+	IN struct vattr *vap;
+	IN struct ucred *cred;
+	IN struct proc *p;
+};
+
+vop_setattr {
+	IN struct vnode *vp;
+	IN struct vattr *vap;
+	IN struct ucred *cred;
+	IN struct proc *p;
+};
+
+vop_read {
+	IN struct vnode *vp;
+	INOUT struct uio *uio;
+	IN int ioflag;
+	IN struct ucred *cred;
+};
+
+vop_write {
+	IN struct vnode *vp;
+	INOUT struct uio *uio;
+	IN int ioflag;
+	IN struct ucred *cred;
+};
+
+vop_ioctl {
+	IN struct vnode *vp;
+	IN int command;
+	IN caddr_t data;
+	IN int fflag;
+	IN struct ucred *cred;
+	IN struct proc *p;
+};
+
+# Needs work?  (fflags)
+vop_select {
+	IN struct vnode *vp;
+	IN int which;
+	IN int fflags;
+	IN struct ucred *cred;
+	IN struct proc *p;
+};
+
+vop_mmap {
+	IN struct vnode *vp;
+	IN int fflags;
+	IN struct ucred *cred;
+	IN struct proc *p;
+};
+
+vop_fsync {
+	IN struct vnode *vp;
+	IN struct ucred *cred;
+	IN int waitfor;
+	IN struct proc *p;
+};
+
+# Needs word: Is newoff right?  What's it mean?
+vop_seek {
+	IN struct vnode *vp;
+	IN off_t oldoff;
+	IN off_t newoff;
+	IN struct ucred *cred;
+};
+
+vop_remove {
+	IN WILLRELE struct vnode *dvp;
+	IN WILLRELE struct vnode *vp;
+	IN struct componentname *cnp;
+};
+
+vop_link {
+	IN WILLRELE struct vnode *vp;
+	IN struct vnode *tdvp;
+	IN struct componentname *cnp;
+};
+
+vop_rename {
+	IN WILLRELE struct vnode *fdvp;
+	IN WILLRELE struct vnode *fvp;
+	IN struct componentname *fcnp;
+	IN WILLRELE struct vnode *tdvp;
+	IN WILLRELE struct vnode *tvp;
+	IN struct componentname *tcnp;
+};
+
+vop_mkdir {
+	IN WILLRELE struct vnode *dvp;
+	OUT struct vnode **vpp;
+	IN struct componentname *cnp;
+	IN struct vattr *vap;
+};
+
+vop_rmdir {
+	IN WILLRELE struct vnode *dvp;
+	IN WILLRELE struct vnode *vp;
+	IN struct componentname *cnp;
+};
+
+vop_symlink {
+	IN WILLRELE struct vnode *dvp;
+	OUT WILLRELE struct vnode **vpp;
+	IN struct componentname *cnp;
+	IN struct vattr *vap;
+	IN char *target;
+};
+
+vop_readdir {
+	IN struct vnode *vp;
+	INOUT struct uio *uio;
+	IN struct ucred *cred;
+};
+
+vop_readlink {
+	IN struct vnode *vp;
+	INOUT struct uio *uio;
+	IN struct ucred *cred;
+};
+
+vop_abortop {
+	IN struct vnode *dvp;
+	IN struct componentname *cnp;
+};
+
+vop_inactive {
+	IN struct vnode *vp;
+};
+
+vop_reclaim {
+	IN struct vnode *vp;
+};
+
+vop_lock {
+	IN struct vnode *vp;
+};
+
+vop_unlock {
+	IN struct vnode *vp;
+};
+
+vop_bmap {
+	IN struct vnode *vp;
+	IN daddr_t bn;
+	OUT struct vnode **vpp;
+	IN daddr_t *bnp;
+	OUT int *runp;
+};
+
+#vop_strategy {
+#	IN struct buf *bp;
+#};
+
+vop_print {
+	IN struct vnode *vp;
+};
+
+vop_islocked {
+	IN struct vnode *vp;
+};
+
+vop_pathconf {
+	IN struct vnode *vp;
+	IN int name;
+	OUT int *retval;
+};
+
+vop_advlock {
+	IN struct vnode *vp;
+	IN caddr_t id;
+	IN int op;
+	IN struct flock *fl;
+	IN int flags;
+};
+
+vop_blkatoff {
+	IN struct vnode *vp;
+	IN off_t offset;
+	OUT char **res;
+	OUT struct buf **bpp;
+};
+
+vop_valloc {
+	IN struct vnode *pvp;
+	IN int mode;
+	IN struct ucred *cred;
+	OUT struct vnode **vpp;
+};
+
+vop_vfree {
+	IN struct vnode *pvp;
+	IN ino_t ino;
+	IN int mode;
+};
+
+vop_truncate {
+	IN struct vnode *vp;
+	IN off_t length;
+	IN int flags;
+	IN struct ucred *cred;
+	IN struct proc *p;
+};
+
+vop_update {
+	IN struct vnode *vp;
+	IN struct timeval *ta;
+	IN struct timeval *tm;
+	IN int waitfor;
+};
+
+# Needs work: no vp?
+#vop_bwrite {
+#	IN struct buf *bp;
+#};

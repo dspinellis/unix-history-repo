@@ -1,0 +1,52 @@
+.\" Copyright (c) 1980, 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)nlist.3	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt NLIST 3
+.Os BSD 4
+.Sh NAME
+.Nm nlist
+.Nd retrieve symbol table name list from an executable file
+.Sh SYNOPSIS
+.Fd #include <nlist.h>
+.Ft int
+.Fn nlist "const char *filename" "struct nlist *nl"
+.Sh DESCRIPTION
+The
+.Fn nlist
+function
+retrieves name list entries from the symbol table of an
+exectutable file. (See
+.Xr a.out 5 . )
+The argument
+.Fa \&nl
+is set to reference the
+beginning of the list.
+The list is preened of binary and invalid data;
+if an entry in the
+name list is valid, the
+.Fa n_type
+and
+.Fa n_value
+for the entry are copied into the list
+referenced by
+.Fa \&nl .
+No other data is copied.
+The last entry in the list is always
+.Dv NULL .
+.Sh RETURN VALUES
+The number of invalid entries is returned if successful; otherwise,
+if the file
+.Fa filename
+does not exist or is not exectuable, the returned value is \-1.
+.Sh SEE ALSO
+.Xr a.out 5
+.Sh HISTORY
+A
+.Fn nlist
+function appeared in
+.At v6 .

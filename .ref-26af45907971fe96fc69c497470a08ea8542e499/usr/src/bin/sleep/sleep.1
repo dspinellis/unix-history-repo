@@ -1,0 +1,90 @@
+.\" Copyright (c) 1990, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" the Institute of Electrical and Electronics Engineers, Inc.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"	@(#)sleep.1	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt SLEEP 1
+.Os
+.Sh NAME
+.Nm sleep
+.Nd suspend execution for an interval of time
+.Sh SYNOPSIS
+.Nm sleep
+.Ar seconds
+.Sh DESCRIPTION
+The
+.Nm sleep
+command
+suspends execution for a minimum of
+.Ar seconds .
+.Nm Sleep
+is used to schedule the execution of other commands (see
+.Sx EXAMPLES
+below).
+.Pp
+The
+.Nm Sleep
+utility exits with one of the following values:
+.Bl -tag -width flag
+.It Li \&0
+On successful completetion, or if the signal
+.Dv SIGALRM
+was received.
+.It Li \&>\&0
+An error occurred.
+.El
+.Sh EXAMPLES
+To schedule the execution of a command for
+.Va x
+number seconds later:
+.Pp
+.Dl (sleep 1800; sh command_file >& errors)&
+.Pp
+This incantation would wait a half hour before
+running the script command_file. (See the
+.Xr at 1
+utility.)
+.Pp
+To reiteratively run a command (with the
+.Xr csh 1 ) :
+.Pp
+.Bd -literal -offset indent -compact
+while (1)
+	if (! -r zzz.rawdata) then
+		sleep 300
+	else
+		foreach i (`ls *.rawdata`)
+			sleep 70
+			awk -f collapse_data $i >> results
+		end
+		break
+	endif
+end
+.Ed
+.Pp
+The scenario for a script such as this might be: a program currently
+running is taking longer than expected to process a series of
+files, and it would be nice to have
+another program start processing the files created by the first
+program as soon as it is finished (when zzz.rawdata is created).
+The script checks every five minutes for the file zzz.rawdata,
+when the file is found, then another portion processing
+is done curteously by sleeping for 70 seconds in between each
+awk job.
+.Sh SEE ALSO
+.Xr setitimer 2 ,
+.Xr alarm 3 ,
+.Xr sleep 3 ,
+.Xr at 1
+.Sh STANDARDS
+The
+.Nm sleep
+command is expected to be
+.St -p1003.2
+compatible.

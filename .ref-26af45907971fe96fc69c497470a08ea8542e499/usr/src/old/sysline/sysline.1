@@ -1,0 +1,172 @@
+.\" Copyright (c) 1983, 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"     @(#)sysline.1	6.6 (Berkeley) %G%
+.\"
+.Dd 
+.Dt SYSLINE 1
+.Os BSD 4.2
+.Sh NAME
+.Nm sysline
+.Nd display system status on status line of a terminal
+.Sh SYNOPSIS
+.Nm sysline
+.Op Fl Dbcdehijlmpqrsw
+.Op Fl H Ar remote
+.Op Cm +N
+.Sh DESCRIPTION
+.Nm Sysline
+runs in the background and periodically displays system status information
+on the status line of the terminal.
+Not all terminals contain a status line.
+Those that do include the h19, concept 108, Ann Arbor Ambassador, vt100,
+Televideo 925/950 and Freedom 100.
+If no flags are given,
+.Nm sysline
+displays the time of day, the current load average, the change in load
+average in the last 5 minutes, the number of users (followed by a `u'),
+the number of runnable  process (followed by a `r')
+.Bq Tn VAX No only ,
+the number
+of suspended processes (followed by a `s')
+.Bq Tn VAX No only ,
+and the users who have logged on and off since the last status report.
+Finally, if new mail has arrived, a summary of it is printed.
+If there is unread mail in your mailbox, an asterisk will appear after the
+display of the number of users.
+The display is normally in reverse video (if your terminal supports
+this in the status line) and is right justified to reduce distraction.
+Every fifth display is done in normal video to give the screen a chance
+to rest.
+.Pp
+If you have a file named
+.Pa .who
+in your home directory, then the contents
+of that file is printed first.  One common use of this
+feature is to alias chdir, pushd, and popd  to place the current directory 
+stack in
+.Pa ~/.who
+after it changes the new directory.
+.Pp
+The following flags may be given on the command line.
+.Bl -tag -width Ds
+.It Fl D
+Print out the current day/date before the time.
+.It Fl H Ar remote
+Print the load average on the remote host
+.Ar remote
+.Bq Tn VAX No only .
+If the host is down, or is not sending out
+.Xr rwhod
+packets, then
+the down time is printed instead.  If the prefix "ucb" is present,
+then it is removed.
+.It Cm +N
+Update the status line every N seconds. The default is 60 seconds.
+.It Fl b
+Beep once every half hour and twice every hour, just like those obnoxious
+watches you keep hearing.
+.It Fl c
+Clear the status line for 5 seconds before each redisplay.
+.It Fl d
+Debug mode -- print status line data in human readable format.
+.It Fl e
+Print out only the information.  Do not print out the control commands
+necessary to put the information on the bottom line.  This option is
+useful for putting the output of
+.Nm sysline
+onto the mode line of an emacs window.
+.It Fl h
+Print out the host machine's name after the time
+.Bq Tn VAX No only .
+.It Fl i
+Print out the process id of the
+.Nm sysline
+process onto standard output upon startup.
+With this information you can send the alarm signal to the
+.Nm sysline
+process to cause it to update immediately.
+.Nm Sysline
+writes to the standard error, so you can redirect the standard
+output into a file to catch the process id.
+.It Fl j
+Force the sysline output to be left justified even on terminals capable of
+cursor movement on the status line.
+.It Fl l
+Don't print the names of people who log in and out.
+.It Fl m
+Don't check for mail. 
+.It Fl p
+Don't report the number of process which are runnable and suspended.
+.It Fl q
+Don't print out diagnostic messages if something goes wrong when starting up.
+.It Fl r
+Don't display in reverse video.
+.It Fl s
+Print "short" form of line by left-justifying
+.Em iff
+escapes are not allowed in the status line.
+Some terminals (the Televideos and Freedom 100 for example)
+do not allow cursor movement (or other "intelligent" operations)
+in the status line.  For these terminals,
+.Nm sysline
+normally uses blanks to cause right-justification.
+This flag will disable the adding of the blanks.
+.It Fl w
+Window mode -- print the status on the current line of the terminal,
+suitable for use inside a one line window.
+.El
+.Pp
+If you have a file
+.Pa .syslinelock
+in your home directory, then
+.Nm sysline
+will not update its statistics and write on your screen, it will just go to
+sleep for a minute.  This is useful if you want to momentarily disable
+.Nm sysline .
+Note that it may take a few seconds from the time the lock file
+is created until you are guaranteed that
+.Nm sysline
+will not write on the screen.
+.Sh FILES
+.Bl -tag -width /var/spool/rwho/whod.x -compact
+.It Pa /var/run/utmp
+names of people who are logged in
+.It Pa /dev/kmem
+contains process table
+.Bq Tn VAX No only
+.It Pa /var/spool/rwho/whod.*
+who/uptime information for remote hosts
+.Bq Tn VAX No only
+.It Pa ${HOME}/.who
+information to print on bottom line
+.It Pa ${HOME}/.syslinelock
+when it exists, sysline will not print
+.El
+.Sh BUGS
+If you interrupt the display then you may find your cursor missing or 
+stuck  on the status line.  The best thing to do is reset the terminal.
+.Pp
+If there is too much for one line, the excess is thrown away.
+.Sh HISTORY
+The
+.Nm
+command appeared in
+.Bx 4.2 .
+.Sh ENVIRONMENT
+.Bl -tag -width HOME
+.Nm Sysline
+checks for the existence of
+the following environment variables:
+.It Ev HOME
+The directory provided by the
+.Ev HOME
+variable is checked for the file
+.Pa .who .
+.It Ev TERM
+Provides terminal type.
+.It Ev USER
+Provides username.
+.El

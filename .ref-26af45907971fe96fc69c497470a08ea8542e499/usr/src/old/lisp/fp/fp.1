@@ -1,0 +1,105 @@
+.\" Copyright (c) 1983, 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"	@(#)fp.1	6.6 (Berkeley) %G%
+.\"
+.Dd 
+.Dt FP 1
+.Os BSD 4.2
+.Sh NAME
+.Nm fp
+.Nd Functional Programming language compiler/interpreter
+.Sh SYNOPSIS
+.Nm fp
+.Sh DESCRIPTION
+.Nm Fp
+is an
+interpreter/compiler that implements the applicative language proposed
+by John Backus.  It is written in
+.Tn FRANZ LISP .
+.Pp
+In a  functional programming language
+intent is expressed
+in  a mathematical style devoid of assignment statements
+and variables.
+Functions compute by value only; there are no side-effects
+since  the result of a computation depends solely on the inputs.
+.Pp
+.Nm Fp
+programs consist of
+.Em functional expressions
+\-
+primitive and user-defined
+.Nm fp
+functions
+combined by
+.Em functional forms .
+These forms take functional arguments
+and return functional results.
+For example, the composition
+operator
+.Sq Ic @
+takes two functional arguments and returns a function
+which represents their composition.
+.Pp
+There exists a single operation in
+.Nm fp
+\&\-
+.Em application .
+This operation causes the system to evaluate the indicated function using
+the single argument
+as input
+(all functions are monadic).
+.Sh GETTING STARTED
+.Pp
+.Nm Fp
+invokes the system.
+.Nm Fp
+compiles functions into
+.Xr lisp  1
+source code;
+.Xr lisp  1
+interprets this code
+(the user may compile this code using the
+.Xr liszt 1
+compiler to gain a factor of 10 in performance).
+.Ic Control D
+exits back to the shell.
+.Ic Break
+terminates any computation in progress  and resets any open file units.
+.Ic )help
+provides a short summary of all user commands.
+.Sh FILES
+.Bl -tag -width liszt -compact
+.It Pa lisp
+The
+.Dv FRANZ LISP
+interpreter.
+.It Pa liszt
+The liszt compiler.
+.El
+.Sh SEE ALSO
+.Xr lisp 1 ,
+.Xr liszt 1 ,
+.Rs
+.%T "The Berkeley FP user's manual"
+.Re
+.Pp
+The language is described  in  the August 1978 issue of
+.Em CACM
+(Turing award lecture by John Backus).
+.Sh BUGS
+If a non-terminating function is applied as the result of loading a file,
+then control is returned to the user immediately, everything
+after that position in the file is ignored.
+.Pp
+.Nm Fp
+incorrectly marks the location of a syntax error on
+large, multi-line function definitions or applications.
+.Sh HISTORY
+The
+.Nm fp
+program appeared in
+.Bx 4.2 .

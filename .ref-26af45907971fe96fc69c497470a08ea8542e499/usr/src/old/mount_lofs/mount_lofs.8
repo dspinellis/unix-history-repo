@@ -1,0 +1,44 @@
+.\"
+.\" Copyright (c) 1992 The Regents of the University of California
+.\" Copyright (c) 1990, 1992 Jan-Simon Pendry
+.\" All rights reserved.
+.\"
+.\" This code is derived from software donated to Berkeley by
+.\" Jan-Simon Pendry.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"	@(#)mount_lofs.8	8.1 (Berkeley) %G%
+.\"
+.\"
+.Dd 
+.Dt MOUNT_LOFS 8
+.Os BSD 4.4
+.Sh NAME
+.Nm mount_lofs
+.Nd mount a virtual copy of an existing filesystem sub-tree
+.Sh SYNOPSIS
+.Nm mount_lofs
+.Op Fl F Ar fsoptions
+.Ar target mount-point
+.Sh DESCRIPTION
+The
+.Nm mount_lofs
+command makes a sub-tree of an existing filesystem visible
+in another part of the global filesystem namespace.
+This allows existing files and directories to be accessed
+using a different pathname.
+.Pp
+The primary differences between a virtual copy of the filesystem
+and a symbolic link are that
+.Xr getcwd 3
+functions correctly in the virtual copy, and that other filesystems
+may be mounted on the virtual copy without affecting the original.
+A different device number for the virtual copy is returned by
+.Xr stat 2 ,
+but in other respects it is indistinguishable from the original.
+.Sh HISTORY
+The
+loopback filesystem
+is
+.Ud

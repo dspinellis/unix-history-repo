@@ -1,0 +1,219 @@
+.\" %sccs.include.proprietary.roff%
+.\"
+.\"	@(#)e5	6.2 (Berkeley) %G%
+.\"
+.NH
+Language Theory
+.PP
+The basic structure of the language is
+not a particularly original one.
+Equations are pictured as a set of ``boxes,''
+pieced together in various ways.
+For example, something with a subscript is
+just a box followed by another box moved downward
+and shrunk
+by an appropriate amount.
+A fraction is just a box centered above another box,
+at the right altitude,
+with a line of correct length drawn between them.
+.PP
+The grammar for the language is shown below.
+For purposes of exposition, we have collapsed
+some productions. In the original grammar, there
+are about 70 productions, but many of these
+are simple ones used only to guarantee
+that some keyword is recognized early enough in the parsing process.
+Symbols in
+capital letters
+are terminal symbols; 
+lower case
+symbols are non-terminals, i.e., syntactic categories.
+The vertical bar \(bv indicates an alternative;
+the brackets [ ] indicate optional material.
+A
+.UC TEXT
+is a string of non-blank characters or
+any string inside double quotes;
+the other terminal symbols represent literal occurrences
+of the corresponding keyword.
+.P1
+.ce 0
+.ta .3i
+.ps 9
+.ne 17
+.in 1
+eqn	: box | eqn box
+.sp 5p
+box	: text
+	| { eqn }
+	| box OVER box
+	| SQRT box
+	| box SUB box | box SUP box
+	| [ L | C | R ]PILE { list }
+	| LEFT text eqn [ RIGHT text ]
+	| box [ FROM box ] [ TO box ]
+	| SIZE text box
+	| [ROMAN | BOLD | ITALIC] box
+	| box [HAT | BAR | DOT | DOTDOT | TILDE]
+	| DEFINE text text
+.sp 5p
+list	: eqn | list ABOVE eqn
+.sp 5p
+text	: TEXT
+.ps 10
+.in 0
+.P2
+.PP
+The grammar makes it obvious why there are few exceptions.
+For example, the observation that something can be replaced by a more complicated something 
+in braces is implicit in the productions:
+.P1
+.ce 0
+   eqn	: box | eqn box
+   box	: text | { eqn }
+.P2
+Anywhere a single character could be used,
+.ul
+any
+legal construction can be used.
+.PP
+Clearly, our grammar is highly ambiguous.
+What, for instance, do we do with the input
+.P1
+a over b over c  ?
+.P2
+Is it
+.P1
+{a over b} over c 
+.P2
+or is it
+.P1
+a over {b over c}  ?
+.P2
+.PP
+To answer questions like this, the grammar
+is supplemented with a small set of rules that describe the precedence 
+and associativity
+of operators.
+In particular, we specify (more or less arbitrarily)
+that
+.ul
+over
+associates to the left,
+so the first alternative above is the one chosen.
+On the other hand, 
+.ul
+sub
+and
+.ul
+sup
+bind to the right,
+because this is closer to standard mathematical practice.
+That is, we assume $x sup a sup b$ is $x sup {(a sup b )}$,
+not  $(x sup a ) sup b$.
+.PP
+The precedence rules resolve the ambiguity in a construction like
+.P1
+a sup 2 over b
+.P2
+We define
+.ul
+sup
+to have a higher precedence than
+.ul
+over,
+so this construction is parsed as
+$a sup 2 over b$ instead of $a sup {2 over b}$.
+.PP
+Naturally, a user can always
+force a particular parsing
+by placing braces around expressions.
+.PP
+The ambiguous grammar approach seems to be quite useful.
+The grammar we use is small enough to be easily understood,
+for it contains none of the productions that would be
+normally used for resolving ambiguity.
+Instead the supplemental information about
+precedence and associativity (also small enough to be understood)
+provides the compiler-compiler
+with the information it needs
+to make a fast, deterministic parser for
+the specific language we want.
+When the language is supplemented by the disambiguating rules,
+it is in fact
+.UC LR(1)
+and thus easy to parse[5].
+.PP
+The output code is generated as the input is scanned.
+Any time a production
+of the grammar is recognized,
+(potentially) some
+.UC TROFF
+commands are output.
+For example, when the lexical analyzer 
+reports that it has found a
+.UC TEXT
+(i.e., a string of contiguous characters),
+we have recognized the production:
+.P1
+text    : TEXT
+.P2
+The translation of this is simple.
+We generate a local name for the string,
+then hand the name and the string to
+.UC TROFF,
+and let
+.UC TROFF
+perform the storage management.
+All we save is the name of the string,
+its height, and its baseline.
+.PP
+As another example,
+the translation associated with the production
+.P1
+box    : box OVER box
+.P2
+is:
+.P1
+.ce 0
+.in 1
+.ne 14
+Width of output box =
+  slightly more than largest input width
+Height of output box =
+  slightly more than sum of input heights
+Base of output box =
+  slightly more than height of bottom input box
+String describing output box =
+  move down;
+  move right enough to center bottom box;
+  draw bottom box (i.e., copy string for bottom box);
+  move up; move left enough to center top box;
+  draw top box (i.e., copy string for top box);
+  move down and left; draw line full width;
+  return to proper base line.
+.in 0
+.P2
+Most of the other productions have 
+equally simple semantic actions.
+Picturing the output as a set of properly placed boxes
+makes the right sequence of positioning commands
+quite obvious.
+The main difficulty is in finding the right numbers to use
+for esthetically pleasing positioning.
+.PP
+With a grammar, it is usually clear how to extend the language.
+For instance, one of our users
+suggested a
+.UC TENSOR
+operator, to make constructions like
+.EQ
+~ sub size 7 m sup size 7 l
+{bold T from n to k} sub size 7 i sup size 7 j
+.EN
+Grammatically, this is easy:
+it is sufficient to add a production like
+.P1
+box    : TENSOR { list }
+.P2
+Semantically, we need only juggle the boxes to the right places.

@@ -1,0 +1,431 @@
+.TH SDB 1 VAX/11
+.SH NAME
+sdb \- symbolic debugger
+.SH SYNOPSIS
+.B sdb
+[ objfil [ corfil [ directory ] ] ]
+.SH DESCRIPTION
+.I Sdb
+is a symbolic debugger which can be used with C and F77 programs.
+It may be used to examine their files and to provide
+a controlled environment for their execution.
+.PP
+.I Objfil
+is an executable program file
+which has been compiled with the -g (debug) option.
+The default for
+.I objfil
+is
+.B  a.out.
+.I Corfil
+is assumed to be a core image file produced after
+executing
+.IR objfil ;
+the default for
+.I corfil
+is
+.B  core.
+The core file need not be present.
+.PP
+It is useful to know that at any time there is a
+.I "current line"
+and
+.I "current file."
+If
+.I corfil
+exists then they are initially set to the line and file
+containing the source statement at which the process terminated or stopped.
+Otherwise, they are set to the first line in main.
+The current line and file may be changed with the source file
+examination commands.
+.PP
+Names of variables are written just as they are in C or F77.
+Variables local to a procedure may be accessed using the form
+`procedure:variable'.
+If no procedure name is given, the procedure containing the
+current line is used by default.
+It is also possible to refer to structure members as `variable.member',
+pointers to structure members as `variable\(mi>member' and array elements
+as `variable[number]'.
+Combinations of these forms may also be used.
+.PP
+It is also possible to specify a variable by its address.
+All forms of integer constants which are valid in C may be used, so that
+addresses may be input in decimal, octal or hexadecimal.
+.PP
+Line numbers in the source program are referred to as `filename:number'
+or `procedure:number'.
+In either case the number is relative to the beginning of the file.
+If no procedure or file name is given,
+the current file is used by default.
+If no number is given,
+the first line of the named procedure or file is used.
+.sp 1
+.PP
+The commands for examining data in the program are:
+.TP 5
+.B t
+Print a stack trace of the terminated or stopped program.
+.TP 5
+.B T
+Print the top line of the stack trace.
+.TP 5
+variable/\fIlm\fP
+Print the value of variable according to
+length
+.I l
+and format 
+.I m.
+If 
+.I l
+and
+.I m
+are omitted,
+sdb chooses a length and format suitable for the variable's type
+as declared in the program.
+The length specifiers are:
+.RS
+.TP
+.BI b
+one byte
+.br
+.ns
+.TP
+.BI h
+two bytes (half word)
+.br
+.ns
+.TP
+.BI l
+four bytes (long word)
+.br
+.ns
+.TP
+number
+string length for formats
+.B s
+and
+.B a
+.RE
+.TP 5
+\ 
+Legal values for
+.I m
+are:
+.RS
+.TP
+.BI c
+character
+.br
+.ns
+.TP
+.BI d
+decimal
+.br
+.ns
+.TP
+.BI u
+decimal, unsigned
+.br
+.ns
+.TP
+.BI o
+octal
+.br
+.ns
+.TP
+.BI x
+hexadecimal
+.br
+.ns
+.TP
+.BI f
+32 bit single precision floating point
+.br
+.ns
+.TP
+.BI g
+64 bit double precision floating point
+.br
+.ns
+.TP
+.BI s
+Assume variable is a string pointer and print characters until a null is 
+reached.
+.br
+.ns
+.TP
+.BI a
+Print characters starting at the variable's address until a null
+is reached.
+.br
+.ns
+.TP
+.BI p
+pointer to procedure
+.RE
+.TP 5
+\ 
+The length specifiers are only effective with the formats
+\fBd\fP, \fBu\fP, \fBo\fP and \fBx\fP.
+If
+one of these formats
+is specified and
+.I l
+is omitted,
+the length
+defaults to the word length of the host machine;
+4 for the DEC VAX/11-780.
+The last variable may be redisplayed with the command `./'.
+.sp
+The sh(1) metacharacters 
+.B *
+and
+.B ?
+may be used within procedure and variable names,
+providing a limited form of pattern matching.
+If no procedure name is given, both variables local to the current
+procedure and global (common for F77) variables are matched,
+while if a procedure name is specified then
+only variables local to that procedure and matched.
+To match only global variables (or blank common for F77),
+the form `:pattern' is used.
+The name of a common block may be specified instead of a procedure name
+for F77 programs.
+.RE
+.TP 5
+variable\fB=\fP\fIlm\fP
+.br
+.ns
+.TP 5
+linenumber\fB=\fP\fIlm\fP
+.br
+.ns
+.TP 5
+number\fB=\fP\fIlm\fP
+Print the address of the variable or line number or the value of the number
+in the specified format.
+If no format is given, then `lx' is used.
+The last variant of this command provides a convenient way to convert
+between decimal, octal and hexadecimal.
+.TP 5
+variable\fB!\fPvalue
+Set the variable to the given value.
+The value may be a number, character constant or a variable.
+If the variable is of type float or double,
+the value may also be a floating constant.
+.sp 1
+.PP
+The commands for examining source files are
+.TP 5
+\fBe\fP procedure
+.br
+.ns
+.TP 5
+\fBe\fP filename.c
+Set the current file to
+the file containing the named procedure
+or the named filename.
+Set the current line to the first line in the named
+procedure or file.
+All source files are assumed to be in
+.I directory.
+The default for 
+.I directory
+is the working directory.
+If no procedure or file name is given, the current procedure and file names
+are reported.
+.TP 5
+\fB/\fPregular expression\fB/\fP
+Search forward from the current line for a line containing
+a string matching the regular expression as in ed(1).
+The trailing `/' may be elided.
+.TP 5
+\fB?\fPregular expression\fB?\fP
+Search backward from the current line for a line containing
+a string matching the regular expression as in ed(1).
+The trailing `?' may be elided.
+.TP 5
+.B p
+Print the current line.
+.TP 5
+.B z
+Print the current line followed by the next 9 lines.
+Set the current line to the last line printed.
+.TP 5
+.B control-D
+Scroll.
+Print the next 10 lines.
+Set the current line to the last line printed.
+.TP 5
+.B w
+Window.
+Print the 10 lines around the current line.
+.TP 5
+number
+Set the current line to the given line number.
+Print the new current line.
+.TP 5
+\fIcount\fB +\fR
+Advance the current line by \fIcount\fP lines.
+Print the new current line.
+.TP 5
+\fIcount\fB \(mi\fR
+Retreat the current line by \fIcount\fP lines.
+Print the new current line.
+.sp 1
+.PP
+The commands for controlling the execution of the source program are:
+.TP 5
+\fIcount\fB r \fIargs\fR
+.br
+.ns
+.TP 5
+\fIcount\fB R
+Run the program with the given arguments.
+The \fBr\fP command with no arguments reuses the previous arguments
+to the program while the \fBR\fP command
+runs the program with no arguments.
+An argument beginning with `<' or `>' causes redirection for the
+standard input or output respectively.
+If \fIcount\fP is given,
+it specifies the number of breakpoints to be ignored.
+.TP 5
+\fIlinenumber\fB c\fI count\fR
+.br
+.ns
+.TP 5
+\fIlinenumber\fB C\fI count\fR
+Continue after a breakpoint or interrupt.
+If \fIcount\fP is given,
+it specifies the number of breakpoints to be ignored.
+\fBC\fP continues with the signal which caused the program to stop and
+\fBc\fP ignores it.
+.sp 0.5
+If a linenumber is specified
+then a temporary breakpoint is placed at the line
+and execution is continued.
+The breakpoint is deleted when the command finishes.
+.TP 5
+\fIcount\fB s\fR
+Single step.
+Run the program through \fIcount\fP lines.
+If no count is given then the program is run for one line.
+.TP 5
+\fIcount\fB S\fR
+Single step, but step through subroutine calls.
+.TP 5
+.B k
+Kill the debugged program.
+.TP 5
+procedure\fB(\fParg1,arg2,...\fB)\fP
+.br
+.ns
+.TP 5
+procedure\fB(\fParg1,arg2,...\fB)/\fP\fIm\fP
+Execute the named procedure with the given arguments.
+Arguments can be integer, character or string constants
+or names of variables accessible from the current procedure.
+The second form causes the value returned by the procedure to be
+printed according to format \fIm\fP.
+If no format is given, it defaults to `d'.
+.TP 5
+\fIlinenumber\fB b\fR \fIcommands\fR
+Set a breakpoint at the given line.
+If a procedure name without a line number is given (e.g. `proc:'),
+a breakpoint is placed at the first line in the procedure
+even if it was not compiled with the debug flag.
+If no \fIlinenumber\fP is given,
+a breakpoint is placed at the current line.
+.sp 0.5
+If no
+.I commands
+are given then execution stops just before the breakpoint
+and control is returned to sdb.
+Otherwise
+the 
+.I commands 
+are executed when the breakpoint is
+encountered and execution continues.
+Multiple commands are specified by separating them with semicolons.
+.TP 5
+\fIlinenumber\fB d\fR
+Delete a breakpoint at the given line.
+If no \fIlinenumber\fP is given then the breakpoints are deleted interactively:
+Each breakpoint location is printed and a line is read from the standard input.
+If the line begins with a `y' or `d' then the breakpoint is deleted.
+.TP 5
+.B B
+Print a list of the currently active breakpoints.
+.TP 5
+.B D
+Delete all breakpoints.
+.TP 5
+l
+Print the last executed line.
+.TP 5
+\fIlinenumber\fB a\fR
+Announce.
+If \fIlinenumber\fR is of the form `proc:number', the command
+effectively does a `linenumber b l'.
+If \fIlinenumber\fR is of the form `proc:', the command
+effectively does a `proc: b T'.
+.sp 1
+.PP
+Miscellaneous commands.
+.TP 5
+\fB! \fIcommand\fR
+The command is interpreted by sh(1).
+.TP 5
+.B newline
+If the previous command printed a source line then
+advance the current line by 1 line and
+print the new current line.
+If the previous command displayed a core location then
+display the next core location.
+.TP 5
+\fB"\fI string\fR
+Print the given string.
+.TP 5
+.B q
+Exit the debugger.
+.sp 1
+.PP
+The following commands also exist and are intended only for
+debugging the debugger.
+.TP 5
+.B V
+Print the version number.
+.TP 5
+.B X
+Print a list of procedures and files being debugged.
+.TP 5
+.B Y
+Toggle debug output.
+.SH FILES
+a.out
+.br
+core
+.SH SEE\ ALSO
+adb(1)
+.SH DIAGNOSTICS
+Error reports are either identical to those of adb(1) or are
+self-explanatory.
+.SH BUGS
+If a procedure is called when the program is
+.I not
+stopped at a breakpoint
+(such as when a core image is being debugged),
+all variables are initialized before the procedure is started.
+This makes it impossible to use a procedure which formats
+data from a core image.
+.PP
+Arrays must be of one dimension and of zero origin to be correctly
+addressed by sdb.
+.PP
+The default type for printing F77 parameters is incorrect.
+Their address is printed instead of their value.
+.PP
+Tracebacks containing F77 subprograms with multiple entry points
+may print too many arguments in the wrong order, but their values
+are correct.

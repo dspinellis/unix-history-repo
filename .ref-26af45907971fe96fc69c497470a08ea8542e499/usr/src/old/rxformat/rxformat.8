@@ -1,0 +1,76 @@
+.\" Copyright (c) 1983, 1991 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)rxformat.8	6.6 (Berkeley) %G%
+.\"
+.Dd 
+.Dt RXFORMAT 8
+.Os BSD 4.2
+.Sh NAME
+.Nm rxformat
+.Nd format floppy disks
+.Sh SYNOPSIS
+.Nm rxformat
+.Op Fl d
+.Ar special
+.Sh DESCRIPTION
+The
+.Nm rxformat
+program formats a diskette in the specified drive
+associated with the special device
+.Ar special .
+.Pf ( Ar Special
+is normally
+.Pa /dev/rx0 ,
+for drive 0, or
+.Pa /dev/rx1 ,
+for drive 1.)
+.Pp
+Available option:
+.Bl -tag -width Ds
+.It Fl d
+Force double density formatting.
+By default, the diskette is formatted single density;
+Single density is compatible 
+with the
+.Tn IBM
+3740 standard (128 bytes/sector). 
+In double density, each sector
+contains 256 bytes of data.
+.El
+.Pp
+Before formatting a diskette
+.Nm rxformat
+prompts for verification if standard input is a tty
+(this allows a user to cleanly
+abort the operation; note that
+formatting a diskette will destroy any existing data).
+Formatting is done by the hardware.
+All sectors are zero-filled.
+.Sh DIAGNOSTICS
+.Bl -tag -width Ds
+.It Sy \&No such device
+means that the drive is not ready, 
+usually because no disk is in the drive or the drive door is open.
+Other error messages are selfexplanatory.
+.El
+.Sh FILES
+.Bl -tag -width /dev/rx? -compact
+.It Pa /dev/rx?
+.El
+.Sh SEE ALSO
+.Xr rx 4
+.Sh AUTHOR
+Helge Skrivervik
+.Sh BUGS
+A floppy may not be formatted if the
+header info on sector 1, track 0 has been damaged.  Hence, it is not
+possible to format a completely degaussed disk. 
+(This is actually a problem in the DEC hardware.)
+.Sh HISTORY
+The
+.Nm
+command appeared in
+.Bx 4.2 .

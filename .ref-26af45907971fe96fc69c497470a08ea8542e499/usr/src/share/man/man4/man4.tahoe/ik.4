@@ -1,0 +1,164 @@
+.\" Copyright (c) 1983, 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)ik.4	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt IK 4
+.Os BSD 4.2
+.Sh NAME
+.Nm ik
+.Nd Evans and Sutherland Picture System 300 graphics device interface
+.Sh SYNOPSIS
+.Cd "device ik0 at vba? csr 0xfffb100 vector ikintr"
+.Sh DESCRIPTION
+The
+.Nm ik
+driver provides access
+to an Evans and
+Sutherland Picture System 300 through an Ikon
+.Tn DR-11W
+interface card.
+Each two minor device numbers are a different
+.Tn PS300 ;
+within a pair of device numbers the odd valued
+device is used for ``diagnostic'' purposes.   That is,
+for even numbered minor devices, opening the device results
+in a
+.Tn PS300
+``attach'' request being performed while for
+odd numbered minor devices the attach request is not performed.
+.Pp
+All operations between the host and the
+.Tn PS300
+utilize
+.Tn DMA .
+The driver currently supports only physical
+.Tn I/O operations
+when reading and writing; this makes the device useless with
+standard Evans and Sutherland software.
+.Pp
+The interface provided by the interface is as
+.Ux Ns -like
+as possible.
+When a device is opened a
+.Tn PS300
+attach request is automatically
+performed.  When a device is closed a detach is performed.  Reads
+and writes result in physical
+.Tn I/O
+requests, but hide all the details
+of the physical
+.Tn I/O
+protocol.  This is programming style is completely
+different from the
+.Tn VMS Ns -oriented
+qio-style interface supplied by Evans
+and Sutherland.
+.Pp
+Reads and writes to the device result in a physical
+.Tn I/O
+request
+to the
+.Tn PS300 .
+If a
+.Xr readv 2
+or
+.Xr writev 2
+call is used, each
+.Tn I/O
+request results in a single physical
+.Tn I/O
+request (i.e. the scatter-gather facilities are not supported).
+In normal operation, the address used in a physical
+.Tn I/O
+request
+is the current file offset as specified explicitly with
+.Xr lseek 2
+or implictly as a result of reading or writing the device.
+To specify an address to be used with each physical
+.Tn I/O
+request,
+the
+.Nm ik
+driver interprets the
+.Ar iov
+entries in a non-standard way.  If
+.Ar iov_len
+is zero, then
+.Ar iov_base
+is interpreted as an address to be used in the physical
+.Tn I/O
+request.  If the address has the
+.Dv PSIO_SYNC
+flag or-d into it,
+the physical
+.Tn I/O
+request is made as a ``write with sync''.
+All addresses and data presented to the driver should be in
+the byte order of the host; any byte swapping required to converse
+with the
+.Tn PS300
+is performed in the driver/controller.
+.Pp
+In addition to reading and writing, the following
+.Xr ioctl
+requests are available:
+.Bl -tag -width PSIOGETERROR
+.It Dv PSIOLOOKUP
+Perform a ``name lookup'' request.  The
+.Ar pslookup
+structure passed indicates the symbol name to be looked up
+and contains the address returned by the
+.Tn PS300 .
+A zero
+address return indicates the symbol was undefined.
+.It Dv PSIOGETERROR
+In the event of an error, this request may be made to
+return a more detailed and, sometimes
+.Tn PS300 Ns -specific ,
+error code.
+.Sh FILES
+.Bl -tag -width /dec/ik[0-7]xx -compact
+.It Pa /dev/ik[0-7]
+auto-attach devices
+.It Pa /dev/ik[0-7]d
+diagnostic interfaces to devices
+.El
+.Sh DIAGNOSTICS
+.Bl -diag
+.It ik%d: bad cmd %x.
+An unknown or unsupported command was received by the host.
+.It ik%d: spurious interrupt, code %x.
+An unexpected interrupt was received from the
+.Tn PS300 ;
+the
+attention code from the
+.Tn PS300
+is printed.
+.It ik%d: timeout.
+A command failed to elicit a response within a reasonable
+time; the
+.Tn PS300
+probably crashed.
+.El
+.Sh HISTORY
+The
+Tahoe Version
+.Nm
+driver appeared in
+.Bx 4.2 .
+.Sh BUGS
+An invalid access (e.g. illegal address) to the
+.Tn PS300
+can
+cause the
+.Tn PS300
+to crash.  It is not always possible to unwedge
+the
+.Tn PS300
+interface hardware hung by an
+.Tn I/O
+request.

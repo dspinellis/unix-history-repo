@@ -1,0 +1,81 @@
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"	@(#)passwd.1	6.11 (Berkeley) %G%
+.\"
+.Dd 
+.Dt PASSWD 1
+.Os BSD 4
+.Sh NAME
+.Nm passwd
+.Nd modify a user's password
+.Sh SYNOPSIS
+.Nm passwd
+.Op Fl l
+.Op Ar user
+.Sh DESCRIPTION
+.Nm Passwd
+changes the user's Kerberos password.  First, the user is prompted for their
+current password.
+If the current password is correctly typed, a new password is
+requested.
+The new password must be entered twice to avoid typing errors.
+.Pp
+The new password should be at least six characters long and not
+purely alphabetic.
+Its total length must be less than
+.Dv _PASSWORD_LEN
+(currently 128 characters).
+Numbers, upper case letters and meta characters
+are encouraged.
+.Pp
+Once the password has been verified,
+.Nm passwd
+communicates the new password information to
+the Kerberos authenticating host.
+.Bl -tag -width flag
+.It Fl l
+This option causes the password to be updated only in the local
+password file, and not with the Kerberos database.
+When changing only the local password,
+.Xr pwd_mkdb  8
+is used to update the password databases.
+.El
+.Pp
+To change another user's Kerberos password, one must first
+run
+.Xr kinit 1
+followed by
+.Xr passwd 1 .
+The super-user is not required to provide a user's current password
+if only the local password is modified.
+.Sh FILES
+.Bl -tag -width /etc/master.passwd -compact
+.It Pa /etc/master.passwd
+The user database
+.It Pa /etc/passwd 
+A Version 7 format password file
+.It Pa /etc/passwd.XXXXXX
+Temporary copy of the password file
+.El
+.Sh SEE ALSO
+.Xr chpass 1 ,
+.Xr kerberos 1 ,
+.Xr kinit 1 ,
+.Xr login 1 ,
+.Xr passwd 5 ,
+.Xr kpasswdd 8 ,
+.Xr pwd_mkdb 8 ,
+.Xr vipw 8
+.Rs
+.%A Robert Morris
+.%A Ken Thompson
+.%T "UNIX password security"
+.Re
+.Sh HISTORY
+A
+.Nm passwd
+command appeared in
+.At v6 .

@@ -1,0 +1,85 @@
+.\" Copyright (c) 1988, 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" the American National Standards Committee X3, on Information
+.\" Processing Systems.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)strtok.3	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt STRTOK 3
+.Os BSD 3
+.Sh NAME
+.Nm strtok ,
+.Nm strsep
+.Nd string token operations
+.Sh SYNOPSIS
+.Fd #include <string.h>
+.Ft char *
+.Fn strtok "char *str" "const char *sep"
+.Sh DESCRIPTION
+.Bf -symbolic
+This interface is obsoleted by strsep(3).
+.Ef
+.Pp
+The
+.Fn strtok
+function
+is used to isolate sequential tokens in a null-terminated string,
+.Fa str .
+These tokens are separated in the string by at least one of the
+characters in
+.Fa sep .
+The first time that
+.Fn strtok
+is called,
+.Fa str
+should be specified; subsequent calls, wishing to obtain further tokens
+from the same string, should pass a null pointer instead.
+The separator string,
+.Fa sep ,
+must be supplied each time, and may change between calls.
+.Pp
+The
+.Fn strtok
+function
+returns a pointer to the beginning of each subsequent token in the string,
+after replacing the token itself with a
+.Dv NUL
+character.
+When no more tokens remain, a null pointer is returned.
+.Sh SEE ALSO
+.Xr index 3 ,
+.Xr memchr 3 ,
+.Xr rindex 3 ,
+.Xr strchr 3 ,
+.Xr strcspn 3 ,
+.Xr strpbrk 3 ,
+.Xr strrchr 3 ,
+.Xr strsep 3 ,
+.Xr strspn 3 ,
+.Xr strstr 3
+.Sh STANDARDS
+The
+.Fn strtok
+function
+conforms to
+.St -ansiC .
+.Sh BUGS
+There is no way to get tokens from multiple strings simultaneously.
+.Pp
+The System V
+.Fn strtok ,
+if handed a string containing only delimiter characters,
+will not alter the next starting point, so that a call to
+.Fn strtok
+with a different (or empty) delimiter string
+may return a
+.Pf non- Dv NULL
+value.
+Since this implementation always alters the next starting point,
+such a sequence of calls would always return
+.Dv NULL .

@@ -1,0 +1,73 @@
+.ND
+.nh
+.nr LL 6.75i
+.LP
+.nf
+.ce 7
+RENO ADDENDUM
+.sp
+to
+.sp
+FOURTH BERKELEY SOFTWARE DISTRIBUTION
+.sp 2
+LICENSE (3/4/86) AGREEMENT BETWEEN
+.sp 2
+THE REGENTS OF THE UNIVERSITY OF CALIFORNIA
+.sp
+AND
+.sp
+AMERICAN TELEPHONE AND TELEGRAPH COMPANY
+.sp 2
+.LP
+The above-referenced License Agreement (``Agreement'') 
+entered into between The Regents of the University of California
+(``Regents'') and American Telephone and Telegraph Company (``Licensee'')
+controls Licensee's use
+of release 4.3 of Regents' Fourth Berkeley Software Distribution
+(``4BSD'') which was distributed upon execution of the Agreement.
+The 4.3BSD-Reno version of 4.3BSD is hereby made available to Licensee,
+on the type of media and for the fee indicated on Exhibit A,	
+under the same terms and conditions set forth in the Agreement 
+with the following additional terms and conditions:
+.sp 1
+.RS
+.IP 1.
+4.3BSD-Reno is a test release.
+.IP 2.
+Sublicensing of 4.3BSD-Reno is allowed only until one (1) year after the
+first shipment by Regents to any licensee of 4.4BSD.
+.IP 3.
+Licensee may not include 4.3BSD-Reno or any portion thereof in any
+sublicenses entered into after the one (1) year period specified above.
+.IP 4.
+After the one (1) year period specified above, Licensee may continue
+to use 4.3BSD-Reno for its internal purposes only.
+.IP 5.
+After the first shipment by Regents to any licensee of 4.4BSD, Licensee
+shall endeavor to replace any 4.3BSD-Reno software or
+software derived from 4.3BSD-Reno sublicensed to others with
+equivalent portions of 4.4BSD.
+.sp 1
+.RE
+.LP
+IN WITNESS WHEREOF, Regents and Licensee have executed this
+Reno Addendum on the dates specified below.  The 
+effective date of this amendment shall be the date of execution by
+Regents.
+.sp 3
+.TS
+expand tab(~);
+cw(2.9375i) cw(0.75i) cw(2.9375i).
+THE REGENTS OF THE UNIVERSITY~~AMERICAN TELEPHONE AND
+\v'-10p'\l'2.9375i'~~\l'2.9375i'
+\v'-7p'OF CALIFORNIA~~TELEGRAPH COMPANY
+\v'-17p'\l'2.9375i'~~\l'2.9375i'
+\v'-15p'(LICENSOR)~~(LICENSEE)
+~
+~
+By\l'2.75i'~~By\l'2.75i'
+~
+Title\l'2.625i'~~Title\l'2.625i'
+~
+Date\l'2.625i'~~Date\l'2.625i'
+.TE

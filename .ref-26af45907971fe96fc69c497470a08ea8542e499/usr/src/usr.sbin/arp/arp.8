@@ -1,0 +1,101 @@
+.\" Copyright (c) 1985, 1991 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)arp.8	6.6 (Berkeley) %G%
+.\"
+.Dd 
+.Dt ARP 8
+.Os BSD 4.3
+.Sh NAME
+.Nm arp
+.Nd address resolution display and control
+.Sh SYNOPSIS
+.Nm arp
+.Ar hostname
+.Nm arp
+.Fl a
+.Nm arp
+.Fl d Ar hostname
+.Nm arp
+.Fl s Ar hostname ether_addr
+.Op Ar temp
+.Op Ar pub
+.Op Ar trail
+.Nm arp
+.Fl f Ar filename
+.Sh DESCRIPTION
+The
+.Nm arp
+program displays and modifies the Internet-to-Ethernet address translation
+tables used by the address resolution protocol
+.Pq Xr arp 4 .
+With no flags, the program displays the current
+.Tn ARP
+entry for
+.Ar hostname .
+The host may be specified by name or by number,
+using Internet dot notation.
+.Pp
+Available options:
+.Bl -tag -width Ds
+.It Fl a
+The program displays all of the current
+.Tn ARP
+entries.
+.It Fl d
+A super-user may delete an entry for the host called
+.Ar hostname
+with the
+.Fl d
+flag.
+.It Fl s Ar hostname ether_addr
+Create an
+.Tn ARP
+entry for the host called
+.Ar hostname
+with the Ethernet address 
+.Ar ether_addr .
+The Ethernet address is given as six hex bytes separated by colons.
+The entry will be permanent unless the word
+.Ar temp
+is given in the command. 
+If the word
+.Ar pub
+is given, the entry will be "published"; i.e., this system will
+act as an
+.Tn ARP
+server,
+responding to requests for 
+.Ar hostname
+even though the host address is not its own.
+The word
+.Ar trail
+indicates that trailer encapsulations may be sent to this host.
+.It Fl f
+Causes the file
+.Ar filename
+to be read and multiple entries to be set in the
+.Tn ARP
+tables.  Entries
+in the file should be of the form
+.Pp
+.Bd -filled -offset indent -compact
+.Ar hostname ether_addr
+.Op Ar temp
+.Op Ar pub
+.Op Ar trail
+.Ed
+.Pp
+with argument meanings as given above.
+.El
+.Sh SEE ALSO
+.Xr inet 3 ,
+.Xr arp 4 ,
+.Xr ifconfig 8
+.Sh HISTORY
+The
+.Nm
+command appeared in
+.Bx 4.3 .

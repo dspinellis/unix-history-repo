@@ -1,0 +1,84 @@
+.\" Copyright (c) 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)iso_addr.3	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt ISO_ADDR 3
+.Os
+.Sh NAME
+.Nm iso_addr ,
+.Nm iso_ntoa
+.Nd "elementary network address conversion routines for Open System Interconnection
+.Sh SYNOPSIS
+.Fd #include <sys/types.h>
+.Fd #include <netiso/iso.h>
+.Ft struct iso_addr *
+.Fn iso_addr "char *cp"
+.Ft char *
+.Fn iso_ntoa "struct iso_addr *isoa"
+.Sh DESCRIPTION
+The routine
+.Fn iso_addr
+interprets character strings representing
+.Tn OSI
+addresses, returning binary information suitable
+for use in system calls.
+The routine
+.Fn iso_ntoa
+takes
+.Tn OSI
+addresses and returns
+.Tn ASCII
+strings representing NSAPs (network service
+access points) in a
+notation inverse to that accepted by 
+.Fn iso_addr .
+.Pp
+Unfortunately, no universal standard exists for representing
+.Tn OSI
+network addresses.
+.Pp
+The format employed by
+.Fn iso_addr
+is a sequence of hexadecimal
+.Dq digits
+(optionally separated by periods),
+of the form:
+.Bd -filled -offset indent
+<hex digits>.<hex digits>.<hex digits>
+.Ed
+.Pp
+Each pair of hexadecimal digits represents a byte
+with the leading digit indicating the higher-ordered bits.
+A period following an even number of bytes has no
+effect (but may be used to increase legibility).
+A period following an odd number of bytes has the
+effect of causing the byte of address being translated
+to have its higher order bits filled with zeros.
+.Sh RETURN VALUES
+.Fn iso_ntoa
+always returns a null terminated string.
+.Fn iso_addr
+always returns a pointer to a struct iso_addr.
+(See
+.Sx BUGS . )
+.Sh SEE ALSO
+.Xr iso 4
+.Sh HISTORY
+The
+.Fn iso_addr
+and
+.Fn iso_ntoa
+functions appeared in 
+.Bx 4.3 Reno .
+.Sh BUGS
+The returned values
+reside in a static memory area.
+.Pp
+The function
+.Fn iso_addr
+should diagnose improperly formed input, and there should be an unambiguous
+way to recognize this.

@@ -1,0 +1,85 @@
+.nr _0 \n(c.
+.\" Copyright (c) 1988, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"	@(#)eqn.me	8.1 (Berkeley) %G%
+.\"
+.\"	%beginstrip%
+.\"
+.de EQ			\" *** equation start
+.ec
+.if !\\n(?e \
+\{\
+.	if "\\n(.z"|e" .tm Line \\n(c. -- Nested .EQ request
+.	@D 1 "\\$1" "\\$2"
+.	@C 2
+.	di |e
+.\}
+.ls 1
+.in 0
+.nf
+..
+.de EN			\" *** equation end
+.br
+.ie "\\$1"C" \
+\{\
+.	nr ?e 1
+.	sp \\n(esu
+.\}
+.el \
+\{\
+.	nr ?e 0
+.	di
+.	if \\n(dn \
+.		@q		\" actual equation output
+.	rm |e
+.	rm 10
+.	rm 11
+.	rm 12
+.	rm 13
+.	rm 14
+.	rm 15
+.	rm 16
+.	rm 17
+.	rm 18
+.	rm 19
+.	rm 20
+.	rm 21
+.	rm 22
+.	rm 23
+.	ev
+.\}
+..
+.de @q			\" --- equation output
+.nr _Q \\n(dnu
+.ev
+.sp \\n(esu			\" output rest of preceeding text
+.@C 2				\" .ev 2 may be jumbled from header
+.ie \\n(_d=1 \
+.	in (\\n(.lu+\\n($iu-\\n(dlu)/2u
+.el .ie \\n(_d=2 \
+.	in \\n($iu
+.el .ie \\n(_d=3 \
+.	in \\n(biu+\\n($iu
+.el .if \\n(_d=4 \
+.	in 0
+.if !"\\n(.z"" \!.ne \\n(_Qu
+.ne \\n(_Qu+\n(.Vu		\" keep it on one page
+.mk _q
+.if \n@>1 .tm --@e: _Q=\\n(_Q _q=\\n(_q nl=\\n(nl |p=\\*(|p
+.if !"\\*(|p"" \
+\{\
+.	rs
+.	sp (\\n(_Qu-\\n(.vu)/2u
+.	tl """\\*(|p"
+.	rt \\n(_qu
+.\}
+.|e
+.sp |\\n(_qu+\\n(_Qu
+.sp \\n(esu+\\n(.Lv-1v
+.rr _q
+.rr _Q
+..
+.nr c. \n(_0

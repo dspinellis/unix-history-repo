@@ -1,0 +1,25 @@
+#print
+You can use the "ls" command to find out how
+many files you have in your directory.
+How many files are there in the current
+directory now?  Make another list - the list of files
+that you made before is no longer right because I added
+some files to the directory.  When you find out
+how many files there are in this directory, type
+"answer N" where N is the number of files.
+#create a1
+file a1
+#create a2
+file a2
+#create X1
+file a1
+#copyin
+#user
+#uncopyin
+ls | %s/../lcount >X1
+tail -1 .copy >X2
+#cmp X1 X2
+#log
+#next
+2.1a 10
+2.2a 5

@@ -1,0 +1,64 @@
+.\" Copyright (c) 1983, 1990, 1992 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)gcore.1	6.4 (Berkeley) 3/14/91
+.\"
+.Dd March 14, 1991
+.Dt GCORE 1
+.Os BSD 4.2
+.Sh NAME
+.Nm gcore
+.Nd get core images of running process
+.Sh SYNOPSIS
+.Nm gcore
+.Op Fl s
+.Op Fl c Ar core
+.Ar exec pid
+.Sh DESCRIPTION
+.Nm Gcore
+creates a core image of the specified process,
+suitable for use with
+.Xr gdb  1 .
+By default, the core is written to the file
+.Dq Pa core.<pid> .
+Both the executable image,
+.Ar exec ,
+and the process identifier,
+.Ar pid ,
+must be given on the command line.
+.Pp
+The options are:
+.Bl -tag -width indent
+.It Fl c
+Write the core file to the specified file instead of
+.Dq Pa core.<pid> .
+.It Fl s
+Stop the process while gathering the core image, and resume it
+when done.  This guarantees that the resulting core dump will
+be in a consistent state.  The process is resumed even if it was
+already stopped.
+The same effect can be achieved manually with 
+.Xr kill 1 .
+.El
+.Sh FILES
+.Bl -tag -width /var/log/messages -compact
+.It Pa core.<pid>
+The core image.
+.EL
+.Dp
+.Sh HISTORY
+.Nm Gcore
+appeared in 4.2BSD.
+.Sh BUGS
+Context switches or paging activity that occur while
+.Nm gcore
+is running may cause the program to become confused.
+For best results, use -s to temporarily stop the target process.
+
+.Nm Gcore
+is not compatible with the original 4.2BSD version.  In particular, 4.4BSD
+requires the 
+.Ar exec
+argumemt.

@@ -1,0 +1,365 @@
+.\"	@(#)contrib	5.46 (Berkeley) %G%
+.\"
+.\" To build a document, pipe the bottom list through column -c140, making
+.\" it two columns wide (remove the .TE at the end of the file first).
+.\" Then, compress multiple tabs into a single tab, and do "dtbl list |
+.\" psroff -ms".  DON'T SAVE THE FILE IN COLUMNATED FORM, IT'S HARD TO UNDO!
+.\"
+.\" Be careful sorting the list, there are some entries that span two
+.\" two lines.
+.\"
+.ds CH
+.ps 16
+.ce
+The Computer Stystems Research Group 1979 \- 1993
+.sp 3
+.ps 10
+.nf
+CSRG Technical Staff
+.sp 1
+Jim Bloom
+Keith Bostic
+Ralph Campbell
+Kevin Dunlap
+William N. Joy
+Michael J. Karels
+Samuel J. Leffler
+Marshall Kirk McKusick
+Miriam Amos Nihart
+Keith Sklower
+Marc Teitelbaum
+Michael Toy
+.sp 3
+CSRG Administration and Support
+.sp 1
+Robert Fabry
+Domenico Ferrari
+Susan L. Graham
+Bob Henry
+Anne Hughes
+Bob Kridle
+David Mosher
+Pauline Schwartz
+Mark Seiden
+Jean Wood
+.fi
+.sp 3
+The following organizations funded the CSRG with grants,
+gifts, personnel, and/or hardware.
+.sp 1
+.nf
+Compaq Computer Corporation
+Cray Research Inc.
+Department of Defense Advance Research Projects Agency (DARPA)
+Digital Equipment Corporation
+NASA Ames Research Center
+The Hewlett-Packard Company
+The Open Software Foundation
+UUNET Technologies Inc.
+.fi
+.bp
+.lp
+The following are people and organizations that provided a
+large subsystem for the BSD releases.
+.sp
+.TS
+l l.
+ANSI C library	Chris Torek
+ANSI C prototypes	Donn Seeley and John Kohl
+Autoconfiguration	Robert Elz
+C library documentation	American National Standards Committee X3
+CCI 6/32 support	Computer Consoles Inc.
+DEC 3000/5000 support	Ralph Campbell
+Disklabels	Symmetric Computer Systems
+Documentation	Cynthia Livingston and The USENIX Association
+Franz Lisp	Richard Fateman, John Foderaro, Keith Sklower, Kevin Layer
+GCC, GDB	The Free Software Foundation
+Groff	James Clark (The FSF)
+HP300 support	Jeff Forys, Mike Hibler, Jay Lepreau, Donn Seeley and the Systems
+	Programming Group; University of Utah Computer Science Department
+ISODE	Marshall Rose
+Ingres	Mike Stonebraker, Gene Wong, and the Berkeley Ingres Research Group
+Intel 386/486 support	Bill Jolitz and TeleMuse
+Job control	Jim Kulp
+Kerberos	Project Athena and MIT
+Kernel support	Bill Shannon and Sun Microsystems Inc.
+LFS	Margo Seltzer, Mendel Rosenblum, Carl Staelin
+MIPS support	Trent Hein
+Math library	K.C. Ng, Zhishun Alex Liu, S. McDonald, P. Tang and W. Kahan
+NFS	Rick Macklem
+NFS automounter	Jan-Simon Pendry
+Network device drivers	Micom-Interlan and Excelan
+Omron Luna support	Akito Fujita and Shigeto Mochida
+Quotas	Robert Elz
+RPC support	Sun Microsystems Inc.
+Shared library support	Rob Gingell and Sun Microsystems Inc.
+Sony News 3400 support	Kazumasa Utashiro
+Sparc I/II support	Computer Systems Engineering Group, Lawrence Berkeley Laboratory
+Stackable file systems	John Heidemann
+Stdio	Chris Torek
+System documentation	The Institute of Electrical and Electronics Engineers, Inc.
+TCP/IP	Rob Gurwitz and Bolt Beranek and Newman Inc.
+Timezone support	Arthur David Olson
+Transport/Network OSI layers	IBM Corporation and the University of Wisconsin
+Kernel XNS assistance	William Nesheim, J. Q. Johnson, Chris Torek, and James O'Toole
+User level XNS	Cornell University
+VAX 3000 support	Mt. Xinu and Tom Ferrin
+VAX BI support	Chris Torek
+VAX device support	Digital Equipment Corporation and Helge Skrivervik
+Versatec printer/plotter support	University of Toronto
+Virtual memory implementation	Avadis Tevanian, Jr., Michael Wayne Young,
+	and the Carnegie-Mellon University Mach project
+X25 	University of British Columbia
+.TE
+.bp
+.lp
+The following are people and organizations that provided a specific
+item, program, library routine or program maintenance for the BSD system.
+(Their contribution may not be part of the final 4.4BSD release.)
+.sp
+.ps 9
+.vs 11
+.nf
+.TS
+l l.
+386 device drivers	Carnegie-Mellon University Mach project
+386 device drivers	Don Ahn, Sean Fagan and Tim Tucker
+HCX device drivers	Harris Corporation
+Kernel enhancements	Robert Elz, Peter Ivanov, Ian Johnstone, Piers Lauder,
+	John Lions, Tim Long, Chris Maltby, Greg Rose and John Wainwright 
+.TE
+.fi
+.TS
+l l l l.
+adventure(6)	Don Woods
+adventure(6)	Jim Gillogly
+adventure(6)	Will Crowther
+apply(1)	Rob Pike
+ar(1)	Hugh A. Smith
+arithmetic(6)	Eamonn McManus
+arp(8)	Sun Microsystems Inc.
+at(1)	Steve Wall
+atc(6)	Ed James
+awk(1)	Arnold Robbins
+awk(1)	David Trueman
+backgammon(6)	Alan Char
+banner(1)	Mark Horton
+battlestar(6)	David Riggle
+bcd(6)	Steve Hayman
+bdes(1)	Matt Bishop
+berknet(1)	Eric Schmidt
+bib(1)	Dain Samples
+bib(1)	Gary M. Levin
+bib(1)	Timothy A. Budd
+bitstring(3)	Paul Vixie
+bpf(4)	Steven McCanne
+btree(3)	Mike Olson
+byte-range locking	Scooter Morris
+caesar(6)	John Eldridge
+caesar(6)	Stan King
+cal(1)	Kim Letkeman
+cat(1)	Kevin Fall
+chess(6)	Stuart Cracraft (The FSF)
+ching(6)	Guy Harris
+cksum(1)	James W. Williams
+clri(8)	Rich $alz
+col(1)	Michael Rendell
+comm(1)	Case Larsen
+compact(1)	Colin L. McMaster
+compress(1)	James A. Woods
+compress(1)	Joseph Orost
+compress(1)	Spencer Thomas
+courier(1)	Eric Cooper
+cp(1)	David Hitz
+cpio(1)	AT&T
+crypt(3)	Tom Truscott
+csh(1)	Christos Zoulas
+csh(1)	Len Shar
+curses(3)	Elan Amir
+curses(3)	Ken Arnold
+cut(1)	Adam S. Moskowitz
+cut(1)	Marciano Pitargue
+dbx(1)	Mark Linton
+dd(1)	Keith Muller
+dd(1)	Lance Visser
+des(1)	Jim Gillogly
+des(1)	Phil Karn
+des(1)	Richard Outerbridge
+dipress(1)	Xerox Corporation
+disklabel(8)	Symmetric Computer Systems
+du(1)	Chris Newcomb
+dungeon(6)	R.M. Supnik
+ed(1)	Rodney Ruddock
+emacs(1)	Richard Stallman
+erf(3)	Peter McIlroy, K.C. Ng
+error(1)	Robert R. Henry
+ex(1)	Mark Horton
+factor(6)	Landon Curt Noll
+find(1)	Cimarron Taylor
+finger(1)	Tony Nardo
+fish(6)	Muffy Barkocy
+fmt(1)	Kurt Schoens
+fnmatch(3)	Guido van Rossum
+fold(1)	Kevin Ruddy
+fortune(6)	Ken Arnold
+fpr(1)	Robert Corbett
+fsdb(8)	Computer Consoles Inc.
+fsplit(1)	Asa Romberger
+fsplit(1)	Jerry Berkman
+gcc/groff integration	UUNET Technologies, Inc.
+gcore(1)	Eric Cooper
+getcap(3)	Casey Leedom
+glob(3)	Guido van Rossum
+gprof(1)	Peter Kessler
+gprof(1)	Robert R. Henry
+hack(6)	Andries Brouwer (and a cast of thousands)
+hangman(6)	Ken Arnold
+hash(3)	Margo Seltzer
+heapsort(3)	Elmer Yglesias
+heapsort(3)	Kevin Lew
+heapsort(3)	Ronnie Kon
+hunt(6)	Conrad Huang
+hunt(6)	Greg Couch
+icon(1)	Bill Mitchell
+icon(1)	Ralph Griswold
+indent(1)	David Willcox
+indent(1)	Eric Schmidt
+indent(1)	James Gosling
+indent(1)	Sun Microsystems
+init(1)	Donn Seeley
+j0(3)	Sun Microsystems, Inc.
+j1(3)	Sun Microsystems, Inc.
+jn(3)	Sun Microsystems, Inc.
+join(1)	David Goodenough
+join(1)	Michiro Hikida
+join(1)	Steve Hayman
+jot(1)	John Kunze
+jove(1)	Jonathon Payne
+kermit(1)	Columbia University
+kvm(3)	Peter Shipley
+kvm(3)	Steven McCanne
+lam(1)	John Kunze
+larn(6)	Noah Morgan
+lastcomm(1)	Len Edmondson
+lex(1)	Vern Paxson
+libm(3)	Peter McIlroy
+libm(3)	UUNET Technologies, Inc.
+locate(1)	James A. Woods
+lock(1)	Bob Toxen
+log(3)	Peter McIlroy
+look(1)	David Hitz
+ls(1)	Michael Fischbein
+lsearch(3)	Roger L. Snyder
+m4(1)	Ozan Yigit
+mail(1)	Kurt Schoens
+make(1)	Adam de Boor
+me(7)	Eric Allman
+mergesort(3)	Peter McIlroy
+mh(1)	Marshall Rose
+mh(1)	The Rand Corporation
+mille(6)	Ken Arnold
+mknod(8)	Kevin Fall
+monop(6)	Ken Arnold
+more(1)	Eric Shienbrood
+more(1)	Mark Nudleman
+mountd(8)	Herb Hasler
+mprof(1)	Ben Zorn
+msgs(1)	David Wasley
+multicast	Stephen Deering
+mv(1)	Ken Smith
+named/bind(8)	Douglas Terry
+named/bind(8)	Kevin Dunlap
+news(1)	Rick Adams (and a cast of thousands)
+nm(1)	Hans Huebner
+pascal(1)	Kirk McKusick
+pascal(1)	Peter Kessler
+paste(1)	Adam S. Moskowitz
+patch(1)	Larry Wall
+pax(1)	Keith Muller
+phantasia(6)	C. Robertson
+phantasia(6)	Edward A. Estes
+ping(8)	Mike Muuss
+pom(6)	Keith E. Brandt
+pr(1)	Keith Muller
+primes(6)	Landon Curt Noll
+qsort(3)	Doug McIlroy
+qsort(3)	Earl Cohen
+qsort(3)	Jon Bentley
+quad(3)	Chris Torek
+quiz(6)	Jim R. Oldroyd
+quiz(6)	Keith Gabryelski
+radixsort(3)	Dan Bernstein
+radixsort(3)	Peter McIlroy
+rain(6)	Eric P. Scott
+ranlib(1)	Hugh A. Smith
+rcs(1)	Walter F. Tichy
+rdist(1)	Michael Cooper
+regex(3)	Henry Spencer
+robots(6)	Ken Arnold
+rogue(6)	Timothy C. Stoehr
+rs(1)	John Kunze
+sail(6)	David Riggle
+sail(6)	Edward Wang
+sccs(1)	Eric Allman
+scsiformat(1)	Lawrence Berkeley Laboratory
+sdb(1)	Howard Katseff
+sed(1)	Diomidis Spinellis
+sendmail(8)	Eric Allman
+setmode(3)	Dave Borman
+sh(1)	Kenneth Almquist
+slattach(8)	Rick Adams
+slip(8)	Rick Adams
+spms(1)	Peter J. Nicklin
+strtod(3)	David M. Gay
+swab(3)	Jeffrey Mogul
+sysconf(3)	Sean Eric Fagan
+sysline(1)	J.K. Foderaro
+syslog(3)	Eric Allman
+systat(1)	Bill Reeves
+systat(1)	Robert Elz
+tail(1)	Edward Sze-Tyan Wang
+talk(1)	Clem Cole
+talk(1)	Kipp Hickman
+talk(1)	Peter Moore
+telnet(1)	Dave Borman
+telnet(1)	Paul Borman
+termcap(5)	John A. Kunze
+termcap(5)	Mark Horton
+test(1)	Kenneth Almquist
+tetris(6)	Chris Torek
+tetris(6)	Darren F. Provine
+timed(8)	Riccardo Gusella
+timed(8)	Stefano Zatti
+tn3270(1)	Gregory Minshall
+tr(1)		Igor Belchinskiy
+traceroute(8)	Van Jacobson
+trek(6)	Eric Allman
+tset(1)	Eric Allman
+tsort(1)	Michael Rendell
+unifdef(1)	Dave Yost
+uniq(1)	Case Larsen
+uucpd(8)	Rick Adams
+uudecode(1)	Mark Horton
+uuencode(1)	Mark Horton
+uuq(1)	Lou Salkind
+uuq(1)	Rick Adams
+uusnap(8)	Randy King
+uusnap(8)	Rick Adams
+vacation(1)	Eric Allman
+vi(1)	Steve Kirkendall
+which(1)	Peter Kessler
+who(1)	Michael Fischbein
+window(1)	Edward Wang
+worm(6)	Michael Toy
+worms(6)	Eric P. Scott
+write(1)	Craig Leres
+write(1)	Jef Poskanzer
+wump(6)	Dave Taylor
+X25/Ethernet	Univ. of Erlangen-Nuremberg
+X25/LLC2	Dirk Husemann
+xargs(1)	John B. Roll Jr.
+xneko(6)	Masayuki Koba
+XNSrouted(1)	Bill Nesheim
+xroach(6)	J.T. Anderson
+yacc(1)	Robert Paul Corbett
+.TE

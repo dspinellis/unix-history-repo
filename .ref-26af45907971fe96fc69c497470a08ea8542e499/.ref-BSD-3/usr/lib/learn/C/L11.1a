@@ -1,0 +1,35 @@
+#print
+With your 'cc' command you can give the name of
+an object file to be loaded with your program.
+For example
+   cc x.c y.o
+will load the previously compiled program 'y' along with
+the program 'x' to be compiled now.
+
+The file "getnum.o" contains a subroutine "getnum" which
+reads an integer and returns its value.
+Write a program which reads a number and decides
+whether or not it is a multiple of 23.  If so print
+"yes" and otherwise print "no".
+Compile and test; then type "ready".
+#once #create Ref1
+23000
+#once #create Ref2
+23001
+#once cp %s/getnum.o .
+#user
+a.out <Ref1 >z1
+a.out <Ref2 >z2
+grep yes z1 >/dev/null && grep no z1 >/dev/null
+#succeed
+/*	One way: */
+
+main() {
+	if (getnum()%23 == 0)
+		printf("yes\n");
+	else
+		printf("no\n");
+}
+#log
+#next
+12.1a 10

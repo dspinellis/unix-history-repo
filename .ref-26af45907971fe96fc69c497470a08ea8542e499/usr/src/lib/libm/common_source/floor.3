@@ -1,0 +1,39 @@
+.\" Copyright (c) 1985, 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)floor.3	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt FLOOR 3
+.Os
+.Sh NAME
+.Nm floor
+.Nd largest integral value not greater than x
+.Sh SYNOPSIS
+.Fd #include <math.h>
+.Ft double
+.Fn floor "double x"
+.Sh DESCRIPTION
+The
+.Fn floor
+function computes the largest integral value not greater than
+.Fa x .
+.Sh RETURN VALUES
+The
+.Fn floor
+function returns the largest integral value
+expressed as a double.
+.Sh SEE ALSO
+.Xr abs 3 ,
+.Xr ieee 3 ,
+.Xr fabs 3 ,
+.Xr floor 3 ,
+.Xr rint 3 ,
+.Xr math 3
+.Sh STANDARDS
+The
+.Fn floor
+function conforms to
+.St -ansiC .

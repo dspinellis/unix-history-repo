@@ -1,0 +1,75 @@
+.\" Copyright (c) 1989, 1991 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)mountd.8	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt MOUNTD 8
+.Os
+.Sh NAME
+.Nm mountd
+.Nd service remote
+.Tn NFS
+mount requests
+.Sh SYNOPSIS
+.Nm /sbin/mountd
+.Op Fl n
+.Op Ar exportsfile
+.Sh DESCRIPTION
+.Xr Mountd
+is the server for
+.Tn NFS
+mount requests from other client machines.
+.Xr Mountd
+listens for service requests at the port indicated in the
+.Tn NFS
+server specification; see
+.%T "Network File System Protocol Specification" ,
+RFC1094.
+.Pp
+Options and operands available for
+.Nm mountd :
+.Bl -tag -width Ds
+.It Fl n
+The
+.Fl n
+option allows non-root mount requests to be served.
+This should only be specified if there are clients such as PC's,
+that require it.
+.It Ar exportsfile
+The
+.Ar exportsfile
+argument specifies an alternate location
+for the exports file.
+.El
+.Pp
+When mountd is started,
+it loads the export host addresses and options into the kernel
+using the mount(2) system call.
+After changing the exports file,
+a hangup signal should be sent to the mountd daemon
+to get it to reload the export information.
+After sending the SIGHUP
+(kill -HUP `cat /var/run/mountd.pid`),
+check the syslog output to see if mountd logged any parsing
+errors in the exports file.
+.Sh FILES
+.Bl -tag -width /var/run/mountd.pid -compact
+.It Pa /etc/exports
+the list of exported filesystems
+.It Pa /var/run/mountd.pid
+the pid of the currently running mountd
+.El
+.Sh SEE ALSO
+.Xr nfsstat 1 ,
+.Xr exports 5 ,
+.Xr nfsd 8 ,
+.Xr portmap 8 ,
+.Xr showmount 8
+.Sh HISTORY
+The
+.Nm
+command
+.Ud

@@ -1,0 +1,49 @@
+.\" Copyright (c) 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" the American National Standards Committee X3, on Information
+.\" Processing Systems.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)iscntrl.3	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt ISCNTRL 3
+.Os
+.Sh NAME
+.Nm iscntrl
+.Nd control character test
+.Sh SYNOPSIS
+.Fd #include <ctype.h>
+.Ft int
+.Fn iscntrl "int c";
+.Sh DESCRIPTION
+The
+.Fn iscntrl
+function tests for any control character.
+In the ASCII character set, this includes the following characters:
+.sp
+.Bl -column \&000_``0''__ \&000_``0''__ \&000_``0''__ \&000_``0''__ \&000_``0''__
+.It \&000\ nul \t001\ soh \t002\ stx \t003\ etx \t004\ eot
+.It \&005\ enq \t006\ ack \t007\ bel \t010\ bs \t011\ ht
+.It \&012\ nl \t013\ vt \t014\ np \t015\ cr \t016\ so
+.It \&017\ si \t020\ dle \t021\ dc1 \t022\ dc2 \t023\ dc3
+.It \&024\ dc4 \t025\ nak \t026\ syn \t027\ etb \t030\ can
+.It \&031\ em \t032\ sub \t033\ esc \t034\ fs \t035\ gs
+.It \&036\ rs \t037\ us \t177\ del
+.El
+.Sh RETURN VALUES
+The
+.Fn iscntrl
+function returns zero if the character tests false and
+returns non-zero if the character tests true.
+.Sh SEE ALSO
+.Xr ctype 3 ,
+.Xr ascii 7
+.Sh STANDARDS
+The
+.Fn iscntrl
+function conforms to
+.St -ansiC .

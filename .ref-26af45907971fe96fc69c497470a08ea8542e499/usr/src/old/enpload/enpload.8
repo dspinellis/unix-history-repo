@@ -1,0 +1,68 @@
+.\" Copyright (c) 1987, 1991 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" Computer Consoles Inc.
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)enpload.8	5.4 (Berkeley) %G%
+.\"
+.Dd 
+.Dt ENPLOAD 8
+.Os BSD 4.2
+.Sh NAME
+.Nm enpload
+.Nd download firmware and initialize a
+.Tn CMC
+Ethernet controller
+.Sh SYOPNSIS
+.Nm enpload
+.Ar device
+.Op Ar files
+.Sh DESCRIPTION
+.Nm Enpload
+is used to download firmware and initialize a
+.Tn CMC ENP-20
+Ethernet controller.
+.Pp
+Operands available:
+.Bl -tag -width Fl
+.It Ar device
+The
+.Ar device
+specified is a character device used to access the on-board
+.Tn RAM
+which hosts the controllers operating firmware;
+.It Ar files
+The
+.Ar files
+arguments specify the firmware file(s) to load into this memory.
+After
+.Nm enpload
+deposits the specified firmware it starts the board running.
+.El
+.Pp
+If no firmware is specified the board is just restarted.
+.Nm Enpload
+must be run before a
+.Tn CMC
+controller can be used by the
+system.
+.Sh FILES
+.Bl -tag -width /dev/enp?ram -compact
+.It Pa /dev/enp?ram
+special files for accessing
+.Tn ENP-20
+memory
+.It Pa /etc/enpcode
+link-level firmware
+.El
+.Sh SEE ALSO
+.Xr enp 4 ,
+.Xr ifconfig 8 ,
+.Xr rc 8
+.Sh HISTORY
+The
+.Nm
+command appeared in
+.Bx 4.3 tahoe .

@@ -1,0 +1,48 @@
+.\" Copyright (c) 1985, 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"     @(#)lptest.1	6.7 (Berkeley) %G%
+.\"
+.Dd 
+.Dt LPTEST 1
+.Os BSD 4.3
+.Sh NAME
+.Nm lptest
+.Nd generate lineprinter ripple pattern
+.Sh SYNOPSIS
+.Nm lptest
+.Op Ar length
+.Op Ar count
+.Sh DESCRIPTION
+.Nm Lptest
+writes the traditional "ripple test" pattern on standard output.
+In 96 lines,
+this pattern will print all 96 printable
+.Tn ASCII
+characters
+in each position.
+While originally created to test printers, it is quite
+useful for testing terminals,
+driving terminal ports for debugging purposes,
+or any other task where a quick supply of random data is needed.
+.Pp
+The
+.Ar length
+argument specifies the output line length if the the default
+length of 79 is inappropriate.
+.Pp
+The
+.Ar count
+argument specifies the number of output lines to be generated if
+the default count of 200 is inappropriate.
+Note that if
+.Ar count
+is to be specified,
+.Ar length
+must be also be specified.
+.Sh HISTORY
+.Nm Lptest
+appeared in
+.Bx 4.3 .

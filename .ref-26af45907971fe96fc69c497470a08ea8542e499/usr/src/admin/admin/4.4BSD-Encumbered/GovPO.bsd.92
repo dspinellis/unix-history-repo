@@ -1,0 +1,29 @@
+.ND
+.nr LL 6.8i
+.ll 6.8i
+.ce
+.LP
+.B
+FOR INCLUSION IN GOVERNMENT PURCHASE ORDER
+.R
+.sp 2
+.IP 1.
+This purchase order is subject to the terms and conditions of the
+Revised Berkeley License Agreement (6/92) and Addenda  Number One
+to Fourth Berkeley Software Distribution License (6/92) Agreement
+between the Regents of the University of California and
+the Federal Government,
+.UL provided,
+however, notwithstanding any contrary provisions in such license
+or Addendum, the Government shall have the minimum rights set forth
+in the definition of "Restricted Rights" which appears in paragraph (a)
+of DFAR 52.227.7013 (May 1981) and further
+.UL provided,
+that said License and Addendum shall prevail over any other terms and
+conditions set forth in this purchase order.
+.IP 2.
+The computer software license or agreement, Attachment A hereof, shall
+be made a part of this contract/purchase order only upon written
+notification to (Please insert the name of your government agency) by the
+University of California that the University wishes it to be made so.
+

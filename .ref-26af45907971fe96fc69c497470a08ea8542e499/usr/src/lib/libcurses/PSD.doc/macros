@@ -1,0 +1,118 @@
+.\" Copyright (c) 1980 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"	@(#)macros	8.2 (Berkeley) %G%
+.\"
+.\" this is the uncommented version.  The commented one is in "macros.coms"
+.ie t .ds _ \d\(mi\u
+.el .ds _ _
+.ds , ,\ 
+.ds y (y\*,x) co-ordinates
+.ds db database
+.ie n .ds f \fI
+.el .ds f \fB
+.ds tc \*ftermcap\fP(5)
+.ds Es This returns ERR if it would cause the screen to scroll illegally.
+.ds Nm This has no associated \*(lq\fBmv\fP\*(rq command.
+.ie t .ds m \fB\s-2\(dg\s+2\fP
+.el .ds m [*]
+.\" .hy WINDOW
+.\".he ''\*(Ln''
+.\".fo ''\- % \-''
+.oh '\*(Ln''PS1:18-%'
+.eh 'PS1:18-%''\*(Ln'
+.de Un
+.b
+\s-2\\$2UNIX\\$1\s+2
+.ft
+..
+.de Ds
+.sp
+.lp
+.ev 1
+.nf
+.ft I
+.in 0
+.di Df
+..
+.de De
+.di
+.Df
+.ne \n(dn+2
+.ev
+.ip
+..
+.de Dg
+.di
+.Df
+.ne \n(dn+2
+.ev
+..
+.de Fd
+.br
+\&\\$4
+.fi
+.b
+\&\\$1(\\$2)
+.ft
+\&\\$3
+.br
+.nf
+..
+.de Vn
+\&\\$3\c
+.i "\\$1" \\$2
+..
+.de Bq
+.ie t \&\*(lq\fB\\$1\fP\*(rq
+.el \&\*(lq\fI\\$1\fP\*(rq
+..
+.de $0
+.(x
+.in \\n(Xs
+\\*($n \\$1
+.)x
+..
+.de $1
+.nr Xs 0
+..
+.de $2
+.nr Xs 3
+..
+.de $3
+.nr Xs 6
+..
+.de Fn
+.if \\n(.$==0 .tm error
+.nr ll 0
+.nr dg 0
+\fR
+.if '\\$\\n(.$'.' .nr ll 1
+.if '\\$\\n(.$',' .nr ll 1
+.if '\\$\\n(.$')' .nr ll 1
+.if '\\$\\n(.$').' .nr ll 1
+.if '\\$\\n(.$';' .nr ll 1
+.if '\\$\\n(.$':' .nr ll 1
+.if '\\$\\n(.$'\'s' .nr ll 1
+.if '\\$\\n(.$'\(dg' .nr ll 1
+.\" .if '\\$\\n(.$'' .nr ll 1
+.nr al \\n(.$-\\n(ll
+.ds ot \f(CB\\$1\fP(
+.if \\n(al>1 .as ot \fI\\$2\fP
+.if \\n(al>2 .as ot ", \fI\\$3\fP
+.if \\n(al>3 .as ot ", \fI\\$4\fP
+.if \\n(al>4 .as ot ", \fI\\$5\fP
+.if \\n(al>5 .as ot ", \fI\\$6\fP
+.if \\n(al>6 .as ot ", \fI\\$7\fP
+.if \\n(al>7 .as ot ", \fI\\$8\fP
+.if \\n(al>8 .as ot ", \fI\\$9\fP
+.as ot )
+.if \\n(.$>1 \{\
+.       if \\n(ll==0 .as ot ;
+.       if '\\$\\n(.$'\(dg' .as ot ;
+\}
+.if \\n(ll==1 .as ot \\$\\n(.$
+\\*(ot
+..

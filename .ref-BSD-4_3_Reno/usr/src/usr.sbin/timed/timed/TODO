@@ -1,0 +1,3 @@
+Practically any users can send to the master TSP messages and this way
+corrupt the reliability of the system: authentication of messages should
+be provided.

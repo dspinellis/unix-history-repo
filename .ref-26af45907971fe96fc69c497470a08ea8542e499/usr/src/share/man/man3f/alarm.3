@@ -1,0 +1,47 @@
+.\" Copyright (c) 1983, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.proprietary.roff%
+.\"
+.\"	@(#)alarm.3	8.1 (Berkeley) %G%
+.\"
+.TH ALARM 3F ""
+.UC 5
+.SH NAME
+alarm \- execute a subroutine after a specified time
+.SH SYNOPSIS
+.B integer function alarm (time, proc)
+.br
+.B integer time
+.br
+.B external proc
+.SH DESCRIPTION
+This routine arranges for subroutine
+.I proc
+to be called after
+.I time
+seconds. If
+.I time
+is ``0'', the alarm is turned off and no routine will be called.
+The returned value will be the time remaining on the last alarm.
+.SH FILES
+.ie \nM /usr/ucb/lib/libU77.a
+.el /usr/lib/libU77.a
+.SH "SEE ALSO"
+alarm(3C), sleep(3F), signal(3F)
+.SH BUGS
+.I Alarm
+and
+.I sleep
+interact. If
+.I sleep
+is called after
+.IR alarm ,
+the
+.I alarm
+process will never be called. SIGALRM will occur at the lesser of the
+remaining
+.I alarm
+time or the
+.I sleep
+time.

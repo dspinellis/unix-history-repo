@@ -1,0 +1,41 @@
+.\"	@(#)letter.mips	5.2 (Berkeley) %G%
+.\" use -me
+.if n \{\
+.ND
+.rm CH
+.ll 7i
+.nr LL 7i
+.ad l
+.\}
+.so HEADERS
+.HE
+.nr PS 11
+.nr VS 13
+.nr LL 6i
+.nr OI 0.5i
+.in 0.5i
+.ps 11p
+.ti 4i
+.nf
+
+.lp
+.nf
+Jeffrey Dumas
+MIPS Computer Systems Inc.
+950 DeGuigne Dr.
+MS 5-11
+Sunnyvale, CA 95088
+.sp 3
+.lp
+Dear Mr. Dumas,
+.fi
+.pp
+I am enclosing the most recent version of the proposed agreement between
+MIPS and the University.
+Please let me know if there is any explanation or additional information
+that I can provide.
+.sp 2
+.in +1.5i
+Sincerely,
+.sp .65i
+Keith Bostic

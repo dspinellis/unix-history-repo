@@ -1,0 +1,218 @@
+.\"	@(#)NASA.proposal	1.8	91/09/30
+.\"
+.\" use the me macro package
+.\"
+.fo +CSRG NASA proposal++%
+.nr si 3n
+.nr PS 11
+.nr VS 13
+.nr LL 6i
+.nr OI 0.5i
+.in 0.5i
+.ps 11p
+.sh 1 Title
+.sp
+The 4.4BSD Operating Systems Project
+.sh 1 Summary
+.sp
+The attached is an unsolicited proposal for NASA requesting funding
+for the support of the 4.4BSD project.
+This proposal has not been submitted to any other organization or NASA
+installation.
+.sh 2 Organization
+.sp
+.nf
+Computer Systems Research Group
+455 Evans Hall
+University of California
+Berkeley CA 94720
+.fi
+.sh 2 "Type of organization"
+.sp
+Educational
+.sh 2 "Principal Investigator"
+.sp
+.nf
+Professor Susan L. Graham
+Computer Systems Research Group
+Computer Science Division
+University of California
+Berkeley, CA 94720
+.fi
+.sh 2 "Research Investigator"
+.sp
+.nf
+Dr. Marshall Kirk McKusick
+455 Evans Hall
+Computer Systems Research Group
+Computer Science Division
+University of California
+Berkeley, CA 94720
+415-642-4948
+.fi
+.sh 2 "Preliminary Discussions"
+.pp
+Preliminary discussions have been held with:
+.sp
+.nf
+Thomas Woodrow
+Numerical Aerodynamic Simulation Division
+Systems Development Branch
+NASA Ames Research Center
+Mail Stop 258-5
+Moffett Field, CA 94035
+415-604-3966
+.fi
+.sh 2 Funding
+.pp
+The funding requested is $100,000.
+The project will start November 1, 1991, and will last for one year.
+.bp
+.sh 1 Abstract
+.pp
+The primary goal of the 4.4BSD project is to incorporate leading edge
+research ideas in a stable and reliable implementation dealing with
+current problems in operating systems research.
+These research areas include networking protocols, virtual
+memory, shared memory, threads and multiprocessing.
+The resulting system is widely used by other researchers in operating
+systems and network protocols and by vendor organizations.
+The most recent two releases made by the Computer Systems Research Group
+(CSRG), 4.2BSD and 4.3BSD, provide the core of the standard networking
+and/or operating system software for nearly all vendors of UNIX-based
+workstations and minicomputers.
+The network support in the current systems released by both the Open
+Software Foundation (OSF), OSF-1, and AT&T, System V Release 4, is
+based on that found in 4.3BSD.
+.pp
+A secondary goal of our research is to make an inexpensive, cutting-edge
+research system available to anyone without restrictions based on
+the inclusion of proprietary software or restrictive licensing.
+CSRG is unquestionably the largest current distributor of technologically
+advanced, freely redistributable software.
+In June 1991, CSRG made an unencumbered release that includes most
+of the kernel and about 75% of the utilities found on 4.3BSD.
+.pp
+During the funding period, CSRG anticipates that it will complete
+its next major release, 4.4BSD.
+As soon as this release is complete, CSRG will begin work on a
+follow-on release, tentatively named 4.5BSD.
+The 4.5BSD release is expected to include full multiprocessor support.
+The requested funding will support the development of software for
+both releases.
+.sp 2
+.sh 1 "Project Description"
+.pp
+The project will help fund the following specific goals:
+.ip \(bu
+Integrate a new virtual memory subsystem into the kernel which
+includes multiprocessor support.
+.ip \(bu
+Design and implement a new networking subsystem into the kernel which
+includes multiprocessor support.
+.ip \(bu
+Implement a prototype of the POSIX 1003.4a threads model with support
+for multiple threads of execution through the use of primitives providing
+thread synchronization, scheduling and mutual exclusion.
+.ip \(bu
+Design and implement the machine dependent code to support a multiprocessor
+version of at least one architecture.
+.ip \(bu
+Replace the remaining proprietary source code in the machine independent
+portions of the kernel.
+.sp 2
+.sh 1 "Personnel"
+.pp
+There are five members of the CSRG research staff: Kirk McKusick,
+Mike Karels, Keith Bostic, Keith Sklower and Marc Teitelbaum.
+.pp
+Dr. McKusick received his undergraduate degree in Electrical Engineering
+from Cornell University.
+His graduate work was done at the University of California, where he
+received Masters degrees in Computer Science and Business Administration,
+and a Ph.D. in the area of programming languages.
+While at Berkeley he implemented the 4.2BSD fast file system and was
+involved in implementing the Berkeley Pascal system.
+He currently is the Research Computer Scientist at the Berkeley Computer
+Systems Research Group.
+He is president of the Usenix Association and a member of ACM and IEEE.
+He is a co-author of the book ``The Design and Implementation of the
+4.3BSD UNIX Operating System.''
+.pp
+Michael J. Karels is the Principal Programmer of the Computer Systems
+Research Group at the University of California, Berkeley.
+Since the release of 4.2BSD, he has been the primary system architect
+for Berkeley UNIX, continuing the development of new versions of BSD.
+Michael Karels received his B.S. in Microbiology from the University of
+Notre Dame.
+He was the principal developer of the 2.9BSD UNIX release of the Berkeley
+Software Distribution for the PDP-11.
+He is a member of the ACM, the IEEE and the Internet Engineering Task
+force.
+He is a co-author of the book ``The Design and Implementation of the
+4.3BSD UNIX Operating System.''
+.pp
+A representative selection of CSRG's relevant publications are as follows:
+.sp
+M. McKusick, M. Karels, K. Bostic,
+``A Pageable Memory-Based Filesystem'',
+\fIProceedings of the Anaheim Usenix Conference\fP,
+pp 137-144, June 1990.
+.sp
+.lp
+M. McKusick, M. Karels, K. Bostic,
+``The Release Engineering of 4.3BSD'',
+\fIProceedings of the New Orleans Usenix Workshop on Software Management\fP,
+pp 95-100, April 1989.
+.sp
+.lp
+M. McKusick, M. Karels,
+``Design of a General Purpose Memory Allocator for the 4.3BSD UNIX Kernel'',
+\fIProceedings of the San Francisco Usenix Conference\fP,
+pp 295-304, June 1988.
+.sp
+.lp
+M. McKusick, M. Karels,
+``Directions of UNIX at Berkeley'',
+\fIDigest of Papers of the Thirty-second IEEE Computer Society
+International Conference\fP,
+Compcon, San Francisco, pp. 196-199, February 23-27, 1987.
+.sp
+.lp
+M. McKusick, M. Karels,
+``A New Virtual Memory Implementation for Berkeley UNIX'',
+\fIProceedings of the European UNIX Users Group Meeting\fP,
+Manchester, England, pp. 451-460, September 1986.
+.sp
+.lp
+M. Karels, M. McKusick,
+``Towards a Compatible Filesystem Interface'',
+\fIProceedings of the European UNIX Users Group Meeting\fP,
+Manchester, England, pp. 481-496, September 1986.
+.sh 1 "Facilities and Equipment"
+.pp
+Equipment for the CSRG is currently being provided by Computer Consoles
+Inc., Hewlett-Packard Corp. and Compaq Corporation.
+This equipment is located in 458 Evans Hall.
+No additional equipment is required for the proposed project.
+.sh 1 "Proposed Costs"
+.pp
+The CSRG currently requires funding at a level of $31,179 per month
+for salaries and $6,800 for supplies and expenses such as equipment
+maintenance and power.
+Of the requested funding of $100,000, $49,000 will go directly
+to the University of California as overhead.
+The remaining $51,000 of funding will fund the CSRG for slightly under
+1.5 months.
+Of course, NASA is not the only source of funding for the CSRG.
+Current funding is provided by the Open Software Foundation,
+Hewlett-Packard Corp. and Cray Research.
+.sh 1 "Current Projects"
+.pp
+No other current projects are being conducted by the
+research investigator, or by other members of CSRG.
+.sp 8
+.nf
+.in +1.0i
+Professor Susan L. Graham
+Principal Investigator

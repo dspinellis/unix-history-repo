@@ -1,0 +1,50 @@
+/*-
+ * Copyright (c) 1982 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.redist.c%
+ *
+ *	@(#)objsym.rep	5.3 (Berkeley) %G%
+ */
+
+/*
+ * This file contains the definition of the representation of symbolic
+ * information in the object file.  The difference from this and memory
+ * is that pointers are represented as short integers and line number
+ * information is stored relatively where the base is found in the
+ * file information.
+ */
+
+typedef struct {
+    short strindex;
+    char oclass;
+    char oblkno;
+    short typno;
+    short chno;
+    union {
+	int offset;     /* variable address */
+	long iconval;       /* integer constant value */
+	double fconval;     /* floating constant value */
+	struct {        /* range bounds */
+	    long lower;
+	    long upper;
+	} orangev;
+	struct {        /* address of function value, code */
+	    int offset;
+	    ADDRESS codeloc;
+	} ofuncv;
+	struct {        /* variant record info */
+	    int size;
+	    short vtorecno;
+	    short vtagno;
+	} ovarnt;
+    } osymvalue;
+} OBJSYM;
+
+typedef union {
+    long together;
+    struct {
+	short lineincr;
+	unsigned short addrincr;
+    } separate;
+} OBJLINE;

@@ -1,0 +1,52 @@
+.\"	@(#)goodbye	5.4 (Berkeley) %G%
+.\"
+.\" use -ms
+.PP
+As you may already have heard, the CSRG is going to go away after the
+final release of 4.4BSD.
+For the following reasons, it is clear that the CSRG cannot continue
+in its present form.
+.PP
+Funding has become increasingly time-consuming and difficult.
+We are spending more and more of our time obtaining funding,
+time that we would prefer to spend working on BSD.
+As many of you are intimately aware, computer corporations are
+actively seeking ways to reduce discretionary outlays.
+Also, as UNIX vendors have developed their own research groups,
+the work of the CSRG has become less necessary to them.
+Finally, making BSD freely redistributable has resulted
+in fewer distributions sold,
+as other organizations sell our releases for less money.
+.PP
+Support within the University of California has declined as BSD has
+become less widely used internally.
+Victims of our own success, many of the features once found only in
+BSD are now available from every vendor.
+.PP
+The system has become too large and complex for a group of four to
+architect and maintain.
+In particular, losing Mike Karels has made it obvious to us that
+the group is below critical mass for developing and distributing a
+complete UNIX system.
+.PP
+So, we intend to make the 4.4BSD-alpha distribution available around
+the first week of July.
+We will spend the summer and some part of the fall cleaning up
+the release and make the final 4.4BSD release available in the fall.
+When the final
+release happens is mostly dependent on when our current funding runs
+out.
+At that time we will close down the group.
+.PP
+BSD has always been a community effort, and, as a community effort,
+does not rely on a small group of people in Berkeley to keep it going.
+BSD will not go away, but will live on through the free software and
+commercial efforts of many people.
+We thank you for your support over the years, your funding, and,
+of course, the software you've contributed to make the BSD system
+what it is today!
+.in 1i
+.sp 2
+Kirk McKusick
+.br
+Keith Bostic

@@ -1,0 +1,96 @@
+.\" Copyright (c) 1983, 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)setuid.2	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt SETUID 2
+.Os BSD 4.2
+.Sh NAME
+.Nm setuid ,
+.Nm seteuid ,
+.Nm setgid ,
+.Nm setegid ,
+.Nd set user and group ID
+.Sh SYNOPSIS
+.Fd #include <sys/types.h>
+.Fd #include <unistd.h>
+.Ft int
+.Fn setuid "uid_t uid"
+.Ft int
+.Fn seteuid "uid_t euid"
+.Ft int
+.Fn setgid "gid_t gid"
+.Ft int
+.Fn setegid "gid_t egid"
+.Sh DESCRIPTION
+The
+.Fn setuid
+function
+sets the real and effective
+user IDs and the saved set-user-ID of the current process
+to the specified value.
+The
+.Fn setuid
+function is permitted if the specified ID is equal to the real user ID
+of the process, or if the effective user ID is that of the super user.
+.Pp
+The
+.Fn setgid
+function
+sets the real and effective
+group IDs and the saved set-group-ID of the current process
+to the specified value.
+The
+.Fn setgid
+function is permitted if the specified ID is equal to the real group ID
+of the process, or if the effective user ID is that of the super user.
+.Pp
+The
+.Fn seteuid
+function
+.Pq Fn setegid
+sets the effective user ID (group ID) of the
+current process.
+The effective user ID may be set to the value
+of the real user ID or the saved set-user-ID (see
+.Xr intro 2
+and
+.Xr execve 2 ) ;
+in this way, the effective user ID of a set-user-ID executable
+may be toggled by switching to the real user ID, then re-enabled
+by reverting to the set-user-ID value.
+Similarly, the effective group ID may be set to the value
+of the real group ID or the saved set-user-ID.
+.Pp
+.Sh RETURN VALUES
+Upon success, these functions return 0;
+otherwise \-1 is returned.
+.Pp
+If the user is not the super user, or the uid
+specified is not the real, effective ID, or saved ID,
+these functions return \-1.
+.Sh SEE ALSO
+.Xr getuid 2 ,
+.Xr getgid 2
+.Sh STANDARDS
+The
+.Fn setuid
+and
+.Fn setgid
+functions are compliant with the
+.St -p1003.1-88
+specification with
+.Li _POSIX_SAVED_IDS
+not defined.
+The
+.Fn seteuid
+and
+.Fn setegid
+functions are extensions based on the 
+.Tn POSIX
+concept of
+.Li _POSIX_SAVED_IDS ,
+and have been proposed for a future revision of the standard.

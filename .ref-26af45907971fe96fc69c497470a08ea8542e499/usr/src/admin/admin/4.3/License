@@ -1,0 +1,350 @@
+.\" @(#)License	1.4 (CSRG - distribution) %G%
+.ND
+.po +0.34375i
+.nr PO +0.34375i
+(Rev. 4/86)
+.ps 14
+.ft B
+.ce
+LICENSE AGREEMENT
+.ft R
+.sp 3
+.ps 12
+.vs 18
+.nr VS 18
+.PP
+.hy 0
+THIS LICENSE AGREEMENT is made and entered into
+by and between THE REGENTS OF THE UNIVERSITY
+OF CALIFORNIA, a California corporation, and
+\l'2.25i'
+\l'3.1i'\|, a \l'2.6i' having its
+principal office at \l'3.2i'\|, hereinafter
+``LICENSEE'', and shall become effective
+on the date of execution by THE REGENTS OF THE UNIVERSITY OF CALIFORNIA.
+.hy 14
+.sp 2
+.vs
+.ps 10
+.vs 15
+.nr VS 15
+.I
+.ce
+W I T N E S S E T H:
+.R
+.sp
+.PP
+\fI WHEREAS, \fR AMERICAN TELEPHONE & TELEGRAPH CORPORATION and/or its
+predecessor WESTERN ELECTRIC COMPANY, INCORPORATED (hereinafter jointly
+known as ``AT&T'') is the proprietor and owner of the UNIX/32V Time
+Sharing System, Version 1.0 (hereinafter ``UNIX/32V''),
+UNIX System III (hereinafter ``SYSTEM-III''), and
+UNIX System V (hereinafter ``SYSTEM-V'');
+and
+.PP
+\fI WHEREAS, \fR The Regents of the University of California is the
+proprietor and owner of enhancements and additions to UNIX/32V, which
+together with parts of UNIX/32V comprise computer programs and
+documentation entitled ``Fourth Berkeley Software Distribution;'' and
+.PP
+\fI WHEREAS, \fR the Fourth Berkeley Software Distribution includes
+some material contributed by persons other than agents, officers,
+and employees of The Regents of the University of California
+(hereinafter ``Other Contributors'') and these Other Contributors are identified
+within the Fourth Berkeley Software Distribution; and
+.PP
+\fI WHEREAS, \fR The Regents of the University of California has been
+authorized by AT&T to distribute the Fourth Berkeley Software
+Distribution to licensees who are also AT&T's licensees for
+UNIX/32V, SYSTEM-III, or SYSTEM-V; and
+.PP
+\fI WHEREAS, \fR LICENSEE warrants and represents that it is an AT&T
+licensee for
+UNIX/32V, SYSTEM-III, or SYSTEM-V; and
+.PP
+\fI WHEREAS, \fR LICENSEE desires to obtain from The Regents of the
+University of California, and The Regents of the University of
+California desires to grant to LICENSEE, a license to use the computer
+programs and documentation comprising the Fourth Berkeley Software
+Distribution;
+.PP
+\fI NOW, \fR THEREFORE, in consideration of the mutual covenants,
+conditions and terms hereinafter set forth, and for other good and
+valuable consideration, The Regents of the University of California
+hereby grants to LICENSEE the nonexclusive right to use and to
+sublicense the Fourth Berkeley Software Distribution, the components of
+which are described on the attached Schedule A, subject to the terms
+and conditions of this Agreement and LICENSEE hereby accepts such
+license solely upon such terms and conditions.
+.bp
+.PP
+\01.\ \ \fBTerm. \fR The term of this Agreement shall commence on the
+effective date hereof, and, unless sooner terminated as hereinafter set forth,
+shall terminate when LICENSEE's
+UNIX/32V, SYSTEM-III, or SYSTEM-V
+license terminates.
+LICENSEE may terminate this Agreement upon thirty (30) days written notice
+to The Regents of the University of California.
+This license shall terminate thirty (30) days after notice from The
+Regents of the University of California to LICENSEE that LICENSEE
+is in breach of this Agreement unless within that time LICENSEE gives
+notice satisfactory to The Regents of the University of California
+that such breach has been corrected.
+Upon termination, LICENSEE shall immediately destroy the
+Fourth Berkeley Software Distribution and all copies thereof including
+any copies contained in any storage apparatus or medium
+and shall cease use and sublicensing thereof.
+.PP
+\02.\ \ \fBFees. \fRThe distribution fee for this license and delivery
+of one physical copy of the Fourth Berkeley Software Distribution is
+one thousand dollars ($1,000.00). LICENSEE may obtain additional copies
+and new releases
+of the Fourth Berkeley Software Distribution which The Regents of
+the University of California may choose to make available
+under the terms of this Agreement by paying an additional
+distribution fee determined by The Regents of the University of
+California.  Distribution fees are due and payable in advance.
+Distribution fees do not include local, state or federal taxes, and LICENSEE
+hereby agrees to pay all such taxes as may be imposed upon LICENSEE or
+The Regents of the University of California
+with respect to the distribution, possession, use, or sublicensing
+of the Fourth Berkeley Software Distribution pursuant to this Agreement.
+.PP
+\03.\ \ \fBTitle. \fR LICENSEE agrees that the Fourth Berkeley Software
+Distribution is, and shall at all times remain the property of The
+Regents of the University of California.  LICENSEE shall have no right,
+title or interest therein or thereto except as expressly set forth in
+this Agreement.
+.PP
+\04.\ \ \fBAT&T Proprietary Software. \fR LICENSEE and The Regents of
+the University of California agree that the Fourth Berkeley Software
+Distribution contains proprietary software belonging to AT&T and
+licensed by AT&T as UNIX/32V.  LICENSEE represents and warrants that it
+has obtained and currently holds a valid license from AT&T to use
+UNIX/32V, SYSTEM-III, and/or SYSTEM-V
+and has provided a copy of this license to
+The Regents of the University of California attached as Schedule B.
+LICENSEE agrees to treat AT&T's proprietary software included in the
+Fourth Berkeley Software Distribution in the same manner as if such
+included proprietary software had been received directly pursuant to
+LICENSEE's license from AT&T.  It is agreed that should the LICENSEE's
+license from AT&T be modified, for example, to include additional CPUs
+or to upgrade from a UNIX/32V license to a SYSTEM-V license, the
+terms of the modified license will govern the use of the Fourth
+Berkeley Software Distribution.
+LICENSEE further agrees that the mark ``UNIX'' is a Trademark of
+Bell Laboratories.
+.PP
+\05.\ \ \fBDuplication. \fR LICENSEE has the right to duplicate the
+Fourth Berkeley Software Distribution as required pursuant to its use
+and sublicensing as allowed
+by this Agreement provided that such duplication is allowed under the terms
+of LICENSEE's
+UNIX/32V, SYSTEM-III, or SYSTEM-V license with
+AT&T.
+.bp
+.PP
+\06.\ \ \fBSublicensing by Licensee. \fR LICENSEE may sublicense the
+use of the Fourth Berkeley Software Distribution to third parties
+provided that:
+.RS
+.IP (a)
+LICENSEE is permitted by AT&T to sublicense
+UNIX/32V, SYSTEM-III, or SYSTEM-V
+software;
+.IP (b)
+LICENSEE's sublicensing of the Fourth Berkeley Software Distribution is
+under the same terms and conditions that AT&T requires be applied to
+LICENSEE's sublicensing of
+UNIX/32V, SYSTEM-III, or SYSTEM-V, whichever is
+applicable;
+.IP (c)
+LICENSEE's sublicense contains the covenants and restrictions of
+paragraphs 7, 8, and 9.
+.RE
+.LP
+Material so sublicensed may be either modified or unmodified by
+LICENSEE.  LICENSEE may, but need not, charge a fee for such licenses.
+.PP
+\07.\ \ \fBProper Credit and Recognition. \fR
+In the use of any part of the Fourth Berkeley Software Distribution,
+LICENSEE will give
+appropriate credit to The Regents of the University of California
+and the Electrical Engineering and Computer Sciences Department
+at the Berkeley Campus of the University of California
+and to the Other Contributors for their roles in its development.
+If LICENSEE is providing documentation similar to that which is
+provided with the Fourth Berkeley Software Distribution,
+notices similar to those included in that documentation
+suffice to satisfy this requirement.
+If LICENSEE is providing new documentation, this requirement
+will be satisfied if each document includes the following statement:
+``This software and documentation is based in part on the Fourth
+Berkeley Software Distribution under license from The Regents
+of the University of California.  We acknowledge the following
+individuals and institutions for their role in its development:
+[insert names of individuals and institutions which appear in the
+documentation provided to the LICENSEE as part of the Fourth Berkeley
+Software Distribution for those portions of said Distribution
+used by LICENSEE].''
+.PP
+\08.\ \ \fBLack of Warranty. \fR
+The Fourth Berkeley Software Distribution is provided by The Regents
+of the University of California and the Other Contributors
+on an ``As Is'' basis.
+Neither The Regents of the University of California nor the Other Contributors
+warrant that the
+functions contained in the Fourth Berkeley Software Distribution will
+meet LICENSEE's requirements or will operate in the combinations which
+may be selected for use by the LICENSEE, or that the operation of the
+Fourth Berkeley Software Distribution will be uninterrupted or error
+free.
+NEITHER THE REGENTS OF THE UNIVERSITY OF CALIFORNIA NOR THE OTHER CONTRIBUTORS
+MAKE
+ANY WARRANTIES, EITHER EXPRESS OR IMPLIED, AS TO ANY MATTER
+WHATSOEVER, INCLUDING WITHOUT LIMITATION, THE CONDITION OF THE
+FOURTH BERKELEY SOFTWARE DISTRIBUTION,
+ITS MERCHANTABILITY OR ITS FITNESS FOR ANY PARTICULAR PURPOSE.
+.PP
+\09.\ \ \fBLack of Maintenance Services. \fR LICENSEE understands
+and agrees that The Regents of the University of California and the
+Other Contributors are
+under no obligation to provide either maintenance services,
+update services, notices of latent defects, or correction
+of defects for the Fourth Berkeley Software Distribution.
+.bp
+.PP
+10.\ \ \fBPatent, Trade Secret and Copyright Infringement.  \fRIf 
+The Regents of the University of California gives formal written
+notice to LICENSEE that there has been a claim, or is likely to
+be a claim, that the Fourth Berkeley Software Distribution infringes
+a U.S. patent, trade secret, or copyright, LICENSEE agrees to either:
+.RS
+.IP (a)
+immediately cease use of, cease sublicensing of, and destroy
+the original and all copies of that part of the Fourth Berkeley
+Software Distribution which is, or is likely to become, subject
+to the claim of infringement; or
+.IP (b)
+procure from claimant, or potential claimant, of infringement the
+continued right to use and sublicense that part of the Fourth
+Berkeley Software Distribution which is, or is likely to become,
+subject to the claim of infringement; or
+.IP (c)
+procure from The Regents of the University of California,
+which procurement shall be granted at the sole discretion of
+The Regents of the University of California,
+the continued right to use and sublicense that part of the Fourth
+Berkeley Software Distribution which is, or is likely to become,
+subject to the claim of infringement.
+.RE
+.PP
+11.\ \ \fBLimitation of Liability. \fR LICENSEE agrees to
+indemnify, defend, and hold harmless The Regents of the University
+of California and the Other Contributors,
+their successors, agents,
+officers, and employees, either in their individual capacities or
+by reason of their relationship to The Regents of the University
+of California or the Other Contributors, with respect to any expense,
+claim, liability, loss or
+damage (including any incidental or consequential damages) either
+direct or indirect, whether incurred, made or suffered by
+LICENSEE or any of its sublicensees or by other third parties, in
+connection with or in any way arising out of the furnishing,
+sublicensing, performance or use of the Fourth Berkeley Software
+Distribution in connection with this Agreement.
+LICENSEE's obligations under this paragraph include, but are not
+limited to, its obligation to indemnify, defend, and hold
+The Regents of the University of California and the Other Contributors,
+their agents, officers, and employees harmless in the
+case of any claim of copyright, trade secret, or patent
+infringement based in any manner on LICENSEE's use or sublicensing
+of the Fourth Berkeley Software Distribution.
+.PP
+12.\ \ \fBLegal Expenses. \fR  In case legal action is taken by
+either party to enforce this Agreement, all costs and expenses,
+including reasonable attorney's fees, incurred by the
+prevailing party in exercising any of its rights or
+remedies hereunder or in enforcing any of the terms,
+conditions, or provisions hereof shall be paid by the other party.
+.PP
+13.\ \ \fBSeverability. \fR  If any part, term or provision of
+this Agreement shall be held illegal, unenforceable or in conflict
+with any law of a federal, state or local government having
+jurisdiction over this Agreement, the validity of the remaining
+portions or provisions shall not be affected thereby.
+.PP
+14.\ \ \fBGoverning Law. \fR  This Agreement shall be construed and
+enforced according to the laws of California.
+If LICENSEE is located outside
+the United States of America, the parties hereto agree
+that any dispute arising in connection with this
+Agreement will be settled by the ICC Court of Arbitration.
+.PP
+15.\ \ \fBParagraph Headings. \fR  The headings herein are inserted for
+convenience only and shall not be construed to limit or modify
+the scope of any provision of this Agreement.
+.bp
+.PP
+16.\ \ \fBEntire Agreement. \fR  This Agreement contains all the
+agreements, representations, and understandings of the parties hereto
+and supersedes any previous understandings, commitments or
+agreements, oral or written.
+.PP
+17.\ \ \fBAuthority. \fR  Each of the undersigned warrants that he/she
+has the authority to bind to this Agreement the party which
+he/she represents.
+.sp 2
+.LP
+.UL \fB\s+2Amendment\ No.\ One:\s-2\fR  
+.IP
+The release distributed under this agreement is 4.2
+of the Fourth Berkeley Software Distribution and
+updates thereto which comprise release 4.3.
+.sp 2
+.PP
+IN WITNESS WHEREOF, The Regents of the University of California 
+and LICENSEE have executed this Agreement
+on the dates specified below.  The
+effective date of this Agreement shall be the date of execution by
+The Regents of the University of California.
+.sp 3
+.in +18
+.vs 12
+.B
+THE REGENTS OF THE
+.br
+UNIVERSITY OF CALIFORNIA
+.br
+(Licensor)
+.R
+.sp 2
+.in +1
+By:\l'|6i-20m'
+.sp 2
+\l'|6i-20m'
+.sp -4p
+(Title)
+.sp 1
+Date:\l'|6i-20m'
+.in -1
+.sp 3
+.B
+\l'|6.125i-20m'
+.sp 1
+\l'|6.125i-20m'
+.sp 1
+\l'|6.125i-20m'
+.sp -4p
+(Licensee)
+.sp 2
+.in +1
+By:\l'|6i-20m'
+.sp 2
+\l'|6i-20m'
+.sp -4p
+(Title)
+.sp
+Date:\l'|6i-20m'
+.in -20
+

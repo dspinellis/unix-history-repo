@@ -1,0 +1,44 @@
+#print
+By now you are probably wondering how you
+get into the editor if someone else doesn't put
+you there.  The main command interpreter (the shell)
+recognizes
+  ed
+as the name of the editor.  (On some systems, it's
+also called "e", which is a useful abbreviation.)
+You can give a file name,
+which becomes the current file.  Thus
+  ed NAME
+in response to $ puts you in the editor with
+current file as specified by NAME.
+So you can print a file with the sequence
+  ed file
+  1,$p
+  w
+  q
+All right.  There is a file in the current
+directory named for a New Jersey city.  Print
+it with "cat" and then with the editor.
+Then type "ready".
+#create Ref
+2 cups sifted all-purpose flour
+1 tablespoon double-acting baking powder
+1/2 teaspoon salt
+1/4 cup butter
+3/4 cup milk
+119
+#create trenton
+2 cups sifted all-purpose flour
+1 tablespoon double-acting baking powder
+1/2 teaspoon salt
+1/4 cup butter
+3/4 cup milk
+#copyout
+#user
+#uncopyout
+tail -6 .ocopy >X1
+#cmp X1 Ref
+#log
+#next
+12.1a 10
+12.2a 5

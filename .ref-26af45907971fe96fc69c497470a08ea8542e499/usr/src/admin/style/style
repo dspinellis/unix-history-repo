@@ -1,0 +1,247 @@
+/*
+ * Style guide for BSD's KNF (Kernel Normal Form).
+ *
+ *	@(#)style	1.10 (Berkeley) %G%
+ */
+
+/*
+ * VERY important single-line comments look like this.
+ */
+
+/* Most single-line comments look like this. */
+
+/*
+ * Multi-line comments look like this.  Make them real sentences.  Fill
+ * them so they look like real paragraphs.
+ */
+
+/* Include files go at the top of the source module. */
+#include <stdio.h>		/* Non-local includes in brackets. */
+
+/*
+ * Global pathnames are defined in /usr/include/paths.h.  Pathnames local
+ * to the program go in pathnames.h in the local directory.
+ */
+#include <paths.h>		/* Non-local includes in brackets. */
+#include "pathnames.h"		/* Local includes in quotes. */		
+
+/*
+ * All ANSI function decls go at the top of the source module.  Use the
+ * __P macro from include file <sys/cdefs.h>.  Only the kernel has a name
+ * associated with the types, i.e. in the kernel use:
+ *
+ *	void function __P((int a));
+ *
+ * in user land use:
+ *
+ *	void function __P((int));
+ */
+void function __P((int, const char *));
+
+/*
+ * Macros are capitalized, parenthesized, and should avoid side-effects.
+ * If they are an inline expansion of a function, the function is defined
+ * all in lowercase, the macro has the same name all in uppercase. If the
+ * macro needs more than a single line, use braces.  Put a space before
+ * the backslashes.
+ */
+#define	MACRO(x, y) { \
+	variable = (x) + (y); \
+	line two; \
+}
+
+/* Enum types are capitalized. */
+enum enumtype { ONE, TWO } et;
+
+/*
+ * When declaring variables in structures, declare them sorted by use, then
+ * by size, and then by alphabetical order.  The first category normally
+ * doesn't apply, but there are exceptions.  Each one gets its own line.
+ * Put a tab after the first word, i.e. use "int^Ix;" and "struct^Ifoo *x;".
+ *
+ * Major structures should be declared at the top of the file they are
+ * used in, or in separate header files, if they are used in multiple
+ * source files. Use of the structures should be by separate declarations
+ * and should be "extern" if they are declared in a header file.
+ */
+struct foo {
+	struct	foo *next;	/* List of active foo */
+	struct	mumble amumble;	/* Comment for mumble */
+	int	bar;
+};
+struct foo *foohead;		/* Head of global foo list */
+	
+/*
+ * All major routines should have a comment briefly describing what
+ * they do. The comment before the "main" routine should describe
+ * what the program does.
+ */
+main(argc, argv)
+	int argc;
+	char *argv[];
+{
+	extern char *optarg;
+	extern int optind;
+	long num;
+	int ch;
+	char *ep;
+
+	/*
+	 * For consistency, getopt should be used to parse options.
+	 * Options should be sorted in the getopt call and the switch
+	 * statement, unless they fall through.  Elements in a switch
+	 * statement that fall through should have a FALLTHROUGH comment.
+	 * Numerical arguments should be checked for accuracy.
+	 */
+	while ((ch = getopt(argc, argv, "abn")) != EOF)
+		switch (ch) {		/* Indent the switch. */
+		case 'a':		/* Don't indent the case. */
+			aflag = 1;
+			/* FALLTHROUGH */
+		case 'b':
+			bflag = 1;
+			break;
+		case 'n':
+			num = strtol(optarg, &ep, 10);
+                        if (num <= 0 || *ep)
+                                err("illegal number -- %s", optarg);
+			break;
+		case '?':
+		default:
+			usage();
+		}
+	argc -= optind;
+	argv += optind;
+
+	/*
+	 * Space after keywords (while, for, return, switch).  No braces are
+	 * used for single statement block.
+	 *
+	 * Forever loops are done with for's, not while's.
+	 */
+	for (;;)
+		stmt;
+	
+	/*
+	 * Parts of a for loop may be left empty.  Avoid declarations in
+	 * blocks unless the routine is unusually complicated.
+	 */
+	for (; cnt < 15; cnt++) {
+		stmt1;
+		stmt2;
+	}
+
+	while (cnt < 20) {
+		stmt1;		/* Second level indents are four spaces. */
+		z = a + really + long + statment + that + needs + two lines +
+		    gets + indented + four + spaces + on + the + second +
+		    and + subsequent + lines.
+	}
+
+	/*
+	 * Try to put shorter part first.  The closing and opening braces
+	 * go on the same line as the else.
+	 */
+	if (test)
+		stmt;
+	else if (bar) {
+		stmt;
+		stmt;
+	} else
+		stmt;
+		
+	/* No space after function names. */
+	if (error = function(a1, a2))
+		exit(error);
+
+	/*
+	 * Unary operators do not require spaces, binary operators do.
+	 * Try not to use too many parenthesis unless the statement is
+	 * really confusing without them.
+	 */
+	a = b->c[0] + ~d == (e || f) || g && h ? i : j >> 1;
+	k = l & FLAGS;
+
+	/*
+	 * Exits should be 0 on success, and 1 on failure.  Don't denote
+	 * all the possible exit points, using the integers 1 through 300.
+	 */
+	exit(0);    /* Avoid obvious comments such as "Exit 0 on success." */
+}
+
+/*
+ * If a function type is declared, it should be on a line
+ * by itself preceeding the function.
+ */
+static char *
+function(a1, a2, a3, a4)
+	int a1, a2, a4;	/* Declare ints too. */
+	float a3;	/* List in order declared, as much as possible. */
+{
+	/*
+	 * When declaring variables in functions declare them sorted by size,
+	 * then in alphabetical order; multiple ones per line are okay.  Old
+	 * style function declarations can go on the same line.  ANSI style
+	 * function declarations should go in the include file "externs.h".
+	 * If a line overflows reuse the type keyword.
+	 *
+	 * Try not to initialize variables in the declarations.
+	 */
+	extern u_char one;
+	extern char two;
+	struct foo three, *four;
+	double five;
+	int *six, seven, eight();
+	char *nine, ten, eleven, twelve, thirteen, fourteen, fifteen, sixteen;
+	char *overflow __P((void));
+	void *mymalloc __P((u_int));
+
+	/*
+	 * Casts and sizeof's are not followed by a space.  NULL is any
+	 * pointer type, and doesn't need to be cast, so use NULL instead
+	 * of (struct foo *)0 or (struct foo *)NULL.  Also, test pointers
+	 * against NULL, i.e. use:
+	 *
+	 * 	(p = f()) == NULL
+	 * not:
+	 *	!(p = f())
+ 	 *
+	 * Routines returning void * should not have their return values cast
+	 * to any pointer type.
+	 */
+	if ((four = malloc(sizeof(struct foo))) == NULL)
+		return (NULL);
+	if ((six = (int *)overflow()) == NULL)
+		return (NULL);
+	return (eight);
+}
+
+/* ANSI function braces look like regular function braces. */
+function(int a1, int a2)
+{
+	...
+}
+
+static void
+usage()
+{	/* Insert an empty line if the function has no local variables. */
+
+	/*
+	 * Use printf(3), not fputs/puts/putchar/whatever, it's faster and
+	 * usually cleaner, not to mention avoiding stupid bugs.
+	 *
+	 * Usage statements should look like the manual pages.  Options w/o
+	 * operands come first, in alphabetical order inside a single set of
+	 * braces.  Followed by options with operands, in alphabetical order,
+	 * each in braces.  Followed by required arguments in the order they
+	 * are specified, followed by optional arguments in the order they
+	 * are specified.  A bar ('|') separates either/or options/arguments,
+	 * and multiple options/arguments which are specified together are
+	 * placed in a single set of braces.
+	 *
+	 * "usage: f [-ade] [-b b_arg] [-m m_arg] req1 req2 [opt1 [opt2]]\n"
+	 * "usage: f [-a | -b] [-c [-de] [-n number]]\n"
+	 */
+	(void)fprintf(stderr, "usage: f [-ab]\n");
+	exit(1);
+}

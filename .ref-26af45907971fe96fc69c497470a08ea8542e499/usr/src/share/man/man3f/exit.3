@@ -1,0 +1,38 @@
+.\" Copyright (c) 1983, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.proprietary.roff%
+.\"
+.\"	@(#)exit.3	8.1 (Berkeley) %G%
+.\"
+.TH EXIT 3F ""
+.UC 5
+.SH NAME
+exit \- terminate process with status
+.SH SYNOPSIS
+.B subroutine exit (status)
+.br
+.B integer status
+.SH DESCRIPTION
+.I Exit
+flushes and closes all the process's files, and notifies the parent process
+if it is executing a
+.IR wait .
+The low-order 8 bits of 
+.I status
+are available to the parent process.
+(Therefore
+.I status
+should be in the range 0 \- 255)
+.PP
+This call will never return.
+.PP
+The C function
+.I exit
+may cause cleanup actions before the
+final `sys exit'.
+.SH FILES
+.ie \nM /usr/ucb/lib/libF77.a
+.el /usr/lib/libF77.a
+.SH "SEE ALSO"
+exit(2), fork(2), fork(3F), wait(2), wait(3F)

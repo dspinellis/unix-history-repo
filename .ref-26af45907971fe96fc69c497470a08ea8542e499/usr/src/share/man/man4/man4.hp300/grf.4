@@ -1,0 +1,187 @@
+.\" Copyright (c) 1990, 1991 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" the Systems Programming Group of the University of Utah Computer
+.\" Science Department.
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)grf.4	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt GRF 4 hp300
+.Os
+.Sh NAME
+.Nm grf
+.Nd
+.Tn HP
+graphics frame buffer device interface
+.Sh DESCRIPTION
+This is a generic description of the frame buffer device interface.
+The devices to which this applies are the 98544, 98545 and 98547
+Topcat display cards (also known as
+.Tn HP300H
+devices),
+the 98548, 98549 and 98550
+Catseye display cards,
+the 98700
+Gatorbox graphics box,
+the 98720
+Renaissance graphics box,
+and the 98730
+DaVinci graphics box.
+.Pp
+Use of the devices can be effectively approached from two directions.
+The first is through
+.Tn HP-UX
+.Em Starbase
+routines, the second is by direct control in the
+.Bx
+environment.
+In order to use the Starbase libraries,
+code must be compiled in an
+.Tn HP-UX
+environment, either by doing so on an
+.Tn HP-UX
+machine and transferring the binaries to the
+.Bx
+machine, or by compilation
+with the use of the
+.Xr hpux 1
+command.
+Applications using Starbase libraries have been run successfully
+on
+.Bx
+machines using both of these compilation techniques.
+.Pp
+Direct compilation,
+such as that used for the X Window System servers, has also been successful.
+Examples of some frame buffer operations can be found in
+the device dependent X Window system sources, for example the
+.Pa /usr/src/new/X/libhp.fb
+directory.  These files contain examples of device dependent color map
+initialization, frame buffer operations, bit moving routines etc.
+.Pp
+The basic programming of the
+.Nm grf Ns ?
+devices involves opening the device
+file, mapping the control registers and frame buffer addresses into user
+space, and then manipulating the device as the application requires.
+The address mapping is controlled by an
+.Xr ioctl 2
+call to map the device into user space, and an unmap call when finished.
+The ioctls supported by
+.Bx
+are:
+.Bl -tag -width indent
+.It Dv GRFIOCGINFO
+Get Graphics Info
+.Pp
+Get info about device, setting the entries in the
+.Em grfinfo
+structure, as defined in <hpdev/grfioctl.h>:
+.Bd -literal
+struct	grfinfo {
+	int	gd_id;		/* HPUX identifier */
+	caddr_t	gd_regaddr;	/* control registers physaddr */
+	int	gd_regsize;	/* control registers size */
+	caddr_t	gd_fbaddr;	/* frame buffer physaddr */
+	int	gd_fbsize;	/* frame buffer size */
+	short	gd_colors;	/* number of colors */
+	short	gd_planes;	/* number of planes */
+/* new stuff */
+	int	gd_fbwidth;	/* frame buffer width */
+	int	gd_fbheight;	/* frame buffer height */
+	int	gd_dwidth;	/* displayed part width */
+	int	gd_dheight;	/* displayed part height */
+	int	gd_pad[6];	/* for future expansion */
+};
+.Ed
+.It Dv GRFIOCON
+Graphics On
+.Pp
+Turn graphics on by enabling
+.Tn CRT
+output.  The screen will come on, displaying
+whatever is in the frame buffer, using whatever colormap is in place.
+.It Dv GRFIOCOFF
+Graphics Off
+.Pp
+Turn graphics off by disabling output to the
+.Tn CRT .
+The frame buffer contents
+are not affected.
+.It Dv GRFIOCMAP
+Map Device to user space
+.Pp
+Map in control registers and framebuffer space. Once the device file is
+mapped, the frame buffer structure is accessible.
+.It Dv GRFIOCUNMAP
+Unmap Device
+.Pp
+Unmap control registers and framebuffer space.
+.El
+.Pp
+For further information about the use of ioctl see the man page.
+.Sh EXAMPLE
+This short code fragment is an example of opening some graphics device and
+mapping in the control and frame buffer space:
+.Bd -literal
+#define GRF_DEV <some_graphics_device>  /* /dev/grfN */
+{
+	struct fbstruct *regs;  /*  fbstruct = gboxfb, rboxfb, etc. */
+	u_char *Addr, frame_buffer;
+	struct grfinfo gi;
+	int disp_fd;
+
+	disp_fd = open(GRF_DEV,1);
+	if (ioctl (disp_fd, GRFIOCGINFO, &gi) < 0) return -1;
+	(void) ioctl (disp_fd, GRFIOCON, 0);
+
+	Addr = (u_char *) 0;
+	if (ioctl (disp_fd, GRFIOCMAP, &Addr) < 0) {
+		(void) ioctl (disp_fd, GRFIOCOFF, 0);
+		return -1;
+	}
+	regs = (fbstruct *) Addr;               /* Control Registers   */
+	frame_buffer = (u_char *) Addr + gi.gd_regsize; /* Frame buffer mem */
+}
+.Ed
+.Sh FILES
+.Bl -tag -width /dev/*crt*? -compact
+.It Pa /dev/grf?
+.Bx
+interface special files
+.It Pa /dev/*crt*
+.Tn HP-UX
+.Em starbase
+interface special files
+.El
+.Sh DIAGNOSTICS
+None under
+.Bx .
+.Tn HP-UX
+The
+.Tn CE.utilities/Crtadjust
+programs must be used for each specific device.
+.Sh ERRORS
+.Bl -tag -width [EINVAL]
+.It Bq Er ENODEV
+no such device.
+.It Bq Er EBUSY
+Another process has the device open.
+.It Bq Er EINVAL
+Invalid ioctl specification.
+.El
+.Sh SEE ALSO
+.Xr ioctl 2 ,
+.Xr dv 4 ,
+.Xr gb 4 ,
+.Xr rb 4 ,
+.Xr tc 4 ,
+.Xr hil 4
+.Sh HISTORY
+The
+.Nm
+driver
+.Ud

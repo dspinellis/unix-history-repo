@@ -1,0 +1,67 @@
+.\" Copyright (c) 1990, 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" Chris Torek and the American National Standards Committee X3,
+.\" on Information Processing Systems.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)strcat.3	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt STRCAT 3
+.Os
+.Sh NAME
+.Nm strcat
+.Nd concatenate strings
+.Sh SYNOPSIS
+.Fd #include <string.h>
+.Ft char *
+.Fn strcat "char *s" "const char *append"
+.Ft char *
+.Fn strncat "char *s" "const char *append" "size_t count"
+.Sh DESCRIPTION
+The
+.Fn strcat
+and
+.Fn strncat
+functions
+append a copy of the null-terminated string
+.Fa append
+to the end of the null-terminated string
+.Fa s ,
+then add a terminating
+.Ql \e0 .
+The string
+.Fa s
+must have sufficient space to hold the result.
+.Pp
+The
+.Fn strncat
+function
+appends not more than
+.Fa count
+characters.
+.Sh RETURN VALUES
+The
+.Fn strcat
+and
+.Fn strncat
+functions
+return the pointer
+.Fa s .
+.Sh SEE ALSO
+.Xr bcopy 3 ,
+.Xr memccpy 3 ,
+.Xr memcpy 3 ,
+.Xr memmove 3 ,
+.Xr strcpy 3
+.Sh STANDARDS
+The
+.Fn strcat
+and
+.Fn strncat
+functions
+conform to
+.St -ansiC .

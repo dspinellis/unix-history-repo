@@ -1,0 +1,91 @@
+.\" Copyright (c) 1990, 1991 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)chown.8	6.10 (Berkeley) %G%
+.\"
+.Dd 
+.Dt CHOWN 8
+.Os BSD 4
+.Sh NAME
+.Nm chown
+.Nd change file owner and group
+.Sh SYNOPSIS
+.Nm chown
+.Op Fl HRfh
+.Ar owner Op Ar :group
+.Ar file ...
+.Nm chown
+.Op Fl HRfh
+.Ar :group
+.Ar file ...
+.Sh DESCRIPTION
+.Nm Chown
+sets the user ID and/or the group ID of the specified files.
+.Pp
+The options are as follows:
+.Bl -tag -width Ds
+.It Fl H
+When encountering a symbolic link on the command line, follow it.  All other
+symbolic links encountered in the traversal are not followed.
+.It Fl R
+Change the user ID and/or the group ID for the file hierarchies rooted
+in the files instead of just the files themselves.
+.It Fl f
+Don't report any failure to change file owner or group, nor modify
+the exit status to reflect such failures.
+.It Fl h
+When encountering a symbolic link anywhere in the traversal, follow it.
+.El
+.Pp
+The ownership of a symbolic link is immutable, so that unless the
+.Fl h
+or 
+.Fl H 
+flags are set,
+.Nm chown
+on a symbolic link is a no-op.
+.Pp
+The
+.Ar owner
+and
+.Ar group
+operands are both optional, however, one must be specified.
+If the
+.Ar group
+operand is specified, it must be preceded by a colon (``:'') character.
+.Pp
+The
+.Ar owner
+may be either a numeric user ID or a user name.
+If a user name is also a numeric user ID, the operand is used as a
+user name.
+The
+.Ar group
+may be either a numeric group ID or a group name.
+If a group name is also a numeric group ID, the operand is used as a
+group name.
+.Pp
+The ownership of a file may only be altered by a super-user for
+obvious security reasons.
+.Pp
+The
+.Nm chown
+utility exits 0 on success, and >0 if an error occurs.
+.Sh COMPATIBILITY
+Previous versions of the
+.Nm chown
+utility used the dot (``.'') character to distinguish the group name.
+This has been changed to be a colon (``:'') character so that user and
+group names may contain the dot character.
+.Sh SEE ALSO
+.Xr chgrp 1 ,
+.Xr find 1 ,
+.Xr chown 2 ,
+.Xr fts 3 ,
+.Xr symlink 7
+.Sh STANDARDS
+The
+.Nm chown
+command is expected to be POSIX 1003.2 compliant.

@@ -1,0 +1,1378 @@
+.\"	@(#)m2	6.1 (Berkeley) %G%
+.\"
+.NH
+LANGUAGE DESCRIPTION
+.SH
+Design
+.PP
+Ratfor
+attempts to retain the merits of Fortran
+(universality, portability, efficiency)
+while hiding the worst Fortran inadequacies.
+The language
+.ul
+is
+Fortran except for two aspects.
+First,
+since control flow is central to any program,
+regardless of the specific application,
+the primary task of
+Ratfor
+is to conceal this part of Fortran from the user,
+by providing decent control flow structures.
+These structures are sufficient and comfortable
+for structured programming in the narrow sense of programming without
+.UC GOTO 's.
+Second, since the preprocessor must examine an entire program
+to translate the control structure,
+it is possible at the same time to clean up many of the
+``cosmetic'' deficiencies of Fortran,
+and thus provide a language which is easier
+and more pleasant to read and write.
+.PP
+Beyond these two aspects _ control flow and cosmetics _
+Ratfor
+does nothing about the host of other weaknesses of Fortran.
+Although it would be straightforward to extend 
+it
+to provide
+character strings,
+for example,
+they are not needed by everyone,
+and of course
+the preprocessor would be harder to implement.
+Throughout, the design principle which has determined
+what should be in
+Ratfor
+and what should not has
+been
+.ul
+Ratfor
+.ul
+doesn't know any Fortran.
+Any language feature which would require that
+Ratfor
+really understand Fortran has been omitted.
+We will return to this point in the section
+on implementation.
+.PP
+Even within the confines of control flow and cosmetics,
+we have attempted to be selective
+in what features to provide.
+The intent has been to provide a small set of the most useful
+constructs,
+rather than to throw in everything that has ever been thought useful
+by someone.
+.PP
+The rest of this section contains an informal description
+of the
+Ratfor
+language.
+The control flow aspects will be
+quite familiar to readers used to languages like
+Algol, PL/I, Pascal, etc.,
+and the cosmetic changes are equally straightforward.
+We shall concentrate on 
+showing what the language looks like.
+.SH
+Statement Grouping
+.PP
+Fortran provides no way to group statements together,
+short of making them into a subroutine.
+The standard construction
+``if a condition is true,
+do this group of things,''
+for example,
+.P1
+if (x > 100)
+	{ call error("x>100"); err = 1; return }
+.P2
+cannot be written directly in Fortran.
+Instead
+a programmer is forced to translate this relatively
+clear thought into murky Fortran,
+by stating the negative condition
+and branching around the group of statements:
+.P1
+	if (x .le. 100) goto 10
+		call error(5hx>100)
+		err = 1
+		return
+10	...
+.P2
+When the program doesn't work,
+or when it must be modified,
+this must be translated back into
+a clearer form before one can be sure what it does.
+.PP
+Ratfor
+eliminates this error-prone and confusing back-and-forth translation;
+the first form 
+.ul
+is
+the way the computation is written in 
+Ratfor.
+A group of statements can be treated as a unit
+by enclosing them in the braces { and }.
+This is true throughout the language:
+wherever a single 
+Ratfor
+statement can be used,
+there can be several enclosed in braces.
+(Braces seem clearer and less obtrusive than
+.UL begin
+and
+.UL end 
+or
+.UL do
+and
+.UL end ,
+and of course 
+.UL do
+and
+.UL end
+already have Fortran meanings.)
+.PP
+Cosmetics
+contribute to the readability of code,
+and thus to its understandability.
+The character ``>'' is clearer than
+.UC ``.GT.'' ,
+so
+Ratfor
+translates it appropriately,
+along with several other similar shorthands.
+Although many Fortran compilers permit character strings in quotes
+(like
+.UL """x>100""" ),
+quotes are
+not allowed in 
+.UC ANSI
+Fortran,
+so 
+Ratfor
+converts it into the right number of
+.UL H 's:
+computers count better than people do.
+.PP
+Ratfor
+is a free-form language:
+statements may appear anywhere on a line,
+and several may appear on one line
+if they are separated by semicolons.
+The example above could also be written as
+.P1
+if (x > 100) {
+	call error("x>100")
+	err = 1
+	return
+}
+.P2
+In this case, no semicolon is needed at the end of each line because
+Ratfor
+assumes there is one statement per line
+unless told otherwise.
+.PP
+Of course,
+if the statement that follows the
+.UL if
+is a single statement
+(Ratfor
+or otherwise),
+no braces are needed:
+.P1
+if (y <= 0.0 & z <= 0.0)
+	write(6, 20) y, z
+.P2
+No continuation need be indicated 
+because the statement is clearly not finished on the first line.
+In general
+Ratfor
+continues lines when it seems obvious that they are not yet done.
+(The continuation convention is discussed in detail later.)
+.PP
+Although a free-form language permits wide latitude in formatting styles,
+it is wise to pick one that is readable, then stick to it.
+In particular, proper indentation is vital,
+to make the logical structure of the program obvious to the reader.
+.sp
+.SH
+The ``else'' Clause
+.PP
+Ratfor
+provides an
+.UL "else"
+statement to handle the construction
+``if a condition is true,
+do 
+this
+thing,
+.ul
+otherwise
+do that thing.''
+.P1
+if (a <= b)
+	{ sw = 0; write(6, 1) a, b }
+else
+	{ sw = 1; write(6, 1) b, a }
+.P2
+This writes out the smaller of
+.UL a
+and
+.UL b ,
+then the larger, and sets
+.UL sw
+appropriately.
+.PP
+The Fortran equivalent of this code is circuitous indeed:
+.P1
+	if (a .gt. b) goto 10
+		sw = 0
+		write(6, 1) a, b
+		goto 20
+10	sw = 1
+	write(6, 1) b, a
+20	...
+.P2
+This is a mechanical translation;
+shorter forms exist, 
+as they do for many similar situations.
+But all translations suffer from the same problem:
+since they are translations,
+they are less clear and understandable than code
+that is not a translation.
+To understand the Fortran version,
+one must scan the entire program to make
+sure that no other statement branches
+to statements 10 or 20
+before one knows that indeed this is an 
+.UL if-else
+construction.
+With the
+Ratfor
+version,
+there is no question about how one gets to the parts of the statement.
+The
+.UL if-else
+is a single unit,
+which can be read, understood, and ignored if not relevant.
+The program says what it means.
+.PP
+As before, if the statement following an
+.UL if
+or an
+.UL else
+is a single statement, no braces are needed:
+.P1
+if (a <= b)
+	sw = 0
+else
+	sw = 1
+.P2
+.PP
+The syntax of the
+.UL if
+statement is
+.P1
+if (\fIlegal Fortran condition\fP)
+	\fIRatfor statement\fP
+else
+	\fIRatfor statement\fP
+.P2
+where the 
+.UL else
+part is optional.
+The
+.ul
+legal Fortran condition
+is
+anything that can legally go into a Fortran Logical
+.UC IF .
+Ratfor
+does not check this clause,
+since it does not know enough Fortran
+to know what is permitted.
+The
+.ul
+Ratfor
+.ul
+statement
+is any Ratfor or Fortran statement, or any collection of them
+in braces.
+.SH
+Nested if's
+.PP
+Since the statement that follows an
+.UL if
+or 
+an
+.UL else
+can be any Ratfor statement, this leads immediately
+to the possibility of another
+.UL if
+or
+.UL else .
+As a useful example, consider this problem:
+the variable
+.UL f
+is to be set to
+\-1 if
+.UL x
+is less than zero,
+to
++1
+if
+.UL x
+is greater than 100,
+and to 0 otherwise.
+Then in Ratfor, we write
+.P1
+if (x < 0)
+	f = -1
+else if (x > 100)
+	f = +1
+else
+	f = 0
+.P2
+Here the statement after the first
+.UL else
+is another
+.UL if-else .
+Logically it is just a single statement,
+although it is rather complicated.
+.PP
+This code says what it means.
+Any version written in straight Fortran
+will necessarily be indirect
+because Fortran does not let you say what you mean.
+And as always, clever shortcuts may turn out
+to be too clever to understand a year from now.
+.PP
+Following an
+.UL else
+with an
+.UL if
+is one way to write a multi-way branch in Ratfor.
+In general the structure
+.P1
+if (...)
+	- - -
+else if (...)
+	- - -
+else if (...)
+	- - -
+ ...
+else
+	- - -
+.P2
+provides a way to specify the choice of exactly one of several alternatives.
+(Ratfor also provides a
+.UL switch
+statement which does the same job
+in certain special cases;
+in more general situations, we have to make do
+with spare parts.)
+The tests are laid out in sequence, and each one
+is followed by the code associated with it.
+Read down the list
+of decisions until one is found that is satisfied.
+The code associated with this condition is executed,
+and then the entire structure is finished.
+The trailing
+.UL else
+part handles the ``default'' case,
+where none of the other conditions apply.
+If there is no default action, this final
+.UL else
+part
+is omitted:
+.P1
+if (x < 0)
+	x = 0
+else if (x > 100)
+	x = 100
+.P2
+.SH
+if-else ambiguity
+.PP
+There is one thing to notice about complicated structures
+involving nested
+.UL if 's
+and
+.UL else 's.
+Consider
+.P1
+if (x > 0)
+	if (y > 0)
+		write(6, 1) x, y
+	else
+		write(6, 2) y
+.P2
+There are two
+.UL if 's
+and
+only one
+.UL else .
+Which
+.UL if
+does the
+.UL else
+go with?
+.PP
+This is a genuine ambiguity in Ratfor, as it is in many other programming
+languages.
+The ambiguity is resolved in Ratfor
+(as elsewhere) by saying that in such cases the
+.UL else
+goes with the closest previous
+.UL else 'ed un-
+.UL if .
+Thus in this case, the
+.UL else
+goes with the inner
+.UL if ,
+as we have indicated by the indentation.
+.PP
+It is a wise practice to resolve such cases by explicit braces,
+just to make your intent clear.
+In the case above, we would write
+.P1
+if (x > 0) {
+	if (y > 0)
+		write(6, 1) x, y
+	else
+		write(6, 2) y
+}
+.P2
+which does not change the meaning, but leaves
+no doubt in the reader's mind.
+If we want the other association, we
+.ul
+must
+write
+.P1
+if (x > 0) {
+	if (y > 0)
+		write(6, 1) x, y
+}
+else
+	write(6, 2) y
+.P2
+.SH
+The ``switch'' Statement
+.PP
+The
+.UL switch
+statement
+provides a clean way to express multi-way branches
+which branch on the value of some integer-valued expression.
+The syntax is
+.P1
+\f3switch (\fIexpression\|\f3) {
+
+	case \fIexpr1\f3 :
+		\f2statements\f3
+	case \fIexpr2, expr3\f3 :
+		\f2statements\f3
+	...
+	default:
+		\f2statements\f3
+}
+.P2
+.PP
+Each
+.UL case
+is followed by a
+list of comma-separated integer expressions.
+The
+.ul
+expression
+inside
+.UL switch
+is compared against the case expressions
+.ul
+expr1,
+.ul
+expr2, 
+and so on in turn
+until one matches,
+at which time the statements following that
+.UL case
+are executed.
+If no cases match
+.ul
+expression,
+and there is a
+.UL default 
+section,
+the statements with it are done;
+if there is no
+.UL default,
+nothing is done.
+In all situations,
+as soon as some block of statements is executed,
+the entire
+.UL switch
+is exited immediately.
+(Readers familiar with C[4] should beware that this
+behavior is not the same as the C
+.UL switch .)
+.SH
+The ``do'' Statement
+.PP
+The
+.UL do
+statement in
+Ratfor
+is quite similar to the
+.UC DO
+statement in Fortran,
+except that it uses no statement number.
+The statement number, after all, serves only to mark the end
+of the
+.UC DO ,
+and this can be done just as easily with braces.
+Thus
+.P1
+	do i = 1, n {
+		x(i) = 0.0
+		y(i) = 0.0
+		z(i) = 0.0
+	}
+.P2
+is the same as
+.P1
+	do 10 i = 1, n
+		x(i) = 0.0
+		y(i) = 0.0
+		z(i) = 0.0
+10	continue
+.P2
+The syntax is:
+.P1
+do \fIlegal\(hyFortran\(hyDO\(hytext\fP
+	\fIRatfor statement\fP
+.P2
+The part that follows 
+the keyword
+.UL do
+has to be something that can legally go into a Fortran
+.UC DO
+statement.
+Thus if a local version of Fortran allows
+.UC DO
+limits to be expressions
+(which is not currently permitted in
+.UC ANSI
+Fortran),
+they can be used in a
+Ratfor
+.UL do.
+.PP
+The
+.ul
+Ratfor statement
+part will often be enclosed in braces, but
+as with the
+.UL if ,
+a single statement need not have braces around it.
+This code sets an array to zero:
+.P1
+do i = 1, n
+	x(i) = 0.0
+.P2
+Slightly more complicated,
+.P1
+do i = 1, n
+	do j = 1, n
+		m(i, j) = 0
+.P2
+sets the entire array
+.UL m
+to zero, and
+.P1
+do i = 1, n
+	do j = 1, n
+		if (i < j)
+			m(i, j) = -1
+		else if (i == j)
+			m(i, j) = 0
+		else
+			m(i, j) = +1
+.P2
+sets the upper triangle of
+.UL m
+to \-1, the diagonal to zero, and the lower triangle to +1.
+(The operator == is ``equals'', that is, ``.EQ.''.)
+In each case, the statement that follows the
+.UL do
+is logically a
+.ul
+single
+statement, even though complicated,
+and thus needs no braces.
+.sp
+.SH
+``break'' and ``next''
+.PP
+Ratfor
+provides a statement for leaving a loop early,
+and one for beginning the next iteration.
+.UL "break"
+causes an immediate exit from the
+.UL do ;
+in effect it is a branch to the statement
+.ul
+after
+the
+.UL do .
+.UL next
+is a branch to the bottom of the loop,
+so it causes the next iteration to be done.
+For example, this code skips over negative values in an array:
+.P1
+do i = 1, n {
+	if (x(i) < 0.0)
+		next
+	\fIprocess positive element\fP
+}
+.P2
+.UL break
+and
+.UL next
+also work in the other Ratfor looping constructions
+that we will talk about in the next few sections.
+.PP
+.UL break
+and
+.UL next
+can be followed by an integer to indicate breaking or iterating
+that level of enclosing loop; thus
+.P1
+break 2
+.P2
+exits from two levels of enclosing loops,
+and
+.UL break\ 1
+is equivalent to
+.UL break .
+.UL next\ 2
+iterates the second enclosing loop.
+(Realistically, 
+multi-level
+.UL break 's
+and
+.UL next 's
+are
+not likely to be much used
+because they lead to code that is hard to understand
+and somewhat risky to change.)
+.sp
+.SH
+The ``while'' Statement
+.PP
+One of the problems with the Fortran
+.UC DO
+statement
+is that it generally insists upon being done once,
+regardless of its limits.
+If a loop begins
+.P1
+DO I = 2, 1
+.P2
+this will typically be done once with
+.UL I
+set to 2,
+even though common sense would suggest that perhaps it shouldn't be.
+Of course a
+Ratfor
+.UL do
+can easily be preceded by a test
+.P1
+if (j <= k)
+	do i = j, k  {
+		_ _ _
+	}
+.P2
+but this has to be a conscious act,
+and is often overlooked by programmers.
+.PP
+A more serious problem with the
+.UC DO
+statement
+is that it encourages that a program be written
+in terms of an arithmetic progression
+with small positive steps,
+even though that may not be the best way to write it.
+If code has to be contorted to fit the requirements
+imposed by the Fortran
+.UC DO ,
+it is that much harder to write and understand.
+.PP
+To overcome these difficulties,
+Ratfor
+provides a
+.UL while
+statement,
+which is simply a loop:
+``while some condition is true,
+repeat this group of statements''.
+It has
+no preconceptions about why one is looping.
+For example, this routine to compute sin(x)
+by the Maclaurin series
+combines two termination criteria.
+.P1 1
+.ta .3i .6i .9i 1.2i 1.5i 1.8i
+real function sin(x, e)
+	# returns sin(x) to accuracy e, by
+	# sin(x) = x - x**3/3! + x**5/5! - ...
+
+	sin = x
+	term = x
+
+	i = 3
+	while (abs(term)>e & i<100) {
+		term = -term * x**2 / float(i*(i-1))
+		sin = sin + term
+		i = i + 2
+	}
+
+	return
+	end
+.P2
+.PP
+Notice that
+if the routine is entered with
+.UL term
+already smaller than
+.UL e ,
+the 
+loop will be done
+.ul
+zero times,
+that is, no attempt will be made to compute
+.UL x**3
+and thus a potential underflow is avoided.
+Since the test is made at the top of a
+.UL while
+loop
+instead of the bottom,
+a special case disappears _
+the code works at one of its boundaries.
+(The test
+.UL i<100
+is the other boundary _
+making sure the routine stops after
+some maximum number of iterations.)
+.PP
+As an aside, a sharp character ``#'' in a line
+marks the beginning of a comment;
+the rest of the line is comment.
+Comments and code can co-exist on the same line _
+one can make marginal remarks,
+which is not possible with Fortran's ``C in column 1'' convention.
+Blank lines are also permitted anywhere
+(they are not in Fortran);
+they should be used to emphasize the natural divisions
+of a program.
+.PP
+The syntax of the 
+.UL while
+statement is
+.P1
+while (\fIlegal Fortran condition\fP)
+	\fIRatfor statement\fP
+.P2
+As with the
+.UL if ,
+.ul
+legal Fortran condition
+is something that can go into
+a Fortran Logical
+.UC IF ,
+and
+.ul
+Ratfor statement
+is a single statement,
+which may be multiple statements in braces.
+.PP
+The
+.UL while
+encourages a style of coding not normally
+practiced by Fortran programmers.
+For example, suppose
+.UL nextch
+is a function which returns the next input character
+both as a function value and in its argument.
+Then a loop to find the first non-blank character is just
+.P1
+while (nextch(ich) == iblank)
+	;
+.P2
+A semicolon by itself is a null statement,
+which is necessary here to mark the end of the
+.UL while ;
+if it were not present, the
+.UL while
+would control the next statement.
+When the loop is broken, 
+.UL ich
+contains the first non-blank.
+Of course the same code can be written in Fortran as
+.P1 1
+100	if (nextch(ich) .eq. iblank) goto 100
+.P2
+but many Fortran programmers (and a few compilers) believe this line is illegal.
+The language at one's disposal
+strongly influences how one thinks about a problem.
+.sp
+.SH
+The ``for'' Statement
+.PP
+The
+.UL for
+statement
+is another Ratfor loop, which
+attempts to carry the separation of
+loop-body from reason-for-looping
+a step further
+than the
+.UL while.
+A
+.UL for
+statement allows explicit initialization
+and increment steps as part of the statement.
+For example, 
+a
+.UC DO
+loop is just
+.P1
+for (i = 1; i <= n; i = i + 1) ...
+.P2
+This is equivalent to
+.P1
+i = 1
+while (i <= n) {
+	...
+	i = i + 1
+}
+.P2
+The initialization and increment of
+.UL i
+have been moved into the
+.UL for
+statement,
+making it easier to see at a glance
+what controls the loop.
+.PP
+The
+.UL for
+and
+.UL while
+versions have the advantage that they will be done zero times
+if
+.UL n
+is less than 1; this is not true of the
+.UL do .
+.PP
+The loop of the sine routine in the previous section
+can be re-written
+with a
+.UL for
+as
+.P1 3
+for (i=3; abs(term) > e & i < 100; i=i+2) {
+	term = -term * x**2 / float(i*(i-1))
+	sin = sin + term
+}
+.P2
+.PP
+The syntax of the
+.UL for
+statement is
+.P1
+for ( \fIinit\fP ; \fIcondition\fP ; \fIincrement\fP )
+	\fIRatfor statement\fP
+.P2
+.ul
+init
+is any single Fortran statement, which gets done once
+before the loop begins.
+.ul
+increment
+is any single Fortran statement,
+which gets done at the end of each pass through the loop,
+before the test.
+.ul
+condition
+is again anything that is legal in a logical 
+.UC IF.
+Any of 
+.ul
+init,
+.ul
+condition,
+and
+.ul
+increment
+may be omitted,
+although the semicolons
+.ul
+must
+always be present.
+A non-existent
+.ul
+condition
+is treated as always true,
+so
+.UL "for(;;)"
+is an indefinite repeat.
+(But see the
+.UL repeat-until
+in the next section.)
+.PP
+The
+.UL for
+statement is particularly
+useful for
+backward loops, chaining along lists,
+loops that might be done zero times,
+and similar things which are hard to express with a 
+.UC DO
+statement,
+and obscure to write out 
+with
+.UC IF 's
+and
+.UC GOTO 's.
+For example,
+here is a
+backwards
+.UC DO
+loop
+to find the last non-blank character on a card:
+.P1
+for (i = 80; i > 0; i = i - 1)
+	if (card(i) != blank)
+		break
+.P2
+(``!='' is the same as 
+.UC ``.NE.'' ).
+The code scans the columns from 80 through to 1.
+If a non-blank is found, the loop
+is immediately broken.
+.UL break \& (
+and
+.UL next
+work in
+.UL for 's
+and
+.UL while  's
+just as in 
+.UL do 's).
+If 
+.UL i
+reaches zero,
+the card is all blank.
+.PP
+This code is rather nasty to write with a regular Fortran
+.UC DO ,
+since the loop must go forward,
+and we must explicitly set up proper conditions
+when we fall out of the loop.
+(Forgetting this is a common error.)
+Thus:
+.P1 1
+.ta .3i .6i .9i 1.2i 1.5i 1.8i
+	DO 10 J = 1, 80
+		I = 81 - J
+		IF (CARD(I) .NE. BLANK) GO TO 11
+10	CONTINUE
+	I = 0
+11	...
+.P2
+The version that uses the
+.UL for
+handles the termination condition properly for free;
+.UL i
+.ul
+is
+zero when we fall out of the
+.UL for
+loop.
+.PP
+The increment
+in a
+.UL for
+need not be an arithmetic progression;
+the following program walks along a list
+(stored in an integer array
+.UL ptr )
+until a zero pointer is found,
+adding up elements from a parallel array of values:
+.P1
+sum = 0.0
+for (i = first; i > 0; i = ptr(i))
+	sum = sum + value(i)
+.P2
+Notice that the code works correctly if the list is empty.
+Again, placing the test at the top of a loop
+instead of the bottom eliminates a potential boundary error.
+.SH
+The ``repeat-until'' statement
+.PP
+In spite of the dire warnings,
+there are times when one really needs a loop that tests at the bottom
+after one pass through.
+This service is provided by the
+.UL repeat-until :
+.P1
+repeat
+	\fIRatfor statement\fP
+until (\fIlegal Fortran condition\fP)
+.P2
+The
+.ul
+Ratfor statement
+part is done once,
+then the condition is evaluated.
+If it is true, the loop is exited;
+if it is false, another pass is made.
+.PP
+The
+.UL until
+part is optional, so a bare
+.UL repeat
+is the cleanest way to specify an infinite loop.
+Of course such a loop must ultimately be broken by some
+transfer of control such as
+.UL stop ,
+.UL return ,
+or
+.UL break ,
+or an implicit stop such as running out of input with
+a
+.UC READ
+statement.
+.PP
+As a matter of observed fact[8], the
+.UL repeat-until
+statement is
+.ul
+much
+less used than the other looping constructions;
+in particular, it is typically outnumbered ten to one by
+.UL for
+and
+.UL while .
+Be cautious about using it, for loops that test only at the
+bottom often don't handle null cases well.
+.SH
+More on break and next
+.PP
+.UL break
+exits immediately from 
+.UL do ,
+.UL while ,
+.UL for ,
+and
+.UL repeat-until .
+.UL next
+goes to the test part of
+.UL do ,
+.UL while
+and
+.UL repeat-until ,
+and to the increment step of a
+.UL for .
+.SH
+``return'' Statement
+.PP
+The standard Fortran mechanism for returning a value from a function uses the name of the function as a variable which can be assigned to;
+the last value stored in it 
+is the function value upon return.
+For example, here is a routine
+.UL equal
+which returns 1 if two arrays are identical,
+and zero if they differ.
+The array ends are marked by the special value \-1.
+.P1 1
+.ta .3i .6i .9i 1.2i 1.5i 1.8i
+# equal _ compare str1 to str2;
+#	return 1 if equal, 0 if not
+	integer function equal(str1, str2)
+	integer str1(100), str2(100)
+	integer i
+
+	for (i = 1; str1(i) == str2(i); i = i + 1)
+		if (str1(i) == -1) {
+			equal = 1
+			return
+		}
+	equal = 0
+	return
+	end
+.P2
+.PP
+In many languages (e.g., PL/I)
+one instead says
+.P1
+return (\fIexpression\fP)
+.P2
+to return a value from a function.
+Since this is often clearer, Ratfor provides such a
+.UL return
+statement _
+in a function
+.UL F ,
+.UL return (expression)
+is equivalent to
+.P1
+{ F = expression; return }
+.P2
+For example, here is
+.UL equal
+again:
+.P1 1
+.ta .3i .6i .9i 1.2i 1.5i 1.8i
+# equal _ compare str1 to str2;
+#	return 1 if equal, 0 if not
+	integer function equal(str1, str2)
+	integer str1(100), str2(100)
+	integer i
+
+	for (i = 1; str1(i) == str2(i); i = i + 1)
+		if (str1(i) == -1)
+			return(1)
+	return(0)
+	end
+.P2
+If there is no parenthesized expression after
+.UL return ,
+a normal
+.UC RETURN 
+is made.
+(Another version of
+.UL equal
+is presented shortly.)
+.sp
+.SH
+Cosmetics
+.PP
+As we said above,
+the visual appearance of a language
+has a substantial effect
+on how easy it is to read and understand
+programs.
+Accordingly, Ratfor provides a number of cosmetic facilities
+which may be used to make programs more readable.
+.SH
+Free-form Input
+.PP
+Statements can be placed anywhere on a line;
+long statements are continued automatically,
+as are long conditions in
+.UL if ,
+.UL while ,
+.UL for ,
+and
+.UL until .
+Blank lines are ignored.
+Multiple statements may appear on one line,
+if they are separated by semicolons.
+No semicolon is needed at the end of a line,
+if
+Ratfor
+can make some reasonable guess about whether the statement
+ends there.
+Lines ending with any of the characters
+.P1
+=    +    -    *    ,    |    &    (    \(ru
+.P2
+are assumed to be continued on the next line.
+Underscores are discarded wherever they occur;
+all others remain as part of the statement.
+.PP
+Any statement that begins with an all-numeric field is
+assumed to be a Fortran label,
+and placed in columns 1-5 upon output.
+Thus
+.P1
+write(6, 100); 100 format("hello")
+.P2
+is converted into
+.P1
+	write(6, 100)
+100	format(5hhello)
+.P2
+.SH
+Translation Services
+.PP
+Text enclosed in matching single or double quotes
+is converted to
+.UL nH...
+but is otherwise unaltered
+(except for formatting _ it may get split across card boundaries
+during the reformatting process).
+Within quoted strings, the backslash `\e' serves as an escape character:
+the next character is taken literally.
+This provides a way to get quotes (and of course the backslash itself) into
+quoted strings:
+.P1
+"\e\e\e\(fm"
+.P2
+is a string containing a backslash and an apostrophe.
+(This is
+.ul
+not
+the standard convention of doubled quotes,
+but it is easier to use and more general.)
+.PP
+Any line that begins with the character `%'
+is left absolutely unaltered  
+except for stripping off the `%'
+and moving the line one position to the left.
+This is useful for inserting control cards,
+and other things that should not be transmogrified
+(like an existing Fortran program).
+Use `%' only for ordinary statements,
+not for the condition parts of
+.UL if ,
+.UL while ,
+etc., or the output may come out in an unexpected place.
+.PP
+The following character translations are made, 
+except within single or double quotes
+or on a line beginning with a `%'.
+.P1
+.ta .5i 1.5i 2i
+==	.eq.	!=	.ne.
+>	.gt.	>=	.ge.
+<	.lt.	<=	.le.
+&	.and.	|	.or.
+!	.not.	^	.not.
+.P2
+In addition, the following translations are provided
+for input devices with restricted character sets.
+.P1
+.ta .5i 1.5i 2i
+[	{	]	}
+$(	{	$)	}
+.P2
+.SH
+``define'' Statement
+.PP
+Any string of alphanumeric characters can be defined as a name;
+thereafter, whenever that name occurs in the input
+(delimited by non-alphanumerics)
+it is replaced by the rest of the definition line.
+(Comments and trailing white spaces are stripped off).
+A defined name can be arbitrarily long,
+and must begin with a letter.
+.PP
+.UL define
+is typically used to create symbolic parameters:
+.P1
+define	ROWS	100
+define	COLS	50
+.if t .sp 5p
+dimension a(ROWS), b(ROWS, COLS)
+.if t .sp 5p
+	if (i > ROWS  \(or  j > COLS) ...
+.P2
+Alternately, definitions may be written as
+.P1
+define(ROWS, 100)
+.P2
+In this case, the defining text is everything after the comma up to the balancing
+right parenthesis;
+this allows multi-line definitions.
+.PP
+It is generally a wise practice to use symbolic parameters
+for most constants, to help make clear the function of what
+would otherwise be mysterious numbers.
+As an example, here is the routine
+.UL equal 
+again, this time with symbolic constants.
+.P1 3
+.ta .3i .6i .9i 1.2i 1.5i 1.8i
+define	YES		1
+define	NO		0
+define	EOS		-1
+define	ARB		100
+
+# equal _ compare str1 to str2;
+#	return YES if equal, NO if not
+	integer function equal(str1, str2)
+	integer str1(ARB), str2(ARB)
+	integer i
+
+	for (i = 1; str1(i) == str2(i); i = i + 1)
+		if (str1(i) == EOS)
+			return(YES)
+	return(NO)
+	end
+.P2
+.SH
+``include'' Statement
+.PP
+The statement
+.P1
+	include file
+.P2
+inserts the file
+found on input stream
+.ul
+file
+into the
+Ratfor
+input in place of the
+.UL include
+statement.
+The standard usage is to place 
+.UC COMMON
+blocks on a file,
+and
+.UL include
+that file whenever a copy is needed:
+.P1
+subroutine x
+	include commonblocks
+	...
+	end
+
+suroutine y
+	include commonblocks
+	...
+	end
+.P2
+This ensures that all copies of the 
+.UC COMMON
+blocks are identical
+.SH
+Pitfalls, Botches, Blemishes and other Failings
+.PP
+Ratfor catches certain syntax errors, such as missing braces,
+.UL else
+clauses without an
+.UL if ,
+and most errors involving missing parentheses in statements.
+Beyond that, since Ratfor knows no Fortran, 
+any errors you make will be reported by the Fortran compiler,
+so you will from time to time have to relate a Fortran diagnostic back
+to the Ratfor source.
+.PP
+Keywords are reserved _
+using
+.UL if ,
+.UL else ,
+etc., as variable names will typically wreak havoc.
+Don't leave spaces in keywords.
+Don't use the Arithmetic
+.UC IF .
+.PP
+The Fortran
+.UL nH
+convention is not recognized anywhere by Ratfor;
+use quotes instead.

@@ -1,0 +1,76 @@
+.\" Copyright (c) 1989, 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)lsearch.3	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt LSEARCH 3
+.Os
+.Sh NAME
+.Nm lsearch ,
+.Nm lfind,
+.Nd linear searching routines
+.Sh SYNOPSIS
+.Ft char *
+.Fn lsearch "const void *key" "const void *base" "size_t *nelp" "size_t width" "int (*compar)(void *, void *)"
+.Ft char *
+.Fn lfind "const void *key" "const void *base" "size_t *nelp" "size_t width" "int (*compar)(void *, void *)"
+.Sh DESCRIPTION
+.Bf -symbolic
+This interface was obsolete before it was written.
+It is available from the compatibility library, libcompat.
+.Ef
+.Pp
+The functions
+.Fn lsearch ,
+and
+.Fn lfind
+provide basic linear searching functionality.
+.Pp
+.Fa Base
+is the pointer to the beginning of an array.
+The argument
+.Fa nelp
+is the current number of elements in the array, where each element
+is
+.Fa width
+bytes long.
+The
+.Fa compar
+function
+is a comparison routine which is used to compare two elements.
+It takes two arguments which point to the
+.Fa key
+object and to an array member, in that order, and must return an integer
+less than, equivalent to, or greater than zero if the 
+.Fa key
+object is considered, respectively, to be less than, equal to, or greater
+than the array member.
+.Pp
+The
+.Fn lsearch
+and
+.Fn lfind
+functions
+return a pointer into the array referenced by
+.Fa base
+where
+.Fa key
+is located.
+If
+.Fa key
+does not exist,
+.Fn lfind
+will return a null pointer and
+.Fn lsearch
+will add it to the array.
+When an element is added to the array by
+.Fn lsearch
+the location referenced by the argument
+.Fa nelp
+is incremented by one.
+.Sh SEE ALSO
+.Xr bsearch 3 ,
+.Xr db 3

@@ -1,0 +1,31 @@
+CMD=${CMD-/bin/make}
+ARK=${ARK-libedit.a}
+#
+# This script will make various version of editlib for different machines
+#
+command=$1
+U370= DBSD= VIRAW= SYSCALL=
+if	test -f /vmunix -o "$SYSTYPE" = bsd4.1 -o "$SYSTYPE" = bsd4.2 # true for BSD unix
+then	DBSD=-DBSD
+fi
+if	test -f /bin/u3b && /bin/u3b
+then	SYSCALL=syscall.o
+fi
+if	uname -m 2> /dev/null > /dev/null
+then	set -- `uname -m`
+	case "$1" in
+	*370)
+		U370=U370 VIRAW='-DRAWONLY'
+		;;
+	ibm-pc*)
+		VIRAW='-DRAWONLY'
+		;;
+	esac
+fi
+set -- `uname -r`
+case "$1" in
+*[23].*)
+	VIRAW='-DRAWONLY'
+	;;
+esac
+$CMD -f Makefile DBSD=$DBSD U370=$U370 VIRAW=$VIRAW SYSCALL=$SYSCALL $command

@@ -1,0 +1,38 @@
+.\" Copyright (c) 1980 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"	@(#)fold.1	6.5 (Berkeley) %G%
+.\"
+.Dd 
+.Dt FOLD 1
+.Os
+.Sh NAME
+.Nm fold
+.Nd "fold long lines for finite width output device"
+.Sh SYNOPSIS
+.Nm fold
+.Op Fl w Ar width
+.Ar
+.Sh DESCRIPTION
+.Nm Fold
+is a filter which folds the contents of the specified files,
+or the standard input if no files are specified,
+breaking the lines to have maximum of 80 characters.
+.Pp
+The options are as follows:
+.Bl -tag -width indent
+.It Fl w
+Specifies a line width to use instead of the default 80 characters.
+.Ar Width
+should be a multiple of 8 if tabs are present, or the tabs should
+be expanded using
+.Xr expand 1
+before using
+.Nm fold .
+.El
+.Sh SEE ALSO
+.Xr expand 1
+.Sh BUGS
+If underlining is present it may be messed up by folding.

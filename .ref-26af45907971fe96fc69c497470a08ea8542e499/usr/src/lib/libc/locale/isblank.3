@@ -1,0 +1,29 @@
+.\" Copyright (c) 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)isblank.3	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt ISBLANK 3
+.Os
+.Sh NAME
+.Nm isblank
+.Nd space or tab character test
+.Sh SYNOPSIS
+.Fd #include <ctype.h>
+.Ft int
+.Fn isblank "int c";
+.Sh DESCRIPTION
+The
+.Fn isblank
+function tests for a space or tab character.
+.Sh RETURN VALUES
+The
+.Fn isblank
+function returns zero if the character tests false and
+returns non-zero if the character tests true.
+.Sh SEE ALSO
+.Xr ctype 3 ,
+.Xr ascii 7

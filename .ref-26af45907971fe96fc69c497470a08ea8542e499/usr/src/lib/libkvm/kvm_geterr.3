@@ -1,0 +1,54 @@
+.\" Copyright (c) 1992, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" This code is derived from software developed by the Computer Systems
+.\" Engineering group at Lawrence Berkeley Laboratory under DARPA contract
+.\" BG 91-66 and contributed to Berkeley.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)kvm_geterr.3	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt KVM_GETERR 3
+.Os
+.Sh NAME
+.Nm kvm_geterr
+.Nd get error message on kvm descriptor
+.Sh SYNOPSIS
+.Fd #include <kvm.h>
+.br
+.Ft char *
+.Fn kvm_geterr "kvm_t *kd"
+.Sh DESCRIPTION
+This function returns a string describing the most recent error condition
+on the descriptor
+.Fa kd .
+The results are undefined if the most recent
+.Xr kvm 3
+library call did not produce an error.
+The string returned is stored in memory owned by 
+.Xr kvm 3
+so the message should be copied out and saved elsewhere if necessary.
+.Sh BUGS
+This routine cannot be used to access error conditions due to a failed
+.Fn kvm_openfiles
+call, since failure is indicated by returning a
+.Dv NULL
+descriptor.
+Therefore, errors on open are output to the special error buffer
+passed to 
+.Fn kvm_openfiles .
+This option is not available to
+.Fn kvm_open .
+.Sh SEE ALSO
+.Xr kvm 3 ,
+.Xr kvm_close 3 ,
+.Xr kvm_getargv 3 ,
+.Xr kvm_getenvv 3 ,
+.Xr kvm_getprocs 3 ,
+.Xr kvm_nlist 3 ,
+.Xr kvm_open 3 ,
+.Xr kvm_openfiles 3 ,
+.Xr kvm_read 3 ,
+.Xr kvm_write 3

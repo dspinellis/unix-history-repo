@@ -1,0 +1,5 @@
+		   News
+		June 6, 1985
+
+New routines: malloc
+Deleted: signal.c - same as in libF77

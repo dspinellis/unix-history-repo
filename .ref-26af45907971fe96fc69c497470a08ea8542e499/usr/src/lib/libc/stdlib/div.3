@@ -1,0 +1,41 @@
+.\" Copyright (c) 1990, 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" Chris Torek.
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)div.3	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt DIV 3
+.Os
+.Sh NAME
+.Nm div
+.Nd return quotient and remainder from division
+.Sh SYNOPSIS
+.Fd #include <stdlib.h>
+.Ft div_t
+.Fn div "int num" "int denom"
+.Sh DESCRIPTION
+The
+.Fn div
+function
+computes the value
+.Fa num/denom
+and returns the quotient and remainder in a structure named
+.Fa div_t
+that contains two
+.Em int
+members named
+.Fa quot
+and
+.Fa rem .
+.Sh SEE ALSO
+.Xr ldiv 3
+.Sh STANDARDS
+The
+.Fn div
+function
+conforms to
+.St -ansiC .

@@ -1,0 +1,162 @@
+.\" Copyright (c) 1985, 1991 Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.proprietary.roff%
+.\"
+.\"     @(#)troff.1	6.3 (Berkeley) %G%
+.\"
+.Dd 
+.Dt TROFF 1
+.Os ATT 7th
+.Sh NAME
+.Nm troff ,
+.Nm nroff
+.Nd text formatting and typesetting
+.Sh SYNOPSIS
+.Nm troff
+.Op Ar option
+.Ar ...
+.Op Ar file
+.Ar ...
+.Sh DESCRIPTION
+.Nm Troff
+formats text in the named
+.Ar files
+for printing on a Graphic Systems
+.Tn C/A/T
+phototypesetter;
+Its capabilities are described in the
+.%T Nroff/Troff user's manual .
+.Pp
+If no
+.Ar file
+argument is present, the standard input is read.
+An argument consisting of a single minus
+.Pq Fl
+is taken to be a file name corresponding to the standard input.
+The options, which may appear in any order so long as they appear
+before the files, are:
+.Bl -tag -width indent
+.It Fl o Ar list
+Print only pages whose page numbers appear in the comma-separated
+.Ar list
+of numbers and ranges.
+A range
+.Ar N\-M
+means pages
+.Ar N
+through
+.Ar M ;
+an initial
+.Ar \-N
+means from the beginning to page
+.Ar N ;
+and a final
+.Ar N\-
+means from
+.Ar N
+to the end.
+.It Fl n Ar N
+Number first generated page
+.Ar N .
+.It Fl s Ar N
+Stop every
+.Ar N
+pages.
+.Nm Troff
+will stop the phototypesetter every
+.Ar N
+pages, produce a trailer to allow changing cassettes,
+and resume when the typesetter's start button is pressed.
+.It Fl m Ar name
+Prepend the macro file
+.Pa /usr/lib/tmac/tmac. Ns Em name
+to the input
+.Ar files .
+.It Fl r Ns Ar aN
+Set register
+.Ar a
+(one-character) to
+.Ar N .
+.It Fl i
+Read standard input after the input files are exhausted.
+.It Fl q
+Invoke the simultaneous input-output mode of the
+.Ic rd
+request.
+.It Fl t
+Direct output to the standard output instead of the phototypesetter.
+.It Fl f
+Refrain from feeding out paper and stopping
+phototypesetter at the end of the run.
+.It Fl w
+Wait until phototypesetter is available, if currently busy.
+.It Fl b
+Report whether the phototypesetter is busy or available.
+No text processing is done.
+.It Fl a
+Send a printable
+.Tn ASCII
+approximation of the results to the standard output.
+.It Fl p Ar N
+Print all characters in point size
+.Ar N
+while retaining all prescribed spacings and motions,
+to reduce phototypesetter elapsed time.
+.It Fl F Ar fontdir
+The directory
+.Ar fontdir
+contains the font width tables instead of the default directory
+.Pa /usr/libdata/troff_font .
+This option can be used to produce output for devices
+besides the phototypesetter.
+.El
+.Pp
+If the file
+.Pa /var/account/tracct
+is writable,
+.Nm troff
+keeps phototypesetter accounting records there.
+The integrity of that file may be secured by making
+.Nm troff
+a  'set user-id' program.
+.Sh FILES
+.Bl -tag -width /usr/libdata/troff_font/ftXXXX -compact
+.It Pa /tmp/ta*
+Temporary file.
+.It Pa /usr/share/tmac/tmac.*
+Standard macro files.
+.It Pa /usr/libdata/term/tab*
+Terminal driving tables for
+.Nm nroff .
+.It Pa /usr/libdata/troff_font/ftXX*
+Font width tables for
+.Nm troff
+.Pa /dev/cat
+phototypesetter.
+.It Pa /var/account/tracct
+Accounting statistics for
+.Pa /dev/cat .
+.El
+.Sh SEE ALSO
+.Xr eqn 1 ,
+.Xr tbl 1 ,
+.Xr ms 7 ,
+.Xr me 7 ,
+.Xr man 7 ,
+.Xr col 1
+.Rs
+.%T Nroff/Troff user's manual
+.%A J. F. Ossanna
+.Re
+.Rs
+.%T A TROFF Tutorial
+.%A B. W. Kernighan
+.Re
+.Sh HISTORY
+The
+.Nm troff
+command appeared in
+.At v6 .
+The version this man page decribes appeared in
+.At v7 .

@@ -1,0 +1,84 @@
+.\" Copyright (c) 1987 Sun Microsystems
+.\" Copyright (c) 1990, 1991 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)portmap.8	5.3 (Berkeley) %G%
+.\"
+.Dd 
+.Dt PORTMAP 8
+.Os BSD 4.3
+.Sh NAME
+.Nm portmap
+.Nd
+.Tn DARPA
+port to
+.Tn RPC
+program number mapper
+.Sh SYNOPSIS
+.Nm portmap
+.Op Fl d
+.Sh DESCRIPTION
+.Nm Portmap
+is a server that converts
+.Tn RPC
+program numbers into
+.Tn DARPA
+protocol port numbers.
+It must be running in order to make
+.Tn RPC
+calls.
+.Pp
+When an
+.Tn RPC
+server is started, it will tell
+.Nm portmap
+what port number it is listening to, and what
+.Tn RPC
+program numbers it is prepared to serve.
+When a client wishes to make an
+.Tn RPC
+call to a given program number,
+it will first contact
+.Nm portmap
+on the server machine to determine
+the port number where
+.Tn RPC
+packets should be sent.
+.Pp
+.Nm Portmap
+must be started before any
+.Tn RPC
+servers are invoked.
+.Pp
+Normally
+.Nm portmap
+forks and dissociates itself from the terminal
+like any other daemon.
+.Nm Portmap
+then logs errors using
+.Xr syslog 3 .
+.Pp
+Option available:
+.Bl -tag -width Ds
+.It Fl d
+(debug) prevents
+.Nm portmap
+from running as a daemon,
+and causes errors and debugging information
+to be printed to the standard error output.
+.El
+.Sh SEE ALSO
+.Xr inetd.conf 5 ,
+.Xr rpcinfo 8 ,
+.Xr inetd 8
+.Sh BUGS
+If
+.Nm portmap
+crashes, all servers must be restarted.
+.Sh HISTORY
+The
+.Nm
+command appeared in
+.Bx 4.3

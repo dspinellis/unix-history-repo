@@ -1,0 +1,153 @@
+.\" Copyright (c) 1985, 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)ns.4	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt NS 4
+.Os BSD 4.3
+.Sh NAME
+.Nm ns
+.Nd Xerox Network Systems(tm) protocol family
+.Sh SYNOPSIS
+.Nm options NS
+.Nm options NSIP
+.Nm pseudo-device ns
+.Sh DESCRIPTION
+The
+.Tn NS
+protocol family is a collection of protocols
+layered atop the
+.Em Internet  Datagram  Protocol
+.Pq Tn IDP
+transport layer, and using the Xerox 
+.Tn NS
+address formats.
+The
+.Tn NS
+family provides protocol support for the
+.Dv SOCK_STREAM , SOCK_DGRAM , SOCK_SEQPACKET ,
+and
+.Dv SOCK_RAW
+socket types; the
+.Dv SOCK_RAW
+interface is a debugging tool, allowing you to trace all packets
+entering, (or with toggling kernel variable, additionally leaving) the local
+host.
+.Sh ADDRESSING
+.Tn NS
+addresses are 12 byte quantities, consisting of a 
+4 byte Network number, a 6 byte Host number and a 2 byte port number,
+all stored in network standard format.
+(on the
+.Tn VAX
+these are word and byte reversed; on the
+.Tn Sun
+they are not
+reversed).  The include file
+.Aq Pa netns/ns.h
+defines the
+.Tn NS
+address as a structure containing unions (for quicker
+comparisons).
+.Pp
+Sockets in the Internet protocol family use the following
+addressing structure:
+.Bd -literal -offset indent
+struct sockaddr_ns {
+	short		sns_family;
+	struct ns_addr	sns_addr;
+	char		sns_zero[2];
+};
+.Ed
+.Pp
+where an
+.Ar ns_addr
+is composed as follows:
+.Bd -literal -offset indent
+union ns_host {
+	u_char		c_host[6];
+	u_short		s_host[3];
+};
+
+union ns_net {
+	u_char		c_net[4];
+	u_short		s_net[2];
+};
+
+struct ns_addr {
+	union ns_net	x_net;
+	union ns_host	x_host;
+	u_short	x_port;
+};
+.Ed
+.Pp
+Sockets may be created with an address of all zeroes to effect
+.Dq wildcard
+matching on incoming messages.
+The local port address specified in a
+.Xr bind 2
+call is restricted to be greater than
+.Dv NSPORT_RESERVED
+(=3000, in
+.Aq Pa netns/ns.h )
+unless the creating process is running
+as the super-user, providing a space of protected port numbers.
+.Sh PROTOCOLS
+The
+.Tn NS
+protocol family supported by the operating system
+is comprised of
+the Internet Datagram Protocol
+.Pq Tn IDP
+.Xr idp 4 ,
+Error Protocol (available through
+.Tn IDP ) ,
+and
+Sequenced Packet Protocol
+.Pq Tn SPP
+.Xr spp 4 .
+.Pp
+.Tn SPP
+is used to support the
+.Dv SOCK_STREAM
+and
+.Dv SOCK_SEQPACKET
+abstraction,
+while
+.Tn IDP
+is used to support the
+.Dv SOCK_DGRAM
+abstraction.
+The Error protocol is responded to by the kernel
+to handle and report errors in protocol processing;
+it is, however,
+only accessible to user programs through heroic actions.
+.Sh SEE ALSO
+.Xr intro 3 ,
+.Xr byteorder 3 ,
+.Xr gethostbyname 3 ,
+.Xr getnetent 3 ,
+.Xr getprotoent 3 ,
+.Xr getservent 3 ,
+.Xr ns 3 ,
+.Xr intro 4 ,
+.Xr spp 4 ,
+.Xr idp 4 ,
+.Xr nsip 4
+.Rs
+.%T "Internet Transport Protocols"
+.%R Xerox Corporation document XSIS
+.%N 028112
+.Re
+.Rs
+.%T "An Advanced 4.3 BSD Interprocess Communication Tutorial"
+.Re
+.Sh HISTORY
+The
+.Nm
+protocol family
+appeared in
+.Bx 4.3 .

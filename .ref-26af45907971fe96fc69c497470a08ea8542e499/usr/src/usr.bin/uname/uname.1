@@ -1,0 +1,69 @@
+.\" Copyright (c) 1993 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"	@(#)uname.1	5.1 (Berkeley) %G%
+.\"
+.Dd ""
+.Dt UNAME 1
+.Os
+.Sh NAME
+.Nm uname
+.Nd display information about the system
+.Sh SYNOPSIS
+.Nm uname
+.Op Fl amnrsv
+.Sh DESCRIPTION
+The
+.Nm uname
+command writes the name of the operating system to the standard output.
+When options are specified, strings representing one or more system
+characteristics are written to the standard output.
+.Pp
+The options are as follows:
+.Bl -tag -width Ds
+.It Fl a
+Behave as though the options
+.Fl m ,
+.Fl n ,
+.Fl r ,
+.Fl s ,
+and
+.Fl v
+were specified.
+.It Fl m
+Write the type of the current hardware platform to standard output.
+.It Fl n
+Write the name of the system to standard output.
+.It Fl r
+Write the current release level of the operating system
+to standard output.
+.It Fl s
+Write the type of the operating system to standard output.
+.It Fl v
+Write the version level of this release of the operating system
+to standard output.
+.El
+.Pp
+If the
+.Fl a
+flag is specified, or multiple flags are specified, all
+output is written on a single line, separated by spaces.
+.Pp
+The
+.Nm uname
+utility exits 0 on success, and >0 if an error occurs.
+.Sh SEE ALSO
+.Xr sysctl 1 ,
+.Xr sysctl 2
+.Sh HISTORY
+The
+.Nm uname
+command appeared in 4.4BSD.
+.Sh STANDARDS
+The
+.Nm ls
+function is expected to conform to the
+.St -p1003.2
+specification.

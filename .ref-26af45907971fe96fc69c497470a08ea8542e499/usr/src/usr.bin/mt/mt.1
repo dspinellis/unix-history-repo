@@ -1,0 +1,104 @@
+.\" Copyright (c) 1981, 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"	@(#)mt.1	6.7 (Berkeley) %G%
+.\"
+.Dd 
+.Dt MT 1
+.Os BSD 4
+.Sh NAME
+.Nm mt
+.Nd magnetic tape manipulating program
+.Sh SYNOPSIS
+.Nm mt
+.Op Fl f Ar tapename
+.Ar command
+.Op Ar count
+.Sh DESCRIPTION
+.Nm Mt
+is used to give commands to a magnetic tape drive.
+By default
+.Nm mt
+performs the requested operation once.  Operations
+may be performed multiple times by specifying
+.Ar count  .
+Note
+that
+.Ar tapename
+must reference a raw (not block) tape device.
+.Pp
+The available commands are listed below.  Only as many
+characters as are required to uniquely identify a command
+need be specified.
+.Bl -tag -width "eof, weof"
+.It Cm eof , weof
+Write
+.Ar count
+end-of-file marks at the current position on the tape.
+.It Cm fsf
+Forward space
+.Ar count
+files.
+.It Cm fsr
+Forward space
+.Ar count
+records.
+.It Cm bsf
+Back space
+.Ar count
+files.
+.It Cm bsr
+Back space
+.Ar count
+records.
+.It Cm rewind
+Rewind the tape
+(Count is ignored).
+.It Cm offline , rewoffl
+Rewind the tape and place the tape unit off-line
+(Count is ignored).
+.It Cm status
+Print status information about the tape unit.
+.El
+.Pp
+If a tape name is not specified, and the environment variable
+.Ev TAPE
+does not exist;
+.Nm mt
+uses the device
+.Pa /dev/rmt12 .
+.Pp
+.Nm Mt
+returns a 0 exit status when the operation(s) were successful,
+1 if the command was unrecognized, and 2 if an operation failed.
+.Sh ENVIRONMENT
+If the following environment variable exists, it is utilized by
+.Nm mt .
+.Bl -tag -width Fl
+.It Ev TAPE
+.Nm Mt
+checks the
+.Ev TAPE
+environment variable if the
+argument
+.Ar tapename
+is not given.
+.Sh FILES
+.Bl -tag -width /dev/rmt* -compact
+.It Pa /dev/rmt*
+Raw magnetic tape interface
+.El
+.Sh SEE ALSO
+.\".Xr mtio 4 ,
+.Xr dd 1 ,
+.Xr ioctl 2 ,
+.Xr environ 7
+.Sh HISTORY
+The
+.Nm mt
+command appeared in
+.Bx 4.3 .
+.\" mt.1: mtio(4) missing

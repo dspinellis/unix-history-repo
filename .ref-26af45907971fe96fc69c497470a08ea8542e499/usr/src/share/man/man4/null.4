@@ -1,0 +1,30 @@
+.\" Copyright (c) 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)null.4	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt NULL 4
+.Os
+.Sh NAME
+.Nm null
+.Nd the null device
+.Sh DESCRIPTION
+The
+.Nm
+device accepts and reads data as any ordinary (and willing)
+file \-
+but throws it away. The length of the
+.Nm null
+device is always zero.
+.Sh FILES
+.Bl -tag -width /dev/null
+.It Pa /dev/null
+.El
+.Sh HISTORY
+A
+.Nm
+device appeared in
+.At v7 .

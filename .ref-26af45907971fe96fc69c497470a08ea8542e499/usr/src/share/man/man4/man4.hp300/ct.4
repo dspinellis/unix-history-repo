@@ -1,0 +1,83 @@
+.\" Copyright (c) 1990, 1991 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" the Systems Programming Group of the University of Utah Computer
+.\" Science Department.
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)ct.4	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt CT 4 hp300
+.Os
+.Sh NAME
+.Nm \&ct
+.Nd
+.Tn CS/80
+cartridge tape interface
+.Sh SYNOPSIS
+.Cd "tape ct0 at hpib? slave ?"
+.Sh DESCRIPTION
+The cartridge tape interface as found in the 7946 and 9144 products
+provides a standard tape drive interface as described in
+.Xr mtio 4
+with the following exceptions:
+.Bl -enum
+.It
+There is only one density.
+.It
+Only the
+.Dq raw
+interface is supported.
+.It
+The
+.Dv MTIOCTOP
+.Xr ioctl 2
+is limited.
+In particular, the command,
+.Dv MTFSR
+is not supported.
+.It
+The
+.Dv MTIOCGET
+.Xr ioctl
+is not supported.
+.It
+The record size for read and write operations must be between
+1K and 64K inclusive.
+.El
+.Pp
+Special files
+.Pa rct0
+through
+.Pa rct3
+refer to rewind on close interfaces to drives 0 to 3.
+Files
+.Pa rct4
+through
+.Pa rct7
+refer to no-rewind interfaces.
+Files
+.Pa rct8
+through
+.Pa rct11
+refer to streaming rewind on close interfaces. (Only 9144 type devices
+can stream.)
+Lastly,
+.Pa rct12
+through
+.Pa rct15
+refer to streaming no-rewind interfaces.
+.Sh SEE ALSO
+.Xr mt 1 ,
+.Xr tar 1 ,
+.Xr tp 1 ,
+.Xr mtio 4 .
+.Sh HISTORY
+The
+.Nm \&ct
+driver
+.Ud
+.Sh BUGS
+Read and writes of less than 1024 bytes will not behave as expected.

@@ -1,0 +1,74 @@
+.nr _0 \n(c.
+.\" Copyright (c) 1988, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"	@(#)float.me	8.1 (Berkeley) %G%
+.\"
+.\"	%beginstrip%
+.\"
+.de (z			\" *** begin floating keep
+.if \n@>4 .tm >> (z, .z=\n(.z
+.@D 4 \\$1 \\$2
+.@(
+.nr ?T 0
+..
+.de )z			\" *** end floating keep
+.if \n@>4 .tm >> )z, .z=\n(.z
+.sp \\n(zsu
+.@)
+.if \n@>4 .tm -- )z << @), .z=\n(.z
+.rr _0
+.if !\\n(?b \
+.	nr dn +(\\n(ppu*\\n($ru)/2u+\\n(zsu
+.nr dl -\n(.H			\" fudge factor necessary to make it work
+.ie ((\\n(dn+\n(.V)>=\\n(.t):(\\n(?a):((\\n(dl>\\n($l)&(\\n($c>1)) \
+\{\
+.	nr ?a 1
+.	if (\\n(dl>\\n($l)&(\\n($m>1) \
+.		nr ?w 1		\" mark wider than one column (top)
+.	ds |x |t
+.\}
+.el \
+\{\
+.	nr ?b 1
+.	if (\\n(dl>\\n($l)&(\\n($m>1) \
+.		nr ?W 1		\" mark wider than one column (bottom)
+.	nr _b +\\n(dnu
+.	ch @f -\\n(_bu
+.	ds |x |b
+.\}
+.da \\*(|x			\" copy to save macro
+.nf
+.ls 1
+.nr ?k 1
+.if \n@>4 .tm -- )z >> \\*(|x
+\!.if \\\\n(nl>(\\\\n(tm+2v) .ne \\n(dnu-\\n(zsu
+.|k\"				\" and the body
+.ec
+.if \n@>4 .tm -- )z << \\*(|x, .z=\\n(.z
+.nr ?k 0
+.rm |k\"			\" remove the temp macro
+.da
+.in 0
+.ls 1
+.xl \\n($lu
+.ev
+.if \n@>4 .tm << )z, .z=\\n(.z
+..
+.de @k			\" --- output floating keep
+.if \n@>4 .tm >> @k, $1=\\$1, .z=\\n(.z
+.ev 1
+.nf
+.ls 1
+.in 0
+.sp \\n(zsu
+.\\$1
+.ec
+.br
+.rm \\$1
+.ev
+.nr ?T 0
+..
+.nr c. \n(_0

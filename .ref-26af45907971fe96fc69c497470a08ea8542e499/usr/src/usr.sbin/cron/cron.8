@@ -1,0 +1,98 @@
+.\" Copyright (c) 1986 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.proprietary.roff%
+.\"
+.\"	@(#)cron.8	6.7 (Berkeley) %G%
+.\"
+.TH CRON 8 ""
+.AT 3
+.SH NAME
+cron \- clock daemon
+.SH SYNOPSIS
+.B cron
+.SH DESCRIPTION
+.I Cron
+executes commands at specified dates and times
+according to the instructions in the files
+/etc/crontab and /etc/crontab.local.
+None, either one, or both of these files may be present.
+Since
+.I cron
+never exits,
+it should only be executed once.
+This is best done by running
+.I cron
+from the initialization
+process through the file
+/etc/rc;
+see
+.IR init (8).
+.PP
+The
+crontab files
+consist of lines of seven fields each.
+The fields are separated by spaces or tabs.
+The first five are integer patterns to specify:
+.in +2m
+.TP 2m
+\(bu
+minute (0-59)
+.nr .0 \n()Pu
+.nr )P 0
+.TP 2m
+\(bu
+hour (0-23)
+.TP 2m
+\(bu
+day of the month (1-31)
+.TP 2m
+\(bu
+month of the year (1-12)
+.TP 2m
+\(bu
+day of the week (1-7 with 1 = Monday)
+.nr )P \n(.0u
+.in -2m
+.LP
+Each of these patterns may contain:
+.in +2m
+.TP 2m
+\(bu
+a number in the range above
+.nr .0 \n()Pu
+.nr )P 0
+.TP 2m
+\(bu
+two numbers separated by a minus
+meaning a range inclusive
+.TP 2m
+\(bu
+a list of numbers separated by
+commas meaning any of the numbers
+.TP 2m
+\(bu
+an asterisk meaning all legal values
+.nr )P \n(.0u
+.in -2m
+.LP
+The sixth field is a user name: the
+command will be run with that user's uid and permissions.
+The seventh field consists of all the text
+on a line following the sixth field,
+including spaces and tabs;
+this text is treated as a command
+which is executed by the Shell at the
+specified times.
+A percent character (``%'')
+in this field is translated to a new-line
+character.
+.PP
+Both
+crontab files are checked by
+.I cron
+every minute, on the minute.
+.SH FILES
+/etc/crontab
+.br
+/etc/crontab.local

@@ -1,0 +1,1719 @@
+#	   user: bostic
+#	machine: vangogh.CS.Berkeley.EDU
+#	   tree: distribution tree: /, /usr, /var
+#	   date: Wed Jul 15 13:40:13 1992
+#
+#	@(#)4.4BSD.dist	5.18 (Berkeley) %G%
+
+/set type=dir uname=root gname=wheel mode=0755
+# .
+.
+
+# ./a
+a
+# ./a
+..
+
+# ./altroot
+altroot
+# ./altroot
+..
+
+# ./amd
+amd	mode=0555
+# ./amd
+..
+
+# ./b
+b
+# ./b
+..
+
+# ./c
+c
+# ./c
+..
+
+# ./dump
+dump
+# ./dump	uname=operator gname=operator mode=0775
+..
+
+# ./bin
+bin
+# ./bin
+..
+
+# ./dev
+dev
+
+# ./dev/fd
+fd
+# ./dev/fd
+..
+
+# ./dev
+..
+
+# ./etc
+etc
+
+# ./etc/disklabels
+disklabels
+# ./etc/disklabels
+..
+
+# ./etc/kerberosIV
+kerberosIV
+# ./etc/kerberosIV
+..
+
+# ./etc/mtree
+mtree
+# ./etc/mtree
+..
+
+# ./etc/namedb
+namedb
+# ./etc/namedb
+..
+
+# ./etc/sliphome
+sliphome
+# ./etc/sliphome
+..
+
+# ./etc
+..
+
+# ./home
+home
+# ./home
+..
+
+# ./mnt
+mnt
+# ./mnt
+..
+
+# ./root
+root
+# ./root
+..
+
+# ./sbin
+sbin
+# ./sbin
+..
+
+# ./stand
+stand
+# ./stand
+..
+
+# ./tmp
+tmp             mode=01777
+# ./tmp
+..
+
+# ./usr
+usr
+
+# ./usr/bin
+bin
+# ./usr/bin
+..
+
+# ./usr/contrib
+contrib
+
+# ./usr/contrib/bin
+bin
+# ./usr/contrib/bin
+..
+
+# ./usr/contrib/lib
+lib
+
+# ./usr/contrib/lib/emacs
+emacs
+
+# ./usr/contrib/lib/emacs/etc
+etc
+..
+
+# ./usr/contrib/lib/emacs/info
+info
+# ./usr/contrib/lib/emacs/info
+..
+
+# ./usr/contrib/lib/emacs/lisp
+lisp
+
+# ./usr/contrib/lib/emacs/lisp/term
+term
+# ./usr/contrib/lib/emacs/lisp/term
+..
+
+# ./usr/contrib/lib/emacs/lisp
+..
+
+# ./usr/contrib/lib/emacs
+..
+
+# ./usr/contrib/lib/jove
+jove
+# ./usr/contrib/lib/jove
+..
+
+# ./usr/contrib/lib/perl
+perl
+# ./usr/contrib/lib/perl
+..
+
+# ./usr/contrib/lib
+..
+
+# ./usr/contrib/man
+man
+
+# ./usr/contrib/man/cat1
+cat1
+# ./usr/contrib/man/cat1
+..
+
+# ./usr/contrib/man/cat2
+cat2
+# ./usr/contrib/man/cat2
+..
+
+# ./usr/contrib/man/cat3
+cat3
+# ./usr/contrib/man/cat3
+..
+
+# ./usr/contrib/man/cat3f
+cat3f
+# ./usr/contrib/man/cat3f
+..
+
+# ./usr/contrib/man/cat4
+cat4
+# ./usr/contrib/man/cat4
+..
+
+# ./usr/contrib/man/cat5
+cat5
+# ./usr/contrib/man/cat5
+..
+
+# ./usr/contrib/man/cat6
+cat6
+# ./usr/contrib/man/cat6
+..
+
+# ./usr/contrib/man/cat7
+cat7
+# ./usr/contrib/man/cat7
+..
+
+# ./usr/contrib/man/cat8
+cat8
+# ./usr/contrib/man/cat8
+..
+
+# ./usr/contrib/man
+..
+
+# ./usr/contrib/mh-6.8
+mh-6.8
+
+# ./usr/contrib/mh-6.8/bin
+bin
+# ./usr/contrib/mh-6.8/bin
+..
+
+# ./usr/contrib/mh-6.8/lib
+lib
+# ./usr/contrib/mh-6.8/lib
+..
+
+# ./usr/contrib/mh-6.8/man
+man
+
+# ./usr/contrib/mh-6.8/man/man1
+man1
+# ./usr/contrib/mh-6.8/man/man1
+..
+
+# ./usr/contrib/mh-6.8/man/man5
+man5
+# ./usr/contrib/mh-6.8/man/man5
+..
+
+# ./usr/contrib/mh-6.8/man/man8
+man8
+# ./usr/contrib/mh-6.8/man/man8
+..
+
+# ./usr/contrib/mh-6.8/man
+..
+
+# ./usr/contrib/mh-6.8
+..
+
+# ./usr/contrib
+..
+
+# ./usr/games
+games
+
+# ./usr/games/hide
+hide            gname=games uname=games mode=0700
+# ./usr/games/hide
+..
+
+# ./usr/games
+..
+
+# ./usr/include
+include
+
+# ./usr/include/arpa
+arpa
+# ./usr/include/arpa
+..
+
+# ./usr/include/g++
+g++
+
+# ./usr/include/g++/sys
+sys
+# ./usr/include/g++/sys
+..
+
+# ./usr/include/g++
+..
+
+# ./usr/include/kerberosIV
+kerberosIV
+# ./usr/include/kerberosIV
+..
+
+# ./usr/include/pascal
+pascal
+# ./usr/include/pascal
+..
+
+# ./usr/include/protocols
+protocols
+# ./usr/include/protocols
+..
+
+# ./usr/include/rpc
+rpc
+# ./usr/include/rpc
+..
+
+# ./usr/include/xnscourier
+xnscourier
+# ./usr/include/xnscourier
+..
+
+# ./usr/include
+..
+
+# ./usr/lib
+lib
+
+# ./usr/lib/uucp
+uucp             gname=daemon uname=uucp
+# ./usr/lib/uucp
+..
+
+# ./usr/lib
+..
+
+# ./usr/libdata
+libdata
+
+# ./usr/libdata/learn
+learn
+
+# ./usr/libdata/learn/C
+C
+# ./usr/libdata/learn/C
+..
+
+# ./usr/libdata/learn/bin
+bin
+# ./usr/libdata/learn/bin
+..
+
+# ./usr/libdata/learn/editor
+editor
+# ./usr/libdata/learn/editor
+..
+
+# ./usr/libdata/learn/eqn
+eqn
+# ./usr/libdata/learn/eqn
+..
+
+# ./usr/libdata/learn/files
+files
+# ./usr/libdata/learn/files
+..
+
+# ./usr/libdata/learn/macros
+macros
+# ./usr/libdata/learn/macros
+..
+
+# ./usr/libdata/learn/morefiles
+morefiles
+# ./usr/libdata/learn/morefiles
+..
+
+# ./usr/libdata/learn
+..
+
+# ./usr/libdata
+..
+
+# ./usr/libexec
+libexec
+
+# ./usr/libexec/gcc2
+gcc2
+
+# ./usr/libexec/gcc2/gcc-lib
+gcc-lib
+
+# ./usr/libexec/gcc2/gcc-lib/include
+include
+# ./usr/libexec/gcc2/gcc-lib/include
+..
+
+# ./usr/libexec/gcc2/gcc-lib/m68k-hp-bsd
+m68k-hp-bsd
+
+# ./usr/libexec/gcc2/gcc-lib/m68k-hp-bsd/2.3.3
+2.3.3
+
+# ./usr/libexec/gcc2/gcc-lib/m68k-hp-bsd/2.3.3/include
+include
+# ./usr/libexec/gcc2/gcc-lib/m68k-hp-bsd/2.3.3/include
+..
+
+# ./usr/libexec/gcc2/gcc-lib/m68k-hp-bsd/2.3.3
+..
+
+# ./usr/libexec/gcc2/gcc-lib/m68k-hp-bsd
+..
+
+# ./usr/libexec/gcc2/gcc-lib
+..
+
+# ./usr/libexec/gcc2
+..
+
+# ./usr/libexec/lpr
+lpr
+# ./usr/libexec/lpr
+..
+
+# ./usr/libexec/lpr
+lpr
+# ./usr/libexec/lpr
+..
+
+# ./usr/libexec/lpr
+lpr
+# ./usr/libexec/lpr
+..
+
+# ./usr/libexec/lpr
+lpr
+# ./usr/libexec/lpr
+..
+
+# ./usr/libexec/pascal
+pascal
+# ./usr/libexec/pascal
+..
+
+# ./usr/libexec/plot
+plot
+# ./usr/libexec/plot
+..
+
+# ./usr/libexec
+..
+
+# ./usr/local
+local
+
+# ./usr/local/bin
+bin
+# ./usr/local/bin
+..
+
+# ./usr/local/lib
+lib
+# ./usr/local/lib
+..
+
+# ./usr/local/libdata
+libdata
+# ./usr/local/libdata
+..
+
+# ./usr/local/libexec
+libexec
+# ./usr/local/libexec
+..
+
+# ./usr/local/man
+man
+
+# ./usr/local/man/cat1
+cat1
+# ./usr/local/man/cat1
+..
+
+# ./usr/local/man/cat2
+cat2
+# ./usr/local/man/cat2
+..
+
+# ./usr/local/man/cat3
+cat3
+# ./usr/local/man/cat3
+..
+
+# ./usr/local/man/cat4
+cat4
+# ./usr/local/man/cat4
+..
+
+# ./usr/local/man/cat5
+cat5
+# ./usr/local/man/cat5
+..
+
+# ./usr/local/man/cat6
+cat6
+# ./usr/local/man/cat6
+..
+
+# ./usr/local/man/cat7
+cat7
+# ./usr/local/man/cat7
+..
+
+# ./usr/local/man/cat8
+cat8
+# ./usr/local/man/cat8
+..
+
+# ./usr/local/man
+..
+
+# ./usr/local/sbin
+sbin
+# ./usr/local/sbin
+..
+
+# ./usr/local
+..
+
+# ./usr/mdec
+mdec
+# ./usr/mdec
+..
+
+# ./usr/old
+old
+
+# ./usr/old/bin
+bin
+# ./usr/old/bin
+..
+
+# ./usr/old/dict
+dict
+
+# ./usr/old/dict/papers
+papers
+# ./usr/old/dict/papers
+..
+
+# ./usr/old/dict
+..
+
+# ./usr/old/lib
+lib
+
+# ./usr/old/lib/ms
+ms
+# ./usr/old/lib/ms
+..
+
+# ./usr/old/lib/tmac
+tmac
+# ./usr/old/lib/tmac
+..
+
+# ./usr/old/lib
+..
+
+# ./usr/old/libdata
+libdata
+
+# ./usr/old/libdata/adb
+adb
+# ./usr/old/libdata/adb
+..
+
+# ./usr/old/libdata/term
+term
+# ./usr/old/libdata/term
+..
+
+# ./usr/old/libdata/troff_font
+troff_font
+# ./usr/old/libdata/troff_font
+..
+
+# ./usr/old/libdata
+..
+
+# ./usr/old/libexec
+libexec
+# ./usr/old/libexec
+..
+
+# ./usr/old
+..
+
+# ./usr/public
+public
+# ./usr/public
+..
+
+# ./usr/sbin
+sbin
+# ./usr/sbin
+..
+
+# ./usr/share
+share
+
+# ./usr/share/calendar
+calendar
+# ./usr/share/calendar
+..
+
+# ./usr/share/dict
+dict
+
+# ./usr/share/dict/papers
+papers
+# ./usr/share/dict/papers
+..
+
+# ./usr/share/dict/special
+special
+# ./usr/share/dict/special
+..
+
+# ./usr/share/dict
+..
+
+# ./usr/share/doc
+doc
+
+# ./usr/share/doc/misc
+misc
+
+# ./usr/share/doc/misc/ctour
+ctour
+# ./usr/share/doc/misc/ctour
+..
+
+# ./usr/share/doc/misc
+..
+
+# ./usr/share/doc/ps1
+ps1
+
+# ./usr/share/doc/ps1/01.Clang
+01.Clang
+# ./usr/share/doc/ps1/01.Clang
+..
+
+# ./usr/share/doc/ps1/02.f77
+02.f77
+# ./usr/share/doc/ps1/02.f77
+..
+
+# ./usr/share/doc/ps1/03.f77io
+03.f77io
+# ./usr/share/doc/ps1/03.f77io
+..
+
+# ./usr/share/doc/ps1/04.pascal
+04.pascal
+# ./usr/share/doc/ps1/04.pascal
+..
+
+# ./usr/share/doc/ps1/05.as
+05.as
+# ./usr/share/doc/ps1/05.as
+..
+
+# ./usr/share/doc/ps1/06.sysman
+06.sysman
+# ./usr/share/doc/ps1/06.sysman
+..
+
+# ./usr/share/doc/ps1/07.ipctut
+07.ipctut
+# ./usr/share/doc/ps1/07.ipctut
+..
+
+# ./usr/share/doc/ps1/08.ipc
+08.ipc
+# ./usr/share/doc/ps1/08.ipc
+..
+
+# ./usr/share/doc/ps1/09.lint
+09.lint
+# ./usr/share/doc/ps1/09.lint
+..
+
+# ./usr/share/doc/ps1/10.adb
+10.adb
+# ./usr/share/doc/ps1/10.adb
+..
+
+# ./usr/share/doc/ps1/11.dbx
+11.dbx
+# ./usr/share/doc/ps1/11.dbx
+..
+
+# ./usr/share/doc/ps1/12.make
+12.make
+# ./usr/share/doc/ps1/12.make
+..
+
+# ./usr/share/doc/ps1/13.rcs
+13.rcs
+# ./usr/share/doc/ps1/13.rcs
+..
+
+# ./usr/share/doc/ps1/14.sccs
+14.sccs
+# ./usr/share/doc/ps1/14.sccs
+..
+
+# ./usr/share/doc/ps1/15.yacc
+15.yacc
+# ./usr/share/doc/ps1/15.yacc
+..
+
+# ./usr/share/doc/ps1/16.lex
+16.lex
+# ./usr/share/doc/ps1/16.lex
+..
+
+# ./usr/share/doc/ps1/17.m4
+17.m4
+# ./usr/share/doc/ps1/17.m4
+..
+
+# ./usr/share/doc/ps1/18.curses
+18.curses
+# ./usr/share/doc/ps1/18.curses
+..
+
+# ./usr/share/doc/ps1
+..
+
+# ./usr/share/doc/ps2
+ps2
+
+# ./usr/share/doc/ps2/01.cacm
+01.cacm
+# ./usr/share/doc/ps2/01.cacm
+..
+
+# ./usr/share/doc/ps2/02.summary
+02.summary
+# ./usr/share/doc/ps2/02.summary
+..
+
+# ./usr/share/doc/ps2/03.uprog
+03.uprog
+# ./usr/share/doc/ps2/03.uprog
+..
+
+# ./usr/share/doc/ps2/04.implement
+04.implement
+# ./usr/share/doc/ps2/04.implement
+..
+
+# ./usr/share/doc/ps2/05.iosys
+05.iosys
+# ./usr/share/doc/ps2/05.iosys
+..
+
+# ./usr/share/doc/ps2/07.fp
+07.fp
+# ./usr/share/doc/ps2/07.fp
+..
+
+# ./usr/share/doc/ps2
+..
+
+# ./usr/share/doc/smm
+smm
+
+# ./usr/share/doc/smm/01.setup
+01.setup
+# ./usr/share/doc/smm/01.setup
+..
+
+# ./usr/share/doc/smm/02.config
+02.config
+# ./usr/share/doc/smm/02.config
+..
+
+# ./usr/share/doc/smm/03.kdebug
+03.kdebug
+# ./usr/share/doc/smm/03.kdebug
+..
+
+# ./usr/share/doc/smm/04.quotas
+04.quotas
+# ./usr/share/doc/smm/04.quotas
+..
+
+# ./usr/share/doc/smm/05.fsck
+05.fsck
+# ./usr/share/doc/smm/05.fsck
+..
+
+# ./usr/share/doc/smm/06.lpd
+06.lpd
+# ./usr/share/doc/smm/06.lpd
+..
+
+# ./usr/share/doc/smm/07.sendmailop
+07.sendmailop
+# ./usr/share/doc/smm/07.sendmailop
+..
+
+# ./usr/share/doc/smm/08.timedop
+08.timedop
+# ./usr/share/doc/smm/08.timedop
+..
+
+# ./usr/share/doc/smm/09.uucpimpl
+09.uucpimpl
+# ./usr/share/doc/smm/09.uucpimpl
+..
+
+# ./usr/share/doc/smm/10.newsop
+10.newsop
+# ./usr/share/doc/smm/10.newsop
+..
+
+# ./usr/share/doc/smm/11.named
+11.named
+# ./usr/share/doc/smm/11.named
+..
+
+# ./usr/share/doc/smm/12.uchanges
+12.uchanges
+# ./usr/share/doc/smm/12.uchanges
+..
+
+# ./usr/share/doc/smm/13.kchanges
+13.kchanges
+# ./usr/share/doc/smm/13.kchanges
+..
+
+# ./usr/share/doc/smm/14.fastfs
+14.fastfs
+# ./usr/share/doc/smm/14.fastfs
+..
+
+# ./usr/share/doc/smm/15.net
+15.net
+# ./usr/share/doc/smm/15.net
+..
+
+# ./usr/share/doc/smm/16.sendmail
+16.sendmail
+# ./usr/share/doc/smm/16.sendmail
+..
+
+# ./usr/share/doc/smm/17.security
+17.security
+# ./usr/share/doc/smm/17.security
+..
+
+# ./usr/share/doc/smm/18.password
+18.password
+# ./usr/share/doc/smm/18.password
+..
+
+# ./usr/share/doc/smm/19.porttour
+19.porttour
+# ./usr/share/doc/smm/19.porttour
+..
+
+# ./usr/share/doc/smm/20.termdesc
+20.termdesc
+# ./usr/share/doc/smm/20.termdesc
+..
+
+# ./usr/share/doc/smm/21.uucpnet
+21.uucpnet
+# ./usr/share/doc/smm/21.uucpnet
+..
+
+# ./usr/share/doc/smm/22.timed
+22.timed
+# ./usr/share/doc/smm/22.timed
+..
+
+# ./usr/share/doc/smm
+..
+
+# ./usr/share/doc/usd
+usd
+
+# ./usr/share/doc/usd/01.begin
+01.begin
+# ./usr/share/doc/usd/01.begin
+..
+
+# ./usr/share/doc/usd/02.learn
+02.learn
+# ./usr/share/doc/usd/02.learn
+..
+
+# ./usr/share/doc/usd/03.shell
+03.shell
+# ./usr/share/doc/usd/03.shell
+..
+
+# ./usr/share/doc/usd/04.csh
+04.csh
+# ./usr/share/doc/usd/04.csh
+..
+
+# ./usr/share/doc/usd/05.dc
+05.dc
+# ./usr/share/doc/usd/05.dc
+..
+
+# ./usr/share/doc/usd/06.bc
+06.bc
+# ./usr/share/doc/usd/06.bc
+..
+
+# ./usr/share/doc/usd/07.Mail
+07.Mail
+# ./usr/share/doc/usd/07.Mail
+..
+
+# ./usr/share/doc/usd/08.mh
+08.mh
+# ./usr/share/doc/usd/08.mh
+..
+
+# ./usr/share/doc/usd/09.newsread
+09.newsread
+# ./usr/share/doc/usd/09.newsread
+..
+
+# ./usr/share/doc/usd/10.etiq
+10.etiq
+# ./usr/share/doc/usd/10.etiq
+..
+
+# ./usr/share/doc/usd/11.notes
+11.notes
+# ./usr/share/doc/usd/11.notes
+..
+
+# ./usr/share/doc/usd/12.edtut
+12.edtut
+# ./usr/share/doc/usd/12.edtut
+..
+
+# ./usr/share/doc/usd/13.edadv
+13.edadv
+# ./usr/share/doc/usd/13.edadv
+..
+
+# ./usr/share/doc/usd/14.edit
+14.edit
+# ./usr/share/doc/usd/14.edit
+..
+
+# ./usr/share/doc/usd/15.vi
+15.vi
+# ./usr/share/doc/usd/15.vi
+..
+
+# ./usr/share/doc/usd/16.ex
+16.ex
+# ./usr/share/doc/usd/16.ex
+..
+
+# ./usr/share/doc/usd/17.jove
+17.jove
+# ./usr/share/doc/usd/17.jove
+..
+
+# ./usr/share/doc/usd/18.sed
+18.sed
+# ./usr/share/doc/usd/18.sed
+..
+
+# ./usr/share/doc/usd/19.awk
+19.awk
+# ./usr/share/doc/usd/19.awk
+..
+
+# ./usr/share/doc/usd/20.msmacros
+20.msmacros
+# ./usr/share/doc/usd/20.msmacros
+..
+
+# ./usr/share/doc/usd/21.msdiffs
+21.msdiffs
+# ./usr/share/doc/usd/21.msdiffs
+..
+
+# ./usr/share/doc/usd/22.memacros
+22.memacros
+# ./usr/share/doc/usd/22.memacros
+..
+
+# ./usr/share/doc/usd/23.meref
+23.meref
+# ./usr/share/doc/usd/23.meref
+..
+
+# ./usr/share/doc/usd/24.troff
+24.troff
+# ./usr/share/doc/usd/24.troff
+..
+
+# ./usr/share/doc/usd/25.trofftut
+25.trofftut
+# ./usr/share/doc/usd/25.trofftut
+..
+
+# ./usr/share/doc/usd/26.eqn
+26.eqn
+# ./usr/share/doc/usd/26.eqn
+..
+
+# ./usr/share/doc/usd/27.eqnguide
+27.eqnguide
+# ./usr/share/doc/usd/27.eqnguide
+..
+
+# ./usr/share/doc/usd/28.tbl
+28.tbl
+# ./usr/share/doc/usd/28.tbl
+..
+
+# ./usr/share/doc/usd/29.refer
+29.refer
+# ./usr/share/doc/usd/29.refer
+..
+
+# ./usr/share/doc/usd/30.invert
+30.invert
+# ./usr/share/doc/usd/30.invert
+..
+
+# ./usr/share/doc/usd/31.bib
+31.bib
+# ./usr/share/doc/usd/31.bib
+..
+
+# ./usr/share/doc/usd/32.diction
+32.diction
+# ./usr/share/doc/usd/32.diction
+..
+
+# ./usr/share/doc/usd/33.rogue
+33.rogue
+# ./usr/share/doc/usd/33.rogue
+..
+
+# ./usr/share/doc/usd/34.trek
+34.trek
+# ./usr/share/doc/usd/34.trek
+..
+
+# ./usr/share/doc/usd
+..
+
+# ./usr/share/doc
+..
+
+# ./usr/share/games
+games
+
+# ./usr/share/games/atc
+atc
+# ./usr/share/games/atc
+..
+
+# ./usr/share/games/ching
+ching
+# ./usr/share/games/ching
+..
+
+# ./usr/share/games/fortune
+fortune
+# ./usr/share/games/fortune
+..
+
+# ./usr/share/games/larn
+larn
+# ./usr/share/games/larn
+..
+
+# ./usr/share/games/quiz.db
+quiz.db
+# ./usr/share/games/quiz.db
+..
+
+# ./usr/share/games
+..
+
+# ./usr/share/groff
+groff
+
+# ./usr/share/groff/eign
+eign
+# ./usr/share/groff/eign
+..
+
+# ./usr/share/groff/font
+font
+# ./usr/share/groff/font
+..
+
+# ./usr/share/groff/tmac
+tmac
+
+# ./usr/share/groff/tmac/mdoc
+mdoc
+# ./usr/share/groff/tmac/mdoc
+..
+
+# ./usr/share/groff/tmac/mm
+mm
+# ./usr/share/groff/tmac/mm
+..
+
+# ./usr/share/groff/tmac
+..
+
+# ./usr/share/groff
+..
+
+# ./usr/share/groff_font
+groff_font
+
+# ./usr/share/groff_font/devX100
+devX100
+# ./usr/share/groff_font/devX100
+..
+
+# ./usr/share/groff_font/devX100-12
+devX100-12
+# ./usr/share/groff_font/devX100-12
+..
+
+# ./usr/share/groff_font/devX75
+devX75
+# ./usr/share/groff_font/devX75
+..
+
+# ./usr/share/groff_font/devX75-12
+devX75-12
+# ./usr/share/groff_font/devX75-12
+..
+
+# ./usr/share/groff_font/devascii
+devascii
+# ./usr/share/groff_font/devascii
+..
+
+# ./usr/share/groff_font/devdvi
+devdvi
+
+# ./usr/share/groff_font/devdvi/generate
+generate
+# ./usr/share/groff_font/devdvi/generate
+..
+
+# ./usr/share/groff_font/devdvi
+..
+
+# ./usr/share/groff_font/devlatin1
+devlatin1
+# ./usr/share/groff_font/devlatin1
+..
+
+# ./usr/share/groff_font/devps
+devps
+
+# ./usr/share/groff_font/devps/generate
+generate
+# ./usr/share/groff_font/devps/generate
+..
+
+# ./usr/share/groff_font/devps
+..
+
+# ./usr/share/groff_font
+..
+
+# ./usr/share/locale
+locale
+# ./usr/share/locale
+..
+
+# ./usr/share/man
+man
+
+# ./usr/share/man/cat1
+cat1
+# ./usr/share/man/cat1
+..
+
+# ./usr/share/man/cat2
+cat2
+# ./usr/share/man/cat2
+..
+
+# ./usr/share/man/cat3
+cat3
+# ./usr/share/man/cat3
+..
+
+# ./usr/share/man/cat3f
+cat3f
+# ./usr/share/man/cat3f
+..
+
+# ./usr/share/man/cat4
+cat4
+
+# ./usr/share/man/cat4/hp300
+hp300
+# ./usr/share/man/cat4/hp300
+..
+
+# ./usr/share/man/cat4/i386
+i386
+# ./usr/share/man/cat4/i386
+..
+
+# ./usr/share/man/cat4/sparc
+sparc
+# ./usr/share/man/cat4/sparc
+..
+
+# ./usr/share/man/cat4/tahoe
+tahoe
+# ./usr/share/man/cat4/tahoe
+..
+
+# ./usr/share/man/cat4/vax
+vax
+# ./usr/share/man/cat4/vax
+..
+
+# ./usr/share/man/cat4
+..
+
+# ./usr/share/man/cat5
+cat5
+# ./usr/share/man/cat5
+..
+
+# ./usr/share/man/cat6
+cat6
+# ./usr/share/man/cat6
+..
+
+# ./usr/share/man/cat7
+cat7
+# ./usr/share/man/cat7
+..
+
+# ./usr/share/man/cat8
+cat8
+
+# ./usr/share/man/cat8/hp300
+hp300
+# ./usr/share/man/cat8/hp300
+..
+
+# ./usr/share/man/cat8/i386
+i386
+# ./usr/share/man/cat8/i386
+..
+
+# ./usr/share/man/cat8/sparc
+sparc
+# ./usr/share/man/cat8/sparc
+..
+
+# ./usr/share/man/cat8/tahoe
+tahoe
+# ./usr/share/man/cat8/tahoe
+..
+
+# ./usr/share/man/cat8/vax
+vax
+# ./usr/share/man/cat8/vax
+..
+
+# ./usr/share/man/cat8
+..
+
+# ./usr/share/man/old
+old              uname=bin gname=bin
+
+# ./usr/share/man/old/cat1
+cat1
+# ./usr/share/man/old/cat1
+..
+
+# ./usr/share/man/old/cat2
+cat2
+# ./usr/share/man/old/cat2
+..
+
+# ./usr/share/man/old/cat3
+cat3
+# ./usr/share/man/old/cat3
+..
+
+# ./usr/share/man/old/cat4
+cat4
+# ./usr/share/man/old/cat4
+..
+
+# ./usr/share/man/old/cat5
+cat5
+# ./usr/share/man/old/cat5
+..
+
+# ./usr/share/man/old/cat6
+cat6
+# ./usr/share/man/old/cat6
+..
+
+# ./usr/share/man/old/cat7
+cat7
+# ./usr/share/man/old/cat7
+..
+
+# ./usr/share/man/old/cat8
+cat8
+# ./usr/share/man/old/cat8
+..
+
+# ./usr/share/man/old
+..
+
+# ./usr/share/man
+..
+
+# ./usr/share/me
+me
+# ./usr/share/me
+..
+
+# ./usr/share/misc
+misc
+# ./usr/share/misc
+..
+
+# ./usr/share/mk
+mk
+# ./usr/share/mk
+..
+
+# ./usr/share/skel
+skel
+# ./usr/share/skel
+..
+
+# ./usr/share/tabset
+tabset
+# ./usr/share/tabset
+..
+
+# ./usr/share/tmac
+tmac
+# ./usr/share/tmac
+..
+
+# ./usr/share/zoneinfo
+zoneinfo         mode=0555
+
+# ./usr/share/zoneinfo/Australia
+Australia        mode=0555
+# ./usr/share/zoneinfo/Australia
+..
+
+# ./usr/share/zoneinfo/Brazil
+Brazil           mode=0555
+# ./usr/share/zoneinfo/Brazil
+..
+
+# ./usr/share/zoneinfo/Canada
+Canada           mode=0555
+# ./usr/share/zoneinfo/Canada
+..
+
+# ./usr/share/zoneinfo/Chile
+Chile            mode=0555
+# ./usr/share/zoneinfo/Chile
+..
+
+# ./usr/share/zoneinfo/Mexico
+Mexico           mode=0555
+# ./usr/share/zoneinfo/Mexico
+..
+
+# ./usr/share/zoneinfo/SystemV
+SystemV          mode=0555
+# ./usr/share/zoneinfo/SystemV
+..
+
+# ./usr/share/zoneinfo/US
+US               mode=0555
+# ./usr/share/zoneinfo/US
+..
+
+# ./usr/share/zoneinfo
+..
+
+# ./usr/share
+..
+
+# ./usr/src
+src
+# ./usr/src
+..
+
+# ./usr/ucb
+ucb              uname=bin
+# ./usr/ucb
+..
+
+# ./usr
+..
+
+# ./var
+var
+
+# ./var/account
+account
+# ./var/account
+..
+
+# ./var/at
+at
+
+# ./var/at/past
+past
+# ./var/at/past
+..
+
+# ./var/at
+..
+
+# ./var/backups
+backups
+# ./var/backups
+..
+
+# ./var/crash
+crash		mode=775
+# ./var/crash
+..
+
+# ./var/db
+db
+
+# ./var/db/ns
+ns
+# ./var/db/ns
+..
+
+# ./var/db
+..
+
+# ./var/emacs
+emacs
+
+# ./var/emacs/lock
+lock              mode=0777
+# ./var/emacs/lock
+..
+
+# ./var/emacs
+..
+
+# ./var/games
+games            uname=games gname=games mode=0775
+
+# ./var/games/hackdir
+hackdir          uname=games gname=games mode=0775
+# ./var/games/hackdir
+..
+
+# ./var/games/larn
+larn             uname=games gname=games mode=0775
+# ./var/games/larn
+..
+
+# ./var/games/phantasia
+phantasia        uname=games gname=games mode=0775
+# ./var/games/phantasia
+..
+
+# ./var/games
+..
+
+# ./var/log
+log
+
+# ./var/log/rdist
+rdist
+# ./var/log/rdist
+..
+
+# ./var/log
+..
+
+# ./var/mail
+mail
+# ./var/mail
+..
+
+# ./var/msgs
+msgs
+# ./var/msgs
+..
+
+# ./var/obj
+obj
+# ./var/obj
+..
+
+# ./var/preserve
+preserve
+# ./var/preserve
+..
+
+# ./var/quotas
+quotas            gname=operator mode=0750
+# ./var/quotas
+..
+
+# ./var/run
+run
+# ./var/run
+..
+
+# ./var/rwho
+rwho
+# ./var/rwho
+..
+
+# ./var/spool
+spool
+
+# ./var/spool/ftp
+ftp
+
+# ./var/spool/ftp/bin
+bin
+# ./var/spool/ftp/bin
+..
+
+# ./var/spool/ftp/etc
+etc
+# ./var/spool/ftp/etc
+..
+
+# ./var/spool/ftp/hidden
+hidden           mode=0111
+# ./var/spool/ftp/hidden
+..
+
+# ./var/spool/ftp/pub
+pub               mode=0777
+# ./var/spool/ftp/pub
+..
+
+# ./var/spool/ftp
+..
+
+# ./var/spool/mqueue
+mqueue
+# ./var/spool/mqueue
+..
+
+# ./var/spool/news
+news
+# ./var/spool/news
+..
+
+# ./var/spool/output
+output
+# ./var/spool/output
+..
+
+# ./var/spool/secretmail
+secretmail
+# ./var/spool/secretmail
+..
+
+# ./var/spool/sockets
+sockets	mode=777
+
+# ./var/spool/sockets/X11
+X11	mode=777
+# ./var/spool/sockets/X11
+..
+
+# ./var/spool/sockets
+..
+
+/set uname=uucp gname=daemon
+# ./var/spool/uucp
+uucp
+
+# ./var/spool/uucp/AUDIT
+AUDIT
+# ./var/spool/uucp/AUDIT
+..
+
+# ./var/spool/uucp/C.
+C.
+# ./var/spool/uucp/C.
+..
+
+# ./var/spool/uucp/CORRUPT
+CORRUPT
+# ./var/spool/uucp/CORRUPT
+..
+
+# ./var/spool/uucp/D.
+D.
+# ./var/spool/uucp/D.
+..
+
+# ./var/spool/uucp/LCK
+LCK              mode=0777
+# ./var/spool/uucp/LCK
+..
+
+# ./var/spool/uucp/LOG
+LOG
+
+# ./var/spool/uucp/LOG/uucico
+uucico
+# ./var/spool/uucp/LOG/uucico
+..
+
+# ./var/spool/uucp/LOG/uucp
+uucp
+# ./var/spool/uucp/LOG/uucp
+..
+
+# ./var/spool/uucp/LOG/uux
+uux
+# ./var/spool/uucp/LOG/uux
+..
+
+# ./var/spool/uucp/LOG/uuxqt
+uuxqt
+# ./var/spool/uucp/LOG/uuxqt
+..
+
+# ./var/spool/uucp/LOG/xferstats
+xferstats
+# ./var/spool/uucp/LOG/xferstats
+..
+
+# ./var/spool/uucp/LOG
+..
+
+# ./var/spool/uucp/STST
+STST
+# ./var/spool/uucp/STST
+..
+
+# ./var/spool/uucp/TM.
+TM.
+# ./var/spool/uucp/TM.
+..
+
+# ./var/spool/uucp/X.
+X.
+# ./var/spool/uucp/X.
+..
+
+# ./var/spool/uucp/XTMP
+XTMP
+# ./var/spool/uucp/XTMP
+..
+
+# ./var/spool/uucp
+..
+
+# ./var/spool/uucppublic
+uucppublic       mode=0777
+# ./var/spool/uucppublic
+..
+
+/set uname=root gname=wheel
+# ./var/spool
+..
+
+# ./var/tmp
+tmp        mode=01777
+
+# ./var/tmp/vi.recover
+vi.recover	 mode=01777
+# ./var/tmp/vi.recover
+..
+
+# ./var/tmp
+..
+
+# ./var
+..

@@ -1,0 +1,6 @@
+stop in main
+source args.cmd
+print argc
+print argv[95]
+print argv[96]
+print argv[97]

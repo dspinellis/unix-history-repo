@@ -1,0 +1,57 @@
+.\" Copyright (c) 1990, 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" the American National Standards Committee X3, on Information
+.\" Processing Systems.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)exit.3	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt EXIT 3
+.Os
+.Sh NAME
+.Nm exit
+.Nd perform normal program termination
+.Sh SYNOPSIS
+.Fd #include <stdlib.h>
+.Ft void
+.Fn exit "int status"
+.Sh DESCRIPTION
+.Fn Exit
+terminates a process.
+.Pp
+Before termination it performs the following functions in the
+order listed:
+.Bl -enum -offset indent
+.It
+Call the functions registered with the
+.Xr atexit 3
+function, in the reverse order of their registration.
+.It
+Flush all open output streams.
+.It
+Close all open streams.
+.It
+Unlink all files created with the
+.Xr tmpfile 3
+function.
+.El
+.Sh RETURN VALUES
+The
+.Fn exit
+function
+never returns.
+.Sh SEE ALSO
+.Xr _exit 2 ,
+.Xr atexit 3 ,
+.Xr intro 3 ,
+.Xr tmpfile 3
+.Sh STANDARDS
+The
+.Fn exit
+function
+conforms to
+.St -ansiC .

@@ -1,0 +1,128 @@
+.\" Copyright (c) 1980, 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"     @(#)liszt.1	6.4 (Berkeley) %G%
+.\"
+.Dd 
+.Dt LISZT 1
+.Os BSD 4
+.Sh NAME
+.Nm liszt
+.Nd compile a Franz Lisp program
+.Sh SYNOPSIS
+.Nm liszt
+.Op Fl mpqruwxCQST
+.Op Fl e Ar form
+.Op Fl o Ar objfile
+.Op Ar name
+.Sh DESCRIPTION
+.Nm Liszt
+takes a file whose names ends in `.l' and compiles the
+.Tn FRANZ LISP
+code there leaving an object program on the file whose name is that of the
+source with `.o' substituted for `.l'.
+.Pp
+The following options are interpreted by
+.Nm liszt .
+.Bl -tag -width Fl
+.It Fl e
+Evaluate the given form before compilation begins.
+.It Fl m
+Compile a
+.Tn MACLISP
+file, by changing the readtable to conform to
+.Tn MACLISP
+syntax and including a macro-defined compatibility package.
+.It Fl o
+Put the object code in the specified file, rather than the default `.o' file.
+.It Fl p
+places profiling code at the beginning of each non-local function.
+If the lisp system is also created with profiling in it, this allows
+function calling frequency to be determined (see
+.Xr prof  1  . )
+.It Fl q
+Only print warning and error messages.
+Compilation statistics and notes on correct but unusual constructs
+will not be printed.
+.It Fl r
+place bootstrap code at the beginning of the object file, which when
+the object file is executed will cause a lisp system to be invoked
+and the object file fasl'ed in.
+.It Fl u
+Compile a
+.Tn UCI Ns -lispfile ,
+by changing the readtable to conform to
+.Tn UCI Ns -Lisp
+syntax and including a macro-defined compatibility package.
+.It Fl w
+Suppress warning diagnostics.
+.It Fl x
+Create a lisp cross reference file with the same name as the source
+file but with  `.x' appended.
+The program
+.Xr lxref  1
+reads this file and creates a human readable cross
+reference listing.
+.It Fl C
+put comments in the assembler output of the compiler.
+Useful for debugging the compiler.
+.It Fl Q
+Print compilation statistics and warn of strange constructs.
+This is the default.
+.It Fl S
+Compile the named program and leave the assembler-language output on
+the corresponding file suffixed `.s'.
+This will also prevent the assembler language file from being assembled.
+.It Fl T
+send the assembler output to standard output.
+.El
+.Pp
+If
+no source file is specified, then the compiler will run interactively.
+You will find yourself talking to the
+.Xr lisp  1
+top-level command interpreter.
+You can compile a file by using the
+function
+.Nm liszt
+(an nlambda) with the same arguments as you use on the command line.
+For example to compile `foo', a
+.Tn MACLISP
+file, you would use:
+.Bd -literal -offset indent
+(liszt \-m foo)
+.Ed
+.Pp
+Note that
+.Nm liszt
+supplies the ``.l'' extension for you.
+.Sh FILES
+.Bl -tag -width /usr/lib/lisp/machacks.l -compact
+.It Pa /usr/lib/lisp/machacks.l
+.Tn MACLISP
+compatibility package.
+.It Pa /usr/lib/lisp/syscall.l
+Macro definitions of
+.Ux
+system calls.
+.It Pa /usr/lib/lisp/ucifnc.l
+.Tn UCI
+Lisp compatibility package.
+.El
+.Sh SEE ALSO
+.Xr lisp 1 ,
+.Xr lxref 1
+.Sh ENVIRONMENT
+.Nm Liszt
+checks these
+environment variables;
+.Ev PATH ,
+.Ev SHELL
+and
+.Ev TERM .
+.Sh HISTORY
+.Nm Lisp
+appeared in
+.Bx 3.0 .

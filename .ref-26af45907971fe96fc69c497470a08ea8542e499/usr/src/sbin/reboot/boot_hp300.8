@@ -1,0 +1,96 @@
+.\" Copyright (c) 1990, 1991 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" the Systems Programming Group of the University of Utah Computer
+.\" Science Department.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"	@(#)boot_hp300.8	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt BOOT_HP300 8
+.Os
+.Sh NAME
+.Nm boot
+.Nd
+system bootstrapping procedures
+.Sh DESCRIPTION
+.Sy Power fail and crash recovery.
+Normally, the system will reboot itself at power-up or after crashes.
+An automatic consistency check of the file systems will be performed,
+and unless this fails, the system will resume multi-user operations.
+.Pp
+.Sy Cold starts.
+On an HP300, the boot procedure uses the boot ROM to load a boot program
+from an
+.Tn LIF
+format directory at the beginning of an attached disk.
+The
+.Pa /usr/mdec
+directory contains a disk boot programs which should be placed in a
+new pack automatically by
+.Xr newfs 8
+when the ``a'' partition file system on the pack is created.
+.Pp
+This
+.Em boot
+program
+finds the corresponding file on the given device 
+.Pf ( Ar vmunix
+by default),
+loads that file into memory,
+and starts the program at the entry address specified in the program header.
+.Pp
+The boot program can be interrupted by typing `^C' (ctrl-C).
+This will force the boot program to interactively prompt for a system to boot.
+If not interrupted, it will boot from the device from which the boot
+program itself was loaded.
+.Pp
+The file specifications used for an interactive boot are of the form:
+.Pp
+.Dl device(unit, minor)
+.Pp
+where
+.Ar device
+is the type of the device to be searched,
+.Ar unit
+is 8 * the hpib number plus the unit number of the disk or tape,
+and
+.Ar minor
+is the disk partition or tape file number.
+Normal line editing characters can be used when typing the file specification.
+Currently, ``rd'' and ``sd'' are the only valid
+.Ar device
+specifiers.
+.Pp
+For example,
+to boot from the `a' file system of unit 0 on HP-IB 2,
+type
+.Ql rd(16, 0)vmunix
+to the boot prompt.
+For tapes, the minor device number gives a file offset.
+.Pp
+In an emergency, the bootstrap methods described in the paper
+.%T Installing 4.3bsd on the HP300
+can be used to boot from a distribution tape.
+.Sh FILES
+.Bl -tag -width /usr/mdec/installboot -compact
+.It Pa /vmunix
+system code
+.It Pa /usr/mdec/bootrd
+.Tn LIF
+format boot block
+.It Pa /usr/mdec/installboot
+program to install boot blocks
+.El
+.Sh SEE ALSO
+.Xr halt 8 ,
+.Xr reboot 8 ,
+.Xr shutdown 8
+.Sh HISTORY
+The
+.Nm
+command is
+.Ud .

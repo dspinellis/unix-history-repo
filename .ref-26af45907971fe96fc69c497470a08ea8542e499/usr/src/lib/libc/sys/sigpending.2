@@ -1,0 +1,46 @@
+.\" Copyright (c) 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" Berkeley Software Design, Inc.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"	@(#)sigpending.2	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt SIGPENDING 2
+.Os
+.Sh NAME
+.Nm sigpending
+.Nd get pending signals
+.Sh SYNOPSIS
+.Fd #include <signal.h>
+.Ft int
+.Fn sigpending "sigset_t *set"
+.Sh DESCRIPTION
+The
+.Nm sigpending
+function returns a mask of the signals pending for delivery
+to the calling process in the location indicated by
+.Fa set .
+Signals may be pending because they are currently masked,
+or transiently before delivery (although the latter case is not
+normally detectable).
+.Sh RETURN VALUES
+A 0 value indicated that the call succeeded.  A \-1 return value
+indicates an error occurred and
+.Va errno
+is set to indicated the reason.
+.Sh ERRORS
+The
+.Nm sigpending
+function does not currently detect any errors.
+.Sh SEE ALSO
+.Xr sigaction 2 ,
+.Xr sigprocmask 2
+.Sh STANDARDS
+The
+.Nm sigpending
+function is defined by
+.St -p1003.1 .

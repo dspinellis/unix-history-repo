@@ -1,0 +1,214 @@
+.\" Copyright (c) 1986 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.proprietary.roff%
+.\"
+.\"	@(#)USERFILE.5	6.3 (Berkeley) %G%
+.\"
+.TH USERFILE 5 ""
+.UC 6
+.SH NAME
+USERFILE \- \s-1UUCP\s0 pathname permissions file
+.SH DESCRIPTION
+The
+.I USERFILE
+file specifies the file system directory trees that are accessible to
+local users and to remote systems via \s-1UUCP\s0.
+.PP
+Each line in
+.I USERFILE
+is of the form:
+.PP
+[\fIloginname\fP]\fB,\fP[\fIsystem\fP] [ \fBc\fP ] \fIpathname\fP \c
+[\fIpathname\fP] [\fIpathname\fP]
+.PP
+The first two items are separated by a comma; any number of spaces or
+tabs may separate the remaining items.
+Lines beginning with a `#' character are comments.
+A trailing `\e' indicates that the next line
+is a continuation of the current line. 
+.PP
+.I Loginname
+is a login (from
+.IR /etc/passwd )
+on the local machine.
+.PP
+.I System
+is the name of a remote machine, the same name used in
+.IR L.sys (5).
+.PP
+.I c
+denotes the optional
+.I callback
+field.
+If a \fBc\fP appears here, a remote machine that calls in will be told
+that callback is requested, and the conversation will be terminated.
+The local system will then immediately call the remote host back.
+.PP
+.I Pathname
+is a pathname prefix that is permissible for this
+.I login
+and/or
+.IR system .
+.PP
+When
+.IR uucico (8C)
+runs in master role or
+.IR uucp (1C)
+or
+.IR uux (1C)
+are run by local users, the permitted pathnames are those on the
+first line with a
+.I loginname
+that matches the name of the user who executed the command.
+If no such line exists, then the first line with a null (missing)
+.I loginname
+field is used.
+(Beware:
+.I uucico
+is often run by the superuser or the \s-1UUCP\s0 administrator through
+.IR cron (8).)
+.PP
+When
+.I uucico
+runs in slave role, the permitted pathnames are those on the
+first line with a
+.I system
+field that matches the hostname of the remote machine.
+If no such line exists, then the first line with a null (missing)
+.I system
+field is used.
+.PP
+.IR Uuxqt (8)
+works differently; it knows neither a login name nor a hostname.
+It accepts the pathnames on the first line that has a null
+.I system 
+field.
+(This is the same line that is used by
+.I uucico
+when it cannot match the remote machine's hostname.)
+.PP
+A line with both
+.I loginname
+and
+.I system
+null, for example
+.IP
+.B ,  /var/spool/uucppublic
+.PP	
+can be used to conveniently specify the paths for both "no match" cases
+if lines earlier in
+.I USERFILE
+did not define them.
+(This differs from older Berkeley and all USG versions, where each case
+must be individually specified.
+If neither case is defined earlier,
+a "null" line only defines the "unknown login" case.)
+.PP
+To correctly process
+.I loginname
+on systems that assign several logins per UID,
+the following strategy is used to determine the current
+.IR loginname :
+.TP
+1)
+If the process is attached to a terminal, a login entry exists in
+.IR /var/run/utmp ,
+and the UID for the
+.I utmp
+name matches the current real UID, then
+.IR loginname
+is set to the
+.I utmp
+name.
+.TP
+2)
+If the
+.B USER
+environment variable is defined and the UID for this name matches
+the current real UID, then
+.IR loginname
+is set to the name in
+.BR USER .
+.TP
+3)
+If both of the above fail, call
+.IR getpwuid (3)
+to fetch the first name in
+.I /etc/passwd
+that matches the real UID.
+.TP
+4)
+If all of the above fail, the utility aborts.
+.SH FILES
+.ta \w'/usr/lib/uucp/UUAIDS/USERFILE   'u
+.nf
+/usr/lib/uucp/USERFILE
+/usr/lib/uucp/UUAIDS/USERFILE	USERFILE example
+.fi
+.SH SEE ALSO
+uucp(1C), uux(1C), L.cmds(5), L.sys(5), uucico(8C), uuxqt(8C)
+.SH NOTES
+The \s-1UUCP\s0 utilities
+.RI ( uucico ,
+.IR uucp ,
+.IR uux ,
+and
+.IR uuxqt )
+always have access to the \s-1UUCP\s0 spool files in
+.IR /var/spool/uucp ,
+regardless of pathnames in
+.IR USERFILE .
+.PP
+If
+.B uucp
+is listed in
+.IR L.cmds (5),
+then a remote system will execute
+.I uucp 
+on the local system with the
+.I USERFILE
+privileges for its
+.IR login ,
+not its hostname.
+.PP
+.I Uucico
+freely switches between master and slave roles during the course of a
+conversation, regardless of the role it was started with.
+This affects how
+.I USERFILE
+is interpreted.
+.SH WARNING
+.I USERFILE
+restricts access only on strings that the \s-1UUCP\s0 utilities identify
+as being pathnames.
+If the wrong holes are left in other \s-1UUCP\s0 control files (notably
+.IR L.cmds ),
+it can be easy for an intruder to open files anywhere in the file system.
+Arguments to
+.IR uucp (1C)
+are safe, since it assumes all of its non-option arguments are files.
+.IR Uux (1C)
+cannot make such assumptions; hence, it is more dangerous.
+.SH BUGS
+The
+.I "\s-1UUCP\s0 Implementation Description"
+explicitly states that all remote login names must be listed in
+.IR USERFILE .
+This requirement is not enforced by Berkeley \s-1UUCP\s0, although it is
+by USG \s-1UUCP\s0.
+.PP
+Early versions of 4.2BSD
+.IR uuxqt (8)
+erroneously check \s-1UUCP\s0 spool files against the
+.I USERFILE
+pathname permissions.
+Hence, on these systems it is necessary to specify
+.I /var/spool/uucp
+as a valid path on the
+.I USERFILE
+line used by
+.IR uuxqt .
+Otherwise, all
+.IR uux (1C)
+requests are rejected with a "PERMISSION DENIED" message.

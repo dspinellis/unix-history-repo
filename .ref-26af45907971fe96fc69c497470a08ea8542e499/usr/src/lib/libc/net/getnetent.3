@@ -1,0 +1,125 @@
+.\" Copyright (c) 1983, 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)getnetent.3	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt GETNETENT 3
+.Os BSD 4.2
+.Sh NAME
+.Nm getnetent ,
+.Nm getnetbyaddr ,
+.Nm getnetbyname ,
+.Nm setnetent ,
+.Nm endnetent
+.Nd get network entry
+.Sh SYNOPSIS
+.Fd #include <netdb.h>
+.Ft struct netent *
+.Fn getnetent 
+.Ft struct netent *
+.Fn getnetbyname "char *name"
+.Ft struct netent *
+.Fn getnetbyaddr "long net" "int type"
+.Fn setnetent "int stayopen"
+.Fn endnetent 
+.Sh DESCRIPTION
+The
+.Fn getnetent ,
+.Fn getnetbyname ,
+and
+.Fn getnetbyaddr
+functions
+each return a pointer to an object with the
+following structure
+containing the broken-out
+fields of a line in the network data base,
+.Pa /etc/networks .
+.Bd -literal -offset indent
+struct	netent {
+	char		*n_name;	/* official name of net */
+	char		**n_aliases;	/* alias list */
+	int		n_addrtype;	/* net number type */
+	unsigned long	n_net;		/* net number */
+};
+.Ed
+.Pp
+The members of this structure are:
+.Bl -tag -width n_addrtype
+.It Fa n_name
+The official name of the network.
+.It Fa n_aliases
+A zero terminated list of alternate names for the network.
+.It Fa n_addrtype
+The type of the network number returned; currently only AF_INET.
+.It Fa n_net
+The network number.  Network numbers are returned in machine byte
+order.
+.El
+.Pp
+The
+.Fn getnetent
+function
+reads the next line of the file, opening the file if necessary.
+.Pp
+The
+.Fn setnetent
+function
+opens and rewinds the file.  If the
+.Fa stayopen
+flag is non-zero,
+the net data base will not be closed after each call to 
+.Fn getnetbyname
+or
+.Fn getnetbyaddr .
+.Pp
+The
+.Fn endnetent
+function
+closes the file.
+.Pp
+The
+.Fn getnetbyname
+function
+and
+.Fn getnetbyaddr
+sequentially search from the beginning
+of the file until a matching
+net name or
+net address and type is found,
+or until
+.Dv EOF
+is encountered.
+Network numbers are supplied in host order.
+.Sh FILES
+.Bl -tag -width /etc/networks -compact
+.It Pa /etc/networks
+.El
+.Sh DIAGNOSTICS
+Null pointer
+(0) returned on
+.Dv EOF
+or error.
+.Sh SEE ALSO
+.Xr networks 5
+.Sh HISTORY
+The
+.Fn getnetent ,
+.Fn getnetbyaddr ,
+.Fn getnetbyname ,
+.Fn setnetent ,
+and
+.Fn endnetent
+functions appeared in 
+.Bx 4.2 .
+.Sh BUGS
+The data space used by
+these functions is static; if future use requires the data, it should be
+copied before any subsequent calls to these functions overwrite it.
+Only Internet network
+numbers are currently understood.
+Expecting network numbers to fit
+in no more than 32 bits is probably
+naive.

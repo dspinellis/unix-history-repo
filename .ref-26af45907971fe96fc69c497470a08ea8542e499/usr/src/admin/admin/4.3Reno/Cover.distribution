@@ -1,0 +1,73 @@
+.\"     @(#)Cover.distribution	1.2     90/08/31
+.so HEADERS
+.if n \{\
+.ND
+.rm CH
+.ll 7i
+.nr LL 7i
+.ad l
+.\}
+.HE D
+.nr PS 11
+.nr VS 13
+.nr LL 6.5i
+.nr OI 0.5i
+.in 0.5i
+.ps 11p
+.ti 4i
+.nf
+.PP
+.sp 2
+This is a full distribution kit for the interim release of the Fourth
+Berkeley Software tape known as 4.3BSD Reno.  The package
+you received should have contained:
+.sp
+.IP 1)
+Three 2400' 1600 bpi magnetic tapes or one 2400' 6250 bpi magnetic 
+tape containing
+the basic system software; this is the bootstrap distribution media.
+.IP 2)
+A document entitled
+``Hints on Upgrading a 4.3BSD System to 4.3BSD-Reno.''
+.IP 3)
+The \fIhier\fP(7) manual page.
+.IP 4)
+A document entitled ``HP9000/300 series support in the 4.3 Reno distribution''.
+.IP 5)
+A document listing contributors to the Berkeley Software Distribution.
+.IP 6)
+A document entitled
+``Installing and Operating 4.3BSD-tahoe UNIX on the Tahoe''
+or
+``Installing and Operating 4.3BSD-tahoe UNIX on the Vax,''
+according to the tape(s) ordered.
+.PP
+To set up the tapes, follow the instructions in the
+``Installing and Operating 4.3BSD-tahoe ...''
+document.  It
+is a good idea to look through the whole document before you begin.
+If you have questions that are not answered
+in the documentation supplied, you can call us at 415-642-4948,
+or, by sending electronic mail to ``bostic@okeeffe.berkeley.edu''.
+.PP
+Bug reports about this distribution can be submitted using the sendbug
+program on the tape, which will submit a formatted report to  
+``4bsd-bugs@Berkeley.EDU'' on the Internet (on the uucp net, modify sendbug 
+to send to ``uunet!ucbvax!4bsd-bugs'' by an appropriate path).
+Please be sure to sure that the Index line specifies ``4.3BSD-reno.''
+Ideas for improvement of the system
+should be sent to ``4bsd-ideas'', in the same network context.  Please
+let us know of problems you have with the distribution tape.  If
+you bring up new devices or other software which you would be willing
+to share with others, let us know.
+.sp 2
+.ti 2.5i
+Good Luck,
+.sp
+.ti 3.0i
+The Computer Systems Research Group
+.sp
+.ti 3.0i
+Mike Karels, Kirk McKusick, Keith Bostic,
+.ti 3.0i
+Keith Sklower, Marc Teitelbaum, Trent Hein

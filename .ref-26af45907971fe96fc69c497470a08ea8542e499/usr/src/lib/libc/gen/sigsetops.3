@@ -1,0 +1,82 @@
+.\" Copyright (c) 1983, 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)sigsetops.3	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt SIGSETOPS 3
+.Os
+.Sh NAME
+.Nm sigemptyset ,
+.Nm sigfillset ,
+.Nm sigaddset ,
+.Nm sigdelset ,
+.Nm sigismember
+.Nd manipulate signal sets
+.Sh SYNOPSIS
+.Fd #include <signal.h>
+.Fn sigemptyset "sigset_t *set"
+.Fn sigfillset "sigset_t *set"
+.Fn sigaddset "sigset_t *set" "int signo"
+.Fn sigdelset "sigset_t *set" "int signo"
+.Fn sigismember "sigset_t *set" "int signo"
+.Sh DESCRIPTION
+These functions manipulate signal sets stored in a
+.Fa sigset_t .
+Either
+.Fn sigemptyset
+or
+.Fn sigfillset
+must be called for every object of type
+.Fa sigset_t
+before any other use of the object.
+.Pp
+The
+.Fn sigemptyset
+function initializes a signal set to be empty.
+.Pp
+The
+.Fn sigfillset
+function initializes a signal set to contain all signals.
+.Pp
+The
+.Fn sigaddset
+function adds the specified signal
+.Fa signo
+to the signal set.
+.Pp
+The
+.Fn sigdelset
+function deletes the specified signal
+.Fa signo
+from the signal set.
+.Pp
+The
+.Fn sigismember
+function returns whether a specified signal
+.Fa signo
+is contained in the signal set.
+.Pp
+These functions
+are provided as macros in the include file <signal.h>.
+Actual functions are available
+if their names are undefined (with #undef
+.Em name ) .
+.Sh RETURN VALUES
+The
+.Fn sigismember
+function returns 1
+if the signal is a member of the set,
+0 otherwise.
+The other functions return 0.
+.Sh ERRORS
+Currently no errors are detected.
+.Sh SEE ALSO
+.Xr kill 2 ,
+.Xr sigaction 2 ,
+.Xr sigsuspend 2
+.Sh STANDARDS
+These functions are defined by
+.St -p1003.1-88 .

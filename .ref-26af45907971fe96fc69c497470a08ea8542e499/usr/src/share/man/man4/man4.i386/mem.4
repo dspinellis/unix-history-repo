@@ -1,0 +1,56 @@
+.\" Copyright (c) 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"	@(#)mem.4	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt MEM 4 i386
+.Os
+.Sh NAME
+.Nm mem ,
+.Nm kmem
+.Nd memory files
+.Sh DESCRIPTION
+The special file
+.Nm /dev/mem
+is an interface to the physical memory of the computer.
+Byte offsets in this file are interpreted as physical memory addresses.
+Reading and writing this file is equivalent to reading and writing
+memory itself.
+Only offsets within the bounds of
+.Nm /dev/mem
+are allowed.
+.Pp
+Kernel virtual memory is accessed through the interface
+.Nm /dev/kmem
+in the same manner as
+.Nm /dev/mem .
+Only kernel virtual addresses that are currently mapped to memory are allowed.
+.Pp
+On
+.Tn ISA
+the
+.Tn I/O
+memory space begins at physical address 0x000a0000
+and runs to 0x00100000.
+The
+per-process data
+size
+for the current process
+is
+.Dv UPAGES
+long, and ends at virtual
+address 0xfe000000.
+.Sh FILES
+.Bl -tag -width Pa -compact
+.It Pa /dev/mem
+.It Pa /dev/kmem
+.El
+.Sh HISTORY
+The
+.Nm mem ,
+.Nm kmem
+files appeared in
+.At v6 .

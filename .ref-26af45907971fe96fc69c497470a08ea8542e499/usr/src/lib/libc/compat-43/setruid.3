@@ -1,0 +1,53 @@
+.\" Copyright (c) 1983, 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)setruid.3	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt SETRUID 3
+.Os BSD 4.2
+.Sh NAME
+.Nm setruid ,
+.Nm setrgid
+.Nd set user and group ID
+.Sh SYNOPSIS
+.Fd #include <sys/types.h>
+.Ft int
+.Fn setruid "uid_t ruid"
+.Ft int
+.Fn setrgid "gid_t rgid"
+.Sh DESCRIPTION
+The
+.Fn setruid
+function
+.Pq Fn setrgid
+sets the real user ID (group ID) of the
+current process.
+.Sh RETURN VALUES
+Upon success, these functions return 0;
+otherwise \-1 is returned.
+.Pp
+If the user is not the super user, or the uid
+specified is not the real or effective ID, these
+functions return \-1.
+.Pp
+The use of these calls is not portable.
+Their use is discouraged; they will be removed in the future.
+.Sh SEE ALSO
+.Xr setuid 2 ,
+.Xr setgid 2 ,
+.Xr seteuid 2 ,
+.Xr setegid 2 ,
+.Xr getuid 2 ,
+.Xr getgid 2
+.Sh HISTORY
+The
+.Fn setruid
+and
+.Fn setrgid
+syscalls appeared in 
+.Bx 4.2
+and were dropped in
+.Bx 4.4 .

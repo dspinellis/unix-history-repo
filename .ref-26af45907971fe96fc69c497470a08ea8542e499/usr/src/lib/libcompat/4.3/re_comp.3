@@ -1,0 +1,97 @@
+.\" Copyright (c) 1980, 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)re_comp.3	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt RE_COMP 3
+.Os
+.Sh NAME
+.Nm re_comp ,
+.Nm re_exec
+.Nd regular expression handler
+.Sh SYNOPSIS
+.Fd #include <unistd.h>
+.Ft char *
+.Fn re_comp "const char *s"
+.Ft int
+.Fn re_exec "const char *s"
+.Sh DESCRIPTION
+This interface is made obsolete by
+.Xr regex 3 .
+.Pp
+The
+.Fn re_comp
+function
+compiles a string into an internal form suitable for pattern matching. 
+The
+.Fn re_exec
+function
+checks the argument string against the last string passed to
+.Fn re_comp .
+.Pp
+The
+.Fn re_comp
+function
+returns 0 if the string
+.Fa s
+was compiled successfully; otherwise a string containing an
+error message is returned. If 
+.Fn re_comp
+is passed 0 or a null string, it returns without changing the currently
+compiled regular expression.
+.Pp
+The
+.Fn re_exec
+function
+returns 1 if the string
+.Fa s
+matches the last compiled regular expression, 0 if the string
+.Fa s
+failed to match the last compiled regular expression, and \-1 if the compiled
+regular expression was invalid (indicating an internal error).
+.Pp
+The strings passed to both
+.Fn re_comp
+and
+.Fn re_exec
+may have trailing or embedded newline characters; 
+they are terminated by
+.Dv NUL Ns s.
+The regular expressions recognized are described in the manual entry for 
+.Xr ed 1 ,
+given the above difference.
+.Sh DIAGNOSTICS
+The
+.Fn re_exec
+function
+returns \-1 for an internal error.
+.Pp
+The
+.Fn re_comp
+function
+returns one of the following strings if an error occurs:
+.Bd -unfilled -offset indent
+No previous regular expression,
+Regular expression too long,
+unmatched \e(,
+missing ],
+too many \e(\e) pairs,
+unmatched \e).
+.Ed
+.Sh SEE ALSO
+.Xr ed 1 ,
+.Xr ex 1 ,
+.Xr egrep 1 ,
+.Xr fgrep 1 ,
+.Xr grep 1 ,
+.Xr regex 3
+.Sh HISTORY
+The
+.Fn re_comp
+and
+.Fn re_exec
+functions appeared in 
+.Bx 4.0 .

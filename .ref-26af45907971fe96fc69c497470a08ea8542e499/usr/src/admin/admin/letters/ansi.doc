@@ -1,0 +1,76 @@
+.\"	@(#)ansi.doc	5.1	91/06/26
+.lh
+.nf
+Oliver Smoot
+CEBMA
+311 First St. NW
+Suite 500
+Washington, D.C. 20001
+.fi
+.sp 3
+Mr. Smoot:
+.pp
+My name is Keith Bostic, and I work for the University of California,
+at Berkeley.
+I recently spoke with Ms. Barra, of the X3 Secretariat, about the
+possibility of Berkeley's including portions of the X3J11 standard
+in our documentation, and she referred me to you.
+.pp
+We would like to use portions of the standard as follows: we (and all
+UNIX vendors) provide both on-line and hardcopy documentation of the
+C library functions supplied with the system.
+ANSI will be standardizing a small subset of these commands.
+As vendors become conformant, they will be faced with two types
+of changes.
+Some functions may be created from current functions and documentation,
+by adding new arguments, or modifying current behaviors, while others
+will have to be written from scratch.
+As this standard is, in many ways, a rigorous specification of the
+current UNIX manual pages, it will be a much simpler task to become
+conformant if vendors can use portions of the standard to create
+their usual style of documentation.
+This use is in no way intended to replace the standard itself, and
+my guess is that no more than twenty percent of the overall standard
+would be reproduced.
+.pp
+The example that I've included is the ``fgets'' function.
+This is probably a fairly reasonable example, and indicative of the
+type of use that Berkeley would make of the C standard.
+.pp
+There are two major advantages to the user community in allowing vendors
+to draw from the C standard.
+First, the manual pages are much more likely to be error-free if they are
+taken from the exhaustively checked standard.
+This is not a trivial point; if nothing else, the creation of the C
+standard has proven the difficulty of rigorously defining the syntax
+of complex functions!
+Secondly, there is no reason for manual pages to differ greatly if
+vendors start with the same text.
+This means that users will see equivalent documentation on a number
+of vendor's systems.
+This is particularly true in Berkeley's case; since we freely allow
+redistribution of our documentation, vendors that derive their 
+systems from ours will, in all likelihood, deliver our documents
+as theirs.
+.pp
+Finally, I believe that it does not disadvantage you to allow this
+use of the standard.
+ANSI cannot provide manual entries for vendors to include, as each
+vendor must modify these entries in various ways, some of them fairly
+extensive.
+Also, each vendor, depending on the programs they wish users to use
+for displaying their documentation, will require the manual pages to
+be stored in a different format.
+.pp
+If I can answer any further questions, or clarify anything I've said,
+please don't hesitate to contact me.  My phone number is 415-642-8524.
+
+
+
+.nf
+Keith Bostic
+
+
+
+cc: Lynn Barra
+    X3 Secretariat

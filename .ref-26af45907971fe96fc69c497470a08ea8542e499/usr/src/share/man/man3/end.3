@@ -1,0 +1,40 @@
+.\"	@(#)end.3	6.2 (Berkeley) 5/12/86
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)end.3	6.3 (Berkeley) %G%
+.\"
+.Dd 
+.Dt END 3
+.Os
+.Sh NAME
+.Nm end ,
+.Nm etext ,
+.Nm edata
+.Nd end boundaries of image segments
+.Sh SYNOPSIS
+.Vt extern end;
+.Vt extern etext;
+.Vt extern edata;
+.Sh DESCRIPTION
+The global variables
+.Va end , extext
+and
+.Va edata
+correspond to the
+the next address following the end
+of the text segment,
+the initialized data segment and the
+end of the data segment
+.Pq Tn BSS .
+These values are initially set at execution time
+by
+.Xr brk 2 .
+.Sh SEE ALSO
+.Xr brk 2 ,
+.Xr malloc 3
+.Sh HISTORY
+A
+.Nm end
+manual appeared in
+.At v6 .

@@ -1,0 +1,23 @@
+# Copyright (c) 1991, 1993
+#	The Regents of the University of California.  All rights reserved.
+#
+# This code is derived from software contributed to Berkeley by
+# Kenneth Almquist.
+#
+# %sccs.include.redist.sh%
+#
+#	@(#)cmv	8.1 (Berkeley) %G%
+
+# Conditional move--don't replace an existing file.
+
+cmv() {
+	if test $# != 2
+	then	echo "cmv: arg count"
+		return 2
+	fi
+	if test -f "$2" -o -w "$2"
+	then	echo "$2 exists"
+		return 2
+	fi
+	/bin/mv "$1" "$2"
+}

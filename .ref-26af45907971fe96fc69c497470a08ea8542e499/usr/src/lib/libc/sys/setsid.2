@@ -1,0 +1,53 @@
+.\" Copyright (c) 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"	@(#)setsid.2	8.1 (Berkeley) %G%
+.\"
+.Dd ""
+.Dt SETSID 2
+.Os
+.Sh NAME
+.Nm setsid
+.Nd create session and set process group ID
+.Sh SYNOPSIS
+.Fd #include <sys/types.h>
+.Ft pid_t
+.Fn setsid "void"
+.Sh DESCRIPTION
+The
+.Nm setsid
+function creates a new session.
+The calling process is the session leader of the new session, is the
+process group leader of a new process group and has no controlling
+terminal.
+The calling process is the only process in either the session or the
+process group.
+.Pp
+Upon successful completion, the
+.Nm setsid
+function returns the value of the process group ID of the new process
+group, which is the same as the process ID of the calling process.
+.Sh ERRORS
+If an error occurs,
+.Nm setsid
+returns -1 and the global variable
+.Va errno
+is set to indicate the error, as follows:
+.Bl -tag -width Er
+.It Bq Er EPERM
+The calling process is already a process group leader, or the process
+group ID of a process other than the calling process matches the process
+ID of the calling process.
+.El
+.Sh SEE ALSO
+.Xr setpgid 3 ,
+.Xr tcgetpgrp 3 ,
+.Xr tcsetpgrp 3
+.Sh STANDARDS
+The
+.Nm setsid
+function is expected to be compliant with the
+.St -p1003.1-88
+specification.

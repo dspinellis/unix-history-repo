@@ -1,0 +1,65 @@
+#	@(#)GENERIC.sparc	7.2 (Berkeley) %G%
+#
+# Generic SPARC
+
+include	"std.sparc"
+
+maxusers	8
+
+# does not really do anything anymore, but this replaces "ident GENERIC"
+options		GENERIC
+
+# needs to be set per system
+options		TIMEZONE="'8*60'"	# minutes west of GMT (for param.c)
+options		DST=1			# daylight savings rules (for param.c)
+
+# Standard system options
+options		SWAPPAGER, VNODEPAGER, DEVPAGER	# paging
+options		DEBUG, DIAGNOSTIC	# extra kernel debugging
+options		KTRACE			# system call tracing support
+options		KGDB			# support for kernel gdb
+options		KGDBDEV=0xc01, KGDBRATE=38400	# device & baud rate
+makeoptions	DEBUG="-g"			# symbols for kgdb
+options		RCONSOLE		# fast rasterop console
+
+# Filesystem options
+options		FIFO		# POSIX fifo support (in all filesystems)
+options		FFS, QUOTA	# fast filesystem with user and group quotas
+options		MFS		# memory-based filesystem
+options		NFS		# Sun NFS-compatible filesystem
+options		LOFS		# Loop-back filesystem
+#options	KERNFS		# kernel data-structure filesystem
+options		FDESC		# user file descriptor filesystem
+#options	UMAPFS		# uid/gid remapping filesystem
+#options	LFS		# Log-based filesystem (still experimental)
+#options	PORTAL		# portal filesystem (still experimental)
+
+# Networking options
+options		INET
+#options	TCP_COMPAT_42	# compatibility with 4.2BSD TCP/IP
+#options	GATEWAY		# IP packet forwarding
+#options	ISO		# OSI networking
+#options	TPIP
+#options	EON
+
+# Options for SPARCstation hardware
+options		COMPAT_SUNOS		# compatibility with SunOS binaries
+
+config		vmunix	swap generic
+
+dma*	at sbus0 slot ? offset ?
+esp*	at sbus0 slot ? offset ?	# nb., esp is a `scsi'
+
+tg0	at esp? target 0
+tg*	at scsi? target ?
+sd0	at tg0 drive 0
+sd*	at tg? drive ?
+
+bwtwo*	at sbus? slot ? offset ?
+cgthree* at sbus? slot ? offset ?
+
+le*	at sbus? slot ? offset ?
+
+pseudo-device	loop
+pseudo-device	pty
+pseudo-device	sl

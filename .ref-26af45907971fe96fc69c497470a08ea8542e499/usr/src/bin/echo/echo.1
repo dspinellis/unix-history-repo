@@ -1,0 +1,44 @@
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" the Institute of Electrical and Electronics Engineers, Inc.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"	@(#)echo.1	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt ECHO 1
+.Os
+.Sh NAME
+.Nm echo
+.Nd write arguments to the standard output
+.Sh SYNOPSIS
+.Nm echo
+.Op Fl n
+.Op "string ..."
+.Sh DESCRIPTION
+The
+.Nm echo
+utility writes any specified operands, separated by single blank (`` '')
+characters) and followed by a newline (``\en'') character, to the standard
+output.
+.Pp
+The following option is available:
+.Bl -tag -width flag
+.It Fl n
+Do not print the trailing newline character.
+.El
+.Pp
+The
+.Nm echo
+utility exits 0 on success, and >0 if an error occurs.
+.Sh SEE ALSO
+.Xr printf 1
+.Sh STANDARDS
+The
+.Nm echo
+utility is expected to be
+.St -p1003.2
+compatible.

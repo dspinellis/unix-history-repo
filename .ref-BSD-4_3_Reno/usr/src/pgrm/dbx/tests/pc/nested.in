@@ -1,0 +1,11 @@
+whereis i
+whereis j
+stop at 18
+run
+which k
+print i, j, nested.i, p.i, p.j
+step
+step
+print i, j, nested.i
+cont
+print nested.i

@@ -1,0 +1,76 @@
+.\"	@(#)ieee.doc	5.1	91/06/26
+.lh
+.nf
+Judy Gorman
+IEEE Standards Office
+345 East 47th St.
+New York, NY  10017
+.fi
+.sp 3
+.pp
+Judy, my name is Keith Bostic, and I work for the University of
+California, at Berkeley.
+We spoke at the recent POSIX meeting, in Florida, about Berkeley's
+concerns regarding restrictions that IEEE may place on the inclusion
+of portions of the POSIX standards in vendor documentation.
+.pp
+At that time you requested that I send you a letter describing our
+proposed usage and including an example.
+.pp
+Our usage is as follows: we (and all UNIX vendors) provide both on-line
+and hardcopy documentation of the user-level commands supplied with
+the system.
+POSIX 1003.2 will be standardizing a small subset of these commands.
+When vendors become conformant, they will be faced with two types
+of changes.
+Some POSIX commands may be created from current commands and
+documentation, by adding new flags, or modifying current behaviors,
+while others will have to be written from scratch.
+As this standard is, in many ways, a rigorous specification of the
+current UNIX manual pages, it will be a much simpler task to become
+conformant if vendors can use portions of the standard to create
+their usual style of documentation.
+This style is in no way intended to replace the standard itself,
+and my guess is that no more than twenty percent of the overall
+standard would be reproduced.
+.pp
+The example that I've included is the ``cat'' command.
+This is probably a fairly reasonable example, and indicative of the
+percentage of text that Berkeley would take from the POSIX standard.
+We would, however, wish to draw more heavily on the POSIX descriptions
+for commands that are new to the system, or commands with a complex
+syntax, such as ``sh'', or ``awk''.
+.pp
+There are two major advantages to the user community in allowing vendors
+to draw from the POSIX standard.
+First, the manual pages are much more likely to be error-free if they are
+taken from the exhaustively checked standard.
+This is not a trivial point; if nothing else, the creation of the POSIX
+standard has proven the difficulty of rigorously defining the syntax
+of complex applications!
+Secondly, there is no reason for manual pages to differ greatly if
+vendors start with the same text.
+This means that users will see equivalent documentation on a number
+of vendor's systems.
+This is particularly true in Berkeley's case; since we freely allow
+redistribution of our documentation, vendors that derive their 
+systems from ours will, in all likelihood, deliver our documents
+as theirs.
+.pp
+Finally, I believe that it does not disadvantage IEEE to allow this
+use of the standard.
+IEEE cannot provide manual entries for vendors to include, as each
+vendor will need
+to modify these entries in various ways, some of them fairly extensive.
+As you can see from the ``cat'' command, we have local options to the
+command that we must maintain for backward compatibility.
+Also, each vendor, depending on the programs they wish users to use
+for displaying their documentation, will require the manual pages to
+be stored in a different format.
+.pp
+If I can answer any further questions, or clarify anything I've said,
+please don't hesitate to contact me.  My work number is 415-642-8524.
+
+
+
+Keith Bostic

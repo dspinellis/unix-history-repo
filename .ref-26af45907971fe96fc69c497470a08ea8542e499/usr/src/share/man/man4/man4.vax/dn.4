@@ -1,0 +1,87 @@
+.\" Copyright (c) 1980, 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)dn.4	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt DN 4 vax
+.Os BSD 4
+.Sh NAME
+.Nm dn
+.Nd
+.Tn DN-11
+autocall unit interface
+.Sh SYNOPSIS
+.Cd "device dn0 at uba? csr 0160020 vector dnintr"
+.Sh DESCRIPTION
+The
+.Nm dn
+device provides an interface through a
+.Tn DEC
+.Tn DN-11
+(or equivalent
+such as the Able Quadracall) to an auto-call unit
+.Pq Tn ACU .
+To place an outgoing call one forks a sub-process which
+opens the appropriate call unit file,
+.Pa /dev/cua?
+and writes the phone number on it.  The parent process
+then opens the corresponding modem line
+.Pa /dev/cul? .
+When the connection has been
+established, the open on the modem line
+.Pa /dev/cul?
+will return and the process will be connected.
+A timer is normally used to timeout the opening of 
+the modem line.
+.Pp
+The codes for the phone numbers are:
+.Bl -column xxxx -offset indent
+0-9	number to be dialed
+*	dial * (`:' is a synonym)
+#	dial # (`;' is a synonym)
+\-	delay 20 milliseconds
+<	end of phone number (`e' is a synonym)
+=	delay for a second dial tone (`w' is a synonym)
+f	force a hangup of any existing connection
+.El
+.Pp
+The phone number to be dialed must be presented as one contiguous string.
+.Pp
+By convention, even numbered call units are for 300 baud
+modem lines, while odd numbered units are for 1200 baud lines.
+For example,
+.Pa /dev/cua0
+is associated with a 300 baud modem line,
+.Pa /dev/cul0 ,
+while
+.Pa /dev/cua1
+is associated with a 1200 baud modem line,
+.Pa /dev/cul1 .
+For devices such as the Quadracall which simulate multiple
+.Tn DN-11
+units, the minor device indicates which outgoing modem to use.
+.Sh FILES
+.Bl -tag -width /dev/cul? -compact
+.It Pa /dev/cua?
+call units
+.It Pa /dev/cul?
+associated modem lines
+.El
+.Sh DIAGNOSTICS
+Two error numbers are of interest at open time.
+.Bl -tag -width EBUSYxx
+.It Bq Er EBUSY
+The dialer is in use.
+.It Bq Er ENXIO
+The device doesn't exist, or there's no power to it.
+.El
+.Sh SEE ALSO
+.Xr tip 1
+.Sh HISTORY
+A
+.Nm
+driver appeared in
+.At v6 .
