@@ -1,4 +1,4 @@
-/*	init_main.c	4.26	82/03/11	*/
+/*	init_main.c	4.27	82/03/14	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -142,13 +142,6 @@ main(firstaddr)
 		 */
 		return;
 	}
-
-#ifdef BBNNET 
-	/*
-	 * Initialize bbn network.
-	 */
-	netmain();
-#endif BBNNET
 	proc[0].p_szpt = 1;
 	sched();
 }
