@@ -1,5 +1,5 @@
 #
-#	@(#)Makefile	1.21	(Berkeley)	%G%
+#	@(#)Makefile	1.22	(Berkeley)	%G%
 #
 M=../../lib/mip
 P=../../lib/pcc
@@ -9,8 +9,9 @@ LINTLIBS=llib-port.ln llib-lc.ln llib-lcurses.ln llib-ldbm.ln llib-lm.ln \
 SRCS=	$M/cgram.y $M/common.c $M/optim.c $M/pftn.c $M/scan.c $M/trees.c \
 	$M/xdefs.c lint.c hash.c $M/pass1.h $M/manifest.h macdefs.h \
 	lpass2.c
+MAN=	lint.0
 
-all:	lpass1 lpass2 ${LINTLIBS}
+all: lpass1 lpass2 ${LINTLIBS}
 
 lpass1: cgram.o rodata.o comm1.o optim.o pftn.o scan.o trees.o xdefs.o \
 	lint.o hash.o rel.o
@@ -100,7 +101,7 @@ lintall:
 	lint -hpv -I. -I$M  $M/cgram.c $M/xdefs.c $M/scan.c \
 		$M/pftn.c $M/trees.c $M/optim.c lint.c
 
-install: all SHELL
+install: all SHELL ${MAN}
 	install -s -o bin -g bin -m 755 lpass1 ${DESTDIR}/usr/lib/lint/lint1
 	install -s -o bin -g bin -m 755 lpass2 ${DESTDIR}/usr/lib/lint/lint2
 	for i in llib-*; do install -c -o bin -g bin -m 644 $$i ${DESTDIR}/usr/lib/lint; done
@@ -108,6 +109,7 @@ install: all SHELL
 	ln -s llib-ltermcap ${DESTDIR}/usr/lib/lint/llib-ltermlib
 	ln -s llib-ltermcap.ln ${DESTDIR}/usr/lib/lint/llib-ltermlib.ln
 	install -c -o bin -g bin -m 755 SHELL ${DESTDIR}/usr/bin/lint
+	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat1
 
 shrink:
 	rm -f *.o errs rodata.c pcctokens pcclocal.h
@@ -115,7 +117,10 @@ shrink:
 clean: shrink
 	rm -f lpass1 lpass2 cgram.c gram.in tags ${LINTLIBS}
 
-tags:	${SRCS}
+cleandir: clean
+	rm -f ${MAN} tags .depend
+
+tags: ${SRCS}
 	ctags -w ${SRCS}
 
-depend:
+depend lint:
