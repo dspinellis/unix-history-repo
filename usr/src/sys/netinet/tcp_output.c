@@ -1,9 +1,10 @@
-/* tcp_output.c 4.5 81/10/31 */
+/* tcp_output.c 4.6 81/10/31 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
 #include "../h/mbuf.h"
 #include "../h/socket.h"
+#include "../inet/cksum.h"
 #include "../inet/inet.h"
 #include "../inet/inet_host.h"
 #include "../inet/inet_systm.h"
@@ -200,8 +201,8 @@ tcp_output(tp, flags, len, dat)
 	int len;
 	struct mbuf *dat;
 {
+	register struct th *t;			/* known to be r9 */
 	register struct mbuf *m;
-	register struct th *t;
 	register struct ip *ip;
 	int i;
 #ifdef TCPDEBUG
@@ -249,7 +250,8 @@ COUNT(SEND_TCP);
 #endif
 	t->t_seq = htonl(tp->snd_nxt);
 	t->t_ackno = htonl(tp->rcv_nxt);
-	t->t_sum = cksum(m, len + sizeof(struct th));
+	t->t_sum = 0;		/* gratuitous? */
+	CKSUM_TCPSET(m, t, r9, sizeof (struct th) + len);
 	ip = (struct ip *)t;
 	ip->ip_v = IPVERSION;
 	ip->ip_hl = 5;
