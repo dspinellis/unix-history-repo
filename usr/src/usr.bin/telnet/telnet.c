@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)telnet.c	5.48 (Berkeley) %G%";
+static char sccsid[] = "@(#)telnet.c	5.49 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -806,6 +806,7 @@ suboption()
     case TELOPT_AUTHENTICATION:
 	if ((subbuffer[1] & 0xff) == TELQUAL_SEND) {
 		register char *cp = &subbuffer[2];
+		char tmp[256];
 		int dokrb4 = 0, unknowntypes = 0, noresponse = 1;
 
 		while (cp < subend) {
@@ -852,7 +853,7 @@ suboption()
 				if (*ucp == IAC)
 					space++;
 			}
-			if (NETROOM() < 6 + 1 + strlen(remotename) + 2 +
+			if (NETROOM() < 6 + 1 + 2 +
 			    space + 2) {
 				fprintf(stderr,
 				   "no room to send V4 ticket/authenticator\n");
@@ -868,29 +869,23 @@ cantsend4:
 				exit(1);
 			} else {
 #ifdef notdef
-		    printring(&netoring, "%c%c%c%c%c%c%c%s", IAC, SB,
+		    printring(&netoring, "%c%c%c%c%c%c", IAC, SB,
 			      TELOPT_AUTHENTICATION,
 			      TELQUAL_IS, TELQUAL_AUTHTYPE_KERBEROS,
-			      TELQUAL_AUTHTYPE_KERBEROS_V4,
-			      strlen(remotename),
-			      remotename);
-		    sprintf(tmp, "%c%c%c%c%s%c%c", TELOPT_AUTHENTICATION,
+			      TELQUAL_AUTHTYPE_KERBEROS_V4);
+		    sprintf(tmp, "%c%c%c%c%c%c", TELOPT_AUTHENTICATION,
 			    TELQUAL_IS, TELQUAL_AUTHTYPE_KERBEROS,
-			    TELQUAL_AUTHTYPE_KERBEROS_V4,
-			    remotename, IAC, SE);
+			    TELQUAL_AUTHTYPE_KERBEROS_V4, IAC, SE);
 #else
-			    printring(&netoring, "%c%c%c%c%c%c%s", IAC, SB,
+			    printring(&netoring, "%c%c%c%c%c", IAC, SB,
 			      TELOPT_AUTHENTICATION,
 			      TELQUAL_IS,
-			      TELQUAL_AUTHTYPE_KERBEROS_V4,
-			      strlen(remotename),
-			      remotename);
-			    sprintf(tmp, "%c%c%c%s%c%c", TELOPT_AUTHENTICATION,
+			      TELQUAL_AUTHTYPE_KERBEROS_V4);
+			    sprintf(tmp, "%c%c%c%c%c", TELOPT_AUTHENTICATION,
 			      TELQUAL_IS,
-			      TELQUAL_AUTHTYPE_KERBEROS_V4,
-			      remotename, IAC, SE);
+			      TELQUAL_AUTHTYPE_KERBEROS_V4, IAC, SE);
 #endif
-			    printsub(">", tmp, 4+strlen(remotename)+2-2-2);
+			    printsub(">", tmp, 4+2-2-2);
 			    ring_supply_bindata(&netoring,
 			        (char *)authent_st.dat, authent_st.length, IAC);
 			    printring(&netoring, "%c%c", IAC, SE);
