@@ -42,9 +42,9 @@
 
 __BEGIN_DECLS
 extern unsigned long	 inet_addr __P((const char *));
+extern unsigned long	 inet_aton __P((const char *cp, struct _n_addr *addr));
 extern unsigned long	 inet_lnaof __P((struct in_addr));
 extern struct in_addr	 inet_makeaddr __P((u_long , u_long));
-extern unsigned long	 inet_netof __P((struct in_addr));
 extern unsigned long	 inet_network __P((const char *));
 extern char		*inet_ntoa __P((struct in_addr));
 __END_DECLS
