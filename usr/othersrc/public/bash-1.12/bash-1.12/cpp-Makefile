@@ -1,0 +1,822 @@
+/* This -*- C -*- file (cpp-Makefile) is run through the C preprocessor
+   to produce bash-Makefile which is machine specific.
+
+   If you have Gcc and/or Bison, you might wish to mention that right
+   below here.
+
+   Since this is to become a Makefile, blank lines which appear outside
+   of comments may not contain a TAB character.
+
+   Copyright (C) 1987,1991 Free Software Foundation, Inc.
+
+   This file is part of GNU Bash, the Bourne Again SHell.
+
+   Bash is free software; you can redistribute it and/or modify it under
+   the terms of the GNU General Public License as published by the Free
+   Software Foundation; either version 1, or (at your option) any later
+   version.
+
+   Bash is distributed in the hope that it will be useful, but WITHOUT ANY
+   WARRANTY; without even the implied warranty of MERCHANTABILITY or
+   FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+   for more details.
+
+   You should have received a copy of the GNU General Public License along
+   with Bash; see the file COPYING.  If not, write to the Free Software
+   Foundation, 675 Mass Ave, Cambridge, MA 02139, USA. */
+
+/**/# This Makefile is automagically made from cpp-Makefile.  You should
+/**/# not be editing this file; edit cpp-Makefile, machines.h, or
+/**/# support/mksysdefs instead.  Then, assuming the edits were required
+/**/# to compile Bash on your system, mail the changes you had to make to
+/**/# bash-maintainers@ai.mit.edu.  We will do our best to incorporate
+/**/# them into the next release.
+
+/* **************************************************************** */
+/*								    */
+/*			Which compiler are you using?		    */
+/*								    */
+/* **************************************************************** */
+
+/* Define HAVE_GCC if you have the GNU C compiler. */
+/* #define HAVE_GCC */
+
+/* Define HAVE_FIXED_INCLUDES if you are using GCC with the fixed
+   header files. */
+#if defined (HAVE_GCC) && !defined (HAVE_FIXED_INCLUDES)
+/* #define HAVE_FIXED_INCLUDES */
+#endif /* HAVE_GCC && !HAVE_FIXED_INCLUDES */
+
+/* Define HAVE_BISON if you have the GNU replacement for Yacc. */
+/**/# We would like you to use Bison instead of Yacc since some
+/**/# versions of Yacc cannot handle reentrant parsing.  Unfortunately,
+/**/# this includes the Yacc currently being shipped with SunOS4.x.
+/**/# If you do use Yacc, please make sure that any bugs in parsing
+/**/# are not really manifestations of Yacc bugs before you report
+/**/# them.
+#define HAVE_BISON
+
+/* This includes the appropriate description for the machine that you are
+   using (we hope).  If the compilation doesn't work correctly, then you
+   will have to edit the file `machines.h' to include a description for the
+   machine that your Cpp uniquely identifies this as.  For example, Sun 4's
+   are recognized by the Cpp identifier `sparc', Vax is recognized with `vax',
+   etc.  The order of these files is very important.  Config.h must come last,
+   since it is capable of undef'ing various things. */
+#define BUILDING_MAKEFILE   /* Tell config.h to avoid #including anything. */
+#include "sysdefs.h"
+#include "machines.h"
+#include "config.h"
+
+/**/# Here is a rule for making .o files from .c files that does not
+/**/# force the type of the machine (like -M_MACHINE) into the flags.
+.c.o:
+	$(RM) $@
+	$(CC) $(CFLAGS) $(CPPFLAGS) -c $*.c
+
+#if defined (HAVE_BISON)
+BISON = bison -y
+#else
+BISON = yacc
+#endif
+
+#if defined (HAVE_GCC)
+#  if defined (GCC_FLAGS)
+GCC_EXTRAS = GCC_FLAGS
+#  endif /* GCC_FLAGS */
+#  if !defined (HAVE_FIXED_INCLUDES)
+/* This is guaranteed to work, even if you have the fixed includes!
+   (Unless, of course, you have the fixed include files installed in
+   /usr/include.  Then it will break.) */
+#    if defined (isc386)
+CC = gcc -traditional -posix -I/usr/include $(GCC_EXTRAS)
+#    else
+CC = gcc -traditional -I/usr/include $(GCC_EXTRAS)
+#    endif /* isc386 */
+#  else /* HAVE_FIXED_INCLUDES */
+#    if defined (isc386)
+CC = gcc -posix $(GCC_EXTRAS)
+#    else /* !isc386 */
+CC = gcc $(GCC_EXTRAS)
+#    endif /* isc386 */
+#  endif /* HAVE_FIXED_INCLUDES */
+#else /* !HAVE_GCC */
+CC = CPP_CC
+#endif /* !HAVE_GCC */
+
+/**/# Of course, you cannot do this the first time through...
+/**/#SHELL=$(DESTDIR)/bash
+SHELL=/bin/sh
+
+RM = rm -f
+AR = ar
+
+MACHINE = M_MACHINE
+OS = M_OS
+
+/**/# PROFILE_FLAGS is either -pg, to generate profiling info for use
+/**/# with gprof, or nothing (the default).
+PROFILE_FLAGS=
+
+#if defined (HAVE_SHARED_LIBS) && defined (sun)
+#  if !defined (HAVE_GCC)
+/**/# On Sun systems, we compile without shared libraries so we
+/**/# can debug the shell with gdb.
+NOSHARE = -Bstatic
+#  endif
+#endif
+
+#if defined (SYSDEP_CFLAGS)
+/**/# This system has some peculiar flags that must be passed to the
+/**/# the C compiler (or to cpp).
+SYSDEP = SYSDEP_CFLAGS
+#endif /* SYSDEP_CFLAGS */
+
+#if defined (SYSDEP_LDFLAGS)
+/**/# This system has some peculiar flags that must be passed to the
+/**/# link editor (ld).
+SYSDEP_LD = SYSDEP_LDFLAGS
+#endif /* SYSDEP_LDFLAGS */
+
+#if defined (HAVE_SETLINEBUF)
+/**/# This system has the setlinebuf () call.
+LINEBUF = -DHAVE_SETLINEBUF
+#endif
+
+#if defined (HAVE_VFPRINTF)
+/**/# This system has the vprintf () and vfprintf () calls.
+VPRINTF = -DHAVE_VFPRINTF
+#endif /* HAVE_VFPRINTF */
+
+#if defined (HAVE_UNISTD_H)
+/**/# This system has <unistd.h>.
+UNISTD = -DHAVE_UNISTD_H
+#endif
+
+#if defined (HAVE_GETGROUPS)
+/**/# This system has multiple groups.
+GROUPS = -DHAVE_GETGROUPS
+#endif
+
+#if defined (HAVE_RESOURCE)
+/**/# This system has <sys/resource.h>
+RESOURCE = -DHAVE_RESOURCE
+#endif
+
+#if defined (VOID_SIGHANDLER)
+/**/# The signal () call of this system returns a pointer to a function
+/**/# returning void.  The signal handlers themselves are thus void functions.
+SIGHANDLER = -DVOID_SIGHANDLER
+#endif
+
+#if defined (HAVE_STRERROR)
+/**/# This system has the strerror () function.
+STRERROR = -DHAVE_STRERROR
+#endif
+
+#if defined (HAVE_WAIT_H)
+/**/# This system has <sys/wait.h>
+WAITH = -DHAVE_WAIT_H
+#endif
+
+#if defined (HAVE_GETWD)
+/**/# This system has the getwd () call.
+GETWD = -DHAVE_GETWD
+#endif
+
+#if defined (HAVE_DUP2)
+/**/# This system has a working version of dup2 ().
+DUP2 = -DHAVE_DUP2
+#endif /* HAVE_DUP2 */
+
+SYSTEM_FLAGS = $(LINEBUF) $(VPRINTF) $(UNISTD) $(GROUPS) $(RESOURCE) \
+       $(SIGHANDLER) $(SYSDEP) $(WAITH) $(GETWD) $(DUP2) $(STRERROR) \
+       -D$(MACHINE) -D$(OS)
+DEBUG_FLAGS = $(PROFILE_FLAGS) -g
+LDFLAGS	= $(NOSHARE) $(SYSDEP_LD) $(EXTRA_LD_PATH) $(DEBUG_FLAGS)
+CFLAGS	= $(DEBUG_FLAGS) $(SYSTEM_FLAGS) -DSHELL $(ALLOCA_CFLAGS)
+CPPFLAGS= -I$(LIBSRC)
+
+/* It is conceviable that you wish to edit some things beyond this point,
+   but I guess that it is highly unlikely, and may give you a headache. */
+
+/* **************************************************************** */
+/*								    */
+/*		    How to Build a Library			    */
+/*								    */
+/* **************************************************************** */
+
+/* Defines used when building libraries. */
+#define LIB_CFLAGS_DECL CFLAGS='$(LIBRARY_CFLAGS) '$(LIBINC_USAGE)
+#define LIB_CPPFLAGS_DECL CPPFLAGS='$(CPPFLAGS)'
+#define LIB_LDFLAGS_DECL LDFLAGS='$(LDFLAGS)'
+#define LIBMAKE_FLAGS LIB_CFLAGS_DECL LIB_CPPFLAGS_DECL LIB_LDFLAGS_DECL \
+	RANLIB='$(RANLIB)' AR='$(AR)' CC='$(CC)'
+
+/* Macro does library building. */
+#define build_lib_in_dir(directory) \
+	@echo "Building in " directory "..."; \
+	($(LIBINC_DECL); cd directory; $(MAKE) $(MFLAGS) LIBMAKE_FLAGS)
+
+/* The builtins are somewhat special in that more information is needed
+   to compile them correctly. */
+#define build_builtins_in_dir(directory) \
+	($(LIBINC_DECL); cd directory; \
+	 $(MAKE) $(MFLAGS) CPPFLAGS='$(CPPFLAGS)' \
+	 CFLAGS='$(CFLAGS) '$(LIBINC_USAGE)' -I.' LDFLAGS='$(LDFLAGS)' \
+	 RANLIB='$(RANLIB)' AR='$(AR)' CC='$(CC)' DIRECTDEFINE='-D 'directory)
+
+/* Flags used when building libraries. */
+LIBRARY_CFLAGS  = $(DEBUG_FLAGS) $(SIGHANDLER) $(ALLOCA_CFLAGS) \
+		  $(SYSDEP) -D$(MACHINE) -D$(OS) $(UNISTD) -DSHELL
+
+/**/# These are required for sending bug reports.
+SYSTEM_NAME = $(MACHINE)
+OS_NAME = $(OS)
+
+/**/# The name of this program.
+PROGRAM = bash
+
+/**/# The type of machine Bash is being compiled on.
+HOSTTYPE_DECL = -DHOSTTYPE='$(SYSTEM_NAME)'
+
+#if defined (NotYet)
+/**/# The name of the manufacturer of this machine.
+MachineManufacturer = ConfiguredManufacturer
+
+/**/# The name of the operating system this machine is using.
+MachineSystem = ConfiguredOS
+
+/**/# How to pass the above two variables into a source compilation.
+MachineInfo = -DMachineManufacturer="$(MachineManufacturer)" \
+	      -DMachineSystem="$(MachineSystem)"
+#endif /* NotYet */
+
+/**/# The default primary and secondary prompts.
+PPROMPT = '"${PROGRAM}\\$$ "'
+SPROMPT = '"> "'
+
+#if defined (MAINTAINER)
+bash_maintainer = MAINTAINER
+MAINTAIN_DEFINE = -DMAINTAINER='"$(bash_maintainer)"'
+#endif
+
+/**/# The group of configuration flags.  These are for shell.c
+CFG_FLAGS = -DPPROMPT=$(PPROMPT) -DSPROMPT=$(SPROMPT) -DOS_NAME='"$(OS_NAME)"'\
+	    -DSYSTEM_NAME='$(SYSTEM_NAME)' $(SIGLIST_FLAG) $(MAINTAIN_DEFINE)
+
+/**/# The directory which contains the source for malloc.  The name must
+/**/# end in a slash, as in "./lib/malloc/".
+ALLOC_DIR = ./lib/malloc/
+
+/**/# Our malloc.
+#if defined (USE_GNU_MALLOC)
+MALLOC = $(ALLOC_DIR)malloc.o
+MALLOC_DEP = $(ALLOC_DIR)malloc.c $(ALLOC_DIR)getpagesize.h
+MALLOC_FLAGS = -Drcheck -Dbotch=programming_error
+#endif /* USE_GNU_MALLOC */
+
+/* If this user doesn't have alloca (), then we must try to supply them
+   with a working one. */
+#if !defined (HAVE_ALLOCA)
+ALLOCA = $(ALLOC_DIR)alloca.o
+#  if defined (ALLOCA_ASM)
+ALLOCA_SOURCE = $(ALLOC_DIR)ALLOCA_ASM
+#  else
+ALLOCA_SOURCE = $(ALLOC_DIR)alloca.c
+#  endif /* ALLOCA_ASM */
+#endif /* !HAVE_ALLOCA */
+
+/* Compilation flags to use in the shell directory and to pass to builds
+   in subdirectories (readline, termcap) to ensure that alloca is treated
+   in a consistent fashion. */
+#if defined (HAVE_ALLOCA_H)
+ALLOCA_H_DEFINE = -DHAVE_ALLOCA_H
+#else
+ALLOCA_H_DEFINE =
+#endif /* HAVE_ALLOCA_H */
+
+#if defined (HAVE_ALLOCA)
+ALLOCA_DEFINE = -DHAVE_ALLOCA
+#else
+ALLOCA_DEFINE =
+#endif /* HAVE_ALLOCA */
+
+ALLOCA_CFLAGS = $(ALLOCA_DEFINE) $(ALLOCA_H_DEFINE)
+
+/* Protect the `i386' used in the definition of ALLOC_FILES. */
+#if defined (i386)
+#  undef i386
+#  define i386_defined
+#endif /* i386 */
+
+ALLOC_HEADERS = $(ALLOC_DIR)getpagesize.h
+ALLOC_FILES = $(ALLOC_DIR)malloc.c $(ALLOC_DIR)alloca.c $(ALLOC_DIR)xmalloc.c \
+	      $(ALLOC_DIR)i386-alloca.s $(ALLOC_DIR)x386-alloca.s
+
+/* Perhaps restore the `i386' define. */
+#if defined (i386_defined)
+#  define i386
+#  undef i386_defined
+#endif /* i386_defined */
+
+#if !defined (HAVE_SYS_SIGLIST)
+/**/# Since this system does not have sys_siglist, we define SIGLIST
+/**/# as siglist.o.
+SIGLIST = siglist.o
+SIGLIST_FLAG=-DINITIALIZE_SIGLIST
+#endif /* HAVE_SYS_SIGLIST */
+
+#if !defined (HAVE_GETCWD)
+/**/# Since this system does not have a correctly working getcwd (), we
+/**/# define GETCWD as getcwd.o.
+GETCWD = getcwd.o
+#endif /* !HAVE_GETCWD */
+
+/**/# The location of ranlib on your system.
+#if defined (RANLIB_LOCATION)
+RANLIB = RANLIB_LOCATION
+#else
+RANLIB = ranlib
+#endif /* RANLIB_LOCATION */
+
+/**/# Support for the libraries required.  Termcap, Glob, and Readline.
+/**/# The location of sources for the support libraries.
+LIBSRC = ./lib/
+LIBINC_DECL  = LIBINCDIR=`pwd`; export LIBINCDIR
+LIBINC_USAGE = "-I$${LIBINCDIR} -I$${LIBINCDIR}/$(LIBSRC)"
+
+/* Does this machine's linker need a space after -L? */
+#if defined (HAVE_GCC)
+#  undef SEARCH_LIB_NEEDS_SPACE
+#endif /* HAVE_GCC */
+
+#if defined (SEARCH_LIB_NEEDS_SPACE)
+/**/# The native compiler for this machines requires a space after '-L'.
+SEARCH_LIB = -L $(UNSET_VARIABLE_CREATES_SPACE)
+#else
+SEARCH_LIB = -L
+#endif /* !SEARCH_LIB_NEEDS_SPACE */
+
+#if defined (EXTRA_LIB_SEARCH_PATH)
+LOCAL_LD_PATH = EXTRA_LIB_SEARCH_PATH
+EXTRA_LD_PATH = $(SEARCH_LIB)$(LOCAL_LD_PATH)
+#endif /* EXTRA_LIB_SEARCH_PATH */
+
+RLIBSRC = $(LIBSRC)readline/
+RLIBDOC = $(RLIBSRC)doc/
+
+/**/# The source, object and documentation of the history library.
+HISTORY_SOURCE	= $(RLIBSRC)history.c $(RLIBSRC)history.h
+HISTORY_OBJ	= $(RLIBSRC)history.o
+HISTORY_DOC	= $(RLIBDOC)hist.texinfo $(RLIBDOC)hsuser.texinfo \
+		  $(RLIBDOC)hstech.texinfo
+
+/**/# The source, object and documentation of the GNU Readline library.
+/**/# The source to the history library is inherently part of this.
+READLINE_SOURCE	= $(RLIBSRC)readline.c $(RLIBSRC)readline.h\
+		  $(RLIBSRC)chardefs.h $(RLIBSRC)keymaps.h\
+		  $(RLIBSRC)funmap.c $(RLIBSRC)emacs_keymap.c\
+		  $(RLIBSRC)vi_keymap.c $(RLIBSRC)keymaps.c\
+		  $(RLIBSRC)vi_mode.c $(GLIBSRC)tilde.c $(HISTORY_SOURCE)
+
+READLINE_OBJ	= $(RLIBSRC)readline.o $(RLIBSRC)funmap.o \
+		  $(RLIBSRC)keymaps.o $(GLIBSRC)tilde.o $(HISTORY_OBJ)
+
+READLINE_DOC	= $(RLIBDOC)rlman.texinfo $(RLIBDOC)rluser.texinfo \
+		  $(RLIBDOC)rltech.texinfo
+
+READLINE_DOC_SUPPORT  = $(RLIBDOC)Makefile $(RLIBDOC)texinfo.tex \
+		  $(RLIBDOC)texindex.c $(RLIBDOC)readline.dvi \
+		  $(RLIBDOC)readline.info $(RLIBDOC)history.dvi \
+		  $(RLIBDOC)history.info
+
+/**/# This has to be written funny to avoid looking like a C comment starter.
+READLINE_EXAMPLES = $(RLIBSRC)examples/[a-zA-Z]*.[ch] \
+		    $(RLIBSRC)examples/Makefile $(RLIBSRC)examples/Inputrc
+
+/**/# Support files for GNU Readline.
+READLINE_SUPPORT = $(RLIBSRC)Makefile $(RLIBSRC)ChangeLog $(RLIBSRC)COPYING \
+		   $(READLINE_EXAMPLES) $(READLINE_DOC_SUPPORT)
+
+#if defined (HAVE_READLINE_SOURCE)
+READLINE_CFLAGS = $(DEBUG_FLAGS) $(SIGHANDLER) $(ALLOCA_CFLAGS) \
+		  $(SYSDEP) -D$(MACHINE) -D$(OS) $(UNISTD)
+#define READLINE_LIBRARY ./lib/readline/libreadline.a
+#else
+#define READLINE_LIBRARY -lreadline
+#endif
+
+#if defined (USE_GNU_TERMCAP)
+#define HAVE_TERMCAP_SOURCE
+/**/# The source, object and documentation for the GNU Termcap library.
+TLIBSRC = $(LIBSRC)termcap/
+#define TERMCAP_LIBRARY ./lib/termcap/libtermcap.a
+
+TERMCAP_SOURCE	= $(TLIBSRC)termcap.c $(TLIBSRC)tparam.c
+TERMCAP_OBJ	= $(TLIBSRC)libtermcap.a
+TERMCAP_DOC	= $(TLIBSRC)termcap.texinfo
+TERMCAP_SUPPORT = $(TLIBSRC)Makefile $(TLIBSRC)ChangeLog
+TERMCAP_LDFLAGS = $(SEARCH_LIB)$(TLIBSRC)
+#endif /* USE_GNU_TERMCAP */
+
+/* The glob library is always used. */
+#define USE_GLOB_LIBRARY
+
+/* If we have the source to the glob library, then compile it. */
+#if defined (USE_GLOB_LIBRARY)
+GLIBSRC = $(LIBSRC)glob/
+#define GLOB_LIBRARY ./lib/glob/libglob.a
+
+/* Sometime in the future, we will have the finished GNU C Library globber. */
+#if defined (POSIX_GLOBBING_SOURCE)
+GLOB_SOURCE = $(GLIBSRC)glob.c $(GLIBSRC)fnmatch.c $(GLIBSRC)tilde.c \
+	      $(GLIBSRC)glob.h $(GLIBSRC)ndir.h $(GLIBSRC)fnmatch.h
+#else
+GLOB_SOURCE = $(GLIBSRC)glob.c $(GLIBSRC)tilde.c \
+		$(GLIBSRC)fnmatch.c $(GLIBSRC)fnmatch.h
+#endif /* POSIX_GLOBBING_SOURCE */
+
+GLOB_OBJ     = $(GLIBSRC)libglob.a
+GLOB_DOC     = $(GLIBSRC)glob.texinfo
+GLOB_SUPPORT = $(GLIBSRC)Makefile $(GLIBSRC)ChangeLog
+GLOB_LDFLAGS = $(SEARCH_LIB)$(GLIBSRC)
+GLOB_LIB     = -lglob
+#endif /* USE_GLOB_LIBRARY */
+
+/**/# Declare all of the sources for the libraries that we have.
+LIBRARY_SOURCE	= $(READLINE_SOURCE) $(TERMCAP_SOURCE) $(GLOB_SOURCE)
+LIBRARY_DOC	= $(READLINE_DOC) $(HISTORY_DOC) $(TERMCAP_DOC) $(GLOB_DOC)
+LIBRARY_SUPPORT	= $(READLINE_SUPPORT) $(TERMCAP_SUPPORT) $(GLOB_SUPPORT)
+LIBRARY_TAR	= $(LIBRARY_SOURCE) $(LIBRARY_DOC) $(LIBRARY_SUPPORT)
+
+#if defined (READLINE)
+/**/# You wish to compile with the line editing features installed.
+READLINE_LIB = -lreadline
+
+/**/# You only need termcap for readline.
+#if defined (USE_TERMCAP_EMULATION)
+TERMCAP_LIB = -lcurses
+#else
+TERMCAP_LIB = -ltermcap
+#endif /* USE_TERMCAP_EMULATION */
+
+/**/# Directory list for -L so that the link editor (ld) can find -lreadline.
+#if defined (HAVE_READLINE_SOURCE)
+READLINE_LDFLAGS = $(SEARCH_LIB)$(RLIBSRC) $(TERMCAP_LDFLAGS)
+#else
+READLINE_LDFLAGS = $(TERMCAP_LDFLAGS) $(SEARCH_LIB)/usr/gnu/lib \
+		   $(SEARCH_LIB)/usr/local/lib
+#endif /* HAVE_READLINE_SOURCE */
+
+/**/# The source and object of the bash<->readline interface code.
+RL_SUPPORT_SRC = bashline.c
+RL_SUPPORT_OBJ = bashline.o
+#endif /* READLINE */
+
+#if defined (REQUIRED_LIBRARIES)
+/**/# Locally required libraries.
+LOCAL_LIBS = REQUIRED_LIBRARIES
+#endif /* REQUIRED_LIBRARIES */
+
+/**/# The order is important.  Most dependent first.
+LIBRARIES = $(READLINE_LIB) $(TERMCAP_LIB) $(GLOB_LIB) $(LOCAL_LIBS)
+
+#if defined (HAVE_TERMCAP_SOURCE)
+TERMCAP_DEP = TERMCAP_LIBRARY
+#endif
+
+#if defined (HAVE_READLINE_SOURCE)
+READLINE_DEP = READLINE_LIBRARY
+#endif
+
+#if defined (USE_GLOB_LIBRARY)
+GLOB_DEP = GLOB_LIBRARY
+#else
+GLOBC = glob.c tilde.c
+GLOBO = glob.o tilde.o
+#endif /* USE_GLOB_LIBRARY */
+
+/**/# Source files for libraries that Bash depends on.
+LIBDEP = $(READLINE_DEP) $(TERMCAP_DEP) $(GLOB_DEP)
+
+/**/# Rules for cleaning the readline and termcap sources.
+#if defined (HAVE_READLINE_SOURCE)
+#  define CLEAN_READLINE (cd $(RLIBSRC); $(MAKE) $(MFLAGS) clean)
+#else
+#  define CLEAN_READLINE :
+#endif /* HAVE_READLINE_SOURCE */
+
+#if defined (HAVE_TERMCAP_SOURCE)
+#  define CLEAN_TERMCAP (cd $(TLIBSRC); $(MAKE) $(MFLAGS) clean)
+#else
+#  define CLEAN_TERMCAP :
+#endif /* HAVE_TERMCAP_SOURCE */
+
+#if defined (USE_GLOB_LIBRARY)
+#  define CLEAN_GLOB (cd $(GLIBSRC); $(MAKE) $(MFLAGS) clean)
+#else
+#  define CLEAN_GLOB :
+#endif /* USE_GLOB_LIBRARY */
+
+BUILTINS_LIB = builtins/libbuiltins.a
+
+/**/# The main source code for the Bourne Again SHell.
+CSOURCES = shell.c parse.y general.c make_cmd.c print_cmd.c y.tab.c \
+	   dispose_cmd.c execute_cmd.c variables.c $(GLOBC) version.c \
+	   expr.c copy_cmd.c flags.c subst.c hash.c mailcheck.c \
+	   test.c trap.c jobs.c nojobs.c $(ALLOC_FILES) braces.c \
+	   unwind_prot.c siglist.c getcwd.c $(RL_SUPPORT_SRC) error.c
+
+HSOURCES = shell.h flags.h trap.h hash.h jobs.h builtins.h alias.c y.tab.h \
+	   general.h variables.h config.h $(ALLOC_HEADERS) alias.h maxpath.h \
+	   quit.h machines.h posixstat.h filecntl.h unwind_prot.h parser.h \
+	   command.h input.h error.h
+
+SOURCES	 = $(CSOURCES) $(HSOURCES) $(BUILTIN_DEFS)
+
+/**/# Matching object files.
+OBJECTS	 = shell.o y.tab.o general.o make_cmd.o print_cmd.o $(GLOBO) \
+	   dispose_cmd.o execute_cmd.o variables.o copy_cmd.o error.o \
+	   expr.o flags.o jobs.o subst.o hash.o mailcheck.o test.o \
+	   trap.o alias.o $(MALLOC) $(ALLOCA) braces.o unwind_prot.o \
+	   $(SIGLIST) $(GETCWD) version.o $(RL_SUPPORT_OBJ) $(BUILTINS_LIB)
+
+/**/# Where the source code of the shell builtins resides.
+DEFDIR = builtins/
+BUILTIN_DEFS = $(DEFDIR)alias.def $(DEFDIR)bind.def $(DEFDIR)break.def \
+	       $(DEFDIR)builtin.def $(DEFDIR)cd.def $(DEFDIR)colon.def \
+	       $(DEFDIR)command.def $(DEFDIR)declare.def \
+	       $(DEFDIR)echo.def $(DEFDIR)enable.def $(DEFDIR)eval.def \
+	       $(DEFDIR)exec.def $(DEFDIR)exit.def $(DEFDIR)fc.def \
+	       $(DEFDIR)fg_bg.def $(DEFDIR)hash.def $(DEFDIR)help.def \
+	       $(DEFDIR)history.def $(DEFDIR)jobs.def $(DEFDIR)kill.def \
+	       $(DEFDIR)let.def $(DEFDIR)read.def $(DEFDIR)return.def \
+	       $(DEFDIR)set.def $(DEFDIR)setattr.def $(DEFDIR)shift.def \
+	       $(DEFDIR)source.def $(DEFDIR)suspend.def $(DEFDIR)test.def \
+	       $(DEFDIR)times.def $(DEFDIR)trap.def $(DEFDIR)type.def \
+	       $(DEFDIR)ulimit.def $(DEFDIR)umask.def $(DEFDIR)wait.def \
+	       $(DEFDIR)getopts.def $(DEFDIR)reserved.def
+BUILTIN_C_CODE  = $(DEFDIR)mkbuiltins.c $(DEFDIR)common.c \
+		  $(DEFDIR)hashcom.h $(GETOPT_SOURCE)
+GETOPT_SOURCE   = $(DEFDIR)getopt.c $(DEFDIR)getopt.h
+PSIZE_SOURCE	= $(DEFDIR)psize.sh $(DEFDIR)psize.c
+BUILTIN_SUPPORT = $(DEFDIR)Makefile $(DEFDIR)ChangeLog $(PSIZE_SOURCE) \
+		  $(BUILTIN_C_CODE)
+
+/**/# Documentation for the shell.
+DOCDIR = ./documentation/
+BASH_TEXINFO = $(DOCDIR)*.texi $(DOCDIR)*.tex $(DOCDIR)texindex.c \
+	        $(DOCDIR)*.dvi $(DOCDIR)Makefile
+BASH_MAN = $(DOCDIR)bash.1
+BASHDOCS = $(BASH_TEXINFO) $(BASH_MAN) INSTALL README RELEASE
+DOCUMENTATION = $(BASHDOCS) $(LIBRARY_DOC)
+
+/**/# Some example files demonstrating use of the shell.
+/* This has to be written funny to avoid looking like a comment starter. */
+EXAMPLES = examples/[a-zA-Z]*
+
+ENDIAN_SUPPORT = endian.c
+SDIR = ./support/
+MKTARFILE = $(SDIR)mktarfile
+SCRIPTS_SUPPORT = $(SDIR)mksysdefs $(SDIR)cppmagic $(SDIR)cat-s \
+		  $(MKTARFILE) $(SDIR)mail-shell $(SDIR)inform
+
+TEST_SUITE = ./test-suite/
+TEST_SUITE_SUPPORT = $(TEST_SUITE)[a-zA-Z0-9]*
+
+CREATED_SUPPORT = endian.aux endian.h sysdefs.h $(SDIR)getcppsyms
+
+SUPPORT = configure $(ENDIAN_SUPPORT) $(SCRIPTS_SUPPORT) $(BUILTIN_SUPPORT) \
+	  COPYING Makefile cpp-Makefile ChangeLog .distribution newversion.c \
+	  $(EXAMPLES) $(SDIR)bash.xbm $(SDIR)getcppsyms.c $(TEST_SUITE_SUPPORT)
+
+/**/# BAGGAGE consists of things that you want to keep with the shell for some
+/**/# reason, but do not actually use; old source code, etc.
+BAGGAGE = longest_sig.c
+
+/**/# Things that the world at large needs.
+THINGS_TO_TAR = $(SOURCES) $(LIBRARY_TAR) $(BASHDOCS) $(SUPPORT) $(BAGGAGE)
+
+all: .made
+
+/**/# Keep GNU Make from exporting the entire environment for small machines.
+.NOEXPORT:
+
+.made: $(PROGRAM)
+	cp .machine .made
+
+$(PROGRAM):  .build $(OBJECTS) $(LIBDEP) .distribution
+	$(RM) $@
+	$(CC) $(LDFLAGS) $(READLINE_LDFLAGS) $(GLOB_LDFLAGS) \
+	   -o $(PROGRAM) $(OBJECTS) $(LIBRARIES)
+
+.build:	$(SOURCES) cpp-Makefile newversion.aux
+	if ./newversion.aux -build; then mv -f newversion.h version.h; fi
+	@echo
+	@echo "	  ***************************************************"
+	@echo "	  *						    *"
+	@echo "	  * Making Bash-`cat .distribution` for a $(MACHINE) running $(OS)."
+	@echo "	  *						    *"
+	@echo "	  ***************************************************"
+	@echo
+	@echo "$(PROGRAM) last made for a $(MACHINE) running $(OS)" >.machine
+
+version.h:	newversion.aux
+	if ./newversion.aux -build; then mv -f newversion.h version.h; fi
+
+y.tab.c:	parse.y parser.h command.h input.h
+		-if test -f y.tab.h; then mv -f y.tab.h old-y.tab.h; fi
+		@echo "Expect 12 reduce/reduce errors.  No Problem."
+		$(BISON) -d parse.y
+		-if cmp -s old-y.tab.h y.tab.h; then mv old-y.tab.h y.tab.h; fi
+
+#if defined (HAVE_READLINE_SOURCE)
+READLINE_LIBRARY: $(READLINE_SOURCE)
+	build_lib_in_dir ($(RLIBSRC))
+#endif /* HAVE_READLINE_SOURCE */
+
+#if defined (HAVE_TERMCAP_SOURCE)
+TERMCAP_LIBRARY: $(TERMCAP_SOURCE)
+	build_lib_in_dir ($(TLIBSRC))
+#endif /* HAVE_TERMCAP_SOURCE */
+
+#if defined (USE_GLOB_LIBRARY)
+GLOB_LIBRARY: $(GLOB_SOURCE)
+	build_lib_in_dir ($(GLIBSRC))
+#endif /* USE_GLOB_LIBRARY */
+
+version.o:	version.h version.c
+
+shell.o:	shell.h flags.h shell.c posixstat.h filecntl.h endian.h \
+		parser.h
+		$(CC) $(CFG_FLAGS) $(CFLAGS) $(CPPFLAGS) -c shell.c
+
+endian.h:	endian.aux
+		./endian.aux endian.h
+
+endian.aux:	endian.c
+		$(CC) $(CFLAGS) -o $@ endian.c
+
+#if defined (USE_GNU_MALLOC)
+/* Note that gcc correctly leaves the output file in the source directory. */
+#if !defined (__GNUC__)
+$(MALLOC):	$(MALLOC_DEP)
+		$(CC) -I$(ALLOC_DIR) $(CFLAGS) $(MALLOC_FLAGS) -c $*.c
+		@-mv `basename $*`.o $(MALLOC) 2>/dev/null
+#else
+$(MALLOC):	$(MALLOC_DEP)
+		$(CC) -I$(ALLOC_DIR) $(CFLAGS) $(MALLOC_FLAGS) \
+		    -o $(MALLOC) -c $*.c
+#endif /* __GNUC__ */
+#endif /* USE_GNU_MALLOC */
+
+#if !defined (HAVE_ALLOCA)
+/* Note that gcc correctly leaves the output file in the source directory. */
+$(ALLOCA):	$(ALLOCA_SOURCE)
+		$(CC) -I$(ALLOC_DIR) $(CFLAGS) -c $(ALLOCA_SOURCE)
+		@-mv `basename $*`.o $(ALLOCA) >/dev/null 2>&1
+#endif /* !HAVE_ALLOCA */
+
+variables.o: shell.h hash.h flags.h variables.h variables.c
+	$(CC) -c $(CFLAGS) $(CPPFLAGS) $(HOSTTYPE_DECL) variables.c
+
+builtins/libbuiltins.a: $(BUILTIN_DEFS) $(BUILTIN_C_CODE)
+	build_builtins_in_dir ($(DEFDIR))
+
+/* Dependencies for the main bash source. */
+shell.h:	general.h variables.h config.h quit.h
+jobs.h:		endian.h quit.h
+variables.h:	hash.h
+braces.o: general.h
+copy_cmd.o: shell.h hash.h
+copy_cmd.o: general.h variables.h config.h quit.h
+dispose_cmd.o: shell.h
+dispose_cmd.o: general.h variables.h config.h quit.h
+error.o: error.h
+execute_cmd.o: shell.h y.tab.h posixstat.h flags.h jobs.h
+execute_cmd.o: general.h variables.h config.h quit.h hash.h endian.h
+execute_cmd.o: unwind_prot.h
+expr.o: shell.h hash.h
+expr.o: general.h variables.h config.h quit.h
+flags.o: flags.h config.h general.h quit.h
+general.o: shell.h maxpath.h
+general.o: general.h variables.h config.h quit.h
+hash.o: shell.h hash.h
+hash.o: general.h variables.h config.h quit.h
+jobs.o: shell.h hash.h trap.h jobs.h
+jobs.o: general.h variables.h config.h endian.h quit.h
+mailcheck.o: posixstat.h maxpath.h variables.h
+mailcheck.o: hash.h quit.h
+make_cmd.o: shell.h flags.h
+make_cmd.o: general.h variables.h config.h quit.h
+y.tab.o: shell.h flags.h maxpath.h
+y.tab.o: general.h variables.h config.h quit.h
+print_cmd.o: shell.h y.tab.h
+print_cmd.o: general.h variables.h config.h quit.h
+shell.o: shell.h flags.h
+shell.o: general.h variables.h config.h quit.h
+subst.o: shell.h flags.h alias.h jobs.h
+subst.o: general.h variables.h config.h endian.h quit.h
+test.o: posixstat.h
+trap.o: trap.h shell.h hash.h unwind_prot.h
+trap.o: general.h variables.h config.h quit.h
+unwind_prot.o: config.h general.h unwind_prot.h
+
+#if !defined (JOB_CONTROL)
+jobs.o: nojobs.c
+#endif
+
+#if defined (READLINE)
+bashline.o: shell.h hash.h builtins.h
+bashline.o: general.h variables.h config.h quit.h alias.h
+#endif
+
+/* Dependencies which rely on the user using the source to READLINE. */
+#if defined (HAVE_READLINE_SOURCE)
+bashline.o: $(RLIBSRC)chardefs.h $(RLIBSRC)history.h $(RLIBSRC)readline.h
+bashline.o: $(RLIBSRC)keymaps.h $(RLIBSRC)history.h
+y.tab.o: $(RLIBSRC)keymaps.h $(RLIBSRC)chardefs.h $(RLIBSRC)history.h
+y.tab.o: $(RLIBSRC)readline.h
+subst.o: $(RLIBSRC)history.h
+#endif /* HAVE_READLINE_SOURCE */
+
+#if defined (USE_GLOB_LIBRARY)
+subst.o: $(GLIBSRC)fnmatch.h
+execute_cmd.o: $(GLIBSRC)fnmatch.h
+#  if defined (POSIX_GLOBBING_SOURCE)
+subst.o: $(GLIBSRC)glob.h
+#  endif /* POSIX_GLOBBING_SOURCE */
+#endif /* USE_GLOB_LIBRARY */
+
+$(PROGRAM).tar: $(THINGS_TO_TAR) .distribution
+	@$(MKTARFILE) $(PROGRAM) `cat .distribution` $(THINGS_TO_TAR)
+
+$(PROGRAM).tar.Z:	$(PROGRAM).tar
+		compress -f $(PROGRAM).tar
+
+clone:		$(THINGS_TO_TAR)
+	@$(MKTARFILE) +notar $(MACHINE) $(OS) $(THINGS_TO_TAR)
+		
+install:	.made
+		-if [ -f $(DESTDIR)/$(PROGRAM) ]; \
+		then mv $(DESTDIR)/$(PROGRAM) $(DESTDIR)/$(PROGRAM).old; \
+		fi
+		cp $(PROGRAM) $(DESTDIR)/$(PROGRAM)
+		$(RM) installed-$(PROGRAM)
+		ln -s $(DESTDIR)/$(PROGRAM) installed-$(PROGRAM)
+
+mailable:	distribution
+		/bin/rm -rf uuencoded
+		mkdir uuencoded
+		$(SHELL) -c 'f=$(PROGRAM)-`cat .distribution`.tar.Z;uuencode $$f $$f | split -800 - uuencoded/$$f.uu.'
+
+.distribution:
+		./newversion.aux -dist `$(PROGRAM) -c 'echo $$BASH_VERSION'`
+
+distribution:	$(PROGRAM) $(PROGRAM).tar.Z .distribution
+		@echo cp $(PROGRAM).tar.Z $(PROGRAM)-`cat .distribution`.tar.Z
+		@cp $(PROGRAM).tar.Z $(PROGRAM)-`cat .distribution`.tar.Z
+
+newversion.aux:	newversion.c
+		$(CC) $(DEBUG_FLAGS) -o newversion.aux newversion.c -lm
+
+newversion:	newversion.aux
+		$(RM) .build
+		./newversion.aux -dist
+		mv -f newversion.h version.h
+		$(MAKE) $(MFLAGS)
+
+documentation:  documentation-frob
+		(cd $(DOCDIR); make)
+
+documentation-frob:
+
+tags:		$(SOURCES) $(BUILTIN_C_CODE) $(LIBRARY_SOURCE)
+		etags $(SOURCES) $(BUILTIN_C_CODE) $(LIBRARY_SOURCE)
+
+INDEX:		$(SOURCES) $(BUILTIN_C_CODE) $(LIBRARY_SOURCE)
+		ctags -x $(SOURCES) $(BUILTIN_C_CODE) $(LIBRARY_SOURCE) > $@
+
+clean:
+		$(RM) $(OBJECTS) $(PROGRAM) aix-Makefile *.aux
+		$(RM) .build .made version.h
+		$(RM) $(CREATED_SUPPORT) bash-Makefile
+		(cd $(DOCDIR); $(MAKE) $(MFLAGS) clean)
+		(cd builtins; $(MAKE) $(MFLAGS) clean)
+		CLEAN_READLINE;CLEAN_TERMCAP;CLEAN_GLOB
+
+/**/# Here is a convenient rule when you arrive at a new site and wish to
+/**/# install bash on several different architectures.  It creates a new
+/**/# directory to hold the results of compilatation.  The directory is
+/**/# named MACHINE-OS.
+architecture: $(MACHINE)-$(OS)/$(PROGRAM)
+
+$(MACHINE)-$(OS):
+	-mkdir $(MACHINE)-$(OS)
+
+$(MACHINE)-$(OS)/$(PROGRAM): $(MACHINE)-$(OS) $(PROGRAM)
+	mv $(PROGRAM) $(MACHINE)-$(OS)
+	mv sysdefs.h $(MACHINE)-$(OS)
+	mv $(SDIR)getcppsyms $(MACHINE)-$(OS)
+	$(MAKE) $(MFLAGS) clean
