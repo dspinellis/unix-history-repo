@@ -31,6 +31,9 @@
 **			This is used to disambiguate the contents of
 **			ArpaHost among many hosts who may be sharing
 **			a gateway.
+**		DaemonName -- the name of this agent for use in
+**			error messages, typically "~MAILER~DAEMON~"
+**			at this host on the local net.
 **		ArpaLocal -- a list of local names for this host on
 **			the arpanet.  Only functional if HASARPA set.
 **		UucpLocal -- ditto for the Arpanet.
@@ -108,7 +111,7 @@
 
 
 
-static char SccsId[] = "@(#)conf.c	2.3	%G%";
+static char SccsId[] = "@(#)conf.c	2.4	%G%";
 
 
 bool	UseMsgId = FALSE;	/* don't put message id's in anywhere */
@@ -116,17 +119,26 @@ bool	UseMsgId = FALSE;	/* don't put message id's in anywhere */
 # include <whoami.h>		/* definitions of machine id's at berkeley */
 
 # ifdef BERKELEY
+
 char	*ArpaHost = "Berkeley";	/* host name of gateway on Arpanet */
+
 # else BERKELEY
+
 char	*ArpaHost = "[unknown]";
 char	*MyLocName = sysname;
 # define HASUUCP		/* default to having UUCP net */
 char	*UucpLocal[] = { sysname, NULL };
+
 # endif BERKELEY
+
+
+/* Specific Configurations for Berkeley Machines */
+
+/* Berkeley people: mail changes to csvax:eric or they will be lost! */
 
 # ifdef ING70
 static char	*BerkLocal[] = { "i", "ingres", "ing70", NULL };
-# define ArpaLocal	NULL
+char		*ArpaLocal = { "berkeley", "ucb", NULL };
 char		*MyLocName = "Ing70";
 char		*DaemonName = "Ing70:~MAILER~DAEMON~";
 # define HASARPA
