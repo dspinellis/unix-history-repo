@@ -1,4 +1,4 @@
-/*	rx.c	4.17	83/04/29	*/
+/*	rx.c	4.18	83/05/11	*/
 
 #include "rx.h"
 #if NFX > 0
@@ -73,6 +73,7 @@ struct rx_softc {
 #define	RXF_DDMK	0x20	/* deleted-data mark detected */
 #define	RXF_USEWDDS	0x40	/* write deleted-data sector */
 #define	RXF_FORMAT	0x80	/* format in progress */
+#define	RXF_BAD		0x100	/* drive bad, cannot be used */
 	int	sc_csbits;	/* constant bits for CS register */
 	int	sc_open;	/* count number of opens */
 	int	sc_offset;	/* raw mode kludge to avoid restricting */
@@ -97,6 +98,8 @@ struct rxerr {
 
 struct	uba_device *rxdinfo[NRX];
 struct	uba_ctlr *rxminfo[NFX];
+
+struct buf *savebp;
 
 int rxprobe(), rxslave(), rxattach(), rxdgo(), rxintr(), rxwatch(), rxphys();
 u_short rxstd[] = { 0177170, 0177150, 0 };
@@ -176,6 +179,8 @@ rxopen(dev, flag)
 		bp->b_flags = B_RDSTAT | B_BUSY;
 		bp->b_error = 0;
 		bp->b_blkno = 0;
+		sc->sc_offset = 0;
+		sc->sc_resid  = 0;
 		/*
 		 * read device status to determine if
 		 * a floppy is present in the drive and
@@ -232,11 +237,15 @@ rxstrategy(bp)
 	sc = &rx_softc[unit];
 	if (bp->b_blkno < 0 || (bp->b_blkno * DEV_BSIZE) > RXSIZE )
 		goto bad;
+	if (sc->sc_flags & RXF_BAD) {
+		bp->b_error = EIO;
+		goto dbad;
+	}
+	s = spl5();
 #ifdef RXDEBUG
-	printf("rxstrategy: bp=0x%x, flgs=0x%x, unit=%d, block=%d, count=%d\n", 
+	printf("rxstrat: bp=0x%x, fl=0x%x, un=%d, bl=%d, cnt=%d\n", 
 		bp, bp->b_flags, unit, bp->b_blkno, bp->b_bcount);
 #endif
-	s = spl5();
 	bp->b_cylin = bp->b_blkno;	/* don't care to calculate trackno */
 	dp = &rxutab[unit];
 	disksort(dp, bp);
@@ -250,9 +259,10 @@ rxstrategy(bp)
 	return;
 
 bad:
+	bp->b_error = ENXIO;
+dbad:
 	bp->b_flags |= B_ERROR;
 	iodone(bp);
-	bp->b_error = ENXIO;
 	return;
 }
 
@@ -355,6 +365,10 @@ loop:
 	um->um_tab.b_active++;
 	unit = RXUNIT(bp->b_dev);
 	sc = &rx_softc[unit];
+	if (sc->sc_flags & RXF_BAD) {
+		rxpurge(um);
+		return;
+	}
 	if (dp->b_active == 1) {
 		sc->sc_resid = bp->b_bcount;
 		sc->sc_uaddr = bp->b_un.b_addr;
@@ -466,8 +480,8 @@ rxintr(ctlr)
 	rxc->rxc_tocnt = 0;
 	er = &rxerr[unit];
 #ifdef RXDEBUG
-	printf("rxintr: dev=%x, state=%d, status=0x%x", 
-		bp->b_dev, rxc->rxc_state, rxaddr->rxcs);
+	printf("rxint: dev=%x, st=%d, cs=0x%x, db=0x%x\n", 
+		bp->b_dev, rxc->rxc_state, rxaddr->rxcs, rxaddr->rxdb);
 #endif
 	if ((rxaddr->rxcs & RX_ERR) &&
 	    (rxc->rxc_state != RXS_RDSTAT) && (rxc->rxc_state != RXS_RDERR))
@@ -487,9 +501,6 @@ rxintr(ctlr)
 		rxc->rxc_state = RXS_EMPTY;
 		um->um_cmd = RX_EMPTY;
 		(void) ubago(ui);
-#ifdef RXDEBUG
-		printf("\n");
-#endif
 		return;
 
 	case RXS_FILL:
@@ -506,9 +517,6 @@ rxintr(ctlr)
 		while ((rxaddr->rxcs&RX_TREQ) == 0)
 			;
 		rxaddr->rxdb = track;
-#ifdef RXDEBUG
-		printf("\n");
-#endif
 		return;
 
 	/*
@@ -527,7 +535,7 @@ rxintr(ctlr)
 		}
 		if (rxaddr->rxdb&RXES_READY)
 			goto rderr;
-		bp->b_error = EBUSY;
+		bp->b_error = ENODEV;
 		bp->b_flags |= B_ERROR;
 		goto done;
 
@@ -542,7 +550,7 @@ rxintr(ctlr)
 		goto rdone;
 
 	case RXS_RDERR:
-		bp = bp->b_back;
+		bp = savebp;
 		rxmap(bp, &sector, &track);
 		printf("rx%d: hard error, trk %d psec %d ",
 			unit, track, sector);
@@ -571,12 +579,12 @@ error:
 	if (rxc->rxc_state == RXS_FORMAT || (rxaddr->rxdb&RXES_DENERR))
 		goto giveup;
 	if (rxaddr->rxdb & RXES_CRCERR) {
-		if (++bp->b_errcnt >= 10)
+		if (++um->um_tab.b_errcnt >= 10)
 			goto giveup;
 		goto retry;
 	}
-	bp->b_errcnt += 9;
-	if (bp->b_errcnt >= 10)
+	um->um_tab.b_errcnt += 9;
+	if (um->um_tab.b_errcnt >= 10)
 		goto giveup;
 	rxaddr->rxcs = RX_INIT;
 	/* no way to get an interrupt for "init done", so just wait */
@@ -599,34 +607,28 @@ retry:
 giveup:
 	/*
 	 * Hard I/O error --
-	 * Density errors are not noted on the console since the
-	 * only way to determine the density of an unknown disk
-	 * is to try one density or the other at random and see
-	 * which one doesn't give a density error.
+	 * ALL errors are considered fatal and will abort the
+	 * transfer and purge the i/o request queue
 	 */
-	if (rxaddr->rxdb & RXES_DENERR) {
-		bp->b_error = ENODEV;
-		bp->b_flags |= B_ERROR;
-		goto done;
-	}
+	sc->sc_flags |= RXF_BAD;
+	sc->sc_resid = 0;	/* make sure the transfer is terminated */
 	rxc->rxc_state = RXS_RDSTAT;
 	rxaddr->rxcs = RX_RDSTAT | sc->sc_csbits;
 	return;
 
 rderr:
 	/*
-	 * A hard error (other than not ready or density) has occurred.
+	 * A hard error (other than not ready) has occurred.
 	 * Read the extended error status information.
 	 * Before doing this, save the current CS and DB register values,
 	 * because the read error status operation may modify them.
-	 * Insert buffer with request at the head of the queue, and
-	 * save a pointer to the data buffer, so it can be restored
-	 * when the read error status operation is finished.
+	 * Insert buffer with request at the head of the queue.
 	 */
 	bp->b_error = EIO;
 	bp->b_flags |= B_ERROR;
-	ubadone(um);
-	erxbuf[unit].b_back = bp;	/* save the data buffer pointer */
+	if (um->um_ubinfo)
+		ubadone(um);
+	savebp = bp;
 	er->rxcs = rxaddr->rxcs;
 	er->rxdb = rxaddr->rxdb;
 	bp = &erxbuf[unit];
@@ -649,9 +651,6 @@ rdone:
 	um->um_tab.b_errcnt = 0;
 	if ((sc->sc_resid -= NBPS) > 0) {
 		bp->b_un.b_addr += NBPS;
-#ifdef RXDEBUG
-		printf("\n");
-#endif
 		rxstart(um);
 		return;
 	}
@@ -666,7 +665,7 @@ rdone:
 	dp->b_active = 0;
 	dp->b_errcnt = 0;
 #ifdef RXDEBUG
-	printf(" old bp=0x%x, new=0x%x\n", bp, dp->b_actf);
+	printf(".. bp=%x, new=%x\n", bp, dp->b_actf);
 #endif
 	/*
 	 * If this unit has more work to do,
@@ -793,14 +792,11 @@ rxioctl(dev, cmd, data, flag)
 	int unit = RXUNIT(dev);
 	struct rx_softc *sc = &rx_softc[unit];
 
-	switch (cmd&RXIOC_MASK) {
+	switch (cmd) {
 
 	case RXIOC_FORMAT:
-#ifdef notdef	/* temporarily removed (the flag argument is */
-		/* is actually always zero at this point) */
 		if ((flag&FWRITE) == 0)
 			return (EBADF);
-#endif
 		if (sc->sc_open > 1 )
 			return (EBUSY);
 		if (*(int *)data)
@@ -848,5 +844,25 @@ rxformat(dev)
 	bp->b_flags &= ~B_BUSY;
 	sc->sc_flags &= ~RXF_LOCK;
 	return (error);
+}
+
+/*
+ * A permanent hard error condition has occured,
+ * purge the buffer queue
+ */
+rxpurge(um)
+	register struct uba_ctlr *um;
+{
+	register struct buf *bp, *dp;
+
+	dp = um->um_tab.b_actf;
+	while (dp->b_actf) {
+		dp->b_errcnt++;
+		bp = dp->b_actf;
+		bp->b_error = EIO;
+		bp->b_flags |= B_ERROR;
+		iodone(bp);
+		dp->b_actf = bp->av_forw;
+	}
 }
 #endif
