@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)misc.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)misc.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -18,7 +18,10 @@ static char sccsid[] = "@(#)misc.c	5.4 (Berkeley) %G%";
 #include <dirent.h>
 #include <unistd.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include "archive.h"
+#include "extern.h"
 #include "pathnames.h"
 
 extern CHDR chdr;			/* converted header */
@@ -61,17 +64,29 @@ tmp()
  *	See if the current file matches any file in the argument list; if it
  * 	does, remove it from the argument list.
  */
+char *
 files(argv)
 	char **argv;
 {
 	register char **list;
+	char *p;
 
 	for (list = argv; *list; ++list)
 		if (compare(*list)) {
+			p = *list;
 			for (; list[0] = list[1]; ++list);
-			return(1);
+			return(p);
 		}
-	return(0);
+	return(NULL);
+}
+
+void
+orphans(argv)
+	char **argv;
+{
+	for (; *argv; ++argv)
+		(void)fprintf(stderr,
+		    "ar: %s: not found in archive.\n", *argv);
 }
 
 char *
@@ -86,19 +101,19 @@ rname(path)
 compare(dest)
 	char *dest;
 {
-	char *rname();
-
 	if (options & AR_S)
 		return(!strncmp(chdr.name, rname(dest), OLDARMAXNAME));
 	return(!strcmp(chdr.name, rname(dest)));
 }
 
+void
 badfmt()
 {
 	errno = EFTYPE;
 	error(archive);
 }
 
+void
 error(name)
 	char *name;
 {
