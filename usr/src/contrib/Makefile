@@ -1,4 +1,4 @@
-#	Makefile	4.18	86/04/25
+#	Makefile	4.19	86/05/25
 #
 DESTDIR=
 CFLAGS=	-O
@@ -7,6 +7,10 @@ CFLAGS=	-O
 #
 SUBDIR=	ansi apl bib courier cpm dsh help hyper icon jove kermit mh \
 	mkmf np100 patch rcs spms sunrpc tac tools
+#
+# Default programs that are installed
+#
+STDINST=bib jove mh patch rcs
 #
 # Special purpose software that requires custom installation,
 # or may not be needed by all sites
@@ -22,6 +26,10 @@ ${OPTDIR}: FRC
 	cd $@; make ${MFLAGS} all
 
 install:
+	-for i in ${STDINST}; do \
+		(cd $$i; make ${MFLAGS} DESTDIR=${DESTDIR} install); done
+
+installall:
 	-for i in ${SUBDIR}; do \
 		(cd $$i; make ${MFLAGS} DESTDIR=${DESTDIR} install); done
 
