@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)subr_mcount.c	7.10 (Berkeley) 5/7/91
- *	$Id: subr_mcount.c,v 1.3 1993/10/16 15:24:41 rgrimes Exp $
+ *	$Id: subr_mcount.c,v 1.4 1993/12/12 12:23:20 davidg Exp $
  */
 
 #ifdef GPROF
@@ -55,6 +55,7 @@ int	ssiz;
 u_short	*sbuf;
 u_short	*kcount;
 
+void
 kmstartup()
 {
 	u_long fromssize, tossize;
@@ -107,6 +108,7 @@ kmstartup()
 	kcount = (u_short *)(((int)sbuf) + sizeof (struct phdr));
 }
 
+void
 mcount()
 {
 	register char *selfpc;			/* r11 => r5 */
