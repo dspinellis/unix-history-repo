@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)pstat.c	4.25 (Berkeley) %G%";
+static char *sccsid = "@(#)pstat.c	4.26 (Berkeley) %G%";
 #endif
 /*
  * Print system stuff
@@ -496,6 +496,7 @@ dousr()
 {
 	struct user U;
 	register i, j, *ip;
+	register struct nameidata *nd = &U.u_nd;
 
 	/* This wins only if PAGSIZ > sizeof (struct user) */
 	lseek(fc, ubase * NBPG, 0);
@@ -524,17 +525,17 @@ dousr()
 	}
 	if (i%5)
 		printf("\n");
-	printf("segflg\t%d\nerror %d\n", U.u_segflg, U.u_error);
+	printf("segflg\t%d\nerror %d\n", nd->ni_segflg, U.u_error);
 	printf("uids\t%d,%d,%d,%d\n", U.u_uid,U.u_gid,U.u_ruid,U.u_rgid);
 	printf("procp\t%.1x\n", U.u_procp);
 	printf("ap\t%.1x\n", U.u_ap);
 	printf("r_val?\t%.1x %.1x\n", U.u_r.r_val1, U.u_r.r_val2);
-	printf("base, count, offset %.1x %.1x %ld\n", U.u_base,
-		U.u_count, U.u_offset);
+	printf("base, count, offset %.1x %.1x %ld\n", nd->ni_base,
+		nd->ni_count, nd->ni_offset);
 	printf("cdir rdir %.1x %.1x\n", U.u_cdir, U.u_rdir);
-	printf("dirp %.1x\n", U.u_dirp);
-	printf("dent %d %.14s\n", U.u_dent.d_ino, U.u_dent.d_name);
-	printf("pdir %.1o\n", U.u_pdir);
+	printf("dirp %.1x\n", nd->ni_dirp);
+	printf("dent %d %.14s\n", nd->ni_dent.d_ino, nd->ni_dent.d_name);
+	printf("pdir %.1o\n", nd->ni_pdir);
 	printf("file\t");
 	for (i=0; i<10; i++)
 		printf("%9.1x", U.u_ofile[i]);
@@ -570,11 +571,6 @@ dousr()
 	printf("\neosys\t%d\n", U.u_eosys);
 	printf("ttyp\t%.1x\n", U.u_ttyp);
 	printf("ttyd\t%d,%d\n", major(U.u_ttyd), minor(U.u_ttyd));
-	printf("exdata\t");
-	ip = (int *)&U.u_exdata;
-	for (i = 0; i < 8; i++)
-		printf("%.1D ", *ip++);
-	printf("\n");
 	printf("comm %.14s\n", U.u_comm);
 	printf("start\t%D\n", U.u_start);
 	printf("acflag\t%D\n", U.u_acflag);
