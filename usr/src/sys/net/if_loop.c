@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_loop.c	7.18 (Berkeley) %G%
+ *	@(#)if_loop.c	7.19 (Berkeley) %G%
  */
 
 /*
@@ -57,11 +57,7 @@ loattach()
 
 	ifp->if_name = "lo";
 	ifp->if_mtu = LOMTU;
-#ifdef MULTICAST
 	ifp->if_flags = IFF_LOOPBACK | IFF_MULTICAST;
-#else
-	ifp->if_flags = IFF_LOOPBACK;
-#endif
 	ifp->if_ioctl = loioctl;
 	ifp->if_output = looutput;
 	ifp->if_type = IFT_LOOP;
@@ -175,9 +171,7 @@ loioctl(ifp, cmd, data)
 	caddr_t data;
 {
 	register struct ifaddr *ifa;
-#ifdef MULTICAST
 	register struct ifreq *ifr;
-#endif
 	register int error = 0;
 
 	switch (cmd) {
@@ -192,7 +186,6 @@ loioctl(ifp, cmd, data)
 		 */
 		break;
 
-#ifdef MULTICAST
 	case SIOCADDMULTI:
 	case SIOCDELMULTI:
 		ifr = (struct ifreq *)data;
@@ -212,7 +205,6 @@ loioctl(ifp, cmd, data)
 			break;
 		}
 		break;
-#endif
 
 	default:
 		error = EINVAL;
