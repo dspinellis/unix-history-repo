@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)strftime.3	5.7 (Berkeley) %G%
+.\"	@(#)strftime.3	5.8 (Berkeley) %G%
 .\"
 .TH STRFTIME 3 "%Q"
 .AT 3
@@ -161,7 +161,8 @@ is replaced by ``%''.
 .SH "SEE ALSO"
 date(1), ctime(3), printf(1), printf(3)
 .SH BUGS
-The is no conversion specification for the phase of the moon.
+There is no conversion specification for the phase of the moon.
 .SH STANDARDS
 .B Strftime
 conforms to ANSI X3.159-1989 (``ANSI C'').
+The ``%s'' conversion specification is an extension.
