@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)fly.c	1.1 %G%";
+static char sccsid[] = "@(#)fly.c	1.2 %G%";
 #endif
 
 #include "externs.h"
@@ -19,8 +19,16 @@ int (*oldsig)();
 
 succumb()
 {
-	endfly();
-	die();
+	switch (oldsig) {
+	case SIG_DFL:
+		endfly();
+		exit(1);
+	case SIG_IGN:
+		break;
+	default:
+		endfly();
+		(*oldsig)();
+	}
 }
 
 visual()

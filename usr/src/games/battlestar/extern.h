@@ -1,4 +1,4 @@
-/* @(#)extern.h	1.1 %G% */
+/* @(#)extern.h	1.2 %G% */
 
 #include <sys/signal.h>
 #include <stdio.h>
@@ -147,6 +147,7 @@
 #define SCORE	1049
 #define BURY	1050 
 #define JUMP	1051
+#define KICK	1052
 
 	/* injuries */
 #define ARM	6		/* broken arm */
@@ -176,7 +177,7 @@
 #define CYCLE		100
 
 	/* initial variable values */
-#define TANKFULL	50
+#define TANKFULL	250
 #define TORPEDOES	10
 #define MAXWEIGHT	60
 #define MAXCUMBER	10

@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)save.c	1.1 %G%";
+static char sccsid[] = "@(#)save.c	1.2 %G%";
 #endif
 
 #include "externs.h"
@@ -74,12 +74,12 @@ save()
 		return;
 	}
 	printf("Saved in %s.\n", home1);
-	fread(&WEIGHT, sizeof WEIGHT, 1, fp);
-	fread(&CUMBER, sizeof CUMBER, 1, fp);
-	fread(&clock, sizeof clock, 1, fp);
+	fwrite(&WEIGHT, sizeof WEIGHT, 1, fp);
+	fwrite(&CUMBER, sizeof CUMBER, 1, fp);
+	fwrite(&clock, sizeof clock, 1, fp);
 	for (n = 1; n <= NUMOFROOMS; n++) {
-		fread(location[n].link, sizeof location[n].link, 1, fp);
-		fread(location[n].objects, sizeof location[n].objects, 1, fp);
+		fwrite(location[n].link, sizeof location[n].link, 1, fp);
+		fwrite(location[n].objects, sizeof location[n].objects, 1, fp);
 	}
 	fwrite(inven, sizeof inven, 1, fp);
 	fwrite(wear, sizeof wear, 1, fp);

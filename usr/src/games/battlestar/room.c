@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)room.c	1.1 %G%";
+static char sccsid[] = "@(#)room.c	1.2 %G%";
 #endif
 
 #include "externs.h"
@@ -11,7 +11,7 @@ writedes()
 	register c;
 
 	printf("\n\t%s\n", location[position].name);
-	if (beenthere[position]++ < 3) {
+	if (beenthere[position] < 3) {
 		compass = NORTH;
 		for (p = location[position].desc; c = *p++;)
 			if (c != '-' && c != '*' && c != '+')
@@ -26,13 +26,13 @@ writedes()
 
 printobjs()
 {
+	register unsigned int *p = location[position].objects;
 	register n;
 
 	printf("\n");
-	for (n = 0; n < NUMOFOBJECTS; n++) {
-		if (testbit(location[position].objects, n) && objdes[n])
-			printf("%s\n", objdes[n]);
-	}
+	for (n = 0; n < NUMOFOBJECTS; n++)
+		if (testbit(p, n) && objdes[n])
+			puts(objdes[n]);
 }
 
 whichway(here)

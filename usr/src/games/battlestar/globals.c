@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)globals.c	1.1 %G%";
+static char sccsid[] = "@(#)globals.c	1.2 %G%";
 #endif
 
 #include "externs.h"
@@ -56,8 +56,8 @@ char *objdes[NUMOFOBJECTS] = {
        "There is a colorful pink potion in a small crystal vial here.",
        "A gold bracelet is on the ground here.",
        "A swarthy woman with stern features pulls you aside from the crowd,\n'I must talk to you -- but not here.  Meet me at midnight in the gardens.'",
-       "The swarthy woman has been awiating you anxiousy. 'I must warn you that the\nIsland has anticipated your Quest.  You will not be welcomed. The Darkness is\nstrong where you must search.  Seek not the shadows save only at night, for\nthen are they the weakest.  In the mountains far from here a canyon winds\nwith ferns and streams and forgotten vines.  There you will go and take this\nrope.'",
-       "Out from the shadows a figure leaps!  His black cape swirls around and he\nholds a laser sword at your chest.  'So, you have come to fulfill the Quest.\nHa! Your weapons are no match for me!'",
+       "The swarthy woman has been awaiting you anxiousy. 'I must warn you that the\nIsland has anticipated your Quest.  You will not be welcomed. The Darkness is\nstrong where you must search.  Seek not the shadows save only at night, for\nthen are they the weakest.  In the mountains far from here a canyon winds\nwith ferns and streams and forgotten vines.  There you must go. Take this\nrope.'",
+       "Out from the shadows a figure leaps!  His black cape swirls around, and he\nholds a laser sword at your chest.  'So, you have come to fulfill the Quest.\nHa! Your weapons are no match for me!'",
        "An old timer with one eye missing and no money for a drink sits at the bar.",
        "You are flying through an asteroid field!",
        "A planet is nearby.",
@@ -182,3 +182,5 @@ int objcumber[NUMOFOBJECTS] = {
 
 int win = 1;
 int matchcount = 20;
+int followgod = -1;
+int followfight = -1;

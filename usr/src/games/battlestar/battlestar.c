@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)battlestar.c	1.1 %G%";
+static char sccsid[] = "@(#)battlestar.c	1.2 %G%";
 #endif
 
 #include "externs.h"
@@ -14,8 +14,7 @@ char **argv;
 	initialize(argc < 2 || strcmp(argv[1], "-r"));
 start:
 	news();
-	if (!beenthere[position])
-		beenthere[position] = 1;
+	beenthere[position]++;
 	if (notes[LAUNCHED])
 		crash();		/* decrements fuel & crash */
 	if (matchlight) {

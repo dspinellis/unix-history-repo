@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)cypher.c	1.1 %G%";
+static char sccsid[] = "@(#)cypher.c	1.2 %G%";
 #endif
 
 #include "externs.h"
@@ -103,32 +103,28 @@ cypher()
 				break;
 
 
+			 case KICK:
 			 case THROW:
-
-
 				if (wordnumber < wordcount && wordvalue[wordnumber+1] == EVERYTHING){
 					for (n=0; n < NUMOFOBJECTS; n++)
-						if (testbit(inven,n)){
+						if (testbit(inven,n) ||
+						  testbit(location[position].objects, n) && *objsht[n]){
 							wordvalue[wordnumber+1] = n;
-							wordnumber = throw();
+							wordnumber = throw(wordvalue[wordnumber] == KICK ? "Kicked" : "Thrown");
 						}
-				wordnumber++;
-				wordnumber++;
-				}
-				else 
-					throw();
+					wordnumber += 2;
+				} else 
+					throw(wordvalue[wordnumber] == KICK ? "Kicked" : "Thrown");
 				break;
 
 			 case TAKEOFF:
-
 				if (wordnumber < wordcount && wordvalue[wordnumber+1] == EVERYTHING){
 					for (n=0; n < NUMOFOBJECTS; n++)
 						if (testbit(wear,n)){
 							wordvalue[wordnumber+1] = n;
 							wordnumber = takeoff();
 						}
-				wordnumber++;
-				wordnumber++;
+					wordnumber += 2;
 				}
 				else 
 					takeoff();
@@ -143,8 +139,7 @@ cypher()
 							wordvalue[wordnumber+1] = n;
 							wordnumber = draw();
 						}
-				wordnumber++;
-				wordnumber++;
+					wordnumber += 2;
 				}
 				else 
 					draw();
@@ -159,8 +154,7 @@ cypher()
 							wordvalue[wordnumber+1] = n;
 							wordnumber = puton();
 						}
-				wordnumber++;
-				wordnumber++;
+					wordnumber += 2;
 				}
 				else 
 					puton();
@@ -174,8 +168,7 @@ cypher()
 							wordvalue[wordnumber+1] = n;
 							wordnumber = wearit();
 						}
-				wordnumber++;
-				wordnumber++;
+					wordnumber += 2;
 				}
 				else 
 					wearit();
@@ -190,8 +183,7 @@ cypher()
 							wordvalue[wordnumber+1] = n;
 							wordnumber = eat();
 						}
-				wordnumber++;
-				wordnumber++;
+					wordnumber += 2;
 				}
 				else 
 					eat();

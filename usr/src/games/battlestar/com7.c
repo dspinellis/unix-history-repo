@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)com7.c	1.1 %G%";
+static char sccsid[] = "@(#)com7.c	1.2 %G%";
 #endif
 
 #include "externs.h"
@@ -20,11 +20,11 @@ fighton:
 	if (snooze > time)
 		exhaustion = CYCLE/(snooze - time);
 	else {
-		puts("You collapse exhausted and he pulverizes your skull.");
+		puts("You collapse exhausted, and he pulverizes your skull.");
 		die();
 	}
 	if (snooze - time < 20)
-		puts("You look tired, I hope you're able to fight.");
+		puts("You look tired! I hope you're able to fight.");
 	next = getcom(auxbuf, LINELENGTH, "<fight!>-: ", 0);
 	for (i=0; next && i < 10; i++)
 		next = getword(next, words[i], -1);
@@ -91,7 +91,7 @@ fighton:
 						puts("The steel bites home and scrapes along his ribs.");
 						break;
 					case 2:
-						puts("You pierce him and his breath hisses through clenched teeth.");
+						puts("You pierce him, and his breath hisses through clenched teeth.");
 						break;
 				}
 				lifeline += 10;

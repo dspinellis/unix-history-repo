@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)com1.c	1.1 %G%";
+static char sccsid[] = "@(#)com1.c	1.2 %G%";
 #endif
 
 #include "externs.h"
@@ -21,9 +21,9 @@ int thataway, token;
 			return(0);
 		}
 	else if (notes[CANTMOVE] && !notes[LAUNCHED])
-		puts("You aren't able to move, you better drop something.");
+		puts("You aren't able to move; you better drop something.");
 	else
-		puts("You are out of fuel, now we will rot in space forever!");
+		puts("You are out of fuel; now you will rot in space forever!");
 	return(1);
 }
 
@@ -31,15 +31,22 @@ convert(tothis)		/* Converts day to night and vice versa. 	    */
 int tothis;		/* Day objects are permanent.  Night objects are added*/
 {			/* at dusk, and subtracted at dawn.		*/
 	register struct objs *p;
+	register i, j;
 
-	if (tothis == TONIGHT){
+	if (tothis == TONIGHT) {
+		for (i = 1; i <= NUMOFROOMS; i++)
+			for (j = 0; j < NUMOFWORDS; j++)
+				nightfile[i].objects[j] = dayfile[i].objects[j];
+		for (p = nightobjs; p->room != 0; p++)
+			setbit(nightfile[p->room].objects, p->obj);
 		location = nightfile;
-		for (p = nightobjs; p->room != 0; p++)
-			setbit(location[p->room].objects, p->obj);
 	} else {
-		location = dayfile;
+		for (i = 1; i <= NUMOFROOMS; i++)
+			for (j = 0; j < NUMOFWORDS; j++)
+				dayfile[i].objects[j] = nightfile[i].objects[j];
 		for (p = nightobjs; p->room != 0; p++)
-			clearbit(location[p->room].objects, p->obj);
+			clearbit(dayfile[p->room].objects, p->obj);
+		location = dayfile;
 	}
 }
 
@@ -51,7 +58,7 @@ news()
 	if (time > 30 && position < 32){
 		puts("An explosion of shuddering magnitude splinters bulkheads and");
 		puts("ruptures the battlestar's hull.  You are sucked out into the");
-		puts("frozen void of space and killed...");
+		puts("frozen void of space and killed.");
 		die();
 	}
 	if (time > 20 && position < 32)
@@ -61,31 +68,31 @@ news()
 		zzz();
 	}
 	if (time > snooze - 5)
-		puts("I'm getting tired.");
-	if (time > (rythmn + CYCLE) && location == nightfile){
-		convert(TODAY);
-		if (OUTSIDE && time - rythmn - CYCLE < 10){
-			puts("Dew lit sunbeams stretch out from a watery sunrise and herald the dawn.");
-			puts("You awake from a misty dream-world into stark reality");
-			puts("It is day.");
+		puts("You're getting tired.");
+	if (time > (rythmn + CYCLE)) {
+		if (location == nightfile) {
+			convert(TODAY);
+			if (OUTSIDE && time - rythmn - CYCLE < 10) {
+				puts("Dew lit sunbeams stretch out from a watery sunrise and herald the dawn.");
+				puts("You awake from a misty dream-world into stark reality.");
+				puts("It is day.");
+			}
+		} else {
+			convert(TONIGHT);
+			clearbit(location[POOLS].objects, BATHGOD);
+			if (OUTSIDE && time - rythmn - CYCLE < 10) {
+				puts("The dying sun sinks into the ocean, leaving a blood stained sunset.");
+				puts("The sky slowly fades from orange to violet to black.  A few stars");
+				puts("flicker on, and it is night.");
+				puts("The world seems completly different at night.");
+			}
 		}
-		rythmn = time;
-	}
-	else if (time > (rythmn + CYCLE)){
-		convert(TONIGHT);
-		clearbit(location[POOLS].objects,BATHGOD);
-		if (OUTSIDE && time - rythmn - CYCLE < 10){
-			puts("The dying sun sinks into the ocean, leaving a blood stained sunset.");
-			puts("The sky slowly fades from orange to violet to black.  A few stars");
-			puts("flicker on, and it is night.");
-			puts("The world seems completly different at night.");
-		}
-		rythmn = time;
+		rythmn = time - time % CYCLE;
 	}
 	if (!wiz && !tempwiz)
 		if ((testbit(inven,TALISMAN) || testbit(wear,TALISMAN)) && (testbit(inven,MEDALION) || testbit(wear,MEDALION)) && (testbit(inven,AMULET) || testbit(wear,AMULET))){
 			tempwiz = 1;
-			puts("The three amulets glow and reenforce each other in power.  You are now a wizard.");
+			puts("The three amulets glow and reenforce each other in power.\nYou are now a wizard.");
 	}
 	if (testbit(location[position].objects,ELF)){
 		printf("%s\n",objdes[ELF]);
@@ -136,10 +143,11 @@ news()
 		puts("Oh my God, you're being shot at by an alien spacecraft!");
 		printf("The targeting computer says we have %d seconds to attack!\n",clock);
 		fflush(stdout);
+		sleep(1);
 		if (!visual()){
 			hurt = rnd(NUMOFINJURIES);
 			injuries[hurt] = 1;
-			puts("Laser blasts sear the cockpit, but then he veers off.");
+			puts("Laser blasts sear the cockpit, and the alien veers off in a victory roll.");
 			puts("The viper shudders under a terrible explosion.");
 			printf("I'm afraid you have suffered %s.\n", ouch[hurt]);
 		}
@@ -187,7 +195,7 @@ crash()
 		else{ 
 			puts("You're out of fuel.  We'll have to crash land!");
 			if (!location[position].down){
-				puts("You're viper strikes the ground and explodes into firey fragments.");
+				puts("Your viper strikes the ground and explodes into firey fragments.");
 				puts("Thick black smoke billows up from the wreckage.");
 				die();
 			}
