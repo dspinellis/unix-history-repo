@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)lab.c 1.10 %G%";
+static char sccsid[] = "@(#)lab.c 1.11 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -136,7 +136,12 @@ gotoop(s)
 		putdot( filename , line );
 	    }
 	    extlabname( extname , p -> symbol , bn );
-	    putprintf( "	jbr	%s" , 0 , extname );
+		/*
+		 *	this is a jmp because it's a jump to a global
+		 *	and the assembler doesn't change jbr's into jmp's
+		 *	if the destination is a global symbol.
+		 */
+	    putprintf( "	jmp	%s" , 0 , extname );
 #	endif PC
 	if (bn == cbn)
 		if (p->nl_flags & NFORWD) {
