@@ -1,4 +1,4 @@
-/*	sgtty.h	4.1	83/05/03	*/
+/*	sgtty.h	4.2	84/12/31	*/
 
 /*
  * Structure for stty and gtty system calls.
