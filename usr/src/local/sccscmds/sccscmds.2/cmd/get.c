@@ -2,7 +2,7 @@
 # include	"../hdr/had.h"
 # include	<sys/dir.h>
 
-SCCSID(@(#)get.c	4.5);
+SCCSID(@(#)get.c	4.6);
 USXALLOC();
 
 int	Debug	0;
@@ -15,6 +15,7 @@ char	*ilist, *elist, *lfile;
 long	cutoff	0X7FFFFFFFL;	/* max positive long */
 int verbosity;
 char	Gfile[MAXNAMLEN + 3];
+char	Mod[MAXNAMLEN + 3];		/* should be as large as Gfile? */
 char	*Type;
 int	Did_id;
 
@@ -199,8 +200,15 @@ get(file)
 			else
 				gpkt.p_gout = xfcreat(Gfile,HADK ? 0666 : 0444);
 		}
-		prfx(&gpkt);
-		p = idsubst(&gpkt,gpkt.p_line);
+		if (HADN)
+			fprintf(gpkt.p_gout,"%s\t",Mod);
+		if (HADM) {
+			sid_ba(&gpkt.p_inssid,str);
+			fprintf(gpkt.p_gout,"%s\t",str);
+		}
+		p = gpkt.p_line;
+		if (!HADK && any('%',p))
+			p = idsubst(&gpkt,p);
 		fputs(p,gpkt.p_gout);
 	}
 	fflush(gpkt.p_gout);
@@ -386,7 +394,6 @@ char	Chgdate[18];
 char	*Chgtime;
 char	Gchgdate[9];
 char	Sid[32];
-char	Mod[MAXNAMLEN + 3];		/* should be as large as Gfile? */
 char	Olddir[BUFSIZ];
 char	Pname[BUFSIZ];
 char	Dir[BUFSIZ];
@@ -456,9 +463,6 @@ char line[];
 	register char *lp, *tp;
 	extern char *Type;
 	extern char *Sflags[];
-
-	if (HADK || !any('%',line))
-		return(line);
 
 	tp = tline;
 	for(lp=line; *lp != 0; lp++) {
@@ -559,20 +563,6 @@ register char *tp, *str;
 	while(*tp++ = *str++)
 		;
 	return(tp-1);
-}
-
-
-prfx(pkt)
-register struct packet *pkt;
-{
-	char str[32];
-
-	if (HADN)
-		fprintf(pkt->p_gout,"%s\t",Mod);
-	if (HADM) {
-		sid_ba(&pkt->p_inssid,str);
-		fprintf(pkt->p_gout,"%s\t",str);
-	}
 }
 
 
