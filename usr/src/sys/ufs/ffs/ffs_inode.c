@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_inode.c	7.61 (Berkeley) %G%
+ *	@(#)ffs_inode.c	7.62 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -16,6 +16,8 @@
 #include <sys/vnode.h>
 #include <sys/kernel.h>
 #include <sys/malloc.h>
+#include <sys/trace.h>
+#include <sys/resourcevar.h>
 
 #include <vm/vm.h>
 
@@ -27,7 +29,8 @@
 #include <ufs/ffs/fs.h>
 #include <ufs/ffs/ffs_extern.h>
 
-static int ffs_indirtrunc __P((struct inode *, daddr_t, daddr_t, int, long *));
+static int ffs_indirtrunc __P((struct inode *, daddr_t, daddr_t, daddr_t, int,
+	    long *));
 
 int
 ffs_init()
@@ -221,8 +224,8 @@ ffs_truncate(ap)
 	for (level = TRIPLE; level >= SINGLE; level--) {
 		bn = ip->i_ib[level];
 		if (bn != 0) {
-			error = ffs_indirtrunc(ip,
-			    indir_lbn[level], lastiblock[level], level, &count);
+			error = ffs_indirtrunc(ip, indir_lbn[level],
+			    fsbtodb(fs, bn), lastiblock[level], level, &count);
 			if (error)
 				allerror = error;
 			blocksreleased += count;
@@ -312,9 +315,10 @@ done:
  * NB: triple indirect blocks are untested.
  */
 static int
-ffs_indirtrunc(ip, lbn, lastbn, level, countp)
+ffs_indirtrunc(ip, lbn, dbn, lastbn, level, countp)
 	register struct inode *ip;
 	daddr_t lbn, lastbn;
+	daddr_t dbn;
 	int level;
 	long *countp;
 {
@@ -322,10 +326,11 @@ ffs_indirtrunc(ip, lbn, lastbn, level, countp)
 	struct buf *bp;
 	register struct fs *fs = ip->i_fs;
 	register daddr_t *bap;
+	struct vnode *vp;
 	daddr_t *copy, nb, nlbn, last;
 	long blkcount, factor;
 	int nblocks, blocksreleased = 0;
-	int error, allerror = 0;
+	int error = 0, allerror = 0;
 
 	/*
 	 * Calculate index in current block of last
@@ -340,20 +345,38 @@ ffs_indirtrunc(ip, lbn, lastbn, level, countp)
 		last /= factor;
 	nblocks = btodb(fs->fs_bsize);
 	/*
-	 * Get buffer of block pointers, zero those 
-	 * entries corresponding to blocks to be free'd,
-	 * and update on disk copy first.
+	 * Get buffer of block pointers, zero those entries corresponding
+	 * to blocks to be free'd, and update on disk copy first.  Since
+	 * double(triple) indirect before single(double) indirect, calls
+	 * to bmap on these blocks will fail.  However, we already have
+	 * the on disk address, so we have to set the b_blkno field
+	 * explicitly instead of letting bread do everything for us.
 	 */
 #ifdef SECSIZE
 	bp = bread(ip->i_dev, fsbtodb(fs, bn), (int)fs->fs_bsize,
 	    fs->fs_dbsize);
 #else SECSIZE
-	error = bread(ITOV(ip), lbn, (int)fs->fs_bsize, NOCRED, &bp);
+	vp = ITOV(ip);
+	bp = getblk(vp, lbn, (int)fs->fs_bsize);
+	if (bp->b_flags & (B_DONE | B_DELWRI)) {
+		/* Braces must be here in case trace evaluates to nothing. */
+		trace(TR_BREADHIT, pack(vp, fs->fs_bsize), lbn);
+	} else {
+		trace(TR_BREADMISS, pack(vp, fs->fs_bsize), lbn);
+		curproc->p_stats->p_ru.ru_inblock++;	/* pay for read */
+		bp->b_flags |= B_READ;
+		if (bp->b_bcount > bp->b_bufsize)
+			panic("ffs_indirtrunc: bad buffer size");
+		bp->b_blkno = dbn;
+		VOP_STRATEGY(bp);
+		error = biowait(bp);
+	}
 	if (error) {
 		brelse(bp);
 		*countp = 0;
 		return (error);
 	}
+
 	bap = bp->b_un.b_daddr;
 	MALLOC(copy, daddr_t *, fs->fs_bsize, M_TEMP, M_WAITOK);
 	bcopy((caddr_t)bap, (caddr_t)copy, (u_int)fs->fs_bsize);
@@ -370,13 +393,13 @@ ffs_indirtrunc(ip, lbn, lastbn, level, countp)
 	 * Recursively free totally unused blocks.
 	 */
 	for (i = NINDIR(fs) - 1, nlbn = lbn + 1 - i * factor; i > last;
-	    i--, nlbn -= factor) {
+	    i--, nlbn += factor) {
 		nb = bap[i];
 		if (nb == 0)
 			continue;
 		if (level > SINGLE) {
-			if (error = ffs_indirtrunc(ip,
-			    nlbn, (daddr_t)-1, level - 1, &blkcount))
+			if (error = ffs_indirtrunc(ip, nlbn,
+			    fsbtodb(fs, nb), (daddr_t)-1, level - 1, &blkcount))
 				allerror = error;
 			blocksreleased += blkcount;
 		}
@@ -391,9 +414,8 @@ ffs_indirtrunc(ip, lbn, lastbn, level, countp)
 		last = lastbn % factor;
 		nb = bap[i];
 		if (nb != 0) {
-			if (error =
-			    ffs_indirtrunc(ip, nlbn, last, level - 1,
-			        &blkcount))
+			if (error = ffs_indirtrunc(ip, nlbn, fsbtodb(fs, nb),
+			    last, level - 1, &blkcount))
 				allerror = error;
 			blocksreleased += blkcount;
 		}
