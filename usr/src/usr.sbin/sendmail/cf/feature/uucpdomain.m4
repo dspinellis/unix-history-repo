@@ -8,7 +8,7 @@ divert(-1)
 #
 
 divert(0)
-VERSIONID(`@(#)uucpdomain.m4	8.5 (Berkeley) %G%')
+VERSIONID(`@(#)uucpdomain.m4	8.6 (Berkeley) %G%')
 divert(-1)
 
 
@@ -19,5 +19,5 @@ POPDIVERT
 
 PUSHDIVERT(2)
 # handle UUCP mapping
-R$* < @ $+ .UUCP. > $*		$: $1 < @ $(uudomain $2 $: $2.UUCP. $) > $3
+R$* < @ $+ .UUCP > $*		$: $1 < @ $(uudomain $2 $: $2.UUCP $) > $3
 POPDIVERT
