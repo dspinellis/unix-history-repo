@@ -1,4 +1,4 @@
-/*	mkubglue.c	1.9	83/06/16	*/
+/*	mkubglue.c	1.10	83/07/09	*/
 
 /*
  * Make the uba interrupt file ubglue.s
@@ -61,7 +61,8 @@ dump_vec(fp, vector, number)
 			fprintf(fp, "#endif\n");
 		}
 		fprintf(fp, "\tpushl\t$%d\n", number);
-		fprintf(fp, "\tcalls\t$1,_%s\n\tpopr\t$0x3f\n\trei\n\n",
-		    vector);
+		fprintf(fp, "\tcalls\t$1,_%s\n\tpopr\t$0x3f\n", vector);
+		fprintf(fp, "#if defined(VAX750) || defined(VAX730)\n");
+		fprintf(fp, "\tincl\t_cnt+V_INTR\n#endif\n\trei\n\n");
 	}
 }
