@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)3.t	6.26 (Berkeley) %G%
+.\"	@(#)3.t	6.27 (Berkeley) %G%
 .\"
 .ds lq ``
 .ds rq ''
@@ -22,28 +22,28 @@ files are different, and the executable file formats are completely
 incompatible.
 .PP
 In particular be wary when using this information to upgrade
-a 4.3\*(Bs HP300 system.
-There are at least 4 different versions of ``4.3'' out there:
+a \*(Ps HP300 system.
+There are at least 4 different versions of ``\*(Ps'' out there:
 .IP 1)
 HPBSD 1.x from Utah.
 .br
-This was the original version of 4.3\*(Bs for HP300s from which the
-other variants (and 4.4) are derived.
-It is largely a 4.3 system with Sun's NFS 3.0 filesystem code and
-some 4.3-Tahoe features (e.g. networking code).
+This was the original version of \*(Ps for HP300s from which the
+other variants (and \*(4B) are derived.
+It is largely a \*(Ps system with Sun's NFS 3.0 filesystem code and
+some \*(Ps-Tahoe features (e.g. networking code).
 Since the filesystem code is 4.2/4.3 vintage and the filesystem
-hierarchy is largely 4.3, most of this section should apply.
+hierarchy is largely \*(Ps, most of this section should apply.
 .IP 2)
 MORE/bsd from Mt. Xinu.
 .br
-This is a 4.3-Tahoe vintage system with Sun's NFS 4.0 filesystem code
+This is a \*(Ps-Tahoe vintage system with Sun's NFS 4.0 filesystem code
 upgraded with Tahoe UFS features.
-The instructions for 4.3-Tahoe should largely apply.
+The instructions for \*(Ps-Tahoe should largely apply.
 .IP 3)
-4.3-Reno from CSRG.
+\*(Ps-Reno from CSRG.
 .br
 At least one site bootstrapped HP300 support from the Reno distribution.
-The Reno filesystem code was somewhere between 4.3 and 4.4: the VFS switch
+The Reno filesystem code was somewhere between \*(Ps and \*(4B: the VFS switch
 had been added but many of the UFS features (e.g. ``inline'' symlinks)
 were missing.
 The filesystem hierarchy reorganization first appeared in this release.
@@ -53,8 +53,8 @@ upgrading from the Reno distribution.
 HPBSD 2.0 from Utah.
 .br
 As if things weren't bad enough already,
-this release has the 4.4 filesystem and networking code
-as well as some utilities, but still has a 4.3 hierarchy.
+this release has the \*(4B filesystem and networking code
+as well as some utilities, but still has a \*(Ps hierarchy.
 No filesystem conversions are necessary for this upgrade,
 but files will still need to be moved around.
 .NH 2
@@ -576,7 +576,7 @@ whose locations and/or contents have changed.
 .TS
 l l l
 lfC lfC l.
-4.3BSD and Earlier	\*(4B	Comments
+\*(Ps and Earlier	\*(4B	Comments
 _	_	_
 /etc/fstab	/etc/fstab	new format; see below
 /etc/inetd.conf	/etc/inetd.conf	pathnames of executables changed
@@ -591,7 +591,7 @@ _	_	_
 .T&
 l l l
 lfC lfC l.
-New in 4.3BSD-Tahoe	\*(4B	Comments
+New in \*(Ps-Tahoe	\*(4B	Comments
 _	_	_
 /usr/games/dm.config	/etc/dm.conf	configuration for games (see \fIdm\fP\|(8))
 /etc/zoneinfo/localtime	/etc/localtime	timezone configuration
@@ -1204,7 +1204,7 @@ address structures).
 .NH 4
 Additions and changes to filesystems
 .PP
-The 4.4BSD distribution contains most of the interfaces
+The \*(4B distribution contains most of the interfaces
 specified in the IEEE Std1003.1 system interface standard.
 Filesystem additions include IEEE Std1003.1 FIFOs,
 byte-range file locking, and saved user and group identifiers.
@@ -1636,10 +1636,10 @@ a new, fast implementation of stdio and a radix and merge sort functions.
 .PP
 The
 .Xr fts (3)
-functions will perform either physical or logical traversal of
-a file hierarchy as well as handle essentially infinite depth
+functions will do either physical or logical traversal of
+a file hierarchy as well as handle almost infinite depth
 file systems and file systems with directory loops.
-All of the utilities in \*(4B which traverse file hierarchies
+All the utilities in \*(4B which traverse file hierarchies
 have been converted to use
 .Xr fts (3).
 The conversion has always resulted in a significant performance
@@ -1676,10 +1676,10 @@ in which case it usually significantly outperforms
 The
 .Xr radixsort (3)
 functions are variants of most-significant-byte radix sorting.
-They take linear time relative to the number of bytes to be
+They take time linear to the number of bytes to be
 sorted, usually significantly outperforming
 .Xr qsort
-on data which can be sorted in this fashion.
+on data that can be sorted in this fashion.
 An implementation of the POSIX 1003.2 standard
 .Xr sort 1 ,
 based on
@@ -1687,7 +1687,7 @@ based on
 is included in
 .Pn /usr/src/contrib/sort .
 .PP
-Some additional comments concerning the \*(4B C library:
+Some additional comments about the \*(4B C library:
 .IP \(bu
 The floating point support in the C library has been replaced
 and is now accurate.
@@ -1709,8 +1709,7 @@ purpose interface named
 .IP \(bu
 The
 .Xr stdio (3)
-routines have been replaced, and, in many cases, are now much
-faster.
+routines have been replaced, and, are usually much faster.
 In addition, the
 .Xr funopen (3)
 interface permits applications to provide their own I/O stream
@@ -1725,7 +1724,7 @@ Important additional features include support for scrolling and
 An application front-end editing library, named libedit, has been
 added to the system.
 .PP
-A superset implementation of the  SunOS kernel memory interface library,
+A superset implementation of the SunOS kernel memory interface library,
 libkvm, has been integrated into the system.
 .PP
 Timezone support
@@ -1787,8 +1786,8 @@ The additions to the utility suite include greatly enhanced versions of
 programs that display system status information, implementations of
 various traditional tools described in the IEEE Std1003.2 standard,
 and many others.
-Also, with only a very few exceptions, all of the utilities from
-4.3BSD which included proprietary source code have been replaced
+Also, with only a few exceptions, all the utilities from
+\*(Ps that included proprietary source code have been replaced
 and their \*(4B counterparts are freely redistributable.
 .PP
 The  new version of
@@ -1838,8 +1837,8 @@ find / \-name name \-print
 .DE
 .PP
 .Xr Find
-itself has two new options which are important to be aware of
-if you plan on using NFS.
+itself has two new options that are important to be aware of
+if you intend to use NFS.
 The ``fstype'' and ``prune'' options can be used together to prevent
 find from crossing NFS mount points.
 See
