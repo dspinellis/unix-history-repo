@@ -104,15 +104,18 @@ resort!
 
 2. CDROM
 
-FreeBSD may be ordered on CD from Walnut Creek CDROM, 4041 Pike Lane,
-Suite E, Concord, Ca. 94520.  1-800-786-9907 or 1-510-674-0783.
+FreeBSD may be ordered on CDROM from Walnut Creek CDROM, Suite 260, 1547
+Palos Verdes, Walnut Creek CA 94596.  1-800-786-9907, +1-510-674-0783,
++1-510-674-0821 (fax), or from orders@cdrom.com.  Our current email catalog
+is wcarchive.cdrom.com:/cdrom/catalog.
 
-Cost is $39.95 + $5 S&H in the U.S. and Canada or $10.00 overseas.
-California residents please add sales tax.
+Cost is $39.95.  Shipping (per order not per disc) is $5 in the US, Canada,
+or Mexico and $10.00 overseas.  We accept Visa, Mastercard, American
+Express, and ship COD to the United States.  California residents please
+add 8.25% sales tax.
 
 Should you be dissatisfied for any reason, the CD comes with an
 unconditional return policy.
-
 
 3. 1/4" Tape, 4mm DAT, floppy
 
@@ -236,4 +239,4 @@ hope you enjoy this release of FreeBSD!
 
 			The FreeBSD Core Group
 
-$Id: RELNOTES.FreeBSD,v 1.4 1993/09/03 07:35:38 rgrimes Exp $
+$Id: RELNOTES.FreeBSD,v 1.5 1993/09/03 20:43:53 jkh Exp $
