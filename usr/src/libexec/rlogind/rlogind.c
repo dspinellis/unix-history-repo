@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rlogind.c	5.24 (Berkeley) %G%";
+static char sccsid[] = "@(#)rlogind.c	5.23 (Berkeley) 1/7/89";
 #endif /* not lint */
 
 /*
@@ -40,6 +40,7 @@ static char sccsid[] = "@(#)rlogind.c	5.24 (Berkeley) %G%";
 #include <sys/socket.h>
 #include <sys/wait.h>
 #include <sys/file.h>
+#include <sys/param.h>
 
 #include <netinet/in.h>
 
@@ -58,7 +59,6 @@ static char sccsid[] = "@(#)rlogind.c	5.24 (Berkeley) %G%";
 #endif
 
 #ifdef	KERBEROS
-#include <sys/param.h>
 #include <kerberos/krb.h>
 #define	SECURE_MESSAGE "This rlogin session is using DES encryption for all transmissions.\r\n"
 
@@ -102,7 +102,7 @@ main(argc, argv)
 	int on = 1, fromlen;
 	struct sockaddr_in from;
 
-	openlog("rlogind", LOG_PID | LOG_AUTH, LOG_AUTH);
+	openlog("rlogind", LOG_PID | LOG_CONS, LOG_AUTH);
 
 	opterr = 0;
 	while ((ch = getopt(argc, argv, ARGSTR)) != EOF)
@@ -138,8 +138,7 @@ main(argc, argv)
 #endif
 	fromlen = sizeof (from);
 	if (getpeername(0, &from, &fromlen) < 0) {
-		fprintf(stderr, "%s: ", argv[0]);
-		perror("getpeername");
+		syslog(LOG_ERR,"Couldn't get peer name of remote host: %m");
 		exit(1);
 	}
 	if (keepalive &&
@@ -162,7 +161,10 @@ doit(f, fromp)
 	int i, p, t, pid, on = 1;
 	int authenticated = 0;
 	register struct hostent *hp;
+	char	remotehost[MAXHOSTNAMELEN];
+	char	localhost[MAXHOSTNAMELEN];
 	struct hostent hostent;
+	char	*raddr;
 	char c;
 
 	alarm(60);
@@ -201,6 +203,33 @@ doit(f, fromp)
 		 */
 		hp = &hostent;
 		hp->h_name = inet_ntoa(fromp->sin_addr);
+	} else {
+		(void) gethostname(localhost, sizeof(localhost));
+		if(same_domain(hp->h_name, localhost)) {
+			bcopy(hp->h_name, remotehost, sizeof(remotehost));
+			hp = gethostbyname(remotehost);
+			authenticated = -10;	/* !authenticated */
+			if(hp == NULL) {
+				syslog(LOG_NOTICE, "Couldn't get entry for remote host %s\n",
+					remotehost);
+			} else {
+			    for(;;) {
+				if(!(raddr = hp->h_addr_list[0]))
+					break;
+
+				if(!bcmp(raddr, (caddr_t) &fromp->sin_addr,
+				    sizeof(struct in_addr))) {
+					authenticated = 0;
+					break;
+				}
+				hp->h_addr_list++;
+    			    }
+			    if(authenticated < 0) {
+				syslog(LOG_NOTICE,"Host address not listed for name %s",
+					remotehost);
+			    }
+			}
+		}
 	}
 
 #ifdef	KERBEROS
@@ -217,9 +246,11 @@ doit(f, fromp)
 #endif
 		if (fromp->sin_family != AF_INET ||
 	    	    fromp->sin_port >= IPPORT_RESERVED ||
-	    	    fromp->sin_port < IPPORT_RESERVED/2)
+	    	    fromp->sin_port < IPPORT_RESERVED/2) {
+			syslog(LOG_NOTICE, "Connection from %s on illegal port",
+				inet_ntoa(fromp->sin_addr));
 			fatal(f, "Permission denied");
-		else {
+		} else {
 			write(f, "", 1);
 
 			if (do_rlogin(hp->h_name) == 0)
@@ -278,7 +309,7 @@ gotpty:
 		close(f), close(p);
 		dup2(t, 0), dup2(t, 1), dup2(t, 2);
 		close(t);
-		if (authenticated)
+		if (authenticated > 0)
 			execl("/bin/login", "login", "-p",
 			    "-h", hp->h_name, "-f", lusername, 0);
 		else
@@ -647,4 +678,15 @@ usage()
 #else
 	syslog(LOG_ERR, "usage: rlogind [-l] [-n]");
 #endif
+}
+
+int
+same_domain(h1, h2)
+	char	*h1, *h2;
+{
+	register char *p1 = index(h1, '.');
+	register char *p2 = index(h2, '.');
+	if(!strcasecmp(p1, p2))
+		return(1);
+	return(0);
 }
