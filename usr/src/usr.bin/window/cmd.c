@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd.c	1.3 83/07/20";
+static	char *sccsid = "@(#)cmd.c	1.4 83/07/22";
 #endif
 
 #include "defs.h"
@@ -16,11 +16,18 @@ docmd()
 
 top:
 	Wunhide(cmdwin->ww_win);
+	if (selwin != 0)
+		Woncursor(selwin->ww_win, 1);
 	while ((c = bgetc()) >= 0) {
 		wwputs("\r\n", cmdwin);
 		switch (c) {
 		case 'r':
 		case 'R':
+		case 'h': case 'j': case 'k': case 'l':
+		case CTRL(u):
+		case CTRL(d):
+		case CTRL(b):
+		case CTRL(f):
 		case CTRL([):
 		case ESCAPE:
 			if (selwin == 0) {
@@ -43,9 +50,13 @@ top:
 			setselwin(w);
 			break;
 		case 'c':
+			doclose(CLOSE_ONE, getwin());
+			break;
 		case 'C':
+			doclose(CLOSE_DEAD, (struct ww *)0);
+			break;
 		case 'Z':
-			doclose(c);
+			doclose(CLOSE_ALL, (struct ww *)0);
 			break;
 		case 'w':
 			dowindow();
@@ -64,6 +75,30 @@ top:
 			break;
 		case 'T':
 			dotime(RUSAGE_CHILDREN);
+			break;
+		case 'h':
+			Wcurleft(selwin->ww_win, 1);
+			break;
+		case 'j':
+			Wcurdown(selwin->ww_win, 1);
+			break;
+		case 'k':
+			Wcurup(selwin->ww_win, 1);
+			break;
+		case 'l':
+			Wcurright(selwin->ww_win, 1);
+			break;
+		case CTRL(d):
+			doscroll(1);
+			break;
+		case CTRL(u):
+			doscroll(-1);
+			break;
+		case CTRL(f):
+			doscroll(2);
+			break;
+		case CTRL(b):
+			doscroll(-2);
 			break;
 		case CTRL(l):
 			ScreenGarbaged = 1;
@@ -98,6 +133,8 @@ top:
 out:
 	if (!quit)
 		wwsetcurwin(selwin);
+	if (selwin != 0)
+		Woncursor(selwin->ww_win, 0);
 	Whide(cmdwin->ww_win);
 }
 
@@ -121,14 +158,16 @@ getwin()
 setselwin(w)
 register struct ww *w;
 {
-	if (selwin)
+	if (selwin) {
 		labelwin(selwin, 0);
-	selwin = w;
-	if (w) {
+		Woncursor(selwin->ww_win, 0);
+	}
+	if (selwin = w) {
 		labelwin(w, WINVERSE);
 		/* bring it to the top just below cmdwin */
 		wwsetcurwin(w);
 		wwsetcurwin(cmdwin);
+		Woncursor(w->ww_win, 1);
 	}
 }
 

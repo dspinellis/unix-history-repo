@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwspawn.c	1.4 83/07/19";
+static	char *sccsid = "@(#)wwspawn.c	1.5 83/07/22";
 #endif
 
 #include "ww.h"
@@ -46,11 +46,11 @@ register struct ww *wp;
 	dup2(wp->ww_tty, 2);
 	for (i = _wwdtablesize - 1; i > 2; i--)
 		close(i);
-	/*
+
 	i = open("/dev/tty");
 	ioctl(i, TIOCNOTTY, 0);
 	close(i);
-	*/
+	open(wp->ww_ttyname, 0);
 
 	for (p = environ, q = env; *p; p++, q++) {
 		if (strncmp(*p, "TERM=", 5) == 0)
@@ -63,6 +63,6 @@ register struct ww *wp;
 	if (termcap == 0)
 		termcap = q++;
 	*q = 0;
-	*termcap = sprintf(buf, TERMCAP, wp->ww_incol, wp->ww_inrow);
+	*termcap = sprintf(buf, TERMCAP, wp->ww_i.ncol, wp->ww_i.nrow);
 	environ = env;
 }

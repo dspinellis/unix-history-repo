@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd1.c	1.3 83/07/20";
+static	char *sccsid = "@(#)cmd1.c	1.4 83/07/22";
 #endif
 
 #include "defs.h"
@@ -106,18 +106,18 @@ register int *row, *col, minrow, mincol;
 			*col = mincol;
 			break;
 		case 'l':
-			if ((*col += count) >= WCols)
-				*col = WCols - 1;
+			if ((*col += count) >= wwncol)
+				*col = wwncol - 1;
 			break;
 		case 'L':
-			*col = WCols - 1;
+			*col = wwncol - 1;
 			break;
 		case 'j':
-			if ((*row += count) >= WRows)
-				*row = WRows - 1;
+			if ((*row += count) >= wwnrow)
+				*row = wwnrow - 1;
 			break;
 		case 'J':
-			*row = WRows - 1;
+			*row = wwnrow - 1;
 			break;
 		case 'k':
 			if ((*row -= count) < minrow)
@@ -148,24 +148,33 @@ int id, nrow, ncol, row, col;
 		return 0;
 	if ((w = wwopen(WW_PTY, id, nrow, ncol, row, col)) == 0)
 		return 0;
-	wwframe(w);
-	labelwin(w, 0);
-	/*
 	reframe();
-	*/
+	if (selwin == 0)
+		setselwin(w);
+	else
+		wwsetcurwin(cmdwin);
 	wwflush();
 	switch (wwfork(w)) {
 	case -1:
-		wwclose(w);
+		doclose(CLOSE_ONE, w);
 		return 0;
 	case 0:
 		execl("/bin/csh", "csh", 0);
 		perror("exec(csh)");
 		exit(1);
 	}
-	if (selwin == 0)
-		setselwin(w);
-	else
-		wwsetcurwin(cmdwin);
 	return w;
+}
+
+reframe()
+{
+	register struct ww *w;
+
+	for (w = wwhead; w; w = w->ww_next) {
+		if (w == cmdwin)
+			continue;
+		wwunframe(w);
+		wwframe(w);
+		labelwin(w, w == selwin ? WINVERSE : 0);
+	}
 }

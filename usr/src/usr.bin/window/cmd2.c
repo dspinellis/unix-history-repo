@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd2.c	1.3 83/07/20";
+static	char *sccsid = "@(#)cmd2.c	1.4 83/07/22";
 #endif
 
 #include "defs.h"
@@ -44,7 +44,7 @@ dotime(flag)
 	struct rusage rusage;
 	struct timeval timeval;
 
-	if ((w = openwin(8, "Time")) == 0) {
+	if ((w = openwin(8, "Timing and Resource Usage")) == 0) {
 		wwputs("Can't open time window.  ", cmdwin);
 		return;
 	}
@@ -104,6 +104,19 @@ register struct timeval *t;
 	return buf;
 }
 
+dostat()
+{
+	register struct ww *w;
+
+	if ((w = openwin(22, "IO Statics")) == 0) {
+		wwputs("Can't open statistics window.  ", cmdwin);
+		return;
+	}
+	wwprintf(w, "nread: %d\r\n", nread);
+	waitnl(w);
+	closewin(w);
+}
+
 doquit()
 {
 	wwputs("Really quit? ", cmdwin);
@@ -123,7 +136,7 @@ char *label;
 {
 	register struct ww *w;
 
-	if ((w = wwopen(WW_NONE, 0, nrow, WCols, 1, 0)) == 0)
+	if ((w = wwopen(WW_NONE, 0, nrow, wwncol, 1, 0)) == 0)
 		return 0;
 	wwframe(w);
 	wwlabel(w, label, WINVERSE);

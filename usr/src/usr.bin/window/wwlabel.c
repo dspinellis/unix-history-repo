@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwlabel.c	1.2 83/07/19";
+static	char *sccsid = "@(#)wwlabel.c	1.3 83/07/22";
 #endif
 
 #include "ww.h"
@@ -12,13 +12,13 @@ register char *l;
 	char ulc, top, urc, left, right, llc, bottom, lrc;
 	char framed;
 
-	if (!(framed = w->ww_inrow < w->ww_nrow)) {
+	if (!(framed = w->ww_i.nrow < w->ww_o.nrow)) {
 		Wgetframe(&ulc, &top, &urc, &left, &right, &llc, &bottom, &lrc);
-		w->ww_inrow--;
-		w->ww_irow++;
+		w->ww_i.nrow--;
+		w->ww_i.row++;
 	}
 	Wauxcursor(w->ww_win, 0, 1);
-	for (i = w->ww_ncol - 2; i > 0 && *l; i--, l++)
+	for (i = w->ww_o.ncol - 2; i > 0 && *l; i--, l++)
 		Waputc(*l, mode, w->ww_win);
 	if (!framed)
 		for (; i > 0; i--)

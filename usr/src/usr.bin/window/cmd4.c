@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd4.c	1.2 83/07/20";
+static	char *sccsid = "@(#)cmd4.c	1.3 83/07/22";
 #endif
 
 #include "defs.h"
@@ -19,7 +19,7 @@ doquery()
 			continue;
 		done_it++;
 		wwsetcurwin(w);
-		wwsetcursor(w->ww_row, w->ww_col + 1);
+		wwsetcursor(w->ww_o.row, w->ww_o.col + 1);
 		for (;;) {
 			switch (bgetc()) {
 			case '\r':
