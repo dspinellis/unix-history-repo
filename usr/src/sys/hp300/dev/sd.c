@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sd.c	8.7 (Berkeley) %G%
+ *	@(#)sd.c	8.8 (Berkeley) %G%
  */
 
 /*
@@ -474,29 +474,17 @@ sdopen(dev, flags, mode, p)
 {
 	register int unit = sdunit(dev);
 	register struct sd_softc *sc = &sd_softc[unit];
-	int mask, error;
+	int error, mask;
 
-	if (unit >= NSD)
+	if (unit >= NSD || (sc->sc_flags & SDF_ALIVE) == 0)
 		return(ENXIO);
-	/*
-	 * If a drive's position was fully qualified (i.e. not wildcarded in
-	 * any way, we allow root to open the device even though it wasn't
-	 * found at autoconfig time.  This allows initial formatting of disks.
-	 * However, if any part of the specification was wildcarded, we won't
-	 * be able to locate the drive so there is nothing we can do.
-	 */
-	if ((sc->sc_flags & SDF_ALIVE) == 0 &&
-	    (suser(p->p_ucred, &p->p_acflag) ||
-	     sc->sc_hd->hp_ctlr < 0 || sc->sc_hd->hp_slave < 0))
-		return(ENXIO);
-	if (sc->sc_flags & SDF_ERROR)
-		return(EIO);
 
 	/*
 	 * Wait for any pending opens/closes to complete
 	 */
 	while (sc->sc_flags & (SDF_OPENING|SDF_CLOSING))
 		sleep((caddr_t)sc, PRIBIO);
+
 	/*
 	 * On first open, get label and partition info.
 	 * We may block reading the label, so be careful
