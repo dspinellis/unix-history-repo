@@ -1,5 +1,5 @@
 .nr _0 \n(c.
-.\"	@(#)footnote.me	2.4	%G%
+.\"	@(#)footnote.me	2.5	%G%
 .\"	%beginstrip%
 .de (f			\" *** begin footnote
 .ec
@@ -17,7 +17,7 @@
 .	vs \\n(.su*\\n($Ru
 .	if !\\n(?f \
 \{\
-.		nr _b +2u*\n(.Vu	\" fudge factor
+.		nr _b +1v	\" allow space for $s
 .		$s
 .	\}
 .	br
