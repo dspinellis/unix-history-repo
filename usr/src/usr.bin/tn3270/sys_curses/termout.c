@@ -37,6 +37,8 @@ static	char	sccsid[] = "@(#)outbound.c	3.1  10/29/86";
 
 #include "../telnet.ext"
 
+#include "../ascii/disp_asc.h"
+
 #include "../ctlr/hostctlr.h"
 #include "../ctlr/inbound.ext"
 #include "../ctlr/oia.h"
@@ -85,10 +87,6 @@ static int tcflag = -1;			/* transparent mode command flag */
 static int savefd[2];			/* for storing fds during transcom */
 extern int	tin, tout;		/* file descriptors */
 #endif	/* defined(unix) */
-
-
-#include "disp_asc.out"
-
 
 
 /*
