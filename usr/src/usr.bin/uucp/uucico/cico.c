@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)cico.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)cico.c	5.10 (Berkeley) %G%";
 #endif
 
 #include <signal.h>
@@ -178,7 +178,7 @@ register char *argv[];
 	}
 #endif TIOCNOTTY
 #ifdef BSD4_2
-	if (getpgrp(0) == 0) { /*We have no controlling terminal */
+	if (getpgrp(0) == 0) { /* We have no controlling terminal */
 		setpgrp(0, getpid());
 	}
 #endif BSD4_2
@@ -223,6 +223,7 @@ register char *argv[];
 		Ifn = 0;
 		Ofn = 1;
 		fixmode(Ifn);
+		getbaud(Ifn);
 		sprintf(file,"%s/%d", RMTDEBUG, getpid());
 #ifdef VMS
 		/* hold the version number down */
