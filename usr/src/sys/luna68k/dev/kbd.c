@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kbd.c	7.1 (Berkeley) %G%
+ *	@(#)kbd.c	7.2 (Berkeley) %G%
  */
 
 /*
@@ -20,8 +20,8 @@
 #include "bmc.h"
 #if NBMC > 0
 
-#include "param.h"
-#include "kbdreg.h"
+#include <sys/param.h>
+#include <luna68k/dev/kbdreg.h>
 
 
 struct kbd_keymap kbd_keymap[] = {
@@ -114,9 +114,9 @@ struct kbd_keymap kbd_keymap[] = {
 	KC_CODE,	0x62,		0x42,		/*  86 [0x56]	 b    */
 	KC_CODE,	0x6E,		0x4E,		/*  87 [0x57]	 n    */
 	KC_CODE,	0x6D,		0x4D,		/*  88 [0x58]	 m    */
-	KC_CODE,	0x6B,		0x3C,		/*  89 [0x59]	 ,    */
-	KC_CODE,	0x6C,		0x3E,		/*  90 [0x5A]	 .    */
-	KC_CODE,	0x3B,		0x3F,		/*  91 [0x5B]	 /    */
+	KC_CODE,	0x2C,		0x3C,		/*  89 [0x59]	 ,    */
+	KC_CODE,	0x2E,		0x3E,		/*  90 [0x5A]	 .    */
+	KC_CODE,	0x2F,		0x3F,		/*  91 [0x5B]	 /    */
 	KC_CODE,	0x5F,		0x5F,		/*  92 [0x5C]	 _    */
 	KC_IGNORE,	0,		0,		/*  93 [0x5D]	      */
 	KC_IGNORE,	0,		0,		/*  94 [0x5E]	      */
