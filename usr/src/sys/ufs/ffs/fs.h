@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fs.h	8.4 (Berkeley) %G%
+ *	@(#)fs.h	8.5 (Berkeley) %G%
  */
 
 /*
@@ -243,8 +243,9 @@ struct fs {
     /* blks size */	(fs)->fs_cpg * (fs)->fs_nrpos * sizeof(short) + \
     /* inode map */	howmany((fs)->fs_ipg, NBBY) + \
     /* block map */	howmany((fs)->fs_cpg * (fs)->fs_spc / NSPF(fs), NBBY) +\
+    /* if present */	((fs)->fs_contigsumsize <= 0 ? 0 : \
     /* cluster sum */	(fs)->fs_contigsumsize * sizeof(long) + \
-    /* cluster map */	howmany((fs)->fs_cpg * (fs)->fs_spc / NSPB(fs), NBBY))
+    /* cluster map */	howmany((fs)->fs_cpg * (fs)->fs_spc / NSPB(fs), NBBY)))
 
 /*
  * Convert cylinder group to base address of its global summary info.
