@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)savemail.c	8.34 (Berkeley) %G%";
+static char sccsid[] = "@(#)savemail.c	8.35 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -380,7 +380,7 @@ savemail(e)
 			putline("\n", &mcibuf);
 			(void) fflush(fp);
 			state = ferror(fp) ? ESM_PANIC : ESM_DONE;
-			(void) xfclose(fp, "savemail", "/usr/tmp/dead.letter");
+			(void) xfclose(fp, "savemail", buf);
 			break;
 
 		  default:
