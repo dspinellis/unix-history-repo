@@ -1,0 +1,66 @@
+This file is builtin.def, from which is created builtin.c.
+It implements the builtin "builtin" in Bash.
+
+Copyright (C) 1987, 1989, 1991 Free Software Foundation, Inc.
+
+This file is part of GNU Bash, the Bourne Again SHell.
+
+Bash is free software; you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free
+Software Foundation; either version 1, or (at your option) any later
+version.
+
+Bash is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or
+FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+for more details.
+
+You should have received a copy of the GNU General Public License along
+with Bash; see the file COPYING.  If not, write to the Free Software
+Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+
+$PRODUCES builtin.c
+
+$BUILTIN builtin
+$FUNCTION builtin_builtin
+$SHORT_DOC builtin [shell-builtin [arg ...]]
+Run a shell builtin.  This is useful when you wish to rename a
+shell builtin to be a function, but need the functionality of the
+builtin within the function itself.
+$END
+
+#include "../shell.h"
+extern char *this_command_name;
+
+/* Run the command mentioned in list directly, without going through the
+   normal alias/function/builtin/filename lookup process. */
+builtin_builtin (list)
+     WORD_LIST *list;
+{
+  extern Function *find_shell_builtin (), *builtin_address ();
+  Function *function;
+  register char *command;
+
+  if (!list)
+    return (EXECUTION_SUCCESS);
+
+  command = (list->word->word);
+#if defined (DISABLED_BUILTINS)
+  function = builtin_address (command);
+#else /* !DISABLED_BUILTINS */
+  function = find_shell_builtin (command);
+#endif /* !DISABLED_BUILTINS */
+
+  if (!function)
+    {
+      builtin_error ("%s: Not a shell builtin!", command);
+      return (EXECUTION_FAILURE);
+    }
+  else
+    {
+      this_command_name = command;
+      list = list->next;
+      return ((*function) (list));
+    }
+}
+
