@@ -1,4 +1,4 @@
-static char sccsid[] = "ifontinfo.c	1.2	(Berkeley)	83/10/22";
+static char sccsid[] = "ifontinfo.c	1.3	(Berkeley)	84/02/20";
 
 /* Font Information for Imagen-style fonts (RST format)
  *      taken from vfontinfo, by Andy Hertzfeld  4/79
@@ -49,11 +49,10 @@ char **argv;
 
 	while (argc > 1 && argv[1][0] == '-') {
 		switch(argv[1][1]) {
+		case 'z':
+			zoom = argv[1][2] - '0';  /* zoom implies verbose */
 		case 'v':
 			verbose++;
-			break;
-		case 'z':
-			zoom = argv[1][2] - '0';
 			break;
 		case 'm':
 			msgflag = 1;
