@@ -1,4 +1,4 @@
-#	@(#)Files.base	8.17 (Berkeley) %G%
+#	@(#)Files.base	8.18 (Berkeley) %G%
 FAQ
 KNOWNBUGS
 Makefile
@@ -86,6 +86,7 @@ src/Makefiles/Makefile.HP-UX
 src/Makefiles/Makefile.UNIX_SV.i386.4.2
 src/Makefiles/Makefile.IRIX
 src/Makefiles/Makefile.IRIX64
+src/Makefiles/Makefile.ISC
 src/Makefiles/Makefile.Linux
 src/Makefiles/Makefile.Mach386
 src/Makefiles/Makefile.NCR3000
@@ -107,6 +108,7 @@ src/Makefiles/Makefile.SunOS.5.x
 src/Makefiles/Makefile.Titan
 src/Makefiles/Makefile.ULTRIX
 src/Makefiles/Makefile.UMAX
+src/Makefiles/Makefile.UNICOS
 src/Makefiles/Makefile.Utah
 src/Makefiles/Makefile.uts.systemV
 test/t_setreuid.c
