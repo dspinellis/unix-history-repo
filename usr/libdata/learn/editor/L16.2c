@@ -1,0 +1,14 @@
+#print
+You can see that the 'a' command adds lines after the
+line addressed.  So if you type
+  2a
+at the editor, what will be the line number of the
+first line that you added?  Type "answer N" where N is the
+number it will have.
+#copyin
+#user
+#uncopyin
+#match 3
+#log
+#next
+16.1c 5
