@@ -1,5 +1,5 @@
 /*
-char id_ftell[] = "@(#)ftell_.c	1.1";
+char id_ftell[] = "@(#)ftell_.c	1.2";
  *
  * return current file position
  *
@@ -22,7 +22,7 @@ long ftell_(lu)
 long *lu;
 {
 	if (*lu < 0 || *lu >= MXUNIT)
-		return(-(long)(errno=F_ERARG));
+		return(-(long)(errno=F_ERUNIT));
 	if (!units[*lu].ufd)
 		return(-(long)(errno=F_ERNOPEN));
 	return(ftell(units[*lu].ufd));

@@ -1,5 +1,5 @@
 /*
-char id_fseek[] = "@(#)fseek_.c	1.1";
+char id_fseek[] = "@(#)fseek_.c	1.2";
  *
  * position a file associated with a fortran logical unit
  *
@@ -23,7 +23,9 @@ extern unit units[];
 long fseek_(lu, off, from)
 long *lu, *off, *from;
 {
-	if (*lu < 0 || *lu >= MXUNIT || *from < 0 || *from > 2)
+	if (*lu < 0 || *lu >= MXUNIT)
+		return((long)(errno=F_ERUNIT));
+	if (*from < 0 || *from > 2)
 		return((long)(errno=F_ERARG));
 	if (!units[*lu].ufd)
 		return((long)(errno=F_ERNOPEN));

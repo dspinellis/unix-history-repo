@@ -1,5 +1,5 @@
 /*
-char id_fgetc[] = "@(#)fgetc_.c	1.1";
+char id_fgetc[] = "@(#)fgetc_.c	1.2";
  *
  * get a character from a logical unit bypassing formatted I/O
  *
@@ -22,7 +22,7 @@ long *u; char *c; long clen;
 	int i;
 
 	if (*u < 0 || *u >= MXUNIT)
-		return((long)(errno=F_ERARG));
+		return((long)(errno=F_ERUNIT));
 	if (!units[*u].ufd)
 		return((long)(errno=F_ERNOPEN));
 	if ((i = getc (units[*u].ufd)) < 0)
