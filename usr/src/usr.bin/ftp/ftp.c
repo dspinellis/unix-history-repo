@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)ftp.c	4.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)ftp.c	4.11 (Berkeley) %G%";
 #endif
 
 #include <sys/param.h>
@@ -547,9 +547,6 @@ dataconn(mode)
 	}
 	(void) close(data);
 	data = s;
-	if (*mode == 'w' && linger)
-		(void) setsockopt(s, SOL_SOCKET, SO_LINGER, &linger,
-		    sizeof (linger));
 	return (fdopen(data, mode));
 }
 
