@@ -13,7 +13,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.35 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.36 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -811,12 +811,6 @@ intsig()
 **	Side Effects:
 **		initializes several macros to be themselves.
 */
-
-struct metamac
-{
-	char	metaname;
-	char	metaval;
-};
 
 struct metamac	MetaMacros[] =
 {

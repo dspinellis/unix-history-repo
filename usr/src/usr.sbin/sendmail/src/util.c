@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	5.20 (Berkeley) %G%";
+static char sccsid[] = "@(#)util.c	5.21 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <stdio.h>
@@ -259,11 +259,27 @@ xputs(s)
 	register char *s;
 {
 	register char c;
+	register struct metamac *mp;
+	extern struct metamac MetaMacros[];
 
 	if (s == NULL)
 	{
 		printf("<null>");
 		return;
+	}
+	c = *s;
+	if (c == MATCHREPL && isdigit(s[1]) && s[2] == '\0')
+	{
+		printf("$%c", s[1]);
+		return;
+	}
+	for (mp = MetaMacros; mp->metaname != NULL; mp++)
+	{
+		if (mp->metaval == c)
+		{
+			printf("$%c%s", mp->metaname, ++s);
+			return;
+		}
 	}
 	(void) putchar('"');
 	while ((c = *s++) != '\0')

@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	5.22 (Berkeley) %G%";
+static char sccsid[] = "@(#)recipient.c	5.23 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/types.h>
@@ -597,7 +597,7 @@ include(fname, msg, ctladdr, sendq)
 		LineNumber++;
 		if (p != NULL)
 			*p = '\0';
-		if (buf[0] == '\0')
+		if (buf[0] == '\0' || buf[0] == '#')
 			continue;
 		CurEnv->e_to = oldto;
 		message(Arpa_Info, "%s to %s", msg, buf);
