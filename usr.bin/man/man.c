@@ -42,7 +42,7 @@ static char sccsid[] = "@(#)man.c	5.12 (Berkeley) 3/20/86";
 #define	SUBSEC4	"pfn"
 #define	SUBSEC8	"cv"
 
-#define	WHATIS	"whatis"
+#define	WHATIS	"whatis.db"
 
 int	nomore;
 char	*CAT	= CAT_;
