@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)glob.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)glob.c	5.3 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -63,9 +63,9 @@ typedef int bool_t;
 
 static
 compare(p, q)
-	char **p, **q;
+	void **p, **q;
 {
-	return(strcmp(*p, *q));
+	return(strcmp(*(char **)p, *(char **)q));
 }
 
 
