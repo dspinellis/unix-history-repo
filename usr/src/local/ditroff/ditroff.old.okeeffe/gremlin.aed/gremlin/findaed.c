@@ -1,4 +1,4 @@
-/* @(#)findaed.c	1.2	%G%
+/* @(#)findaed.c	1.3	%G%
  *
  * Copyright -C- 1982 Barry S. Roitblat
  *
@@ -42,7 +42,8 @@ FindAED()
  */
 
 {
-    char name1[100], name2[100], *tty;
+    char name1[100], *tty;
+    static char name2[100];
     FILE *f;
     tty = ttyname(fileno(stderr));
     if (tty == NULL) return NULL;
@@ -60,5 +61,6 @@ FindAED()
 	    (void) fclose(f);
 	    return name2;
 	}
+	while (getc (f) > 10);		/* ignore extra characters on a line */
     }
 }
