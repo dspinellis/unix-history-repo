@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)c22.c	1.6 (Berkeley/CCI) %G%";
+static char sccsid[] = "@(#)c22.c	1.7 (Berkeley/CCI) %G%";
 #endif
 
 /*
@@ -331,8 +331,16 @@ register struct node *p1, *p2;
 
 	if (p1->op != p2->op || p1->subop != p2->subop)
 		return(0);
+	if (p1->op == NIL && p1->subop == 0 && p1->pop != p2->pop)
+		return(0);
 	if (p1->op != NIL && ord(p1->op) < ord(MOV))
 		return(0);
+	switch (p1->op) {
+	case EROU:	case JSW:	case TEXT:	case DATA:
+	case BSS:	case ALIGN:	case WGEN:	case END:
+		/* sufficient? */
+		return(0);
+	}
 	if (p1->op==MOVA && p1->labno!=p2->labno) return(0);
 	cp1 = p1->code;
 	cp2 = p2->code;
