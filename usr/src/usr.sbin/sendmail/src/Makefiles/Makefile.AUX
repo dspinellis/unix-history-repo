@@ -5,7 +5,9 @@
 #  old make program (I recommend that you get and port the new make if you
 #  are going to be doing any signficant work on sendmail).
 #
-#	@(#)Makefile.AUX	8.8 (Berkeley) %G%
+#	@(#)Makefile.AUX	8.9 (Berkeley) %G%
+#
+#  Tested on A/UX 3.1.
 #
 
 # use O=-O (usual) or O=-g (debugging)
@@ -17,8 +19,8 @@ O=	-O
 #	-DNIS -- include NIS support
 # The really old (V7) DBM library is no longer supported.
 # See READ_ME for a description of how these flags interact.
-#
-DBMDEF=	-DNDBM
+#   If you are running A/UX prior to 3.1, delete -DNEWDB
+DBMDEF=	-DNDBM -DNEWDB
 
 # environment definitions (e.g., -D_AIX3)
 ENVDEF=	-D_POSIX_SOURCE
@@ -35,7 +37,8 @@ LDOPTS=
 LIBDIRS=
 
 # libraries required on your system
-LIBS=	-ldbm -lposix -lmalloc
+#   If you are running A/UX prior to 3.1, delete -ldb
+LIBS=	-ldbm -ldb -lposix -lmalloc
 
 # location of sendmail binary (usually /usr/sbin or /usr/lib)
 BINDIR=	${DESTDIR}/usr/lib
