@@ -180,5 +180,18 @@ netiso/tp_trace.c	optional iso
 netiso/tp_trace.c	optional tpip
 netiso/tp_usrreq.c	optional iso
 netiso/tp_usrreq.c	optional tpip
-netiso/if_cons.c	optional argoxtwentyfive device-driver
 netiso/if_eon.c		optional eon
+netccitt/ccitt_proto.c	optional ccitt
+netccitt/hd_debug.c	optional ccitt
+netccitt/hd_input.c	optional ccitt
+netccitt/hd_output.c	optional ccitt
+netccitt/hd_subr.c	optional ccitt
+netccitt/hd_timer.c	optional ccitt
+netccitt/if_x25subr.c	optional ccitt
+netccitt/pk_acct.c	optional ccitt
+netccitt/pk_debug.c	optional ccitt
+netccitt/pk_input.c	optional ccitt
+netccitt/pk_output.c	optional ccitt
+netccitt/pk_subr.c	optional ccitt
+netccitt/pk_timer.c	optional ccitt
+netccitt/pk_usrreq.c	optional ccitt
