@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_subs.c	7.42 (Berkeley) %G%
+ *	@(#)nfs_subs.c	7.43 (Berkeley) %G%
  */
 
 /*
@@ -32,8 +32,8 @@
 
 #include "rpcv2.h"
 #include "nfsv2.h"
-#include "nfsnode.h"
 #include "nfs.h"
+#include "nfsnode.h"
 #include "nfsiom.h"
 #include "xdr_subs.h"
 #include "nfsm_subs.h"
@@ -582,7 +582,7 @@ nfs_loadattrcache(vpp, mdp, dposp, vaper)
 	register struct vnode *vp = *vpp;
 	register struct vattr *vap;
 	register struct nfsv2_fattr *fp;
-	extern struct vnodeops spec_nfsv2nodeops;
+	extern struct vnodeops spec_nfsv2nodeops, spec_vnodeops;
 	register struct nfsnode *np;
 	register long t1;
 	caddr_t dpos, cp2;
@@ -631,22 +631,22 @@ nfs_loadattrcache(vpp, mdp, dposp, vaper)
 			vp->v_op = &spec_nfsv2nodeops;
 			if (nvp = checkalias(vp, (dev_t)rdev, vp->v_mount)) {
 				/*
+				 * Discard unneeded vnode, but save its nfsnode.
+				 */
+				remque(np);
+				nfs_unlock(vp);
+				nvp->v_data = vp->v_data;
+				vp->v_data = NULL;
+				vp->v_op = &spec_vnodeops;
+				vrele(vp);
+				vgone(vp);
+				/*
 				 * Reinitialize aliased node.
 				 */
-				np = VTONFS(nvp);
 				np->n_vnode = nvp;
-				np->n_flag = 0;
-				nfs_lock(nvp);
-				bcopy((caddr_t)&VTONFS(vp)->n_fh,
-					(caddr_t)&np->n_fh, NFSX_FH);
 				insque(np, nfs_hash(&np->n_fh));
-				np->n_attrstamp = 0;
-				np->n_sillyrename = (struct sillyrename *)0;
-				/*
-				 * Discard unneeded vnode and update actual one
-				 */
-				vput(vp);
-				*vpp = nvp;
+				nfs_lock(nvp);
+				*vpp = vp = nvp;
 			}
 		}
 		np->n_mtime = mtime.tv_sec;
