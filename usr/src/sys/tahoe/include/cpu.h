@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)cpu.h	1.1 (Berkeley) %G%
+ *	@(#)cpu.h	1.2 (Berkeley) %G%
  */
 
 /*
@@ -15,6 +15,11 @@
 #define	movob(a,b)	_movob((u_char *)(a), (u_char)(b))
 
 #define	resettodr()	/* no todr to set */
+
+#define	MAXCKEY	255		/* maximal allowed code key */
+#define	MAXDKEY	255		/* maximal allowed data key */
+#define	NCKEY	(MAXCKEY+1)	/* # code keys, including 0 (reserved) */
+#define	NDKEY	(MAXDKEY+1)	/* # data keys, including 0 (reserved) */
 
 #ifndef LOCORE
 #ifdef KERNEL
@@ -29,11 +34,14 @@ short	dkey_cnt[NDKEY];	/* data key reference count */
  * data cache key allocations algorithms.
  */
 struct	keystats {
+	long	ks_avail;	/* number of keys currently unallocated */
+	long	ks_dirty;	/* number of keys currently waiting for purge */
 	long	ks_allocs;	/* number of keys allocated */
-	long	ks_free;	/* key allocated from free slot */
+	long	ks_allocfree;	/* key allocated from free slot */
 	long	ks_norefs;	/* key marked in use, but refcnt 0 */
 	long	ks_taken;	/* key taken from single process */
 	long	ks_shared;	/* key taken from multiple processes */
+	long	ks_inval;	/* number of times keys exchanged */
 };
 #endif
 
