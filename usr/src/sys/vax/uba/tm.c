@@ -1,4 +1,4 @@
-/*	tm.c	4.19	%G%	*/
+/*	tm.c	4.20	%G%	*/
 
 #include "te.h"
 #if NTM > 0
@@ -519,7 +519,7 @@ tmintr(tm11)
 		 * Couldn't recover error
 		 */
 		harderr(bp);
-		printf("tm%d er %b\n", dkunit(bp),
+		printf("tm%d er=%b\n", dkunit(bp),
 		    sc->sc_erreg, TMEREG_BITS);
 		bp->b_flags |= B_ERROR;
 		goto opdone;
