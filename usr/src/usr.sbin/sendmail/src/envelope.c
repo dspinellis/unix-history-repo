@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)envelope.c	8.50 (Berkeley) %G%";
+static char sccsid[] = "@(#)envelope.c	8.34.1.1 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -71,11 +71,9 @@ dropenvelope(e)
 	register ENVELOPE *e;
 {
 	bool queueit = FALSE;
-	bool failure_return = FALSE;
-	bool success_return = FALSE;
+	bool saveit = bitset(EF_FATALERRS, e->e_flags);
 	register ADDRESS *q;
 	char *id = e->e_id;
-	bool return_no, return_yes;
 	char buf[MAXLINE];
 
 	if (tTd(50, 1))
@@ -111,48 +109,19 @@ dropenvelope(e)
 	*/
 
 	e->e_flags &= ~EF_QUEUERUN;
-	return_no = return_yes = FALSE;
 	for (q = e->e_sendqueue; q != NULL; q = q->q_next)
 	{
 		if (bitset(QQUEUEUP, q->q_flags))
 			queueit = TRUE;
-
-		/* see if a notification is needed */
-		if (e->e_df != NULL &&
-		    bitset(QBADADDR, q->q_flags) &&
-		    bitset(QPINGONFAILURE, q->q_flags))
+		if (!bitset(QDONTSEND, q->q_flags) &&
+		    bitset(QBADADDR, q->q_flags))
 		{
-			failure_return = TRUE;
-			if (q->q_owner == NULL && !emptyaddr(&e->e_from))
+			if (q->q_owner == NULL &&
+			    strcmp(e->e_from.q_paddr, "<>") != 0)
 				(void) sendtolist(e->e_from.q_paddr, NULL,
-						  &e->e_errorqueue, 0, e);
-		}
-		else if (bitset(QSENT, q->q_flags) &&
-		    bitnset(M_LOCALMAILER, q->q_mailer->m_flags) &&
-		    bitset(QPINGONSUCCESS, q->q_flags))
-		{
-			success_return = TRUE;
-		}
-		else if (bitset(QRELAYED, q->q_flags))
-		{
-			success_return = TRUE;
-		}
-		else
-			continue;
-
-		/* common code for error returns and return receipts */
-
-		/* test for returning the body */
-		if (bitset(QHAS_RET_PARAM, q->q_flags))
-		{
-			if (bitset(QRET_HDRS, q->q_flags))
-				return_no = TRUE;
-			else
-				return_yes = TRUE;
+						  &e->e_errorqueue, e);
 		}
 	}
-	if (return_no && !return_yes)
-		e->e_flags |= EF_NORETURN;
 
 	/*
 	**  See if the message timed out.
@@ -160,18 +129,18 @@ dropenvelope(e)
 
 	if (!queueit)
 		/* nothing to do */ ;
-	else if (curtime() > e->e_ctime + TimeOuts.to_q_return[e->e_timeoutclass])
+	else if (curtime() > e->e_ctime + TimeOuts.to_q_return)
 	{
 		(void) sprintf(buf, "Cannot send message for %s",
-			pintvl(TimeOuts.to_q_return[e->e_timeoutclass], FALSE));
+			pintvl(TimeOuts.to_q_return, FALSE));
 		if (e->e_message != NULL)
 			free(e->e_message);
 		e->e_message = newstr(buf);
 		message(buf);
 		e->e_flags |= EF_CLRQUEUE;
-		failure_return = TRUE;
+		saveit = TRUE;
 		fprintf(e->e_xfp, "Message could not be delivered for %s\n",
-			pintvl(TimeOuts.to_q_return[e->e_timeoutclass], FALSE));
+			pintvl(TimeOuts.to_q_return, FALSE));
 		fprintf(e->e_xfp, "Message will be deleted from queue\n");
 		for (q = e->e_sendqueue; q != NULL; q = q->q_next)
 		{
@@ -179,61 +148,32 @@ dropenvelope(e)
 				q->q_flags |= QBADADDR;
 		}
 	}
-	else if (TimeOuts.to_q_warning[e->e_timeoutclass] > 0 &&
-	    curtime() > e->e_ctime + TimeOuts.to_q_warning[e->e_timeoutclass])
+	else if (TimeOuts.to_q_warning > 0 &&
+	    curtime() > e->e_ctime + TimeOuts.to_q_warning)
 	{
-		bool delay_return = FALSE;
-
-		for (q = e->e_sendqueue; q != NULL; q = q->q_next)
-		{
-			if (bitset(QQUEUEUP, q->q_flags) &&
-			    bitset(QPINGONDELAY, q->q_flags))
-			{
-				q->q_flags |= QREPORT;
-				delay_return = TRUE;
-			}
-		}
-		if (delay_return &&
-		    !bitset(EF_WARNING|EF_RESPONSE, e->e_flags) &&
+		if (!bitset(EF_WARNING|EF_RESPONSE, e->e_flags) &&
 		    e->e_class >= 0 &&
-		    strcmp(e->e_from.q_paddr, "<>") != 0 &&
-		    strncasecmp(e->e_from.q_paddr, "owner-", 6) != 0 &&
-		    (strlen(e->e_from.q_paddr) <= 8 ||
-		     strcasecmp(&e->e_from.q_paddr[strlen(e->e_from.q_paddr) - 8], "-request") != 0))
+		    strcmp(e->e_from.q_paddr, "<>") != 0)
 		{
 			(void) sprintf(buf,
-				"Warning: cannot send message for %s",
-				pintvl(TimeOuts.to_q_warning[e->e_timeoutclass], FALSE));
+				"warning: cannot send message for %s",
+				pintvl(TimeOuts.to_q_warning, FALSE));
 			if (e->e_message != NULL)
 				free(e->e_message);
 			e->e_message = newstr(buf);
 			message(buf);
 			e->e_flags |= EF_WARNING;
-			failure_return = TRUE;
+			saveit = TRUE;
 		}
 		fprintf(e->e_xfp,
 			"Warning: message still undelivered after %s\n",
-			pintvl(TimeOuts.to_q_warning[e->e_timeoutclass], FALSE));
+			pintvl(TimeOuts.to_q_warning, FALSE));
 		fprintf(e->e_xfp, "Will keep trying until message is %s old\n",
-			pintvl(TimeOuts.to_q_return[e->e_timeoutclass], FALSE));
-	}
-
-	if (tTd(50, 2))
-		printf("failure_return=%d success_return=%d queueit=%d\n",
-			failure_return, success_return, queueit);
-
-	/*
-	**  If we had some fatal error, but no addresses are marked as
-	**  bad, mark them _all_ as bad.
-	*/
-
-	if (bitset(EF_FATALERRS, e->e_flags) && !failure_return)
-	{
-		failure_return = TRUE;
+			pintvl(TimeOuts.to_q_return, FALSE));
 		for (q = e->e_sendqueue; q != NULL; q = q->q_next)
 		{
-			if (!bitset(QDONTSEND, q->q_flags))
-				q->q_flags |= QBADADDR;
+			if (bitset(QQUEUEUP, q->q_flags))
+				q->q_flags |= QREPORT;
 		}
 	}
 
@@ -241,30 +181,22 @@ dropenvelope(e)
 	**  Send back return receipts as requested.
 	*/
 
-/*
 	if (e->e_receiptto != NULL && bitset(EF_SENDRECEIPT, e->e_flags)
 	    && !bitset(PRIV_NORECEIPTS, PrivacyFlags))
-*/
-	if (e->e_receiptto == NULL)
-		e->e_receiptto = e->e_from.q_paddr;
-	if (success_return && !failure_return &&
-	    !bitset(PRIV_NORECEIPTS, PrivacyFlags) &&
-	    strcmp(e->e_receiptto, "<>") != 0)
 	{
 		auto ADDRESS *rlist = NULL;
 
-		e->e_flags |= EF_SENDRECEIPT;
-		(void) sendtolist(e->e_receiptto, NULLADDR, &rlist, 0, e);
-		(void) returntosender("Return receipt", rlist, return_yes, e);
+		(void) sendtolist(e->e_receiptto, NULLADDR, &rlist, e);
+		(void) returntosender("Return receipt", rlist, FALSE, e);
+		e->e_flags &= ~EF_SENDRECEIPT;
 	}
-	e->e_flags &= ~EF_SENDRECEIPT;
 
 	/*
 	**  Arrange to send error messages if there are fatal errors.
 	*/
 
-	if (failure_return && e->e_errormode != EM_QUIET)
-		savemail(e, return_yes || (!return_no && e->e_class >= 0));
+	if (saveit && e->e_errormode != EM_QUIET)
+		savemail(e);
 
 	/*
 	**  Arrange to send warning messages to postmaster as requested.
@@ -275,7 +207,7 @@ dropenvelope(e)
 	{
 		auto ADDRESS *rlist = NULL;
 
-		(void) sendtolist(PostMasterCopy, NULLADDR, &rlist, 0, e);
+		(void) sendtolist(PostMasterCopy, NULLADDR, &rlist, e);
 		(void) returntosender(e->e_message, rlist, FALSE, e);
 	}
 
@@ -287,8 +219,7 @@ dropenvelope(e)
 	    bitset(EF_CLRQUEUE, e->e_flags))
 	{
 		if (tTd(50, 1))
-			printf("\n===== Dropping [dq]f%s (queueit=%d, e_flags=%x) =====\n\n",
-				e->e_id, queueit, e->e_flags);
+			printf("\n===== Dropping [dq]f%s =====\n\n", e->e_id);
 		if (e->e_dfp != NULL)
 			(void) fclose(e->e_dfp);
 		if (e->e_df != NULL)
@@ -659,27 +590,34 @@ setsender(from, e, delimptr, internal)
 	}
 	SuprErrs = FALSE;
 
-# ifdef USERDB
-	if (bitnset(M_CHECKUDB, e->e_from.q_mailer->m_flags))
+	pvp = NULL;
+	if (e->e_from.q_mailer == LocalMailer)
 	{
+# ifdef USERDB
 		register char *p;
 		extern char *udbsender();
+# endif
 
-		p = udbsender(e->e_from.q_user);
-		if (p != NULL)
-			from = p;
-	}
-# endif /* USERDB */
-
-	if (bitnset(M_HASPWENT, e->e_from.q_mailer->m_flags))
-	{
 		if (!internal)
 		{
-			/* if the user already given fullname don't redefine */
+			/* if the user has given fullname already, don't redefine */
 			if (FullName == NULL)
 				FullName = macvalue('x', e);
 			if (FullName != NULL && FullName[0] == '\0')
 				FullName = NULL;
+
+# ifdef USERDB
+			p = udbsender(e->e_from.q_user);
+
+			if (p != NULL)
+			{
+				/*
+				**  We have an alternate address for the sender
+				*/
+
+				pvp = prescan(p, '\0', pvpbuf, sizeof pvpbuf, NULL);
+			}
+# endif /* USERDB */
 		}
 
 		if ((pw = getpwnam(e->e_from.q_user)) != NULL)
@@ -732,7 +670,8 @@ setsender(from, e, delimptr, internal)
 	**	links in the net.
 	*/
 
-	pvp = prescan(from, delimchar, pvpbuf, sizeof pvpbuf, NULL);
+	if (pvp == NULL)
+		pvp = prescan(from, delimchar, pvpbuf, sizeof pvpbuf, NULL);
 	if (pvp == NULL)
 	{
 		/* don't need to give error -- prescan did that already */
@@ -742,14 +681,12 @@ setsender(from, e, delimptr, internal)
 # endif
 		finis();
 	}
-/*
 	(void) rewrite(pvp, 3, 0, e);
 	(void) rewrite(pvp, 1, 0, e);
 	(void) rewrite(pvp, 4, 0, e);
-*/
 	bp = buf + 1;
 	cataddr(pvp, NULL, bp, sizeof buf - 2, '\0');
-	if (*bp == '@' && !bitnset(M_NOBRACKET, e->e_from.q_mailer->m_flags))
+	if (*bp == '@')
 	{
 		/* heuristic: route-addr: add angle brackets */
 		strcat(bp, ">");
