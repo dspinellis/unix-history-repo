@@ -1,0 +1,22 @@
+.th CMP I 1/15/73
+.sh NAME
+cmp \*- compare two files
+.sh SYNOPSIS
+.bd cmp
+file1 file2
+.sh DESCRIPTION
+The two files are
+compared for identical contents.
+Discrepancies are noted
+by giving the offset and the differing words,
+all in octal.
+.sh "SEE ALSO"
+proof (I), comm (I)
+.sh BUGS
+If
+the shorter of the two files is of odd length,
+.it cmp
+acts as if a null byte had been appended to it.
+The
+.it offset
+is only a single-precision number.
