@@ -1,5 +1,5 @@
-.\" @(#)map3270.5	1.3
-.TH MAP3270 5  "22 February 1985"
+.\" @(#)map3270.5	1.2 %G%
+.TH MAP3270 5  "%G%"
 .ds ]W UCB Computer Center
 .SH NAME
 map3270 \- database for mapping ascii keystrokes into IBM 3270 keys
@@ -167,6 +167,11 @@ to send a bell sequence to the user's terminal.
      (*)XOFF            please hold output
      (*)XON             please give me output
         ESCAPE          enter telnet command mode
+        WORDTAB         tab to beginning of next word
+        WORDBACKTAB     tab to beginning of current/last word
+        WORDEND         tab to end of current/next word
+        FIELDEND        tab to last non-blank of current/next
+                        unprotected (writable) field.
 
         PA1             program attention 1
         PA2             program attention 2
@@ -287,3 +292,8 @@ available in
 when such a function is requested 
 .I tn3270
 will beep at you.
+.PP
+The definition of "word" (for "word delete", "word tab") should be a run-time
+option.  Currently it is defined as the kernel tty driver defines it (strings
+of non-blanks); more than one person would rather use the "vi" definition
+(strings of specials, strings of alphanumeric).
