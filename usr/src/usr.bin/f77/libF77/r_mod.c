@@ -3,8 +3,10 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)r_mod.c	5.2	%G%
+ *	@(#)r_mod.c	5.3	%G%
  */
+
+float flt_retval;
 
 float r_mod(x,y)
 float *x, *y;
@@ -14,5 +16,6 @@ if (quotient >= 0.0)
 	quotient = floor(quotient);
 else
 	quotient = -floor(-quotient);
-return(*x - (*y) * quotient );
+flt_retval = *x - (*y) * quotient ;
+return(flt_retval);
 }

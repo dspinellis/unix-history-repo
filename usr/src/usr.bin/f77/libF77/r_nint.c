@@ -3,14 +3,16 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)r_nint.c	5.2	%G%
+ *	@(#)r_nint.c	5.3	%G%
  */
+
+float flt_retval;
 
 float r_nint(x)
 float *x;
 {
 double floor();
 
-return( (*x)>=0 ?
-	floor(*x + .5) : -floor(.5 - *x) );
+flt_retval = (*x)>=0 ? floor(*x + .5) : -floor(.5 - *x);
+return(flt_retval);
 }
