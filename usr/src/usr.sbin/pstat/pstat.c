@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)pstat.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)pstat.c	5.12 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -666,25 +666,25 @@ dousr()
 		printf("\n");
 	printf("code\t%.1x\n", U.u_code);
 	printf("ar0\t%.1x\n", U.u_ar0);
-	printf("prof\t%X %X %X %X\n", U.u_prof.pr_base, U.u_prof.pr_size,
+	printf("prof\t%x %x %x %x\n", U.u_prof.pr_base, U.u_prof.pr_size,
 	    U.u_prof.pr_off, U.u_prof.pr_scale);
 	printf("\neosys\t%d\n", U.u_eosys);
 	printf("ttyp\t%.1x\n", U.u_ttyp);
 	printf("ttyd\t%d,%d\n", major(U.u_ttyd), minor(U.u_ttyd));
 	printf("comm %.14s\n", U.u_comm);
-	printf("start\t%D\n", U.u_start);
-	printf("acflag\t%D\n", U.u_acflag);
-	printf("cmask\t%D\n", U.u_cmask);
+	printf("start\t%ld\n", U.u_start.tv_sec);
+	printf("acflag\t%ld\n", U.u_acflag);
+	printf("cmask\t%ld\n", U.u_cmask);
 	printf("sizes\t%.1x %.1x %.1x\n", U.u_tsize, U.u_dsize, U.u_ssize);
 	printf("ru\t");
 	ip = (int *)&U.u_ru;
 	for (i = 0; i < sizeof(U.u_ru)/sizeof(int); i++)
-		printf("%D ", ip[i]);
+		printf("%ld ", ip[i]);
 	printf("\n");
 	ip = (int *)&U.u_cru;
 	printf("cru\t");
 	for (i = 0; i < sizeof(U.u_cru)/sizeof(int); i++)
-		printf("%D ", ip[i]);
+		printf("%ld ", ip[i]);
 	printf("\n");
 #ifdef notdef
 	i =  U.u_stack - &U;
