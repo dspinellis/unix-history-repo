@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_alloc.c	7.54 (Berkeley) %G%
+ *	@(#)lfs_alloc.c	7.55 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -97,13 +97,12 @@ lfs_valloc(ap)
 	/* Create a vnode to associate with the inode. */
 	if (error = lfs_vcreate(ap->a_pvp->v_mount, new_ino, &vp))
 		return (error);
-	*ap->a_vpp = vp;
-	vp->v_flag |= VDIROP;
+
 	ip = VTOI(vp);
-	VREF(ip->i_devvp);
 
 	/* Zero out the direct and indirect block addresses. */
-	bzero(ip->i_db, (NDADDR + NIADDR) * sizeof(daddr_t));
+	bzero(&ip->i_din, sizeof(struct dinode));
+	ip->i_din.di_inumber = new_ino;
 
 	/* Set a new generation number for this inode. */
 	if (++nextgennumber < (u_long)time.tv_sec)
@@ -112,6 +111,16 @@ lfs_valloc(ap)
 
 	/* Insert into the inode hash table. */
 	ufs_ihashins(ip);
+
+	if (error = ufs_vinit(vp->v_mount, lfs_specop_p, LFS_FIFOOPS, &vp)) {
+		vput(vp);
+		*ap->a_vpp = NULL;
+		return (error);
+	}
+
+	*ap->a_vpp = vp;
+	vp->v_flag |= VDIROP;
+	VREF(ip->i_devvp);
 
 	/* Set superblock modified bit and increment file count. */
 	fs->lfs_fmod = 1;
@@ -147,7 +156,7 @@ lfs_vcreate(mp, ino, vpp)
 	ip->i_devvp = ump->um_devvp;
 	ip->i_flag = IMOD;
 	ip->i_dev = ump->um_dev;
-	ip->i_number = ip->i_din.di_inum = ino;
+	ip->i_number = ip->i_din.di_inumber = ino;
 	ip->i_lfs = ump->um_lfs;
 #ifdef QUOTA
 	for (i = 0; i < MAXQUOTAS; i++)
