@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	8.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	8.4 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -108,7 +108,7 @@ main(argc, argv)
 		(void) strcpy(home, pw->pw_dir);
 	}
 	if (argc > 0) {
-		char *xargv[3];
+		char *xargv[5];
 		extern char *__progname;
 
 		if (setjmp(toplevel))
@@ -119,6 +119,7 @@ main(argc, argv)
 		xargv[1] = argv[0];
 		xargv[2] = argv[1];
 		xargv[3] = argv[2];
+		xargv[4] = NULL;
 		setpeer(argc+1, xargv);
 	}
 	top = setjmp(toplevel) == 0;
