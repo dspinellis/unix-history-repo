@@ -1,4 +1,4 @@
-#	Makefile	4.3	83/03/10
+#	Makefile	4.4	84/08/25
 
 CFLAGS=-O
 DESTDIR=
@@ -6,10 +6,10 @@ DESTDIR=
 all: compact uncompact
 
 compact: compact.o tree.o
-	cc compact.o tree.o -o compact
+	${CC} ${LDFLAGS} compact.o tree.o -o compact
 
 uncompact: uncompact.o tree.o
-	cc uncompact.o tree.o -o uncompact
+	${CC} ${LDFLAGS} uncompact.o tree.o -o uncompact
 
 compact.o uncompact.o tree.o: compact.h
 

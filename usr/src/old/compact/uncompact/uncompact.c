@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)uncompact.c	4.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)uncompact.c	4.6 (Berkeley) %G%";
 #endif
 
 /*
@@ -11,165 +11,216 @@ static char sccsid[] = "@(#)uncompact.c	4.5 (Berkeley) %G%";
  *
  *  Written by Colin L. Mc Master (UCB) February 14, 1979
  */
-
 #include "compact.h"
+#include <strings.h>
 
+union	cio c;
+union	cio d;
+char	*infname;			/* input file's name */
+char	fname[MAXPATHLEN+1];		/* output file's name */
+struct	stat status;			/* compacted file status */
 
-main (argc, argv)
-short argc;
-char *argv [ ];
+int	verbose = 0;
+
+main(argc, argv)
+	int argc;
+	char *argv[];
 {
-	register short i;
+	register short j;
+
+	argc--, argv++;
+	if (argc > 0 && strcmp(*argv, "-v") == 0) {
+		verbose++;
+		argc--, argv++;
+	}
+	dir[513].next = NULL;
+	for (head = dir + (j = 513); j--; ) {
+		dirp = head--;
+		head->next = dirp;
+	}
+	bottom = dirp->pt = dict;
+	dict[0].top[LEFT] = dict[0].top[RIGHT] = dirp;
+	dirq = dirp->next;
+	in[EF].flags = FBIT | SEEN;
+	if (argc == 0)
+		exit(uncompact("-"));
+	for (j = 0; j < argc; j++) {
+		if (uncompact(argv[j]))
+			exit(1);
+		if (verbose && argc > 0)
+			printf("%s uncompacted to %s\n", argv[j], fname);
+	}
+	exit(0);
+}
+
+uncompact(file)
+	char *file;
+{
+	int ignore;
+	FILE *setup();
+
+	bottom->top[1]->next = flist;
+	bottom->top[1] = dirp;
+	flist = dirq;
+	if (strcmp(file, "-") != 0) {
+		char *cp;
+
+		strcpy(fname, file);
+		cp = rindex(fname, '.');
+		if (cp == 0 || strcmp(cp, ".C") != 0) {
+			fprintf(stderr,
+			    "uncompact: %s: File must have .C suffix.\n", file);
+			return;
+		}
+		*cp = '\0';
+		cfp = fopen(file, "r");
+		if (cfp == NULL) {
+			fprintf(stderr, "uncompact: "), perror(file);
+			return;
+		}
+		(void) fstat(fileno(cfp), &status);
+	} else
+		cfp = stdin;
+	infname = file;
+	uncfp = setup(cfp, &ignore);
+	if (uncfp == NULL) {
+		if (ignore)
+			goto done;
+		goto bad;
+	}
+	decompress(cfp, uncfp);
+	fflush(uncfp);
+	if (ferror(uncfp) || ferror(cfp)) {
+		if (uncfp != stdout) {
+			if (ferror(uncfp))
+				perror(fname);
+			else
+				perror(infname);
+			(void) unlink(fname);
+		}
+		goto bad;
+	}
+	if (uncfp != stdout && unlink(infname) < 0)
+		fprintf(stderr, "uncompact: "), perror(infname);
+done:
+	if (uncfp != NULL && uncfp != stdout)
+		fclose(uncfp);
+	if (cfp != NULL)
+		fclose(cfp);
+	return (0);
+bad:
+	fprintf(stderr, "uncompact: ");
+	if (strcmp(infname, "-") != 0)
+		perror(infname);
+	else
+		fprintf(stderr,
+	    "Unsuccessful uncompact of standard input to standard output.\n");
+	return (1);
+}
+
+decompress(cfp, uncfp)
+	register FILE *cfp, *uncfp;
+{
 	register struct node *p;
 	register short j;
 	register int m;
-	union cio c, d;
+	register struct cio *dp = &d;
 	char b;
-	longint ic, n;
-	char fname [LNAME], *cp;
 
-	dir [513] . next = NULL;
-	for (head = dir + (j = 513); j--; ) {
-		dirp = head--;
-		head -> next = dirp;
-	}
-	bottom = dirp -> pt = dict;
-	dict [0] . top [0] = dict [0] . top [1] = dirp;
-	dirq = dirp -> next;
-	in [EF] . flags = FBIT | SEEN;
-
-	for (i = 1; ; i++) {
-		ic = oc = 0;
-		(bottom -> top [1]) -> next = flist;
-		bottom -> top [1] = dirp;
-		flist = dirq;
-		if (i >= argc) {
-			uncfp = stdout;
-			cfp = stdin;
-		}
-		else {
-			m = -1;
-			cp = fname;
-			for (j = 0; j < (LNAME - 3) && (*cp = argv [i][j]); j++)
-				if (*cp++ == '/') m = j;
-			if (cp [-1] == 'C' && cp [-2] == '.') cp [-2] = 0;
-			else {
-				fprintf (stderr, "%s: File name must end with \".C\"\n", argv [i]);
-				if (i == argc - 1) break;
-				continue;
-			}
-			if (j >= (LNAME - 3) || (j - m) > MAXNAMLEN) {
-				fprintf (stderr, "File name too long -- %s\n", argv [i]);
-				if (i == argc - 1) break;
-				continue;
-			}
-			if ((cfp = fopen (argv [i], "r")) == NULL) {
-				perror (argv [i]);
-				if (i == argc - 1) break;
-				continue;
-			}
-			if ((uncfp = fopen (fname, "w")) == NULL) {
-				perror (fname);
-				fclose (cfp);
-				if (i == argc - 1) break;
-				continue;
-			}
-			fstat (fileno (cfp), &status);
-			chmod (fname, status.st_mode & 07777);
-		}
-
-		if ((c . integ = getc (cfp)) != EOF) {
-			if ((d . integ = getc (cfp)) != EOF) {
-				c . chars . hib = d . integ & 0377;
-				c . integ &= 0177777;
-				if (c . integ != COMPACTED) goto notcompact;
-				if ((c . integ = getc (cfp)) != EOF) {
-					putc (c . chars . lob, uncfp);
-					ic = 3;
-		
-					in [NC] . fp = in [EF] . fp = dict [0] . sp [0] . p = bottom = dict + 1;
-					bottom -> count [0] = bottom -> count [1] = dict [0] . count [1] = 1;
-					dirp -> next = dict [0] . top [1] = bottom -> top [0] = bottom -> top [1] = dirq = NEW;
-					dirq -> next = NULL;
-					dict [0] . fath . fp = NULL;
-					dirq -> pt = bottom -> fath . fp = in [c . integ] . fp = dict;
-					in [c . integ] . flags = (FBIT | SEEN);
-					in [NC] . flags = SEEN;
-					dict [0] . fath . flags = RLEAF;
-					bottom -> fath . flags = (LLEAF | RLEAF);
-					dict [0] . count [0] = 2;
-		
-					dict [0] . sp [1] . ch = c . integ;
-					bottom -> sp [0] . ch = NC;
-					bottom -> sp [1] . ch = EF;
-		
-					p = dict;
-					while ((c . integ = getc (cfp)) != EOF) {
-						ic++;
-						for (m = 0200; m; ) {
-							b = (m & c . integ ? 1 : 0);
-							m >>= 1;
-							if (p -> fath . flags & (b ? RLEAF : LLEAF)) {
-								d . integ = p -> sp [b] . ch;
-								if (d . integ == EF) break;
-								if (d . integ == NC) {
-									uptree (NC);
-									d . integ = 0;
-									for (j = 8; j--; m >>= 1) {
-										if (m == 0) {
-											c . integ = getc (cfp);
-											ic++;
-											m = 0200;
-										}
-										d . integ <<= 1;
-										if (m & c . integ) d . integ++;
-									}
-									insert (d . integ);
-								}
-								uptree (d . integ);
-								putc (d . chars . lob, uncfp);
-								oc++;
-								p = dict;
-							}
-							else p = p -> sp [b] . p;
+	p = dict;
+	while ((c.integ = getc (cfp)) != EOF) {
+		for (m = 0200; m; ) {
+			b = (m & c.integ ? 1 : 0);
+			m >>= 1;
+			if (p->fath.flags & (b ? RLEAF : LLEAF)) {
+				dp->integ = p->sp[b].ch;
+				if (dp->integ == EF)
+					break;
+				if (dp->integ == NC) {
+					uptree(NC);
+					dp->integ = 0;
+					for (j = 8; j--; m >>= 1) {
+						if (m == 0) {
+							c.integ = getc(cfp);
+							m = 0200;
 						}
+						dp->integ <<= 1;
+						if (m & c.integ)
+							dp->integ++;
 					}
+					insert(dp->integ);
 				}
-			}
-			else goto notcompact;
+				uptree(dp->integ);
+				putc(dp->chars.lob, uncfp);
+				p = dict;
+			} else
+				p = p->sp[b].p;
 		}
-		else {
-			notcompact : if (i < argc) {
-					     fprintf (stderr, "%s: ", argv [i]);
-					     unlink (fname);
-				     }
-				     if (c . integ == PACKED) fprintf (stderr, "File is packed. Use unpack.\n");
-				     else fprintf (stderr, "Not a compacted file.\n");
-				     if (i >= argc) break;
-				     goto closeboth;
-		}
-
-		fflush (uncfp);
-		if (ferror (uncfp) || ferror (cfp))
-			if (i < argc) {
-				if (ferror (uncfp))
-					perror (fname);
-				else
-					perror (argv [i]);
-				fprintf (stderr, "Unable to uncompact %s\n", argv [i]);
-				unlink (fname);
-				goto closeboth;
-			}
-			    if (i >= argc) break;
-			    fprintf (stderr, "%s uncompacted to %s\n", argv [i], fname);
-			    unlink (argv [i]);
-		closeboth : fclose (cfp);
-		closein   : fclose (uncfp);
-			    if (i == argc - 1) break;
-			    for (j = 256; j--; ) in [j] . flags = 0;
-			    continue;
-		fail 	  : fprintf (stderr, "Unsuccessful uncompact of standard input to standard output.\n");
-		            break;
 	}
-	return (0);
+}
+
+FILE *
+setup(cfp, ignore)
+	FILE *cfp;
+	int *ignore;
+{
+	FILE *uncfp = NULL;
+	register union cio *dp = &d;
+	register union cio *cp = &c;
+
+	dp->integ = getc(cfp);
+	if (*ignore = (dp->integ == EOF))
+		goto bad;
+	cp->integ = getc(cfp);
+	if (*ignore = (cp->integ == EOF))
+		goto bad;
+	dp->chars.hib = cp->integ & 0377;
+	if ((dp->integ &= 0177777) != COMPACTED) {
+		if (dp->integ == PACKED)
+			fprintf(stderr, "%s: File is packed, use unpack.\n",
+			    infname);
+		else
+			fprintf(stderr, "%s: Not a compacted file.\n", infname);
+		*ignore = 1;
+		goto bad;
+	}
+	if (strcmp(infname, "-") != 0) {
+		uncfp = fopen(fname, "w");
+		if (uncfp == NULL) {
+			perror(fname);
+			goto bad;
+		}
+		(void) fchmod(fileno(uncfp), status.st_mode);
+	} else
+		uncfp = stdout;
+	cp->integ = getc(cfp);
+	if (cp->integ == EOF)
+		goto bad;
+	putc(cp->chars.lob, uncfp);
+
+	in[NC].fp = in[EF].fp = dict[0].sp[LEFT].p = bottom = dict + 1;
+	bottom->count[LEFT] = bottom->count[RIGHT] =
+	    dict[0].count[RIGHT] = 1;
+	dirp->next = dict[0].top[RIGHT] = bottom->top[LEFT] =
+	    bottom->top[RIGHT] = dirq = NEW;
+	dirq->next = NULL;
+	dict[0].fath.fp = NULL;
+	dirq->pt = bottom->fath.fp = in[cp->integ].fp = dict;
+	in[cp->integ].flags = (FBIT | SEEN);
+	in[NC].flags = SEEN;
+	dict[0].fath.flags = RLEAF;
+	bottom->fath.flags = (LLEAF | RLEAF);
+	dict[0].count[LEFT] = 2;
+
+	dict[0].sp[RIGHT].ch = cp->integ;
+	bottom->sp[LEFT].ch = NC;
+	bottom->sp[RIGHT].ch = EF;
+	return (uncfp);
+bad:
+	if (uncfp && uncfp != stdout) {
+		perror(fname);
+		(void) unlink(fname);
+		fclose(uncfp);
+	}
+	return (NULL);
 }

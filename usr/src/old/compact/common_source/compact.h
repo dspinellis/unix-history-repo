@@ -1,7 +1,4 @@
-/*	compact.h	4.4	83/06/03	*/
-
-#define VAX 11/780
-
+/*	compact.h	4.5	84/08/25	*/
 
 #if defined(vax) || defined(sun)
 typedef int longint;
@@ -14,54 +11,57 @@ typedef long longint;
 #include <sys/dir.h>
 #include <stdio.h>
 
-#define LNAME (MAXPATHLEN+1)
-#define NEW flist; flist = flist -> next
-#define LLEAF 010
-#define RLEAF 04
-#define SEEN 02
-#define FBIT 01
 #define COMPACTED 017777
-#define PACKED 017437
-#define EF 0400
-#define NC 0401
+#define PACKED	017437
 
 struct charac {
 #if defined(vax) || defined(pdp11)
-	char lob, hib;
+	char	lob, hib;
 #else
-	char hib, lob;
+	char	hib, lob;
 #endif
 };
 
 union cio {
-	struct charac chars;
-	short integ;
+	struct	charac chars;
+	short	integ;
 };
 
+#define LLEAF	010
+#define RLEAF	04
+#define SEEN	02
+#define FBIT	01
+
+#define EF	0400
+#define NC	0401
+
+#define	NF	(NC+1)
+
 struct fpoint {
-	struct node *fp;
-	int flags;
-} in [258];
+	struct	node *fp;
+	int	flags;
+} in[NF];
 
 struct index {
-	struct node *pt;
-	struct index *next;
-} dir [514], *head, *flist, *dirp, *dirq;
+	struct	node *pt;
+	struct	index *next;
+} dir[2*NF], *head, *flist, *dirp, *dirq;
+
+#define	NEW	flist; flist = flist->next
 
 union treep {
-	struct node *p;
-	int ch;
+	struct	node *p;
+	int	ch;
 };
 
 struct node {
-	struct fpoint fath;
-	union treep sp [2];
-	struct index *top [2];
-	longint count [2];
-} dict [258], *bottom;
+	struct	fpoint fath;
+	union	treep sp[2];
+	struct	index *top[2];
+	longint	count[2];
+#define	LEFT	0
+#define	RIGHT	1
+} dict[NF], *bottom;
 
-longint oc;
-
-FILE *cfp, *uncfp;
-
-struct stat status;
+FILE	*cfp;
+FILE	*uncfp;
