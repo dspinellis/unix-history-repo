@@ -15,13 +15,12 @@ static char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)mountd.c	8.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)mountd.c	8.5 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
 #include <sys/file.h>
 #include <sys/ioctl.h>
-#define CD9660
 #include <sys/mount.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
