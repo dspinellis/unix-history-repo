@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)dev_mkdb.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)dev_mkdb.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -35,6 +35,7 @@ main(argc, argv)
 	register DIR *dirp;
 	register struct dirent *dp;
 	struct stat sb;
+	char bkeybuf[sizeof(sb.st_rdev) + 1];
 	DB *db;
 	DBT data, key;
 	int ch;
@@ -62,16 +63,29 @@ main(argc, argv)
 	if (!db)
 		error(dbtmp);
 
-	key.data = (u_char *)&sb.st_rdev;
-	key.size = sizeof(sb.st_rdev);
+	/*
+	 * Character devices are stored using st_rdev as the key.
+	 * Block devices are stores using st_rdev followed by exactly
+	 * one NULL byte as the key.
+	 */
+	key.data = bkeybuf;
+	bkeybuf[sizeof(sb.st_rdev)] = NULL;
 	data.data = buf;
 	while (dp = readdir(dirp)) {
-		if (stat(dp->d_name, &sb))
-			error(dp->d_name);
-		if (!S_ISCHR(sb.st_mode))
+		if (stat(dp->d_name, &sb)) {
+			(void)fprintf(stderr, "dev_mkdb: can't stat %s\n",
+				dp->d_name);
 			continue;
-
-		/* Nul terminate the name so ps doesn't have to. */
+		}
+		if (S_ISCHR(sb.st_mode))
+			key.size = sizeof(sb.st_rdev);
+		else if (S_ISBLK(sb.st_mode))
+			key.size = sizeof(sb.st_rdev) + 1;
+		else
+			continue;
+		/* 
+		 * Nul terminate the name so caller doesn't have to. 
+		 */
 		bcopy(dp->d_name, buf, dp->d_namlen);
 		buf[dp->d_namlen] = '\0';
 		data.size = dp->d_namlen + 1;
