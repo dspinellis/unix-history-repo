@@ -4,9 +4,9 @@
 .\" This code is derived from software contributed to Berkeley by
 .\" the Institute of Electrical and Electronics Engineers, Inc.
 .\"
-.\" %sccs.include.redist.man%
+.\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)cp.1	6.14 (Berkeley) %G%
+.\"	@(#)cp.1	6.15 (Berkeley) %G%
 .\"
 .Dd 
 .Dt CP 1
@@ -39,7 +39,7 @@ If
 detects an attempt to copy a file to itself, the copy will fail.
 .Pp
 The following options are available:
-.Bl -tag -width 4n
+.Bl -tag -width flag
 .It Fl R
 If
 .Ar source_file
@@ -103,7 +103,7 @@ ID are unchanged.
 .Pp
 If the destination file does not exist, the mode of the source file is
 used as modified by the file mode creation mask
-.Pf \&( Ic umask ,
+.Pf ( Ic umask ,
 see
 .Xr csh 1 ) .
 If the source file has its set user ID bit on, that bit is removed
@@ -130,4 +130,6 @@ exits 0 on success, >0 if an error occurred.
 .Sh HISTORY
 The
 .Nm cp
-command is expected to be POSIX 1003.2 compatible.
+command is expected to be
+.St -p1003.2
+compatible.
