@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)net.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)net.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -40,13 +40,7 @@ netfinger(name)
 	if (!(host = rindex(name, '@')))
 		return;
 	*host++ = NULL;
-	if (!(hp = gethostbyname(host))) {
-		defaddr.s_addr = inet_addr(host);
-		if (defaddr.s_addr == -1) {
-			(void)fprintf(stderr,
-			    "finger: unknown host: %s\n", host);
-			return;
-		}
+	if (isdigit(*host) && (defaddr.s_addr = inet_addr(host)) != -1) {
 		def.h_name = host;
 		def.h_addr_list = alist;
 		def.h_addr = (char *)&defaddr;
@@ -54,6 +48,10 @@ netfinger(name)
 		def.h_addrtype = AF_INET;
 		def.h_aliases = 0;
 		hp = &def;
+	} else if (!(hp = gethostbyname(host))) {
+		(void)fprintf(stderr,
+		    "finger: unknown host: %s\n", host);
+		return;
 	}
 	if (!(sp = getservbyname("finger", "tcp"))) {
 		(void)fprintf(stderr, "finger: tcp/finger: unknown service\n");
