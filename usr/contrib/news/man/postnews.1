@@ -1,0 +1,86 @@
+.if n .ds La '
+.if n .ds Ra '
+.if t .ds La `
+.if t .ds Ra '
+.if n .ds Lq "
+.if n .ds Rq "
+.if t .ds Lq ``
+.if t .ds Rq ''
+.de Ch
+\\$3\\*(Lq\\$1\\*(Rq\\$2
+..
+.TH POSTNEWS 1 "January 17, 1986"
+.ds ]W  Version B 2.10.3
+.SH NAME
+postnews \- submit news articles
+.SH SYNOPSIS
+.BR postnews " [ "
+.IR article " ]"
+.SH DESCRIPTION
+.I Postnews
+is a program that calls
+.IR inews (1)
+to submit news articles to USENET.
+The commands should be self-explanatory, however you may type
+.Ch ?
+to most prompts to get a list of the possible options (obviously, except
+for the \*(LqSubject\*(Rq of the article, \*(LqKeywords\*(Rq, etc).
+It will prompt the user for the title of the article
+(which should be a phrase suggesting the subject,
+so that persons reading the news can tell if they
+are interested in the article), for the newsgroup,
+and for the distribution.
+.PP
+The distribution is typically a geographic region or corporate region.
+Typing
+.Ch ?
+will get you a list of the possible distributions. You should
+use the minimum distribution that will serve your purpose for
+posting the article. For example, if you are selling your car in New
+Jersey, it is doubtful that someone in California (or Europe) would
+be willing to buy it. If you don't restrict the distribution to your
+local area, you will cause this article to be transmitted unnecessarily
+around the world.  Currently, with a distribution of
+.BR world ,
+the article
+will be seen in the United States, Canada, Europe, Japan, Korea and
+other places.
+A distribution header will, if given, be included in the headers
+of the article, affecting where the article is distributed to.
+.PP
+After entering the title, newsgroup, and distribution,
+the user will be placed in an editor.
+If
+.B EDITOR
+is set in the environment, that editor will be used.
+Otherwise,
+.I postnews
+defaults to
+.IR vi (1).
+.PP
+An initial set of headers containing the subject and newsgroups
+will be placed in the editor, followed by a blank line.
+The article should be appended to the buffer, after the blank line.
+The initial headers can be changed, or additional headers added,
+while in the editor, if desired.
+.PP
+After you have finished typing in your article, you have the
+option of sending it, listing it, quitting without sending it or
+saving it in a file so you can finish editing it and post it later.
+.PP
+For posting news from a program, see
+.IR inews (1).
+.SH "SEE ALSO"
+Mail(1),
+binmail(1),
+checknews(1),
+inews(1),
+mailx(1),
+readnews(1),
+vi(1),
+news(5),
+newsrc(5),
+expire(8),
+recnews(8),
+sendnews(8),
+uurec(8)
