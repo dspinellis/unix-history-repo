@@ -16,7 +16,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)join.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)join.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -284,7 +284,7 @@ slurp(F)
 			F->pushbool = 0;
 			continue;
 		}
-		if ((bp = fgetline(F->fp, &len)) == NULL)
+		if ((bp = fgetln(F->fp, &len)) == NULL)
 			return;
 		if (lp->linealloc <= len + 1) {
 			lp->linealloc += MAX(100, len + 1);
