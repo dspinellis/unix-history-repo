@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid ="@(#)pftn.c	1.20 (Berkeley) %G%";
+static char *sccsid ="@(#)pftn.c	1.21 (Berkeley) %G%";
 #endif lint
 
 # include "pass1.h"
@@ -751,7 +751,9 @@ tsize( ty, d, s )  TWORD ty; {
 		switch( (ty>>i)&TMASK ){
 
 		case FTN:
-			cerror( "compiler takes size of function");
+			/* cerror( "compiler takes size of function"); */
+			uerror( "can't take size of function" );
+			return( SZCHAR );
 		case PTR:
 			return( SZPOINT * mult );
 		case ARY:
