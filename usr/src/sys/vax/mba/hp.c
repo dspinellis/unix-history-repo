@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)hp.c	7.14 (Berkeley) %G%
+ *	@(#)hp.c	7.15 (Berkeley) %G%
  */
 
 #ifdef HPDEBUG
@@ -352,7 +352,7 @@ hpinit(dev, flags)
 		else
 			log(LOG_ERR, "hp%d: %s\n", unit, msg);
 #ifdef COMPAT_42
-		if ((mi->mi_type = hpmaptype(mi, lp)) == 0)
+		if (hpmaptype(mi, lp) == 0)
 #endif
 		goto raw;
 	}
@@ -1345,6 +1345,7 @@ hpmaptype(mi, lp)
 			type = HPDT_EAGLE;
 			break;
 		}
+		mi->mi_type = type;
 	}
 
 	/*
@@ -1389,6 +1390,7 @@ hpmaptype(mi, lp)
 			lp->d_partitions[0].p_size = lp->d_secperunit;
 			return (0);
 		}
+		mi->mi_type = type;
 	}
 
 	/*
@@ -1410,7 +1412,7 @@ hpmaptype(mi, lp)
 		    lp->d_secpercyl;
 		lp->d_partitions[i].p_size = st->sizes[i].nblocks;
 	}
-	return (type);
+	return (1);
 }
 #endif COMPAT_42
 #endif
