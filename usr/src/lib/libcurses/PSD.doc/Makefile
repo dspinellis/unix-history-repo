@@ -1,4 +1,4 @@
-#	@(#)Makefile	8.1 (Berkeley) %G%
+#	@(#)Makefile	6.8 (Berkeley) %G%
 
 DIR=	psd/19.curses
 SRCS=	Master
@@ -24,7 +24,7 @@ VFONT=	/usr/libexec/vfontedpr
 paper.ps: ${SRCS}
 	${ROFF} ${SRCS} > ${.TARGET}
 
-Master: twinkle1.gr ex2.gr fns.doc intro.5 intro.2.tbl intro.0 intro.1 \
+Master: twinkle1.gr ex1.gr ex2.gr fns.doc intro.5 intro.2.tbl intro.0 intro.1 \
 	intro.3 intro.4 intro.6 macros c_macros
 
 intro.2.tbl: intro.2
