@@ -34,7 +34,7 @@ extern struct contab {
 #ifdef	INCORE
 	tchar *wbuf;
 	tchar *rbuf;
-	tchar corebuf[NBLIST*BLK];
+	tchar corebuf[NBLIST*BLK + NEV*EVS];
 #else
 	tchar wbuf[BLK];
 	tchar rbuf[BLK];
