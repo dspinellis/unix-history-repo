@@ -11,20 +11,18 @@
 #include <machine/machAsmDefs.h>
 
 #if defined(LIBC_SCCS) && !defined(lint)
-	ASMSTR("@(#)bcmp.s	5.4 (Berkeley) %G%")
+	ASMSTR("@(#)bcmp.s	5.5 (Berkeley) %G%")
 #endif /* LIBC_SCCS and not lint */
 
 /* bcmp(s1, s2, n) */
 
-#include <machine/endian.h>
-
-#if BYTE_ORDER == LITTLE_ENDIAN
+#ifdef MIPSEL
 #	define	LWHI	lwr
 #	define	LWLO	lwl
 #	define	SWHI	swr
 #	define	SWLO	swl
 #endif
-#if BYTE_ORDER == BIG_ENDIAN
+#ifdef MIPSEB
 #	define	LWHI	lwl
 #	define	LWLO	lwr
 #	define	SWHI	swl
