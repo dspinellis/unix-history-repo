@@ -1,7 +1,8 @@
-/*	raw_usrreq.c	6.3	84/08/20	*/
+/*	raw_usrreq.c	6.4	84/08/21	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
+#include "../h/domain.h"
 #include "../h/protosw.h"
 #include "../h/socket.h"
 #include "../h/socketvar.h"
@@ -91,7 +92,7 @@ next:
 	last = 0;
 	for (rp = rawcb.rcb_next; rp != &rawcb; rp = rp->rcb_next) {
 		lproto = rp->rcb_socket->so_proto;
-		if (lproto->pr_family != rh->raw_proto.sp_family)
+		if (lproto->pr_domain->dom_family != rh->raw_proto.sp_family)
 			continue;
 		if (lproto->pr_protocol &&
 		    lproto->pr_protocol != rh->raw_proto.sp_protocol)
