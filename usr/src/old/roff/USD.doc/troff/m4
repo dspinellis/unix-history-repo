@@ -1,6 +1,6 @@
 .\" %sccs.include.proprietary.roff%
 .\"
-.\"	@(#)m4	8.1 (Berkeley) %G%
+.\"	@(#)m4	8.2 (Berkeley) %G%
 .\"
 .tr |
 .mh
@@ -25,6 +25,7 @@ or hyphenation indicator characters\
 \(emsuch as mother-in-law\(em\
 are \fIalways\fR subject to splitting after those characters,
 whether or not automatic hyphenation is on or off.
+.pl +1
 .h1
 .bt
 \fB&nh\fR	hyphenate	-	E	\
@@ -51,6 +52,7 @@ i.|e. \fIdig\-it\fR implies \fIdig\-its\fR.
 This list is examined initially \fIand\fR after
 each suffix stripping.
 The space available is small\(emabout 128 characters.
+.pl -1
 .mh
 Three Part Titles.
 .pg

@@ -1,6 +1,6 @@
 .\" %sccs.include.proprietary.roff%
 .\"
-.\"	@(#)awk	8.1 (Berkeley) %G%
+.\"	@(#)awk	8.2 (Berkeley) %G%
 .\"
 .EH 'USD:16-%''Awk \(em A Pattern Scanning and Processing Language'
 .OH 'Awk \(em A Pattern Scanning and Processing Language''USD:16-%'
@@ -175,6 +175,7 @@ The program
 $2 ~ /A\||B\||C/
 .P2
 prints all input lines with an A, B, or C in the second field.
+.ne 1i
 The program
 .P1
 $1 != prev	{ print; prev = $1 }
@@ -872,6 +873,8 @@ if ($1 == $2) ...
 fields are treated as strings.
 .PP
 Each input line is split into fields automatically as necessary.
+.br
+.ne 1i
 It is also possible to split any variable or string
 into fields:
 .P1

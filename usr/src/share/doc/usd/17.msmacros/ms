@@ -1,6 +1,6 @@
 .\" %sccs.include.proprietary.roff%
 .\"
-.\"	@(#)ms	8.1 (Berkeley) %G%
+.\"	@(#)ms	8.2 (Berkeley) %G%
 .\"
 .EH 'USD:17-%''Using the \-ms Macros with Troff and Nroff'
 .OH 'Using the \-ms Macros with Troff and Nroff''USD:17-%'
@@ -255,6 +255,7 @@ sub-sections, as in this example:
 	.NH 2
 	Boonton Line
 .DE
+.ne 1i
 generates:
 .NH
 Erie-Lackawanna
@@ -548,6 +549,7 @@ by enclosing them with .B1 and .B2:
 .DE
 as has been done here.
 .B2
+.ne 1i
 .PP
 .I
 Keeping blocks together.
