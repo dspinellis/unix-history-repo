@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)malloc.h	7.25 (Berkeley) 5/15/91
- *	$Id: malloc.h,v 1.4 1993/11/07 17:52:43 wollman Exp $
+ *	$Id: malloc.h,v 1.5 1994/03/02 20:29:01 guido Exp $
  */
 
 #ifndef _MALLOC_H_
@@ -273,5 +273,7 @@ extern char *kmembase;
 extern struct kmembuckets bucket[];
 extern void *malloc __P((unsigned long size, int type, int flags));
 extern void free __P((void *addr, int type));
+extern void *contigmalloc __P((unsigned long size, int type, int flags, unsigned long maxpa,
+			       unsigned long alignmask, unsigned long boundarymask));
 #endif /* KERNEL */
 #endif /* !_MALLOC_H_ */
