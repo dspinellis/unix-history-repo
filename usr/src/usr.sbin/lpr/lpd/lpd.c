@@ -13,7 +13,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)lpd.c	5.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)lpd.c	5.19 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -114,6 +114,7 @@ main(argc, argv)
 #endif
 
 	openlog("lpd", LOG_PID, LOG_LPR);
+	syslog(LOG_INFO, "restarted");
 	(void) umask(0);
 	lfd = open(_PATH_MASTERLOCK, O_WRONLY|O_CREAT, 0644);
 	if (lfd < 0) {
