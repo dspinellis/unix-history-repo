@@ -9,7 +9,7 @@
 */
 
 #ifndef lint
-static char	SccsId[] = "@(#)readcf.c	5.8 (Berkeley) %G%";
+static char	SccsId[] = "@(#)readcf.c	5.9 (Berkeley) %G%";
 #endif not lint
 
 # include "sendmail.h"
@@ -300,7 +300,7 @@ fileclass(class, filename, fmt)
 	char *filename;
 	char *fmt;
 {
-	register FILE *f;
+	FILE *f;
 	char buf[MAXLINE];
 
 	f = fopen(filename, "r");
@@ -313,12 +313,42 @@ fileclass(class, filename, fmt)
 	while (fgets(buf, sizeof buf, f) != NULL)
 	{
 		register STAB *s;
+		register char *p;
+# ifdef SCANF
 		char wordbuf[MAXNAME+1];
 
 		if (sscanf(buf, fmt, wordbuf) != 1)
 			continue;
-		s = stab(wordbuf, ST_CLASS, ST_ENTER);
-		setbitn(class, s->s_class);
+		p = wordbuf;
+# else SCANF
+		p = buf;
+# endif SCANF
+
+		/*
+		**  Break up the match into words.
+		*/
+
+		while (*p != '\0')
+		{
+			register char *q;
+
+			/* strip leading spaces */
+			while (isspace(*p))
+				p++;
+			if (*p == '\0')
+				break;
+
+			/* find the end of the word */
+			q = p;
+			while (*p != '\0' && !isspace(*p))
+				p++;
+			if (*p != '\0')
+				*p++ = '\0';
+
+			/* enter the word in the symbol table */
+			s = stab(q, ST_CLASS, ST_ENTER);
+			setbitn(class, s->s_class);
+		}
 	}
 
 	(void) fclose(f);
