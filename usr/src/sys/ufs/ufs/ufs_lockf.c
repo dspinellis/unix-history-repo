@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_lockf.c	7.5 (Berkeley) %G%
+ *	@(#)ufs_lockf.c	7.6 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -128,7 +128,7 @@ lf_setlock(lock)
 			lf_printlist("lf_setlock", block);
 		}
 #endif /* LOCKF_DEBUG */
-		if (error = tsleep((caddr_t *)lock, priority, lockstr, 0)) {
+		if (error = tsleep((caddr_t)lock, priority, lockstr, 0)) {
 			free(lock, M_LOCKF);
 			return (error);
 		}
