@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	5.43 (Berkeley) %G%
+ *	@(#)sendmail.h	5.44 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	5.43		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	5.44		%G%";
 # endif lint
 # else /*  _DEFINE */
 # define EXTERN extern
@@ -437,7 +437,7 @@ MAP
 # define MF_VALID	00001		/* this entry is valid */
 # define MF_INCLNULL	00002		/* include null byte in key */
 # define MF_OPTIONAL	00004		/* don't complain if map not found */
-# define MF_FOLDCASE	00010		/* fold case in keys */
+# define MF_NOFOLDCASE	00010		/* don't fold case in keys */
 /*
 **  Symbol table definitions
 */
