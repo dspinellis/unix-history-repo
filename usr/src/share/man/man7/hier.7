@@ -1,276 +1,353 @@
 .\" Copyright (c) 1990 The Regents of the University of California.
 .\" All rights reserved.
 .\"
-.\" %sccs.include.redist.man%
+.\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)hier.7	6.2 (Berkeley) %G%
+.\"	@(#)hier.7	6.3 (Berkeley) %G%
 .\"
 .Dd 
 .Dt HIER 7
-.Os BSD 4.4
+.Os
 .Sh NAME
 .Nm hier
 .Nd layout of filesystems
 .Sh DESCRIPTION
 A sketch of the filesystem hierarchy.
-.Dw Fl
-.Di L
-.Dp Li /
+.Bl -tag -width "/stand/"
+.It Li /
 root directory of the filesystem
-.Dp Li /bin/
+.It Li /bin/
 user utilities fundamental to both single-user and multi-user environments
-.Dp Li /dev/
+.It Li /dev/
 block and character device files
-.Dw Fl
-.Di L
-.Dp Li MAKEDEV
-script for creating device files; see makedev(8)
-.Dp Li fd/ 
-file descriptor files; see fd(4)
-.Dp
-.Dp Li /etc/
+.Pp
+.Bl -tag -width MAKEDEV -compact
+.It Li MAKEDEV
+script for creating device files;
+see
+.Xr makedev 8
+.It Li fd/ 
+file descriptor files;
+see
+.Xr \&fd 4
+.El
+.It Li /etc/
 system configuration files and scripts 
-.Dw Fl
-.Di L
-.Dp Li localtime
-local timezone information; see ctime(3)
-.Dp Li disklabels/
-backup disklabels; see disklabel(8)
-.Dp Li kerberosIV/ 
-configuration files for the kerberos version IV; see kerberos(1)
-.Dp Li mtree/ 
-mtree configuration files; see mtree(1)
-.Dp Li namedb/ 
-named configuration files; see named(8)
-.Dp
-.Dp Li /mnt/
-empty directory commonly used by system administrators as a temporary mount point
-.Dp Li /sbin/
-system programs and administration utilities fundamental to both single-user and multi-user environments
-.Dp Li /stand/
+.Pp
+.Bl -tag -width "disklabels/" -compact
+.It Li localtime
+local timezone information;
+see
+.Xr ctime 3
+.It Li disklabels/
+backup disklabels;
+see
+.Xr disklabel 8
+.It Li kerberosIV/ 
+configuration files for the kerberos version IV;
+see
+.Xr kerberos 1
+.It Li mtree/ 
+mtree configuration files;
+see
+.Xr mtree 1
+.It Li namedb/ 
+named configuration files;
+see
+.Xr named 8
+.El
+.It Li /mnt/
+empty directory commonly used by
+system administrators as a temporary mount point
+.It Li /sbin/
+system programs and administration utilities
+fundamental to both single-user and multi-user environments
+.It Li /stand/
 programs used in a standalone environment
-.Dp Li /tmp/ 
-temporary files, usually a mfs(8) memory-based filesystem (the contents
+.It Li /tmp/ 
+temporary files, usually a
+.Xr mfs 8
+memory-based filesystem (the contents
 of /tmp are usually NOT preserved across a system reboot)
-.Dp Li /usr/
+.It Li /usr/
 contains the majority of user utilities and applications 
-.Dw Fl
-.Di L
-.Dp Li bin/
+.Pp
+.Bl -tag -width "libdata/" -compact
+.It Li bin/
 common utilities, programming tools, and applications 
-.Dp Li contrib/
+.It Li contrib/
 large packages contributed to Berkeley by outside parties
-.Dp Li games/
+.It Li games/
 useful and semi-frivolous programs
-.Dp Li include/
+.It Li include/
 standard C include files
-.Dw Fl
-.Di L
-.Dp Li X11/
+.Pp
+.Bl -tag -width "kerberosIV/" -compact
+.It Li X11/
 C include files for X11 window system
-.Dp Li arpa/
+.It Li arpa/
 C include files for Internet service protocols
-.Dp Li kerberosIV/
-C include files for kerberos authentication package; see kerberos(1)
-.Dp Li machine/
+.It Li kerberosIV/
+C include files for kerberos authentication package;
+see
+.Xr kerberos 1
+.It Li machine/
 machine specific C include files
-.Dp Li net/
+.It Li net/
 misc network C include files
-.Dp Li netimp/
-C include files for IMP protocols; see imp(4)
-.Dp Li netinet/
-C include files for Internet standard protocols; see inet(4)
-.Dp Li netiso/
-C include files for ISO standard protocols; see iso(4)
-.Dp Li netns/
-C include files for XNS standard protocols; see ns(4)
-.Dp Li nfs/
+.It Li netimp/
+C include files for IMP protocols;
+see
+.Xr imp 4
+.It Li netinet/
+C include files for Internet standard protocols;
+see
+.Xr inet 4
+.It Li netiso/
+C include files for ISO standard protocols;
+see
+.Xr iso 4
+.It Li netns/
+C include files for XNS standard protocols;
+see
+.Xr \&ns 4
+.It Li nfs/
 C include files for NFS (Network File System)
-.Dp Li pascal/
-include files for pc(1)
-.Dp Li protocols/
+.It Li pascal/
+include files for pc 1
+.It Li protocols/
 C include files for Berkeley service protocols
-.Dp Li sys/
+.It Li sys/
 system C include files (kernel data structures)
-.Dp Li ufs/
+.It Li ufs/
 C include files for UFS (The U-word File System)
-.Dp
-.Dp Li lib/
+.El
+.Pp
+.It Li lib/
 archive libraries
-.Dw Fl
-.Di L
-.Dp Li uucp/
+.Pp
+.Bl -tag -width Fl -compact
+.It Li uucp/
 UUCP configuration files (historically placed; to be moved)
-.Dp
-.Dp Li libdata/
+.El
+.It Li libdata/
 misc. utility data files
-.Dp Li libexec/
+.It Li libexec/
 system daemons & system utilities (executed by other programs)
-.Dp Li local/
+.It Li local/
 local executables, libraries, etc.
-.Dp Li obj/
+.It Li obj/
 architecture-specific target tree produced by building the /usr/src tree
-.Dp Li old/
+.It Li old/
 programs from past lives of BSD which may disappear in future
 releases
-.Dp Li sbin/
+.It Li sbin/
 system daemons & system utilities (executed by users)
-.Dp Li share/
+.It Li share/
 architecture-independent ascii text files
-.Dw Fl
-.Di L
-.Dp Li calendar/
-a variety of pre-fab calendar files; see calendar(1)
-.Dp Li dict/
-word lists; see look(1)
-.Dw Fl
-.Di L
-.Dp Li words
+.Pp
+.Bl -tag -width "calendar/" -compact
+.It Li calendar/
+a variety of pre-fab calendar files;
+see
+.Xr calendar 1
+.It Li dict/
+word lists;
+see
+.Xr look 1
+.Pp
+.Bl -tag -width Fl -compact
+.It Li words
 common words
-.Dp Li web2
+.It Li web2
 words from Webster's 2nd International
-.Dp Li papers/
-reference databases; see refer(1)
-.Dp Li special/
-custom word lists; see spell(1)
-.Dp
-.Dp Li doc/
-misc documentation; src for most of the printed BSD manuals (available
-from the USENIX association)
-.Dp Li games/
+.It Li papers/
+reference databases;
+see
+.Xr refer 1
+.It Li special/
+custom word lists;
+see
+.Xr spell 1
+.El
+.Pp
+.It Li doc/
+misc documentation;
+src for most of the printed
+.Bx BSD
+manuals (available
+from the
+.Tn USENIX
+association)
+.It Li games/
 ascii text files used by various games
-.Dp Li man/
+.It Li man/
 manual pages 
-.Dp Li me/
+.It Li me/
 macros for use with the me macro package
-.Dp Li misc/
+.It Li misc/
 misc system-wide ascii text files
-.Dw Fl
-.Di L
-.Dp Li termcap
-terminal characteristics database; see termcap(5)
-.Dp
-.Dp Li mk/
-templates for make; see make(1)
-.Dp Li ms/
+.Bl -tag -width Fl -compact
+.It Li termcap
+terminal characteristics database;
+see
+.Xr termcap 5
+.El
+.It Li mk/
+templates for make;
+see
+.Xr make 1
+.It Li ms/
 macros for use with the ms macro package
-.Dp Li skel/
+.It Li skel/
 example . (dot) files for new accounts
-.Dp Li tabset/
+.It Li tabset/
 tab description files for a variety of terminals; used in 
-the termcap file; see termcap(5)
-.Dp Li tmac/
-text processing macros; see nroff(1) and troff(1)
-.Dp Li zoneinfo/
-timezone configuration information; see tzfile(5)
-.Dp
-.Dp Li src/
+the termcap file;
+see
+.Xr termcap 5
+.It Li tmac/
+text processing macros;
+see
+.Xr nroff 1
+and 
+.Xr troff 1
+.It Li zoneinfo/
+timezone configuration information;
+see
+.Xr tzfile 5
+.El
+.Pp
+.It Li src/
 BSD and/or local source files
-.Dw Fl
-.Di L
-.Dp Li bin/
+.Pp
+.Bl -tag -width "kerberosIV/" -compact
+.It Li bin/
 src for files in /bin 
-.Dp Li contrib/
+.It Li contrib/
 src for files in /usr/contrib
-.Dp Li etc/
+.It Li etc/
 src for files in /etc
-.Dp Li games/
+.It Li games/
 src for files in /usr/games
-.Dp Li include/
+.It Li include/
 src for files in /usr/include
-.Dp Li kerberosIV/
+.It Li kerberosIV/
 src for kerberos version IV
-.Dp Li lib/
+.It Li lib/
 src for files in /usr/lib
-.Dp Li libexec/
+.It Li libexec/
 src for files in /usr/libexec
-.Dp Li local/
+.It Li local/
 src for files in /usr/local
-.Dp Li old/
+.It Li old/
 src for files in /usr/old
-.Dp Li pgrm/
+.It Li pgrm/
 src for programming tools in /usr/bin
-.Dp Li sbin/
+.It Li sbin/
 src for files in /sbin
-.Dp Li share/
+.It Li share/
 src for files in /usr/share
-.Dp Li sys/
+.It Li sys/
 kernel src files
-.Dp Li usr.bin/
+.It Li usr.bin/
 src for files in /usr/bin
-.Dp Li usr.sbin/
+.It Li usr.sbin/
 src for files in /usr/sbin
-.Dp
-.Dp
-.Dp Li /var/
+.El
+.El
+.It Li /var/
 multi-purpose log, temporary, transient, and spool files
-.Dw Fl
-.Di L
-.Dp Li account/ 
+.Pp
+.Bl -tag -width "preserve/" -compact
+.It Li account/ 
 system accounting files
-.Dw Fl
-.Di L
-.Dp Li acct
-execution accounting file; see acct(5)
-.Dp
-.Dp Li at/
-timed command scheduling files; see at(1)
-.Dp Li backups/
+.Pp
+.Bl -tag -width Fl -compact
+.It Li acct
+execution accounting file;
+see
+.Xr acct 5
+.El
+.Pp
+.It Li at/
+timed command scheduling files;
+see
+.Xr \&at 1
+.It Li backups/
 misc. backup files
-.Dp Li db/ 
+.It Li db/ 
 misc. automatically generated system-specific database files
-.Dp Li games/ 
+.It Li games/ 
 misc. game status and log files
-.Dp Li log/ 
+.It Li log/ 
 misc. system log files
-.Dw Fl
-.Di L
-.Dp Li wtmp
-login/logout log; see wtmp(5)
-.Dp
-.Dp Li mail/ 
+.Pp
+.Bl -tag -width Fl -compact
+.It Li wtmp
+login/logout log;
+see
+.Xr wtmp 5
+.El
+.Pp
+.It Li mail/ 
 user mailbox files
-.Dp Li preserve/
+.It Li preserve/
 temporary home of files preserved after an accidental death
-of an editor; see ex(1) 
-.Dp Li quotas/ 
+of an editor;
+see
+.Xr \&ex 1 
+.It Li quotas/ 
 filesystem quota information files
-.Dp Li run/
+.It Li run/
 system information files describing various info about
 system since it was booted
-.Dw Fl
-.Di L
-.Dp Li utmp
-database of current users; see utmp(5)
-.Dp
-.Dp Li rwho/ 
-rwho data files; see rwhod(8), rwho(1), and ruptime(1)
-.Dp Li spool/ 
+.Pp
+.Bl -tag -width Fl -compact
+.It Li utmp
+database of current users;
+see
+.Xr utmp 5
+.El
+.Pp
+.It Li rwho/ 
+rwho data files;
+see
+.Xr rwhod 8 ,
+.Xr rwho 1 ,
+and
+.Xr ruptime 1
+.It Li spool/ 
 misc. printer and mail system spooling directories
-.Dw Fl
-.Di L
-.Dp Li ftp/ 
+.Pp
+.Bl -tag -width Fl -compact
+.It Li ftp/ 
 commonly ~ftp; the anonymous ftp root directory
-.Dp Li mqueue/ 
-undelivered mail queue; see sendmail(8)
-.Dp Li output/
+.It Li mqueue/ 
+undelivered mail queue;
+see
+.Xr sendmail 8
+.It Li output/
 line printer spooling directories
-.Dp Li secretmail/ 
-secretmail spool directory; see xget(1)
-.Dp Li uucp/ 
+.It Li secretmail/ 
+secretmail spool directory;
+see
+.Xr xget 1
+.It Li uucp/ 
 uucp spool directory
-.Dp Li uucppublic/
+.It Li uucppublic/
 commonly ~uucp; public uucp temporary directory
-.Dp
-.Dp Li tmp/ 
+.El
+.Pp
+.It Li tmp/ 
 temporary files that are kept between system reboots
-.Dp
-.Dp Li /vmunix
+.El
+.It Li /vmunix
 pure kernel executable (the operating system loaded into memory
 at boot time).  
-.Dp
+.El
 .Sh SEE ALSO
-.Xr ls 1 ,
+.Xr \&ls 1 ,
 .Xr apropos 1 ,
 .Xr whatis 1 ,
 .Xr whereis 1 ,
@@ -280,4 +357,7 @@ at boot time).
 .Xr grep 1  ,
 .Xr fsck 8 
 .Sh HISTORY
-4.4 BSD.
+A
+.Nm hier
+manual page appeared in
+.At v7 .
