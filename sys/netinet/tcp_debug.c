@@ -31,16 +31,14 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)tcp_debug.c	7.6 (Berkeley) 6/28/90
- *	$Id: tcp_debug.c,v 1.5 1993/12/13 11:07:43 chmr Exp $
+ *	$Id: tcp_debug.c,v 1.6 1993/12/19 00:52:47 wollman Exp $
  */
 
-#ifdef TCPDEBUG
 /* load symbolic names */
 #define PRUREQUESTS
 #define TCPSTATES
 #define	TCPTIMERS
 #define	TANAMES
-#endif
 
 #include "param.h"
 #include "systm.h"
@@ -98,7 +96,6 @@ tcp_trace(act, ostate, tp, ti, req)
 	else
 		bzero((caddr_t)&td->td_ti, sizeof (*ti));
 	td->td_req = req;
-#ifdef TCPDEBUG
 	if (tcpconsdebug == 0)
 		return;
 	if (tp)
@@ -157,5 +154,4 @@ tcp_trace(act, ostate, tp, ti, req)
 	    tp->snd_max);
 	printf("\tsnd_(wl1,wl2,wnd) (%x,%x,%x)\n",
 	    tp->snd_wl1, tp->snd_wl2, tp->snd_wnd);
-#endif /* TCPDEBUG */
 }

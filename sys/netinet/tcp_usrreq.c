@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)tcp_usrreq.c	7.15 (Berkeley) 6/28/90
- *	$Id: tcp_usrreq.c,v 1.3 1993/11/25 01:35:20 wollman Exp $
+ *	$Id: tcp_usrreq.c,v 1.4 1993/12/19 00:52:53 wollman Exp $
  */
 
 #include "param.h"
@@ -58,7 +58,9 @@
 #include "tcp_timer.h"
 #include "tcp_var.h"
 #include "tcpip.h"
+#ifdef TCPDEBUG
 #include "tcp_debug.h"
+#endif
 
 /*
  * TCP protocol interface to socket abstraction.
@@ -332,8 +334,10 @@ tcp_usrreq(so, req, m, nam, control, dummy)
 	default:
 		panic("tcp_usrreq");
 	}
+#ifdef TCPDEBUG
 	if (tp && (so->so_options & SO_DEBUG))
 		tcp_trace(TA_USER, ostate, tp, (struct tcpiphdr *)0, req);
+#endif
 	splx(s);
 	return (error);
 }

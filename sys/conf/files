@@ -1,4 +1,4 @@
-# $Id: files,v 1.16 1994/01/21 09:55:51 davidg Exp $
+# $Id: files,v 1.17 1994/01/22 09:24:40 rgrimes Exp $
 #
 ddb/db_access.c		optional ddb
 ddb/db_aout.c		optional ddb
@@ -125,7 +125,7 @@ netinet/ip_icmp.c	optional inet
 netinet/ip_input.c	optional inet
 netinet/ip_output.c	optional inet
 netinet/raw_ip.c	optional inet
-netinet/tcp_debug.c	optional inet
+netinet/tcp_debug.c	optional tcpdebug
 netinet/tcp_input.c	optional inet
 netinet/tcp_output.c	optional inet
 netinet/tcp_subr.c	optional inet

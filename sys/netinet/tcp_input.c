@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)tcp_input.c	7.25 (Berkeley) 6/30/90
- *	$Id: tcp_input.c,v 1.3 1993/11/25 01:35:13 wollman Exp $
+ *	$Id: tcp_input.c,v 1.4 1993/12/19 00:52:48 wollman Exp $
  */
 
 #include "param.h"
@@ -57,7 +57,9 @@
 #include "tcp_timer.h"
 #include "tcp_var.h"
 #include "tcpip.h"
+#ifdef TCPDEBUG
 #include "tcp_debug.h"
+#endif
 
 static void tcp_dooptions(struct tcpcb *, struct mbuf *, struct tcpiphdr *);
 static void tcp_pulloutofband(struct socket *, struct tcpiphdr *, struct mbuf *);
@@ -1149,8 +1151,10 @@ dodata:							/* XXX */
 			break;
 		}
 	}
+#ifdef TCPDEBUG
 	if (so->so_options & SO_DEBUG)
 		tcp_trace(TA_INPUT, ostate, tp, &tcp_saveti, 0);
+#endif
 
 	/*
 	 * Return any desired output.
@@ -1202,8 +1206,10 @@ drop:
 	/*
 	 * Drop space held by incoming segment and return.
 	 */
+#ifdef TCPDEBUG
 	if (tp && (tp->t_inpcb->inp_socket->so_options & SO_DEBUG))
 		tcp_trace(TA_DROP, ostate, tp, &tcp_saveti, 0);
+#endif
 	m_freem(m);
 	/* destroy temporarily created socket */
 	if (dropsocket)

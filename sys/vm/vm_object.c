@@ -34,7 +34,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vm_object.c	7.4 (Berkeley) 5/7/91
- *	$Id: vm_object.c,v 1.16 1994/01/17 09:33:47 davidg Exp $
+ *	$Id: vm_object.c,v 1.17 1994/01/24 02:24:11 davidg Exp $
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -123,14 +123,8 @@ vm_object_t	kmem_object;		/* the kernel malloc object */
 struct vm_object	kernel_object_store;
 struct vm_object	kmem_object_store;
 
-#define VSMALL
-#ifdef VSMALL
+extern int vm_cache_max;
 #define	VM_OBJECT_HASH_COUNT	127	
-int		vm_cache_max = 256;	/* can patch if necessary */
-#else
-#define	VM_OBJECT_HASH_COUNT	521
-int		vm_cache_max = 2048;	/* can patch if necessary */
-#endif
 
 queue_head_t	vm_object_hashtable[VM_OBJECT_HASH_COUNT];
 

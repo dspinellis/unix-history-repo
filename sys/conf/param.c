@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)param.c	7.20 (Berkeley) 6/27/91
- *	$Id: param.c,v 1.4 1993/11/07 17:38:29 wollman Exp $
+ *	$Id: param.c,v 1.5 1994/01/21 09:55:52 davidg Exp $
  */
 
 #include "sys/param.h"
@@ -79,7 +79,8 @@ int	tickadj = TICKADJ	/* NTP users may prefer a smaller value */
 struct	timezone tz = { TIMEZONE, DST };
 #define	NPROC (20 + 16 * MAXUSERS)
 int	maxproc = NPROC;
-#define	NTEXT (80 + NPROC / 8)			/* actually the object cache */
+#define	NTEXT (NPROC)			/* actually the object cache */
+int	vm_cache_max = NTEXT;
 #define	NVNODE (NPROC + NTEXT + 100)
 long	desiredvnodes = NVNODE;
 int	maxfdescs = MAXFDESCS;
