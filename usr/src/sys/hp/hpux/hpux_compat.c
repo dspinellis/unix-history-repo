@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: hpux_compat.c 1.41 91/04/06$
  *
- *	@(#)hpux_compat.c	7.18 (Berkeley) %G%
+ *	@(#)hpux_compat.c	7.19 (Berkeley) %G%
  */
 
 /*
@@ -562,7 +562,7 @@ hpuxulimit(p, uap, retval)
 		int	cmd;
 		long	newlimit;
 	} *uap;
-	off_t *retval;
+	long *retval;
 {
 	struct rlimit *limp;
 	int error = 0;
@@ -834,7 +834,7 @@ bsdtohpuxstat(sb, hsb)
 	struct hpuxstat ds;
 
 	bzero((caddr_t)&ds, sizeof(ds));
-	ds.hst_dev = sb->st_dev;
+	ds.hst_dev = (u_short)sb->st_dev;
 	ds.hst_ino = (u_long)sb->st_ino;
 	ds.hst_mode = sb->st_mode;
 	ds.hst_nlink = sb->st_nlink;
@@ -847,7 +847,10 @@ bsdtohpuxstat(sb, hsb)
 	else
 #endif
 		ds.hst_rdev = bsdtohpuxdev(sb->st_rdev);
-	ds.hst_size = sb->st_size;
+	if (sb->st_size < (quad_t)1 << 32)
+		ds.hst_size = (long)sb->st_size;
+	else
+		ds.hst_size = -2;
 	ds.hst_atime = sb->st_atime;
 	ds.hst_mtime = sb->st_mtime;
 	ds.hst_ctime = sb->st_ctime;
@@ -1412,13 +1415,13 @@ struct hpuxtimeb {
 
 /* ye ole stat structure */
 struct	ohpuxstat {
-	dev_t	ohst_dev;
+	u_short	ohst_dev;
 	u_short	ohst_ino;
 	u_short ohst_mode;
 	short  	ohst_nlink;
 	short  	ohst_uid;
 	short  	ohst_gid;
-	dev_t	ohst_rdev;
+	u_short	ohst_rdev;
 	int	ohst_size;
 	int	ohst_atime;
 	int	ohst_mtime;
@@ -1683,7 +1686,7 @@ ohpuxstat1(vp, ub)
 	ds.ohst_nlink = vattr.va_nlink;
 	ds.ohst_uid = (short)vattr.va_uid;
 	ds.ohst_gid = (short)vattr.va_gid;
-	ds.ohst_rdev = (dev_t)vattr.va_rdev;
+	ds.ohst_rdev = (u_short)vattr.va_rdev;
 	ds.ohst_size = (int)vattr.va_size;
 	ds.ohst_atime = (int)vattr.va_atime.tv_sec;
 	ds.ohst_mtime = (int)vattr.va_mtime.tv_sec;
