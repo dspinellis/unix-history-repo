@@ -2,19 +2,23 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)uda.4	4.1 (Berkeley) %G%
+.\"	@(#)uda.4	5.1 (Berkeley) %G%
 .\"
-.TH RA 4 10/8/81
+.TH UDA 4 "27 July 1983"
 .UC 4
 .SH NAME
-ra \- UDA50/RA80 Unibus disk controller and drives
+uda \- UDA-50 disk controller interface
 .SH SYNOPSIS
-controller uda0 at uba? csr 0177550 vector udaintr
+.B "controller uda0 at uba0 csr 0172150 vector udaintr"
 .br
-disk ra0 at uda0 drive 0
+.B "disk ra0 at uda0 drive 0"
 .SH DESCRIPTION
-The UDA50 is an intelligent disk controller for the UNIBUS.
-It supports the RA80 124MB disk drive.
+This is a driver for the DEC UDA-50 disk controller.
+The UDA-50 communicates with the host through a packet
+oriented protocol termed the Mass Storage Control Protocol (MSCP).
+Consult the file
+.RI < vax/mscp.h >
+for a detailed description of this protocol.
 .PP
 Files with minor device numbers 0 through 7 refer to various portions
 of drive 0;
@@ -22,33 +26,6 @@ minor devices 8 through 15 refer to drive 1, etc.
 The standard device names begin with ``ra'' followed by
 the drive number and then a letter a-h for partitions 0-7 respectively.
 The character ? stands here for a drive number in the range 0-7.
-.PP
-The origin and size of the pseudo-disks on each drive are
-as follows:
-.PP
-.nf
-.ta .5i +\w'000000    'u +\w'000000    'u
-RA80 124M drive partitions:
-	disk	start	length
-	ra?a	0	15884
-	ra?b	15884	33440
-	ra?c	0	237298
-	ra?d	0	0
-	ra?e	0	0
-	ra?f	0	0
-	ra?g	49324	82080
-	ra?h	131404	105994
-.DT
-.fi
-.PP
-It is unwise for all of these files to be present in one installation,
-since there is overlap in addresses and protection becomes
-a sticky matter.
-The ra?a partition is normally used for the root file system,
-the ra?b partition as a paging area,
-and the ra?c partition for pack-pack copying (it maps the entire disk).
-Both ra?g and ra?h are used to map the
-remaining cylinders.
 .PP
 The block files access the disk via the system's normal
 buffering mechanism and may be read and written without regard to
@@ -64,77 +41,116 @@ In raw I/O counts should be a multiple of 512 bytes (a disk sector).
 Likewise
 .I seek
 calls should specify a multiple of 512 bytes.
+.SH "DISK SUPPORT"
+This driver handles all drives which may be connected to the
+UDA-50.  Drive types per se are not recognized, but rather
+the variable length partitions are defined as having an
+``infinite'' length and the controller is relied on to return
+an error when an inaccessible block is requested.  For
+constructing file systems, however the partitions sizes are
+required.
+The origin and size (in sectors) of the pseudo-disks
+on each drive are shown below.  Partitions are not rounded
+to cylinder boundaries, as on other drives, because the type
+of drive attached to the controller is discovered too late
+in the autoconfiguration process to maintain separate partition
+tables for each drive.  (The lack of proper drive
+type recognition would be more easily dealt with if the partition
+tables were read off the drive.)
+.PP
+.nf
+.ta .5i +\w'000000    'u +\w'000000    'u +\w'000000    'u +\w'000000    'u
+.PP
+RA60 partitions
+	disk	start	length
+	ra?a	0	15884
+	ra?b	15884	33440
+	ra?c	0	400176
+	ra?g	49324	82080
+	ra?h	131404	268772
+.PP
+RA80 partitions
+	disk	start	length
+	ra?a	0	15884
+	ra?b	15884	33440
+	ra?c	0	242606
+	ra?g	49324	82080
+	ra?h	131404	111202
+.PP
+RA81 partitions
+	disk	start	length
+	ra?a	0	15884
+	ra?b	15884	33440
+	ra?c	0	891072
+	ra?d	340670	15884
+	ra?e	356554	55936
+	ra?f	412490	478582
+	ra?g	49324	82080
+	ra?h	131404	759668
+.DT
+.fi
+.PP
+The ra?a partition is normally used for the root file system,
+the ra?b partition as a paging area,
+and the ra?c partition for pack-pack copying (it maps the entire disk).
 .SH FILES
-/dev/ra[0-7][a-h]	block files
+/dev/ra[0-9][a-f]
 .br
-/dev/rra[0-7][a-h]	raw files
-.SH SEE ALSO
-hk(4), hp(4), up(4)
+/dev/rra[0-9][a-f]
 .SH DIAGNOSTICS
-\fBra%d%c: hard error sn%d udasa %o, state %d\fR.
-.br
-\fBra%d%c: hard error sn%d status %o\fR.
-An unrecoverable
-error occured during transfer of the specified sector of the specified
-disk partition.  The contents of the udasa register are printed
-in octal and symbolically with bits decoded.  The internal state is also
-printed.  In the second form, the MSCP status is printed.
-The error was either unrecoverable, or a large number of retry attempts
-(including offset positioning and drive recalibration) could not
-recover the error.
+.BR "uda: ubinfo %x" .
+(VAX 11/750 only.)
+When allocating UNIBUS resources, the driver found it already
+had resources previously allocated.  This indicates a bug in
+the driver.
 .PP
-\fBra%d%c: hard error sn%d OFFLINE\fR.  The drive was spun down or off
-line when it was accessed.  The i/o operation is not recoverable.
+.BR "udasa %o, state %d" .
+(Additional status information given after a hard i/o error.)
+The values of the UDA-50 status register and the internal
+driver state are printed.
 .PP
-\fBuda%d: random interrupt ignored\fR.  The UDA received an interrupt
-before it was initialized.
+.BR "uda%d: random interrupt ignored" .
+An unexpected interrupt was received (e.g. when no i/o was
+pending).  The interrupt is ignored.
 .PP
-\fBuda%d: fatal error (%o)\fR.  A fatal error was noticed in the UDA
-interrupt routine.  The contents of udasa are printed.  The controller
-will be reinitialized.
+.BR "uda%d: interrupt in unknown state %d ignored" .
+An interrupt was received when the driver was in an unknown
+internal state.  Indicates a hardware problem or a driver bug.
 .PP
-\fBuda%d: [soft|hard] error, controller error, event 0%o\fR.
-.br
-\fBuda%d: [soft|hard] error, host memory access error, event 0%o, addr 0%o\fR.
-.br
-\fBuda%d: [soft|hard] error, disk transfer error, unit %d, grp %d, cyl %d,
-sec %d, trk %d, lbn %d, retry %d, level %d\fR.
-.br
-\fBuda%d: [soft|hard] error, SDI error, unit %d, event 0%o, cyl %d\fR.
-.br
-\fBuda%d: [soft|hard] error, small disk error, unit %d, event 0%o, cyl %d\fR.
-.br
-\fBuda%d: [soft|hard] error, unknown error, unit %d, format 0%o, event 0%o\fR.
-.br
-See the driver and the UDA and MSCP manuals.
+.BR "uda%d: fatal error (%o)" .
+The UDA-50 indicated a ``fatal error'' in the status returned
+to the host.  The contents of the status register are displayed.
+.PP
+.BR OFFLINE .
+(Additional status information given after a hard i/o error.)
+A hard i/o error occurred because the drive was not on-line.
+.PP
+.BR "status %o" .
+(Additional status information given after a hard i/o error.)
+The status information returned from the UDA-50 is tacked onto
+the end of the hard error message printed on the console.
+.PP
+.BR "uda: unknown packet" .
+An MSCP packet of unknown type was received from the UDA-50.
+Check the cabling to the controller.
+.PP
+The following errors are interpretations of MSCP error messages
+returned by the UDA-50 to the host.
+.PP
+.BR "uda%d: %s error, controller error, event 0%o" .
+.PP
+.BR "uda%d: %s error, host memory access error, event 0%o, addr 0%o" .
+.PP
+.BR "uda%d: %s error, disk transfer error, unit %d" .
+.PP
+.BR "uda%d: %s error, SDI error, unit %d, event 0%o" .
+.PP
+.BR "uda%d: %s error, small disk error, unit %d, event 0%o, cyl %d" .
+.PP
+.BR "uda%d: %s error, unknown error, unit %d, format 0%o, event 0%o" .
 .SH BUGS
-In raw I/O
-.I read
-and
-.IR write (2)
-truncate file offsets to 512-byte block boundaries,
-and
-.I write
-scribbles on the tail of incomplete blocks.
-Thus,
-in programs that are likely to access raw devices,
-.I read, write
-and
-.IR lseek (2)
-should always deal in 512-byte multiples.
-.PP
-A program to analyze the logged error information (even in its
-present reduced form) is needed.  Error messages should be more
-consistent.
-.PP
-The partition tables for the file systems should be read off of each
-pack, as they are never quite what any single installation would prefer,
-and this would make packs more portable.
-.PP
-Dumps to the swap area on system crashes are not implemented.
-.PP
-Booting via block zero is not (and will not be) supported.  The ``boot''
-program must be loaded from the console storage device.
-.PP
-Although the device supports unit numbers up to 255, the driver only
-supports unit numbers up to 7.
+The partition tables are so poorly laid out that they almost
+certainly force each site to tailor them to their individual
+needs.  The problem is even worse when a site has a mixed collection
+of drives.  The best solution would be to read the partition tables
+off the drive.
