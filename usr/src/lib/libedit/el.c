@@ -9,7 +9,7 @@
  */
 
 #if !defined(lint) && !defined(SCCSID)
-static char sccsid[] = "@(#)el.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)el.c	8.2 (Berkeley) %G%";
 #endif /* not lint && not SCCSID */
 
 /*
@@ -276,7 +276,7 @@ el_source(el, fname)
     if ((fp = fopen(fname, "r")) == NULL) 
 	return -1;
 
-    while ((ptr = fgetline(fp, &len)) != NULL)
+    while ((ptr = fgetln(fp, &len)) != NULL)
 	ptr[len - 1] = '\0';
 	if (parse_line(el, ptr) == -1) {
 	    (void) fclose(fp);
