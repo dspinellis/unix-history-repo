@@ -59,10 +59,8 @@ extern void EmptyTerminal();
 static int terminalCursorAddress;	/* where the cursor is on term */
 static int screenInitd; 		/* the screen has been initialized */
 static int screenStopped;		/* the screen has been stopped */
-#if	defined(SLOWSCREEN)
 static int max_changes_before_poll;	/* how many characters before looking */
 					/* at terminal and net again */
-#endif	/* defined(SLOWSCREEN) */
 
 static int needToRing;			/* need to ring terinal bell */
 static char *bellSequence = "\07";	/* bell sequence (may be replaced by
@@ -76,10 +74,8 @@ static char *KS, *KE;
 #endif	/* defined(unix) */
 
 
-#if	defined(SLOWSCREEN)
 static int inHighlightMode = 0;
 ScreenImage Terminal[MAXSCREENSIZE];
-#endif	/* defined(SLOWSCREEN) */
 
 /* Variables for transparent mode */
 #if	defined(unix)
@@ -99,10 +95,8 @@ void
 init_screen()
 {
     bellwinup = 0;
-#if	defined(SLOWSCREEN)
     inHighlightMode = 0;
     ClearArray(Terminal);
-#endif	/* defined(SLOWSCREEN) */
 }
 
 
@@ -146,7 +140,6 @@ int	where;		/* cursor address */
 	/* NOTREACHED */
 }
 
-#if	defined(SLOWSCREEN)
 /* What is the screen address of the attribute byte for the terminal */
 
 static int
@@ -166,7 +159,6 @@ register int	p;
 
     return(LowestScreen());	/* unformatted screen... */
 }
-#endif	/* defined(SLOWSCREEN) */
 
 /*
  *	There are two algorithms for updating the screen.
@@ -186,7 +178,6 @@ register int	p;
  */
 
 
-#if defined(SLOWSCREEN)
 #if	defined(NOT43)
 static int
 #else	/* defined(NOT43) */
@@ -444,7 +435,6 @@ SlowScreen()
     EmptyTerminal();			/* move data along */
     return;
 }
-#endif	/* defined(SLOWSCREEN) */
 
 #if	defined(NOT43)
 static int
@@ -624,16 +614,14 @@ InitTerminal()
 	extern char *tgetstr();
 #endif	/* defined(unix) */
 
-#if	defined(SLOWSCREEN)
 	ClearArray(Terminal);
-#endif	/* defined(SLOWSCREEN) */
 	terminalCursorAddress = SetBufferAddress(0,0);
 #if defined(unix)
 	signal(SIGHUP, abort);
 #endif
 
 	TryToSend = FastScreen;
-#if defined(unix) && defined(SLOWSCREEN)
+#if defined(unix)
 	ioctl(1, TIOCGETP, (char *) &ourttyb);
 	if ((ourttyb.sg_ospeed < 0) || (ourttyb.sg_ospeed > B9600)) {
 	    max_changes_before_poll = 1920;
@@ -645,7 +633,7 @@ InitTerminal()
 	    TryToSend = SlowScreen;
 	    HaveInput = 1;		/* get signals going */
 	}
-#endif	/* defined(unix) && defined(SLOWSCREEN) */
+#endif	/* defined(unix) */
 	setcommandmode();
 	/*
 	 * By now, initscr() (in curses) has been called (from telnet.c),
@@ -689,9 +677,7 @@ int doNewLine;
     if (screenInitd && !screenStopped) {
 	move(NumberLines-1, 1);
 	standend();
-#if	defined(SLOWSCREEN)
 	inHighlightMode = 0;
-#endif	/* defined(SLOWSCREEN) */
 	DoARefresh();
 	setcommandmode();
 	endwin();
@@ -744,9 +730,7 @@ LocalClearScreen()
 {
     outputPurge();		/* flush all data to terminal */
     clear();			/* clear in curses */
-#if	defined(SLOWSCREEN)
     ClearArray(Terminal);
-#endif	/* defined(SLOWSCREEN) */
     Clear3270();
     Lowest = HighestScreen()+1; /* everything in sync... */
     Highest = LowestScreen()+1;
@@ -762,9 +746,7 @@ BellOff()
 	bellwinup = 0;
 	Lowest = MIN(Lowest, LINES/2);
 	Highest = MAX(Highest, (LINES/2)+3);
-#if	defined(SLOWSCREEN)
 	memset((char *)(Terminal+LINES/2), 0, (sizeof Terminal[0])*(3*COLS));
-#endif	/* defined(SLOWSCREEN) */
 	touchwin(stdscr);
 	DoARefresh();
     }

@@ -4,8 +4,6 @@
 
 #define	INCLUDED_TERMINAL
 
-#if	defined(SLOWSCREEN)
-
 /*
  * In the situation where we have a copy of the terminal screen in front
  * of us, here are some macros to deal with them.
@@ -39,7 +37,6 @@
 			((c != GetTerminal(p)) || NeedToRedisplayFieldsAttr(p,a))
 #define NeedToRedisplay(c,p)	NeedToRedisplayAttr(c,p,FieldAttributes(p))
 
-#endif	/* defined(SLOWSCREEN) */
 
 #define GetTerminal(i)		GetGeneric(i, Terminal)
 #define GetTerminalPointer(p)	GetGenericPointer(p)
