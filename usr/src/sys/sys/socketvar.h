@@ -66,6 +66,8 @@ struct socket {
 #define	SB_NOINTR	0x40		/* operations not interruptible */
 
 	caddr_t	so_tpcb;		/* Wisc. protocol control block XXX */
+	void	(*so_upcall)(		/* so, so->so_upcallarg, waitf */);
+	caddr_t	so_upcallarg;		/* Arg for above */
 };
 
 /*
@@ -138,8 +140,9 @@ struct socket {
  * Unless SB_NOINTR is set on sockbuf, sleep is interruptible.
  * Returns error without lock if sleep is interrupted.
  */
-#define sblock(sb) ((sb)->sb_flags & SB_LOCK ? sb_lock(sb) : \
-		((sb)->sb_flags |= SB_LOCK, 0))
+#define sblock(sb, wf) ((sb)->sb_flags & SB_LOCK ? \
+		(((wf) == M_WAITOK) ? sb_lock(sb) : EWOULDBLOCK) : \
+		((sb)->sb_flags |= SB_LOCK), 0)
 
 /* release lock on sockbuf sb */
 #define	sbunlock(sb) { \
@@ -150,7 +153,11 @@ struct socket {
 	} \
 }
 
-#define	sorwakeup(so)	sowakeup((so), &(so)->so_rcv)
+#define	sorwakeup(so)	{ sowakeup((so), &(so)->so_rcv); \
+			  if ((so)->so_upcall) \
+			    (*((so)->so_upcall))((so), (so)->so_upcallarg, M_DONTWAIT); \
+			}
+
 #define	sowwakeup(so)	sowakeup((so), &(so)->so_snd)
 
 #ifdef KERNEL
