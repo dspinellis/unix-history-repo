@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)dir.h	7.6 (Berkeley) %G%
+ *	@(#)dir.h	7.7 (Berkeley) %G%
  */
 
 #ifndef _DIR_
@@ -90,7 +90,7 @@ struct dirtemplate {
 #ifndef KERNEL
 #define d_fileno d_ino		/* compatibility with POSIX */
 #ifndef DEV_BSIZE
-#define	DEV_BSIZE	512
+#define	DEV_BSIZE	1024
 #endif
 /*
  * Definitions for library routines operating on directories.
@@ -111,7 +111,10 @@ extern	DIR *opendir();
 extern	struct direct *readdir();
 extern	long telldir();
 extern	void seekdir();
-#define rewinddir(dirp)	seekdir((dirp), (long)0)
 extern	void closedir();
+extern	long _rewinddir;
+#define rewinddir(dirp) \
+	_seekdir((dirp), _rewinddir); \
+	_rewinddir = telldir(dirp)
 #endif /* not KERNEL */
 #endif /* _DIR_ */
