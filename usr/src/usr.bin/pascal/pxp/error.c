@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)error.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)error.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -100,7 +100,7 @@ error(a1, a2, a3, a4)
 #ifdef PI
 	if (errpfx == ' ') {
 		printf("  ");
-		for (i = line; i >= 10; i =/ 10)
+		for (i = line; i >= 10; i /= 10)
 			putchar(' ');
 		printf("... ");
 	} else if (Enoline)

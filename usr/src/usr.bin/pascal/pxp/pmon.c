@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)pmon.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)pmon.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -137,7 +137,7 @@ getcore(fp)
 	if (inf.type != 0 && inf.type != 1)
 		goto format;
 	if (inf.type)
-		inf.bp =- inf.off;
+		inf.bp -= inf.off;
 	if (lseek(zfil, inf.bp + 02000, 0) < 0)
 		goto format;
 	if (read(zfil, &pxp, sizeof pxp) != sizeof pxp)
@@ -147,7 +147,7 @@ getcore(fp)
 		exit(1);
 	}
 	if (inf.type)
-		pxp.buf =- inf.off;
+		pxp.buf -= inf.off;
 	if (lseek(zfil, pxp.buf + 02000, 0) < 0)
 		goto format;
 	if (pmread() < 0)

@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)yymain.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)yymain.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -166,7 +166,7 @@ magic2()
 	pflush();
 	lseek(ofil, 0l, 0);
 	header.data_size = ( unsigned ) lc - header.txt_size;
-	header.data_size =- sizeof header;
+	header.data_size -= sizeof header;
 	write(ofil, &header, sizeof header);
 	lseek(ofil, ( long ) ( HEAD_BYTES - sizeof ( short ) ) , 0);
 	i = ( ( unsigned ) lc) - HEAD_BYTES;
