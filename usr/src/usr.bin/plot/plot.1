@@ -1,6 +1,6 @@
-.\"	@(#)plot.1	4.1 (Berkeley) %G%
+.\"	@(#)plot.1	5.1 (Berkeley) %G%
 .\"
-.TH PLOT 1G 
+.TH PLOT 1G  "18 January 1983"
 .AT 3
 .SH NAME
 plot \- graphics filters
@@ -23,25 +23,25 @@ If no
 .I terminal
 type is specified, the environment parameter $TERM
 (see
-.IR environ (5))
+.IR environ (7))
 is used.
 Known
 .I terminals
 are:
 .TP
-4014
+.B 4014
 Tektronix 4014 storage scope.
 .TP
-450
+.B 450
 DASI Hyterm 450 terminal (Diablo mechanism).
 .TP
-300
+.B 300
 DASI 300 or GSI terminal (Diablo mechanism).
 .TP
-300S
+.B 300S
 DASI 300S terminal (Diablo mechanism).
 .TP
-ver
+.B ver
 Versatec D1200A printer-plotter.
 This version of
 .I plot
@@ -66,7 +66,7 @@ to be sent to the plotter.
 .br
 /usr/tmp/raster 
 .SH "SEE ALSO"
-plot(3), plot(5)
+plot(3X), plot(5)
 .SH BUGS
 There is no lockout protection
 for /usr/tmp/raster.
