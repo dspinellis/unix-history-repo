@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)apropos.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)apropos.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -22,7 +22,7 @@ static char sccsid[] = "@(#)apropos.c	5.12 (Berkeley) %G%";
 #include <stdlib.h>
 #include "../man/pathnames.h"
 
-#define	MAXLINELEN	256			/* max line handled */
+#define	MAXLINELEN	1024			/* max line handled */
 
 char *progname;
 
@@ -113,7 +113,7 @@ apropos(argv, path, buildpath)
 			if (!index(buf, '\n')) {
 				(void)fprintf(stderr,
 				    "apropos: %s line too long.\n", name);
-				exit(1);
+				continue;
 			}
 			lowstr(buf, wbuf);
 			for (p = argv; *p; ++p)
