@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)dmareg.h	7.2 (Berkeley) %G%
+ *	@(#)dmareg.h	7.3 (Berkeley) %G%
  */
 
 /*
@@ -51,7 +51,7 @@ struct	dmareg {
 #define	DMAINTLVL	5
 
 /* addresses */
-#define	DMA_BASE	IOV(0x500000)
+#define	DMA_BASE	IIOV(0x500000)
 
 /* command bits */
 #define	DMA_ENAB	0x0001
