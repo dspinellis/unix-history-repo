@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)fts.c	5.40 (Berkeley) %G%";
+static char sccsid[] = "@(#)fts.c	5.41 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -330,8 +330,15 @@ next:	tmp = p;
 	if (p = p->fts_link) {
 		free(tmp);
 
-		/* If reached the top, load the paths for the next root. */
+		/*
+		 * If reached the top, return to the original directory, and
+		 * load the paths for the next root.
+		 */
 		if (p->fts_level == FTS_ROOTLEVEL) {
+			if (!ISSET(FTS_NOCHDIR) && FCHDIR(sp, sp->fts_rfd)) {
+				SET(FTS_STOP);
+				return (NULL);
+			}
 			fts_load(sp, p);
 			return (sp->fts_cur = p);
 		}
@@ -570,6 +577,7 @@ fts_build(sp, type)
 	 * needed sorted entries or stat information, they had better be
 	 * checking FTS_NS on the returned nodes.
 	 */
+	cderrno = 0;
 	if (nlinks || type == BREAD)
 		if (FCHDIR(sp, dirfd(dirp))) {
 			if (nlinks && type == BREAD)
@@ -577,10 +585,8 @@ fts_build(sp, type)
 			cur->fts_flags |= FTS_DONTCHDIR;
 			descend = 0;
 			cderrno = errno;
-		} else {
+		} else
 			descend = 1;
-			cderrno = 0;
-		}
 	else
 		descend = 0;
 
