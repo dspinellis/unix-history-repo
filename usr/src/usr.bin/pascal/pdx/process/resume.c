@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)resume.c 1.5 %G%";
+static char sccsid[] = "@(#)resume.c 1.6 %G%";
 
 /*
  * resume execution, first setting appropriate registers
@@ -132,12 +132,23 @@ ADDRESS *framep;
 /*
  * Under the -r option, we offer the opportunity to just get
  * the px traceback and not actually enter the debugger.
+ *
+ * If the standard input is not a tty but standard error is,
+ * change standard input to be /dev/tty.
  */
 
 LOCAL choose()
 {
     register int c;
 
+    if (!isatty(fileno(stdin))) {
+	if (!isatty(fileno(stderr)) || freopen("/dev/tty", "r", stdin) == NIL) {
+	    unsetsigtraces(process);
+	    pcont(process);
+	    quit(process->exitval);
+	    /* NOTREACHED */
+	}
+    }
     fprintf(stderr, "\nProgram error");
     if (errnum != 0) {
 	fprintf(stderr, " -- %s", pxerrmsg[errnum]);
@@ -149,7 +160,7 @@ LOCAL choose()
 	pcont(process);
 	quit(process->exitval);
     }
-    while (c != '\n') {
+    while (c != '\n' && c != EOF) {
 	c = getchar();
     }
     fprintf(stderr, "\nEntering debugger ...");
