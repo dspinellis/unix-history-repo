@@ -1,4 +1,4 @@
-/*	ubavar.h	6.1	83/08/13	*/
+/*	ubavar.h	6.2	85/01/18	*/
 
 /*
  * This file contains definitions related to the kernel structures
@@ -46,6 +46,7 @@ struct	uba_hd {
 	int	uh_lastiv;		/* last free interrupt vector */
 	short	uh_users;		/* transient bdp use count */
 	short	uh_xclu;		/* an rk07 is using this uba! */
+	int	uh_lastmem;		/* limit of any unibus memory */
 #define	UAMSIZ	25
 	struct	map *uh_map;		/* buffered data path regs free */
 };
@@ -131,6 +132,7 @@ struct uba_driver {
 	char	*ud_mname;		/* name of a controller */
 	struct	uba_ctlr **ud_minfo;	/* backpointers to ubminit structs */
 	short	ud_xclu;		/* want exclusive use of bdp's */
+	int	(*ud_ubamem)();		/* see if dedicated memory is present */
 };
 #endif
 
