@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)autoconf.c	6.22 (Berkeley) %G%
+ *	@(#)autoconf.c	6.23 (Berkeley) %G%
  */
 
 /*
@@ -182,7 +182,7 @@ probe_Abus(ioanum, iob)
 	struct sbia_regs *sbiaregs;
 
 	ioap = &ioa[ioanum];
-	nxaccess(iob->io_addr, Ioamap[ioanum], iob->io_size);
+	ioaccess(iob->io_addr, Ioamap[ioanum], iob->io_size);
 	if (badaddr((caddr_t)ioap, 4))
 		return;
 	ioacsr.ioa_csr = ioap->ioacsr.ioa_csr;
@@ -222,13 +222,9 @@ probenexi(pnc)
 	union nexcsr nexcsr;
 	int i;
 	
-	nexnum = 0, nxv = &nexus[nsbi * 16];
+	nexnum = 0, nxv = &nexus[nsbi * NNEX8600];
 	for (; nexnum < pnc->psb_nnexus; nexnum++, nxp++, nxv++) {
-			/*
-			 * the 16 below shouldn't be there, but the constant
-			 * is used at other points (vax/locore.s)
-			 */
-		nxaccess((caddr_t)nxp, Nexmap[nsbi * 16 + nexnum],
+		ioaccess((caddr_t)nxp, Nexmap[nsbi * 16 + nexnum],
 		     sizeof(struct nexus));
 		if (badaddr((caddr_t)nxv, 4))
 			continue;
@@ -555,6 +551,10 @@ unifind(vubp, pubp, vumem, pumem, memmap, haveubasr)
 	 */
 	uhp->uh_uba = vubp;
 	uhp->uh_physuba = pubp;
+	/*
+	 * On the 8600, can't use UNIvec;
+	 * the vectors for the second SBI overlap it.
+	 */
 	if (cpu == VAX_8600)
 		uhp->uh_vec = (int(**)())calloc(512);
 	else if (numuba == 0)
@@ -575,7 +575,7 @@ unifind(vubp, pubp, vumem, pumem, memmap, haveubasr)
 	 */
 	uhp->uh_lastiv = 0x200;
 
-	ubaaccess(pumem, memmap, UBAPAGES * NBPG);
+	ioaccess(pumem, memmap, UBAPAGES * NBPG);
 #if defined(VAX780) || defined(VAX8600)
 	if (haveubasr) {
 		vubp->uba_sr = vubp->uba_sr;
@@ -797,7 +797,7 @@ setscbnex(fn)
 {
 	register struct scb *scbp = &scb;
 
-	scbp = (struct scb *)((caddr_t)scbp + nsbi * IOAMAPSIZ);
+	scbp = (struct scb *)((caddr_t)scbp + nsbi * 512);
 	scbp->scb_ipl14[nexnum] = scbp->scb_ipl15[nexnum] =
 	    scbp->scb_ipl16[nexnum] = scbp->scb_ipl17[nexnum] =
 		scbentry(fn, SCB_ISTACK);
@@ -806,32 +806,14 @@ setscbnex(fn)
 /*
  * Make an IO register area accessible at physical address physa
  * by mapping kernel ptes starting at pte.
- *
- * WE LEAVE ALL NEXI MAPPED; THIS IS PERHAPS UNWISE
- * SINCE MISSING NEXI DONT RESPOND.  BUT THEN AGAIN
- * PRESENT NEXI DONT RESPOND TO ALL OF THEIR ADDRESS SPACE.
  */
-nxaccess(physa, pte, size)
+ioaccess(physa, pte, size)
 	caddr_t physa;
 	register struct pte *pte;
 	int size;
 {
 	register int i = btop(size);
 	register unsigned v = btop(physa);
-	
-	do
-		*(int *)pte++ = PG_V|PG_KW|v++;
-	while (--i > 0);
-	mtpr(TBIA, 0);
-}
-
-ubaaccess(pumem, pte, size)
-	caddr_t pumem;
-	register struct pte *pte;
-	int size;
-{
-	register int i = btop(size);
-	register unsigned v = btop(pumem);
 	
 	do
 		*(int *)pte++ = PG_V|PG_KW|v++;
