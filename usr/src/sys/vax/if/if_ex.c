@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if_ex.c	6.10 (Berkeley) %G%
+ *	@(#)if_ex.c	6.11 (Berkeley) %G%
  */
 
 
@@ -201,13 +201,10 @@ exattach(ui)
 	bp = xs->xs_x2hnext;
 	while ((bp->mb_status & MH_OWNER) == MH_EXOS)	/* poll for reply */
 		;
-	printf("ex%d: HW %c.%c, NX %c.%c, addr %x.%x.%x.%x.%x.%x\n",
-		ui->ui_unit,
+	printf("ex%d: HW %c.%c, NX %c.%c, hardware address %s\n",
+		ui->ui_unit, ether_sprintf(bp->mb_na.na_addrs),
 		xs->xs_cm.cm_vc[2], xs->xs_cm.cm_vc[3],
-		xs->xs_cm.cm_vc[0], xs->xs_cm.cm_vc[1],
-		bp->mb_na.na_addrs[0], bp->mb_na.na_addrs[1],
-		bp->mb_na.na_addrs[2], bp->mb_na.na_addrs[3],
-		bp->mb_na.na_addrs[4], bp->mb_na.na_addrs[5]);
+		xs->xs_cm.cm_vc[0], xs->xs_cm.cm_vc[1]);
 	bcopy((caddr_t)bp->mb_na.na_addrs, (caddr_t)xs->xs_addr,
 	    sizeof (xs->xs_addr));
 
@@ -680,6 +677,7 @@ exoutput(ifp, m0, dst)
 	register struct mbuf *m = m0;
 	register struct ether_header *eh;
 	register int off;
+	int usetrailers;
 
 	if ((ifp->if_flags & (IFF_UP|IFF_RUNNING)) != (IFF_UP|IFF_RUNNING)) {
 		error = ENETDOWN;
@@ -690,12 +688,10 @@ exoutput(ifp, m0, dst)
 #ifdef INET
 	case AF_INET:
 		idst = ((struct sockaddr_in *)dst)->sin_addr;
-		if (!arpresolve(&xs->xs_ac, m, &idst, edst))
+		if (!arpresolve(&xs->xs_ac, m, &idst, edst, &usetrailers))
 			return (0);	/* if not yet resolved */
 		off = ntohs((u_short)mtod(m, struct ip *)->ip_len) - m->m_len;
-		/* need per host negotiation */
-		if ((ifp->if_flags & IFF_NOTRAILERS) == 0)
-		if (off > 0 && (off & 0x1ff) == 0 &&
+		if (usetrailers && off > 0 && (off & 0x1ff) == 0 &&
 		    m->m_off >= MMINOFF + 2 * sizeof (u_short)) {
 			type = ETHERTYPE_TRAIL + (off>>9);
 			m->m_off -= 2 * sizeof (u_short);
@@ -917,11 +913,10 @@ ex_setaddr(physaddr, unit)
 	bp = xs->xs_x2hnext;
 	while ((bp->mb_status & MH_OWNER) == MH_EXOS)	/* poll for reply */
 		;
-	printf("ex%d: reset addr %x.%x.%x.%x.%x.%x\n",
-		ui->ui_unit,
-		bp->mb_na.na_addrs[0], bp->mb_na.na_addrs[1],
-		bp->mb_na.na_addrs[2], bp->mb_na.na_addrs[3],
-		bp->mb_na.na_addrs[4], bp->mb_na.na_addrs[5]);
+#ifdef	DEBUG
+	printf("ex%d: reset addr %s\n", ui->ui_unit,
+		ether_sprintf(bp->mb_na.na_addrs));
+#endif
 	/*
 	 * Now, re-enable reception on phys slot.
 	 */

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if_de.c	6.16 (Berkeley) %G%
+ *	@(#)if_de.c	6.17 (Berkeley) %G%
  */
 #include "de.h"
 #if NDE > 0
@@ -171,13 +171,10 @@ deattach(ui)
 	(void)dewait(ui, "read addr ");
 
 	ubarelse(ui->ui_ubanum, &ds->ds_ubaddr);
-	if (dedebug)
-		printf("de%d: addr=%d:%d:%d:%d:%d:%d\n", ui->ui_unit,
-		    ds->ds_pcbb.pcbb2&0xff, (ds->ds_pcbb.pcbb2>>8)&0xff,
-		    ds->ds_pcbb.pcbb4&0xff, (ds->ds_pcbb.pcbb4>>8)&0xff,
-		    ds->ds_pcbb.pcbb6&0xff, (ds->ds_pcbb.pcbb6>>8)&0xff);
  	bcopy((caddr_t)&ds->ds_pcbb.pcbb2, (caddr_t)ds->ds_addr,
 	    sizeof (ds->ds_addr));
+	printf("de%d: hardware address %s\n", ui->ui_unit,
+		ether_sprintf(ds->ds_addr));
 	ifp->if_init = deinit;
 	ifp->if_output = deoutput;
 	ifp->if_ioctl = deioctl;
@@ -592,6 +589,7 @@ deoutput(ifp, m0, dst)
 	register struct mbuf *m = m0;
 	register struct ether_header *eh;
 	register int off;
+	int usetrailers;
 
 	if ((ifp->if_flags & (IFF_UP|IFF_RUNNING)) != (IFF_UP|IFF_RUNNING)) {
 		error = ENETDOWN;
@@ -602,12 +600,10 @@ deoutput(ifp, m0, dst)
 #ifdef INET
 	case AF_INET:
 		idst = ((struct sockaddr_in *)dst)->sin_addr;
- 		if (!arpresolve(&ds->ds_ac, m, &idst, edst))
+ 		if (!arpresolve(&ds->ds_ac, m, &idst, edst, &usetrailers))
 			return (0);	/* if not yet resolved */
 		off = ntohs((u_short)mtod(m, struct ip *)->ip_len) - m->m_len;
-		/* need per host negotiation */
-		if ((ifp->if_flags & IFF_NOTRAILERS) == 0)
-		if (off > 0 && (off & 0x1ff) == 0 &&
+		if (usetrailers && off > 0 && (off & 0x1ff) == 0 &&
 		    m->m_off >= MMINOFF + 2 * sizeof (u_short)) {
 			type = ETHERTYPE_TRAIL + (off>>9);
 			m->m_off -= 2 * sizeof (u_short);

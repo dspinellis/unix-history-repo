@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if_ec.c	6.15 (Berkeley) %G%
+ *	@(#)if_ec.c	6.16 (Berkeley) %G%
  */
 
 #include "ec.h"
@@ -85,17 +85,6 @@ struct	ec_softc {
 	short	es_oactive;		/* is output active? */
 	u_char	*es_buf[16];		/* virtual addresses of buffers */
 } ec_softc[NEC];
-
-#ifdef DEBUG
-ether_addr(s)
-char *s;
-{
-
-	printf("%x:%x:%x:%x:%x:%x\n",
-		s[0]&0xff, s[1]&0xff, s[2]&0xff,
-		s[3]&0xff, s[4]&0xff, s[5]&0xff);
-}
-#endif
 
 /*
  * Configure on-board memory for an interface.
@@ -233,10 +222,8 @@ ecattach(ui)
 		}
 		cp++;
 	}
-#ifdef DEBUG
-	printf("ecattach %d: addr=",ui->ui_unit);
-	ether_addr(es->es_addr);
-#endif
+	printf("ec%d: hardware address %s\n", ui->ui_unit,
+		ether_sprintf(es->es_addr));
 	ifp->if_init = ecinit;
 	ifp->if_ioctl = ecioctl;
 	ifp->if_output = ecoutput;
@@ -567,6 +554,7 @@ ecoutput(ifp, m0, dst)
 	register struct ether_header *ec;
 	register int off;
 	struct mbuf *mcopy = (struct mbuf *)0;
+	int usetrailers;
 
 	if ((ifp->if_flags & (IFF_UP|IFF_RUNNING)) != (IFF_UP|IFF_RUNNING)) {
 		error = ENETDOWN;
@@ -577,15 +565,14 @@ ecoutput(ifp, m0, dst)
 #ifdef INET
 	case AF_INET:
 		idst = ((struct sockaddr_in *)dst)->sin_addr;
-		if (!arpresolve(&es->es_ac, m, &idst, edst))
+		if (!arpresolve(&es->es_ac, m, &idst, edst, &usetrailers))
 			return (0);	/* if not yet resolved */
 		if (!bcmp((caddr_t)edst, (caddr_t)etherbroadcastaddr,
 		    sizeof(edst)))
 			mcopy = m_copy(m, 0, (int)M_COPYALL);
 		off = ntohs((u_short)mtod(m, struct ip *)->ip_len) - m->m_len;
 		/* need per host negotiation */
-		if ((ifp->if_flags & IFF_NOTRAILERS) == 0)
-		if (off > 0 && (off & 0x1ff) == 0 &&
+		if (usetrailers && off > 0 && (off & 0x1ff) == 0 &&
 		    m->m_off >= MMINOFF + 2 * sizeof (u_short)) {
 			type = ETHERTYPE_TRAIL + (off>>9);
 			m->m_off -= 2 * sizeof (u_short);
@@ -923,9 +910,8 @@ ec_setaddr(physaddr,unit)
 	 */
 	
 #ifdef DEBUG
-	printf("ec_setaddr: setting address for unit %d = ",
-		unit);
-	ether_addr(physaddr); 
+	printf("ec_setaddr: setting address for unit %d = %s",
+		unit, ether_sprintf(physaddr));
 #endif
 	addr->ec_xcr = EC_UECLR;
 	addr->ec_rcr = 0;
@@ -968,8 +954,8 @@ ec_setaddr(physaddr,unit)
 		}
 		cp++;
 	}
-	printf("ec_setaddr %d: ROM addr=",ui->ui_unit);
-	ether_addr(es->es_addr);
+	printf("ec_setaddr: RAM address for unit %d = %s",
+		unit, ether_sprintf(physaddr));
 #endif
 }
 #endif
