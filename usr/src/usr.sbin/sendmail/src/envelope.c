@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)envelope.c	8.32 (Berkeley) %G%";
+static char sccsid[] = "@(#)envelope.c	8.33 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -699,9 +699,8 @@ setsender(from, e, delimptr, internal)
 		if (e->e_from.q_home == NULL)
 		{
 			e->e_from.q_home = getenv("HOME");
-			if (e->e_from.q_home == NULL)
-				e->e_from.q_home = "";
-			if (strcmp(e->e_from.q_home, "/") == 0)
+			if (e->e_from.q_home != NULL &&
+			    strcmp(e->e_from.q_home, "/") == 0)
 				e->e_from.q_home++;
 		}
 		e->e_from.q_uid = RealUid;
