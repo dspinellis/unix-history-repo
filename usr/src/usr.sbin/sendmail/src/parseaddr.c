@@ -2,7 +2,7 @@
 # include <ctype.h>
 # include "postbox.h"
 
-static char	SccsId[] = "@(#)parseaddr.c	3.3	%G%";
+static char	SccsId[] = "@(#)parseaddr.c	3.4	%G%";
 
 /*
 **  PARSE -- Parse an address
@@ -174,8 +174,7 @@ parse(addr, a, copyf)
 		a->q_paddr = newstr(addr);
 	else
 		a->q_paddr = addr;
-	a->q_rmailer = t->p_mailer;
-	a->q_mailer = &Mailer[t->p_mailer];
+	a->q_mailer = a->q_rmailer = t->p_mailer;
 
 	if (bitset(P_MOVE, t->p_flags))
 	{
@@ -216,7 +215,7 @@ parse(addr, a, copyf)
 		**	suppression algorithm will work.
 		*/
 
-		if ((pvp = a->q_mailer->m_local) != NULL)
+		if ((pvp = Mailer[a->q_mailer]->m_local) != NULL)
 		{
 			while (*pvp != NULL)
 			{

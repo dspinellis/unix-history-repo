@@ -7,7 +7,7 @@
 # include <syslog.h>
 # endif LOG
 
-static char SccsId[] = "@(#)deliver.c	3.3	%G%";
+static char SccsId[] = "@(#)deliver.c	3.4	%G%";
 
 /*
 **  DELIVER -- Deliver a message to a particular address.
@@ -81,7 +81,7 @@ deliver(to, editfcn)
 	*/
 
 	To = to->q_paddr;
-	m = to->q_mailer;
+	m = Mailer[to->q_mailer];
 	user = to->q_user;
 	host = to->q_host;
 	Errors = 0;
@@ -127,12 +127,12 @@ deliver(to, editfcn)
 	**		be applied to the message.
 	*/
 
-	if (m == &Mailer[0])
+	if (m == Mailer[0])
 	{
 		if (*user == '|')
 		{
 			user++;
-			m = &Mailer[1];
+			m = Mailer[1];
 		}
 		else
 		{
@@ -155,7 +155,7 @@ deliver(to, editfcn)
 	**	>>>>>>>>>> function is subsumed by postbox.
 	*/
 
-	if (m == &Mailer[0])
+	if (m == Mailer[0])
 	{
 		if (getpwnam(user) == NULL)
 		{
@@ -414,7 +414,7 @@ putmessage(fp, m)
 	{
 		extern char *FullName;
 
-		p = translate("$f", From.q_mailer, From.q_paddr, (char *) NULL, (char *) NULL);
+		p = translate("$f", Mailer[From.q_mailer], From.q_paddr, (char *) NULL, (char *) NULL);
 		if (FullName != NULL)
 			fprintf(fp, "From: %s <%s>\n", FullName, p);
 		else
@@ -572,7 +572,7 @@ recipient(a, targetq)
 	extern bool sameaddr();
 
 	To = a->q_paddr;
-	m = a->q_mailer;
+	m = Mailer[a->q_mailer];
 	errno = 0;
 # ifdef DEBUG
 	if (Debug)
@@ -611,7 +611,7 @@ recipient(a, targetq)
 	**	`Forward' must do the forwarding recursively.
 	*/
 
-	if (m == &Mailer[0] && !NoAlias && targetq == &SendQ && forward(a))
+	if (m == Mailer[0] && !NoAlias && targetq == &SendQ && forward(a))
 		return;
 
 	/*
