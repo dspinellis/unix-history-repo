@@ -1,4 +1,4 @@
-#	@(#)README	7.4 (Berkeley) %G%
+#	@(#)README	7.5 (Berkeley) %G%
 
 The file system is reasonably stable, but incomplete.  There is no cleaner
 on the 4.4BSD-Alpha tape.  Therefore, LFS is currently a "write-once" file
@@ -19,12 +19,6 @@ Missing Functionality:
 	Since blocks are laid out contiguously, we can miss rotations reading
 	sequentially.  We need to read in contiguous blocks to avoid that.
 	See McVoy's Winter 1991 Usenix paper for details on how to do that.
-
-Known Bugs:
-	The vrele of the ifile inode in lfs_unmount should be moved to
-	immediately before the call to vgone (so that if VFS_SYNC returns
-	busy and we break out, we end up the correct usecount for the
-	ifile inode (fs->lfs_ivnode).
 
 ----------
 Design Details (a more complete design has been submitted to the January 1993
