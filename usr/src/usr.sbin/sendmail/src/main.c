@@ -3,7 +3,7 @@
 # include <sys/ioctl.h>
 # include "sendmail.h"
 
-SCCSID(@(#)main.c	3.144		%G%);
+SCCSID(@(#)main.c	3.145		%G%);
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -304,10 +304,6 @@ main(argc, argv)
 	  case MD_INITALIAS:
 		Verbose = TRUE;
 		break;
-
-	  case MD_PRINT:
-		usrerr("mailq mode not yet implemented");
-		finis();
 	}
 
 	/* do heuristic mode adjustment */
@@ -341,6 +337,17 @@ main(argc, argv)
 	{
 		syserr("cannot chdir(%s)", QueueDir);
 		exit(EX_SOFTWARE);
+	}
+
+	/*
+	**  If printing the queue, go off and do that.
+	*/
+
+	if (OpMode == MD_PRINT)
+	{
+		dropenvelope(CurEnv);
+		printqueue();
+		exit(EX_OK);
 	}
 
 	/*

@@ -5,10 +5,10 @@
 # include <errno.h>
 
 # ifndef QUEUE
-SCCSID(@(#)queue.c	3.58		%G%	(no queueing));
+SCCSID(@(#)queue.c	3.59		%G%	(no queueing));
 # else QUEUE
 
-SCCSID(@(#)queue.c	3.58		%G%);
+SCCSID(@(#)queue.c	3.59		%G%);
 
 /*
 **  Work queue.
@@ -101,14 +101,14 @@ queueup(e, queueall, announce)
 	/* output message priority */
 	fprintf(tfp, "P%ld\n", e->e_msgpriority);
 
+	/* output creation time */
+	fprintf(tfp, "T%ld\n", e->e_ctime);
+
 	/* output name of data file */
 	fprintf(tfp, "D%s\n", e->e_df);
 
 	/* output name of sender */
 	fprintf(tfp, "S%s\n", e->e_from.q_paddr);
-
-	/* output creation time */
-	fprintf(tfp, "T%ld\n", e->e_ctime);
 
 	/* output list of recipient addresses */
 	for (q = e->e_sendqueue; q != NULL; q = q->q_next)
@@ -485,7 +485,7 @@ dowork(w)
 		initsys();
 
 		/* read the queue control file */
-		readqf(CurEnv);
+		readqf(CurEnv, TRUE);
 		CurEnv->e_flags |= EF_INQUEUE;
 		eatheader(CurEnv);
 
@@ -518,6 +518,8 @@ dowork(w)
 **
 **	Parameters:
 **		e -- the envelope of the job to run.
+**		full -- if set, read in all information.  Otherwise just
+**			read in info needed for a queue print.
 **
 **	Returns:
 **		none.
@@ -527,8 +529,9 @@ dowork(w)
 **		we had been invoked by argument.
 */
 
-readqf(e)
+readqf(e, full)
 	register ENVELOPE *e;
+	bool full;
 {
 	register FILE *f;
 	char buf[MAXFIELD];
@@ -554,7 +557,7 @@ readqf(e)
 	**  Read and process the file.
 	*/
 
-	if (Verbose)
+	if (Verbose && full)
 		printf("\nRunning %s\n", e->e_id);
 	while (fgetfolded(buf, sizeof buf, f) != NULL)
 	{
@@ -565,7 +568,8 @@ readqf(e)
 			break;
 
 		  case 'H':		/* header */
-			(void) chompheader(&buf[1], FALSE);
+			if (full)
+				(void) chompheader(&buf[1], FALSE);
 			break;
 
 		  case 'S':		/* sender */
@@ -573,6 +577,8 @@ readqf(e)
 			break;
 
 		  case 'D':		/* data file name */
+			if (!full)
+				break;
 			e->e_df = newstr(&buf[1]);
 			e->e_dfp = fopen(e->e_df, "r");
 			if (e->e_dfp == NULL)
@@ -591,7 +597,8 @@ readqf(e)
 			break;
 
 		  case 'M':		/* define macro */
-			define(buf[1], newstr(&buf[2]), e);
+			if (full)
+				define(buf[1], newstr(&buf[2]), e);
 			break;
 
 		  default:
@@ -635,6 +642,82 @@ timeout(e)
 
 	/* arrange to remove files from queue */
 	e->e_flags |= EF_CLRQUEUE;
+}
+/*
+**  PRINTQUEUE -- print out a representation of the mail queue
+**
+**	Parameters:
+**		none.
+**
+**	Returns:
+**		none.
+**
+**	Side Effects:
+**		Prints a listing of the mail queue on the standard output.
+*/
+
+printqueue()
+{
+	register WORK *w;
+	FILE *f;
+	char buf[MAXLINE];
+
+	/*
+	**  Read and order the queue.
+	*/
+
+	orderq();
+
+	/*
+	**  Print the work list that we have read.
+	*/
+
+	/* first see if there is anything */
+	if (WorkQ == NULL)
+	{
+		printf("\nMail queue is empty\n");
+		return;
+	}
+
+	printf("\n\t\tMail Queue\n");
+	printf("--QID-- --Size-- -----Q Time----- --Sender/Recipient--\n");
+	for (w = WorkQ; w != NULL; w = w->w_next)
+	{
+		struct stat st;
+
+		printf("%7s", w->w_name + 2);
+		f = fopen(w->w_name, "r");
+		if (f == NULL)
+		{
+			printf(" (finished)\n");
+			continue;
+		}
+		(void) fstat(fileno(f), &st);
+		printf(" %8ld", st.st_size);
+		while (fgets(buf, sizeof buf, f) != NULL)
+		{
+			auto long ti;
+
+			fixcrlf(buf, TRUE);
+			switch (buf[0])
+			{
+			  case 'S':	/* sender name */
+				printf(" %.20s", &buf[1]);
+				break;
+
+			  case 'R':	/* recipient name */
+				printf("\n\t\t\t\t  %.20s", &buf[1]);
+				break;
+
+			  case 'T':	/* creation time */
+				sscanf(&buf[1], "%ld", &ti);
+				printf(" %.16s", ctime(&ti));
+				break;
+			}
+		}
+		printf("\n");
+		fclose(f);
+	}
 }
 
 # endif QUEUE
