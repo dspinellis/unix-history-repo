@@ -1,4 +1,4 @@
-.\"	@(#)goodbye	5.1 (Berkeley) %G%
+.\"	@(#)goodbye	5.2 (Berkeley) %G%
 .\"
 .\" use -ms
 .PP
@@ -46,3 +46,7 @@ efforts of many people.
 We thank you for your support over the years, your funding, and,
 of course, the software you've contributed to make the BSD system
 what it is today!
+.in 1i
+.sp 2
+Kirk McKusick
+Keith Bostic
