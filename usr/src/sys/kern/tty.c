@@ -1,4 +1,4 @@
-/*	tty.c	4.46	83/07/06	*/
+/*	tty.c	4.47	83/07/09	*/
 
 #include "../machine/reg.h"
 
@@ -949,7 +949,8 @@ ttyoutput(c, tp)
 		ctype = (tp->t_flags >> 8) & 03;
 		if (ctype == 1) { /* tty 37 */
 			if (*colp > 0)
-				c = max(((unsigned)*colp>>4) + 3, (unsigned)6);
+				c = max((((unsigned)*colp) >> 4) + 3,
+				    (unsigned)6);
 		} else if (ctype == 2) /* vt05 */
 			c = mstohz(100);
 		*colp = 0;
