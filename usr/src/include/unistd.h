@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)unistd.h	8.9 (Berkeley) %G%
+ *	@(#)unistd.h	8.10 (Berkeley) %G%
  */
 
 #ifndef _UNISTD_H_
@@ -121,7 +121,7 @@ char	*sbrk __P((int));
 int	 select __P((int, fd_set *, fd_set *, fd_set *, struct timeval *));
 int	 setegid __P((gid_t));
 int	 seteuid __P((uid_t));
-int	 setgroups __P((int, const int *));
+int	 setgroups __P((int, const gid_t *));
 void	 sethostid __P((long));
 int	 sethostname __P((const char *, int));
 int	 setkey __P((const char *));
