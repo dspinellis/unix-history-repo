@@ -1,0 +1,1225 @@
+Info file ../info/emacs, produced by Makeinfo, -*- Text -*- from
+input file emacs.tex.
+
+This file documents the GNU Emacs editor.
+
+Copyright (C) 1985, 1986, 1988 Richard M. Stallman.
+
+Permission is granted to make and distribute verbatim copies of this
+manual provided the copyright notice and this permission notice are
+preserved on all copies.
+
+Permission is granted to copy and distribute modified versions of
+this manual under the conditions for verbatim copying, provided also
+that the sections entitled "The GNU Manifesto", "Distribution" and
+"GNU General Public License" are included exactly as in the original,
+and provided that the entire resulting derived work is distributed
+under the terms of a permission notice identical to this one.
+
+Permission is granted to copy and distribute translations of this
+manual into another language, under the above conditions for modified
+versions, except that the sections entitled "The GNU Manifesto",
+"Distribution" and "GNU General Public License" may be included in a
+translation approved by the author instead of in the original English.
+
+
+
+File: emacs,  Node: Paragraphs,  Next: Pages,  Prev: Sentences,  Up: Text
+
+Paragraphs
+==========
+
+  The Emacs commands for manipulating paragraphs are also `Meta-' keys.
+
+`M-['
+     Move back to previous paragraph beginning 
+     (`backward-paragraph').
+
+`M-]'
+     Move forward to next paragraph end (`forward-paragraph').
+
+`M-h'
+     Put point and mark around this or next paragraph
+     (`mark-paragraph').
+
+  `Meta-[' moves to the beginning of the current or previous paragraph,
+while `Meta-]' moves to the end of the current or next paragraph. 
+Blank lines and text formatter command lines separate paragraphs and
+are not part of any paragraph.  Also, an indented line starts a new
+paragraph.
+
+  In major modes for programs (as opposed to Text mode), paragraphs
+begin and end only at blank lines.  This makes the paragraph commands
+continue to be useful even though there are no paragraphs per se.
+
+  When there is a fill prefix, then paragraphs are delimited by all
+lines which don't start with the fill prefix.  *Note Filling::.
+
+  When you wish to operate on a paragraph, you can use the command
+`Meta-h' (`mark-paragraph') to set the region around it.  This
+command puts point at the beginning and mark at the end of the
+paragraph point was in.  If point is between paragraphs (in a run of
+blank lines, or at a boundary), the paragraph following point is
+surrounded by point and mark.  If there are blank lines preceding the
+first line of the paragraph, one of these blank lines is included in
+the region.  Thus, for example, `M-h C-w' kills the paragraph around
+or after point.
+
+  The precise definition of a paragraph boundary is controlled by the
+variables `paragraph-separate' and `paragraph-start'.  The value of
+`paragraph-start' is a regexp that should match any line that either
+starts or separates paragraphs.  The value of `paragraph-separate' is
+another regexp that should match only lines that separate paragraphs
+without being part of any paragraph.  Lines that start a new
+paragraph and are contained in it must match both regexps.  For
+example, normally `paragraph-start' is `"^[ \t\n\f]"' and
+`paragraph-separate' is `"^[ \t\f]*$"'.
+
+  Normally it is desirable for page boundaries to separate paragraphs. 
+The default values of these variables recognize the usual separator
+for pages.
+
+
+
+File: emacs,  Node: Pages,  Next: Filling,  Prev: Paragraphs,  Up: Text
+
+Pages
+=====
+
+  Files are often thought of as divided into "pages" by the "formfeed"
+character (ASCII Control-L, octal code 014).  For example, if a file
+is printed on a line printer, each page of the file, in this sense,
+will start on a new page of paper.  Emacs treats a page-separator
+character just like any other character.  It can be inserted with
+`C-q C-l', or deleted with DEL.  Thus, you are free to paginate your
+file or not.  However, since pages are often meaningful divisions of
+the file, commands are provided to move over them and operate on them.
+
+`C-x ['
+     Move point to previous page boundary (`backward-page').
+
+`C-x ]'
+     Move point to next page boundary (`forward-page').
+
+`C-x C-p'
+     Put point and mark around this page (or another page)
+     (`mark-page').
+
+`C-x l'
+     Count the lines in this page (`count-lines-page').
+
+  The `C-x [' (`backward-page') command moves point to immediately
+after the previous page delimiter.  If point is already right after a
+page delimiter, it skips that one and stops at the previous one.  A
+numeric argument serves as a repeat count.  The `C-x ]'
+(`forward-page') command moves forward past the next page delimiter.
+
+  The `C-x C-p' command (`mark-page') puts point at the beginning of
+the current page and the mark at the end.  The page delimiter at the
+end is included (the mark follows it).  The page delimiter at the
+front is excluded (point follows it).  This command can be followed
+by `C-w' to kill a page which is to be moved elsewhere.  If it is
+inserted after a page delimiter, at a place where `C-x ]' or `C-x ['
+would take you, then the page will be properly delimited before and
+after once again.
+
+  A numeric argument to `C-x C-p' is used to specify which page to go
+to, relative to the current one.  Zero means the current page.  One
+means the next page, and -1 means the previous one.
+
+  The `C-x l' command (`count-lines-page') is good for deciding where
+to break a page in two.  It prints in the echo area the total number
+of lines in the current page, and then divides it up into those
+preceding the current line and those following, as in
+
+     Page has 96 (72+25) lines
+
+  Notice that the sum is off by one; this is correct if point is not at
+the beginning of a line.
+
+  The variable `page-delimiter' should have as its value a regexp that
+matches the beginning of a line that separates pages.  This is what
+defines where pages begin.  The normal value of this variable is
+`"^\f"', which matches a formfeed character at the beginning of a line.
+
+
+
+File: emacs,  Node: Filling,  Next: Case,  Prev: Pages,  Up: Text
+
+Filling Text
+============
+
+  With Auto Fill mode, text can be "filled" (broken up into lines that
+fit in a specified width) as you insert it.  If you alter existing
+text it may no longer be properly filled; then explicit commands for
+filling can be used.
+
+* Menu:
+
+* Auto Fill::	  Auto Fill mode breaks long lines automatically.
+* Fill Commands:: Commands to refill paragraphs and center lines.
+* Fill Prefix::   Filling when every line is indented or in a comment, etc.
+
+ 
+
+File: emacs,  Node: Auto Fill,  Next: Fill Commands,  Prev: Filling,  Up: Filling
+
+Auto Fill Mode
+--------------
+
+  "Auto Fill" mode is a minor mode in which lines are broken
+automatically when they become too wide.  Breaking happens only when
+you type a SPC or RET.
+
+`M-x auto-fill-mode'
+     Enable or disable Auto Fill mode.
+
+`SPC'
+`RET'
+     In Auto Fill mode, break lines when appropriate.
+
+  `M-x auto-fill-mode' turns Auto Fill mode on if it was off, or off if
+it was on.  With a positive numeric argument it always turns Auto
+Fill mode on, and with a negative argument always turns it off.  You
+can see when Auto Fill mode is in effect by the presence of the word
+`Fill' in the mode line, inside the parentheses.  Auto Fill mode is a
+minor mode, turned on or off for each buffer individually.  *Note
+Minor Modes::.
+
+  In Auto Fill mode, lines are broken automatically at spaces when they
+get longer than the desired width.  Line breaking and rearrangement
+takes place only when you type SPC or RET.  If you wish to insert a
+space or newline without permitting line-breaking, type `C-q SPC' or
+`C-q LFD' (recall that a newline is really a linefeed).  Also, `C-o'
+inserts a newline without line breaking.
+
+  Auto Fill mode works well with Lisp mode, because when it makes a new
+line in Lisp mode it indents that line with TAB.  If a line ending in
+a comment gets too long, the text of the comment is split into two
+comment lines.  Optionally new comment delimiters are inserted at the
+end of the first line and the beginning of the second so that each
+line is a separate comment; the variable `comment-multi-line'
+controls the choice (*note Comments::.).
+
+  Auto Fill mode does not refill entire paragraphs.  It can break lines
+but cannot merge lines.  So editing in the middle of a paragraph can
+result in a paragraph that is not correctly filled.  The easiest way
+to make the paragraph properly filled again is usually with the
+explicit fill commands.
+
+  Many users like Auto Fill mode and want to use it in all text files. 
+The section on init files says how to arrange this permanently for
+yourself.  *Note Init File::.
+
+
+
+File: emacs,  Node: Fill Commands,  Next: Fill Prefix,  Prev: Auto Fill,  Up: Filling
+
+Explicit Fill Commands
+----------------------
+
+`M-q'
+     Fill current paragraph (`fill-paragraph').
+
+`M-g'
+     Fill each paragraph in the region (`fill-region').
+
+`C-x f'
+     Set the fill column (`set-fill-column').
+
+`M-x fill-region-as-paragraph.'
+     Fill the region, considering it as one paragraph.
+
+`M-s'
+     Center a line.
+
+  To refill a paragraph, use the command `Meta-q' (`fill-paragraph'). 
+It causes the paragraph that point is inside, or the one after point
+if point is between paragraphs, to be refilled.  All the line-breaks
+are removed, and then new ones are inserted where necessary.  `M-q'
+can be undone with `C-_'.  *Note Undo::.
+
+  To refill many paragraphs, use `M-g' (`fill-region'), which divides
+the region into paragraphs and fills each of them.
+
+  `Meta-q' and `Meta-g' use the same criteria as `Meta-h' for finding
+paragraph boundaries (*note Paragraphs::.).  For more control, you
+can use `M-x fill-region-as-paragraph', which refills everything
+between point and mark.  This command recognizes only blank lines as
+paragraph separators.
+
+  A numeric argument to `M-g' or `M-q' causes it to "justify" the text
+as well as filling it.  This means that extra spaces are inserted to
+make the right margin line up exactly at the fill column.  To remove
+the extra spaces, use `M-q' or `M-g' with no argument.
+
+  The command `Meta-s' (`center-line') centers the current line within
+the current fill column.  With an argument, it centers several lines
+individually and moves past them.
+
+  The maximum line width for filling is in the variable `fill-column'. 
+Altering the value of `fill-column' makes it local to the current
+buffer; until that time, the default value is in effect.  The default
+is initially 70.  *Note Locals::.
+
+  The easiest way to set `fill-column' is to use the command `C-x f'
+(`set-fill-column').  With no argument, it sets `fill-column' to the
+current horizontal position of point.  With a numeric argument, it
+uses that as the new fill column.
+
+
+
+File: emacs,  Node: Fill Prefix,  Prev: Fill Commands,  Up: Filling
+
+The Fill Prefix
+---------------
+
+  To fill a paragraph in which each line starts with a special marker
+(which might be a few spaces, giving an indented paragraph), use the
+"fill prefix" feature.  The fill prefix is a string which Emacs
+expects every line to start with, and which is not included in filling.
+
+`C-x .'
+     Set the fill prefix (`set-fill-prefix').
+
+`M-q'
+     Fill a paragraph using current fill prefix (`fill-paragraph').
+
+`M-x fill-individual-paragraphs'
+     Fill the region, considering each change of indentation as
+     starting a new paragraph.
+
+  To specify a fill prefix, move to a line that starts with the desired
+prefix, put point at the end of the prefix, and give the command
+`C-x .' (`set-fill-prefix').  That's a period after the `C-x'.  To
+turn off the fill prefix, specify an empty prefix: type `C-x .' with
+point at the beginning of a line.
+
+  When a fill prefix is in effect, the fill commands remove the fill
+prefix from each line before filling and insert it on each line after
+filling.  The fill prefix is also inserted on new lines made
+automatically by Auto Fill mode.  Lines that do not start with the
+fill prefix are considered to start paragraphs, both in `M-q' and the
+paragraph commands; this is just right if you are using paragraphs
+with hanging indentation (every line indented except the first one). 
+Lines which are blank or indented once the prefix is removed also
+separate or start paragraphs; this is what you want if you are
+writing multi-paragraph comments with a comment delimiter on each line.
+
+  The fill prefix is stored in the variable `fill-prefix'.  Its value
+is a string, or `nil' when there is no fill prefix.  This is a
+per-buffer variable; altering the variable affects only the current
+buffer, but there is a default value which you can change as well. 
+*Note Locals::.
+
+  Another way to use fill prefixes is through `M-x
+fill-individual-paragraphs'.  This function divides the region into
+groups of consecutive lines with the same amount and kind of
+indentation and fills each group as a paragraph using its indentation
+as a fill prefix.
+
+
+
+File: emacs,  Node: Case,  Prev: Filling,  Up: Text
+
+Case Conversion Commands
+========================
+
+  Emacs has commands for converting either a single word or any
+arbitrary range of text to upper case or to lower case.
+
+`M-l'
+     Convert following word to lower case (`downcase-word').
+
+`M-u'
+     Convert following word to upper case (`upcase-word').
+
+`M-c'
+     Capitalize the following word (`capitalize-word').
+
+`C-x C-l'
+     Convert region to lower case (`downcase-region').
+
+`C-x C-u'
+     Convert region to upper case (`upcase-region').
+
+  The word conversion commands are the most useful.  `Meta-l'
+(`downcase-word') converts the word after point to lower case, moving
+past it.  Thus, repeating `Meta-l' converts successive words. 
+`Meta-u' (`upcase-word') converts to all capitals instead, while
+`Meta-c' (`capitalize-word') puts the first letter of the word into
+upper case and the rest into lower case.  All these commands convert
+several words at once if given an argument.  They are especially
+convenient for converting a large amount of text from all upper case
+to mixed case, because you can move through the text using `M-l',
+`M-u' or `M-c' on each word as appropriate, occasionally using `M-f'
+instead to skip a word.
+
+  When given a negative argument, the word case conversion commands
+apply to the appropriate number of words before point, but do not
+move point.  This is convenient when you have just typed a word in
+the wrong case: you can give the case conversion command and continue
+typing.
+
+  If a word case conversion command is given in the middle of a word,
+it applies only to the part of the word which follows point.  This is
+just like what `Meta-d' (`kill-word') does.  With a negative
+argument, case conversion applies only to the part of the word before
+point.
+
+  The other case conversion commands are `C-x C-u' (`upcase-region')
+and `C-x C-l' (`downcase-region'), which convert everything between
+point and mark to the specified case.  Point and mark do not move.
+
+
+
+File: emacs,  Node: Programs,  Next: Running,  Prev: Text,  Up: Top
+
+Editing Programs
+****************
+
+  Emacs has many commands designed to understand the syntax of
+programming languages such as Lisp and C.  These commands can
+
+   * Move over or kill balanced expressions or "sexps" (*note
+     Lists::.).
+
+   * Move over or mark top-level balanced expressions ("defuns", in
+     Lisp; functions, in C).
+
+   * Show how parentheses balance (*note Matching::.).
+
+   * Insert, kill or align comments (*note Comments::.).
+
+   * Follow the usual indentation conventions of the language (*note
+     Grinding::.).
+
+  The commands for words, sentences and paragraphs are very useful in
+editing code even though their canonical application is for editing
+human language text.  Most symbols contain words (*note Words::.);
+sentences can be found in strings and comments (*note Sentences::.). 
+Paragraphs per se are not present in code, but the paragraph commands
+are useful anyway, because Lisp mode and C mode define paragraphs to
+begin and end at blank lines (*note Paragraphs::.).  Judicious use of
+blank lines to make the program clearer will also provide interesting
+chunks of text for the paragraph commands to work on.
+
+  The selective display feature is useful for looking at the overall
+structure of a function (*note Selective Display::.).  This feature
+causes only the lines that are indented less than a specified amount
+to appear on the screen.
+
+* Menu:
+
+* Program Modes::       Major modes for editing programs.
+* Lists::               Expressions with balanced parentheses.
+                         There are editing commands to operate on them.
+* Defuns::              Each program is made up of separate functions.
+                         There are editing commands to operate on them.
+* Grinding::            Adjusting indentation to show the nesting.
+* Matching::            Insertion of a close-delimiter flashes matching open.
+* Comments::            Inserting, illing and aligning comments.
+* Balanced Editing::    Inserting two matching parentheses at once, etc.
+* Lisp Completion::     Completion on symbol names in Lisp code.
+* Documentation::       Getting documentation of functions you plan to call.
+* Change Log::          Maintaining a change history for your program.
+* Tags::                Go direct to any function in your program in one
+                         command.  Tags remembers which file it is in.
+* Fortran::		Fortran mode and its special features.
+
+ 
+
+File: emacs,  Node: Program Modes,  Next: Lists,  Prev: Programs,  Up: Programs
+
+Major Modes for Programming Languages
+=====================================
+
+  Emacs also has major modes for the programming languages Lisp, Scheme
+(a variant of Lisp), C, Fortran and Muddle.  Ideally, a major mode
+should be implemented for each programming language that you might
+want to edit with Emacs; but often the mode for one language can
+serve for other syntactically similar languages.  The language modes
+that exist are those that someone decided to take the trouble to write.
+
+  There are several forms of Lisp mode, which differ in the way they
+interface to Lisp execution.  *Note Lisp Modes::.
+
+  Each of the programming language modes defines the TAB key to run an
+indentation function that knows the indentation conventions of that
+language and updates the current line's indentation accordingly.  For
+example, in C mode TAB is bound to `c-indent-line'.  LFD is normally
+defined to do RET followed by TAB; thus, it too indents in a
+mode-specific fashion.
+
+  In most programming languages, indentation is likely to vary from
+line to line.  So the major modes for those languages rebind DEL to
+treat a tab as if it were the equivalent number of spaces (using the
+command `backward-delete-char-untabify').  This makes it possible to
+rub out indentation one column at a time without worrying whether it
+is made up of spaces or tabs.  Use `C-b C-d' to delete a tab
+character before point, in these modes.
+
+  Programming language modes define paragraphs to be separated only by
+blank lines, so that the paragraph commands remain useful.  Auto Fill
+mode, if enabled in a programming language major mode, indents the
+new lines which it creates.
+
+  Turning on a major mode calls a user-supplied function called the
+"mode hook", which is the value of a Lisp variable.  For example,
+turning on C mode calls the value of the variable `c-mode-hook' if
+that value exists and is non-`nil'.  Mode hook variables for other
+programming language modes include `lisp-mode-hook',
+`emacs-lisp-mode-hook', `lisp-interaction-mode-hook',
+`scheme-mode-hook' and `muddle-mode-hook'.  The mode hook function
+receives no arguments.
+
+
+
+File: emacs,  Node: Lists,  Next: Defuns,  Prev: Program Modes,  Up: Programs
+
+Lists and Sexps
+===============
+
+  By convention, Emacs keys for dealing with balanced expressions are
+usually `Control-Meta-' characters.  They tend to be analogous in
+function to their `Control-' and `Meta-' equivalents.  These commands
+are usually thought of as pertaining to expressions in programming
+languages, but can be useful with any language in which some sort of
+parentheses exist (including English).
+
+  These commands fall into two classes.  Some deal only with "lists"
+(parenthetical groupings).  They see nothing except parentheses,
+brackets, braces (whichever ones must balance in the language you are
+working with), and escape characters that might be used to quote those.
+
+  The other commands deal with expressions or "sexps".  The word `sexp'
+is derived from "s-expression", the ancient term for an expression in
+Lisp.  But in Emacs, the notion of `sexp' is not limited to Lisp.  It
+refers to an expression in whatever language your program is written
+in.  Each programming language has its own major mode, which
+customizes the syntax tables so that expressions in that language
+count as sexps.
+
+  Sexps typically include symbols, numbers, and string constants, as
+well as anything contained in parentheses, brackets or braces.
+
+  In languages that use prefix and infix operators, such as C, it is
+not possible for all expressions to be sexps.  For example, C mode
+does not recognize `foo + bar' as a sexp, even though it is a C
+expression; it recognizes `foo' as one sexp and `bar' as another,
+with the `+' as punctuation between them.  This is a fundamental
+ambiguity: both `foo + bar' and `foo' are legitimate choices for the
+sexp to move over if point is at the `f'.  Note that `(foo + bar)' is
+a sexp in C mode.
+
+  Some languages have obscure forms of syntax for expressions that
+nobody has bothered to make Emacs understand properly.
+
+`C-M-f'
+     Move forward over a sexp (`forward-sexp').
+
+`C-M-b'
+     Move backward over a sexp (`backward-sexp').
+
+`C-M-k'
+     Kill sexp forward (`kill-sexp').
+
+`C-M-u'
+     Move up and backward in list structure (`backward-up-list').
+
+`C-M-d'
+     Move down and forward in list structure (`down-list').
+
+`C-M-n'
+     Move forward over a list (`forward-list').
+
+`C-M-p'
+     Move backward over a list (`backward-list').
+
+`C-M-t'
+     Transpose expressions (`transpose-sexps').
+
+`C-M-@'
+     Put mark after following expression (`mark-sexp').
+
+  To move forward over a sexp, use `C-M-f' (`forward-sexp').  If the
+first significant character after point is an opening delimiter (`('
+in Lisp; `(', `[' or `{' in C), `C-M-f' moves past the matching
+closing delimiter.  If the character begins a symbol, string, or
+number, `C-M-f' moves over that.  If the character after point is a
+closing delimiter, `C-M-f' just moves past it.  (This last is not
+really moving across a sexp; it is an exception which is included in
+the definition of `C-M-f' because it is as useful a behavior as
+anyone can think of for that situation.)
+
+  The command `C-M-b' (`backward-sexp') moves backward over a sexp. 
+The detailed rules are like those above for `C-M-f', but with
+directions reversed.  If there are any prefix characters
+(singlequote, backquote and comma, in Lisp) preceding the sexp,
+`C-M-b' moves back over them as well.
+
+  `C-M-f' or `C-M-b' with an argument repeats that operation the
+specified number of times; with a negative argument, it moves in the
+opposite direction.
+
+  The sexp commands move across comments as if they were whitespace, in
+languages such as C where the comment-terminator can be recognized. 
+In Lisp, and other languages where comments run until the end of a
+line, it is very difficult to ignore comments when parsing backwards;
+therefore, in such languages the sexp commands treat the text of
+comments as if it were code.
+
+  Killing a sexp at a time can be done with `C-M-k' (`kill-sexp'). 
+`C-M-k' kills the characters that `C-M-f' would move over.
+
+  The "list commands" move over lists like the sexp commands but skip
+blithely over any number of other kinds of sexps (symbols, strings,
+etc).  They are `C-M-n' (`forward-list') and `C-M-p'
+(`backward-list').  The main reason they are useful is that they
+usually ignore comments (since the comments usually do not contain
+any lists).
+
+  `C-M-n' and `C-M-p' stay at the same level in parentheses, when
+that's possible.  To move up one (or N) levels, use `C-M-u'
+(`backward-up-list').  `C-M-u' moves backward up past one unmatched
+opening delimiter.  A positive argument serves as a repeat count; a
+negative argument reverses direction of motion and also requests
+repetition, so it moves forward and up one or more levels.
+
+  To move down in list structure, use `C-M-d' (`down-list').  In Lisp
+mode, where `(' is the only opening delimiter, this is nearly the
+same as searching for a `('.  An argument specifies the number of
+levels of parentheses to go down.
+
+  A somewhat random-sounding command which is nevertheless easy to use
+is `C-M-t' (`transpose-sexps'), which drags the previous sexp across
+the next one.  An argument serves as a repeat count, and a negative
+argument drags backwards (thus canceling out the effect of `C-M-t'
+with a positive argument).  An argument of zero, rather than doing
+nothing, transposes the sexps ending after point and the mark.
+
+  To make the region be the next sexp in the buffer, use `C-M-@'
+(`mark-sexp') which sets mark at the same place that `C-M-f' would
+move to.  `C-M-@' takes arguments like `C-M-f'.  In particular, a
+negative argument is useful for putting the mark at the beginning of
+the previous sexp.
+
+  The list and sexp commands' understanding of syntax is completely
+controlled by the syntax table.  Any character can, for example, be
+declared to be an opening delimiter and act like an open parenthesis.
+*Note Syntax::.
+
+
+
+File: emacs,  Node: Defuns,  Next: Grinding,  Prev: Lists,  Up: Programs
+
+Defuns
+======
+
+  In Emacs, a parenthetical grouping at the top level in the buffer is
+called a "defun".  The name derives from the fact that most top-level
+lists in a Lisp file are instances of the special form `defun', but
+any top-level parenthetical grouping counts as a defun in Emacs
+parlance regardless of what its contents are, and regardless of the
+programming language in use.  For example, in C, the body of a
+function definition is a defun.
+
+`C-M-a'
+     Move to beginning of current or preceding defun
+     (`beginning-of-defun').
+
+`C-M-e'
+     Move to end of current or following defun (`end-of-defun').
+
+`C-M-h'
+     Put region around whole current or following defun (`mark-defun').
+
+  The commands to move to the beginning and end of the current defun
+are `C-M-a' (`beginning-of-defun') and `C-M-e' (`end-of-defun').
+
+  If you wish to operate on the current defun, use `C-M-h'
+(`mark-defun') which puts point at the beginning and mark at the end
+of the current or next defun.  For example, this is the easiest way
+to get ready to move the defun to a different place in the text.  In
+C mode, `C-M-h' runs the function `mark-c-function', which is almost
+the same as `mark-defun'; the difference is that it backs up over the
+argument declarations, function name and returned data type so that
+the entire C function is inside the region.
+
+  Emacs assumes that any open-parenthesis found in the leftmost column
+is the start of a defun.  Therefore, never put an open-parenthesis at
+the left margin in a Lisp file unless it is the start of a top level
+list.  Never put an open-brace or other opening delimiter at the
+beginning of a line of C code unless it starts the body of a
+function.  The most likely problem case is when you want an opening
+delimiter at the start of a line inside a string.  To avoid trouble,
+put an escape character (`\', in C and Emacs Lisp, `/' in some other
+Lisp dialects) before the opening delimiter.  It will not affect the
+contents of the string.
+
+  In the remotest past, the original Emacs found defuns by moving
+upward a level of parentheses until there were no more levels to go
+up.  This always required scanning all the way back to the beginning
+of the buffer, even for a small function.  To speed up the operation,
+Emacs was changed to assume that any `(' (or other character assigned
+the syntactic class of opening-delimiter) at the left margin is the
+start of a defun.  This heuristic was nearly always right and avoided
+the costly scan; however, it mandated the convention described above.
+
+
+
+File: emacs,  Node: Grinding,  Next: Matching,  Prev: Defuns,  Up: Programs
+
+Indentation for Programs
+========================
+
+  The best way to keep a program properly indented ("ground") is to use
+Emacs to re-indent it as you change it.  Emacs has commands to indent
+properly either a single line, a specified number of lines, or all of
+the lines inside a single parenthetical grouping.
+
+* Menu:
+
+* Basic Indent::
+* Multi-line Indent::   Commands to reindent many lines at once.
+* Lisp Indent::		Specifying how each Lisp function should be indented.
+* C Indent::		Choosing an indentation style for C code.
+
+ 
+
+File: emacs,  Node: Basic Indent,  Next: Multi-line Indent,  Prev: Grinding,  Up: Grinding
+
+Basic Program Indentation Commands
+----------------------------------
+
+`TAB'
+     Adjust indentation of current line.
+
+`LFD'
+     Equivalent to RET followed by TAB (`newline-and-indent').
+
+  The basic indentation command is TAB, which gives the current line
+the correct indentation as determined from the previous lines.  The
+function that TAB runs depends on the major mode; it is
+`lisp-indent-line' in Lisp mode, `c-indent-line' in C mode, etc. 
+These functions understand different syntaxes for different
+languages, but they all do about the same thing.  TAB in any
+programming language major mode inserts or deletes whitespace at the
+beginning of the current line, independent of where point is in the
+line.  If point is inside the whitespace at the beginning of the
+line, TAB leaves it at the end of that whitespace; otherwise, TAB
+leaves point fixed with respect to the characters around it.
+
+  Use `C-q TAB' to insert a tab at point.
+
+  When entering a large amount of new code, use LFD
+(`newline-and-indent'), which is equivalent to a RET followed by a
+TAB.  LFD creates a blank line, and then gives it the appropriate
+indentation.
+
+  TAB indents the second and following lines of the body of an
+parenthetical grouping each under the preceding one; therefore, if
+you alter one line's indentation to be nonstandard, the lines below
+will tend to follow it.  This is the right behavior in cases where
+the standard result of TAB is unaesthetic.
+
+  Remember that an open-parenthesis, open-brace or other opening
+delimiter at the left margin is assumed by Emacs (including the
+indentation routines) to be the start of a function.  Therefore, you
+must never have an opening delimiter in column zero that is not the
+beginning of a function, not even inside a string.  This restriction
+is vital for making the indentation commands fast; you must simply
+accept it.  *Note Defuns::, for more information on this.
+
+
+
+File: emacs,  Node: Multi-line Indent,  Next: Lisp Indent,  Prev: Basic Indent,  Up: Grinding
+
+Indenting Several Lines
+-----------------------
+
+  When you wish to re-indent several lines of code which have been
+altered or moved to a different level in the list structure, you have
+several commands available.
+
+`C-M-q'
+     Re-indent all the lines within one list (`indent-sexp').
+
+`C-u TAB'
+     Shift an entire list rigidly sideways so that its first line is
+     properly indented.
+
+`C-M-\'
+     Re-indent all lines in the region (`indent-region').
+
+  You can re-indent the contents of a single list by positioning point
+before the beginning of it and typing `C-M-q' (`indent-sexp' in Lisp
+mode, `indent-c-exp' in C mode; also bound to other suitable
+functions in other modes).  The indentation of the line the sexp
+starts on is not changed; therefore, only the relative indentation
+within the list, and not its position, is changed.  To correct the
+position as well, type a TAB before the `C-M-q'.
+
+  If the relative indentation within a list is correct but the
+indentation of its beginning is not, go to the line the list begins
+on and type `C-u TAB'.  When TAB is given a numeric argument, it
+moves all the lines in the grouping starting on the current line
+sideways the same amount that the current line moves.  It is clever,
+though, and does not move lines that start inside strings, or C
+preprocessor lines when in C mode.
+
+  Another way to specify the range to be re-indented is with point and
+mark.  The command `C-M-\' (`indent-region') applies TAB to every
+line whose first character is between point and mark.
+
+
+
+File: emacs,  Node: Lisp Indent,  Next: C Indent,  Prev: Multi-line Indent,  Up: Grinding
+
+Customizing Lisp Indentation
+----------------------------
+
+  The indentation pattern for a Lisp expression can depend on the
+function called by the expression.  For each Lisp function, you can
+choose among several predefined patterns of indentation, or define an
+arbitrary one with a Lisp program.
+
+  The standard pattern of indentation is as follows: the second line of
+the expression is indented under the first argument, if that is on
+the same line as the beginning of the expression; otherwise, the
+second line is indented underneath the function name.  Each following
+line is indented under the previous line whose nesting depth is the
+same.
+
+  If the variable `lisp-indent-offset' is non-`nil', it overrides the
+usual indentation pattern for the second line of an expression, so
+that such lines are always indented `lisp-indent-offset' more columns
+than the containing list.
+
+  The standard pattern is overridded for certain functions.  Functions
+whose names start with `def' always indent the second line by
+`lisp-body-indention' extra columns beyond the open-parenthesis
+starting the expression.
+
+  The standard pattern can be overridden in various ways for individual
+functions, according to the `lisp-indent-hook' property of the
+function name.  There are four possibilities for this property:
+
+`nil'
+     This is the same as no property; the standard indentation
+     pattern is used.
+
+`defun'
+     The pattern used for function names that start with `def' is
+     used for this function also.
+
+a number, NUMBER
+     The first NUMBER arguments of the function are "distinguished"
+     arguments; the rest are considered the "body" of the expression.
+     A line in the expression is indented according to whether the
+     first argument on it is distinguished or not.  If the argument
+     is part of the body, the line is indented `lisp-body-indent'
+     more columns than the open-parenthesis starting the containing
+     expression.  If the argument is distinguished and is either the
+     first or second argument, it is indented twice that many extra
+     columns.  If the argument is distinguished and not the first or
+     second argument, the standard pattern is followed for that line.
+
+a symbol, SYMBOL
+     SYMBOL should be a function name; that function is called to
+     calculate the indentation of a line within this expression.  The
+     function receives two arguments:
+
+    STATE
+          The value returned by `parse-partial-sexp' (a Lisp
+          primitive for indentation and nesting computation) when it
+          parses up to the beginning of this line.
+
+    POS
+          The position at which the line being indented begins.
+
+     It should return either a number, which is the number of columns
+     of indentation for that line, or a list whose car is such a
+     number.  The difference between returning a number and returning
+     a list is that a number says that all following lines at the
+     same nesting level should be indented just like this one; a list
+     says that following lines might call for different indentations.
+     This makes a difference when the indentation is being computed
+     by `C-M-q'; if the value is a number, `C-M-q' need not
+     recalculate indentation for the following lines until the end of
+     the list.
+
+
+
+File: emacs,  Node: C Indent,  Prev: Lisp Indent,  Up: Grinding
+
+Customizing C Indentation
+-------------------------
+
+  Two variables control which commands perform C indentation and when.
+
+  If `c-auto-newline' is non-`nil', newlines are inserted both before
+and after braces that you insert, and after colons and semicolons. 
+Correct C indentation is done on all the lines that are made this way.
+
+  If `c-tab-always-indent' is non-`nil', the TAB command in C mode does
+indentation only if point is at the left margin or within the line's
+indentation.  If there is non-whitespace to the left of point, then
+TAB just inserts a tab character in the buffer.  Normally, this
+variable is `nil', and TAB always reindents the current line.
+
+  C does not have anything analogous to particular function names for
+which special forms of indentation are desirable.  However, it has a
+different need for customization facilities: many different styles of
+C indentation are in common use.
+
+  There are six variables you can set to control the style that Emacs C
+mode will use.
+
+`c-indent-level'
+     Indentation of C statements within surrounding block.  The
+     surrounding block's indentation is the indentation of the line
+     on which the open-brace appears.
+
+`c-continued-statement-offset'
+     Extra indentation given to a substatement, such as the
+     then-clause of an if or body of a while.
+
+`c-brace-offset'
+     Extra indentation for line if it starts with an open brace.
+
+`c-brace-imaginary-offset'
+     An open brace following other text is treated as if it were this
+     far to the right of the start of its line.
+
+`c-argdecl-indent'
+     Indentation level of declarations of C function arguments.
+
+`c-label-offset'
+     Extra indentation for line that is a label, or case or default.
+
+  The variable `c-indent-level' controls the indentation for C
+statements with respect to the surrounding block.  In the example
+
+         {
+           foo ();
+
+the difference in indentation between the lines is `c-indent-level'. 
+Its standard value is 2.
+
+If the open-brace beginning the compound statement is not at the
+beginning of its line, the `c-indent-level' is added to the
+indentation of the line, not the column of the open-brace.  For
+example,
+
+     if (losing) {
+       do_this ();
+
+One popular indentation style is that which results from setting
+`c-indent-level' to 8 and putting open-braces at the end of a line in
+this way.  I prefer to put the open-brace on a separate line.
+
+  In fact, the value of the variable `c-brace-imaginary-offset' is also
+added to the indentation of such a statement.  Normally this variable
+is zero.  Think of this variable as the imaginary position of the
+open brace, relative to the first nonblank character on the line.  By
+setting this variable to 4 and `c-indent-level' to 0, you can get
+this style:
+
+     if (x == y) {
+         do_it ();
+         }
+
+  When `c-indent-level' is zero, the statements inside most braces will
+line up right under the open brace.  But there is an exception made
+for braces in column zero, such as surrounding a function's body. 
+The statements just inside it do not go at column zero.  Instead,
+`c-brace-offset' and `c-continued-statement-offset' (see below) are
+added to produce a typical offset between brace levels, and the
+statements are indented that far.
+
+  `c-continued-statement-offset' controls the extra indentation for a
+line that starts within a statement (but not within parentheses or
+brackets).  These lines are usually statements that are within other
+statements, such as the then-clauses of `if' statements and the
+bodies of `while' statements.  This parameter is the difference in
+indentation between the two lines in
+
+     if (x == y)
+       do_it ();
+
+Its standard value is 2.  Some popular indentation styles correspond
+to a value of zero for `c-continued-statement-offset'.
+
+  `c-brace-offset' is the extra indentation given to a line that starts
+with an open-brace.  Its standard value is zero; compare
+
+     if (x == y)
+       {
+
+with
+
+     if (x == y)
+       do_it ();
+
+if `c-brace-offset' were set to 4, the first example would become
+
+     if (x == y)
+           {
+
+  `c-argdecl-indent' controls the indentation of declarations of the
+arguments of a C function.  It is absolute: argument declarations
+receive exactly `c-argdecl-indent' spaces.  The standard value is 5,
+resulting in code like this:
+
+     char *
+     index (string, char)
+          char *string;
+          int char;
+
+  `c-label-offset' is the extra indentation given to a line that
+contains a label, a case statement, or a `default:' statement.  Its
+standard value is -2, resulting in code like this
+
+     switch (c)
+       {
+       case 'x':
+
+If `c-label-offset' were zero, the same code would be indented as
+
+     switch (c)
+       {
+         case 'x':
+
+This example assumes that the other variables above also have their
+standard values.
+
+  I strongly recommend that you try out the indentation style produced
+by the standard settings of these variables, together with putting
+open braces on separate lines.  You can see how it looks in all the C
+source files of GNU Emacs.
+
+
+
+File: emacs,  Node: Matching,  Next: Comments,  Prev: Grinding,  Up: Programs
+
+Automatic Display Of Matching Parentheses
+=========================================
+
+  The Emacs parenthesis-matching feature is designed to show
+automatically how parentheses match in the text.  Whenever a
+self-inserting character that is a closing delimiter is typed, the
+cursor moves momentarily to the location of the matching opening
+delimiter, provided that is on the screen.  If it is not on the
+screen, some text starting with that opening delimiter is displayed
+in the echo area.  Either way, you can tell what grouping is being
+closed off.
+
+  In Lisp, automatic matching applies only to parentheses.  In C, it
+applies to braces and brackets too.  Emacs knows which characters to
+regard as matching delimiters based on the syntax table, which is set
+by the major mode.  *Note Syntax::.
+
+  If the opening delimiter and closing delimiter are mismatched--such
+as in `[x)'--a warning message is displayed in the echo area.  The
+correct matches are specified in the syntax table.
+
+  Two variables control parenthesis match display. 
+`blink-matching-paren' turns the feature on or off; `nil' turns it
+off, but the default is `t' to turn match display on. 
+`blink-matching-paren-distance' specifies how many characters back to
+search to find the matching opening delimiter.  If the match is not
+found in that far, scanning stops, and nothing is displayed.  This is
+to prevent scanning for the matching delimiter from wasting lots of
+time when there is no match.  The default is 4000.
+
+
+
+File: emacs,  Node: Comments,  Next: Balanced Editing,  Prev: Matching,  Up: Programs
+
+Manipulating Comments
+=====================
+
+  The comment commands insert, kill and align comments.
+
+`M-;'
+     Insert or align comment (`indent-for-comment').
+
+`C-x ;'
+     Set comment column (`set-comment-column').
+
+`C-u - C-x ;'
+     Kill comment on current line (`kill-comment').
+
+`M-LFD'
+     Like RET followed by inserting and aligning a comment
+     (`indent-new-comment-line').
+
+  The command that creates a comment is `Meta-;' (`indent-for-comment').
+If there is no comment already on the line, a new comment is created,
+aligned at a specific column called the "comment column".  The
+comment is created by inserting the string Emacs thinks comments
+should start with (the value of `comment-start'; see below).  Point
+is left after that string.  If the text of the line extends past the
+comment column, then the indentation is done to a suitable boundary
+(usually, at least one space is inserted).  If the major mode has
+specified a string to terminate comments, that is inserted after
+point, to keep the syntax valid.
+
+  `Meta-;' can also be used to align an existing comment.  If a line
+already contains the string that starts comments, then `M-;' just
+moves point after it and re-indents it to the conventional place. 
+Exception: comments starting in column 0 are not moved.
+
+  Some major modes have special rules for indenting certain kinds of
+comments in certain contexts.  For example, in Lisp code, comments
+which start with two semicolons are indented as if they were lines of
+code, instead of at the comment column.  Comments which start with
+three semicolons are supposed to start at the left margin.  Emacs
+understands these conventions by indenting a double-semicolon comment
+using TAB, and by not changing the indentation of a triple-semicolon
+comment at all.
+
+     ;; This function is just an example
+     ;;; Here either two or three semicolons are appropriate.
+     (defun foo (x)
+     ;;; And now, the first part of the function:
+       ;; The following line adds one.
+       (1+ x))           ; This line adds one.
+
+   In C code, a comment preceded on its line by nothing but whitespace
+is indented like a line of code.
+
+  Even when an existing comment is properly aligned, `M-;' is still
+useful for moving directly to the start of the comment.
+
+  `C-u - C-x ;' (`kill-comment') kills the comment on the current line,
+if there is one.  The indentation before the start of the comment is
+killed as well.  If there does not appear to be a comment in the
+line, nothing is done.  To reinsert the comment on another line, move
+to the end of that line, do `C-y', and then do `M-;' to realign it. 
+Note that `C-u - C-x ;' is not a distinct key; it is `C-x ;'
+(`set-comment-column') with a negative argument.  That command is
+programmed so that when it receives a negative argument it calls
+`kill-comment'.  However, `kill-comment' is a valid command which you
+could bind directly to a key if you wanted to.
+
+Multiple Lines of Comments
+--------------------------
+
+  If you are typing a comment and find that you wish to continue it on
+another line, you can use the command `Meta-LFD'
+(`indent-new-comment-line'), which terminates the comment you are
+typing, creates a new blank line afterward, and begins a new comment
+indented under the old one.  When Auto Fill mode is on, going past
+the fill column while typing a comment causes the comment to be
+continued in just this fashion.  If point is not at the end of the
+line when `M-LFD' is typed, the text on the rest of the line becomes
+part of the new comment line.
+
+Options Controlling Comments
+----------------------------
+
+  The comment column is stored in the variable `comment-column'.  You
+can set it to a number explicitly.  Alternatively, the command `C-x
+;' (`set-comment-column') sets the comment column to the column point
+is at.  `C-u C-x ;' sets the comment column to match the last comment
+before point in the buffer, and then does a `Meta-;' to align the
+current line's comment under the previous one.  Note that `C-u - C-x
+;' runs the function `kill-comment' as described above.
+
+  `comment-column' is a per-buffer variable; altering the variable
+affects only the current buffer, but there is a default value which
+you can change as well.  *Note Locals::.  Many major modes initialize
+this variable for the current buffer.
+
+  The comment commands recognize comments based on the regular
+expression that is the value of the variable `comment-start-skip'. 
+This regexp should not match the null string.  It may match more than
+the comment starting delimiter in the strictest sense of the word;
+for example, in C mode the value of the variable is `"/\\*+ *"',
+which matches extra stars and spaces after the `/*' itself.  (Note
+that `\\' is needed in Lisp syntax to include a `\' in the string,
+which is needed to deny the first star its special meaning in regexp
+syntax.  *Note Regexps::.)
+
+  When a comment command makes a new comment, it inserts the value of
+`comment-start' to begin it.  The value of `comment-end' is inserted
+after point, so that it will follow the text that you will insert
+into the comment.  In C mode, `comment-start' has the value `"/* "'
+and `comment-end' has the value `" */"'.
+
+  `comment-multi-line' controls how `M-LFD' (`indent-new-comment-line')
+behaves when used inside a comment.  If `comment-multi-line' is
+`nil', as it normally is, then the comment on the starting line is
+terminated and a new comment is started on the new following line. 
+If `comment-multi-line' is not `nil', then the new following line is
+set up as part of the same comment that was found on the starting line.
+This is done by not inserting a terminator on the old line, and not
+inserting a starter on the new line.  In languages where multi-line
+comments work, the choice of value for this variable is a matter of
+taste.
+
+  The variable `comment-indent-hook' should contain a function that
+will be called to compute the indentation for a newly inserted
+comment or for aligning an existing comment.  It is set differently
+by various major modes.  The function is called with no arguments,
+but with point at the beginning of the comment, or at the end of a
+line if a new comment is to be inserted.  It should return the column
+in which the comment ought to start.  For example, in Lisp mode, the
+indent hook function bases its decision on how many semicolons begin
+an existing comment, and on the code in the preceding lines.
+
+
+
+File: emacs,  Node: Balanced Editing,  Next: Lisp Completion,  Prev: Comments,  Up: Programs
+
+Editing Without Unbalanced Parentheses
+======================================
+
+`M-('
+     Put parentheses around next sexp(s) (`insert-parentheses').
+
+`M-)'
+     Move past next close parenthesis and re-indent
+     (`move-over-close-and-reindent').
+
+  The commands `M-(' (`insert-parentheses') and `M-)'
+(`move-over-close-and-reindent') are designed to facilitate a style
+of editing which keeps parentheses balanced at all times.  `M-('
+inserts a pair of parentheses, either together as in `()', or, if
+given an argument, around the next several sexps, and leaves point
+after the open parenthesis.  Instead of typing `( F O O )', you can
+type `M-( F O O', which has the same effect except for leaving the
+cursor before the close parenthesis.  Then you would type `M-)',
+which moves past the close parenthesis, deleting any indentation
+preceding it (in this example there is none), and indenting with LFD
+after it.
+
+
+
+File: emacs,  Node: Lisp Completion,  Next: Documentation,  Prev: Balanced Editing,  Up: Programs
+
+Completion for Lisp Symbols
+===========================
+
+  Usually completion happens in the minibuffer.  But one kind of
+completion is available in all buffers: completion for Lisp symbol
+names.
+
+  The command `M-TAB' (`lisp-complete-symbol') takes the partial Lisp
+symbol before point to be an abbreviation, and compares it against
+all nontrivial Lisp symbols currently known to Emacs.  Any additional
+characters that they all have in common are inserted at point. 
+Nontrivial symbols are those that have function definitions, values
+or properties.
+
+  If there is an open-parenthesis immediately before the beginning of
+the partial symbol, only symbols with function definitions are
+considered as completions.
+
+  If the partial name in the buffer has more than one possible
+completion and they have no additional characters in common, a list
+of all possible completions is displayed in another window.
+
+

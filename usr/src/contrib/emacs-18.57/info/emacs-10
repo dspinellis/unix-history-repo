@@ -1,0 +1,1243 @@
+Info file ../info/emacs, produced by Makeinfo, -*- Text -*- from
+input file emacs.tex.
+
+This file documents the GNU Emacs editor.
+
+Copyright (C) 1985, 1986, 1988 Richard M. Stallman.
+
+Permission is granted to make and distribute verbatim copies of this
+manual provided the copyright notice and this permission notice are
+preserved on all copies.
+
+Permission is granted to copy and distribute modified versions of
+this manual under the conditions for verbatim copying, provided also
+that the sections entitled "The GNU Manifesto", "Distribution" and
+"GNU General Public License" are included exactly as in the original,
+and provided that the entire resulting derived work is distributed
+under the terms of a permission notice identical to this one.
+
+Permission is granted to copy and distribute translations of this
+manual into another language, under the above conditions for modified
+versions, except that the sections entitled "The GNU Manifesto",
+"Distribution" and "GNU General Public License" may be included in a
+translation approved by the author instead of in the original English.
+
+
+
+File: emacs,  Node: Rmail Output,  Next: Rmail Labels,  Prev: Rmail Files,  Up: Rmail
+
+Copying Messages Out to Files
+=============================
+
+`o FILE RET'
+     Append a copy of the current message to the file FILE, writing
+     it in Rmail file format (`rmail-output-to-rmail-file').
+
+`C-o FILE RET'
+     Append a copy of the current message to the file FILE, writing
+     it in Unix mail file format (`rmail-output').
+
+  If an Rmail file has no inboxes, how does it get anything in it?  By
+explicit `o' commands.
+
+  `o' (`rmail-output-to-rmail-file') appends the current message in
+Rmail format to the end of the specified file.  This is the best
+command to use to move messages between Rmail files.  If the other
+Rmail file is currently visited, the copying is done into the other
+file's Emacs buffer instead.  You should eventually save it on disk.
+
+  The `C-o' (`rmail-output') command in Rmail appends a copy of the
+current message to a specified file, in Unix mail file format.  This
+is useful for moving messages into files to be read by other mail
+processors that do not understand Rmail format.
+
+  Copying a message with `o' or `C-o' gives the original copy of the
+message the `filed' attribute, so that `filed' appears in the mode
+line when such a message is current.
+
+  Normally you should use only `o' to output messages to other Rmail
+files, never `C-o'.  But it is also safe if you always use `C-o',
+never `o'.  When a file is visited in Rmail, the last message is
+checked, and if it is in Unix format, the entire file is scanned and
+all Unix-format messages are converted to Rmail format.  (The reason
+for checking the last message is that scanning the file is slow and
+most Rmail files have only Rmail format messages.)  If you use `C-o'
+consistently, the last message is sure to be in Unix format, so Rmail
+will convert all messages properly.
+
+  The case where you might want to use `C-o' always, instead of `o'
+always, is when you or other users want to append mail to the same
+file from other mail processors.  Other mail processors probably do
+not know Rmail format but do know Unix format.
+
+  In any case, always use `o' to add to an Rmail file that is being
+visited in Rmail.  Adding messages with `C-o' to the actual disk file
+will trigger a "simultaneous editing" warning when you ask to save
+the Emacs buffer, and will be lost if you do save.
+
+
+
+File: emacs,  Node: Rmail Labels,  Next: Rmail Summary,  Prev: Rmail Output,  Up: Rmail
+
+Labels
+======
+
+  Each message can have various "labels" assigned to it as a means of
+classification.  A label has a name; different names mean different
+labels.  Any given label is either present or absent on a particular
+message.  A few label names have standard meanings and are given to
+messages automatically by Rmail when appropriate; these special
+labels are called "attributes".  All other labels are assigned by the
+user.
+
+`a LABEL RET'
+     Assign the label LABEL to the current message (`rmail-add-label').
+
+`k LABEL RET'
+     Remove the label LABEL from the current message
+     (`rmail-kill-label').
+
+`C-M-n LABELS RET'
+     Move to the next message that has one of the labels LABELS
+     (`rmail-next-labeled-message').
+
+`C-M-p LABELS RET'
+     Move to the previous message that has one of the labels LABELS
+     (`rmail-previous-labeled-message').
+
+`C-M-l LABELS RET'
+     Make a summary of all messages containing any of the labels
+     LABELS (`rmail-summary-by-labels').
+
+Specifying an empty string for one these commands means to use the
+last label specified for any of these commands.
+
+  The `a' (`rmail-add-label') and `k' (`rmail-kill-label') commands
+allow you to assign or remove any label on the current message.  If
+the LABEL argument is empty, it means to assign or remove the same
+label most recently assigned or removed.
+
+  Once you have given messages labels to classify them as you wish,
+there are two ways to use the labels: in moving and in summaries.
+
+  The command `C-M-n LABELS RET' (`rmail-next-labeled-message') moves
+to the next message that has one of the labels LABELS.  LABELS is one
+or more label names, separated by commas.  `C-M-p'
+(`rmail-previous-labeled-message') is similar, but moves backwards to
+previous messages.  A preceding numeric argument to either one serves
+as a repeat count.
+
+  The command `C-M-l LABELS RET' (`rmail-summary-by-labels') displays a
+summary containing only the messages that have at least one of a
+specified set of messages.  The argument LABELS is one or more label
+names, separated by commas.  *Note Rmail Summary::, for information
+on summaries.
+
+  If the LABELS argument to `C-M-n', `C-M-p' or `C-M-l' is empty, it
+means to use the last set of labels specified for any of these
+commands.
+
+  Some labels such as `deleted' and `filed' have built-in meanings and
+are assigned to or removed from messages automatically at appropriate
+times; these labels are called "attributes".  Here is a list of Rmail
+attributes:
+
+`unseen'
+     Means the message has never been current.  Assigned to messages
+     when they come from an inbox file, and removed when a message is
+     made current.
+
+`deleted'
+     Means the message is deleted.  Assigned by deletion commands and
+     removed by undeletion commands (*note Rmail Deletion::.).
+
+`filed'
+     Means the message has been copied to some other file.  Assigned
+     by the file output commands (*note Rmail Files::.).
+
+`answered'
+     Means you have mailed an answer to the message.  Assigned by the
+     `r' command (`rmail-reply').  *Note Rmail Reply::.
+
+`forwarded'
+     Means you have forwarded the message to other users.  Assigned
+     by the `f' command (`rmail-forward').  *Note Rmail Reply::.
+
+`edited'
+     Means you have edited the text of the message within Rmail. 
+     *Note Rmail Editing::.
+
+  All other labels are assigned or removed only by the user, and it is
+up to the user to decide what they mean.
+
+
+
+File: emacs,  Node: Rmail Summary,  Next: Rmail Reply,  Prev: Rmail Labels,  Up: Rmail
+
+Summaries
+=========
+
+  A "summary" is a buffer containing one line per message that Rmail
+can make and display to give you an overview of the mail in an Rmail
+file.  Each line shows the message number, the sender, the labels,
+and the subject.  When the summary buffer is selected, various
+commands can be used to select messages by moving in the summary
+buffer, or delete or undelete messages.
+
+  A summary buffer applies to a single Rmail file only; if you are
+editing multiple Rmail files, they have separate summary buffers. 
+The summary buffer name is made by appending `-summary' to the Rmail
+buffer's name.  Only one summary buffer will be displayed at a time
+unless you make several windows and select the summary buffers by hand.
+
+* Menu:
+
+* Rmail Make Summary::  Making various sorts of summaries.
+* Rmail Summary Edit::  Manipulating messages from the summary.
+
+ 
+
+File: emacs,  Node: Rmail Make Summary,  Next: Rmail Summary Edit,  Prev: Rmail Summary,  Up: Rmail Summary
+
+Making Summaries
+----------------
+
+  Here are the commands to create a summary for the current Rmail file.
+Summaries do not update automatically; to make an updated summary,
+you must use one of these commands again.
+
+`h'
+`C-M-h'
+     Summarize all messages (`rmail-summary').
+
+`l LABELS RET'
+`C-M-l LABELS RET'
+     Summarize message that have one or more of the specified labels
+     (`rmail-summary-by-labels').
+
+`C-M-r RCPTS RET'
+     Summarize messages that have one or more of the specified
+     recipients (`rmail-summary-by-recipients')
+
+  The `h' or `C-M-h' (`rmail-summary') command fills the summary buffer
+for the current Rmail file with a summary of all the messages in the
+file.  It then displays and selects the summary buffer in another
+window.
+
+  `C-M-l LABELS RET' (`rmail-summary-by-labels') makes a partial
+summary mentioning only the messages that have one or more of the
+labels LABELS.  LABELS should contain label names separated by commas.
+
+  `C-M-r RCPTS RET' (`rmail-summary-by-recipients') makes a partial
+summary mentioning only the messages that have one or more of the
+recipients RCPTS.  RCPTS should contain mailing addresses separated
+by commas.
+
+  Note that there is only one summary buffer for any Rmail file; making
+one kind of summary discards any previously made summary.
+
+
+
+File: emacs,  Node: Rmail Summary Edit,  Prev: Rmail Make Summary,  Up: Rmail Summary
+
+Editing in Summaries
+--------------------
+
+  Summary buffers are given the major mode Rmail Summary mode, which
+provides the following special commands:
+
+`j'
+     Select the message described by the line that point is on
+     (`rmail-summary-goto-msg').
+
+`C-n'
+     Move to next line and select its message in Rmail
+     (`rmail-summary-next-all').
+
+`C-p'
+     Move to previous line and select its message
+     (`rmail-summary-previous-all').
+
+`n'
+     Move to next line, skipping lines saying `deleted', and select
+     its message (`rmail-summary-next-msg').
+
+`p'
+     Move to previous line, skipping lines saying `deleted', and
+     select its message (`rmail-summary-previous-msg').
+
+`d'
+     Delete the current line's message, then do like `n'
+     (`rmail-summary-delete-forward').
+
+`u'
+     Undelete and select this message or the previous deleted message
+     in the summary (`rmail-summary-undelete').
+
+`SPC'
+     Scroll the other window (presumably Rmail) forward
+     (`rmail-summary-scroll-msg-up').
+
+`DEL'
+     Scroll the other window backward
+     (`rmail-summary-scroll-msg-down').
+
+`x'
+     Kill the summary window (`rmail-summary-exit').
+
+`q'
+     Exit Rmail (`rmail-summary-quit').
+
+  The keys `C-n' and `C-p' are modified in Rmail Summary mode so that
+in addition to moving point in the summary buffer they also cause the
+line's message to become current in the associated Rmail buffer. 
+That buffer is also made visible in another window if it is not
+already so.
+
+  `n' and `p' are similar to `C-n' and `C-p', but skip lines that say
+`message deleted'.  They are like the `n' and `p' keys of Rmail
+itself.  Note, however, that in a partial summary these commands move
+only among the message listed in the summary.
+
+  The other Emacs cursor motion commands are not changed in Rmail
+Summary mode, so it is easy to get the point on a line whose message
+is not selected in Rmail.  This can also happen if you switch to the
+Rmail window and switch messages there.  To get the Rmail buffer back
+in sync with the summary, use the `j' (`rmail-summary-goto-msg')
+command, which selects in Rmail the message of the current summary
+line.
+
+  Deletion and undeletion can also be done from the summary buffer. 
+They always work based on where point is located in the summary
+buffer, ignoring which message is selected in Rmail.  `d'
+(`rmail-summary-delete-forward') deletes the current line's message,
+then moves to the next line whose message is not deleted and selects
+that message.  The inverse of this is `u' (`rmail-summary-undelete'),
+which moves back (if necessary) to a line whose message is deleted,
+undeletes that message, and selects it in Rmail.
+
+  When moving through messages with the summary buffer, it is
+convenient to be able to scroll the message while remaining in the
+summary window.  The commands SPC (`rmail-summary-scroll-msg-up') and
+DEL (`rmail-summary-scroll-msg-down') do this.  They scroll the
+message just as those same keys do when the Rmail buffer is selected.
+
+  When you are finished using the summary, type `x'
+(`rmail-summary-exit') to kill the summary buffer's window.
+
+  You can also exit Rmail while in the summary.  `q'
+(`rmail-summary-quit') kills the summary window, then saves the Rmail
+file and switches to another buffer.
+
+
+
+File: emacs,  Node: Rmail Reply,  Next: Rmail Editing,  Prev: Rmail Summary,  Up: Rmail
+
+Sending Replies
+===============
+
+  Rmail has several commands that use Mail mode to send outgoing mail. 
+*Note Sending Mail::, for information on using Mail mode.  What are
+documented here are the special commands of Rmail for entering Mail
+mode.  Note that the usual keys for sending mail, `C-x m' and `C-x 4
+m', are available in Rmail mode and work just as they usually do.
+
+`m'
+     Send a message (`rmail-mail').
+
+`c'
+     Continue editing already started outgoing message 
+     (`rmail-continue').
+
+`r'
+     Send a reply to the current Rmail message (`rmail-reply').
+
+`f'
+     Forward current message to other users (`rmail-forward').
+
+  The most common reason to send a message while in Rmail is to reply
+to the message you are reading.  To do this, type `r'
+(`rmail-reply').  This displays the `*mail*' buffer in another
+window, much like `C-x 4 m', but preinitializes the `Subject', `To',
+`CC' and `In-reply-to' header fields based on the message being
+replied to.  The `To' field is given the sender of that message, and
+the `CC' gets all the recipients of that message (but recipients that
+match elements of the list `rmail-dont-reply-to' are omitted; by
+default, this list contains your own mailing address).
+
+  Once you have initialized the `*mail*' buffer this way, sending the
+mail goes as usual (*note Sending Mail::.).  You can edit the
+presupplied header fields if they are not right for you.
+
+  One additional Mail mode command is available when mailing is invoked
+from Rmail: `C-c C-y' (`mail-yank-original') inserts into the
+outgoing message a copy of the current Rmail message; normally this
+is the message you are replying to, but you can also switch to the
+Rmail buffer, select a different message, switch back, and yank new
+current message.  Normally the yanked message is indented four spaces
+and has most header fields deleted from it; an argument to `C-c C-y'
+specifies the amount to indent, and `C-u C-c C-y' does not indent at
+all and does not delete any header fields.
+
+  Another frequent reason to send mail in Rmail is to forward the
+current message to other users.  `f' (`rmail-forward') makes this
+easy by preinitializing the `*mail*' buffer with the current message
+as the text, and a subject designating a forwarded message.  All you
+have to do is fill in the recipients and send.
+
+  The `m' (`rmail-mail') command is used to start editing an outgoing
+message that is not a reply.  It leaves the header fields empty.  Its
+only difference from `C-x 4 m' is that it makes the Rmail buffer
+accessible for `C-c y', just as `r' does.  Thus, `m' can be used to
+reply to or forward a message; it can do anything `r' or `f' can do.
+
+  The `c' (`rmail-continue') command resumes editing the `*mail*'
+buffer, to finish editing an outgoing message you were already
+composing, or to alter a message you have sent.
+
+
+
+File: emacs,  Node: Rmail Editing,  Next: Rmail Digest,  Prev: Rmail Reply,  Up: Rmail
+
+Editing Within a Message
+========================
+
+  Rmail mode provides a few special commands for moving within and
+editing the current message.  In addition, the usual Emacs commands
+are available (except for a few, such as `C-M-n' and `C-M-h', that
+are redefined by Rmail for other purposes).  However, the Rmail
+buffer is normally read-only, and to alter it you must use the Rmail
+command `w' described below.
+
+`t'
+     Toggle display of original headers (`rmail-toggle-headers').
+
+`w'
+     Edit current message (`rmail-edit-current-message').
+
+  Rmail reformats the header of each message before displaying it. 
+Normally this involves deleting most header fields, on the grounds
+that they are not interesting.  The variable `rmail-ignored-headers'
+should contain a regexp that matches the header fields to discard in
+this way.  The original headers are saved permanently, and to see
+what they look like, use the `t' (`rmail-toggle-headers') command. 
+This discards the reformatted headers of the current message and
+displays it with the original headers.  Repeating `t' reformats the
+message again.  Selecting the message again also reformats.
+
+  The Rmail buffer is normally read only, and most of the characters
+you would type to modify it (including most letters) are redefined as
+Rmail commands.  This is usually not a problem since it is rare to
+want to change the text of a message.  When you do want to do this,
+the way is to type `w' (`rmail-edit-current-message'), which changes
+from Rmail mode into Rmail Edit mode, another major mode which is
+nearly the same as Text mode.  The mode line illustrates this change.
+
+  In Rmail Edit mode, letters insert themselves as usual and the Rmail
+commands are not available.  When you are finished editing the
+message and are ready to go back to Rmail, type `C-c C-c', which
+switches back to Rmail mode.  Alternatively, you can return to Rmail
+mode but cancel all the editing that you have done by typing `C-c C-]'.
+
+  Entering Rmail Edit mode calls with no arguments the value of the
+variable `text-mode-hook', if that value exists and is not `nil';
+then it does the same with the variable `rmail-edit-mode-hook'.  It
+adds the attribute `edited' to the message.
+
+
+
+File: emacs,  Node: Rmail Digest,  Prev: Rmail Editing,  Up: Rmail
+
+Digest Messages
+===============
+
+  A "digest message" is a message which exists to contain and carry
+several other messages.  Digests are used on moderated mailing lists;
+all the messages that arrive for the list during a period of time
+such as one day are put inside a single digest which is then sent to
+the subscribers.  Transmitting the single digest uses much less
+computer time than transmitting the individual messages even though
+the total size is the same, because the per-message overhead in
+network mail transmission is considerable.
+
+  When you receive a digest message, the most convenient way to read it
+is to "undigestify" it: to turn it back into many individual messages.
+Then you can read and delete the individual messages as it suits you.
+
+  To undigestify a message, select it and then type `M-x
+undigestify-rmail-message'.  This copies each submessage as a
+separate Rmail message and inserts them all following the digest. 
+The digest message itself is flagged as deleted.
+
+
+
+File: emacs,  Node: Recursive Edit,  Next: Narrowing,  Prev: Rmail,  Up: Top
+
+Recursive Editing Levels
+========================
+
+  A "recursive edit" is a situation in which you are using Emacs
+commands to perform arbitrary editing while in the middle of another
+Emacs command.  For example, when you type `C-r' inside of a
+`query-replace', you enter a recursive edit in which you can change
+the current buffer.  On exiting from the recursive edit, you go back
+to the `query-replace'.
+
+  "Exiting" the recursive edit means returning to the unfinished
+command, which continues execution.  For example, exiting the
+recursive edit requested by `C-r' in `query-replace' causes query
+replacing to resume.  Exiting is done with `C-M-c'
+(`exit-recursive-edit').
+
+  You can also "abort" the recursive edit.  This is like exiting, but
+also quits the unfinished command immediately.  Use the command `C-]'
+(`abort-recursive-edit') for this.  *Note Quitting::.
+
+  The mode line shows you when you are in a recursive edit by
+displaying square brackets around the parentheses that always
+surround the major and minor mode names.  Every window's mode line
+shows this, in the same way, since being in a recursive edit is true
+of Emacs as a whole rather than any particular buffer.
+
+  It is possible to be in recursive edits within recursive edits.  For
+example, after typing `C-r' in a `query-replace', you might type a
+command that entered the debugger.  In such circumstances, two or
+more sets of square brackets appear in the mode line.  Exiting the
+inner recursive edit (such as, with the debugger `c' command) would
+resume the command where it called the debugger.  After the end of
+this command, you would be able to exit the first recursive edit. 
+Aborting also gets out of only one level of recursive edit; it
+returns immediately to the command level of the previous recursive
+edit.  So you could immediately abort that one too.
+
+  Alternatively, the command `M-x top-level' aborts all levels of
+recursive edits, returning immediately to the top level command reader.
+
+  The text being edited inside the recursive edit need not be the same
+text that you were editing at top level.  It depends on what the
+recursive edit is for.  If the command that invokes the recursive
+edit selects a different buffer first, that is the buffer you will
+edit recursively.  In any case, you can switch buffers within the
+recursive edit in the normal manner (as long as the buffer-switching
+keys have not been rebound).  You could probably do all the rest of
+your editing inside the recursive edit, visiting files and all.  But
+this could have surprising effects (such as stack overflow) from time
+to time.  So remember to exit or abort the recursive edit when you no
+longer need it.
+
+  In general, GNU Emacs tries to avoid using recursive edits.  It is
+usually preferable to allow the user to switch among the possible
+editing modes in any order he likes.  With recursive edits, the only
+way to get to another state is to go "back" to the state that the
+recursive edit was invoked from.
+
+
+
+File: emacs,  Node: Narrowing,  Next: Sorting,  Prev: Recursive Edit,  Up: Top
+
+Narrowing
+=========
+
+  "Narrowing" means focusing in on some portion of the buffer, making
+the rest temporarily invisible and inaccessible.  Cancelling the
+narrowing, and making the entire buffer once again visible, is called
+"widening".  The amount of narrowing in effect in a buffer at any
+time is called the buffer's "restriction".
+
+`C-x n'
+     Narrow down to between point and mark (`narrow-to-region').
+
+`C-x w'
+     Widen to make the entire buffer visible again (`widen').
+
+  When you have narrowed down to a part of the buffer, that part
+appears to be all there is.  You can't see the rest, you can't move
+into it (motion commands won't go outside the visible part), you
+can't change it in any way.  However, it is not gone, and if you save
+the file all the invisible text will be saved.  In addition to
+sometimes making it easier to concentrate on a single subroutine or
+paragraph by eliminating clutter, narrowing can be used to restrict
+the range of operation of a replace command or repeating keyboard
+macro.  The word `Narrow' appears in the mode line whenever narrowing
+is in effect.
+
+  The primary narrowing command is `C-x n' (`narrow-to-region').  It
+sets the current buffer's restrictions so that the text in the
+current region remains visible but all text before the region or
+after the region is invisible.  Point and mark do not change.
+
+  Because narrowing can easily confuse users who do not understand it,
+`narrow-to-region' is normally a disabled command.  Attempting to use
+this command asks for confirmation and gives you the option of
+enabling it; once you enable the command, confirmation will no longer
+be required for it.  *Note Disabling::.
+
+  The way to undo narrowing is to widen with `C-x w' (`widen').  This
+makes all text in the buffer accessible again.
+
+  You can get information on what part of the buffer you are narrowed
+down to using the `C-x =' command.  *Note Position Info::.
+
+
+
+File: emacs,  Node: Sorting,  Next: Shell,  Prev: Narrowing,  Up: Top
+
+Sorting Text
+============
+
+  Emacs provides several commands for sorting text in the buffer.  All
+operate on the contents of the region (the text between point and the
+mark).  They divide the text of the region into many "sort records",
+identify a "sort key" for each record, and then reorder the records
+into the order determined by the sort keys.  The records are ordered
+so that their keys are in alphabetical order, or, for numeric
+sorting, in numeric order.  In alphabetic sorting, all upper case
+letters `A' through `Z' come before lower case `a', in accord with
+the ASCII character sequence.
+
+  The various sort commands differ in how they divide the text into
+sort records and in which part of each record is used as the sort
+key.  Most of the commands make each line a separate sort record, but
+some commands use paragraphs or pages as sort records.  Most of the
+sort commands use each entire sort record as its own sort key, but
+some use only a portion of the record as the sort key.
+
+`M-x sort-lines'
+     Divide the region into lines, and sort by comparing the entire
+     text of a line.  A prefix argument means sort into descending
+     order.
+
+`M-x sort-paragraphs'
+     Divide the region into paragraphs, and sort by comparing the
+     entire text of a paragraph (except for leading blank lines).  A
+     prefix argument means sort into descending order.
+
+`M-x sort-pages'
+     Divide the region into pages, and sort by comparing the entire
+     text of a page (except for leading blank lines).  A prefix
+     argument means sort into descending order.
+
+`M-x sort-fields'
+     Divide the region into lines, and sort by comparing the contents
+     of one field in each line.  Fields are defined as separated by
+     whitespace, so the first run of consecutive non-whitespace
+     characters in a line constitutes field 1, the second such run
+     constitutes field 2, etc.
+
+     You specify which field to sort by with a numeric argument: 1 to
+     sort by field 1, etc.  A negative argument means sort into
+     descending order.  Thus, minus 2 means sort by field 2 in
+     reverse-alphabetical order.
+
+`M-x sort-numeric-fields'
+     Like `M-x sort-fields' except the specified field is converted
+     to a number for each line, and the numbers are compared.  `10'
+     comes before `2' when considered as text, but after it when
+     considered as a number.
+
+`M-x sort-columns'
+     Like `M-x sort-fields' except that the text within each line
+     used for comparison comes from a fixed range of columns.  See
+     below for an explanation.
+
+For example, if the buffer contains
+
+     On systems where clash detection (locking of files being edited) is
+     implemented, Emacs also checks the first time you modify a buffer
+     whether the file has changed on disk since it was last visited or
+     saved.  If it has, you are asked to confirm that you want to change
+     the buffer.
+
+ then if you apply `M-x sort-lines' to the entire buffer you get
+
+     On systems where clash detection (locking of files being edited) is
+     implemented, Emacs also checks the first time you modify a buffer
+     saved.  If it has, you are asked to confirm that you want to change
+     the buffer.
+     whether the file has changed on disk since it was last visited or
+
+where the upper case `O' comes before all lower case letters.  If you
+apply instead `C-u 2 M-x sort-fields' you get
+
+     implemented, Emacs also checks the first time you modify a buffer
+     saved.  If it has, you are asked to confirm that you want to change
+     the buffer.
+     On systems where clash detection (locking of files being edited) is
+     whether the file has changed on disk since it was last visited or
+
+where the sort keys were `Emacs', `If', `buffer', `systems' and `the'.
+
+  `M-x sort-columns' requires more explanation.  You specify the
+columns by putting point at one of the columns and the mark at the
+other column.  Because this means you cannot put point or the mark at
+the beginning of the first line to sort, this command uses an unusual
+definition of `region': all of the line point is in is considered
+part of the region, and so is all of the line the mark is in.
+
+  For example, to sort a table by information found in columns 10 to
+15, you could put the mark on column 10 in the first line of the
+table, and point on column 15 in the last line of the table, and then
+use this command.  Or you could put the mark on column 15 in the
+first line and point on column 10 in the last line.
+
+  This can be thought of as sorting the rectangle specified by point
+and the mark, except that the text on each line to the left or right
+of the rectangle moves along with the text inside the rectangle. 
+*Note Rectangles::.
+
+
+
+File: emacs,  Node: Shell,  Next: Hardcopy,  Prev: Sorting,  Up: Top
+
+Running Shell Commands from Emacs
+=================================
+
+  Emacs has commands for passing single command lines to inferior shell
+processes; it can also run a shell interactively with input and
+output to an Emacs buffer `*shell*'.
+
+`M-!'
+     Run a specified shell command line and display the output
+     (`shell-command').
+
+`M-|'
+     Run a specified shell command line with region contents as
+     input; optionally replace the region with the output
+     (`shell-command-on-region').
+
+`M-x shell'
+     Run a subshell with input and output through an Emacs buffer. 
+     You can then give commands interactively.
+
+* Menu:
+
+* Single Shell::         How to run one shell command and return.
+* Interactive Shell::    Permanent shell taking input via Emacs.
+* Shell Mode::           Special Emacs commands used with permanent shell.
+
+ 
+
+File: emacs,  Node: Single Shell,  Next: Interactive Shell,  Prev: Shell,  Up: Shell
+
+Single Shell Commands
+---------------------
+
+  `M-!' (`shell-command') reads a line of text using the minibuffer and
+creates an inferior shell to execute the line as a command.  Standard
+input from the command comes from the null device.  If the shell
+command produces any output, the output goes into an Emacs buffer
+named `*Shell Command Output*', which is displayed in another window
+but not selected.  A numeric argument, as in `M-1 M-!', directs this
+command to insert any output into the current buffer.  In that case,
+point is left before the output and the mark is set after the output.
+
+  `M-|' (`shell-command-on-region') is like `M-!' but passes the
+contents of the region as input to the shell command, instead of no
+input.  If a numeric argument is used, meaning insert output in the
+current buffer, then the old region is deleted first and the output
+replaces it as the contents of the region.
+
+  Both `M-!' and `M-|' use `shell-file-name' to specify the shell to
+use.  This variable is initialized based on your `SHELL' environment
+variable when Emacs is started.  If the file name does not specify a
+directory, the directories in the list `exec-path' are searched; this
+list is initialized based on the environment variable `PATH' when
+Emacs is started.  Your `.emacs' file can override either or both of
+these default initializations.
+
+  With `M-!' and `M-|', Emacs has to wait until the shell command
+completes.  You can quit with `C-g'; that terminates the shell command.
+
+
+
+File: emacs,  Node: Interactive Shell,  Next: Shell Mode,  Prev: Single Shell,  Up: Shell
+
+Interactive Inferior Shell
+--------------------------
+
+  To run a subshell interactively, putting its typescript in an Emacs
+buffer, use `M-x shell'.  This creates (or reuses) a buffer named
+`*shell*' and runs a subshell with input coming from and output going
+to that buffer.  That is to say, any "terminal output" from the
+subshell will go into the buffer, advancing point, and any "terminal
+input" for the subshell comes from text in the buffer.  To give input
+to the subshell, go to the end of the buffer and type the input,
+terminated by RET.
+
+  Emacs does not wait for the subshell to do anything.  You can switch
+windows or buffers and edit them while the shell is waiting, or while
+it is running a command.  Output from the subshell waits until Emacs
+has time to process it; this happens whenever Emacs is waiting for
+keyboard input or for time to elapse.
+
+  If you would like multiple subshells, change the name of buffer
+`*shell*' to something different by using `M-x rename-buffer'.  The
+next use of `M-x shell' will create a new buffer `*shell*' with its
+own subshell.  By renaming this buffer as well you can create a third
+one, and so on.  All the subshells run independently and in parallel.
+
+  The file name used to load the subshell is the value of the variable
+`explicit-shell-file-name', if that is non-`nil'.  Otherwise, the
+environment variable `ESHELL' is used, or the environment variable
+`SHELL' if there is no `ESHELL'.  If the file name specified is
+relative, the directories in the list `exec-path' are searched (*note
+Single Shell Commands: Single Shell.).
+
+  As soon as the subshell is started, it is sent as input the contents
+of the file `~/.emacs_SHELLNAME', if that file exists, where
+SHELLNAME is the name of the file that the shell was loaded from. 
+For example, if you use `csh', the file sent to it is `~/.emacs_csh'.
+
+  `cd', `pushd' and `popd' commands given to the inferior shell are
+watched by Emacs so it can keep the `*shell*' buffer's default
+directory the same as the shell's working directory.  These commands
+are recognized syntactically by examining lines of input that are
+sent.  If you use aliases for these commands, you can tell Emacs to
+recognize them also.  For example, if the value of the variable
+`shell-pushd-regexp' matches the beginning of a shell command line,
+that line is regarded as a `pushd' command.  Change this variable
+when you add aliases for `pushd'.  Likewise, `shell-popd-regexp' and
+`shell-cd-regexp' are used to recognize commands with the meaning of
+`popd' and `cd'.  These commands are recognized only at the beginning
+of a shell command line.
+
+  If Emacs gets an error while trying to handle what it believes is a
+`cd', `pushd' or `popd' command, and the value of
+`shell-set-directory-error-hook' is non-`nil', that value is called
+as a function with no arguments.
+
+
+
+File: emacs,  Node: Shell Mode,  Prev: Interactive Shell,  Up: Shell
+
+Shell Mode
+----------
+
+  The shell buffer uses Shell mode, which defines several special keys
+attached to the `C-c' prefix.  They are chosen to resemble the usual
+editing and job control characters present in shells that are not
+under Emacs, except that you must type `C-c' first.  Here is a
+complete list of the special key bindings of Shell mode:
+
+`RET'
+     At end of buffer send line as input; otherwise, copy current
+     line to end of buffer and send it (`send-shell-input').  When a
+     line is copied, any text at the beginning of the line that
+     matches the variable `shell-prompt-pattern' is left out; this
+     variable's value should be a regexp string that matches the
+     prompts that you use in your subshell.
+
+`C-c C-d'
+     Send end-of-file as input, probably causing the shell or its
+     current subjob to finish (`shell-send-eof').
+
+`C-c C-u'
+     Kill all text that has yet to be sent as input
+     (`kill-shell-input').
+
+`C-c C-w'
+     Kill a word before point (`backward-kill-word').
+
+`C-c C-c'
+     Interrupt the shell or its current subjob if any
+     (`interrupt-shell-subjob').
+
+`C-c C-z'
+     Stop the shell or its current subjob if any (`stop-shell-subjob').
+
+`C-c C-\'
+     Send quit signal to the shell or its current subjob if any
+     (`quit-shell-subjob').
+
+`C-c C-o'
+     Delete last batch of output from shell (`kill-output-from-shell').
+
+`C-c C-r'
+     Scroll top of last batch of output to top of window
+     (`show-output-from-shell').
+
+`C-c C-y'
+     Copy the previous bunch of shell input, and insert it into the
+     buffer before point (`copy-last-shell-input').  No final newline
+     is inserted, and the input copied is not resubmitted until you
+     type RET.
+
+
+
+File: emacs,  Node: Hardcopy,  Next: Dissociated Press,  Prev: Shell,  Up: Top
+
+Hardcopy Output
+===============
+
+  The Emacs commands for making hardcopy derive their names from the
+Unix commands `print' and `lpr'.
+
+`M-x print-buffer'
+     Print hardcopy of current buffer using Unix command `print'
+     (`lpr -p').  This makes page headings containing the file name
+     and page number.
+
+`M-x lpr-buffer'
+     Print hardcopy of current buffer using Unix command `lpr'.  This
+     makes no page headings.
+
+`M-x print-region'
+     Like `print-buffer' but prints only the current region.
+
+`M-x lpr-region'
+     Like `lpr-buffer' but prints only the current region.
+
+  All the hardcopy commands pass extra switches to the `lpr' program
+based on the value of the variable `lpr-switches'.  Its value should
+be a list of strings, each string a switch starting with `-'.  For
+example, the value could be `("-Pfoo")' to print on printer `foo'.
+
+
+
+File: emacs,  Node: Dissociated Press,  Next: Amusements,  Prev: Hardcopy,  Up: Top
+
+Dissociated Press
+=================
+
+  `M-x dissociated-press' is a command for scrambling a file of text
+either word by word or character by character.  Starting from a
+buffer of straight English, it produces extremely amusing output. 
+The input comes from the current Emacs buffer.  Dissociated Press
+writes its output in a buffer named `*Dissociation*', and redisplays
+that buffer after every couple of lines (approximately) to facilitate
+reading it.
+
+  `dissociated-press' asks every so often whether to continue
+operating.  Answer `n' to stop it.  You can also stop at any time by
+typing `C-g'.  The dissociation output remains in the
+`*Dissociation*' buffer for you to copy elsewhere if you wish.
+
+  Dissociated Press operates by jumping at random from one point in the
+buffer to another.  In order to produce plausible output rather than
+gibberish, it insists on a certain amount of overlap between the end
+of one run of consecutive words or characters and the start of the
+next.  That is, if it has just printed out `president' and then
+decides to jump to a different point in the file, it might spot the
+`ent' in `pentagon' and continue from there, producing
+`presidentagon'.  Long sample texts produce the best results.
+
+  A positive argument to `M-x dissociated-press' tells it to operate
+character by character, and specifies the number of overlap
+characters.  A negative argument tells it to operate word by word and
+specifies the number of overlap words.  In this mode, whole words are
+treated as the elements to be permuted, rather than characters.  No
+argument is equivalent to an argument of two.  For your
+againformation, the output goes only into the buffer
+`*Dissociation*'.  The buffer you start with is not changed.
+
+  Dissociated Press produces nearly the same results as a Markov chain
+based on a frequency table constructed from the sample text.  It is,
+however, an independent, ignoriginal invention.  Dissociated Press
+techniquitously copies several consecutive characters from the sample
+between random choices, whereas a Markov chain would choose randomly
+for each word or character.  This makes for more plausible sounding
+results, and runs faster.
+
+  It is a mustatement that too much use of Dissociated Press can be a
+developediment to your real work.  Sometimes to the point of outragedy.
+And keep dissociwords out of your documentation, if you want it to be
+well userenced and properbose.  Have fun.  Your buggestions are
+welcome.
+
+
+
+File: emacs,  Node: Amusements,  Next: Emulation,  Prev: Dissociated Press,  Up: Top
+
+Other Amusements
+================
+
+  If you are a little bit bored, you can try `M-x hanoi'.  If you are
+considerably bored, give it a numeric argument.  If you are very very
+bored, try an argument of 9.  Sit back and watch.
+
+  When you are frustrated, try the famous Eliza program.  Just do `M-x
+doctor'.  End each input by typing `RET' twice.
+
+  When you are feeling strange, type `M-x yow'.
+
+
+
+File: emacs,  Node: Emulation,  Next: Customization,  Prev: Amusements,  Up: Top
+
+Emulation
+=========
+
+  GNU Emacs can be programmed to emulate (more or less) most other
+editors.  Standard facilities can emulate these:
+
+EDT (DEC VMS editor)
+     Turn on EDT emulation with `M-x edt-emulation-on'.  `M-x
+     edt-emulation-off' restores normal Emacs command bindings.
+
+     Most of the EDT emulation commands are keypad keys, and most
+     standard Emacs key bindings are still available.  The EDT
+     emulation rebindings are done in the global keymap, so there is
+     no problem switching buffers or major modes while in EDT
+     emulation.
+
+Gosling Emacs
+     Turn on emulation of Gosling Emacs (aka Unipress Emacs) with
+     `M-x set-gosmacs-bindings'.  This redefines many keys, mostly on
+     the `C-x' and `ESC' prefixes, to work as they do in Gosmacs. 
+     `M-x set-gnu-bindings' returns to normal GNU Emacs by rebinding
+     the same keys to the definitions they had at the time `M-x
+     set-gosmacs-bindings' was done.
+
+     It is also possible to run Mocklisp code written for Gosling
+     Emacs.  *Note Mocklisp::.
+
+vi (Berkeley Unix editor)
+     Turn on vi emulation with `M-x vi-mode'.  This is a major mode
+     that replaces the previously established major mode.  All of the
+     vi commands that, in real vi, enter "input" mode are programmed
+     in the Emacs emulator to return to the previous major mode. 
+     Thus, ordinary Emacs serves as vi's "input" mode.
+
+     Because vi emulation works through major modes, it does not work
+     to switch buffers during emulation.  Return to normal Emacs first.
+
+     If you plan to use vi emulation much, you probably want to bind
+     a key to the `vi-mode' command.
+
+vi (alternate emulator)
+     Another vi emulator said to resemble real vi more thoroughly is
+     invoked by `M-x vip-mode'.  "Input" mode in this emulator is
+     changed from ordinary Emacs so you can use ESC to go back to
+     emulated vi command mode.  To get from emulated vi command mode
+     back to ordinary Emacs, type `C-z'.
+
+     This emulation does not work through major modes, and it is
+     possible to switch buffers in various ways within the emulator. 
+     It is not so necessary to assign a key to the command `vip-mode'
+     as it is with `vi-mode' because terminating insert mode does not
+     use it.
+
+     For full information, see the long comment at the beginning of
+     the source file, which is `lisp/vip.el' in the Emacs distribution.
+
+I am interested in hearing which vi emulator users prefer, as well as
+in receiving more complete user documentation for either or both
+emulators.  Warning: loading both at once may cause name conficts; no
+one has checked.
+
+
+
+File: emacs,  Node: Customization,  Next: Quitting,  Prev: Emulation,  Up: Top
+
+Customization
+*************
+
+  This chapter talks about various topics relevant to adapting the
+behavior of Emacs in minor ways.
+
+  All kinds of customization affect only the particular Emacs job that
+you do them in.  They are completely lost when you kill the Emacs
+job, and have no effect on other Emacs jobs you may run at the same
+time or later.  The only way an Emacs job can affect anything outside
+of it is by writing a file; in particular, the only way to make a
+customization `permanent' is to put something in your `.emacs' file
+or other appropriate file to do the customization in each session. 
+*Note Init File::.
+
+* Menu:
+
+* Minor Modes::     Each minor mode is one feature you can turn on
+                     independently of any others.
+* Variables::       Many Emacs commands examine Emacs variables
+                     to decide what to do; by setting variables,
+                     you can control their functioning.
+* Keyboard Macros:: A keyboard macro records a sequence of keystrokes
+                     to be replayed with a single command.
+* Key Bindings::    The keymaps say what command each key runs.
+                     By changing them, you can "redefine keys".
+* Syntax::          The syntax table controls how words and expressions
+                     are parsed.
+* Init File::       How to write common customizations in the `.emacs' file.
+
+ 
+
+File: emacs,  Node: Minor Modes,  Next: Variables,  Prev: Customization,  Up: Customization
+
+Minor Modes
+===========
+
+  Minor modes are options which you can use or not.  For example, Auto
+Fill mode is a minor mode in which SPC breaks lines between words as
+you type.  All the minor modes are independent of each other and of
+the selected major mode.  Most minor modes say in the mode line when
+they are on; for example, `Fill' in the mode line means that Auto
+Fill mode is on.
+
+  Append `-mode' to the name of a minor mode to get the name of a
+command function that turns the mode on or off.  Thus, the command to
+enable or disable Auto Fill mode is called `M-x auto-fill-mode'. 
+These commands are usually invoked with `M-x', but you can bind keys
+to them if you wish.  With no argument, the function turns the mode
+on if it was off and off if it was on.  This is known as "toggling". 
+A positive argument always turns the mode on, and an explicit zero
+argument or a negative argument always turns it off.
+
+  Auto Fill mode allows you to enter filled text without breaking lines
+explicitly.  Emacs inserts newlines as necessary to prevent lines
+from becoming too long.  *Note Filling::.
+
+  Overwrite mode causes ordinary printing characters to replace
+existing text instead of shoving it over.  For example, if the point
+is in front of the `B' in `FOOBAR', then in Overwrite mode typing a
+`G' changes it to `FOOGAR', instead of making it `FOOGBAR' as usual.
+
+  Abbrev mode allows you to define abbreviations that automatically
+expand as you type them.  For example, `amd' might expand to `abbrev
+mode'.  *Note Abbrevs::, for full information.
+
+
+
+File: emacs,  Node: Variables,  Next: Keyboard Macros,  Prev: Minor Modes,  Up: Customization
+
+Variables
+=========
+
+  A "variable" is a Lisp symbol which has a value.  The symbol's name
+is also called the name of the variable.  Variable names can contain
+any characters, but conventionally they are chosen to be words
+separated by hyphens.  A variable can have a documentation string
+which describes what kind of value it should have and how the value
+will be used.
+
+  Lisp allows any variable to have any kind of value, but most
+variables that Emacs uses require a value of a certain type.  Often
+the value should always be a string, or should always be a number. 
+Sometimes we say that a certain feature is turned on if a variable is
+"non-`nil'," meaning that if the variable's value is `nil', the
+feature is off, but the feature is on for any other value.  The
+conventional value to use to turn on the feature--since you have to
+pick one particular value when you set the variable--is `t'.
+
+  Emacs uses many Lisp variables for internal recordkeeping, as any
+Lisp program must, but the most interesting variables for you are the
+ones that exist for the sake of customization.  Emacs does not
+(usually) change the values of these variables; instead, you set the
+values, and thereby alter and control the behavior of certain Emacs
+commands.  These variables are called "options".  Most options are
+documented in this manual, and appear in the Variable Index (*note
+Variable Index::.).
+
+  One example of a variable which is an option is `fill-column', which
+specifies the position of the right margin (as a number of characters
+from the left margin) to be used by the fill commands (*note
+Filling::.).
+
+* Menu:
+
+* Examining::           Examining or setting one variable's value.
+* Edit Options::        Examining or editing list of all variables' values.
+* Locals::              Per-buffer values of variables.
+* File Variables::      How files can specify variable values.
+
+ 
+
+File: emacs,  Node: Examining,  Next: Edit Options,  Prev: Variables,  Up: Variables
+
+Examining and Setting Variables
+-------------------------------
+
+`C-h v'
+`M-x describe-variable'
+     Print the value and documentation of a variable.
+
+`M-x set-variable'
+     Change the value of a variable.
+
+  To examine the value of a single variable, use `C-h v'
+(`describe-variable'), which reads a variable name using the
+minibuffer, with completion.  It prints both the value and the
+documentation of the variable.
+
+     C-h v fill-column RET
+
+prints something like
+
+     fill-column's value is 75
+     
+     Documentation:
+     *Column beyond which automatic line-wrapping should happen.
+     Automatically becomes local when set in any fashion.
+
+ The star at the beginning of the documentation indicates that this
+variable is an option.  `C-h v' is not restricted to options; it
+allows any variable name.
+
+  If you know which option you want to set, you can set it using `M-x
+set-variable'.  This reads the variable name with the minibuffer
+(with completion), and then reads a Lisp expression for the new value
+using the minibuffer a second time.  For example,
+
+     M-x set-variable RET fill-column RET 75 RET
+
+sets `fill-column' to 75, like executing the Lisp expression
+
+     (setq fill-column 75)
+
+  Setting variables in this way, like all means of customizing Emacs
+except where explicitly stated, affects only the current Emacs session.
+
+
+
+File: emacs,  Node: Edit Options,  Next: Locals,  Prev: Examining,  Up: Variables
+
+Editing Variable Values
+-----------------------
+
+`M-x list-options'
+     Display a buffer listing names, values and documentation of all
+     options.
+
+`M-x edit-options'
+     Change option values by editing a list of options.
+
+  `M-x list-options' displays a list of all Emacs option variables, in
+an Emacs buffer named `*List Options*'.  Each option is shown with
+its documentation and its current value.  Here is what a portion of
+it might look like:
+
+     ;; exec-path:
+     ("." "/usr/local/bin" "/usr/ucb" "/bin" "/usr/bin" "/u2/emacs/etc")
+     *List of directories to search programs to run in subprocesses.
+     Each element is a string (directory name)
+     or nil (try the default directory).
+     ;;
+     ;; fill-column:
+     75
+     *Column beyond which automatic line-wrapping should happen.
+     Automatically becomes local when set in any fashion.
+     ;;
+
+  `M-x edit-options' goes one step further and immediately selects the
+`*List Options*' buffer; this buffer uses the major mode Options
+mode, which provides commands that allow you to point at an option
+and change its value:
+
+`s'
+     Set the variable point is in or near to a new value read using
+     the minibuffer.
+
+`x'
+     Toggle the variable point is in or near: if the value was `nil',
+     it becomes `t'; otherwise it becomes `nil'.
+
+`1'
+     Set the variable point is in or near to `t'.
+
+`0'
+     Set the variable point is in or near to `nil'.
+
+`n'
+`p'
+     Move to the next or previous variable.
+
+
