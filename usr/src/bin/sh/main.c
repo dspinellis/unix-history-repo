@@ -129,7 +129,7 @@ state1:
 	} 
 state2:
 	state = 3;
-	if ((sflag || minusc) && (shinit = lookupvar("ENV")) != NULL &&
+	if ((shinit = lookupvar("ENV")) != NULL &&
 	     *shinit != '\0') {
 		state = 3;
 		read_profile(shinit);
