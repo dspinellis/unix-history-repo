@@ -1,7 +1,7 @@
 #
 #	Makefile for sendmail base directory
 #
-#		@(#)Makefile	4.8		%G%
+#		@(#)Makefile	4.9		%G%
 #
 
 ALL=	src/sendmail
@@ -13,6 +13,8 @@ SENDMAIL=$(DESTDIR)/usr/lib/sendmail
 SYSLOG=	/usr/spool/mqueue/syslog
 HOST=	`hostname | sed -e 's/ucb//' -e 's/\..*//'`
 
+# When hardlinks are used, the references to LN below will need changes
+# for DESTDIR != /
 LN=	ln -s
 CP=	cp
 
@@ -30,10 +32,10 @@ install: $(ALL) $(DIRS)
 	install -c -o root -m 666	/dev/null	$(SENDMAIL).st
 	install -c -o root -m 644	/dev/null	$(SENDMAIL).fc
 	rm -f					$(DESTDIR)/usr/ucb/newaliases
-	$(LN)			$(SENDMAIL)	$(DESTDIR)/usr/ucb/newaliases
+	$(LN)			/usr/lib/sendmail  $(DESTDIR)/usr/ucb/newaliases
 	rm -f					$(DESTDIR)/usr/ucb/mailq
-	$(LN)			$(SENDMAIL)	$(DESTDIR)/usr/ucb/mailq
-	install -c -o root -m 644	cf/$(HOST).cf	$(SENDMAIL).cf
+	$(LN)			/usr/lib/sendmail  $(DESTDIR)/usr/ucb/mailq
+#	install -c -o root -m 644	cf/$(HOST).cf	$(SENDMAIL).cf
 #	install -o 1		aux/syslog	$(DESTDIR)/etc/syslog
 #	install -c -o 1 -m 644	aux/syslog.conf	$(DESTDIR)/etc/syslog.conf
 #	install -c -o 1 -m 644	/dev/null	$(DESTDIR)/etc/syslog.pid
@@ -41,6 +43,9 @@ install: $(ALL) $(DIRS)
 #	for i in 0 1 2 3 4 5 6 7; do install -c -o 1 -m 644 /dev/null $(DESTDIR)$(SYSLOG).$$i; done
 #	install -c -o 1		lib/newsyslog.sh $(DESTDIR)/usr/adm/newsyslog
 #	echo	'5 4 * * * sh /usr/adm/newsyslog' >> $(DESTDIR)/usr/lib/crontab
+
+installcf:
+	install -c -o root -m 644	cf/$(HOST).cf	$(SENDMAIL).cf
 
 src/sendmail:
 	cd src; make ${MFLAGS} sendmail
