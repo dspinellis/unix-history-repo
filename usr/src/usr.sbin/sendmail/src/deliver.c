@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	6.77 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	6.78 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -422,7 +422,12 @@ sendenvelope(e, mode)
 		{
 			e->e_to = q->q_paddr;
 			if (!bitset(QDONTSEND|QBADADDR, q->q_flags))
-				message("deliverable");
+			{
+				message("deliverable: mailer %s, host %s, user %s",
+					q->q_mailer->m_name,
+					q->q_host,
+					q->q_user);
+			}
 		}
 		else if (!bitset(QDONTSEND|QBADADDR, q->q_flags))
 		{
