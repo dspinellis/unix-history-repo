@@ -1,4 +1,4 @@
-%	@(#)psdit.pro	1.5 %G%
+%	@(#)psdit.pro	1.6 %G%
 % lib/psdit.pro -- prolog for psdit (ditroff) files
 % Copyright (c) 1984, 1985 Adobe Systems Incorporated. All Rights Reserved.
 % last edit: shore Sat Nov 23 20:28:03 1985
@@ -10,8 +10,7 @@
 /$DITroff 140 dict def $DITroff begin
 /fontnum 1 def /fontsize 10 def /fontheight 10 def /fontslant 0 def
 /xi{0 72 11 mul translate 72 resolution div dup neg scale 0 0 moveto
- /fontnum 1 def /fontsize 10 def /fontheight 10 def /fontslant 0 def F
- /pagesave save def}def
+ /fontnum 1 def /fontsize 10 def /fontheight 10 def /fontslant 0 def F}def
 /PB{save /psv exch def currentpoint translate 
  resolution 72 div dup neg scale 0 0 moveto}def
 /PE{psv restore}def
@@ -49,7 +48,7 @@
 /MXY{moveto}def
 /cb{pop}def	% action on unknown char -- nothing for now
 /n{}def/w{}def
-/p{pop showpage pagesave restore /pagesave save def}def
+/p{pop showpage xi}def
 /Dt{/Dlinewidth exch def}def 1 Dt
 /Ds{/Ddash exch def}def -1 Ds
 /i{/Dstipple exch def}def 1 i
