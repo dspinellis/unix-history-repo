@@ -16,25 +16,25 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)getpass.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)getpass.c	5.5 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
-#include <sys/ioctl.h>
+#include <sys/termios.h>
 #include <sys/signal.h>
 #include <stdio.h>
+#include <pwd.h>
 
 char *
 getpass(prompt)
 	char *prompt;
 {
-	struct sgttyb ttyb;
+	struct termios term;
 	register int ch;
 	register char *p;
 	FILE *fp, *outfp;
 	long omask;
-	int svflagval;
-#define	PASSWD_LEN	128
-	static char buf[PASSWD_LEN + 1];
+	int echo;
+	static char buf[_PASSWORD_LEN + 1];
 
 	/*
 	 * read and write to /dev/tty if possible; else read from
@@ -44,23 +44,29 @@ getpass(prompt)
 		outfp = stderr;
 		fp = stdin;
 	}
-
-	(void)ioctl(fileno(fp), TIOCGETP, &ttyb);
-	svflagval = ttyb.sg_flags;
-	ttyb.sg_flags &= ~ECHO;
-	omask = sigblock(sigmask(SIGINT));
-	(void)ioctl(fileno(fp), TIOCSETP, &ttyb);
-
+	/*
+	 * note - blocking signals isn't necessarily the
+	 * right thing, but we leave it for now.
+	 */
+	omask = sigblock(sigmask(SIGINT)|sigmask(SIGTSTP));
+	(void)tcgetattr(fileno(fp), &term);
+	if (echo = (term.c_lflag & ECHO)) {
+		term.c_lflag &= ~ECHO;
+		term.c_cflag |= CIGNORE;
+		(void)tcsetattr(fileno(fp), TCSADFLUSH, &term);
+	}
 	(void)fputs(prompt, outfp);
 	rewind(outfp);			/* implied flush */
 	for (p = buf; (ch = getc(fp)) != EOF && ch != '\n';)
-		if (p < buf + PASSWD_LEN)
+		if (p < buf + _PASSWORD_LEN)
 			*p++ = ch;
 	*p = '\0';
 	(void)write(fileno(outfp), "\n", 1);
-
-	ttyb.sg_flags = svflagval;
-	(void)ioctl(fileno(fp), TIOCSETP, &ttyb);
+	if (echo) {
+		term.c_lflag |= ECHO;
+		term.c_cflag |= CIGNORE;
+		tcsetattr(fileno(fp), TCSADFLUSH, &term);
+	}
 	(void)sigsetmask(omask);
 	if (fp != stdin)
 		(void)fclose(fp);
