@@ -12,7 +12,7 @@
 %{
 
 #ifndef lint
-static	char sccsid[] = "@(#)ftpcmd.y	5.7 (Berkeley) %G%";
+static	char sccsid[] = "@(#)ftpcmd.y	5.8 (Berkeley) %G%";
 #endif
 
 #include <sys/types.h>
@@ -51,6 +51,7 @@ static	int cmd_type;
 static	int cmd_form;
 static	int cmd_bytesz;
 char cbuf[512];
+char *fromname;
 
 char	*index();
 %}
@@ -77,6 +78,10 @@ char	*index();
 
 cmd_list:	/* empty */
 	|	cmd_list cmd
+		= {
+			fromname = (char *) 0;
+		}
+	|	cmd_list rcmd
 	;
 
 cmd:		USER SP username CRLF
@@ -237,6 +242,17 @@ cmd:		USER SP username CRLF
 			if ($4 != NULL)
 				free((char *) $4);
 		}
+	|	RNTO SP pathname CRLF
+		= {
+			if (fromname) {
+				renamecmd(fromname, (char *) $3);
+				free(fromname);
+				fromname = (char *) 0;
+			} else {
+				reply(503, "Bad sequence of commands.");
+			}
+			free((char *) $3);
+		}
 	|	ABOR CRLF
 		= {
 			reply(225, "ABOR command successful.");
@@ -253,7 +269,6 @@ cmd:		USER SP username CRLF
 			if ($4 != NULL)
 				free((char *) $4);
 		}
-	|	rename_cmd
 	|	HELP CRLF
 		= {
 			help((char *) 0);
@@ -311,6 +326,19 @@ cmd:		USER SP username CRLF
 		}
 	;
 
+rcmd:		RNFR check_login SP pathname CRLF
+		= {
+			char *renamefrom();
+
+			if ($2 && $4) {
+				fromname = renamefrom((char *) $4);
+				if (fromname == (char *) 0 && $4) {
+					free((char *) $4);
+				}
+			}
+		}
+	;
+		
 username:	STRING
 	;
 
@@ -437,37 +465,6 @@ pathname:	pathstring
 	;
 
 pathstring:	STRING
-	;
-
-rename_cmd:	rename_from rename_to
-	= {
-		if ($1 && $2)
-			renamecmd((char *) $1, (char *) $2);
-		else
-			reply(503, "Bad sequence of commands.");
-		if ($1)
-			free((char *) $1);
-		if ($2)
-			free((char *) $2);
-	}
-	;
-
-rename_from:	RNFR check_login SP pathname CRLF
-	= {
-		char *from = 0, *renamefrom();
-
-		if ($2 && $4)
-			from = renamefrom((char *) $4);
-		if (from == 0 && $4)
-			free((char *) $4);
-		$$ = (int)from;
-	}
-	;
-
-rename_to:	RNTO SP pathname CRLF
-	= {
-		$$ = $3;
-	}
 	;
 
 check_login:	/* empty */
