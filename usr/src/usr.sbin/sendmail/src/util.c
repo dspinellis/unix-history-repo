@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	8.68 (Berkeley) %G%";
+static char sccsid[] = "@(#)util.c	8.69 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -1847,7 +1847,7 @@ get_column(line, col, delim, buf)
 	char delimbuf[3];
 	
 	if (delim == '\0')
-		strcpy(delimbuf, "\t ");
+		strcpy(delimbuf, "\n\t ");
 	else
 	{
 		delimbuf[0] = delim;
