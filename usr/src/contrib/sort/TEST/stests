@@ -1,4 +1,4 @@
-#	@(#)stests	5.1 (Berkeley) %G%
+#	@(#)stests	5.2 (Berkeley) %G%
 
 #Latest version.  My sort passes all tests because I wrote it.
 #We differ only on 25E and 25H.
@@ -64,6 +64,8 @@ trap "rm -f in in1 out xx -k xsort linecount fields; exit" 0 1 2 13 15
 #	order of lines within a file.
 #	System V sum is suitable; sum -5 is the v10 equivalent.
 
+PATH=.:$PATH
+export PATH
 cat <<'!' >xsort; chmod +x xsort
 
 	X=$1; shift
