@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_exec.c	7.6 (Berkeley) %G%
+ *	@(#)kern_exec.c	7.7 (Berkeley) %G%
  */
 
 #include "../machine/reg.h"
@@ -159,14 +159,14 @@ execve()
 		ndp->ni_dirp = cp;
 		while (*cp && *cp != ' ')
 			cp++;
+		cfarg[0] = '\0';
 		if (*cp) {
 			*cp++ = '\0';
 			while (*cp == ' ')
 				cp++;
 			if (*cp)
 				bcopy((caddr_t)cp, (caddr_t)cfarg, MAXINTERP);
-		} else
-			cfarg[0] = '\0';
+		}
 		indir = 1;
 		iput(ip);
 		ndp->ni_nameiop = LOOKUP | FOLLOW;
