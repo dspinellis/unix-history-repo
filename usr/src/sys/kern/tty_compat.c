@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tty_compat.c	1.4 (Berkeley) %G%
+ *	@(#)tty_compat.c	1.5 (Berkeley) %G%
  */
 
 /* 
@@ -262,11 +262,11 @@ ttcompatsetflags(tp, t)
 	if (flags & RAW) {
 		iflag &= IXOFF;
 		oflag &= ~OPOST;
-		lflag &= ~(ECHOCTL|ISIG|ICANON);
+		lflag &= ~(ECHOCTL|ISIG|ICANON|IEXTEN);
 	} else {
-		iflag |= BRKINT|IXON|IEXTEN|IMAXBEL;
+		iflag |= BRKINT|IXON|IMAXBEL;
 		oflag |= OPOST;
-		lflag |= ISIG;
+		lflag |= ISIG|IEXTEN;
 		if (flags & XTABS)
 			oflag |= OXTABS;
 		else
