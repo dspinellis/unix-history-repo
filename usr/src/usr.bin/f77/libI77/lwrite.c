@@ -1,5 +1,5 @@
 /*
-char id_lwrite[] = "@(#)lwrite.c	1.2";
+char id_lwrite[] = "@(#)lwrite.c	1.3";
  *
  * list directed write
  */
@@ -8,6 +8,7 @@ char id_lwrite[] = "@(#)lwrite.c	1.2";
 #include "lio.h"
 
 int l_write(), t_putc();
+char lwrt[] = "list write";
 
 s_wsle(a) cilist *a;
 {
@@ -19,7 +20,7 @@ s_wsle(a) cilist *a;
 	line_len = LINE;
 	curunit->uend = NO;
 	leof = NO;
-	if(!curunit->uwrt) nowwriting(curunit);
+	if(!curunit->uwrt && ! nowwriting(curunit)) err(errflag, errno, lwrt)
 	return(OK);
 }
 
