@@ -1,12 +1,12 @@
 #ifndef lint
-static char sccsid[] = "@(#)versys.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)versys.c	5.4 (Berkeley) %G%";
 #endif
 
 #include "uucp.h"
 #include <stdio.h>
 #include <ctype.h>
 
-#define SNAMESIZE 7
+/*LINTLIBRARY*/
 
 /*
  *	verify system names n1 and n2
@@ -26,11 +26,11 @@ register char **nameptr;
 	char *name;
 
 	DEBUG (11, "Before Alias: %s\n", *nameptr);
-	uualias(nameptr);			/* alias expansion */
+	uualias (nameptr);			/* alias expansion */
 	DEBUG (11, "After Alias: %s\n", *nameptr);
 	name = *nameptr;			/* dereference */
 
-	if (strncmp(name, Myname, 7) == 0)
+	if (strncmp(name, Myname, MAXBASENAME) == 0)
 		return SUCCESS;
 
 	fp = fopen(SYSFILE, "r");
@@ -39,7 +39,7 @@ register char **nameptr;
 		char *targs[100];
 
 		getargs(line, targs, 100);
-		if (strncmp(name, targs[0], 7) == SAME) {
+		if (strncmp(name, targs[0], MAXBASENAME) == SAME) {
 			fclose(fp);
 			return SUCCESS;
 		}
@@ -61,7 +61,7 @@ register char **nameptr;
  *		SUCCESS		Anything else
  */
 
-uualias(hostptr)
+uualias (hostptr)
 char  **hostptr;			  /* we change it */
 {
 	FILE * Aliases;			  /* list of aliases */
@@ -94,7 +94,7 @@ char  **hostptr;			  /* we change it */
 			*q = '\0';
 			DEBUG(11, "Compare against: %s\n", p);
 			if (strcmp(*hostptr, p) == 0)/* match? */ {
-				koshername = malloc(strlen(buf) + 1);
+				koshername = malloc((unsigned)strlen(buf) + 1);
 				strcpy(koshername, buf); /* save it */
 				fclose(Aliases);
 				DEBUG(4, "Alias: %s to ", *hostptr);

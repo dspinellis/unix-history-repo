@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)uuxqt.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)uuxqt.c	5.6 (Berkeley) %G%";
 #endif
 
 #include "uucp.h"
@@ -31,7 +31,6 @@ int Notify[NCMDS+1];
 #define	NT_NO	2	/* if should not notify ever (-n equivalent) */
 
 extern int Nfiles;
-char *strpbrk();
 
 int TransferSucceeded = 1;
 int notiok = 1;
@@ -110,7 +109,7 @@ char *argv[];
 	setuid(geteuid());
 
 	DEBUG(4, "User - %s\n", User);
-	if (ulockf(X_LOCK, (time_t)  X_LOCKTIME) != 0)
+	if (ulockf(X_LOCK, X_LOCKTIME) != 0)
 		exit(0);
 
 	fp = fopen(CMDFILE, "r");
@@ -196,7 +195,7 @@ doprocess:
 		strcpy(user, User);
 		strcpy(fin, DEVNULL);
 		strcpy(fout, DEVNULL);
-		sprintf(sysout, "%.7s", Myname);
+		strcpy(sysout, Myname);
 		badfiles = 0;
 		while (fgets(buf, BUFSIZ, xfp) != NULL) {
 			switch (buf[0]) {
@@ -217,7 +216,7 @@ doprocess:
 				break;
 			case X_STDOUT:
 				sscanf(&buf[1], "%s%s", fout, sysout);
-				sysout[7] = '\0';
+				sysout[MAXBASENAME] = '\0';
 				/* rti!trt: do not check permissions of
 				 * vanilla spool file.  DO check permissions
 				 * of writing on a non-vanilla file */
@@ -408,7 +407,6 @@ register char *file;
 	char pre[3];
 	int rechecked;
 	time_t ystrdy;		/* yesterday */
-	extern time_t time();
 	struct stat stbuf;	/* for X file age */
 
 	pre[0] = XQTPRE;
@@ -654,25 +652,6 @@ char *user, *rmt, *file;
 	else
 		mailst(ruser, "Mail failed.  Letter returned to sender.\n", CNULL);
 	return;
-}
-
-/*
- * this is like index, but takes a string as the second argument
- */
-char *
-strpbrk(str, chars)
-register char *str, *chars;
-{
-	register char *cp;
-
-	do {
-		cp = chars - 1;
-		while (*++cp) {
-			if (*str == *cp)
-				return str;
-		}
-	} while (*str++);
-	return NULL;
 }
 
 /*

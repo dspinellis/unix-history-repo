@@ -1,10 +1,10 @@
 #ifndef lint
-static char sccsid[] = "@(#)uusnap.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)uusnap.c	5.5 (Berkeley) %G%";
 #endif
 
 /*
  *	Uusnap - displays a snapshot of the uucp system.
- *					RJKing WECo-MG6565 May 83
+ *	originally by	RJKing WECo-MG6565 May 83
  */
 
 #include "uucp.h"
@@ -29,12 +29,8 @@ char SYSBUF[BUFSIZ];
 #define	DATTYPE	1				/* Index into scnt.cntr */
 #define	XEQTYPE	2				/* Index into scnt.cntr */
 
-extern	char *index(), *rindex(), *strcpy(), *strncpy();;
-extern	long atol();
-extern	time_t	time();
-
 struct	scnt {					/* System count structure */
-		char	name[16];		/* Name of system */
+		char	name[MAXBASENAME+1];	/* Name of system */
 		short	cntr[NUMCTRS];		/* Count */
 		char	stst[32];		/* STST Message */
 		time_t	locked;			/* If LCK..sys present */
@@ -130,10 +126,10 @@ main()
 scandir(dnam, prfx, flen, fchr, type)
 char *dnam, *prfx, fchr;
 {
-	register int i, plen;
-	char	fnam[MAXNAMLEN+1];
 	register struct direct *dentp;
 	register DIR *dirp;
+	register int i, fnamlen, plen;
+	char	fnam[MAXNAMLEN+1];
 
 	plen = strlen(prfx);
 	if(chdir(dnam) < 0) {
@@ -153,18 +149,27 @@ char *dnam, *prfx, fchr;
 			continue;
 		}
 		strcpy(fnam, &dentp->d_name[plen]);
-		i = strlen(fnam);
-		if(flen > 0)
-			fnam[i -flen] = NULL;
-		else
-			for(; i>0; --i) {
-				if(fnam[i] == fchr) {
-					fnam[i] = NULL;
+		fnamlen = strlen(fnam);
+		if(flen > 0) {
+			fnamlen -= flen;
+			if (type == DATTYPE && (fnam[fnamlen] != 'S' && fnam[fnamlen] != 'B')) {
+				fnamlen -= 2;	/* For Honey DanBer */
+				fnam[fnamlen] = NULL;
+			} else {
+				fnam[fnamlen] = NULL;
+				fnamlen = MAXBASENAME; /* yes, after = NULL*/
+			}
+		} else {
+			for(; fnamlen>0; --fnamlen) {
+				if(fnam[fnamlen] == fchr) {
+					fnam[fnamlen] = NULL;
 					break;
 				}
 			}
+			fnamlen = MAXBASENAME;
+		}
 		for(i=0; i<sndx; ++i) {
-			if(strcmp(fnam, sys[i].name) == SAME) {
+			if(strncmp(fnam, sys[i].name, fnamlen) == SAME) {
 				++sys[i].cntr[type];
 				break;
 			}
@@ -208,11 +213,12 @@ char *sdir;
 				continue;
 			strcpy(fnam, dentp->d_name);
 			for(csys=0; csys<sndx; ++csys) {
-				if(strcmp(&fnam[5], sys[csys].name) == SAME)
+				if(strncmp(&fnam[5], sys[csys].name, SYSNSIZE)
+					== SAME)
 					break;
 			}
+			strcpy(sys[csys].name, &fnam[5]);
 			if(csys == sndx) {
-				strcpy(sys[csys].name, &fnam[5]);
 				++sndx;
 			}
 			if (stat(fnam, &stbuf) < 0)
@@ -236,18 +242,18 @@ char *sdir;
 			continue;
 		strcpy(fnam, dentp->d_name);
 		for(csys=0; csys<sndx; ++csys) {
-			if(strcmp(fnam, sys[csys].name) == SAME)
+			if(strncmp(fnam, sys[csys].name, SYSNSIZE) == SAME)
 				break;
 		}
+		strcpy(sys[csys].name, fnam);
 		if(csys == sndx) {
-			strcpy(sys[csys].name, fnam);
 			++sndx;
 		}
 		if((st = fopen(fnam, "r")) == NULL) {
-			strncpy(sys[csys].stst, "", sizeof(sys[csys].stst));
+			sys[csys].stst[0] = '\0';
 			continue;
 		}
-		strncpy(buff, "", sizeof(buff));
+		buff[0] = '\0';
 		fgets(buff, sizeof(buff), st);
 		fclose(st);
 		if(tp = rindex(buff, ' '))
