@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	5.40 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	5.41 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -17,6 +17,7 @@ static char sccsid[] = "@(#)deliver.c	5.40 (Berkeley) %G%";
 #include <fcntl.h>
 #include <errno.h>
 #ifdef NAMED_BIND
+#include <sys/param.h>
 #include <arpa/nameser.h>
 #include <resolv.h>
 #endif
