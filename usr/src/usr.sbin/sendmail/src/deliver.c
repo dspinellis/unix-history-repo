@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.30 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.31 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -569,6 +569,7 @@ deliver(firstto, editfcn)
 	char rpathbuf[MAXNAME];		/* translated return path */
 	extern int checkcompat();
 	extern FILE *fdopen();
+	extern char SmtpError[];
 
 	errno = 0;
 	if (bitset(QDONTSEND|QBADADDR|QQUEUEUP, to->q_flags))
@@ -696,7 +697,7 @@ deliver(firstto, editfcn)
 		*pvp = NULL;
 # else /* SMTP */
 		/* oops!  we don't implement SMTP */
-		syserr("554 SMTP style mailer");
+		syserr("554 SMTP style mailer not implemented");
 		return (EX_SOFTWARE);
 # endif /* SMTP */
 	}
@@ -910,6 +911,7 @@ deliver(firstto, editfcn)
 
 	curhost = NULL;
 	SmtpPhase = NULL;
+	mci = NULL;
 
 #ifdef XDEBUG
 	{
@@ -920,7 +922,6 @@ deliver(firstto, editfcn)
 		checkfd012(wbuf);
 	}
 #endif
-
 
 	/* check for Local Person Communication -- not for mortals!!! */
 	if (strcmp(m->m_mailer, "[LPC]") == 0)
@@ -949,7 +950,7 @@ deliver(firstto, editfcn)
 		if (!clever)
 		{
 			syserr("554 non-clever IPC");
-			rcode = EX_OSERR;
+			rcode = EX_CONFIG;
 			goto give_up;
 		}
 		if (pv[2] != NULL)
@@ -957,7 +958,6 @@ deliver(firstto, editfcn)
 		else
 			port = 0;
 tryhost:
-		mci = NULL;
 			/* see if we already know that this host is fried */
 		st = stab(pvp[1], ST_HOST, ST_FIND);
 		if (st == NULL || st->s_host.ho_exitstat == EX_OK)
@@ -967,6 +967,12 @@ tryhost:
 			i = st->s_host.ho_exitstat;
 			errno = st->s_host.ho_errno;
 		}
+		}
+		if (mci == NULL)
+		{
+			syserr("deliver: no host name");
+			rcode = EX_OSERR;
+			goto give_up;
 		}
 		mci->mci_pid = 0;
 		else
@@ -1416,7 +1422,13 @@ giveresponse(stat, m, mci, e)
 	*/
 
 	if (stat == EX_OK || stat == EX_TEMPFAIL)
+	{
+		extern char MsgBuf[];
+
 		message(&statmsg[4], errstring(errno));
+		if (stat == EX_TEMPFAIL && e->e_xfp != NULL)
+			fprintf(e->e_xfp, "%s\n", &MsgBuf[4]);
+	}
 	else
 	{
 		Errors++;

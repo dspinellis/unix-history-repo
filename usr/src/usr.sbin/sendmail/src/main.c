@@ -13,7 +13,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	8.29 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	8.30 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -92,6 +92,8 @@ main(argc, argv, envp)
 	int j;
 	bool queuemode = FALSE;		/* process queue requests */
 	bool safecf = TRUE;
+	bool warn_C_flag = FALSE;
+	char warn_f_flag = '\0';
 	static bool reenter = FALSE;
 	char *argv0 = argv[0];
 	struct passwd *pw;
@@ -370,9 +372,7 @@ main(argc, argv, envp)
 
 		  case 'C':	/* select configuration file (already done) */
 			if (RealUid != 0)
-				auth_warning(CurEnv,
-					"Processed by %s with -C %s",
-					RealUserName, optarg);
+				warn_C_flag = TRUE;
 			ConfFile = optarg;
 			(void) setgid(RealGid);
 			(void) setuid(RealUid);
@@ -530,6 +530,19 @@ main(argc, argv, envp)
 		xputs(macvalue('k', CurEnv));
 		printf("\n");
 	}
+
+	/*
+	**  Process authorization warnings from command line.
+	*/
+
+	if (warn_C_flag)
+		auth_warning(CurEnv, "Processed by %s with -C %s",
+			RealUserName, ConfFile);
+	if (warn_f_flag != '\0')
+		auth_warning(CurEnv, "%s set sender to %s using -%c",
+			RealUserName, from, warn_f_flag);
+	if (Warn_Q_option)
+		auth_warning(CurEnv, "Processed from queue %s", QueueDir);
 
 	/* Enforce use of local time (null string overrides this) */
 	if (TimeZoneSpec == NULL)

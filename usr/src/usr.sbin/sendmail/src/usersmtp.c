@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)usersmtp.c	8.10 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	8.11 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)usersmtp.c	8.10 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	8.11 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -479,6 +479,16 @@ smtpfinish(m, editfcn)
 	(*e->e_putbody)(SmtpOut, m, CurEnv);
 
 	clrevent(ev);
+
+	if (ferror(mci->mci_out))
+	{
+		/* error during processing -- don't send the dot */
+		mci->mci_errno = EIO;
+		mci->mci_exitstat = EX_IOERR;
+		mci->mci_state = MCIS_ERROR;
+		smtpquit(m, mci, e);
+		return EX_IOERR;
+	}
 
 	/* terminate the message */
 	fprintf(SmtpOut, ".%s", m->m_eol);

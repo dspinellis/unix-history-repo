@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.40 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.41 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -624,6 +624,22 @@ getla()
 #else
 #if LA_TYPE == LA_SUBR
 
+#ifdef DGUX
+
+#include <sys/dg_sys_info.h>
+
+int getla()
+{
+	struct dg_sys_info_load_info load_info;
+
+	dg_sys_info((long *)&load_info,
+		DG_SYS_INFO_LOAD_INFO_TYPE, DG_SYS_INFO_LOAD_VERSION_0);
+
+	return((int) (load_info.one_minute + 0.5));
+}
+
+#else
+
 getla()
 {
 	double avenrun[3];
@@ -639,6 +655,7 @@ getla()
 	return ((int) (avenrun[0] + 0.5));
 }
 
+#endif /* DGUX */
 #else
 #if LA_TYPE == LA_MACH
 
