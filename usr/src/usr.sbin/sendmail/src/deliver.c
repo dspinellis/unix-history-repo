@@ -7,7 +7,7 @@
 # include <syslog.h>
 # endif LOG
 
-static char SccsId[] = "@(#)deliver.c	3.44	%G%";
+static char SccsId[] = "@(#)deliver.c	3.45	%G%";
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -37,20 +37,22 @@ deliver(to, editfcn)
 	ADDRESS *to;
 	int (*editfcn)();
 {
-	char *host;
-	char *user;
+	char *host;			/* host being sent to */
+	char *user;			/* user being sent to */
 	char **pvp;
 	register char **mvp;
 	register char *p;
-	register struct mailer *m;
+	register struct mailer *m;	/* mailer for this recipient */
 	register int i;
 	extern putmessage();
 	extern bool checkcompat();
 	char *pv[MAXPV+1];
-	char tobuf[MAXLINE];
+	char tobuf[MAXLINE];		/* text line of to people */
 	char buf[MAXNAME];
 	ADDRESS *ctladdr;
 	extern ADDRESS *getctladdr();
+	char tfrombuf[MAXNAME];		/* translated from person */
+	extern char **prescan();
 
 	if (!ForceMail && bitset(QDONTSEND, to->q_flags))
 		return (0);
@@ -72,7 +74,19 @@ deliver(to, editfcn)
 
 	m = Mailer[to->q_mailer];
 	host = to->q_host;
-	define('g', m->m_from);		/* translated from address */
+
+	/* rewrite from address, using rewriting rules */
+	(void) expand(m->m_from, buf, &buf[sizeof buf - 1]);
+	mvp = prescan(buf, '\0');
+	if (mvp == NULL)
+	{
+		syserr("bad mailer from translate \"%s\"", buf);
+		return (EX_SOFTWARE);
+	}
+	rewrite(mvp, 2);
+	cataddr(mvp, tfrombuf, sizeof tfrombuf);
+
+	define('g', tfrombuf);		/* translated sender address */
 	define('h', host);		/* to host */
 	Errors = 0;
 	errno = 0;
@@ -661,10 +675,20 @@ putmessage(fp, m)
 	**  Output the body of the message
 	*/
 
-	rewind(TempFile);
-	while (!ferror(fp) && (i = fread(buf, 1, BUFSIZ, TempFile)) > 0)
-		(void) fwrite(buf, 1, i, fp);
+	if (TempFile != NULL)
+	{
+		rewind(TempFile);
+		while (!ferror(fp) && (i = fread(buf, 1, BUFSIZ, TempFile)) > 0)
+			(void) fwrite(buf, 1, i, fp);
 
+		if (ferror(TempFile))
+		{
+			syserr("putmessage: read error");
+			setstat(EX_IOERR);
+		}
+	}
+
+	fflush(fp);
 	if (ferror(fp) && errno != EPIPE)
 	{
 		syserr("putmessage: write error");

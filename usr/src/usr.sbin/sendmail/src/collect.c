@@ -1,7 +1,7 @@
 # include <errno.h>
 # include "sendmail.h"
 
-static char	SccsId[] = "@(#)collect.c	3.22	%G%";
+static char	SccsId[] = "@(#)collect.c	3.23	%G%";
 
 /*
 **  COLLECT -- read & parse message header & make temp file.
@@ -168,10 +168,10 @@ maketemp(from)
 			{
 				(void) freopen(InFileName, "w", tf);
 				fputs("\nMAIL DELETED BECAUSE OF LACK OF DISK SPACE\n\n", tf);
-				syserr("Out of disk space for temp file");
+				syserr("collect: Out of disk space for temp file");
 			}
 			else
-				syserr("Cannot write %s", InFileName);
+				syserr("collect: Cannot write %s", InFileName);
 			(void) freopen("/dev/null", "w", tf);
 		}
 	}
