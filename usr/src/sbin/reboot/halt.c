@@ -1,18 +1,29 @@
 /*
- * Copyright (c) 1980,1986 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+ * Copyright (c) 1980, 1986 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms are permitted
+ * provided that the above copyright notice and this paragraph are
+ * duplicated in all such forms and that any documentation,
+ * advertising materials, and other materials related to such
+ * distribution and use acknowledge that the software was developed
+ * by the University of California, Berkeley.  The name of the
+ * University may not be used to endorse or promote products derived
+ * from this software without specific prior written permission.
+ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+ * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
 
 #ifndef lint
 char copyright[] =
-"@(#) Copyright (c) 1980,1986 Regents of the University of California.\n\
+"@(#) Copyright (c) 1980, 1986 The Regents of the University of California.\n\
  All rights reserved.\n";
-#endif not lint
+#endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)halt.c	5.4 (Berkeley) %G%";
-#endif not lint
+static char sccsid[] = "@(#)halt.c	5.5 (Berkeley) %G%";
+#endif /* not lint */
 
 /*
  * Halt
@@ -30,49 +41,52 @@ main(argc, argv)
 	int argc;
 	char **argv;
 {
-	int howto;
-	char *ttyn = (char *)ttyname(2);
-	register i;
-	register qflag = 0;
-	int needlog = 1;
-	char *user, *getlogin();
+	register int i;
+	register int qflag = 0;
 	struct passwd *pw, *getpwuid();
+	int ch, howto, needlog = 1;
+	char *user, *ttyn, *getlogin(), *ttyname();
 
-	openlog("halt", 0, LOG_AUTH);
 	howto = RB_HALT;
-	argc--, argv++;
-	while (argc > 0) {
-		if (!strcmp(*argv, "-n"))
-			howto |= RB_NOSYNC;
-		else if (!strcmp(*argv, "-y"))
-			ttyn = 0;
-		else if (!strcmp(*argv, "-q"))
-			qflag++;
-		else if (!strcmp(*argv, "-l"))
+	ttyn = ttyname(2);
+	while ((ch = getopt(argc, argv, "lnqy")) != EOF)
+		switch((char)ch) {
+		case 'l':		/* undocumented; for shutdown(8) */
 			needlog = 0;
-		else {
-			fprintf(stderr, "usage: halt [ -n ]\n");
+			break;
+		case 'n':
+			howto |= RB_NOSYNC;
+			break;
+		case 'q':
+			qflag++;
+			break;
+		case 'y':
+			ttyn = 0;
+			break;
+		case '?':
+		default:
+			fprintf(stderr, "usage: halt [-nqy]\n");
 			exit(1);
 		}
-		argc--, argv++;
-	}
+
 	if (ttyn && *(ttyn+strlen("/dev/tty")) == 'd') {
 		fprintf(stderr, "halt: dangerous on a dialup; use ``halt -y'' if you are really sure\n");
 		exit(1);
 	}
 
 	if (needlog) {
-		user = getlogin();
-		if (user == (char *)0 && (pw = getpwuid(getuid())))
-			user = pw->pw_name;
-		if (user == (char *)0)
-			user = "root";
+		openlog("halt", 0, LOG_AUTH);
+		if ((user = getlogin()) == NULL)
+			if ((pw = getpwuid(getuid())))
+				user = pw->pw_name;
+			else
+				user = "???";
 		syslog(LOG_CRIT, "halted by %s", user);
 	}
 
 	signal(SIGHUP, SIG_IGN);		/* for network connections */
 	if (kill(1, SIGTSTP) == -1) {
-		fprintf(stderr, "reboot: can't idle init\n");
+		fprintf(stderr, "halt: can't idle init\n");
 		exit(1);
 	}
 	sleep(1);
@@ -86,7 +100,7 @@ main(argc, argv)
 			if (errno == ESRCH)
 				break;
 
-			perror("reboot: kill");
+			perror("halt: kill");
 			kill(1, SIGHUP);
 			exit(1);
 		}
@@ -100,13 +114,13 @@ main(argc, argv)
 	}
 
 	if (!qflag && (howto & RB_NOSYNC) == 0) {
-		markdown();
+		logwtmp("~", "shutdown", "");
 		sync();
 		setalarm(5);
 		pause();
 	}
 	syscall(55, howto);
-	perror("reboot");
+	perror("halt");
 }
 
 dingdong()
@@ -118,23 +132,4 @@ setalarm(n)
 {
 	signal(SIGALRM, dingdong);
 	alarm(n);
-}
-
-#include <utmp.h>
-#define SCPYN(a, b)	strncpy(a, b, sizeof(a))
-char	wtmpf[]	= "/usr/adm/wtmp";
-struct utmp wtmp;
-
-markdown()
-{
-	register f = open(wtmpf, 1);
-	if (f >= 0) {
-		lseek(f, 0L, 2);
-		SCPYN(wtmp.ut_line, "~");
-		SCPYN(wtmp.ut_name, "shutdown");
-		SCPYN(wtmp.ut_host, "");
-		time(&wtmp.ut_time);
-		write(f, (char *)&wtmp, sizeof(wtmp));
-		close(f);
-	}
 }
