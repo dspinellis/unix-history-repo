@@ -1,4 +1,4 @@
-#	@(#)COPYRIGHT	8.1 (Berkeley) %G%
+#	@(#)COPYRIGHT	5.4 (Berkeley) %G%
 
 All of the documentation and software included in the 4.4BSD and 4.4BSD-Lite
 Releases is copyrighted by The Regents of the University of California.
@@ -58,10 +58,7 @@ Business Equipment Manufacturers Association (CBEMA), 311 First St., NW,
 Suite 500, Washington, DC 20001-2178.  The developmental work of
 Programming Language C was completed by the X3J11 Technical Committee.
 
-Portions of the manual reflect system enhancements made at Berkeley and
-sponsored in part by the Defense Advanced Research Projects Agency (DoD),
-Arpa Order No. 4871 monitored by the Naval Electronics Systems Command
-under contract No. N00039-84-C-0089.  The views and conclusions contained
-in these documents are those of the authors and should not be interpreted
-as representing official policies, either expressed or implied, of the
-Defense Research Projects Agency or of the US Government.
+The views and conclusions contained in the software and documentation are
+those of the authors and should not be interpreted as representing official
+policies, either expressed or implied, of the Regents of the University
+of California.
