@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)call.c 1.19 %G%";
+static	char sccsid[] = "@(#)call.c 1.20 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -226,22 +226,22 @@ call(p, argv, porf, psbn)
 				case TREC:
 				case TSET:
 				case TSTR:
-				    q = rvalue( argv[1] , p1 -> type , LREQ );
+				    q = stkrval( argv[1] , p1 -> type , LREQ );
 				    break;
 				case TINT:
 				case TSCAL:
 				case TBOOL:
 				case TCHAR:
 				    precheck( p1 -> type , "_RANG4" , "_RSNG4" );
-				    q = rvalue( argv[1] , p1 -> type , RREQ );
-				    postcheck( p1 -> type );
+				    q = stkrval( argv[1] , p1 -> type , RREQ );
+				    postcheck(p1 -> type, P2INT);
+				    break;
+				case TDOUBLE:
+				    q = stkrval( argv[1] , p1 -> type , RREQ );
+				    sconv(p2type(q), P2DOUBLE);
 				    break;
 				default:
 				    q = rvalue( argv[1] , p1 -> type , RREQ );
-				    if (  isa( p1 -> type  , "d" )
-				       && isa( q , "i" ) ) {
-					putop( P2SCONV , P2DOUBLE );
-				    }
 				    break;
 			    }
 #			endif PC

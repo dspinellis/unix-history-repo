@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)forop.c 1.11 %G%";
+static char sccsid[] = "@(#)forop.c 1.12 %G%";
 
 #include	"whoami.h"
 #include	"0.h"
@@ -148,6 +148,7 @@ nogood:
 	    goto byebye;
 	}
 #	ifdef PC
+	    sconv(p2type(inittype), P2INT);
 	    putop( P2ASSIGN , P2INT );
 	    putdot( filename , line );
 		/*
@@ -173,6 +174,7 @@ nogood:
 	    goto byebye;
 	}
 #	ifdef PC
+	    sconv(p2type(termtype), P2INT);
 	    putop( P2ASSIGN , P2INT );
 	    putdot( filename , line );
 		/*
@@ -204,8 +206,9 @@ nogood:
 	    putRV( 0 , cbn , initnlp -> value[ NL_OFFS ] ,
 		    initnlp -> extra_flags , P2INT );
 	    if ( opt( 't' ) ) {
-		postcheck( fortype );
+		postcheck(fortype, nl+T4INT);
 	    }
+	    sconv(P2INT, p2type(fortype));
 	    putop( P2ASSIGN , p2type( fortype ) );
 	    putdot( filename , line );
 #	endif PC
@@ -299,7 +302,7 @@ nogood:
 	    putleaf( P2ICON , 1 , 0 , P2INT , 0 );
 	    putop( ( arg[0] == T_FORU ? P2PLUS : P2MINUS ) , P2INT );
 	    if ( opt( 't' ) ) {
-		postcheck( fortype );
+		postcheck(fortype, nl+T4INT);
 	    }
 	    putop( P2ASSIGN , P2INT );
 	    putdot( filename , line );

@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)rval.c 1.13 %G%";
+static char sccsid[] = "@(#)rval.c 1.14 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -289,11 +289,8 @@ cstrng:
 					put(2, O_CON2, (short)p->range[0]);
 #				    endif OBJ
 #				    ifdef PC
-					    /*
-					     * make short constants ints
-					     */
 					putleaf( P2ICON , (short) p -> range[0]
-						, 0 , P2INT , 0 );
+						, 0 , P2SHORT , 0 );
 #				    endif PC
 				    break;
 			    case 1:
@@ -301,11 +298,8 @@ cstrng:
 					put(2, O_CON1, p->value[0]);
 #				    endif OBJ
 #				    ifdef PC
-					    /*
-					     * make char constants ints
-					     */
 					putleaf( P2ICON , p -> value[0] , 0
-						, P2INT , 0 );
+						, P2CHAR , 0 );
 #				    endif PC
 				    break;
 			    default:
@@ -406,7 +400,8 @@ cstrng:
 			put(1, O_NEG2 + (width(q) >> 2));
 #		    endif OBJ
 #		    ifdef PC
-			putop( P2UNARY P2MINUS , p2type( q ) );
+			sconv(p2type(q), P2INT);
+			putop( P2UNARY P2MINUS , P2INT );
 #		    endif PC
 		    return (isa(q, "d") ? q : nl+T4INT);
 		}
@@ -424,14 +419,22 @@ cstrng:
 		    put(1, O_NOT);
 #		endif OBJ
 #		ifdef PC
-		    putop( P2NOT , P2INT );
+		    sconv(p2type(q), P2INT);
+		    putop( P2NOT , P2INT);
+		    sconv(P2INT, p2type(q));
 #		endif PC
 		return (nl+T1BOOL);
 
 	case T_AND:
 	case T_OR:
 		p = rvalue(r[2], NIL , RREQ );
+#		ifdef PC
+		    sconv(p2type(p),P2INT);
+#		endif PC
 		p1 = rvalue(r[3], NIL , RREQ );
+#		ifdef PC
+		    sconv(p2type(p1),P2INT);
+#		endif PC
 		if (p == NIL || p1 == NIL)
 			return (NIL);
 		if (isnta(p, "b")) {
@@ -451,6 +454,7 @@ cstrng:
 			 * to force evaluation of all the expressions.
 			 */
 		    putop( r[ 0 ] == T_AND ? P2AND : P2OR , P2INT );
+		    sconv(P2INT, p2type(p));
 #		endif PC
 		return (nl+T1BOOL);
 
@@ -464,13 +468,9 @@ cstrng:
 			 *	force these to be doubles for the divide
 			 */
 		    p = rvalue( r[ 2 ] , NIL , RREQ );
-		    if ( isnta( p , "d" ) ) {
-			putop( P2SCONV , P2DOUBLE );
-		    }
+		    sconv(p2type(p), P2DOUBLE);
 		    p1 = rvalue( r[ 3 ] , NIL , RREQ );
-		    if ( isnta( p1 , "d" ) ) {
-			putop( P2SCONV , P2DOUBLE );
-		    }
+		    sconv(p2type(p1), P2DOUBLE);
 #		endif PC
 		if (p == NIL || p1 == NIL)
 			return (NIL);
@@ -544,21 +544,10 @@ cstrng:
 			if ( ( p == NIL ) || ( p1 == NIL ) ) {
 			    return NIL;
 			}
-			if ( isa( p , "i" ) && isa( p1 , "d" ) ) {
-			    putop( P2SCONV , P2DOUBLE );
-			}
+			tuac(p, p1, &rettype, &ctype);
 			p1 = rvalue( r[ 3 ] , contype , RREQ );
-			if ( isa( p , "d" ) && isa( p1 , "i" ) ) {
-			    putop( P2SCONV , P2DOUBLE );
-			}
+			tuac(p1, p, &rettype, &ctype);
 			if ( isa( p , "id" ) ) {
-			    if ( isa( p , "d" ) || isa( p1 , "d" ) ) {
-				ctype = P2DOUBLE;
-				rettype = nl + TDOUBLE;
-			    } else {
-				ctype = P2INT;
-				rettype = nl + T4INT;
-			    }
 			    putop( mathop[ r[0] - T_MULT ] , ctype );
 			    return rettype;
 			}
@@ -631,7 +620,13 @@ cstrng:
 	case T_MOD:
 	case T_DIV:
 		p = rvalue(r[2], NIL , RREQ );
+#		ifdef PC
+		    sconv(p2type(p), P2INT);
+#		endif PC
 		p1 = rvalue(r[3], NIL , RREQ );
+#		ifdef PC
+		    sconv(p2type(p1), P2INT);
+#		endif PC
 		if (p == NIL || p1 == NIL)
 			return (NIL);
 		if (isnta(p, "i")) {
@@ -775,16 +770,14 @@ cstrng:
 			     *	long op double  or  double op long
 			     * we may have to do some coercing.
 			     */
-			if ( isa( p , "i" ) && isa( p1 , "d" ) ) {
-			    putop( P2SCONV , P2DOUBLE );
-			}
+			tuac(p, p1, &rettype, &ctype);
 			p1 = rvalue( r[ 3 ] , p , RREQ );
 			if ( p1 == NIL ) {
 			    return NIL;
 			}
-			if ( isa( p , "d" ) && isa( p1 , "i" ) )
-			    putop( P2SCONV , P2DOUBLE );
+			tuac(p1, p, &rettype, &ctype);
 			putop( relops[ r[0] - T_EQ ] , P2INT );
+			sconv(P2INT, P2CHAR);
 		    }
 #		endif PC
 		c = classify(p);
@@ -948,6 +941,7 @@ nonident:
 			postcset( r[3] , &csetd );
 		    }
 		    putop( P2CALL , P2INT );
+		    sconv(P2INT, P2CHAR);
 #		endif PC
 		return (nl+T1BOOL);
 	default:
@@ -976,25 +970,27 @@ conint:
 				return (NIL);
 			}
 			l = f;
-			if (bytes(l, l) <= 2) {
-#				ifdef OBJ
-				    put(2, O_CON2, ( short ) l);
-#				endif OBJ
-#				ifdef PC
-				        /*
-					 * short constants are ints
-					 */
-				    putleaf( P2ICON , l , 0 , P2INT , 0 );
-#				endif PC
-				return (nl+T2INT);
-			}
 #			ifdef OBJ
+			    if (bytes(l, l) <= 2) {
+				    put(2, O_CON2, ( short ) l);
+				    return (nl+T2INT);
+			    }
 			    put(2, O_CON4, l); 
+			    return (nl+T4INT);
 #			endif OBJ
 #			ifdef PC
-			    putleaf( P2ICON , l , 0 , P2INT , 0 );
+			    switch (bytes(l, l)) {
+				case 1:
+				    putleaf(P2ICON, l, 0, P2CHAR, 0);
+				    return nl+T1INT;
+				case 2:
+				    putleaf(P2ICON, l, 0, P2SHORT, 0);
+				    return nl+T2INT;
+				case 4:
+				    putleaf(P2ICON, l, 0, P2INT, 0);
+				    return nl+T4INT;
+			    }
 #			endif PC
-			return (nl+T4INT);
 	
 		/*
 		 * A floating point number

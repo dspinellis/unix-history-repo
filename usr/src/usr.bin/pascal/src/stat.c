@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)stat.c 1.8 %G%";
+static char sccsid[] = "@(#)stat.c 1.9 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -432,7 +432,8 @@ asgnop1(r, p)
 		    case TBOOL:
 		    case TCHAR:
 		    case TSCAL:
-			    postcheck( p );
+			    postcheck(p, p1);
+			    sconv(p2type(p1), p2type(p));
 			    putop( P2ASSIGN , p2type( p ) );
 			    putdot( filename , line );
 			    break;
@@ -441,9 +442,7 @@ asgnop1(r, p)
 			    putdot( filename , line );
 			    break;
 		    case TDOUBLE:
-			    if (isnta(p1,"d")) {
-				putop( P2SCONV , P2DOUBLE );
-			    }
+			    sconv(p2type(p1), p2type(p));
 			    putop( P2ASSIGN , p2type( p ) );
 			    putdot( filename , line );
 			    break;
