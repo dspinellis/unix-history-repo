@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_syscalls.c	7.12 (Berkeley) %G%
+ *	@(#)vfs_syscalls.c	7.13 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -275,7 +275,7 @@ fchdir()
 	if (vp->v_type != VDIR)
 		error = ENOTDIR;
 	else
-		error = vn_access(vp, VEXEC, u.u_cred);
+		error = VOP_ACCESS(vp, VEXEC, u.u_cred);
 	VOP_UNLOCK(vp);
 	vrele(u.u_cdir);
 	u.u_cdir = vp;
@@ -341,7 +341,7 @@ chdirec(ndp)
 	if (vp->v_type != VDIR)
 		error = ENOTDIR;
 	else
-		error = vn_access(vp, VEXEC, ndp->ni_cred);
+		error = VOP_ACCESS(vp, VEXEC, ndp->ni_cred);
 	VOP_UNLOCK(vp);
 	if (error)
 		vrele(vp);
@@ -672,7 +672,8 @@ saccess()
 			mode |= VWRITE;
 		if (uap->fmode & X_OK)
 			mode |= VEXEC;
-		error = vn_access(vp, mode, u.u_cred);
+		if ((error = vn_writechk(vp)) == 0)
+			error = VOP_ACCESS(vp, mode, ndp->ni_cred);
 	}
 	vput(vp);
 out1:
@@ -1013,7 +1014,8 @@ truncate()
 		error = EISDIR;
 		goto out;
 	}
-	if (error = vn_access(vp, VWRITE, ndp->ni_cred))
+	if ((error = vn_writechk(vp)) ||
+	    (error = VOP_ACCESS(vp, VWRITE, ndp->ni_cred)))
 		goto out;
 	error = VOP_SETATTR(vp, &vattr, ndp->ni_cred);
 out:
@@ -1047,7 +1049,7 @@ ftruncate()
 		error = EISDIR;
 		goto out;
 	}
-	if (error = vn_access(vp, VWRITE, fp->f_cred))
+	if (error = vn_writechk(vp))
 		goto out;
 	error = VOP_SETATTR(vp, &vattr, fp->f_cred);
 out:
