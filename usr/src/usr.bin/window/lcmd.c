@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)lcmd.c	3.30 (Berkeley) %G%";
+static char sccsid[] = "@(#)lcmd.c	3.31 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "defs.h"
@@ -75,8 +75,8 @@ struct lcmd_tab lcmd_tab[] = {
 	"cursormodes",		2,	l_cursormodes,	arg_cursormodes,
 	"debug",		1,	l_debug,	arg_debug,
 	"default_nlines",	9,	l_def_nline,	arg_def_nline,
-	"default_shell",	9,	l_def_shell,	arg_def_shell,
-	"default_smooth",	9,	l_def_smooth,	arg_def_smooth,
+	"default_shell",	10,	l_def_shell,	arg_def_shell,
+	"default_smooth",	10,	l_def_smooth,	arg_def_smooth,
 	"echo",			2,	l_echo,		arg_echo,
 	"escape",		2,	l_escape,	arg_escape,
 	"foreground",		1,	l_foreground,	arg_foreground,
