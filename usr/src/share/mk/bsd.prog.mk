@@ -1,4 +1,4 @@
-#	@(#)bsd.prog.mk	5.30 (Berkeley) %G%
+#	@(#)bsd.prog.mk	5.31 (Berkeley) %G%
 
 .if exists(${.CURDIR}/../Makefile.inc)
 .include "${.CURDIR}/../Makefile.inc"
@@ -25,6 +25,7 @@ LIBDES?=	/usr/lib/libdes.a
 LIBL?=		/usr/lib/libl.a
 LIBKDB?=	/usr/lib/libkdb.a
 LIBKRB?=	/usr/lib/libkrb.a
+LIBKVM?=	/usr/lib/libkvm.a
 LIBM?=		/usr/lib/libm.a
 LIBMP?=		/usr/lib/libmp.a
 LIBPC?=		/usr/lib/libpc.a
