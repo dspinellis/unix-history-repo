@@ -39,7 +39,7 @@
  * from: Utah $Hdr: swap_pager.c 1.4 91/04/30$
  * from: @(#)swap_pager.c	7.4 (Berkeley) 5/7/91
  *
- * $Id: swap_pager.c,v 1.20 1994/03/08 21:44:38 davidg Exp $
+ * $Id: swap_pager.c,v 1.21 1994/03/14 21:54:21 davidg Exp $
  */
 
 /*
@@ -1190,8 +1190,17 @@ swap_pager_output(swp, m, count, flags, rtvals)
 
 
 			ntoget = (i == SWB_NPAGES) ? SWB_NPAGES : 1;
+			/*
+			 * this code is alittle conservative, but works
+			 * (the intent of this code is to allocate small chunks
+			 *  for small objects)
+			 */
+			if( (m[j]->offset == 0) && (ntoget*NBPG > object->size)) {
+				ntoget = (object->size + (NBPG-1))/NBPG;
+			}
+				
 retrygetspace:
-			if (ntoget == SWB_NPAGES &&
+			if (ntoget > 1 &&
 				rlist_alloc(&swapmap, ntoget * btodb(NBPG), &blk)) {
 				for (i = 0; i < ntoget; i++)
 					swb[j]->swb_block[i] = blk + btodb(NBPG) * i;
@@ -1343,7 +1352,13 @@ retrygetspace:
 	for(i=0;i<count;i++) {
 		foff = m[i]->offset + paging_offset;
 		off = swap_pager_block_offset(swp, foff);
+		/*
+		 * set the valid bit
+		 */
 		swb[i]->swb_valid |= (1 << off);
+		/*
+		 * and unlock the data structure
+		 */
 		--swb[i]->swb_locked;
 	}
 

@@ -65,7 +65,7 @@
  * any improvements or extensions that they make and grant Carnegie the
  * rights to redistribute these changes.
  *
- * $Id: vm_pageout.c,v 1.15 1994/03/14 21:54:30 davidg Exp $
+ * $Id: vm_pageout.c,v 1.16 1994/03/16 05:54:08 davidg Exp $
  */
 
 /*
@@ -99,7 +99,7 @@ extern int swap_pager_full;
 
 #define MAXREF 32767
 #define DEACT_MAX (DEACT_START * 4)
-#define MINSCAN 512	/* minimum number of pages to scan in active queue */
+#define MINSCAN 256	/* minimum number of pages to scan in active queue */
 			/* set the "clock" hands to be (MINSCAN * 4096) Bytes */
 
 #define LOWATER ((1024*1024)/NBPG)
@@ -634,14 +634,14 @@ rescan1:
 	while (maxscan-- > 0) {
 		vm_page_t	next;
 
-		if( (m->flags & PG_INACTIVE) == 0) {
-			printf("vm_pageout_scan: page not inactive?");
-			goto rescan1;
-		}
-
 		if (queue_end(&vm_page_queue_inactive, (queue_entry_t) m)
 			|| (vm_page_free_count >= vm_page_free_target)) {
 			break;
+		}
+
+		if( (m->flags & PG_INACTIVE) == 0) {
+			printf("vm_pageout_scan: page not inactive?");
+			goto rescan1;
 		}
 
 		next = (vm_page_t) queue_next(&m->pageq);
