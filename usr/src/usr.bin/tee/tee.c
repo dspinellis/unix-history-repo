@@ -1,100 +1,80 @@
-#ifndef lint
-static char *sccsid = "@(#)tee.c	5.4 (Berkeley) %G%";
-#endif
 /*
- * tee-- pipe fitting
+ * Copyright (c) 1988 Regents of the University of California.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms are permitted
+ * provided that the above copyright notice and this paragraph are
+ * duplicated in all such forms and that any documentation,
+ * advertising materials, and other materials related to such
+ * distribution and use acknowledge that the software was developed
+ * by the University of California, Berkeley.  The name of the
+ * University may not be used to endorse or promote products derived
+ * from this software without specific prior written permission.
+ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+ * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
 
-#include <signal.h>
+#ifndef lint
+char copyright[] =
+"@(#) Copyright (c) 1988 Regents of the University of California.\n\
+ All rights reserved.\n";
+#endif /* not lint */
+
+#ifndef lint
+static char sccsid[] = "@(#)tee.c	5.5 (Berkeley) %G%";
+#endif /* not lint */
+
 #include <sys/types.h>
-#include <sys/stat.h>
-#include <errno.h>
+#include <sys/file.h>
+#include <signal.h>
+#include <stdio.h>
 
-#define	BUFSIZ	8192
-int openf[20] = { 1 };
-int n = 1;
-int t = 0;
-int aflag;
-
-char in[BUFSIZ];
-
-char out[BUFSIZ];
-
-extern errno;
-long	lseek();
-
-main(argc,argv)
-char **argv;
+main(argc, argv)
+	int argc;
+	char **argv;
 {
-	int register r,w,p;
-	struct stat buf;
-	while(argc>1&&argv[1][0]=='-') {
-		switch(argv[1][1]) {
+	extern int optind;
+	register int cnt, n, step;
+	int append, ch, *fd;
+	char buf[8192], *malloc();
+	off_t lseek();
+
+	append = 0;
+	while ((ch = getopt(argc, argv, "ai")) != EOF)
+		switch((char)ch) {
 		case 'a':
-			aflag++;
+			append = 1;
 			break;
 		case 'i':
-		case 0:
-			signal(SIGINT, SIG_IGN);
+			(void)signal(SIGINT, SIG_IGN);
+			break;
+		case '?':
+		default:
+			fprintf(stderr, "usage: tee [-ai] [file ...]\n");
+			exit(2);
 		}
-		argv++;
-		argc--;
-	}
-	fstat(1,&buf);
-	t = (buf.st_mode&S_IFMT)==S_IFCHR;
-	if(lseek(1,0L,1)==-1&&errno==ESPIPE)
-		t++;
-	while(argc-->1) {
-		if(aflag) {
-			openf[n] = open(argv[1],1);
-			if(openf[n] < 0)
-				openf[n] = creat(argv[1],0666);
-			lseek(openf[n++],0L,2);
-		} else
-			openf[n++] = creat(argv[1],0666);
-		if(stat(argv[1],&buf)>=0) {
-			if((buf.st_mode&S_IFMT)==S_IFCHR)
-				t++;
-		} else {
-			puts("tee: cannot open ");
-			puts(argv[1]);
-			puts("\n");
-			n--;
-		}
-		argv++;
-	}
-	r = w = 0;
-	for(;;) {
-		for(p=0;p<BUFSIZ;) {
-			if(r>=w) {
-				if(t>0&&p>0) break;
-				w = read(0,in,BUFSIZ);
-				r = 0;
-				if(w<=0) {
-					stash(p);
-					exit(0);
-				}
-			}
-			out[p++] = in[r++];
-		}
-		stash(p);
-	}
-}
+	argv += optind;
+	argc -= optind;
 
-stash(p)
-{
-	int k;
-	int i;
-	int d;
-	d = t ? 16 : p;
-	for(i=0; i<p; i+=d)
-		for(k=0;k<n;k++)
-			write(openf[k], out+i, d<p-i?d:p-i);
-}
-
-puts(s)
-char *s;
-{
-	while(*s)
-		write(2,s++,1);
+	if (!(fd = (int *)malloc((u_int)((argc + 1) * sizeof(int))))) {
+		fprintf(stderr, "tee: out of space.\n");
+		exit(2);
+	}
+	fd[0] = 1;			/* always write to stdout */
+	for (cnt = 1; *argv; ++argv)
+		if ((fd[cnt] = open(*argv, append ? O_WRONLY|O_CREAT :
+		    O_WRONLY|O_CREAT|O_TRUNC, 0600)) < 0) {
+			fprintf(stderr, "tee: %s: ", *argv);
+			perror((char *)NULL);
+		}
+		else {
+			if (append)
+				(void)lseek(fd[cnt], 0L, L_XTND);
+			++cnt;
+		}
+	for (--cnt; (n = read(0, buf, sizeof(buf))) > 0;)
+		for (step = cnt; step >= 0; --step)
+			(void)write(fd[step], buf, n);
+	exit(0);
 }
