@@ -10,7 +10,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ar_subs.c	1.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)ar_subs.c	1.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -571,6 +571,15 @@ append()
 		return;
 
 	/*
+	 * reading the archive may take a long time. If verbose tell the user
+	 */
+	if (vflag) {
+		(void)fputs("pax: Reading archive to position at the end...",
+		     stderr);
+		vfpart = 1;
+	}
+
+	/*
 	 * step through the archive until the format says it is done
 	 */
 	while (next_head(arcn) == 0) {
@@ -582,6 +591,7 @@ append()
 				break;
 			continue;
 		}
+
 		if (uflag) {
 			/*
 			 * see if this is the newest version of this file has
@@ -605,7 +615,6 @@ append()
 		if ((udev && (add_dev(arcn) < 0)) ||
 		    (rd_skip(arcn->skip + arcn->pad) == 1))
 			break;
-
 	}
 
 	/*
@@ -623,6 +632,14 @@ append()
 	if (appnd_start(tlen) < 0)
 		return;
 
+	/*
+	 * tell the user we are done reading.
+	 */
+	if (vflag && vfpart) {
+		(void)fputs("done.\n", stderr);
+		vfpart = 0;
+	}
+       
 	/*
 	 * go to the writing phase to add the new members
 	 */
