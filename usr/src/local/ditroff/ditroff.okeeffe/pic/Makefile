@@ -1,12 +1,12 @@
 #
-#	Makefile	(CWI)	1.3	85/10/24
+#	Makefile	(CWI)	1.4	88/03/23
 #
 CFLAGS= -g
 YFLAGS= -d
 DESTDIR=
 BINDIR=/usr/local
 OFILES = main.o print.o misc.o symtab.o blockgen.o boxgen.o circgen.o \
-	picy.o arcgen.o linegen.o movegen.o textgen.o \
+	arcgen.o linegen.o movegen.o textgen.o \
 	input.o for.o pltroff.o
 OLDOFILES = OLDmain.o print.o misc.o symtab.o blockgen.o boxgen.o circgen.o \
 	arcgen.o linegen.o movegen.o troffgen.o textgen.o \
