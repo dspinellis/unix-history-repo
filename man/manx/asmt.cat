@@ -1,0 +1,198 @@
+
+
+1/15/73 						   AS (I)
+
+
+	   Special variables:		      ilgins
+					      nice
+		.
+		..			 Double operand:
+
+	   Register:			      mov     src,dst
+					      movb	 "
+		r0			      cmp	 "
+		r1			      cmpb	 "
+		r2			      bit	 "
+		r3			      bitb	 "
+		r4			      bic	 "
+		r5			      bicb	 "
+		sp			      bis	 "
+		pc			      bisb	 "
+		fr0			      add	 "
+		fr1			      sub	 "
+		fr2
+		fr3			 Branch:
+		fr4
+		fr5			      br
+					      bne
+	   System calls:		      beq
+					      bge
+		exit			      blt
+		fork			      bgt
+		read			      ble
+		write			      bpl
+		open			      bmi
+		close			      bhi
+		wait			      blos
+		creat			      bvc
+		link			      bvs
+		unlink			      bhis
+		exec			      bec     (= bcc)
+		chdir			      bcc
+		time			      blo
+		makdir			      bcs
+		chmod			      bes     (= bcs)
+		chown
+		break			 Single operand:
+		stat
+		seek			      clr     dst
+		tell			      clrb     "
+		mount			      com      "
+		umount			      comb     "
+		setuid			      inc      "
+		getuid			      incb     "
+		stime			      dec      "
+		quit			      decb     "
+		intr			      neg      "
+		fstat			      negb     "
+		cemt			      adc      "
+		mdate			      adcb     "
+		stty			      sbc      "
+		gtty			      sbcb     "
+
+			      - 7 -
+
+
+
+
+
+1/15/73 						   AS (I)
+
+
+		ror	 "		      ash     src,r
+		rorb	 "		      ashc    src,r
+		rol	 "		      mul     src,r
+		rolb	 "		      div     src,r
+		asr	 "		      xor     r,dst
+		asrb	 "		      sxt     dst
+		asl	 "		      mark    exp
+		aslb	 "		      sob     r,exp
+		jmp	 "
+		swab	 "		 Specials
+		tst	src
+		tstb	src		      .byte
+					      .even
+	   Miscellaneous:		      .if
+					      .endif
+		jsr	r,dst		      .globl
+		rts	r		      .text
+		sys	exp	(= trap)      .data
+					      .bss
+	   Flag-setting:		      .comm
+
+		clc
+		clv
+		clz
+		cln
+		sec
+		sev
+		sez
+		sen
+
+	   Floating point ops:
+
+		cfcc
+		setf
+		setd
+		seti
+		setl
+		clrf	fdst
+		negf	fdst
+		absf	fdst
+		tstf	fsrc
+		movf	fsrc,fr (= ldf)
+		movf	fr,fdst (= stf)
+		movif	src,fr	(= ldcif)
+		movfi	fr,dst	(= stcfi)
+		movof	fsrc,fr (= ldcdf)
+		movfo	fr,fdst (= stcfd)
+		addf	fsrc,fr
+		subf	fsrc,fr
+		mulf	fscr,fr
+		divf	fsrc,fr
+		cmpf	fsrc,fr
+		modf	fsrc,fr
+
+	   11/45 operations
+
+
+			      - 8 -
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
