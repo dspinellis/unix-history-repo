@@ -2,10 +2,12 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)e.t	6.2 (Berkeley) %G%
+.\"	@(#)e.t	6.3 (Berkeley) %G%
 .\"
 .nr H2 1
 .\".ds RH "Trailer protocols
+.br
+.ne 2i
 .NH
 \s+2Trailer protocols\s0
 .PP
@@ -98,4 +100,3 @@ length header was 40 bytes (the size of a
 minimal TCP/IP packet header).  If hardware
 supports larger sized packets, even greater gains
 may be realized.
-'ne 2i

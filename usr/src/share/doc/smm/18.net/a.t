@@ -2,10 +2,12 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)a.t	6.2 (Berkeley) %G%
+.\"	@(#)a.t	6.3 (Berkeley) %G%
 .\"
 .nr H2 1
 .\".ds RH "Gateways and routing
+.br
+.ne 2i
 .NH
 \s+2Gateways and routing issues\s0
 .PP
@@ -188,4 +190,3 @@ Protocol [Xerox82] to maintain up-to-date routing tables in our local
 environment.  Interaction with other existing routing protocols,
 such as the Internet EGP (Exterior Gateway Protocol), has been
 accomplished using a similar process.
-'ne 2i

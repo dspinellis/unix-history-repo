@@ -2,10 +2,12 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)f.t	6.2 (Berkeley) %G%
+.\"	@(#)f.t	6.3 (Berkeley) %G%
 .\"
 .nr H2 1
 .\".ds RH Acknowledgements
+.br
+.ne 2i
 .SH
 \s+2Acknowledgements\s0
 .PP

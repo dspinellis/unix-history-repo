@@ -2,10 +2,12 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)c.t	6.2 (Berkeley) %G%
+.\"	@(#)c.t	6.3 (Berkeley) %G%
 .\"
 .nr H2 1
 .\".ds RH "Buffering and congestion control
+.br
+.ne 2i
 .NH
 \s+2Buffering and congestion control\s0
 .PP
@@ -120,4 +122,3 @@ Broadcast packets are never forwarded due to possible dire
 consequences.  In an early stage of network development, broadcast
 packets were forwarded and a ``routing loop'' resulted in network
 saturation and every host on the network crashing.
-'ne 2i

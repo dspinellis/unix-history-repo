@@ -2,10 +2,12 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)d.t	6.2 (Berkeley) %G%
+.\"	@(#)d.t	6.3 (Berkeley) %G%
 .\"
 .nr H2 1
 .\".ds RH "Out of band data
+.br
+.ne 2i
 .NH
 \s+2Out of band data\s0
 .PP
@@ -42,4 +44,3 @@ segments are received before the first has been passed to the user.
 The PRU_SENDOOB and PRU_RCVOOB
 requests to the \fIpr_usrreq\fP routine are used in sending and
 receiving data.
-'ne 2i
