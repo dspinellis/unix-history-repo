@@ -22,12 +22,13 @@ static char sccsid[] = "@(#)wwinschar.c	3.18 (Berkeley) %G%";
 #include "ww.h"
 #include "tt.h"
 
-wwinschar(w, row, col, c)
+wwinschar(w, row, col, c, m)
 register struct ww *w;
-short c;
+char c, m;
 {
 	register i;
 	int nvis;
+	short x = c | m << WWC_MSHIFT;
 
 	/*
 	 * First, shift the line.
@@ -39,7 +40,7 @@ short c;
 		q = p - 1;
 		for (i = w->ww_b.r - col; --i > 0;)
 			*--p = *--q;
-		q->c_w = c;
+		q->c_w = x;
 	}
 
 	/*
@@ -92,14 +93,19 @@ short c;
 	/*
 	 * Can/Should we use delete character?
 	 */
-	if ((tt.tt_inschar || tt.tt_setinsert) && nvis > (wwncol - col) / 2) {
+	if ((tt.tt_inschar || tt.tt_insspace) && nvis > (wwncol - col) / 2) {
 		register union ww_char *p, *q;
 
-		xxinschar(row, col, c & wwavailmodes << WWC_MSHIFT);
+		if (tt.tt_inschar)
+			xxinschar(row, col, c, m);
+		else {
+			xxinsspace(row, col);
+			x = ' ';
+		}
 		p = &wwos[row][wwncol];
 		q = p - 1;
 		for (i = wwncol - col; --i > 0;)
 			*--p = *--q;
-		q->c_w = tt.tt_setinsert ? c : ' ';
+		q->c_w = x;
 	}
 }
