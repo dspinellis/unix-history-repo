@@ -13,7 +13,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)startslip.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)startslip.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -266,10 +266,12 @@ restart:
 		}
 	        if (bcmp(&buf[1], "ogin:", 5) == 0) {
 	                fprintf(wfd, "%s\r", argv[1]);
+			printd("Sent login: %s\n", argv[1]);
 	                continue;
 	        }
 	        if (bcmp(&buf[1], "assword:", 8) == 0) {
 	                fprintf(wfd, "%s\r", argv[2]);
+			printd("Sent password: %s\n", argv[2]);
 	                break;
 	        }
 	}
@@ -330,13 +332,12 @@ getline(buf, size, fd)
 			return (0);
 	        if ((ret = read(fd, &buf[i], 1)) == 1) {
 	                buf[i] &= 0177;
-	                if (buf[i] == '\r')
+	                if (buf[i] == '\r' || buf[i] == '\0')
 	                        buf[i] = '\n';
 	                if (buf[i] != '\n' && buf[i] != ':')
 	                        continue;
 	                buf[i + 1] = '\0';
-			if (debug)
-				fprintf(stderr, "Got %d: \"%s\"\n", i + 1, buf);
+			printd("Got %d: \"%s\"\n", i + 1, buf);
 	                return (i+1);
 	        }
 		if (ret <= 0) {
