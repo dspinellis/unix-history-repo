@@ -53,9 +53,9 @@ ALLH =	spint.h termout.ext video.h
 
 ALLC = spintc.c system.c termout.c
 
-ALLASM =	spintasm.asm
+ALLASM =	spintasm.asm support.asm
 
-ALLO = spintasm$O spintc$O system$O termout$O
+ALLO = spintasm$O spintc$O support$O system$O termout$O
 
 ALLPRINT =	${ALLH} ${ALLASM} ${ALLC}
 
