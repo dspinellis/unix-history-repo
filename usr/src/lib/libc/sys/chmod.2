@@ -1,0 +1,70 @@
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)chmod.2	4.1 (Berkeley) %G%
+.\"
+.TH CHMOD 2 
+.UC 4
+.SH NAME
+chmod \- change mode of file
+.SH SYNOPSIS
+.nf
+.B chmod(name, mode)
+.B char *name;
+.fi
+.SH DESCRIPTION
+The file whose name
+is given as the null-terminated string pointed to by
+.I name
+has its mode changed to
+.IR mode .
+Modes are constructed by
+.IR or ing
+together some
+combination of the following:
+.PP
+.RS
+ 04000 set user ID on execution
+ 02000 set group ID on execution
+ 01000 save text image after execution
+ 00400 read by owner
+ 00200 write by owner
+ 00100 execute (search on directory) by owner
+ 00070 read, write, execute (search) by group
+ 00007 read, write, execute (search) by others
+.RE
+.PP
+If an executable file is set up for sharing (this is the default)
+then mode 1000 prevents the system from
+abandoning the swap-space image of the program-text portion
+of the file when its last user
+terminates.
+Ability to set this bit is restricted to the super-user
+since swap space is consumed
+by the images.
+See
+.IR sticky (8).
+.PP
+Only the owner of a file (or the super-user) may change the mode.
+Only the super-user can set the 1000 mode.
+.PP
+On some systems,
+writing or changing the owner of a file
+turns off the set-user-id bit.
+This makes the system somewhat more secure
+by protecting set-user-id files
+from remaining set-user-id if they are modified,
+at the expense of a degree of compatibility.
+.SH "SEE ALSO"
+chmod(1)
+.SH DIAGNOSTIC
+Zero is returned if the mode is changed;
+\-1 is returned if
+.I name
+cannot be found or if the current user
+is neither the owner of the file nor the super-user.
+.SH "ASSEMBLER (PDP-11)"
+(chmod = 15.)
+.br
+.B sys chmod; name; mode
