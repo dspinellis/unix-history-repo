@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)date.1	8.2 (Berkeley) %G%
+.\"     @(#)date.1	8.3 (Berkeley) %G%
 .\"
 .Dd 
 .Dt DATE 1
@@ -78,9 +78,11 @@ The format string may contain any of the conversion specifications described
 in the 
 .Xr strftime 3
 manual page, as well as any arbitrary text.
+A <newline> character is always output after the characters specified by
+the format string.
 The format string for the default display is:
 .Bd -literal -offset indent
-``%a %b %e %H:%M:%S %Z n''.
+``%a %b %e %H:%M:%S %Z %Y''.
 .Ed
 .Pp
 If an operand does not have a leading plus sign, it is interpreted as
@@ -110,7 +112,7 @@ and years are handled automatically.
 .Sh EXAMPLES
 The command:
 .Bd -literal -offset indent
-date ``+DATE: %m/%d/%y%nTIME: %H:%M:n''
+date ``+DATE: %m/%d/%y%nTIME: %H:%M:%S''
 .Ed
 .Pp
 will display:
