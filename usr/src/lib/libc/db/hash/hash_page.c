@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)hash_page.c	5.20 (Berkeley) %G%";
+static char sccsid[] = "@(#)hash_page.c	5.21 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -493,7 +493,7 @@ __get_page(p, bucket, is_bucket, is_disk, is_bitmap)
 		page = BUCKET_TO_PAGE(bucket);
 	else
 		page = OADDR_TO_PAGE(bucket);
-	if ((lseek(fd, page << hashp->BSHIFT, SEEK_SET) == -1) ||
+	if ((lseek(fd, (off_t)page << hashp->BSHIFT, SEEK_SET) == -1) ||
 	    ((rsize = read(fd, p, size)) == -1))
 		return (-1);
 	bp = (u_short *)p;
@@ -563,7 +563,7 @@ __put_page(p, bucket, is_bucket, is_bitmap)
 		page = BUCKET_TO_PAGE(bucket);
 	else
 		page = OADDR_TO_PAGE(bucket);
-	if ((lseek(fd, page << hashp->BSHIFT, SEEK_SET) == -1) ||
+	if ((lseek(fd, (off_t)page << hashp->BSHIFT, SEEK_SET) == -1) ||
 	    ((wsize = write(fd, p, size)) == -1))
 		/* Errno is set */
 		return (-1);
