@@ -1,7 +1,7 @@
 /*
  * Terminal initialization routines.
  *
- * %G% (Berkeley) @(#)setterm.c	1.14
+ * %G% (Berkeley) @(#)setterm.c	1.15
  */
 
 # include	"curses.ext"
@@ -59,6 +59,7 @@ reg char	*type; {
 
 	reg int		unknown;
 	static char	genbuf[1024];
+	struct winsize win;
 
 # ifdef DEBUG
 	fprintf(outf, "SETTERM(\"%s\")\n", type);
@@ -74,6 +75,13 @@ reg char	*type; {
 # ifdef DEBUG
 	fprintf(outf, "SETTERM: tty = %s\n", type);
 # endif
+	if (ioctl(_tty_ch, TIOCGWINSZ, &win) >= 0) {
+		if (LINES == 0)
+			LINES = win.ws_row;
+		if (COLS == 0)
+			COLS = win.ws_col;
+	}
+
 	if (LINES == 0)
 		LINES = tgetnum("li");
 	if (LINES <= 5)
