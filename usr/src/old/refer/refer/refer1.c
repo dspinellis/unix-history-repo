@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)refer1.c	4.1 (Berkeley) %G%";
+static char *sccsid = "@(#)refer1.c	4.2 (Berkeley) %G%";
 #endif
 
 #include <signal.h>
@@ -106,7 +106,7 @@ char *argv[];
 			argc--; 
 			argv++;
 			if (in == NULL) {
-				err("Can't read %s", (void) Ifile);
+				err("Can't read %s", Ifile);
 				continue;
 			}
 		}

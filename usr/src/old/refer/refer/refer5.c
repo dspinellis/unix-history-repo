@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)refer5.c	4.4 (Berkeley) %G%";
+static char *sccsid = "@(#)refer5.c	4.5 (Berkeley) %G%";
 #endif
 
 #include "refer..c"
@@ -132,7 +132,7 @@ char *flds[], *nstline, *endline;
 				fhide = fopen(hidenam, "w");
 				if (fhide == NULL)
 					err("Can't get scratch file %s",
-						(void) hidenam);
+						hidenam);
 				fo = fhide;
 			}
 		}
