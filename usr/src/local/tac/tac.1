@@ -1,4 +1,4 @@
-.\"	@(#)tac.1	1.2 %G%
+.\"	@(#)tac.1	1.3 %G%
 .\"
 .TH TAC 1 ""
 .SH NAME
@@ -40,7 +40,7 @@ file before it outputs anything, so for large input it is slow.
 .RS
 tac '-\e
 .br
-From\ ' /usr/spool/mail/$USER
+From\ ' /var/mail/$USER
 .RE
 prints out one's mail messages, most recent first.
 .PP
@@ -50,7 +50,7 @@ tac file
 prints the file in reverse, line by line, and:
 .PP
 .RS
-tac /usr/adm/messages | egrep 'hp.*hard'
+tac /var/log/messages | egrep 'hp.*hard'
 .RE
 prints out the hard errors on MASSBUS disk drives, most recent first.
 .SH SEE ALSO
