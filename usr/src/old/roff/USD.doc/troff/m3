@@ -1,4 +1,4 @@
-.\"	@(#)m3	6.1 (Berkeley) %G%
+.\"	@(#)m3	6.2 (Berkeley) %G%
 .\"
 .tr |
 .rm mx
@@ -278,13 +278,13 @@ l2|ls2||l2|ls2.
 \fB\*X\eh\'\fIN\|\^\fB\'\fR	Move distance \fIN\fR
 .TC
 _2|_2_2||l2|ls2.
-x	x	x	\fB\*X\e\fR(space)	Unpaddable space-size space
+			\fB\*X\e\fR(space)	Unpaddable space-size space
 .TC
 l2|l2|l2||l2|ls2.
 \fB\*X\eu\fR	\(12 em up	\(12 line up	\fB\*X\e0\fR	Digit-size space
 .TC
 l2|l2|l2||_2|_2_2.
-\fB\*X\ed\fR	\(12 em down	\(12 line down	x	x	x
+\fB\*X\ed\fR	\(12 em down	\(12 line down			
 .TC
 l2|l2|l2||l2|l2|l2.
 \fB\*X\er\fR	1 em up	1 line up	\fB\*X\e\||\fR	1\(sl6 em space	ignored
