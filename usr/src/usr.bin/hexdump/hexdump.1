@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)hexdump.1	5.5 (Berkeley) %G%
+.\"	@(#)hexdump.1	5.6 (Berkeley) %G%
 .\"
 .TH HEXDUMP 1 ""
 .UC 7
@@ -55,11 +55,6 @@ One-byte octal display.
 Display the input offset in hexadecimal, followed by sixteen
 space-separated, three column, zero-filled, bytes of input data,
 in octal, per line.
-It is equivalent to specifying the following format strings:
-.ti +5
-"%07.7_Ax\en"
-.ti +5
-"%07.7_ax  " 16/1 "%03o " "\en"
 .TP
 -c
 One-byte character display.
@@ -67,11 +62,6 @@ One-byte character display.
 Display the input offset in hexadecimal, followed by sixteen
 space-separated, three column, space-filled, characters of input
 data per line.
-It is equivalent to specifying the following format strings:
-.ti +5
-"%07.7_Ax\en"
-.ti +5
-"%07.7_ax  " 16/1 "%3_c " "\en"
 .TP
 -d
 Two-byte decimal display.
@@ -79,11 +69,6 @@ Two-byte decimal display.
 Display the input offset in hexadecimal, followed by eight
 space-separated, five column, zero-filled, two-byte units
 of input data, in unsigned decimal, per line.
-It is equivalent to specifying the following format strings:
-.ti +5
-"%07.7_Ax\en"
-.ti +5
-"%07.7_ax  " 8/2 "%05u " "\en"
 .TP
 -e
 Specify a format string to be used for displaying data.
@@ -104,11 +89,6 @@ Two-byte octal display.
 Display the input offset in hexadecimal, followed by eight
 space-separated, six column, zero-filled, two byte quantities of
 input data, in octal, per line.
-It is equivalent to specifying the following format strings:
-.ti +5
-"%07.7_Ax\en"
-.ti +5
-"%07.7_ax  " 8/2 "%06o " "\en"
 .TP
 -s
 Skip
@@ -145,11 +125,6 @@ Two-byte hexadecimal display.
 Display the input offset in hexadecimal, followed by eight, space
 separated, four column, zero-filled, two-byte quantities of input
 data, in hexadecimal, per line.
-It is equivalent to specifying the following format strings:
-.ti +5
-"%07.7_Ax\en"
-.ti +5
-"%07.7_ax  " 8/2 "%04x " "\en"
 .PP
 For each input file,
 .I hexdump
@@ -307,9 +282,19 @@ exits 0 on success and >0 if an error occurred.
 .SH EXAMPLES
 Display the input in perusal format:
 .sp
-.ti +5
+.RS
 "%06.6_ao "  12/1 "%3_u "
-.ti +5
+.br
 "\et\et" "%_p "
-.ti +5
+.br
 "\en"
+.RE
+.PP
+Implement the \-x option:
+.sp
+.RS
+"%07.7_Ax\en"
+.br
+"%07.7_ax  " 8/2 "%04x " "\en"
+.RE
+
