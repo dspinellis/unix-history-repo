@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sys.c	7.1 (Berkeley) %G%
+ *	@(#)sys.c	7.2 (Berkeley) %G%
  */
 
 #include "saio.h"
@@ -33,7 +33,7 @@ openi(n, io)
 	io->i_ma = io->i_buf;
 	cc = devread(io);
 	dp = (struct dinode *)io->i_buf;
-	io->i_ino.i_din = dp[itoo(&io->i_fs, n)];
+	io->i_ino = dp[itoo(&io->i_fs, n)];
 	return (cc);
 }
 
@@ -86,7 +86,7 @@ sbmap(io, bn)
 	register struct iob *io;
 	daddr_t bn;
 {
-	register struct inode *ip;
+	register struct dinode *ip;
 	int i, j, sh;
 	daddr_t nb, *bap;
 
@@ -100,7 +100,7 @@ sbmap(io, bn)
 	 * blocks 0..NDADDR are direct blocks
 	 */
 	if(bn < NDADDR) {
-		nb = ip->i_db[bn];
+		nb = ip->di_db[bn];
 		return (nb);
 	}
 
@@ -124,7 +124,7 @@ sbmap(io, bn)
 	/*
 	 * fetch the first indirect block address from the inode
 	 */
-	nb = ip->i_ib[NIADDR - j];
+	nb = ip->di_ib[NIADDR - j];
 	if (nb == 0) {
 		printf("bn void %D\n",bn);
 		return ((daddr_t)0);
@@ -164,19 +164,20 @@ dlook(s, io)
 	register struct iob *io;
 {
 	register struct direct *dp;
-	register struct inode *ip;
+	struct direct *readdir();
+	register struct dinode *ip;
 	struct dirstuff dirp;
 	int len;
 
 	if (s == NULL || *s == '\0')
 		return (0);
 	ip = &io->i_ino;
-	if ((ip->i_mode&IFMT) != IFDIR) {
+	if ((ip->di_mode&IFMT) != IFDIR) {
 		printf("not a directory\n");
 		printf("%s: not a directory\n", s);
 		return (0);
 	}
-	if (ip->i_size == 0) {
+	if (ip->di_size == 0) {
 		printf("%s: zero length directory\n", s);
 		return (0);
 	}
@@ -206,7 +207,7 @@ readdir(dirp)
 
 	io = dirp->io;
 	for(;;) {
-		if (dirp->loc >= io->i_ino.i_size)
+		if (dirp->loc >= io->i_ino.di_size)
 			return (NULL);
 		off = blkoff(&io->i_fs, dirp->loc);
 		if (off == 0) {
@@ -216,7 +217,7 @@ readdir(dirp)
 				return NULL;
 			io->i_bn = fsbtodb(&io->i_fs, d) + io->i_boff;
 			io->i_ma = io->i_buf;
-			io->i_cc = blksize(&io->i_fs, &io->i_ino, lbn);
+			io->i_cc = dblksize(&io->i_fs, &io->i_ino, lbn);
 			if (devread(io) < 0) {
 				errno = io->i_error;
 				printf("bn %D: directory read error\n",
@@ -277,14 +278,14 @@ getc(fdesc)
 	p = io->i_ma;
 	if (io->i_cc <= 0) {
 		if ((io->i_flgs & F_FILE) != 0) {
-			diff = io->i_ino.i_size - io->i_offset;
+			diff = io->i_ino.di_size - io->i_offset;
 			if (diff <= 0)
 				return (-1);
 			fs = &io->i_fs;
 			lbn = lblkno(fs, io->i_offset);
 			io->i_bn = fsbtodb(fs, sbmap(io, lbn)) + io->i_boff;
 			off = blkoff(fs, io->i_offset);
-			size = blksize(fs, &io->i_ino, lbn);
+			size = dblksize(fs, &io->i_ino, lbn);
 		} else {
 			io->i_bn = io->i_offset / DEV_BSIZE;
 			off = 0;
@@ -297,7 +298,7 @@ getc(fdesc)
 			return (-1);
 		}
 		if ((io->i_flgs & F_FILE) != 0) {
-			if (io->i_offset - off + size >= io->i_ino.i_size)
+			if (io->i_offset - off + size >= io->i_ino.di_size)
 				io->i_cc = diff + off;
 			io->i_cc -= off;
 		}
@@ -351,8 +352,8 @@ read(fdesc, buf, count)
 		return (i);
 	}
 #endif SMALL
-	if (file->i_offset+count > file->i_ino.i_size)
-		count = file->i_ino.i_size - file->i_offset;
+	if (file->i_offset+count > file->i_ino.di_size)
+		count = file->i_ino.di_size - file->i_offset;
 	if ((i = count) <= 0)
 		return (0);
 	/*
@@ -363,7 +364,7 @@ read(fdesc, buf, count)
 	while (i) {
 		off = blkoff(fs, file->i_offset);
 		lbn = lblkno(fs, file->i_offset);
-		size = blksize(fs, &file->i_ino, lbn);
+		size = dblksize(fs, &file->i_ino, lbn);
 		if (off == 0 && size <= i) {
 			file->i_bn = fsbtodb(fs, sbmap(file, lbn)) +
 			    file->i_boff;
@@ -461,7 +462,7 @@ gotfile:
 			;
 	if (*cp != ':') {
 		/* default bootstrap unit and device */
-		file->i_ino.i_dev = bootdev;
+		file->i_dev = bootdev;
 		cp = str;
 	} else {
 # define isdigit(n)	((n>='0') && (n<='9'))
@@ -505,7 +506,7 @@ gotfile:
 			errno = EOFFSET;
 			return (-1);
 		}
-		opendev = file->i_ino.i_dev = makedev(dp-devsw, i);
+		opendev = file->i_dev = makedev(dp-devsw, i);
 	}
 	file->i_boff = 0;
 	devopen(file);
@@ -535,7 +536,7 @@ gotfile:
 		errno = ENXIO;
 		return (-1);
 	}
-	file->i_ino.i_dev = dp-devsw;
+	file->i_dev = dp-devsw;
 	file->i_unit = *cp++ - '0';
 	if (*cp >= '0' && *cp <= '9')
 		file->i_unit = file->i_unit * 10 + *cp++ - '0';
@@ -738,10 +739,10 @@ fstat(fdesc, sb)
 		return (-1);
 	}
 	/* only important stuff */
-	sb->st_mode = io->i_ino.i_mode;
-	sb->st_uid = io->i_ino.i_uid;
-	sb->st_gid = io->i_ino.i_gid;
-	sb->st_size = io->i_ino.i_size;
+	sb->st_mode = io->i_ino.di_mode;
+	sb->st_uid = io->i_ino.di_uid;
+	sb->st_gid = io->i_ino.di_gid;
+	sb->st_size = io->i_ino.di_size;
 	return (0);
 }
 
