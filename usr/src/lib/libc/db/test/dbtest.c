@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)dbtest.c	8.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)dbtest.c	8.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -28,7 +28,6 @@ static char sccsid[] = "@(#)dbtest.c	8.6 (Berkeley) %G%";
 #include <unistd.h>
 
 #include <db.h>
-#include "../PORT/include/compat.h"
 
 enum S { COMMAND, COMPARE, GET, PUT, REMOVE, SEQ, SEQFLAG, KEY, DATA };
 
