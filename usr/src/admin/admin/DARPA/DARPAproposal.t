@@ -1,8 +1,17 @@
-.\"	@(#)DARPAproposal.t	1.1	87/01/29
+.\"	@(#)DARPAproposal.t	1.2	87/01/30
 .rm CM
+.sp 2
 .ce 1
 \fB\s+2Proposal for Continued UNIX Research at Berkeley\s-2\fP
-.sp
+.sp 2
+.nf
+.ce 4
+Marshall Kirk McKusick
+Michael J Karels
+Susan L. Graham
+Domenico Ferrari
+.fi
+.sp 2
 .ce 1
 \fISummary\fP
 .PP
@@ -20,6 +29,7 @@ advantage of current technology and to provide new capabilities
 such as mapped files and shared memory.
 Finally, there is a need to provide more internal flexibility in a
 way similar to the System V Streams paradigm.
+.sp 2
 .NH
 UNIX Research at Berkeley
 .PP
@@ -167,9 +177,9 @@ Jack A. Test and Herb Jacobs (Alliant),
 Steve Gaede (NBI),
 Jim Lipkis (New York Univ),
 Stephen J. Hartley (Univ of Vermont),
-Hermann Haertig (Univ in Germany),
-Alan Sexton (Univ in Germany),
-Jukka Virtanen (Univ in Finland)
+Hermann Haertig and Alan Sexton (European Computer-Industry
+Research Center, Germany),
+Jukka Virtanen (Helsinki Univ of Technology, Finland)
 .FE
 Within the last few months, the specification of the interface has been
 agreed on.
