@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)tempnam.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)tempnam.c	5.2 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -30,24 +30,26 @@ tempnam(dir, pfx)
 		pfx = "tmp.";
 
 	if (f = getenv("TMPDIR")) {
-		(void)snprintf(name, MAXPATHLEN, "%s/%sXXXXXX", f, pfx);
+		(void)snprintf(name, MAXPATHLEN, "%s%s%sXXXXXX", f,
+		    *(f + strlen(f) - 1) == '/'? "": "/", pfx);
 		if (f = mktemp(name))
 			return(f);
 	}
 
 	if (f = (char *)dir) {
-		(void)snprintf(name, MAXPATHLEN, "%s/%sXXXXXX", f, pfx);
+		(void)snprintf(name, MAXPATHLEN, "%s%s%sXXXXXX", f,
+		    *(f + strlen(f) - 1) == '/'? "": "/", pfx);
 		if (f = mktemp(name))
 			return(f);
 	}
 
 	f = P_tmpdir;
-	(void)snprintf(name, MAXPATHLEN, "%s/%sXXXXXX", f, pfx);
+	(void)snprintf(name, MAXPATHLEN, "%s%sXXXXXX", f, pfx);
 	if (f = mktemp(name))
 		return(f);
 
 	f = _PATH_TMP;
-	(void)snprintf(name, MAXPATHLEN, "%s/%sXXXXXX", f, pfx);
+	(void)snprintf(name, MAXPATHLEN, "%s%sXXXXXX", f, pfx);
 	if (f = mktemp(name))
 		return(f);
 
