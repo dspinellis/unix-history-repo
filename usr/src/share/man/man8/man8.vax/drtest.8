@@ -1,16 +1,18 @@
-.\" Copyright (c) 1983 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1983, 1991 Regents of the University of California.
+.\" All rights reserved.
 .\"
-.\"	@(#)drtest.8	6.2 (Berkeley) %G%
+.\" %sccs.include.redist.man%
 .\"
-.TH DRTEST 8 ""
-.UC 5
-.SH NAME
-drtest \- standalone disk test program
-.SH DESCRIPTION
-.PP
-.I Drtest
+.\"     @(#)drtest.8	6.3 (Berkeley) %G%
+.\"
+.Dd 
+.Dt DRTEST 8
+.Os BSD 4.2
+.Sh NAME
+.Nm drtest
+.Nd standalone disk test program
+.Sh DESCRIPTION
+.Nm Drtest
 is a standalone program used to read a disk 
 track by track. 
 It was primarily intended as a test program 
@@ -18,57 +20,69 @@ for new standalone drivers, but has shown
 useful in other contexts as well, such as 
 verifying disks and running speed
 tests. For example, when a disk has been formatted
-(by format(8)), you can check that
+(by
+.Xr format 8 ) ,
+you can check that
 hard errors has been taken care of by running 
-.IR drtest .
+.Nm drtest .
 No hard errors should be found, but in many cases 
-quite a few soft ECC errors will be reported.
-.PP
+quite a few soft
+.Tn ECC
+errors will be reported.
+.Pp
 While
-.I drtest
+.Nm drtest
 is running, the cylinder number is printed on
 the console for every 10th cylinder read.
-.SH EXAMPLE
+.Sh EXAMPLE
 A sample run of 
-.I drtest
+.Xr drtest
 is shown below.  
 In this example (using a 750), 
-.I drtest
+.Nm drtest
 is loaded from the root file system;
 usually it
 will be loaded from the machine's
 console storage device.  Boldface means user input.
 As usual, ``#'' and ``@'' may be used to edit input.
-.nf
-.in +5
-.sp 1
->>>\fBB/3\fR
-%%
-loading hk(0,0)boot 
-Boot
-: \fBhk(0,0)drtest\fR
-Test program for stand-alone up and hp driver
-.sp 1
-Debugging level (1=bse, 2=ecc, 3=bse+ecc)?
-Enter disk name [type(adapter,unit), e.g. hp(1,3)]? \fBhp(0,0)\fR
-Device data: #cylinders=1024, #tracks=16, #sectors=32
-Testing hp(0,0), chunk size is 16384 bytes.
-\fI(chunk size is the number of bytes read per disk access)\fP
-Start ...Make sure hp(0,0) is online
- ...
-\fI(errors are reported as they occur)\fP
- ...
-\fI(...program restarts to allow checking other disks)\fP
-\fI(...to abort halt machine with ^P)\fP
-.in -5
-.fi
-.sp 1
-.SH DIAGNOSTICS
+.Pp
+.Bd -unfilled -offset indent -compact
+.Li \&>>> Ns Sy B/3
+.Li \&%%
+.Li \&loading hk(0,0)boot 
+.Li \&Boot
+.Li \&: Sy \&hk(0,0)drtest
+.Li Test program for stand-alone up and hp driver
+
+.Li Debugging level (1=bse, 2=ecc, 3=bse+ecc)?
+.Li Enter disk name [type(adapter,unit),\ e.g.\ hp(1,3)]? Sy hp(0,0)
+.Li Device data: #cylinders=1024, #tracks=16, #sectors=32
+.Li Testing hp(0,0), chunk size is 16384 bytes.
+.Em (chunk\ size\ is\ the\ number\ of\ bytes read per disk access)
+.Li Start ...Make sure hp(0,0) is online
+.Li \ ...
+.Em (errors are reported as they occur)
+.Li \ ...
+.Em (...program restarts to allow checking other disks)
+.Em (...to abort halt machine with \&^P)
+.Ed
+.Sh DIAGNOSTICS
 The diagnostics are intended to be self explanatory. Note, however, that 
 the device number
-in the diagnostic messages is identified as  \fItypeX\fR instead of 
-\fItype(a,u)\fR where \fIX\fR = a*8+u, e.g., hp(1,3) becomes hp11.
-.SH SEE ALSO
-format(8V), bad144(8)
-.SH AUTHOR
+in the diagnostic messages is identified as
+.Em typeX
+instead of 
+.Em type(a,u)
+where
+.Ar X
+\&= a*8+u, e.g., hp(1,3) becomes hp11.
+.Sh SEE ALSO
+.Xr format 8 ,
+.Xr bad144 8
+.Sh AUTHOR
 Helge Skrivervik
+.Sh HISTORY
+The
+.Nm
+command appeared in
+.Bx 4.2 .

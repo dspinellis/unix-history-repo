@@ -1,39 +1,46 @@
-.\"	@(#)update.8	6.2 (Berkeley) %G%
+.\"	@(#)update.8	6.2 (Berkeley) 6/24/90
 .\"
-.TH UPDATE 8 ""
-.AT 3
-.SH NAME
-update \- periodically update the super block
-.SH SYNOPSIS
-.B update
-.SH DESCRIPTION
-.I Update
-is a program that executes
-the
-.IR sync (2)
-primitive every 30 seconds.
-This insures that the file system
-is fairly up to date in case of a crash.
-This command should not be executed directly,
-but should be executed out of the
-initialization shell command file.
-.SH "SEE ALSO"
-sync(2), sync(8), init(8), rc(8)
-.SH BUGS
-With
-.I update
-running,
-if the CPU is
-halted just as
-the
-.I sync
-is executed,
-a file system can be damaged.
-This is partially due to DEC hardware that
-writes zeros when NPR requests fail.
-A fix would be to have
-.IR sync (8)
-temporarily increment the system time by at
-least 30 seconds to trigger the execution of
-.I update.
-This would give 30 seconds grace to halt the CPU.
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)update.8	6.3 (Berkeley) %G%
+.\"
+.Dd 
+.Dt UPDATE 8
+.Os ATT 7th
+.Sh NAME
+.Nm update
+.Nd flush internal filesystem caches to disk frequently
+.Sh SYNOPSIS
+.Nm update
+.Sh DESCRIPTION
+The
+.Nm update
+command helps protect the integrity of disk volumes
+by flushing
+voliatile cached filesystem data
+to disk at thirty second intervals.
+.Nm Update
+uses the
+.Xr sync 2
+function call to do the task.
+.Pp
+.Nm Update
+is commonly invoked at startup time by
+.Xr rc 8
+when the system goes multi-user.
+.Sh SEE ALSO
+.Xr sync 2 ,
+.Xr fsck 8 ,
+.Xr init 8 ,
+.Xr rc 8 ,
+.Xr sync 8
+.Sh BUGS
+It is possible on some systems, that a
+.Nm sync
+occuring simultaneously with a crash may cause
+file system damage. See
+.Xr fsck 8 .
+.Sh HISTORY
+An
+.Nm
+command appeared in Version 6 AT&T UNIX.

@@ -1,74 +1,84 @@
 .\" Copyright (c) 1987 Sun Microsystems
-.\" Copyright (c) 1990 The Regents of the University of California.
+.\" Copyright (c) 1990, 1991 The Regents of the University of California.
 .\" All rights reserved.
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)portmap.8	5.2 (Berkeley) %G%
+.\"     @(#)portmap.8	5.3 (Berkeley) %G%
 .\"
-.TH PORTMAP 8 ""
-.UC 6
-.SH NAME
-portmap \- DARPA port to RPC program number mapper
-.SH SYNOPSIS
-.B portmap
-[
-.B \-d
-]
-.SH DESCRIPTION
-.IX  "portmap command"  ""  "\fLportmap\fP \(em DARPA to RPC mapper"
-.IX  DARPA "to RPC mapper \(em \fLportmap\fP"
-.B Portmap
+.Dd 
+.Dt PORTMAP 8
+.Os BSD 4.3
+.Sh NAME
+.Nm portmap
+.Nd
+.Tn DARPA
+port to
+.Tn RPC
+program number mapper
+.Sh SYNOPSIS
+.Nm portmap
+.Op Fl d
+.Sh DESCRIPTION
+.Nm Portmap
 is a server that converts
-.SM RPC
+.Tn RPC
 program numbers into
-.SM DARPA
+.Tn DARPA
 protocol port numbers.
 It must be running in order to make
-.SM RPC
+.Tn RPC
 calls.
-.PP
+.Pp
 When an
-.SM RPC
+.Tn RPC
 server is started, it will tell
-.B portmap
+.Nm portmap
 what port number it is listening to, and what
-.SM RPC
+.Tn RPC
 program numbers it is prepared to serve.
 When a client wishes to make an
-.SM RPC
+.Tn RPC
 call to a given program number,
 it will first contact
-.B portmap
+.Nm portmap
 on the server machine to determine
 the port number where
-.SM RPC
+.Tn RPC
 packets should be sent.
-.PP
-.B Portmap
+.Pp
+.Nm Portmap
 must be started before any
-.SM RPC
+.Tn RPC
 servers are invoked.
-.PP
+.Pp
 Normally
-.B portmap
+.Nm portmap
 forks and dissociates itself from the terminal
 like any other daemon.
-.B Portmap
+.Nm Portmap
 then logs errors using
-.IR syslog (3).
-The
-.B \-d
-(debug) option prevents
-.B portmap
+.Xr syslog 3 .
+.Pp
+Option available:
+.Bl -tag -width Ds
+.It Fl d
+(debug) prevents
+.Nm portmap
 from running as a daemon,
 and causes errors and debugging information
 to be printed to the standard error output.
-.SH "SEE ALSO"
-inetd.conf(5),
-rpcinfo(8),
-inetd(8)
-.SH BUGS
+.El
+.Sh SEE ALSO
+.Xr inetd.conf 5 ,
+.Xr rpcinfo 8 ,
+.Xr inetd 8
+.Sh BUGS
 If
-.B portmap
+.Nm portmap
 crashes, all servers must be restarted.
+.Sh HISTORY
+The
+.Nm
+command appeared in
+.Bx 4.3
