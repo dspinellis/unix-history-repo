@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_vfsops.c	8.21 (Berkeley) %G%
+ *	@(#)ffs_vfsops.c	8.22 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -86,6 +86,7 @@ ffs_mountroot()
 		return (ENODEV);
 	mp = malloc((u_long)sizeof(struct mount), M_MOUNT, M_WAITOK);
 	bzero((char *)mp, (u_long)sizeof(struct mount));
+	mp->mnt_vfc = vfsp;
 	mp->mnt_op = vfsp->vfc_vfsops;
 	mp->mnt_flag = MNT_RDONLY;
 	if (error = ffs_mountfs(rootvp, mp, p)) {
@@ -99,7 +100,6 @@ ffs_mountroot()
 	}
 	TAILQ_INSERT_TAIL(&mountlist, mp, mnt_list);
 	mp->mnt_vnodecovered = NULLVP;
-	mp->mnt_vfc = vfsp;
 	vfsp->vfc_refcount++;
 	mp->mnt_stat.f_type = vfsp->vfc_typenum;
 	mp->mnt_flag |= (vfsp->vfc_flags & MNT_VISFLAGMASK) | MNT_ROOTFS;
