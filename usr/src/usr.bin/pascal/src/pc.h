@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-/* static	char sccsid[] = "@(#)pc.h 1.1 %G%"; */
+/* static	char sccsid[] = "@(#)pc.h 1.2 %G%"; */
 
     /*
      *		random constants for pc
@@ -64,8 +64,6 @@ struct rtlocals {
      *	    PREFIXFORMAT	used to print made up names with prefixes.
      *	    LABELPREFIX		with getlab() makes up label names.
      *	    LLABELPREFIX	with getlab() makes up sdb labels.
-     *	    PLABELPREFIX	with atol(symbol) makes up global pascal labels.
-     *	    GLABELPREFIX	with getlab() makes up nested label names
      *	a typical use might be to print out a name with a preceeding underscore
      *	with putprintf( EXTFORMAT , 0 , name );
      */
@@ -74,8 +72,6 @@ struct rtlocals {
 #define	PREFIXFORMAT	"%s%d"
 #define	LABELPREFIX	"L"
 #define	LLABELPREFIX	"LL"
-#define	PLABELPREFIX	"P"
-#define	GLABELPREFIX	"G"
 
     /*
      *	the name of the statement counter
