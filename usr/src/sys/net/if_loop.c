@@ -1,4 +1,4 @@
-/*	if_loop.c	4.10	82/04/13	*/
+/*	if_loop.c	4.11	82/04/16	*/
 
 /*
  * Loopback interface driver for protocol testing and timing.
@@ -15,6 +15,7 @@
 #include "../net/ip_var.h"
 #include "../h/mtpr.h"
 #include "../net/route.h"
+#include <errno.h>
 
 #define	LONET	127
 #define	LOMTU	(1024+512)
