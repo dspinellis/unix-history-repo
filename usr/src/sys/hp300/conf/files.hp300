@@ -15,7 +15,7 @@ hp300/hp300/trap.c		standard
 hp300/hp300/vm_machdep.c	standard
 hp300/dev/dma.c			standard
 hp300/dev/cd.c			optional cd
-hp300/dev/fd.c			optional fd
+hp300/dev/vn.c			optional vn
 hp300/dev/ite.c			optional ite
 hp300/dev/ite_subr.c		optional ite
 hp300/dev/ite_tc.c		optional ite
