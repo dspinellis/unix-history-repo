@@ -1,4 +1,4 @@
-#	@(#)Makefile.hp300	7.16 (Berkeley) %G%
+#	@(#)Makefile.hp300	7.17 (Berkeley) %G%
 #
 # Makefile for 4.4 BSD
 #
@@ -150,5 +150,10 @@ param.c: $S/conf/param.c
 
 param.o: param.c Makefile
 	${CC} -c ${CFLAGS} ${PARAM} param.c
+
+vnode_if.c: $S/kern/vnode_if.sh $S/kern/vnode_if.src
+	sh $S/kern/vnode_if.sh $S/kern/vnode_if.src
+vnode_if.h: $S/kern/vnode_if.sh $S/kern/vnode_if.src
+	sh $S/kern/vnode_if.sh $S/kern/vnode_if.src
 
 %RULES
