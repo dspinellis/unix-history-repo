@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.53 (Berkeley) %G%
+ *	@(#)conf.h	8.54 (Berkeley) %G%
  */
 
 /*
@@ -77,6 +77,13 @@
 #ifndef IDENTPROTO
 # define IDENTPROTO	1	/* use IDENT proto (RFC 1413) */
 #endif
+
+/*
+**  Most systems have symbolic links today, so default them on.  You
+**  can turn them off by #undef'ing this below.
+*/
+
+# define HASLSTAT	1	/* has lstat(2) call */
 
 /**********************************************************************
 **  Operating system configuration.
@@ -508,7 +515,7 @@ extern struct group	*getgrent(), *getgrnam(), *getgrgid();
 **
 **	Must be compiled in "cc -43" mode.
 **
-**	From Kate HedStrom <kate@ahab.rutgers.edu>.
+**	From Kate Hedstrom <kate@ahab.rutgers.edu>.
 **
 **	Note the tweaking below after the BSD defines are set.
 */
@@ -591,7 +598,10 @@ typedef int		pid_t;
 
 /* System 5 compatibility */
 #ifndef S_ISREG
-#define S_ISREG(foo)	((foo & S_IFREG) == S_IFREG)
+# define S_ISREG(foo)	((foo & S_IFMT) == S_IFREG)
+#endif
+#if !defined(S_ISLNK) && defined(S_IFLNK)
+# define S_ISLNK(foo)	((foo & S_IFMT) == S_IFLNK)
 #endif
 #ifndef S_IWGRP
 #define S_IWGRP		020

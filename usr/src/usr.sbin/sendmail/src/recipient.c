@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	8.23 (Berkeley) %G%";
+static char sccsid[] = "@(#)recipient.c	8.24 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -356,18 +356,15 @@ recipient(a, sendq, e)
 	}
 	else if (m == FileMailer)
 	{
-		struct stat stb;
 		extern bool writable();
 
-		p = strrchr(buf, '/');
 		/* check if writable or creatable */
 		if (a->q_alias == NULL)
 		{
 			a->q_flags |= QBADADDR;
 			usrerr("550 Cannot mail directly to files");
 		}
-		else if ((stat(buf, &stb) >= 0) ? (!writable(buf, &stb)) :
-		    (*p = '\0', safefile(buf, RealUid, RealGid, NULL, TRUE, S_IWRITE|S_IEXEC) != 0))
+		else if (!writable(buf))
 		{
 			a->q_flags |= QBADADDR;
 			giveresponse(EX_CANTCREAT, m, NULL, a->q_alias, e);
@@ -624,42 +621,73 @@ finduser(name, fuzzyp)
 */
 
 bool
-writable(filename, s)
+writable(filename)
 	char *filename;
-	register struct stat *s;
 {
 	uid_t euid;
 	gid_t egid;
 	int bits;
+	register char *p;
+	char *uname;
+	struct stat stb;
+	extern char RealUserName[];
 
 	if (tTd(29, 5))
-		printf("writable(%s) mode=%o\n", filename, s->st_mode);
-	if (bitset(0111, s->st_mode))
+		printf("writable(%s)\n", filename);
+
+#ifdef HASLSTAT
+	if (lstat(filename, &stb) < 0)
+#else
+	if (stat(filename, &stb) < 0)
+#endif
+	{
+		/* file does not exist -- see if directory is safe */
+		p = strrchr(filename, '/');
+		if (p == NULL)
+			return FALSE;
+		*p = '\0';
+		if (safefile(filename, RealUid, RealGid, RealUserName,
+			     SF_MUSTOWN, S_IWRITE|S_IEXEC) != 0)
+		{
+			*p = '/';
+			return FALSE;
+		}
+		*p = '/';
+	}
+
+	/*
+	**  File does exist -- check that it is writable.
+	*/
+
+	if (bitset(0111, stb.st_mode))
 		return (FALSE);
+
 	euid = RealUid;
+	uname = RealUserName;
+	if (euid == 0)
+	{
+		euid = DefUid;
+		uname = DefUser;
+	}
 	egid = RealGid;
+	if (egid == 0)
+		egid = DefGid;
 	if (geteuid() == 0)
 	{
-		if (bitset(S_ISUID, s->st_mode))
-			euid = s->st_uid;
-		if (bitset(S_ISGID, s->st_mode))
-			egid = s->st_gid;
+		if (bitset(S_ISUID, stb.st_mode))
+		{
+			euid = stb.st_uid;
+			uname = NULL;
+		}
+		if (bitset(S_ISGID, stb.st_mode))
+			egid = stb.st_gid;
 	}
 
 	if (tTd(29, 5))
 		printf("\teu/gid=%d/%d, st_u/gid=%d/%d\n",
-			euid, egid, s->st_uid, s->st_gid);
+			euid, egid, stb.st_uid, stb.st_gid);
 
-	if (euid == 0)
-		return (TRUE);
-	bits = S_IWRITE;
-	if (euid != s->st_uid)
-	{
-		bits >>= 3;
-		if (egid != s->st_gid)
-			bits >>= 3;
-	}
-	return ((s->st_mode & bits) != 0);
+	return safefile(filename, euid, egid, uname, SF_NOSLINK, S_IWRITE);
 }
 /*
 **  INCLUDE -- handle :include: specification.
@@ -704,6 +732,7 @@ include(fname, forwarding, ctladdr, sendq, e)
 	gid_t savedgid, gid;
 	char *uname;
 	int rval = 0;
+	int sfflags = forwarding ? SF_MUSTOWN : 0;
 	char buf[MAXLINE];
 
 	if (tTd(27, 2))
@@ -765,7 +794,7 @@ include(fname, forwarding, ctladdr, sendq, e)
 	ev = setevent((time_t) 60, includetimeout, 0);
 
 	/* the input file must be marked safe */
-	rval = safefile(fname, uid, gid, uname, forwarding, S_IREAD);
+	rval = safefile(fname, uid, gid, uname, sfflags, S_IREAD);
 	if (rval != 0)
 	{
 		/* don't use this :include: file */

@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	8.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)util.c	8.17 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -378,7 +378,9 @@ fullname(pw, buf)
 **		gid -- group id to compare against.
 **		uname -- user name to compare against (used for group
 **			sets).
-**		mustown -- to be safe, this uid must own the file.
+**		flags -- modifiers:
+**			SF_MUSTOWN -- "uid" must own this file.
+**			SF_NOSLINK -- file cannot be a symbolic link.
 **		mode -- mode bits that must match.
 **
 **	Returns:
@@ -404,12 +406,12 @@ fullname(pw, buf)
 #endif
 
 int
-safefile(fn, uid, gid, uname, mustown, mode)
+safefile(fn, uid, gid, uname, flags, mode)
 	char *fn;
 	uid_t uid;
 	gid_t gid;
 	char *uname;
-	bool mustown;
+	int flags;
 	int mode;
 {
 	register char *p;
@@ -417,8 +419,8 @@ safefile(fn, uid, gid, uname, mustown, mode)
 	struct stat stbuf;
 
 	if (tTd(54, 4))
-		printf("safefile(%s, uid=%d, gid=%d, mustown=%d, mode=%o):\n",
-			fn, uid, gid, mustown, mode);
+		printf("safefile(%s, uid=%d, gid=%d, flags=%x, mode=%o):\n",
+			fn, uid, gid, flags, mode);
 	errno = 0;
 
 	for (p = fn; (p = strchr(++p, '/')) != NULL; *p = '/')
@@ -459,7 +461,12 @@ safefile(fn, uid, gid, uname, mustown, mode)
 		return ret;
 	}
 
+#ifdef HASLSTAT
+	if ((bitset(SF_NOSLINK, flags) ? lstat(fn, &stbuf)
+				       : stat(fn, &stbuf)) < 0)
+#else
 	if (stat(fn, &stbuf) < 0)
+#endif
 	{
 		int ret = errno;
 
@@ -469,6 +476,16 @@ safefile(fn, uid, gid, uname, mustown, mode)
 		errno = 0;
 		return ret;
 	}
+
+#ifdef S_ISLNK
+	if (bitset(SF_NOSLINK, flags) && S_ISLNK(stbuf.st_mode))
+	{
+		if (tTd(54, 4))
+			printf("\t[mode %o]\tEPERM\n");
+		return EPERM;
+	}
+#endif
+
 	if (uid == 0)
 		mode >>= 6;
 	else if (stbuf.st_uid != uid)
@@ -496,7 +513,8 @@ safefile(fn, uid, gid, uname, mustown, mode)
 	if (tTd(54, 4))
 		printf("\t[uid %d, stat %o, mode %o] ",
 			stbuf.st_uid, stbuf.st_mode, mode);
-	if ((stbuf.st_uid == uid || stbuf.st_uid == 0 || !mustown) &&
+	if ((stbuf.st_uid == uid || stbuf.st_uid == 0 ||
+	     !bitset(SF_MUSTOWN, flags)) &&
 	    (stbuf.st_mode & mode) == mode)
 	{
 		if (tTd(54, 4))
