@@ -9,7 +9,7 @@
 # include "sendmail.h"
 
 #ifndef lint
-static char sccsid[] = "@(#)alias.c	8.46 (Berkeley) %G%";
+static char sccsid[] = "@(#)alias.c	8.47 (Berkeley) %G%";
 #endif /* not lint */
 
 
@@ -176,8 +176,6 @@ aliaslookup(name, pstat, e)
 
 	for (dbno = 0; dbno < NAliasDBs; dbno++)
 	{
-		auto int stat;
-
 		map = AliasDB[dbno];
 		if (!bitset(MF_OPEN, map->map_mflags))
 			continue;

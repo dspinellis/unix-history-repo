@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)err.c	8.33 (Berkeley) %G%";
+static char sccsid[] = "@(#)err.c	8.34 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -43,7 +43,9 @@ static char sccsid[] = "@(#)err.c	8.33 (Berkeley) %G%";
 char	MsgBuf[BUFSIZ*2];		/* text of most recent message */
 char	HeldMessageBuf[sizeof MsgBuf];	/* for held messages */
 
-static void	fmtmsg();
+extern void	putoutmsg __P((char *, bool, bool));
+extern void	puterrmsg __P((char *));
+static void	fmtmsg __P((char *, const char *, const char *, int, const char *, va_list));
 
 #if NAMED_BIND && !defined(NO_DATA)
 # define NO_DATA	NO_ADDRESS
@@ -285,6 +287,7 @@ nmessage(msg, va_alist)
 **		Deletes SMTP reply code number as appropriate.
 */
 
+void
 putoutmsg(msg, holdmsg, heldmsg)
 	char *msg;
 	bool holdmsg;
@@ -362,6 +365,7 @@ putoutmsg(msg, holdmsg, heldmsg)
 **		Sets the fatal error bit in the envelope as appropriate.
 */
 
+void
 puterrmsg(msg)
 	char *msg;
 {
@@ -405,10 +409,10 @@ puterrmsg(msg)
 static void
 fmtmsg(eb, to, num, eno, fmt, ap)
 	register char *eb;
-	char *to;
-	char *num;
+	const char *to;
+	const char *num;
 	int eno;
-	char *fmt;
+	const char *fmt;
 	va_list ap;
 {
 	char del;

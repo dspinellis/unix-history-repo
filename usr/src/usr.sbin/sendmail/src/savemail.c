@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)savemail.c	8.70 (Berkeley) %G%";
+static char sccsid[] = "@(#)savemail.c	8.71 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -49,6 +49,7 @@ static char sccsid[] = "@(#)savemail.c	8.70 (Berkeley) %G%";
 # endif
 
 
+void
 savemail(e, sendbody)
 	register ENVELOPE *e;
 	bool sendbody;
@@ -419,20 +420,21 @@ savemail(e, sendbody)
 #define MAXRETURNS	6	/* max depth of returning messages */
 #define ERRORFUDGE	100	/* nominal size of error message text */
 
+int
 returntosender(msg, returnq, sendbody, e)
 	char *msg;
 	ADDRESS *returnq;
 	bool sendbody;
 	register ENVELOPE *e;
 {
-	char buf[MAXNAME + 1];
-	extern putheader(), errbody();
 	register ENVELOPE *ee;
 	ENVELOPE *oldcur = CurEnv;
 	ENVELOPE errenvelope;
 	static int returndepth;
 	register ADDRESS *q;
 	char *p;
+	char buf[MAXNAME + 1];
+	extern void errbody __P((MCI *, ENVELOPE *, char *));
 
 	if (returnq == NULL)
 		return (-1);
@@ -569,6 +571,7 @@ returntosender(msg, returnq, sendbody, e)
 **		Outputs the body of an error message.
 */
 
+void
 errbody(mci, e, separator)
 	register MCI *mci;
 	register ENVELOPE *e;
@@ -1170,6 +1173,7 @@ xtextok(s)
 **		modifies addr in-place
 */
 
+bool
 pruneroute(addr)
 	char *addr;
 {

@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	8.84 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	8.85 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	8.84 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	8.85 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -57,6 +57,7 @@ WORK	*WorkQ;			/* queue of things to be done */
 **		The queue file is left locked.
 */
 
+void
 queueup(e, queueall, announce)
 	register ENVELOPE *e;
 	bool queueall;
@@ -73,6 +74,7 @@ queueup(e, queueall, announce)
 	MAILER nullmailer;
 	MCI mcibuf;
 	char buf[MAXLINE], tf[MAXLINE];
+	extern void printctladdr __P((ADDRESS *, FILE *));
 
 	/*
 	**  Create control file.
@@ -166,7 +168,6 @@ queueup(e, queueall, announce)
 		register FILE *dfp;
 		char dfname[20];
 		struct stat stbuf;
-		extern putbody();
 
 		strcpy(dfname, queuename(e, 'd'));
 		fd = open(dfname, O_WRONLY|O_CREAT|O_TRUNC, FileMode);
@@ -395,6 +396,7 @@ queueup(e, queueall, announce)
 	return;
 }
 
+void
 printctladdr(a, tfp)
 	register ADDRESS *a;
 	FILE *tfp;
@@ -631,6 +633,7 @@ runqueue(forkflag)
 static WORK	*WorkList = NULL;
 static int	WorkListSize = 0;
 
+int
 # ifndef DIR
 # define DIR		FILE
 # define direct		dir
@@ -752,6 +755,8 @@ orderq(doall)
 		}
 		if (wn >= WorkListSize)
 		{
+			extern void grow_wlist __P((void));
+
 			grow_wlist();
 			if (wn >= WorkListSize)
 				continue;
@@ -934,6 +939,7 @@ orderq(doall)
 **		should be checked again upon return.
 */
 
+void
 grow_wlist()
 {
 	if (tTd(41, 1))
@@ -986,6 +992,7 @@ grow_wlist()
 **		none.
 */
 
+int
 workcmpf0(a, b)
 	register WORK *a;
 	register WORK *b;
@@ -1018,6 +1025,7 @@ workcmpf0(a, b)
 **		none.
 */
 
+int
 workcmpf1(a, b)
 	register WORK *a;
 	register WORK *b;
@@ -1058,6 +1066,7 @@ workcmpf1(a, b)
 **		none.
 */
 
+int
 workcmpf2(a, b)
 	register WORK *a;
 	register WORK *b;
@@ -1505,6 +1514,7 @@ readqf(e)
 **		Prints a listing of the mail queue on the standard output.
 */
 
+void
 printqueue()
 {
 	register WORK *w;
@@ -1820,6 +1830,7 @@ queuename(e, type)
 **		unlocks the queue for `e'.
 */
 
+void
 unlockqueue(e)
 	ENVELOPE *e;
 {

@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)envelope.c	8.65 (Berkeley) %G%";
+static char sccsid[] = "@(#)envelope.c	8.66 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -33,9 +33,6 @@ newenvelope(e, parent)
 	register ENVELOPE *e;
 	register ENVELOPE *parent;
 {
-	extern putheader(), putbody();
-	extern ENVELOPE BlankEnvelope;
-
 	if (e == parent && e->e_parent != NULL)
 		parent = e->e_parent;
 	clearenvelope(e, TRUE);
@@ -395,7 +392,6 @@ initsys(e)
 #endif /* TTYNAME */
 	extern char *ttyname();
 	extern void settime();
-	extern char Version[];
 
 	/*
 	**  Give this envelope a reality.

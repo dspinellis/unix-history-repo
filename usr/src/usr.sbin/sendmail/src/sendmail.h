@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	8.135 (Berkeley) %G%
+ *	@(#)sendmail.h	8.136 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	8.135		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	8.136		%G%";
 # endif
 # else /*  _DEFINE */
 # define EXTERN extern
@@ -63,6 +63,10 @@ static char SmailSccsId[] =	"@(#)sendmail.h	8.135		%G%";
 # endif
 
 
+
+/* forward references for prototypes */
+typedef struct envelope	ENVELOPE;
+typedef struct mailer	MAILER;
 
 
 /*
@@ -151,6 +155,19 @@ typedef struct address ADDRESS;
 # define QTHISPASS	0x80000000	/* temp: address set this pass */
 
 # define NULLADDR	((ADDRESS *) NULL)
+
+/* functions */
+extern ADDRESS	*parseaddr __P((char *, ADDRESS *, int, int, char **, ENVELOPE *));
+extern ADDRESS	*recipient __P((ADDRESS *, ADDRESS **, int, ENVELOPE *));
+extern char	**prescan __P((char *, int, char[], int, char **, u_char *));
+extern int	rewrite __P((char **, int, int, ENVELOPE *));
+extern char	*remotename __P((char *, MAILER *, int, int *, ENVELOPE *));
+extern ADDRESS	*getctladdr __P((ADDRESS *));
+extern bool	sameaddr __P((ADDRESS *, ADDRESS *));
+extern bool	emptyaddr __P((ADDRESS *));
+extern void	printaddr __P((ADDRESS *, bool));
+extern void	cataddr __P((char **, char **, char *, int, int));
+extern int	sendtolist __P((char *, ADDRESS *, ADDRESS **, int, ENVELOPE *));
 # define QPSEUDO	000040	/* only on the list for verification */
 /*
 **  Mailer definition structure.
@@ -187,8 +204,6 @@ struct mailer
 	gid_t	m_gid;		/* GID to run as */
 	char	*m_defcharset;	/* default character set */
 };
-
-typedef struct mailer	MAILER;
 
 /* bits for m_flags */
 # define M_ESMTP	'a'	/* run Extended SMTP protocol */
@@ -342,6 +357,11 @@ MCI
 #define MCIS_QUITING	4		/* running quit protocol */
 #define MCIS_SSD	5		/* service shutting down */
 #define MCIS_ERROR	6		/* I/O error on connection */
+
+/* functions */
+extern MCI	*mci_get __P((char *, MAILER *));
+extern void	mci_cache __P((MCI *));
+extern void	mci_flush __P((bool, MCI *));
 /*
 **  Envelope structure.
 **	This structure defines the message itself.  There is usually
@@ -351,9 +371,7 @@ MCI
 **	will have their own envelope.
 */
 
-# define ENVELOPE	struct envelope
-
-ENVELOPE
+struct envelope
 {
 	HDR		*e_header;	/* head of header list */
 	long		e_msgpriority;	/* adjusted priority of this message */
@@ -375,9 +393,9 @@ ENVELOPE
 	short		e_sendmode;	/* message send mode */
 	short		e_errormode;	/* error return mode */
 	short		e_timeoutclass;	/* message timeout class */
-	int		(*e_puthdr)__P((MCI *, HDR *, ENVELOPE *));
+	void		(*e_puthdr)__P((MCI *, HDR *, ENVELOPE *));
 					/* function to put header of message */
-	int		(*e_putbody)__P((MCI *, ENVELOPE *, char *));
+	void		(*e_putbody)__P((MCI *, ENVELOPE *, char *));
 					/* function to put body of message */
 	struct envelope	*e_parent;	/* the message this one encloses */
 	struct envelope *e_sibling;	/* the next envelope of interest */
@@ -426,6 +444,14 @@ ENVELOPE
 #define EF_IS_MIME	0x0400000	/* really is a MIME message */
 
 EXTERN ENVELOPE	*CurEnv;	/* envelope currently being processed */
+
+/* functions */
+extern ENVELOPE	*newenvelope __P((ENVELOPE *, ENVELOPE *));
+extern void	dropenvelope __P((ENVELOPE *));
+extern void	clearenvelope __P((ENVELOPE *, bool));
+
+extern void	putheader __P((MCI *, HDR *, ENVELOPE *));
+extern void	putbody __P((MCI *, ENVELOPE *, char *));
 /*
 **  Message priority classes.
 **
@@ -521,6 +547,13 @@ struct metamac
 	char	metaname;	/* external code (after $) */
 	u_char	metaval;	/* internal code (as above) */
 };
+
+/* functions */
+extern void	expand __P((char *, char *, size_t, ENVELOPE *));
+extern void	define __P((int, char *, ENVELOPE *));
+extern char	*macvalue __P((int, ENVELOPE *));
+extern char	*macname __P((int));
+extern int	macid __P((char *, char **));
 /*
 **  Name canonification short circuit.
 **
@@ -632,6 +665,9 @@ MAPCLASS
 #define MCF_ALIASONLY	0x0002		/* usable only for aliases */
 #define MCF_REBUILDABLE	0x0004		/* can rebuild alias files */
 #define MCF_OPTFILE	0x0008		/* file name is optional */
+
+/* functions */
+extern char	*map_rewrite __P((MAP *, char *, int, char **));
 /*
 **  Symbol table definitions
 */
@@ -707,6 +743,10 @@ struct event
 typedef struct event	EVENT;
 
 EXTERN EVENT	*EventQueue;		/* head of event queue */
+
+/* functions */
+extern EVENT	*setevent __P((time_t, void(*)(), int));
+extern void	clrevent __P((EVENT *));
 /*
 **  Operation, send, error, and MIME modes
 **
@@ -1071,62 +1111,61 @@ EXTERN u_char	tTdvect[100];
 **  Declarations of useful functions
 */
 
-extern ADDRESS		*parseaddr __P((char *, ADDRESS *, int, int, char **, ENVELOPE *));
-extern char		*xalloc __P((int));
-extern bool		sameaddr __P((ADDRESS *, ADDRESS *));
-extern FILE		*dfopen __P((char *, int, int));
-extern EVENT		*setevent __P((time_t, void(*)(), int));
-extern char		*sfgets __P((char *, int, FILE *, time_t, char *));
-extern char		*queuename __P((ENVELOPE *, int));
-extern time_t		curtime __P(());
-extern bool		transienterror __P((int));
+extern char	*xalloc __P((int));
+extern FILE	*dfopen __P((char *, int, int));
+extern char	*sfgets __P((char *, int, FILE *, time_t, char *));
+extern char	*queuename __P((ENVELOPE *, int));
+extern time_t	curtime __P(());
+extern bool	transienterror __P((int));
+extern char	*fgetfolded __P((char *, int, FILE *));
+extern char	*username __P(());
+extern char	*pintvl __P((time_t, bool));
+extern char	*anynet_ntoa __P((SOCKADDR *));
+extern bool	shouldqueue __P((long, time_t));
+extern bool	lockfile __P((int, char *, char *, int));
+extern char	*hostsignature __P((MAILER *, char *, ENVELOPE *));
+extern void	openxscript __P((ENVELOPE *));
+extern void	closexscript __P((ENVELOPE *));
+extern char	*shortenstring __P((const char *, int));
+extern bool	usershellok __P((char *));
+extern void	commaize __P((HDR *, char *, bool, MCI *, ENVELOPE *));
+extern char	*hvalue __P((char *, HDR *));
+extern char	*defcharset __P((ENVELOPE *));
+extern bool	wordinclass __P((char *, int));
+extern char	*denlstring __P((char *, bool, bool));
+extern void	makelower __P((char *));
+extern void	rebuildaliases __P((MAP *, bool));
+extern void	readaliases __P((MAP *, FILE *, bool, bool));
+extern void	finis __P(());
+extern void	setsender __P((char *, ENVELOPE *, char **, bool));
+extern FILE	*safefopen __P((char *, int, int, int));
+extern void	xputs __P((const char *));
+extern void	logsender __P((ENVELOPE *, char *));
+extern void	smtprset __P((MAILER *, MCI *, ENVELOPE *));
+extern void	smtpquit __P((MAILER *, MCI *, ENVELOPE *));
+extern void	setuserenv __P((const char *, const char *));
+extern void	disconnect __P((int, ENVELOPE *));
+extern void	putxline __P((char *, MCI *, int));
+extern void	dumpfd __P((int, bool, bool));
+extern void	makemapentry __P((char *));
+extern void	makemailer __P((char *));
+extern void	putfromline __P((MCI *, ENVELOPE *));
+extern void	setoption __P((int, char *, bool, bool, ENVELOPE *));
+extern void	setclass __P((int, char *));
+extern void	inittimeouts __P((char *));
+extern void	logdelivery __P((MAILER *, MCI *, const char *, ADDRESS *, time_t, ENVELOPE *));
+extern void	giveresponse __P((int, MAILER *, MCI *, ADDRESS *, time_t, ENVELOPE *));
+
 extern const char	*errstring __P((int));
-extern void		expand __P((char *, char *, size_t, ENVELOPE *));
-extern void		define __P((int, char *, ENVELOPE *));
-extern char		*macvalue __P((int, ENVELOPE *));
-extern char		*macname __P((int));
-extern int		macid __P((char *, char **));
-extern char		**prescan __P((char *, int, char[], int, char **, char *));
-extern int		rewrite __P((char **, int, int, ENVELOPE *));
-extern char		*fgetfolded __P((char *, int, FILE *));
-extern ADDRESS		*recipient __P((ADDRESS *, ADDRESS **, int, ENVELOPE *));
-extern ENVELOPE		*newenvelope __P((ENVELOPE *, ENVELOPE *));
-extern void		dropenvelope __P((ENVELOPE *));
-extern void		clearenvelope __P((ENVELOPE *, bool));
-extern char		*username __P(());
-extern MCI		*mci_get __P((char *, MAILER *));
-extern char		*pintvl __P((time_t, bool));
-extern char		*map_rewrite __P((MAP *, char *, int, char **));
-extern ADDRESS		*getctladdr __P((ADDRESS *));
-extern char		*anynet_ntoa __P((SOCKADDR *));
-extern char		*remotename __P((char *, MAILER *, int, int *, ENVELOPE *));
-extern bool		shouldqueue __P((long, time_t));
-extern bool		lockfile __P((int, char *, char *, int));
-extern char		*hostsignature __P((MAILER *, char *, ENVELOPE *));
-extern void		openxscript __P((ENVELOPE *));
-extern void		closexscript __P((ENVELOPE *));
 extern sigfunc_t	setsignal __P((int, sigfunc_t));
-extern char		*shortenstring __P((char *, int));
-extern bool		usershellok __P((char *));
-extern void		commaize __P((HDR *, char *, bool, MCI *, ENVELOPE *));
-extern char		*hvalue __P((char *, HDR *));
-extern char		*defcharset __P((ENVELOPE *));
-extern bool		emptyaddr __P((ADDRESS *));
-extern int		sendtolist __P((char *, ADDRESS *, ADDRESS **, int, ENVELOPE *));
-extern bool		wordinclass __P((char *, int));
-extern char		*denlstring __P((char *, bool, bool));
-extern void		printaddr __P((ADDRESS *, bool));
-extern void		makelower __P((char *));
-extern void		rebuildaliases __P((MAP *, bool));
-extern void		readaliases __P((MAP *, FILE *, bool, bool));
-extern void		finis __P(());
-extern void		clrevent __P((EVENT *));
-extern void		setsender __P((char *, ENVELOPE *, char **, bool));
-extern FILE		*safefopen __P((char *, int, int, int));
 extern struct hostent	*sm_gethostbyname __P((char *));
 extern struct hostent	*sm_gethostbyaddr __P((char *, int, int));
 extern struct passwd	*sm_getpwnam __P((char *));
 extern struct passwd	*sm_getpwuid __P((UID_T));
+
+#ifdef XDEBUG
+extern void		checkfd012 __P((char *));
+#endif
 
 /* ellipsis is a different case though */
 #ifdef __STDC__

@@ -10,9 +10,9 @@
 
 #ifndef lint
 #if NAMED_BIND
-static char sccsid[] = "@(#)domain.c	8.40 (Berkeley) %G% (with name server)";
+static char sccsid[] = "@(#)domain.c	8.41 (Berkeley) %G% (with name server)";
 #else
-static char sccsid[] = "@(#)domain.c	8.40 (Berkeley) %G% (without name server)";
+static char sccsid[] = "@(#)domain.c	8.41 (Berkeley) %G% (without name server)";
 #endif
 #endif /* not lint */
 
@@ -70,6 +70,7 @@ static char	MXHostBuf[MAXMXHOSTS*PACKETSZ];
 **			and 1 is returned.
 */
 
+int
 getmxrr(host, mxhosts, droplocalhost, rcode)
 	char *host;
 	char **mxhosts;
@@ -353,6 +354,7 @@ punt:
 **		none.
 */
 
+int
 mxrand(host)
 	register char *host;
 {
