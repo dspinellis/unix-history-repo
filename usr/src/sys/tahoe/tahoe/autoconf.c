@@ -49,7 +49,7 @@ configure()
 	register int *ip;
 	extern caddr_t Sysbase;
 
-	vbafind(numvba, vmem, VMEMmap);
+	vbafind(numvba, (caddr_t)&vmem, VMEMmap);
 	numvba++;
 	/*
 	 * Write protect the scb.  It is strange
@@ -132,7 +132,7 @@ vbafind(vban, vumem, memmap)
 	struct vba_driver *udp;
 	int i, (**ivec)();
 	caddr_t valloc, zmemall();
-	extern long cold, catcher[SCB_LASTIV*2];
+	extern long catcher[SCB_LASTIV*2];
 
 #ifdef lint
 	br = 0; cvec = 0;
@@ -142,7 +142,7 @@ vbafind(vban, vumem, memmap)
 	 * Make the controllers accessible at physical address phys
 	 * by mapping kernel ptes starting at pte.
 	 */
-	vbaccess(memmap, VBIOBASE, VBIOSIZE);
+	vbaccess(memmap, (caddr_t)VBIOBASE, VBIOSIZE);
 	printf("vba%d at %x\n", vban, VBIOBASE);
 	/*
 	 * Setup scb device entries to point into catcher array.
@@ -173,7 +173,7 @@ vbafind(vban, vumem, memmap)
 	 * see if it is really there, and if it is record it and
 	 * then go looking for slaves.
 	 */
-#define	vbaddr(off)	(u_short *)((int)vumem + vboff(off))
+#define	vbaddr(off)	(u_short *)(vumem + vboff(off))
 	for (um = vbminit; udp = um->um_driver; um++) {
 		if (um->um_vbanum != vban && um->um_vbanum != '?')
 			continue;
@@ -302,7 +302,8 @@ vbafind(vban, vumem, memmap)
  * Warn if the new allocation overlaps a previous allocation.
  */
 csralloc(valloc, addr, size)
-	caddr_t valloc, addr;
+	caddr_t valloc;
+	long addr;
 	register int size;
 {
 	register caddr_t p;
