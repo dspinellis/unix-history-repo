@@ -13,9 +13,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ctlreg.h	7.3 (Berkeley) %G%
+ *	@(#)ctlreg.h	7.4 (Berkeley) %G%
  *
- * from: $Header: ctlreg.h,v 1.5 92/11/26 02:04:33 torek Exp $
+ * from: $Header: ctlreg.h,v 1.6 93/04/27 14:29:07 torek Exp $
  */
 
 /*
@@ -31,9 +31,9 @@
 #define	ASI_CONTROL	2	/* cache enable, context reg, etc */
 #define	ASI_SEGMAP	3	/* segment maps (so we can reach each pmeg) */
 #define	ASI_PTE		4	/* PTE space (pmegs) */
-/*			5	   unused */
-/*			6	   unused */
-/*			7	   unused */
+#define	ASI_HWFLUSHSEG	5	/* hardware assisted version of FLUSHSEG */
+#define	ASI_HWFLUSHPG	6	/* hardware assisted version of FLUSHPG */
+#define	ASI_HWFLUSHCTX	7	/* hardware assisted version of FLUSHCTX */
 #define	ASI_USERI	8	/* I-space (user) */
 #define	ASI_KERNELI	9	/* I-space (kernel) */
 #define	ASI_USERD	10	/* D-space (user) */
