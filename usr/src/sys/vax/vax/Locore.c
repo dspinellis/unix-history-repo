@@ -1,4 +1,4 @@
-/*	Locore.c	4.8	81/03/09	*/
+/*	Locore.c	4.9	81/04/28	*/
 
 #include "dz.h"
 
@@ -91,7 +91,7 @@ struct	pte Sysmap[6*NPTEPG];
 char	Sysbase[6*NPTEPG*NBPG];
 int	umbabeg;
 struct	pte Nexmap[16][16];
-struct	nexus nexus[NNEXUS];
+struct	nexus nexus[MAXNNEXUS];
 struct	pte UMEMmap[4][16];
 char	umem[4][16*NBPG];
 int	umbaend;
@@ -206,8 +206,7 @@ spl7() { return (0); }
 splx(s) int s; { }
 
 /*ARGSUSED*/
-bcopy(to, from, count) caddr_t to, from; unsigned count;
-    { *(int *)mcrmap = 0; }
+bcopy(to, from, count) caddr_t to, from; unsigned count; { ; }
 
 /*ARGSUSED*/
 ffs(i) { return (0); }
