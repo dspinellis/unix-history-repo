@@ -1,4 +1,4 @@
-/* @(#)popen.c	4.2 (Berkeley) %G% */
+/* @(#)popen.c	4.3 (Berkeley) %G% */
 #include <stdio.h>
 #include <signal.h>
 #define	tst(a,b)	(*mode == 'r'? (b) : (a))
@@ -21,8 +21,10 @@ char	*mode;
 	if((pid = fork()) == 0) {
 		/* myside and hisside reverse roles in child */
 		close(myside);
-		dup2(hisside, tst(0, 1));
-		close(hisside);
+		if (hisside != tst(0, 1)) {
+			dup2(hisside, tst(0, 1));
+			close(hisside);
+		}
 		execl("/bin/sh", "sh", "-c", cmd, 0);
 		_exit(1);
 	}
