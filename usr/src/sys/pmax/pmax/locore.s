@@ -22,7 +22,7 @@
  * from: $Header: /sprite/src/kernel/vm/ds3100.md/vmPmaxAsm.s,
  *	v 1.1 89/07/10 14:27:41 nelson Exp $ SPRITE (DECWRL)
  *
- *	@(#)locore.s	7.6 (Berkeley) %G%
+ *	@(#)locore.s	7.7 (Berkeley) %G%
  */
 
 /*
@@ -823,7 +823,7 @@ LEAF(idle)
 	.set	noreorder
 	li	t0, (MACH_INT_MASK | MACH_SR_INT_ENA_CUR)
 	mtc0	t0, MACH_COP_0_STATUS_REG	# enable all interrupts
-	nop
+	sw	zero, curproc			# set curproc NULL for stats
 1:
 	lw	t0, whichqs			# look for non-empty queue
 	nop
