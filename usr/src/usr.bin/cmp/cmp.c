@@ -17,12 +17,12 @@
 
 #ifndef lint
 char copyright[] =
-"@(#) Copyright (c) 1987 Regents of the University of California.\n\
+"@(#) Copyright (c) 1987, 1990 Regents of the University of California.\n\
  All rights reserved.\n";
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)cmp.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmp.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -36,13 +36,13 @@ static char sccsid[] = "@(#)cmp.c	5.1 (Berkeley) %G%";
 #define	EXITDIFF	1
 #define	EXITERR		2
 
-static int	all, fd1, fd2, silent;
-static u_char	buf1[MAXBSIZE], buf2[MAXBSIZE];
-static char	*file1, *file2;
+int	all, fd1, fd2, silent;
+u_char	buf1[MAXBSIZE], buf2[MAXBSIZE];
+char	*file1, *file2;
 
 main(argc, argv)
 	int argc;
-	char **argv;
+	char *argv[];
 {
 	extern char *optarg;
 	extern int optind;
@@ -50,7 +50,7 @@ main(argc, argv)
 	u_long otoi();
 
 	while ((ch = getopt(argc, argv, "-ls")) != EOF)
-		switch(ch) {
+		switch (ch) {
 		case 'l':		/* print all differences */
 			all = 1;
 			break;
@@ -76,11 +76,11 @@ endargs:
 		    "cmp: only one of -l and -s may be specified.\n");
 		exit(EXITERR);
 	}
-	if (!strcmp(file1 = argv[0], "-"))
+	if (strcmp(file1 = argv[0], "-") == 0)
 		fd1 = 0;
 	else if ((fd1 = open(file1, O_RDONLY, 0)) < 0)
 		error(file1);
-	if (!strcmp(file2 = argv[1], "-"))
+	if (strcmp(file2 = argv[1], "-") == 0)
 		fd2 = 0;
 	else if ((fd2 = open(file2, O_RDONLY, 0)) < 0)
 		error(file2);
@@ -104,7 +104,6 @@ endargs:
  * skip --
  *	skip first part of file
  */
-static
 skip(dist, fd, fname)
 	register u_long dist;
 	register int fd;
@@ -123,16 +122,15 @@ skip(dist, fd, fname)
 	}
 }
 
-static
 cmp()
 {
-	register u_char	*C1, *C2;
+	register u_char	*p1, *p2;
 	register int cnt, len1, len2;
 	register long byte, line;
 	int dfound = 0;
 
-	for (byte = 0, line = 1;;) {
-		switch(len1 = read(fd1, buf1, MAXBSIZE)) {
+	for (byte = 0, line = 1; ; ) {
+		switch (len1 = read(fd1, buf1, MAXBSIZE)) {
 		case -1:
 			error(file1);
 		case 0:
@@ -140,13 +138,16 @@ cmp()
 			 * read of file 1 just failed, find out
 			 * if there's anything left in file 2
 			 */
-			switch(read(fd2, buf2, 1)) {
+			switch (read(fd2, buf2, 1)) {
 				case -1:
 					error(file2);
+					/* NOTREACHED */
 				case 0:
 					exit(dfound ? EXITDIFF : EXITNODIFF);
+					/* NOTREACHED */
 				default:
 					endoffile(file1);
+					break;
 			}
 		}
 		/*
@@ -161,18 +162,20 @@ cmp()
 				exit(EXITDIFF);
 			if (all) {
 				dfound = 1;
-				for (C1 = buf1, C2 = buf2, cnt = len2; cnt--; ++C1, ++C2) {
+				for (p1 = buf1, p2 = buf2, cnt = len2; cnt--;
+				    ++p1, ++p2) {
 					++byte;
-					if (*C1 != *C2)
-						printf("%6ld %3o %3o\n", byte, *C1, *C2);
+					if (*p1 != *p2)
+						printf("%6ld %3o %3o\n",
+						    byte, *p1, *p2);
 				}
-			} else for (C1 = buf1, C2 = buf2;; ++C1, ++C2) {
+			} else for (p1 = buf1, p2 = buf2; ; ++p1, ++p2) {
 				++byte;
-				if (*C1 != *C2) {
+				if (*p1 != *p2) {
 					printf("%s %s differ: char %ld, line %ld\n", file1, file2, byte, line);
 					exit(EXITDIFF);
 				}
-				if (*C1 == '\n')
+				if (*p1 == '\n')
 					++line;
 			}
 		} else {
@@ -184,8 +187,8 @@ cmp()
 			 * *want* to know the line number, run -s or -l.
 			 */
 			if (!silent && !all)
-				for (C1 = buf1, cnt = len2; cnt--;)
-					if (*C1++ == '\n')
+				for (p1 = buf1, cnt = len2; cnt--; )
+					if (*p1++ == '\n')
 						++line;
 		}
 		/*
@@ -202,24 +205,23 @@ cmp()
  * otoi --
  *	octal/decimal string to u_long
  */
-static u_long
-otoi(C)
-	register char *C;
+u_long
+otoi(s)
+	register char *s;
 {
 	register u_long val;
 	register int base;
 
-	base = (*C == '0') ? 8 : 10;
-	for (val = 0; isdigit(*C); ++C)
-		val = val * base + *C - '0';
-	return(val);
+	base = (*s == '0') ? 8 : 10;
+	for (val = 0; isdigit(*s); ++s)
+		val = val * base + *s - '0';
+	return (val);
 }
 
 /*
  * error --
  *	print I/O error message and die
  */
-static
 error(filename)
 	char *filename;
 {
@@ -227,7 +229,7 @@ error(filename)
 	char *strerror();
 
 	if (!silent)
-		(void)fprintf(stderr, "cmp: %s: %s\n",
+		(void) fprintf(stderr, "cmp: %s: %s\n",
 		    filename, strerror(errno));
 	exit(EXITERR);
 }
@@ -236,13 +238,13 @@ error(filename)
  * endoffile --
  *	print end-of-file message and exit indicating the files were different
  */
-static
 endoffile(filename)
 	char *filename;
 {
 	/* 32V put this message on stdout, S5 does it on stderr. */
+	/* POSIX.2 currently does it on stdout-- Hooray! */
 	if (!silent)
-		(void)fprintf(stderr, "cmp: EOF on %s\n", filename);
+		(void) printf("cmp: EOF on %s\n", filename);
 	exit(EXITDIFF);
 }
 
@@ -250,7 +252,6 @@ endoffile(filename)
  * usage --
  *	print usage and die
  */
-static
 usage()
 {
 	fputs("usage: cmp [-ls] file1 file2 [skip1] [skip2]\n", stderr);
