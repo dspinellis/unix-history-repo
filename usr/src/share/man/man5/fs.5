@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)fs.5	6.1 (Berkeley) %G%
+.\"	@(#)fs.5	6.2 (Berkeley) %G%
 .\"
 .TH FS 5 ""
 .UC 5
@@ -19,11 +19,12 @@ Every file system storage volume (disk, nine-track tape, for instance)
 has a common format for certain vital information.
 Every such volume is divided into a certain number of blocks.
 The block size is a parameter of the file system.
-Sectors 0 to 15 on a file system are used to contain primary
-and secondary bootstrapping programs.
+Sectors beginning at BBLOCK and continuing for BBSIZE are used to
+contain primary and secondary bootstrapping programs.
 .PP
-The actual file system begins at sector 16 with the
-.I "super block."
+The actual file system begins at sector SBLOCK with the
+.I "super block"
+that is of size SBSIZE.
 The layout of the super block as defined by the include file
 .RI < sys/fs.h >
 is:
@@ -67,7 +68,8 @@ struct	fs {
 	long	fs_nindir;		/* value of NINDIR */
 	long	fs_inopb;		/* value of INOPB */
 	long	fs_nspf;		/* value of NSPF */
-	long	fs_sparecon[6];		/* reserved for future constants */
+	long	fs_optim;		/* optimization preference, see below */
+	long	fs_sparecon[5];		/* reserved for future constants */
 /* sizes determined by number of cylinder groups and their sizes */
 	daddr_t fs_csaddr;		/* blk addr of cyl grp summary area */
 	long	fs_cssize;		/* size of cyl grp summary area */
@@ -144,7 +146,7 @@ inode when it is initially created by
 .LP
 .I fs_minfree
 gives the minimum acceptable percentage of file system
-blocks which may be free. If the freelist drops below this level
+blocks that may be free. If the freelist drops below this level
 only the super-user may continue to allocate blocks. This may
 be set to 0 if no reserve of free blocks is deemed necessary,
 however severe performance degradations will be observed if the
@@ -157,6 +159,17 @@ Empirically the best trade-off between block fragmentation and
 overall disk utilization at a loading of 90% comes with a
 fragmentation of 4, thus the default fragment size is a fourth
 of the block size.
+.LP
+.I fs_optim
+specifies whether the file system should try to minimize the time spent
+allocating blocks, or if it should attempt to minimize the space
+fragmentation on the disk.
+If the value of fs_minfree (see above) is less than 10%,
+then the file system defaults to optimizing for space to avoid
+running out of full sized blocks.
+If the value of minfree is greater than or equal to 10%,
+fragmentation is unlikely to be problematical, and
+the file system defaults to optimizing for time.
 .LP
 .I Cylinder group related
 .IR limits :
@@ -196,8 +209,7 @@ it can be made larger as long as that structure's size remains
 within the bounds dictated by MINBSIZE.
 Note that super blocks are never more than size SBSIZE.
 .LP
-The path name on which the file system is mounted is maintained
-in
+The path name on which the file system is mounted is maintained in
 .IR fs_fsmnt .
 MAXMNTLEN defines the amount of space allocated in 
 the super block for this name.
