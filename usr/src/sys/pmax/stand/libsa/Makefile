@@ -1,4 +1,4 @@
-#	@(#)Makefile	8.1 (Berkeley) %G%
+#	@(#)Makefile	8.2 (Berkeley) %G%
 
 LIB=	sa
 SRCS=	alloc.c bcopy.c bzero.c close.c dev.c disklabel.c getfile.c \
@@ -10,4 +10,4 @@ NOPROFILE=noprofile
 
 .include <bsd.lib.mk>
 
-CFLAGS+=-I../../..
+CFLAGS=-O2 -I/sys
