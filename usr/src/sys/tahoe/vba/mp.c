@@ -1,4 +1,4 @@
-/*	mp.c	1.1	87/11/17	*/
+/*	mp.c	1.2	87/11/24	*/
 
 #include "mp.h"
 #if NMP > 0
@@ -1188,6 +1188,12 @@ mpdlclose(dev)
 	/* set to dead, for board handshake */
 	mb->mb_hostint.imok = MPIMOK_DEAD;
 	return (0);
+}
+
+mpreset(dev)
+	dev_t dev;
+{
+	/* XXX */
 }
 
 int	mpdltimeout();
