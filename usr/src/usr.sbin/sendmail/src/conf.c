@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.75 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.76 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -1904,13 +1904,21 @@ chownsafe(fd)
 	setresgid(o_gid, o_egid, -1);
 	return rval;
 #else
-# ifdef _PC_CHOWN_RESTRICTED
-	return fpathconf(fd, _PC_CHOWN_RESTRICTED) > 0;
-# else
-#  ifdef BSD
-	return TRUE;
-#  else
+# ifdef _POSIX_CHOWN_RESTRICTED
+#  if _POSIX_CHOWN_RESTRICTED == -1
 	return FALSE;
+#  else
+	return TRUE;
+#  endif
+# else
+#  ifdef _PC_CHOWN_RESTRICTED
+	return fpathconf(fd, _PC_CHOWN_RESTRICTED) > 0;
+#  else
+#   ifdef BSD
+	return TRUE;
+#   else
+	return FALSE;
+#   endif
 #  endif
 # endif
 #endif
