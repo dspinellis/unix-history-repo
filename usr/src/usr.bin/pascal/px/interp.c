@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)interp.c 1.6 %G%";
+static char sccsid[] = "@(#)interp.c 1.7 %G%";
 
 #include <math.h>
 #include "vars.h"
@@ -110,17 +110,24 @@ interpreter(base)
 	/*
 	 * the following variables are used as scratch
 	 */
-	double td, td1;
+	register char *tcp;
 	register long tl, tl1, tl2;
+	double td, td1;
+	struct sze8 t8;
 	long *tlp;
 	short *tsp, *tsp1;
-	register char *tcp;
 	char *tcp1;
 	struct stack *tstp;
 	struct formalrtn *tfp;
 	union progcntr tpc;
 	struct iorec **ip;
 
+	/*
+	 * Setup sets up any hardware specific parameters before
+	 * starting the interpreter. Typically this is inline replaced
+	 * by interp.sed to utilize specific machine instructions.
+	 */
+	 setup();
 	/*
 	 * necessary only on systems which do not initialize
 	 * memory to zero
@@ -510,8 +517,8 @@ interpreter(base)
 			continue;
 		case O_AS8:
 			pc.cp++;
-			td = pop8();
-			*(double *)popaddr() = td;
+			t8 = popsze8();
+			*(struct sze8 *)popaddr() = t8;
 			continue;
 		case O_AS:
 			tl = *pc.cp++;
@@ -841,7 +848,7 @@ interpreter(base)
 			continue;
 		case O_RV8:
 			tcp = _display.raw[*pc.ucp++];
-			push8(*(double *)(tcp + *pc.sp++));
+			pushsze8(*(struct sze8 *)(tcp + *pc.sp++));
 			continue;
 		case O_RV:
 			tcp = _display.raw[*pc.ucp++];
@@ -876,7 +883,7 @@ interpreter(base)
 			continue;
 		case O_LRV8:
 			tcp = _display.raw[*pc.ucp++];
-			push8(*(double *)(tcp + *pc.lp++));
+			pushsze8(*(struct sze8 *)(tcp + *pc.lp++));
 			continue;
 		case O_LRV:
 			tcp = _display.raw[*pc.ucp++];
@@ -911,7 +918,7 @@ interpreter(base)
 			continue;
 		case O_IND8:
 			pc.cp++;
-			push8(*(double *)(popaddr()));
+			pushsze8(*(struct sze8 *)(popaddr()));
 			continue;
 		case O_IND:
 			tl = *pc.cp++;
