@@ -6,7 +6,7 @@
 %{
 
 #ifndef lint
-static char sccsid[] = "@(#)ftpcmd.y	4.9 83/03/23";
+static char sccsid[] = "@(#)ftpcmd.y	4.10 83/06/12";
 #endif
 
 #include <sys/types.h>
@@ -14,12 +14,13 @@ static char sccsid[] = "@(#)ftpcmd.y	4.9 83/03/23";
 
 #include <netinet/in.h>
 
+#include <arpa/ftp.h>
+
 #include <stdio.h>
 #include <signal.h>
 #include <ctype.h>
 #include <pwd.h>
 #include <setjmp.h>
-#include "ftp.h"
 
 extern	struct sockaddr_in data_dest;
 extern	int logged_in;
@@ -504,7 +505,7 @@ lookup(cmd)
 	return (0);
 }
 
-#include "../telnet/telnet.h"
+#include <arpa/telnet.h>
 
 /*
  * getline - a hacked up version of fgets to ignore TELNET escape codes.
