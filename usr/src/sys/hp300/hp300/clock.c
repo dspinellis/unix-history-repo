@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: clock.c 1.18 91/01/21$
  *
- *	@(#)clock.c	7.9 (Berkeley) %G%
+ *	@(#)clock.c	7.10 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -125,8 +125,8 @@ clkread()
 #include "sys/malloc.h"
 #include "vm/vm.h"
 #include "clockioctl.h"
-#include "sys/specdev.h"
 #include "sys/vnode.h"
+#include "sys/specdev.h"
 #include "sys/mman.h"
 
 int clockon = 0;		/* non-zero if high-res timer enabled */
