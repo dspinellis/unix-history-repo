@@ -1,6 +1,6 @@
 %{
 #ifndef lint
-static char sccsid[] = "@(#)scan.l	4.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)scan.l	4.2 (Berkeley) %G%";
 #endif
 
 #include "y.tab.h"
@@ -34,7 +34,10 @@ NAMECHR	[0-9A-Z./-]
 			return (NAME);
 		}
 
-{ALPHA}		return (NAME);
+{ALPHA}		{
+			yylval.namelist = newname(yytext);
+			return (NAME);
+		}
 
 {DIGIT}+	{
 			yylval.number = atoi(yytext);
