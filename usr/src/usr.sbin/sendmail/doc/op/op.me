@@ -4,7 +4,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)op.me	6.3 (Berkeley) %G%
+.\"	@(#)op.me	6.4 (Berkeley) %G%
 .\"
 .\" eqn op.me | pic | troff -me
 .eh 'SMM:07-%''Sendmail Installation and Operation Guide'
@@ -40,9 +40,9 @@ University of California, Berkeley
 Mammoth Project
 eric@CS.Berkeley.EDU
 .sp
-Version 6.3
+Version 6.4
 .sp
-For Sendmail Version 6.6
+For Sendmail Version 6.7
 .)l
 .sp 2
 .pp
@@ -4615,20 +4615,23 @@ the
 .i checkcompat
 routine can be modified.
 This routine is called for every recipient address.
-It can return
-.b TRUE
-to indicate that the address is acceptable
-and mail processing will continue,
-or it can return
-.b FALSE
-to reject the recipient.
-If it returns false,
-it is up to
+It returns an exit status
+indicating the status of the message.
+The status
+.sm EX_OK
+accepts the address,
+.sm EX_TEMPFAIL
+queues the message for a later try,
+and other values
+(commonly
+.sm EX_UNAVAILABLE )
+reject the message.
+It is up to
 .i checkcompat
 to print an error message
 (using
 .i usrerr )
-saying why the message is rejected.
+if the message is rejected.
 For example,
 .i checkcompat
 could read:
@@ -4636,17 +4639,27 @@ could read:
 .re
 .sz -1
 .ta 4n +4n +4n +4n +4n +4n +4n
-bool
-checkcompat(to)
+int
+checkcompat(to, e)
 	register ADDRESS *to;
+	register ENVELOPE *e;
 \&{
-	if (MsgSize > 50000 && to->q_mailer != LocalMailer)
+	register STAB *s;
+
+	s = stab("private", ST_MAILER, ST_FIND);
+	if (s != NULL && e\->e_from.q_mailer != LocalMailer &&
+	    to->q_mailer == s->s_mailer)
+	{
+		usrerr("No private net mail allowed through this machine");
+		return (EX_UNAVAILABLE);
+	}
+	if (MsgSize > 50000 && to\->q_mailer != LocalMailer)
 	{
 		usrerr("Message too large for non-local delivery");
 		NoReturn = TRUE;
-		return (FALSE);
+		return (EX_UNAVAILABLE);
 	}
-	return (TRUE);
+	return (EX_OK);
 }
 .sz
 .)b
@@ -4828,6 +4841,12 @@ those connections are cached for possible future use.
 The advent of MX records made this effective for mailing lists;
 in addition,
 substantial performance improvements can be expected for queue processing.
+.sh 2 "MX Piggybacking"
+.pp
+If two hosts with different names in a single message
+happen to have the same set of MX hosts,
+they can be sent in the same transaction.
+Release 6 notices this and tries to batch the messages.
 .sh 2 "Eight-Bit Clean"
 .pp
 Previous versions of
@@ -4924,6 +4943,13 @@ The total number of MX records that can be used has been raised to 20.
 .pp
 The number of queued messages that can be handled at one time
 has been raised from 600 to 1000.
+.sh 2 "Different Default Tuning Parameters"
+.pp
+Release 6 has changed the default parameters
+for tuning queue costs
+to make the number of recipients more important
+than the size of the message (for small messages).
+This is reasonable if you are connected with reasonably fast links.
 .sh 2 "Auto-Quoting in Addresses"
 .pp
 Previously, the
@@ -5298,7 +5324,7 @@ A transcript of the current session.
 .\"Eric Allman
 .\"Britton-Lee, Inc.
 .\".sp
-.\"Version 6.3
+.\"Version 6.4
 .\".ce 0
 .pn 2
 .bp
