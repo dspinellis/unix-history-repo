@@ -14,15 +14,15 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.13 (Berkeley) %G%
+#	@(#)Makefile	5.14 (Berkeley) %G%
 #
 # C Shell with process control; VM/UNIX VAX Makefile
 # Bill Joy UC Berkeley; Jim Kulp IIASA, Austria
 #
 # To profile, put -DPROF in DEFS and -pg in CFLAGS, and recompile.
 
-DEFS=	-DTELL -DVFORK -DFILEC	# -DPROF
-CFLAGS=	${DEFS} -I. -O		# -pg
+DEFS=	-DTELL -DVFORK -DFILEC
+CFLAGS=	${DEFS} -I. -O
 XSTR=	/usr/ucb/xstr
 MAN=	csh.0
 
@@ -38,9 +38,9 @@ OBJS=	alloc.o doprnt.o sh.o sh.char.o sh.dir.o sh.dol.o sh.err.o \
 # Special massaging of C files for sharing of strings
 .c.o:
 	${CC} -E ${CFLAGS} $*.c | ${XSTR} -c -
-	${CC} -c ${CFLAGS} x.c 
-	mv -f x.o $*.o
-	rm -f x.c
+	@${CC} -c ${CFLAGS} x.c
+	@mv -f x.o $*.o
+	@rm -f x.c
 
 all: csh
 
