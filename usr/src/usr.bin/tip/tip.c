@@ -1,4 +1,4 @@
-/*	tip.c	4.11	81/12/16	*/
+/*	tip.c	4.12	82/07/29	*/
 
 /*
  * tip - UNIX link to other systems
@@ -69,6 +69,8 @@ main(argc, argv)
 		}
 	}
 
+	if (system == NOSTR)
+		goto notnumber;
 	for (p = system; *p; p++)
 		if (isalpha(*p))
 			goto notnumber;
@@ -316,6 +318,7 @@ speed(n)
 any(c, p)
 	register char c, *p;
 {
+	if (p)
 	while (*p)
 		if (*p++ == c)
 			return(1);
