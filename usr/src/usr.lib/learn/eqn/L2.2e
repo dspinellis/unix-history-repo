@@ -1,0 +1,37 @@
+#print
+Make the two equations in "Example" look like these two,
+then type "ready".
+
+#once #create Ref
+.ND
+.LP
+.EQ (1.1)
+PI ~=~ ( pi sub 1 , pi sub 2 ,..., pi sub n )
+.EN
+.EQ (1.2)
+pi bar ~=~ sum ( alpha , beta )
+.EN
+.pl 1
+#once #create Example
+.ND
+.LP
+.EQ
+PHI = ( phi sub 1 , phi sub 2 ,..., phi sub n )
+.EN
+.EQ
+phi bar = sum (A,B)
+.EN
+.pl 1
+#
+#once neqn Ref | nroff >X1 &
+#once neqn Ref | nroff -T$term %s/tinyms -
+#user
+neqn Example | nroff >X2
+#cmp X1 X2
+#fail
+Don't forget equation numbering and spaces
+where needed.  Print file "Chars" if you've forgotten
+the character names.
+#log
+#next
+2.1f
