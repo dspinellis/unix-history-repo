@@ -1,5 +1,3 @@
-/*	@(#)lrnref.h	4.1	(Berkeley)	83/02/24	*/
-
 #define	READY	0
 #define	PRINT	1
 #define	COPYIN	2
@@ -26,8 +24,9 @@
 #define	BAD	23
 #define	CREATE	24
 #define	CMP	25
-#define	GOTO	26
-#define	ONCE	27
+#define	ONCE	26
+#define	AGAIN	27
+#define XYZZY	28
 
 extern	int	more;
 extern	char	*level;
@@ -46,3 +45,7 @@ extern	FILE	*incopy;
 extern	FILE	*scrin;
 extern	int	logging;
 extern	int	ask;
+extern 	int	again;
+extern	int	skip;
+extern	int	teed;
+extern	int	total;

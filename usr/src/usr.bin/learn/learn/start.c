@@ -1,11 +1,11 @@
 #ifndef lint
-static char sccsid[] = "@(#)start.c	4.1	(Berkeley)	%G%";
+static char sccsid[] = "@(#)start.c	4.2	(Berkeley)	%G%";
 #endif not lint
 
 #include "stdio.h"
+#include "lrnref.h"
 #include <sys/types.h>
 #include <sys/dir.h>
-#include "lrnref.h"
 #define	ND	64
 
 start(lesson)
@@ -15,11 +15,11 @@ char *lesson;
 	int f, c, n;
 	char where [100];
 
-	f = open(".", 0);
+	f = open(".", 0);		/* clean up play directory */
 	n = read(f, dv, ND*sizeof(*dp));
 	n /= sizeof(*dp);
 	if (n==ND)
-		fprintf(stderr, "lesson too long\n");
+		fprintf(stderr, "Start:  play directory too long\n");
 	dm = dv+n;
 	for(dp=dv; dp<dm; dp++)
 		if (dp->d_ino) {
@@ -33,10 +33,11 @@ char *lesson;
 	close(f);
 	if (ask)
 		return;
-	sprintf(where, "../../%s/L%s", sname, lesson);
+	sprintf(where, "%s/%s/L%s", direct, sname, lesson);
 	if (access(where, 04)==0)	/* there is a file */
 		return;
-	fprintf(stderr, "No lesson %s\n",lesson);
+	perror(where);
+	fprintf(stderr, "Start:  no lesson %s\n",lesson);
 	wrapup(1);
 }
 

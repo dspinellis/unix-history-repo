@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)mysys.c	4.1	(Berkeley)	%G%";
+static char sccsid[] = "@(#)mysys.c	4.2	(Berkeley)	%G%";
 #endif not lint
 
 #include "stdio.h"
@@ -8,6 +8,57 @@ static char sccsid[] = "@(#)mysys.c	4.1	(Berkeley)	%G%";
 #define	EASY	1
 #define	MEDIUM	2
 #define	HARD	3
+#define	EMAX	256
+
+char *envp[EMAX+1];
+
+/*
+ * This routine edits the PATH environment variable so that
+ * special commands that learners may need will be found.
+ * EXINIT is modified so that the editor will always prompt,
+ * will not print \r's, and will be usable with open mode.
+ */
+
+chgenv()
+{
+	register char **p;
+	register int i;
+	extern char **environ;
+	extern char *direct;
+	char path[BUFSIZ], exinit[BUFSIZ];
+	char *malloc();
+
+	sprintf(path, "PATH=%s/bin:/usr/cc/bin:/usr/ucb/bin:", direct);
+	sprintf(exinit, "EXINIT=set prompt noopt open");
+#if vax
+	system("stty old");
+	for (p=environ,i=3; *p != 0 && i < EMAX; p++,i++)   {
+#else
+	for (p=environ,i=2; *p != 0 && i < EMAX; p++,i++)   {
+#endif
+		envp[i] = *p;
+		if (**p != 'P' && **p != 'E')
+			continue;
+		if (strncmp(*p, "PATH=", 5) == 0)
+			sprintf(path, "PATH=%s/bin:%s", direct, &envp[i--][5]);
+		else if (strncmp(*p, "EXINIT=", 7) == 0)
+			sprintf(exinit, "%s|set prompt noopt open", envp[i--]);
+#if vax
+		else if (strncmp(*p, "PS1=", 4) == 0);
+			i--;
+	}
+	envp[2] = malloc(7);
+	strcpy(envp[2], "PS1=% ");
+#else
+	}
+#endif
+	envp[0] = malloc(strlen(path) + 1);
+	strcpy(envp[0], path);
+	envp[1] = malloc(strlen(exinit) + 1);
+	strcpy(envp[1], exinit);
+	envp[i] = 0;
+	environ = envp;
+}
 
 mysys(s)
 char *s;
@@ -31,6 +82,9 @@ char *s;
 		case '$':
 		case '\'':
 		case '"':
+		case '`':
+		case '{':
+		case '~':
 			type = MEDIUM;
 			break;
 		case '|': 
@@ -58,11 +112,19 @@ char *s;
 			if (fork() == 0) {
 				char b[100];
 				signal(SIGINT, SIG_DFL);
-				strcpy(b, "/bin/");
-				strcat(b, t);
 				np[nv] = 0;
+				execvp(t, np);
+				perror(t);
+			/*	sprintf(b, "/usr/ucb/bin/%s", t);
 				execv(b, np);
-				fprintf(stderr, "Execv failed\n");
+				sprintf(b, "/usr/ucb/%s", t);
+				execv(b, np);
+				sprintf(b, "/bin/%s", t);
+				execv(b, np);
+				sprintf(b, "/usr/bin/%s", t);
+				execv(b, np);
+				perror(b); */
+				fprintf(stderr, "Mysys:  execv failed on %s\n", np);
 				exit(1);
 			}
 			wait(&stat);
@@ -90,7 +152,7 @@ char *s;
 	if ((pid = fork()) == 0) {
 		signal(SIGINT, SIG_DFL);
 		signal(SIGQUIT, SIG_DFL);
-		execl("/bin/sh", "sh", "-c", s, 0);
+		execl("/bin/csh", "csh", "-cf", s, 0);
 		_exit(127);
 	}
 	while ((w = wait(&status)) != pid && w != -1)
