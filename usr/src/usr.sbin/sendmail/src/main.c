@@ -13,7 +13,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	6.68 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	6.69 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -501,11 +501,6 @@ main(argc, argv, envp)
 		}
 	}
 	}
-
-#ifdef NAMED_BIND
-	if (tTd(8, 8))
-		_res.options |= RES_DEBUG;
-#endif
 
 	/*
 	**  Do basic initialization.
