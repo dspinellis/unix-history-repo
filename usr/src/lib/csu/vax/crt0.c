@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)crt0.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)crt0.c	5.6 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -32,10 +32,18 @@ static char sccsid[] = "@(#)crt0.c	5.5 (Berkeley) %G%";
 char **environ = (char **)0;
 static int fd;
 
-asm("#define _start start");
-asm("#define _eprol eprol");
 extern	unsigned char	etext;
-extern	unsigned char	eprol;
+extern	unsigned char	eprol asm ("eprol");
+extern			start() asm("start");
+
+/*
+ * Two kluges: store sp at entry in environ, and
+ * install 16 bits of 0 at location 0 (a zero register save mask).
+ * These two hacks remove limits on the use of local
+ * and register variables in start().
+ */
+asm(".text; .word 0; movl sp,_environ; jbr start+2");
+
 start()
 {
 	struct kframe {
@@ -44,11 +52,7 @@ start()
 		char	kargstr[1];	/* size varies */
 		char	kenvstr[1];	/* size varies */
 	};
-	/*
-	 *	ALL REGISTER VARIABLES!!!
-	 */
-	register int r11;		/* needed for init */
-	register struct kframe *kfp;	/* r10 */
+	register struct kframe *kfp;
 	register char **targv;
 	register char **argv;
 	extern int errno;
@@ -57,7 +61,7 @@ start()
 	kfp = 0;
 	initcode = initcode = 0;
 #else not lint
-	asm("	movl	sp,r10");	/* catch it quick */
+	kfp = (struct kframe *) environ;
 #endif not lint
 	for (argv = targv = &kfp->kargv[0]; *targv++; /* void */)
 		/* void */ ;
@@ -87,13 +91,11 @@ asm("eprol:");
 	errno = 0;
 	exit(main(kfp->kargc, argv, environ));
 }
-asm("#undef _start");
-asm("#undef _eprol");
 
 #ifdef MCRT0
 /*ARGSUSED*/
 exit(code)
-	register int code;	/* r11 */
+	register int code;
 {
 	monitor(0);
 	_cleanup();
@@ -111,6 +113,6 @@ moncontrol(val)
 {
 
 }
-asm("	.globl	mcount");
-asm("mcount:	rsb");
+asm(".globl mcount");
+asm("mcount: rsb");
 #endif CRT0
