@@ -1,9 +1,0 @@
-Mwhatis	whatis.c	/^main(argc, argv)$/
-addlist	../man/config.c	/^addlist(name)$/
-config	../man/config.c	/^config(fname)$/
-dashtrunc	whatis.c	/^dashtrunc(from, to)$/
-debug	../man/config.c	/^debug(l)$/
-getlist	../man/config.c	/^getlist(name)$/
-match	whatis.c	/^match(bp, str)$/
-usage	whatis.c	/^usage()$/
-whatis	whatis.c	/^whatis(argv, path, buildpath)$/

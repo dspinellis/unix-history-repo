@@ -1,9 +1,0 @@
-: run this script through /bin/sh
-:	convert an MM-style maildrop to an MMDF-style maildrop.
-:	strips the MM delimiter line
-:	assumes that CR-LF's have already been tr'd to newlines
-
-for A in $*
-do
-     ex $A < mm-mmdf.ex
-done
