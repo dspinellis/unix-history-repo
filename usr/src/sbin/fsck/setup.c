@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)setup.c	5.19 (Berkeley) %G%";
+static char sccsid[] = "@(#)setup.c	5.20 (Berkeley) %G%";
 #endif not lint
 
 #define DKTYPENAMES
@@ -23,6 +23,19 @@ static char sccsid[] = "@(#)setup.c	5.19 (Berkeley) %G%";
 BUFAREA asblk;
 #define altsblock (*asblk.b_un.b_fs)
 #define POWEROF2(num)	(((num) & ((num) - 1)) == 0)
+
+/*
+ * The size of a cylinder group is calculated by CGSIZE. The maximum size
+ * is limited by the fact that cylinder groups are at most one block.
+ * Its size is derived from the size of the maps maintained in the 
+ * cylinder group and the (struct cg) size.
+ */
+#define CGSIZE(fs) \
+    /* base cg */	(sizeof(struct cg) + \
+    /* blktot size */	(fs)->fs_cpg * sizeof(long) + \
+    /* blks size */	(fs)->fs_cpg * (fs)->fs_nrpos * sizeof(short) + \
+    /* inode map */	howmany((fs)->fs_ipg, NBBY) + \
+    /* block map */	howmany((fs)->fs_cpg * (fs)->fs_spc / NSPF(fs), NBBY))
 
 char	*calloc();
 char	*index();
@@ -158,6 +171,8 @@ setup(dev)
 			    (char *)(&sblock.fs_link);
 			sblock.fs_rotbloff = &sblock.fs_space[0] -
 			    (u_char *)(&sblock.fs_link);
+			sblock.fs_cgsize =
+				fragroundup(&sblock, CGSIZE(&sblock));
 			/*
 			 * Planning now for future expansion.
 			 */
@@ -191,6 +206,8 @@ setup(dev)
 			else if (!reply("CONVERT TO OLD FILE SYSTEM FORMAT"))
 				return(0);
 			sblock.fs_postblformat = FS_42POSTBLFMT;
+			sblock.fs_cgsize = fragroundup(&sblock,
+			    sizeof(struct ocg) + howmany(sblock.fs_fpg, NBBY));
 			sbdirty();
 			dirty(&asblk);
 		} else {
