@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)usersmtp.c	6.5 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	6.6 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)usersmtp.c	6.5 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	6.6 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -300,11 +300,20 @@ smtpdata(m, mci, e)
 	setproctitle("%s %s: %s", e->e_id, CurHostName, mci->mci_phase);
 	r = reply(m, mci, e, ReadTimeout);
 	if (r < 0 || REPLYTYPE(r) == 4)
+	{
+		smtpquit(m, mci, e);
 		return (EX_TEMPFAIL);
+	}
 	else if (r == 554)
+	{
+		smtprset(m, mci, e);
 		return (EX_UNAVAILABLE);
+	}
 	else if (r != 354)
+	{
+		smtprset(m, mci, e);
 		return (EX_PROTOCOL);
+	}
 
 	/* now output the actual message */
 	(*e->e_puthdr)(mci->mci_out, m, e);
@@ -321,7 +330,10 @@ smtpdata(m, mci, e)
 	setproctitle("%s %s: %s", e->e_id, CurHostName, mci->mci_phase);
 	r = reply(m, mci, e, ReadTimeout);
 	if (r < 0)
+	{
+		smtpquit(m, mci, e);
 		return (EX_TEMPFAIL);
+	}
 	mci->mci_state = MCIS_OPEN;
 	if (REPLYTYPE(r) == 4)
 		return (EX_TEMPFAIL);
