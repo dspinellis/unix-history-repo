@@ -1,9 +1,9 @@
 #
 # cursor package maker
 #
-# @(#)Makefile	1.9 (Berkeley) %G%
+# @(#)Makefile	1.10 (Berkeley) %G%
 #
-HEADERS=curses.h unctrl.h cr_ex.h
+HEADERS=curses.h unctrl.h cr_ex.h curses.ext
 CFILES=	box.c clear.c initscr.c endwin.c mvprintw.c mvscanw.c mvwin.c \
 	newwin.c overlay.c overwrite.c printw.c scanw.c refresh.c \
 	touchwin.c erase.c clrtobot.c clrtoeol.c cr_put.c cr_tty.c \
@@ -81,10 +81,10 @@ lpr:
 	-lpq
 
 tp:
-	tp crm0 Makefile tags ${HEADERS} curses.ext ${CFILES} llib-lcurses
+	tp crm0 Makefile tags ${HEADERS} ${CFILES} llib-lcurses
 
 tar:
-	tar crvf curses.tar Makefile tags ${HEADERS} curses.ext ${CFILES} llib-lcurses
+	tar crvf curses.tar Makefile tags ${HEADERS} ${CFILES} llib-lcurses
 
 llib-lcurses.ln: llib-lcurses
 	-(/lib/cpp -C -Dlint llib-lcurses | ${LPASS1} > llib-lcurses.ln ) 2>&1 | grep -v warning
