@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)login.c.1	4.25 (Berkeley) 83/05/23";
+static	char *sccsid = "@(#)login.c.1	4.26 (Berkeley) 83/05/23";
 #endif
 
 /*
@@ -531,5 +531,13 @@ doremoteterm(term, tp)
 logerr(fmt, a1, a2, a3)
 	char *fmt, *a1, *a2, *a3;
 {
+#ifdef LOGERR
+	FILE *cons = fopen("/dev/console", "w");
 
+	if (cons != NULL) {
+		fprintf(cons, fmt, a1, a2, a3);
+		fputc('\r', cons);
+		fclose(cons);
+	}
+#endif
 }
