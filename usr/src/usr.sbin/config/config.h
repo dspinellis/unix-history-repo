@@ -1,5 +1,5 @@
 /*
- * config.h	1.3	81/03/06
+ * config.h	1.4	81/03/31
  * Definitions that everybody needs to know
  */
 
@@ -47,6 +47,10 @@ struct cputype {
 	char *cpu_name;
 	struct cputype *cpu_next;
 } *cputype;
+struct opt {
+	char *op_name;
+	struct cputype *op_next;
+} *opt;
 char *ident, *ns(), *malloc(), *tc(), *qu();
 bool do_trace, seen_mba, seen_uba;
 struct device *connect();
