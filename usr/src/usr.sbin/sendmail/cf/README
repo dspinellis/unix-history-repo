@@ -4,7 +4,7 @@
 
 		Eric Allman <eric@CS.Berkeley.EDU>
 
-		@(#)README	8.44 (Berkeley) %G%
+		@(#)README	8.45 (Berkeley) %G%
 
 
 This document describes the sendmail configuration files being used
@@ -457,6 +457,11 @@ local_procmail	Use procmail as the local mailer.  This mailer can
 		it is passed as the -a argument to procmail.  The
 		argument to this feature is the pathname of procmail,
 		which defaults to /usr/local/bin/procmail.
+
+bestmx_is_local	Accept mail as though locally addressed for any host that
+		lists us as the best possible MX record.  This generates
+		additional DNS traffic, but should be OK for low to
+		medium traffic hosts.
 
 
 +-------+
