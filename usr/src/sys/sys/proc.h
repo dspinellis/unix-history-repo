@@ -1,4 +1,4 @@
-/*	proc.h	3.3	%H%	*/
+/*	proc.h	3.4	%H%	*/
 
 /*
  * One structure allocated per active
@@ -23,7 +23,7 @@ struct	proc
 	char	p_nice;		/* nice for cpu usage */
 	char	p_slptime;	/* time since last block */
 	char	p_cursig;
-	int	p_sig;		/* signals pending to this process */
+	long	p_sig;		/* signals pending to this process */
 	long	p_siga0;	/* low bit of 2 bit signal action */
 	long	p_siga1;	/* high bit of 2 bit signal action */
 #define	p_ignsig p_siga0	/* ignored signal mask */
