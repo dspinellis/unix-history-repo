@@ -1,4 +1,7 @@
-/*	proc.h	4.11	82/07/16	*/
+/*	proc.h	4.12	82/07/17	*/
+
+#include "mush.h"
+#include "mu_msg.h"
 
 /*
  * One structure allocated per active
