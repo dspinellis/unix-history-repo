@@ -33,7 +33,7 @@
 
 #ifndef lint
 /*static char sccsid[] = "from: @(#)local_passwd.c	5.5 (Berkeley) 5/6/91";*/
-static char rcsid[] = "$Id: local_passwd.c,v 1.5 1993/08/01 18:10:19 mycroft Exp $";
+static char rcsid[] = "$Id: local_passwd.c,v 1.4 1994/01/11 19:01:13 nate Exp $";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -81,8 +81,21 @@ local_passwd(uname)
 	pw->pw_change = 0;
 	pw_copy(pfd, tfd, pw);
 
-	if (!pw_mkdb())
-		pw_error((char *)NULL, 0, 1);
+#ifndef PW_COMPACT
+	/*
+	 * Attempt a recovery if the incremental database update failed by
+	 * handing off to the real password hashing program to remake the
+	 * whole mess. Even though this costs lots of time it's better than
+	 * having the password databases out of sync with the master pw file.
+	 */
+	if (pw_fastmkdb(pw) < 0) {
+		fprintf(stderr,"%s: WARNING!! Password database mangled, recreating it from scratch\n");
+#endif
+		if(!pw_mkdb())
+			pw_error((char *)NULL, 0, 1);
+#ifndef PW_COMPACT
+	}
+#endif
 	return(0);
 }
 

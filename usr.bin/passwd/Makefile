@@ -2,7 +2,7 @@
 
 PROG=	passwd
 SRCS=	local_passwd.c passwd.c pw_copy.c pw_util.c yp_passwd.c getpwent.c \
-	krb_passwd.c
+	krb_passwd.c pw_fastmkdb.c
 CFLAGS+=-I${.CURDIR} -DYP
 .PATH:  ${.CURDIR}/../../usr.bin/chpass ${.CURDIR}/../../usr.sbin/vipw \
 	${.CURDIR}/../rlogin ${.CURDIR}/../../lib/libc/gen
