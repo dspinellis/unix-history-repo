@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)timed.c	1.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)timed.c	1.4 (Berkeley) %G%";
 #endif not lint
 
 #include "globals.h"
@@ -398,14 +398,10 @@ char *
 date()
 {
 	char	*ret;
-	char    *asctime();
+	char    *ctime();
 	struct	timeval tv;
-	struct	tm *localtime();
-	struct  tm *tp;
 
 	(void)gettimeofday(&tv, (struct timezone *)0);
-	tp = localtime((time_t *)&tv.tv_sec);
-	ret = asctime(tp);
-	ret[19] = '\0';
+	ret = ctime(&tv.tv_sec);
 	return(ret);
 }
