@@ -1,0 +1,119 @@
+#!/bin/sh
+#
+# The shell script for bc to automatically create the config.h file.
+# 
+# Syntax:  configure [ include-dir [ lib-file [ c-compiler ]]]
+#
+# Set some standard things.
+#
+INCLUDE=${1-/usr/include}
+LIBFILE=${2-libmath.b}
+CC=${3-cc}
+#
+# Initialize the exit status
+#
+EXIT=0
+#
+# Remove the current copy and make sure there is at least an empty file
+#
+rm -f config.h
+echo "/* config.h */" > config.h
+#
+# Check for the argument passing mechanism.
+#
+if test -r $INCLUDE/varargs.h
+then
+echo "Using varargs.h for variable arguments (non ansi compilers). "
+echo "#ifndef __STDC__" >> config.h
+echo "#define VARARGS" >> config.h
+echo "#endif" >> config.h
+else
+if test -r $INCLUDE/stdarg.h
+then
+echo "Using stdarg.h for variable arguments. "
+else
+echo "Unknown variable argument mechanism. "
+EXIT=1
+fi
+fi
+#
+# Limits file?
+#
+if test -r $INCLUDE/limits.h
+then
+echo "You have a limits.h file."
+else
+echo "You need to check the limits in const.h."
+echo "#define NO_LIMITS" >> config.h
+fi
+#
+# unistd?
+#
+if test -r $INCLUDE/unistd.h
+then
+echo "You have a unistd.h file."
+else
+echo "#define NO_UNISTD" >> config.h
+fi
+#
+# Stdlib?
+#
+if test -r $INCLUDE/stdlib.h
+then
+echo "You have a stdlib.h file."
+else
+echo "#define NO_STDLIB" >> config.h
+fi
+#
+# Strinog?
+#
+if test -r $INCLUDE/string.h
+then
+echo "You have a string.h file."
+else
+echo "#define STRINGS_H" >> config.h
+fi
+#
+# At least one BSD system did not define "extern int errno;" in errno.h
+#
+if grep -s extern $INCLUDE/errno.h
+then
+true
+else
+echo "extern int errno;" >> config.h
+fi
+#
+# On MINIX pc systems we want to define some extra files.
+#
+if test -r $INCLUDE/minix
+then
+# We must be on a minix system.  Check for the machine type.
+if test `machine` = IBM_PC
+then
+echo "#define SMALL_BUF" >> config.h
+echo "#define BC_MATH_FILE \"$LIBFILE\"" >> config.h
+echo "#define SHORTNAMES" >> config.h
+else
+echo "Your Minix is not on a PC.  The bc library will be loaded in the"
+echo "executable file.  You will not have to install a library file."
+fi
+else
+# Test to see if the compiler will compile long strings...
+echo "char libmath[] =" > JUNK.c
+echo "#include \"math.h\"" >> JUNK.c
+echo ";" >> JUNK.c
+if $CC -c JUNK.c >/dev/null 2>&1
+then
+echo "The bc library will be loaded in the executable file.  You will"
+echo "not have to install a library file."
+else
+echo "Your C compiler does not like long strings.  You will have to"
+echo "load the math library from a file."
+echo "#define BC_MATH_FILE \"$LIBFILE\"" >> config.h
+fi
+rm -f JUNK.c JUNK.o
+fi
+#
+# exit
+#
+exit $EXIT

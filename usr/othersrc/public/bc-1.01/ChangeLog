@@ -1,0 +1,47 @@
+Mon Nov 25 13:11:17 1991  Phil Nelson  (phil at cs.wwu.edu)
+
+	* Changed version number in version.h to 1.01 with current date.
+
+	* Changed LIBFILE definition in Makefile.
+
+	* Added a recursive function example to bc.1.
+
+Sun Nov 24 21:24:01 1991  Phil Nelson  (phil at cs.wwu.edu)
+
+	* Changed the Makefile to make sure configure is run first.
+	  Added the $(CC) the configure call.  Moved some defines
+	  toward the front of the Makefile to make sure they are
+	  read by installers.  Also added SUBDIRS variable and updated
+	  the GNU distribution to include the subdirectories.  Included
+	  math.h in the distribution for use by configure.  Included
+	  ChangeLog in the distribution.
+
+	* Split the README into README and Install.  Changed Install
+	  to have current information.  Documented the STRINGS_H define.
+	  Updated the version number in README.
+
+	* Added a check for <strings.h> in configure.
+
+Fri Nov 22 15:06:32 1991  Phil Nelson  (phil at cs.wwu.edu)
+
+	* Changed configure to check for varargs.h first.  Also, added
+	  checks to see if long strings (math.h) are accepted by the
+	  C compiler.  Also added parameters to configure.
+
+	* Deleted #include <sys/types.h> from proto.h.  Also made only
+	  ANSI C compilers include <stdlib.h>.
+
+	* Changed the Makefile to have the install bin directory be
+	  /usr/local/bin and the install lib directory be /usr/local/lib.
+
+	* Changed some files in the Test directory to eliminate the
+	  <op>= form that some older bcs don't like.
+
+	* Made some small corrections in bc.1.
+
+Tue Oct 29 10:06:32 1991  Phil Nelson  (phil at cs.wwu.edu)
+
+	* Called current version 1.00.
+
+	* Submitted GNU bc-1.00 to comp.sources.reviewed
+
