@@ -101,6 +101,7 @@ define(`confIGNORE_DOTS', `False')
 define(`confBIND_OPTS', `')
 define(`confMCI_CACHE_SIZE', `2')
 define(`confMCI_CACHE_TIMEOUT', `5m')
+define(`confUSE_ERRORS_TO', `False')
 define(`confLOG_LEVEL', `9')
 define(`confME_TOO', `False')
 define(`confCHECK_ALIASES', `True')
@@ -117,4 +118,4 @@ define(`confCW_FILE', `/etc/sendmail.cw')
 define(`confMIME_FORMAT_ERRORS', `True')
 
 divert(0)dnl
-VERSIONID(`@(#)cf.m4	6.16 (Berkeley) %G%')
+VERSIONID(`@(#)cf.m4	6.17 (Berkeley) %G%')
