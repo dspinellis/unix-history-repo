@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: cons.c 1.4 88/12/03$
  *
- *	@(#)cons.c	7.2 (Berkeley) %G%
+ *	@(#)cons.c	7.3 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -101,24 +101,24 @@ cnclose(dev, flag)
 	return ((*cdevsw[major(dev)].d_close)(dev, flag));
 }
  
-cnread(dev, uio)
+cnread(dev, uio, flag)
 	dev_t dev;
 	struct uio *uio;
 {
 	if (cn_tab == NULL)
 		return(0);
 	dev = cn_tab->cn_dev;
-	return ((*cdevsw[major(dev)].d_read)(dev, uio));
+	return ((*cdevsw[major(dev)].d_read)(dev, uio, flag));
 }
  
-cnwrite(dev, uio)
+cnwrite(dev, uio, flag)
 	dev_t dev;
 	struct uio *uio;
 {
 	if (cn_tab == NULL)
 		return(0);
 	dev = cn_tab->cn_dev;
-	return ((*cdevsw[major(dev)].d_write)(dev, uio));
+	return ((*cdevsw[major(dev)].d_write)(dev, uio, flag));
 }
  
 cnioctl(dev, cmd, data, flag)
