@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)langpats.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)langpats.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 #include "inline.h"
@@ -475,6 +475,169 @@ struct pats language_ptab[] = {
 1:\n" },
 
 #endif mc68000
+
+#ifdef tahoe
+	{ 2, "_TRUNC\n",
+"	ldd	(sp)\n\
+	movab	8(sp),sp\n\
+	cvdl	r0\n" },
+
+	{ 1, "_ACTFILE\n",
+"	movl	(sp)+,r1\n\
+	movl	12(r1),r0\n" },
+
+/*
+ * Pascal set operations.
+ */
+
+	{ 4, "_ADDT\n",
+"	movl	(sp)+,r0\n\
+	movl	(sp)+,r1\n\
+	movl	(sp)+,r2\n\
+	movl	(sp)+,r4\n\
+	movl	r0,r3\n\
+	clrl	r5\n\
+1:\n\
+	orl3	(r1),(r2),(r3)\n\
+	addl2	$4,r1\n\
+	addl2	$4,r2\n\
+	addl2	$4,r3\n\
+	aoblss	r4,r5,1b\n" },
+
+	{ 4, "_SUBT\n",
+"	movl	(sp)+,r0\n\
+	movl	(sp)+,r1\n\
+	movl	(sp)+,r2\n\
+	movl	(sp)+,r4\n\
+	movl	r0,r3\n\
+1:\n\
+	mcoml	(r2),r5\n\
+	andl3	r5,(r1),(r3)\n\
+	addl2	$4,r1\n\
+	addl2	$4,r2\n\
+	addl2	$4,r3\n\
+	decl	r4\n\
+	jgtr	1b\n" },
+
+	{ 4, "_MULT\n",
+"	movl	(sp)+,r0\n\
+	movl	(sp)+,r1\n\
+	movl	(sp)+,r2\n\
+	movl	(sp)+,r4\n\
+	movl	r0,r3\n\
+	clrl	r5\n\
+1:\n\
+	andl3	(r1),(r2),(r3)\n\
+	addl2	$4,r1\n\
+	addl2	$4,r2\n\
+	addl2	$4,r3\n\
+	aoblss	r4,r5,1b\n" },
+
+/*
+ * Pascal runtime checks
+ */
+	{ 1, "_ASRT\n",
+"	movl	(sp)+,r0\n\
+	tstl	r0\n\
+	jneq	1f\n\
+	pushl	$0\n\
+	pushl	$_EASRT\n\
+	callf	$12,_ERROR\n\
+1:\n" },
+
+	{ 2, "_ASRTS\n",
+"	movl	(sp)+,r0\n\
+	movl	(sp)+,r1\n\
+	tstl	r0\n\
+	jneq	1f\n\
+	pushl	r1\n\
+	pushl	$_EASRTS\n\
+	callf	$12,_ERROR\n\
+1:\n" },
+
+	{ 1, "_CHR\n",
+"	movl	(sp)+,r0\n\
+	cmpl	r0,$127\n\
+	jlequ	1f\n\
+	pushl	r0\n\
+	pushl	$_ECHR\n\
+	callf	$12,_ERROR\n\
+1:\n" },
+
+	{ 0, "_LINO\n",
+"	incl	__stcnt\n\
+	cmpl	__stcnt,__stlim\n\
+	jlss	1f\n\
+	pushl	__stcnt\n\
+	pushl	$_ELINO\n\
+	callf	$12,_ERROR\n\
+1:\n" },
+
+	{ 1, "_NIL\n",
+"	movl	(sp)+,r0\n\
+	cmpl	r0,__maxptr\n\
+	jgtr	1f\n\
+	cmpl	r0,__minptr\n\
+	jgeq	2f\n\
+1:\n\
+	pushl	$0\n\
+	pushl	$_ENIL\n\
+	callf	$12,_ERROR\n\
+2:\n" },
+
+	{ 3, "_RANG4\n",
+"	movl	(sp)+,r0\n\
+	movl	(sp)+,r1\n\
+	movl	(sp)+,r2\n\
+	cmpl	r0,r1\n\
+	jlss	1f\n\
+	cmpl	r0,r2\n\
+	jleq	2f\n\
+1:\n\
+	pushl	r0\n\
+	pushl	$_ERANG\n\
+	callf	$12,_ERROR\n\
+2:\n" },
+
+	{ 2, "_RSNG4\n",
+"	movl	(sp)+,r0\n\
+	movl	(sp)+,r1\n\
+	cmpl	r0,r1\n\
+	jlequ	1f\n\
+	pushl	r0\n\
+	pushl	$_ERANG\n\
+	callf	$12,_ERROR\n\
+1:\n" },
+
+	{ 1, "_SEED\n",
+"	movl	(sp)+,r1\n\
+	movl	__seed,r0\n\
+	movl	r1,__seed\n" },
+
+	{ 3, "_SUBSC\n",
+"	movl	(sp)+,r0\n\
+	movl	(sp)+,r1\n\
+	movl	(sp)+,r2\n\
+	cmpl	r0,r1\n\
+	jlss	1f\n\
+	cmpl	r0,r2\n\
+	jleq	2f\n\
+1:\n\
+	pushl	r0\n\
+	pushl	$_ESUBSC\n\
+	callf	$12,_ERROR\n\
+2:\n" },
+
+	{ 2, "_SUBSCZ\n",
+"	movl	(sp)+,r0\n\
+	movl	(sp)+,r1\n\
+	cmpl	r0,r1\n\
+	jlequ	1f\n\
+	pushl	r0\n\
+	pushl	$_ESUBSC\n\
+	callf	$12,_ERROR\n\
+1:\n" },
+#endif tahoe
 
 	{ 0, "", "" }
 };
