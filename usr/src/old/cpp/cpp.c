@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)cpp.c	1.14 %G%";
+static char sccsid[] = "@(#)cpp.c	1.15 %G%";
 #endif lint
 
 #ifdef FLEXNAMES
@@ -34,7 +34,7 @@ char cinit;
 
 /* some code depends on whether characters are sign or zero extended */
 /*	#if '\377' < 0		not used here, old cpp doesn't understand */
-#if pdp11 | vax | mc68000
+#if pdp11 | vax | mc68000 | tahoe
 #define COFF 128
 #else
 #define COFF 0
@@ -1252,6 +1252,9 @@ main(argc,argv)
 # endif
 # if vax
 	varloc=stsym("vax");
+# endif
+# if tahoe
+	varloc=stsym("tahoe");
 # endif
 # if interdata
 	varloc=stsym ("interdata");

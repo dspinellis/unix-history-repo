@@ -1,11 +1,11 @@
 #ifndef lint
-static char sccsid[] = "@(#)yylex.c	1.3 %G%";
+static char sccsid[] = "@(#)yylex.c	1.4 %G%";
 #endif lint
 
 #define isid(a)  ((fastab+COFF)[a]&IB)
 #define IB 1
 /*	#if '\377' < 0		it would be nice if this worked properly!!!!! */
-#if pdp11 | vax | mc68000
+#if pdp11 | vax | mc68000 | tahoe
 #define COFF 128
 #else
 #define COFF 0
