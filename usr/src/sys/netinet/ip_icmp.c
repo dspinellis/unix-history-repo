@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ip_icmp.c	7.1 (Berkeley) %G%
+ *	@(#)ip_icmp.c	7.2 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -249,7 +249,7 @@ icmp_input(m, ifp)
 	case ICMP_MASKREQ:
 		if (icmplen < ICMP_MASKLEN || (ia = ifptoia(ifp)) == 0)
 			break;
-		icp->icmp_type = ICMP_IREQREPLY;
+		icp->icmp_type = ICMP_MASKREPLY;
 		icp->icmp_mask = ia->ia_netmask;
 		if (ip->ip_src.s_addr == 0) {
 			if (ia->ia_ifp->if_flags & IFF_BROADCAST)
