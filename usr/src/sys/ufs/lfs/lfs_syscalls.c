@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_syscalls.c	7.9 (Berkeley) %G%
+ *	@(#)lfs_syscalls.c	7.10 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -111,7 +111,7 @@ lfs_markv(p, uap, retval)
 		 * If modify time later than segment create time, see if the
 		 * block has been replaced.
 		 */
-		if (ip->i_mtime > blkp->bi_segcreate &&
+		if (ip->i_mtime.tv_sec > blkp->bi_segcreate &&
 		    (lfs_bmap(vp, blkp->bi_lbn, NULL, &daddr) ||
 		    daddr != blkp->bi_daddr)) {
 			vput(vp);
