@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_node.c	7.15 (Berkeley) %G%
+ *	@(#)nfs_node.c	7.16 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -210,12 +210,16 @@ nfs_reclaim(vp)
 	extern int prtactive;
 
 	/*
-	 * Flush out any associated bio buffers that might be lying about
+	 * Flush out any bio buffer or cmap references
 	 */
-	if (vp->v_type == VREG && (np->n_flag & NBUFFERED)) {
-		nfs_lock(vp);
-		nfs_blkflush(vp, (daddr_t)0, np->n_size, TRUE);
-		nfs_unlock(vp);
+	if (vp->v_type == VREG) {
+		if (vp->v_blockh) {
+			nfs_lock(vp);
+			vinvalbuf(vp, TRUE);
+			nfs_unlock(vp);
+		}
+		if (np->n_flag & NPAGEDON)
+			mpurge(vp);
 	}
 	if (prtactive && vp->v_count != 0)
 		vprint("nfs_reclaim: pushing active", vp);
@@ -226,6 +230,7 @@ nfs_reclaim(vp)
 	np->n_forw = np;
 	np->n_back = np;
 	cache_purge(vp);
+	np->n_flag = 0;
 	return (0);
 }
 

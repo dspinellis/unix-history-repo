@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_vfsops.c	7.10 (Berkeley) %G%
+ *	@(#)nfs_vfsops.c	7.11 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -26,6 +26,7 @@
 #include "proc.h"
 #include "uio.h"
 #include "ucred.h"
+#include "systm.h"
 #include "../ufs/dir.h"
 #include "namei.h"
 #include "vnode.h"
@@ -72,7 +73,7 @@ struct vfsops nfs_vfsops = {
 };
 
 extern struct nfsreq nfsreqh;
-static long nfs_mntid;
+static u_char nfs_mntid;
 
 /*
  * Called by vfs_mountroot when nfs is going to be mounted as root
@@ -137,16 +138,41 @@ mountnfs(argp, mp, saddr, pth, hst)
 	char *pth, *hst;
 {
 	register struct nfsmount *nmp;
-#ifdef notdef
-	struct statfs statf, *sbp;
-#endif
+	fsid_t tfsid;
 	int error;
 
 	nmp = (struct nfsmount *)malloc(sizeof (struct nfsmount), M_NFSMNT,
 	    M_WAITOK);
 	mp->m_data = (qaddr_t)nmp;
-	mp->m_fsid.val[0] = ++nfs_mntid;
+	/*
+	 * Generate a unique nfs mount id. The problem is that a dev number
+	 * is not unique across multiple systems. The techique is as follows:
+	 * 1) Set to nblkdev,0 which will never be used otherwise
+	 * 2) Generate a first guess as nblkdev,nfs_mntid where nfs_mntid is
+	 *	NOT 0
+	 * 3) Loop searching the mount list for another one with same id
+	 *	If a match, increment val[0] and try again
+	 * NB: I increment val[0] { a long } instead of nfs_mntid { a u_char }
+	 *	so that nfs is not limited to 255 mount points
+	 *     Incrementing the high order bits does no real harm, since it
+	 *     simply makes the major dev number tick up. The upper bound is
+	 *     set to major dev 127 to avoid any sign extention problems
+	 */
+	mp->m_fsid.val[0] = makedev(nblkdev, 0);
 	mp->m_fsid.val[1] = MOUNT_NFS;
+	if (++nfs_mntid == 0)
+		++nfs_mntid;
+	tfsid.val[0] = makedev(nblkdev, nfs_mntid);
+	tfsid.val[1] = MOUNT_NFS;
+	while (getvfs(&tfsid)) {
+		tfsid.val[0]++;
+		nfs_mntid++;
+	}
+	if (major(tfsid.val[0]) > 127) {
+		error = ENOENT;
+		goto bad;
+	}
+	mp->m_fsid.val[0] = tfsid.val[0];
 	nmp->nm_mountp = mp;
 	nmp->nm_flag = argp->flags;
 	nmp->nm_sockaddr = saddr;
@@ -178,54 +204,11 @@ mountnfs(argp, mp, saddr, pth, hst)
 	bcopy((caddr_t)argp->fh, (caddr_t)&nmp->nm_fh, sizeof(nfsv2fh_t));
 	bcopy(pth, nmp->nm_path, MNAMELEN);
 	bcopy(hst, nmp->nm_host, MNAMELEN);
-#ifdef notdef
-	sbp = &statf;
-	/*
-	 * Kludge City...
-	 * To do an interruptable hard mount, turn it into a soft mount
-	 * with a retry limit of one and then repeat it so long as it
-	 * times out and there is no pending signal for the process.
-	 * It is tempting to just let nfs_statfs() sleep at positive
-	 * prio, but then you would long jump out without taking the
-	 * mount structure back out of the list.
-	 * NB: NFSMNT_INT must NEVER be set for nfs_mountroot(), since
-	 * the process context is not yet built!!
-	 */
-	if ((argp->flags && NFSMNT_INT) && (argp->flags & NFSMNT_SOFT) == 0) {
-		int savretrans;
-
-		nmp->nm_flag |= NFSMNT_SOFT;
-		savretrans = nmp->nm_retrans;
-		nmp->nm_retrans = 1;
-		do {
-			error = nfs_statfs(mp, sbp);
-		} while (error == ETIMEDOUT && (u.u_procp->p_sig &
-			(sigmask(SIGINT)|sigmask(SIGQUIT)|sigmask(SIGTERM)|
-			 sigmask(SIGKILL))) == 0);
-		nmp->nm_retrans = savretrans;
-		nmp->nm_flag &= ~NFSMNT_SOFT;
-		if (error)
-			goto bad;
-	} else if (error = nfs_statfs(mp, sbp))
-		goto bad;
-	mp->m_fsize = sbp->f_fsize;
-
-	/*
-	 * If the block size is not an exact multiple of CLBYTES
-	 * use CLBYTES so that paging in ZMAGIC executables doesn't
-	 * get sick. (It is used by vinitfod())
-	 */
-	if (sbp->f_bsize >= CLBYTES && claligned(sbp->f_bsize))
-		mp->m_bsize = sbp->f_bsize;
-	else
-		mp->m_bsize = CLBYTES;
-#else
 	/*
 	 * Set to CLBYTES so that vinifod() doesn't get confused.
 	 * Actually any exact multiple of CLBYTES will do
 	 */
 	mp->m_bsize = mp->m_fsize = CLBYTES;
-#endif
 	return (0);
 bad:
 	m_freem(saddr);

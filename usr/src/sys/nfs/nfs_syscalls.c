@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_syscalls.c	7.4 (Berkeley) %G%
+ *	@(#)nfs_syscalls.c	7.5 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -37,6 +37,7 @@
 #include "socketvar.h"
 #include "nfsv2.h"
 #include "nfs.h"
+#include "nfsrvcache.h"
 
 /* Global defs. */
 extern u_long nfs_prog, nfs_vers;
@@ -147,6 +148,8 @@ nfssvc()
 {
 	register struct a {
 		int s;
+		u_long ormask;
+		u_long matchbits;
 	} *uap = (struct a *)u.u_ap;
 	register struct mbuf *m;
 	register int siz;
@@ -157,6 +160,8 @@ nfssvc()
 	caddr_t dpos;
 	int procid;
 	u_long retxid;
+	u_long msk, mtch;
+	int repstat;
 	int error;
 
 	/*
@@ -169,34 +174,49 @@ nfssvc()
 		return;
 	so = (struct socket *)fp->f_data;
 	cr = u.u_cred = crcopy(u.u_cred);	/* Copy it so others don't see changes */
+	msk = uap->ormask;
+	mtch = uap->matchbits;
 	/*
-	 * Just loop arround doin our stuff until SIGKILL
+	 * Just loop around doin our stuff until SIGKILL
 	 */
 	for (;;) {
 		if (error = nfs_getreq(so, nfs_prog, nfs_vers, NFS_NPROCS-1,
-			&nam, &mrep, &md, &dpos, &retxid, &procid, cr)) {
+		   &nam, &mrep, &md, &dpos, &retxid, &procid, cr, msk, mtch)) {
 			m_freem(nam);
 			continue;
 		}
-		if (error = (*(nfsrv_procs[procid]))(mrep, md, dpos,
-			cr, retxid, &mreq)) {
-			m_freem(nam);
-			nfsstats.srv_errs++;
-			continue;
-		} else
+		switch (nfsrv_getcache(nam, retxid, procid, &mreq)) {
+		case RC_DOIT:
+			if (error = (*(nfsrv_procs[procid]))(mrep, md, dpos,
+				cr, retxid, &mreq, &repstat)) {
+				m_freem(nam);
+				nfsstats.srv_errs++;
+				break;
+			}
 			nfsstats.srvrpccnt[procid]++;
-		m = mreq;
-		siz = 0;
-		while (m) {
-			siz += m->m_len;
-			m = m->m_next;
-		}
-		if (siz <= 0 || siz > 9216) {
-			printf("mbuf siz=%d\n",siz);
-			panic("Bad nfs svc reply");
-		}
-		error = nfs_udpsend(so, nam, mreq, 0, siz);
-		m_freem(nam);
+			nfsrv_updatecache(nam, retxid, procid, repstat, mreq);
+			mrep = (struct mbuf *)0;
+		case RC_REPLY:
+			m = mreq;
+			siz = 0;
+			while (m) {
+				siz += m->m_len;
+				m = m->m_next;
+			}
+			if (siz <= 0 || siz > 9216) {
+				printf("mbuf siz=%d\n",siz);
+				panic("Bad nfs svc reply");
+			}
+			error = nfs_udpsend(so, nam, mreq, 0, siz);
+			m_freem(nam);
+			if (mrep)
+				m_freem(mrep);
+			break;
+		case RC_DROPIT:
+			m_freem(mrep);
+			m_freem(nam);
+			break;
+		};
 	}
 }
 

@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_socket.c	7.4 (Berkeley) %G%
+ *	@(#)nfs_socket.c	7.5 (Berkeley) %G%
  */
 
 /*
@@ -25,8 +25,8 @@
  * with copies to/from a uio vector)
  * NB: For now, they only work for UDP datagram sockets.
  * (Use on stream sockets would require some record boundary mark in the
- *  stream such as Sun's RM (Section 3.2 of the Sun RPC Message Protocol
- *  manual, in Networking on the Sun Workstation, Part #800-1324-03
+ *  stream as defined by "RPC: Remote Procedure Call Protocol
+ *  Specification" RFC1057 Section 10)
  *  and different versions of send, receive and reply that do not assume
  *  an atomic protocol
  */
@@ -167,14 +167,17 @@ release:
 /*
  * This is a stripped down udp specific version of soreceive()
  */
-nfs_udpreceive(so, aname, mp)
+nfs_udpreceive(so, msk, mtch, aname, mp)
 	register struct socket *so;
+	u_long msk;
+	u_long mtch;
 	struct mbuf **aname;
 	struct mbuf **mp;
 {
 	register struct mbuf *m;
 	int s, error = 0;
 	struct mbuf *nextrecord;
+	struct sockaddr_in *saddr;
 
 	if (aname)
 		*aname = 0;
@@ -202,6 +205,15 @@ restart:
 	nextrecord = m->m_nextpkt;
 	if (m->m_type != MT_SONAME)
 		panic("nfs_receive 1a");
+	if (msk) {
+		saddr = mtod(m, struct sockaddr_in *);
+		if ((saddr->sin_addr.s_addr & msk) != mtch) {
+			sbdroprecord(&so->so_rcv);
+			sbunlock(&so->so_rcv);
+			splx(s);
+			goto restart;
+		}
+	}
 	sbfree(&so->so_rcv, m);
 	if (aname) {
 		*aname = m;
@@ -535,7 +547,8 @@ nfsmout:
  * - verify it
  * - fill in the cred struct.
  */
-nfs_getreq(so, prog, vers, maxproc, nam, mrp, mdp, dposp, retxid, proc, cr)
+nfs_getreq(so, prog, vers, maxproc, nam, mrp, mdp, dposp, retxid, proc, cr,
+	   msk, mtch)
 	struct socket *so;
 	u_long prog;
 	u_long vers;
@@ -547,6 +560,8 @@ nfs_getreq(so, prog, vers, maxproc, nam, mrp, mdp, dposp, retxid, proc, cr)
 	u_long *retxid;
 	u_long *proc;
 	register struct ucred *cr;
+	u_long msk;
+	u_long mtch;
 {
 	register int i;
 	register u_long *p;
@@ -556,7 +571,7 @@ nfs_getreq(so, prog, vers, maxproc, nam, mrp, mdp, dposp, retxid, proc, cr)
 	struct mbuf *mrep, *md;
 	int len;
 
-	if (error = nfs_udpreceive(so, nam, &mrep))
+	if (error = nfs_udpreceive(so, msk, mtch, nam, &mrep))
 		return (error);
 	md = mrep;
 	dpos = mtod(mrep, caddr_t);
