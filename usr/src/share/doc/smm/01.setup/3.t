@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)3.t	6.24 (Berkeley) %G%
+.\"	@(#)3.t	6.25 (Berkeley) %G%
 .\"
 .ds lq ``
 .ds rq ''
@@ -986,7 +986,8 @@ A new utility,
 .Xr sysctl (8),
 retrieves kernel state and allows processes with appropriate
 privilege to set kernel state.
-.PP
+.NH 3
+Security
 The kernel runs with four different levels of security.
 Any superuser process can raise the security level, but only 
 .Fn init (8)
@@ -1011,6 +1012,14 @@ This level precludes tampering with filesystems by unmounting them,
 but also inhibits running
 .Xr newfs (8)
 while the system is multi-user.
+See
+.Xr chflags (1)
+and the
+.Op o
+option to 
+.Xr ls (1)
+for information on setting and displaying the immutable and append-only
+flags.
 .PP
 Normally, the system runs in level 0 mode while single user
 and in level 1 mode while multiuser.
@@ -1387,8 +1396,9 @@ through
 .Pn 63
 that, when opened, duplicate the corresponding file descriptor.
 The names
-.Pn /dev/stdin
+.Pn /dev/stdin ,
 .Pn /dev/stdout
+and
 .Pn /dev/stderr
 refer to file descriptors 0, 1 and 2.
 See
@@ -1618,15 +1628,132 @@ changes the ``local'' password if one exists.
 Note that Version 5 of Kerberos will be released soon;
 Version 4 should probably be replaced at that time.
 .NH 4
-Additions and changes to other utilities
+Additions and changes to the libraries
 .PP
 Notable additions to the libraries include functions to traverse a
 filesystem hierarchy, database interfaces to btree and hashing functions,
-a new, fast implementation of stdio and a radix sort function.
+a new, fast implementation of stdio and a radix and merge sort functions.
+.PP
+The
+.Xr fts (3)
+functions will perform either physical or logical traversal of
+a file hierarchy as well as handle essentially infinite depth
+file systems and file systems with directory loops.
+All of the utilities in \*(4B which traverse file hierarchies
+have been converted to use
+.Xr fts (3).
+The conversion has always resulted in a significant performance
+gain, often of four or five to one in system time.
+.PP
+The
+.Xr dbopen (3)
+functions are intended to be a family of database access methods.
+Currently, they consist of
+.Xr hash (3) ,
+an extensible, dynamic hashing scheme,
+.Xr btree (3) ,
+a sorted, balanced tree structure (B+tree's), and
+.Xr recno (3) ,
+a flat-file interface for fixed or variable length records
+referenced by logical record number.
+Each of the access methods stores associated key/data pairs and
+uses the same record oriented interface for access.
+.PP
+The
+.Xr qsort (3)
+function has been rewritten for additional performance.
+In addition, three new types of sorting functions,
+.Xr heapsort (3) ,
+.Xr mergesort (3)
+and
+.Xr radixsort (3)
+have been added to the system.
+The
+.Xr mergesort
+function is optimized for data with pre-existing order,
+in which case it usually significantly outperforms
+.Xr qsort .
+The
+.Xr radixsort (3)
+functions are variants of most-significant-byte radix sorting.
+They take linear time relative to the number of bytes to be
+sorted, usually significantly outperforming
+.Xr qsort
+on data which can be sorted in this fashion.
+An implementation of the POSIX 1003.2 standard
+.Xr sort 1 ,
+based on
+.Xr radixsort ,
+is included in
+.Pn /usr/src/contrib/sort .
+.PP
+Some additional comments concerning the \*(4B C library:
+.IP \(bu
+The floating point support in the C library has been replaced
+and is now accurate.
+.IP \(bu
+A POSIX 1003.2 compliant version of both basic and extended
+regular expressions is provided as part of the C library.
+.IP \(bu
+The C functions specified by both ANSI C and POSIX 1003.1 and
+1003.2 are now part of the C library.
+This includes support for both file name matching and shell globbing.
+.IP \(bu
+The timezone routines have been replaced with a new timezone
+package and are now accurate.
+.IP \(bu
+ANSI C multibyte and wide character support has been integrated.
+The rune functionality from the Bell Labs' Plan 9 system is provided
+as well.
+.IP \(bu
+The
+.Xr termcap (3)
+functions have been generalized and replaced with a general
+purpose interface named
+.Xr getcap (3) .
+.IP \(bu
+The
+.Xr stdio (3)
+routines have been replaced, and, in many cases, are now much
+faster.
+In addition, the
+.Xr funopen (3)
+interface permits applications to provide their own I/O stream
+function support.
+.PP
+The
+.Xr curses (3)
+library has been largely rewritten.
+Important additional features include support for scrolling and
+.Xr termios (3) .
+.PP
+An application front-end editing library, named libedit, has been
+added to the system.
+.PP
+A superset implementation of the  SunOS kernel memory interface library,
+kvm, has been integrated into the system.
+.NH 4
+Additions and changes to other utilities
+.PP
 The additions to the utility suite include greatly enhanced versions of
 programs that display system status information, implementations of
 various traditional tools described in the IEEE Std1003.2 standard,
 and many others.
+Also, with only a very few exceptions, all of the utilities from
+4.3BSD which included proprietary source code have been replaced
+and their \*(4B counterparts are freely redistributable.
+.PP
+The  new version of
+.Xr csh (1)
+is significantly cleaner, freely redistributable, and 8-bit clean.
+.PP
+The POSIX 1003.2 replacement for
+.Xr cpio (1)
+and
+.Xr tar (1) ,
+named
+.Xr pax (1)
+is included with the system.
 .PP
 New versions of
 .Xr lex (1)
@@ -1670,6 +1797,11 @@ find from crossing NFS mount points.
 See
 .Pn /etc/daily
 for an example use.
+.PP
+Finally, there are many new utilities offering many new capabilities,
+in \*(4B.
+Skimming through the section 1 and section 8 manual pages is sure
+to be useful.
 .NH 2
 Hints on converting from \*(Ps to \*(4B
 .PP
