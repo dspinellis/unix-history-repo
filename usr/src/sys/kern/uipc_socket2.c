@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)uipc_socket2.c	6.10 (Berkeley) %G%
+ *	@(#)uipc_socket2.c	6.11 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -310,25 +310,6 @@ sowakeup(so, sb)
  * some of the available buffer space in the system buffer pool for the
  * socket.  The space should be released by calling sbrelease() when the
  * socket is destroyed.
- *
- * The routines sbappend() or sbappendrecord() are normally called to
- * append new mbufs to a socket buffer, after checking that adequate
- * space is available, comparing the function sbspace() with the amount
- * of data to be added.  sbappendrecord() differs from sbappend() in
- * that data supplied is treated as the beginning of a new record.
- * Data is normally removed from a socket buffer in a protocol by
- * first calling m_copy on the socket buffer mbuf chain and sending this
- * to a peer, and then removing the data from the socket buffer with
- * sbdrop() or sbdroprecord() when the data is acknowledged by the peer
- * (or immediately in the case of unreliable protocols.)
- *
- * To place a sender's name, optionally, access rights, and data in a
- * socket buffer sbappendaddr() should be used.  To place access rights
- * and data in a socket buffer sbappendrights() should be used.  Note
- * that unlike sbappend() and sbappendrecord(), these routines check
- * for the caller that there will be enough space to store the data.
- * Each fails if there is not enough space, or if it cannot find mbufs
- * to store additional information in.
  */
 
 soreserve(so, sndcc, rcvcc)
@@ -377,6 +358,26 @@ sbrelease(sb)
 /*
  * Routines to add and remove
  * data from an mbuf queue.
+ *
+ * The routines sbappend() or sbappendrecord() are normally called to
+ * append new mbufs to a socket buffer, after checking that adequate
+ * space is available, comparing the function sbspace() with the amount
+ * of data to be added.  sbappendrecord() differs from sbappend() in
+ * that data supplied is treated as the beginning of a new record.
+ * To place a sender's address, optional access rights, and data in a
+ * socket receive buffer, sbappendaddr() should be used.  To place
+ * access rights and data in a socket receive buffer, sbappendrights()
+ * should be used.  In either case, the new data begins a new record.
+ * Note that unlike sbappend() and sbappendrecord(), these routines check
+ * for the caller that there will be enough space to store the data.
+ * Each fails if there is not enough space, or if it cannot find mbufs
+ * to store additional information in.
+ *
+ * Reliable protocols may use the socket send buffer to hold data
+ * awaiting acknowledgement.  Data is normally copied from a socket
+ * send buffer in a protocol with m_copy for output to a peer,
+ * and then removing the data from the socket buffer with sbdrop()
+ * or sbdroprecord() when the data is acknowledged by the peer.
  */
 
 /*
@@ -436,7 +437,7 @@ sbappendrecord(sb, m0)
  * to the receive queue of a socket.  Return 0 if
  * no space in sockbuf or insufficient mbufs.
  */
-sbappendaddr(sb, asa, m0, rights0)		/* XXX */
+sbappendaddr(sb, asa, m0, rights0)
 	register struct sockbuf *sb;
 	struct sockaddr *asa;
 	struct mbuf *rights0, *m0;
@@ -444,63 +445,50 @@ sbappendaddr(sb, asa, m0, rights0)		/* XXX */
 	register struct mbuf *m, *n;
 	int space = sizeof (*asa);
 
-	m = m0;
-	if (m == 0)
-		panic("sbappendaddr");
-	do {
+	for (m = m0; m; m = m->m_next)
 		space += m->m_len;
-		m = m->m_next;
-	} while (m);
 	if (rights0)
 		space += rights0->m_len;
 	if (space > sbspace(sb))
 		return (0);
-	m = m_get(M_DONTWAIT, MT_SONAME);
+	MGET(m, M_DONTWAIT, MT_SONAME);
 	if (m == 0)
 		return (0);
 	*mtod(m, struct sockaddr *) = *asa;
 	m->m_len = sizeof (*asa);
+	sballoc(sb, m);
 	if (rights0) {
-		m->m_act = m_copy(rights0, 0, rights0->m_len);
-		if (m->m_act == 0) {
+		m->m_next = m_copy(rights0, 0, rights0->m_len);
+		if (m->m_next == 0) {
 			m_freem(m);
 			return (0);
 		}
-		sballoc(sb, m->m_act);
+		sballoc(sb, m->m_next);
 	}
-	sballoc(sb, m);
 	if (n = sb->sb_mb) {
 		while (n->m_act)
 			n = n->m_act;
 		n->m_act = m;
 	} else
 		sb->sb_mb = m;
-	if (m->m_act)
-		m = m->m_act;
-	sballoc(sb, m0);
-	m->m_act = m0;
-	m = m0->m_next;
-	m0->m_next = 0;
-	if (m)
-		sbcompress(sb, m, m0);
+	if (m->m_next)
+		m = m->m_next;
+	if (m0)
+		sbcompress(sb, m0, m);
 	return (1);
 }
 
-#ifdef notdef
-sbappendrights(sb, rights, m0)
+sbappendrights(sb, m0, rights)
 	struct sockbuf *sb;
-	struct mbuf *rights, *m;
+	struct mbuf *rights, *m0;
 {
 	register struct mbuf *m, *n;
 	int space = 0;
 
-	m = m0;
-	if (m == 0 || rights == 0)
+	if (rights == 0)
 		panic("sbappendrights");
-	do {
+	for (m = m0; m; m = m->m_next)
 		space += m->m_len;
-		m = m->m_next;
-	} while (m);
 	space += rights->m_len;
 	if (space > sbspace(sb))
 		return (0);
@@ -513,16 +501,11 @@ sbappendrights(sb, rights, m0)
 			n = n->m_act;
 		n->m_act = m;
 	} else
-		n->m_act = m;
-	sballoc(sb, m0);
-	m->m_act = m0;
-	m = m0->m_next;
-	m0->m_next = 0;
-	if (m)
-		sbcompress(sb, m, m0);
+		sb->sb_mb = m;
+	if (m0)
+		sbcompress(sb, m0, m);
 	return (1);
 }
-#endif
 
 /*
  * Compress mbuf chain m into the socket
@@ -540,7 +523,8 @@ sbcompress(sb, m, n)
 			continue;
 		}
 		if (n && n->m_off <= MMAXOFF && m->m_off <= MMAXOFF &&
-		    (n->m_off + n->m_len + m->m_len) <= MMAXOFF) {
+		    (n->m_off + n->m_len + m->m_len) <= MMAXOFF &&
+		    n->m_type == m->m_type) {
 			bcopy(mtod(m, caddr_t), mtod(n, caddr_t) + n->m_len,
 			    (unsigned)m->m_len);
 			n->m_len += m->m_len;
