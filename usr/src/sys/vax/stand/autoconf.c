@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)autoconf.c	7.1 (Berkeley) %G%
+ *	@(#)autoconf.c	7.2 (Berkeley) %G%
  */
 
 #include "../machine/pte.h"
@@ -21,10 +21,28 @@
 #define	UTR(i)	((struct uba_regs *)(NEX780+(i)))
 #define	UMA(i)	((caddr_t)UMEM780(i))
 #define	MTR(i)	((struct mba_regs *)(NEX780+(i)))
+#define	UTRB(i)	((struct uba_regs *)(NEXB8600+(i)))
+#define	UMAB(i)	((caddr_t)UMEMB8600(i))
+#define	MTRB(i)	((struct mba_regs *)(NEXB8600+(i)))
 
-struct	uba_regs *ubaddr780[] = { UTR(3), UTR(4), UTR(5), UTR(6) };
-caddr_t	umaddr780[] = { UMA(0), UMA(1), UMA(2), UMA(3) };
-struct	mba_regs *mbaddr780[] = { MTR(8), MTR(9), MTR(10), MTR(11) };
+struct	uba_regs *ubaddr780[] = {
+	UTR(3), UTR(4), UTR(5), UTR(6),
+#if VAX8600
+	UTRB(3), UTRB(4), UTRB(5), UTRB(6),
+#endif
+};
+caddr_t	umaddr780[] = {
+	UMA(0), UMA(1), UMA(2), UMA(3),
+#if VAX8600
+	UMAB(0), UMAB(1), UMAB(2), UMAB(3),
+#endif
+};
+struct	mba_regs *mbaddr780[] = {
+	MTR(8), MTR(9), MTR(10), MTR(11),
+#if VAX8600
+	MTRB(8), MTRB(9), MTRB(10), MTRB(11),
+#endif
+};
 
 #undef	UTR
 #undef	UMA
@@ -65,8 +83,13 @@ configure()
 		mbaddr = mbaddr780;
 		ubaddr = ubaddr780;
 		umaddr = umaddr780;
-		nmba = sizeof (mbaddr780) / sizeof (mbaddr780[0]);
-		nuba = sizeof (ubaddr780) / sizeof (ubaddr780[0]);
+		if (cpu == VAX_8600) {
+			nmba = sizeof (mbaddr780) / sizeof (mbaddr780[0]);
+			nuba = sizeof (ubaddr780) / sizeof (ubaddr780[0]);
+		} else {
+			nmba = 4;
+			nuba = 4;
+		}
 		break;
 
 	case VAX_750:
@@ -88,11 +111,11 @@ configure()
 	 */
 /*
 	for (i = 0; i < nmba; i++)
-		if (!badloc(mbaddr[i]))
+		if (!badaddr(mbaddr[i], sizeof(long)))
 			mbaddr[i]->mba_cr = MBCR_INIT;
 */
 	for (i = 0; i < nuba; i++)
-		if (!badloc(ubaddr[i]))
+		if (!badaddr(ubaddr[i], sizeof(long)))
 			ubaddr[i]->uba_cr = UBACR_ADINIT;
 	if ((cpu != VAX_780) && (cpu != VAX_8600))
 		mtpr(IUR, 0);

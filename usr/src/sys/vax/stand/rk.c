@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)rk.c	7.1 (Berkeley) %G%
+ *	@(#)rk.c	7.2 (Berkeley) %G%
  */
 
 /*
@@ -14,6 +14,7 @@
 #include "../h/param.h"
 #include "../h/inode.h"
 #include "../h/fs.h"
+#include "../h/disklabel.h"
 
 #include "../vaxuba/ubareg.h"
 #include "../vaxuba/rkreg.h"
@@ -21,21 +22,73 @@
 #include "saio.h"
 #include "savax.h"
 
+#define	SECTSIZ 	512	/* sector size in bytes */
+
 u_short	rkstd[] = { 0777440 };
-short	rk_off[] = { 0, 241, 0, -1, -1, -1, 393, -1 };
+struct	disklabel rklabel[MAXNUBA*8];
+char	lbuf[SECTSIZ];
 
 rkopen(io)
 	register struct iob *io;
 {
 	register struct rkdevice *rkaddr = (struct rkdevice *)ubamem(io->i_unit, rkstd[0]);
+	register struct disklabel *lp = &rklabel[io->i_unit];
+	struct iob tio;
 
-	if (rk_off[io->i_boff] == -1 ||
-	    io->i_boff < 0 || io->i_boff > 7)
-		_stop("rk bad unit");
-	io->i_boff = rk_off[io->i_boff] * NRKSECT*NRKTRK;
+	if (badaddr((char *)rkaddr, sizeof(short))) {
+		printf("nonexistent device");
+		return (ENXIO);
+	}
 	rkaddr->rkcs2 = RKCS2_SCLR;
 	rkwait(rkaddr);
+	/*
+	 * Read in the pack label.
+	 */
+	lp->d_nsectors = NRKSECT;
+	lp->d_secpercyl = NRKTRK*NRKSECT;
+	tio = *io;
+	tio.i_bn = LABELSECTOR;
+	tio.i_ma = lbuf;
+	tio.i_cc = SECTSIZ;
+	tio.i_flgs |= F_RDDATA;
+	if (rkstrategy(&tio, READ) != SECTSIZ) {
+		printf("can't read disk label");
+		return (EIO);
+	}
+	*lp = *(struct disklabel *)(lbuf + LABELOFFSET);
+	if (lp->d_magic != DISKMAGIC || lp->d_magic2 != DISKMAGIC) {
+		printf("hk%d: unlabeled\n", io->i_unit);
+#ifdef COMPAT_42
+		rkmaptype(io, lp);
+#else
+		return (ENXIO);
+#endif
+	}
+	if ((unsigned)io->i_boff >= lp->d_npartitions ||
+	    (io->i_boff = lp->d_partitions[io->i_boff].p_offset) == -1) {
+		printf("rk: bad partition");
+		return (EUNIT);
+	}
+	return (0);
 }
+
+#ifdef COMPAT_42
+u_long	rk_off[] = { 0, 241, 0, -1, -1, -1, 393, -1 };
+
+rkmaptype(io, lp)
+	register struct iob *io;
+	register struct disklabel *lp;
+{
+	register struct partition *pp;
+	register i;
+	register u_long *off = rk_off;
+
+	lp->d_npartitions = 8;
+	pp = lp->d_partitions;
+	for (i = 0; i < 8; i++, pp++)
+		pp->p_offset = *off++;
+}
+#endif
 
 rkstrategy(io, func)
 	register struct iob *io;
@@ -49,7 +102,7 @@ rkstrategy(io, func)
 retry:
 	ubinfo = ubasetup(io, 1);
 	bn = io->i_bn;
-	dn = io->i_unit;
+	dn = UNITTODRIVE(io->i_unit);
 	cn = bn/(NRKSECT*NRKTRK);
 	sn = bn%NRKSECT;
 	tn = (bn / NRKSECT) % NRKTRK;
