@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ps.c	5.27 (Berkeley) %G%";
+static char sccsid[] = "@(#)ps.c	5.28 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <machine/pte.h>
@@ -457,8 +457,6 @@ main (argc, argv)
 	} else if (pid != -1) {
 		what = KINFO_PROC_PID;
 		flag = pid;
-	} else
-		what = KINFO_PROC_ALL;
 	/*
 	 * select procs
 	 */
