@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)db.h	5.3 (Berkeley) %G%
+ *	@(#)db.h	5.4 (Berkeley) %G%
  */
 
 #ifndef _DB_H_
@@ -33,7 +33,7 @@ typedef struct {
 typedef struct {
 	char *internal;		/* access method private; really void * */
 	int (*close)();
-	int (*delete)();
+	int (*del)();
 	int (*get)();
 	int (*put)();
 	int (*seq)();
