@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_inode.c	7.47 (Berkeley) %G%
+ *	@(#)ufs_inode.c	7.48 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -59,8 +59,10 @@ ufs_iput(ip)
  * Reclaim an inode so that it can be used for other purposes.
  */
 int
-ufs_reclaim (ap)
-	struct vop_reclaim_args *ap;
+ufs_reclaim(ap)
+	struct vop_reclaim_args /* {
+		struct vnode *a_vp;
+	} */ *ap;
 {
 	register struct vnode *vp = ap->a_vp;
 	register struct inode *ip;
