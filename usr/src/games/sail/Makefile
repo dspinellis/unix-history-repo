@@ -1,7 +1,7 @@
 #
 # Sail - Wooden Ships And Iron Men
 #
-# Makefile	@(#)Makefile	2.7 85/03/04
+# Makefile	@(#)Makefile	2.8 85/03/04
 #
 CC=	cc
 CTAGS=	ctags -w
