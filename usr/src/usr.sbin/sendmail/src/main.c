@@ -13,7 +13,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	8.66 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	8.67 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -189,6 +189,8 @@ main(argc, argv, envp)
 # endif
 #endif 
 
+	tTsetup(tTdvect, sizeof tTdvect, "0-99.1");
+
 	/* set up the blank envelope */
 	BlankEnvelope.e_puthdr = putheader;
 	BlankEnvelope.e_putbody = putbody;
@@ -251,7 +253,6 @@ main(argc, argv, envp)
 		switch (j)
 		{
 		  case 'd':
-			tTsetup(tTdvect, sizeof tTdvect, "0-99.1");
 			tTflag(optarg);
 			setbuf(stdout, (char *) NULL);
 			printf("Version %s\n", Version);
@@ -921,18 +922,69 @@ main(argc, argv, envp)
 				switch (buf[1])
 				{
 				  case 'D':
-					define(buf[2], &buf[3], CurEnv);
+					define(buf[2], newstr(&buf[3]), CurEnv);
 					break;
 
 				  case 'C':
 					setclass(buf[2], &buf[3]);
 					break;
 
+				  case 'S':		/* dump rule set */
+					{
+						int rs;
+						struct rewrite *rw;
+
+						if (buf[2] == '\n')
+							continue;
+						rs = atoi(&buf[2]);
+						if (rs < 0 || rs > MAXRWSETS)
+							continue;
+						if ((rw = RewriteRules[rs]) == NULL)
+							continue;
+						do
+						{
+							char **s;
+							putchar('R');
+							s = rw->r_lhs;
+							while (*s != NULL)
+							{
+								xputs(*s++);
+								putchar(' ');
+							}
+							putchar('\t');
+							putchar('\t');
+							s = rw->r_rhs;
+							while (*s != NULL)
+							{
+								xputs(*s++);
+								putchar(' ');
+							}
+							putchar('\n');
+						} while (rw = rw->r_next);
+					}
+					break;
+
 				  default:
 					printf("Unknown config command %s", buf);
 					break;
-				  }
-				  continue;
+				}
+				continue;
+
+			  case '-':		/* set command-line-like opts */
+				switch (buf[1])
+				{
+				  case 'd':
+					if (buf[2] == '\n')
+						tTflag("");
+					else
+						tTflag(&buf[2]);
+					break;
+
+				  default:
+					printf("Unknown \"-\" command %s", buf);
+					break;
+				}
+				continue;
 			}
 
 			for (p = buf; isascii(*p) && isspace(*p); p++)
