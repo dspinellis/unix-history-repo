@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)df.1	8.1 (Berkeley) %G%
+.\"     @(#)df.1	8.2 (Berkeley) %G%
 .\"
 .Dd 
 .Dt DF 1
@@ -46,11 +46,11 @@ with the possibly stale statistics that were previously obtained.
 .It Fl t
 Only print out statistics for filesystems of the specified types.
 The recognized types are:
-ufs, nfs, mfs, lfs, pc, fdesc, portal and kernfs,
+ufs, nfs, mfs, lfs, msdos, fdesc, portal, kernfs, procfs, afs and isofs.
 along with the aggregates:
 all (the default),
-local (ufs, mfs, lfs),
-and misc (fdesc, portal, kernfs).
+local (ufs, mfs, lfs, msdos, isofs),
+and misc (fdesc, portal, kernfs, procfs).
 The string ``no'' may be prepending to a type to get its complement
 (e.g. ``nonfs'' to get non-NFS filesystems).  The first
 .Fl t
