@@ -1,0 +1,39 @@
+This is tn3270, version 4.1.  This version builds on 4.3 BSD Unix (and
+various similar systems, including 4.2).
+
+Files (and directories):
+
+ANNOUNCE	A description of some newer functions
+		in tn3270.
+
+README		This file.
+
+curses		The 4.3 curses package, which allows PUTCHAR to
+		be defined (needed only if NOT43 is defined; see
+		tn3270/makefile and tn3270/Make-samples) for the
+		sun and vax computers.  These do NOT include the
+		source for curses, just two .a files (in curses/sun
+		and curses/vax).  Also included in this directory
+		is the 4.3 curses.h file.  If one of the 4.3 curses
+		.a files from this directory are used, this curses.h
+		file must also be used during compilation of tn3270.
+
+man		Contains man pages in man/man1 and man/man5.
+
+telnet		The version of telnet which is used to build tn3270.
+
+tn3270		The actual code for tn3270.  See the README file there
+		for more information.  You should "cd" to tn3270 and
+		say "make" to build tn3270.
+
+transcom	An example of a transcom command driver; for using
+		tektool on Suns.  This directory includes the man
+		page entry for the comand driver (tk3270).
+
+
+Thanks to various people at Berkeley for helping with this version of
+tn3270, especially in the area of graphics.
+
+Greg Minshall
+<minshall@berkeley.edu>
+415-642-0530
