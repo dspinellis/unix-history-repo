@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)select.2	5.1 (Berkeley) %G%
+.\"	@(#)select.2	6.1 (Berkeley) %G%
 .\"
-.TH SELECT 2 "2 July 1983"
+.TH SELECT 2 ""
 .UC 5
 .SH NAME
 select \- synchronous i/o multiplexing
@@ -14,8 +14,8 @@ select \- synchronous i/o multiplexing
 #include <sys/time.h>
 .PP
 .ft B
-nfound = select(nfds, readfds, writefds, execptfds, timeout)
-int nfound, nfds, *readfds, *writefds, *execptfds;
+nfound = select(nfds, readfds, writefds, exceptfds, timeout)
+int nfound, nfds, *readfds, *writefds, *exceptfds;
 struct timeval *timeout;
 .fi
 .SH DESCRIPTION
@@ -24,7 +24,7 @@ examines the i/o descriptors specified by the bit masks
 .IR readfds ,
 .IR writefds ,
 and
-.I execptfds
+.I exceptfds
 to see if they are ready for reading, writing, or have an exceptional
 condition pending, respectively.
 File descriptor 
@@ -38,7 +38,7 @@ i.e. the bits from 0 through
 in the masks are examined.
 .I Select
 returns, in place, a mask of those descriptors which are ready.
-The total number of ready descriptors is returned in
+The total number of bits set in all the masks is returned in
 .IR nfound .
 .PP
 If
@@ -54,11 +54,11 @@ Any of
 .IR readfds ,
 .IR writefds ,
 and
-.I execptfds
+.I exceptfds
 may be given as 0 if no descriptors are of interest.
 .SH "RETURN VALUE
 .I Select
-returns the number of descriptors which are contained in
+returns the number of 'one' bits which are contained in
 the bit masks,
 or \-1 if an error occurred.
 If the time limit expires then
@@ -74,7 +74,7 @@ One of the bit masks specified an invalid descriptor.
 An signal was delivered before any of the selected for
 events occurred or the time limit expired.
 .SH SEE ALSO
-accept(2), connect(2), read(2), write(2), recv(2), send(2)
+accept(2), connect(2), read(2), write(2), recv(2), send(2), getdtablesize(2)
 .SH BUGS
 The descriptor masks are always modified on return, even
 if the call returns as the result of the timeout.
