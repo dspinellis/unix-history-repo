@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.60 (Berkeley) %G%
+ *	@(#)conf.h	8.61 (Berkeley) %G%
  */
 
 /*
@@ -389,7 +389,23 @@ extern int		errno;
 
 /*
 **  SCO Unix
+**
+**	This includes two parts -- the first is for SCO Open Server 3.2v4
+**	(contributed by Philippe Brand <phb@colombo.telesys-innov.fr>).
+**	The second is, I believe, for an older version.
 */
+
+#ifdef _SCO_unix_4_2
+# define _SCO_unix_
+# define HASSETREUID	1	/* has setreuid(2) call */
+# define _PATH_UNIX	"/unix"
+# ifndef _PATH_SENDMAILCF
+#  define _PATH_SENDMAILCF	"/usr/lib/sendmail.cf"
+# endif
+# ifndef _PATH_SENDMAILPID
+#  define _PATH_SENDMAILPID	"/etc/sendmail.pid"
+# endif
+#endif
 
 #ifdef _SCO_unix_
 # define SYSTEM5	1	/* include all the System V defines */
