@@ -1,4 +1,4 @@
-/*	cons.c	3.5	%G%	*/
+/*	cons.c	3.6	%G%	*/
 
 /*
  * Vax console driver and floppy interface
@@ -183,28 +183,16 @@ register struct tty *tp;
 	splx(s);
 }
 
-char	*msgbufp = msgbuf;	/* Next saved printf character */
 /*
  * Print a character on console.
  * Attempts to save and restore device
  * status.
- * If the switches are 0, all
- * printing is inhibited.
- *
- * Whether or not printing is inhibited,
- * the last MSGBUFS characters
- * are saved in msgbuf for inspection later.
  */
-putchar(c)
+cnputc(c)
 register c;
 {
 	register s, timo;
 
-	if (c != '\0' && c != '\r' && c != 0177) {
-		*msgbufp++ = c;
-		if(msgbufp >= &msgbuf[MSGBUFS])
-			msgbufp = msgbuf;
-	}
 	timo = 30000;
 	/*
 	 * Try waiting for the console tty to come ready,
@@ -216,10 +204,10 @@ register c;
 	if(c == 0)
 		return;
 	s = mfpr(TXCS);
-	mtpr(TXCS,0);
+	mtpr(TXCS, 0);
 	mtpr(TXDB, c&0xff);
 	if(c == '\n')
-		putchar('\r');
-	putchar(0);
+		cnputc('\r');
+	cnputc(0);
 	mtpr(TXCS, s);
 }
