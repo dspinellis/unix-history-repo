@@ -1,4 +1,4 @@
-/*	gethostnamadr.c	4.7	85/01/16	*/
+/*	gethostnamadr.c	4.7	85/01/21	*/
 
 #include <stdio.h>
 #include <netdb.h>
@@ -7,12 +7,16 @@
 
 #define	MAXALIASES	35
 
-static char HOSTDB[] = "/etc/hosts";
-DBM *_host_db = (DBM *)NULL;
 static struct hostent host;
 static char *host_aliases[MAXALIASES];
 static char hostbuf[BUFSIZ+1];
-int _host_stayopen;	/* set by sethostent(), cleared by endhostent() */
+
+/*
+ * The following is shared with gethostent.c
+ */
+extern	char *_host_file;
+DBM	*_host_db = (DBM *)NULL;
+int	_host_stayopen;	/* set by sethostent(), cleared by endhostent() */
 
 static struct hostent *
 fetchhost(key)
@@ -50,14 +54,27 @@ fetchhost(key)
 
 struct hostent *
 gethostbyname(nam)
-	char *nam;
+	register char *nam;
 {
-        datum key;
 	register struct hostent *hp;
+	register char **cp;
+        datum key;
 
 	if ((_host_db == (DBM *)NULL)
-	  && ((_host_db = dbm_open(HOSTDB, O_RDONLY)) == (DBM *)NULL))
-                return ((struct hostent *)NULL);
+	  && ((_host_db = dbm_open(_host_file, O_RDONLY)) == (DBM *)NULL)) {
+		sethostent(_host_stayopen);
+		while (hp = gethostent()) {
+			if (strcmp(hp->h_name, nam) == 0)
+				break;
+			for (cp = hp->h_aliases; cp != 0 && *cp != 0; cp++)
+				if (strcmp(*cp, nam) == 0)
+					goto found;
+		}
+	found:
+		if (!_host_stayopen)
+			endhostent();
+		return (hp);
+	}
         key.dptr = nam;
         key.dsize = strlen(nam);
 	hp = fetchhost(key);
@@ -69,16 +86,26 @@ gethostbyname(nam)
 }
 
 struct hostent *
-gethostbyaddr(addr, length)
+gethostbyaddr(addr, length, type)
 	char *addr;
-	int length;
+	register int length;
+	register int type;
 {
-        datum key;
 	register struct hostent *hp;
+        datum key;
 
 	if ((_host_db == (DBM *)NULL)
-	  && ((_host_db = dbm_open(HOSTDB, O_RDONLY)) == (DBM *)NULL))
-                return ((struct hostent *)NULL);
+	  && ((_host_db = dbm_open(_host_file, O_RDONLY)) == (DBM *)NULL)) {
+		sethostent(_host_stayopen);
+		while (hp = gethostent()) {
+			if (hp->h_addrtype == type && hp->h_length == length
+			    && bcmp(hp->h_addr, addr, length) == 0)
+				break;
+		}
+		if (!_host_stayopen)
+			endhostent();
+		return (hp);
+	}
         key.dptr = addr;
         key.dsize = length;
 	hp = fetchhost(key);
