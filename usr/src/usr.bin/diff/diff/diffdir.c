@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)diffdir.c	4.10 (Berkeley) %G%";
+static	char *sccsid = "@(#)diffdir.c	4.11 (Berkeley) %G%";
 
 #include "diff.h"
 /*
@@ -326,7 +326,7 @@ calldiff(wantpr)
 	prargs[2] = wantpr;
 	fflush(stdout);
 	if (wantpr) {
-		sprintf(etitle, "%s %s", file1, file2);
+		(void)sprintf(etitle, "%s %s", file1, file2);
 		pipe(pv);
 		pid = fork();
 		if (pid == -1) {

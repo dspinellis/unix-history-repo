@@ -1,5 +1,5 @@
 %{#include "defs"
-static	char *sccsid = "@(#)gram.y	4.1 (Berkeley) 81/02/28";
+static	char *sccsid = "@(#)gram.y	4.2 (Berkeley) 87/10/22";
 %}
 
 %term NAME SHELLINE START MACRODEF COLON DOUBLECOLON GREATER
@@ -83,7 +83,7 @@ namelist: NAME	= { lefts[0] = $1; nlefts = 1; }
 deplist:
 		{
 		char junk[10];
-		sprintf(junk, "%d", yylineno);
+		(void)sprintf(junk, "%d", yylineno);
 		fatal1("Must be a separator on rules line %s", junk);
 		}
 	| dlist

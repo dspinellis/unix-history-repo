@@ -1,5 +1,5 @@
 #ifndef lint
-static	char sccsid[] = "@(#)output.c	4.5 %G%";
+static	char sccsid[] = "@(#)output.c	4.6 %G%";
 #endif
 /*
  *
@@ -172,7 +172,7 @@ printf(fmat,a1)
 		    case 'F':
 #ifdef vax
 			dptr++;
-			sprintf(s=digits,"%+.16e",*rptr); prec= -1; break;
+			(void)sprintf(s=digits,"%+.16e",*rptr); prec= -1; break;
 #else
 			vptr += 7;
 			s=ecvt(*rptr, prec, &decpt, &n);
@@ -321,7 +321,7 @@ L_INT lxy; char fmat; int base;
 #ifndef MULD2
 	register char *cp1;
 	cp1=digs; if ((lxy&0xFFFF0000L)==0xFFFF0000L) {*cp1++='-'; lxy= -lxy;}
-	sprintf(cp1,base==16 ? "%x" : "%D",lxy);
+	(void)sprintf(cp1,base==16 ? "%x" : "%D",lxy);
 	cp1=digs; while (*digitptr++= *cp1++); --digitptr;
 #else
 	L_REAL f ,g; long q;

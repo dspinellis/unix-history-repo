@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)asmain.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)asmain.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -25,7 +25,7 @@ static char sccsid[] = "@(#)asmain.c	5.2 (Berkeley) %G%";
 
 #include <sys/stat.h>
 
-#define	unix_lang_name "VAX/UNIX Assembler V%G% 5.2"
+#define	unix_lang_name "VAX/UNIX Assembler V%G% 5.3"
 /*
  *	variables to manage reading the assembly source files
  */
@@ -422,7 +422,7 @@ FILE *tempopen(tname, part)
 	char	*part;
 {
 	FILE	*file;
-	sprintf(tname, "%s%sas%s%05d",
+	(void)sprintf(tname, "%s%sas%s%05d",
 		tmpdirprefix,
 		(tmpdirprefix[strlen(tmpdirprefix)-1] != '/') ? "/" : "",
 		part,

@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ar.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)ar.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 #ifndef lint
@@ -515,7 +515,7 @@ movefil(f)
 {
 	char buf[sizeof(arbuf)+1];
 
-	sprintf(buf, "%-16s%-12ld%-6u%-6u%-8o%-10ld%-2s",
+	(void)sprintf(buf, "%-16s%-12ld%-6u%-6u%-8o%-10ld%-2s",
 	   trim(file),
 	   stbuf.st_mtime,
 	   (u_short)stbuf.st_uid,

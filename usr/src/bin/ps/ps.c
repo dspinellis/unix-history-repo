@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)ps.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)ps.c	5.11 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -672,7 +672,7 @@ printhdr()
 			fprintf(stderr, "ps: out of memory\n");
 			exit(1);
 		}
-		sprintf(hdr, lhdr, wcwidth, "WCHAN");
+		(void)sprintf(hdr, lhdr, wcwidth, "WCHAN");
 	} else if (vflg)
 		hdr = vhdr;
 	else if (uflg) {
@@ -681,7 +681,7 @@ printhdr()
 			fprintf(stderr, "ps: out of memory\n");
 			exit(1);
 		}
-		sprintf(hdr, uhdr, nflg ? " UID" : "USER    ");
+		(void)sprintf(hdr, uhdr, nflg ? " UID" : "USER    ");
 	} else
 		hdr = shdr;
 	if (lflg+vflg+uflg+sflg == 0)
