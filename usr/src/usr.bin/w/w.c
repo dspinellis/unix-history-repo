@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)w.c	8.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)w.c	8.5 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -281,7 +281,8 @@ main(argc, argv)
 			p = hp->h_name;
 		}
 		if (x) {
-			(void)snprintf(buf, sizeof(buf), "%s:%s", p, x);
+			(void)snprintf(buf, sizeof(buf), "%s:%.*s", p,
+				ep->utmp.ut_host + UT_HOSTSIZE - x, x);
 			p = buf;
 		}
 		(void)printf("%-*.*s %-2.2s %-*.*s ",
