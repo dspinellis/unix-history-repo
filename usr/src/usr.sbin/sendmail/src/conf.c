@@ -34,7 +34,7 @@
 
 
 
-SCCSID(@(#)conf.c	4.8		%G%);
+SCCSID(@(#)conf.c	4.9		%G%);
 
 
 
@@ -528,8 +528,12 @@ getla()
 		if (Nl[0].n_type == 0)
 			return (-1);
 	}
-	(void) lseek(kmem, (long) Nl[X_AVENRUN].n_value, 0);
-	(void) read(kmem, avenrun, sizeof(avenrun));
+	if (lseek(kmem, (long) Nl[X_AVENRUN].n_value, 0) < 0 ||
+	    read(kmem, avenrun, sizeof(avenrun)) < sizeof(avenrun))
+	{
+		/* thank you Ian */
+		return (-1);
+	}
 	return ((int) (avenrun[0] + 0.5));
 }
 
