@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_glue.c	7.11 (Berkeley) %G%
+ *	@(#)vm_glue.c	7.12 (Berkeley) %G%
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -427,6 +427,20 @@ swapout(p)
 			addr += NBPG;
 		}
 		addr = (vm_offset_t) p->p_addr;
+	}
+#endif
+#ifdef mips
+	/*
+	 * Be sure to save the floating point coprocessor state before
+	 * paging out the u-struct.
+	 */
+	{
+		extern struct proc *machFPCurProcPtr;
+
+		if (p == machFPCurProcPtr) {
+			MachSaveCurFPState(p);
+			machFPCurProcPtr = (struct proc *)0;
+		}
 	}
 #endif
 #ifndef	i386 /* temporary measure till we find spontaineous unwire of kstack */
