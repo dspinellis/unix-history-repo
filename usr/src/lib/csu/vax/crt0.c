@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)crt0.c	4.2 (Berkeley) %G%";
+static	char *sccsid = "@(#)crt0.c	4.3 (Berkeley) %G%";
 
 /*
  *	C start up routine.
@@ -54,4 +54,5 @@ start()
 /*
  * null mcount, just in case some routine is compiled for profiling
  */
+asm("	.globl	mcount");
 asm("mcount:	rsb");
