@@ -3,9 +3,9 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.3 (Berkeley) %G%
+#	@(#)Makefile	5.4 (Berkeley) %G%
 #
-SCCSID = "@(#)Makefile 5.3 %G%"
+SCCSID = "@(#)Makefile 5.4 %G%"
 
 DESTDIR =
 BINDIR = /usr/ucb
