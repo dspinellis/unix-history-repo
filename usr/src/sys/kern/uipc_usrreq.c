@@ -1,4 +1,4 @@
-/*	uipc_usrreq.c	6.4	84/05/02	*/
+/*	uipc_usrreq.c	6.5	84/07/08	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -10,7 +10,6 @@
 #include "../h/unpcb.h"
 #include "../h/un.h"
 #include "../h/inode.h"
-#include "../h/nami.h"
 #include "../h/file.h"
 
 /*
@@ -274,15 +273,17 @@ unp_bind(unp, nam)
 {
 	struct sockaddr_un *soun = mtod(nam, struct sockaddr_un *);
 	register struct inode *ip;
-	extern schar();
+	register struct nameidata *ndp = &u.u_nd;
 	int error;
 
-	u.u_dirp = soun->sun_path;
+	ndp->ni_dirp = soun->sun_path;
 	if (nam->m_len == MLEN)
 		return (EINVAL);
 	*(mtod(nam, caddr_t) + nam->m_len) = 0;
 /* SHOULD BE ABLE TO ADOPT EXISTING AND wakeup() ALA FIFO's */
-	ip = namei(schar, CREATE, 1);
+	ndp->ni_nameiop = CREATE | FOLLOW;
+	ndp->ni_segflg = UIO_SYSSPACE;
+	ip = namei(ndp);
 	if (ip) {
 		iput(ip);
 		return (EADDRINUSE);
@@ -291,7 +292,7 @@ unp_bind(unp, nam)
 		u.u_error = 0;			/* XXX */
 		return (error);
 	}
-	ip = maknode(IFSOCK | 0777);
+	ip = maknode(IFSOCK | 0777, ndp);
 	if (ip == NULL) {
 		error = u.u_error;		/* XXX */
 		u.u_error = 0;			/* XXX */
@@ -311,12 +312,15 @@ unp_connect(so, nam)
 	register struct inode *ip;
 	int error;
 	register struct socket *so2;
+	register struct nameidata *ndp = &u.u_nd;
 
-	u.u_dirp = soun->sun_path;
+	ndp->ni_dirp = soun->sun_path;
 	if (nam->m_len + (nam->m_off - MMINOFF) == MLEN)
 		return (EMSGSIZE);
 	*(mtod(nam, caddr_t) + nam->m_len) = 0;
-	ip = namei(schar, LOOKUP, 1);
+	ndp->ni_nameiop = LOOKUP | FOLLOW;
+	ndp->ni_segflg = UIO_SYSSPACE;
+	ip = namei(ndp);
 	if (ip == 0) {
 		error = u.u_error;
 		u.u_error = 0;

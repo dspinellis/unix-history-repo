@@ -1,4 +1,4 @@
-/*	kern_acct.c	6.1	83/07/29	*/
+/*	kern_acct.c	6.2	84/07/08	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -8,7 +8,6 @@
 #include "../h/fs.h"
 #include "../h/kernel.h"
 #include "../h/acct.h"
-#include "../h/nami.h"
 #include "../h/uio.h"
 
 /*
@@ -26,6 +25,7 @@ sysacct()
 	register struct a {
 		char	*fname;
 	} *uap = (struct a *)u.u_ap;
+	register struct nameidata *ndp = &u.u_nd;
 
 	if (suser()) {
 		if (savacctp) {
@@ -39,7 +39,10 @@ sysacct()
 			}
 			return;
 		}
-		ip = namei(uchar, LOOKUP, 1);
+		ndp->ni_nameiop = LOOKUP | FOLLOW;
+		ndp->ni_segflg = UIO_USERSPACE;
+		ndp->ni_dirp = uap->fname;
+		ip = namei(ndp);
 		if(ip == NULL)
 			return;
 		if((ip->i_mode & IFMT) != IFREG) {

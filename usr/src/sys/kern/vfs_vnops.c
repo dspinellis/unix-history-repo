@@ -1,4 +1,4 @@
-/*	vfs_vnops.c	6.1	83/07/29	*/
+/*	vfs_vnops.c	6.2	84/07/08	*/
 
 #include "../machine/reg.h"
 
@@ -15,7 +15,6 @@
 #include "../h/socket.h"
 #include "../h/socketvar.h"
 #include "../h/proc.h"
-#include "../h/nami.h"
 
 /*
  * Check mode permission on inode pointer.
@@ -104,12 +103,17 @@ found:
  * return inode pointer.
  */
 struct inode *
-owner(follow)
+owner(fname, follow)
+	caddr_t fname;
 	int follow;
 {
 	register struct inode *ip;
+	register struct nameidata *ndp = &u.u_nd;
 
-	ip = namei(uchar, LOOKUP, follow);
+	ndp->ni_nameiop = LOOKUP | follow;
+	ndp->ni_segflg = UIO_USERSPACE;
+	ndp->ni_dirp = fname;
+	ip = namei(ndp);
 	if (ip == NULL)
 		return (NULL);
 	if (u.u_uid == ip->i_uid)

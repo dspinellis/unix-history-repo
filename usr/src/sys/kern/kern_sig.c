@@ -1,4 +1,4 @@
-/*	kern_sig.c	6.3	84/05/22	*/
+/*	kern_sig.c	6.4	84/07/08	*/
 
 #include "../machine/reg.h"
 #include "../machine/pte.h"
@@ -21,7 +21,6 @@
 #include "../h/acct.h"
 #include "../h/uio.h"
 #include "../h/kernel.h"
-#include "../h/nami.h"
 
 #define	mask(s)	(1 << ((s)-1))
 #define	cantmask	(mask(SIGKILL)|mask(SIGCONT)|mask(SIGSTOP))
@@ -736,7 +735,7 @@ psig()
 core()
 {
 	register struct inode *ip;
-	extern schar();
+	register struct nameidata *ndp = &u.u_nd;
 
 	if (u.u_uid != u.u_ruid || u.u_gid != u.u_rgid)
 		return (0);
@@ -744,12 +743,14 @@ core()
 	    u.u_rlimit[RLIMIT_CORE].rlim_cur)
 		return (0);
 	u.u_error = 0;
-	u.u_dirp = "core";
-	ip = namei(schar, CREATE, 1);
+	ndp->ni_nameiop = CREATE | FOLLOW;
+	ndp->ni_segflg = UIO_SYSSPACE;
+	ndp->ni_dirp = "core";
+	ip = namei(ndp);
 	if (ip == NULL) {
 		if (u.u_error)
 			return (0);
-		ip = maknode(0644);
+		ip = maknode(0644, ndp);
 		if (ip==NULL)
 			return (0);
 	}

@@ -1,4 +1,4 @@
-/*	vfs_xxx.c	6.1	83/07/29	*/
+/*	vfs_xxx.c	6.2	84/07/08	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -10,34 +10,8 @@
 #include "../h/buf.h"
 #include "../h/conf.h"
 
-/*
- * Return the next character fromt the
- * kernel string pointed at by dirp.
- */
-schar()
-{
-	return (*u.u_dirp++ & 0377);
-}
-
-/*
- * Return the next character from the
- * user string pointed at by dirp.
- */
-uchar()
-{
-	register c;
-
-	c = fubyte(u.u_dirp++);
-	if (c == -1) {
-		u.u_error = EFAULT;
-		c = 0;
-	}
-	return (c);
-}
-
 #ifdef COMPAT
 #include "../h/file.h"
-#include "../h/nami.h"
 #include "../h/kernel.h"
 
 /*
@@ -84,10 +58,13 @@ ostat()
 	register struct a {
 		char	*fname;
 		struct ostat *sb;
-	} *uap;
+	} *uap = (struct a *)u.u_ap;
+	register struct nameidata *ndp = &u.u_nd;
 
-	uap = (struct a *)u.u_ap;
-	ip = namei(uchar, LOOKUP, 1);
+	ndp->ni_nameiop = LOOKUP | FOLLOW;
+	ndp->ni_segflg = UIO_USERSPACE;
+	ndp->ni_dirp = uap->fname;
+	ip = namei(ndp);
 	if (ip == NULL)
 		return;
 	ostat1(ip, uap->sb);
@@ -132,7 +109,7 @@ outime()
 	time_t tv[2];
 	struct timeval tv0, tv1;
 
-	if ((ip = owner(1)) == NULL)
+	if ((ip = owner(uap->fname, FOLLOW)) == NULL)
 		return;
 	u.u_error = copyin((caddr_t)uap->tptr, (caddr_t)tv, sizeof (tv));
 	if (u.u_error == 0) {
