@@ -1,6 +1,6 @@
-/* Copyright (c) 1982 Regents of the University of California */
-
-static char sccsid[] = "@(#)random.c	4.1	(Berkeley)	82/11/22";
+#ifndef lint
+static char sccsid[] = "@(#)random.c	4.2	(Berkeley)	83/01/02";
+#endif
 
 #include	<stdio.h>
 
