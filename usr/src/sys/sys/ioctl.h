@@ -1,4 +1,4 @@
-/*	ioctl.h	6.2	84/03/20	*/
+/*	ioctl.h	6.3	84/04/13	*/
 /*
  * Ioctl definitions
  */
@@ -204,9 +204,10 @@ struct ltchars {
 #define	SIOCGIFDSTADDR	_IOWR(i,15, struct ifreq)	/* get p-p address */
 #define	SIOCSIFFLAGS	_IOW(i, 16, struct ifreq)	/* set ifnet flags */
 #define	SIOCGIFFLAGS	_IOWR(i,17, struct ifreq)	/* get ifnet flags */
+#define	SIOCGIFBRDADDR	_IOWR(i,18, struct ifreq)	/* get broadcast addr */
 #define	SIOCGIFCONF	_IOWR(i,20, struct ifconf)	/* get ifnet list */
 
 #define	SIOCSARP	_IOW(i, 30, struct arpreq)	/* set arp entry */
-#define	SIOCGARP	_IOWR(i, 31, struct arpreq)	/* get arp entry */
+#define	SIOCGARP	_IOWR(i,31, struct arpreq)	/* get arp entry */
 #define	SIOCDARP	_IOW(i, 32, struct arpreq)	/* delete arp entry */
 #endif
