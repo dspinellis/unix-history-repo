@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfsmount.h	7.9 (Berkeley) %G%
+ *	@(#)nfsmount.h	7.10 (Berkeley) %G%
  */
 
 /*
@@ -76,7 +76,7 @@ int	nfs_root __P((
 int	nfs_quotactl __P((
 		struct mount *mp,
 		int cmds,
-		u_int uid,	/* should be uid_t */
+		uid_t uid,
 		caddr_t arg,
 		struct proc *p));
 int	nfs_statfs __P((
@@ -85,11 +85,12 @@ int	nfs_statfs __P((
 		struct proc *p));
 int	nfs_sync __P((
 		struct mount *mp,
-		int waitfor));
+		int waitfor,
+		struct ucred *cred,
+		struct proc *p));
 int	nfs_fhtovp __P((
 		struct mount *mp,
 		struct fid *fhp,
-		int setgen,
 		struct vnode **vpp));
 int	nfs_vptofh __P((
 		struct vnode *vp,
