@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid ="@(#)pftn.c	1.15 (Berkeley) %G%";
+static char *sccsid ="@(#)pftn.c	1.16 (Berkeley) %G%";
 #endif lint
 
 # include "pass1.h"
@@ -51,28 +51,6 @@ defid( q, class ) register NODE *q; register int class; {
 
 	if( idp < 0 ) cerror( "tyreduce" );
 	p = &stab[idp];
-#ifdef LINT
-	if (pflag) {
-		register int	i;
-
-#ifndef FLEXNAMES
-		for (i = 0; i < 8; ++i)
-#else /* FLEXNAMES */
-		for (i = 0; ; ++i)
-#endif /* FLEXNAMES */
-			if (p->sname[i] == '\0')
-				break;
-			else if (p->sname[i] == '$') {
-#ifndef FLEXNAMES
-				werror( "nonportable identifier (uses $): %.8s",
-#else /* FLEXNAMES */
-				werror( "nonportable identifier (uses $): %s",
-#endif /* FLEXNAMES */
-					p->sname);
-				break;
-			}
-	}
-#endif /* LINT */
 
 # ifndef BUG1
 	if( ddebug ){
@@ -425,7 +403,7 @@ psave( i ){
 	}
 
 ftnend(){ /* end of function */
-	if( retlab != NOLAB ){ /* inside a real function */
+	if( retlab != NOLAB && nerrors == 0 ){ /* inside a real function */
 		efcode();
 		}
 	checkst(0);
@@ -880,9 +858,11 @@ beginit(curid){
 	case EXTDEF:
 	case STATIC:
 		ilocctr = ISARY(p->stype)?ADATA:DATA;
-		locctr( ilocctr );
-		defalign( talign( p->stype, p->sizoff ) );
-		defnam( p );
+		if( nerrors == 0 ){
+			locctr( ilocctr );
+			defalign( talign( p->stype, p->sizoff ) );
+			defnam( p );
+			}
 
 		}
 
@@ -1069,7 +1049,7 @@ doinit( p ) register NODE *p; {
 
 	/* note: size of an individual initializer is assumed to fit into an int */
 
-	if( iclass < 0 || pstk == 0 ) goto leave;
+	if( iclass < 0 ) goto leave;
 	if( iclass == EXTERN || iclass == UNAME ){
 		uerror( "cannot initialize extern or union" );
 		iclass = -1;
@@ -1115,9 +1095,6 @@ doinit( p ) register NODE *p; {
 	inforce( pstk->in_off );
 
 	p = buildtree( ASSIGN, block( NAME, NIL,NIL, t, d, s ), p );
-#ifdef LINT
-	ecode(p);
-#endif
 	p->in.left->in.op = FREE;
 	p->in.left = p->in.right;
 	p->in.right = NIL;
