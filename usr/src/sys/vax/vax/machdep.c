@@ -1,4 +1,4 @@
-/*	machdep.c	4.13	81/02/16	*/
+/*	machdep.c	4.14	81/02/25	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -24,7 +24,7 @@
 int	coresw = 0;
 int	printsw = 0;
 
-char	version[] = "VM/UNIX (Berkeley Version 4.13) 81/02/16 20:50:04 \n";
+char	version[] = "VM/UNIX (Berkeley Version 4.14) 81/02/25 14:48:03 \n";
 int	icode[] =
 {
 	0x9f19af9f,	/* pushab [&"init",0]; pushab */
@@ -446,3 +446,48 @@ dumpsys()
 	    (*bdevsw[major(dumpdev)].d_dump)(dumpdev) ?
 		"failed" : "succeeded");
 }
+
+#if VAX780
+char *mc780[] = {
+	"cp read",	"ctrl str par",	"cp tbuf par",	"cp cache par",
+	"cp rdtimo", 	"cp rds",	"ucode lost",	0,
+	0,		0,		"ib tbuf par",	0,
+	"ib rds",	"ib rd timo",	0,		"ib cache par"
+};
+
+struct mc780frame {
+	int	mc7_bcnt;
+	int	mc7_summary;
+	int	mc7_cpues;
+	int	mc7_upc;
+	int	mc7_vaviba;
+	int	mc7_dreg;
+	int	mc7_tber0;
+	int	mc7_tber1;
+	int	mc7_timo;
+	int	mc7_parity;
+	int	mc7_sbier;
+	int	mc7_pc;
+	int	mc7_psl;
+};
+
+machinecheck(mcf)
+	register struct mc780frame *mcf;
+{
+	register int type = mcf->mc7_summary;
+	register int sbifs;
+
+	printf("machine check %x: %s%s\n", type, mc780[type&0xf],
+	    (type&0xf0) ? " abort" : " fault"); 
+	printf("\tcpues %x upc %x va/viba %x dreg %x tber %x %x\n",
+	   mcf->mc7_cpues, mcf->mc7_upc, mcf->mc7_vaviba,
+	   mcf->mc7_dreg, mcf->mc7_tber0, mcf->mc7_tber1);
+	sbifs = mfpr(SBIFS);
+	printf("\ttimo %x parity %x sbier %x pc %x psl %x sbifs %x\n",
+	   mcf->mc7_timo*4, mcf->mc7_parity, mcf->mc7_sbier,
+	   mcf->mc7_pc, mcf->mc7_psl, sbifs);
+	mtpr(SBIFS, sbifs &~ 0x2000000);
+	mtpr(SBIER, mfpr(SBIER) | 0x70c0);
+	panic("mchk");
+}
+#endif
