@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)rtsock.c	8.5 (Berkeley) %G%
+ *	@(#)rtsock.c	8.3.2.1 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -33,7 +33,8 @@ static struct mbuf *
 		rt_msg1 __P((int, struct rt_addrinfo *));
 static int	rt_msg2 __P((int,
 		    struct rt_addrinfo *, caddr_t, struct walkarg *));
-static void	rt_xaddrs __P((caddr_t, caddr_t, struct rt_addrinfo *));
+caddr_t	rt_xaddrs __P((caddr_t, caddr_t, struct rt_addrinfo *));
+void	m_copyback __P((struct mbuf *, int, int, caddr_t));
 
 /* Sleazy use of local variables throughout file, warning!!!! */
 #define dst	info.rti_info[RTAX_DST]
@@ -54,7 +55,6 @@ route_usrreq(so, req, m, nam, control)
 	register int error = 0;
 	register struct rawcb *rp = sotorawcb(so);
 	int s;
-
 	if (req == PRU_ATTACH) {
 		MALLOC(rp, struct rawcb *, sizeof(*rp), M_PCB, M_WAITOK);
 		if (so->so_pcb = (caddr_t)rp)
@@ -106,11 +106,12 @@ route_output(m, so)
 	register struct rtentry *rt = 0;
 	struct rtentry *saved_nrt = 0;
 	struct radix_node_head *rnh;
-	struct radix_node_head *rnh;
 	struct rt_addrinfo info;
 	int len, error = 0;
 	struct ifnet *ifp = 0;
 	struct ifaddr *ifa = 0;
+	caddr_t pkthdr;
+	struct radix_node_head *rnh;
 
 #define senderr(e) { error = e; goto flush;}
 	if (m == 0 || ((m->m_len < sizeof(long)) &&
@@ -136,12 +137,13 @@ route_output(m, so)
 	}
 	rtm->rtm_pid = curproc->p_pid;
 	info.rti_addrs = rtm->rtm_addrs;
-	rt_xaddrs((caddr_t)(rtm + 1), len + (caddr_t)rtm, &info);
+	pkthdr = rt_xaddrs((caddr_t)(rtm + 1), len + (caddr_t)rtm, &info);
+	info.rti_flags = rtm->rtm_flags;
 	if (dst == 0)
 		senderr(EINVAL);
 	if (genmask) {
 		struct radix_node *t;
-		t = rn_addmask((caddr_t)genmask, 0, 1);
+		t = rn_addmask((caddr_t)genmask, 1, 2);
 		if (t && Bcmp(genmask, t->rn_key, *(u_char *)genmask) == 0)
 			genmask = (struct sockaddr *)(t->rn_key);
 		else
@@ -152,8 +154,16 @@ route_output(m, so)
 	case RTM_ADD:
 		if (gate == 0)
 			senderr(EINVAL);
-		error = rtrequest(RTM_ADD, dst, gate, netmask,
-					rtm->rtm_flags, &saved_nrt);
+		error = rtrequest1(RTM_ADD, &info, &saved_nrt);
+		goto add_metrics;
+
+	case RTM_ADDPKT:
+		if  ((rnh = rt_tables[dst->sa_family]) == 0 ||
+		     rnh->rnh_addpkt == 0)
+			senderr(EAFNOSUPPORT);
+		error = rnh->rnh_addpkt(pkthdr, &info, rnh, 
+			saved_nrt->rt_nodes);
+	add_metrics:
 		if (error == 0 && saved_nrt) {
 			rt_setmetrics(rtm->rtm_inits,
 				&rtm->rtm_rmx, &saved_nrt->rt_rmx);
@@ -162,8 +172,13 @@ route_output(m, so)
 		}
 		break;
 
+	case RTM_DELPKT:
+		if  ((rnh = rt_tables[dst->sa_family]) == 0 ||
+		     rnh->rnh_delpkt == 0)
+			senderr(EAFNOSUPPORT);
+		error = rnh->rnh_delpkt(pkthdr, &info, rnh);
+
 	case RTM_DELETE:
-		error = rtrequest(RTM_DELETE, dst, gate, netmask,
 				rtm->rtm_flags, &saved_nrt);
 		if (error == 0) {
 			if ((rt = saved_nrt)->rt_refcnt <= 0)
@@ -172,16 +187,28 @@ route_output(m, so)
 		}
 		break;
 
-	case RTM_GET:
 	case RTM_CHANGE:
+	case RTM_GET:
 	case RTM_LOCK:
-		if ((rnh = rt_tables[dst->sa_family]) == 0)
-			senderr(EAFNOSUPPORT);
-		else if (rt = (struct rtentry *)
-				rnh->rnh_lookup(dst, netmask, rnh))
-			rt->rt_refcnt++;
-		else
+		rt = rtalloc1(dst, 0);
+		if (rt == 0)
 			senderr(ESRCH);
+		if (rtm->rtm_type != RTM_GET) {/* XXX: too grotty */
+			struct radix_node *rn;
+			extern struct radix_node_head *mask_rnhead;
+
+			if (Bcmp(dst, rt_key(rt), dst->sa_len) != 0)
+				senderr(ESRCH);
+			if (netmask && (rn = rn_search(netmask,
+					    mask_rnhead->rnh_treetop)))
+				netmask = (struct sockaddr *)rn->rn_key;
+			for (rn = rt->rt_nodes; rn; rn = rn->rn_dupedkey)
+				if (netmask == (struct sockaddr *)rn->rn_mask)
+					break;
+			if (rn == 0)
+				senderr(ETOOMANYREFS);
+			rt = (struct rtentry *)rn;
+		}
 		switch(rtm->rtm_type) {
 
 		case RTM_GET:
@@ -271,6 +298,7 @@ flush:
 		else 
 			rtm->rtm_flags |= RTF_DONE;
 	}
+cleanup:
 	if (rt)
 		rtfree(rt);
     {
@@ -324,13 +352,14 @@ rt_setmetrics(which, in, out)
 	((a) > 0 ? (1 + (((a) - 1) | (sizeof(long) - 1))) : sizeof(long))
 #define ADVANCE(x, n) (x += ROUNDUP((n)->sa_len))
 
-static void
+caddr_t
 rt_xaddrs(cp, cplim, rtinfo)
 	register caddr_t cp, cplim;
 	register struct rt_addrinfo *rtinfo;
 {
 	register struct sockaddr *sa;
 	register int i;
+	caddr_t cp0 = cp;
 
 	bzero(rtinfo->rti_info, sizeof(rtinfo->rti_info));
 	for (i = 0; (i < RTAX_MAX) && (cp < cplim); i++) {
@@ -339,6 +368,7 @@ rt_xaddrs(cp, cplim, rtinfo)
 		rtinfo->rti_info[i] = sa = (struct sockaddr *)cp;
 		ADVANCE(cp, sa);
 	}
+	return cp;
 }
 
 /*
@@ -531,6 +561,7 @@ rt_missmsg(type, rtinfo, flags, error)
 {
 	register struct rt_msghdr *rtm;
 	register struct mbuf *m;
+	register int i;
 	struct sockaddr *sa = rtinfo->rti_info[RTAX_DST];
 
 	if (route_cb.any_count == 0)
@@ -644,8 +675,9 @@ sysctl_dumpentry(rn, w)
 	struct radix_node *rn;
 	register struct walkarg *w;
 {
+	register struct sockaddr *sa;
 	register struct rtentry *rt = (struct rtentry *)rn;
-	int error = 0, size;
+	int n, error = 0, size;
 	struct rt_addrinfo info;
 
 	if (w->w_op == NET_RT_FLAGS && !(rt->rt_flags & w->w_arg))
@@ -681,6 +713,7 @@ sysctl_iflist(af, w)
 	register struct ifnet *ifp;
 	register struct ifaddr *ifa;
 	struct	rt_addrinfo info;
+	struct	sockaddr *sa;
 	int	len, error = 0;
 
 	bzero((caddr_t)&info, sizeof(info));
