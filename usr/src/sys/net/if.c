@@ -1,4 +1,4 @@
-/*	if.c	4.6	81/12/07	*/
+/*	if.c	4.7	82/02/03	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -86,6 +86,8 @@ if_makeaddr(net, host)
 		addr = (net << 16) | host;
 	else
 		addr = (net << 8) | host;
+#ifdef vax
 	addr = htonl(addr);
+#endif
 	return (*(struct in_addr *)&addr);
 }
