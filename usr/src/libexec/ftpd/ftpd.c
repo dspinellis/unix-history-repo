@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ftpd.c	5.24 (Berkeley) %G%";
+static char sccsid[] = "@(#)ftpd.c	5.25 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -429,20 +429,21 @@ retrieve(cmd, name)
 	struct stat st;
 	int (*closefunc)(), tmp;
 
-	if (cmd == 0)
+	if (cmd == 0) {
 		fin = fopen(name, "r"), closefunc = fclose;
-	else {
+		st.st_size = 0;
+	} else {
 		char line[BUFSIZ];
 
 		(void) sprintf(line, cmd, name), name = line;
 		fin = ftpd_popen(line, "r"), closefunc = ftpd_pclose;
+		st.st_size = -1;
 	}
 	if (fin == NULL) {
 		if (errno != 0)
 			perror_reply(550, name);
 		return;
 	}
-	st.st_size = 0;
 	if (cmd == 0 &&
 	    (stat(name, &st) < 0 || (st.st_mode&S_IFMT) != S_IFREG)) {
 		reply(550, "%s: not a plain file.", name);
