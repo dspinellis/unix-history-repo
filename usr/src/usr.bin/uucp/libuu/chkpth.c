@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)chkpth.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)chkpth.c	5.5	(Berkeley) %G%";
 #endif
 
 #include "uucp.h"
@@ -12,6 +12,7 @@ struct userpath {
 	char **us_path;
 	struct userpath *unext;
 };
+
 struct userpath *Uhead = NULL;
 struct userpath *Mchdef = NULL, *Logdef = NULL;
 int Uptfirst = 1;
@@ -41,7 +42,10 @@ char *path, *logname, *mchname;
 
 	if (Uptfirst) {
 		rdpth();
-		ASSERT(Uhead != NULL, "INIT USERFILE, No entrys!", CNULL, 0);
+		if (Uhead == NULL) {
+			syslog(LOG_ERR, "USERFILE empty!");
+			cleanup(FAIL);
+		}
 		Uptfirst = 0;
 	}
 	for (u = Uhead; u != NULL; ) {
@@ -174,7 +178,10 @@ register char *name;
 
 	if (Uptfirst) {
 		rdpth();
-		ASSERT(Uhead != NULL, "INIT USERFILE, No Users!", CNULL, 0);
+		if (Uhead == NULL) {
+			syslog(LOG_ERR, "USERFILE empty!");
+			cleanup(FAIL);
+		}
 		Uptfirst = 0;
 	}
 
