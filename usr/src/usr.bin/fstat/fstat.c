@@ -1,28 +1,18 @@
-/*
- * Copyright (c) 1987 Regents of the University of California.
+/*-
+ * Copyright (c) 1988 The Regents of the University of California.
  * All rights reserved.
  *
- * Redistribution and use in source and binary forms are permitted
- * provided that the above copyright notice and this paragraph are
- * duplicated in all such forms and that any documentation,
- * advertising materials, and other materials related to such
- * distribution and use acknowledge that the software was developed
- * by the University of California, Berkeley.  The name of the
- * University may not be used to endorse or promote products derived
- * from this software without specific prior written permission.
- * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
- * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
- * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+ * %sccs.include.redist.c%
  */
 
 #ifndef lint
 char copyright[] =
-"@(#) Copyright (c) 1987 Regents of the University of California.\n\
+"@(#) Copyright (c) 1988 The Regents of the University of California.\n\
  All rights reserved.\n";
 #endif /* not lint */
 
 #ifndef lint
-char sccsid[] = "@(#)fstat.c	5.24 (Berkeley) %G%";
+static char sccsid[] = "@(#)fstat.c	5.25 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -47,6 +37,7 @@ char sccsid[] = "@(#)fstat.c	5.24 (Berkeley) %G%";
 #define NFS
 #include <sys/file.h>
 #include <sys/mount.h>
+#include <ufs/quota.h>
 #include <ufs/inode.h>
 #include <nfs/nfsv2.h>
 #include <nfs/nfs.h>
@@ -64,7 +55,7 @@ char sccsid[] = "@(#)fstat.c	5.24 (Berkeley) %G%";
 #include <ctype.h>
 #include <nlist.h>
 #include <pwd.h>
-#include <strings.h>
+#include <string.h>
 #include <stdio.h>
 
 #define	TEXT	-1
@@ -74,7 +65,7 @@ char sccsid[] = "@(#)fstat.c	5.24 (Berkeley) %G%";
 
 typedef struct devs {
 	struct	devs *next;
-	dev_t	dev;
+	long	fsid;
 	ino_t	ino;
 	char	*name;
 } DEVS;
@@ -83,13 +74,16 @@ DEVS *devs;
 struct  filestat {
 	long	fsid;
 	long	fileid;
+	mode_t	mode;
 	u_long	size;
 	dev_t	rdev;
 };
 
+#ifdef notdef
 struct nlist nl[] = {
 	{ "" },
 };
+#endif
 
 int 	fsflg,	/* show files on same filesystem as file(s) argument */
 	pflg,	/* show files open by a particular pid */
@@ -113,7 +107,7 @@ main(argc, argv)
 	struct proc *p;
 	extern char *optarg;
 	extern int optind;
-	int ch, size;
+	int ch;
 	char *malloc();
 
 
@@ -133,7 +127,7 @@ main(argc, argv)
 			if (uflg++)
 				usage();
 			if (!(passwd = getpwnam(optarg))) {
-				(void)fprintf(stderr, "%s: unknown uid\n",
+				fprintf(stderr, "%s: unknown uid\n",
 				    optarg);
 				exit(1);
 			}
@@ -174,18 +168,20 @@ main(argc, argv)
 		fprintf(stderr, "fstat: %s\n", kvm_geterr());
 		exit(1);
 	}
+#ifdef notdef
 	if (kvm_nlist(nl) != 0) {
-		(void)fprintf(stderr, "%s: no namelist: %s\n", kvm_geterr());
+		fprintf(stderr, "fstat: no namelist: %s\n", kvm_geterr());
 		exit(1);
 	}
+#endif
 	if (kvm_getprocs(what, arg) == -1) {
 		fprintf(stderr, "fstat: %s\n", kvm_geterr());
 		exit(1);
 	}
 	if (nflg)
-fputs("USER     CMD        PID   FD FST  DEV    INUM TYPE SZ|DV", stdout);
+fputs("USER     CMD        PID   FD  DEV    INUM       MODE SZ|DV", stdout);
 	else
-fputs("USER     CMD        PID   FD FST MNT        INUM TYPE SZ|DV", stdout);
+fputs("USER     CMD        PID   FD MOUNT      INUM MODE         SZ|DV", stdout);
 	if (checkfile && fsflg == 0)
 		fputs(" NAME\n", stdout);	
 	else
@@ -228,10 +224,10 @@ dofiles(p)
 	struct proc *p;
 {
 	int i;
-	char *user_from_uid();
 	struct file file;
 	struct user *up = kvm_getu(p);
 	struct vnode *xvptr;
+	extern char *user_from_uid();
 
 	Uname = user_from_uid(p->p_uid, 0);
 	Pid = p->p_pid;
@@ -293,10 +289,10 @@ vtrans(vp, i)
 	struct vnode vn;
 	struct filestat fst;
 	char *filename = NULL;
-	char *fstype;
-	char *getmnton(), *vtype();
-	int nodata = 0;
+	char *badtype = NULL;
+	char *getmnton();
 	extern char *devname();
+	char mode[15];
 
 	if (kvm_read((off_t)vp, &vn, sizeof (struct vnode)) != 
 	    sizeof (struct vnode)) {
@@ -304,38 +300,35 @@ vtrans(vp, i)
 			vp, Pid);
 		return;
 	}
-	switch (vn.v_tag) {
-	case VT_NON:
-		fstype = " non";
-		nodata = 1;
-		break;
-	case VT_UFS:
-		fstype = " ufs";
-		ufs_filestat(&vn, &fst);
-		break;
-	case VT_MFS:
-		fstype = " mfs";
-		ufs_filestat(&vn, &fst);
-		break;
-	case VT_NFS:
-		fstype = " nfs";
-		nfs_filestat(&vn, &fst);
-		break;
-	default: {
-		static char unknown[10];
-		sprintf(fstype = unknown, " ?%d", vn.v_tag);
-		nodata = 1;
-		break;;
-	}
+	if (vn.v_type == VNON || vn.v_tag == VT_NON)
+		badtype = "none";
+	else if (vn.v_type == VBAD)
+		badtype = "bad";
+	else
+		switch (vn.v_tag) {
+		case VT_UFS:
+			ufs_filestat(&vn, &fst);
+			break;
+		case VT_MFS:
+			ufs_filestat(&vn, &fst);
+			break;
+		case VT_NFS:
+			nfs_filestat(&vn, &fst);
+			break;
+		default: {
+			static char unknown[10];
+			sprintf(badtype = unknown, "?(%x)", vn.v_tag);
+			break;;
+		}
 	}
 	if (checkfile) {
 		int fsmatch = 0;
 		register DEVS *d;
 
-		if (nodata)
+		if (badtype)
 			return;
 		for (d = devs; d != NULL; d = d->next)
-			if (d->dev == fst.fsid) {
+			if (d->fsid == fst.fsid) {
 				fsmatch = 1;
 				if (d->ino == fst.fileid) {
 					filename = d->name;
@@ -346,16 +339,19 @@ vtrans(vp, i)
 			return;
 	}
 	PREFIX(i);
-	fputs(fstype, stdout);
-	if (nodata) {
-		printf(" -       -    -    -\n");
+	if (badtype) {
+		(void)printf(" -         -  %10s    -\n", badtype);
 		return;
 	}
 	if (nflg)
-		printf(" %2d,%-2d", major(fst.fsid), minor(fst.fsid));
+		(void)printf(" %2d,%-2d", major(fst.fsid), minor(fst.fsid));
 	else
-		printf(" %-8s", getmnton(vn.v_mount));
-	printf(" %6d %3s", fst.fileid, vtype(vn.v_type));
+		(void)printf(" %-8s", getmnton(vn.v_mount));
+	if (nflg)
+		(void)sprintf(mode, "%o", fst.mode);
+	else
+		strmode(fst.mode, mode);
+	(void)printf(" %6d %10s", fst.fileid, mode);
 	switch (vn.v_type) {
 	case VBLK:
 	case VCHR: {
@@ -383,8 +379,9 @@ ufs_filestat(vp, fsp)
 {
 	struct inode *ip = VTOI(vp);
 
-	fsp->fsid = (long)ip->i_dev;
+	fsp->fsid = ip->i_dev & 0xffff;
 	fsp->fileid = (long)ip->i_number;
+	fsp->mode = (mode_t)ip->i_mode;
 	fsp->size = (u_long)ip->i_size;
 	fsp->rdev = ip->i_rdev;
 }
@@ -393,12 +390,38 @@ nfs_filestat(vp, fsp)
 	struct vnode *vp;
 	struct filestat *fsp;
 {
-	struct nfsnode *np = VTONFS(vp);
+	register struct nfsnode *np = VTONFS(vp);
+	register mode_t mode;
 
 	fsp->fsid = np->n_vattr.va_fsid;
 	fsp->fileid = np->n_vattr.va_fileid;
 	fsp->size = np->n_size;
 	fsp->rdev = np->n_vattr.va_rdev;
+	mode = (mode_t)np->n_vattr.va_mode;
+	switch (vp->v_type) {
+	case VREG:
+		mode |= S_IFREG;
+		break;
+	case VDIR:
+		mode |= S_IFDIR;
+		break;
+	case VBLK:
+		mode |= S_IFBLK;
+		break;
+	case VCHR:
+		mode |= S_IFCHR;
+		break;
+	case VLNK:
+		mode |= S_IFLNK;
+		break;
+	case VSOCK:
+		mode |= S_IFSOCK;
+		break;
+	case VFIFO:
+		mode |= S_IFIFO;
+		break;
+	};
+	fsp->mode = mode;
 }
 
 
@@ -427,43 +450,10 @@ getmnton(m)
 		exit(1);
 	}
 	mt->m = m;
-	bcopy(&mount.m_stat.f_mntonname[0], &mt->mntonname[0], MNAMELEN);
+	bcopy(&mount.mnt_stat.f_mntonname[0], &mt->mntonname[0], MNAMELEN);
 	mt->next = mhead;
 	mhead = mt;
 	return (mt->mntonname);
-}
-
-char *
-vtype(type)
-	enum vtype type;
-{
-
-	switch(type) {
-	case VNON:
-		return("non");
-	case VREG:
-		return("reg");
-	case VDIR:
-		return("dir");
-	case VBLK:
-		return("blk");
-	case VCHR:
-		return("chr");
-	case VLNK:
-		return("lnk");
-	case VSOCK:
-		return("soc");
-	case VFIFO:
-		return("fif");
-	case VBAD:
-		return("bad");
-	default: {
-		static char unknown[10];
-		sprintf(unknown, "?%d", type);
-		return(unknown);
-	}
-	}
-	/*NOTREACHED*/
 }
 
 socktrans(sock, i)
@@ -492,21 +482,21 @@ socktrans(sock, i)
 	if (kvm_read((off_t)sock, (char *)&so, sizeof(struct socket))
 	    != sizeof(struct socket)) {
 		dprintf(stderr, "can't read sock at %x\n", sock);
-		return;
+		goto bad;
 	}
 
 	/* fill in protosw entry */
 	if (kvm_read((off_t)so.so_proto, (char *)&proto, sizeof(struct protosw))
 	    != sizeof(struct protosw)) {
 		dprintf(stderr, "can't read protosw at %x", so.so_proto);
-		return;
+		goto bad;
 	}
 
 	/* fill in domain */
 	if (kvm_read((off_t)proto.pr_domain, (char *)&dom, sizeof(struct domain))
 	    != sizeof(struct domain)) {
 		dprintf(stderr, "can't read domain at %x\n", proto.pr_domain);
-		return;
+		goto bad;
 	}
 
 	/*
@@ -514,7 +504,7 @@ socktrans(sock, i)
 	 * kludge "internet" --> "inet" for brevity
 	 */
 	if (dom.dom_family == AF_INET)
-		(void)strcpy(dname, "inet");
+		strcpy(dname, "inet");
 	else {
 		if ((len = kvm_read((off_t)dom.dom_name, dname, sizeof(dname) - 1)) < 0) {
 			dprintf(stderr, "can't read domain name at %x\n",
@@ -526,9 +516,9 @@ socktrans(sock, i)
 	}
 
 	if ((u_short)so.so_type > STYPEMAX)
-		(void)printf("* %s ?%d", dname, so.so_type);
+		printf("* %s ?%d", dname, so.so_type);
 	else
-		(void)printf("* %s %s", dname, stypename[so.so_type]);
+		printf("* %s %s", dname, stypename[so.so_type]);
 
 	/* 
 	 * protocol specific formatting
@@ -550,23 +540,23 @@ socktrans(sock, i)
 				    != sizeof(struct inpcb)){
 					dprintf(stderr, 
 					     "can't read inpcb at %x\n", so.so_pcb);
-					return;
+					goto bad;
 				}
-				(void)printf(" %x", (int)inpcb.inp_ppcb);
+				printf(" %x", (int)inpcb.inp_ppcb);
 			}
 		}
 		else if (so.so_pcb)
-			(void)printf(" %x", (int)so.so_pcb);
+			printf(" %x", (int)so.so_pcb);
 		break;
 	case AF_UNIX:
 		/* print address of pcb and connected pcb */
 		if (so.so_pcb) {
-			(void)printf(" %x", (int)so.so_pcb);
+			printf(" %x", (int)so.so_pcb);
 			if (kvm_read((off_t)so.so_pcb, (char *)&unpcb, sizeof(struct unpcb))
 			    != sizeof(struct unpcb)){
 				dprintf(stderr, "can't read unpcb at %x\n",
 					so.so_pcb);
-				return;
+				goto bad;
 			}
 			if (unpcb.unp_conn) {
 				char shoconn[4], *cp;
@@ -578,16 +568,19 @@ socktrans(sock, i)
 				if (!(so.so_state & SS_CANTSENDMORE))
 					*cp++ = '>';
 				*cp = '\0';
-				(void)printf(" %s %x", shoconn,
+				printf(" %s %x", shoconn,
 				    (int)unpcb.unp_conn);
 			}
 		}
 		break;
 	default:
 		/* print protocol number and socket address */
-		(void)printf(" %d %x", proto.pr_protocol, (int)sock);
+		printf(" %d %x", proto.pr_protocol, (int)sock);
 	}
-	(void)printf("\n");
+	printf("\n");
+	return;
+bad:
+	printf("* error\n");
 }
 
 /*
@@ -619,10 +612,10 @@ getinetproto(number)
 	case IPPROTO_RAW:
 		cp ="raw"; break;
 	default:
-		(void)printf(" %d", number);
+		printf(" %d", number);
 		return;
 	}
-	(void)printf(" %s", cp);
+	printf(" %s", cp);
 }
 
 getfname(filename)
@@ -633,19 +626,19 @@ getfname(filename)
 	char *malloc();
 
 	if (stat(filename, &statbuf)) {
-		(void)fprintf(stderr, "fstat: %s: %s\n", strerror(errno),
+		fprintf(stderr, "fstat: %s: %s\n", strerror(errno),
 		    filename);
 		return(0);
 	}
 	if ((cur = (DEVS *)malloc(sizeof(DEVS))) == NULL) {
-		(void)fprintf(stderr, "fstat: out of space.\n");
+		fprintf(stderr, "fstat: out of space.\n");
 		exit(1);
 	}
 	cur->next = devs;
 	devs = cur;
 
 	cur->ino = statbuf.st_ino;
-	cur->dev = statbuf.st_dev;
+	cur->fsid = statbuf.st_dev & 0xffff;
 	cur->name = filename;
 	return(1);
 }
