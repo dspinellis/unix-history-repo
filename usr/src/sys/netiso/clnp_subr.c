@@ -408,19 +408,24 @@ clnp_route(dst, ro, flags, first_hop, ifa)
 	struct iso_ifaddr **ifa;		/* result: fill in with ptr to interface */
 {
 	if (flags & SO_DONTROUTE) {
-		struct sockaddr_iso dest;
 		struct iso_ifaddr *ia;
 
-		bzero((caddr_t)&dest, sizeof(dest));
-		bcopy((caddr_t)dst, (caddr_t)&dest.siso_addr,
+		if (ro->ro_rt) {
+			RTFREE(ro->ro_rt);
+			ro->ro_rt = 0;
+		}
+		bzero((caddr_t)&ro->ro_dst, sizeof(ro->ro_dst));
+		bcopy((caddr_t)dst, (caddr_t)&ro->ro_dst.siso_addr,
 			1 + (unsigned)dst->isoa_len);
-		dest.siso_family = AF_ISO;
-		dest.siso_len = sizeof(dest);
-		ia = iso_localifa(&dest);
+		ro->ro_dst.siso_family = AF_ISO;
+		ro->ro_dst.siso_len = sizeof(ro->ro_dst);
+		ia = iso_localifa(&ro->ro_dst);
 		if (ia == 0)
 			return EADDRNOTAVAIL;
 		if (ifa)
-			*ifa = (struct iso_ifaddr *)ia;
+			*ifa = ia;
+		if (first_hop)
+			*first_hop = (struct sockaddr *)&ro->ro_dst;
 		return 0;
 	}
 	/*
