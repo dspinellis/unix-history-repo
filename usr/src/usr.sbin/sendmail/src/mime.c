@@ -10,7 +10,7 @@
 # include <string.h>
 
 #ifndef lint
-static char sccsid[] = "@(#)mime.c	8.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)mime.c	8.16 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -358,13 +358,18 @@ mime8to7(mci, header, e, boundaries, flags)
 	**  Heuristically determine encoding method.
 	**	If more than 1/8 of the total characters have the
 	**	eighth bit set, use base64; else use quoted-printable.
+	**	However, only encode binary encoded data as base64,
+	**	since otherwise the NL=>CRLF mapping will be a problem.
 	*/
 
 	if (tTd(43, 8))
 	{
-		printf("mime8to7: %ld high bit(s) in %ld byte(s)\n",
-			sectionhighbits, sectionsize);
+		printf("mime8to7: %ld high bit(s) in %ld byte(s), cte=%s\n",
+			sectionhighbits, sectionsize,
+			cte == NULL ? "[none]" : cte);
 	}
+	if (cte != NULL && strcasecmp(cte, "binary") == 0)
+		sectionsize = sectionhighbits;
 	linelen = 0;
 	if (sectionhighbits == 0)
 	{
@@ -396,10 +401,10 @@ mime8to7(mci, header, e, boundaries, flags)
 		extern int mime_getchar __P((FILE *, char **, int *));
 		extern int mime_getchar_crlf __P((FILE *, char **, int *));
 
-		if (strcasecmp(type, "text") == 0)
-			getcharf = mime_getchar_crlf;
-		else
+		if (cte != NULL && strcasecmp(cte, "binary") == 0)
 			getcharf = mime_getchar;
+		else
+			getcharf = mime_getchar_crlf;
 		putline("Content-Transfer-Encoding: base64", mci);
 		if (tTd(43, 36))
 			printf("  ...Content-Transfer-Encoding: base64\n");
