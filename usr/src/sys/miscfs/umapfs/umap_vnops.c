@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)umap_vnops.c	8.2 (Berkeley) %G%
+ *	@(#)umap_vnops.c	8.3 (Berkeley) %G%
  */
 
 /*
@@ -40,16 +40,18 @@ umap_bypass(ap)
 	} */ *ap;
 {
 	extern int (**umap_vnodeop_p)();  /* not extern, really "forward" */
-	struct ucred **credpp,*credp, *savecredp, *savecompcredp;
-	struct ucred *compcredp;
-	register struct vnode **this_vp_p;
+	struct ucred **credpp = 0, *credp = 0;
+	struct ucred *savecredp, *savecompcredp = 0;
+	struct ucred *compcredp = 0;
+	struct vnode **this_vp_p;
 	int error;
-	struct vnode *old_vps[VDESC_MAX_VPS], *vp1;
+	struct vnode *old_vps[VDESC_MAX_VPS];
+	struct vnode *vp1 = 0;
 	struct vnode **vps_p[VDESC_MAX_VPS];
 	struct vnode ***vppp;
 	struct vnodeop_desc *descp = ap->a_desc;
 	int reles, i;
-	struct componentname **compnamepp;
+	struct componentname **compnamepp = 0;
 
 	if (umap_bug_bypass)
 		printf ("umap_bypass: %s\n", descp->vdesc_name);
@@ -73,10 +75,9 @@ umap_bypass(ap)
 		if (descp->vdesc_vp_offsets[i] == VDESC_NO_OFFSET)
 			break;   /* bail out at end of list */
 		vps_p[i] = this_vp_p = 
-			VOPARG_OFFSETTO(struct vnode**,descp->vdesc_vp_offsets[i],ap);
+			VOPARG_OFFSETTO(struct vnode**, descp->vdesc_vp_offsets[i], ap);
 
-		if (i == 0)
-		{
+		if (i == 0) {
 			vp1 = *vps_p[0];
 		}
 
@@ -112,17 +113,17 @@ umap_bypass(ap)
 		(*credpp) = crdup(savecredp);
 		credp = *credpp;
 
-		if (umap_bug_bypass && credp->cr_uid != 0 )
+		if (umap_bug_bypass && credp->cr_uid != 0)
 			printf("umap_bypass: user was %d, group %d\n", 
-			    credp->cr_uid,credp->cr_gid);
+			    credp->cr_uid, credp->cr_gid);
 
 		/* Map all ids in the credential structure. */
 
-		umap_mapids(vp1->v_mount,credp);
+		umap_mapids(vp1->v_mount, credp);
 
-		if (umap_bug_bypass && credp->cr_uid != 0 )
+		if (umap_bug_bypass && credp->cr_uid != 0)
 			printf("umap_bypass: user now %d, group %d\n", 
-			    credp->cr_uid,credp->cr_gid);
+			    credp->cr_uid, credp->cr_gid);
 	}
 
 	/* BSD often keeps a credential in the componentname structure
@@ -138,17 +139,17 @@ umap_bypass(ap)
 		savecompcredp = compcredp;
 		compcredp = (*compnamepp)->cn_cred = crdup(savecompcredp);
 
-		if (umap_bug_bypass && compcredp->cr_uid != 0 )
+		if (umap_bug_bypass && compcredp->cr_uid != 0)
 			printf("umap_bypass: component credit user was %d, group %d\n", 
-			    compcredp->cr_uid,compcredp->cr_gid);
+			    compcredp->cr_uid, compcredp->cr_gid);
 
 		/* Map all ids in the credential structure. */
 
-		umap_mapids(vp1->v_mount,compcredp);
+		umap_mapids(vp1->v_mount, compcredp);
 
-		if (umap_bug_bypass && compcredp->cr_uid != 0 )
+		if (umap_bug_bypass && compcredp->cr_uid != 0)
 			printf("umap_bypass: component credit user now %d, group %d\n", 
-			    compcredp->cr_uid,compcredp->cr_gid);
+			    compcredp->cr_uid, compcredp->cr_gid);
 	}
 
 	/*
@@ -184,7 +185,7 @@ umap_bypass(ap)
 		if (descp->vdesc_flags & VDESC_VPP_WILLRELE)
 			goto out;
 		vppp = VOPARG_OFFSETTO(struct vnode***,
-				 descp->vdesc_vpp_offset,ap);
+				 descp->vdesc_vpp_offset, ap);
 		error = umap_node_create(old_vps[0]->v_mount, **vppp, *vppp);
 	};
 
@@ -193,26 +194,27 @@ umap_bypass(ap)
 	 * Free duplicate cred structure and restore old one.
 	 */
 	if (descp->vdesc_cred_offset != VDESC_NO_OFFSET) {
-		if (umap_bug_bypass && credp->cr_uid != 0 )
-		printf("umap_bypass: returning-user was %d\n", credp->cr_uid);
+		if (umap_bug_bypass && credp && credp->cr_uid != 0)
+			printf("umap_bypass: returning-user was %d\n",
+					credp->cr_uid);
 
 		crfree(credp);
 		(*credpp) = savecredp;
-		if (umap_bug_bypass && (*credpp)->cr_uid != 0 )
+		if (umap_bug_bypass && credpp && (*credpp)->cr_uid != 0)
 		 	printf("umap_bypass: returning-user now %d\n\n", 
 			    (*credpp)->cr_uid);
 	}
 
 	if (descp->vdesc_componentname_offset != VDESC_NO_OFFSET) {
-		if (umap_bug_bypass && compcredp->cr_uid != 0 )
+		if (umap_bug_bypass && compcredp && compcredp->cr_uid != 0)
 		printf("umap_bypass: returning-component-user was %d\n", 
-		    compcredp->cr_uid);
+				compcredp->cr_uid);
 
 		crfree(compcredp);
 		(*compnamepp)->cn_cred = savecompcredp;
-		if (umap_bug_bypass && (*credpp)->cr_uid != 0 )
-		 	printf("umap_bypass: returning-component-user now %d\n\n", 
-			    compcredp->cr_uid);
+		if (umap_bug_bypass && credpp && (*credpp)->cr_uid != 0)
+		 	printf("umap_bypass: returning-component-user now %d\n", 
+					compcredp->cr_uid);
 	}
 
 	return (error);
@@ -232,7 +234,8 @@ umap_getattr(ap)
 	} */ *ap;
 {
 	short uid, gid;
-	int error, tmpid, *mapdata, nentries, *gmapdata, gnentries;
+	int error, tmpid, nentries, gnentries;
+	u_long (*mapdata)[2], (*gmapdata)[2];
 	struct vnode **vp1p;
 	struct vnodeop_desc *descp = ap->a_desc;
 
@@ -257,39 +260,39 @@ umap_getattr(ap)
 	uid = ap->a_vap->va_uid;
 	gid = ap->a_vap->va_gid;
 	if (umap_bug_bypass)
-		printf("umap_getattr: mapped uid = %d, mapped gid = %d\n",uid, 
+		printf("umap_getattr: mapped uid = %d, mapped gid = %d\n", uid, 
 		    gid);
 
-	vp1p = VOPARG_OFFSETTO(struct vnode**,descp->vdesc_vp_offsets[0],ap);
+	vp1p = VOPARG_OFFSETTO(struct vnode**, descp->vdesc_vp_offsets[0], ap);
 	nentries =  MOUNTTOUMAPMOUNT((*vp1p)->v_mount)->info_nentries;
-	mapdata =  &(MOUNTTOUMAPMOUNT((*vp1p)->v_mount)->info_mapdata[0][0]);
+	mapdata =  (MOUNTTOUMAPMOUNT((*vp1p)->v_mount)->info_mapdata);
 	gnentries =  MOUNTTOUMAPMOUNT((*vp1p)->v_mount)->info_gnentries;
-	gmapdata =  &(MOUNTTOUMAPMOUNT((*vp1p)->v_mount)->info_gmapdata[0][0]);
+	gmapdata =  (MOUNTTOUMAPMOUNT((*vp1p)->v_mount)->info_gmapdata);
 
 	/* Reverse map the uid for the vnode.  Since it's a reverse
 		map, we can't use umap_mapids() to do it. */
 
-	tmpid = umap_reverse_findid(uid,mapdata,nentries);
-
-	if (tmpid != -1 ) {
-
-		ap->a_vap->va_uid = (uid_t)tmpid;
-		if (umap_bug_bypass)
-			printf("umap_getattr: original uid = %d\n",uid);
-	} else 
-		ap->a_vap->va_uid = (uid_t)NOBODY;
-
-	/* Reverse map the gid for the vnode. */
-
-	tmpid = umap_reverse_findid(gid,gmapdata,gnentries);
+	tmpid = umap_reverse_findid(uid, mapdata, nentries);
 
 	if (tmpid != -1) {
 
-		ap->a_vap->va_gid = (gid_t)tmpid;
+		ap->a_vap->va_uid = (uid_t) tmpid;
 		if (umap_bug_bypass)
-			printf("umap_getattr: original gid = %d\n",gid);
+			printf("umap_getattr: original uid = %d\n", uid);
+	} else 
+		ap->a_vap->va_uid = (uid_t) NOBODY;
+
+	/* Reverse map the gid for the vnode. */
+
+	tmpid = umap_reverse_findid(gid, gmapdata, gnentries);
+
+	if (tmpid != -1) {
+
+		ap->a_vap->va_gid = (gid_t) tmpid;
+		if (umap_bug_bypass)
+			printf("umap_getattr: original gid = %d\n", gid);
 	} else
-		ap->a_vap->va_gid = (gid_t)NULLGROUP;
+		ap->a_vap->va_gid = (gid_t) NULLGROUP;
 	
 	return (0);
 }
@@ -325,7 +328,7 @@ umap_reclaim(ap)
 	remque(xp);
 	FREE(vp->v_data, M_TEMP);
 	vp->v_data = NULL;
-	vrele (lowervp);
+	vrele(lowervp);
 	return (0);
 }
 
@@ -376,8 +379,8 @@ umap_print(ap)
 		struct vnode *a_vp;
 	} */ *ap;
 {
-	register struct vnode *vp = ap->a_vp;
-	printf ("\ttag VT_UMAPFS, vp=%x, lowervp=%x\n", vp, UMAPVPTOLOWERVP(vp));
+	struct vnode *vp = ap->a_vp;
+	printf("\ttag VT_UMAPFS, vp=%x, lowervp=%x\n", vp, UMAPVPTOLOWERVP(vp));
 	return (0);
 }
 
@@ -410,17 +413,17 @@ umap_rename(ap)
 	savecompcredp = compcredp;
 	compcredp = compnamep->cn_cred = crdup(savecompcredp);
 
-	if (umap_bug_bypass && compcredp->cr_uid != 0 )
+	if (umap_bug_bypass && compcredp->cr_uid != 0)
 		printf("umap_rename: rename component credit user was %d, group %d\n", 
-		    compcredp->cr_uid,compcredp->cr_gid);
+		    compcredp->cr_uid, compcredp->cr_gid);
 
 	/* Map all ids in the credential structure. */
 
-	umap_mapids(vp->v_mount,compcredp);
+	umap_mapids(vp->v_mount, compcredp);
 
-	if (umap_bug_bypass && compcredp->cr_uid != 0 )
+	if (umap_bug_bypass && compcredp->cr_uid != 0)
 		printf("umap_rename: rename component credit user now %d, group %d\n", 
-		    compcredp->cr_uid,compcredp->cr_gid);
+		    compcredp->cr_uid, compcredp->cr_gid);
 
 	error = umap_bypass(ap);
 	
@@ -436,7 +439,7 @@ umap_rename(ap)
  * Global vfs data structures
  */
 /*
- * XXX - strategy,bwrite are hand coded currently.  They should
+ * XXX - strategy, bwrite are hand coded currently.  They should
  * go away with a merged buffer/block cache.
  *
  */
@@ -453,7 +456,7 @@ struct vnodeopv_entry_desc umap_vnodeop_entries[] = {
 	{ &vop_strategy_desc, umap_strategy },
 	{ &vop_bwrite_desc, umap_bwrite },
 
-	{ (struct vnodeop_desc*)NULL, (int(*)())NULL }
+	{ (struct vnodeop_desc*) NULL, (int(*)()) NULL }
 };
 struct vnodeopv_desc umap_vnodeop_opv_desc =
 	{ &umap_vnodeop_p, umap_vnodeop_entries };

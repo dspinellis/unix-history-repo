@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mount_umap.c	8.1 (Berkeley) %G%
+ *	@(#)mount_umap.c	8.2 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -50,8 +50,8 @@ main(argc, argv)
 {
 	int ch, mntflags;
 	int e, i, nentries, gnentries, count;
-        int mapdata[MAPFILEENTRIES][2];
-        int gmapdata[GMAPFILEENTRIES][2];
+        u_long mapdata[MAPFILEENTRIES][2];
+        u_long gmapdata[GMAPFILEENTRIES][2];
 	char *fs_type="umap";
 	char *source, *target;
 	char *mapfile, *gmapfile;
@@ -85,23 +85,20 @@ main(argc, argv)
 	 * Check that group and other don't have write permissions on
 	 * this mapfile, and that the mapfile belongs to root. 
 	 */
-	if ( stat(mapfile, &statbuf) )
-	{
-		printf("mount_umap: can't stat %s\n",mapfile);
-		perror("mount_umap: error status");
+	if (stat(mapfile, &statbuf)) {
+		fprintf(stderr, "mount_umap: can't stat %s: %s\n",
+			mapfile, strerror(errno));
 		notMounted();
 	}
 
-	if (statbuf.st_mode & S_IWGRP || statbuf.st_mode & S_IWOTH)
-	{
-		printf("mount_umap: Improper write permissions for %s, mode %x\n",
+	if (statbuf.st_mode & S_IWGRP || statbuf.st_mode & S_IWOTH) {
+		fprintf(stderr, "mount_umap: Improper write permissions for %s, mode %x\n",
 		    mapfile, statbuf.st_mode);
 		notMounted();
 	}
 
-	if ( statbuf.st_uid != ROOTUSER )
-	{
-		printf("mount_umap: %s does not belong to root\n", mapfile);
+	if (statbuf.st_uid != ROOTUSER) {
+		fprintf(stderr, "mount_umap: %s does not belong to root\n", mapfile);
 		notMounted();
 	}
 #endif MAPSECURITY
@@ -111,27 +108,28 @@ main(argc, argv)
 	 */
 
 	if ((fp = fopen(mapfile, "r")) == NULL) {
-		printf("mount_umap: can't open %s\n",mapfile);
+		fprintf(stderr, "mount_umap: can't open %s: %s\n",
+			mapfile, strerror(errno));
 		notMounted();
 	}
 	fscanf(fp, "%d\n", &nentries);
 	if (nentries > MAPFILEENTRIES)
-		printf("mount_umap: nentries exceeds maximum\n");
+		fprintf(stderr, "mount_umap: nentries exceeds maximum\n");
 #if 0
 	else
 		printf("reading %d entries\n", nentries);
 #endif
 
-	for(count = 0; count<nentries;count++) {
-		if ((fscanf(fp, "%d %d\n", &(mapdata[count][0]),
+	for(count = 0; count < nentries;count++) {
+		if ((fscanf(fp, "%lu %lu\n", &(mapdata[count][0]),
 		    &(mapdata[count][1]))) == EOF) {
-			printf("mount_umap: %s, premature eof\n",mapfile);
+			fprintf(stderr, "mount_umap: %s, premature eof\n",mapfile);
 			notMounted();
 		}
 #if 0
 		/* fix a security hole */
 		if (mapdata[count][1] == 0) {
-			printf("mount_umap: Mapping to UID 0 not allowed\n");
+			fprintf(stderr, "mount_umap: Mapping to UID 0 not allowed\n");
 			notMounted();
 		}
 #endif
@@ -141,43 +139,40 @@ main(argc, argv)
 	 * Check that group and other don't have write permissions on
 	 * this group mapfile, and that the file belongs to root. 
 	 */
-	if ( stat(gmapfile, &statbuf) )
-	{
-		printf("mount_umap: can't stat %s\n",gmapfile);
-		perror("mount_umap: error status");
+	if (stat(gmapfile, &statbuf)) {
+		fprintf(stderr, "mount_umap: can't stat %s: %s\n",
+			gmapfile, strerror(errno));
 		notMounted();
 	}
 
-	if (statbuf.st_mode & S_IWGRP || statbuf.st_mode & S_IWOTH)
-	{
-		printf("mount_umap: Improper write permissions for %s, mode %x\n",
+	if (statbuf.st_mode & S_IWGRP || statbuf.st_mode & S_IWOTH) {
+		fprintf(stderr, "mount_umap: Improper write permissions for %s, mode %x\n",
 		    gmapfile, statbuf.st_mode);
 	}
 
-	if ( statbuf.st_uid != ROOTUSER )
-	{
-		printf("mount_umap: %s does not belong to root\n", mapfile);
+	if (statbuf.st_uid != ROOTUSER) {
+		fprintf(stderr, "mount_umap: %s does not belong to root\n", mapfile);
 	}
 
 	/*
 	 * Read in gid mapping data.
 	 */
 	if ((gfp = fopen(gmapfile, "r")) == NULL) {
-		printf("mount_umap: can't open %s\n",gmapfile);
+		fprintf(stderr, "mount_umap: can't open %s\n",gmapfile);
 		notMounted();
 	}
 	fscanf(gfp, "%d\n", &gnentries);
 	if (gnentries > GMAPFILEENTRIES)
-		printf("mount_umap: gnentries exceeds maximum\n");
+		fprintf(stderr, "mount_umap: gnentries exceeds maximum\n");
 #if 0
 	else
 		printf("reading %d group entries\n", gnentries);
 #endif
 
-	for(count = 0; count<gnentries;count++) {
-		if ((fscanf(gfp, "%d %d\n", &(gmapdata[count][0]),
+	for (count = 0; count < gnentries;count++) {
+		if ((fscanf(gfp, "%lu %lu\n", &(gmapdata[count][0]),
 		    &(gmapdata[count][1]))) == EOF) {
-			printf("mount_umap: %s, premature eof on group mapfile\n",
+			fprintf(stderr, "mount_umap: %s, premature eof on group mapfile\n",
 			    gmapfile);
 			notMounted();
 		}
@@ -189,12 +184,12 @@ main(argc, argv)
 	 */
 	args.target = source;
 	args.nentries = nentries;
-	args.mapdata = &(mapdata[0][0]);
+	args.mapdata = mapdata;
 	args.gnentries = gnentries;
-	args.gmapdata = &(gmapdata[0][0]);
+	args.gmapdata = gmapdata;
 
 #if 0
-	printf("calling mount_umap(%s,%d,<%s>)\n",target,mntflags,
+	printf("calling mount_umap(%s,%d,<%s>)\n", target, mntflags,
 	       args.target);
 #endif
 	if (mount(MOUNT_UMAP, argv[1], mntflags, &args)) {
