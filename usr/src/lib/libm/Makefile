@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.7 (Berkeley) %G%
+#	@(#)Makefile	5.7.1.1 (Berkeley) %G%
 #
 # ieee		- for most IEEE machines, we hope.
 # mc68881	- the, ahem, mc68881.
@@ -8,6 +8,8 @@
 # tahoe		- for the tahoe double format.
 # vax		- for the vax D_floating format
 
+# Missing: erf.c, j0.c, j1.c, jn.c, lgamma.c
+
 LIB=	m
 CFLAGS+=-I${.CURDIR}/common_source
 
@@ -16,8 +18,8 @@ CFLAGS+=-I${.CURDIR}/common_source
 HARDWARE=${MACHINE}
 .PATH:	${.CURDIR}/common_source ${.CURDIR}/common ${.CURDIR}/ieee
 # common_source
-SRCS+=	acosh.c asincos.c asinh.c atan.c atanh.c cosh.c erf.c exp.c \
-	exp__E.c expm1.c floor.c fmod.c lgamma.c j0.c j1.c jn.c log.c \
+SRCS+=	acosh.c asincos.c asinh.c atan.c atanh.c cosh.c exp.c \
+	exp__E.c expm1.c floor.c fmod.c log.c \
 	log10.c log1p.c log__L.c pow.c sinh.c tanh.c
 # common
 SRCS+=	atan2.c sincos.c tan.c
@@ -29,7 +31,7 @@ SRCS+=	cabs.c cbrt.c support.c
 HARDWARE=mc68881
 .PATH:	${.CURDIR}/mc68881 ${.CURDIR}/common_source ${.CURDIR}/ieee
 # common_source
-SRCS+=	acosh.c asinh.c erf.c exp__E.c fmod.c lgamma.c j0.c j1.c log__L.c \
+SRCS+=	acosh.c asinh.c exp__E.c fmod.c log__L.c \
 	pow.c
 # mc68881
 SRCS+=	asincos.s atan.s atan2.c atanh.s cosh.s exp.s expm1.s floor.s \
@@ -44,8 +46,8 @@ HARDWARE=i387
 	${.CURDIR}/ieee
 CFLAGS+= -Dnational
 # common_source
-SRCS+=	acosh.c asincos.c asinh.c atan.c atanh.c cosh.c erf.c exp.c \
-	exp__E.c expm1.c floor.c fmod.c lgamma.c j0.c j1.c jn.c log.c \
+SRCS+=	acosh.c asincos.c asinh.c atan.c atanh.c cosh.c exp.c \
+	exp__E.c expm1.c floor.c fmod.c log.c \
 	log10.c log1p.c log__L.c pow.c sinh.c tanh.c
 # common
 SRCS+=	atan2.c sincos.c tan.c
@@ -62,8 +64,8 @@ HARDWARE=${MACHINE}
 .PATH:	${.CURDIR}/common_source ${.CURDIR}/common ${.CURDIR}/national \
 	${.CURDIR}/ieee
 # common_source
-SRCS+=	acosh.c asincos.c asinh.c atan.c atanh.c cosh.c erf.c exp.c \
-	exp__E.c expm1.c floor.c fmod.c lgamma.c j0.c j1.c jn.c log.c \
+SRCS+=	acosh.c asincos.c asinh.c atan.c atanh.c cosh.c exp.c \
+	exp__E.c expm1.c floor.c fmod.c log.c \
 	log10.c log1p.c log__L.c pow.c sinh.c tanh.c
 # common
 SRCS+=	atan2.c sincos.c tan.c
@@ -77,8 +79,8 @@ SRCS+=	cabs.c cbrt.c
 HARDWARE=${MACHINE}
 .PATH:	${.CURDIR}/common_source ${.CURDIR}/common ${.CURDIR}/tahoe \
 # common_source
-SRCS+=	acosh.c asincos.c asinh.c atan.c atanh.c cosh.c erf.c exp.c \
-	exp__E.c expm1.c floor.c fmod.c lgamma.c j0.c j1.c jn.c log.c \
+SRCS+=	acosh.c asincos.c asinh.c atan.c atanh.c cosh.c exp.c \
+	exp__E.c expm1.c floor.c fmod.c log.c \
 	log10.c log1p.c log__L.c pow.c sinh.c tanh.c
 # common
 SRCS+=	atan2.c sincos.c tan.c
@@ -90,8 +92,8 @@ SRCS+=	cabs.s cbrt.s sqrt.s support.s infnan.s
 HARDWARE=${MACHINE}
 .PATH:	${.CURDIR}/common_source ${.CURDIR}/vax
 # common_source
-SRCS+=	acosh.c asincos.c asinh.c atan.c atanh.c cosh.c erf.c exp.c \
-	exp__E.c expm1.c floor.c fmod.c lgamma.c j0.c j1.c jn.c log.c \
+SRCS+=	acosh.c asincos.c asinh.c atan.c atanh.c cosh.c exp.c \
+	exp__E.c expm1.c floor.c fmod.c log.c \
 	log10.c log1p.c log__L.c pow.c sinh.c tanh.c
 # vax
 SRCS+=	atan2.s cabs.s cbrt.s sqrt.s sincos.s tan.s argred.s support.s \
