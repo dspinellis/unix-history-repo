@@ -13,7 +13,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)startslip.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)startslip.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -314,8 +314,8 @@ restart:
 				continue;
 			}
 			if (bcmp(&buf[1], "assword:", 8) == 0) {
-				fprintf(wfd, "%s\r", pbuf);
-				printd("Sent password: %s\n", pbuf);
+				fprintf(wfd, "%s\r", argv[2]);
+				printd("Sent password: %s\n", argv[2]);
 				break;
 			}
 		} else {
