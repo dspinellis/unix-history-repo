@@ -10,7 +10,7 @@
 #include "configdefs.h"
 #include <ctype.h>
 
-static char *SccsId = "@(#)optim.c	2.6 %G%";
+static char *SccsId = "@(#)optim.c	2.7 %G%";
 
 /*
  * Map a name into the correct network "view" of the
@@ -704,6 +704,7 @@ best(src, dest)
 	return(np->no_char);
 }
 
+#ifdef	GETHOST
 /*
  * Initialize the network name of the current host.
  */
@@ -722,6 +723,7 @@ inithost()
 	}
 	np->nt_machine = host;
 }
+#endif	GETHOST
 
 /*
  * Code to twist around arpa net names.
