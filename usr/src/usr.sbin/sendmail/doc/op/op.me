@@ -1,6 +1,7 @@
-.if n .ls 2
+.\" eqn % | troff -me
+.\"if n .ls 2
 .he 'Sendmail Installation and Operation Guide''%'
-.fo 'Version 5.2''Last Mod %G%'
+.fo 'Version 5.3''Last Mod %G%'
 .nr si 3n
 .de $0
 .(x
@@ -28,7 +29,7 @@
 Eric Allman
 Britton-Lee, Inc.
 .sp
-Version 5.2
+Version 5.3
 .)l
 .sp 2
 .pp
@@ -232,17 +233,15 @@ and the new directory access routines
 (if required).
 If you are not running the new 4.2bsd directory code
 and do not have the compatibility routines installed in your system library,
-you should execute the commands:
+you should execute the command:
 .(b
-cd lib
-make ndir
+(cd lib; make ndir)
 .)b
 This will compile and install the 4.2 compatibility routines
 in the library.
 You should then type:
 .(b
-cd lib      # if required
-make
+(cd lib; make)
 .)b
 This will recompile and fill the library.
 .sh 3 "/usr/lib/sendmail"
@@ -256,6 +255,7 @@ cd src
 rm \-f *.o
 make
 cp sendmail /usr/lib
+chgrp kmem /usr/lib/sendmail
 .)b
 .sh 3 "/usr/lib/sendmail.cf"
 .pp
@@ -401,32 +401,6 @@ chmod 666 /usr/lib/sendmail.st
 This file does not grow.
 It is printed with the program
 .q aux/mailstats.
-.sh 3 "/etc/syslog"
-.pp
-You may want to run the
-.i syslog
-program
-(to collect log information about sendmail).
-This program normally resides in
-.i /etc/syslog,
-with support files
-.i /etc/syslog.conf
-and
-.i /etc/syslog.pid .
-The program is located in the
-.i aux
-subdirectory of the
-.i sendmail
-distribution.
-The file
-.i /etc/syslog.conf
-describes the file(s) that sendmail will log in.
-For a complete description of syslog,
-see the manual page for
-.i syslog \|(8)
-(located in
-.i sendmail/doc
-on the distribution).
 .sh 3 "/usr/ucb/newaliases"
 .pp
 If
@@ -488,7 +462,7 @@ so this should not be trusted.
 .sh 2 "The System Log"
 .pp
 The system log is supported by the
-.i syslog \|(8)
+.i syslogd \|(8)
 program.
 .sh 3 "Format"
 .pp
@@ -503,7 +477,7 @@ and a message.
 .sh 3 "Levels"
 .pp
 If you have
-.i syslog \|(8)
+.i syslogd \|(8)
 or an equivalent installed,
 you will be able to do logging.
 There is a large amount of information that can be logged.
@@ -521,7 +495,7 @@ log levels above ten
 are usually for debugging purposes.
 .pp
 A complete description of the log levels
-is given in section 4.3.
+is given in section 4.6.
 .sh 2 "The Mail Queue"
 .pp
 The mail queue should be processed transparently.
@@ -627,7 +601,7 @@ This is used to compute when to time out the job.
 The current message priority.
 This is used to order the queue.
 Higher numbers mean lower priorities.
-The priority increases
+The priority changes
 as the message sits in the queue.
 The initial priority depends on the message class
 and the size of the message.
@@ -658,7 +632,6 @@ Hsubject: this is an example message
 Hmessage-id: <8209232249.13557@UCBARPA.BERKELEY.ARPA>
 Hreceived: by UCBARPA.BERKELEY.ARPA (3.227 [10/22/82])
 	id A13557; 23-Oct-82 15:49:32-PDT (Sat)
-Hphone: (415) 548-3211
 HTo: mckusick@calder, wnj
 .)b
 This shows the name of the data file,
@@ -752,7 +725,7 @@ name: name1, name2, ...
 Only local names may be aliased;
 e.g.,
 .(b
-eric@mit-xx: eric@berkeley
+eric@mit-xx: eric@berkeley.EDU
 .)b
 will not have the desired effect.
 Aliases may be continued by starting any continuation lines
@@ -1218,6 +1191,12 @@ options respectively.
 They default to 1000 (for the recipient factor)
 and 1800
 (for the class factor).
+The initial priority is:
+.(b
+pri = size - (class * z) + (nrcpt * y)
+.)b
+(Remember, higher values for this parameter actually mean
+that the job will be treated with lower priority.)
 .pp
 The priority of a job can also be adjusted each time it is processed
 (that is, each time an attempt is made to deliver it)
@@ -1778,6 +1757,24 @@ used to pass information in or out of sendmail,
 and some special characters are reserved to
 provide conditionals, etc.
 .pp
+Conditionals can be specified using the syntax:
+.(b
+$?x text1 $| text2 $.
+.)b
+This interpolates
+.i text1
+if the macro
+.b $x
+is set,
+and
+.i text2
+otherwise.
+The
+.q else
+(\c
+.b $| )
+clause may be omitted.
+.pp
 The following macros
 .i must
 be defined to transmit information into
@@ -1814,16 +1811,16 @@ which will be considered tokens
 and which will separate tokens
 when doing parsing.
 For example, if
-.q r
+.q @
 were in the
 .b $o
 macro, then the input
-.q address
+.q a@b
 would be scanned as three tokens:
-.q add,
-.q r,
+.q a,
+.q @,
 and
-.q ess.
+.q b.
 Finally, the
 .b $q
 macro specifies how an address should appear in a message
@@ -1999,24 +1996,6 @@ and
 fields are set to the protocol used to communicate with sendmail
 and the sending hostname;
 these are not supported in the current version.
-.pp
-Conditionals can be specified using the syntax:
-.(b
-$?x text1 $| text2 $.
-.)b
-This interpolates
-.i text1
-if the macro
-.b $x
-is set,
-and
-.i text2
-otherwise.
-The
-.q else
-(\c
-.b $| )
-clause may be omitted.
 .sh 3 "Special classes"
 .pp
 The class
@@ -2066,7 +2045,7 @@ $2	eric
 When the left hand side of a rewriting rule matches,
 the input is deleted and replaced by the right hand side.
 Tokens are copied directly from the RHS
-unless they are begin with a dollar sign.
+unless they begin with a dollar sign.
 Metasymbols are:
 .(b
 .ta \w'$#mailer  'u
@@ -2101,7 +2080,11 @@ file and replaced by the canonical name.
 For example,
 .q $[csam$]
 would become
-.q lbl-csam.arpa.
+.q lbl-csam.arpa
+and
+.q $[[128.32.130.2]$]
+would become
+.q vangogh.berkeley.edu.
 .pp
 The
 .b $> \c
@@ -2515,28 +2498,19 @@ the domain is logical rather than physical.
 For example,
 at Berkeley
 one legal host is
-.q a.cc.berkeley.arpa ;
+.q a.CC.Berkeley.EDU ;
 reading from right to left,
-.q arpa
+.q EDU
 is a top level domain
-(related to, but not limited to, the physical Arpanet),
-.q berkeley
-is both an Arpanet host and a logical domain
-which is actually interpreted by
-a host called ucbvax
-(which is actually just the
-.q "major"
-host for this domain),
-.q cc
+comprising educational institutions,
+.q Berkeley
+is a logical domain name,
+.q CC
 represents the Computer Center,
 (in this case a strictly logical entity),
 and
 .q a
-is a host in the Computer Center;
-this particular host happens to be connected
-via berknet,
-but other hosts might be connected via one of two ethernets
-or some other network.
+is a host in the Computer Center.
 .pp
 Beware when reading RFC819
 that there are a number of errors in it.
@@ -3420,7 +3394,7 @@ are included in this file.
 The numbers following the parameters
 are their default value.
 .nr ii 1.2i
-.ip "MAXLINE [256]"
+.ip "MAXLINE [1024]"
 The maximum line length of any input line.
 If message lines exceed this length
 they will still be processed correctly;
@@ -3429,7 +3403,7 @@ configuration file lines,
 alias lines,
 etc.,
 must fit within this limit.
-.ip "MAXNAME [128]"
+.ip "MAXNAME [256]"
 The maximum length of any name,
 such as a host or a user name.
 .ip "MAXFIELD [2500]"
@@ -3438,7 +3412,7 @@ including continuation lines.
 .ip "MAXPV [40]"
 The maximum number of parameters to any mailer.
 This limits the number of recipients that may be passed in one transaction.
-.ip "MAXHOP [30]"
+.ip "MAXHOP [17]"
 When a message has been processed more than this number of times,
 sendmail rejects the message
 on the assumption that there has been an aliasing loop.
@@ -3476,6 +3450,9 @@ The maximum number of trusted users that may be defined
 (using the
 .b T
 line in sendmail.cf).
+.ip "MAXUSERENVIRON [40]"
+The maximum number of items in the user environment
+that will be passed to subordinate mailers.
 .lp
 A number of other compilation options exist.
 These specify whether or not specific code should be compiled in.
@@ -3620,7 +3597,7 @@ specification:
 .(b
 .ta 4n +\w'"return-receipt-to",  'u
 struct hdrinfo	HdrInfo[] =
-{
+\&{
 	     /* originator fields, most to least significant  */
 	"resent-sender",	H_FROM,
 	"resent-from",	H_FROM,
@@ -3714,7 +3691,7 @@ There are four classifications these fall into:
 .ta \w'char  'u +\w'Arpa_TUsrerr[] =  'u +\w'"888";  'u
 char	Arpa_Info[] =	"050";	/* arbitrary info */
 char	Arpa_TSyserr[] =	"455";	/* some (transient) system error */
-char	Arpa_PSyserr[] =	"554";	/* some (transient) system error */
+char	Arpa_PSyserr[] =	"554";	/* some (permanent) system error */
 char	Arpa_Usrerr[] =	"554";	/* some (fatal) user error */
 .sz
 .)b
@@ -3730,9 +3707,12 @@ is printed by the
 routine.
 TSyserr
 is printed out for transient errors,
-whereas PSyserr
-is printed for permanent errors;
-the distinction is made based on the value of
+that is,
+errors that are likely to go away without explicit action
+on the part of a systems administrator.
+PSyserr
+is printed for permanent errors.
+The distinction is made based on the value of
 .i errno .
 Finally,
 .i Arpa_Usrerr
@@ -3774,7 +3754,7 @@ could read:
 bool
 checkcompat(to)
 	register ADDRESS *to;
-{
+\&{
 	if (MsgSize > 50000 && to->q_mailer != LocalMailer)
 	{
 		usrerr("Message too large for non-local delivery");
@@ -3794,6 +3774,24 @@ of the message in the error return.
 The actual use of this routine is highly dependent on the
 implementation,
 and use should be limited.
+.uh "Configuration in src/daemon.c"
+.pp
+The file
+.i src/daemon.c
+contains a number of routines that are dependent
+on the local networking environment.
+The version supplied is specific to 4.3 BSD.
+.pp
+The routine
+.i maphostname
+is called to convert strings within
+.b $[
+\&...\&
+.b $]
+symbols.
+It can be modified if you wish to provide a more sophisticated service,
+e.g.,
+mapping UUCP host names to full paths.
 .+c "SUMMARY OF SUPPORT FILES"
 .pp
 This is a summary of the support files
@@ -3834,12 +3832,6 @@ The textual version of the alias file.
 The alias file in
 .i dbm \|(3)
 format.
-.ip /etc/syslog
-The program to do logging.
-.ip /etc/syslog.conf
-The configuration file for syslog.
-.ip /etc/syslog.pid
-Contains the process id of the currently running syslog.
 .ip /usr/spool/mqueue
 The directory in which the mail queue
 and temporary files reside.
@@ -3872,7 +3864,7 @@ INSTALLATION AND OPERATION GUIDE
 Eric Allman
 Britton-Lee, Inc.
 .sp
-Version 5.2
+Version 5.3
 .ce 0
 .bp 1
 .ce
