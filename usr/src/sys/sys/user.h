@@ -1,4 +1,6 @@
-/*	user.h	4.11	82/03/27	*/
+/* @(#)user.h 2.1 3/25/82 */
+
+/*	user.h	4.12	82/04/19	*/
 
 #ifdef KERNEL
 #include "../h/pcb.h"
@@ -55,7 +57,6 @@ struct	user
 	off_t	u_offset;		/* offset in file for IO */
 	struct	inode *u_cdir;		/* pointer to inode of current directory */
 	struct	inode *u_rdir;		/* root directory of current process */
-	char	u_dbuf[DIRSIZ];		/* current pathname component */
 	caddr_t	u_dirp;			/* pathname pointer */
 	struct	direct u_dent;		/* current directory entry */
 	struct	inode *u_pdir;		/* inode of parent directory of dirp */
@@ -100,7 +101,7 @@ struct	user
 #define	ux_unused	Ux_A.Ux_unused
 #define	ux_relflg	Ux_A.Ux_relflg
 
-	char	u_comm[DIRSIZ];
+	char	u_comm[MAXNAMLEN + 1];
 	time_t	u_start;
 	char	u_acflag;
 	short	u_fpflag;		/* unused now, will be later */

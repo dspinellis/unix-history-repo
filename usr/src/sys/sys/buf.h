@@ -1,4 +1,6 @@
-/*	buf.h	4.13	81/05/09	*/
+/*	buf.h	4.14	82/04/19	*/
+
+/*	buf.h	2.1	3/25/82	*/
 
 /*
  * The header for buffers in the buffer pool and otherwise used
@@ -45,7 +47,9 @@ struct buf
 	union {
 	    caddr_t b_addr;		/* low order core address */
 	    int	*b_words;		/* words for clearing */
-	    struct filsys *b_filsys;	/* superblocks */
+	    struct fs *b_fs;		/* superblocks */
+	    struct csum *b_cs;		/* superblock summary information */
+	    struct cg *b_cg;		/* cylinder group block */
 	    struct dinode *b_dino;	/* ilist */
 	    daddr_t *b_daddr;		/* indirect block */
 	} b_un;
@@ -74,6 +78,7 @@ struct	buf bswlist;		/* head of free swap header list */
 struct	buf *bclnlist;		/* head of cleaned page list */
 
 struct	buf *alloc();
+struct	buf *realloccg();
 struct	buf *baddr();
 struct	buf *getblk();
 struct	buf *geteblk();

@@ -1,4 +1,4 @@
-/*	stat.h	4.3	82/02/27	*/
+/*	stat.h	4.4	82/04/19	*/
 
 struct	stat
 {
@@ -13,6 +13,7 @@ struct	stat
 	time_t	st_atime;
 	time_t	st_mtime;
 	time_t	st_ctime;
+	long	st_blksize;
 };
 
 #define	S_IFMT	0170000		/* type of file */

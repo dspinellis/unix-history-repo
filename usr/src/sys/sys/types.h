@@ -1,4 +1,6 @@
-/*	types.h	4.3	81/10/17	*/
+/*	types.h	2.1	3/25/82	*/
+
+/*	types.h	4.4	82/04/19	*/
 
 /*
  * Basic system types and major/minor device constructing/busting macros.
@@ -23,7 +25,7 @@ typedef	unsigned long	u_long;
 typedef	struct	_physadr { int r[1]; } *physadr;
 typedef	int	daddr_t;
 typedef	char *	caddr_t;
-typedef	u_short ino_t;
+typedef	u_long	ino_t;
 typedef	int	swblk_t;
 typedef	int	size_t;
 typedef	int	time_t;
