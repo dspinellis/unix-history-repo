@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)date.1	6.3 (Berkeley) %G%
+.\"	@(#)date.1	6.4 (Berkeley) %G%
 .\"
 .TH DATE 1 ""
 .UC 4
@@ -61,6 +61,9 @@ gettimeofday(2), utmp(5), timed(8),
 \fITSP: The Time Synchronization Protocol for UNIX 4.3BSD\fP, 
 R. Gusella and S. Zatti
 .SH DIAGNOSTICS
+Exit status is 0 on success, 1 on complete failure to set the date,
+and 2 on successfully setting the local date but failing globally.
+.PP
 `You are not superuser: date not set' if you try to change the date
 but are not the super-user.
 Occasionally, when \fItimed\fP synchronizes the time on many hosts, 
