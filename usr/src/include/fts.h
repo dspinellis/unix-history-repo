@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fts.h	5.10 (Berkeley) %G%
+ *	@(#)fts.h	5.11 (Berkeley) %G%
  */
 
 typedef struct {
@@ -69,7 +69,7 @@ __BEGIN_DECLS
 FTSENT	*fts_children __P((FTS *));
 int	 fts_close __P((FTS *));
 FTS	*fts_open
-	    __P((const char **, int, int (*)(const FTSENT *, const FTSENT *)));
+	    __P((char * const *, int, int (*)(const FTSENT *, const FTSENT *)));
 FTSENT	*fts_read __P((FTS *));
 int	 fts_set __P((FTS *, FTSENT *, int));
 __END_DECLS
