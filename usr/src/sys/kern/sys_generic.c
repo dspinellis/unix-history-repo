@@ -1,4 +1,4 @@
-/*	sys_generic.c	5.21	82/10/21	*/
+/*	sys_generic.c	5.22	82/11/13	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -6,6 +6,7 @@
 #include "../h/user.h"
 #include "../h/tty.h"
 #include "../h/file.h"
+#define	IDEBUG
 #include "../h/inode.h"
 #include "../h/buf.h"
 #include "../h/proc.h"
@@ -211,7 +212,8 @@ rwip(ip, uio, rw)
 		panic("rwip");
 	if (uio->uio_offset < 0 &&
 	    ((ip->i_mode&IFMT) != IFCHR || mem_no != major(dev)))
-		return (EINVAL); if (rw == UIO_READ)
+		return (EINVAL);
+	if (rw == UIO_READ)
 		ip->i_flag |= IACC;
 	type = ip->i_mode&IFMT;
 	if (type == IFCHR) {
@@ -227,6 +229,8 @@ rwip(ip, uio, rw)
 		CHARGE(sc_tio * (c - uio->uio_resid));
 		return (u.u_error);
 	}
+	if (uio->uio_resid == 0)
+		return;
 	if (rw == UIO_WRITE && type == IFREG &&
 	    uio->uio_offset + uio->uio_resid >
 	      u.u_rlimit[RLIMIT_FSIZE].rlim_cur) {
