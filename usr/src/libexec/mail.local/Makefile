@@ -1,7 +1,7 @@
-#	@(#)Makefile	5.2 (Berkeley) %G%
+#	@(#)Makefile	5.3 (Berkeley) %G%
 
-PROG=	delivermail
-MAN8=	delivermail.0
+PROG=	mail.local
+MAN8=	mail.local.0
 BINOWN=	root
 BINMODE=4555
 

@@ -4,10 +4,8 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pathnames.h	5.2 (Berkeley) %G%
+ *	@(#)pathnames.h	5.3 (Berkeley) %G%
  */
-
 #include <paths.h>
 
-#undef _PATH_TMP
-#define _PATH_TMP	"/tmp/maXXXXX"
+#define _PATH_LOCTMP	"/tmp/local.XXXXXX"
