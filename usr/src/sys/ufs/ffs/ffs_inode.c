@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_inode.c	7.55 (Berkeley) %G%
+ *	@(#)ffs_inode.c	7.56 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -179,7 +179,7 @@ ffs_update (ap)
 		ip->i_atime.ts_sec = ap->a_ta->tv_sec;
 	if (ip->i_flag&IUPD) {
 		ip->i_mtime.ts_sec = ap->a_tm->tv_sec;
-		INCRQUAD(ip->i_modrev);
+		ip->i_modrev++;
 	}
 	if (ip->i_flag&ICHG)
 		ip->i_ctime.ts_sec = time.tv_sec;
