@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)kill.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)kill.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <signal.h>
@@ -27,7 +27,7 @@ static char *signals[] = {
 	"emt", "fpe", "kill", "bus", "segv", "sys",		/*  7 - 12 */
 	"pipe", "alrm",  "term", "urg", "stop", "tstp",		/* 13 - 18 */
 	"cont", "chld", "ttin", "ttou", "io", "xcpu",		/* 19 - 24 */
-	"xfsz", "vtalrm", "prof", "winch", "29", "usr1",	/* 25 - 30 */
+	"xfsz", "vtalrm", "prof", "winch", "info", "usr1",	/* 25 - 30 */
 	"usr2", NULL,						/* 31 - 32 */
 };
 
