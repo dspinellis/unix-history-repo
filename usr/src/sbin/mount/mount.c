@@ -12,28 +12,17 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mount.c	5.46 (Berkeley) %G%";
+static char sccsid[] = "@(#)mount.c	5.47 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
-#include <sys/ucred.h>
 #include <sys/file.h>
 #include <sys/time.h>
 #include <sys/wait.h>
 #include <sys/errno.h>
 #include <sys/signal.h>
+#include <sys/ucred.h>
 #include <sys/mount.h>
-#ifdef NFS
-#include <sys/socket.h>
-#include <sys/socketvar.h>
-#include <netdb.h>
-#include <rpc/rpc.h>
-#include <rpc/pmap_clnt.h>
-#include <rpc/pmap_prot.h>
-#include <nfs/rpcv2.h>
-#include <nfs/nfsv2.h>
-#include <nfs/nfs.h>
-#endif
 #include <fstab.h>
 #include <string.h>
 #include <stdio.h>
@@ -52,33 +41,6 @@ int fake, verbose, updateflg, mnttype;
 char *mntname, **envp;
 char **vfslist, **makevfslist();
 static void prmount();
-
-#ifdef NFS
-int xdr_dir(), xdr_fh();
-char *getnfsargs();
-struct nfs_args nfsdefargs = {
-	(struct sockaddr *)0,
-	SOCK_DGRAM,
-	0,
-	(nfsv2fh_t *)0,
-	0,
-	NFS_WSIZE,
-	NFS_RSIZE,
-	NFS_TIMEO,
-	NFS_RETRANS,
-	(char *)0,
-};
-
-struct nfhret {
-	u_long	stat;
-	nfsv2fh_t nfh;
-};
-#define	DEF_RETRY	10000
-int retrycnt;
-#define	BGRND	1
-#define	ISBGRND	2
-int opflags = 0;
-#endif
 
 main(argc, argv, arge)
 	int argc;
@@ -234,11 +196,9 @@ mountfs(spec, name, flags, type, options, mntopts)
 	pid_t pid;
 	int argc, i;
 	struct ufs_args args;
-	struct nfs_args nfsargs;
 	char *argp, *argv[50];
 	char execname[MAXPATHLEN + 1], flagval[12];
 
-	nfsargs = nfsdefargs;
 	if (mntopts)
 		getstdopts(mntopts, &flags);
 	if (options)
@@ -261,19 +221,8 @@ mountfs(spec, name, flags, type, options, mntopts)
 		argp = (caddr_t)&args;
 		break;
 
-#ifdef NFS
-	case MOUNT_NFS:
-		retrycnt = DEF_RETRY;
-		if (mntopts)
-			getnfsopts(mntopts, &nfsargs, &opflags, &retrycnt);
-		if (options)
-			getnfsopts(options, &nfsargs, &opflags, &retrycnt);
-		if (argp = getnfsargs(spec, &nfsargs))
-			break;
-		return (1);
-#endif /* NFS */
-
 	case MOUNT_MFS:
+	case MOUNT_NFS:
 	default:
 		argv[0] = mntname;
 		argc = 1;
@@ -319,8 +268,6 @@ mountfs(spec, name, flags, type, options, mntopts)
 
 	}
 	if (!fake && mount(mnttype, name, flags, argp)) {
-		if (opflags & ISBGRND)
-			exit(1);
 		(void) fprintf(stderr, "%s on %s: ", spec, name);
 		switch (errno) {
 		case EMFILE:
@@ -346,8 +293,6 @@ out:
 	if (verbose)
 		prmount(spec, name, flags);
 
-	if (opflags & ISBGRND)
-		exit(1);
 	return(0);
 }
 
@@ -358,8 +303,6 @@ prmount(spec, name, flags)
 {
 	register int first;
 
-	if (opflags & ISBGRND)
-		return;
 	(void)printf("%s on %s", spec, name);
 	if (!(flags & MNT_VISFLAGMASK)) {
 		(void)printf("\n");
@@ -382,10 +325,7 @@ prmount(spec, name, flags)
 	if (flags & MNT_LOCAL)
 		PR("local");
 	if (flags & MNT_EXPORTED)
-		if (flags & MNT_EXRDONLY)
-			PR("NFS exported read-only");
-		else
-			PR("NFS exported");
+		PR("NFS exported");
 	(void)printf(")\n");
 }
 
@@ -410,9 +350,9 @@ usage()
 
 	(void) fprintf(stderr,
 		"usage:\n  mount %s %s\n  mount %s\n  mount %s\n",
-		"[ -frwu ] [ -t nfs | ufs | external_type ]",
+		"[ -frwu ] [ -t ufs | external_type ]",
 		"[ -o options ] special node",
-		"[ -afrwu ] [ -t nfs | ufs | external_type ]",
+		"[ -afrwu ] [ -t ufs | external_type ]",
 		"[ -frwu ] special | node");
 	exit(1);
 }
@@ -577,198 +517,3 @@ makevfslist(fslist)
 	av[i++] = 0;
 	return (av);
 }
-
-#ifdef NFS
-exclusive(a, b)
-	char *a, *b;
-{
-
-	(void) fprintf(stderr, "mount: Options %s, %s mutually exclusive\n",
-	    a, b);
-	exit(1);
-}
-
-/*
- * Handle the getoption arg.
- * Essentially update "opflags", "retrycnt" and "nfsargs"
- */
-getnfsopts(optarg, nfsargsp, opflagsp, retrycntp)
-	char *optarg;
-	register struct nfs_args *nfsargsp;
-	int *opflagsp;
-	int *retrycntp;
-{
-	register char *cp, *nextcp;
-	int num;
-	char *nump;
-
-	for (cp = optarg; cp != NULL && *cp != '\0'; cp = nextcp) {
-		if ((nextcp = index(cp, ',')) != NULL)
-			*nextcp++ = '\0';
-		if ((nump = index(cp, '=')) != NULL) {
-			*nump++ = '\0';
-			num = atoi(nump);
-		} else
-			num = -1;
-		/*
-		 * Just test for a string match and do it
-		 */
-		if (!strcmp(cp, "bg")) {
-			*opflagsp |= BGRND;
-		} else if (!strcmp(cp, "soft")) {
-			if (nfsargsp->flags & NFSMNT_SPONGY)
-				exclusive("soft, spongy");
-			nfsargsp->flags |= NFSMNT_SOFT;
-		} else if (!strcmp(cp, "spongy")) {
-			if (nfsargsp->flags & NFSMNT_SOFT)
-				exclusive("soft, spongy");
-			nfsargsp->flags |= NFSMNT_SPONGY;
-		} else if (!strcmp(cp, "compress")) {
-			nfsargsp->flags |= NFSMNT_COMPRESS;
-		} else if (!strcmp(cp, "intr")) {
-			nfsargsp->flags |= NFSMNT_INT;
-		} else if (!strcmp(cp, "tcp")) {
-			nfsargsp->sotype = SOCK_STREAM;
-		} else if (!strcmp(cp, "noconn")) {
-			nfsargsp->flags |= NFSMNT_NOCONN;
-		} else if (!strcmp(cp, "retry") && num > 0) {
-			*retrycntp = num;
-		} else if (!strcmp(cp, "rsize") && num > 0) {
-			nfsargsp->rsize = num;
-			nfsargsp->flags |= NFSMNT_RSIZE;
-		} else if (!strcmp(cp, "wsize") && num > 0) {
-			nfsargsp->wsize = num;
-			nfsargsp->flags |= NFSMNT_WSIZE;
-		} else if (!strcmp(cp, "timeo") && num > 0) {
-			nfsargsp->timeo = num;
-			nfsargsp->flags |= NFSMNT_TIMEO;
-		} else if (!strcmp(cp, "retrans") && num > 0) {
-			nfsargsp->retrans = num;
-			nfsargsp->flags |= NFSMNT_RETRANS;
-		}
-	}
-	if (nfsargsp->sotype == SOCK_DGRAM) {
-		if (nfsargsp->rsize > NFS_MAXDGRAMDATA)
-			nfsargsp->rsize = NFS_MAXDGRAMDATA;
-		if (nfsargsp->wsize > NFS_MAXDGRAMDATA)
-			nfsargsp->wsize = NFS_MAXDGRAMDATA;
-	}
-}
-
-char *
-getnfsargs(spec, nfsargsp)
-	char *spec;
-	struct nfs_args *nfsargsp;
-{
-	register CLIENT *clp;
-	struct hostent *hp;
-	static struct sockaddr_in saddr;
-	struct timeval pertry, try;
-	enum clnt_stat clnt_stat;
-	int so = RPC_ANYSOCK;
-	char *fsp, *hostp, *delimp;
-	u_short tport;
-	static struct nfhret nfhret;
-	static char nam[MNAMELEN + 1];
-	char buf[MAXPATHLEN + 1];
-
-	strncpy(buf, spec, MAXPATHLEN);
-	buf[MAXPATHLEN] = '\0';
-	strncpy(nam, spec, MNAMELEN);
-	nam[MNAMELEN] = '\0';
-	if ((delimp = index(buf, '@')) != NULL) {
-		hostp = delimp + 1;
-		fsp = buf;
-	} else if ((delimp = index(buf, ':')) != NULL) {
-		hostp = buf;
-		fsp = delimp + 1;
-	} else {
-		(void) fprintf(stderr,
-		    "mount: No <host>:<dirpath> or <dirpath>@<host> spec\n");
-		return (0);
-	}
-	*delimp = '\0';
-	if ((hp = gethostbyname(hostp)) == NULL) {
-		(void) fprintf(stderr, "mount: Can't get net id for host\n");
-		return (0);
-	}
-	bcopy(hp->h_addr, (caddr_t)&saddr.sin_addr, hp->h_length);
-	nfhret.stat = ETIMEDOUT;	/* Mark not yet successful */
-	while (retrycnt > 0) {
-		saddr.sin_family = AF_INET;
-		saddr.sin_port = htons(PMAPPORT);
-		if ((tport = pmap_getport(&saddr, RPCPROG_NFS,
-		    NFS_VER2, IPPROTO_UDP)) == 0) {
-			if ((opflags & ISBGRND) == 0)
-				clnt_pcreateerror("NFS Portmap");
-		} else {
-			saddr.sin_port = 0;
-			pertry.tv_sec = 10;
-			pertry.tv_usec = 0;
-			if ((clp = clntudp_create(&saddr, RPCPROG_MNT,
-			    RPCMNT_VER1, pertry, &so)) == NULL) {
-				if ((opflags & ISBGRND) == 0)
-					clnt_pcreateerror("Cannot MNT PRC");
-			} else {
-				clp->cl_auth = authunix_create_default();
-				try.tv_sec = 10;
-				try.tv_usec = 0;
-				clnt_stat = clnt_call(clp, RPCMNT_MOUNT,
-				    xdr_dir, fsp, xdr_fh, &nfhret, try);
-				if (clnt_stat != RPC_SUCCESS) {
-					if ((opflags & ISBGRND) == 0)
-						clnt_perror(clp, "Bad MNT RPC");
-				} else {
-					auth_destroy(clp->cl_auth);
-					clnt_destroy(clp);
-					retrycnt = 0;
-				}
-			}
-		}
-		if (--retrycnt > 0) {
-			if (opflags & BGRND) {
-				opflags &= ~BGRND;
-				if (fork())
-					return (0);
-				else
-					opflags |= ISBGRND;
-			} 
-			sleep(10);
-		}
-	}
-	if (nfhret.stat) {
-		if (opflags & ISBGRND)
-			exit(1);
-		(void) fprintf(stderr, "Mount RPC error on %s: ", spec);
-		errno = nfhret.stat;
-		perror((char *)NULL);
-		return (0);
-	}
-	saddr.sin_port = htons(tport);
-	nfsargsp->addr = (struct sockaddr *) &saddr;
-	nfsargsp->fh = &nfhret.nfh;
-	nfsargsp->hostname = nam;
-	return ((caddr_t)nfsargsp);
-}
-
-/*
- * xdr routines for mount rpc's
- */
-xdr_dir(xdrsp, dirp)
-	XDR *xdrsp;
-	char *dirp;
-{
-	return (xdr_string(xdrsp, &dirp, RPCMNT_PATHLEN));
-}
-
-xdr_fh(xdrsp, np)
-	XDR *xdrsp;
-	struct nfhret *np;
-{
-	if (!xdr_u_long(xdrsp, &(np->stat)))
-		return (0);
-	if (np->stat)
-		return (1);
-	return (xdr_opaque(xdrsp, (caddr_t)&(np->nfh), NFSX_FH));
-}
-#endif /* NFS */
