@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)va820.c	4.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)va820.c	4.2 (Berkeley) %G%";
 #endif
 
 #include "../condevs.h"
@@ -81,11 +81,9 @@ struct Devices *dev;
 	}
 	/*
 	 * Build the dialing sequence for the adapter
-	 * It appears that this needs to go in one
-	 * write for some obscure reason...
 	 */
 	DEBUG(4, "DIALING %s\n", ph);
-	sprintf(vadbuf, "%c%s%c%c", c_start, ph, c_empty, c_end);
+	sprintf(vadbuf, "%c%s<%c%c", c_start, ph, c_empty, c_end);
 	timelim = 5 * strlen(ph);
 	alarm(timelim < 30 ? 30 : timelim);
 	nw = write(va, vadbuf, strlen(vadbuf));	/* Send Phone Number */

@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)vmacs.c	4.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)vmacs.c	4.2 (Berkeley) %G%";
 #endif
 
 #include "../condevs.h"
@@ -75,7 +75,7 @@ struct Devices *dev;
 	sprintf(acu, "/dev/%s", dev->D_calldev);
 	getnextfd();
 	signal(SIGALRM, alarmtr);
-	alarm(45);
+	alarm(60);
 	if ((va = open(acu, 2)) < 0) {
 		logent(acu, "CAN'T OPEN");
 		i = CF_NODEV;
@@ -96,7 +96,10 @@ struct Devices *dev;
 	write(va, &c_STX, 1);		/* start text, access adaptor */
 	write(va, &dialer, 1);		/* send dialer address digit */
 	write(va, &modem, 1);		/* send modem address digit */
-	write(va, ph, strlen(ph));	/* Send Phone Number */
+	for (p=ph; *p; p++) {
+		if (*p == '=' || (*p >= '0' && *p <= '9'))
+			write(va, p, 1);
+	}
 	write(va, &c_SI, 1);		/* send buffer empty */
 	write(va, &c_ETX, 1);		/* end of text, initiate call */
 
@@ -110,7 +113,7 @@ struct Devices *dev;
 		DEBUG(5, "Call connected\n", 0);
 		break;
 	case 'B':
-		DEBUG(2, "CALL ABORTED\n", 0);
+		DEBUG(2, "Dialer Timeout or Abort\n", 0);
 		goto failret;
 	case 'D':
 		DEBUG(2, "Dialer format error\n", 0);
@@ -147,6 +150,7 @@ ret:
 	if (child > 1)
 		kill(child, SIGKILL);
 	close(va);
+	sleep(2);
 	return i;
 }
 
