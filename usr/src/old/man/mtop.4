@@ -1,0 +1,141 @@
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)mtop.4	4.1 (Berkeley) %G%
+.\"
+.TH MTOP 4 10/8/81
+.UC 4
+.SH NAME
+mt \- UNIX magtape interface
+.SH DESCRIPTION
+The files
+.I "mt0, ..., mt15"
+refer to the UNIX magtape drives,
+which may be on the MASSBUS using the TM03 or TM78 formatters
+.IR ht (4)
+or
+.IR mt (4),
+or on the UNIBUS using either the TM11, TS11, or TU45 formatters
+.IR tm (4),
+.IR ts (4)
+or
+.IR ut (4).
+The following description applies to any of the transport/controller pairs.
+The files
+.I "mt0, ..., mt7"
+are low density, and
+.I "mt8, ..., mt15"
+are high density.
+On the TM03 and TM11 low density is 800bpi and high density is 1600bpi.
+On the TM78 low density is 1600bpi and high density is 6250bpi.
+On the TS11 both low and high density are 1600bpi.
+The files
+.I "mt0, ..., mt3"
+and
+.I "mt8, ..., mt11"
+are rewound when closed; the others are not.
+When a file open for writing is closed, two end-of-files are written.
+If the tape is not to be rewound
+it is positioned with the head between the two
+tapemarks.
+.PP
+A standard tape consists of a
+series of 1024 byte records terminated by an
+end-of-file.
+To the extent possible, the system makes
+it possible, if inefficient, to treat
+the tape like any other file.
+Seeks have their usual meaning and it is possible
+to read or write a byte at a time.
+Writing in very small units is inadvisable,
+however, because it tends to create monstrous record
+gaps.
+.PP
+The
+.I mt
+files discussed above are useful
+when it is desired to access the tape in a way
+compatible with ordinary files.
+When foreign tapes are to be dealt with, and especially
+when long records are to be read or written, the
+`raw' interface is appropriate.
+The associated files are named
+.I "rmt0, ..., rmt15,"
+but the same minor-device considerations as for the regular files still apply.
+A number of other ioctl operations are available
+on raw magnetic tape.
+The following definitions are from <sys/mtio.h>:
+.PP
+.nf
+/*
+ * Structures and definitions for mag tape io control commands
+ */
+
+/* mag tape io control commands */
+#define MTIOCTOP	(('m'<<8)|1)	/* do a mag tape op */
+#define MTIOCGET	(('m'<<8)|2)	/* get mag tape status */
+
+/* structure for MTIOCTOP - mag tape op command */
+struct	mtop	{
+	short	mt_op;		/* operations defined below */
+	daddr_t	mt_count;	/* how many of them */
+};
+
+/* operations */
+#define MTWEOF	0	/* write an end-of-file record */
+#define MTFSF	1	/* forward space file */
+#define MTBSF	2	/* backward space file */
+#define MTFSR	3	/* forward space record */
+#define MTBSR	4	/* backward space record */
+#define MTREW	5	/* rewind */
+#define MTOFFL	6	/* rewind and put the drive offline */
+#define MTNOP	7	/* no operation, sets status only */
+
+/* structure for MTIOCGET - mag tape get status command */
+
+struct	mtget	{
+	short	mt_type;		/* type of magtape device */
+/* the following two registers are grossly device dependent */
+	short	mt_dsreg;		/* ``drive status'' register */
+	short	mt_erreg;		/* ``error'' register */
+/* end device-dependent registers */
+	short	mt_resid;		/* residual count */
+/* the following two are not yet implemented */
+	daddr_t mt_fileno;	/* file number of current position */
+	daddr_t mt_blkno;	/* block number of current position */
+/* end not yet implemented */
+};
+
+/*
+ * Constants for mt_type byte
+ */
+#define MT_ISTS		01
+#define MT_ISHT		02
+#define MT_ISTM		03
+#define MT_ISMT		04
+#define MT_ISUT		05
+.fi
+.ft R
+.PP
+Each
+.I read
+or
+.I write
+call reads or writes the next record on the tape.
+In the write case the record has the same length as the
+buffer given.
+During a read, the record size is passed
+back as the number of bytes read, provided it is no greater
+than the buffer size;
+if the record is long, an error is indicated.
+In raw tape I/O seeks are ignored.
+A zero byte count is returned when a tape mark is read,
+but another read will fetch the first record of the
+new tape file.
+.SH FILES
+/dev/mt?,
+/dev/rmt?
+.SH "SEE ALSO"
+mt(1), tar(1), tp(1), ht(4), mt(4), tm(4), ts(4)
+.SH BUGS

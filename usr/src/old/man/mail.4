@@ -1,0 +1,24 @@
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)mail.4	4.1 (Berkeley) %G%
+.\"
+.TH MAIL 4
+.UC 4
+.SH NAME
+mail \- pseudo-device for mail notification
+.SH DESCRIPTION
+The file
+.B /dev/mail
+is a multiplexor file
+maintained by the mail notification daemon.
+When a piece of mail is delivered the mail delivery process
+writes information on this file and the mail notification daemon
+.B /etc/comsat
+notifies a user of the arrival of the mail if the user desires to be notified.
+.SH SEE ALSO
+biff(1)
+.SH FILES
+/dev/mail
+.SH BUGS
