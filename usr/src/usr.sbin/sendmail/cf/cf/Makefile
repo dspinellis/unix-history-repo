@@ -1,4 +1,4 @@
-#	@(#)Makefile	8.1 (Berkeley) %G%
+#	@(#)Makefile	8.2 (Berkeley) %G%
 
 M4=	m4
 #M4=	/usr/src/usr.bin/m4/obj/m4
@@ -21,7 +21,7 @@ ALL=	cs-hidden.cf cs-exposed.cf \
 	mail.cs.cf mail.eecs.cf ucbvax.cf vangogh.cf \
 	chez.cf knecht.cf cogsci.cf alpha.cf s2k.cf auspex.cf \
 	python.cf \
-	tcpproto.cf uucpproto.cf
+	clientproto.cf tcpproto.cf uucpproto.cf
 
 all: $(ALL)
 
