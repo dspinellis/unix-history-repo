@@ -1,17 +1,17 @@
 #ifndef lint
-static char sccsid[] = "@(#)rlogind.c	4.17 83/06/24";
+static char sccsid[] = "@(#)rlogind.c	4.18 83/07/01";
 #endif
 
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/socket.h>
+#include <sys/wait.h>
 
 #include <netinet/in.h>
 
 #include <errno.h>
 #include <pwd.h>
-#include <wait.h>
 #include <signal.h>
 #include <sgtty.h>
 #include <stdio.h>
@@ -304,7 +304,7 @@ fatal(f, msg)
 	char buf[BUFSIZ];
 
 	buf[0] = '\01';		/* error indicator */
-	(void) sprintf(buf + 1, "rlogind: %s.\n", msg);
+	(void) sprintf(buf + 1, "rlogind: %s.\r\n", msg);
 	(void) write(f, buf, strlen(buf));
 	exit(1);
 }
