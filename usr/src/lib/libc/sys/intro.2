@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)intro.2	6.4 (Berkeley) %G%
+.\"	@(#)intro.2	6.5 (Berkeley) %G%
 .\"
 .TH INTRO 2 ""
 .UC 4
@@ -97,7 +97,7 @@ In a
 the system's process table is full
 or the user is not allowed to create any more
 processes.
-.en 12 ENOMEM "Not enough core
+.en 12 ENOMEM "Not enough memory
 During an
 .I execve
 or
@@ -161,8 +161,11 @@ and temporarily no more
 .I opens
 can be accepted.
 .en 24 EMFILE "Too many open files
-Customary configuration limit is 20 per process.
-.en 25 ENOTTY "Not a typewriter
+As released, the limit on the number of
+open files per process is 64.
+Customary configuration limit on most other UNIX systems
+is 20 per process.
+.en 25 ENOTTY "Inappropriate ioctl for device
 The file mentioned in an
 .I ioctl
 is not a terminal or one of the other
@@ -203,7 +206,7 @@ A write on a pipe or socket for which there is no process
 to read the data.
 This condition normally generates a signal;
 the error is returned if the signal is ignored.
-.en 33 EDOM "Math argument
+.en 33 EDOM "Argument too large
 The argument of a function in the math package (3M)
 is out of the domain of the function.
 .en 34 ERANGE "Result too large
@@ -229,7 +232,7 @@ A message sent on a socket was larger than the internal message buffer.
 A protocol was specified that does not support the semantics of the
 socket type requested. For example you cannot use the ARPA Internet
 UDP protocol with type SOCK_STREAM.
-.en 42 ENOPROTOOPT "Bad protocol option"
+.en 42 ENOPROTOOPT "Option not supported by protocol 
 A bad option was specified in a
 .IR getsockopt (2)
 or
