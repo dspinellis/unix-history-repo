@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)rpc_fwd.c	5.3 (Berkeley) %G%
+ *	@(#)rpc_fwd.c	5.4 (Berkeley) %G%
  *
- * $Id: rpc_fwd.c,v 5.2.1.3 91/05/07 22:18:30 jsp Alpha $
+ * $Id: rpc_fwd.c,v 5.2.2.1 1992/02/09 15:09:01 jsp beta $
  *
  */
 

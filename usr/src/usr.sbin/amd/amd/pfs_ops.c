@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pfs_ops.c	5.3 (Berkeley) %G%
+ *	@(#)pfs_ops.c	5.4 (Berkeley) %G%
  *
- * $Id: pfs_ops.c,v 5.2.1.2 91/05/07 22:18:27 jsp Alpha $
+ * $Id: pfs_ops.c,v 5.2.2.1 1992/02/09 15:08:56 jsp beta $
  *
  */
 

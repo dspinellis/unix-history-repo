@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)uwait.h	5.3 (Berkeley) %G%
+ *	@(#)uwait.h	5.4 (Berkeley) %G%
  *
- * $Id: uwait.h,v 5.2.1.2 91/05/07 22:19:23 jsp Alpha $
+ * $Id: uwait.h,v 5.2.2.1 1992/02/09 15:10:01 jsp beta $
  *
  */
 

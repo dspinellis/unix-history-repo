@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fstype.h	5.3 (Berkeley) %G%
+ *	@(#)fstype.h	5.4 (Berkeley) %G%
  *
- * $Id: fstype.h,v 5.2.1.3 91/05/07 22:19:21 jsp Alpha $
+ * $Id: fstype.h,v 5.2.2.1 1992/02/09 15:09:57 jsp beta $
  *
  */
 
@@ -107,9 +107,13 @@ extern am_ops	ufs_ops;	/* Un*x file system */
 /*
  * Symbolic-link file system
  * A "filesystem" which is just a symbol link.
+ *
+ * sfsx also checks that the target of the link exists.
  */
 #define HAS_SFS
 extern am_ops	sfs_ops;	/* Symlink FS */
+#define HAS_SFSX
+extern am_ops	sfsx_ops;	/* Symlink FS with existence check */
 
 /*
  * Union file system

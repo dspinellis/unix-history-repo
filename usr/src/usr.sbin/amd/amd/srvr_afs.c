@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)srvr_afs.c	5.3 (Berkeley) %G%
+ *	@(#)srvr_afs.c	5.4 (Berkeley) %G%
  *
- * $Id: srvr_afs.c,v 5.2.1.2 91/05/07 22:18:35 jsp Alpha $
+ * $Id: srvr_afs.c,v 5.2.2.1 1992/02/09 15:09:05 jsp beta $
  *
  */
 

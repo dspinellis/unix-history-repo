@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)wr_fstab.c	5.3 (Berkeley) %G%
+ *	@(#)wr_fstab.c	5.4 (Berkeley) %G%
  *
- * $Id: wr_fstab.c,v 5.2.1.3 91/05/07 22:19:14 jsp Alpha $
+ * $Id: wr_fstab.c,v 5.2.2.1 1992/02/09 15:09:49 jsp beta $
  *
  */
 

@@ -1,3 +1,4 @@
+.\"
 .\" Copyright (c) 1989 Jan-Simon Pendry
 .\" Copyright (c) 1989 Imperial College of Science, Technology & Medicine
 .\" Copyright (c) 1989, 1991 The Regents of the University of California.
@@ -6,11 +7,11 @@
 .\" This code is derived from software contributed to Berkeley by
 .\" Jan-Simon Pendry at Imperial College, London.
 .\"
-.\" %sccs.include.redist.roff%
+.\" %sccs.include.redist.man%
 .\"
-.\"	@(#)amd.8	5.5 (Berkeley) %G%
+.\"     @(#)amd.8	5.6 (Berkeley) %G%
 .\"
-.\" $Id: amd.8,v 5.2.1.2 91/05/07 22:20:43 jsp Alpha $
+.\" $Id: amd.8,v 5.2.2.1 1992/02/09 15:11:39 jsp beta $
 .\"
 .Dd March 17, 1991
 .Dt AMD 8
@@ -27,28 +28,22 @@
 .Bk -words
 .Op Fl k Ar kernel-arch
 .Ek
-.Bk -words
 .Op Fl l Ar logfile
-.Ek
 .Op Fl t Ar interval.interval
 .Bk -words
 .Op Fl w Ar interval
 .Ek
 .Op Fl x Ar log-option
-.Bk -words
 .Op Fl y Ar YP-domain
-.Ek
 .Bk -words
 .Op Fl C Ar cluster-name
 .Ek
 .Op Fl D Ar option
-.Bk -words
 .Oo
 .Ar directory mapname
 .Op Fl map-options
 .Oc
 .Ar ...
-.Ek
 .Sh DESCRIPTION
 .Nm Amd
 is a daemon that automatically mounts filesystems
@@ -196,12 +191,9 @@ A weird imagination is most useful to gain full advantage of all
 the features.
 .Sh SEE ALSO
 .Xr amq 8 ,
-.Xr domainname 1 ,
 .Xr hostname 1 ,
-.Xr automount 8 ,
 .Xr mount 8 ,
 .Xr umount 8 ,
-.Xr mtab 5 ,
 .Rs
 .%T Amd \- The 4.4 BSD Automounter
 .Re
@@ -210,6 +202,6 @@ the features.
 <jsp@doc.ic.ac.uk>, Department of Computing, Imperial College, London, UK.
 .Sh HISTORY
 The
-.Nm amd
+.Nm Amd
 automounter is
 .Ud .

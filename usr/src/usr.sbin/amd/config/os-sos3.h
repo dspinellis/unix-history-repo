@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)os-sos3.h	5.3 (Berkeley) %G%
+ *	@(#)os-sos3.h	5.4 (Berkeley) %G%
  *
- * $Id: os-sos3.h,v 5.2.1.2 91/05/07 22:19:56 jsp Alpha $
+ * $Id: os-sos3.h,v 5.2.2.1 1992/02/09 15:10:39 jsp beta $
  *
  * SunOS 3.2 definitions for Amd (automounter)
  */

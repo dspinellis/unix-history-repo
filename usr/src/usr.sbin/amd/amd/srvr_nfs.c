@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)srvr_nfs.c	5.3 (Berkeley) %G%
+ *	@(#)srvr_nfs.c	5.4 (Berkeley) %G%
  *
- * $Id: srvr_nfs.c,v 5.2.1.6 91/05/07 22:18:36 jsp Alpha $
+ * $Id: srvr_nfs.c,v 5.2.2.1 1992/02/09 15:09:06 jsp beta $
  *
  */
 

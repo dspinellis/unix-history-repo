@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)os-defaults.h	5.3 (Berkeley) %G%
+ *	@(#)os-defaults.h	5.4 (Berkeley) %G%
  *
- * $Id: os-defaults.h,v 5.2.1.4 91/05/07 22:19:38 jsp Alpha $
+ * $Id: os-defaults.h,v 5.2.2.1 1992/02/09 15:10:17 jsp beta $
  *
  * Common OS definitions.  These may be overridden in
  * the OS specific files ("os-foo.h").

@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)afs_ops.c	5.3 (Berkeley) %G%
+ *	@(#)afs_ops.c	5.4 (Berkeley) %G%
  *
- * $Id: afs_ops.c,v 5.2.1.9 91/05/07 22:17:40 jsp Alpha $
+ * $Id: afs_ops.c,v 5.2.2.1 1992/02/09 15:08:11 jsp beta $
  *
  */
 
@@ -864,7 +864,7 @@ int mpe;
 		 * Find a mounted filesystem for this node.
 		 */
 		mp->am_mnt = mf = realloc_mntfs(mf, p, &cp->fs_opts, cp->fs_opts.opt_fs,
-						cp->fs_opts.fs_mtab, cp->auto_opts, cp->fs_opts.opt_opts);
+			cp->fs_opts.fs_mtab, cp->auto_opts, cp->fs_opts.opt_opts, cp->fs_opts.opt_remopts);
 
 		p = mf->mf_ops;
 #ifdef DEBUG
@@ -1103,7 +1103,7 @@ int mpe;
 			cp->mp->am_timeo = 17;
 			break;
 		}
-		cp->mp->am_timeo_w = 0;
+		new_ttl(cp->mp);
 	}
 
 	/*

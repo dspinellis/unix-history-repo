@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mntfs.c	5.3 (Berkeley) %G%
+ *	@(#)mntfs.c	1.2 (Berkeley) 6/25/91
  *
- * $Id: mntfs.c,v 5.2.1.7 91/05/07 22:18:11 jsp Alpha $
+ * $Id: mntfs.c,v 5.2.2.1 1992/02/09 15:08:42 jsp beta $
  *
  */
 
@@ -64,8 +64,8 @@ mntfs *mf;
 	return mf;
 }
 
-static int init_mntfs P((mntfs *mf, am_ops *ops, am_opts *mo, char *mp, char *info, char *auto_opts, char *mopts));
-static int init_mntfs(mf, ops, mo, mp, info, auto_opts, mopts)
+static void init_mntfs P((mntfs *mf, am_ops *ops, am_opts *mo, char *mp, char *info, char *auto_opts, char *mopts, char *remopts));
+static void init_mntfs(mf, ops, mo, mp, info, auto_opts, mopts, remopts)
 mntfs *mf;
 am_ops *ops;
 am_opts *mo;
@@ -73,6 +73,7 @@ char *mp;
 char *info;
 char *auto_opts;
 char *mopts;
+char *remopts;
 {
 	mf->mf_ops = ops;
 	mf->mf_fo = mo;
@@ -80,6 +81,7 @@ char *mopts;
 	mf->mf_info = strdup(info);
 	mf->mf_auto = strdup(auto_opts);
 	mf->mf_mopts = strdup(mopts);
+	mf->mf_remopts = strdup(remopts);
 	mf->mf_refc = 1;
 	mf->mf_flags = 0;
 	mf->mf_error = -1;
@@ -102,31 +104,33 @@ char *mopts;
 		mf->mf_server = 0;
 }
 
-static mntfs *alloc_mntfs P((am_ops *ops, am_opts *mo, char *mp, char *info, char *auto_opts, char *mopts));
-static mntfs *alloc_mntfs(ops, mo, mp, info, auto_opts, mopts)
+static mntfs *alloc_mntfs P((am_ops *ops, am_opts *mo, char *mp, char *info, char *auto_opts, char *mopts, char *remopts));
+static mntfs *alloc_mntfs(ops, mo, mp, info, auto_opts, mopts, remopts)
 am_ops *ops;
 am_opts *mo;
 char *mp;
 char *info;
 char *auto_opts;
 char *mopts;
+char *remopts;
 {
 	mntfs *mf = ALLOC(mntfs);
-	init_mntfs(mf, ops, mo, mp, info, auto_opts, mopts);
+	init_mntfs(mf, ops, mo, mp, info, auto_opts, mopts, remopts);
 	ins_que(&mf->mf_q, &mfhead);
 	mntfs_allocated++;
 
 	return mf;
 }
 
-mntfs *find_mntfs P((am_ops *ops, am_opts *mo, char *mp, char *info, char *auto_opts, char *mopts));
-mntfs *find_mntfs(ops, mo, mp, info, auto_opts, mopts)
+mntfs *find_mntfs P((am_ops *ops, am_opts *mo, char *mp, char *info, char *auto_opts, char *mopts, char *remopts));
+mntfs *find_mntfs(ops, mo, mp, info, auto_opts, mopts, remopts)
 am_ops *ops;
 am_opts *mo;
 char *mp;
 char *info;
 char *auto_opts;
 char *mopts;
+char *remopts;
 {
 	mntfs *mf;
 
@@ -158,7 +162,7 @@ char *mopts;
 				/*
 				 * Restart a previously mounted filesystem.
 				 */
-				mntfs *mf2 = alloc_mntfs(&ifs_ops, mo, mp, info, auto_opts, mopts);
+				mntfs *mf2 = alloc_mntfs(&ifs_ops, mo, mp, info, auto_opts, mopts, remopts);
 #ifdef DEBUG
 				dlog("Restarting filesystem %s", mf->mf_mount);
 #endif /* DEBUG */
@@ -176,6 +180,7 @@ char *mopts;
 				mf->mf_error = -1;
 				mf->mf_auto = strealloc(mf->mf_auto, auto_opts);
 				mf->mf_mopts = strealloc(mf->mf_mopts, mopts);
+				mf->mf_remopts = strealloc(mf->mf_remopts, remopts);
 				mf->mf_info = strealloc(mf->mf_info, info);
 				if (mf->mf_private && mf->mf_prfree) {
 					(*mf->mf_prfree)(mf->mf_private);
@@ -190,12 +195,12 @@ char *mopts;
 		}
 	}
 
-	return alloc_mntfs(ops, mo, mp, info, auto_opts, mopts);
+	return alloc_mntfs(ops, mo, mp, info, auto_opts, mopts, remopts);
 }
 
 mntfs *new_mntfs()
 {
-	return alloc_mntfs(&efs_ops, (am_opts *) 0, "//nil//", ".", "", "");
+	return alloc_mntfs(&efs_ops, (am_opts *) 0, "//nil//", ".", "", "", "");
 }
 
 static void uninit_mntfs(mf, rmd)
@@ -205,6 +210,7 @@ int rmd;
 	if (mf->mf_mount) free((voidp) mf->mf_mount);
 	if (mf->mf_auto) free((voidp) mf->mf_auto);
 	if (mf->mf_mopts) free((voidp) mf->mf_mopts);
+	if (mf->mf_remopts) free((voidp) mf->mf_remopts);
 	if (mf->mf_info) free((voidp) mf->mf_info);
 	if (mf->mf_private && mf->mf_prfree)
 		(*mf->mf_prfree)(mf->mf_private);
@@ -296,8 +302,8 @@ mntfs *mf;
 	}
 }
 
-mntfs *realloc_mntfs P((mntfs *mf, am_ops *ops, am_opts *mo, char *mp, char *info, char *auto_opts, char *mopts));
-mntfs *realloc_mntfs(mf, ops, mo, mp, info, auto_opts, mopts)
+mntfs *realloc_mntfs P((mntfs *mf, am_ops *ops, am_opts *mo, char *mp, char *info, char *auto_opts, char *mopts, char *remopts));
+mntfs *realloc_mntfs(mf, ops, mo, mp, info, auto_opts, mopts, remopts)
 mntfs *mf;
 am_ops *ops;
 am_opts *mo;
@@ -305,6 +311,7 @@ char *mp;
 char *info;
 char *auto_opts;
 char *mopts;
+char *remopts;
 {
 	mntfs *mf2;
 	if (mf->mf_refc == 1 && mf->mf_ops == &ifs_ops && STREQ(mf->mf_mount, mp)) {
@@ -326,7 +333,7 @@ char *mopts;
 		return mf;
 	}
 
-	mf2 = find_mntfs(ops, mo, mp, info, auto_opts, mopts);
+	mf2 = find_mntfs(ops, mo, mp, info, auto_opts, mopts, remopts);
 	free_mntfs(mf);
 	return mf2;
 }

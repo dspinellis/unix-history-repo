@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)misc_rpc.c	5.3 (Berkeley) %G%
+ *	@(#)misc_rpc.c	5.4 (Berkeley) %G%
  *
- * $Id: misc_rpc.c,v 5.2.1.3 91/05/07 22:18:10 jsp Alpha $
+ * $Id: misc_rpc.c,v 5.2.2.1 1992/02/09 15:08:40 jsp beta $
  *
  */
 
@@ -74,7 +74,8 @@ xdrproc_t where_xdr;
 	}
 
 drop:
-	if (reply_msg.acpted_rply.ar_verf.oa_base) {
+	if (reply_msg.rm_reply.rp_stat == MSG_ACCEPTED &&
+			reply_msg.acpted_rply.ar_verf.oa_base) {
 		reply_xdr.x_op = XDR_FREE;
 		(void)xdr_opaque_auth(&reply_xdr,
 			&reply_msg.acpted_rply.ar_verf);

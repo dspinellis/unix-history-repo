@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)amd.c	5.3 (Berkeley) %G%
+ *	@(#)amd.c	5.4 (Berkeley) %G%
  *
- * $Id: amd.c,v 5.2.1.5 91/05/07 22:17:44 jsp Alpha $
+ * $Id: amd.c,v 5.2.2.1 1992/02/09 15:08:15 jsp beta $
  *
  */
 

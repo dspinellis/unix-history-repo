@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)get_args.c	5.3 (Berkeley) %G%
+ *	@(#)get_args.c	5.4 (Berkeley) %G%
  *
- * $Id: get_args.c,v 5.2.1.5 91/05/07 22:17:52 jsp Alpha $
+ * $Id: get_args.c,v 5.2.2.1 1992/02/09 15:08:23 jsp beta $
  *
  */
 

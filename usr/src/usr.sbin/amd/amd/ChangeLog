@@ -1,3 +1,51 @@
+Sun Feb  9 13:14:54 1992  Jan-Simon Pendry  (jsp at achilles)
+
+	* hpux 8 support is still missing.
+
+	* (os-bsd44.h) merged in changes for new bsd nfs code.  still need
+	to add in lease and kerberos support.
+
+Sun Dec  1 16:20:21 1991  Jan-Simon Pendry  (jsp at achilles)
+
+	* (info_nis.c) changed so that it remembers if the NIS domainname
+	is set and doesn't repeatedly complain.  Message changed from an
+	Error to a Warning.
+
+	* (sfs_ops.c) added linkx fstype.  linkx is the same as link but
+	it also checks that the target exists.  This makes it useful for
+	wildcard map entries.
+
+	* (wire.c) applied changes from Dirk Grunwald.  Now stands a
+	better chance of correctly determining the network name.
+
+	* (map.c) changes in timeout_mp to cause second and subsequent
+	backgrounded unmount attempts to backoff and so reduce the chance
+	of running more than one backgrounded unmount at a time.
+
+	* (misc_rpc.c) bug fix from Martyn Johnson to avoid xdr_free'ing
+	the wrong piece of memory.  This was causing random core dumps,
+	often with a stack trace through pickup_rpc_reply.
+
+Sun Sep 15 21:16:38 1991  Jan-Simon Pendry  (jsp at achilles)
+
+	* Release 5.3 alpha 14.
+
+	* (os-osf1.h) merged in OSF/1 support.
+
+Sun Aug  4 18:25:04 1991  Jan-Simon Pendry  (jsp at achilles)
+
+	* (os-stellix.h) merged in Stellix support.
+
+	* (os-u4_2.h) merged in Ultrix 4.2 support.
+
+	* (host_ops.c) made TCP the default transport protocol.  Define
+	HOST_RPC_UDP somewhere to get UDP transport.
+
+	* (many) added support for ${remopts}.  Suggested by Steve
+	Heimlich.  remopts is the same as opts, but is used when the
+	remote server is not on the local network.  If it is not set it
+	defaults to whatever value ${opts} has.
+
 Tue May  7 22:30:00 1991  Jan-Simon Pendry  (jsp at achilles)
 
 	* Checkpoint for Berkeley network tape II.

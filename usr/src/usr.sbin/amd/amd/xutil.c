@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)xutil.c	5.3 (Berkeley) %G%
+ *	@(#)xutil.c	5.4 (Berkeley) %G%
  *
- * $Id: xutil.c,v 5.2.1.5 91/05/07 22:18:43 jsp Alpha $
+ * $Id: xutil.c,v 5.2.2.1 1992/02/09 15:09:13 jsp beta $
  *
  */
 

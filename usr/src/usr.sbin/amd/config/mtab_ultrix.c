@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mtab_ultrix.c	5.3 (Berkeley) %G%
+ *	@(#)mtab_ultrix.c	5.4 (Berkeley) %G%
  *
- * $Id: mtab_ultrix.c,v 5.2.1.2 91/05/07 22:20:02 jsp Alpha $
+ * $Id: mtab_ultrix.c,v 5.2.2.1 1992/02/09 15:10:50 jsp beta $
  *
  */
 

@@ -10,9 +10,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fsi_lex.l	5.4 (Berkeley) %G%
+ *	@(#)fsi_lex.l	5.5 (Berkeley) %G%
  *
- * $Id: fsi_lex.l,v 5.2.1.3 91/05/07 22:19:03 jsp Alpha $
+ * $Id: fsi_lex.l,v 5.2.2.1 1992/02/09 15:09:36 jsp beta $
  *
  */
 
@@ -215,7 +215,7 @@ int yywrap()
 static int first = 1;
 	if (first) {
 		char prog[16*1024];
-		strcpy(prog, "cpp=cat; test -r /lib/cpp && cpp=/lib/cpp; test -r /usr/libexec/cpp && cpp=/usr/libexec/cpp; for file in ");
+		strcpy(prog, "for file in ");
 		while (*++g_argv) {
 			if (access(*g_argv, 4) < 0) {
 				error("\"%s\": Cannot open for reading", *g_argv);
@@ -225,7 +225,7 @@ static int first = 1;
 				strcat(prog, " ");
 			}
 		}
-		strcat(prog, "; do $cpp ");
+		strcat(prog, "; do /lib/cpp ");
 		strcat(prog, idvbuf);
 		strcat(prog, " -DHOSTNAME=\'");
 		strcat(prog, hostname);

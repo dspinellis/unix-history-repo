@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)os-aux.h	5.3 (Berkeley) %G%
+ *	@(#)os-aux.h	5.4 (Berkeley) %G%
  *
- * $Id: os-aux.h,v 5.2.1.2 91/05/07 22:19:31 jsp Alpha $
+ * $Id: os-aux.h,v 5.2.2.1 1992/02/09 15:10:10 jsp beta $
  *
  * A/UX macII definitions for Amd (automounter)
  * Contributed by Julian Onions <jpo@cs.nott.ac.uk>

@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mount_fs.c	5.3 (Berkeley) %G%
+ *	@(#)mount_fs.c	5.4 (Berkeley) %G%
  *
- * $Id: mount_fs.c,v 5.2.1.4 91/05/07 22:18:13 jsp Alpha $
+ * $Id: mount_fs.c,v 5.2.2.1 1992/02/09 15:08:43 jsp beta $
  *
  */
 

@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sched.c	5.3 (Berkeley) %G%
+ *	@(#)sched.c	5.4 (Berkeley) %G%
  *
- * $Id: sched.c,v 5.2.1.5 91/05/07 22:18:32 jsp Alpha $
+ * $Id: sched.c,v 5.2.2.1 1992/02/09 15:09:02 jsp beta $
  *
  */
 
@@ -249,3 +249,51 @@ void do_task_notify(P_void)
 		free((voidp) p);
 	}
 }
+
+#ifdef HAS_SVR3_SIGNALS
+/*
+ * 4.2 signal library based on svr3 (4.1+ bsd) interface
+ * From Stephen C. Pope <scp@acl.lanl.gov).
+ */
+
+static int current_mask = 0;
+
+int sigblock(mask)
+int mask;
+{
+    int sig;
+    int m;
+    int oldmask;
+
+    oldmask = current_mask;
+    for ( sig = 1, m = 1; sig <= MAXSIG; sig++, m <<= 1 ) {
+        if (mask & m)  {
+	    sighold(sig);
+            current_mask |= m;
+        }
+    }
+    return oldmask;
+}
+
+int sigsetmask(mask)
+int mask;
+{
+    int sig;
+    int m;
+    int oldmask;
+
+    oldmask = current_mask;
+    for ( sig = 1, m = 1; sig <= MAXSIG; sig++, m <<= 1 ) {
+        if (mask & m)  {
+            sighold(sig);
+            current_mask |= m;
+        }
+        else  {
+            sigrelse(sig);
+            current_mask &= ~m;
+        }
+    }
+    return oldmask;
+}
+
+#endif /* HAS_SVR3_SIGNALS */

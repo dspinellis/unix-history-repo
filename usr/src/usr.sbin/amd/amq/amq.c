@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)amq.c	5.3 (Berkeley) %G%
+ *	@(#)amq.c	5.4 (Berkeley) %G%
  *
- * $Id: amq.c,v 5.2.1.5 91/05/07 22:18:45 jsp Alpha $
+ * $Id: amq.c,v 5.2.2.1 1992/02/09 15:09:16 jsp beta $
  *
  */
 
@@ -28,8 +28,8 @@ char copyright[] = "\
 #endif /* not lint */
 
 #ifndef lint
-static char rcsid[] = "$Id: amq.c,v 5.2.1.5 91/05/07 22:18:45 jsp Alpha $";
-static char sccsid[] = "@(#)amq.c	5.3 (Berkeley) %G%";
+static char rcsid[] = "$Id: amq.c,v 5.2.2.1 1992/02/09 15:09:16 jsp beta $";
+static char sccsid[] = "@(#)amq.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "am.h"
@@ -379,8 +379,13 @@ Usage: %s [-h host] [[-f] [-m] [-v] [-s]] | [[-u] directory ...]] |\n\
 	/*
 	 * Create RPC endpoint
 	 */
-	s = privsock();
-	clnt = clntudp_create(&server_addr, AMQ_PROGRAM, AMQ_VERSION, TIMEOUT, &s);
+	s = privsock(SOCK_STREAM);
+	clnt = clnttcp_create(&server_addr, AMQ_PROGRAM, AMQ_VERSION, &s, 0, 0);
+	if (clnt == 0) {
+		close(s);
+		s = privsock(SOCK_DGRAM);
+		clnt = clntudp_create(&server_addr, AMQ_PROGRAM, AMQ_VERSION, TIMEOUT, &s);
+	}
 	if (clnt == 0) {
 		fprintf(stderr, "%s: ", progname);
 		clnt_pcreateerror(server);
@@ -576,7 +581,8 @@ Usage: %s [-h host] [[-f] [-m] [-v] [-s]] | [[-u] directory ...]] |\n\
  * secure port.
  * returns: The bound socket, or -1 to indicate an error.
  */
-static int udpresport()
+static int inetresport(ty)
+int ty;
 {
 	int alport;
 	struct sockaddr_in addr;
@@ -585,7 +591,7 @@ static int udpresport()
 	/* Use internet address family */
 	addr.sin_family = AF_INET;
 	addr.sin_addr.s_addr = INADDR_ANY;
-	if ((sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) < 0)
+	if ((sock = socket(AF_INET, ty, 0)) < 0)
 		return -1;
 	for (alport = IPPORT_RESERVED-1; alport > IPPORT_RESERVED/2 + 1; alport--) {
 		addr.sin_port = htons((u_short)alport);
@@ -602,14 +608,15 @@ static int udpresport()
 }
 
 /*
- * Privsock() calls udpresport() to attempt to bind a socket to a secure
- * port.  If udpresport() fails, privsock returns a magic socket number which
+ * Privsock() calls inetresport() to attempt to bind a socket to a secure
+ * port.  If inetresport() fails, privsock returns a magic socket number which
  * indicates to RPC that it should make its own socket.
  * returns: A privileged socket # or RPC_ANYSOCK.
  */
-static int privsock()
+static int privsock(ty)
+int ty;
 {
-	int sock = udpresport();
+	int sock = inetresport(ty);
 
 	if (sock < 0) {
 		errno = 0;

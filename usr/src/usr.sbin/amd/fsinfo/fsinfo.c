@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fsinfo.c	5.3 (Berkeley) %G%
+ *	@(#)fsinfo.c	5.4 (Berkeley) %G%
  *
- * $Id: fsinfo.c,v 5.2.1.3 91/05/07 22:19:01 jsp Alpha $
+ * $Id: fsinfo.c,v 5.2.2.1 1992/02/09 15:09:33 jsp beta $
  *
  */
 

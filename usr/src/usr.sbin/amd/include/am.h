@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)am.h	5.3 (Berkeley) %G%
+ *	@(#)am.h	1.2 (Berkeley) 6/25/91
  *
- * $Id: am.h,v 5.2.1.8 91/05/07 22:19:18 jsp Alpha $
+ * $Id: am.h,v 5.2.2.1 1992/02/09 15:09:54 jsp beta $
  *
  */
 
@@ -205,7 +205,7 @@ extern char* expand_key P((char*));
 extern am_node* exported_ap_alloc(P_void);
 extern am_node* find_ap P((char*));
 extern am_node* find_mf P((mntfs*));
-extern mntfs* find_mntfs P((am_ops*, am_opts*, char*, char*, char*, char*));
+extern mntfs* find_mntfs P((am_ops*, am_opts*, char*, char*, char*, char*, char*));
 extern void flush_mntfs(P_void);
 extern void flush_nfs_fhandle_cache P((fserver*));
 extern void forcibly_timeout_mp P((am_node*));
@@ -230,6 +230,7 @@ extern char *inet_dquad P((char*, unsigned long));
 extern void init_map P((am_node*, char*));
 extern void insert_am P((am_node*, am_node*));
 extern void ins_que P((qelem*, qelem*));
+extern int islocalnet P((unsigned long));
 extern int make_nfs_auth P((void));
 extern void make_root_node(P_void);
 extern int make_rpc_packet P((char*, int, u_long, struct rpc_msg*, voidp, xdrproc_t, AUTH*));
@@ -248,6 +249,7 @@ extern int mount_auto_node P((char*, voidp));
 extern int mount_automounter P((int));
 extern int mount_exported(P_void);
 extern int mount_fs P((struct mntent*, int, caddr_t, int, MTYPE_TYPE));
+/*extern int mount_nfs_fh P((struct fhstatus*, char*, char*, char*, mntfs*));*/
 extern int mount_node P((am_node*));
 extern mntfs* new_mntfs(P_void);
 extern void new_ttl P((am_node*));
@@ -257,7 +259,7 @@ extern void normalize_slash P((char*));
 extern void ops_showfstypes P((FILE*));
 extern int pickup_rpc_reply P((voidp, int, voidp, xdrproc_t));
 extern mntlist* read_mtab P((char*));
-extern mntfs* realloc_mntfs  P((mntfs*, am_ops*, am_opts*, char*, char*, char*, char*));
+extern mntfs* realloc_mntfs  P((mntfs*, am_ops*, am_opts*, char*, char*, char*, char*, char*));
 extern void rem_que P((qelem*));
 extern void reschedule_timeout_mp(P_void);
 extern void restart(P_void);
@@ -323,6 +325,7 @@ struct am_opts {
 	char	*opt_group;
 	char	*opt_mount;
 	char	*opt_opts;
+	char	*opt_remopts;
 	char	*opt_pref;
 	char	*opt_cache;
 	char	*opt_rfs;
@@ -467,6 +470,7 @@ struct mntfs {
 	char		*mf_info;	/* Mount info */
 	char		*mf_auto;	/* Automount opts */
 	char		*mf_mopts;	/* FS mount opts */
+	char		*mf_remopts;	/* Remote FS mount opts */
 	fserver		*mf_server;	/* File server */
 	int		mf_flags;	/* Flags */
 	int		mf_error;	/* Error code from background mount */

@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)os-acis43.h	5.3 (Berkeley) %G%
+ *	@(#)os-acis43.h	5.4 (Berkeley) %G%
  *
- * $Id: os-acis43.h,v 5.2.1.2 91/05/07 22:19:24 jsp Alpha $
+ * $Id: os-acis43.h,v 5.2.2.1 1992/02/09 15:10:02 jsp beta $
  *
  * IBM RT ACIS4.3 definitions for Amd (automounter)
  */

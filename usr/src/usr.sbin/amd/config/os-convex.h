@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)os-convex.h	5.3 (Berkeley) %G%
+ *	@(#)os-convex.h	5.4 (Berkeley) %G%
  *
- * $Id: os-convex.h,v 5.2.1.2 91/05/07 22:19:37 jsp Alpha $
+ * $Id: os-convex.h,v 5.2.2.1 1992/02/09 15:10:16 jsp beta $
  *
  * Convex C220, version 7.1 definitions for Amd (automounter)
  *         from Eitan Mizrotsky <eitan@shum.huji.ac.il>

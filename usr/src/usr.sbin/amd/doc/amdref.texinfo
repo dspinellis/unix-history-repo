@@ -35,11 +35,12 @@
 @c LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
 @c OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 @c
-@c	@(#)amdref.texinfo	1.3 (Berkeley) %G%
+@c	@(#)amdref.texinfo	1.4 (Berkeley) %G%
 @c
-@c $Id: amdref.texinfo,v 5.2.1.6 91/05/07 22:20:47 jsp Alpha $
+@c $Id: amdref.texinfo,v 5.2.2.1 1992/02/09 15:11:50 jsp beta $
 @c
-@setfilename /usr/local/emacs/info/amd
+@setfilename amdref.info
+@c @setfilename /usr/local/emacs/info/amd
 @tex
 \overfullrule=0pt
 @end tex
@@ -89,14 +90,19 @@ to use and understand Amd.
 * License::                  Explains the terms and conditions for using
                              and distributing Amd.
 * Distrib::                  How to get the latest Amd distribution.
-* Overview::                 An introduction to Automounting concepts.
+* Intro::                    An introduction to Automounting concepts.
+* Overview::                 An overview of Amd.
 * Supported Platforms::      Machines and Systems supported by Amd.
 * Mount Maps::               Details of mount maps
 * Amd Command Line Options:: All the Amd command line options explained. 
 * Filesystem Types::         The different mount types supported by Amd.
 * Run-time Administration::  How to start, stop and control Amd.
 * FSinfo::                   The FSinfo filesystem management tool.
+* Internals::                Internals.
+* Acknowledgements & Trademarks:: Legal notes.
 * Examples::                 Some examples showing how Amd might be used.
+* Internals::                Implementation details.
+* Acknowledgements & Trademarks::
 
 Indexes
 * Index::                    An item for each concept.
@@ -138,7 +144,7 @@ THIS SOFTWARE IS  PROVIDED ``AS IS''  AND WITHOUT ANY EXPRESS OR IMPLIED
 WARRANTIES, INCLUDING,  WITHOUT  LIMITATION,  THE IMPLIED  WARRANTIES OF
 MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 
-@node Distrib, Overview, License, Top
+@node Distrib, Intro, License, Top
 @unnumbered Source Distribution
 @cindex Source code distribution
 @cindex Obtaining the source code
@@ -157,6 +163,9 @@ anonymous NIFTP to fetch the file @samp{<AMD>amd.tar.Z} from host
 
 Revision 5.2 was part of the 4.3 BSD Reno distribution.
 
+Revision 5.3bsdnet, a late alpha version of 5.3, was part
+of the BSD network version 2 distribution
+
 @unnumberedsec Bug Reports
 @cindex Bug reports
 
@@ -170,7 +179,7 @@ the command @samp{amd -v}.
 There is a mailing list for people interested in keeping uptodate with
 developments.  To subscribe, send a note to @file{amd-workers-request@@acl.lanl.gov}.
 
-@node Intro, Index, Distrib, Top
+@node Intro, Overview, Distrib, Top
 @unnumbered Introduction
 @cindex Introduction
 
@@ -196,7 +205,7 @@ become available.
 @i{Amd} contains no proprietary source code and has been ported to
 numerous flavours of Unix.
 
-@node Overview, Supported Platforms, Distrib, Top
+@node Overview, Supported Platforms, Intro, Top
 @chapter Overview
 
 @i{Amd} maintains a cache of mounted filesystems.  Filesystems are
@@ -784,17 +793,17 @@ in this case causing the @file{amd.home} map to be rebuilt:
 @example
 $(YPTSDIR)/amd.home.time: $(ETCDIR)/amd.home
         -@@sed -e "s/#.*$$//" -e "/^$$/d" $(ETCDIR)/amd.home | \
-          awk '{  \
+          awk '@{  \
                  for (i = 1; i <= NF; i++) \
-                     if (i == NF) { \
+                     if (i == NF) @{ \
                          if (substr($$i, length($$i), 1) == "\\") \
                              printf("%s", substr($$i, 1, length($$i) - 1)); \
                          else \
                              printf("%s\n", $$i); \
-                     } \
+                     @} \
                      else \
                          printf("%s ", $$i); \
-             }' | \
+             @}' | \
         $(MAKEDBM) - $(YPDBDIR)/amd.home; \
         touch $(YPTSDIR)/amd.home.time; \
         echo "updated amd.home"; \
@@ -878,7 +887,7 @@ the map entry used by @i{Amd} would be
 rfs:=/home/sugar;rhost:=sugar.cc;sublink:=jsp
 @end example
 
-@node     Union maps, Map Types, Password maps, Map Types
+@node     Union maps, , Password maps, Map Types
 @comment  node-name,  next,  previous,  up
 @subsection Union maps
 @cindex Union file maps
@@ -1034,7 +1043,7 @@ defaults given with @samp{/defaults}).
 @c which is equivalent to
 @c \begin{quote}
 @c $@dfn{gdef}@samp{;}@dfn{def}_a@samp{;}@dfn{loc}_{a_1} $\verb*+ +$@dfn{gdef}@samp{;}@dfn{def}_a@samp{;}@dfn{loc}_{a_2} $\verb*+ +$@dfn{gdef}@samp{;}@dfn{def}_b@samp{;}@dfn{loc}_{b_1} \ldots$
-@c\end{quote}
+@c \end{quote}
 
 @node     Variable Expansion, Selectors, Map Defaults, Location Format
 @comment  node-name,  next,  previous,  up
@@ -1079,7 +1088,7 @@ location is then parsed, selections are evaluated and option assignments
 recorded.  If there were no selections or they all succeeded the
 location is used and the values of the following options are expanded in
 the order given: @var{sublink}, @var{rfs}, @var{fs}, @var{opts},
-@var{mount} and @var{unmount}.
+@var{remopts}, @var{mount} and @var{unmount}.
 
 Note that expansion of option values is done after @dfn{all} assignments
 have been completed and not in a purely left to right order as is done
@@ -1279,6 +1288,7 @@ The following options apply to more than one filesystem type.
 * delay Option::
 * fs Option::
 * opts Option::
+* remopts Option::
 * sublink Option::
 * type Option::
 @end menu
@@ -1344,7 +1354,7 @@ defaults to @samp{/tmp_mnt}.  Note that there is no @samp{/} between
 the @code{$@{rhost@}} and @code{$@{rfs@}} since @code{$@{rfs@}} begins
 with a @samp{/}.@refill
 
-@node     opts Option, sublink Option, fs Option, Map Options
+@node     opts Option, remopts Option, fs Option, Map Options
 @comment  node-name,  next,  previous,  up
 @subsubsection opts Option
 @cindex Setting system mount options
@@ -1420,8 +1430,8 @@ never expire.  This is also the default for some filesystem types.
 @item ping=@var{n}
 The interval, in seconds, between keep-alive pings.  When four
 consecutive pings have failed the mount point is marked as hung.  This
-interval defaults to 30 seconds.  If the ping interval is less then or
-equal to zero, no pings are sent and the host is assumed to be always
+interval defaults to 30 seconds.  If the ping interval is less than zero,
+no pings are sent and the host is assumed to be always
 up.  By default, pings are not sent for an NFS/TCP mount.
 @item retry=@var{n}
 The number of times to retry the mount system call.
@@ -1433,7 +1443,29 @@ attempted to avoid thrashing.  The default value is 120 seconds (two
 minutes) or as set by the ``-w'' command line option.
 @end table
 
-@node     sublink Option, type Option, opts Option, Map Options
+@node     remopts Option, sublink Option, opts Option, Map Options
+@comment  node-name,  next,  previous,  up
+@subsubsection remopts Option
+@cindex Setting system mount options for non-local networks
+@cindex remopts, mount option
+@cindex Mount option; remopts
+
+This option has the same use as @code{$@{opts@}} but applies only when
+the remote host is on a non-local network.  For example, when using NFS
+across a gateway it is often necessary to use smaller values for the
+data read and write sizes.  This can simply be done by specifying the
+small values in @var{remopts}.  When a non-local host is accessed, the
+smaller sizes will automatically be used.
+
+@i{Amd} determines whether a host is local by examining the network
+interface configuration at startup.  Any interface changes made after
+@i{Amd} has been started will not be noticed.  The likely effect will
+be that a host may incorrectly be declared non-local.
+
+Unless otherwise set, the value of @code{$@{rem@}} is the same as the
+value of @code{$@{opts@}}.
+
+@node     sublink Option, type Option, remopts Option, Map Options
 @comment  node-name,  next,  previous,  up
 @subsubsection sublink Option
 @cindex Setting the sublink option
@@ -1444,7 +1476,7 @@ The subdirectory within the mounted filesystem to which the reference
 should point.  This can be used to prevent duplicate mounts in cases
 where multiple directories in the same mounted filesystem are used.
 
-@node     type Option, Map Options, sublink Option, Map Options
+@node     type Option, , sublink Option, Map Options
 @comment  node-name,  next,  previous,  up
 @subsubsection type Option
 @cindex Setting the filesystem type option
@@ -1467,7 +1499,7 @@ command line is also used to specify automount points and maps.
 The general format of a command line is
 
 @example
-amd [@i{options}] { @i{directory} @i{map-name} [-@i{map-options}] } ...
+amd [@i{options}] @{ @i{directory} @i{map-name} [-@i{map-options}] @} ...
 @end example
 
 For each directory and map-name given, @i{Amd} establishes an
@@ -1545,7 +1577,7 @@ line option or by the @samp{utimeout} mount option.
 
 The default @dfn{cache-interval} is 300 seconds (five minutes).
 
-@node     -d Option, -k Option, -a Option, Amd Command Line Options
+@node     -d Option, -k Option, -c Option, Amd Command Line Options
 @comment  node-name,  next,  previous,  up
 @section @code{-d} @var{domain}
 @cindex Domain name
@@ -1637,7 +1669,7 @@ returned by a hostname lookup.
 This option should be used if several names are used to refer to a
 single host in a mount map.
 
-@node     -p Option, -t Option, -n Option, Amd Command Line Options
+@node     -p Option, -r Option, -n Option, Amd Command Line Options
 @comment  node-name,  next,  previous,  up
 @section @code{-p}
 @cindex Process id
@@ -2043,7 +2075,7 @@ For example:
 
 @example
 pub      type:=nfsx;rhost:=gould;\
-		rfs:=/public,/,graphics,usenet;fs:=${autodir}/${rhost}/root
+		rfs:=/public,/,graphics,usenet;fs:=$@{autodir@}/$@{rhost@}/root
 @end example
 
 The first string defines the root of the tree, and is applied as a
@@ -2147,7 +2179,7 @@ from the current values used by @i{Amd}.  Standard output is a
 duplicate of standard error.  The value specified with the ``-l''
 command line option has no effect on standard error.
 
-@node     Symbolic Link Filesystem, Automount Filesystem, Program Filesystem, Filesystem Types
+@node     Symbolic Link Filesystem, Symbolic Link Filesystem II, Program Filesystem, Filesystem Types
 @comment  node-name,  next,  previous,  up
 @section Symbolic Link Filesystem (@samp{type:=link})
 @cindex Symbolic link filesystem
@@ -2189,7 +2221,26 @@ jsp   host==charm;type:=link;fs:=/home/charm;sublink:=jsp
 @end example
 which would return a symbolic link pointing to @file{/home/charm/jsp}.
 
-@node     Automount Filesystem, Direct Automount Filesystem, Symbolic Link Filesystem, Filesystem Types
+@node     Symbolic Link Filesystem II, Automount Filesystem, Program Filesystem, Filesystem Types
+@comment  node-name,  next,  previous,  up
+@section Symbolic Link Filesystem II (@samp{type:=link})
+@cindex Symbolic link filesystem II
+@cindex Referencing an existing part of the local name space
+@cindex Mounting an existing part of the local name space
+@cindex How to reference an existing part of the local name space
+@cindex linkx, filesystem type
+@cindex symlink, linkx filesystem type
+@cindex Filesystem type; linkx
+
+The @samp{linkx} filesystem type is identical to @samp{link} with the
+exception that the target of the link must exist.  Existence is checked
+with the @samp{lstat} system call.
+
+The @samp{linkx} filesystem type is particularly useful for wildcard map
+entries.  In this case, a list of possible targets can be give and
+@i{Amd} will choose the first one which exists on the local machine.
+
+@node     Automount Filesystem, Direct Automount Filesystem, Symbolic Link Filesystem II, Filesystem Types
 @comment  node-name,  next,  previous,  up
 @section Automount Filesystem (@samp{type:=auto})
 @cindex Automount filesystem
@@ -2279,7 +2330,7 @@ we are now stuck with it due to historical accident.
 @c %If the string @samp{.} is used then the same map is used;
 @c %in addition the lookup prefix is set to the name of the mount point followed
 @c %by a slash @samp{/}.
-@c %This is the same as specifying @samp{fs:=\$\{map\};pref:=\$\{key\}/}.
+@c %This is the same as specifying @samp{fs:=\$@{map@};pref:=\$@{key@}/}.
 @c
 
 @item pref
@@ -2370,7 +2421,7 @@ The files visible in the union directory are computed at the time
 underlying directories.  Similarly, if a link is removed, for example
 with the @samp{rm} command, it will be lost forever.
 
-@node     Error Filesystem, Top-level Filesystem, Direct Automount Filesystem, Filesystem Types
+@node     Error Filesystem, Top-level Filesystem, Union Filesystem, Filesystem Types
 @comment  node-name,  next,  previous,  up
 @section Error Filesystem (@samp{type:=error})
 @cindex Error filesystem
@@ -2432,7 +2483,7 @@ possible that the output from @samp{amq -m} may list @samp{inherit} as
 the filesystem type.  This happens when an inherit operation cannot
 be completed for some reason, usually because a fileserver is down.
 
-@node     Run-time Administration, Examples, Filesystem Types, Top
+@node     Run-time Administration, FSinfo, Filesystem Types, Top
 @comment  node-name,  next,  previous,  up
 @chapter Run-time Administration
 @cindex Run-time administration
@@ -2542,7 +2593,7 @@ is primarly used for debugging.@refill
 
 Actions taken for other signals are undefined.
 
-@node     Controlling Amd, Run-time Administration, Stopping Amd, Run-time Administration
+@node     Controlling Amd, , Stopping Amd, Run-time Administration
 @comment  node-name,  next,  previous,  up
 @section Controlling @i{Amd}
 @cindex Controlling Amd
@@ -2561,14 +2612,15 @@ but includes information about the number and type of accesses to each
 mount point.
 
 @menu
-* Amq default::    Default command behaviour.
-* Amq -f option::  Flusing the map cache.
-* Amq -h option::  Controlling a non-local host.
-* Amq -m option::  Obtaining mount statistics.
-* Amq -M-option::  Mounting a volume.
-* Amq -s option::  Obtaining global statistics.
-* Amq -u option::  Forcing volumes to time out.
-* Amq -v option::  Version information.
+* Amq default::      Default command behaviour.
+* Amq -f option::     Flushing the map cache.
+* Amq -h option::     Controlling a non-local host.
+* Amq -m option::     Obtaining mount statistics.
+* Amq -M-option::     Mounting a volume.
+* Amq -s option::     Obtaining global statistics.
+* Amq -u option::     Forcing volumes to time out.
+* Amq -v option::     Version information.
+* Other Amq options:: Three other special options.
 @end menu
 
 @node     Amq default, Amq -f option, Controlling Amd, Controlling Amd
@@ -2795,7 +2847,7 @@ flag.
 The ``-v'' option displays the version of @i{Amd} in a similar way to
 @i{Amd}'s ``-v'' option.
 
-@node     Other Amq options, Controlling Amd, Amq -v option, Controlling Amd
+@node     Other Amq options, , Amq -v option, Controlling Amd
 @comment  node-name,  next,  previous,  up
 @subsection Other @i{Amq} options
 
@@ -2910,7 +2962,7 @@ dummy set of definitions for the host and volume names required.  Since
 the files generated for those particular hosts will not be used on them,
 the exact values used is not critical.
 
-@node     FSinfo Grammar, FSinfo, Using FSinfo, FSinfo
+@node     FSinfo Grammar, FSinfo host definitions, Using FSinfo, FSinfo
 @comment  node-name,  next,  previous,  up
 @section @i{FSinfo} grammar
 @cindex FSinfo grammar
@@ -3024,12 +3076,13 @@ The options that can be given as host attributes are shown below.
 
 @menu
 * netif Option:		FSinfo host netif:
+* config Option:	FSinfo host config:
 * arch Option:		FSinfo host arch:
 * os Option:		FSinfo host os:
 * cluster Option:	FSinfo host cluster:
 @end menu
 
-@node FSinfo host netif, FSinfo host arch, , FSinfo host attributes
+@node FSinfo host netif, FSinfo host config, , FSinfo host attributes
 @comment  node-name,  next,  previous,  up
 @subsection netif Option
 
@@ -3161,63 +3214,63 @@ The @i{FSinfo} configuration file for @code{dylan.doc.ic.ac.uk} is listed below.
 @example
 host dylan.doc.ic.ac.uk
 
-fs /dev/dsk/0s0 {
+fs /dev/dsk/0s0 @{
 	fstype = swap
-}
+@}
 
-fs /dev/dsk/0s0 {
+fs /dev/dsk/0s0 @{
 	fstype = hfs
 	opts = rw,noquota,grpid
 	passno = 0;
 	freq = 1;
-	mount / { }
-}
+	mount / @{ @}
+@}
 
-fs /dev/dsk/1s0 {
+fs /dev/dsk/1s0 @{
 	fstype = hfs
 	opts = defaults
 	passno = 1;
 	freq = 1;
-	mount /usr {
-		local {
+	mount /usr @{
+		local @{
 			exportfs "dougal eden dylan zebedee brian"
 			volname /nfs/hp300/local
-		}
-	}
-}
+		@}
+	@}
+@}
 
-fs /dev/dsk/2s0 {
+fs /dev/dsk/2s0 @{
 	fstype = hfs
 	opts = defaults
 	passno = 1;
 	freq = 1;
-	mount default {
+	mount default @{
 		exportfs "toytown_clients hangers_on"
 		volname /home/dylan/dk2
-	}
-}
+	@}
+@}
 
-fs /dev/dsk/3s0 {
+fs /dev/dsk/3s0 @{
 	fstype = hfs
 	opts = defaults
 	passno = 1;
 	freq = 1;
-	mount default {
+	mount default @{
 		exportfs "toytown_clients hangers_on"
 		volname /home/dylan/dk3
-	}
-}
+	@}
+@}
 
-fs /dev/dsk/5s0 {
+fs /dev/dsk/5s0 @{
 	fstype = hfs
 	opts = defaults
 	passno = 1;
 	freq = 1;
-	mount default {
+	mount default @{
 		exportfs "toytown_clients hangers_on"
 		volname /home/dylan/dk5
-	}
-}
+	@}
+@}
 @end example
 
 @menu
@@ -3590,7 +3643,7 @@ sure that the directory has already been made before running
 * -q FSinfo Option::	Ultra quiet mode.
 * -v FSinfo Option::	Verbose mode.
 * -I FSinfo Option::	Define new #include directory.
-* -D FSinfo Option::	Define macro.
+* -D-FSinfo Option::	Define macro.
 * -U FSinfo Option::	Undefine macro.
 @end menu
 
@@ -3942,7 +3995,7 @@ than zero.  Swap devices should not be dumped.@refill
 * /vol::
 @end menu
 
-@node     User Filesystems, Home Directories, Starting Amd, Examples
+@node     User Filesystems, Home Directories, Examples, Examples
 @comment  node-name,  next,  previous,  up
 @section User Filesystems
 @cindex User filesystems
@@ -4229,7 +4282,7 @@ Below is part of the @samp{/vol} map for the domain @samp{doc.ic.ac.uk}.
 The @samp{r+d} tree is used for new or experimental software that needs
 to be available everywhere without installing it on all the fileservers.
 Users wishing to try out the new software then simply include
-@samp{/vol/r+d/{bin,ucb}} in their path.@refill
+@samp{/vol/r+d/@{bin,ucb@}} in their path.@refill
 
 The main tree resides on one host @samp{gould.doc.ic.ac.uk}, which has
 different @samp{bin}, @samp{etc}, @samp{lib} and @samp{ucb}
@@ -4487,11 +4540,12 @@ Machines Corporation.
 @b{Sun}, @b{NFS} and @b{SunOS} are registered trademarks of Sun
 Microsystems, Inc.
 @item
-@b{Unix} is a registered trademark of AT&T Bell Laboratories in the USA
-and other countries.
+@b{Unix} is a registered trademark of AT&T Unix Systems Laboratories
+in the USA and other countries.
 @end itemize
 
-@node Index, , Acknowledgements & Trademarks, Top
+@node Index, Intro, Acknowledgements & Trademarks, Top
+@comment  node-name,  next,  previous,  up
 @unnumbered Index
 
 @printindex cp

@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)map.c	5.3 (Berkeley) %G%
+ *	@(#)map.c	1.2 (Berkeley) 6/25/91
  *
- * $Id: map.c,v 5.2.1.7 91/05/07 22:18:05 jsp Alpha $
+ * $Id: map.c,v 5.2.2.1 1992/02/09 15:08:36 jsp beta $
  *
  */
 
@@ -693,7 +693,7 @@ void make_root_node()
 	/*
 	 * Allocate a new mounted filesystem
 	 */
-	root_mnt = find_mntfs(&root_ops, (am_opts *) 0, "", rootmap, "", "");
+	root_mnt = find_mntfs(&root_ops, (am_opts *) 0, "", rootmap, "", "", "");
 	/*
 	 * Replace the initial null reference
 	 */
@@ -926,13 +926,16 @@ voidp closure;
 	wakeup((voidp) mf);
 }
 
-static void unmount_mp(mp)
+static int unmount_mp(mp)
 am_node *mp;
 {
+	int was_backgrounded = 0;
 	mntfs *mf = mp->am_mnt;
+
 #ifdef notdef
 	plog(XLOG_INFO, "\"%s\" on %s timed out", mp->am_path, mp->am_mnt->mf_mount);
 #endif /* notdef */
+
 	if ((mf->mf_ops->fs_flags & FS_UBACKGROUND) &&
 			(mf->mf_flags & MFF_MOUNTED)) {
 		if (mf->mf_refc == 1 && !FSRV_ISUP(mf->mf_server)) {
@@ -957,6 +960,7 @@ am_node *mp;
 			mf->mf_flags |= MFF_UNMOUNTING;
 			run_task(unmount_node_wrap, (voidp) mp,
 				 free_map_if_success, (voidp) mp);
+			was_backgrounded = 1;
 #ifdef DEBUG
 			dlog("unmount attempt backgrounded");
 #endif /* DEBUG */
@@ -972,6 +976,8 @@ am_node *mp;
 		dlog("unmount attempt done");
 #endif /* DEBUG */
 	}
+
+	return was_backgrounded;
 }
 
 void timeout_mp()
@@ -984,6 +990,7 @@ void timeout_mp()
 	int i;
 	time_t t = NEVER;
 	time_t now = clocktime();
+	int backoff = 0;
 
 #ifdef DEBUG
 	dlog("Timing out automount points...");
@@ -1017,15 +1024,25 @@ void timeout_mp()
 			/*dlog("t is initially @%d, zero in %d secs", t, t - now);*/
 #endif /* DEBUG */
 			if (now >= mp->am_ttl) {
-				expired = 1;
-				/*
-				 * Move the ttl forward to avoid thrashing effects
-				 * on the next call to timeout!
-				 */
-				/* sun's -tw option */
-				if (mp->am_timeo_w < 4 * am_timeo_w)
-					mp->am_timeo_w += am_timeo_w;
-				mp->am_ttl = now + mp->am_timeo_w;
+				if (!backoff) {
+					expired = 1;
+					/*
+					 * Move the ttl forward to avoid thrashing effects
+					 * on the next call to timeout!
+					 */
+					/* sun's -tw option */
+					if (mp->am_timeo_w < 4 * am_timeo_w)
+						mp->am_timeo_w += am_timeo_w;
+					mp->am_ttl = now + mp->am_timeo_w;
+				} else {
+					/*
+					 * Just backoff this unmount for
+					 * a couple of seconds to avoid
+					 * many multiple unmounts being
+					 * started in parallel.
+					 */
+					mp->am_ttl = now + backoff + 1;
+				}
 			}
 			/*
 			 * If the next ttl is smallest, use that
@@ -1036,8 +1053,18 @@ void timeout_mp()
 			/*dlog("after ttl t is @%d, zero in %d secs", t, t - now);*/
 #endif /* DEBUG */
 
-			if (!mp->am_child && mf->mf_error >= 0 && expired)
-				unmount_mp(mp);
+			if (!mp->am_child && mf->mf_error >= 0 && expired) {
+				/*
+				 * If the unmount was backgrounded then
+				 * bump the backoff counter.
+				 */
+				if (unmount_mp(mp)) {
+					backoff = 2;
+#ifdef DEBUG
+					/*dlog("backing off subsequent unmounts by at least %d seconds", backoff);*/
+#endif
+				}
+			}
 		} else if (mf->mf_flags & MFF_UNMOUNTING) {
 			mf->mf_flags |= MFF_WANTTIMO;
 		}

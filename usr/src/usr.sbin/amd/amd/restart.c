@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)restart.c	5.3 (Berkeley) %G%
+ *	@(#)restart.c	1.2 (Berkeley) 6/25/91
  *
- * $Id: restart.c,v 5.2.1.3 91/05/07 22:18:29 jsp Alpha $
+ * $Id: restart.c,v 5.2.2.1 1992/02/09 15:08:59 jsp beta $
  *
  */
 
@@ -110,7 +110,7 @@ void restart()
 			 * Make a new mounted filesystem
 			 */
 			mf = find_mntfs(fs_ops, &mo, me->mnt_dir,
-				me->mnt_fsname, "", me->mnt_opts);
+				me->mnt_fsname, "", me->mnt_opts, "");
 			if (mf->mf_refc == 1) {
 				mf->mf_flags |= MFF_RESTART|MFF_MOUNTED;
 				mf->mf_error = 0;	/* Already mounted correctly */

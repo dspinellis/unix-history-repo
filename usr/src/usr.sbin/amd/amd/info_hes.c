@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)info_hes.c	5.3 (Berkeley) %G%
+ *	@(#)info_hes.c	5.4 (Berkeley) %G%
  *
- * $Id: info_hes.c,v 5.2.1.5 91/05/07 22:17:58 jsp Alpha $
+ * $Id: info_hes.c,v 5.2.2.1 1992/02/09 15:08:29 jsp beta $
  *
  */
 

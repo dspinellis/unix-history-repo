@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mount.h	5.3 (Berkeley) %G%
+ *	@(#)mount.h	5.4 (Berkeley) %G%
  *
- * $Id: mount.h,v 5.2.1.2 91/05/07 22:18:54 jsp Alpha $
+ * $Id: mount.h,v 5.2.2.1 1992/02/09 15:09:27 jsp beta $
  *
  */
 

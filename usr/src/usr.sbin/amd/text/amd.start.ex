@@ -10,11 +10,11 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)amd.start.ex	5.3 (Berkeley) %G%
+#	@(#)amd.start.ex	5.4 (Berkeley) %G%
 #
 # Start amd
 #
-# $Id: amd.start.ex,v 5.2.1.3 91/05/07 22:20:41 jsp Alpha $
+# $Id: amd.start.ex,v 5.2.2.1 1992/02/09 15:11:32 jsp beta $
 #
 PATH=/usr/sbin:/bin:/usr/bin:$PATH export PATH
 

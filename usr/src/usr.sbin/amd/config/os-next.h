@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)os-next.h	5.4 (Berkeley) %G%
+ *	@(#)os-next.h	5.5 (Berkeley) %G%
  *
- * $Id: os-next.h,v 5.2.1.3 91/05/07 22:19:51 jsp Alpha $
+ * $Id: os-next.h,v 5.2.2.1 1992/02/09 15:10:33 jsp beta $
  *
  * NeXT OS definitions for Amd (automounter)
  * By Bill Trost, Reed College

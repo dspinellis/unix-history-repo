@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)os-bsd44.h	5.3 (Berkeley) %G%
+ *	@(#)os-bsd44.h	5.4 (Berkeley) %G%
  *
- * $Id: os-bsd44.h,v 5.2.1.4 91/05/07 22:19:32 jsp Alpha $
+ * $Id: os-bsd44.h,v 5.2.2.1 1992/02/09 15:10:11 jsp beta $
  *
  * 4.4 BSD definitions for Amd (automounter)
  */
@@ -78,6 +78,7 @@
 #undef NFS_SA_DREF
 #define	NFS_SA_DREF(dst, src) { \
 		(dst).addr = (struct sockaddr *) (src); \
+		(dst).addrlen = sizeof(*src); \
 		(dst).sotype = SOCK_DGRAM; \
 		(dst).proto = 0; \
 	}
@@ -121,6 +122,8 @@ XXX - Probably no hope of running Amd on this machine!
 
 #define	MNTOPT_SOFT	"soft"		/* soft mount */
 #define	MNTOPT_INTR	"intr"		/* interrupts allowed */
+
+#define NFSMNT_HOSTNAME	0		/* hostname on 4.4 is not optional */
 
 struct mntent {
 	char	*mnt_fsname;	/* name of mounted file system */

@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)misc-next.h	5.3 (Berkeley) %G%
+ *	@(#)misc-next.h	5.4 (Berkeley) %G%
  *
- * $Id: misc-next.h,v 5.2.1.1 91/05/07 22:19:52 jsp Alpha $
+ * $Id: misc-next.h,v 5.2.2.1 1992/02/09 15:10:34 jsp beta $
  *
  */
 

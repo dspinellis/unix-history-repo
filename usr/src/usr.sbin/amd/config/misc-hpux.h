@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)misc-hpux.h	5.3 (Berkeley) %G%
+ *	@(#)misc-hpux.h	5.4 (Berkeley) %G%
  *
- * $Id: misc-hpux.h,v 5.2.1.2 91/05/07 22:19:45 jsp Alpha $
+ * $Id: misc-hpux.h,v 5.2.2.1 1992/02/09 15:10:24 jsp beta $
  *
  */
 
@@ -35,6 +35,9 @@ struct nfs_args {
 	int			timeo;		/* initial timeout in .1 secs */
 	int			retrans;	/* times to retry send */
 	char			*hostname;	/* server's name */
+#ifdef __hp9000s700 /* XXX for HPUX 8.0 */
+	char			*fsname;	/* server's filesystem name */
+#endif
 };
 
 /*
