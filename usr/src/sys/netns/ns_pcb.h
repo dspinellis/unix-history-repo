@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ns_pcb.h	6.2 (Berkeley) %G%
+ *	@(#)ns_pcb.h	6.3 (Berkeley) %G%
  */
 
 /*
@@ -31,6 +31,7 @@ struct nspcb {
 #define NSP_IN_ABORT	0x1		/* calling abort through socket */
 #define NSP_RAWIN	0x2		/* show headers on input */
 #define NSP_RAWOUT	0x4		/* show header on output */
+#define NSP_ALL_PACKETS	0x8		/* Turn off higher proto processing */
 
 #define	NS_WILDCARD	1
 
