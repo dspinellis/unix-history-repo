@@ -5,7 +5,7 @@
 Please mail all suggestions and additions to <FreeBSD-FAQ@freefall.cdrom.com>
 
 
-Revision: $Id: FreeBSD.FAQ,v 1.21 1994/05/02 23:23:20 jkh Exp $
+Revision: $Id: FreeBSD.FAQ,v 1.22 1994/05/04 08:28:16 gclarkii Exp $
 
 All entries marked <CURRENT> are for FreeBSD-current.  All other entries
 are for both.
@@ -333,7 +333,7 @@ drives.
 
 2.4:  What multi-port serial cards are supported by FreeBSD?
 
-AST/4 and BOCA 4/8 port cards.  Some unnamed clone cards have also
+AST/4 and BOCA 4/8/16 port cards.  Some unnamed clone cards have also
 been known to work, especially those that claim to be AST compatible.
 Check the sio(4) man page to get more information on configuring such
 cards.
@@ -389,7 +389,7 @@ There is support for the following cards:
 
 `ed' driver:
         NE2000 and 1000
-        WD/SMC 8003,8013 and Elite Ultra (8216)
+        WD/SMC 8003, 8013 and Elite Ultra (8216)
         3Com 3c503 
         And clones of the above
 
@@ -484,7 +484,7 @@ forget about having to do this.
 For current you may add the following to your kernel config file and
 it  will be compiled in.
 options                         GPL_MATH_EMULATE
-
+NOTE:  You will need to remove the MATH_EMULATE option when you do this.
 
 4.2:  If I want something like seyon, term, Kermit, emacs or any one of
       hundreds of popular freeware utilities, is there a good place to
@@ -604,9 +604,6 @@ device    sio2    at isa? port 0x2a0 tty irq 5 flags 0x501 vector siointr
 device    sio3    at isa? port 0x2a8 tty flags 0x501 vector siointr 
 device    sio4    at isa? port 0x2b0 tty flags 0x501 vector siointr
 device    sio5    at isa? port 0x2b8 tty flags 0x501 vector siointr
-
-You may also want to look at the multi-port serial FAQ in
-/usr/src/contrib/FAQ/OTHER-FAQS/multi-port.serial.FAQ.
 
 
 6.2:  FreeBSD is supposed to come with support for QIC-40/80 drives but
