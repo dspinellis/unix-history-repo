@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)rshd.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)rshd.c	5.10 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -104,17 +104,22 @@ doit(f, fromp)
 	}
 #endif
 	fromp->sin_port = ntohs((u_short)fromp->sin_port);
-	if (fromp->sin_family != AF_INET ||
-	    fromp->sin_port >= IPPORT_RESERVED) {
+	if (fromp->sin_family != AF_INET) {
 		syslog(LOG_ERR, "malformed from address\n");
+		exit(1);
+	}
+	if (fromp->sin_port >= IPPORT_RESERVED ||
+	    fromp->sin_port < IPPORT_RESERVED/2) {
+		syslog(LOG_NOTICE, "connection from bad port\n");
 		exit(1);
 	}
 	(void) alarm(60);
 	port = 0;
 	for (;;) {
 		char c;
-		if (read(f, &c, 1) != 1) {
-			syslog(LOG_ERR, "read: %m");
+		if ((cc = read(f, &c, 1)) != 1) {
+			if (cc < 0)
+				syslog(LOG_NOTICE, "read: %m");
 			shutdown(f, 1+1);
 			exit(1);
 		}
