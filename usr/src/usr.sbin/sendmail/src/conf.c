@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	6.54 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	6.55 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/ioctl.h>
@@ -835,7 +835,9 @@ refuseconnections()
 # ifdef BSD4_4
 #  include <machine/vmparam.h>
 #  include <sys/exec.h>
-#  define SETPROC_STATIC static
+#  ifdef PS_STRINGS
+#   define SETPROC_STATIC static
+#  endif
 # endif
 # ifndef SETPROC_STATIC
 #  define SETPROC_STATIC
