@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)cp.c	5.30 (Berkeley) %G%";
+static char sccsid[] = "@(#)cp.c	5.31 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -230,9 +230,10 @@ copy(type, ftsp)
 	
 	while(curr = fts_read(ftsp)) {
 		if (curr->fts_info == FTS_ERR || curr->fts_info == FTS_NS) {
-			err("%s:%s", curr->fts_path, curr->fts_errno);
+			err("%s: %s", curr->fts_path, 
+			    strerror(curr->fts_errno));
 			exit_val = 1;
-			return;
+			continue;
 		}
 		if (curr->fts_info == FTS_DP)
 			continue;
