@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tcp_timer.h	7.2 (Berkeley) %G%
+ *	@(#)tcp_timer.h	7.3 (Berkeley) %G%
  */
 
 /*
@@ -61,14 +61,15 @@ int	tcp_ttl;			/* time to live for TCP segs */
 						   if 0, no idea yet */
 #define	TCPTV_SRTTDFLT	(  3*PR_SLOWHZ)		/* assumed RTT if no info */
 
-#define	TCPTV_KEEP	( 45*PR_SLOWHZ)		/* keep alive - 45 secs */
 #define	TCPTV_PERSMIN	(  5*PR_SLOWHZ)		/* retransmit persistance */
+#define	TCPTV_PERSMAX	( 60*PR_SLOWHZ)		/* maximum persist interval */
 
+#define	TCPTV_KEEP	( 75*PR_SLOWHZ)		/* keep alive - 75 secs */
 #define	TCPTV_MAXIDLE	(  8*TCPTV_KEEP)	/* maximum allowable idle
 						   time before drop conn */
 
 #define	TCPTV_MIN	(  1*PR_SLOWHZ)		/* minimum allowable value */
-#define	TCPTV_MAX	( 30*PR_SLOWHZ)		/* maximum allowable value */
+#define	TCPTV_REXMTMAX	( 64*PR_SLOWHZ)		/* max allowable REXMT value */
 
 #define	TCP_LINGERTIME	120			/* linger at most 2 minutes */
 
@@ -80,32 +81,16 @@ char *tcptimers[] =
 #endif
 
 /*
- * Retransmission smoothing constants.
- * Smoothed round trip time is updated by
- *    tp->t_srtt = (tcp_alpha * tp->t_srtt) + ((1 - tcp_alpha) * tp->t_rtt)
- * each time a new value of tp->t_rtt is available.  The initial
- * retransmit timeout is then based on
- *    tp->t_timer[TCPT_REXMT] = tcp_beta * tp->t_srtt;
- * limited, however to be at least TCPTV_MIN and at most TCPTV_MAX.
- */
-float	tcp_alpha, tcp_beta;
-
-/*
- * Initial values of tcp_alpha and tcp_beta.
- * These are conservative: averaging over a long
- * period of time, and allowing for large individual deviations from
- * tp->t_srtt.
- */
-#define	TCP_ALPHA	0.9
-#define	TCP_BETA	2.0
-
-/*
  * Force a time value to be in a certain range.
  */
 #define	TCPT_RANGESET(tv, value, tvmin, tvmax) { \
 	(tv) = (value); \
 	if ((tv) < (tvmin)) \
 		(tv) = (tvmin); \
-	if ((tv) > (tvmax)) \
+	else if ((tv) > (tvmax)) \
 		(tv) = (tvmax); \
 }
+
+#ifdef KERNEL
+extern int tcp_backoff[];
+#endif

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tcp_var.h	7.2 (Berkeley) %G%
+ *	@(#)tcp_var.h	7.3 (Berkeley) %G%
  */
 
 /*
@@ -58,12 +58,17 @@ struct tcpcb {
 					 */
 /* congestion control (for source quench) */
 	u_short	snd_cwnd;		/* congestion-controlled window */
-/* transmit timing stuff */
+/*
+ * transmit timing stuff.
+ * srtt and rttvar are stored as fixed point; for convenience in smoothing,
+ * srtt has 3 bits to the right of the binary point, rttvar has 2.
+ */
 	short	t_idle;			/* inactivity time */
 	short	t_rtt;			/* round trip time */
 	u_short max_rcvd;		/* most peer has sent into window */
 	tcp_seq	t_rtseq;		/* sequence number being timed */
-	float	t_srtt;			/* smoothed round-trip time */
+	short	t_srtt;			/* smoothed round-trip time */
+	short	t_rttvar;		/* variance in round-trip time */
 	u_short	max_sndwnd;		/* largest window peer has offered */
 /* out-of-band data */
 	char	t_oobflags;		/* have some */

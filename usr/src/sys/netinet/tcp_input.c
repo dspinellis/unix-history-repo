@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tcp_input.c	7.5 (Berkeley) %G%
+ *	@(#)tcp_input.c	7.6 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -681,12 +681,46 @@ trimthenstep6:
 		 */
 		if (tp->t_rtt && SEQ_GT(ti->ti_ack, tp->t_rtseq)) {
 			tcpstat.tcps_rttupdated++;
-			if (tp->t_srtt == 0)
-				tp->t_srtt = tp->t_rtt;
-			else
-				tp->t_srtt =
-				    tcp_alpha * tp->t_srtt +
-				    (1 - tcp_alpha) * tp->t_rtt;
+			if (tp->t_srtt != 0) {
+				register short delta;
+
+				/*
+				 * srtt is stored as fixed point with 3 bits
+				 * after the binary point (i.e., scaled by 8).
+				 * The following magic is equivalent
+				 * to the smoothing algorithm in rfc793
+				 * with an alpha of .875
+				 * (srtt = rtt/8 + srtt*7/8 in fixed point).
+				 */
+				delta = tp->t_rtt - (tp->t_srtt >> 3);
+				if ((tp->t_srtt += delta) <= 0)
+					tp->t_srtt = 1;
+				/*
+				 * We accumulate a smoothed rtt variance,
+				 * then set the retransmit timer to smoothed
+				 * rtt + 2 times the smoothed variance.
+				 * rttvar is strored as fixed point
+				 * with 2 bits after the binary point
+				 * (scaled by 4).  The following is equivalent
+				 * to rfc793 smoothing with an alpha of .75
+				 * (rttvar = rttvar*3/4 + |delta| / 4).
+				 * This replaces rfc793's wired-in beta.
+				 */
+				if (delta < 0)
+					delta = -delta;
+				delta -= (tp->t_rttvar >> 2);
+				if ((tp->t_rttvar += delta) <= 0)
+					tp->t_rttvar = 1;
+			} else {
+				/* 
+				 * No rtt measurement yet - use the
+				 * unsmoothed rtt.  Set the variance
+				 * to half the rtt (so our first
+				 * retransmit happens at 2*rtt)
+				 */
+				tp->t_srtt = tp->t_rtt << 3;
+				tp->t_rttvar = tp->t_rtt << 1;
+			}
 			tp->t_rtt = 0;
 		}
 
@@ -694,14 +728,15 @@ trimthenstep6:
 		 * If all outstanding data is acked, stop retransmit
 		 * timer and remember to restart (more output or persist).
 		 * If there is more data to be acked, restart retransmit
-		 * timer.
+		 * timer; set to smoothed rtt + 2*rttvar.
 		 */
 		if (ti->ti_ack == tp->snd_max) {
 			tp->t_timer[TCPT_REXMT] = 0;
 			needoutput = 1;
 		} else if (tp->t_timer[TCPT_PERSIST] == 0) {
 			TCPT_RANGESET(tp->t_timer[TCPT_REXMT],
-			    tcp_beta * tp->t_srtt, TCPTV_MIN, TCPTV_MAX);
+			    ((tp->t_srtt >> 2) + tp->t_rttvar) >> 1,
+			    TCPTV_MIN, TCPTV_REXMTMAX);
 			tp->t_rxtshift = 0;
 		}
 		/*
@@ -1083,8 +1118,8 @@ tcp_pulloutofband(so, ti)
  *  Determine a reasonable value for maxseg size.
  *  If the route is known, use one that can be handled
  *  on the given interface without forcing IP to fragment.
- *  If bigger than a page (CLBYTES), round down to nearest pagesize
- *  to utilize pagesize mbufs.
+ *  If bigger than an mbuf cluster (MCLBYTES), round down to nearest size
+ *  to utilize large mbufs.
  *  If interface pointer is unavailable, or the destination isn't local,
  *  use a conservative size (512 or the default IP max size, but no more
  *  than the mtu of the interface through which we route),
@@ -1116,12 +1151,12 @@ tcp_mss(tp)
 	}
 
 	mss = ifp->if_mtu - sizeof(struct tcpiphdr);
-#if	(CLBYTES & (CLBYTES - 1)) == 0
-	if (mss > CLBYTES)
-		mss &= ~(CLBYTES-1);
+#if	(MCLBYTES & (MCLBYTES - 1)) == 0
+	if (mss > MCLBYTES)
+		mss &= ~(MCLBYTES-1);
 #else
-	if (mss > CLBYTES)
-		mss = mss / CLBYTES * CLBYTES;
+	if (mss > MCLBYTES)
+		mss = mss / MCLBYTES * MCLBYTES;
 #endif
 	if (in_localaddr(inp->inp_faddr))
 		return (mss);

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tcp_timer.c	7.5 (Berkeley) %G%
+ *	@(#)tcp_timer.c	7.6 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -112,8 +112,8 @@ tcp_canceltimers(tp)
 		tp->t_timer[i] = 0;
 }
 
-int	tcp_backoff[TCP_MAXRXTSHIFT+1] =
-    { 1, 2, 4, 6, 8, 10, 15, 20, 30, 30, 30, 30, 30 };
+int	tcp_backoff[TCP_MAXRXTSHIFT] =
+    { 2, 4, 8, 16, 32, 64, 64, 64, 64, 64, 64, 64 };
 
 int	tcp_keeplen = 1;	/* must be nonzero for 4.2 compat- XXX */
 
@@ -149,18 +149,15 @@ tcp_timers(tp, timer)
 	 * to a longer retransmit interval and retransmit one segment.
 	 */
 	case TCPT_REXMT:
-		tp->t_rxtshift++;
-		if (tp->t_rxtshift > TCP_MAXRXTSHIFT) {
+		if (tp->t_rxtshift >= TCP_MAXRXTSHIFT) {
 			tcpstat.tcps_timeoutdrop++;
 			tp = tcp_drop(tp, ETIMEDOUT);
 			break;
 		}
 		tcpstat.tcps_rexmttimeo++;
-		if (tp->t_srtt == 0)
-			rexmt = tcp_beta * TCPTV_SRTTDFLT;
-		else
-			rexmt = (int)(tcp_beta * tp->t_srtt);
-		rexmt *= tcp_backoff[tp->t_rxtshift - 1];
+		rexmt = ((tp->t_srtt >> 2) + tp->t_rttvar) >> 1;
+		rexmt *= tcp_backoff[tp->t_rxtshift];
+		tp->t_rxtshift++;
 		TCPT_RANGESET(tp->t_timer[TCPT_REXMT], rexmt,
 			    TCPTV_MIN, TCPTV_MAX);
 		/*
@@ -172,12 +169,9 @@ tcp_timers(tp, timer)
 			in_losing(tp->t_inpcb);
 		tp->snd_nxt = tp->snd_una;
 		/*
-		 * If timing a segment in this window,
-		 * and we have already gotten some timing estimate,
-		 * stop the timer.
+		 * If timing a segment in this window, stop the timer.
 		 */
-		if (tp->t_rtt && tp->t_srtt)
-			tp->t_rtt = 0;
+		tp->t_rtt = 0;
 		/*
 		 * Close the congestion window down to one segment
 		 * (we'll open it by one segment for each ack we get).

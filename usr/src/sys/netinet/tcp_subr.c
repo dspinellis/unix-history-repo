@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tcp_subr.c	7.6 (Berkeley) %G%
+ *	@(#)tcp_subr.c	7.7 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -31,8 +31,6 @@
 #include "tcpip.h"
 
 int	tcp_ttl = TCP_TTL;
-float	tcp_alpha = TCP_ALPHA;
-float	tcp_beta = TCP_BETA;
 
 /*
  * Tcp initialization
@@ -169,7 +167,13 @@ tcp_newtcpcb(inp)
 	tp->t_maxseg = TCP_MSS;
 	tp->t_flags = 0;		/* sends options! */
 	tp->t_inpcb = inp;
-	tp->t_srtt = TCPTV_SRTTBASE;
+	/*
+	 * Init srtt to 0, so we can tell that we have no rtt estimate.
+	 * Set rttvar so that srtt + 2 * rttvar gives reasonable initial
+	 * retransmit time.
+	 */
+	tp->t_srtt = 0;
+	tp->t_rttvar = TCPTV_SRTTBASE << 2;
 	tp->snd_cwnd = sbspace(&inp->inp_socket->so_snd);
 	inp->inp_ppcb = (caddr_t)tp;
 	return (tp);
