@@ -1,4 +1,4 @@
-/*	uba.c	6.1	83/07/31	*/
+/*	uba.c	4.62	83/08/21	*/
 
 #include "../machine/pte.h"
 
@@ -428,42 +428,46 @@ ubaerror(uban, uh, xx, uvec, uba)
 #endif
 
 /*
- * This routine is called by a driver for a device with on-board Unibus
- * memory.  It removes the memory block from the Unibus resource map
- * and clears the map registers for the block.
- *
- * Arguments are the Unibus number, the Unibus address of the memory
- * block, its size in blocks of 512 bytes, and a flag indicating whether
- * to allocate the unibus space form the resource map or whether it already
- * has been.
- *
- * Returns > 0 if successful, 0 if not.
+ * Allocate UNIBUS memory.  Allocates and initializes
+ * sufficient mapping registers for access.  On a 780,
+ * the configuration register is setup to disable UBA
+ * response on DMA transfers to addresses controlled
+ * by the disabled mapping registers.
  */
-ubamem(uban, addr, size, doalloc)
-	int uban, addr, size, doalloc;
+ubamem(uban, addr, npg, doalloc)
+	int uban, addr, npg, doalloc;
 {
 	register struct uba_hd *uh = &uba_hd[uban];
-	register int *m;
-	register int i, a, s;
+	register int a;
 
 	if (doalloc) {
-		s = spl6();
-		a = rmget(uh->uh_map, size, (addr>>9)+1); /* starts at ONE! */
+		int s = spl6();
+		a = rmget(uh->uh_map, npg, (addr >> 9) + 1);
 		splx(s);
 	} else
-		a = (addr>>9)+1;
+		a = (addr >> 9) + 1;
 	if (a) {
-		m = (int *) &uh->uh_uba->uba_map[a-1];
-		for (i=0; i<size; i++)
+		register int i, *m;
+
+		m = (int *)&uh->uh_uba->uba_map[a - 1];
+		for (i = 0; i < npg; i++)
 			*m++ = 0;	/* All off, especially 'valid' */
 #if VAX780
-		if (cpu == VAX_780) {		/* map disable */
-			i = (addr+size*512+8191)/8192;
-			uh->uh_uba->uba_cr |= i<<26;
+		/*
+		 * On a 780, set up the map register disable
+		 * field in the configuration register.  Beware
+		 * of callers that request memory ``out of order''.
+		 */
+		if (cpu == VAX_780) {
+			int cr = uh->uh_uba->uba_cr;
+
+			i = (addr + npg * 512 + 8191) / 8192;
+			if (i > (cr >> 26))
+				uh->uh_uba->uba_cr |= i << 26;
 		}
 #endif
 	}
-	return(a);
+	return (a);
 }
 
 #include "ik.h"
