@@ -1,9 +1,0 @@
-Mpc	pc.c	/^main(argc, argv)$/
-done	pc.c	/^done()$/
-dosys	pc.c	/^dosys(cmd, argv, in, out)$/
-getsuf	pc.c	/^getsuf(cp)$/
-onintr	pc.c	/^onintr()$/
-removetemps	pc.c	/^removetemps()$/
-savestr	pc.c	/^savestr(cp)$/
-setsuf	pc.c	/^setsuf(as, ch)$/
-suffix	pc.c	/^suffix(cp)$/

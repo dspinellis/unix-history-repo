@@ -1,8 +1,0 @@
-set nodef
-set debug
-lserver umich.edu
-ls -d umich.edu > umich.named_dump
-ls -d cc.umich.edu >> umich.named_dump
-lserver merit.edu
-ls -d merit.edu >> umich.named_dump
-ls -d noc.merit.edu >> umich.named_dump

@@ -1,4 +1,0 @@
-Mmount_lfs	mount_lfs.c	/^main(argc, argv)$/
-getmntopts	../mount/getmntopts.c	/^getmntopts(options, m0, flagp)$/
-invoke_cleaner	mount_lfs.c	/^invoke_cleaner(name)$/
-usage	mount_lfs.c	/^usage()$/

@@ -1,2 +1,0 @@
-Mpwd	pwd.c	/^main(argc, argv)$/
-usage	pwd.c	/^usage()$/

@@ -1,5 +1,0 @@
-Mmv	mv.c	/^main(argc, argv)$/
-copy	mv.c	/^copy(from, to)$/
-do_move	mv.c	/^do_move(from, to)$/
-fastcopy	mv.c	/^fastcopy(from, to, sbp)$/
-usage	mv.c	/^usage()$/

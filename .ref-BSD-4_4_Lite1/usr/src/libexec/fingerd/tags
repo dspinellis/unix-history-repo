@@ -1,2 +1,0 @@
-Mfingerd	fingerd.c	/^main(argc, argv)$/
-err	fingerd.c	/^err(fmt, va_alist)$/

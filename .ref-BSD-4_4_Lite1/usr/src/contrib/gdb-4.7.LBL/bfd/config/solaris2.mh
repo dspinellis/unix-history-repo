@@ -1,3 +1,0 @@
-RANLIB=echo
-# get around a bug in the Sun C compiler
-H_DEFINES=-Dconst=

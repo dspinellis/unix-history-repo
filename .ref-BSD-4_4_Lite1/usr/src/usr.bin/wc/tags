@@ -1,4 +1,0 @@
-Mwc	wc.c	/^main(argc, argv)$/
-cnt	wc.c	/^cnt(file)$/
-err	wc.c	/^err(fmt, va_alist)$/
-usage	wc.c	/^usage()$/

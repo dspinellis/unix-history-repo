@@ -1,2 +1,0 @@
-Mfold	fold.c	/^main(argc, argv)$/
-fold	fold.c	/^fold(width)$/

@@ -1,5 +1,0 @@
-/dev/hk0a	/		ufs	rw 1 1
-/dev/hk0g	/usr		ufs	rw 1 3
-/dev/hk1a	/mnt		ufs	rw 1 2
-/dev/hk1g	/usr/src		ufs	rw 1 3
-/dev/hk1a	/tmp		ufs	xx 1 2

@@ -1,7 +1,0 @@
-Msysctl	sysctl.c	/^main(argc, argv)$/
-debuginit	sysctl.c	/^debuginit()$/
-findname	sysctl.c	/^findname(string, level, bufp, namelist)$/
-listall	sysctl.c	/^listall(prefix, lp)$/
-parse	sysctl.c	/^parse(string, flags)$/
-sysctl_inet	sysctl.c	/^sysctl_inet(string, bufpp, mib, flags, typep)$/
-usage	sysctl.c	/^usage()$/

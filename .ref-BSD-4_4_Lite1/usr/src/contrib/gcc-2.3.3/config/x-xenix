@@ -1,1 +1,0 @@
-OLDCC = rcc -DM_XENIX -DM_UNIX -DM_COFF

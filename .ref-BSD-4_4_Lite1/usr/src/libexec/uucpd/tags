@@ -1,5 +1,0 @@
-Muucpd	uucpd.c	/^main(argc, argv)$/
-SCPYN	uucpd.c	/^#define	SCPYN(a, b)	strncpy(a, b, sizeof (a))$/
-doit	uucpd.c	/^doit(sinp)$/
-dologout	uucpd.c	/^dologout()$/
-readline	uucpd.c	/^readline(p, n)$/

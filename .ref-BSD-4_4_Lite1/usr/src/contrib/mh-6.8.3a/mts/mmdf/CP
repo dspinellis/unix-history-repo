@@ -1,1 +1,0 @@
-cp /usr/src/uci/mmdf/mmdf.12-81/{utildir.1/{conf_util.h,ll_log.h,util.h,util_lib.a},mmdf.1/{h/{ch.h,conf.h,mmdf.h},mmdf_lib.a}} .

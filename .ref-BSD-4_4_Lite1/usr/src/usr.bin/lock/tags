@@ -1,4 +1,0 @@
-Mlock	lock.c	/^main(argc, argv)$/
-bye	lock.c	/^bye()$/
-hi	lock.c	/^hi()$/
-quit	lock.c	/^quit()$/

@@ -1,6 +1,0 @@
-Mcmp	cmp.c	/^main(argc, argv)$/
-c_regular	regular.c	/^c_regular(fd1, file1, skip1, len1, fd2, file2, ski/
-c_special	special.c	/^c_special(fd1, file1, skip1, fd2, file2, skip2)$/
-diffmsg	misc.c	/^diffmsg(file1, file2, byte, line)$/
-eofmsg	misc.c	/^eofmsg(file)$/
-usage	cmp.c	/^usage()$/

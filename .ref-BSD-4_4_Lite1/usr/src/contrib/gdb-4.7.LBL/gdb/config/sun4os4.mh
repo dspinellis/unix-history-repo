@@ -1,5 +1,0 @@
-# Host: Sun 4 or Sparcstation, running SunOS 4
-XDEPFILES= ser-bsd.o
-XM_FILE= xm-sun4os4.h
-NAT_FILE= nm-sun4os4.h
-NATDEPFILES= fork-child.o infptrace.o inftarg.o corelow.o sparc-nat.o

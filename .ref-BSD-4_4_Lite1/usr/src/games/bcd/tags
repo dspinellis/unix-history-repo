@@ -1,3 +1,0 @@
-Mbcd	bcd.c	/^main(argc, argv)$/
-bit	bcd.c	/^#define	bit(w,i)	((w)&(1<<(i)))$/
-printcard	bcd.c	/^printcard(str)$/

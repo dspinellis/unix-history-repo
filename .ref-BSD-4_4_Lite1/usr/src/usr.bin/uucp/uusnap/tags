@@ -1,5 +1,0 @@
-Muusnap	uusnap.c	/^main()$/
-dodir	uusnap.c	/^dodir(dnam, prfx, flen, fchr, type)$/
-getstst	uusnap.c	/^getstst(sdir)$/
-index	uusnap.c	/^index(sp, c)$/
-rindex	uusnap.c	/^rindex(sp, c)$/

@@ -1,8 +1,0 @@
-gnu_cc:[000000]libgxx/libr
-sys$share:vaxcrtl/share
-psect_attr=curscr,noshr
-psect_attr=stdscr,noshr
-psect_attr=stdin,noshr
-psect_attr=stdout,noshr
-psect_attr=stderr,noshr
-psect_attr=_ctype_,noshr

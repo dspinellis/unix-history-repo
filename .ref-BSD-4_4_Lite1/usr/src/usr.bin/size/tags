@@ -1,4 +1,0 @@
-Msize	size.c	/^main(argc, argv)$/
-err	size.c	/^err(fmt, va_alist)$/
-show	size.c	/^show(count, name)$/
-usage	size.c	/^usage()$/

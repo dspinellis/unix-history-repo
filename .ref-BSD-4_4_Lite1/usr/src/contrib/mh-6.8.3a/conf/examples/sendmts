@@ -1,7 +1,0 @@
-# sendmail 	- template using mts: sendmail
-bin	/usr/local
-bboards	on
-etc	/usr/local/lib/mh
-mail	/usr/spool/mail
-manuals	local
-mts	sendmail

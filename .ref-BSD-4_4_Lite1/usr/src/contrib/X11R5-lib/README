@@ -1,5 +1,0 @@
-# Minimal tree to build just libX11.a, enough to make
-# the X oriented programs in 4.4BSD compile and load.
-#
-# This tree should be replaced with the real X11 tree
-# when a complete X11 is installed.

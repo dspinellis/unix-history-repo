@@ -1,4 +1,0 @@
-print environ
-print environ[1]
-print environ[1][1]
-&environ/10X

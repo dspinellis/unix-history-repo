@@ -1,3 +1,0 @@
-Mnohup	nohup.c	/^main(argc, argv)$/
-dofile	nohup.c	/^dofile()$/
-usage	nohup.c	/^usage()$/
