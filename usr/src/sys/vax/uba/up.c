@@ -1,4 +1,4 @@
-/*	up.c	4.38	81/04/18	*/
+/*	up.c	4.39	81/05/11	*/
 
 #include "up.h"
 #if NSC > 0
@@ -47,8 +47,13 @@ struct	size
 	495520,	0,		/* C=cyl 0 thru 814 */
 	15884,	562,		/* D=cyl 562 thru 588 */
 	55936,	589,		/* E=cyl 589 thru 680 */
-	81472,	681,		/* F=cyl 681 thru 814 */
-	153824,	562,		/* G=cyl 562 thru 814 */
+#ifndef NOBADSECT
+	81376,	681,		/* F=cyl 681 thru 814 */
+	153728,	562,		/* G=cyl 562 thru 814 */
+#else
+	81472,	681,
+	153824,	562,
+#endif
 	291346,	82,		/* H=cyl 82 thru 561 */
 }, fj_sizes[8] = {
 	15884,	0,		/* A=cyl 0 thru 49 */
@@ -58,7 +63,11 @@ struct	size
 	0,	0,
 	0,	0,
 	0,	0,
-	213760,	155,		/* H=cyl 155 thru 822 */
+#ifndef NOBADSECT
+	213664,	155,		/* H=cyl 155 thru 822 */
+#else
+	213760,	155,
+#endif
 };
 /* END OF STUFF WHICH SHOULD BE READ IN PER DISK */
 
