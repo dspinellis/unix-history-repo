@@ -1,4 +1,4 @@
-/*	kdb_expr.c	7.1	86/11/20	*/
+/*	kdb_expr.c	7.2	86/11/20	*/
 
 #include "../kdb/defs.h"
 
@@ -247,7 +247,7 @@ symchar(dig)
 
 	if (lastc=='\\') {
 		readchar();
-		return (TRUE);
+		return (1);
 	}
 	return (isalpha(lastc) || lastc=='_' || dig && isdigit(lastc));
 }
