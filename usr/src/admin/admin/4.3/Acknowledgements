@@ -1,0 +1,41 @@
+.so HEADERS
+.NH
+.LP
+.ls
+.ce
+THANK YOU!
+.sp 2
+We would like to acknowledge the following staff members for their
+contributions to 4.3BSD: Bob Henry, our technical support; Pauline
+Schwartz, our Distribution Coordinator; Anne Hughes, our Distribution
+assistant; Nick Cuccia, Mahlen Morris, Jordan Hayes, and Earl Nolan,
+our Engineering Aides; Matt Glickman, our Distribution technical
+assistant; Morgan Milligan and Carol Martin, our hardware support;
+Jason Thomassen, Adam Joseph, Allyn Hardyck, and Todd Gross,
+our dumpers; and all the contributors from our test sites.
+.PP
+We also extend our thanks to the long list of contributors who are not
+mentioned here, but who helped in their countless ways.
+.sp 2
+.ti 3.0i
+.br
+Professor Domenico Ferrari
+.br
+.ti 3.0i
+Professor Susan Graham
+.br 
+.ti 3.0i
+Jim Bloom
+.br
+.ti 3.0i
+Ralph Campbell (Emeritus)
+.br
+.ti 3.0i
+Kirk McKusick
+.br
+.ti 3.0i
+Mike Karels
+ 
+.
+
+
