@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)fsck.8	8.2 (Berkeley) %G%
+.\"	@(#)fsck.8	8.3 (Berkeley) %G%
 .\"
 .Dd 
 .Dt FSCK 8
@@ -155,7 +155,7 @@ do not open the filesystem for writing.
 Convert the filesystem to the specified level.
 Note that the level of a filesystem can only be raised.
 .Bl -tag -width indent
-There are currently three levels defined:
+There are currently four levels defined:
 .It 0
 The filesystem is in the old (static table) format.
 .It 1
@@ -164,6 +164,10 @@ The filesystem is in the new (dynamic table) format.
 The filesystem supports 32-bit uid's and gid's,
 short symbolic links are stored in the inode, 
 and directories have an added field showing the file type.
+.It 3
+If maxcontig is greater than one,
+build the free segment maps to aid in finding contiguous sets of blocks.
+If maxcontig is equal to one, delete any existing segment maps.
 .El
 .Pp
 In interactive mode,
