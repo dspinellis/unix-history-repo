@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_srvcache.c	7.14 (Berkeley) %G%
+ *	@(#)nfs_srvcache.c	7.15 (Berkeley) %G%
  */
 
 /*
@@ -15,25 +15,25 @@
  *		of an NFS Server", in Proc. Winter 1989 USENIX Conference,
  *		pages 53-63. San Diego, February 1989.
  */
-#include "param.h"
-#include "vnode.h"
-#include "mount.h"
-#include "kernel.h"
-#include "systm.h"
-#include "proc.h"
-#include "mbuf.h"
-#include "socket.h"
-#include "socketvar.h"
-#include "netinet/in.h"
+#include <sys/param.h>
+#include <sys/vnode.h>
+#include <sys/mount.h>
+#include <sys/kernel.h>
+#include <sys/systm.h>
+#include <sys/proc.h>
+#include <sys/mbuf.h>
+#include <sys/socket.h>
+#include <sys/socketvar.h>
+#include <netinet/in.h>
 #ifdef ISO
-#include "netiso/iso.h"
+#include <netiso/iso.h>
 #endif
-#include "nfsm_subs.h"
-#include "rpcv2.h"
-#include "nfsv2.h"
-#include "nfsrvcache.h"
-#include "nfs.h"
-#include "nqnfs.h"
+#include <nfs/nfsm_subs.h>
+#include <nfs/rpcv2.h>
+#include <nfs/nfsv2.h>
+#include <nfs/nfs.h>
+#include <nfs/nfsrvcache.h>
+#include <nfs/nqnfs.h>
 
 #if	((NFSRCHSZ&(NFSRCHSZ-1)) == 0)
 #define	NFSRCHASH(xid)		(((xid)+((xid)>>16))&(NFSRCHSZ-1))
