@@ -1,4 +1,4 @@
-#	@(#)Makefile	8.1 (Berkeley) %G%
+#	@(#)Makefile	5.6 (Berkeley) %G%
 
 PROG=	su
 #CFLAGS+=-DKERBEROS
@@ -6,5 +6,6 @@ PROG=	su
 #LDADD=	-lkrb -ldes
 BINOWN=	root
 BINMODE=4555
+INSTALLFLAGS=-fschg
 
 .include <bsd.prog.mk>
