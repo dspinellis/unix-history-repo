@@ -2,6 +2,8 @@
 .\" pic file | tbl | troff -ms
 .\"
 .\" \*s stands for $, and avoids problems when this file is checked in.
+.EH 'PSD:13-%''RCS \*- A System for Version Control'
+.OH 'RCS \*- A System for Version Control''PSD:13-%'
 .ds s $
 .\" PS and PE center pic diagrams. (The corresponding ms-macros may not.)
 .de PS
