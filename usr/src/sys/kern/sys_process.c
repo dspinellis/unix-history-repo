@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)sys_process.c	7.7 (Berkeley) %G%
+ *	@(#)sys_process.c	7.8 (Berkeley) %G%
  */
 
 #define IPCREG
@@ -91,17 +91,17 @@ ptrace()
  * executes to implement the command
  * of the parent process in tracing.
  */
-procxmt()
+procxmt(p)
+	register struct proc *p;
 {
-	register int i;
-	register *p;
+	register int i, *poff;
 	register struct text *xp;
 	struct vattr vattr;
 	struct vnode *vp;
 
-	if (ipc.ip_lock != u.u_procp->p_pid)
+	if (ipc.ip_lock != p->p_pid)
 		return (0);
-	u.u_procp->p_slptime = 0;
+	p->p_slptime = 0;
 	i = ipc.ip_req;
 	ipc.ip_req = 0;
 	switch (i) {
@@ -134,7 +134,7 @@ procxmt()
 		/*
 		 * If text, must assure exclusive use
 		 */
-		if (xp = u.u_procp->p_textp) {
+		if (xp = p->p_textp) {
 			vp = xp->x_vptr;
 			VOP_GETATTR(vp, &vattr, u.u_cred);
 			if (xp->x_count!=1 || (vattr.va_mode & VSVTX))
@@ -153,13 +153,13 @@ procxmt()
 			goto error;
 #if defined(tahoe)
 		/* make sure the old value is not in cache */
-		ckeyrelease(u.u_procp->p_ckey);
-		u.u_procp->p_ckey = getcodekey();
+		ckeyrelease(p->p_ckey);
+		p->p_ckey = getcodekey();
 #endif
 		if (xp) {
 			xp->x_flag |= XWRIT;
 #if defined(tahoe)
-			xp->x_ckey = u.u_procp->p_ckey;
+			xp->x_ckey = p->p_ckey;
 #endif
 		}
 		break;
@@ -177,11 +177,11 @@ procxmt()
 		else
 #endif
 		i = (int)ipc.ip_addr;
-		p = (int *)PHYSOFF(&u, i);
+		poff = (int *)PHYSOFF(&u, i);
 		for (i=0; i<NIPCREG; i++)
-			if (p == &u.u_ar0[ipcreg[i]])
+			if (poff == &u.u_ar0[ipcreg[i]])
 				goto ok;
-		if (p == &u.u_ar0[PS]) {
+		if (poff == &u.u_ar0[PS]) {
 			ipc.ip_data |= PSL_USERSET;
 			ipc.ip_data &= ~PSL_USERCLR;
 #ifdef PSL_CM_CLR
@@ -192,15 +192,15 @@ procxmt()
 		}
 #if defined(hp300)
 #ifdef FPCOPROC
-		if (p >= (int *)u.u_pcb.pcb_fpregs.fpf_regs &&
-		    p <= (int *)&u.u_pcb.pcb_fpregs.fpf_fpiar)
+		if (poff >= (int *)u.u_pcb.pcb_fpregs.fpf_regs &&
+		    poff <= (int *)&u.u_pcb.pcb_fpregs.fpf_fpiar)
 			goto ok;
 #endif
 #endif
 		goto error;
 
 	ok:
-		*p = ipc.ip_data;
+		*poff = ipc.ip_data;
 		break;
 
 	case PT_STEP:			/* single step the child */
@@ -209,7 +209,7 @@ procxmt()
 			u.u_ar0[PC] = (int)ipc.ip_addr;
 		if ((unsigned)ipc.ip_data > NSIG)
 			goto error;
-		u.u_procp->p_cursig = ipc.ip_data;	/* see issig */
+		p->p_cursig = ipc.ip_data;	/* see issig */
 		if (i == PT_STEP) 
 			u.u_ar0[PS] |= PSL_T;
 		wakeup((caddr_t)&ipc);
@@ -217,7 +217,7 @@ procxmt()
 
 	case PT_KILL:			/* kill the child process */
 		wakeup((caddr_t)&ipc);
-		exit(u.u_procp->p_cursig);
+		exit(p, p->p_cursig);
 
 	default:
 	error:
