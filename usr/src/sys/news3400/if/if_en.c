@@ -9,7 +9,7 @@
  *
  * from: $Hdr: if_en.c,v 4.300 91/06/09 06:25:54 root Rel41 $ SONY
  *
- *	@(#)if_en.c	7.1 (Berkeley) %G%
+ *	@(#)if_en.c	7.2 (Berkeley) %G%
  */
 
 #include "en.h"
@@ -75,7 +75,7 @@ struct	iop_driver endriver = { enprobe, 0, enattach, 0, "en", eninfo };
 
 #define	ENUNIT(x)	minor(x)
 
-int	eninit(),enoutput(),enioctl(),enreset(),enwatch(),enstart();
+int	eninit(),enioctl(),enreset(),enwatch(),enstart();
 int	endebug = 0;
 
 struct ether_addr {
@@ -249,9 +249,7 @@ _enxint(unit, error, collision)
 #endif
 	if ((es->es_if.if_flags & IFF_OACTIVE) == 0) {
 		printf("en%d: stray xmit interrupt\n", unit);
-/*
 		return;
-*/
 	} else {
 		es->es_if.if_flags &= ~IFF_OACTIVE;
 		es->es_if.if_opackets++;
