@@ -1,7 +1,7 @@
 # include "sendmail.h"
 # include <signal.h>
 
-SCCSID(@(#)clock.c	3.14		%G%);
+SCCSID(@(#)clock.c	3.15		%G%);
 
 /*
 **  SETEVENT -- set an event to happen at a specific time.
@@ -163,7 +163,7 @@ tick()
 		if (EventQueue != NULL)
 		{
 			if (EventQueue->ev_time > now)
-				(void) alarm(EventQueue->ev_time - now);
+				(void) alarm((unsigned) (EventQueue->ev_time - now));
 			else
 				(void) alarm(3);
 		}
@@ -173,7 +173,7 @@ tick()
 	}
 	(void) signal(SIGALRM, tick);
 	if (EventQueue != NULL)
-		(void) alarm(EventQueue->ev_time - now);
+		(void) alarm((unsigned) (EventQueue->ev_time - now));
 }
 /*
 **  SLEEP -- a version of sleep that works with this stuff
@@ -202,7 +202,7 @@ sleep(intvl)
 	if (intvl == 0)
 		return;
 	SleepDone = FALSE;
-	(void) setevent(intvl, endsleep, 0);
+	(void) setevent((time_t) intvl, endsleep, 0);
 	while (!SleepDone)
 		pause();
 }

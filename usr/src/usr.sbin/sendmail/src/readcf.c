@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)readcf.c	3.57		%G%);
+SCCSID(@(#)readcf.c	3.58		%G%);
 
 /*
 **  READCF -- read control file.
@@ -595,6 +595,7 @@ setoption(opt, val, safe, sticky)
 	bool sticky;
 {
 	extern bool atobool();
+	extern time_t convtime();
 
 # ifdef DEBUG
 	if (tTd(37, 1))
