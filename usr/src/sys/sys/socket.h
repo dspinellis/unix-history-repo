@@ -1,4 +1,4 @@
-/*	socket.h	4.19	82/07/24	*/
+/*	socket.h	4.20	82/09/27	*/
 
 /*
  * Externally visible attributes of sockets.
@@ -87,3 +87,8 @@ struct sockaddr {
 #define	AF_CCITT	10		/* CCITT protocols, X.25 etc */
 
 #define	AF_MAX		11
+
+struct	socketopt {
+	int	so_optlen;
+	caddr_t	so_optdata;
+};

@@ -1,4 +1,4 @@
-/*	protosw.h	4.11	82/04/24	*/
+/*	protosw.h	4.12	82/09/27	*/
 
 /*
  * Protocol switch table.
@@ -55,42 +55,47 @@ struct protosw {
 
 /*
  * The arguments to usrreq are:
- *	(*protosw[].pr_usrreq)(up, req, m, addr);
+ *	(*protosw[].pr_usrreq)(up, req, m, nam, opt);
  * where up is a (struct socket *), req is one of these requests,
- * m is a optional mbuf chain, and addr is an optional meta-internetwork
- * address representation.  The protocol is responsible for
- * disposal of the mbuf chain.  A non-zero return from usrreq gives an
+ * m is a optional mbuf chain containing a message,
+ * nam is an optional mbuf chain containing an address,
+ * and opt is a pointer to a socketopt structure or nil.
+ * The protocol is responsible for disposal of the mbuf chain m,
+ * the caller is responsible for any space held by nam and opt.
+ * A non-zero return from usrreq gives an
  * UNIX error number which should be passed to higher level software.
  */
 #define	PRU_ATTACH		0	/* attach protocol to up */
 #define	PRU_DETACH		1	/* detach protocol from up */
-#define	PRU_CONNECT		2	/* establish connection to peer */
-#define	PRU_ACCEPT		3	/* accept connection from peer */
-#define	PRU_DISCONNECT		4	/* disconnect from peer */
-#define	PRU_SHUTDOWN		5	/* won't send any more data */
-#define	PRU_RCVD		6	/* have taken data; more room now */
-#define	PRU_SEND		7	/* send this data */
-#define	PRU_ABORT		8	/* abort (fast DISCONNECT, DETATCH) */
-#define	PRU_CONTROL		9	/* control operations on protocol */
-#define	PRU_SENSE		10	/* return status into m */
-#define	PRU_RCVOOB		11	/* retrieve out of band data */
-#define	PRU_SENDOOB		12	/* send out of band data */
-#define	PRU_SOCKADDR		13	/* fetch socket's address */
+#define	PRU_BIND		2	/* bind socket to address */
+#define	PRU_LISTEN		3	/* listen for connection */
+#define	PRU_CONNECT		4	/* establish connection to peer */
+#define	PRU_ACCEPT		5	/* accept connection from peer */
+#define	PRU_DISCONNECT		6	/* disconnect from peer */
+#define	PRU_SHUTDOWN		7	/* won't send any more data */
+#define	PRU_RCVD		8	/* have taken data; more room now */
+#define	PRU_SEND		9	/* send this data */
+#define	PRU_ABORT		10	/* abort (fast DISCONNECT, DETATCH) */
+#define	PRU_CONTROL		11	/* control operations on protocol */
+#define	PRU_SENSE		12	/* return status into m */
+#define	PRU_RCVOOB		13	/* retrieve out of band data */
+#define	PRU_SENDOOB		14	/* send out of band data */
+#define	PRU_SOCKADDR		15	/* fetch socket's address */
 /* begin for protocols internal use */
-#define	PRU_FASTTIMO		14	/* 200ms timeout */
-#define	PRU_SLOWTIMO		15	/* 500ms timeout */
-#define	PRU_PROTORCV		16	/* receive from below */
-#define	PRU_PROTOSEND		17	/* send to below */
+#define	PRU_FASTTIMO		16	/* 200ms timeout */
+#define	PRU_SLOWTIMO		17	/* 500ms timeout */
+#define	PRU_PROTORCV		18	/* receive from below */
+#define	PRU_PROTOSEND		19	/* send to below */
 
-#define	PRU_NREQ		18
+#define	PRU_NREQ		20
 
 #ifdef PRUREQUESTS
 char *prurequests[] = {
-	"ATTACH",	"DETACH",	"CONNECT",	"ACCEPT",
-	"DISCONNECT",	"SHUTDOWN",	"RCVD",		"SEND",	
-	"ABORT",	"CONTROL",	"SENSE",	"RCVOOB",
-	"SENDOOB",	"SOCKADDR",	"FASTTIMO",	"SLOWTIMO",
-	"PROTORCV",	"PROTOSEND",
+	"ATTACH",	"DETACH",	"BIND",		"LISTEN",
+	"CONNECT",	"ACCEPT",	"DISCONNECT",	"SHUTDOWN",
+	"RCVD",		"SEND",		"ABORT",	"CONTROL",
+	"SENSE",	"RCVOOB",	"SENDOOB",	"SOCKADDR",
+	"FASTTIMO",	"SLOWTIMO",	"PROTORCV",	"PROTOSEND",
 };
 #endif
 
