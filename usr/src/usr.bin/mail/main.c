@@ -9,7 +9,7 @@
  * Startup -- interface with user.
  */
 
-static char *SccsId = "@(#)main.c	2.8 %G%";
+static char *SccsId = "@(#)main.c	2.9 %G%";
 
 jmp_buf	hdrjmp;
 
@@ -47,6 +47,9 @@ main(argc, argv)
 
 	uflag = 0;
 	argv[argc] = (char *) -1;
+#ifdef	GETHOST
+	inithost();
+#endif	GETHOST
 	mypid = getpid();
 	intty = isatty(0);
 	outtty = isatty(1);
