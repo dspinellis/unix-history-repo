@@ -1,0 +1,317 @@
+* changes from libg++-1.36.3 to libg++-1.37.0
+
+    * Most utility classes and functions are now in stand-alone .cc and/or .h
+      files. This should generate smaller exectuables, and, sometimes
+      faster compilation. In particular, istream.h, and ostream.h are
+      now separately includable. If you only need one, you don't have
+      to get the other.
+
+    * The Plex classes now understand `const'. The `changes' and `changed'
+      member functions were removed, since it is now possible to
+      avoid changes in Plex structures by using const versions.
+
+    * class RandomInteger is available, courtesy of John Reidl.
+
+    * PlotFile3D, a 3D plot class is in libg++/etc. It will be
+      incorporated into libg++ proper for the next release, perhaps
+       with a few changes. Thanks to Tom Ngo.
+
+    * various and sundry bug fixes, minor enhancements, and/or portability 
+        improvements as described in the ChangeLog. 
+
+    * The file etc/HINTS is an emacs RMAIL file that contains recent
+        bug-lib-g++ list mail and related messages that may be useful.
+
+
+* changes from libg++-1.36.1 to libg++-1.36.3
+
+    * `Tmp' classes have been eliminated from Strings, Integers, etc.
+       (Via some retuning of the main classes, Tmp classes were found
+        to not significantly impact performance one way or the other,
+        so they were removed.)
+
+    * There is now a version of malloc, directly supporting operator
+      new, etc. It may be faster and better suited to C++ applications
+      than your libc malloc. You should be able to use it unless you need
+      a special malloc for a distributed shared memory environment or
+      the like. If you can't use it, edit the appropriate flag in
+      the top-level Makefile. I would very much appreciate feedback
+      about whether this malloc makes any difference in time or space
+      efficiency than whatever you are now using.
+
+    * By default, output is now line-buffered. Use the
+      NO_LINE_BUFFER_STREAMBUF define in the Makefile to override
+
+    * Otherwise, the stream classes remain C++-1.2 compatible.
+      C++-2.0-compatible versions are still in the works.
+
+    * various and sundry bug fixes, minor enhancements, and/or portability 
+        improvements as described in the ChangeLog. 
+
+* changes from libg++-1.35.0 & 1.35.1 to 1.36.1
+
+    * various and sundry bug fixes, minor enhancements, and/or portability 
+        improvements as described in the ChangeLog. 
+
+    * Most everything should now work on most SystemV machines. Let me
+        know if they don't.
+
+    * genclass now allows an optional prefix to be used instead of type
+        name concatenation in order to help minimize filename
+        lengths for SYSV users. This is not a great solution, but
+        is A solution to filename length problems for SYSV users.
+
+    * Some, but not all classes now behave well with respect to 
+      the new 2.0 const specifications. Some uncertainties about
+      how g++ will interpret gcc-based const function qualifiers
+      (to indicate lack of side effects) versus C++-2.0 const member
+      functions has held up the conversion of some classes to use
+      const in either or both of these ways.
+
+    * A version of etags suitable for use with c++ is in etc/
+        (courtesy of J. Clark)
+
+    * `graph', a unix graph(1) work-alike is in libg++/etc, courtesy
+        of Rich Murphey.
+
+    * RAVLMap (Ranked AVLs) prototypes.
+
+    * The GetOpt class & support has been moved from etc/ into libg++.a
+
+    * Streams have been redone to be nearly 100% AT&T 1.2 compatible.
+        One minor possible incompatibility exists (ostream<< char)
+        that can be eliminated via #define NO_OUTPUT_CHAR at the
+        top of stream.h. This is probably necessary in order to
+        compile et++. See libg++.texinfo for more details.
+
+        The new stream implementation is not particulary pretty.
+        Its main virtue is that it avoids some of the worst things 
+        about both AT&T streams and old libg++ streams. A much
+        superior AT&T 2.0-iostream superset is in the works
+        for future release.
+
+* changes from libg++-1.25.0 to libg++-1.32.0
+
+    * Nearly all data and methods previously declared as `private'
+        are now declared as `protected' to make subclassing from
+        library classes easier.
+
+    * Most classes now contain a method `OK()' that checks to
+        make sure that an objects internal data is in a valid state.
+        See the documentation for further details
+
+    * Mosts tests in ./tests now contain various kinds of assert
+        statements. If tests execute without assertion failures,
+        and without any other errors that cause aborted execution,
+        you may consider them successful. The test files now include
+        nearly all of my internal tests, which in turn have been
+        made more extensive.
+
+    * Plex classes are available. 
+        A bit of propaganda about these:
+        Plexes are very attractive replacements for arrays
+        in many contexts. Try them!
+
+    * `shrink' and `contains' have been added to Obstack
+
+    * Files and streams have not yet been revamped (a complete
+        reworking awaits the AT&T 2.0 stream specification), but
+        have been adjusted to provide slightly faster IO in some 
+        cases, and now support the use of a user-supplied string 
+        to read or write from instead of an actual IO source.
+
+    * Rationals are now normalized when input via `>>'.
+
+    * atoI is fixed.
+
+    * variable-length representations in String, Integer, etc., are
+        now completely different. See the documentation for details.
+
+    * New String functions:
+       * readline -- read in a line from an istream as a String
+       * prepend -- prepend stuff to a String
+       * through  -- make a SubString from beginning to match point
+       * from     -- make a SubString from match point to end
+       * s[i]     -- now returns the char by reference
+
+    * BitVec's are no longer supported, since their capabilities
+        are now incorporated in the revised BitString class.
+
+    * stdarg.h and regex.h are revised to support the Sun4
+
+    * Several interesting and/or useful examples of libg++
+        class use are in ./etc, mainly courtesy of Doug Schmidt.
+
+    * .cc file names are now all less than 15 characters. Some
+        .h file names are longer, but this should not present
+        problems on SYSV systems.
+
+    * pseudo-generic `proto' classes have been thoroughly revised:
+        * The prototype file names now end in `P', not `.proto'
+            and are in the g++-include directory
+        * A single, simple-to-use collection traversal mechanism
+            via pseudo-indices (`Pix') is used instead of particular
+            traversal friend classes.
+        * `Bag' prototypes are included
+        * Base classes are now supplied, so that all implementations
+            of Sets, Bags, are derived, allowing programmers to
+            mix and match implementations.
+        * They are now simpler to create: all comparison operators
+            and the like are now defined as macros in a `defs' file
+            which uses some reasonable defaults.
+        * The `Dictionary' versions of Set prototypes are not now
+            supported. Revised versions of such classes are forthcoming.
+        * Class prototypes previously labelled as `Assoc' are now
+            called `Maps', with slightly different capabilities.
+
+    * Splay tree prototypes are available.
+        A bit more propaganda:  Consider using Splay tree
+        based containers (Set, Bag, Map, PQ). They are often
+        the most efficient structures when performing mixtures
+        of operations (adds, deletes, searches...)
+
+    * Fixed precision reals are available, courtesy of Kurt Baudendistel
+
+    * An ordered hash Set prototype (VOHSet) is available,
+        courtesy of Doug Schmidt.
+
+    * MLCG now allows access and modifications to the seeds.
+
+    * The Normal random generator is fixed.
+
+    * SampleStatistic now allows any prob value for confidence
+        intervals.
+
+    * some simple timer routines are in builtin.cc, courtesy of Doug Schmidt
+
+    * While the Vec class prototypes are still available, they are
+        currently undergoing revision in order to correspond to
+        the forthcoming Matrix package (which should be available
+        in the next libg++ release).
+
+    * A C++ version of GPERF, a perfect hash function generator
+       program is also available in ./etc, courtesy of Doug Schmidt.
+ 
+
+* changes from libg++-1.22.2 to libg++-1.25.0
+
+  * All reported errors from the previous release are fixed, and many
+    suggested modifications have been performed. Thanks to all who
+    have sent bug reports and comments, including those with mail
+    addresses that I have not been able to reply to. (My mail connections
+    are sometimes more than a little fragile. If you send me mail and
+    I have not replied within a few days, you may want to try again. Sorry.)
+
+  * A serious problem in the use of Obstacks by conversion functions 
+    has been repaired.
+
+  * A bug in maintaining reference counts on `find' and related operations
+    in List prototype classes has been fixed.
+
+  * Strings now support self case manipulation in addition to the
+    functional versions.
+
+  * Some new functions have been added to builtin.[h.cc]. All are now
+    documented in libg++.texinfo
+
+  * Overload declarations are now performed in std.h and math.h,
+    rather than builtin.h,  to eliminate some include file ordering
+    problems.
+
+  * Random, RNG, and SampleStatistic classes are available,
+    thanks to Dirk Grunwald.
+
+  * A BitVec class is available.
+
+  * The are many new generic container class prototype files. These
+    support container classes based on elementary data structures
+    (and a couple of non-elementary ones). Please read the documentation.
+
+  * Class prototype OSet has been modified and renamed OLSet.
+
+  * The genclass utility has been modified
+
+* changes from libg++-1.22.1 to 1.22.2
+
+  * Tests files are now in a separate directory.
+
+  * Several minor errors (Complex unary -, several BitString functions)
+    have been repaired.
+
+  * pow(0,0) returns 1 for all versions of pow.
+
+  * An experimental generic class prototyping feature is provided,
+    including prototypes for lisp-style lists and ordered list-based sets.
+
+  * several include files with the same names as those in AT&T CC
+    are provided. These simply #include other files. OOPS should now
+    compile using only g++-include files. See, however, the note
+    about struct exception in file math.h
+
+  * Some rearrangement of files containing char* conversion has been
+    done to eliminate linking of unnecessary classes.
+
+  * The inline-only-when-optimizing feature is still not supported.
+
+* New Random number generator classes are not yet available. Stubs for
+  these files are in this directory. They should be available for next
+  release.
+
+* changes from libg++-1.21.1 to 1.22.0
+
+  * All documentation is in a stand-alone texinfo file, libg++.texinfo,
+    and is on its way to becoming a decent piece of documentation.
+
+  * All reported errors from the previous release are fixed, and many
+    suggested modifications have been performed. Thanks to all who
+    have sent bug reports and comments, including those with mail
+    addresses that I have not been able to reply to. (My mail connections
+    are sometimes more than a little fragile. If you send me mail and
+    I have not replied within a few days, you may want to try again. Sorry.)
+
+  * New Complex, BitSet, and BitString classes are available. You will
+    be performing a valuable service if you try these out and report
+    back any bugs/comments/suggestions about these or any other classes.
+
+  * File `values.h' has been added. This contains various system
+    constants like the number of bits per long, etc. It contains
+    much of the same information as sun <values.h>, although a
+    few names and things differ slightly.
+
+  * Files `builtin.h', `builtin.cc', and `convert.cc' have been added.
+    `builtin' contains common inline and non-inline functions on
+    builtin types (like `abs'). `convert' contains code for performing
+    IO and char* conversions, mainly via Obstacks. Most of these
+    functions are not new -- they have been collected from other .h
+    and .cc files.
+
+  * Files `std.h' and `math.h' now declare all libc.a C functions 
+    in a way that allows any of them to be overloaded in C++.
+
+  * Strings and Integers now perform expansion via realloc() -- 
+    see libconfig.h about whether you should #define SHOULD_FREE_TO_REALLOC.
+
+  * `eatwhite' is supported for istreams.
+
+  * File::getline(String, ...) and get(String) have been removed in order to
+    maintain greater independence of different classes.
+
+  * Strings now provide substring matching via new versions of
+    `contains' and `matches', `common_prefix' and `common_suffix'.
+    Also, there is more support for case operations via `fcompare', etc.
+    The versions of `decompose' that do not deal with Regexes have
+    been deleted since they provide little functionality over other
+    operations. Also, a few special case functions dealing with char*'s
+    have been deleted since the required constructors are necessary
+    anyway. Several other corrections have been made in String.cc,
+    including the elimination of a few aliasing problems.
+
+  * The implementations of Integers and Rationals are now both much
+    more efficient and well-tested, while remaining machine independent.
+    A few minor visible features have been added and/or changed.
+        
+  * The `box' command in PlotFile is now simulated, whether or not
+    it is present in libplot.a
+
+  * The inlining-only-if-optimizing feature is still not fully implemented.
+                 
