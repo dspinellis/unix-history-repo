@@ -37,7 +37,6 @@ static char rcsid[] = "$Id: usrdb.c,v 1.1 1994/03/24 18:42:01 cgd Exp $";
 #include <err.h>
 #include <errno.h>
 #include <fcntl.h>
-#include <pwd.h>
 #include "extern.h"
 #include "pathnames.h"
 
@@ -225,7 +224,6 @@ usracct_print()
 {
 	DBT key, data;
 	struct userinfo *ui;
-	struct passwd *pwd;
 	double t;
 	int rv;
 
@@ -236,10 +234,8 @@ usracct_print()
 	while (rv == 0) {
 		ui = (struct userinfo *) data.data;
 
-		pwd = getpwuid(ui->ui_uid);
 		printf("%-8s %9qu ",
-		    pwd->pw_name, ui->ui_calls);
-		    /*user_from_uid(ui->ui_uid, 0), ui->ui_calls);*/
+		    user_from_uid(ui->ui_uid, 0), ui->ui_calls);
 
 		t = (double) (ui->ui_utime + ui->ui_stime) /
 		    (double) AHZ;
