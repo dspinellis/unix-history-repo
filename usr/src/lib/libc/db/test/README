@@ -1,4 +1,4 @@
-#	@(#)README	5.2 (Berkeley) %G%
+#	@(#)README	5.3 (Berkeley) %G%
 
 The script file consists of lines with a initial character which is
 the "command" for that line.  Legal characters are as follows:
@@ -32,4 +32,6 @@ Options to dbtest are as follows:
 	    will set BTREEINFO.cachesize to 10240.
 	-o: The rest of the argument is the output file instead of
 	    using stdout.
-	-t: Set the type of access, either "btree", "hash" or "recno".
+
+Dbtest requires two arguments, the type of access "hash", "recno" or
+"btree", and the script name.
