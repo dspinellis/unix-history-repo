@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)iso_snpac.c	7.18 (Berkeley) %G%
+ *	@(#)iso_snpac.c	7.19 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -151,6 +151,7 @@ struct sockaddr *sa;
 		 * or from a default route.
 		 */
 		if (rt->rt_flags & RTF_CLONING) {
+			iso_setmcasts(ifp, req);
 			rt_setgate(rt, rt_key(rt), &blank_dl);
 			return;
 		}
@@ -184,7 +185,9 @@ struct sockaddr *sa;
 			lc->lc_flags = (SNPA_ES | SNPA_VALID | SNPA_PERM);
 		break;
 	case RTM_DELETE:
-		if (lc == 0 || (rt->rt_flags & RTF_CLONING))
+		if (rt->rt_flags & RTF_CLONING)
+			iso_setmcasts(ifp, req);
+		if (lc == 0)
 			return;
 		remque(lc);
 		Free(lc);
@@ -195,6 +198,36 @@ struct sockaddr *sa;
 	if (rt->rt_rmx.rmx_mtu == 0) {
 			rt->rt_rmx.rmx_mtu = rt->rt_ifp->if_mtu - LLC_SIZE;
 	}
+}
+/*
+ * FUNCTION:		iso_setmcasts
+ *
+ * PURPOSE:			Enable/Disable ESIS/ISIS multicast reception on interfaces.
+ *
+ * NOTES:			This also does a lot of obscure magic;
+ */
+iso_setmcasts(ifp, req)
+	struct	ifnet *ifp;
+	int		req;
+{
+	static char *addrlist[] =
+		{ all_es_snpa, all_is_snpa, all_l1is_snpa, all_l2is_snpa, 0};
+	struct ifreq ifr;
+	register caddr_t *cpp;
+	int		doreset = 0;
+
+	bzero((caddr_t)&ifr, sizeof(ifr));
+	for (cpp = (caddr_t *)addrlist; *cpp; cpp+) {
+		bcopy(*cpp, (caddr_t)ifr.ifr_addr.sa_data, 6);
+		if (req == RTM_ADD)
+			if (ether_addmulti(&ifr, (struct arpcom *)ifp) == ENETRESET)
+				doreset++;
+		else
+			if (ether_addmulti(&ifr, (struct arpcom *)ifp) == ENETRESET)
+				doreset++;
+	}
+	if (doreset)
+		(*ifp->if_reset)(ifp->if_unit);
 }
 /*
  * FUNCTION:		iso_snparesolve
