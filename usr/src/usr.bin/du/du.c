@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)du.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)du.c	5.14 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -27,19 +27,21 @@ static char sccsid[] = "@(#)du.c	5.13 (Berkeley) %G%";
 #include <string.h>
 #include <stdlib.h>
 
+char	*getbsize __P((char *, int *, int *));
+int	 linkchk __P((FTSENT *));
+void	 usage __P((void));
+
 main(argc, argv)
 	int argc;
-	char **argv;
+	char *argv[];
 {
-	extern int optind;
 	register FTS *fts;
 	register FTSENT *p;
-	register int kvalue, listdirs, listfiles;
-	int aflag, ch, ftsoptions, sflag;
+	register int listdirs, listfiles;
+	int aflag, blocksize, ch, ftsoptions, notused, sflag;
 	char **save;
 
 	ftsoptions = FTS_PHYSICAL;
-	kvalue = 0;
 	save = argv;
 	aflag = sflag = 0;
 	while ((ch = getopt(argc, argv, "aksx")) != EOF)
@@ -47,8 +49,8 @@ main(argc, argv)
 		case 'a':
 			aflag = 1;
 			break;
-		case 'k':
-			kvalue = 1;
+		case 'k':		/* Delete before 4.4BSD. */
+			(void)fprintf(stderr, "du: -k no longer supported\n");
 			break;
 		case 's':
 			sflag = 1;
@@ -79,8 +81,11 @@ main(argc, argv)
 		argv[1] = NULL;
 	}
 
-	if (!(fts = fts_open(argv, ftsoptions, (int (*)())NULL))) {
-		(void)fprintf(stderr, "du: %s.\n", strerror(errno));
+	(void)getbsize("du", &notused, &blocksize);
+	blocksize /= 512;
+
+	if ((fts = fts_open(argv, ftsoptions, NULL)) == NULL) {
+		(void)fprintf(stderr, "du: %s\n", strerror(errno));
 		exit(1);
 	}
 
@@ -97,15 +102,15 @@ main(argc, argv)
 			 * root of a traversal, display the total.
 			 */
 			if (listdirs || !listfiles && !p->fts_level)
-				(void)printf("%ld\t%s\n", kvalue ?
-				    howmany(p->fts_number, 2) :
-				    p->fts_number, p->fts_path);
+				(void)printf("%ld\t%s\n",
+				    howmany(p->fts_number, blocksize),
+				    p->fts_path);
 			break;
 		case FTS_DNR:
 		case FTS_ERR:
 		case FTS_NS:
 			(void)fprintf(stderr,
-			    "du: %s: %s.\n", p->fts_path, strerror(errno));
+			    "du: %s: %s\n", p->fts_path, strerror(errno));
 			break;
 		case FTS_SL:
 			if (p->fts_level == FTS_ROOTLEVEL) {
@@ -121,9 +126,9 @@ main(argc, argv)
 			 * the root of a traversal, display the total.
 			 */
 			if (listfiles || !p->fts_level)
-				(void)printf("%ld\t%s\n", kvalue ?
-				    howmany(p->fts_statp->st_blocks, 2) :
-				    p->fts_statp->st_blocks, p->fts_path);
+				(void)printf("%ld\t%s\n",
+				    howmany(p->fts_statp->st_blocks, blocksize),
+				    p->fts_path);
 			p->fts_parent->fts_number += p->fts_statp->st_blocks;
 		}
 	exit(0);
@@ -134,6 +139,7 @@ typedef struct _ID {
 	ino_t	inode;
 } ID;
 
+int
 linkchk(p)
 	register FTSENT *p;
 {
@@ -150,8 +156,8 @@ linkchk(p)
 			if (ino == fp->inode && dev == fp->dev)
 				return(1);
 
-	if (nfiles == maxfiles && !(files = (ID *)realloc((char *)files,
-	    (u_int)(sizeof(ID) * (maxfiles += 128))))) {
+	if (nfiles == maxfiles && (files = realloc((char *)files,
+	    (u_int)(sizeof(ID) * (maxfiles += 128)))) == NULL) {
 		(void)fprintf(stderr, "du: %s\n", strerror(errno));
 		exit(1);
 	}
@@ -161,8 +167,9 @@ linkchk(p)
 	return(0);
 }
 
+void
 usage()
 {
-	(void)fprintf(stderr, "usage: du [-a | -s] [-kx] [file ...]\n");
+	(void)fprintf(stderr, "usage: du [-a | -s] [-x] [file ...]\n");
 	exit(1);
 }
