@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)creat.2	6.9 (Berkeley) %G%
+.\"     @(#)creat.2	6.10 (Berkeley) %G%
 .\"
 .Dd 
 .Dt CREAT 2
@@ -22,7 +22,7 @@ This interface is made obsolete by:
 .Fn Creat
 is the same as:
 .Bd -literal -offset indent
-open(path, O_WRONLY | O_CREAT | O_WRONLY, mode);
+open(path, O_CREAT | O_TRUNC | O_WRONLY, mode);
 .Ed
 .Sh SEE ALSO
 .Xr open 2
