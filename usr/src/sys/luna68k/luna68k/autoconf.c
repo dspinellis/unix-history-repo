@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)autoconf.c	7.3 (Berkeley) %G%
+ *	@(#)autoconf.c	7.4 (Berkeley) %G%
  */
 
 /*
@@ -25,14 +25,14 @@
  * and the drivers are initialized.
  */
 
-#include "sys/param.h"
-#include "sys/systm.h"
-#include "sys/dkstat.h"
-#include "sys/conf.h"
-#include "sys/reboot.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/dkstat.h>
+#include <sys/conf.h>
+#include <sys/reboot.h>
 
-#include "../include/cpu.h"
-#include "../dev/device.h"
+#include <machine/cpu.h>
+#include <luna68k/dev/device.h>
 
 /*
  * The following several variables are related to
