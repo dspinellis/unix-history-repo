@@ -11,13 +11,13 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)rexecd.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)rexecd.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/ioctl.h>
 #include <sys/param.h>
 #include <sys/socket.h>
-#include <sys/wait.h>
+#include <sys/time.h>
 
 #include <netinet/in.h>
 
@@ -29,10 +29,10 @@ static char sccsid[] = "@(#)rexecd.c	5.3 (Berkeley) %G%";
 
 extern	errno;
 struct	passwd *getpwnam();
-char	*crypt(), *rindex(), *sprintf();
-/* VARARGS 1 */
+char	*crypt(), *rindex(), *strncat(), *sprintf();
+/*VARARGS1*/
 int	error();
-int	reapchild();
+
 /*
  * remote execute server:
  *	username\0
@@ -40,6 +40,7 @@ int	reapchild();
  *	command\0
  *	data
  */
+/*ARGSUSED*/
 main(argc, argv)
 	int argc;
 	char **argv;
@@ -54,14 +55,6 @@ main(argc, argv)
 		exit(1);
 	}
 	doit(0, &from);
-}
-
-reapchild()
-{
-	union wait status;
-
-	while (wait3(&status, WNOHANG, 0) > 0)
-		;
 }
 
 char	username[20] = "USER=";
@@ -119,7 +112,7 @@ doit(f, fromp)
 			exit(1);
 		(void) alarm(60);
 		fromp->sin_port = htons((u_short)port);
-		if (connect(s, fromp, sizeof (*fromp), 0) < 0)
+		if (connect(s, fromp, sizeof (*fromp)) < 0)
 			exit(1);
 		(void) alarm(0);
 	}
@@ -160,7 +153,8 @@ doit(f, fromp)
 			/* should set s nbio! */
 			do {
 				ready = readfrom;
-				(void) select(16, &ready, 0, 0, 0);
+				(void) select(16, &ready, (fd_set *)0,
+				    (fd_set *)0, (struct timeval *)0);
 				if (ready & (1<<s)) {
 					if (read(s, &sig, 1) <= 0)
 						readfrom &= ~(1<<s);
@@ -186,9 +180,9 @@ doit(f, fromp)
 		pwd->pw_shell = "/bin/sh";
 	if (f > 2)
 		(void) close(f);
+	(void) setgid((gid_t)pwd->pw_gid);
 	initgroups(pwd->pw_name, pwd->pw_gid);
-	(void) setgid(pwd->pw_gid);
-	(void) setuid(pwd->pw_uid);
+	(void) setuid((uid_t)pwd->pw_uid);
 	environ = envinit;
 	strncat(homedir, pwd->pw_dir, sizeof(homedir)-6);
 	strncat(shell, pwd->pw_shell, sizeof(shell)-7);
@@ -203,7 +197,7 @@ doit(f, fromp)
 	exit(1);
 }
 
-/* VARARGS 1 */
+/*VARARGS1*/
 error(fmt, a1, a2, a3)
 	char *fmt;
 	int a1, a2, a3;
