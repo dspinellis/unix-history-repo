@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)strmode.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)strmode.c	8.3 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -45,7 +45,6 @@ strmode(mode, p)
 #endif
 #ifdef S_IFWHT
 	case S_IFWHT:			/* whiteout */
-	case S_IFWHTD:
 		*p++ = 'w';
 		break;
 #endif
