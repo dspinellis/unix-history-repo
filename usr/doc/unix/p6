@@ -1,0 +1,141 @@
+.s1
+9. Statistics
+.es
+The following numbers
+are presented to suggest the scale of our operation.
+Those of our users
+not involved in document preparation
+tend to use the system for
+program development, especially language work.
+There are few important
+``applications'' programs.
+.pg
+Overall, we have
+.pg
+.ta .5i 1.25i
+.ti 0
+.nf
+	100	user population
+	14	maximum simultaneous users
+	380	directories
+	4800	files
+	66300	512-byte secondary storage blocks used
+.fi
+.pg
+There is a ``background'' process that
+runs at the lowest possible priority; it is used
+to soak up any idle \*sCPU\*n time.
+It has been used to produce a million-digit
+approximation to the constant \fIe\fR\(mi2,
+and is now solving all rook-and-pawn vs. rook chess
+endgames.
+Not counting this background work, we average daily
+.pg
+.nf
+.ti 0
+	2400	commands
+	5.5	\*sCPU\*n hours
+	100	connect hours
+	32	different users
+	100	logins
+.fi
+.pg
+.pg
+.ti 0
+.ft I
+Acknowledgements.
+.ft R
+We are grateful to R.H. Canaday, L.L. Cherry,
+and L.E. McMahon
+for their contributions to
+\*sUNIX\*n.
+We are particularly appreciative
+of the inventiveness,
+thoughtful criticism,
+and constant support of
+R. Morris, M.D. McIlroy,
+and J.F. Ossanna.
+.pg
+.pg
+.ti 0
+.ft B
+References
+.ft R
+.br
+.in 3
+.ta 3
+.nr r 0 1
+.ti 0
+\n+r.	Digital Equipment Corporation.
+.ft I
+\*sPDP\*n-11/40 Processor Handbook \fR(1972),
+.ft R
+.ft I
+\*sPDP\*n-11/45 Processor Handbook \fR(1971),
+.ft R
+and
+.ft I
+\*sPDP\*n-11/70 Processor Handbook \fR(1975).
+.br
+.ti 0
+\n+r.	Deutsch, L.P., and Lampson, B.W.
+An online editor.
+.ft I
+Comm. ACM 10,
+.ft R
+12 (Dec. 1967),
+793-799, 803.
+.br
+.ti 0
+\n+r.	Richards, M.
+\*sBCPL\*n: A tool for compiler writing
+and system programming.
+Proc. AFIPS 1969 SJCC, Vol. 34,
+AFIPS Press, Montvale, N.J., pp. 557-566.
+.br
+.ti 0
+\n+r.	McClure, R.M.
+\*sTMG\*n\(emA syntax directed compiler.
+Proc. ACM 20th Nat. Conf.,
+ACM, 1965, New York,
+pp. 262-274.
+.br
+.ti 0
+\n+r.	Hall, A.D.
+The M6 macroprocessor.
+Computing Science Tech. Rep. #2,
+Bell Telephone Laboratories,
+1969.
+.br
+.ti 0
+\n+r.	Ritchie, D.M.  C reference manual. Unpublished memorandum,
+Bell Telephone Laboratories (1973).
+.br
+.ti 0
+\n+r.	Aleph-null. Computer Recreations.
+.ft I
+Software Practice and Experience 1, \fR2
+(Apr.-June 1971), 201-204.
+.br
+.ti 0
+\n+r.	Deutch, L.P. and Lampson, B.W.
+\*sSDS\*n 930 time-sharing system
+preliminary reference manual.
+Doc. 30.10.10, Project \*sGENIE\*n,
+Univ. Cal. at Berkeley (Apr. 1965).
+.br
+.ti 0
+\n+r.	Feiertag, R.J., and Organick, E.I.
+The Multics input-output system.
+Proc. Third Symposium on Operating Systems Principles.
+Oct. 18-20, 1971,
+ACM, New York, pp. 35-41.
+.br
+.ti 0
+\n+r.	Bobrow, D.G., Burchfiel, J.D., Murphy, D.L., and
+Tomlinson, R.S.
+\*sTENEX\*n, a paged time sharing system for the \*sPDP\*n-10.
+.ft I
+Comm. ACM 15.,
+.ft R
+3 (March 1972) 135-143.
