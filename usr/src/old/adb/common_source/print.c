@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)print.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)print.c	5.2 (Berkeley) %G%";
 #endif
 
 /*
@@ -239,7 +239,7 @@ prfrom(a, c)
 
 	errflag = NULL;
 	if (adbread(SP_DATA, a, &v, sizeof(v)) == sizeof(v) && errflag == NULL)
-		adbprintf("5c", v, c);
+		adbprintf("%R\%c", v, c);
 	else {
 		errflag = NULL;
 		adbprintf("?%c", c);
@@ -268,7 +268,7 @@ printregs()
 
 	for (p = reglist; p->r_name != NULL; p++) {
 		v = getreg(p);
-		adbprintf("%s%6t516t", p->r_name, v);
+		adbprintf("%s%6t%R\%16t", p->r_name, v);
 		valpr(v, ispace_reg(p) ? SP_INSTR : SP_DATA);
 		printc('\n');
 	}
