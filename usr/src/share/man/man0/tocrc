@@ -4,7 +4,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)tocrc	6.1 (Berkeley) %G%
+#	@(#)tocrc	6.2 (Berkeley) %G%
 #
 tmp=/tmp/toc$$
 trap "rm $tmp ; exit" 2 3 15
@@ -69,6 +69,7 @@ else case $1 in
 			-e 's/(1g)/(1G)/' \
 			-e 's/(3c)/(3C)/' \
 			-e 's/(3m)/(3M)/' \
+			-e 's/(3n)/(3N)/' \
 			-e 's/(3s)/(3S)/' \
 			-e 's/(3x)/(3X)/' \
 			-e 's/(3f)/(3F)/' \
