@@ -1,0 +1,14 @@
+#print
+Again, remember the possibility of arithmetic
+combinations.  If "$" is the last line, what
+is the line before the last line?  Type "answer XXX"
+where "XXX" is the way you would refer to the line
+before the last line of the file.
+#copyin
+#user
+#uncopyin
+#match $-1
+#match $-
+#log
+#next
+10.3f 10

@@ -1,0 +1,30 @@
+#print
+You can now change a line of a file by a slow procedure: delete the
+old version and insert the new one.  For example, you could replace
+line 4 of a file with
+   4d
+   3a
+   new version of line 4
+   .
+right?  OK, try that.  There is a file named "words" in this
+directory and line 4 contains a mistyped word.  Correct it and
+rewrite the file; then type "ready".
+#create Ref
+bear
+begin
+belief
+believe
+belt
+bend
+#create words
+bear
+begin
+belief
+beleive
+belt
+bend
+#user
+#cmp words Ref
+#log
+#next
+20.2b 5

@@ -1,0 +1,20 @@
+#print
+When you want to match one of a few specific characters, and not
+just any character, the pattern is similar to the pattern used
+in filenames.  The patterns used with the editor, by
+the way, are called "regular expressions".  The string
+   [abc]
+matches 'a', 'b' or 'c'.  So if the current line
+is
+   now is the time for all good men
+and the command is
+   s/t[ijk]/xx/
+what word is changed?  Type "answer WORD" where WORD is the
+word changed by that command.
+#copyin
+#user
+#uncopyin
+#match time
+#log
+#next
+33.1b 10

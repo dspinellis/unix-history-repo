@@ -1,0 +1,21 @@
+#print
+You can also employ addresses using arithmetic with
+this kind of command.  For example, what "p" command
+would you type to print from line 2 to the line
+before the current line of the file?  Remember what
+the line before the current line is: 
+  .-1
+right?
+Type "answer COMMAND" where COMMAND is the specified
+"p" command.
+#copyin
+#user
+#uncopyin
+#match 2,.-1p
+#match 2,-p
+#match 2,.-p
+#log
+#next
+10.1a 10
+10.2a 5
+10.3a 2

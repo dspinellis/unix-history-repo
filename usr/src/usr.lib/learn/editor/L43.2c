@@ -1,0 +1,23 @@
+#print
+This is trickier.  Change all sequences of several
+asterisks into one asterisk.  E.g.
+ *** xxx ****
+becomes
+ * xxx *
+The file is named "stars"; edit it
+and then rewrite it.  Then type "ready".
+#create Ref
+   List of phone numbers
+  * 6377 *
+  * 4582 *
+  * 3968 *
+#create stars
+   List of phone numbers
+  ** 6377 ***
+  **** 4582 ****
+  * 3968 ***
+#user
+#cmp stars Ref
+#log
+#next
+43.2d 5
