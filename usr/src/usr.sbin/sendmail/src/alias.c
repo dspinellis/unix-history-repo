@@ -10,7 +10,7 @@
 # include <pwd.h>
 
 #ifndef lint
-static char sccsid[] = "@(#)alias.c	8.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)alias.c	8.7 (Berkeley) %G%";
 #endif /* not lint */
 
 
@@ -492,7 +492,7 @@ readaliases(map, af, automatic)
 		}
 		if (parseaddr(line, &al, 1, ':', NULL, CurEnv) == NULL)
 		{
-			syserr("554 illegal alias name");
+			syserr("554 %s... illegal alias name", al.q_paddr);
 			continue;
 		}
 
@@ -557,7 +557,8 @@ readaliases(map, af, automatic)
 		}
 		if (al.q_mailer != LocalMailer)
 		{
-			syserr("554 cannot alias non-local names");
+			syserr("554 %s... cannot alias non-local names",
+				al.q_paddr);
 			continue;
 		}
 
