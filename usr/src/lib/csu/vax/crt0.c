@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)crt0.c	4.4 (Berkeley) %G%";
+static	char *sccsid = "@(#)crt0.c	4.5 (Berkeley) %G%";
 
 /*
  *	C start up routine.
@@ -20,9 +20,12 @@ static	char *sccsid = "@(#)crt0.c	4.4 (Berkeley) %G%";
  *	allocated.
  */
 
-char **environ;
+char **environ = (char **)0;
 
 asm("#define _start start");
+asm("#define _eprol eprol");
+extern	unsigned char	etext;
+extern	unsigned char	eprol;
 start()
 {
 	struct kframe {
@@ -41,6 +44,7 @@ start()
 
 #ifdef lint
 	kfp = 0;
+	initcode = initcode = 0;
 #else not lint
 	asm("	movl	sp,r10");	/* catch it quick */
 #endif not lint
@@ -49,11 +53,31 @@ start()
 	if (targv >= (char **)(*argv))
 		--targv;
 	environ = targv;
+asm("eprol:");
+#ifdef MCRT0
+	monstartup(&eprol, &etext);
+#endif MCRT0
 	exit(main(kfp->kargc, argv, environ));
 }
+asm("#undef _start");
+asm("#undef _eprol");
 
+#ifdef MCRT0
+/*ARGSUSED*/
+exit(code)
+	register int code;	/* r11 */
+{
+	monitor(0);
+	_cleanup();
+	asm("	movl r11,r0");
+	asm("	chmk $1");
+}
+#endif MCRT0
+
+#ifdef CRT0
 /*
  * null mcount, just in case some routine is compiled for profiling
  */
 asm("	.globl	mcount");
 asm("mcount:	rsb");
+#endif CRT0
