@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)uname.1	8.2 (Berkeley) %G%
+.\"	@(#)uname.1	8.3 (Berkeley) %G%
 .\"
 .Dd ""
 .Dt UNAME 1
@@ -17,9 +17,10 @@
 .Sh DESCRIPTION
 The
 .Nm uname
-command writes the name of the operating system to the standard output.
+command writes the name of the operating system implementation to
+standard output.
 When options are specified, strings representing one or more system
-characteristics are written to the standard output.
+characteristics are written to standard output.
 .Pp
 The options are as follows:
 .Bl -tag -width Ds
@@ -40,7 +41,7 @@ Write the name of the system to standard output.
 Write the current release level of the operating system
 to standard output.
 .It Fl s
-Write the type of the operating system to standard output.
+Write the name of the operating system implementation to standard output.
 .It Fl v
 Write the version level of this release of the operating system
 to standard output.
@@ -64,7 +65,7 @@ The
 command appeared in 4.4BSD.
 .Sh STANDARDS
 The
-.Nm ls
-function is expected to conform to the
+.Nm uname
+command is expected to conform to the
 .St -p1003.2
 specification.
