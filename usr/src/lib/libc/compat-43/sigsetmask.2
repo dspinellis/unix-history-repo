@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)sigsetmask.2	6.2 (Berkeley) %G%
+.\"	@(#)sigsetmask.2	6.3 (Berkeley) %G%
 .\"
 .TH SIGSETMASK 2 ""
 .UC 5
@@ -10,18 +10,23 @@
 sigsetmask \- set current signal mask
 .SH SYNOPSIS
 .nf
+.B #include <signal.h>
+
 .B sigsetmask(mask);
 .B int mask;
+
+.B mask = sigmask(signum)
 .SH DESCRIPTION
 .I Sigsetmask
 sets the current signal mask (those signals
-that are blocked from delivery).  Signal
-.I i
-is blocked if the
-.IR i -th
-bit in 
+that are blocked from delivery).
+Signals are blocked if the
+corresponding bit in 
 .I mask
-is a 1.
+is a 1; the macro
+.I sigmask
+is provided to construct the mask for a given
+.IR signum .
 .PP
 The system
 quietly disallows SIGKILL, SIGSTOP, or SIGCONT to
