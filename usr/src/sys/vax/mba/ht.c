@@ -1,4 +1,4 @@
-/*	ht.c	4.15	81/03/11	*/
+/*	ht.c	4.16	81/04/03	*/
 
 #include "tu.h"
 #if NHT > 0
@@ -493,6 +493,7 @@ htioctl(dev, cmd, addr, flag)
 		mtget.mt_dsreg = sc->sc_dsreg;
 		mtget.mt_erreg = sc->sc_erreg;
 		mtget.mt_resid = sc->sc_resid;
+		mtget.mt_type = MT_ISHT;
 		if (copyout((caddr_t)&mtget, addr, sizeof(mtget)))
 			u.u_error = EFAULT;
 		return;

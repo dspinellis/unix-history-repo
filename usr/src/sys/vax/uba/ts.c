@@ -1,4 +1,4 @@
-/*	ts.c	4.8	81/03/21	*/
+/*	ts.c	4.9	81/04/03	*/
 
 #include "ts.h"
 #if NTS > 0
@@ -832,6 +832,7 @@ tsioctl(dev, cmd, addr, flag)
 		mtget.mt_dsreg = 0;
 		mtget.mt_erreg = sc->sc_sts.s_xs0;
 		mtget.mt_resid = sc->sc_resid;
+		mtget.mt_type = MT_ISTS;
 		if (copyout((caddr_t)&mtget, addr, sizeof(mtget)))
 			u.u_error = EFAULT;
 		return;
