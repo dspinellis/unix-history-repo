@@ -1,4 +1,4 @@
-/*	systm.h	4.31	82/10/31	*/
+/*	systm.h	4.32	82/11/15	*/
 
 /*
  * Random set of variables
@@ -6,8 +6,8 @@
  * routine.
  */
 int	hz;			/* frequency of the clock */
-char	version[];		/* system version */
 int	hand;			/* current index into coremap used by daemon */
+extern	char version[];		/* system version */
 
 /*
  * Nblkdev is the number of entries
@@ -76,12 +76,13 @@ extern struct sysent
 	int	(*sy_call)();		/* handler */
 } sysent[];
 
-char	vmmap[];		/* poor name! */
 int	noproc;			/* no one is running just now */
 char	*panicstr;
 int	wantin;
 int	boothowto;		/* reboot flags, from console subsystem */
 int	selwait;
+
+extern	char vmmap[];		/* poor name! */
 
 /* casts to keep lint happy */
 #define	insque(q,p)	_insque((caddr_t)q,(caddr_t)p)
