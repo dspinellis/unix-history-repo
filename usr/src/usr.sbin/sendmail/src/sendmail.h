@@ -1,7 +1,7 @@
 /*
 **  SENDMAIL.H -- Global definitions for sendmail.
 **
-**	@(#)sendmail.h	3.33	%G%
+**	@(#)sendmail.h	3.34	%G%
 */
 
 
@@ -158,7 +158,6 @@ extern struct hdrinfo	HdrInfo[];
 
 /* bits for h_flags and hi_flags */
 # define H_EOH		00001	/* this field terminates header */
-# define H_DELETE	00002	/* don't send this field */
 # define H_DEFAULT	00004	/* if another value is found, drop this */
 # define H_USED		00010	/* indicates that this has been output */
 # define H_CHECK	00020	/* check h_mflags against m_flags */
