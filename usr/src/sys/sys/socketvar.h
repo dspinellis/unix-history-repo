@@ -1,4 +1,4 @@
-/*	socketvar.h	6.4	84/08/21	*/
+/*	socketvar.h	6.5	84/12/20	*/
 
 /*
  * Kernel structure per socket.
@@ -44,6 +44,7 @@ struct socket {
 		struct	proc *sb_sel;	/* process selecting read/write */
 		short	sb_flags;	/* flags, see below */
 	} so_rcv, so_snd;
+#define	SB_MAX		32767		/* max chars in sockbuf */
 #define	SB_LOCK		0x01		/* lock on data queue (so_rcv only) */
 #define	SB_WANT		0x02		/* someone is waiting to lock */
 #define	SB_WAIT		0x04		/* someone is waiting for data/space */
