@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)lfs_vnops.c	7.20 (Berkeley) %G%
+ *	@(#)lfs_vnops.c	7.21 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -115,36 +115,36 @@ int	spec_lookup(),
 	spec_nullop();
 
 struct vnodeops spec_inodeops = {
-	spec_lookup,
-	spec_badop,
-	spec_badop,
-	spec_open,
-	spec_close,
-	ufs_access,
-	ufs_getattr,
-	ufs_setattr,
-	spec_read,
-	spec_write,
-	spec_ioctl,
-	spec_select,
-	spec_badop,
-	spec_nullop,
-	spec_badop,
-	spec_badop,
-	spec_badop,
-	spec_badop,
-	spec_badop,
-	spec_badop,
-	spec_badop,
-	spec_badop,
-	spec_badop,
-	spec_badop,
-	ufs_inactive,
-	ufs_reclaim,
-	ufs_lock,
-	ufs_unlock,
-	spec_badop,
-	spec_strategy,
+	spec_lookup,		/* lookup */
+	spec_badop,		/* create */
+	spec_badop,		/* mknod */
+	spec_open,		/* open */
+	spec_close,		/* close */
+	ufs_access,		/* access */
+	ufs_getattr,		/* getattr */
+	ufs_setattr,		/* setattr */
+	spec_read,		/* read */
+	spec_write,		/* write */
+	spec_ioctl,		/* ioctl */
+	spec_select,		/* select */
+	spec_badop,		/* mmap */
+	spec_nullop,		/* fsync */
+	spec_badop,		/* seek */
+	spec_badop,		/* remove */
+	spec_badop,		/* link */
+	spec_badop,		/* rename */
+	spec_badop,		/* mkdir */
+	spec_badop,		/* rmdir */
+	spec_badop,		/* symlink */
+	spec_badop,		/* readdir */
+	spec_badop,		/* readlink */
+	spec_badop,		/* abortop */
+	ufs_inactive,		/* inactive */
+	ufs_reclaim,		/* reclaim */
+	ufs_lock,		/* lock */
+	ufs_unlock,		/* unlock */
+	spec_badop,		/* bmap */
+	spec_strategy,		/* strategy */
 };
 
 enum vtype iftovt_tab[8] = {
@@ -477,20 +477,17 @@ ufs_mmap(vp, fflags, cred)
  * Synch an open file.
  */
 /* ARGSUSED */
-ufs_fsync(vp, fflags, cred)
+ufs_fsync(vp, fflags, cred, waitfor)
 	struct vnode *vp;
 	int fflags;
 	struct ucred *cred;
+	int waitfor;
 {
-	register struct inode *ip = VTOI(vp);
-	int error;
+	struct inode *ip = VTOI(vp);
 
-	ILOCK(ip);
 	if (fflags&FWRITE)
 		ip->i_flag |= ICHG;
-	error = syncip(ip);
-	IUNLOCK(ip);
-	return (error);
+	return (syncip(ip, waitfor));
 }
 
 /*
@@ -792,9 +789,10 @@ ufs_rename(fndp, tndp)
 		if (doingdirectory && newparent) {
 			dp->i_nlink--;
 			dp->i_flag |= ICHG;
-			error = rdwri(UIO_READ, xp, (caddr_t)&dirbuf,
+			error = vn_rdwr(UIO_READ, ITOV(xp), (caddr_t)&dirbuf,
 				sizeof (struct dirtemplate), (off_t)0,
-				UIO_SYSSPACE, tndp->ni_cred, (int *)0);
+				UIO_SYSSPACE, IO_NODELOCKED, 
+				tndp->ni_cred, (int *)0);
 			if (error == 0) {
 				if (dirbuf.dotdot_namlen != 2 ||
 				    dirbuf.dotdot_name[0] != '.' ||
@@ -802,10 +800,11 @@ ufs_rename(fndp, tndp)
 					printf("rename: mangled dir\n");
 				} else {
 					dirbuf.dotdot_ino = newparent;
-					(void) rdwri(UIO_WRITE, xp,
+					(void) vn_rdwr(UIO_WRITE, ITOV(xp),
 					    (caddr_t)&dirbuf,
 					    sizeof (struct dirtemplate),
 					    (off_t)0, UIO_SYSSPACE,
+					    IO_NODELOCKED|IO_SYNC,
 					    tndp->ni_cred, (int *)0);
 					cache_purge(ITOV(dp));
 				}
@@ -907,9 +906,9 @@ ufs_mkdir(ndp, vap)
 	dirtemplate = mastertemplate;
 	dirtemplate.dot_ino = ip->i_number;
 	dirtemplate.dotdot_ino = dp->i_number;
-	error = rdwri(UIO_WRITE, ip, (caddr_t)&dirtemplate,
+	error = vn_rdwr(UIO_WRITE, ITOV(ip), (caddr_t)&dirtemplate,
 		sizeof (dirtemplate), (off_t)0, UIO_SYSSPACE,
-		ndp->ni_cred, (int *)0);
+		IO_NODELOCKED|IO_SYNC, ndp->ni_cred, (int *)0);
 	if (error) {
 		dp->i_nlink--;
 		dp->i_flag |= ICHG;
@@ -1029,8 +1028,8 @@ ufs_symlink(ndp, vap, target)
 	error = maknode(IFLNK | vap->va_mode, ndp, &ip);
 	if (error)
 		return (error);
-	error = rdwri(UIO_WRITE, ip, target, strlen(target), (off_t)0,
-		UIO_SYSSPACE, ndp->ni_cred, (int *)0);
+	error = vn_rdwr(UIO_WRITE, ITOV(ip), target, strlen(target), (off_t)0,
+		UIO_SYSSPACE, IO_NODELOCKED, ndp->ni_cred, (int *)0);
 	iput(ip);
 	return (error);
 }
@@ -1038,29 +1037,22 @@ ufs_symlink(ndp, vap, target)
 /*
  * Vnode op for read and write
  */
-ufs_readdir(vp, uio, offp, cred)
+ufs_readdir(vp, uio, cred)
 	struct vnode *vp;
 	register struct uio *uio;
-	off_t *offp;
 	struct ucred *cred;
 {
-	register struct inode *ip = VTOI(vp);
-	int count, error;
+	int count, lost, error;
 
-	ILOCK(ip);
-	uio->uio_offset = *offp;
 	count = uio->uio_resid;
 	count &= ~(DIRBLKSIZ - 1);
-	if (vp->v_type != VDIR || uio->uio_iovcnt != 1 ||
-	    (count < DIRBLKSIZ) || (uio->uio_offset & (DIRBLKSIZ -1))) {
-		IUNLOCK(ip);
+	lost = uio->uio_resid - count;
+	if (count < DIRBLKSIZ || (uio->uio_offset & (DIRBLKSIZ -1)))
 		return (EINVAL);
-	}
 	uio->uio_resid = count;
 	uio->uio_iov->iov_len = count;
-	error = readip(ip, uio, cred);
-	*offp += count - uio->uio_resid;
-	IUNLOCK(ip);
+	error = ufs_read(vp, uio, 0, cred);
+	uio->uio_resid += lost;
 	return (error);
 }
 
@@ -1073,7 +1065,7 @@ ufs_readlink(vp, uiop, cred)
 	struct ucred *cred;
 {
 
-	return (readip(VTOI(vp), uiop, cred));
+	return (ufs_read(vp, uiop, 0, cred));
 }
 
 /*
