@@ -1,4 +1,4 @@
-/*	mkmakefile.c	1.28	83/06/16	*/
+/*	mkmakefile.c	1.29	83/06/29	*/
 
 /*
  * Build the makefile for the system, from
@@ -150,7 +150,9 @@ makefile()
 		if (profiling && strncmp(line, "COPTS=", 6) == 0) {
 			register char *cp;
 
-			fprintf(ofp, "GPROF.EX=/usr/src/lib/libc/csu/gmon.ex\n");
+			fprintf(ofp, 
+			    "GPROF.EX=/usr/src/lib/libc/%s/csu/gmon.ex\n",
+			    machinename);
 			cp = index(line, '\n');
 			if (cp)
 				*cp = 0;
