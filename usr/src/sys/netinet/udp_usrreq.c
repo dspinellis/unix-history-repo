@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)udp_usrreq.c	6.18 (Berkeley) %G%
+ *	@(#)udp_usrreq.c	6.19 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -38,7 +38,12 @@ udp_init()
 	udb.inp_next = udb.inp_prev = &udb;
 }
 
+#ifndef	COMPAT_42
 int	udpcksum = 1;
+#else
+int	udpcksum = 0;		/* XXX */
+#endif
+
 struct	sockaddr_in udp_in = { AF_INET };
 
 udp_input(m0, ifp)
