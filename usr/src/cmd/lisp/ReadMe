@@ -1,0 +1,141 @@
+File: ReadMe 				-[Fri Apr 23 14:12:11 1982 by jkf]-
+Location: the root of the lisp distribution tree
+
+    This directory contains a Makefile which can will direct the 
+initial construction and installation of the Franz Lisp system.  After the 
+lisp system is installed, the Makefiles in the subdirectories should be
+used directly when modifications are made to either piece of code.
+
+    The lisp system consists of these parts:
+ 1) lisp - lisp interpreter
+ 2) liszt - lisp compiler
+ 3) lxref - lisp cross reference program
+ 4) library of files - collection of lisp files.  Some are already loaded
+	into lisp. Others are loaded on demand.  Still others are just
+	contributed files.
+ 5) on-line manual - the lisp manual formatted for lineprinter or terminal
+	perusal.  The lisp 'help' command refers to this manual
+ 6) lisp manual - the troff input form for the lisp manual.  If you can 
+	run troff or nroff at your site then you can generate a lisp manual
+	from the files in this directory.
+
+To build lisp, follow these steps:
+
+1) Look at the path name defaults in the Makefile.  You can modify these
+    defaults if you like.  It is suggested that you leave the lisp library
+    in /usr/lib/lisp.  Most code doesn't really depend on where the 
+    library is, just as long as when the system is built, the directory
+    name is known.  However, some application programs may depend on the
+    library being in /usr/lib/lisp.
+   Look in franz/h/config.h.  You may want to alter some of the
+    configuration parameters before you start.
+
+2) If this is a distribution of lisp source (as opposed to a complete
+    4.x distribution) then you will want to copy the
+    lisp library files in lisplib into the lisp library (typically
+    /usr/lib/lisp).  [If you don't want to use /usr/lib/lisp change
+    the value of LibDir in the Makefile].  Now type
+		make copylibrary
+    and the library files in lisplib will be copied to the lisp
+    library.  If an error message occurs, it may be that you don't
+    have permissions to write in the lisp library.  If this is the
+    case, fix the permissions and type 'make copylibrary' again.
+
+3) If you have a working lisp system, then you may be able to bring the
+    system up quickly.  Type
+		make fast
+    and the Makefile will attempt to build a new lisp, liszt, and lxref
+    and place them in franz/mylisp, liszt/nliszt and liszt/lxref respectively.
+    [See Note 1 below.]
+    If it fails, then you may just have to start from scratch, see step 4.
+    If it works, go to step 5.
+
+4) To make the entire lisp system, interpreter and compiler, from scratch,
+    type:
+		make slow
+    This may take three to four hours on an unloaded vax.
+    See Note 1 below.
+
+5) once the files are made, type
+		make install
+    and new versions of lisp, liszt and lxref (the compiler cross reference
+    program) will be installed in ObjDir.
+
+6) If you've changed where files live, then you should change the defaults
+    in each of the makefiles: liszt/Makefile, franz/Makefile, doc/Makefile
+    and /usr/lib/lisp/Makefile.
+
+7)  You may want to enable garbage collection of string space.  The collection
+    is done on a page by page basis, that is if an entire page of string
+    objects is free, then the whole page will be put on the free list.
+    In order to do this, look in franz/Makefile for directions.
+
+Note 1: Two files which are necessary yet which are not distributed 
+are the assembler and linking loader.  The assembler is required by
+liszt after it has compiled a file, the loader is required by the 'cfasl'
+and 'ffasl' functions.  These programs are expected to be in 
+/usr/lib/lisp/as and /usr/lib/lisp/nld.  The Makefile will copy
+them from /bin/as and /bin/ld.  If you are running a Berkeley 
+distribution, this is ok.  If you are using non-berkeley as or ld
+then you will have to get a copy of the berkeley as or ld and place
+them in /usr/lib/lisp yourself.  We don't distribute them because
+they require a Unix license and because we want to avoid distributing
+object files.
+
+
+Changes:
+  Look in franz/ChangeLog and liszt/ChangeLog for a blow by blow description
+of bug fixes and new features.  Also the file lispnews in this directory
+describes changes to lisp which affect the user.  This file is most
+easily read with  'mail -f lispnews'.
+
+The major changes are described next.
+
+  opus 38: the reader has changed quite a bit.  It now uses symbolic
+	syntax codes and it provides infix macros.  
+	The lisp library files have been reorganized in order to make
+	lisp bootstrapable.
+
+Future bug fixes:
+  When you find bugs in Lisp or Liszt, mail a letter to franz-bugs@berkeley
+  or ucbvax!franz-bugs.   
+  We will mail bug fixes to the franz-composers mailing list.  To get on 
+  this mailing list, mail a letter to franz-friends-request@berkeley or
+  ucbvax!franz-friends-request.
+
+Documentation:
+  The source (troff form, with -me macros) for the Franz Lisp Manual is
+in the doc subdirectory.  There is a line printer printable version 
+in lisplib/manual (which is most likely copied to /usr/lib/lisp/manual).
+  There is also a system manual which may be of interest to people who
+want to modify the lisp system or just understand how it works.  The file
+is doc/franz.n.  
+
+
+The meanings of the default directories and paths in the Makefiles
+in this directory tree (and LibDir)
+
+LibDir : [/usr/lib/lisp]
+	directory containing the lisp library sources, some of which
+	are required to build a lisp system.  Change this with caution,
+	Some programs may depend on it being /usr/lib/lisp
+
+DestObjDir : [/usr/ucb]
+	place to put the lisp and liszt that we build.  Note that for
+	the liszt -r flag to work, the lisp interpreter must be in
+	/usr/ucb
+
+ObjDir: Directory containing existing lisp and liszt (if they exist).
+	if they don't exist, then you will do a 'make slow' and the value
+	of ObjDir doesn't matter
+
+LispDist: [/usr/src/cmd/lispdist]
+	directory to build distribution in.
+
+CcodeDir: [../franz]
+	location of C coded kernel as seen from the liszt directory
+
+CopyTo : used as the destination directory of some of the commands in
+	the makefile.  it has a different meaning in each.
+
+
