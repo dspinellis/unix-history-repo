@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)ex_data.c	7.7 (Berkeley) %G%";
+static char *sccsid = "@(#)ex_data.c	7.8 (Berkeley) %G%";
 #endif not lint
 
 #include "ex.h"
@@ -23,7 +23,7 @@ char	direct[ONMSZ] =
 #ifdef vms
 	{'t', 'm', 'p', ':'}; 
 #else
-	{'/', 't', 'm', 'p'}; 
+	{'/', 'v', 'a', 'r', '/', 't', 'm', 'p'};
 #endif
 char	paragraphs[ONMSZ] = {
 	'I', 'P', 'L', 'P', 'P', 'P', 'Q', 'P',		/* -ms macros */
