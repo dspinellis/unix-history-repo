@@ -9,7 +9,7 @@
  * Still more user commands.
  */
 
-static char *SccsId = "@(#)cmd3.c	1.8 %G%";
+static char *SccsId = "@(#)cmd3.c	1.9 %G%";
 
 /*
  * Process a shell escape by saving signals, ignoring signals,
@@ -188,7 +188,7 @@ respond(msgvec)
 	int *msgvec;
 {
 	struct message *mp;
-	char *cp, buf[2 * LINESIZE], *rcv;
+	char *cp, buf[2 * LINESIZE], *rcv, *replyto;
 	struct name *np;
 	struct header head;
 	char *netmap();
@@ -200,35 +200,48 @@ respond(msgvec)
 	mp = &message[msgvec[0] - 1];
 	dot = mp;
 	rcv = nameof(mp, 1);
+	replyto = hfield("reply-to", mp);
 	strcpy(buf, "");
-	cp = hfield("to", mp);
-	if (cp != NOSTR)
-		strcpy(buf, cp);
+	if (replyto != NOSTR)
+		strcpy(buf, replyto);
+	else {
+		cp = hfield("to", mp);
+		if (cp != NOSTR)
+			strcpy(buf, cp);
+	}
 	np = elide(extract(buf, GTO));
 	/* rcv = rename(rcv); */
 	mapf(np, rcv);
 	np = delname(np, myname);
 	head.h_seq = 1;
 	cp = detract(np, 0);
-	if (cp != NOSTR) {
+	if (cp != NOSTR && replyto == NOSTR) {
 		strcpy(buf, cp);
 		strcat(buf, " ");
 		strcat(buf, rcv);
 	}
-	else
-		strcpy(buf, rcv);
+	else {
+		if (cp == NOSTR && replyto != NOSTR)
+			printf("Empty reply-to field -- replying to author\n");
+		if (cp == NOSTR)
+			strcpy(buf, rcv);
+		else
+			strcpy(buf, cp);
+	}
 	head.h_to = buf;
 	head.h_subject = hfield("subject", mp);
 	if (head.h_subject == NOSTR)
 		head.h_subject = hfield("subj", mp);
 	head.h_subject = reedit(head.h_subject);
 	head.h_cc = NOSTR;
-	cp = hfield("cc", mp);
-	if (cp != NOSTR) {
-		np = elide(extract(cp, GCC));
-		mapf(np, rcv);
-		np = delname(np, myname);
-		head.h_cc = detract(np, 0);
+	if (replyto == NOSTR) {
+		cp = hfield("cc", mp);
+		if (cp != NOSTR) {
+			np = elide(extract(cp, GCC));
+			mapf(np, rcv);
+			np = delname(np, myname);
+			head.h_cc = detract(np, 0);
+		}
 	}
 	head.h_bcc = NOSTR;
 	mail1(&head);
