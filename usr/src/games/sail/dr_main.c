@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static	char *sccsid = "@(#)dr_main.c	2.3 85/04/25";
+static	char *sccsid = "@(#)dr_main.c	2.3 85/04/26";
 #endif
 
 #include "driver.h"
@@ -15,6 +15,7 @@ dr_main()
 	register int n;
 	register struct ship *sp;
 	int nat[NNATION];
+	int value = 0;
 
 	(void) signal(SIGINT, SIG_IGN);
 	(void) signal(SIGQUIT, SIG_IGN);
@@ -54,10 +55,11 @@ dr_main()
 	for (;;) {
 		sleep(7);
 		if (Sync() < 0) {
-			sync_close(1);
-			exit(1);
+			value = 1;
+			break;
 		}
-		next();
+		if (next() < 0)
+			break;
 		unfoul();
 		checkup();
 		prizecheck();
@@ -69,8 +71,10 @@ dr_main()
 		reload();
 		checksails();
 		if (Sync() < 0) {
-			sync_close(1);
-			exit(1);
+			value = 1;
+			break;
 		}
 	}
+	sync_close(1);
+	return value;
 }
