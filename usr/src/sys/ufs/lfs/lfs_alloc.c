@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_alloc.c	7.30 (Berkeley) %G%
+ *	@(#)lfs_alloc.c	7.31 (Berkeley) %G%
  */
 
 #ifdef LOGFS
@@ -174,7 +174,7 @@ lfs_vcreate(mp, ino, vpp)
 printf("lfs_vcreate: ino %d\n", ino);
 	/* Create the vnode. */
 	if (error = getnewvnode(VT_LFS, mp, &lfs_vnodeops, vpp))
-		return(error);
+		return (error);
 
 	/* Get a pointer to the private mount structure. */
 	ump = VFSTOUFS(mp);
@@ -209,13 +209,13 @@ lfs_getversion(fs, ino)
 	u_long version;
 
 	/*
-	 * Read the appropriate block from the ifile.  Return the version
-	 * number.
+	 * Read the appropriate block from the ifile.  Return the
+	 * version number.
 	 */
 	LFS_IENTRY(ifp, fs, ino, bp);
 	version = ifp->if_version;
 	brelse(bp);
-	return(version);
+	return (version);
 }
 
 /* Set values in the ifile for the inode. */
@@ -230,7 +230,8 @@ lfs_iset(ip, daddr, atime)
 	LFS *fs;
 	ino_t ino;
 
-printf("lfs_iset: setting ino %d daddr %lx time %lx\n", ip->i_number, daddr, atime);
+printf("lfs_iset: setting ino %d daddr %lx time %lx\n",
+ip->i_number, daddr, atime);
 
 	fs = ip->i_lfs;
 	ino = ip->i_number;
