@@ -9,7 +9,7 @@
  * Still more user commands.
  */
 
-static char *SccsId = "@(#)cmd3.c	1.9 %G%";
+static char *SccsId = "@(#)cmd3.c	1.10 %G%";
 
 /*
  * Process a shell escape by saving signals, ignoring signals,
@@ -200,7 +200,7 @@ respond(msgvec)
 	mp = &message[msgvec[0] - 1];
 	dot = mp;
 	rcv = nameof(mp, 1);
-	replyto = hfield("reply-to", mp);
+	replyto = skin(hfield("reply-to", mp));
 	strcpy(buf, "");
 	if (replyto != NOSTR)
 		strcpy(buf, replyto);
@@ -640,7 +640,7 @@ Respond(msgvec)
 	for (s = 0, ap = msgvec; *ap != 0; ap++) {
 		mp = &message[*ap - 1];
 		dot = mp;
-		s += strlen(nameof(mp, 1)) + 1;
+		s += strlen(nameof(mp, 2)) + 1;
 	}
 	if (s == 0)
 		return(0);
@@ -648,7 +648,7 @@ Respond(msgvec)
 	head.h_to = cp;
 	for (ap = msgvec; *ap != 0; ap++) {
 		mp = &message[*ap - 1];
-		cp = copy(nameof(mp, 1), cp);
+		cp = copy(nameof(mp, 2), cp);
 		*cp++ = ' ';
 	}
 	*--cp = 0;
