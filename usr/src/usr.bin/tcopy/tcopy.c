@@ -12,15 +12,15 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)tcopy.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)tcopy.c	5.16 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
-#include <sys/signal.h>
-#include <sys/file.h>
 #include <sys/ioctl.h>
 #include <sys/mtio.h>
-#include <sys/errno.h>
+#include <signal.h>
+#include <fcntl.h>
+#include <errno.h>
 #include <stdio.h>
 #include "pathnames.h"
 
