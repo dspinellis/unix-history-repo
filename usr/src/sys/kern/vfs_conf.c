@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_conf.c	8.4 (Berkeley) %G%
+ *	@(#)vfs_conf.c	8.5 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -115,7 +115,7 @@ extern	struct vfsops afs_vfsops;
 #define AFS_VFSOPS	NULL
 #endif
 
-#ifdef ISOFS
+#ifdef CD9660
 extern	struct vfsops isofs_vfsops;
 #define ISOFS_VFSOPS	&isofs_vfsops
 #else
@@ -137,7 +137,7 @@ struct vfsops *vfssw[] = {
 	KERNFS_VFSOPS,		/* 11 = MOUNT_KERNFS */
 	PROCFS_VFSOPS,		/* 12 = MOUNT_PROCFS */
 	AFS_VFSOPS,		/* 13 = MOUNT_AFS */
-	ISOFS_VFSOPS,		/* 14 = MOUNT_ISOFS */
+	ISOFS_VFSOPS,		/* 14 = MOUNT_CD9660 */
 	0
 };
 
@@ -222,7 +222,7 @@ struct vnodeopv_desc *vfs_opv_descs[] = {
 #ifdef PROCFS
 	&procfs_vnodeop_opv_desc,
 #endif
-#ifdef ISOFS
+#ifdef CD9660
 	&isofs_vnodeop_opv_desc,
 	&isofs_specop_opv_desc,
 #ifdef FIFO
