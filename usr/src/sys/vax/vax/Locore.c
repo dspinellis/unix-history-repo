@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)Locore.c	6.5 (Berkeley) %G%
+ *	@(#)Locore.c	6.6 (Berkeley) %G%
  */
 
 #include "dz.h"
@@ -226,7 +226,7 @@ copyinstr(udaddr, kaddr, maxlength, lencopied)
 { *kaddr = *udaddr; *lencopied = maxlength; return (0); }
 copyoutstr(kaddr, udaddr, maxlength, lencopied)
     caddr_t kaddr, udaddr; u_int maxlength, *lencopied;
-{ *kaddr = *udaddr; *lencopied = maxlength; return (0); }
+{ *udaddr = *kaddr; *lencopied = maxlength; return (0); }
 copystr(kfaddr, kdaddr, maxlength, lencopied)
     caddr_t kfaddr, kdaddr; u_int maxlength, *lencopied;
 { *kdaddr = *kfaddr; *lencopied = maxlength; return (0); }
