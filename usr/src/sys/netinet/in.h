@@ -1,4 +1,4 @@
-/*	in.h	4.13	82/06/13	*/
+/*	in.h	4.14	82/06/30	*/
 
 /*
  * Constants and structures defined by the internet system,
@@ -48,12 +48,14 @@
 #define	IPPORT_EXECSERVER	512
 #define	IPPORT_LOGINSERVER	513
 #define	IPPORT_CMDSERVER	514
+#define	IPPORT_EFSSERVER	520
 
 /*
  * UNIX UDP sockets
  */
 #define	IPPORT_BIFFUDP		512
 #define	IPPORT_WHOSERVER	513
+#define	IPPORT_ROUTESERVER	520	/* 520+1 also used */
 
 /*
  * Ports < IPPORT_RESERVED are reserved for
