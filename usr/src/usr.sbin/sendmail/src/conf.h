@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.100 (Berkeley) %G%
+ *	@(#)conf.h	8.101 (Berkeley) %G%
  */
 
 /*
@@ -483,6 +483,7 @@ extern int		errno;
 #ifdef _SCO_unix_4_2
 # define _SCO_unix_
 # define HASSETREUID	1	/* has setreuid(2) call */
+# define NEEDFSYNC	1	/* needs the fsync(2) call stub */
 # define _PATH_UNIX	"/unix"
 # ifndef _PATH_SENDMAILCF
 #  define _PATH_SENDMAILCF	"/usr/lib/sendmail.cf"
