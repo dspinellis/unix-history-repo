@@ -25,7 +25,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ping.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)ping.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -401,7 +401,7 @@ pinger()
 	icp->icmp_type = ICMP_ECHO;
 	icp->icmp_code = 0;
 	icp->icmp_cksum = 0;
-	icp->icmp_seq = ++ntransmitted;
+	icp->icmp_seq = ntransmitted++;
 	icp->icmp_id = ident;			/* ID */
 
 	CLR(icp->icmp_seq % mx_dup_ck);
