@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	6.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)recipient.c	6.19 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/types.h>
@@ -272,7 +272,7 @@ recipient(a, sendq, e)
 
 	for (pq = sendq; (q = *pq) != NULL; pq = &q->q_next)
 	{
-		if (!ForceMail && sameaddr(q, a))
+		if (sameaddr(q, a))
 		{
 			if (tTd(26, 1))
 			{

@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	6.23 (Berkeley) %G%
+ *	@(#)sendmail.h	6.24 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	6.23		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	6.24		%G%";
 # endif lint
 # else /*  _DEFINE */
 # define EXTERN extern
@@ -598,7 +598,6 @@ struct prival
 
 EXTERN bool	FromFlag;	/* if set, "From" person is explicit */
 EXTERN bool	NoAlias;	/* if set, don't do any aliasing */
-EXTERN bool	ForceMail;	/* if set, mail even if already got a copy */
 EXTERN bool	MeToo;		/* send to the sender also */
 EXTERN bool	IgnrDot;	/* don't let dot end messages */
 EXTERN bool	SaveFrom;	/* save leading "From" lines */
