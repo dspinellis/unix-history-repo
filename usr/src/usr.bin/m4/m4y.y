@@ -1,5 +1,5 @@
 Virgin BTL M4 as sent out in 4.1
-/* @(#)m4y.y	1.1 (Berkeley) %G% */
+/* @(#)m4y.y	1.2 (Berkeley) %G% */
 %{
 extern long	evalval;
 #define	YYSTYPE	long
@@ -43,8 +43,8 @@ e	: e '|' e	={ $$ = ($1!=0 || $3!=0) ? 1 : 0; }
 
 %%
 
+extern char *pe;
 yylex() {
-	extern char *pe;
 
 	while (*pe==' ' || *pe=='\t' || *pe=='\n')
 		pe++;
