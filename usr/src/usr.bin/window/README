@@ -14,18 +14,18 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)README	3.11 (Berkeley) %G%
+ *	@(#)README	3.12 (Berkeley) %G%
  */
 
 Compilation notes:
 
      There is only one compiler option:
 
-	vax		use Vax byte order (found in ww.h)
-			Actually MIPSEL is also little-endian.
-			Anyway, they should already be defined in the
-			preprocessor.
-			If neither is defined, big-endian is assumed.
+	BYTE_ORDER (used only in ww.h)
+		It should already be defined in machine/endian.h.
+		The code knows about BIG_ENDIAN, LITTLE_ENDIAN, and PDP_ENDIAN.
+		It only cares about byte order in words, so PDP_ENDIAN
+		is the same as LITTLE_ENDIAN.
 
      Ok, there's another one, STR_DEBUG.  It turns on consistency checks
      in the string allocator.  It's been left on since performace doesn't
