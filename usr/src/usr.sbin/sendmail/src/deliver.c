@@ -6,7 +6,7 @@
 # include <syslog.h>
 # endif LOG
 
-SCCSID(@(#)deliver.c	3.85		%G%);
+SCCSID(@(#)deliver.c	3.86		%G%);
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -1018,6 +1018,9 @@ putheader(fp, m)
 	extern char *hvalue();
 	extern bool samefrom();
 	char *of_line;
+	char obuf[MAXLINE];
+	register char *obp;
+	bool fullsmtp = bitset(M_FULLSMTP, m->m_flags);
 
 	of_line = hvalue("original-from");
 	for (h = CurEnv->e_header; h != NULL; h = h->h_link)
@@ -1055,8 +1058,10 @@ putheader(fp, m)
 			p = h->h_value;
 			if (p == NULL || *p == '\0' || nooutput)
 				continue;
-			fprintf(fp, "%s: ", capitalize(h->h_field));
+			obp = obuf;
+			sprintf(obp, "%s: ", capitalize(h->h_field));
 			opos = strlen(h->h_field) + 2;
+			obp += opos;
 			while (*p != '\0')
 			{
 				register char *name = p;
@@ -1100,12 +1105,20 @@ putheader(fp, m)
 					opos += 2;
 				if (opos > 78 && !firstone)
 				{
-					fprintf(fp, ",\n        ");
+					(void) sprintf(obp, ",\n");
+					putline(obuf, fp, fullsmtp);
+					obp = obuf;
+					(void) sprintf(obp, "        ");
+					obp += strlen(obp);
 					opos = 8 + strlen(name);
 				}
 				else if (!firstone)
-					fprintf(fp, ", ");
-				fprintf(fp, "%s", name);
+				{
+					(void) sprintf(obp, ", ");
+					obp += 2;
+				}
+				(void) sprintf(obp, "%s", name);
+				obp += strlen(obp);
 				firstone = FALSE;
 
 				/* clean up the source string */
@@ -1113,7 +1126,8 @@ putheader(fp, m)
 				while (*p != '\0' && (isspace(*p) || *p == ','))
 					p++;
 			}
-			fprintf(fp, "\n");
+			strcpy(obp, "\n");
+			putline(obp, fp, fullsmtp);
 			nooutput = TRUE;
 		}
 		else
@@ -1127,7 +1141,10 @@ putheader(fp, m)
 			/* output new Original-From line if needed */
 			if (of_line == NULL && !samefrom(p, origfrom))
 			{
-				fprintf(fp, "Original-From: %s\n", origfrom);
+			{
+				(void) sprintf(obuf, "Original-From: %s\n", origfrom);
+				putline(obuf, fp, fullsmtp);
+			}
 				anyheader = TRUE;
 			}
 			if (of_line != NULL && !nooutput && samefrom(p, of_line))
@@ -1143,7 +1160,8 @@ putheader(fp, m)
 		/* finally, output the header line */
 		if (!nooutput)
 		{
-			fprintf(fp, "%s: %s\n", capitalize(h->h_field), p);
+			(void) sprintf(obuf, "%s: %s\n", capitalize(h->h_field), p);
+			putline(obuf, fp, fullsmtp);
 			h->h_flags |= H_USED;
 			anyheader = TRUE;
 		}

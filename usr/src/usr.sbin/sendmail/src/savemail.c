@@ -1,7 +1,7 @@
 # include <pwd.h>
 # include "sendmail.h"
 
-SCCSID(@(#)savemail.c	3.33		%G%);
+SCCSID(@(#)savemail.c	3.34		%G%);
 
 /*
 **  SAVEMAIL -- Save mail on error
@@ -310,7 +310,7 @@ errhdr(fp, m, xdot)
 	fprintf(fp, "\n   ----- Transcript of session follows -----\n");
 	(void) fflush(Xscript);
 	while (fgets(buf, sizeof buf, xfile) != NULL)
-		fputs(buf, fp);
+		putline(buf, fp, fullsmtp);
 
 	/*
 	**  Output text of original message
