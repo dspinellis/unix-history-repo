@@ -1,4 +1,4 @@
-/*	gethostnamadr.c	4.7	85/01/21	*/
+/*	gethostnamadr.c	4.8	85/02/18	*/
 
 #include <stdio.h>
 #include <netdb.h>
@@ -23,7 +23,7 @@ fetchhost(key)
 	datum key;
 {
         register char *cp, *tp, **ap;
-	register int naliases;
+	int naliases;
 
         if (key.dptr == 0)
                 return ((struct hostent *)NULL);
@@ -35,7 +35,7 @@ fetchhost(key)
 	host.h_name = tp;
 	while (*tp++ = *cp++)
 		;
-	naliases = *(int *)cp; cp += sizeof (int);
+	bcopy(cp, (char *)&naliases, sizeof(int)); cp += sizeof (int);
 	for (ap = host_aliases; naliases > 0; naliases--) {
 		*ap++ = tp;
 		while (*tp++ = *cp++)
