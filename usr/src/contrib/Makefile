@@ -1,4 +1,4 @@
-#	Makefile	4.9	85/08/14
+#	Makefile	4.10	85/09/04
 #
 DESTDIR=
 CFLAGS=	-O
@@ -7,7 +7,7 @@ CFLAGS=	-O
 #
 SUBDIR=	ansi apl bib courier cpm dsh help hyper icon jove kermit learn \
 	mh mkmf mmdf news notes patch rcs rn sccstorcs spms sumacc sunrpc \
-	tac teft tn3270 tools xns
+	tac teft tn3270 tools xns X
 
 all:	${SUBDIR}
 
