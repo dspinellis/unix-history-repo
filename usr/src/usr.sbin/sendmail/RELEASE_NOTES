@@ -1,3 +1,290 @@
+8.6.5/8.6.5	94/01/13
+	Security fix:  /.forward could be owned by anyone (the test
+		to allow root to own any file was backwards).  From
+		Bob Campbell at U.C. Berkeley.
+	Security fix: group ids were not completely set when programs
+		were invoked.  This caused programs to have group
+		permissions they should not have had (usually group
+		daemon instead of their own group).  In particular,
+		Perl scripts would refuse to run.
+	Security: check to make sure files that are written are not
+		symbolic links (at least under some circumstances).
+		Although this does not respond to a specific known
+		attack, it's just a good idea.  Suggested by
+		Christian Wettergren.
+	Security fix: if a user had an NFS mounted home directory on
+		a system with a restricted shell listed in their
+		/etc/passwd entry, they could still execute any
+		program by putting that in their .forward file.
+		This fix prevents that by insisting that their shell
+		appear in /etc/shells before allowing a .forward to
+		execute a program or write a file.  You can disable
+		this by putting "*" in /etc/shells.  It also won't
+		permit world-writable :include: files to reference
+		programs or files (there's no way to disable this).
+		These behaviours are only one level deep -- for
+		example, it is legal for a world-writable :include:
+		file to reference an alias that writes a file, on
+		the assumption that the alias file is well controlled.
+	Security fix: root was not treated suspiciously enough when
+		looking into subdirectories.  This would potentially
+		allow a cracker to examine files that were publically
+		readable but in a non-publically searchable directory.
+	Fix a problem that causes an error on QUIT on a cached
+		connection to create problems on the current job.
+		These are typically unrelated, so errors occur in
+		the wrong place.
+	Reset CurrentLA in sendall() -- this makes sendmail queue
+		runs more responsive to load average, and fixes a
+		problem that ignored the load average in locally
+		generated mail.  From Eric Wassenaar.
+	Fix possible core dump on aliases with null LHS.  From
+		John Orthoefer of BB&N.
+	Revert to using flock() whenever possible -- there are just
+		too many bugs in fcntl() locking, particularly over
+		NFS, that cause sendmail to fail in perverse ways.
+	Fix a bug that causes the connection cache to get confused
+		when sending error messages.  This resulted in
+		"unexpected close" messages.  It should fix itself
+		on the following queue run.  Problem noted by
+		Liudvikas Bukys of Rochester University.
+	Include $k in $=k as documented in the Install & Op Guide.
+		This seems odd, but it was documented....  From
+		Michael Corrigan of UCSD.
+	Fix problem that caused :include:s from alias files to be
+		forced to be owned by root instead of daemon
+		(actually DefUid).  From Tim Irvin.
+	Diagnose unrecognized I option values -- from Mortin Forssen
+		of the Chalmers University of Technology.
+	Make "error" mailer work consistently when there is no error
+		code associated with it -- previously it returned OK
+		even though there was a real problem.  Now it assumes
+		EX_UNAVAILABLE.
+	Fix bug that caused the last header line of messages that had
+		no body and which were terminated with EOF instead of
+		"." to be discarded.  Problem noted by Liudvikas Bukys.
+	Fix core dump on SMTP mail to programs that failed -- it tried
+		to go to a "next MX host" when none existed, causing
+		a core dump.  From der Mouse at McGill University.
+	Change IDENTPROTO from a defined/not defined to a 0/1 switch;
+		this makes it easier to turn it off (using
+		-DIDENTPROTO=0 in the Makefile).  From der Mouse.
+	Fix YP_MASTER_NAME store to use the unupdated result of
+		gethostname() (instead of myhostname(), which tries
+		to fully qualify the name) to be consistent with
+		SunOS.  If your hostname is unqualified, this fixes
+		transfers to slave servers.  Bug noted by Keith
+		McMillan of Ameritech Services, Inc.
+	Fix Ultrix problem: gethostbyname() can return a very large
+		(> 500) h_length field, which causes the sockaddr
+		to be trashed.  Use the size of the sockaddr instead.
+		Fix from Bob Manson of Ohio State.
+	Don't assume "-a." on host lookups if NAMED_BIND is not
+		defined -- this confuses gethostbyname on hosts
+		file lookups, which doesn't understand the trailing
+		dot convention.
+	Log SMTP server subprocesses that die with a signal instead
+		of from a clean exit.
+	If you don't have option "I" set, don't assume that a DNS
+		"host unknown" message is authoritative -- it
+		might still be found in /etc/hosts.
+	Fix a problem that would cause Deferred: messages to be sent
+		as the subject of an error message, even though the
+		actual cause of a message was more severe than that.
+		Problem noted by Chris Seabrook of OSSI.
+	Fix race condition in DBM alias file locking.  From Kyle
+		Jones of UUNET.
+	Limit delivery syslog line length to avoid bugs in some
+		versions of syslog(3).  This adds a new compile time
+		variable SYSLOG_BUFSIZE.  From Jay Plett of Princeton
+		University, which is in turn derived from IDA.
+	Fix quotes inside of comments in addresses -- previously
+		it insisted that they be balanced, but the 822 spec
+		says that they should be ignored.
+	Dump open file state to syslog upon receiving SIGUSR1 (for
+		debugging).  This also evaluates ruleset 89, if set
+		(with the null input), and logs the result.  This
+		should be used sparingly, since the rewrite process
+		is not reentrant.
+	Change -qI, -qR, and -qS flags to be case-insensitive as
+		documented in the Bat Book.
+	If the mailer returned EX_IOERR or EX_OSERR, sendmail did not
+		return an error message and did not requeue the message.
+		Fix based on code from Roland Dirlewanger of
+		Reseau Regional Aquarel, Bordeaux, France.
+	Fix a problem that caused a seg fault if you got a 421 error
+		code during some parts of connection initialization.
+		I've only seen this when talking to buggy mailers on
+		the other end, but it shouldn't give a seg fault in
+		any case.  From Amir Plivatsky.
+	Fix core dump caused by a ruleset call that returns null.
+		Fix from Bryan Costales of ICSI.
+	Full-Name: field was being ignored.  Fix from Motonori Nakamura
+		of Kyoto University.
+	Fix a possible problem with very long input lines in setproctitle.
+		From P{r Emanuelsson.
+	Avoid putting "This is a warning message" out on return receipts.
+		Suggested by Douglas Anderson.
+	Detect loops caused by recursive ruleset calls.  Suggested by
+		Bryan Costales.
+	Initialize non-alias maps during alias rebuilds -- they may be
+		needed for parsing.  Problem noted by Douglas Anderson.
+	Log sender address even if no message was collected in SMTP
+		(e.g., if all RCPTs failed).  Suggested by Motonori
+		Nakamura.
+	Don't reflect the owner-list contents into the envelope sender
+		address if the value contains ", :, /, or | (to avoid
+		illegal addresses appearing there).
+	Efficiency hack for toktype macro -- from Craig Partridge of
+		BB&N.
+	Clean up DNS error printing so that a host name is always
+		included.
+	Remember to set $i during queue runs.  Reported by Stephen
+		Campbell of Dartmouth University.
+	If ${HOSTALIASES} is set, use it during canonification so that
+		headers are properly mapped.  Reported by Anne Bennett
+		of Concordia University.
+	Avoid printing misleading error message if SMTP mailer (not
+		using [IPC]) should die on a core dump.
+	Avoid incorrect diagnosis of "file 1 closed" when it is caused
+		by the other end closing the connection.  From
+		Dave Morrison of Oracle.
+	Improve several of the error messages printed by "mailq"
+		to include a host name or other useful information.
+	Add NetInfo preliminary support for NeXT systems.  From Vince
+		DeMarco.
+	Fix a glitch that sometimes caused :include:s that pointed to
+		NFS filesystems that were down to give an "aliasing/
+		forwarding loop broken" message instead of queueing
+		the message for retry.  Noted by William C Fenner of
+		the NRL Connection Machine Facility.
+	Fix a problem that could cause a core dump if the input sequence
+		had (or somehow acquired) a \231 character.
+	Make sure that route-addrs always have <angle brackets> around
+		them in non-SMTP envelopes (SMTP envelopes already do
+		this properly).
+	Avoid wierd headers on unbalanced punctuation of the form:
+		``Joe User <user)'' -- this caused reference to the
+		null macro.  Fix from Rick McCarty of IO.COM.
+	Fix a problem that caused an alias "user: user@local.host" to
+		not have the QNOTREMOTE bit set; this caused configs
+		to act as if FEATURE(notsticky) was defined even when
+		it was not.  The effect of the problem was to make it
+		very hard to to set up satellite sites that had a few
+		local accounts, with everything else forwarded to a
+		corporate hub.  Reported by Detlef Drewanz of the
+		University of Rostock and Mark Frost of NCD.
+	Change queuing to not call rulesets 3, {1 or 2}, 4 on header
+		addresses.  This is more efficient (fewer name server
+		calls) and fixes certain unusual configurations, such
+		as those that have ruleset 4 do something that is
+		non-idempotent unless a mailer-specific ruleset did
+		something else.  Problem reported by Brian J. Coan
+		of the Institute for Global Communications.
+	Fix the "obsolete argument" routine in main to better understand
+		new arguments.  For example, if you used ``sendmail
+		-C config -v -q'' it would choke on the -q because
+		the -C would stop looking for old-format arguments.
+	Fix the code that was intended to allow two users to forward their
+		mail to the same program and have them appear unique.
+	Portability fixes for:
+		SCO UNIX from Murray Kucherawy.
+		SCO Open Server 3.2v4 from Philippe Brand.
+		System V Release 4 from Rick Ellis and others.
+		OSF/1 from Steve Campbell.
+		DG/UX from Ben Mesander of the USGS and Bryan Curnutt
+			of Stoner Associates.
+		Motorola SysV88 from Kevin Johnson of Motorola.
+		Solaris 2.3 from Casper H.S. Dik of the University
+			of Amsterdam and John Caruso of University
+			of Maryland.
+		FreeBSD from Ollivier Robert.
+		NetBSD from Adam Glass.
+		TitanOS from Kate Hedstrom of Rutgers University.
+		Irix from Bryan Curnutt.
+		Dynix from Jim Davis of the University of Arizona.
+		RISC/os.
+		Linux from John Kennedy of California State University
+			at Chico.
+		Solaris 2.x from Tony Boner of the U.S. Air Force.
+		NEXTSTEP 3.x from Vince DeMarco.
+		HP-UX from various people.  NOTA BENE:  the location
+			of the config file has moved to /usr/lib
+			to match the HP-UX version of sendmail.
+	CONFIG: Don't do any recipient rewriting on relay mailer;
+		since this is intended only for internal use, the
+		usual RFC 821/822/1123 rules can be relaxed.  The
+		main point of this is to avoid munging (ugh) UUCP
+		addresses when relaying internally.
+	CONFIG: fix typo in mailer/uucp.m4 that mutilates list:;
+		syntax addresses delivered via UUCP.  Solution
+		provided by Peter Wemm.
+	CONFIG: fix thumb-fumble in default UUCP relaying in ruleset
+		zero; it caused double @ signs in addresses.  From
+		Irving Reid of the University of Toronto.
+	CONFIG: Portability fixes for SCO Unix 3.2 with TCP/IP 1.2.1
+		from Markku Toijala of ICL Personal Systems Oy.
+	CONFIG: Add trailing "." on pseudo-domains for consistency;
+		this fixes a problem (noted by Al Whaley of Sunnyside)
+		that made it hard to recognize your own pseudodomain
+		names.
+	CONFIG: catch "@host" syntax errors (i.e., null local-parts)
+		rather than letting them get "local configuration
+		error"s.  Problem noted by John Gardiner Myers.
+	CONFIG: add uucp-uudom mailer variant, based on code posted
+		by Spider Boardman <spider@Orb.Nashua.NH.US>; this
+		has uucp-dom semantics but old UUCP syntax.  This
+		also permits "uucp-old" as an alias for "uucp" and
+		"uucp-new" as a synonym for "suucp" for consistency.
+	CONFIG: add POP mailer support (from Kimmo Suominen
+		<kim@grendel.lut.fi>).
+	CONFIG: drop CSNET_RELAY support -- CSNET is long gone.
+	CONFIG: fix bug caused with domain literal addresses (e.g.,
+		``[128.32.131.12]'') when FEATURE(allmasquerade)
+		was set; it would get an additional @masquerade.host
+		added to the address.  Problem noted by Peter Wan
+		of Georgia Tech.
+	CONFIG: make sure that the local UUCP name is in $=w.  From
+		Jim Murray of Stratus.
+	CONFIG: changes to UUCP rewriting to simulate IDA-style "V"
+		mailer flag.  Briefly, if you are sending to host
+		"foo", then it rewrites "foo!...!baz" to "...!baz",
+		"foo!baz" remains "foo!baz", and anything else has
+		the local name prepended.
+	CONFIG: portability fixes for HP-UX.
+	DOC: several minor problems fixed in the Install & Op Guide.
+	MAKEMAP: fix core dump problem on lines that are too long or
+		which lack newline.  From Mark Delany.
+	MAILSTATS: print sums of columns (total messages & kbytes
+		in and out of the system).  From Tom Ferrin of UC
+		San Francisco Computer Graphics Lab.
+	SIGNIFICANT USER- OR SYSAD-VISIBLE CHANGES:
+		On HP-UX, /etc/sendmail.cf has been moved to
+			/usr/lib/sendmail.cf to match HP sendmail.
+		Permissions have been tightened up on world-writable
+			:include: files and accounts that have shells
+			that are not listed in /etc/shells.  This may
+			cause some .forward files that have worked
+			before to start failing.
+		SIGUSR1 dumps some state to the log.
+	NEW FILES:
+		src/Makefile.DGUX
+		src/Makefile.Dynix
+		src/Makefile.FreeBSD
+		src/Makefile.Mach386
+		src/Makefile.NetBSD
+		src/Makefile.RISCos
+		src/Makefile.SCO
+		src/Makefile.SVR4
+		src/Makefile.Titan
+		cf/mailer/pop.m4
+		cf/ostype/bsdi1.0.m4
+		cf/ostype/dgux.m4
+		cf/ostype/dynix3.2.m4
+		cf/ostype/sco3.2.m4
+		makemap/Makefile.dist
+		praliases/Makefile.dist
+
 8.6.4/8.6.4	93/10/31
 	Repair core-dump problem (write to read-only memory segment)
 		if you fall back to the return-to-Postmaster case in
