@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)quota.h	7.10 (Berkeley) %G%
+ *	@(#)quota.h	7.11 (Berkeley) %G%
  */
 
 #ifndef _QUOTA_
@@ -169,7 +169,7 @@ int	quotaoff __P((struct proc *, struct mount *, int));
 int	quotaon __P((struct proc *, struct mount *, int, caddr_t));
 int	setquota __P((struct mount *, u_long, int, caddr_t));
 int	setuse __P((struct mount *, u_long, int, caddr_t));
-int	ufs_quotactl __P((struct mount *, int, u_int, caddr_t, struct proc *));
+int	ufs_quotactl __P((struct mount *, int, uid_t, caddr_t, struct proc *));
 __END_DECLS
 
 #ifdef DIAGNOSTIC
