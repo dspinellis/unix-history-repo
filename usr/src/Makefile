@@ -1,4 +1,4 @@
-#	@(#)Makefile	4.2	(Berkeley)	%G%
+#	@(#)Makefile	4.3	(Berkeley)	%G%
 #
 DESTDIR=
 CFLAGS=	-O
@@ -9,8 +9,10 @@ SUBDIR=	lib usr.lib bin usr.bin etc ucb games local
 
 all:	${SUBDIR}
 
-${SUBDIR}: /tmp
+${SUBDIR}: FRC
 	cd $@; make ${MFLAGS}
+
+FRC:
 
 install:
 	for i in ${SUBDIR}; do \
