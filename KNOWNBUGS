@@ -36,4 +36,10 @@ keyboard problems.
 	The boot block binaries shipped with the 1.1 BETA release were
 	built using an older version of as and can be installed safely.
 
-$Id: KNOWNBUGS,v 1.5 1994/02/20 02:45:44 rgrimes Exp $
+/sys/i386/boot
+	You can not have the root file system mounted on /dev/fd1a, it
+	panics on you.  This occurs when booting from floppy and answering
+	the question for what drive the root file system is on with B.
+	This will be fixed by the 1.1 release date.
+
+$Id: KNOWNBUGS,v 1.6 1994/02/22 17:52:23 rgrimes Exp $
