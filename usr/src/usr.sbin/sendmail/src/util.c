@@ -1,21 +1,13 @@
 /*
+ * Copyright (c) 1983 Eric P. Allman
  * Copyright (c) 1988 Regents of the University of California.
  * All rights reserved.
  *
- * Redistribution and use in source and binary forms are permitted
- * provided that this notice is preserved and that due credit is given
- * to the University of California at Berkeley. The name of the University
- * may not be used to endorse or promote products derived from this
- * software without specific prior written permission. This software
- * is provided ``as is'' without express or implied warranty.
- *
- *  Sendmail
- *  Copyright (c) 1983  Eric P. Allman
- *  Berkeley, California
+ * %sccs.include.redist.c%
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	5.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)util.c	5.18 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <stdio.h>
