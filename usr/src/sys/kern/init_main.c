@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)init_main.c	7.42 (Berkeley) %G%
+ *	@(#)init_main.c	7.43 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -17,7 +17,6 @@
 #include "signalvar.h"
 #include "systm.h"
 #include "vnode.h"
-#include "seg.h"
 #include "conf.h"
 #include "buf.h"
 #include "clist.h"

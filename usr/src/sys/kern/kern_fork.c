@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_fork.c	7.30 (Berkeley) %G%
+ *	@(#)kern_fork.c	7.31 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -16,7 +16,6 @@
 #include "proc.h"
 #include "resourcevar.h"
 #include "vnode.h"
-#include "seg.h"
 #include "file.h"
 #include "acct.h"
 #include "ktrace.h"

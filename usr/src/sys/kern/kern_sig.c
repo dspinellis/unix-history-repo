@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_sig.c	7.36 (Berkeley) %G%
+ *	@(#)kern_sig.c	7.37 (Berkeley) %G%
  */
 
 #define	SIGPROP		/* include signal properties table */
@@ -18,7 +18,6 @@
 #include "timeb.h"
 #include "times.h"
 #include "buf.h"
-#include "seg.h"
 #include "acct.h"
 #include "file.h"
 #include "kernel.h"
