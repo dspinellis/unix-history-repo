@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_vnops.c	7.54 (Berkeley) %G%
+ *	@(#)nfs_vnops.c	7.55 (Berkeley) %G%
  */
 
 /*
@@ -469,9 +469,12 @@ nfs_lookup(vp, ndp)
 		} else if (ndp->ni_isdotdot) {
 			nfs_unlock(vp);
 			error = vget(vdp);
+			if (!error && lockparent && *ndp->ni_next == '\0')
+				nfs_lock(vp);
 		} else {
 			error = vget(vdp);
-			nfs_unlock(vp);
+			if (!lockparent || error || *ndp->ni_next != '\0')
+				nfs_unlock(vp);
 		}
 		if (!error) {
 			if (vpid == vdp->v_id) {
@@ -479,13 +482,12 @@ nfs_lookup(vp, ndp)
 			       vattr.va_ctime.tv_sec == VTONFS(vdp)->n_ctime) {
 				nfsstats.lookupcache_hits++;
 				return (0);
-			   } else {
-				cache_purge(vdp);
-				nfs_nput(vdp);
 			   }
-			} else {
-				nfs_nput(vdp);
+			   cache_purge(vdp);
 			}
+			nfs_nput(vdp);
+			if (lockparent && vdp != vp && *ndp->ni_next == '\0')
+				nfs_unlock(vp);
 		}
 		ndp->ni_vp = NULLVP;
 	} else
