@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)readcf.c	3.29		%G%);
+SCCSID(@(#)readcf.c	3.30		%G%);
 
 /*
 **  READCF -- read control file.
@@ -284,16 +284,16 @@ makemailer(line, safe)
 {
 	register char *p;
 	register char *q;
+	register struct mailer *m;
+	register STAB *s;
+	int i;
 	char *mname;
 	char *mpath;
 	u_long mopts;
-	extern u_long mfencode();
-	char *mfrom;
-	register struct mailer *m;
+	short mrset, msset;
 	char *margv[MAXPV + 1];
-	register int i;
+	extern u_long mfencode();
 	extern int NextMailer;
-	STAB *s;
 
 	if (NextMailer >= MAXMAILERS)
 	{
@@ -313,12 +313,20 @@ makemailer(line, safe)
 	if (!safe)
 		mopts &= ~M_RESTR;
 	SETWORD;
-	mfrom = q;
+	msset = atoi(q);
+	SETWORD;
+	mrset = atoi(q);
 
 	if (*p == '\0')
 	{
 		syserr("readcf: line %d: invalid M line in configuration file",
 			LineNumber);
+		return;
+	}
+	if (msset >= MAXRWSETS || mrset >= MAXRWSETS)
+	{
+		syserr("readcf: line %d: invalid rewrite set, %d max",
+			LineNumber, MAXRWSETS);
 		return;
 	}
 
@@ -327,7 +335,8 @@ makemailer(line, safe)
 	m->m_name = newstr(mname);
 	m->m_mailer = newstr(mpath);
 	m->m_flags = mopts;
-	m->m_from = newstr(mfrom);
+	m->m_r_rwset = mrset;
+	m->m_s_rwset = msset;
 	m->m_badstat = EX_UNAVAILABLE;
 	m->m_mno = NextMailer;
 	Mailer[NextMailer++] = m;
@@ -370,25 +379,14 @@ printrules()
 	{
 		if (RewriteRules[ruleset] == NULL)
 			continue;
-		printf("\n----Rule Set %d:\n", ruleset);
+		printf("\n----Rule Set %d:", ruleset);
 
 		for (rwp = RewriteRules[ruleset]; rwp != NULL; rwp = rwp->r_next)
 		{
-			register char **av;
-
-			printf("\n");
-			for (av = rwp->r_lhs; *av != NULL; av++)
-			{
-				xputs(*av);
-				putchar('_');
-			}
-			printf("\n\t");
-			for (av = rwp->r_rhs; *av != NULL; av++)
-			{
-				xputs(*av);
-				putchar('_');
-			}
-			printf("\n");
+			printf("\nLHS:");
+			printav(rwp->r_lhs);
+			printf("RHS:");
+			printav(rwp->r_rhs);
 		}
 	}
 }
@@ -434,7 +432,6 @@ struct optlist	OptList[] =
 	'A',	M_ARPAFMT,
 	'U',	M_UGLYUUCP,
 	'e',	M_EXPENSIVE,
-	'R',	M_RELRCPT,
 	'X',	M_FULLSMTP,
 	'\0',	0
 };
