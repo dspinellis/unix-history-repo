@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)dbopen.3	8.3 (Berkeley) %G%
+.\"	@(#)dbopen.3	8.4 (Berkeley) %G%
 .\"
 .TH DBOPEN 3 ""
 .UC 7
@@ -49,8 +49,8 @@ and
 .I mode arguments
 are as specified to the
 .IR open (2)
-routine, however, only the O_CREAT, O_EXCL, O_EXLOCK, O_RDONLY, O_RDWR,
-O_SHLOCK and O_TRUNC flags are meaningful.
+routine, however, only the O_CREAT, O_EXCL, O_EXLOCK, O_NONBLOCK,
+O_RDONLY, O_RDWR, O_SHLOCK and O_TRUNC flags are meaningful.
 (Note, opening a database file O_WRONLY is not possible.)
 .\"Three additional options may be specified by
 .\".IR or 'ing
