@@ -1,0 +1,1 @@
+/sys/vaxuba/vsreg.h
