@@ -35,7 +35,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)vfscanf.c	5.6 (Berkeley) 2/24/91";
+static char sccsid[] = "@(#)vfscanf.c	5.7 (Berkeley) 12/14/92";
 #endif /* LIBC_SCCS and not lint */
 
 #include <stdio.h>
@@ -50,12 +50,8 @@ static char sccsid[] = "@(#)vfscanf.c	5.6 (Berkeley) 2/24/91";
 
 #define FLOATING_POINT
 
-#ifdef FLOATING_POINT
 #include "floatio.h"
-#define	BUF	(MAXEXP+MAXFRACT+3)	/* 3 = sign + decimal point + NUL */
-#else
-#define	BUF	40
-#endif
+#define	BUF		513	/* Maximum length of numeric string. */
 
 /*
  * Flags used during conversion.
@@ -101,7 +97,7 @@ static u_char *__sccl();
 __svfscanf(fp, fmt0, ap)
 	register FILE *fp;
 	char const *fmt0;
-	_VA_LIST_ ap;
+	va_list ap;
 {
 	register u_char *fmt = (u_char *)fmt0;
 	register int c;		/* character from format, or conversion */
@@ -635,7 +631,7 @@ literal:
 				double res;
 
 				*p = 0;
-				res = atof(buf);
+				res = strtod(buf,(char **) NULL);
 				if (flags & LONG)
 					*va_arg(ap, double *) = res;
 				else
