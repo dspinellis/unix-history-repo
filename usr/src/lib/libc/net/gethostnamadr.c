@@ -5,7 +5,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)gethostnamadr.c	6.21 (Berkeley) %G%";
+static char sccsid[] = "@(#)gethostnamadr.c	6.22 (Berkeley) %G%";
 #endif LIBC_SCCS and not lint
 
 #include <sys/param.h>
@@ -258,9 +258,19 @@ gethostbyname(name)
 		hp = gethostdomain(name, *domain);
 		if (hp)
 			return (hp);
+		/*
+		 * If no server present, use host table.
+		 * If host isn't found in this domain,
+		 * keep trying higher domains in the search list
+		 * (if that's enabled).
+		 * On a NO_ADDRESS error, keep trying,
+		 * or a wildcard MX entry could keep us from finding
+		 * host entries higher in the domain.
+		 */
 		if (errno == ECONNREFUSED)
 			return (_gethtbyname(name));
-		if (h_errno != HOST_NOT_FOUND ||
+		if ((h_errno != HOST_NOT_FOUND &&
+		    h_errno != NO_ADDRESS) ||
 		    (_res.options & RES_DNSRCH) == 0)
 			return (NULL);
 		h_errno = 0;
@@ -350,7 +360,7 @@ hostalias(name)
 		for (C1 = buf; *C1 && !isspace(*C1); ++C1);
 		if (!*C1 || *C1 == '\n')
 			break;
-		if (!strncmp(buf, name, C1 - buf)) {
+		if (!strcasencmp(buf, name, C1 - buf)) {
 			while (isspace(*++C1));
 			if (!*C1)
 				break;
@@ -456,22 +466,13 @@ _gethtbyname(name)
 {
 	register struct hostent *p;
 	register char **cp;
-	char lowname[128];
-	register char *lp = lowname;
 	
-	while (*name)
-		if (isupper(*name))
-			*lp++ = tolower(*name++);
-		else
-			*lp++ = *name++;
-	*lp = '\0';
-
 	_sethtent(0);
 	while (p = _gethtent()) {
-		if (strcmp(p->h_name, lowname) == 0)
+		if (strcasecmp(p->h_name, name) == 0)
 			break;
 		for (cp = p->h_aliases; *cp != 0; cp++)
-			if (strcmp(*cp, lowname) == 0)
+			if (strcasecmp(*cp, name) == 0)
 				goto found;
 	}
 found:
