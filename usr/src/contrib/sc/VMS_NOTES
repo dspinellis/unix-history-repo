@@ -1,0 +1,135 @@
+From: ihnp4!gargoyle!oddjob!noao!arizona!naucse!jdc (John Campbell)
+To: arizona!noao!oddjob!gargoyle!ihnp4!nsc!nscpdc!rgb
+Subject: VMS SC
+
+VMS USERS:
+
+Bob Bond has been generous enough to give me free rein in adding what I
+think is needed to make SC run on VMS.  Any problems with VMS should be
+directed to me--they are not Bob's fault.
+
+The VMS SC is "SIMPLE" for the most part, except that the arrow keys
+(instead of hjkl) will move you around the cells.  The VMS version of SC
+will not interact with the Bourne shell (obviously), which means that CRYPT
+and EXTERNAL FUNCTIONS will not be available.
+
+If you have a 'C' compiler and GNU Bison then you should be able to get
+SC running on VMS by following the instructions below.
+
+Step 1:  Get all the files
+
+I've heard of a few sites that can unpack unix shar files directly on
+VMS.  Most people, however, will need access to a unix machine to get
+the original distribution unpacked.  At this time you should also build
+experres.h and statres.h and perhaps run the man pages off if you need
+to port the documentation. To build the two "missing" hearder files:
+   sed <gram.y >experres.h -f eres.sed
+   sed <gram.y >statres.h -f sres.sed
+
+Step 2: Cut out BUILD.COM and GETOPT.C
+
+At the end of this file are two other pieces: BUILD.COM and GETOPT.C.  After
+you've moved everything to VMS, cut BUILD.COM and GETOPT.C out of here and
+put them in the same directory as the rest of the SC distribution.
+
+Step 3: Build it
+
+Theoretically all you now need to do is @BUILD and SC (as well as PSC)
+will be running on VMS.  If you have problems feel free to contact me
+at ...!arizona!naucse!jdc  (or even call at 602-523-6259).
+
+---------------------cut here for BUILD.COM--------------------------
+$! VMS command file to build SC and PSC (requires bison)
+$! SC:
+$ bison -d gram.y
+$ ren gram_tab.c gram.c
+$ cc  /define=("SIMPLE","SIGVOID") sc.c
+$ cc  /define=("SIMPLE","SIGVOID") gram.c
+$ cc  /define=("SIMPLE","SIGVOID") lex.c
+$ cc  /define=("SIMPLE","SIGVOID") interp
+$ cc  /define=("SIMPLE","SIGVOID") cmds
+$ cc  /define=("SIMPLE","SIGVOID") xmalloc
+$ cc  /define=("SIMPLE","SIGVOID") range
+$ cc  /define=("SIMPLE","SIGVOID") help
+$ link sc.obj,lex.obj,gram.obj,interp.obj,cmds.obj,xmalloc.obj,-
+       range.obj,help.obj,sys$library:vaxcrtl.olb/lib
+$ !
+$ ! Create VMS foreign command symbol to test SC
+$ !
+$ sc == "$" + f$logical("SYS$DISK") + f$directory() + "SC.EXE"
+$!
+$! Now PSC
+$!
+$ cc psc.c
+$ cc getopt.c
+$ link psc,getopt,sys$library:vaxcrtl.olb/lib
+$ !
+$ ! Create VMS foreign command symbol to test PSC (Note that
+$ ! PSC reads SYS$INPUT and writes to SYS$OUTPUT, so use
+$ ! DEFINE/USER to redirect.)
+$ !
+$ psc == "$" + f$logical("SYS$DISK") + f$directory() + "PSC.EXE"
+
+---------------------cut here for GETOPT.C------------------------
+/*
+ * getopt - get option letter from argv
+ *      This software is in the public domain
+ *      Originally written by Henry Spencer at the U. of Toronto
+ */
+
+#include <stdio.h>
+
+char    *optarg;        /* Global argument pointer. */
+int     optind = 0;     /* Global argv index. */
+
+static char     *scan = NULL;   /* Private scan pointer. */
+
+/* extern char     *index();  obsolete, used strchr (JDC). */
+
+int
+getopt(argc, argv, optstring)
+int argc;
+char *argv[];
+char *optstring;
+{
+        register char c;
+        register char *place;
+
+        optarg = NULL;
+
+        if (scan == NULL || *scan == '\0') {
+                if (optind == 0)
+                        optind++;
+
+                if (optind >= argc || argv[optind][0] != '-' || argv[optind][1] == '\0')
+                        return(EOF);
+                if (strcmp(argv[optind], "--")==0) {
+                        optind++;
+                        return(EOF);
+                }
+
+                scan = argv[optind]+1;
+                optind++;
+        }
+
+        c = *scan++;
+        place = strchr(optstring, c);
+
+        if (place == NULL || c == ':') {
+                fprintf(stderr, "%s: unknown option -%c\n", argv[0], c);
+                return('?');
+        }
+
+        place++;
+        if (*place == ':') {
+                if (*scan != '\0') {
+                        optarg = scan;
+                        scan = NULL;
+                } else {
+                        optarg = argv[optind];
+                        optind++;
+                }
+        }
+
+        return(c);
+}
