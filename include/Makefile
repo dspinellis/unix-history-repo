@@ -24,7 +24,7 @@ FILES=	a.out.h ar.h assert.h bitstring.h ctype.h db.h dirent.h disktab.h \
 	tzfile.h unistd.h utime.h utmp.h varargs.h vis.h
 
 MFILES=	float.h frame.h
-LFILES=	errno.h fcntl.h signal.h syslog.h termios.h
+LFILES=	errno.h fcntl.h signal.h syslog.h syscall.h termios.h
 
 DIRS=arpa protocols
 LDIRS=	net netccitt netinet netiso netns nfs sys ufs vm
