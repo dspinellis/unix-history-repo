@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	5.26 (Berkeley) %G%";
+static char sccsid[] = "@(#)recipient.c	5.27 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/types.h>
@@ -351,7 +351,7 @@ recipient(a, sendq)
 			else
 			{
 				message(Arpa_Info, "including file %s", &a->q_user[9]);
-				include(&a->q_user[9], " sending", a, sendq);
+				include(&a->q_user[9], FALSE, a, sendq);
 			}
 		}
 		else
@@ -594,7 +594,8 @@ writable(s)
 **
 **	Parameters:
 **		fname -- filename to include.
-**		msg -- message to print in verbose mode.
+**		forwarding -- if TRUE, we are reading a .forward file.
+**			if FALSE, it's a :include: file.
 **		ctladdr -- address template to use to fill in these
 **			addresses -- effective user/group id are
 **			the important things.
@@ -609,17 +610,43 @@ writable(s)
 **		listed in that file.
 */
 
-include(fname, msg, ctladdr, sendq)
+static jmp_buf	CtxIncludeTimeout;
+
+include(fname, forwarding, ctladdr, sendq)
 	char *fname;
-	char *msg;
+	bool forwarding;
 	ADDRESS *ctladdr;
 	ADDRESS **sendq;
 {
-	char buf[MAXLINE];
 	register FILE *fp;
 	char *oldto = CurEnv->e_to;
 	char *oldfilename = FileName;
 	int oldlinenumber = LineNumber;
+	register EVENT *ev = NULL;
+	char buf[MAXLINE];
+	static int includetimeout();
+
+	/*
+	**  If home directory is remote mounted but server is down,
+	**  this can hang or give errors; use a timeout to avoid this
+	*/
+
+	if (setjmp(CtxIncludeTimeout) != 0)
+	{
+		ctladdr->q_flags |= QQUEUEUP|QDONTSEND;
+		errno = 0;
+		usrerr("451 open timeout on %s", fname);
+		return;
+	}
+	ev = setevent((time_t) 60, includetimeout, 0);
+
+	/* if forwarding, the input file must be marked safe */
+	if (forwarding && !safefile(fname, ctladdr->q_uid, S_IREAD))
+	{
+		/* don't use this .forward file */
+		clrevent(ev);
+		return;
+	}
 
 	fp = fopen(fname, "r");
 	if (fp == NULL)
@@ -627,6 +654,7 @@ include(fname, msg, ctladdr, sendq)
 		usrerr("Cannot open %s", fname);
 		return;
 	}
+
 	if (getctladdr(ctladdr) == NULL)
 	{
 		struct stat st;
@@ -637,6 +665,8 @@ include(fname, msg, ctladdr, sendq)
 		ctladdr->q_gid = st.st_gid;
 		ctladdr->q_flags |= QGOODUID;
 	}
+
+	clrevent(ev);
 
 	/* read the file -- each line is a comma-separated list. */
 	FileName = fname;
@@ -651,7 +681,8 @@ include(fname, msg, ctladdr, sendq)
 		if (buf[0] == '\0' || buf[0] == '#')
 			continue;
 		CurEnv->e_to = oldto;
-		message(Arpa_Info, "%s to %s", msg, buf);
+		message(Arpa_Info, "%s to %s",
+			forwarding ? "forwarding" : "sending", buf);
 		AliasLevel++;
 		sendto(buf, 1, ctladdr, 0);
 		AliasLevel--;
@@ -660,6 +691,12 @@ include(fname, msg, ctladdr, sendq)
 	(void) fclose(fp);
 	FileName = oldfilename;
 	LineNumber = oldlinenumber;
+}
+
+static
+includetimeout()
+{
+	longjmp(CtxIncludeTimeout, 1);
 }
 /*
 **  SENDTOARGV -- send to an argument vector.

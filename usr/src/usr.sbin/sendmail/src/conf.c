@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	5.34 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	5.35 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/ioctl.h>
@@ -540,6 +540,27 @@ shouldqueue(pri)
 	if (CurrentLA < QueueLA)
 		return (FALSE);
 	return (pri > (QueueFactor / (CurrentLA - QueueLA + 1)));
+}
+/*
+**  REFUSECONNECTIONS -- decide if connections should be refused
+**
+**	Parameters:
+**		none.
+**
+**	Returns:
+**		TRUE if incoming SMTP connections should be refused
+**			(for now).
+**		FALSE if we should accept new work.
+**
+**	Side Effects:
+**		none.
+*/
+
+bool
+refuseconnections()
+{
+	/* this is probably too simplistic */
+	return (CurrentLA > RefuseLA);
 }
 /*
 **  SETPROCTITLE -- set process title for ps

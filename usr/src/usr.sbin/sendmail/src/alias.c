@@ -23,12 +23,12 @@
 
 #ifndef lint
 #ifdef NEWDB
-static char sccsid[] = "@(#)alias.c	5.31 (Berkeley) %G% (with NEWDB)";
+static char sccsid[] = "@(#)alias.c	5.32 (Berkeley) %G% (with NEWDB)";
 #else
 #ifdef DBM
-static char sccsid[] = "@(#)alias.c	5.31 (Berkeley) %G% (with DBM)";
+static char sccsid[] = "@(#)alias.c	5.32 (Berkeley) %G% (with DBM)";
 #else
-static char sccsid[] = "@(#)alias.c	5.31 (Berkeley) %G% (without DBM)";
+static char sccsid[] = "@(#)alias.c	5.32 (Berkeley) %G% (without DBM)";
 #endif
 #endif
 #endif /* not lint */
@@ -726,11 +726,7 @@ forward(user, sendq)
 	/* good address -- look for .forward file in home */
 	define('z', user->q_home, CurEnv);
 	expand("\001z/.forward", buf, &buf[sizeof buf - 1], CurEnv);
-	if (!safefile(buf, user->q_uid, S_IREAD))
-		return;
-
-	/* we do have an address to forward to -- do it */
-	include(buf, "forwarding", user, sendq);
+	include(buf, TRUE, user, sendq);
 }
 /*
 **  MAPHOST -- given a host description, produce a mapping.
