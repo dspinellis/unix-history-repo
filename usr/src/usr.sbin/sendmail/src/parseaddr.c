@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)parseaddr.c	3.57		%G%);
+SCCSID(@(#)parseaddr.c	3.58		%G%);
 
 /*
 **  PARSE -- Parse an address
@@ -450,13 +450,11 @@ rewrite(pvp, ruleset)
 	char *npvp[MAXATOM+1];		/* temporary space for rebuild */
 	extern bool sameword();
 
-# ifdef DEBUG
-	if (tTd(21, 2))
+	if (Mode == MD_TEST || tTd(21, 2))
 	{
 		printf("rewrite: ruleset %d, original pvp:", ruleset);
 		printav(pvp);
 	}
-# endif DEBUG
 
 	/*
 	**  Run through the list of rewrite rules, applying
@@ -684,13 +682,11 @@ rewrite(pvp, ruleset)
 		}
 	}
 
-# ifdef DEBUG
-	if (tTd(21, 2))
+	if (Mode == MD_TEST || tTd(21, 2))
 	{
 		printf("rewrite: ruleset %d returns:", ruleset);
 		printav(pvp);
 	}
-# endif DEBUG
 }
 /*
 **  BUILDADDR -- build address from token vector.
