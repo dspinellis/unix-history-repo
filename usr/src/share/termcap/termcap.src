@@ -3,7 +3,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)termcap.src	5.112 (Berkeley) %G%
+#	@(#)termcap.src	5.113 (Berkeley) %G%
 #
 
 #	Termcap source file
@@ -408,6 +408,10 @@ ibm|ibm3101|3101|i3101|IBM 3101-10:\
 	:if=/usr/share/tabset/ibm3101:\
 	:am:le=^H:bs:cl=\EK:li#24:co#80:nd=\EC:up=\EA:cd=\EJ:ce=\EI:\
 	:kd=\EB:kl=\ED:kr=\EC:ku=\EA:ho=\EH:cm=\EY%+\40%+\40:pt:
+ibm327-789|ibm-3277-2|ibm-3278-2|ibm-3278-3|ibm-3278-4|ibm-3278-5|ibm-3279-2|ibm-3279-3:\
+	:tc=ibm327-56:
+ibm327-56|ibm-3275-2|ibm-3276-2|ibm-3276-3|ibm-3276-4|line mode IBM 3270 style:\
+	:gn:ce=\r:cl=\r\n:ho=\r:
 ibm-apl|apl|IBM apl terminal simulator:\
 	:li#25:tc=dm1520:
 # ibmapa* and ibmmono entries come from ACIS 4.3 distribution
