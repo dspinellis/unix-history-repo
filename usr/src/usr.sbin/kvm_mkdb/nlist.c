@@ -1,25 +1,27 @@
 /*-
- * Copyright (c) 1990 The Regents of the University of California.
+ * Copyright (c) 1990, 1993 The Regents of the University of California.
  * All rights reserved.
  *
  * %sccs.include.redist.c%
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)nlist.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)nlist.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
-#include <fcntl.h>
-#include <limits.h>
+
 #include <a.out.h>
 #include <db.h>
+#include <err.h>
 #include <errno.h>
-#include <unistd.h>
+#include <fcntl.h>
 #include <kvm.h>
+#include <limits.h>
 #include <stdio.h>
-#include <string.h>
 #include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 
 #include "extern.h"
 
@@ -27,8 +29,9 @@ typedef struct nlist NLIST;
 #define	_strx	n_un.n_strx
 #define	_name	n_un.n_name
 
+#define	badfmt(str)	errx(1, "%s: %s: %s", kfile, str, strerror(EFTYPE))
+
 static void badread __P((int, char *));
-static void badfmt __P((char *));
 
 static char *kfile;
 
@@ -47,10 +50,10 @@ create_knlist(name, db)
 
 	kfile = name;
 	if ((fd = open(name, O_RDONLY, 0)) < 0)
-		error(name);
+		err(1, "%s", name);
 
 	/* Read in exec structure. */
-	nr = read(fd, (char *)&ebuf, sizeof(struct exec));
+	nr = read(fd, &ebuf, sizeof(struct exec));
 	if (nr != sizeof(struct exec))
 		badfmt("no exec header");
 
@@ -71,16 +74,16 @@ create_knlist(name, db)
 
 	/* Read in the string table. */
 	strsize -= sizeof(strsize);
-	if (!(strtab = (char *)malloc(strsize)))
-		error(name);
+	if (!(strtab = malloc(strsize)))
+		err(1, NULL);
 	if ((nr = read(fd, strtab, strsize)) != strsize)
 		badread(nr, "corrupted symbol table");
 
 	/* Seek to symbol table. */
 	if (!(fp = fdopen(fd, "r")))
-		error(name);
+		err(1, "%s", name);
 	if (fseek(fp, N_SYMOFF(ebuf), SEEK_SET) == -1)
-		error(name);
+		err(1, "%s", name);
 	
 	data.data = (u_char *)&nbuf;
 	data.size = sizeof(NLIST);
@@ -91,15 +94,15 @@ create_knlist(name, db)
 		if (fread((char *)&nbuf, sizeof (NLIST), 1, fp) != 1) {
 			if (feof(fp))
 				badfmt("corrupted symbol table");
-			error(name);
+			err(1, "%s", name);
 		}
 		if (!nbuf._strx || nbuf.n_type&N_STAB)
 			continue;
 
 		key.data = (u_char *)strtab + nbuf._strx - sizeof(long);
 		key.size = strlen((char *)key.data);
-		if ((db->put)(db, &key, &data, 0))
-			error("put");
+		if (db->put(db, &key, &data, 0))
+			err(1, "record enter");
 
 		if (strcmp((char *)key.data, VRS_SYM) == 0) {
 			long cur_off, voff;
@@ -133,8 +136,8 @@ create_knlist(name, db)
 			key.size = sizeof(VRS_KEY) - 1;
 			data.data = (u_char *)buf;
 			data.size = strlen(buf);
-			if ((db->put)(db, &key, &data, 0))
-				error("put");
+			if (db->put(db, &key, &data, 0))
+				err(1, "record enter");
 
 			/* Restore to original values. */
 			data.data = (u_char *)&nbuf;
@@ -152,15 +155,6 @@ badread(nr, p)
 	char *p;
 {
 	if (nr < 0)
-		error(kfile);
+		err(1, "%s", kfile);
 	badfmt(p);
-}
-
-static void
-badfmt(p)
-	char *p;
-{
-	(void)fprintf(stderr,
-	    "kvm_mkdb: %s: %s: %s\n", kfile, p, strerror(EFTYPE));
-	exit(1);
 }
