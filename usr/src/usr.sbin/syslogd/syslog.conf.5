@@ -1,147 +1,159 @@
-.\" Copyright (c) 1990 The Regents of the University of California.
+.\" Copyright (c) 1990, 1991 The Regents of the University of California.
 .\" All rights reserved.
 .\"
-.\" %sccs.include.redist.man%
+.\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)syslog.conf.5	5.2 (Berkeley) %G%
+.\"     @(#)syslog.conf.5	5.3 (Berkeley) %G%
 .\"
-.TH SYSLOG.CONF 5 ""
-.UC 7
-.SH NAME
-syslog.conf \- syslogd configuration file
-.SH DESCRIPTION
-.I Syslog.conf
-is the configuration file for the
-.IR syslogd (8)
+.Dd 
+.Dt SYSLOG.CONF 5
+.Os
+.Sh NAME
+.Nm syslog.conf
+.Nd
+.Xr syslogd 8
+configuration file
+.Sh DESCRIPTION
+The
+.Nm syslog.conf
+file is the configuration file for the
+.Xr syslogd 8
 program.
 It consists of lines with two fields: the
-.I selector
+.Em selector
 field which specifies the types of messages and priorities to which the
 line applies, and an
-.I action
+.Em action
 field which specifies the action to be taken if a message
-.IR syslogd
+.Xr syslogd
 receives matches the selection criteria.
 The
-.I selector
+.Em selector
 field is separated from the
-.I action
+.Em action
 field by one or more tab characters.
-.PP
-.I Selectors
+.Pp
+The
+.Em Selectors
+function
 are encoded as a
-.IR facility ,
+.Em facility ,
 a period (``.''), and a
-.IR level ,
+.Em level ,
 with no intervening white-space.
 Both the
-.I facility
+.Em facility
 and the
-.I level
+.Em level
 are case insensitive.
-.PP
+.Pp
 The
-.I facility
+.Em facility
 describes the part of the system generating the message, and is one of
 the following keywords: auth, authpriv, cron, daemon, kern, lpr, mail,
 mark, news, syslog, user, uucp and local0 through local7.
 These keywords (with the exception of mark) correspond to the
-similar ``LOG_'' values specified to the
-.I openlog
+similar
+.Dq Dv LOG_
+values specified to the
+.Xr openlog 3
 and
-.I syslog
+.Xr syslog 3
 library routines.
-.PP
+.Pp
 The
-.I level
+.Em level
 describes the severity of the message, and is a keyword from the
 following ordered list (higher to lower): emerg, alert, crit, err,
 warning, notice and debug.
 These keywords correspond to the
-similar ``LOG_'' values specified to the
-.I syslog
+similar
+.Pq Dv LOG_
+values specified to the
+.Xr syslog
 library routine.
-.PP
+.Pp
 See
-.IR syslog (3)
+.Xr syslog 3
 for a further descriptions of both the
-.I facility
+.Em facility
 and
-.I level
+.Em level
 keywords and their significance.
-.PP
+.Pp
 If a received message matches the specified
-.I facility
+.Em facility
 and is of the specified
-.I level
-.BR "(or a higher level)" ,
+.Em level
+.Em (or a higher level) ,
 the action specified in the
-.I action
+.Em action
 field will be taken.
-.PP
+.Pp
 Multiple
-.I selectors
+.Em selectors
 may be specified for a single
-.I action
+.Em action
 by separating them with semicolon (``;'') characters.
 It is important to note, however, that each
-.I selector
+.Em selector
 can modify the ones preceding it.
-.PP
+.Pp
 Multiple
-.I facilities
+.Em facilities
 may be specified for a single
-.I level
+.Em level
 by separating them with comma (``,'') characters.
-.PP
+.Pp
 An asterisk (``*'') can be used to specify all
-.I facilities
+.Em facilities
 or all
-.IR levels .
-.PP
+.Em levels .
+.Pp
 The special
-.I facility
+.Em facility
 ``mark'' receives a message at priority ``info'' every 20 minutes
 (see
-.IR syslogd (8)).
+.Xr syslogd 8 ) .
 This is not enabled by a
-.I facility
+.Em facility
 field containing an asterisk.
-.PP
+.Pp
 The special
-.I level
+.Em level
 ``none'' disables a particular
-.IR facility .
-.PP
+.Em facility .
+.Pp
 The
-.I action
+.Em action
 field of each line specifies the action to be taken when the
-.I selector
+.Em selector
 field selects a message.
 There are four forms:
-.IP \(bu 3n
+.Bl -bullet
+.It
 A pathname (beginning with a leading slash).
 Selected messages are appended to the file.
-.IP \(bu 3n
+.It
 A hostname (preceded by an at (``@'') sign).
 Selected messages are forwarded to the
-.I syslogd
+.Xr syslogd
 program on the named host.
-.IP \(bu 3n
+.It
 A comma separated list of users.
 Selected messages are written to those users
 if they are logged in.
-.IP \(bu 3n
+.It
 An asterisk.
 Selected messages are written to all logged-in users.
-.PP
+.El
+.Pp
 Blank lines and lines whose first non-blank character is a hash (``#'')
 character are ignored.
-.SH EXAMPLES
-.PP
+.Sh EXAMPLES
+.Pp
 A configuration file might appear as follows:
-.sp
-.nf
+.Bd -literal
 # Log all kernel messages, authentication messages of
 # level notice or higher and anything of level err or
 # higher to the console.
@@ -169,12 +181,23 @@ mail.*							/var/log/maillog
 # Save mail and news errors of level err and higher in a
 # special file.
 uucp,news.crit						/var/log/spoolerr
-.fi
-.SH FILES
-/etc/syslog.conf	\fIsyslogd\fP(8) configuration file
-.SH BUGS
+.Ed
+.Sh FILES
+.Bl -tag -width /etc/syslog.conf -compact
+.It Pa /etc/syslog.conf
+The
+.Xr syslogd 8
+configuration file.
+.El
+.Sh BUGS
 The effects of multiple selectors are sometimes not intuitive.
 For example ``mail.crit,*.err'' will select ``mail'' facility messages at
 the level of ``err'' or higher, not at the level of ``crit'' or higher.
-.SH "SEE ALSO"
-syslog(3), syslogd(8)
+.Sh SEE ALSO
+.Xr syslog 3 ,
+.Xr syslogd 8
+.Sh HISTORY
+The
+.Nm syslog.conf
+file format is
+.Ud .
