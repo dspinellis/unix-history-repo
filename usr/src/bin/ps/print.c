@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)print.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)print.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <machine/pte.h>
@@ -229,11 +229,15 @@ started(k, v)
 	tp = localtime(&k->ki_u->u_start.tv_sec);
 	if (!now)
 		(void)time(&now);
-	if (now - k->ki_u->u_start.tv_sec < 24 * SECSPERHOUR)
-		(void) strftime(buf, sizeof(buf) - 1, "%l:print.cp", tp);
-	else if (now - k->ki_u->u_start.tv_sec < 7 * SECSPERDAY)
-		(void) strftime(buf, sizeof(buf) - 1, "%a5.1p", tp);
-	else
+	if (now - k->ki_u->u_start.tv_sec < 24 * SECSPERHOUR) {
+		static char *fmt = "%l:@M%p";
+		fmt[3] = '%';			/* I *hate* SCCS... */
+		(void) strftime(buf, sizeof(buf) - 1, fmt, tp);
+	} else if (now - k->ki_u->u_start.tv_sec < 7 * SECSPERDAY) {
+		static char *fmt = "%a@I%p";
+		fmt[2] = '%';			/* I *hate* SCCS... */
+		(void) strftime(buf, sizeof(buf) - 1, fmt, tp);
+	} else
 		(void) strftime(buf, sizeof(buf) - 1, "%e%b%y", tp);
 	(void) printf("%-*s", v->width, buf);
 }
