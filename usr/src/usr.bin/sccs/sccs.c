@@ -1,10 +1,11 @@
 # include <stdio.h>
 # include <sys/types.h>
 # include <sys/stat.h>
+# include <sys/dir.h>
 # include <sysexits.h>
 # include <whoami.h>
 
-static char SccsId[] = "@(#)sccs.c 1.10 delta %G% 16:34:19 get %H% %T%";
+static char SccsId[] = "@(#)sccs.c	1.11 %G%";
 
 # define bitset(bit, word)	((bit) & (word))
 
@@ -24,6 +25,7 @@ struct sccsprog
 # define PROG		0	/* call a program */
 # define CMACRO		1	/* command substitution macro */
 # define FIX		2	/* fix a delta */
+# define CLEAN		3	/* clean out recreatable files */
 
 /* bits for sccsflags */
 # define NO_SDOT	0001	/* no s. on front of args */
@@ -51,6 +53,7 @@ struct sccsprog SccsProg[] =
 	"del",		CMACRO,	0,			"delta/get",
 	"delt",		CMACRO,	0,			"delta/get",
 	"fix",		FIX,	0,			NULL,
+	"clean",	CLEAN,	REALUSER,		NULL,
 	NULL,		-1,	0,			NULL
 };
 
@@ -150,7 +153,7 @@ command(argv, forkflag)
 		exit(EX_SOFTWARE);
 
 	  case FIX:		/* fix a delta */
-		if (strncmp(argv[1], "-r", 2) != 0)
+		if (strcmpn(argv[1], "-r", 2) != 0)
 		{
 			fprintf(stderr, "Sccs: -r flag needed for fix command\n");
 			break;
@@ -160,6 +163,10 @@ command(argv, forkflag)
 		xcommand(&argv[2], FALSE, "get", "-e", "-g", NULL);
 		fprintf(stderr, "Sccs internal error: FIX\n");
 		exit(EX_SOFTWARE);
+
+	  case CLEAN:
+		clean();
+		break;
 
 	  default:
 		fprintf(stderr, "Sccs internal error: oper %d\n", cmd->sccsoper);
@@ -268,7 +275,7 @@ makefile(name)
 	**	3. The name references a directory.
 	*/
 
-	if (strncmp(name, "s.", 2) == 0)
+	if (strcmpn(name, "s.", 2) == 0)
 		return (name);
 	for (p = name; (c = *p) != '\0'; p++)
 	{
@@ -293,4 +300,59 @@ makefile(name)
 	}
 	strcpy(p, buf);
 	return (p);
+}
+/*
+**  CLEAN -- clean out recreatable files
+**
+**	Any file for which an "s." file exists but no "p." file
+**	exists in the current directory is purged.
+**
+**	Parameters:
+**		none.
+**
+**	Returns:
+**		none.
+**
+**	Side Effects:
+**		removes files in the current directory.
+*/
+
+clean()
+{
+	struct direct dir;
+	struct stat stbuf;
+	char buf[100];
+	FILE *dirfd;
+
+	dirfd = fopen(SccsPath, "r");
+	if (dirfd == NULL)
+	{
+		fprintf(stderr, "Sccs: cannot open %s\n", SccsPath);
+		return;
+	}
+
+	/*
+	**  Scan the SCCS directory looking for s. files.
+	*/
+
+	while (fread(&dir, sizeof dir, 1, dirfd) != NULL)
+	{
+		if (dir.d_ino == 0 || strcmpn(dir.d_name, "s.", 2) != 0)
+			continue;
+		
+		/* got an s. file -- see if the p. file exists */
+		strcpy(buf, SccsPath);
+		strcat(buf, "/p.");
+		buf[strlen(buf) + sizeof dir.d_name - 2] = '\0';
+		strcatn(buf, &dir.d_name[2], sizeof dir.d_name - 2);
+		if (stat(buf, &stbuf) >= 0)
+			continue;
+		
+		/* the s. file exists and no p. file exists -- unlink the g-file */
+		buf[sizeof dir.d_name - 2] = '\0';
+		strcpyn(buf, &dir.d_name[2], sizeof dir.d_name - 2);
+		unlink(buf);
+	}
+
+	fclose(dirfd);
 }
