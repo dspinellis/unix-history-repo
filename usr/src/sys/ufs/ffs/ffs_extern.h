@@ -4,8 +4,25 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_extern.h	8.5 (Berkeley) %G%
+ *	@(#)ffs_extern.h	8.6 (Berkeley) %G%
  */
+
+/*
+ * Sysctl values for the fast filesystem.
+ */
+#define FFS_CLUSTERREAD		1	/* cluster reading enabled */
+#define FFS_CLUSTERWRITE	2	/* cluster writing enabled */
+#define FFS_REALLOCBLKS		3	/* block reallocation enabled */
+#define FFS_ASYNCFREE		4	/* asynchronous block freeing enabled */
+#define	FFS_MAXID		5	/* number of valid ffs ids */
+
+#define FFS_NAMES { \
+	{ 0, 0 }, \
+	{ "doclusterread", CTLTYPE_INT }, \
+	{ "doclusterwrite", CTLTYPE_INT }, \
+	{ "doreallocblks", CTLTYPE_INT }, \
+	{ "doasyncfree", CTLTYPE_INT }, \
+}
 
 struct buf;
 struct fid;
@@ -20,6 +37,7 @@ struct ucred;
 struct uio;
 struct vnode;
 struct mbuf;
+struct vfsconf;
 
 __BEGIN_DECLS
 int	ffs_alloc __P((struct inode *,
@@ -35,7 +53,7 @@ int	ffs_fhtovp __P((struct mount *, struct fid *, struct mbuf *,
 	    struct vnode **, int *, struct ucred **));
 void	ffs_fragacct __P((struct fs *, int, int32_t [], int));
 int	ffs_fsync __P((struct vop_fsync_args *));
-int	ffs_init __P((void));
+int	ffs_init __P((struct vfsconf *));
 int	ffs_isblock __P((struct fs *, u_char *, ufs_daddr_t));
 int	ffs_mount __P((struct mount *,
 	    char *, caddr_t, struct nameidata *, struct proc *));
@@ -49,6 +67,8 @@ int	ffs_reclaim __P((struct vop_reclaim_args *));
 void	ffs_setblock __P((struct fs *, u_char *, ufs_daddr_t));
 int	ffs_statfs __P((struct mount *, struct statfs *, struct proc *));
 int	ffs_sync __P((struct mount *, int, struct ucred *, struct proc *));
+int	ffs_sysctl __P((int *, u_int, void *, size_t *, void *, size_t,
+	    struct proc *));
 int	ffs_truncate __P((struct vop_truncate_args *));
 int	ffs_unmount __P((struct mount *, int, struct proc *));
 int	ffs_update __P((struct vop_update_args *));
