@@ -44,6 +44,7 @@ trap(frame)
 	struct timeval syst;
 	extern int nofault;
 
+#ifdef DEBUG
 dprintf(DALLTRAPS, "%d. trap",u.u_procp->p_pid);
 dprintf(DALLTRAPS, "\npc:%x cs:%x ds:%x eflags:%x isp %x\n",
 		frame.tf_eip, frame.tf_cs, frame.tf_ds, frame.tf_eflags,
@@ -55,8 +56,9 @@ dprintf(DALLTRAPS, "edx %x ecx %x eax %x\n",
 		frame.tf_edx, frame.tf_ecx, frame.tf_eax);
 dprintf(DALLTRAPS|DPAUSE, "ec %x type %x cr0 %x cr2 %x cpl %x \n",
 		frame.tf_err, frame.tf_trapno, rcr0(), rcr2(), cpl);
+#endif
 
-	locr0[tEFLAGS] &= ~PSL_NT;	/* clear nested trap */
+	locr0[tEFLAGS] &= ~PSL_NT;	/* clear nested trap XXX */
 if(nofault && frame.tf_trapno != 0xc)
 	{ locr0[tEIP] = nofault; return;}
 
@@ -68,6 +70,7 @@ if(nofault && frame.tf_trapno != 0xc)
 	switch (type) {
 
 	default:
+bit_sucker:
 #ifdef KDB
 		if (kdb_trap(&psl))
 			return;
@@ -77,13 +80,16 @@ if(nofault && frame.tf_trapno != 0xc)
 		panic("trap");
 		/*NOTREACHED*/
 
+	case T_SEGNPFLT + USER:
 	case T_PROTFLT + USER:		/* protection fault */
+		u.u_code = code + BUS_SEGM_FAULT ;
 		i = SIGBUS;
 		break;
 
 	case T_PRIVINFLT + USER:	/* privileged instruction fault */
 	case T_RESADFLT + USER:		/* reserved addressing fault */
-	case T_RESOPFLT + USER:		/* resereved operand fault */
+	case T_RESOPFLT + USER:		/* reserved operand fault */
+	case T_FPOPFLT + USER:		/* coprocessor operand fault */
 		u.u_code = type &~ USER;
 		i = SIGILL;
 		break;
@@ -97,8 +103,27 @@ if(nofault && frame.tf_trapno != 0xc)
 		}
 		goto out;
 
-	case T_ARITHTRAP + USER:
+	case T_DNA + USER:
+		u.u_code = FPE_FPU_NP_TRAP;
+		i = SIGFPE;
+		break;
+
+	case T_BOUND + USER:
+		u.u_code = FPE_SUBRNG_TRAP;
+		i = SIGFPE;
+		break;
+
+	case T_OFLOW + USER:
+		u.u_code = FPE_INTOVF_TRAP;
+		i = SIGFPE;
+		break;
+
 	case T_DIVIDE + USER:
+		u.u_code = FPE_INTDIV_TRAP;
+		i = SIGFPE;
+		break;
+
+	case T_ARITHTRAP + USER:
 		u.u_code = code;
 		i = SIGFPE;
 		break;
@@ -111,7 +136,7 @@ if(nofault && frame.tf_trapno != 0xc)
 	case T_SEGFLT + USER:
 		if (grow((unsigned)locr0[tESP]) /*|| grow(code)*/)
 			goto out;
-xxx:
+		u.u_code = code;
 		i = SIGSEGV;
 		break;
 
@@ -124,28 +149,57 @@ xxx:
 			{ register u_int vp;
 			struct pte *pte;
 
-			if (rcr2() >= &Sysbase) goto xxx;
-			vp = btop((int)rcr2());
-			if (vp >= dptov(u.u_procp, u.u_procp->p_dsize) &&
-			    vp < sptov(u.u_procp, u.u_procp->p_ssize-1)) {
-				if (grow((unsigned)locr0[tESP]) || grow(rcr2()))
-				goto out;
-				else	{
-if(nofault) { locr0[tEIP] = nofault; return;}
-printf("didnt");
-				i = SIGSEGV;
+			if(u.u_procp->p_pid == 2) goto bit_sucker;
+#define PGEX_P	0x01
+			if (rcr2() >= &Sysbase || code & PGEX_P) {
+				u.u_code = code + BUS_PAGE_FAULT;
+				i = SIGBUS;
 				break;
+			} else {
+				vp = btop((int)rcr2());
+				if (vp >= dptov(u.u_procp, u.u_procp->p_dsize)
+				&& vp < sptov(u.u_procp, u.u_procp->p_ssize-1)){
+					if (grow((unsigned)locr0[tESP])
+					|| grow(rcr2()))
+						goto out;
+					else	if (nofault) {
+						locr0[tEIP] = nofault;
+						return;
+					}
+#ifdef DEBUG
+pg("didnt ");
+printf("\npc:%x cs:%x ds:%x eflags:%x isp %x\n",
+		frame.tf_eip, frame.tf_cs, frame.tf_ds, frame.tf_eflags,
+		frame.tf_isp);
+printf("edi %x esi %x ebp %x ebx %x esp %x\n",
+		frame.tf_edi, frame.tf_esi, frame.tf_ebp,
+		frame.tf_ebx, frame.tf_esp);
+printf("edx %x ecx %x eax %x\n",
+		frame.tf_edx, frame.tf_ecx, frame.tf_eax);
+printf("ec %x type %x cr0 %x cr2 %x cpl %x \n",
+		frame.tf_err, frame.tf_trapno, rcr0(), rcr2(), cpl);
+#endif
+					i = SIGSEGV;
+					break;
 				}
-			}
-			i = u.u_error;
-			pagein(rcr2(), 0);
-			u.u_error = i;
-		if (type == T_PAGEFLT)
-				return;
-if(nofault) { locr0[tEIP] = nofault; return;}
-			goto out;
-	}
+				i = u.u_error;
+				pagein(rcr2(), 0);
+				u.u_error = i;
+				if (type == T_PAGEFLT) return;
 
+				if(nofault) {
+					locr0[tEIP] = nofault;
+					return;
+				}
+				goto out;
+			}
+		}
+
+	case T_TRCTRAP:	 /* trace trap -- someone single stepping lcall's */
+		locr0[tEFLAGS] &= ~PSL_T;
+			/* Q: how do we turn it on again? */
+		return;
+	
 	case T_BPTFLT + USER:		/* bpt instruction fault */
 	case T_TRCTRAP + USER:		/* trace trap */
 		locr0[tEFLAGS] &= ~PSL_T;
@@ -179,11 +233,6 @@ if(nofault) { locr0[tEIP] = nofault; return;}
 	psignal(u.u_procp, i);
 out:
 	p = u.u_procp;
-
-if(p->p_cursig)
-printf("out cursig %x flg %x sig %x ign %x msk %x\n", 
-	p->p_cursig,
-	p->p_flag, p->p_sig, p->p_sigignore, p->p_sigmask);
 
 	if (p->p_cursig || ISSIG(p))
 		psig(1);
@@ -220,7 +269,6 @@ printf("out cursig %x flg %x sig %x ign %x msk %x\n",
 /*
  * Called from locore when a system call occurs
  */
-int fuckup;
 /*ARGSUSED*/
 syscall(frame)
 	struct syscframe frame;
@@ -240,9 +288,17 @@ syscall(frame)
 #endif
 	syst = u.u_ru.ru_stime;
 	if (ISPL(locr0[sCS]) != SEL_UPL)
+{
+printf("\npc:%x cs:%x eflags:%x\n",
+		frame.sf_eip, frame.sf_cs, frame.sf_eflags);
+printf("edi %x esi %x ebp %x ebx %x esp %x\n",
+		frame.sf_edi, frame.sf_esi, frame.sf_ebp,
+		frame.sf_ebx, frame.sf_esp);
+printf("edx %x ecx %x eax %x\n", frame.sf_edx, frame.sf_ecx, frame.sf_eax);
+printf("cr0 %x cr2 %x cpl %x \n", rcr0(), rcr2(), cpl);
 		panic("syscall");
+}
 	u.u_ar0 = locr0;
-svfpsp();
 	params = (caddr_t)locr0[sESP] + NBPW ;
 	u.u_error = 0;
 	/*
@@ -271,7 +327,6 @@ svfpsp();
 		u.u_eosys = NORMALRETURN;
 		(*callp->sy_call)();
 	}
-/*rsfpsp();*/
 	if (u.u_eosys == NORMALRETURN) {
 		if (u.u_error) {
 /*dprintf(DSYSFAIL,"%d. fail %d %d\n",u.u_procp->p_pid,  code, u.u_error);*/
@@ -330,7 +385,6 @@ nosys()
 	psignal(u.u_procp, SIGSYS);
 }
 
-#ifdef notdef
 /*
  * Ignored system call
  */
@@ -338,4 +392,3 @@ nullsys()
 {
 
 }
-#endif

@@ -7,9 +7,23 @@
  *
  * %sccs.include.386.c%
  *
- *	@(#)vm_machdep.c	5.1 (Berkeley) %G%
+ *	@(#)vm_machdep.c	5.2 (Berkeley) %G%
  */
 
+/*
+ * Copyright (c) 1988 University of Utah.
+ * All rights reserved.  The Utah Software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	Utah $Hdr: vm_machdep.c 1.16.1.1 89/06/23$
+ */
+/*
+ * Copyright (c) 1982, 1986 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@(#)vm_machdep.c	7.1 (Berkeley) 6/5/86
+ */
 
 #include "pte.h"
 
@@ -236,10 +250,11 @@ probew(addr)
 	p = u.u_procp;
 	page = btop(addr);
 	if (page < dptov(p, p->p_dsize) || page > sptov(p, p->p_ssize))
+/*
 {
-dprintf(DPHYS,"vtopte %x %x\n", vtopte(p, page), *(int *)vtopte(p, page) );
+dprintf(DPHYS,"vtopte %x %x\n", vtopte(p, page), *(int *)vtopte(p, page) );*/
 		return((*(int *)vtopte(p, page) & PG_PROT) == PG_UW);
-}
+/*}*/
 	return(0);
 }
 
@@ -256,7 +271,7 @@ kernacc(addr, count, rw)
 	register int ix, cnt;
 	extern long Syssize;
 
-dprintf(DPHYS,"kernacc %x count %d rw %d", addr, count, rw);
+/*dprintf(DPHYS,"kernacc %x count %d rw %d", addr, count, rw);*/
 	if (count <= 0)
 		return(0);
 	pde = (struct pde *)((u_int)u.u_procp->p_p0br + u.u_procp->p_szpt * NBPG);
@@ -265,25 +280,25 @@ dprintf(DPHYS,"kernacc %x count %d rw %d", addr, count, rw);
 	cnt -= ix;
 	for (pde += ix; cnt; cnt--, pde++)
 		if (pde->pd_v == 0)
-{
-dprintf(DPHYS,"nope pde %x, idx %x\n", pde, ix);
+/*{
+dprintf(DPHYS,"nope pde %x, idx %x\n", pde, ix);*/
 			return(0);
-}
+/*}*/
 	ix = btop(addr-0xfe000000);
 	cnt = btop(addr-0xfe000000+count+NBPG-1);
 	if (cnt > (int)&Syssize)
-{
-dprintf(DPHYS,"nope cnt %x\n", cnt);
+/*{
+dprintf(DPHYS,"nope cnt %x\n", cnt);*/
 		return(0);
-}
+/*}*/
 	cnt -= ix;
 	for (pte = &Sysmap[ix]; cnt; cnt--, pte++)
 		if (pte->pg_v == 0 /*|| (rw == B_WRITE && pte->pg_prot == 1)*/) 
-{
-dprintf(DPHYS,"nope pte %x %x, idx %x\n", pte, *(int *)pte, ix);
+/*{
+dprintf(DPHYS,"nope pte %x %x, idx %x\n", pte, *(int *)pte, ix);*/
 			return(0);
-}
-dprintf(DPHYS,"yup\n");
+/*}
+dprintf(DPHYS,"yup\n");*/
 	return(1);
 }
 
@@ -295,7 +310,7 @@ useracc(addr, count, rw)
 	register u_int addr2;
 	extern int prober(), probew();
 
-dprintf(DPHYS,"useracc %x count %d rw %d", addr, count, rw);
+/*dprintf(DPHYS,"useracc %x count %d rw %d", addr, count, rw);*/
 	if (count <= 0)
 		return(0);
 	addr2 = addr;
@@ -303,13 +318,13 @@ dprintf(DPHYS,"useracc %x count %d rw %d", addr, count, rw);
 	func = (rw == B_READ) ? prober : probew;
 	do {
 		if ((*func)(addr2) == 0)
-{
-dprintf(DPHYS,"nope %x\n", addr);
+/*{
+dprintf(DPHYS,"nope %x\n", addr);*/
 			return(0);
-}
+/*}*/
 		addr2 = (addr2 + NBPG) & ~PGOFSET;
 	} while (addr2 < addr);
-dprintf(DPHYS,"yup\n", addr);
+/*dprintf(DPHYS,"yup\n", addr);*/
 	return(1);
 }
 
@@ -350,7 +365,7 @@ initcr3(p)
  * Page directory table address is given by Usrptmap index of p_szpt.
  * [used by vgetpt for kernal mode entries, and ptexpand for user mode entries]
  */
-initpdt(p, usr)
+initpdt(p)
 	register struct proc *p;
 {
 	register int i, k, sz;
@@ -359,7 +374,6 @@ initpdt(p, usr)
 	extern Sysbase;
 
 /*pg("initpdt");*/
-if(!usr) {
 	/* clear entire map */
 	pde = vtopde(p, 0);
 	bzero(pde, NBPG);
@@ -375,8 +389,6 @@ if(!usr) {
 	pde->pd_pfnum = Usrptmap[btokmx(p->p_addr)].pg_pfnum;
 /*printf("%d.u. pde %x pfnum %x virt %x\n", p->p_pid, pde, pde->pd_pfnum,
 p->p_addr);*/
-	return;
-}
 
 	/* otherwise, fill in user map */
 	k = btokmx(p->p_p0br);
@@ -385,7 +397,7 @@ p->p_addr);*/
 
 	/* text and data */
 	sz = ctopt(p->p_tsize + p->p_dsize);
-dprintf(DEXPAND,"textdata 0 to %d\n",sz-1);
+/*dprintf(DEXPAND,"textdata 0 to %d\n",sz-1);*/
 	for (i = 0; i < sz; i++, pde++) {
 		*(int *)pde = PG_UW | PG_V;
 		pde->pd_pfnum = Usrptmap[k++].pg_pfnum;
@@ -402,7 +414,7 @@ dprintf(DEXPAND,"textdata 0 to %d\n",sz-1);
 		k += p->p_szpt - sz;
 	/* hole */
 	sz = NPTEPG - ctopt(p->p_ssize + UPAGES + btoc(&Sysbase));
-dprintf(DEXPAND,"zero %d upto %d\n", i, sz-1);
+/*dprintf(DEXPAND,"zero %d upto %d\n", i, sz-1);*/
 	for ( ; i < sz; i++, pde++)
 /* definite bug here... does not hit all entries, but point moot due
 to bzero above XXX*/
@@ -412,7 +424,7 @@ to bzero above XXX*/
 }
 	/* stack and u-area */
 	sz = NPTEPG - ctopt(UPAGES + btoc(&Sysbase));
-dprintf(DEXPAND,"stack %d upto %d\n", i, sz-1);
+/*dprintf(DEXPAND,"stack %d upto %d\n", i, sz-1);*/
 	for ( ; i < sz; i++, pde++) {
 		*(int *)pde = PG_UW | PG_V;
 		pde->pd_pfnum = Usrptmap[k++].pg_pfnum;
@@ -514,6 +526,7 @@ vmapbuf(bp)
 		iopte++, pte++;
 		a++;
 	}
+	load_cr3(_cr3());
 }
 
 /*
