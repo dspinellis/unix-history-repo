@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)input.c	1.11 (Berkeley) 84/12/11";
+static	char *sccsid = "@(#)input.c	1.12 (Berkeley) 84/12/18";
 #include <stdio.h>
 #include <ctype.h>
 #include "error.h"
@@ -487,7 +487,11 @@ Errorclass troff()
 }
 Errorclass mod2()
 {
-	if (   (strcmp(wordv[1], "!!!") == 0)
+	/*
+	 *	for decwrl modula2 compiler (powell)
+	 */
+	if (   (  (strcmp(wordv[1], "!!!") == 0)	/* early version */
+	        ||(strcmp(wordv[1], "File") == 0))	/* later version */
 	    && (lastchar(wordv[2]) == ',')	/* file name */
 	    && (strcmp(wordv[3], "line") == 0)
 	    && (isdigit(firstchar(wordv[4])))	/* line number */
