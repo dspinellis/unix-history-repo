@@ -4,19 +4,27 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)config.h	8.2 (Berkeley) %G%
+ *	@(#)config.h	8.3 (Berkeley) %G%
  */
 
+typedef struct _tag {
+	TAILQ_ENTRY(_tag) q;		/* Queue of tags. */
+
+	TAILQ_HEAD(tqh, _entry) list;	/* Queue of entries. */
+	char *s;			/* Associated string. */
+	size_t len;			/* Length of 's'. */
+} TAG;
 typedef struct _entry {
-	struct queue_entry	list;		/* List of items. */
-	struct queue_entry	tags;		/* List of tags. */
-	char *s;				/* Associated string. */
-	size_t len;				/* Length of 's'. */
+	TAILQ_ENTRY(_entry) q;		/* Queue of entries. */
+
+	char *s;			/* Associated string. */
+	size_t len;			/* Length of 's'. */
 } ENTRY;
 
-extern struct queue_entry head;
+TAILQ_HEAD(_head, _tag);
+extern struct _head head;
 
-ENTRY	*addlist __P((char *));
+TAG	*addlist __P((char *));
 void	 config __P((char *));
 void	 debug __P((char *));
-ENTRY	*getlist __P((char *));
+TAG	*getlist __P((char *));
