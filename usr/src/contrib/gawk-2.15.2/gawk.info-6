@@ -1,0 +1,1234 @@
+This is Info file gawk.info, produced by Makeinfo-1.54 from the input
+file gawk.texi.
+
+   This file documents `awk', a program that you can use to select
+particular records in a file and perform operations upon them.
+
+   This is Edition 0.15 of `The GAWK Manual',
+for the 2.15 version of the GNU implementation
+of AWK.
+
+   Copyright (C) 1989, 1991, 1992, 1993 Free Software Foundation, Inc.
+
+   Permission is granted to make and distribute verbatim copies of this
+manual provided the copyright notice and this permission notice are
+preserved on all copies.
+
+   Permission is granted to copy and distribute modified versions of
+this manual under the conditions for verbatim copying, provided that
+the entire resulting derived work is distributed under the terms of a
+permission notice identical to this one.
+
+   Permission is granted to copy and distribute translations of this
+manual into another language, under the above conditions for modified
+versions, except that this permission notice may be stated in a
+translation approved by the Foundation.
+
+
+File: gawk.info,  Node: I/O Functions,  Next: Time Functions,  Prev: String Functions,  Up: Built-in
+
+Built-in Functions for Input/Output
+===================================
+
+`close(FILENAME)'
+     Close the file FILENAME, for input or output.  The argument may
+     alternatively be a shell command that was used for redirecting to
+     or from a pipe; then the pipe is closed.
+
+     *Note Closing Input Files and Pipes: Close Input, regarding closing
+     input files and pipes.  *Note Closing Output Files and Pipes:
+     Close Output, regarding closing output files and pipes.
+
+`system(COMMAND)'
+     The system function allows the user to execute operating system
+     commands and then return to the `awk' program.  The `system'
+     function executes the command given by the string COMMAND.  It
+     returns, as its value, the status returned by the command that was
+     executed.
+
+     For example, if the following fragment of code is put in your `awk'
+     program:
+
+          END {
+               system("mail -s 'awk run done' operator < /dev/null")
+          }
+
+     the system operator will be sent mail when the `awk' program
+     finishes processing input and begins its end-of-input processing.
+
+     Note that much the same result can be obtained by redirecting
+     `print' or `printf' into a pipe.  However, if your `awk' program
+     is interactive, `system' is useful for cranking up large
+     self-contained programs, such as a shell or an editor.
+
+     Some operating systems cannot implement the `system' function.
+     `system' causes a fatal error if it is not supported.
+
+Controlling Output Buffering with `system'
+------------------------------------------
+
+   Many utility programs will "buffer" their output; they save
+information to be written to a disk file or terminal in memory, until
+there is enough to be written in one operation.  This is often more
+efficient than writing every little bit of information as soon as it is
+ready.  However, sometimes it is necessary to force a program to
+"flush" its buffers; that is, write the information to its destination,
+even if a buffer is not full.  You can do this from your `awk' program
+by calling `system' with a null string as its argument:
+
+     system("")   # flush output
+
+`gawk' treats this use of the `system' function as a special case, and
+is smart enough not to run a shell (or other command interpreter) with
+the empty command.  Therefore, with `gawk', this idiom is not only
+useful, it is efficient.  While this idiom should work with other `awk'
+implementations, it will not necessarily avoid starting an unnecessary
+shell.
+
+
+File: gawk.info,  Node: Time Functions,  Prev: I/O Functions,  Up: Built-in
+
+Functions for Dealing with Time Stamps
+======================================
+
+   A common use for `awk' programs is the processing of log files.  Log
+files often contain time stamp information, indicating when a
+particular log record was written.  Many programs log their time stamp
+in the form returned by the `time' system call, which is the number of
+seconds since a particular epoch.  On POSIX systems, it is the number
+of seconds since Midnight, January 1, 1970, UTC.
+
+   In order to make it easier to process such log files, and to easily
+produce useful reports, `gawk' provides two functions for working with
+time stamps.  Both of these are `gawk' extensions; they are not
+specified in the POSIX standard, nor are they in any other known version
+of `awk'.
+
+`systime()'
+     This function returns the current time as the number of seconds
+     since the system epoch.  On POSIX systems, this is the number of
+     seconds since Midnight, January 1, 1970, UTC.  It may be a
+     different number on other systems.
+
+`strftime(FORMAT, TIMESTAMP)'
+     This function returns a string.  It is similar to the function of
+     the same name in the ANSI C standard library.  The time specified
+     by TIMESTAMP is used to produce a string, based on the contents of
+     the FORMAT string.
+
+   The `systime' function allows you to compare a time stamp from a log
+file with the current time of day.  In particular, it is easy to
+determine how long ago a particular record was logged.  It also allows
+you to produce log records using the "seconds since the epoch" format.
+
+   The `strftime' function allows you to easily turn a time stamp into
+human-readable information.  It is similar in nature to the `sprintf'
+function, copying non-format specification characters verbatim to the
+returned string, and substituting date and time values for format
+specifications in the FORMAT string.  If no TIMESTAMP argument is
+supplied, `gawk' will use the current time of day as the time stamp.
+
+   `strftime' is guaranteed by the ANSI C standard to support the
+following date format specifications:
+
+`%a'
+     The locale's abbreviated weekday name.
+
+`%A'
+     The locale's full weekday name.
+
+`%b'
+     The locale's abbreviated month name.
+
+`%B'
+     The locale's full month name.
+
+`%c'
+     The locale's "appropriate" date and time representation.
+
+`%d'
+     The day of the month as a decimal number (01-31).
+
+`%H'
+     The hour (24-hour clock) as a decimal number (00-23).
+
+`%I'
+     The hour (12-hour clock) as a decimal number (01-12).
+
+`%j'
+     The day of the year as a decimal number (001-366).
+
+`%m'
+     The month as a decimal number (01-12).
+
+`%M'
+     The minute as a decimal number (00-59).
+
+`%p'
+     The locale's equivalent of the AM/PM designations associated with
+     a 12-hour clock.
+
+`%S'
+     The second as a decimal number (00-61).  (Occasionally there are
+     minutes in a year with one or two leap seconds, which is why the
+     seconds can go from 0 all the way to 61.)
+
+`%U'
+     The week number of the year (the first Sunday as the first day of
+     week 1) as a decimal number (00-53).
+
+`%w'
+     The weekday as a decimal number (0-6).  Sunday is day 0.
+
+`%W'
+     The week number of the year (the first Monday as the first day of
+     week 1) as a decimal number (00-53).
+
+`%x'
+     The locale's "appropriate" date representation.
+
+`%X'
+     The locale's "appropriate" time representation.
+
+`%y'
+     The year without century as a decimal number (00-99).
+
+`%Y'
+     The year with century as a decimal number.
+
+`%Z'
+     The time zone name or abbreviation, or no characters if no time
+     zone is determinable.
+
+`%%'
+     A literal `%'.
+
+   If a conversion specifier is not one of the above, the behavior is
+undefined.  (This is because the ANSI standard for C leaves the
+behavior of the C version of `strftime' undefined, and `gawk' will use
+the system's version of `strftime' if it's there.  Typically, the
+conversion specifier will either not appear in the returned string, or
+it will appear literally.)
+
+   Informally, a "locale" is the geographic place in which a program is
+meant to run.  For example, a common way to abbreviate the date
+September 4, 1991 in the United States would be "9/4/91".  In many
+countries in Europe, however, it would be abbreviated "4.9.91".  Thus,
+the `%x' specification in a `"US"' locale might produce `9/4/91', while
+in a `"EUROPE"' locale, it might produce `4.9.91'.  The ANSI C standard
+defines a default `"C"' locale, which is an environment that is typical
+of what most C programmers are used to.
+
+   A public-domain C version of `strftime' is shipped with `gawk' for
+systems that are not yet fully ANSI-compliant.  If that version is used
+to compile `gawk' (*note Installing `gawk': Installation.), then the
+following additional format specifications are available:
+
+`%D'
+     Equivalent to specifying `%m/%d/%y'.
+
+`%e'
+     The day of the month, padded with a blank if it is only one digit.
+
+`%h'
+     Equivalent to `%b', above.
+
+`%n'
+     A newline character (ASCII LF).
+
+`%r'
+     Equivalent to specifying `%I:%M:%S %p'.
+
+`%R'
+     Equivalent to specifying `%H:%M'.
+
+`%T'
+     Equivalent to specifying `%H:%M:%S'.
+
+`%t'
+     A TAB character.
+
+`%k'
+     is replaced by the hour (24-hour clock) as a decimal number (0-23).
+     Single digit numbers are padded with a blank.
+
+`%l'
+     is replaced by the hour (12-hour clock) as a decimal number (1-12).
+     Single digit numbers are padded with a blank.
+
+`%C'
+     The century, as a number between 00 and 99.
+
+`%u'
+     is replaced by the weekday as a decimal number [1 (Monday)-7].
+
+`%V'
+     is replaced by the week number of the year (the first Monday as
+     the first day of week 1) as a decimal number (01-53).  The method
+     for determining the week number is as specified by ISO 8601 (to
+     wit: if the week containing January 1 has four or more days in the
+     new year, then it is week 1, otherwise it is week 53 of the
+     previous year and the next week is week 1).
+
+`%Ec %EC %Ex %Ey %EY %Od %Oe %OH %OI'
+`%Om %OM %OS %Ou %OU %OV %Ow %OW %Oy'
+     These are "alternate representations" for the specifications that
+     use only the second letter (`%c', `%C', and so on).  They are
+     recognized, but their normal representations are used.  (These
+     facilitate compliance with the POSIX `date' utility.)
+
+`%v'
+     The date in VMS format (e.g. 20-JUN-1991).
+
+   Here are two examples that use `strftime'.  The first is an `awk'
+version of the C `ctime' function.  (This is a user defined function,
+which we have not discussed yet.  *Note User-defined Functions:
+User-defined, for more information.)
+
+     # ctime.awk
+     #
+     # awk version of C ctime(3) function
+     
+     function ctime(ts,    format)
+     {
+         format = "%a %b %e %H:%M:%S %Z %Y"
+         if (ts == 0)
+             ts = systime()         # use current time as default
+         return strftime(format, ts)
+     }
+
+   This next example is an `awk' implementation of the POSIX `date'
+utility.  Normally, the `date' utility prints the current date and time
+of day in a well known format.  However, if you provide an argument to
+it that begins with a `+', `date' will copy non-format specifier
+characters to the standard output, and will interpret the current time
+according to the format specifiers in the string.  For example:
+
+     date '+Today is %A, %B %d, %Y.'
+
+might print
+
+     Today is Thursday, July 11, 1991.
+
+   Here is the `awk' version of the `date' utility.
+
+     #! /usr/bin/gawk -f
+     #
+     # date --- implement the P1003.2 Draft 11 'date' command
+     #
+     # Bug: does not recognize the -u argument.
+     
+     BEGIN    \
+     {
+         format = "%a %b %e %H:%M:%S %Z %Y"
+         exitval = 0
+     
+         if (ARGC > 2)
+             exitval = 1
+         else if (ARGC == 2) {
+             format = ARGV[1]
+             if (format ~ /^\+/)
+                 format = substr(format, 2)    # remove leading +
+         }
+         print strftime(format)
+         exit exitval
+     }
+
+
+File: gawk.info,  Node: User-defined,  Next: Built-in Variables,  Prev: Built-in,  Up: Top
+
+User-defined Functions
+**********************
+
+   Complicated `awk' programs can often be simplified by defining your
+own functions.  User-defined functions can be called just like built-in
+ones (*note Function Calls::.), but it is up to you to define them--to
+tell `awk' what they should do.
+
+* Menu:
+
+* Definition Syntax::           How to write definitions and what they mean.
+* Function Example::            An example function definition and
+                                what it does.
+* Function Caveats::            Things to watch out for.
+* Return Statement::            Specifying the value a function returns.
+
+
+File: gawk.info,  Node: Definition Syntax,  Next: Function Example,  Prev: User-defined,  Up: User-defined
+
+Syntax of Function Definitions
+==============================
+
+   Definitions of functions can appear anywhere between the rules of the
+`awk' program.  Thus, the general form of an `awk' program is extended
+to include sequences of rules *and* user-defined function definitions.
+
+   The definition of a function named NAME looks like this:
+
+     function NAME (PARAMETER-LIST) {
+          BODY-OF-FUNCTION
+     }
+
+NAME is the name of the function to be defined.  A valid function name
+is like a valid variable name: a sequence of letters, digits and
+underscores, not starting with a digit.  Functions share the same pool
+of names as variables and arrays.
+
+   PARAMETER-LIST is a list of the function's arguments and local
+variable names, separated by commas.  When the function is called, the
+argument names are used to hold the argument values given in the call.
+The local variables are initialized to the null string.
+
+   The BODY-OF-FUNCTION consists of `awk' statements.  It is the most
+important part of the definition, because it says what the function
+should actually *do*.  The argument names exist to give the body a way
+to talk about the arguments; local variables, to give the body places
+to keep temporary values.
+
+   Argument names are not distinguished syntactically from local
+variable names; instead, the number of arguments supplied when the
+function is called determines how many argument variables there are.
+Thus, if three argument values are given, the first three names in
+PARAMETER-LIST are arguments, and the rest are local variables.
+
+   It follows that if the number of arguments is not the same in all
+calls to the function, some of the names in PARAMETER-LIST may be
+arguments on some occasions and local variables on others.  Another way
+to think of this is that omitted arguments default to the null string.
+
+   Usually when you write a function you know how many names you intend
+to use for arguments and how many you intend to use as locals.  By
+convention, you should write an extra space between the arguments and
+the locals, so other people can follow how your function is supposed to
+be used.
+
+   During execution of the function body, the arguments and local
+variable values hide or "shadow" any variables of the same names used
+in the rest of the program.  The shadowed variables are not accessible
+in the function definition, because there is no way to name them while
+their names have been taken away for the local variables.  All other
+variables used in the `awk' program can be referenced or set normally
+in the function definition.
+
+   The arguments and local variables last only as long as the function
+body is executing.  Once the body finishes, the shadowed variables come
+back.
+
+   The function body can contain expressions which call functions.  They
+can even call this function, either directly or by way of another
+function.  When this happens, we say the function is "recursive".
+
+   There is no need in `awk' to put the definition of a function before
+all uses of the function.  This is because `awk' reads the entire
+program before starting to execute any of it.
+
+   In many `awk' implementations, the keyword `function' may be
+abbreviated `func'.  However, POSIX only specifies the use of the
+keyword `function'.  This actually has some practical implications.  If
+`gawk' is in POSIX-compatibility mode (*note Invoking `awk': Command
+Line.), then the following statement will *not* define a function:
+
+     func foo() { a = sqrt($1) ; print a }
+
+Instead it defines a rule that, for each record, concatenates the value
+of the variable `func' with the return value of the function `foo', and
+based on the truth value of the result, executes the corresponding
+action.  This is probably not what was desired.  (`awk' accepts this
+input as syntactically valid, since functions may be used before they
+are defined in `awk' programs.)
+
+
+File: gawk.info,  Node: Function Example,  Next: Function Caveats,  Prev: Definition Syntax,  Up: User-defined
+
+Function Definition Example
+===========================
+
+   Here is an example of a user-defined function, called `myprint', that
+takes a number and prints it in a specific format.
+
+     function myprint(num)
+     {
+          printf "%6.3g\n", num
+     }
+
+To illustrate, here is an `awk' rule which uses our `myprint' function:
+
+     $3 > 0     { myprint($3) }
+
+This program prints, in our special format, all the third fields that
+contain a positive number in our input.  Therefore, when given:
+
+      1.2   3.4    5.6   7.8
+      9.10 11.12 -13.14 15.16
+     17.18 19.20  21.22 23.24
+
+this program, using our function to format the results, prints:
+
+        5.6
+       21.2
+
+   Here is a rather contrived example of a recursive function.  It
+prints a string backwards:
+
+     function rev (str, len) {
+         if (len == 0) {
+             printf "\n"
+             return
+         }
+         printf "%c", substr(str, len, 1)
+         rev(str, len - 1)
+     }
+
+
+File: gawk.info,  Node: Function Caveats,  Next: Return Statement,  Prev: Function Example,  Up: User-defined
+
+Calling User-defined Functions
+==============================
+
+   "Calling a function" means causing the function to run and do its
+job.  A function call is an expression, and its value is the value
+returned by the function.
+
+   A function call consists of the function name followed by the
+arguments in parentheses.  What you write in the call for the arguments
+are `awk' expressions; each time the call is executed, these
+expressions are evaluated, and the values are the actual arguments.  For
+example, here is a call to `foo' with three arguments (the first being
+a string concatenation):
+
+     foo(x y, "lose", 4 * z)
+
+     *Caution:* whitespace characters (spaces and tabs) are not allowed
+     between the function name and the open-parenthesis of the argument
+     list.  If you write whitespace by mistake, `awk' might think that
+     you mean to concatenate a variable with an expression in
+     parentheses.  However, it notices that you used a function name
+     and not a variable name, and reports an error.
+
+   When a function is called, it is given a *copy* of the values of its
+arguments.  This is called "call by value".  The caller may use a
+variable as the expression for the argument, but the called function
+does not know this: it only knows what value the argument had.  For
+example, if you write this code:
+
+     foo = "bar"
+     z = myfunc(foo)
+
+then you should not think of the argument to `myfunc' as being "the
+variable `foo'."  Instead, think of the argument as the string value,
+`"bar"'.
+
+   If the function `myfunc' alters the values of its local variables,
+this has no effect on any other variables.  In particular, if `myfunc'
+does this:
+
+     function myfunc (win) {
+       print win
+       win = "zzz"
+       print win
+     }
+
+to change its first argument variable `win', this *does not* change the
+value of `foo' in the caller.  The role of `foo' in calling `myfunc'
+ended when its value, `"bar"', was computed.  If `win' also exists
+outside of `myfunc', the function body cannot alter this outer value,
+because it is shadowed during the execution of `myfunc' and cannot be
+seen or changed from there.
+
+   However, when arrays are the parameters to functions, they are *not*
+copied.  Instead, the array itself is made available for direct
+manipulation by the function.  This is usually called "call by
+reference".  Changes made to an array parameter inside the body of a
+function *are* visible outside that function.  This can be *very*
+dangerous if you do not watch what you are doing.  For example:
+
+     function changeit (array, ind, nvalue) {
+          array[ind] = nvalue
+     }
+     
+     BEGIN {
+                a[1] = 1 ; a[2] = 2 ; a[3] = 3
+                changeit(a, 2, "two")
+                printf "a[1] = %s, a[2] = %s, a[3] = %s\n", a[1], a[2], a[3]
+           }
+
+prints `a[1] = 1, a[2] = two, a[3] = 3', because calling `changeit'
+stores `"two"' in the second element of `a'.
+
+
+File: gawk.info,  Node: Return Statement,  Prev: Function Caveats,  Up: User-defined
+
+The `return' Statement
+======================
+
+   The body of a user-defined function can contain a `return' statement.
+This statement returns control to the rest of the `awk' program.  It
+can also be used to return a value for use in the rest of the `awk'
+program.  It looks like this:
+
+     return EXPRESSION
+
+   The EXPRESSION part is optional.  If it is omitted, then the returned
+value is undefined and, therefore, unpredictable.
+
+   A `return' statement with no value expression is assumed at the end
+of every function definition.  So if control reaches the end of the
+function body, then the function returns an unpredictable value.  `awk'
+will not warn you if you use the return value of such a function; you
+will simply get unpredictable or unexpected results.
+
+   Here is an example of a user-defined function that returns a value
+for the largest number among the elements of an array:
+
+     function maxelt (vec,   i, ret) {
+          for (i in vec) {
+               if (ret == "" || vec[i] > ret)
+                    ret = vec[i]
+          }
+          return ret
+     }
+
+You call `maxelt' with one argument, which is an array name.  The local
+variables `i' and `ret' are not intended to be arguments; while there
+is nothing to stop you from passing two or three arguments to `maxelt',
+the results would be strange.  The extra space before `i' in the
+function parameter list is to indicate that `i' and `ret' are not
+supposed to be arguments.  This is a convention which you should follow
+when you define functions.
+
+   Here is a program that uses our `maxelt' function.  It loads an
+array, calls `maxelt', and then reports the maximum number in that
+array:
+
+     awk '
+     function maxelt (vec,   i, ret) {
+          for (i in vec) {
+               if (ret == "" || vec[i] > ret)
+                    ret = vec[i]
+          }
+          return ret
+     }
+     
+     # Load all fields of each record into nums.
+     {
+               for(i = 1; i <= NF; i++)
+                    nums[NR, i] = $i
+     }
+     
+     END {
+          print maxelt(nums)
+     }'
+
+   Given the following input:
+
+      1 5 23 8 16
+     44 3 5 2 8 26
+     256 291 1396 2962 100
+     -6 467 998 1101
+     99385 11 0 225
+
+our program tells us (predictably) that:
+
+     99385
+
+is the largest number in our array.
+
+
+File: gawk.info,  Node: Built-in Variables,  Next: Command Line,  Prev: User-defined,  Up: Top
+
+Built-in Variables
+******************
+
+   Most `awk' variables are available for you to use for your own
+purposes; they never change except when your program assigns values to
+them, and never affect anything except when your program examines them.
+
+   A few variables have special built-in meanings.  Some of them `awk'
+examines automatically, so that they enable you to tell `awk' how to do
+certain things.  Others are set automatically by `awk', so that they
+carry information from the internal workings of `awk' to your program.
+
+   This chapter documents all the built-in variables of `gawk'.  Most
+of them are also documented in the chapters where their areas of
+activity are described.
+
+* Menu:
+
+* User-modified::               Built-in variables that you change
+                                to control `awk'.
+* Auto-set::                    Built-in variables where `awk'
+                                gives you information.
+
+
+File: gawk.info,  Node: User-modified,  Next: Auto-set,  Prev: Built-in Variables,  Up: Built-in Variables
+
+Built-in Variables that Control `awk'
+=====================================
+
+   This is a list of the variables which you can change to control how
+`awk' does certain things.
+
+`CONVFMT'
+     This string is used by `awk' to control conversion of numbers to
+     strings (*note Conversion of Strings and Numbers: Conversion.).
+     It works by being passed, in effect, as the first argument to the
+     `sprintf' function.  Its default value is `"%.6g"'.  `CONVFMT' was
+     introduced by the POSIX standard.
+
+`FIELDWIDTHS'
+     This is a space separated list of columns that tells `gawk' how to
+     manage input with fixed, columnar boundaries.  It is an
+     experimental feature that is still evolving.  Assigning to
+     `FIELDWIDTHS' overrides the use of `FS' for field splitting.
+     *Note Reading Fixed-width Data: Constant Size, for more
+     information.
+
+     If `gawk' is in compatibility mode (*note Invoking `awk': Command
+     Line.), then `FIELDWIDTHS' has no special meaning, and field
+     splitting operations are done based exclusively on the value of
+     `FS'.
+
+`FS'
+     `FS' is the input field separator (*note Specifying how Fields are
+     Separated: Field Separators.).  The value is a single-character
+     string or a multi-character regular expression that matches the
+     separations between fields in an input record.
+
+     The default value is `" "', a string consisting of a single space.
+     As a special exception, this value actually means that any
+     sequence of spaces and tabs is a single separator.  It also causes
+     spaces and tabs at the beginning or end of a line to be ignored.
+
+     You can set the value of `FS' on the command line using the `-F'
+     option:
+
+          awk -F, 'PROGRAM' INPUT-FILES
+
+     If `gawk' is using `FIELDWIDTHS' for field-splitting, assigning a
+     value to `FS' will cause `gawk' to return to the normal,
+     regexp-based, field splitting.
+
+`IGNORECASE'
+     If `IGNORECASE' is nonzero, then *all* regular expression matching
+     is done in a case-independent fashion.  In particular, regexp
+     matching with `~' and `!~', and the `gsub' `index', `match',
+     `split' and `sub' functions all ignore case when doing their
+     particular regexp operations.  *Note:* since field splitting with
+     the value of the `FS' variable is also a regular expression
+     operation, that too is done with case ignored.  *Note
+     Case-sensitivity in Matching: Case-sensitivity.
+
+     If `gawk' is in compatibility mode (*note Invoking `awk': Command
+     Line.), then `IGNORECASE' has no special meaning, and regexp
+     operations are always case-sensitive.
+
+`OFMT'
+     This string is used by `awk' to control conversion of numbers to
+     strings (*note Conversion of Strings and Numbers: Conversion.) for
+     printing with the `print' statement.  It works by being passed, in
+     effect, as the first argument to the `sprintf' function.  Its
+     default value is `"%.6g"'.  Earlier versions of `awk' also used
+     `OFMT' to specify the format for converting numbers to strings in
+     general expressions; this has been taken over by `CONVFMT'.
+
+`OFS'
+     This is the output field separator (*note Output Separators::.).
+     It is output between the fields output by a `print' statement.  Its
+     default value is `" "', a string consisting of a single space.
+
+`ORS'
+     This is the output record separator.  It is output at the end of
+     every `print' statement.  Its default value is a string containing
+     a single newline character, which could be written as `"\n"'.
+     (*Note Output Separators::.)
+
+`RS'
+     This is `awk''s input record separator.  Its default value is a
+     string containing a single newline character, which means that an
+     input record consists of a single line of text.  (*Note How Input
+     is Split into Records: Records.)
+
+`SUBSEP'
+     `SUBSEP' is the subscript separator.  It has the default value of
+     `"\034"', and is used to separate the parts of the name of a
+     multi-dimensional array.  Thus, if you access `foo[12,3]', it
+     really accesses `foo["12\0343"]' (*note Multi-dimensional Arrays:
+     Multi-dimensional.).
+
+
+File: gawk.info,  Node: Auto-set,  Prev: User-modified,  Up: Built-in Variables
+
+Built-in Variables that Convey Information
+==========================================
+
+   This is a list of the variables that are set automatically by `awk'
+on certain occasions so as to provide information to your program.
+
+`ARGC'
+`ARGV'
+     The command-line arguments available to `awk' programs are stored
+     in an array called `ARGV'.  `ARGC' is the number of command-line
+     arguments present.  *Note Invoking `awk': Command Line.  `ARGV' is
+     indexed from zero to `ARGC - 1'.  For example:
+
+          awk 'BEGIN {
+                 for (i = 0; i < ARGC; i++)
+                     print ARGV[i]
+               }' inventory-shipped BBS-list
+
+     In this example, `ARGV[0]' contains `"awk"', `ARGV[1]' contains
+     `"inventory-shipped"', and `ARGV[2]' contains `"BBS-list"'.  The
+     value of `ARGC' is 3, one more than the index of the last element
+     in `ARGV' since the elements are numbered from zero.
+
+     The names `ARGC' and `ARGV', as well the convention of indexing
+     the array from 0 to `ARGC - 1', are derived from the C language's
+     method of accessing command line arguments.
+
+     Notice that the `awk' program is not entered in `ARGV'.  The other
+     special command line options, with their arguments, are also not
+     entered.  But variable assignments on the command line *are*
+     treated as arguments, and do show up in the `ARGV' array.
+
+     Your program can alter `ARGC' and the elements of `ARGV'.  Each
+     time `awk' reaches the end of an input file, it uses the next
+     element of `ARGV' as the name of the next input file.  By storing a
+     different string there, your program can change which files are
+     read.  You can use `"-"' to represent the standard input.  By
+     storing additional elements and incrementing `ARGC' you can cause
+     additional files to be read.
+
+     If you decrease the value of `ARGC', that eliminates input files
+     from the end of the list.  By recording the old value of `ARGC'
+     elsewhere, your program can treat the eliminated arguments as
+     something other than file names.
+
+     To eliminate a file from the middle of the list, store the null
+     string (`""') into `ARGV' in place of the file's name.  As a
+     special feature, `awk' ignores file names that have been replaced
+     with the null string.
+
+`ARGIND'
+     The index in `ARGV' of the current file being processed.  Every
+     time `gawk' opens a new data file for processing, it sets `ARGIND'
+     to the index in `ARGV' of the file name.  Thus, the condition
+     `FILENAME == ARGV[ARGIND]' is always true.
+
+     This variable is useful in file processing; it allows you to tell
+     how far along you are in the list of data files, and to
+     distinguish between multiple successive instances of the same
+     filename on the command line.
+
+     While you can change the value of `ARGIND' within your `awk'
+     program, `gawk' will automatically set it to a new value when the
+     next file is opened.
+
+     This variable is a `gawk' extension; in other `awk' implementations
+     it is not special.
+
+`ENVIRON'
+     This is an array that contains the values of the environment.  The
+     array indices are the environment variable names; the values are
+     the values of the particular environment variables.  For example,
+     `ENVIRON["HOME"]' might be `/u/close'.  Changing this array does
+     not affect the environment passed on to any programs that `awk'
+     may spawn via redirection or the `system' function.  (In a future
+     version of `gawk', it may do so.)
+
+     Some operating systems may not have environment variables.  On
+     such systems, the array `ENVIRON' is empty.
+
+`ERRNO'
+     If a system error occurs either doing a redirection for `getline',
+     during a read for `getline', or during a `close' operation, then
+     `ERRNO' will contain a string describing the error.
+
+     This variable is a `gawk' extension; in other `awk' implementations
+     it is not special.
+
+`FILENAME'
+     This is the name of the file that `awk' is currently reading.  If
+     `awk' is reading from the standard input (in other words, there
+     are no files listed on the command line), `FILENAME' is set to
+     `"-"'.  `FILENAME' is changed each time a new file is read (*note
+     Reading Input Files: Reading Files.).
+
+`FNR'
+     `FNR' is the current record number in the current file.  `FNR' is
+     incremented each time a new record is read (*note Explicit Input
+     with `getline': Getline.).  It is reinitialized to 0 each time a
+     new input file is started.
+
+`NF'
+     `NF' is the number of fields in the current input record.  `NF' is
+     set each time a new record is read, when a new field is created,
+     or when `$0' changes (*note Examining Fields: Fields.).
+
+`NR'
+     This is the number of input records `awk' has processed since the
+     beginning of the program's execution.  (*note How Input is Split
+     into Records: Records.).  `NR' is set each time a new record is
+     read.
+
+`RLENGTH'
+     `RLENGTH' is the length of the substring matched by the `match'
+     function (*note Built-in Functions for String Manipulation: String
+     Functions.).  `RLENGTH' is set by invoking the `match' function.
+     Its value is the length of the matched string, or -1 if no match
+     was found.
+
+`RSTART'
+     `RSTART' is the start-index in characters of the substring matched
+     by the `match' function (*note Built-in Functions for String
+     Manipulation: String Functions.).  `RSTART' is set by invoking the
+     `match' function.  Its value is the position of the string where
+     the matched substring starts, or 0 if no match was found.
+
+
+File: gawk.info,  Node: Command Line,  Next: Language History,  Prev: Built-in Variables,  Up: Top
+
+Invoking `awk'
+**************
+
+   There are two ways to run `awk': with an explicit program, or with
+one or more program files.  Here are templates for both of them; items
+enclosed in `[...]' in these templates are optional.
+
+   Besides traditional one-letter POSIX-style options, `gawk' also
+supports GNU long named options.
+
+     awk [POSIX OR GNU STYLE OPTIONS] -f progfile [`--'] FILE ...
+     awk [POSIX OR GNU STYLE OPTIONS] [`--'] 'PROGRAM' FILE ...
+
+* Menu:
+
+* Options::                     Command line options and their meanings.
+* Other Arguments::             Input file names and variable assignments.
+* AWKPATH Variable::            Searching directories for `awk' programs.
+* Obsolete::                    Obsolete Options and/or features.
+* Undocumented::                Undocumented Options and Features.
+
+
+File: gawk.info,  Node: Options,  Next: Other Arguments,  Prev: Command Line,  Up: Command Line
+
+Command Line Options
+====================
+
+   Options begin with a minus sign, and consist of a single character.
+GNU style long named options consist of two minus signs and a keyword
+that can be abbreviated if the abbreviation allows the option to be
+uniquely identified.  If the option takes an argument, then the keyword
+is immediately followed by an equals sign (`=') and the argument's
+value.  For brevity, the discussion below only refers to the
+traditional short options; however the long and short options are
+interchangeable in all contexts.
+
+   Each long named option for `gawk' has a corresponding POSIX-style
+option.  The options and their meanings are as follows:
+
+`-F FS'
+`--field-separator=FS'
+     Sets the `FS' variable to FS (*note Specifying how Fields are
+     Separated: Field Separators.).
+
+`-f SOURCE-FILE'
+`--file=SOURCE-FILE'
+     Indicates that the `awk' program is to be found in SOURCE-FILE
+     instead of in the first non-option argument.
+
+`-v VAR=VAL'
+`--assign=VAR=VAL'
+     Sets the variable VAR to the value VAL *before* execution of the
+     program begins.  Such variable values are available inside the
+     `BEGIN' rule (see below for a fuller explanation).
+
+     The `-v' option can only set one variable, but you can use it more
+     than once, setting another variable each time, like this:
+     `-v foo=1 -v bar=2'.
+
+`-W GAWK-OPT'
+     Following the POSIX standard, options that are implementation
+     specific are supplied as arguments to the `-W' option.  With
+     `gawk', these arguments may be separated by commas, or quoted and
+     separated by whitespace.  Case is ignored when processing these
+     options.  These options also have corresponding GNU style long
+     named options.  The following `gawk'-specific options are
+     available:
+
+    `-W compat'
+    `--compat'
+          Specifies "compatibility mode", in which the GNU extensions in
+          `gawk' are disabled, so that `gawk' behaves just like Unix
+          `awk'.  *Note Extensions in `gawk' not in POSIX `awk':
+          POSIX/GNU, which summarizes the extensions.  Also see *Note
+          Downward Compatibility and Debugging: Compatibility Mode.
+
+    `-W copyleft'
+    `-W copyright'
+    `--copyleft'
+    `--copyright'
+          Print the short version of the General Public License.  This
+          option may disappear in a future version of `gawk'.
+
+    `-W help'
+    `-W usage'
+    `--help'
+    `--usage'
+          Print a "usage" message summarizing the short and long style
+          options that `gawk' accepts, and then exit.
+
+    `-W lint'
+    `--lint'
+          Provide warnings about constructs that are dubious or
+          non-portable to other `awk' implementations.  Some warnings
+          are issued when `gawk' first reads your program.  Others are
+          issued at run-time, as your program executes.
+
+    `-W posix'
+    `--posix'
+          Operate in strict POSIX mode.  This disables all `gawk'
+          extensions (just like `-W compat'), and adds the following
+          additional restrictions:
+
+             * `\x' escape sequences are not recognized (*note Constant
+               Expressions: Constants.).
+
+             * The synonym `func' for the keyword `function' is not
+               recognized (*note Syntax of Function Definitions:
+               Definition Syntax.).
+
+             * The operators `**' and `**=' cannot be used in place of
+               `^' and `^=' (*note Arithmetic Operators: Arithmetic
+               Ops., and also *note Assignment Expressions: Assignment
+               Ops.).
+
+             * Specifying `-Ft' on the command line does not set the
+               value of `FS' to be a single tab character (*note
+               Specifying how Fields are Separated: Field Separators.).
+
+          Although you can supply both `-W compat' and `-W posix' on the
+          command line, `-W posix' will take precedence.
+
+    `-W source=PROGRAM-TEXT'
+    `--source=PROGRAM-TEXT'
+          Program source code is taken from the PROGRAM-TEXT.  This
+          option allows you to mix `awk' source code in files with
+          program source code that you would enter on the command line.
+          This is particularly useful when you have library functions
+          that you wish to use from your command line programs (*note
+          The `AWKPATH' Environment Variable: AWKPATH Variable.).
+
+    `-W version'
+    `--version'
+          Prints version information for this particular copy of `gawk'.
+          This is so you can determine if your copy of `gawk' is up to
+          date with respect to whatever the Free Software Foundation is
+          currently distributing.  This option may disappear in a
+          future version of `gawk'.
+
+`--'
+     Signals the end of the command line options.  The following
+     arguments are not treated as options even if they begin with `-'.
+     This interpretation of `--' follows the POSIX argument parsing
+     conventions.
+
+     This is useful if you have file names that start with `-', or in
+     shell scripts, if you have file names that will be specified by
+     the user which could start with `-'.
+
+   Any other options are flagged as invalid with a warning message, but
+are otherwise ignored.
+
+   In compatibility mode, as a special case, if the value of FS supplied
+to the `-F' option is `t', then `FS' is set to the tab character
+(`"\t"').  This is only true for `-W compat', and not for `-W posix'
+(*note Specifying how Fields are Separated: Field Separators.).
+
+   If the `-f' option is *not* used, then the first non-option command
+line argument is expected to be the program text.
+
+   The `-f' option may be used more than once on the command line.  If
+it is, `awk' reads its program source from all of the named files, as
+if they had been concatenated together into one big file.  This is
+useful for creating libraries of `awk' functions.  Useful functions can
+be written once, and then retrieved from a standard place, instead of
+having to be included into each individual program.  You can still type
+in a program at the terminal and use library functions, by specifying
+`-f /dev/tty'.  `awk' will read a file from the terminal to use as part
+of the `awk' program.  After typing your program, type `Control-d' (the
+end-of-file character) to terminate it.  (You may also use `-f -' to
+read program source from the standard input, but then you will not be
+able to also use the standard input as a source of data.)
+
+   Because it is clumsy using the standard `awk' mechanisms to mix
+source file and command line `awk' programs, `gawk' provides the
+`--source' option.  This does not require you to pre-empt the standard
+input for your source code, and allows you to easily mix command line
+and library source code (*note The `AWKPATH' Environment Variable:
+AWKPATH Variable.).
+
+   If no `-f' or `--source' option is specified, then `gawk' will use
+the first non-option command line argument as the text of the program
+source code.
+
+
+File: gawk.info,  Node: Other Arguments,  Next: AWKPATH Variable,  Prev: Options,  Up: Command Line
+
+Other Command Line Arguments
+============================
+
+   Any additional arguments on the command line are normally treated as
+input files to be processed in the order specified.  However, an
+argument that has the form `VAR=VALUE', means to assign the value VALUE
+to the variable VAR--it does not specify a file at all.
+
+   All these arguments are made available to your `awk' program in the
+`ARGV' array (*note Built-in Variables::.).  Command line options and
+the program text (if present) are omitted from the `ARGV' array.  All
+other arguments, including variable assignments, are included.
+
+   The distinction between file name arguments and variable-assignment
+arguments is made when `awk' is about to open the next input file.  At
+that point in execution, it checks the "file name" to see whether it is
+really a variable assignment; if so, `awk' sets the variable instead of
+reading a file.
+
+   Therefore, the variables actually receive the specified values after
+all previously specified files have been read.  In particular, the
+values of variables assigned in this fashion are *not* available inside
+a `BEGIN' rule (*note `BEGIN' and `END' Special Patterns: BEGIN/END.),
+since such rules are run before `awk' begins scanning the argument list.
+The values given on the command line are processed for escape sequences
+(*note Constant Expressions: Constants.).
+
+   In some earlier implementations of `awk', when a variable assignment
+occurred before any file names, the assignment would happen *before*
+the `BEGIN' rule was executed.  Some applications came to depend upon
+this "feature."  When `awk' was changed to be more consistent, the `-v'
+option was added to accommodate applications that depended upon this
+old behavior.
+
+   The variable assignment feature is most useful for assigning to
+variables such as `RS', `OFS', and `ORS', which control input and
+output formats, before scanning the data files.  It is also useful for
+controlling state if multiple passes are needed over a data file.  For
+example:
+
+     awk 'pass == 1  { PASS 1 STUFF }
+          pass == 2  { PASS 2 STUFF }' pass=1 datafile pass=2 datafile
+
+   Given the variable assignment feature, the `-F' option is not
+strictly necessary.  It remains for historical compatibility.
+
+
+File: gawk.info,  Node: AWKPATH Variable,  Next: Obsolete,  Prev: Other Arguments,  Up: Command Line
+
+The `AWKPATH' Environment Variable
+==================================
+
+   The previous section described how `awk' program files can be named
+on the command line with the `-f' option.  In some `awk'
+implementations, you must supply a precise path name for each program
+file, unless the file is in the current directory.
+
+   But in `gawk', if the file name supplied in the `-f' option does not
+contain a `/', then `gawk' searches a list of directories (called the
+"search path"), one by one, looking for a file with the specified name.
+
+   The search path is actually a string consisting of directory names
+separated by colons.  `gawk' gets its search path from the `AWKPATH'
+environment variable.  If that variable does not exist, `gawk' uses the
+default path, which is `.:/usr/lib/awk:/usr/local/lib/awk'.  (Programs
+written by system administrators should use an `AWKPATH' variable that
+does not include the current directory, `.'.)
+
+   The search path feature is particularly useful for building up
+libraries of useful `awk' functions.  The library files can be placed
+in a standard directory that is in the default path, and then specified
+on the command line with a short file name.  Otherwise, the full file
+name would have to be typed for each file.
+
+   By combining the `--source' and `-f' options, your command line
+`awk' programs can use facilities in `awk' library files.
+
+   Path searching is not done if `gawk' is in compatibility mode.  This
+is true for both `-W compat' and `-W posix'.  *Note Command Line
+Options: Options.
+
+   *Note:* if you want files in the current directory to be found, you
+must include the current directory in the path, either by writing `.'
+as an entry in the path, or by writing a null entry in the path.  (A
+null entry is indicated by starting or ending the path with a colon, or
+by placing two colons next to each other (`::').)  If the current
+directory is not included in the path, then files cannot be found in
+the current directory.  This path search mechanism is identical to the
+shell's.
+
+
+File: gawk.info,  Node: Obsolete,  Next: Undocumented,  Prev: AWKPATH Variable,  Up: Command Line
+
+Obsolete Options and/or Features
+================================
+
+   This section describes features and/or command line options from the
+previous release of `gawk' that are either not available in the current
+version, or that are still supported but deprecated (meaning that they
+will *not* be in the next release).
+
+   For version 2.15 of `gawk', the following command line options from
+version 2.11.1 are no longer recognized.
+
+`-c'
+     Use `-W compat' instead.
+
+`-V'
+     Use `-W version' instead.
+
+`-C'
+     Use `-W copyright' instead.
+
+`-a'
+`-e'
+     These options produce an "unrecognized option" error message but
+     have no effect on the execution of `gawk'.  The POSIX standard now
+     specifies traditional `awk' regular expressions for the `awk'
+     utility.
+
+   The public-domain version of `strftime' that is distributed with
+`gawk' changed for the 2.14 release.  The `%V' conversion specifier
+that used to generate the date in VMS format was changed to `%v'.  This
+is because the POSIX standard for the `date' utility now specifies a
+`%V' conversion specifier.  *Note Functions for Dealing with Time
+Stamps: Time Functions, for details.
+
+
+File: gawk.info,  Node: Undocumented,  Prev: Obsolete,  Up: Command Line
+
+Undocumented Options and Features
+=================================
+
+   This section intentionally left blank.
+
+
+File: gawk.info,  Node: Language History,  Next: Installation,  Prev: Command Line,  Up: Top
+
+The Evolution of the `awk' Language
+***********************************
+
+   This manual describes the GNU implementation of `awk', which is
+patterned after the POSIX specification.  Many `awk' users are only
+familiar with the original `awk' implementation in Version 7 Unix,
+which is also the basis for the version in Berkeley Unix (through
+4.3-Reno).  This chapter briefly describes the evolution of the `awk'
+language.
+
+* Menu:
+
+* V7/S5R3.1::                   The major changes between V7 and
+                                System V Release 3.1.
+* S5R4::                        Minor changes between System V
+                                Releases 3.1 and 4.
+* POSIX::                       New features from the POSIX standard.
+* POSIX/GNU::                   The extensions in `gawk'
+                                not in POSIX `awk'.
+

@@ -1,0 +1,1288 @@
+This is Info file gawk.info, produced by Makeinfo-1.54 from the input
+file gawk.texi.
+
+   This file documents `awk', a program that you can use to select
+particular records in a file and perform operations upon them.
+
+   This is Edition 0.15 of `The GAWK Manual',
+for the 2.15 version of the GNU implementation
+of AWK.
+
+   Copyright (C) 1989, 1991, 1992, 1993 Free Software Foundation, Inc.
+
+   Permission is granted to make and distribute verbatim copies of this
+manual provided the copyright notice and this permission notice are
+preserved on all copies.
+
+   Permission is granted to copy and distribute modified versions of
+this manual under the conditions for verbatim copying, provided that
+the entire resulting derived work is distributed under the terms of a
+permission notice identical to this one.
+
+   Permission is granted to copy and distribute translations of this
+manual into another language, under the above conditions for modified
+versions, except that this permission notice may be stated in a
+translation approved by the Foundation.
+
+
+File: gawk.info,  Node: Output Separators,  Next: OFMT,  Prev: Print Examples,  Up: Printing
+
+Output Separators
+=================
+
+   As mentioned previously, a `print' statement contains a list of
+items, separated by commas.  In the output, the items are normally
+separated by single spaces.  But they do not have to be spaces; a
+single space is only the default.  You can specify any string of
+characters to use as the "output field separator" by setting the
+built-in variable `OFS'.  The initial value of this variable is the
+string `" "', that is, just a single space.
+
+   The output from an entire `print' statement is called an "output
+record".  Each `print' statement outputs one output record and then
+outputs a string called the "output record separator".  The built-in
+variable `ORS' specifies this string.  The initial value of the
+variable is the string `"\n"' containing a newline character; thus,
+normally each `print' statement makes a separate line.
+
+   You can change how output fields and records are separated by
+assigning new values to the variables `OFS' and/or `ORS'.  The usual
+place to do this is in the `BEGIN' rule (*note `BEGIN' and `END'
+Special Patterns: BEGIN/END.), so that it happens before any input is
+processed.  You may also do this with assignments on the command line,
+before the names of your input files.
+
+   The following example prints the first and second fields of each
+input record separated by a semicolon, with a blank line added after
+each line:
+
+     awk 'BEGIN { OFS = ";"; ORS = "\n\n" }
+                { print $1, $2 }'  BBS-list
+
+   If the value of `ORS' does not contain a newline, all your output
+will be run together on a single line, unless you output newlines some
+other way.
+
+
+File: gawk.info,  Node: OFMT,  Next: Printf,  Prev: Output Separators,  Up: Printing
+
+Controlling Numeric Output with `print'
+=======================================
+
+   When you use the `print' statement to print numeric values, `awk'
+internally converts the number to a string of characters, and prints
+that string.  `awk' uses the `sprintf' function to do this conversion.
+For now, it suffices to say that the `sprintf' function accepts a
+"format specification" that tells it how to format numbers (or
+strings), and that there are a number of different ways that numbers
+can be formatted.  The different format specifications are discussed
+more fully in *Note Using `printf' Statements for Fancier Printing:
+Printf.
+
+   The built-in variable `OFMT' contains the default format
+specification that `print' uses with `sprintf' when it wants to convert
+a number to a string for printing.  By supplying different format
+specifications as the value of `OFMT', you can change how `print' will
+print your numbers.  As a brief example:
+
+     awk 'BEGIN { OFMT = "%d"  # print numbers as integers
+                  print 17.23 }'
+
+will print `17'.
+
+
+File: gawk.info,  Node: Printf,  Next: Redirection,  Prev: OFMT,  Up: Printing
+
+Using `printf' Statements for Fancier Printing
+==============================================
+
+   If you want more precise control over the output format than `print'
+gives you, use `printf'.  With `printf' you can specify the width to
+use for each item, and you can specify various stylistic choices for
+numbers (such as what radix to use, whether to print an exponent,
+whether to print a sign, and how many digits to print after the decimal
+point).  You do this by specifying a string, called the "format
+string", which controls how and where to print the other arguments.
+
+* Menu:
+
+* Basic Printf::                Syntax of the `printf' statement.
+* Control Letters::             Format-control letters.
+* Format Modifiers::            Format-specification modifiers.
+* Printf Examples::             Several examples.
+
+
+File: gawk.info,  Node: Basic Printf,  Next: Control Letters,  Prev: Printf,  Up: Printf
+
+Introduction to the `printf' Statement
+--------------------------------------
+
+   The `printf' statement looks like this:
+
+     printf FORMAT, ITEM1, ITEM2, ...
+
+The entire list of arguments may optionally be enclosed in parentheses.
+The parentheses are necessary if any of the item expressions uses a
+relational operator; otherwise it could be confused with a redirection
+(*note Redirecting Output of `print' and `printf': Redirection.).  The
+relational operators are `==', `!=', `<', `>', `>=', `<=', `~' and `!~'
+(*note Comparison Expressions: Comparison Ops.).
+
+   The difference between `printf' and `print' is the argument FORMAT.
+This is an expression whose value is taken as a string; it specifies
+how to output each of the other arguments.  It is called the "format
+string".
+
+   The format string is the same as in the ANSI C library function
+`printf'.  Most of FORMAT is text to be output verbatim.  Scattered
+among this text are "format specifiers", one per item.  Each format
+specifier says to output the next item at that place in the format.
+
+   The `printf' statement does not automatically append a newline to its
+output.  It outputs only what the format specifies.  So if you want a
+newline, you must include one in the format.  The output separator
+variables `OFS' and `ORS' have no effect on `printf' statements.
+
+
+File: gawk.info,  Node: Control Letters,  Next: Format Modifiers,  Prev: Basic Printf,  Up: Printf
+
+Format-Control Letters
+----------------------
+
+   A format specifier starts with the character `%' and ends with a
+"format-control letter"; it tells the `printf' statement how to output
+one item.  (If you actually want to output a `%', write `%%'.)  The
+format-control letter specifies what kind of value to print.  The rest
+of the format specifier is made up of optional "modifiers" which are
+parameters such as the field width to use.
+
+   Here is a list of the format-control letters:
+
+`c'
+     This prints a number as an ASCII character.  Thus, `printf "%c",
+     65' outputs the letter `A'.  The output for a string value is the
+     first character of the string.
+
+`d'
+     This prints a decimal integer.
+
+`i'
+     This also prints a decimal integer.
+
+`e'
+     This prints a number in scientific (exponential) notation.  For
+     example,
+
+          printf "%4.3e", 1950
+
+     prints `1.950e+03', with a total of four significant figures of
+     which three follow the decimal point.  The `4.3' are "modifiers",
+     discussed below.
+
+`f'
+     This prints a number in floating point notation.
+
+`g'
+     This prints a number in either scientific notation or floating
+     point notation, whichever uses fewer characters.
+
+`o'
+     This prints an unsigned octal integer.
+
+`s'
+     This prints a string.
+
+`x'
+     This prints an unsigned hexadecimal integer.
+
+`X'
+     This prints an unsigned hexadecimal integer.  However, for the
+     values 10 through 15, it uses the letters `A' through `F' instead
+     of `a' through `f'.
+
+`%'
+     This isn't really a format-control letter, but it does have a
+     meaning when used after a `%': the sequence `%%' outputs one `%'.
+     It does not consume an argument.
+
+
+File: gawk.info,  Node: Format Modifiers,  Next: Printf Examples,  Prev: Control Letters,  Up: Printf
+
+Modifiers for `printf' Formats
+------------------------------
+
+   A format specification can also include "modifiers" that can control
+how much of the item's value is printed and how much space it gets.  The
+modifiers come between the `%' and the format-control letter.  Here are
+the possible modifiers, in the order in which they may appear:
+
+`-'
+     The minus sign, used before the width modifier, says to
+     left-justify the argument within its specified width.  Normally
+     the argument is printed right-justified in the specified width.
+     Thus,
+
+          printf "%-4s", "foo"
+
+     prints `foo '.
+
+`WIDTH'
+     This is a number representing the desired width of a field.
+     Inserting any number between the `%' sign and the format control
+     character forces the field to be expanded to this width.  The
+     default way to do this is to pad with spaces on the left.  For
+     example,
+
+          printf "%4s", "foo"
+
+     prints ` foo'.
+
+     The value of WIDTH is a minimum width, not a maximum.  If the item
+     value requires more than WIDTH characters, it can be as wide as
+     necessary.  Thus,
+
+          printf "%4s", "foobar"
+
+     prints `foobar'.
+
+     Preceding the WIDTH with a minus sign causes the output to be
+     padded with spaces on the right, instead of on the left.
+
+`.PREC'
+     This is a number that specifies the precision to use when printing.
+     This specifies the number of digits you want printed to the right
+     of the decimal point.  For a string, it specifies the maximum
+     number of characters from the string that should be printed.
+
+   The C library `printf''s dynamic WIDTH and PREC capability (for
+example, `"%*.*s"') is supported.  Instead of supplying explicit WIDTH
+and/or PREC values in the format string, you pass them in the argument
+list.  For example:
+
+     w = 5
+     p = 3
+     s = "abcdefg"
+     printf "<%*.*s>\n", w, p, s
+
+is exactly equivalent to
+
+     s = "abcdefg"
+     printf "<%5.3s>\n", s
+
+Both programs output `<**abc>'.  (We have used the bullet symbol "*" to
+represent a space, to clearly show you that there are two spaces in the
+output.)
+
+   Earlier versions of `awk' did not support this capability.  You may
+simulate it by using concatenation to build up the format string, like
+so:
+
+     w = 5
+     p = 3
+     s = "abcdefg"
+     printf "<%" w "." p "s>\n", s
+
+This is not particularly easy to read, however.
+
+
+File: gawk.info,  Node: Printf Examples,  Prev: Format Modifiers,  Up: Printf
+
+Examples of Using `printf'
+--------------------------
+
+   Here is how to use `printf' to make an aligned table:
+
+     awk '{ printf "%-10s %s\n", $1, $2 }' BBS-list
+
+prints the names of bulletin boards (`$1') of the file `BBS-list' as a
+string of 10 characters, left justified.  It also prints the phone
+numbers (`$2') afterward on the line.  This produces an aligned
+two-column table of names and phone numbers:
+
+     aardvark   555-5553
+     alpo-net   555-3412
+     barfly     555-7685
+     bites      555-1675
+     camelot    555-0542
+     core       555-2912
+     fooey      555-1234
+     foot       555-6699
+     macfoo     555-6480
+     sdace      555-3430
+     sabafoo    555-2127
+
+   Did you notice that we did not specify that the phone numbers be
+printed as numbers?  They had to be printed as strings because the
+numbers are separated by a dash.  This dash would be interpreted as a
+minus sign if we had tried to print the phone numbers as numbers.  This
+would have led to some pretty confusing results.
+
+   We did not specify a width for the phone numbers because they are the
+last things on their lines.  We don't need to put spaces after them.
+
+   We could make our table look even nicer by adding headings to the
+tops of the columns.  To do this, use the `BEGIN' pattern (*note
+`BEGIN' and `END' Special Patterns: BEGIN/END.) to force the header to
+be printed only once, at the beginning of the `awk' program:
+
+     awk 'BEGIN { print "Name      Number"
+                  print "----      ------" }
+          { printf "%-10s %s\n", $1, $2 }' BBS-list
+
+   Did you notice that we mixed `print' and `printf' statements in the
+above example?  We could have used just `printf' statements to get the
+same results:
+
+     awk 'BEGIN { printf "%-10s %s\n", "Name", "Number"
+                  printf "%-10s %s\n", "----", "------" }
+          { printf "%-10s %s\n", $1, $2 }' BBS-list
+
+By outputting each column heading with the same format specification
+used for the elements of the column, we have made sure that the headings
+are aligned just like the columns.
+
+   The fact that the same format specification is used three times can
+be emphasized by storing it in a variable, like this:
+
+     awk 'BEGIN { format = "%-10s %s\n"
+                  printf format, "Name", "Number"
+                  printf format, "----", "------" }
+          { printf format, $1, $2 }' BBS-list
+
+   See if you can use the `printf' statement to line up the headings and
+table data for our `inventory-shipped' example covered earlier in the
+section on the `print' statement (*note The `print' Statement: Print.).
+
+
+File: gawk.info,  Node: Redirection,  Next: Special Files,  Prev: Printf,  Up: Printing
+
+Redirecting Output of `print' and `printf'
+==========================================
+
+   So far we have been dealing only with output that prints to the
+standard output, usually your terminal.  Both `print' and `printf' can
+also send their output to other places.  This is called "redirection".
+
+   A redirection appears after the `print' or `printf' statement.
+Redirections in `awk' are written just like redirections in shell
+commands, except that they are written inside the `awk' program.
+
+* Menu:
+
+* File/Pipe Redirection::       Redirecting Output to Files and Pipes.
+* Close Output::                How to close output files and pipes.
+
+
+File: gawk.info,  Node: File/Pipe Redirection,  Next: Close Output,  Prev: Redirection,  Up: Redirection
+
+Redirecting Output to Files and Pipes
+-------------------------------------
+
+   Here are the three forms of output redirection.  They are all shown
+for the `print' statement, but they work identically for `printf' also.
+
+`print ITEMS > OUTPUT-FILE'
+     This type of redirection prints the items onto the output file
+     OUTPUT-FILE.  The file name OUTPUT-FILE can be any expression.
+     Its value is changed to a string and then used as a file name
+     (*note Expressions as Action Statements: Expressions.).
+
+     When this type of redirection is used, the OUTPUT-FILE is erased
+     before the first output is written to it.  Subsequent writes do not
+     erase OUTPUT-FILE, but append to it.  If OUTPUT-FILE does not
+     exist, then it is created.
+
+     For example, here is how one `awk' program can write a list of BBS
+     names to a file `name-list' and a list of phone numbers to a file
+     `phone-list'.  Each output file contains one name or number per
+     line.
+
+          awk '{ print $2 > "phone-list"
+                 print $1 > "name-list" }' BBS-list
+
+`print ITEMS >> OUTPUT-FILE'
+     This type of redirection prints the items onto the output file
+     OUTPUT-FILE.  The difference between this and the single-`>'
+     redirection is that the old contents (if any) of OUTPUT-FILE are
+     not erased.  Instead, the `awk' output is appended to the file.
+
+`print ITEMS | COMMAND'
+     It is also possible to send output through a "pipe" instead of
+     into a file.   This type of redirection opens a pipe to COMMAND
+     and writes the values of ITEMS through this pipe, to another
+     process created to execute COMMAND.
+
+     The redirection argument COMMAND is actually an `awk' expression.
+     Its value is converted to a string, whose contents give the shell
+     command to be run.
+
+     For example, this produces two files, one unsorted list of BBS
+     names and one list sorted in reverse alphabetical order:
+
+          awk '{ print $1 > "names.unsorted"
+                 print $1 | "sort -r > names.sorted" }' BBS-list
+
+     Here the unsorted list is written with an ordinary redirection
+     while the sorted list is written by piping through the `sort'
+     utility.
+
+     Here is an example that uses redirection to mail a message to a
+     mailing list `bug-system'.  This might be useful when trouble is
+     encountered in an `awk' script run periodically for system
+     maintenance.
+
+          report = "mail bug-system"
+          print "Awk script failed:", $0 | report
+          print "at record number", FNR, "of", FILENAME  | report
+          close(report)
+
+     We call the `close' function here because it's a good idea to close
+     the pipe as soon as all the intended output has been sent to it.
+     *Note Closing Output Files and Pipes: Close Output, for more
+     information on this.  This example also illustrates the use of a
+     variable to represent a FILE or COMMAND: it is not necessary to
+     always use a string constant.  Using a variable is generally a
+     good idea, since `awk' requires you to spell the string value
+     identically every time.
+
+   Redirecting output using `>', `>>', or `|' asks the system to open a
+file or pipe only if the particular FILE or COMMAND you've specified
+has not already been written to by your program, or if it has been
+closed since it was last written to.
+
+
+File: gawk.info,  Node: Close Output,  Prev: File/Pipe Redirection,  Up: Redirection
+
+Closing Output Files and Pipes
+------------------------------
+
+   When a file or pipe is opened, the file name or command associated
+with it is remembered by `awk' and subsequent writes to the same file or
+command are appended to the previous writes.  The file or pipe stays
+open until `awk' exits.  This is usually convenient.
+
+   Sometimes there is a reason to close an output file or pipe earlier
+than that.  To do this, use the `close' function, as follows:
+
+     close(FILENAME)
+
+or
+
+     close(COMMAND)
+
+   The argument FILENAME or COMMAND can be any expression.  Its value
+must exactly equal the string used to open the file or pipe to begin
+with--for example, if you open a pipe with this:
+
+     print $1 | "sort -r > names.sorted"
+
+then you must close it with this:
+
+     close("sort -r > names.sorted")
+
+   Here are some reasons why you might need to close an output file:
+
+   * To write a file and read it back later on in the same `awk'
+     program.  Close the file when you are finished writing it; then
+     you can start reading it with `getline' (*note Explicit Input with
+     `getline': Getline.).
+
+   * To write numerous files, successively, in the same `awk' program.
+     If you don't close the files, eventually you may exceed a system
+     limit on the number of open files in one process.  So close each
+     one when you are finished writing it.
+
+   * To make a command finish.  When you redirect output through a pipe,
+     the command reading the pipe normally continues to try to read
+     input as long as the pipe is open.  Often this means the command
+     cannot really do its work until the pipe is closed.  For example,
+     if you redirect output to the `mail' program, the message is not
+     actually sent until the pipe is closed.
+
+   * To run the same program a second time, with the same arguments.
+     This is not the same thing as giving more input to the first run!
+
+     For example, suppose you pipe output to the `mail' program.  If you
+     output several lines redirected to this pipe without closing it,
+     they make a single message of several lines.  By contrast, if you
+     close the pipe after each line of output, then each line makes a
+     separate message.
+
+   `close' returns a value of zero if the close succeeded.  Otherwise,
+the value will be non-zero.  In this case, `gawk' sets the variable
+`ERRNO' to a string describing the error that occurred.
+
+
+File: gawk.info,  Node: Special Files,  Prev: Redirection,  Up: Printing
+
+Standard I/O Streams
+====================
+
+   Running programs conventionally have three input and output streams
+already available to them for reading and writing.  These are known as
+the "standard input", "standard output", and "standard error output".
+These streams are, by default, terminal input and output, but they are
+often redirected with the shell, via the `<', `<<', `>', `>>', `>&' and
+`|' operators.  Standard error is used only for writing error messages;
+the reason we have two separate streams, standard output and standard
+error, is so that they can be redirected separately.
+
+   In other implementations of `awk', the only way to write an error
+message to standard error in an `awk' program is as follows:
+
+     print "Serious error detected!\n" | "cat 1>&2"
+
+This works by opening a pipeline to a shell command which can access the
+standard error stream which it inherits from the `awk' process.  This
+is far from elegant, and is also inefficient, since it requires a
+separate process.  So people writing `awk' programs have often
+neglected to do this.  Instead, they have sent the error messages to the
+terminal, like this:
+
+     NF != 4 {
+        printf("line %d skipped: doesn't have 4 fields\n", FNR) > "/dev/tty"
+     }
+
+This has the same effect most of the time, but not always: although the
+standard error stream is usually the terminal, it can be redirected, and
+when that happens, writing to the terminal is not correct.  In fact, if
+`awk' is run from a background job, it may not have a terminal at all.
+Then opening `/dev/tty' will fail.
+
+   `gawk' provides special file names for accessing the three standard
+streams.  When you redirect input or output in `gawk', if the file name
+matches one of these special names, then `gawk' directly uses the
+stream it stands for.
+
+`/dev/stdin'
+     The standard input (file descriptor 0).
+
+`/dev/stdout'
+     The standard output (file descriptor 1).
+
+`/dev/stderr'
+     The standard error output (file descriptor 2).
+
+`/dev/fd/N'
+     The file associated with file descriptor N.  Such a file must have
+     been opened by the program initiating the `awk' execution
+     (typically the shell).  Unless you take special pains, only
+     descriptors 0, 1 and 2 are available.
+
+   The file names `/dev/stdin', `/dev/stdout', and `/dev/stderr' are
+aliases for `/dev/fd/0', `/dev/fd/1', and `/dev/fd/2', respectively,
+but they are more self-explanatory.
+
+   The proper way to write an error message in a `gawk' program is to
+use `/dev/stderr', like this:
+
+     NF != 4 {
+       printf("line %d skipped: doesn't have 4 fields\n", FNR) > "/dev/stderr"
+     }
+
+   `gawk' also provides special file names that give access to
+information about the running `gawk' process.  Each of these "files"
+provides a single record of information.  To read them more than once,
+you must first close them with the `close' function (*note Closing
+Input Files and Pipes: Close Input.).  The filenames are:
+
+`/dev/pid'
+     Reading this file returns the process ID of the current process,
+     in decimal, terminated with a newline.
+
+`/dev/ppid'
+     Reading this file returns the parent process ID of the current
+     process, in decimal, terminated with a newline.
+
+`/dev/pgrpid'
+     Reading this file returns the process group ID of the current
+     process, in decimal, terminated with a newline.
+
+`/dev/user'
+     Reading this file returns a single record terminated with a
+     newline.  The fields are separated with blanks.  The fields
+     represent the following information:
+
+    `$1'
+          The value of the `getuid' system call.
+
+    `$2'
+          The value of the `geteuid' system call.
+
+    `$3'
+          The value of the `getgid' system call.
+
+    `$4'
+          The value of the `getegid' system call.
+
+     If there are any additional fields, they are the group IDs
+     returned by `getgroups' system call.  (Multiple groups may not be
+     supported on all systems.)
+
+   These special file names may be used on the command line as data
+files, as well as for I/O redirections within an `awk' program.  They
+may not be used as source files with the `-f' option.
+
+   Recognition of these special file names is disabled if `gawk' is in
+compatibility mode (*note Invoking `awk': Command Line.).
+
+     *Caution*:  Unless your system actually has a `/dev/fd' directory
+     (or any of the other above listed special files), the
+     interpretation of these file names is done by `gawk' itself.  For
+     example, using `/dev/fd/4' for output will actually write on file
+     descriptor 4, and not on a new file descriptor that was `dup''ed
+     from file descriptor 4.  Most of the time this does not matter;
+     however, it is important to *not* close any of the files related
+     to file descriptors 0, 1, and 2.  If you do close one of these
+     files, unpredictable behavior will result.
+
+
+File: gawk.info,  Node: One-liners,  Next: Patterns,  Prev: Printing,  Up: Top
+
+Useful "One-liners"
+*******************
+
+   Useful `awk' programs are often short, just a line or two.  Here is a
+collection of useful, short programs to get you started.  Some of these
+programs contain constructs that haven't been covered yet.  The
+description of the program will give you a good idea of what is going
+on, but please read the rest of the manual to become an `awk' expert!
+
+   Since you are reading this in Info, each line of the example code is
+enclosed in quotes, to represent text that you would type literally.
+The examples themselves represent shell commands that use single quotes
+to keep the shell from interpreting the contents of the program.  When
+reading the examples, focus on the text between the open and close
+quotes.
+
+`awk '{ if (NF > max) max = NF }'
+`     END { print max }''
+     This program prints the maximum number of fields on any input line.
+
+`awk 'length($0) > 80''
+     This program prints every line longer than 80 characters.  The sole
+     rule has a relational expression as its pattern, and has no action
+     (so the default action, printing the record, is used).
+
+`awk 'NF > 0''
+     This program prints every line that has at least one field.  This
+     is an easy way to delete blank lines from a file (or rather, to
+     create a new file similar to the old file but from which the blank
+     lines have been deleted).
+
+`awk '{ if (NF > 0) print }''
+     This program also prints every line that has at least one field.
+     Here we allow the rule to match every line, then decide in the
+     action whether to print.
+
+`awk 'BEGIN { for (i = 1; i <= 7; i++)'
+`               print int(101 * rand()) }''
+     This program prints 7 random numbers from 0 to 100, inclusive.
+
+`ls -l FILES | awk '{ x += $4 } ; END { print "total bytes: " x }''
+     This program prints the total number of bytes used by FILES.
+
+`expand FILE | awk '{ if (x < length()) x = length() }'
+`                  END { print "maximum line length is " x }''
+     This program prints the maximum line length of FILE.  The input is
+     piped through the `expand' program to change tabs into spaces, so
+     the widths compared are actually the right-margin columns.
+
+`awk 'BEGIN { FS = ":" }'
+`     { print $1 | "sort" }' /etc/passwd'
+     This program prints a sorted list of the login names of all users.
+
+`awk '{ nlines++ }'
+`     END { print nlines }''
+     This programs counts lines in a file.
+
+`awk 'END { print NR }''
+     This program also counts lines in a file, but lets `awk' do the
+     work.
+
+`awk '{ print NR, $0 }''
+     This program adds line numbers to all its input files, similar to
+     `cat -n'.
+
+
+File: gawk.info,  Node: Patterns,  Next: Actions,  Prev: One-liners,  Up: Top
+
+Patterns
+********
+
+   Patterns in `awk' control the execution of rules: a rule is executed
+when its pattern matches the current input record.  This chapter tells
+all about how to write patterns.
+
+* Menu:
+
+* Kinds of Patterns::           A list of all kinds of patterns.
+                                The following subsections describe
+                                them in detail.
+* Regexp::                      Regular expressions such as `/foo/'.
+* Comparison Patterns::         Comparison expressions such as `$1 > 10'.
+* Boolean Patterns::            Combining comparison expressions.
+* Expression Patterns::         Any expression can be used as a pattern.
+* Ranges::                      Pairs of patterns specify record ranges.
+* BEGIN/END::                   Specifying initialization and cleanup rules.
+* Empty::                       The empty pattern, which matches every record.
+
+
+File: gawk.info,  Node: Kinds of Patterns,  Next: Regexp,  Prev: Patterns,  Up: Patterns
+
+Kinds of Patterns
+=================
+
+   Here is a summary of the types of patterns supported in `awk'.
+
+`/REGULAR EXPRESSION/'
+     A regular expression as a pattern.  It matches when the text of the
+     input record fits the regular expression.  (*Note Regular
+     Expressions as Patterns: Regexp.)
+
+`EXPRESSION'
+     A single expression.  It matches when its value, converted to a
+     number, is nonzero (if a number) or nonnull (if a string).  (*Note
+     Expressions as Patterns: Expression Patterns.)
+
+`PAT1, PAT2'
+     A pair of patterns separated by a comma, specifying a range of
+     records.  (*Note Specifying Record Ranges with Patterns: Ranges.)
+
+`BEGIN'
+`END'
+     Special patterns to supply start-up or clean-up information to
+     `awk'.  (*Note `BEGIN' and `END' Special Patterns: BEGIN/END.)
+
+`NULL'
+     The empty pattern matches every input record.  (*Note The Empty
+     Pattern: Empty.)
+
+
+File: gawk.info,  Node: Regexp,  Next: Comparison Patterns,  Prev: Kinds of Patterns,  Up: Patterns
+
+Regular Expressions as Patterns
+===============================
+
+   A "regular expression", or "regexp", is a way of describing a class
+of strings.  A regular expression enclosed in slashes (`/') is an `awk'
+pattern that matches every input record whose text belongs to that
+class.
+
+   The simplest regular expression is a sequence of letters, numbers, or
+both.  Such a regexp matches any string that contains that sequence.
+Thus, the regexp `foo' matches any string containing `foo'.  Therefore,
+the pattern `/foo/' matches any input record containing `foo'.  Other
+kinds of regexps let you specify more complicated classes of strings.
+
+* Menu:
+
+* Regexp Usage::                How to Use Regular Expressions
+* Regexp Operators::            Regular Expression Operators
+* Case-sensitivity::            How to do case-insensitive matching.
+
+
+File: gawk.info,  Node: Regexp Usage,  Next: Regexp Operators,  Prev: Regexp,  Up: Regexp
+
+How to Use Regular Expressions
+------------------------------
+
+   A regular expression can be used as a pattern by enclosing it in
+slashes.  Then the regular expression is matched against the entire
+text of each record.  (Normally, it only needs to match some part of
+the text in order to succeed.)  For example, this prints the second
+field of each record that contains `foo' anywhere:
+
+     awk '/foo/ { print $2 }' BBS-list
+
+   Regular expressions can also be used in comparison expressions.  Then
+you can specify the string to match against; it need not be the entire
+current input record.  These comparison expressions can be used as
+patterns or in `if', `while', `for', and `do' statements.
+
+`EXP ~ /REGEXP/'
+     This is true if the expression EXP (taken as a character string)
+     is matched by REGEXP.  The following example matches, or selects,
+     all input records with the upper-case letter `J' somewhere in the
+     first field:
+
+          awk '$1 ~ /J/' inventory-shipped
+
+     So does this:
+
+          awk '{ if ($1 ~ /J/) print }' inventory-shipped
+
+`EXP !~ /REGEXP/'
+     This is true if the expression EXP (taken as a character string)
+     is *not* matched by REGEXP.  The following example matches, or
+     selects, all input records whose first field *does not* contain
+     the upper-case letter `J':
+
+          awk '$1 !~ /J/' inventory-shipped
+
+   The right hand side of a `~' or `!~' operator need not be a constant
+regexp (i.e., a string of characters between slashes).  It may be any
+expression.  The expression is evaluated, and converted if necessary to
+a string; the contents of the string are used as the regexp.  A regexp
+that is computed in this way is called a "dynamic regexp".  For example:
+
+     identifier_regexp = "[A-Za-z_][A-Za-z_0-9]+"
+     $0 ~ identifier_regexp
+
+sets `identifier_regexp' to a regexp that describes `awk' variable
+names, and tests if the input record matches this regexp.
+
+
+File: gawk.info,  Node: Regexp Operators,  Next: Case-sensitivity,  Prev: Regexp Usage,  Up: Regexp
+
+Regular Expression Operators
+----------------------------
+
+   You can combine regular expressions with the following characters,
+called "regular expression operators", or "metacharacters", to increase
+the power and versatility of regular expressions.
+
+   Here is a table of metacharacters.  All characters not listed in the
+table stand for themselves.
+
+`^'
+     This matches the beginning of the string or the beginning of a line
+     within the string.  For example:
+
+          ^@chapter
+
+     matches the `@chapter' at the beginning of a string, and can be
+     used to identify chapter beginnings in Texinfo source files.
+
+`$'
+     This is similar to `^', but it matches only at the end of a string
+     or the end of a line within the string.  For example:
+
+          p$
+
+     matches a record that ends with a `p'.
+
+`.'
+     This matches any single character except a newline.  For example:
+
+          .P
+
+     matches any single character followed by a `P' in a string.  Using
+     concatenation we can make regular expressions like `U.A', which
+     matches any three-character sequence that begins with `U' and ends
+     with `A'.
+
+`[...]'
+     This is called a "character set".  It matches any one of the
+     characters that are enclosed in the square brackets.  For example:
+
+          [MVX]
+
+     matches any one of the characters `M', `V', or `X' in a string.
+
+     Ranges of characters are indicated by using a hyphen between the
+     beginning and ending characters, and enclosing the whole thing in
+     brackets.  For example:
+
+          [0-9]
+
+     matches any digit.
+
+     To include the character `\', `]', `-' or `^' in a character set,
+     put a `\' in front of it.  For example:
+
+          [d\]]
+
+     matches either `d', or `]'.
+
+     This treatment of `\' is compatible with other `awk'
+     implementations, and is also mandated by the POSIX Command Language
+     and Utilities standard.  The regular expressions in `awk' are a
+     superset of the POSIX specification for Extended Regular
+     Expressions (EREs).  POSIX EREs are based on the regular
+     expressions accepted by the traditional `egrep' utility.
+
+     In `egrep' syntax, backslash is not syntactically special within
+     square brackets.  This means that special tricks have to be used to
+     represent the characters `]', `-' and `^' as members of a
+     character set.
+
+     In `egrep' syntax, to match `-', write it as `---', which is a
+     range containing only `-'.  You may also give `-' as the first or
+     last character in the set.  To match `^', put it anywhere except
+     as the first character of a set.  To match a `]', make it the
+     first character in the set.  For example:
+
+          []d^]
+
+     matches either `]', `d' or `^'.
+
+`[^ ...]'
+     This is a "complemented character set".  The first character after
+     the `[' *must* be a `^'.  It matches any characters *except* those
+     in the square brackets (or newline).  For example:
+
+          [^0-9]
+
+     matches any character that is not a digit.
+
+`|'
+     This is the "alternation operator" and it is used to specify
+     alternatives.  For example:
+
+          ^P|[0-9]
+
+     matches any string that matches either `^P' or `[0-9]'.  This
+     means it matches any string that contains a digit or starts with
+     `P'.
+
+     The alternation applies to the largest possible regexps on either
+     side.
+
+`(...)'
+     Parentheses are used for grouping in regular expressions as in
+     arithmetic.  They can be used to concatenate regular expressions
+     containing the alternation operator, `|'.
+
+`*'
+     This symbol means that the preceding regular expression is to be
+     repeated as many times as possible to find a match.  For example:
+
+          ph*
+
+     applies the `*' symbol to the preceding `h' and looks for matches
+     to one `p' followed by any number of `h's.  This will also match
+     just `p' if no `h's are present.
+
+     The `*' repeats the *smallest* possible preceding expression.
+     (Use parentheses if you wish to repeat a larger expression.)  It
+     finds as many repetitions as possible.  For example:
+
+          awk '/\(c[ad][ad]*r x\)/ { print }' sample
+
+     prints every record in the input containing a string of the form
+     `(car x)', `(cdr x)', `(cadr x)', and so on.
+
+`+'
+     This symbol is similar to `*', but the preceding expression must be
+     matched at least once.  This means that:
+
+          wh+y
+
+     would match `why' and `whhy' but not `wy', whereas `wh*y' would
+     match all three of these strings.  This is a simpler way of
+     writing the last `*' example:
+
+          awk '/\(c[ad]+r x\)/ { print }' sample
+
+`?'
+     This symbol is similar to `*', but the preceding expression can be
+     matched once or not at all.  For example:
+
+          fe?d
+
+     will match `fed' and `fd', but nothing else.
+
+`\'
+     This is used to suppress the special meaning of a character when
+     matching.  For example:
+
+          \$
+
+     matches the character `$'.
+
+     The escape sequences used for string constants (*note Constant
+     Expressions: Constants.) are valid in regular expressions as well;
+     they are also introduced by a `\'.
+
+   In regular expressions, the `*', `+', and `?' operators have the
+highest precedence, followed by concatenation, and finally by `|'.  As
+in arithmetic, parentheses can change how operators are grouped.
+
+
+File: gawk.info,  Node: Case-sensitivity,  Prev: Regexp Operators,  Up: Regexp
+
+Case-sensitivity in Matching
+----------------------------
+
+   Case is normally significant in regular expressions, both when
+matching ordinary characters (i.e., not metacharacters), and inside
+character sets.  Thus a `w' in a regular expression matches only a
+lower case `w' and not an upper case `W'.
+
+   The simplest way to do a case-independent match is to use a character
+set: `[Ww]'.  However, this can be cumbersome if you need to use it
+often; and it can make the regular expressions harder for humans to
+read.  There are two other alternatives that you might prefer.
+
+   One way to do a case-insensitive match at a particular point in the
+program is to convert the data to a single case, using the `tolower' or
+`toupper' built-in string functions (which we haven't discussed yet;
+*note Built-in Functions for String Manipulation: String Functions.).
+For example:
+
+     tolower($1) ~ /foo/  { ... }
+
+converts the first field to lower case before matching against it.
+
+   Another method is to set the variable `IGNORECASE' to a nonzero
+value (*note Built-in Variables::.).  When `IGNORECASE' is not zero,
+*all* regexp operations ignore case.  Changing the value of
+`IGNORECASE' dynamically controls the case sensitivity of your program
+as it runs.  Case is significant by default because `IGNORECASE' (like
+most variables) is initialized to zero.
+
+     x = "aB"
+     if (x ~ /ab/) ...   # this test will fail
+     
+     IGNORECASE = 1
+     if (x ~ /ab/) ...   # now it will succeed
+
+   In general, you cannot use `IGNORECASE' to make certain rules
+case-insensitive and other rules case-sensitive, because there is no way
+to set `IGNORECASE' just for the pattern of a particular rule.  To do
+this, you must use character sets or `tolower'.  However, one thing you
+can do only with `IGNORECASE' is turn case-sensitivity on or off
+dynamically for all the rules at once.
+
+   `IGNORECASE' can be set on the command line, or in a `BEGIN' rule.
+Setting `IGNORECASE' from the command line is a way to make a program
+case-insensitive without having to edit it.
+
+   The value of `IGNORECASE' has no effect if `gawk' is in
+compatibility mode (*note Invoking `awk': Command Line.).  Case is
+always significant in compatibility mode.
+
+
+File: gawk.info,  Node: Comparison Patterns,  Next: Boolean Patterns,  Prev: Regexp,  Up: Patterns
+
+Comparison Expressions as Patterns
+==================================
+
+   "Comparison patterns" test relationships such as equality between
+two strings or numbers.  They are a special case of expression patterns
+(*note Expressions as Patterns: Expression Patterns.).  They are written
+with "relational operators", which are a superset of those in C.  Here
+is a table of them:
+
+`X < Y'
+     True if X is less than Y.
+
+`X <= Y'
+     True if X is less than or equal to Y.
+
+`X > Y'
+     True if X is greater than Y.
+
+`X >= Y'
+     True if X is greater than or equal to Y.
+
+`X == Y'
+     True if X is equal to Y.
+
+`X != Y'
+     True if X is not equal to Y.
+
+`X ~ Y'
+     True if X matches the regular expression described by Y.
+
+`X !~ Y'
+     True if X does not match the regular expression described by Y.
+
+   The operands of a relational operator are compared as numbers if they
+are both numbers.  Otherwise they are converted to, and compared as,
+strings (*note Conversion of Strings and Numbers: Conversion., for the
+detailed rules).  Strings are compared by comparing the first character
+of each, then the second character of each, and so on, until there is a
+difference.  If the two strings are equal until the shorter one runs
+out, the shorter one is considered to be less than the longer one.
+Thus, `"10"' is less than `"9"', and `"abc"' is less than `"abcd"'.
+
+   The left operand of the `~' and `!~' operators is a string.  The
+right operand is either a constant regular expression enclosed in
+slashes (`/REGEXP/'), or any expression, whose string value is used as
+a dynamic regular expression (*note How to Use Regular Expressions:
+Regexp Usage.).
+
+   The following example prints the second field of each input record
+whose first field is precisely `foo'.
+
+     awk '$1 == "foo" { print $2 }' BBS-list
+
+Contrast this with the following regular expression match, which would
+accept any record with a first field that contains `foo':
+
+     awk '$1 ~ "foo" { print $2 }' BBS-list
+
+or, equivalently, this one:
+
+     awk '$1 ~ /foo/ { print $2 }' BBS-list
+
+
+File: gawk.info,  Node: Boolean Patterns,  Next: Expression Patterns,  Prev: Comparison Patterns,  Up: Patterns
+
+Boolean Operators and Patterns
+==============================
+
+   A "boolean pattern" is an expression which combines other patterns
+using the "boolean operators" "or" (`||'), "and" (`&&'), and "not"
+(`!').  Whether the boolean pattern matches an input record depends on
+whether its subpatterns match.
+
+   For example, the following command prints all records in the input
+file `BBS-list' that contain both `2400' and `foo'.
+
+     awk '/2400/ && /foo/' BBS-list
+
+   The following command prints all records in the input file
+`BBS-list' that contain *either* `2400' or `foo', or both.
+
+     awk '/2400/ || /foo/' BBS-list
+
+   The following command prints all records in the input file
+`BBS-list' that do *not* contain the string `foo'.
+
+     awk '! /foo/' BBS-list
+
+   Note that boolean patterns are a special case of expression patterns
+(*note Expressions as Patterns: Expression Patterns.); they are
+expressions that use the boolean operators.  *Note Boolean Expressions:
+Boolean Ops, for complete information on the boolean operators.
+
+   The subpatterns of a boolean pattern can be constant regular
+expressions, comparisons, or any other `awk' expressions.  Range
+patterns are not expressions, so they cannot appear inside boolean
+patterns.  Likewise, the special patterns `BEGIN' and `END', which
+never match any input record, are not expressions and cannot appear
+inside boolean patterns.
+
+
+File: gawk.info,  Node: Expression Patterns,  Next: Ranges,  Prev: Boolean Patterns,  Up: Patterns
+
+Expressions as Patterns
+=======================
+
+   Any `awk' expression is also valid as an `awk' pattern.  Then the
+pattern "matches" if the expression's value is nonzero (if a number) or
+nonnull (if a string).
+
+   The expression is reevaluated each time the rule is tested against a
+new input record.  If the expression uses fields such as `$1', the
+value depends directly on the new input record's text; otherwise, it
+depends only on what has happened so far in the execution of the `awk'
+program, but that may still be useful.
+
+   Comparison patterns are actually a special case of this.  For
+example, the expression `$5 == "foo"' has the value 1 when the value of
+`$5' equals `"foo"', and 0 otherwise; therefore, this expression as a
+pattern matches when the two values are equal.
+
+   Boolean patterns are also special cases of expression patterns.
+
+   A constant regexp as a pattern is also a special case of an
+expression pattern.  `/foo/' as an expression has the value 1 if `foo'
+appears in the current input record; thus, as a pattern, `/foo/'
+matches any record containing `foo'.
+
+   Other implementations of `awk' that are not yet POSIX compliant are
+less general than `gawk': they allow comparison expressions, and
+boolean combinations thereof (optionally with parentheses), but not
+necessarily other kinds of expressions.
+
+
+File: gawk.info,  Node: Ranges,  Next: BEGIN/END,  Prev: Expression Patterns,  Up: Patterns
+
+Specifying Record Ranges with Patterns
+======================================
+
+   A "range pattern" is made of two patterns separated by a comma, of
+the form `BEGPAT, ENDPAT'.  It matches ranges of consecutive input
+records.  The first pattern BEGPAT controls where the range begins, and
+the second one ENDPAT controls where it ends.  For example,
+
+     awk '$1 == "on", $1 == "off"'
+
+prints every record between `on'/`off' pairs, inclusive.
+
+   A range pattern starts out by matching BEGPAT against every input
+record; when a record matches BEGPAT, the range pattern becomes "turned
+on".  The range pattern matches this record.  As long as it stays
+turned on, it automatically matches every input record read.  It also
+matches ENDPAT against every input record; when that succeeds, the
+range pattern is turned off again for the following record.  Now it
+goes back to checking BEGPAT against each record.
+
+   The record that turns on the range pattern and the one that turns it
+off both match the range pattern.  If you don't want to operate on
+these records, you can write `if' statements in the rule's action to
+distinguish them.
+
+   It is possible for a pattern to be turned both on and off by the same
+record, if both conditions are satisfied by that record.  Then the
+action is executed for just that record.
+
+
+File: gawk.info,  Node: BEGIN/END,  Next: Empty,  Prev: Ranges,  Up: Patterns
+
+`BEGIN' and `END' Special Patterns
+==================================
+
+   `BEGIN' and `END' are special patterns.  They are not used to match
+input records.  Rather, they are used for supplying start-up or
+clean-up information to your `awk' script.  A `BEGIN' rule is executed,
+once, before the first input record has been read.  An `END' rule is
+executed, once, after all the input has been read.  For example:
+
+     awk 'BEGIN { print "Analysis of `foo'" }
+          /foo/ { ++foobar }
+          END   { print "`foo' appears " foobar " times." }' BBS-list
+
+   This program finds the number of records in the input file `BBS-list'
+that contain the string `foo'.  The `BEGIN' rule prints a title for the
+report.  There is no need to use the `BEGIN' rule to initialize the
+counter `foobar' to zero, as `awk' does this for us automatically
+(*note Variables::.).
+
+   The second rule increments the variable `foobar' every time a record
+containing the pattern `foo' is read.  The `END' rule prints the value
+of `foobar' at the end of the run.
+
+   The special patterns `BEGIN' and `END' cannot be used in ranges or
+with boolean operators (indeed, they cannot be used with any operators).
+
+   An `awk' program may have multiple `BEGIN' and/or `END' rules.  They
+are executed in the order they appear, all the `BEGIN' rules at
+start-up and all the `END' rules at termination.
+
+   Multiple `BEGIN' and `END' sections are useful for writing library
+functions, since each library can have its own `BEGIN' or `END' rule to
+do its own initialization and/or cleanup.  Note that the order in which
+library functions are named on the command line controls the order in
+which their `BEGIN' and `END' rules are executed.  Therefore you have
+to be careful to write such rules in library files so that the order in
+which they are executed doesn't matter.  *Note Invoking `awk': Command
+Line, for more information on using library functions.
+
+   If an `awk' program only has a `BEGIN' rule, and no other rules,
+then the program exits after the `BEGIN' rule has been run.  (Older
+versions of `awk' used to keep reading and ignoring input until end of
+file was seen.)  However, if an `END' rule exists as well, then the
+input will be read, even if there are no other rules in the program.
+This is necessary in case the `END' rule checks the `NR' variable.
+
+   `BEGIN' and `END' rules must have actions; there is no default
+action for these rules since there is no current record when they run.
+
+
+File: gawk.info,  Node: Empty,  Prev: BEGIN/END,  Up: Patterns
+
+The Empty Pattern
+=================
+
+   An empty pattern is considered to match *every* input record.  For
+example, the program:
+
+     awk '{ print $1 }' BBS-list
+
+prints the first field of every record.
+
