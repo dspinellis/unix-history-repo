@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.proprietary.roff%
 .\"
-.\"	@(#)tar.1	6.11 (Berkeley) %G%
+.\"	@(#)tar.1	6.12 (Berkeley) %G%
 .\"
 .Dd 
 .Dt TAR 1
@@ -143,6 +143,16 @@ to follow symbolic links as if they were normal files or
 directories.  Normally, 
 .Nm tar
 does not follow symbolic links.
+.It Cm H
+Force
+.Nm tar
+to follow symbolic links on the command line only as if they were normal 
+files or directories.  Normally,
+.Nm tar
+does not follow symbolic links.  Note that 
+.Fl h
+supercedes 
+.Fl H .
 .It Cm B
 Forces input and output blocking to 20 blocks per record.  This option
 was added so that 
