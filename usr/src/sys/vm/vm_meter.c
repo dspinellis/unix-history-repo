@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_meter.c	7.15 (Berkeley) %G%
+ *	@(#)vm_meter.c	7.16 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -146,7 +146,6 @@ vmtotal(totalp)
 	/*
 	 * Mark all objects as inactive.
 	 */
-	simple_unlock(&vm_object_list_lock);
 	simple_lock(&vm_object_list_lock);
 	object = (vm_object_t) queue_first(&vm_object_list);
 	while (!queue_end(&vm_object_list, (queue_entry_t) object)) {
