@@ -1,4 +1,10 @@
-.\"	@(#)kernmalloc.t	1.8	(Copyright 1988 M. K. McKusick)	88/07/27
+.\" Copyright (c) 1988 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)kernmalloc.t	5.1 (Berkeley) %G%
+.\"
 .\" reference a system routine name
 .de RN
 \fI\\$1\fP\^(\h'1m/24u')\\$2
