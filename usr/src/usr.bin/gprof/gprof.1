@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)gprof.1	6.8 (Berkeley) %G%
+.\"	@(#)gprof.1	6.9 (Berkeley) %G%
 .\"
 .Dd 
 .Dt GPROF 1
@@ -87,6 +87,14 @@ The static call graph of the program is discovered by a heuristic
 that examines the text space of the object file.
 Static-only parents or children are shown
 with call counts of 0.
+.It Fl C Ar count
+Find a minimal set of arcs that can be broken to eliminate all cycles with
+.Ar count
+or more members.
+Caution: the algorithm used to break cycles is exponential,
+so using this option may cause 
+.Nm gprof
+to run for a very long time.
 .It Fl e Ar name 
 Suppresses the printing of the graph profile entry for routine
 .Ar name
