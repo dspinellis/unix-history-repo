@@ -1,0 +1,6 @@
+this is a newer version of host than the one in the tools/ directory,
+but it was released by someone other than the original author and i did
+not know about this version until too late in bind 4.9's development cycle.
+if someone else wants to port it to the new resolver and remove as much
+code from this hacked-up send.c as possible, i will consider replacing the
+tools/ version of host with this one.		--paul vixie, april 1993
