@@ -1,5 +1,5 @@
 /* Copyright (c) 1981 Regents of the University of California */
-static char *sccsid = "@(#)ex_re.c	7.2	%G%";
+static char *sccsid = "@(#)ex_re.c	7.3	%G%";
 #include "ex.h"
 #include "ex_re.h"
 
@@ -898,7 +898,7 @@ star:
 		return (0);
 
 	case CBRC:
-		if (lp == expbuf)
+		if (lp == linebuf)
 			continue;
 		if ((isdigit(*lp) || uletter(*lp)) && !uletter(lp[-1]) && !isdigit(lp[-1]))
 			continue;
