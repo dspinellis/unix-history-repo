@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)inetd.c	5.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)inetd.c	5.19 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -56,7 +56,7 @@ static char sccsid[] = "@(#)inetd.c	5.18 (Berkeley) %G%";
  *	wait/nowait			single-threaded/multi-threaded
  *	user				user to run daemon as
  *	server program			full path name
- *	server program arguments	maximum of MAXARGS (5)
+ *	server program arguments	maximum of MAXARGS (20)
  *
  * Comment lines are indicated by a `#' in column 1.
  */
@@ -109,7 +109,7 @@ struct	servtab {
 	char	*se_user;		/* user name to run as */
 	struct	biltin *se_bi;		/* if built-in, description */
 	char	*se_server;		/* server program */
-#define MAXARGV 5
+#define	MAXARGV 20
 	char	*se_argv[MAXARGV+1];	/* program arguments */
 	int	se_fd;			/* open descriptor */
 	struct	sockaddr_in se_ctrladdr;/* bound address */
