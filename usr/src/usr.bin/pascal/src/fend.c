@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)fend.c 1.12 %G%";
+static char sccsid[] = "@(#)fend.c 1.13 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -276,13 +276,14 @@ funcend(fp, bundle, endline)
 			putdot( filename , line );
 		    }
 #		endif PC
+		inp = 0;
 		out = 0;
 		for (p = fp->chain; p != NIL; p = p->chain) {
-			if (strcmp(p->symbol, "input") == 0) {
+			if (strcmp(p->symbol, input->symbol) == 0) {
 				inp++;
 				continue;
 			}
-			if (strcmp(p->symbol, "output") == 0) {
+			if (strcmp(p->symbol, output->symbol) == 0) {
 				out++;
 				continue;
 			}
@@ -331,10 +332,6 @@ funcend(fp, bundle, endline)
 			    putdot( filename , line );
 #			endif PC
 		}
-		if (out == 0 && fp->chain != NIL) {
-			recovered();
-			error("The file output must appear in the program statement file list");
-		}
 	}
 	/*
 	 * Process the prog/proc/func body
@@ -368,14 +365,18 @@ funcend(fp, bundle, endline)
 		putdot( filename , line );
 	    }
 #	endif PC
-	if (fp->class == PROG && inp == 0 && (input->nl_flags & (NUSED|NMOD)) != 0) {
-		recovered();
-		error("Input is used but not defined in the program statement");
-	}
 	/*
 	 * Clean up the symbol table displays and check for unresolves
 	 */
 	line = endline;
+	if (fp->class == PROG && inp == 0 && (input->nl_flags & (NUSED|NMOD)) != 0) {
+		recovered();
+		error("Input is used but not defined in the program statement");
+	}
+	if (fp->class == PROG && out == 0 && (output->nl_flags & (NUSED|NMOD)) != 0) {
+		recovered();
+		error("Output is used but not defined in the program statement");
+	}
 	b = cbn;
 	Fp = fp;
 	chkref = syneflg == errcnt[cbn] && opt('w') == 0;
