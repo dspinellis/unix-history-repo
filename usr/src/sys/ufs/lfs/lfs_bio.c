@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_bio.c	7.8 (Berkeley) %G%
+ *	@(#)lfs_bio.c	7.9 (Berkeley) %G%
  */
 
 #include <sys/param.h>

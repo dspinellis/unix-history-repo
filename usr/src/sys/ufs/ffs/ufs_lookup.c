@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_lookup.c	7.44 (Berkeley) %G%
+ *	@(#)ufs_lookup.c	7.45 (Berkeley) %G%
  */
 
 #include <sys/param.h>

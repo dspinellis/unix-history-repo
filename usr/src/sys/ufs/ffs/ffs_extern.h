@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_extern.h	7.7 (Berkeley) %G%
+ *	@(#)ffs_extern.h	7.8 (Berkeley) %G%
  */
 
 struct buf;

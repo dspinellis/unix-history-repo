@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)dead_vnops.c	7.17 (Berkeley) %G%
+ *	@(#)dead_vnops.c	7.18 (Berkeley) %G%
  */
 
 #include "param.h"

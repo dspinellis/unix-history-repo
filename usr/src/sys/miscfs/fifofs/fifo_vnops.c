@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fifo_vnops.c	7.12 (Berkeley) %G%
+ *	@(#)fifo_vnops.c	7.13 (Berkeley) %G%
  */
 
 #include "param.h"

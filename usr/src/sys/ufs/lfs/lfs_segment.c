@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_segment.c	7.17 (Berkeley) %G%
+ *	@(#)lfs_segment.c	7.18 (Berkeley) %G%
  */
 
 #include <sys/param.h>

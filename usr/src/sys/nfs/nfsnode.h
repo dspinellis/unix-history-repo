@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfsnode.h	7.20 (Berkeley) %G%
+ *	@(#)nfsnode.h	7.21 (Berkeley) %G%
  */
 
 /*

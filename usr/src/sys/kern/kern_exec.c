@@ -4,7 +4,7 @@
  *
  * %sccs.include.proprietary.c%
  *
- *	@(#)kern_exec.c	7.55 (Berkeley) %G%
+ *	@(#)kern_exec.c	7.56 (Berkeley) %G%
  */
 
 #include "param.h"

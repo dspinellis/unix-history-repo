@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mfs_vfsops.c	7.24 (Berkeley) %G%
+ *	@(#)mfs_vfsops.c	7.25 (Berkeley) %G%
  */
 
 #include <sys/param.h>
