@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)exports.5	8.1 (Berkeley) %G%
+.\"     @(#)exports.5	8.2 (Berkeley) %G%
 .\"
 .Dd 
 .Dt EXPORTS 5
@@ -46,6 +46,8 @@ followed by the
 .Fl alldirs
 flag;
 this form allows the host(s) to mount any directory within the filesystem.
+The pathnames must not have any symbolic links in them and should not have
+any "." or ".." components.
 Mount points for a filesystem may appear on multiple lines each with
 different sets of hosts and export options.
 .Pp

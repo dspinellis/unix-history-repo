@@ -15,7 +15,7 @@ static char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)mountd.c	8.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)mountd.c	8.6 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
@@ -112,6 +112,7 @@ struct hostlist {
 
 /* Global defs */
 int mntsrv(), umntall_each(), xdr_fhs(), xdr_mlist(), xdr_dir(), xdr_explist();
+int check_dirpath();
 void get_exportlist(), send_umntall(), nextfield(), out_of_mem();
 void get_mountlist(), add_mlist(), del_mlist(), free_exp(), free_grp();
 void getexp_err(), hang_dirp(), add_dlist(), free_dir(), free_host();
@@ -533,7 +534,6 @@ get_exportlist()
 	register struct grouplist *grp, *tgrp;
 	struct exportlist **epp;
 	struct dirlist *dirhead;
-	struct stat sb;
 	struct statfs fsb, *fsp;
 	struct hostent *hpe;
 	struct ucred anon;
@@ -641,8 +641,7 @@ get_exportlist()
 			} else if (*cp == '/') {
 			    savedc = *endcp;
 			    *endcp = '\0';
-			    if (stat(cp, &sb) >= 0 &&
-				(sb.st_mode & S_IFMT) == S_IFDIR &&
+			    if (check_dirpath(cp) &&
 				statfs(cp, &fsb) >= 0) {
 				if (got_nondir) {
 				    syslog(LOG_ERR, "Dirs must be first");
@@ -1980,4 +1979,33 @@ check_options(dp)
 	    return (1);
 	}
 	return (0);
+}
+
+/*
+ * Check an absolute directory path for any symbolic links. Return true
+ * if no symbolic links are found.
+ */
+int
+check_dirpath(dirp)
+	register char *dirp;
+{
+	register char *cp;
+	int ret = 1;
+	struct stat sb;
+
+	cp = dirp + 1;
+	while (*cp && ret) {
+		if (*cp == '/') {
+			*cp = '\0';
+			if (lstat(dirp, &sb) < 0 ||
+				(sb.st_mode & S_IFMT) != S_IFDIR)
+				ret = 0;
+			*cp = '/';
+		}
+		cp++;
+	}
+	if (lstat(dirp, &sb) < 0 ||
+		(sb.st_mode & S_IFMT) != S_IFDIR)
+		ret = 0;
+	return (ret);
 }
