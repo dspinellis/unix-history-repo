@@ -1,0 +1,40 @@
+.th MKNOD VIII 2/11/75
+.sh NAME
+mknod \*- build special file
+.sh SYNOPSIS
+.bd /etc/mknod
+name
+[
+.bd c
+] [
+.bd b
+]
+major
+minor
+.sh DESCRIPTION
+.it Mknod
+makes a directory entry and corresponding i-node
+for a special file.
+The first argument is the
+.it name
+of the entry.
+The second is
+.bd b
+if the special file is block-type (disks, tape) or
+.bd c
+if it is character-type (other devices).
+The last two arguments are
+numbers specifying the
+.it major
+device type
+and the
+.it minor
+device (e.g. unit, drive, or line number).
+.s3
+The assignment of major device numbers is specific to each system.
+They have to be dug out of the
+system source file
+.it conf.c.
+.sh "SEE ALSO"
+mknod (II)
+.sh BUGS
