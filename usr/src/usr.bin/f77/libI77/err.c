@@ -1,5 +1,5 @@
 /*
-char id_err[] = "@(#)err.c	1.9";
+char id_err[] = "@(#)err.c	1.10";
  *
  * file i/o error and initialization routines
  */
@@ -94,6 +94,11 @@ fatal(n,s) char *s;
 	}
 	f_exit();
 	_cleanup();
+#if	vax
+	signal(SIGILL, SIG_DFL);
+#else	pdp11
+	signal(SIGIOT, SIG_DFL);
+#endif
 	abort();
 }
 
