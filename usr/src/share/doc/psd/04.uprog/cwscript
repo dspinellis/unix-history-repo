@@ -1,4 +1,4 @@
-#	@(#)cwscript	4.1 (Berkeley) %G%
+#	@(#)cwscript	5.1 (Berkeley) %G%
 #
 /^\.if/b
 /^\.ix/b
