@@ -27,7 +27,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 /*-
@@ -57,7 +57,7 @@ static char sccsid[] = "@(#)main.c	5.11 (Berkeley) %G%";
  *				exiting.
  */
 
-#include <sys/types.h>
+#include <sys/param.h>
 #include <sys/signal.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -359,6 +359,7 @@ main(argc, argv)
 	Var_Set("MAKE", argv[0], VAR_GLOBAL);
 	Var_Set(MAKEFLAGS, "", VAR_GLOBAL);
 	Var_Set("MFLAGS", "", VAR_GLOBAL);
+	Var_Set ("MACHINE", MACHINE, VAR_GLOBAL);
 
 	/*
 	 * First snag any flags out of the PMAKE environment variable.
