@@ -1,10 +1,21 @@
-.\" Copyright (c) 1983 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1983 The Regents of the University of California.
+.\" All rights reserved.
 .\"
-.\"	@(#)rexecd.8	6.2 (Berkeley) %G%
+.\" Redistribution and use in source and binary forms are permitted
+.\" provided that the above copyright notice and this paragraph are
+.\" duplicated in all such forms and that any documentation,
+.\" advertising materials, and other materials related to such
+.\" distribution and use acknowledge that the software was developed
+.\" by the University of California, Berkeley.  The name of the
+.\" University may not be used to endorse or promote products derived
+.\" from this software without specific prior written permission.
+.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+.\" WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.TH REXECD 8C ""
+.\"	@(#)rexecd.8	6.3 (Berkeley) %G%
+.\"
+.TH REXECD 8 ""
 .UC 5
 .SH NAME
 rexecd \- remote execution server
@@ -13,7 +24,7 @@ rexecd \- remote execution server
 .SH DESCRIPTION
 .I Rexecd
 is the server for the 
-.IR rexec (3X)
+.IR rexec (3)
 routine.  The server provides remote execution facilities
 with authentication based on user names and
 passwords.
@@ -111,7 +122,7 @@ on the connection associated with the
 .BR stderr ,
 and is not preceded by a flag byte.
 .SH SEE ALSO
-rexec(3X)
+rexec(3)
 .SH BUGS
 Indicating ``Login incorrect'' as opposed to ``Password incorrect''
 is a security breach which allows people to probe a system for users
