@@ -15,7 +15,7 @@
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
 
-static char sccsid[] = "@(#)fortran.c	5.5	%G%";
+static char sccsid[] = "@(#)fortran.c	5.6	%G%";
 /*
  * FORTRAN dependent symbol routines.
  */
@@ -556,7 +556,7 @@ long i;
 private fortran_printarray(a)
 Symbol a;
 {
-struct Bounds { int lb, val, ub} dim[MAXDIM];
+struct Bounds { int lb, val, ub; } dim[MAXDIM];
 
 Symbol sc,st,eltype;
 char buf[50];
