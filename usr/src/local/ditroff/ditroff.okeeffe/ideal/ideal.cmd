@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-#	ideal.cmd	(CWI)	1.2	85/03/03
+#	ideal.cmd	(CWI)	1.3	85/05/02
 #
 IDDIR=/usr/lib/ditroff/ideal
 filter=t
@@ -18,7 +18,7 @@ do
 		shift ;;
 	-t*)	filter=t
 		shift ;;
-	-v*)	filter=v
+	-Tver*)	filter=v
 		shift ;;
 	-T202*)	filter=2
 		shift ;;
