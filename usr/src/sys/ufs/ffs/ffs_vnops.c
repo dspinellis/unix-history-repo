@@ -1,4 +1,4 @@
-/*	ffs_vnops.c	4.30	82/07/24	*/
+/*	ffs_vnops.c	4.31	82/07/25	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -222,7 +222,7 @@ link()
 		u.u_error = EXDEV;
 		goto out;
 	}
-	wdir(ip);
+	direnter(ip);
 out:
 	if (u.u_error) {
 		ip->i_nlink--;
@@ -293,7 +293,7 @@ unlink()
 	int unlinkingdot = 0;
 
 	pp = namei(uchar, 2, 0);
-	if(pp == NULL)
+	if (pp == NULL)
 		return;
 #ifdef EFS
 	/* divert to extended file system if off machine. */
@@ -338,45 +338,10 @@ unlink()
 	}
 	if (ip->i_flag&ITEXT)
 		xrele(ip);	/* try once to free text */
-/*
-	if ((ip->i_flag&ITEXT) && ip->i_nlink==1) {
- 		u.u_error = ETXTBSY;
-		goto out;
+	if (dirremove()) {
+		ip->i_nlink--;
+		ip->i_flag |= ICHG;
 	}
-*/
-	if (u.u_count == 0) {
-		/*
-		 * first entry in block, so set d_ino to zero.
-		 */
-/*ZZ*/if(u.u_offset&0x1ff)printf("missed dir compact dir %s/%d off %d file %s\n"
-/*ZZ*/,pp->i_fs->fs_fsmnt,pp->i_number,u.u_offset,u.u_dent.d_name);
-		u.u_base = (caddr_t)&u.u_dent;
-		u.u_count = DIRSIZ(&u.u_dent);
-		u.u_dent.d_ino = 0;
-		writei(pp);
-	} else {
-		/*
-		 * updating preceeding entry to skip over current entry.
-		 */
-		fs = pp->i_fs;
-		lbn = lblkno(fs, u.u_offset);
-		base = blkoff(fs, u.u_offset);
-		bn = fsbtodb(fs, bmap(pp, lbn, B_WRITE, base + u.u_count));
-		bp = bread(pp->i_dev, bn, blksize(fs, pp, lbn));
-		if (bp->b_flags & B_ERROR) {
-			brelse(bp);
-			goto out;
-		}
-		((struct direct *)(bp->b_un.b_addr + base))->d_reclen +=
-		    u.u_dent.d_reclen;
-/*ZZ*/if(((int)(bp->b_un.b_addr + base)&0x1ff)+u.u_dent.d_reclen>512)
-/*ZZ*/	panic("unlink: reclen");
-		bwrite(bp);
-		pp->i_flag |= IUPD|ICHG;
-	}
-	ip->i_nlink--;
-	ip->i_flag |= ICHG;
-
 out:
 	if (unlinkingdot)
 		irele(ip);
@@ -799,4 +764,56 @@ sync()
 {
 
 	update(0);
+}
+
+/*
+ * Make a new file.
+ */
+struct inode *
+maknode(mode)
+	int mode;
+{
+	register struct inode *ip;
+	ino_t ipref;
+
+	if ((mode & IFMT) == IFDIR)
+		ipref = dirpref(u.u_pdir->i_fs);
+	else
+		ipref = u.u_pdir->i_number;
+	ip = ialloc(u.u_pdir, ipref, mode);
+	if (ip == NULL) {
+		iput(u.u_pdir);
+		return(NULL);
+	}
+#ifdef	QUOTA
+	if (ip->i_dquot != NODQUOT)
+		panic("maknode: dquot");
+#endif
+	ip->i_flag |= IACC|IUPD|ICHG;
+	if ((mode & IFMT) == 0)
+		mode |= IFREG;
+	ip->i_mode = mode & ~u.u_cmask;
+	ip->i_nlink = 1;
+	ip->i_uid = u.u_uid;
+	ip->i_gid = u.u_pdir->i_gid;
+#ifdef	QUOTA
+	ip->i_dquot = inoquota(ip);
+#endif
+
+	/*
+	 * Make sure inode goes to disk before directory entry.
+	 */
+	iupdat(ip, &time, &time, 1);
+	direnter(ip);
+	if (u.u_error) {
+		/*
+		 * write error occurred trying to update directory
+		 * so must deallocate the inode
+		 */
+		ip->i_nlink = 0;
+		ip->i_flag |= ICHG;
+		iput(ip);
+		return(NULL);
+	}
+	return(ip);
 }
