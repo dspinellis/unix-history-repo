@@ -7,7 +7,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)fread.3	8.1 (Berkeley) %G%
+.\"     @(#)fread.3	8.2 (Berkeley) %G%
 .\"
 .Dd 
 .Dt FREAD 3
@@ -21,7 +21,7 @@
 .Ft int
 .Fn fread "void *ptr" "size_t size" "size_t nmemb" "FILE *stream"
 .Ft int
-.Fn fwrite "void *ptr" "size_t size" "size_t nmemb" "FILE *stream"
+.Fn fwrite "const void *ptr" "size_t size" "size_t nmemb" "FILE *stream"
 .Sh DESCRIPTION
 The function
 .Fn fread
