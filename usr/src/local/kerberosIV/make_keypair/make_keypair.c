@@ -1,3 +1,24 @@
+/*
+ * Copyright (c) 1989 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms are permitted
+ * provided that the above copyright notice and this paragraph are
+ * duplicated in all such forms and that any documentation,
+ * advertising materials, and other materials related to such
+ * distribution and use acknowledge that the software was developed
+ * by the University of California, Berkeley.  The name of the
+ * University may not be used to endorse or promote products derived
+ * from this software without specific prior written permission.
+ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+ */
+
+#ifndef lint
+static char sccsid[] = "@(#)make_keypair.c	1.4 (Berkeley) %G%";
+#endif /* not lint */
+
 #include <sys/types.h>
 #include <krb.h>
 #include <stdio.h>
@@ -23,7 +44,7 @@ char	**argv;
 	}
 
 	hp = gethostbyname(argv[1]);
-	for(i = 0; addr = hp->h_addr_list[i]; i++) {
+	for (i = 0; addr = hp->h_addr_list[i]; i++) {
 		addr = hp->h_addr_list[i];
 		bcopy(addr, &sin.sin_addr, hp->h_length);
 
@@ -49,16 +70,20 @@ make_key(addr)
 	char		namebuf[255];
 	int		fd;
 
-	sprintf(namebuf, KFILE, inet_ntoa(addr));
+	sprintf(namebuf, ".%s%s",
+		CLIENT_KEYFILE,
+		inet_ntoa(addr));
 	fd = open(namebuf, O_WRONLY|O_CREAT, 0600);
-	if(fd < 0) {
+	if (fd < 0) {
 		perror("open");
 		exit(1);
 	}
 	random_key(kfile.kf_key);
-	if(write(fd, &kfile, sizeof(kfile)) != sizeof(kfile)) {
+	printf("writing to file -> %s ...", namebuf);
+	if (write(fd, &kfile, sizeof(kfile)) != sizeof(kfile)) {
 		fprintf(stderr, "error writing file %s\n", namebuf);
 	}
+	printf("done.\n");
 	close(fd);
 }
 usage(name)
