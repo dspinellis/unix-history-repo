@@ -1,4 +1,4 @@
-/*	format.c	4.3	83/03/02	*/
+/*	format.c	4.4	83/05/03	*/
 
 /* 
  * Standalone program to do media checking
@@ -109,7 +109,7 @@ again:
 			bp[i].header2 = ((u_short)trk << 8) + i;
 		}
 		if (sector && (sector % (st.nspc * 10)) == 0)
-			printf("sector %d\n", sector);
+			printf("cylinder %d\n", cyl);
 		/*
 		 * Try and write the headers and data patterns into
 		 * each sector in the track.  Continue until such
