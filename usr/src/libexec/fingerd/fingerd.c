@@ -12,62 +12,65 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)fingerd.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)fingerd.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
-#include <errno.h>
-#include <unistd.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <strings.h>
-#include <syslog.h>
-#include <netdb.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <errno.h>
+
+#include <unistd.h>
+#include <syslog.h>
+#include <netdb.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <strings.h>
 #include "pathnames.h"
 
 void err __P((const char *, ...));
 
 int
-main(int argc, char **argv)
+main(argc, argv)
+	int argc;
+	char *argv[];
 {
 	register FILE *fp;
 	register int ch;
 	register char *lp;
-	int p[2];
-#define	ENTRIES	50
-	char **ap, *av[ENTRIES + 1], **comp, line[1024];
-	char *prog = _PATH_FINGER;
 	struct hostent *hp;
 	struct sockaddr_in sin;
-	int sval = sizeof(sin);
-	int secure=0, logging=0;
-	extern char *optarg;
+	int p[2], logging, secure, sval;
+#define	ENTRIES	50
+	char **ap, *av[ENTRIES + 1], **comp, line[1024], *prog;
 
-	openlog("fingerd", LOG_PID|LOG_CONS, LOG_DAEMON);
-	while ((ch=getopt(argc, argv, "slp:")) != EOF)
+	prog = _PATH_FINGER;
+	logging = secure = 0;
+	openlog("fingerd", LOG_PID | LOG_CONS, LOG_DAEMON);
+	opterr = 0;
+	while ((ch = getopt(argc, argv, "slp:")) != EOF)
 		switch (ch) {
-		case 's':
-			secure++;
-			break;
 		case 'l':
-			logging++;
+			logging = 1;
 			break;
 		case 'p':
 			prog = optarg;
 			break;
+		case 's':
+			secure = 1;
+			break;
 		case '?':
 		default:
-			syslog(LOG_ERR, "unknown option: %c", ch);
+			err("illegal option -- %c", ch);
 		}
 
 	if (logging) {
+		sval = sizeof(sin);
 		if (getpeername(0, (struct sockaddr *)&sin, &sval) < 0)
 			err("getpeername: %s", strerror(errno));
 		if (hp = gethostbyaddr((char *)&sin.sin_addr.s_addr,
-				sizeof(sin.sin_addr.s_addr), AF_INET))
+		    sizeof(sin.sin_addr.s_addr), AF_INET))
 			lp = hp->h_name;
 		else
 			lp = inet_ntoa(sin.sin_addr);
