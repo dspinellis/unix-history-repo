@@ -9,7 +9,7 @@
 #include "rcv.h"
 #include <sgtty.h>
 
-static char *SccsId = "@(#)tty.c	1.1 %G%";
+static char *SccsId = "@(#)tty.c	1.2 %G%";
 
 static	int	c_erase;		/* Current erase char */
 static	int	c_kill;			/* Current kill char */
@@ -131,9 +131,12 @@ readtty(pr, src)
 		ioctl(0, TIOCSTI, &c);
 	}
 	cp = canonb;
+	*cp = 0;
 #endif
 	cp2 = fgets(cp, BUFSIZ - (cp - canonb), stdin);
-	canonb[strlen(canonb) - 1] = '\0';
+	cp = index(canonb, '\n');
+	if (cp != NOSTR)
+		*cp = 0;
 #ifndef TIOCSTI
 	if (cp2 == NOSTR || *cp2 == '\0')
 		return(src);
