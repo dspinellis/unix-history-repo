@@ -1,22 +1,37 @@
-.\" Copyright (c) 1980 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1980, 1990, 1991 Regents of the University of California.
+.\" All rights reserved.
 .\"
-.\"	@(#)whoami.1	6.3 (Berkeley) %G%
+.\" %sccs.include.redist.roff%
 .\"
-.TH WHOAMI 1 ""
-.UC
-.SH NAME
-whoami \- print effective current user id
-.SH SYNOPSIS
-.B whoami
-.SH DESCRIPTION
-.I Whoami
-prints who you are.
-It works even if you are su'd, while `who am i' does not since
-it uses /etc/utmp.
-.SH FILES
-.DT
-/etc/passwd	Name data base
-.SH "SEE ALSO"
-who (1)
+.\"     @(#)whoami.1	6.2 (Berkeley) %G%
+.\"
+.Dd 
+.Dt WHOAMI 1
+.Os BSD 3
+.Sh NAME
+.Nm whoami
+.Nd print effective current user id
+.Sh SYNOPSIS
+.Nm whoami
+.Sh DESCRIPTION
+.Nm Whoami
+prints your effective user id.
+It works even if you are
+.Xr su Ns 'd ,
+while
+.Dq Li who am i
+does not since
+it uses
+.Pa /var/run/utmp .
+.Sh FILES
+.Bl -tag -width /etc/passwd
+.It Pa /etc/passwd
+Name data base
+.El
+.Sh SEE ALSO
+.Xr who 1
+.Sh HISTORY
+The
+.Nm
+command appeared in
+.Bx 3.0 .
