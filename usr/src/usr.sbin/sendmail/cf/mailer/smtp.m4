@@ -14,7 +14,7 @@ POPDIVERT
 ###   SMTP Mailer specification   ###
 #####################################
 
-VERSIONID(`@(#)smtp.m4	8.14 (Berkeley) %G%')
+VERSIONID(`@(#)smtp.m4	8.15 (Berkeley) %G%')
 
 Msmtp,		P=[IPC], F=CONCAT(mDFMuX, SMTP_MAILER_FLAGS), S=11/31, R=ifdef(`_ALL_MASQUERADE_', `11/31', `21'), E=\r\n,
 		ifdef(`_OLD_SENDMAIL_',, `L=990, ')ifdef(`SMTP_MAILER_MAX', `M=SMTP_MAILER_MAX, ')A=IPC $h
@@ -56,8 +56,9 @@ R$* :; <@>		$@ $1 :;			list:; special case
 R$* <@> $*		$@ $1 <@> $2			pass null host through
 R< @ $* > $*		$@ < @ $1 > $2			pass route-addr through
 R$=E < @ $=w . >	$@ $1 < @ $2 >			exposed user as is
-R$* < @ $=w . >		$: $1 < @ $M >			masquerade as domain
-R$* < @ >		$: $1 < @ $j >			in case $M undefined
+R$* < @ $=w . >		$: $1 < @ $2 @ $M >		masquerade as domain
+R$* < @ $+ @ >		$@ $1 < @ $2 >			in case $M undefined
+R$* < @ $+ @ $+ >	$@ $1 < @ $3 >			$M is defined -- use it
 R$*			$@ $>61 $1			qualify unqual'ed names
 
 
