@@ -1,0 +1,14 @@
+# delta everything in the system
+foreach i (*)
+	if (! -d $i) continue
+	if (! -e $i/SCCS) continue
+	echo " ---------- $i ------------"
+	cd $i
+	set x = (`sccs tell -u $user`)
+	if ($#x == 0) then
+		echo no files being edited by $user
+	else
+		sccs delget $*:q $x
+	endif
+	cd ..
+end

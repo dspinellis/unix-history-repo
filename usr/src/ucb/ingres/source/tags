@@ -1,0 +1,826 @@
+IIatoi	libq/IIatoi.c	?^IIatoi(a1, i)$?
+IIbmove	libq/IIbmove.c	?^IIbmove(s, d, l)$?
+IIclose	libq/IIgetc.c	?^IIclose(buf)$?
+IIconcatv	libq/IIconcatv.c	?^char	*IIconcatv(buf, args)$?
+IIconvert	libq/IIconvert.c	?^IIconvert(inp, outp, sf, slen, df, dlen)$?
+IIcvar	libq/IIcvar.c	?^IIcvar(obj, type, len)$?
+IIerrfilen	libq/IIp_err.c	?^IIerrfilen(num, buf)$?
+IIerror	libq/IIerror.c	?^IIerror(errno, argc, argv)$?
+IIerrtest	libq/IIn_get.c	?^IIerrtest()$?
+IIexit	libq/IIexit.c	?^IIexit()$?
+IIflushtup	libq/IIflushtup.c	?^IIflushtup(file_name, line_no)$?
+IIfopen	libq/IIgetc.c	?^IIfopen(file, iobuf)$?
+IIgetc	libq/IIgetc.c	?^IIgetc(iobuf)$?
+IIgetpath	libq/IIingres.c	?^IIgetpath()$?
+IIgettup	libq/IIgettup.c	?^IIgettup(file_name, line_no)$?
+IIingres	libq/IIingres.c	?^IIingres(p1, p2, p3, p4, p5, p6, p7, p8, p9)$?
+IIitos	libq/IIitos.c	?^char *IIitos(i1)$?
+IIlength	libq/IIlength.c	?^IIlength(s)$?
+IIn_get	libq/IIn_get.c	?^IIn_get(file_name, line_no)$?
+IIn_ret	libq/IIn_ret.c	?^IIn_ret(addr, type)$?
+IInd_init	libq/IIreadinp.c	?^IInd_init()$?
+IIneed	libq/IIreadinp.c	?^IIneed(i)$?
+IIno_err	libq/IIerror.c	?^IIno_err(err)$?
+IIp_err	libq/IIp_err.c	?^IIp_err(err_num, argc, argv)$?
+IIpb_flush	libq/IIpb_flush.c	?^IIpb_flush(ppb)$?
+IIpb_get	libq/IIpb_get.c	?^IIpb_get(ppb, dp, len)$?
+IIpb_prime	libq/IIpb_prime.c	?^IIpb_prime(ppb, type)$?
+IIpb_put	libq/IIpb_put.c	?^IIpb_put(dp, len, ppb)$?
+IIpb_read	libq/IIpb_read.c	?^IIpb_read(ppb)$?
+IIpb_rphys	libq/IIpb_rphys.c	?^IIpb_rphys(ppb, fd)$?
+IIpb_wphys	libq/IIpb_wphys.c	?^IIpb_wphys(ppb, fd)$?
+IIpb_write	libq/IIpb_write.c	?^IIpb_write(ppb)$?
+IIread_arg	libq/IIreadinp.c	?^IIread_arg(ppb, parm)$?
+IIreadinput	libq/IIreadinp.c	?^IIreadinput(ppb)$?
+IIresync	libq/IIresync.c	?^IIresync()$?
+IIret_err	libq/IIerror.c	?^IIret_err(err)$?
+IIretrieve	libq/IIretrieve.c	?^IIretrieve(addr, type)$?
+IIsequal	libq/IIsequal.c	?^IIsequal(s1, s2)$?
+IIsetup	libq/IIsetup.c	?^IIsetup()$?
+IIsync	libq/IIsync.c	?^IIsync(file_name, line_no)$?
+IIsyserr	libq/IIsyserr.c	?^IIsyserr(pv)$?
+IIw_left	libq/IIw_left.c	?^IIw_left(string, argv)$?
+IIw_right	libq/IIw_right.c	?^IIw_right(string, argv)$?
+IIwrite	libq/IIwrite.c	?^IIwrite(str)$?
+Mcreatdb	support/creatdb.c	?^main(argc, argv)$?
+Mdestroydb	support/destroydb.c	?^main(argc, argv)$?
+Mhelpr	support/helpr.c	?^main(argc, argv)$?
+Mingres	support/ingres.c	?^main(argc, argv)$?
+Mksort	dbu/ksort.c	?^main(argc, argv)$?
+Mmain	ctlmod/main.c	?^main(argc, argv)$?
+Mprintadmin	support/printadmin.c	?^main(argc, argv)$?
+Mprintr	support/printr.c	?^main(argc, argv)$?
+Mpurge	support/purge.c	?^main(argc, argv)$?
+Mrestore	support/restore.c	?^main(argc, argv)$?
+Msysmod	support/sysmod.c	?^main(argc, argv)$?
+Mt	ovqp/t.c	?^}$?
+Mtimefix	support/timefix.c	?^main(argc, argv)$?
+Musersetup	support/usersetup.c	?^main(argc, argv)$?
+SPOP	ovqp/interp.c	?^# define SPOP(v)	(((struct stacksym *) v)--)$?
+SPUSH	ovqp/interp.c	?^# define SPUSH(v)	(++((struct stacksym *) v))$?
+acc_addbuf	iutil/acc_addbuf.c	?^acc_addbuf(bufs, cnt)$?
+acc_close	iutil/accbuf.c	?^acc_close()$?
+acc_err	dbu/ksort.c	?^acc_err(err)$?
+acc_init	iutil/acc_init.c	?^acc_init()$?
+ack_err	parser/ack_err.c	?^ack_err()$?
+add_mon	ctlmod/monitor.c	?^add_mon(a, b)$?
+add_ovflo	iutil/add_ovflo.c	?^add_ovflo(dx, tid)$?
+add_prim	iutil/add_prim.c	?^add_prim(d, tidx)$?
+add_ret	equel/retrieve.c	?^add_ret(s, type)$?
+add_simp	ovqp/findsimps.c	?^add_simp(const, rel, attno)$?
+addabyte	iutil/rhash.c	?^addabyte(ch, word, knt1)$?
+addbatch	iutil/batch.c	?^addbatch(oldtid, newtuple, oldtuple)$?
+addresdom	parser/tree.c	?^addresdom(lptr, rptr)$?
+addsym	equel/display.c	?^struct disp_node *addsym(s)$?
+adjust	parser/norml.c	?^adjust(pp)$?
+ageval	decomp/ageval.c	?^ageval(tree, result)$?
+aggcheck	qrymod/trscan.c	?^aggcheck(root)$?
+aggregate	decomp/aggregate.c	?^aggregate(root)$?
+agspace	decomp/aggregate.c	?^agspace(aop)$?
+algorithm	decomp/reduction.c	?^algorithm(clist, varmap)$?
+any	dbu/pr_tree.c	?^any(c, s)$?
+aop_interp	ovqp/interp.c	?^aop_interp(opval, tos)$?
+append	gutil/append.c	?^append(b1, l1, b2, l2, b3)$?
+appqual	qrymod/util.c	?^appqual(qual, root)$?
+argproc	equel/main.c	?^char **argproc(argv)$?
+ascii	ovqp/string.c	?^ascii(s)$?
+ask	support/subs.c	?^ask(prompt)$?
+atof	gutil/atof.c	?^atof(str, val)$?
+atoi	gutil/atoi.c	?^atoi(a, i)$?
+atol	gutil/atol.c	?^atol(a, i)$?
+attadd	parser/att_fcn.c	?^attadd(slot, tuple)$?
+attalloc	parser/att_fcn.c	?^attalloc()$?
+attcheck	parser/att_fcn.c	?^attcheck(aptr)$?
+attcount	parser/att_fcn.c	?^attcount(slot)$?
+attfind	parser/att_fcn.c	?^attfind(slot, attrib)$?
+attfree	parser/att_fcn.c	?^attfree(aptr)$?
+attinit	parser/att_fcn.c	?^attinit()$?
+attlookup	parser/att_fcn.c	?^attlookup(slot, attrib)$?
+av_files	ctlmod/av_files.c	?^av_files()$?
+backup	equel/getch.c	?^backup(ch)$?
+batchflush	dbu/rdwrbatch.c	?^batchflush()$?
+batchname	iutil/batchxtra.c	?^batchname()$?
+begin_quote	equel/prtout.c	?^begin_quote()$?
+beginhdr	iutil/printup.c	?^beginhdr()$?
+bequal	gutil/bequal.c	?^bequal(a, b, l)$?
+bitcnt	gutil/bitcnt.c	?^bitcnt(var)$?
+bitpos	gutil/bitpos.c	?^bitpos(wd)$?
+bldbindex	dbu/nmodify.c	?^bldbindex(dx)$?
+bldindex	dbu/modify.c	?^bldindex(d)$?
+bmove	support/timefix.c	?^bmove(src, dst, len)$?
+bndxsearch	iutil/bndxsearch.c	?^bndxsearch(d, tidx, tuple, mode, keyok, path)$?
+branch	monitor/branch.c	?^branch()$?
+branchto	monitor/branch.c	?^branchto(label)$?
+bread	dbu/copy.c	?^bread(mp)$?
+bufalloc	monitor/buf.c	?^bufalloc(size)$?
+bufcrunch	monitor/buf.c	?^bufcrunch(buffer)$?
+bufflatten	monitor/buf.c	?^bufflatten(buf, length)$?
+bufflush	monitor/buf.c	?^bufflush(buffer)$?
+buffree	monitor/buf.c	?^buffree(ptr)$?
+bufget	monitor/buf.c	?^bufget(buffer)$?
+bufpurge	monitor/buf.c	?^bufpurge(buffer)$?
+bufput	monitor/buf.c	?^bufput(c, buffer)$?
+buildlist	decomp/reduction.c	?^buildlist(root1, buf)$?
+byeval	decomp/byeval.c	?^byeval(root, aghead, agvar)$?
+c_enter	equel/cvar.c	?^c_enter(node, root)$?
+call	ctlmod/call.c	?^call(entpt, errfn)$?
+call_dbu	decomp/call_dbu.c	?^call_dbu(code, errflag)$?
+call_fn	ctlmod/call_fn.c	?^call_fn(fno, pc, pv)$?
+call_ovqp	decomp/call_ovqp.c	?^call_ovqp(tree, mode, resultnum)$?
+call_setup	ctlmod/call.c	?^call_setup(ppb, state, errfn)$?
+call_tree	parser/call_tree.c	?^call_tree(qmode, dest, err_fcn)$?
+calln	ctlmod/call.c	?^calln(entpt, errfn)$?
+canonical	iutil/put_tuple.c	?^canonical(d, tuple)$?
+cant	dbu/ksort.c	?^cant(f)$?
+cat	gutil/cat.c	?^cat(file)$?
+catcherr	decomp/call_dbu.c	?^catcherr(pc, pv)$?
+cgprompt	monitor/prompt.c	?^cgprompt()$?
+changedb	support/creatdb.c	?^changedb()$?
+charmove	dbu/copy.c	?^charmove(in, out, length)$?
+check	ovqp/findsimps.c	?^check(sym)$?
+checkadmin	iutil/checkadmin.c	?^checkadmin(fd)$?
+checkagg	decomp/aggregate.c	?^checkagg(aghead1, aop1, aghead2, aop2)$?
+checkatts	support/restore.c	?^checkatts()$?
+checkflags	support/timefix.c	?^checkflags(argc, argv)$?
+checkinteg	support/restore.c	?^checkinteg()$?
+checkpipes	support/ingres.c	?^checkpipes(proc, fd)$?
+checkprotect	support/restore.c	?^checkprotect()$?
+checkrel	support/restore.c	?^checkrel()$?
+checktree	support/restore.c	?^checktree()$?
+checkupd	parser/range_fcn.c	?^checkupd(entnum)$?
+chk_att	dbu/create.c	?^chk_att(rel, attname, format, domain, internal)$?
+chk_const	dbu/rmqm.c	?^chk_const(r_desc, c_desc, key, tuple, relid, id_at?
+chklink	decomp/aggregate.c	?^chklink(root)$?
+chkwidth	decomp/aggregate.c	?^chkwidth(aop, widthp, domno)$?
+choose_buf	iutil/accbuf.c	?^choose_buf(dx, pageid)$?
+ckpkey	decomp/reformat.c	?^ckpkey(linkmap, var)$?
+ckpkey1	decomp/reformat.c	?^ckpkey1(linkmap, ap)$?
+ckvar	decomp/tempvar.c	?^ckvar(t)$?
+clean	support/destroydb.c	?^clean(f)$?
+cleanrel	iutil/cleanrel.c	?^cleanrel(d)$?
+clear	monitor/clear.c	?^clear(f)$?
+clearkeys	iutil/setkey.c	?^clearkeys(d)$?
+clearvar	decomp/setvar.c	?^clearvar(tree, var)$?
+closeall	iutil/markopen.c	?^closeall(tell, ovect)$?
+closebatch	iutil/batch.c	?^closebatch()$?
+closecatalog	iutil/closecat.c	?^closecatalog(really)$?
+closer	iutil/closer.c	?^closer(d)$?
+closer1	decomp/openrs.c	?^closer1(var)$?
+closers	decomp/openrs.c	?^closers()$?
+clr_tuple	iutil/clr_tuple.c	?^clr_tuple(desc, tuple)$?
+clrline	monitor/clrline.c	?^clrline(noprompt)$?
+clrmem	gutil/clrmem.c	?^clrmem(p, l)$?
+clrrange	ctlmod/range.c	?^clrrange()$?
+cm_cleanup	ctlmod/cm_cleanup.c	?^cm_cleanup(typ)$?
+cm_close	ctlmod/cm_close.c	?^cm_close()$?
+cm_reset	ctlmod/cm_reset.c	?^cm_reset()$?
+cmove	ovqp/key.c	?^cmove(sym, dest)$?
+cmpa	dbu/ksort.c	?^cmpa(a, b)$?
+comment	equel/comment.c	?^comment()$?
+comp_tup	iutil/put_tuple.c	?^comp_tup(d, src)$?
+concat	gutil/concat.c	?^char *concat(s1, s2, s3)$?
+concatsym	ovqp/string.c	?^concatsym(s1, s2)$?
+construct	decomp/reduction.c	?^construct(root, listhead, buf)$?
+convert	dbu/convert.c	?^convert(inp, outp, sf, slen, df, dlen)$?
+copy	dbu/copy.c	?^copy(pc,pv)$?
+copy_ands	decomp/makenode.c	?^copy_ands(root, buf)$?
+copy_c_code	equel/yylex.c	?^copy_c_code()$?
+copydone	dbu/copy.c	?^copydone(i)$?
+copytree	decomp/makenode.c	?^copytree(r, buf)$?
+costfunc	decomp/selectv.c	?^costfunc(root, var, rx)$?
+cprime	decomp/aggregate.c	?^cprime(aop)$?
+cpsym	ovqp/findsimps.c	?^struct symbol $?
+create	dbu/create.c	?^create(pc, pv)$?
+ctlmod_decl	parser/range_fcn.c	?^ctlmod_decl(slot)$?
+cvt_dow	qrymod/d_prot.c	?^cvt_dow(sdow)$?
+cvt_time	ctlmod/monitor.c	?^cvt_time(t)$?
+d_integ	qrymod/d_integ.c	?^d_integ(pc, pv)$?
+d_prot	qrymod/d_prot.c	?^d_prot(pc, pv)$?
+d_view	qrymod/d_view.c	?^d_view(pc, pv)$?
+db_lock	iutil/initucode.c	?^db_lock(mode)$?
+de_init	decomp/de_init.c	?^de_init(argc, argv)$?
+de_rubproc	decomp/de_init.c	?^de_rubproc()$?
+dec_var	equel/cvar.c	?^dec_var(name, type, indir_level, block_level, loca?
+decision	decomp/decision.c	?^decision(root, qmode, result_num, buf)$?
+decl_cvar	equel/cvar.c	?^decl_cvar(name, type, indir_level, block_level)$?
+decl_field	equel/cvar.c	?^decl_field(name, type, indir_level, block_level)$?
+declare	ctlmod/range.c	?^declare(varno, desc)$?
+decode	support/usersetup.c	?^decode(buf, field)$?
+decomp	decomp/decomp.c	?^decomp(q, qmode, result_num)$?
+decompx	decomp/decomp.c	?^decompx(root, qmode, result_num)$?
+decompy	decomp/decomp.c	?^decompy(q, qmode, result_num, sqbuf)$?
+decompz	decomp/decomp.c	?^decompz(q, qmode, result_num)$?
+del_all	dbu/rmqm.c	?^del_all(r_desc, c_desc, key, tuple, tkey, bit, tre?
+del_int	dbu/rmqm.c	?^del_int(c_desc, key, tuple, tkey, constid, constat?
+del_tree	dbu/rmqm.c	?^del_tree(key, treeid)$?
+del_tuple	iutil/del_tuple.c	?^del_tuple(tid, width)$?
+delete	iutil/delete.c	?^delete(dx, tidx)$?
+derror	decomp/error.c	?^derror(eno)$?
+des	dbu/destroy.c	?^des(name)$?
+desc_close	decomp/openrs.c	?^desc_close(dt1)$?
+desc_get	decomp/openrs.c	?^desc_get(relnum, flag)$?
+desc_last	decomp/openrs.c	?^desc_last(dt)$?
+desc_lru	decomp/openrs.c	?^desc_lru()$?
+desc_top	decomp/openrs.c	?^desc_top(dt1)$?
+desc_victum	decomp/openrs.c	?^desc_victum()$?
+dest_const	dbu/rmqm.c	?^dest_const(pc, pv)$?
+dest_integ	dbu/rmqm.c	?^dest_integ(d, intv)$?
+dest_prot	dbu/rmqm.c	?^dest_prot(d, intv)$?
+destroy	dbu/destroy.c	?^destroy(pc, pv)$?
+dfind	decomp/pull_sq.c	?^dfind(tree, buf, sqlist)$?
+disp	dbu/display.c	?^disp(relation, mode)$?
+display	dbu/display.c	?^display(pc, pv)$?
+dispose	ovqp/scan.c	?^dispose(mode)$?
+do_seq	ctlmod/do_seq.c	?^do_seq(ppb)$?
+do_st	ctlmod/do_st.c	?^do_st(ppb, pc, pv)$?
+do_u_flag	iutil/do_u_flag.c	?^do_u_flag(u_flag)$?
+doflag	support/ingres.c	?^doflag(flag, where)$?
+dolocks	support/ingres.c	?^dolocks()$?
+domnam	decomp/usubr.c	?^domnam(lnp, pre)$?
+dopro	qrymod/protect.c	?^dopro(varno, root, qmode, byset)$?
+dstr_mark	decomp/usubr.c	?^dstr_mark(relnum)$?
+dstr_rel	decomp/usubr.c	?^dstr_rel(relnum)$?
+dump_cm	ctlmod/sysdump.c	?^dump_cm(argc, argv)$?
+dumptid	iutil/utility.c	?^dumptid(tid)$?
+dumvalue	dbu/copy.c	?^dumvalue(name)$?
+dup_att	dbu/create.c	?^dup_att(name, count, domain)$?
+dup_check	iutil/scan_dups.c	?^dup_check(d, tid, tuple1)$?
+eat_display	equel/display.c	?^eat_display(disp, left_ch, right_ch)$?
+edit	monitor/edit.c	?^edit()$?
+end_quote	equel/prtout.c	?^end_quote()$?
+endgo	parser/control.c	?^endgo()$?
+endovqp	decomp/call_ovqp.c	?^endovqp(ack)$?
+endquelst	parser/control.c	?^endquelst(op)$?
+endquery	decomp/rangetable.c	?^endquery(locrang, reopen)$?
+endretrieve	parser/control.c	?^endretrieve(err_fcn)$?
+enter_display	equel/display.c	?^struct disp_node *enter_display(disp, string)$?
+enter_ret	equel/retrieve.c	?^enter_ret(disp, type)$?
+equate_lines	equel/prtout.c	?^equate_lines()$?
+equel	equel/main.c	?^equel(filename)$?
+equelatt	ovqp/equelpr.c	?^equelatt(ss)$?
+equeleol	ovqp/equelpr.c	?^equeleol(code)$?
+errfilen	iutil/errfilen.c	?^errfilen(digit)$?
+error	ctlmod/error.c	?^error(num, msg)$?
+eval	monitor/eval.c	?^eval(pr)$?
+exactkey	ovqp/key.c	?^exactkey(ap, key)$?
+exec_sq	decomp/exec_sq.c	?^exec_sq(sqlist, sqrange, disj)$?
+execsq1	decomp/exec_sq.c	?^execsq1(sq, var, relnum)$?
+exp_op	monitor/expr.c	?^exp_op(op, lv, rv)$?
+expr	monitor/expr.c	?^expr()$?
+exprfind	monitor/expr.c	?^exprfind()$?
+exprgch	monitor/expr.c	?^exprgch()$?
+f8tof4	ovqp/typecheck.c	?^f8tof4(pp)$?
+f_cvar	equel/cvar.c	?^f_cvar(root)$?
+file_rel	dbu/copy.c	?^file_rel()$?
+file_spec	equel/yyerror.c	?^file_spec()$?
+fill_batch	dbu/modify.c	?^fill_batch(odesc, desc)$?
+fill_rel	dbu/modify.c	?^fill_rel(sdesc, desc, sortit)$?
+find	iutil/find.c	?^find(d, mode, lotid, hightid, key)$?
+find_page	iutil/findbest.c	?^find_page(dx, tid, need)$?
+findagg	decomp/aggregate.c	?^findagg(nodep,  agf)$?
+findbest	iutil/findbest.c	?^findbest(dx, tidx, tuple, need, checkdups)$?
+findlinks	decomp/reformat.c	?^findlinks(node, selv, linkv, linkmap)$?
+findsimps	ovqp/findsimps.c	?^findsimps()$?
+findsymbol	support/timefix.c	?^findsymbol(hd, fd, s)$?
+findwid	decomp/reformat.c	?^findwid(tree)$?
+fixovlap	decomp/decision.c	?^fixovlap(qlist, ovlapvar, buf)$?
+fixrange	decomp/decision.c	?^fixrange(root, tree, ovlapvar, reductnum, newrelnu?
+fixresult	decomp/decision.c	?^fixresult(root, tree1, newmode, origmode, resnum)$?
+fixtl	decomp/decision.c	?^fixtl(tree1, qp1, ovlapvar, buf)$?
+flaglkup	support/creatdb.c	?^flaglkup(flagname, plusminus)$?
+flagval	support/creatdb.c	?^flagval(f)$?
+flptexcep	ovqp/startovqp.c	?^flptexcep()$?
+flush_rel	iutil/accbuf.c	?^flush_rel(d, resetflag)$?
+flushbatch	iutil/writebatch.c	?^flushbatch()$?
+format	parser/format.c	?^format(result1)$?
+formatpg	iutil/formatpg.c	?^formatpg(d, n)$?
+formck	dbu/create.c	?^formck(a, dom, internal)$?
+free_display	equel/display.c	?^free_display(disp)$?
+free_ret	equel/retrieve.c	?^free_ret()$?
+freebuf	gutil/freebuf.c	?^freebuf(bf, bytes)$?
+freecvar	equel/cvar.c	?^freecvar(rootp)$?
+freesym	parser/s_symtab.c	?^freesym()$?
+ftoa	gutil/ftoa.c	?^ftoa(value, ascii, width, prec1, format)$?
+ftoi2	ovqp/typecheck.c	?^ftoi2(p)$?
+ftoi4	ovqp/typecheck.c	?^ftoi4(p)$?
+fullkey	iutil/find.c	?^fullkey(des)$?
+fullwait	gutil/fullwait.c	?^fullwait(child, name)$?
+get	iutil/get.c	?^get(d, tid, limtid, tuple, getnxt)$?
+get_addr	iutil/get_tuple.c	?^get_addr(tid)$?
+get_attuples	iutil/openr.c	?^get_attuples(d)$?
+get_p_tid	dbu/get_p_tid.c	?^get_p_tid(d, tp)$?
+get_page	dbu/ksort.c	?^get_page(d, tid)$?
+get_reltup	iutil/get_reltup.c	?^get_reltup(d, name)$?
+get_scan	parser/get_scan.c	?^get_scan(mode)$?
+get_tuple	iutil/get_tuple.c	?^get_tuple(d, tid, tuple)$?
+get_var	equel/cvar.c	?^struct cvar *get_var(id, local_tree, global_tree)$?
+getaddr	support/timefix.c	?^getaddr(hd, s)$?
+getbatch	dbu/rdwrbatch.c	?^getbatch(loc, count)$?
+getch	equel/getch.c	?^getch()$?
+getcop	parser/tree.c	?^getcop(string)$?
+getcvar	equel/cvar.c	?^getcvar(id)$?
+getequal	iutil/getequal.c	?^getequal(d, key, tuple, tid)$?
+getescape	monitor/monitor.c	?^getescape(copy)$?
+getfield	equel/cvar.c	?^getfield(id)$?
+getfilenm	monitor/getfilenm.c	?^getfilenm()$?
+getfill	dbu/modify.c	?^getfill(pv, rel, mp)$?
+getformat	decomp/usubr.c	?^getformat(p)$?
+getint_tuple	iutil/get_tuple.c	?^getint_tuple(d, tid, tuple)$?
+getkey	equel/getkey.c	?^*getkey(key)$?
+getkeys	dbu/modify.c	?^getkeys(ppv, relname, d, mp)$?
+getmode	iutil/paramd.c	?^getmode(spec)$?
+getname	monitor/monitor.c	?^getname()$?
+getnuser	iutil/getnuser.c	?^getnuser(name, buf)$?
+getnxtdb	support/subs.c	?^getnxtdb()$?
+getp	ctlmod/getp.c	?^getp()$?
+getrange	decomp/aggregate.c	?^getrange(varmap)$?
+getstat	support/creatdb.c	?^getstat(def, bitson, bitsoff)$?
+getsymbol	ovqp/interp1.c	?^getsymbol(ts, p)$?
+gettree	iutil/gettree.c	?^gettree(treerelid, treeowner, treetype, treeid, in?
+getufield	gutil/getufield.c	?^getufield(buf, num)$?
+getuser	iutil/getuser.c	?^getuser(code, buf)$?
+getvalue	support/timefix.c	?^getvalue(hd, fd, s, cp, len)$?
+go	monitor/go.c	?^go()$?
+gtchar	parser/s_inout.c	?^gtchar()$?
+hashcost	decomp/reformat.c	?^hashcost(npages)$?
+hasndx	support/restore.c	?^hasndx(id, own)$?
+havetree	support/restore.c	?^havetree(id, own, mdvalue)$?
+header	parser/par_util.c	?^header(pv)$?
+help	dbu/help.c	?^help(parmc, parmv)$?
+i2toi4	ovqp/typecheck.c	?^i2toi4(pp)$?
+i4toi2	ovqp/typecheck.c	?^i4toi2(pp)$?
+i_cat	dbu/rmqm.c	?^i_cat(c_name, c_desc, key, relid, id_attno, relown?
+icompare	iutil/compare.c	?^icompare(ax, bx, frmt, frml)$?
+if_c_code	equel/yylex.c	?^if_c_code(chr)$?
+ilclose	support/ildr.c	?^ilclose()$?
+ilcomp	support/ildr.c	?^ilcomp(st1,st2)$?
+ilenter	support/ildr.c	?^ilenter(ll)$?
+ilfind	support/ildr.c	?^ilfind(ll)$?
+ilrm	support/ildr.c	?^ilrm(l,llpid)$?
+ilrma	support/ildr.c	?^ilrma(pd)$?
+ilunique	support/ildr.c	?^ilunique(ll)$?
+ilwrite	support/ildr.c	?^ilwrite()$?
+include	equel/include.c	?^include(buf, start, chp, end)$?
+indexcheck	ovqp/key.c	?^indexcheck()$?
+indexx	dbu/index.c	?^indexx(pc, pv)$?
+ingexec	support/ingres.c	?^ingexec(procno)$?
+ingresname	iutil/ingresname.c	?^ingresname(iname, id, outname)$?
+init_decomp	decomp/call_ovqp.c	?^init_decomp()$?
+init_qt	ctlmod/init_qt.c	?^init_qt()$?
+init_quelst	parser/control.c	?^init_quelst()$?
+initbuf	gutil/need.c	?^initbuf(bf, size, err_num, err_func)$?
+initdbpath	iutil/initucode.c	?^initdbpath(database, dbpath, follow)$?
+initdesc	decomp/openrs.c	?^initdesc(mode)$?
+initialize	support/subs.c	?^initialize(argc, argv)$?
+initp	ctlmod/initp.c	?^initp()$?
+initrange	decomp/rangetable.c	?^initrange()$?
+initstructs	dbu/create.c	?^initstructs(att, rel)$?
+initucode	iutil/initucode.c	?^initucode(argc, argv, dbflag, paramlist, waitmode)?
+inpcloser	iutil/inpcloser.c	?^inpcloser(d)$?
+ins_att	dbu/create.c	?^ins_att(des, att, dom)$?
+insert	iutil/insert.c	?^insert(d, tid, tuple, checkdups)$?
+int_inttree	dbu/rmqm.c	?^int_inttree(i)$?
+integrity	qrymod/integrity.c	?^integrity(root)$?
+interpret	ovqp/interp.c	?^interpret(list)$?
+invalid	iutil/get_tuple.c	?^invalid(tid)$?
+iocv	gutil/iocv.c	?^iocv(i)$?
+isinteg	support/restore.c	?^isinteg(id, own, treeid)$?
+isndx	support/restore.c	?^isndx(id, own)$?
+isprot	support/restore.c	?^isprot(id, own, treeid)$?
+issue	qrymod/issue.c	?^issue(state, tree)$?
+issueinvert	qrymod/issue.c	?^issueinvert(root)$?
+isttyname	qrymod/d_prot.c	?^isttyname(n)$?
+itoa	gutil/itoa.c	?^itoa(i, a)$?
+itof	ovqp/typecheck.c	?^itof(p)$?
+itol	support/timefix.c	?^long itol(value)$?
+kcompare	iutil/compare.c	?^kcompare (dx, tuple, key)$?
+keycheck	ovqp/key.c	?^keycheck(keys, keytuple, mode)$?
+last_page	iutil/last_page.c	?^last_page(d, tid, buf)$?
+leaf	ctlmod/readqry.c	?^leaf(p)$?
+length	gutil/length.c	?^length(s)$?
+lexcomp	ovqp/string.c	?^lexcomp(s1, l1, s2, l2)$?
+listcomp	decomp/decision.c	?^listcomp(list, mesg)$?
+lmatch	ovqp/string.c	?^lmatch(pat, plen, str, slen)$?
+lnode	decomp/usubr.c	?^lnode(nod, lnodv, count)$?
+lockit	decomp/lockit.c	?^lockit(root, resvar)$?
+lookucode	support/restore.c	?^lookucode(ucode)$?
+lprintf	gutil/lprintf.c	?^lprintf(fmt, p1, p2, p3, p4, p5, p6)$?
+lsetbit	qrymod/util.c	?^lsetbit(bitno, xset)$?
+macallscan	monitor/mac.c	?^macallscan()$?
+macckch	monitor/mac.c	?^macckch()$?
+macdefine	monitor/mac.c	?^macdefine(template, subs, raw)$?
+macdelim	monitor/mac.c	?^macdelim()$?
+macdnl	monitor/mac.c	?^macdnl()$?
+macdump	monitor/mac.c	?^macdump(name)$?
+macfetch	monitor/mac.c	?^macfetch(quote)$?
+macgch	monitor/mac.c	?^macgch()$?
+macgetch	monitor/mac.c	?^macgetch()$?
+macinit	monitor/mac.c	?^macinit(rawget, rawpar, endtrap)$?
+macload	monitor/mac.c	?^macload(str, flag)$?
+macmatch	monitor/mac.c	?^macmatch(template)$?
+macmlkup	monitor/mac.c	?^macmlkup(name)$?
+macmmatch	monitor/mac.c	?^macmmatch(name, temp, flag)$?
+macmmchew	monitor/mac.c	?^macmmchew(pp)$?
+macmocv	monitor/mac.c	?^macmocv(m)$?
+macmode	monitor/mac.c	?^macmode(ch)$?
+macnewev	monitor/mac.c	?^macnewev(rawget, rawpar)$?
+macnumber	monitor/mac.c	?^macnumber(s)$?
+macparam	monitor/mac.c	?^macparam(mode, name, delim)$?
+macpflush	monitor/mac.c	?^macpflush(env)$?
+macplkup	monitor/mac.c	?^macplkup(name)$?
+macpopev	monitor/mac.c	?^macpopev()$?
+macprescan	monitor/mac.c	?^macprescan(pp)$?
+macprim	monitor/mac.c	?^macprim(n)$?
+macread	monitor/mac.c	?^macread()$?
+macremove	monitor/mac.c	?^macremove(name)$?
+macrescan	monitor/mac.c	?^macrescan()$?
+macro	monitor/mac.c	?^macro(name)$?
+macscan	monitor/mac.c	?^macscan(mac)$?
+macschng	monitor/mac.c	?^macschng(ch)$?
+macsget	monitor/mac.c	?^macsget(pp)$?
+macspring	monitor/mac.c	?^macspring(trap)$?
+macsstr	monitor/mac.c	?^macsstr(from, to, string)$?
+macsubs	monitor/mac.c	?^macsubs(mac)$?
+mactcvt	monitor/mac.c	?^mactcvt(raw, paramdefined)$?
+macunget	monitor/mac.c	?^macunget(mask)$?
+mak_t_rel	decomp/usubr.c	?^mak_t_rel(tree, prefix, rnum)$?
+makavar	decomp/makenode.c	?^makavar(node, varnum, attnum)$?
+make_newrel	dbu/modify.c	?^make_newrel(desc)$?
+makeadmin	support/creatdb.c	?^makeadmin(d, pv)$?
+makedb	support/creatdb.c	?^makedb()$?
+makedset	qrymod/protect.c	?^makedset(vn, tree, uset, rset, aset, qset)$?
+makefile	support/creatdb.c	?^makefile(r)$?
+makeidset	qrymod/d_integ.c	?^makeidset(varno, tree, dset)$?
+makereln	support/creatdb.c	?^makereln(r)$?
+makestr	parser/par_util.c	?^makestr(str)$?
+makezero	qrymod/util.c	?^makezero(typ)$?
+makfile	dbu/ksort.c	?^makfile(name)$?
+makresdom	decomp/makenode.c	?^makresdom(buf, node)$?
+makroot	decomp/makenode.c	?^makroot(buf)$?
+maktl	decomp/pull_sq.c	?^maktl(node, buf, sq1, varno)$?
+man	dbu/help.c	?^man(name)$?
+mapfill	dbu/copy.c	?^mapfill(aptr)$?
+mapvar	decomp/mapvar.c	?^mapvar(t, tl)$?
+mapvars	ctlmod/mapvars.c	?^mapvars(tree)$?
+markbuf	gutil/freebuf.c	?^markbuf(bf)$?
+markopen	iutil/markopen.c	?^markopen(ovect)$?
+markperf	ctlmod/monitor.c	?^markperf(mbuf)$?
+mcall	monitor/mcall.c	?^mcall(mac)$?
+merge	dbu/ksort.c	?^merge(a, b)$?
+mergevar	qrymod/util.c	?^mergevar(a, b, root)$?
+min	gutil/min.c	?^min(a, b)$?
+mintup	dbu/ksort.c	?^mintup(mbuf, cnt, cmpfunc)$?
+mk_unique	decomp/ret_unique.c	?^mk_unique(root)$?
+mklist	decomp/mklist.c	?^mklist(tree)$?
+mksqlist	decomp/usubr.c	?^mksqlist(tree, var)$?
+modify	dbu/modify.c	?^modify(pc, pv)$?
+modqual	decomp/byeval.c	?^modqual(root, lnodv, srcmap, agvar)$?
+modseqkey	dbu/modify.c	?^modseqkey(domain, relname, seq_ok)$?
+modtree	decomp/aggregate.c	?^modtree(pnode, lnodv, replmap)$?
+modupdate	dbu/modupdate.c	?^modupdate()$?
+monitor	monitor/monitor.c	?^monitor()$?
+monthcheck	dbu/save.c	?^monthcheck(input, output)$?
+monthsize	dbu/save.c	?^monthsize(month, year)$?
+mvands	parser/norml.c	?^mvands(andp)$?
+nalloc	equel/nalloc.c	?^char *nalloc(s)$?
+name	equel/name.c	?^name(chr)$?
+ndxsearch	iutil/ndxsearch.c	?^ndxsearch(d, tid, tuple, mode, keyok)$?
+need	gutil/need.c	?^need(bf, nbytes)$?
+new_range	decomp/rangetable.c	?^new_range(var, relnum)$?
+newdirec	monitor/newdirec.c	?^newdirec()$?
+newfile	dbu/ksort.c	?^newfile()$?
+newlino	iutil/newlino.c	?^newlino(len)$?
+newquery	decomp/rangetable.c	?^newquery(locrang)$?
+newtime	support/timefix.c	?^newtime(filename)$?
+next	support/usersetup.c	?^next(code)$?
+nferror	ctlmod/error.c	?^nferror(num, msg)$?
+nnorm	parser/norml.c	?^nnorm(p1)$?
+noclose	iutil/noclose.c	?^noclose(d)$?
+nodepr	ctlmod/treepr.c	?^nodepr(tree)$?
+norm	parser/norml.c	?^norm(p)$?
+norml	parser/norml.c	?^norml(ptr)$?
+notpush	parser/norml.c	?^notpush(p1)$?
+null_fn	iutil/null_fn.c	?^null_fn()$?
+number	equel/number.c	?^number(chr)$?
+numberget	monitor/expr.c	?^numberget(cx)$?
+oatoi	gutil/oatoi.c	?^oatoi(a)$?
+oldfile	dbu/ksort.c	?^oldfile()$?
+openbatch	iutil/batch.c	?^openbatch(rel_desc, index_desc, mode)$?
+opencatalog	iutil/opencat.c	?^opencatalog(name, mode)$?
+openheader	support/timefix.c	?^openheader(hd, filename)$?
+openindex	decomp/call_ovqp.c	?^openindex(name)$?
+openr	iutil/openr.c	?^openr(d, mode, name)$?
+openr1	decomp/openrs.c	?^openr1(var)$?
+openrs	decomp/openrs.c	?^openrs(root)$?
+openup	decomp/openrs.c	?^openup(dt1, varno, mode)$?
+operator	equel/operator.c	?^operator(chr)$?
+opfind	monitor/expr.c	?^opfind()$?
+opt_bylist	decomp/aggregate.c	?^opt_bylist(alist, root)$?
+optn_rel	support/sysmod.c	?^optn_rel(mx)$?
+order	decomp/reduction.c	?^order(clist, ovlapvar)$?
+origvar	decomp/tempvar.c	?^origvar(t, sqlist)$?
+ov_err	decomp/call_ovqp.c	?^ov_err(code)$?
+ovqpnod	decomp/call_ovqp.c	?^ovqpnod(q)$?
+pad	gutil/pad.c	?^pad(s, n)$?
+pageflush	iutil/page.c	?^pageflush(buf)$?
+par_init	parser/par_init.c	?^par_init(argc, argv1)$?
+paramd	iutil/paramd.c	?^paramd(d, ap)$?
+parami	iutil/paramd.c	?^parami(ip, param)$?
+parser	parser/parser.c	?^parser()$?
+pass_err	parser/pass_err.c	?^pass_err(pc, pv)$?
+patmat	parser/par_util.c	?^patmat(str)$?
+pb_dump	ctlmod/pb_dump.c	?^pb_dump(ppb, full)$?
+pb_flush	ctlmod/pb_flush.c	?^pb_flush(ppb)$?
+pb_get	ctlmod/pb_get.c	?^pb_get(ppb, dp, len)$?
+pb_prime	ctlmod/pb_prime.c	?^pb_prime(ppb, type)$?
+pb_put	ctlmod/pb_put.c	?^pb_put(dp, len, ppb)$?
+pb_read	ctlmod/pb_read.c	?^pb_read(ppb)$?
+pb_rphys	ctlmod/pb_rphys.c	?^pb_rphys(ppb, fd)$?
+pb_tput	ctlmod/pb_tput.c	?^pb_tput(tag, dp, len, ppb)$?
+pb_trace	ctlmod/pb_read.c	?^pb_trace(ppb)$?
+pb_wphys	ctlmod/pb_wphys.c	?^pb_wphys(ppb, fd)$?
+pb_write	ctlmod/pb_write.c	?^pb_write(ppb)$?
+permcom	parser/par_util.c	?^permcom(a)$?
+pipeopen	support/ingres.c	?^pipeopen(pipid, rw)$?
+pipexlat	support/ingres.c	?^pipexlat(ppip, rw)$?
+pluck_page	iutil/utility.c	?^pluck_page(t, var)$?
+pmatch	ovqp/string.c	?^pmatch(pat, plen, str, slength)$?
+pmove	gutil/pmove.c	?^pmove(s1, b1, l1, c)$?
+popnum	monitor/expr.c	?^popnum()$?
+popop	monitor/expr.c	?^popop()$?
+pr_attname	dbu/pr_tree.c	?^pr_attname(rel, attno)$?
+pr_const	dbu/pr_tree.c	?^pr_const(c)$?
+pr_day	dbu/pr_prot.c	?^pr_day(bgn, end)$?
+pr_ddom	dbu/pr_tree.c	?^pr_ddom()$?
+pr_def	dbu/display.c	?^pr_def(relation, owner)$?
+pr_dom_init	dbu/pr_tree.c	?^pr_dom_init()$?
+pr_doms	dbu/pr_prot.c	?^pr_doms(doms, relstat)$?
+pr_expr	dbu/pr_tree.c	?^pr_expr(e)$?
+pr_int	dbu/display.c	?^pr_int(i, relid)$?
+pr_integrity	dbu/display.c	?^pr_integrity(relid, relowner)$?
+pr_op	dbu/pr_tree.c	?^pr_op(op_type, op_code)$?
+pr_ops	dbu/pr_prot.c	?^pr_ops(opset, relstat)$?
+pr_parm	ctlmod/prvect.c	?^pr_parm(pv)$?
+pr_permit	dbu/pr_prot.c	?^pr_permit(p, relstat)$?
+pr_prot	dbu/pr_prot.c	?^pr_prot(relid, r)$?
+pr_q_clause	dbu/pr_tree.c	?^pr_q_clause(q)$?
+pr_qual	dbu/pr_tree.c	?^pr_qual(q)$?
+pr_range	dbu/pr_tree.c	?^pr_range()$?
+pr_resdom	dbu/pr_tree.c	?^pr_resdom(resdom, target_flag)$?
+pr_rv	dbu/pr_tree.c	?^pr_rv(re)$?
+pr_set	qrymod/protect.c	?^pr_set(xset, labl)$?
+pr_spec_permit	dbu/pr_prot.c	?^pr_spec_permit(r, relst_bit)$?
+pr_term	dbu/pr_prot.c	?^pr_term(term)$?
+pr_time	dbu/pr_prot.c	?^pr_time(bgn, end)$?
+pr_tl_clause	dbu/pr_tree.c	?^pr_tl_clause(t_l, target_flag)$?
+pr_tree	dbu/pr_tree.c	?^pr_tree(root)$?
+pr_trim	dbu/pr_tree.c	?^pr_trim(s, l)$?
+pr_unique	decomp/ret_unique.c	?^pr_unique(root1, var1)$?
+pr_user	dbu/pr_prot.c	?^pr_user(user)$?
+pr_values	support/timefix.c	?^pr_values(str, secs, std, dyl, flag)$?
+pr_var	dbu/pr_tree.c	?^pr_var(var)$?
+prargs	gutil/prargs.c	?^prargs(pc, pv)$?
+prime	decomp/ageval.c	?^prime(aop)$?
+primrf	decomp/reformat.c	?^primrf(var, pq, locrang)$?
+print	dbu/print.c	?^print(parmc, parmv)$?
+printatt	iutil/printup.c	?^printatt(type, length, value)$?
+printdesc	iutil/printdesc.c	?^printdesc(d)$?
+printeh	iutil/printup.c	?^printeh()$?
+printeol	iutil/printup.c	?^printeol()$?
+printfatt	iutil/printup.c	?^printfatt(width, value)$?
+printhdr	iutil/printup.c	?^printhdr(type, length, value)$?
+printslot	parser/range_fcn.c	?^printslot(slot)$?
+printtable	parser/range_fcn.c	?^printtable()$?
+printtrail	parser/control.c	?^printtrail()$?
+printup	iutil/printup.c	?^printup(d, tuple)$?
+prlinks	decomp/prlinks.c	?^prlinks(label,linkmap)$?
+proappl	qrymod/protect.c	?^proappl(protup)$?
+proc_err	ctlmod/proc_err.c	?^proc_err(ppb, pc, pv)$?
+prochk	qrymod/protect.c	?^prochk(inbit, domset, protup)$?
+prompt	monitor/prompt.c	?^prompt(msg)$?
+prot_protree	dbu/rmqm.c	?^prot_protree(p)$?
+protect	qrymod/protect.c	?^protect(root)$?
+prsimp	ovqp/findsimps.c	?^prsimp(ss)$?
+prstack	ovqp/prsym.c	?^prstack(s)$?
+prstr	ovqp/prsym.c	?^prstr(p, l)$?
+prsym	ovqp/prsym.c	?^prsym(s)$?
+prvect	ctlmod/prvect.c	?^prvect(pc, pv)$?
+pull_const	decomp/pull_const.c	?^pull_const(root, buf)$?
+pull_sq	decomp/pull_sq.c	?^pull_sq(tree1, sqlist, locrang, sqrange, buf)$?
+purgedb	support/purge.c	?^purgedb(db)$?
+purgetup	dbu/purgetup.c	?^purgetup(d, key1, dom1, key2, dom2)$?
+pushnum	monitor/expr.c	?^pushnum(num)$?
+pushop	monitor/expr.c	?^pushop(op)$?
+put_tuple	iutil/put_tuple.c	?^put_tuple(tid, tuple, length)$?
+putbatch	dbu/rdwrbatch.c	?^putbatch(cp, count)$?
+putch	monitor/monitor.c	?^putch(ch)$?
+puts	equel/prtout.c	?^puts(s, file)$?
+puttree	qrymod/puttree.c	?^puttree(root, trelid, towner, ttype)$?
+putvalue	support/timefix.c	?^putvalue(hd, fd, s, loc, len)$?
+pwritesym	ovqp/equelpr.c	?^pwritesym(s)$?
+qm_init	qrymod/qrymod.c	?^qm_init(argc, argv)$?
+qmerror	qrymod/util.c	?^qmerror(errno, qmode, vn, p1, p2, p3, p4, p5, p6)$?
+qmtest	support/helpr.c	?^char *qmtest(p)$?
+qrymod	qrymod/qrymod.c	?^qrymod(pc, pv)$?
+qryproc	decomp/qryproc.c	?^qryproc(pc, pv)$?
+qscan	qrymod/trscan.c	?^qscan(root, vn, an)$?
+quit	monitor/quit.c	?^quit()$?
+r_relstat	dbu/rmqm.c	?^r_relstat(d, bit, action)$?
+rangekey	ovqp/key.c	?^rangekey(ap, l, h)$?
+rangename	decomp/rangetable.c	?^rangename(var)$?
+rangrf	decomp/reformat.c	?^rangrf(var, substvar, sq, buf, linkmap, tree, locr?
+rcsvtrpr	ctlmod/treepr.c	?^rcsvtrpr(tree)$?
+rcvt	ovqp/interp1.c	?^rcvt(tos, restype, reslen)$?
+read_arg	ctlmod/readinput.c	?^read_arg(ppb, pparm)$?
+readadmin	iutil/readadmin.c	?^readadmin()$?
+readagg_result	decomp/call_ovqp.c	?^readagg_result(result)$?
+readbatch	dbu/rdwrbatch.c	?^readbatch()$?
+readdbtemp	support/creatdb.c	?^readdbtemp()$?
+readinput	ctlmod/readinput.c	?^readinput(ppb)$?
+readmon	ctlmod/readmon.c	?^readmon(buf, nbytes)$?
+readopen	decomp/openrs.c	?^readopen(var)$?
+readqry	ctlmod/readqry.c	?^readqry(rdfn, fnparam, initialize)$?
+readsym	ctlmod/readqry.c	?^readsym(rdfn, fnparam)$?
+readtree	ctlmod/readqry.c	?^readtree(tresym, rdfn, fnparam)$?
+reformat	decomp/reformat.c	?^reformat(var, sqlist, locrang, buf, tree)$?
+reinit	decomp/reinit.c	?^reinit()$?
+rel_file	dbu/copy.c	?^rel_file()$?
+rel_fmt	dbu/help.c	?^rel_fmt(r)$?
+rel_pages	decomp/usubr.c	?^rel_pages(tupcnt, width)$?
+relntrrd	iutil/gettree.c	?^relntrrd(dummyx, ptr, cnt, treerelid, treeowner, t?
+relntrwr	qrymod/puttree.c	?^relntrwr(ptr, len, treerelid, treeowner, treetype,?
+relop	ovqp/findsimps.c	?^relop(s, reverse)$?
+relop_interp	ovqp/interp.c	?^relop_interp(opval, l1)$?
+relpr	dbu/help.c	?^relpr(mode)$?
+removedups	decomp/ageval.c	?^removedups(var)$?
+replace	iutil/replace.c	?^replace(d, tid, tuple, checkdups)	$?
+reset	monitor/syscntrl.c	?^reset()$?
+reset_sq	decomp/exec_sq.c	?^reset_sq(sqlist, locrang, limit)$?
+resetacc	dbu/ksort.c	?^resetacc(buf)$?
+resetp	ctlmod/resetp.c	?^resetp()$?
+resetrel	dbu/resetrel.c	?^resetrel(pc, pv)$?
+restore	support/restore.c	?^restore()$?
+restoref	equel/include.c	?^restoref()$?
+resultres	dbu/pr_tree.c	?^resultres()$?
+rhash	iutil/rhash.c	?^rhash(d, key)$?
+rline	dbu/ksort.c	?^rline(mp)$?
+rmbatch	iutil/batchxtra.c	?^rmbatch()$?
+rmovlap	decomp/decision.c	?^rmovlap(qlist, ovlapvar)$?
+rngback	parser/range_fcn.c	?^rngback(slot)$?
+rngdel	parser/range_fcn.c	?^rngdel(rel)$?
+rngent	parser/range_fcn.c	?^rngent(type, var, desc)$?
+rngfresh	parser/range_fcn.c	?^rngfresh(op)$?
+rngfront	parser/range_fcn.c	?^rngfront(slot)$?
+rngget	parser/range_fcn.c	?^rngget(slot)$?
+rnginit	parser/range_fcn.c	?^rnginit()$?
+rnglook	parser/range_fcn.c	?^rnglook(name, type)$?
+rngold	parser/range_fcn.c	?^rngold()$?
+rngreset	parser/range_fcn.c	?^rngreset()$?
+rnum_alloc	decomp/rnum.c	?^rnum_alloc()$?
+rnum_assign	decomp/rnum.c	?^rnum_assign(name)$?
+rnum_convert	decomp/rnum.c	?^rnum_convert(num)$?
+rnum_init	decomp/rnum.c	?^rnum_init()$?
+rnum_last	decomp/rnum.c	?^rnum_last()$?
+rnum_remove	decomp/rnum.c	?^rnum_remove(num)$?
+rnum_temp	decomp/rnum.c	?^rnum_temp(rnum)$?
+roctal	support/creatdb.c	?^roctal()$?
+rstrang	decomp/rangetable.c	?^rstrang(locrang, var)$?
+rubcatch	iutil/rub.c	?^rubcatch()$?
+ruboff	iutil/rub.c	?^ruboff(why)$?
+rubon	iutil/rub.c	?^rubon()$?
+rubproc	ctlmod/main.c	?^rubproc()$?
+rupdate	dbu/rupdate.c	?^rupdate(pc, pv)$?
+salloc	equel/nalloc.c	?^char *salloc(s)$?
+sameafcn	decomp/aggregate.c	?^sameafcn(q1, q2)$?
+sameagg	decomp/aggregate.c	?^sameagg(aghead, newaop, agg_depth)$?
+satisfypt	support/ingres.c	?^satisfypt()$?
+save	dbu/save.c	?^save(parmc, parmv)$?
+savrang	decomp/rangetable.c	?^savrang(locrang, var)$?
+scan	ovqp/scan.c	?^scan()$?
+scan_dups	iutil/scan_dups.c	?^scan_dups(d, tid, tuple)$?
+scompare	gutil/scompare.c	?^scompare(a_ptr, a_len, b_ptr, b_len)$?
+secupdate	dbu/secupdate.c	?^secupdate(r)$?
+selectv	decomp/selectv.c	?^selectv(root)$?
+send_arg	ctlmod/send_off.c	?^send_arg(pparm, ppb)$?
+send_off	ctlmod/send_off.c	?^send_off(ppb, pc, pv)$?
+seq_attributes	dbu/seq_atts.c	?^seq_attributes(a, r, atup)$?
+seq_init	dbu/seq_atts.c	?^seq_init(a, r)$?
+sequal	gutil/sequal.c	?^sequal(a, b)$?
+set_si_buf	gutil/set_si_buf.c	?^set_si_buf()$?
+set_so_buf	gutil/set_so_buf.c	?^set_so_buf()$?
+setallkey	ovqp/key.c	?^setallkey(relkey, keytuple)$?
+setcsl	iutil/cslocks.c	?^setcsl(rtid)$?
+setdbl	iutil/dblocks.c	?^setdbl(act, mod)$?
+seterr	gutil/freebuf.c	?^seterr(bf, errnum, err_func)$?
+setfil	dbu/ksort.c	?^setfil(i)$?
+setflag	gutil/setflag.c	?^setflag(argv, flagch, def)$?
+setkey	iutil/setkey.c	?^setkey(d, key, value, dom)$?
+setp	ctlmod/setp.c	?^setp(type, val, len)$?
+setpgl	iutil/pglocks.c	?^setpgl(buf)$?
+setrll	iutil/rllocks.c	?^setrll(act, rtid, mod)$?
+setvar	decomp/setvar.c	?^setvar(tree, var, intid, tuple)$?
+shell	monitor/shell.c	?^shell()$?
+size	ovqp/string.c	?^size(s)$?
+smove	gutil/smove.c	?^smove(a, b)$?
+sort	dbu/ksort.c	?^sort()$?
+sortrel	dbu/modify.c	?^sortrel(odesc, desc)$?
+space_left	iutil/put_tuple.c	?^space_left(bp)$?
+specclose	decomp/openrs.c	?^specclose(relnum)$?
+specopen	decomp/openrs.c	?^specopen(relnum)$?
+startdecomp	decomp/call_ovqp.c	?^startdecomp()$?
+startequel	ovqp/equelpr.c	?^startequel()$?
+startgo	parser/control.c	?^startgo()$?
+startovqp	ovqp/startovqp.c	?^startovqp()$?
+startsymbol	support/timefix.c	?^startsymbol(hd, fdx)$?
+strategy	ovqp/strategy.c	?^strategy()$?
+string	equel/string.c	?^string(op)$?
+stuff_page	iutil/utility.c	?^stuff_page(t, var)$?
+subsvars	qrymod/trscan.c	?^subsvars(proot, vn, transtree, vmode)$?
+sucheck	support/subs.c	?^sucheck()$?
+syment	parser/s_symtab.c	?^syment(ptr, len1)$?
+symspfree	equel/display.c	?^symspfree()$?
+sysdump	ctlmod/sysdump.c	?^sysdump(pc, pv)$?
+syserr	gutil/syserr.c	?^syserr(pv)$?
+tTamper	gutil/trace.c	?^tTamper(line, tflag, tvect, tsize)$?
+tTf	gutil/tTf.c	?^tTf(m, n)$?
+tTflag	gutil/trace.c	?^tTflag(args)$?
+tTfp	gutil/trace.c	?^tTfp(m, n, a1, a2, a3, a4, a5, a6)$?
+tTnext	gutil/trace.c	?^tTnext()$?
+tToff	gutil/trace.c	?^tToff(fun, pt)$?
+tTon	gutil/trace.c	?^tTon(fun, pt)$?
+tTrace	gutil/trace.c	?^tTrace(argv, tflag, tvect, tsize)$?
+tTurn	gutil/trace.c	?^tTurn(fno)$?
+tempvar	decomp/tempvar.c	?^tempvar(node, sqlist, buf)$?
+term	dbu/ksort.c	?^term(error)$?
+timeofday	parser/par_util.c	?^timeofday(hrs, mins)$?
+tlprepend	parser/par_util.c	?^tlprepend(a, b)$?
+tm_init	monitor/ttymon.c	?^tm_init(argc, argv)$?
+tm_intr	monitor/ttymon.c	?^tm_intr(typ)$?
+tm_mon	monitor/ttymon.c	?^tm_mon()$?
+top_acc	iutil/accbuf.c	?^top_acc(buf)$?
+tout	ovqp/interp1.c	?^tout(s, offp, rlen)$?
+trace	monitor/syscntrl.c	?^trace()$?
+transfer	dbu/copy.c	?^transfer(in, sf, sl, df, dl, doff)$?
+trapquery	monitor/trapquery.c	?^trapquery(resp, name)$?
+travers	parser/norml.c	?^travers(p1)$?
+trbuild	ctlmod/readqry.c	?^trbuild(bufptr)$?
+tree	parser/tree.c	?^tree(lptr, rptr, typ, len, valu, attnum)$?
+tree_const	dbu/rmqm.c	?^tree_const(i)$?
+tree_prot	dbu/rmqm.c	?^tree_prot(p)$?
+treedup	parser/norml.c	?^*treedup(p1)$?
+treepr	ctlmod/treepr.c	?^treepr(tree)$?
+trim_relname	iutil/trim_relna.c	?^trim_relname(name)$?
+trimqlend	qrymod/util.c	?^trimqlend(qual)$?
+tst_include	equel/include.c	?^tst_include()$?
+tup_len	iutil/tup_len.c	?^tup_len(tid)$?
+typecheck	ovqp/typecheck.c	?^typecheck(pp1, pp2, opval)$?
+typecoerce	ovqp/typecheck.c	?^typecoerce(tosx, ntype, nlen)$?
+uncomp_tup	iutil/get_tuple.c	?^uncomp_tup(d, cp, tuple)$?
+undo_sq	decomp/exec_sq.c	?^undo_sq(sqlist, locrang, sqrange, limit, maxlimit,?
+unlall	iutil/pglocks.c	?^unlall()$?
+unlcs	iutil/cslocks.c	?^unlcs(rtid)$?
+unldb	iutil/dblocks.c	?^unldb()$?
+unlpg	iutil/pglocks.c	?^unlpg(buf)$?
+unlrl	iutil/rllocks.c	?^unlrl(rtid)$?
+unspool	dbu/modify.c	?^unspool(desc)$?
+update	dbu/update.c	?^update()$?
+uperr	support/restore.c	?^uperr()$?
+userdestroy	dbu/udestroy.c	?^userdestroy(reltup)$?
+usrerr	support/ingres.c	?^usrerr(f, p1, p2, p3)$?
+valof	monitor/expr.c	?^valof(terminator)$?
+varfind	decomp/aggregate.c	?^varfind(root, aghead)$?
+varset	qrymod/trscan.c	?^varset(root)$?
+vfind	qrymod/trscan.c	?^vfind(vn, vtree)$?
+view	qrymod/view.c	?^view(root)$?
+vrscan	qrymod/view.c	?^vrscan(root, vtree)$?
+w_con	equel/prtout.c	?^w_con(type, string)$?
+w_display	equel/display.c	?^w_display(disp)$?
+w_file	equel/prtout.c	?^w_file()$?
+w_flush	equel/prtout.c	?^w_flush()$?
+w_key	equel/prtout.c	?^w_key(string)$?
+w_new	equel/prtout.c	?^w_new(string)$?
+w_op	equel/prtout.c	?^w_op(string)$?
+w_raw	equel/prtout.c	?^w_raw(string)$?
+w_ret	equel/retrieve.c	?^w_ret()$?
+w_string	equel/prtout.c	?^w_string(string, type)$?
+w_sync	equel/prtout.c	?^w_sync()$?
+w_var	equel/prtout.c	?^w_var(disp, type)$?
+windup	parser/tree.c	?^windup(ptr)$?
+wrbatch	iutil/writebatch.c	?^wrbatch(cp, count)$?
+writeopen	decomp/openrs.c	?^writeopen(var)$?
+writeout	monitor/writeout.c	?^writeout()$?
+writeqry	ctlmod/writeqry.c	?^writeqry(root, wrfn, fnparam)$?
+writesym	ctlmod/writeqry.c	?^writesym(typ, len, value, wrfn, fnparam)$?
+writetree	ctlmod/writeqry.c	?^writetree(q1, wrfn, fnparam)$?
+xalloc	gutil/xalloc.c	?^xalloc(sz)$?
+xdot	parser/xdot.c	?^xdot(slot)$?
+xfree	equel/nalloc.c	?^xfree(cp)$?
+xputchar	gutil/xputchar.c	?^xputchar(c)$?
+xwait	monitor/xwait.c	?^xwait()$?
+yyerror	equel/yyerror.c	?^yyerror(s)$?
+yylex	equel/yylex.c	?^yylex()$?
+yyparse	equel/grammar.c	?^yyparse() {$?
+yysemerr	equel/yyerror.c	?^yysemerr(s, i)$?
+yyserror	equel/yyerror.c	?^yyserror(s, d)$?
+zcheck	dbu/copy.c	?^zcheck(param)$?
+ztack	gutil/ztack.c	?^ztack(a, b)$?
