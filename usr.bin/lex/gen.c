@@ -1,50 +1,38 @@
+/* gen - actual generation (writing) of flex scanners */
+
 /*-
  * Copyright (c) 1990 The Regents of the University of California.
  * All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
- * Vern Paxson of Lawrence Berkeley Laboratory.
+ * Vern Paxson.
  * 
  * The United States Government has rights in this work pursuant
  * to contract no. DE-AC03-76SF00098 between the United States
  * Department of Energy and the University of California.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in the
- *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *	This product includes software developed by the University of
- *	California, Berkeley and its contributors.
- * 4. Neither the name of the University nor the names of its contributors
- *    may be used to endorse or promote products derived from this software
- *    without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
- * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
- * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
- * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
- * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
- * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
- * SUCH DAMAGE.
+ * Redistribution and use in source and binary forms are permitted provided
+ * that: (1) source distributions retain this entire copyright notice and
+ * comment, and (2) distributions including binaries display the following
+ * acknowledgement:  ``This product includes software developed by the
+ * University of California, Berkeley and its contributors'' in the
+ * documentation or other materials provided with the distribution and in
+ * all advertising materials mentioning features or use of this software.
+ * Neither the name of the University nor the names of its contributors may
+ * be used to endorse or promote products derived from this software without
+ * specific prior written permission.
+ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR IMPLIED
+ * WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)gen.c	5.2 (Berkeley) 6/18/90";
-#endif /* not lint */
-
-/* gen - actual generation (writing) of flex scanners */
+static char rcsid[] =
+    "@(#) $Header: /home/horse/u0/vern/flex/RCS/gen.c,v 2.12 91/03/28 12:01:38 vern Exp $ (LBL)";
+#endif
 
 #include "flexdef.h"
+
 
 /* declare functions that have forward references */
 
@@ -688,11 +676,7 @@ void gen_NUL_trans()
 
 	do_indent();
 
-	if ( interactive )
-	    printf( "yy_is_jam = (yy_base[yy_current_state] == %d);\n",
-		    jambase );
-	else
-	    printf( "yy_is_jam = (yy_current_state == %d);\n", jamstate );
+	printf( "yy_is_jam = (yy_current_state == %d);\n", jamstate );
 	}
 
     /* if we've entered an accepting state, backtrack; note that
@@ -811,7 +795,7 @@ void gentabs()
 
 		    if ( variable_trailing_context_rules &&
 			 ! (accnum & YY_TRAILING_HEAD_MASK) &&
-			 accnum > 0 &&
+			 accnum > 0 && accnum <= num_rules &&
 			 rule_type[accnum] == RULE_VARIABLE )
 			{
 			/* special hack to flag accepting number as part
@@ -1137,9 +1121,10 @@ void make_tables()
 	    puts( "static int yy_looking_for_trail_begin = 0;" );
 	    puts( "static int yy_full_lp;" );
 	    puts( "static int *yy_full_state;" );
-	    printf( "#define YY_TRAILING_MASK 0x%x\n", YY_TRAILING_MASK );
+	    printf( "#define YY_TRAILING_MASK 0x%x\n",
+		    (unsigned int) YY_TRAILING_MASK );
 	    printf( "#define YY_TRAILING_HEAD_MASK 0x%x\n",
-		    YY_TRAILING_HEAD_MASK );
+		    (unsigned int) YY_TRAILING_HEAD_MASK );
 	    }
 
 	puts( "#define REJECT \\" );
@@ -1210,6 +1195,7 @@ void make_tables()
 
     if ( yymore_used )
 	{
+	indent_puts( "yy_more_len = 0;" );
 	indent_puts( "yy_doing_yy_more = yy_more_flag;" );
 	indent_puts( "if ( yy_doing_yy_more )" );
 	indent_up();
