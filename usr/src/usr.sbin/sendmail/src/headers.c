@@ -1,7 +1,7 @@
 # include <errno.h>
 # include "sendmail.h"
 
-SCCSID(@(#)headers.c	4.1		%G%);
+SCCSID(@(#)headers.c	4.2		%G%);
 
 /*
 **  CHOMPHEADER -- process and save a header line.
@@ -78,16 +78,6 @@ chompheader(line, def)
 	if (*fvalue == ' ')
 		fvalue++;
 
-	/* delete default value for this header */
-	for (hp = &CurEnv->e_header, h = CurEnv->e_header; h != NULL;
-		hp = &h->h_link, h = h->h_link)
-	{
-		if (strcmp(fname, h->h_field) == 0 &&
-		    bitset(H_DEFAULT, h->h_flags) &&
-		    !bitset(H_FORCE, h->h_flags))
-			h->h_value = NULL;
-	}
-
 	/* see if it is a known type */
 	for (hi = HdrInfo; hi->hi_field != NULL; hi++)
 	{
@@ -104,13 +94,25 @@ chompheader(line, def)
 		return (hi->hi_flags);
 
 	/* drop explicit From: if same as what we would generate -- for MH */
-	if (!def && !QueueRun && strcmp(fvalue, CurEnv->e_from.q_paddr) == 0)
+	p = "resent-from";
+	if (!bitset(EF_RESENT, CurEnv->e_flags))
+		p += 7;
+	if (!def && !QueueRun && strcmp(fname, p) == 0)
 	{
-		p = "resent-from";
-		if (!bitset(EF_RESENT, CurEnv->e_flags))
-			p += 7;
-		if (strcmp(fname, p) == 0)
+		if (strcmp(fvalue, CurEnv->e_from.q_paddr) == 0)
 			return (hi->hi_flags);
+
+		/* different contents -- add a Sender: field */
+		addheader("sender", "$q", CurEnv);
+	}
+
+	/* delete default value for this header */
+	for (hp = &CurEnv->e_header; (h = *hp) != NULL; hp = &h->h_link)
+	{
+		if (strcmp(fname, h->h_field) == 0 &&
+		    bitset(H_DEFAULT, h->h_flags) &&
+		    !bitset(H_FORCE, h->h_flags))
+			h->h_value = NULL;
 	}
 
 	/* create a new node */
