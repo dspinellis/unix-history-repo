@@ -1,10 +1,7 @@
 /*
- * This is the style guide for BSD's KNF (Kernel Normal Form).
+ * Style guide for BSD's KNF (Kernel Normal Form).
  *
- * Multi-line comments look like this.  Make them real sentences.  Fill
- * them so they look like real paragraphs.
- *
- *	@(#)style	1.3 (Berkeley) %G%
+ *	@(#)style	1.4 (Berkeley) %G%
  */
 
 /*
@@ -12,6 +9,11 @@
  */
 
 /* Most single-line comments look like this. */
+
+/*
+ * Multi-line comments look like this.  Make them real sentences.  Fill
+ * them so they look like real paragraphs.
+ */
 
 /* Include files go at the top of the source module. */
 #include <stdio.h>		/* Non-local includes in brackets. */
@@ -80,10 +82,16 @@ main(argc, argv)
 	extern int optind;
 	int ch;
 
-	/* For consistency, getopt should be used to parse options. */
-	while ((ch = getopt(argc, argv, "")) != EOF)
+	/*
+	 * For consistency, getopt should be used to parse options.
+	 * Options should be sorted in the getopt call and the switch
+	 * statment, unless they fall through.
+	 */
+	while ((ch = getopt(argc, argv, "ab")) != EOF)
 		switch (ch) {		/* Indent the switch. */
-		case '':		/* Don't indent the case. */
+		case 'a':		/* Don't indent the case. */
+			break;
+		case 'b':
 			break;
 		case '?':
 		default:
@@ -111,8 +119,10 @@ main(argc, argv)
 	}
 
 	while (cnt < 20) {
-		stmt1;
-		stmt2;
+		stmt1;		/* Second level indents are four spaces. */
+		z = a + really + long + statment + that + needs + two lines +
+		    gets + indented + four + spaces + on + the + second +
+		    and + subsequent + lines.
 	}
 
 	/*
