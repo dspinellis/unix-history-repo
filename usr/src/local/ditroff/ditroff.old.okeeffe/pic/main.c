@@ -1,4 +1,4 @@
-/* main.c	(Berkeley)	1.4	83/10/07	*/
+/* main.c	(Berkeley)	1.5	83/10/18	*/
 #include	<stdio.h>
 #include	"pic.h"
 #include	"y.tab.h"
@@ -103,7 +103,7 @@ main(argc, argv)
 			getdata(yyin);
 			fclose(yyin);
 		}
-	exit(0);
+	exit(synerr);
 }
 
 
