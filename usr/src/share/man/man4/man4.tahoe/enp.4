@@ -1,0 +1,62 @@
+.\" Copyright (c) 1986 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)enp.4	5.1 (Berkeley) %G%
+.\"
+.TH ENP 4 "April 29, 1987"
+.UC 5
+.SH NAME
+enp \- CMC 10 Mb/s Ethernet interface
+.SH SYNOPSIS
+.B "device enp0 at vba? csr 0xfff40000 vector enpintr"
+.SH DESCRIPTION
+The
+.I enp
+interface provides access to a 10 Mb/s Ethernet network through
+a CMC ENP-20 controller.
+.PP
+The hardware has 128 kilobytes of dual-ported memory on the VERSAbus. 
+This memory
+is used for internal buffering by the board, and the interface code reads
+the buffer contents directly through the VERSAbus.
+The address of this memory is derived from the address specified
+in the configuration file.
+.PP
+Each of the host's network addresses
+is specified at boot time with an SIOCSIFADDR
+ioctl.  The
+.I ace
+interface employs the address resolution protocol described in
+.IR arp (4P)
+to dynamically map between Internet and Ethernet addresses on the local
+network.
+.PP
+The interface normally tries to use a ``trailer'' encapsulation
+to minimize copying data on input and output.
+The use of trailers is negotiated with ARP.
+This negotiation may be disabled, on a per-interface basis,
+by setting the IFF_NOTRAILERS
+flag with an SIOCSIFFLAGS ioctl.
+.PP
+Associated with each interface is a character device which
+is used to dowload, start, and reset the firmware in the controller.
+Reading or writing the ``ram device'' reads or writes the writable
+control store in the controller.  Two
+.IR ioctl (2)
+calls, ENPIOGO and ENPIORESET, are used to start and reset the
+firmware.
+.SH DIAGNOSTICS
+.BR "enp%d: can't handle af%d" .
+The interface was handed
+a message with addresses formatted in an unsuitable address
+family; the packet was dropped.
+.SH SEE ALSO
+intro(4N), inet(4F), arp(4P), enpload(8C)
+.SH BUGS
+The hardware is not capable of talking to itself.  The software
+implements local sending and broadcast by sending such packets to the
+loop interface.  This is a kludge.
+.PP
+The link level firmware does not support setting the board's
+Ethernet address.
