@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	6.1	(Berkeley)	%G%
+#	@(#)Makefile	6.2	(Berkeley)	%G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
@@ -42,7 +42,7 @@ vsort: ${LIBC}
 	${CC} -O -o $@ vsort.c
 
 clean: FRC
-	rm -f ${OBJS} core ${ALL}
+	rm -f ${OBJS} core ${ALL} chrtab.o
 
 depend: FRC
 	mkdep -p ${CFLAGS} ${SRCS}
