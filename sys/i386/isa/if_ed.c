@@ -16,7 +16,7 @@
  */
 
 /*
- * $Id: if_ed.c,v 1.37 1994/04/13 10:15:34 davidg Exp $
+ * $Id: if_ed.c,v 1.38 1994/05/17 22:30:47 jkh Exp $
  */
 
 #include "ed.h"
@@ -502,28 +502,6 @@ ed_probe_WD80x3(isa_dev)
 
 	if (sc->mem_shared) {
 		/*
-		 * Set address and enable interface shared memory.
-		 */
-		if(!sc->is790) {
-#ifdef TOSH_ETHER
-			outb(sc->asic_addr + ED_WD_MSR + 1, ((kvtop(sc->mem_start) >> 8) & 0xe0) | 4);
-			outb(sc->asic_addr + ED_WD_MSR + 2, ((kvtop(sc->mem_start) >> 16) & 0x0f));
-			outb(sc->asic_addr + ED_WD_MSR, ED_WD_MSR_MENB | ED_WD_MSR_POW);
-
-#else
-			outb(sc->asic_addr + ED_WD_MSR, ((kvtop(sc->mem_start) >> 13) &
-				ED_WD_MSR_ADDR) | ED_WD_MSR_MENB);
-#endif
-		} else {
-			outb(sc->asic_addr + ED_WD_MSR, ED_WD_MSR_MENB);
-			outb(sc->asic_addr + 0x04, (inb(sc->asic_addr + 0x04) | 0x80));
-			outb(sc->asic_addr + 0x0b, ((kvtop(sc->mem_start) >> 13) & 0x0f) |
-			     ((kvtop(sc->mem_start) >> 11) & 0x40) | 
-			     (inb(sc->asic_addr + 0x0b) & 0xb0));
-			outb(sc->asic_addr + 0x04, (inb(sc->asic_addr + 0x04) & ~0x80));
-		}
-
-		/*
 		 * Set upper address bits and 8/16 bit access to shared memory
 		 */
 		if (isa16bit) {
@@ -548,6 +526,28 @@ ed_probe_WD80x3(isa_dev)
 		}
 
 		/*
+		 * Set address and enable interface shared memory.
+		 */
+		if(!sc->is790) {
+#ifdef TOSH_ETHER
+			outb(sc->asic_addr + ED_WD_MSR + 1, ((kvtop(sc->mem_start) >> 8) & 0xe0) | 4);
+			outb(sc->asic_addr + ED_WD_MSR + 2, ((kvtop(sc->mem_start) >> 16) & 0x0f));
+			outb(sc->asic_addr + ED_WD_MSR, ED_WD_MSR_MENB | ED_WD_MSR_POW);
+
+#else
+			outb(sc->asic_addr + ED_WD_MSR, ((kvtop(sc->mem_start) >> 13) &
+				ED_WD_MSR_ADDR) | ED_WD_MSR_MENB);
+#endif
+		} else {
+			outb(sc->asic_addr + ED_WD_MSR, ED_WD_MSR_MENB);
+			outb(sc->asic_addr + 0x04, (inb(sc->asic_addr + 0x04) | 0x80));
+			outb(sc->asic_addr + 0x0b, ((kvtop(sc->mem_start) >> 13) & 0x0f) |
+			     ((kvtop(sc->mem_start) >> 11) & 0x40) | 
+			     (inb(sc->asic_addr + 0x0b) & 0xb0));
+			outb(sc->asic_addr + 0x04, (inb(sc->asic_addr + 0x04) & ~0x80));
+		}
+
+		/*
 		 * Now zero memory and verify that it is clear
 		 */
 		bzero(sc->mem_start, memsize);
@@ -561,11 +561,14 @@ ed_probe_WD80x3(isa_dev)
 				 * Disable 16 bit access to shared memory
 				 */
 				if (isa16bit) {
+				        if (sc->is790) {
+					     outb(sc->asic_addr + ED_WD_MSR, 0x00);
+					     (void) inb(0x84);
+					}
 					outb(sc->asic_addr + ED_WD_LAAR, (sc->wd_laar_proto &=
 					     ~ED_WD_LAAR_M16EN));
 					(void) inb(0x84);
 				}
-
 				return(0);
 			}
 	
@@ -578,6 +581,10 @@ ed_probe_WD80x3(isa_dev)
 		 *	memory can be used in this 128k region, too.
 		 */
 		if (isa16bit) {
+		        if (sc->is790) {
+		             outb(sc->asic_addr + ED_WD_MSR, 0x00);
+			     (void) inb(0x84);
+			}
 			outb(sc->asic_addr + ED_WD_LAAR, (sc->wd_laar_proto &=
 			     ~ED_WD_LAAR_M16EN));
 			(void) inb(0x84);
@@ -1541,12 +1548,12 @@ outloop:
 				    ED_3COM_GACFR_RSEL | ED_3COM_GACFR_MBS0);
 				break;
 			case ED_VENDOR_WD_SMC: {
-				outb(sc->asic_addr + ED_WD_LAAR, sc->wd_laar_proto);
-				(void) inb(0x84);
 				if (sc->is790) {
 					outb(sc->asic_addr + ED_WD_MSR, 0x00);
 					(void) inb(0x84);
 				}
+				outb(sc->asic_addr + ED_WD_LAAR, sc->wd_laar_proto);
+				(void) inb(0x84);
 				break;
 			    }
 			}
@@ -1918,14 +1925,14 @@ edintr(unit)
 				if (sc->isa16bit &&
 					(sc->vendor == ED_VENDOR_WD_SMC)) {
 
-					outb(sc->asic_addr + ED_WD_LAAR,
-					     (sc->wd_laar_proto &=
-					     ~ED_WD_LAAR_M16EN));
-					(void) inb(0x84);
 					if (sc->is790) {
 						outb(sc->asic_addr + ED_WD_MSR, 0x00);
 						(void) inb(0x84);
 					}
+					outb(sc->asic_addr + ED_WD_LAAR,
+					     (sc->wd_laar_proto &=
+					     ~ED_WD_LAAR_M16EN));
+					(void) inb(0x84);
 				}
 			}
 		}
