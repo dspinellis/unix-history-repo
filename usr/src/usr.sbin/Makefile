@@ -1,8 +1,8 @@
-#	@(#)Makefile	5.8 (Berkeley) %G%
+#	@(#)Makefile	5.9 (Berkeley) %G%
 
 # BROKEN pstat
 SUBDIR=	ac accton amd arp chown chroot config cron dev_mkdb diskpart \
-	edquota gettable htable implog implogd inetd iostat kgmon kvm_mkdb \
+	edquota gettable htable implog implogd inetd kgmon kvm_mkdb \
 	lpr mkproto mtree named portmap pwd_mkdb quot quotaon repquota \
 	rmt rwhod sa sendmail sliplogin syslogd traceroute trpt trsp \
 	update vipw
@@ -10,15 +10,17 @@ SUBDIR=	ac accton amd arp chown chroot config cron dev_mkdb diskpart \
 .if   make(clean) || make(cleandir)
 SUBDIR+=bad144 dlmpcc flcopy rxformat timed
 .elif ${MACHINE} == "hp300"
-SUBDIR+=timed
-.elif ${MACHINE} == "luna68k"
-SUBDIR+=timed
-.elif ${MACHINE} == "tahoe"
-SUBDIR+=dlmpcc timed
-.elif ${MACHINE} == "vax"
-SUBDIR+=bad144 flcopy rxformat timed
+SUBDIR+=config iostat timed
 .elif ${MACHINE} == "i386"
-SUBDIR+=bad144 
+SUBDIR+=bad144 config iostat
+.elif ${MACHINE} == "luna68k"
+SUBDIR+=config iostat timed
+.elif ${MACHINE} == "sparc"
+SUBDIR+=config.new timed
+.elif ${MACHINE} == "tahoe"
+SUBDIR+=config dlmpcc iostat timed
+.elif ${MACHINE} == "vax"
+SUBDIR+=arff bad144 config flcopy iostat rxformat timed
 .endif
 
 .include <bsd.subdir.mk>
