@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)ufs_disksubr.c	7.16 (Berkeley) 5/4/91
- *	$Id: ufs_disksubr.c,v 1.4 1993/11/25 01:38:31 wollman Exp $
+ *	$Id: ufs_disksubr.c,v 1.5 1993/12/19 00:55:43 wollman Exp $
  */
 
 #include "param.h"
@@ -530,7 +530,7 @@ bounds_check_with_label(struct buf *bp, struct disklabel *lp, int wlabel)
         }
 
 	/* calculate cylinder for disksort to order transfers with */
-        bp->b_cylin = (bp->b_blkno + p->p_offset) / lp->d_secpercyl;
+        bp->b_cylin = bp->b_blkno + p->p_offset;
 	return(1);
 
 bad:

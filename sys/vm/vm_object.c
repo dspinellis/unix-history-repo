@@ -34,7 +34,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vm_object.c	7.4 (Berkeley) 5/7/91
- *	$Id: vm_object.c,v 1.22 1994/03/05 03:22:46 davidg Exp $
+ *	$Id: vm_object.c,v 1.23 1994/03/14 21:54:25 davidg Exp $
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -514,15 +514,7 @@ again:
 				vm_page_deactivate(p);
 
 			if ((p->flags & PG_CLEAN) == 0) {
-				p->flags |= PG_BUSY;
-				object->paging_in_progress++;
-				vm_object_unlock(object);
-				(void) vm_pager_put(object->pager, p, TRUE);
-				vm_object_lock(object);
-				object->paging_in_progress--;
-				if (object->paging_in_progress == 0)
-					wakeup((caddr_t) object);
-				PAGE_WAKEUP(p);
+				vm_pageout_clean(p,1);
 				goto again;
 			}
 		}

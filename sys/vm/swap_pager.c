@@ -39,7 +39,7 @@
  * from: Utah $Hdr: swap_pager.c 1.4 91/04/30$
  * from: @(#)swap_pager.c	7.4 (Berkeley) 5/7/91
  *
- * $Id: swap_pager.c,v 1.23 1994/03/22 06:07:12 davidg Exp $
+ * $Id: swap_pager.c,v 1.24 1994/03/30 02:21:58 davidg Exp $
  */
 
 /*
@@ -872,8 +872,10 @@ swap_pager_iodone1(bp)
 	bp->b_flags |= B_DONE;
 	bp->b_flags &= ~B_ASYNC;
 	wakeup((caddr_t)bp);
+/*
 	if ((bp->b_flags & B_READ) == 0)
 		vwakeup(bp);
+*/
 }
 
 
@@ -1074,6 +1076,7 @@ swap_pager_input(swp, m, count, reqpage)
 	bp->b_un.b_addr = (caddr_t) kva;
 	bp->b_blkno = reqaddr[0];
 	bp->b_bcount = NBPG*count;
+	bp->b_bufsize = NBPG*count;
 
 	VHOLD(swapdev_vp);
 	bp->b_vp = swapdev_vp;
@@ -1422,6 +1425,7 @@ retrygetspace:
 	if (swapdev_vp->v_type == VBLK)
 		bp->b_dev = swapdev_vp->v_rdev;
 	bp->b_bcount = NBPG*count;
+	bp->b_bufsize = NBPG*count;
 	swapdev_vp->v_numoutput++;
 
 	/*
@@ -1642,8 +1646,10 @@ swap_pager_iodone(bp)
 			bp->b_error, bp->b_blkno, bp->b_bcount);
 	}
 
+/*
 	if ((bp->b_flags & B_READ) == 0)
 		vwakeup(bp);
+*/
 		
 	bp->b_flags &= ~(B_BUSY|B_WANTED|B_PHYS|B_DIRTY|B_ASYNC);
 	if (bp->b_vp) {
@@ -1691,6 +1697,27 @@ getpbuf() {
 	bp = bswlist.av_forw;
 	bswlist.av_forw = bp->av_forw;
 
+	splx(s);
+
+	bzero(bp, sizeof *bp);
+	return bp;
+}
+
+/*
+ * allocate a physical buffer, if one is available
+ */
+struct buf *
+trypbuf() {
+	int s;
+	struct buf *bp;
+
+	s = splbio();
+	if( bswlist.av_forw == NULL) {
+		splx(s);
+		return NULL;
+	}
+	bp = bswlist.av_forw;
+	bswlist.av_forw = bp->av_forw;
 	splx(s);
 
 	bzero(bp, sizeof *bp);

@@ -65,7 +65,7 @@
  * any improvements or extensions that they make and grant Carnegie the
  * rights to redistribute these changes.
  *
- * $Id: vm_pageout.c,v 1.16 1994/03/16 05:54:08 davidg Exp $
+ * $Id: vm_pageout.c,v 1.17 1994/03/21 09:46:12 davidg Exp $
  */
 
 /*
@@ -102,9 +102,9 @@ extern int swap_pager_full;
 #define MINSCAN 256	/* minimum number of pages to scan in active queue */
 			/* set the "clock" hands to be (MINSCAN * 4096) Bytes */
 
-#define LOWATER ((1024*1024)/NBPG)
+#define LOWATER ((2048*1024)/NBPG)
 
-#define VM_PAGEOUT_PAGE_COUNT 6
+#define VM_PAGEOUT_PAGE_COUNT 8
 static int minscan;
 void vm_pageout_deact_bump(vm_page_t m) ;
 static vm_offset_t vm_space_needed;
@@ -117,8 +117,9 @@ int vm_pageout_do_stats;
  * 	cleans a vm_page
  */
 int
-vm_pageout_clean(m) 
+vm_pageout_clean(m, sync) 
 	register vm_page_t m;
+	int sync;
 {
 	/*
 	 *	Clean the page and remove it from the
@@ -166,21 +167,22 @@ vm_pageout_clean(m)
 		vm_page_free_count < vm_pageout_free_min)
 		return 0;
 
-collapseagain:
 	if (!object->pager &&
 		object->shadow &&
 		object->shadow->paging_in_progress)
 		return 0;
 
-	if (object->shadow) {
-		vm_object_collapse(object);
-		if (!vm_page_lookup(object, offset))
-			return 0;
-	}
+	if( !sync) {
+		if (object->shadow) {
+			vm_object_collapse(object);
+			if (!vm_page_lookup(object, offset))
+				return 0;
+		}
 
-	if ((m->flags & PG_BUSY) || (m->hold_count != 0)) {
-		return 0;
-	} 
+		if ((m->flags & PG_BUSY) || (m->hold_count != 0)) {
+			return 0;
+		} 
+	}
 
 	pageout_count = 1;
 	ms[0] = m;
@@ -233,14 +235,14 @@ collapseagain:
 		vm_page_free_count >= vm_pageout_free_min) {
 		if( pageout_count == 1) {
 			pageout_status[0] = pager ?
-				vm_pager_put(pager, m, ((object == kernel_object) ? TRUE: FALSE)) :
+				vm_pager_put(pager, m, ((sync || (object == kernel_object)) ? TRUE: FALSE)) :
 				VM_PAGER_FAIL;
 		} else {
 			if( !pager) {
 				for(i=0;i<pageout_count;i++)
 					pageout_status[i] = VM_PAGER_FAIL;
 			} else {
-				vm_pager_putmulti(pager, ms, pageout_count, ((object == kernel_object) ? TRUE : FALSE), pageout_status);
+				vm_pager_putmulti(pager, ms, pageout_count, ((sync || (object == kernel_object)) ? TRUE : FALSE), pageout_status);
 			}
 		}
 			
@@ -348,7 +350,7 @@ vm_fault_object_deactivate_pages(map, object, dummy)
 			if (!pmap_is_referenced(VM_PAGE_TO_PHYS(p))) {
 				vm_page_deactivate(p);
 				if ((p->flags & PG_CLEAN) == 0) {
-					vm_pageout_clean(p);
+					vm_pageout_clean(p,0);
 				}
 				++dcount;
 				if (--count <= 0) {
@@ -377,7 +379,7 @@ vm_fault_object_deactivate_pages(map, object, dummy)
 				p->flags &= ~PG_CLEAN;
 
 			if ((p->flags & PG_CLEAN) == 0)
-				vm_pageout_clean(p);
+				vm_pageout_clean(p,0);
 		}
 
 		vm_page_unlock_queues();
@@ -697,7 +699,7 @@ rescan1:
 			 *	cleaning operation.
 			 */
 
-			if (written = vm_pageout_clean(m)) {
+			if (written = vm_pageout_clean(m,0)) {
 				maxlaunder -= written;
 			}
 			/*
@@ -849,7 +851,7 @@ restart_inactivate:
 			 * check for deactivation.
 			 */
 			vm_pageout_deact_bump(m);
-			if (page_shortage > 0 || m->deact >= (DEACT_MAX/2))
+/*			if (page_shortage > 0 || m->deact >= (DEACT_MAX/2)) */
 				pmap_clear_reference(VM_PAGE_TO_PHYS(m));
 			queue_remove(&m->object->memq, m, vm_page_t, listq);
 			queue_enter(&m->object->memq, m, vm_page_t, listq);
@@ -863,8 +865,9 @@ restart_inactivate:
 	 * if we have not freed any pages and we are desparate for memory
 	 * then we keep trying until we get some (any) memory.
 	 */
-	if( (swap_pager_full || !force_wakeup || pages_freed == 0)
-		&& (vm_page_free_count <= vm_page_free_reserved)) {
+	if( (swap_pager_full || !force_wakeup || (pages_freed == 0 &&
+		(vm_page_free_count < vm_page_free_min))
+		&& (vm_page_free_count <= vm_page_free_reserved))) {
 		vm_pager_sync();
 		force_wakeup = 1;
 		goto morefree;
@@ -912,11 +915,15 @@ case DEACT_START:
 
 void
 vm_pageout_timeout(int flag) {
+	
+	int nextrun = hz/10;
 	if( ((vm_page_free_count + vm_page_inactive_count) < LOWATER) ||
-		(vm_page_free_count < vm_page_free_min) )
+		(vm_page_free_count <= vm_page_free_reserved) ) {
+		nextrun = hz/32;
 		wakeup((caddr_t) & vm_pages_needed);
+	}
 	vm_pageout_req_do_stats = 1;
-	timeout((timeout_func_t)&vm_pageout_timeout, 0, 10);
+	timeout((timeout_func_t)&vm_pageout_timeout, 0, nextrun);
 }
 /*
  *	vm_pageout is the high level pageout daemon.
@@ -980,7 +987,7 @@ vmretry:
 	 */
 		force_wakeup = vm_pageout_scan();
 		vm_pager_sync();
-		if( force_wakeup || (vm_page_free_count >= vm_page_free_min))
+		if( force_wakeup)
 			wakeup( (caddr_t) &vm_page_free_count);
 		vm_pageout_do_stats = 0;
 		cnt.v_scan++;

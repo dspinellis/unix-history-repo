@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)buf.h	7.11 (Berkeley) 5/9/90
- *	$Id: buf.h,v 1.7 1993/12/22 12:51:48 davidg Exp $
+ *	$Id: buf.h,v 1.8 1994/03/23 09:16:16 davidg Exp $
  */
 
 #ifndef _SYS_BUF_H_
@@ -79,6 +79,7 @@ struct buf
 	struct	buf *b_forw, *b_back;	/* hash chain (2 way street) */
 	struct	buf *av_forw, *av_back;	/* position on free list if not BUSY */
 	struct	buf *b_blockf, **b_blockb;/* associated vnode */
+	struct	buf *b_clusterf, *b_clusterl;/* cluster list */
 #define	b_actf	av_forw			/* alternate names for driver queue */
 #define	b_actl	av_back			/*    head - isn't history wonderful */
 	long	b_bcount;		/* transfer count */
@@ -187,7 +188,7 @@ extern int physio(void (*)(struct buf *), int, struct buf *, int, int,
 #define	B_VMPAGE	0x000800	/* buffer from virtual memory */
 #define	B_MALLOC	0x001000	/* buffer from malloc space */
 #define	B_DIRTY		0x002000	/* dirty page to be pushed out async */
-#define	B_PGIN		0x004000	/* pagein op, so swap() can count it */
+#define	B_CLUSTER	0x004000	/* pagein op, so swap() can count it */
 #define	B_CACHE		0x008000	/* did bread find us in the cache ? */
 #define	B_INVAL		0x010000	/* does not contain valid info  */
 #define	B_LOCKED	0x020000	/* locked in core (not reusable) */

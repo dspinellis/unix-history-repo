@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)ufs_vnops.c	7.64 (Berkeley) 5/16/91
- *	$Id: ufs_vnops.c,v 1.13 1994/01/17 02:20:12 jkh Exp $
+ *	$Id: ufs_vnops.c,v 1.14 1994/01/19 21:09:26 jtc Exp $
  */
 
 #include "param.h"
@@ -617,7 +617,9 @@ ufs_write(vp, uio, ioflag, cred)
 		if (ioflag & IO_SYNC)
 			(void) bwrite(bp);
 		else if (n + on == fs->fs_bsize) {
+#if 0
 			bp->b_flags |= B_AGE;
+#endif
 			bawrite(bp);
 		} else
 			bdwrite(bp);

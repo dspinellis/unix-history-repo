@@ -45,7 +45,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	$Id: vfs__bio.c,v 1.16 1994/03/19 22:19:11 wollman Exp $
+ *	$Id: vfs__bio.c,v 1.17 1994/03/23 09:15:38 davidg Exp $
  */
 
 #include "param.h"
@@ -73,7 +73,13 @@ struct	buf bswlist;		/* head of free swap header list */
 struct	buf *bclnlist;		/* head of cleaned page list */
 
 static struct buf *getnewbuf(int);
-extern	vm_map_t buffer_map;
+extern	vm_map_t buffer_map, io_map;
+
+/*
+ * Internel update daemon, process 3
+ *	The variable vfs_update_wakeup allows for internal syncs.
+ */
+int vfs_update_wakeup;
 
 /*
  * Initialize buffer headers and related structures.
@@ -593,6 +599,33 @@ biowait(register struct buf *bp)
 void
 biodone(register struct buf *bp)
 {
+	int s;
+	s = splbio();
+	if (bp->b_flags & B_CLUSTER) {
+		struct buf *tbp;
+		bp->b_resid = bp->b_bcount;
+		while ( tbp = bp->b_clusterf) {
+			bp->b_clusterf = tbp->av_forw;
+			bp->b_resid -= tbp->b_bcount;
+			tbp->b_resid = 0;
+			if( bp->b_resid <= 0) {
+				tbp->b_error = bp->b_error;
+				tbp->b_flags |= (bp->b_flags & B_ERROR);
+				tbp->b_resid = -bp->b_resid;
+				bp->b_resid = 0;
+			}
+/*
+			printf("rdc (%d,%d,%d) ", tbp->b_blkno, tbp->b_bcount, tbp->b_resid);
+*/
+			
+			biodone(tbp);
+		}
+		vm_bounce_kva_free( bp->b_un.b_addr, bp->b_bufsize, 0);
+		relpbuf(bp);
+		splx(s);
+		return;
+	}
+		
 #ifndef NOBOUNCE
 	if (bp->b_flags & B_BOUNCE)
 		vm_bounce_free(bp);
@@ -607,6 +640,7 @@ biodone(register struct buf *bp)
 	if (bp->b_flags & B_CALL) {
 		bp->b_flags &= ~B_CALL;
 		(*bp->b_iodone)(bp);
+		splx(s);
 		return;
 	}
 
@@ -622,13 +656,9 @@ biodone(register struct buf *bp)
 		bp->b_flags &= ~B_WANTED;
 		wakeup((caddr_t) bp);
 	}
+	splx(s);
 }
 
-/*
- * Internel update daemon, process 3
- *	The variable vfs_update_wakeup allows for internal syncs.
- */
-int vfs_update_wakeup;
 #ifndef UPDATE_INTERVAL
 int vfs_update_interval = 30;
 #else
