@@ -1,4 +1,4 @@
-.\" @(#)Checklist	1.1 (CSRG - distribution) 6/9/92
+.\" @(#)Checklist	1.2 (CSRG - distribution) 6/9/92
 .ND
 .\".ti +3.25i
 .\"June 9, 1992
@@ -17,8 +17,6 @@ and the University of California to complete the purchase of release
 BSD-Lite with original signatures. 
 (One completed copy will be returned after it is signed by a representative   
 of The Regents of the University of California).
-Foreign Licensees must also include two completed copies of Addendum Number
-One for Foreign Licensees with original signatures.
 .sp 2
 .IP "\l'.5i' 2." 15
 A \fBPREPAYMENT\fR check for U.S. $1,000.00. \fB(WE DO NOT INVOICE!)\fR
