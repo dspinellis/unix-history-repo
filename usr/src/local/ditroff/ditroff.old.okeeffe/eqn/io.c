@@ -206,6 +206,7 @@ fileinit()
 		/* if res and minsize were not set by option, do it now */
 	if (res <= 0) res = device_info.res;
 	if (minsize <= 0) minsize = readmin;
+	minvert = device_info.vert;
 	close(fin);
 }
 
