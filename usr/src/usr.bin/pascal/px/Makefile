@@ -1,4 +1,4 @@
-SCCSID = "@(#)Makefile 1.15 %G%"
+SCCSID = "@(#)Makefile 1.16 %G%"
 
 CFLAGS = -O
 DESTDIR =
@@ -31,7 +31,7 @@ Version.c: version.c
 	${CC} ${CFLAGS} -o version version.c
 	./version >Version.c
 	${RM}  version
-interp.o interp.s: interp.c
+interp.o interp.s: interp.c interp.sed
 	${CC} -S interp.c
 	sed -f interp.sed <interp.s >tmp
 	${OPT} tmp interp.s
@@ -63,7 +63,7 @@ grind: sources ${PSHDR} ${PCHDR}
 	${SRCDIR}/ctags -v *.h *.c *.s | sort -f >index
 	${SRCDIR}/vgrind -t -x index >lpr
 	${CC} ${CFLAGS} -o pic pic.c
-	${SRCDIR}/vgrind -t -n READ_ME makefile lst >>lpr
+	${SRCDIR}/vgrind -t -n READ_ME Makefile lst >>lpr
 	${SRCDIR}/vgrind -t ${PCHDR} ${PXHDR} objfmt.h whoami.h >>lpr
 	${SRCDIR}/vgrind -t ${PXSRC} >>lpr
 	./pic >lst
@@ -79,12 +79,12 @@ depend:	sources
 	echo '/^# DO NOT DELETE THIS LINE/+2,$$d' >eddep
 	echo '$$r makedep' >>eddep
 	echo 'w' >>eddep
-	cp makefile makefile.bak
-	ed - makefile < eddep
+	cp Makefile Makefile.bak
+	ed - Makefile < eddep
 	rm eddep makedep
-	echo '# DEPENDENCIES MUST END AT END OF FILE' >> makefile
-	echo '# IF YOU PUT STUFF HERE IT WILL GO AWAY' >> makefile
-	echo '# see make depend above' >> makefile
+	echo '# DEPENDENCIES MUST END AT END OF FILE' >> Makefile
+	echo '# IF YOU PUT STUFF HERE IT WILL GO AWAY' >> Makefile
+	echo '# see make depend above' >> Makefile
 
 # DO NOT DELETE THIS LINE -- make depend uses it
 # DEPENDENCIES MUST END AT END OF FILE
@@ -93,14 +93,15 @@ int.o: vars.h
 int.o: libpc.h
 int.o: objfmt.h
 interp.o: whoami.h
-interp.o: objfmt.h
 interp.o: vars.h
+interp.o: objfmt.h
 interp.o: h02opcs.h
 interp.o: machdep.h
 interp.o: libpc.h
 opc.o: OPnames.h
 utilities.o: whoami.h
 utilities.o: vars.h
+utilities.o: objfmt.h
 # DEPENDENCIES MUST END AT END OF FILE
 # IF YOU PUT STUFF HERE IT WILL GO AWAY
 # see make depend above
