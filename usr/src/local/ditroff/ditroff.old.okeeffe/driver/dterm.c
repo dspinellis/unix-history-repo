@@ -275,6 +275,12 @@ register FILE *fp;
 				sscanf(buf+1, "%d %d %d %d", &n, &m, &n1, &m1);
 				drawarc(n, m, n1, m1);
 				break;
+			case 'q':	/* versatec polygon - ignore */
+				while (buf[strlen(buf) - 1] != '\n')
+				    if (fgets(buf, sizeof(buf), fp) == NULL)
+					error(FATAL,"unexpected end of input");
+				break;
+			case 'P':	/* unbordered */
 			case 'p':	/* polygon */
 				sscanf(buf+1, "%d", &n);
 				n = 1;
