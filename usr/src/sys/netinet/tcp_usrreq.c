@@ -1,4 +1,4 @@
-/*	tcp_usrreq.c	1.71	83/01/08	*/
+/*	tcp_usrreq.c	1.72	83/01/13	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -35,11 +35,10 @@ struct	tcpcb *tcp_newtcpcb();
  * (called from the software clock routine), then timertype tells which timer.
  */
 /*ARGSUSED*/
-tcp_usrreq(so, req, m, nam, opt)
+tcp_usrreq(so, req, m, nam)
 	struct socket *so;
 	int req;
 	struct mbuf *m, *nam;
-	struct socketopt *opt;
 {
 	register struct inpcb *inp = sotoinpcb(so);
 	register struct tcpcb *tp;
