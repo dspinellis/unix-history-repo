@@ -174,18 +174,14 @@ exit(0);
 extern int intr();
 signals()
 {
-	SIG_TYP oldint;
-oldint = signal(SIGINT, &intr);
-if (oldint== (SIG_TYP)1)
-	signal (SIGINT, 1);
-signal (SIGHUP, &intr);
-signal (SIGPIPE, &intr);
-signal (SIGTERM, &intr);
+signal (SIGINT, intr);
+signal (SIGHUP, intr);
+signal (SIGPIPE, intr);
+signal (SIGTERM, intr);
 }
 
 intr()
 {
-	int oldsig;
 signal(SIGINT, 1);
 cleanup();
 exit(1);
