@@ -1,0 +1,49 @@
+#once #create message
+.ND
+.LP
+The next neqn operation is called "sqrt" - it makes
+square root signs over things, like this:
+.EQ
+sqrt a+b
+.EN
+(They don't look very good on a terminal, unfortunately.)
+This one is very easy - to print the line above, you
+say
+   .EQ
+   sqrt a+b
+   .EN
+The "sqrt" operates on the first thing it finds
+so if you want something more complicated, like
+.EQ
+sqrt {pi +1}
+.EN
+you have to use braces to enclose the entire
+thing.  This one was printed with
+   .EQ
+   sqrt {pi +1}
+   .EN
+And that's all there is to sqrt.
+
+Modify "Example" so it looks like this, then type "ready".
+.pl 1
+#once #create Ref
+.LP
+.EQ
+f(x) ~=~ sqrt {ax sup 2 +bx+c}
+.EN
+.pl 1
+#once #create Example
+.LP
+.EQ
+f(x)....
+.EN
+.pl 1
+#
+#once neqn Ref | nroff >X1 &
+#once neqn message Ref | nroff -T$term %s/tinyms -
+#user
+neqn Example | nroff >X2
+#cmp X1 X2
+#log
+#next
+8.1b 10
