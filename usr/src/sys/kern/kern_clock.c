@@ -1,4 +1,4 @@
-/*	kern_clock.c	4.17	81/04/02	*/
+/*	kern_clock.c	4.18	81/04/03	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -434,7 +434,7 @@ timeout(fun, arg, tim)
 	p3 = callout+(ncallout-2);
 	while (p2->c_func != 0) {
 		if (p2 >= p3)
-			panic("timeout");
+			panic("timeout table overflow");
 		p2++;
 	}
 	while (p2 >= p1) {
