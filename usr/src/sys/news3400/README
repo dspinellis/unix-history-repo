@@ -1,35 +1,36 @@
-#	@(#)README	5.1 (Berkeley) %G%
+#	@(#)README	5.2 (Berkeley) %G%
 
 ------------------------------------------------------------------------------
 
-This version is not completed.  Please contact to utashiro@sra.co.jp if
+This version is not completed.  Please contact utashiro@sra.co.jp if
 you have any comment about this code.  Bugfix will be greatly appreciated.
 
 ------------------------------------------------------------------------------
 I'm using NWS-3200 laptop machine for development.  Only 3200's LCD display
-is supported now.  You can use on 3400 by serial line console, but it is not
-tested well.
+is supported now.  You can use this kernel on 3400 by serial line console,
+but it is not tested well.
 ------------------------------------------------------------------------------
-config command is not changed to support NEWS because it will be changed
-to support dual processor machine in future.  Diffs are in config.diff
+Config command is not changed to support NEWS because it will be changed
+to support dual processor machine in the future.  Diffs are in CONFIG.DIFF
 in /sys/news3400 directory.
 ------------------------------------------------------------------------------
-GCC 2.x has problem to build library objects.  Usually library object is made
-by following way.
+GCC 2.x has a problem to build library objects.  Usually library object is
+made by following way:
 
 	cc -c x.c
 	ld -r -x x.o
 	mv a.out x.o
 
-But using gcc 2.x (at least 2.2.2), some object made by this can't be
-lordable.  ld complains that the object has bad isym.
+But using gcc 2.x (at least 2.2.2), some objects made by this way can't be
+linked.  ld complains that the object has bad isym.
 ------------------------------------------------------------------------------
 Known bugs:
-	- Floating point doesn't work.
+	- Floating point doesn't work always.
 	- Display driver is slow.
 	- Serial line driver is slow.
 	- Reboot doesn't work.
 	- NFS doesn't work (it worked before...)
+	- System hangs when ^S is typed from bitmap console.
 ------------------------------------------------------------------------------
 
 			Kazumasa Utashiro <utashiro@sra.co.jp>
