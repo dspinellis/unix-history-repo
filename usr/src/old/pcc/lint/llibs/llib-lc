@@ -1,4 +1,4 @@
-/*	llib-lc	1.12	84/09/24	*/
+/*	llib-lc	1.13	84/11/20	*/
 /* LINTLIBRARY */
 #include <sys/types.h>
 #include <fstab.h>
@@ -162,6 +162,7 @@ char *	ecvt(v, n, d, s) double v; int *d, *s; { return(""); }
 int	endfsent() { return 0; }
 int	endgrent() { return 0; }
 int	endpwent() { return 0; }
+char **	environ;
 	/* VARARGS */
 	execl(f, a) char *f, *a; {;}
 	/* VARARGS */
