@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)wall.c	4.3 (Berkeley) 81/05/06";
+static char *sccsid = "@(#)wall.c	4.4 (Berkeley) 81/05/06";
 /*
  * wall.c - Broadcast a message to all users.
  *
@@ -19,7 +19,7 @@ struct	utmp utmp[USERS];
 char	*strcpy();
 char	*strcat();
 char who[9] = "???";
-long	clock;
+long	clock, time();
 struct tm *localtime();
 struct tm *localclock;
 
