@@ -4,7 +4,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)READ_ME	6.1 (Berkeley) %G%
+#	@(#)READ_ME	6.2 (Berkeley) %G%
 #
 
 This directory contains the source files for sendmail.
@@ -13,11 +13,19 @@ For installation instructions, please read the document ../doc/op.me:
 
 	nroff -me ../doc/op.me
 
+The Makefile is for the new Berkeley make, available from ftp.uu.net
+in the directory /systems/unix/bsd-sources/usr.bin/make.  There is
+also a Makefile.dist which is much less clever, but works on the old
+traditional make.  You can use this using:
+
+	make -f Makefile.dist
+
 The following list describes the files in this directory:
 
-Makefile	The makefile used here; this is created from
-		makefile.m4.
-Makefile.m4	A makefile template.
+Makefile	The makefile used here; this version only works with
+		the new Berkeley make.
+Makefile.dist	A trimmed down version of the makefile that works with
+		the old make.
 READ_ME		This file.
 TODO		New features to be put in (maybe) at some time.
 Version.c	The version number and information about this
@@ -68,4 +76,4 @@ version.c	A master file for Version.c -- it may not exist in
 
 Eric Allman
 
-(Version 6.1, last update %G% 16:07:55)
+(Version 6.2, last update %G% 08:24:56)
