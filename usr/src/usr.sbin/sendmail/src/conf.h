@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.166 (Berkeley) %G%
+ *	@(#)conf.h	8.167 (Berkeley) %G%
  */
 
 /*
@@ -288,6 +288,7 @@ extern int	syslog(int, char *, ...);
 			/* special tweaking for SunOS 4.0.3 */
 #   include <malloc.h>
 #   define SYS5SIGNALS	1	/* SysV signal semantics -- reset on each sig */
+#   define NEEDSTRSTR	1	/* need emulation of strstr(3) routine */
 #   define WAITUNION	1	/* use "union wait" as wait argument type */
 #   undef WIFEXITED
 #   undef WEXITSTATUS
@@ -1222,6 +1223,7 @@ typedef int		(*sigfunc_t)();
 # define HASUNSETENV	1	/* has unsetenv(2) call */
 # define NEEDPUTENV	1	/* need putenv(3) call */
 # define NEEDGETOPT	1	/* need a replacement for getopt(3) */
+# define NEEDSTRSTR	1	/* need emulation of the strstr(3) call */
 # define WAITUNION	1	/* use "union wait" as wait argument type */
 # ifdef uniosb
 #  define LA_TYPE	LA_INT

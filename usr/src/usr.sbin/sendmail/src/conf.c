@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.174 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.175 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -2931,6 +2931,43 @@ strtol(nptr, endptr, base)
 	if (endptr != 0)
 		*endptr = (char *)(any ? s - 1 : nptr);
 	return (acc);
+}
+
+#endif
+/*
+**  STRSTR -- find first substring in string
+**
+**	Parameters:
+**		big -- the big (full) string.
+**		little -- the little (sub) string.
+**
+**	Returns:
+**		A pointer to the first instance of little in big.
+**		big if little is the null string.
+**		NULL if little is not contained in big.
+*/
+
+#ifdef NEEDSTRSTR
+
+char *
+strstr(big, little)
+	char *big;
+	char *little;
+{
+	register char *p = big;
+	int l;
+
+	if (*little == '\0')
+		return big;
+	l = strlen(little);
+
+	while ((p = strchr(p, *little)) != NULL)
+	{
+		if (strncmp(p, little, l) == 0)
+			return p;
+		p++;
+	}
+	return NULL;
 }
 
 #endif
