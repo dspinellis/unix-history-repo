@@ -1,10 +1,10 @@
 # include "sendmail.h"
 
 # ifndef SMTP
-SCCSID(@(#)srvrsmtp.c	3.28		%G%	(no SMTP));
+SCCSID(@(#)srvrsmtp.c	3.29		%G%	(no SMTP));
 # else SMTP
 
-SCCSID(@(#)srvrsmtp.c	3.28		%G%);
+SCCSID(@(#)srvrsmtp.c	3.29		%G%);
 
 /*
 **  SMTP -- run the SMTP protocol.
@@ -168,12 +168,6 @@ smtp()
 			p = skipword(p, "to");
 			if (p == NULL)
 				break;
-			if (index(p, ',') != NULL)
-			{
-				message("501", "Source routing not implemented");
-				Errors++;
-				break;
-			}
 			sendto(p, 1, (ADDRESS *) NULL, &CurEnv->e_sendqueue);
 			if (Errors == 0)
 			{
