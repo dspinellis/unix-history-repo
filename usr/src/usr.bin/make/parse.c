@@ -21,7 +21,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parse.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)parse.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 /*-
@@ -106,13 +106,6 @@ Lst         	parseIncPath;	/* list of directories for "..." includes */
 Lst         	sysIncPath;	/* list of directories for <...> includes */
 
 /*-
- * anyExport is used to trace if any target will need exportation. If none
- * does, then any .EXPORT target can be ignored and the process needn't
- * be slowed down by trying to connect to some load-balancing system.
- */
-static Boolean anyExport = FALSE;
-
-/*-
  * specType contains the SPECial TYPE of the current target. It is
  * Not if the target is unspecial. If it *is* special, however, the children
  * are linked as children of the parent but not vice versa. This variable is
@@ -122,7 +115,6 @@ typedef enum {
     Begin,  	    /* .BEGIN */
     Default,	    /* .DEFAULT */
     End,    	    /* .END */
-    Export, 	    /* .EXPORT */
     Ignore,	    /* .IGNORE */
     Includes,	    /* .INCLUDES */
     Interrupt,	    /* .INTERRUPT */
@@ -130,7 +122,6 @@ typedef enum {
     MFlags,	    /* .MFLAGS or .MAKEFLAGS */
     Main,	    /* .MAIN and we don't have anything user-specified to
 		     * make */
-    NoExport,	    /* .NOEXPORT */
     Not,	    /* Not special */
     NotParallel,    /* .NOTPARALELL */
     Null,   	    /* .NULL */
@@ -169,20 +160,16 @@ static struct {
 { ".DONTCARE",	  Attribute,   	OP_DONTCARE },
 { ".END",   	  End,	    	0 },
 { ".EXEC",	  Attribute,   	OP_EXEC },
-{ ".EXPORT",	  Export,   	OP_EXPORT },
-{ ".EXPORTSAME",  Attribute,	OP_EXPORTSAME },
 { ".IGNORE",	  Ignore,   	OP_IGNORE },
 { ".INCLUDES",	  Includes, 	0 },
 { ".INTERRUPT",	  Interrupt,	0 },
 { ".INVISIBLE",	  Attribute,   	OP_INVISIBLE },
 { ".JOIN",  	  Attribute,   	OP_JOIN },
 { ".LIBS",  	  Libs,	    	0 },
-{ ".M68020",	  Attribute,	OP_M68020 },
 { ".MAIN",	  Main,		0 },
 { ".MAKE",  	  Attribute,   	OP_MAKE },
 { ".MAKEFLAGS",	  MFlags,   	0 },
 { ".MFLAGS",	  MFlags,   	0 },
-{ ".NOEXPORT",	  NoExport,   	OP_NOEXPORT },
 { ".NOTMAIN",	  Attribute,   	OP_NOTMAIN },
 { ".NOTPARALLEL", NotParallel,	0 },
 { ".NULL",  	  Null,	    	0 },
@@ -271,25 +258,6 @@ Parse_Error (type, fmt, arg1, arg2)
 	    fatals += 1;
 	}
     }
-}
-
-/*-
- *-----------------------------------------------------------------------
- * Parse_AnyExport --
- *	Return TRUE if any target was labeled for exportation.
- *
- * Results:
- *	TRUE or FALSE...
- *
- * Side Effects:
- *	None.
- *
- *-----------------------------------------------------------------------
- */
-Boolean
-Parse_AnyExport()
-{
-    return (anyExport);
 }
 
 /*-
@@ -433,9 +401,6 @@ ParseDoSrc (tOp, src)
     }
     if (op != 0) {
 	Lst_ForEach (targets, ParseDoOp, (ClientData)op);
-	if (op == OP_EXPORT) {
-	    anyExport = TRUE;
-	}
     } else if (specType == Main) {
 	/*
 	 * If we have noted the existence of a .MAIN, it means we need
@@ -706,9 +671,6 @@ ParseDoDependency (line)
 		 * Certain special targets have special semantics:
 		 *	.PATH		Have to set the dirSearchPath
 		 *			variable too
-		 *	.EXPORT		Doesn't really apply the
-		 *			.EXPORT operator to its
-		 *			sources, so we reset tOp.
 		 *	.MAIN		Its sources are only used if
 		 *			nothing has been specified to
 		 *			create.
@@ -738,9 +700,6 @@ ParseDoDependency (line)
 			    paths = Lst_Init(FALSE);
 			}
 			(void)Lst_AtEnd(paths, (ClientData)dirSearchPath);
-			break;
-		    case Export:
-			tOp = 0;
 			break;
 		    case Main:
 			if (!Lst_IsEmpty(create)) {
@@ -927,7 +886,6 @@ ParseDoDependency (line)
      *	a .IGNORE line ignores errors for all targets
      *	a .SILENT line creates silence when making all targets
      *	a .PATH removes all directories from the search path(s).
-     *	a .NOEXPORT turns off exportation for all jobs.
      */
     if (!*line) {
 	switch (specType) {
@@ -945,9 +903,6 @@ ParseDoDependency (line)
 		break;
 	    case Path:
 		Lst_ForEach(paths, ParseClearPath, (ClientData)NULL);
-		break;
-	    case NoExport:
-		noExport = TRUE;
 		break;
 	}
     } else if (specType == MFlags) {
@@ -973,7 +928,7 @@ ParseDoDependency (line)
      */
     if ((specType == Suffixes) || (specType == Path) ||
 	(specType == Includes) || (specType == Libs) ||
-	(specType == Export)   || (specType == Null))
+	(specType == Null))
     {
 	while (*line) {
 	    /*
@@ -997,9 +952,6 @@ ParseDoDependency (line)
 	     * files which are considered libraries and whose search path
 	     * should be present in the .LIBS variable.
 	     *
-	     * If it was .EXPORT, the source is the location of the export
-	     * server and is passed to the Rmt module as such.
-	     *
 	     * If it was .NULL, the source is the suffix to use when a file
 	     * has no valid suffix.
 	     */
@@ -1021,9 +973,6 @@ ParseDoDependency (line)
 		    break;
 		case Libs:
 		    Suff_AddLib (line);
-		    break;
-		case Export:
-		    Rmt_AddServer (line);
 		    break;
 		case Null:
 		    Suff_SetNull (line);

@@ -21,7 +21,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)compat.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)compat.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 /*-
@@ -226,16 +226,7 @@ CompatRunCommand (cmd, gn)
 	av += 1;
     }
     
-    /*
-     * If the job has not been marked unexportable, tell the Rmt module we've
-     * got something for it...local is set TRUE if the job should be run
-     * locally.
-     */
-    if (!(gn->type & OP_NOEXPORT)) {
-	local = !Rmt_Begin(av[0], av, gn);
-    } else {
-	local = TRUE;
-    }
+    local = TRUE;
 
     /*
      * Fork and execute the single command. If the fork fails, we abort.
@@ -250,7 +241,7 @@ CompatRunCommand (cmd, gn)
 	    numWritten = write (2, av[0], strlen (av[0]));
 	    numWritten = write (2, ": not found\n", sizeof(": not found"));
 	} else {
-	    Rmt_Exec(av[0], av, FALSE);
+	    (void)execv(av[0], av);
 	}
 	exit(1);
     } else if (argc != 0) {
@@ -270,7 +261,7 @@ CompatRunCommand (cmd, gn)
 	int 	  id;
 
 	if (!local) {
-	    id = Rmt_LastID(cpid);
+	    id = 0;
 	}
 
 	while ((stat = wait(&reason)) != cpid) {
@@ -279,11 +270,6 @@ CompatRunCommand (cmd, gn)
 	    }
 	}
 	
-	if (!local) {
-	    Rmt_Done(id);
-	}
-	
-
 	if (stat > -1) {
 	    if (WIFSTOPPED(reason)) {
 		status = reason.w_stopval;		/* stopped */

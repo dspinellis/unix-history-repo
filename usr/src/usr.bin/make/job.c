@@ -21,7 +21,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)job.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)job.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 /*-
@@ -221,7 +221,7 @@ Lst  	    stoppedJobs;	/* Lst of Job structures describing
 static void JobRestart();
 static int  JobStart();
 static void JobInterrupt();
-
+
 /*-
  *-----------------------------------------------------------------------
  * JobCondPassSig --
@@ -315,7 +315,7 @@ JobPassSig(signo)
     signal(signo, JobPassSig);
 
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * JobCmpPid  --
@@ -337,7 +337,7 @@ JobCmpPid (job, pid)
 {
     return (pid - job->pid);
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * JobPrintCommand  --
@@ -500,7 +500,7 @@ JobPrintCommand (cmd, job)
     }
     return (0);
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * JobSaveCommand --
@@ -524,7 +524,7 @@ JobSaveCommand (cmd, gn)
     (void)Lst_AtEnd (postCommands->commands, (ClientData)cmd);
     return (0);
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * JobFinish  --
@@ -779,7 +779,7 @@ JobFinish (job, status)
 	Finish (errors);
     }
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * Job_Touch --
@@ -852,7 +852,7 @@ Job_Touch (gn, silent)
 	}
     }
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * Job_CheckCommands --
@@ -937,7 +937,7 @@ JobLocalInput(stream, job)
     JobDoOutput(job, FALSE);
 }
 #endif /* RMT_WILL_WATCH */
-
+
 /*-
  *-----------------------------------------------------------------------
  * JobExec --
@@ -1037,12 +1037,7 @@ JobExec(job, argv)
 	(void) setpgrp(0, getpid());
 #endif USE_PGRP
 
-	if (job->flags & JOB_REMOTE) {
-	    Rmt_Exec (shellPath, argv, FALSE);
-	} else {
-	    (void) execv (shellPath, argv);
-	}
-
+	(void) execv (shellPath, argv);
 	(void) write (2, "Could not execute shell\n",
 		 sizeof ("Could not execute shell"));
 	_exit (1);
@@ -1065,7 +1060,7 @@ JobExec(job, argv)
 	}
 
 	if (job->flags & JOB_REMOTE) {
-	    job->rmtID = (char *)Rmt_LastID(job->pid);
+	    job->rmtID = (char *)0;
 	} else {
 	    nLocal += 1;
 	    /*
@@ -1088,7 +1083,7 @@ jobExecFinish:
 	jobFull = TRUE;
     }
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * JobMakeArgv --
@@ -1143,15 +1138,11 @@ JobMakeArgv(job, argv)
     }
     argv[argc] = (char *)NULL;
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * JobRestart --
- *	Restart a job that stopped for some reason. If the job stopped
- *	because it migrated home again, we tell the Rmt module to
- *	find a new home for it and make it runnable if Rmt_ReExport
- *	succeeded (if it didn't and the job may be run locally, we
- *	simply resume it). If the job didn't run and can now, we run it.
+ *	Restart a job that stopped for some reason. 
  *
  * Results:
  *	None.
@@ -1169,11 +1160,7 @@ JobRestart(job)
 	if (DEBUG(JOB)) {
 	    printf("Remigrating %x\n", job->pid);
 	}
-	if (!Rmt_ReExport(job->pid)) {
-	    if (DEBUG(JOB)) {
-		printf("Couldn't migrate...");
-	    }
-	    if (nLocal != maxLocal) {
+	if (nLocal != maxLocal) {
 		/*
 		 * Job cannot be remigrated, but there's room on the local
 		 * machine, so resume the job and note that another
@@ -1185,7 +1172,7 @@ JobRestart(job)
 		KILL(job->pid, SIGCONT);
 		nLocal +=1;
 		job->flags &= ~(JOB_REMIGRATE|JOB_RESUME);
-	    } else {
+	} else {
 		/*
 		 * Job cannot be restarted. Mark the table as full and
 		 * place the job back on the list of stopped jobs.
@@ -1199,14 +1186,6 @@ JobRestart(job)
 		    printf("Job queue is full.\n");
 		}
 		return;
-	    }
-	} else {
-	    /*
-	     * Clear out the remigrate and resume flags. If MIGRATE was set,
-	     * leave that around for JobFinish to see so it doesn't print out
-	     * that the job was continued.
-	     */
-	    job->flags &= ~(JOB_REMIGRATE|JOB_RESUME);
 	}
 	
 	(void)Lst_AtEnd(jobs, (ClientData)job);
@@ -1233,16 +1212,7 @@ JobRestart(job)
 	if (DEBUG(JOB)) {
 	    printf("Restarting %s...", job->node->name);
 	}
-	if ((job->node->type&OP_NOEXPORT) ||
-#ifdef RMT_NO_EXEC
-	    !Rmt_Export(shellPath, argv, job)
-#else
-	    !Rmt_Begin(shellPath, argv, job->node)
-#endif
-	    )
-	{
-	    if (((nLocal >= maxLocal) && ! (job->flags & JOB_SPECIAL)))
-	    {
+	if (((nLocal >= maxLocal) && ! (job->flags & JOB_SPECIAL))) {
 		/*
 		 * Can't be exported and not allowed to run locally -- put it
 		 * back on the hold queue and mark the table full
@@ -1256,7 +1226,7 @@ JobRestart(job)
 		    printf("Job queue is full.\n");
 		}
 		return;
-	    } else {
+	} else {
 		/*
 		 * Job may be run locally.
 		 */
@@ -1264,15 +1234,6 @@ JobRestart(job)
 		    printf("running locally\n");
 		}
 		job->flags &= ~JOB_REMOTE;
-	    }
-	} else {
-	    /*
-	     * Can be exported. Hooray!
-	     */
-	    if (DEBUG(JOB)) {
-		printf("exporting\n");
-	    }
-	    job->flags |= JOB_REMOTE;
 	}
 	JobExec(job, argv);
     } else {
@@ -1285,8 +1246,7 @@ JobRestart(job)
 	}
 	if (((job->flags & JOB_REMOTE) ||
 	     (nLocal < maxLocal) ||
-	     (((job->flags & JOB_SPECIAL) ||
-	       (job->node->type & OP_NOEXPORT)) &&
+	     (((job->flags & JOB_SPECIAL)) &&
 	      (maxLocal == 0))) &&
 	    (nJobs != maxJobs))
 	{
@@ -1345,7 +1305,7 @@ JobRestart(job)
 	}
     }
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * JobStart  --
@@ -1608,22 +1568,11 @@ JobStart (gn, flags, previous)
 	}
     }
 
-    if (!(gn->type & OP_NOEXPORT)) {
-#ifdef RMT_NO_EXEC
-	local = !Rmt_Export(shellPath, argv, job);
-#else
-	local = !Rmt_Begin (shellPath, argv, gn);
-#endif /* RMT_NO_EXEC */
-	if (!local) {
-	    job->flags |= JOB_REMOTE;
-	}
-    } else {
-	local = TRUE;
-    }
+    local = TRUE;
 
     if (local && (((nLocal >= maxLocal) &&
 	 !(job->flags & JOB_SPECIAL) &&
-	 (!(gn->type & OP_NOEXPORT) || (maxLocal != 0)))))
+	 (maxLocal != 0))))
     {
 	/*
 	 * The job can only be run locally, but we've hit the limit of
@@ -1631,8 +1580,7 @@ JobStart (gn, flags, previous)
 	 * finishes. Note that the special jobs (.BEGIN, .INTERRUPT and .END)
 	 * may be run locally even when the local limit has been reached
 	 * (e.g. when maxLocal == 0), though they will be exported if at
-	 * all possible. In addition, any target marked with .NOEXPORT will
-	 * be run locally if maxLocal is 0.
+	 * all possible. 
 	 */
 	jobFull = TRUE;
 	
@@ -1656,7 +1604,7 @@ JobStart (gn, flags, previous)
     }
     return(JOB_RUNNING);
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * JobDoOutput  --
@@ -1921,7 +1869,7 @@ end_loop:
     }
     fflush(stdout);
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * Job_CatchChildren --
@@ -1987,18 +1935,13 @@ Job_CatchChildren (block)
 		printf("Job queue is no longer full.\n");
 	    }
 	    jobFull = FALSE;
-	
-	    if (job->flags & JOB_REMOTE) {
-		Rmt_Done (job->rmtID);
-	    } else {
-		nLocal -= 1;
-	    }
+	    nLocal -= 1;
 	}
 
 	JobFinish (job, status);
     }
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * Job_CatchOutput --
@@ -2073,7 +2016,7 @@ Job_CatchOutput ()
     }
 #endif /* RMT_WILL_WATCH */
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * Job_Make --
@@ -2094,7 +2037,7 @@ Job_Make (gn)
 {
     (void)JobStart (gn, 0, (Job *)NULL);
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * Job_Init --
@@ -2210,7 +2153,7 @@ Job_Init (maxproc, maxlocal)
     }
     postCommands = Targ_FindNode (".END", TARG_CREATE);
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * Job_Full --
@@ -2230,7 +2173,7 @@ Job_Full ()
 {
     return (aborting || jobFull);
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * Job_Empty --
@@ -2268,7 +2211,7 @@ Job_Empty ()
 	return(FALSE);
     }
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * JobMatchShell --
@@ -2311,7 +2254,7 @@ JobMatchShell (name)
     }
     return (match == (Shell *) NULL ? sh : match);
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * Job_ParseShell --
@@ -2477,7 +2420,7 @@ Job_ParseShell (line)
     free (words);
     return SUCCESS;
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * JobInterrupt --
@@ -2558,7 +2501,7 @@ JobInterrupt (runINTERRUPT)
     (void) unlink (tfile);
     exit (0);
 }
-
+
 /*
  *-----------------------------------------------------------------------
  * Job_End --
@@ -2594,7 +2537,7 @@ Job_End ()
     (void) unlink (tfile);
     return(errors);
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * Job_Wait --
@@ -2621,7 +2564,7 @@ Job_Wait()
     }
     aborting = 0;
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * Job_AbortAll --

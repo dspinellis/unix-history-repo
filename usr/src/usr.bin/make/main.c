@@ -27,7 +27,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 /*-
@@ -99,11 +99,8 @@ Boolean			backwards;  	/* -B flag */
 Boolean			ignoreErrors;	/* -i flag */
 Boolean			beSilent;   	/* -s flag */
 Boolean	    	    	sysVmake;   	/* -v flag */
-Boolean			oldVars;    	/* -V flag */
+Boolean			oldVars;    	/* variable substitution style */
 Boolean	    	    	checkEnvFirst;	/* -e flag */
-static Boolean	  	XFlag=FALSE;   	/* -X flag given */
-static Boolean	  	xFlag=FALSE;	/* -x flag given */
-Boolean	    	  	noExport;   	/* Set TRUE if shouldn't export */
 static Boolean	  	jobsRunning;	/* TRUE if the jobs might be running */
 
 static Boolean	    	ReadMakefile();
@@ -113,12 +110,6 @@ static Boolean	    	ReadMakefile();
  * differently...
  */
 static int  	initOptInd;
-
-#ifdef CAN_EXPORT
-#define OPTSTR "BCD:I:J:L:MPSVWXd:ef:iknp:qrstvxh"
-#else
-#define OPTSTR "BCD:I:J:L:MPSVWd:ef:iknp:qrstvh"
-#endif
 
 static char 	    *help[] = {
 "-B	    	Be as backwards-compatible with make as possible without\n\
@@ -132,13 +123,7 @@ static char 	    *help[] = {
 "-M		Be Make as closely as possible.",
 "-P		Don't use pipes to catch the output of jobs, use files.",
 "-S	    	Turn off the -k flag (see below).",
-#ifndef POSIX
-"-V		Use old-style variable substitution.",
-#endif
 "-W		Don't print warning messages.",
-#ifdef CAN_EXPORT
-"-X		Turn off exporting of commands.",
-#endif
 "-d<flags>  	Turn on debugging output.",
 "-e		Give environment variables precedence over those in the\n\
 		makefile(s).",
@@ -153,10 +138,7 @@ static char 	    *help[] = {
 "-r	    	Do not read the system makefile for pre-defined rules.",
 "-s	    	Don't print commands as they are executed.",
 "-t	    	Update targets by \"touching\" them (see touch(1)).",
-"-v	    	Be compatible with System V make. Implies -B, -V.",
-#ifdef CAN_EXPORT
-"-x	    	Allow exportation of commands.",
-#endif
+"-v	    	Be compatible with System V make. Implies -B.",
 };
 
 
@@ -189,14 +171,14 @@ MainParseArgs (argc, argv)
 
     optind = initOptInd;
 
-    while((c = getopt(argc, argv, OPTSTR)) != -1) {
+    while((c = getopt(argc, argv, "BCD:I:J:L:MPSWd:ef:iknp:qrstvh")) != -1) {
 	switch(c) {
 	    case 'B':
-		backwards = oldVars = TRUE;
+		backwards = TRUE;
 		Var_Append(MAKEFLAGS, "-B", VAR_GLOBAL);
 		break;
 	    case 'C':
-		oldVars = backwards = sysVmake = amMake = FALSE;
+		backwards = sysVmake = amMake = FALSE;
 		Var_Append(MAKEFLAGS, "-C", VAR_GLOBAL);
 		break;
 	    case 'D':
@@ -231,17 +213,9 @@ MainParseArgs (argc, argv)
 		keepgoing = FALSE;
 		Var_Append(MAKEFLAGS, "-S", VAR_GLOBAL);
 		break;
-	    case 'V':
-		oldVars = TRUE;
-		Var_Append(MAKEFLAGS, "-V", VAR_GLOBAL);
-		break;
 	    case 'W':
 		noWarnings = TRUE;
 		Var_Append(MAKEFLAGS, "-W", VAR_GLOBAL);
-		break;
-	    case 'X':
-		XFlag = TRUE;
-		Var_Append(MAKEFLAGS, "-X", VAR_GLOBAL);
 		break;
 	    case 'd':
 	    {
@@ -330,7 +304,7 @@ MainParseArgs (argc, argv)
 		Var_Append(MAKEFLAGS, "-t", VAR_GLOBAL);
 		break;
 	    case 'v':
-		sysVmake = oldVars = backwards = TRUE;
+		sysVmake = backwards = TRUE;
 		Var_Append(MAKEFLAGS, "-v", VAR_GLOBAL);
 		break;
 	    case 'h':
@@ -352,9 +326,7 @@ MainParseArgs (argc, argv)
     if (amMake) {
 	backwards = TRUE;
     }
-    if (backwards) {
-	oldVars = TRUE;
-    }
+    oldVars = TRUE;
 
     /*
      * See if the rest of the arguments are variable assignments and perform
@@ -481,13 +453,11 @@ main (argc, argv)
     if (strcmp (cp, "make") == 0) {
 	amMake = TRUE;	      	/* Be like make */
 	backwards = TRUE;     	/* Do things the old-fashioned way */
-	oldVars = TRUE;	      	/* Same with variables */
     } else if (strcmp(cp, "smake") == 0 || strcmp(cp, "vmake") == 0) {
-	sysVmake = oldVars = backwards = TRUE;
+	sysVmake = backwards = TRUE;
     } else {
 	amMake = FALSE;
 	backwards = FALSE;    	/* Do things MY way, not MAKE's */
-	oldVars = TRUE;
     }
 
     /*
@@ -583,20 +553,6 @@ main (argc, argv)
 #endif
     }
 
-    /*
-     * Figure "noExport" out based on the current mode. Since exporting each
-     * command in make mode is rather inefficient, we only export if the -x
-     * flag was given. In regular mode though, we only refuse to export if
-     * -X was given. In case the operative flag was given in the environment,
-     * however, the opposite one may be given on the command line and cancel
-     * the action.
-     */
-    if (amMake) {
-	noExport = !xFlag || XFlag;
-    } else {
-	noExport = XFlag && !xFlag;
-    }
-    
     Var_Append ("MFLAGS", Var_Value(MAKEFLAGS, VAR_GLOBAL), VAR_GLOBAL);
 
     /*
@@ -661,8 +617,6 @@ main (argc, argv)
     if (printGraph & 1) {
 	Targ_PrintGraph (1);
     }
-
-    Rmt_Init();
 
     /*
      * Have now read the entire graph and need to make a list of targets to
