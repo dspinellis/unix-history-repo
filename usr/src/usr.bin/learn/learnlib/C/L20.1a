@@ -1,0 +1,105 @@
+#print
+Write a program to read a list of positive numbers
+and sort them into ascending order.  Print
+the sorted list of numbers one per line
+as five digit numbers (%5d in printf).
+Stop reading numbers when getnum returns -1.
+Compile and test your program; then type "ready".
+#once #create Ref
+    1
+    3
+    4
+    9
+   11
+   12
+   13
+   14
+   15
+   16
+   17
+   20
+   34
+   71
+  200
+  225
+  250
+  275
+  300
+ 4095
+ 7111
+16384
+#once cp %s/getnum.o .
+#once #create input
+4 20 3 200 16384 4095 71 11 12 13 14
+15 16 17 34 9 7111 300 275 250 225 1
+#user
+a.out  <input >xxx
+#cmp xxx Ref
+#succeed
+main()
+{
+	int n;
+	int list[1000];
+
+	n = getlist(list);
+	shellsort(list, n);
+	printlist(list, n);
+}
+
+getlist(list)
+int list[];
+{
+	int n;
+
+	n = 0;
+	while ((list[n]=getnum()) >= 0)
+		n++;
+	return(n);
+}
+
+/* this is a shell sort, stripped down to process a list
+   of integers only.  Although you probably don't know
+   how to write this offhand, you should know where to find
+   it - it is only marginally more code than a bubble sort
+   and much faster (n**1.5 vs. n**2) in time. */
+shellsort(v, n)  /* sort v[0]...v[n-1] into increasing order */
+int v[], n;
+{
+    int gap, i, j, temp;
+
+    for (gap = n/2; gap > 0; gap /= 2)
+        for (i = gap; i < n; i++)
+            for (j=i-gap; j>=0 && v[j]>v[j+gap]; j-=gap) {
+                temp = v[j];
+                v[j] = v[j+gap];
+                v[j+gap] = temp;
+            }
+}
+
+printlist(list, n)
+int list[], n;
+{
+	int i;
+	for(i=0; i<n; i++)
+		printf("%5d\n",list[i]);
+}
+/* this is a crummy bubble sort which
+   would work perfectly well for this
+   problem but can not be recommended
+   for large jobs. 
+sortlist()
+{
+	int i, j, k;
+
+	for(i=0; i<n; i++)
+		for(j=n-1; j>0; j--)
+			if (list[j-1] > list[j]) {
+				k = list[j];
+				list[j] = list[j-1];
+				list[j-1] = k;
+			}
+}
+ ****/
+#log
+#next
+30.1a 10
