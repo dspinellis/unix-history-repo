@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)main.c	2.1 (Berkeley) %G%";
+static	char *sccsid = "@(#)main.c	2.2 (Berkeley) %G%";
 /* Copyright (c) 1979 Regents of the University of California */
 #
 /*
@@ -210,7 +210,7 @@ header()
 	static char reenter;
 	extern int outcol;
 
-	gettime();
+	gettime(filename);
 	if (reenter) {
 		if (outcol)
 			putchar('\n');
