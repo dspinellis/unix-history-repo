@@ -10,7 +10,7 @@
  * File I/O.
  */
 
-static char *SccsId = "@(#)fio.c	2.8 %G%";
+static char *SccsId = "@(#)fio.c	2.9 %G%";
 
 /*
  * Set up the input pointers while copying the mail file into
@@ -392,10 +392,6 @@ done:
 	relsesigs();
 }
 
-# ifndef VMUNIX
-static int	SaveSigs[32];
-# endif VMUNIX
-
 /*
  * Hold signals SIGHUP - SIGQUIT.
  */
@@ -404,11 +400,7 @@ holdsigs()
 	register int i;
 
 	for (i = SIGHUP; i <= SIGQUIT; i++)
-# ifdef VMUNIX
 		sighold(i);
-# else
-		SaveSigs[i] = signal(i, SIG_IGN);
-# endif
 }
 
 /*
@@ -419,11 +411,7 @@ relsesigs()
 	register int i;
 
 	for (i = SIGHUP; i <= SIGQUIT; i++)
-# ifdef VMUNIX
 		sigrelse(i);
-# else
-		signal(i, SaveSigs[i]);
-# endif
 }
 
 /*
@@ -520,6 +508,7 @@ expand(name)
 	}
 	sprintf(cmdbuf, "echo %s", name);
 	if ((pid = vfork()) == 0) {
+		sigchild();
 		Shell = value("SHELL");
 		if (Shell == NOSTR)
 			Shell = SHELL;
