@@ -25,11 +25,20 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)unifdef.c	4.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)unifdef.c	4.6 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
  * unifdef - remove ifdef'ed lines
+ *
+ *  Warning: will not work correctly if input contains null characters.
+ *
+ *  Wishlist:
+ *      provide an option which will append the name of the
+ *        appropriate symbol after #else's and #endif's
+ *      provide an option which will check symbols after
+ *        #else's and #endif's to see that they match their
+ *        corresponding #ifdef or #ifndef
  */
 
 #include <stdio.h>
@@ -40,23 +49,32 @@ FILE *input;
 #ifndef YES
 #define YES 1
 #define NO  0
-#endif
+#endif/*YES */
+typedef int Bool;
 
 char *progname BSS;
 char *filename BSS;
 char text BSS;          /* -t option in effect: this is a text file */
 char lnblank BSS;       /* -l option in effect: blank deleted lines */
 char complement BSS;    /* -c option in effect: complement the operation */
+
 #define MAXSYMS 100
-char true[MAXSYMS] BSS;
-char ignore[MAXSYMS] BSS;
-char *sym[MAXSYMS] BSS;
-char insym[MAXSYMS] BSS;
+char *symname[MAXSYMS] BSS; /* symbol name */
+char true[MAXSYMS] BSS;     /* -Dsym */
+char ignore[MAXSYMS] BSS;   /* -iDsym or -iUsym */
+char insym[MAXSYMS] BSS;    /* state: false, inactive, true */
+#define SYM_INACTIVE 0      /* symbol is currently inactive */
+#define SYM_FALSE    1      /* symbol is currently false */
+#define SYM_TRUE     2      /* symbol is currently true  */
+
 char nsyms BSS;
-char incomment BSS;
-#define QUOTE1 0
-#define QUOTE2 1
-char inquote[2] BSS;
+char incomment BSS;         /* inside C comment */
+
+#define QUOTE_NONE   0
+#define QUOTE_SINGLE 1
+#define QUOTE_DOUBLE 2
+char inquote BSS;           /* inside single or double quotes */
+
 int exitstat BSS;
 char *skipcomment ();
 char *skipquote ();
@@ -78,24 +96,28 @@ char **argv;
 	if (*++cp1 == 'i') {
 	    ignorethis = YES;
 	    cp1++;
-	}
-	else
+	} else
 	    ignorethis = NO;
 	if (   (   *cp1 == 'D'
 		|| *cp1 == 'U'
 	       )
 	    && cp1[1] != '\0'
 	   ) {
-	    if (nsyms >= MAXSYMS) {
-		prname ();
-		fprintf (stderr, "too many symbols.\n");
-		exit (2);
+	    register int symind;
+
+	    if ((symind = findsym (&cp1[1])) < 0) {
+		if (nsyms >= MAXSYMS) {
+		    prname ();
+		    fprintf (stderr, "too many symbols.\n");
+		    exit (2);
+		}
+		symind = nsyms++;
+		symname[symind] = &cp1[1];
+		insym[symind] = SYM_INACTIVE;
 	    }
-	    ignore[nsyms] = ignorethis;
-	    true[nsyms] = *cp1 == 'D' ? YES : NO;
-	    sym[nsyms++] = &cp1[1];
-	}
-	else if (ignorethis)
+	    ignore[symind] = ignorethis;
+	    true[symind] = *cp1 == 'D' ? YES : NO;
+	} else if (ignorethis)
 	    goto unrec;
 	else if (strcmp (&cp[1], "t") == 0)
 	    text = YES;
@@ -113,46 +135,52 @@ char **argv;
     if (nsyms == 0) {
  usage:
 	fprintf (stderr, "\
-Usage: %s [-l] [-t] [-c] [[-Dsym] [-Usym] [-idsym] [-iusym]]... [file]\n\
-    At least one arg from [-D -U -id -iu] is required\n", progname);
+Usage: %s [-l] [-t] [-c] [[-Dsym] [-Usym] [-iDsym] [-iUsym]]... [file]\n\
+    At least one arg from [-D -U -iD -iU] is required\n", progname);
 	exit (2);
     }
 
     if (argc > 1) {
 	prname ();
 	fprintf (stderr, "can only do one file.\n");
-    }
-    else if (argc == 1) {
+    } else if (argc == 1) {
 	filename = *curarg;
 	if ((input = fopen (filename, "r")) != NULL) {
 	    pfile();
-	    fclose (input);
-	}
-	else {
+	    (void) fclose (input);
+	} else {
 	    prname ();
+	    fprintf (stderr, "can't open ");
 	    perror(*curarg);
 	}
-    }
-    else {
+    } else {
 	filename = "[stdin]";
 	input = stdin;
 	pfile();
     }
 
-    fflush (stdout);
+    (void) fflush (stdout);
     exit (exitstat);
 }
 
 /* types of input lines: */
-#define PLAIN       0   /* ordinary line */
-#define TRUE        1   /* a true  #ifdef of a symbol known to us */
-#define FALSE       2   /* a false #ifdef of a symbol known to us */
-#define OTHER       3   /* an #ifdef of a symbol not known to us */
-#define ELSE        4   /* #else */
-#define ENDIF       5   /* #endif */
-#define LEOF        6   /* end of file */
+typedef int Linetype;
+#define LT_PLAIN       0   /* ordinary line */
+#define LT_TRUE        1   /* a true  #ifdef of a symbol known to us */
+#define LT_FALSE       2   /* a false #ifdef of a symbol known to us */
+#define LT_OTHER       3   /* an #ifdef of a symbol not known to us */
+#define LT_IF          4   /* an #ifdef of a symbol not known to us */
+#define LT_ELSE        5   /* #else */
+#define LT_ENDIF       6   /* #endif */
+#define LT_LEOF        7   /* end of file */
+extern Linetype checkline ();
 
-char reject BSS;    /* 0 or 1: pass thru; 1 or 2: ignore comments */
+typedef int Reject_level;
+Reject_level reject BSS;    /* 0 or 1: pass thru; 1 or 2: ignore comments */
+#define REJ_NO          0
+#define REJ_IGNORE      1
+#define REJ_YES         2
+
 int linenum BSS;    /* current line number */
 int stqcline BSS;   /* start of current coment or quote */
 char *errs[] = {
@@ -174,41 +202,47 @@ char *errs[] = {
 			"Premature EOF in quoted string"
 };
 
+/* States for inif arg to doif */
+#define IN_NONE 0
+#define IN_IF   1
+#define IN_ELSE 2
+
 pfile ()
 {
-    reject = 0;
-    doif (-1, NO, reject, 0);
+    reject = REJ_NO;
+    (void) doif (-1, IN_NONE, reject, 0);
     return;
 }
 
+int
 doif (thissym, inif, prevreject, depth)
 register int thissym;   /* index of the symbol who was last ifdef'ed */
 int inif;               /* YES or NO we are inside an ifdef */
-int prevreject;         /* previous value of reject */
+Reject_level prevreject;/* previous value of reject */
 int depth;              /* depth of ifdef's */
 {
-    register int lineval;
-    register int thisreject;
-    int doret;          /* tmp return valud]e of doif */
+    register Linetype lineval;
+    register Reject_level thisreject;
+    int doret;          /* tmp return value of doif */
     int cursym;         /* index of the symbol returned by checkline */
     int stline;         /* line number when called this time */
 
     stline = linenum;
     for (;;) {
 	switch (lineval = checkline (&cursym)) {
-	case PLAIN:
+	case LT_PLAIN:
 	    flushline (YES);
 	    break;
 
-	case TRUE:
-	case FALSE:
+	case LT_TRUE:
+	case LT_FALSE:
 	    thisreject = reject;
-	    if (lineval == TRUE)
-		insym[cursym] = 1;
+	    if (lineval == LT_TRUE)
+		insym[cursym] = SYM_TRUE;
 	    else {
-		if (reject < 2)
-		    reject = ignore[cursym] ? 1 : 2;
-		insym[cursym] = -1;
+		if (reject != REJ_YES)
+		    reject = ignore[cursym] ? REJ_IGNORE : REJ_YES;
+		insym[cursym] = SYM_FALSE;
 	    }
 	    if (ignore[cursym])
 		flushline (YES);
@@ -216,25 +250,29 @@ int depth;              /* depth of ifdef's */
 		exitstat = 1;
 		flushline (NO);
 	    }
-	    if ((doret = doif (cursym, YES, thisreject, depth + 1)) != NO_ERR)
-		return error (doret, stline, depth);
-    	    break;
-
-	case OTHER:
-	    flushline (YES);
-	    if ((doret = doif (-1, YES, reject, depth + 1)) != NO_ERR)
+	    if ((doret = doif (cursym, IN_IF, thisreject, depth + 1)) != NO_ERR)
 		return error (doret, stline, depth);
 	    break;
 
-	case ELSE:
-	    if (inif != 1)
+	case LT_IF:
+	case LT_OTHER:
+	    flushline (YES);
+	    if ((doret = doif (-1, IN_IF, reject, depth + 1)) != NO_ERR)
+		return error (doret, stline, depth);
+	    break;
+
+	case LT_ELSE:
+	    if (inif != IN_IF)
 		return error (ELSE_ERR, linenum, depth);
-	    inif = 2;
+	    inif = IN_ELSE;
 	    if (thissym >= 0) {
-		if ((insym[thissym] = -insym[thissym]) < 0)
-		    reject = ignore[thissym] ? 1 : 2;
-		else
+		if (insym[thissym] == SYM_TRUE) {
+		    reject = ignore[thissym] ? REJ_IGNORE : REJ_YES;
+		    insym[thissym] = SYM_FALSE;
+		} else { /* (insym[thissym] == SYM_FALSE) */
 		    reject = prevreject;
+		    insym[thissym] = SYM_TRUE;
+		}
 		if (!ignore[thissym]) {
 		    flushline (NO);
 		    break;
@@ -243,11 +281,11 @@ int depth;              /* depth of ifdef's */
 	    flushline (YES);
 	    break;
 
-	case ENDIF:
-	    if (inif == 0)
+	case LT_ENDIF:
+	    if (inif == IN_NONE)
 		return error (ENDIF_ERR, linenum, depth);
 	    if (thissym >= 0) {
-		insym[thissym] = 0;
+		insym[thissym] = SYM_INACTIVE;
 		reject = prevreject;
 		if (!ignore[thissym]) {
 		    flushline (NO);
@@ -257,21 +295,20 @@ int depth;              /* depth of ifdef's */
 	    flushline (YES);
 	    return NO_ERR;
 
-	case LEOF: {
+	case LT_LEOF: {
 	    int err;
 	    err =   incomment
 		  ? CEOF_ERR
-		  : inquote[QUOTE1]
+		  : inquote == QUOTE_SINGLE
 		  ? Q1EOF_ERR
-		  : inquote[QUOTE2]
+		  : inquote == QUOTE_DOUBLE
 		  ? Q2EOF_ERR
 		  : NO_ERR;
-	    if (inif) {
+	    if (inif != IN_NONE) {
 		if (err != NO_ERR)
-		    error (err, stqcline, depth);
+		    (void) error (err, stqcline, depth);
 		return error (IEOF_ERR, stline, depth);
-	    }
-	    else if (err != NO_ERR)
+	    } else if (err != NO_ERR)
 		return error (err, stqcline, depth);
 	    else
 		return NO_ERR;
@@ -285,27 +322,26 @@ int depth;              /* depth of ifdef's */
 #define MAXLINE 256
 char tline[MAXLINE] BSS;
 
+Linetype
 checkline (cursym)
-int *cursym;
+int *cursym;    /* if LT_TRUE or LT_FALSE returned, set this to sym index */
 {
     register char *cp;
     register char *symp;
-    register char chr;
     char *scp;
-    int retval;
-    int symind;
+    Linetype retval;
 #   define KWSIZE 8
     char keyword[KWSIZE];
 
     linenum++;
     if (getlin (tline, sizeof tline, input, NO) == EOF)
-        return LEOF;
+	return LT_LEOF;
 
-    retval = PLAIN;
+    retval = LT_PLAIN;
     if (   *(cp = tline) != '#'
 	|| incomment
-	|| inquote[QUOTE1]
-	|| inquote[QUOTE2]
+	|| inquote == QUOTE_SINGLE
+	|| inquote == QUOTE_DOUBLE
        )
 	goto eol;
 
@@ -321,66 +357,55 @@ int *cursym;
     if (strcmp (keyword, "ifdef") == 0) {
 	retval = YES;
 	goto ifdef;
-    }
-    else if (strcmp (keyword, "ifndef") == 0) {
+    } else if (strcmp (keyword, "ifndef") == 0) {
 	retval = NO;
  ifdef:
 	scp = cp = skipcomment (++cp);
 	if (incomment) {
-	    retval = PLAIN;
+	    retval = LT_PLAIN;
 	    goto eol;
 	}
-	for (symind = 0; ; ) {
-	    if (insym[symind] == 0) {
-		for ( symp = sym[symind], cp = scp
-		    ; *symp && *cp == *symp
-		    ; cp++, symp++
-		    )
-		    {}
-		chr = *cp;
-		if (*symp == '\0' && endsym (chr)) {
-		    *cursym = symind;
-		    retval = (retval ^ true[symind]) ? FALSE : TRUE;
-		    break;
-		}
-	    }
-	    if (++symind >= nsyms) {
-		retval = OTHER;
-		break;
-	    }
+	{
+	    int symind;
+
+	    if ((symind = findsym (scp)) >= 0)
+		retval = (retval ^ true[*cursym = symind])
+			 ? LT_FALSE : LT_TRUE;
+	    else
+		retval = LT_OTHER;
 	}
-    }
-    else if (strcmp (keyword, "if") == 0)
-	retval = OTHER;
+    } else if (strcmp (keyword, "if") == 0)
+	retval = LT_IF;
     else if (strcmp (keyword, "else") == 0)
-	retval = ELSE;
+	retval = LT_ELSE;
     else if (strcmp (keyword, "endif") == 0)
-	retval = ENDIF;
+	retval = LT_ENDIF;
 
  eol:
-    if (!text && !reject)
+    if (!text && reject != REJ_IGNORE)
 	for (; *cp; ) {
 	    if (incomment)
 		cp = skipcomment (cp);
-	    else if (inquote[QUOTE1])
-		cp = skipquote (cp, QUOTE1);
-	    else if (inquote[QUOTE2])
-		cp = skipquote (cp, QUOTE2);
+	    else if (inquote == QUOTE_SINGLE)
+		cp = skipquote (cp, QUOTE_SINGLE);
+	    else if (inquote == QUOTE_DOUBLE)
+		cp = skipquote (cp, QUOTE_DOUBLE);
 	    else if (*cp == '/' && cp[1] == '*')
 		cp = skipcomment (cp);
 	    else if (*cp == '\'')
-		cp = skipquote (cp, QUOTE1);
+		cp = skipquote (cp, QUOTE_SINGLE);
 	    else if (*cp == '"')
-		cp = skipquote (cp, QUOTE2);
+		cp = skipquote (cp, QUOTE_DOUBLE);
 	    else
 		cp++;
 	}
     return retval;
 }
 
-/*  Skip over comments and stop at the next charaacter
-/*  position that is not whitespace.
-/**/
+/*
+ *  Skip over comments and stop at the next charaacter
+ *  position that is not whitespace.
+ */
 char *
 skipcomment (cp)
 register char *cp;
@@ -388,14 +413,14 @@ register char *cp;
     if (incomment)
 	goto inside;
     for (;; cp++) {
-        while (*cp == ' ' || *cp == '\t')
-            cp++;
+	while (*cp == ' ' || *cp == '\t')
+	    cp++;
 	if (text)
-            return cp;
+	    return cp;
 	if (   cp[0] != '/'
 	    || cp[1] != '*'
 	   )
-            return cp;
+	    return cp;
 	cp += 2;
 	if (!incomment) {
 	    incomment = YES;
@@ -406,16 +431,18 @@ register char *cp;
 	    for (; *cp != '*'; cp++)
 		if (*cp == '\0')
 		    return cp;
-	    if (*++cp == '/')
+	    if (*++cp == '/') {
+		incomment = NO;
 		break;
+	    }
 	}
-	incomment = NO;
     }
 }
 
-/*  Skip over a quoted string or character and stop at the next charaacter
-/*  position that is not whitespace.
-/**/
+/*
+ *  Skip over a quoted string or character and stop at the next charaacter
+ *  position that is not whitespace.
+ */
 char *
 skipquote (cp, type)
 register char *cp;
@@ -423,37 +450,63 @@ register int type;
 {
     register char qchar;
 
-    qchar = type == QUOTE1 ? '\'' : '"';
+    qchar = type == QUOTE_SINGLE ? '\'' : '"';
 
-    if (inquote[type])
+    if (inquote == type)
 	goto inside;
     for (;; cp++) {
 	if (*cp != qchar)
 	    return cp;
 	cp++;
-	if (!inquote[type]) {
-	    inquote[type] = YES;
-	    stqcline = linenum;
-	}
+	inquote = type;
+	stqcline = linenum;
  inside:
 	for (; ; cp++) {
 	    if (*cp == qchar)
 		break;
 	    if (   *cp == '\0'
-		|| *cp == '\\'
-		&& *++cp == '\0'
+		|| *cp == '\\' && *++cp == '\0'
 	       )
 		return cp;
 	}
-	inquote[type] = NO;
+	inquote = QUOTE_NONE;
     }
 }
 
 /*
-/*   special getlin - treats form-feed as an end-of-line
-/*                    and expands tabs if asked for
+ *  findsym - look for the symbol in the symbol table.
+ *            if found, return symbol table index,
+ *            else return -1.
+ */
+int
+findsym (str)
+char *str;
+{
+    register char *cp;
+    register char *symp;
+    register int symind;
+    register char chr;
+
+    for (symind = 0; symind < nsyms; ++symind) {
+	if (insym[symind] == SYM_INACTIVE) {
+	    for ( symp = symname[symind], cp = str
+		; *symp && *cp == *symp
+		; cp++, symp++
+		)
+		continue;
+	    chr = *cp;
+	    if (*symp == '\0' && endsym (chr))
+		return symind;
+	}
+    }
+    return -1;
+}
+
 /*
-/**/
+ *   getlin - expands tabs if asked for
+ *            and (if compiled in) treats form-feed as an end-of-line
+ */
+int
 getlin (line, maxline, inp, expandtabs)
 register char *line;
 int maxline;
@@ -463,29 +516,28 @@ int expandtabs;
     int tmp;
     register int num;
     register int chr;
-#ifdef FFSPECIAL
+#ifdef  FFSPECIAL
     static char havechar = NO;  /* have leftover char from last time */
     static char svchar BSS;
-#endif
+#endif/*FFSPECIAL */
 
     num = 0;
-#ifdef FFSPECIAL
+#ifdef  FFSPECIAL
     if (havechar) {
 	havechar = NO;
 	chr = svchar;
 	goto ent;
     }
-#endif
+#endif/*FFSPECIAL */
     while (num + 8 < maxline) {   /* leave room for tab */
-        chr = getc (inp);
+	chr = getc (inp);
 	if (isprint (chr)) {
-#ifdef FFSPECIAL
+#ifdef  FFSPECIAL
  ent:
-#endif
+#endif/*FFSPECIAL */
 	    *line++ = chr;
 	    num++;
-	}
-	else
+	} else
 	    switch (chr) {
 	    case EOF:
 		return EOF;
@@ -497,28 +549,28 @@ int expandtabs;
 			*line++ = ' ';
 		    while (--tmp);
 		    break;
-		} 
-            default:
-                *line++ = chr;
-                num++;
+		}
+	    default:
+		*line++ = chr;
+		num++;
 		break;
 
 	    case '\n':
-                *line = '\n';
-                num++;
-                goto end;
-    
-#ifdef FFSPECIAL
+		*line = '\n';
+		num++;
+		goto end;
+
+#ifdef  FFSPECIAL
 	    case '\f':
 		if (++num == 1)
 		    *line = '\f';
 		else {
 		    *line = '\n';
 		    havechar = YES;
-                    svchar = chr;
-                }
-                goto end;
-#endif
+		    svchar = chr;
+		}
+		goto end;
+#endif/*FFSPECIAL */
 	    }
     }
  end:
@@ -527,26 +579,17 @@ int expandtabs;
 }
 
 flushline (keep)
+Bool keep;
 {
-    if ((keep && reject < 2) ^ complement)
-	putlin (tline, stdout);
-    else if (lnblank)
-	putlin ("\n", stdout);
-    return;
-}
+    if ((keep && reject != REJ_YES) ^ complement) {
+	register char *line = tline;
+	register FILE *out = stdout;
+	register char chr;
 
-/*
-/*  putlin - for tools
-/*
-/**/
-putlin (line, fio)
-register char *line;
-register FILE *fio;
-{
-    register char chr;
-
-    while (chr = *line++)
-	putc (chr, fio);
+	while (chr = *line++)
+	    putc (chr, out);
+    } else if (lnblank)
+	putc ('\n', stdout);
     return;
 }
 
@@ -556,8 +599,11 @@ prname ()
     return;
 }
 
-
+int
 error (err, line, depth)
+int err;        /* type of error & index into error string array */
+int line;       /* line number */
+int depth;      /* how many ifdefs we are inside */
 {
     if (err == END_ERR)
 	return err;
@@ -565,15 +611,11 @@ error (err, line, depth)
     prname ();
 
 #ifndef TESTING
-    fprintf (stderr, "Error in %s line %d: %s.\n",
-	     filename, line, errs[err]);
-#endif
-
-#ifdef TESTING
-    fprintf (stderr, "Error in %s line %d: %s. ",
-	     filename, line, errs[err]);
+    fprintf (stderr, "Error in %s line %d: %s.\n", filename, line, errs[err]);
+#else/* TESTING */
+    fprintf (stderr, "Error in %s line %d: %s. ", filename, line, errs[err]);
     fprintf (stderr, "ifdef depth: %d\n", depth);
-#endif
+#endif/*TESTING */
 
     exitstat = 2;
     return depth > 1 ? IEOF_ERR : END_ERR;
