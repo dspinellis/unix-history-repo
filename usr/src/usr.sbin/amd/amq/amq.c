@@ -1,6 +1,4 @@
 /*
- * $Id: amq.c,v 5.2.1.3 91/03/17 17:33:42 jsp Alpha $
- *
  * Copyright (c) 1990 Jan-Simon Pendry
  * Copyright (c) 1990 Imperial College of Science, Technology & Medicine
  * Copyright (c) 1990 The Regents of the University of California.
@@ -10,6 +8,11 @@
  * Jan-Simon Pendry at Imperial College, London.
  *
  * %sccs.include.redist.c%
+ *
+ *	@(#)amq.c	5.3 (Berkeley) %G%
+ *
+ * $Id: amq.c,v 5.2.1.5 91/05/07 22:18:45 jsp Alpha $
+ *
  */
 
 /*
@@ -25,8 +28,8 @@ char copyright[] = "\
 #endif /* not lint */
 
 #ifndef lint
-static char rcsid[] = "$Id: amq.c,v 5.2.1.3 91/03/17 17:33:42 jsp Alpha $";
-static char sccsid[] = "@(#)amq.c	5.2 (Berkeley) %G%";
+static char rcsid[] = "$Id: amq.c,v 5.2.1.5 91/05/07 22:18:45 jsp Alpha $";
+static char sccsid[] = "@(#)amq.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "am.h"
@@ -359,13 +362,19 @@ Usage: %s [-h host] [[-f] [-m] [-v] [-s]] | [[-u] directory ...]] |\n\
 	/*
 	 * Get address of server
 	 */
-	if ((hp = gethostbyname(server)) == 0) {
+	if ((hp = gethostbyname(server)) == 0 && strcmp(server, localhost) != 0) {
 		fprintf(stderr, "%s: Can't get address of %s\n", progname, server);
 		exit(1);
 	}
 	bzero(&server_addr, sizeof server_addr);
 	server_addr.sin_family = AF_INET;
-	bcopy((voidp) hp->h_addr, (voidp) &server_addr.sin_addr, sizeof(server_addr.sin_addr));
+	if (hp) {
+		bcopy((voidp) hp->h_addr, (voidp) &server_addr.sin_addr,
+			sizeof(server_addr.sin_addr));
+	} else {
+		/* fake "localhost" */
+		server_addr.sin_addr.s_addr = htonl(0x7f000001);
+	}
 
 	/*
 	 * Create RPC endpoint
@@ -485,7 +494,7 @@ Usage: %s [-h host] [[-f] [-m] [-v] [-s]] | [[-u] directory ...]] |\n\
 			printf("%s.\n", *spp);
 			free(*spp);
 		} else {
-			fprintf(stderr, "%s: failed to get version infromation\n", progname);
+			fprintf(stderr, "%s: failed to get version information\n", progname);
 			errs = 1;
 		}
 	}

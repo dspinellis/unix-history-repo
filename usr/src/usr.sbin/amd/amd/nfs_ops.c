@@ -1,6 +1,4 @@
 /*
- * $Id: nfs_ops.c,v 5.2.1.4 91/03/17 17:45:55 jsp Alpha $
- *
  * Copyright (c) 1990 Jan-Simon Pendry
  * Copyright (c) 1990 Imperial College of Science, Technology & Medicine
  * Copyright (c) 1990 The Regents of the University of California.
@@ -11,7 +9,10 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_ops.c	5.2 (Berkeley) %G%
+ *	@(#)nfs_ops.c	5.3 (Berkeley) %G%
+ *
+ * $Id: nfs_ops.c,v 5.2.1.6 91/05/07 22:18:16 jsp Alpha $
+ *
  */
 
 #include "am.h"
@@ -307,6 +308,25 @@ voidp wchan;
 	return error;
 }
 
+int make_nfs_auth P((void))
+{
+#ifdef HAS_NFS_QUALIFIED_NAMES
+	/*
+	 * From: Chris Metcalf <metcalf@masala.lcs.mit.edu>
+	 * Use hostd, not just hostname.  Note that uids
+	 * and gids and the gidlist are type *int* and not the
+	 * system uid_t and gid_t types.
+	 */
+	static int group_wheel = 0;
+	nfs_auth = authunix_create(hostd, 0, 0, 1, &group_wheel);
+#else
+	nfs_auth = authunix_create_default();
+#endif
+	if (!nfs_auth)
+		return ENOBUFS;
+	return 0;
+}
+
 static int call_mountd P((fh_cache *fp, u_long proc, fwd_fun f, voidp wchan));
 static int call_mountd(fp, proc, f, wchan)
 fh_cache *fp;
@@ -320,9 +340,9 @@ voidp wchan;
 	int error;
 
 	if (!nfs_auth) {
-		nfs_auth = authunix_create_default();
-		if (!nfs_auth)
-			return ENOBUFS;
+		error = make_nfs_auth();
+		if (error)
+			return error;
 	}
 
 	if (fp->fh_sin.sin_port == 0) {

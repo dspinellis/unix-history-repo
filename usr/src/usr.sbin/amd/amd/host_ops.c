@@ -1,6 +1,4 @@
 /*
- * $Id: host_ops.c,v 5.2.1.3 91/03/03 20:42:25 jsp Alpha $
- *
  * Copyright (c) 1990 Jan-Simon Pendry
  * Copyright (c) 1990 Imperial College of Science, Technology & Medicine
  * Copyright (c) 1990 The Regents of the University of California.
@@ -11,7 +9,10 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)host_ops.c	5.2 (Berkeley) %G%
+ *	@(#)host_ops.c	5.3 (Berkeley) %G%
+ *
+ * $Id: host_ops.c,v 5.2.1.6 91/05/07 22:17:53 jsp Alpha $
+ *
  */
 
 #include "am.h"
@@ -150,7 +151,7 @@ fhstatus *fhp;
 	/*
 	 * Pick a number, any number...
 	 */
-	tv.tv_sec = 10;
+	tv.tv_sec = 20;
 	tv.tv_usec = 0;
 
 #ifdef DEBUG
@@ -259,11 +260,9 @@ mntfs *mf;
 	}
 
 	if (!nfs_auth) {
-		nfs_auth = authunix_create_default();
-		if (!nfs_auth) {
-			error = ENOBUFS;
+		error = make_nfs_auth();
+		if (error)
 			goto out;
-		}
 	}
 
 	client->cl_auth = nfs_auth;
@@ -475,7 +474,10 @@ mntfs *mf;
 	if (xerror && amd_state != Finishing) {
 		xerror = host_fmount(mf);
 		if (!xerror) {
+			/*
+			 * Don't log this - it's usually too verbose
 			plog(XLOG_INFO, "Remounted host %s", mf->mf_info);
+			 */
 			xerror = EBUSY;
 		}
 	}

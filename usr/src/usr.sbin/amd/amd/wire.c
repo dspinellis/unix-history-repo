@@ -1,6 +1,4 @@
 /*
- * $Id: wire.c,v 5.2.1.1 91/03/17 17:42:58 jsp Alpha $
- *
  * Copyright (c) 1990 Jan-Simon Pendry
  * Copyright (c) 1990 Imperial College of Science, Technology & Medicine
  * Copyright (c) 1990 The Regents of the University of California.
@@ -11,7 +9,10 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)wire.c	5.2 (Berkeley) %G%
+ *	@(#)wire.c	5.3 (Berkeley) %G%
+ *
+ * $Id: wire.c,v 5.2.1.5 91/05/07 22:14:21 jsp Alpha $
+ *
  */
 
 /*
@@ -84,14 +85,14 @@ char *getwire()
 	 */
 #ifdef AF_LINK
 #define max(a, b) ((a) > (b) ? (a) : (b))
-#define size(p) max((p).sa_len, sizeof(p))
+#define size(ifr) (max((ifr)->ifr_addr.sa_len, sizeof((ifr)->ifr_addr)) + sizeof(ifr->ifr_name))
 #else
-#define size(p) sizeof(p)
+#define size(ifr) sizeof(*ifr)
 #endif
 	/*
 	 * Scan the list looking for a suitable interface
 	 */
-	for (cp = buf; cp < cplim; cp += sizeof(ifr->ifr_name) + size(ifr->ifr_addr)) {
+	for (cp = buf; cp < cplim; cp += size(ifr)) {
 		ifr = (struct ifreq *) cp;
 
 		if (ifr->ifr_addr.sa_family != AF_INET)
@@ -128,6 +129,14 @@ char *getwire()
 		 * Figure out the subnet's network address
 		 */
 		subnet = address & netmask;
+#ifdef IN_CLASSA
+		if (IN_CLASSA(subnet))
+			subnet >>= IN_CLASSA_NSHIFT;
+		else if (IN_CLASSB(subnet))
+			subnet >>= IN_CLASSB_NSHIFT;
+		else if (IN_CLASSC(subnet))
+			subnet >>= IN_CLASSC_NSHIFT;
+#endif
 		/*
 		 * Now get a usable name.
 		 * First use the network database,
@@ -138,6 +147,7 @@ char *getwire()
 		if (np)
 			s = np->n_name;
 		else {
+			subnet = address & netmask;
 			hp = gethostbyaddr((char *) &subnet, 4, AF_INET);
 			if (hp)
 				s = hp->h_name;
@@ -161,5 +171,4 @@ char *getwire()
 {
 	return strdup(NO_SUBNET);
 }
- * %sccs.include.redist.c%
 #endif /* SIOCGIFFLAGS */

@@ -1,9 +1,4 @@
-/* $Id: os-irix.h,v 5.2.1.2 91/03/03 20:50:27 jsp Alpha $ */
-
 /*
- * IRIX 3.3 definitions for Amd (automounter)
- * Contributed by Scott R. Presnell <srp@cgl.ucsf.edu>
- *
  * Copyright (c) 1990 Jan-Simon Pendry
  * Copyright (c) 1990 Imperial College of Science, Technology & Medicine
  * Copyright (c) 1990 The Regents of the University of California.
@@ -14,7 +9,12 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)os-irix.h	5.2 (Berkeley) %G%
+ *	@(#)os-irix.h	5.3 (Berkeley) %G%
+ *
+ * $Id: os-irix.h,v 5.2.1.4 91/05/07 22:19:47 jsp Alpha $
+ *
+ * IRIX 3.3 definitions for Amd (automounter)
+ * Contributed by Scott R. Presnell <srp@cgl.ucsf.edu>
  */
 
 /*
@@ -104,5 +104,4 @@
 #define MOUNT_HELPER_SOURCE "mount_irix.c"
 
 #define	MNTINFO_DEV	"fsid"
- * %sccs.include.redist.c%
 #define	MNTINFO_PREF	"0x"

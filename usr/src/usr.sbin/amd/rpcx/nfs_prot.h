@@ -1,4 +1,19 @@
-/* $Id: nfs_prot.h,v 5.2.1.1 90/10/21 22:30:23 jsp Exp $ */
+/*
+ * Copyright (c) 1990 Jan-Simon Pendry
+ * Copyright (c) 1990 Imperial College of Science, Technology & Medicine
+ * Copyright (c) 1990 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * This code is derived from software contributed to Berkeley by
+ * Jan-Simon Pendry at Imperial College, London.
+ *
+ * %sccs.include.redist.c%
+ *
+ *	@(#)nfs_prot.h	5.3 (Berkeley) %G%
+ *
+ * $Id: nfs_prot.h,v 5.2.1.2 91/05/07 22:18:56 jsp Alpha $
+ *
+ */
 
 #define	xdr_nfsstat xdr_enum
 #define	xdr_ftype xdr_enum

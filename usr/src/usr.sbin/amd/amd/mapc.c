@@ -1,6 +1,4 @@
 /*
- * $Id: mapc.c,v 5.2.1.7 91/03/17 17:46:52 jsp Alpha $
- *
  * Copyright (c) 1989 Jan-Simon Pendry
  * Copyright (c) 1989 Imperial College of Science, Technology & Medicine
  * Copyright (c) 1989 The Regents of the University of California.
@@ -11,7 +9,10 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mapc.c	5.2 (Berkeley) %G%
+ *	@(#)mapc.c	5.3 (Berkeley) %G%
+ *
+ * $Id: mapc.c,v 5.2.1.9 91/05/07 22:18:07 jsp Alpha $
+ *
  */
 
 /*

@@ -1,6 +1,4 @@
 /*
- * $Id: get_args.c,v 5.2.1.4 91/03/17 17:48:02 jsp Alpha $
- *
  * Copyright (c) 1990 Jan-Simon Pendry
  * Copyright (c) 1990 Imperial College of Science, Technology & Medicine
  * Copyright (c) 1990 The Regents of the University of California.
@@ -11,7 +9,10 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)get_args.c	5.2 (Berkeley) %G%
+ *	@(#)get_args.c	5.3 (Berkeley) %G%
+ *
+ * $Id: get_args.c,v 5.2.1.5 91/05/07 22:17:52 jsp Alpha $
+ *
  */
 
 /*

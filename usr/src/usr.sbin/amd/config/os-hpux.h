@@ -1,8 +1,4 @@
-/* $Id: os-hpux.h,v 5.2.1.4 91/03/03 20:49:43 jsp Alpha $ */
-
 /*
- * HP/9000 HP-UX definitions for Amd (automounter)
- *
  * Copyright (c) 1989 Jan-Simon Pendry
  * Copyright (c) 1989 Imperial College of Science, Technology & Medicine
  * Copyright (c) 1989 The Regents of the University of California.
@@ -13,7 +9,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)os-hpux.h	5.2 (Berkeley) %G%
+ *	@(#)os-hpux.h	5.3 (Berkeley) %G%
+ *
+ * $Id: os-hpux.h,v 5.2.1.5 91/05/07 22:19:44 jsp Alpha $
+ *
+ * HP/9000 HP-UX definitions for Amd (automounter)
  */
 
 /*

@@ -1,8 +1,4 @@
-/* $Id: os-umax43.h,v 5.2.1.1 90/10/21 22:31:10 jsp Exp $ */
-
 /*
- * UMAX 4.3 definitions for Amd (automounter)
- *
  * Copyright (c) 1989 Jan-Simon Pendry
  * Copyright (c) 1989 Imperial College of Science, Technology & Medicine
  * Copyright (c) 1989 The Regents of the University of California.
@@ -13,7 +9,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)os-umax43.h	5.2 (Berkeley) %G%
+ *	@(#)os-umax43.h	5.3 (Berkeley) %G%
+ *
+ * $Id: os-umax43.h,v 5.2.1.2 91/05/07 22:20:05 jsp Alpha $
+ *
+ * UMAX 4.3 definitions for Amd (automounter)
  */
 
 /*

@@ -1,3 +1,71 @@
+Tue May  7 22:30:00 1991  Jan-Simon Pendry  (jsp at achilles)
+
+	* Checkpoint for Berkeley network tape II.
+
+Sat May  4 22:06:24 1991  Jan-Simon Pendry  (jsp at achilles)
+
+	* New Berkeley Copyright.
+
+	* (mntfs.c) more short-circuiting in realloc_mntfs().
+
+	* (host_ops.c) increase RPC timeout to 20 seconds.
+
+	* (info_hes.c) now supports lookup in other domains.
+
+	* (srvr_nfs.c) call map_flush_srvr whenever a server comes up.
+
+	* (map.c) added hook to flush hung file servers.
+
+	* (wire.c) make loop step more portable.
+
+	* (util.c) fix for compiling on rios.
+
+Sun Apr 21 21:54:52 1991  Jan-Simon Pendry  (jsp at forest)
+
+	* (util.c) ignore EINVAL returned by rmdir().
+
+	* (am_ops.c, afs_ops.c) remove SunOS4 map compat code.
+
+	* (nfsx_ops.c) don't clear MFF_MOUNTING until finished mount attempts.
+
+	* (nfsx_ops.c) don't call sched_task more than once.
+
+	* (afs_ops.c) don't call afs_bgmount if a mount is in progress.
+
+	* (info_file.c) handle case where map ends with \
+
+Fri Apr  5 19:23:50 1991  Jan-Simon Pendry  (jsp at forest)
+
+	* Release 5.3 Alpha 12.
+
+	* (util.c) don't clear MFF_MOUNTING flag if mount is still in progress.
+
+	* (srvr_nfs.c) calls make_nfs_auth() as required.
+
+	* (host_ops.c) calls make_nfs_auth() as required.
+	
+	* (afs_ops.c) allow foreground mounts to return pending.  This is
+	used by nfsx_ops.c.
+
+	* (mapc.c) uses new RE_HDR abstraction coping with systems which
+	already have the re package installed.
+
+	* (nfsx_ops.c) automatically generates a suitable sublink to make
+	things work.  Remounts now work correctly, but are done in the
+	foreground so there is a possibility that things may hang.  This is
+	too hard to do differently.
+
+Wed Apr  3 17:49:05 1991  Jan-Simon Pendry  (jsp at achilles)
+
+	* (nfs_ops.c) HAS_NFS_QUALIFIED_NAME is a new compile time switch
+	which puts a qualified domain name into the RPC authentication
+	instead of using the default value.  Abstracted this out into new
+	routine called make_nfs_auth().
+
+	* (afs_ops.c) fixed bug which caused spurious ENOENTs to appear.
+	this was caused by some code motion which also got slightly
+	altered int the process.  moral: don't make two changes at once.
+
 Sun Mar 17 12:05:27 1991  Jan-Simon Pendry  (jsp at forest)
 
 	* Release 5.3 Alpha 11.

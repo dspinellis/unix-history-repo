@@ -1,6 +1,4 @@
 /*
- * $Id: wr_fstab.c,v 5.2.1.2 90/12/21 16:46:52 jsp Alpha $
- *
  * Copyright (c) 1989 Jan-Simon Pendry
  * Copyright (c) 1989 Imperial College of Science, Technology & Medicine
  * Copyright (c) 1989 The Regents of the University of California.
@@ -11,7 +9,10 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)wr_fstab.c	5.2 (Berkeley) %G%
+ *	@(#)wr_fstab.c	5.3 (Berkeley) %G%
+ *
+ * $Id: wr_fstab.c,v 5.2.1.3 91/05/07 22:19:14 jsp Alpha $
+ *
  */
 
 #include "../fsinfo/fsinfo.h"

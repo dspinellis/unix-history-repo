@@ -1,6 +1,4 @@
 /*
- * $Id: config.h,v 5.2.1.3 91/03/17 17:38:39 jsp Alpha $
- *
  * Copyright (c) 1990 Jan-Simon Pendry
  * Copyright (c) 1990 Imperial College of Science, Technology & Medicine
  * Copyright (c) 1990 The Regents of the University of California.
@@ -11,7 +9,10 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)config.h	5.1 (Berkeley) %G%
+ *	@(#)config.h	5.2 (Berkeley) %G%
+ *
+ * $Id: config.h,v 5.2.1.4 91/05/07 22:19:20 jsp Alpha $
+ *
  */
 
 /*

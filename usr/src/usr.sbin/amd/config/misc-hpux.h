@@ -1,6 +1,4 @@
 /*
- * $Id: misc-hpux.h,v 5.2.1.1 90/10/21 22:30:54 jsp Exp $
- *
  * Copyright (c) 1989 Jan-Simon Pendry
  * Copyright (c) 1989 Imperial College of Science, Technology & Medicine
  * Copyright (c) 1989 The Regents of the University of California.
@@ -11,7 +9,10 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)misc-hpux.h	5.2 (Berkeley) %G%
+ *	@(#)misc-hpux.h	5.3 (Berkeley) %G%
+ *
+ * $Id: misc-hpux.h,v 5.2.1.2 91/05/07 22:19:45 jsp Alpha $
+ *
  */
 
 /*

@@ -9,14 +9,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)os-next.h	5.3 (Berkeley) %G%
- */
-
-/* $Id: os-next.h,v 5.2.1.1 90/10/21 22:31:00 jsp Exp $ */
-
-/*
- * NeXT OS definitions for Amd (automounter)
+ *	@(#)os-next.h	5.4 (Berkeley) %G%
  *
+ * $Id: os-next.h,v 5.2.1.3 91/05/07 22:19:51 jsp Alpha $
+ *
+ * NeXT OS definitions for Amd (automounter)
  * By Bill Trost, Reed College
  * trost%reed@cse.ogi.edu,
  *
@@ -53,5 +50,4 @@
 /*
  * Where to get NFS definitions
  */
- * %sccs.include.redist.c%
 #define NFS_HDR "misc-next.h"

@@ -1,6 +1,4 @@
 /*
- * $Id: clock.c,v 5.2.1.4 91/03/03 20:41:36 jsp Alpha $
- *
  * Copyright (c) 1989 Jan-Simon Pendry
  * Copyright (c) 1989 Imperial College of Science, Technology & Medicine
  * Copyright (c) 1989 The Regents of the University of California.
@@ -11,7 +9,10 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)clock.c	5.2 (Berkeley) %G%
+ *	@(#)clock.c	5.3 (Berkeley) %G%
+ *
+ * $Id: clock.c,v 5.2.1.5 91/05/07 22:17:49 jsp Alpha $
+ *
  */
 
 /*

@@ -1,7 +1,5 @@
 #!/bin/sh -
 #
-# $Id: newvers.sh,v 5.2.1.2 91/03/17 17:41:03 jsp Alpha $
-#
 # Copyright (c) 1989 Jan-Simon Pendry
 # Copyright (c) 1989 Imperial College of Science, Technology & Medicine
 # Copyright (c) 1989 The Regents of the University of California.
@@ -12,7 +10,9 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)newvers.sh	5.3 (Berkeley) %G%
+#	@(#)newvers.sh	5.4 (Berkeley) %G%
+#
+# $Id: newvers.sh,v 5.2.1.4 91/05/07 22:20:29 jsp Alpha $
 #
 PATH=/usr/ucb:/bin:/usr/bin:$PATH
 if [ $# -ne 3 ]; then echo "Usage: newvers program arch os" >&2; exit 1; fi
@@ -23,7 +23,7 @@ u=${USER-${LOGNAME-root}}
 h=`hostname`
 #h=`expr "$h" : '\([^.]*\)'`
 t=`date`
-if [ ! -s "$d../config/RELEASE" -o ! -s "$d../text/COPYRIGHT" ]; then
+if [ ! -s "$d../config/RELEASE"  -o ! -s "$d../text/COPYRIGHT" ]; then
 	echo ERROR: config file missing >&2
 	exit 1
 fi

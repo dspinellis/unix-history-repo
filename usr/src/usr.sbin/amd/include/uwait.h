@@ -1,6 +1,4 @@
 /*
- * $Id: uwait.h,v 5.2.1.1 90/10/21 22:30:35 jsp Exp $
- *
  * Copyright (c) 1989 Jan-Simon Pendry
  * Copyright (c) 1989 Imperial College of Science, Technology & Medicine
  * Copyright (c) 1989 The Regents of the University of California.
@@ -11,7 +9,10 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)uwait.h	5.2 (Berkeley) %G%
+ *	@(#)uwait.h	5.3 (Berkeley) %G%
+ *
+ * $Id: uwait.h,v 5.2.1.2 91/05/07 22:19:23 jsp Alpha $
+ *
  */
 
 #if defined(mc68k) || defined(mc68000) || defined(mc68020) || defined(sparc) || defined(hp9000s300) || defined(hp9000s800)

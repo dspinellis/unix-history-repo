@@ -1,6 +1,4 @@
 /*
- * $Id: am_ops.c,v 5.2.1.3 91/03/03 20:37:39 jsp Alpha $
- *
  * Copyright (c) 1989 Jan-Simon Pendry
  * Copyright (c) 1989 Imperial College of Science, Technology & Medicine
  * Copyright (c) 1989 The Regents of the University of California.
@@ -11,7 +9,10 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)am_ops.c	5.2 (Berkeley) %G%
+ *	@(#)am_ops.c	5.3 (Berkeley) %G%
+ *
+ * $Id: am_ops.c,v 5.2.1.5 91/05/07 22:17:46 jsp Alpha $
+ *
  */
 
 #include "am.h"
@@ -62,6 +63,7 @@ FILE *fp;
 }
 
 #ifdef SUNOS4_COMPAT
+#ifdef nomore
 /*
  * Crack a SunOS4-style host:fs:sub-link line
  * Construct an amd-style line and call the
@@ -86,6 +88,7 @@ char *map;
 		g_key);
 	return ops_match(fo, keybuf, "", path, keym, map);
 }
+#endif
 #endif /* SUNOS4_COMPAT */
 
 am_ops *ops_match(fo, key, g_key, path, keym, map)

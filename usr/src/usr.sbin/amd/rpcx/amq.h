@@ -1,6 +1,4 @@
 /*
- * $Id: amq.h,v 5.2.1.2 91/03/17 17:39:26 jsp Alpha $
- *
  * Copyright (c) 1990 Jan-Simon Pendry
  * Copyright (c) 1990 Imperial College of Science, Technology & Medicine
  * Copyright (c) 1990 The Regents of the University of California.
@@ -11,7 +9,10 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)amq.h	5.2 (Berkeley) %G%
+ *	@(#)amq.h	5.3 (Berkeley) %G%
+ *
+ * $Id: amq.h,v 5.2.1.3 91/05/07 22:18:49 jsp Alpha $
+ *
  */
 
 #define AMQ_STRLEN 1024

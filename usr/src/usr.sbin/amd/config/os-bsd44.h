@@ -1,8 +1,4 @@
-/* $Id: os-bsd44.h,v 5.2.1.2 90/11/04 23:17:39 jsp Exp $ */
-
 /*
- * 4.4 BSD definitions for Amd (automounter)
- *
  * Copyright (c) 1990 Jan-Simon Pendry
  * Copyright (c) 1990 Imperial College of Science, Technology & Medicine
  * Copyright (c) 1990 The Regents of the University of California.
@@ -13,7 +9,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)os-bsd44.h	5.2 (Berkeley) %G%
+ *	@(#)os-bsd44.h	5.3 (Berkeley) %G%
+ *
+ * $Id: os-bsd44.h,v 5.2.1.4 91/05/07 22:19:32 jsp Alpha $
+ *
+ * 4.4 BSD definitions for Amd (automounter)
  */
 
 /*
