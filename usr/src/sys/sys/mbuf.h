@@ -1,4 +1,4 @@
-/*	mbuf.h	6.2	84/08/21	*/
+/*	mbuf.h	6.3	85/03/07	*/
 
 /*
  * Constants related to memory allocator.
@@ -48,6 +48,7 @@ struct mbuf {
 #define	MT_SOOPTS	10	/* socket options */
 #define	MT_FTABLE	11	/* fragment reassembly header */
 #define	MT_RIGHTS	12	/* access rights */
+#define	MT_IFADDR	13	/* interface address */
 
 /* flags to m_get */
 #define	M_DONTWAIT	0
