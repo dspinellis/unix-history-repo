@@ -1,8 +1,20 @@
+/*-
+ * Copyright (c) 1991 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * This code is derived from software contributed to Berkeley by
+ * Arthur David Olson of the National Cancer Institute.
+ *
+ * %sccs.include.redist.c%
+ */
+
 #ifndef lint
-#ifndef NOID
+static char sccsid[] = "@(#)zic.c	5.3 (Berkeley) %G%";
+#endif /* not lint */
+
+#ifdef notdef
 static char	elsieid[] = "@(#)zic.c	4.12";
-#endif /* !defined NOID */
-#endif /* !defined lint */
+#endif
 
 #include <sys/types.h>
 #include <sys/cdefs.h>
