@@ -16,7 +16,7 @@
  */
 
 /*
- * $Id: if_ed.c,v 1.39 1994/05/18 06:32:19 swallace Exp $
+ * $Id: if_ed.c,v 1.40 1994/05/25 20:06:47 ats Exp $
  */
 
 #include "ed.h"
@@ -2183,8 +2183,8 @@ ed_ioctl(ifp, command, data)
 				outb(sc->asic_addr + ED_3COM_CR, ED_3COM_CR_XSEL);
 			}
 		}
-#else
 		break;
+#else
 	case SIOCADDMULTI:
 	case SIOCDELMULTI:
 		/*
