@@ -23,6 +23,8 @@ char	*OE;			/* EOT to send to complete FT */
 char	*CU;			/* call unit if making a phone call */
 char	*AT;			/* acu type */
 char	*PN;			/* phone number(s) */
+char	*DI;			/* disconnect string */
+char	*PA;			/* parity to be generated */
 
 char	*PH;			/* phone number file */
 char	*RM;			/* remote file name */
@@ -33,6 +35,16 @@ int	FS;			/* frame size for transfers */
 
 char	DU;			/* this host is dialed up */
 char	HW;			/* this device is hardwired, see hunt.c */
+char	*ES;			/* escape character */
+char	*EX;			/* exceptions */
+char	*FO;			/* force (literal next) char*/
+char	*RC;			/* raise character */
+char	*RE;			/* script record file */
+char	*PR;			/* remote prompt */
+int	DL;			/* line delay for file transfers to remote */
+int	CL;			/* char delay for file transfers to remote */
+int	ET;			/* echocheck timeout */
+char	HD;			/* this host is half duplex - do local echo */
 
 /*
  * String value table
@@ -91,8 +103,8 @@ typedef
 typedef
 	union {
 		int	zz_number;
-		int	zz_boolean;
-		int	zz_character;
+		short	zz_boolean;
+		char	zz_character;
 		int	*zz_address;
 	}
 	zzhack;
@@ -162,6 +174,15 @@ extern value_t	vtable[];	/* variable table */
 #define SHELL		22
 #define HOME		23
 #define ECHOCHECK	24
+#define DISCONNECT	25
+#define TAND		26
+#define LDELAY		27
+#define CDELAY		28
+#define ETIMEOUT	29
+#define RAWFTP		30
+#define HALFDUPLEX	31
+#define	LECHO		32
+#define	PARITY		33
 #else
 #define PHONES		11
 #define PROMPT		12
@@ -175,6 +196,15 @@ extern value_t	vtable[];	/* variable table */
 #define SHELL		20
 #define HOME		21
 #define ECHOCHECK	22
+#define DISCONNECT	23
+#define TAND		24
+#define LDELAY		25
+#define CDELAY		26
+#define ETIMEOUT	27
+#define RAWFTP		28
+#define HALFDUPLEX	29
+#define	LECHO		30
+#define	PARITY		31
 #endif
 
 #define NOVAL	((value_t *)NULL)
@@ -195,6 +225,7 @@ FILE	*fscript;		/* FILE for scripting */
 int	fildes[2];		/* file transfer synchronization channel */
 int	repdes[2];		/* read process sychronization channel */
 int	FD;			/* open file descriptor to remote host */
+int	AC;			/* open file descriptor to dialer (v831 only) */
 int	vflag;			/* print .tiprc initialization sequence */
 int	sfd;			/* for ~< operation */
 int	pid;			/* pid of tipout */
