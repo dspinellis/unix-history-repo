@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mount_lofs.c	8.2 (Berkeley) %G%
+ *	@(#)mount_lofs.c	8.3 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -21,7 +21,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-static int subdir __P((char *, char *));
+static int subdir __P((const char *, const char *));
 void usage __P((void));
 
 int
@@ -55,9 +55,9 @@ main(argc, argv)
 		exit(1);
 	}
 
-	if (subdir(target, argv[1])) {
+	if (subdir(target, argv[1]) || subdir(argv[1], target)) {
 		(void)fprintf(stderr,
-			"mount_lofs: %s (%s) is a sub directory of %s\n",
+			"mount_lofs: %s (%s) and %s are not distinct paths\n",
 				argv[0], target, argv[1]);
 		exit(1);
 	}
@@ -73,8 +73,8 @@ main(argc, argv)
 
 static int
 subdir(p, dir)
-	char *p;
-	char *dir;
+	const char *p;
+	const char *dir;
 {
 	int l;
 
@@ -82,7 +82,7 @@ subdir(p, dir)
 	if (l <= 1)
 		return (1);
 
-	if ((strncmp(p, dir, l) == 0) && (p[l] == '/'))
+	if ((strncmp(p, dir, l) == 0) && (p[l] == '/' || p[l] == '\0'))
 		return (1);
 
 	return (0);
