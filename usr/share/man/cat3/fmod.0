@@ -1,0 +1,27 @@
+FMOD(3)                     BSD Programmer's Manual                    FMOD(3)
+
+NNAAMMEE
+     ffmmoodd - floating-point remainder function
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<mmaatthh..hh>>
+
+     _d_o_u_b_l_e
+     ffmmoodd(_d_o_u_b_l_e _x, _d_o_u_b_l_e _y);
+
+DDEESSCCRRIIPPTTIIOONN
+     The ffmmoodd() function computes the floating-point remainder of _x/ _y.
+
+RREETTUURRNN VVAALLUUEESS
+     The ffmmoodd() function returns the value _x_-_i_*_y, for some integer _i such
+     that, if _y is non-zero, the result has the same sign as _x and magnitude
+     less than the magnitude of _y. If _y is zero, whether a domain error occurs
+     or the ffmmoodd() function returns zero is implementation-defined.
+
+SSEEEE AALLSSOO
+     math(3)
+
+SSTTAANNDDAARRDDSS
+     The ffmmoodd() function conforms to ANSI C X3.159-1989 (``ANSI C '').
+
+4.4BSD                           June 4, 1993                                1

@@ -1,0 +1,25 @@
+FABS(3)                     BSD Programmer's Manual                    FABS(3)
+
+NNAAMMEE
+     ffaabbss - floating-point absolute value function
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<mmaatthh..hh>>
+
+     _d_o_u_b_l_e
+     ffaabbss(_d_o_u_b_l_e _x);
+
+DDEESSCCRRIIPPTTIIOONN
+     The ffaabbss() function computes the absolute value of a floating-point num-
+     ber _x.
+
+RREETTUURRNN VVAALLUUEESS
+     The ffaabbss() function returns the absolute value of _x.
+
+SSEEEE AALLSSOO
+     abs(3),  ceil(3),  floor(3),  rint(3),  ieee(3),  math.3
+
+SSTTAANNDDAARRDDSS
+     The ffaabbss() function conforms to ANSI C X3.159-1989 (``ANSI C '').
+
+4.4BSD                           June 4, 1993                                1

@@ -1,0 +1,32 @@
+ERF(3)                      BSD Programmer's Manual                     ERF(3)
+
+NNAAMMEE
+     eerrff, eerrffcc - error function operators
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<mmaatthh..hh>>
+
+     _d_o_u_b_l_e
+     eerrff(_d_o_u_b_l_e _x);
+
+     _d_o_u_b_l_e
+     eerrffcc(_d_o_u_b_l_e _x);
+
+DDEESSCCRRIIPPTTIIOONN
+     These functions calculate the error function of _x.
+
+     The eerrff() calculates the error function of x; where
+
+           erf(x) = 2/sqrt(pi)*integral from 0 to x of exp(-t*t) dt.
+
+     The eerrffcc() function calculates the complementary error function of _x;
+     that is eerrffcc() subtracts the result of the error function eerrff(_x) from
+     1.0.  This is useful, since for large _x places disappear.
+
+SSEEEE AALLSSOO
+     math(3)
+
+HHIISSTTOORRYY
+     The eerrff() and eerrffcc() functions appeared in 4.3BSD.
+
+4.3 Berkeley Distribution        June 4, 1993                                1
