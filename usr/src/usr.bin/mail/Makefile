@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.2 (Berkeley) %G%
+#	@(#)Makefile	5.3 (Berkeley) %G%
 #
 # Berkeley Mail
 #
@@ -64,16 +64,24 @@ tags:	$(SRCS)
 
 clean:
 	$(RM) -f *.o
-	rm -f Mail a.out fmt x.c xs.c tags core
+	rm -f Mail a.out fmt x.c xs.c tags core xhead.c
 	cp /dev/null strings
 
 lint:
 	lint $(CFLAGS) $(SRCS)
 
-fmt:	fmt.c head.c
-	$(CC) fmt.c head.c -o fmt
-	$(RM) fmt.o head.o
+fmt:	fmt.o xhead.o
+	$(CC) $(CFLAGS) fmt.o xhead.o -o fmt
 	size fmt
+
+fmt.o:	fmt.c
+	$(CC) $(CFLAGS) -c fmt.c
+
+xhead.c:
+	ln -s head.c xhead.c
+
+xhead.o: xhead.c
+	$(CC) $(CFLAGS) -c xhead.c
 
 str.o: strings
 	$(XSTR)
