@@ -4,21 +4,21 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_prot.c	7.28 (Berkeley) %G%
+ *	@(#)kern_prot.c	7.29 (Berkeley) %G%
  */
 
 /*
  * System calls related to processes and protection
  */
 
-#include "param.h"
-#include "acct.h"
-#include "systm.h"
-#include "ucred.h"
-#include "proc.h"
-#include "timeb.h"
-#include "times.h"
-#include "malloc.h"
+#include <sys/param.h>
+#include <sys/acct.h>
+#include <sys/systm.h>
+#include <sys/ucred.h>
+#include <sys/proc.h>
+#include <sys/timeb.h>
+#include <sys/times.h>
+#include <sys/malloc.h>
 
 struct args {
 	int	dummy;
