@@ -1,15 +1,15 @@
-/* tcp_usrreq.c 1.4 81/10/21 */
+/* tcp_usrreq.c 1.5 81/10/21 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
 #include "../bbnnet/net.h"
+#include "../bbnnet/mbuf.h"
 #include "../bbnnet/tcp.h"
 #include "../bbnnet/ip.h"
 #include "../bbnnet/imp.h"
 #include "../bbnnet/ucb.h"
 #define TCPFSTAB
 #include "../bbnnet/fsm.h"
-#include "../bbnnet/tcp_pred.h"
 
 /*
  * This file contains the top level routines for actions
@@ -283,7 +283,7 @@ sss_snd(wp)
 	register struct mbuf *m, *n;
 	register struct ucb *up;
 	register off;
-	sequence last;
+	seq_t last;
 
 	tp = wp->w_tcb;
 	up = tp->t_ucb;

@@ -1,6 +1,8 @@
-/* ip_input.c 1.4 81/10/18 */
+/* ip_input.c 1.5 81/10/21 */
+
 #include "../h/param.h"
 #include "../bbnnet/net.h"
+#include "../bbnnet/mbuf.h"
 #include "../bbnnet/tcp.h"
 #include "../bbnnet/ip.h"
 #include "../bbnnet/ucb.h"
