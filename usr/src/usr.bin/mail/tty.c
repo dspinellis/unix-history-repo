@@ -11,7 +11,7 @@
  */
 
 #ifdef notdef
-static char sccsid[] = "@(#)tty.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)tty.c	5.6 (Berkeley) %G%";
 #endif /* notdef */
 
 /*
@@ -65,12 +65,11 @@ grabh(hp, gflags)
 #endif
 	if (gflags & GTO) {
 #ifndef TIOCSTI
-		if (!ttyset && hp->h_to != NOSTR)
+		if (!ttyset && hp->h_to != NIL)
 			ttyset++, stty(fileno(stdin), &ttybuf);
 #endif
-		hp->h_to = readtty("To: ", hp->h_to);
-		if (hp->h_to != NOSTR)
-			hp->h_seq++;
+		hp->h_to =
+			extract(readtty("To: ", detract(hp->h_to, 0)), GTO);
 	}
 	if (gflags & GSUBJECT) {
 #ifndef TIOCSTI
@@ -78,26 +77,22 @@ grabh(hp, gflags)
 			ttyset++, stty(fileno(stdin), &ttybuf);
 #endif
 		hp->h_subject = readtty("Subject: ", hp->h_subject);
-		if (hp->h_subject != NOSTR)
-			hp->h_seq++;
 	}
 	if (gflags & GCC) {
 #ifndef TIOCSTI
-		if (!ttyset && hp->h_cc != NOSTR)
+		if (!ttyset && hp->h_cc != NIL)
 			ttyset++, stty(fileno(stdin), &ttybuf);
 #endif
-		hp->h_cc = readtty("Cc: ", hp->h_cc);
-		if (hp->h_cc != NOSTR)
-			hp->h_seq++;
+		hp->h_cc =
+			extract(readtty("Cc: ", detract(hp->h_cc, 0)), GCC);
 	}
 	if (gflags & GBCC) {
 #ifndef TIOCSTI
-		if (!ttyset && hp->h_bcc != NOSTR)
+		if (!ttyset && hp->h_bcc != NIL)
 			ttyset++, stty(fileno(stdin), &ttybuf);
 #endif
-		hp->h_bcc = readtty("Bcc: ", hp->h_bcc);
-		if (hp->h_bcc != NOSTR)
-			hp->h_seq++;
+		hp->h_bcc =
+			extract(readtty("Bcc: ", detract(hp->h_bcc, 0)), GBCC);
 	}
 	signal(SIGCONT, savecont);
 #ifndef TIOCSTI

@@ -11,7 +11,7 @@
  */
 
 #ifdef notdef
-static char sccsid[] = "@(#)cmd3.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmd3.c	5.11 (Berkeley) %G%";
 #endif /* notdef */
 
 #include "rcv.h"
@@ -211,13 +211,12 @@ respond(msgvec)
  * Reply to a list of messages.  Extract each name from the
  * message header and send them off to mail1()
  */
-
 _respond(msgvec)
 	int *msgvec;
 {
 	struct message *mp;
 	char *cp, *rcv, *replyto;
-	char buf[2 * LINESIZE], **ap;
+	char **ap;
 	struct name *np;
 	struct header head;
 
@@ -227,23 +226,15 @@ _respond(msgvec)
 	}
 	mp = &message[msgvec[0] - 1];
 	dot = mp;
-	rcv = NOSTR;
-	cp = skin(nameof(mp, 1));
-	if (cp != NOSTR)
-	    rcv = cp;
-	cp = skin(hfield("from", mp));
-	if (cp != NOSTR)
-	    rcv = cp;
-	replyto = skin(hfield("reply-to", mp));
-	strcpy(buf, "");
-	if (replyto != NOSTR)
-		strcpy(buf, replyto);
-	else {
-		cp = skin(hfield("to", mp));
-		if (cp != NOSTR)
-			strcpy(buf, cp);
-	}
-	np = elide(extract(buf, GTO));
+	if ((rcv = skin(hfield("from", mp))) == NOSTR)
+		rcv = skin(nameof(mp, 1));
+	if ((replyto = skin(hfield("reply-to", mp))) != NOSTR)
+		np = extract(replyto, GTO);
+	else if ((cp = skin(hfield("to", mp))) != NOSTR)
+		np = extract(cp, GTO);
+	else
+		np = NIL;
+	np = elide(np);
 	/*
 	 * Delete my name from the reply list,
 	 * and with it, all my alternate names.
@@ -252,41 +243,29 @@ _respond(msgvec)
 	if (altnames)
 		for (ap = altnames; *ap; ap++)
 			np = delname(np, *ap, icequal);
-	head.h_seq = 1;
-	cp = detract(np, 0);
-	if (cp != NOSTR && replyto == NOSTR) {
-		strcpy(buf, cp);
-		strcat(buf, " ");
-		strcat(buf, rcv);
-	}
-	else {
-		if (cp == NOSTR && replyto != NOSTR)
+	if (np != NIL && replyto == NOSTR)
+		np = cat(np, extract(rcv, GTO));
+	else if (np == NIL) {
+		if (replyto != NOSTR)
 			printf("Empty reply-to field -- replying to author\n");
-		if (cp == NOSTR)
-			strcpy(buf, rcv);
-		else
-			strcpy(buf, cp);
+		np = extract(rcv, GTO);
 	}
-	head.h_to = buf;
-	head.h_subject = hfield("subject", mp);
-	if (head.h_subject == NOSTR)
+	head.h_to = np;
+	if ((head.h_subject = hfield("subject", mp)) == NOSTR)
 		head.h_subject = hfield("subj", mp);
 	head.h_subject = reedit(head.h_subject);
-	head.h_cc = NOSTR;
-	if (replyto == NOSTR) {
-		cp = skin(hfield("cc", mp));
-		if (cp != NOSTR) {
-			np = elide(extract(cp, GCC));
-			np = delname(np, myname, icequal);
-			if (altnames != 0)
-				for (ap = altnames; *ap; ap++)
-					np = delname(np, *ap, icequal);
-			head.h_cc = detract(np, 0);
-		}
-	}
-	head.h_bcc = NOSTR;
-	head.h_smopts = NOSTR;
-	mail1(&head);
+	if (replyto == NOSTR && (cp = skin(hfield("cc", mp))) != NOSTR) {
+		np = elide(extract(cp, GCC));
+		np = delname(np, myname, icequal);
+		if (altnames != 0)
+			for (ap = altnames; *ap; ap++)
+				np = delname(np, *ap, icequal);
+		head.h_cc = np;
+	} else
+		head.h_cc = NIL;
+	head.h_bcc = NIL;
+	head.h_smopts = NIL;
+	mail1(&head, 1);
 	return(0);
 }
 
@@ -294,23 +273,22 @@ _respond(msgvec)
  * Modify the subject we are replying to to begin with Re: if
  * it does not already.
  */
-
 char *
 reedit(subj)
-	char *subj;
+	register char *subj;
 {
-	char sbuf[10];
-	register char *newsubj;
+	char *newsubj;
 
 	if (subj == NOSTR)
-		return(NOSTR);
-	strncpy(sbuf, subj, 3);
-	sbuf[3] = 0;
-	if (icequal(sbuf, "re:"))
-		return(subj);
-	newsubj = salloc(strlen(subj) + 6);
-	sprintf(newsubj, "Re: %s", subj);
-	return(newsubj);
+		return NOSTR;
+	if ((subj[0] == 'r' || subj[0] == 'R') &&
+	    (subj[1] == 'e' || subj[1] == 'E') &&
+	    subj[2] == ':')
+		return subj;
+	newsubj = salloc(strlen(subj) + 5);
+	strcpy(newsubj, "Re: ");
+	strcpy(subj, newsubj + 4);
+	return newsubj;
 }
 
 /*
@@ -595,7 +573,6 @@ file(argv)
 /*
  * Expand file names like echo
  */
-
 echo(argv)
 	char **argv;
 {
@@ -611,8 +588,7 @@ echo(argv)
 		}
 	}
 	putchar('\n');
-
-	return(0);
+	return 0;
 }
 
 Respond(msgvec)
@@ -629,48 +605,33 @@ Respond(msgvec)
  * and not messing around with the To: and Cc: lists as in normal
  * reply.
  */
-
 _Respond(msgvec)
 	int msgvec[];
 {
 	struct header head;
 	struct message *mp;
-	register int s, *ap;
-	register char *cp, *cp2, *subject;
+	register int *ap;
+	register char *cp;
 
-	for (s = 0, ap = msgvec; *ap != 0; ap++) {
-		mp = &message[*ap - 1];
-		dot = mp;
-		if ((cp = skin(hfield("from", mp))) != NOSTR)
-		    s+= strlen(cp) + 1;
-		else
-		    s += strlen(skin(nameof(mp, 2))) + 1;
-	}
-	if (s == 0)
-		return(0);
-	cp = salloc(s + 2);
-	head.h_to = cp;
+	head.h_to = NIL;
 	for (ap = msgvec; *ap != 0; ap++) {
 		mp = &message[*ap - 1];
-		if ((cp2 = skin(hfield("from", mp))) == NOSTR)
-		    cp2 = skin(nameof(mp, 2));
-		cp = copy(cp2, cp);
-		*cp++ = ' ';
+		dot = mp;
+		if ((cp = skin(hfield("from", mp))) == NOSTR)
+			cp = skin(nameof(mp, 2));
+		head.h_to = cat(head.h_to, extract(cp, GTO));
 	}
-	*--cp = 0;
+	if (head.h_to == NIL)
+		return 0;
 	mp = &message[msgvec[0] - 1];
-	subject = hfield("subject", mp);
-	head.h_seq = 0;
-	if (subject == NOSTR)
-		subject = hfield("subj", mp);
-	head.h_subject = reedit(subject);
-	if (subject != NOSTR)
-		head.h_seq++;
-	head.h_cc = NOSTR;
-	head.h_bcc = NOSTR;
-	head.h_smopts = NOSTR;
-	mail1(&head);
-	return(0);
+	if ((head.h_subject = hfield("subject", mp)) == NOSTR)
+		head.h_subject = hfield("subj", mp);
+	head.h_subject = reedit(head.h_subject);
+	head.h_cc = NIL;
+	head.h_bcc = NIL;
+	head.h_smopts = NIL;
+	mail1(&head, 1);
+	return 0;
 }
 
 /*

@@ -11,7 +11,7 @@
  */
 
 #ifdef notdef
-static char sccsid[] = "@(#)send.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)send.c	5.11 (Berkeley) %G%";
 #endif /* notdef */
 
 #include "rcv.h"
@@ -183,18 +183,18 @@ statusput(mp, obuf)
  * which does all the dirty work.
  */
 
-mail(to, cc, bcc, smopts)
+mail(to, cc, bcc, smopts, subject)
 	struct name *to, *cc, *bcc, *smopts;
+	char *subject;
 {
 	struct header head;
 
-	head.h_to = detract(to, 0);
-	head.h_subject = NOSTR;
-	head.h_cc = detract(cc, 0);
-	head.h_bcc = detract(bcc, 0);
-	head.h_smopts = detract(smopts, 0);
-	head.h_seq = 0;
-	(void) mail1(&head);
+	head.h_to = to;
+	head.h_subject = subject;
+	head.h_cc = cc;
+	head.h_bcc = bcc;
+	head.h_smopts = smopts;
+	(void) mail1(&head, 0);
 	return(0);
 }
 
@@ -209,16 +209,12 @@ sendmail(str)
 {
 	struct header head;
 
-	if (blankline(str))
-		head.h_to = NOSTR;
-	else
-		head.h_to = str;
+	head.h_to = extract(str, GTO);
 	head.h_subject = NOSTR;
-	head.h_cc = NOSTR;
-	head.h_bcc = NOSTR;
-	head.h_smopts = NOSTR;
-	head.h_seq = 0;
-	(void) mail1(&head);
+	head.h_cc = NIL;
+	head.h_bcc = NIL;
+	head.h_smopts = NIL;
+	(void) mail1(&head, 0);
 	return(0);
 }
 
@@ -227,7 +223,7 @@ sendmail(str)
  * in the passed header.  (Internal interface).
  */
 
-mail1(hp)
+mail1(hp, printheaders)
 	struct header *hp;
 {
 	register char *cp;
@@ -245,11 +241,8 @@ mail1(hp)
 	 */
 
 	pid = -1;
-	if (hp->h_subject == NOSTR)
-		hp->h_subject = sflag;
-	if ((mtf = collect(hp)) == NULL)
+	if ((mtf = collect(hp, printheaders)) == NULL)
 		return(-1);
-	hp->h_seq = 1;
 	if (value("interactive") != NOSTR)
 		if (value("askcc") != NOSTR)
 			grabh(hp, GCC);
@@ -257,26 +250,21 @@ mail1(hp)
 			printf("EOT\n");
 			(void) fflush(stdout);
 		}
-
 	/*
 	 * Now, take the user names from the combined
 	 * to and cc lists and do all the alias
 	 * processing.
 	 */
-
 	senderr = 0;
-	to = usermap(cat(extract(hp->h_bcc, GBCC),
-		cat(extract(hp->h_to, GTO), extract(hp->h_cc, GCC))));
+	to = usermap(cat(hp->h_bcc, cat(hp->h_to, hp->h_cc)));
 	if (to == NIL) {
 		printf("No recipients specified\n");
 		goto topdog;
 	}
-
 	/*
 	 * Look through the recipient list for names with /'s
 	 * in them which we write to as files directly.
 	 */
-
 	to = outof(to, mtf, hp);
 	rewind(mtf);
 	if (senderr) {
@@ -295,23 +283,22 @@ topdog:
 	if (!gotcha)
 		goto out;
 	to = elide(to);
-	if (count(to) > 1)
-		hp->h_seq++;
-	if (hp->h_seq > 0) {
-		fixhead(hp, to);
-		if (fsize(mtf) == 0)
-		    if (hp->h_subject == NOSTR)
+	if (fsize(mtf) == 0)
+		if (hp->h_subject == NOSTR)
 			printf("No message, no subject; hope that's ok\n");
-		    else
+		else
 			printf("Null message body; hope that's ok\n");
+	if (count(to) > 0 || hp->h_subject != NOSTR) {
+		/* don't do this unless we have to */
+		fixhead(hp, to);
 		if ((mtf = infix(hp, mtf)) == NULL) {
 			fprintf(stderr, ". . . message lost, sorry.\n");
 			return(-1);
 		}
 	}
-	namelist = unpack(cat(extract(hp->h_smopts, 0), to));
+	namelist = unpack(cat(hp->h_smopts, to));
 	if (debug) {
-		printf("Recipients of message:\n");
+		printf("Sendmail arguments:");
 		for (t = namelist; *t != NOSTR; t++)
 			printf(" \"%s\"", *t);
 		printf("\n");
@@ -320,7 +307,6 @@ topdog:
 	}
 	if ((cp = value("record")) != NOSTR)
 		(void) savemail(expand(cp), mtf);
-
 	/*
 	 * Wait, to absorb a potential zombie, then
 	 * fork, set up the temporary mail file as standard
@@ -328,7 +314,6 @@ topdog:
 	 * far above. Return the process id to caller in case he
 	 * wants to await the completion of mail.
 	 */
-
 	while (wait3(&s, WNOHANG, (struct timeval *) 0) > 0)
 		;
 	rewind(mtf);
@@ -364,7 +349,6 @@ topdog:
 		perror(deliver);
 		exit(1);
 	}
-
 out:
 	if (value("verbose") != NOSTR) {
 		while ((p = wait(&s)) != pid && p != -1)
@@ -374,34 +358,32 @@ out:
 		pid = 0;
 	}
 	(void) fclose(mtf);
-	return(pid);
+	return pid;
 }
 
 /*
  * Fix the header by glopping all of the expanded names from
  * the distribution list into the appropriate fields.
- * If there are any ARPA net recipients in the message,
- * we must insert commas, alas.
  */
-
 fixhead(hp, tolist)
 	struct header *hp;
 	struct name *tolist;
 {
-	register int f;
 	register struct name *np;
 
-	for (f = 0, np = tolist; np != NIL; np = np->n_flink)
-		if (any('@', np->n_name)) {
-			f |= GCOMMA;
-			break;
-		}
-
-	if (debug && f & GCOMMA)
-		fprintf(stderr, "Should be inserting commas in recip lists\n");
-	hp->h_to = detract(tolist, GTO|f);
-	hp->h_cc = detract(tolist, GCC|f);
-	hp->h_bcc = detract(tolist, GBCC|f);
+	hp->h_to = NIL;
+	hp->h_cc = NIL;
+	hp->h_bcc = NIL;
+	for (np = tolist; np != NIL; np = np->n_flink)
+		if ((np->n_type & GMASK) == GTO)
+			hp->h_to =
+				cat(hp->h_to, nalloc(np->n_name, np->n_type));
+		else if ((np->n_type & GMASK) == GCC)
+			hp->h_cc =
+				cat(hp->h_cc, nalloc(np->n_name, np->n_type));
+		else if ((np->n_type & GMASK) == GBCC)
+			hp->h_bcc =
+				cat(hp->h_bcc, nalloc(np->n_name, np->n_type));
 }
 
 /*
@@ -429,7 +411,7 @@ infix(hp, fi)
 		return(fi);
 	}
 	(void) remove(tempMail);
-	(void) puthead(hp, nfo, GTO|GSUBJECT|GCC|GBCC|GNL);
+	(void) puthead(hp, nfo, GTO|GSUBJECT|GCC|GBCC|GNL|GCOMMA);
 	c = getc(fi);
 	while (c != EOF) {
 		(void) putc(c, nfo);
@@ -456,7 +438,6 @@ infix(hp, fi)
  * Dump the to, subject, cc header on the
  * passed file buffer.
  */
-
 puthead(hp, fo, w)
 	struct header *hp;
 	FILE *fo;
@@ -464,14 +445,14 @@ puthead(hp, fo, w)
 	register int gotcha;
 
 	gotcha = 0;
-	if (hp->h_to != NOSTR && w & GTO)
-		fmt("To: ", hp->h_to, fo), gotcha++;
+	if (hp->h_to != NIL && w & GTO)
+		fmt("To: ", hp->h_to, fo, w&GCOMMA), gotcha++;
 	if (hp->h_subject != NOSTR && w & GSUBJECT)
 		fprintf(fo, "Subject: %s\n", hp->h_subject), gotcha++;
-	if (hp->h_cc != NOSTR && w & GCC)
-		fmt("Cc: ", hp->h_cc, fo), gotcha++;
-	if (hp->h_bcc != NOSTR && w & GBCC)
-		fmt("Bcc: ", hp->h_bcc, fo), gotcha++;
+	if (hp->h_cc != NIL && w & GCC)
+		fmt("Cc: ", hp->h_cc, fo, w&GCOMMA), gotcha++;
+	if (hp->h_bcc != NIL && w & GBCC)
+		fmt("Bcc: ", hp->h_bcc, fo, w&GCOMMA), gotcha++;
 	if (gotcha && w & GNL)
 		(void) putc('\n', fo);
 	return(0);
@@ -480,45 +461,40 @@ puthead(hp, fo, w)
 /*
  * Format the given text to not exceed 72 characters.
  */
-
-fmt(str, txt, fo)
-	register char *str, *txt;
-	register FILE *fo;
+fmt(str, np, fo, comma)
+	char *str;
+	register struct name *np;
+	FILE *fo;
+	int comma;
 {
-	register int col;
-	register char *bg, *bl, *pt, ch;
+	register col, len;
 
+	comma = comma ? 1 : 0;
 	col = strlen(str);
 	if (col)
-		fprintf(fo, "%s", str);
-	pt = bg = txt;
-	bl = 0;
-	while (*bg) {
-		pt++;
-		if (++col > 72) {
-			if (!bl) {
-				bl = bg;
-				while (*bl && !isspace(*bl))
-					bl++;
-			}
-			if (!*bl)
-				goto finish;
-			ch = *bl;
-			*bl = '\0';
-			fprintf(fo, "%s\n    ", bg);
+		fputs(str, fo);
+	len = strlen(np->n_name);
+	for (;;) {
+		fputs(np->n_name, fo);
+		col += len;
+		if (comma) {
+			putc(',', fo);
+			col++;
+		}
+		if ((np = np->n_flink) == NIL)
+			break;
+		if (np->n_flink == NIL)
+			comma = 0;
+		len = strlen(np->n_name);
+		if (col + len + comma > 72) {
+			fputs("\n    ", fo);
 			col = 4;
-			*bl = ch;
-			pt = bg = ++bl;
-			bl = 0;
+		} else {
+			putc(' ', fo);
+			col++;
 		}
-		if (!*pt) {
-finish:
-			fprintf(fo, "%s\n", bg);
-			return;
-		}
-		if (isspace(*pt))
-			bl = pt;
 	}
+	putc('\n', fo);
 }
 
 /*

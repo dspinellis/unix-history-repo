@@ -11,7 +11,7 @@
  */
 
 #ifdef notdef
-static char sccsid[] = "@(#)collect.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)collect.c	5.9 (Berkeley) %G%";
 #endif /* notdef */
 
 /*
@@ -45,7 +45,7 @@ static	int	hadintr;		/* Have seen one SIGINT so far */
 static	jmp_buf	coljmp;			/* To get back to work */
 
 FILE *
-collect(hp)
+collect(hp, printheaders)
 	struct header *hp;
 {
 	FILE *fp, *fbuf;
@@ -95,7 +95,7 @@ collect(hp)
 	if (hp->h_subject == NOSTR && value("interactive") != NOSTR &&
 	    value("ask"))
 		t &= ~GNL, getsub++;
-	if (hp->h_seq != 0) {
+	if (printheaders) {
 		puthead(hp, stdout, t);
 		fflush(stdout);
 	}
@@ -209,8 +209,7 @@ cont:
 			/*
 			 * Add to the To list.
 			 */
-			hp->h_to = addto(hp->h_to, &linebuf[2]);
-			hp->h_seq++;
+			hp->h_to = cat(hp->h_to, extract(&linebuf[2], GTO));
 			break;
 		case 's':
 			/*
@@ -220,21 +219,18 @@ cont:
 			while (isspace(*cp))
 				cp++;
 			hp->h_subject = savestr(cp);
-			hp->h_seq++;
 			break;
 		case 'c':
 			/*
 			 * Add to the CC list.
 			 */
-			hp->h_cc = addto(hp->h_cc, &linebuf[2]);
-			hp->h_seq++;
+			hp->h_cc = cat(hp->h_cc, extract(&linebuf[2], GCC));
 			break;
 		case 'b':
 			/*
 			 * Add stuff to blind carbon copies list.
 			 */
-			hp->h_bcc = addto(hp->h_bcc, &linebuf[2]);
-			hp->h_seq++;
+			hp->h_bcc = cat(hp->h_bcc, extract(&linebuf[2], GBCC));
 			break;
 		case 'd':
 			strcpy(linebuf + 2, deadletter);
@@ -631,7 +627,6 @@ forward(ms, fp, f)
  * line.  Return a count of the characters sent, or -1
  * on error.
  */
-
 long
 transmit(mailp, fp)
 	struct message *mailp;
@@ -687,7 +682,6 @@ collcont(s)
  * signal routine.  We only come here if signals
  * were previously set anyway.
  */
-
 collrub(s)
 {
 	register FILE *dbuf;
@@ -706,7 +700,6 @@ collrub(s)
 	while ((c = getc(collf)) != EOF)
 		putc(c, dbuf);
 	fclose(dbuf);
-
 done:
 	fclose(collf);
 	signal(SIGINT, saveint);
@@ -724,7 +717,6 @@ done:
 /*
  * Acknowledge an interrupt signal from the tty by typing an @
  */
-
 /*ARGSUSED*/
 intack(s)
 {
@@ -732,32 +724,4 @@ intack(s)
 	puts("@");
 	fflush(stdout);
 	clearerr(stdin);
-}
-
-/*
- * Add a string to the end of a header entry field.
- */
-
-char *
-addto(hf, news)
-	char hf[], news[];
-{
-	register char *cp, *cp2, *linebuf;
-
-	if (hf == NOSTR)
-		hf = "";
-	if (*news == '\0')
-		return(hf);
-	linebuf = salloc(strlen(hf) + strlen(news) + 2);
-	for (cp = hf; any(*cp, " \t"); cp++)
-		;
-	for (cp2 = linebuf; *cp;)
-		*cp2++ = *cp++;
-	*cp2++ = ' ';
-	for (cp = news; any(*cp, " \t"); cp++)
-		;
-	while (*cp != '\0')
-		*cp2++ = *cp++;
-	*cp2 = '\0';
-	return(linebuf);
 }

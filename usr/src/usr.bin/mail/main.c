@@ -17,7 +17,7 @@ char copyright[] =
 #endif /* notdef */
 
 #ifdef notdef
-static char sccsid[] = "@(#)main.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.15 (Berkeley) %G%";
 #endif /* notdef */
 
 #include "rcv.h"
@@ -34,10 +34,11 @@ jmp_buf	hdrjmp;
 main(argc, argv)
 	char **argv;
 {
-	register char *ef;
 	register int i;
 	struct name *to, *cc, *bcc, *smopts;
-	int mustsend, hdrstop(), (*prevint)();
+	char *subject;
+	char *ef;
+	int hdrstop(), (*prevint)();
 	extern int getopt(), optind, opterr;
 	extern char *optarg;
 
@@ -58,11 +59,11 @@ main(argc, argv)
 	 * first of these users.
 	 */
 	ef = NOSTR;
-	to = NULL;
-	cc = NULL;
-	bcc = NULL;
-	smopts = NULL;
-	mustsend = 0;
+	to = NIL;
+	cc = NIL;
+	bcc = NIL;
+	smopts = NIL;
+	subject = NOSTR;
 	while ((i = getopt(argc, argv, "INT:b:c:dfins:u:v")) != EOF) {
 		switch (i) {
 		case 'T':
@@ -98,8 +99,7 @@ main(argc, argv)
 			 * Give a subject field for sending from
 			 * non terminal
 			 */
-			mustsend++;
-			sflag = optarg;
+			subject = optarg;
 			break;
 		case 'f':
 			/*
@@ -144,15 +144,13 @@ main(argc, argv)
 			/*
 			 * Get Carbon Copy Recipient list
 			 */
-			cc = cat(cc, nalloc(optarg));
-			mustsend++;
+			cc = cat(cc, nalloc(optarg, GCC));
 			break;
 		case 'b':
 			/*
 			 * Get Blind Carbon Copy Recipient list
 			 */
-			bcc = cat(bcc, nalloc(optarg));
-			mustsend++;
+			bcc = cat(bcc, nalloc(optarg, GBCC));
 			break;
 		case '?':
 			fputs("\
@@ -165,22 +163,18 @@ Usage: mail [-iInv] [-s subject] [-c cc-addr] [-b bcc-addr] to-addr ...\n\
 		}
 	}
 	for (i = optind; (argv[i]) && (*argv[i] != '-'); i++)
-		to = cat(to, nalloc(argv[i]));
+		to = cat(to, nalloc(argv[i], GTO));
 	for (; argv[i]; i++)
-		smopts = cat(smopts, nalloc(argv[i]));
+		smopts = cat(smopts, nalloc(argv[i], 0));
 	/*
 	 * Check for inconsistent arguments.
 	 */
-	if (!to && (cc || bcc)) {
-		fputs("You must also specify direct recipients of mail.\n", stderr);
+	if (to == NIL && (subject != NOSTR || cc != NIL || bcc != NIL)) {
+		fputs("You must specify direct recipients with -s, -c, or -b.\n", stderr);
 		exit(1);
 	}
-	if ((ef != NOSTR) && to) {
+	if (ef != NOSTR && to != NIL) {
 		fprintf(stderr, "Cannot give -f and people to send to.\n");
-		exit(1);
-	}
-	if (mustsend && !to) {
-		fprintf(stderr, "The flags you gave make no sense since you're not sending mail.\n");
 		exit(1);
 	}
 	tinit();
@@ -191,15 +185,12 @@ Usage: mail [-iInv] [-s subject] [-c cc-addr] [-b bcc-addr] to-addr ...\n\
 		load(MASTER);
 	load(mailrc);
 	if (!rcvmode) {
-		mail(to, cc, bcc, smopts);
-
+		mail(to, cc, bcc, smopts, subject);
 		/*
 		 * why wait?
 		 */
-
 		exit(senderr);
 	}
-
 	/*
 	 * Ok, we are reading mail.
 	 * Decide whether we are editing a mailbox or reading
