@@ -1,0 +1,81 @@
+# Makefile for gzip (GNU zip), OS/2 version    -*- Indented-Text -*-
+# Written by Kai Uwe Rommel <rommel@informatik.tu-muenchen.de>
+
+# specialized version for OS/2
+
+default:
+	@echo "Enter $(MAKE) -f makefile.os2 target"
+	@echo "where target is one of:"
+	@echo "   msc mscdebug gcc gccdyn gccdebug"
+
+# compilation with emx 0.8f (gcc 2.3.3) or newer
+#
+# release version, statically linked C runtime
+gcc:
+	$(MAKE) -f Makefile.os2 all \
+	CC="gcc -Zomf -Zsys" O=".obj" S=".S" \
+	AS="gcc -Zomf -xassembler-with-cpp -c -o" \
+	CFLAGS="-O" LDFLAGS="gzip.def -s"
+#
+# release version, dynamically linked C runtime
+gccdyn:
+	$(MAKE) -f Makefile.os2 all \
+	CC="gcc -Zomf -Zmt" O=".obj" S=".S" \
+	AS="gcc -Zomf -xassembler-with-cpp -c -o" \
+	CFLAGS="-O" LDFLAGS="gzip.def -s"
+#
+# debugging version
+gccdebug:
+	$(MAKE) -f Makefile.os2 all \
+	CC="gcc -g" O=".o" S=".S" \
+	AS="gcc -g -xassembler-with-cpp -c -o" \
+	CFLAGS="" LDFLAGS="gzip.def"
+
+# compilation with MS C 6.00
+#
+# release version
+msc:
+	$(MAKE) -f Makefile.os2 all \
+	CC="cl -nologo -AC" O=".obj" S=".asm" \
+	AS="ml -nologo -Zm -Cp -c -Fo" \
+	CFLAGS=" -W1 -Zap -J -G2s -Ocegit" \
+	LDFLAGS="-Lp -F 2000 setargv.obj gzip16.def -link /noe"
+#
+# debugging version
+mscdebug:
+	$(MAKE) -f Makefile.os2 all \
+	CC="cl -nologo -AC -Zi" O=".obj" S=".asm" \
+	AS="ml -nologo -Zm -Zi -Cp -c -Fo" \
+	CFLAGS="-W1 -Zap -J -G2 -Od" \
+	LDFLAGS="-Lp -F 2000 setargv.obj gzip16.def -link /noe /exe"
+
+DEFS  = -DOS2 -DASMV
+
+OBJS = gzip$O zip$O deflate$O trees$O bits$O unzip$O inflate$O util$O \
+       crypt$O lzw$O unlzw$O unpack$O unlzh$O getopt$O match$O
+
+.SUFFIXES: .c $O
+
+.c$O:
+	$(CC) $(CFLAGS) $(DEFS) -c $<
+
+all: gzip.exe gzip.info gzip.doc
+
+gzip.exe: $(OBJS)
+	$(CC) -o $@ $(OBJS) $(LDFLAGS)
+
+gzip$O zip$O deflate$O trees$O bits$O unzip$O inflate$O: gzip.h tailor.h
+util$O lzw$O unlzw$O unpack$O unlzh$O crypt$O: gzip.h tailor.h
+
+gzip$O unlzw$O: revision.h lzw.h
+
+bits$O unzip$O util$O zip$O: crypt.h
+
+match$O: match$S
+	$(AS) $@ match$S
+
+gzip.info: gzip.texi gpl.texinfo
+	makeinfo gzip.texi
+
+gzip.doc: gzip.1
+	groff -man gzip.1 > $@
