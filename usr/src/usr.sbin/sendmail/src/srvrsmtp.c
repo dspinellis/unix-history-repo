@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)srvrsmtp.c	8.6 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	8.7 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)srvrsmtp.c	8.6 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	8.7 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -467,7 +467,7 @@ smtp(e)
 
 			/* collect the text of the message */
 			SmtpPhase = "collect";
-			SuprErrs = TRUE;
+			HoldErrs = TRUE;
 			collect(TRUE, doublequeue, e);
 			if (Errors != 0)
 				goto abortmessage;
@@ -502,7 +502,6 @@ smtp(e)
 			/* send to all recipients */
 			sendall(e, Verbose ? SM_DELIVER : SM_QUEUE);
 			e->e_to = NULL;
-			SuprErrs = FALSE;
 
 			/* save statistics */
 			markstats(e, (ADDRESS *) NULL);

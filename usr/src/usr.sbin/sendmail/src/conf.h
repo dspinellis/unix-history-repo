@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.8 (Berkeley) %G%
+ *	@(#)conf.h	8.9 (Berkeley) %G%
  */
 
 /*
@@ -94,13 +94,13 @@
 /*
 **  Silicon Graphics IRIX
 **
-**	I haven't tested this yet myself.
+**	Compiles on 4.0.1.
 */
 
 # ifdef IRIX
+# define HASSETREUID	1	/* have setreuid(2) call */
 # define FORK		fork	/* no vfork primitive available */
 # define setpgrp	BSDsetpgrp
-# define HASSETREUID	1	/* have setreuid(2) call */
 # define GIDSET_T	gid_t
 # endif
 
@@ -206,7 +206,7 @@
 **	Untested...
 */
 
-#if defined(mips) && !defined(ultrix)
+#ifdef RISCOS
 # define HASSETENV	1	/* has setenv(3) call */
 # define HASUNSETENV	1	/* has unsetenv(3) call */
 # define LA_TYPE	LA_INT

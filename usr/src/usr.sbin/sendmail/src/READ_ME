@@ -4,7 +4,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)READ_ME	8.6 (Berkeley) %G%
+#	@(#)READ_ME	8.7 (Berkeley) %G%
 #
 
 This directory contains the source files for sendmail.
@@ -37,6 +37,7 @@ SOLARIS		Define this if you are running Solaris 2.0 or higher.
 __NeXT__	Define this if you are on a NeXT box.  (This one may
 		be pre-defined for you.)
 _AIX3		Define this if you are IBM AIX 3.x.
+RISCOS		Define this if you are running RISC/os from MIPS.
 
 If you are a system that sendmail has already been ported to, you
 probably won't have to touch these.  But if you are porting, you may
@@ -228,4 +229,4 @@ version.c	The version number and information about this
 
 Eric Allman
 
-(Version 8.6, last update %G% 15:35:37)
+(Version 8.7, last update %G% 19:24:36)

@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -424,9 +424,13 @@ sendenvelope(e, mode)
 
 	/*
 	**  Run through the list and send everything.
+	**
+	**	Set EF_GLOBALERRS so that error messages during delivery
+	**	result in returned mail.
 	*/
 
 	e->e_nsent = 0;
+	e->e_flags |= EF_GLOBALERRS;
 	for (q = e->e_sendqueue; q != NULL; q = q->q_next)
 	{
 		if (mode == SM_VERIFY)
