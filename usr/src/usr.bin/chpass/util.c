@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)util.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -40,7 +40,7 @@ ttoa(tval)
 	time_t tval;
 {
 	struct tm *tp;
-	static char tbuf[10];
+	static char tbuf[50];
 
 	if (tval) {
 		tp = localtime(&tval);
@@ -98,7 +98,7 @@ bad:		return(1);
 		    DAYSPERLYEAR : DAYSPERNYEAR;
 	while (--month)
 		tval += dmsize[month];
-	tval += day - 1;
+	tval += day;
 	tval = tval * HOURSPERDAY * MINSPERHOUR * SECSPERMIN;
 	tval -= lt->tm_gmtoff;
 	*store = tval;
