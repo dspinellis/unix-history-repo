@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)rlogin.1	6.1 (Berkeley) %G%
+.\"	@(#)rlogin.1	6.2 (Berkeley) %G%
 .\"
 .TH RLOGIN 1C ""
 .UC 5
@@ -15,6 +15,10 @@ rhost [
 ] [
 .B \-8
 ] [
+.B \-L
+] [
+.B \-w
+] [
 .B \-l
 username ]
 .br
@@ -22,6 +26,10 @@ rhost [
 \fB\-e\fR\fIc\fR
 ] [
 .B \-8
+] [
+.B \-L
+] [
+.B \-w
 ] [
 .B \-l
 username ]
@@ -60,6 +68,13 @@ The optional argument
 .B \-8
 allows an eight-bit data path,
 otherwise parity bits are stripped.
+The argument
+.B \-L
+allows the rlogin session to be run in litout mode.
+The argument
+.B \-w
+if used, says to not do window size propagation.  This is for talking to
+hosts still running 4.2BSD software.
 A line of the form ``~.'' disconnects from the remote host, where
 ``~'' is the escape character.
 Similarly, the line ``~^Z'' (where ^Z, control-Z, is the suspend character)
