@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)tree.c 1.2 %G%";
+static char sccsid[] = "@(#)tree.c 1.3 %G%";
 
 /*
  * Parse tree management.
@@ -102,6 +102,7 @@ Operator op;
 	    break;
 
 	case O_LCON:
+	case O_CONT:
 	case O_DELETE:
 	case O_CATCH:
 	case O_IGNORE:
