@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)catman.c	4.5 (Berkeley) %G%";
+static char *sccsid = "@(#)catman.c	4.6 (Berkeley) %G%";
 #endif
 
 /*
@@ -49,7 +49,7 @@ main(ac, av)
 	if (ac == 2)
 		sections = *av;
 	else if (ac < 2)
-		sections = "12345678";
+		sections = "12345678ln";
 	else {
 usage:
 		printf("usage: catman [ -p ] [ -n ] [ -w ] [ sections ]\n");
@@ -106,7 +106,7 @@ usage:
 			tsp = rindex(dir->d_name, '.');
 			if (tsp == NULL)
 				continue;
-			if (!isdigit(*++tsp))
+			if (!isdigit(*++tsp) && *tsp != *sp)
 				continue;
 			if (*++tsp && !isalpha(*tsp))
 				continue;
