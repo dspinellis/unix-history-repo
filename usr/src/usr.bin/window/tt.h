@@ -1,5 +1,5 @@
 /*
- * @(#)tt.h	3.14 %G%
+ * @(#)tt.h	3.15 %G%
  */
 
 /*
@@ -67,11 +67,17 @@ struct tt_tab tt_tab[];
 char tt_strings[1024];		/* string buffer */
 char *tt_strp;			/* pointer for it */
 
-#define tttgetstr(s)	tgetstr((s), &tt_strp)
-char *ttxgetstr();		/* tgetstr() and expand delays */
+struct tt_str {
+	char *ts_str;
+	int ts_n;
+};
+
+struct tt_str *tttgetstr();
+struct tt_str *ttxgetstr();	/* tgetstr() and expand delays */
 
 int tttputc();
-#define tttputs(s, n)	tputs((s), (n), tttputc)
+#define tttputs(s, n)	tputs((s)->ts_str, (n), tttputc)
+#define ttxputs(s)	ttwrite((s)->ts_str, (s)->ts_n)
 
 /*
  * Buffered output without stdio.

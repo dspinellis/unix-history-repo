@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)ttgeneric.c	3.26 %G%";
+static char sccsid[] = "@(#)ttgeneric.c	3.27 %G%";
 #endif
 
 /*
@@ -13,7 +13,6 @@ static char sccsid[] = "@(#)ttgeneric.c	3.26 %G%";
 
 char PC, *BC, *UP;
 short ospeed;
-char *tgoto();
 
 	/* normal frame */
 short gen_frame[16] = {
@@ -33,33 +32,33 @@ short ansi_frame[16] = {
 };
 #define ANSI_AS "\033(0"	/* ) */
 
-char *gen_CM;
-char *gen_IM;
-char *gen_IC;
-char *gen_IP;
-char *gen_EI;
-char *gen_DC;
-char *gen_AL;
-char *gen_DL;
-char *gen_CE;
-char *gen_CD;
-char *gen_CL;
-char *gen_VS;
-char *gen_VE;
-char *gen_TI;
-char *gen_TE;
-char *gen_SO;
-char *gen_SE;
-char *gen_US;
-char *gen_UE;
-char *gen_UP;
-char *gen_PC;
-char *gen_BC;
-char *gen_ND;
-char *gen_HO;
-char *gen_NL;
-char *gen_AS;
-char *gen_AE;
+struct tt_str *gen_CM;
+struct tt_str *gen_IM;
+struct tt_str *gen_IC;
+struct tt_str *gen_IP;
+struct tt_str *gen_EI;
+struct tt_str *gen_DC;
+struct tt_str *gen_AL;
+struct tt_str *gen_DL;
+struct tt_str *gen_CE;
+struct tt_str *gen_CD;
+struct tt_str *gen_CL;
+struct tt_str *gen_VS;
+struct tt_str *gen_VE;
+struct tt_str *gen_TI;
+struct tt_str *gen_TE;
+struct tt_str *gen_SO;
+struct tt_str *gen_SE;
+struct tt_str *gen_US;
+struct tt_str *gen_UE;
+struct tt_str *gen_UP;
+struct tt_str *gen_PC;
+struct tt_str *gen_BC;
+struct tt_str *gen_ND;
+struct tt_str *gen_HO;
+struct tt_str *gen_NL;
+struct tt_str *gen_AS;
+struct tt_str *gen_AE;
 char gen_MI;
 char gen_MS;
 char gen_AM;
@@ -71,17 +70,15 @@ int gen_LI;
 int gen_UG;
 int gen_SG;
 
-#define ps(s) ttputs(s)
-
 gen_setinsert(new)
 char new;
 {
 	if (new) {
 		if (gen_IM)
-			ps(gen_IM);
+			ttxputs(gen_IM);
 	} else
 		if (gen_EI)
-			ps(gen_EI);
+			ttxputs(gen_EI);
 	tt.tt_insert = new;
 }
 
@@ -94,26 +91,26 @@ register new;
 	if (diff & WWM_REV) {
 		if (new & WWM_REV) {
 			if (gen_SO)
-				ps(gen_SO);
+				ttxputs(gen_SO);
 		} else
 			if (gen_SE)
-				ps(gen_SE);
+				ttxputs(gen_SE);
 	}
 	if (diff & WWM_UL) {
 		if (new & WWM_UL) {
 			if (gen_US)
-				ps(gen_US);
+				ttxputs(gen_US);
 		} else
 			if (gen_UE)
-				ps(gen_UE);
+				ttxputs(gen_UE);
 	}
 	if (diff & WWM_GRP) {
 		if (new & WWM_GRP) {
 			if (gen_AS)
-				ps(gen_AS);
+				ttxputs(gen_AS);
 		} else
 			if (gen_AE)
-				ps(gen_AE);
+				ttxputs(gen_AE);
 	}
 	tt.tt_modes = new;
 }
@@ -157,14 +154,15 @@ register char c;
 }
 
 gen_write(p, n)
-register char *p;
-register n;
+	register char *p;
+	register n;
 {
 	if (tt.tt_ninsert != tt.tt_insert)
 		gen_setinsert(tt.tt_ninsert);
 	if (tt.tt_nmodes != tt.tt_modes)
 		gen_setmodes(tt.tt_nmodes);
-	if (tt.tt_insert) {
+	tt.tt_col += n;
+	if (tt.tt_insert && (gen_IC || gen_IP)) {
 		while (--n >= 0) {
 			if (gen_IC)
 				tttputs(gen_IC, gen_CO - tt.tt_col);
@@ -175,8 +173,7 @@ register n;
 		}
 	} else {
 		tt.tt_col += n;
-		while (--n >= 0)
-			ttputc(*p++);
+		ttwrite(p, n);
 	}
 	if (tt.tt_col == gen_CO)
 		if (gen_AM)
@@ -199,12 +196,12 @@ register char row, col;
 			return;
 		if (tt.tt_col == col - 1) {
 			if (gen_ND) {
-				ps(gen_ND);
+				ttxputs(gen_ND);
 				goto out;
 			}
 		} else if (tt.tt_col == col + 1) {
 			if (gen_BC) {
-				ps(gen_BC);
+				ttxputs(gen_BC);
 				goto out;
 			}
 		}
@@ -212,21 +209,19 @@ register char row, col;
 	if (tt.tt_col == col) {
 		if (tt.tt_row == row + 1) {
 			if (gen_UP) {
-				ps(gen_UP);
+				ttxputs(gen_UP);
 				goto out;
 			}
 		} else if (tt.tt_row == row + 1) {
-			if (gen_NL) {
-				ps(gen_NL);
-				goto out;
-			}
+			ttxputs(gen_NL);
+			goto out;
 		}
 	}
 	if (gen_HO && col == 0 && row == 0) {
-		ps(gen_HO);
+		ttxputs(gen_HO);
 		goto out;
 	}
-	ps(tgoto(gen_CM, col, row));
+	tttgoto(gen_CM, col, row);
 out:
 	tt.tt_col = col;
 	tt.tt_row = row;
@@ -235,11 +230,10 @@ out:
 gen_init()
 {
 	if (gen_VS)
-		ps(gen_VS);
+		ttxputs(gen_VS);
 	if (gen_TI)
-		ps(gen_TI);
-	if (gen_CL)
-		ps(gen_CL);
+		ttxputs(gen_TI);
+	ttxputs(gen_CL);
 	tt.tt_col = tt.tt_row = 0;
 	tt.tt_ninsert = tt.tt_insert = 0;
 	tt.tt_nmodes = tt.tt_modes = 0;
@@ -248,43 +242,43 @@ gen_init()
 gen_end()
 {
 	if (gen_TE)
-		ps(gen_TE);
+		ttxputs(gen_TE);
 	if (gen_VE)
-		ps(gen_VE);
+		ttxputs(gen_VE);
 }
 
 gen_clreol()
 {
 	if (tt.tt_modes)			/* for concept 100 */
 		gen_setmodes(0);
-	if (gen_CE)
-		tttputs(gen_CE, gen_CO - tt.tt_col);
+	tttputs(gen_CE, gen_CO - tt.tt_col);
 }
 
 gen_clreos()
 {
 	if (tt.tt_modes)			/* for concept 100 */
 		gen_setmodes(0);
-	if (gen_CD)
-		tttputs(gen_CD, gen_LI - tt.tt_row);
+	tttputs(gen_CD, gen_LI - tt.tt_row);
 }
 
 gen_clear()
 {
 	if (tt.tt_modes)			/* for concept 100 */
 		gen_setmodes(0);
-	if (gen_CL)
-		ps(gen_CL);
+	ttxputs(gen_CL);
 }
 
 gen_delchar()
 {
-	if (gen_DC)
-		tttputs(gen_DC, gen_CO - tt.tt_col);
+	tttputs(gen_DC, gen_CO - tt.tt_col);
 }
 
 tt_generic()
 {
+	gen_PC = tttgetstr("pc");
+	PC = gen_PC ? *gen_PC->ts_str : 0;
+	ospeed = wwoldtty.ww_sgttyb.sg_ospeed;
+
 	gen_CM = ttxgetstr("cm");		/* may not work */
 	gen_IM = ttxgetstr("im");
 	gen_IC = tttgetstr("ic");
@@ -305,7 +299,6 @@ tt_generic()
 	gen_US = ttxgetstr("us");
 	gen_UE = ttxgetstr("ue");
 	gen_UP = ttxgetstr("up");
-	gen_PC = tttgetstr("pc");
 	gen_BC = ttxgetstr("bc");
 	gen_ND = ttxgetstr("nd");
 	gen_HO = ttxgetstr("ho");
@@ -323,18 +316,18 @@ tt_generic()
 	gen_UG = tgetnum("ug");
 	gen_SG = tgetnum("sg");
 
-	if (gen_CL == 0 || gen_CM == 0 || gen_OS)
+	if (gen_NL == 0) {
+		static struct tt_str nl = { "\n", 1 };
+		gen_NL = &nl;
+	}
+	if (gen_BC == 0 && gen_BS) {
+		static struct tt_str bc = { "\b", 1 };
+		gen_BC = &bc;
+	}
+	BC = gen_BC ? gen_BC->ts_str : 0;
+	UP = gen_UP ? gen_UP->ts_str : 0;
+	if (gen_CL == 0 || gen_OS || gen_CM == 0)
 		return -1;
-
-	if (gen_NL == 0)
-		gen_NL = "\n";
-	if (gen_BC == 0 && gen_BS)
-		gen_BC = "\b";
-
-	PC = gen_PC ? *gen_PC : 0;
-	BC = gen_BC;
-	UP = gen_UP;
-	ospeed = wwoldtty.ww_sgttyb.sg_ospeed;
 
 	if (gen_DC)
 		tt.tt_delchar = gen_delchar;
@@ -346,8 +339,6 @@ tt_generic()
 		tt.tt_clreol = gen_clreol;
 	if (gen_CD)
 		tt.tt_clreos = gen_clreos;
-	if (gen_CL)
-		tt.tt_clear = gen_clear;
 	if (gen_SG > 0)
 		gen_SO = 0;
 	if (gen_UG > 0)
@@ -368,11 +359,10 @@ tt_generic()
 	tt.tt_write = gen_write;
 	tt.tt_putc = gen_putc;
 	tt.tt_move = gen_move;
+	tt.tt_clear = gen_clear;
 	tt.tt_setinsert = gen_setinsert;
 	tt.tt_setmodes = gen_setmodes;
-	if (gen_AS && strcmp(gen_AS, ANSI_AS) == 0)
-		tt.tt_frame = ansi_frame;
-	else
-		tt.tt_frame = gen_frame;
+	tt.tt_frame = gen_AS && !strncmp(gen_AS->ts_str, ANSI_AS, gen_AS->ts_n)
+		? ansi_frame : gen_frame;
 	return 0;
 }

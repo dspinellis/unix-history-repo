@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)tth19.c	3.15 %G%";
+static char sccsid[] = "@(#)tth19.c	3.16 %G%";
 #endif
 
 /*
@@ -34,8 +34,8 @@ short h19_frame[16] = {
 	'c'|G,	't'|G,	's'|G,	'b'|G
 };
 
-extern char *gen_VS;
-extern char *gen_VE;
+extern struct tt_str *gen_VS;
+extern struct tt_str *gen_VE;
 
 int h19_msp10c;
 
@@ -123,8 +123,7 @@ register n;
 		}
 	} else {
 		tt.tt_col += n;
-		while (--n >= 0)
-			ttputc(*p++);
+		ttwrite(p, n);
 	}
 	if (tt.tt_col == NCOL)
 		tt.tt_col = NCOL - 1;
@@ -172,7 +171,7 @@ out:
 h19_init()
 {
 	if (gen_VS)
-		ttputs(gen_VS);
+		ttxputs(gen_VS);
 	esc();
 	pc(w);
 	esc();
@@ -185,7 +184,7 @@ h19_init()
 h19_end()
 {
 	if (gen_VE)
-		ttputs(gen_VE);
+		ttxputs(gen_VE);
 	esc();
 	pc(v);
 }

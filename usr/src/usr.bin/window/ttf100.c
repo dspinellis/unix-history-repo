@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)ttf100.c	3.7 %G%";
+static char sccsid[] = "@(#)ttf100.c	3.8 %G%";
 #endif
 
 /*
@@ -22,15 +22,18 @@ short f100_frame[16] = {
 	'K'|G,	'D'|G,	'K'|G,	'O'|G,
 	'C'|G,	'L'|G,	'N'|G,	'I'|G
 };
-extern char *gen_AE, *gen_AS;
+extern struct tt_str *gen_AE, *gen_AS;
 
 tt_f100()
 {
+	static struct tt_str ae = { "\033%", 2 };
+	static struct tt_str as = { "\033$", 2 };
+
 	if (tt_generic() < 0)
 		return -1;
 	tt.tt_frame = f100_frame;
 	tt.tt_availmodes |= WWM_GRP;
-	gen_AS = "\033$";
-	gen_AE = "\033%";
+	gen_AS = &as;
+	gen_AE = &ae;
 	return 0;
 }
