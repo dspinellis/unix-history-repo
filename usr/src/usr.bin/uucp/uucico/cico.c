@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)cico.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)cico.c	5.14 (Berkeley) %G%";
 #endif
 
 #include <signal.h>
@@ -170,6 +170,9 @@ register char *argv[];
 		--argc; argv++;
 	}
 
+	if (Debug && Role == MASTER)
+		chkdebug();
+
 	/* Try to run as uucp */
 	setgid(getegid());
 	setuid(geteuid());
@@ -194,8 +197,6 @@ register char *argv[];
 	strcpy(Wrkdir, Spool);
 
 	if (Debug) {
-		if (Role == MASTER)
-			chkdebug();
 		setdebug ((Role == SLAVE) ? DBG_TEMP : DBG_PERM);
 		if (Debug > 0)
 			logent ("Local Enabled", "DEBUG");
