@@ -5,10 +5,11 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)optr.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)optr.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 #include "dump.h"
+#include <sys/time.h>
 #include "pathnames.h"
 
 /*
