@@ -13,6 +13,8 @@
 /usr/src/share/man/man5/fs.5
 /usr/src/share/man/man5/fstab.5
 /usr/src/libexec/getty/gettytab.5
+/usr/src/contrib/groff-1.08/man/groff_font.5
+/usr/src/contrib/groff-1.08/man/groff_out.5
 /usr/src/share/man/man5/group.5
 /usr/src/share/man/man5/hosts.5
 /usr/src/kerberosIV/man/krb.conf.5
