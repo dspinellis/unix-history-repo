@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)du.1	6.7 (Berkeley) %G%
+.\"     @(#)du.1	6.8 (Berkeley) %G%
 .\"
 .Dd 
 .Dt DU 1
@@ -16,9 +16,13 @@
 .Op Fl aksx
 .Op Ar pathname ...
 .Sh DESCRIPTION
-.Nm Du
-utility displays the block usage of files in the current directory
-or for the entire tree of a given pathname.
+The
+.Nm du
+utility displays the file system block usage of each file argument
+or of each directory in the file hierarchy rooted in each directory
+argument.
+By default, the block usage of the hierarchy rooted in the current
+directory is displayed.
 .Pp
 The options are as follows:
 .Tw Ds
@@ -36,17 +40,12 @@ flag is specified, the number displayed is the number of 1024-byte
 blocks with partial blocks rounded up.
 .Tp Fl s
 Generate only the grand total.
-If neither
-.Fl a
-or
-.Fl s
-are specified, an entry is generated for each directory only.
 .Tp Fl x
 Don't traverse any mount points.
 .Tp
 .Pp
-Files having multiple hard links are counted
-(and displayed) a single time per
+Files having multiple hard links are counted (and displayed) a single
+time per
 .Nm du
 execution.
 .Sh SEE ALSO
