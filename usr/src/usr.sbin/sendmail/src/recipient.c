@@ -2,7 +2,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)recipient.c	3.40		%G%);
+SCCSID(@(#)recipient.c	3.41		%G%);
 
 /*
 **  SENDTO -- Designate a send list.
@@ -34,7 +34,7 @@ sendto(list, ctladdr, sendq)
 	ADDRESS **sendq;
 {
 	register char *p;
-	register ADDRESS *al;		/* list of addresses to send to */
+	register ADDRESS *al;	/* list of addresses to send to */
 	bool firstone;		/* set on first address sent */
 	bool selfref;		/* set if this list includes ctladdr */
 
@@ -46,9 +46,15 @@ sendto(list, ctladdr, sendq)
 	}
 # endif DEBUG
 
+	/* heuristic to determine old versus new style addresses */
+	if (index(list, ',') != NULL || index(list, ';') != NULL ||
+	    index(list, '<') != NULL || index(list, '(') != NULL)
+		CurEnv->e_oldstyle = FALSE;
+
 	firstone = TRUE;
 	selfref = FALSE;
 	al = NULL;
+
 	for (p = list; *p != '\0'; )
 	{
 		register ADDRESS *a;
