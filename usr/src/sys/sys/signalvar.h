@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)signalvar.h	7.1 (Berkeley) %G%
+ *	@(#)signalvar.h	7.2 (Berkeley) %G%
  */
 
 #ifndef	_SIGNALVAR_H_		/* tmp for user.h */
@@ -69,7 +69,7 @@ struct	sigacts {
 #define	SA_KILL		0x01		/* terminates process by default */
 #define	SA_CORE		0x02		/* ditto and coredumps */
 #define	SA_STOP		0x04		/* suspend process */
-#define	SA_TTYSTOP	(0x08|SA_STOP)	/* ditto, from tty */
+#define	SA_TTYSTOP	0x08		/* ditto, from tty */
 #define	SA_IGNORE	0x10		/* ignore by default */
 #define	SA_CONT		0x20		/* continue if suspended */
 #define	SA_CANTMASK	0x40		/* non-maskable, catchable */
@@ -94,11 +94,11 @@ int sigprop[NSIG + 1] = {
 	SA_KILL,		/* SIGTERM */
 	SA_IGNORE,		/* SIGURG */
 	SA_STOP,		/* SIGSTOP */
-	SA_TTYSTOP,		/* SIGTSTP */
+	SA_STOP|SA_TTYSTOP,	/* SIGTSTP */
 	SA_IGNORE|SA_CONT,	/* SIGCONT */
 	SA_IGNORE,		/* SIGCHLD */
-	SA_TTYSTOP,		/* SIGTTIN */
-	SA_TTYSTOP,		/* SIGTTOU */
+	SA_STOP|SA_TTYSTOP,	/* SIGTTIN */
+	SA_STOP|SA_TTYSTOP,	/* SIGTTOU */
 	SA_IGNORE,		/* SIGIO */
 	SA_KILL,		/* SIGXCPU */
 	SA_KILL,		/* SIGXFSZ */
