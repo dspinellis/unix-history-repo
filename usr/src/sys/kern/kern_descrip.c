@@ -1,4 +1,4 @@
-/*	kern_descrip.c	6.5	84/08/29	*/
+/*	kern_descrip.c	6.6	84/11/27	*/
 
 #include "param.h"
 #include "systm.h"
@@ -118,7 +118,7 @@ fcntl()
 	switch(uap->cmd) {
 	case F_DUPFD:
 		i = uap->arg;
-		if (i < 0 || i > NOFILE) {
+		if (i < 0 || i >= NOFILE) {
 			u.u_error = EINVAL;
 			return;
 		}
@@ -397,9 +397,10 @@ flock()
 		ino_unlock(fp, FSHLOCK|FEXLOCK);
 		return;
 	}
+	if ((uap->how & (LOCK_SH | LOCK_EX)) == 0)
+		return;					/* error? */
 	/* avoid work... */
-	if ((fp->f_flag & FEXLOCK) && (uap->how & LOCK_EX) ||
-	    (fp->f_flag & FSHLOCK) && (uap->how & LOCK_SH))
+	if ((fp->f_flag & FEXLOCK) && (uap->how & LOCK_EX))
 		return;
 	u.u_error = ino_lock(fp, uap->how);
 }
