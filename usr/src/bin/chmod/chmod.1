@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)chmod.1	6.10 (Berkeley) %G%
+.\"     @(#)chmod.1	6.11 (Berkeley) %G%
 .\"
 .Dd 
 .Dt CHMOD 1
@@ -97,7 +97,7 @@ last_action
 .Dp Li op
 .Li ::= + |  - |  =
 .Dp Li perm
-.Li ::= r |  s |  t |  w |  X |  x
+.Li ::= r |  s |  t |  w |  X |  x |  u |  g |  o
 .Dp
 .Pp
 The
@@ -205,10 +205,12 @@ retain any execute permissions that are currently set.
 .Tp ``+X''
 make a directory or file searchable/executable by everyone if it is
 already searchable/executable by anyone.
-.Tp ``755'' or ``u=rwx,go=rx''
+.Tp ``755'', ``u=rwx,go=rx'' or ``u=rwx,go=u-w''
 make a file readable/executable by everyone and writeable by the owner only.
 .Tp ``go=''
 clear all mode bits for group and others.
+.Tp ``g=u-w''
+set the group bits equal to the user bits, but clear the group write bit.
 .Tp
 .Sh BUGS
 There's no
