@@ -1,7 +1,6 @@
-/*	if_en.c	4.64	82/06/12	*/
+/*	if_en.c	4.65	82/06/13	*/
 
 #include "en.h"
-#include "imp.h"
 
 /*
  * Xerox prototype (3 Mb) Ethernet interface driver.
@@ -107,7 +106,7 @@ COUNT(ENATTACH);
 	es->es_if.if_unit = ui->ui_unit;
 	es->es_if.if_name = "en";
 	es->es_if.if_mtu = ENMTU;
-	es->es_if.if_net = ui->ui_flags & 0xff;
+	es->es_if.if_net = ui->ui_flags;
 	es->es_if.if_host[0] =
 	 (~(((struct endevice *)eninfo[ui->ui_unit]->ui_addr)->en_addr)) & 0xff;
 	sin = (struct sockaddr_in *)&es->es_if.if_addr;
@@ -122,11 +121,6 @@ COUNT(ENATTACH);
 	es->es_if.if_ubareset = enreset;
 	es->es_ifuba.ifu_flags = UBA_NEEDBDP | UBA_NEED16 | UBA_CANTWAIT;
 	if_attach(&es->es_if);
-#if NIMP == 0
-	/* here's one for you john baby.... */
-	if (ui->ui_flags &~ 0xff)
-		enlhinit(&es->es_if, (ui->ui_flags &~ 0xff) | 0x0a);
-#endif
 }
 
 /*
@@ -562,43 +556,3 @@ bad:
 	m_freem(m0);
 	return (error);
 }
-
-#if NIMP == 0 && NEN > 0
-/*
- * Logical host interface driver.
- * Allows host to appear as an ARPAnet
- * logical host.  Must also have routing
- * table entry set up to forward packets
- * to appropriate gateway on localnet.
- */
-
-struct	ifnet enlhif;
-int	looutput();
-
-/*
- * Called by localnet interface to allow logical
- * host interface to "attach", it's purpose
- * is simply to establish the host's arpanet address.
- */
-enlhinit(esifp, addr)
-	struct ifnet *esifp;
-	int addr;
-{
-	register struct ifnet *ifp = &enlhif;
-	struct sockaddr_in *sin;
-
-COUNT(ENLHINIT);
-	ifp->if_name = "lh";
-	ifp->if_mtu = ENMTU;
-	sin = (struct sockaddr_in *)&ifp->if_addr;
-	sin->sin_family = AF_INET;
-	sin->sin_addr.s_addr = addr;
-	sin->sin_addr.s_lh = esifp->if_host[0];
-	ifp->if_net = sin->sin_addr.s_net;
-	ifp->if_flags = IFF_UP|IFF_POINTOPOINT;
-	ifp->if_dstaddr = ifp->if_addr;
-	ifp->if_output = looutput;
-	if_attach(ifp);
-	rtinit(&ifp->if_addr, &ifp->if_addr, RTF_UP|RTF_HOST);
-}
-#endif

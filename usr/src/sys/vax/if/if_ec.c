@@ -1,8 +1,6 @@
-/*	if_ec.c	4.15	82/06/12	*/
+/*	if_ec.c	4.16	82/06/13	*/
 
 #include "ec.h"
-#include "imp.h"
-#include "loop.h"
 
 /*
  * 3Com Ethernet Controller interface
@@ -138,7 +136,7 @@ COUNT(ECATTACH);
 	es->es_if.if_unit = ui->ui_unit;
 	es->es_if.if_name = "ec";
 	es->es_if.if_mtu = ECMTU;
-	es->es_if.if_net = ui->ui_flags & 0xff;
+	es->es_if.if_net = ui->ui_flags;
 
 	/*
 	 * Read the ethernet address off the board,
@@ -183,11 +181,6 @@ COUNT(ECATTACH);
 	for (i=0; i<16; i++)
 		es->es_buf[i] = &umem[ui->ui_ubanum][0600000+2048*i];
 	if_attach(&es->es_if);
-#if NIMP == 0
-	/* here's one for you john baby.... */
-	if (ui->ui_flags &~ 0xff)
-		eclhinit(&es->es_if, (ui->ui_flags &~ 0xff) | 0x0a);
-#endif
 }
 
 /*
@@ -746,43 +739,3 @@ bad:
 	m_freem(top);
 	return (0);
 }
-
-#if NIMP == 0 && NEC > 0
-/*
- * Logical host interface driver.
- * Allows host to appear as an ARPAnet
- * logical host.  Must also have routing
- * table entry set up to forward packets
- * to appropriate gateway on localnet.
- */
-
-struct	ifnet eclhif;
-int	looutput();
-
-/*
- * Called by localnet interface to allow logical
- * host interface to "attach", it's purpose
- * is simply to establish the host's arpanet address.
- */
-eclhinit(ecifp, addr)
-	struct ifnet *ecifp;
-	int addr;
-{
-	register struct ifnet *ifp = &eclhif;
-	register struct sockaddr_in *sin;
-
-COUNT(ECLHINIT);
-	ifp->if_name = "lh";
-	ifp->if_mtu = ECMTU;
-	sin = (struct sockaddr_in *)&ifp->if_addr;
-	sin->sin_family = AF_INET;
-	sin->sin_addr.s_addr = addr;
-	sin->sin_addr.s_lh = ecifp->if_host[0];
-	ifp->if_net = sin->sin_addr.s_net;
-	ifp->if_dstaddr = ifp->if_addr;
-	ifp->if_flags = IFF_UP|IFF_POINTOPOINT;
-	ifp->if_output = looutput;
-	if_attach(ifp);
-	rtinit(&ifp->if_addr, &ifp->if_addr, RTF_UP|RTF_HOST);
-}
-#endif

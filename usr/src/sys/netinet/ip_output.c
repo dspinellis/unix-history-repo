@@ -1,4 +1,4 @@
-/*	ip_output.c	1.33	82/06/12	*/
+/*	ip_output.c	1.34	82/06/13	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -54,7 +54,7 @@ COUNT(IP_OUTPUT);
 		 */
 		if (ro == &routetoif) {
 			/* check ifp is AF_INET??? */
-			ifp = if_ifonnetof(ip->ip_dst.s_net);
+			ifp = if_ifonnetof(IN_NETOF(ip->ip_dst));
 			if (ifp == 0)
 				goto unreachable;
 			goto gotif;

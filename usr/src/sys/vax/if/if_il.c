@@ -1,8 +1,6 @@
-/*	if_il.c	4.5	82/06/12	*/
+/*	if_il.c	4.6	82/06/13	*/
 
 #include "il.h"
-#include "imp.h"
-#include "loop.h"
 
 /*
  * Interlan Ethernet Communications Controller interface
@@ -110,7 +108,7 @@ COUNT(ILATTACH);
 	is->is_if.if_unit = ui->ui_unit;
 	is->is_if.if_name = "il";
 	is->is_if.if_mtu = ILMTU;
-	is->is_if.if_net = ui->ui_flags & 0xff;
+	is->is_if.if_net = ui->ui_flags;
 
 	/*
 	 * Reset the board
@@ -167,10 +165,6 @@ COUNT(ILATTACH);
 	is->is_if.if_ubareset = ilreset;
 	is->is_ifuba.ifu_flags = UBA_CANTWAIT;
 	if_attach(&is->is_if);
-#if NIMP == 0
-	if (ui->ui_flags &~ 0xff)
-		illhinit(&is->is_if, (ui->ui_flags &~ 0xff) | 0x0a);
-#endif
 }
 
 /*
@@ -547,44 +541,3 @@ bad:
 	m_freem(m0);
 	return(error);
 }
-
-#if NIMP == 0 && NIL > 0
-/*
- * Logical host interface driver.
- * Allows host to appear as an ARPAnet
- * logical host.  Must also have routing
- * table entry set up to forward packets
- * to appropriate gateway on localnet.
- */
-
-struct	ifnet illhif;
-int	looutput();
-
-/*
- * Called by localnet interface to allow logical
- * host interface to "attach".  Nothing should ever
- * be sent locally to this interface, it's purpose
- * is simply to establish the host's arpanet address.
- */
-illhinit(ilifp, addr)
-	struct ifnet *ilifp;
-	int addr;
-{
-	register struct ifnet *ifp = &illhif;
-	register struct sockaddr_in *sin;
-
-COUNT(ILLHINIT);
-	ifp->if_name = "lh";
-	ifp->if_mtu = ILMTU;
-	sin = (struct sockaddr_in *)&ifp->if_addr;
-	sin->sin_family = AF_INET;
-	sin->sin_addr.s_addr = addr;
-	sin->sin_addr.s_lh = ilifp->if_host[0];
-	ifp->if_net = sin->sin_addr.s_net;
-	ifp->if_dstaddr = ifp->if_addr;
-	ifp->if_flags = IFF_UP|IFF_POINTOPOINT;
-	ifp->if_output = looutput;
-	if_attach(ifp);
-	rtinit(&ifp->if_addr, &ifp->if_addr, RTF_UP|RTF_HOST);
-}
-#endif

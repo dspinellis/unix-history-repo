@@ -1,4 +1,4 @@
-/*	if.h	4.13	82/05/24	*/
+/*	if.h	4.14	82/06/13	*/
 
 /*
  * Structures defining a network interface, providing a packet
@@ -29,12 +29,14 @@
  * Structure defining a queue for a network interface.
  *
  * (Would like to call this struct ``if'', but C isn't PL/1.)
+ *
+ * EVENTUALLY PURGE if_net AND if_host FROM STRUCTURE
  */
 struct ifnet {
 	char	*if_name;		/* name, e.g. ``en'' or ``lo'' */
 	short	if_unit;		/* sub-unit for lower level driver */
 	short	if_mtu;			/* maximum transmission unit */
-	short	if_net;			/* network number of interface */
+	int	if_net;			/* network number of interface */
 	short	if_flags;		/* up/down, broadcast, etc. */
 	int	if_host[2];		/* local net host number */
 	struct	sockaddr if_addr;	/* address of interface */
