@@ -1,5 +1,5 @@
 /*
- *	@(#)var.h	3.4 84/01/13
+ *	@(#)var.h	3.5 84/05/06
  */
 
 struct var {
@@ -9,12 +9,16 @@ struct var {
 	struct value r_val;
 };
 
-struct var *var_set();
-struct var *var_setstr();
-struct var *var_setnum();
+struct var *var_set1();
+struct var *var_setstr1();
+struct var *var_setnum1();
 struct var **var_lookup1();
 
-#define var_walk(f, a)	var_walk1(var_head, (f), (a))
-#define var_lookup(n)	(*var_lookup1(n))
+#define var_set(n, v)		var_set1(&var_head, n, v)
+#define var_setstr(n, s)	var_setstr1(&var_head, n, s)
+#define var_setnum(n, i)	var_setnum1(&var_head, n, i)
+#define var_unset(n)		var_unset1(&var_head, n)
+#define var_lookup(n)		(*var_lookup1(&var_head, n))
+#define var_walk(f, a)		var_walk1(var_head, f, a)
 
 struct var *var_head;		/* secret, shhh */

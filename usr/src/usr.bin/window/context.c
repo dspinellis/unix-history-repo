@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)context.c	3.4 84/01/13";
+static	char *sccsid = "@(#)context.c	3.5 84/05/06";
 #endif
 
 #include <stdio.h>
@@ -66,13 +66,17 @@ bad:
 	return -1;
 }
 
-cx_beginbuf(buf)
+cx_beginbuf(buf, arg, narg)
 char *buf;
+struct value *arg;
+int narg;
 {
 	if (cx_alloc() < 0)
 		return -1;
 	cx.x_type = X_BUF;
 	cx.x_bufp = cx.x_buf = buf;
+	cx.x_arg = arg;
+	cx.x_narg = narg;
 	return 0;
 }
 

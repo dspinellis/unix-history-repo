@@ -1,11 +1,12 @@
 #ifndef lint
-static	char *sccsid = "@(#)lcmd1.c	3.22 84/04/08";
+static	char *sccsid = "@(#)lcmd1.c	3.23 84/05/06";
 #endif
 
 #include "defs.h"
 #include "string.h"
 #include "value.h"
 #include "lcmd.h"
+#include "var.h"
 
 struct lcmd_arg arg_window[] = {
 	{ "row",	1,	ARG_ANY },

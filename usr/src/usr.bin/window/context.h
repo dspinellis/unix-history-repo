@@ -1,5 +1,5 @@
 /*
- *	@(#)context.h	3.4 84/03/03
+ *	@(#)context.h	3.5 84/05/06
  */
 
 #include <stdio.h>
@@ -19,6 +19,8 @@ struct context {
 		struct {	/* input is a buffer */
 			char *X_buf;		/* input buffer */
 			char *X_bufp;		/* current position in buf */
+			struct value *X_arg;	/* argument for alias */
+			int X_narg;		/* number of arguments */
 		} x_b;
 	} x_un;
 		/* holding place for current token */
@@ -31,6 +33,8 @@ struct context {
 };
 #define x_buf		x_un.x_b.X_buf
 #define x_bufp		x_un.x_b.X_bufp
+#define x_arg		x_un.x_b.X_arg
+#define x_narg		x_un.x_b.X_narg
 #define x_filename	x_un.x_f.X_filename
 #define x_fp		x_un.x_f.X_fp
 #define x_lineno	x_un.x_f.X_lineno

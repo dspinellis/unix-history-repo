@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)var.c	3.4 84/01/13";
+static	char *sccsid = "@(#)var.c	3.5 84/05/06";
 #endif
 
 #include "value.h"
@@ -9,7 +9,8 @@ static	char *sccsid = "@(#)var.c	3.4 84/01/13";
 char *malloc();
 
 struct var *
-var_set(name, v)
+var_set1(head, name, v)
+struct var **head;
 char *name;
 struct value *v;
 {
@@ -21,7 +22,7 @@ struct value *v;
 	val = *v;
 	if (val.v_type == V_STR && (val.v_str = str_cpy(val.v_str)) == 0)
 		return 0;
-	if (*(p = var_lookup1(name)) == 0) {
+	if (*(p = var_lookup1(head, name)) == 0) {
 		r = (struct var *) malloc(sizeof (struct var));
 		if (r == 0) {
 			val_free(val);
@@ -43,7 +44,8 @@ struct value *v;
 }
 
 struct var *
-var_setstr(name, str)
+var_setstr1(head, name, str)
+struct var **head;
 char *name;
 char *str;
 {
@@ -51,11 +53,12 @@ char *str;
 
 	v.v_type = V_STR;
 	v.v_str = str;
-	return var_set(name, &v);
+	return var_set1(head, name, &v);
 }
 
 struct var *
-var_setnum(name, num)
+var_setnum1(head, name, num)
+struct var **head;
 char *name;
 int num;
 {
@@ -63,16 +66,17 @@ int num;
 
 	v.v_type = V_NUM;
 	v.v_num = num;
-	return var_set(name, &v);
+	return var_set1(head, name, &v);
 }
 
-var_unset(name)
+var_unset1(head, name)
+struct var **head;
 char *name;
 {
 	register struct var **p;
 	register struct var *r;
 
-	if (*(p = var_lookup1(name)) == 0)
+	if (*(p = var_lookup1(head, name)) == 0)
 		return -1;
 	r = *p;
 	*p = r->r_left;
@@ -86,13 +90,13 @@ char *name;
 }
 
 struct var **
-var_lookup1(name)
+var_lookup1(p, name)
+register struct var **p;
 register char *name;
 {
-	register struct var **p;
 	register cmp;
 
-	for (p = &var_head; *p != 0;) {
+	while (*p != 0) {
 		if ((cmp = strcmp(name, (*p)->r_name)) < 0)
 			p = &(*p)->r_left;
 		else if (cmp > 0)

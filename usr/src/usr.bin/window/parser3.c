@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)parser3.c	3.1 84/01/12";
+static	char *sccsid = "@(#)parser3.c	3.2 84/05/06";
 #endif
 
 #include "parser.h"
@@ -26,9 +26,6 @@ char flag;
 	struct value t;
 	int ret;
 
-#ifdef DEBUG
-	error("expr: %d.", flag);
-#endif
 	if (p_expr0(&t, flag) < 0)
 		return -1;
 
@@ -37,14 +34,11 @@ char flag;
 		return 0;
 	}
 	switch (t.v_type) {
+	case V_NUM:
+		p_error("%d: Not a variable.", t.v_num);
 	case V_ERR:
 		t.v_str = 0;
 		break;
-	case V_NUM:
-		if ((t.v_str = str_itoa(t.v_num)) == 0) {
-			p_memerror();
-			return -1;
-		}
 	}
 	ret = p_assign(t.v_str, v, flag);
 	if (t.v_str != 0)
