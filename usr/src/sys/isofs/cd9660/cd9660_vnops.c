@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)cd9660_vnops.c	8.5 (Berkeley) %G%
+ *	@(#)cd9660_vnops.c	8.6 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -48,7 +48,7 @@ cd9660_mknod(ndp, vap, cred, p)
 	free(ndp->ni_pnbuf, M_NAMEI);
 	vput(ndp->ni_dvp);
 	vput(ndp->ni_vp);
-	return EINVAL;
+	return (EINVAL);
 #else
 	register struct vnode *vp;
 	struct iso_node *ip;
@@ -64,7 +64,7 @@ cd9660_mknod(ndp, vap, cred, p)
 		free(ndp->ni_pnbuf, M_NAMEI);
 		vput(ndp->ni_dvp);
 		vput(ndp->ni_vp);
-		return EINVAL;
+		return (EINVAL);
 	}
 	
 	dp = iso_dmap(ip->i_dev,ip->i_number,1);
@@ -139,7 +139,50 @@ cd9660_access(ap)
 		struct proc *a_p;
 	} */ *ap;
 {
-	return (0);
+	struct iso_node *ip = VTOI(ap->a_vp);
+	struct ucred *cred = ap->a_cred;
+	mode_t mask, mode = ap->a_mode;
+	gid_t *gp;
+	int i, error;
+
+	/* User id 0 always gets access. */
+	if (cred->cr_uid == 0)
+		return (0);
+
+	mask = 0;
+
+	/* Otherwise, check the owner. */
+	if (cred->cr_uid == ip->inode.iso_uid) {
+		if (mode & VEXEC)
+			mask |= S_IXUSR;
+		if (mode & VREAD)
+			mask |= S_IRUSR;
+		if (mode & VWRITE)
+			mask |= S_IWUSR;
+		return ((ip->inode.iso_mode & mask) == mask ? 0 : EACCES);
+	}
+
+	/* Otherwise, check the groups. */
+	for (i = 0, gp = cred->cr_groups; i < cred->cr_ngroups; i++, gp++)
+		if (ip->inode.iso_gid == *gp) {
+			if (mode & VEXEC)
+				mask |= S_IXGRP;
+			if (mode & VREAD)
+				mask |= S_IRGRP;
+			if (mode & VWRITE)
+				mask |= S_IWGRP;
+			return ((ip->inode.iso_mode & mask) == mask ?
+			    0 : EACCES);
+		}
+
+	/* Otherwise, check everyone else. */
+	if (mode & VEXEC)
+		mask |= S_IXOTH;
+	if (mode & VREAD)
+		mask |= S_IROTH;
+	if (mode & VWRITE)
+		mask |= S_IWOTH;
+	return ((ip->inode.iso_mode & mask) == mask ? 0 : EACCES);
 }
 
 cd9660_getattr(ap)
@@ -407,12 +450,12 @@ iso_shipdir(idp)
 		    || bcmp(sname,cname,sl)) {
 			if (idp->assocent.d_namlen) {
 				if (error = iso_uiodir(idp,&idp->assocent,idp->assocoff))
-					return error;
+					return (error);
 				idp->assocent.d_namlen = 0;
 			}
 			if (idp->saveent.d_namlen) {
 				if (error = iso_uiodir(idp,&idp->saveent,idp->saveoff))
-					return error;
+					return (error);
 				idp->saveent.d_namlen = 0;
 			}
 		}
@@ -425,12 +468,12 @@ iso_shipdir(idp)
 		idp->saveoff = idp->curroff;
 		bcopy(&idp->current,&idp->saveent,idp->current.d_reclen);
 	}
-	return 0;
+	return (0);
 }
 
 /*
  * Vnode op for readdir
- * XXX make sure everything still works now that eofflagp and cookiep
+ * XXX make sure everything still works now that eofflagp and cookies
  * are no longer args.
  */
 int
@@ -622,37 +665,26 @@ cd9660_readlink(ap)
 	imp = ip->i_mnt;
 	
 	if (imp->iso_ftype != ISO_FTYPE_RRIP)
-		return EINVAL;
+		return (EINVAL);
 	
 	/*
 	 * Get parents directory record block that this inode included.
 	 */
 	error = bread(imp->im_devvp,
-		      (daddr_t)(ip->i_number / DEV_BSIZE),
+		      (daddr_t)((ip->i_number&~imp->im_bmask) / DEV_BSIZE),
 		      imp->logical_block_size,
 		      NOCRED,
 		      &bp);
 	if (error) {
 		brelse(bp);
-		return EINVAL;
+		return (EINVAL);
 	}
 
 	/*
 	 * Setup the directory pointer for this inode
 	 */
 	dirp = (ISODIR *)(bp->b_un.b_addr + (ip->i_number & imp->im_bmask));
-#ifdef DEBUG
-	printf("lbn=%d,off=%d,bsize=%d,DEV_BSIZE=%d, dirp= %08x, b_addr=%08x, offset=%08x(%08x)\n",
-	       (daddr_t)(ip->i_number >> imp->im_bshift),
-	       ip->i_number & imp->im_bmask,
-	       imp->logical_block_size,
-	       DEV_BSIZE,
-	       dirp,
-	       bp->b_un.b_addr,
-	       ip->i_number,
-	       ip->i_number & imp->im_bmask );
-#endif
-	
+
 	/*
 	 * Just make sure, we have a right one....
 	 *   1: Check not cross boundary on block
@@ -660,7 +692,7 @@ cd9660_readlink(ap)
 	if ((ip->i_number & imp->im_bmask) + isonum_711(dirp->length)
 	    > imp->logical_block_size) {
 		brelse(bp);
-		return EINVAL;
+		return (EINVAL);
 	}
 	
 	/*
@@ -675,7 +707,7 @@ cd9660_readlink(ap)
 	if (cd9660_rrip_getsymname(dirp,symname,&symlen,imp) == 0) {
 		FREE(symname,M_NAMEI);
 		brelse(bp);
-		return EINVAL;
+		return (EINVAL);
 	}
 	/*
 	 * Don't forget before you leave from home ;-)
@@ -689,7 +721,7 @@ cd9660_readlink(ap)
 	
 	FREE(symname,M_NAMEI);
 	
-	return error;
+	return (error);
 }
 
 /*
@@ -705,7 +737,7 @@ cd9660_abortop(ap)
 {
 	if ((ap->a_cnp->cn_flags & (HASBUF | SAVESTART)) == HASBUF)
 		FREE(ap->a_cnp->cn_pnbuf, M_NAMEI);
-	return 0;
+	return (0);
 }
 
 /*
@@ -720,7 +752,7 @@ cd9660_lock(ap)
 	register struct iso_node *ip = VTOI(ap->a_vp);
 
 	ISO_ILOCK(ip);
-	return 0;
+	return (0);
 }
 
 /*
@@ -737,7 +769,7 @@ cd9660_unlock(ap)
 	if (!(ip->i_flag & ILOCKED))
 		panic("cd9660_unlock NOT LOCKED");
 	ISO_IUNLOCK(ip);
-	return 0;
+	return (0);
 }
 
 /*
@@ -751,8 +783,8 @@ cd9660_islocked(ap)
 {
 
 	if (VTOI(ap->a_vp)->i_flag & ILOCKED)
-		return 1;
-	return 0;
+		return (1);
+	return (0);
 }
 
 /*
@@ -804,7 +836,7 @@ cd9660_print(ap)
 	} */ *ap;
 {
 	printf("tag VT_ISOFS, isofs vnode\n");
-	return 0;
+	return (0);
 }
 
 /*
