@@ -1,13 +1,13 @@
 /*-
- * Copyright (c) 1990 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1990, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * Chris Torek.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)local.h	5.3 (Berkeley) %G%
+ *	@(#)local.h	8.1 (Berkeley) %G%
  */
 
 /*
