@@ -1,5 +1,5 @@
 /* Copyright (c) 1980 Regents of the University of California */
-static char *sccsid = "@(#)ex_vmain.c	4.2 %G%";
+static char *sccsid = "@(#)ex_vmain.c	4.3 %G%";
 #include "ex.h"
 #include "ex_tty.h"
 #include "ex_vis.h"
@@ -802,24 +802,13 @@ pfixup:
 			continue;
 
 		/*
-		 * ^^		Return to previous context.  Like a 't
-		 *		if that mark is set since tag sets that
-		 *		mark if it stays in same file.  Else
-		 *		like a :e #, and thus can be used after a
+		 * ^^		Return to previous file.
+		 *		Like a :e #, and thus can be used after a
 		 *		"No Write" diagnostic.
-		 *
-		 *		Note: this doesn't correspond with documentation
-		 *		Is this comment misleading?
 		 */
 		case CTRL(^):
 			if (hadcnt)
 				vsetsiz(cnt);
-			addr = getmark('t');
-			if (addr != 0) {
-				markit(addr);
-				vupdown(addr - dot, NOSTR);
-				continue;
-			}
 			vsave();
 			ckaw();
 			oglobp = globp;
