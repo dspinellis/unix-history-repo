@@ -5,11 +5,13 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)mktemp.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)mktemp.c	5.4 (Berkeley) %G%";
 #endif LIBC_SCCS and not lint
 
 #include <sys/types.h>
 #include <sys/file.h>
+#include <sys/stat.h>
+#include <errno.h>
 #include <stdio.h>
 #include <ctype.h>
 
@@ -36,14 +38,15 @@ _gettemp(as, doopen)
 	char	*as;
 	register int	*doopen;
 {
+	extern int	errno;
 	register char	*start, *trv;
+	struct stat	sbuf;
 	u_int	pid;
-	char	savech;
 
 	pid = getpid();
 
 	/* extra X's get set to 0's */
-	for (trv = as;*trv;++trv);
+	for (trv = as; *trv; ++trv);
 	while (*--trv == 'X') {
 		*trv = (pid % 10) + '0';
 		pid /= 10;
@@ -54,22 +57,26 @@ _gettemp(as, doopen)
 	 * six X's and you can't write the directory, this will run for
 	 * a *very* long time.
 	 */
-	for (start = ++trv;trv > as && *trv != '/';--trv);
+	for (start = ++trv; trv > as && *trv != '/'; --trv);
 	if (*trv == '/') {
-		savech = *++trv;
 		*trv = '\0';
-		if (access(as, W_OK))
+		if (stat(as, &sbuf) || !(sbuf.st_mode & S_IFDIR))
 			return(NO);
-		*trv = savech;
+		*trv = '/';
 	}
-	else if (access(".", W_OK))
+	else if (stat(".", &sbuf) == -1)
 		return(NO);
 
 	for (;;) {
-		if (doopen
-		    && (*doopen = open(as, O_CREAT|O_EXCL|O_RDWR, 0600)) != -1
-		    || access(as, F_OK))
+		if (doopen) {
+		    if ((*doopen = open(as, O_CREAT|O_EXCL|O_RDWR, 0600)) >= 0)
 			return(YES);
+		    if (errno != EEXIST)
+			return(NO);
+		}
+		else if (stat(as, &sbuf))
+			return(errno == ENOENT ? YES : NO);
+
 		/* tricky little algorithm for backward compatibility */
 		for (trv = start;;) {
 			if (!*trv)
