@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)tty.h	7.10 (Berkeley) 6/26/91
- *	$Id: tty.h,v 1.10 1994/03/23 01:58:30 ache Exp $
+ *	$Id: tty.h,v 1.11 1994/05/30 03:33:37 ache Exp $
  */
 
 #ifndef _SYS_TTY_H_
@@ -240,7 +240,6 @@ extern void ttstart(struct tty *);
 extern void ttrstrt(struct tty *);
 #endif
 extern int ttioctl(struct tty *, int, caddr_t, int);
-extern int ttnread(struct tty *);
 extern int ttselect(int /*dev_t*/, int, struct proc *);
 extern int ttyopen(int /*dev_t*/, struct tty *, int);
 extern void ttylclose(struct tty *, int);
