@@ -19,7 +19,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)score.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)score.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -36,6 +36,7 @@ static char sccsid[] = "@(#)score.c	5.3 (Berkeley) %G%";
 
 #include <stdio.h>
 #include "rogue.h"
+#include "pathnames.h"
 
 extern char login_name[];
 extern char *m_names[];
@@ -189,7 +190,7 @@ short other;
 
 	md_lock(1);
 
-	if ((fp = fopen(SCORE_FILE, "a+")) == NULL) {
+	if ((fp = fopen(_PATH_SCOREFILE, "a+")) == NULL) {
 		message("cannot read/write/create score file", 0);
 		sf_error();
 	}
