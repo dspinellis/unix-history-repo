@@ -1,6 +1,6 @@
 # ------------------------
 #
-#	Termcap source file @(#)termcap.src	1.33	(Berkeley) %G%
+#	Termcap source file @(#)termcap.src	1.34	(Berkeley) %G%
 #	Kevin Layer, Berkeley
 #	Craig Leres, Berkeley
 #	Mark Horton, Berkeley
@@ -1264,10 +1264,10 @@ bm|microb|microbee|micro bee series:\
 # This description is tricky: being able to use cm depends on there being
 # 2048 bytes of memory and the hairy nl string.
 bs|sb1|superbee|superb|beehive super bee:\
-	:ct=\E3:st=\E1:is=\EE:do=^J:\
+	:ct=\E3:st=\E1:is=\EH\EJ:do=^J:\
 	:cr=^M:sf=\n\200\200\200\n\200\200\200\EA\EK\200\200\200\ET\ET:bl=^G:\
 	:am:le=^H:bs:cd=3\EJ:ce=3\EK:cl=3\EH\EJ:co#80:cm=\EF%r%3%3:cr=1000\r:\
-	:dC#10:da:db:xb:dc=3\EP:dl=100\EM:so=\E_1:se=\E_0:\
+	:dC#10:da:db:xb:dc=3\EP:dl=100\EM:so=\E_1:se=\E_3:\
 	:li#25:nl=\n\200\200\200\n\200\200\200\EA\EK\200\200\200\ET\ET:\
 	:nd=\EC:ta=^I:pt:up=\EA:ho=\EH:ve=\n:\
 	:k1=\Ep:k2=\Eq:k3=\Er:k4=\Es:k5=\Et:k6=\Eu:k7=\Ev:k8=\Ew:\
