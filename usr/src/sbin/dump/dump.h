@@ -1,5 +1,5 @@
 /*
- * "@(#)dump.h	1.9 (Berkeley) %G%"
+ * "@(#)dump.h	1.10 (Berkeley) %G%"
  */
 #define	NI		16
 #define MAXINOPB	(MAXBSIZE / sizeof(struct dinode))
@@ -36,6 +36,8 @@ char	*nodmap;
 char	*disk;		/* name of the disk file */
 char	*tape;		/* name of the tape file */
 char	*increm;	/* name of the file containing incremental information*/
+char	*temp;		/* name of the file for doing rewrite of increm */
+char	lastincno;	/* increment number of previous dump */
 char	incno;		/* increment number */
 int	uflag;		/* update flag */
 int	fi;		/* disk file descriptor */
@@ -87,13 +89,8 @@ int	interrupt();		/* in case operator bangs on console */
 #define	X_REWRITE	2	/* restart writing from the check point */
 #define	X_ABORT		3	/* abort all of dump; don't attempt checkpointing*/
 
-#ifdef DEBUG
-#define	OINCREM	"./ddate"		/*old format incremental info*/
-#define	NINCREM	"./dumpdates"		/*new format incremental info*/
-#else not DEBUG
-#define	OINCREM	"/etc/ddate"		/*old format incremental info*/
 #define	NINCREM	"/etc/dumpdates"	/*new format incremental info*/
-#endif
+#define	TEMP	"/etc/dtmp"		/*output temp file*/
 
 #define	TAPE	"/dev/rmt8"		/* default tape device */
 #define	DISK	"/dev/rrp1g"		/* default disk */
