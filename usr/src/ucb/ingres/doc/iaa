@@ -1,0 +1,74 @@
+.ns
+.de ul
+..
+.pl 1
+.nr in 5
+.de i0
+.in \n(in
+..
+.de lp
+.i0
+.ta \\$2+1
+.in \\$1
+.ti -\\$2
+..
+.de s1
+.sp 1
+..
+.de s2
+.sp 1
+..
+.de s3
+.sp 1
+..
+.de th
+'fi
+'ad
+.bp
+.in \n(in
+.dt
+..
+.de sh
+.i0
+.s1
+.ti 0
+\\$1
+.br
+..
+.de bd
+.tr __
+.ul
+\\$1
+..
+.de bn
+.tr __
+.ul
+\\$1\\t
+..
+.de it
+.tr __
+.ul
+.li
+\\$1
+..
+.de dt
+.ta 8 16 24 32 40 48 56 64
+..
+.ds II \s-2INGRES\s0
+.ds UU \s-2UNIX\s0
+.ds GQ \s-2GEO-QUEL\s0
+.ds +- +-
+.ds ** *
+.ds b B
+.ds G G
+.ds a '
+.ds - -
+.ds _ _
+.ds v |
+.ds p J
+.ds r
+.ds g `
+.ds X X
+.ds u u
+.ds > ->
+.ds | 
