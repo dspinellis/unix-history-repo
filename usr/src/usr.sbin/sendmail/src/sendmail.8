@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)sendmail.8	6.9 (Berkeley) %G%
+.\"     @(#)sendmail.8	6.10 (Berkeley) %G%
 .\"
 .Dd 
 .Dt SENDMAIL 8
@@ -319,19 +319,24 @@ You can consider this an adjunct to the aliasing mechanism,
 except that the database is intended to be distributed;
 aliases are local to a particular host.
 This may not be available if your sendmail does not have the
-USERDB option compiled in.
+.Dv USERDB
+option compiled in.
 .It Li u Ns Ar N
 Set the default user id for mailers.
 .It Li w
 If not set, name server lookups will us a querytype of ANY
 to find types
-CNAME, A, and MX,
+.Dv CNAME , A ,
+and
+.Dv MX ,
 and will cause all existing records to be cached by our local server.
 If there is (might be) a wildcard MX in the local domain
 or its parents that are searched, you
 .ul
 must
-set this option, which will use a querytype of CNAME only;
+set this option, which will use a querytype of
+.Dv CNAME
+only;
 otherwise, it would cause all fully-qualified names
 to match as names in the local domain.
 .El
