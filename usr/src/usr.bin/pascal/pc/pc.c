@@ -1,4 +1,5 @@
-static	char sccsid[] = "@(#)pc.c 3.12 %G%";
+static	char sccsid[] = "@(#)pc.c 3.13 %G%";
+
 #include <stdio.h>
 #include <signal.h>
 #include <wait.h>
@@ -16,6 +17,7 @@ char	*as = "/bin/as";
 char	*lpc = "-lpc";
 char	*crt0 = "/lib/crt0.o";
 char	*mcrt0 = "/lib/mcrt0.o";
+char	*gcrt0 = "/usr/lib/gcrt0.o";
 
 char	*mktemp();
 char	*tname[2];
@@ -23,7 +25,7 @@ char	*tfile[2];
 
 char	*setsuf(), *savestr();
 
-int	Jflag, Sflag, Oflag, cflag, gflag, pflag;
+int	Jflag, Sflag, Oflag, Tlflag, cflag, gflag, pflag;
 int	debug;
 
 #define	NARGS	512
@@ -143,6 +145,7 @@ main(argc, argv)
 				}
 				continue;
 			case 'l':
+				Tlflag = 1;
 				lpc = "/usr/src/lib/libpc/libpc";
 				if (argp[3] != '\0') {
 					lpc = &argp[3];
@@ -171,8 +174,13 @@ main(argc, argv)
 			fprintf(stderr, "pc: -t is default; -C for checking\n");
 			continue;
 		case 'p':
-			crt0 = mcrt0;
-			pflag++;
+			if (argp[2] == 'g')
+				crt0 = gcrt0;
+			else
+				crt0 = mcrt0;
+			if (!Tlflag)
+				lpc = "-lpc_p";
+			pflag = 1;
 			continue;
 		}
 	}
@@ -342,8 +350,13 @@ duplicate:
 	ldargs[ldargx++] = lpc;
 	if (gflag)
 		ldargs[ldargx++] = "-lg";
-	ldargs[ldargx++] = "-lnm";
-	ldargs[ldargx++] = "-lc";
+	if (pflag) {
+		ldargs[ldargx++] = "-lm_p";
+		ldargs[ldargx++] = "-lc_p";
+	} else {
+		ldargs[ldargx++] = "-lm";
+		ldargs[ldargx++] = "-lc";
+	}
 	ldargs[ldargx] = 0;
 	if (dosys(ld, ldargs, 0, 0)==0 && np == 1 && nxo == 0)
 		unlink(onepso);
