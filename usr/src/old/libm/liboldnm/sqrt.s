@@ -1,3 +1,11 @@
+#
+# Copyright (c) 1980 Regents of the University of California.
+# All rights reserved.  The Berkeley software License Agreement
+# specifies the terms and conditions for redistribution.
+#
+#	@(#)sqrt.s	5.1 (Berkeley) %G%
+# 
+#
 # double sqrt(arg):revised July 18,1980
 # double arg
 # if(arg<0.0) { _errno=EDOM; return(-sqrt(-arg)) }

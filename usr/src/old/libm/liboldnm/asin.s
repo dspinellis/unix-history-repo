@@ -1,3 +1,11 @@
+#
+# Copyright (c) 1980 Regents of the University of California.
+# All rights reserved.  The Berkeley software License Agreement
+# specifies the terms and conditions for redistribution.
+#
+#	@(#)asin.s	5.1 (Berkeley) %G%
+# 
+#
 #double asin(arg)
 #double arg; -1.0<=arg<=1.0 or an out of range error return
 #method: call atan() after range reduction

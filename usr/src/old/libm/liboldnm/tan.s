@@ -1,3 +1,11 @@
+#
+# Copyright (c) 1980 Regents of the University of California.
+# All rights reserved.  The Berkeley software License Agreement
+# specifies the terms and conditions for redistribution.
+#
+#	@(#)tan.s	5.1 (Berkeley) %G%
+# 
+#
 # double tan(arg)
 # double arg;
 #method: range reduction to [0,pi/4] followed by polynomial
