@@ -5,9 +5,9 @@
  *
  * %sccs.include.redist.c%
  *
- * from: hp300/hp300/conf.c	7.16 (Berkeley) 4/28/93
+ * from: hp300/hp300/conf.c	8.2 (Berkeley) 11/14/93
  *
- *	@(#)conf.c	8.2 (Berkeley) %G%
+ *	@(#)conf.c	8.3 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -163,11 +163,12 @@ cdev_decl(ctty);
 	(dev_type_map((*))) enodev, 0 }
 
 dev_type_read(mmrw);
-/* read/write */
+dev_type_map(mmmap);
+/* read, write, mmap */
 #define	cdev_mm_init(c,n) { \
 	(dev_type_open((*))) nullop, (dev_type_close((*))) nullop, mmrw, \
 	mmrw, (dev_type_ioctl((*))) enodev, (dev_type_stop((*))) nullop, \
-	(dev_type_reset((*))) nullop, 0, seltrue, (dev_type_map((*))) enodev, 0 }
+	(dev_type_reset((*))) nullop, 0, seltrue, mmmap, 0 }
 
 /* read, write, strategy */
 #define	cdev_swap_init(c,n) { \
@@ -222,7 +223,7 @@ cdev_decl(kbd);
 	dev_init(c,n,open), dev_init(c,n,close), dev_init(c,n,read), \
 	(dev_type_write((*))) nullop, dev_init(c,n,ioctl), \
 	(dev_type_stop((*))) enodev, (dev_type_reset((*))) nullop, 0, \
-	dev_init(c,n,select), (dev_type_map((*))) nullop, 0 }
+	ttselect, (dev_type_map((*))) nullop, 0 }
 
 cdev_decl(cd);
 
@@ -303,9 +304,7 @@ iskmemdev(dev)
 	dev_t dev;
 {
 
-	if (major(dev) == 2 && (minor(dev) == 0 || minor(dev) == 1))
-		return (1);
-	return (0);
+	return (major(dev) == 2 && minor(dev) < 2);
 }
 
 iszerodev(dev)
