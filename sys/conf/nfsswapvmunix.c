@@ -33,7 +33,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)nfsswapvmunix.c	7.1 (Berkeley) 3/4/91
+ *	from: @(#)nfsswapvmunix.c	7.1 (Berkeley) 3/4/91
+ *	$Id$
  */
 
 /*

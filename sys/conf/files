@@ -1,11 +1,4 @@
-#
-# PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
-# --------------------         -----   ----------------------
-# CURRENT PATCH LEVEL:         1       00129
-# --------------------         -----   ----------------------
-#
-# 02 Apr 93	Paul Popelka		Added PCFS support
-# 02 Apr 93	Rodney W. Grimes	Sorted file
+# $Id$
 #
 ddb/db_access.c		optional ddb
 ddb/db_aout.c		optional ddb
