@@ -1,4 +1,4 @@
-/*	ffs_vnops.c	4.3	%G%	*/
+/*	ffs_vnops.c	4.4	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -181,9 +181,9 @@ smount()
 	}
 	mp->m_inodp = ip;
 	mp->m_dev = dev;
-	mp->m_bufp = geteblk();
-	bcopy((caddr_t)bp->b_un.b_addr, mp->m_bufp->b_un.b_addr, BSIZE);
-	fp = mp->m_bufp->b_un.b_filsys;
+	bp->b_flags |= B_LOCKED;
+	mp->m_bufp = bp;
+	fp = bp->b_un.b_filsys;
 	fp->s_ilock = 0;
 	fp->s_flock = 0;
 	fp->s_ronly = uap->ronly & 1;
@@ -209,8 +209,7 @@ sumount()
 	register struct inode *ip;
 	register struct mount *mp;
 	struct buf *bp;
-	int flag;
-	int stillopen = 0;
+	int stillopen, flag;
 	register struct a {
 		char	*fspec;
 	};
@@ -228,17 +227,19 @@ sumount()
 
 found:
 	for(ip = &inode[0]; ip < &inode[NINODE]; ip++)
-		if(ip->i_number != 0 && dev == ip->i_dev) {
+		if (ip->i_number != 0 && dev == ip->i_dev) {
 			u.u_error = EBUSY;
 			return;
-		} else if (ip->i_number != 0 && (ip->i_mode&IFMT) == IFBLK
-			&& ip->i_un.i_rdev == dev)
-				stillopen++;
+		} else if (ip->i_number != 0 && (ip->i_mode&IFMT) == IFBLK &&
+		    ip->i_un.i_rdev == dev)
+			stillopen++;
 	ip = mp->m_inodp;
 	ip->i_flag &= ~IMOUNT;
 	plock(ip);
 	iput(ip);
-	bp = mp->m_bufp;
+	if ((bp = getblk(dev, SUPERB)) != mp->m_bufp)
+		panic("umount");
+	bp->b_flags &= ~B_LOCKED;
 	flag = !bp->b_un.b_filsys->s_ronly;
 	mp->m_bufp = NULL;
 	brelse(bp);
