@@ -1,0 +1,143 @@
+.th "SORT" I 5/13/75
+.sh NAME
+sort, usort \*- sort or merge files
+.sh SYNOPSIS
+.bd sort
+[
+.if t \fB\*-abdnrt\fIx\fR
+.if n -abdnrt______x
+]
+[ \fB+\fIpos \fR [ \fB\*-\fIpos \fR]
+] . . .
+[ 
+.bd \*-mo 
+]
+[ name ] . . .
+.br
+.bd usort
+[
+.bd \-umo
+] [ name ] . . .
+.sh DESCRIPTION
+.it Sort
+sorts
+all the named files together
+and writes the result on
+the standard output.
+The name `\*-' means
+the standard input.
+The standard input is also used if no input file names are given.
+Thus
+.it sort
+may be used as a filter.
+.s3
+The default sort key is an entire line.
+Default ordering is lexicographic in ASCII collating sequence,
+except that lower-case letters are considered
+the same as the corresponding upper-case letters.
+Non-ASCII bytes are ignored.
+The ordering is affected by the flags
+.if t \fB\*-abdnrt\fR,
+.if n .it abdnrt,
+one or more of which may appear:
+.s3
+.lp +4 4
+\fBa\fR	Do not map lower case letters.
+.s3
+.lp +4 4
+\fBb\fR	Leading blanks (spaces and tabs) are not included in fields.
+.s3
+.lp+4 4
+\fBd\fR	`Dictionary' order: only letters, digits and blanks
+are significant in ASCII comparisons.
+.s3
+.lp +4 4
+\fBn\fR	An initial numeric string,
+consisting of optional minus sign,
+digits and optionally included decimal point,
+is sorted by arithmetic value.
+.s3
+.lp+4 4
+\fBr\fR	Reverse the sense of comparisons.
+.s3
+.lp +4 4
+\fBt\fIx\fR	Tab character between fields is
+.it x.
+.s3
+.i0
+Selected parts of the line, specified by
+\fB+\fIpos\fR
+and
+\fB\*-\fIpos\fR,
+may be used as sort keys.
+.it Pos 
+has the form
+.it m.n,
+where
+.it m
+specifies a number of fields to skip,
+and 
+.it n
+a number of characters to skip further into the next field.
+A missing
+.it \\.n
+is taken to be 0.
+\fB+\fIpos\fR denotes the beginning of the key;
+\fB\*-\fIpos\fR denotes the first position after the key
+(end of line by default).
+The ordering rule may be overridden for a particular key
+by appending one or more of the flags
+.bd abdnr
+to
+\fB+\fIpos\fR.
+.s3
+When no tab character has been specified,
+a field consists of
+nonblanks and any preceding blanks.
+Under the
+.bd \*-b
+flag, leading blanks are excluded from a field.
+When a tab character has been specified,
+a field is a
+string ending with a tab character.
+.s3
+.i0
+When keys are specified,
+later keys are compared only when all earlier ones compare equal.
+Lines that compare equal are ordered
+with all bytes significant.
+.s3
+These flag arguments are also understood:
+.s3
+.lp +4 4
+\fB\*-m\fR	Merge only, the input files are already sorted.
+.s3
+.lp +4 4
+\fB\*-o\fR	The next argument is the name of an output file
+to use instead of the standard output.
+This file may be the same as one of the inputs,
+except under the merge flag \fB\*-m\fR.
+.i0
+.s3
+.it Usort
+is a somewhat specialized version of
+.it sort
+which accepts no collating sequence options:
+order is always
+plain ASCII.
+It also strips out the second and following copies
+of duplicated lines.
+A
+.it u
+flag prevents this stripping.
+.it Usort
+also understands
+the
+.it m
+and
+.it o
+options in the same way as
+.it sort.
+.sh FILES
+/usr/tmp/stm???
+.sh BUGS
