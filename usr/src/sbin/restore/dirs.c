@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)dirs.c	5.21 (Berkeley) %G%";
+static char sccsid[] = "@(#)dirs.c	5.22 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "restore.h"
@@ -512,7 +512,8 @@ opendirfile(name)
 /*
  * Set the mode, owner, and times for all new or changed directories
  */
-setdirmodes()
+setdirmodes(flags)
+	int flags;
 {
 	FILE *mf;
 	struct modeinfo node;
@@ -537,7 +538,7 @@ setdirmodes()
 		if (command == 'i' || command == 'x') {
 			if (ep == NIL)
 				continue;
-			if (ep->e_flags & EXISTED) {
+			if ((flags & FORCE) == 0 && ep->e_flags & EXISTED) {
 				ep->e_flags &= ~NEW;
 				continue;
 			}
