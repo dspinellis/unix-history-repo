@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)rx50.c	7.2 (Berkeley) %G%
+ *	@(#)rx50.c	7.3 (Berkeley) %G%
  */
 
 #if VAX8200
@@ -91,7 +91,7 @@ rx50close(dev, flags)
 /*
  * Perform a read (uio->uio_rw==UIO_READ) or write (uio->uio_rw==UIO_WRITE).
  */
-rx50operation(dev, uio, flags)
+rx50rw(dev, uio, flags)
 	dev_t dev;
 	register struct uio *uio;
 	int flags;
