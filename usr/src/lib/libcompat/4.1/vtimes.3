@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)vtimes.3	4.1 (Berkeley) %G%
+.\"	@(#)vtimes.3	5.1 (Berkeley) %G%
 .\"
-.TH VTIMES 2V
+.TH VTIMES 3C "13 June 1983"
 .UC 4
 .SH NAME
 vtimes \- get information about resource utilization
@@ -14,6 +14,10 @@ vtimes \- get information about resource utilization
 .B "struct vtimes *par_vm, *ch_vm;"
 .fi
 .SH DESCRIPTION
+.ft B
+This facility is superseded by getrusage(2).
+.ft R
+.PP
 .I Vtimes
 returns accounting information for the current process and for
 the terminated child processes of the current
