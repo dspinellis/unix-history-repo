@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ww.h	3.63 (Berkeley) %G%
+ *	@(#)ww.h	3.64 (Berkeley) %G%
  */
 
 #ifdef OLD_TTY
@@ -211,7 +211,7 @@ int wwnwwr, wwnwwra, wwnwwrc;
 int wwntokdef, wwntokuse, wwntokbad, wwntoksave, wwntokc;
 int wwnupdate, wwnupdline, wwnupdmiss;
 int wwnupdscan, wwnupdclreol, wwnupdclreos, wwnupdclreosmiss, wwnupdclreosline;
-int wwnread, wwnreade, wwnreadz, wwnreadc;
+int wwnread, wwnreade, wwnreadz, wwnreadc, wwnreadec;
 int wwnwread, wwnwreade, wwnwreadz, wwnwreadd, wwnwreadc, wwnwreadp;
 int wwnselect, wwnselecte, wwnselectz;
 
