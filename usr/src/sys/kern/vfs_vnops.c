@@ -1,4 +1,4 @@
-/*	vfs_vnops.c	4.13	81/10/11	*/
+/*	vfs_vnops.c	4.14	81/11/08	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -13,15 +13,13 @@
 #include "../h/mount.h"
 
 /*
- * Convert a user supplied
- * file descriptor into a pointer
- * to a file structure.
- * Only task is to check range
- * of the descriptor.
+ * Convert a user supplied file descriptor into a pointer
+ * to a file structure.  Only task is to check range of the descriptor.
+ * Critical paths should use the GETF macro, defined in inline.h.
  */
 struct file *
 getf(f)
-register int f;
+	register int f;
 {
 	register struct file *fp;
 
@@ -44,7 +42,7 @@ register int f;
  * Call device handler on last close.
  */
 closef(fp)
-register struct file *fp;
+	register struct file *fp;
 {
 	register struct inode *ip;
 	register struct mount *mp;
@@ -52,28 +50,23 @@ register struct file *fp;
 	dev_t dev;
 	register int (*cfunc)();
 
-	if(fp == NULL)
+	if (fp == NULL)
 		return;
 	if (fp->f_count > 1) {
 		fp->f_count--;
 		return;
 	}
 	flag = fp->f_flag;
-#ifdef BBNNET
-	if (flag&FNET) {
-		netclose(fp);
-		return;
-	}
-#endif
-	if (flag & FPORT) {
-		ptclose(fp);
+	if (flag & FSOCKET) {
+		skclose(fp->f_socket);
+		fp->f_socket = 0;
 		fp->f_count = 0;
 		return;
 	}
 	ip = fp->f_inode;
 	dev = (dev_t)ip->i_un.i_rdev;
 	mode = ip->i_mode & IFMT;
-	plock(ip);
+	ilock(ip);
 	iput(ip);
 	fp->f_count = 0;
 
@@ -92,23 +85,20 @@ register struct file *fp;
 				return;
 		cfunc = bdevsw[major(dev)].d_close;
 		break;
+
 	default:
 		return;
 	}
-
-	for(fp=file; fp < fileNFILE; fp++) {
-#ifdef BBNNET
-			if (fp->f_flag & FNET)
-				continue;
-#endif
+	for (fp = file; fp < fileNFILE; fp++) {
+		if (fp->f_flag & FSOCKET)
+			continue;
 		if (fp->f_count && (ip = fp->f_inode) &&
-		    ip->i_un.i_rdev == dev &&
-		    (ip->i_mode&IFMT) == mode)
+		    ip->i_un.i_rdev == dev && (ip->i_mode&IFMT) == mode)
 			return;
 	}
 	if (mode == IFBLK) {
 		/*
-		 * on last close of a block device (that isn't mounted)
+		 * On last close of a block device (that isn't mounted)
 		 * we must invalidate any in core blocks
 		 */
 		bflush(dev);
@@ -118,28 +108,28 @@ register struct file *fp;
 }
 
 /*
- * openi called to allow handler
+ * Openi called to allow handler
  * of special files to initialize and
  * validate before actual IO.
  */
 openi(ip, rw)
-register struct inode *ip;
+	register struct inode *ip;
 {
 	dev_t dev;
 	register unsigned int maj;
 
 	dev = (dev_t)ip->i_un.i_rdev;
 	maj = major(dev);
-	switch(ip->i_mode&IFMT) {
+	switch (ip->i_mode&IFMT) {
 
 	case IFCHR:
-		if(maj >= nchrdev)
+		if (maj >= nchrdev)
 			goto bad;
 		(*cdevsw[maj].d_open)(dev, rw);
 		break;
 
 	case IFBLK:
-		if(maj >= nblkdev)
+		if (maj >= nblkdev)
 			goto bad;
 		(*bdevsw[maj].d_open)(dev, rw);
 	}
@@ -163,35 +153,35 @@ bad:
  * permissions.
  */
 access(ip, mode)
-register struct inode *ip;
+	register struct inode *ip;
+	int mode;
 {
 	register m;
 
 	m = mode;
-	if(m == IWRITE) {
-		if(getfs(ip->i_dev)->s_ronly != 0) {
+	if (m == IWRITE) {
+		if (getfs(ip->i_dev)->s_ronly != 0) {
 			u.u_error = EROFS;
-			return(1);
+			return (1);
 		}
 		if (ip->i_flag&ITEXT)		/* try to free text */
 			xrele(ip);
-		if(ip->i_flag & ITEXT) {
+		if (ip->i_flag & ITEXT) {
 			u.u_error = ETXTBSY;
-			return(1);
+			return (1);
 		}
 	}
-	if(u.u_uid == 0)
-		return(0);
-	if(u.u_uid != ip->i_uid) {
+	if (u.u_uid == 0)
+		return (0);
+	if (u.u_uid != ip->i_uid) {
 		m >>= 3;
-		if(u.u_gid != ip->i_gid)
+		if (u.u_gid != ip->i_gid)
 			m >>= 3;
 	}
-	if((ip->i_mode&m) != 0)
-		return(0);
-
+	if ((ip->i_mode&m) != 0)
+		return (0);
 	u.u_error = EACCES;
-	return(1);
+	return (1);
 }
 
 /*
@@ -208,14 +198,14 @@ owner()
 	register struct inode *ip;
 
 	ip = namei(uchar, 0);
-	if(ip == NULL)
-		return(NULL);
-	if(u.u_uid == ip->i_uid)
-		return(ip);
-	if(suser())
-		return(ip);
+	if (ip == NULL)
+		return (NULL);
+	if (u.u_uid == ip->i_uid)
+		return (ip);
+	if (suser())
+		return (ip);
 	iput(ip);
-	return(NULL);
+	return (NULL);
 }
 
 /*
@@ -225,12 +215,12 @@ owner()
 suser()
 {
 
-	if(u.u_uid == 0) {
+	if (u.u_uid == 0) {
 		u.u_acflag |= ASU;
-		return(1);
+		return (1);
 	}
 	u.u_error = EPERM;
-	return(0);
+	return (0);
 }
 
 /*
@@ -240,14 +230,14 @@ ufalloc()
 {
 	register i;
 
-	for(i=0; i<NOFILE; i++)
-		if(u.u_ofile[i] == NULL) {
+	for (i=0; i<NOFILE; i++)
+		if (u.u_ofile[i] == NULL) {
 			u.u_r.r_val1 = i;
 			u.u_pofile[i] = 0;
-			return(i);
+			return (i);
 		}
 	u.u_error = EMFILE;
-	return(-1);
+	return (-1);
 }
 
 struct	file *lastf;
@@ -265,7 +255,7 @@ falloc()
 
 	i = ufalloc();
 	if (i < 0)
-		return(NULL);
+		return (NULL);
 	if (lastf == 0)
 		lastf = file;
 	for (fp = lastf; fp < fileNFILE; fp++)
@@ -280,7 +270,7 @@ falloc()
 slot:
 	u.u_ofile[i] = fp;
 	fp->f_count++;
-	fp->f_un.f_offset = 0;
+	fp->f_offset = 0;
 	fp->f_inode = 0;
 	lastf = fp + 1;
 	return (fp);
