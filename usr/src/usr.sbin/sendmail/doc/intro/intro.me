@@ -21,7 +21,7 @@ Berkeley, California  94720
 .(f
 This is
 .if \n(DR draft
-version 3.6,
+version 3.7,
 last modified on %G%.
 .if \n(DR Please do not distribute this version without permission
 .if \n(DR of the author.
@@ -2312,6 +2312,12 @@ For example,
 if this flag is set
 it is not possible to specify a program as an address directly;
 this can only be done with an alias.
+.ip NOTUNIX
+If you are using a non-UNIX mail format,
+you can set this flag to turn off special processing
+of UNIX-style
+.q "From "
+lines.
 .nr ii 5n
 .pp
 If you want to enable special processing of other headers,
