@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)vacation.c	5.20 (Berkeley) %G%";
+static char sccsid[] = "@(#)vacation.c	5.21 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -190,7 +190,8 @@ readheaders()
 			if (!*p)
 				break;
 			if (!strncasecmp(p, "junk", 4) ||
-			    !strncasecmp(p, "bulk", 4))
+			    !strncasecmp(p, "bulk", 4) ||
+			    !strncasecmp(p, "list", 4))
 				exit(0);
 			break;
 		case 'C':		/* "Cc:" */
@@ -236,7 +237,7 @@ nsearch(name, str)
 
 /*
  * junkmail --
- *	read the header and return if automagic/junk/bulk mail
+ *	read the header and return if automagic/junk/bulk/list mail
  */
 junkmail()
 {
