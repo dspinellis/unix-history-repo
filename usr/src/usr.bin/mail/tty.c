@@ -9,7 +9,7 @@
 #include "rcv.h"
 #include <sgtty.h>
 
-static char *SccsId = "@(#)tty.c	1.2 %G%";
+static char *SccsId = "@(#)tty.c	1.3 %G%";
 
 static	int	c_erase;		/* Current erase char */
 static	int	c_kill;			/* Current kill char */
@@ -45,8 +45,8 @@ grabh(hp, gflags)
 	ttybuf.sg_erase = 0;
 	ttybuf.sg_kill = 0;
 	for (s = SIGINT; s <= SIGQUIT; s++)
-		if ((savesigs[s-SIGINT] = signal(s, SIG_IGN)) == SIG_DFL)
-			signal(s, SIG_DFL);
+		if ((savesigs[s-SIGINT] = sigset(s, SIG_IGN)) == SIG_DFL)
+			sigset(s, SIG_DFL);
 #endif
 	if (gflags & GTO) {
 #ifndef TIOCSTI
@@ -90,7 +90,7 @@ grabh(hp, gflags)
 	if (ttyset)
 		stty(fileno(stdin), &ttybuf);
 	for (s = SIGINT; s <= SIGQUIT; s++)
-		signal(s, savesigs[s-SIGINT]);
+		sigset(s, savesigs[s-SIGINT]);
 #endif
 	return(errs);
 }
