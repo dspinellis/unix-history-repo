@@ -81,6 +81,7 @@
 #define DRAWCURVE	'g'	/* gremlin spline */
 #define	DRAWWIG		'~'	/* wiggly line with spline */
 #define	DRAWPOLY	'p'	/* polygon with stipples */
+#define	DRAWUBPOLY	'P'	/* polygon, stipples, no border */
 
 #define	LEFT	020	/* \{ */
 #define	RIGHT	021	/* \} */

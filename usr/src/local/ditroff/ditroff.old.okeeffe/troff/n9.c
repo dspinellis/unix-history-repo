@@ -258,7 +258,7 @@ setdraw()	/* generate internal cookies for a drawing function */
 		if (cbits(c) != ' ')
 			ch = c;
 		vflag = 0;
-		if (i == 0 && type == DRAWPOLY) {
+		if (i == 0 && (type == DRAWPOLY || type == DRAWUBPOLY)) {
 			dfact = 1;
 			dx[0] = quant(atoi(), 1);
 			if (dx[0] < 0 || dx[0] > MAXMOT)
