@@ -10,7 +10,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)machdep.c	7.12 (Berkeley) %G%
+ *	@(#)machdep.c	7.13 (Berkeley) %G%
  */
 
 /* from: Utah $Hdr: machdep.c 1.63 91/04/24$ */
@@ -50,12 +50,14 @@
 
 #include <pmax/dev/device.h>
 #include <pmax/dev/sccreg.h>
+#include <pmax/dev/ascreg.h>
 
 #include <pmax/pmax/clockreg.h>
 #include <pmax/pmax/kn01.h>
 #include <pmax/pmax/kn02.h>
 #include <pmax/pmax/kmin.h>
 #include <pmax/pmax/maxine.h>
+#include <pmax/pmax/kn03.h>
 #include <pmax/pmax/asic.h>
 #include <pmax/pmax/turbochannel.h>
 #include <pmax/pmax/pmaxtype.h>
@@ -69,6 +71,7 @@
 #include <dtop.h>
 #include <scc.h>
 #include <le.h>
+#include <asc.h>
 
 #if NDC > 0
 extern int dcGetc(), dcparam();
@@ -88,7 +91,13 @@ extern struct consdev cn_tab;
 /* Will scan from max to min, inclusive */
 static int tc_max_slot = KN02_TC_MAX;
 static int tc_min_slot = KN02_TC_MIN;
-
+static u_int tc_slot_phys_base [TC_MAX_SLOTS] = {
+	/* use 3max for default values */
+	KN02_PHYS_TC_0_START, KN02_PHYS_TC_1_START,
+	KN02_PHYS_TC_2_START, KN02_PHYS_TC_3_START,
+	KN02_PHYS_TC_4_START, KN02_PHYS_TC_5_START,
+	KN02_PHYS_TC_6_START, KN02_PHYS_TC_7_START
+};
 
 vm_map_t buffer_map;
 
@@ -99,24 +108,29 @@ int	nswbuf = 0;
 #ifdef	NBUF
 int	nbuf = NBUF;
 #else
-int	nbuf = 1024;
+int	nbuf = 0;
 #endif
 #ifdef	BUFPAGES
 int	bufpages = BUFPAGES;
 #else
-int	bufpages = 1024;
+int	bufpages = 0;
 #endif
 int	msgbufmapped = 0;	/* set when safe to use msgbuf */
 int	maxmem;			/* max memory per process */
 int	physmem;		/* max supported memory, changes to actual */
 int	pmax_boardtype;		/* Mother board type */
 u_long	le_iomem;		/* 128K for lance chip via. ASIC */
+u_long	asc_iomem;		/* and 7 * 8K buffers for the scsi */
+u_long	asic_base;		/* Base address of I/O asic */
 const	struct callback *callv;	/* pointer to PROM entry points */
 
 void	(*tc_enable_interrupt)();
 extern	int (*pmax_hardware_intr)();
 void	pmax_slot_hand_fill();
 int	kn02_intr(), kmin_intr(), xine_intr(), pmax_intr();
+#ifdef DS5000_240
+int	kn03_intr();
+#endif
 extern	int Mach_spl0(), Mach_spl1(), Mach_spl2(), Mach_spl3(), splhigh();
 int	(*Mach_splnet)() = splhigh;
 int	(*Mach_splbio)() = splhigh;
@@ -127,6 +141,9 @@ int	(*Mach_splstatclock)() = splhigh;
 void	(*tc_slot_hand_fill)();
 extern	volatile struct chiptime *Mach_clock_addr;
 u_long	kmin_tc3_imask, xine_tc3_imask;
+#ifdef DS5000_240
+u_long	kn03_tc3_imask;
+#endif
 tc_option_t tc_slot_info[TC_MAX_LOGICAL_SLOTS];
 static	void asic_init();
 extern	void RemconsInit();
@@ -135,6 +152,9 @@ void	kn02_enable_intr(), kn02_slot_hand_fill(),
 	kmin_enable_intr(), kmin_slot_hand_fill(),
 	xine_enable_intr(), xine_slot_hand_fill(),
 	tc_find_all_options();
+#ifdef DS5000_240
+void	kn03_enable_intr(), kn03_slot_hand_fill();
+#endif
 #endif /* DS5000 */
 
 /*
@@ -353,6 +373,10 @@ mach_init(argc, argv, code, cv)
 	case DS_3MIN:	/* DS5000/1xx 3min */
 		tc_max_slot = KMIN_TC_MAX;
 		tc_min_slot = KMIN_TC_MIN;
+		tc_slot_phys_base[0] = KMIN_PHYS_TC_0_START;
+		tc_slot_phys_base[1] = KMIN_PHYS_TC_1_START;
+		tc_slot_phys_base[2] = KMIN_PHYS_TC_2_START;
+		asic_base = MACH_PHYS_TO_UNCACHED(KMIN_SYS_ASIC);
 		tc_slot_hand_fill = kmin_slot_hand_fill;
 		pmax_hardware_intr = kmin_intr;
 		tc_enable_interrupt = kmin_enable_intr;
@@ -380,8 +404,8 @@ mach_init(argc, argv, code, cv)
 		/*
 		 * Initialize interrupts.
 		 */
-		*(u_int *)MACH_PHYS_TO_UNCACHED(KMIN_REG_IMSK) = KMIN_IM0;
-		*(u_int *)MACH_PHYS_TO_UNCACHED(KMIN_REG_INTR) = 0;
+		*(u_int *)ASIC_REG_IMSK(asic_base) = KMIN_IM0;
+		*(u_int *)ASIC_REG_INTR(asic_base) = 0;
 		/* clear any memory errors from probes */
 		*(unsigned *)MACH_PHYS_TO_UNCACHED(KMIN_REG_TIMEOUT) = 0;
 		break;
@@ -389,6 +413,9 @@ mach_init(argc, argv, code, cv)
 	case DS_MAXINE:	/* DS5000/xx maxine */
 		tc_max_slot = XINE_TC_MAX;
 		tc_min_slot = XINE_TC_MIN;
+		tc_slot_phys_base[0] = XINE_PHYS_TC_0_START;
+		tc_slot_phys_base[1] = XINE_PHYS_TC_1_START;
+		asic_base = MACH_PHYS_TO_UNCACHED(XINE_SYS_ASIC);
 		tc_slot_hand_fill = xine_slot_hand_fill;
 		pmax_hardware_intr = xine_intr;
 		tc_enable_interrupt = xine_enable_intr;
@@ -409,11 +436,47 @@ mach_init(argc, argv, code, cv)
 		/*
 		 * Initialize interrupts.
 		 */
-		*(u_int *)MACH_PHYS_TO_UNCACHED(XINE_REG_IMSK) = XINE_IM0;
-		*(u_int *)MACH_PHYS_TO_UNCACHED(XINE_REG_INTR) = 0;
+		*(u_int *)ASIC_REG_IMSK(asic_base) = XINE_IM0;
+		*(u_int *)ASIC_REG_INTR(asic_base) = 0;
 		/* clear any memory errors from probes */
 		*(unsigned *)MACH_PHYS_TO_UNCACHED(XINE_REG_TIMEOUT) = 0;
 		break;
+
+#ifdef DS5000_240
+	case DS_3MAXPLUS:	/* DS5000/240 3max+ UNTESTED!! */
+		tc_max_slot = KN03_TC_MAX;
+		tc_min_slot = KN03_TC_MIN;
+		tc_slot_phys_base[0] = KN03_PHYS_TC_0_START;
+		tc_slot_phys_base[1] = KN03_PHYS_TC_1_START;
+		tc_slot_phys_base[2] = KN03_PHYS_TC_2_START;
+		asic_base = MACH_PHYS_TO_UNCACHED(KN03_SYS_ASIC);
+		tc_slot_hand_fill = kn03_slot_hand_fill;
+		pmax_hardware_intr = kn03_intr;
+		tc_enable_interrupt = kn03_enable_intr;
+
+		Mach_splnet = Mach_spl0;
+		Mach_splbio = Mach_spl0;
+		Mach_splimp = Mach_spl0;
+		Mach_spltty = Mach_spl0;
+		Mach_splclock = Mach_spl1;
+		Mach_splstatclock = Mach_spl1;
+		Mach_clock_addr = (volatile struct chiptime *)
+			MACH_PHYS_TO_UNCACHED(KN03_SYS_CLOCK);
+
+		/*
+		 * Probe the TURBOchannel to see what controllers are present.
+		 */
+		tc_find_all_options();
+
+		/*
+		 * Initialize interrupts.
+		 */
+		*(u_int *)ASIC_REG_IMSK(asic_base) = KN03_IM0;
+		*(u_int *)ASIC_REG_INTR(asic_base) = 0;
+		/* clear any memory errors from probes */
+		*(unsigned *)MACH_PHYS_TO_UNCACHED(KN03_SYS_ERRADR) = 0;
+		break;
+#endif /* DS5000_240 */
 #endif /* DS5000 */
 
 	default:
@@ -448,12 +511,27 @@ mach_init(argc, argv, code, cv)
 	/*
 	 * Grab 128K at the top of physical memory for the lance chip
 	 * on machines where it does dma through the I/O ASIC.
+	 * It must be physically contiguous and aligned on a 128K boundary.
 	 */
-	if (pmax_boardtype == DS_3MIN || pmax_boardtype == DS_MAXINE) {
+	if (pmax_boardtype == DS_3MIN || pmax_boardtype == DS_MAXINE ||
+		pmax_boardtype == DS_3MAXPLUS) {
 		maxmem -= btoc(128 * 1024);
 		le_iomem = (maxmem << PGSHIFT);
 	}
 #endif /* NLE */
+#if NASC > 0
+	/*
+	 * Ditto for the scsi chip. There is probably a way to make asc.c
+	 * do dma without these buffers, but it would require major
+	 * re-engineering of the asc driver.
+	 * They must be 8K in size and page aligned.
+	 */
+	if (pmax_boardtype == DS_3MIN || pmax_boardtype == DS_MAXINE ||
+		pmax_boardtype == DS_3MAXPLUS) {
+		maxmem -= btoc(ASC_NCMD * 8192);
+		asc_iomem = (maxmem << PGSHIFT);
+	}
+#endif /* NASC */
 
 	/*
 	 * Initialize error message buffer (at end of core).
@@ -603,6 +681,7 @@ consinit()
 		break;
 
 	    case DS_3MIN:
+	    case DS_3MAXPLUS:
 #if NSCC > 0
 		if (kbd == 3) {
 			cn_tab.cn_dev = makedev(SCCDEV, SCCKBD_PORT);
@@ -667,6 +746,7 @@ remcons:
 		break;
 
 	case DS_3MIN:
+	case DS_3MAXPLUS:
 #if NSCC > 0
 		cn_tab.cn_dev = makedev(SCCDEV, SCCCOMM3_PORT);
 		cn_tab.cn_getc = sccGetc;
@@ -1443,13 +1523,6 @@ tc_identify_option( addr, slot, complain)
  * use as system console (all workstations).
  */
 
-unsigned int	tc_slot_phys_base [TC_MAX_SLOTS] = {
-	/* use 3max for default values */
-	KN02_PHYS_TC_0_START, KN02_PHYS_TC_1_START,
-	KN02_PHYS_TC_2_START, KN02_PHYS_TC_3_START,
-	KN02_PHYS_TC_4_START, KN02_PHYS_TC_5_START,
-	KN02_PHYS_TC_6_START, KN02_PHYS_TC_7_START
-};
 
 void
 tc_find_all_options()
@@ -1700,6 +1773,56 @@ xine_enable_intr(slotno, on)
 		xine_tc3_imask &= ~mask;
 }
 
+#ifdef DS5000_240
+/*
+ * UNTESTED!!
+ *	Object:
+ *		kn03_enable_intr		EXPORTED function
+ *
+ *	Enable/Disable interrupts from a TURBOchannel slot.
+ *
+ *	We pretend we actually have 8 slots even if we really have
+ *	only 4: TCslots 0-2 maps to slots 0-2, TCslot3 maps to
+ *	slots 3-7 (see kn03_slot_hand_fill).
+ */
+void
+kn03_enable_intr(slotno, on)
+	register unsigned int slotno;
+	int on;
+{
+	register unsigned mask;
+
+	switch (slotno) {
+	case 0:
+	case 1:
+	case 2:
+		return;
+	case KN03_SCSI_SLOT:
+		mask = (KN03_INTR_SCSI | KN03_INTR_SCSI_PTR_LOAD |
+			KN03_INTR_SCSI_OVRUN | KN03_INTR_SCSI_READ_E);
+		break;
+	case KN03_LANCE_SLOT:
+		mask = KN03_INTR_LANCE;
+		break;
+	case KN03_SCC0_SLOT:
+		mask = KN03_INTR_SCC_0;
+		break;
+	case KN03_SCC1_SLOT:
+		mask = KN03_INTR_SCC_1;
+		break;
+	case KN03_ASIC_SLOT:
+		mask = KN03_INTR_ASIC;
+		break;
+	default:
+		return;
+	}
+	if (on)
+		kn03_tc3_imask |= mask;
+	else
+		kn03_tc3_imask &= ~mask;
+}
+#endif /* DS5000_240 */
+
 /*
  *	Object:
  *		kn02_slot_hand_fill		EXPORTED function
@@ -1771,7 +1894,7 @@ kmin_slot_hand_fill(slot)
 	bcopy("ASIC    ", slot[KMIN_ASIC_SLOT].module_name, TC_ROM_LLEN+1);
 	slot[KMIN_ASIC_SLOT].k1seg_address =
 		MACH_PHYS_TO_UNCACHED(KMIN_SYS_ASIC);
-	asic_init(TRUE);
+	asic_init(0);
 }
 
 /*
@@ -1841,49 +1964,72 @@ xine_slot_hand_fill(slot)
 	bcopy("XINE-FRC", slot[XINE_FRC_SLOT].module_name, TC_ROM_LLEN+1);
 	slot[XINE_FRC_SLOT].k1seg_address =
 		MACH_PHYS_TO_UNCACHED(XINE_REG_FCTR);
-	asic_init(FALSE);
+	asic_init(1);
 }
+
+#ifdef DS5000_240
+/*
+ * UNTESTED!!
+ *	Object:
+ *		kn03_slot_hand_fill		EXPORTED function
+ *
+ *	Fill in by hand the info for TC slots that are non-standard.
+ *	This is the system slot on a 3max+, which we think of as a
+ *	set of non-regular size TC slots.
+ *
+ */
+void
+kn03_slot_hand_fill(slot)
+	tc_option_t *slot;
+{
+	register int i;
+
+	for (i = KN03_SCSI_SLOT; i < KN03_ASIC_SLOT+1; i++) {
+		slot[i].present = 1;
+		slot[i].slot_size = 1;
+		slot[i].rom_width = 1;
+		slot[i].unit = 0;
+		bcopy("DEC KN03", slot[i].module_id, TC_ROM_LLEN+1);
+	}
+
+	/* scsi */
+	bcopy("PMAZ-AA ", slot[KN03_SCSI_SLOT].module_name, TC_ROM_LLEN+1);
+	slot[KN03_SCSI_SLOT].k1seg_address =
+		MACH_PHYS_TO_UNCACHED(KN03_SYS_SCSI);
+
+	/* lance */
+	bcopy("PMAD-AA ", slot[KN03_LANCE_SLOT].module_name, TC_ROM_LLEN+1);
+	slot[KN03_LANCE_SLOT].k1seg_address = 0;
+
+	/* scc */
+	bcopy("Z8530   ", slot[KN03_SCC0_SLOT].module_name, TC_ROM_LLEN+1);
+	slot[KN03_SCC0_SLOT].k1seg_address =
+		MACH_PHYS_TO_UNCACHED(KN03_SYS_SCC_0);
+
+	slot[KN03_SCC1_SLOT].unit = 1;
+	bcopy("Z8530   ", slot[KN03_SCC1_SLOT].module_name, TC_ROM_LLEN+1);
+	slot[KN03_SCC1_SLOT].k1seg_address =
+		MACH_PHYS_TO_UNCACHED(KN03_SYS_SCC_1);
+
+	/* asic */
+	bcopy("ASIC    ", slot[KN03_ASIC_SLOT].module_name, TC_ROM_LLEN+1);
+	slot[KN03_ASIC_SLOT].k1seg_address =
+		MACH_PHYS_TO_UNCACHED(KN03_SYS_ASIC);
+	asic_init(0);
+}
+#endif /* DS5000_240 */
 
 /*
  * Initialize the I/O asic
  */
 static void
-asic_init(isa_3min)
-	int isa_3min;
+asic_init(isa_maxine)
+	int isa_maxine;
 {
-	volatile u_int *ssr, *decoder;
+	volatile u_int *decoder;
 
 	/* These are common between 3min and maxine */
-	decoder = (volatile u_int *)
-		MACH_PHYS_TO_UNCACHED(KMIN_REG_LANCE_DECODE);
+	decoder = (volatile u_int *)ASIC_REG_LANCE_DECODE(asic_base);
 	*decoder = KMIN_LANCE_CONFIG;
-#ifdef notdef
-	decoder = (volatile u_int *)MACH_PHYS_TO_UNCACHED(KMIN_REG_SCSI_DECODE);
-	*decoder = KMIN_SCSI_CONFIG;
-	decoder = (volatile u_int *)MACH_PHYS_TO_UNCACHED(KMIN_REG_SCC0_DECODE);
-	*decoder = KMIN_SCC0_CONFIG;
-
-	ssr = (volatile u_int *)MACH_PHYS_TO_UNCACHED(KMIN_REG_CSR);
-
-	if (isa_3min) {
-		decoder = (volatile u_int *)
-			MACH_PHYS_TO_UNCACHED(KMIN_REG_SCC1_DECODE);
-		*decoder = KMIN_SCC1_CONFIG;
-
-		/* take all chips out of reset now */
-		*ssr = 0x00000f00;
-
-	} else {
-		decoder = (volatile u_int *)
-			MACH_PHYS_TO_UNCACHED(XINE_REG_DTOP_DECODE);
-		*decoder = XINE_DTOP_CONFIG;
-		decoder = (volatile u_int *)
-			MACH_PHYS_TO_UNCACHED(XINE_REG_FLOPPY_DECODE);
-		*decoder = XINE_FLOPPY_CONFIG;
-
-		/* take all chips out of reset now */
-		*ssr = 0x00001fc1;
-	}
-#endif
 }
 #endif /* DS5000 */

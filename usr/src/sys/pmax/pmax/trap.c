@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: trap.c 1.32 91/04/06$
  *
- *	@(#)trap.c	7.11 (Berkeley) %G%
+ *	@(#)trap.c	7.12 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -43,6 +43,7 @@
 #include <pmax/pmax/kn02.h>
 #include <pmax/pmax/kmin.h>
 #include <pmax/pmax/maxine.h>
+#include <pmax/pmax/kn03.h>
 #include <pmax/pmax/asic.h>
 #include <pmax/pmax/turbochannel.h>
 
@@ -148,9 +149,15 @@ struct trapdebug {		/* trap history buffer for debugging */
 
 static void pmax_errintr();
 static void kn02_errintr(), kn02ba_errintr();
+#ifdef DS5000_240
+static void kn03_errintr();
+#endif
 static unsigned kn02ba_recover_erradr();
 extern tc_option_t tc_slot_info[TC_MAX_LOGICAL_SLOTS];
 extern u_long kmin_tc3_imask, xine_tc3_imask;
+#ifdef DS5000_240
+extern u_long kn03_tc3_imask;
+#endif
 int (*pmax_hardware_intr)() = (int (*)())0;
 extern volatile struct chiptime *Mach_clock_addr;
 
@@ -938,7 +945,7 @@ kmin_intr(mask, pc, statusReg, causeReg)
 	
 		if (intr & KMIN_INTR_SCSI_PTR_LOAD) {
 			*intrp &= ~KMIN_INTR_SCSI_PTR_LOAD;
-#if NASC > 0
+#ifdef notdef
 			asc_dma_intr();
 #endif
 		}
@@ -1018,7 +1025,6 @@ xine_intr(mask, pc, statusReg, causeReg)
 	u_int old_mask;
 	struct clockframe cf;
 	int temp;
-static int clkticks = 0;
 
 	old_mask = *imaskp & xine_tc3_imask;
 	*imaskp = old_mask;
@@ -1029,7 +1035,6 @@ static int clkticks = 0;
 		cf.pc = pc;
 		cf.sr = statusReg;
 		hardclock(&cf);
-if ((++clkticks % 10000) == 0) printf("TICKKEYY TICKEY!\n");
 		causeReg &= ~MACH_INT_MASK_1;
 		/* reenable clock interrupts */
 		splx(MACH_INT_MASK_1 | MACH_SR_INT_ENA_CUR);
@@ -1041,7 +1046,7 @@ if ((++clkticks % 10000) == 0) printf("TICKKEYY TICKEY!\n");
 
 		if (intr & XINE_INTR_SCSI_PTR_LOAD) {
 			*intrp &= ~XINE_INTR_SCSI_PTR_LOAD;
-#if NASC > 0
+#ifdef notdef
 			asc_dma_intr();
 #endif
 		}
@@ -1098,6 +1103,100 @@ if ((++clkticks % 10000) == 0) printf("TICKKEYY TICKEY!\n");
 	return ((statusReg & ~causeReg & MACH_HARD_INT_MASK) |
 		MACH_SR_INT_ENA_CUR);
 }
+
+#ifdef DS5000_240
+/*
+ * 3Max+ hardware interrupts. (DECstation 5000/240) UNTESTED!!
+ */
+kn03_intr(mask, pc, statusReg, causeReg)
+	unsigned mask;
+	unsigned pc;
+	unsigned statusReg;
+	unsigned causeReg;
+{
+	register u_int intr;
+	register volatile struct chiptime *c = Mach_clock_addr;
+	volatile u_int *imaskp = (volatile u_int *)
+		MACH_PHYS_TO_UNCACHED(KN03_REG_IMSK);
+	volatile u_int *intrp = (volatile u_int *)
+		MACH_PHYS_TO_UNCACHED(KN03_REG_INTR);
+	u_int old_mask;
+	struct clockframe cf;
+	int temp;
+
+	old_mask = *imaskp & kn03_tc3_imask;
+	*imaskp = old_mask;
+
+	/* handle clock interrupts ASAP */
+	if (mask & MACH_INT_MASK_1) {
+		temp = c->regc;	/* XXX clear interrupt bits */
+		cf.pc = pc;
+		cf.sr = statusReg;
+		hardclock(&cf);
+		causeReg &= ~MACH_INT_MASK_1;
+		/* reenable clock interrupts */
+		splx(MACH_INT_MASK_1 | MACH_SR_INT_ENA_CUR);
+	}
+	if (mask & MACH_INT_MASK_0) {
+		intr = *intrp;
+		/* masked interrupts are still observable */
+		intr &= old_mask;
+
+		if (intr & KN03_INTR_SCSI_PTR_LOAD) {
+			*intrp &= ~KN03_INTR_SCSI_PTR_LOAD;
+#ifdef notdef
+			asc_dma_intr();
+#endif
+		}
+	
+		if (intr & (KN03_INTR_SCSI_OVRUN | KN03_INTR_SCSI_READ_E))
+			*intrp &= ~(KN03_INTR_SCSI_OVRUN | KN03_INTR_SCSI_READ_E);
+
+		if (intr & KN03_INTR_LANCE_READ_E)
+			*intrp &= ~KN03_INTR_LANCE_READ_E;
+
+		if ((intr & KN03_INTR_TC_0) &&
+			tc_slot_info[0].intr)
+			(*(tc_slot_info[0].intr))
+			(tc_slot_info[0].unit);
+	
+		if ((intr & KN03_INTR_TC_1) &&
+			tc_slot_info[1].intr)
+			(*(tc_slot_info[1].intr))
+			(tc_slot_info[1].unit);
+	
+		if ((intr & KN03_INTR_TC_2) &&
+			tc_slot_info[2].intr)
+			(*(tc_slot_info[2].intr))
+			(tc_slot_info[2].unit);
+	
+		if ((intr & KN03_INTR_SCSI) &&
+			tc_slot_info[KN03_SCSI_SLOT].intr)
+			(*(tc_slot_info[KN03_SCSI_SLOT].intr))
+			(tc_slot_info[KN03_SCSI_SLOT].unit);
+	
+		if ((intr & KN03_INTR_LANCE) &&
+			tc_slot_info[KN03_LANCE_SLOT].intr)
+			(*(tc_slot_info[KN03_LANCE_SLOT].intr))
+			(tc_slot_info[KN03_LANCE_SLOT].unit);
+	
+		if ((intr & KN03_INTR_SCC_0) &&
+			tc_slot_info[KN03_SCC0_SLOT].intr)
+			(*(tc_slot_info[KN03_SCC0_SLOT].intr))
+			(tc_slot_info[KN03_SCC0_SLOT].unit);
+	
+		if ((intr & KN03_INTR_SCC_1) &&
+			tc_slot_info[KN03_SCC1_SLOT].intr)
+			(*(tc_slot_info[KN03_SCC1_SLOT].intr))
+			(tc_slot_info[KN03_SCC1_SLOT].unit);
+	
+	}
+	if (mask & MACH_INT_MASK_3)
+		kn03_errintr();
+	return ((statusReg & ~causeReg & MACH_HARD_INT_MASK) |
+		MACH_SR_INT_ENA_CUR);
+}
+#endif /* DS5000_240 */
 
 /*
  * This is called from MachUserIntr() if astpending is set.
@@ -1260,6 +1359,17 @@ kn02_errintr()
 	*(unsigned *)MACH_PHYS_TO_UNCACHED(KN02_SYS_ERRADR) = 0;
 	MachEmptyWriteBuffer();
 }
+
+#ifdef DS5000_240
+static void
+kn03_errintr()
+{
+
+	printf("erradr %x\n", *(unsigned *)MACH_PHYS_TO_UNCACHED(KN03_SYS_ERRADR));
+	*(unsigned *)MACH_PHYS_TO_UNCACHED(KN03_SYS_ERRADR) = 0;
+	MachEmptyWriteBuffer();
+}
+#endif /* DS5000_240 */
 
 static void
 kn02ba_errintr()
