@@ -4,7 +4,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)op.me	8.52 (Berkeley) %G%
+.\"	@(#)op.me	8.53 (Berkeley) %G%
 .\"
 .\" eqn op.me | pic | troff -me
 .eh 'SMM:08-%''Sendmail Installation and Operation Guide'
@@ -43,7 +43,7 @@ University of California, Berkeley
 Mammoth Project
 eric@CS.Berkeley.EDU
 .sp
-Version 8.52
+Version 8.53
 .sp
 For Sendmail Version 8.7
 .)l
@@ -3072,6 +3072,9 @@ should be selected from the set of upper case letters only.
 Lower case letters
 and special symbols
 are used internally.
+Long names beginning with a lower case letter or a punctuation character
+are reserved for use by sendmail,
+so user-defined long macro names should begin with an upper case letter.
 .pp
 The syntax for macro definitions is:
 .(b F
@@ -3503,10 +3506,12 @@ so that attempts to send to oneself
 can be eliminated.
 These can either be defined directly in the configuration file
 or read in from another file.
-Classes may be given names
-from the set of upper case letters.
-Lower case letters and special characters
-are reserved for system use.
+Classes are named as a single letter or a word in {braces}.
+Class names beginning with lower case letters
+and special characters are reserved for system use.
+Classes defined in config files may be given names
+from the set of upper case letters for short names
+or beginning with an upper case letter for long names.
 .pp
 The syntax is:
 .(b F
@@ -7400,7 +7405,7 @@ A transcript of the current session.
 .\"Eric Allman
 .\"Britton-Lee, Inc.
 .\".sp
-.\"Version 8.52
+.\"Version 8.53
 .\".ce 0
 .bp 2
 .rs
