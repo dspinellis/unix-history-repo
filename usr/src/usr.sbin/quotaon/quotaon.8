@@ -1,5 +1,8 @@
-.\" Copyright (c) 1983 Regents of the University of California.
+.\" Copyright (c) 1983, 1990 Regents of the University of California.
 .\" All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" Robert Elz at The University of Melbourne.
 .\"
 .\" Redistribution and use in source and binary forms are permitted
 .\" provided that the above copyright notice and this paragraph are
@@ -13,54 +16,117 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)quotaon.8	6.4 (Berkeley) %G%
+.\"	@(#)quotaon.8	6.5 (Berkeley) %G%
 .\"
 .TH QUOTAON 8 ""
 .UC 5
 .SH NAME
-quotaon, quotaoff \- turn file system quotas on and off
+quotaon, quotaoff \- turn filesystem quotas on and off
 .SH SYNOPSIS
-.nf
-.ft B
-quotaon [-v] filesys ...
-quotaon [-av]
-quotaoff [-v] filesys ...
-quotaoff [-av]
-.fi
-.ft R
+.B quotaon
+[
+.B \-g
+] [
+.B \-u
+] [
+.B \-v
+]
+filesystem ...
+.br
+.B quotaon
+[
+.B \-g
+] [
+.B \-u
+] [
+.B \-v
+]
+.B \-a
+.br
+.B quotaoff
+[
+.B \-g
+] [
+.B \-u
+] [
+.B \-v
+]
+filesystem ...
+.br
+.B quotaoff
+[
+.B \-g
+] [
+.B \-u
+] [
+.B \-v
+]
+.B \-a
+.br
 .SH DESCRIPTION
 .I Quotaon
 announces to the system that disk quotas should be enabled on one or more
-file systems.
-The file systems specified must have entries in the
-.I fstab
-file and be mounted.
-The file system quota files (named ``quotas'') must be present in
-the root directory of the specified file system.
+filesystems.
+The filesystems specified must have entries in
+.I /etc/fstab
+and be mounted.
+.I Quotaon
+expects each filesystem to have quota files named
+.I quota.user
+and
+.I quota.group
+which are located at the root of the associated file system.
+These defaults may be overridden in
+.I /etc/fstab .
+By default both user and group quotas are enabled.
+The optional \fI-g\fP flag specifies that only group quotas should be enabled.
+The optional \fI-u\fP flag specifies that only user quotas should be enabled.
+Specifying both \fI-g\fP and \fI-u\fP is equivalent to the default.
+.PP
+If the
+.B \-a
+flag is supplied in place of any filesystem names,
+.I quotaon
+will enable all the filesystems indicated in
+.I /etc/fstab
+to be read-write with disk quotas.
+By default only the types of quotas listed in
+.I /etc/fstab
+are enabled.
+The optional \fI-g\fP flag specifies that only group quotas listed in
+.I /etc/fstab
+should be enabled.
+The optional \fI-u\fP flag specifies that only user quotas listed in
+.I /etc/fstab
+should be enabled.
+Specifying both \fI-g\fP and \fI-u\fP is equivalent to the default.
 .PP
 .I Quotaoff
-announces to the system that the specified file systems should have
+announces to the system that the specified filesystems should have
 any disk quotas turned off.
+If the
+.B \-a
+flag is supplied in place of any filesystem names,
+.I quotaoff
+will turn off quotas on all the filesystems indicated in
+.I /etc/fstab
+to be read-write with disk quotas.
+The \fI-g\fP and \fI-u\fP flags work analogously with quotaon.
 .PP
-The options are as follows:
-.TP
--v
-Verbose; this flag causes
+The \fI-v\fP flag causes
 .I quotaon
 and
 .I quotaoff
-to print a message for each file system where quotas are turned on or off.
-.TP
--a
-Turn on (off) quotas on the standard set of file systems.
-This flag should be specified instead of a list of file systems.
-It causes all file systems in the
-.I fstab
-file marked read-write with quotas to have their quotas turned on (off).
-This is normally used at boot time by the
-.I /etc/rc
-file.
+to print a message for each filesystem where quotas are turned on or off.
 .SH FILES
-/etc/fstab	file system table
+.DT
+\fIquota.user\fP	at the filesystem root with user quotas
+.br
+\fIquota.group\fP	at the filesystem root with group quotas
+.br
+/etc/fstab	filesystem table
 .SH "SEE ALSO"
-setquota(2), fstab(5)
+quota(1),
+quotactl(2),
+fstab(5),
+edquota(8), quotacheck(8), repquota(8)
