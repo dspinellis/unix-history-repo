@@ -1,4 +1,4 @@
-/*	if_il.c	4.24	83/06/13	*/
+/*	if_il.c	4.25	83/07/19	*/
 
 #include "il.h"
 
@@ -426,7 +426,7 @@ ilrint(unit)
 
 	case ETHERPUP_ARPTYPE:
 		arpinput(&is->is_ac, m);
-		return;
+		goto setup;
 #endif
 	default:
 		m_freem(m);
