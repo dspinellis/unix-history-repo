@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)syslog.h	7.20 (Berkeley) %G%
+ *	@(#)syslog.h	7.21 (Berkeley) %G%
  */
 
 #define	_PATH_LOG	"/dev/log"
@@ -138,15 +138,22 @@ CODE facilitynames[] = {
 
 #ifndef KERNEL
 
+/*
+ * Don't use va_list in the vsyslog() prototype.   Va_list is typedef'd in two
+ * places (<machine/varargs.h> and <machine/stdarg.h>), so if we include one
+ * of them here we may collide with the utility's includes.  It's unreasonable
+ * for utilities to have to include one of them to include syslog.h, so we get
+ * _VA_LIST_ from <machine/ansi.h> and use it.
+ */
+#include <machine/ansi.h>
 #include <sys/cdefs.h>
-#include <stdarg.h>
 
 __BEGIN_DECLS
 void	closelog __P((void));
 void	openlog __P((const char *, int, int));
 int	setlogmask __P((int));
 void	syslog __P((int, const char *, ...));
-void	vsyslog __P((int, const char *, va_list));
+void	vsyslog __P((int, const char *, _VA_LIST_));
 __END_DECLS
 
 #endif /* !KERNEL */
