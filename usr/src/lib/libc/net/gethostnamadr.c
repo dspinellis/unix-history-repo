@@ -5,7 +5,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)gethostnamadr.c	6.19 (Berkeley) %G%";
+static char sccsid[] = "@(#)gethostnamadr.c	6.20 (Berkeley) %G%";
 #endif LIBC_SCCS and not lint
 
 #include <sys/param.h>
@@ -330,20 +330,31 @@ char *
 hostalias(name)
 	register char *name;
 {
+	register char *C1, *C2;
 	FILE *fp;
-	char *file, *getenv();
+	char *file, *getenv(), *strcpy(), *strncpy();
+	char buf[BUFSIZ];
 	static char abuf[MAXDNAME];
-	char nbuf[MAXDNAME];
-	int n;
 
 	file = getenv("HOSTALIASES");
 	if (file == NULL || (fp = fopen(file, "r")) == NULL)
 		return (NULL);
-	while ((n = fscanf(fp, "%s %s\n", nbuf, abuf)) != EOF)
-		if (strcmp(nbuf, name) == 0) {
+	buf[sizeof(buf) - 1] = '\0';
+	while (fgets(buf, sizeof(buf), fp)) {
+		for (C1 = buf; *C1 && !isspace(*C1); ++C1);
+		if (!*C1 || *C1 == '\n')
+			break;
+		if (!strncmp(buf, name, C1 - buf)) {
+			while (isspace(*++C1));
+			if (!*C1)
+				break;
+			for (C2 = C1 + 1; *C2 && !isspace(*C2); ++C2);
+			abuf[sizeof(abuf) - 1] = *C2 = '\0';
+			(void)strncpy(abuf, C1, sizeof(abuf) - 1);
 			fclose(fp);
 			return (abuf);
 		}
+	}
 	fclose(fp);
 	return (NULL);
 }
