@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.1 (Berkeley) %G%
+#	@(#)Makefile	8.1 (Berkeley) %G%
 
 FILES=	how_pc how_pi how_pix how_pxp
 NOOBJ=	noobj
