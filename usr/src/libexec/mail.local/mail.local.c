@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mail.local.c	8.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)mail.local.c	8.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -166,7 +166,7 @@ deliver(fd, name)
 	int fd;
 	char *name;
 {
-	struct stat sb;
+	struct stat fsb, sb;
 	struct passwd *pw;
 	int mbfd, nr, nw, off;
 	char biffmsg[100], buf[8*1024], path[MAXPATHLEN];
@@ -188,12 +188,14 @@ deliver(fd, name)
 	/*
 	 * If the mailbox is linked or a symlink, fail.  There's an obvious
 	 * race here, that the file was replaced with a symbolic link after
-	 * the lstat returned, but before the open.  Mail.local cannot detect
-	 * this race.  Furthermore, it's a symptom of a larger problem, that
-	 * the mail spooling directory is writeable by the wrong users.  NB:
-	 * if that directory is writeable, system security is compromised for
-	 * other reasons, and it cannot be fixed here.  Be that as it may, we
-	 * we make the race harder by checking after the open as well.
+	 * the lstat returned, but before the open.  We attempt to detect
+	 * this by comparing the original stat information and information
+	 * returned by an fstat of the file descriptor returned by the open.
+	 *
+	 * NB: this is a symptom of a larger problem, that the mail spooling
+	 * directory is writeable by the wrong users.  If that directory is
+	 * writeable, system security is compromised for other reasons, and
+	 * it cannot be fixed here.
 	 *
 	 * If we created the mailbox, set the owner/group.  If that fails,
 	 * just return.  Another process may have already opened it, so we
@@ -219,10 +221,11 @@ deliver(fd, name)
 		return;
 	} else {
 		mbfd = open(path, O_APPEND|O_WRONLY, 0);
-		if (mbfd != -1 && (lstat(path, &sb) ||
-		    sb.st_nlink != 1 || S_ISLNK(sb.st_mode))) {
-			e_to_sys(errno);
-			warn("%s: missing or linked file", path);
+		if (mbfd != -1 &&
+		    (fstat(mbfd, &fsb) || fsb.st_nlink != 1 ||
+		    S_ISLNK(fsb.st_mode) || sb.st_dev != fsb.st_dev ||
+		    sb.st_ino != fsb.st_ino)) {
+			warn("%s: file changed after open", path);
 			(void)close(mbfd);
 			return;
 		}
