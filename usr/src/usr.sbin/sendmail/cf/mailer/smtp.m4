@@ -11,7 +11,7 @@ POPDIVERT
 ###   SMTP Mailer specification   ###
 #####################################
 
-VERSIONID(`@(#)smtp.m4	6.3 (Berkeley) %G%')
+VERSIONID(`@(#)smtp.m4	6.4 (Berkeley) %G%')
 
 Msmtp,		P=[IPC], F=mDFMueXLC, S=11, R=21, E=\r\n,
 		A=IPC $h
@@ -58,4 +58,5 @@ ifdef(`BITNET_RELAY',
 ifdef(`CSNET_RELAY',
 `R$+ <@ $+ . CSNET >	$: $1 % $2 .CSNET < @ $C >	user@host.CSNET',
 	`dnl')
-R$+ <@ $+ . UUCP >	$: $2 ! $1 < @ $j >		user@host.UUCP
+ifdef(`_NO_UUCP_', `dnl',
+`R$+ <@ $+ . UUCP >	$: $2 ! $1 < @ $j >		user@host.UUCP')
