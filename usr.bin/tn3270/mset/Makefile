@@ -1,4 +1,4 @@
-# $Header: /b/source/CVS/src/usr.bin/tn3270/mset/Makefile,v 1.5 1993/04/29 11:05:59 cgd Exp $
+# $Header: /a/cvs/386BSD/src/usr.bin/tn3270/mset/Makefile,v 1.1 1993/06/29 11:54:42 nate Exp $
 
 .include <../../Makefile.inc>
 
@@ -18,9 +18,15 @@ PROG = mset
 
 astosc.o: astosc.OUT
 CLEANFILES += astosc.OUT astosc.out
+.if exists(${.CURDIR}/../tools/mkastosc/obj)
+OBJ_DIR=obj
+.else
+OBJ_DIR=.
+.endif
+
 astosc.OUT: ${.CURDIR}/../ctlr/hostctlr.h ${.CURDIR}/../ctlr/function.h \
-	${.CURDIR}/../ctlr/${KBD} ${.CURDIR}/../tools/mkastosc/${.CURDIR}/mkastosc
-	${.CURDIR}/../tools/mkastosc/${.CURDIR}/mkastosc \
+	${.CURDIR}/../ctlr/${KBD} ${.CURDIR}/../tools/mkastosc/${OBJ_DIR}/mkastosc
+	${.CURDIR}/../tools/mkastosc/${OBJ_DIR}/mkastosc \
 	${.CURDIR}/../ctlr/hostctlr.h ${.CURDIR}/../ctlr/function.h \
 		< ${.CURDIR}/../ctlr/${KBD} > ${.TARGET}
 	/bin/rm -f astosc.out
@@ -28,7 +34,7 @@ astosc.OUT: ${.CURDIR}/../ctlr/hostctlr.h ${.CURDIR}/../ctlr/function.h \
 
 # astosc.out
 
-${.CURDIR}/../tools/mkastosc/${.CURDIR}/mkastosc:
+${.CURDIR}/../tools/mkastosc/${OBJ_DIR}/mkastosc:
 	cd ${.CURDIR}/../tools/mkastosc; make
 
 
