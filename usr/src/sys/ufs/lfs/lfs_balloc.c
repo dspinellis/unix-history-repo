@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_balloc.c	7.28 (Berkeley) %G%
+ *	@(#)lfs_balloc.c	7.29 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -82,6 +82,7 @@ lfs_bmaparray(vp, bn, bnp, ap, nump)
 	INDIR *ap;
 	int *nump;
 {
+	USES_VOP_STRATEGY;
 	register struct inode *ip;
 	struct buf *bp;
 	struct lfs *fs;
@@ -150,7 +151,13 @@ lfs_bmaparray(vp, bn, bnp, ap, nump)
 			bp->b_blkno = daddr;
 			bp->b_flags |= B_READ;
 			bp->b_dev = devvp->v_rdev;
-			(devvp->v_op->vop_strategy)(bp);
+			/*
+			 * Call a strategy VOP by hand.
+			 */
+			vop_strategy_a.a_desc = VDESC(vop_strategy);
+			vop_strategy_a.a_bp=bp;
+			VOCALL(devvp->v_op, VOFFSET(vop_strategy), \
+			       &vop_strategy_a);
 			curproc->p_stats->p_ru.ru_inblock++;	/* XXX */
 			if (error = biowait(bp)) {
 				brelse(bp);
