@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.5 (Berkeley) %G%
+#	@(#)Makefile	5.6 (Berkeley) %G%
 #
 CFLAGS=	-O ${DEFS}
 STDSRCS=ftime.c gtty.c nice.c pause.c rand.c stty.c tell.c \
@@ -28,7 +28,7 @@ TAGSFILE=tags
 compat-4.1lib compat-4.1lib_p: ${OBJS}
 	@echo "building profiled compat-4.1lib"
 	@cd profiled; ar cru ../compat-4.1lib_p ${OBJS}
-	@echo "buiding normal compat-4.1lib"
+	@echo "building normal compat-4.1lib"
 	@ar cru compat-4.1lib ${OBJS}
 
 tags:
