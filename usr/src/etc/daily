@@ -1,6 +1,6 @@
 #!/bin/sh -
 #
-#	@(#)daily	5.17 (Berkeley) %G%
+#	@(#)daily	5.18 (Berkeley) %G%
 #
 PATH=/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin
 host=`hostname`
@@ -48,8 +48,8 @@ find / \( ! -fstype local -o -fstype rdonly \) -a -prune -o \
 	   -o -name '*.CKP' -o -name '.emacs_[0-9]*' \) \
 		-a -atime +3 -a -exec rm -f -- {} \; -a -print > $TMP
 echo ""
-echo "Core dumps:"
-egrep 'core\.' $TMP
+echo "Possible core dumps:"
+egrep 'core\.' $TMP | sed '/core.[05cho]$/d'
 
 echo ""
 echo "Deleted files:"
