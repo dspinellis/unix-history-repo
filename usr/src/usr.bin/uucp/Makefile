@@ -1,4 +1,4 @@
-#	Makefile	5.1	83/07/02
+#	Makefile	5.2	83/07/02
 #
 # This version expects the 4.2BSD directory reading routines to
 # located in libc.a.  If they aren't, augment LIBS.  Also, LIBS
@@ -31,6 +31,8 @@ XQTDIR=	/usr/spool/uucp/XTMP
 SUBDIRS=C. D.`uuname -l`X D.`uuname -l` D. X. TM.
 PKON=	pkon.o
 IOCTL=
+# for make depend
+UNDEF=	-uNDIR -uUNET -uSYSIII -uUNAME -uCCWHOAMI -uGETMYHNAME -uDATAKIT
 
 all:	${ALL} 
 
@@ -92,7 +94,7 @@ mkdirs:
 	chgrp ${GROUP} ${DESTDIR}/${XQTDIR}
 	cd ${DESTDIR}/${SPOOL}; for i in ${SUBDIRS}; do \
 		mkdir $$i; \
-		chown ${UUCP} $$i; chgrp ${GROUP} $$i; chmod 755 $$i; \
+		chown ${OWNER} $$i; chgrp ${GROUP} $$i; chmod 755 $$i; \
 	done
 
 # The lorder...tsort below is for systems w/o ranlib
@@ -139,7 +141,7 @@ clean:
 depend:
 	for i in *.c; do \
 		(echo `basename $$i .c`.o: $$i >>makedep; \
-			unifdef -uUNET -uNDIR $$i | \
+			unifdef ${UNDEF} $$i | \
 			/bin/grep '^#[ 	]*include' | sed \
 			-e '/\.\.\/h/d' \
 			-e 's,<\(.*\)>,"/usr/include/\1",' \
@@ -161,14 +163,14 @@ anlwrk.o: anlwrk.c
 anlwrk.o: uucp.h
 anlwrk.o: /usr/include/sys/types.h
 anlwrk.o: /usr/include/sys/stat.h
-anlwrk.o: /usr/include/dir.h
+anlwrk.o: /usr/include/sys/dir.h
 anyread.o: anyread.c
 anyread.o: uucp.h
 anyread.o: /usr/include/sys/types.h
 anyread.o: /usr/include/sys/stat.h
 assert.o: assert.c
 assert.o: uucp.h
-assert.o: /usr/include/time.h
+assert.o: /usr/include/sys/time.h
 assert.o: /usr/include/sys/types.h
 assert.o: /usr/include/errno.h
 cfgets.o: cfgets.c
@@ -182,7 +184,6 @@ cico.o: uucp.h
 cico.o: /usr/include/signal.h
 cico.o: /usr/include/setjmp.h
 cico.o: /usr/include/sys/types.h
-cico.o: /usr/include/termio.h
 cico.o: /usr/include/sgtty.h
 cntrl.o: cntrl.c
 cntrl.o: uucp.h
@@ -195,8 +196,7 @@ condevs.o: /usr/include/setjmp.h
 condevs.o: /usr/include/signal.h
 condevs.o: /usr/include/sgtty.h
 condevs.o: uucp.h
-condevs.o: /usr/include/dk.h
-condevs.o: /usr/include/time.h
+condevs.o: /usr/include/sys/time.h
 condevs.o: /usr/include/sys/timeb.h
 conn.o: conn.c
 conn.o: uucp.h
@@ -204,10 +204,8 @@ conn.o: /usr/include/signal.h
 conn.o: /usr/include/setjmp.h
 conn.o: /usr/include/ctype.h
 conn.o: /usr/include/sys/types.h
-conn.o: /usr/include/time.h
+conn.o: /usr/include/sys/time.h
 conn.o: /usr/include/errno.h
-conn.o: /usr/include/termio.h
-conn.o: /usr/include/fcntl.h
 conn.o: /usr/include/sgtty.h
 cpmv.o: cpmv.c
 cpmv.o: uucp.h
@@ -226,7 +224,7 @@ getopt.o: /usr/include/stdio.h
 getprm.o: getprm.c
 getprm.o: /usr/include/stdio.h
 getpw.o: getpw.c
-getpw.o: stdio.h
+getpw.o: /usr/include/stdio.h
 getpwinfo.o: getpwinfo.c
 getpwinfo.o: uucp.h
 getpwinfo.o: /usr/include/pwd.h
@@ -239,15 +237,15 @@ gio.o: uucp.h
 gnamef.o: gnamef.c
 gnamef.o: uucp.h
 gnamef.o: /usr/include/sys/types.h
-gnamef.o: /usr/include/dir.h
+gnamef.o: /usr/include/sys/dir.h
 gnsys.o: gnsys.c
 gnsys.o: uucp.h
 gnsys.o: /usr/include/sys/types.h
-gnsys.o: /usr/include/dir.h
+gnsys.o: /usr/include/sys/dir.h
 gnxseq.o: gnxseq.c
 gnxseq.o: uucp.h
 gnxseq.o: /usr/include/sys/types.h
-gnxseq.o: /usr/include/time.h
+gnxseq.o: /usr/include/sys/time.h
 gwd.o: gwd.c
 gwd.o: uucp.h
 gwd.o: /usr/include/signal.h
@@ -262,21 +260,18 @@ lastpart.o: lastpart.c
 logent.o: logent.c
 logent.o: uucp.h
 logent.o: /usr/include/sys/types.h
-logent.o: /usr/include/time.h
-logent.o: /usr/include/fcntl.h
+logent.o: /usr/include/sys/time.h
 logent.o: /usr/include/sgtty.h
 mailst.o: mailst.c
 mailst.o: uucp.h
 pk0.o: pk0.c
 pk0.o: /usr/include/stdio.h
-pk0.o: /usr/include/sys/types.h
 pk0.o: pk.p
 pk0.o: /usr/include/sys/param.h
 pk0.o: pk.h
 pk0.o: /usr/include/sys/buf.h
 pk1.o: pk1.c
 pk1.o: /usr/include/stdio.h
-pk1.o: /usr/include/sys/types.h
 pk1.o: pk.p
 pk1.o: /usr/include/sys/param.h
 pk1.o: pk.h
@@ -290,7 +285,6 @@ sdmail.o: uucp.h
 sdmail.o: /usr/include/pwd.h
 setline.o: setline.c
 setline.o: uucp.h
-setline.o: /usr/include/termio.h
 shio.o: shio.c
 shio.o: uucp.h
 shio.o: /usr/include/signal.h
@@ -311,7 +305,7 @@ uuclean.o: /usr/include/signal.h
 uuclean.o: /usr/include/pwd.h
 uuclean.o: /usr/include/sys/types.h
 uuclean.o: /usr/include/sys/stat.h
-uuclean.o: /usr/include/dir.h
+uuclean.o: /usr/include/sys/dir.h
 uucp.o: uucp.c
 uucp.o: uucp.h
 uucp.o: /usr/include/sys/types.h
@@ -322,9 +316,6 @@ uucpname.o: uucpname.c
 uucpname.o: uucp.h
 uucpname.o: /usr/include/sys/types.h
 uucpname.o: /usr/include/sys/stat.h
-uucpname.o: /usr/include/UNET/unetio.h
-uucpname.o: /usr/include/sys/utsname.h
-uucpname.o: /usr/include/whoami.h
 uudecode.o: uudecode.c
 uudecode.o: /usr/include/stdio.h
 uudecode.o: /usr/include/pwd.h
@@ -350,14 +341,14 @@ uusnap.o: uusnap.c
 uusnap.o: uucp.h
 uusnap.o: /usr/include/sys/types.h
 uusnap.o: /usr/include/sys/stat.h
-uusnap.o: /usr/include/dir.h
+uusnap.o: /usr/include/sys/dir.h
 uux.o: uux.c
 uux.o: uucp.h
 uuxqt.o: uuxqt.c
 uuxqt.o: uucp.h
 uuxqt.o: /usr/include/sys/types.h
 uuxqt.o: /usr/include/sys/stat.h
-uuxqt.o: /usr/include/dir.h
+uuxqt.o: /usr/include/sys/dir.h
 versys.o: versys.c
 versys.o: uucp.h
 xqt.o: xqt.c
