@@ -1,4 +1,4 @@
-#	@(#)Makefile	4.2	(Berkeley)	83/04/26
+#	@(#)Makefile	4.3	(Berkeley)	83/06/19
 #
 DESTDIR=
 
@@ -22,7 +22,7 @@ LLIB	= $(DESTDIR)/usr/lib/learn/bin
 all:	learn lrntee lcount
 
 install:	all
-	install -s learn $(DESTDIR)/usr/bin
+	install -c -s learn $(DESTDIR)/usr/bin
 	install -s learn $(LLIB)
 	install -s lrntee $(LLIB)
 	install -s lcount $(LLIB)
