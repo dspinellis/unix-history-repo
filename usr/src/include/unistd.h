@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)unistd.h	5.24 (Berkeley) %G%
+ *	@(#)unistd.h	5.25 (Berkeley) %G%
  */
 
 #ifndef _UNISTD_H_
@@ -26,7 +26,7 @@ __BEGIN_DECLS
 __dead void
 	 _exit __P((int));
 int	 access __P((const char *, int));
-u_int	 alarm __P((u_int));
+unsigned int	 alarm __P((unsigned int));
 int	 chdir __P((const char *));
 int	 chown __P((const char *, uid_t, gid_t));
 int	 close __P((int));
@@ -63,7 +63,7 @@ int	 setgid __P((gid_t));
 int	 setpgid __P((pid_t, pid_t));
 pid_t	 setsid __P((void));
 int	 setuid __P((uid_t));
-u_int	 sleep __P((u_int));
+unsigned int	 sleep __P((unsigned int));
 long	 sysconf __P((int));			/* not yet */
 pid_t	 tcgetpgrp __P((int));
 int	 tcsetpgrp __P((int, pid_t));
@@ -103,13 +103,13 @@ char	*getpass __P((const char *));
 char	*getusershell __P((void));
 char	*getwd __P((char *));			/* obsoleted by getcwd() */
 int	 initgroups __P((const char *, int));
-int	 iruserok __P((u_long, int, const char *, const char *));
+int	 iruserok __P((unsigned long, int, const char *, const char *));
 int	 mknod __P((const char *, mode_t, dev_t));
 int	 mkstemp __P((char *));
 char	*mktemp __P((char *));
 int	 nfssvc __P((int, caddr_t));
 int	 nice __P((int));
-void	 psignal __P((u_int, const char *));
+void	 psignal __P((unsigned int, const char *));
 extern char *const sys_siglist[];
 int	 profil __P((char *, int, int, int));
 int	 rcmd __P((char **, int, const char *,
@@ -144,8 +144,8 @@ int	 syscall __P((int, ...));
 #define	 truncate __truncate
 int	 truncate __P((const char *, off_t));
 int	 ttyslot __P((void));
-u_int	 ualarm __P((u_int, u_int));
-void	 usleep __P((u_int));
+unsigned int	 ualarm __P((unsigned int, unsigned int));
+void	 usleep __P((unsigned int));
 void	*valloc __P((size_t));			/* obsoleted by malloc() */
 int	 vfork __P((void));
 
