@@ -1,5 +1,5 @@
 /*
-char id_lread[] = "@(#)lread.c	1.7";
+char id_lread[] = "@(#)lread.c	1.8";
  *
  * list directed read
  */
@@ -72,9 +72,9 @@ t_getc()
 e_rsle()
 {
 	int ch;
-	if(curunit->uend) return(OK);
+	if(curunit->uend) return(EOF);
 	while(GETC(ch) != '\n' && ch != EOF);
-	return(OK);
+	return(ch==EOF?EOF:OK);
 }
 
 l_read(number,ptr,len,type) ftnint *number,type; flex *ptr; ftnlen len;
