@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)REMOVE.c 1.3 %G%";
+static char sccsid[] = "@(#)REMOVE.c 1.4 %G%";
 
 #include "h00vars.h"
 
@@ -17,8 +17,8 @@ REMOVE(name, namlim)
 	 * trim trailing blanks, and insure that the name 
 	 * will fit into the file structure
 	 */
-	for (cnt = 0; cnt < maxnamlen; )
-		if (name[cnt] == '\0' || name[cnt++] == ' ')
+	for (cnt = 0; cnt < maxnamlen; cnt++)
+		if (name[cnt] == '\0' || name[cnt] == ' ')
 			break;
 	if (cnt >= NAMSIZ) {
 		ERROR("%s: File name too long\n", name);
