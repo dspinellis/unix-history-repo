@@ -171,6 +171,17 @@ another:
 		argv++, argc--;
 		goto another;
 	}
+	if (argc > 0 && !strcmp(*argv, "-k")) {
+		argv++, argc--;
+		if(argc <= 0 || (**argv == '-')) {
+			fprintf(stderr, "-k option requires an argument\n");
+			exit(1);
+		}
+		strncpy(krb_realm, *argv, REALM_SZ);
+		argv++, argc--;
+		goto another;
+	}
+
 #endif	/* KERBEROS */
 
 	if (host == 0)
