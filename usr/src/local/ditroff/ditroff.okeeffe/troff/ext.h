@@ -99,6 +99,7 @@ extern	int	ppts;
 extern	int	print;
 extern	FILE	*ptid;
 extern	int	pto;
+extern	int	physfonts;
 extern	int	quiet;
 extern	int	ralss;
 extern	int	rargc;

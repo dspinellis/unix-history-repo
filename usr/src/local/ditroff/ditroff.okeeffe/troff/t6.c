@@ -289,7 +289,7 @@ tchar setabs()		/* set absolute char from \C'...' */
  * the data (actually only necessary for the width
  * and ligature info). The ptfont() (t10.c) routine will tell
  * the device filter to put the font always at position
- * zero if xfont > nfonts, so no need to change these filters.
+ * zero if xfont > physfonts, so no need to change these filters.
  * Yes, this is a bit kludgy.
  *
  * This gives the new specs of findft:
@@ -310,7 +310,8 @@ register int	i;
 
 	p = unpair(i);
 
-	if( isdigit(p[0])) {		/* first look for numbers */
+	/* first look for numbers */
+	if( isdigit(p[0] && (p[1] == 0 || isdigit(p[1])))) {
 		k = p[0] - '0';
 		if( p[1] > 0 && isdigit(p[1]))
 			k = 10 * k + ( p[1] - '0');
@@ -318,7 +319,7 @@ register int	i;
 		/*
 		fprintf(ptid, "x xxx it's a number: %d\n", k);
 		*/
-		if( k > 0 && k <= nfonts && k < smnt ) {
+		if( k > 0 && k <= nfonts && fontbase[k]->specfont == 0 ) {
 			/*
 			fprintf(ptid, "x xxx it's a mounted font\n");
 			*/
@@ -343,20 +344,23 @@ register int	i;
 		if (k > MAXFONTS +1)	/* the +1 is for the ``font cache'' */
 			return(-1);	/* running out of fontlab space */
 		if ( !fontlab[k] ) {	/* passed all existing names */
-			if(setfp(0, i, 0) < 0)
-				return(-1);
-			else {
+			if (k <= NFONT) {
+				if(setfp(k, i, 0) < 0)
+					return(-1);
+				nfonts = k;
+			} else
+				if(setfp(0, i, 0) < 0)
+					return(-1);
+			/*
+			fprintf(ptid, "x xxx installed %s on %d\n", name ,k);
+			*/
+				/* now install the name */
+			fontlab[k] = i;
 				/*
-				fprintf(ptid, "x xxx installed %s on %d\n", name ,k);
+				 * and remember accociated with
+				 * this font, ligature info etc.
 				*/
-					/* now install the name */
-				fontlab[k] = i;
-					/*
-					 * and remember accociated with
-					 * this font, ligature info etc.
-					*/
-				return(k);
-			}
+			return(k);
 		}
 	}
 	return(k);			/* was one of the existing names */
@@ -706,6 +710,7 @@ casefp()
 	register char *s;
 
 	skip();
+	/* allow .fp for fonts >nfonts, <NFONTS? */
 	if ((i = cbits(getch()) - '0') <= 0 || i > nfonts)
 		errprint("fp: bad font position %d", i);
 	else if (skip() || !(j = getrq()))
@@ -716,14 +721,17 @@ casefp()
 		setfp(i, j, nextf);
 }
 
-setfp(pos, f, truename)	/* mount font f at position pos[0...nfonts] */
-int pos, f;
+setfp(pos, f, truename)	/* mount font f at position pos[0...NFONTS] */
+register pos;
+int f;
 char *truename;
 {
 	register k;
+	register struct Font *ft;
 	int n;
 	char longname[NS], shortname[20];
 	extern int nchtab;
+	extern struct dev dev;
 
 	if (fontlab[pos] == f)		/* if f already mounted at pos, */
 		return(pos);		/* don't remount it */
@@ -740,18 +748,25 @@ char *truename;
 		errprint("Can't open %s", longname);
 		return(-1);
 	}
-	n = fontbase[pos]->nwfont & BYTEMASK;
-	read(k, (char *) fontbase[pos], 3*n + nchtab + 128 - 32 + sizeof(struct Font));
+	if ((ft = fontbase[pos]) == 0) {
+		ft = fontbase[pos] = (struct Font *) malloc(EXTRAFONT);
+		ft->nwfont = MAXCHARS;
+		fontab[pos] = (char *)(ft + 1);
+	}
+	n = ft->nwfont;
+	read(k, (char *) ft, 3*n + nchtab + 128 - 32 + sizeof(struct Font));
+	close(k);
 
-	kerntab[pos] = (char *) fontab[pos] + (fontbase[pos]->nwfont & BYTEMASK);
+	k = ft->nwfont;
+	kerntab[pos] = (char *) fontab[pos] + k;
+	codetab[pos] = (char *) fontab[pos] + 2 * k;
 	/* have to reset the fitab pointer because the width may be different */
-	fitab[pos] = (char *) fontab[pos] + 3 * (fontbase[pos]->nwfont & BYTEMASK);
-	if ((fontbase[pos]->nwfont & BYTEMASK) > n) {
+	fitab[pos] = (char *) fontab[pos] + 3 * k;
+	ft->nwfont = n;	/* so can load a larger one again later */
+	if (k > n) {
 		errprint("Font %s too big for position %d", shortname, pos);
 		return(-1);
 	}
-	fontbase[pos]->nwfont = n;	/* so can load a larger one again later */
-	close(k);
 	if (pos == smnt) {
 		smnt = 0; 
 		sbold = 0; 
@@ -772,7 +787,7 @@ char *truename;
 		/*
 		 * Trying to fix this FONTPOS problem: See findft()
 		 */
-	if ( pos > 0 && pos <= nfonts)
+	if ( pos > 0 && pos <= physfonts)
 		ptfpcmd(pos, shortname);
 	return(pos);
 }
