@@ -1,7 +1,6 @@
-.nr DR 1	\" this is a draft copy
 .nr si 3n
 .he 'Mail Systems and Addressing in 4.2bsd''%'
-.fo 'Version 1.1'DRAFT'Last Mod %G%'
+.fo 'Version 1.2''Last Mod %G%'
 .if n .ls 2
 .+c
 .(l C
@@ -102,11 +101,14 @@ on other networks,
 as with the Ethernet at Xerox PARC.
 However, the general case is extremely complex.
 For example,
-some networks require point-to-point routing,
-which simplifies the database update problem
+some networks require that the route the message takes
+be explicitly specified by the sender,
+simplifying the database update problem
 since only adjacent hosts must be entered
 into the system tables,
-while others use end-to-end addressing.
+while others use logical addressing,
+where the sender specifies the location of the recipient
+but not how to get there.
 Some networks use a left-associative syntax
 and others use a right-associative syntax,
 causing ambiguity in mixed addresses.
@@ -130,8 +132,20 @@ separates the issue of physical versus logical addressing.
 For example,
 an address of the form
 .q "eric@a.cc.berkeley.arpa"
-describes only the logical
-organization of the address space.
+describes the logical
+organization of the address space
+(user
+.q eric
+on host
+.q a
+in the Computer Center
+at Berkeley)
+but not the physical networks used
+(for example, this could go over different networks
+depending on whether
+.q a
+were on an ethernet
+or a store-and-forward network).
 .pp
 .i Sendmail
 is intended to help bridge the gap
@@ -255,7 +269,7 @@ or
 depending on my current affiliation.
 .pp
 However,
-and address is independent of the location of anyone else.
+an address is independent of the location of anyone else.
 That is,
 my address remains the same to everyone who might be sending me mail.
 For example,
@@ -276,7 +290,7 @@ or by calling people on the telephone
 to find out their address.
 .sh 2 "Route"
 .pp
-Where an address specifies
+While an address specifies
 .i where
 to find a mailbox,
 a route specifies
@@ -361,12 +375,12 @@ Easy expansion to
 fairly complex environments,
 including multiple
 connections to a single network type
-(such as with multiple UUCP or Ether nets).
+(such as with multiple UUCP or Ethernets).
 This goal requires consideration of the contents of an address
 as well as its syntax
 in order to determine which gateway to use.
 .np
-Configuration should not be compiled into the code.
+Configuration information should not be compiled into the code.
 A single compiled program should be able to run as is at any site
 (barring such basic changes as the CPU type or the operating system).
 We have found this seemingly unimportant goal
@@ -439,7 +453,7 @@ may be used as an internet mail gateway.
 .sh 1 "USAGE"
 .sh 2 "Address Formats"
 .pp
-Arguments may be flags and addresses.
+Arguments may be flags or addresses.
 Flags set various processing options.
 Following flag arguments,
 address arguments may be given.
@@ -481,6 +495,9 @@ are equivalent,
 but
 .i \euser
 is different from either of them.
+This might be used
+to avoid normal aliasing
+or duplicate suppression algorithms.
 .pp
 Parentheses, angle brackets, and double quotes
 must be properly balanced and nested.
@@ -549,12 +566,6 @@ If the user name begins with a slash mark (\c
 .q /\^ )
 the name is used as a file name,
 instead of a login name.
-.pp
-Files that have setuid or setgid bits set
-but no execute bits set
-have those bits honored if
-.i sendmail
-is running as root.
 .sh 2 "Aliasing, Forwarding, Inclusion"
 .pp
 .i Sendmail
@@ -569,24 +580,25 @@ and is normally used
 in conjunction with aliasing.
 .sh 3 "Aliasing"
 .pp
-Aliasing maps names to address lists using a system-wide file.
-This file is indexed to speed access.
-Only names that parse as local
+Aliasing maps local addresses to address lists using a system-wide file.
+This file is hashed to speed access.
+Only addresses that parse as local
 are allowed as aliases;
 this guarantees a unique key
 (since there are no nicknames for the local host).
 .sh 3 "Forwarding"
 .pp
 After aliasing,
-recipients that are local and valid
-are checked for the existence of a
+if an recipient address specifies a local user
+.i sendmail
+searches for a
 .q .forward
-file in their home directory.
+file in the recipient's home directory.
 If it exists,
 the message is
 .i not
 sent to that user,
-but rather to the list of users in that file.
+but rather to the list of addresses in that file.
 Often
 this list will contain only one address,
 and the feature will be used for network mail forwarding.
@@ -650,7 +662,7 @@ such as time stamps.
 Of particular interest
 is the UUCP network.
 The explicit routing
-used in the UUCP world
+used in the UUCP environment
 causes a number of serious problems.
 First,
 giving out an address
@@ -676,7 +688,7 @@ a program does not have equally sophisticated heuristics
 built in.
 Third,
 certain addresses will become painfully and unnecessarily long,
-as when a message is routed through many hosts in USENET.
+as when a message is routed through many hosts in the USENET.
 And finally,
 certain
 .q "mixed domain"
@@ -684,7 +696,7 @@ addresses
 are impossible to parse unambiguously \*-
 e.g.,
 .(l
-decvax!ucbvax!lbl-h@LBL-CSAM
+decvax!ucbvax!lbl-h!user@LBL-CSAM
 .)l
 might have many possible resolutions,
 depending on whether the message was first routed
@@ -721,8 +733,9 @@ creating and propagating the necessary software,
 and building and maintaining the database.
 .sh 2 "Defining the Namespace"
 .pp
-Making all UUCP hosts
-top-level names
+Putting all UUCP hosts into a flat namespace
+(e.g.,
+.q \&...@host.UUCP )
 is not practical for a number of reasons.
 First,
 with over 1600 sites already,
@@ -771,7 +784,7 @@ rather than as host
 in the UUCP domain).
 .sh 2 "Creating and Propagating the Software"
 .pp
-The software itself
+The software required to implement a consistent namespace
 is relatively trivial.
 Two modules are needed,
 one to handle incoming mail
@@ -844,16 +857,16 @@ other hosts
 .i could
 be notified as an efficiency measure.
 .pp
-Nor need there be only one domain gateway.
+There may be more than one domain gateway.
 A domain such as BTL,
 for instance,
 might have a dozen gateways to the outside world;
 a non-BTL site
-could choose the one that was closest.
+could choose the closest gateway.
 The only restriction
 would be that all gateways
 maintain a consistent view of the domain
-that they represent.
+they represent.
 .sh 2 "Logical Structure"
 .pp
 Logically,
@@ -898,7 +911,7 @@ For example,
 at Berkeley it may be presumed
 that most hosts know about other hosts
 inside the Berkeley domain.
-But if they process and address
+But if they process an address
 that is unknown,
 they can pass it
 .q upstairs
@@ -910,7 +923,7 @@ only one host
 be updated immediately;
 other hosts can be updated as convenient.
 .pp
-Ideally this name resolution
+Ideally this name resolution process
 would be performed by a name server
 (e.g., [Su82b])
 to avoid unnecessary copying
