@@ -5,7 +5,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)run.test	5.13 (Berkeley) %G%
+#	@(#)run.test	5.14 (Berkeley) %G%
 #
 
 # db regression tests
@@ -47,7 +47,7 @@ test1()
 			printf "p\nk%s\nd%s\ng\nk%s\n" $i $i $i
 		done > $TMP2
 		$PROG -o $TMP3 $type $TMP2
-		if (cmp -s $TMP1 $TMP3) ; then
+		if (cmp -s $TMP1 $TMP3) ; then :
 		else
 			printf "test1: type %s: failed\n" $type
 			exit 1
@@ -61,7 +61,7 @@ test1()
 		printf("p\nk%d\nd%s\ng\nk%d\n", i, $0, i);
 	}' > $TMP2
 	$PROG -o $TMP3 recno $TMP2
-	if (cmp -s $TMP1 $TMP3) ; then
+	if (cmp -s $TMP1 $TMP3) ; then :
 	else
 		printf "test1: type recno: failed\n"
 		exit 1
@@ -82,7 +82,7 @@ test2()
 			printf "p\nk%s\nd%s\ng\nk%s\n" $i $mdata $i
 		done > $TMP2
 		$PROG -o $TMP3 $type $TMP2
-		if (cmp -s $TMP1 $TMP3) ; then
+		if (cmp -s $TMP1 $TMP3) ; then :
 		else
 			printf "test2: type %s: failed\n" $type
 			exit 1
@@ -95,7 +95,7 @@ test2()
 		printf("p\nk%d\nd%s\ng\nk%d\n", i, $0, i);
 	}' > $TMP2
 	$PROG -o $TMP3 recno $TMP2
-	if (cmp -s $TMP1 $TMP3) ; then
+	if (cmp -s $TMP1 $TMP3) ; then :
 	else
 		printf "test2: type recno: failed\n"
 		exit 1
@@ -114,7 +114,7 @@ test3()
 			printf "p\nk%s\nD%s\ng\nk%s\n" $i $i $i
 		done > $TMP2
 		$PROG -o $TMP3 $type $TMP2
-		if (cmp -s $TMP1 $TMP3) ; then
+		if (cmp -s $TMP1 $TMP3) ; then :
 		else
 			printf "test3: type %s: failed\n" $type
 			exit 1
@@ -128,7 +128,7 @@ test3()
 		printf("p\nk%d\nD%s\ng\nk%d\n", i, $0, i);
 	}' > $TMP2
 	$PROG -o $TMP3 recno $TMP2
-	if (cmp -s $TMP1 $TMP3) ; then
+	if (cmp -s $TMP1 $TMP3) ; then :
 	else
 		printf "test3: type recno: failed\n"
 		exit 1
@@ -177,7 +177,7 @@ test4()
 				printf("g\nk%d\n", i);
 		}' > $TMP2
 	$PROG -o $TMP3 recno $TMP2
-	if (cmp -s $TMP1 $TMP3) ; then
+	if (cmp -s $TMP1 $TMP3) ; then :
 	else
 		printf "test4: type recno: failed\n"
 		exit 1
@@ -208,7 +208,7 @@ test5()
 				printf("g\nk%d\n", i);
 		}' > $TMP2
 	$PROG -o $TMP3 recno $TMP2
-	if (cmp -s $TMP1 $TMP3) ; then
+	if (cmp -s $TMP1 $TMP3) ; then :
 	else
 		printf "test5: type recno: failed\n"
 		exit 1
@@ -250,7 +250,7 @@ test6()
 	$PROG -o $TMP3 recno $TMP2
 	sort -o $TMP1 $TMP1
 	sort -o $TMP3 $TMP3
-	if (cmp -s $TMP1 $TMP3) ; then
+	if (cmp -s $TMP1 $TMP3) ; then :
 	else
 		printf "test6: type recno: failed\n"
 		exit 1
@@ -292,7 +292,7 @@ test7()
 			printf("fR_FIRST\ns\n");
 		}' > $TMP2
 		$PROG -o $TMP3 recno $TMP2
-		if (cmp -s $TMP1 $TMP3) ; then
+		if (cmp -s $TMP1 $TMP3) ; then :
 		else
 			printf "test7: type $type: failed\n"
 			exit 1
@@ -350,7 +350,7 @@ test9()
 		}' > $TMP2
 		$PROG -iflags=1 -o $TMP3 $type $TMP2
 		sort -o $TMP3 $TMP3
-		if (cmp -s $TMP1 $TMP3) ; then
+		if (cmp -s $TMP1 $TMP3) ; then :
 		else
 			printf "test9: type $type: failed\n"
 			exit 1
@@ -433,7 +433,7 @@ test11()
 				printf("or\n");
 		}' > $TMP2
 		$PROG -o $TMP3 $type $TMP2
-		if (cmp -s $TMP1 $TMP3) ; then
+		if (cmp -s $TMP1 $TMP3) ; then :
 		else
 			printf "test11: type $type: failed\n"
 			exit 1
@@ -456,7 +456,7 @@ test12()
 			printf "p\nk%s\nd%s\ng\nk%s\n" $i $mdata $i
 		done > $TMP2
 		$PROG -i psize=512 -o $TMP3 $type $TMP2
-		if (cmp -s $TMP1 $TMP3) ; then
+		if (cmp -s $TMP1 $TMP3) ; then :
 		else
 			printf "test12: type %s: failed\n" $type
 			exit 1
@@ -491,7 +491,7 @@ test20()
 		$PROG -o$TMP3 \
 		    -ibsize=$bsize,ffactor=$ffactor,nelem=25000,cachesize=65536\
 		    hash $TMP2
-		if (cmp -s $TMP1 $TMP3) ; then
+		if (cmp -s $TMP1 $TMP3) ; then :
 		else
 			printf "test20: type hash:\
 bsize=$bsize ffactor=$ffactor nelem=25000 cachesize=65536 failed\n"
@@ -504,7 +504,7 @@ bsize=$bsize ffactor=$ffactor nelem=25000 cachesize=65536 failed\n"
 		$PROG -o$TMP3 \
 		    -ibsize=$bsize,ffactor=$ffactor,nelem=25000,cachesize=65536\
 		    hash $TMP2
-		if (cmp -s $TMP1 $TMP3) ; then
+		if (cmp -s $TMP1 $TMP3) ; then :
 		else
 			printf "test20: type hash:\
 bsize=$bsize ffactor=$ffactor nelem=25000 cachesize=65536 failed\n"
@@ -517,7 +517,7 @@ bsize=$bsize ffactor=$ffactor nelem=25000 cachesize=65536 failed\n"
 		$PROG -o$TMP3 \
 		    -ibsize=$bsize,ffactor=$ffactor,nelem=25000,cachesize=65536\
 		    hash $TMP2
-		if (cmp -s $TMP1 $TMP3) ; then
+		if (cmp -s $TMP1 $TMP3) ; then :
 		else
 			printf "test20: type hash:\
 bsize=$bsize ffactor=$ffactor nelem=25000 cachesize=65536 failed\n"
@@ -530,7 +530,7 @@ bsize=$bsize ffactor=$ffactor nelem=25000 cachesize=65536 failed\n"
 		$PROG -o$TMP3 \
 		    -ibsize=$bsize,ffactor=$ffactor,nelem=25000,cachesize=65536\
 		    hash $TMP2
-		if (cmp -s $TMP1 $TMP3) ; then
+		if (cmp -s $TMP1 $TMP3) ; then :
 		else
 			printf "test20: type hash:\
 bsize=$bsize ffactor=$ffactor nelem=25000 cachesize=65536 failed\n"
@@ -543,7 +543,7 @@ bsize=$bsize ffactor=$ffactor nelem=25000 cachesize=65536 failed\n"
 		$PROG -o$TMP3 \
 		    -ibsize=$bsize,ffactor=$ffactor,nelem=25000,cachesize=65536\
 		    hash $TMP2
-		if (cmp -s $TMP1 $TMP3) ; then
+		if (cmp -s $TMP1 $TMP3) ; then :
 		else
 			printf "test20: type hash:\
 bsize=$bsize ffactor=$ffactor nelem=25000 cachesize=65536 failed\n"
@@ -556,7 +556,7 @@ bsize=$bsize ffactor=$ffactor nelem=25000 cachesize=65536 failed\n"
 		$PROG -o$TMP3 \
 		    -ibsize=$bsize,ffactor=$ffactor,nelem=25000,cachesize=65536\
 		    hash $TMP2
-		if (cmp -s $TMP1 $TMP3) ; then
+		if (cmp -s $TMP1 $TMP3) ; then :
 		else
 			printf "test20: type hash:\
 bsize=$bsize ffactor=$ffactor nelem=25000 cachesize=65536 failed\n"
