@@ -1,4 +1,4 @@
-/*	vdreg.h	1.11	87/06/30	*/
+/*	vdreg.h	1.12	88/05/21	*/
 
 /*
  * Versabus VDDC/SMDE disk controller definitions.
@@ -403,3 +403,12 @@ typedef union {
 #define	VDUF	0x4000		/* User Fault 1=good sector */
 #define	VDALT	0x2000		/* Alternate Sector 1=alternate */
 #define	VDWPT	0x1000		/* Write Protect 1=Read Only Sector */
+
+/* input register assignments for DIOCWFORMAT ioctl */
+#define	dk_op		df_reg[0]	/* opcode */
+#define	dk_althdr	df_reg[1]	/* alt. sect. header, in an int! */
+#define	dk_fmtflags	df_reg[2]	/* header format flags */
+
+/* output register assignments for DIOCWFORMAT ioctl */
+#define	dk_operrsta	df_reg[0]	/* dcb operrsta */
+#define	dk_ecode	df_reg[1]	/* smd-e err_code */
