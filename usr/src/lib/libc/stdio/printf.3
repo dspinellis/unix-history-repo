@@ -1,6 +1,6 @@
-.\"	@(#)printf.3	6.4 (Berkeley) %G%
+.\"	@(#)printf.3	6.5 (Berkeley) %G%
 .\"
-.TH PRINTF 3S ""
+.TH PRINTF 3S "October 22, 1987"
 .AT 3
 .SH NAME
 printf, fprintf, sprintf \- formatted output conversion
@@ -30,17 +30,29 @@ arg ] ...
 arg ] ...
 .B )
 .br
-.B char *s, format;
+.B char *s, *format;
 .PP
 .B #include <varargs.h>
 .br
-.B _doprnt(format, args, stream)
+.B vprintf(format, args)
 .br
 .B char *format;
 .br
-.B va_list *args;
+.B va_list args;
+.PP
+.B vfprintf(stream, format, args)
 .br
 .B FILE *stream;
+.br
+.B char *format;
+.br
+.B va_list args;
+.PP
+.B vsprintf(s, format, args)
+.br
+.B char *s, *format;
+.br
+.B va_list args;
 .SH DESCRIPTION
 .I Printf
 places output on the standard output stream
@@ -52,11 +64,14 @@ places output on the named output
 places `output' in the string
 .IR s ,
 followed by the character `\\0'.
-All of these routines work by calling the internal
-routine
-.B _doprnt,
-using the variable-length argument facilities of
-.IR varargs (3).
+Alternate forms, in which the arguments have already been
+captured using the variable-length argument facilities of
+.IR varargs (3),
+are available under the names
+.IR vprintf ,
+.IR vfprintf ,
+and
+.IR vsprintf .
 .PP
 Each of these functions converts, formats, and prints its arguments after
 the first under control of the first argument.
@@ -73,7 +88,7 @@ The remainder of the conversion specification includes
 in the following order
 .TP
 .B \(bu
-Zero or more of following flags:
+Zero or more of the following flags:
 .RS
 .TP
 .B \(bu
@@ -106,7 +121,7 @@ results of those conversions if a digit follows the decimal point).  For
 and
 .B G
 conversions, trailing zeros are not removed from the result as they
-would otherwise be.
+would otherwise be;
 .TP
 .B \(bu
 a minus sign `\-' which specifies
@@ -115,11 +130,15 @@ of the converted value in the indicated field;
 .TP
 .B \(bu
 a `+' character specifying that there should always be
-a sign placed before the number when using signed conversions.
+a sign placed before the number when using signed conversions;
 .TP
 .B \(bu
 a space specifying that a blank should be left before a positive number
-during a signed conversion.  A `+' overrides a space if both are used.
+during a signed conversion.  A `+' overrides a space if both are used;
+.TP
+.B \(bu
+a zero `0' character indicating that zero-padding should be used
+rather than blank-padding.  A `\-' overrides a `0' if both are used;
 .RE
 .TP
 .B \(bu
@@ -127,33 +146,52 @@ an optional digit string specifying a
 .I "field width;"
 if the converted value has fewer characters than the field width
 it will be blank-padded on the left (or right,
-if the left-adjustment indicator has been given) to make up the field width;
-if the field width begins with a zero,
-zero-padding will be done instead of blank-padding;
+if the left-adjustment indicator has been given) to make up the field width
+(note that a leading zero is a flag,
+but an embedded zero is part of a field width);
 .TP
 .B \(bu
-an optional period
-.RB ` . '
-which serves to separate the field width from the next digit string;
-.TP
-.B \(bu
-an optional digit string specifying a
+an optional period, followed by
+an optional digit string giving a
 .I precision
 which specifies the number of digits to appear after the
 decimal point, for e- and f-conversion, or the maximum number of characters
-to be printed from a string;
+to be printed from a string; if the digit string is missing,
+the precision is treated as zero;
 .TP
 .B \(bu
 the character
 .B l
 specifying that a following
 .BR d ,
+.BR i ,
 .BR o ,
 .BR x ,
 or
 .B u
 corresponds to a long integer
-.IR arg .
+.IR arg ,
+or that a following
+.B n
+corresponds to a pointer to a long integer
+.IR arg ;
+.TP
+.B \(bu
+the character
+.B h
+specifying that a following
+.BR d ,
+.BR i ,
+.BR o ,
+.BR x ,
+or
+.B u
+corresponds to a short integer
+.IR arg ,
+or that a following
+.B n
+corresponds to a pointer to a short integer
+.IR arg ;
 .TP
 .B \(bu
 a character which indicates the type of
@@ -171,8 +209,11 @@ and their meanings are
 .B dox
 The integer
 .I arg
-is converted to decimal, octal, or
-hexadecimal notation respectively.
+is converted to signed decimal, unsigned octal, or
+unsigned hexadecimal notation respectively.
+.TP
+.B i
+An alias for `d'.
 .TP
 .B f
 The float or double
@@ -188,7 +229,7 @@ is missing,
 if the precision is explicitly 0, no digits and
 no decimal point are printed.
 .TP
-.B e
+.B eE
 The float or double
 .I arg
 is converted in the style
@@ -198,17 +239,16 @@ the number after is equal to the
 precision specification for the argument;
 when the precision is missing,
 6 digits are produced.
+An uppercase E is used for `E' conversion.
 .TP
-.B g
+.B gG
 The float or double
 .I arg
 is printed in style
-.BR d ,
-in style
-.BR f ,
-or in
-style
-.BR e ,
+.B f
+or in style
+.B e
+.RB ( E )
 whichever gives full precision in minimum space.
 .TP
 .B c
@@ -234,6 +274,26 @@ and printed (the result will be in the
 range 0 through MAXUINT, where MAXUINT equals 4294967295 on a VAX-11
 and 65535 on a PDP-11).
 .TP
+.B n
+.I Arg
+is taken to be a pointer to an integer (possibly
+.B short
+or
+.BR long )
+through which is stored the number of characters written
+to the output stream (or string) so far by this call to
+.B printf
+(or
+.BR fprintf ,
+etc.).
+.TP
+.B p
+.I Arg
+is taken to be a pointer to
+.BR void ;
+it is printed in style
+.BR x .
+.TP
 .B %
 Print a `%'; no argument is converted.
 .PP
@@ -243,12 +303,12 @@ padding takes place only if the specified field
 width exceeds the actual width.
 Characters generated by
 .I printf
-are printed by 
+are printed as by 
 .IR putc (3S).
 .PP
 .SH "RETURN VALUE"
-The functions \fIprintf\fP, \fIfprintf\fP, and \fIsprintf\fP return
-the number of characters printf, or -1 if an error occurred.
+The functions all return
+the number of characters printed, or -1 if an error occurred.
 .SH EXAMPLES
 .br
 To print a date and time in the form `Sunday, July 3, 10:02',
@@ -271,8 +331,7 @@ to 5 decimals:
 .IP
 printf("pi = %.5f", 4*atan(1.0));
 .SH "SEE ALSO"
-putc(3S),
-scanf(3S),
-ecvt(3)
+putc(3S), scanf(3S)
 .SH BUGS
-Very wide fields (>128 characters) fail.
+The functions still supports \fI%D\fP, \fI%O\fP, and \fI%U\fP.  Do not
+use these formats, as they will be disappearing soon.
