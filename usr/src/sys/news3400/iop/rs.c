@@ -9,7 +9,7 @@
  *
  * from: $Hdr: rs.c,v 4.300 91/06/09 06:43:03 root Rel41 $ SONY
  *
- *	@(#)rs.c	7.1 (Berkeley) %G%
+ *	@(#)rs.c	7.2 (Berkeley) %G%
  */
 
 /*	rs.c	6.1	83/07/29	*/
@@ -1044,7 +1044,7 @@ rs_output(unit, n)
 {
 
 	msg_send(port_xmit_iop[unit], port_rsxmit[unit],
-	    rs_tty[unit].t_outq.c_cf, MIN(n, MAX_CIO), 0);
+	    rs_tty[unit].t_outq.c_cf, min(n, MAX_CIO), 0);
 }
 
 rs_stop(unit, flush)

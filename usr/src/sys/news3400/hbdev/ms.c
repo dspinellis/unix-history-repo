@@ -9,7 +9,7 @@
  *
  * from: $Hdr: ms.c,v 4.300 91/06/09 06:22:04 root Rel41 $ SONY
  *
- *	@(#)ms.c	7.1 (Berkeley) %G%
+ *	@(#)ms.c	7.2 (Berkeley) %G%
  */
 
 #include "../include/fix_machine_type.h"
@@ -575,16 +575,16 @@ msconv(unit, rep)
 	ms->mss_data.md_y += dy;
 
 	if (dx > 0)
-		ms->mss_data.md_x = MIN(ms->mss_data.md_x,
+		ms->mss_data.md_x = min(ms->mss_data.md_x,
 					ms->mss_range.mr_max.mc_x);
 	else
-		ms->mss_data.md_x = MAX(ms->mss_data.md_x,
+		ms->mss_data.md_x = max(ms->mss_data.md_x,
 					ms->mss_range.mr_min.mc_x);
 	if (dy > 0)
-		ms->mss_data.md_y = MIN(ms->mss_data.md_y,
+		ms->mss_data.md_y = min(ms->mss_data.md_y,
 					ms->mss_range.mr_max.mc_y);
 	else
-		ms->mss_data.md_y = MAX(ms->mss_data.md_y,
+		ms->mss_data.md_y = max(ms->mss_data.md_y,
 					ms->mss_range.mr_min.mc_y);
 
 	if (dx != 0 || dy != 0)

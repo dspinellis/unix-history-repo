@@ -12,7 +12,7 @@
  *
  * from: Utah $Hdr: clock.c 1.18 91/01/21$
  *
- *	@(#)clock.c	7.2 (Berkeley) %G%
+ *	@(#)clock.c	7.3 (Berkeley) %G%
  */
 
 #include "../include/fix_machine_type.h"
@@ -37,8 +37,34 @@
  */
 
 /*
+ * Set up the real-time and statistics clocks.  Leave stathz 0 only if
+ * no alternative timer is available.
+ *
+ */
+cpu_initclocks()
+{
+
+	startrtclock();
+	enablertclock();
+}
+
+/*
+ * We assume newhz is either stathz or profhz, and that neither will
+ * change after being set up above.  Could recalculate intervals here
+ * but that would be a drag.
+ */
+void
+setstatclockrate(newhz)
+	int newhz;
+{
+
+	/* KU:XXX do something! */
+}
+
+/*
  * Start the real-time clock.
  */
+static void
 startrtclock()
 {
 
@@ -48,6 +74,7 @@ startrtclock()
 /*
  * Enable the real-time clock.
  */
+static void
 enablertclock()
 {
 

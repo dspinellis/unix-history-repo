@@ -9,7 +9,7 @@
  *
  * from: $Hdr: vt100.h,v 4.300 91/06/09 06:14:58 root Rel41 $ SONY
  *
- *	@(#)vt100.h	7.1 (Berkeley) %G%
+ *	@(#)vt100.h	7.2 (Berkeley) %G%
  */
 
 #include "../include/fix_machine_type.h"
@@ -172,15 +172,6 @@ extern int	fpa;
 #define	FALSE	0
 
 #define	C_MESS_SIZ	32
-
-/* MIN and MAX are imported from ../h/param.h */
-#ifndef MIN
-#define	MIN(a,b) (((a)<(b))?(a):(b))
-#endif
-#ifndef MAX
-#define	MAX(a,b) (((a)>(b))?(a):(b))
-#endif
-#define	ABS(a)		((a) < 0 ? -(a) : (a))
 
 extern	int	fcolor;
 extern	int	bcolor;

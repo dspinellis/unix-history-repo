@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)cpu.h	7.1 (Berkeley) %G%
+ *	@(#)cpu.h	7.2 (Berkeley) %G%
  */
 
 #ifndef _CPU_H_
@@ -26,36 +26,25 @@
  */
 #undef	COPY_SIGCODE		/* copy sigcode above user stack in exec */
 
-/*
- * function vs. inline configuration;
- * these are defined to get generic functions
- * rather than inline or machine-dependent implementations
- */
-#define	NEED_MINMAX		/* need {,i,l,ul}{min,max} functions */
-#define	NEED_FFS		/* don't need ffs function */
-#undef	NEED_BCMP		/* don't need bcmp function */
-#undef	NEED_STRLEN		/* don't need strlen function */
-
 #define	cpu_exec(p)	(p->p_md.md_ss_addr = 0) /* init single step */
 #define	cpu_wait(p)	/* nothing */
 #define cpu_setstack(p, ap) \
 	(p)->p_md.md_regs[SP] = ap
 
 /*
- * Arguments to hardclock, softclock and gatherstats
- * encapsulate the previous machine state in an opaque
- * clockframe;
+ * Arguments to hardclock and gatherstats encapsulate the previous
+ * machine state in an opaque clockframe.
  */
-typedef struct intrframe {
-	int	pc;
-	int	ps;
-} clockframe;
+struct clockframe {
+	int	pc;	/* program counter at time of interrupt */
+	int	sr;	/* status register at time of interrupt */
+};
 
-#define	CLKF_USERMODE(framep)	((framep)->ps & MACH_SR_KU_PREV)
+#define	CLKF_USERMODE(framep)	((framep)->sr & MACH_SR_KU_PREV)
 #define	CLKF_BASEPRI(framep)	\
-	(((framep)->ps & (MACH_INT_MASK | MACH_SR_INT_ENA_PREV)) == \
-	(MACH_INT_MASK | MACH_SR_INT_ENA_PREV))
+	((~(framep)->sr & (MACH_INT_MASK | MACH_SR_INT_ENA_PREV)) == 0)
 #define	CLKF_PC(framep)		((framep)->pc)
+#define	CLKF_INTR(framep)	(0)
 
 /*
  * Preempt the current process if in interrupt from user mode,
@@ -64,11 +53,11 @@ typedef struct intrframe {
 #define	need_resched()	{ want_resched = 1; aston(); }
 
 /*
- * Give a profiling tick to the current process from the softclock
- * interrupt.
+ * Give a profiling tick to the current process when the user profiling
+ * buffer pages are invalid.  On the PMAX, request an ast to send us
+ * through trap, marking the proc as needing a profiling tick.
  */
-#define	profile_tick(p, framep) \
-	addupc((framep)->pc, &p->p_stats->p_prof, 1);
+#define	need_proftick(p)	{ (p)->p_flag |= SOWEUPC; aston(); }
 
 /*
  * Notify the current process (p) that it has a signal pending,

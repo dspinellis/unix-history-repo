@@ -9,13 +9,14 @@
  *
  * from: $Hdr: vt100.c,v 4.300 91/06/09 06:14:56 root Rel41 $ SONY
  *
- *	@(#)vt100.c	7.1 (Berkeley) %G%
+ *	@(#)vt100.c	7.2 (Berkeley) %G%
  */
 
 #include "../include/fix_machine_type.h"
 
 #include "types.h"
 #include "param.h"
+#include "systm.h"
 #include "../iop/framebuf.h"
 #include "../iop/kbreg.h"
 #include "../iop/keyboard.h"
@@ -475,7 +476,7 @@ next_tab_stop(sp)
 	for (i = sp->s_csr.csr_x + 1; i < rit_m; i++)
 		if (sp->s_tab_pos[i] == 1)
 			break;
-	sp->s_csr.csr_x = MIN(i, rit_m);
+	sp->s_csr.csr_x = min(i, rit_m);
 	sp->s_csr.csr_p.x = (sp->s_csr.csr_x - 1) * char_w + x_ofst;
 	cursor_on(&sp->s_csr.csr_p);
 }
