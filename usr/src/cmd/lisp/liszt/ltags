@@ -1,0 +1,2 @@
+/^\(DEF/	{ print $2, FILENAME, "?^" $0 "$?" }
+/^\(def/	{ print $2, FILENAME, "?^" $0 "$?" }
