@@ -442,12 +442,25 @@ EXTERN u_char	tTdvect[100];
 
 # include	<sysexits.h>
 
+
+/*
+**  Some in-line functions
+*/
+
+/* set exit status */
 # define setstat(s)		{ if (ExitStat == EX_OK) ExitStat = s; }
 
+/* line terminator appropriate for a given mailer */
+# define crlf(m)		(bitset(M_CRLF, (m)->m_flags) ? "\r\n" : "\n")
 
-/* useful functions */
+/* make a copy of a string */
+# define newstr(s)		strcpy(xalloc(strlen(s) + 1), s)
 
-extern char	*newstr();
+
+/*
+**  Declarations of useful functions
+*/
+
 extern ADDRESS	*parseaddr();
 extern char	*xalloc();
 extern bool	sameaddr();
@@ -456,4 +469,3 @@ extern EVENT	*setevent();
 extern char	*sfgets();
 extern char	*queuename();
 extern time_t	curtime();
-extern char	*crlf();
