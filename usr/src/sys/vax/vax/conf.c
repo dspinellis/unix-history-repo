@@ -1,4 +1,4 @@
-/*	conf.c	4.18	%G%	*/
+/*	conf.c	4.19	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -52,7 +52,7 @@ int	rkstrategy(),rkread(),rkwrite(),rkintr(),rkdump();
 #define	rkdump		nodev
 #endif
 
-#include "tm.h"
+#include "te.h"
 #if NTM > 0
 int	tmopen(),tmclose(),tmstrategy(),tmread(),tmwrite(),tmioctl(),tmdump();
 #else
@@ -65,17 +65,12 @@ int	tmopen(),tmclose(),tmstrategy(),tmread(),tmwrite(),tmioctl(),tmdump();
 #define	tmdump		nodev
 #endif
 
-#include "ts.h"
-#if NTS > 0
-int	tsopen(),tsclose(),tsstrategy(),tsread(),tswrite(),tsdump();
-#else
 #define	tsopen		nodev
 #define	tsclose		nodev
 #define	tsstrategy	nodev
 #define	tsread		nodev
 #define	tswrite		nodev
 #define	tsdump		nodev
-#endif
 
 #include "up.h"
 #if NSC > 0
@@ -131,21 +126,6 @@ struct	tty dh11[];
 
 #if VAX==780
 int	flopen(),flclose(),flread(),flwrite();
-#endif
-
-#include "dk.h"
-#if NDK == 0
-#define	dkopen	nodev
-#define	dkclose	nodev
-#define	dkread	nodev
-#define	dkwrite	nodev
-#define	dkioctl	nodev
-#define	dkstop	nodev
-#define	dkreset	nulldev
-#define	dkchans	0
-#else
-int	dkopen(),dkclose(),dkread(),dkwrite(),dkioctl(),dkstop(),dkreset();
-struct	tty	dkchans[];
 #endif
 
 #include "dz.h"

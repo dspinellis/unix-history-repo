@@ -1,4 +1,4 @@
-/*	autoconf.c	4.12	81/02/25	*/
+/*	autoconf.c	4.13	81/02/26	*/
 
 /*
  * Configure the system for the current machine.
@@ -59,7 +59,6 @@ configure()
 	cpusid.cpusid = mfpr(SID);
 	for (ocp = percpu; ocp < &percpu[NCPU]; ocp++)
 		if (ocp->pc_cputype == cpusid.cpuany.cp_type) {
-			cpu = ocp->pc_cputype;
 			(*ocp->pc_config)(ocp);
 #if VAXANY
 			setconf();

@@ -1,4 +1,4 @@
-/*	up.c	4.23	81/02/25	*/
+/*	up.c	4.24	81/02/26	*/
 
 #include "up.h"
 #if NSC > 0
@@ -440,7 +440,7 @@ updgo(um)
 /*
  * Handle a disk interrupt.
  */
-scintr(sc21)
+upintr(sc21)
 	register sc21;
 {
 	register struct buf *bp, *dp;

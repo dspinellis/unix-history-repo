@@ -1,4 +1,4 @@
-/*	rk.c	4.12	%G%	*/
+/*	rk.c	4.13	%G%	*/
 
 #include "rk.h"
 #if NHK > 0
@@ -291,7 +291,7 @@ rkdgo(um)
 	rkaddr->rkcs1 = um->um_cmd|((um->um_ubinfo>>8)&0x300);
 }
 
-hkintr(rk11)
+rkintr(rk11)
 	int rk11;
 {
 	register struct uba_minfo *um = rkminfo[rk11];

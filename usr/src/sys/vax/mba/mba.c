@@ -1,5 +1,7 @@
-/*	mba.c	4.9	81/02/25	*/
+/*	mba.c	4.10	81/02/26	*/
 
+#include "mba.h"
+#if NMBA > 0
 /*
  * Massbus driver; arbitrates massbusses through device driver routines
  * and provides common functions.
@@ -395,3 +397,4 @@ mbasetup(mi)
 	*(int *)io++ = 0;
 	return (vaddr);
 }
+#endif
