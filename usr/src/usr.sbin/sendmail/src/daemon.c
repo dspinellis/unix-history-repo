@@ -12,9 +12,9 @@
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	5.43 (Berkeley) %G% (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	5.44 (Berkeley) %G% (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	5.43 (Berkeley) %G% (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	5.44 (Berkeley) %G% (without daemon mode)";
 #endif
 #endif /* not lint */
 
@@ -393,32 +393,36 @@ myhostname(hostbuf, size)
 		return (NULL);
 }
 /*
- *  MAPHOSTNAME -- turn a hostname into canonical form
- *
- *	Parameters:
- *		hbuf -- a buffer containing a hostname.
- *		hbsize -- the size of hbuf.
- *
- *	Returns:
- *		TRUE if the host name was mapped.
- *		FALSE otherwise.
- *
- *	Side Effects:
- *		Looks up the host specified in hbuf.  If it is not
- *		the canonical name for that host, replace it with
- *		the canonical name.  If the name is unknown, or it
- *		is already the canonical name, leave it unchanged.
- */
+**  MAPHOSTNAME -- turn a hostname into canonical form
+**
+**	Parameters:
+**		hbuf -- a buffer containing a hostname.
+**		hbsize -- the size of hbuf.
+**
+**	Returns:
+**		The mapping, if found.
+**		NULL if no mapping found.
+**
+**	Side Effects:
+**		Looks up the host specified in hbuf.  If it is not
+**		the canonical name for that host, return the canonical
+**		name.
+*/
 
-bool
-maphostname(hbuf, hbsize)
+char *
+maphostname(hbuf, hbsize, avp)
 	char *hbuf;
 	int hbsize;
+	char **avp;
 {
 	register struct hostent *hp;
 	u_long in_addr;
 	char ptr[256], *cp;
 	struct hostent *gethostbyaddr();
+
+	/* allow room for trailing dot on correct match */
+	if (ConfigLevel >= 2)
+		hbsize--;
 
 	/*
 	 * If first character is a bracket, then it is an address
@@ -426,19 +430,34 @@ maphostname(hbuf, hbsize)
 	 * strip the brackets and to preserve hbuf if address is
 	 * unknown.
 	 */
+
 	if (*hbuf != '[')
-		return (getcanonname(hbuf, hbsize));
+	{
+		if (getcanonname(hbuf, hbsize))
+		{
+			/* found a match -- add the trailing dot */
+			if (ConfigLevel >= 2)
+				(void) strcat(hbuf, ".");
+			return hbuf;
+		}
+		else
+			return NULL;
+	}
 	if ((cp = index(strcpy(ptr, hbuf), ']')) == NULL)
-		return (FALSE);
+		return (NULL);
 	*cp = '\0';
 	in_addr = inet_addr(&ptr[1]);
 	hp = gethostbyaddr((char *)&in_addr, sizeof(struct in_addr), AF_INET);
 	if (hp == NULL)
-		return (FALSE);
+		return (NULL);
+
+	/* found a match -- copy and dot terminate */
 	if (strlen(hp->h_name) >= hbsize)
 		hp->h_name[hbsize - 1] = '\0';
-	(void)strcpy(hbuf, hp->h_name);
-	return (TRUE);
+	(void) strcpy(hbuf, hp->h_name);
+	if (ConfigLevel >= 2)
+		(void) strcat(hbuf, ".");
+	return hbuf;
 }
 
 # else DAEMON
@@ -475,9 +494,10 @@ myhostname(hostbuf, size)
 **	Parameters:
 **		hbuf -- a buffer containing a hostname.
 **		hbsize -- the size of hbuf.
+**		avp -- a pointer to a (cf file defined) argument vector.
 **
 **	Returns:
-**		TRUE if the hostname was mapped.
+**		mapped host name
 **		FALSE otherwise.
 **
 **	Side Effects:
@@ -488,12 +508,13 @@ myhostname(hostbuf, size)
 */
 
 /*ARGSUSED*/
-bool
-maphostname(hbuf, hbsize)
+char *
+maphostname(hbuf, hbsize, avp)
 	char *hbuf;
 	int hbsize;
+	char **avp;
 {
-	return (FALSE);
+	return NULL;
 }
 
 #endif DAEMON

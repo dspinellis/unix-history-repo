@@ -13,7 +13,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.48 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.49 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -878,18 +878,20 @@ intsig()
 struct metamac	MetaMacros[] =
 {
 	/* LHS pattern matching characters */
-	'*', MATCHZANY,	'+', MATCHANY,	'-', MATCHONE,	'=', MATCHCLASS,
-	'~', MATCHNCLASS,
+	'*', MATCHZANY,		'+', MATCHANY,		'-', MATCHONE,
+	'=', MATCHCLASS,	'~', MATCHNCLASS,
 
 	/* these are RHS metasymbols */
-	'#', CANONNET,	'@', CANONHOST,	':', CANONUSER,	'>', CALLSUBR,
+	'#', CANONNET,		'@', CANONHOST,		':', CANONUSER,
+	'>', CALLSUBR,
 	'{', MATCHLOOKUP,		'}', MATCHELOOKUP,
 
 	/* the conditional operations */
-	'?', CONDIF,	'|', CONDELSE,	'.', CONDFI,
+	'?', CONDIF,		'|', CONDELSE,		'.', CONDFI,
 
 	/* and finally the hostname lookup characters */
-	'[', HOSTBEGIN,	']', HOSTEND,
+	'[', HOSTBEGIN,		']', HOSTEND,
+	'(', LOOKUPBEGIN,	')', LOOKUPEND,
 
 	'\0'
 };

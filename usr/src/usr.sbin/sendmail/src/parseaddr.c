@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parseaddr.c	5.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)parseaddr.c	5.18 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -755,7 +755,7 @@ rewrite(pvp, ruleset)
 		*avp++ = NULL;
 
 		/*
-		**  Check for any hostname lookups.
+		**  Check for any hostname/keyword lookups.
 		*/
 
 		for (rvp = npvp; *rvp != NULL; rvp++)
@@ -764,25 +764,64 @@ rewrite(pvp, ruleset)
 			char **xpvp;
 			int trsize;
 			char *olddelimchar;
+			char *replac;
+			int endtoken;
+			STAB *map;
+			char *mapname;
+			char **key_rvp;
+			char **arg_rvp;
+			char **default_rvp;
 			char buf[MAXNAME + 1];
 			char *pvpb1[MAXATOM + 1];
 			char pvpbuf[PSBUFSIZE];
 			extern char *DelimChar;
 
-			if (**rvp != HOSTBEGIN)
+			if (**rvp != HOSTBEGIN && **rvp != LOOKUPBEGIN)
 				continue;
 
 			/*
-			**  Got a hostname lookup.
+			**  Got a hostname/keyword lookup.
 			**
 			**	This could be optimized fairly easily.
 			*/
 
 			hbrvp = rvp;
+			arg_rvp = default_rvp = NULL;
+			if (**rvp == HOSTBEGIN)
+			{
+				endtoken = HOSTEND;
+				mapname = "host";
+			}
+			else
+			{
+				endtoken = LOOKUPEND;
+				mapname = *++rvp;
+			}
+			map = stab(mapname, ST_MAP, ST_FIND);
+			if (map == NULL)
+				syserr("rewrite: map %s not found", mapname);
 
 			/* extract the match part */
-			while (*++rvp != NULL && **rvp != HOSTEND)
-				continue;
+			key_rvp = ++rvp;
+			while (*rvp != NULL && **rvp != endtoken)
+			{
+				switch (**rvp)
+				{
+				  case CANONHOST:
+					*rvp++ = NULL;
+					arg_rvp = rvp;
+					break;
+
+				  case CANONUSER:
+					*rvp++ = NULL;
+					default_rvp = rvp;
+					break;
+
+				  default:
+					rvp++;
+					break;
+				}
+			}
 			if (*rvp != NULL)
 				*rvp++ = NULL;
 
@@ -791,32 +830,36 @@ rewrite(pvp, ruleset)
 			bcopy((char *) rvp, (char *) pvpb1, trsize);
 
 			/* look it up */
-			cataddr(++hbrvp, buf, sizeof buf);
-			if (maphostname(buf, sizeof buf - 1) && ConfigLevel >= 2)
-			{
-				register int i;
+			cataddr(key_rvp, buf, sizeof buf);
+			if (map != NULL && bitset(MF_VALID, map->s_map.map_flags))
+				replac = (*map->s_map.map_class->map_lookup)(buf,
+						sizeof buf - 1, arg_rvp);
+			else
+				replac = NULL;
 
-				/* it mapped -- mark it with a trailing dot */
-				i = strlen(buf);
-				if (i > 0 && buf[i - 1] != '.')
+			/* if no replacement, use default */
+			if (replac == NULL)
+			{
+				if (default_rvp != NULL)
+					xpvp = default_rvp;
+				else
+					xpvp = key_rvp;
+			}
+			else
+			{
+				/* scan the new replacement */
+				olddelimchar = DelimChar;
+				xpvp = prescan(replac, '\0', pvpbuf);
+				DelimChar = olddelimchar;
+				if (xpvp == NULL)
 				{
-					buf[i++] = '.';
-					buf[i] = '\0';
+					syserr("rewrite: cannot prescan map value: %s", replac);
+					return;
 				}
 			}
 
-			/* scan the new host name */
-			olddelimchar = DelimChar;
-			xpvp = prescan(buf, '\0', pvpbuf);
-			DelimChar = olddelimchar;
-			if (xpvp == NULL)
-			{
-				syserr("rewrite: cannot prescan canonical hostname: %s", buf);
-				return;
-			}
-
 			/* append it to the token list */
-			for (avp = --hbrvp; *xpvp != NULL; xpvp++)
+			for (avp = hbrvp; *xpvp != NULL; xpvp++)
 			{
 				*avp++ = newstr(*xpvp);
 				if (avp >= &npvp[MAXATOM])

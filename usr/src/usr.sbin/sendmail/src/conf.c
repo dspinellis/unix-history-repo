@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	5.35 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	5.36 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/ioctl.h>
@@ -146,6 +146,7 @@ setdefaults()
 	ErrorMode = EM_PRINT;
 	EightBit = FALSE;
 	setdefuser();
+	setupmaps();
 }
 
 
@@ -164,9 +165,82 @@ setdefuser()
 	else
 		DefUser = newstr("nobody");
 }
+/*
+**  SETUPMAPS -- set up map classes
+**
+**	Since these are compiled in, they cannot be in the config file.
+**
+*/
 
+setupmaps()
+{
+	register STAB *s;
+	MAPCLASS *hostmapclass;
+	extern char *maphostname();
 
-/*
+	/* set up host name lookup map */
+	s = stab("host", ST_MAPCLASS, ST_ENTER);
+	s->s_mapclass.map_init = NULL;
+	s->s_mapclass.map_lookup = maphostname;
+	hostmapclass = &s->s_mapclass;
+
+	s = stab("host", ST_MAP, ST_ENTER);
+	s->s_map.map_class = hostmapclass;
+	s->s_map.map_flags = MF_VALID;
+
+	/*
+	**  Set up other map classes.
+	*/
+
+# ifdef DBM_MAP
+	/* dbm file access */
+	{
+		extern void dbm_map_init();
+		extern char *dbm_map_lookup();
+
+		s = stab("dbm", ST_MAPCLASS, ST_ENTER);
+		s->s_mapclass.map_init = dbm_map_init;
+		s->s_mapclass.map_lookup = dbm_map_lookup;
+	}
+# endif
+
+# ifdef BTREE_MAP
+	/* new database file access -- btree files */
+	{
+		extern void bt_map_init();
+		extern char *bt_map_lookup();
+
+		s = stab("btree", ST_MAPCLASS, ST_ENTER);
+		s->s_mapclass.map_init = bt_map_init;
+		s->s_mapclass.map_lookup = bt_map_lookup;
+	}
+# endif
+
+# ifdef HASH_MAP
+	/* new database file access -- hash files */
+	{
+		extern void hash_map_init();
+		extern char *hash_map_lookup();
+
+		s = stab("hash", ST_MAPCLASS, ST_ENTER);
+		s->s_mapclass.map_init = hash_map_init;
+		s->s_mapclass.map_lookup = hash_map_lookup;
+	}
+# endif
+
+# ifdef USERDB_MAP
+	/* user database */
+	{
+		extern void udb_map_init();
+		extern char *udb_map_lookup();
+
+		s = stab("udb", ST_MAPCLASS, ST_ENTER);
+		s->s_mapclass.map_init = udb_map_init;
+		s->s_mapclass.map_lookup = udb_map_lookup;
+	}
+# endif
+}
+/*
 **  GETRUID -- get real user id (V7)
 */
 
@@ -190,8 +264,7 @@ getrgid()
 	else
 		return (getgid());
 }
-
-/*
+/*
 **  USERNAME -- return the user id of the logged in user.
 **
 **	Parameters:

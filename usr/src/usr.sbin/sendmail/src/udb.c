@@ -8,9 +8,9 @@
 
 #ifndef lint
 #ifdef USERDB
-static char sccsid [] = "@(#)udb.c	5.17 (Berkeley) %G% (with USERDB)";
+static char sccsid [] = "@(#)udb.c	5.18 (Berkeley) %G% (with USERDB)";
 #else
-static char sccsid [] = "@(#)udb.c	5.17 (Berkeley) %G% (without USERDB)";
+static char sccsid [] = "@(#)udb.c	5.18 (Berkeley) %G% (without USERDB)";
 #endif
 #endif
 
@@ -26,7 +26,7 @@ static char sccsid [] = "@(#)udb.c	5.17 (Berkeley) %G% (without USERDB)";
 #include <db.h>
 
 /*
-**  UDBEXPAND.C -- interface between sendmail and Berkeley User Data Base.
+**  UDB.C -- interface between sendmail and Berkeley User Data Base.
 **
 **	This depends on the 4.4BSD db package.
 */
