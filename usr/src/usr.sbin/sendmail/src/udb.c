@@ -6,15 +6,15 @@
  * %sccs.include.redist.c%
  */
 
+#include "sendmail.h"
+
 #ifndef lint
 #ifdef USERDB
-static char sccsid [] = "@(#)udb.c	6.21 (Berkeley) %G% (with USERDB)";
+static char sccsid [] = "@(#)udb.c	6.22 (Berkeley) %G% (with USERDB)";
 #else
-static char sccsid [] = "@(#)udb.c	6.21 (Berkeley) %G% (without USERDB)";
+static char sccsid [] = "@(#)udb.c	6.22 (Berkeley) %G% (without USERDB)";
 #endif
 #endif
-
-#include "sendmail.h"
 
 #ifdef USERDB
 
