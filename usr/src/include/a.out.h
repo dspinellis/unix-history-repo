@@ -4,12 +4,13 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)a.out.h	5.10 (Berkeley) %G%
+ *	@(#)a.out.h	5.11 (Berkeley) %G%
  */
 
 #ifndef	_AOUT_H_
 #define	_AOUT_H_
 
+#include <sys/types.h>
 #include <machine/exec.h>
 #include <machine/reloc.h>
 
