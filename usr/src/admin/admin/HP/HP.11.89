@@ -1,0 +1,123 @@
+.\"	@(#)HP.11.89	1.1	89/08/11
+.if n \{\
+.ND
+.rm CH
+.ll 7i
+.nr LL 7i
+.ad l
+.\}
+.ce 2
+Proposal for Hewlett Packard support
+of the Berkeley Computer Systems Research Group
+.sp 1
+.PP
+This is a proposal for support by Hewlett-Packard of operating
+system and networking research in the \s-1UNIX\s0 project in the Computer
+Science Division of the University of California, Berkeley, known as
+the Computer Systems Research Group (\s-1CSRG\s0).
+The goal of the project
+is to use leading edge research ideas in a stable and reliable
+implementation that solves current problems in operating systems research.
+The project also includes incorporation of network protocols and other
+subsystems into the operating system while maintaining consistency
+with the existing system call interface.
+The resulting system is widely used by other
+researchers in operating systems and network protocols.
+The most recent two releases, \s-14.2BSD\s0
+and \s-14.3BSD\s0, provide the
+core of the standard networking and/or operating system software for
+essentially all vendors of \s-1UNIX\s0-based workstations and minicomputers.
+\s-14.3BSD\s0-based network support will be included in the next systems to
+be released by both \s-1OSF\s0 and \s-1AT&T\s0.
+.PP
+\s-1CSRG\s0 includes three full-time research staff (Mike Karels, Kirk
+McKusick and Keith Bostic), one three-quarter-time programmer on loan
+from another group (Keith Sklower), and one software engineer
+currently on loan from Digital Equipment Corporation (Marc Teitelbaum).
+In addition, two full-time administrative and secretarial people
+handle licensing and software distribution as well as office support.
+.PP
+Current funding for \s-1CSRG\s0 is provided by the Defense Advanced
+Research Projects Agency (\s-1DARPA\s0) via the National Institute for
+Science and Technology (\s-1NIST\s0, formerly \s-1NBS\s0).
+The current grant from \s-1NIST\s0
+will expire about April 1, 1990.
+By mutual agreement,
+further funding from \s-1DARPA\s0 is not expected.
+We propose that Hewlett-Packard begin support of \s-1CSRG\s0
+with donations of workstations and financial support as the group
+makes the transition from \s-1DARPA\s0 funding to other sources of funding.
+.PP
+Equipment needs for \s-1CSRG\s0 in the coming year include replacement
+of obsolete Sun Workstations (model 3/50) with faster, more modern
+workstations.
+To improve the distributed computing
+environment within \s-1CSRG\s0, it is desirable to replace
+older workstations with models for which \s-14.3BSD\s0 support is available.
+The only such workstations at the present are
+the 680x0-based series of Hewlett-Packard
+workstations.
+This will allow us to run our software on our
+workstations as well as the central minicomputers currently in use.
+To completely replace the existing workstations, we would need a total
+of six machines.
+One machine with about one gigabyte of \s-1SCSI\s0-based
+disk storage would serve as a file server, and three other machines
+would be used as local workstations supported by that file server.
+An option for \s-1SMD\s0-based disk storage would be desirable for the file
+server, allowing existing disks to be moved to the new file server.
+The remaining two workstations would be used by senior research staff
+from their home offices, using dedicated serial-line links for network access.
+These machines would be used two to four days per week.
+.PP
+Financial support from Hewlett-Packard is also requested.
+A donation on the order of $200,000 to $300,000 would provide roughly
+half of the budget needed by \s-1CSRG\s0 in the next year for salaries and
+benefits, maintenance and network access fees, travel and other expenses.
+.PP
+\s-1CSRG\s0 anticipates that its next major release, tentatively called
+\s-14.4BSD\s0, will be completed and begin shipment during the time frame of
+the proposed support by Hewlett-Packard.
+The file system interface
+will be extended to allow greater flexibility and performance, and a
+public-domain version of \s-1NFS\s0 is expected to be included.
+The new system includes integration of an implementation of the
+\s-1ISO OSI\s0 networking protocols into the existing
+socket interface and internal network architecture.
+This work will include a revised internal network
+architecture incorporating the best features of both the existing
+socket support and the ``streams'' layering of the Ninth Edition
+research version of \s-1UNIX\s0.
+Both file system and networking interfaces
+improve upon previous work with better support for caching in layered
+architectures.
+These caching techniques are based on work done by Van
+Jacobson at the Lawrence Berkeley Laboratory, and will be fully
+exploited by the \s-1TCP/IP\s0 networking protocols.
+The applicability of
+these techniques in the \s-1OSI\s0 protocol suite will be investigated as
+well.
+.PP
+The system will also include an \s-1IEEE\s0 P1003.1 \s-1(POSIX)\s0 standard
+operating system interface integrated with the existing system
+interface in such a way that both interfaces are fully supported and
+interoperate fully.
+Finally, the system is expected to include a new
+virtual memory system derived from that of the Mach operating system
+from \s-1CMU\s0 and incorporated into \s-14.3BSD\s0 by the University of Utah.
+We expect that the products of this work will become the interfaces and
+implementations of choice for other operating systems and networking
+researchers in the near future.
+.sp 2
+.in +1.5i
+Sincerely,
+.sp .75i
+Dr. Marshall Kirk McKusick
+.in -1.5i
+.sp 2
+.nf
+cc:	Roy D'Souza
+	Mike Karels
+.fi
+.sp
+MKM/tl
