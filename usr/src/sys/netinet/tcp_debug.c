@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tcp_debug.c	7.6 (Berkeley) %G%
+ *	@(#)tcp_debug.c	7.7 (Berkeley) %G%
  */
 
 #ifdef TCPDEBUG

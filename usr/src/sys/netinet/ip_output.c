@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ip_output.c	7.24 (Berkeley) %G%
+ *	@(#)ip_output.c	7.25 (Berkeley) %G%
  */
 
 #include "param.h"

@@ -4,10 +4,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tcp_subr.c	7.20 (Berkeley) %G%
+ *	@(#)tcp_subr.c	7.21 (Berkeley) %G%
  */
 
 #include "param.h"
+#include "proc.h"
 #include "systm.h"
 #include "malloc.h"
 #include "mbuf.h"

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tcp_input.c	7.26 (Berkeley) %G%
+ *	@(#)tcp_input.c	7.27 (Berkeley) %G%
  */
 
 #include "param.h"
