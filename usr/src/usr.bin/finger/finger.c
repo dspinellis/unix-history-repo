@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)finger.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)finger.c	5.6 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -1006,7 +1006,7 @@ netfinger(name)
 	if (hp == NULL) {
 		static struct hostent def;
 		static struct in_addr defaddr;
-		char *alist[1];
+		static char *alist[1];
 		static char namebuf[128];
 		int inet_addr();
 
