@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vm_swap.c	7.6 (Berkeley) %G%
+ *	@(#)vm_swap.c	7.7 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -71,6 +71,11 @@ swstrategy(bp)
 		panic("swstrategy");
 	if (bp->b_vp)
 		brelvp(bp);
+	if (sp->sw_vp == NULL) {
+		bp->b_error |= B_ERROR;
+		biodone(bp);
+		return;
+	}
 	VREF(sp->sw_vp);
 	bp->b_vp = sp->sw_vp;
 	VOP_STRATEGY(bp);
