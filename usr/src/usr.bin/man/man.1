@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)man.1	6.3 (Berkeley) %G%
+.\"	@(#)man.1	6.4 (Berkeley) %G%
 .\"
 .TH MAN 1 ""
 .UC 4
@@ -13,8 +13,6 @@ man \- find manual information by keywords; print out the manual
 .B man
 [
 .B \-
-] [
-.B \-t
 ] [
 .B \-M
 .I path
@@ -88,15 +86,6 @@ to crush out useless blank lines
 and to stop after each page on the screen.
 Hit a space to continue,
 a control-D to scroll 11 more lines when the output stops.
-.PP
-The
-.B \-t
-flag causes
-.I man
-to arrange for the specified section to be
-.I troff'ed
-to a suitable raster output device; see
-.IR vtroff (1).
 .PP
 Normally
 .I man
