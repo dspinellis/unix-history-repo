@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	6.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)util.c	6.2 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <stdio.h>
@@ -582,6 +582,7 @@ xunlink(f)
 **		buf -- place to put the input line.
 **		siz -- size of buf.
 **		fp -- file to read from.
+**		timeout -- the timeout before error occurs.
 **
 **	Returns:
 **		NULL on error (including timeout).  This will also leave
@@ -595,17 +596,18 @@ xunlink(f)
 static jmp_buf	CtxReadTimeout;
 
 char *
-sfgets(buf, siz, fp)
+sfgets(buf, siz, fp, timeout)
 	char *buf;
 	int siz;
 	FILE *fp;
+	time_t timeout;
 {
 	register EVENT *ev = NULL;
 	register char *p;
 	static int readtimeout();
 
 	/* set the timeout */
-	if (ReadTimeout != 0)
+	if (timeout != 0)
 	{
 		if (setjmp(CtxReadTimeout) != 0)
 		{
@@ -619,7 +621,7 @@ sfgets(buf, siz, fp)
 			buf[0] = '\0';
 			return (NULL);
 		}
-		ev = setevent((time_t) ReadTimeout, readtimeout, 0);
+		ev = setevent(timeout, readtimeout, 0);
 	}
 
 	/* try to read */

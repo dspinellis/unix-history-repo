@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)collect.c	6.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)collect.c	6.2 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <errno.h>
@@ -70,7 +70,7 @@ maketemp(from)
 	**  Try to read a UNIX-style From line
 	*/
 
-	if (sfgets(buf, MAXLINE, InChannel) == NULL)
+	if (sfgets(buf, MAXLINE, InChannel, ReadTimeout) == NULL)
 		goto readerr;
 	fixcrlf(buf, FALSE);
 # ifndef NOTUNIX
@@ -79,7 +79,7 @@ maketemp(from)
 		if (!flusheol(buf, InChannel))
 			goto readerr;
 		eatfrom(buf, e);
-		if (sfgets(buf, MAXLINE, InChannel) == NULL)
+		if (sfgets(buf, MAXLINE, InChannel, ReadTimeout) == NULL)
 			goto readerr;
 		fixcrlf(buf, FALSE);
 	}
@@ -125,7 +125,7 @@ maketemp(from)
 		{
 			int clen;
 
-			if (sfgets(freebuf, MAXLINE, InChannel) == NULL)
+			if (sfgets(freebuf, MAXLINE, InChannel, ReadTimeout) == NULL)
 				goto readerr;
 
 			/* is this a continuation line? */
@@ -201,7 +201,7 @@ maketemp(from)
 	if (*workbuf == '\0')
 	{
 		/* throw away a blank line */
-		if (sfgets(buf, MAXLINE, InChannel) == NULL)
+		if (sfgets(buf, MAXLINE, InChannel, ReadTimeout) == NULL)
 			goto readerr;
 	}
 	else if (workbuf == buf2)	/* guarantee `buf' contains data */
@@ -235,7 +235,7 @@ maketemp(from)
 		fputs("\n", tf);
 		if (ferror(tf))
 			tferror(tf, e);
-	} while (sfgets(buf, MAXLINE, InChannel) != NULL);
+	} while (sfgets(buf, MAXLINE, InChannel, ReadTimeout) != NULL);
 
 readerr:
 	if (fflush(tf) != 0)
@@ -323,7 +323,7 @@ flusheol(buf, fp)
 		if (printmsg)
 			usrerr("header line too long");
 		printmsg = FALSE;
-		if (sfgets(junkbuf, MAXLINE, fp) == NULL)
+		if (sfgets(junkbuf, MAXLINE, fp, ReadTimeout) == NULL)
 			return (FALSE);
 		p = junkbuf;
 	}
