@@ -1,6 +1,10 @@
-/* STARTUP PROCEDURE FOR UNIX FORTRAN PROGRAMS */
-char id_libF77[] = "@(#)main.c	2.17	%G%";
-
+/*
+ * Copyright (c) 1980 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@(#)main.c	5.1	%G%
+ */
 #include <stdio.h>
 #include <signal.h>
 #include "../libI77/fiodefs.h"
