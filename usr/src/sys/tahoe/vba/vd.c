@@ -1,4 +1,4 @@
-/*	vd.c	1.9	86/07/16	*/
+/*	vd.c	1.10	86/10/28	*/
 
 #include "dk.h"
 #if NVD > 0
@@ -42,6 +42,7 @@
 #define DRIVE_ERROR	2
 #define HARD_DATA_ERROR	3
 #define SOFT_DATA_ERROR	4
+#define	WRITE_PROTECT	5
 
 #define b_cylin	b_resid
 #define b_daddr	b_error
@@ -74,7 +75,7 @@ typedef struct {
 	struct	pte *map;	/* i/o page map */
 	caddr_t	utl;		/* mapped i/o space */
 	u_int	cur_slave:8;	/* last active unit number */
-	u_int	int_expected:1;	/* expect an interupt */
+	u_int	int_expected:1;	/* expect an interrupt */
 	u_int	ctlr_started:1;	/* start command was issued */
 	u_int	overlap_seeks:1;/* should overlap seeks */
 	u_int	initdone:1;	/* controller initialization completed */
@@ -122,7 +123,8 @@ vdprobe(reg, vm)
 		addr->dcb_tcf = AM_ENPDA;
 		addr->trail_tcf = AM_ENPDA;
 		addr->data_tcf = AM_ENPDA;
-		addr->cdr_ccf = CCF_STS | XMD_32BIT | BSZ_16WRD |
+		addr->cdr_ccf = CCF_SEN | CCF_DER | CCF_STS |
+		    XMD_32BIT | BSZ_16WRD |
 		    CCF_ENP | CCF_EPE | CCF_EDE | CCF_ECE | CCF_ERR;
 	}
 	/*
@@ -202,7 +204,7 @@ vdslave(vi, addr)
 	if (type >= nvddrv) {
 		/*
 		 * If reached here, a drive which is not defined in the 
-		 * 'vdst' tables is connected. Cannot set it's type.
+		 * 'vdst' tables is connected. Cannot set its type.
 		 */
 		printf("dk%d: unknown drive type\n", vi->ui_unit);
 		return (0);
@@ -229,9 +231,10 @@ vdconfigure_drive(addr, ctlr, slave, type, pass)
 	ci->ctlr_dcb.trail.rstrail.ncyl = vdst[type].ncyl;
 	ci->ctlr_dcb.trail.rstrail.nsurfaces = vdst[type].ntrak;
 	if (ci->ctlr_type == SMD_ECTLR) {
-		ci->ctlr_dcb.trailcnt = (char)4;
+		ci->ctlr_dcb.trailcnt = (char)5;
 		ci->ctlr_dcb.trail.rstrail.nsectors = vdst[type].nsec;
 		ci->ctlr_dcb.trail.rstrail.slip_sec = vdst[type].nslip;
+		ci->ctlr_dcb.trail.rstrail.recovery = 0x18f;
 	} else
 		ci->ctlr_dcb.trailcnt = (char)2;
 	ci->ctlr_mdcb.firstdcb = (fmt_dcb *)(PHYS(&ci->ctlr_dcb));
@@ -262,15 +265,18 @@ vdstart_drive(addr, ctlr, slave)
 
 	printf("vd%d: starting drive %d, wait...", ctlr, slave);
 	if (vdctlr_info[ctlr].ctlr_started) {
+#ifdef notdef
 printf("DELAY(5500000)...");
 		DELAY(5500000);
+#endif
 		goto done;
 	}
 	vdctlr_info[ctlr].ctlr_started = 1;
 	error = vdnotrailer(addr, ctlr, 0, VDSTART, (slave*6)+62) & HRDERR;
 	if (!error) {
-printf("DELAY(%d)...", (slave * 5500000) + 62000000);
+#ifdef notdef
 		DELAY((slave * 5500000) + 62000000);
+#endif
 	}
 done:
 	printf("\n");
@@ -329,7 +335,9 @@ vdattach(vi)
 		uq->b_forw = &ui->xfer_queue;
 		start_queue->b_back = &ui->xfer_queue;
 	}
-	printf("dk%d: %s\n", vi->ui_unit, fs->type_name);
+	printf("dk%d: %s <ntrak %d, ncyl %d, nsec %d>\n",
+	    vi->ui_unit, fs->type_name,
+	    ui->info.ntrak, ui->info.ncyl, ui->info.nsec);
 	/*
 	 * (60 / rpm) / (number of sectors per track * (bytes per sector / 2))
 	 */
@@ -532,7 +540,7 @@ vd_int_timeout(ctlr)
 	register fmt_dcb *dcb = &ci->ctlr_dcb;
 
 	uncache(&dcb->operrsta);
-	printf("vd%d: lost interupt, status %x", ctlr, dcb->operrsta);
+	printf("vd%d: lost interrupt, status %b", ctlr, dcb->operrsta, ERRBITS);
 	if (ci->ctlr_type == SMD_ECTLR) {
 		uncache(&dcb->err_code);
 		printf(", error code %x", dcb->err_code);
@@ -601,6 +609,7 @@ vdintr(ctlr)
 		break;
 
 	case HARD_DATA_ERROR:
+	case WRITE_PROTECT:
 		vdhard_error(ci, bp, dcb);
 		bp->b_resid = 0;
 		break;
@@ -651,7 +660,9 @@ vddecode_error(dcb)
 {
 
 	if (dcb->operrsta & HRDERR) {
-		if (dcb->operrsta & (HCRCERR | HCMPERR | UCDATERR | WPTERR |
+		if (dcb->operrsta & WPTERR)
+			return (WRITE_PROTECT);
+		if (dcb->operrsta & (HCRCERR | HCMPERR | UCDATERR |
 		    DSEEKERR | NOTCYLERR |DRVNRDY | INVDADR))
 			return (DRIVE_ERROR);
 		if (dcb->operrsta & (CTLRERR | OPABRT | INVCMD | DNEMEM))
@@ -675,9 +686,13 @@ vdhard_error(ci, bp, dcb)
 
 	bp->b_flags |= B_ERROR;
 	harderr(bp, ui->info.type_name);
-	printf("status %x", dcb->operrsta);
-	if (ci->ctlr_type == SMD_ECTLR)
-		printf(" ecode %x", dcb->err_code);
+	if (dcb->operrsta & WPTERR)
+		printf("write protected");
+	else {
+		printf("status %b", dcb->operrsta, ERRBITS);
+		if (ci->ctlr_type == SMD_ECTLR)
+			printf(" ecode %x", dcb->err_code);
+	}
 	printf("\n");
 }
 
@@ -691,9 +706,8 @@ vdsoft_error(ci, bp, dcb)
 {
 	unit_tab *ui = &vdunit_info[VDUNIT(bp->b_dev)];
 
-	printf("%s%d%c: soft error sn%d status %x", ui->info.type_name,
-	    minor(bp->b_dev) >> 3, 'a'+(minor(bp->b_dev)&07), bp->b_blkno,
-	    dcb->operrsta);
+	printf("dk%d%c: soft error sn%d status %b", minor(bp->b_dev) >> 3,
+	    'a'+(minor(bp->b_dev)&07), bp->b_blkno, dcb->operrsta, ERRBITS);
 	if (ci->ctlr_type == SMD_ECTLR)
 		printf(" ecode %x", dcb->err_code);
 	printf("\n");
@@ -810,7 +824,8 @@ vdwrite_block(caddr, ctlr, unit, addr, block, blocks)
 		return (0);
 	}
 	if (dcb->operrsta & HRDERR) {
-		printf("vd%d: hard error, status %x\n", unit, dcb->operrsta);
+		printf("dk%d: hard error, status=%b\n", unit,
+		    dcb->operrsta, ERRBITS);
 		return (0);
 	}
 	return (1);
