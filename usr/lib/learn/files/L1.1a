@@ -1,0 +1,12 @@
+#print
+The "ls" command will list the names of the files
+in your directory.  Is there a file named "junk"
+present?  Find out and then type "yes" or "no".
+#copyin
+#user
+#uncopyin
+#match no
+#log
+#next
+2.1a 10
+2.2a 5
