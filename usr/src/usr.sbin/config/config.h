@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)config.h	5.1 (Berkeley) %G%
+ *	@(#)config.h	5.2 (Berkeley) %G%
  */
 
 /*
@@ -90,7 +90,7 @@ struct config {
  * Config has a global notion of which machine type is
  * being used.  It uses the name of the machine in choosing
  * files and directories.  Thus if the name of the machine is ``vax'',
- * it will build from ``makefile.vax'' and use ``../vax/inline''
+ * it will build from ``Makefile.vax'' and use ``../vax/inline''
  * in the makerules, etc.
  */
 int	machine;
