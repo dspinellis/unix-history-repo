@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: hpux_sig.c 1.4 92/01/20$
  *
- *	@(#)hpux_sig.c	7.11 (Berkeley) %G%
+ *	@(#)hpux_sig.c	7.12 (Berkeley) %G%
  */
 
 /*
@@ -333,6 +333,7 @@ hpuxsigaction(p, uap, retval)
 	return (0);
 }
 
+#ifdef COMPAT_OHPUX
 struct ohpuxssig_args {
 	int	signo;
 	sig_t	fun;
@@ -370,6 +371,7 @@ ohpuxssig(p, uap, retval)
 #endif
 	return (0);
 }
+#endif
 
 /* signal numbers: convert from HPUX to BSD */
 hpuxtobsdsig(sig)
