@@ -1,4 +1,3 @@
-
 /*
  * rogue.h
  *
@@ -9,7 +8,7 @@
  *    3.)  This code is not to be traded, sold, or used for personal
  *         gain or profit.
  *
- *	@(#)rogue.h	5.1 (Berkeley) %G%
+ *	@(#)rogue.h	5.2 (Berkeley) %G%
  */
 
 #define boolean char
@@ -153,8 +152,8 @@
 
 #define GOLD_PERCENT 46
 
-#define SCORE_FILE "/usr1/tims/.r/rogue.scores"
-#define LOCK_FILE  "/usr1/tims/.r/rogue.lock"
+#define SCORE_FILE "/usr/games/lib/rogue.scores"
+#define LOCK_FILE  "/usr/games/lib/rogue.lock"
 
 #define MAX_OPT_LEN 40
 
