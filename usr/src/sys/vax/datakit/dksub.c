@@ -2,7 +2,7 @@
  * Datakit driver
  * Common subroutines for all drivers
  *	SCCSID[] = "@(#)dksub.c	1.2 Garage 84/03/27"
- *		   "@(#)dksub.c	1.3 (Berkeley) %G%"
+ *		   "@(#)dksub.c	1.4 (Berkeley) %G%"
  */
 
 #include "datakit.h"
@@ -68,7 +68,6 @@ nopages:
 			(void) dk_rabort(chan, dkrdone, (caddr_t) tp) ;
 		splx(s);
 		m_freem(mm);
-		u.u_error = EINTR;
 		return EINTR ;
 	}
 		
@@ -217,22 +216,23 @@ dksplwait(chan)
 }
 
 /* convert file desciptor to Datakit channel */
-dkgetdev(fildes)
+dkgetdev(fildes, devnop)
+	int fildes, *devnop;
 {
-	extern struct file *getinode();
-	register struct file *fp;
-	register struct inode *ip ;
+	struct file *fp;
+	register struct vnode *vp ;
+	int error;
 
-	fp = getinode(fildes) ;
-	ip = (struct inode *)fp->f_data;
-	if ((ip->i_mode & IFMT) != IFCHR ) {
-		u.u_error = ENOTTY ;
-		return(-1) ;
+	if (error = getvnode(u.u_ofile, fildes, &fp))
+		return error;
+	vp = (struct vnode *)fp->f_data;
+	if (vp->v_type != VCHR)
+		return ENOTTY;
+	if (dkdevtype((dev_t) vp->v_rdev)) {
+		*devnop = minor(ip->i_rdev);
+		return 0;
 	}
-	if (dkdevtype((dev_t) ip->i_rdev))
-		return(minor(ip->i_rdev)) ;
-	u.u_error = EINVAL ;
-	return(-1) ;
+	return EINVAL;
 }
 
 /* validate device number as belonging to Datakit */
