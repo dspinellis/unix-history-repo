@@ -1,4 +1,4 @@
-/*	if_imp.c	4.8	82/02/21	*/
+/*	if_imp.c	4.9	82/02/21	*/
 
 #include "imp.h"
 #if NIMP > 0
@@ -139,7 +139,7 @@ impinput(unit, m)
 	struct in_addr addr;
 	struct mbuf *next;
 
-COUNT(IMP_INPUT);
+COUNT(IMPINPUT);
 	/*
 	 * Verify leader length.  Be careful with control
 	 * message which don't get a length included.
