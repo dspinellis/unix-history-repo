@@ -1,26 +1,19 @@
 #
-# Copyright (c) 1980 Regents of the University of California.
+# Copyright (c) 1987 Regents of the University of California.
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	6.1 (Berkeley) %G%
+#	@(#)Makefile	6.2	(Berkeley)	%G%
 #
-#  Makefile for -me macros
-#
-#	This makefile strips comments from the source files and
-#	installs them in the expected directories.
-#
-DESTDIR=
-LIB =	/usr/lib/me
+CFLAGS=	-O
+LIBC=	/lib/libc.a
+LIB=	/usr/lib/me
+SRCS=	tmac.e acm.me chars.me deltext.me eqn.me float.me footnote.me \
+	index.me local.me null.me refer.me sh.me tbl.me thesis.me
 
-SRCS =	tmac.e acm.me chars.me deltext.me eqn.me \
-	float.me footnote.me index.me local.me null.me \
-	refer.me sh.me tbl.me thesis.me
-GET =	sccs get
+all:
 
-all: revisions $(SRCS)
-
-install: revisions $(SRCS)
+install: FRC
 	-if [ ! -d ${DESTDIR}${LIB} ]; then \
 		rm -f ${DESTDIR}${LIB}; \
 		mkdir ${DESTDIR}${LIB}; \
@@ -34,12 +27,11 @@ install: revisions $(SRCS)
 		    -e '/%beginstrip%/,$$s/[. 	][ 	]*\\".*//' \
 		    -e '/^$$/d' \
 		    -e '/\\n@/d' $$i > _mac_tmp_; \
-		install -m 0444 _mac_tmp_ ${DESTDIR}${LIB}/$$i; \
+		install -o bin -g bin -m 644 _mac_tmp_ ${DESTDIR}${LIB}/$$i; \
 	done
 	mv ${DESTDIR}${LIB}/tmac.e ${DESTDIR}/usr/lib/tmac/tmac.e
-	install -c -m 0444 revisions ${DESTDIR}${LIB}/revisions
+	install -c -o bin -g bin -m 444 revisions ${DESTDIR}${LIB}/revisions
 
 clean:
-
-revisions $(SRCS):
-	$(GET) SCCS/s.$@
+depend:
+FRC:
