@@ -52,11 +52,17 @@
  * strings produced by the __STRING macro, but this only works with ANSI C.
  */
 #if defined(__STDC__) || defined(__cplusplus)
+#if defined(__P)
+#undef __P
+#endif	/* defined(__P) */
 #define	__P(protos)	protos		/* full-blown ANSI C */
 #define	__CONCAT(x,y)	x ## y
 #define	__STRING(x)	#x
 
 #else	/* !(__STDC__ || __cplusplus) */
+#if defined(__P)
+#undef __P
+#endif	/* defined(__P) */
 #define	__P(protos)	()		/* traditional C preprocessor */
 #define	__CONCAT(x,y)	x/**/y
 #define	__STRING(x)	"x"
