@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_inode.c	8.5 (Berkeley) %G%
+ *	@(#)ffs_inode.c	8.6 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -175,7 +175,7 @@ ffs_truncate(ap)
 			return (error);
 		oip->i_size = length;
 		(void) vnode_pager_uncache(ovp);
-		if (aflags & IO_SYNC)
+		if (aflags & B_SYNC)
 			bwrite(bp);
 		else
 			bawrite(bp);
@@ -205,7 +205,7 @@ ffs_truncate(ap)
 		(void) vnode_pager_uncache(ovp);
 		bzero((char *)bp->b_data + offset, (u_int)(size - offset));
 		allocbuf(bp, size);
-		if (aflags & IO_SYNC)
+		if (aflags & B_SYNC)
 			bwrite(bp);
 		else
 			bawrite(bp);
