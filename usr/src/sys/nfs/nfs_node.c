@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_node.c	7.46 (Berkeley) %G%
+ *	@(#)nfs_node.c	7.47 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -154,7 +154,7 @@ nfs_inactive(ap)
 		free((caddr_t)sp, M_NFSREQ);
 #endif
 	}
-	np->n_flag &= (NMODIFIED | NFLUSHINPROG | NFLUSHWANT);
+	np->n_flag &= (NMODIFIED | NFLUSHINPROG | NFLUSHWANT | NQNFSEVICTED);
 	return (0);
 }
 

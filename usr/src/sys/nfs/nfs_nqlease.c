@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_nqlease.c	7.19 (Berkeley) %G%
+ *	@(#)nfs_nqlease.c	7.20 (Berkeley) %G%
  */
 
 /*
@@ -103,6 +103,7 @@ extern nfstype nfs_type[9];
 extern struct nfssvc_sock *nfs_udpsock, *nfs_cltpsock;
 extern struct nfsd nfsd_head;
 extern int nfsd_waiting;
+extern struct nfsreq nfsreqh;
 
 #define TRUE	1
 #define	FALSE	0
@@ -938,6 +939,7 @@ nqnfs_clientd(nmp, cred, ncd, flag, argp, p)
 {
 	register struct nfsnode *np;
 	struct vnode *vp;
+	struct nfsreq myrep;
 	int error, vpid;
 
 	/*
@@ -973,6 +975,23 @@ nqnfs_clientd(nmp, cred, ncd, flag, argp, p)
 	 */
 	while ((nmp->nm_flag & NFSMNT_DISMNT) == 0) {
 	    if (nmp->nm_flag & NFSMNT_NQNFS) {
+		/*
+		 * If there are no outstanding requests (and therefore no
+		 * processes in nfs_reply) and there is data in the receive
+		 * queue, poke for callbacks.
+		 */
+		if (nfsreqh.r_next == &nfsreqh && nmp->nm_so &&
+		    nmp->nm_so->so_rcv.sb_cc > 0) {
+		    myrep.r_flags = R_GETONEREP;
+		    myrep.r_nmp = nmp;
+		    myrep.r_mrep = (struct mbuf *)0;
+		    myrep.r_procp = (struct proc *)0;
+		    (void) nfs_reply(&myrep);
+		}
+
+		/*
+		 * Loop through the leases, updating as required.
+		 */
 		np = nmp->nm_tnext;
 		while (np != (struct nfsnode *)nmp &&
 		       (nmp->nm_flag & NFSMNT_DISMINPROG) == 0) {

@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs.h	7.19 (Berkeley) %G%
+ *	@(#)nfs.h	7.20 (Berkeley) %G%
  */
 
 /*
@@ -171,6 +171,7 @@ struct nfsreq {
 #define	R_SOCKERR	0x10		/* Fatal error on socket */
 #define	R_TPRINTFMSG	0x20		/* Did a tprintf msg. */
 #define	R_MUSTRESEND	0x40		/* Must resend request */
+#define	R_GETONEREP	0x80		/* Probe for one reply only */
 
 struct nfsstats nfsstats;
 
