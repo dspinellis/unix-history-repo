@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)pigs.c	1.4 (Lucasfilm) %G%";
+static char sccsid[] = "@(#)pigs.c	1.5 (Lucasfilm) %G%";
 #endif
 
 #include "systat.h"
@@ -10,7 +10,7 @@ openpigs()
 	static WINDOW *w = NULL;
 
 	if (w == NULL)
-		w = newwin(20, 70, 3, 5);
+		w = newwin(20, 0, 3, 0);
         return (w);
 }
 
@@ -113,9 +113,9 @@ showpigs()
                 wmove(wnd, y, 0);
                 wclrtoeol(wnd);
                 mvwaddstr(wnd, y, 0, namp);
-                sprintf(pidname, "%8.8s", pnamp);
-                mvwaddstr(wnd, y, 6, pidname);
-                wmove(wnd, y++, 15);
+                sprintf(pidname, "%10.10s", pnamp);
+                mvwaddstr(wnd, y, 9, pidname);
+                wmove(wnd, y++, 20);
                 for (j = ptptr->pt_pctcpu*factor + 0.5; j > 0; j--)
                         waddch(wnd, 'X');
                 ptptr++;
