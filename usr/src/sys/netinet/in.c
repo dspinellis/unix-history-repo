@@ -1,4 +1,4 @@
-/*	in.c	6.6	85/03/18	*/
+/*	in.c	6.7	85/04/16	*/
 
 #include "param.h"
 #include "ioctl.h"
@@ -334,6 +334,7 @@ in_ifinit(ifp, ia, sin)
 		rtinit((struct sockaddr *)&ia->ia_dstaddr, &ia->ia_addr,
 			RTF_HOST|RTF_UP);
 	ia->ia_flags |= IFA_ROUTE;
+	return (0);
 }
 
 /*
