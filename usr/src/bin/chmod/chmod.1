@@ -4,13 +4,13 @@
 .\" This code is derived from software contributed to Berkeley by
 .\" the Institute of Electrical and Electronics Engineers, Inc.
 .\"
-.\" %sccs.include.redist.man%
+.\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)chmod.1	6.14 (Berkeley) %G%
+.\"	@(#)chmod.1	6.15 (Berkeley) %G%
 .\"
 .Dd 
 .Dt CHMOD 1
-.Os BSD 4.4
+.Os
 .Sh NAME
 .Nm chmod
 .Nd change file modes
@@ -220,7 +220,9 @@ option for the naughty bits.
 .Sh STANDARDS
 The
 .Nm chmod
-utility is expected to be POSIX 1003.2 compatible with the exception
+utility is expected to be
+.St -p1003.2
+compatible with the exception
 of the
 .Ar perm
 symbols
