@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)pw_copy.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)pw_copy.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -18,7 +18,7 @@ static char sccsid[] = "@(#)pw_copy.c	5.2 (Berkeley) %G%";
 #include <stdio.h>
 #include <string.h>
 
-extern char *tempname;
+extern char *progname, *tempname;
 
 pw_copy(ffd, tfd, pw)
 	int ffd, tfd;
@@ -36,23 +36,27 @@ pw_copy(ffd, tfd, pw)
 
 	for (done = 0; fgets(buf, sizeof(buf), from);) {
 		if (!index(buf, '\n')) {
-			(void)fprintf(stderr, "chpass: %s: line too long\n",
-			    _PATH_MASTERPASSWD);
-			pw_error((char *)NULL, 0, 1);
+			(void)fprintf(stderr, "%s: %s: line too long\n",
+			    progname, _PATH_MASTERPASSWD);
+			pw_error(NULL, 0, 1);
 		}
 		if (done) {
 			(void)fprintf(to, "%s", buf);
+			if (ferror(to))
+				goto err;
 			continue;
 		}
 		if (!(p = index(buf, ':'))) {
-			(void)fprintf(stderr, "chpass: %s: corrupted entry\n",
-			    _PATH_MASTERPASSWD);
-			pw_error((char *)NULL, 0, 1);
+			(void)fprintf(stderr, "%s: %s: corrupted entry\n",
+			    progname, _PATH_MASTERPASSWD);
+			pw_error(NULL, 0, 1);
 		}
 		*p = '\0';
 		if (strcmp(buf, pw->pw_name)) {
 			*p = ':';
 			(void)fprintf(to, "%s", buf);
+			if (ferror(to))
+				goto err;
 			continue;
 		}
 		(void)fprintf(to, "%s:%s:%d:%d:%s:%ld:%ld:%s:%s:%s\n",
@@ -60,11 +64,16 @@ pw_copy(ffd, tfd, pw)
 		    pw->pw_class, pw->pw_change, pw->pw_expire, pw->pw_gecos,
 		    pw->pw_dir, pw->pw_shell);
 		done = 1;
+		if (ferror(to))
+			goto err;
 	}
 	if (!done)
 		(void)fprintf(to, "%s:%s:%d:%d:%s:%ld:%ld:%s:%s:%s\n",
 		    pw->pw_name, pw->pw_passwd, pw->pw_uid, pw->pw_gid,
 		    pw->pw_class, pw->pw_change, pw->pw_expire, pw->pw_gecos,
 		    pw->pw_dir, pw->pw_shell);
+
+	if (ferror(to))
+err:		pw_error(NULL, 1, 1);
 	(void)fclose(to);
 }
