@@ -1,0 +1,97 @@
+# Copyright (c) 1983 Eric P. Allman
+# Copyright (c) 1988 The Regents of the University of California.
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+# 1. Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in the
+#    documentation and/or other materials provided with the distribution.
+# 3. All advertising materials mentioning features or use of this software
+#    must display the following acknowledgement:
+#	This product includes software developed by the University of
+#	California, Berkeley and its contributors.
+# 4. Neither the name of the University nor the names of its contributors
+#    may be used to endorse or promote products derived from this software
+#    without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+# OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+# OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+# SUCH DAMAGE.
+#
+#	@(#)READ_ME	4.6 (Berkeley) 4/23/91
+#
+
+This directory contains the source files for sendmail.
+
+For installation instructions, please read the document ../doc/op.me:
+
+	nroff -me ../doc/op.me
+
+The following list describes the files in this directory:
+
+Makefile	The makefile used here; this is created from
+		makefile.m4.
+Makefile.m4	A makefile template.
+READ_ME		This file.
+TODO		New features to be put in (maybe) at some time.
+Version.c	The version number and information about this
+		version of sendmail.  Theoretically, this gets
+		modified on every change.
+alias.c		Does name aliasing in all forms.
+arpadate.c	A subroutine which creates ARPANET standard dates.
+clock.c		Routines to implement real-time oriented functions
+		in sendmail -- e.g., timeouts.
+collect.c	The routine that actually reads the mail into a temp
+		file.  It also does a certain amount of parsing of
+		the header, etc.
+conf.c		The configuration file.  This contains information
+		that is presumed to be quite static and non-
+		controversial, or code compiled in for efficiency
+		reasons.  Most of the configuration is in sendmail.cf.
+conf.h		Configuration that must be known everywhere.
+convtime.c	A routine to sanely process times.
+daemon.c	Routines to implement daemon mode.  This version is
+		specifically for Berkeley 4.1 IPC.
+deliver.c	Routines to deliver mail.
+err.c		Routines to print error messages.
+envelope.c	Routines to manipulate the envelope structure.
+headers.c	Routines to process message headers.
+macro.c		The macro expander.  This is used internally to
+		insert information from the configuration file.
+main.c		The main routine to sendmail.  This file also
+		contains some miscellaneous routines.
+parseaddr.c	The routines which do address parsing.
+queue.c		Routines to implement message queueing.
+readcf.c	The routine that reads the configuration file and
+		translates it to internal form.
+recipient.c	Routines that manipulate the recipient list.
+savemail.c	Routines which save the letter on processing errors.
+sendmail.h	Main header file for sendmail.
+srvrsmtp.c	Routines to implement server SMTP.
+stab.c		Routines to manage the symbol table.
+stats.c		Routines to collect and post the statistics.
+sysexits.c	List of error messages associated with error codes
+		in sysexits.h.
+trace.c		The trace package.  These routines allow setting and
+		testing of trace flags with a high granularity.
+trace.h		Definitions needed for the trace package.
+usersmtp.c	Routines to implement user SMTP.
+util.c		Some general purpose routines used by sendmail.
+version.c	A master file for Version.c -- it may not exist in
+		your distribution.
+
+Eric Allman
+
+(Version 4.6, last update 4/23/91 19:52:27)

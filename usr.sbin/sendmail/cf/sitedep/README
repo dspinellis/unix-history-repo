@@ -1,0 +1,19 @@
+
+Everything in this directory is site dependent.  It contains info
+such as UUCP host lists, SMTPUUCP host lists, etc.  The idea here
+is that there is one .m4 file for every generic type of configuration
+file, and can be one .m4 file for hosts that have oddball needs.
+
+
+On okeeffe:
+
+To edit one of these files (say to add a uucp host), do
+
+	sccs edit file
+
+make your changes, and then do
+
+	sccs delget file
+
+Then cd to ../cf and do a "make".
+

@@ -1,0 +1,16 @@
+
+Macro					Class
+-----					-----
+A	Internet relay			--
+B	BITNET relay			--
+C	CSNET relay			--
+D	domain name
+I	--				"Fake" (Internal) domains, i.e.
+					UUCP, BITNET, CSNET.
+N	--				hosts registered with the NIC
+R	UUCP relay host			--
+U	This host's UUCP name		UUCP aliases
+V	None				List of our UUCP neighbors
+W	Host to forward to for $=W	UUCP hosts on $W
+X	Host to forward to for $=X	UUCP hosts on $X
+Y	Host to forward to for $=Y	UUCP hosts on $Y

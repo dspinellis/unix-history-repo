@@ -1,0 +1,8 @@
+# Sun rasterfiles
+0	string	\x59\xa6\x6a\x95	rasterfile
+>4	long	>0		%d
+>8	long	>0		x %d
+>12	long	>0		x %d
+>20	long	0		old format
+>20	long	2		compressed
+>24	long	1		with color map

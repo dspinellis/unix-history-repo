@@ -1,0 +1,649 @@
+###########################################################################
+###########################################################################
+#####
+#####		SENDMAIL CONFIGURATION FILE FOR NON-GATEWAY MACHINES
+#####
+#####		Use this configuration file only on machines that
+#####		are neither the Internet gateway nor the UUCP
+#####		gateway.  There are separate configuration files
+#####		for these gateway functions.
+#####
+###########################################################################
+###########################################################################
+
+
+
+##########
+##
+##	Miscellaneous configuration.
+##
+##	Define various macros and classes that define the local
+##	mail and network configuration.
+##
+##########
+
+# Official domain name.
+DDTeleMuse.com
+
+# List of domain names that we are (at least sort of) in.  $D isn't
+# included here since it is multiple "words" long.  It is handled
+# separately when needed.
+#CDarpa uucp
+# Bogus Domains that we aren't in, but people keep sending us mail there.
+# Would you believe we even get addresses like something.rice.csnet?  Sigh...
+#CDrice csnet csnet-east csnet-west east west mmdf
+
+# List of pseudo host names to treat as local (alone or in $D or $=D).
+CLlocalhost loopback local
+
+# Name of Internet mail gateway to the outside world.
+DGtelemuse.com
+# Name of uucp mail gateway for local connections.
+DVtelemuse.com
+
+# Name of UUCP routing gateway.
+#DWseismo.css.gov
+
+# UUCP hostname.
+DUtelemuse
+
+# Non-Internet pseudo domain names.  These will not be canonicalized.
+CNUUCP CSNET BITNET MAILNET MFENET CSN CHUNET JUNET COSAC SPAN
+
+
+
+##########
+##
+##	Critical macro definitions.
+##
+##	These macros are used to import information from the
+##	configuration file into sendmail.
+##
+##########
+
+# SMTP daemon name.
+DnMAILER-DAEMON
+# UNIX header format.
+DlFrom $g  $d
+# Delimiter (operator) characters.
+Do.:%@!^=/[]
+# Format of a total name.
+Dq$?x$x <$g>$|$g$.
+#Dq$g$?x ($x)$.
+# My official hostname ($w is already official).
+Dj$w
+# SMTP login message.
+De$j SMTP open for business at $b.
+
+##########
+##
+##	Option definitions
+##
+##	These define the default values for various sendmail options.
+##	These can be overridden on the senmail command line with
+##	the "-o" flag.
+##
+##########
+
+# Location of alias file.
+OA/etc/aliases
+# Wait up to ten minutes for alias file rebuild.
+Oa10
+# Default delivery mode (deliver in background).
+Odbackground
+# Don't connect to "expensive" mailers.
+Oc
+# Temporary file mode.
+OF0600
+# Location of help file.
+OH/usr/share/misc/sendmail.hf
+# log level
+OL9
+# Default network name.	???
+ON$D
+# Messages might be in old style.
+Oo
+# Queue directory.
+OQ/var/spool/mqueue
+# Read timeout -- violates protocols.
+Or2h
+# Status file.
+OS/etc/sendmail.st
+# Queue up everything before starting transmission.
+Os
+# Default timeout interval.
+OT7d
+# Default UID.
+Ou1
+# Default GID.
+Og1
+# Wizard's password.
+OW*
+# Load average at which we just queue messages.
+Ox8
+# Load average at which we refuse connections.
+OX12
+
+##########
+##
+##	Message precedences
+##
+##########
+
+Pfirst-class=0
+Pspecial-delivery=100
+Pbulk=-60
+Pjunk=-100
+
+##########
+##
+##	Trusted users
+##
+##########
+
+Troot
+Tuucp
+Tdaemon
+
+##########
+##
+##	Format of headers
+##
+##########
+
+H?P?Return-Path: <$g>
+HReceived: $?sfrom $s $.by $j ($i); $b
+H?D?Resent-Date: $a
+H?D?Date: $a
+H?F?Resent-From: $q
+H?F?From: $q
+H?x?Full-Name: $x
+HSubject:
+H?M?Resent-Message-Id: <$t.$i@$j>
+H?M?Message-Id: <$t.$i@$j>
+
+##########
+##
+##	Rewriting rules
+##
+##	These are applied automatically by sendmail in the following order:
+##
+##		    +--> 0 --> 2 --> R --> 4 --> resolved address
+##		    |   
+##		    |       +--> 1 --> S --+
+## 	addr --> 3 ---> D --|		   |--> 4 --> message
+##			    +--> 2 --> R --+
+##
+##		D - sender domaion addition
+##		S - mailer specific sender rewriting
+##		R - mailer specific recipient rewriting
+##
+##########
+
+##########
+##
+##	Ruleset 0
+##
+##	Resolve addresses to specific mailer.
+##
+##########
+
+S0
+
+# Focus on the next host name in the path.  If we are already focused,
+# though, just use it and don't do it again.  Also, there's no need
+# to try to focus on a single token, so optimize this out; these are
+# just simple local addresses.
+R$*			$:<>$1				add a marker
+R<>$*<@$*>$*		$:$1<@$2>$3			focused, so unmark
+R<>$-			$:$1				single, so unmark
+R<>$*			$:$>3$1				focus
+
+# Handle special cases.
+R@			$#local$:$n			handle <> form
+
+# Remove our own host name if it's there and start over.
+R$+<@$j>		$@$>0$1				@thishost
+R$+<@$w>		$@$>0$1				@thishost
+R$+<@$w.$=D>		$@$>0$1				@thishost.local-domain
+R$+<@$w.$=D.$=D>	$@$>0$1				@thishost.local.local
+R$+<@$w.$D>		$@$>0$1				@thishost.local-domain
+R$+<@$=w.$=D>		$@$>0$1				@thishost.local-domain
+R$+<@$=w.$=D.$=D>	$@$>0$1				@thishost.local.local
+R$+<@$=w.$D>		$@$>0$1				@thishost.local-domain
+R$+<@$=w>		$@$>0$1				@thishost
+R<@$j>:$+		$@$>0$1				@thishost
+R<@$w>:$+		$@$>0$1				@thishost
+R<@$w.$=D>:$+		$@$>0$2				@thishost.local-domain
+R<@$w.$=D.$=D>:$+	$@$>0$3				@thishost.local.local
+R<@$w.$D>:$+		$@$>0$1				@thishost.local-domain
+R<@$=w.$=D>:$+		$@$>0$3				@thishost.local-domain
+R<@$=w.$=D.$=D>:$+	$@$>0$4				@thishost.local.local
+R<@$=w.$D>:$+		$@$>0$2				@thishost.local-domain
+R<@$=w>:$+		$@$>0$2				@thishost
+
+# Treat the various forms of the names $=L as all local, too.
+R$+<@$=L.$D>		$@$>0$1				c@local
+R$+<@$D>		$@$>0$1				c@local
+R$+<@$=L.$=D>		$@$>0$1				c@local
+R$+<@$=L.$=D.$=D>	$@$>0$1				c@local
+R$+<@$=L>		$@$>0$1				c@local
+R<@$=L.$D>:$+		$@$>0$2				@local:b@c
+R<@$D>:$+		$@$>0$1				@local:b@c
+R<@$=L.$=D>:$+		$@$>0$3				@local:b@c
+R<@$=L.$=D.$=D>:$+	$@$>0$4				@local:b@c
+R<@$=L>:$+		$@$>0$2				@local:b@c
+
+# For known local hosts, send directly there (both normal and route addrs).
+# For compatibility with older mailers in the domain that don't accept
+# the .$D form of their name, we use only the simple name without the .$D in
+# the $: clause here.  This shouldn't be a problem since these addresses
+# don't leave the local domain.
+R$*<@$-.$D>$*		$#domain$@$2.$D$:$1<@$2>$3
+
+
+# Send all UUCP addresses to the UUCP gateway.
+R$*<@$+.UUCP>$*		$#domain$@$V$:$1<@$2.UUCP>$3
+
+
+
+# Other non-local names will be passed off to the gateway.
+R$*<@$*>$*		$#domain$@$G$:$1<@$2>$3		user@somewhere
+
+
+# Everything else is a local name.
+R$+			$#local$:$1			local names
+
+##########
+##
+##	Ruleset 1
+##
+##	Sender address pre-rewriting.
+##
+##########
+
+S1
+
+##########
+##
+##	Ruleset 2
+##
+##	Recipient address pre-rewriting.
+##
+##	Since the "$:" part of what ruleset 0 returns is passed through
+##	rulesets 2, R, and 4, this rule MUST focus on the next host
+##	name in the path.  We don't need (and don't want) all of the
+##	canonicalization of ruleset 3, though, so we just pass it through
+##	ruleset 9 only.
+##
+##########
+
+S2
+
+# Focus on the next host name in the path.  If we are already focused,
+# though, just use it and don't do it again.  Also, there's no need
+# to try to focus on a single token, so optimize this out; these are
+# just simple local addresses.
+R$*			$:<>$1				add a marker
+R<>$*<@$*>$*		$:$1<@$2>$3			focused, so unmark
+R<>$-			$:$1				single, so unmark
+R<>$*			$:$>9$1				focus
+
+##########
+##
+##	Ruleset 3
+##
+##	Name canonicalization.
+##
+##	This rule can not strip off @local-host-name since this is applied
+##	before the sender domain addition based on the 'C' mailer flag.
+##	Instead, this is deferred until ruleset 9, which is called at
+##	the beginning of rulesets 0, 1, and 2.
+##
+##########
+
+S3
+
+# Handle "from:<>" special case.
+R<>			$@@				turn into magic token
+
+# Basic textual canonicalization -- note RFC733 heuristic here.
+R<$*>			$1				<> nested on outside
+R$*<$*<$*<$+>$*>$*>$*	$4				3-level <> nesting
+R$*<$*<$+>$*>$*		$3				2-level <> nesting
+R$*<$+>$*		$2				flush 822 comments
+R$+ at $+		$1@$2				"at" -> "@"
+
+# Get rid of list-name addresses. ???
+#R$+:$*;@$+		$@$1:$2;@$3			list syntax
+R$+:$*;			$@$1:$2;			list syntax
+
+# Make sure <@a,@b,@c:user@d> syntax is easy to parse.
+# This is undone in ruleset 4 before it is seen outside of sendmail.
+R@$+,@$+		@$1:@$2				change ",@" to ":@"
+
+# Focus on the next host name in the path.  This places <> around the
+# next @hostname.
+R$+			$:$>9$1				focus on domain
+
+# Map old UUCP connections into Internet addresses.
+R$*<@lbl-csam.UUCP>$*	$:$1<@LBL-CSAM.ARPA>$2
+R$*<@ut-sally.UUCP>$*	$:$1<@SALLY.UTEXAS.EDU>$2
+R$*<@ut-ngp.UUCP>$*	$:$1<@NGP.UTEXAS.EDU>$2
+R$*<@cornell.UUCP>$*	$:$1<@CU-ARPA.CS.CORNELL.EDU>$2
+R$*<@cmucsg.UUCP>$*	$:$1<@G.CS.CMU.EDU>$2
+
+# Handle UUCP name changes.
+R$*<@parsec.UUCP>$*	$:$1<@convex.UUCP>$2
+R$*<@drilltech.UUCP>$*	$:$1<@drillsys.UUCP>$2
+R$*<@drilltec.UUCP>$*	$:$1<@drillsys.UUCP>$2
+R$*<@drillte.UUCP>$*	$:$1<@drillsys.UUCP>$2
+
+# Translate a numeric Internet address back into a name if possible.
+R$*<@[$+]>$*		$:$1<@$[[$2]$]>$3		try it
+R$*<@[$+]>$*		$@$1<@[$2]>$3			couldn't get it
+
+# Canonicalize local host names that explicitly have our domain.
+R$*<@$-.$D>$*		$:$1<@$[$2.$D$]>$3
+
+# Canonicalize local host names that don't explicitly have our domain.
+# For names with no domain or those in the domains we are sort of in,
+# try canonicalizing the name, but put back the old name if its not found.
+R$*<@$->$*		$:$1<@$2><$2>$3			hide old domain
+R$*<@$-.>$*		$:$1<@$2><$2.>$3		hide old domain
+R$*<@$-.$=D>$*		$:$1<@$2><$2.$3>$4		hide old domain
+R$*<@$-.$=D.$=D>$*	$:$1<@$2><$2.$3.$4>$5		hide old domain
+R$*<@$-><$*>$*		$:$1<@$[$2$]><$3>$4		map simple name
+R$*<@$+.$D><$*>$*	$:$1<@$2.$D>$4			keep result
+R$*<@$*><$*>$*		$:$1<@$3>$4			put old domain back
+
+# Map old-style pseudo domains to the new official names.
+R$*<@$+.OZ>$*		$:$1<@$2.OZ.AU>$3		Australia
+R$*<@$+.DEC>$*		$:$1<@$2.DEC.COM>$3		Digital Equipment Corp
+R$*<@$+.ATT>$*		$:$1<@$2.ATT.COM>$3		AT&T
+
+# Leave non Internet addresses alone now and just return them.
+R$*<@$+.$=N>$*		$@$1<@$2.$3>$4
+
+# Try to canonicalize anything that's left.
+R$*<@$+>$*		$@$1<@$[$2$]>$3			try canonicalization
+
+##########
+##
+##	Ruleset 4
+##
+##	Final output post-rewriting.
+##
+##########
+
+S4
+
+R@			$@				handle <> error addr
+
+R$*<@$*.>$*		$:$1<@$2>$3			remove trailing dot
+
+R$*<$*>$*		$:$1$2$3			defocus
+
+# Turn addresses with mixed !'s and @'s into all !-form.
+# Sigh.... removed since other mailers don't understand it.... ???
+#R$*!$*@$*		$:$>6$1!$2@$3			mixed ! and @
+#R$*@$*!$*		$:$>6$1@$2!$3			mixed @ and !
+
+# Turn route address back into correct form.
+R@$+:@$+		@$1,@$2				@a:@route => @a,@route
+
+##########
+##
+##	Ruleset 6 (and rulesets 7 and 8)
+##
+##	Convert address into UUCP !-style address.
+##
+##	Ruleset 6 is called to do the conversion.  This simply sets up the
+##	initial arguments for ruleset 7 to do recursion on.  Ruleset 7
+##	then recurses on itself for each element in the path, building up
+##	the resultant path in !-format one element at a time in the
+##	leading <>s.  Ruleset 8 is used as a subroutine of ruleset 7
+##	to focus on the next element in the path.  This is just a copy
+##	of the domain focusing done in ruleset 3, but the initial
+##	path-so-far in <>s is allowed for.
+##
+##########
+
+# Set up for initial recursion by ruleset 7.  Each new element of the
+# path will be added to this "<>".
+S6
+R$*			$@$>7<>$1			set up for recursion
+
+# Recurse for each element of the path, translating it and adding it to
+# the path-so-far in the leading "<>".
+S7
+R<$*>$*<$*>$*		$:<$1>$2$3$4			defocus
+R<$*>$+			$:$>8<$1>$2			focus on next element
+R<$*><@$+.UUCP>:$+	$@$>7<$1!$2>$3			move into result
+R<$*><@$+>:$+		$@$>7<$1!$2>$3			move into result
+R<$*>$+<@$+.UUCP>	$@$>7<$1!$3>$2			move into result
+R<$*>$+<@$+>		$@$>7<$1!$3>$2			move into result
+R<$*>$+			$:<$1!$2>			get leftovers
+R<!$+>			$:<$1>				remove leading !
+R<$+>			$:$1				remove markers
+
+# Focus on the next element of the input path.
+S8
+
+# Localize and dispose of route-based addresses.
+R<$*>@$+:$+		$@<$1><@$2>:$3			handle <route-addr>
+
+# Focus on the right-most domain in the address.
+R<$*>$+@$+		$:<$1>$2<@$3>			focus on domain
+R<$*>$+<$+@$+>		<$1>$2$3<@$4>			move gaze right
+R<$*>$+<$+%$+>		<$1>$2$3<%$4>			move gaze right
+R<$*>$+<@$+>		$@<$1>$2<@$3>			already canonical
+R<$*>$+<%$+>		$@<$1>$2<@$3>			already canonical
+R<$*>$+%$+		$:<$1>$2<%$3>			focus on domain
+R<$*>$+<$+%$+>		<$1>$2$3<%$4>			move gaze right
+R<$*>$+<%$+>		$@<$1>$2<@$3>			already canonical
+
+# Convert old-style UUCP addresses to domain-based addresses.
+R<$*>$+^$+		<$1>$2!$3			convert ^ to !
+R<$*>$+!$+		$:<$1><$2>!$3			focus on path
+R<$*><$+!$+>$+		<$1><$2>!$3$4			move gaze left
+R<$*><$+.$*>!$+		$@<$1>$4<@$2.$3>		x.y!b => b@x.y
+R<$*><$+>!$+		$@<$1>$3<@$2.UUCP>		a!b => b@a.UUCP
+
+# Convert old-style BITNET addresses to domain-based addresses.
+R<$*>$-=$+		$@<$1>$3<@$2.BITNET>		a=b => b@a.BITNET
+
+# Convert old-style Berknet-syntax addresses to domain-based addresses.
+R<$*>$-:$+		$@<$1>$3<@$2>			host:user
+
+# Anything else is a local address, so just leave it alone
+
+##########
+##
+##	Ruleset 9
+##
+##	Focus on the next host name in the path.
+##
+##########
+
+S9
+
+R$*<$*>$*		$1$2$3				defocus
+
+# Localize and dispose of route-based addresses.
+R@$+:$+			$@<@$1>:$2			handle <route-addr>
+
+# Focus on the right-most domain in the address.
+R$+@$+			$:$1<@$2>			focus on domain
+R$+<$+@$+>		$1$2<@$3>			move gaze right
+R$+<$+%$+>		$1$2<%$3>			move gaze right
+R$+<@$+>		$@$1<@$2>			already canonical
+R$+<%$+>		$@$1<@$2>			already canonical
+R$+%$+			$:$1<%$2>			focus on domain
+R$+<$+%$+>		$1$2<%$3>			move gaze right
+R$+<%$+>		$@$1<@$2>			already canonical
+
+# Convert old-style UUCP addresses to domain-based addresses.
+R$+^$+			$1!$2				convert ^ to !
+R$+!$+			$:<$1>!$2			focus on path
+R<$+!$+>$+		<$1>!$2$3			move gaze left
+R<$+.$*>!$+		$@$3<@$1.$2>			x.y!b => b@x.y
+R<$+>!$+		$@$2<@$1.UUCP>			a!b => b@a.UUCP
+
+# Convert old-style BITNET addresses to domain-based addresses.
+R$-=$+			$@$2<@$1.BITNET>		a=b => b@a.BITNET
+
+# Convert old-style Berknet-syntax addresses to domain-based addresses.
+R$-:$+			$@$2<@$1>			host:user
+
+# Anything else is a local address, so just leave it alone.
+
+##########
+##
+##	Local and program mailer specifications
+##
+##########
+
+#  Mailer flags specified:
+#  l	final delivery will be performed
+#  m	accepts multiple recipients
+#  n	do not insert Unix-style "From " line
+#  r	mailer wants "-r" flag for sender
+#  s	strip quote off before calling mailer
+#  D	wants "Date:" header line
+#  F	wants "From:" header line
+#  M	wants "Message-id:" header line
+#
+Mlocal,	P=/bin/mail, F=lmnrsDFM, S=10, R=20, A=mail -d $u
+
+#  Mailer flags specified:
+#  e	mailer is expensive
+#  l	final delivery will be performed
+#  s	strip quote off before calling mailer
+#  D	wants "Date:" header line
+#  F	wants "From:" header line
+#  M	wants "Message-id:" header line
+#
+Mprog,	P=/bin/sh,  F=elsDFM,   S=10, R=20, A=sh -c $u
+
+S10
+# Convert special <> token back into a name.
+R@			$n				errors from myself
+# Make sure we have a host name on the address. ???
+#R$*<@$+>$*		$@$1<@$2>$3			already ok
+#R$+			$@$1<@$j>			tack on our hostname
+
+S20
+# Convert special <> token back into a name.
+R@			$n				errors to myself
+# Make sure we have a host name on the address. ???
+#R$*<@$+>$*		$@$1<@$2>$3			already ok
+#R$+			$@$1<@$j>			tack on our hostname
+
+##########
+##
+##	Intra-domain mailer specification
+##
+##	This is used for all mail within our domain.
+##
+##########
+
+#  Mailer flags specified:
+#  m	accepts multiple recipients
+#  s	strip quote off before calling mailer
+#  u	preserve upper case in usernames
+#  C	add sender domain when received from mailer
+#  D	wants "Date:" header line
+#  F	wants "From:" header line
+#  M	wants "Message-id:" header line
+#  X	use RFC821 hidden dot algorithm
+#
+Mdomain,	P=[IPC], F=msuCDFMX, S=11, R=21, A=IPC $h, E=\r\n
+
+S11
+R$*<@$+>$*		$@$1<@$2>$3			already ok
+R$+			$@$1<@$j>			tack on our hostname
+
+S21
+R$*<@$+>$*		$@$1<@$2>$3			already ok
+R$+			$@$1<@$j>			tack on our hostname
+
+##########
+##
+##	World mailer specification
+##
+##	This is used for all mail to the outside world.
+##
+##########
+
+#  Mailer flags specified:
+#  m	accepts multiple recipients
+#  s	strip quote off before calling mailer
+#  u	preserve upper case in usernames
+#  C	add sender domain when received from mailer
+#  D	wants "Date:" header line
+#  F	wants "From:" header line
+#  L	limit line lengths from RFC821
+#  M	wants "Message-id:" header line
+#  X	use RFC821 hidden dot algorithm
+#
+Mworld,		P=[IPC], F=msuCDFLMX, S=12, R=22, A=IPC $h, E=\r\n
+
+S12
+
+# Make it look like all mail to the outside world is from the gateway.
+R$*<@$-.$D>$*		$@$1<@$G>$3			known local names
+R$*<@$D>$*		$@$1<@$G>$2			known local names
+R$*<@$=L>$*		$@$1<@$G>$3			known local names
+
+R$*<@$+>$*		$@$1<@$2>$3			already has hostname
+R$+			$@$1<@$G>			tack on gateway name
+
+S22
+R$*<@$+>$*		$@$1<@$2>$3			already has hostname
+R$+			$@$1<@$j>			tack on our hostname
+
+##########
+##
+##	UUCP mailer specification
+##
+##########
+
+#  Mailer flags specified:
+#  h	preserve upper case in hostnames
+#  s	strip quote off before calling mailer
+#  u	preserve upper case in usernames
+#  C	add sender domain when received from mailer
+#  D	wants "Date:" header line
+#  F	wants "From:" header line
+#  M	wants "Message-id:" header line
+#  U	use ugly UUCP-style Unix-style "From " line
+#
+Muucp,	P=/usr/bin/uux, F=hsuCDFMU, S=13, R=23,
+	A=uux - -r -n -a$g -gC $h!rmail ($u)
+
+S13
+
+R$+			$:$>6$1				turn into all ! syntax
+
+# Make it look like all mail from local hosts is from the gateway.
+R$+!$+			$:<$1>!$2			focus on path
+R<$+!$+>$+		<$1>!$2$3			move gaze left
+R<$-.$D>!$+		$@$U!$2				known local names
+R<$D>!$+		$@$U!$1				known local names
+R<$=L>!$+		$@$U!$2				known local names
+R$*<$*>$*		$:$1$2$3			defocus
+
+R$+			$@$U!$1				add our UUCP name
+
+S23
+R$+			$:$>6$1				turn into all !'s
+
+# Turn local host names into our UUCP name.  This is the name that we
+# are known by to the UUCP host that we are now sending to.
+R$+!$+			$:<$1>!$2			focus on path
+R<$+!$+>$+		<$1>!$2$3			move gaze left
+R<$-.$D>!$+		$@$U!$2				known local names
+R<$D>!$+		$@$U!$1				known local names
+R<$=L>!$+		$@$U!$2				known local names
+R$*<$*>$*		$:$1$2$3			defocus

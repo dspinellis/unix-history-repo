@@ -1,0 +1,6 @@
+
+These files contain templates and include files for the .cf files.
+They should be reasonably generic.  All the machine dependent stuff
+is in ../machdep.
+
+Note that these files expect to be processed by m4.

@@ -1,0 +1,14 @@
+0	string		#!\ /bin/sh	commands text
+0	string		#!/bin/sh	commands text
+0	string		#!\ /bin/csh	C shell commands text
+0	string		#!/bin/csh	C shell commands text
+0	string		#!\ /bin/awk	awk commands text
+0	string		#!/bin/awk	awk commands text
+0	string		#!\ /		some kinda commands text
+0	string		#!/		some kinda commands text
+0	string		#!\ 		commands text
+>3	string		>\0		 for %s
+#	An "antique" kernel is either unmodified early V7,
+#	without DMR's 1979 mod for #!, or any kernel
+#	derived from a pre-v7 kernel (i.e., System V)
+0	string		:\ 		shell archive or commands for antique kernel text

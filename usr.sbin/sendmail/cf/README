@@ -1,0 +1,392 @@
+INTRODUCTION:
+-------------
+
+This document describes (in some detail, though undoubtedly not enough!)
+the sendmail configuration files currently in use at Berkeley as distributed
+with version 5.61 of sendmail.  It discusses the configuration file
+directory hierarchy, how the files are processed by m4(1), what functionality
+the files provide, what m4(1) options can be used to produce specific
+results, and goes through an example or two.  It concludes with a list
+of things that will change in the next release of the configuration files.
+
+This is a working draft; your comments are appreciated.  Please send your
+suggestions to Phil Lapsley, phil@ucbvax.berkeley.edu, ...!ucbvax!phil.
+
+
+HIERARCHY:
+----------
+
+The "cf" subdirectory is organized as follows:
+
+					cf
+					|
+			+---------------+---------------+
+			|		|		|
+		      sitedep		m4		cf
+			|	        |	      /    \
+			*.m4		*.m4	    *.mc   *.cf
+
+where the directories contain the following:
+
+	sitedep		Site dependent parts of configuration files
+			in m4(1) include files.
+
+	m4		Site independent parts of configuration files
+			in m4(1) include files.
+
+	cf		Includes "master configuration" (.mc) files
+			that include m4 files from ../m4 and ../sitedep.
+			.mc files are processed by m4(1) and result in
+			configuration files (.cf).
+
+In the remainder of this document, all path names are referenced
+relative to the top level "cf" directory.  Hence, the m4 subdirectory
+is called "cf/m4".
+
+
+WHERE m4(1) FITS INTO ALL OF THIS:
+----------------------------------
+
+Configuration files are built by typing "make" in cf/cf.  This
+runs m4(1) on the .mc files in cf/cf and produces .cf files.
+
+The philosophy at Berkeley is to place as much information into
+one .mc file as possible, and then use m4 conditional substitution
+(ifdef, for example) to produce other configuration files from it.
+This results in a substantial reduction of duplicated code that must
+be maintained separately.
+
+The main master configuration file that contains all this information
+is "cf/proto.mc".  This file has a number of m4 conditional substitutions
+that can be controlled by other .mc files that include "cf/proto.mc".
+
+For example, most hosts at Berkeley have only SMTP (TCP) connections
+to other hosts.  A file called "ucbproto.cf" takes care of these
+machines by defining the m4 flags needed to produce only SMTP mailer
+definitions from "cf/proto.mc".  Since this is default behavior, very
+little needs to be defined.
+
+But some hosts at Berkeley (e.g., cad.Berkeley.EDU) have both SMTP
+connections and UUCP connections as well.  Thus, they need to
+produce a configuration file that contains both SMTP and UUCP mailer
+definitions, and they need to include a list of directly connected
+UUCP neighbors.  The file "cf/cad.mc" does this by setting the m4
+flags for "cf/proto.mc" that say "(1) I am a UUCP host with hostname "ucbcad",
+(2) a list of my UUCP neighbors can be found in ../sitedep/uucp.cad.m4".
+
+Thus, there are many .mc files in cf/cf that simply define m4 flags and
+then include "cf/proto.mc" to produce a specific configuration file.
+
+Note:
+
+	IT IS STRONGLY SUGGESTED THAT YOU, THE SYSTEM MANAGER,
+	CONTINUE TO MAINTAIN CONFIGURATION FILES BY USING THIS
+	m4(1) METHOD.  TRYING TO MAINTAIN MULTIPLE .CF FILES
+	ON SEPARATE MACHINES WILL LEAD TO INSANITY.
+
+
+With that out of the way, we should now examine the functionality
+provided by the supplied sendmail configuration files, and then
+talk in detail about the m4(1) options that control this.
+
+FUNCTIONALITY PROVIDED BY THE SUPPLIED SENDMAIL CONFIGURATIONS:
+---------------------------------------------------------------
+
+Mailers:
+--------
+
+The sendmail configuration files come with the following mailers:
+
+	local		For delivery of messages to users on the
+			local machine.
+
+	tcp		For SMTP delivery of messages across the
+			the Internet.
+
+	tcpld		For SMTP delivery of messages within the
+			local domain.
+
+	uucp		For delivery of messages to a UUCP neighbor.
+
+	smtpuucp	For delivery of messages to a UUCP neighbor
+			with whom we also share Internet connectivity.
+
+The tcp/tcpld mailers and the smtpuucp mailers deserve a little more
+explanation.
+
+The "tcp" and "tcpld" mailers:
+------------------------------
+
+As regards tcp and tcpld: in theory, there should be only one mailer
+here, called "smtp", that deals with addresses in the form "user@host.domain".  
+Everyone on the Internet would use this, regardless of what domain
+they were in.  Host name lookups would be performed via the domain naming
+system (DNS), and no central registry of machine names would be necessary.
+
+Unfortunately, this is not the case.  The MILNET community is still
+in transition towards the DNS, and until this transition is complete,
+they do not have to use the nameserver.  Rather, they can "legally"
+still use the host table supplied by SRI-NIC to translate names to
+addresses.  This means that to be strictly legal, we must send out
+messages in the form "user@host.domain" ONLY FOR machines that are
+registered with SRI NIC.  Machines that are not registered with the
+NIC must be "hidden" behind a relay machine, e.g.,
+user%unregistered_host@registered_host.domain.  This, when MILNET folks
+reply to this, the mail passes through "registered_host.domain" first.
+
+Currently this "hiding" behind NIC registered hosts is performed by
+the "tcp" mailer.
+
+Since you don't want to register all the hosts at your site with
+the NIC (and they don't want you to!), the "tcpld" mailer was created.
+The idea here is that you KNOW all the hosts in your local domain
+use the nameserver, so there is no need to hide mail behind a NIC
+registered relay -- that would only slow things down.  So the "tcpld"
+does not do any hiding of unregistered hosts behind a registered relay.
+
+Eventually the "tcpld" mailer will become the "smtp" mailer mentioned above.
+
+The "smtpuucp" mailer:
+----------------------
+
+The "smtpuucp" mailer is another fun one.  As time progresses, many
+hosts with whom one has UUCP connections join the Internet.  Unfortunately,
+if the UUCP connection existed for any length of time, people are
+probably used to using it, complete with the bangist syntax that comes
+with UUCP.  As a result, many sites elect to keep their
+UUCP connections even though they have TCP/IP connectivity to the sites
+in question.  This turns out not be such a good idea because of the
+double-queuing incurred by UUCP, explained in the following example.
+
+For concreteness, consider the following scenario: ucbvax.Berkeley.EDU
+(UUCP host "ucbvax") and decvax.dec.com (UUCP host "decvax") have shared
+a cross county UUCP link that is heavily used by many people.  Let's say
+that a piece of mail is routed through the ucbvax-decvax link via UUCP.
+The queueing process is:
+
+
+step	host	action
+-----	-----	------
+1	ucbvax	incoming mail is accepted via UUCP
+2	ucbvax	uuxqt is queued to invoke sendmail.
+3	ucbvax	sendmail parses the message.
+4	ucbvax	sendmail passes the message to the UUCP
+		mailer for delivery to decvax.
+5	ucbvax	message is placed in the outgoing UUCP queue for decvax
+
+6	decvax	uucico takes the message from ucbvax
+7	decvax	uuxqt is queued to invoke sendmail
+8	decvax	sendmail parses the message
+9	decvax	sendmail passes the message to someplace else.
+
+Note that the message transited the inbound UUCP queue on ucbvax, the sendmail
+queue on ucbvax, the outbound UUCP queue on ucbvax, the inbound UUCP queue
+on decvax, etc.
+
+Now, if decvax and ucbvax have SMTP connectivity, the session is more
+manageable:
+
+step	host	action
+-----	-----	------
+1	ucbvax	incoming mail is accepted via UUCP
+2	ucbvax	uuxqt is queued to invoke sendmail.
+3	ucbvax	sendmail parses the message
+4a	ucbvax	sendmail delivers it to decvax.dec.com via SMTP.
+
+a	decvax	sendmail accepts the message from ucbvax via SMTP.
+8	decvax	sendmail parses the message.
+9	decvax	sendmail passes it to someplace else.
+
+Note that old steps (5) and (7), the UUCP queueing, are avoided entirely.
+
+The only trick to the "smtpuucp" mailer is that even though it uses
+SMTP to communicate with its neighbors, it must use the UUCP syntax
+and rewriting rulesets so that the operation is transparent to the
+outside world.  This is easy enough to do.
+
+Other functionality:
+-------------------
+
+Aside from the mailers supplied, the basic configuration files
+support the following features:
+
+	* Domains.  Addresses of the form "user@host.domain" are
+	  considered to be the basic type of address we deal with.
+
+	* Fake domains.  Addresses of the form:
+
+		user@host.BITNET
+	and
+		user@host.CSNET
+
+	  are forwarded to a CSNET relay host and a BITNET relay host,
+	  respectively.
+
+	  Note: this feature exists for convenience.  As CSNET and
+	  BITNET convert to domains, it will go away.  In particular,
+	  "user@host.CSNET" is slated to get the axe in the next release.
+
+m4(1) OPTIONS USED IN THE .MC FILES:
+------------------------------------
+
+The following options, from "most important" to "trivial", can be
+used to control what configuration file you get from running m4(1)
+on "cf/proto.mc".  As explained earlier, the standard practice is to
+create an ".mc" file for a particular configuration that contains
+all the m4(1) macro definitions/flags you want, and then have
+that .mc file include "mc/proto.mc".
+
+Macro name		Example	(you must include the ` and ')!
+----------		---------------------------------------
+
+DOMAIN			`DDBerkeley.EDU'
+
+     This MUST be defined to be your Internet domain.
+
+INTERNET_RELAY		`DAcad.Berkeley.EDU'
+
+     If defined, this will be the machine behind which non-NIC registered
+hosts are hidden, resulting in addresses of the form
+
+	user%host@internet_relay.domain
+
+e.g.,
+
+	moore%prefect@cad.Berkeley.EDU
+
+     If not defined, outgoing addresses will always be of the form
+
+	user@host.domain
+
+regardless of whether "host.domain" is registered with the NIC.
+
+UUCP_NAME		`DUucbcad'
+
+     If defined, includes the UUCP mailer and assumes you have local
+UUCP connections.  The UUCP_NAME macro is used to define your
+canonical UUCP hostname.  See also: UUCP_ALIASES and UUCP_HOSTS_FILE.
+
+UUCP_ALIASES		`CUucbcad cad'
+
+     Used only if UUCP_NAME is defined, this macro lists any UUCP
+aliases for your machine.  See also: UUCP_NAME and UUCP_HOSTS_FILE.
+
+UUCP_HOSTS_FILE		`../sitedep/uucp.cad.m4'
+
+     Used only if UUCP_NAME is defined.  Defines class V of
+local UUCP hosts by including the appropriate m4 file.  See also:
+UUCP_NAME and UUCP_ALIASES.
+
+UUCP_RELAY		`DRcad.Berkeley.EDU'
+
+     If defined, this will be the machine to which non-local UUCP traffic
+is forwarded.  That is, any address that ends in ".UUCP" that is
+not listed in the V class (as defined by UUCP_HOSTS_FILE) will be
+forwarded to the UUCP_RELAY host via the "tcpld" mailer.
+
+UUCP_ONLY		1
+
+     If defined, makes sure that no TCP/IP based mailers will be
+put in the resulting configuration file.  Normally undefined.
+
+SMTPUUCP		`../sitedep/smtpuucp.cad.m4'
+
+     If defined, use SMTP to resolve certain UUCP connections (while
+keeping UUCP syntax).  Should be defined to be a file that
+contains the list of pairs of UUCP names and their corresponding
+Internet names.  See "machdep/smtpuucp.ucbvax.m4" for an example
+of what this should look like.
+
+BITNET_RELAY		`DBjade.Berkeley.EDU'
+
+     If defined, this will be the machine to which BITNET traffic
+(i.e., mail to user@host.bitnet) is forwarded.  If not defined,
+addresses of the form "user@host.bitnet" will bounce.
+
+CSNET_RELAY		`DCrelay.cs.net'
+
+     If defined, this will be the machine to which CSNET traffic
+(i.e., mail to user@host.csnet) is forwarded.  If not defined, addresses
+of that form will bounce.
+
+ARPAKLUDGE		`1'
+
+     If defined, this turns on a kludge to reduce mail load on your
+INTERNET_GATEWAY.  What is done is the following: if mail is outgoing
+to a machine in the ".arpa" domain and we're not registered with the
+NIC, we hide ourselves behind our INTERNET_GATEWAY.  If the machine
+to which mail is being delivered is NOT in the ".arpa" domain, we
+assume they use the domain name system and can reply to our address --
+hence, we don't hide anywhere.
+
+AN EXAMPLE OR TWO:
+------------------
+
+Let's consider a hypothetical system at Foo, Inc.  Foo, Inc. is on the
+ARPA Internet and is the proud owner of the domain "foo.com".  Machines
+in "foo.com" exchange mail with other hosts on the Internet via SMTP.
+Foo, Inc. also has customers with whom they have UUCP links -- these
+links are all on the machine "uucp-gw.foo.com".  Mail to any address
+that ends in ".UUCP" should be forwarded to "uucp-gw.foo.com".  They
+also have a gateway to the bitnet through their local machine
+"bitnet-gw.foo.com"; mail to any address ending in ".bitnet" should go
+there.  They intend to take advantage of the kind folks at CSNET by
+forwarding mail to "host.csnet" to the machine "relay.cs.net".
+
+The master configuration file for a generic machine on the corporate
+ethernet might look like this:
+
+define(DOMAIN, `DDfoo.com')
+define(UUCP_RELAY, `DRuucp-gw.foo.com')
+define(BITNET_RELAY, `DBbitnet-gw.foo.com')
+define(CSNET_RELAY, `DCrelay.cs.net')
+include(proto.mc)
+
+And that's it!  The system manager at "foo.com" would simply install
+this in the "cf" subdirectory, add a production to the make file,
+and type "make foo.cf".  This would run m4(1) on the .mc file and
+we're done.
+
+Now let's turn to the machine "uucp-gw.foo.com".  It obviously needs
+to have the UUCP mailer compiled in, and it needs a list of UUCP
+neighbors with whom it is connected.  Of course, it also needs a TCP/IP
+(SMTP) based mailer so it can talk to the rest of the company.
+On the UUCP network, "uucp-gw.foo.com" is known as "foo".
+The master configuration file might be:
+
+define(DOMAIN, `DDfoo.com')
+define(UUCP_NAME, `DUfoo')
+define(UUCP_ALIASES, `CUfoo')
+define(UUCP_HOSTS_FILE, `../sitedep/uucp.foo.m4')
+define(BITNET_RELAY, `DBbitnet-gw.foo.com')
+define(CSNET_RELAY, `DCrelay.cs.net')
+include(proto.mc)
+
+Note that we didn't define UUCP_RELAY here, since we ARE the UUCP relay.
+
+The file "../sitedep/uucp.foo.m4" contains a list of our UUCP neighbors:
+
+CV	oink
+CV	bletch
+CV	spam
+
+indicating that "uucp-gw.foo.com" is directly connected to three other
+machines via UUCP: "oink", "bletch", and "spam."
+
+
+WHAT WILL BE CHANGING IN THE NEXT RELEASE:
+------------------------------------------
+
+In the next release, the following things should change:
+
+1. The MILNET should have gotten its act together.  This means
+   that the "tcp" mailer goes away.  The "tcpld" mailer will
+   be renamed "smtp".  The "N" class (NIC registered hosts)
+   gets axed.  The ARPAKLUDGE and INTERNET_RELAY  m4(1) options
+   will disappear as well.
+
+2. The CSNET "fake domain" (i.e., user@host.csnet) will cease
+   to be supported.
+
+3. The "smtp" mailer rulesets (currently 17/27) will be rewritten,
+   along with much of rulesets 0 and 3.

@@ -1,0 +1,9 @@
+# For Sequent's multiprocessor systems (incomplete).
+0	long	000352		BALANCE NS32000 .o
+0	long	010352		BALANCE NS32000 executable (0 @ 0)
+>16	long	>0		not stripped
+0	long	020352		BALANCE NS32000 executable (invalid @ 0)
+>16	long	>0		not stripped
+0	long	030352		BALANCE NS32000 standalone executable
+>16	long	>0		not stripped
+# Also need info on Sequent "Symmetry" series...

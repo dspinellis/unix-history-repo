@@ -1,0 +1,60 @@
+RCS HISTORY OF CO DRIVER:
+
+-hv-	= Holger Veit veit@du9ds3.fb9dv.uni-duisburg.de
+-vak-	= Sergey Vakulenko vak@kiae.su
+-hm	= Helmut Michaelis hm@hcshh.hcs.de
+
+$Log:	CO_HISTORY,v $
+# Revision 1.11  93/04/27  21:19:16  -hv-
+# keymap debugged, hotkey programmable, HASVTY flag fixed
+# several minor things I forgot
+#
+# Revision 1.10  93/04/22  22:06:21  -hv-
+# most CODRV2 ioctls moved into CODRV1, now "the interface"
+# made scroll, lock keys and LEDS depending from the current
+# vty, fixed EMACS META-SPACE bug, fixed ISOLATIN bug (again)
+#
+# Revision 1.9  93/03/29  19:45:38  -hv-
+# Lots of fixes
+#
+# Revision 1.8  93/01/23  23:13:05  -hv-
+# kbd low level routines revised, now runs on laptop and pc,
+# Christoph's snake screen saver included
+# 
+# Revision 1.7  93/01/11  01:14:44  -hv-
+# Bug fixes
+# 
+# Revision 1.6  93/01/10  14:55:47  -hv-
+# "virtual" emulator calls, codrv2 ioctl interface
+# 
+# Revision 1.5  93/01/07  11:40:47  -hv-
+# split ioctl_pc.h into public and common (to kernel) part
+# to allow for kernel independent from ioctl_pc.h, for different
+# ioctl sets
+# 
+# Revision 1.4  93/01/04  22:04:18  -hv-
+# Keyboard low level code entirely rewritten, XTKBDMODE
+# 
+# Revision 1.3  93/01/02  23:10:49  -hv-
+# Split IOCTL services into co_codrv1/co_codrv2
+# 
+# Revision 1.2  92/12/27  12:41:11  -hv-
+# VTYs, many, many bug fixes
+# and modifications
+# 
+# Revision 1.1  92/12/25  12:33:47  -hv-
+# Initial revision
+# 
+
+
+PRE RCS History:
+
+-vak-	01/12/92	meta and shiftaltgr mapping, beep ioctl
+-vak-	01/12/92        8x16 font loading, beep ioctl,
+			LED reassignment ioctl.
+-hv-	04/09/92	kbd (co) device, bug fixes X11 support
+			many more ioctls (codrv1-type)
+-hm	16-08-92	adding vga ioctl for cursor shape
+-hv-	25/07/92 	split into kbd.c vga.c pccons.c
+-hv-	23/07/92	use at your own risk!
+			national keyboard support

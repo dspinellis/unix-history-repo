@@ -1,0 +1,46 @@
+Portability of the new file(1) command.
+@(#) $Header: PORTING,v 1.6 87/11/08 23:03:41 ian Exp $
+
+Read this file only if the program doesn't compile on your system.
+
+I have tried to make a program that doesn't need any command-line
+defines (-D) to specify what version of UNIX is in use,
+by using the definitions available in the system #include
+files. For example, the lstat(2) call is normally found in
+4BSD systems, but might be grafted into some other variant
+of UNIX. If it's done right (ie., using the same definitions),
+my program will compile and work correctly. Look at the #ifdefs
+to see how it's done. 
+
+I've also tried to include all the non-portable library routines
+I used (getopt, str*).   Non-portable here means `not in every
+reasonably standard UNIX out there: V7, System V, 4BSD'.
+
+There is one area that just might cause problems. On System
+V, they moved the definition of major() and minor() out of
+<sys/types.h> into <sys/sysmacros.h>.  Hence, if major isn't
+defined after including types.h, I automatically include sys/sysmacros.h.
+This will work for 99% of the systems out there. ONLY if you
+have a system in which  neither types.h nor sysmacros.h defines
+`major' will this automatic include fail (I hope). On such
+systems, you will get a compilation error in trying to compile
+a warning message. Please do the following: 
+
+	1) change the appropriate (2nd) #include at the start of 
+		fsmagic.c
+and	2) let me know the name of the system, the release number,
+	   and the name of the header file that *does* include
+	   this "standard" definition.
+
+If you are running the old Ritchie PDP-11 C compiler or
+some other compiler that doesn't know about `void', you will have
+to un-comment-out the definition of `void=int' in the Makefile.
+
+Other than this, there should be no portability problems,
+but one never knows these days. Please let me know of any
+other problems you find porting to a UNIX system. I don't much
+care for non-UNIX systems but will collect widely-used magic 
+numbers for them as well as for UNIX systems.
+
+Ian Darwin
+Toronto, Canada
