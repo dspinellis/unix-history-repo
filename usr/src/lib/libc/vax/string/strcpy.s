@@ -1,7 +1,8 @@
-/*	strcpy.s	4.2	84/11/01	*/
+/*	strcpy.s	4.3	84/11/07	*/
 
 /*
  * Copy string s2 over top of s1.
+ * Return base of s1.
  *
  * char *
  * strcpy(s1, s2)
@@ -16,11 +17,11 @@ ENTRY(strcpy, R6)
 	locc	$0,$65535,(r6)	# find length of s2
 	bneq	2f
 	movc3	$65535,(r6),(r3)# copy full block
-	movl	r6,r1
+	movl	r1,r6
 	jbr	1b
 2:
 	subl2	r6,r1		# calculate length
 	incl	r1
 	movc3	r1,(r6),(r3)	# copy remainder
-	movl	r6,r0
+	movl	4(ap),r0	# return base of s1
 	ret
