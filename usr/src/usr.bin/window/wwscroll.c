@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)wwscroll.c	3.15 %G%";
+static char sccsid[] = "@(#)wwscroll.c	3.16 %G%";
 #endif
 
 /*
@@ -82,45 +82,33 @@ int leaveit;
 		nvis += w->ww_nvis[i];
 
 	/*
-	 * If it's a good idea to use delete and insert line
-	 * and the terminal can, then do it.
+	 * If it's a good idea to scroll and the terminal can, then do it.
 	 */
-	if (nvis > nvismax / 2 && tt.tt_delline && tt.tt_insline) {
-		register union ww_char *tmp;
-		register union ww_char **cpp, **cqq;
-
+	if (nvis < nvismax) {
+	} else if (!tt.tt_noscroll && row1x == 0 && row2x == wwnrow && dir > 0)
+	{
+		/*
+		 * We're going to assume that a line feed at the
+		 * bottom of the screen will cause a scroll, unless
+		 * "ns" is set.  This should work at least 99%
+		 * of the time.  At any rate, vi seems to do it.
+		 */
+		if (tt.tt_row != wwnrow - 1)
+			(*tt.tt_move)(wwnrow - 1, 0);
+		ttputc('\n');
+		deleted++;
+	} else if (tt.tt_delline && tt.tt_insline) {
 		/*
 		 * Don't worry about retain when scrolling down,
 		 * but do worry when scrolling up, for hp2621.
 		 */
 		if (dir > 0) {
-			/*
-			 * We're going to assume that a line feed at the
-			 * bottom of the screen will cause a scroll, unless
-			 * "ns" is set.  This should work at least 99%
-			 * of the time.  At any rate, vi seems to do it.
-			 */
-			if (tt.tt_noscroll || row1x != 0 || row2x != wwnrow) {
-				(*tt.tt_move)(row1x, 0);
-				(*tt.tt_delline)();
-				if (row2x < wwnrow) {
-					(*tt.tt_move)(row2x - 1, 0);
-					(*tt.tt_insline)();
-				}
-			} else {
-				if (tt.tt_row != wwnrow - 1)
-					(*tt.tt_move)(wwnrow - 1, 0);
-				ttputc('\n');
+			(*tt.tt_move)(row1x, 0);
+			(*tt.tt_delline)();
+			if (row2x < wwnrow) {
+				(*tt.tt_move)(row2x - 1, 0);
+				(*tt.tt_insline)();
 			}
-			/*
-			 * Fix up the old screen.
-			 */
-			cpp = &wwos[row1x];
-			cqq = cpp + 1;
-			tmp = *cpp;
-			for (i = row2x - row1x; --i > 0;)
-				*cpp++ = *cqq++;
-			*cpp = tmp;
 		} else {
 			if (tt.tt_retain || row2x != wwnrow) {
 				(*tt.tt_move)(row2x - 1, 0);
@@ -128,9 +116,24 @@ int leaveit;
 			}
 			(*tt.tt_move)(row1x, 0);
 			(*tt.tt_insline)();
-			/*
-			 * Fix up the old screen.
-			 */
+		}
+		deleted++;
+	}
+	/*
+	 * Fix up the old screen.
+	 */
+	if (deleted) {
+		register union ww_char *tmp;
+		register union ww_char **cpp, **cqq;
+
+		if (dir > 0) {
+			cpp = &wwos[row1x];
+			cqq = cpp + 1;
+			tmp = *cpp;
+			for (i = row2x - row1x; --i > 0;)
+				*cpp++ = *cqq++;
+			*cpp = tmp;
+		} else {
 			cpp = &wwos[row2x];
 			cqq = cpp - 1;
 			tmp = *cqq;
@@ -140,7 +143,6 @@ int leaveit;
 		}
 		for (i = wwncol; --i >= 0;)
 			tmp++->c_w = ' ';
-		deleted++;
 	}
 
 	/*
