@@ -1,85 +1,10 @@
-static	char *sccsid = "@(#)gmon.c	4.4 (Berkeley) %G%";
+static	char *sccsid = "@(#)gmon.c	4.5 (Berkeley) %G%";
 
 #ifdef DEBUG
 #include <stdio.h>
 #endif DEBUG
 
-#include "gcrt0.h"
-
-    /*
-     *	C start up routines, for monitoring
-     *	Robert Henry, UCB, 20 Oct 81
-     *
-     *	We make the following (true) assumptions:
-     *	1) when the kernel calls start, it does a jump to location 2,
-     *	and thus avoids the register save mask.  We are NOT called
-     *	with a calls!  see sys1.c:setregs().
-     *	2) The only register variable that we can trust is sp,
-     *	which points to the base of the kernel calling frame.
-     *	Do NOT believe the documentation in exec(2) regarding the
-     *	values of fp and ap.
-     *	3) We can allocate as many register variables as we want,
-     *	and don't have to save them for anybody.
-     *	4) Because of the ways that asm's work, we can't have
-     *	any automatic variables allocated on the stack, because
-     *	we must catch the value of sp before any automatics are
-     *	allocated.
-     */
-
-char **environ;
-    /*
-     *	etext is added by the loader, and is the end of the text space.
-     *	eprol is a local symbol, and labels almost the beginning of text space.
-     *	    its name is changed so it doesn't look like a function.
-     */
-extern	unsigned char	etext;
-extern	unsigned char	eprol;
-asm( "#define _eprol _$eprol" );
-
-asm( "#define _start start" );
-start()
-{
-    struct kframe {
-	int	kargc;
-	char	*kargv[1];		/* size depends on kargc */
-	char	kargstr[1];		/* size varies */
-	char	kenvstr[1];		/* size varies */
-    };
-	/*
-	 *	ALL REGISTER VARIABLES!!!
-	 */
-    register int		r11;		/* init needs r11 */
-    register struct kframe	*kfp;		/* r10 */
-    register char		**targv;
-    register char		**argv;
-
-#ifdef lint
-    kfp = 0;
-#else not lint
-    asm( "	movl	sp,r10" );		/* catch it quick */
-#endif not lint
-    for ( argv = targv = &kfp -> kargv[0] ; *targv++ ; /* void */ )
-	/* VOID */ ;
-    if ( targv >= (char **) ( *argv ) )
-	--targv;
-    environ = targv;
-asm("_eprol:");
-    _mstartup( &eprol , &etext );
-    exit( main( kfp -> kargc , argv , environ ) );
-}
-asm( "#undef _start" );
-asm( "#undef _eprol" );
-
-exit( code )
-	/* ARGSUSED */
-    register int	code;	/* r11 */
-{
-
-    _mcleanup();
-    _cleanup();
-    asm( "	movl r11, r0" );
-    asm( "	chmk $1" );
-}
+#include "gmon.h"
 
     /*
      *	froms is actually a bunch of unsigned shorts indexing tos
@@ -97,7 +22,7 @@ static int	*sbuf;
 
 #define	MSG "No space for monitor buffer(s)\n"
 
-_mstartup(lowpc, highpc)
+monstartup(lowpc, highpc)
     char	*lowpc;
     char	*highpc;
 {
@@ -136,7 +61,7 @@ _mstartup(lowpc, highpc)
 	 *	make sure it won't overflow.
 	 */
     tolimit = limit > 65534 ? 65534 : limit;
-    monitor( lowpc , highpc , buffer , monsize );
+    monitor( lowpc , highpc , buffer , monsize , tolimit );
 }
 
 _mcleanup()
@@ -147,7 +72,6 @@ _mcleanup()
     int			toindex;
     struct rawarc	rawarc;
 
-    monitor( (int (*)()) 0 );
     fd = creat( "gmon.out" , 0666 );
     if ( fd < 0 ) {
 	perror( "mcount: gmon.out" );
@@ -269,16 +193,18 @@ overflow:
     goto out;
 }
 
-monitor( lowpc , highpc , buf , bufsiz )
+/*VARARGS1*/
+monitor( lowpc , highpc , buf , bufsiz , nfunc )
     char	*lowpc;
-    /* VARARGS1 */
     char	*highpc;
     int		*buf, bufsiz;
+    int		nfunc;	/* not used, available for compatability only */
 {
     register o;
 
     if ( lowpc == 0 ) {
 	profil( (char *) 0 , 0 , 0 , 0 );
+	_mcleanup();
 	return;
     }
     sbuf = buf;
@@ -314,7 +240,9 @@ brk(addr)
 	if (addr < minsbrk)
 		addr = minsbrk;
 	asm("	chmk	$17");
-	asm("	jcs	cerror");
+	asm("	jcc	1f");
+	asm("	jmp	cerror");
+asm("1:");
 	curbrk = addr;
 	return (0);
 }
