@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 1992 Regents of the University of California.
  * Copyright (c) 1988, 1992 The University of Utah and the Center
  *	for Software Science (CSS).
+ * Copyright (c) 1992 Regents of the University of California.
  * All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
@@ -12,7 +12,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pathnames.h	8.1 (Berkeley) %G%
+ *	@(#)pathnames.h	5.3 (Berkeley) %G%
  *
  * Utah $Hdr: pathnames.h 3.1 92/07/06$
  * Author: Jeff Forys, University of Utah CSS
