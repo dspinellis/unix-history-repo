@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)anlwrk.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)anlwrk.c	5.6 (Berkeley) %G%";
 #endif
 
 #include "uucp.h"
@@ -12,7 +12,7 @@ static char sccsid[] = "@(#)anlwrk.c	5.5 (Berkeley) %G%";
 #endif
 #include <ctype.h>
 
-#define TLIMIT	(5*60L)
+#define TLIMIT	(15*60L)
 #define NITEMS(X)	(sizeof (X) / sizeof ((X)[0]))
 
 int Nfiles = 0;
@@ -61,7 +61,7 @@ register char *file, **wvec;
 			bnp = rindex(file, '/');
 			sprintf(rqstr, "%s/%s", CORRUPT, bnp ? bnp + 1 : file);
 			xmv(file, rqstr);
-			logent(subfile(file), "CMD FILE UNREADABLE");
+			assert("CMD FILE UNREADABLE", subfile(file), 0);
 			unlink(subfile(file));
 			return 0;
 		}
@@ -113,10 +113,9 @@ char *reqst;
 register char *dir, *pre;
 {
 	static DIR  *dirp = NULL;
-	register nfound;
-	char filename[NAMESIZE];
-	int plen = strlen (pre);
-	int flen;
+	register struct direct *dentp;
+	register int i;
+	int plen = strlen(pre);
 	extern char MaxGrade;
 
 	if (dirp == NULL) {
@@ -124,10 +123,11 @@ register char *dir, *pre;
 			DEBUG(1,"opendir(%s) FAILS\n",subdir(dir,pre[0]));
 			return 0;
 		}
-	}
-	else
+	} else
 		rewinddir(dirp);
-	for (nfound = 0, Nfiles = 0; gnamef(dirp, filename);) {
+
+	Nfiles = 0;
+	while ((dentp = readdir(dirp)) != NULL && Nfiles < LLEN) {
 		/* Check for two systems with the same prefix.
 		 * Magic number "5" is 1 for "grade" character plus
 		 * 4 for sequence number.  The point here is to not
@@ -136,50 +136,44 @@ register char *dir, *pre;
 		 * Special case: prefix "X." does not do this check
 		 * so uuxqt can use bldflst.
 		 */
-		flen = strlen(filename);
-		if (!prefix(pre, filename) || (plen != 2 && flen-plen != 5)) {
-			DEBUG(99,"bldflst rejects %s\n",filename);
+		if (!prefix(pre, dentp->d_name) ||
+			(plen != 2 && (dentp->d_namlen-plen) != 5)) {
+			DEBUG(99,"bldflst rejects %s\n",dentp->d_name);
 			continue;
 		}
-		if (filename[flen-5] > MaxGrade ) {
-			DEBUG(8,"bldflst rejects %s, grade too low\n",filename);
+		if (dentp->d_name[dentp->d_namlen-5] > MaxGrade) {
+			DEBUG(8, "bldflst rejects %s, grade too low\n",
+				dentp->d_name);
 			continue;
 		}
-		nfound++;
 		if (*reqst == 'c')
 			return 1;
-		entflst(filename);
+
+		/* locate position for the new file and make room for it */
+		for (i = Nfiles; i > 0; i--) {
+			if (pcompar(dentp->d_name, Filent[i-1]) <= 0)
+				break;
+			if (i <LLEN)
+				strcpy(Filent[i], Filent[i-1]);
+		}
+
+		/* add new file (if there is room), and increase Nfiles if need be */
+		if (i < LLEN) {
+			DEBUG(99,"bldflst accepts %s",dentp->d_name);
+			DEBUG(99," as Filent[%d]\n", i);
+			strcpy(Filent[i], dentp->d_name);
+			if (Nfiles < LLEN)
+				Nfiles++;
+		} else
+			DEBUG(99,"Filent full, %s rejected by bldflst\n", dentp->d_name);
+		
+
 	}
-	return  nfound? 1: 0;
-}
+	if (Debug >99)
+		for(i=0;i<Nfiles;i++)
+			fprintf(stderr,"Filent[%d]=%s\n",i,Filent[i]);
 
-/*
- *	put new name if list is not full  or new name is less than the MAX
- *		  now in the list.
- *
- */
-
-/* LOCAL only */
-int
-entflst(file)
-register char *file;
-{
-	register int i;
-
-	/* locate position for the new file and make room for it */
-	for (i = Nfiles; i > 0; i--) {
-		if (pcompar(file, Filent[i-1]) <= 0)
-			break;
-		if (i <LLEN)
-			strcpy(Filent[i], Filent[i-1]);
-	}
-
-	/* add new file (if there is room), and increase Nfiles if need be */
-	if (i < LLEN) {
-		strcpy(Filent[i], file);
-		if (Nfiles < LLEN)
-			Nfiles++;
-	}
+	return Nfiles > 0;
 }
 
 /*
@@ -213,32 +207,6 @@ register char *p1, *p2;
 			return rc;
 	/* check remaining digits */
 	return strcmp(p2, p1);
-}
-
-/*
- *	get next work file
- *
- *	return value:
- *
- *		0  - No file gotten
- *		1  - File successfully gotten.
- *
- */
-
-/* LOCAL only */
-gtwrkf(dir, file)
-char *file, *dir;
-{
-	register int i;
-
-	if (Nfiles-- <= 0) {
-		Nfiles = 0;
-		return 0;
-	}
-	sprintf(file, "%s/%s", dir, Filent[0]);
-	for (i=0; i<Nfiles;i++)
-		strcpy(Filent[i], Filent[i+1]);
-	return 1;
 }
 
 /*
@@ -284,52 +252,52 @@ iswrk(file, reqst, dir, pre)
 register char *file, *reqst, *dir, *pre;
 {
 	static char *lastpre = 0;
-	register ret;
+	register ret = 0;
+	int i;
 
 	/* Starting new system; re-init */
-	if (lastpre == 0 || strcmp(lastpre,pre) != 0) {
-		anlwrk ("", (char **)0);	/* Force close of work file */
+	if (lastpre == 0 || strcmp(lastpre, pre) != SAME) {
+		/* Force close of work file */
+		anlwrk("", (char **)0);
 
 		/* Save last worked-on prefix */
 		if (lastpre != 0)
-			free (lastpre);
+			free(lastpre);
 		lastpre = malloc((unsigned)(strlen(pre)+1));
-		strcpy (lastpre, pre);
+		strcpy(lastpre, pre);
 
-		/* Set the external indexes properly
-		 */
+		/* Set the external indexes properly */
 		Nfiles = 0;
 	}
 
-	/* If the list is empty or new files have entered
+	/*
+	 * If the list is empty or new files have entered
 	 * the spool area, call "bldflst" to read
-	 * some file names into it.  Because names can
-	 * be put in the list that later turn out to
-	 * be unusable (from "gtwrkf"), this operation
-	 * continues until either "bldflst" can't find
-	 * any new files, or "gtwrkf" signals success.
+	 * some file names into it. 
 	 */
-	for (;;) {
-		ret = 0;
-		if (Nfiles <= 0 || newspool((time_t)TLIMIT)) {
-			ret = bldflst (reqst, dir, pre);
-			DEBUG(99,"bldflst returns %d\n",ret);
-		}
-
-		/* If they only wanted to check, return
-		 * boolean list not empty.  NB: the list
-		 * will be forcibly emptied as soon as
-		 * a new system name is mentioned.
-		 */
-		if (*reqst == 'c')
-			return ret;
-
-		if (Nfiles <= 0)
-			return 0;
-
-		if (gtwrkf(dir, file))
-			return 1;
+	if (Nfiles <= 0 || newspool((time_t)TLIMIT)) {
+		ret = bldflst(reqst, dir, pre);
+		DEBUG(99, "bldflst returns %d\n", ret);
 	}
+
+	/* If they only wanted to check, return
+	 * boolean list not empty.  NB: the list
+	 * will be forcibly emptied as soon as
+	 * a new system name is mentioned.
+	 */
+	if (*reqst == 'c')
+		return ret;
+
+	if (Nfiles-- <= 0) {
+		/* Didn't find any files in the spool area */
+		Nfiles = 0;
+		return 0;
+	}
+	/* Found some files, return the first one */
+	sprintf(file, "%s/%s", dir, Filent[0]);
+	for (i = 0; i < Nfiles; i++)
+		strcpy(Filent[i], Filent[i+1]);
+	return 1;
 }
 
 /* Return non-zero if there is new work in the spool
