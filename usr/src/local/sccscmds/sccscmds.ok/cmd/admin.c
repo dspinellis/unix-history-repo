@@ -1,7 +1,8 @@
 # include "../hdr/defines.h"
 # include "../hdr/had.h"
+# include "pathnames.h"
 
-static char Sccsid[] = "@(#)admin.c	4.3	%G%";
+static char Sccsid[] = "@(#)admin.c	4.4	%G%";
 
 /*
 	Program to create new SCCS files and change parameters
@@ -33,7 +34,6 @@ char *ifile, *tfile;
 char *z;	/* for validation program name */
 char had[26], had_flag[26], rm_flag[26];
 char	*Comments, *Mrs;
-char Valpgm[] = "/usr/local/val";
 int irel, fexists, num_files;
 int	VFLAG = 0;
 int	Domrs;
@@ -334,9 +334,9 @@ char *afile;
 			/*
 			   perform 'val' with appropriate keyletters
 			*/
-			sprintf(command, "/usr/local/val -s %s", afile);
-			execl("/bin/sh","/bin/sh","-c", command, 0);
-			sprintf(Error,"cannot execute '%s'",Valpgm);
+			sprintf(command, "%s -s %s", afile, _PATH_VAL);
+			execl(_PATH_BSHELL, "sh", "-c", command, 0);
+			sprintf(Error,"cannot execute '%s'", _PATH_VAL);
 			fatal(Error);
 		}
 		else {

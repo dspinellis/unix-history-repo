@@ -1,6 +1,7 @@
 # include	"../hdr/defines.h"
+# include	"pathnames.h"
 
-static char Sccsid[] = "@(#)help.c	4.3	%G%";
+static char Sccsid[] = "@(#)help.c	4.4	%G%";
 
 /*
 	Program to locate helpful info in an ascii file.
@@ -16,7 +17,7 @@ static char Sccsid[] = "@(#)help.c	4.3	%G%";
 	with the search key being <remainder of arg>, (e.g., 32).
 	If the argument is all numeric, or if the file as
 	determined above does not exist, the search will be attempted on
-	'/usr/local/lib/sccs.hf', which is the old help file, with the
+	_PATH_OLDHELP, which is the old help file, with the
 	search key being the entire argument.
 	In no case will more than one search per argument be performed.
 
@@ -39,8 +40,6 @@ static char Sccsid[] = "@(#)help.c	4.3	%G%";
 
 	If the argument is omitted, the program requests it.
 */
-char	oldfile[] = "/usr/local/lib/sccs.hf";
-char	helpdir[] = "/usr/local/lib/help/";
 char	hfile[64];
 FILE	*iop;
 char	line [512];
@@ -87,23 +86,23 @@ char *p;
 
 	if (*q == '\0') {		/* all alphabetics */
 		copy(p,key);
-		cat(hfile,helpdir,"cmds",0);
+		cat(hfile,_PATH_HELPDIR,"cmds",0);
 		if (!exists(hfile))
-			copy(oldfile,hfile);
+			copy(_PATH_OLDHELP,hfile);
 	}
 	else
 		if (q == p) {		/* first char numeric */
 			copy(p,key);
-			copy(oldfile,hfile);
+			copy(_PATH_OLDHELP,hfile);
 		}
 	else {				/* first char alpha, then numeric */
 		copy(p,key);		/* key used as temporary */
 		*(key + (q - p)) = '\0';
-		cat(hfile,helpdir,key,0);
+		cat(hfile,_PATH_HELPDIR,key,0);
 		copy(q,key);
 		if (!exists(hfile)) {
 			copy(p,key);
-			copy(oldfile,hfile);
+			copy(_PATH_OLDHELP,hfile);
 		}
 	}
 
