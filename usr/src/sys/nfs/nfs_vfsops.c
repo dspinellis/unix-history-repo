@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_vfsops.c	8.6 (Berkeley) %G%
+ *	@(#)nfs_vfsops.c	8.7 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -453,6 +453,8 @@ nfs_mount(mp, path, data, ndp, p)
 	error = copyin(data, (caddr_t)&args, sizeof (struct nfs_args));
 	if (error)
 		return (error);
+	if (args.version != NFS_ARGSVERSION)
+		return (EPROGMISMATCH);
 	error = copyin((caddr_t)args.fh, (caddr_t)nfh, args.fhsize);
 	if (error)
 		return (error);
