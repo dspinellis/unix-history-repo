@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)server.c	4.12 (Berkeley) 83/12/19";
+static	char *sccsid = "@(#)server.c	4.13 (Berkeley) 84/01/03";
 #endif
 
 #include "defs.h"
@@ -599,7 +599,15 @@ recvf(cmd, isdir)
 		}
 		if (stat(target, &stb) == 0) {
 			if (ISDIR(stb.st_mode)) {
-				ack();
+				if (stb.st_mode & 0777 == mode) {
+					ack();
+					return;
+				}
+				buf[0] = '\0';
+				(void) sprintf(buf + 1,
+					"%s:%s: Warning: mode %o != %o\n",
+					host, target, stb.st_mode & 0777, mode);
+				(void) write(rem, buf, strlen(buf + 1) + 1);
 				return;
 			}
 			error("%s: %s\n", target, sys_errlist[ENOTDIR]);
