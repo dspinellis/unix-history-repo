@@ -3,7 +3,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)crtplot.c	4.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)crtplot.c	4.5 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -123,6 +123,13 @@ char *str;
 		plot_addch(str[i]);
 }
 
+void
+cputchar(ch)
+        int ch;
+{
+        (void)putchar(ch);
+}
+
 plot_erase()
 {
 /*
@@ -133,17 +140,16 @@ the driver calls openpl before doing anything.  This is actually
 wrong, but it is what whoever originally wrote the driver decided
 to do.  (openpl() in libplot does nothing -- that is the main problem!)
 */
-_puts(TI);
-_puts(VS);
+tputs(TI, 0, cputchar);
+tputs(VS, 0, cputchar);
 
 noecho();
 nonl();
-tputs(CL, LINES, __cputchar);
+tputs(CL, LINES, cputchar);
 mvcur(0, COLS-1, LINES-1, 0);
 lastX = 0;
 lastY = LINES-1;
 }
-
 
 point(x, y)
 int x,y;
