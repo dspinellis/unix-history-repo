@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)chflags.2	6.6 (Berkeley) %G%
+.\"	@(#)chflags.2	6.7 (Berkeley) %G%
 .\"
 .Dd 
 .Dt CHFLAGS 2
@@ -13,11 +13,12 @@
 .Nm fchflags
 .Nd set file flags
 .Sh SYNOPSIS
+.Fd #include <sys/stat.h>
 .Fd #include <unistd.h>
 .Ft int
-.Fn chflags "const char *path"  "long flags"
+.Fn chflags "const char *path"  "u_long flags"
 .Ft int
-.Fn fchflags "int fd" "long flags"
+.Fn fchflags "int fd" "u_long flags"
 .Sh DESCRIPTION
 The file whose name
 is given by
