@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	7.9 (Berkeley) %G%
+#	@(#)Makefile	7.10 (Berkeley) %G%
 #
 
 RELOC=		800
@@ -33,13 +33,13 @@ SUBDIR=	vdformat
 ALL=	boot cat copy ls
 
 SRCS=	boot.c cat.c conf.c copy.c dev.c getfile.c gets.c ls.c prf.c \
-	srt0.c sys.c vd.c cy.c hdc.c
-DRIVERS=cy.o vd.o hdc.o
+	srt0.c sys.c vd.c cy.c hd.c
+DRIVERS=cy.o vd.o hd.o
 
 #all: srt0.o libsa.a ${ALL} ${SUBDIR}
 all: srt0.o libsa.a ${ALL}
 
-${SUBDIR}: FRC
+${SUBDIR}:
 	cd $@; make ${MFLAGS}
 
 machdep.o: machdep.c ../tahoe/mtpr.h ../tahoe/mem.h ../tahoe/SYS.h
@@ -94,15 +94,19 @@ ncy.c: cy.c
 ncy.o: ncy.c
 	${CC} -DNOBLOCK ${CFLAGS} -c ncy.c
 
-clean: FRC
+clean:
 	rm -f ${ALL} *.o *.map *.bak a.out ncy.c libsa.a
 	for i in ${SUBDIR}; do (cd $$i; make ${MFLAGS} clean); done
 
-depend: ${SRCS} FRC
+cleandir: clean
+	rm -f ${MAN} tags .depend
+	for i in ${SUBDIR}; do (cd $$i; make ${MFLAGS} cleandir); done
+
+depend: ${SRCS}
 	mkdep ${COPTS} ${SRCS}
 	for i in ${SUBDIR}; do (cd $$i; make ${MFLAGS} depend); done
 
-install: FRC
+install:
 	-mkdir ${DESTDIR}/stand
 	for i in ${ALL}; do \
 		install -o bin -g bin -m 644 $$i ${DESTDIR}/stand/$$i; \
@@ -113,67 +117,6 @@ install: FRC
 		(cd $$i; make ${MFLAGS} DESTDIR=${DESTDIR} install) \
 	done
 
-tags: ${SRCS} FRC
+tags: ${SRCS}
 	ctags ${SRCS}
 	for i in ${SUBDIR}; do (cd $$i; make ${MFLAGS} tags); done
-
-FRC:
-
-# DO NOT DELETE THIS LINE -- mkdep uses it.
-# DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
-
-boot.o: boot.c ../machine/mtpr.h ../h/param.h /usr/include/sys/types.h
-boot.o: ../h/signal.h /usr/include/machine/trap.h
-boot.o: /usr/include/machine/machparam.h /usr/include/machine/endian.h
-boot.o: ../h/inode.h ../h/fs.h ../h/vm.h /usr/include/sys/vmparam.h
-boot.o: /usr/include/machine/vmparam.h /usr/include/sys/vmmac.h
-boot.o: /usr/include/sys/vmmeter.h /usr/include/sys/vmsystm.h ../stand/saio.h
-boot.o: ../stand/saioctl.h ../stand/saerrno.h ../h/reboot.h
-boot.o: /usr/include/a.out.h /usr/include/sys/exec.h
-cat.o: ../stand/cat.c
-conf.o: conf.c ../h/param.h /usr/include/sys/types.h ../h/signal.h
-conf.o: /usr/include/machine/trap.h /usr/include/machine/machparam.h
-conf.o: /usr/include/machine/endian.h ../h/inode.h ../h/fs.h ../stand/saio.h
-conf.o: ../stand/saioctl.h ../stand/saerrno.h
-copy.o: ../stand/copy.c
-dev.o: ../stand/dev.c ../h/param.h /usr/include/sys/types.h ../h/signal.h
-dev.o: /usr/include/machine/trap.h /usr/include/machine/machparam.h
-dev.o: /usr/include/machine/endian.h ../h/inode.h ../h/fs.h ../stand/saio.h
-dev.o: ../stand/saioctl.h ../stand/saerrno.h
-getfile.o: ../stand/getfile.c ../h/param.h /usr/include/sys/types.h
-getfile.o: ../h/signal.h /usr/include/machine/trap.h
-getfile.o: /usr/include/machine/machparam.h /usr/include/machine/endian.h
-getfile.o: ../h/inode.h ../h/fs.h ../stand/saio.h ../stand/saioctl.h
-getfile.o: ../stand/saerrno.h
-gets.o: ../stand/gets.c
-ls.o: ../stand/ls.c ../h/param.h /usr/include/sys/types.h ../h/signal.h
-ls.o: /usr/include/machine/trap.h /usr/include/machine/machparam.h
-ls.o: /usr/include/machine/endian.h ../h/inode.h ../h/dir.h ../h/fs.h
-ls.o: ../stand/saio.h ../stand/saioctl.h ../stand/saerrno.h
-prf.o: prf.c ../machine/mtpr.h ../h/param.h /usr/include/sys/types.h
-prf.o: ../h/signal.h /usr/include/machine/trap.h
-prf.o: /usr/include/machine/machparam.h /usr/include/machine/endian.h
-prf.o: ../tahoe/cp.h
-srt0.o: srt0.c ../machine/mtpr.h
-sys.o: ../stand/sys.c ../h/param.h /usr/include/sys/types.h ../h/signal.h
-sys.o: /usr/include/machine/trap.h /usr/include/machine/machparam.h
-sys.o: /usr/include/machine/endian.h ../h/inode.h ../h/fs.h ../h/dir.h
-sys.o: ../h/reboot.h ../stand/saio.h ../stand/saioctl.h ../stand/saerrno.h
-vd.o: vd.c ../machine/mtpr.h ../h/param.h /usr/include/sys/types.h
-vd.o: ../h/signal.h /usr/include/machine/trap.h
-vd.o: /usr/include/machine/machparam.h /usr/include/machine/endian.h
-vd.o: ../h/inode.h ../h/fs.h ../h/buf.h ../h/disklabel.h ../stand/saio.h
-vd.o: ../stand/saioctl.h ../stand/saerrno.h ../tahoevba/vdreg.h
-vd.o: ../tahoevba/vbaparam.h
-cy.o: cy.c ../machine/pte.h ../machine/mtpr.h ../h/param.h
-cy.o: /usr/include/sys/types.h ../h/signal.h /usr/include/machine/trap.h
-cy.o: /usr/include/machine/machparam.h /usr/include/machine/endian.h
-cy.o: ../h/inode.h ../h/fs.h ../stand/saio.h ../stand/saioctl.h
-cy.o: ../stand/saerrno.h ../tahoevba/cyreg.h ../tahoevba/vbaparam.h
-hdc.o: hdc.c /usr/include/machine/mtpr.h ../h/param.h ../h/types.h
-hdc.o: ../h/signal.h /usr/include/machine/trap.h ../h/../machine/machparam.h
-hdc.o: /usr/include/machine/endian.h ../h/inode.h ../h/fs.h ../h/buf.h
-hdc.o: ../h/ioctl.h ../h/ttychars.h ../h/ttydev.h ../h/disklabel.h
-hdc.o: ../stand/saio.h ../stand/saioctl.h ../stand/saerrno.h ../tahoevba/hdc.h
-
-# IF YOU PUT ANYTHING HERE IT WILL GO AWAY
