@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mkubglue.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)mkubglue.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -86,6 +86,10 @@ dump_vec(fp, vector, number)
 	fprintf(fp, "\tincl\t_fltintrcnt+(4*%d)\n", cntcnt++);
 	if (strncmp(vector, "dzx", 3) == 0)
 		fprintf(fp, "\tmovl\t$%d,r0\n\tjmp\tdzdma\n\n", number);
+	else if (strncmp(vector, "dpx", 3) == 0)
+		fprintf(fp, "\tmovl\t$%d,r0\n\tjmp\tdpxdma\n\n", number);
+	else if (strncmp(vector, "dpr", 3) == 0)
+		fprintf(fp, "\tmovl\t$%d,r0\n\tjmp\tdprdma\n\n", number);
 	else {
 		if (strncmp(vector, "uur", 3) == 0) {
 			fprintf(fp, "#ifdef UUDMA\n");
