@@ -12,14 +12,14 @@
 .\"*		1919 Addison Street Suite 304				*
 .\"*		Berkeley, California  94704				*
 .\"*									*
-.\"*	VERSION 2.22	First Release: 11 Sept 1978			*
+.\"*	VERSION 2.23	First Release: 11 Sept 1978			*
 .\"*	See file \*(||/revisions for revision history			*
 .\"*									*
 .\"*	Documentation is available.					*
 .\"*									*
 .\"**********************************************************************
 .\"
-.\"	@(#)tmac.orig_me	2.22	%G%
+.\"	@(#)tmac.orig_me	2.23	%G%
 .\"	%beginstrip%
 .\"
 .\"	Code on .de commands:
@@ -730,6 +730,12 @@
 .rn ]- @]
 .so \\*(||/refer.me
 .]-
+.rm @]
+..
+.de ]<			\" &&& initialize reference
+.rn ]< @]
+.so \\*(||/refer.me
+.]<
 .rm @]
 ..
 .if n .ds [. " [
