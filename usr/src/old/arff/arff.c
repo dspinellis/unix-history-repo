@@ -1,5 +1,5 @@
 #ifndef lint
-static	char sccsid[] = "@(#)arff.c	4.16 (Berkeley) 83/07/10";
+static	char sccsid[] = "@(#)arff.c	4.17 (Berkeley) 83/11/18";
 #endif
 
 #include <sys/types.h>
@@ -284,11 +284,11 @@ xcmd()
 	     segnum = rt_dir[segnum].rt_axhead.rt_nxtseg-1)
 		for (last = rt_last+(segnum*2*RT_BLOCK),
 		     de = ((char *)&rt_dir[segnum])+10; de <= last; 
-		     de += rt_entsiz)
+		     de += rt_entsiz) {
 			switch (rt(de)->rt_stat) {
 
 			case RT_ESEG:
-				return;
+				break;	/* exit loop and try next segment */
 
 			case RT_TEMP:
 			case RT_FILE:
@@ -296,8 +296,11 @@ xcmd()
 				rtx(name);
 
 			case RT_NULL:
-				break;
+			default:
+				continue;
 			}
+			break;
+		}
 }
 
 rtx(name)
