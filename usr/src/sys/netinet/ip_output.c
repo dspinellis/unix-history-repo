@@ -1,4 +1,4 @@
-/*	ip_output.c	6.1	83/07/29	*/
+/*	ip_output.c	6.2	83/10/22	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -72,7 +72,7 @@ ip_output(m, opt, ro, flags)
 		goto bad;
 	}
 	ro->ro_rt->rt_use++;
-	if (ro->ro_rt->rt_flags & RTF_GATEWAY)
+	if (ro->ro_rt->rt_flags & (RTF_GATEWAY|RTF_HOST))
 		dst = &ro->ro_rt->rt_gateway;
 gotif:
 #ifndef notdef
