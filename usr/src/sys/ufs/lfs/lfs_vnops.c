@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)lfs_vnops.c	7.9 (Berkeley) %G%
+ *	@(#)lfs_vnops.c	7.10 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -597,7 +597,7 @@ ufs_rename(fndp, tndp)
 		do {
 			dp = VTOI(tndp->ni_dvp);
 			if (xp != NULL)
-				vput(ITOV(xp));
+				iput(xp);
 			if (error = checkpath(ip, dp, tndp->ni_cred))
 				goto out;
 			if (error = namei(tndp))
@@ -704,6 +704,8 @@ ufs_rename(fndp, tndp)
 		xp = VTOI(fndp->ni_vp);
 		dp = VTOI(fndp->ni_dvp);
 	} else {
+		if (fndp->ni_dvp != NULL)
+			vput(fndp->ni_dvp);
 		xp = NULL;
 		dp = NULL;
 	}
