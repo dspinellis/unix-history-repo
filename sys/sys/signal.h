@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)signal.h	7.16 (Berkeley) 3/17/91
- *	$Id$
+ *	$Id: signal.h,v 1.3 1993/10/16 17:17:39 rgrimes Exp $
  */
 
 #ifndef	_SIGNAL_H_
@@ -173,11 +173,27 @@ struct	sigstack {
 struct	sigcontext {
 	int	sc_onstack;		/* sigstack state to restore */
 	int	sc_mask;		/* signal mask to restore */
-	int	sc_sp;			/* sp to restore */
-	int	sc_fp;			/* fp to restore */
-	int	sc_ap;			/* ap to restore */
-	int	sc_pc;			/* pc to restore */
-	int	sc_ps;			/* psl to restore */
+# ifdef i386
+	int	sc_esp;			/* machine state */
+	int     sc_ebp;
+	int     sc_isp;
+	int     sc_eip;
+	int     sc_efl;
+	int     sc_es;
+	int     sc_ds;
+	int     sc_cs;
+	int     sc_ss;
+	int     sc_edi;
+	int     sc_esi;
+	int     sc_ebx;
+	int     sc_edx;
+	int     sc_ecx;
+	int     sc_eax;
+#  define sc_sp sc_esp
+#  define sc_fp sc_ebp
+#  define sc_pc sc_eip
+#  define sc_ps sc_efl
+# endif
 };
 
 /*
