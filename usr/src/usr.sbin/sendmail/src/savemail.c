@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)savemail.c	8.44 (Berkeley) %G%";
+static char sccsid[] = "@(#)savemail.c	8.45 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -754,7 +754,14 @@ errbody(mci, e, separator, flags)
 		}
 
 		/* Final-MTS-Type: is required -- our type */
-		putline("Final-MTS-Type: Internet", mci);
+		if (e->e_parent->e_from.q_mailer->m_mtstype == NULL)
+			putline("Final-MTS-Type: Internet", mci);
+		else
+		{
+			(void) sprintf(buf, "Final-MTS-Type: %s",
+				e->e_parent->e_from.q_mailer->m_mtstype);
+			putline(buf, mci);
+		}
 
 		/* Final-MTA: seems silly -- this is in the From: line */
 		(void) sprintf(buf, "Final-MTA: %s", MyHostName);
@@ -863,7 +870,7 @@ errbody(mci, e, separator, flags)
 				putline(buf, mci);
 			}
 
-			/* Remote-MTS-Type: -- always INET?  XXX */
+			/* Remote-MTS-Type: -- depends on mailer */
 			if (q->q_mailer->m_mtstype != NULL)
 			{
 				(void) sprintf(buf, "Remote-MTS-Type: %s",
