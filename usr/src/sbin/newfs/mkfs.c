@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mkfs.c	6.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)mkfs.c	6.3 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -57,6 +57,8 @@ extern int	opt;		/* optimization preference (space or time) */
 extern int	density;	/* number of bytes per inode */
 extern int	maxcontig;	/* max contiguous blocks to allocate */
 extern int	rotdelay;	/* rotational delay between blocks */
+extern int	bbsize;		/* boot block size */
+extern int	sbsize;		/* superblock size */
 
 union {
 	struct fs fs;
@@ -157,9 +159,9 @@ mkfs(pp, fsys, fi, fo)
 	for (sblock.fs_fsbtodb = 0, i = NSPF(&sblock); i > 1; i >>= 1)
 		sblock.fs_fsbtodb++;
 	sblock.fs_sblkno =
-	    roundup(howmany(BBSIZE + SBSIZE, sblock.fs_fsize), sblock.fs_frag);
+	    roundup(howmany(bbsize + sbsize, sblock.fs_fsize), sblock.fs_frag);
 	sblock.fs_cblkno = (daddr_t)(sblock.fs_sblkno +
-	    roundup(howmany(SBSIZE, sblock.fs_fsize), sblock.fs_frag));
+	    roundup(howmany(sbsize, sblock.fs_fsize), sblock.fs_frag));
 	sblock.fs_iblkno = sblock.fs_cblkno + sblock.fs_frag;
 	sblock.fs_cgoffset = roundup(
 	    howmany(sblock.fs_nsect, NSPF(&sblock)), sblock.fs_frag);
@@ -399,7 +401,7 @@ next:
 	 */
 	fsinit();
 	sblock.fs_time = utime;
-	wtfs(SBLOCK, SBSIZE, (char *)&sblock);
+	wtfs(SBOFF / sectorsize, sbsize, (char *)&sblock);
 	for (i = 0; i < sblock.fs_cssize; i += sblock.fs_bsize)
 		wtfs(fsbtodb(&sblock, sblock.fs_csaddr + numfrags(&sblock, i)),
 			sblock.fs_cssize - i < sblock.fs_bsize ?
@@ -410,7 +412,7 @@ next:
 	 */
 	for (cylno = 0; cylno < sblock.fs_ncg; cylno++)
 		wtfs(fsbtodb(&sblock, cgsblock(&sblock, cylno)),
-		    SBSIZE, (char *)&sblock);
+		    sbsize, (char *)&sblock);
 	/*
 	 * Update information about this partion in pack
 	 * label, to that it may be updated on disk.

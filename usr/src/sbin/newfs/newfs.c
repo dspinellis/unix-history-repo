@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)newfs.c	6.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)newfs.c	6.5 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -91,6 +91,9 @@ int	secpercyl;		/* sectors per cylinder */
 int	trackspares = -1;	/* spare sectors per track */
 int	cylspares = -1;		/* spare sectors per cylinder */
 int	sectorsize;		/* bytes/sector */
+#ifdef tahoe
+int	realsectorsize;		/* bytes/sector in hardware */
+#endif
 int	rpm;			/* revolutions/minute of drive */
 int	interleave;		/* hardware sector interleave */
 int	trackskew = -1;		/* sector 0 skew, per track */
@@ -104,6 +107,8 @@ int	opt = DEFAULTOPT;	/* optimization preference (space or time) */
 int	density = NBPI;		/* number of bytes per inode */
 int	maxcontig = MAXCONTIG;	/* max contiguous blocks to allocate */
 int	rotdelay = ROTDELAY;	/* rotational delay between blocks */
+int	bbsize = BBSIZE;	/* boot block size */
+int	sbsize = SBSIZE;	/* superblock size */
 
 char	device[MAXPATHLEN];
 
@@ -411,14 +416,32 @@ next:
 			"disagrees with disk label", lp->d_secpercyl);
 	headswitch = lp->d_headswitch;
 	trackseek = lp->d_trkseek;
+	bbsize = lp->d_bbsize;
+	sbsize = lp->d_sbsize;
 	oldpartition = *pp;
+#ifdef tahoe
+	realsectorsize = sectorsize;
+	if (sectorsize != DEV_BSIZE) {
+		int secperblk = DEV_BSIZE / sectorsize;
+
+		sectorsize = DEV_BSIZE;
+		nsectors /= secperblk;
+		nphyssectors /= secperblk;
+		secpercyl /= secperblk;
+		fssize /= secperblk;
+		pp->p_size /= secperblk;
+	}
+#endif
 	mkfs(pp, special, fsi, fso);
+#ifdef tahoe
+	if (realsectorsize != DEV_BSIZE)
+		pp->p_size *= DEV_BSIZE / realsectorsize;
+#endif
 	if (!Nflag && bcmp(pp, &oldpartition, sizeof(oldpartition)))
 		rewritelabel(special, fso, lp);
 	exit(0);
 }
 
-#ifdef byioctl
 struct disklabel *
 getdisklabel(s, fd)
 	char *s;
@@ -445,84 +468,32 @@ rewritelabel(s, fd, lp)
 		perror("ioctl (GWINFO)");
 		fatal("%s: can't rewrite disk label", s);
 	}
-}
-#else byioctl
-char specname[64];
-char boot[BBSIZE];
-
-struct disklabel *
-getdisklabel(s, fd)
-	char *s;
-	int	fd;
-{
-	char *cp;
-	u_long magic = htonl(DISKMAGIC);
-	register struct disklabel *lp;
-	int cfd;
-
-	/*
-	 * Make name for 'c' partition.
-	 */
-	strcpy(specname, s);
-	cp = specname + strlen(specname) - 1;
-	if (!isdigit(*cp))
-		*cp = 'c';
-	cfd = open(specname, O_RDONLY);
-	if (cfd < 0) {
-		perror(specname);
-		exit(2);
-	}
-
-	if (read(cfd, boot, BBSIZE) < BBSIZE) {
-		perror(specname);
-		exit(2);
-	}
-	close(cfd);
-	for (lp = (struct disklabel *)(boot + LABELOFFSET);
-	    lp <= (struct disklabel *)(boot + BBSIZE -
-	    sizeof(struct disklabel));
-	    lp = (struct disklabel *)((char *)lp + 128))
-		if (lp->d_magic == magic && lp->d_magic2 == magic)
-			break;
-	if (lp > (struct disklabel *)(boot + BBSIZE -
-	    sizeof(struct disklabel)) ||
-	    lp->d_magic != magic || lp->d_magic2 != magic ||
-	    dkcksum(lp) != 0) {
-		fprintf(stderr,
-	"Bad pack magic number (label is damaged, or pack is unlabeled)\n");
-		exit(1);
-	}
-	return (lp);
-}
-
-rewritelabel(s, fd, lp)
-	char *s;
-	int fd;
-	register struct disklabel *lp;
-{
-	int cfd;
-
-	lp->d_checksum = 0;
-	lp->d_checksum = dkcksum(lp);
-	cfd = open(specname, O_WRONLY);
-	if (cfd < 0) {
-		perror(specname);
-		exit(2);
-	}
-	lseek(cfd, (off_t)0, L_SET);
-	if (write(cfd, boot, BBSIZE) < BBSIZE) {
-		perror(specname);
-		exit(2);
-	}
 #if vax
 	if (lp->d_type == DTYPE_SMD && lp->d_flags & D_BADSECT) {
 		register i;
+		int cfd;
 		daddr_t alt;
+		char specname[64];
+		char blk[1024];
 
+		/*
+		 * Make name for 'c' partition.
+		 */
+		strcpy(specname, s);
+		cp = specname + strlen(specname) - 1;
+		if (!isdigit(*cp))
+			*cp = 'c';
+		cfd = open(specname, O_WRONLY);
+		if (cfd < 0) {
+			perror(specname);
+			exit(2);
+		}
+		bzero(blk, sizeof(blk));
+		*(struct disklabel *)(blk + LABELOFFSET) = *lp;
 		alt = lp->d_ncylinders * lp->d_secpercyl - lp->d_nsectors;
 		for (i = 1; i < 11 && i < lp->d_nsectors; i += 2) {
 			lseek(cfd, (off_t)(alt + i) * lp->d_secsize, L_SET);
-			if (write(cfd, boot, lp->d_secsize) < lp->d_secsize) {
+			if (write(cfd, blk, lp->d_secsize) < lp->d_secsize) {
 				int oerrno = errno;
 				fprintf(stderr, "alternate label %d ", i/2);
 				errno = oerrno;
@@ -531,9 +502,7 @@ rewritelabel(s, fd, lp)
 		}
 	}
 #endif
-	close(cfd);
 }
-#endif byioctl
 
 /*VARARGS*/
 fatal(fmt, arg1, arg2)
