@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_vnops.c	7.86 (Berkeley) %G%
+ *	@(#)nfs_vnops.c	7.87 (Berkeley) %G%
  */
 
 /*
@@ -1479,7 +1479,8 @@ nfs_readdirrpc(vp, uiop, cred)
 				m_freem(mrep);
 				goto nfsmout;
 			}
-			dp->d_namlen = (u_short)len;
+			dp->d_namlen = (u_char)len;
+			dp->d_type = DT_UNKNOWN;
 			nfsm_adv(len);		/* Point past name */
 			tlen = nfsm_rndup(len);
 			/*
@@ -1492,7 +1493,7 @@ nfs_readdirrpc(vp, uiop, cred)
 				len = tlen;
 			}
 			nfsm_dissecton(tl, u_long *, 2*NFSX_UNSIGNED);
-			off = fxdr_unsigned(off_t, *tl);
+			off = fxdr_unsigned(u_long, *tl);
 			*tl++ = 0;	/* Ensures null termination of name */
 			more_dirs = fxdr_unsigned(int, *tl);
 			dp->d_reclen = len+4*NFSX_UNSIGNED;
@@ -1645,6 +1646,8 @@ nfs_readdirlookrpc(vp, uiop, cred)
 				dp->d_fileno = fileno;
 				dp->d_namlen = len;
 				dp->d_reclen = tlen + DIRHDSIZ;
+				dp->d_type =
+				    IFTODT(VTTOIF(np->n_vattr.va_type));
 				uiop->uio_resid -= DIRHDSIZ;
 				uiop->uio_iov->iov_base += DIRHDSIZ;
 				uiop->uio_iov->iov_len -= DIRHDSIZ;
