@@ -28,6 +28,7 @@ extern struct t {
 	char	*down;		/* ditto */
 	char	*right;		/* ditto */
 	char	*left;		/* ditto */
+	char	*eject;		/* sequence to eject page */
 
 	char	*codetab[NROFFCHARS-128];
 	char	width[NROFFCHARS];

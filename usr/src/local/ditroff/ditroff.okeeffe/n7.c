@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)n7.c	2.3 (CWI) 86/08/14";
+static char sccsid[] = "@(#)n7.c	2.4 (CWI) 86/08/15";
 #endif lint
 #include "tdef.h"
 #ifdef NROFF
@@ -430,6 +430,12 @@ nlpn:
 	}
 	if (print)
 		newpage(numtab[PN].val);	/* supposedly in a clean state so can pause */
+#ifdef NROFF
+	if (print && *t.eject) {
+		oputs(t.eject);
+		flusho();
+	}
+#endif
 	if (stop && print) {
 		dpn++;
 		if (dpn >= stop) {

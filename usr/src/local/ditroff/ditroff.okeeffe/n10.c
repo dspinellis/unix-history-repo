@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[]="@(#)n10.c	1.1	(CWI)	86/08/14";
+static char sccsid[]="@(#)n10.c	1.2	(CWI)	86/08/15";
 #endif
 
 /*
@@ -106,6 +106,7 @@ ptinit()
 	p = skipstr(p); p = getstr(p, t.down = p);
 	p = skipstr(p); p = getstr(p, t.right = p);
 	p = skipstr(p); p = getstr(p, t.left = p);
+	p = skipstr(p); p = getstr(p, t.eject = p);
 
 	getstr(p, check);
 	if (strcmp(check, "charset") != 0) {
