@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)if_ex.c	7.1 (Berkeley) %G%
+ *	@(#)if_ex.c	7.2 (Berkeley) %G%
  */
 
 #include "ex.h"
@@ -56,6 +56,13 @@
 #include "../netns/ns.h"
 #include "../netns/ns_if.h"
 #endif
+
+#ifdef ISO
+#include "../netiso/iso.h"
+#include "../netiso/iso_var.h"
+#include "../netiso/iso_snpac.h"
+extern struct snpa_cache all_es, all_is;
+#endif 
 
 #include "../tahoe/cpu.h"
 #include "../tahoe/pte.h"
@@ -111,32 +118,42 @@ struct	ex_softc {
 	struct	ex_msg	*xs_h2xnext;	/* host pointer to request queue */
 	struct	ex_msg 	*xs_x2hnext;	/* host pointer to reply queue */
 	u_long		xs_qbaddr;	/* map info for structs below */
+	struct	ex_shm	{
 	/* the following structures are always mapped in */
-	u_short		xs_h2xhdr;	/* EXOS's request queue header */
-	u_short		xs_x2hhdr;	/* EXOS's reply queue header */
-	struct ex_msg 	xs_h2xent[NH2X];/* request msg buffers */
-	struct ex_msg 	xs_x2hent[NX2H];/* reply msg buffers */
-	struct confmsg	xs_cm;		/* configuration message */
-	struct stat_array xs_xsa;	/* EXOS writes stats here */
+	u_short		sm_h2xhdr;	/* EXOS's request queue header */
+	u_short		sm_x2hhdr;	/* EXOS's reply queue header */
+	struct ex_msg 	sm_h2xent[NH2X];/* request msg buffers */
+	struct ex_msg 	sm_x2hent[NX2H];/* reply msg buffers */
+	struct ex_conf	sm_cm;		/* configuration message */
+	struct ex_stat	sm_xsa;	/* EXOS writes stats here */
 	/* end mapped area */
-#define	BUSADDR(x)	((0x3D000000 | ((u_long)(kvtophys(x))&0xFFFFFF)) + busoff)
-#define	P_BUSADDR(x)	((0x3D000000 | ((u_long)(kvtophys(x))&0xFFFFF0)) + busoff)
-#define	INCORE_BASE(p)	(((u_long)(&(p)->xs_h2xhdr)) & 0xFFFFFFF0)
-#define	RVAL_OFF(n)	((u_long)(&(ex_softc[0].n)) - INCORE_BASE(&ex_softc[0]))
-#define	LVAL_OFF(n)	((u_long)(ex_softc[0].n) - INCORE_BASE(&ex_softc[0]))
-#define	H2XHDR_OFFSET	RVAL_OFF(xs_h2xhdr)
-#define	X2HHDR_OFFSET	RVAL_OFF(xs_x2hhdr)
-#define	H2XENT_OFFSET	LVAL_OFF(xs_h2xent)
-#define	X2HENT_OFFSET	LVAL_OFF(xs_x2hent)
-#define	CM_OFFSET	RVAL_OFF(xs_cm)
-#define	SA_OFFSET	RVAL_OFF(xs_xsa)
-#define FreePkBuf(b) (((b)->iff_mbuf = (struct mbuf *)xs->xs_pkblist),\
-							(xs->xs_pkblist = b))
+	} 		*xs_shm;	/* host pointer to shared area */
+#define	xs_h2xhdr	xs_shm->sm_h2xhdr
+#define	xs_x2hhdr	xs_shm->sm_x2hhdr
+#define	xs_h2xent	xs_shm->sm_h2xent
+#define	xs_x2hent	xs_shm->sm_x2hent
+#define	xs_cm		xs_shm->sm_cm
+#define	xs_xsa		xs_shm->sm_xsa
+#define	BUSADDR(x)	(0x3D000000 | (((u_long)kvtophys(x))&0xFFFFFF))
+#define	P_BUSADDR(x)	(0x3D000000 | (((u_long)kvtophys(x))&0xFFFFF0))
+#define	INCORE_BASE(p)	(((u_long)(p)->xs_shm) & 0xFFFFFFF0)
+/* we will arrange that the shared memory begins on a 16 byte boundary */
+#define	RVAL_OFF(n)	(((char *)&(((struct ex_shm *)0)->n))-(char *)0)
+#define	LVAL_OFF(n)	(((char *)(((struct ex_shm *)0)->n))-(char *)0)
+#define	H2XHDR_OFFSET	RVAL_OFF(sm_h2xhdr)
+#define	X2HHDR_OFFSET	RVAL_OFF(sm_x2hhdr)
+#define	H2XENT_OFFSET	LVAL_OFF(sm_h2xent)
+#define	X2HENT_OFFSET	LVAL_OFF(sm_x2hent)
+#define	CM_OFFSET	RVAL_OFF(sm_cm)
+#define	SA_OFFSET	RVAL_OFF(sm_xsa)
 	struct		ifvba xs_vbinfo[NVBI];/* Bus Resources (low core) */
 	struct		ifvba *xs_pkblist; /* free list of above */
+#define GetPkBuf(b, v)  ((v = (b)->mb_pkb = xs->xs_pkblist),\
+		      (xs->xs_pkblist = (struct ifvba *)(v)->iff_mbuf))
+#define FreePkBuf(v) (((v)->iff_mbuf = (struct mbuf *)xs->xs_pkblist),\
+							(xs->xs_pkblist = v))
 	char		xs_nrec;	/* number of pending receive buffers */
 	char		xs_ntrb;	/* number of pending transmit buffers */
-	char		pad[6];		/* make BUSADDR macros */
 } ex_softc[NEX];
 
 int ex_padcheck = sizeof (struct ex_softc);
@@ -149,7 +166,7 @@ exprobe(reg, vi)
 	register struct exdevice *exaddr = (struct exdevice *)reg;
 	int	i;
 
-	if (badaddr(exaddr, 2))
+	if (badaddr((caddr_t)exaddr, 2))
 		return 0;
 	/*
 	 * Reset EXOS and run self-test (should complete within 2 seconds).
@@ -190,8 +207,14 @@ exattach(ui)
 	ifp->if_output = ether_output;
 	ifp->if_reset = exreset;
 	ifp->if_start = exstart;
+	ifp->if_flags = IFF_BROADCAST;
 
-	if (if_vbareserve(xs->xs_vbinfo, NVBI, EXMAXRBUF) == 0)
+	/*
+	 * Note: extra memory gets returned by if_vbareserve()
+	 * first, so, being page alligned, it is also 16-byte alligned.
+	 */
+	if (if_vbareserve(xs->xs_vbinfo, NVBI, EXMAXRBUF,
+			(caddr_t *)&xs->xs_shm, sizeof(*xs->xs_shm)) == 0)
 		return;
 	/*
 	 * Temporarily map queues in order to configure EXOS
@@ -210,9 +233,7 @@ exattach(ui)
 	bp->mb_status |= MH_EXOS;
 	movow(&exaddr->ex_portb, EX_NTRUPT);
 	bp = xs->xs_x2hnext;
-	do {
-		uncache(&bp->mb_status);
-	} while ((bp->mb_status & MH_OWNER) == MH_EXOS);/* poll for reply */
+	while ((bp->mb_status & MH_OWNER) == MH_EXOS);/* poll for reply */
 	printf("ex%d: HW %c.%c NX %c.%c, hardware address %s\n",
 		ui->ui_unit, xs->xs_cm.cm_vc[2], xs->xs_cm.cm_vc[3],
 		xs->xs_cm.cm_vc[0], xs->xs_cm.cm_vc[1],
@@ -276,9 +297,8 @@ int unit;
 	bp->mb_status |= MH_EXOS;
 	movow(&exaddr->ex_portb, EX_NTRUPT);
 	bp = xs->xs_x2hnext;
-	do {
-		uncache(&bp->mb_status);
-	} while ((bp->mb_status & MH_OWNER) == MH_EXOS);/* poll for reply */
+	while ((bp->mb_status & MH_OWNER) == MH_EXOS) /* poll for reply */
+		;
 	bp->mb_length = MBDATALEN;
 	bp->mb_status |= MH_EXOS;		/* free up buffer */
 	movow(&exaddr->ex_portb, EX_NTRUPT);
@@ -292,6 +312,10 @@ int unit;
 	xs->xs_flags |= EX_RUNNING;
 	if (xs->xs_flags & EX_SETADDR)
 		ex_setaddr((u_char *)0, unit);
+#ifdef ISO
+	ex_setmulti(all_es.sc_snpa, unit, 1);
+	ex_setmulti(all_is.sc_snpa, unit, 2);
+#endif
 	exstart(&ex_softc[unit].xs_if);		/* start transmits */
 	splx(s);		/* are interrupts disabled here, anyway? */
 }
@@ -307,7 +331,7 @@ int itype;
 	register int unit = ui->ui_unit;
 	register struct ex_softc *xs = &ex_softc[unit];
 	register struct exdevice *exaddr = (struct exdevice *) ui->ui_addr;
-	register struct confmsg *cm = &xs->xs_cm;
+	register struct ex_conf *cm = &xs->xs_cm;
 	register struct ex_msg 	*bp;
 	register struct ifvba *pkb;
 	int 	i;
@@ -381,7 +405,7 @@ int itype;
 	xs->xs_nrec = 0;
 	xs->xs_ntrb = 0;
 	xs->xs_pkblist =  xs->xs_vbinfo + NVBI - 1;
-	for (pkb = xs->xs_pkblist; pkb >= xs->xs_vbinfo; pkb--)
+	for (pkb = xs->xs_pkblist; pkb > xs->xs_vbinfo; pkb--)
 		pkb->iff_mbuf = (struct mbuf *)(pkb - 1);
 	xs->xs_vbinfo[0].iff_mbuf = 0;
 
@@ -428,8 +452,8 @@ struct ifnet *ifp;
 	register struct mbuf *m;
         int len;
 	register struct ifvba *pkb;
-	struct mbuf *m0;
-	register int nb, tlen;
+	struct mbuf *m0 = 0;
+	register int nb = 0, tlen = 0;
 	union l_util {
 		u_long	l;
 		struct	i86_long i;
@@ -453,18 +477,23 @@ struct ifnet *ifp;
 		return;
 	}
 	xs->xs_ntrb++;
-	bp->mb_pkb = pkb = xs->xs_pkblist;
-	xs->xs_pkblist = (struct ifvba *)pkb->iff_mbuf;
-	nb = 0; tlen = 0; m0 = 0;
+	GetPkBuf(bp, pkb);
 	pkb->iff_mbuf = m;	/* save mbuf pointer to free when done */
 	/*
 	 * point directly to the first group of mbufs to be transmitted. The
 	 * hardware can only support NFRAGMENTS descriptors.
 	 */
 	while (m && ((nb < NFRAGMENTS-1) || (m->m_next == 0)) ) {
-		l_util.l = BUSADDR(mtod(m, char *));
+		l_util.l = BUSADDR(mtod(m, caddr_t));
 		bp->mb_et.et_blks[nb].bb_len = (u_short)m->m_len;
 		bp->mb_et.et_blks[nb].bb_addr = l_util.i;
+		if (l_util.l + m->m_len > BUSADDR(VB_MAXADDR24)) {
+			/* Here, the phys memory for the mbuf is out
+			   of range for the vmebus to talk to it */
+			if (m == pkb->iff_mbuf)
+				pkb->iff_mbuf = 0;
+			break;
+		}
 		tlen += m->m_len;
 		m0 = m;
 		m = m->m_next;
@@ -482,7 +511,11 @@ struct ifnet *ifp;
 	 * transmit interrupt.
 	 */
 	if (m) {
-		len = if_vbaput(pkb->iff_buffer, m);
+		if (m == pkb->iff_mbuf) {
+			printf("ex%d: exstart insanity\n", unit);
+			pkb->iff_mbuf = 0;
+		}
+		len = if_vbaput(pkb->iff_buffer, m, 0);
 		l_util.l = BUSADDR(pkb->iff_buffer);
 		bp->mb_et.et_blks[nb].bb_len = (u_short)len;
 		bp->mb_et.et_blks[nb].bb_addr = l_util.i;
@@ -491,12 +524,18 @@ struct ifnet *ifp;
 	}
 
 	/*
-	 * If the total length of the packet is too small, pad the last frag
+	 * If the total length of the packet is too small,
+	 * pad the last fragment.  (May run into very obscure problems)
 	 */
-	if (tlen - sizeof(struct ether_header) < ETHERMIN) {
+	if (tlen < sizeof(struct ether_header) + ETHERMIN) {
 		len = (ETHERMIN + sizeof(struct ether_header)) - tlen;
 		bp->mb_et.et_blks[nb-1].bb_len += (u_short)len;
 		tlen += len;
+#ifdef notdef
+                if (l_util.l + m->m_len > BUSADDR(VB_MAXADDR24)) {
+			must copy last frag into private buffer
+		}
+#endif
 	}
 
 	/* set number of fragments in descriptor */
@@ -515,13 +554,15 @@ exintr(unit)
 	register struct ex_msg *bp = xs->xs_x2hnext;
 	struct vba_device *ui = exinfo[unit];
 	struct exdevice *exaddr = (struct exdevice *)ui->ui_addr;
+	struct ex_msg *next_bp;
 
-	uncache(&bp->mb_status);
 	while ((bp->mb_status & MH_OWNER) == MH_HOST) {
 		switch (bp->mb_rqst) {
 		    case LLRECEIVE:
-			if (--xs->xs_nrec < 0)
+			if (--xs->xs_nrec < 0) {
+				printf("ex%d: internal receive check\n", unit);
 				xs->xs_nrec = 0;
+			}
 			exrecv(unit, bp);
 			FreePkBuf(bp->mb_pkb);
 			bp->mb_pkb = (struct ifvba *)0;
@@ -530,10 +571,12 @@ exintr(unit)
 
 		    case LLTRANSMIT:
 		    case LLRTRANSMIT:
-			if (--xs->xs_ntrb < 0)
+			if (--xs->xs_ntrb < 0) {
+				printf("ex%d: internal transmit check\n", unit);
 				xs->xs_ntrb = 0;
+			}
 			xs->xs_if.if_opackets++;
-			if (bp->mb_rply == LL_OK)
+			if (bp->mb_rply == LL_OK || bp->mb_rply == LLXM_NSQE)
 				;
 			else if (bp->mb_rply & LLXM_1RTRY)
 				xs->xs_if.if_collisions++;
@@ -549,23 +592,31 @@ exintr(unit)
 			}
 			FreePkBuf(bp->mb_pkb);
 			bp->mb_pkb = (struct ifvba *)0;
-			exstart(&ex_softc[unit].xs_if);
+			exstart(&xs->xs_if);
 			exhangrcv(unit);
 			break;
 
 		    case LLNET_STSTCS:
 			xs->xs_if.if_ierrors += xs->xs_xsa.sa_crc;
 			xs->xs_flags &= ~EX_STATPENDING;
+		    case LLNET_ADDRS:
+		    case LLNET_RECV:
+			if (bp->mb_rply == LL_OK || bp->mb_rply == LLXM_NSQE)
+				;
+			else
+				printf("ex%d: %s, request 0x%x, reply 0x%x\n",
+				  unit, "unsucessful stat or address change",
+				  bp->mb_rqst, bp->mb_rply);
 			break;
 
 		    default:
 			printf("ex%d: unknown reply 0x%x", unit, bp->mb_rqst);
 		}
 		bp->mb_length = MBDATALEN;
+		next_bp = bp->mb_next;
 		bp->mb_status |= MH_EXOS;	/* free up buffer */
+		bp = next_bp;			/* paranoia about race */
 		movow(&exaddr->ex_portb, EX_NTRUPT); /* tell EXOS about it */
-		bp = bp->mb_next;
-		uncache(&bp->mb_status);
 	}
 	xs->xs_x2hnext = bp;
 }
@@ -583,7 +634,6 @@ int req;
 	int s = splimp();
 
 	bp = xs->xs_h2xnext;
-	uncache(&bp->mb_status);
 	if ((bp->mb_status & MH_OWNER) == MH_EXOS) {
 		splx(s);
 		return (struct ex_msg *)0;
@@ -681,9 +731,8 @@ exhangrcv(unit)
 		if ((bp = exgetcbuf(xs, LLRECEIVE)) == (struct ex_msg *)0) {
 			break;
 		}
-		pkb = bp->mb_pkb = xs->xs_pkblist;
-		xs->xs_pkblist = (struct ifvba *)bp->mb_pkb->iff_mbuf;
-
+		GetPkBuf(bp, pkb);
+		pkb->iff_mbuf = 0;
 		xs->xs_nrec += 1;
 		bp->mb_er.er_nblock = 1;
 		bp->mb_er.er_blks[0].bb_len = EXMAXRBUF;
@@ -797,44 +846,51 @@ ex_setaddr(physaddr, unit)
 	int unit;
 {
 	register struct ex_softc *xs = &ex_softc[unit];
-	struct vba_device *ui = exinfo[unit];
-	register struct exdevice *addr= (struct exdevice *)ui->ui_addr;
-	register struct ex_msg *bp;
 	
 	if (physaddr) {
 		xs->xs_flags |= EX_SETADDR;
 		bcopy((caddr_t)physaddr, (caddr_t)xs->xs_addr, 6);
 	}
-	if (! (xs->xs_flags & EX_RUNNING))
+	ex_setmulti((u_char *)xs->xs_addr, unit, PHYSSLOT);
+}
+
+/*
+ * Enable multicast reception for unit.
+ */
+ex_setmulti(linkaddr, unit, slot)
+	u_char *linkaddr;
+	int unit, slot;
+{
+	register struct ex_softc *xs = &ex_softc[unit];
+	struct vba_device *ui = exinfo[unit];
+	register struct exdevice *addr= (struct exdevice *)ui->ui_addr;
+	register struct ex_msg *bp;
+	
+	if (!(xs->xs_flags & EX_RUNNING))
 		return;
-	bp = exgetcbuf(xs);
-	bp->mb_rqst = LLNET_ADDRS;
+	bp = exgetcbuf(xs, LLNET_ADDRS);
 	bp->mb_na.na_mask = READ_OBJ|WRITE_OBJ;
-	bp->mb_na.na_slot = PHYSSLOT;
-	bcopy((caddr_t)xs->xs_addr, (caddr_t)bp->mb_na.na_addrs, 6);
+	bp->mb_na.na_slot = slot;
+	bcopy((caddr_t)linkaddr, (caddr_t)bp->mb_na.na_addrs, 6);
 	bp->mb_status |= MH_EXOS;
 	movow(&addr->ex_portb, EX_NTRUPT);
 	bp = xs->xs_x2hnext;
-	do {
-		uncache(&bp->mb_status);
-	} while ((bp->mb_status & MH_OWNER) == MH_EXOS);/* poll for reply */
+	while ((bp->mb_status & MH_OWNER) == MH_EXOS);/* poll for reply */
 #ifdef	DEBUG
-	log(LOG_DEBUG, "ex%d: reset addr %s\n", ui->ui_unit,
-		ether_sprintf(bp->mb_na.na_addrs));
+	log(LOG_DEBUG, "ex%d: %s %s (slot %d)\n", unit,
+		(slot == PHYSSLOT ? "reset addr" : "add multicast"
+		ether_sprintf(bp->mb_na.na_addrs), slot);
 #endif
 	/*
-	 * Now, re-enable reception on phys slot.
+	 * Now, re-enable reception on slot.
 	 */
-	bp = exgetcbuf(xs);
-	bp->mb_rqst = LLNET_RECV;
+	bp = exgetcbuf(xs, LLNET_RECV);
 	bp->mb_nr.nr_mask = ENABLE_RCV|READ_OBJ|WRITE_OBJ;
-	bp->mb_nr.nr_slot = PHYSSLOT;
+	bp->mb_nr.nr_slot = slot;
 	bp->mb_status |= MH_EXOS;
 	movow(&addr->ex_portb, EX_NTRUPT);
 	bp = xs->xs_x2hnext;
-	do {
-		uncache(&bp->mb_status);
-	} while ((bp->mb_status & MH_OWNER) == MH_EXOS);/* poll for reply */
+	while ((bp->mb_status & MH_OWNER) == MH_EXOS);/* poll for reply */
 		;
 }
 #endif

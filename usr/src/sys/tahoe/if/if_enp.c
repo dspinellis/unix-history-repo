@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)if_enp.c	7.4 (Berkeley) %G%
+ *	@(#)if_enp.c	7.5 (Berkeley) %G%
  */
 
 #include "enp.h"
@@ -129,7 +129,7 @@ enpattach(ui)
 	ifp->if_mtu = ETHERMTU;
 	ifp->if_init = enpinit;
 	ifp->if_ioctl = enpioctl;
-	ifp->if_output = enoutput;
+	ifp->if_output = ether_output;
 	ifp->if_start = enpstart;
 	ifp->if_reset = enpreset;
 	ifp->if_flags = IFF_BROADCAST | IFF_SIMPLEX;
@@ -243,7 +243,7 @@ enpread(es, bcbp)
 	m = enpget((u_char *)enp, len, off, &es->es_if);
 	if (m == 0)
 		return;
-	en_doproto(&es->es_if, enp, m);
+	ether_input(&es->es_if, enp, m);
 }
 
 enpstart(ifp)
@@ -417,7 +417,7 @@ enpioctl(ifp, cmd, data)
 
 	case SIOCSIFADDR:
 		ifp->if_flags |= IFF_UP;
-		switch (ifa->ifa_addr.sa_family) {
+		switch (ifa->ifa_addr->sa_family) {
 #ifdef INET
 		case AF_INET:
 			enpinit(ifp->if_unit);
