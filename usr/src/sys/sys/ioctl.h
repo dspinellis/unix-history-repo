@@ -1,4 +1,4 @@
-/*	ioctl.h	3.8	%G%	*/
+/*	ioctl.h	3.9	%G%	*/
 /*
  * ioctl definitions, and special character and local tty definitions
  */
@@ -19,9 +19,6 @@ struct ltchars {
 	char	t_flushc;	/* flush output (toggles) */
 	char	t_werasc;	/* word erase */
 	char	t_lnextc;	/* literal next character */
-	char	t_lerase;	/* local erase */
-	char	t_lkill;	/* local kill */
-	char	t_lintr;	/* local interrupt */
 };
 
 /*
@@ -82,6 +79,7 @@ struct ltchars {
 #define	TIOCOUTQ	(('t'<<8)|115)	/* number of chars in output queue */
 #define	TIOCSTI		(('t'<<8)|114)	/* simulate a terminal in character */
 
+#define	OTTYDISC	0
 #define	NETLDISC	1		/* line discip for berk net */
 #define	NTTYDISC	2
 
