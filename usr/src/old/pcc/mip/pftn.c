@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid ="@(#)pftn.c	1.21 (Berkeley) %G%";
+static char *sccsid ="@(#)pftn.c	1.22 (Berkeley) %G%";
 #endif lint
 
 # include "pass1.h"
@@ -1401,7 +1401,8 @@ nidcl( p ) NODE *p; { /* handle unitialized declarations */
 	defid( p, class );
 
 	/* if an array is not initialized, no empty dimension */
-	if( class!=EXTERN && ISARY(p->in.type) && dimtab[p->fn.cdim]==0 )
+	if( class!=EXTERN && class!=TYPEDEF &&
+	    ISARY(p->in.type) && dimtab[p->fn.cdim]==0 )
 		uerror("null storage definition");
 
 #ifndef LCOMM
