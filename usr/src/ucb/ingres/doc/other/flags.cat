@@ -1,0 +1,31 @@
+INGRES system flags:
+
+D	decomposition trace info
+G	GEOQUEL trace info
+L	disable map UPPER -> lower case
+M	terminal monitor trace info
+O	OVQP trace info
+P	parser trace info
+Q	query modification trace info
+T	support routine trace info
+Z	DBU trace info
+&	EQUEL flag
+a	automatic buffer clear on/off
+b	batch update on/off
+cN	set min "c" width to N
+d	dayfile on/off
+fWXM.N	set "fW" format to XM.N
+iWN	set "iW" format to N
+lN	set page length to N + 6 lines (default 60)
+rT	set ret into to T, default "isam".  (isam, cisam, hash, chash,
+	cheap).
+s	prompt character on/off
+uXX	set user code to XX
+
+Trace flags 0 -> 19 are used by the control monitor and should
+not be otherwise used.  Trace flags 20 -> 29 are used by the
+access methods and utility routines and are reserved.  Flags
+30 -> whatever are for general use by the process.
+
+Upper case are generally for system debugging, lower case flags are
+user flags.
