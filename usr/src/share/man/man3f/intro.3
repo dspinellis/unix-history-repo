@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)intro.3	6.3 (Berkeley) %G%
+.\"	@(#)intro.3	6.4 (Berkeley) %G%
 .\"
 .TH INTRO 3F ""
 .UC 5
@@ -18,6 +18,20 @@ programs.  They are automatically loaded as needed by the Fortran compiler
 except for the graphics interface routines.
 Those must be explicitly requested, see
 .IR plot (3f).
+.PP
+The math intrinsics required by the 1977 Fortran standard are
+available, although not described here.  In addition, the
+\fIabs\fP, \fIsqrt\fP, \fIexp\fP, \fIlog\fP, \fIsin\fP, and \fIcos\fP 
+intrinsics have been extended for double complex values.
+They may be referenced using the generic names listed above,
+or they may be referenced using their specific names that
+consist of the generic names preceded by either \fIcd\fP or
+\fIz\fP.  For example, if \fIzz\fP is double complex, then
+\fIsqrt(zz)\fP, \fIzsqrt(zz)\fP, or \fIcdsqrt(zz)\fP compute
+the square root of \fIzz\fP.  The \fIdcmplx\fP intrinsic
+forms a double complex value from two double precision variables
+or expressions, and the name of the specific function for the conjugate
+of a double complex value is \fIdconjg\fP.
 .PP
 Most of these functions are in libU77.a. 
 Some are in libF77.a or libI77.a.
