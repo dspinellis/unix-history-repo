@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_malloc.c	8.1 (Berkeley) %G%
+ *	@(#)kern_malloc.c	8.2 (Berkeley) %G%
  */
 
 #include <sys/param.h>
