@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pathnames.h	5.7 (Berkeley) %G%
+ *	@(#)pathnames.h	5.8 (Berkeley) %G%
  */
 
 #define	_PATH_BIN		"/bin"

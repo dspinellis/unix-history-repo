@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)dol.c	5.19 (Berkeley) %G%";
+static char sccsid[] = "@(#)dol.c	5.20 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -85,7 +85,7 @@ Dfix(t)
     if (noexec)
 	return;
     /* Note that t_dcom isn't trimmed thus !...:q's aren't lost */
-    for (pp = t->t_dcom; p = *pp++;)
+    for (pp = t->t_dcom; (p = *pp++) != NULL;)
 	for (; *p; p++) {
 	    if (cmap(*p, _DOL | QUOTES)) {	/* $, \, ', ", ` */
 		Dfix2(t->t_dcom);	/* found one */
@@ -317,7 +317,7 @@ DgetC(flag)
     register int c;
 
 top:
-    if (c = Dpeekc) {
+    if ((c = Dpeekc) != '\0') {
 	Dpeekc = 0;
 	return (c);
     }
@@ -333,7 +333,7 @@ quotspec:
 	return (c);
     }
     if (dolp) {
-	if (c = *dolp++ & (QUOTE | TRIM))
+	if ((c = *dolp++ & (QUOTE | TRIM)) != '\0')
 	    goto quotspec;
 	if (dolcnt > 0) {
 	    setDolp(*dolnxt++);
@@ -356,7 +356,7 @@ quotspec:
 }
 
 static Char *nulvec[] = {0};
-static struct varent nulargv = {nulvec, STRargv, 0};
+static struct varent nulargv = {nulvec, STRargv, { NULL, NULL, NULL }, 0};
 
 static void
 dolerror(s)
@@ -778,7 +778,7 @@ Dredc()
 {
     register int c;
 
-    if (c = Dpeekrd) {
+    if ((c = Dpeekrd) != '\0') {
 	Dpeekrd = 0;
 	return (c);
     }
@@ -849,7 +849,7 @@ heredoc(term)
 	    c = readc(1);	/* 1 -> Want EOF returns */
 	    if (c < 0 || c == '\n')
 		break;
-	    if (c &= TRIM) {
+	    if ((c &= TRIM) != '\0') {
 		*lbp++ = c;
 		if (--lcnt < 0) {
 		    setname("<<");
@@ -874,7 +874,7 @@ heredoc(term)
 	if (quoted || noexec) {
 	    *lbp++ = '\n';
 	    *lbp = 0;
-	    for (lbp = lbuf; c = *lbp++;) {
+	    for (lbp = lbuf; (c = *lbp++) != '\0';) {
 		*obp++ = c;
 		if (--ocnt == 0) {
 		    (void) write(0, short2str(obuf), BUFSIZ);

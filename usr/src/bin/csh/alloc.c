@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)alloc.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)alloc.c	5.14 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -94,5 +94,5 @@ showall(v, t)
 {
     memtop = (char *) sbrk(0);
     (void) fprintf(cshout, "Allocated memory from 0x%lx to 0x%lx (%ld).\n",
-	    membot, memtop, memtop - membot);
+	    (unsigned long) membot, (unsigned long) memtop, memtop - membot);
 }

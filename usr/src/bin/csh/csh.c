@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)csh.c	5.37 (Berkeley) %G%";
+static char sccsid[] = "@(#)csh.c	5.38 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -395,7 +395,7 @@ main(argc, argv)
      * Note that in only the login shell is it likely that parent may have set
      * signals to be ignored
      */
-    if (loginsh || intact || intty && isatty(SHOUT))
+    if (loginsh || intact || (intty && isatty(SHOUT)))
 	setintr = 1;
     settell();
     /*
@@ -764,7 +764,7 @@ rechist()
 	 * If $savehist is just set, we use the value of $history
 	 * else we use the value in $savehist
 	 */
-	if (shist = adrof(STRsavehist)) {
+	if ((shist = adrof(STRsavehist)) != NULL) {
 	    if (shist->vec[0][0] != '\0')
 		(void) Strcpy(hbuf, shist->vec[0]);
 	    else if ((shist = adrof(STRhistory)) && shist->vec[0][0] != '\0')
@@ -890,9 +890,9 @@ pintr1(wantnl)
     if (gointr) {
 	gotolab(gointr);
 	timflg = 0;
-	if (v = pargv)
+	if ((v = pargv) != NULL)
 	    pargv = 0, blkfree(v);
-	if (v = gargv)
+	if ((v = gargv) != NULL)
 	    gargv = 0, blkfree(v);
 	reset();
     }
@@ -994,7 +994,7 @@ process(catch)
 	 * Echo not only on VERBOSE, but also with history expansion. If there
 	 * is a lexical error then we forego history echo.
 	 */
-	if (lex(&paraml) && !seterr && intty || adrof(STRverbose)) {
+	if ((lex(&paraml) && !seterr && intty) || adrof(STRverbose)) {
 	    prlex(csherr, &paraml);
 	}
 
@@ -1011,7 +1011,7 @@ process(catch)
 	 * PWP: entry of items in the history list while in a while loop is done
 	 * elsewhere...
 	 */
-	if (enterhist || catch && intty && !whyles)
+	if (enterhist || (catch && intty && !whyles))
 	    savehist(&paraml);
 
 	/*
@@ -1109,7 +1109,7 @@ mailchk()
 	new = stb.st_mtime > time0.tv_sec;
 	if (stb.st_size == 0 || stb.st_atime > stb.st_mtime ||
 	    (stb.st_atime < chktim && stb.st_mtime < chktim) ||
-	    loginsh && !new)
+	    (loginsh && !new))
 	    continue;
 	if (cnt == 1)
 	    (void) fprintf(cshout, "You have %smail.\n", new ? "new " : "");
@@ -1137,7 +1137,7 @@ gethdir(home)
      * Is it us?
      */
     if (*home == '\0') {
-	if (h = value(STRhome)) {
+	if ((h = value(STRhome)) != NULL) {
 	    (void) Strcpy(home, h);
 	    return 0;
 	}
@@ -1145,7 +1145,7 @@ gethdir(home)
 	    return 1;
     }
 
-    if (pw = getpwnam(short2str(home))) {
+    if ((pw = getpwnam(short2str(home))) != NULL) {
 	(void) Strcpy(home, str2short(pw->pw_dir));
 	return 0;
     }

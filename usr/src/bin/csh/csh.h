@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)csh.h	5.24 (Berkeley) %G%
+ *	@(#)csh.h	5.25 (Berkeley) %G%
  */
 
 /*
@@ -44,6 +44,12 @@ typedef char Char;
 
 #define SAVE(a) (strsave(a))
 #endif
+
+/*
+ * Make sure a variable is not stored in a register by taking its address
+ * This is used where variables might be clobbered by longjmp.
+ */
+#define UNREGISTER(a)	(void) &a
 
 typedef void *ioctl_t;		/* Third arg of ioctl */
 

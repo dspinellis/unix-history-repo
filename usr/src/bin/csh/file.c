@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)file.c	5.23 (Berkeley) %G%";
+static char sccsid[] = "@(#)file.c	5.24 (Berkeley) %G%";
 #endif /* not lint */
 
 #ifdef FILEC
@@ -141,7 +141,7 @@ pushback(string)
     tty.c_lflag &= ~(ECHOKE | ECHO | ECHOE | ECHOK | ECHONL | ECHOPRT | ECHOCTL);
     (void) tcsetattr(SHOUT, TCSANOW, &tty);
 
-    for (p = string; c = *p; p++)
+    for (p = string; (c = *p) != '\0'; p++)
 	(void) ioctl(SHOUT, TIOCSTI, (ioctl_t) & c);
     (void) tcsetattr(SHOUT, TCSANOW, &tty_normal);
     (void) sigsetmask(omask);
@@ -371,7 +371,7 @@ getentry(dir_fd, looking_for_lognames)
 	    return (NULL);
 	return (str2short(pw->pw_name));
     }
-    if (dirp = readdir(dir_fd))
+    if ((dirp = readdir(dir_fd)) != NULL)
 	return (str2short(dirp->d_name));
     return (NULL);
 }
@@ -435,7 +435,7 @@ tsearch(word, command, max_word_length)
 
 again:				/* search for matches */
     name_length = Strlen(name);
-    for (numitems = 0; entry = getentry(dir_fd, looking_for_lognames);) {
+    for (numitems = 0; (entry = getentry(dir_fd, looking_for_lognames)) != NULL;) {
 	if (!is_prefix(name, entry))
 	    continue;
 	/* Don't match . files on null prefix match */
