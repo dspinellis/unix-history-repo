@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)iso_snpac.c	7.17 (Berkeley) %G%
+ *	@(#)iso_snpac.c	7.18 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -75,7 +75,7 @@ static struct sockaddr_iso
 	gte	= {sizeof(dst), AF_ISO},
 	src	= {sizeof(dst), AF_ISO},
 	msk	= {sizeof(dst), AF_ISO},
-	zmk = {1};
+	zmk = {0};
 #define zsi blank_siso
 #define zero_isoa	zsi.siso_addr
 #define zap_isoaddr(a, b) {Bzero(&a.siso_addr, sizeof(*r)); r = b; \
@@ -388,7 +388,7 @@ int					nsellength;	/* nsaps may differ only in trailing bytes */
 		panic("snpac_rtrequest");
 	rt->rt_rmx.rmx_expire = ht + time.tv_sec;
 	lc->lc_flags = SNPA_VALID | type;
-	if (type & SNPA_IS)
+	if ((type & SNPA_IS) && !(iso_systype & SNPA_IS))
 		snpac_logdefis(rt);
 	return (new_entry);
 }
@@ -481,24 +481,23 @@ register struct rtentry *sc;
 {
 	register struct iso_addr *r;
 	register struct sockaddr_dl *sdl = (struct sockaddr_dl *)sc->rt_gateway;
-	register struct rtentry *rt = rtalloc1((struct sockaddr *)&zsi, 0);
+	register struct rtentry *rt;
 
-	zap_linkaddr((&gte_dl), LLADDR(sdl), sdl->sdl_alen, sdl->sdl_index);
-	gte_dl.sdl_type = sc->rt_ifp->if_type;
-	if (known_is == 0)
-		known_is = sc;
-	if (known_is != sc) {
-		rtfree(known_is);
-		known_is = sc;
-	}
-	if (rt == 0) {
-		rtrequest(RTM_ADD, S(zsi), S(gte_dl), S(zmk),
-						RTF_DYNAMIC|RTF_GATEWAY|RTF_CLONING, 0);
+	if (known_is == sc || !(sc->rt_flags & RTF_HOST))
 		return;
+	if (known_is) {
+		RTFREE(known_is);
 	}
-	rt->rt_refcnt--;
-	if (rt->rt_flags & (RTF_DYNAMIC | RTF_MODIFIED)) {
-		*((struct sockaddr_dl *)rt->rt_gateway) = gte_dl;
+	known_is = sc;
+	sc->rt_refcnt++;
+	rt = rtalloc1((struct sockaddr *)&zsi, 0);
+	if (rt == 0)
+		rtrequest(RTM_ADD, S(zsi), rt_key(sc), S(zmk),
+						RTF_DYNAMIC|RTF_GATEWAY, 0);
+	else {
+		if ((rt->rt_flags & RTF_DYNAMIC) && 
+		    (rt->rt_flags & RTF_GATEWAY) && rt_mask(rt)->sa_len == 0)
+			rt_setgate(rt, rt_key(rt), rt_key(sc));
 	}
 }
 
@@ -532,12 +531,10 @@ snpac_age()
 
 	for (lc = llinfo_llc.lc_next; lc != & llinfo_llc; lc = nlc) {
 		nlc = lc->lc_next;
-		if (((lc->lc_flags & SNPA_PERM) == 0) && (lc->lc_flags & SNPA_VALID)) {
+		if (lc->lc_flags & SNPA_VALID) {
 			rt = lc->lc_rt;
 			if (rt->rt_rmx.rmx_expire && rt->rt_rmx.rmx_expire < time.tv_sec)
 				snpac_free(lc);
-			else
-				continue;
 		}
 	}
 }
