@@ -220,7 +220,7 @@ another:
 usage:
 	fprintf(stderr,
 #ifdef	KERBEROS
-	    "usage: rlogin host [ -ex ] [ -l username ] [ -8 ] [ -L ] [ -x ]\n");
+	    "usage: rlogin host [ -ex ] [ -l username ] [ -k realm ] [ -8 ] [ -L ] [ -x ]\n");
 #else
 	    "usage: rlogin host [ -ex ] [ -l username ] [ -8 ] [ -L ]\n");
 #endif
