@@ -1,4 +1,4 @@
-#	@(#)README	5.6 (Berkeley) %G%
+#	@(#)README	5.7 (Berkeley) %G%
 
 The script file consists of lines with a initial character which is
 the "command" for that line.  Legal characters are as follows:
@@ -34,6 +34,7 @@ o [r]: dump [reverse]
 
 Options to dbtest are as follows:
 
+	-f: Use the file argument as the database file.
 	-i: Use the rest of the argument to set elements in the info
 	    structure.  If the type is btree, then "-i cachesize=10240"
 	    will set BTREEINFO.cachesize to 10240.
