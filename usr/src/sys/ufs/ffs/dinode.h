@@ -1,4 +1,4 @@
-/*	dinode.h	4.3	81/02/19	*/
+/*	dinode.h	4.4	81/02/27	*/
 
 /*
  * The I node is the focus of all
@@ -56,7 +56,8 @@ struct	inode
 };
 
 #ifdef KERNEL
-extern	struct inode inode[];	/* The inode table itself */
+extern	struct inode *inode, *inodeNINODE;/* The inode table itself */
+extern	int ninode;
 
 struct	inode *rootdir;		/* pointer to inode of root directory */
 struct	inode *mpxip;		/* mpx virtual inode */

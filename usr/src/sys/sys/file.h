@@ -1,4 +1,4 @@
-/*	file.h	4.3	81/02/19	*/
+/*	file.h	4.4	81/02/27	*/
 
 /*
  * One file structure is allocated
@@ -15,14 +15,12 @@ struct	file
 	union {
 		off_t	f_offset;	/* read/write character pointer */
 		struct chan *f_chan;	/* mpx channel pointer */
-#ifdef CHAOS
-		struct connection *f_conn;
-#endif
 	} f_un;
 };
 
 #ifdef	KERNEL
-extern	struct file file[];		/* the file table itself */
+extern	struct file *file, *fileNFILE;	/* the file table itself */
+extern	int nfile;
 
 struct	file *getf();
 struct	file *falloc();

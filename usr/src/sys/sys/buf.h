@@ -1,4 +1,4 @@
-/*	buf.h	4.8	81/02/19	*/
+/*	buf.h	4.9	81/02/27	*/
 
 /*
  * The header for buffers in the buffer pool and otherwise used
@@ -62,8 +62,10 @@ struct buf
 #define	BQ_AGE		2		/* rubbish */
 
 #ifdef	KERNEL
-extern	struct buf buf[];		/* the buffer pool itself */
-extern	struct buf swbuf[];		/* swap I/O headers */
+extern	struct buf *buf;		/* the buffer pool itself */
+extern	int nbuf;
+extern	struct buf *swbuf;		/* swap I/O headers */
+extern	int nswbuf;
 extern	struct buf bfreelist[BQUEUES];	/* heads of available lists */
 extern	struct buf bswlist;		/* head of free swap header list */
 extern	struct buf *bclnlist;		/* head of cleaned page list */
@@ -77,8 +79,6 @@ struct	buf *breada();
 
 unsigned minphys();
 #endif
-
-#define	NSWBUF	48			/* number of swap I/O headers */
 
 /*
  * These flags are kept in b_flags.
