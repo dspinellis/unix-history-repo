@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)paths.h	5.16 (Berkeley) %G%
+ *	@(#)paths.h	5.17 (Berkeley) %G%
  */
 
 #ifndef _PATHS_H_
@@ -25,6 +25,7 @@
 #define	_PATH_MEM	"/dev/mem"
 #define	_PATH_NOLOGIN	"/etc/nologin"
 #define	_PATH_SENDMAIL	"/usr/sbin/sendmail"
+#define	_PATH_SHELLS	"/etc/shells"
 #define	_PATH_TTY	"/dev/tty"
 #define	_PATH_UNIX	"/vmunix"
 #define	_PATH_VI	"/usr/bin/vi"
