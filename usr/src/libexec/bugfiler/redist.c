@@ -6,38 +6,42 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)redist.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)redist.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
+
+#include <ctype.h>
 #include <dirent.h>
 #include <stdio.h>
-#include <ctype.h>
 #include <string.h>
+
 #include "bug.h"
 #include "pathnames.h"
+#include "extern.h"
 
 /*
  * redist --
  *	Redistribute a bug report to those people indicated in the
  *	redistribution list file.
  */
+void
 redist()
 {
 	extern FILE	*dfp;		/* dist file fp */
 	extern char	pfile[];	/* permanent bug file */
 	register char	*C1, *C2;
-	FILE	*pf, *popen();
+	FILE	*pf;
 	int	group;
-	char	*p, *index();
 
 	(void)sprintf(bfr, "%s/%s", dir, DIST_FILE);
 	if (!freopen(bfr, "r", stdin))
 		return;
 	for (pf = NULL, group = 0; fgets(bfr, sizeof(bfr), stdin);) {
-		if (C1 = index(bfr, '\n'))
+		if (C1 = strchr(bfr, '\n'))
 			*C1 = '\0';
-nextline:	if (*bfr == COMMENT || isspace(*bfr) || !(C1 = index(bfr, ':')))
+nextline:	if (*bfr == COMMENT ||
+		    isspace(*bfr) || !(C1 = index(bfr, ':')))
 			continue;
 		*C1 = EOS;
 		if (!strcmp(bfr, folder) || !strcmp(bfr, "all")) {
@@ -56,7 +60,7 @@ nextline:	if (*bfr == COMMENT || isspace(*bfr) || !(C1 = index(bfr, ':')))
 				if (!mailhead[TO_TAG].line) {
 					if (mailhead[APPAR_TO_TAG].line)
 					    fprintf(pf, "To%s",
-					      index(mailhead[APPAR_TO_TAG].line,
+				      strchr(mailhead[APPAR_TO_TAG].line,
 					      ':'));
 					else
 					    fprintf(pf, "To: %s\n",  BUGS_ID);
@@ -71,12 +75,12 @@ nextline:	if (*bfr == COMMENT || isspace(*bfr) || !(C1 = index(bfr, ':')))
 			if (group++)
 				fputs(", ", pf);
 			for (;;) {
-				if (C2 = index(C1, '\\'))
+				if (C2 = strchr(C1, '\\'))
 					*C2 = EOS;
 				fputs(C1, pf);
 				if (!fgets(bfr, sizeof(bfr), stdin))
 					break;
-				if (C1 = index(bfr, '\n'))
+				if (C1 = strchr(bfr, '\n'))
 					*C1 = '\0';
 				if (*bfr != ' ' && *bfr != '\t')
 					goto nextline;

@@ -6,15 +6,19 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)error.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)error.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
+
 #include <dirent.h>
-#include <syslog.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <syslog.h>
+
 #include "bug.h"
+#include "extern.h"
 
 static short	err_redir;			/* stderr redirected */
 
@@ -22,6 +26,7 @@ static short	err_redir;			/* stderr redirected */
  * seterr --
  *	redirect stderr for error processing
  */
+void
 seterr()
 {
 	if (!freopen(ERROR_FILE, "a", stderr))
@@ -33,12 +38,12 @@ seterr()
  * error --
  *	write errors to log file and die
  */
+void
 error(fmt, arg)
 	register char	*fmt,
 			*arg;
 {
 	static char	logmsg[MAXLINELEN];	/* syslog message */
-	char	*strcpy(), *strcat();
 
 	if (err_redir) {
 		/* don't combine these, "fmt" may not require "arg" */

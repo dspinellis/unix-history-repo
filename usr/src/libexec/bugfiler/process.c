@@ -6,32 +6,37 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)process.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)process.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/time.h>
-#include <fcntl.h>
-#include <dirent.h>
-#include <unistd.h>
-#include <stdio.h>
+
 #include <ctype.h>
+#include <dirent.h>
+#include <fcntl.h>
+#include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
+
 #include "bug.h"
+#include "extern.h"
 
 char	pfile[MAXPATHLEN];			/* permanent file name */
+
+static int getnext __P((void));
 
 /*
  * process --
  *	copy report to permanent file,
  *	update summary file.
  */
+int
 process()
 {
 	register int	rval;			/* read return value */
 	struct timeval	tp;			/* time of day */
 	int	lfd;				/* lock file descriptor */
-	static int getnext();
 
 	if (access(LOCK_FILE, R_OK) || (lfd = open(LOCK_FILE, O_RDONLY, 0)) < 0)
 		error("can't find lock file %s.", LOCK_FILE);
@@ -52,7 +57,9 @@ process()
 		error("can't append to summary file %s.", bfr);
 	if (gettimeofday(&tp, (struct timezone *)NULL))
 		error("can't get time of day.", CHN);
-	printf("\n%s\t\t%s\t%s\t%s\tOwner: Bugs Bunny\n\tStatus: Received\n", pfile, ctime(&tp.tv_sec), mailhead[INDX_TAG].line, mailhead[SUBJ_TAG].found ? mailhead[SUBJ_TAG].line : "Subject:\n");
+	printf("\n%s\t\t%s\t%s\t%s\tOwner: Bugs Bunny\n\tStatus: Received\n",
+	    pfile, ctime(&tp.tv_sec), mailhead[INDX_TAG].line,
+	    mailhead[SUBJ_TAG].found ? mailhead[SUBJ_TAG].line : "Subject:\n");
 	(void)flock(lfd, LOCK_UN);
 	(void)fclose(stdout);
 }
