@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ww.h	3.65 (Berkeley) %G%
+ *	@(#)ww.h	3.66 (Berkeley) %G%
  */
 
 #ifdef OLD_TTY
@@ -230,8 +230,9 @@ char *wwib;		/* input (keyboard) buffer */
 char *wwibe;		/* wwib + sizeof buffer */
 char *wwibp;		/* current read position in buffer */
 char *wwibq;		/* current write position in buffer */
-#define wwgetc()	(wwibp < wwibq ? *wwibp++ & 0x7f : -1)
-#define wwpeekc()	(wwibp < wwibq ? *wwibp & 0x7f : -1)
+#define wwmaskc(c)	((c) & 0x7f)
+#define wwgetc()	(wwibp < wwibq ? wwmaskc(*wwibp++) : -1)
+#define wwpeekc()	(wwibp < wwibq ? wwmaskc(*wwibp) : -1)
 #define wwungetc(c)	(wwibp > wwib ? *--wwibp = (c) : -1)
 
 	/* things for short circuiting wwiomux() */
