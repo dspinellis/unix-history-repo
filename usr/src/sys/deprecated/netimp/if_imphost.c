@@ -1,4 +1,4 @@
-/*	if_imphost.c	4.13	82/06/20	*/
+/*	if_imphost.c	4.14	82/10/05	*/
 
 #include "imp.h"
 #if NIMP > 0
@@ -86,7 +86,6 @@ hostenter(addr)
 			return (0);
 		}
 		*mprev = m;
-		m->m_off = MMINOFF;
 		hp0 = &mtod(m, struct hmbuf *)->hm_hosts[hash];
 	}
 	mtod(dtom(hp0), struct hmbuf *)->hm_count++;

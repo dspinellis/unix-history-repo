@@ -1,4 +1,4 @@
-/*	tcp_subr.c	4.28	82/06/26	*/
+/*	tcp_subr.c	4.29	82/10/05	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -104,7 +104,6 @@ tcp_respond(tp, ti, ack, seq, flags)
 		m = m_get(M_DONTWAIT);
 		if (m == 0)
 			return;
-		m->m_off = MMINOFF;
 		m->m_len = sizeof (struct tcpiphdr) + 1;
 		*mtod(m, struct tcpiphdr *) = *ti;
 		ti = mtod(m, struct tcpiphdr *);

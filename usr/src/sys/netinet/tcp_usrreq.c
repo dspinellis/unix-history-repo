@@ -1,4 +1,4 @@
-/*	tcp_usrreq.c	1.63	82/10/05	*/
+/*	tcp_usrreq.c	1.64	82/10/05	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -238,27 +238,12 @@ tcp_usrreq(so, req, m, nam, opt)
 		break;
 
 	case PRU_SENDOOB:
-#ifdef TCPTRUEOOB
-		if (tp->t_flags & TF_DOOOB) {
-			tp->t_oobseq++;
-			tp->t_oobc = *mtod(m, caddr_t);
-			tp->t_oobmark = tp->snd_una + so->so_snd.sb_cc;
-			tp->t_oobflags |= TCPOOB_NEEDACK;
-			/* what to do ...? */
-			if (error = tcp_output(tp))
-				break;
-		}
-#endif
 		if (sbspace(&so->so_snd) < -512) {
 			error = ENOBUFS;
 			break;
 		}
 		tp->snd_up = tp->snd_una + so->so_snd.sb_cc + 1;
 		sbappend(&so->so_snd, m);
-#ifdef notdef
-		if (tp->t_flags & TF_PUSH)
-			tp->snd_end = tp->snd_una + so->so_snd.sb_cc;
-#endif
 		tp->t_force = 1;
 		error = tcp_output(tp);
 		tp->t_force = 0;

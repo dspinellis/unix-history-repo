@@ -1,4 +1,4 @@
-/*	ip_input.c	1.49	82/09/12	*/
+/*	ip_input.c	1.50	82/10/05	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -233,7 +233,6 @@ ip_reass(ip, fp)
 	if (fp == 0) {
 		if ((t = m_get(M_WAIT)) == NULL)
 			goto dropfrag;
-		t->m_off = MMINOFF;
 		fp = mtod(t, struct ipq *);
 		insque(fp, &ipq);
 		fp->ipq_ttl = IPFRAGTTL;
