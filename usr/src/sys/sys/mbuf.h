@@ -1,4 +1,4 @@
-/* mbuf.h 4.9 81/12/20 */
+/* mbuf.h 4.10 81/12/23 */
 
 /*
  * Constants related to memory allocator.
@@ -83,6 +83,6 @@ int	nmbclusters;
 struct	mbuf *mfree, *mclfree;
 int	nmclfree;
 char	mclrefcnt[NMBCLUSTERS];
-struct	mbuf *m_get(), *m_getclr(), *m_free(), *m_more(), *m_copy();
+struct	mbuf *m_get(),*m_getclr(),*m_free(),*m_more(),*m_copy(),*m_pullup();
 caddr_t	m_clalloc();
 #endif
