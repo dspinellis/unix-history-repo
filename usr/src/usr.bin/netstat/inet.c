@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)inet.c	4.9 83/03/11";
+static char sccsid[] = "@(#)inet.c	4.10 83/03/11";
 #endif
 
 #include <sys/types.h>
@@ -222,7 +222,7 @@ icmp_stats(off, name)
 		icmpstat.icps_oldshort);
 	printf("\t%d errors not generated 'cuz old message was icmp\n",
 		icmpstat.icps_oldicmp);
-	for (first = 0, i = 0; i < ICMP_IREQREPLY + 1; i++)
+	for (first = 1, i = 0; i < ICMP_IREQREPLY + 1; i++)
 		if (icmpstat.icps_outhist[i] != 0) {
 			if (first) {
 				printf("\tOutput histogram:\n");
@@ -234,8 +234,8 @@ icmp_stats(off, name)
 	printf("\t%d messages < minimum length\n", icmpstat.icps_tooshort);
 	printf("\t%d bad checksums\n", icmpstat.icps_checksum);
 	printf("\t%d messages with bad length\n", icmpstat.icps_badlen);
-	printf("\t%d messages respondes generated\n", icmpstat.icps_reflect);
-	for (first = 0, i = 0; i < ICMP_IREQREPLY + 1; i++)
+	printf("\t%d messages responses generated\n", icmpstat.icps_reflect);
+	for (first = 1, i = 0; i < ICMP_IREQREPLY + 1; i++)
 		if (icmpstat.icps_inhist[i] != 0) {
 			if (first) {
 				printf("\tInput histogram:\n");
