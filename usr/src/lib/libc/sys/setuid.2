@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)setuid.2	6.1 (Berkeley) %G%
+.\"	@(#)setuid.2	6.2 (Berkeley) %G%
 .\"
 .TH SETUID 3 "" 
 .UC 5
@@ -10,13 +10,22 @@
 setuid, seteuid, setruid, setgid, setegid, setrgid \- set user and group ID
 .SH SYNOPSIS
 .nf
-.B setuid(uid)
-.B seteuid(euid)
-.B setruid(ruid)
+.ft B
+#include <sys/types.h>
 .PP
-.B setgid(gid)
-.B setegid(egid)
-.B setrgid(rgid)
+.ft B
+.nf
+setuid(uid)
+seteuid(euid)
+setruid(ruid)
+uid_t uid, euid, ruid;
+.PP
+.ft B
+.nf
+setgid(gid)
+setegid(egid)
+setrgid(rgid)
+gid_t gid, egid, rgid;
 .fi
 .SH DESCRIPTION
 .I Setuid
