@@ -1,4 +1,4 @@
-/*	tty_conf.c	4.1	82/10/17	*/
+/*	tty_conf.c	4.2	82/10/17	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -49,8 +49,6 @@ struct	linesw linesw[] =
 	nodev, nodev, nodev, nodev, nodev,
 	nodev, nodev, nodev, nodev, nodev,
 #endif
-	0		/* XXX */
 };
 
-int	nldisp = 5;
-
+int	nldisp = sizeof (linesw) / sizeof (linesw[0]);
