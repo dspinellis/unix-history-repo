@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)lcmd1.c	3.11 83/12/09";
+static	char *sccsid = "@(#)lcmd1.c	3.12 84/01/11";
 #endif
 
 #include "defs.h"
@@ -69,6 +69,19 @@ struct value *v;
 	if ((w = vtowin(&arg_select[0].arg_val)) == 0)
 		return;
 	setselwin(w);
+}
+
+struct lcmd_arg arg_debug[] = {
+	{ "flag",	1,	ARG_ANY },
+	{ 0,		0,	0 }
+};
+
+l_debug(v)
+struct value *v;
+{
+	v->v_type = V_NUM;
+	v->v_num = debug;
+	debug = vtobool(&arg_debug[0].arg_val, 1, debug);
 }
 
 struct lcmd_arg arg_escape[] = {
