@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ps.c	5.37 (Berkeley) %G%";
+static char sccsid[] = "@(#)ps.c	5.37 (Berkeley) 3/27/91";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -38,7 +38,7 @@ static char sccsid[] = "@(#)ps.c	5.37 (Berkeley) %G%";
 #endif
 
 KINFO *kinfo;
-VAR *vhead, *vtail;
+struct varent *vhead, *vtail;
 
 int	eval;			/* exit value */
 int	rawcpu;			/* -C */
@@ -70,7 +70,7 @@ main(argc, argv)
 	extern int optind;
 	register struct proc *p;
 	register size_t nentries;
-	register VAR *v;
+	register struct varent *vent;
 	register int i;
 	struct winsize ws;
 	dev_t ttydev;
@@ -263,9 +263,9 @@ main(argc, argv)
 		if (xflg == 0 && (kinfo[i].ki_e->e_tdev == NODEV ||
 		    (kinfo[i].ki_p->p_flag & SCTTY ) == 0))
 			continue;
-		for (v = vhead; v; v = v->next) {
-			(*v->oproc)(&kinfo[i], v);
-			if (v->next != NULL)
+		for (vent = vhead; vent; vent = vent->next) {
+			(*vent->var->oproc)(&kinfo[i], vent->var, vent->next);
+			if (vent->next != NULL)
 				(void) putchar(' ');
 		}
 		(void) putchar('\n');
@@ -280,10 +280,12 @@ main(argc, argv)
 
 scanvars()
 {
+	register struct varent *vent;
 	register VAR *v;
 	register int i;
 
-	for (v = vhead; v; v = v->next) {
+	for (vent = vhead; vent; vent = vent->next) {
+		v = vent->var;
 		i = strlen(v->header);
 		if (v->width < i)
 			v->width = i;
