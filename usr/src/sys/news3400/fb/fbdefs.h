@@ -9,7 +9,7 @@
  *
  * from: $Hdr: fbdefs.h,v 4.300 91/06/09 06:33:54 root Rel41 $ SONY
  *
- *	@(#)fbdefs.h	7.1 (Berkeley) %G%
+ *	@(#)fbdefs.h	7.2 (Berkeley) %G%
  */
 
 #ifndef mips
@@ -42,7 +42,7 @@
 #endif /* CPU_SINGLE */
 
 #if defined(news3400) || defined(news3700)
-#define WB_FLUSH	wb_flush()
+#define WB_FLUSH	MachEmptyWriteBuffer()
 #else
 #define WB_FLUSH
 #endif
