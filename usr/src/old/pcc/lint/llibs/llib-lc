@@ -1,4 +1,4 @@
-/*	@(#)llib-lc	1.40 (Berkeley) %G%	*/
+/*	@(#)llib-lc	1.41 (Berkeley) %G%	*/
 
 /* LINTLIBRARY */
 
@@ -357,6 +357,7 @@ char *	strcat(a, b) char *a, *b; { return a; }
 char *	strcatn(a, b, n) char *a, *b; { return a;}
 char *	strchr(s, c) char *s, c; { return s; }
 int	strcmp(a, b) char *a, *b; { return(1); }
+int	strcasecmp(a, b) char *a, *b; { return(1); }
 int	strcmpn(a, b, n) char *a, *b; { return(1); }
 char *	strcpy(a, b) char *a, *b; { return a; }
 char *	strcpyn(a, b, n) char *a, *b; { return a; }
@@ -364,6 +365,7 @@ int	strcspn(s, set) char *s, *set; { return(0); }
 int	strlen(s) char *s; { return(1); }
 char *	strncat(a, b, n) char *a, *b; { return a;}
 int	strncmp(a, b, n) char *a, *b; { return(1); }
+int	strncasecmp(a, b, n) char *a, *b; { return(1); }
 char *	strncpy(a, b, n) char *a, *b; { return a; }
 char *	strpbrk(s, brk) char *s, *brk; { return s; }
 char *	strrchr(s, c) char *s, c; { return s; }
