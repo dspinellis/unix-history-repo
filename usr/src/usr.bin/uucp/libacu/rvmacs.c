@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rvmacs.c	4.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)rvmacs.c	4.2 (Berkeley) %G%";
 #endif
 
 #include "../condevs.h"
@@ -13,8 +13,19 @@ static char sccsid[] = "@(#)rvmacs.c	4.1 (Berkeley) %G%";
  * tty11 is the dialer line (D_calldev),
  * the '4' is the dialer address + modem type (viz. dialer 0, Bell 103),
  * the '8' is the communication port,
- * We assume the dialer speed is 1200 baud.
+ * We assume the dialer speed is 1200 baud unless MULTISPEED is defined.
+ * We extended the semantics of the L-devices entry to allow you
+ * to set the speed at which the computer talks to the dialer:
+ *	ACU cul0 cua0,0<,2400 1200 rvmacs
+ * This is interpreted as above, except that the number following the second
+ * comma in the third field is taken to be the speed at which the computer
+ * must communicate with the dialer.  (If omitted, it defaults to the value
+ * in the fourth field.)  Note -- just after the call completes and you get
+ * carrier, the line speed is reset to the speed indicated in the fourth field.
+ * To get this ability, define "MULTISPEED", as below.
+ *
  */
+#define MULTISPEED		/* for dialers which work at various speeds */
 
 #define	STX	02	/* Access Adaptor */
 #define	ETX	03	/* Transfer to Dialer */
@@ -45,6 +56,13 @@ struct Devices *dev;
 		return CF_DIAL;
 	}
 	*p++ = '\0';
+#ifdef MULTISPEED
+	baudrate = dev->D_speed;
+	if ((pp = index(p, ',')) != NULL){
+		baudrate = atoi(pp+1);
+		DEBUG(5, "Using speed %d baud\n", baudrate);
+	}
+#endif MULTISPEED
 	if (setjmp(Sjbuf)) {
 		logent("rvmacsopn", "TIMEOUT");
 		goto failret;
@@ -70,9 +88,13 @@ struct Devices *dev;
 		sleep(2);
 		fclose(stdin);
 		fclose(stdout);
+#ifdef MULTISPEED
+		fixline(va, baudrate);
+#else !MULTISPEED
 		sg.sg_flags = RAW|ANYP;
 		sg.sg_ispeed = sg.sg_ospeed = B1200;
 		ioctl(va, TIOCSETP, &sg);
+#endif MULTISPEED
 		pc(va, ABORT);
 		sleep(1);
 		ioctl(va, TIOCFLUSH, &zero);
