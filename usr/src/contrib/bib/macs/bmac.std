@@ -1,4 +1,4 @@
-.\"	@(#)bmac.std	2.2	%G%;
+.\"	@(#)bmac.std	2.3	%G%;
 .\" standard format troff commands
 .\" citation formatting strings
 .ds [[ [
@@ -65,7 +65,7 @@
 .de 1[ \" journal article
 .s[
 .if !"\\*([A"" \\*([A,
-.if !"\\*([T""  \\*([T,
+.if !"\\*([T""  \\*(lq\\*([T\\*(rq,
 \\fI\\*([J \\*([V\\fP\c
 .if !"\\*([N"" ,\\*([N
 .if !"\\*([D"" (\\*([D)\c
@@ -98,7 +98,7 @@
 .de 3[ \" article in book
 .s[
 .if !"\\*([A"" \\*([A,
-.if !"\\*([T"" \\*([T,
+.if !"\\*([T"" \\*(lq\\*([T\\*(rq,
 in \\fI\\*([B\\fP\c
 .if !"\\*([V"" , vol. \\*([V
 .if !~\\*([E~~ \{\
@@ -118,7 +118,7 @@ in \\fI\\*([B\\fP\c
 .if !~\\*([E~~ \{\
 .       ie \\n([E-1 \\*([E, editors.
 .       el \\*([E, editor.\}
-\\*([T,
+\&\\*(lq\\*([T\\*(rq,
 \\*([R\c
 .if !"\\*([G"" \& (\\*([G)\c
 .if !"\\*([I"" , \\*([I\c
@@ -131,7 +131,7 @@ in \\fI\\*([B\\fP\c
 .de 5[ \" conference paper
 .s[
 .if !"\\*([A"" \\*([A,
-.if !"\\*([T"" \\*([T,
+.if !"\\*([T"" \\*(lq\\*([T\\*(rq,
 \\fI\\*([J\\fP,
 .if !"\\*([C"" \\*([C,
 .if !"\\*([D"" \\*([D\c
