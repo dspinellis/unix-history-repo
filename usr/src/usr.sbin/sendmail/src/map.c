@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)map.c	6.21 (Berkeley) %G%";
+static char sccsid[] = "@(#)map.c	6.22 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -184,7 +184,7 @@ map_rewrite(map, s, slen, av)
 	int i;
 	int len;
 
-	if (tTd(23, 1))
+	if (tTd(39, 1))
 	{
 		printf("map_rewrite(%.*s), av =", slen, s);
 		if (av == NULL)
@@ -274,9 +274,83 @@ map_rewrite(map, s, slen, av)
 		strcpy(bp, map->map_app);
 	else
 		*bp = '\0';
-	if (tTd(23, 1))
+	if (tTd(39, 1))
 		printf("map_rewrite => %s\n", rwb->rwb_buf);
 	return rwb->rwb_buf;
+}
+/*
+**  INITMAPS -- initialize for aliasing
+**
+**	Parameters:
+**		rebuild -- if TRUE, this rebuilds the cached versions.
+**		e -- current envelope.
+**
+**	Returns:
+**		none.
+**
+**	Side Effects:
+**		initializes aliases:
+**		if NDBM:  opens the database.
+**		if ~NDBM: reads the aliases into the symbol table.
+*/
+
+initmaps(rebuild, e)
+	bool rebuild;
+	register ENVELOPE *e;
+{
+	extern void map_init();
+
+	CurEnv = e;
+	stabapply(map_init, rebuild);
+}
+
+void
+map_init(s, rebuild)
+	register STAB *s;
+	int rebuild;
+{
+	register MAP *map;
+
+	/* has to be a map */
+	if (s->s_type != ST_MAP)
+		return;
+
+	map = &s->s_map;
+	if (!bitset(MF_VALID, map->map_mflags))
+		return;
+
+	if (tTd(38, 2))
+		printf("map_init(%s:%s)\n",
+			map->map_class->map_cname, map->map_file);
+
+	/* if already open, close it (for nested open) */
+	if (bitset(MF_OPEN, map->map_mflags))
+	{
+		map->map_class->map_close(map);
+		map->map_mflags &= ~(MF_OPEN|MF_WRITABLE);
+	}
+
+	if (rebuild)
+	{
+		if (bitset(MCF_REBUILDABLE, map->map_class->map_cflags))
+			rebuildaliases(map, FALSE);
+	}
+	else
+	{
+		if (map->map_class->map_open(map, O_RDONLY))
+		{
+			if (tTd(38, 4))
+				printf("%s:%s: valid\n",
+					map->map_class->map_cname,
+					map->map_file);
+			map->map_mflags |= MF_OPEN;
+		}
+		else if (tTd(38, 4))
+			printf("%s:%s: invalid: %s\n",
+				map->map_class->map_cname,
+				map->map_file,
+				errstring(errno));
+	}
 }
 /*
 **  NDBM modules
@@ -295,7 +369,7 @@ ndbm_map_open(map, mode)
 {
 	DBM *dbm;
 
-	if (tTd(27, 2))
+	if (tTd(38, 2))
 		printf("ndbm_map_open(%s, %d)\n", map->map_file, mode);
 
 	if (mode == O_RDWR)
@@ -330,7 +404,7 @@ ndbm_map_lookup(map, name, av, statp)
 	datum key, val;
 	char keybuf[MAXNAME + 1];
 
-	if (tTd(27, 20))
+	if (tTd(38, 20))
 		printf("ndbm_map_lookup(%s)\n", name);
 
 	key.dptr = name;
@@ -370,7 +444,7 @@ ndbm_map_store(map, lhs, rhs)
 	datum data;
 	int stat;
 
-	if (tTd(27, 12))
+	if (tTd(38, 12))
 		printf("ndbm_map_store(%s, %s)\n", lhs, rhs);
 
 	key.dsize = strlen(lhs);
@@ -442,7 +516,7 @@ bt_map_open(map, mode)
 	int i;
 	char buf[MAXNAME];
 
-	if (tTd(27, 2))
+	if (tTd(38, 2))
 		printf("bt_map_open(%s, %d)\n", map->map_file, mode);
 
 	if (mode == O_RDWR)
@@ -479,7 +553,7 @@ hash_map_open(map, mode)
 	int i;
 	char buf[MAXNAME];
 
-	if (tTd(27, 2))
+	if (tTd(38, 2))
 		printf("hash_map_open(%s, %d)\n", map->map_file, mode);
 
 	if (mode == O_RDWR)
@@ -520,7 +594,7 @@ db_map_lookup(map, name, av, statp)
 	int saveerrno;
 	char keybuf[MAXNAME + 1];
 
-	if (tTd(27, 20))
+	if (tTd(38, 20))
 		printf("db_map_lookup(%s)\n", name);
 
 	key.size = strlen(name);
@@ -568,7 +642,7 @@ db_map_store(map, lhs, rhs)
 	DBT data;
 	register DB *db = map->map_db2;
 
-	if (tTd(27, 20))
+	if (tTd(38, 20))
 		printf("db_map_store(%s, %s)\n", lhs, rhs);
 
 	key.size = strlen(lhs);
@@ -604,7 +678,7 @@ db_map_close(map)
 {
 	register DB *db = map->map_db2;
 
-	if (tTd(27, 9))
+	if (tTd(38, 9))
 		printf("db_map_close(%s, %x)\n", map->map_file, map->map_mflags);
 
 	if (bitset(MF_WRITABLE, map->map_mflags))
@@ -639,7 +713,7 @@ nis_map_open(map, mode)
 	auto int vsize;
 	char *master;
 
-	if (tTd(27, 2))
+	if (tTd(38, 2))
 		printf("nis_map_open(%s)\n", map->map_file);
 
 	if (mode != O_RDONLY)
@@ -665,7 +739,7 @@ nis_map_open(map, mode)
 	/* check to see if this map actually exists */
 	yperr = yp_match(map->map_domain, map->map_file, "@", 1,
 			&vp, &vsize);
-	if (tTd(27, 10))
+	if (tTd(38, 10))
 		printf("nis_map_open: yp_match(%s, %s) => %s\n",
 			map->map_domain, map->map_file, yperr_string(yperr));
 	if (yperr == 0 || yperr == YPERR_KEY || yperr == YPERR_BUSY)
@@ -696,7 +770,7 @@ nis_map_lookup(map, name, av, statp)
 	int yperr;
 	char keybuf[MAXNAME + 1];
 
-	if (tTd(27, 20))
+	if (tTd(38, 20))
 		printf("nis_map_lookup(%s)\n", name);
 
 	buflen = strlen(name);
@@ -763,7 +837,7 @@ stab_map_lookup(map, name)
 {
 	register STAB *s;
 
-	if (tTd(27, 20))
+	if (tTd(38, 20))
 		printf("stab_lookup(%s)\n", name);
 
 	s = stab(name, ST_ALIAS, ST_FIND);
@@ -806,7 +880,7 @@ stab_map_open(map, mode)
 {
 	FILE *af;
 
-	if (tTd(27, 2))
+	if (tTd(38, 2))
 		printf("stab_map_open(%s)\n", map->map_file);
 
 	if (mode != O_RDONLY)
@@ -847,7 +921,7 @@ impl_map_lookup(map, name, av, pstat)
 	char **av;
 	int *pstat;
 {
-	if (tTd(27, 20))
+	if (tTd(38, 20))
 		printf("impl_map_lookup(%s)\n", name);
 
 #ifdef NEWDB
@@ -893,7 +967,7 @@ impl_map_open(map, mode)
 {
 	struct stat stb;
 
-	if (tTd(27, 2))
+	if (tTd(38, 2))
 		printf("impl_map_open(%s)\n", map->map_file);
 
 	if (stat(map->map_file, &stb) < 0)
