@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_malloc.c	7.37 (Berkeley) %G%
+ *	@(#)kern_malloc.c	7.38 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -166,7 +166,8 @@ malloc(size, type, flags)
 	freep = (struct freelist *)va;
 	savedtype = (unsigned)freep->type < M_LAST ?
 		memname[freep->type] : "???";
-	if (!kernacc(kbp->kb_next, sizeof(struct freelist), 0)) {
+	if (kbp->kb_next &&
+	    !kernacc(kbp->kb_next, sizeof(struct freelist), 0)) {
 		printf("%s of object 0x%x size %d %s %s (invalid addr 0x%x)\n",
 			"Data modified on freelist: word 2.5", va, size,
 			"previous type", savedtype, kbp->kb_next);
