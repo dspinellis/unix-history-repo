@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)dr_1.c	1.7 83/10/14";
+static	char *sccsid = "@(#)dr_1.c	1.7 83/10/28";
 #endif
 
 #include "driver.h"
@@ -290,8 +290,8 @@ compcombat()
 	register struct ship *sp;
 	struct ship *closest;
 	int crew[3], men = 0, target, temp;
-	int r, guns, load, car;
-	int ready, index, rakehim, sternrake;
+	int r, guns, ready, load, car;
+	int index, rakehim, sternrake;
 	int shootat, hit;
 
 	foreachship(sp) {
@@ -381,11 +381,16 @@ compcombat()
 						hit--;
 					else
 						hit -= 2;
-			if (ready & R_INITIAL)
+			if (ready & R_INITIAL) {
+				if (!r)
+					sp->file->readyL &= ~R_INITIAL;
+				else
+					sp->file->readyR &= ~R_INITIAL;
 				if (index <= 3)
 					hit++;
 				else
 					hit += 2;
+			}
 			if (sp->file->captured != 0)
 				if (index <= 1)
 					hit--;
@@ -404,10 +409,6 @@ compcombat()
 					hit = hit > 10 ? 10 : hit;
 				table(shootat, load, hit, closest, sp, die());
 			}
-			if (!r)
-				sp->file->readyL = R_EMPTY;
-			else
-				sp->file->readyR = R_EMPTY;
 		}
 	}
 }
