@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)kvm.c	5.25 (Berkeley) %G%";
+static char sccsid[] = "@(#)kvm.c	5.26 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -22,6 +22,7 @@ static char sccsid[] = "@(#)kvm.c	5.25 (Berkeley) %G%";
 #include <paths.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 #include <ctype.h>
 
 #include <vm/vm.h>	/* ??? kinfo_proc currently includes this*/
@@ -33,8 +34,6 @@ static char sccsid[] = "@(#)kvm.c	5.25 (Berkeley) %G%";
 
 #include "kvm_private.h"
 
-#include <stdarg.h>
-
 static int kvm_dbopen(kvm_t *, const char *);
 
 char *
@@ -43,6 +42,12 @@ kvm_geterr(kvm_t *kd)
 	return (kd->errbuf);
 }
 
+#if __STDC__
+#include <stdarg.h>
+#else
+#include <varargs.h>
+#endif
+
 /*
  * Report an error using printf style arguments.  "program" is kd->program
  * on hard errors, and 0 on soft errors, so that under sun error emulation,
@@ -50,39 +55,60 @@ kvm_geterr(kvm_t *kd)
  * generate tons of error messages when trying to access bogus pointers).
  */
 void
+#if __STDC__
 _kvm_err(kvm_t *kd, const char *program, const char *fmt, ...)
+#else
+_kvm_err(kd, program, fmt, va_alist)
+	kvm_t *kd;
+	char *program, *fmt;
+	va_dcl
+#endif
 {
 	va_list ap;
 
+#ifdef __STDC__
 	va_start(ap, fmt);
-	if (program != 0) {
-		fprintf(stderr, "%s: ", program);
-		vfprintf(stderr, fmt, ap);
-		fputc('\n', stderr);
+#else
+	va_start(ap);
+#endif
+	if (program != NULL) {
+		(void)fprintf(stderr, "%s: ", program);
+		(void)vfprintf(stderr, fmt, ap);
+		(void)fputc('\n', stderr);
 	} else
-		vsnprintf(kd->errbuf, sizeof(kd->errbuf), (char *)fmt, ap);
+		(void)vsnprintf(kd->errbuf,
+		    sizeof(kd->errbuf), (char *)fmt, ap);
 
 	va_end(ap);
 }
 
 void
+#if __STDC__
 _kvm_syserr(kvm_t *kd, const char *program, const char *fmt, ...)
+#else
+_kvm_syserr(kd, program, fmt, va_alist)
+	kvm_t *kd;
+	char *program, *fmt;
+	va_dcl
+#endif
 {
 	va_list ap;
 	register int n;
 
+#if __STDC__
 	va_start(ap, fmt);
-	if (program != 0) {
-		fprintf(stderr, "%s: ", program);
-		vfprintf(stderr, fmt, ap);
-		fprintf(stderr, ": ");
-		perror((char *)0);
+#else
+	va_start(ap);
+#endif
+	if (program != NULL) {
+		(void)fprintf(stderr, "%s: ", program);
+		(void)vfprintf(stderr, fmt, ap);
+		(void)fprintf(stderr, ": %s\n", strerror(errno));
 	} else {
 		register char *cp = kd->errbuf;
 
-		vsnprintf(cp, sizeof(kd->errbuf), (char *)fmt, ap);
-		n = strlen(cp);
-		snprintf(&cp[n], sizeof(kd->errbuf) - n, ": %s",
+		n = vsnprintf(cp, sizeof(kd->errbuf), (char *)fmt, ap);
+		(void)snprintf(&cp[n], sizeof(kd->errbuf) - n, ": %s",
 			 strerror(errno));
 	}
 	va_end(ap);
@@ -93,10 +119,10 @@ _kvm_malloc(kd, n)
 	register kvm_t *kd;
 	register size_t n;
 {
-	void *p = (void *)malloc(n);
+	void *p;
 
-	if (p == 0)
-		_kvm_err(kd, kd->program, "out of memory");
+	if ((p = malloc(n)) == NULL)
+		_kvm_err(kd, kd->program, strerror(errno));
 	return (p);
 }
 
@@ -209,14 +235,14 @@ kvm_openfiles(uf, mf, sf, flag, errout)
 	int flag;
 	char *errout;
 {
-	register kvm_t *kd = (kvm_t *)malloc(sizeof(*kd));
+	register kvm_t *kd;
 
-	if (kd == 0) {
-		strcpy(errout, "out of memory");
+	if ((kd = malloc(sizeof(*kd))) == NULL) {
+		(void)strcpy(errout, strerror(errno));
 		return (0);
 	}
 	kd->program = 0;
-	return _kvm_open(kd, uf, mf, sf, flag, errout);
+	return (_kvm_open(kd, uf, mf, sf, flag, errout));
 }
 
 kvm_t *
@@ -227,14 +253,14 @@ kvm_open(uf, mf, sf, flag, program)
 	int flag;
 	const char *program;
 {
-	register kvm_t *kd = (kvm_t *)malloc(sizeof(*kd));
+	register kvm_t *kd;
 
-	if (kd == 0 && program != 0) {
-		fprintf(stderr, "%s: out of memory", program);
+	if ((kd = malloc(sizeof(*kd))) == NULL && program != NULL) {
+		(void)fprintf(stderr, "%s: %s\n", strerror(errno));
 		return (0);
 	}
 	kd->program = program;
-	return _kvm_open(kd, uf, mf, sf, flag, (char *)0);
+	return (_kvm_open(kd, uf, mf, sf, flag, NULL));
 }
 
 int
