@@ -1,6 +1,8 @@
-/* defs 4.2 81/03/15 */
+/* defs 4.3 82/04/20 */
 #include <stdio.h>
 #include <ctype.h>
+#include <sys/param.h>
+#include <ndir.h>
 
 #define SHELLCOM "/bin/sh"
 
@@ -111,13 +113,13 @@ struct pattern
 	};
 extern struct pattern *firstpat;
 
-struct opendir
+struct dirhdr
 	{
-	struct opendir *nxtopendir;
-	FILE * dirfc;
+	struct dirhdr *nxtopendir;
+	DIR *dirfc;
 	char *dirn;
 	};
-extern struct opendir *firstod;
+extern struct dirhdr *firstod;
 
 
 struct chain

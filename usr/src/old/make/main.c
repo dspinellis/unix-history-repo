@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)main.c	4.1 (Berkeley) 81/02/28";
+static	char *sccsid = "@(#)main.c	4.2 (Berkeley) 82/04/20";
 # include "defs"
 /*
 command make to update programs.
@@ -20,7 +20,7 @@ struct nameblock *firstname	= NULL;
 struct lineblock *sufflist	= NULL;
 struct varblock *firstvar	= NULL;
 struct pattern *firstpat	= NULL;
-struct opendir *firstod		= NULL;
+struct dirhdr *firstod		= NULL;
 
 #include <signal.h>
 int sigivalue	= 0;
@@ -325,7 +325,7 @@ int prntflag;
 struct nameblock *p;
 struct depblock *dp;
 struct varblock *vp;
-struct opendir *od;
+struct dirhdr *od;
 struct shblock *sp;
 struct lineblock *lp;
 
@@ -334,7 +334,7 @@ if(prntflag)
 	{
 	printf("Open directories:\n");
 	for (od = firstod; od; od = od->nxtopendir)
-		printf("\t%d: %s\n", fileno(od->dirfc), od->dirn);
+		printf("\t%d: %s\n", od->dirfc->dd_fd, od->dirn);
 	}
 #endif
 
