@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parseaddr.c	6.36 (Berkeley) %G%";
+static char sccsid[] = "@(#)parseaddr.c	6.37 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -103,8 +103,8 @@ parseaddr(addr, a, copyf, delim, delimptr, e)
 	**	Ruleset 0 does basic parsing.  It must resolve.
 	*/
 
-	rewrite(pvp, 3);
-	rewrite(pvp, 0);
+	rewrite(pvp, 3, e);
+	rewrite(pvp, 0, e);
 
 	/*
 	**  See if we resolved to a real mailer.
@@ -514,6 +514,8 @@ toktype(c)
 	c &= 0377;
 	if (c == MATCHCLASS || c == MATCHREPL || c == MATCHNCLASS)
 		return (ONE);
+	if (c == MACRODEXPAND)
+		return (ONE);
 	if (c == '"')
 		return (QST);
 	if ((c & 0340) == 0200)
@@ -550,6 +552,8 @@ toktype(c)
 **
 **	Parameters:
 **		pvp -- pointer to token vector.
+**		ruleset -- the ruleset to use for rewriting.
+**		e -- the current envelope.
 **
 **	Returns:
 **		none.
@@ -568,9 +572,10 @@ struct match
 # define MAXMATCH	9	/* max params per rewrite */
 
 
-rewrite(pvp, ruleset)
+rewrite(pvp, ruleset, e)
 	char **pvp;
 	int ruleset;
+	register ENVELOPE *e;
 {
 	register char *ap;		/* address pointer */
 	register char *rp;		/* rewrite pointer */
@@ -581,6 +586,7 @@ rewrite(pvp, ruleset)
 	int ruleno;			/* current rule number */
 	struct match mlist[MAXMATCH];	/* stores match on LHS */
 	char *npvp[MAXATOM+1];		/* temporary space for rebuild */
+	extern char *macvalue();
 
 	if (OpMode == MD_TEST || tTd(21, 2))
 	{
@@ -710,6 +716,39 @@ rewrite(pvp, ruleset)
 
 			  case MATCHZERO:
 				/* match zero tokens */
+				break;
+
+			  case MACRODEXPAND:
+				/*
+				**  Match against run-time macro.
+				**  This algorithm is broken for the
+				**  general case (no recursive macros,
+				**  improper tokenization) but should
+				**  work for the usual cases.
+				*/
+
+				ap = macvalue(rp[1], e);
+				mlp->first = avp;
+				if (tTd(21, 2))
+					printf("rewrite: LHS $&%c => \"%s\"\n",
+						rp[1],
+						ap == NULL ? "(NULL)" : ap);
+
+				if (ap == NULL)
+					break;
+				while (*ap != NULL)
+				{
+					if (*avp == NULL ||
+					    strncasecmp(ap, *avp, strlen(*avp)) != 0)
+					{
+						/* no match */
+						avp = mlp->first;
+						goto backup;
+					}
+					ap += strlen(*avp++);
+				}
+
+				/* match */
 				break;
 
 			  default:
@@ -855,7 +894,18 @@ rewrite(pvp, ruleset)
 					syserr("554 rewrite: expansion too long");
 					return;
 				}
-				*avp++ = rp;
+				if ((*rp & 0377) != MACRODEXPAND)
+					*avp++ = rp;
+				else
+				{
+					*avp = macvalue(rp[1], e);
+					if (tTd(21, 2))
+						printf("rewrite: RHS $&%c => \"%s\"\n",
+							rp[1],
+							*avp == NULL ? "(NULL)" : *avp);
+					if (*avp != NULL)
+						avp++;
+				}
 			}
 		}
 		*avp++ = NULL;
@@ -1035,7 +1085,7 @@ rewrite(pvp, ruleset)
 				(int) (avp - npvp - 2) * sizeof *avp);
 			if (tTd(21, 3))
 				printf("-----callsubr %s\n", npvp[1]);
-			rewrite(pvp, atoi(npvp[1]));
+			rewrite(pvp, atoi(npvp[1]), e);
 		}
 		else
 		{
@@ -1234,7 +1284,7 @@ buildaddr(tv, a, e)
 	}
 
 	/* do cleanup of final address */
-	rewrite(tv, 4);
+	rewrite(tv, 4, e);
 
 	/* save the result for the command line/RCPT argument */
 	cataddr(tv, NULL, buf, sizeof buf, '\0');
@@ -1490,7 +1540,7 @@ remotename(name, m, senderaddress, header, canonical, adddomain, e)
 	pvp = prescan(name, '\0', pvpbuf, NULL);
 	if (pvp == NULL)
 		return (name);
-	rewrite(pvp, 3);
+	rewrite(pvp, 3, e);
 	if (adddomain && e->e_fromdomain != NULL)
 	{
 		/* append from domain to this address */
@@ -1506,7 +1556,7 @@ remotename(name, m, senderaddress, header, canonical, adddomain, e)
 
 			while ((*pxp++ = *qxq++) != NULL)
 				continue;
-			rewrite(pvp, 3);
+			rewrite(pvp, 3, e);
 		}
 	}
 
@@ -1518,11 +1568,11 @@ remotename(name, m, senderaddress, header, canonical, adddomain, e)
 	*/
 
 	if (senderaddress)
-		rewrite(pvp, 1);
+		rewrite(pvp, 1, e);
 	else
-		rewrite(pvp, 2);
+		rewrite(pvp, 2, e);
 	if (rwset > 0)
-		rewrite(pvp, rwset);
+		rewrite(pvp, rwset, e);
 
 	/*
 	**  Do any final sanitation the address may require.
@@ -1531,7 +1581,7 @@ remotename(name, m, senderaddress, header, canonical, adddomain, e)
 	**	may be used as a default to the above rules.
 	*/
 
-	rewrite(pvp, 4);
+	rewrite(pvp, 4, e);
 
 	/*
 	**  Now restore the comment information we had at the beginning.
@@ -1577,7 +1627,7 @@ maplocaluser(a, sendq, e)
 	if (pvp == NULL)
 		return;
 
-	rewrite(pvp, 5);
+	rewrite(pvp, 5, e);
 	if (pvp[0] == NULL || (pvp[0][0] & 0377) != CANONNET)
 		return;
 
