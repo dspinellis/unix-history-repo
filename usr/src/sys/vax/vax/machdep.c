@@ -1,4 +1,4 @@
-/*	machdep.c	4.29	81/04/03	*/
+/*	machdep.c	4.30	81/04/03	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -28,7 +28,6 @@
 #include "../h/cmap.h"
 #include <frame.h>
 
-char	version[] = "VAX/UNIX (Berkeley Version 4.27) 81/03/17 17:01:04 \n";
 int	icode[] =
 {
 	0x9f19af9f,	/* pushab [&"init",0]; pushab */
