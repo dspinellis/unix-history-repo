@@ -2048,7 +2048,13 @@ remotename(name, m, flags, pstat, e)
 
 	cataddr(pvp, NULL, lbuf, sizeof lbuf, '\0');
 	define('g', lbuf, e);
-	expand(fancy, buf, &buf[sizeof buf - 1], e);
+
+	/* need to make sure route-addrs have <angle brackets> */
+	if (bitset(RF_CANONICAL, flags) && lbuf[0] == '@')
+		expand("<\201g>", buf, &buf[sizeof buf - 1], e);
+	else
+		expand(fancy, buf, &buf[sizeof buf - 1], e);
+
 	define('g', oldg, e);
 
 	if (tTd(12, 1))

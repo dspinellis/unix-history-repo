@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)usersmtp.c	8.16 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	8.17 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)usersmtp.c	8.16 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	8.17 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -296,6 +296,7 @@ smtpmailfrom(m, mci, e)
 	ENVELOPE *e;
 {
 	int r;
+	char *bufp;
 	char buf[MAXNAME];
 	char optbuf[MAXLINE];
 
@@ -328,15 +329,25 @@ smtpmailfrom(m, mci, e)
 		(void) strcpy(buf, "");
 	else
 		expand("\201g", buf, &buf[sizeof buf - 1], e);
+	if (buf[0] == '<')
+	{
+		/* strip off <angle brackets> (put back on below) */
+		bufp = &buf[strlen(buf) - 1];
+		if (*bufp == '>')
+			*bufp = '\0';
+		bufp = &buf[1];
+	}
+	else
+		bufp = buf;
 	if (e->e_from.q_mailer == LocalMailer ||
 	    !bitnset(M_FROMPATH, m->m_flags))
 	{
-		smtpmessage("MAIL From:<%s>%s", m, mci, buf, optbuf);
+		smtpmessage("MAIL From:<%s>%s", m, mci, bufp, optbuf);
 	}
 	else
 	{
 		smtpmessage("MAIL From:<@%s%c%s>%s", m, mci, MyHostName,
-			buf[0] == '@' ? ',' : ':', buf, optbuf);
+			*bufp == '@' ? ',' : ':', bufp, optbuf);
 	}
 	SmtpPhase = mci->mci_phase = "client MAIL";
 	setproctitle("%s %s: %s", e->e_id, CurHostName, mci->mci_phase);
