@@ -168,10 +168,6 @@ main(argc, argv)
 		chown(ttyn, 0, 0);
 		chmod(ttyn, 0600);
 		revoke(ttyn);
-		/*
-		 * Delay the open so DTR stays down long enough to be detected.
-		 */
-		sleep(2);
 		while ((i = open(ttyn, O_RDWR)) == -1) {
 			if (repcnt % 10 == 0) {
 				syslog(LOG_ERR, "%s: %m", ttyn);
