@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_prot.c	7.14 (Berkeley) %G%
+ *	@(#)kern_prot.c	7.15 (Berkeley) %G%
  */
 
 /*
@@ -124,6 +124,7 @@ getgroups(p, uap, retval)
 {
 	register gid_t *gp;
 	register int *lp;
+	register u_int ngrp;
 	int groups[NGROUPS];
 	int error;
 
@@ -131,15 +132,15 @@ getgroups(p, uap, retval)
 		if (gp[-1] != NOGROUP)
 			break;
 	if (uap->gidsetsize < gp - u.u_groups) {
-	if (uap->gidsetsize < u.u_cred->cr_ngroups)
+	if (ngrp < u.u_cred->cr_ngroups)
 		return (EINVAL);
 	uap->gidsetsize = gp - u.u_groups;
 	for (lp = groups, gp = u.u_groups; lp < &groups[uap->gidsetsize]; )
 		*lp++ = *gp++;
 	if (error = copyout((caddr_t)groups, (caddr_t)uap->gidset,
-	    uap->gidsetsize * sizeof (groups[0])))
+	    ngrp * sizeof (groups[0])))
 		return (error);
-	*retval = uap->gidsetsize;
+	*retval = ngrp;
 	return (0);
 }
 
@@ -374,17 +375,17 @@ setgroups(p, uap, retval)
 	int *retval;
 {
 	register gid_t *gp;
-	register u_int ngrps;
+	register u_int ngrp;
 	register int *lp;
 	int groups[NGROUPS];
 
 	if (error = suser(u.u_cred, &u.u_acflag))
 		return (error);
 	if (uap->gidsetsize > sizeof (u.u_groups) / sizeof (u.u_groups[0])) {
-	if ((ngrps = uap->gidsetsize) > NGROUPS)
+	if ((ngrp = uap->gidsetsize) > NGROUPS)
 		return (EINVAL);
 	if (error = copyin((caddr_t)uap->gidset, (caddr_t)groups,
-	    ngrps * sizeof (groups[0])))
+	    ngrp * sizeof (groups[0])))
 		return (error);
 	for (lp = groups, gp = u.u_groups; lp < &groups[uap->gidsetsize]; )
 }
