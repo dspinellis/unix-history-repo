@@ -1,7 +1,7 @@
-/*	rk.c	4.8	%G%	*/
+/*	rk.c	4.9	%G%	*/
 
 #include "rk.h"
-#if NRK11 > 0
+#if NHK > 0
 int	rkflags,rkerrs;		/* GROT */
 /*
  * RK11/RK07 disk driver
@@ -30,7 +30,7 @@ struct	rk_softc {
 	int	sc_ndrive;
 	int	sc_wticks;
 	int	sc_recal;
-} rk_softc[NRK11];
+} rk_softc[NHK];
 
 /* THIS SHOULD BE READ OFF THE PACK, PER DRIVE */
 struct	size
@@ -50,15 +50,15 @@ struct	size
 /* END OF STUFF WHICH SHOULD BE READ IN PER DISK */
 
 int	rkprobe(), rkslave(), rkattach(), rkdgo(), rkintr();
-struct	uba_minfo *rkminfo[NRK11];
-struct	uba_dinfo *rkdinfo[NRK07];
-struct	uba_dinfo *rkip[NRK11][4];
+struct	uba_minfo *rkminfo[NHK];
+struct	uba_dinfo *rkdinfo[NRK];
+struct	uba_dinfo *rkip[NHK][4];
 
 u_short	rkstd[] = { 0777440, 0 };
 struct	uba_driver hkdriver =
  { rkprobe, rkslave, rkattach, rkdgo, rkstd, "rk", rkdinfo, "hk", rkminfo, 1 };
-struct	buf rkutab[NRK07];
-short	rkcyl[NRK07];
+struct	buf rkutab[NRK];
+short	rkcyl[NRK];
 
 struct	rkst {
 	short	nsect;
@@ -73,7 +73,7 @@ struct	rkst {
 u_char 	rk_offset[16] =
   { P400,M400,P400,M400,P800,M800,P800,M800,P1200,M1200,P1200,M1200,0,0,0,0 };
 
-struct	buf rrkbuf[NRK07];
+struct	buf rrkbuf[NRK];
 
 #define	b_cylin	b_resid
 
@@ -142,7 +142,7 @@ rkstrategy(bp)
 
 	sz = (bp->b_bcount+511) >> 9;
 	unit = dkunit(bp);
-	if (unit >= NRK07)
+	if (unit >= NRK)
 		goto bad;
 	ui = rkdinfo[unit];
 	if (ui == 0 || ui->ui_alive == 0)
@@ -402,7 +402,7 @@ rkread(dev)
 {
 	register int unit = minor(dev) >> 3;
 
-	if (unit >= NRK07)
+	if (unit >= NRK)
 		u.u_error = ENXIO;
 	else
 		physio(rkstrategy, &rrkbuf[unit], dev, B_READ, minphys);
@@ -413,7 +413,7 @@ rkwrite(dev)
 {
 	register int unit = minor(dev) >> 3;
 
-	if (unit >= NRK07)
+	if (unit >= NRK)
 		u.u_error = ENXIO;
 	else
 		physio(rkstrategy, &rrkbuf[unit], dev, B_WRITE, minphys);
@@ -491,7 +491,7 @@ rkreset(uban)
 	register rk11, unit;
 	int any = 0;
 
-	for (rk11 = 0; rk11 < NRK11; rk11++) {
+	for (rk11 = 0; rk11 < NHK; rk11++) {
 		if ((um = rkminfo[rk11]) == 0 || um->um_ubanum != uban ||
 		    um->um_alive == 0)
 			continue;
@@ -506,9 +506,7 @@ rkreset(uban)
 			printf("<%d>", (um->um_ubinfo>>28)&0xf);
 			ubadone(um);
 		}
-		((struct rkdevice *)(um->um_addr))->rkcs1 = RK_CDT|RK_CCLR;
-		rkwait((struct rkdevice *)(um->um_addr));
-		for (unit = 0; unit < NRK11; unit++) {
+		for (unit = 0; unit < NHK; unit++) {
 			if ((ui = rkdinfo[unit]) == 0)
 				continue;
 			if (ui->ui_alive == 0)
@@ -527,13 +525,13 @@ rkwatch()
 	register struct rk_softc *sc;
 
 	timeout(rkwatch, (caddr_t)0, HZ);
-	for (rk11 = 0; rk11 < NRK11; rk11++) {
+	for (rk11 = 0; rk11 < NHK; rk11++) {
 		um = rkminfo[rk11];
 		if (um == 0 || um->um_alive == 0)
 			continue;
 		sc = &rk_softc[rk11];
 		if (um->um_tab.b_active == 0) {
-			for (unit = 0; unit < NRK07; unit++)
+			for (unit = 0; unit < NRK; unit++)
 				if (rkutab[unit].b_active &&
 				    rkdinfo[unit]->ui_mi == um)
 					goto active;
@@ -544,10 +542,8 @@ active:
 		sc->sc_wticks++;
 		if (sc->sc_wticks >= 20) {
 			sc->sc_wticks = 0;
-			printf("LOST INTERRUPT RESET");
-			/* SHOULD JUST RESET ONE CTLR, NOT ALL ON UBA */
-			rkreset(um->um_ubanum);
-			printf("\n");
+			printf("LOST rkintr ");
+			ubareset(um->um_ubanum);
 		}
 	}
 }
@@ -567,7 +563,7 @@ rkdump(dev)
 	struct rkst *st;
 
 	unit = minor(dev) >> 3;
-	if (unit >= NRK07) {
+	if (unit >= NRK) {
 		printf("bad unit\n");
 		return (-1);
 	}
