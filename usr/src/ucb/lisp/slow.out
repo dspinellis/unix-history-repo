@@ -1,0 +1,253 @@
+date
+Fri Mar  4 15:28:18 PST 1983
+(cd /usr/lib/lisp; make as nld tackon)
+`as' is up to date.
+`nld' is up to date.
+cc -O -o tackon tackon.c
+(cd franz; make LibDir=/usr/lib/lisp ObjDir=//usr/ucb slowmylisp)
+cc -O -o fixmask fixmask.c
+cc -Ih -R -c low.c
+as -o lowaux.o lowaux.s
+cc -c lisp.c
+cc -c eval.c
+cc -c eval2.c
+cc -c inits.c
+cc -c io.c
+cc -c error.c
+cc -c sysat.c
+cc -c lam1.c
+cc -c lam2.c
+cc -c lam3.c
+cc -c lam4.c
+cc -c lam5.c
+cc -c lam6.c
+cc -c lam7.c
+cc -c lam8.c
+cc -c lam9.c
+cc -c lamr.c
+cc -c fex1.c
+cc -c fex2.c
+cc -c fex3.c
+cc -c fex4.c
+cc -c fexr.c
+cc -c fpipe.c
+as -o bigmath.o bigmath.s
+cc -c subbig.c
+cc -c pbignum.c
+cc -c divbig.c
+as -o inewint.o inewint.s
+cc -c ffasl.c
+cc -c fasl.c
+as -o vsyscall.o vsyscall.s
+cc -Ih -E  qfuncl.c | as -o qfuncl.o
+cc -c trace.c
+cc -c evalf.c
+cc -c frame.c
+cc -c lamgc.c
+cc -c vax.c
+as -o crt0.o crt0.s
+cc -c alloc.c
+cc -c data.c
+cc -c lamnop.c
+as -o dmcount.o dmcount.s
+rm -f tlisp
+ld -x -o tlisp -e start low.o lowaux.o lisp.o eval.o eval2.o inits.o io.o error.o sysat.o  lam1.o lam2.o lam3.o lam4.o lam5.o lam6.o lam7.o lam8.o lam9.o lamr.o  fex1.o fex2.o fex3.o fex4.o fexr.o fpipe.o bigmath.o subbig.o pbignum.o divbig.o inewint.o ffasl.o  fasl.o vsyscall.o qfuncl.o trace.o evalf.o frame.o   lamgc.o vax.o crt0.o alloc.o data.o lamnop.o dmcount.o -lm -lc -ltermlib
+ls -l tlisp
+-rwxrwxr-x  1 root       167936 Mar  4 16:06 tlisp
+echo "(progn (setq build:load t		 build:lisp-type 'franz  build:dir '/usr/lib/lisp  lisp-object-directory '//usr/ucb lisp-library-directory '/usr/lib/lisp) (load '/usr/lib/lisp/buildlisp) (dumplisp mylisp))" | tlisp
+Franz Lisp, Opus 38
+-> [load /usr/lib/lisp/common2.l]
+[load /usr/lib/lisp/vector.l]
+[load /usr/lib/lisp/array.l]
+[load /usr/lib/lisp/pp.l]
+[load /usr/lib/lisp/version.l]
+[load /usr/lib/lisp/tpl.l]
+[load /usr/lib/lisp/toplevel.l]
+nil
+-> date
+Fri Mar  4 16:13:24 PST 1983
+(cd liszt; make Lisp=../franz/mylisp snliszt)
+echo "(load 'scmake.l)" | ../franz/mylisp
+Franz Lisp, Opus 38.55
+-> [load scmake.l]
+[load /usr/lib/lisp/fcninfo.l]
+[load decl.l]
+[load chead.l]
+[load cmacros.l]
+[load array.l]
+[load datab.l]
+[load expr.l]
+[load io.l]
+[load funa.l]
+[load funb.l]
+[load func.l]
+[load tlev.l]
+[load fixnum.l]
+[load util.l]
+[load lversion.l]
+t
+Liszt version 8.22 [.55]
+-> snliszt done
+(cd liszt; make Lisp=../franz/mylisp Liszt=./snliszt nliszt)
+./snliszt -qxa cmacros 
+./snliszt -qxa array 
+./snliszt -qxa datab 
+./snliszt -qxa decl 
+./snliszt -qxa expr 
+./snliszt -qxa fixnum 
+./snliszt -qxa funa 
+./snliszt -qxa funb 
+./snliszt -qxa func 
+./snliszt -qxa io 
+./snliszt -qxa tlev 
+./snliszt -qxa util 
+./snliszt -qxa lversion 
+echo "(load 'cmake.l)" | ../franz/mylisp 
+Franz Lisp, Opus 38.55
+-> [load cmake.l]
+[load /usr/lib/lisp/fcninfo.l]
+[fasl decl.o]
+[fasl array.o]
+[fasl datab.o]
+[fasl expr.o]
+[fasl io.o]
+[fasl funa.o]
+[fasl funb.o]
+[fasl func.o]
+[fasl tlev.o]
+[fasl fixnum.o]
+[fasl util.o]
+[fasl lversion.o]
+t
+Liszt version 8.22 [.55]
+-> nliszt done
+(cd liszt; rm snliszt)
+date
+Fri Mar  4 17:30:29 PST 1983
+(X=`pwd`; cd franz;  make Liszt=$X/liszt/nliszt  ObjDir=//usr/ucb LibDir=/usr/lib/lisp domylisp)
+rm -f mylisp
+make LibDir=/usr/lib/lisp Liszt=/usr/src/ucb/lisp/liszt/nliszt ObjDir=//usr/ucb mylisp
+rm -f mylisp
+(cd /usr/lib/lisp ; make Liszt=/usr/src/ucb/lisp/liszt/nliszt required)
+/usr/src/ucb/lisp/liszt/nliszt  -xaq charmac 
+/usr/src/ucb/lisp/liszt/nliszt  -xaq common0 
+/usr/src/ucb/lisp/liszt/nliszt  -xaq common1 
+/usr/src/ucb/lisp/liszt/nliszt  -xaq common2 
+/usr/src/ucb/lisp/liszt/nliszt  -xaq toplevel 
+/usr/src/ucb/lisp/liszt/nliszt  -xaq syntax 
+/usr/src/ucb/lisp/liszt/nliszt  -xaq macros 
+/usr/src/ucb/lisp/liszt/nliszt  -xaq vector 
+/usr/src/ucb/lisp/liszt/nliszt  -xaq array 
+/usr/src/ucb/lisp/liszt/nliszt  -xaq pp 
+/usr/src/ucb/lisp/liszt/nliszt  -xaq format 
+/usr/src/ucb/lisp/liszt/nliszt  -xaq version 
+/usr/src/ucb/lisp/liszt/nliszt  -xaq tpl 
+/usr/src/ucb/lisp/liszt/nliszt  -xaq fcninfo 
+echo "(progn (setq build:map 'map  build:lisp-type 'franz  lisp-library-directory '/usr/lib/lisp  build:dir '/usr/lib/lisp  lisp-object-directory '//usr/ucb)  (load '/usr/lib/lisp/buildlisp) (dumplisp mylisp))" | tlisp
+Franz Lisp, Opus 38
+-> [fasl /usr/lib/lisp/common0.o]
+[fasl /usr/lib/lisp/syntax.o]
+[fasl /usr/lib/lisp/charmac.o]
+[fasl /usr/lib/lisp/macros.o]
+[fasl /usr/lib/lisp/common1.o]
+[fasl /usr/lib/lisp/common2.o]
+[fasl /usr/lib/lisp/vector.o]
+[fasl /usr/lib/lisp/array.o]
+[fasl /usr/lib/lisp/pp.o]
+[fasl /usr/lib/lisp/format.o]
+[fasl /usr/lib/lisp/version.o]
+[fasl /usr/lib/lisp/tpl.o]
+[fasl /usr/lib/lisp/toplevel.o]
+nil
+-> /usr/lib/lisp/tackon map mylisp
+mylisp built
+(cd liszt; make Lisp=../franz/mylisp Liszt=./nliszt nliszt)
+echo "(load 'cmake.l)" | ../franz/mylisp 
+Franz Lisp, Opus 38.55
+-> [load cmake.l]
+[fasl /usr/lib/lisp/fcninfo.o]
+[fasl decl.o]
+[fasl array.o]
+[fasl datab.o]
+[fasl expr.o]
+[fasl io.o]
+[fasl funa.o]
+[fasl funb.o]
+[fasl func.o]
+[fasl tlev.o]
+[fasl fixnum.o]
+[fasl util.o]
+[fasl lversion.o]
+t
+Liszt version 8.22 [.55]
+-> nliszt done
+(X=`pwd`; cd /usr/lib/lisp ; make Liszt=$X/liszt/nliszt all)
+/usr/src/ucb/lisp/liszt/nliszt  -xaq machacks 
+/usr/src/ucb/lisp/liszt/nliszt  -xaq loop 
+/usr/src/ucb/lisp/liszt/nliszt  -xaq ucifnc 
+/usr/src/ucb/lisp/liszt/nliszt  -xaq ucido 
+/usr/src/ucb/lisp/liszt/nliszt  -xaq jkfmacs 
+/usr/src/ucb/lisp/liszt/nliszt  -xaq trace 
+/usr/src/ucb/lisp/liszt/nliszt  -xaq syscall 
+/usr/src/ucb/lisp/liszt/nliszt  -xaq cmumacs 
+/usr/src/ucb/lisp/liszt/nliszt  -xaq cmufncs 
+/usr/src/ucb/lisp/liszt/nliszt  -xaq fix 
+/usr/src/ucb/lisp/liszt/nliszt  -xaq step 
+/usr/src/ucb/lisp/liszt/nliszt  -xaq cmufile 
+/usr/src/ucb/lisp/liszt/nliszt  -xaq cmutpl 
+/usr/src/ucb/lisp/liszt/nliszt  -xaq cmuedit 
+/usr/src/ucb/lisp/liszt/nliszt  -xaq struct 
+/usr/src/ucb/lisp/liszt/nliszt  -xaq prof 
+/usr/src/ucb/lisp/liszt/nliszt  -xaq hash 
+/usr/src/ucb/lisp/liszt/nliszt  -xaq flavorm 
+/usr/src/ucb/lisp/liszt/nliszt  -xaq lmhacks 
+(X=`pwd`; cd /usr/lib/lisp ; make Liszt=$X/liszt/nliszt struct-again)
+/usr/src/ucb/lisp/liszt/nliszt -xaq struct
+(X=`pwd`; cd franz;  make Liszt=$X/liszt/nliszt  ObjDir=//usr/ucb LibDir=/usr/lib/lisp domylisp)
+rm -f mylisp
+make LibDir=/usr/lib/lisp Liszt=/usr/src/ucb/lisp/liszt/nliszt ObjDir=//usr/ucb mylisp
+rm -f mylisp
+(cd /usr/lib/lisp ; make Liszt=/usr/src/ucb/lisp/liszt/nliszt required)
+echo "(progn (setq build:map 'map  build:lisp-type 'franz  lisp-library-directory '/usr/lib/lisp  build:dir '/usr/lib/lisp  lisp-object-directory '//usr/ucb)  (load '/usr/lib/lisp/buildlisp) (dumplisp mylisp))" | tlisp
+Franz Lisp, Opus 38
+-> [fasl /usr/lib/lisp/common0.o]
+[fasl /usr/lib/lisp/syntax.o]
+[fasl /usr/lib/lisp/charmac.o]
+[fasl /usr/lib/lisp/macros.o]
+[fasl /usr/lib/lisp/common1.o]
+[fasl /usr/lib/lisp/common2.o]
+[fasl /usr/lib/lisp/vector.o]
+[fasl /usr/lib/lisp/array.o]
+[fasl /usr/lib/lisp/pp.o]
+[fasl /usr/lib/lisp/format.o]
+[fasl /usr/lib/lisp/version.o]
+[fasl /usr/lib/lisp/tpl.o]
+[fasl /usr/lib/lisp/toplevel.o]
+nil
+-> /usr/lib/lisp/tackon map mylisp
+mylisp built
+(cd liszt; make Lisp=../franz/mylisp Liszt=./nliszt nliszt)
+echo "(load 'cmake.l)" | ../franz/mylisp 
+Franz Lisp, Opus 38.55
+-> [load cmake.l]
+[fasl /usr/lib/lisp/fcninfo.o]
+[fasl decl.o]
+[fasl array.o]
+[fasl datab.o]
+[fasl expr.o]
+[fasl io.o]
+[fasl funa.o]
+[fasl funb.o]
+[fasl func.o]
+[fasl tlev.o]
+[fasl fixnum.o]
+[fasl util.o]
+[fasl lversion.o]
+t
+Liszt version 8.22 [.55]
+-> nliszt done
+(cd liszt; make Liszt=./nliszt lxref)
+./nliszt -xrq lxref
+cp lxref.o lxref
+date
+Fri Mar  4 18:34:39 PST 1983
