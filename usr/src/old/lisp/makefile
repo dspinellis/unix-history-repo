@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1987 Regents of the University of California.
+# Copyright (c) 1987, 1988 Regents of the University of California.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms are permitted
@@ -9,21 +9,21 @@
 # software without specific prior written permission. This software
 # is provided ``as is'' without express or implied warranty.
 #
-#	@(#)makefile	5.1 (Berkeley) %G%
+#	@(#)makefile	5.2 (Berkeley) %G%
 #
 
 all: FRC
-	cd lisp; ./lispconf ${MACHINE}_4_3
-	cd lisp; make DESTDIR=${DESTDIR} copylibrary
-	cd lisp; make ${MFLAGS}
+	./lispconf ${MACHINE}_4_3
+	make -f Makefile ${MFLAGS} DESTDIR=${DESTDIR} copylibrary
+	make -f Makefile ${MFLAGS}
 
 install: FRC
-	cd lisp; make DESTDIR=${DESTDIR} install
+	make -f Makefile ${MFLAGS} DESTDIR=${DESTDIR} install
 
 clean: FRC
-	cd lisp; make ${MFLAGS} clean
+	make -f Makefile ${MFLAGS} clean
 
 depend: FRC
-	cd lisp; make ${MFLAGS} depend
+	make -f Makefile ${MFLAGS} depend
 
 FRC:
