@@ -1,4 +1,4 @@
-/*	tip.h	4.8	82/12/24	*/
+/*	tip.h	4.9	83/05/17	*/
 /*
  * tip - terminal interface program
  *
@@ -187,6 +187,8 @@ struct sgttyb	arg;		/* current mode of local terminal */
 struct sgttyb	defarg;		/* initial mode of local terminal */
 struct tchars	tchars;		/* current state of terminal */
 struct tchars	defchars;	/* initial state of terminal */
+struct ltchars	ltchars;	/* current local characters of terminal */
+struct ltchars	deflchars;	/* initial local characters of terminal */
 
 FILE	*fscript;		/* FILE for scripting */
 

@@ -1,4 +1,4 @@
-/*	tip.c	4.12	82/07/29	*/
+/*	tip.c	4.13	83/05/17	*/
 
 /*
  * tip - UNIX link to other systems
@@ -138,6 +138,7 @@ cucommon:
 	 */
 	ioctl(0, TIOCGETP, (char *)&defarg);
 	ioctl(0, TIOCGETC, (char *)&defchars);
+	ioctl(0, TIOCGLTC, (char *)&deflchars);
 #ifdef VMUNIX
 	ioctl(0, TIOCGETD, (char *)&odisc);
 #endif
@@ -145,6 +146,9 @@ cucommon:
 	arg.sg_flags = ANYP | CBREAK;
 	tchars = defchars;
 	tchars.t_intrc = tchars.t_quitc = -1;
+	ltchars = deflchars;
+	ltchars.t_suspc = ltchars.t_dsuspc = ltchars.t_flushc
+		= ltchars.t_lnextc = -1;
 	raw();
 
 	pipe(fildes); pipe(repdes);
@@ -182,6 +186,7 @@ raw()
 {
 	ioctl(0, TIOCSETP, &arg);
 	ioctl(0, TIOCSETC, &tchars);
+	ioctl(0, TIOCSLTC, &ltchars);
 #ifdef VMUNIX
 	ioctl(0, TIOCSETD, (char *)&disc);
 #endif
@@ -198,6 +203,7 @@ unraw()
 #endif
 	ioctl(0, TIOCSETP, (char *)&defarg);
 	ioctl(0, TIOCSETC, (char *)&defchars);
+	ioctl(0, TIOCSLTC, (char *)&deflchars);
 }
 
 /*
