@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_subr.c	7.28 (Berkeley) %G%
+ *	@(#)vfs_subr.c	7.29 (Berkeley) %G%
  */
 
 /*
@@ -29,6 +29,12 @@
 #include "ucred.h"
 #include "errno.h"
 #include "malloc.h"
+
+/*
+ * Shorthand notation.
+ */
+#define v_hashchain v_specinfo->si_hashchain
+#define v_specnext v_specinfo->si_specnext
 
 /*
  * Remove a mount point from the list of mounted filesystems.
