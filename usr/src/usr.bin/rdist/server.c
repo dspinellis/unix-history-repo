@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)server.c	4.15 (Berkeley) 84/02/09";
+static	char *sccsid = "@(#)server.c	4.16 (Berkeley) 84/03/14";
 #endif
 
 #include "defs.h"
@@ -428,7 +428,7 @@ update(rname, opts, st)
 	cp = s = buf;
 	do {
 		if (read(rem, cp, 1) != 1)
-			cleanup();
+			lostconn();
 	} while (*cp++ != '\n' && cp < &buf[BUFSIZ]);
 
 	switch (*s++) {
@@ -883,7 +883,7 @@ rmchk(opts)
 		cp = s = buf;
 		do {
 			if (read(rem, cp, 1) != 1)
-				cleanup();
+				lostconn();
 		} while (*cp++ != '\n' && cp < &buf[BUFSIZ]);
 
 		switch (*s++) {
@@ -928,7 +928,7 @@ rmchk(opts)
 					(void) fwrite(s, 1, cp - s, lfp);
 			}
 			if (buf[0] == '\2')
-				cleanup();
+				lostconn();
 			break;
 
 		default:
@@ -1202,7 +1202,7 @@ response()
 	cp = s = buf;
 	do {
 		if (read(rem, cp, 1) != 1)
-			cleanup();
+			lostconn();
 	} while (*cp++ != '\n' && cp < &buf[BUFSIZ]);
 
 	switch (*s++) {
@@ -1229,7 +1229,7 @@ response()
 				(void) fwrite(s, 1, cp - s, lfp);
 		}
 		if (buf[0] == '\2')
-			cleanup();
+			lostconn();
 		return(-1);
 	}
 }

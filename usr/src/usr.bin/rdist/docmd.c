@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)docmd.c	4.16 (Berkeley) 84/03/13";
+static	char *sccsid = "@(#)docmd.c	4.17 (Berkeley) 84/03/14";
 #endif
 
 #include "defs.h"
@@ -70,7 +70,7 @@ doarrow(files, rhost, cmds)
 	if (nflag)
 		printf("updating host %s\n", rhost);
 	else {
-		if (setjmp(env) != 0)
+		if (setjmp(env))
 			goto done;
 		signal(SIGPIPE, lostconn);
 		if (!makeconn(rhost))
@@ -107,7 +107,7 @@ doarrow(files, rhost, cmds)
 	}
 done:
 	if (!nflag) {
-		(void) signal(SIGPIPE, SIG_DFL);
+		(void) signal(SIGPIPE, cleanup);
 		(void) fclose(lfp);
 		lfp = NULL;
 	}
@@ -132,10 +132,12 @@ makeconn(rhost)
 	if (debug)
 		printf("makeconn(%s)\n", rhost);
 
-	if (cur_host != NULL && strcmp(cur_host, rhost) == 0)
-		return(1);
-
-	closeconn();
+	if (cur_host != NULL && rem >= 0) {
+		if (strcmp(cur_host, rhost) == 0)
+			return(1);
+		closeconn();
+		cur_host = NULL;
+	}
 
 	ruser = rindex(rhost, '.');
 	if (ruser != NULL) {
@@ -146,7 +148,6 @@ makeconn(rhost)
 		ruser = user;
 	if (!qflag)
 		printf("updating host %s\n", rhost);
-	cur_host = rhost;
 	(void) sprintf(buf, "/usr/local/rdist -Server%s", qflag ? " -q" : "");
 
 	if (debug) {
@@ -171,8 +172,10 @@ makeconn(rhost)
 		n = 0;
 		while (*cp >= '0' && *cp <= '9')
 			n = (n * 10) + (*cp++ - '0');
-		if (*cp == '\0' && n == VERSION)
+		if (*cp == '\0' && n == VERSION) {
+			cur_host = rhost;
 			return(1);
+		}
 	}
 	error("connection failed: version numbers don't match\n");
 	return(0);
@@ -195,8 +198,9 @@ closeconn()
 
 lostconn()
 {
-	fflush(stdout);
-	fprintf(stderr, "rdist: lost connection\n");
+	if (iamremote)
+		cleanup();
+	log(lfp, "rdist: lost connection\n");
 	longjmp(env, 1);
 }
 
