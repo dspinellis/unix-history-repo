@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)df.c	5.33 (Berkeley) %G%";
+static char sccsid[] = "@(#)df.c	5.34 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -27,14 +27,53 @@ static char sccsid[] = "@(#)df.c	5.33 (Berkeley) %G%";
 #include <string.h>
 #include <unistd.h>
 
+/* XXX assumes MOUNT_MAXTYPE < 32 */
+#define MT(m)		(1 << (m))
+
+/* fixed values */
+#define MT_NONE		(0)
+#define MT_ALL		(MT(MOUNT_MAXTYPE+1)-1)
+
+/* subject to change */
+#define MT_AMDNFS	(1)	/* XXX automounted NFS FSes return type 0 */
+#define MT_LOCAL	(MT(MOUNT_UFS)|MT(MOUNT_MFS)|MT(MOUNT_LFS))
+#define MT_DEFAULT	MT_ALL
+
+struct typetab {
+	char *str;
+	long types;
+} typetab[] = {
+	"ufs",		MT(MOUNT_UFS),
+	"local",	MT_LOCAL,
+	"all",		MT_ALL,
+	"nfs",		MT(MOUNT_NFS)|MT_AMDNFS,
+	"mfs",		MT(MOUNT_MFS),
+	"lfs",		MT(MOUNT_LFS),
+	"pc",		MT(MOUNT_PC),
+	"fdesc",	MT(MOUNT_FDESC),
+	"portal",	MT(MOUNT_PORTAL),
+#if 0
+	/* return fsid of underlying FS */
+	"lofs",		MT(MOUNT_LOFS),
+	"null",		MT(MOUNT_NULL),
+	"umap",		MT(MOUNT_UMAP),
+#endif
+	"kernfs",	MT(MOUNT_KERNFS),
+	"misc",		MT(MOUNT_LOFS)|MT(MOUNT_FDESC)|MT(MOUNT_PORTAL)|
+			MT(MOUNT_NULL)|MT(MOUNT_UMAP)|MT(MOUNT_KERNFS),
+	(char *)0,	0
+};
+
+long	addtype __P((long, char *));
+long	regetmntinfo __P((struct statfs **, long, long));
 int	 bread __P((off_t, void *, int));
-char	*getbsize __P((char *, int *, long *));
+char	*getbsize __P((int *, long *));
 char	*getmntpt __P((char *));
 void	 prtstat __P((struct statfs *, int));
 void	 ufs_df __P((char *, int));
 void	 usage __P((void));
 
-int	iflag, nflag;
+int	iflag, nflag, tflag;
 struct	ufs_args mdev;
 
 int
@@ -47,14 +86,19 @@ main(argc, argv)
 	long mntsize;
 	int err, ch, i, maxwidth, width;
 	char *mntpt;
+	long fsmask;
 
-	while ((ch = getopt(argc, argv, "in")) != EOF)
+	while ((ch = getopt(argc, argv, "int:")) != EOF)
 		switch(ch) {
 		case 'i':
 			iflag = 1;
 			break;
 		case 'n':
 			nflag = 1;
+			break;
+		case 't':
+			fsmask = addtype(fsmask, optarg);
+			tflag = 1;
 			break;
 		case '?':
 		default:
@@ -70,12 +114,24 @@ main(argc, argv)
 		if (width > maxwidth)
 			maxwidth = width;
 	}
+
 	if (!*argv) {
-		mntsize = getmntinfo(&mntbuf, (nflag ? MNT_NOWAIT : MNT_WAIT));
+		if (!tflag)
+			fsmask = MT_DEFAULT;
+		mntsize = regetmntinfo(&mntbuf, mntsize, fsmask);
+		if (fsmask != MT_ALL) {
+			maxwidth = 0;
+			for (i = 0; i < mntsize; i++) {
+				width = strlen(mntbuf[i].f_mntfromname);
+				if (width > maxwidth)
+					maxwidth = width;
+			}
+		}
 		for (i = 0; i < mntsize; i++)
 			prtstat(&mntbuf[i], maxwidth);
 		exit(0);
 	}
+
 	for (; *argv; argv++) {
 		if (stat(*argv, &stbuf) < 0) {
 			err = errno;
@@ -140,6 +196,68 @@ getmntpt(name)
 	return (0);
 }
 
+long
+addtype(omask, str)
+	long omask;
+	char *str;
+{
+	struct typetab *tp;
+
+	/*
+	 * If it is one of our known types, add it to the current mask
+	 */
+	for (tp = typetab; tp->str; tp++)
+		if (strcmp(str, tp->str) == 0)
+			return (tp->types | (tflag ? omask : MT_NONE));
+	/*
+	 * See if it is the negation of one of the known values
+	 */
+	if (strlen(str) > 2 && str[0] == 'n' && str[1] == 'o')
+		for (tp = typetab; tp->str; tp++)
+			if (strcmp(str+2, tp->str) == 0)
+				return (~tp->types & (tflag ? omask : MT_ALL));
+	(void)fprintf(stderr, "df: unknown type `%s'\n", str);
+	exit(1);
+}
+
+/*
+ * Make a pass over the filesystem info in ``mntbuf'' filtering out
+ * filesystem types not in ``fsmask'' and possibly re-stating to get
+ * current (not cached) info.  Returns the new count of valid statfs bufs.
+ */
+long
+regetmntinfo(mntbufp, mntsize, fsmask)
+	struct statfs **mntbufp;
+	long mntsize, fsmask;
+{
+	register int i, j;
+	register struct statfs *mntbuf;
+
+	if (fsmask == MT_ALL)
+		return (nflag ? mntsize : getmntinfo(mntbufp, MNT_WAIT));
+
+	mntbuf = *mntbufp;
+	j = 0;
+	for (i = 0; i < mntsize; i++) {
+		if (fsmask & MT(mntbuf[i].f_type)) {
+			if (!nflag)
+				(void)statfs(mntbuf[i].f_mntonname,&mntbuf[j]);
+			else if (i != j)
+				mntbuf[j] = mntbuf[i];
+			j++;
+		}
+	}
+	return (j);
+}
+
+/*
+ * Convert statfs returned filesystem size into BLOCKSIZE units.
+ * Attempts to avoid overflow for large filesystems.
+ */
+#define fsbtoblk(num, fsbs, bs) \
+	(((fsbs) != 0 && (fsbs) < (bs)) ? \
+		(num) / ((bs) / (fsbs)) : (num) * ((fsbs) / (bs)))
+
 /*
  * Print out status about a filesystem.
  */
@@ -156,8 +274,8 @@ prtstat(sfsp, maxwidth)
 	if (maxwidth < 11)
 		maxwidth = 11;
 	if (++timesthrough == 1) {
-		header = getbsize("df", &headerlen, &blocksize);
-		(void)printf("%-*.*s %s    Used   Avail Capacity",
+		header = getbsize(&headerlen, &blocksize);
+		(void)printf("%-*.*s %s     Used    Avail Capacity",
 		    maxwidth, maxwidth, "Filesystem", header);
 		if (iflag)
 			(void)printf(" iused   ifree  %%iused");
@@ -166,10 +284,10 @@ prtstat(sfsp, maxwidth)
 	(void)printf("%-*.*s", maxwidth, maxwidth, sfsp->f_mntfromname);
 	used = sfsp->f_blocks - sfsp->f_bfree;
 	availblks = sfsp->f_bavail + used;
-	(void)printf(" %*ld %7ld %7ld", headerlen,
-	    sfsp->f_blocks * sfsp->f_bsize / blocksize,
-	    used * sfsp->f_bsize / blocksize,
-	    sfsp->f_bavail * sfsp->f_bsize / blocksize);
+	(void)printf(" %*ld %8ld %8ld", headerlen,
+	    fsbtoblk(sfsp->f_blocks, sfsp->f_bsize, blocksize),
+	    fsbtoblk(used, sfsp->f_bsize, blocksize),
+	    fsbtoblk(sfsp->f_bavail, sfsp->f_bsize, blocksize));
 	(void)printf(" %5.0f%%",
 	    availblks == 0 ? 100.0 : (double)used / (double)availblks * 100.0);
 	if (iflag) {
