@@ -1,0 +1,28 @@
+# This file is a shell script fragment that supplies the information
+# necessary for a configure script to process the program in
+# this directory.  For more information, look at ../configure.
+
+configdirs=
+srctrigger=getopt1.c
+srcname="-liberty library"
+
+# per-host:
+
+files="alloca-norm.h"
+links="alloca-conf.h"
+
+case "${host}" in
+  rs6000-ibm-aix*)	host_makefile_frag=config/mh-aix
+			files="alloca-botch.h" ;;
+  m68k-apollo-bsd*)	host_makefile_frag=config/mh-a68bsd ;;
+  m68k-apollo-sysv*)	host_makefile_frag=config/mh-apollo68 ;;
+  i[34]86-ncr-sysv4*)	host_makefile_frag=config/mh-ncr3000 ;;
+  *-*-dgux*)		host_makefile_frag=config/mh-sysv ;;
+  *-*-irix4*)		host_makefile_frag=config/mh-irix4 ;;
+  *-*-m88kbcs)		host_makefile_frag=config/mh-sysv ;;
+  *-*-solaris2*)	host_makefile_frag=config/mh-sysv4 ;;
+  *-*-sysv4*)		host_makefile_frag=config/mh-sysv4 ;;
+  *-*-sysv*)		host_makefile_frag=config/mh-sysv ;;
+esac
+
+# per-target:
