@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)tunefs.8	6.2 (Berkeley) %G%
+.\"	@(#)tunefs.8	6.3 (Berkeley) %G%
 .\"
 .TH TUNEFS 8 ""
 .UC 5
@@ -80,11 +80,12 @@ M. McKusick, W. Joy, S. Leffler, R. Fabry,
 ``A Fast File System for UNIX'',
 \fIACM Transactions on Computer Systems 2\fP, 3.
 pp 181-197, August 1984.
-(reprinted in the System Manager's Manual and in Volume 2c)
+(reprinted in the System Manager's Manual, SMM:14)
 .SH BUGS
 This program should work on mounted and active file systems.
 Because the super-block is not kept in the buffer cache,
 the program will only take effect if it is run on dismounted file systems.
-(if run on the root file system, the system must be rebooted)
+To take effect on the root file system, the system must be rebooted
+after being tuned.
 .PP
 You can tune a file system, but you can't tune a fish.
