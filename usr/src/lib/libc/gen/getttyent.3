@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)getttyent.3	6.2 (Berkeley) %G%
+.\"	@(#)getttyent.3	6.3 (Berkeley) %G%
 .\"
 .TH GETTTYENT 3  ""
 .UC 6
@@ -70,12 +70,14 @@ Allows root to login on this terminal. Note that `TTY_ON' must be included
 for this to be useful.
 .RE
 .IP ty_window
-is the quoted string of a command to execute for a window system
-associated with the line.
-If none is specified, this will be a null string.
+is the command to execute for a window system
+associated with the line.  The window system will be started before
+the command specified in the
+.I ty_getty
+entry is executed.
+If none is specified, this will be the null string.
 .IP ty_comment
-Currently unused; could be used by finger to determine the location
-of a terminal.
+is the trailing comment field, if any.
 .PP
 .I Getttyent
 reads the next
