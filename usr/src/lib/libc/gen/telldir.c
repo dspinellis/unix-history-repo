@@ -16,7 +16,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)telldir.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)telldir.c	5.7 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -96,6 +96,7 @@ _seekdir(dirp, loc)
 	if (lp->loc_loc == dirp->dd_loc && lp->loc_seek == dirp->dd_seek)
 		goto found;
 	(void) lseek(dirp->dd_fd, lp->loc_seek, 0);
+	dirp->dd_seek = lp->loc_seek;
 	dirp->dd_loc = 0;
 	while (dirp->dd_loc < lp->loc_loc) {
 		dp = readdir(dirp);
