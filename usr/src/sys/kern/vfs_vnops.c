@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_vnops.c	7.23 (Berkeley) %G%
+ *	@(#)vfs_vnops.c	7.24 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -123,9 +123,12 @@ vn_writechk(vp)
 	 * unless the file is a socket or a block or character
 	 * device resident on the file system.
 	 */
-	if ((vp->v_mount->mnt_flag & MNT_RDONLY) && vp->v_type != VCHR &&
-	    vp->v_type != VBLK && vp->v_type != VSOCK)
-		return (EROFS);
+	if (vp->v_mount->mnt_flag & MNT_RDONLY) {
+		switch (vp->v_type) {
+		case VREG: case VDIR: case VLNK:
+			return (EROFS);
+		}
+	}
 	/*
 	 * If there's shared text associated with
 	 * the vnode, try to free it up once.  If
@@ -400,7 +403,7 @@ again:
 		    lockstr, 0))
 			return (error);
 	}
-	if (error = 0 && (cmd & LOCK_EX) && (vp->v_flag & VSHLOCK)) {
+	if (error == 0 && (cmd & LOCK_EX) && (vp->v_flag & VSHLOCK)) {
 		/*
 		 * Must wait for any shared locks to finish
 		 * before we try to apply a exclusive lock.
@@ -416,7 +419,7 @@ again:
 			return (EWOULDBLOCK);
 		vp->v_flag |= VLWAIT;
 		if (error = tsleep((caddr_t)&vp->v_shlockc, PLOCK | PCATCH,
-		    lockstr, 0) == 0)
+		    lockstr, 0))
 			return (error);
 	}
 	if (fp->f_flag & FEXLOCK)
