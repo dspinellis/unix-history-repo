@@ -1,4 +1,22 @@
-/* vi: set tabstop=4 : */
+/*-
+ * Copyright (c) 1993 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * This code is derived from software contributed to Berkeley by
+ * Barry Brachman.
+ *
+ * %sccs.include.redist.c%
+ */
+
+#ifndef lint
+char copyright[] =
+"@(#) Copyright (c) 1993 The Regents of the University of California.\n\
+ All rights reserved.\n";
+#endif /* not lint */
+
+#ifndef lint
+static char sccsid[] = "@(#)mkdict.c	5.2 (Berkeley) %G%";
+#endif /* not lint */
 
 /*
  * Filter out words that:
@@ -10,16 +28,17 @@
 
 #include <ctype.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include "bog.h"
 
-char *index();
-
+int
 main(argc, argv)
-int argc;
-char **argv;
+	int argc;
+	char *argv[];
 {
-	register char *p, *q, *r;
+	register char *p, *q;
 	register int ch, common, n, nwords;
 	int current, len, prev, qcount;
 	char buf[2][MAXWORDLEN + 1];
@@ -30,10 +49,11 @@ char **argv;
 	if (argc == 2)
 		n = atoi(argv[1]);
 
-	nwords = 1;
-	while (fgets(buf[current], MAXWORDLEN + 1, stdin) != (char *) NULL) {
+	for (nwords = 1;
+	    fgets(buf[current], MAXWORDLEN + 1, stdin) != NULL; ++nwords) {
 		if ((p = index(buf[current], '\n')) == NULL) {
-			fprintf(stderr, "mkdict: word too long: %s\n", buf[current]);
+			fprintf(stderr,
+			    "mkdict: word too long: %s\n", buf[current]);
 			while ((ch = getc(stdin)) != EOF && ch != '\n')
 				;
 			if (ch == EOF)
@@ -58,7 +78,7 @@ char **argv;
 		}
 		if (*p != '\n' || len < 3 || len > MAXWORDLEN)
 			continue;
-		if (nwords++ % n && argc == 2)
+		if (argc == 2 && nwords % n)
 			continue;
 
 		*p = '\0';
@@ -76,4 +96,3 @@ char **argv;
 	fprintf(stderr, "%d words\n", nwords);
 	exit(0);
 }
-
