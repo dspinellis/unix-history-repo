@@ -19,7 +19,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)print.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)print.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -50,7 +50,7 @@ printlong(stats, num)
 		if (f_inode)
 			(void)printf("%6lu ", stats->lstat.st_ino);
 		if (f_size)
-			(void)printf("%4ld ", stats->lstat.st_blocks / 2);
+			(void)printf("%4ld ", stats->lstat.st_blocks);
 		printperms(stats->lstat.st_mode);
 		(void)printf("%3d ", stats->lstat.st_nlink);
 		printowner(stats->lstat.st_uid);
@@ -130,7 +130,7 @@ printaname(lp)
 	if (f_inode)
 		chcnt += printf("%5lu ", lp->lstat.st_ino);
 	if (f_size)
-		chcnt += printf("%4ld ", lp->lstat.st_blocks / 2);
+		chcnt += printf("%4ld ", lp->lstat.st_blocks);
 	chcnt += printf("%s", lp->name);
 	if (f_type)
 		chcnt += printtype(lp->lstat.st_mode);
