@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)yycosts.c 1.3 %G%";
+static char sccsid[] = "@(#)yycosts.c 1.4 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -149,6 +149,8 @@ repcost(what, with)
 			case YBEGIN:
 				break;
 		}
+	if (what == YID && with == YFORWARD)
+		return(5);
 	if (what == ';' && (with == ',' || with == '.'))
 		return (CLIMIT - 1);
 	c = delcost(what) + inscost(with);
