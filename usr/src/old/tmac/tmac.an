@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.proprietary.roff%
 .\"
-.\"	@(#)tmac.an	6.8 (Berkeley) %G%
+.\"	@(#)tmac.an	6.9 (Berkeley) %G%
 .\"
 
 '	DT, PD, SM, and B macros invoked internally.
@@ -334,7 +334,7 @@
 .nr )p 0 1
 .ds ]I \\\\n(]
 .ds ]R \\\\n()
-.bd S B 3
+.if t .bd S B 3
 .if t .ds R \(rg
 .if n .ds R (Reg.)
 .ds S \s10
