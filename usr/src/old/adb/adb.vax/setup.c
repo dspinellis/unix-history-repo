@@ -1,9 +1,9 @@
-static	char sccsid[] = "@(#)setup.c	4.5 82/04/01";
+static	char sccsid[] = "@(#)setup.c	4.6 82/10/28";
 /*
  * adb - routines to read a.out+core at startup
  */
 #include "defs.h"
-#include <stat.h>
+#include <sys/stat.h>
 
 off_t	datbas;			/* offset of the base of the data segment */
 off_t	stksiz;			/* stack size in the core image */
