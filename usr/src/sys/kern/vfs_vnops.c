@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_vnops.c	7.43 (Berkeley) %G%
+ *	@(#)vfs_vnops.c	7.44 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -387,26 +387,4 @@ vn_closefile(fp, p)
 
 	return (vn_close(((struct vnode *)fp->f_data), fp->f_flag,
 		fp->f_cred, p));
-}
-
-/*
- * vn_fhtovp() - convert a fh to a vnode ptr (optionally locked)
- * 	- look up fsid in mount list (if not found ret error)
- *	- get vp by calling VFS_FHTOVP() macro
- *	- if lockflag lock it with VOP_LOCK()
- */
-vn_fhtovp(fhp, lockflag, vpp)
-	fhandle_t *fhp;
-	int lockflag;
-	struct vnode **vpp;
-{
-	register struct mount *mp;
-
-	if ((mp = getvfs(&fhp->fh_fsid)) == NULL)
-		return (ESTALE);
-	if (VFS_FHTOVP(mp, &fhp->fh_fid, vpp))
-		return (ESTALE);
-	if (!lockflag)
-		VOP_UNLOCK(*vpp);
-	return (0);
 }
