@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)uda.c	7.16 (Berkeley) %G%
+ *	@(#)uda.c	7.17 (Berkeley) %G%
  *
  */
 
@@ -1651,7 +1651,7 @@ udaioctl(dev, cmd, data, flag)
 	register int unit = udaunit(dev);
 	register struct disklabel *lp;
 	register struct ra_info *ra = &ra_info[unit];
-	int error = 0, wlab;
+	int error = 0;
 
 	lp = &udalabel[unit];
 
@@ -1683,19 +1683,21 @@ udaioctl(dev, cmd, data, flag)
 		break;
 
 	case DIOCWDINFO:
-		/* simulate opening partition 0 so write succeeds */
-		ra->ra_openpart |= (1 << 0);		/* XXX */
-		wlab = ra->ra_wlabel;
-		ra->ra_wlabel = 1;
 		if ((flag & FWRITE) == 0)
 			error = EBADF;
 		else if ((error = setdisklabel(lp, (struct disklabel *)data,
 		    (ra->ra_state == OPENRAW) ? 0 : ra->ra_openpart)) == 0) {
+			int wlab;
+
 			ra->ra_state = OPEN;
+			/* simulate opening partition 0 so write succeeds */
+			ra->ra_openpart |= (1 << 0);		/* XXX */
+			wlab = ra->ra_wlabel;
+			ra->ra_wlabel = 1;
 			error = writedisklabel(dev, udastrategy, lp);
+			ra->ra_openpart = ra->ra_copenpart | ra->ra_bopenpart;
+			ra->ra_wlabel = wlab;
 		}
-		ra->ra_openpart = ra->ra_copenpart | ra->ra_bopenpart;
-		ra->ra_wlabel = wlab;
 		break;
 
 #ifdef notyet

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)hp.c	7.12 (Berkeley) %G%
+ *	@(#)hp.c	7.13 (Berkeley) %G%
  */
 
 #ifdef HPDEBUG
@@ -793,7 +793,7 @@ hpioctl(dev, cmd, data, flag)
 	int unit = hpunit(dev);
 	register struct disklabel *lp;
 	register struct hpsoftc *sc = &hpsoftc[unit];
-	int error = 0, wlab;
+	int error = 0;
 	int hpformat();
 
 	lp = &hplabel[unit];
@@ -828,19 +828,21 @@ hpioctl(dev, cmd, data, flag)
 		break;
 
 	case DIOCWDINFO:
-		/* simulate opening partition 0 so write succeeds */
-		sc->sc_openpart |= (1 << 0);		/* XXX */
-		wlab = sc->sc_wlabel;
-		sc->sc_wlabel = 1;
 		if ((flag & FWRITE) == 0)
 			error = EBADF;
 		else if ((error = setdisklabel(lp, (struct disklabel *)data,
 		    (sc->sc_state == OPENRAW) ? 0 : sc->sc_openpart)) == 0) {
+			int wlab;
+
 			sc->sc_state = OPEN;
+			/* simulate opening partition 0 so write succeeds */
+			sc->sc_openpart |= (1 << 0);		/* XXX */
+			wlab = sc->sc_wlabel;
+			sc->sc_wlabel = 1;
 			error = writedisklabel(dev, hpstrategy, lp);
+			sc->sc_openpart = sc->sc_copenpart | sc->sc_bopenpart;
+			sc->sc_wlabel = wlab;
 		}
-		sc->sc_openpart = sc->sc_copenpart | sc->sc_bopenpart;
-		sc->sc_wlabel = wlab;
 		break;
 
 	case DIOCSBAD:
