@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_vnops.c	7.96 (Berkeley) %G%
+ *	@(#)lfs_vnops.c	7.97 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -40,8 +40,8 @@ int (**lfs_vnodeop_p)();
 struct vnodeopv_entry_desc lfs_vnodeop_entries[] = {
 	{ &vop_default_desc, vn_default_error },
 	{ &vop_lookup_desc, ufs_lookup },		/* lookup */
-	{ &vop_create_desc, lfs_create },		/* create */
-	{ &vop_mknod_desc, lfs_mknod },			/* mknod */
+	{ &vop_create_desc, ufs_create },		/* create */
+	{ &vop_mknod_desc, ufs_mknod },			/* mknod */
 	{ &vop_open_desc, ufs_open },			/* open */
 	{ &vop_close_desc, lfs_close },			/* close */
 	{ &vop_access_desc, ufs_access },		/* access */
@@ -54,16 +54,16 @@ struct vnodeopv_entry_desc lfs_vnodeop_entries[] = {
 	{ &vop_mmap_desc, ufs_mmap },			/* mmap */
 	{ &vop_fsync_desc, lfs_fsync },			/* fsync */
 	{ &vop_seek_desc, ufs_seek },			/* seek */
-	{ &vop_remove_desc, lfs_remove },		/* remove */
-	{ &vop_link_desc, lfs_link },			/* link */
-	{ &vop_rename_desc, lfs_rename },		/* rename */
-	{ &vop_mkdir_desc, lfs_mkdir },			/* mkdir */
-	{ &vop_rmdir_desc, lfs_rmdir },			/* rmdir */
-	{ &vop_symlink_desc, lfs_symlink },		/* symlink */
+	{ &vop_remove_desc, ufs_remove },		/* remove */
+	{ &vop_link_desc, ufs_link },			/* link */
+	{ &vop_rename_desc, ufs_rename },		/* rename */
+	{ &vop_mkdir_desc, ufs_mkdir },			/* mkdir */
+	{ &vop_rmdir_desc, ufs_rmdir },			/* rmdir */
+	{ &vop_symlink_desc, ufs_symlink },		/* symlink */
 	{ &vop_readdir_desc, ufs_readdir },		/* readdir */
 	{ &vop_readlink_desc, ufs_readlink },		/* readlink */
 	{ &vop_abortop_desc, ufs_abortop },		/* abortop */
-	{ &vop_inactive_desc, lfs_inactive },		/* inactive */
+	{ &vop_inactive_desc, ufs_inactive },		/* inactive */
 	{ &vop_reclaim_desc, ufs_reclaim },		/* reclaim */
 	{ &vop_lock_desc, ufs_lock },			/* lock */
 	{ &vop_unlock_desc, ufs_unlock },		/* unlock */
@@ -110,7 +110,7 @@ struct vnodeopv_entry_desc lfs_specop_entries[] = {
 	{ &vop_readdir_desc, spec_readdir },		/* readdir */
 	{ &vop_readlink_desc, spec_readlink },		/* readlink */
 	{ &vop_abortop_desc, spec_abortop },		/* abortop */
-	{ &vop_inactive_desc, lfs_inactive },		/* inactive */
+	{ &vop_inactive_desc, ufs_inactive },		/* inactive */
 	{ &vop_reclaim_desc, ufs_reclaim },		/* reclaim */
 	{ &vop_lock_desc, ufs_lock },			/* lock */
 	{ &vop_unlock_desc, ufs_unlock },		/* unlock */
@@ -158,7 +158,7 @@ struct vnodeopv_entry_desc lfs_fifoop_entries[] = {
 	{ &vop_readdir_desc, fifo_readdir },		/* readdir */
 	{ &vop_readlink_desc, fifo_readlink },		/* readlink */
 	{ &vop_abortop_desc, fifo_abortop },		/* abortop */
-	{ &vop_inactive_desc, lfs_inactive },		/* inactive */
+	{ &vop_inactive_desc, ufs_inactive },		/* inactive */
 	{ &vop_reclaim_desc, ufs_reclaim },		/* reclaim */
 	{ &vop_lock_desc, ufs_lock },			/* lock */
 	{ &vop_unlock_desc, ufs_unlock },		/* unlock */
@@ -195,10 +195,10 @@ lfs_read(ap)
 	register struct inode *ip = VTOI(vp);
 	register struct uio *uio = ap->a_uio;
 	register struct lfs *fs;
-	struct buf *bp1, *bp2;
+	struct buf *bp;
 	daddr_t lbn, bn, rablock;
 	off_t diff;
-	int type, error = 0, lock_on_enter, size;
+	int type, error = 0, size;
 	long n, on;
 
 	type = ip->i_mode & IFMT;
@@ -217,9 +217,6 @@ lfs_read(ap)
 	    (u_quad_t)uio->uio_offset + uio->uio_resid > fs->lfs_maxfilesize)
 		return (EFBIG);
 	ip->i_flag |= IACC;
-	bp1 = bp2 = NULL;
-	if (lock_on_enter = ip->i_flag & ILOCKED)
-		IUNLOCK(ip);
 	do {
 		lbn = lblkno(fs, uio->uio_offset);
 		on = blkoff(fs, uio->uio_offset);
@@ -231,33 +228,17 @@ lfs_read(ap)
 			n = diff;
 		size = blksize(fs);
 		lfs_check(vp, lbn);
-/* */
-		rablock = lbn + 1;
-		if (vp->v_lastr + 1 == lbn &&
-		    lblktosize(fs, rablock) < ip->i_size)
-			error = breadn(ITOV(ip), lbn, size, &rablock,
-			    &size, 1, NOCRED, &bp1);
-		else
-			error = bread(ITOV(ip), lbn, size, NOCRED, &bp1);
-/*
-		error = ufs_breada(vp, lbn, size, NOCRED, &bp1);
-*/
-		if (bp2)
-			brelse(bp2);
-		bp2 = bp1;
+		error = cluster_read(vp, ip->i_size, lbn, size, NOCRED, &bp);
 		vp->v_lastr = lbn;
-		n = min(n, size - bp2->b_resid);
+		n = min(n, size - bp->b_resid);
 		if (error)
 			break;
-		error = uiomove(bp2->b_un.b_addr + on, (int)n, uio);
+		error = uiomove(bp->b_un.b_addr + on, (int)n, uio);
 		if (type == IFREG &&
 		    n + on == fs->lfs_bsize || uio->uio_offset == ip->i_size)
-			bp2->b_flags |= B_AGE;
+			bp->b_flags |= B_AGE;
+		brelse(bp);
 	} while (error == 0 && uio->uio_resid > 0 && n != 0);
-	if (bp2)
-		brelse(bp2);
-	if (lock_on_enter)
-		ILOCK(ip);
 	return (error);
 }
 
@@ -279,7 +260,7 @@ lfs_write(ap)
 	register struct lfs *fs;
 	register ioflag = ap->a_ioflag;
 	struct timeval tv;
-	struct buf *bp1, *bp2;
+	struct buf *bp;
 	daddr_t lbn;
 	off_t osize;
 	int n, on, flags, newblock;
@@ -327,27 +308,12 @@ lfs_write(ap)
 	    (u_quad_t)uio->uio_offset + uio->uio_resid > fs->lfs_maxfilesize)
 		return (EFBIG);
 
-	/*
-	 * XXX
-	 * FFS uses the VOP_LOCK to provide serializability of multi-block
-	 * reads and writes.  Since the cleaner may need to interrupt and
-	 * clean a vnode, this isn't such a good idea for us.  We use 
-	 * ordered locking instead.  Hold buffer N busy until buffer N+1
-	 * has been obtained.  We get much better concurrency that way.
-	 */
-	bp1 = bp2 = NULL;
-	IUNLOCK(ip);
 	do {
 		lbn = lblkno(fs, uio->uio_offset);
 		on = blkoff(fs, uio->uio_offset);
 		n = min((unsigned)(fs->lfs_bsize - on), uio->uio_resid);
 		lfs_check(vp, lbn);
-		if (error = lfs_balloc(vp, n, lbn, &bp1))
-			break;
-		if (bp2)
-			error = VOP_BWRITE(bp2);
-		bp2 = NULL;
-		if (error)
+		if (error = lfs_balloc(vp, n, lbn, &bp))
 			break;
 		if (uio->uio_offset + n > ip->i_size) {
 			ip->i_size = uio->uio_offset + n;
@@ -355,18 +321,13 @@ lfs_write(ap)
 		}
 		size = blksize(fs);
 		(void) vnode_pager_uncache(vp);
-		n = min(n, size - bp1->b_resid);
-		error = uiomove(bp1->b_un.b_addr + on, n, uio);
+		n = min(n, size - bp->b_resid);
+		error = uiomove(bp->b_un.b_addr + on, n, uio);
+		error = VOP_BWRITE(bp);
 		/* XXX Why is this in the loop? */
-		if (ap->a_cred->cr_uid != 0)
+		if (ap->a_cred && ap->a_cred->cr_uid != 0)
 			ip->i_mode &= ~(ISUID|ISGID);
-		bp2 = bp1;
-		bp1 = NULL;
 	} while (error == 0 && uio->uio_resid > 0 && n != 0);
-	if (bp1)
-		brelse(bp1);
-	if (bp2)
-		error = VOP_BWRITE(bp2);
 
 	if (error) {
 		if (ioflag & IO_UNIT) {
@@ -377,13 +338,14 @@ lfs_write(ap)
 		}
 	} 
 
+	/* TURN OFF SYNC FOR NOW
 	if (!error && (ioflag & IO_SYNC)) {
 		tv = time;
 		if (!(error = VOP_UPDATE(vp, &tv, &tv, 1)))
 			error = VOP_FSYNC(vp, ap->a_cred, MNT_WAIT,
 			    uio->uio_procp);
 	}
-	ILOCK(ip);
+	*/
 	return (error);
 }
 
@@ -404,61 +366,6 @@ lfs_fsync(ap)
 	tv = time;
 	return (VOP_UPDATE(ap->a_vp, &tv, &tv,
 	    ap->a_waitfor == MNT_WAIT ? LFS_SYNC : 0));
-}
-
-/*
- * Last reference to an inode, write the inode out and if necessary,
- * truncate and deallocate the file.
- */
-int
-lfs_inactive(ap)
-	struct vop_inactive_args /* {
-		struct vnode *a_vp;
-	} */ *ap;
-{
-	extern int prtactive;
-	register struct vnode *vp = ap->a_vp;
-	register struct inode *ip;
-	struct timeval tv;
-	int mode, error;
-
-	if (prtactive && vp->v_usecount != 0)
-		vprint("lfs_inactive: pushing active", vp);
-
-	/* Get rid of inodes related to stale file handles. */
-	ip = VTOI(vp);
-	if (ip->i_mode == 0) {
-		if ((vp->v_flag & VXLOCK) == 0)
-			vgone(vp);
-		return (0);
-	}
-
-	error = 0;
-	ILOCK(ip);
-	if (ip->i_nlink <= 0 && (vp->v_mount->mnt_flag & MNT_RDONLY) == 0) {
-#ifdef QUOTA
-		if (!getinoquota(ip))
-			(void)chkiq(ip, -1, NOCRED, 0);
-#endif
-		error = VOP_TRUNCATE(vp, (off_t)0, 0, NOCRED, NULL);
-		mode = ip->i_mode;
-		ip->i_mode = 0;
-		ip->i_rdev = 0;
-		ip->i_flag |= IUPD|ICHG;
-		VOP_VFREE(vp, ip->i_number, mode);
-	}
-	if (ip->i_flag&(IUPD|IACC|ICHG|IMOD)) {
-		tv = time;
-		VOP_UPDATE(vp, &tv, &tv, 0);
-	}
-	IUNLOCK(ip);
-	/*
-	 * If we are done with the inode, reclaim it
-	 * so that it can be reused immediately.
-	 */
-	if (vp->v_usecount == 0 && ip->i_mode == 0)
-		vgone(vp);
-	return (error);
 }
 
 /*
