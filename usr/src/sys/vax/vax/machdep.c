@@ -1,4 +1,4 @@
-/*	machdep.c	4.47	81/11/29	*/
+/*	machdep.c	4.48	81/12/09	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -157,7 +157,7 @@ startup(firstaddr)
 	maxmem = freemem;
 	printf("avail mem = %d\n", ctob(maxmem));
 	rminit(kernelmap, USRPTSIZE, 1, "usrpt", nproc);
-	rminit(mbmap, nmbclusters-1, 1, "mbclusters", nmbclusters/4);
+	rminit(mbmap, nmbclusters-CLSIZE, CLSIZE, "mbclusters", nmbclusters/4);
 
 	/*
 	 * Configure the system.
