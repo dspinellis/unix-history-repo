@@ -8,14 +8,14 @@
 .\"*		Electronics Research Laboratory				*
 .\"*		U.C. Berkeley.						*
 .\"*									*
-.\"*	VERSION 1.1	First Release: 11 Sept 1978			*
+.\"*	VERSION 2.1	First Release: 11 Sept 1978			*
 .\"*	See file \*(||/revisions for revision history			*
 .\"*									*
 .\"*	Documentation is available.					*
 .\"*									*
 .\"**********************************************************************
 .\"
-.\"	@(#)tmac.orig_me	1.6	%G%
+.\"	@(#)tmac.orig_me	2.1	%G%
 .\"	%beginstrip%
 .\"
 .\"	Code on .de commands:
