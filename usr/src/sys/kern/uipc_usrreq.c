@@ -12,7 +12,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)uipc_usrreq.c	7.16 (Berkeley) %G%
+ *	@(#)uipc_usrreq.c	7.17 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -24,10 +24,9 @@
 #include "unpcb.h"
 #include "un.h"
 #include "vnode.h"
-#include "mount.h"
 #include "file.h"
 #include "stat.h"
-#include "mbuf.h"	/* XXX must appear after mount.h */
+#include "mbuf.h"
 
 /*
  * Unix communications domain.

@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)kern_prot.c	7.9 (Berkeley) %G%
+ *	@(#)kern_prot.c	7.10 (Berkeley) %G%
  */
 
 /*
@@ -29,7 +29,6 @@
 #include "timeb.h"
 #include "times.h"
 #include "reboot.h"
-#include "mount.h"
 #include "buf.h"
 #include "../ufs/quota.h"
 #include "malloc.h"
