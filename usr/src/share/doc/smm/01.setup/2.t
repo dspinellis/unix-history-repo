@@ -3,15 +3,14 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)2.t	6.30 (Berkeley) %G%
+.\"	@(#)2.t	6.31 (Berkeley) %G%
 .\"
 .ds lq ``
 .ds rq ''
 .ds LH "Installing/Operating \*(4B
 .ds RH Bootstrapping
 .ds CF \*(Dy
-.NH 1
-Bootstrap Procedure
+.Sh 1 "Bootstrap procedure"
 .PP
 This section explains the bootstrap procedure that can be used
 to get the kernel supplied with this distribution running on your machine.
@@ -45,8 +44,7 @@ people outside the university.
 Consequently, we are not able to directly test or maintain these 
 other architectures, so cannot comment on their robustness,
 reliability, or completeness.
-.NH 2
-Bootstrapping from the tape
+.Sh 2 "Bootstrapping from the tape"
 .LP
 The set of files on the distribution tape are as follows:
 .IP 1)
@@ -115,10 +113,8 @@ You should follow the instructions for your particular architecture.
 In all sections,
 commands you are expected to type are shown in italics, while that
 information printed by the system is shown emboldened.
-.NH 2
-Booting the HP300
-.NH 3
-Supported hardware
+.Sh 2 "Booting the HP300"
+.Sh 3 "Supported hardware"
 .LP
 The hardware supported by \*(4B for the HP300/400 is as follows:
 .TS
@@ -178,8 +174,7 @@ Major items that are not supported
 include the 310 and 332 CPU's, 400 series machines
 configured for Domain/OS, EISA and VME bus adaptors, audio, the centronics
 port, 1/2" tape drives (7980), CD-ROM, and the PVRX/TVRX 3D graphics displays.
-.NH 3
-Standalone device file naming
+.Sh 3 "Standalone device file naming"
 .LP
 The standalone system device name syntax on the HP300 is of the form:
 .DS
@@ -217,8 +212,7 @@ If you have only one of any type bus adaptor, you may omit the adaptor
 and controller numbers;
 e.g. ``sd(0,2)'' could be used instead of ``sd(0,0,0,2)''.
 The following examples always use the full syntax for clarity.
-.NH 3
-The Procedure
+.Sh 3 "The procedure"
 .LP
 The basic steps involved in bringing up the HP300 are as follows:
 .IP 1)
@@ -234,8 +228,7 @@ Boot the UNIX system on the new disk.
 Label the disks with the
 .Xr disklabel (8)
 program.
-.NH 4
-Step 1: selecting and formatting a disk.
+.Sh 4 "Step 1: selecting and formatting a disk"
 .PP
 For your first system you will have to obtain a formatted disk
 of a type given in the ``supported hardware'' list above.
@@ -266,8 +259,7 @@ Once you have \*(4B up and running on one machine you can use the
 .Xr scsiformat (8)
 program to format additional SCSI disks.
 Any additional HP-IB disks will have to be formatted using HP-UX.
-.NH 4
-Step 2: copying the root filesystem from tape to disk
+.Sh 4 "Step 2: copying the root filesystem from tape to disk"
 .PP
 Once you have a formatted second disk you can use the
 .Xr dd (1)
@@ -332,8 +324,7 @@ lw(2i) l.
 .DE
 .LP
 This copy will likely take 30 minutes or more.
-.NH 4
-Step 3: booting the root filesystem
+.Sh 4 "Step 3: booting the root filesystem"
 .PP
 You now have a bootable root filesystem on the disk.
 If you were previously running with two disks,
@@ -473,8 +464,7 @@ lw(2i) l.
 (again, ignore warning from ``sh'')
 .TE
 .DE
-.NH 4
-Step 4: (optional) restoring the root filesystem
+.Sh 4 "Step 4: (optional) restoring the root filesystem"
 .PP
 The root filesystem that you are currently running on is complete,
 however it probably is not optimally laid out for the disk on
@@ -509,8 +499,7 @@ to which you should reply ``yes''.)
 When this completes,
 you should then shut down the system, and boot on the disk that
 you just created following the procedure in step (3) above.
-.NH 4
-Step 5: placing labels on the disks
+.Sh 4 "Step 5: placing labels on the disks"
 .PP
 For each disk on the HP300, \*(4B places information about the geometry
 of the drive and the partition layout at byte offset 1024.
@@ -586,10 +575,8 @@ Also, if you are loading on a single disk with the default disklabel,
 should be restored to the ``f'' partition and
 .Pn /usr
 to the ``e'' partition.
-.NH 2
-Booting the SPARC
-.NH 3
-Supported hardware
+.Sh 2 "Booting the SPARC"
+.Sh 3 "Supported hardware"
 .LP
 The hardware supported by \*(4B for the SPARC is as follows:
 .TS
@@ -632,8 +619,7 @@ Major items that are not supported include
 anything VME-based,
 the GX (cgsix) display,
 the floppy disk, and SCSI tapes.
-.NH 3
-Limitations
+.Sh 3 "Limitations"
 .LP
 There are several important limitations on the \*(4B distribution
 for the SPARC:
@@ -674,8 +660,7 @@ Attempts to use port
 .Pn ttyb
 will fail when the kernel tries
 to print the boot up messages to the console.
-.NH 3
-The Procedure
+.Sh 3 "The procedure"
 .PP
 You must have a spare disk on which to place \*(4B.
 The steps involved in bootstrapping this tape are as follows:
@@ -783,10 +768,8 @@ SunOS system:
 The SunOS compiler and linker should be able to produce SunOS binaries
 under \*(4B, but this has not been tested.  If you plan to try it you
 will need the appropriate .sa files as well.
-.NH 2
-Booting the DECstation
-.NH 3
-Supported hardware
+.Sh 2 "Booting the DECstation"
+.Sh 3 "Supported hardware"
 .LP
 The hardware supported by \*(4B for the DECstation is as follows:
 .TS
@@ -834,8 +817,7 @@ Major items that are not supported include the 5000/240
 R4000 based machines, FDDI and audio interfaces.
 Diskless machines are not supported but booting kernels and bootstrapping
 over the network is supported on the 5000 series.
-.NH 3
-The Procedure
+.Sh 3 "The procedure"
 .PP
 The first file on the distribution tape is a tar file that contains
 four files.
@@ -858,8 +840,7 @@ first three files.
 You may want to read the section on bootstrapping the HP300
 since many of the steps are similar.
 A spare, formatted SCSI disk is also useful.
-.NH 4
-Procedure A: copy root filesystem to disk
+.Sh 4 "Procedure A: copy root filesystem to disk"
 .PP
 This procedure is similar to the HP300.
 If you have an extra disk, the easiest approach is to use \fIdd\fP\|(1)
@@ -885,8 +866,7 @@ DEC 5000:    boot 5/rz0/vmunix
 You can then proceed to section 2.5
 to create reasonable disk partitions for your machine
 and then install the rest of the system.
-.NH 4
-Procedure B: bootstrap from tape
+.Sh 4 "Procedure B: bootstrap from tape"
 .PP
 If you have only a single machine with a single disk,
 you need to use the more difficult approach of booting a
@@ -915,8 +895,7 @@ DEC 5000:    boot 5/tz6 m           # 6 is the SCSI id of the TK50
 .DE
 The `m' argument tells the kernel to look for a root filesystem in memory.
 Next you should proceed to section 2.4.3 to build a disk-based root filesystem.
-.NH 4
-Procedure C: bootstrap over the network
+.Sh 4 "Procedure C: bootstrap over the network"
 .PP
 You will need a host machine that is running the \fIbootp\fP server 
 with the
@@ -946,8 +925,7 @@ Execute the following to start the networking:
 # ifconfig le0 inet myname
 .DE
 Next you should proceed to section 2.4.3 to build a disk-based root filesystem.
-.NH 3
-Label disk and create the root filesystem.
+.Sh 3 "Label disk and create the root filesystem"
 .LP
 There are five steps to create a disk-based root filesystem.
 .IP 1)
@@ -1019,15 +997,13 @@ mfb0	raw interface to mono graphics devices
 You can then proceed to section 2.5 to install the rest of the system.
 Note that where the disk name ``sd'' is used throughout section 2.5,
 you should substitute the name ``rz''.
-.NH 2
-Disk configuration
+.Sh 2 "Disk configuration"
 .PP
 All architectures now have a root filesystem up and running and
 proceed from this point to layout filesystems to make use
 of the available space and to balance disk load for better system
 performance.
-.NH 3
-Disk naming and divisions
+.Sh 3 "Disk naming and divisions"
 .PP
 Each physical disk drive can be divided into up to 8 partitions;
 UNIX typically uses only 3 or 4 partitions.
@@ -1074,8 +1050,7 @@ The
 .Pn /etc/disktab
 file used in labelling disks and making filesystems
 specifies disk partition sizes in sectors.
-.NH 3
-Layout considerations
+.Sh 3 "Layout considerations"
 .PP
 There are several considerations in deciding how
 to adjust the arrangement of things on your disks.
@@ -1167,8 +1142,7 @@ user files and the
 .Pn /usr
 directory as space needs dictate and experiment
 with the other, more easily moved filesystems.
-.NH 3
-Filesystem parameters
+.Sh 3 "Filesystem parameters"
 .PP
 Each filesystem is parameterized according to its block size,
 fragment size, and the disk geometry characteristics of the
@@ -1314,8 +1288,7 @@ override any of the default values you can modify the file,
 edit the disk label,
 or use an option to
 .Xr newfs .
-.NH 3
-Implementing a layout
+.Sh 3 "Implementing a layout"
 .PP
 To put a chosen disk layout into effect, you should use the
 .Xr newfs (8)
@@ -1401,8 +1374,7 @@ filesystem we would do:
 \fB#\fP \fImkdir /var\fP
 \fB#\fP \fImount /dev/\*(Dk1f /var\fP
 .DE
-.NH 2
-Installing the rest of the system
+.Sh 2 "Installing the rest of the system"
 .PP
 At this point you should have your disks partitioned.
 The next step is to extract the rest of the data from the tape.
@@ -1631,8 +1603,7 @@ you can remount it with:
 .DS
 \fB#\fP \fImount /usr/src\fP
 .DE
-.NH 2
-Additional conversion information
+.Sh 2 "Additional conversion information"
 .PP
 After setting up the new \*(4B filesystems, you may restore the user
 files that were saved on tape before beginning the conversion.
