@@ -9,7 +9,7 @@
  *
  * from: $Hdr: if_en.c,v 4.300 91/06/09 06:25:54 root Rel41 $ SONY
  *
- *	@(#)if_en.c	7.3 (Berkeley) %G%
+ *	@(#)if_en.c	7.4 (Berkeley) %G%
  */
 
 #include "en.h"
@@ -277,9 +277,12 @@ _enrint(unit, len)
 	register struct en_rheader *en;
     	struct mbuf *m;
 	int off, resid, s;
-	int	type;
+	int type;
 	register struct ensw *esp;
 	extern struct mbuf *if_rnewsget();
+#if defined(mips) && defined(CPU_SINGLE)
+	int bxcopy();
+#endif
 
 #ifdef notyet /* KU:XXX */
 	intrcnt[INTR_ETHER0 + unit]++;
@@ -342,7 +345,11 @@ _enrint(unit, len)
 	 * KU:XXX really?
 	 */
 	type = en->enr_type;
+#if defined(mips) && defined(CPU_SINGLE)
+	m = m_devget((char *)(en + 1), len, off, &es->es_if, bxcopy);
+#else
 	m = m_devget((char *)(en + 1), len, off, &es->es_if, 0);
+#endif
 	if (m == 0)
 		return;
 	ether_input(&es->es_if, (struct ether_header *) en->enr_dhost, m);
