@@ -1,4 +1,4 @@
-/*	dh.c	4.37	81/07/10	*/
+/*	dh.c	4.38	81/08/31	*/
 
 #include "dh.h"
 #if NDH > 0
@@ -75,11 +75,7 @@ struct dhdevice
 #define	OPAR	040
 #define	HDUPLX	040000
 
-#if NBK == 0
-#define	DH_IE	(DH_TIE|DH_RIE)
-#else
 #define	DH_IE	(DH_TIE|DH_SIE|DH_RIE)
-#endif
 
 /* Bits in dhrcr */
 #define	DH_PE		0010000		/* parity error */
@@ -255,9 +251,7 @@ dhopen(dev, flag)
 	if ((dhact&(1<<dh)) == 0) {
 		addr->un.dhcsr |= DH_IE;
 		dhact |= (1<<dh);
-#if NBK > 0
 		addr->dhsilo = 16;
-#endif
 	}
 	splx(s);
 	/*
@@ -635,9 +629,7 @@ dhreset(uban)
 			continue;
 		printf(" dh%d", dh);
 		((struct dhdevice *)ui->ui_addr)->un.dhcsr |= DH_IE;
-#if NBK > 0
 		((struct dhdevice *)ui->ui_addr)->dhsilo = 16;
-#endif
 		unit = dh * 16;
 		for (i = 0; i < 16; i++) {
 			tp = &dh11[unit];
