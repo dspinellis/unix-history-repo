@@ -10,6 +10,7 @@
 #ifndef KERNEL
 #include <sys/ucred.h>
 #endif
+#include <sys/queue.h>
 
 typedef struct { long val[2]; } fsid_t;		/* file system id type */
 
@@ -85,12 +86,13 @@ struct statfs {
  * array of operations and an instance record.  The file systems are
  * put on a doubly linked list.
  */
+LIST_HEAD(vnodelst, vnode);
+
 struct mount {
-	struct mount	*mnt_next;		/* next in mount list */
-	struct mount	*mnt_prev;		/* prev in mount list */
+	TAILQ_ENTRY(mount) mnt_list;		/* mount list */
 	struct vfsops	*mnt_op;		/* operations on fs */
 	struct vnode	*mnt_vnodecovered;	/* vnode we mounted on */
-	struct vnode	*mnt_mounth;		/* list of vnodes this mount */
+	struct vnodelst	mnt_vnodelist;		/* list of vnodes this mount */
 	int		mnt_flag;		/* flags */
 	int		mnt_maxsymlinklen;	/* max size of short symlink */
 	struct statfs	mnt_stat;		/* cache of filesystem stats */
@@ -123,6 +125,7 @@ struct mount {
  */
 #define	MNT_LOCAL	0x00001000	/* filesystem is stored locally */
 #define	MNT_QUOTA	0x00002000	/* quotas are enabled on filesystem */
+#define	MNT_ROOTFS	0x00004000	/* identifies the root filesystem */
 
 /*
  * Mask of flags that are visible to statfs()
@@ -319,12 +322,11 @@ struct nfs_args {
 /*
  * exported vnode operations
  */
-void	vfs_remove __P((struct mount *mp)); /* remove a vfs from mount list */
-int	vfs_lock __P((struct mount *mp));   /* lock a vfs */
-void	vfs_unlock __P((struct mount *mp)); /* unlock a vfs */
-struct	mount *getvfs __P((fsid_t *fsid));  /* return vfs given fsid */
-extern struct	mount *rootfs;		    /* ptr to root mount structure */
-extern struct	vfsops *vfssw[];	    /* mount filesystem type table */
+int	vfs_lock __P((struct mount *mp));	/* lock a vfs */
+void	vfs_unlock __P((struct mount *mp));	/* unlock a vfs */
+struct	mount *getvfs __P((fsid_t *fsid));	/* return vfs given fsid */
+extern	TAILQ_HEAD(mntlist, mount) mountlist;	/* mounted filesystem list */
+extern	struct vfsops *vfssw[];			/* filesystem type table */
 
 #else /* KERNEL */
 
