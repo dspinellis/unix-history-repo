@@ -837,6 +837,7 @@ int poll;		/* If 0, then block until something to do */
 	     */
 	if (SYNCHing) {
 	    int atmark;
+	    static int bogus_oob = 0, first = 1;
 
 	    ioctl(net, SIOCATMARK, (char *)&atmark);
 	    if (atmark) {
@@ -846,6 +847,40 @@ int poll;		/* If 0, then block until something to do */
 		    if (clocks.didnetreceive < clocks.gotDM) {
 			SYNCHing = stilloob(net);
 		    }
+		} else if (first && c > 0) {
+		    /*
+		     * Bogosity check.  Systems based on 4.2BSD
+		     * do not return an error if you do a second
+		     * recv(MSG_OOB).  So, we do one.  If it
+		     * succeeds and returns exactly the same
+		     * data, then assume that we are running
+		     * on a broken system and set the bogus_oob
+		     * flag.  (If the data was different, then
+		     * we probably got some valid new data, so
+		     * increment the count...)
+		     */
+		    int i;
+		    i = recv(net, netiring.supply + c, canread - c, MSG_OOB);
+		    if (i == c &&
+			  bcmp(netiring.supply, netiring.supply + c, i) == 0) {
+			bogus_oob = 1;
+			first = 0;
+		    } else if (i < 0) {
+			bogus_oob = 0;
+			first = 0;
+		    } else
+			c += i;
+		}
+		if (bogus_oob && c > 0) {
+		    int i;
+		    /*
+		     * Bogosity.  We have to do the read
+		     * to clear the atmark to get out of
+		     * an infinate loop.
+		     */
+		    i = read(net, netiring.supply + c, canread - c);
+		    if (i > 0)
+			c += i;
 		}
 	    } else {
 		c = recv(net, netiring.supply, canread, 0);
