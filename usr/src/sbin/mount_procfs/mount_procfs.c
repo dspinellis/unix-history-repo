@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mount_procfs.c	8.1 (Berkeley) %G%
+ *	@(#)mount_procfs.c	8.2 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -46,7 +46,7 @@ main(argc, argv)
 		usage();
 
 	if (mount(MOUNT_PROCFS, argv[1], mntflags, NULL)) {
-		(void)fprintf(stderr, "mount_fdesc: %s\n", strerror(errno));
+		(void)fprintf(stderr, "mount_procfs: %s\n", strerror(errno));
 		exit(1);
 	}
 	exit(0);
