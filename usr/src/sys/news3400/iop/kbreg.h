@@ -9,21 +9,16 @@
  *
  * from: $Hdr: kbreg.h,v 4.300 91/06/09 06:42:47 root Rel41 $ SONY
  *
- *	@(#)kbreg.h	7.2 (Berkeley) %G%
+ *	@(#)kbreg.h	7.3 (Berkeley) %G%
  */
 
 #ifndef __KEYBOARD__
 #define __KEYBOARD__ 1
 
-#include <machine/fix_machine_type.h>
-
 #define	key_any(x)	((x) != -1)
 #define	key_down(x)	(((x) & 0x80) == 0)
 #define	key_up(x)	((x) & 0x80)
 
-/*
- *
- */
 typedef	struct key_string {
 	int	key_length;
 	char	*key_string;
@@ -42,10 +37,6 @@ typedef	struct pfk_string {
 } Pfk_string;
 
 #define	KBDPRI		28
-
-#ifdef news800
-#define	KB_TEST		0
-#endif news800
 
 #define	KIOCSETS	0		/* set pfk string	*/
 #define	KIOCBELL	1		/* ring bell		*/
@@ -67,13 +58,7 @@ typedef	struct pfk_string {
 #define	KIOCGETSTAT	17		/* get keyboard status	*/
 #define	KIOCSETSTAT	18		/* set keyboard status	*/
 
-/*
- *
- */
 #define	OFF		0x80
-#ifndef SS2
-#define	SS2		0x8e
-#endif
 
 extern int N_Pfk;
 #define	N_PFK		N_Pfk
@@ -81,7 +66,7 @@ extern int N_Pfk;
 #define	N_KEY		93
 
 /*
- *	Programmable function key
+ * Programmable function key
  */
 #define	F1		1
 #define	F2		2
@@ -131,6 +116,5 @@ extern int N_Pfk;
 #define	DOWN		42
 #define	RIGHT		43
 #define	LEFT		44
-
 
 #endif /* !__KEYBOARD__ */

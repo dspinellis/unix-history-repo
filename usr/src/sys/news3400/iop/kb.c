@@ -9,13 +9,12 @@
  *
  * from: $Hdr: kb.c,v 4.300 91/06/09 06:42:44 root Rel41 $ SONY
  *
- *	@(#)kb.c	7.2 (Berkeley) %G%
+ *	@(#)kb.c	7.3 (Berkeley) %G%
  */
 
 #include "kb.h"
 
 #if NKB > 0
-#include <machine/fix_machine_type.h>
 
 #include <sys/param.h>
 #include <sys/proc.h>
@@ -238,20 +237,16 @@ kb_attach(hi)
 kb_open()
 {
 
-#ifndef news700
 	if (tty00_is_console)
 		kbm_open(SCC_KEYBOARD);
-#endif
 	return (0);
 }
 
 kb_close()
 {
 
-#ifndef news700
 	if (tty00_is_console)
 		kbm_close(SCC_KEYBOARD);
-#endif
 	return (0);
 }
 
@@ -296,9 +291,6 @@ kb_ctrl(func, arg)
 #include "../ipc/newsipc.h"
 #include "../mrx/h/kbms.h"
 
-#ifdef news1800
-#define ipc_phys(x)	(caddr_t)((int)(x) & ~0x80000000)
-#endif
 #ifdef news3800
 #define ipc_phys(x)	(caddr_t)(K0_TT0(x))
 #endif

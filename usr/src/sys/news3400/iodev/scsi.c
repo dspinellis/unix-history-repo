@@ -9,14 +9,13 @@
  *
  * from: $Hdr: scsi.c,v 4.300 91/06/27 20:42:51 root Rel41 $ SONY
  *
- *	@(#)scsi.c	7.2 (Berkeley) %G%
+ *	@(#)scsi.c	7.3 (Berkeley) %G%
  */
 
 /*
  *	scsi.c	ver 1.1		
  */
 
-#include <machine/fix_machine_type.h>
 #include <machine/param.h>
 
 #include <sys/param.h>
@@ -64,186 +63,100 @@ struct msg_list {
 };
 
 #ifdef NO_SHRINK_RSENSE_MSG
+#	define MSG(m) m
+#else
+#	define MSG(m) NULL
+#endif
+
 struct msg_list skeylist[] = {
-	{ 0x00,	1, "No Sense" },
-	{ 0x01,	0, "Recoverable Error" },
-	{ 0x02,	0, "Not Ready" },
-	{ 0x03,	0, "Medium Error" },
-	{ 0x04,	0, "Hardware Error" },
-	{ 0x05, 0, "Illegal Request" },
-	{ 0x06, 1, "Unit Attention" },
-	{ 0x07,	1, "Data protect" },
-	{ 0x08, 0, "Blank Check" },
-	{ 0x09,	0, "Vendor Unique" },
-	{ 0x0a,	0, "Copy/Compare Aborted" },
-	{ 0x0b, 0, "Aborted Command" },
-	{ 0x0c, 0, "Equal" },
-	{ 0x0d, 0, "Volume Overflow" },
-	{ 0x0e,	0, "Miscompare" },
+	{ 0x00,	1, MSG("No Sense") },
+	{ 0x01,	0, MSG("Recoverable Error") },
+	{ 0x02,	0, MSG("Not Ready") },
+	{ 0x03,	0, MSG("Medium Error") },
+	{ 0x04,	0, MSG("Hardware Error") },
+	{ 0x05, 0, MSG("Illegal Request") },
+	{ 0x06, 1, MSG("Unit Attention") },
+	{ 0x07,	1, MSG("Data protect") },
+	{ 0x08, 0, MSG("Blank Check") },
+	{ 0x09,	0, MSG("Vendor Unique") },
+	{ 0x0a,	0, MSG("Copy/Compare Aborted") },
+	{ 0x0b, 0, MSG("Aborted Command") },
+	{ 0x0c, 0, MSG("Equal") },
+	{ 0x0d, 0, MSG("Volume Overflow") },
+	{ 0x0e,	0, MSG("Miscompare") },
 	{ -1,	0, (caddr_t)0 }
 };
-#else /* NO_SHRINK_RSENSE_MSG */
-struct msg_list skeylist[] = {
-	{ 0x00,	1, NULL },
-	{ 0x01,	0, NULL },
-	{ 0x02,	0, NULL },
-	{ 0x03,	0, NULL },
-	{ 0x04,	0, NULL },
-	{ 0x05, 0, NULL },
-	{ 0x06, 1, NULL },
-	{ 0x07,	1, NULL },
-	{ 0x08, 0, NULL },
-	{ 0x09,	0, NULL },
-	{ 0x0a,	0, NULL },
-	{ 0x0b, 0, NULL },
-	{ 0x0c, 0, NULL },
-	{ 0x0d, 0, NULL },
-	{ 0x0e,	0, NULL },
-	{ -1,	0, NULL }
-};
-#endif /* NO_SHRINK_RSENSE_MSG */
 
-#ifdef NO_SHRINK_RSENSE_MSG
 struct msg_list ecodelist[] = {
-	{ 0x00, 9, "No Additional Sense Information" },
-/*HD*/	{ 0x01, 1, "No Index/Address Mark Found signal" },
-	{ 0x02, 0, "No Seek Complete" },
-	{ 0x03, 0, "Write Fault" },
-	{ 0x04, 9, "Drive Not Ready" },
-	{ 0x05, 0, "Drive Not Selected" },
-/*HD*/	{ 0x06, 0, "No Track Zero" },
-	{ 0x07, 0, "Multiple Drives Selected" },
-	{ 0x08, 0, "Logical Unit Communication Failure" },
-	{ 0x09, 2, "Track Following Error" },
-/*MO*/	{ 0x0a, 1, "No Disk" },
-/*MO*/	{ 0x0b, 1, "Load/Unload Failure" },
-/*MO*/	{ 0x0c, 1, "Spindle Failure" },
-/*MO*/	{ 0x0d, 1, "Focus Failure" },
-/*MO*/	{ 0x0e, 1, "Tracking Failure" },
-/*MO*/	{ 0x0f, 0, "Drive Initialization Failure" },
-	{ 0x10, 1, "ID CRC or ECC error" },
-	{ 0x11, 0, "Unrecoverd Read error" },
-/*HD*/	{ 0x12, 0, "No Address Mark (byte sync byte) found in ID field" },
-/*HD*/	{ 0x13, 0, "No Address Mark (byte sync byte) found in Data field" },
-/*HD*/	{ 0x14, 0, "No record found" },
-	{ 0x15, 1, "Seek Positioning Error" },
+	{ 0x00, 9, MSG("No Additional Sense Information") },
+/*HD*/	{ 0x01, 1, MSG("No Index/Address Mark Found signal") },
+	{ 0x02, 0, MSG("No Seek Complete") },
+	{ 0x03, 0, MSG("Write Fault") },
+	{ 0x04, 9, MSG("Drive Not Ready") },
+	{ 0x05, 0, MSG("Drive Not Selected") },
+/*HD*/	{ 0x06, 0, MSG("No Track Zero") },
+	{ 0x07, 0, MSG("Multiple Drives Selected") },
+	{ 0x08, 0, MSG("Logical Unit Communication Failure") },
+	{ 0x09, 2, MSG("Track Following Error") },
+/*MO*/	{ 0x0a, 1, MSG("No Disk") },
+/*MO*/	{ 0x0b, 1, MSG("Load/Unload Failure") },
+/*MO*/	{ 0x0c, 1, MSG("Spindle Failure") },
+/*MO*/	{ 0x0d, 1, MSG("Focus Failure") },
+/*MO*/	{ 0x0e, 1, MSG("Tracking Failure") },
+/*MO*/	{ 0x0f, 0, MSG("Drive Initialization Failure") },
+	{ 0x10, 1, MSG("ID CRC or ECC error") },
+	{ 0x11, 0, MSG("Unrecoverd Read error") },
+/*HD*/	{ 0x12, 0, MSG("No Address Mark (byte sync byte) found in ID field") },
+/*HD*/	{ 0x13, 0, MSG("No Address Mark (byte sync byte) found in Data field") },
+/*HD*/	{ 0x14, 0, MSG("No record found") },
+	{ 0x15, 1, MSG("Seek Positioning Error") },
 
-/*HD*/	{ 0x17, 0, "Recovered Read data with Read retries" },
-	{ 0x18, 0, "Recovered Read data with ECC procedure" },
-/*HD*/	{ 0x19, 0, "Defect List error" },
-/*HD*/	{ 0x1a, 0, "Parameter overrun" },
-/*HD*/	{ 0x1b, 0, "Synchronous transfer error" },
-/*HD*/	{ 0x1c, 0, "Primary Defect List not found" },
-/*HD*/	{ 0x1d, 0, "Compare error" },
+/*HD*/	{ 0x17, 0, MSG("Recovered Read data with Read retries") },
+	{ 0x18, 0, MSG("Recovered Read data with ECC procedure") },
+/*HD*/	{ 0x19, 0, MSG("Defect List error") },
+/*HD*/	{ 0x1a, 0, MSG("Parameter overrun") },
+/*HD*/	{ 0x1b, 0, MSG("Synchronous transfer error") },
+/*HD*/	{ 0x1c, 0, MSG("Primary Defect List not found") },
+/*HD*/	{ 0x1d, 0, MSG("Compare error") },
 
-	{ 0x20, 0, "Invalid Command Operation Code" },
-	{ 0x21, 0, "Illegal Logical Block Address" },
-/*HD*/	{ 0x22, 0, "Illegal function for device type" },
-/*MO*/	{ 0x23, 0, "Illegal function for Medium Type" },
-	{ 0x24, 0, "Illegal Field in CDB" },
-	{ 0x25, 0, "Invalid LUN" },
-	{ 0x26, 0, "Invalid field in Parameter List" },
-	{ 0x27, 0, "Write Protected" },
-	{ 0x28, 1, "Medium Changed" },
-	{ 0x29, 1, "Power On or Reset or Bus Device Reset Occured" },
-	{ 0x2a, 1, "Mode Select Parameters Changed" },
-/*HD*/	{ 0x2b, 0, "Host cannot Disconnect" },
+	{ 0x20, 0, MSG("Invalid Command Operation Code") },
+	{ 0x21, 0, MSG("Illegal Logical Block Address") },
+/*HD*/	{ 0x22, 0, MSG("Illegal function for device type") },
+/*MO*/	{ 0x23, 0, MSG("Illegal function for Medium Type") },
+	{ 0x24, 0, MSG("Illegal Field in CDB") },
+	{ 0x25, 0, MSG("Invalid LUN") },
+	{ 0x26, 0, MSG("Invalid field in Parameter List") },
+	{ 0x27, 0, MSG("Write Protected") },
+	{ 0x28, 1, MSG("Medium Changed") },
+	{ 0x29, 1, MSG("Power On or Reset or Bus Device Reset Occured") },
+	{ 0x2a, 1, MSG("Mode Select Parameters Changed") },
+/*HD*/	{ 0x2b, 0, MSG("Host cannot Disconnect") },
 
-	{ 0x31, 0, "Medium Format Corrupted" },
-	{ 0x32, 0, "No Defect Spare Location Available" },
+	{ 0x31, 0, MSG("Medium Format Corrupted") },
+	{ 0x32, 0, MSG("No Defect Spare Location Available") },
 
-/*MO*/	{ 0x38, 1, "Recovered with Automatic Reallocation" },
-/*MO*/	{ 0x39, 0, "Automatic Reallocation Failure" },
-/*MO*/	{ 0x3a, 1, "Defect List Update Failure" },
+/*MO*/	{ 0x38, 1, MSG("Recovered with Automatic Reallocation") },
+/*MO*/	{ 0x39, 0, MSG("Automatic Reallocation Failure") },
+/*MO*/	{ 0x3a, 1, MSG("Defect List Update Failure") },
 
-/*MO*/	{ 0x3d, 0, "Defect List Not Available" },
+/*MO*/	{ 0x3d, 0, MSG("Defect List Not Available") },
 
-/*HD*/	{ 0x40, 0, "RAM failure" },
-/*HD*/	{ 0x41, 0, "Data Path diagnostic failure" },
-	{ 0x42, 0, "Power On Diagnostic Failure" },
-	{ 0x43, 0, "Message Reject Error" },
-	{ 0x44, 9, "Internal Controller Error" },
-/*HD*/	{ 0x45, 0, "Selection/Reselection failure" },
+/*HD*/	{ 0x40, 0, MSG("RAM failure") },
+/*HD*/	{ 0x41, 0, MSG("Data Path diagnostic failure") },
+	{ 0x42, 0, MSG("Power On Diagnostic Failure") },
+	{ 0x43, 0, MSG("Message Reject Error") },
+	{ 0x44, 9, MSG("Internal Controller Error") },
+/*HD*/	{ 0x45, 0, MSG("Selection/Reselection failure") },
 
-	{ 0x47, 0, "SCSI Interface Parity Error" },
-	{ 0x48, 0, "Initiator Detected Error" },
-	{ 0x49, 0, "Inappropriate/Illegal Message" },
+	{ 0x47, 0, MSG("SCSI Interface Parity Error") },
+	{ 0x48, 0, MSG("Initiator Detected Error") },
+	{ 0x49, 0, MSG("Inappropriate/Illegal Message") },
 
-	{ 0x64, 1, "Illegal mode for this track" },
+	{ 0x64, 1, MSG("Illegal mode for this track") },
 
 	{ -1,   0, (caddr_t)0 }
 };
-#else /* NO_SHRINK_RSENSE_MSG */
-struct msg_list ecodelist[] = {
-	{ 0x00, 9, NULL },
-/*HD*/	{ 0x01, 1, NULL },
-	{ 0x02, 0, NULL },
-	{ 0x03, 0, NULL },
-	{ 0x04, 9, NULL },
-	{ 0x05, 0, NULL },
-/*HD*/	{ 0x06, 0, NULL },
-	{ 0x07, 0, NULL },
-	{ 0x08, 0, NULL },
-	{ 0x09, 2, NULL },
-/*MO*/	{ 0x0a, 1, NULL },
-/*MO*/	{ 0x0b, 1, NULL },
-/*MO*/	{ 0x0c, 1, NULL },
-/*MO*/	{ 0x0d, 1, NULL },
-/*MO*/	{ 0x0e, 1, NULL },
-/*MO*/	{ 0x0f, 0, NULL },
-	{ 0x10, 1, NULL },
-	{ 0x11, 0, NULL },
-/*HD*/	{ 0x12, 0, NULL },
-/*HD*/	{ 0x13, 0, NULL },
-/*HD*/	{ 0x14, 0, NULL },
-	{ 0x15, 1, NULL },
-
-/*HD*/	{ 0x17, 0, NULL },
-	{ 0x18, 0, NULL },
-/*HD*/	{ 0x19, 0, NULL },
-/*HD*/	{ 0x1a, 0, NULL },
-/*HD*/	{ 0x1b, 0, NULL },
-/*HD*/	{ 0x1c, 0, NULL },
-/*HD*/	{ 0x1d, 0, NULL },
-
-	{ 0x20, 0, NULL },
-	{ 0x21, 0, NULL },
-/*HD*/	{ 0x22, 0, NULL },
-/*MO*/	{ 0x23, 0, NULL },
-	{ 0x24, 0, NULL },
-	{ 0x25, 0, NULL },
-	{ 0x26, 0, NULL },
-	{ 0x27, 0, NULL },
-	{ 0x28, 1, NULL },
-	{ 0x29, 1, NULL },
-	{ 0x2a, 1, NULL },
-/*HD*/	{ 0x2b, 0, NULL },
-
-	{ 0x31, 0, NULL },
-	{ 0x32, 0, NULL },
-
-/*MO*/	{ 0x38, 1, NULL },
-/*MO*/	{ 0x39, 0, NULL },
-/*MO*/	{ 0x3a, 1, NULL },
-
-/*MO*/	{ 0x3d, 0, NULL },
-
-/*HD*/	{ 0x40, 0, NULL },
-/*HD*/	{ 0x41, 0, NULL },
-	{ 0x42, 0, NULL },
-	{ 0x43, 0, NULL },
-	{ 0x44, 9, NULL },
-/*HD*/	{ 0x45, 0, NULL },
-
-	{ 0x47, 0, NULL },
-	{ 0x48, 0, NULL },
-	{ 0x49, 0, NULL },
-
-	{ 0x64, 1, NULL },
-
-	{ -1,   0, NULL }
-};
-#endif /* NO_SHRINK_RSENSE_MSG */
+#undef MSG
 
 /*
  * Init a scsi bus.
@@ -1101,5 +1014,4 @@ struct scsi_berr_bug_table {
 	int serial_h;
 	int value;	/* 1:BUG, 0:NOBUG */
 };
-
 /***/
