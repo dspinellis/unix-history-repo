@@ -14,7 +14,7 @@ char copyright[] =
 #endif
 
 #ifndef lint
-static char sccsid[] = "@(#)printf.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)printf.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 
@@ -26,10 +26,14 @@ static char sccsid[] = "@(#)printf.c	5.11 (Berkeley) %G%";
 #include <stdlib.h>
 #include <string.h>
 
+/*
+ * XXX
+ * This *has* to go away.  TK.
+ */
 #ifdef SHELL
 #define main printfcmd
 #define err error
-#include "/usr/src/devel/sh/bltin/bltin.h"
+#include "../../bin/sh/bltin/bltin.h"
 #endif
 
 #define PF(f, func) { \
