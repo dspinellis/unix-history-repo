@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ftp.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)ftp.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
@@ -33,54 +33,53 @@ struct	sockaddr_in myctladdr;
 FILE	*cin, *cout;
 FILE	*dataconn();
 
-struct hostent *
+char *
 hookup(host, port)
 	char *host;
 	int port;
 {
-	register struct hostent *hp;
+	register struct hostent *hp = 0;
+	static char hostnamebuf[80];
 	int s, len;
-	long addr;
 
 	bzero((char *)&hisctladdr, sizeof (hisctladdr));
-	if ((addr = inet_addr(host)) == -1) {
+	hisctladdr.sin_addr.s_addr = inet_addr(host);
+	if (hisctladdr.sin_addr.s_addr != -1) {
+		hisctladdr.sin_family = AF_INET;
+		(void) strcpy(hostnamebuf, host);
+	} else {
 		hp = gethostbyname(host);
-	} else  {
-		static struct hostent def;
-		static struct in_addr defaddr;
-		static char namebuf[MAXHOSTNAMELEN];
-		static char *addrbuf;
-		long inet_addr();
-
-		defaddr.s_addr = addr;
-		strcpy(namebuf, host);
-		def.h_name = namebuf;
-		hostname = namebuf;
-		def.h_addr_list = &addrbuf;
-		def.h_addr = (char *)&defaddr;
-		def.h_length = sizeof (struct in_addr);
-		def.h_addrtype = AF_INET;
-		def.h_aliases = 0;
-		hp = &def;
+		if (hp == NULL) {
+			printf("%s: unknown host\n", host);
+			return (0);
+		}
+		hisctladdr.sin_family = hp->h_addrtype;
+		bcopy(hp->h_addr_list[0],
+		    (caddr_t)&hisctladdr.sin_addr, hp->h_length);
+		(void) strcpy(hostnamebuf, hp->h_name);
 	}
-	if (hp == NULL) {
-		fprintf(stderr, "%s: Unknown host.\n", host);
-		return (0);
-	}
-	hostname = hp->h_name;
-	hisctladdr.sin_family = hp->h_addrtype;
-	s = socket(hp->h_addrtype, SOCK_STREAM, 0);
+	hostname = hostnamebuf;
+	s = socket(hisctladdr.sin_family, SOCK_STREAM, 0);
 	if (s < 0) {
 		perror("ftp: socket");
 		return (0);
 	}
-	if (bind(s, (char *)&hisctladdr, sizeof (hisctladdr), 0) < 0) {
-		perror("ftp: bind");
-		goto bad;
-	}
-	bcopy(hp->h_addr, (char *)&hisctladdr.sin_addr, hp->h_length);
 	hisctladdr.sin_port = port;
-	if (connect(s, (char *)&hisctladdr, sizeof (hisctladdr), 0) < 0) {
+	while (connect(s, (caddr_t)&hisctladdr, sizeof (hisctladdr)) < 0) {
+		if (hp && hp->h_addr_list[1]) {
+			int oerrno = errno;
+
+			fprintf(stderr, "ftp: connect to address %s: ",
+				inet_ntoa(hisctladdr.sin_addr));
+			errno = oerrno;
+			perror(0);
+			hp->h_addr_list++;
+			bcopy(hp->h_addr_list[0],
+			    (caddr_t)&hisctladdr.sin_addr, hp->h_length);
+			fprintf(stderr, "Trying %s...\n",
+				inet_ntoa(hisctladdr.sin_addr));
+			continue;
+		}
 		perror("ftp: connect");
 		goto bad;
 	}
@@ -100,23 +99,23 @@ hookup(host, port)
 		goto bad;
 	}
 	if (verbose)
-		printf("Connected to %s.\n", hp->h_name);
+		printf("Connected to %s.\n", hostname);
 	(void) getreply(0); 		/* read startup message from server */
-	return (hp);
+	return (hostname);
 bad:
 	close(s);
-	return ((struct hostent *)0);
+	return ((char *)0);
 }
 
-login(hp)
-	struct hostent *hp;
+login(host)
+	char *host;
 {
 	char acct[80];
 	char *user, *pass;
 	int n;
 
 	user = pass = 0;
-	ruserpass(hp->h_name, &user, &pass);
+	ruserpass(host, &user, &pass);
 	n = command("USER %s", user);
 	if (n == CONTINUE)
 		n = command("PASS %s", pass);
