@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.14 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -103,14 +103,6 @@ main(argc, argv)
 		argc--, argv++;
 	}
 	fromatty = isatty(fileno(stdin));
-	/*
-	 * Set up defaults for FTP.
-	 */
-	(void) strcpy(typename, "ascii"), type = TYPE_A;
-	(void) strcpy(formname, "non-print"), form = FORM_N;
-	(void) strcpy(modename, "stream"), mode = MODE_S;
-	(void) strcpy(structname, "file"), stru = STRU_F;
-	(void) strcpy(bytename, "8"), bytesize = 8;
 	if (fromatty)
 		verbose++;
 	cpend = 0;           /* no pending replies */

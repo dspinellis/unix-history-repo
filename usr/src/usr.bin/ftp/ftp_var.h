@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1985 Regents of the University of California.
+ * Copyright (c) 1985, 1989 Regents of the University of California.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms are permitted
@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ftp_var.h	5.5 (Berkeley) %G%
+ *	@(#)ftp_var.h	5.6 (Berkeley) %G%
  */
 
 /*
@@ -52,7 +52,8 @@ char	ntout[17];		/* output translation table */
 char	mapin[MAXPATHLEN];	/* input map template */
 char	mapout[MAXPATHLEN];	/* output map template */
 char	typename[32];		/* name of file transfer type */
-int	type;			/* file transfer type */
+int	type;			/* requested file transfer type */
+int	curtype;		/* current file transfer type */
 char	structname[32];		/* name of file transfer structure */
 int	stru;			/* file transfer structure */
 char	formname[32];		/* name of file transfer format */
@@ -63,6 +64,8 @@ char	bytename[32];		/* local byte size in ascii */
 int	bytesize;		/* local byte size in binary */
 
 char	*hostname;		/* name of host connected to */
+int	unix_server;		/* server is unix, can use binary for ascii */
+int	unix_proxy;		/* proxy is unix, can use binary for ascii */
 
 struct	servent *sp;		/* service spec for tcp/ftp */
 

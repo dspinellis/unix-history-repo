@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ftp.c	5.28 (Berkeley) %G%";
+static char sccsid[] = "@(#)ftp.c	5.29 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -45,7 +45,6 @@ int	data = -1;
 int	abrtflag = 0;
 int	ptflag = 0;
 int	connected;
-int	allbinary;
 struct	sockaddr_in myctladdr;
 uid_t	getuid();
 off_t	restart_point = 0;
@@ -236,11 +235,15 @@ command(fmt, args)
 	char *fmt;
 {
 	int r, (*oldintr)(), cmdabort();
+	char *xxx = "XXX";
 
 	abrtflag = 0;
 	if (debug) {
 		printf("---> ");
-		_doprnt(fmt, &args, stdout);
+		if (strncmp(fmt, "PASS", 4) == 0)
+			_doprnt(fmt, (int *)&xxx, stdout);
+		else
+			_doprnt(fmt, &args, stdout);
 		printf("\n");
 		(void) fflush(stdout);
 	}
@@ -415,6 +418,8 @@ sendrequest(cmd, local, remote, printnames)
 		proxtrans(cmd, local, remote);
 		return;
 	}
+	if (curtype != type)
+		changetype(type, 0);
 	closefunc = NULL;
 	oldintr = NULL;
 	oldintp = NULL;
@@ -641,7 +646,7 @@ recvrequest(cmd, local, remote, mode, printnames)
 {
 	FILE *fout, *din = 0, *popen();
 	int (*closefunc)(), pclose(), fclose(), (*oldintr)(), (*oldintp)(); 
-	int abortrecv(), oldverbose, oldtype = 0, is_retr, tcrflag, nfnd;
+	int abortrecv(), is_retr, tcrflag, nfnd;
 	char *bufp, *gunique(), msg;
 	static char *buf;
 	static int bufsize;
@@ -722,6 +727,11 @@ recvrequest(cmd, local, remote, mode, printnames)
 			return;
 		}
 	}
+	if (!is_retr) {
+		if (curtype != TYPE_A)
+			changetype(TYPE_A, 0);
+	} else if (curtype != type)
+		changetype(type, 0);
 	if (initconn()) {
 		(void) signal(SIGINT, oldintr);
 		code = -1;
@@ -729,59 +739,17 @@ recvrequest(cmd, local, remote, mode, printnames)
 	}
 	if (setjmp(recvabort))
 		goto abort;
-	if (!is_retr) {
-		if (type != TYPE_A && (allbinary == 0 || type != TYPE_I)) {
-			oldtype = type;
-			oldverbose = verbose;
-			if (!debug)
-				verbose = 0;
-			setascii();
-			verbose = oldverbose;
-		}
-	} else if (restart_point) {
-		if (command("REST %ld", (long) restart_point) != CONTINUE)
-			return;
-	}
+	if (is_retr && restart_point &&
+	    command("REST %ld", (long) restart_point) != CONTINUE)
+		return;
 	if (remote) {
 		if (command("%s %s", cmd, remote) != PRELIM) {
 			(void) signal(SIGINT, oldintr);
-			if (oldtype) {
-				if (!debug)
-					verbose = 0;
-				switch (oldtype) {
-					case TYPE_I:
-						setbinary();
-						break;
-					case TYPE_E:
-						setebcdic();
-						break;
-					case TYPE_L:
-						settenex();
-						break;
-				}
-				verbose = oldverbose;
-			}
 			return;
 		}
 	} else {
 		if (command("%s", cmd) != PRELIM) {
 			(void) signal(SIGINT, oldintr);
-			if (oldtype) {
-				if (!debug)
-					verbose = 0;
-				switch (oldtype) {
-					case TYPE_I:
-						setbinary();
-						break;
-					case TYPE_E:
-						setebcdic();
-						break;
-					case TYPE_L:
-						settenex();
-						break;
-				}
-				verbose = oldverbose;
-			}
 			return;
 		}
 	}
@@ -820,7 +788,7 @@ recvrequest(cmd, local, remote, mode, printnames)
 		bufsize = st.st_blksize;
 	}
 	(void) gettimeofday(&start, (struct timezone *)0);
-	switch (type) {
+	switch (curtype) {
 
 	case TYPE_I:
 	case TYPE_L:
@@ -935,22 +903,6 @@ break2:
 	(void) getreply(0);
 	if (bytes > 0 && is_retr)
 		ptransfer("received", bytes, &start, &stop);
-	if (oldtype) {
-		if (!debug)
-			verbose = 0;
-		switch (oldtype) {
-			case TYPE_I:
-				setbinary();
-				break;
-			case TYPE_E:
-				setebcdic();
-				break;
-			case TYPE_L:
-				settenex();
-				break;
-		}
-		verbose = oldverbose;
-	}
 	return;
 abort:
 
@@ -960,22 +912,6 @@ abort:
 	if (oldintp)
 		(void) signal(SIGPIPE, oldintr);
 	(void) signal(SIGINT,SIG_IGN);
-	if (oldtype) {
-		if (!debug)
-			verbose = 0;
-		switch (oldtype) {
-			case TYPE_I:
-				setbinary();
-				break;
-			case TYPE_E:
-				setebcdic();
-				break;
-			case TYPE_L:
-				settenex();
-				break;
-		}
-		verbose = oldverbose;
-	}
 	if (!cpend) {
 		code = -1;
 		(void) signal(SIGINT,oldintr);
@@ -1176,6 +1112,7 @@ pswitch(flag)
 		FILE *in;
 		FILE *out;
 		int tpe;
+		int curtpe;
 		int cpnd;
 		int sunqe;
 		int runqe;
@@ -1186,7 +1123,7 @@ pswitch(flag)
 		int mapflg;
 		char mi[MAXPATHLEN];
 		char mo[MAXPATHLEN];
-		} proxstruct, tmpstruct;
+	} proxstruct, tmpstruct;
 	struct comvars *ip, *op;
 
 	abrtflag = 0;
@@ -1197,8 +1134,7 @@ pswitch(flag)
 		ip = &tmpstruct;
 		op = &proxstruct;
 		proxy++;
-	}
-	else {
+	} else {
 		if (!proxy)
 			return;
 		ip = &proxstruct;
@@ -1223,8 +1159,8 @@ pswitch(flag)
 	cout = op->out;
 	ip->tpe = type;
 	type = op->tpe;
-	if (!type)
-		type = 1;
+	ip->curtpe = curtype;
+	curtype = op->curtpe;
 	ip->cpnd = cpend;
 	cpend = op->cpnd;
 	ip->sunqe = sunique;
@@ -1272,7 +1208,7 @@ abortpt()
 proxtrans(cmd, local, remote)
 	char *cmd, *local, *remote;
 {
-	int (*oldintr)(), abortpt(), tmptype, oldtype = 0, secndflag = 0, nfnd;
+	int (*oldintr)(), abortpt(), prox_type, secndflag = 0, nfnd;
 	extern jmp_buf ptabort;
 	char *cmd2;
 	struct fd_set mask;
@@ -1281,11 +1217,18 @@ proxtrans(cmd, local, remote)
 		cmd2 = "RETR";
 	else
 		cmd2 = runique ? "STOU" : "STOR";
+	if ((prox_type = type) == 0) {
+		if (unix_server && unix_proxy)
+			prox_type = TYPE_I;
+		else
+			prox_type = TYPE_A;
+	}
+	if (curtype != prox_type)
+		changetype(prox_type, 1);
 	if (command("PASV") != COMPLETE) {
-		printf("proxy server does not support third part transfers.\n");
+		printf("proxy server does not support third party transfers.\n");
 		return;
 	}
-	tmptype = type;
 	pswitch(0);
 	if (!connected) {
 		printf("No primary connection\n");
@@ -1293,40 +1236,9 @@ proxtrans(cmd, local, remote)
 		code = -1;
 		return;
 	}
-	if (type != tmptype) {
-		oldtype = type;
-		switch (tmptype) {
-			case TYPE_A:
-				setascii();
-				break;
-			case TYPE_I:
-				setbinary();
-				break;
-			case TYPE_E:
-				setebcdic();
-				break;
-			case TYPE_L:
-				settenex();
-				break;
-		}
-	}
+	if (curtype != prox_type)
+		changetype(prox_type, 1);
 	if (command("PORT %s", pasv) != COMPLETE) {
-		switch (oldtype) {
-			case 0:
-				break;
-			case TYPE_A:
-				setascii();
-				break;
-			case TYPE_I:
-				setbinary();
-				break;
-			case TYPE_E:
-				setebcdic();
-				break;
-			case TYPE_L:
-				settenex();
-				break;
-		}
 		pswitch(1);
 		return;
 	}
@@ -1335,22 +1247,6 @@ proxtrans(cmd, local, remote)
 	oldintr = signal(SIGINT, abortpt);
 	if (command("%s %s", cmd, remote) != PRELIM) {
 		(void) signal(SIGINT, oldintr);
-		switch (oldtype) {
-			case 0:
-				break;
-			case TYPE_A:
-				setascii();
-				break;
-			case TYPE_I:
-				setbinary();
-				break;
-			case TYPE_E:
-				setebcdic();
-				break;
-			case TYPE_L:
-				settenex();
-				break;
-		}
 		pswitch(1);
 		return;
 	}
@@ -1364,22 +1260,6 @@ proxtrans(cmd, local, remote)
 	pswitch(0);
 	(void) getreply(0);
 	(void) signal(SIGINT, oldintr);
-	switch (oldtype) {
-		case 0:
-			break;
-		case TYPE_A:
-			setascii();
-			break;
-		case TYPE_I:
-			setbinary();
-			break;
-		case TYPE_E:
-			setebcdic();
-			break;
-		case TYPE_L:
-			settenex();
-			break;
-	}
 	pswitch(1);
 	ptflag = 0;
 	printf("local: %s remote: %s\n", local, remote);
@@ -1394,22 +1274,6 @@ abort:
 	if (!cpend && !secndflag) {  /* only here if cmd = "STOR" (proxy=1) */
 		if (command("%s %s", cmd2, local) != PRELIM) {
 			pswitch(0);
-			switch (oldtype) {
-				case 0:
-					break;
-				case TYPE_A:
-					setascii();
-					break;
-				case TYPE_I:
-					setbinary();
-					break;
-				case TYPE_E:
-					setebcdic();
-					break;
-				case TYPE_L:
-					settenex();
-					break;
-			}
 			if (cpend) {
 				char msg[2];
 
@@ -1469,22 +1333,6 @@ abort:
 	if (!cpend && !secndflag) {  /* only if cmd = "RETR" (proxy=1) */
 		if (command("%s %s", cmd2, local) != PRELIM) {
 			pswitch(0);
-			switch (oldtype) {
-				case 0:
-					break;
-				case TYPE_A:
-					setascii();
-					break;
-				case TYPE_I:
-					setbinary();
-					break;
-				case TYPE_E:
-					setebcdic();
-					break;
-				case TYPE_L:
-					settenex();
-					break;
-			}
 			if (cpend) {
 				char msg[2];
 
@@ -1557,22 +1405,6 @@ abort:
 	}
 	if (proxy)
 		pswitch(0);
-	switch (oldtype) {
-		case 0:
-			break;
-		case TYPE_A:
-			setascii();
-			break;
-		case TYPE_I:
-			setbinary();
-			break;
-		case TYPE_E:
-			setebcdic();
-			break;
-		case TYPE_L:
-			settenex();
-			break;
-	}
 	pswitch(1);
 	if (ptabflg)
 		code = -1;
