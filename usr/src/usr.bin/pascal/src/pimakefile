@@ -1,4 +1,4 @@
-SCCSID = "@(#)pimakefile 1.42 %G%"
+SCCSID = "@(#)pimakefile 1.43 %G%"
 
 INSTALLDIR = ${DESTDIR}/usr/ucb
 INSTALLNAME = ${INSTALLDIR}/pi
@@ -64,6 +64,9 @@ ${OBJS}:
 	cd ${SRCDIR}; ${MKSTR} - ${BINDIR}/${ERRORSTRINGS} ${BINDIR}/ $*.c
 	${CC} ${CFLAGS} -I. -I${SRCDIR} -c $*.c
 	${RM} $*.c
+
+lint:
+	cd ${SRCDIR}; lint -I. -I${BINDIR} ${SRCS} ${BINDIR}/*.c
 
 whoami.h:
 	${GET} ${REL} piwhoami.h
