@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_exit.c	7.34 (Berkeley) %G%
+ *	@(#)kern_exit.c	7.35 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -83,10 +83,23 @@ exit(p, rv)
 	 * This may block!
 	 */
 	fdfree(p);
+
+	/* The next two chunks should probably be moved to vmspace_exit. */
 #ifdef SYSVSHM
 	if (p->p_vmspace->vm_shm)
 		shmexit(p);
 #endif
+	/*
+	 * Release user portion of address space.
+	 * This releases references to vnodes,
+	 * which could cause I/O if the file has been unlinked.
+	 * Need to do this early enough that we can still sleep.
+	 * Can't free the entire vmspace as the kernel stack
+	 * may be mapped within that space also.
+	 */
+	if (p->p_vmspace->vm_refcnt == 1)
+		(void) vm_map_remove(&p->p_vmspace->vm_map, VM_MIN_ADDRESS,
+		    VM_MAXUSER_ADDRESS);
 
 	if (p->p_pid == 1)
 		panic("init died");
@@ -121,10 +134,6 @@ exit(p, rv)
 	(void) acct(p);
 	if (--p->p_limit->p_refcnt == 0)
 		FREE(p->p_limit, M_SUBPROC);
-	if (--p->p_cred->p_refcnt == 0) {
-		crfree(p->p_cred->pc_ucred);
-		FREE(p->p_cred, M_SUBPROC);
-	}
 #ifdef KTRACE
 	/* 
 	 * release trace file
@@ -308,6 +317,10 @@ loop:
 			p->p_xstat = 0;
 			ruadd(&q->p_stats->p_cru, p->p_ru);
 			FREE(p->p_ru, M_ZOMBIE);
+			if (--p->p_cred->p_refcnt == 0) {
+				crfree(p->p_cred->pc_ucred);
+				FREE(p->p_cred, M_SUBPROC);
+			}
 
 			/*
 			 * Finally finished with old proc entry.
@@ -323,10 +336,12 @@ loop:
 			if ((q = p->p_pptr)->p_cptr == p)
 				q->p_cptr = p->p_osptr;
 
-#ifdef i386
-			cpu_wait(p);			/* XXX */
-#endif
-
+			/*
+			 * Give machine-dependent layer a chance
+			 * to free anything that cpu_exit couldn't
+			 * release while still running in process context.
+			 */
+			cpu_wait(p);
 			FREE(p, M_PROC);
 			nprocs--;
 			return (0);
