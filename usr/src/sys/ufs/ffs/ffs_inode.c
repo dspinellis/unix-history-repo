@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ffs_inode.c	7.19 (Berkeley) %G%
+ *	@(#)ffs_inode.c	7.20 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -45,6 +45,8 @@ union ihead {
 	union  ihead *ih_head[2];
 	struct inode *ih_chain[2];
 } ihead[INOHSZ];
+
+int prtactive;	/* 1 => print out reclaim of active vnodes */
 
 /*
  * Initialize hash links for inodes.
@@ -229,7 +231,7 @@ ufs_inactive(vp)
 	register struct inode *ip = VTOI(vp);
 	int mode, error = 0;
 
-	if (vp->v_count != 0)
+	if (prtactive && vp->v_count != 0)
 		printf("ufs_inactive: pushing active ino %d dev 0x%x\n",
 			ip->i_number, ip->i_dev);
 	/*
@@ -273,7 +275,7 @@ ufs_reclaim(vp)
 {
 	register struct inode *ip = VTOI(vp);
 
-	if (vp->v_count != 0)
+	if (prtactive && vp->v_count != 0)
 		printf("ufs_reclaim: pushing active ino %d dev 0x%x\n",
 			ip->i_number, ip->i_dev);
 	/*
