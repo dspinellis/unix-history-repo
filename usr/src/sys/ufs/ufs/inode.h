@@ -9,10 +9,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)inode.h	8.7 (Berkeley) %G%
+ *	@(#)inode.h	8.8 (Berkeley) %G%
  */
 
 #include <ufs/ufs/dinode.h>
+#include <ufs/ufs/dir.h>
 
 /*
  * The inode is used to describe each active (or recently active) file in the
