@@ -83,7 +83,8 @@ typedef union
 extern DItype __fixunssfdi (SFtype a);
 extern DItype __fixunsdfdi (DFtype a);
 DItype
-__fixunsdfdi (DFtype a)
+__fixunsdfdi (a)
+     DFtype a;
 {
   DFtype b;
   UDItype v;

@@ -184,7 +184,7 @@ FILE	*funopen  (const void *,
 int	__srget  (FILE *) 		;
 int	__svfscanf  (FILE *, const char *, char *			) 		;
 int	__swbuf  (int, FILE *) 		;
-static inline int __sputc(int _c, FILE *_p) {
+static __inline__ int __sputc(int _c, FILE *_p) {
 	if (--_p->_w >= 0 || (_p->_w >= _p->_lbfsize && (char)_c != '\n'))
 		return (*_p->_p++ = _c);
 	else
