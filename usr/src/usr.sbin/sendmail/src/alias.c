@@ -3,7 +3,11 @@
 # include <pwd.h>
 # include "sendmail.h"
 
-static char SccsId[] = "@(#)alias.c	3.11	%G%";
+# ifdef DBM
+static char SccsId[] = "@(#)alias.c	3.12	%G%	(with DBM)";
+# else DBM
+static char SccsId[] = "@(#)alias.c	3.12	%G%	(without DBM)";
+# endif DBM
 
 /*
 **  ALIAS -- Compute aliases.
@@ -137,14 +141,15 @@ initaliases(aliasfile)
 	char *rhs;
 	bool skipping;
 	ADDRESS al, bl;
-	extern char *prescan();
-	bool contin;
+	FILE *af;
+	int lineno;
+	register STAB *s;
 
 	if ((af = fopen(aliasfile, "r")) == NULL)
 	{
 # ifdef DEBUG
 		if (Debug)
-			printf("Can't open %s\n", AliasFile);
+			printf("Can't open %s\n", aliasfile);
 # endif
 		errno = 0;
 		NoAlias++;
@@ -189,11 +194,11 @@ initaliases(aliasfile)
 			goto syntaxerr;
 		}
 		rhs = p;
-		contin = FALSE;
 		for (;;)
 		{
 			register char c;
 
+# ifdef SECURE
 			/* do parsing & compression of addresses */
 			c = *p;
 			while (c != '\0')
@@ -209,14 +214,19 @@ initaliases(aliasfile)
 					continue;
 				}
 				parse(p2, &bl, -1);
-				contin = (c == ',');
 				p[-1] = c;
 				while (isspace(*p))
 					p++;
 			}
+# else SECURE
+			p = &p[strlen(p)];
+# endif SECURE
 
 			/* see if there should be a continuation line */
-			if (!contin)
+			c = fgetc(af);
+			if (!feof(af))
+				ungetc(c, af);
+			if (c != ' ' && c != '\t')
 				break;
 
 			/* read continuation line */
@@ -224,16 +234,14 @@ initaliases(aliasfile)
 			if (fgets(p, sizeof line - (p - line), af) == NULL)
 				break;
 			lineno++;
-
-			if (!isspace(*p))
-				syserr("aliases: %d: continuation line missing", lineno);
 		}
 		if (al.q_mailer != M_LOCAL)
 		{
 			syserr("aliases: %d: cannot alias non-local names", lineno);
 			continue;
 		}
-		s = stab(al.q_user, ST_ALIAS, rhs);
+		s = stab(al.q_user, ST_ALIAS, ST_ENTER);
+		s->s_alias = newstr(rhs);
 	}
 	(void) fclose(af);
 # endif DBM
