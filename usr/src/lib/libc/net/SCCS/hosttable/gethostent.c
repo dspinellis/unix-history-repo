@@ -5,6 +5,7 @@
 #include <sys/socket.h>
 #include <netdb.h>
 #include <ctype.h>
+#include <ndbm.h>
 
 /*
  * Internet version.
@@ -18,25 +19,29 @@ static char line[BUFSIZ+1];
 static char hostaddr[MAXADDRSIZE];
 static struct hostent host;
 static char *host_aliases[MAXALIASES];
-static int stayopen = 0;
+int _stayopen = 0;
+extern DBM *db;		/* set by gethostbyname(), gethostbyaddr() */
 static char *any();
 
 sethostent(f)
 	int f;
 {
-	if (hostf == NULL)
-		hostf = fopen(HOSTDB, "r" );
-	else
+	if (hostf != NULL)
 		rewind(hostf);
-	stayopen |= f;
+	_stayopen |= f;
 }
 
 endhostent()
 {
-	if (hostf && !stayopen) {
+	if (hostf) {
 		fclose(hostf);
 		hostf = NULL;
 	}
+	if (db) {
+		ndbmclose(db);
+		db = (DBM *)NULL;
+	}
+	_stayopen = 0;
 }
 
 struct hostent *
