@@ -1,4 +1,4 @@
-/*	syslog.h	4.3	85/01/31	*/
+/*	syslog.h	4.4	85/02/25	*/
 
 /*
  *  Declarations for system logging program
@@ -20,7 +20,7 @@
 #define	LOG_CRIT	9	/* critical conditions */
 #define	LOG_ERR		10	/* init open faliures/fatal daemon errors */
 #define	LOG_FAIL	11	/* getty failing, interface dropped */
-#define	LOG_WARN	12	/* non-fatal daemon errs */
+#define	LOG_WARNING	12	/* non-fatal daemon errs */
 
 	/* user priorities */
 #define	LOG_SALERT	13	/* important information */
