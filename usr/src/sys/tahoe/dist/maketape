@@ -1,21 +1,11 @@
 #!/bin/sh -
 #
-# Copyright (c) 1988 Regents of the University of California.
+# Copyright (c) 1990 The Regents of the University of California.
 # All rights reserved.
 #
-# Redistribution and use in source and binary forms are permitted
-# provided that the above copyright notice and this paragraph are
-# duplicated in all such forms and that any documentation,
-# advertising materials, and other materials related to such
-# distribution and use acknowledge that the software was developed
-# by the University of California, Berkeley.  The name of the
-# University may not be used to endorse or promote products derived
-# from this software without specific prior written permission.
-# THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
-# IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
-# WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+# %sccs.include.redist.sh%
 #
-#	@(#)maketape	5.6 (Berkeley) %G%
+#	@(#)maketape	5.7 (Berkeley) %G%
 #
 
 # maketape [ 6250 | 1600 [ tapename [ remotetapemachine ] ] ]
@@ -29,12 +19,21 @@ block=40
 tflag=cbf
 bprog="/usr/local/20b 20480"
 
-if [ $# -gt 0 ]; then type=$1; fi
-if [ $# -gt 1 ]; then tape=$2; fi
-tartape=$tape
-if [ $# -gt 2 ]; then remote=$3; tartape='-'; fi
+if [ $# -gt 0 ]; then
+	type=$1;
+fi
 
-$remote mt -t ${tape} rew
+if [ $# -gt 1 ]; then
+	tape=$2;
+fi
+
+tartape=$tape
+if [ $# -gt 2 ]; then
+	remote=$3;
+	tartape='-';
+fi
+
+rsh $remote mt -t ${tape} rew
 date
 umount /dev/$nbsdusr
 umount /dev/$nbsd
@@ -57,16 +56,17 @@ eval dd if=/dev/r${miniroot} count=205 bs=10240 conv=sync ${remote+"| rsh"} \
 	${remote-"of=$tape"} ${remote+'/usr/local/20b ">" $tape'}
 
 echo "Add full dump of real file system"
-/sbin/${remote+r}dump 0uf $remote${remote+:}${tape} /nbsd
+/sbin/${remote+r}dump 0f $remote${remote+:}${tape} /nbsd
+
 echo "Add tar image of /usr"
-cd /nbsd/usr; eval tar ${tflag} ${block} ${tartape} adm bin dict doc games \
-	guest hosts include lib local man msgs new \
-	preserve pub spool tmp ucb \
-		${remote+'| $remote ${bprog} ">" $tape'}
+cd /nbsd/usr
+tar ${tflag} ${block} ${tartape} bin contrib games include lib libdata \
+	libexec local obj old sbin share | rsh $remote ${bprog} ">" $tape
+
 if [ ${type} != '6250' ]
 then
 	echo "Done, rewinding first tape"
-	$remote mt -t ${tape} rew &
+	rsh $remote mt -t ${tape} rew &
 	echo "Mount second tape and hit return when ready"
 	echo "(or type name of next tape drive)"
 	read x
@@ -77,13 +77,14 @@ fi
 
 : tape2:
 echo "Add user source code"
-cd /nbsd/usr/src; eval tar ${tflag} ${block} ${tartape} Makefile bin cci \
-	etc games include lib local man old ucb undoc usr.bin usr.lib \
-	${remote+'| $remote ${bprog} ">" $tape'}
+FILES="Makefile bin etc games include kerberosIV lib libexec old \
+	pgrm sbin share usr.bin usr.sbin"
+cd /nbsd/usr/src
+tar ${tflag} ${block} ${tartape} ${FILES} | rsh $remote ${bprog} ">" $tape
 
 #echo "Add varian fonts"
-#cd /usr/lib/vfont; eval tar ${tflag} ${block} ${tartape} . \
-#	${remote+'| $remote ${bprog} ">" $tape'}
+#cd /usr/lib/vfont
+#tar ${tflag} ${block} ${tartape} . ${remote+'| $remote ${bprog} ">" $tape'}
 if [ ${type} != '6250' ]
 then
 	echo "Done, rewinding second tape"
@@ -98,22 +99,19 @@ fi
 
 : tape3:
 echo "Add tar image of system sources"
-cd /nbsd/sys; eval tar ${tflag} ${block} ${tartape} . \
-	${remote+'| $remote ${bprog} ">" $tape'}
+cd /nbsd/usr/src/sys
+tar ${tflag} ${block} ${tartape} . | rsh $remote ${bprog} ">" $tape
 
 echo "Add user contributed software"
 # standard (always uncompressed) directories:
-new="README Makefile B X ansi apl bib courier cpm dipress dsh \
-	enet help hyper jove kermit mkmf news notes nntp np100 \
-	patch pathalias rcs rn spms sunrpc tac tools umodem xns"
-uncompress="emacs icon mh mmdf sumacc pup"
-compress="emacs.tar.Z icon.tar.Z mh.tar.Z mmdf.tar.Z sumacc.tar.Z pup.tar.Z"
-cd /nbsd/usr/src/new; eval tar ${tflag} ${block} ${tartape} ${new} \
-	${compress} ${remote+'| $remote ${bprog} ">" $tape'}
+FILES="Makefile Makefile.inc ansi bib emacs emacs-18.55.tar.Z jove kermit \
+	mh.tar.Z patch rcs vmsprep"
+cd /nbsd/usr/src/contrib
+tar ${tflag} ${block} ${tartape} ${FILES} | rsh $remote ${bprog} ">" $tape
 
 #echo "Add ingres source"
 #cd /nbsd/usr/ingres; eval tar ${tflag} ${block} ${tartape} . \
-#	${remote+'| $remote ${bprog} ">" $tape'}
+#	${remote+'| rsh $remote ${bprog} ">" $tape'}
 
 echo "Done, rewinding tape"
-$remote mt -t ${tape} rew &
+rsh $remote mt -t ${tape} rew &
