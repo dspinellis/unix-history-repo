@@ -1,4 +1,4 @@
-.\"	@(#)contrib	5.17 (Berkeley) %G%
+.\"	@(#)contrib	5.18 (Berkeley) %G%
 .\"
 .\" To build a document, pipe the bottom list through column -c140, making
 .\" it two columns wide (remove the .TE at the end of the file first).
@@ -127,6 +127,7 @@ gcc/groff integration	UUNET Technologies, Inc.
 glob(3)	Guido van Rossum
 gprof(1)	Peter Kessler
 hack(6)	Andries Brouwer (and a cast of thousands)
+heapsort(3)	Ronnie Kon, Kevin Lew and Elmer Yglesias
 hangman(6)	Ken Arnold
 hunt(6)	Greg Couch, Conrad Huang
 indent(1)	David Willcox, Eric Schmidt,
