@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_sl.c	7.23 (Berkeley) %G%
+ *	@(#)if_sl.c	7.24 (Berkeley) %G%
  */
 
 /*
@@ -37,9 +37,6 @@
  * Note that splimp() is used throughout to block both (tty) input
  * interrupts and network activity; thus, splimp must be >= spltty.
  */
-
-/* $Header: /usr/src/sys/net/RCS/if_sl.c,v 1.1 91/08/30 11:14:57 william Exp Locker: william $ */
-/* from if_sl.c,v 1.11 84/10/04 12:54:47 rick Exp */
 
 #include "sl.h"
 #if NSL > 0
@@ -125,15 +122,16 @@ Huh? Slip without inet?
  * SLIP ABORT ESCAPE MECHANISM:
  *	(inspired by HAYES modem escape arrangement)
  *	1sec escape 1sec escape 1sec escape { 1sec escape 1sec escape }
- *	signals a "soft" exit from slip mode by usermode process
+ *	within window time signals a "soft" exit from slip mode by remote end
  */
 
 #define	ABT_ESC		'\033'	/* can't be t_intr - distant host must know it*/
-#define ABT_WAIT	1	/* in seconds - idle before an escape & after */
-#define ABT_RECYCLE	(5*2+2)	/* in seconds - time window processing abort */
+#define ABT_IDLE	1	/* in seconds - idle before an escape */
+#define ABT_COUNT	3	/* count of escapes for abort */
+#define ABT_WINDOW	(ABT_COUNT*2+2)	/* in seconds - time to count */
 
-#define ABT_SOFT	3	/* count of escapes */
 
+#ifdef nomore
 /*
  * The following disgusting hack gets around the problem that IP TOS
  * can't be set yet.  We want to put "interactive" traffic on a high
@@ -145,6 +143,7 @@ static u_short interactive_ports[8] = {
 	0,	21,	0,	23,
 };
 #define INTERACTIVE(p) (interactive_ports[(p) & 7] == (p))
+#endif
 
 struct sl_softc sl_softc[NSL];
 
@@ -279,16 +278,22 @@ sltioctl(tp, cmd, data, flag)
 		*(int *)data = sc->sc_if.if_unit;
 		break;
 
+#ifdef notdef
 	case SLIOCGFLAGS:
 		*(int *)data = sc->sc_if.if_flags;
 		break;
+#endif
 
 	case SLIOCSFLAGS:
-#define	LLC_MASK	(IFF_LLC0|IFF_LLC1|IFF_LLC2)
 		s = splimp();
-		sc->sc_if.if_flags =
-			(sc->sc_if.if_flags &~ LLC_MASK)
-			| ((*(int *)data) & LLC_MASK);
+		/* temp compat */
+		sc->sc_if.if_flags &= ~(SC_COMPRESS | SC_NOICMP | SC_AUTOCOMP);
+		if (*(int *)data & 0x2)
+			sc->sc_if.if_flags |= SC_COMPRESS;
+		if (*(int *)data & 0x4)
+			sc->sc_if.if_flags |= SC_NOICMP;
+		if (*(int *)data & 0x8)
+			sc->sc_if.if_flags |= SC_AUTOCOMP;
 		splx(s);
 		break;
 
@@ -319,6 +324,7 @@ sloutput(ifp, m, dst)
 		printf("sl%d: af%d not supported\n", sc->sc_if.if_unit,
 			dst->sa_family);
 		m_freem(m);
+		sc->sc_if.if_noproto++;
 		return (EAFNOSUPPORT);
 	}
 
@@ -332,6 +338,7 @@ sloutput(ifp, m, dst)
 	}
 	ifq = &sc->sc_if.if_snd;
 	if ((ip = mtod(m, struct ip *))->ip_p == IPPROTO_TCP) {
+#ifdef nomore
 		register int p = ((int *)ip)[ip->ip_hl];
 
 		if (INTERACTIVE(p & 0xffff) || INTERACTIVE(p >> 16)) {
@@ -339,6 +346,15 @@ sloutput(ifp, m, dst)
 			p = 1;
 		} else
 			p = 0;
+#else
+		register int p;
+
+		if (ip->ip_tos & IPTOS_LOWDELAY) {
+			ifq = &sc->sc_fastq;
+			p = 1;
+		} else
+			p = 0;
+#endif
 
 		if (sc->sc_if.if_flags & SC_COMPRESS) {
 			/*
@@ -353,7 +369,7 @@ sloutput(ifp, m, dst)
 		}
 	} else if (sc->sc_if.if_flags & SC_NOICMP && ip->ip_p == IPPROTO_ICMP) {
 		m_freem(m);
-		return (0);
+		return (ENETRESET);		/* XXX ? */
 	}
 	s = splimp();
 	if (IF_QFULL(ifq)) {
@@ -408,7 +424,9 @@ slstart(tp)
 		 */
 		s = splimp();
 		IF_DEQUEUE(&sc->sc_fastq, m);
-		if (m == NULL)
+		if (m)
+			sc->sc_if.if_omcasts++;		/* XXX */
+		else
 			IF_DEQUEUE(&sc->sc_if.if_snd, m);
 		splx(s);
 		if (m == NULL)
@@ -431,7 +449,7 @@ slstart(tp)
 		 * the line may have been idle for some time.
 		 */
 		if (tp->t_outq.c_cc == 0) {
-			++sc->sc_bytessent;
+			++sc->sc_if.if_obytes;
 			(void) putc(FRAME_END, &tp->t_outq);
 		}
 
@@ -462,7 +480,7 @@ slstart(tp)
 					 */
 					if (b_to_q((char *)bp, cp - bp, &tp->t_outq))
 						break;
-					sc->sc_bytessent += cp - bp;
+					sc->sc_if.if_obytes += cp - bp;
 				}
 				/*
 				 * If there are characters left in the mbuf,
@@ -478,7 +496,7 @@ slstart(tp)
 						(void) unputc(&tp->t_outq);
 						break;
 					}
-					sc->sc_bytessent += 2;
+					sc->sc_if.if_obytes += 2;
 				}
 			}
 			MFREE(m, m2);
@@ -497,10 +515,9 @@ slstart(tp)
 			(void) putc(FRAME_END, &tp->t_outq);
 			sc->sc_if.if_collisions++;
 		} else {
-			++sc->sc_bytessent;
+			++sc->sc_if.if_obytes;
 			sc->sc_if.if_opackets++;
 		}
-		sc->sc_if.if_obytes = sc->sc_bytessent;
 	}
 }
 
@@ -566,33 +583,33 @@ slinput(c, tp)
 	if (!(tp->t_state&TS_CARR_ON))	/* XXX */
 		return;
 
-	++sc->sc_bytesrcvd;
 	++sc->sc_if.if_ibytes;
 	c &= 0xff;			/* XXX */
 
 #ifdef ABT_ESC
-	{
-		/* if we see an abort after "idle" time, count it */
-		if (c == ABT_ESC && time.tv_sec >= sc->sc_lasttime + ABT_WAIT) {
-			sc->sc_abortcount++;
-			/* record when the first abort escape arrived */
-			if (sc->sc_abortcount == 1)
-				sc->sc_starttime = time.tv_sec;
-		}
-		/*
-		 * if we have an abort, see that we have not run out of time,
-		 * or that we have an "idle" time after the complete escape
-		 * sequence
-		 */
-		if (sc->sc_abortcount) {
-			if (time.tv_sec >= sc->sc_starttime + ABT_RECYCLE)
+	if (sc->sc_if.if_flags & IFF_DEBUG) {
+		if (c == ABT_ESC) {
+			/*
+			 * If we have a previous abort, see whether
+			 * this one is within the time limit.
+			 */
+			if (sc->sc_abortcount &&
+			    time.tv_sec >= sc->sc_starttime + ABT_WINDOW)
 				sc->sc_abortcount = 0;
-			if (sc->sc_abortcount >= ABT_SOFT &&
-			    time.tv_sec >= sc->sc_lasttime + ABT_WAIT) {
-				slclose(tp);
-				return;
+			/*
+			 * If we see an abort after "idle" time, count it;
+			 * record when the first abort escape arrived.
+			 */
+			if (time.tv_sec >= sc->sc_lasttime + ABT_IDLE) {
+				if (++sc->sc_abortcount == 1)
+					sc->sc_starttime = time.tv_sec;
+				if (sc->sc_abortcount >= ABT_COUNT) {
+					slclose(tp);
+					return;
+				}
 			}
-		}
+		} else
+			sc->sc_abortcount = 0;
 		sc->sc_lasttime = time.tv_sec;
 	}
 #endif
