@@ -8,9 +8,9 @@
 
 #ifndef lint
 #ifdef USERDB
-static char sccsid [] = "@(#)udb.c	5.9 (Berkeley) %G% (with USERDB)";
+static char sccsid [] = "@(#)udb.c	5.10 (Berkeley) %G% (with USERDB)";
 #else
-static char sccsid [] = "@(#)udb.c	5.9 (Berkeley) %G% (without USERDB)";
+static char sccsid [] = "@(#)udb.c	5.10 (Berkeley) %G% (without USERDB)";
 #endif
 #endif
 
@@ -175,10 +175,10 @@ udbexpand(a, sendq)
 				continue;
 			}
 
-			/* there is at least one match -- start processing */
-			breakout = TRUE;
-			do
+			while (i == 0 && key.size == keylen &&
+					bcmp(key.data, keybuf, keylen) == 0)
 			{
+				breakout = TRUE;
 				if (info.size < sizeof buf)
 					user = buf;
 				else
@@ -196,8 +196,7 @@ udbexpand(a, sendq)
 
 				/* get the next record */
 				i = (*up->udb_dbp->seq)(up->udb_dbp, &key, &info, R_NEXT);
-			} while (i == 0 && key.size == keylen &&
-					bcmp(key.data, keybuf, keylen) == 0);
+			}
 			break;
 
 		  case UDB_REMOTE:
@@ -365,7 +364,8 @@ _udbx_init()
 				break;
 
 			  case UDB_LOOKUP:
-				printf("LOOKUP\n");
+				printf("LOOKUP: file %s\n",
+					up->udb_dbname);
 				break;
 
 			  case UDB_FORWARD:
