@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)readcf.c	3.42		%G%);
+SCCSID(@(#)readcf.c	3.43		%G%);
 
 /*
 **  READCF -- read control file.
@@ -808,9 +808,11 @@ setoption(opt, val, safe, sticky)
 # endif DEBUG
 
 	  default:
-	  syntax:
-		syserr("setoption: line %d: syntax error on \"%c%s\"",
-		       LineNumber, opt, val);
 		break;
 	}
+	return;
+
+  syntax:
+	syserr("setoption: line %d: syntax error on \"%c%s\"",
+	       LineNumber, opt, val);
 }
