@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)headers.c	6.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)headers.c	6.3 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <errno.h>
@@ -52,7 +52,7 @@ chompheader(line, def, e)
 	/* strip off options */
 	clrbitmap(mopts);
 	p = line;
-	if (def && *p == '?')
+	if (*p == '?')
 	{
 		/* have some */
 		register char *q = strchr(p + 1, *p);
