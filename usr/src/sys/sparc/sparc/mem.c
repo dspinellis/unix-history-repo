@@ -13,7 +13,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mem.c	8.1 (Berkeley) %G%
+ *	@(#)mem.c	8.2 (Berkeley) %G%
  *
  * from: $Header: mem.c,v 1.9 92/11/26 03:05:03 torek Exp $
  */
@@ -88,7 +88,7 @@ mmrw(dev, uio, flags)
 
 /* minor device 1 is kernel memory */
 		case 1:
-			va = (caddr_t)uio->uio_offset;
+			va = (caddr_t)(int)uio->uio_offset;
 			c = min(iov->iov_len, MAXPHYS);
 			if (!kernacc(va, c,
 			    uio->uio_rw == UIO_READ ? B_READ : B_WRITE))
