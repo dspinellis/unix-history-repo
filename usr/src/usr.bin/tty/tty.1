@@ -1,13 +1,16 @@
-.\"	@(#)tty.1	4.1 (Berkeley) %G%
+.\"	@(#)tty.1	5.1 (Berkeley) %G%
 .\"
-.TH TTY 1 
+.TH TTY 1 "10 February 1983"
 .AT 3
 .SH NAME
 tty \- get terminal name
 .SH SYNOPSIS
 .B tty
+[ -s ]
 .SH DESCRIPTION
 .I Tty
-prints the pathname of the user's terminal.
+prints the pathname of the user's terminal unless the \-s
+(silent) is given. In either case, the exit value is zero if the
+standard input is a terminal and one if it is not.
 .SH DIAGNOSTICS
 `not a tty' if the standard input file is not a terminal.
