@@ -1,6 +1,6 @@
 .if n .ls 2
 .he 'Sendmail Installation and Operation Guide''%'
-.fo 'Version 4.4''Last Mod %G%'
+.fo 'Version 5.1''Last Mod %G%'
 .nr si 3n
 .de $0
 .(x
@@ -28,7 +28,7 @@
 Eric Allman
 Britton-Lee, Inc.
 .sp
-Version 4.4
+Version 5.1
 .)l
 .sp 2
 .pp
@@ -3012,6 +3012,19 @@ Headers are always output with commas between the names.
 Use the named
 .i dir
 as the queue directory.
+.ip q\fIfactor\fP
+Use
+.i factor
+as the multiplier in the map function
+to decide when to just queue up jobs rather than run them.
+This value is divided by the difference between the current load average
+and the load average limit
+(\c
+.b x
+flag)
+to determine the maximum message priority
+that will be sent.
+Defaults to 10000.
 .ip r\fItime\fP
 Timeout reads after
 .i time
@@ -3059,6 +3072,12 @@ just queue messages
 When the system load average exceeds
 .i LA ,
 refuse incoming SMTP connections.
+.ip z
+If set,
+deliver each job that is run from the queue in a separate process.
+Use this option if you are short of memory,
+since the default tends to consume considerable amounts of memory
+while the queue is being processed.
 .+c "MAILER FLAGS"
 The following flags may be set in the mailer description.
 .nr ii 4n
@@ -3729,7 +3748,7 @@ INSTALLATION AND OPERATION GUIDE
 Eric Allman
 Britton-Lee, Inc.
 .sp
-Version 4.4
+Version 5.1
 .ce 0
 .bp 1
 .ce
