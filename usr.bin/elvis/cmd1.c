@@ -270,7 +270,11 @@ void cmd_shell(frommark, tomark, cmd, bang, extra)
 	int	bang;
 	char	*extra;
 {
+#ifdef BSD
+	static char	*prevextra = NULL;
+#else
 	static char	prevextra[80];
+#endif
 
 	/* special case: ":sh" means ":!sh" */
 	if (cmd == CMD_SHELL)
@@ -282,14 +286,33 @@ void cmd_shell(frommark, tomark, cmd, bang, extra)
 	/* if extra is "!", substitute previous command */
 	if (*extra == '!')
 	{
-		if (!*prevextra)
+#ifdef BSD
+		if (prevextra == NULL)
+#else
+		if (*prevextra == '\0')
+#endif
 		{
 			msg("No previous shell command to substitute for '!'");
 			return;
 		}
+#ifdef BSD
+		else if ((prevextra = (char *) realloc(prevextra, 
+		    strlen(prevextra) + strlen(extra))) != NULL) {
+			strcat(prevextra, extra + 1);
+			extra = prevextra;
+			msg(extra);
+		}
+#else
 		extra = prevextra;
+#endif
+
 	}
-	else if (cmd == CMD_BANG && strlen(extra) < sizeof(prevextra) - 1)
+	else if (cmd == CMD_BANG &&
+#ifdef BSD
+	    (prevextra = (char *) realloc(prevextra, strlen(extra) + 1)) != NULL)
+#else
+	 strlen(extra) < sizeof(prevextra) - 1)
+#endif
 	{
 		strcpy(prevextra, extra);
 	}
