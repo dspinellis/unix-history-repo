@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sys_machdep.c	7.10 (Berkeley) %G%
+ *	@(#)sys_machdep.c	7.11 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -114,7 +114,8 @@ cachectl(req, addr, len)
 		    (req & ~CC_EXTPURGE) != CC_PURGE && len > 2*NBPG)
 			doall = 1;
 #ifdef HPUXCOMPAT
-		if ((curproc->p_flag & SHPUX) && len != 16 && len != NBPG)
+		if ((curproc->p_md.md_flags & MDP_HPUX) &&
+		    len != 16 && len != NBPG)
 			doall = 1;
 #endif
 		if (!doall) {
