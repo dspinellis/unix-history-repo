@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)clnp_raw.c	7.8 (Berkeley) %G%
+ *	@(#)clnp_raw.c	7.9 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -116,7 +116,7 @@ struct socket	*so;	/* socket to send from */
 	int						error;		/* return value of function */
 	int						flags;		/* flags for clnp_output */
 
-	if (0 == m0->m_flags & M_PKTHDR)
+	if (0 == (m0->m_flags & M_PKTHDR))
 		return (EINVAL);
 	/*
 	 *	Set up src address. If user has bound socket to an address, use it.
