@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)wsfe.c	5.2	%G%
+ *	@(#)wsfe.c	5.3	%G%
  */
 
 /*
@@ -44,7 +44,7 @@ x_putc(c)
 {
 	if(c=='\n') recpos = reclen = cursor = 0;
 	else recpos++;
-	if (c) putc(c,cf);
+	putc(c,cf);
 	return(OK);
 }
 
@@ -62,7 +62,7 @@ pr_put(c)
 		else return(OK);
 	}
 	else recpos++;
-	if (c) putc(c,cf);
+	putc(c,cf);
 	return(OK);
 }
 
@@ -77,7 +77,10 @@ LOCAL
 x_wend(last) char last;
 {
 	if(reclen>recpos) fseek(cf,(long)(reclen-recpos),1);
-	return((*putn)(last));
+	if(last)
+		return((*putn)(last));
+	else
+		return(OK);
 }
 
 e_wsfe()
