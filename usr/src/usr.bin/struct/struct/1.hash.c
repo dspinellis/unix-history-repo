@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)1.hash.c	4.1	(Berkeley)	%G%";
+static char sccsid[] = "@(#)1.hash.c	4.2	(Berkeley)	%G%";
 #endif not lint
 
 #include <stdio.h>
@@ -47,7 +47,7 @@ parse()
 				if ( (current < 0 || current >= snum) && current != ABORT)
 					{
 					strerr("in parsing:","","");
-					fprintf(stderr,"line %d of file, parser in invalid state", begline,current);
+					fprintf(stderr,"line %d of file, parser in invalid state", current);
 					fprintf(stderr,"treating it as straight line code\n");
 					current = ABORT;
 					}
