@@ -34,6 +34,14 @@
  * SUCH DAMAGE.
  *
  *	@(#)genassym.c	5.11 (Berkeley) 5/10/91
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00154
+ * --------------------         -----   ----------------------
+ *
+ * 24 Apr 93	Bruce Evans/Dave Rivers	Npx-0.5 support
+ *
  */
 static char rcsid[] = "$Header: /usr/bill/working/sys/i386/i386/RCS/genassym.c,v 1.2 92/01/21 14:22:02 william Exp $";
 
@@ -146,9 +154,11 @@ main()
 	printf("#define\tRU_MINFLT %d\n", &rup->ru_minflt);
 	printf("#define\tPCB_FLAGS %d\n", &pcb->pcb_flags);
 	printf("#define\tPCB_SAVEFPU %d\n", &pcb->pcb_savefpu);
+#ifdef notused
 	printf("#define\tFP_WASUSED %d\n", FP_WASUSED);
 	printf("#define\tFP_NEEDSSAVE %d\n", FP_NEEDSSAVE);
 	printf("#define\tFP_NEEDSRESTORE %d\n", FP_NEEDSRESTORE);
+#endif
 	printf("#define\tFP_USESEMC %d\n", FP_USESEMC);
 	printf("#define\tPCB_SAVEEMC %d\n", &pcb->pcb_saveemc);
 	printf("#define\tPCB_CMAP2 %d\n", &pcb->pcb_cmap2);

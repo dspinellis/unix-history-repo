@@ -38,7 +38,7 @@
  *
  * PATCHES MAGIC		LEVEL	PATCH THAT GOT US HERE
  * --------------------		-----	----------------------
- * CURRENT PATCH LEVEL:		3	00113
+ * CURRENT PATCH LEVEL:		4	00154
  * --------------------		-----	----------------------
  *
  * 15 Aug 92	William Jolitz		Large memory bug
@@ -46,6 +46,7 @@
  * 25 Mar 93	Sean Eric Fagan		Added #ifdef HZ around microtime for
  *					the new microtime.s routine
  * 08 Apr 93	Andrew Herbert		Fixes for kmem_alloc panics
+ * 20 Apr 93	Bruce Evans		New npx-0.5 code
  */
 static char rcsid[] = "$Header: /usr/src/sys.386bsd/i386/i386/RCS/machdep.c,v 1.2 92/01/21 14:22:09 william Exp Locker: root $";
 
@@ -630,7 +631,7 @@ setregs(p, entry)
 	p->p_regs[sEIP] = entry;
 
 	p->p_addr->u_pcb.pcb_flags = 0;	/* no fp at all */
-	load_cr0(rcr0() | CR0_EM);	/* start emulating */
+	load_cr0(rcr0() | CR0_TS);	/* start emulating */
 #ifdef	NPX
 	npxinit(__INITIAL_NPXCW__);
 #endif

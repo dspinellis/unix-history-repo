@@ -37,13 +37,14 @@
  *
  * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
  * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         3       00117
+ * CURRENT PATCH LEVEL:         4       00154
  * --------------------         -----   ----------------------
  *
  * 06 Aug 92	Pace Willisson		Allow VGA memory to be mapped
  * 28 Nov 92	Frank MacLachlan	Aligned addresses and data
  *					on 32bit boundaries.
  * 25 Mar 93	Kevin Lahey		Add syscall counter for vmstat
+ * 20 Apr 93	Bruce Evans		New npx-0.5 code
  */
 
 
@@ -60,6 +61,10 @@
 #include "errno.h"
 
 #include "machine/trap.h"
+
+#include "machine/specialreg.h"
+
+#define	KDSEL		0x10
 
 /*
  * Note: This version greatly munged to avoid various assembler errors
@@ -1204,20 +1209,16 @@ ENTRY(swtch)
 	movl	%edi, PCB_EDI(%ecx)
 
 #ifdef NPX
-	movb	PCB_FLAGS(%ecx),%al
 	/* have we used fp, and need a save? */
-	andb	$ FP_WASUSED|FP_NEEDSSAVE,%al
-	cmpb	$ FP_WASUSED|FP_NEEDSSAVE,%al
+	mov	_curproc,%eax
+	cmp	%eax,_npxproc
 	jne	1f
-	movl	%cr0,%eax		/* insure fp is enabled */
-	andb 	$0xfb,%al
-	movl	%eax,%cr0
-	fnsave	PCB_SAVEFPU(%ecx)
-	orb 	$4,%al			/* disable it */
-	movl	%eax,%cr0
-	movb	PCB_FLAGS(%ecx),%al
-	xorb	$ FP_NEEDSSAVE,%al	/* save processed */
-	movb	%al,PCB_FLAGS(%ecx)
+	pushl	%ecx			/* h/w bugs make saving complicated */
+	leal	PCB_SAVEFPU(%ecx),%eax
+	pushl	%eax
+	call	_npxsave		/* do it in a big C function */
+	popl	%eax
+	popl	%ecx
 1:
 #endif
 
@@ -1288,15 +1289,6 @@ swfnd:
 	movl	PCB_EIP(%edx), %eax
 	movl	%eax, (%esp)
 
-#ifdef NPX
-	movb	PCB_FLAGS(%edx),%al
-	/* if fp could be used, a dna trap will do a restore */
-	testb	$ FP_WASUSED,%al
-	je	1f
-	orb	$ FP_NEEDSRESTORE,PCB_FLAGS(%edx)
-1:
-#endif
-
 	movl	PCB_CMAP2(%edx),%eax	# get temporary map
 	movl	%eax,_CMAP2		# reload temporary map PTE
 
@@ -1350,18 +1342,45 @@ ENTRY(savectx)
 	movl	%ebp, PCB_EBP(%ecx)
 	movl	%esi, PCB_ESI(%ecx)
 	movl	%edi, PCB_EDI(%ecx)
+
 #ifdef NPX
-	/* have we ever used fp, and need to save? */
-	testb	$ FP_WASUSED, PCB_FLAGS(%ecx)
+	/*
+	 * If npxproc == NULL, then the npx h/w state is irrelevant and the
+	 * state had better already be in the pcb.  This is true for forks
+	 * but not for dumps (the old book-keeping with FP flags in the pcb
+	 * always lost for dumps because the dump pcb has 0 flags).
+	 *
+	 * If npxproc != NULL, then we have to save the npx h/w state to
+	 * npxproc's pcb and copy it to the requested pcb, or save to the
+	 * requested pcb and reload.  Copying is easier because we would
+	 * have to handle h/w bugs for reloading.  We used to lose the
+	 * parent's npx state for forks by forgetting to reload.
+	 */
+	mov	_npxproc,%eax
+	testl	%eax,%eax
 	je	1f
-	movl	%cr0, %edx
-	andb 	$0xfb, %dl
-	movl	%edx, %cr0
-	fnsave	PCB_SAVEFPU(%ecx)
-	orb 	$4, %edx
-	movl	%edx, %cr0
+
+	pushl	%ecx
+	movl	P_ADDR(%eax),%eax
+	leal	PCB_SAVEFPU(%eax),%eax
+	pushl	%eax
+	pushl	%eax
+	call	_npxsave
+	popl	%eax
+	popl	%eax
+	popl	%ecx
+
+	pushl	%ecx
+	pushl	$108+8*2	/* XXX h/w state size + padding */
+	leal	PCB_SAVEFPU(%ecx),%ecx
+	pushl	%ecx
+	pushl	%eax
+	call	_bcopy
+	addl	$12,%esp
+	popl	%ecx
 1:
 #endif
+
 	movl	_CMAP2, %edx		# save temporary map PTE
 	movl	%edx, PCB_CMAP2(%ecx)	# in our context
 
@@ -1496,7 +1515,31 @@ IDTVEC(page)
 IDTVEC(rsvd)
 	pushl $0; TRAP(T_RESERVED)
 IDTVEC(fpu)
+#ifdef NPX
+	/*
+	 * Handle like an interrupt so that we can call npxintr to clear the
+	 * error.  It would be better to handle npx interrupts as traps but
+	 * this is difficult for nested interrupts.
+	 */
+	pushl	$0		/* dummy error code */
+	pushl	$T_ASTFLT
+	pushal
+	nop			/* silly, the bug is for popal and it only
+				 * bites when the next instruction has a
+				 * complicated address mode */
+	pushl	%ds
+	pushl	%es		/* now the stack frame is a trap frame */
+	movl	$KDSEL,%eax
+	movl	%ax,%ds
+	movl	%ax,%es
+	pushl	_cpl
+	pushl	$0		/* dummy unit to finish building intr frame */
+	incl	_cnt+V_TRAP
+	call	_npxintr
+	jmp	doreti
+#else
 	pushl $0; TRAP(T_ARITHTRAP)
+#endif
 	/* 17 - 31 reserved for future exp */
 IDTVEC(rsvd0)
 	pushl $0; TRAP(17)
@@ -1542,13 +1585,14 @@ alltraps:
 calltrap:
 	incl	_cnt+V_TRAP
 	call	_trap
-	call	_spl0
-	pop %es
-	pop %ds
-	popal
-	nop
-	addl	$8,%esp			# pop type, code
-	iret
+	/*
+	 * Return through doreti to handle ASTs.  Have to change trap frame
+	 * to interrupt frame.
+	 */
+	movl	$T_ASTFLT,4+4+32(%esp)	/* new trap type (err code not used) */
+	pushl	_cpl
+	pushl	$0			/* dummy unit */
+	jmp	doreti
 
 #ifdef KGDB
 /*
@@ -1581,20 +1625,37 @@ IDTVEC(syscall)
 	pushfl	# only for stupid carry bit and more stupid wait3 cc kludge
 	pushal	# only need eax,ecx,edx - trap resaves others
 	nop
-	# movw	$KDSEL,%ax
-	movw	$0x10,%ax	# switch to kernel segments
-	movw	%ax,%ds
-	movw	%ax,%es
+	movl	$KDSEL,%eax		# switch to kernel segments
+	movl	%ax,%ds
+	movl	%ax,%es
 	incl	_cnt+V_SYSCALL  # kml 3/25/93
 	call	_syscall
-	call	_spl0
-	movw	__udatasel,%ax	# switch back to user segments
-	movw	%ax,%ds
-	movw	%ax,%es
+	/*
+	 * Return through doreti to handle ASTs.  Have to change syscall frame
+	 * to interrupt frame.
+	 *
+	 * XXX - we should have set up the frame earlier to avoid the
+	 * following popal/pushal (not much can be done to avoid shuffling
+	 * the flags).  Consistent frames would simplify things all over.
+	 */
+	movl	32+0(%esp),%eax	/* old flags, shuffle to above cs:eip */
+	movl	32+4(%esp),%ebx	/* `int' frame should have been ef, eip, cs */
+	movl	32+8(%esp),%ecx
+	movl	%ebx,32+0(%esp)
+	movl	%ecx,32+4(%esp)
+	movl	%eax,32+8(%esp)
 	popal
 	nop
-	popfl
-	lret
+	pushl	$0		/* dummy error code */
+	pushl	$T_ASTFLT
+	pushal
+	nop
+	movl	__udatasel,%eax	/* switch back to user segments */
+	push	%eax		/* XXX - better to preserve originals? */
+	push	%eax
+	pushl	_cpl
+	pushl	$0
+	jmp	doreti
 
 	ALIGN32
 ENTRY(htonl)

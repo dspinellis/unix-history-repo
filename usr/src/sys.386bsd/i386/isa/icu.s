@@ -38,13 +38,14 @@
  *
  * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
  * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         2       00117
+ * CURRENT PATCH LEVEL:         3       00154
  * --------------------         -----   ----------------------
  * 
  * 28 Nov 92	Frank MacLachlan	Aligned addresses and data
  *					on 32bit boundaries.
  * 24 Mar 93	Rodney W. Grimes	Added interrupt counters for vmstat
  *					also stray and false intr counters added
+ * 20 Apr 93	Bruce Evans		New npx-0.5 code
  */
 
 /*
@@ -119,7 +120,7 @@ doreti:
 	ALIGN32
 1:	cmpl	$0,_netisr		# check for softint s/traps
 	jne	1f
-	cmpl	$0,_want_resched
+	cmpl	$0,_astpending
 	jne	1f
 
 	pop	%es			# none, going back to base pri
@@ -181,8 +182,9 @@ doreti:
 1:
 	cmpw	$0x1f,13*4(%esp)	# to user?
 	jne	2f			# nope, leave
-	cmpl	$0,_want_resched
+	cmpl	$0,_astpending
 	je	2f
+	movl	$0,_astpending
 	call	_trap
 
 2:	pop	%es
