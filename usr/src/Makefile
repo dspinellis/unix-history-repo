@@ -1,7 +1,7 @@
-#	@(#)Makefile	4.23 (Berkeley) %G%
+#	@(#)Makefile	5.1 (Berkeley) %G%
 
-SUBDIR=	bin contrib games include kerberosIV lib libexec old pgrm sbin \
-	share usr.bin usr.sbin
+# contrib
+SUBDIR=	bin games kerberosIV lib libexec old sbin share usr.bin usr.sbin
 
 build:
 	${MAKE} cleandir
@@ -27,10 +27,6 @@ build:
 	@echo "+++ libraries"
 	cd lib; ${MAKE} depend all install all
 	cd kerberosIV; ${MAKE} depend all install all
-
-	@echo "+++ C library tags"
-	cd lib/libc; rm -f tags; ${MAKE} tags; \
-	    install -c -o ${BINOWN} -g ${BINGRP} -m 444 tags /usr/libdata/tags
 
 	${MAKE} depend all
 
