@@ -1,0 +1,15 @@
+VMS-ed version of etags
+-----------------------
+
+1. The changes made allow the program to compile correctly,
+   to give error messages more meaningful to VMS, to allow '$'
+   in identifier tokens in C programs, and to expand wild-cards in the
+   input filespecs.
+
+2. To minimize the differences from the original version,
+   the VMS filename expansion converts filenames to lower
+   case, and strips version numbers. This does indeed mean
+   that some input specs (containing version wildcards) will
+   cause curious effects, it is reasonably consistent with
+   Emacs, which ignores file versions.
+
