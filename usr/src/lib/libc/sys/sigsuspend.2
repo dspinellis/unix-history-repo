@@ -1,0 +1,45 @@
+.\" Copyright (c) 1983 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)sigsuspend.2	6.1 (Berkeley) %G%
+.\"
+.TH SIGSUSPEND 2 ""
+.UC 7
+.SH NAME
+sigsuspend \- atomically release blocked signals and wait for interrupt
+.SH SYNOPSIS
+.B #include <signal.h>
+.ft B
+sigsuspend(sigmask)
+.br
+sigset_t *sigmask;
+.ft R
+.SH DESCRIPTION
+.I Sigsuspend
+temporarily changes the blocked signal mask to the set to which
+.I sigmask
+points,
+and then waits for a signal to arrive;
+on return the previous set of masked signals is restored.
+The signal mask set
+is usually empty to indicate that all
+signals are to be unblocked for the duration of the call.
+The
+.I sigsuspend
+function
+always terminates by being interrupted, returning \-1 with
+.I errno
+set to EINTR.
+.PP
+In normal usage, a signal is blocked using
+.IR sigprocmask (2),
+to begin a critical section, variables modified on the occurrence
+of the signal are examined to determine that there is no work
+to be done, and the process pauses awaiting work by using
+.I sigsuspend
+with the previous mask returned by
+.IR sigprocmask .
+.SH SEE ALSO
+sigprocmask(2), sigaction(2), sigsetops(3)
