@@ -1,4 +1,4 @@
-/*	dh.c	3.4	%H%	*/
+/*	dh.c	3.5	%H%	*/
 
 /*
  *	DH-11 driver
@@ -180,7 +180,9 @@ dhrint(dev)
 	register short c;
 	register struct device *addr;
 	register struct tty *tp0;
+	int s;
 
+	s = spl6();	/* see comment in clock.c */
 	addr = DHADDR;
 	addr += minor(dev) & 0177;
 	tp0 = &dh11[((minor(dev)&0177)<<4)];
@@ -204,13 +206,14 @@ dhrint(dev)
 			else
 				c = 0177;	/* DEL (intr) */
 #ifdef BERKNET
-		if (tp->t_line == BNETLDIS) {
+		if (tp->t_line == NETLDISC) {
 			c &= 0177;
 			NETINPUT(c, tp);
 		} else
 #endif
 			(*linesw[tp->t_line].l_rint)(c,tp);
 	}
+	splx(s);
 }
 
 /*

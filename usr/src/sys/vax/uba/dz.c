@@ -1,4 +1,4 @@
-/*	dz.c	3.3	%H%	*/
+/*	dz.c	3.4	%H%	*/
 
 /*
  *  DZ-11 Driver
@@ -170,7 +170,9 @@ dzrint(dev)
 	register int c;
 	register struct device *dzaddr;
 	register struct tty *tp0;
+	int s;
  
+	s = spl6();	/* see comment in clock.c */
 	/* as long as we are here, service them all */
 	for (dev = 0; dev < NDZ; dev += 8) {
 		if ((dzact & (1<<(dev>>3))) == 0)
@@ -199,7 +201,7 @@ dzrint(dev)
 				  || ((tp->t_flags & (EVENP|ODDP)) == ODDP))
 					continue;
 #ifdef BERKNET
-			if (tp->t_line == BNETLDIS) {
+			if (tp->t_line == NETLDISC) {
 				c &= 0177;
 				NETINPUT(c, tp);
 			} else
@@ -207,6 +209,7 @@ dzrint(dev)
 				(*linesw[tp->t_line].l_rint)(c, tp);
 		}
 	}
+	splx(s);
 }
  
 /*ARGSUSED*/
