@@ -2,6 +2,7 @@
 #include "f2c.h"
 #include "fio.h"
 #include "fmt.h"
+#include "local.h"
 extern int f__hiwater;
 
 #ifdef KR_headers

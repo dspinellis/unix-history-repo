@@ -6,6 +6,7 @@
 #include "fio.h"
 #include "fmt.h"	/* for struct syl */
 #include "rawio.h"	/* for fcntl.h, fdopen */
+#include "local.h"
 #ifdef NON_UNIX_STDIO
 #ifdef KR_headers
 extern char *malloc();

@@ -1,6 +1,7 @@
 #include "f2c.h"
 #include "fio.h"
 #include "fmt.h"
+#include "local.h"
 extern int f__cursor;
 #ifdef KR_headers
 extern char *f__icvt();
