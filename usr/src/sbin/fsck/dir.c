@@ -6,10 +6,11 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)dir.c	5.20 (Berkeley) %G%";
+static char sccsid[] = "@(#)dir.c	5.21 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
+#include <sys/time.h>
 #include <ufs/ufs/dinode.h>
 #define KERNEL
 #include <ufs/ufs/dir.h>
