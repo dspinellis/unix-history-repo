@@ -2,17 +2,17 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)getdtablesize.2	5.1 (Berkeley) %G%
+.\"	@(#)getdtablesize.2	6.1 (Berkeley) %G%
 .\"
-.TH GETDTABLESIZE 2 "12 February 1983"
+.TH GETDTABLESIZE 2 ""
 .UC 5
 .SH NAME
 getdtablesize \- get descriptor table size
 .SH SYNOPSIS
 .nf
 .ft B
-nds = getdtablesize()
-int nds;
+nfds = getdtablesize()
+int nfds;
 .fi
 .SH DESCRIPTION
 Each process has a fixed size descriptor table
@@ -22,4 +22,4 @@ The call
 .I getdtablesize
 returns the size of this table.
 .SH "SEE ALSO"
-close(2), dup(2), open(2)
+close(2), dup(2), open(2), select(2)
