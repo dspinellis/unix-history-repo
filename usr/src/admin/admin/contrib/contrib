@@ -1,4 +1,4 @@
-.\"	@(#)contrib	5.6 (Berkeley) %G%
+.\"	@(#)contrib	5.7 (Berkeley) %G%
 .\"
 .\" To build a document, pipe the bottom list through column -c140, making
 .\" it two columns wide (remove the .TE at the end of the file first).
@@ -10,8 +10,9 @@
 .\"
 .ds CH
 .sp 5
-The following organizations have either funded the development
-of 4.4BSD or provided people and/or hardware to support our research.
+The following organizations have funded the CSRG since the 4.3BSD
+release, have provided people or have provided hardware to support
+our research.
 .sp 1
 .nf
 Compaq Computer Corp.
@@ -23,56 +24,57 @@ The Open Software Foundation
 UUNET Technologies Inc.
 .fi
 .sp 2
-The following are people and organizations that have contributed a
+The following are people and organizations that have provided a
 large subsystem.
 .sp
 .TS
 l l.
-386/486 support	William Jolitz
-ANSI C library support	Chris Torek
+386/486 port	William Jolitz
+ANSI C library	Chris Torek
 ANSI C prototypes	Donn Seeley, John Kohl
 Autoconfiguration	Robert Elz
 C library documentation	American National Standards Committee X3
-CCI 6/32 support	Computer Consoles Inc.
-Disklable support	Symmetric Computer Systems
+CCI 6/32 port	Computer Consoles Inc.
+Disklables	Symmetric Computer Systems
 Documentation	Cynthia Livingston and The USENIX Assoc.
-GCC and groff integration	UUNET Technologies, Inc.
 GCC, GDB	The Free Software Foundation
-Groff	James Clark
-HP300 support	Jeff Forys, Mike Hibler, Jay Lepreau, Donn Seeley and the
+Groff	James Clark (The FSF)
+HP300 port	Jeff Forys, Mike Hibler, Jay Lepreau, Donn Seeley and the
 	Systems Programming Group; University of Utah CS Dept.
-Harris HCX I/O support	Harris Corp.
+ISODE	Marshall Rose
 Job control	Jim Kulp
 Kerberos	Project Athena, MIT
 Math library (libm)	K.C. Ng, Z-S. Alex Liu, S. McDonald P. Tang, W. Kahan
+NFS	Rick Macklem
 NFS automounter	Jan Pendry
-NFS support	Rick Macklem
 Network device drivers	Micom-Interlan, Excelan
-Quota support	Robert Elz
+Quotas	Robert Elz
 RPC support	Sun Microsystems Inc.
 Stdio	Chris Torek
 System documentation	IEEE (POSIX)
 Timezone support	Arthur David Olson
 Transport/Network OSI layers	IBM Corp., and the University of Wisconsin
-User level XNS support	Cornell University
-User level X25 	University of British Columbia
-VAX 3000 support	Mt. Xinu and Tom Ferrin
+User level XNS	Cornell University
+X25 	University of British Columbia
+VAX 3000 port	Mt. Xinu and Tom Ferrin
 VAX BI support	Chris Torek
 VAX device support	Digital Equipment Corp.
 Virtual memory implementation	Carnegie-Mellon University Mach project
-X11	MIT X Consortium
+.\"X11	MIT X Consortium
 .TE
 .bp
 .sp 5
-The following are people and organizations that have contributed a
-specific item, program, library routine or program maintenance.
+The following are people and organizations that have provided a specific
+item, program, library routine or program maintenance for the BSD system.
+(Their contribution may not be part of the current release.)
 .sp
 .ps 9
 .vs 11
 .TS
 l l l l.
-386 support	Carnegie-Mellon University Mach project
-386 support	Don Ahn, Sean Fagin, Tim Tucker
+386 device drivers	Carnegie-Mellon University Mach project
+386 device drivers	Don Ahn, Sean Fagin, Tim Tucker
+HCX device drivers	Harris Corp.
 adventure(6)	Will Crowther, Don Woods, Jim Gillogly
 ar(1)	Hugh Smith
 arithmetic(6)	Eamonn McManus
@@ -83,10 +85,11 @@ battlestar(6)	David Riggle
 bcd(6)	Steve Hayman
 bdes(1)	Matt Bishop
 bitstring(3)	Paul Vixie
+byte-range locking	Scooter Morris
 caesar(6)	Stan King, John Eldridge
 cal(1)	Kim Letkeman
 cat(1)	Kevin Fall
-chess(6)	Stuart Cracraft
+chess(6)	Stuart Cracraft (The FSF)
 ching(6)	Guy Harris
 cksum(1)	James W. Williams
 clri(8)	Rich $alz
@@ -97,8 +100,8 @@ compress(1)	James A. Woods, Spencer Thomas
 cp(1)	David Hitz
 curses(3)	Ken Arnold
 cut(1)	Adam S. Moskowitz and Marciano Pitargue
-db(3) btree support	Mike Olson
-db(3) hashing support	Margo Seltzer
+db(3) (btree support)	Mike Olson
+db(3) (hashing support)	Margo Seltzer
 des(1)	Phil Karn, Jim Gillogly
 	 and Richard Outerbridge
 disklabel(8)	Symmetric Computer Systems
@@ -111,10 +114,10 @@ fish(6)	Muffy Barkocy
 fnmatch(3)	Guido van Rossum
 fold(1)	Kevin Ruddy
 fortune(6)	Ken Arnold
-fortune(6)	Ken Arnold
 fpr(1)	Robert Corbett
 fsdb(8)	Computer Consoles Inc.
 fsplit(1)	Jerry Berkman and Asa Romberger
+gcc/groff integration	UUNET Technologies, Inc.
 glob(3)	Guido van Rossum
 gprof(1)	Peter Kessler
 hack(6)	Andries Brouwer (and a cast of thousands)
@@ -142,8 +145,7 @@ nm(1)	Hans Huebner
 packet filter	Steven McCanne
 paste(1)	Adam S. Moskowitz
 patch(1)	Larry Wall
-phantasia(6)	E.A. Estes, C. Robertson
-phantasia(6)	Edward Estes
+phantasia(6)	Edward A. Estes, C. Robertson
 ping(8)	Mike Muuss
 pom(6)	Keith E. Brandt
 primes(6)	Landon Curt Noll
@@ -157,7 +159,7 @@ sendmail(8)	Eric Allman
 sh(1)	Kenneth Almquist
 slattach(8)	Rick Adams
 slip(8)	Rick Adams
-telnet(1) support	Dave Borman
+telnet(1)	Dave Borman
 tn3270(1)	Gregory Minshall
 traceroute(8)	Van Jacobson
 trek(6)	Eric Allman
