@@ -1,24 +1,7 @@
-/*      systat.h     1.3     83/10/02     */
+/*      systat.h     1.4     84/08/09     */
 
-#include <sys/param.h>
-#include <sys/dir.h>
-#include <sys/user.h>
-#include <sys/proc.h>
-#include <sys/timeb.h>
-#include <sys/vm.h>
-#include <sys/file.h>
-#include <sys/map.h>
-#include <sys/conf.h>
-#include <sys/text.h>
-
-#include <machine/pte.h>
-
-#include <nlist.h>
-#include <pwd.h>
-#include <math.h>
+#include <sys/dk.h>
 #include <curses.h>
-#include <signal.h>
-#include <ctype.h>
 
 struct p_times {
         short   pt_pid;
@@ -27,6 +10,8 @@ struct p_times {
         int     pt_paddr;
         struct  proc *pt_pp;
 } *pt;
+long    nproc, procp;
+struct	proc *kprocp;
 
 struct procs {
         int     pid;
@@ -38,6 +23,7 @@ struct users {
         int     k_uid;
         char    k_name[16];
 } known[30];
+int     numknown;
 
 struct  cmdtab {
         char    *c_name;		/* command name */
@@ -47,6 +33,7 @@ struct  cmdtab {
 	int	(*c_init)();		/* initialize namelist, etc. */
 	WINDOW	*(*c_open)();		/* open display */
 	int	(*c_close)();		/* close display */
+	int	(*c_cmd)();		/* display command interpreter */
 	char	c_flags;		/* been initialized (right now) */
 };
 
@@ -54,39 +41,26 @@ struct	cmdtab *curcmd;
 struct	cmdtab cmdtab[];
 struct	cmdtab *lookup();
 
-char    *kmemf;
-char    *memf;
-char    *swapf;
-int     kmem;
-int     mem;
-int     swap;
-int     col;
-long    nproc;
-long    procp;
-struct	proc *kprocp;
-long	ntext;
-long	textp;
+int     kmem, mem, swap;
+int     naptime, col;
+
+long	ntext, textp;
 struct	text *xtext;
-double  ccpu;
+
 double  lccpu;
-char    *malloc();
-char    *calloc();
-char    *namp;
-char    *strncpy();
-char    c;
-char    hostname[32];
-int     numprocs;
-int     numknown;
-int     naptime;
-int     maxind;
-long    getw();
-float   total;
-int     factor;
-double  lave;
-int     dellave;
-struct  passwd *getpwuid();
-char    pidname[30];
+
+char    *kmemf, *memf, *swapf;
+char	dr_name[DK_NDRIVE][10];
+int	ndrives;
+int	hz;
+float	dk_mspw[DK_NDRIVE];
+char    c, *namp, hostname[32];
+
 struct  pte *usrpt;
 struct  pte *Usrptma;
 
 WINDOW  *wnd;
+int	CMDLINE;
+
+char    *malloc(), *calloc(), *strncpy();
+long    getw();

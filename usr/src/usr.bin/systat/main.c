@@ -1,8 +1,11 @@
 #ifndef lint
-static char sccsid[] = "@(#)main.c	1.6 (Lucasfilm) %G%";
+static char sccsid[] = "@(#)main.c	1.7 (Lucasfilm) %G%";
 #endif
 
 #include "systat.h"
+#include <sys/file.h>
+#include <nlist.h>
+#include <signal.h>
 
 static struct nlist nlst[] = {
 #define X_CCPU          0
@@ -20,6 +23,9 @@ int	naptime = 5;
 int     die();
 int     display();
 int     suspend();
+
+double	lave, ccpu;
+int     dellave;
 
 static	WINDOW *wload;			/* one line window for load average */
 
@@ -81,6 +87,7 @@ main(argc, argv)
 	 * routines to minimize update work by curses.
 	 */
         initscr();
+	CMDLINE = LINES - 1;
 	wnd = (*curcmd->c_open)();
 	if (wnd == NULL) {
 		fprintf(stderr, "Couldn't initialize display.\n");
@@ -157,17 +164,19 @@ display()
         (*curcmd->c_refresh)();
 	wrefresh(wload);
         wrefresh(wnd);
-        move(22, col);
+        move(CMDLINE, col);
         refresh();
         alarm(naptime);
 }
 
 load()
 {
+	double	avenrun[3];
 
 	lseek(kmem, nlst[X_AVENRUN].n_value, L_SET);
-	read(kmem, &lave, sizeof (lave));
-	mvprintw(22, 0, "%4.1f", lave);
+	read(kmem, avenrun, sizeof (avenrun));
+	mvprintw(CMDLINE, 0, "%4.1f %4.1f %4.1f",
+	    avenrun[0], avenrun[1], avenrun[2]);
 	clrtoeol();
 }
 
@@ -181,7 +190,7 @@ die()
 error(fmt, a1, a2, a3)
 {
 
-	mvprintw(22, 0, fmt, a1, a2, a3);
+	mvprintw(CMDLINE, 0, fmt, a1, a2, a3);
 	clrtoeol();
 	refresh();
 }
