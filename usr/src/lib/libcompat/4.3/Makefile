@@ -14,14 +14,16 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.6 (Berkeley) %G%
+#	@(#)Makefile	5.7 (Berkeley) %G%
 #
 
 DEFS=	-DLIBC_SCCS
 CFLAGS=	-O ${DEFS}
-SRCS=	ecvt.c gcvt.c recv.c send.c sibuf.c sobuf.c strout.c wait.c wait3.c
-OBJS=	ecvt.o gcvt.o recv.o send.o sibuf.o sobuf.o strout.o wait.o wait3.o
+SRCS=	ecvt.c gcvt.c lsearch.c rexec.c ruserpass.c sibuf.c sobuf.c strout.c
+OBJS=	ecvt.o gcvt.o lsearch.o rexec.o ruserpass.o sibuf.o sobuf.o strout.o
+MAN=	ecvt.0 lsearch.0 rexec.0
 TAGSFILE=tags
+MDIR=	${DESTDIR}/usr/man/cat3
 
 .c.o:
 	@${CC} -p ${CFLAGS} -c $*.c
@@ -32,13 +34,8 @@ TAGSFILE=tags
 
 all: ${OBJS}
 
-link: ${OBJS}
-	(cd ../library; rm -f ${OBJS})
-	(cd ../profiled; rm -f ${OBJS})
-	ln ${OBJS} ../library
-	(cd profiled; ln ${OBJS} ../../profiled)
-
 tags:
+	rm -f ${TAGSFILE}
 	cwd=`pwd`; \
 	for i in ${SRCS}; do \
 		ctags -a -f ${TAGSFILE} $$cwd/$$i; \
@@ -47,5 +44,17 @@ tags:
 clean:
 	rm -f *.o profiled/* a.out core ${TAGSFILE}
 
+cleandir: clean
+	rm -f ${MAN} tags .depend
+
 depend:
 	mkdep ${CFLAGS} ${SRCS}
+
+install: ${MAN}
+	cd ../library; rm -f ${OBJS}
+	cd ../profiled; rm -f ${OBJS}
+	ln ${OBJS} ../library
+	cd profiled; ln ${OBJS} ../../profiled
+	install -c -o bin -g bin -m 444 ${MAN} ${MDIR}
+	rm -f ${MDIR}/fcvt.0; ln ${MDIR}/ecvt.0 ${MDIR}/fcvt.0
+	rm -f ${MDIR}/gcvt.0; ln ${MDIR}/ecvt.0 ${MDIR}/gcvt.0
