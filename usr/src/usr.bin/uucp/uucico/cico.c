@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)cico.c	5.18	(Berkeley) %G%";
+static char sccsid[] = "@(#)cico.c	5.19	(Berkeley) %G%";
 #endif
 
 #include <signal.h>
@@ -26,6 +26,7 @@ static char sccsid[] = "@(#)cico.c	5.18	(Berkeley) %G%";
 #endif
 #include "uust.h"
 #include "uusub.h"
+#include "pathnames.h"
 
 #if defined(VMS) && defined(BSDTCP)
 #define NOGETPEER
@@ -208,7 +209,7 @@ char **envp;
 	 * detach uucico from controlling terminal
 	 * to defend against rlogind sending us a SIGKILL (!!!)
 	 */
-	if (Role == MASTER && (ret = open("/dev/tty", 2)) >= 0) {
+	if (Role == MASTER && (ret = open(_PATH_TTY, 2)) >= 0) {
 		ioctl(ret, TIOCNOTTY, STBNULL);
 		close(ret);
 	}
