@@ -43,6 +43,9 @@ static char sccsid[] = "@(#)env.c	5.3 (Berkeley) 6/1/90";
 
 #include <stdio.h>
 #include <string.h>
+#include <errno.h>
+
+static void usage();
 
 main(argc, argv)
 	int argc;
@@ -54,27 +57,41 @@ main(argc, argv)
 	char *cleanenv[1];
 	int ch;
 
-	while ((ch = getopt(argc, argv, "-")) != EOF)
+	while ((ch = getopt(argc, argv, "-i")) != EOF)
 		switch((char)ch) {
-		case '-':
+		case '-':			/* obsolete */
+		case 'i':
 			environ = cleanenv;
 			cleanenv[0] = NULL;
 			break;
 		case '?':
 		default:
-			(void)fprintf(stderr,
-			    "usage: env [-] [name=value ...] [command]\n");
-			exit(1);
+			usage();
 		}
+
 	for (argv += optind; *argv && (p = index(*argv, '=')); ++argv)
 		(void)setenv(*argv, ++p, 1);
+
 	if (*argv) {
+		/* return 127 if the command to be run could not be found; 126
+		   if the command was was found but could not be invoked */
+		int status;
+
 		execvp(*argv, argv);
-		(void)fprintf(stderr, "env: %s: %s\n", *argv,
-		    strerror(errno));
-		exit(1);
+		status = (errno == ENOENT) ? 127 : 126;
+		(void)fprintf(stderr, "env: %s: %s\n", *argv, strerror(errno));
+		exit(status);
 	}
+
 	for (ep = environ; *ep; ep++)
 		(void)printf("%s\n", *ep);
+
 	exit(0);
+}
+
+static void
+usage ()
+{
+	(void) fprintf(stderr, "usage: env [-i] [name=value ...] [command]\n");
+	exit (1);
 }
