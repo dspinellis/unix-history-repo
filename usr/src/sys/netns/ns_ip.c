@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ns_ip.c	6.7 (Berkeley) %G%
+ *	@(#)ns_ip.c	6.8 (Berkeley) %G%
  */
 
 /*
@@ -137,6 +137,16 @@ idpip_input(m, ifp)
 		return;
 	}
 	ip = mtod(m, struct ip *);
+	if (ip->ip_hl > (sizeof (struct ip) >> 2)) {
+		ip_stripoptions(ip, (struct mbuf *)0);
+		if (m->m_len < s) {
+			if ((m = m_pullup(m, s))==0) {
+				nsipif.if_ierrors++;
+				return;
+			}
+			ip = mtod(m, struct ip *);
+		}
+	}
 
 	/*
 	 * Make mbuf data length reflect IDP length.
