@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)df.c	5.21 (Berkeley) %G%";
+static char sccsid[] = "@(#)df.c	5.22 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -23,13 +23,16 @@ static char sccsid[] = "@(#)df.c	5.21 (Berkeley) %G%";
 #include <sys/mount.h>
 #include <sys/file.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 
 char	*getmntpt();
+void	ufs_df(), prtstat();
 int	iflag, kflag, nflag;
 struct	ufs_args mdev;
 
+int
 main(argc, argv)
 	int argc;
 	char **argv;
@@ -89,7 +92,7 @@ main(argc, argv)
 			if ((mntpt = getmntpt(*argv)) == 0) {
 				mntpt = mktemp("/tmp/df.XXXXXX");
 				mdev.fspec = *argv;
-				if (mkdir(mntpt) != 0) {
+				if (mkdir(mntpt, DEFFILEMODE) != 0) {
 					fprintf(stderr, "df: %s: %s\n",
 					    mntpt, strerror(errno));
 					continue;
@@ -124,7 +127,7 @@ main(argc, argv)
 			maxwidth = strlen(statfsbuf.f_mntfromname) + 1;
 		prtstat(&statfsbuf, maxwidth);
 	}
-	exit(0);
+	return (0);
 }
 
 char *
@@ -145,6 +148,7 @@ getmntpt(name)
 /*
  * Print out status about a filesystem.
  */
+void
 prtstat(sfsp, maxwidth)
 	register struct statfs *sfsp;
 	long maxwidth;
@@ -196,17 +200,16 @@ union {
 #define sblock sb.iu_fs
 
 int	fi;
-char	*strcpy();
+int	bread();
 
+void
 ufs_df(file, maxwidth)
 	char *file;
 	long maxwidth;
 {
 	extern int errno;
-	struct stat stbuf;
 	struct statfs statfsbuf;
 	register struct statfs *sfsp;
-	struct fstab *fsp;
 	char *mntpt;
 	static int synced;
 
@@ -247,9 +250,11 @@ ufs_df(file, maxwidth)
 
 long lseek();
 
+int
 bread(off, buf, cnt)
 	long off;
 	char *buf;
+	int cnt;
 {
 	int n;
 	extern errno;
