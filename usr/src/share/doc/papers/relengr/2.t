@@ -1,4 +1,4 @@
-.\"	@(#)2.t	1.3	(Copyright 1989 M. K. McKusick)	89/02/23
+.\"	@(#)2.t	1.4	(Copyright 1989 M. K. McKusick)	89/02/23
 .NH
 System Development
 .PP
@@ -15,9 +15,9 @@ and still other projects are emergency responses to situations like
 the Internet Worm.
 .PP
 These projects are ordered based on the perceived benefit of the
-project as opposed to its difficulty, and some number of them are
-selected for inclusion in each new release.
-Usually there is a prototype available from a group outside of
+project as opposed to its difficulty;
+the most important are selected for inclusion in each new release.
+Usually there is a prototype available from a group outside
 .SM CSRG .
 If possible, this prototype is obtained to use as a starting base
 for integration into the
@@ -79,7 +79,7 @@ During development,
 this control system is critical for notifying people
 when they are colliding with other ongoing projects.
 Even more important, however,
-is the audit trail maintained by the control system which
+is the audit trail maintained by the control system that
 is critical to the release engineering phase of the project
 described in the next section.
 .PP
@@ -88,7 +88,7 @@ The development phase continues until
 decides that it is appropriate to make a release.
 The decision to halt development and transition to release mode
 is driven by several factors.
-The most important is that sufficient projects have been completed
+The most important is that enough projects have been completed
 to make the system significantly superior to the previously released
 version of the system.
 For example,

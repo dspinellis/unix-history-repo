@@ -1,4 +1,4 @@
-.\"	@(#)3.t	1.3	(Copyright 1989 M. K. McKusick)	89/02/23
+.\"	@(#)3.t	1.4	(Copyright 1989 M. K. McKusick)	89/02/23
 .NH
 System Release
 .PP
@@ -20,10 +20,10 @@ are test systems.
 Alpha releases are normally available to only a few sites,
 usually those working closely with
 .SM CSRG .
-A much larger number of sites are given beta releases,
+More sites are given beta releases,
 as the system is closer to completion,
 and needs wider testing to find more obscure problems.
-For example, \*(b3 alpha was distributed to approximately fifteen
+For example, \*(b3 alpha was distributed to about fifteen
 sites, while \*(b3 beta ran at more than a hundred.
 .NH 2
 The Alpha Distribution
@@ -75,12 +75,12 @@ and the
 .PN patch
 program had originated outside Berkeley,
 .SM CSRG
-had to coordinate the efforts of the respective authors in order
+had to coordinate the efforts of the respective authors
 to make the programs work together harmoniously.
 .PP
 Once the sources have stabilized,
 an attempt is made to build the entire source tree.
-Often this exposes errors due to changed header files,
+Often this exposes errors caused by changed header files,
 or use of obsoleted C library interfaces.
 If the incompatibilities affect too many programs,
 or require excessive amounts of change in the programs
@@ -92,12 +92,12 @@ in a list that is later incorporated into the release notes.
 Thus, users upgrading to the new system can anticipate problems
 in their own software that will require change.
 .PP
-Once the source tree completely compiles,
+Once the source tree compiles completely,
 it is installed and becomes the running system that
 .SM CSRG
 uses on its main development machine.
 Once in day-to-day use,
-other interoperability problems are made apparent
+other interoperability problems become apparent
 and are resolved.
 When all known problems have been resolved, and the system has been
 stable for some period of time, an alpha distribution tape is made
@@ -114,7 +114,7 @@ with some portion of the system.
 .NH 2
 The Beta Distribution
 .PP
-After the alpha tape is created
+After the alpha tape is created,
 the distribution filesystem is mounted read-only.
 Further changes are requested in a change log rather than
 being made directly to the distribution.
@@ -207,7 +207,7 @@ and must be edited to bring them up to date.
 During this review, the need for other documents becomes evident.
 For example, it was
 during this phase of \*(b3 that it was decided
-to have a tutorial document on how to use the socket
+to add a tutorial document on how to use the socket
 interprocess communication primitives.
 .PP
 Another task during this period is to contact the people that
@@ -244,7 +244,7 @@ out who made the change and what their explanation was
 for the change.
 If the log does not resolve the problem,
 the person responsible for the change is asked for an explanation
-what they were trying to accomplish.
+of what they were trying to accomplish.
 If the reason is not compelling,
 the change is backed out.
 Facilities deemed inappropriate in \*(b3 included new options to
@@ -272,7 +272,7 @@ These documents are delivered with the final distribution.
 A user can look up any command by name and see immediately
 what has changed,
 and a developer can similarly look up any kernel
-file by name and get a summary of that file's changes.
+file by name and get a summary of the changes to that file.
 .PP
 Having completed the review of the entire system,
 the preparation of the beta distribution is started.
@@ -292,7 +292,7 @@ are unlikely to be caught.
 .NH 2
 The Final Distribution
 .PP
-The beta distribution goes to a larger set of sites than the
+The beta distribution goes to more sites than the
 alpha distribution for three main reasons.
 First, as it is closer to the final release, more sites are willing
 to run it in a production environment without fear of catastrophic failures.
@@ -302,11 +302,11 @@ derived systems are interested in getting a preview of the
 upcoming changes in preparation for merging them into their
 own systems.
 Finally, because the beta tape has fewer problems,
-it is beneficial to offer it to a larger number of systems in hopes of
+it is beneficial to offer it to more sites in hopes of
 finding as many of the remaining problems as possible.
 Also, by handing the system out to less sophisticated sites,
 issues that would be ignored by the users of the alpha sites
-will be brought to our attention.
+become apparent.
 .PP
 The anticipation is that the beta tape will not require
 extensive changes to either the programs or the documentation.
