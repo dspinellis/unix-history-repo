@@ -5,8 +5,10 @@
  *
  */
 
+#define dprintf if (0) printf
+
 #include "defs.h"
-static	char sccsid[] = "@(#)access.c 4.1 %G%";
+static	char sccsid[] = "@(#)access.c 4.2 %G%";
 
 MSG		ODDADR;
 MSG		BADDAT;
@@ -63,7 +65,7 @@ L_INT	n;
 
 #ifndef EDDT
 access(mode,adr,space,value)
-L_INT	adr;
+long	adr;
 {
 	INT	pmode,rd,file;
 	ADDR	w;
@@ -97,15 +99,79 @@ L_INT	adr;
 	THEN return(0);
 	FI
 	file=(space&DSP?datmap.ufd:txtmap.ufd);
-	IF longseek(file,adr)==0 ORF
-	   (rd ? read(file,&w,sizeof(w)) : write(file,&value,sizeof(w))) < 1
-	THEN	errflg=(space&DSP?BADDAT:BADTXT);
+	IF kernel && space == DSP THEN
+	    int oadr = adr;
+	    int v;
+	    adr &= ~0x80000000;
+	    IF oadr&0x80000000 THEN		/* system space */
+		v = btop(adr);
+		dprintf("system addr %X, v %X\n", adr, v);
+		IF v >= slr THEN errflg="bad system space addr"; return (0); FI
+		adr = vtoa(file, adr);
+		IF adr == -1 THEN
+		    errflg="sys page table page not valid"; return (0); FI
+	    ELIF adr&0x40000000 THEN		/* p1 space */
+		v = btop(adr&~0x40000000);
+		dprintf("p1 addr %X, v %X, p1br %X p1lr %X\n", adr, v,
+		    pcb.pcb_p1br, pcb.pcb_p1lr);
+		IF v < pcb.pcb_p1lr THEN
+		    errflg="bad p1 space addr"; return (0); FI
+		adr = vtoa(file, pcb.pcb_p1br+v);
+		IF adr == -1 THEN
+		    errflg="p1 page table page not valid"; return (0); FI
+		goto get;
+	    ELSE				/* p0 space */
+		dprintf("p0 addr %X, v %X, p0br %X p0lr %X\n", adr,
+		   v, pcb.pcb_p0br, pcb.pcb_p0lr);
+		IF v >= pcb.pcb_p0lr THEN
+		    errflg="bad p0 space addr"; return (0); FI
+		adr = vtoa(file, pcb.pcb_p0br+v);
+		IF adr == -1 THEN
+		    errflg="p0 page table page not valid"; return (0); FI
+get:
+		dprintf("addr for pt page %X\n", adr);
+		IF physrw(file, adr, &adr, 1) < 0 THEN
+		    errflg = "page tables botched"; return (0); FI
+		dprintf("user pte value %X\n", adr);
+		IF (adr & PG_V) == 0 &&
+		    ((adr & PG_FOD) || (adr & PG_PFNUM) == 0) THEN
+		    errflg = "user page not resident"; return (0);
+		FI
+		adr = ((adr & 0xfffff) << 9) | (oadr & 0x1ff);
+	    FI
+	FI
+	IF physrw(file, adr, &w, rd) < 0 THEN
+	    errflg=(space&DSP?BADDAT:BADTXT);
 	FI
 	return(w);
-
 }
 #endif
 
+physrw(file, adr, aw, rd)
+int *aw;
+{
+
+	dprintf("physrw(%X) %s to %X\n", adr, rd ? "read" : "write", aw);
+	IF longseek(file,adr)==0 ORF
+	   (rd ? read(file,aw,sizeof(int)) : write(file,aw,sizeof(int))) < 1
+	THEN	 return (-1);
+	FI
+	return (0);
+}
+
+vtoa(file, va)
+unsigned long va;
+{
+	struct pte pte;
+
+	physrw(file, ((long)(sbr + btop(va&0x7fffffff)))&~0x80000000, &pte, 1);
+	dprintf("vtoa got pte %X\n", pte);
+	if (pte.pg_v || (pte.pg_fod == 0 && pte.pg_pfnum))
+		return (ptob(pte.pg_pfnum) + (va & PGOFSET));
+	errflg = "page not resident";
+	return (-1);
+}
+	
 chkmap(adr,space)
 	REG L_INT	*adr;
 	REG INT		space;

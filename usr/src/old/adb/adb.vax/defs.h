@@ -1,4 +1,4 @@
-/*	defs.h	4.1	81/05/14	*/
+/*	defs.h	4.2	81/05/14	*/
 
 /*
  * adb - vax string table version; common definitions
@@ -7,6 +7,7 @@
 #include <sys/param.h>
 #include <sys/dir.h>
 #include <sys/psl.h>
+#include <sys/pte.h>
 #include <sys/user.h>
 #include <ctype.h>
 #include <a.out.h>
@@ -116,3 +117,10 @@ STRING		exform();
 L_INT		round();
 BKPTR		scanbkpt();
 VOID		fault();
+
+struct	pcb	pcb;
+int	kernel;
+int	kcore;
+struct	pte *sbr;
+int	slr;
+int	masterpcbb;

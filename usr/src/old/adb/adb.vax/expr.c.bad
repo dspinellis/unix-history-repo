@@ -6,7 +6,7 @@
  */
 
 #include "defs.h"
-static	char sccsid[] = "@(#)expr.c.bad 4.1 %G%";
+static	char sccsid[] = "@(#)expr.c.bad 4.2 %G%";
 
 MSG		BADSYM;
 MSG		BADVAR;
@@ -181,7 +181,8 @@ item(a)
 	ELIF lastc=='<'
 	THEN	savc=rdc();
 		IF regptr=getreg(savc)
-		THEN	expv= * (ADDR *)(((ADDR)&u)+regptr);
+		THEN	IF kcore THEN expv = *(int *)regptr;
+			ELSE expv= * (ADDR *)(((ADDR)&u)+regptr); FI
 		ELIF (base=varchk(savc)) != -1
 		THEN	expv=var[base];
 		ELSE	error(BADVAR);

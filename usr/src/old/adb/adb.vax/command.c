@@ -6,7 +6,7 @@
  */
 
 #include "defs.h"
-static	char sccsid[] = "@(#)command.c 4.1 %G%";
+static	char sccsid[] = "@(#)command.c 4.2 %G%";
 
 MSG		BADEQ;
 MSG		NOMATCH;
@@ -178,6 +178,12 @@ CHAR		defcom;
 		     ptrace(WUREGS,pid,regptr,* (ADDR *) (((ADDR)&u)+regptr));
 		ELIF (modifier=varchk(savc)) != -1
 		THEN	var[modifier]=dot;
+			IF kcore && savc == 'p' THEN
+				int pte = access(RD, dot, DSP, 0);
+				printf("pte %X\n", pte);
+				masterpcbb = (pte&PG_PFNUM)*512;
+				getpcb();
+			FI
 		ELSE	error(BADVAR);
 		FI
 		break;

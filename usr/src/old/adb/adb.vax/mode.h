@@ -1,4 +1,4 @@
-/*	mode.h	4.1	81/05/14	*/
+/*	mode.h	4.2	81/05/14	*/
 
 #include "machine.h"
 /*
@@ -51,4 +51,5 @@ TYPE	REGLIST		*REGPTR;
 struct reglist {
 	STRING	rname;
 	INT	roffs;
+	int	*rkern;
 };
