@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_vnops.c	7.67 (Berkeley) %G%
+ *	@(#)ufs_vnops.c	7.68 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -310,7 +310,7 @@ ufs_setattr(vp, vap, cred, p)
  * Change the mode on a file.
  * Inode must be locked before calling.
  */
-int
+static int
 ufs_chmod(vp, mode, p)
 	register struct vnode *vp;
 	register int mode;
@@ -341,7 +341,7 @@ ufs_chmod(vp, mode, p)
  * Perform chown operation on inode ip;
  * inode must be locked prior to call.
  */
-int
+static int
 ufs_chown(vp, uid, gid, p)
 	register struct vnode *vp;
 	u_int uid;
