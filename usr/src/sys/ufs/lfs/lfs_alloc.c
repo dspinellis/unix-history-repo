@@ -1,4 +1,4 @@
-/*	lfs_alloc.c	2.20	82/12/17	*/
+/*	lfs_alloc.c	2.21	83/01/14	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -369,9 +369,11 @@ hashalloc(ip, cg, pref, size, allocator)
 	}
 	/*
 	 * 3: brute force search
+	 * Note that we start at i == 3, since 0 was checked initially,
+	 * and 1 and 2 are always checked in the quadratic rehash.
 	 */
 	cg = icg;
-	for (i = 0; i < fs->fs_ncg; i++) {
+	for (i = 3; i < fs->fs_ncg; i++) {
 		result = (*allocator)(ip, cg, 0, size);
 		if (result)
 			return (result);
@@ -411,7 +413,7 @@ fragextend(ip, cg, bprev, osize, nsize)
 		/* cannot extend across a block boundry */
 		return (NULL);
 	}
-	bp = bread(ip->i_dev, fsbtodb(fs, cgtod(fs, cg)), (int)fs->fs_bsize);
+	bp = bread(ip->i_dev, fsbtodb(fs, cgtod(fs, cg)), (int)fs->fs_cgsize);
 	cgp = bp->b_un.b_cg;
 	if (bp->b_flags & B_ERROR || cgp->cg_magic != CG_MAGIC) {
 		brelse(bp);
@@ -470,12 +472,14 @@ alloccg(ip, cg, bpref, size)
 	fs = ip->i_fs;
 	if (fs->fs_cs(fs, cg).cs_nbfree == 0 && size == fs->fs_bsize)
 		return (NULL);
-	bp = bread(ip->i_dev, fsbtodb(fs, cgtod(fs, cg)), (int)fs->fs_bsize);
+	bp = bread(ip->i_dev, fsbtodb(fs, cgtod(fs, cg)), (int)fs->fs_cgsize);
 	cgp = bp->b_un.b_cg;
 	if (bp->b_flags & B_ERROR || cgp->cg_magic != CG_MAGIC) {
 		brelse(bp);
 		return (NULL);
 	}
+	if (cgp->cg_cs.cs_nbfree == 0 && size == fs->fs_bsize)
+		return (NULL);
 	cgp->cg_time = time.tv_sec;
 	if (size == fs->fs_bsize) {
 		bno = alloccgblk(fs, cgp, bpref);
@@ -662,12 +666,14 @@ ialloccg(ip, cg, ipref, mode)
 	fs = ip->i_fs;
 	if (fs->fs_cs(fs, cg).cs_nifree == 0)
 		return (NULL);
-	bp = bread(ip->i_dev, fsbtodb(fs, cgtod(fs, cg)), (int)fs->fs_bsize);
+	bp = bread(ip->i_dev, fsbtodb(fs, cgtod(fs, cg)), (int)fs->fs_cgsize);
 	cgp = bp->b_un.b_cg;
 	if (bp->b_flags & B_ERROR || cgp->cg_magic != CG_MAGIC) {
 		brelse(bp);
 		return (NULL);
 	}
+	if (cgp->cg_cs.cs_nifree == 0)
+		return (NULL);
 	cgp->cg_time = time.tv_sec;
 	if (ipref) {
 		ipref %= fs->fs_ipg;
@@ -730,7 +736,7 @@ free(ip, bno, size)
 		printf("bad block %d, ino %d\n", bno, ip->i_number);
 		return;
 	}
-	bp = bread(ip->i_dev, fsbtodb(fs, cgtod(fs, cg)), (int)fs->fs_bsize);
+	bp = bread(ip->i_dev, fsbtodb(fs, cgtod(fs, cg)), (int)fs->fs_cgsize);
 	cgp = bp->b_un.b_cg;
 	if (bp->b_flags & B_ERROR || cgp->cg_magic != CG_MAGIC) {
 		brelse(bp);
@@ -819,7 +825,7 @@ ifree(ip, ino, mode)
 		panic("ifree: range");
 	}
 	cg = itog(fs, ino);
-	bp = bread(ip->i_dev, fsbtodb(fs, cgtod(fs, cg)), (int)fs->fs_bsize);
+	bp = bread(ip->i_dev, fsbtodb(fs, cgtod(fs, cg)), (int)fs->fs_cgsize);
 	cgp = bp->b_un.b_cg;
 	if (bp->b_flags & B_ERROR || cgp->cg_magic != CG_MAGIC) {
 		brelse(bp);
