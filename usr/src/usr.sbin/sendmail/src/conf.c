@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.149 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.150 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -3050,3 +3050,65 @@ local_hostname_length(hostname)
 
 # endif
 #endif
+/*
+**  Compile-Time options
+*/
+
+char	*CompileOptions[] =
+{
+#if HESIOD
+	"HESIOD",
+#endif
+#if LOG
+	"LOG",
+#endif
+#if MATCHGECOS
+	"MATCHGECOS",
+#endif
+#if NAMED_BIND
+	"NAMED_BIND",
+#endif
+#if NDBM
+	"NDBM",
+#endif
+#if NETINET
+	"NETINET",
+#endif
+#if NETINFO
+	"NETINFO",
+#endif
+#if NETISO
+	"NETISO",
+#endif
+#if NETNS
+	"NETNS",
+#endif
+#if NETUNIX
+	"NETUNIX",
+#endif
+#if NETX25
+	"NETX25",
+#endif
+#if NEWDB
+	"NEWDB",
+#endif
+#if NIS
+	"NIS",
+#endif
+#if SCANF
+	"SCANF",
+#endif
+#if SUID_ROOT_FILES_OK
+	"SUID_ROOT_FILES_OK",
+#endif
+#if USERDB
+	"USERDB",
+#endif
+#if XDEBUG
+	"XDEBUG",
+#endif
+#if XLA
+	"XLA",
+#endif
+	NULL
+};
