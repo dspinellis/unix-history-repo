@@ -1,7 +1,7 @@
 /* Copyright (c) 1984 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)langpats.c	2.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)langpats.c	2.4 (Berkeley) %G%";
 #endif
 
 #include "inline.h"
