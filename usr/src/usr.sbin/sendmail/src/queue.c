@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	5.38 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	5.39 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	5.38 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	5.39 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -72,8 +72,10 @@ queueup(e, queueall, announce)
 	int fd;
 	int i;
 	bool newid;
+	register char *p;
 	MAILER nullmailer;
 	char buf[MAXLINE], tf[MAXLINE];
+	extern char *macvalue();
 
 	/*
 	**  Create control file.
@@ -169,6 +171,12 @@ queueup(e, queueall, announce)
 	/* message from envelope, if it exists */
 	if (e->e_message != NULL)
 		fprintf(tfp, "M%s\n", e->e_message);
+
+	/* $r and $s macro values */
+	if ((p = macvalue('r', e)) != NULL)
+		fprintf(tfp, "$r%s\n", p);
+	if ((p = macvalue('s', e)) != NULL)
+		fprintf(tfp, "$s%s\n", p);
 
 	/* output name of sender */
 	fprintf(tfp, "S%s\n", e->e_from.q_paddr);
@@ -829,6 +837,10 @@ readqf(e)
 			e->e_msgpriority = atol(&buf[1]) + WkTimeFact;
 			break;
 
+		  case '$':		/* define macro */
+			define(buf[1], newstr(&buf[2]), e);
+			break;
+
 		  case '\0':		/* blank line; ignore */
 			break;
 
@@ -953,11 +965,16 @@ printqueue()
 		cbuf[0] = '\0';
 		while (fgets(buf, sizeof buf, f) != NULL)
 		{
+			register int i;
+
 			fixcrlf(buf, TRUE);
 			switch (buf[0])
 			{
 			  case 'M':	/* error message */
-				(void) strcpy(message, &buf[1]);
+				if ((i = strlen(&buf[1])) >= sizeof message)
+					i = sizeof message;
+				bcopy(&buf[1], message, i);
+				message[i] = '\0';
 				break;
 
 			  case 'S':	/* sender name */
