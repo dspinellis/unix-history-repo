@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)readcf.c	3.27		%G%);
+SCCSID(@(#)readcf.c	3.28		%G%);
 
 /*
 **  READCF -- read control file.
@@ -67,18 +67,11 @@ readcf(cfname, safe)
 		exit(EX_OSFILE);
 	}
 
-	while (fgets(buf, sizeof buf, cf) != NULL)
+	while (fgetfolded(buf, sizeof buf, cf) != NULL)
 	{
-		p = rindex(buf, '\n');
-		if (p != NULL)
-			*p = '\0';
-
 		switch (buf[0])
 		{
-		  case '\n':
 		  case '\0':
-		  case ' ':
-		  case '\t':
 		  case '#':		/* comment */
 			break;
 

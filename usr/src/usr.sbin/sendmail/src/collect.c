@@ -1,7 +1,7 @@
 # include <errno.h>
 # include "sendmail.h"
 
-SCCSID(@(#)collect.c	3.50		%G%);
+SCCSID(@(#)collect.c	3.51		%G%);
 
 /*
 **  COLLECT -- read & parse message header & make temp file.
@@ -37,7 +37,7 @@ maketemp(from)
 	char *from;
 {
 	register FILE *tf;
-	char buf[MAXFIELD+1];
+	char buf[MAXFIELD+2];
 	register char *p;
 	extern char *hvalue();
 	extern char *macvalue();
@@ -87,7 +87,7 @@ maketemp(from)
 	**	and prepended with ">" in the body.
 	*/
 
-	for (; !feof(InChannel); !feof(InChannel) && fgets(buf, sizeof buf, InChannel) != NULL)
+	for (; !feof(InChannel); !feof(InChannel) && fgets(buf, MAXFIELD, InChannel) != NULL)
 	{
 		register char c;
 		extern bool isheader();
@@ -100,7 +100,7 @@ maketemp(from)
 			/* give an error? */
 		}
 
-		fixcrlf(buf, FALSE);
+		fixcrlf(buf, TRUE);
 
 		/* see if the header is over */
 		if (!isheader(buf))
@@ -110,10 +110,11 @@ maketemp(from)
 		while ((c = getc(InChannel)) == ' ' || c == '\t')
 		{
 			p = &buf[strlen(buf)];
+			*p++ = '\n';
 			*p++ = c;
-			if (fgets(p, sizeof buf - (p - buf), InChannel) == NULL)
+			if (fgets(p, MAXFIELD - (p - buf), InChannel) == NULL)
 				break;
-			fixcrlf(p, FALSE);
+			fixcrlf(p, TRUE);
 		}
 		if (!feof(InChannel))
 			(void) ungetc(c, InChannel);
@@ -134,10 +135,10 @@ maketemp(from)
 # endif DEBUG
 
 	/* throw away a blank line */
-	if (buf[0] == '\n')
+	if (buf[0] == '\0')
 	{
-		(void) fgets(buf, sizeof buf, InChannel);
-		fixcrlf(buf, FALSE);
+		(void) fgets(buf, MAXFIELD, InChannel);
+		fixcrlf(buf, TRUE);
 	}
 
 	/*
@@ -149,7 +150,7 @@ maketemp(from)
 		register int i;
 		register char *bp = buf;
 
-		fixcrlf(buf, FALSE);
+		fixcrlf(buf, TRUE);
 
 		/* check for end-of-message */
 		if (!IgnrDot && buf[0] == '.' && (buf[1] == '\n' || buf[1] == '\0'))
@@ -174,10 +175,9 @@ maketemp(from)
 		*/
 
 		i = strlen(bp);
-		CurEnv->e_msgsize += i;
+		CurEnv->e_msgsize += i + 1;
 		fputs(bp, tf);
-		if (bp[i - 1] != '\n')
-			fputs("\n", tf);
+		fputs("\n", tf);
 		if (ferror(tf))
 		{
 			if (errno == ENOSPC)

@@ -1,7 +1,7 @@
 # include <errno.h>
 # include "sendmail.h"
 
-SCCSID(@(#)headers.c	3.27		%G%);
+SCCSID(@(#)headers.c	3.28		%G%);
 
 /*
 **  CHOMPHEADER -- process and save a header line.
@@ -27,7 +27,6 @@ chompheader(line, def)
 	register char *p;
 	register HDR *h;
 	HDR **hp;
-	extern bool isheader();
 	char *fname;
 	char *fvalue;
 	struct hdrinfo *hi;
@@ -40,11 +39,6 @@ chompheader(line, def)
 	if (tTd(31, 6))
 		printf("chompheader: %s\n", line);
 # endif DEBUG
-
-	/* strip off trailing newline */
-	p = rindex(line, '\n');
-	if (p != NULL)
-		*p = '\0';
 
 	/* strip off options */
 	mopts = 0;
@@ -261,11 +255,6 @@ hrvalue(field)
 **
 **	Side Effects:
 **		none.
-**
-**	Bugs:
-**		According to RFC733, there should be a newline
-**		permitted after the word but before the colon.
-**		We don't seem to support that.....
 */
 
 bool
@@ -274,7 +263,7 @@ isheader(s)
 {
 	if (!isalnum(*s))
 		return (FALSE);
-	while (!isspace(*s) && *s != ':')
+	while (!isspace(*s) && *s != ':' && *s != '\0')
 		s++;
 	while (isspace(*s))
 		s++;
