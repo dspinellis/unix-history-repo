@@ -11,6 +11,9 @@
 #include <sys/unistd.h>
 
 #ifdef KERNEL
+struct proc;
+struct uio;
+
 /*
  * Kernel descriptor table.
  * One entry for each open kernel vnode and socket.
