@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)wwopen.c	3.26 (Berkeley) %G%";
+static char sccsid[] = "@(#)wwopen.c	3.27 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ww.h"
@@ -75,17 +75,8 @@ wwopen(flags, nrow, ncol, row, col, nline)
 	w->ww_cur.c = w->ww_w.l;
 
 	if (flags & WWO_PTY) {
-		struct winsize winsize;
-
 		if (wwgetpty(w) < 0)
 			goto bad;
-		winsize.ws_row = nrow;
-		winsize.ws_col = ncol;
-		winsize.ws_xpixel = winsize.ws_ypixel = 0;
-		if (ioctl(w->ww_pty, TIOCSWINSZ, (char *)&winsize) < 0) {
-			wwerrno = WWE_SYS;
-			goto bad;
-		}
 		w->ww_ispty = 1;
 	} else if (flags & WWO_SOCKET) {
 		int d[2];
