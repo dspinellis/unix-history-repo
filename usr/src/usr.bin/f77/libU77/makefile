@@ -1,9 +1,15 @@
 # Makefile for f77 system lib, libU77.a
-#	@(#)makefile	1.1	%G%
+#	@(#)makefile	1.2	%G%
 
-LIBDIR = /usr/ucb/lib
 LIB = libU77.a
-TAPE = /dev/nrmt1
+
+# for 11's
+#LIBDIR = /usr/ucb/lib
+#TAPE = /dev/nrmt1
+
+# for Vax
+LIBDIR = /usr/lib
+TAPE = /dev/rnmt0.1600
 
 CFLAGS = -O
 
@@ -23,6 +29,7 @@ SOURCES = \
 	gerror_.c \
 	getarg_.c \
 	getc_.c \
+	getcwd_.c \
 	getenv_.c \
 	getgid_.c \
 	getlog_.c \
@@ -64,6 +71,7 @@ OBJECTS = \
 	gerror_.o \
 	getarg_.o \
 	getc_.o \
+	getcwd_.o \
 	getenv_.o \
 	getgid_.o \
 	getlog_.o \
