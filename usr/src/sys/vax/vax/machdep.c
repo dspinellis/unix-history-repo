@@ -1,4 +1,4 @@
-/*	machdep.c	3.1	%H%	*/
+/*	machdep.c	3.2	%H%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -48,7 +48,7 @@ startup(firstaddr)
 	 */
 	unixsize = (firstaddr+UPAGES+1);
 	if (coresw)
-		maxmem = 2048;
+		maxmem = 4096;
 
 	/*
 	 * Initialize maps.
