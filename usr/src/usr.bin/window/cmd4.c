@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd4.c	1.4 83/07/28";
+static	char *sccsid = "@(#)cmd4.c	1.5 83/07/28";
 #endif
 
 #include "defs.h"
@@ -45,7 +45,9 @@ doshow()
 	}
 out:
 	if (!done_it) {
-		if (!terse)
+		if (terse)
+			Ding();
+		else
 			wwputs("No windows.  ", cmdwin);
 	} else {
 		wwsetcurwin(cmdwin);
