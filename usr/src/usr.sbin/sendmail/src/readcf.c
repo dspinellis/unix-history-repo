@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)readcf.c	3.47		%G%);
+SCCSID(@(#)readcf.c	3.48		%G%);
 
 /*
 **  READCF -- read control file.
@@ -69,6 +69,7 @@ readcf(cfname, safe)
 		exit(EX_OSFILE);
 	}
 
+	FileName = cfname;
 	LineNumber = 0;
 	while (fgetfolded(buf, sizeof buf, cf) != NULL)
 	{
@@ -84,8 +85,7 @@ readcf(cfname, safe)
 
 			if (*p == '\0')
 			{
-				syserr("line %d: invalid rewrite line \"%s\"",
-					LineNumber, buf);
+				syserr("invalid rewrite line \"%s\"", buf);
 				break;
 			}
 
@@ -126,15 +126,14 @@ readcf(cfname, safe)
 			ruleset = atoi(&buf[1]);
 			if (ruleset >= MAXRWSETS || ruleset < 0)
 			{
-				syserr("readcf: line %d: bad ruleset %d (%d max)",
-					LineNumber, ruleset, MAXRWSETS);
+				syserr("bad ruleset %d (%d max)", ruleset, MAXRWSETS);
 				ruleset = 0;
 			}
 			rwp = NULL;
 			break;
 
 		  case 'D':		/* macro definition */
-			define(buf[1], newstr(&buf[2]));
+			define(buf[1], newstr(&buf[2]), CurEnv);
 			break;
 
 		  case 'H':		/* required header line */
@@ -145,7 +144,10 @@ readcf(cfname, safe)
 		  case 'F':		/* word class from file */
 			class = buf[1];
 			if (!isalpha(class))
-				goto badline;
+			{
+				syserr("illegal class name %c", class);
+				break;
+			}
 			if (isupper(class))
 				class -= 'A';
 			else
@@ -206,7 +208,7 @@ readcf(cfname, safe)
 				toomany('P', MAXPRIORITIES);
 				break;
 			}
-			for (p = &buf[1]; *p != '\0' && *p != '='; p++)
+			for (p = &buf[1]; *p != '\0' && *p != '=' && *p != '\t'; p++)
 				continue;
 			if (*p == '\0')
 				goto badline;
@@ -242,10 +244,10 @@ readcf(cfname, safe)
 
 		  default:
 		  badline:
-			syserr("readcf: line %d: unknown control line \"%s\"",
-				LineNumber, buf);
+			syserr("unknown control line \"%s\"", buf);
 		}
 	}
+	FileName = NULL;
 }
 /*
 **  TOOMANY -- signal too many of some option
@@ -265,8 +267,7 @@ toomany(id, maxcnt)
 	char id;
 	int maxcnt;
 {
-	syserr("readcf: line %d: too many %c lines, %d max",
-	       LineNumber, id, maxcnt);
+	syserr("too many %c lines, %d max", id, maxcnt);
 }
 /*
 **  FILECLASS -- read members of a class from a file
@@ -367,8 +368,7 @@ makemailer(line, safe)
 
 	if (NextMailer >= MAXMAILERS)
 	{
-		syserr("readcf: line %d: too many mailers defined (%d max)",
-			LineNumber, MAXMAILERS);
+		syserr("too many mailers defined (%d max)", MAXMAILERS);
 		return;
 	}
 
@@ -389,8 +389,7 @@ makemailer(line, safe)
 
 	if (*p == '\0')
 	{
-		syserr("readcf: line %d: invalid M line in configuration file",
-			LineNumber);
+		syserr("invalid M line in configuration file");
 		return;
 	}
 	if (msset >= MAXRWSETS || mrset >= MAXRWSETS)
@@ -407,7 +406,6 @@ makemailer(line, safe)
 	m->m_flags = mopts;
 	m->m_r_rwset = mrset;
 	m->m_s_rwset = msset;
-	m->m_badstat = EX_UNAVAILABLE;
 	m->m_mno = NextMailer;
 	Mailer[NextMailer++] = m;
 
@@ -487,7 +485,7 @@ struct optlist	OptList[] =
 {
 	'f',	M_FOPT,
 	'r',	M_ROPT,
-	'q',	M_QUIET,
+	'P',	M_RPATH,
 	'S',	M_RESTR,
 	'n',	M_NHDR,
 	'l',	M_LOCAL,
@@ -583,9 +581,6 @@ setoption(opt, val, safe, sticky)
 	bool safe;
 	bool sticky;
 {
-	time_t tval;
-	int ival;
-	bool bval;
 	int smask;
 	int sindex;
 	extern bool atobool();
@@ -620,43 +615,21 @@ setoption(opt, val, safe, sticky)
 	if (getruid() == 0)
 		safe = TRUE;
 
-	/*
-	**  Encode this option as appropriate.
-	*/
-
-	if (index("rT", opt) != NULL)
-		tval = convtime(val);
-	else if (index("gLu", opt) != NULL)
-		ival = atoi(val);
-	else if (index("F", opt) != NULL)
-		ival = atooct(val);
-	else if (index("acDfimosv", opt) != NULL)
-		bval = atobool(val);
-	else if (index("be", opt) != NULL)
-		/* do nothing */ ;
-	else if (val[0] == '\0')
-		val = "";
-	else
-		val = newstr(val);
-
-	/*
-	**  Now do the actual assignment.
-	*/
-
 	switch (opt)
 	{
 	  case 'A':		/* set default alias file */
-		AliasFile = val;
-		if (AliasFile[0] == '\0')
+		if (val[0] == '\0')
 			AliasFile = "aliases";
+		else
+			AliasFile = newstr(val);
 		break;
 
 	  case 'a':		/* look for "@:@" in alias file */
-		SafeAlias = bval;
+		SafeAlias = atobool(val);
 		break;
 
 	  case 'c':		/* don't connect to "expensive" mailers */
-		NoConnect = bval;
+		NoConnect = atobool(val);
 		break;
 
 	  case 'd':		/* delivery mode */
@@ -679,125 +652,121 @@ setoption(opt, val, safe, sticky)
 		break;
 
 	  case 'D':		/* rebuild alias database as needed */
-		AutoRebuild = bval;
+		AutoRebuild = atobool(val);
 		break;
 
 	  case 'e':		/* set error processing mode */
 		switch (*val)
 		{
-		  case 'p':	/* print errors normally */
-			break;	/* (default) */
-
-		  case 'q':	/* be silent about it */
+		  case EM_QUIET:	/* be silent about it */
 			(void) freopen("/dev/null", "w", stdout);
-			break;
+			/* fall through... */
 
-		  case 'm':	/* mail back */
-			MailBack = TRUE;
+		  case EM_MAIL:		/* mail back */
+		  case EM_BERKNET:	/* do berknet error processing */
+		  case EM_WRITE:	/* write back (or mail) */
 			HoldErrs = TRUE;
-			break;
+			/* fall through... */
 
-		  case 'e':	/* do berknet error processing */
-			BerkNet = TRUE;
-			HoldErrs = TRUE;
-			break;
-
-		  case 'w':	/* write back (or mail) */
-			WriteBack = TRUE;
-			HoldErrs = TRUE;
+		  case EM_PRINT:	/* print errors normally (default) */
+			ErrorMode = *val;
 			break;
 		}
 		break;
 
 	  case 'F':		/* file mode */
-		FileMode = ival;
+		FileMode = atooct(val);
 		break;
 
 	  case 'f':		/* save Unix-style From lines on front */
-		SaveFrom = bval;
+		SaveFrom = atobool(val);
 		break;
 
 	  case 'g':		/* default gid */
 		if (safe)
-			DefGid = ival;
+			DefGid = atoi(val);
 		break;
 
 	  case 'H':		/* help file */
-		HelpFile = val;
-		if (HelpFile[0] == '\0')
+		if (val[0] == '\0')
 			HelpFile = "sendmail.hf";
+		else
+			HelpFile = newstr(val);
 		break;
 
 	  case 'i':		/* ignore dot lines in message */
-		IgnrDot = bval;
+		IgnrDot = atobool(val);
 		break;
 
 	  case 'L':		/* log level */
-		LogLevel = ival;
+		LogLevel = atoi(val);
 		break;
 
 	  case 'M':		/* define macro */
-		define(val[0], &val[1]);
+		define(val[0], newstr(&val[1]), CurEnv);
 		break;
 
 	  case 'm':		/* send to me too */
-		MeToo = bval;
+		MeToo = atobool(val);
 		break;
 
 	  case 'o':		/* assume old style headers */
-		if (bval)
+		if (atobool(val))
 			CurEnv->e_flags |= EF_OLDSTYLE;
 		else
 			CurEnv->e_flags &= ~EF_OLDSTYLE;
 		break;
 
 	  case 'Q':		/* queue directory */
-		QueueDir = val;
-		if (QueueDir[0] == '\0')
+		if (val[0] == '\0')
 			QueueDir = "mqueue";
+		else
+			QueueDir = newstr(val);
 		break;
 
 	  case 'r':		/* read timeout */
-		ReadTimeout = tval;
+		ReadTimeout = convtime(val);
 		break;
 
 	  case 'S':		/* status file */
-		StatFile = val;
-		if (StatFile[0] == '\0')
+		if (val[0] == '\0')
 			StatFile = "sendmail.st";
+		else
+			StatFile = newstr(val);
 		break;
 
 	  case 's':		/* be super safe, even if expensive */
-		SuperSafe = bval;
+		SuperSafe = atobool(val);
 		break;
 
 	  case 'T':		/* queue timeout */
-		TimeOut = tval;
+		TimeOut = convtime(val);
 		break;
 
 	  case 't':		/* time zone name */
 # ifdef V6
-		StdTimezone = val;
-		DstTimezone = index(val, ',');
+		StdTimezone = newstr(val);
+		DstTimezone = index(StdTimeZone, ',');
 		if (DstTimezone == NULL)
-			goto syntax;
-		*DstTimezone++ = '\0';
+			syserr("bad time zone spec");
+		else
+			*DstTimezone++ = '\0';
 # endif V6
 		break;
 
 	  case 'u':		/* set default uid */
 		if (safe)
-			DefUid = ival;
+			DefUid = atoi(val);
 		break;
 
 	  case 'v':		/* run in verbose mode */
-		Verbose = bval;
+		Verbose = atobool(val);
 		break;
 
 # ifdef DEBUG
 	  case 'W':		/* set the wizards password */
 		if (safe)
-			WizWord = val;
+			WizWord = newstr(val);
 		break;
 # endif DEBUG
 
@@ -805,8 +774,4 @@ setoption(opt, val, safe, sticky)
 		break;
 	}
 	return;
-
-  syntax:
-	syserr("setoption: line %d: syntax error on \"%c%s\"",
-	       LineNumber, opt, val);
 }

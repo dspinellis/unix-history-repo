@@ -5,33 +5,45 @@
 # include <errno.h>
 
 # ifndef QUEUE
-SCCSID(@(#)queue.c	3.53		%G%	(no queueing));
+SCCSID(@(#)queue.c	3.54		%G%	(no queueing));
 # else QUEUE
 
-SCCSID(@(#)queue.c	3.53		%G%);
+SCCSID(@(#)queue.c	3.54		%G%);
 
 /*
+**  Work queue.
+*/
+
+struct work
+{
+	char		*w_name;	/* name of control file */
+	long		w_pri;		/* priority of message, see below */
+	struct work	*w_next;	/* next in queue */
+};
+
+typedef struct work	WORK;
+
+WORK	*WorkQ;			/* queue of things to be done */
+/*
 **  QUEUEUP -- queue a message up for future transmission.
-**
-**	The queued message should already be in the correct place.
-**	This routine just outputs the control file as appropriate.
 **
 **	Parameters:
 **		e -- the envelope to queue up.
 **		queueall -- if TRUE, queue all addresses, rather than
 **			just those with the QQUEUEUP flag set.
+**		announce -- if TRUE, tell when you are queueing up.
 **
 **	Returns:
 **		none.
 **
 **	Side Effects:
-**		The current request (only unsatisfied addresses)
-**			are saved in a control file.
+**		The current request are saved in a control file.
 */
 
-queueup(e, queueall)
+queueup(e, queueall, announce)
 	register ENVELOPE *e;
 	bool queueall;
+	bool announce;
 {
 	char *tf;
 	char *qf;
@@ -75,13 +87,17 @@ queueup(e, queueall)
 			return;
 		}
 		(void) chmod(e->e_df, FileMode);
-		(*e->e_putbody)(dfp, Mailer[1], FALSE);
+		(*e->e_putbody)(dfp, ProgMailer, FALSE);
 		(void) fclose(dfp);
 	}
 
 	/*
 	**  Output future work requests.
+	**	Priority should be first, since it is read by orderq.
 	*/
+
+	/* output message priority */
+	fprintf(tfp, "P%ld\n", e->e_msgpriority);
 
 	/* output name of data file */
 	fprintf(tfp, "D%s\n", e->e_df);
@@ -91,9 +107,6 @@ queueup(e, queueall)
 
 	/* output creation time */
 	fprintf(tfp, "T%ld\n", e->e_ctime);
-
-	/* output message priority */
-	fprintf(tfp, "P%ld\n", e->e_msgpriority);
 
 	/* output message class */
 	fprintf(tfp, "C%d\n", e->e_class);
@@ -112,11 +125,26 @@ queueup(e, queueall)
 			       bitset(QQUEUEUP, q->q_flags))
 		{
 			fprintf(tfp, "R%s\n", q->q_paddr);
+			if (announce)
+			{
+				e->e_to = q->q_paddr;
+				message(Arpa_Info, "queued");
+				if (LogLevel > 4)
+					logdelivery("queued");
+				e->e_to = NULL;
+			}
 		}
 	}
 
-	/* output headers for this message */
-	define('g', "$f");
+	/*
+	**  Output headers for this message.
+	**	Expand macros completely here.  Queue run will deal with
+	**	everything as absolute headers.
+	**		All headers that must be relative to the recipient
+	**		can be cracked later.
+	*/
+
+	define('g', "$f", e);
 	for (h = e->e_header; h != NULL; h = h->h_link)
 	{
 		if (h->h_value == NULL || h->h_value[0] == '\0')
@@ -144,11 +172,13 @@ queueup(e, queueall)
 
 	(void) fclose(tfp);
 	qf = queuename(e, 'q');
+	holdsigs();
 	(void) unlink(qf);
 	if (link(tf, qf) < 0)
 		syserr("cannot link(%s, %s), df=%s", tf, qf, e->e_df);
 	else
 		(void) unlink(tf);
+	rlsesigs();
 
 # ifdef LOG
 	/* save log info */
@@ -175,8 +205,6 @@ queueup(e, queueall)
 runqueue(forkflag)
 	bool forkflag;
 {
-	register int i;
-
 	/*
 	**  See if we want to go off and do other useful work.
 	*/
@@ -189,12 +217,7 @@ runqueue(forkflag)
 		if (pid != 0)
 		{
 			/* parent -- pick up intermediate zombie */
-			do
-			{
-				auto int stat;
-
-				i = wait(&stat);
-			} while (i >= 0 && i != pid);
+			(void) waitfor(pid);
 			if (QueueIntvl != 0)
 				(void) setevent(QueueIntvl, runqueue, TRUE);
 			return;
@@ -290,8 +313,8 @@ orderq()
 
 	while (wn < WLSIZE && (d = readdir(f)) != NULL)
 	{
-		char lbuf[MAXNAME];
 		FILE *cf;
+		char lbuf[MAXNAME];
 
 		/* is this an interesting entry? */
 		if (d->d_ino == 0)
@@ -317,11 +340,8 @@ orderq()
 		/* extract useful information */
 		while (fgets(lbuf, sizeof lbuf, cf) != NULL)
 		{
-			fixcrlf(lbuf, TRUE);
-
-			switch (lbuf[0])
+			if (lbuf[0] == 'P')
 			{
-			  case 'P':		/* message priority */
 				(void) sscanf(&lbuf[1], "%ld", &wlist[wn].w_pri);
 				break;
 			}
@@ -339,6 +359,7 @@ orderq()
 
 	/*
 	**  Convert the work list into canonical form.
+	**	Should be turning it into a list of envelopes here perhaps.
 	*/
 
 	wp = &WorkQ;
@@ -406,7 +427,6 @@ dowork(w)
 	register WORK *w;
 {
 	register int i;
-	auto int xstat;
 
 # ifdef DEBUG
 	if (tTd(40, 1))
@@ -438,7 +458,7 @@ dowork(w)
 		(void) alarm(0);
 		CurEnv->e_flags &= ~EF_FATALERRS;
 		QueueRun = TRUE;
-		MailBack = TRUE;
+		ErrorMode = EM_MAIL;
 		CurEnv->e_id = &w->w_name[2];
 # ifdef LOG
 		if (LogLevel > 11)
@@ -468,9 +488,9 @@ dowork(w)
 		initsys();
 
 		/* read the queue control file */
-		readqf(queuename(CurEnv, 'q'));
+		readqf(CurEnv);
 		CurEnv->e_flags |= EF_INQUEUE;
-		eatheader();
+		eatheader(CurEnv);
 
 		/* do the delivery */
 		if (!bitset(EF_FATALERRS, CurEnv->e_flags))
@@ -494,19 +514,13 @@ dowork(w)
 	*/
 
 	errno = 0;
-	while ((i = wait(&xstat)) > 0 && errno != EINTR)
-	{
-		if (errno == EINTR)
-		{
-			errno = 0;
-		}
-	}
+	(void) waitfor(i);
 }
 /*
 **  READQF -- read queue file and set up environment.
 **
 **	Parameters:
-**		cf -- name of queue control file.
+**		e -- the envelope of the job to run.
 **
 **	Returns:
 **		none.
@@ -516,31 +530,35 @@ dowork(w)
 **		we had been invoked by argument.
 */
 
-readqf(cf)
-	char *cf;
+readqf(e)
+	register ENVELOPE *e;
 {
 	register FILE *f;
 	char buf[MAXFIELD];
 	extern char *fgetfolded();
+	register char *p;
 	extern ADDRESS *sendto();
 
 	/*
 	**  Open the file created by queueup.
 	*/
 
-	f = fopen(cf, "r");
+	p = queuename(e, 'q');
+	f = fopen(p, "r");
 	if (f == NULL)
 	{
-		syserr("readqf: no cf file %s", cf);
+		syserr("readqf: no control file %s", p);
 		return;
 	}
+	FileName = p;
+	LineNumber = 0;
 
 	/*
 	**  Read and process the file.
 	*/
 
 	if (Verbose)
-		printf("\nRunning %s\n", cf);
+		printf("\nRunning %s\n", e->e_id);
 	while (fgetfolded(buf, sizeof buf, f) != NULL)
 	{
 		switch (buf[0])
@@ -558,36 +576,34 @@ readqf(cf)
 			break;
 
 		  case 'D':		/* data file name */
-			CurEnv->e_df = newstr(&buf[1]);
-			TempFile = fopen(CurEnv->e_df, "r");
+			e->e_df = newstr(&buf[1]);
+			TempFile = fopen(e->e_df, "r");
 			if (TempFile == NULL)
-				syserr("readqf: cannot open %s", CurEnv->e_df);
+				syserr("readqf: cannot open %s", e->e_df);
 			break;
 
 		  case 'T':		/* init time */
-			(void) sscanf(&buf[1], "%ld", &CurEnv->e_ctime);
+			(void) sscanf(&buf[1], "%ld", &e->e_ctime);
 			break;
 
 		  case 'P':		/* message priority */
-			(void) sscanf(&buf[1], "%ld", &CurEnv->e_msgpriority);
+			(void) sscanf(&buf[1], "%ld", &e->e_msgpriority);
 
 			/* make sure that big things get sent eventually */
-			CurEnv->e_msgpriority -= WKTIMEFACT;
-			break;
-
-		  case 'C':		/* message class */
-			(void) sscanf(&buf[1], "%hd", &CurEnv->e_class);
+			e->e_msgpriority -= WKTIMEFACT;
 			break;
 
 		  case 'M':		/* define macro */
-			define(buf[1], newstr(&buf[2]));
+			define(buf[1], newstr(&buf[2]), e);
 			break;
 
 		  default:
-			syserr("readqf(%s): bad line \"%s\"", cf, buf);
+			syserr("readqf(%s): bad line \"%s\"", e->e_id, buf);
 			break;
 		}
 	}
+
+	FileName = NULL;
 }
 /*
 **  TIMEOUT -- process timeout on queue file.

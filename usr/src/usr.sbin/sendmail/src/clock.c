@@ -1,9 +1,12 @@
 # include "sendmail.h"
 
-SCCSID(@(#)clock.c	3.12		%G%);
+SCCSID(@(#)clock.c	3.13		%G%);
 
 /*
 **  SETEVENT -- set an event to happen at a specific time.
+**
+**	Events are stored in a sorted list for fast processing.
+**	An event only applies to the process that set it.
 **
 **	Parameters:
 **		intvl -- intvl until next event occurs.
@@ -89,7 +92,7 @@ clrevent(ev)
 		return;
 
 	/* find the parent event */
-	signal(SIGALRM, SIG_IGN);
+	(void) signal(SIGALRM, SIG_IGN);
 	for (evp = &EventQueue; *evp != NULL; evp = &(*evp)->ev_link)
 	{
 		if (*evp == ev)
@@ -126,7 +129,8 @@ tick()
 	register time_t now;
 	register EVENT *ev;
 
-	signal(SIGALRM, tick);
+	(void) signal(SIGALRM, SIG_IGN);
+	(void) alarm(0);
 	now = curtime();
 
 # ifdef DEBUG
@@ -149,6 +153,7 @@ tick()
 # endif DEBUG
 
 		/* we must be careful in here because ev_func may not return */
+		(void) signal(SIGALRM, tick);
 		f = ev->ev_func;
 		a = ev->ev_arg;
 		free((char *) ev);
@@ -165,6 +170,7 @@ tick()
 		(void) alarm(0);
 		now = curtime();
 	}
+	(void) signal(SIGALRM, tick);
 	if (EventQueue != NULL)
 		(void) alarm(EventQueue->ev_time - now);
 }

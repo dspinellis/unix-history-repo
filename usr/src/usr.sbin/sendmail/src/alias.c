@@ -5,17 +5,17 @@
 # include "sendmail.h"
 
 # ifdef DBM
-SCCSID(@(#)alias.c	3.41		%G%	(with DBM));
+SCCSID(@(#)alias.c	3.42		%G%	(with DBM));
 # else DBM
-SCCSID(@(#)alias.c	3.41		%G%	(without DBM));
+SCCSID(@(#)alias.c	3.42		%G%	(without DBM));
 # endif DBM
 
 /*
 **  ALIAS -- Compute aliases.
 **
-**	Scans the file /usr/lib/aliases for a set of aliases.
-**	If found, it arranges to deliver to them.  Uses libdbm
-**	database if -DDBM.
+**	Scans the alias file for an alias for the given address.
+**	If found, it arranges to deliver to the alias list instead.
+**	Uses libdbm database if -DDBM.
 **
 **	Parameters:
 **		a -- address to alias.
@@ -28,17 +28,6 @@ SCCSID(@(#)alias.c	3.41		%G%	(without DBM));
 **	Side Effects:
 **		Aliases found are expanded.
 **
-**	Files:
-**		/usr/lib/aliases -- the mail aliases.  The format is
-**			a series of lines of the form:
-**				alias:name1,name2,name3,...
-**			where 'alias' expands to all of
-**			'name[i]'.  Continuations begin with
-**			space or tab.
-**		/usr/lib/aliases.pag, /usr/lib/aliases.dir: libdbm version
-**			of alias file.  Keys are aliases, datums
-**			(data?) are name1,name2, ...
-**
 **	Notes:
 **		If NoAlias (the "-n" flag) is set, no aliasing is
 **			done.
@@ -46,7 +35,6 @@ SCCSID(@(#)alias.c	3.41		%G%	(without DBM));
 **	Deficiencies:
 **		It should complain about names that are aliased to
 **			nothing.
-**		It is unsophisticated about line overflows.
 */
 
 
@@ -165,11 +153,13 @@ initaliases(aliasfile, init)
 	char *aliasfile;
 	bool init;
 {
+#ifdef DBM
 	int atcnt;
 	char buf[MAXNAME];
-	struct stat stb;
 	time_t modtime;
 	int (*oldsigint)();
+#endif DBM
+	struct stat stb;
 
 	if (stat(aliasfile, &stb) < 0)
 	{
@@ -205,7 +195,7 @@ initaliases(aliasfile, init)
 	if (!init && (atcnt < 0 || stat(buf, &stb) < 0 || stb.st_mtime < modtime))
 	{
 		if (AutoRebuild && stb.st_ino != 0 &&
-		    ((stb.st_mode & 0666) == 0666 || stb.st_uid == geteuid()))
+		    ((stb.st_mode & 0777) == 0666 || stb.st_uid == geteuid()))
 		{
 			init = TRUE;
 			message(Arpa_Info, "rebuilding alias database");
@@ -235,6 +225,7 @@ initaliases(aliasfile, init)
 		if (close(creat(buf, DBMMODE)) < 0)
 		{
 			syserr("cannot make %s", buf);
+			(void) signal(SIGINT, oldsigint);
 			return;
 		}
 		(void) strcpy(buf, aliasfile);
@@ -242,6 +233,7 @@ initaliases(aliasfile, init)
 		if (close(creat(buf, DBMMODE)) < 0)
 		{
 			syserr("cannot make %s", buf);
+			(void) signal(SIGINT, oldsigint);
 			return;
 		}
 	}
@@ -289,16 +281,15 @@ readaliases(aliasfile, init)
 	char *aliasfile;
 	bool init;
 {
-	char line[BUFSIZ];
 	register char *p;
 	char *p2;
 	char *rhs;
 	bool skipping;
-	ADDRESS al, bl;
-	FILE *af;
-	int lineno;
-	register STAB *s;
 	int naliases, bytes, longest;
+	FILE *af;
+	ADDRESS al, bl;
+	register STAB *s;
+	char line[BUFSIZ];
 
 	if ((af = fopen(aliasfile, "r")) == NULL)
 	{
@@ -315,14 +306,15 @@ readaliases(aliasfile, init)
 	**  Read and interpret lines
 	*/
 
-	lineno = 0;
+	FileName = aliasfile;
+	LineNumber = 0;
 	naliases = bytes = longest = 0;
 	skipping = FALSE;
 	while (fgets(line, sizeof (line), af) != NULL)
 	{
 		int lhssize, rhssize;
 
-		lineno++;
+		LineNumber++;
 		switch (line[0])
 		{
 		  case '#':
@@ -334,7 +326,7 @@ readaliases(aliasfile, init)
 		  case ' ':
 		  case '\t':
 			if (!skipping)
-				syserr("aliases: %d: Non-continuation line starts with space", lineno);
+				syserr("Non-continuation line starts with space");
 			skipping = TRUE;
 			continue;
 		}
@@ -353,7 +345,6 @@ readaliases(aliasfile, init)
 			continue;
 		if (*p == '\0' || *p == '\n')
 		{
-		 syntaxerr:
 			syserr("%s, line %d: syntax error", aliasfile, lineno);
 			continue;
 		}
@@ -361,7 +352,8 @@ readaliases(aliasfile, init)
 		if (parse(line, &al, 1) == NULL)
 		{
 			*--p = ':';
-			goto syntaxerr;
+			syserr("illegal alias name");
+			continue;
 		}
 
 		/*
@@ -440,11 +432,11 @@ readaliases(aliasfile, init)
 			p--;
 			if (fgets(p, sizeof line - (p - line), af) == NULL)
 				break;
-			lineno++;
+			LineNumber++;
 		}
 		if (al.q_mailer != LocalMailer)
 		{
-			syserr("aliases: %d: cannot alias non-local names", lineno);
+			syserr("cannot alias non-local names");
 			continue;
 		}
 
@@ -481,6 +473,7 @@ readaliases(aliasfile, init)
 	}
 	(void) fclose(af);
 	CurEnv->e_to = NULL;
+	FileName = NULL;
 	message(Arpa_Info, "%d aliases, longest %d bytes, %d bytes total",
 			naliases, longest, bytes);
 }
@@ -524,7 +517,7 @@ forward(user, sendq)
 # endif DEBUG
 
 	/* good address -- look for .forward file in home */
-	define('z', user->q_home);
+	define('z', user->q_home, CurEnv);
 	expand("$z/.forward", buf, &buf[sizeof buf - 1], CurEnv);
 	if (!safefile(buf, user->q_uid, S_IREAD))
 		return;

@@ -1,7 +1,7 @@
 # include <ctype.h>
 # include "useful.h"
 
-SCCSID(@(#)convtime.c	3.2		%G%);
+SCCSID(@(#)convtime.c	3.3		%G%);
 
 /*
 **  CONVTIME -- convert time
@@ -13,6 +13,7 @@ SCCSID(@(#)convtime.c	3.2		%G%);
 **	  h -- hours
 **	  d -- days (default)
 **	  w -- weeks
+**	For example, "3d12h" is three and a half days.
 **
 **	Parameters:
 **		p -- pointer to ascii time.
@@ -62,4 +63,95 @@ convtime(p)
 	}
 
 	return (r);
+}
+/*
+**  PINTVL -- produce printable version of a time interval
+**
+**	Parameters:
+**		intvl -- the interval to be converted
+**		brief -- if TRUE, print this in an extremely compact form
+**			(basically used for logging).
+**
+**	Returns:
+**		A pointer to a string version of intvl suitable for
+**			printing or framing.
+**
+**	Side Effects:
+**		none.
+**
+**	Warning:
+**		The string returned is in a static buffer.
+*/
+
+# define PLURAL(n)	((n) == 1 ? "" : "s")
+
+char *
+pintvl(intvl, brief)
+	time_t intvl;
+	bool brief;
+{
+	static char buf[256];
+	register char *p;
+	int wk, dy, hr, mi, se;
+
+	if (intvl == 0 && !brief)
+		return ("zero seconds");
+
+	/* decode the interval into weeks, days, hours, minutes, seconds */
+	se = intvl % 60;
+	intvl /= 60;
+	mi = intvl % 60;
+	intvl /= 60;
+	hr = intvl % 24;
+	intvl /= 24;
+	if (brief)
+		dy = intvl;
+	else
+	{
+		dy = intvl % 7;
+		intvl /= 7;
+		wk = intvl;
+	}
+
+	/* now turn it into a sexy form */
+	p = buf;
+	if (brief)
+	{
+		if (dy > 0)
+		{
+			(void) sprintf(p, "%d+", dy);
+			p += strlen(p);
+		}
+		(void) sprintf(p, "%02d:%02d:%02d", hr, mi, se);
+		return (buf);
+	}
+
+	/* use the verbose form */
+	if (wk > 0)
+	{
+		(void) sprintf(p, ", %d week%s", wk, PLURAL(wk));
+		p += strlen(p);
+	}
+	if (dy > 0)
+	{
+		(void) sprintf(p, ", %d day%s", dy, PLURAL(dy));
+		p += strlen(p);
+	}
+	if (hr > 0)
+	{
+		(void) sprintf(p, ", %d hour%s", hr, PLURAL(hr));
+		p += strlen(p);
+	}
+	if (mi > 0)
+	{
+		(void) sprintf(p, ", %d minute%s", mi, PLURAL(mi));
+		p += strlen(p);
+	}
+	if (se > 0)
+	{
+		(void) sprintf(p, ", %d second%s", se, PLURAL(se));
+		p += strlen(p);
+	}
+
+	return (buf + 2);
 }

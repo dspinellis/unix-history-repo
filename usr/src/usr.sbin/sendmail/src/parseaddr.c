@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)parseaddr.c	3.66		%G%);
+SCCSID(@(#)parseaddr.c	3.67		%G%);
 
 /*
 **  PARSE -- Parse an address
@@ -38,6 +38,7 @@ SCCSID(@(#)parseaddr.c	3.66		%G%);
 **		none
 */
 
+/* following delimiters are inherent to the internal algorithms */
 # define DELIMCHARS	"$()<>,;\\\"\r\n"	/* word delimiters */
 
 ADDRESS *
@@ -145,11 +146,8 @@ parse(addr, a, copyf)
 /*
 **  PRESCAN -- Prescan name and make it canonical
 **
-**	Scans a name and turns it into canonical form.  This involves
-**	deleting blanks, comments (in parentheses), and turning the
-**	word "at" into an at-sign ("@").  The name is copied as this
-**	is done; it is legal to copy a name onto itself, since this
-**	process can only make things smaller.
+**	Scans a name and turns it into a set of tokens.  This process
+**	deletes blanks and comments (in parentheses).
 **
 **	This routine knows about quoted strings and angle brackets.
 **
@@ -599,108 +597,107 @@ rewrite(pvp, ruleset)
 		**  See if we successfully matched
 		*/
 
-		if (rvp >= rwr->r_lhs && *rvp == NULL)
-		{
-			rvp = rwr->r_rhs;
-# ifdef DEBUG
-			if (tTd(21, 12))
-			{
-				printf("-----rule matches:");
-				printav(rvp);
-			}
-# endif DEBUG
-
-			rp = *rvp;
-			if (*rp == CANONUSER)
-			{
-				rvp++;
-				rwr = rwr->r_next;
-			}
-			else if (*rp == CANONHOST)
-			{
-				rvp++;
-				rwr = NULL;
-			}
-			else if (*rp == CANONNET)
-				rwr = NULL;
-
-			/* substitute */
-			for (avp = npvp; *rvp != NULL; rvp++)
-			{
-				rp = *rvp;
-				if (*rp == MATCHREPL)
-				{
-					register struct match *m;
-					register char **pp;
-
-					m = &mlist[rp[1] - '1'];
-# ifdef DEBUG
-					if (tTd(21, 15))
-					{
-						printf("$%c:", rp[1]);
-						pp = m->first;
-						while (pp <= m->last)
-						{
-							printf(" %x=\"", *pp);
-							(void) fflush(stdout);
-							printf("%s\"", *pp++);
-						}
-						printf("\n");
-					}
-# endif DEBUG
-					pp = m->first;
-					while (pp <= m->last)
-					{
-						if (avp >= &npvp[MAXATOM])
-						{
-							syserr("rewrite: expansion too long");
-							return;
-						}
-						*avp++ = *pp++;
-					}
-				}
-				else
-				{
-					if (avp >= &npvp[MAXATOM])
-					{
-						syserr("rewrite: expansion too long");
-						return;
-					}
-					*avp++ = rp;
-				}
-			}
-			*avp++ = NULL;
-			if (**npvp == CALLSUBR)
-			{
-				bmove((char *) &npvp[2], (char *) pvp,
-					(avp - npvp - 2) * sizeof *avp);
-# ifdef DEBUG
-				if (tTd(21, 3))
-					printf("-----callsubr %s\n", npvp[1]);
-# endif DEBUG
-				rewrite(pvp, atoi(npvp[1]));
-			}
-			else
-			{
-				bmove((char *) npvp, (char *) pvp,
-					(avp - npvp) * sizeof *avp);
-			}
-# ifdef DEBUG
-			if (tTd(21, 4))
-			{
-				printf("rewritten as:");
-				printav(pvp);
-			}
-# endif DEBUG
-		}
-		else
+		if (rvp < rwr->r_lhs || *rvp != NULL)
 		{
 # ifdef DEBUG
 			if (tTd(21, 10))
 				printf("----- rule fails\n");
 # endif DEBUG
 			rwr = rwr->r_next;
+			continue;
 		}
+
+		rvp = rwr->r_rhs;
+# ifdef DEBUG
+		if (tTd(21, 12))
+		{
+			printf("-----rule matches:");
+			printav(rvp);
+		}
+# endif DEBUG
+
+		rp = *rvp;
+		if (*rp == CANONUSER)
+		{
+			rvp++;
+			rwr = rwr->r_next;
+		}
+		else if (*rp == CANONHOST)
+		{
+			rvp++;
+			rwr = NULL;
+		}
+		else if (*rp == CANONNET)
+			rwr = NULL;
+
+		/* substitute */
+		for (avp = npvp; *rvp != NULL; rvp++)
+		{
+			register struct match *m;
+			register char **pp;
+
+			rp = *rvp;
+			if (*rp != MATCHREPL)
+			{
+				if (avp >= &npvp[MAXATOM])
+				{
+					syserr("rewrite: expansion too long");
+					return;
+				}
+				*avp++ = rp;
+				continue;
+			}
+
+			/* substitute from LHS */
+			m = &mlist[rp[1] - '1'];
+# ifdef DEBUG
+			if (tTd(21, 15))
+			{
+				printf("$%c:", rp[1]);
+				pp = m->first;
+				while (pp <= m->last)
+				{
+					printf(" %x=\"", *pp);
+					(void) fflush(stdout);
+					printf("%s\"", *pp++);
+				}
+				printf("\n");
+			}
+# endif DEBUG
+			pp = m->first;
+			while (pp <= m->last)
+			{
+				if (avp >= &npvp[MAXATOM])
+				{
+					syserr("rewrite: expansion too long");
+					return;
+				}
+				*avp++ = *pp++;
+			}
+		}
+		*avp++ = NULL;
+		if (**npvp == CALLSUBR)
+		{
+			bmove((char *) &npvp[2], (char *) pvp,
+				(avp - npvp - 2) * sizeof *avp);
+# ifdef DEBUG
+			if (tTd(21, 3))
+				printf("-----callsubr %s\n", npvp[1]);
+# endif DEBUG
+			rewrite(pvp, atoi(npvp[1]));
+		}
+		else
+		{
+			bmove((char *) npvp, (char *) pvp,
+				(avp - npvp) * sizeof *avp);
+		}
+# ifdef DEBUG
+		if (tTd(21, 4))
+		{
+			printf("rewritten as:");
+			printav(pvp);
+		}
+# endif DEBUG
 	}
 
 	if (OpMode == MD_TEST || tTd(21, 2))
@@ -853,8 +850,6 @@ cataddr(pvp, buf, sz)
 **
 **	Parameters:
 **		a, b -- pointers to the internal forms to compare.
-**		wildflg -- if TRUE, 'a' may have no user specified,
-**			in which case it is to match anything.
 **
 **	Returns:
 **		TRUE -- they represent the same mailbox.
@@ -865,17 +860,16 @@ cataddr(pvp, buf, sz)
 */
 
 bool
-sameaddr(a, b, wildflg)
+sameaddr(a, b)
 	register ADDRESS *a;
 	register ADDRESS *b;
-	bool wildflg;
 {
 	/* if they don't have the same mailer, forget it */
 	if (a->q_mailer != b->q_mailer)
 		return (FALSE);
 
 	/* if the user isn't the same, we can drop out */
-	if ((!wildflg || a->q_user[0] != '\0') && strcmp(a->q_user, b->q_user) != 0)
+	if (strcmp(a->q_user, b->q_user) != 0)
 		return (FALSE);
 
 	/* if the mailer ignores hosts, we have succeeded! */
@@ -1054,9 +1048,9 @@ remotename(name, m, senderaddress)
 	*/
 
 	cataddr(pvp, lbuf, sizeof lbuf);
-	define('g', lbuf);
+	define('g', lbuf, CurEnv);
 	expand(fancy, buf, &buf[sizeof buf - 1], CurEnv);
-	define('g', oldg);
+	define('g', oldg, CurEnv);
 
 # ifdef DEBUG
 	if (tTd(12, 1))

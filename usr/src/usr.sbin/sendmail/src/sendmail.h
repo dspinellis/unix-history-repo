@@ -7,7 +7,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	3.101		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	3.102		%G%";
 # endif lint
 # else  _DEFINE
 # define EXTERN extern
@@ -83,7 +83,6 @@ struct mailer
 	char	*m_name;	/* symbolic name of this mailer */
 	char	*m_mailer;	/* pathname of the mailer to use */
 	u_long	m_flags;	/* status flags, see below */
-	short	m_badstat;	/* the status code to use on unknown error */
 	short	m_mno;		/* mailer number internally */
 	char	**m_argv;	/* template argument vector */
 	short	m_s_rwset;	/* rewriting set for sender addresses */
@@ -95,7 +94,7 @@ typedef struct mailer	MAILER;
 /* bits for m_flags */
 # define M_FOPT		000000001L	/* mailer takes picky -f flag */
 # define M_ROPT		000000002L	/* mailer takes picky -r flag */
-# define M_QUIET	000000004L	/* don't print error on bad status */
+# define M_RPATH	000000004L	/* wants a Return-Path: line */
 # define M_RESTR	000000010L	/* must be daemon to execute */
 # define M_NHDR		000000020L	/* don't insert From line */
 # define M_LOCAL	000000040L	/* delivery is to this host */
@@ -153,7 +152,6 @@ extern struct hdrinfo	HdrInfo[];
 # define H_EOH		00001	/* this field terminates header */
 # define H_RCPT		00002	/* contains recipient addresses */
 # define H_DEFAULT	00004	/* if another value is found, drop this */
-# define H_USED		00010	/* indicates that this has been output */
 # define H_CHECK	00020	/* check h_mflags against m_flags */
 # define H_ACHECK	00040	/* ditto, but always (not just default) */
 # define H_FORCE	00100	/* force this field, even if default */
@@ -183,6 +181,7 @@ struct envelope
 	long		e_msgsize;	/* size of the message in bytes */
 	short		e_class;	/* msg class (priority, junk, etc.) */
 	short		e_flags;	/* flags, see below */
+	short		e_hopcount;	/* number of times processed */
 	int		(*e_puthdr)();	/* function to put header of message */
 	int		(*e_putbody)();	/* function to put body of message */
 	struct envelope	*e_parent;	/* the message this one encloses */
@@ -202,25 +201,10 @@ typedef struct envelope	ENVELOPE;
 #define EF_SENDRECEIPT	000020		/* send a return receipt */
 #define EF_FATALERRS	000040		/* fatal errors occured */
 #define EF_KEEPQUEUE	000100		/* keep queue files always */
+#define EF_RESPONSE	000200		/* this is an error or return receipt */
 
 EXTERN ENVELOPE	*CurEnv;	/* envelope currently being processed */
 /*
-**  Work queue.
-*/
-
-struct work
-{
-	char		*w_name;	/* name of control file */
-	long		w_pri;		/* priority of message, see below */
-	struct work	*w_next;	/* next in queue */
-};
-
-typedef struct work	WORK;
-
-EXTERN WORK	*WorkQ;			/* queue of things to be done */
-
-
-/*
 **  Message priorities.
 **	Priorities > 0 should be preemptive.
 **
@@ -343,23 +327,7 @@ typedef struct event	EVENT;
 
 EXTERN EVENT	*EventQueue;		/* head of event queue */
 /*
-**  Statistics structure.
-*/
-
-struct statistics
-{
-	time_t	stat_itime;		/* file initialization time */
-	short	stat_size;		/* size of this structure */
-	long	stat_nf[MAXMAILERS];	/* # msgs from each mailer */
-	long	stat_bf[MAXMAILERS];	/* kbytes from each mailer */
-	long	stat_nt[MAXMAILERS];	/* # msgs to each mailer */
-	long	stat_bt[MAXMAILERS];	/* kbytes to each mailer */
-};
-
-EXTERN struct statistics	Stat;
-extern long			kbytes();	/* for _bf, _bt */
-/*
-**  Operation and send modes
+**  Operation, send, and error modes
 **
 **	The operation mode describes the basic operation of sendmail.
 **	This can be set from the command line, and is "send mail" by
@@ -371,7 +339,7 @@ extern long			kbytes();	/* for _bf, _bt */
 **	-v (verbose) flag is given, it will be forced to SM_DELIVER
 **	mode.
 **
-**	The default send mode can be safely changed.
+**	The error mode tells how to return errors.
 */
 
 EXTERN char	OpMode;		/* operation mode, see below */
@@ -394,14 +362,20 @@ EXTERN char	SendMode;	/* send mode, see below */
 #define SM_FORK		'b'		/* deliver in background */
 #define SM_QUEUE	'q'		/* queue, don't deliver */
 #define SM_VERIFY	'v'		/* verify only (used internally) */
+
+
+EXTERN char	ErrorMode;	/* error mode, see below */
+
+#define EM_PRINT	'p'		/* print errors */
+#define EM_MAIL		'm'		/* mail back errors */
+#define EM_WRITE	'w'		/* write back errors */
+#define EM_BERKNET	'e'		/* special berknet processing */
+#define EM_QUIET	'q'		/* don't print messages (stat only) */
 /*
 **  Global variables.
 */
 
 EXTERN bool	FromFlag;	/* if set, "From" person is explicit */
-EXTERN bool	MailBack;	/* mail back response on error */
-EXTERN bool	BerkNet;	/* called from BerkNet */
-EXTERN bool	WriteBack;	/* write back response on error */
 EXTERN bool	NoAlias;	/* if set, don't do any aliasing */
 EXTERN bool	ForceMail;	/* if set, mail even if already got a copy */
 EXTERN bool	MeToo;		/* send to the sender also */
@@ -409,7 +383,6 @@ EXTERN bool	IgnrDot;	/* don't let dot end messages */
 EXTERN bool	SaveFrom;	/* save leading "From" lines */
 EXTERN bool	Verbose;	/* set if blow-by-blow desired */
 EXTERN bool	GrabTo;		/* if set, get recipients from msg */
-EXTERN bool	DontSend;	/* mark recipients as QDONTSEND */
 EXTERN bool	NoReturn;	/* don't return letter to sender */
 EXTERN bool	SuprErrs;	/* set if we are suppressing errors */
 EXTERN bool	QueueRun;	/* currently running message from the queue */
@@ -430,7 +403,6 @@ EXTERN int	DefGid;		/* default gid to run as */
 EXTERN int	OldUmask;	/* umask when sendmail starts up */
 EXTERN int	Errors;		/* set if errors (local to single pass) */
 EXTERN int	ExitStat;	/* exit status code */
-EXTERN int	HopCount;	/* hop count */
 EXTERN int	AliasLevel;	/* depth of aliasing */
 EXTERN int	MotherPid;	/* proc id of parent process */
 EXTERN int	LineNumber;	/* line number in current input */
@@ -443,6 +415,7 @@ EXTERN char	*AliasFile;	/* location of alias file */
 EXTERN char	*HelpFile;	/* location of SMTP help file */
 EXTERN char	*StatFile;	/* location of statistics summary */
 EXTERN char	*QueueDir;	/* location of queue directory */
+EXTERN char	*FileName;	/* name to print on error messages */
 EXTERN char	*TrustedUsers[MAXTRUST+1];	/* list of trusted users */
 EXTERN jmp_buf	TopFrame;	/* branch-to-top-of-loop-on-error frame */
 EXTERN bool	QuickAbort;	/*  .... but only if we want a quick abort */

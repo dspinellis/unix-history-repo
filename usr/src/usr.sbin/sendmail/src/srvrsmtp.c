@@ -2,10 +2,10 @@
 # include "sendmail.h"
 
 # ifndef SMTP
-SCCSID(@(#)srvrsmtp.c	3.38		%G%	(no SMTP));
+SCCSID(@(#)srvrsmtp.c	3.39		%G%	(no SMTP));
 # else SMTP
 
-SCCSID(@(#)srvrsmtp.c	3.38		%G%);
+SCCSID(@(#)srvrsmtp.c	3.39		%G%);
 
 /*
 **  SMTP -- run the SMTP protocol.
@@ -78,6 +78,7 @@ bool	IsWiz = FALSE;			/* set if we are a wizard */
 char	*WizWord = NULL;		/* the wizard word to compare against */
 # endif DEBUG
 bool	InChild = FALSE;		/* true if running in a subprocess */
+bool	OneXact = FALSE;		/* one xaction only this run */
 #define EX_QUIT		22		/* special code for QUIT command */
 
 smtp()
@@ -149,7 +150,7 @@ smtp()
 		switch (c->cmdcode)
 		{
 		  case CMDHELO:		/* hello -- introduce yourself */
-			define('s', newstr(p));
+			define('s', newstr(p), CurEnv);
 			message("250", "%s Hello %s, pleased to meet you", HostName, p);
 			break;
 
@@ -233,7 +234,10 @@ smtp()
 			*/
 
 			if (rcps != 1)
-				HoldErrs = MailBack = TRUE;
+			{
+				HoldErrs = TRUE;
+				ErrorMode == EM_MAIL;
+			}
 			CurEnv->e_flags &= ~EF_FATALERRS;
 
 			/* send to all recipients */
@@ -288,7 +292,7 @@ smtp()
 			break;
 
 		  case CMDONEX:		/* doing one transaction only */
-			onexact = TRUE;
+			OneXact = TRUE;
 			message("200", "Only one transaction");
 			break;
 
@@ -316,10 +320,24 @@ smtp()
 		  case CMDDBGSHELL:	/* give us an interactive shell */
 			if (!iswiz())
 				break;
+			if (fileno(InChannel) != 0)
+			{
+				(void) close(0);
+				(void) dup(fileno(InChannel));
+				(void) fclose(InChannel);
+				InChannel = stdin;
+			}
+			if (fileno(OutChannel) != 1)
+			{
+				(void) close(1);
+				(void) dup(fileno(OutChannel));
+				(void) fclose(OutChannel);
+				OutChannel = stdout;
+			}
 			execl("/bin/csh", "sendmail", 0);
 			execl("/bin/sh", "sendmail", 0);
 			message("500", "Can't");
-			break;
+			exit(EX_UNAVAILABLE);
 
 		  case CMDDBGWIZ:	/* become a wizard */
 			if (WizWord != NULL)
@@ -496,6 +514,9 @@ runinchild(label)
 {
 	int childpid;
 
+	if (OneXact)
+		return (0);
+
 	childpid = dofork();
 	if (childpid < 0)
 	{
@@ -504,16 +525,11 @@ runinchild(label)
 	}
 	if (childpid > 0)
 	{
-		/* parent -- wait for child to complete */
 		auto int st;
-		int i;
 
-		while ((i = wait(&st)) != childpid)
-		{
-			if (i < 0 && errno != EINTR)
-				break;
-		}
-		if (i < 0)
+		/* parent -- wait for child to complete */
+		st = waitfor(childpid);
+		if (st == -1)
 			syserr("%s: lost child", label);
 
 		/* if we exited on a QUIT command, complete the process */

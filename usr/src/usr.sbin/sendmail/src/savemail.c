@@ -1,12 +1,12 @@
 # include <pwd.h>
 # include "sendmail.h"
 
-SCCSID(@(#)savemail.c	3.49		%G%);
+SCCSID(@(#)savemail.c	3.50		%G%);
 
 /*
 **  SAVEMAIL -- Save mail on error
 **
-**	If the MailBack flag is set, mail it back to the originator
+**	If mailing back errors, mail it back to the originator
 **	together with an error message; otherwise, just put it in
 **	dead.letter in the user's home directory (if he exists on
 **	this machine).
@@ -32,15 +32,14 @@ savemail(e)
 	extern struct passwd *getpwnam();
 	register char *p;
 	extern char *ttypath();
-	static int exclusive;
 	typedef int (*fnptr)();
 
 # ifdef DEBUG
 	if (tTd(6, 1))
-		printf("\nsavemail: exclusive %d\n", exclusive);
+		printf("\nsavemail\n");
 # endif DEBUG
 
-	if (exclusive++)
+	if (bitset(EF_RESPONSE, e->e_flags))
 		return;
 	if (e->e_class < 0)
 	{
@@ -75,45 +74,56 @@ savemail(e)
 	**  Also, if the from address is not local, mail it back.
 	*/
 
-	if (BerkNet)
+	if (ErrorMode == EM_BERKNET)
 	{
 		ExitStat = EX_OK;
-		MailBack = TRUE;
+		ErrorMode = EM_MAIL;
 	}
 	if (!bitset(M_LOCAL, CurEnv->e_returnto->q_mailer->m_flags))
-		MailBack = TRUE;
+		ErrorMode = EM_MAIL;
 
 	/*
 	**  If writing back, do it.
 	**	If the user is still logged in on the same terminal,
 	**	then write the error messages back to hir (sic).
-	**	If not, set the MailBack flag so that it will get
-	**	mailed back instead.
+	**	If not, mail back instead.
 	*/
 
-	if (WriteBack)
+	if (ErrorMode == EM_WRITE)
 	{
 		p = ttypath();
 		if (p == NULL || freopen(p, "w", stdout) == NULL)
 		{
-			MailBack = TRUE;
+			ErrorMode = EM_MAIL;
 			errno = 0;
 		}
 		else
 		{
-			if (Xscript != NULL)
-				(void) fflush(Xscript);
-			xfile = fopen(queuename(e, 'x'), "r");
-			if (xfile == NULL)
-				syserr("Cannot open %s", queuename(e, 'x'));
 			expand("$n", buf, &buf[sizeof buf - 1], e);
 			printf("\r\nMessage from %s...\r\n", buf);
-			printf("Errors occurred while sending mail; transcript follows:\r\n");
-			while (fgets(buf, sizeof buf, xfile) != NULL && !ferror(stdout))
-				fputs(buf, stdout);
+			printf("Errors occurred while sending mail.\r\n");
+			if (Xscript != NULL)
+			{
+				(void) fflush(Xscript);
+				xfile = fopen(queuename(e, 'x'), "r");
+			}
+			else
+				xfile = NULL;
+			if (xfile == NULL)
+			{
+				syserr("Cannot open %s", queuename(e, 'x'));
+				printf("Transcript of session is unavailable.\r\n");
+			}
+			else
+			{
+				printf("Transcript follows:\r\n");
+				while (fgets(buf, sizeof buf, xfile) != NULL &&
+				       !ferror(stdout))
+					fputs(buf, stdout);
+				(void) fclose(xfile);
+			}
 			if (ferror(stdout))
 				(void) syserr("savemail: stdout: write err");
-			(void) fclose(xfile);
 		}
 	}
 
@@ -128,7 +138,7 @@ savemail(e)
 	**	sender.
 	*/
 
-	if (MailBack)
+	if (ErrorMode == EM_MAIL)
 	{
 		if (returntosender("Unable to deliver mail", CurEnv->e_returnto, TRUE) == 0)
 			return;
@@ -140,13 +150,8 @@ savemail(e)
 	**	should save the message in dead.letter so that the
 	**	poor person doesn't have to type it over again --
 	**	and we all know what poor typists programmers are.
-	**	However, if we are running a "smart" protocol, we don't
-	**	bother to return the message, since the other end is
-	**	expected to handle that.
 	*/
 
-	if (OpMode == MD_ARPAFTP || OpMode == MD_SMTP)
-		return;
 	p = NULL;
 	if (CurEnv->e_returnto->q_mailer == LocalMailer)
 	{
@@ -168,19 +173,19 @@ savemail(e)
 		bool oldverb = Verbose;
 
 		/* we have a home directory; open dead.letter */
-		Verbose = TRUE;
-		message(Arpa_Info, "Saving message in dead.letter");
-		Verbose = oldverb;
-		define('z', p);
+		define('z', p, e);
 		expand("$z/dead.letter", buf, &buf[sizeof buf - 1], e);
+		Verbose = TRUE;
+		message(Arpa_Info, "Saving message in %s", buf);
+		Verbose = oldverb;
 		e->e_to = buf;
 		q = NULL;
 		sendto(buf, (ADDRESS *) NULL, &q);
-		(void) deliver(q);
+		(void) deliver(e, q);
 	}
 
 	/* add terminator to writeback message */
-	if (WriteBack)
+	if (ErrorMode == EM_WRITE)
 		printf("-----\r\n");
 }
 /*
@@ -216,6 +221,7 @@ returntosender(msg, returnto, sendbody)
 	extern ENVELOPE *newenvelope();
 	ENVELOPE errenvelope;
 	static int returndepth;
+	register ADDRESS *q;
 
 # ifdef DEBUG
 	if (tTd(6, 1))
@@ -223,7 +229,7 @@ returntosender(msg, returnto, sendbody)
 		printf("Return To Sender: msg=\"%s\", depth=%d, CurEnv=%x,\n",
 		       msg, returndepth, CurEnv);
 		printf("\treturnto=");
-		printaddr(returnto, FALSE);
+		printaddr(returnto, TRUE);
 	}
 # endif DEBUG
 
@@ -236,14 +242,19 @@ returntosender(msg, returnto, sendbody)
 		return (0);
 	}
 
-	NoAlias = TRUE;
 	SendBody = sendbody;
-	define('g', "$f");
+	define('g', "$f", CurEnv);
 	ee = newenvelope(&errenvelope);
 	ee->e_puthdr = putheader;
 	ee->e_putbody = errbody;
+	ee->e_flags |= EF_RESPONSE;
+	ee->e_sendqueue = returnto;
 	(void) queuename(ee, '\0');
-	addheader("to", returnto->q_paddr, ee);
+	for (q = returnto; q != NULL; q = q->q_next)
+	{
+		if (q->q_alias == NULL)
+			addheader("to", q->q_paddr, ee);
+	}
 	addheader("subject", msg, ee);
 
 	/* fake up an address header for the from person */
@@ -255,18 +266,14 @@ returntosender(msg, returnto, sendbody)
 		returndepth--;
 		return (-1);
 	}
-	ee->e_sendqueue = returnto;
 
 	/* push state into submessage */
 	CurEnv = ee;
-	define('f', "$n");
-	define('x', "Mail Delivery Subsystem");
+	define('f', "$n", ee);
+	define('x', "Mail Delivery Subsystem", ee);
 
 	/* actually deliver the error message */
 	sendall(ee, SendMode);
-
-	/* do any closing error processing */
-	checkerrors(ee);
 
 	/* restore state */
 	dropenvelope(ee);
@@ -346,7 +353,7 @@ errbody(fp, m, xdot)
 		{
 			fprintf(fp, "\n  ----- Message header follows -----\n");
 			(void) fflush(fp);
-			putheader(fp, m, CurEnv);
+			putheader(fp, m, CurEnv->e_parent);
 		}
 	}
 	else

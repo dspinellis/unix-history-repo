@@ -32,7 +32,7 @@
 
 
 
-SCCSID(@(#)conf.c	3.64		%G%);
+SCCSID(@(#)conf.c	3.65		%G%);
 /*
 **  Header info table
 **	Final (null) entry contains the flags used for any other field.
@@ -283,6 +283,29 @@ getrgid()
 
 # endif V6
 /*
+**  USERNAME -- return the user id of the logged in user.
+**
+**	Parameters:
+**		none.
+**
+**	Returns:
+**		The login name of the logged in user.
+**
+**	Side Effects:
+**		none.
+**
+**	Notes:
+**		The return value is statically allocated.
+*/
+
+char *
+username()
+{
+	extern char *getlogin();
+
+	return (getlogin());
+}
+/*
 **  TTYPATH -- Get the path of the user's tty
 **
 **	Returns the pathname of the user's tty.  Returns NULL if
@@ -317,7 +340,8 @@ ttypath()
 	extern char *getlogin();
 
 	/* compute the pathname of the controlling tty */
-	if ((pathn = ttyname(2)) == NULL && (pathn = ttyname(1)) == NULL && (pathn = ttyname(0)) == NULL)
+	if ((pathn = ttyname(2)) == NULL && (pathn = ttyname(1)) == NULL &&
+	    (pathn = ttyname(0)) == NULL)
 	{
 		errno = 0;
 		return (NULL);
@@ -379,11 +403,46 @@ checkcompat(to)
 	}
 # ifdef ING70
 	s = stab("arpa", ST_MAILER, ST_FIND);
-	if (s != NULL && CurEnv->e_from.q_mailer != LocalMailer && to->q_mailer == s->s_mailer)
+	if (s != NULL && CurEnv->e_from.q_mailer != LocalMailer &&
+	    to->q_mailer == s->s_mailer)
 	{
 		usrerr("No ARPA mail through this machine: see your system administration");
 		return (FALSE);
 	}
 # endif ING70
 	return (TRUE);
+}
+/*
+**  HOLDSIGS -- arrange to hold all signals
+**
+**	Parameters:
+**		none.
+**
+**	Returns:
+**		none.
+**
+**	Side Effects:
+**		Arranges that signals are held.
+*/
+
+holdsigs()
+{
+}
+/*
+**  RLSESIGS -- arrange to release all signals
+**
+**	This undoes the effect of holdsigs.
+**
+**	Parameters:
+**		none.
+**
+**	Returns:
+**		none.
+**
+**	Side Effects:
+**		Arranges that signals are released.
+*/
+
+rlsesigs()
+{
 }

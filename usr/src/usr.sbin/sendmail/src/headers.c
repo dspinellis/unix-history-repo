@@ -1,7 +1,7 @@
 # include <errno.h>
 # include "sendmail.h"
 
-SCCSID(@(#)headers.c	3.39		%G%);
+SCCSID(@(#)headers.c	3.40		%G%);
 
 /*
 **  CHOMPHEADER -- process and save a header line.
@@ -74,7 +74,8 @@ chompheader(line, def)
 		fvalue++;
 
 	/* search header list for this header */
-	for (hp = &CurEnv->e_header, h = CurEnv->e_header; h != NULL; hp = &h->h_link, h = h->h_link)
+	for (hp = &CurEnv->e_header, h = CurEnv->e_header; h != NULL;
+		hp = &h->h_link, h = h->h_link)
 	{
 		if (strcmp(fname, h->h_field) == 0 && bitset(H_DEFAULT, h->h_flags))
 			break;
@@ -90,10 +91,6 @@ chompheader(line, def)
 	/* if this means "end of header" quit now */
 	if (bitset(H_EOH, hi->hi_flags))
 		return (hi->hi_flags);
-
-	/* count Received: lines to avoid loops (simulate hop counts) */
-	if (bitset(H_TRACE, hi->hi_flags))
-		HopCount++;
 
 	/* create/fill in a new node */
 	if (h == NULL || bitset(H_FORCE, h->h_flags))
@@ -192,7 +189,7 @@ addheader(field, value, e)
 **		NULL if not found.
 **
 **	Side Effects:
-**		sets the H_USED bit in the header if found.
+**		none.
 */
 
 char *
@@ -204,10 +201,7 @@ hvalue(field)
 	for (h = CurEnv->e_header; h != NULL; h = h->h_link)
 	{
 		if (!bitset(H_DEFAULT, h->h_flags) && strcmp(h->h_field, field) == 0)
-		{
-			h->h_flags |= H_USED;
 			return (h->h_value);
-		}
 	}
 	return (NULL);
 }
@@ -232,65 +226,77 @@ bool
 isheader(s)
 	register char *s;
 {
-	if (!isalnum(*s))
-		return (FALSE);
-	while (!isspace(*s) && *s != ':' && *s != '\0')
+	while (*s > ' ' && *s != ':' && *s != '\0')
 		s++;
+
+	/* following technically violates RFC822 */
 	while (isspace(*s))
 		s++;
+
 	return (*s == ':');
 }
 /*
 **  EATHEADER -- run through the stored header and extract info.
 **
 **	Parameters:
-**		none.
+**		e -- the envelope to process.
 **
 **	Returns:
 **		none.
 **
 **	Side Effects:
 **		Sets a bunch of global variables from information
-**		in the collected header.
+**			in the collected header.
+**		Aborts the message if the hop count is exceeded.
 */
 
-eatheader()
+eatheader(e)
+	register ENVELOPE *e;
 {
 	register HDR *h;
 	register char *p;
+	int hopcnt = 0;
 
-# ifdef DEBUG
-	if (tTd(32, 2))
+#ifdef DEBUG
+	if (tTd(32, 1))
+		printf("----- collected header -----\n");
+#endif DEBUG
+	for (h = e->e_header; h != NULL; h = h->h_link)
 	{
+#ifdef DEBUG
 		extern char *capitalize();
 
-		printf("----- collected header -----\n");
-		for (h = CurEnv->e_header; h != NULL; h = h->h_link)
+		if (tTd(32, 1))
 			printf("%s: %s\n", capitalize(h->h_field), h->h_value);
-		printf("----------------------------\n");
+#endif DEBUG
+		if (bitset(H_TRACE, h->h_flags))
+			hopcnt++;
 	}
-# endif DEBUG
+#ifdef DEBUG
+	if (tTd(32, 1))
+		printf("----------------------------\n");
+#endif DEBUG
+
+	/* store hop count */
+	if (hopcnt > e->e_hopcount)
+		e->e_hopcount = hopcnt;
 
 	/* message priority */
+	p = hvalue("precedence");
+	if (p != NULL)
+		e->e_class = priencode(p);
 	if (!QueueRun)
-	{
-		/* adjust total priority by message priority */
-		CurEnv->e_msgpriority = CurEnv->e_msgsize;
-		p = hvalue("precedence");
-		if (p != NULL)
-			CurEnv->e_class = priencode(p);
-		CurEnv->e_msgpriority -= CurEnv->e_class * WKPRIFACT;
-	}
+		e->e_msgpriority = e->e_msgsize - e->e_class * WKPRIFACT;
 
 	/* return receipt to */
 	p = hvalue("return-receipt-to");
 	if (p != NULL)
-		CurEnv->e_receiptto = p;
+		e->e_receiptto = p;
 
 	/* errors to */
 	p = hvalue("errors-to");
 	if (p != NULL)
-		sendto(p, (ADDRESS *) NULL, &CurEnv->e_errorqueue);
+		sendto(p, (ADDRESS *) NULL, &e->e_errorqueue);
 
 	/* from person */
 	if (OpMode == MD_ARPAFTP)
@@ -303,13 +309,13 @@ eatheader()
 				p = hvalue(hi->hi_field);
 		}
 		if (p != NULL)
-			setfrom(p, (char *) NULL);
+			setsender(p);
 	}
 
 	/* full name of from person */
 	p = hvalue("full-name");
 	if (p != NULL)
-		define('x', p);
+		define('x', p, e);
 
 	/* date message originated */
 	p = hvalue("posted-date");
@@ -317,9 +323,9 @@ eatheader()
 		p = hvalue("date");
 	if (p != NULL)
 	{
-		define('a', p);
+		define('a', p, e);
 		/* we don't have a good way to do canonical conversion ....
-		define('d', newstr(arpatounix(p)));
+		define('d', newstr(arpatounix(p)), e);
 		.... so we will ignore the problem for the time being */
 	}
 }
@@ -524,4 +530,237 @@ crackaddr(addr)
 # endif DEBUG
 
 	return (buf);
+}
+/*
+**  PUTHEADER -- put the header part of a message from the in-core copy
+**
+**	Parameters:
+**		fp -- file to put it on.
+**		m -- mailer to use.
+**		e -- envelope to use.
+**
+**	Returns:
+**		none.
+**
+**	Side Effects:
+**		none.
+*/
+
+putheader(fp, m, e)
+	register FILE *fp;
+	register MAILER *m;
+	register ENVELOPE *e;
+{
+	char buf[BUFSIZ];
+	register HDR *h;
+	extern char *arpadate();
+	extern char *capitalize();
+	char obuf[MAXLINE];
+	bool fullsmtp = bitset(M_FULLSMTP, m->m_flags);
+
+	for (h = e->e_header; h != NULL; h = h->h_link)
+	{
+		register char *p;
+
+		if (bitset(H_CHECK|H_ACHECK, h->h_flags) &&
+		    !bitset(h->h_mflags, m->m_flags))
+			continue;
+
+		p = h->h_value;
+		if (bitset(H_DEFAULT, h->h_flags))
+		{
+			/* macro expand value if generated internally */
+			expand(p, buf, &buf[sizeof buf], e);
+			p = buf;
+			if (p == NULL || *p == '\0')
+				continue;
+		}
+
+		if (bitset(H_FROM|H_RCPT, h->h_flags))
+		{
+			/* address field */
+			bool oldstyle = bitset(EF_OLDSTYLE, e->e_flags);
+
+			if (bitset(H_FROM, h->h_flags))
+				oldstyle = FALSE;
+			commaize(h, p, fp, oldstyle, m);
+		}
+		else
+		{
+			/* vanilla header line */
+			(void) sprintf(obuf, "%s: %s\n", capitalize(h->h_field), p);
+			putline(obuf, fp, fullsmtp);
+		}
+	}
+}
+/*
+**  COMMAIZE -- output a header field, making a comma-translated list.
+**
+**	Parameters:
+**		h -- the header field to output.
+**		p -- the value to put in it.
+**		fp -- file to put it to.
+**		oldstyle -- TRUE if this is an old style header.
+**		m -- a pointer to the mailer descriptor.  If NULL,
+**			don't transform the name at all.
+**
+**	Returns:
+**		none.
+**
+**	Side Effects:
+**		outputs "p" to file "fp".
+*/
+
+commaize(h, p, fp, oldstyle, m)
+	register HDR *h;
+	register char *p;
+	FILE *fp;
+	bool oldstyle;
+	register MAILER *m;
+{
+	register char *obp;
+	int opos;
+	bool fullsmtp = FALSE;
+	bool firstone = TRUE;
+	char obuf[MAXLINE];
+
+	/*
+	**  Output the address list translated by the
+	**  mailer and with commas.
+	*/
+
+# ifdef DEBUG
+	if (tTd(14, 2))
+		printf("commaize(%s: %s)\n", h->h_field, p);
+# endif DEBUG
+
+	if (m != NULL && bitset(M_FULLSMTP, m->m_flags))
+		fullsmtp = TRUE;
+
+	obp = obuf;
+	(void) sprintf(obp, "%s: ", capitalize(h->h_field));
+	opos = strlen(h->h_field) + 2;
+	obp += opos;
+
+	/*
+	**  Run through the list of values.
+	*/
+
+	while (*p != '\0')
+	{
+		register char *name;
+		char savechar;
+		extern char *remotename();
+		extern char *DelimChar;		/* defined in prescan */
+
+		/*
+		**  Find the end of the name.  New style names
+		**  end with a comma, old style names end with
+		**  a space character.  However, spaces do not
+		**  necessarily delimit an old-style name -- at
+		**  signs mean keep going.
+		*/
+
+		/* find end of name */
+		while (isspace(*p) || *p == ',')
+			p++;
+		name = p;
+		for (;;)
+		{
+			char *oldp;
+			extern bool isatword();
+			extern char **prescan();
+
+			(void) prescan(p, oldstyle ? ' ' : ',');
+			p = DelimChar;
+
+			/* look to see if we have an at sign */
+			oldp = p;
+			while (*p != '\0' && isspace(*p))
+				p++;
+
+			if (*p != '@' && !isatword(p))
+			{
+				p = oldp;
+				break;
+			}
+			p += *p == '@' ? 1 : 2;
+			while (*p != '\0' && isspace(*p))
+				p++;
+		}
+		/* at the end of one complete name */
+
+		/* strip off trailing white space */
+		while (p >= name && (isspace(*p) || *p == ',' || *p == '\0'))
+			p--;
+		if (++p == name)
+			continue;
+		savechar = *p;
+		*p = '\0';
+
+		/* translate the name to be relative */
+		if (m != NULL)
+			name = remotename(name, m, bitset(H_FROM, h->h_flags));
+		if (*name == '\0')
+		{
+			*p = savechar;
+			continue;
+		}
+
+		/* output the name with nice formatting */
+		opos += qstrlen(name);
+		if (!firstone)
+			opos += 2;
+		if (opos > 78 && !firstone)
+		{
+			(void) sprintf(obp, ",\n");
+			putline(obuf, fp, fullsmtp);
+			obp = obuf;
+			(void) sprintf(obp, "        ");
+			obp += strlen(obp);
+			opos = 8 + strlen(name);
+		}
+		else if (!firstone)
+		{
+			(void) sprintf(obp, ", ");
+			obp += 2;
+		}
+
+		/* strip off quote bits as we output */
+		while (*name != '\0')
+		{
+			if (bitset(0200, *name))
+				*obp++ = '\\';
+			*obp++ = *name++ & ~0200;
+		}
+		firstone = FALSE;
+		*p = savechar;
+	}
+	(void) strcpy(obp, "\n");
+	putline(obuf, fp, fullsmtp);
+}
+/*
+**  ISATWORD -- tell if the word we are pointing to is "at".
+**
+**	Parameters:
+**		p -- word to check.
+**
+**	Returns:
+**		TRUE -- if p is the word at.
+**		FALSE -- otherwise.
+**
+**	Side Effects:
+**		none.
+*/
+
+bool
+isatword(p)
+	register char *p;
+{
+	extern char lower();
+
+	if (lower(p[0]) == 'a' && lower(p[1]) == 't' &&
+	    p[2] != '\0' && isspace(p[2]))
+		return (TRUE);
+	return (FALSE);
 }
