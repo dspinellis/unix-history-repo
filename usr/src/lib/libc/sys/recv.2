@@ -3,11 +3,11 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)recv.2	6.9 (Berkeley) %G%
+.\"     @(#)recv.2	6.10 (Berkeley) %G%
 .\"
 .Dd 
 .Dt RECV 2
-.Os BSD 4.2
+.Os BSD 4.3r
 .Sh NAME
 .Nm recv ,
 .Nm recvfrom ,
@@ -27,12 +27,13 @@
 and
 .Fn recvmsg
 are used to receive messages from a socket,
-and may be used to receive data on a socket whether
-it is in a connected state or not.
+and may be used to receive data on a socket whether or not
+it is connection-oriented.
 .Pp
 If
 .Fa from
-is non-nil, the source address of the message is filled in.
+is non-nil, and the socket is not connection-oriented,
+the source address of the message is filled in.
 .Fa Fromlen
 is a value-result parameter, initialized to the size of
 the buffer associated with
@@ -63,30 +64,51 @@ the message is received from (see
 If no messages are available at the socket, the
 receive call waits for a message to arrive, unless
 the socket is nonblocking (see
-.Xr ioctl 2 )
+.Xr fcntl 2 )
 in which case the value
 -1 is returned and the external variable
 .Va errno
 set to
 .Er EWOULDBLOCK.
+The receive calls normally return any data available,
+up to the requested amount,
+rather than waiting for receipt of the full amount requested;
+this behavior is affected by the socket-level options
+.Dv SO_RCVLOWAT
+and
+.Dv SO_RCVTIMEO
+described in
+.Xr getsockopt 2 .
 .Pp
 The
 .Xr select 2
-call may be used to determine when more data arrives.
+call may be used to determine when more data arrive.
 .Pp
 The
 .Fa flags
 argument to a recv call is formed by 
 .Em or Ap ing
 one or more of the values:
-.Bd -literal
-#define	MSG_OOB		0x1	/* process out-of-band data */
-#define	MSG_PEEK	0x2	/* peek at incoming message */
-#define	MSG_DONTROUTE	0x4	/* send without using routing tables */
-#define	MSG_EOR		0x8	/* data completes record */
-#define	MSG_TRUNC	0x10	/* data discarded before delivery */
-#define	MSG_CTRUNC	0x20	/* control data lost before delivery */
-.Ed
+.Bl -column MSG_WAITALL -offset indent
+.It Dv MSG_OOB Ta process out-of-band data
+.It Dv MSG_PEEK Ta peek at incoming message
+.It Dv MSG_WAITALL Ta wait for full request or error
+.El
+The
+.Dv MSG_OOB
+flag requests receipt of out-of-band data
+that would not be received in the normal data stream.
+Some protocols place expedited data at the head of the normal
+data queue, and thus this flag cannot be used with such protocols.
+The MSG_PEEK flag causes the receive operation to return data
+from the beginning of the receive queue without removing that
+data from the queue.
+Thus, a subsequent receive call will return the same data.
+The MSG_WAITALL flag requests that the operation block until
+the full request is satisfied.
+However, the call may still return less data than requested
+if a signal is caught, an error or disconnect occurs,
+or the next data to be received is of a different type than that returned.
 .Pp
 The
 .Fn recvmsg
@@ -137,34 +159,38 @@ struct cmsghdr {
 .Ed
 As an example, one could use this to learn of changes in the data-stream
 in XNS/SPP, or in ISO, to obtain user-connection-request data by requesting
-a recvmsg with no uio provided immediately after an
-.Fn accept ,
-thought of here in the sense of get-next-connection-request without
-an implicit connection confirmation.
+a recvmsg with no data buffer provided immediately after an
+.Fn accept
+call.
 .Pp
 Open file descriptors are now passed as ancillary data for
 .Dv AF_UNIX
 domain sockets, with
 .Fa cmsg_level
-being
+set to
 .Dv SOL_SOCKET
 and
 .Fa cmsg_type
-being
+set to
 .Dv SCM_RIGHTS .
 .Pp
-.Fa Msg_flags
-is set on return according to the message received.
+The
+.Fa msg_flags
+field is set on return according to the message received.
 .Dv MSG_EOR
-indicates end-of-record,
+indicates end-of-record;
+the data returned completed a record (generally used with sockets of type
+.Dv SOCK_SEQPACKET ) .
 .Dv MSG_TRUNC
 indicates that
-some trailing datagram data was discarded,
+the trailing portion of a datagram was discarded because the datagram
+was larger than the buffer supplied.
 .Dv MSG_CTRUNC
 indicates that some
-control data was discarded due to lack of space,
+control data were discarded due to lack of space in the buffer
+for ancillary data.
 .Dv MSG_OOB
-is returned to indicate that expedited data was received.
+is returned to indicate that expedited or out-of-band data were received.
 .Pp
 .Sh RETURN VALUES
 These calls return the number of bytes received, or -1
@@ -176,16 +202,24 @@ The calls fail if:
 The argument
 .Fa s
 is an invalid descriptor.
+.It Bq Er ENOTCONN
+The socket is assoicated with a connection-oriented protocol
+and has not been connected (see
+.Xr connect 2
+and
+.Xr accept 2 ).
 .It Bq Er ENOTSOCK
 The argument
 .Fa s
-is not a socket.
+does not refer to a socket.
 .It Bq Er EWOULDBLOCK
-The socket is marked non-blocking and the receive operation
-would block.
+The socket is marked non-blocking, and the receive operation
+would block, or
+a receive timeout had been set,
+and the timeout expired before data were received.
 .It Bq Er EINTR
 The receive was interrupted by delivery of a signal before
-any data was available.
+any data were available.
 .It Bq Er EFAULT
 The receive buffer pointer(s) point outside the process's
 address space.
@@ -193,7 +227,6 @@ address space.
 .Sh SEE ALSO
 .Xr fcntl 2 ,
 .Xr read 2 ,
-.Xr send 2 ,
 .Xr select 2 ,
 .Xr getsockopt 2 ,
 .Xr socket 2
