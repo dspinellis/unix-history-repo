@@ -1,14 +1,25 @@
 Subject: Short summary of the problem
-Index:	<source directory>/<source file> 4.3BSD
+Index:	folder version
 
 Description:
 	Detailed description of the problem, suggestion, or complaint.
 Repeat-By:
-	Procedure to repeat the problem.
+	Describe the sequence of events that causes the problem
+	to occur.
 Fix:
-	Description of how to fix the problem.
-	If you don't know the fix, don't include this section or "Fix:".
+	Description of how to fix the problem.  If you don't know a
+	fix for the problem, don't include this section.
 
----------- Remove this line and what's below it. (only for reference) ------
-<source directory> ::=  bin | etc | games | ideas | include | lib | local |
+-------- Remove this line and what's below it, for reference only. --------
+
+To ensure that your bug report is handled correctly by bugfiler(8),
+you must replace both "folder" and "version", on the line above
+starting with "Index:", with one of the following values:
+
+	folder  ::= bin | etc | games | ideas | include | lib | local |
 			man | misc | new | sys | ucb | usr.bin | usr.lib
+	version ::= V7 | 2BSD | 4.1BSD | 4.2BSD | 4.3BSD
+
+For example, if your bug concerns the program "/usr/bin/file" and you're
+currently running 4.2BSD, you should replace "folder" with "usr.bin", and
+"version" with "4.2BSD".  The folder "ideas" is for suggestions.
