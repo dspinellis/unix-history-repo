@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *      @(#)bpf_filter.c	7.5 (Berkeley) %G%
+ *      @(#)bpf_filter.c	7.6 (Berkeley) %G%
  *
  * static char rcsid[] =
  * "$Header: bpf_filter.c,v 1.16 91/10/27 21:22:35 mccanne Exp $";
@@ -18,7 +18,6 @@
 #include <sys/param.h>
 #include <sys/types.h>
 #include <sys/time.h>
-#include <net/bpf.h>
 
 #ifdef sun
 #include <netinet/in.h>
@@ -136,6 +135,7 @@ m_xhalf(m, k, err)
 }
 #endif
 
+#include <net/bpf.h>
 /*
  * Execute the filter program starting at pc on the packet p
  * wirelen is the length of the original packet
