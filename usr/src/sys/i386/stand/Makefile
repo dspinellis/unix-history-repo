@@ -1,4 +1,4 @@
-#	@(#)Makefile	7.8 (Berkeley) %G%
+#	@(#)Makefile	7.9 (Berkeley) %G%
 
 DESTDIR=/
 STAND=	../../stand
@@ -18,8 +18,8 @@ CFLAGS=	-DSTANDALONE -DAT386 -O ${INCPATH}
 DRIVERS=cga.c fd.c kbd.c wd.c
 SRCS=	boot.c bootxx.c conf.c confxx.c copy.c fd.c fdbootblk.c prf.c \
 	srt0.c wdbootblk.c ${DRIVERS} ${SASRC}
-LIBS=	${STAND}/obj/libsa.a libdrive.a ${DESTDIR}/usr/lib/libc.a
-SMLIBS=	${STAND}/small/obj/libsmsa.a libdrive.a ${DESTDIR}/usr/lib/libc.a
+LIBS=	libsa/libsa.a libdrive.a ${DESTDIR}/usr/lib/libc.a
+SMLIBS=	libsmsa/libsmsa.a libdrive.a ${DESTDIR}/usr/lib/libc.a
 
 BOOTBLOCKS= wdboot bootwd fdboot bootfd
 DISKUTILS= boot copy cat ls
@@ -27,10 +27,10 @@ ALL=	${BOOTBLOCKS} ${DISKUTILS}
 
 all: ${ALL}
 
-${STAND}/obj/libsa.a:
-	cd ${STAND}; make
-${STAND}/small/obj/libsmsa.a:
-	cd ${STAND}/small; make
+libsa/libsa.a::
+	cd libsa; make
+libsmsa/libsmsa.a::
+	cd libsmsa; make
 
 libdrive.a: conf.o prf.o ${DRIVERS:.c=.o}
 	ar crv $@ $?
@@ -160,8 +160,8 @@ clean:
 	rm -f boot[a-wyz]? boot[a-wyz]?? boot[a-wyz]?.c boot[a-wyz]??.c \
 		conf[a-wyz]?.c conf[a-wyz]??.c
 	rm -f format core sboot bootconf.c
-	cd ${STAND}; make clean
-	cd ${STAND}/small; make clean
+	cd libsa; make cleandir
+	cd libsmsa; make cleandir
 
 cleandir: clean
 	rm -f ${MAN} tags .depend
