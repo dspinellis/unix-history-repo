@@ -1,4 +1,4 @@
-/*	srt0.c	1.8	90/12/16	*/
+/*	srt0.c	7.1	91/05/05	*/
 
 #include "../include/mtpr.h"
 #define	LOCORE
@@ -10,7 +10,7 @@
 	.globl	_end
 	.globl	_main
 	.globl	__rtt
-	.globl	_openfirst
+	.globl	_firstopen
 	.globl	_start
 	.globl	_boothowto
 	.globl	_bootdev
@@ -63,7 +63,7 @@ begin:
 	movl	fp,ofp
 	movl	r11,_boothowto
 	movl	r10,_bootdev
-	movl	$1,_openfirst
+	movl	$1,_firstopen
 	callf	$4,_main
 #ifdef REL
 	halt
