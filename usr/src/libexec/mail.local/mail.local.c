@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)mail.local.c	4.31 (Berkeley) %G%";
+static char sccsid[] = "@(#)mail.local.c	4.33 (Berkeley) %G%";
 #endif
 
 #include <sys/param.h>
@@ -165,7 +165,7 @@ printmail(argc, argv)
 	flock(fileno(malf), LOCK_SH);
 	copymt(malf, tmpf);
 	fclose(malf);			/* implicit unlock */
-	fseek(tmpf, 0, L_SET);
+	fseek(tmpf, 0L, L_SET);
 
 	changed = 0;
 	print = 1;
@@ -302,13 +302,12 @@ printmail(argc, argv)
 /* copy temp or whatever back to /usr/spool/mail */
 copyback()
 {
-	register i, c;
-	int fd, new = 0, oldmask;
+	register int i, c;
+	long oldmask;
+	int fd, new = 0;
 	struct stat stbuf;
 
-#define	mask(s)	(1 << ((s) - 1))
-	oldmask = sigblock(mask(SIGINT)|mask(SIGHUP)|mask(SIGQUIT));
-#undef mask
+	oldmask = sigblock(sigmask(SIGINT)|sigmask(SIGHUP)|sigmask(SIGQUIT));
 	fd = open(mailfile, O_RDWR | O_CREAT, MAILMODE);
 	if (fd >= 0) {
 		flock(fd, LOCK_EX);
@@ -324,9 +323,9 @@ copyback()
 			putc(c, tmpf);
 		let[++nlet].adr = stbuf.st_size;
 		new = 1;
-		fseek(malf, 0, L_SET);
+		fseek(malf, 0L, L_SET);
 	}
-	ftruncate(fd, 0);
+	ftruncate(fd, 0L);
 	for (i = 0; i < nlet; i++)
 		if (let[i].change != 'd')
 			copylet(i, malf, ORDINARY);
@@ -658,7 +657,7 @@ sendmail(n, name, fromaddr)
 		return(0);
 	}
 	fchown(fd, pw->pw_uid, pw->pw_gid);
-	(void)sprintf(buf, "%s@%d\n", name, ftell(malf));
+	(void)sprintf(buf, "%s@%ld\n", name, ftell(malf));
 	copylet(n, malf, ORDINARY);
 	fclose(malf);
 	notifybiff(buf);
@@ -669,7 +668,7 @@ delex(i)
 {
 	if (i != SIGINT) {
 		setsig(i, SIG_DFL);
-		sigsetmask(sigblock(0) &~ sigmask(i));
+		sigsetmask(sigblock(0L) &~ sigmask(i));
 	}
 	putc('\n', stderr);
 	if (delflg)
