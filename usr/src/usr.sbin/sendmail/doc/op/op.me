@@ -4,7 +4,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)op.me	8.2 (Berkeley) %G%
+.\"	@(#)op.me	8.3 (Berkeley) %G%
 .\"
 .\" eqn op.me | pic | troff -me
 .eh 'SMM:08-%''Sendmail Installation and Operation Guide'
@@ -25,6 +25,7 @@
 \\$1 \\$2.  \\$3
 .)x
 ..
+.sc
 .+c
 .(l C
 .sz 16
@@ -40,9 +41,9 @@ University of California, Berkeley
 Mammoth Project
 eric@CS.Berkeley.EDU
 .sp
-Version 8.2
+Version 8.3
 .sp
-For Sendmail Version 8.2
+For Sendmail Version 8.4
 .)l
 .sp 2
 .pp
@@ -122,7 +123,7 @@ in this version of
 The appendixes give a brief
 but detailed explanation of a number of features
 not described in the rest of the paper.
-.bp 5
+.bp 7
 .sh 1 "BASIC INSTALLATION"
 .pp
 There are two basic steps to installing sendmail.
@@ -3816,6 +3817,29 @@ If specified, the
 acts like a very low priority MX
 on every host.
 This is intended to be used by sites with poor network connectivity.
+.ip w
+If you are the
+.q best
+(that is, lowest preference)
+MX for a given host,
+you should normally detect this situation
+and treat that condition specially,
+by forwarding the mail to a UUCP feed,
+treating it as local,
+or whatever.
+However, in some cases (such as Internet firewalls)
+you may want to try to connect directly to that host
+as though it had no MX records at all.
+Setting this option causes
+.i sendmail
+to try this.
+The downside is that errors in your configuration
+are likely to be diagnosed as
+.q "host unknown"
+or
+.q "message timed out"
+instead of something more meaningful.
+This option is disrecommended.
 .ip x\fILA\fP
 When the system load average exceeds
 .i LA ,
@@ -6090,7 +6114,7 @@ The following people made notable contributions:
 Keith Bostic, CSRG, University of California, Berkeley
 Michael J. Corrigan, University of California, San Diego
 Bryan Costales, International Computer Science Institute
-P{r (Pell) Emanuelsson
+Pa\*:r (Pell) Emanuelsson
 Craig Everhart, Transarc Corporation
 Tom Ivar Helbekkmo, Norwegian School of Economics
 Allan E. Johannesen, WPI
@@ -6516,10 +6540,9 @@ A transcript of the current session.
 .\"Eric Allman
 .\"Britton-Lee, Inc.
 .\".sp
-.\"Version 8.2
+.\"Version 8.3
 .\".ce 0
-.pn 2
-.bp
+.bp 2
 .ce
 .sz 12
 TABLE OF CONTENTS
