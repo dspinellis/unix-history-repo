@@ -1,0 +1,3 @@
+/dev/sd0a		/		ufs	rw		1  1
+/dev/sd0e		/var		ufs	rw		1  2
+/dev/sd0f		/usr		ufs	rw		1  2
