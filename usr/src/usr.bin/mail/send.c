@@ -11,7 +11,7 @@
  */
 
 #ifdef notdef
-static char sccsid[] = "@(#)send.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)send.c	5.7 (Berkeley) %G%";
 #endif /* notdef */
 
 #include "rcv.h"
@@ -183,29 +183,16 @@ statusput(mp, obuf)
  * which does all the dirty work.
  */
 
-mail(people)
-	char **people;
+mail(to, cc, bcc, smopts)
+	struct name *to, *cc, *bcc, *smopts;
 {
-	register char *cp2;
-	register int s;
-	char *buf, **ap;
 	struct header head;
 
-	for (s = 0, ap = people; *ap != 0; ap++)
-		s += strlen(*ap) + 1;
-	buf = salloc(s+1);
-	cp2 = buf;
-	for (ap = people; *ap != 0; ap++) {
-		cp2 = copy(*ap, cp2);
-		*cp2++ = ' ';
-	}
-	if (cp2 != buf)
-		cp2--;
-	*cp2 = '\0';
-	head.h_to = buf;
+	head.h_to = detract(to, 0);
 	head.h_subject = NOSTR;
-	head.h_cc = NOSTR;
-	head.h_bcc = NOSTR;
+	head.h_cc = detract(cc, 0);
+	head.h_bcc = detract(bcc, 0);
+	head.h_smopts = detract(smopts, 0);
 	head.h_seq = 0;
 	(void) mail1(&head);
 	return(0);
@@ -229,6 +216,7 @@ sendmail(str)
 	head.h_subject = NOSTR;
 	head.h_cc = NOSTR;
 	head.h_bcc = NOSTR;
+	head.h_smopts = NOSTR;
 	head.h_seq = 0;
 	(void) mail1(&head);
 	return(0);
@@ -258,11 +246,11 @@ mail1(hp)
 	 */
 
 	pid = -1;
+	if (hp->h_subject == NOSTR)
+		hp->h_subject = sflag;
 	if ((mtf = collect(hp)) == NULL)
 		return(-1);
 	hp->h_seq = 1;
-	if (hp->h_subject == NOSTR)
-		hp->h_subject = sflag;
 	if (intty && value("askcc") != NOSTR)
 		grabh(hp, GCC);
 	else if (intty) {
@@ -278,7 +266,7 @@ mail1(hp)
 
 	senderr = 0;
 	to = usermap(cat(extract(hp->h_bcc, GBCC),
-	    cat(extract(hp->h_to, GTO), extract(hp->h_cc, GCC))));
+		cat(extract(hp->h_to, GTO), extract(hp->h_cc, GCC))));
 	if (to == NIL) {
 		printf("No recipients specified\n");
 		goto topdog;
@@ -324,7 +312,7 @@ topdog:
 			return(-1);
 		}
 	}
-	namelist = unpack(to);
+	namelist = unpack(cat(extract(hp->h_smopts, 0), to));
 	if (debug) {
 		printf("Recipients of message:\n");
 		for (t = namelist; *t != NOSTR; t++)
@@ -421,6 +409,7 @@ fixhead(hp, tolist)
 		fprintf(stderr, "Should be inserting commas in recip lists\n");
 	hp->h_to = detract(tolist, GTO|f);
 	hp->h_cc = detract(tolist, GCC|f);
+	hp->h_bcc = detract(tolist, GBCC|f);
 }
 
 /*
@@ -448,7 +437,7 @@ infix(hp, fi)
 		return(fi);
 	}
 	(void) remove(tempMail);
-	(void) puthead(hp, nfo, GTO|GSUBJECT|GCC|GNL);
+	(void) puthead(hp, nfo, GTO|GSUBJECT|GCC|GBCC|GNL);
 	c = getc(fi);
 	while (c != EOF) {
 		(void) putc(c, nfo);

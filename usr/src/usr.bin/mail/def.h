@@ -9,7 +9,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)def.h	5.6 (Berkeley) %G%
+ *	@(#)def.h	5.7 (Berkeley) %G%
  */
 
 #include <sys/param.h>		/* includes <sys/types.h> */
@@ -148,6 +148,7 @@ struct header {
 	char	*h_subject;		/* Subject string */
 	char	*h_cc;			/* Carbon copies string */
 	char	*h_bcc;			/* Blind carbon copies */
+	char	*h_smopts;		/* Sendmail options */
 	int	h_seq;			/* Sequence for optimization */
 };
 

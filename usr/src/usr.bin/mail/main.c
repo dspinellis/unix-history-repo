@@ -17,7 +17,7 @@ char copyright[] =
 #endif /* notdef */
 
 #ifdef notdef
-static char sccsid[] = "@(#)main.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.6 (Berkeley) %G%";
 #endif /* notdef */
 
 #include "rcv.h"
@@ -45,10 +45,13 @@ jmp_buf	hdrjmp;
 main(argc, argv)
 	char **argv;
 {
-	register char *ef;
-	register int i, argp;
-	int mustsend, hdrstop(), (*prevint)(), f;
+	register char *ef, opt;
+	register int i;
+	struct name *to, *cc, *bcc, *smopts;
+	int  mustsend, hdrstop(), (*prevint)(), f;
 	struct sgttyb tbuf;
+	extern int getopt(), optind, opterr;
+	extern char *optarg;
 
 	/*
 	 * Set up a reasonable environment.
@@ -79,66 +82,41 @@ main(argc, argv)
 	 */
 
 	ef = NOSTR;
-	argp = -1;
+	to = NULL;
+	cc = NULL;
+	bcc = NULL;
+	smopts = NULL;
 	mustsend = 0;
 	if (argc > 0 && **argv == 'r')
 		rmail++;
-	for (i = 1; i < argc; i++) {
-
-		/*
-		 * If current argument is not a flag, then the
-		 * rest of the arguments must be recipients.
-		 */
-
-		if (*argv[i] != '-') {
-			argp = i;
-			break;
-		}
-		switch (argv[i][1]) {
+	while ((opt = getopt(argc, argv, "INT:b:c:dfh:inr:s:u:v")) != EOF) {
+		switch (opt) {
 		case 'r':
 			/*
 			 * Next argument is address to be sent along
 			 * to the mailer.
 			 */
-			if (i >= argc - 1) {
-				fprintf(stderr, "Address required after -r\n");
-				exit(1);
-			}
 			mustsend++;
-			rflag = argv[i+1];
-			i++;
+			rflag = optarg;
 			break;
-
 		case 'T':
 			/*
 			 * Next argument is temp file to write which
 			 * articles have been read/deleted for netnews.
 			 */
-			if (i >= argc - 1) {
-				fprintf(stderr, "Name required after -T\n");
-				exit(1);
-			}
-			Tflag = argv[i+1];
+			Tflag = optarg;
 			if ((f = creat(Tflag, 0600)) < 0) {
 				perror(Tflag);
 				exit(1);
 			}
 			close(f);
-			i++;
 			break;
-
 		case 'u':
 			/*
 			 * Next argument is person to pretend to be.
 			 */
-			if (i >= argc - 1) {
-				fprintf(stderr, "Missing user name for -u\n");
-				exit(1);
-			}
-			strcpy(myname, argv[i+1]);
-			i++;
+			strcpy(myname, optarg);
 			break;
-
 		case 'i':
 			/*
 			 * User wants to ignore interrupts.
@@ -146,11 +124,9 @@ main(argc, argv)
 			 */
 			assign("ignore", "");
 			break;
-
 		case 'd':
 			debug++;
 			break;
-
 		case 'h':
 			/*
 			 * Specified sequence number for network.
@@ -158,102 +134,107 @@ main(argc, argv)
 			 * far (count of times message has been
 			 * forwarded) to help avoid infinite mail loops.
 			 */
-			if (i >= argc - 1) {
-				fprintf(stderr, "Number required for -h\n");
-				exit(1);
-			}
 			mustsend++;
-			hflag = atoi(argv[i+1]);
+			hflag = atoi(optarg);
 			if (hflag == 0) {
 				fprintf(stderr, "-h needs non-zero number\n");
 				exit(1);
 			}
-			i++;
 			break;
-
 		case 's':
 			/*
 			 * Give a subject field for sending from
 			 * non terminal
 			 */
-			if (i >= argc - 1) {
-				fprintf(stderr, "Subject req'd for -s\n");
-				exit(1);
-			}
 			mustsend++;
-			sflag = argv[i+1];
-			i++;
+			sflag = optarg;
 			break;
-
 		case 'f':
 			/*
 			 * User is specifying file to "edit" with Mail,
 			 * as opposed to reading system mailbox.
 			 * If no argument is given after -f, we read his
 			 * mbox file in his home directory.
+			 *
+			 * getopt() can't handle optional arguments, so here
+			 * is an ugly hack to get around it.
 			 */
-			if (i >= argc - 1)
-				ef = mbox;
+			if ((argv[optind]) && (argv[optind][0] != '-')) 
+				ef = argv[optind++];
 			else
-				ef = argv[i + 1];
-			i++;
+				ef = mbox;
 			break;
-
 		case 'n':
 			/*
 			 * User doesn't want to source /usr/lib/Mail.rc
 			 */
 			nosrc++;
 			break;
-
 		case 'N':
 			/*
 			 * Avoid initial header printing.
 			 */
 			noheader++;
 			break;
-
 		case 'v':
 			/*
 			 * Send mailer verbose flag
 			 */
 			assign("verbose", "");
 			break;
-
 		case 'I':
 			/*
 			 * We're interactive
 			 */
 			intty = 1;
 			break;
-
-		default:
-			fprintf(stderr, "Unknown flag: %s\n", argv[i]);
+		case 'c':
+			/*
+			 * Get Carbon Copy Recipient list
+			 */
+			cc = cat(cc, nalloc(optarg));
+			mustsend++;
+			break;
+		case 'b':
+			/*
+			 * Get Blind Carbon Copy Recipient list
+			 */
+			bcc = cat(bcc, nalloc(optarg));
+			mustsend++;
+			break;
+		case '?':
+			fputs("Usage: XXX\n", stderr);
 			exit(1);
 		}
 	}
-
+	for (i = optind; (argv[i]) && (*argv[i] != '-'); i++) 
+		to = cat(to, nalloc(argv[i]));
+	for (; argv[i]; i++)
+		smopts = cat(smopts, nalloc(argv[i]));
 	/*
 	 * Check for inconsistent arguments.
 	 */
-
-	if (ef != NOSTR && argp != -1) {
+	if (!to && (cc || bcc)) {
+		fputs("You must also specify direct recipients of mail.\n", stderr);
+		exit(1);
+	}
+	if ((ef != NOSTR) && to) {
 		fprintf(stderr, "Cannot give -f and people to send to.\n");
 		exit(1);
 	}
-	if (mustsend && argp == -1) {
+	if (mustsend && !to) {
 		fprintf(stderr, "The flags you gave make no sense since you're not sending mail.\n");
 		exit(1);
 	}
 	tinit();
 	setscreensize();
 	input = stdin;
-	rcvmode = argp == -1;
+	rcvmode = !to;
 	if (!nosrc)
 		load(MASTER);
 	load(mailrc);
-	if (argp != -1) {
-		mail(&argv[argp]);
+	if (!rcvmode) {
+		mail(to, cc, bcc, smopts);
 
 		/*
 		 * why wait?
