@@ -3,11 +3,12 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_resource.c	7.9 (Berkeley) %G%
+ *	@(#)kern_resource.c	7.10 (Berkeley) %G%
  */
 
 #include "param.h"
-#include "user.h"
+#include "resourcevar.h"
+#include "malloc.h"
 #include "proc.h"
 
 /*
@@ -53,9 +54,9 @@ getpriority(curp, uap, retval)
 
 	case PRIO_USER:
 		if (uap->who == 0)
-			uap->who = p->p_uid;
+			uap->who = curp->p_ucred->cr_uid;
 		for (p = allproc; p != NULL; p = p->p_nxt) {
-			if (p->p_uid == uap->who &&
+			if (p->p_ucred->cr_uid == uap->who &&
 			    p->p_nice < low)
 				low = p->p_nice;
 		}
@@ -112,9 +113,9 @@ setpriority(curp, uap, retval)
 
 	case PRIO_USER:
 		if (uap->who == 0)
-			uap->who = p->p_uid;
+			uap->who = curp->p_ucred->cr_uid;
 		for (p = allproc; p != NULL; p = p->p_nxt)
-			if (p->p_uid == uap->who) {
+			if (p->p_ucred->cr_uid == uap->who) {
 				error = donice(curp, p, uap->prio);
 				found++;
 			}
@@ -132,15 +133,17 @@ donice(curp, chgp, n)
 	register struct proc *curp, *chgp;
 	register int n;
 {
+	register struct pcred *pcred = curp->p_cred;
 
-	if (curp->p_uid && curp->p_ruid &&
-	    curp->p_uid != chgp->p_uid && curp->p_ruid != chgp->p_uid)
+	if (pcred->pc_ucred->cr_uid && pcred->p_ruid &&
+	    pcred->pc_ucred->cr_uid != chgp->p_ucred->cr_uid &&
+	    pcred->p_ruid != chgp->p_ucred->cr_uid)
 		return (EPERM);
 	if (n > PRIO_MAX)
 		n = PRIO_MAX;
 	if (n < PRIO_MIN)
 		n = PRIO_MIN;
-	if (n < chgp->p_nice && suser(u.u_cred, &u.u_acflag))
+	if (n < chgp->p_nice && suser(pcred->pc_ucred, &curp->p_acflag))
 		return (EACCES);
 	chgp->p_nice = n;
 	(void) setpri(chgp);
@@ -163,13 +166,19 @@ setrlimit(p, uap, retval)
 
 	if (uap->which >= RLIM_NLIMITS)
 		return (EINVAL);
-	alimp = &u.u_rlimit[uap->which];
+	alimp = &p->p_rlimit[uap->which];
 	if (error =
 	    copyin((caddr_t)uap->lim, (caddr_t)&alim, sizeof (struct rlimit)))
 		return (error);
 	if (alim.rlim_cur > alimp->rlim_max || alim.rlim_max > alimp->rlim_max)
-		if (error = suser(u.u_cred, &u.u_acflag))
+		if (error = suser(p->p_ucred, &p->p_acflag))
 			return (error);
+	if (p->p_limit->p_refcnt > 1 &&
+	    (p->p_limit->p_lflags & PL_SHAREMOD) == 0) {
+		p->p_limit->p_refcnt--;
+		p->p_limit = limcopy(p->p_limit);
+	}
+
 	switch (uap->which) {
 
 	case RLIMIT_DATA:
@@ -187,8 +196,6 @@ setrlimit(p, uap, retval)
 		break;
 	}
 	*alimp = alim;
-	if (uap->which == RLIMIT_RSS)
-		p->p_maxrss = alim.rlim_cur/NBPG;
 	return (0);
 }
 
@@ -204,7 +211,7 @@ getrlimit(p, uap, retval)
 
 	if (uap->which >= RLIM_NLIMITS)
 		return (EINVAL);
-	return (copyout((caddr_t)&u.u_rlimit[uap->which], (caddr_t)uap->rlp,
+	return (copyout((caddr_t)&p->p_rlimit[uap->which], (caddr_t)uap->rlp,
 	    sizeof (struct rlimit)));
 }
 
@@ -224,7 +231,7 @@ getrusage(p, uap, retval)
 	case RUSAGE_SELF: {
 		int s;
 
-		rup = &u.u_ru;
+		rup = &p->p_stats->p_ru;
 		s = splclock();
 		rup->ru_stime = p->p_stime;
 		rup->ru_utime = p->p_utime;
@@ -233,7 +240,7 @@ getrusage(p, uap, retval)
 	}
 
 	case RUSAGE_CHILDREN:
-		rup = &u.u_cru;
+		rup = &p->p_stats->p_cru;
 		break;
 
 	default:
@@ -256,4 +263,24 @@ ruadd(ru, ru2)
 	ip = &ru->ru_first; ip2 = &ru2->ru_first;
 	for (i = &ru->ru_last - &ru->ru_first; i > 0; i--)
 		*ip++ += *ip2++;
+}
+
+/*
+ * Make a copy of the plimit structure.
+ * We share these structures copy-on-write after fork,
+ * and copy when a limit is changed.
+ */
+struct plimit *
+limcopy(lim)
+	struct plimit *lim;
+{
+	register struct plimit *copy;
+
+	MALLOC(copy, struct plimit *, sizeof(struct plimit),
+	    M_SUBPROC, M_WAITOK);
+	bcopy(lim->pl_rlimit, copy->pl_rlimit,
+	    sizeof(struct rlimit) * RLIM_NLIMITS);
+	copy->p_lflags = 0;
+	copy->p_refcnt = 1;
+	return (copy);
 }
