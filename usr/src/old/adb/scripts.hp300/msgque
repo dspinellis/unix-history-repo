@@ -1,0 +1,5 @@
+.$<<ipc_perm
++/"first"16t"last"16t"cbytes"8t"qnum"8t"qbytes"n2X3d
++/"lspid"8t"lrpid"8t"stime"n2dY
++/"rtime"20t"ctime"n2Y
++,<9-1$<msgque

@@ -1,0 +1,8 @@
+./"flags"16t"type"16t"regbase"16t"fbbase"nXDXX
++/"curx"8t"cury"8t"cursorx"8t"cursory"8t"cblankx"8t"cblanky"n6d
++/"rows"8t"cols"8t"cpl"n3d
++/"dh"8t"dw"8t"fbh"8t"fbw"n4d
++/"fth"8t"ftw"8t"fontx"8t"fonty"n4d
++/"attrib"8t"attrbuf"20t"pmask"nxXx
++/"pos"8t"imode"8t"escape"8t"fpd"8t"hold"nd4b
++,<9-1$<ite_softc

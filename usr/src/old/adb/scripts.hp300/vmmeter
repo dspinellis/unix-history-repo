@@ -1,0 +1,8 @@
+./"swtch"16t"trap"16t"syscall"16t"intr"n4D
++/"soft"16t"pdma"16t"pswpin"16t"pswpout"n4D
++/"pgin"16t"pgout"16t"pgpgin"16t"pgpgout"n4D
++/"intrans"16t"pgrec"16t"xsfrec"16t"xifrec"n4D
++/"exfod"16t"zfod"16t"vrfod"16t"nexfod"n4D
++/"nzfod"16t"nvrfod"16t"pgfrec"16t"faults"n4D
++/"scan"16t"rev"16t"seqfree"16t"dfree"n4D
++/"fastpgrec"16t"swpin"16t"swpout"n3D
