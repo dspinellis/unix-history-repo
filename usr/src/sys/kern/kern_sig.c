@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_sig.c	6.19 (Berkeley) %G%
+ *	@(#)kern_sig.c	6.20 (Berkeley) %G%
  */
 
 #include "../machine/reg.h"
@@ -28,6 +28,8 @@
 #include "kernel.h"
 
 #define	cantmask	(sigmask(SIGKILL)|sigmask(SIGCONT)|sigmask(SIGSTOP))
+#define	stopsigmask	(sigmask(SIGSTOP)|sigmask(SIGTSTP)| \
+			sigmask(SIGTTIN)|sigmask(SIGTTOU))
 
 /*
  * Generalized interface signal handler.
@@ -323,8 +325,6 @@ psignal(p, sig)
 		else
 			action = SIG_DFL;
 	}
-#define	stops	(sigmask(SIGSTOP)|sigmask(SIGTSTP)| \
-			sigmask(SIGTTIN)|sigmask(SIGTTOU))
 	if (sig) {
 		p->p_sig |= mask;
 		switch (sig) {
@@ -340,7 +340,7 @@ psignal(p, sig)
 			break;
 
 		case SIGCONT:
-			p->p_sig &= ~stops;
+			p->p_sig &= ~stopsigmask;
 			break;
 
 		case SIGSTOP:
@@ -351,7 +351,6 @@ psignal(p, sig)
 			break;
 		}
 	}
-#undef stops
 	/*
 	 * Defer further processing for signals which are held.
 	 */
@@ -531,8 +530,7 @@ issig()
 		if ((p->p_flag&STRC) == 0)
 			sigbits &= ~p->p_sigignore;
 		if (p->p_flag&SVFORK)
-#define bit(a) (1<<(a-1))
-			sigbits &= ~(bit(SIGSTOP)|bit(SIGTSTP)|bit(SIGTTIN)|bit(SIGTTOU));
+			sigbits &= ~stopsigmask;
 		if (sigbits == 0)
 			break;
 		sig = ffs(sigbits);
