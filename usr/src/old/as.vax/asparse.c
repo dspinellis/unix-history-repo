@@ -2,7 +2,7 @@
  *	Copyright (c) 1982 Regents of the University of California
  */
 #ifndef lint
-static char sccsid[] = "@(#)asparse.c 4.18 %G%";
+static char sccsid[] = "@(#)asparse.c 4.19 %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -415,9 +415,8 @@ restlab:
 	if (passno == 2 && (locxp->e_xtype & XTYPE) != XABS)	/* tekmdp */
 		yyerror("Fill value not absolute");
 	flushfield(NBPW/4);
-	if (passno == 1) {
-		dotp->e_xvalue += fill_rep * fill_size;
-	} else {
+	dotp->e_xvalue += fill_rep * fill_size;
+	if (passno == 2) {
 		while(fill_rep-- > 0)
 			bwrite((char *)&locxp->e_xvalue, fill_size, txtfil);
 	}
