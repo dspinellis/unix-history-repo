@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)kern_fork.c	7.11 (Berkeley) %G%
+ *	@(#)kern_fork.c	7.12 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -170,10 +170,6 @@ again:
 	 * Make a proc table entry for the new process.
 	 */
 	rip = u.u_procp;
-#ifdef QUOTA
-	rpp->p_quota = rip->p_quota;
-	rpp->p_quota->q_cnt++;
-#endif
 #if defined(tahoe)
 	rpp->p_ckey = rip->p_ckey;
 	rpp->p_dkey = 0;

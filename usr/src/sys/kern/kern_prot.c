@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)kern_prot.c	7.8 (Berkeley) %G%
+ *	@(#)kern_prot.c	7.9 (Berkeley) %G%
  */
 
 /*
@@ -193,12 +193,6 @@ setreuid()
 	 * Copy credentials so other references do not
 	 * see our changes.
 	 */
-#ifdef QUOTA
-	if (u.u_quota->q_uid != ruid) {
-		qclean();
-		qstart(getquota((uid_t)ruid, 0, 0));
-	}
-#endif
 	if (u.u_cred->cr_ref > 1)
 		u.u_cred = crcopy(u.u_cred);
 	u.u_cred->cr_uid = euid;
