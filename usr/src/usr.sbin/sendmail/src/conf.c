@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.128 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.129 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -1380,13 +1380,15 @@ shouldqueue(pri, ctime)
 bool
 refuseconnections()
 {
+	extern bool enoughspace();
+
 #ifdef XLA
 	if (!xla_smtp_ok())
 		return TRUE;
 #endif
 
 	/* this is probably too simplistic */
-	return (CurrentLA >= RefuseLA);
+	return CurrentLA >= RefuseLA || !enoughspace(MinBlocksFree + 1);
 }
 /*
 **  SETPROCTITLE -- set process title for ps
@@ -2156,8 +2158,10 @@ enoughspace(msize)
 			if (LogLevel > 0)
 				syslog(LOG_ALERT,
 					"%s: low on space (have %ld, %s needs %ld in %s)",
-					CurEnv->e_id, bfree,
-					CurHostName, msize, QueueDir);
+					CurEnv->e_id == NULL ? "[NOQUEUE]" : CurEnv->e_id,
+					bfree,
+					CurHostName == NULL ? "SMTP-DAEMON" : CurHostName,
+					msize, QueueDir);
 #endif
 			return FALSE;
 		}
