@@ -5,7 +5,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)gethostnamadr.c	6.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)gethostnamadr.c	6.9 (Berkeley) %G%";
 #endif LIBC_SCCS and not lint
 
 #include <sys/param.h>
@@ -399,7 +399,7 @@ _gethtbyaddr(addr, len, type)
 
 	_sethtent(0);
 	while (p = _gethtent())
-		if (p->h_addrtype == type && bcmp(p->h_addr, addr, len))
+		if (p->h_addrtype == type && !bcmp(p->h_addr, addr, len))
 			break;
 	_endhtent();
 	return (p);
