@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)api_bsd.c	3.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)api_bsd.c	3.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #if	defined(unix)
@@ -52,7 +52,9 @@ char	*string;		/* if non-zero, where to connect to */
     struct hostent *hp;
     struct storage_descriptor sd;
     extern char *getenv();
+#if	!defined(htons)
     extern unsigned short htons();
+#endif	/* !defined(htons) */
     char thehostname[100];
     char keyname[100];
     char inkey[100];
