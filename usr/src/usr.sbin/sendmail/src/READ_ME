@@ -4,7 +4,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)READ_ME	8.24 (Berkeley) %G%
+#	@(#)READ_ME	8.25 (Berkeley) %G%
 #
 
 This directory contains the source files for sendmail.
@@ -169,6 +169,9 @@ ERRLIST_PREDEFINED
 		If set, assumes that some header file defines sys_errlist.
 		This may be needed if you get type conflicts on this
 		variable -- otherwise don't worry about it.
+WAITUNION	The wait(2) routine takes a "union wait" argument instead
+		of an integer argument.  This is for compatibility with
+		old versions of BSD.
 
 
 +-----------------------+
@@ -400,4 +403,4 @@ version.c	The version number and information about this
 
 Eric Allman
 
-(Version 8.24, last update %G% 09:13:44)
+(Version 8.25, last update %G% 10:32:22)
