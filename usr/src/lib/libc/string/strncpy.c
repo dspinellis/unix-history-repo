@@ -16,7 +16,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)strncpy.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)strncpy.c	5.4 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 char *
@@ -26,8 +26,10 @@ strncpy(to, from, cnt)
 {
 	char *save = to;
 
-	for (; cnt && (*from = *to); --cnt, ++from, ++to);
-	for (; cnt; --cnt, ++from)
-		*from = '\0';
-	return(save);
+	for (; cnt && (*to = *from); --cnt, ++from, ++to)
+		;
+	if (cnt)
+		bzero(to, cnt);
+
+	return (save);
 }
