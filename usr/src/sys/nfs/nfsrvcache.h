@@ -7,14 +7,18 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfsrvcache.h	8.2 (Berkeley) %G%
+ *	@(#)nfsrvcache.h	8.3 (Berkeley) %G%
  */
+
+
+#ifndef _NFS_NFSRVCACHE_H_
+#define _NFS_NFSRVCACHE_H_
 
 /*
  * Definitions for the server recent request cache
  */
 
-#define	NFSRVCACHESIZ	256
+#define	NFSRVCACHESIZ	64
 
 struct nfsrvcache {
 	TAILQ_ENTRY(nfsrvcache) rc_lru;		/* LRU chain */
@@ -54,3 +58,5 @@ struct nfsrvcache {
 #define	RC_NQNFS	0x10
 #define	RC_INETADDR	0x20
 #define	RC_NAM		0x40
+
+#endif
