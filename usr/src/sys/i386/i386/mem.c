@@ -11,7 +11,7 @@
  * %sccs.include.redist.c%
  *
  * from: Utah $Hdr: mem.c 1.13 89/10/08$
- *	@(#)mem.c	7.3 (Berkeley) %G%
+ *	@(#)mem.c	7.4 (Berkeley) %G%
  */
 
 /*
@@ -29,8 +29,8 @@
 
 #include "vm/vm_param.h"
 #include "vm/lock.h"
-#include "vm/pmap.h"
 #include "vm/vm_prot.h"
+#include "vm/pmap.h"
 
 extern        char *vmmap;            /* poor name! */
 /*ARGSUSED*/
