@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_sysctl.c	7.33 (Berkeley) %G%
+ *	@(#)kern_sysctl.c	7.34 (Berkeley) %G%
  */
 
 /*
@@ -168,7 +168,7 @@ kern_sysctl(name, namelen, oldp, oldlenp, newp, newlen, p)
 	extern char ostype[], osrelease[], version[];
 
 	/* all sysctl names at this level are terminal */
-	if (namelen != 1 && name[0] != KERN_PROC)
+	if (namelen != 1 && !(name[0] == KERN_PROC || name[0] == KERN_PROF))
 		return (ENOTDIR);		/* overloaded */
 
 	switch (name[0]) {
@@ -189,7 +189,7 @@ kern_sysctl(name, namelen, oldp, oldlenp, newp, newlen, p)
 	case KERN_ARGMAX:
 		return (sysctl_rdint(oldp, oldlenp, newp, ARG_MAX));
 	case KERN_HOSTNAME:
-		error = sysctl_string(oldp, oldlenp, newp, newlen, 
+		error = sysctl_string(oldp, oldlenp, newp, newlen,
 		    hostname, sizeof(hostname));
 		if (!error)
 			hostnamelen = newlen;
@@ -213,6 +213,11 @@ kern_sysctl(name, namelen, oldp, oldlenp, newp, newlen, p)
 		return (sysctl_vnode(oldp, oldlenp));
 	case KERN_PROC:
 		return (sysctl_doproc(name + 1, namelen - 1, oldp, oldlenp));
+#ifdef GPROF
+	case KERN_PROF:
+		return (sysctl_doprof(name + 1, namelen - 1, oldp, oldlenp,
+		    newp, newlen));
+#endif
 	default:
 		return (EOPNOTSUPP);
 	}
@@ -402,6 +407,33 @@ sysctl_rdstring(oldp, oldlenp, newp, str)
 }
 
 /*
+ * Validate parameters and get old / set new parameters
+ * for a structure oriented sysctl function.
+ */
+sysctl_struct(oldp, oldlenp, newp, newlen, sp, len)
+	void *oldp;
+	size_t *oldlenp;
+	void *newp;
+	size_t newlen;
+	void *sp;
+	int len;
+{
+	int error = 0;
+
+	if (oldp && *oldlenp < len)
+		return (ENOMEM);
+	if (newp && newlen > len)
+		return (EINVAL);
+	if (oldp) {
+		*oldlenp = len;
+		error = copyout(sp, oldp, len);
+	}
+	if (error == 0 && newp)
+		error = copyin(newp, sp, len);
+	return (error);
+}
+
+/*
  * Validate parameters and get old parameters
  * for a structure oriented sysctl function.
  */
@@ -472,8 +504,8 @@ sysctl_file(where, sizep)
 	return (0);
 }
 
-/* 
- * try over estimating by 5 procs 
+/*
+ * try over estimating by 5 procs
  */
 #define KERN_PROCSLOP	(5 * sizeof (struct kinfo_proc))
 
@@ -502,9 +534,9 @@ again:
 		 */
 		if (p->p_stat == SIDL)
 			continue;
-		/* 
+		/*
 		 * TODO - make more efficient (see notes below).
-		 * do by session. 
+		 * do by session.
 		 */
 		switch (name[0]) {
 
@@ -521,7 +553,7 @@ again:
 			break;
 
 		case KERN_PROC_TTY:
-			if ((p->p_flag&SCTTY) == 0 || 
+			if ((p->p_flag&SCTTY) == 0 ||
 			    p->p_session->s_ttyp == NULL ||
 			    p->p_session->s_ttyp->t_dev != (dev_t)name[1])
 				continue;
@@ -539,10 +571,10 @@ again:
 		}
 		if (buflen >= sizeof(struct kinfo_proc)) {
 			fill_eproc(p, &eproc);
-			if (error = copyout((caddr_t)p, &dp->kp_proc, 
+			if (error = copyout((caddr_t)p, &dp->kp_proc,
 			    sizeof(struct proc)))
 				return (error);
-			if (error = copyout((caddr_t)&eproc, &dp->kp_eproc, 
+			if (error = copyout((caddr_t)&eproc, &dp->kp_eproc,
 			    sizeof(eproc)))
 				return (error);
 			dp++;
@@ -605,7 +637,7 @@ fill_eproc(p, ep)
 		ep->e_ppid = 0;
 	ep->e_pgid = p->p_pgrp->pg_id;
 	ep->e_jobc = p->p_pgrp->pg_jobc;
-	if ((p->p_flag&SCTTY) && 
+	if ((p->p_flag&SCTTY) &&
 	     (tp = ep->e_sess->s_ttyp)) {
 		ep->e_tdev = tp->t_dev;
 		ep->e_tpgid = tp->t_pgrp ? tp->t_pgrp->pg_id : NO_PID;
