@@ -1,0 +1,4 @@
+# FIXME: Add "-Wall -ansi" to CC when problems are resolved.
+CC = /usr/public/bin/gcc
+AR_FLAGS = cq
+RANLIB = echo
