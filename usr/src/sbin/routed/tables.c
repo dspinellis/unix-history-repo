@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tables.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)tables.c	5.6 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -165,13 +165,16 @@ rtchange(rt, gate, metric)
 	struct sockaddr *gate;
 	short metric;
 {
-	int doioctl = 0, metricchanged = 0;
+	int doioctl = 0, metricchanged = 0, delete = 0;
 	struct rtentry oldroute;
 
 	if (!equal(&rt->rt_router, gate) && (rt->rt_state & RTS_INTERNAL) == 0)
 		doioctl++;
-	if (metric != rt->rt_metric)
+	if (metric != rt->rt_metric) {
 		metricchanged++;
+		if (metric == HOPCNT_INFINITY)
+			delete++;
+	}
 	if (doioctl || metricchanged) {
 		TRACE_ACTION(CHANGE FROM, rt);
 		if ((rt->rt_state & RTS_INTERFACE) && metric) {
@@ -195,12 +198,12 @@ rtchange(rt, gate, metric)
 		rt->rt_state |= RTS_CHANGED;
 		TRACE_ACTION(CHANGE TO, rt);
 	}
-	if (doioctl && install) {
+	if (doioctl && install)
 		if (ioctl(s, SIOCADDRT, (char *)&rt->rt_rt) < 0)
 			perror("SIOCADDRT");
+	if ((doioctl || delete) && install)
 		if (ioctl(s, SIOCDELRT, (char *)&oldroute) < 0)
 			perror("SIOCDELRT");
-	}
 }
 
 rtdelete(rt)
@@ -212,6 +215,7 @@ rtdelete(rt)
 			rt->rt_ifp->int_name);
 	TRACE_ACTION(DELETE, rt);
 	if (install && (rt->rt_state & (RTS_INTERNAL | RTS_EXTERNAL)) == 0 &&
+	    rt->rt_metric != HOPCNT_INFINITY &&
 	    ioctl(s, SIOCDELRT, (char *)&rt->rt_rt))
 		perror("SIOCDELRT");
 	remque(rt);
