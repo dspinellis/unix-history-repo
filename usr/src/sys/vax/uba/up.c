@@ -1,4 +1,4 @@
-/*	up.c	4.54	82/06/05	*/
+/*	up.c	4.55	82/06/14	*/
 
 #include "up.h"
 #if NSC > 0
@@ -545,10 +545,11 @@ upintr(sc21)
 			 * by returning if necessary.
 			 * Otherwise fall through and retry the transfer
 			 */
-			um->um_tab.b_active = 0;	 /* force retry */
-			if ((upaddr->uper1&(UPER1_DCK|UPER1_ECH))==UPER1_DCK)
+			if ((upaddr->uper1&(UPER1_DCK|UPER1_ECH))==UPER1_DCK) {
 				if (upecc(ui))
 					return;
+			} else
+				um->um_tab.b_active = 0; /* force retry */
 		}
 		/*
 		 * Clear drive error and, every eight attempts,
@@ -745,8 +746,10 @@ upecc(ui)
 		i++;
 		bit -= 8;
 	}
-	if (up->upwc == 0)
+	if (up->upwc == 0) {
+		um->um_tab.b_active = 0;
 		return (0);
+	}
 	/*
 	 * Have to continue the transfer... clear the drive,
 	 * and compute the position where the transfer is to continue.
