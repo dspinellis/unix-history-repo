@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)inet.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)inet.c	5.9.1.1 (Berkeley) %G%";
 #endif not lint
 
 #include <strings.h>
@@ -213,6 +213,10 @@ udp_stats(off, name)
 		udpstat.udps_badlen, plural(udpstat.udps_badlen));
 	printf("\t%u bad checksum%s\n",
 		udpstat.udps_badsum, plural(udpstat.udps_badsum));
+#ifdef sun
+	printf("\t%d socket overflow%s\n",
+		udpstat.udps_fullsock, plural(udpstat.udps_fullsock));
+#endif
 }
 
 /*
@@ -228,14 +232,17 @@ ip_stats(off, name)
 		return;
 	klseek(kmem, off, 0);
 	read(kmem, (char *)&ipstat, sizeof (ipstat));
+#if BSD>=43
 	printf("%s:\n\t%u total packets received\n", name,
 		ipstat.ips_total);
+#endif
 	printf("\t%u bad header checksum%s\n",
 		ipstat.ips_badsum, plural(ipstat.ips_badsum));
 	printf("\t%u with size smaller than minimum\n", ipstat.ips_tooshort);
 	printf("\t%u with data size < data length\n", ipstat.ips_toosmall);
 	printf("\t%u with header length < data size\n", ipstat.ips_badhlen);
 	printf("\t%u with data length < header length\n", ipstat.ips_badlen);
+#if BSD>=43
 	printf("\t%u fragment%s received\n",
 		ipstat.ips_fragments, plural(ipstat.ips_fragments));
 	printf("\t%u fragment%s dropped (dup or out of space)\n",
@@ -248,6 +255,7 @@ ip_stats(off, name)
 		ipstat.ips_cantforward, plural(ipstat.ips_cantforward));
 	printf("\t%u redirect%s sent\n",
 		ipstat.ips_redirectsent, plural(ipstat.ips_redirectsent));
+#endif
 }
 
 static	char *icmpnames[] = {
