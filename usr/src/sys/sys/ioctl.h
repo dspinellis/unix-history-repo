@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ioctl.h	6.15 (Berkeley) %G%
+ *	@(#)ioctl.h	6.16 (Berkeley) %G%
  */
 
 /*
@@ -246,25 +246,4 @@ struct winsize {
 #define	SIOCGARP	_IOWR(i,31, struct arpreq)	/* get arp entry */
 #define	SIOCDARP	_IOW(i, 32, struct arpreq)	/* delete arp entry */
 
-/* protocol i/o controls (bbn) */
-#define SIOCSPUSH	_IO(b, 64)		/* tcp: set push */
-#define SIOCCPUSH	_IO(b, 65)		/* tcp: clear push */
-#define SIOCSNOACT	_IOW(b, 66, u_long)	/* tcp: set no activity timer */
-#define SIOCGNOACT	_IOR(b, 67, u_long)	/* tcp: get no activity timer */
-#define	    TCP_NOACTPROBE	0x80000000	/*	send pkt on timeout */
-#define	    TCP_NOACTSIG	0x40000000	/*	advise user on timeout */
-#define SIOCSINIT	_IOW(b, 68, int)	/* tcp: set init timer */
-#define SIOCGINIT	_IOR(b, 69, int)	/* tcp: get init timer */
-#define SIOCABORT	_IO(b, 70)		/* tcp: abort connection */
-
-#define SIOCSNDGRAMS	_IOW(b, 71, int)	/* rdp: set max #dgrams rcv */
-#define SIOCGNDGRAMS	_IOR(b, 72, int)	/* rdp: get max #dgrams rcv */
-#define SIOCSSEQ	_IOW(b, 73, int)	/* rdp: set seq delivery */
-#define SIOCGSEQ	_IOR(b, 74, int)	/* rdp: get seq delivery */
-#define SIOCSNULL	_IOW(b, 77, int)	/* rdp: ~set KEEPALIVE timer */
-#define SIOCGNULL	_IOR(b, 78, int)	/* rdp: ~get KEEPALIVE timer */
-
-		/* tcp + rdp */
-#define SIOCSRTTL	_IOW(b, 75, int)	/* set rxmit took too long */
-#define SIOCGRTTL	_IOR(b, 76, int)	/* get rxmit took too long */
 #endif
