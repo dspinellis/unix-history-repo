@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)newfs.c	6.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)newfs.c	6.13 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -367,8 +367,6 @@ next:
 		fprintf(stderr, "\t-k sector 0 skew, per track\n");
 		exit(1);
 	}
-	if (maxbpg == 0)
-		maxbpg = MAXBLKPG(bsize);
 	special = argv[0];
 	cp = rindex(special, '/');
 	if (cp != 0)
@@ -475,6 +473,8 @@ next:
 		fprintf(stderr, "%s (%d) %s (%d)\n",
 			"Warning: calculated sectors per cylinder", secpercyl,
 			"disagrees with disk label", lp->d_secpercyl);
+	if (maxbpg == 0)
+		maxbpg = MAXBLKPG(bsize);
 	headswitch = lp->d_headswitch;
 	trackseek = lp->d_trkseek;
 	bbsize = lp->d_bbsize;
