@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)print.c	5.34 (Berkeley) %G%";
+static char sccsid[] = "@(#)print.c	5.35 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -68,7 +68,7 @@ printlong(dp)
 		if (f_inode)
 			(void)printf("%*lu ", dp->s_inode, sp->st_ino);
 		if (f_size)
-			(void)printf("%*ld ",
+			(void)printf("%*qd ",
 			    dp->s_block, howmany(sp->st_blocks, blocksize));
 		(void)strmode(sp->st_mode, buf);
 		np = p->fts_pointer;
@@ -181,7 +181,7 @@ printaname(p, inodefield, sizefield)
 	if (f_inode)
 		chcnt += printf("%*lu ", inodefield, sp->st_ino);
 	if (f_size)
-		chcnt += printf("%*ld ",
+		chcnt += printf("%*qd ",
 		    sizefield, howmany(sp->st_blocks, blocksize));
 	chcnt += printf("%s", p->fts_name);
 	if (f_type)
