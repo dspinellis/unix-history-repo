@@ -1,24 +1,34 @@
-.TH ZDUMP 8
-.SH NAME
-zdump \- time zone dumper
-.SH SYNOPSIS
-.B zdump
-[
-.B \-v
-] [
-.B \-c
-cutoffyear ] [ zonename ... ]
-.SH DESCRIPTION
-.I Zdump
+.\" Copyright (c) 1991 Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)zdump.8	1.2 (Berkeley) %G%
+.\"
+.Dd 
+.Dt ZDUMP 8
+.Os
+.Sh NAME
+.Nm zdump
+.Nd time zone dumper
+.Sh SYNOPSIS
+.Nm zdump
+.Op Fl c Ar cutoffyear
+.Op Fl v
+.Op Ar zonename ...
+.Sh DESCRIPTION
+.Nm Zdump
 prints the current time in each
-.I zonename
+.Ar zonename
 named on the command line.
-.PP
+.Pp
 These options are available:
-.TP
-.B \-v
+.Bl -tag -width Ds
+.It Fl c  Ar cutoffyear
+Cut off the verbose output near the start of the given year.
+.It Fl v
 For each
-.I zonename
+.Ar zonename
 on the command line,
 print the current time,
 the time at the lowest possible time value,
@@ -28,15 +38,22 @@ each detected time discontinuity,
 the time at one day less than the highest possible time value,
 and the time at the highest possible time value,
 Each line ends with
-.B isdst=1
+.Ql isdst=1
 if the given time is Daylight Saving Time or
-.B isdst=0
+.Ql isdst=0
 otherwise.
-.TP
-.BI "\-c " cutoffyear
-Cut off the verbose output near the start of the given year.
-.SH FILES
-/etc/zoneinfo	standard zone information directory
-.SH "SEE ALSO"
-newctime(3), tzfile(5), zic(8)
-.. @(#)zdump.8	4.3
+.El
+.Sh FILES
+.Bl -tag -width /etc/zoneinfo -compact
+.It Pa /etc/zoneinfo
+standard zone information directory
+.El
+.Sh SEE ALSO
+.Xr newctime 3 ,
+.Xr tzfile 5 ,
+.Xr zic 8
+.Sh HISTORY
+The
+.Nm
+command
+.Ud
