@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)sys_generic.c	7.6 (Berkeley) %G%
+ *	@(#)sys_generic.c	7.7 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -207,7 +207,8 @@ ioctl()
 		return;
 	}
 	if (size > sizeof (stkbuf)) {
-		memp = (caddr_t)malloc(IOCPARM_MAX, M_IOCTLOPS, M_WAITOK);
+		memp = (caddr_t)malloc((u_long)IOCPARM_MAX, M_IOCTLOPS,
+		    M_WAITOK);
 		data = memp;
 	}
 	if (com&IOC_IN) {

@@ -9,7 +9,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)malloc.h	7.5 (Berkeley) %G%
+ *	@(#)malloc.h	7.6 (Berkeley) %G%
  */
 
 #define KMEMSTATS
@@ -117,24 +117,24 @@ struct kmembuckets {
 /*
  * Turn virtual addresses into kmem map indicies
  */
-#define kmemxtob(addr)	(kmembase + (addr) * NBPG)
-#define btokmemx(addr)	(((addr) - kmembase) / NBPG)
-#define btokup(addr)	(&kmemusage[((addr) - kmembase) >> CLSHIFT])
+#define kmemxtob(alloc)	(kmembase + (alloc) * NBPG)
+#define btokmemx(addr)	(((caddr_t)(addr) - kmembase) / NBPG)
+#define btokup(addr)	(&kmemusage[((caddr_t)(addr) - kmembase) >> CLSHIFT])
 
 /*
  * Macro versions for the usual cases of malloc/free
  */
 #ifdef KMEMSTATS
 #define MALLOC(space, cast, size, type, flags) \
-	(space) = (cast)malloc(size, type, flags)
-#define FREE(addr, type) free(addr, type)
+	(space) = (cast)malloc((u_long)(size), type, flags)
+#define FREE(addr, type) free((caddr_t)(addr), type)
 
 #else /* do not collect statistics */
 #define MALLOC(space, cast, size, type, flags) { \
 	register struct kmembuckets *kbp = &bucket[BUCKETINDX(size)]; \
 	long s = splimp(); \
 	if (kbp->kb_next == NULL) { \
-		(space) = (cast)malloc(size, type, flags); \
+		(space) = (cast)malloc((u_long)(size), type, flags); \
 	} else { \
 		(space) = (cast)kbp->kb_next; \
 		kbp->kb_next = *(caddr_t *)(space); \
@@ -147,7 +147,7 @@ struct kmembuckets {
 	register struct kmemusage *kup = btokup(addr); \
 	long s = splimp(); \
 	if (1 << kup->ku_indx > MAXALLOCSAVE) { \
-		free(addr, type); \
+		free((caddr_t)(addr), type); \
 	} else { \
 		kbp = &bucket[kup->ku_indx]; \
 		*(caddr_t *)(addr) = kbp->kb_next; \
