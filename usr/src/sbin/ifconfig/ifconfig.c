@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)ifconfig.c	4.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)ifconfig.c	4.18 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/types.h>
@@ -296,42 +296,44 @@ status()
 		printf(" metric %d", metric);
 	putchar('\n');
 	if ((p = afp) != NULL) {
-		(*p->af_status)();
-		return;
-	}
-	for (p = afs; p->af_name; p++) {
+		(*p->af_status)(1);
+	} else for (p = afs; p->af_name; p++) {
 		ifr.ifr_addr.sa_family = p->af_af;
-		(*p->af_status)();
+		(*p->af_status)(0);
 	}
 }
 
-in_status()
+in_status(force)
+	int force;
 {
 	struct sockaddr_in *sin;
 	char *inet_ntoa();
 
+	strncpy(ifr.ifr_name, name, sizeof (ifr.ifr_name));
+	if (ioctl(s, SIOCGIFADDR, (caddr_t)&ifr) < 0) {
+		if (errno == EADDRNOTAVAIL || errno == EAFNOSUPPORT) {
+			if (!force)
+				return;
+			bzero((char *)&ifr.ifr_addr, sizeof(ifr.ifr_addr));
+		} else
+			perror("ioctl (SIOCGIFADDR)");
+	}
+	sin = (struct sockaddr_in *)&ifr.ifr_addr;
+	printf("\tinet %s ", inet_ntoa(sin->sin_addr));
+	strncpy(ifr.ifr_name, name, sizeof (ifr.ifr_name));
 	if (ioctl(s, SIOCGIFNETMASK, (caddr_t)&ifr) < 0) {
 		if (errno != EADDRNOTAVAIL)
-			Perror("ioctl (SIOCGIFNETMASK)");
+			perror("ioctl (SIOCGIFNETMASK)");
+		bzero((char *)&ifr.ifr_addr, sizeof(ifr.ifr_addr));
 	} else
 		netmask.sin_addr =
 		    ((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr;
-	strncpy(ifr.ifr_name, name, sizeof (ifr.ifr_name));
-	if (ioctl(s, SIOCGIFADDR, (caddr_t)&ifr) < 0) {
-		if (errno == EADDRNOTAVAIL)
-			bzero((char *)&ifr.ifr_addr, sizeof(ifr.ifr_addr));
-		else
-			Perror("ioctl (SIOCGIFADDR)");
-	}
-	strncpy(ifr.ifr_name, name, sizeof (ifr.ifr_name));
-	sin = (struct sockaddr_in *)&ifr.ifr_addr;
-	printf("\tinet %s ", inet_ntoa(sin->sin_addr));
 	if (flags & IFF_POINTOPOINT) {
 		if (ioctl(s, SIOCGIFDSTADDR, (caddr_t)&ifr) < 0) {
 			if (errno == EADDRNOTAVAIL)
 			    bzero((char *)&ifr.ifr_addr, sizeof(ifr.ifr_addr));
 			else
-			    Perror("ioctl (SIOCGIFDSTADDR)");
+			    perror("ioctl (SIOCGIFDSTADDR)");
 		}
 		strncpy(ifr.ifr_name, name, sizeof (ifr.ifr_name));
 		sin = (struct sockaddr_in *)&ifr.ifr_dstaddr;
@@ -341,18 +343,21 @@ in_status()
 	if (flags & IFF_BROADCAST) {
 		if (ioctl(s, SIOCGIFBRDADDR, (caddr_t)&ifr) < 0) {
 			if (errno == EADDRNOTAVAIL)
-				return;
-			Perror("ioctl (SIOCGIFADDR)");
+			    bzero((char *)&ifr.ifr_addr, sizeof(ifr.ifr_addr));
+			else
+			    perror("ioctl (SIOCGIFADDR)");
 		}
 		strncpy(ifr.ifr_name, name, sizeof (ifr.ifr_name));
 		sin = (struct sockaddr_in *)&ifr.ifr_addr;
-		printf("broadcast %s", inet_ntoa(sin->sin_addr));
+		if (sin->sin_addr.s_addr != 0)
+			printf("broadcast %s", inet_ntoa(sin->sin_addr));
 	}
 	putchar('\n');
 }
 
 
-xns_status()
+xns_status(force)
+	int force;
 {
 	struct sockaddr_ns *sns;
 
@@ -365,9 +370,12 @@ xns_status()
 		exit(1);
 	}
 	if (ioctl(s, SIOCGIFADDR, (caddr_t)&ifr) < 0) {
-		if (errno == EADDRNOTAVAIL || errno==EAFNOSUPPORT)
-			return;
-		Perror("ioctl (SIOCGIFADDR)");
+		if (errno == EADDRNOTAVAIL || errno == EAFNOSUPPORT) {
+			if (!force)
+				return;
+			bzero((char *)&ifr.ifr_addr, sizeof(ifr.ifr_addr));
+		} else
+			perror("ioctl (SIOCGIFADDR)");
 	}
 	strncpy(ifr.ifr_name, name, sizeof ifr.ifr_name);
 	sns = (struct sockaddr_ns *)&ifr.ifr_addr;
