@@ -1,0 +1,41 @@
+XCOMM site:  $XConsortium: site.def,v 1.2 91/07/30 20:26:44 rws Exp $
+
+/*****************************************************************************
+ *                                                                           *
+ *			   SITE-SPECIFIC DEFINITIONS                         *
+ *                                                                           *
+ * This file contains two halves, one included before the vendor-specific    *
+ * configuration file (.cf file), and one included after the .cf file.       *
+ * The before-half should be protected by #ifdef BeforeVendorCF, and the     *
+ * after-half should be protected by #ifdef AfterVendorCF.                   *
+ *                                                                           *
+ * The before-half should only set things that the .cf file depends on.      *
+ * For the .cf files shipped in this release, the main variable in this      *
+ * category is HasGcc.                                                       *
+ *                                                                           *
+ * The after-half should contain all other definitions.  For example,        *
+ * place your ProjectRoot definition here.  Beware that several of the       *
+ * .cf files supplied by vendors have a ProjectRoot already defined, so      *
+ * you may need to #undef it first.                                          *
+ *                                                                           *
+ * OS Major and Minor version numbers should be changed directly in the .cf  *
+ * file, not overridden in site.def.                                         *
+ *                                                                           *
+ *****************************************************************************/
+
+#ifdef BeforeVendorCF
+
+/* #define HasGcc YES */
+
+#endif /* BeforeVendorCF */
+
+#ifdef AfterVendorCF
+
+/*
+#ifdef ProjectRoot
+#undef ProjectRoot
+#endif
+#define ProjectRoot /usr/X11R5
+*/
+
+#endif /* AfterVendorCF */
