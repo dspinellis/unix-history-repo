@@ -171,7 +171,7 @@ register struct mbuf *list;
 		    union { u_long ul; u_char c[4]; } a;
 
 		    a.ul = sin->sin_addr.s_addr;
-		    log(KERN_RECOV, "gw %d.%d.%d.%d pinged out\n",
+		    log(LOG_INFO, "gw %d.%d.%d.%d pinged out\n",
 			a.c[0], a.c[1], a.c[2], a.c[3]);
 
 		    rt->irt_pings = 0;
@@ -439,7 +439,7 @@ passup:
 	    union { u_long ul; u_char c[4]; } a;
 
 	    a.ul = ip->ip_src.s_addr;
-	    log(KERN_RECOV, "Ignoring redirect from %d.%d.%d.%d\n",
+	    log(LOG_INFO, "Ignoring redirect from %d.%d.%d.%d\n",
 		a.c[0], a.c[1], a.c[2], a.c[3]);
 	}
 #ifdef HMPTRAPS
@@ -653,7 +653,7 @@ perr :
 	    f.ul = ip->ip_src.s_addr;
 	    t.ul = ip->ip_dst.s_addr;
 	    v.ul = ic->ic_gaddr.s_addr;
-	    log(KERN_RECOV,
+	    log(LOG_INFO,
 		"Ignoring ICMP redirect from gw %d.%d.%d.%d? to go from %d.%d.%d.%d to %d.%d.%d.%d via %d.%d.%d.%d : %s\n",
 		g.c[0], g.c[1], g.c[2], g.c[3],
 		f.c[0], f.c[1], f.c[2], f.c[3],
@@ -771,8 +771,8 @@ struct mbuf	**table;
 		rt->rt_refcnt ++;
 	    }
 	    else
-		log(KERN_RECOV, "ICMP Redirect to down route\n");
+		log(LOG_INFO, "ICMP Redirect to down route\n");
 	}
 	else
-	    log(KERN_RECOV, "ICMP Redirect route not installed?\n");
+	    log(LOG_INFO, "ICMP Redirect route not installed?\n");
 }

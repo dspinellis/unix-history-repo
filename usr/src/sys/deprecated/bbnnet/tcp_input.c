@@ -338,7 +338,7 @@ int fragsize;
 
 		if (act == 0)  
 		{
-		    log(KERN_RECOV, "tcp bad state: tcb=%x state=%d INRECV\n", t, t->t_state);
+		    log(LOG_INFO, "tcp bad state: tcb=%x state=%d INRECV\n", t, t->t_state);
 		    m_freem(mp);
 		    return;
 		}

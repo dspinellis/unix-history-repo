@@ -620,7 +620,7 @@ register RDPCB *rdpcb;
 	break;
 
       default:
-	log(KERN_RECOV, "rdp_synsent_timer:  timer %d\n", timer);
+	log(LOG_INFO, "rdp_synsent_timer:  timer %d\n", timer);
     }
 
     return(RDP_sSAME);
@@ -712,7 +712,7 @@ register RDPHDR		*pkt;
 
     if (pkt->rh_dlen > rdpcb->r_ourmaxlen)
     {
-	log(KERN_RECOV, "RDP too large packet %d > %d\n",
+	log(LOG_INFO, "RDP too large packet %d > %d\n",
 	    pkt->rh_dlen, rdpcb->r_ourmaxlen);
 theygoofed :
 	rdp_uncon_rst(pkt);
@@ -728,12 +728,12 @@ theygoofed :
     {
 	if (pkt->rh_dlen != 0)
 	{
-	    log(KERN_RECOV, "RDP %d length NULL packet\n", pkt->rh_dlen);
+	    log(LOG_INFO, "RDP %d length NULL packet\n", pkt->rh_dlen);
 	    goto theygoofed;
 	}
 	if (RDP_SEQNO(pkt) != rdpcb->r_rcvq.rq_baseseq)
 	{
-	    log(KERN_RECOV, "RDP NULL 0x%x rcvq baseseq 0x%x\n",
+	    log(LOG_INFO, "RDP NULL 0x%x rcvq baseseq 0x%x\n",
 		RDP_SEQNO(pkt), rdpcb->r_rcvq.rq_baseseq);
 	    goto theygoofed;
 	}
@@ -925,7 +925,7 @@ register RDPHDR		*pkt;
 
     if (pkt->rh_dlen > rdpcb->r_ourmaxlen)
     {
-	log(KERN_RECOV, "RDP pkt too large %d > %d\n",
+	log(LOG_INFO, "RDP pkt too large %d > %d\n",
 	    pkt->rh_dlen, rdpcb->r_ourmaxlen);
 theygoofed :
 	rdp_uncon_rst(pkt);
@@ -941,12 +941,12 @@ theygoofed :
     {
 	if (pkt->rh_dlen != 0)
 	{
-	    log(KERN_RECOV, "RDP %d length NULL pkt\n", pkt->rh_dlen);
+	    log(LOG_INFO, "RDP %d length NULL pkt\n", pkt->rh_dlen);
 	    goto theygoofed;
 	}
 	if (RDP_SEQNO(pkt) != rdpcb->r_rcvq.rq_baseseq)
 	{
-	    log(KERN_RECOV, "RDP NULL 0x%x rcvq baseseq 0x%x\n",
+	    log(LOG_INFO, "RDP NULL 0x%x rcvq baseseq 0x%x\n",
 		RDP_SEQNO(pkt), rdpcb->r_rcvq.rq_baseseq);
 	    goto theygoofed;
 	}
@@ -1181,7 +1181,7 @@ register RDPCB	*rdpcb;
 	break;
 
       default:
-	log(KERN_RECOV, "rdp_estab_timer:  timer %d\n", timer);
+	log(LOG_INFO, "rdp_estab_timer:  timer %d\n", timer);
     }
 
     return(RDP_sSAME);
@@ -1345,7 +1345,7 @@ RDPCB	*rdpcb;
 {
     if (timer != RDP_tCLOSEWAIT)
     {
-	log(KERN_RECOV, "rdp_closew_timer:  timer %d\n", timer);
+	log(LOG_INFO, "rdp_closew_timer:  timer %d\n", timer);
 	return(RDP_sSAME);
     }
 
