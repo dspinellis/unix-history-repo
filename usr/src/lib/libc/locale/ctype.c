@@ -1,4 +1,4 @@
-/* @(#)ctype.c	4.3 (Berkeley) %G% */
+/* @(#)ctype.c	4.4 (Berkeley) %G% */
 #include	<ctype.h>
 
 char _ctype_[1 + 256] = {
@@ -7,7 +7,7 @@ char _ctype_[1 + 256] = {
 	_C,	_S,	_S,	_S,	_S,	_S,	_C,	_C,
 	_C,	_C,	_C,	_C,	_C,	_C,	_C,	_C,
 	_C,	_C,	_C,	_C,	_C,	_C,	_C,	_C,
-	_S|_P,	_P,	_P,	_P,	_P,	_P,	_P,	_P,
+	_S,	_P,	_P,	_P,	_P,	_P,	_P,	_P,
 	_P,	_P,	_P,	_P,	_P,	_P,	_P,	_P,
 	_N,	_N,	_N,	_N,	_N,	_N,	_N,	_N,
 	_N,	_N,	_P,	_P,	_P,	_P,	_P,	_P,
