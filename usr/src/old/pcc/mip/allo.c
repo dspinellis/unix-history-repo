@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid ="@(#)allo.c	4.7 (Berkeley) %G%";
+static char *sccsid ="@(#)allo.c	4.8 (Berkeley) %G%";
 #endif lint
 
 # include "pass2.h"
@@ -199,12 +199,19 @@ usable( p, n, r ) NODE *p; {
 		if( n & NBMASK ) return(0);
 		}
 	/*
-	 * Have to check for ==, <=, etc. because the result is type INT
-	 * but need a register pair temp if either side is real.
+	 * Some special cases that require register pairs...
+	 * Have to check for ==, <=, etc. because the result is type int
+	 * but need a register pair temp if either side is wide.
+	 * For +=, *= etc. where lhs is narrow and rhs is wide, the temp
+	 * register must be wide.
 	 */
-	if( (n&NAMASK) && (szty(p->in.type) == 2 ||
-	    logop(p->in.op) && (szty(p->in.left->in.type) == 2 ||
-	    szty(p->in.right->in.type) == 2)) ){ /* only do the pairing for real regs */
+	if( (n&NAMASK) &&
+	    (szty(p->in.type) == 2 ||
+	     (logop(p->in.op) && (szty(p->in.left->in.type) == 2 ||
+	      szty(p->in.right->in.type) == 2)) ||
+	     (asgop(p->in.op) && szty(p->in.right->in.type) == 2 &&
+	      szty(p->in.left->in.type) == 1))
+	){
 #ifndef NOEVENODD
 		if( r&01 ) return(0);
 #endif
