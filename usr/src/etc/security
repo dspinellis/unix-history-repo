@@ -1,6 +1,6 @@
 #!/bin/sh -
 #
-#	@(#)security	5.18 (Berkeley) %G%
+#	@(#)security	5.19 (Berkeley) %G%
 #
 
 # Script to check basic system security.  Checks included are:
@@ -40,7 +40,7 @@ awk -F: '{
 	}
 	if (NF != 10)
 		printf("Line %d has the wrong number of fields.\n", NR);
-	if ($1 !~ /[A-za-z0-9]*/)
+	if ($1 !~ /^[A-Za-z0-9]*$/)
 		printf("Login %s has non-numeric characters.\n", $1);
 	if (length($1) > 8)
 		printf("Login %s has more than 8 characters.\n", $1);
@@ -53,7 +53,7 @@ awk -F: '{
 	if ($3 < 0)
 		printf("Login %s has a negative user id.\n", $1);
 	if ($4 < 0)
-		printf("Login %s has a negative user id.\n", $1);
+		printf("Login %s has a negative group id.\n", $1);
 }' < $MP > $OUTPUT
 if [ -s $OUTPUT ] ; then
 	printf "\nChecking the $MP file:\n"
@@ -89,7 +89,7 @@ awk -F: '{
 	if (length($1) > 8)
 		printf("Group %s has more than 8 characters.\n", $1);
 	if ($3 !~ /[0-9]*/)
-		printf("Login %s has a negative user id.\n", $1);
+		printf("Login %s has a negative group id.\n", $1);
 }' < $GRP > $OUTPUT
 if [ -s $OUTPUT ] ; then
 	printf "\nChecking the $GRP file:\n"
