@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)cmp.c	4.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmp.c	5.1 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -32,53 +32,63 @@ static char sccsid[] = "@(#)cmp.c	4.9 (Berkeley) %G%";
 #include <ctype.h>
 #include <errno.h>
 
-#define DIFF	1			/* found differences */
-#define ERR	2			/* error during run */
-#define NO	0			/* no/false */
-#define OK	0			/* didn't find differences */
-#define YES	1			/* yes/true */
+#define	EXITNODIFF	0
+#define	EXITDIFF	1
+#define	EXITERR		2
 
-static int	fd1, fd2,		/* file descriptors */
-		silent = NO;		/* if silent run */
-static short	all = NO;		/* if report all differences */
-static u_char	buf1[MAXBSIZE],		/* read buffers */
-		buf2[MAXBSIZE];
-static char	*file1, *file2;		/* file names */
+static int	all, fd1, fd2, silent;
+static u_char	buf1[MAXBSIZE], buf2[MAXBSIZE];
+static char	*file1, *file2;
 
 main(argc, argv)
-	int	argc;
-	char	**argv;
+	int argc;
+	char **argv;
 {
-	extern char	*optarg;
-	extern int	optind;
-	int	ch;
-	u_long	otoi();
+	extern char *optarg;
+	extern int optind;
+	int ch;
+	u_long otoi();
 
-	while ((ch = getopt(argc, argv, "ls")) != EOF)
+	while ((ch = getopt(argc, argv, "-ls")) != EOF)
 		switch(ch) {
 		case 'l':		/* print all differences */
-			all = YES;
+			all = 1;
 			break;
 		case 's':		/* silent run */
-			silent = YES;
+			silent = 1;
 			break;
+		case '-':		/* must be after any flags */
+			--optind;
+			goto endargs;
 		case '?':
 		default:
 			usage();
 		}
+endargs:
 	argv += optind;
 	argc -= optind;
 
 	if (argc < 2 || argc > 4)
 		usage();
 
-	/* open up files; "-" is stdin */
-	file1 = argv[0];
-	if (strcmp(file1, "-") && (fd1 = open(file1, O_RDONLY, 0)) < 0)
+	if (all && silent) {
+		fprintf(stderr,
+		    "cmp: only one of -l and -s may be specified.\n");
+		exit(EXITERR);
+	}
+	if (!strcmp(file1 = argv[0], "-"))
+		fd1 = 0;
+	else if ((fd1 = open(file1, O_RDONLY, 0)) < 0)
 		error(file1);
-	file2 = argv[1];
-	if ((fd2 = open(file2, O_RDONLY, 0)) < 0)
+	if (!strcmp(file2 = argv[1], "-"))
+		fd2 = 0;
+	else if ((fd2 = open(file2, O_RDONLY, 0)) < 0)
 		error(file2);
+	if (fd1 == fd2) {
+		fprintf(stderr,
+		    "cmp: standard input may only be specified once.\n");
+		exit(EXITERR);
+	}
 
 	/* handle skip arguments */
 	if (argc > 2) {
@@ -96,12 +106,11 @@ main(argc, argv)
  */
 static
 skip(dist, fd, fname)
-	register u_long	dist;		/* length in bytes, to skip */
-	register int	fd;		/* file descriptor */
-	char	*fname;			/* file name for error */
+	register u_long dist;
+	register int fd;
+	char *fname;
 {
-	register int	rlen;		/* read length */
-	register int	nread;
+	register int rlen, nread;
 
 	for (; dist; dist -= rlen) {
 		rlen = MIN(dist, sizeof(buf1));
@@ -117,12 +126,10 @@ skip(dist, fd, fname)
 static
 cmp()
 {
-	register u_char	*C1, *C2;	/* traveling pointers */
-	register int	cnt,		/* counter */
-			len1, len2;	/* read lengths */
-	register long	byte,		/* byte count */
-			line;		/* line count */
-	short	dfound = NO;		/* if difference found */
+	register u_char	*C1, *C2;
+	register int cnt, len1, len2;
+	register long byte, line;
+	int dfound = 0;
 
 	for (byte = 0, line = 1;;) {
 		switch(len1 = read(fd1, buf1, MAXBSIZE)) {
@@ -137,7 +144,7 @@ cmp()
 				case -1:
 					error(file2);
 				case 0:
-					exit(dfound ? DIFF : OK);
+					exit(dfound ? EXITDIFF : EXITNODIFF);
 				default:
 					endoffile(file1);
 			}
@@ -151,26 +158,24 @@ cmp()
 			error(file2);
 		if (bcmp(buf1, buf2, len2)) {
 			if (silent)
-				exit(DIFF);
+				exit(EXITDIFF);
 			if (all) {
-				dfound = YES;
+				dfound = 1;
 				for (C1 = buf1, C2 = buf2, cnt = len2; cnt--; ++C1, ++C2) {
 					++byte;
 					if (*C1 != *C2)
 						printf("%6ld %3o %3o\n", byte, *C1, *C2);
 				}
-			}
-			else for (C1 = buf1, C2 = buf2;; ++C1, ++C2) {
+			} else for (C1 = buf1, C2 = buf2;; ++C1, ++C2) {
 				++byte;
 				if (*C1 != *C2) {
 					printf("%s %s differ: char %ld, line %ld\n", file1, file2, byte, line);
-					exit(DIFF);
+					exit(EXITDIFF);
 				}
 				if (*C1 == '\n')
 					++line;
 			}
-		}
-		else {
+		} else {
 			byte += len2;
 			/*
 			 * here's the real performance problem, we've got to
@@ -199,10 +204,10 @@ cmp()
  */
 static u_long
 otoi(C)
-	register char	*C;		/* argument string */
+	register char *C;
 {
-	register u_long	val;		/* return value */
-	register int	base;		/* number base */
+	register u_long val;
+	register int base;
 
 	base = (*C == '0') ? 8 : 10;
 	for (val = 0; isdigit(*C); ++C)
@@ -219,15 +224,12 @@ error(filename)
 	char *filename;
 {
 	extern int errno;
-	int sverrno;
+	char *strerror();
 
-	if (!silent) {
-		sverrno = errno;
-		(void)fprintf(stderr, "cmp: %s: ", filename);
-		errno = sverrno;
-		perror((char *)NULL);
-	}
-	exit(ERR);
+	if (!silent)
+		(void)fprintf(stderr, "cmp: %s: %s\n",
+		    filename, strerror(errno));
+	exit(EXITERR);
 }
 
 /*
@@ -241,7 +243,7 @@ endoffile(filename)
 	/* 32V put this message on stdout, S5 does it on stderr. */
 	if (!silent)
 		(void)fprintf(stderr, "cmp: EOF on %s\n", filename);
-	exit(DIFF);
+	exit(EXITDIFF);
 }
 
 /*
@@ -252,5 +254,5 @@ static
 usage()
 {
 	fputs("usage: cmp [-ls] file1 file2 [skip1] [skip2]\n", stderr);
-	exit(ERR);
+	exit(EXITERR);
 }
