@@ -10,9 +10,9 @@
 
 #ifndef lint
 #if NAMED_BIND
-static char sccsid[] = "@(#)domain.c	8.44 (Berkeley) %G% (with name server)";
+static char sccsid[] = "@(#)domain.c	8.45 (Berkeley) %G% (with name server)";
 #else
-static char sccsid[] = "@(#)domain.c	8.44 (Berkeley) %G% (without name server)";
+static char sccsid[] = "@(#)domain.c	8.45 (Berkeley) %G% (without name server)";
 #endif
 #endif /* not lint */
 
@@ -386,6 +386,35 @@ mxrand(host)
 	if (tTd(17, 9))
 		printf(" = %d\n", hfunc);
 	return hfunc;
+}
+/*
+**  BESTMX -- find the best MX for a name
+**
+**	This is really a hack, but I don't see any obvious way
+**	to generalize it at the moment.
+*/
+
+char *
+bestmx_map_lookup(map, name, av, statp)
+	MAP *map;
+	char *name;
+	char **av;
+	int *statp;
+{
+	int nmx;
+	auto int rcode;
+	int saveopts = _res.options;
+	char *mxhosts[MAXMXHOSTS + 1];
+
+	_res.options &= ~(RES_DNSRCH|RES_DEFNAMES);
+	nmx = getmxrr(name, mxhosts, FALSE, &rcode);
+	_res.options = saveopts;
+	if (nmx <= 0)
+		return NULL;
+	if (bitset(MF_MATCHONLY, map->map_mflags))
+		return map_rewrite(map, name, strlen(name), NULL);
+	else
+		return map_rewrite(map, mxhosts[0], strlen(mxhosts[0]), av);
 }
 /*
 **  DNS_GETCANONNAME -- get the canonical name for named host using DNS
