@@ -3,24 +3,35 @@
 .TH GETENV 3 ""
 .AT 3
 .SH NAME
-getenv \- value for environment name
+getenv, setenv, unsetenv \- manipulate environmental variables
 .SH SYNOPSIS
 .nf
 .B char *getenv(name)
 .B char *name;
+.PP
+.B setenv(name, value, overwrite)
+.B char *name, value;
+.B int overwrite;
+.PP
+.B void unsetenv(name)
+.B char *name;
 .fi
 .SH DESCRIPTION
-.I Getenv
-.a
-searches the environment list
-(see
-.IR environ (7))
-for a string of the form
-.IB name = value
-and returns a pointer to the string
-.I value
-if such a string is present, otherwise 
-.I getenv
-returns the value 0 (NULL).
+\fIGetenv\fP searches the environment list (see \fIenviron\fP(7))
+for a string of the form \fIname\fP\fB=\fP\fIvalue\fP and returns
+a pointer to the string \fIvalue\fP if such a string is present,
+and 0 (NULL) if it is not.
+.PP
+\fISetenv\fP searches the environment list as \fIgetenv\fP does; if
+the string \fIname\fP is not found, a string of the form
+\fIname\fP\fB=\fP\fIvalue\fP is added to the environment.  If it is
+found and \fIoverwrite\fP is non-zero, its value is changed to
+\fIvalue\fP.  \fISetenv\fP returns 0 on success and -1 on failure.
+.PP
+\fIUnsetenv\fP removes all occurrences of the string \fIname\fP from
+the environment.
+.PP
+All of these routines permit, but do not require, a trailing equals
+(``='') sign on \fIname\fP.
 .SH SEE ALSO
-environ(7), execve(2)
+csh(1), sh(1), execve(2), environ(7)
