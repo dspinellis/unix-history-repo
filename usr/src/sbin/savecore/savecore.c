@@ -1,5 +1,5 @@
 /*
- *	savecore.c	4.1	81/04/02
+ *	savecore.c	4.2	81/04/03
  * savecore dirname
  *	Written by Michael Toy (UCB)
  *	Program meant to be called from the /etc/rc file for saving the
@@ -308,10 +308,13 @@ read_kmem()
  get_crashtime()
  {
 	int dumpfd;
+	time_t clobber = (time_t)0;
 
-	dumpfd = Open(ddname, 0);
+	dumpfd = Open(ddname, 2);
 	Lseek(dumpfd, dumplo + ok(nl[X_TIME].n_value), 0);
 	Read(dumpfd, &dumptime, sizeof dumptime);
+	Lseek(dumpfd, dumplo + ok(nl[X_TIME].n_value), 0);
+	Write(dumpfd, &clobber, sizeof clobber);
 	close(dumpfd);
 	printf("System went down at %s", ctime(&dumptime));
 	if (dumptime < now - LEEWAY || dumptime > now + LEEWAY) {
