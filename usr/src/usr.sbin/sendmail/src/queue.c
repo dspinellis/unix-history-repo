@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	8.46 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	8.47 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	8.46 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	8.47 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -163,7 +163,10 @@ queueup(e, queueall, announce)
 		if (fstat(fd, &stbuf) < 0)
 			e->e_dfino = -1;
 		else
+		{
+			e->e_dfdev = stbuf.st_dev;
 			e->e_dfino = stbuf.st_ino;
+		}
 		bzero(&mcibuf, sizeof mcibuf);
 		mcibuf.mci_out = dfp;
 		mcibuf.mci_mailer = FileMailer;
@@ -184,15 +187,17 @@ queueup(e, queueall, announce)
 	/* output creation time */
 	fprintf(tfp, "T%ld\n", e->e_ctime);
 
-	/* output inode number of data file */
-	/* XXX should probably include device major/minor too */
-	fprintf(tfp, "I%ld\n", e->e_dfino);
-
 	/* output last delivery time */
 	fprintf(tfp, "K%ld\n", e->e_dtime);
 
 	/* output number of delivery attempts */
 	fprintf(tfp, "N%d\n", e->e_ntries);
+
+	/* output inode number of data file */
+	/* XXX should probably include device major/minor too */
+	if (e->e_dfino != -1)
+		fprintf(tfp, "I%d/%d/%ld\n",
+			major(e->e_dfdev), minor(e->e_dfdev), e->e_dfino);
 
 	/* output type and name of data file */
 	if (e->e_bodytype != NULL)
@@ -1219,6 +1224,7 @@ readqf(e)
 	if (Verbose)
 		printf("\nRunning %s\n", e->e_id);
 	ctladdr = NULL;
+	e->e_dfino = -1;
 	while ((bp = fgetfolded(buf, sizeof buf, qfp)) != NULL)
 	{
 		register char *p;
@@ -1265,7 +1271,11 @@ readqf(e)
 				e->e_msgsize = -1;
 			}
 			else if (fstat(fileno(e->e_dfp), &st) >= 0)
+			{
 				e->e_msgsize = st.st_size;
+				e->e_dfdev = st.st_dev;
+				e->e_dfino = st.st_ino;
+			}
 			break;
 
 		  case 'T':		/* init time */
@@ -1273,7 +1283,8 @@ readqf(e)
 			break;
 
 		  case 'I':		/* data file's inode number */
-			e->e_dfino = atol(&buf[1]);
+			if (e->e_dfino == -1)
+				e->e_dfino = atol(&buf[1]);
 			break;
 
 		  case 'K':		/* time of last deliver attempt */
