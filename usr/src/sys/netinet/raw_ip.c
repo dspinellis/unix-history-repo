@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)raw_ip.c	7.10 (Berkeley) %G%
+ *	@(#)raw_ip.c	7.11 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -127,11 +127,8 @@ rip_output(m, so, dst)
 	return (ip_output(m,
 	   (inp->inp_flags & INP_HDRINCL)? (struct mbuf *)0: inp->inp_options,
 	    &inp->inp_route, 
-	   (so->so_options & SO_DONTROUTE) | IP_ALLOWBROADCAST
-#ifdef MULTICAST
-	   , inp->inp_moptions
-#endif
-	   ));
+	   (so->so_options & SO_DONTROUTE) | IP_ALLOWBROADCAST,
+	   inp->inp_moptions));
 }
 
 /*
@@ -205,7 +202,7 @@ rip_usrreq(so, req, m, nam, control)
 {
 	register int error = 0;
 	register struct inpcb *inp = sotoinpcb(so);
-#if defined(MULTICAST) && defined(MROUTING)
+#ifdef MROUTING
 	extern struct socket *ip_mrouter;
 #endif
 
@@ -237,7 +234,7 @@ rip_usrreq(so, req, m, nam, control)
 	case PRU_DETACH:
 		if (inp == 0)
 			panic("rip_detach");
-#if defined(MULTICAST) && defined(MROUTING)
+#ifdef MROUTING
 		if (so == ip_mrouter)
 			ip_mrouter_done();
 #endif

@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ip_mroute.c	7.4 (Berkeley) %G%
+ *	@(#)ip_mroute.c	7.5 (Berkeley) %G%
  */
 
 /*
@@ -759,27 +759,19 @@ tunnel_send(m, vifp)
 		return;
 	}
 
-	mb_copy = m_copy(m, 0, M_COPYALL);
+	/* 
+	 * Get a private copy of the IP header so that changes to some 
+	 * of the IP fields don't damage the original header, which is
+	 * examined later in ip_input.c.
+	 */
+	mb_copy = m_copy(m, IP_HDR_LEN, M_COPYALL);
 	if (mb_copy == NULL)
 		return;
-	ip_copy = mtod(mb_copy, struct ip *);
-	ip_copy->ip_ttl--;
-	ip_copy->ip_dst = vifp->v_rmt_addr;	/* remote tunnel end-point */
-	/*
-	 * Adjust the ip header length to account for the tunnel options.
-	 */
-	ip_copy->ip_hl += TUNNEL_LEN >> 2;
-	ip_copy->ip_len += TUNNEL_LEN;
 	MGETHDR(mb_opts, M_DONTWAIT, MT_HEADER);
 	if (mb_opts == NULL) {
 		m_freem(mb_copy);
 		return;
 	}
-	/*
-	 * 'Delete' the base ip header from the mb_copy chain
-	 */
-	mb_copy->m_len -= IP_HDR_LEN;
-	mb_copy->m_data += IP_HDR_LEN;
 	/*
 	 * Make mb_opts be the new head of the packet chain.
 	 * Any options of the packet were left in the old packet chain head
@@ -787,14 +779,23 @@ tunnel_send(m, vifp)
 	mb_opts->m_next = mb_copy;
 	mb_opts->m_len = IP_HDR_LEN + TUNNEL_LEN;
 	mb_opts->m_data += MSIZE - mb_opts->m_len;
+
+	ip_copy = mtod(mb_opts, struct ip *);
 	/*
-	 * Copy the base ip header from the mb_copy chain to the new head mbuf
+	 * Copy the base ip header to the new head mbuf.
 	 */
-	bcopy((caddr_t)ip_copy, mtod(mb_opts, caddr_t), IP_HDR_LEN);
+	*ip_copy = *ip;
+	ip_copy->ip_ttl--;
+	ip_copy->ip_dst = vifp->v_rmt_addr;	/* remote tunnel end-point */
+	/*
+	 * Adjust the ip header length to account for the tunnel options.
+	 */
+	ip_copy->ip_hl += TUNNEL_LEN >> 2;
+	ip_copy->ip_len += TUNNEL_LEN;
 	/*
 	 * Add the NOP and LSRR after the base ip header
 	 */
-	cp = mtod(mb_opts, u_char *) + IP_HDR_LEN;
+	cp = (u_char *)(ip_copy + 1);
 	*cp++ = IPOPT_NOP;
 	*cp++ = IPOPT_LSRR;
 	*cp++ = 11;		/* LSRR option length */

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)udp_usrreq.c	7.26 (Berkeley) %G%
+ *	@(#)udp_usrreq.c	7.27 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -36,7 +36,6 @@ struct	inpcb *udp_last_inpcb = &udb;
  */
 udp_init()
 {
-
 	udb.inp_next = udb.inp_prev = &udb;
 }
 
@@ -120,7 +119,6 @@ udp_input(m, iphlen)
 		}
 	}
 
-#ifdef MULTICAST
 	if (IN_MULTICAST(ntohl(ip->ip_src.s_addr)) ||
 	    in_broadcast(ip->ip_dst)) {
 		struct socket *last;
@@ -137,7 +135,7 @@ udp_input(m, iphlen)
 		 * Those applications open the multiple sockets to overcome an
 		 * inadequacy of the UDP socket interface, but for backwards
 		 * compatibility we avoid the problem here rather than
-		 * fixing the interface.  Maybe 4.4BSD will remedy this?)
+		 * fixing the interface.  Maybe 4.5BSD will remedy this?)
 		 */
 
 		/*
@@ -173,9 +171,10 @@ udp_input(m, iphlen)
 				if ((n = m_copy(m, 0, M_COPYALL)) != NULL) {
 					if (sbappendaddr(&last->so_rcv,
 						(struct sockaddr *)&udp_in,
-						n, (struct mbuf *)0) == 0)
+						n, (struct mbuf *)0) == 0) {
 						m_freem(n);
-					else
+						udpstat.udps_fullsock++;
+					} else
 						sorwakeup(last);
 				}
 			}
@@ -198,15 +197,17 @@ udp_input(m, iphlen)
 			 * (No need to send an ICMP Port Unreachable
 			 * for a broadcast or multicast datgram.)
 			 */
+			udpstat.udps_noportbcast++;
 			goto bad;
 		}
 		if (sbappendaddr(&last->so_rcv, (struct sockaddr *)&udp_in,
-		     m, (struct mbuf *)0) == 0)
+		     m, (struct mbuf *)0) == 0) {
+			udpstat.udps_fullsock++;
 			goto bad;
+		}
 		sorwakeup(last);
 		return;
 	}
-#endif
 	/*
 	 * Locate pcb for datagram.
 	 */
@@ -222,15 +223,7 @@ udp_input(m, iphlen)
 		udpstat.udpps_pcbcachemiss++;
 	}
 	if (inp == 0) {
-		/* don't send ICMP response for broadcast packet */
 		udpstat.udps_noport++;
-#ifndef MULTICAST
-		/* XXX why don't we do this with MULTICAST? */
-		if (m->m_flags & (M_BCAST | M_MCAST)) {
-			udpstat.udps_noportbcast++;
-			goto bad;
-		}
-#endif
 		*ip = save_ip;
 		ip->ip_len += iphlen;
 		icmp_error(m, ICMP_UNREACH, ICMP_UNREACH_PORT);
@@ -320,7 +313,6 @@ udp_notify(inp, errno)
 	register struct inpcb *inp;
 	int errno;
 {
-
 	inp->inp_socket->so_error = errno;
 	sorwakeup(inp->inp_socket);
 	sowwakeup(inp->inp_socket);
@@ -335,7 +327,8 @@ udp_ctlinput(cmd, sa, ip)
 	extern struct in_addr zeroin_addr;
 	extern u_char inetctlerrmap[];
 
-	if ((unsigned)cmd > PRC_NCMDS || inetctlerrmap[cmd] == 0)
+	if (!PRC_IS_REDIRECT(cmd) &&
+	    ((unsigned)cmd >= PRC_NCMDS || inetctlerrmap[cmd] == 0))
 		return;
 	if (ip) {
 		uh = (struct udphdr *)((caddr_t)ip + (ip->ip_hl << 2));
@@ -417,11 +410,8 @@ udp_output(inp, m, addr, control)
 	((struct ip *)ui)->ip_tos = inp->inp_ip.ip_tos;	/* XXX */
 	udpstat.udps_opackets++;
 	error = ip_output(m, inp->inp_options, &inp->inp_route,
-	    inp->inp_socket->so_options & (SO_DONTROUTE | SO_BROADCAST)
-#ifdef MULTICAST
-	    , inp->inp_moptions
-#endif
-	    );
+	    inp->inp_socket->so_options & (SO_DONTROUTE | SO_BROADCAST),
+	    inp->inp_moptions);
 
 	if (addr) {
 		in_pcbdisconnect(inp);

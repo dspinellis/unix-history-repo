@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ip_icmp.c	7.18 (Berkeley) %G%
+ *	@(#)ip_icmp.c	7.19 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -42,10 +42,11 @@ extern	struct protosw inetsw[];
  * in response to bad packet ip.
  */
 /*VARARGS3*/
-icmp_error(n, type, code, dest)
+icmp_error(n, type, code, dest, destifp)
 	struct mbuf *n;
 	int type, code;
 	struct in_addr dest;
+	struct ifnet *destifp;
 {
 	register struct ip *oip = mtod(n, struct ip *), *nip;
 	register unsigned oiplen = oip->ip_hl << 2;
@@ -73,11 +74,12 @@ icmp_error(n, type, code, dest)
 		icmpstat.icps_oldicmp++;
 		goto freeit;
 	}
-#ifdef MULTICAST
 	/* Don't send error in response to a multicast or broadcast packet */
-	if (n->m_flags & (M_MCAST | M_BCAST))
+	if ((n->m_flags & (M_BCAST|M_MCAST)) ||
+	    in_broadcast(oip->ip_dst) ||
+	    IN_MULTICAST(ntohl(oip->ip_dst.s_addr)) ||
+	    IN_EXPERIMENTAL(ntohl(oip->ip_dst.s_addr)))
 		goto freeit;
-#endif
 	/*
 	 * First, formulate icmp message
 	 */
@@ -94,12 +96,21 @@ icmp_error(n, type, code, dest)
 	icp->icmp_type = type;
 	if (type == ICMP_REDIRECT)
 		icp->icmp_gwaddr = dest;
-	else
+	else {
 		icp->icmp_void = 0;
-	if (type == ICMP_PARAMPROB) {
-		icp->icmp_pptr = code;
-		code = 0;
+		/* 
+		 * The following assignments assume an overlay with the
+		 * zeroed icmp_void field.
+		 */
+		if (type == ICMP_PARAMPROB) {
+			icp->icmp_pptr = code;
+			code = 0;
+		} else if (type == ICMP_UNREACH &&
+			code == ICMP_UNREACH_NEEDFRAG && destifp) {
+			icp->icmp_nextmtu = htons(destifp->if_mtu);
+		}
 	}
+
 	icp->icmp_code = code;
 	bcopy((caddr_t)oip, (caddr_t)&icp->icmp_ip, icmplen);
 	nip = &icp->icmp_ip;
@@ -116,11 +127,12 @@ icmp_error(n, type, code, dest)
 	m->m_pkthdr.len = m->m_len;
 	m->m_pkthdr.rcvif = n->m_pkthdr.rcvif;
 	nip = mtod(m, struct ip *);
-	bcopy((caddr_t)oip, (caddr_t)nip, oiplen);
+	bcopy((caddr_t)oip, (caddr_t)nip, sizeof(struct ip));
 	nip->ip_len = m->m_len;
 	nip->ip_hl = sizeof(struct ip) >> 2;
 	nip->ip_hl = sizeof(struct ip) >> 2;
 	nip->ip_p = IPPROTO_ICMP;
+	nip->ip_tos = 0;
 	icmp_reflect(m);
 
 freeit:
@@ -193,9 +205,35 @@ icmp_input(m, hlen)
 	switch (icp->icmp_type) {
 
 	case ICMP_UNREACH:
-		if (code > 5)
-			goto badcode;
-		code += PRC_UNREACH_NET;
+		switch (code) {
+			case ICMP_UNREACH_NET:
+			case ICMP_UNREACH_HOST:
+			case ICMP_UNREACH_PROTOCOL:
+			case ICMP_UNREACH_PORT:
+			case ICMP_UNREACH_SRCFAIL:
+				code += PRC_UNREACH_NET;
+				break;
+
+			case ICMP_UNREACH_NEEDFRAG:
+				code = PRC_MSGSIZE;
+				break;
+				
+			case ICMP_UNREACH_NET_UNKNOWN:
+			case ICMP_UNREACH_NET_PROHIB:
+			case ICMP_UNREACH_TOSNET:
+				code = PRC_UNREACH_NET;
+				break;
+
+			case ICMP_UNREACH_HOST_UNKNOWN:
+			case ICMP_UNREACH_ISOLATED:
+			case ICMP_UNREACH_HOST_PROHIB:
+			case ICMP_UNREACH_TOSHOST:
+				code = PRC_UNREACH_HOST;
+				break;
+
+			default:
+				goto badcode;
+		}
 		goto deliver;
 
 	case ICMP_TIMXCEED:
@@ -205,7 +243,7 @@ icmp_input(m, hlen)
 		goto deliver;
 
 	case ICMP_PARAMPROB:
-		if (code)
+		if (code > 1)
 			goto badcode;
 		code = PRC_PARAMPROB;
 		goto deliver;
@@ -282,6 +320,13 @@ reflect:
 		return;
 
 	case ICMP_REDIRECT:
+		if (code > 3)
+			goto badcode;
+		if (icmplen < ICMP_ADVLENMIN || icmplen < ICMP_ADVLEN(icp) ||
+		    icp->icmp_ip.ip_hl < (sizeof(struct ip) >> 2)) {
+			icmpstat.icps_badlen++;
+			break;
+		}
 		if (icmplen < ICMP_ADVLENMIN || icmplen < ICMP_ADVLEN(icp)) {
 			icmpstat.icps_badlen++;
 			break;
@@ -328,6 +373,8 @@ reflect:
 	 * just fall through to send to raw listener.
 	 */
 	case ICMP_ECHOREPLY:
+	case ICMP_ROUTERADVERT:
+	case ICMP_ROUTERSOLICIT:
 	case ICMP_TSTAMPREPLY:
 	case ICMP_IREQREPLY:
 	case ICMP_MASKREPLY:
@@ -416,17 +463,22 @@ icmp_reflect(m)
 					    break;
 			    }
 			    /*
-			     * should check for overflow, but it "can't happen"
+			     * Should check for overflow, but it "can't happen"
 			     */
-			    if (opt == IPOPT_RR || opt == IPOPT_TS) {
+			    if (opt == IPOPT_RR || opt == IPOPT_TS || 
+				opt == IPOPT_SECURITY) {
 				    bcopy((caddr_t)cp,
 					mtod(opts, caddr_t) + opts->m_len, len);
 				    opts->m_len += len;
 			    }
 		    }
-		    if (opts->m_len % 4 != 0) {
-			    *(mtod(opts, caddr_t) + opts->m_len) = IPOPT_EOL;
-			    opts->m_len++;
+		    /* Terminate & pad, if necessary */
+		    if (cnt = opts->m_len % 4) {
+			    for (; cnt < 4; cnt++) {
+				    *(mtod(opts, caddr_t) + opts->m_len) =
+					IPOPT_EOL;
+				    opts->m_len++;
+			    }
 		    }
 #ifdef ICMPPRINTFS
 		    if (icmpprintfs)

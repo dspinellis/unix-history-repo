@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tcp_output.c	7.24 (Berkeley) %G%
+ *	@(#)tcp_output.c	7.25 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -36,10 +36,8 @@
 extern struct mbuf *m_copypack();
 #endif
 
-/*
- * Initial options.
- */
-u_char	tcp_initopt[4] = { TCPOPT_MAXSEG, 4, 0x0, 0x0, };
+
+#define MAX_TCPOPTLEN	32	/* max # bytes that go in options */
 
 /*
  * Tcp output routine: figure out what should be sent and send it.
@@ -52,7 +50,7 @@ tcp_output(tp)
 	int off, flags, error;
 	register struct mbuf *m;
 	register struct tcpiphdr *ti;
-	u_char *opt;
+	u_char opt[MAX_TCPOPTLEN];
 	unsigned optlen, hdrlen;
 	int idle, sendalot;
 
@@ -151,7 +149,13 @@ again:
 	 * window, then want to send a window update to peer.
 	 */
 	if (win > 0) {
-		long adv = win - (tp->rcv_adv - tp->rcv_nxt);
+		/* 
+		 * "adv" is the amount we can increase the window,
+		 * taking into account that we are limited by
+		 * TCP_MAXWIN << tp->rcv_scale.
+		 */
+		long adv = min(win, (long)TCP_MAXWIN << tp->rcv_scale) -
+			(tp->rcv_adv - tp->rcv_nxt);
 
 		if (adv >= (long) (2 * tp->t_maxseg))
 			goto send;
@@ -224,16 +228,119 @@ send:
 	if (flags & TH_SYN && (tp->t_flags & TF_NOOPT) == 0) {
 		u_short mss;
 
-		opt = tcp_initopt;
-		optlen = sizeof (tcp_initopt);
-		hdrlen += sizeof (tcp_initopt);
+ 		opt[0] = TCPOPT_MAXSEG;
+ 		opt[1] = 4;
 		mss = htons((u_short) tcp_mss(tp, 0));
 		bcopy((caddr_t)&mss, (caddr_t)(opt + 2), sizeof(mss));
-#ifdef DIAGNOSTIC
-	 	if (max_linkhdr + hdrlen > MHLEN)
-			panic("tcphdr too big");
+ 		optlen = 4;
+ 
+ 		if ((tp->t_flags & TF_REQ_SCALE) &&
+ 		    ((flags & TH_ACK) == 0 || (tp->t_flags & TF_RCVD_SCALE))) {
+ 			*((u_long *) (opt + optlen)) = htonl(
+ 				TCPOPT_NOP<<24 |
+ 				TCPOPT_WINDOW<<16 |
+ 				TCPOLEN_WINDOW<<8 |
+ 				tp->request_r_scale);
+ 			optlen += 4;
+ 		}
+ 
+#ifdef DO_SACK
+ 		/* Send a SACK_PERMITTED option in the SYN segment. */
+		*((u_long *) (opt + optlen)) = htonl(
+ 				TCPOPT_NOP<<24 |
+ 				TCPOPT_NOP<<16 |
+ 				TCPOPT_SACK_PERMITTED<<8 |
+ 				TCPOLEN_SACK_PERMITTED);
+		optlen += 4;
 #endif
-	}
+ 	}
+ 
+ 	/*
+	 * Send a timestamp and echo-reply if this is a SYN and our side 
+	 * wants to use timestamps (TF_REQ_TSTMP is set) or both our side
+	 * and our peer have sent timestamps in our SYN's.
+ 	 */
+ 	if ((tp->t_flags & (TF_REQ_TSTMP|TF_NOOPT)) == TF_REQ_TSTMP &&
+ 	     (flags & TH_RST) == 0 &&
+ 	    ((flags & (TH_SYN|TH_ACK)) == TH_SYN ||
+	     (tp->t_flags & TF_RCVD_TSTMP))) {
+		u_long *lp = (u_long *)(opt + optlen);
+ 
+ 		/* Form timestamp option as shown in appendix A of RFC 1323. */
+ 		*lp++ = htonl(TCPOPT_TSTAMP_HDR);
+ 		*lp++ = htonl(tcp_now);
+ 		*lp   = htonl(tp->ts_recent);
+ 		optlen += TCPOLEN_TSTAMP_APPA;
+ 	}
+ 
+#ifdef DO_SACK
+ 	/* Send SACK if needed. Don't tack a SACK onto a non-empty segment. */
+ 	if (tp->seg_next != (struct tcpiphdr *)tp && len == 0 &&
+	    (tp->t_flags & (TF_SACK_PERMIT|TF_NOOPT)) == TF_SACK_PERMIT) {
+ 
+ 		register struct tcpiphdr *q = tp->seg_next;
+ 		register u_long *optl = (u_long *)(opt + optlen) + 1;
+ 		tcp_seq	block_start;
+ 		u_long	block_size;
+ 		int sack_len = 2;
+ 
+ 		/*
+		 * Use these to gather runs of received segments.
+ 		 * The first segment in the queue becomes the initial run.
+ 		 */
+ 		block_start = q->ti_seq;
+ 		block_size = q->ti_len;
+ 
+ 		do {
+ 			q = (struct tcpiphdr *) q->ti_next;
+ 			if (q == (struct tcpiphdr *) tp ||
+ 				block_start + block_size != q->ti_seq) {
+ 				
+ 				/*
+				 * Stick the relative origin and block size
+ 				 * in the SACK option.
+ 				 */
+ 				*optl++ = htonl(block_start-tp->rcv_nxt);
+ 				*optl++ = htonl(block_size);
+ 				sack_len += 8;
+ 
+ 				/* If no more will fit into options, quit. */
+ 				if (sack_len + optlen > MAX_TCPOPTLEN - 8)
+ 					break;
+ 
+ 				if (q != (struct tcpiphdr *) tp) {
+ 					block_start = q->ti_seq;
+ 					block_size = q->ti_len;
+ 				}
+ 			} else {
+ 				/* 
+				 * This segment just accumulates into previous
+ 				 * run.
+ 				 */
+ 				block_size += q->ti_len;
+			}
+ 		} while (q != (struct tcpiphdr *) tp);
+ 
+ 		*((u_long *) (opt + optlen)) = htonl(TCPOPT_NOP << 24 |
+ 			TCPOPT_NOP << 16 | TCPOPT_SACK << 8 | sack_len);
+ 		optlen += sack_len + 2;
+ 	}
+#endif
+ 	hdrlen += optlen;
+	/*
+	 * Adjust data length if insertion of options will
+	 * bump the packet length beyond the t_maxseg length.
+	 */
+	 if (len > tp->t_maxseg - optlen) {
+		len = tp->t_maxseg - optlen;
+		sendalot = 1;
+	 }
+
+
+#ifdef DIAGNOSTIC
+ 	if (max_linkhdr + hdrlen > MHLEN)
+		panic("tcphdr too big");
+#endif
 
 	/*
 	 * Grab a header mbuf, attaching a copy of data to
@@ -327,13 +434,13 @@ send:
 	 */
 	if (win < (long)(so->so_rcv.sb_hiwat / 4) && win < (long)tp->t_maxseg)
 		win = 0;
-	if (win > TCP_MAXWIN)
-		win = TCP_MAXWIN;
+	if (win > (long)TCP_MAXWIN << tp->rcv_scale)
+		win = (long)TCP_MAXWIN << tp->rcv_scale;
 	if (win < (long)(tp->rcv_adv - tp->rcv_nxt))
 		win = (long)(tp->rcv_adv - tp->rcv_nxt);
 	if (win > IP_MAXPACKET)
 		win = IP_MAXPACKET;
-	ti->ti_win = htons((u_short)win);
+	ti->ti_win = htons((u_short) (win>>tp->rcv_scale));
 	if (SEQ_GT(tp->snd_up, tp->snd_nxt)) {
 		ti->ti_urp = htons((u_short)(tp->snd_up - tp->snd_nxt));
 		ti->ti_flags |= TH_URG;
@@ -426,7 +533,7 @@ send:
 #if BSD >= 43
 #if BSD>=43
 	error = ip_output(m, tp->t_inpcb->inp_options, &tp->t_inpcb->inp_route,
-	    so->so_options & SO_DONTROUTE);
+	    so->so_options & SO_DONTROUTE, 0);
 #else
 	error = ip_output(m, (struct mbuf *)0, &tp->t_inpcb->inp_route, 
 	    so->so_options & SO_DONTROUTE);
@@ -458,6 +565,7 @@ out:
 	 */
 	if (win > 0 && SEQ_GT(tp->rcv_nxt+win, tp->rcv_adv))
 		tp->rcv_adv = tp->rcv_nxt + win;
+	tp->last_ack_sent = tp->rcv_nxt;
 	tp->t_flags &= ~(TF_ACKNOW|TF_DELACK);
 	if (sendalot)
 		goto again;

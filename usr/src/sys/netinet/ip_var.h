@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ip_var.h	7.8 (Berkeley) %G%
+ *	@(#)ip_var.h	7.9 (Berkeley) %G%
  */
 
 /*
@@ -86,26 +86,28 @@ struct ip_moptions {
 };
 
 struct	ipstat {
-	long	ips_total;		/* total packets received */
-	long	ips_badsum;		/* checksum bad */
-	long	ips_tooshort;		/* packet too short */
-	long	ips_toosmall;		/* not enough data */
-	long	ips_badhlen;		/* ip header length < data size */
-	long	ips_badlen;		/* ip length < ip header length */
-	long	ips_fragments;		/* fragments received */
-	long	ips_fragdropped;	/* frags dropped (dups, out of space) */
-	long	ips_fragtimeout;	/* fragments timed out */
-	long	ips_forward;		/* packets forwarded */
-	long	ips_cantforward;	/* packets rcvd for unreachable dest */
-	long	ips_redirectsent;	/* packets forwarded on same net */
-	long	ips_noproto;		/* unknown or unsupported protocol */
-	long	ips_delivered;		/* packets consumed here */
-	long	ips_localout;		/* total ip packets generated here */
-	long	ips_odropped;		/* lost packets due to nobufs, etc. */
-	long	ips_reassembled;	/* total packets reassembled ok */
-	long	ips_fragmented;		/* output packets fragmented ok */
-	long	ips_ofragments;		/* output fragments created */
-	long	ips_cantfrag;		/* don't fragment flag was set, etc. */
+	u_long	ips_total;		/* total packets received */
+	u_long	ips_badsum;		/* checksum bad */
+	u_long	ips_tooshort;		/* packet too short */
+	u_long	ips_toosmall;		/* not enough data */
+	u_long	ips_badhlen;		/* ip header length < data size */
+	u_long	ips_badlen;		/* ip length < ip header length */
+	u_long	ips_fragments;		/* fragments received */
+	u_long	ips_fragdropped;	/* frags dropped (dups, out of space) */
+	u_long	ips_fragtimeout;	/* fragments timed out */
+	u_long	ips_forward;		/* packets forwarded */
+	u_long	ips_cantforward;	/* packets rcvd for unreachable dest */
+	u_long	ips_redirectsent;	/* packets forwarded on same net */
+	u_long	ips_noproto;		/* unknown or unsupported protocol */
+	u_long	ips_delivered;		/* datagrams delivered to upper level*/
+	u_long	ips_localout;		/* total ip packets generated here */
+	u_long	ips_odropped;		/* lost packets due to nobufs, etc. */
+	u_long	ips_reassembled;	/* total packets reassembled ok */
+	u_long	ips_fragmented;		/* datagrams sucessfully fragmented */
+	u_long	ips_ofragments;		/* output fragments created */
+	u_long	ips_cantfrag;		/* don't fragment flag was set, etc. */
+	u_long	ips_badoptions;		/* error in option processing */
+	u_long	ips_noroute;		/* packtes discarded due to no route */
 };
 
 #ifdef KERNEL

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_ether.h	7.8 (Berkeley) %G%
+ *	@(#)if_ether.h	7.9 (Berkeley) %G%
  */
 
 /*
@@ -123,13 +123,8 @@ struct sockaddr_inarp {
 
 #ifdef	KERNEL
 u_char	etherbroadcastaddr[6];
-#if defined(ISO) && !defined(MULTICAST)
-#define MULTICAST 1
-#endif
-#ifdef MULTICAST
 u_char	ether_ipmulticast_min[6];
 u_char	ether_ipmulticast_max[6];
-#endif
 
 struct	llinfo_arp *arptnew __P((struct in_addr *));
 struct	llinfo_arp llinfo_arp;		/* head of the llinfo queue */
@@ -144,7 +139,6 @@ struct	ifqueue arpintrq;
 void	in_arpinput __P((struct mbuf *));
 void	arpwhohas __P((struct arpcom *, struct in_addr *));
 
-#ifdef MULTICAST
 /*
  * Ethernet multicast address structure.  There is one of these for each
  * multicast address or range of multicast addresses that we are supposed
@@ -211,6 +205,5 @@ struct ether_multistep {
 	(step).e_enm = (ac)->ac_multiaddrs; \
 	ETHER_NEXT_MULTI((step), (enm)); \
 }
-#endif
 #endif
 #endif

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_ether.c	7.26 (Berkeley) %G%
+ *	@(#)if_ether.c	7.27 (Berkeley) %G%
  */
 
 /*
@@ -271,12 +271,10 @@ arpresolve(ac, rt, m, dst, desten)
 		    sizeof(etherbroadcastaddr));
 		return (1);
 	}
-#ifdef MULTICAST
 	if (m->m_flags & M_MCAST) {	/* multicast */
 		ETHER_MAP_IP_MULTICAST(&SIN(dst)->sin_addr, desten);
 		return(1);
 	}
-#endif
 	if (rt)
 		la = (struct llinfo_arp *)rt->rt_llinfo;
 	else {

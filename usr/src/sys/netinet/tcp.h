@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tcp.h	7.7 (Berkeley) %G%
+ *	@(#)tcp.h	7.8 (Berkeley) %G%
  */
 #ifndef BYTE_ORDER
 /*
@@ -52,9 +52,21 @@ struct tcphdr {
 	u_short	th_urp;			/* urgent pointer */
 };
 
-#define	TCPOPT_EOL	0
-#define	TCPOPT_NOP	1
-#define	TCPOPT_MAXSEG	2
+#define	TCPOPT_EOL		0
+#define	TCPOPT_NOP		1
+#define	TCPOPT_MAXSEG		2
+#define    TCPOLEN_MAXSEG		4
+#define TCPOPT_WINDOW		3
+#define    TCPOLEN_WINDOW		3
+#define TCPOPT_SACK_PERMITTED	4		/* Experimental */
+#define    TCPOLEN_SACK_PERMITTED	2
+#define TCPOPT_SACK		5		/* Experimental */
+#define TCPOPT_TIMESTAMP	8
+#define    TCPOLEN_TIMESTAMP		10
+#define    TCPOLEN_TSTAMP_APPA		(TCPOLEN_TIMESTAMP+2) /* appendix A */
+
+#define TCPOPT_TSTAMP_HDR	\
+    (TCPOPT_NOP<<24|TCPOPT_NOP<<16|TCPOPT_TIMESTAMP<<8|TCPOLEN_TIMESTAMP)
 
 /*
  * Default maximum segment size for TCP.
@@ -64,7 +76,9 @@ struct tcphdr {
  */
 #define	TCP_MSS	512
 
-#define	TCP_MAXWIN	65535		/* largest value for window */
+#define	TCP_MAXWIN	65535	/* largest value for (unscaled) window */
+
+#define TCP_MAX_WINSHIFT	14	/* maximum window shift */
 
 /*
  * User-settable options (used with setsockopt).
