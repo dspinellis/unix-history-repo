@@ -770,8 +770,7 @@ bad:
  *    directory.
  */
 int
-ufs_rename(fdvp, fvp, fcnp,
-	   tdvp, tvp, tcnp)
+ufs_rename(fdvp, fvp, fcnp, tdvp, tvp, tcnp)
 	struct vnode *fdvp, *fvp;
 	struct componentname *fcnp;
 	struct vnode *tdvp, *tvp;
