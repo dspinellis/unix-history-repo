@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ufs_vnops.c	7.14 (Berkeley) %G%
+ *	@(#)ufs_vnops.c	7.15 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -236,11 +236,7 @@ ufs_getattr(vp, vap, cred)
 		vap->va_blocksize = MAXBSIZE;
 	else
 		vap->va_blocksize = ip->i_fs->fs_bsize;
-	/*
-	 * XXX THIS IS NOT CORRECT!!, but be sure to change vn_stat()
-	 * if you change it.
-	 */
-	vap->va_bytes = ip->i_blocks;
+	vap->va_bytes = dbtob(ip->i_blocks);
 	vap->va_bytes1 = -1;
 	vap->va_type = vp->v_type;
 	return (0);
