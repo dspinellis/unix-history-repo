@@ -1,7 +1,7 @@
 
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)runtime.c 1.11 %G%";
+static char sccsid[] = "@(#)runtime.c 1.12 %G%";
 
 /*
  * Runtime organization dependent routines, mostly dealing with
@@ -596,7 +596,7 @@ Symbol f;
     flushoutput();
     putchar('\n');
     printname(stdout, f);
-    printf(" returns successfully\n", symname(f));
+    printf(" returns successfully\n");
     popenv();
     erecover();
 }
