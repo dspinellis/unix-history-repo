@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)0.t	6.3 (Berkeley) %G%
+.\"	@(#)0.t	6.4 (Berkeley) %G%
 .\"
 .ds Ux \s-1UNIX\s0
 .ds Bs \s-1BSD\s0
@@ -61,19 +61,15 @@ Berkeley, California  94720
 .de IR
 \\fI\\$1\|\\fP\\$2
 ..
-.de UX
-\*(Ux\\$1
-..
 .AB
 .PP
-.FS
-*\*(Ux is a register trademark of USL in the USA and some other countries.
-.FE
 This document contains instructions for the
 installation and operation of the
-\*(4B release of
-.UX
+\*(4B release of UNIX\**
 as distributed by The University of California at Berkeley.
+.FS
+UNIX is a registered trademark of USL in the USA and some other countries.
+.FE
 .PP
 It discusses procedures for installing \*(Ux on a new machine,
 and for upgrading an existing \*(Ps \*(Ux system to the new release.

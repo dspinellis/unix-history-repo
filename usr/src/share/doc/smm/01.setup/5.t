@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)5.t	6.7 (Berkeley) %G%
+.\"	@(#)5.t	6.8 (Berkeley) %G%
 .\"
 .ds lq ``
 .ds rq ''
@@ -134,9 +134,9 @@ is to be partitioned.
 Sites with a class A network
 number have a 24-bit host address space with which to work, sites with a
 class B network number have a 16-bit host address space, while sites with
-a class C network number have an 8-bit host address space.*
+a class C network number have an 8-bit host address space\**.
 .FS
-* If you are unfamiliar with the Internet addressing structure, consult
+If you are unfamiliar with the Internet addressing structure, consult
 ``Address Mappings'', Internet RFC-796, J. Postel; available from
 the Internet Network Information Center at SRI.
 .FE
