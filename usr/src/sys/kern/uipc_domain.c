@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)uipc_domain.c	8.1 (Berkeley) %G%
+ *	@(#)uipc_domain.c	8.2 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -14,9 +14,13 @@
 #include <sys/mbuf.h>
 #include <sys/time.h>
 #include <sys/kernel.h>
+#include <sys/systm.h>
 #include <sys/proc.h>
 #include <vm/vm.h>
 #include <sys/sysctl.h>
+
+void	pffasttimo __P((void *));
+void	pfslowtimo __P((void *));
 
 #define	ADDDOMAIN(x)	{ \
 	extern struct domain __CONCAT(x,domain); \
@@ -63,8 +67,8 @@ if (max_linkhdr < 16)		/* XXX */
 max_linkhdr = 16;
 	max_hdr = max_linkhdr + max_protohdr;
 	max_datalen = MHLEN - max_hdr;
-	pffasttimo();
-	pfslowtimo();
+	timeout(pffasttimo, (void *)0, 1);
+	timeout(pfslowtimo, (void *)0, 1);
 }
 
 struct protosw *
@@ -158,10 +162,12 @@ pfctlinput(cmd, sa)
 	for (dp = domains; dp; dp = dp->dom_next)
 		for (pr = dp->dom_protosw; pr < dp->dom_protoswNPROTOSW; pr++)
 			if (pr->pr_ctlinput)
-				(*pr->pr_ctlinput)(cmd, sa, (caddr_t) 0);
+				(*pr->pr_ctlinput)(cmd, sa, (caddr_t)0);
 }
 
-pfslowtimo()
+void
+pfslowtimo(arg)
+	void *arg;
 {
 	register struct domain *dp;
 	register struct protosw *pr;
@@ -170,10 +176,12 @@ pfslowtimo()
 		for (pr = dp->dom_protosw; pr < dp->dom_protoswNPROTOSW; pr++)
 			if (pr->pr_slowtimo)
 				(*pr->pr_slowtimo)();
-	timeout(pfslowtimo, (caddr_t)0, hz/2);
+	timeout(pfslowtimo, (void *)0, hz/2);
 }
 
-pffasttimo()
+void
+pffasttimo(arg)
+	void *arg;
 {
 	register struct domain *dp;
 	register struct protosw *pr;
@@ -182,5 +190,5 @@ pffasttimo()
 		for (pr = dp->dom_protosw; pr < dp->dom_protoswNPROTOSW; pr++)
 			if (pr->pr_fasttimo)
 				(*pr->pr_fasttimo)();
-	timeout(pffasttimo, (caddr_t)0, hz/5);
+	timeout(pffasttimo, (void *)0, hz/5);
 }
