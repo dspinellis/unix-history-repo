@@ -50,9 +50,10 @@ typedef struct same {
 %token <intval>	FOR IN DO DONE
 %token <intval> MACRO_CHAR NL WHITE_SPACE
 %token <intval> ':' '=' '$' '{' '}' ';' '-' '@' '(' ')' ' ' '\t'
-%type <same> target assignment assign1 actions action command_list command list
-%type <same> for_statement maybe_at_minus tokens token non_white_token
-%type <same> maybe_tokens
+%type <same> target target1 assignment assign1 actions action
+%type <same> command_list command list
+%type <same> for_statement maybe_at_minus tokens token
+%type <same> maybe_white_space
 %type <intval> white_space macro_char
 %%
 
@@ -78,7 +79,7 @@ assignment :
     }
     ;
 
-assign1: non_white_token maybe_white_space '=' maybe_white_space
+assign1: tokens maybe_white_space '=' maybe_white_space
     ;
 
 target_action: target actions
@@ -92,10 +93,17 @@ target_action: target actions
     ;
 
 target :
-    non_white_token maybe_tokens ':' maybe_tokens NL
+    target1 tokens NL
     {
-	$$ = add_depends($1, $5);
+	$$ = add_depends($1, $2);
     }
+    | target1 NL
+    {
+	$$ = add_depends($1, same_copy(null));
+    }
+    ;
+
+target1: tokens maybe_white_space ':' maybe_white_space
     ;
 
 actions: action
@@ -115,20 +123,21 @@ action:	white_space command_list NL
     }
     ;
 
-for_statement: maybe_at_minus FOR white_space non_white_token
-		white_space IN tokens semi_colon
+for_statement: maybe_at_minus FOR white_space token
+		in tokens semi_colon
     {
-	$$ = for_statement($1, $4, expand_variables($7, 0));
+	$$ = for_statement($1, $4, expand_variables($6, 0));
     }
     ;
 
+in:	white_space IN white_space
 do:	white_space DO white_space
     ;
 
 done:	white_space DONE
     ;
 
-semi_colon:	maybe_white_space ';'
+semi_colon:	';'
     ;
 
 command_list: list
@@ -142,16 +151,13 @@ list: command
     {
 	$$ = $1;
     }
-    | list semi_colon command
+    | list semi_colon white_space command
     {
-	$$ = same_cat($1, same_cat(same_char('\n'), $3));
+	$$ = same_cat($1, same_cat(same_char('\n'), $4));
     }
     ;
 
-command: non_white_token maybe_tokens
-    {
-	$$ = same_cat($1, $2);
-    }
+command: tokens
     ;
 
 maybe_at_minus: /* empty */
@@ -176,28 +182,14 @@ maybe_at_minus: /* empty */
     }
     ;
 
-maybe_tokens:
-    {
-	$$ = same_copy(null);
-    }
-    | tokens
-    ;
-
 tokens : token
-    | tokens token
+    | tokens maybe_white_space token
     {
-	$$ = same_cat($1, $2);
+	$$ = same_cat($1, same_cat($2, $3));
     }
     ;
 
-token: non_white_token
-    | white_space
-    {
-	$$ = same_char($1);
-    }
-    ;
-
-non_white_token: TOKEN
+token: TOKEN
     {
 	$$ = same_item($1);
     }
@@ -215,7 +207,7 @@ non_white_token: TOKEN
 
 	$$ = same_item(string_lookup(buffer));
     }
-    | '$' '$' non_white_token
+    | '$' '$' token
     {
 	$$ = shell_variable($3);
     }
@@ -223,7 +215,7 @@ non_white_token: TOKEN
     {
 	$$ = same_char($1);
     }
-    | '$' '{' non_white_token '}'
+    | '$' '{' token '}'
     {
 	$$ = variable($3);
     }
@@ -242,7 +234,14 @@ macro_char: MACRO_CHAR
     ;
 
 maybe_white_space:
-    | white_space;
+    {
+	$$ = same_copy(null);
+    }
+    | white_space
+    {
+	$$ = same_char($1);
+    }
+    ;
 
 white_space : WHITE_SPACE
     | white_space WHITE_SPACE
@@ -830,7 +829,9 @@ main()
     newline = same_item(string_lookup("\n"));
     blank = same_item(string_lookup(" "));
 
-    return yyparse();
+    yyparse();
+
+    do_dump();
 }
 
 #if	defined(YYDEBUG)
@@ -844,6 +845,7 @@ same_t *same;
     }
     visit_end();
 }
+#endif	/* YYDEBUG */
 
 do_dump()
 {
@@ -857,9 +859,9 @@ do_dump()
 	}
     }
 
-    printf("variables...\n");
+    printf("# variables...\n");
     for (visit(variables, same); !visited(same); visit_next(same)) {
-	printf("\t%s =\t", same->string->string);
+	printf("%s =\t", same->string->string);
 	for (visit(same->value_list, same2); !visited(same2);
 						visit_next(same2)) {
 	    printf(same2->string->string);
@@ -869,20 +871,20 @@ do_dump()
     }
     visit_end();
 
-    printf("targets...\n");
+    printf("#targets...\n");
     for (visit(targets, same); !visited(same); visit_next(same)) {
-	printf("\t%s :\t", same->string->string);
+	printf("%s :\t", same->string->string);
 	for (visit(same->depend_list, same2); !visited(same2);
 						visit_next(same2)) {
 	    printf(same2->string->string);
 	}
 	visit_end();
-	printf("\n\t\t");
+	printf("\n\t");
 	for (visit(same->action_list, same2); !visited(same2);
 					    visit_next(same2)) {
 	    printf(same2->string->string);
 	    if (same2->string->string[0] == '\n') {
-		printf("\t\t");
+		printf("\t");
 	    }
 	}
 	visit_end();
@@ -890,4 +892,3 @@ do_dump()
     }
     visit_end();
 }
-#endif	/* YYDEBUG */
