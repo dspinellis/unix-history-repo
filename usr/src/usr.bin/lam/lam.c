@@ -1,7 +1,7 @@
 /* Copyright (c) 1983 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)lam.c	4.3	(Berkeley)	%G%";
+static char sccsid[] = "@(#)lam.c	4.4	(Berkeley)	%G%";
 #endif not lint
 
 /*
@@ -36,7 +36,7 @@ char	**argv;
 	register struct	openfile	*ip;
 	char	*gatherline();
 
-	setbuf(buf, stdout);
+	setbuf(stdout, buf);
 	getargs(argv);
 	if (!morefiles)
 		error("lam - laminate files", "");
