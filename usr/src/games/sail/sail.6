@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)sail.6	5.1 (Berkeley) %G%
+.\"	@(#)sail.6	5.2 (Berkeley) %G%
 .\"
 
 .TH SAIL PUBLIC 
@@ -272,13 +272,13 @@ it would only cause a little hole in a loose sail.  For this reason,
 rigging damage is doubled on a ship with full sails set.  Don't let
 that discourage you from using full sails.  I like to keep them up
 right into the heat of battle.  A ship
-with full sails set has a capital letter for its nationality.  E.g.
+with full sails set has a capital letter for its nationality.  E.g.,
 a Frog, "f0", with full sails set would be printed as "F0".
 .PP
 When a ship is battered into a listing hulk, the last man aboard "strikes
 the colors."  This ceremony is the ship's formal surrender.  The nationality
 character
-of a surrendered ship is printed as "!".  E.g. the Frog of our last example
+of a surrendered ship is printed as "!".  E.g., the Frog of our last example
 would soon be "!0".
 .PP
 A ship has a random chance of catching fire or sinking when it reaches the
@@ -289,7 +289,7 @@ Captured ships become the nationality of the prize crew.  Therefore, if
 an American ship captures a British ship, the British ship will have an
 "a" printed for its nationality.  In addition, the ship number is changed
 to "&","'", "(", ,")", "*", or "+" depending upon the original number,
-be it 0,1,2,3,4, or 5.  E.g. the "b0" captured by an American becomes the
+be it 0,1,2,3,4, or 5.  E.g., the "b0" captured by an American becomes the
 "a&".  The "s4" captured by a Frog becomes the "f*".
 .PP
 The ultimate example is, of course, an exploding Brit captured by an
@@ -318,7 +318,7 @@ are a string of forward moves and turns.  An example is "l3".  It will
 turn a ship left and then move it ahead 3 spaces.  In the drawing above,
 the "b0" made 7 successive left turns.  When 
 .I Sail
-prompts you for a move, it prints three characters of import.  E.g.
+prompts you for a move, it prints three characters of import.  E.g., 
 .nf
 	move (7, 4): 
 .fi
@@ -342,7 +342,7 @@ Some of the possible moves for the example above are as follows:
 .fi
 Because square riggers performed so poorly sailing into the wind, if at
 any point in a movement command you turn into the wind, the movement stops
-there.  E.g.
+there.  E.g.,
 .nf
 
 	move (7, 4): l1l4
@@ -384,7 +384,7 @@ can't move at all.  Ships facing into the wind were said to be "in irons".
 The windspeed and direction is displayed as a little weather vane on the
 side of the screen.  The number in the middle of the vane indicates the wind
 speed, and the + to - indicates the wind direction.  The wind blows from
-the + sign (high pressure) to the - sign (low pressure).  E.g.
+the + sign (high pressure) to the - sign (low pressure).  E.g.,
 .nf
 
 				|
