@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)envelope.c	5.26 (Berkeley) %G%";
+static char sccsid[] = "@(#)envelope.c	5.27 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -487,21 +487,13 @@ setsender(from, e)
 	loweraddr(&e->e_from);
 	SuprErrs = FALSE;
 
-	if (e->e_from.q_mailer == LocalMailer &&
-	    (pw = getpwnam(e->e_from.q_user)) != NULL)
+	pvp = NULL;
+	if (e->e_from.q_mailer == LocalMailer)
 	{
-		/*
-		**  Process passwd file entry.
-		*/
-
-
-		/* extract home directory */
-		e->e_from.q_home = newstr(pw->pw_dir);
-		define('z', e->e_from.q_home, e);
-
-		/* extract user and group id */
-		e->e_from.q_uid = pw->pw_uid;
-		e->e_from.q_gid = pw->pw_gid;
+# ifdef USERDB
+		register char *p;
+		extern char *udbsender();
+# endif
 
 		/* if the user has given fullname already, don't redefine */
 		if (FullName == NULL)
@@ -509,13 +501,42 @@ setsender(from, e)
 		if (FullName != NULL && FullName[0] == '\0')
 			FullName = NULL;
 
-		/* extract full name from passwd file */
-		if (FullName == NULL && pw->pw_gecos != NULL &&
-		    strcmp(pw->pw_name, e->e_from.q_user) == 0)
+# ifdef USERDB
+		p = udbsender(from);
+
+		if (p != NULL)
 		{
-			buildfname(pw->pw_gecos, e->e_from.q_user, buf);
-			if (buf[0] != '\0')
-				FullName = newstr(buf);
+			/*
+			**  We have an alternate address for the sender
+			*/
+
+			pvp = prescan(p, '\0', pvpbuf);
+		}
+# endif /* USERDB */
+
+		if ((pw = getpwnam(e->e_from.q_user)) != NULL)
+		{
+			/*
+			**  Process passwd file entry.
+			*/
+
+
+			/* extract home directory */
+			e->e_from.q_home = newstr(pw->pw_dir);
+			define('z', e->e_from.q_home, e);
+
+			/* extract user and group id */
+			e->e_from.q_uid = pw->pw_uid;
+			e->e_from.q_gid = pw->pw_gid;
+
+			/* extract full name from passwd file */
+			if (FullName == NULL && pw->pw_gecos != NULL &&
+			    strcmp(pw->pw_name, e->e_from.q_user) == 0)
+			{
+				buildfname(pw->pw_gecos, e->e_from.q_user, buf);
+				if (buf[0] != '\0')
+					FullName = newstr(buf);
+			}
 		}
 		if (FullName != NULL)
 			define('x', FullName, e);
@@ -533,7 +554,8 @@ setsender(from, e)
 	**	links in the net.
 	*/
 
-	pvp = prescan(from, '\0', pvpbuf);
+	if (pvp == NULL)
+		pvp = prescan(from, '\0', pvpbuf);
 	if (pvp == NULL)
 	{
 # ifdef LOG
@@ -548,31 +570,6 @@ setsender(from, e)
 	rewrite(pvp, 4);
 	cataddr(pvp, buf, sizeof buf);
 	e->e_sender = e->e_returnpath = newstr(buf);
-
-# ifdef USERDB
-	if (e->e_from.q_mailer == LocalMailer)
-	{
-		extern char *udbsender();
-		register char *p = udbsender(from);
-
-		if (p != NULL)
-		{
-			/*
-			**  We have an alternate address for the sender
-			*/
-
-			pvp = prescan(p, '\0', pvpbuf);
-			if (pvp != NULL)
-			{
-				rewrite(pvp, 3);
-				rewrite(pvp, 1);
-				rewrite(pvp, 4);
-				cataddr(pvp, buf, sizeof buf);
-				e->e_sender = newstr(buf);
-			}
-		}
-	}
-# endif /* USERDB */
 
 	define('f', e->e_sender, e);
 
