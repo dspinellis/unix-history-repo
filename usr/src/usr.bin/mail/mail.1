@@ -2,23 +2,58 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)mail.1	4.1 (Berkeley) %G%
+.\"	@(#)mail.1	5.1 (Berkeley) %G%
 .\"
-.TH MAIL 1
+.TH MAIL 1 "1 April 1983"
 .UC 4
 .SH NAME
 mail \- send and receive mail
 .SH SYNOPSIS
 .B mail
 [
+.B \-v
+]
+[
+.B \-i
+]
+[
+.B \-n
+]
+[
+.B \-s
+subject
+]
+[
+user ...
+]
+.br
+.B mail
+[
+.B \-v
+]
+[
+.B \-i
+]
+[
+.B \-n
+]
 .B \-f
 [
 name
 ]
+.br
+.B mail
+[
+.B \-v
 ]
 [
-people ...
+.B \-i
 ]
+[
+.B \-n
+]
+.B \-u
+user
 .SH INTRODUCTION
 .I Mail
 is a intelligent mail processing system, which has
@@ -26,12 +61,32 @@ a command syntax reminiscent of
 .I ed
 with lines replaced by messages.
 .PP
+The
+.B \-v
+flag puts mail into verbose mode; the details of
+delivery are displayed on the users terminal.
+The
+.B \-i
+flag causes tty interrupt signals to be ignored. This is
+particularly useful when using
+.I mail
+on noisy phone lines.
+The
+.B \-n
+flag inhibits the reading of /usr/lib/Mail.rc.
+.PP
 .I "Sending mail.\ "
 To send a message to one or more other people,
 .I mail
 can be invoked with arguments which are the names of people to
 send to.  You are then expected to type in your message, followed
 by an \s-2EOT\s0 (control\-D) at the beginning of a line.
+A subject may be specified on the command line by using the
+.B \-s
+flag. (Only the first argument after the
+.B \-s
+flag is used as a subject; be careful to quote subjects
+containing spaces.)
 The section below, labeled
 .I "Replying to or originating mail,"
 describes some features of
@@ -39,19 +94,19 @@ describes some features of
 available to help you compose your letter.
 .PP
 .I "Reading mail.\ "
-In normal usage,
+In normal usage
 .I mail
 is given no arguments and checks your mail out of the
 post office, then
-printing out a one line header of each message there.
+prints out a one line header of each message there.
 The current message is initially the first message (numbered 1)
 and can be printed using the
 .B print
 command (which can be abbreviated \fBp\fR).
 You can move among the messages much as you move between lines in
-.I ed,
+.IR ed ,
 with the commands `+' and `\-' moving backwards and forwards, and
-simple numbers typing the addressed message.
+simple numbers.
 .PP
 .I "Disposing of mail.\ "
 After examining a message you can
@@ -64,7 +119,7 @@ to it.
 Deletion causes the
 .I mail
 program to forget about the message.
-This is not irreversible, the message can be
+This is not irreversible; the message can be
 .B undeleted
 (\fBu\fR)
 by giving its number, or the
@@ -80,7 +135,7 @@ Commands such as
 .B print
 and
 .B delete
-often can be given a list of message numbers as argument to apply
+can be given a list of message numbers as arguments to apply
 to a number of messages at once.
 Thus ``delete 1 2'' deletes messages 1 and 2, while ``delete 1\-5''
 deletes messages 1 through 5.
@@ -96,9 +151,8 @@ You can use the
 command to
 set up a response to a message, sending it back to the
 person who it was from.
-Text you then type in, up to an end-of-file (or a line consisting only
-of a ``.'') defines the contents of
-the message.
+Text you then type in, up to an end-of-file,
+defines the contents of the message.
 While you are composing a message,
 .I mail
 treats lines beginning with the character `~' specially.
@@ -107,7 +161,7 @@ of the current message into the response right shifting it by a tabstop.
 Other escapes will set up subject fields, add and delete recipients
 to the message and allow you to escape to an editor to revise the
 message or to a shell to run some commands.  (These options
-will be given in the summary below.)
+are given in the summary below.)
 .PP
 .I "Ending a mail processing session.\ "
 You can end a
@@ -128,9 +182,15 @@ to read in the contents of your
 .I mbox
 (or the specified file)
 for processing; when you
-.B quit
+.BR quit ,
 .I mail
 writes undeleted messages back to this file.
+The
+.B \-u
+flag is a short way of doing
+"mail
+.B \-f
+/usr/spool/mail/user".
 .PP
 .I "Personal and systemwide distribution lists.\ "
 It is also possible to create a personal distribution lists so that,
@@ -138,54 +198,44 @@ for instance, you can send mail to ``cohorts'' and have it go
 to a group of people.
 Such lists can be defined by placing a line like
 .IP
-alias cohorts bill ozalp sklower jkf mark cory:kridle
+alias cohorts bill ozalp jkf mark kridle@ucbcory
 .PP
 in the file \&.mailrc in your home directory.
-The current list of such aliases can be displayed by the
+The current list of such aliases can be displayed with the
 .B alias
 .B (a)
 command in
-.I mail.
+.IR mail .
 System wide distribution lists can be created by editing
 /usr/lib/aliases, see
 .IR aliases (5)
 and
-.IR delivermail (8);
-these are kept in a slightly different syntax.
+.IR sendmail (8);
+these are kept in a different syntax.
 In mail you send, personal aliases will be expanded in mail sent
 to others so that they will be able to \fBreply\fR to the recipients.
 System wide \fIaliases\fR are not expanded when the mail is sent,
 but any reply returned to the machine will have the system wide
 alias expanded as all mail goes through
-.I delivermail.
-If you edit
-/usr/lib/aliases, you must run the program
-.IR newaliases (1).
+.IR sendmail .
 .PP
 .I "Network mail (ARPA, UUCP, Berknet)\ "
-Mail to sites on the ARPA network and sites within Bell laboratories
-can be sent using ``name@site'' for ARPA-net sites or ``machine!user''
-for Bell labs sites, provided appropriate gateways are known to the
-system.  (Be sure to escape the ! in Bell sites when giving it on a
-.I csh
-command line by preceding it with an \e.
-Machines on an instance of the Berkeley network are addressed as
-``machine:user'', e.g. ``csvax:bill''.  When addressed from the
-arpa-net, ``csvax:bill'' is known as ``csvax.bill@berkeley''.
+See
+.IR mailaddr(7)
+for a description of network addresses.
 .PP
 .I Mail
-has a number of options which can be
-.B set
-in the
+has a number of options which can be set in the
 .I \&.mailrc
 file to alter its behavior; thus ``set askcc'' enables the ``askcc''
 feature.  (These options are summarized below.)
 .SH SUMMARY
 (Adapted from the `Mail Reference Manual')
+.PP
 Each command is typed on a line by itself, and may take arguments
 following the command word.  The command need not be typed in its
 entirety \- the first command which matches the typed prefix is used.
-For the commands which take message lists as arguments, if no message
+For commands which take message lists as arguments, if no message
 list is given, then the next message forward which satisfies the
 command's requirements is used.  If there are no messages forward of
 the current message, the search proceeds backwards, and if there are no
@@ -197,9 +247,9 @@ aborts the command.
 .B \-
 Goes to the previous message and prints it out.  If given a numeric
 argument
-.I n ,
+.IR n ,
 goes to the
-.I n th
+.IR n -th
 previous message and prints it.
 .TP
 .B ?
@@ -208,20 +258,67 @@ Prints a brief summary of commands.
 .B !
 Executes the \s-2UNIX\s0 shell command which follows.
 .TP
+.B Print
+(\fBP\fR)
+Like
+.B print
+but also prints out ignored header fields. See also
+.B print
+and
+.B ignore.
+.TP
+.B Reply
+(\fRR\fR)
+Reply to originator. Does not reply to other
+recipients of the original message.
+.TP
+.B Type
+(\fTT\fR)
+Identical to the
+.B Print
+command.
+.TP
 .B alias
 (\fBa\fR) With no arguments, prints out all currently-defined aliases.  With one
-argument, prints out that alias.  With more than one argument, adds the
-users named in the second and later arguments to the alias named in the
-first argument.
+argument, prints out that alias.  With more than one argument, creates
+an new or changes an on old alias.
+.TP
+.B alternates
+(\fBalt\fR)
+The
+.B alternates
+command is useful if you have accounts on several machines.
+It can be used to inform
+.I mail
+that the listed addresses are really you. When you
+.B reply
+to messages,
+.I mail
+will not send a copy of the message to any of the addresses
+listed on the
+.I alternates
+list. If the
+.B alternates
+command is given with no argument, the current set of alternate
+names is displayed.
 .TP
 .B chdir
 (\fBc\fR) Changes the user's working directory to that specified, if given.  If
 no directory is given, then changes to the user's login directory.
 .TP
+.B copy
+(\fBco\fR)
+The
+.B copy
+command does the same thing that
+.B save 
+does, except that it does not mark the messages it
+is used on for deletion when you quit.
+.TP
 .B delete
 (\fBd\fR) Takes a list of messages as argument and marks them all as deleted.
 Deleted messages will not be saved in
-.I mbox ,
+.IR mbox ,
 nor will they be available for most other commands.  
 .TP
 .B dp
@@ -239,7 +336,29 @@ turn.  On return from the editor, the message is read back in.
 modifying the user's system mailbox, his
 .I mbox
 file, or his edit file in
-.B \-f .
+.BR \-f .
+.TP
+.B file
+(\fBfi\fR)
+The same as
+.BR folder .
+.TP
+.B folders
+List the names of the folders in your folder directory.
+.TP
+.B folder
+(\fBfo\fR)
+The
+.B folder
+command switches to a new mail file or folder. With no
+arguments, it tells you which file you are currently reading.
+If you give it an argument, it will write out changes (such
+as deletions) you have made in the current file and read in
+the new file. Some special conventions are recognized for
+the name. # means the previous file, % means your system
+mailbox, %user means user's system mailbox, & means
+your \~/mbox file, and +folder means a file in your folder
+directory.
 .TP
 .B from
 (\fBf\fR) Takes a list of messages and prints their message headers.
@@ -256,26 +375,53 @@ A synonym for ?
 (\fBho\fR, also \fBpreserve\fR) Takes a message list and marks each
 message therein to be saved in the
 user's system mailbox instead of in
-.I mbox.
+.IR mbox .
 Does not override the
 .B delete
 command.
 .TP
+.B ignore
+Add the list of header fields named to the
+.IR "ignored list" .
+Header fields in the ignore list are not printed
+on your terminal when you print a message. This
+command is very handy for suppression of certain machine-generated
+header fields. The
+.B Type
+and
+.B Print
+commands can be used to print a message in its entirety, including
+ignored fields. If
+.B ignore
+is executed with no arguments, it lists the current set of
+ignored fields.
+.TP
 .B mail
 (\fBm\fR) Takes as argument login names and distribution group names and sends
 mail to those people.
+.TP
+.B mbox
+Indicate that a list of messages be sent to
+.I mbox
+in your home directory when you quit. This is the default
+action for messages if you do
+.I not
+have the
+.I hold
+option set.
 .TP
 .B next
 (\fBn\fR like \fB+\fR or CR) Goes to the next message in sequence and types it.
 With an argument list, types the next matching message.
 .TP
 .B preserve
+(\fBpre\fR)
 A synonym for
-.B hold.
+.BR hold .
 .TP
 .B print
-(\fBp\fR) Takes a message list and types out each message on the user's
-terminal.
+(\fBp\fR)
+Takes a message list and types out each message on the user's terminal.
 .TP
 .B quit
 (\fBq\fR) Terminates the session, saving all undeleted, unsaved messages in
@@ -298,14 +444,14 @@ can escape with the
 command.
 .TP
 .B reply
-(\fBr\fR) Takes a message list and sends mail to each message author just like
-the
-.B mail
-command.  The default message must not be deleted.
+(\fBr\fR)
+Takes a message list and sends mail to the sender and all
+recipients of the specified message.
+The default message must not be deleted.
 .TP
 .B respond
 A synonym for
-.B reply .
+.BR reply .
 .TP
 .B save
 (\fBs\fR) Takes a message list and a filename and appends each message in
@@ -326,6 +472,14 @@ or
 Takes a message list and prints out the size in characters of each
 message.
 .TP
+.B source
+(\fBso\fR)
+The
+.B source
+command reads
+.I mail
+commands from a file.
+.TP
 .B top
 Takes a message list and prints the top few lines of each.  The number of
 lines printed is controlled by the variable
@@ -334,7 +488,7 @@ and defaults to five.
 .TP
 .B type
 (\fBt\fR) A synonym for
-.B print .
+.BR print .
 .TP
 .B unalias
 Takes a list of names defined by
@@ -350,18 +504,29 @@ being deleted.
 .B unset
 Takes a list of option names and discards their remembered values;
 the inverse of
-.B set .
+.BR set .
 .TP
 .B visual
 (\fBv\fR) Takes a message list and invokes the display editor on each message.
 .TP
 .B write
 (\fBw\fR) A synonym for
-.B save .
+.BR save .
 .TP
 .B xit
 (\fBx\fR) A synonym for
-.B exit .
+.BR exit .
+.TP
+.B z
+.I Mail
+presents message headers in windowfuls as described under the
+.B headers
+command. You can move
+.IR mail 's
+attention forward to the next window with the
+.B z
+command. Also, you can move to the previous window by using
+.BR z\- .
 .PP
 Here is a summary of the tilde escapes,
 which are used when composing messages to perform
@@ -372,7 +537,7 @@ is somewhat of a misnomer since the actual escape character can be set
 by the option
 .B escape.
 .TP 12n
-\fB~!\fRcommand
+.BR ~! command
 Execute the indicated shell command, then return to the message.
 .TP
 \fB~c\fR name ...
@@ -385,6 +550,10 @@ Read the file ``dead.letter'' from your home directory into the message.
 Invoke the text editor on the message collected so far.  After the
 editing session is finished, you may continue appending text to the
 message.
+.TP
+\fB~f\fR messages
+Read the named messages into the message being sent.
+If no messages are specified, read in the current message.
 .TP
 .B ~h
 Edit the message header fields by typing each one in turn and allowing
@@ -433,7 +602,7 @@ is often used as
 .I command
 to rejustify the message.
 .TP
-\fB~~\fRstring
+.BR ~~ string
 Insert the string of text in the message prefaced by a single ~.  If
 you have changed the escape character, then you should double
 that character in order to send it.
@@ -474,23 +643,69 @@ command to behave like
 \- thus, after deleting a message, the next one will be typed
 automatically.
 .TP
+.B debug
+Setting the binary option
+.I debug
+is the same as specifying
+.B \-d
+on the command line and causes
+.I mail
+to output all sorts of information useful for debugging
+.IR mail .
+.TP
+.B dot
+The binary option
+.I dot
+causes
+.I mail
+to interpret a period alone on a line as the terminator
+of a message you are sending.
+.TP
+.B hold
+This option is used to hold messages in the system mailbox
+by default.
+.TP
 .B ignore
 Causes interrupt signals from your terminal to be ignored and echoed as
 @'s.
+.TP
+.B ignoreeof
+An option related to
+.I dot
+is
+.I ignoreeof
+which makes
+.I mail
+refuse to accept a control-d as the end of a message.
+.I Ignoreeof
+also applies to
+.I mail
+command mode.
 .TP
 .B metoo
 Usually, when a group is expanded that contains the sender, the sender
 is removed from the expansion.  Setting this option causes the sender
 to be included in the group.
 .TP
+.B nosave
+Normally, when you abort a message with two \s-2RUBOUT\s0,
+.I mail
+copies the partial letter to the file ``dead.letter''
+in your home directory. Setting the binary option
+.I nosave
+prevents this.
+.TP
 .B quiet
 Suppresses the printing of the version when first invoked.
 .TP
-.B save
-Causes the message collected prior to a interrupt to be saved on
-the file
-``dead.letter''
-in your home directory on receipt of two interrupts (or after a \fB~q\fR.)
+.B verbose
+Setting the option
+.I verbose
+is the same as using the
+.B \-v
+flag on the command line. When mail runs in verbose mode,
+the actual delivery of messages is displayed on he users
+terminal.
 .PP
 The following options have string values:
 .TP 15n
@@ -510,9 +725,24 @@ Pathname of the text editor to use in the
 .B visual
 command and ~v escape.
 .TP
+.B crt
+The valued option
+.I crt
+is used as a threshold to determine how long a message must
+be before
+.I more
+is used to read it.
+.TP
 .B escape
 If defined, the first character of this option gives the character to
 use in the place of ~ to denote escapes.
+.TP
+.B folder
+The name of the directory to use for storing folders of
+messages. If this name begins with a `/',
+.I mail
+considers it to be an absolute pathname; otherwise, the
+folder directory is found relative to your home directory.
 .TP
 .B record
 If defined, gives the pathname of the file used to record all outgoing
@@ -538,13 +768,21 @@ command; normally, the first five lines are printed.
 .br
 /usr/lib/Mail.rc	system initialization file
 .br
-/bin/mail	to do actual mailing
-.br
-/etc/delivermail	postman
+Message*	temporary for editing messages
 .SH "SEE ALSO"
-binmail(1), fmt(1), newaliases(1), aliases(5), delivermail(8)
+binmail(1), fmt(1), newaliases(1), aliases(5),
+.br
+mailaddr(7), sendmail(8)
 .br
 `The Mail Reference Manual'
+.SH BUGS
+There are many flags that are not documented here. Most are
+not useful to the general user.
+.br
+Usually,
+.I mail
+is just a link to
+.IR Mail ,
+which can be confusing.
 .SH AUTHOR
 Kurt Shoens
-.SH BUGS
