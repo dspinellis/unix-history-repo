@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- * from: Utah $Hdr: hpux_tty.c 1.12 92/04/15$
+ * from: Utah $Hdr: hpux_tty.c 1.13 93/06/30$
  *
- *	@(#)hpux_tty.c	8.1 (Berkeley) %G%
+ *	@(#)hpux_tty.c	7.16 (Berkeley) %G%
  */
 
 /*
@@ -327,14 +327,14 @@ termiototermios(tio, tios, bsdtios)
 	if (tios->c_lflag & TIO_ICANON) {
 		tios->c_cc[HPUXVEOF] = tio->c_cc[HPUXVEOF];
 		tios->c_cc[HPUXVEOL] = tio->c_cc[HPUXVEOL];
-		tios->c_cc[HPUXVMINS] = tios->c_cc[HPUXVTIMES] = 0;
+		tios->c_cc[HPUXVMINS] = 0;
+		tios->c_cc[HPUXVTIMES] = 0;
 	} else {
-		tios->c_cc[HPUXVEOF] = tios->c_cc[HPUXVEOL] = 0;
+		tios->c_cc[HPUXVEOF] = 0;
+		tios->c_cc[HPUXVEOL] = 0;
 		tios->c_cc[HPUXVMINS] = tio->c_cc[HPUXVMIN];
 		tios->c_cc[HPUXVTIMES] = tio->c_cc[HPUXVTIME];
 	}
-	tios->c_cc[HPUXVMINS] = bsdtios->c_cc[VMIN];
-	tios->c_cc[HPUXVTIMES] = bsdtios->c_cc[VTIME];
 	tios->c_cc[HPUXVSUSP] = bsdtios->c_cc[VSUSP];
 	tios->c_cc[HPUXVSTART] = bsdtios->c_cc[VSTART];
 	tios->c_cc[HPUXVSTOP] = bsdtios->c_cc[VSTOP];
