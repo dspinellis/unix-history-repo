@@ -1,5 +1,5 @@
 #ifndef lint
-static char SccsId[] =	"@(#)syslog.c	4.2 (Berkeley) %G%";
+static char SccsId[] =	"@(#)syslog.c	4.3 (Berkeley) %G%";
 #endif
 
 /*
@@ -128,6 +128,7 @@ openlog(ident, logstat, logmask)
 	SyslogAddr.sa_family = AF_UNIX;
 	strncpy(SyslogAddr.sa_data, logname, sizeof SyslogAddr.sa_data);
 	LogFile = socket(AF_UNIX, SOCK_DGRAM, 0);
+	fcntl(LogFile, F_SETFD, 1);
 }
 
 /*
