@@ -1,0 +1,38 @@
+\"	@(#)abstract.me	1.1 %G%
+.ls 1
+.lp
+.sp 1
+.ce 1000
+\fB\s+2gprof: a Call Graph Execution Profiler\s-2\fP\**
+.(f
+\**This work was supported by grant MCS80-05144
+from the National Science Foundation.
+.)f
+.sp 1
+by
+\fISusan L. Graham\fP
+\fIPeter B. Kessler\fP
+\fIMarshall K. McKusick\fP
+.sp 1
+Computer Science Division
+Electrical Engineering and Computer Science Department
+University of California, Berkeley
+Berkeley, California 94720
+.ce 0
+.sp 1
+.sh 0 "Abstract"
+.pp
+Programs the size and complexity of compilers
+are composed of a large number of small routines,
+each implementing an abstraction for the routines
+that call it.
+To be useful, an execution profiler must attribute
+execution time in a way that is meaningful in terms of the 
+logical structure of a program 
+as well as its decomposition.
+The information must then be displayed to the user
+in a convenient and informative way.
+The \fBgprof\fP profiler described in this paper
+incorporates the running time of called routines
+in the running time of the routines that call them.
+The design and use of this profiler is described.
