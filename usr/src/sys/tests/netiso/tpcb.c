@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)tpcb.c	7.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)tpcb.c	7.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -28,6 +28,7 @@ static char sccsid[] = "@(#)tpcb.c	7.1 (Berkeley) %G%";
 #include <netiso/tp_user.h>
 #include <netiso/tp_pcb.h>
 #include <netiso/tp_events.h>
+#include <netiso/tp_states.h>
 
 #include <errno.h>
 #include <netdb.h>
@@ -56,10 +57,12 @@ struct tpcb_info {
 int tflag = 0;
 int Iflag = 0;
 int Aflag = 0;
+int Sflag = 1;
 
 char *vmunix = _PATH_UNIX;
 char *kmemf = 0;
 struct nlist nl[] = {
+#define TP_REFINFO 0
 {"_tp_refinfo"},
 0
 };
@@ -74,7 +77,7 @@ main(argc, argv)
 	int loc, n;
 	char *end;
 	argc--; argv++;
-	if (strcmp("-k", argv[0]) == 0) {
+	if ((argc > 0) && strcmp("-k", argv[0]) == 0) {
 		vmunix = argv[1];
 		kmemf = argv[2];
 		argc -= 3;
@@ -89,27 +92,57 @@ main(argc, argv)
 		exit(1);
 	}
 	if (argc < 1) {
-		fprintf(stderr, "tpcb: no args");
-		exit(1);
+		doall(nl[TP_REFINFO].n_value);
+		exit(0);
 	}
 	sscanf(argv[0], "%x", &loc);
 	n = kget(loc, tp_pcb);
 	parse(--argc, ++argv);
 }
+int column;
 
 #define kdata(t) (data = *(t *)(ti->offset + (char *)&tp_pcb))
 
+doall(refinfo_off)
+off_t refinfo_off;
+{
+	struct tp_refinfo tp_refinfo;
+	register struct tp_pcb **tpp, **tpplim;
+	char *tpr_base, *malloc();
+	int n;
+
+	kget(refinfo_off, tp_refinfo);
+	n = tp_refinfo.tpr_size * sizeof(struct tp_pcb *);
+	if (tp_refinfo.tpr_base && (tpr_base = malloc(n))) {
+		tpp = (struct tp_pcb **)tpr_base; 
+		tpplim = tpp + tp_refinfo.tpr_maxopen;
+		bzero(tpr_base, n);
+		kvm_read(tp_refinfo.tpr_base, tpr_base, n);
+		for (n = 0; tpp <= tpplim; tpp++)
+			if (*tpp) {
+				n++;
+				kget(*tpp, tp_pcb);
+				if (Sflag == 0 || tp_pcb.tp_state == TP_OPEN) {
+					printf("\n\npcb at 0x%x:\n", *tpp);
+					parse(0, (char **)"");
+				}
+			}
+		if (n != tp_refinfo.tpr_numopen)
+			printf("\nFound %d of %d expected tpcb's\n",
+				n, tp_refinfo.tpr_numopen);
+	}
+}
 printone(ti)
 register struct tpcb_info  *ti;
 {
-	static int column = 0; int data = -1;
+	int data = -1;
 	switch (ti->size) {
 	case 1: kdata(u_char); break;
 	case 2: kdata(u_short); break;
 	case 4: kdata(u_long); break;
 	}
 	column += printf("%s 0x%x, ", ti->name, data);
-	if (column > 65) {
+	if (column > 65 || Sflag) {
 		column = 0;
 		putchar('\n');
 	}
@@ -120,6 +153,7 @@ parse(argc, argv)
 	register char **argv;
 {
 	register struct tpcb_info *ti;
+	column = 0;
 	if (argc > 0) {
 	    for (; argc-- > 0; argv++)
 		for (ti = tpcb_info; ti->name; ti++)
@@ -147,6 +181,9 @@ Entry(seqmask, tp_seqmask),
 Entry(seqbit, tp_seqbit),
 Entry(seqhalf, tp_seqhalf),
 Entry(ucddata, tp_ucddata),
+Entry(cebit_off, tp_cebit_off),
+Entry(oktonagle, tp_oktonagle),
+Entry(flags, tp_flags),
 Entry(fcredit, tp_fcredit),
 Entry(maxfcredit, tp_maxfcredit),
 Entry(dupacks, tp_dupacks),
@@ -164,6 +201,7 @@ Entry(sent_uwe, tp_sent_uwe),
 Entry(sent_rcvnxt, tp_sent_rcvnxt),
 Entry(lcredit, tp_lcredit),
 Entry(maxlcredit, tp_maxlcredit),
+Entry(rhiwat, tp_rhiwat),
 Entry(rsyq, tp_rsyq),
 Entry(rsycnt, tp_rsycnt),
 Entry(win_recv, tp_win_recv),
