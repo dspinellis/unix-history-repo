@@ -1,4 +1,4 @@
-static char *sccsid ="@(#)local.c	1.3 (Berkeley) %G%";
+static char *sccsid ="@(#)local.c	1.4 (Berkeley) %G%";
 # include "mfile1"
 
 /*	this file contains code which is dependent on the target machine */
@@ -116,7 +116,7 @@ clocal(p) NODE *p; {
 				}
 			p->in.left->in.type = m;
 			}
-		else
+		else if( m != FLOAT && m != DOUBLE )
 			break;
 
 		/* clobber conversion */
