@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)eval.c 1.8 %G%";
+static char sccsid[] = "@(#)eval.c 1.9 %G%";
 
 /*
  * Parse tree evaluation.
@@ -486,8 +486,19 @@ SYM *t;
 	    r = pop(long);
 	    break;
 
+	/*
+	 * A bit of a kludge here.  If an array element is a record,
+	 * the dot operation will be converted into an addition with
+	 * the record operand having a type whose size may be larger
+	 * than a word.  Now actually this is a pointer, but the subscript
+	 * operation isn't aware of this, so it's just hacked here.
+	 *
+	 * The right thing to do is to make dot directly evaluated
+	 * instead of changing it into addition.
+	 */
 	default:
-	    panic("popsmall: size is %d", size(t));
+	    r = pop(ADDRESS);
+	    break;
     }
     return r;
 }
