@@ -8,9 +8,10 @@ divert(-1)
 #
 
 include(`../m4/cf.m4')
-VERSIONID(@(#)chez.cs.mc	2.1 (Berkeley) %G%)
+VERSIONID(@(#)chez.cs.mc	2.2 (Berkeley) %G%)
 OSTYPE(bsd4.4)dnl
 DOMAIN(cs.exposed)dnl
+define(`LOCAL_RELAY', vangogh.CS.Berkeley.EDU)dnl
 define(`MASQUERADE_NAME', vangogh.CS.Berkeley.EDU)dnl
 MAILER(local)dnl
 MAILER(smtp)dnl
