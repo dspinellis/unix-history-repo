@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rlogind.c	5.22.1.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)rlogind.c	5.40 (Berkeley) %G%";
 #endif /* not lint */
 
 #ifdef KERBEROS
@@ -44,6 +44,7 @@ static char sccsid[] = "@(#)rlogind.c	5.22.1.8 (Berkeley) %G%";
  * unless OLD_LOGIN is defined (then done in login, ala 4.2/4.3BSD).
  */
 
+#define	FD_SETSIZE	16		/* don't need many bits for select */
 #include <sys/param.h>
 #include <sys/stat.h>
 #include <sys/socket.h>
@@ -155,6 +156,7 @@ int	child;
 int	cleanup();
 int	netf;
 char	*line;
+int	confirmed;
 extern	char	*inet_ntoa();
 
 struct winsize win = { 0, 0, 0, 0 };
@@ -175,7 +177,7 @@ doit(f, fromp)
 
 	alarm(60);
 	read(f, &c, 1);
-	if(c != 0)
+	if (c != 0)
 		exit(1);
 #ifdef	KERBEROS
 	if (vacuous)
@@ -225,13 +227,14 @@ doit(f, fromp)
 
 	if (use_kerberos) {
 		retval = do_krb_login(hp->h_name, fromp, encrypt);
-		write(f, &c, 1);
 		if (retval == 0 && hostok)
 			authenticated++;
 		else if (retval > 0)
 			fatal(f, krb_err_txt[retval], 0);
-		else if(!hostok)
+		else if (!hostok)
 			fatal(f, "krlogind: Host address mismatch.", 0);
+		write(f, &c, 1);
+		confirmed = 1;		/* we sent the null! */
 	} else
 #ifndef OLD_LOGIN
 	{
@@ -242,15 +245,8 @@ doit(f, fromp)
 			    inet_ntoa(fromp->sin_addr));
 		    fatal(f, "Permission denied", 0);
 	    }
-	    write(f, "", 1);
-    
-	    if (do_rlogin(hp->h_name) == 0) {
-		    if (hostok)
-			    authenticated++;
-		    else
-			    write(f, "rlogind: Host address mismatch.\r\n",
-			     sizeof("rlogind: Host address mismatch.\r\n") - 1);
-	    }
+	    if (do_rlogin(hp->h_name) == 0 && hostok)
+		    authenticated++;
 	}
 
 	for (c = 'p'; c <= 's'; c++) {
@@ -285,6 +281,19 @@ gotpty:
 	if (t < 0)
 		fatal(f, line, 1);
 	setup_term(t);
+	if (confirmed == 0) {
+		write(f, "", 1);
+		confirmed = 1;		/* we sent the null! */
+	}
+#ifdef	KERBEROS
+	if (encrypt)
+		(void) des_write(f, SECURE_MESSAGE, sizeof(SECURE_MESSAGE));
+
+	if (use_kerberos == 0)
+#endif
+	   if (!authenticated && !hostok)
+		write(f, "rlogind: Host address mismatch.\r\n",
+		    sizeof("rlogind: Host address mismatch.\r\n") - 1);
 
 	pid = fork();
 	if (pid < 0)
@@ -322,9 +331,7 @@ gotpty:
 	ioctl(f, FIONBIO, &on);
 	ioctl(p, FIONBIO, &on);
 	ioctl(p, TIOCPKT, &on);
-	signal(SIGTSTP, SIG_IGN);
 	signal(SIGCHLD, cleanup);
-	setpgrp(0, 0);
 	protocol(f, p);
 	signal(SIGCHLD, SIG_IGN);
 	cleanup();
@@ -363,7 +370,7 @@ control(pty, cp, n)
 protocol(f, p)
 	register int f, p;
 {
-	char pibuf[1024], fibuf[1024], *pbp, *fbp;
+	char pibuf[1024+1], fibuf[1024], *pbp, *fbp;
 	register pcc = 0, fcc = 0;
 	int cc, nfd, n;
 	char cntl;
@@ -379,22 +386,29 @@ protocol(f, p)
 		nfd = f + 1;
 	else
 		nfd = p + 1;
+	if (nfd > FD_SETSIZE) {
+		syslog(LOG_ERR, "select mask too small, increase FD_SETSIZE");
+		fatal(f, "internal error (select mask too small)", 0);
+	}
 	for (;;) {
-		fd_set ibits, obits, ebits;
+		fd_set ibits, obits, ebits, *omask;
 
 		FD_ZERO(&ibits);
 		FD_ZERO(&obits);
-		if (fcc)
+		omask = (fd_set *)NULL;
+		if (fcc) {
 			FD_SET(p, &obits);
-		else
+			omask = &obits;
+		} else
 			FD_SET(f, &ibits);
 		if (pcc >= 0)
-			if (pcc)
+			if (pcc) {
 				FD_SET(f, &obits);
-			else
+				omask = &obits;
+			} else
 				FD_SET(p, &ibits);
 		FD_SET(p, &ebits);
-		if ((n = select(nfd, &ibits, &obits, &ebits, 0)) < 0) {
+		if ((n = select(nfd, &ibits, omask, &ebits, 0)) < 0) {
 			if (errno == EINTR)
 				continue;
 			fatal(f, "select", 1);
@@ -473,8 +487,13 @@ protocol(f, p)
 		}
 			cc = write(f, pbp, pcc);
 			if (cc < 0 && errno == EWOULDBLOCK) {
-				/* also shouldn't happen */
-				sleep(5);
+				/*
+				 * This happens when we try write after read
+				 * from p, but some old kernels balk at large
+				 * writes even when select returns true.
+				 */
+				if (!FD_ISSET(p, &ibits))
+					sleep(5);
 				continue;
 			}
 			if (cc > 0) {
@@ -506,15 +525,20 @@ fatal(f, msg, syserr)
 	char *msg;
 {
 	int len;
-	char buf[BUFSIZ];
+	char buf[BUFSIZ], *bp = buf;
 
-	buf[0] = '\01';		/* error indicator */
+	/*
+	 * Prepend binary one to message if we haven't sent
+	 * the magic null as confirmation.
+	 */
+	if (!confirmed)
+		*bp++ = '\01';		/* error indicator */
 	if (syserr)
-		len = sprintf(buf + 1, "rlogind: %s: %s.\r\n",
+		len = sprintf(bp, "rlogind: %s: %s.\r\n",
 		    msg, strerror(errno));
 	else
-		len = sprintf(buf + 1, "rlogind: %s.\r\n", msg);
-	(void) write(f, buf, len);
+		len = sprintf(bp, "rlogind: %s.\r\n", msg);
+	(void) write(f, buf, bp + len - buf);
 	exit(1);
 }
 
