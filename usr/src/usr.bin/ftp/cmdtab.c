@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)cmdtab.c	4.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmdtab.c	4.5 (Berkeley) %G%";
 #endif
 
 #include "ftp_var.h"
@@ -13,7 +13,7 @@ int	setprompt(), setstruct();
 int	settenex(), settrace(), settype(), setverbose();
 int	disconnect();
 int	cd(), lcd(), delete(), mdelete(), user();
-int	ls(), get(), mget(), help(), append(), put(), mput();
+int	ls(), mls(), get(), mget(), help(), append(), put(), mput();
 int	quit(), renamefile(), status();
 int	quote(), rmthelp(), shell();
 int	pwd(), makedir(), removedir();
@@ -35,8 +35,10 @@ char	helphelp[] =	"print local help information";
 char	lcdhelp[] =	"change local working directory";
 char	lshelp[] =	"nlist contents of remote directory";
 char	mdeletehelp[] =	"delete multiple files";
+char	mdirhelp[] =	"list contents of multiple remote directories";
 char	mgethelp[] =	"get multiple files";
 char	mkdirhelp[] =	"make directory on the remote machine";
+char	mlshelp[] =	"nlist contents of multiple remote directories";
 char	modehelp[] =	"set file transfer mode";
 char	mputhelp[] =	"send multiple files";
 char	porthelp[] =	"toggle use of PORT cmd for each data connection";
@@ -60,7 +62,7 @@ char	verbosehelp[] =	"toggle verbose mode";
 
 struct cmd cmdtab[] = {
 	{ "!",		shellhelp,	0,	0,	shell },
-	{ "append",	appendhelp,	1,	1,	append },
+	{ "append",	appendhelp,	1,	1,	put },
 	{ "ascii",	asciihelp,	0,	1,	setascii },
 	{ "bell",	beephelp,	0,	0,	setbell },
 	{ "binary",	binaryhelp,	0,	1,	setbinary },
@@ -78,8 +80,10 @@ struct cmd cmdtab[] = {
 	{ "lcd",	lcdhelp,	0,	0,	lcd },
 	{ "ls",		lshelp,		1,	1,	ls },
 	{ "mdelete",	mdeletehelp,	1,	1,	mdelete },
+	{ "mdir",	mdirhelp,	1,	1,	mls },
 	{ "mget",	mgethelp,	1,	1,	mget },
 	{ "mkdir",	mkdirhelp,	0,	1,	makedir },
+	{ "mls",	mlshelp,	1,	1,	mls },
 	{ "mode",	modehelp,	0,	1,	setmode },
 	{ "mput",	mputhelp,	1,	1,	mput },
 	{ "open",	connecthelp,	0,	0,	setpeer },
