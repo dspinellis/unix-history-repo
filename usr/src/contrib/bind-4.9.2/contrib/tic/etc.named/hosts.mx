@@ -1,0 +1,13 @@
+# %Z% %M% %I% %E% %Z%
+#  the next line describes the fields and any prefix or suffix to be added to
+#  the field value - please do not change unless you know what you are doing
+#FIELDS domain priority host suffix=.tic.com no=@
+#  Comments lines begin with # in the first column
+#  Null lines are allowed
+#  Fields may be separated with blanks or tabs
+#  Fields with embedded blanks may be quoted with double quoted (") or the blank
+#  may be escaped with a backslash
+#  Empty fields should be placemarked with an X (please capitalize)
+#domain		priority	host
+tic.com         10              aahsa
+tic.com         5               akasha
