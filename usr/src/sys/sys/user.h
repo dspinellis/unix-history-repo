@@ -1,4 +1,4 @@
-/*	user.h	4.25	83/05/18	*/
+/*	user.h	4.26	83/05/21	*/
 
 #ifdef KERNEL
 #include "../machine/pcb.h"
@@ -14,7 +14,8 @@
  * isn't needed in core when the process is swapped out.
  */
  
-#define	SHSIZE	32
+#define	SHSIZE		32
+#define	MAXCOMLEN	16		/* <= MAXNAMLEN, >= sizeof(a_comm) */
  
 struct	user {
 	struct	pcb u_pcb;
@@ -88,7 +89,7 @@ struct	user {
 
 /* 1.6 - resource controls */
 	struct	rlimit u_rlimit[RLIM_NLIMITS];
-	struct	quota *u_quota;	/* user's quota structure */
+	struct	quota *u_quota;		/* user's quota structure */
 	int	u_qflags;		/* per process quota flags */
 
 /* BEGIN TRASH */
