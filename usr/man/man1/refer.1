@@ -1,0 +1,113 @@
+.TH REFER 1 "8 February 1983"
+.SH NAME
+refer \- find and insert literature references in documents
+.SH SYNOPSIS
+.B refer
+[ option ... ]
+.SH DESCRIPTION
+.I Refer
+is a preprocessor for 
+.IR nroff (1),
+or
+.IR troff (1),
+that finds and formats references.  The input files (standard input by
+default) are copied to the standard output, except for lines between .[
+and .] command lines.  Such lines are assumed to contain keywords as for
+.IR lookbib (1),
+and are replaced by information from a bibliographic data base.  The
+user can avoid the search, override fields from it, or add new fields.
+The reference data, from whatever source, is assigned to a set of 
+.I troff
+strings.  Macro packages such as 
+.IR ms (7)
+print the finished reference text from these strings.  A flag is placed
+in the text at the point of reference.  By default, the references are
+indicated by numbers.
+.LP
+The following options are available:
+.TP
+.BI -a r
+Reverse the first 
+.I r
+author names (Jones, J. A. instead of J. A. Jones).  If 
+.I r
+is omitted, all author names are reversed.
+.TP
+.B -b
+Bare mode \(em do not put any flags in text (neither numbers or labels).
+.TP
+.BI -c string
+Capitalize (with C\s-2APS\s+2 S\s-2MALL\s+2 SC\s-2APS\s+2) the fields
+whose key-letters are in 
+.IR string .
+.TP
+.B -e
+Instead of leaving the references where encountered, accumulate them
+until a sequence of the form:
+.nf
+.in +1.0i
+\&.[
+$LIST$
+\&.]
+.fi
+.in -1.0i
+is encountered, and then write out all references collected so far.
+Collapse references to the same source.
+.TP
+.BI -k x
+Instead of numbering references, use labels as specified in a reference
+data line beginning with the characters 
+.IR %x ;
+By default, 
+.I x
+is
+.BR L .
+.TP
+.RI -l m , n
+Instead of numbering references, use labels from the senior author's
+last name and the year of publication.  Only the first
+.I m
+letters of the last name and the last 
+.I n
+digits of the date are used.  If either of 
+.IR m or ,n
+is omitted, the entire name or date respectively is used.
+.TP
+.B -p
+Take the next argument as a file of references to be searched.  The
+default file is searched last.
+.TP
+.B -n
+Do not search the default file.
+.TP
+.BI -s keys
+Sort references by fields whose key-letters are in the 
+.I keys
+string, and permute reference numbers in the text accordingly.  Using
+this option implies the 
+.B -e
+option.  The key-letters in
+.I keys
+may be followed by a number indicating how many such fields are used,
+with a + sign taken as a very large number.  The default is 
+.BR AD ,
+which sorts on the senior author and date.  To sort on all authors and
+then the date, for instance, use the options 
+.BR -sA+T .
+.LP
+When
+.I Refer
+is used with
+.IR eqn (1),
+.IR neqn (1),
+or
+.IR tbl (1),
+.I Refer
+should be used fits in the sequence, to minimize the volume of data
+passed through pipes.
+.SH FILES
+.ta 2.0i
+.nf
+/usr/dict/papers	directory of default publication lists and indexes
+/usr/lib/refer	directory of programs
+.fi
