@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)usersmtp.c	6.25 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	6.26 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)usersmtp.c	6.25 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	6.26 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -625,9 +625,9 @@ smtpmessage(f, m, a, b, c)
 		fprintf(SmtpOut, "%s%s", SmtpMsgBuffer,
 			m == NULL ? "\r\n" : m->m_eol);
 	}
-	else
+	else if (tTd(18, 1))
 	{
-		syserr("smtpmessage: NULL mci_out");
+		printf("smtpmessage: NULL mci_out\n");
 	}
 }
 
