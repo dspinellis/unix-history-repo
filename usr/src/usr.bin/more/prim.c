@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)prim.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)prim.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -32,6 +32,7 @@ extern int caseless;
 extern int linenums;
 extern int tagoption;
 extern char *line;
+extern int retain_below;
 
 off_t position(), forw_line(), back_line(), forw_raw_line(), back_raw_line();
 off_t ch_length(), ch_tell();
@@ -200,6 +201,11 @@ back(n, pos, only_last)
 		add_back_pos(pos);
 		if (!do_repaint)
 		{
+			if (retain_below)
+			{
+				lower_left();
+				clear_eol();
+			}
 			home();
 			add_line();
 			put_line();
