@@ -1,0 +1,70 @@
+.\" Copyright (c) 1983 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)disktab.5	5.1 (Berkeley) %G%
+.\"
+.TH DISKTAB 5 "2 March 1983"
+.UC 5
+.SH NAME
+disktab \- disk description file
+.SH SYNOPSIS
+.B #include <disktab.h>
+.SH DESCRIPTION
+.I Disktab
+is a simple date base which describes disk geometries and
+disk partition characteristics.  The format is patterned
+after the
+.IR termcap (5)
+terminal data base.  Entries in 
+.I disktab
+consist of a number of `:' separated fields.  The
+first entry for each disk gives the names which are
+known for the disk, separated by `|' characters.  The
+last name given should be a long name fully identifying
+the disk. 
+.PP
+The following list indicates the normal values
+stored for each disk entry.
+.nf
+
+.ta \w'Name  'u +\w'Type  'u
+\fBName	Type	Description\fP
+ns	num	Number of sectors per track
+nt	num	Number of tracks per cylinder
+nc	num	Total number of cylinders on the disk
+ba	num	Block size for partition `a' (bytes)
+bd	num	Block size for partition `d' (bytes)
+be	num	Block size for partition `e' (bytes)
+bf	num	Block size for partition `f' (bytes)
+bg	num	Block size for partition `g' (bytes)
+bh	num	Block size for partition `h' (bytes)
+fa	num	Fragment size for partition `a' (bytes)
+fd	num	Fragment size for partition `d' (bytes)
+fe	num	Fragment size for partition `e' (bytes)
+ff	num	Fragment size for partition `f' (bytes)
+fg	num	Fragment size for partition `g' (bytes)
+fh	num	Fragment size for partition `h' (bytes)
+pa	num	Size of partition `a' in sectors
+pb	num	Size of partition `b' in sectors
+pc	num	Size of partition `c' in sectors
+pd	num	Size of partition `d' in sectors
+pe	num	Size of partition `e' in sectors
+pf	num	Size of partition `f' in sectors
+pg	num	Size of partition `g' in sectors
+ph	num	Size of partition `h' in sectors
+se	num	Sector size in bytes
+ty	str	Type of disk (e.g. removable, winchester)
+.fi
+.PP
+.I Disktab
+entries may be automatically generated with the
+.I diskpart
+program.
+.SH FILES
+/etc/disktab
+.SH "SEE ALSO"
+newfs(8), diskpart(8)
+.SH BUGS
+This file shouldn't exist, the information should be
+stored on each disk pack.
