@@ -192,9 +192,5 @@ __END_DECLS
  * Kernel level -> options COMPAT_43 or COMPAT_SUNOS
  */
 #if defined(USE_OLD_TTY) || defined(COMPAT_43) || defined(COMPAT_SUNOS)
-#ifdef KERNEL
-#include "ioctl_compat.h"
-#else
 #include <sys/ioctl_compat.h>
-#endif
 #endif
