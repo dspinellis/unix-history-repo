@@ -1,4 +1,4 @@
-/*	lfs_alloc.c	6.6	84/09/28	*/
+/*	lfs_alloc.c	6.7	84/12/10	*/
 
 #include "param.h"
 #include "systm.h"
@@ -153,11 +153,20 @@ realloccg(ip, bprev, bpref, osize, nsize)
 			brelse(obp);
 			return (NULL);
 		}
-		bp = getblk(ip->i_dev, fsbtodb(fs, bno), nsize);
-		bcopy(obp->b_un.b_addr, bp->b_un.b_addr, (u_int)osize);
-		bzero(bp->b_un.b_addr + osize, (unsigned)nsize - osize);
+		bp = getblk(ip->i_dev, fsbtodb(fs, bno), osize);
+		swapbuf(obp, bp);
+		obp->b_flags &= ~B_DELWRI;
+		obp->b_flags |= B_INVAL;
 		brelse(obp);
 		free(ip, bprev, (off_t)osize);
+		while (brealloc(bp, nsize) == 0) {
+			bp = bread(ip->i_dev, fsbtodb(fs, bno), osize);
+			if (bp->b_flags & B_ERROR) {
+				brelse(bp);
+				return (NULL);
+			}
+		}
+		bzero(bp->b_un.b_addr + osize, (unsigned)nsize - osize);
 		ip->i_blocks += btodb(nsize - osize);
 		ip->i_flag |= IUPD|ICHG;
 		return (bp);
