@@ -1,10 +1,11 @@
-SCCSID = "@(#)Makefile 1.21 %G%"
+SCCSID = "@(#)Makefile 1.22 %G%"
 
 CFLAGS = -O
 
 LIB = ${DESTDIR}/usr/lib
 SRCDIR = ${DESTDIR}/usr/ucb
 PASDIR = ${DESTDIR}/usr/src/ucb/pascal
+TAGSFILE=tags
 
 INSTALL= install
 LD= /bin/ld
@@ -29,6 +30,7 @@ SYS =	ERROR.c GETNAME.c IOSYNC.c PCEXIT.c PCLOSE.c PCSTART.c \
 	blkclr.c blkcpy.c
 
 EXTN =	APPEND.c SEEK.c TELL.c
+SRCS=	${CMDS} ${SYS} ${EXTN}
 
 HDRS =	whoami.h h00vars.h
 
@@ -76,7 +78,7 @@ whoami.h:
 	cp ${PASDIR}/whoami.h whoami.h
 
 clean:
-	${RM} libpc libpc_p *.o profiled/*.o a.out lpr tmp core errs
+	${RM} libpc libpc_p *.o profiled/*.o a.out lpr tmp core errs tags
 
 print:
 	ls -l >lst
@@ -90,6 +92,12 @@ grind: sources
 	${RM} index
 	${SRCDIR}/vgrind -t *.h *.c >>lpr
 	${SRCDIR}/vpr -t lpr
+
+tags:
+	cwd=`pwd`; \
+	for i in ${SRCS}; do \
+		ctags -a -f ${TAGSFILE} $$cwd/$$i; \
+	done
 
 depend:	sources
 	/bin/grep '^#[ 	]*include' ${CMDS} ${SYS} ${EXTN} | sed \
