@@ -23,7 +23,7 @@
 .\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 .\" SUCH DAMAGE.
 .\"
-.\" $Id: chkconfig.8,v 1.1 1993/11/11 05:25:28 wollman Exp $
+.\" $Id: chkconfig.8,v 1.2 1993/11/11 23:30:33 wollman Exp $
 .\"
 .Dd November 10, 1993
 .Dt CHKCONFIG 8
@@ -139,7 +139,12 @@ option is bogus, and kept only for SGI compatibility.
 The
 .Nm chkconfig
 command is modeled after the command of the same name in Silicon
-Graphics' IRIX.
+Graphics' IRIX.  The
+.Fl d
+and
+.Fl o
+flags are extensions to the SGI version, as is the ability to have
+comments in the configuration files.
 .Sh AUTHOR
 .Nm chkconfig
 was written by Garrett A. Wollman, University of Vermont.
