@@ -7,7 +7,7 @@
 # include <syslog.h>
 # endif LOG
 
-static char SccsId[] = "@(#)deliver.c	3.14	%G%";
+static char SccsId[] = "@(#)deliver.c	3.15	%G%";
 
 /*
 **  DELIVER -- Deliver a message to a particular address.
@@ -204,9 +204,9 @@ deliver(to, editfcn)
 		**	>>>>>>>>>> function is subsumed by sendmail.
 		*/
 
-		if (m == Mailer[0])
+		if (m == Mailer[0] && !bitset(QGOODADDR, to->q_flags))
 		{
-			if (getpwnam(user) == NULL)
+			if (bitset(QBADADDR, to->q_flags) || getpwnam(user) == NULL)
 			{
 				giveresponse(EX_NOUSER, TRUE, m);
 				continue;
@@ -228,6 +228,10 @@ deliver(to, editfcn)
 			break;
 		}
 	}
+
+	/* see if any addresses still exist */
+	if (tobuf[0] == '\0')
+		return (0);
 
 	/* print out messages as full list */
 	To = tobuf;
@@ -695,7 +699,7 @@ recipient(a)
 				if (Debug)
 					printf("(%s in sendq)\n", a->q_paddr);
 # endif DEBUG
-				if (Verbose)
+				if (Verbose && !bitset(QDONTSEND, a->q_flags))
 					message("050", "duplicate supressed");
 				return;
 			}
@@ -713,7 +717,7 @@ recipient(a)
 	*/
 
 	if (m == Mailer[0] && !NoAlias && forward(a))
-		setbit(QDONTSEND, a->q_flags);
+		a->q_flags |= QDONTSEND;
 
 	return;
 }
@@ -741,7 +745,7 @@ mailfile(filename)
 	f = fopen(filename, "a");
 	if (f == NULL)
 		return (EX_CANTCREAT);
-	
+
 	putmessage(f, Mailer[1]);
 	fputs("\n", f);
 	fclose(f);
