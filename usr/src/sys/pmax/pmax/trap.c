@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: trap.c 1.32 91/04/06$
  *
- *	@(#)trap.c	7.4 (Berkeley) %G%
+ *	@(#)trap.c	7.5 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -368,7 +368,8 @@ trap(statusReg, causeReg, vadr, pc, args)
 	    {
 		register int *locr0 = p->p_md.md_regs;
 		register struct sysent *callp;
-		int code, numsys;
+		unsigned int code;
+		int numsys;
 		struct args {
 			int i[8];
 		} args;
@@ -422,7 +423,7 @@ trap(statusReg, causeReg, vadr, pc, args)
 				}
 			}
 		} else {
-			if ((u_int)code >= numsys)
+			if (code >= numsys)
 				callp = &systab[0];	/* indir (illegal) */
 			else
 				callp = &systab[code];
