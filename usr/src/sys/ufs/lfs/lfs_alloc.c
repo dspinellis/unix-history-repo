@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_alloc.c	7.20 (Berkeley) %G%
+ *	@(#)lfs_alloc.c	7.21 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -143,7 +143,7 @@ realloccg(ip, lbprev, bpref, osize, nsize, bpp)
 		brelse(bp);
 		return (error);
 	}
-	brealloc(bp, nsize);
+	allocbuf(bp, nsize);
 	bp->b_flags |= B_DONE;
 	bzero(bp->b_un.b_addr + osize, (unsigned)nsize - osize);
 	/*
