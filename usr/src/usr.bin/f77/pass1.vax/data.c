@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)data.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)data.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -711,12 +711,12 @@ vexpr *dp;
   else
     {
       if ((MAXINT + MININT == -1)
-	  && tp->paramval->constblock.const.ci == MININT)
+	  && tp->paramval->constblock.constant.ci == MININT)
 	p->status = MINLESS1;
       else
 	{
 	  p->status = NORMAL;
-          p->value = tp->paramval->constblock.const.ci;
+          p->value = tp->paramval->constblock.constant.ci;
 	}
     }
 
@@ -1669,7 +1669,7 @@ char *sname;
 		  t = ALLOC(Dvalue);
 		  t->tag = DVALUE;
 		  t->status = NORMAL;
-		  t->value = np->vleng->constblock.const.ci;
+		  t->value = np->vleng->constblock.constant.ci;
 		  rp->high = (vexpr *) t;
 		}
 	    }
@@ -1867,13 +1867,13 @@ aelt *ap;
   index = sub[--i];
   while (i-- > 0)
     {
-      size = dp->dims[i].dimsize->constblock.const.ci;
+      size = dp->dims[i].dimsize->constblock.constant.ci;
       index = sub[i] + index * size;
     }
 
-  index -= dp->baseoffset->constblock.const.ci;
+  index -= dp->baseoffset->constblock.constant.ci;
 
-  if (index < 0 || index >= dp->nelt->constblock.const.ci)
+  if (index < 0 || index >= dp->nelt->constblock.constant.ci)
     {
       err(boundserror);
       return (-1);
@@ -1949,12 +1949,12 @@ register Namep np;
 	  np->init = YES;
 	  np->initoffset = base = vdatahwm;
 	  if (np->vdim != NULL)
-	    nelt = np->vdim->nelt->constblock.const.ci;
+	    nelt = np->vdim->nelt->constblock.constant.ci;
 	  else
 	    nelt = 1;
 	  type = np->vtype;
 	  if (type == TYCHAR)
-	    typelen = np->vleng->constblock.const.ci;
+	    typelen = np->vleng->constblock.constant.ci;
 	  else if (type == TYLOGICAL)
 	    typelen = typesize[tylogical];
 	  else
@@ -1999,11 +1999,11 @@ register Namep np;
 
 
 
-wrtdata(offset, repl, len, const)
+wrtdata(offset, repl, len, constant)
 long offset;
 ftnint repl;
 ftnint len;
-char *const;
+char *constant;
 {
   static char *badoffset = "bad offset in wrtdata";
   static char *toomuch = "too much data";
@@ -2165,7 +2165,7 @@ char *const;
       k = len;
 
       while (k > 0 && allzero != NO)
-	if (const[--k] != 0) allzero = NO;
+	if (constant[--k] != 0) allzero = NO;
 
       if (allzero == YES)
 	return;
@@ -2181,7 +2181,7 @@ char *const;
   k = repl;
   while (k-- > 0)
     {
-      nbytes = write(datafile, const, len);
+      nbytes = write(datafile, constant, len);
       if (nbytes != len)
 	{
 	  err(writeerror);
@@ -2265,7 +2265,7 @@ aelt *ap;
   register long soffset;
   register dvalue *lwb;
   register dvalue *upb;
-  register Constp const;
+  register Constp constant;
   register int k;
   register vallist *t;
   register int type;
@@ -2280,7 +2280,7 @@ aelt *ap;
   type = np->vtype;
 
   if (type == TYCHAR)
-    typelen = np->vleng->constblock.const.ci;
+    typelen = np->vleng->constblock.constant.ci;
   else if (type == TYLOGICAL)
     typelen = typesize[tylogical];
   else
@@ -2338,28 +2338,28 @@ aelt *ap;
 	  frvexpr((vexpr *) upb);
 	}
 
-      const = getdatum();
-      if (const == NULL || !ISCONST(const))
+      constant = getdatum();
+      if (constant == NULL || !ISCONST(constant))
 	return;
 
-      const = (Constp) convconst(type, typelen, const);
-      if (const == NULL || !ISCONST(const))
+      constant = (Constp) convconst(type, typelen, constant);
+      if (constant == NULL || !ISCONST(constant))
 	{
-	  frexpr((tagptr) const);
+	  frexpr((tagptr) constant);
 	  return;
 	}
 
       if (type == TYCHAR)
-	wrtdata(base + soffset, 1, typelen, const->const.ccp);
+	wrtdata(base + soffset, 1, typelen, constant->constant.ccp);
       else
-	wrtdata(base + soffset, 1, typelen, packbytes(const));
+	wrtdata(base + soffset, 1, typelen, packbytes(constant));
 
-      frexpr((tagptr) const);
+      frexpr((tagptr) constant);
     }
   else
     {
       soffset = 0;
-      k = np->vdim->nelt->constblock.const.ci;
+      k = np->vdim->nelt->constblock.constant.ci;
       while (k > 0 && dataerror == NO)
 	{
 	  if (grvals == NULL)
@@ -2379,18 +2379,18 @@ aelt *ap;
 	    }
 	  else
 	    {
-	      const = grvals->value;
-	      if (const == NULL || !ISCONST(const))
+	      constant = grvals->value;
+	      if (constant == NULL || !ISCONST(constant))
 		{
 		  dataerror = YES;
 		}
 	      else
 		{
-		  const = (Constp) convconst(type, typelen, const);
-		  if (const == NULL || !ISCONST(const))
+		  constant = (Constp) convconst(type, typelen, constant);
+		  if (constant == NULL || !ISCONST(constant))
 		    {
 		      dataerror = YES;
-		      frexpr((tagptr) const);
+		      frexpr((tagptr) constant);
 		    }
 		  else
 		    {
@@ -2403,13 +2403,13 @@ aelt *ap;
 		      k -= repl;
 
 		      if (type == TYCHAR)
-			wrtdata(base+soffset, repl, typelen, const->const.ccp);
+			wrtdata(base+soffset, repl, typelen, constant->constant.ccp);
 		      else
-			wrtdata(base+soffset, repl, typelen, packbytes(const));
+			wrtdata(base+soffset, repl, typelen, packbytes(constant));
 
 		      soffset = soffset + repl * typelen;
 
-		      frexpr((tagptr) const);
+		      frexpr((tagptr) constant);
 		    }
 		}
 	    }

@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)bb.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)bb.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -696,16 +696,16 @@ switch(p->tag)
               if (ISCHAR(p))
                  {
                       fprintf(diagfile," ISCHAR ccp= %d\n",
-                                                   p->constblock.const.ccp);
+                                                   p->constblock.constant.ccp);
                       SHOWEXPR(p->constblock.vleng);
                  }
               else  if( ISINT(type) )
-                   fprintf(diagfile," ci= %d\n",p->constblock.const.ci); 
+                   fprintf(diagfile," ci= %d\n",p->constblock.constant.ci); 
               else if( ISREAL(type) )
-                   fprintf(diagfile," cd[0]= %e\n",p->constblock.const.cd[0]);
+                   fprintf(diagfile," cd[0]= %e\n",p->constblock.constant.cd[0]);
               else fprintf(diagfile," cd[0]= %e  cd[1]= %e\n",
-                            p->constblock.const.cd[0],
-                            p->constblock.const.cd[1] ); 
+                            p->constblock.constant.cd[0],
+                            p->constblock.constant.cd[1] ); 
               break;
 
          case TADDR:

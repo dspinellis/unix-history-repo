@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)stab.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)stab.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -155,11 +155,11 @@ Namep sym;
 		    case TYSHORT:
 		    case TYLOGICAL:
 		    case TYADDR:
-		      sprintf(buf, "c=i%d", ep->constblock.const.ci);
+		      sprintf(buf, "c=i%d", ep->constblock.constant.ci);
 		      break;
 		    case TYREAL:
 		    case TYDREAL:
-		      sprintf(buf, "c=r%f", ep->constblock.const.cd[0]);
+		      sprintf(buf, "c=r%f", ep->constblock.constant.cd[0]);
 		      break;
 		    default:
 		      /* punt */
@@ -330,16 +330,16 @@ Namep sym;
     
       for (i = p->vdim->ndim-1; i >=0 ; --i) { 
          if(p->vdim->dims[i].lbaddr == ENULL) {
-	      sprintf(lb,"%d", p->vdim->dims[i].lb->constblock.const.ci);
+	      sprintf(lb,"%d", p->vdim->dims[i].lb->constblock.constant.ci);
 	 }
 	 else  { 
-	      sprintf(lb,"T%d", p->vdim->dims[i].lbaddr->addrblock.memoffset->constblock.const.ci);
+	      sprintf(lb,"T%d", p->vdim->dims[i].lbaddr->addrblock.memoffset->constblock.constant.ci);
          }
          if(p->vdim->dims[i].ubaddr == ENULL) {
-	      sprintf(ub,"%d",p->vdim->dims[i].ub->constblock.const.ci);
+	      sprintf(ub,"%d",p->vdim->dims[i].ub->constblock.constant.ci);
 	 }
 	 else  {
-	      sprintf(ub,"T%d",p->vdim->dims[i].ubaddr->addrblock.memoffset->constblock.const.ci);
+	      sprintf(ub,"T%d",p->vdim->dims[i].ubaddr->addrblock.memoffset->constblock.constant.ci);
          }
        	 sprintf(asmline+len, "ar%d;%s;%s;", TYINT, lb, ub);
 	 len += strlen(asmline+len);
@@ -350,7 +350,7 @@ Namep sym;
         if( ! (p->vleng ) )
            fatalstr("missing length in addtypeinfo for character variable %s", varstr(p->varname));
 
-        if (ISCONST(p->vleng)) sprintf(ub,"%d",p->vleng->constblock.const.ci);
+        if (ISCONST(p->vleng)) sprintf(ub,"%d",p->vleng->constblock.constant.ci);
          else sprintf(ub,"A%d",p->vleng->addrblock.memno + ARGOFFSET);
 
 	sprintf(asmline+len,"ar%d;1;%s;", TYINT, ub);

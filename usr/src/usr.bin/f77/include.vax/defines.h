@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)defines.h	5.2 (Berkeley) %G%
+ *	@(#)defines.h	5.3 (Berkeley) %G%
  */
 
 /*
@@ -244,7 +244,7 @@ typedef long int ftnint;
 #define ISERROR(z) (z->tag==TERROR)
 #define ISPLUSOP(z) (z->tag==TEXPR && z->exprblock.opcode==OPPLUS)
 #define ISSTAROP(z) (z->tag==TEXPR && z->exprblock.opcode==OPSTAR)
-#define ISONE(z) (ISICON(z) && z->constblock.const.ci==1)
+#define ISONE(z) (ISICON(z) && z->constblock.constant.ci==1)
 #define INT(z) ONEOF(z, MSKINT|MSKCHAR)
 #define ICON(z) mkintcon( (ftnint)(z) )
 

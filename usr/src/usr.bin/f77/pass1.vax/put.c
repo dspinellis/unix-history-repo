@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)put.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)put.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -160,7 +160,7 @@ if (ISCONST(p))
 	if (ISCOMPLEX(p->constblock.vtype))
 		return(mkrealcon(p->constblock.vtype == TYCOMPLEX ?
 					TYREAL : TYDREAL,
-				p->constblock.const.cd[1]));
+				p->constblock.constant.cd[1]));
 	else if (p->constblock.vtype == TYDREAL)
 		return(mkrealcon(TYDREAL, 0.0));
 	else
@@ -204,7 +204,7 @@ register expptr p;
 if(p->tag==TEXPR && p->exprblock.opcode==OPCONCAT)
 	return( lencat(p->exprblock.leftp) + lencat(p->exprblock.rightp) );
 else if( p->headblock.vleng!=NULL && ISICON(p->headblock.vleng) )
-	return(p->headblock.vleng->constblock.const.ci);
+	return(p->headblock.vleng->constblock.constant.ci);
 else if(p->tag==TADDR && p->addrblock.varleng!=0)
 	return(p->addrblock.varleng);
 else if(p->tag==TTEMP && p->tempblock.varleng!=0)
@@ -241,7 +241,7 @@ q->memoffset = ICON(0);
 switch(type = p->vtype)
 	{
 	case TYCHAR:
-		if(p->vleng->constblock.const.ci > XL)
+		if(p->vleng->constblock.constant.ci > XL)
 			break;	/* too long for literal table */
 		litflavor = 1;
 		goto loop;
@@ -263,9 +263,9 @@ switch(type = p->vtype)
 			if(type == litp->littype) switch(litflavor)
 				{
 			case 1:
-				if(p->vleng->constblock.const.ci != litp->litval.litcval.litclen)
+				if(p->vleng->constblock.constant.ci != litp->litval.litcval.litclen)
 					break;
-				if(! eqn( (int) p->vleng->constblock.const.ci, p->const.ccp,
+				if(! eqn( (int) p->vleng->constblock.constant.ci, p->constant.ccp,
 					litp->litval.litcval.litcstr) )
 						break;
 
@@ -275,12 +275,12 @@ switch(type = p->vtype)
 				return(q);
 
 			case 2:
-				if(p->const.cd[0] == litp->litval.litdval)
+				if(p->constant.cd[0] == litp->litval.litdval)
 					goto ret;
 				break;
 
 			case 3:
-				if(p->const.ci == litp->litval.litival)
+				if(p->constant.ci == litp->litval.litival)
 					goto ret;
 				break;
 				}
@@ -293,18 +293,18 @@ switch(type = p->vtype)
 				{
 				case 1:
 					litp->litval.litcval.litclen =
-						p->vleng->constblock.const.ci;
+						p->vleng->constblock.constant.ci;
 					cpn( (int) litp->litval.litcval.litclen,
-						p->const.ccp,
+						p->constant.ccp,
 						litp->litval.litcval.litcstr);
 					break;
 
 				case 2:
-					litp->litval.litdval = p->const.cd[0];
+					litp->litval.litdval = p->constant.cd[0];
 					break;
 
 				case 3:
-					litp->litval.litival = p->const.ci;
+					litp->litval.litival = p->constant.ci;
 					break;
 				}
 			}
@@ -321,7 +321,7 @@ switch(type)
 	case TYLOGICAL:
 	case TYSHORT:
 	case TYLONG:
-		prconi(asmfile, type, p->const.ci);
+		prconi(asmfile, type, p->constant.ci);
 		break;
 
 	case TYCOMPLEX:
@@ -337,16 +337,16 @@ switch(type)
 
 	flpt:
 		for(i = 0 ; i < k ; ++i)
-			prconr(asmfile, type, p->const.cd[i]);
+			prconr(asmfile, type, p->constant.cd[i]);
 		break;
 
 	case TYCHAR:
-		putstr(asmfile, p->const.ccp,
-			(int) (p->vleng->constblock.const.ci) );
+		putstr(asmfile, p->constant.ccp,
+			(int) (p->vleng->constblock.constant.ci) );
 		break;
 
 	case TYADDR:
-		prcona(asmfile, p->const.ci);
+		prcona(asmfile, p->constant.ci);
 		break;
 
 	default:
