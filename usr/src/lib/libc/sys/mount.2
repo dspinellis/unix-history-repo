@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)mount.2	6.5 (Berkeley) %G%
+.\"	@(#)mount.2	6.6 (Berkeley) %G%
 .\"
 .TH MOUNT 2 ""
 .UC 4
@@ -71,6 +71,14 @@ Do not honor setuid or setgid bits on files when executing them.
 Do not interpret special files on the file system.
 .IP M_SYNCHRONOUS 14
 All I/O to the file system should be done synchronously.
+.PP
+The flag M_UPDATE indicates that the mount command is being applied 
+to an already mounted file system.
+This allows the mount flags to be changed without requiring
+that the file system be unmounted and remounted.
+Some file systems may not allow all flags to be changed.
+For example,
+most file systems will not allow a change from read-write to read-only.
 .PP
 The
 .I type
