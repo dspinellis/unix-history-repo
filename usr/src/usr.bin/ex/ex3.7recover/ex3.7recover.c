@@ -1,5 +1,5 @@
 /* Copyright (c) 1981 Regents of the University of California */
-static char *sccsid = "@(#)ex3.7recover.c	7.6	%G%";
+static char *sccsid = "@(#)ex3.7recover.c	7.7	%G%";
 #include <stdio.h>	/* mjm: BUFSIZ: stdio = 512, VMUNIX = 1024 */
 #undef	BUFSIZ		/* mjm: BUFSIZ different */
 #undef	EOF		/* mjm: EOF and NULL effectively the same */
@@ -754,4 +754,21 @@ syserror()
 	else
 		error("System error %d", errno);
 	exit(1);
+}
+
+/*
+ * Must avoid stdio because expreserve uses sbrk to do memory
+ * allocation and stdio uses malloc.
+ */
+fprintf(fp, fmt, a1, a2, a3, a4, a5)
+	FILE *fp;
+	char *fmt;
+	char *a1, *a2, *a3, *a4, *a5;
+{
+	char buf[BUFSIZ];
+
+	if (fp != stderr)
+		return;
+	sprintf(buf, fmt, a1, a2, a3, a4, a5);
+	write(2, buf, strlen(buf));
 }
