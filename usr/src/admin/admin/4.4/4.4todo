@@ -1,9 +1,9 @@
-#	@(#)4.4todo	5.1 (Berkeley) %G%
+#	@(#)4.4todo	5.2 (Berkeley) %G%
 
-Target for alpha tape release May 31.
-Target 386/486, HP300, Sparc, DECstation 3100/5000.
+Target for alpha tape release: May 31.
+Target architectures: 386/486, HP300, Sparc, DECstation 3100/5000.
 
-Required:
+Required:			Owner:		Prio:	Time:	Date:
 64-bit file sizes		Kirk
 32-bit uid/gid			Kirk
 32-bit dev			Kirk
@@ -18,12 +18,15 @@ Getloadinfo			Kirk/TK
 Getsysinfo/uname		Kirk/TK
 Pathconf			Kirk
 
-Block size in environment	TK
-Vi				TK
-LFS				TK
-subr_rmap.c			TK
-Bug list pass			TK/Marc
-ANSI C compatibility		TK/Chris
+Block size in environment	TK		1	1 day	06 Feb
+Vi				TK		2	1 mo	16 Mar
+LFS				TK		3	1 mo	13 Apr
+Mpool(3) interface		TK		4	2 wk	27 Apr
+Bug list pass			TK/Marc		5	2 wk	04 May
+ANSI C compatibility		TK/Chris	6	1 wk	18 May
+subr_rmap.c			TK		7	1 wk	31 May
+
+Routed update			Keith
 
 POSIX 1003.1 compatibility	Marc
 POSIX 1003.2 shell		Marc
@@ -31,8 +34,8 @@ POSIX 1003.2 shell		Marc
 tty_subr.c			Marc
 hp300/dev/hil.c			Marc
 
-Sparc port			Chris
 Bstreams			Mike
+Sparc port			Chris
 DECstation 3100/5000 ports	Ralph/Ted
 Libm				Peter
 Man page pass			Everyone
@@ -58,4 +61,3 @@ sort
 test
 units
 uucp
-
