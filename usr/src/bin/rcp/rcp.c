@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rcp.c	4.11 85/02/16";
+static char sccsid[] = "@(#)rcp.c	4.12 85/02/20";
 #endif
 
 /*
@@ -15,6 +15,7 @@ static char sccsid[] = "@(#)rcp.c	4.11 85/02/16";
 #include <signal.h>
 #include <pwd.h>
 #include <ctype.h>
+#include <netdb.h>
 #include <errno.h>
 
 int	rem;
@@ -29,6 +30,7 @@ int	iamremote, targetshouldbedirectory;
 int	iamrecursive;
 struct	passwd *pwd;
 struct	passwd *getpwuid();
+struct	servent *sp;
 
 /*VARARGS*/
 int	error();
@@ -43,7 +45,12 @@ main(argc, argv)
 	char *suser, *tuser;
 	int i;
 	char buf[BUFSIZ], cmd[16];
-	
+
+	sp = getservbyname("shell", "tcp");
+	if (sp == NULL) {
+		fprintf(stderr, "rcp: shell/tcp: unknown service\n");
+		exit(1);
+	}
 	setpwent();
 	pwd = getpwuid(getuid());
 	endpwent();
@@ -115,7 +122,7 @@ main(argc, argv)
 					(void) sprintf(buf, "%s -t %s",
 					    cmd, targ);
 					host = argv[argc - 1];
-					rem = rcmd(&host, IPPORT_CMDSERVER,
+					rem = rcmd(&host, sp->s_port,
 					    pwd->pw_name, tuser,
 					    buf, 0);
 					if (rem < 0)
@@ -149,7 +156,7 @@ main(argc, argv)
 					suser = pwd->pw_name;
 				(void) sprintf(buf, "%s -f %s", cmd, src);
 				host = argv[i];
-				rem = rcmd(&host, IPPORT_CMDSERVER,
+				rem = rcmd(&host, sp->s_port,
 				    pwd->pw_name, suser,
 				    buf, 0);
 				if (rem < 0)
