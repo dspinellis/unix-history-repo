@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)edquota.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)edquota.c	5.14 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -341,7 +341,7 @@ writeprivs(quplist, outfd, name, quotatype)
 	register struct quotause *qup;
 	FILE *fd;
 
-	ftruncate(outfd);
+	ftruncate(outfd, 0);
 	lseek(outfd, 0, L_SET);
 	if ((fd = fdopen(dup(outfd), "w")) == NULL) {
 		fprintf(stderr, "edquota: ");
@@ -484,7 +484,7 @@ writetimes(quplist, outfd, quotatype)
 	char *cvtstoa();
 	FILE *fd;
 
-	ftruncate(outfd);
+	ftruncate(outfd, 0);
 	lseek(outfd, 0, L_SET);
 	if ((fd = fdopen(dup(outfd), "w")) == NULL) {
 		fprintf(stderr, "edquota: ");
