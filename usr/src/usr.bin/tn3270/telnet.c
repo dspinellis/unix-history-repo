@@ -2298,6 +2298,9 @@ static void
 Finish3270()
 {
     while (Push3270() || !DoTerminalOutput()) {
+#if	defined(unix)
+	HaveInput = 0;
+#endif	/* defined(unix) */
 	;
     }
 }
