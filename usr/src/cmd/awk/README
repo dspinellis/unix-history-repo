@@ -1,0 +1,99 @@
+CHANGES as of July 12:
+
+1. \ddd allowed in regular expressions.
+
+2. exit <expression> causes the expression to
+to be the status return upon completion.
+
+3. a new builtin called "getline" causes the next
+input line to be read immediately.  Fields, NR, etc.,
+are all set, but you are left at exactly the same place
+in the awk program.  Getline returns 0 for end of file;
+1 for a normal record.
+
+
+CHANGES SINCE MEMO:
+Update to TM of Sept 1, 1978:
+
+1. A new form of for loop
+	for (i in array)
+		statement
+is now available. It provides a way to walk
+along the members of an array, most usefully
+for associative arrays with non-numeric subscripts.
+Elements are accessed in an unpredictable order,
+so don't count on anything.
+Futhermore, havoc ensues if elements are created
+during this operation, or if the index variable
+is fiddled.
+
+2. index(s1, s2) returns the position in s1
+where s2 first occurs, or 0 if it doesn't.
+
+3. Multi-line records are now supported more
+conveniently. If the record separator is null
+	RS = ""
+then a blank line terminates a record, and newline
+is a default field separator, along with
+blank and tab.
+
+4. The syntax of split has been changed.
+	n = split(str, arrayname, sep)
+splits the string str into the array using
+the separator sep (a single character).
+If no sep field is given, FS is used instead.
+The elements are array[1] ... array[n]; n
+is the function value.
+
+5. some minor bugs have been fixed.
+
+IMPLEMENTATION NOTES:
+
+Things to watch out for when trying to make awk:
+
+1. The yacc -d business creates a new file y.tab.h
+with the yacc #defines in it. this is compared to
+awk.h on each successive compile, and major recompilation
+is done only if the files differ. (This permits editing
+the grammar file without causing everything in sight
+to be recompiled, so long as the definitions don't
+change.)
+
+2. The program proc.c is compiled into proc, which
+is used to create proctab.c. proctab.c is the
+table of function pointers used by run to actually
+execute things. Don't try to load proc.c with the
+other .c files; it also contains a "main()".
+
+3. Awk uses structure assignment. Be sure your
+version of the C compiler has it.
+
+4. The loader flag -lm is used to fetch the standard
+math library on the Research system. It is more likely
+that you will want to use -lS on yours.
+run.c also includes "math.h", which contains sensible
+definitions for log(), sqrt(), etc. If you don't have this
+include file, comment the line out, and all will be well
+anyway.
+
+5. The basic sequence of events (in case make doesn't
+seem to do the job) is
+	yacc -d awk.g.y
+	cc -O -c y.tab.c
+	mv y.tab.o awk.g.o
+	lex awk.lx.l
+	cc -O -c lex.yy.c
+	mv lex.yy.o awk.lx.o
+	cc -O -c b.c
+	cc -O -c main.c
+	e - <tokenscript
+	cc -O -c token.c
+	cc -O -c tran.c
+	cc -O -c lib.c
+	cc -O -c run.c
+	cc -O -c parse.c
+	cc -O -c proc.c
+	cc -o proc proc.c token.o
+	proc >proctab.c
+	cc -O -c proctab.c
+	cc -i -O awk.g.o awk.lx.o b.o main.o token.o tran.o lib.o run.o parse.o proctab.o -lm
