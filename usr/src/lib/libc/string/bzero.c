@@ -16,7 +16,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)bzero.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)bzero.c	5.3 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -27,9 +27,6 @@ bzero(b, length)
 	register int length;
 {
 
-	if (length)
-		do
-			*b++ = '\0';
-		while (--length);
-	return(length);
+	while (length--)
+		*b++ = '\0';
 }
