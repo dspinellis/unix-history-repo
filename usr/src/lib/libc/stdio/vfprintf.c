@@ -11,7 +11,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)vfprintf.c	5.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)vfprintf.c	5.18 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -62,7 +62,9 @@ x_doprnt(fmt, argp, fp)
 	char padc, *digs, sbuf[MAXDIGIT];
 
 	digs = "0123456789abcdef";
-	for (buf = sbuf, cnt = 0;; ++fmt) {
+	if (!buf)
+		buf = sbuf;
+	for (cnt = 0;; ++fmt) {
 		n = fp->_cnt;
 		for (t = fp->_ptr; (ch = *fmt) && ch != '%'; ++cnt, ++fmt)
 			if (--n < 0
