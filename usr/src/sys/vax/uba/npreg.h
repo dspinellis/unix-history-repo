@@ -1,10 +1,9 @@
 /*
- * Copyright (c) 1986 MICOM-Interlan, Inc., Foxborough Mass
+ * Copyright (c) 1986 MICOM-Interlan, Inc., Boxborough Mass
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
  *
- * This software is furnished under a license and may only be used
- * or copied in accordance with the terms of that license.
- *
- *	@(#)npreg.h	6.1 (Berkeley) %G%
+ *	@(#)npreg.h	6.2 (Berkeley) %G%
  */
 
 /*
