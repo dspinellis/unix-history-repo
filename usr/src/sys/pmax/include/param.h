@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: machparam.h 1.11 89/08/14$
  *
- *	@(#)param.h	7.7 (Berkeley) %G%
+ *	@(#)param.h	7.8 (Berkeley) %G%
  */
 
 /*
@@ -111,26 +111,16 @@
 #define pmax_btop(x)		((unsigned)(x) >> PGSHIFT)
 #define pmax_ptob(x)		((unsigned)(x) << PGSHIFT)
 
-#ifdef DS3100
-#define splnet()        Mach_spl1()
-#define splbio()        Mach_spl0()
-#define splimp()        Mach_spl1()
-#define spltty()        Mach_spl2()
-#define splclock()      Mach_spl3()
-#define splstatclock()  Mach_spl3()
-#endif /* DS3100 */
-
-#ifdef DS5000
-#define splnet()        Mach_spl0()
-#define splbio()        Mach_spl0()
-#define splimp()        Mach_spl0()
-#define spltty()        Mach_spl0()
-#define splclock()      Mach_spl1()
-#define splstatclock()  Mach_spl1()
-#endif /* DS5000 */
-
 #ifdef KERNEL
 #ifndef LOCORE
+extern int (*Mach_splnet)(), (*Mach_splbio)(), (*Mach_splimp)(),
+	   (*Mach_spltty)(), (*Mach_splclock)(), (*Mach_splstatclock)();
+#define	splnet()	((*Mach_splnet)())
+#define	splbio()	((*Mach_splbio)())
+#define	splimp()	((*Mach_splimp)())
+#define	spltty()	((*Mach_spltty)())
+#define	splclock()	((*Mach_splclock)())
+#define	splstatclock()	((*Mach_splstatclock)())
 extern	int cpuspeed;
 #define	DELAY(n)	{ register int N = cpuspeed * (n); while (--N > 0); }
 #endif

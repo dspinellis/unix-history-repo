@@ -1,13 +1,13 @@
 /*
- * Copyright (c) 1992 Regents of the University of California.
+ * Copyright (c) 1992 The Regents of the University of California.
  * All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
- * Ralph Campbell.
+ * Ralph Campbell and Rick Macklem.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)dc7085cons.h	7.2 (Berkeley) %G%
+ *	@(#)dc7085cons.h	7.3 (Berkeley) %G%
  *
  * dc7085.h --
  *
@@ -74,11 +74,9 @@ typedef volatile struct dc7085regs {
 #define TCR_EN1			0x002
 #define TCR_EN0			0x001
 
-#ifdef DS5000
 #define TCR_RTS2		0x800
 #define TCR_RTS3		0x200
 #define TCR_DTR3		0x100
-#endif
 
 /*
  * Line parameter register bits.
@@ -99,13 +97,8 @@ typedef volatile struct dc7085regs {
 #define	LPR_B4800	0x0C00
 #define LPR_B7200	0x0D00
 #define LPR_B9600	0x0E00
-#ifdef DS3100
-#define LPR_B19800	0x0F00
-#endif
-#ifdef DS5000
 #define LPR_B19200	0x0F00
 #define LPR_B38400	0x0F00
-#endif
 #define LPR_OPAR	0x0080
 #define LPR_PARENB	0x0040
 #define LPR_2_STOP	0x0020
@@ -119,7 +112,6 @@ typedef volatile struct dc7085regs {
  */
 #define	MSR_DSR2	0x0200
 
-#ifdef DS5000
 #define	MSR_RI2		0x0800
 #define	MSR_CD2		0x0400
 #define	MSR_CTS2	0x0100
@@ -127,97 +119,14 @@ typedef volatile struct dc7085regs {
 #define	MSR_CD3		0x0004
 #define	MSR_DSR3	0x0002
 #define	MSR_CTS3	0x0001
-#endif
 
 /*
  * The four serial ports.
  */
-#define	KBD_PORT	0
-#define MOUSE_PORT	1
-#define MODEM_PORT	2
-#define PRINTER_PORT	3
-
-/*
- * Special key values.
- */
-#define KEY_SHIFT	0xae
-#define KEY_CONTROL	0xaf
-#define KEY_UP		0xb3
-#define KEY_REPEAT	0xb4
-#define KEY_F1		0x56
-#define KEY_COMMAND	KEY_F1
-
-/*
- * Lk201/301 keyboard
- */
-#define LK_UPDOWN	0x86		/* bits for setting lk201 modes */
-#define LK_AUTODOWN	0x82
-#define LK_DOWN		0x80
-#define LK_DEFAULTS	0xd3		/* reset mode settings          */
-#define LK_AR_ENABLE	0xe3		/* global auto repeat enable	*/
-#define LK_CL_ENABLE	0x1b		/* keyclick enable		*/
-#define LK_KBD_ENABLE	0x8b		/* keyboard enable		*/
-#define LK_BELL_ENABLE	0x23		/* the bell			*/
-#define LK_LED_ENABLE	0x13		/* light led			*/
-#define LK_LED_DISABLE	0x11		/* turn off led			*/
-#define LK_RING_BELL	0xa7		/* ring keyboard bell		*/
-#define LED_1		0x81		/* led bits			*/
-#define LED_2		0x82
-#define LED_3		0x84
-#define LED_4		0x88
-#define LED_ALL		0x8f
-#define LK_HELP		0x7c		/* help key			*/
-#define LK_DO		0x7d		/* do key			*/
-#define LK_KDOWN_ERROR	0x3d		/* key down on powerup error	*/
-#define LK_POWER_ERROR	0x3e		/* keyboard failure on pwrup tst*/
-#define LK_OUTPUT_ERROR 0xb5		/* keystrokes lost during inhbt */
-#define LK_INPUT_ERROR	0xb6		/* garbage command to keyboard	*/
-#define LK_LOWEST	0x56		/* lowest significant keycode	*/
-
-/* max volume is 0, lowest is 0x7 */
-#define	LK_PARAM_VOLUME(v)		(0x80|((v)&0x7))
-
-/* mode command details */
-#define	LK_CMD_MODE(m,div)		((m)|((div)<<3))
-
-/*
- * Command characters for the mouse.
- */
-#define MOUSE_SELF_TEST		'T'
-#define MOUSE_INCREMENTAL	'R'
-
-/*
- * Mouse output bits.
- *
- *     	MOUSE_START_FRAME	Start of report frame bit.
- *	MOUSE_X_SIGN		Sign bit for X.
- *	MOUSE_Y_SIGN		Sign bit for Y.
- *	MOUSE_X_OFFSET		X offset to start cursor at.
- *	MOUSE_Y_OFFSET		Y offset to start cursor at.
- */
-#define MOUSE_START_FRAME	0x80
-#define MOUSE_X_SIGN		0x10
-#define MOUSE_Y_SIGN		0x08
-
-/*
- * Definitions for mouse buttons
- */
-#define EVENT_LEFT_BUTTON	0x01
-#define EVENT_MIDDLE_BUTTON	0x02
-#define EVENT_RIGHT_BUTTON	0x03
-#define RIGHT_BUTTON		0x01
-#define MIDDLE_BUTTON		0x02
-#define LEFT_BUTTON		0x04
-
-/*
- * Mouse report structure definition
- */
-typedef struct {
-	char state;			/* buttons and sign bits	*/
-	short dx;			/* delta X since last change	*/
-	short dy;			/* delta Y since last change	*/
-	char byteCount;			/* mouse report byte count	*/
-} MouseReport;
+#define DCKBD_PORT	0
+#define DCMOUSE_PORT	1
+#define DCCOMM_PORT	2
+#define DCPRINTER_PORT	3
 
 /* bits in dm lsr, copied from dmreg.h */
 #define	DML_DSR		0000400		/* data set ready, not a real DM bit */
