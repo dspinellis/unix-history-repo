@@ -55,6 +55,7 @@ static char sccsid[] = "@(#)mesg.c	4.7 (Berkeley) 3/1/91";
 #include <stdio.h>
 
 static char *tty;
+#define	OTHER_WRITE	002
 
 main(argc, argv)
 	int argc;
@@ -72,14 +73,13 @@ main(argc, argv)
 		exit(-1);
 	}
 	if (argc < 2) {
-		if (sbuf.st_mode & 020) {
+		if (sbuf.st_mode & OTHER_WRITE) {
 			fputs("is y\n", stderr);
 			exit(0);
 		}
 		fputs("is n\n", stderr);
 		exit(1);
 	}
-#define	OTHER_WRITE	020
 	switch(*argv[1]) {
 	case 'y':
 		newmode(sbuf.st_mode | OTHER_WRITE);
@@ -88,7 +88,7 @@ main(argc, argv)
 		newmode(sbuf.st_mode &~ OTHER_WRITE);
 		exit(1);
 	default:
-		fputs("usage: mesg [y] [n]\n", stderr);
+		fputs("usage: mesg [y|n]\n", stderr);
 		exit(-1);
 	}
 	/*NOTREACHED*/
