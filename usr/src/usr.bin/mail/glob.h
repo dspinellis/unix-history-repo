@@ -4,7 +4,7 @@
  */
 
 /*
- * Sccs Id = "@(#)glob.h	2.1 %G%";
+ * Sccs Id = "@(#)glob.h	2.2 %G%";
  */
 
 int	msgCount;			/* Count of messages read in */
@@ -13,6 +13,7 @@ int	rcvmode;			/* True if receiving mail */
 int	sawcom;				/* Set after first command */
 int	hflag;				/* Sequence number for network -h */
 char	*rflag;				/* -r address for network */
+char	*Tflag;				/* -T temp file for netnews */
 char	nosrc;				/* Don't source /usr/lib/Mail.rc */
 char	noheader;			/* Suprress initial header listing */
 int	selfsent;			/* User sent self something */
