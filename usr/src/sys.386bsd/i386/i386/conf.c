@@ -37,7 +37,7 @@
  *
  * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
  * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         3       00097
+ * CURRENT PATCH LEVEL:         4       00135
  * --------------------         -----   ----------------------
  *
  * 10 Feb 93	Jordan K. Hubbard	Added select entry for com driver
@@ -47,6 +47,8 @@
  * 16 Feb 93    Julian Elischer		add entries for scsi media changer
  * 01 Mar 93	Jordan K. Hubbard	Reserve major numbers for codrv, fd, bpf
  * 10 Mar 83	Rodney W. Grimes	General clean up of the above patches
+ * 06 Apr 93	Rodney W. Grimes	Fixed NLPT for LPA driver case, added
+ *					spkr, dcfclock
  */
 static char rcsid[] = "$Header: /usr/src/sys.386bsd/i386/i386/RCS/conf.c,v 1.2 92/01/21 14:21:57 william Exp Locker: toor $";
 
@@ -192,7 +194,7 @@ struct bdevsw	bdevsw[] =
 	  cddump,	cdsize,		NULL },
 /*
  * If you need a bdev major number, please contact the 386bsd patchkit
- * coordinator by sending mail to "patches@whisker.lotus.ie". 
+ * coordinator by sending mail to "patches@cs.montana.edu". 
  * If you assign one yourself it may conflict with someone else.
  */
 };
@@ -273,8 +275,19 @@ int	bpfopen(),bpfclose(),bpfread(),bpfwrite(),bpfselect(),bpfioctl();
 #define	bpfioctl	enxio
 #endif
 
+#include "dcfclk.h"
+#if NDCFCLK > 0
+int	dcfclkopen(),dcfclkclose(),dcfclkread(),dcfclkioctl(),dcfclkselect();
+#else
+#define dcfclkopen	enxio
+#define dcfclkclose	enxio
+#define dcfclkread	enxio
+#define dcfclkioctl	enxio
+#define dcfclkselect	enxio
+#endif
+
 #include "lpa.h"
-#if NLPT > 0
+#if NLPA > 0
 int	lpaopen(),lpaclose(),lpawrite(),lpaioctl();
 #else
 #define lpaopen		enxio
@@ -283,68 +296,77 @@ int	lpaopen(),lpaclose(),lpawrite(),lpaioctl();
 #define lpaioctl	enxio
 #endif
 
+#include "speaker.h"
+#if NSPEAKER > 0
+int     spkropen(),spkrclose(),spkrwrite(),spkrioctl();
+#else
+#define spkropen  enxio
+#define spkrclose enxio
+#define spkrwrite enxio
+#define spkrioctl enxio
+#endif
 
 struct cdevsw	cdevsw[] =
 {
 	{ cnopen,	cnclose,	cnread,		cnwrite,	/*0*/
-	  cnioctl,	nullop,		nullop,		NULL,
+	  cnioctl,	nullop,		nullop,		NULL,	/* console */
 	  cnselect,	enodev,		NULL },
 	{ cttyopen,	nullop,		cttyread,	cttywrite,	/*1*/
-	  cttyioctl,	nullop,		nullop,		NULL,
+	  cttyioctl,	nullop,		nullop,		NULL,	/* tty */
 	  cttyselect,	enodev,		NULL },
         { nullop,       nullop,         mmrw,           mmrw,           /*2*/
-          enodev,       nullop,         nullop,         NULL,
+          enodev,       nullop,         nullop,         NULL,	/* memory */
           mmselect,     enodev,         NULL },
 	{ wdopen,	wdclose,	rawread,	rawwrite,	/*3*/
-	  wdioctl,	enodev,		nullop,		NULL,
+	  wdioctl,	enodev,		nullop,		NULL,	/* wd */
 	  seltrue,	enodev,		wdstrategy },
 	{ nullop,	nullop,		rawread,	rawwrite,	/*4*/
-	  enodev,	enodev,		nullop,		NULL,
+	  enodev,	enodev,		nullop,		NULL,	/* swap */
 	  enodev,	enodev,		swstrategy },
 	{ ptsopen,	ptsclose,	ptsread,	ptswrite,	/*5*/
-	  ptyioctl,	ptsstop,	nullop,		pt_tty,
+	  ptyioctl,	ptsstop,	nullop,		pt_tty, /* ttyp */
 	  ttselect,	enodev,		NULL },
 	{ ptcopen,	ptcclose,	ptcread,	ptcwrite,	/*6*/
-	  ptyioctl,	nullop,		nullop,		pt_tty,
+	  ptyioctl,	nullop,		nullop,		pt_tty, /* ptyp */
 	  ptcselect,	enodev,		NULL },
 	{ logopen,	logclose,	logread,	enodev,		/*7*/
-	  logioctl,	enodev,		nullop,		NULL,
+	  logioctl,	enodev,		nullop,		NULL,	/* klog */
 	  logselect,	enodev,		NULL },
 	{ comopen,	comclose,	comread,	comwrite,	/*8*/
-	  comioctl,	enodev,		comreset,	com_tty,
+	  comioctl,	enodev,		comreset,	com_tty, /* com */
 	  comselect,	enodev,		NULL },
 	{ Fdopen,	fdclose,	rawread,	rawwrite,	/*9*/
 	  fdioctl,	enodev,		nullop,		NULL,	/* Fd (!=fd) */
 	  seltrue,	enodev,		fdstrategy },
 	{ wtopen,	wtclose,	rawread,	rawwrite,	/*10*/
-	  wtioctl,	enodev,		nullop,		NULL,
+	  wtioctl,	enodev,		nullop,		NULL,	/* wt */
 	  seltrue,	enodev,		wtstrategy },
 	{ enodev,	enodev,		enodev,		enodev,		/*11*/
 	  enodev,	enodev,		nullop,		NULL,
 	  seltrue,	enodev,		enodev },
 	{ pcopen,	pcclose,	pcread,		pcwrite,	/*12*/
-	  pcioctl,	nullop,		nullop,		&pccons,
+	  pcioctl,	nullop,		nullop,		&pccons, /* vga */
 	  ttselect,	pcmmap,		NULL },
 #if	NSD > 0
 	{ sdopen,	sdclose,	rawread,	rawwrite,	/*13*/
-	  sdioctl,	enodev,		nullop,		NULL,	/* scsi disk */
+	  sdioctl,	enodev,		nullop,		NULL,	/* sd */
 	  seltrue,	enodev,		sdstrategy },
 #else	NSD > 0
 	{ asopen,	asclose,	rawread,	rawwrite,	/*13*/
-	  asioctl,	enodev,		nullop,		NULL,	/* scsi disk */
+	  asioctl,	enodev,		nullop,		NULL,	/* as */
 	  seltrue,	enodev,		asstrategy },
 #endif	NSD > 0
 	{ stopen,	stclose,	rawread,	rawwrite,	/*14*/
-	  stioctl,	enodev,		nullop,		NULL,	/* scsi tape */
+	  stioctl,	enodev,		nullop,		NULL,	/* st */
 	  seltrue,	enodev,		ststrategy },
 	{ cdopen,	cdclose,	rawread,	enodev,		/*15*/
-	  cdioctl,	enodev,		nullop,		NULL,	/* scsi cdrom */
+	  cdioctl,	enodev,		nullop,		NULL,	/* cd */
 	  seltrue,	enodev,		cdstrategy },
 	{ lptopen,	lptclose,	nullop,		lptwrite,	/*16*/
 	  lptioctl,	nullop,		nullop,		NULL,	/* lpt */
 	  seltrue,	enodev,		enodev},
 	{ chopen,	chclose,	enxio,		enxio,		/*17*/
-	  chioctl,	enxio,		enxio,		NULL,	/* scsi 'changer'*/
+	  chioctl,	enxio,		enxio,		NULL,	/* ch */
 	  enxio,	enxio,		enxio },
 	{ enxio,	enxio,		enxio,		enxio,		/*18*/
 	  enxio,	enxio,		enxio,		NULL,	/* scsi generic */
@@ -364,15 +386,18 @@ struct cdevsw	cdevsw[] =
  	{ bpfopen,	bpfclose,	bpfread,	bpfwrite,	/*23*/
  	  bpfioctl,	enodev,		nullop,		NULL,	/* bpf */
  	  bpfselect,	enodev,		NULL },
-	{ enxio,	enxio,		enxio,		enxio,		/*24*/
-	  enxio,	enxio,		enxio,		NULL,
-	  enxio,	enxio,		enxio },
+	{ dcfclkopen,	dcfclkclose,	dcfclkread,	enodev,		/*24*/
+	  dcfclkioctl,	enodev,		nullop,		NULL,	/* dcfclk */
+	  dcfclkselect,	enodev,		NULL },
 	{ lpaopen,	lpaclose,	nullop,		lpawrite,	/*25*/
 	  lpaioctl,	nullop,		nullop,		NULL,	/* lpa */
 	  seltrue,	enodev,		enodev},
+	{ spkropen,     spkrclose,      enxio,          spkrwrite,      /*26*/
+	  spkrioctl,    enxio,          enxio,          NULL,	/* spkr */
+	  enxio,        enxio,          enxio },
 /*
  * If you need a cdev major number, please contact the 386bsd patchkit 
- * coordinator by sending mail to "patches@whisker.lotus.ie".
+ * coordinator by sending mail to "patches@cs.montana.edu".
  * If you assign one yourself it may then conflict with someone else.
  */
 };
