@@ -65,6 +65,9 @@ struct message {
 #define	MPRESERVE	16		/* keep entry in sys mailbox */
 #define	MMARK		32		/* message is marked! */
 #define	MODIFY		64		/* message has been modified */
+#define	MNEW		128		/* message has never been seen */
+#define	MREAD		256		/* message has been read sometime. */
+#define	MSTATUS		512		/* message status has changed */
 
 /*
  * Format of the command description table.
