@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)finger.c	4.7 (Berkeley) %G%";
+static char *sccsid = "@(#)finger.c	4.8 (Berkeley) %G%";
 #endif
 
 /*  This is a finger program.  It prints out useful information about users
@@ -92,7 +92,6 @@ int		pwdsize		= sizeof( struct passwd );
 
 char		LASTLOG[]	= "/usr/adm/lastlog";	/* last login info */
 char		USERLOG[]	= "/etc/utmp";		/* who is logged in */
-char		outbuf[BUFSIZ];				/* output buffer */
 char		*ctime(), *strcpy();
 
 int		unbrief		= 1;		/* -b option default */
@@ -139,9 +138,7 @@ main( argc, argv )
 	int			i, j;
 	int			fngrlogin;
 
-	setbuf( stdout, outbuf );			/* buffer output */
-
-    /*  parse command line for (optional) arguments */
+	/*  parse command line for (optional) arguments */
 
 	i = 1;
 	if(  strcmp( *argv, "sh" )  )  {

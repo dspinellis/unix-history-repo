@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)head.c	4.1 (Berkeley) %G%";
+static char *sccsid = "@(#)head.c	4.2 (Berkeley) %G%";
 #include <stdio.h>
 /*
  * head - give the first few lines of a stream or of each of a set of files
@@ -17,9 +17,7 @@ main(Argc, argv)
 	char *name;
 	register char *argp;
 	static int around;
-	char obuf[BUFSIZ];
 
-	setbuf(stdout, obuf);
 	Argc--, argv++;
 	argc = Argc;
 	do {

@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)colcrt.c	4.3 (Berkeley) %G%";
+static char *sccsid = "@(#)colcrt.c	4.4 (Berkeley) %G%";
 
 #include <stdio.h>
 /*
@@ -20,7 +20,6 @@ char	page[267][132];
 int	outline = 1;
 int	outcol;
 
-char	buf[BUFSIZ];
 char	suppresul;
 char	printall;
 
@@ -52,7 +51,6 @@ main(argc, argv)
 		argc--;
 		argv++;
 	}
-	setbuf(stdout, buf);
 	do {
 		if (argc > 0) {
 			close(0);
@@ -60,7 +58,6 @@ main(argc, argv)
 ) < 0) {
 				fflush(stdout);
 				perror(argv[0]);
-				fflush(stdout);
 				exit (1);
 			}
 			argc--;
