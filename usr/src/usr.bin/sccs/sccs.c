@@ -92,7 +92,7 @@
 **		Copyright 1980 Regents of the University of California
 */
 
-static char SccsId[] = "@(#)sccs.c	1.51 %G%";
+static char SccsId[] = "@(#)sccs.c	1.52 %G%";
 
 /*******************  Configuration Information  ********************/
 
@@ -154,6 +154,7 @@ struct sccsprog
 # define UNEDIT		4	/* unedit a file */
 # define SHELL		5	/* call a shell file (like PROG) */
 # define DIFFS		6	/* diff between sccs & file out */
+# define DODIFF		7	/* internal call to diff program */
 
 /* bits for sccsflags */
 # define NO_SDOT	0001	/* no s. on front of args */
@@ -196,6 +197,7 @@ struct sccsprog SccsProg[] =
 	"tell",		CLEAN,	REALUSER|NO_SDOT,	(char *) TELLC,
 	"unedit",	UNEDIT,	NO_SDOT,		NULL,
 	"diffs",	DIFFS,	NO_SDOT|REALUSER,	NULL,
+	"-diff",	DODIFF,	NO_SDOT|REALUSER,	PROGPATH(bdiff),
 	NULL,		-1,	0,			NULL
 };
 
@@ -483,6 +485,27 @@ command(argv, forkflag, arg0)
 			argv[1] = p;
 		}
 		break;
+
+	  case DODIFF:		/* internal diff call */
+		setuid(getuid());
+		for (np = ap; *np != NULL; np++)
+		{
+			if ((*np)[0] == '-' && (*np)[1] == 'C')
+				(*np)[1] = 'c';
+		}
+
+		/* insert "-" argument */
+		np[1] = NULL;
+		np[0] = np[-1];
+		np[-1] = "-";
+
+		/* execute the diff program of choice */
+# ifndef V6
+		execvp("diff", ap);
+# endif
+		execv(cmd->sccspath, argv);
+		syserr("cannot exec %s", cmd->sccspath);
+		exit(EX_OSERR);
 
 	  default:
 		syserr("oper %d", cmd->sccsoper);
@@ -1118,6 +1141,7 @@ dodiff(getv, gfile)
 	int (*osig)();
 
 	printf("\n------- %s -------\n", gfile);
+	fflush(stdout);
 
 	/* create context for diff to run in */
 	if (pipe(pipev) < 0)
@@ -1135,7 +1159,7 @@ dodiff(getv, gfile)
 		/* in parent; run get */
 		OutFile = pipev[1];
 		close(pipev[0]);
-		rval = command(&getv[1], TRUE, "get -s -k -p");
+		rval = command(&getv[1], TRUE, "get:rcixt -s -k -p");
 		osig = signal(SIGINT, SIG_IGN);
 		while (((i = wait(&st)) >= 0 && i != pid) || errno == EINTR)
 			errno = 0;
@@ -1151,13 +1175,7 @@ dodiff(getv, gfile)
 			syserr("dodiff: magic failed");
 			exit(EX_OSERR);
 		}
-		execl(PROGPATH(bdiff), "bdiff", "-", gfile, NULL);
-# ifndef V6
-		execlp("bdiff", "bdiff", "-", gfile, NULL);
-		execlp("diff", "diff", "-", gfile, NULL);
-# endif NOT V6
-		syserr("bdiff: cannot execute");
-		exit(EX_OSERR);
+		command(&getv[1], FALSE, "-diff:elsfhbC");
 	}
 	return (rval);
 }
