@@ -1,3 +1,25 @@
+
+/*
+ * Copyright (c) 1989 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms are permitted
+ * provided that the above copyright notice and this paragraph are
+ * duplicated in all such forms and that any documentation,
+ * advertising materials, and other materials related to such
+ * distribution and use acknowledge that the software was developed
+ * by the University of California, Berkeley.  The name of the
+ * University may not be used to endorse or promote products derived
+ * from this software without specific prior written permission.
+ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+ */
+
+#ifndef lint
+static char sccsid[] = "@(#)registerd.c	1.4 (Berkeley) %G%";
+#endif /* not lint */
+
 #include <sys/types.h>
 #include <sys/time.h>
 #include <sys/signal.h>
@@ -68,11 +90,12 @@ char	**argv;
 
 	if(read(kf, keybuf, KBUFSIZ) != KBUFSIZ) {
 		syslog(LOG_ERR, "wrong read size of Kerberos update keyfile");
-		(void) sprintf(msgbuf, "couldn't read session key from your host's keyfile");
+		(void) sprintf(msgbuf,
+			"couldn't read session key from your host's keyfile");
 		send_packet(msgbuf, CLEAR);
 		exit(1);
 	}
-	(void) sprintf(msgbuf, "GOTKEY");
+	(void) sprintf(msgbuf, GOTKEY_MSG);
 	send_packet(msgbuf, CLEAR);
 	kfile = (struct keyfile_data *) keybuf;
 	key_sched(kfile->kf_key, schedule);
@@ -86,9 +109,14 @@ char	**argv;
 		case	APPEND_DB:
 			retval = do_append();
 			break;
+		case	ABORT:
+			cleanup();
+			close(0);
+			exit(0);
 		default:
 			retval = KFAILURE;
-			syslog(LOG_NOTICE, "invalid command code on Kerberos update (0x%x)", code);
+			syslog(LOG_NOTICE,
+				"invalid command code on db update (0x%x)", code);
 		}
 
 	} else {
