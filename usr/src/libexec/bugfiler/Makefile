@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.5 (Berkeley) %G%
+#	@(#)Makefile	5.6 (Berkeley) %G%
 #
 # Bug report processor and associated programs
 #
@@ -16,7 +16,7 @@ LIBDIR=	/usr/lib
 DESTDIR=
 
 bugfiler: bugfiler.c
-	${CC} ${CFLAGS} -DUNIXTOMH=$'"{LIBDIR}/unixtomh"' -o bugfiler bugfiler.c
+	${CC} ${CFLAGS} -DUNIXTOMH='"${LIBDIR}/unixtomh"' -o bugfiler bugfiler.c
 
 install: bugfiler sendbug.sh bugformat unixtomh
 	install -s bugfiler ${DESTDIR}${LIBDIR}/bugfiler
