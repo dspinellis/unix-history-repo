@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)conv.c 1.3 %G%";
+static char sccsid[] = "@(#)conv.c 1.2.1.1 %G%";
 
 #include "whoami.h"
 #ifdef PI
