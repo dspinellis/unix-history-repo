@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfsproto.h	7.5 (Berkeley) %G%
+ *	@(#)nfsproto.h	7.6 (Berkeley) %G%
  */
 
 /*
@@ -39,6 +39,7 @@
 #define	NFS_MAXPKTHDR	404
 #define NFS_MAXPACKET	(NFS_MAXPKTHDR+NFS_MAXDATA)
 #define	NFS_NPROCS	18
+#define	NFS_FABLKSIZE	512	/* Size in bytes of a block wrt fa_blocks */
 
 /* Stat numbers for rpc returns */
 #define	NFS_OK		0
@@ -90,10 +91,12 @@
 
 /* Conversion macros */
 extern int		vttoif_tab[];
-#define	vtonfs_mode(t,m) txdr_unsigned((int)(vttoif_tab[(int)(t)] | (m)))
+#define	vtonfs_mode(t,m) \
+		txdr_unsigned(((t) == VFIFO) ? MAKEIMODE(VCHR, (m)) : \
+				MAKEIMODE((t), (m)))
 #define	nfstov_mode(a)	(fxdr_unsigned(u_short, (a))&07777)
 #define	vtonfs_type(a)	txdr_unsigned(nfs_type[((long)(a))])
-#define	nfstov_type(a)	v_type[fxdr_unsigned(u_long, (a))]
+#define	nfstov_type(a)	ntov_type[fxdr_unsigned(u_long,(a))&0x7]
 
 /* File types */
 typedef enum { NFNON=0, NFREG=1, NFDIR=2, NFBLK=3, NFCHR=4, NFLNK=5 } nfstype;
