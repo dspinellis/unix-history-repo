@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if_vv.c	6.16 (Berkeley) %G%
+ *	@(#)if_vv.c	6.17 (Berkeley) %G%
  */
 
 #include "vv.h"
@@ -148,6 +148,8 @@ struct	vv_softc {
 					/* link data errors on 80 meg */
 } vv_softc[NVV];
 
+#define	NOHOST	0xffff			/* illegal host number */
+
 /*
  * probe the interface to see that the registers exist, and then
  * cause an interrupt to find its vector
@@ -256,7 +258,7 @@ vvinit(unit)
 	 * Now that the uba is set up, figure out our address and
 	 * update complete our host address.
 	 */
-	if ((vs->vs_host = vvidentify(unit)) == -1) {
+	if ((vs->vs_host = vvidentify(unit)) == NOHOST) {
 		vs->vs_if.if_flags &= ~IFF_UP;
 		return;
 	}
@@ -321,7 +323,7 @@ vvidentify(unit)
 	register struct vv_header *v;
 	register int ubainfo;
 	register int i, successes, failures, waitcount;
-	u_short shost = 0xffff;
+	u_short shost = NOHOST;
 
 	vs = &vv_softc[unit];
 	ui = vvinfo[unit];
@@ -429,7 +431,7 @@ gotit:			/* we got something--is it any good? */
 
 			/* check message type, catch our node address */
 			if ((v->vh_type & 0xff) == RING_DIAGNOSTICS) {
-				if (shost == 0xffff) {
+				if (shost == NOHOST) {
 					shost = v->vh_shost & 0xff;
 					/* send to ourself now */
 					((struct vv_header *)
@@ -452,7 +454,7 @@ in %s mode\n",
 			    0xffff & addr->vvocsr, VV_OBITS);
 			addr->vvicsr = VV_RST;	/* kill the sick board */
 			addr->vvocsr = VV_RST;
-			shost = 0xffff;
+			shost = NOHOST;
 			goto done;
 		}
 	}
