@@ -23,7 +23,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)umount.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)umount.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -294,7 +294,7 @@ getmntname(name, what, type)
 	int mntsize, i;
 	struct statfs *mntbuf;
 
-	if ((mntsize = getmntinfo(&mntbuf)) == 0) {
+	if ((mntsize = getmntinfo(&mntbuf, MNT_NOWAIT)) == 0) {
 		perror("umount");
 		return (0);
 	}
