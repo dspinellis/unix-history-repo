@@ -1,4 +1,4 @@
-/*	vfs_lookup.c	4.2	%G%	*/
+/*	vfs_lookup.c	4.3	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -7,6 +7,7 @@
 #include "../h/dir.h"
 #include "../h/user.h"
 #include "../h/buf.h"
+#include "../h/conf.h"
 
 /*
  * Convert a pathname into a pointer to
@@ -57,6 +58,13 @@ cloop:
 		goto out;
 	if(c == '\0')
 		return(dp);
+
+#ifdef CHAOS
+	if((dp->i_mode&IFMT) == IFCHR && cdevpath & (1 << major(dp->i_un.i_rdev)) ) {
+		u.u_dirp--;
+		return(dp);
+	}
+#endif
 
 	/*
 	 * If there is another component,
