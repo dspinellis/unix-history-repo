@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_subs.c	7.12 (Berkeley) %G%
+ *	@(#)nfs_subs.c	7.13 (Berkeley) %G%
  */
 
 /*
@@ -216,6 +216,7 @@ nfsm_mbuftouio(mrep, uiop, siz, dpos)
 			len -= xfer;
 			mbufcp += xfer;
 			uiocp += xfer;
+			uiop->uio_offset += xfer;
 			uiop->uio_resid -= xfer;
 		}
 		if (uiop->uio_iov->iov_len <= siz) {
@@ -287,6 +288,7 @@ nfsm_uiotombuf(uiop, mq, siz, bpos)
 			mp->m_len = xfer;
 			left -= xfer;
 			uiocp += xfer;
+			uiop->uio_offset += xfer;
 			uiop->uio_resid -= xfer;
 		}
 		if (uiop->uio_iov->iov_len <= siz) {
