@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)main.c 1.3 %G%";
+static char sccsid[] = "@(#)main.c 1.4 %G%";
 
 /*
  * Debugger main routine.
@@ -19,6 +19,10 @@ static char sccsid[] = "@(#)main.c 1.3 %G%";
 #ifndef public
 
 #define isterm(file)	(interactive or isatty(fileno(file)))
+
+#include <sgtty.h>
+
+typedef struct sgttyb Ttyinfo;
 
 #endif
 
@@ -40,6 +44,8 @@ private char outbuf[BUFSIZ];		/* standard output buffer */
 private char namebuf[512];		/* possible name of object file */
 private int firstarg;			/* first program argument (for -r) */
 
+private Ttyinfo ttyinfo;
+
 private catchintr();
 
 /*
@@ -51,11 +57,14 @@ int argc;
 String argv[];
 {
     register Integer i;
+    extern String date;
 
     cmdname = argv[0];
     catcherrs();
     onsyserr(EINTR, nil);
     setbuf(stdout, outbuf);
+    printf("dbx version of %s.\nType 'help' for help.\n", date);
+    fflush(stdout);
     scanargs(argc, argv);
     language_init();
     process_init();
@@ -74,6 +83,7 @@ String argv[];
 	init();
     }
     setjmp(env);
+    restoretty(stdout, &ttyinfo);
     signal(SIGINT, catchintr);
     yyparse();
     putchar('\n');
@@ -92,12 +102,17 @@ public init()
     char buf[100];
     extern String getenv();
 
+    savetty(stdout, &ttyinfo);
     enterkeywords();
     scanner_init();
     if (not coredump and not runfirst) {
 	start(nil, nil, nil);
     }
+    printf("reading symbolic information ...");
+    fflush(stdout);
     readobj(objname);
+    printf("\n");
+    fflush(stdout);
     curfunc = program;
     bpinit();
     f = fopen(initfile, "r");
@@ -321,6 +336,24 @@ char c;
 	default:
 	    fatal("unknown option '%c'", c);
     }
+}
+
+/*
+ * Save/restore the state of a tty.
+ */
+
+public savetty(f, t)
+File f;
+Ttyinfo *t;
+{
+    gtty(fileno(f), t);
+}
+
+public restoretty(f, t)
+File f;
+Ttyinfo *t;
+{
+    stty(fileno(f), t);
 }
 
 /*
