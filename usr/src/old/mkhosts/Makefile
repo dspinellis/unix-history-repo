@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.4 (Berkeley) %G%
+#	@(#)Makefile	5.5 (Berkeley) %G%
 
 SRCS=	mkhosts.c
 MAN8=	mkhosts.0
@@ -35,5 +35,4 @@ lint: ${SRCS}
 tags: ${SRCS}
 	cd ${.CURDIR}; ctags ${SRCS}
 
-.include <bsd.own.mk>
-.include <bsd.man.mk>
+.include <bsd.prog.mk>
