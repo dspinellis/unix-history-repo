@@ -1,4 +1,4 @@
-/*	kern_exit.c	6.2	84/05/22	*/
+/*	kern_exit.c	6.3	84/06/10	*/
 
 #include "../machine/reg.h"
 #include "../machine/psl.h"
@@ -175,7 +175,9 @@ wait()
 	u.u_error = wait1(u.u_ar0[R0], &ru);
 	if (u.u_error)
 		return;
-	(void) copyout((caddr_t)&ru, (caddr_t)rup, sizeof (struct rusage));
+	if (rup != (struct rusage *)0)
+		u.u_error = copyout((caddr_t)&ru, (caddr_t)rup,
+		    sizeof (struct rusage));
 }
 
 /*
