@@ -1,0 +1,142 @@
+#! /bin/csh 
+#$Header: lispconf,v 1.18 87/12/11 16:41:21 sklower Exp $
+#
+# csh script to configure lisp
+# use:
+#	lispconf type
+# where type is one of
+#    vax_4_1 vax_4_1a vax_4_1c vax_eunice_vms
+#    tahoe_4_3
+#    sun_4_1c sun_unisoft dual_unisoft pixel_unisoft lisa_uniplus3
+#	sun_4_2 sun_4_2beta mc500_2_0
+#
+if ($#argv == 1) then
+  set argument = $argv[1]
+else  
+  set argument = junk
+endif
+
+#fix makefile
+sed "s%^RootDir = .*%RootDir = `pwd`%" Makefile > Make$$
+mv Make$$ Makefile < /dev/null
+
+switch ($argument)
+ case vax_eunice_vms:
+	mv franz/vax/{Makefile,Make.unix}
+	mv franz/vax/{Make.vms,Makefile}
+ case vax_4_1:
+ case vax_4_1a:
+ case vax_4_1c:
+ case vax_4_2:
+ case vax_4_3:
+ case sun_4_1c: 
+ case sun_4_2: 
+ case sun_4_2beta: 
+ case mc500_2_0:
+ case tahoe_4_3:
+ case sun_unisoft:
+ case dual_unisoft:
+ case pixel_unisoft:
+ case lisa_unisys3:
+	echo "/* this file created by ../../lispconf */" >! franz/h/lconf.h
+	echo "#define $argv[1] 1" >>! franz/h/lconf.h
+	rm -f franz/h/{aout,lispo}.h
+	cp /usr/include/a.out.h franz/h/aout.h
+	cp /usr/include/a.out.h franz/h/lispo.h
+	breaksw
+ default:
+  echo "use: lispconf type"
+  echo "  where type is one of "
+  echo "  vax_4_1 vax_4_1a vax_4_1c vax_4_2 vax_4_3"
+  echo "  vax_eunice_vms tahoe_4_3"
+  echo "  sun_4_1c sun_unisoft dual_unisoft pixel_unisoft "
+  echo "  sun_4_2beta lisa_unisys3 mc500_2_0"
+  exit 1
+endsw 
+
+set ifusft=""
+set ifsys3=""
+switch ($argument)
+ case vax_*:
+	set VAX mach="vax"
+	(echo vax ucbstd; cat Makefile) | awk -f cvt.awk > Make$$
+	mv Make$$ Makefile < /dev/null
+	breaksw
+ case tahoe_*:
+	set TAHOE mach="tahoe"
+	(echo tahoe ucbstd; cat Makefile) | awk -f cvt.awk >Make$$
+	mv Make$$ Makefile </dev/null
+	breaksw
+ case *_unisys3:
+	set ifsys3="unisys3botch"
+ case *_unisoft:
+	set ifusft="unisoft"
+ case sun_4_*: 
+ case mc500_2_*:
+	set M68K mach="68k"
+	(echo 68k ucbstd $ifusft; cat Makefile)| awk -f cvt.awk>Make$$
+	mv Make$$ Makefile < /dev/null
+	breaksw
+endsw 
+
+# for the 68k version of the lisp compiler
+# The type of makefile built depends of the type of 68k
+#  system you have.  We assume that sun's and mc500's have virtual
+#  memory and that dual/unisoft's have no vm (thus, define swapper).
+# As long as we are checking to see if we are dealing with
+# a 68000 unisoft machine; make some patches to the C part as well.
+set ifsunII=""
+if ($?M68K) then
+	switch ($argument)
+	 case *_unisys3:
+	 case *_unisoft:
+		(echo swapper unisoft;\
+		    cat liszt/68k/Makefile) |awk -f cvt.awk > Make$$
+		(echo unisoft $ifsys3;\
+		    cat franz/68k/Makefile) |awk -f cvt.awk > franz/68k/Make$$
+		rm -f franz/h/{lispo,aout}.h
+		cp franz/h/duallispo.h franz/h/lispo.h
+		cp franz/h/dualaout.h franz/h/aout.h
+		cp franz/h/hpagsiz.h franz/h/pagsiz.h
+		cp lisplib/autorun/unisoft lisplib/autorun/68k
+		breaksw
+	 case sun_4_2beta:
+	 case sun_4_2:
+		set ifsunII=sunII
+	 case sun_4_1c:
+		(echo sun; cat liszt/68k/Makefile) | awk -f cvt.awk > Make$$
+		(echo sun $ifsunII; cat franz/68k/Makefile)\
+				| awk -f cvt.awk > franz/68k/Make$$
+		cp lisplib/autorun/sun4.2 lisplib/autorun/68k
+		breaksw
+	 case mc500_2_*:
+		(echo mc500; cat liszt/68k/Makefile) | awk -f cvt.awk > Make$$
+		(echo mc500; cat franz/68k/Makefile)\
+				| awk -f cvt.awk > franz/68k/Make$$
+		cp lisplib/autorun/mc500 lisplib/autorun/68k
+		breaksw
+	endsw
+	rm -f liszt/68k/Makefile
+	sed "s%^RootDir = .*%RootDir = `pwd`%" Make$$ > liszt/68k/Makefile
+	rm -f Make$$
+	rm -f franz/68k/Makefile
+	mv franz/68k/Make$$ franz/68k/Makefile
+
+	if ($ifusft/x == unisoft/x) then
+		switch ($argument)
+		 case sun_unisoft:
+			set OFFSET=0x40000
+			breaksw
+		 case dual_unisoft:
+			set OFFSET=0x800000
+			breaksw
+		 case pixel_unisoft:
+		 case lisa_unisys3:
+			set OFFSET=0x20000
+			breaksw
+		endsw
+		sed "s%^OFFSET = .*%OFFSET = $OFFSET%"\
+				lisplib/autorun/68k > temp$$
+		mv temp$$ lisplib/autorun/68k </dev/null
+	endif
+endif
