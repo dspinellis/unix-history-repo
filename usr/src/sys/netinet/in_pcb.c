@@ -4,12 +4,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)in_pcb.c	7.16 (Berkeley) %G%
+ *	@(#)in_pcb.c	7.17 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "systm.h"
-#include "proc.h"
 #include "malloc.h"
 #include "mbuf.h"
 #include "protosw.h"
