@@ -2,10 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)f77.ms	5.3 (Berkeley) %G%
+.\"	@(#)f77.ms	5.4 (Berkeley) %G%
 .\"
-.EH 'PS1:2-%''A Portable Fortran 77 Compiler'
-.OH 'A Portable Fortran 77 Compiler''PS1:2-%'
+.rm CM
 .hw name-list
 .de XX
 .ne 3
@@ -41,8 +40,12 @@ P. J. Weinberger
 .AI
 Bell Laboratories
 Murray Hill, New Jersey 07974
+.AU
+J. Berkman
+.AI
+University of California
+Berkeley, CA 94720
 .AB
-.LP
 The Fortran language has been revised.
 The new language, known as\p
 Fortran 77,
@@ -59,11 +62,7 @@ In this paper, we describe the language compiled,
 interfaces between procedures,
 and file formats assumed by the \s-1I/O\s0 system.
 Appendix A describes the Fortran 77 language extensions.
-.LP
-1 August 1978
-.SH
-Berkeley Notes
-.LP
+.PP
 This is a standard Bell Laboratories
 document reproduced with minor modifications
 to the text.
@@ -75,12 +74,18 @@ Appendix B contains
 a list of Fortran 77 references
 (some from the original Bell document
 and some added at Berkeley).
+.sp 2
 .LP
-June 1983
-.LP
-Revised for 4.3 BSD, September, 1985 by J. Berkman.
+Revised September, 1985
 .AE
+.LP
 .CS 9 10 19 0 0 8
+.\" the Table of Contents uses pages 2 and 3,
+.\" hence the document begins at page 4.
+.pn 4
+.EH 'PS1:2-%''A Portable Fortran 77 Compiler'
+.OH 'A Portable Fortran 77 Compiler''PS1:2-%'
+.bp
 .NH 0
 INTRODUCTION
 .XS
@@ -2423,4 +2428,8 @@ West, 1980.
 .IP 10.
 Wagener, Jerrold L.  \f2Principles of Fortran 77 Programming.\f1
 Wiley, 1980.
-.TC
+.\" want Table of Contents to begin on page 2 hence must expand body
+.\" of .TC macro to enable us to get handle on page number.
+.pn 2
+.bp
+.PX
