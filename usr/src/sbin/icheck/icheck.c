@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)icheck.c	1.20 (Berkeley) %G%";
+static	char *sccsid = "@(#)icheck.c	1.21 (Berkeley) %G%";
 
 /*
  * icheck
@@ -553,7 +553,7 @@ fragacct(fs, fragmap, fraglist, cnt)
 	inblk = (int)(fragtbl[fs->fs_frag][fragmap] << 1);
 	fragmap <<= 1;
 	for (siz = 1; siz < fs->fs_frag; siz++) {
-		if (((1 << siz) & inblk) == 0)
+		if ((inblk & (1 << (siz + (fs->fs_frag % NBBY)))) == 0)
 			continue;
 		field = around[siz];
 		subfield = inside[siz];
