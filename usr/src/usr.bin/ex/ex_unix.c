@@ -5,13 +5,14 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)ex_unix.c	7.7 (Berkeley) %G%";
+static char *sccsid = "@(#)ex_unix.c	7.8 (Berkeley) %G%";
 #endif not lint
 
 #include "ex.h"
 #include "ex_temp.h"
 #include "ex_tty.h"
 #include "ex_vis.h"
+#include <sys/wait.h>
 
 /*
  * Unix escapes, filtering
@@ -329,14 +330,30 @@ recover()
  */
 waitfor()
 {
-	int stat = 0;
+	union wait stat, pstat;
+	int wpid;
+	extern char *sys_siglist[];
 
+	pstat.w_status = 0;
 	do {
-		rpid = wait(&stat);
-		if (rpid == pid)
-			status = stat;
-	} while (rpid != -1);
-	status = (status >> 8) & 0377;
+		wpid = wait(&stat);
+		if (wpid == pid) {
+			pstat = stat;
+			rpid = wpid;
+		}
+	} while (wpid != -1);
+
+	if (WIFEXITED(pstat))
+		status = pstat.w_retcode;
+	else {
+		ex_printf("%d: terminated abnormally: %s ",
+		    pid, sys_siglist[pstat.w_termsig]);
+		if (pstat.w_coredump)
+			ex_printf("(core dumped) ");
+		if (!inopen)
+			ex_printf("\r\n");
+		status = pstat.w_termsig;
+	}
 }
 
 /*
