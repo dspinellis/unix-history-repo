@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_pcb.h	7.15 (Berkeley) %G%
+ *	@(#)tp_pcb.h	7.16 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -108,17 +108,6 @@ struct tp_param {
 };
 
 
-/*
- * retransmission control and performance measurement 
- */
-struct tp_rtc {
-	struct tp_rtc	*tprt_next; /* ptr to next rtc structure in the list */
-	SeqNum 			tprt_seq;	/* seq # of this TPDU */
-	int				tprt_eot;	/* Will this TPDU have the eot bit set? */
-	int				tprt_octets;/* # octets in this TPDU */
-	struct mbuf		*tprt_data; /* ptr to the octets of data */
-};
-
 struct nl_protosw {
 	int		nlp_afamily;			/* address family */
 	int		(*nlp_putnetaddr)();	/* puts addresses in nl pcb */
@@ -163,7 +152,9 @@ struct tp_pcb {
 
 	/* credit & sequencing info for SENDING */
 	u_short 			tp_fcredit;		/* current remote credit in # packets */
-
+	u_short				tp_ssthresh;	/* cong_win threshold for slow start
+										 * exponential to linear switch
+										 */
 	u_short				tp_cong_win;	/* congestion window : set to 1 on
 										 * source quench
 										 * Minimizes the amount of retrans-
@@ -235,15 +226,19 @@ struct tp_pcb {
 #define	tp_netservice _tp_param.p_netservice
 #define	tp_version _tp_param.p_version
 
-	int tp_l_tpdusize;
+	int					tp_l_tpdusize;
 		/* whereas tp_tpdusize is log2(the negotiated max size)
 		 * l_tpdusize is the size we'll use when sending, in # chars
 		 */
 
-	struct timeval	tp_rtv;					/* max round-trip time variance */
-	struct timeval	tp_rtt; 					/* smoothed round-trip time */
-	struct timeval 	tp_rttemit[ TP_RTT_NUM + 1 ]; 
-					/* times that the last TP_RTT_NUM DT_TPDUs were emitted */
+	int					tp_rtv;			/* max round-trip time variance */
+	int					tp_rtt; 		/* smoothed round-trip time */
+	SeqNum				tp_rttseq;		/* packet being timed */
+	int					tp_rttemit;		/* when emitted, in ticks */
+	int					tp_idle;		/* last activity, in ticks */
+	short				tp_rxtcur;		/* current retransmit value */
+	short				tp_rxtshift;	/* log(2) of rexmt exp. backoff */
+
 	unsigned 
 		tp_sendfcc:1,			/* shall next ack include FCC parameter? */
 		tp_trace:1,				/* is this pcb being traced? (not used yet) */
@@ -346,9 +341,9 @@ u_int	tp_start_win;
 }
 
 #ifdef KERNEL
-extern struct timeval 	time;
 extern struct tp_refinfo 	tp_refinfo;
-extern struct tp_ref *tp_ref;
+extern struct timeval 	time;
+extern struct tp_ref	*tp_ref;
 extern struct tp_param	tp_param;
 extern struct nl_protosw  nl_protosw[];
 extern struct tp_pcb	*tp_listeners;

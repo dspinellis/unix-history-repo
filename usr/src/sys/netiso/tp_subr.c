@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_subr.c	7.13 (Berkeley) %G%
+ *	@(#)tp_subr.c	7.14 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -56,6 +56,7 @@ SOFTWARE.
 #include "errno.h"
 #include "types.h"
 #include "time.h"
+#include "kernel.h"
 
 #include "tp_ip.h"
 #include "iso.h"
@@ -69,15 +70,7 @@ SOFTWARE.
 #include "tp_meas.h"
 #include "tp_seq.h"
 
-int 		tp_emit();
-static void tp_sbdrop();
-
-#define SMOOTH(newtype, alpha, old, new) \
-	(newtype) (((new - old)>>alpha) + (old))
-
-#define ABS(type, val) \
-	(type) (((int)(val)<0)?-(val):(val))
-
+int 		tp_emit(), tp_sbdrop();
 
 /*
  * CALLED FROM:
@@ -134,33 +127,26 @@ tp_goodXack(tpcb, seq)
  *  tp_good_ack()
  * FUNCTION and ARGUMENTS:
  *  updates
- *  smoothed average round trip time (base_rtt)
- *  roundtrip time variance (base_rtv) - actually deviation, not variance
+ *  smoothed average round trip time (*rtt)
+ *  roundtrip time variance (*rtv) - actually deviation, not variance
  *  given the new value (diff)
  * RETURN VALUE:
  * void
  */
 
 void
-tp_rtt_rtv( base_rtt, base_rtv, newmeas )
-	struct 	timeval *base_rtt, *base_rtv, *newmeas;
+tp_rtt_rtv( rtt, rtv, newmeas )
+	register int	 *rtt, *rtv;
+	int newmeas;
 {
-	/* update  rt variance (really just the deviation): 
-	 * 	rtv.smooth_ave =  SMOOTH( | oldrtt.smooth_avg - rtt.this_instance | )
-	 */
-	base_rtv->tv_sec = 
-		SMOOTH( long,  TP_RTV_ALPHA, base_rtv->tv_sec, 
-			ABS( long, base_rtt->tv_sec - newmeas->tv_sec ));
-	base_rtv->tv_usec = 
-		SMOOTH( long,  TP_RTV_ALPHA, base_rtv->tv_usec, 
-			ABS(long, base_rtt->tv_usec - newmeas->tv_usec ));
+	int delta = newmeas - *rtt;
 
-	/* update smoothed average rtt */
-	base_rtt->tv_sec = 
-		SMOOTH( long,  TP_RTT_ALPHA, base_rtt->tv_sec, newmeas->tv_sec);
-	base_rtt->tv_usec =
-		SMOOTH( long,  TP_RTT_ALPHA, base_rtt->tv_usec, newmeas->tv_usec);
-
+	if ((*rtt += (delta >> TP_RTT_ALPHA)) <= 0)
+		*rtt = 1;
+	if (delta < 0)
+		delta = -delta;
+	if (*rtv = ((delta - *rtv) >> TP_RTV_ALPHA) <= 0)
+		*rtv = 1;
 }
 
 /*
@@ -223,7 +209,7 @@ tp_goodack(tpcb, cdt, seq, subseq)
 				"tp_goodack snd before sbdrop");
 		ENDDEBUG
 		tpsbcheck(tpcb, 0);
-		tp_sbdrop(tpcb, seq);
+		(void)tp_sbdrop(tpcb, seq);
 		tpsbcheck(tpcb, 1);
 
 		/* increase congestion window but don't let it get too big */
@@ -233,25 +219,22 @@ tp_goodack(tpcb, cdt, seq, subseq)
 		}
 
 		/* Compute smoothed round trip time.
-		 * Only measure rtt for tp_snduna if tp_snduna was among 
-		 * the last TP_RTT_NUM seq numbers sent, and if the data
+		 * Only measure rtt for tp_snduna if acked and the data
 		 * were not retransmitted.
 		 */
-		if (SEQ_GEQ(tpcb, tpcb->tp_snduna, 
-			SEQ(tpcb, tpcb->tp_sndhiwat - TP_RTT_NUM))
-			&& SEQ_GT(tpcb, seq, SEQ_ADD(tpcb, tpcb->tp_retrans_hiwat, 1))) {
+		if (tpcb->tp_rttemit && SEQ_GT(tpcb, seq, tpcb->tp_rttseq)) {
+			int x = tick - tpcb->tp_rttemit;
 
-			struct timeval *t = &tpcb->tp_rttemit[tpcb->tp_snduna & TP_RTT_NUM];
-			struct timeval x;
-
-			GET_TIME_SINCE(t, &x);
-
-			tp_rtt_rtv( &(tpcb->tp_rtt), &(tpcb->tp_rtv), &x );
+			if (tpcb->tp_rtt)
+				tp_rtt_rtv(&(tpcb->tp_rtt), &(tpcb->tp_rtv), x);
+			else {
+				tpcb->tp_rtt = x;
+				tpcb->tp_rtv = x >> 1;
+			}
 
 			{	/* update the global rtt, rtv stats */
-				register int i =
-				   (int) tpcb->tp_flags & (TPF_PEER_ON_SAMENET | TPF_NLQOS_PDN);
-				tp_rtt_rtv( &(tp_stat.ts_rtt[i]), &(tp_stat.ts_rtv[i]), &x );
+				int i = tpcb->tp_flags & (TPF_PEER_ON_SAMENET | TPF_NLQOS_PDN);
+				tp_rtt_rtv(tp_stat.ts_rtt + i, tp_stat.ts_rtv + i, x);
 
 				IFTRACE(D_RTT)
 					tptraceTPCB(TPPTmisc, "Global rtt, rtv: i", i, 0, 0, 0);
@@ -265,46 +248,37 @@ tp_goodack(tpcb, cdt, seq, subseq)
 					tpcb->tp_peer_acktime);
 
 				tptraceTPCB(TPPTmisc, 
-				"(secs): emittime diff(x) rtt, rtv",
-					t->tv_sec, 
-					x.tv_sec, 
-					tpcb->tp_rtt.tv_sec,
-					tpcb->tp_rtv.tv_sec);
-				tptraceTPCB(TPPTmisc, 
-				"(usecs): emittime diff(x) rtt rtv",
-					t->tv_usec, 
-					x.tv_usec, 
-					tpcb->tp_rtt.tv_usec,
-					tpcb->tp_rtv.tv_usec);
+					"(secs): emittime diff(x) rtt, rtv",
+						tpcb->tp_rttemit, x, tpcb->tp_rtt, tpcb->tp_rtv);
 			ENDTRACE
 
 			{
 				/* Update data retransmission timer based on the smoothed
 				 * round trip time, peer ack time, and the pseudo-arbitrary
-				 * number 4.
-				 * new ticks: avg rtt + 2*dev
-				 * rtt, rtv are in microsecs, and ticks are 500 ms
-				 * so 1 tick = 500*1000 us = 500000 us
-				 * so ticks = (rtt + 2 rtv)/500000
-				 * with ticks no les than peer ack time and no less than 4
+				 * number 2.
+				 * new ticks: (avg rtt + 4*dev)
+				 * rtt, rtv are in hz-ticks,
+				 * and slowtimo-ticks are hz / 2;
+				 * We want no less than peer ack time and no less than 2
 				 */
 
-				int rtt = tpcb->tp_rtt.tv_usec +
-					tpcb->tp_rtt.tv_sec*1000000;
-				int rtv = tpcb->tp_rtv.tv_usec +
-					tpcb->tp_rtv.tv_sec*1000000;
 
+				int rtt = tpcb->tp_rtt, rtv = tpcb->tp_rtv,
+					old = tpcb->tp_dt_ticks, new;
+
+				new = (((rtt + (rtv << 2)) << 1) + hz) / hz;
+				new = MAX(new + 1, old);
+				new = MAX(new, tpcb->tp_peer_acktime);
+				new = MAX(new, 2);
 				IFTRACE(D_RTT)
 					tptraceTPCB(TPPTmisc, "oldticks ,rtv, rtt, newticks",
-						tpcb->tp_dt_ticks, 
-						rtv, rtt,
-						(rtt/500000 + (2 * rtv)/500000));
+						old, rtv, rtt, new);
 				ENDTRACE
-				tpcb->tp_dt_ticks = (rtt+ (2 * rtv))/500000;
-				tpcb->tp_dt_ticks = MAX( tpcb->tp_dt_ticks, 
-					tpcb->tp_peer_acktime);
-				tpcb->tp_dt_ticks = MAX( tpcb->tp_dt_ticks,  4);
+				tpcb->tp_dt_ticks = new;
 			}
+			tpcb->tp_rxtcur = tpcb->tp_dt_ticks;
+			tpcb->tp_rxtshift = 0;
+
 		}
 		tpcb->tp_snduna = seq;
 		tpcb->tp_retrans = tpcb->tp_Nretrans; /* CE_BIT */
@@ -335,13 +309,13 @@ tp_goodack(tpcb, cdt, seq, subseq)
  *  drops everything up TO but not INCLUDING seq # (seq)
  *  from the retransmission queue.
  */
-static void
 tp_sbdrop(tpcb, seq) 
 	register struct 	tp_pcb 			*tpcb;
 	SeqNum					seq;
 {
 	struct sockbuf *sb = &tpcb->tp_sock->so_snd;
 	register int i = ((int)seq)-((int)tpcb->tp_snduna);
+	int	oldcc = sb->sb_cc;
 
 	if (i < 0) i += tpcb->tp_seqhalf;
 	IFDEBUG(D_ACKRECV)
@@ -351,7 +325,7 @@ tp_sbdrop(tpcb, seq)
 		sbdroprecord(sb);
 	if (SEQ_LT(tpcb, tpcb->tp_sndhiwat, seq))
 		tpcb->tp_sndhiwat_m = 0;
-
+	return (oldcc - sb->sb_cc);
 }
 
 /*
@@ -386,10 +360,7 @@ tp_send(tpcb)
 	SeqNum					lowsave; 
 #ifdef TP_PERF_MEAS
 
-	struct timeval 			send_start_time;
-	IFPERF(tpcb)
-		GET_CUR_TIME(&send_start_time);
-	ENDPERF
+	int			 			send_start_time = tick;
 #endif TP_PERF_MEAS
 
 	lowsave =  lowseq = SEQ(tpcb, tpcb->tp_sndhiwat + 1);
@@ -488,13 +459,13 @@ tp_send(tpcb)
 			SEQ_DEC(tpcb, lowseq); 
 			goto done;
 		}
+		/* set the transmit-time for computation of round-trip times */
+		if (tpcb->tp_rttemit == 0) {
+			tpcb->tp_rttemit = tick;
+			tpcb->tp_rttseq = lowseq;
+		}
 		tpcb->tp_sndhiwat_m = mb;
 		mb = mb->m_nextpkt;
-		/* set the transmit-time for computation of round-trip times */
-		bcopy( (caddr_t)&time, 
-				(caddr_t)&( tpcb->tp_rttemit[ lowseq & TP_RTT_NUM ] ), 
-				sizeof(struct timeval));
-
 	}
 
 done:
@@ -502,8 +473,8 @@ done:
 	IFPERF(tpcb)
 		{
 			register int npkts;
-			struct timeval send_end_time;
-			register struct timeval *t;
+			int	 elapsed = tick - send_start_time, *t;
+			struct timeval now;
 
 			npkts = lowseq;
 			SEQ_INC(tpcb, npkts);
@@ -515,12 +486,8 @@ done:
 			if (npkts > TP_PM_MAX) 
 				npkts = TP_PM_MAX; 
 
-			GET_TIME_SINCE(&send_start_time, &send_end_time);
 			t = &(tpcb->tp_p_meas->tps_sendtime[npkts]);
-			t->tv_sec =
-				SMOOTH( long, TP_RTT_ALPHA, t->tv_sec, send_end_time.tv_sec);
-			t->tv_usec =
-				SMOOTH( long, TP_RTT_ALPHA, t->tv_usec, send_end_time.tv_usec);
+			*t += (t - elapsed) >> TP_RTT_ALPHA;
 
 			if ( SEQ_LT(tpcb, lowseq, highseq) ) {
 				IncPStat(tpcb, tps_win_lim_by_data[npkts] );
@@ -528,8 +495,10 @@ done:
 				IncPStat(tpcb, tps_win_lim_by_cdt[npkts] );
 				/* not true with congestion-window being used */
 			}
+			now.tv_sec = elapsed / hz;
+			now.tv_usec = (elapsed - (hz * now.tv_sec)) * 1000000 / hz;
 			tpmeas( tpcb->tp_lref, 
-					TPsbsend, &send_end_time, lowsave, tpcb->tp_Nwindow, npkts);
+					TPsbsend, &elapsed, lowsave, tpcb->tp_Nwindow, npkts);
 		}
 	ENDPERF
 #endif TP_PERF_MEAS
