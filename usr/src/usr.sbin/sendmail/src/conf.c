@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.130 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.131 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -1531,7 +1531,7 @@ setproctitle(fmt, va_alist)
 **  REAPCHILD -- pick up the body of my child, lest it become a zombie
 **
 **	Parameters:
-**		none.
+**		sig -- the signal that got us here (unused).
 **
 **	Returns:
 **		none.
@@ -1541,7 +1541,8 @@ setproctitle(fmt, va_alist)
 */
 
 void
-reapchild()
+reapchild(sig)
+	int sig;
 {
 	int olderrno = errno;
 # ifdef HASWAITPID
@@ -2104,7 +2105,7 @@ freespace(dir, bsize)
 #   else
 	struct statfs fs;
 #    define FSBLOCKSIZE	fs.f_bsize
-#    if defined(_SCO_unix_) || defined(IRIX) || defined(apollo) || defined(ALTOS_SYS_V) || defined(_UTS)
+#    if defined(_SCO_unix_) || defined(IRIX) || defined(apollo) || defined(ALTOS_SYS_V) || defined(_UTS) || defined(_CRAYCOM)
 #     define f_bavail f_bfree
 #    endif
 #   endif

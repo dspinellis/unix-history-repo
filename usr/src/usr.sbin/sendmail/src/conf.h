@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.132 (Berkeley) %G%
+ *	@(#)conf.h	8.133 (Berkeley) %G%
  */
 
 /*
@@ -1025,7 +1025,22 @@ extern int	syslog(int, char *, ...);
 # endif
 #endif
 
+/*
+**  Cray Computer Corporation's CSOS
+**
+**	Contributed by Scott Bolte <scott@craycos.com>.
+*/
 
+#ifdef _CRAYCOM
+# define SYSTEM5	1	/* include all the System V defines */
+# define SYS5SIGNALS	1	/* SysV signal semantics -- reset on each sig */
+# define NEEDFSYNC	1	/* no fsync in system library */
+# define MAXPATHLEN	PATHSIZE
+# define LA_TYPE	LA_ZERO
+# define SFS_TYPE	SFS_4ARGS	/* four argument statfs() call */
+# define _POSIX_CHOWN_RESTRICTED	-1
+extern struct group	*getgrent(), *getgrnam(), *getgrgid();
+#endif
 
 
 /**********************************************************************
@@ -1124,12 +1139,16 @@ extern int	syslog(int, char *, ...);
 #endif
 
 /*
-**  Tweaking for systems that (for example) claim to be BSD but
-**  don't have all the standard BSD routines (boo hiss).
+**  Tweaking for systems that (for example) claim to be BSD or POSIX
+**  but don't have all the standard BSD or POSIX routines (boo hiss).
 */
 
 #ifdef titan
 # undef HASINITGROUPS		/* doesn't have initgroups(3) call */
+#endif
+
+#ifdef _CRAYCOM
+# undef HASSETSID		/* despite POSIX claim, doesn't have setsid */
 #endif
 
 
