@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ffs_vnops.c	7.31 (Berkeley) %G%
+ *	@(#)ffs_vnops.c	7.32 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -1416,9 +1416,13 @@ ufs_print(vp)
 {
 	register struct inode *ip = VTOI(vp);
 
-	printf("tag VT_UFS, ino %d, on dev %d, %d%s\n", ip->i_number,
-		major(ip->i_dev), minor(ip->i_dev),
-		(ip->i_flag & ILOCKED) ? " (LOCKED)" : "");
+	printf("tag VT_UFS, ino %d, on dev %d, %d", ip->i_number,
+		major(ip->i_dev), minor(ip->i_dev));
+#ifdef FIFO
+	if (vp->v_type == VFIFO)
+		fifo_printinfo(vp);
+#endif /* FIFO */
+	printf("%s\n", (ip->i_flag & ILOCKED) ? " (LOCKED)" : "");
 	if (ip->i_spare0 == 0)
 		return;
 	printf("\towner pid %d", ip->i_spare0);
