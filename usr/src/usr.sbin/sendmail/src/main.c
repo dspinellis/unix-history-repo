@@ -13,7 +13,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.50 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.51 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -121,6 +121,7 @@ main(argc, argv, envp)
 	bool readconfig = TRUE;
 	bool queuemode = FALSE;		/* process queue requests */
 	bool nothaw;
+	bool safecf = TRUE;
 	static bool reenter = FALSE;
 	char jbuf[60];			/* holds MyHostName */
 	extern bool safefile();
@@ -171,7 +172,12 @@ main(argc, argv, envp)
 	i = open("/dev/null", O_RDWR);
 	while (i >= 0 && i < 2)
 		i = dup(i);
-	for (i = getdtablesize(); i > 2; --i)
+	i = getdtablesize();
+
+	/* in 4.4BSD, the table can be huge; impose a reasonable limit */
+	if (i > 256)
+		i = 256;
+	while (--i > 2)
 		(void) close(i);
 	errno = 0;
 
@@ -216,6 +222,7 @@ main(argc, argv, envp)
 				ConfFile = "sendmail.cf";
 			(void) setgid(getrgid());
 			(void) setuid(getruid());
+			safecf = FALSE;
 			nothaw = TRUE;
 		}
 		else if (strncmp(p, "-bz", 3) == 0)
@@ -501,7 +508,7 @@ main(argc, argv, envp)
 	*/
 
 	if (OpMode == MD_FREEZE || readconfig)
-		readcf(ConfFile);
+		readcf(ConfFile, safecf);
 
 	if (ConfigLevel > MAXCONFIGLEVEL)
 	{
