@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)sem.c	5.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)sem.c	5.17 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -29,7 +29,7 @@ static char sccsid[] = "@(#)sem.c	5.16 (Berkeley) %G%";
 
 static void	vffree __P((int));
 static void	doio __P((struct command *t, int *, int *));
-static void	chkclob __P((Char *));
+static void	chkclob __P((char *));
 
 void
 execute(t, wanttty, pipein, pipeout)
@@ -433,7 +433,7 @@ doio(t, pipein, pipeout)
 	return;
     if ((flags & F_READ) == 0) {/* F_READ already done */
 	if (cp = t->t_dlef) {
-	    char    tmp[MAXPATHLEN];
+	    char    tmp[MAXPATHLEN+1];
 
 	    /*
 	     * so < /dev/std{in,out,err} work
@@ -443,7 +443,7 @@ doio(t, pipein, pipeout)
 	    (void) dcopy(SHDIAG, 2);
 	    cp = globone(Dfix1(cp), G_IGNORE);
 	    (void) strncpy(tmp, short2str(cp), MAXPATHLEN);
-	    tmp[MAXPATHLEN - 1] = '\0';
+	    tmp[MAXPATHLEN] = '\0';
 	    xfree((ptr_t) cp);
 	    if ((fd = open(tmp, O_RDONLY)) < 0)
 		stderror(ERR_SYSTEM, tmp, strerror(errno));
@@ -466,11 +466,11 @@ doio(t, pipein, pipeout)
 	}
     }
     if (cp = t->t_drit) {
-	Char    tmp[MAXPATHLEN];
+	char    tmp[MAXPATHLEN+1];
 
 	cp = globone(Dfix1(cp), G_IGNORE);
-	(void) Strncpy(tmp, cp, MAXPATHLEN);
-	tmp[MAXPATHLEN - 1] = '\0';
+	(void) strncpy(tmp, short2str(cp), MAXPATHLEN);
+	tmp[MAXPATHLEN] = '\0';
 	xfree((ptr_t) cp);
 	/*
 	 * so > /dev/std{out,err} work
@@ -479,19 +479,19 @@ doio(t, pipein, pipeout)
 	(void) dcopy(SHDIAG, 2);
 	if ((flags & F_APPEND) &&
 #ifdef O_APPEND
-	    (fd = open(short2str(tmp), O_WRONLY | O_APPEND)) >= 0);
+	    (fd = open(tmp, O_WRONLY | O_APPEND)) >= 0);
 #else
-	    (fd = open(short2str(tmp), O_WRONLY)) >= 0)
+	    (fd = open(tmp, O_WRONLY)) >= 0)
 	    (void) lseek(1, (off_t) 0, L_XTND);
 #endif
 	else {
 	    if (!(flags & F_OVERWRITE) && adrof(STRnoclobber)) {
 		if (flags & F_APPEND)
-		    stderror(ERR_SYSTEM, short2str(tmp), strerror(errno));
+		    stderror(ERR_SYSTEM, tmp, strerror(errno));
 		chkclob(tmp);
 	    }
-	    if ((fd = creat(short2str(tmp), 0666)) < 0)
-		stderror(ERR_SYSTEM, short2str(tmp), strerror(errno));
+	    if ((fd = creat(tmp, 0666)) < 0)
+		stderror(ERR_SYSTEM, tmp, strerror(errno));
 	}
 	(void) dmove(fd, 1);
     }
@@ -533,14 +533,13 @@ oops:
 
 static void
 chkclob(cp)
-    register Char *cp;
+    register char *cp;
 {
     struct stat stb;
-    char   *ptr;
 
-    if (stat(ptr = short2str(cp), &stb) < 0)
+    if (stat(cp, &stb) < 0)
 	return;
     if ((stb.st_mode & S_IFMT) == S_IFCHR)
 	return;
-    stderror(ERR_EXISTS, ptr);
+    stderror(ERR_EXISTS, cp);
 }
