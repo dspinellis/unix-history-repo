@@ -1,4 +1,4 @@
-/*	swapgeneric.c	1.2	86/01/05	*/
+/*	swapgeneric.c	1.3	86/07/16	*/
 
 #include "../machine/pte.h"
 
@@ -16,7 +16,9 @@
 /*
  * Generic configuration;  all in one
  */
-dev_t	rootdev, argdev, dumpdev;
+dev_t	rootdev;
+dev_t	argdev = NODEV;
+dev_t	dumpdev = NODEV;
 int	nswap;
 struct	swdevt swdevt[] = {
 	{ -1,	1,	0 },
@@ -32,10 +34,7 @@ struct	genericconf {
 	char	*gc_name;
 	dev_t	gc_root;
 } genericconf[] = {
-	{ (caddr_t)&vddriver,	"fsd",	makedev(1, 0),	},
-	{ (caddr_t)&vddriver,	"smd",	makedev(1, 0),	},
-	{ (caddr_t)&vddriver,	"xfd",	makedev(1, 0),	},
-	{ (caddr_t)&vddriver,	"xsd",	makedev(1, 0),	},
+	{ (caddr_t)&vddriver,	"dk",	makedev(1, 0),	},
 	{ 0 },
 };
 
@@ -45,6 +44,8 @@ setconf()
 	register struct genericconf *gc;
 	int unit, swaponroot = 0;
 
+	if (rootdev != NODEV)
+		goto noswap;
 	if (boothowto & RB_ASKNAME) {
 		char name[128];
 retry:
@@ -52,22 +53,21 @@ retry:
 		gets(name);
 		for (gc = genericconf; gc->gc_driver; gc++)
 			if (gc->gc_name[0] == name[0] &&
-			    gc->gc_name[1] == name[1] &&
-			    gc->gc_name[2] == name[2])
+			    gc->gc_name[1] == name[1])
 				goto gotit;
 		goto bad;
 gotit:
-		if (name[4] == '*') {
-			name[4] = name[5];
+		if (name[3] == '*') {
+			name[3] = name[4];
 			swaponroot++;
 		}
-		if (name[3] >= '0' && name[3] <= '7' && name[4] == 0) {
-			unit = name[3] - '0';
+		if (name[2] >= '0' && name[2] <= '7' && name[3] == 0) {
+			unit = name[2] - '0';
 			goto found;
 		}
 		printf("bad/missing unit number\n");
 bad:
-		printf("use fsd%%d, smd%%d, xfd%%d, or xsd%%d\n");
+		printf("use dk%%d\n");
 		goto retry;
 	}
 	unit = 0;
@@ -137,6 +137,12 @@ gets(cp)
 			*lp++ = '\0';
 			return;
 		case '\b':
+		case '\177':
+			if (lp > cp) {
+				printf(" \b");
+				lp--;
+			}
+			continue;
 		case '#':
 			lp--;
 			if (lp < cp)
