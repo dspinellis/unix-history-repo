@@ -22,20 +22,95 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)tput.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)tput.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
-main()
-{
-	char *cp, *clbp, clbuf[100], tbuf[1024], *getenv(), *tgetstr();
-	int putchar();
+#include <sys/termios.h>
+#include <stdio.h>
+#include <unistd.h>
 
-	if ((cp = getenv("TERM")) && tgetent(tbuf, cp) == 1) {
-		clbp = clbuf;
-		if (cp = tgetstr("cl", &clbp)) {
-			tputs(cp, 1, putchar);
-			exit(0);
+main(argc, argv)
+	int argc;
+	char **argv;
+{
+	extern char *optarg;
+	extern int optind;
+	int ch, exitval, myputchar();
+	char *ap, *p, *term, buf[1024], tbuf[1024];
+	char *getenv(), *tgetstr(), *realname();
+
+	term = NULL;
+	while ((ch = getopt(argc, argv, "T:")) != EOF)
+		switch(ch) {
+		case 'T':
+			term = optarg;
+			break;
+		case '?':
+		default:
+			usage();
 		}
+	argc -= optind;
+	argv += optind;
+
+	if (!term && !(term = getenv("TERM"))) {
+		(void)fprintf(stderr, "tput: no terminal type specified.\n");
+		exit(3);
 	}
+	if (tgetent(tbuf, term) != 1) {
+		(void)fprintf(stderr, "tput: tgetent failure.\n");
+		exit(3);
+	}
+	setospeed();
+	for (p = buf, exitval = 0; *argv; ++argv)
+		if (ap = tgetstr(realname(*argv), &p))
+			tputs(ap, 1, myputchar);
+		else
+			exitval = 2;
+	exit(exitval);
+}
+
+char *
+realname(s)
+	char *s;
+{
+	switch(*s) {
+	case 'c':
+		if (!strcmp(s, "clear"))
+			return("cl");
+		break;
+	case 'i':
+		if (!strcmp(s, "init"))
+			return("is");
+		break;
+	case 'r':
+		if (!strcmp(s, "reset"))
+			return("rs");
+		break;
+	}
+	return(s);
+}
+
+myputchar(c)
+	int c;
+{
+	putchar(c);
+}
+
+setospeed()
+{
+	extern int errno, ospeed;
+	struct termios t;
+	char *strerror();
+
+	if (tcgetattr(STDOUT_FILENO, &t) == -1) {
+		(void)fprintf(stderr, "tput: %s\n", strerror(errno));
+		exit(1);
+	}
+	ospeed = cfgetospeed(&t);
+}
+
+usage()
+{
+	(void)fprintf(stderr, "usage: tput [-T term] attribute ...\n");
 	exit(1);
 }
