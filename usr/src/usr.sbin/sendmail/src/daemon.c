@@ -12,9 +12,9 @@
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	8.17 (Berkeley) %G% (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.18 (Berkeley) %G% (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	8.17 (Berkeley) %G% (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.18 (Berkeley) %G% (without daemon mode)";
 #endif
 #endif /* not lint */
 
@@ -882,7 +882,7 @@ anynet_ntoa(sap)
 	register char *bp;
 	register char *ap;
 	int l;
-	static char buf[80];
+	static char buf[100];
 
 	/* check for null/zero family */
 	if (sap == NULL)
@@ -890,10 +890,26 @@ anynet_ntoa(sap)
 	if (sap->sa.sa_family == 0)
 		return "0";
 
+	switch (sap->sa.sa_family)
+	{
+#ifdef MAYBENEXTRELEASE		/*** UNTESTED *** UNTESTED *** UNTESTED ***/
+	  case AF_UNIX:
+	  	if (sap->sun.sun_path[0] != '\0')
+	  		sprintf(buf, "[UNIX: %.64s]", sap->sun.sun_path);
+	  	else
+	  		sprintf(buf, "[UNIX: localhost]");
+		return buf;
+#endif
+
 #ifdef NETINET
-	if (sap->sa.sa_family == AF_INET)
+	  case AF_INET:
 		return inet_ntoa(((struct sockaddr_in *) sap)->sin_addr);
 #endif
+
+	  default:
+	  	/* this case is only to ensure syntactic correctness */
+	  	break;
+	}
 
 	/* unknown family -- just dump bytes */
 	(void) sprintf(buf, "Family %d: ", sap->sa.sa_family);
@@ -925,10 +941,9 @@ hostnamebyanyaddr(sap)
 	register SOCKADDR *sap;
 {
 	register struct hostent *hp;
-
-#ifdef NAMED_BIND
 	int saveretry;
 
+#ifdef NAMED_BIND
 	/* shorten name server timeout to avoid higher level timeouts */
 	saveretry = _res.retry;
 	_res.retry = 3;
@@ -949,6 +964,12 @@ hostnamebyanyaddr(sap)
 		hp = gethostbyaddr((char *) &sap->siso.siso_addr,
 			sizeof sap->siso.siso_addr,
 			AF_ISO);
+		break;
+#endif
+
+#ifdef MAYBENEXTRELEASE		/*** UNTESTED *** UNTESTED *** UNTESTED ***/
+	  case AF_UNIX:
+		hp = NULL;
 		break;
 #endif
 
