@@ -1,10 +1,11 @@
-
 #
-#	@(#)Makefile	1.2	(Berkeley)	%G%
+#	@(#)Makefile	1.3	(Berkeley)	%G%
 #
 M=/usr/src/lib/mip
-LOAD1=-s
-LOAD2=-s
+#LOAD1=-s
+#LOAD2=-s
+LOAD1=
+LOAD2=
 CFLAGS=-O -DFLEXNAMES
 head: lpass1 lpass2 llib-port.ln llib-lc.ln;
 lpass1: cgram.o xdefs.o scan.o comm1.o pftn.o trees.o optim.o lint.o
@@ -45,10 +46,10 @@ lpass2.o: $M/manifest lmanifest
 lintall:
 	lint -hpv -I. -I$M  $M/cgram.c $M/xdefs.c $M/scan.c $M/pftn.c $M/trees.c $M/optim.c lint.c
 install: head SHELL
-	cp lpass1 ${DESTDIR}/usr/lib/lint/lint1
-	cp lpass2 ${DESTDIR}/usr/lib/lint/lint2
+	install -s lpass1 $(DESTDIR)/usr/lib/lint/lint1
+	install -s lpass2 $(DESTDIR)/usr/lib/lint/lint2
 	cp llib-* ${DESTDIR}/usr/lib/lint
-	cp SHELL ${DESTDIR}/usr/bin/lint
+	install -c SHELL ${DESTDIR}/usr/bin/lint
 
 sources: READ_ME SHELL lint.c llib-lc llib-port lmanifest lpass2.c macdefs
 
