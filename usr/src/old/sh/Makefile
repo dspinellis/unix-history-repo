@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	4.8 (Berkeley) %G%
+#	@(#)Makefile	4.9 (Berkeley) %G%
 #
 #
 CFLAGS=	-O -w
@@ -44,6 +44,14 @@ depend: ${SRCS}
 install: ${MAN}
 	install -s -o bin -g bin -m 755 sh ${DESTDIR}/bin/sh
 	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat1
+	rm -f ${DESTDIR}/usr/man/cat1/case.0
+	rm -f ${DESTDIR}/usr/man/cat1/for.0
+	rm -f ${DESTDIR}/usr/man/cat1/if.0
+	rm -f ${DESTDIR}/usr/man/cat1/while.0
+	ln ${DESTDIR}/usr/man/cat1/sh.0 ${DESTDIR}/usr/man/cat1/case.0
+	ln ${DESTDIR}/usr/man/cat1/sh.0 ${DESTDIR}/usr/man/cat1/for.0
+	ln ${DESTDIR}/usr/man/cat1/sh.0 ${DESTDIR}/usr/man/cat1/if.0
+	ln ${DESTDIR}/usr/man/cat1/sh.0 ${DESTDIR}/usr/man/cat1/while.0
 
 lint: ${SRCS}
 	lint ${CFLAGS} ${SRCS}
