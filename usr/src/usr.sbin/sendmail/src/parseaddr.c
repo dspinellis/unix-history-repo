@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parseaddr.c	8.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)parseaddr.c	8.14 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -732,6 +732,7 @@ _rewrite(pvp, ruleset)
 	register struct rewrite *rwr;	/* pointer to current rewrite rule */
 	int ruleno;			/* current rule number */
 	int rstat = EX_OK;		/* return status */
+	int loopcount;
 	int subr;			/* subroutine number if >= 0 */
 	bool dolookup;			/* do host aliasing */
 	char *npvp[MAXATOM+1];		/* temporary space for rebuild */
@@ -774,10 +775,9 @@ _rewrite(pvp, ruleset)
 	*/
 
 	ruleno = 1;
+	loopcount = 0;
 	for (rwr = RewriteRules[ruleset]; rwr != NULL; )
 	{
-		int loopcount = 0;
-
 		if (tTd(21, 12))
 		{
 			printf("-----trying rule:");
@@ -1165,6 +1165,7 @@ backup:
 				printf("----- rule fails\n");
 			rwr = rwr->r_next;
 			ruleno++;
+			loopcount = 0;
 			nmatches = 0;
 			continue;
 		}
@@ -1191,6 +1192,7 @@ backup:
 			rvp++;
 			rwr = rwr->r_next;
 			ruleno++;
+			loopcount = 0;
 			nmatches = 0;
 		}
 		else if ((*rp & 0377) == CANONHOST)
