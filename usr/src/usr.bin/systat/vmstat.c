@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)vmstat.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)vmstat.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -147,7 +147,7 @@ static struct nlist namelist[] = {
 #define PROCSCOL	 0
 #define GENSTATROW	 7	/* uses 2 rows and 30 cols */
 #define GENSTATCOL	20
-#define VMSTATROW	 7	/* uses 16 rows and 12 cols */
+#define VMSTATROW	 7	/* uses 17 rows and 12 cols */
 #define VMSTATCOL	48
 #define GRAPHROW	10	/* uses 3 rows and 51 cols */
 #define GRAPHCOL	 0
@@ -265,26 +265,24 @@ labelkre()
 	mvprintw(INTSROW, INTSCOL + 3, " Interrupts");
 	mvprintw(INTSROW + 1, INTSCOL + 9, "total");
 
-	mvprintw(VMSTATROW, VMSTATCOL + 10, "vmflt");
-	mvprintw(VMSTATROW + 1, VMSTATCOL + 10, "cow");
-	mvprintw(VMSTATROW + 2, VMSTATCOL + 10, "objlk");
-	mvprintw(VMSTATROW + 3, VMSTATCOL + 10, "objht");
-	mvprintw(VMSTATROW + 4, VMSTATCOL + 10, "zfod");
-	mvprintw(VMSTATROW + 5, VMSTATCOL + 10, "nzfod");
-	mvprintw(VMSTATROW + 6, VMSTATCOL + 10, "%%zfod");
-	mvprintw(VMSTATROW + 7, VMSTATCOL + 10, "kern");
-	mvprintw(VMSTATROW + 8, VMSTATCOL + 10, "wire");
-	mvprintw(VMSTATROW + 9, VMSTATCOL + 10, "act");
-	mvprintw(VMSTATROW + 10, VMSTATCOL + 10, "inact");
-	mvprintw(VMSTATROW + 11, VMSTATCOL + 10, "free");
-	mvprintw(VMSTATROW + 12, VMSTATCOL + 10, "daefr");
-	mvprintw(VMSTATROW + 13, VMSTATCOL + 10, "prcfr");
-	mvprintw(VMSTATROW + 14, VMSTATCOL + 10, "react");
-	mvprintw(VMSTATROW + 15, VMSTATCOL + 10, "scan");
+	mvprintw(VMSTATROW + 0, VMSTATCOL + 10, "cow");
+	mvprintw(VMSTATROW + 1, VMSTATCOL + 10, "objlk");
+	mvprintw(VMSTATROW + 2, VMSTATCOL + 10, "objht");
+	mvprintw(VMSTATROW + 3, VMSTATCOL + 10, "zfod");
+	mvprintw(VMSTATROW + 4, VMSTATCOL + 10, "nzfod");
+	mvprintw(VMSTATROW + 5, VMSTATCOL + 10, "%%zfod");
+	mvprintw(VMSTATROW + 6, VMSTATCOL + 10, "kern");
+	mvprintw(VMSTATROW + 7, VMSTATCOL + 10, "wire");
+	mvprintw(VMSTATROW + 8, VMSTATCOL + 10, "act");
+	mvprintw(VMSTATROW + 9, VMSTATCOL + 10, "inact");
+	mvprintw(VMSTATROW + 10, VMSTATCOL + 10, "free");
+	mvprintw(VMSTATROW + 11, VMSTATCOL + 10, "daefr");
+	mvprintw(VMSTATROW + 12, VMSTATCOL + 10, "prcfr");
+	mvprintw(VMSTATROW + 13, VMSTATCOL + 10, "react");
+	mvprintw(VMSTATROW + 14, VMSTATCOL + 10, "scan");
+	mvprintw(VMSTATROW + 15, VMSTATCOL + 10, "hdrev");
 	if (LINES - 1 > VMSTATROW + 16)
-		mvprintw(VMSTATROW + 16, VMSTATCOL + 10, "hdrev");
-	if (LINES - 1 > VMSTATROW + 17)
-		mvprintw(VMSTATROW + 17, VMSTATCOL + 10, "intrn");
+		mvprintw(VMSTATROW + 16, VMSTATCOL + 10, "intrn");
 
 	mvprintw(GENSTATROW, GENSTATCOL, "  Csw  Trp  Sys  Int  Sof  Flt");
 
@@ -425,27 +423,25 @@ showkre()
 	putint(total.t_dw, PROCSROW + 1, PROCSCOL + 9, 3);
 	putint(total.t_sl, PROCSROW + 1, PROCSCOL + 12, 3);
 	putint(total.t_sw, PROCSROW + 1, PROCSCOL + 15, 3);
-	PUTRATE(Cnt.v_vm_faults, VMSTATROW, VMSTATCOL + 3, 6);
-	PUTRATE(Cnt.v_cow_faults, VMSTATROW + 1, VMSTATCOL + 3, 6);
-	PUTRATE(Cnt.v_lookups, VMSTATROW + 2, VMSTATCOL + 3, 6);
-	PUTRATE(Cnt.v_hits, VMSTATROW + 3, VMSTATCOL + 3, 6);
-	PUTRATE(Cnt.v_zfod, VMSTATROW + 4, VMSTATCOL + 4, 5);
-	PUTRATE(Cnt.v_nzfod, VMSTATROW + 5, VMSTATCOL + 3, 6);
+	PUTRATE(Cnt.v_cow_faults, VMSTATROW + 0, VMSTATCOL + 3, 6);
+	PUTRATE(Cnt.v_lookups, VMSTATROW + 1, VMSTATCOL + 3, 6);
+	PUTRATE(Cnt.v_hits, VMSTATROW + 2, VMSTATCOL + 3, 6);
+	PUTRATE(Cnt.v_zfod, VMSTATROW + 3, VMSTATCOL + 4, 5);
+	PUTRATE(Cnt.v_nzfod, VMSTATROW + 4, VMSTATCOL + 3, 6);
 	putfloat(cnt.v_nzfod == 0 ? 0.0 : (100.0 * cnt.v_zfod / cnt.v_nzfod),
-		 VMSTATROW + 6, VMSTATCOL + 2, 7, 2, 1);
-	putint(pgtokb(cnt.v_kernel_pages), VMSTATROW + 7, VMSTATCOL, 9);
-	putint(pgtokb(cnt.v_wire_count), VMSTATROW + 8, VMSTATCOL, 9);
-	putint(pgtokb(cnt.v_active_count), VMSTATROW + 9, VMSTATCOL, 9);
-	putint(pgtokb(cnt.v_inactive_count), VMSTATROW + 10, VMSTATCOL, 9);
-	putint(pgtokb(cnt.v_free_count), VMSTATROW + 11, VMSTATCOL, 9);
-	PUTRATE(Cnt.v_dfree, VMSTATROW + 12, VMSTATCOL, 9);
-	PUTRATE(Cnt.v_pfree, VMSTATROW + 13, VMSTATCOL, 9);
-	PUTRATE(Cnt.v_reactivated, VMSTATROW + 14, VMSTATCOL, 9);
-	PUTRATE(Cnt.v_scan, VMSTATROW + 15, VMSTATCOL, 9);
+		 VMSTATROW + 5, VMSTATCOL + 2, 7, 2, 1);
+	putint(pgtokb(cnt.v_kernel_pages), VMSTATROW + 6, VMSTATCOL, 9);
+	putint(pgtokb(cnt.v_wire_count), VMSTATROW + 7, VMSTATCOL, 9);
+	putint(pgtokb(cnt.v_active_count), VMSTATROW + 8, VMSTATCOL, 9);
+	putint(pgtokb(cnt.v_inactive_count), VMSTATROW + 9, VMSTATCOL, 9);
+	putint(pgtokb(cnt.v_free_count), VMSTATROW + 10, VMSTATCOL, 9);
+	PUTRATE(Cnt.v_dfree, VMSTATROW + 11, VMSTATCOL, 9);
+	PUTRATE(Cnt.v_pfree, VMSTATROW + 12, VMSTATCOL, 9);
+	PUTRATE(Cnt.v_reactivated, VMSTATROW + 13, VMSTATCOL, 9);
+	PUTRATE(Cnt.v_scan, VMSTATROW + 14, VMSTATCOL, 9);
+	PUTRATE(Cnt.v_rev, VMSTATROW + 15, VMSTATCOL, 9);
 	if (LINES - 1 > VMSTATROW + 16)
-		PUTRATE(Cnt.v_rev, VMSTATROW + 16, VMSTATCOL, 9);
-	if (LINES - 1 > VMSTATROW + 17)
-		PUTRATE(Cnt.v_intrans, VMSTATROW + 17, VMSTATCOL, 9);
+		PUTRATE(Cnt.v_intrans, VMSTATROW + 16, VMSTATCOL, 9);
 	PUTRATE(Cnt.v_pageins, PAGEROW + 2, PAGECOL + 5, 5);
 	PUTRATE(Cnt.v_pageouts, PAGEROW + 2, PAGECOL + 10, 5);
 	PUTRATE(Cnt.v_swpin, PAGEROW + 2, PAGECOL + 15, 5);	/* - */
@@ -459,7 +455,7 @@ showkre()
 	PUTRATE(Cnt.v_syscall, GENSTATROW + 1, GENSTATCOL + 10, 5);
 	PUTRATE(Cnt.v_intr, GENSTATROW + 1, GENSTATCOL + 15, 5);
 	PUTRATE(Cnt.v_soft, GENSTATROW + 1, GENSTATCOL + 20, 5);
-/*	PUTRATE(Cnt.v_faults, GENSTATROW + 1, GENSTATCOL + 25, 5);*/
+	PUTRATE(Cnt.v_faults, GENSTATROW + 1, GENSTATCOL + 25, 5);
 	mvprintw(DISKROW, DISKCOL + 5, "                              ");
 	for (i = 0, c = 0; i < dk_ndrive && c < MAXDRIVES; i++)
 		if (dk_select[i]) {
