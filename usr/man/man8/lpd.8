@@ -1,0 +1,90 @@
+.TH LPD 8 
+.SH NAME
+lpd \- line printer daemon
+.SH SYNOPSIS
+.B /etc/lpd
+.SH DESCRIPTION
+.I Lpd
+is the daemon for the line printer.
+.I Lpd
+uses the directory
+.IR /usr/spool/lpd .
+The file
+.I lock
+in that directory is used
+to prevent two daemons from becoming active.
+After the program has successfully set the lock,
+it forks and the main path exits, thus
+spawning the daemon.
+The directory is scanned for files
+beginning with
+.B df.
+Each such file is submitted as a job.
+Each line of a job file must begin with a key
+character to specify what to do with the remainder
+of the line.
+.TP 5
+.B  L
+specifies that the remainder of the line is to
+be sent as a literal.
+.TP 5
+.B  B
+specifies that the rest of the line
+is a file name.
+.TP 5
+.B  F
+is the same as
+.B B
+except a form feed is prepended to the file.
+.TP 5
+.B  U
+specifies that the rest of the line
+is a file name.
+After the job has been transmitted,
+the file is unlinked.
+.TP 5
+.B  M
+is followed by a user ID; after the job is sent,
+a message is
+mailed to the user via the
+.IR mail (1)
+command
+to verify the sending of the job.
+.PP
+Any error encountered will cause the daemon to
+wait and start over.
+This means that an improperly constructed
+.B df
+file may cause the same job to be submitted
+repeatedly.
+.PP
+.I Lpd
+is automatically initiated by the line printer command,
+.I lpr.
+.PP
+.PP
+To restart
+.I lpd
+(in the case of hardware or software malfunction),
+it is necessary to first kill the old
+daemon
+(if still alive),
+and remove the lock file
+before initiating
+the new daemon.
+This is done automatically when the system is brought up,
+by
+.I /etc/rc,
+in case there were any jobs left in the spooling directory
+when the system last went down.
+.SH FILES
+/usr/spool/lpd/*
+spool area for line printer daemon
+.br
+/etc/passwd
+to get the user's name
+.br
+/dev/lp
+line printer device
+.SH "SEE ALSO"
+lpr(1)
