@@ -360,20 +360,21 @@ int	control;				/* this buffer ended block? */
 	    case ORDER_IC:
 		CursorAddress = BufferAddress;
 		break;
+	    /*
+	     * XXX - PT is supposed to null fill the screen buffer
+	     * under certain draconian conditions.
+	     */
 	    case ORDER_PT:
-		for (i = ScreenInc(BufferAddress); (i != HighestScreen());
-				i = ScreenInc(i)) {
+		i = BufferAddress;
+		do {
 		    if (IsStartField(i)) {
-			i = ScreenInc(i);
 			if (!IsProtected(ScreenInc(i))) {
 			    break;
 			}
-			if (i == HighestScreen()) {
-			    break;
-			}
 		    }
-		}
-		CursorAddress = i;
+		    i = ScreenInc(i);
+		} while (i != HighestScreen());
+		BufferAddress = ScreenInc(i);
 		break;
 	    case ORDER_RA:
 		Ensure(3);
@@ -396,7 +397,9 @@ int	control;				/* this buffer ended block? */
 		c = FieldAttributes(i);
 		for (i = Addr3270(buffer[0], buffer[1]); i != BufferAddress;
 				BufferAddress = ScreenInc(BufferAddress)) {
-		    if (!IsProtectedAttr(BufferAddress, c)) {
+		    if (IsStartField(BufferAddress)) {
+			c = FieldAttributes(BufferAddress);
+		    } else if (!IsProtectedAttr(BufferAddress, c)) {
 			AddHost(BufferAddress, 0);
 		    }
 		}
