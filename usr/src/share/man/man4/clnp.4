@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)clnp.4	6.2 (Berkeley) %G%
+.\"     @(#)clnp.4	6.3 (Berkeley) %G%
 .\"
 .Dd 
 .Dt CLNP 4
@@ -61,7 +61,7 @@ options apply to
 Sets the flags which are passed to clnp when sending a datagram.
 Valid flags are:
 .Pp
-.Bl -tag -width CLNP_NO_CKSUM -compact -offset Ds
+.Bl -tag -width "CLNP_NO_CKSUM" -offset indent -compact
 .It Dv CLNP_NO_SEG
 Do not allow segmentation
 .It Dv CLNP_NO_ER
