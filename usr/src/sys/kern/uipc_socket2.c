@@ -1,4 +1,4 @@
-/*	uipc_socket2.c	4.7	81/11/22	*/
+/*	uipc_socket2.c	4.8	81/11/22	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -131,6 +131,7 @@ sbwakeup(sb)
 {
 
 	if (sb->sb_sel) {
+		printf("sb %x\n", sb);
 		selwakeup(sb->sb_sel, sb->sb_flags & SB_COLL);
 		sb->sb_sel = 0;
 		sb->sb_flags &= ~SB_COLL;
@@ -151,7 +152,7 @@ sbreserve(sb, cc)
 	if (m_reserve((cc*2)/MSIZE) == 0)
 		return (0);
 	sb->sb_hiwat = cc;
-	sb->sb_mbmax = (cc*2)/MSIZE;
+	sb->sb_mbmax = cc*2;
 	return (1);
 }
 
@@ -188,22 +189,25 @@ sbappend(sb, m)
 		np = &n->m_next;
 	}
 	while (m) {
+/*
 		if (n && n->m_off <= MMAXOFF && m->m_off <= MMAXOFF &&
 		   (int)n->m_act == 0 && (int)m->m_act == 0 &&
-		   (n->m_off + n->m_len + m->m_off) <= MMAXOFF) {
-			bcopy(mtod(m, caddr_t), mtod(n, caddr_t),
+		   (n->m_off + n->m_len + m->m_len) <= MMAXOFF) {
+			bcopy(mtod(m, caddr_t), mtod(n, caddr_t) + n->m_len,
 			    (unsigned)m->m_len);
 			n->m_len += m->m_len;
 			sb->sb_cc += m->m_len;
 			m = m_free(m);
 			continue;
 		}
+*/
 		sballoc(sb, m);
 		*np = m;
 		n = m;
 		np = &n->m_next;
 		m = m->m_next;
 	}
+	nullchk("sbappend", sb->sb_mb);
 }
 
 sbappendaddr(sb, asa, m0)
@@ -215,21 +219,38 @@ sbappendaddr(sb, asa, m0)
 	register struct mbuf *m;
 	register int len = sizeof (struct sockaddr);
 
-	for (m = m0; m; m = m->m_next)
-		len += m->m_len;
-	if (len > sbspace(sb))
-		return (0);
-	m = m_get(0);
+	printf("sbappendaddr %x asa %x ", sb, asa);
+	m = m0;
 	if (m == 0)
+		panic("sbappendaddr");
+	for (;;) {
+		len += m->m_len;
+		if (m->m_next == 0) {
+			m->m_act = (struct mbuf *)1;
+			break;
+		}
+		m = m->m_next;
+	}
+	printf(": sb_cc %d sb_hiwat %d sb_mbcnt %d sb_mbmax %d sbspace %d: ",
+	    sb->sb_cc, sb->sb_hiwat, sb->sb_mbcnt, sb->sb_mbmax,
+	    sbspace(sb));
+	if (len > sbspace(sb)) {
+		printf("no space\n");
 		return (0);
+	}
+	m = m_get(0);
+	if (m == 0) {
+		printf("no mbufs\n");
+		return (0);
+	}
 	m->m_off = MMINOFF;
 	m->m_len = sizeof (struct sockaddr);
 	msa = mtod(m, struct sockaddr *);
 	*msa = *asa;
 	m->m_act = (struct mbuf *)1;
 	sbappend(sb, m);
-	m0->m_act = (struct mbuf *)1;
 	sbappend(sb, m0);
+	printf("inserted: sb_cc now %d\n", sb->sb_cc);
 	return (1);
 }
 
@@ -273,4 +294,5 @@ sbdrop(sb, len)
 		}
 	}
 	sb->sb_mb = m;
+	nullchk("sbdrop", sb->sb_mb);
 }
