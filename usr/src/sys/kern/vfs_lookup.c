@@ -1,4 +1,4 @@
-/*	vfs_lookup.c	4.39	83/05/28	*/
+/*	vfs_lookup.c	4.40	83/05/28	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -743,28 +743,44 @@ blkatoff(ip, offset, res)
 /*
  * Check if a directory is empty or not.
  * Inode supplied must be locked.
+ *
+ * Using a struct dirtemplate here is not precisely
+ * what we want, but better than using a struct direct.
+ *
+ * NB: does not handle corrupted directories.
  */
 dirempty(ip)
 	register struct inode *ip;
 {
 	register off_t off;
-	struct direct dbuf;
-	register struct direct *dp = &dbuf;
+	struct dirtemplate dbuf;
+	register struct direct *dp = (struct direct *)&dbuf;
 	int error, count;
+#define	MINDIRSIZ (sizeof (struct dirtemplate) / 2)
 
 	for (off = 0; off < ip->i_size; off += dp->d_reclen) {
-		error = rdwri(UIO_READ, ip, (caddr_t)dp,
-			sizeof (struct direct), off, 1, &count);
-		count = sizeof (struct direct) - count;
-#define	MINDIRSIZ (sizeof (struct direct) - (MAXNAMLEN + 1))
-		if (error || count < MINDIRSIZ || count < DIRSIZ(dp))
+		error = rdwri(UIO_READ, ip, (caddr_t)dp, MINDIRSIZ,
+		    off, 1, &count);
+		/*
+		 * Since we read MINDIRSIZ, residual must
+		 * be 0 unless we're at end of file.
+		 */
+		if (error || count != 0)
 			return (0);
+		/* skip empty entries */
 		if (dp->d_ino == 0)
 			continue;
+		/* accept only "." and ".." */
+		if (dp->d_namlen > 2)
+			return (0);
 		if (dp->d_name[0] != '.')
 			return (0);
-		if (dp->d_namlen == 1 ||
-		    (dp->d_namlen == 2 && dp->d_name[1] == '.'))
+		/*
+		 * At this point d_namlen must be 1 or 2.
+		 * 1 implies ".", 2 implies ".." if second
+		 * char is also "."
+		 */
+		if (dp->d_namlen == 1 || dp->d_name[1] == '.')
 			continue;
 		return (0);
 	}
