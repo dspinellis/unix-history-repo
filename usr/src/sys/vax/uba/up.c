@@ -1,4 +1,4 @@
-/*	up.c	4.33	81/03/09	*/
+/*	up.c	4.34	81/03/10	*/
 
 #include "up.h"
 #if NSC > 0
@@ -524,7 +524,7 @@ upintr(sc21)
 		 */
 		upaddr->upcs1 = UP_TRE|UP_IE|UP_DCLR|UP_GO;
 		needie = 0;
-		if ((um->um_tab.b_errcnt&07) == 4) {
+		if ((um->um_tab.b_errcnt&07) == 4 && um->um_tab.b_active == 0) {
 			upaddr->upcs1 = UP_RECAL|UP_IE|UP_GO;
 			sc->sc_recal = 0;
 			goto nextrecal;

@@ -1,4 +1,4 @@
-/*	vp.c	4.7	81/03/09	*/
+/*	vp.c	4.8	81/03/10	*/
 
 #include "vp.h"
 #if NVP > 0
@@ -13,74 +13,115 @@
 #include "../h/systm.h"
 #include "../h/map.h"
 #include "../h/pte.h"
-#include "../h/uba.h"
-
-int	vpbdp = 1;
+#include "../h/ubavar.h"
+#include "../h/ubareg.h"
+#include "../h/vcmd.h"
 
 unsigned minvpph();
 
 #define	VPPRI	(PZERO-1)
 
-struct	vpregs {
+struct	vpdevice {
 	short	plbcr;
 	short	pbxaddr;
 	short	prbcr;
-	unsigned short pbaddr;
+	u_short pbaddr;
 	short	plcsr;
 	short	plbuf;
 	short	prcsr;
-	unsigned short prbuf;
+	u_short prbuf;
 };
 
-#define	ERROR	0100000
-#define	DTCINTR	040000
-#define	DMAACT	020000
-#define	READY	0200
-#define	IENABLE	0100
-#define	TERMCOM	040
-#define	FFCOM	020
-#define	EOTCOM	010
-#define	CLRCOM	04
-#define	RESET	02
-#define	SPP	01
+#define	VP_ERROR	0100000
+#define	VP_DTCINTR	0040000
+#define	VP_DMAACT	0020000
+#define	VP_READY	0000200
+#define	VP_IENABLE	0000100
+#define	VP_TERMCOM	0000040
+#define	VP_FFCOM	0000020
+#define	VP_EOTCOM	0000010
+#define	VP_CLRCOM	0000004
+#define	VP_RESET	0000002
+#define	VP_SPP		0000001
 
-struct {
-	int	vp_state;
-	int	vp_count;
-	int	vp_bufp;
-	struct	buf *vp_bp;
-} vp11;
-int	vp_ubinfo;
+struct vp_softc {
+	int	sc_state;
+	int	sc_count;
+	int	sc_bufp;
+	struct	buf *sc_bp;
+	int	sc_ubinfo;
+} vp_softc[NVP];
 
-struct	buf rvpbuf;
+/* sc_state bits */
+#define	VPSC_BUSY	0001000
+#define	VPSC_MODE	0000700
+#define	VPSC_SPP	0000400
+#define	VPSC_PLOT	0000200
+#define	VPSC_PRINT	0000100
+#define	VPSC_CMNDS	0000076
+#define	VPSC_OPEN	0000001
 
-#define	VISOPEN	01
-#define	CMNDS	076
-#define	MODE	0700
-#define	PRINT	0100
-#define	PLOT	0200
-#define	PPLOT	0400
-#define	VBUSY	01000
+struct	uba_device *vpdinfo[NVP];
 
-vpopen()
+#define	VPUNIT(dev)	(minor(dev))
+
+struct	buf rvpbuf[NVP];
+
+int	vpprobe(), vpattach();
+struct	uba_device *vpdinfo[NVP];
+u_short	vpstd[] = { 0777500, 0 };
+struct	uba_driver vpdriver =
+    { vpprobe, 0, vpattach, 0, vpstd, "vp", vpdinfo };
+
+vpprobe(reg)
+	caddr_t reg;
+{
+	register int br, cvec;		/* value-result */
+	register struct vpdevice *vpaddr = (struct vpdevice *)(reg-010);
+
+	vpaddr->prcsr = VP_IENABLE|VP_DTCINTR;
+	vpaddr->pbaddr = 0;
+	vpaddr->pbxaddr = 0;
+	vpaddr->plbcr = 1;
+	DELAY(10000);
+	vpaddr->prcsr = 0;
+}
+
+/*ARGSUSED*/
+vpattach(ui)
+	struct uba_device *ui;
 {
 
-	if (vp11.vp_state & VISOPEN) {
+	ui->ui_addr -= 010;
+	ui->ui_physaddr -= 010;
+}
+
+vpopen(dev)
+	dev_t dev;
+{
+	register struct vp_softc *sc;
+	register struct vpdevice *vpaddr;
+	register struct uba_device *ui;
+
+	if (VPUNIT(dev) >= NVP ||
+	    ((sc = &vp_softc[minor(dev)])->sc_state&VPSC_OPEN) ||
+	    (ui = vpdinfo[VPUNIT(dev)]) == 0 || ui->ui_alive == 0) {
 		u.u_error = ENXIO;
 		return;
 	}
-	vp11.vp_state = VISOPEN | PRINT | CLRCOM | RESET;
-	vp11.vp_count = 0;
-	VPADDR->prcsr = IENABLE | DTCINTR;
-	vptimo();
-	while (vp11.vp_state & CMNDS) {
+	vpaddr = (struct vpdevice *)ui->ui_addr;
+	sc->sc_state = VPSC_OPEN|VPSC_PRINT | VP_CLRCOM|VP_RESET;
+	sc->sc_count = 0;
+	vpaddr->prcsr = VP_IENABLE|VP_DTCINTR;
+	vptimo(dev);
+	while (sc->sc_state & VPSC_CMNDS) {
 		(void) spl4();
-		if (vperror(READY)) {
-			vpclose();
+		if (vpwait(dev)) {
+			vpclose(dev);
 			u.u_error = EIO;
 			return;
 		}
-		vpstart();
+		vpstart(dev);
 		(void) spl0();
 	}
 }
@@ -89,40 +130,41 @@ vpstrategy(bp)
 	register struct buf *bp;
 {
 	register int e;
+	register struct vp_softc *sc = &vp_softc[VPUNIT(bp->b_dev)];
+	register struct uba_device *ui = vpdinfo[VPUNIT(bp->b_dev)];
+	register struct vpdevice *vpaddr = (struct vpdevice *)ui->ui_addr;
 
 	(void) spl4();
-	while (vp11.vp_state & VBUSY)
-		sleep((caddr_t)&vp11, VPPRI);
-	vp11.vp_state |= VBUSY;
-	vp11.vp_bp = bp;
-	vp_ubinfo = ubasetup(bp, vpbdp);
-	vp11.vp_bufp = vp_ubinfo & 0x3ffff;
-	if (e = vperror(READY))
+	while (sc->sc_state & VPSC_BUSY)
+		sleep((caddr_t)sc, VPPRI);
+	sc->sc_state |= VPSC_BUSY;
+	sc->sc_bp = bp;
+	sc->sc_ubinfo = ubasetup(ui->ui_ubanum, bp, UBA_NEEDBDP);
+	if (e = vpwait(bp->b_dev))
 		goto brkout;
-	vp11.vp_count = bp->b_bcount;
-	vpstart();
-	while ((vp11.vp_state&PLOT ? VPADDR->plcsr : VPADDR->prcsr) & DMAACT)
-		sleep((caddr_t)&vp11, VPPRI);
-	vp11.vp_count = 0;
-	vp11.vp_bufp = 0;
-	if ((vp11.vp_state&MODE) == PPLOT)
-		vp11.vp_state = (vp11.vp_state &~ MODE) | PLOT;
+	sc->sc_count = bp->b_bcount;
+	vpstart(bp->b_dev);
+	while (((sc->sc_state&VPSC_PLOT) ? vpaddr->plcsr : vpaddr->prcsr) & VP_DMAACT)
+		sleep((caddr_t)sc, VPPRI);
+	sc->sc_count = 0;
+	if ((sc->sc_state&VPSC_MODE) == VPSC_SPP)
+		sc->sc_state = (sc->sc_state &~ VPSC_MODE) | VPSC_PLOT;
 	(void) spl0();
 brkout:
-	ubarelse(&vp_ubinfo);
-	vp11.vp_state &= ~VBUSY;
-	vp11.vp_bp = 0;
+	ubarelse(ui->ui_ubanum, &sc->sc_ubinfo);
+	sc->sc_state &= ~VPSC_BUSY;
+	sc->sc_bp = 0;
 	iodone(bp);
 	if (e)
 		u.u_error = EIO;
-	wakeup((caddr_t)&vp11);
+	wakeup((caddr_t)sc);
 }
 
 int	vpblock = 16384;
 
 unsigned
 minvpph(bp)
-struct buf *bp;
+	struct buf *bp;
 {
 
 	if (bp->b_bcount > vpblock)
@@ -131,61 +173,81 @@ struct buf *bp;
 
 /*ARGSUSED*/
 vpwrite(dev)
+	dev_t dev;
 {
 
-	physio(vpstrategy, &rvpbuf, dev, B_WRITE, minvpph);
+	physio(vpstrategy, &rvpbuf[VPUNIT(dev)], dev, B_WRITE, minvpph);
 }
 
-vperror(bit)
+vpwait(dev)
+	dev_t dev;
 {
-	register int state, e;
+	register struct vpdevice *vpaddr =
+	    (struct vpdevice *)vpdinfo[VPUNIT(dev)]->ui_addr;
+	register struct vp_softc *sc = &vp_softc[VPUNIT(dev)];
+	register int e;
 
-	state = vp11.vp_state & PLOT;
-	while ((e = (state ? VPADDR->plcsr : VPADDR->prcsr) & (bit|ERROR)) == 0)
-		sleep((caddr_t)&vp11, VPPRI);
-	return (e & ERROR);
+	for (;;) {
+		e = (sc->sc_state & VPSC_PLOT) ? vpaddr->plcsr : vpaddr->prcsr;
+		if (e & (VP_READY|VP_ERROR))
+			break;
+		sleep((caddr_t)sc, VPPRI);
+	}
+	/* I wish i could tell whether an error indicated an npr timeout */
+	return (e & VP_ERROR);
 }
 
-vpstart()
+vpstart(dev)
+	dev_t;
 {
-	register short bit;
+	register struct vp_softc *sc = &vp_softc[VPUNIT(dev)];
+	register struct vpdevice *vpaddr =
+	    (struct vpdevice *)vpdinfo[VPUNIT(dev)]->ui_addr;
+	short bit;
 
-	if (vp11.vp_count) {
-		VPADDR->pbaddr = vp11.vp_bufp;
-		VPADDR->pbxaddr = (vp11.vp_bufp>>12)&0x30;
-		if (vp11.vp_state & (PRINT|PPLOT))
-			VPADDR->prbcr = vp11.vp_count;
+	if (sc->sc_count) {
+		vpaddr->pbaddr = sc->sc_ubinfo;
+		vpaddr->pbxaddr = (sc->sc_ubinfo>>12)&0x30;
+		if (sc->sc_state & (VPSC_PRINT|VPSC_SPP))
+			vpaddr->prbcr = sc->sc_count;
 		else
-			VPADDR->plbcr = vp11.vp_count;
+			vpaddr->plbcr = sc->sc_count;
 		return;
 	}
 	for (bit = 1; bit != 0; bit <<= 1)
-		if (vp11.vp_state&bit&CMNDS) {
-			VPADDR->plcsr |= bit;
-			vp11.vp_state &= ~bit;
+		if (sc->sc_state&bit&VPSC_CMNDS) {
+			vpaddr->plcsr |= bit;
+			sc->sc_state &= ~bit;
 			return;
 		}
 }
 
 /*ARGSUSED*/
 vpioctl(dev, cmd, addr, flag)
+	dev_t dev;
+	int cmd;
 	register caddr_t addr;
+	int flag;
 {
 	register int m;
+	register struct vp_softc *sc = &vp_softc[VPUNIT(dev)];
+	register struct vpdevice *vpaddr =
+	    (struct vpdevice *)vpdinfo[VPUNIT(dev)]->ui_addr;
 
 	switch (cmd) {
 
-	case ('v'<<8)+0:
-		(void) suword(addr, vp11.vp_state);
+	case VGETSTATE:
+		(void) suword(addr, sc->sc_state);
 		return;
 
-	case ('v'<<8)+1:
+	case VSETSTATE:
 		m = fuword(addr);
 		if (m == -1) {
 			u.u_error = EFAULT;
 			return;
 		}
-		vp11.vp_state = (vp11.vp_state & ~MODE) | (m&(MODE|CMNDS));
+		sc->sc_state =
+		    (sc->sc_state & ~VPSC_MODE) | (m&(VPSC_MODE|VPSC_CMNDS));
 		break;
 
 	default:
@@ -193,58 +255,73 @@ vpioctl(dev, cmd, addr, flag)
 		return;
 	}
 	(void) spl4();
-	(void) vperror(READY);
-	if (vp11.vp_state&PPLOT)
-		VPADDR->plcsr |= SPP;
+	(void) vpwait(dev);
+	if (sc->sc_state&VPSC_SPP)
+		vpaddr->plcsr |= VP_SPP;
 	else
-		VPADDR->plcsr &= ~SPP;
-	vp11.vp_count = 0;
-	while (CMNDS & vp11.vp_state) {
-		(void) vperror(READY);
-		vpstart();
+		vpaddr->plcsr &= ~VP_SPP;
+	sc->sc_count = 0;
+	while (sc->sc_state & VPSC_CMNDS) {
+		(void) vpwait(dev);
+		vpstart(dev);
 	}
 	(void) spl0();
 }
 
-vptimo()
+vptimo(dev)
+	dev_t dev;
 {
+	register struct vp_softc *sc = &vp_softc[VPUNIT(dev)];
 
-	if (vp11.vp_state&VISOPEN)
-		timeout(vptimo, (caddr_t)0, hz/10);
-	vpintr(0);
+	if (sc->sc_state&VPSC_OPEN)
+		timeout(vptimo, (caddr_t)dev, hz/10);
+	vpintr(dev);
 }
 
 /*ARGSUSED*/
 vpintr(dev)
+	dev_t dev;
 {
+	register struct vp_softc *sc = &vp_softc[VPUNIT(dev)];
 
-	wakeup((caddr_t)&vp11);
+	wakeup((caddr_t)sc);
 }
 
-vpclose()
+vpclose(dev)
+	dev_t dev;
 {
+	register struct vp_softc *sc = &vp_softc[VPUNIT(dev)];
+	register struct vpdevice *vpaddr =
+	    (struct vpdevice *)vpdinfo[VPUNIT(dev)]->ui_addr;
 
-	vp11.vp_state = 0;
-	vp11.vp_count = 0;
-	vp11.vp_bufp = 0;
-	VPADDR->plcsr = 0;
+	sc->sc_state = 0;
+	sc->sc_count = 0;
+	vpaddr->plcsr = 0;
 }
 
-vpreset()
+vpreset(uban)
+	int uban;
 {
+	register int vp11;
+	register struct uba_device *ui;
+	register struct vp_softc *sc = vp_softc;
+	register struct vpdevice *vpaddr;
 
-	if ((vp11.vp_state & VISOPEN) == 0)
-		return;
-	printf(" vp");
-	VPADDR->prcsr = IENABLE | DTCINTR;
-	if ((vp11.vp_state & VBUSY) == 0)
-		return;
-	if (vp_ubinfo) {
-		printf("<%d>", (vp_ubinfo>>28)&0xf);
-		ubarelse(&vp_ubinfo);
+	for (vp11 = 0; vp11 < NVP; vp11++, sc++) {
+		if ((ui = vpdinfo[vp11]) == 0 || ui->ui_alive == 0 ||
+		    ui->ui_ubanum != uban || (sc->sc_state&VPSC_OPEN) == 0)
+			continue;
+		printf(" vp%d", vp11);
+		vpaddr = (struct vpdevice *)ui->ui_addr;
+		vpaddr->prcsr = VP_IENABLE|VP_DTCINTR;
+		if ((sc->sc_state & VPSC_BUSY) == 0)
+			continue;
+		if (sc->sc_ubinfo) {
+			printf("<%d>", (sc->sc_ubinfo>>28)&0xf);
+			ubarelse(ui->ui_ubanum, &sc->sc_ubinfo);
+		}
+		sc->sc_count = sc->sc_bp->b_bcount;
+		vpstart(sc->sc_bp->b_dev);
 	}
-	vp11.vp_bufp = vp_ubinfo & 0x3ffff;
-	vp11.vp_count = vp11.vp_bp->b_bcount;
-	vpstart();
 }
 #endif
