@@ -16,7 +16,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)opendir.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)opendir.c	5.8 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -24,6 +24,7 @@ static char sccsid[] = "@(#)opendir.c	5.7 (Berkeley) %G%";
 #include <fcntl.h>
 
 char *malloc();
+long _rewinddir;
 
 /*
  * open a directory.
@@ -63,5 +64,9 @@ opendir(name)
 	dirp->dd_fd = fd;
 	dirp->dd_loc = 0;
 	dirp->dd_seek = 0;
+	/*
+	 * Set up seek point for rewinddir.
+	 */
+	_rewinddir = telldir(dirp);
 	return dirp;
 }
