@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	4.21 (Berkeley) %G%
+#	@(#)Makefile	4.22 (Berkeley) %G%
 #
 #
 # The system has two monitoring schemes, utilizing either ``prof''
@@ -80,7 +80,6 @@ install:
 	${INSTALL} libc_p.a ${DESTDIR}/usr/lib/libc_p.a
 	ranlib ${DESTDIR}/usr/lib/libc_p.a
 	cd ${MACHINE}/csu; make DESTDIR=${DESTDIR} install
-	install -c ${TAGSFILE} ${DESTDIR}/usr/lib/${TAGSFILE}
 
 tags:
 	for i in ${ALL}; do \
