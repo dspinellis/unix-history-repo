@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)spec_vnops.c	8.13 (Berkeley) %G%
+ *	@(#)spec_vnops.c	8.14 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -449,6 +449,18 @@ loop:
 #endif
 	}
 	splx(s);
+	return (0);
+}
+
+int
+spec_inactive(ap)
+	struct vop_inactive_args /* {
+		struct vnode *a_vp;
+		struct proc *a_p;
+	} */ *ap;
+{
+
+	VOP_UNLOCK(ap->a_vp, 0, ap->a_p);
 	return (0);
 }
 
