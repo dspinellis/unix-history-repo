@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_bmap.c	7.2 (Berkeley) %G%
+ *	@(#)ufs_bmap.c	7.3 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -146,7 +146,7 @@ ufs_bmaparray(vp, bn, bnp, ap, nump, runp)
 			brelse(bp);
 
 		xap->in_exists = 1;
-		bp = getblk(vp, metalbn, mp->mnt_stat.f_iosize);
+		bp = getblk(vp, metalbn, mp->mnt_stat.f_iosize, 0, 0);
 		if (bp->b_flags & (B_DONE | B_DELWRI)) {
 			trace(TR_BREADHIT, pack(vp, size), metalbn);
 		}
