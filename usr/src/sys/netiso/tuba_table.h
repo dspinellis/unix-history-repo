@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tuba_table.h	7.3 (Berkeley) %G%
+ *	@(#)tuba_table.h	7.4 (Berkeley) %G%
  */
 
 struct tuba_cache {
@@ -19,7 +19,9 @@ struct tuba_cache {
 	struct	iso_addr tc_addr;
 };
 
-#define ICKSUM(a, b) ((a = (b) % 0xffff), (a == 0 ? a = 0xffff : a))
+#define ADDCARRY(x)  (x >= 65535 ? x -= 65535 : x)
+#define REDUCE(a, b) { union { u_short s[2]; long l;} l_util; long x; \
+	l_util.l = (b); x = l_util.s[0] + l_util.s[1]; ADDCARRY(x); a = x;}
 
 #ifdef KERNEL
 extern int	tuba_table_size;
