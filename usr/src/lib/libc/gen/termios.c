@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)termios.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)termios.c	5.3 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -89,11 +89,18 @@ cfsetspeed(t, speed)
 	t->c_ispeed = t->c_ospeed = speed;
 }
 
+/*
+ * Make a pre-existing termios structure into "raw" mode:
+ * character-at-a-time mode with no characters interpreted,
+ * 8-bit data path.
+ */
 cfmakeraw(t)
 	struct termios *t;
 {
-	t->c_iflag &= ~(IGNBRK|BRKINT|PARMRK|INLCR|IGNCR|ICRNL|IXON);
-	t->c_oflag &= ~(ONLCR|OXTABS);
+	t->c_iflag &= ~(IGNBRK|BRKINT|PARMRK|ISTRIP|INLCR|IGNCR|ICRNL|IXON);
+	t->c_oflag &= ~OPOST;
 	t->c_lflag &= ~(ECHO|ECHONL|ICANON|ISIG|IEXTEN);
+	t->c_cflag &= ~(CSIZE|PARENB);
+	t->c_cflag |= CS8;
 	/* set MIN/TIME */
 }
