@@ -27,6 +27,7 @@ typedef quad fsid_t;			/* file system id type */
 
 struct fid {
 	u_short		fid_len;		/* length of data in bytes */
+	u_short		fid_reserved;		/* force longword alignment */
 	char		fid_data[MAXFIDSZ];	/* data (variable length) */
 };
 
