@@ -1,1 +1,1 @@
-char	*release = "PCC/364r1 tahoe 1.1";
+char	*release = "PCC/1.2 (Berkeley) %G%";
