@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.1 (Berkeley) %G%
+#	@(#)Makefile	5.2 (Berkeley) %G%
 #
 
 CTAGS = ctags -w
@@ -41,9 +41,8 @@ $(CFILES) $(HFILES) $(OTHERFILES):
 clean:
 	rm -f $(OBJS) $(JUNKFILES)
 
-install: sail sail.6 $(TARGET)/$(LOGFILE)
+install: sail $(TARGET)/$(LOGFILE)
 	install -s -m 4755 -o $(SAILMASTER) sail $(TARGET)/sail
-	install -c -m 644 sail.6 $(DESTDIR)/usr/man/man6
 
 logfile $(TARGET)/$(LOGFILE):
 	cp /dev/null $(TARGET)/$(LOGFILE)
