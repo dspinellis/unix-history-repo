@@ -1,4 +1,4 @@
-/*	diff.h	4.8	91/03/01	*/
+/*	diff.h	4.9	91/03/02	*/
 
 /*
  * diff - common declarations
@@ -61,7 +61,7 @@ int	context;		/* lines of context to be printed */
  */
 int	status;
 int	anychange;
-char	*tempfile;		/* used when comparing against std input */
+char	tempfile[];		/* used when comparing against std input */
 
 /*
  * Variables for diffdir.

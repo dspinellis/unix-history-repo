@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)diffreg.c 4.21 %G%";
+static	char sccsid[] = "@(#)diffreg.c 4.22 %G%";
 
 #include "diff.h"
 #include "pathnames.h"
@@ -263,7 +263,7 @@ same:
 	done();
 }
 
-char *tempfile = _PATH_TMP;
+char tempfile[] = _PATH_TMP;
 
 char *
 copytemp()
