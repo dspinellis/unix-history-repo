@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ftpd.c	5.42 (Berkeley) %G%";
+static char sccsid[] = "@(#)ftpd.c	5.43 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -141,13 +141,11 @@ static void	 end_login __P((void));
 static FILE	*getdatasock __P((char *));
 static char	*gunique __P((char *));
 static void	 lostconn __P((int));
-static void	 pass __P((char *));
 static int	 receive_data __P((FILE *, FILE *));
 static void	 send_data __P((FILE *, FILE *, off_t));
 static struct passwd *
 		 sgetpwnam __P((char *));
 static char	*sgetsave __P((char *));
-static void	 user __P((char *));
 
 static char *
 curdir()
