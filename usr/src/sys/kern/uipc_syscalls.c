@@ -1,4 +1,4 @@
-/*	uipc_syscalls.c	4.17	82/04/10	*/
+/*	uipc_syscalls.c	4.18	82/06/12	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -146,8 +146,13 @@ COUNT(SACCEPT);
 		splx(s);
 		return;
 	}
-	while ((so->so_state & SS_CONNAWAITING) == 0 && so->so_error == 0)
+	while ((so->so_state & SS_CONNAWAITING) == 0 && so->so_error == 0) {
+		if (so->so_state & SS_CANTRCVMORE) {
+			so->so_error = ECONNABORTED;
+			break;
+		}
 		sleep((caddr_t)&so->so_timeo, PZERO+1);
+	}
 	if (so->so_error) {
 		u.u_error = so->so_error;
 		splx(s);
