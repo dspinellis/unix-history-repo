@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)cntrl.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)cntrl.c	5.10 (Berkeley) %G%";
 #endif
 
 #include "uucp.h"
@@ -300,7 +300,7 @@ process:
 			TransferSucceeded = 1;
 		}
 		if (role == MASTER) {
-			notify(mailopt, W_USER, W_FILE2, Rmtname, &msg[1]);
+			notify(mailopt, W_USER, W_FILE1, Rmtname, &msg[1]);
 		}
 		if (msg[2] == 'M') {
 			extern int Nfiles;
@@ -390,7 +390,7 @@ process:
 				RMESG(HUP, msg, 1);
 				goto process;
 			}
-			notify(mailopt, W_USER, W_FILE2, Rmtname, &msg[1]);
+			notify(mailopt, W_USER, W_FILE1, Rmtname, &msg[1]);
 			ASSERT(role == MASTER, "WRONG ROLE - SN", CNULL, role);
 			unlinkdf(W_DFILE);
 			goto top;
@@ -540,7 +540,7 @@ process:
 			USRF( 1 << i );
 			fclose(fp);
 			fp = NULL;
-			notify(mailopt, W_USER, W_FILE2, Rmtname, &msg[1]);
+			notify(mailopt, W_USER, W_FILE1, Rmtname, &msg[1]);
 			ASSERT(role == MASTER, "WRONG ROLE - RN", CNULL, role);
 			unlinkdf(Dfile);
 			goto top;
@@ -747,6 +747,8 @@ char *user, *file, *mesg;
 	return;
 }
 
+char UsingProtocol;
+
 /*
  *	converse with the remote machine, agree upon a protocol (if possible)
  *	and start the protocol.
@@ -776,6 +778,7 @@ int role;
 		if (stptcl(str) != 0)
 			return FAIL;
 		DEBUG(4, "protocol %s\n", str);
+		UsingProtocol = str[0];
 		return SUCCESS;
 	}
 	else {
@@ -788,6 +791,7 @@ int role;
 		if (stptcl(&msg[1]) != 0)
 			return FAIL;
 		DEBUG(4, "Protocol %s\n", msg);
+		UsingProtocol = msg[1];
 		return SUCCESS;
 	}
 }
