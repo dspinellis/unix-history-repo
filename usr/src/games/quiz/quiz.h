@@ -1,6 +1,6 @@
 /*-
- * Copyright (c) 1991 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1991, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * Jim R. Oldroyd at The Instruction Set and Keith Gabryelski at
@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)quiz.h	5.2 (Berkeley) %G%
+ *	@(#)quiz.h	8.1 (Berkeley) %G%
  */
 
 #define	TRUE		1
