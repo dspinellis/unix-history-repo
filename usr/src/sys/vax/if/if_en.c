@@ -1,4 +1,4 @@
-/*	if_en.c	4.27	81/12/22	*/
+/*	if_en.c	4.28	82/01/07	*/
 
 #define ENKLUDGE
 #include "en.h"
@@ -421,6 +421,7 @@ enoutput(ifp, m0, pf)
 		dest = (ip->ip_dst.s_addr >> 8) & 0xff;
 #endif
 		off = ntohs((u_short)ip->ip_len) - m->m_len;
+#ifndef ENKLUDGE
 		if (off > 0 && (off & 0x1ff) == 0 && m->m_off >= MMINOFF + 2) {
 			type = ENPUP_TRAIL + (off>>9);
 			m->m_off -= 2;
@@ -428,6 +429,7 @@ enoutput(ifp, m0, pf)
 			*mtod(m, u_short *) = ENPUP_IPTYPE;
 			goto gottrailertype;
 		}
+#endif
 		type = ENPUP_IPTYPE;
 		off = 0;
 		goto gottype;
