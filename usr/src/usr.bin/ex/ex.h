@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ex.h	7.9.1.1 (Berkeley) %G%
+ *	@(#)ex.h	7.10 (Berkeley) %G%
  */
 
 #ifdef V6
@@ -332,6 +332,21 @@ var	line	*undadot;	/* If we saved all lines, dot reverts here */
 #define	UNDNONE		3
 #define	UNDPUT		4
 
+#ifdef CRYPT
+/*
+ * Various miscellaneous flags and buffers needed by the encryption routines.
+ */
+#define	KSIZE   9       /* key size for encryption */
+#define	KEYPROMPT       "Key: "
+var	int	xflag;		/* True if we are in encryption mode */
+var	int	xtflag;		/* True if the temp file is being encrypted */
+var	int	kflag;		/* True if the key has been accepted */
+var	char	perm[768];
+var	char	tperm[768];
+var	char	*key;
+var	char	crbuf[CRSIZE];
+char	*getpass();
+#endif
 
 /*
  * Function type definitions
@@ -342,7 +357,7 @@ var	line	*undadot;	/* If we saved all lines, dot reverts here */
 extern	int	(*Outchar)();
 extern	int	(*Pline)();
 extern	int	(*Put_char)();
-var	int	(*oldhup)();
+var	void	(*oldhup)();
 int	(*setlist())();
 int	(*setnorm())();
 int	(*setnorm())();
@@ -390,7 +405,7 @@ off_t	lseek();
 int	normchar();
 int	normline();
 int	numbline();
-var	int	(*oldquit)();
+var	void (*oldquit)();
 int	onhup();
 int	onintr();
 int	onsusp();
