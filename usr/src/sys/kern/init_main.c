@@ -1,4 +1,4 @@
-/*	init_main.c	4.27	82/03/14	*/
+/*	init_main.c	4.28	82/03/28	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -85,11 +85,11 @@ main(firstaddr)
 	mbinit();
 	cinit();			/* needed by dmc-11 driver */
 #ifdef INET
-	pfinit();
 #if NLOOP > 0
 	loattach();			/* XXX */
 #endif
 	ifinit();
+	pfinit();			/* must follow interfaces */
 #endif
 	ihinit();
 	bhinit();
