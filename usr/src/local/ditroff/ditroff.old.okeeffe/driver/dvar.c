@@ -1,4 +1,4 @@
-/*	dvar.c	1.8	83/11/30
+/*	dvar.c	1.9	83/12/18
  *
  * Varian driver for the new troff
  *
@@ -70,7 +70,9 @@ x ..\n	device control functions:
 #define ABORT	2		/*     or ABORT */
 #define	FATAL	1		/* type of error */
 #define	BMASK	0377		/* byte grabber */
+#ifndef FONTDIR
 #define FONTDIR	"/usr/lib/font"	/* default place to find font descriptions */
+#endif
 #define BITDIR "/usr/lib/vfont" /* default place to look for font rasters */
 #define MAXWRIT 4096		/* max characters allowed to write at once */
 
@@ -78,7 +80,7 @@ x ..\n	device control functions:
 #define  vmot(n)	vgoto(vpos + n)
 
 
-char	SccsId[]= "dvar.c	1.8	83/11/30";
+char	SccsId[]= "dvar.c	1.9	83/12/18";
 
 int	output	= 0;	/* do we do output at all? */
 int	nolist	= 0;	/* output page list if > 0 */
