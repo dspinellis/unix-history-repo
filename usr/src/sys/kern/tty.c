@@ -3,18 +3,16 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tty.c	7.17 (Berkeley) %G%
+ *	@(#)tty.c	7.18 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "systm.h"
 #include "user.h"
 #include "ioctl.h"
-#include "tty.h"
 #define TTYDEFCHARS
-#include "ttydefaults.h"
+#include "tty.h"
 #undef TTYDEFCHARS
-#include "termios.h"
 #define TTYDEFCHARS
 #include "ttydefaults.h"
 #undef TTYDEFCHARS
@@ -234,10 +232,8 @@ ttioctl(tp, com, data, flag)
 	caddr_t data;
 {
 	extern int nldisp;
-	int softset = 0;
 	int soft;
 	int s, error;
-
 
 	/*
 	 * If the ioctl involves modification,
@@ -252,9 +248,11 @@ ttioctl(tp, com, data, flag)
 	case TIOCSETA:
 	case TIOCSETAW:
 	case TIOCSETAF:
+/**** these get removed ****
 	case TIOCSETAS:
 	case TIOCSETAWS:
 	case TIOCSETAFS:
+/***************************/
 		while (u.u_procp->p_pgid != tp->t_pgid &&
 		   tp == u.u_ttyp &&
 		   u.u_procp->p_pgrp->pg_jobc &&
@@ -482,8 +480,8 @@ ttioctl(tp, com, data, flag)
 	case TIOCLBIC:
 	case TIOCLSET:
 	case TIOCLGET:
-	case TIOCGETDCOMPAT:
-	case TIOCSETDCOMPAT:
+	case OTIOCGETD:
+	case OTIOCSETD:
 		return(ttcompat(tp, com, data, flag));
 #endif
 
@@ -696,8 +694,11 @@ nullmodem(tp, flag)
 	
 	if (flag)
 		tp->t_state |= TS_CARR_ON;
-	else
+	else {
 		tp->t_state &= ~TS_CARR_ON;
+		if ((tp->t_lflag & NOHANG) == 0)
+			gsignal(tp->t_pgid, SIGHUP);
+	}
 	return (flag);
 }
 
@@ -849,6 +850,10 @@ ttyinput(c, tp)
 				ttyflush(tp, FREAD);
 			ttyecho(c, tp);
 			gsignal(tp->t_pgid, SIGTSTP);
+			goto endcase;
+		}
+		if (CCEQ(cc[VINFO],c)) {
+			ttyinfo(tp);
 			goto endcase;
 		}
 	}
@@ -1717,4 +1722,45 @@ ttspeedtab(speed, table)
 		if (table[i].sp_speed == speed)
 			return(table[i].sp_code);
 	return(-1);
+}
+
+/*
+ * (^T)
+ * Report on state of foreground process group.
+ */
+ttyinfo(tp)
+	struct tty *tp;
+{
+	register struct proc *p;
+	struct pgrp *pg = pgfind(tp->t_pgid);
+
+	if (ttycheckoutq(tp,0) == 0) 
+		return;
+	if (pg == NULL)
+		ttyprintf(tp, "kernel: no foreground process group\n");
+	else if ((p = pg->pg_mem) == NULL)
+		ttyprintf(tp, "kernel: empty process group: %d\n", 
+			tp->t_pgid);
+	else {
+		int i = 0;
+		for (; p != NULL; p = p->p_pgrpnxt) {
+			ttyprintf(tp, 
+			 "kernel: pid: %d state: %x wchan: %x ticks: %d\n",
+				p->p_pid, p->p_stat, p->p_wchan, p->p_cpticks);
+			if (++i > 6) {
+				ttyprintf(tp, "kernel: more...\n");
+				break;
+			}
+		}
+	}
+}
+
+#define TOTTY	0x2	/* XXX should be in header */
+/*VARARGS2*/
+ttyprintf(tp, fmt, x1)
+	register struct tty *tp;
+	char *fmt;
+	unsigned x1;
+{
+	prf(fmt, &x1, TOTTY, tp);
 }
