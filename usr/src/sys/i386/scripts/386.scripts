@@ -1,0 +1,204 @@
+set $maxargs = 0
+
+define xbt
+
+	set $usrstack = (unsigned long *) &kstack
+	set $ptmap = (unsigned long *) &PTmap
+
+	set $p = (struct proc *) $arg0
+	set $paddr = $p->p_addr
+	set $fix = (unsigned long *) $paddr - $usrstack
+
+	set $xfp = (unsigned long *) $paddr->u_pcb.pcb_tss.tss_ebp
+	set $xpc = (char *) &tsleep
+
+	while ($xfp > $usrstack && $xfp < $ptmap)
+
+		set $xfp += $fix
+
+		printf "Function:\t"
+		p/a $xpc
+
+		set $i = 0
+		while ($i < $maxargs)
+			set $arg = (unsigned long *) $xfp[$i + 2]
+			if ($arg > $usrstack && $arg < $ptmap)
+				set $arg += $fix
+			end
+			printf "  arg %d:\t%#x\n", $i, (unsigned long) $arg
+			set $i++
+		end
+
+		set $xpc = $xfp[1]
+		set $xfp = (unsigned long *) $xfp[0]
+
+	end
+end
+
+define xps
+
+	set $p = allproc
+
+	printf "      proc   pid      flag st      wchan comm\n"
+	while ($p)
+		printf "%#10x %5d %8x  %2x %#10x %s", $p, $p->p_pid, \
+			$p->p_flag, $p->p_stat, $p->p_wchan, \
+			(char *) $p->p_comm
+		if ($p->p_wmesg)
+			printf " (%s)", $p->p_wmesg
+		end
+		printf "\n"
+		set $p = $p->p_nxt
+	end
+end
+
+define pmappde
+
+	set $m = (struct pmap *) $arg0
+	set $v = (vm_offset_t) $arg1
+	set $PDSHIFT = 22
+
+	p (&(($m)->pm_pdir[((vm_offset_t)($v) >> $PDSHIFT)&1023]))
+
+end
+
+define pmappte
+
+	set $PTmap = (struct pte *) &PTmap
+	set $v = (vm_offset_t) $arg0
+	set $PGSHIFT = 12
+
+	p &$PTmap[$v >> $PGSHIFT]
+
+end
+
+define mapentries
+
+	set $map = (vm_map_t) $arg0
+	set $last = &$map->header
+	set $cur = $map->header.prev
+
+	printf "     entry      start        end     object     offset\n"
+	while ($cur != $last)
+		printf "%#10x %#10x %#10x %#10x %#10x\n", $cur, $cur->start, \
+			$cur->end, $cur->object.vm_object, $cur->offset
+		set $cur = $cur->prev
+	end
+
+end
+
+define pagequeue
+
+	set $pq = (queue_entry_t) $arg0
+	set $m = (vm_page_t) $pq->next
+
+	printf "   vm_page     object     offset       phys     flags\n"
+	while ((queue_entry_t) $m != $pq)
+		printf "%#10x %#10x %#10x %#10x ", $m, $m->object, \
+			$m->offset, $m->phys_addr
+		printf "%c%c%c%c%c%c%c%c%c\n", \
+			($m->active ? 'A' : ' '), \
+			($m->busy ? 'B' : ' '), \
+			($m->clean ? 'C' : ' '), \
+			($m->fake ? 'F' : ' '), \
+			($m->inactive ? 'I' : ' '), \
+			($m->laundry ? 'L' : ' '), \
+			($m->object->paging_in_progress > 0 ? 'O' : ' '), \
+			($m->pagerowned ? 'P' : ' '), \
+			($m->tabled ? 'T' : ' ')
+		set $m = (vm_page_t) $m->pageq.next
+	end
+
+end
+
+define objectqueue
+
+	set $oq = (queue_entry_t) $arg0
+	set $o = (vm_object_t) $oq->next
+
+	printf "    object       size pages  refs   pip\n"
+	while ((queue_entry_t) $o != $oq)
+		printf "%#10x %#10x %5d %5d %5d\n", $o, $o->size, \
+			$o->resident_page_count, $o->ref_count, \
+			$o->paging_in_progress
+		set $o = (vm_object_t) $o->object_list.next
+	end
+
+end
+
+define objectmemq
+
+	set $o = (vm_object_t) $arg0
+	set $mq = (queue_entry_t) &$o->memq
+	set $m = (vm_page_t) $mq->next
+
+	printf "   vm_page     object     offset       phys     flags\n"
+	while ((queue_entry_t) $m != $mq)
+		printf "%#10x %#10x %#10x %#10x ", $m, $m->object, \
+			$m->offset, $m->phys_addr
+		printf "%c%c%c%c%c%c%c%c%c\n", \
+			($m->active ? 'A' : ' '), \
+			($m->busy ? 'B' : ' '), \
+			($m->clean ? 'C' : ' '), \
+			($m->fake ? 'F' : ' '), \
+			($m->inactive ? 'I' : ' '), \
+			($m->laundry ? 'L' : ' '), \
+			($m->object->paging_in_progress > 0 ? 'O' : ' '), \
+			($m->pagerowned ? 'P' : ' '), \
+			($m->tabled ? 'T' : ' ')
+		set $m = (vm_page_t) $m->listq.next
+	end
+
+end
+
+define bucketpage
+
+	set $p = (char *) ((u_long) $arg0 & ~0xfff)
+	set $i = (int) $arg1
+	set $end = $p + 0x1000
+
+	while ($p < $end)
+		printf "%#10x: %#10x\n", $p, *(u_long *)$p
+		set $p += $i
+	end
+
+end
+
+define vnodequeue
+
+	set $mp = (struct mount *) $arg0
+	set $vp = $mp->mnt_mounth
+
+	printf "     vnode type   flag         id     object\n"
+	while ($vp)
+		set $o = (vm_object_t) 0
+		set $pager = (vm_page_t) $vp->v_vmdata
+		if ($pager)
+			set $bucket = &vm_object_hashtable[(u_int) $pager % 157]
+			set $entry = (vm_object_hash_entry_t) $bucket->next
+			while ((queue_t) $entry != $bucket)
+				if ($entry->object->pager == $pager)
+					set $o = $entry->object
+					exitloop
+				end
+				set $entry = (vm_object_hash_entry_t) $entry->hash_links.next
+			end
+		end
+		printf "%#10x %4d %#6x %#10x %#10x\n", $vp, $vp->v_type, \
+			$vp->v_flag, $vp->v_id, $o
+		set $vp = $vp->v_mountf
+	end
+end
+
+define resourcemap
+
+	set $map = (struct map *) $arg0
+	set $me = ((struct mapent *) $map) + 1
+
+	printf "%s:\n", $map->m_name
+	printf "      addr       size\n"
+	while ($me < $map->m_limit && $me->m_size != 0xffffffff)
+		printf "%#10x %#10x\n", $me->m_addr, $me->m_size
+		set $me++
+	end
+end
