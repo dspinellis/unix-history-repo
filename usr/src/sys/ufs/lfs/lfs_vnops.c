@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_vnops.c	7.56 (Berkeley) %G%
+ *	@(#)lfs_vnops.c	7.57 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -1010,6 +1010,7 @@ ufs_rename(fndp, tndp)
 			}
 			goto bad;
 		}
+		iput(dp);
 	} else {
 		if (xp->i_dev != dp->i_dev || xp->i_dev != ip->i_dev)
 			panic("rename: EXDEV");
