@@ -1,4 +1,4 @@
-/* @(#)curses.h	1.14 (Berkeley) %G% */
+/* %G% (Berkeley) @(#)curses.h	1.15 */
 # ifndef WINDOW
 
 # include	<stdio.h>
@@ -17,10 +17,12 @@
 # define	_FULLWIN	002
 # define	_SCROLLWIN	004
 # define	_FLUSH		010
+# define	_FULLLINE	020
+# define	_IDLINE		040
 # define	_STANDOUT	0200
 # define	_NOCHANGE	-1
 
-# define	_puts(s)	tputs(s, 0, _putchar);
+# define	_puts(s)	tputs(s, 0, _putchar)
 
 typedef	struct sgttyb	SGTTY;
 
@@ -28,24 +30,29 @@ typedef	struct sgttyb	SGTTY;
  * Capabilities from termcap
  */
 
-extern bool     AM, BS, CA, DA, DB, EO, GT, HZ, IN, MI, MS, NC, OS, UL,
-		XN;
-extern char     *AL, *BC, *BT, *CD, *CE, *CL, *CM, *CR, *DC, *DL, *DM,
-		*DO, *ED, *EI, *HO, *IC, *IM, *IP, *LL, *MA, *ND, *NL,
-		*SE, *SF, *SO, *SR, *TA, *TE, *TI, *UC, *UE, *UP, *US,
-		*VB, *VE, *VS, PC;
+extern bool     AM, BS, CA, DA, DB, EO, HC, HZ, IN, MI, MS, NC, NS, OS, UL,
+		XB, XN, XT, XX;
+extern char	*AL, *BC, *BT, *CD, *CE, *CL, *CM, *CR, *CS, *DC, *DL,
+		*DM, *DO, *ED, *EI, *K0, *K1, *K2, *K3, *K4, *K5, *K6,
+		*K7, *K8, *K9, *HO, *IC, *IM, *IP, *KD, *KE, *KH, *KL,
+		*KR, *KS, *KU, *LL, *MA, *ND, *NL, *RC, *SC, *SE, *SF,
+		*SO, *SR, *TA, *TE, *TI, *UC, *UE, *UP, *US, *VB, *VS,
+		*VE, *AL_PARM, *DL_PARM, *UP_PARM, *DOWN_PARM,
+		*LEFT_PARM, *RIGHT_PARM;
+extern char	PC;
 
 /*
  * From the tty modes...
  */
 
-extern bool	NONL, UPPERCASE, normtty, _pfast;
+extern bool	GT, NONL, UPPERCASE, normtty, _pfast;
 
 struct _win_st {
 	short		_cury, _curx;
 	short		_maxy, _maxx;
 	short		_begy, _begx;
 	short		_flags;
+	short		_ch_off;
 	bool		_clear;
 	bool		_leave;
 	bool		_scroll;
@@ -130,14 +137,20 @@ int	__void__;
 
 #define raw()	 (_tty.sg_flags|=RAW, _pfast=_rawmode=TRUE, stty(_tty_ch,&_tty))
 #define noraw()	 (_tty.sg_flags&=~RAW,_rawmode=FALSE,_pfast=!(_tty.sg_flags&CRMOD),stty(_tty_ch,&_tty))
-#define crmode() (_tty.sg_flags |= CBREAK, _rawmode = TRUE, stty(_tty_ch,&_tty))
-#define nocrmode() (_tty.sg_flags &= ~CBREAK,_rawmode=FALSE,stty(_tty_ch,&_tty))
+#define cbreak() (_tty.sg_flags |= CBREAK, _rawmode = TRUE, stty(_tty_ch,&_tty))
+#define nocbreak() (_tty.sg_flags &= ~CBREAK,_rawmode=FALSE,stty(_tty_ch,&_tty))
+#define crmode() cbreak()	/* backwards compatability */
+#define nocrmode() nocbreak()	/* backwards compatability */
 #define echo()	 (_tty.sg_flags |= ECHO, _echoit = TRUE, stty(_tty_ch, &_tty))
 #define noecho() (_tty.sg_flags &= ~ECHO, _echoit = FALSE, stty(_tty_ch, &_tty))
 #define nl()	 (_tty.sg_flags |= CRMOD,_pfast = _rawmode,stty(_tty_ch, &_tty))
 #define nonl()	 (_tty.sg_flags &= ~CRMOD, _pfast = TRUE, stty(_tty_ch, &_tty))
-#define	savetty() (gtty(_tty_ch, &_tty), _res_flg = _tty.sg_flags)
-#define	resetty() (_tty.sg_flags = _res_flg, stty(_tty_ch, &_tty))
+#define	savetty() ((void) gtty(_tty_ch, &_tty), _res_flg = _tty.sg_flags)
+#define	resetty() (_tty.sg_flags = _res_flg, (void) stty(_tty_ch, &_tty))
+
+#define	erasechar()	(_tty.sg_erase)
+#define	killchar()	(_tty.sg_kill)
+#define baudrate()	(_tty.sg_ospeed)
 
 WINDOW	*initscr(), *newwin(), *subwin();
 char	*longname(), *getcap();
