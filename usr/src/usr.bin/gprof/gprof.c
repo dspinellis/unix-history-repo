@@ -1,5 +1,5 @@
 #ifndef lint
-    static	char *sccsid = "@(#)gprof.c	1.14 (Berkeley) %G%";
+    static	char *sccsid = "@(#)gprof.c	1.15 (Berkeley) %G%";
 #endif lint
 
 #include "gprof.h"
@@ -331,6 +331,18 @@ openpfile(filename)
     highpc = h.highpc - (UNIT *)0;
     sampbytes = h.ncnt - sizeof(struct hdr);
     nsamples = sampbytes / sizeof (unsigned UNIT);
+#   ifdef DEBUG
+	if ( debug & SAMPLEDEBUG ) {
+	    printf( "[openpfile] hdr.lowpc 0x%x hdr.highpc 0x%x hdr.ncnt %d\n",
+		h.lowpc , h.highpc , h.ncnt );
+	    printf( "[openpfile]   s_lowpc 0x%x   s_highpc 0x%x\n" ,
+		s_lowpc , s_highpc );
+	    printf( "[openpfile]     lowpc 0x%x     highpc 0x%x\n" ,
+		lowpc , highpc );
+	    printf( "[openpfile] sampbytes %d nsamples %d\n" ,
+		sampbytes , nsamples );
+	}
+#   endif DEBUG
     return(pfile);
 }
 
