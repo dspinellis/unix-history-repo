@@ -7,8 +7,13 @@ divert(-1)
 # %sccs.include.redist.sh%
 #
 divert(0)
-VERSIONID(@(#)CS.Berkeley.EDU.m4	2.2 (Berkeley) %G%)
+VERSIONID(@(#)CS.Berkeley.EDU.m4	2.3 (Berkeley) %G%)
 define(`UUCP_RELAY', `ucbvax.Berkeley.EDU')dnl
 define(`BITNET_RELAY', `jade.Berkeley.EDU')dnl
 define(`CSNET_RELAY', `Relay.CS.NET')dnl
 FEATURE(no_wildcard_MX)dnl
+LOCAL_RULE_0
+# hacks to allow local hostnames as host.Berkeley.EDU or host.CS.Berkeley.EDU
+R$* < @ $=w .CS.Berkeley.EDU > $*	$: $1 < @ $w > $3
+R$* < @ $=w .Berkeley.EDU > $*		$: $1 < @ $w > $3
+divert(0)
