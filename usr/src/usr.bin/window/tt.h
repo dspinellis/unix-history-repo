@@ -1,5 +1,5 @@
 /*
- * @(#)tt.h	3.15 %G%
+ * @(#)tt.h	3.16 %G%
  */
 
 /*
@@ -44,6 +44,7 @@ struct tt {
 	char tt_availmodes;		/* the display modes supported */
 	char tt_wrap;			/* has auto wrap around */
 	char tt_retain;			/* can retain below (db flag) */
+	char tt_noscroll;		/* terminal doesn't scroll (ns flag) */
 
 		/* the frame characters */
 	short *tt_frame;
