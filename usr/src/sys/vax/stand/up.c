@@ -23,21 +23,22 @@
 #define MAXBADDESC	126	/* max number of bad sectors recorded */
 #define SECTSIZ		512	/* sector size in bytes */
 #define HDRSIZ		4	/* number of bytes in sector header */
-#define MAXECC		5	/* max number of bad bits accepted in
-				 * a soft ecc error when F_ECCLM is set */
-#define	NUPTYPES	3
+#define MAXECC		5	/* max # bad bits allowed on ecc w/ F_ECCLM */
 
 u_short	ubastd[] = { 0776700 };
 
 char	up_gottype[MAXNUBA*8] = { 0 };
 char	up_type[MAXNUBA*8] = { 0 };
-short	up_off[] = { 0, 27, 68, -1, -1, -1, -1, 82 };
+short	up9300_off[] = { 0, 27, 68, -1, -1, -1, -1, 82 };
+short	up9766_off[] = { 0, 27, 68, -1, -1, -1, -1, 82 };
 short	fj_off[] = { 0, 50, 0, -1, -1, -1, -1, 155 };
 /* this is called upam instead of am because hp.c has a similar array */
 short	upam_off[] = { 0, 32, 0, 668, 723, 778, 668, 98 };
 
+#define	NUPTYPES	4
 struct st upst[NUPTYPES] = {
-	32,	19,	32*19,	823,	up_off,		/* 9300/equiv */
+	32,	19,	32*19,	815,	up9300_off,	/* 9300 */
+	32,	19,	32*19,	823,	up9766_off,	/* 9766 */
 	32,	10,	32*10,	823,	fj_off,		/* Fuji 160 */
 	32,	16,	32*16,	1024,	upam_off,	/* Capricorn */
 };
@@ -57,7 +58,7 @@ upopen(io)
 {
 	register unit = io->i_unit;
 	register struct updevice *upaddr;
-	register struct st *st = &upst[up_type[unit]];
+	register struct st *st;
 
 	if (io->i_boff < 0 || io->i_boff > 7 || st->off[io->i_boff] == -1)
 		_stop("up bad unit");
@@ -68,21 +69,10 @@ upopen(io)
 		register int i;
 		struct iob tio;
 
-		upaddr->uphr = UPHR_MAXTRAK;
-		for (st = upst; st < &upst[NUPTYPES]; st++)
-			if (upaddr->uphr == st->ntrak - 1) {
-				up_type[unit] = st - upst;
-				break;
-			}
-		if (st == &upst[NUPTYPES]) {
-			printf("up%d: uphr=%x\n", unit, upaddr->uphr);
+		up_type[unit] = upmaptype(unit, upaddr);
+		if (up_type[unit] < 0)
 			_stop("unknown drive type");
-		}
-		upaddr->upcs2 = UPCS2_CLR;
-#ifdef DEBUG
-		printf("Unittype=%d\n",up_type[unit]);
-#endif
-
+		st = &upst[up_type[unit]];
 		/*
 		 * Read in the bad sector table:
 		 *	copy the contents of the io structure
@@ -110,6 +100,32 @@ upopen(io)
 	}
 	io->i_boff = st->off[io->i_boff] * st->nspc;
 	io->i_flgs &= ~F_TYPEMASK;
+}
+
+upmaptype(unit, upaddr)
+	int unit;
+	register struct updevice *upaddr;
+{
+	register struct st *st;
+	int type = -1;
+
+	upaddr->upcs1 = 0;
+	upaddr->upcs2 = unit % 8;
+	upaddr->uphr = UPHR_MAXTRAK;
+	for (st = upst; st < &upst[NUPTYPES]; st++)
+		if (upaddr->uphr == st->ntrak - 1) {
+			type = st - upst;
+			break;
+		}
+	if (type < 0)
+		printf("up%d: uphr=%x\n", unit, upaddr->uphr);
+	if (type == 0) {
+		upaddr->uphr = UPHR_MAXCYL;
+		if (upaddr->uphr == 822)	/* CDC 9766 */
+			type++;
+	}
+	upaddr->upcs2 = UPCS2_CLR;
+	return (type);
 }
 
 upstrategy(io, func)
