@@ -1,6 +1,11 @@
 /*
+ * Copyright (c) 1980 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@(#)operand.h	5.1 (Berkeley) %G%
+ *
  * operand.h  --  definitions useful to VAX operand decoding
- *	@(#)operand.h	1.1
  */
 
 #define	opmode(op)	(op & 0xf0)
