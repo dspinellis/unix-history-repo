@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)utils.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)utils.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -196,6 +196,9 @@ setfile(fs, fd)
 	}
 	if (fd ? fchmod(fd, fs->st_mode) : chmod(to.p_path, fs->st_mode))
 		err("chown: %s: %s", to.p_path, strerror(errno));
+
+	if (fd ? fchflags(fd, fs->st_flags) : chflags(to.p_path, fs->st_flags))
+		err("chflags: %s: %s", to.p_path, strerror(errno));
 }
 
 void
