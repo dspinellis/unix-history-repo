@@ -1,0 +1,52 @@
+.\" $Revision: 1.2 $
+.TH SHRINKFILE 1
+.SH NAME
+shrinkfile \- shrink a file on a line boundary
+.SH SYNOPSIS
+.B shrinkfile
+[
+.BI \-s " size"
+]
+[
+.B \-v
+]
+.I file...
+.SH DESCRIPTION
+The
+.I shrinkfile
+program shrinks files to a given size, preserving the data at the end of
+the file.
+Truncation is performed on line boundaries, where a line is a series
+of bytes ending with a newline, \en.
+There is no line length restriction and files may contain any binary data.
+.PP
+Temporary files are created in the
+.\" =()<.I @<_PATH_TMP>@>()=
+.I /tmp
+directory.
+The ``TMPDIR'' environment variable may be used to specify a
+different directory.
+.PP
+A newline will be added to any non-empty file that does not end with a newline.
+The maximum file size will not be exceeded by this addition.
+.PP
+By default, files are truncated to zero bytes.
+The ``\-s'' flag may be used to change the maximum size.
+Because the program truncates only on line boundaries, the final size may be
+may be smaller then the specified maximum.
+The
+.I size
+parameter may end with a ``k'', ``m'', or ``g'', indicating
+kilobyte (1024), megabyte (1048576) or gigabyte (1073741824) lengths.
+Uppercase letters are also allowed.
+The maximum file size is 2147483647 bytes.
+.PP
+If the ``\-v'' flag is used, then
+.I shrinkfile
+will print a status line if a file was shrunk.
+.SH HISTORY
+Written by Landon Curt Noll <chongo@toad.com> and Rich $alz
+<rsalz@uunet.uu.net> for InterNetNews.
+.de R$
+This is revision \\$3, dated \\$4.
+..
