@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)locore.s	7.17 (Berkeley) %G%
+ *	@(#)locore.s	7.18 (Berkeley) %G%
  */
 
 #include "psl.h"
@@ -860,11 +860,19 @@ _/**/mname:	.globl	_/**/mname;		\
 #ifdef	GPROF
 	SYSMAP(profmap	,profbase	,600*CLSIZE	)
 #endif
-#ifdef NFS
+#ifdef MFS
+#include "../ufs/mfsiom.h"
 	/*
-	 * Used by the nfs_strategy() routine for physical I/O
+	 * Used by the mfs_doio() routine for physical I/O
 	 */
-	SYSMAP(Nfsiomap ,nfsiobuf	,MAXPHYS/NBPG+1 )
+	SYSMAP(Mfsiomap	,mfsiobuf	,MFS_MAPREG )
+#endif /* MFS */
+#ifdef NFS
+#include "../nfs/nfsiom.h"
+	/*
+	 * Used by the nfs_doio() routine for physical I/O
+	 */
+	SYSMAP(Nfsiomap	,nfsiobuf	,NFS_MAPREG )
 #endif /* NFS */
 	SYSMAP(ekmempt	,kmemlimit	,0		)
 
