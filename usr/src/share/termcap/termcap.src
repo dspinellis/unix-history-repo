@@ -1,6 +1,6 @@
 # ------------------------
 #
-#	Termcap source file @(#)termcap.src	1.28	(Berkeley) %G%
+#	Termcap source file @(#)termcap.src	1.29	(Berkeley) %G%
 #	Kevin Layer, Berkeley
 #	Craig Leres, Berkeley
 #	Mark Horton, Berkeley
@@ -1514,6 +1514,15 @@ dw|vt52|dec vt52:\
 dx|dw2|decwriter II:\
 	:cr=^M:do=^J:nl=^J:bl=^G:\
 	:kb=^h:le=^H:bs:co#132:hc:os:
+# DEC PRO-350 console (VT220-style)
+dP|decpro|dec pro console:\
+	:bs:cd=\EJ:ce=\EK:cl=\EH\EJ:\
+	:cm=\EY%+ %+ :co#80:ho=\EH:\
+	:kl=\ED:kr=\EC:ku=\EA:kd=\EB:kh=\EH:\
+	:k0=\EE:k1=\EF:k2=\EG:k3=\EH:k4=\EI:k5=\EJ:\
+	:k6=\Ei:k7=\Ej:\
+	:li#24:nd=\EC:pt:sr=\EI:up=\EA:\
+	:se=\E^N:so=\E^H:
 # # --------------------------------
 #
 # h: HEWLETT PACKARD
@@ -2209,6 +2218,8 @@ zn|trs100|Radio Shack Model 100:\
 	:ku=^^:kd=^_:kl=^]:kr=^\:up=\EA:nd=\EC:ho=\EH:ce=\EK:\
 	:cd=\EJ:cl=\EE:xt:cm=\EY%+ %+ :\
 	:so=\Ep:se=\Eq:al=\EL:dl=\EM:
+zt|mac|macintosh|Macintosh with MacTerminal:\
+	:al=20\E[L:dl=20\E[M:ip=7:dc=7\E[P:ic=9\E[@:xn:dN#30:tc=vt100:
 # KERMIT standard all versions.  (gts 9-25-84)
 # Straight ascii keyboard. :sr=\EI: not avail. many versions + bug prone in vi.
 K0|kermit|standard kermit:\
