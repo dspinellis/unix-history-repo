@@ -5,7 +5,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)res_mkquery.c	6.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)res_mkquery.c	6.4 (Berkeley) %G%";
 #endif LIBC_SCCS and not lint
 
 #include <stdio.h>
@@ -133,69 +133,64 @@ res_mkquery(op, dname, class, type, data, datalen, newrr, buf, buflen)
 		hp->ancount = htons(1);
 		break;
 
-#ifdef notdef
+#ifdef ALLOW_UPDATES
+	/*
+	 * For UPDATEM/UPDATEMA, do UPDATED/UPDATEDA followed by UPDATEA
+	 * (Record to be modified is followed by its replacement in msg.)
+	 */
+	case UPDATEM:
+	case UPDATEMA:
+
 	case UPDATED:
 		/*
-		 * Put record to be added or deleted in additional section
+		 * The res code for UPDATED and UPDATEDA is the same; user
+		 * calls them differently: specifies data for UPDATED; server
+		 * ignores data if specified for UPDATEDA.
 		 */
-		buflen -= RRFIXEDSZ + datalen;
-		if ((n = dn_comp(dname, cp, buflen, NULL, NULL)) < 0)
-			return (-1);
-		cp += n;
-		*((u_short *)cp) = htons(type);
-		cp += sizeof(u_short);
-		*((u_short *)cp) = htons(class);
-		cp += sizeof(u_short);
-		*((u_long *)cp) = 0;
-		cp += sizeof(u_long);
-		*((u_short *)cp) = htons(datalen);
-		cp += sizeof(u_short);
-		if (datalen) {
-			bcopy(data, cp, datalen);
-			cp += datalen;
-		}
-		break;
-
-	case UPDATEM:
-		/*
-		 * Record to be modified followed by its replacement
-		 */
+	case UPDATEDA:
 		buflen -= RRFIXEDSZ + datalen;
 		if ((n = dn_comp(dname, cp, buflen, dnptrs, lastdnptr)) < 0)
 			return (-1);
 		cp += n;
-		*((u_short *)cp) = htons(type);
-		cp += sizeof(u_short);
-		*((u_short *)cp) = htons(class);
-		cp += sizeof(u_short);
-		*((u_long *)cp) = 0;
+		putshort(type, cp);
+                cp += sizeof(u_short);
+                putshort(class, cp);
+                cp += sizeof(u_short);
+		putlong(0, cp);
 		cp += sizeof(u_long);
-		*((u_short *)cp) = htons(datalen);
-		cp += sizeof(u_short);
+		putshort(datalen, cp);
+                cp += sizeof(u_short);
 		if (datalen) {
 			bcopy(data, cp, datalen);
 			cp += datalen;
 		}
+		if ( (op == UPDATED) || (op == UPDATEDA) ) {
+			hp->ancount = htons(0);
+			break;
+		}
+		/* Else UPDATEM/UPDATEMA, so drop into code for UPDATEA */
 
-	case UPDATEA:
-		buflen -= RRFIXEDSZ + newrr->r_size;
+	case UPDATEA:	/* Add new resource record */
+		buflen -= RRFIXEDSZ + datalen;
 		if ((n = dn_comp(dname, cp, buflen, dnptrs, lastdnptr)) < 0)
 			return (-1);
 		cp += n;
-		*((u_short *)cp) = htons(newrr->r_type);
-		cp += sizeof(u_short);
-		*((u_short *)cp) = htons(newrr->r_type);
-		cp += sizeof(u_short);
-		*((u_long *)cp) = htonl(newrr->r_ttl);
+		putshort(newrr->r_type, cp);
+                cp += sizeof(u_short);
+                putshort(newrr->r_class, cp);
+                cp += sizeof(u_short);
+		putlong(0, cp);
 		cp += sizeof(u_long);
-		*((u_short *)cp) = htons(newrr->r_size);
-		cp += sizeof(u_short);
+		putshort(newrr->r_size, cp);
+                cp += sizeof(u_short);
 		if (newrr->r_size) {
 			bcopy(newrr->r_data, cp, newrr->r_size);
 			cp += newrr->r_size;
 		}
+		hp->ancount = htons(0);
 		break;
-#endif
+
+#endif ALLOW_UPDATES
 	}
 	return (cp - buf);
 }
