@@ -1,8 +1,6 @@
-.include <bsd.global.mk>
-
 .MAIN: all
 
-STDALL STDDEPEND STDCLEAN STDCLEANDIR STDLINT STDINSTALL STDTAGS: .USE
+_SUBDIRUSE: .USE
 	@for entry in ${SUBDIR}; do \
 		(if test -d ${.CURDIR}/$${entry}.${MACHINE}; then \
 			echo "===> $${entry}.${MACHINE}"; \
@@ -14,7 +12,7 @@ STDALL STDDEPEND STDCLEAN STDCLEANDIR STDLINT STDINSTALL STDTAGS: .USE
 		${MAKE} ${.TARGET}) \
 	done
 
-${SUBDIR}::
+${SUBDIR}:
 	@if test -d ${.TARGET}.${MACHINE}; then \
 		cd ${.CURDIR}/${.TARGET}.${MACHINE}; \
 	else \
@@ -23,34 +21,34 @@ ${SUBDIR}::
 	${MAKE} all
 
 .if !target(all)
-all: STDALL
+all: _SUBDIRUSE
 .endif
 
 .if !target(clean)
-clean: STDCLEAN
+clean: _SUBDIRUSE
 .endif
 
 .if !target(cleandir)
-cleandir: STDCLEANDIR
+cleandir: _SUBDIRUSE
 .endif
 
 .if !target(depend)
-depend: STDDEPEND
+depend: _SUBDIRUSE
 .endif
 
 .if !target(lint)
-lint: STDLINT
+lint: _SUBDIRUSE
 .endif
 
 .if !target(tags)
-tags: STDTAGS
+tags: _SUBDIRUSE
 .endif
 
 .if !target(install)
 .if target(beforeinstall)
-install: beforeinstall
-install: STDINSTALL
-.else
-install: STDINSTALL
+beforeinstall:
 .endif
+realinstall: _SUBDIRUSE
+install: afterinstall
+afterinall: realinstall
 .endif
