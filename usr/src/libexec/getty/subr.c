@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)subr.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)subr.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -443,13 +443,15 @@ autobaud()
 	rfds = 1 << 0;
 	timeout.tv_sec = 5;
 	timeout.tv_usec = 0;
-	if (select(32, &rfds, (int *)0, (int *)0, &timeout) <= 0)
+	if (select(32, (fd_set *)&rfds, (fd_set *)NULL,
+	    (fd_set *)NULL, &timeout) <= 0)
 		return (type);
 	if (read(0, &c, sizeof(char)) != sizeof(char))
 		return (type);
 	timeout.tv_sec = 0;
 	timeout.tv_usec = 20;
-	(void) select(32, (int *)0, (int *)0, (int *)0, &timeout);
+	(void) select(32, (fd_set *)NULL, (fd_set *)NULL,
+	    (fd_set *)NULL, &timeout);
 	ioctl(0, TIOCFLUSH, &null);
 	switch (c & 0377) {
 
