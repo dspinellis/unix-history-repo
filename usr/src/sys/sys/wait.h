@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)wait.h	7.18 (Berkeley) %G%
+ *	@(#)wait.h	7.19 (Berkeley) %G%
  */
 
 /*
@@ -59,9 +59,7 @@
 #define	WAIT_ANY	(-1)	/* any process */
 #define	WAIT_MYPGRP	0	/* any process in my process group */
 
-#ifndef BYTE_ORDER
 #include <machine/endian.h>
-#endif
 
 /*
  * Deprecated:
