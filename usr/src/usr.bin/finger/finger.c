@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)finger.c	5.21 (Berkeley) %G%";
+static char sccsid[] = "@(#)finger.c	5.22 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -133,7 +133,7 @@ userlist(argc, argv)
 {
 	register i;
 	register PERSON *pn;
-	PERSON *nethead;
+	PERSON *nethead, **nettail;
 	struct utmp user;
 	struct passwd *pw;
 	int dolocal, *used;
@@ -145,17 +145,18 @@ userlist(argc, argv)
 	}
 
 	/* pull out all network requests */
-	for (i = 0, dolocal = 0, nethead = NULL; i < argc; i++) {
+	for (i = 0, dolocal = 0, nettail = &nethead; i < argc; i++) {
 		if (!index(argv[i], '@')) {
 			dolocal = 1;
 			continue;
 		}
 		pn = palloc();
-		pn->next = nethead;
-		nethead = pn;
+		*nettail = pn;
+		nettail = &pn->next;
 		pn->name = argv[i];
 		used[i] = -1;
 	}
+	*nettail = NULL;
 
 	if (!dolocal)
 		goto net;
