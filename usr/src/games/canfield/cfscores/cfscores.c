@@ -22,11 +22,12 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)cfscores.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)cfscores.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
 #include <pwd.h>
+#include "pathnames.h"
 
 struct betinfo {
 	long	hand;		/* cost of dealing hand */
@@ -39,7 +40,6 @@ struct betinfo {
 	long	worth;		/* net worth after costs */
 };
 
-char *scorefile = "/usr/games/lib/cfscores";
 int dbfd;
 
 main(argc, argv)
@@ -53,9 +53,9 @@ main(argc, argv)
 		printf("Usage: cfscores [user]\n");
 		exit(1);
 	}
-	dbfd = open(scorefile, 0);
+	dbfd = open(_PATH_SCORE, 0);
 	if (dbfd < 0) {
-		perror(scorefile);
+		perror(_PATH_SCORE);
 		exit(2);
 	}
 	setpwent();
