@@ -4,11 +4,13 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_le.c	7.2 (Berkeley) %G%
+ *	@(#)if_le.c	7.3 (Berkeley) %G%
  */
 
 #include "le.h"
 #if NLE > 0
+
+#include "bpfilter.h"
 
 /*
  * AMD 7990 LANCE
@@ -56,6 +58,11 @@
 #include "device.h"
 #include "if_lereg.h"
 
+#if NBPFILTER > 0
+#include "../net/bpf.h"
+#include "../net/bpfdesc.h"
+#endif
+
 /* offsets for:	   ID,   REGS,    MEM,  NVRAM */
 int	lestd[] = { 0, 0x4000, 0x8000, 0xC008 };
 
@@ -99,6 +106,9 @@ struct	le_softc {
 	int	sc_rxoff;
 	int	sc_txoff;
 	int	sc_busy;
+#if NBPFILTER > 0
+	caddr_t sc_bpf;
+#endif
 } le_softc[NLE];
 
 /* access LANCE registers */
@@ -183,6 +193,14 @@ leattach(hd)
 	ifp->if_output = ether_output;
 	ifp->if_start = lestart;
 	ifp->if_flags = IFF_BROADCAST | IFF_SIMPLEX;
+#if NBPFILTER > 0
+	{
+		static struct bpf_devp dev =
+			{ DLT_EN10MB, sizeof(struct ether_header) };
+
+		bpfattach(&le->sc_bpf, ifp, &dev);
+        }
+#endif
 	if_attach(ifp);
 	return (1);
 }
@@ -219,6 +237,13 @@ lereset(unit)
 
 #ifdef lint
 	stat = unit;
+#endif
+#if NBPFILTER > 0
+	if (le->sc_if.if_flags & IFF_PROMISC)
+		/* set the promiscuous bit */
+		le->sc_r2->ler2_mode = LE_MODE|0x8000;
+	else
+		le->sc_r2->ler2_mode = LE_MODE;
 #endif
 	LERDWR(ler0, LE_CSR0, ler1->ler1_rap);
 	LERDWR(ler0, LE_STOP, ler1->ler1_rdp);
@@ -286,6 +311,14 @@ lestart(ifp)
 	IF_DEQUEUE(&le->sc_if.if_snd, m);
 	if (m == 0)
 		return (0);
+#if NBPFILTER > 0
+	/*
+	 * If bpf is listening on this interface, let it
+	 * see the packet before we commit it to the wire.
+	 */
+	if (le->sc_bpf)
+                bpf_tap(le->sc_bpf, le->sc_r2->ler2_tbuf[0], len);
+#endif
 	len = leput(le->sc_r2->ler2_tbuf[0], m);
 	tmd = le->sc_r2->ler2_tmd;
 	tmd->tmd3 = 0;
@@ -522,7 +555,30 @@ leread(unit, buf, len)
 		le->sc_if.if_ierrors++;
 		return;
 	}
+#if NBPFILTER > 0
+	/*
+	 * Check if there's a bpf filter listening on this interface.
+	 * If so, hand off the raw packet to bpf, which must deal with
+	 * trailers in its own way.
+	 */
+	if (le->sc_bpf) {
+		bpf_tap(le->sc_bpf, buf, len + sizeof(struct ether_header));
 
+		/*
+		 * Note that the interface cannot be in promiscuous mode if
+		 * there are no bpf listeners.  And if we are in promiscuous
+		 * mode, we have to check if this packet is really ours.
+		 *
+		 * XXX This test does not support multicasts.
+		 */
+		if ((le->sc_if.if_flags & IFF_PROMISC)
+		    && bcmp(et->ether_dhost, le->sc_addr, 
+			    sizeof(et->ether_dhost)) != 0
+		    && bcmp(et->ether_dhost, etherbroadcastaddr, 
+			    sizeof(et->ether_dhost)) != 0)
+			return;
+	}
+#endif
 	/*
 	 * Pull packet off interface.  Off is nonzero if packet
 	 * has trailing header; leget will then force this header
