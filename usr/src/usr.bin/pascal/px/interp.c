@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)interp.c 1.11 %G%";
+static char sccsid[] = "@(#)interp.c 1.12 %G%";
 
 #include <math.h>
 #include "whoami.h"
@@ -218,18 +218,19 @@ interpreter(base)
 			continue;
 		case O_FCALL:
 			pc.cp++;
+			tcp = popaddr(); /* ptr to display save area */
 			tfp = (struct formalrtn *)popaddr();
 			stp = (struct stack *)
 				pushsp((long)(sizeof(struct stack)));
 			stp->lino = _lino;	/* save lino, pc, dp */
 			stp->pc.cp = pc.cp;
 			stp->dp = _dp;
-			pc.cp = tfp->entryaddr;	/* calc new entry point */
-			_dp = &_display.frame[tfp->cbn];/* new display ptr */
-			blkcpy(tfp->cbn * sizeof(struct disp),
-				&_display.frame[1], &tfp->disp[tfp->cbn]);
-			blkcpy(tfp->cbn * sizeof(struct disp),
-				&tfp->disp[0], &_display.frame[1]);
+			pc.cp = tfp->fentryaddr;/* calc new entry point */
+			_dp = &_display.frame[tfp->fbn];/* new display ptr */
+			blkcpy(tfp->fbn * sizeof(struct disp),
+				&_display.frame[1], tcp);
+			blkcpy(tfp->fbn * sizeof(struct disp),
+				&tfp->fdisp[0], &_display.frame[1]);
 			continue;
 		case O_FRTN:
 			tl = *pc.cp++;		/* tl = size of return obj */
@@ -237,19 +238,23 @@ interpreter(base)
 				tl = *pc.usp++;
 			tcp = pushsp((long)(0));
 			tfp = *(struct formalrtn **)(tcp + tl);
-			blkcpy(tl, tcp, tcp + sizeof(struct formalrtn *));
-			popsp((long)(sizeof(struct formalrtn *)));
-			blkcpy(tfp->cbn * sizeof(struct disp),
-				&tfp->disp[tfp->cbn], &_display.frame[1]);
+			tcp1 = *(char **)
+			    (tcp + tl + sizeof(struct formalrtn *));
+			blkcpy(tl, tcp,
+			    tcp + sizeof(struct formalrtn *) + sizeof(char *));
+			popsp((long)
+			    (sizeof(struct formalrtn *) + sizeof (char *)));
+			blkcpy(tfp->fbn * sizeof(struct disp),
+			    tcp1, &_display.frame[1]);
 			continue;
 		case O_FSAV:
 			tfp = (struct formalrtn *)popaddr();
-			tfp->cbn = *pc.cp++;	/* blk number of routine */
+			tfp->fbn = *pc.cp++;	/* blk number of routine */
 			tcp = base + *pc.lp++;/* calc new entry point */
 			tcp += sizeof(short);
-			tfp->entryaddr = base + *(long *)tcp;
-			blkcpy(tfp->cbn * sizeof(struct disp),
-				&_display.frame[1], &tfp->disp[0]);
+			tfp->fentryaddr = base + *(long *)tcp;
+			blkcpy(tfp->fbn * sizeof(struct disp),
+				&_display.frame[1], &tfp->fdisp[0]);
 			pushaddr(tfp);
 			continue;
 		case O_SDUP2:
