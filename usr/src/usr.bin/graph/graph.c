@@ -1,3 +1,7 @@
+#ifndef lint
+static char sccsid[] = "@(#)graph.c	4.2 %G%";
+#endif
+
 #include <stdio.h>
 #include <ctype.h>
 #include <math.h>
