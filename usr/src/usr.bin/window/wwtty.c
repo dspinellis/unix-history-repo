@@ -1,6 +1,12 @@
 #ifndef lint
-static char sccsid[] = "@(#)wwtty.c	3.8 %G%";
+static char sccsid[] = "@(#)wwtty.c	3.9 %G%";
 #endif
+
+/*
+ * Copyright (c) 1983 Regents of the University of California,
+ * All rights reserved.  Redistribution permitted subject to
+ * the terms of the Berkeley Software License Agreement.
+ */
 
 #include "ww.h"
 #include <fcntl.h>
