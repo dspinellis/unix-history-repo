@@ -1,10 +1,11 @@
-/*	@(#)llib-lc	1.39 (Berkeley) %G%	*/
+/*	@(#)llib-lc	1.40 (Berkeley) %G%	*/
 
 /* LINTLIBRARY */
 
 #include <sys/types.h>
 #include <sys/time.h>
 
+#include <sys/wait.h>
 #include <sys/dir.h>
 #include <sys/resource.h>
 #include <sys/socket.h>
@@ -13,7 +14,6 @@
 #include <sys/times.h>
 #include <sys/uio.h>
 #include <sys/vtimes.h>
-#include <sys/wait.h>
 
 #include <netinet/in.h>
 
@@ -21,7 +21,7 @@
 
 #include <arpa/inet.h>
 
-#include <disktab.h>
+#include <sys/disklabel.h>
 #include <fstab.h>
 #include <grp.h>
 #include <ndbm.h>
@@ -230,7 +230,7 @@ int	ffs(i) { return i; }
 double	frexp( v, e) double v; int *e; { return v; }
 	ftime(tp) struct timeb *tp; { ; }
 char *	gcvt(v, n, b) double v; char *b; { return(""); }
-struct disktab *	getdiskbyname(name) char *name; { return (struct disktab *) 0; }
+struct disklabel *	getdiskbyname(name) char *name; { return (struct disklabel *) 0; }
 char *	getenv( n ) char *n; { return n; }
 struct fstab *	getfsent() { return (struct fstab *)NULL; }
 struct fstab *	getfsspec( n ) char *n; { return (struct fstab *)NULL; }
