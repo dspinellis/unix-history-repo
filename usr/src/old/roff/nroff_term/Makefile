@@ -1,4 +1,4 @@
-#	Makefile	4.5	86/04/03
+#	Makefile	4.6	86/05/15
 #
 # Possible options:
 #	make		compile source for terminal tables below
@@ -44,10 +44,7 @@ install:
 	for file in tab*.o; do \
 		install -s -m 755 $$file ${DEST}/`basename $$file .o`;\
 	done
-	-if test ! -f ${DEST}/tabtn300; \
-	then \
-		make DESTDIR=${DESTDIR} links; \
-	fi
+	make DESTDIR=${DESTDIR} links
 	install -c -m 644 README ${DEST}/README
 
 links:
