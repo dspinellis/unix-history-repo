@@ -1,7 +1,7 @@
-/*	trace.h	6.1	83/07/29	*/
+/*	trace.h	6.2	84/01/03	*/
 
 /*
- * File system buffer tracing points; all trace <dev, bn>
+ * File system buffer tracing points; all trace <pack(dev, size), bn>
  */
 #define	TR_BREADHIT	0	/* buffer read found in cache */
 #define	TR_BREADMISS	1	/* buffer read not in cache */
@@ -11,6 +11,7 @@
 #define	TR_XFODMISS	5	/* exe fod read */
 #define	TR_XFODHIT	6	/* exe fod read */
 #define	TR_BRELSE	7	/* brelse */
+#define	TR_BREALLOC	8	/* expand/contract a buffer */
 
 /*
  * Memory allocator trace points; all trace the amount of memory involved
@@ -44,7 +45,7 @@
 /*
  * Miscellaneous
  */
-#define	TR_STAMP	50	/* user said vtrace(VTR_STAMP, value); */
+#define	TR_STAMP	45	/* user said vtrace(VTR_STAMP, value); */
 
 /*
  * This defines the size of the trace flags array.
@@ -71,6 +72,7 @@ struct	proc *traceproc;
 int	tracebuf[TRCSIZ];
 unsigned tracex;
 int	tracewhich;
+#define	pack(a,b)	((a)<<16)|(b)
 #define	trace(a,b,c)	if (traceflags[a]) trace1(a,b,c)
 #else
 #define	trace(a,b,b)	;
