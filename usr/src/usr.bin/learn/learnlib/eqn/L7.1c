@@ -1,0 +1,35 @@
+#once #create message
+.ND
+.tr %$
+.EQ
+delim $$
+.EN
+.LP
+It is also quite permissible to leave out
+either the "from" part or the "to" part
+of a from-to construction.  For example,
+modify "Example" so its output looks like this,
+then type "ready".
+.pl 1
+#once #create Ref
+.LP
+.EQ
+lim from {x-> pi /2} ( tan~x) sup {sin~2x}~=~1
+.EN
+.pl 1
+#once #create Example
+.LP
+.EQ
+lim from xxx ( tan~x) sup {sin~2x}~=~1
+.EN
+.pl 1
+#
+#once neqn Ref | nroff >X1 &
+#once neqn message Ref | nroff -T$term %s/tinyms -
+#user
+neqn Example | nroff >X2
+#cmp X1 X2
+#log
+#next
+7.1d 10
+7.2c 5
