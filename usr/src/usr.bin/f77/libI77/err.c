@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)err.c	5.2	%G%
+ *	@(#)err.c	5.3	%G%
  */
 
 /*
@@ -47,7 +47,6 @@ struct ioiflg ioiflg_;	/* initialization flags */
 
 /*error messages*/
 
-extern char *sys_errlist[];
 extern int sys_nerr;
 
 extern char *f_errlist[];
@@ -57,13 +56,14 @@ extern int f_nerr;
 fatal(n,s) char *s;
 {
 	ftnint lu;
+	char *strerror();
 
 	for (lu=1; lu < MXUNIT; lu++)
 		flush_(&lu);
 	if(n<0)
 		fprintf(stderr,"%s: [%d] end of file\n",s,n);
 	else if(n>=0 && n<sys_nerr)
-		fprintf(stderr,"%s: [%d] %s\n",s,n,sys_errlist[n]);
+		fprintf(stderr,"%s: [%d] %s\n",s,n, strerror(n));
 	else if(n>=F_ER && n<F_MAXERR)
 		fprintf(stderr,"%s: [%d] %s\n",s,n,f_errlist[n-F_ER]);
 	else

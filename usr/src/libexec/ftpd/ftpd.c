@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ftpd.c	5.34	(Berkeley) %G%";
+static char sccsid[] = "@(#)ftpd.c	5.35	(Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -61,8 +61,6 @@ static char sccsid[] = "@(#)ftpd.c	5.34	(Berkeley) %G%";
  * Commonly used to disallow uucp.
  */
 extern	int errno;
-extern	char *sys_errlist[];
-extern	int sys_nerr;
 extern	char *crypt();
 extern	char version[];
 extern	char *home;		/* pointer to home directory for glob */
@@ -651,8 +649,7 @@ dataconn(name, size, mode)
 	if (file == NULL) {
 		reply(425, "Can't create data socket (%s,%d): %s.",
 		    inet_ntoa(data_source.sin_addr),
-		    ntohs(data_source.sin_port),
-		    errno < sys_nerr ? sys_errlist[errno] : "unknown error");
+		    ntohs(data_source.sin_port), strerror(errno));
 		return (NULL);
 	}
 	data = fileno(file);
@@ -1220,10 +1217,7 @@ perror_reply(code, string)
 	int code;
 	char *string;
 {
-	if (errno < sys_nerr)
-		reply(code, "%s: %s.", string, sys_errlist[errno]);
-	else
-		reply(code, "%s: unknown error %d.", string, errno);
+	reply(code, "%s: %s.", string, strerror(errno));
 }
 
 static char *onefile[] = {

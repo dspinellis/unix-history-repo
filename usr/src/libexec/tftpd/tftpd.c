@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)tftpd.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)tftpd.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -36,18 +36,19 @@ static char sccsid[] = "@(#)tftpd.c	5.10 (Berkeley) %G%";
 #include <sys/ioctl.h>
 #include <sys/wait.h>
 #include <sys/stat.h>
+#include <sys/signal.h>
 
 #include <netinet/in.h>
 
 #include <arpa/tftp.h>
 
-#include <signal.h>
+#include <netdb.h>
+#include <setjmp.h>
 #include <stdio.h>
 #include <errno.h>
 #include <ctype.h>
-#include <netdb.h>
-#include <setjmp.h>
 #include <syslog.h>
+#include <string.h>
 
 #define	TIMEOUT		5
 
@@ -466,7 +467,6 @@ nak(error)
 	register struct tftphdr *tp;
 	int length;
 	register struct errmsg *pe;
-	extern char *sys_errlist[];
 
 	tp = (struct tftphdr *)buf;
 	tp->th_opcode = htons((u_short)ERROR);
@@ -475,7 +475,7 @@ nak(error)
 		if (pe->e_code == error)
 			break;
 	if (pe->e_code < 0) {
-		pe->e_msg = sys_errlist[error - 100];
+		pe->e_msg = strerror(error - 100);
 		tp->th_code = EUNDEF;   /* set 'undef' errorcode */
 	}
 	strcpy(tp->th_msg, pe->e_msg);
