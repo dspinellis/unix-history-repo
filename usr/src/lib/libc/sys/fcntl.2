@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)fcntl.2	8.1 (Berkeley) %G%
+.\"     @(#)fcntl.2	8.2 (Berkeley) %G%
 .\"
 .Dd 
 .Dt FCNTL 2
@@ -124,6 +124,7 @@ upon availability of data to be read.
 .Pp
 Several commands are available for doing advisory file locking;
 they all operate on the following structure:
+.ne 7v
 .Bd -literal
 struct flock {
 	off_t	l_start;	/* starting offset */
