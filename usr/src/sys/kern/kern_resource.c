@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_resource.c	8.6 (Berkeley) %G%
+ *	@(#)kern_resource.c	8.7 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -330,6 +330,7 @@ getrlimit(p, uap, retval)
  * Transform the running time and tick information in proc p into user,
  * system, and interrupt time usage.
  */
+void
 calcru(p, up, sp, ip)
 	register struct proc *p;
 	register struct timeval *up;
@@ -412,6 +413,7 @@ getrusage(p, uap, retval)
 	    sizeof (struct rusage)));
 }
 
+void
 ruadd(ru, ru2)
 	register struct rusage *ru, *ru2;
 {

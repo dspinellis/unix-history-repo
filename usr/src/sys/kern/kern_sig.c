@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_sig.c	8.11 (Berkeley) %G%
+ *	@(#)kern_sig.c	8.12 (Berkeley) %G%
  */
 
 #define	SIGPROP		/* include signal properties table */
@@ -592,7 +592,7 @@ void
 trapsignal(p, signum, code)
 	struct proc *p;
 	register int signum;
-	u_int code;
+	u_long code;
 {
 	register struct sigacts *ps = p->p_sigacts;
 	int mask;

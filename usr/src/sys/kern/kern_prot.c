@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_prot.c	8.7 (Berkeley) %G%
+ *	@(#)kern_prot.c	8.8 (Berkeley) %G%
  */
 
 /*

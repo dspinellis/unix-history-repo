@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)subr_log.c	8.1 (Berkeley) %G%
+ *	@(#)subr_log.c	8.2 (Berkeley) %G%
  */
 
 /*
@@ -161,7 +161,7 @@ logwakeup()
 /*ARGSUSED*/
 logioctl(dev, com, data, flag, p)
 	dev_t dev;
-	int com;
+	u_long com;
 	caddr_t data;
 	int flag;
 	struct proc *p;
