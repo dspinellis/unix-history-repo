@@ -467,15 +467,26 @@ TransStop()
 }
 
 void
-TransOut(buffer, count)
+TransOut(buffer, count, kind, control)
 unsigned char	*buffer;
 int		count;
+int		kind;		/* 0 or 5 */
+int		control;	/* To see if we are done */
 {
+    char *ptr;
 
     while (DoTerminalOutput() == 0) {
 	;
     }
+    for (ptr = buffer; ptr < buffer+count; ptr++) {
+	*ptr &= 0x7f;		/* Turn off parity bit */
+    }
     (void) DataToTerminal(buffer, count);
+    if (control && (kind == 0)) {		/* Send in AID byte */
+	SendToIBM();
+    } else {
+	TransInput(1, kind);			/* Go get some data */
+    }
 }
 
 /*
