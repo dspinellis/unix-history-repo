@@ -1,0 +1,163 @@
+
+@node Convex,,, Top
+@appendix Convex-specific info
+@cindex Convex notes
+
+Scalar registers are 64 bits long, which is a pain since
+left half of an S register frequently contains noise.
+Therefore there are two ways to obtain the value of an S register.
+
+@table @kbd
+@item $s0
+returns the low half of the register as an int
+
+@item $S0
+returns the whole register as a long long
+@end table
+
+You can print the value in floating point by using @samp{p/f $s0} or @samp{p/f $S0}
+to print a single or double precision value.
+
+@cindex vector registers
+Vector registers are handled similarly, with @samp{$V0} denoting the whole
+64-bit register and @kbd{$v0} denoting the 32-bit low half; @samp{p/f $v0}
+or @samp{p/f $V0} can be used to examine the register in floating point.
+The length of the vector registers is taken from @samp{$vl}.  
+
+Individual elements of a vector register are denoted in the obvious way;
+@samp{print $v3[9]} prints the tenth element of register @kbd{v3}, and
+@samp{set $v3[9] = 1234} alters it.
+
+@kbd{$vl} and @kbd{$vs} are int, and @kbd{$vm} is an int vector.
+Elements of @kbd{$vm} can't be assigned to.
+
+@cindex communication registers
+@kindex info comm-registers
+Communication registers have names @kbd{$C0 .. $C63}, with @kbd{$c0 .. $c63}
+denoting the low-order halves.  @samp{info comm-registers} will print them
+all out, and tell which are locked.  (A communication register is
+locked when a value is sent to it, and unlocked when the value is
+received.)  Communication registers are, of course, global to all
+threads, so it does not matter what the currently selected thread is.
+@samp{info comm-reg @var{name}} prints just that one communication
+register; @samp{name} may also be a communication register number
+@samp{nn} or @samp{0xnn}.
+@samp{info comm-reg @var{address}} prints the contents of the resource
+structure at that address.
+
+@kindex info psw
+The command @samp{info psw} prints the processor status word @kbd{$ps}
+bit by bit.
+
+@kindex set base
+GDB normally prints all integers in base 10, but the leading
+@kbd{0x80000000} of pointers is intolerable in decimal, so the default
+output radix has been changed to try to print addresses appropriately.
+The @samp{set base} command can be used to change this.
+
+@table @code
+@item set base 10
+Integer values always print in decimal.
+
+@item set base 16
+Integer values always print in hex.
+
+@item set base
+Go back to the initial state, which prints integer values in hex if they
+look like pointers (specifically, if they start with 0x8 or 0xf in the
+stack), otherwise in decimal.
+@end table
+
+@kindex set pipeline
+When an exception such as a bus error or overflow happens, usually the PC
+is several instructions ahead by the time the exception is detected.
+The @samp{set pipe} command will disable this.
+
+@table @code
+@item set pipeline off
+Forces serial execution of instructions; no vector chaining and no 
+scalar instruction overlap.  With this, exceptions are detected with 
+the PC pointing to the instruction after the one in error.
+
+@item set pipeline on
+Returns to normal, fast, execution.  This is the default.
+@end table
+
+@cindex parallel
+In a parallel program, multiple threads may be executing, each
+with its own registers, stack, and local memory.  When one of them
+hits a breakpoint, that thread is selected.  Other threads do
+not run while the thread is in the breakpoint.
+
+@kindex 1cont
+The selected thread can be single-stepped, given signals, and so
+on.  Any other threads remain stopped.  When a @samp{cont} command is given,
+all threads are resumed.  To resume just the selected thread, use
+the command @samp{1cont}.
+
+@kindex thread
+The @samp{thread} command will show the active threads and the
+instruction they are about to execute.  The selected thread is marked
+with an asterisk.  The command @samp{thread @var{n}} will select thread @var{n},
+shifting the debugger's attention to it for single-stepping,
+registers, local memory, and so on.
+
+@kindex info threads
+The @samp{info threads} command will show what threads, if any, have
+invisibly hit breakpoints or signals and are waiting to be noticed.
+
+@kindex set parallel
+The @samp{set parallel} command controls how many threads can be active.
+
+@table @code
+@item set parallel off
+One thread.  Requests by the program that other threads join in
+(spawn and pfork instructions) do not cause other threads to start up.
+This does the same thing as the @samp{limit concurrency 1} command.
+
+@item set parallel fixed
+All CPUs are assigned to your program whenever it runs.  When it
+executes a pfork or spawn instruction, it begins parallel execution
+immediately.  This does the same thing as the @samp{mpa -f} command.
+
+@item set parallel on
+One or more threads.  Spawn and pfork cause CPUs to join in when and if
+they are free.  This is the default.  It is very good for system
+throughput, but not very good for finding bugs in parallel code.  If you
+suspect a bug in parallel code, you probably want @samp{set parallel fixed.}
+@end table
+
+@subsection Limitations
+
+WARNING: Convex GDB evaluates expressions in long long, because S
+registers are 64 bits long.  However, GDB expression semantics are not
+exactly C semantics.  This is a bug, strictly speaking, but it's not one I
+know how to fix.  If @samp{x} is a program variable of type int, then it
+is also type int to GDB, but @samp{x + 1} is long long, as is @samp{x + y}
+or any other expression requiring computation.  So is the expression
+@samp{1}, or any other constant.  You only really have to watch out for
+calls.  The innocuous expression @samp{list_node (0x80001234)} has an
+argument of type long long.  You must explicitly cast it to int.
+
+It is not possible to continue after an uncaught fatal signal by using
+@samp{signal 0}, @samp{return}, @samp{jump}, or anything else.  The difficulty is with
+Unix, not GDB.
+
+I have made no big effort to make such things as single-stepping a
+@kbd{join} instruction do something reasonable.  If the program seems to
+hang when doing this, type @kbd{ctrl-c} and @samp{cont}, or use
+@samp{thread} to shift to a live thread.  Single-stepping a @kbd{spawn}
+instruction apparently causes new threads to be born with their T bit set;
+this is not handled gracefully.  When a thread has hit a breakpoint, other
+threads may have invisibly hit the breakpoint in the background; if you
+clear the breakpoint gdb will be surprised when threads seem to continue
+to stop at it.  All of these situations produce spurious signal 5 traps;
+if this happens, just type @samp{cont}.  If it becomes a nuisance, use
+@samp{handle 5 nostop}.  (It will ask if you are sure.  You are.)
+
+There is no way in GDB to store a float in a register, as with
+@kbd{set $s0 = 3.1416}.  The identifier @kbd{$s0} denotes an integer,
+and like any C expression which assigns to an integer variable, the
+right-hand side is casted to type int.  If you should need to do
+something like this, you can assign the value to @kbd{@{float@} ($sp-4)}
+and then do @kbd{set $s0 = $sp[-4]}.  Same deal with @kbd{set $v0[69] = 6.9}.
