@@ -134,22 +134,28 @@ number:
 				printf("Non-numeric second argument\n");
 				return(-1);
 			}
-			if (valdot < msgCount)
-				mark(valdot+1);
-			else {
-				printf("Referencing beyond EOF\n");
-				return(-1);
-			}
+			i = valdot;
+			do {
+				i++;
+				if (i > msgCount) {
+					printf("Referencing beyond EOF\n");
+					return(-1);
+				}
+			} while ((message[i - 1].m_flag & MDELETED) != f);
+			mark(i);
 			break;
 
 		case TDASH:
 			if (beg == 0) {
-				if (valdot > 1)
-					mark(valdot-1);
-				else {
-					printf("Referencing before 1\n");
-					return(-1);
-				}
+				i = valdot;
+				do {
+					i--;
+					if (i <= 0) {
+						printf("Referencing before 1\n");
+						return(-1);
+					}
+				} while ((message[i - 1].m_flag & MDELETED) != f);
+				mark(i);
 			}
 			break;
 
@@ -214,7 +220,7 @@ number:
 
 	if ((np > namelist || colmod != 0) && mc == 0)
 		for (i = 1; i <= msgCount; i++)
-			if ((message[i-1].m_flag & (MSAVED|MDELETED)) == f)
+			if ((message[i-1].m_flag & MDELETED) == f)
 				mark(i);
 
 	/*
@@ -545,11 +551,20 @@ sender(str, mesg)
 	char *str;
 {
 	register struct message *mp;
-	register char *cp;
+	register char *cp, *cp2, *backup;
 
 	mp = &message[mesg-1];
-	cp = nameof(mp, 0);
-	return(icequal(cp, str));
+	backup = cp2 = nameof(mp, 0);
+	cp = str;
+	while (*cp2) {
+		if (*cp == 0)
+			return(1);
+		if (raise(*cp++) != raise(*cp2++)) {
+			cp2 = ++backup;
+			cp = str;
+		}
+	}
+	return(*cp == 0);
 }
 
 /*
