@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)getline.c-big	7.1 (Berkeley) %G%
+ *	@(#)getline.c-big	8.1 (Berkeley) %G%
  */
 
 /*
