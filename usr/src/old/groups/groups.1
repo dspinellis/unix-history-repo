@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)groups.1	6.5 (Berkeley) %G%
+.\"	@(#)groups.1	6.6 (Berkeley) %G%
 .\"
 .Dd 
 .Dt GROUPS 1
@@ -20,27 +20,17 @@ The
 command shows the groups to which you or the optionally specified
 user belong.
 Each user belongs to a group specified in the password file
-.Pa /etc/passwd
-and possibly to other groups as specified in the file
-.Pa /etc/group .
-If you do not own a file but belong to the group which it is owned
-by then you are granted group access to the file.
+and possibly to other groups.
+If you do not own a file but belong to the group by which it is owned,
+then you are granted group access to the file.
 .Pp
-When a new file is created it is given
-the group of the containing directory.
+When a new file is created it is given the group of the containing
+directory.
 .Sh SEE ALSO
+.Xr id 1 ,
 .Xr group 5 ,
-.Xr setgroups 2
-.Sh FILES
-.Bl -tag -width /etc/passwd -compact
-.It Pa /etc/passwd
-.It Pa /etc/group
-.El
 .Sh HISTORY
 The
-.Nm group
-command
-appeared in
+.Nm groups
+command appeared in
 .Bx 4.2 .
-.Sh BUGS
-More groups should be allowed.
