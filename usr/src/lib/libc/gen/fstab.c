@@ -16,7 +16,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)fstab.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)fstab.c	5.7 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <fstab.h>
@@ -32,25 +32,54 @@ fstabscan()
 	register char *cp;
 #define	MAXLINELENGTH	100
 	static char line[MAXLINELENGTH];
-	char *fgets(), *strsep();
+	char subline[MAXLINELENGTH];
+	char *fgets(), *strtok();
 
 	for (;;) {
 		if (!(cp = fgets(line, sizeof(line), _fs_fp)))
 			return(0);
-		_fs_fstab.fs_spec = strsep(cp, ":\n");
-		_fs_fstab.fs_file = strsep((char *)NULL, ":\n");
-		_fs_fstab.fs_type = strsep((char *)NULL, ":\n");
-		if (_fs_fstab.fs_type) {
-			if (!strcmp(_fs_fstab.fs_type, FSTAB_XX))
+		_fs_fstab.fs_spec = strtok(cp, " \t\n");
+		_fs_fstab.fs_file = strtok((char *)NULL, " \t\n");
+		_fs_fstab.fs_vfstype = strtok((char *)NULL, " \t\n");
+		_fs_fstab.fs_mntops = strtok((char *)NULL, " \t\n");
+		if (_fs_fstab.fs_mntops == NULL)
+			goto bad;
+		_fs_fstab.fs_freq = 0;
+		_fs_fstab.fs_passno = 0;
+		if ((cp = strtok((char *)NULL, " \t\n")) != NULL) {
+			_fs_fstab.fs_freq = atoi(cp);
+			if ((cp = strtok((char *)NULL, " \t\n")) != NULL)
+				_fs_fstab.fs_passno = atoi(cp);
+		}
+		strcpy(subline, _fs_fstab.fs_mntops);
+		for (cp = strtok(subline, ","); cp;
+		     cp = strtok((char *)NULL, ",")) {
+			if (strlen(cp) != 2)
 				continue;
-			if (cp = strsep((char *)NULL, ":\n")) {
-				_fs_fstab.fs_freq = atoi(cp);
-				if (cp = strsep((char *)NULL, ":\n")) {
-					_fs_fstab.fs_passno = atoi(cp);
-					return(1);
-				}
+			if (!strcmp(cp, FSTAB_RW)) {
+				_fs_fstab.fs_type = FSTAB_RW;
+				break;
+			}
+			if (!strcmp(cp, FSTAB_RQ)) {
+				_fs_fstab.fs_type = FSTAB_RQ;
+				break;
+			}
+			if (!strcmp(cp, FSTAB_RO)) {
+				_fs_fstab.fs_type = FSTAB_RO;
+				break;
+			}
+			if (!strcmp(cp, FSTAB_SW)) {
+				_fs_fstab.fs_type = FSTAB_SW;
+				break;
+			}
+			if (!strcmp(cp, FSTAB_XX)) {
+				_fs_fstab.fs_type = FSTAB_XX;
+				break;
 			}
 		}
+		if (cp != NULL)
+			return(1);
+	bad:
 		/* no way to distinguish between EOF and syntax error */
 		(void)write(STDERR_FILENO, "fstab: ", 7);
 		(void)write(STDERR_FILENO, _PATH_FSTAB,
