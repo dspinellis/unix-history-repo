@@ -7,7 +7,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)getenv.3	6.11 (Berkeley) %G%
+.\"     @(#)getenv.3	6.12 (Berkeley) %G%
 .\"
 .Dd 
 .Dt GETENV 3
@@ -72,8 +72,8 @@ to the given
 .Pp
 The
 .Fn putenv
-function
-performs the equivalent of:
+function takes an argument of the form ``name=value'' and is
+equivalent to:
 .Bd -literal -offset indent
 setenv(name, value, 1);
 .Ed
