@@ -1,24 +1,13 @@
 #! /bin/csh -f
 #
-#	@(#)vtroff.sh	1.6	(Berkeley)	%G%
+#	@(#)vtroff.sh	4.1	(Berkeley)	%G%
 #
-#	$troffmachine is where the troffing will be done.
-set troffmachine = ucbdali
-#
-#	if the troff machine is not the local machine and it is up,
-#	use it otherwise troff (and sort) locally.
-if ($troffmachine != `hostname` && \
-    `ruptime | grep -c "$troffmachine.*up"` == 1) then
-	set troffsh = ( /usr/ucb/rsh $troffmachine )
-else
-	set troffsh = ( /bin/sh -c )
-endif
 umask 0
 set flags=() noglob length=() fonts=() fontf=()
 unset t
 set macp = (/usr/lib/tmac/tmac.vcat)
 set sort = (/usr/lib/rvsort)
-set vpr = (/usr/ucb/vpr)
+set lpr = (/usr/ucb/lpr -Pvarian)
 top:
 	if ($#argv > 0) then
 		switch ($argv[1])
@@ -32,12 +21,12 @@ top:
 			goto top
 		case -V:
 			set sort = (/usr/lib/rvsort)
-			set vpr = (/usr/ucb/vpr)
+			set lpr = (/usr/ucb/lpr -Pvarian)
 			shift argv
 			goto top
 		case -W:
 			set sort = (/usr/lib/vsort -W)
-			set vpr = (/usr/ucb/vpr -W)
+			set lpr = (/usr/ucb/lpr -Pversatec)
 			shift argv
 			goto top
 		case -F:
@@ -87,10 +76,10 @@ if ($#argv == 0) then
 endif
 if ($?t) then
     /usr/ucb/soelim $macp $fontf $argv[*] \
-    | $troffsh "/usr/bin/troff -t -rv1 $flags | $sort $length"
+    | /usr/bin/troff -t -rv1 $flags | $sort $length
 else
     /usr/ucb/soelim $macp $fontf $argv[*] \
-    | $troffsh "/usr/bin/troff -t -rv1 $flags | $sort $length | $vpr -t $fonts"
+    | /usr/bin/troff -t -rv1 $flags | $sort $length | $lpr -Jvtroff -t $fonts
 endif
 if ($#fontf) then
 	/bin/rm $fontf

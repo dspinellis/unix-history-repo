@@ -1,12 +1,24 @@
-#!/bin/csh -f
+#! /bin/csh -f
 #
-#	@(#)vprm.sh	1.2	(Berkeley)	%G%
+#	@(#)vprm.sh	4.1	(Berkeley)	%G%
 #
-set remote = ucbernie
-set execdir = /usr/ucb
-if ($remote != `hostname`) then
-	set cmd = "/usr/ucb/rsh $remote -n"
-else
-	set cmd = ""
-endif
-$cmd $execdir/vprm $argv
+set flags = ()
+set printer = -Pvarian
+top:
+	if ($#argv > 0) then
+		switch ($argv[1])
+		case -V:
+			set printer = -Pvarian
+			shift argv
+			goto top
+		case -W:
+			set printer = -Pversatec
+			shift argv
+			goto top
+		case -*:
+			set flags = ($flags $argv[1])
+			shift argv
+			goto top
+		endsw
+	endif
+/usr/ucb/lprm $printer $flags $*
