@@ -1,4 +1,4 @@
-.\"	@(#)crypt.3	6.1 (Berkeley) %G%
+.\"	@(#)crypt.3	6.1.1.1 (Berkeley) %G%
 .\"
 .TH CRYPT 3  ""
 .AT 3
@@ -55,11 +55,10 @@ to a similar array
 representing the bits of the argument after having been
 subjected to the DES algorithm using the key set by
 .I setkey.
-If
+The
 .I edflag
-is 0, the argument is encrypted;
-if non-zero,
-it is decrypted.
+flag is ignored;
+the argument can only be encrypted.
 .SH "SEE ALSO"
 passwd(1), passwd(5), login(1), getpass(3)
 .SH BUGS
