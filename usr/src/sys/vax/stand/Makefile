@@ -1,4 +1,4 @@
-#	Makefile	4.10	81/05/10
+#	Makefile	4.11	81/05/10
 
 DESTDIR=
 CFLAGS=	-O -DSTANDALONE ${COPTS} 
@@ -41,8 +41,8 @@ ls:	ls.o srt0.o ${DESTDIR}/usr/lib/libsa.a
 	ld -N srt0.o ls.o -lsa -lc
 	cp a.out b.out; strip b.out; dd if=b.out of=ls ibs=32 skip=1; rm b.out
 
-imptst: imptest.o srt0.o 
-	ld -N srt0.o imptest.o -lsa -lc
+imptst: imptst.o srt0.o 
+	ld -N srt0.o imptst.o -lsa -lc
 	cp a.out b.out; strip b.out; dd if=b.out of=imptst ibs=32 skip=1; rm b.out
 
 mkfs.o:	/usr/src/cmd/mkfs.c
