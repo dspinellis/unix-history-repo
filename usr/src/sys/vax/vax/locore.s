@@ -1,4 +1,4 @@
-/*	locore.s	4.20	81/02/15	*/
+/*	locore.s	4.21	81/02/16	*/
 
 	.set	HIGH,0x1f	# mask for total disable
 	.set	MCKVEC,4	# offset into Scbbase of machine check vector
@@ -355,6 +355,7 @@ start:
 /* trap() and syscall() save r0-r11 in the entry mask (per ../h/reg.h) */
 	bisw2	$0x0fff,_trap
 	bisw2	$0x0fff,_syscall
+	calls	$0,_fixctlrmask
 /* initialize system page table: scb and int stack writeable */
 	clrl	r2
 	movab	eintstack,r1; bbcc $31,r1,0f; 0: ashl $-PGSHIFT,r1,r1
