@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ns_input.c	6.3 (Berkeley) %G%
+ *	@(#)ns_input.c	6.4 (Berkeley) %G%
  */
 
 #include "param.h"
