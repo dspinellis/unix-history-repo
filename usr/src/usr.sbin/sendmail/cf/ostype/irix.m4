@@ -6,9 +6,7 @@ divert(-1)
 #
 # %sccs.include.redist.sh%
 #
-VERSIONID(`@(#)irix.m4	2.1 (Berkeley) %G%')
-#
-
-define(`LOCAL_MAILER_FLAGS', Ehu)dnl
 
 divert(0)
+VERSIONID(`@(#)irix.m4	2.2 (Berkeley) %G%')
+define(`LOCAL_MAILER_FLAGS', Ehu)dnl

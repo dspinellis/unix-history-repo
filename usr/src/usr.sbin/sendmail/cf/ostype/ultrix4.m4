@@ -6,9 +6,7 @@ divert(-1)
 #
 # %sccs.include.redist.sh%
 #
-VERSIONID(`@(#)ultrix4.m4	2.6 (Berkeley) %G%')
-#
-
-ifdef(`_OLD_SENDMAIL_', `define(`NEED_DOMAIN', `')')dnl
 
 divert(0)
+VERSIONID(`@(#)ultrix4.m4	2.7 (Berkeley) %G%')
+ifdef(`_OLD_SENDMAIL_', `define(`NEED_DOMAIN', `')')dnl

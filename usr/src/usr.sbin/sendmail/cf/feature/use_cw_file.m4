@@ -7,7 +7,9 @@ divert(-1)
 # %sccs.include.redist.sh%
 #
 
-VERSIONID(`@(#)use_cw_file.m4	2.4 (Berkeley) %G%')
+divert(0)
+VERSIONID(`@(#)use_cw_file.m4	2.5 (Berkeley) %G%')
+divert(-1)
 
 # if defined, the sendmail.cf will read the /etc/sendmail.cw file
 # to find alternate names for this host.  Typically only used when
