@@ -20,13 +20,11 @@
  */
 #if !(defined(lint) || defined(KERNEL))
 static char rcsid[] =
-    "@(#) $Header: bpf_filter.c,v 1.9 91/01/30 18:21:54 mccanne Exp $ (LBL)";
+    "@(#) $Header: bpf_filter.c,v 1.10 91/04/24 22:07:07 mccanne Locked $ (LBL)";
 #endif
 
 #include <sys/param.h>
 #include <sys/types.h>
-#include <protosw.h>
-#include <netinet/in.h>
 #include <sys/time.h>
 #include <net/bpf.h>
 
@@ -50,38 +48,33 @@ static char rcsid[] =
 #endif
 
 /*
- * Execute the filter program pointed to by 'pc' on the 
- * packet pointed to by 'p'.  'wirelen' is the length of actual
- * packet received by the interface.  'buflen' is the amount of
- * contiguous data.  The return value is the return value of the
- * filter program, or 0 on an error.
+ * Execute the filter program starting at pc on the packet p
+ * wirelen is the length of the original packet
+ * buflen is the amount of data present
  */
 u_int
 bpf_filter(pc, p, wirelen, buflen)
 	register struct bpf_insn *pc;
 	register u_char *p;
 	u_int wirelen;
-	u_int buflen;
+	register u_int buflen;
 {
-#define	JUMP(delta)	pc += (delta)
-#define	BR(cond)	JUMP((cond) ? pc->jt : pc->jf)
-
 	register long A, X;
+	register int k;
 	long mem[BPF_MEMWORDS];
 
 	if (pc == 0)
 		/*
 		 * No filter means accept all.
 		 */
-		return 1;
-
+		return (u_int)-1;
 #ifdef lint
 	A = 0;
 	X = 0;
 #endif
-
+	--pc;
 	while (1) {
-
+		++pc;
 		switch (pc->code) {
 
 		default:
@@ -90,178 +83,216 @@ bpf_filter(pc, p, wirelen, buflen)
 #else
 			abort();
 #endif			
-		case RetOp:
+		case BPF_RET|BPF_K:
 			return (u_int)pc->k;
 
-		case RetAOp:
+		case BPF_RET|BPF_A:
 			return (u_int)A;
 
-		case LdOp:
-			if (pc->k + sizeof(long) > buflen)
+		case BPF_LD|BPF_W|BPF_ABS:
+			k = pc->k;
+			if (k + sizeof(long) > buflen)
 				return 0;
-			A = EXTRACT_LONG(&p[pc->k]);
+#ifdef ALIGN
+			if (((int)(p + k) & 3) != 0)
+				A = EXTRACT_LONG(&p[k]);
+			else
+#endif
+				A = *(long *)(p + k);
 			break;
 
-		case LdHOp:
-			if (pc->k + sizeof(short) > buflen)
+		case BPF_LD|BPF_H|BPF_ABS:
+			k = pc->k;
+			if (k + sizeof(short) > buflen)
 				return 0;
-			A = EXTRACT_SHORT(&p[pc->k]);
+			A = EXTRACT_SHORT(&p[k]);
 			break;
 
-		case LdBOp:
-			if (pc->k >= buflen)
+		case BPF_LD|BPF_B|BPF_ABS:
+			k = pc->k;
+			if (k >= buflen)
 				return 0;
-			A = p[pc->k];
+			A = p[k];
 			break;
 
-		case LdLenOp:
+		case BPF_LD|BPF_W|BPF_LEN:
 			A = wirelen;
 			break;
 
-		case ILdOp:
-			if (X + pc->k + sizeof(long) > buflen)
-				return 0;
-			A = EXTRACT_LONG(&p[X + pc->k]);
+		case BPF_LDX|BPF_W|BPF_LEN:
+			X = wirelen;
 			break;
 
-		case ILdHOp:
-			if (X + pc->k + sizeof(short) > buflen)
+		case BPF_LD|BPF_W|BPF_IND:
+			k = X + pc->k;
+			if (k + sizeof(long) > buflen)
 				return 0;
-			A = EXTRACT_SHORT(&p[X + pc->k]);
+#ifdef ALIGN
+			if (((int)(p + k) & 3) != 0)
+				A = EXTRACT_LONG(&p[k]);
+			else
+#endif
+				A = *(long *)(p + k);
 			break;
 
-		case ILdBOp:
-			if (X + pc->k >= buflen)
+		case BPF_LD|BPF_H|BPF_IND:
+			k = X + pc->k;
+			if (k + sizeof(short) > buflen)
 				return 0;
-			A = p[X + pc->k];
+			A = EXTRACT_SHORT(&p[k]);
 			break;
 
-		case LdIOp:
+		case BPF_LD|BPF_B|BPF_IND:
+			k = X + pc->k;
+			if (k >= buflen)
+				return 0;
+			A = p[k];
+			break;
+
+		case BPF_LD|BPF_IMM:
 			A = pc->k;
 			break;
 
-		case LdXIOp:
+		case BPF_LDX|BPF_IMM:
 			X = pc->k;
 			break;
 
-		case LdxmsOp:
+		case BPF_LDX|BPF_MSH|BPF_B:
 			if (pc->k >= buflen)
 				return 0;
 			X = (p[pc->k] & 0xf) << 2;
 			break;
 
-		case TaxOp:
-			X = A;
-			break;
-
-		case TxaOp:
-			A = X;
-			break;
-
-		case StmOp:
-			mem[pc->k] = A;
-			break;
-
-		case LdmOp:
+		case BPF_LD|BPF_MEM:
 			A = mem[pc->k];
 			break;
 			
-		case StmXOp:
-			mem[pc->k] = X;
-			break;
-
-		case LdmXOp:
+		case BPF_LDX|BPF_MEM:
 			X = mem[pc->k];
 			break;
 
-		case NopOp:
+		case BPF_ST:
+			mem[pc->k] = A;
 			break;
 
-		case GTOp:
-			BR(A > pc->k);
-			continue;
+		case BPF_STX:
+			mem[pc->k] = X;
+			break;
 
-		case GEOp:
-			BR(A >= pc->k);
-			continue;
+		case BPF_JMP|BPF_JA:
+			pc += pc->k;
+			break;
 
-		case EQOp:
-			BR(A == pc->k);
-			continue;
+		case BPF_JMP|BPF_JGT|BPF_K:
+			pc += (A > pc->k) ? pc->jt : pc->jf;
+			break;
 
-		case AddXOp:
+		case BPF_JMP|BPF_JGE|BPF_K:
+			pc += (A >= pc->k) ? pc->jt : pc->jf;
+			break;
+
+		case BPF_JMP|BPF_JEQ|BPF_K:
+			pc += (A == pc->k) ? pc->jt : pc->jf;
+			break;
+
+		case BPF_JMP|BPF_JSET|BPF_K:
+			pc += (A & pc->k) ? pc->jt : pc->jf;
+			break;
+
+		case BPF_JMP|BPF_JGT|BPF_X:
+			pc += (A > X) ? pc->jt : pc->jf;
+			break;
+
+		case BPF_JMP|BPF_JGE|BPF_X:
+			pc += (A >= X) ? pc->jt : pc->jf;
+			break;
+
+		case BPF_JMP|BPF_JEQ|BPF_X:
+			pc += (A == X) ? pc->jt : pc->jf;
+			break;
+
+		case BPF_JMP|BPF_JSET|BPF_X:
+			pc += (A & X) ? pc->jt : pc->jf;
+			break;
+
+		case BPF_ALU|BPF_ADD|BPF_X:
 			A += X;
 			break;
 			
-		case SubXOp:
+		case BPF_ALU|BPF_SUB|BPF_X:
 			A -= X;
 			break;
 			
-		case MulXOp:
+		case BPF_ALU|BPF_MUL|BPF_X:
 			A *= X;
 			break;
 			
-		case DivXOp:
+		case BPF_ALU|BPF_DIV|BPF_X:
 			if (X == 0)
 				return 0;
 			A /= X;
 			break;
 			
-		case AndXOp:
+		case BPF_ALU|BPF_AND|BPF_X:
 			A &= X;
 			break;
 			
-		case OrXOp:
+		case BPF_ALU|BPF_OR|BPF_X:
 			A |= X;
 			break;
 
-		case LshXOp:
+		case BPF_ALU|BPF_LSH|BPF_X:
 			A <<= X;
 			break;
 
-		case RshXOp:
+		case BPF_ALU|BPF_RSH|BPF_X:
 			A >>= X;
 			break;
 
-		case AddIOp:
+		case BPF_ALU|BPF_ADD|BPF_K:
 			A += pc->k;
 			break;
 			
-		case SubIOp:
+		case BPF_ALU|BPF_SUB|BPF_K:
 			A -= pc->k;
 			break;
 			
-		case MulIOp:
+		case BPF_ALU|BPF_MUL|BPF_K:
 			A *= pc->k;
 			break;
 			
-		case DivIOp:
-			if (pc->k == 0)
-				return 0;
+		case BPF_ALU|BPF_DIV|BPF_K:
 			A /= pc->k;
 			break;
 			
-		case AndIOp:
+		case BPF_ALU|BPF_AND|BPF_K:
 			A &= pc->k;
 			break;
 			
-		case OrIOp:
+		case BPF_ALU|BPF_OR|BPF_K:
 			A |= pc->k;
 			break;
 
-		case LshIOp:
+		case BPF_ALU|BPF_LSH|BPF_K:
 			A <<= pc->k;
 			break;
 
-		case RshIOp:
+		case BPF_ALU|BPF_RSH|BPF_K:
 			A >>= pc->k;
 			break;
 
-		case NegOp:
+		case BPF_ALU|BPF_NEG:
 			A = -A;
 			break;
+
+		case BPF_MISC|BPF_TAX:
+			X = A;
+			break;
+
+		case BPF_MISC|BPF_TXA:
+			A = X;
+			break;
 		}
-		++pc;
 	}
 }
 
@@ -277,39 +308,43 @@ bpf_filter(pc, p, wirelen, buflen)
  * Otherwise, a bogus program could easily crash the system.
  */
 int
-bpf_validate(fcode, len)
-	struct bpf_insn *fcode;
+bpf_validate(f, len)
+	struct bpf_insn *f;
 	int len;
 {
-	struct bpf_insn *p;
-	int i;
+	register int i;
+	register struct bpf_insn *p;
 
-	p = fcode;
-	for (i = 0; i < len; ++p, ++i)
-		if (!BPF_VALIDCODE(p->code))
-			return 0;
-	p = fcode;
-	for (i = 0; i < len; ++p, ++i) {
+	for (i = 0; i < len; ++i) {
 		/*
 		 * Check that that jumps are forward, and within 
 		 * the code block.
 		 */
-		if (BPF_ISJUMP(p->code) &&
-		    (p->jt <= 0 || i + p->jt >= len ||
-		     p->jf <= 0 || i + p->jf >= len))
-			return 0;
+		p = &f[i];
+		if (BPF_CLASS(p->code) == BPF_JMP) {
+			register int from = i + 1;
+
+			if (BPF_OP(p->code) == BPF_JA) {
+				if (from + p->k >= len)
+					return 0;
+			}
+			else if (from + p->jt >= len || from + p->jf >= len)
+				return 0;
+		}
 		/*
 		 * Check that memory operations use valid addresses.
 		 */
-		switch (p->code) {
-		case StmOp:
-		case StmXOp:
-		case LdmOp:
-		case LdmXOp:
-			if (p->k >= BPF_MEMWORDS || p->k < 0)
-				return 0;
-		}
+		if ((BPF_CLASS(p->code) == BPF_ST ||
+		     (BPF_CLASS(p->code) == BPF_LD && 
+		      (p->code & 0xe0) == BPF_MEM)) &&
+		    (p->k >= BPF_MEMWORDS || p->k < 0))
+			return 0;
+		/*
+		 * Check for constant division by 0.
+		 */
+		if (p->code == BPF_ALU|BPF_DIV|BPF_K && p->k == 0)
+			return;
 	}
-	return BPF_ISLEAF(fcode[len - 1].code);
+	return BPF_CLASS(f[len - 1].code) == BPF_RET;
 }
 #endif
