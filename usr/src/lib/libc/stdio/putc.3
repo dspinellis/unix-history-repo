@@ -1,4 +1,4 @@
-.\"	@(#)putc.3	6.1 (Berkeley) %G%
+.\"	@(#)putc.3	6.2 (Berkeley) %G%
 .\"
 .TH PUTC 3S  ""
 .AT 3
@@ -15,15 +15,15 @@ putc, putchar, fputc, putw \- put character or word on a stream
 .B FILE
 .B *stream;
 .PP
-.B putchar(c)
+.B int putchar(c)
 .PP
-.B fputc(c, stream)
+.B int fputc(c, stream)
 .br
 .SM
 .B FILE
 .B *stream;
 .PP
-.B putw(w, stream)
+.B int putw(w, stream)
 .br
 .SM
 .B FILE
