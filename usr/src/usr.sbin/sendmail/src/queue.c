@@ -17,12 +17,12 @@
 
 # ifndef QUEUE
 # ifndef lint
-static char	SccsId[] = "@(#)queue.c	5.16 (Berkeley) %G%	(no queueing)";
+static char	SccsId[] = "@(#)queue.c	5.17 (Berkeley) %G%	(no queueing)";
 # endif not lint
 # else QUEUE
 
 # ifndef lint
-static char	SccsId[] = "@(#)queue.c	5.16 (Berkeley) %G%";
+static char	SccsId[] = "@(#)queue.c	5.17 (Berkeley) %G%";
 # endif not lint
 
 /*
@@ -282,15 +282,25 @@ runqueue(forkflag)
 		pid = dofork();
 		if (pid != 0)
 		{
+			extern reapchild();
+
 			/* parent -- pick up intermediate zombie */
+#ifndef SIGCHLD
 			(void) waitfor(pid);
+#else SIGCHLD
+			(void) signal(SIGCHLD, reapchild);
+#endif SIGCHLD
 			if (QueueIntvl != 0)
 				(void) setevent(QueueIntvl, runqueue, TRUE);
 			return;
 		}
 		/* child -- double fork */
+#ifndef SIGCHLD
 		if (fork() != 0)
 			exit(EX_OK);
+#else SIGCHLD
+		(void) signal(SIGCHLD, SIG_DFL);
+#endif SIGCHLD
 	}
 
 	setproctitle("running queue");
