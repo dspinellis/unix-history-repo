@@ -1,22 +1,35 @@
 /*
- * Copyright (c) 1982, 1986 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+ * Copyright (c) 1982, 1986, 1989 Regents of the University of California.
+ * All rights reserved.
  *
- *	@(#)ffs_inode.c	7.5 (Berkeley) %G%
+ * Redistribution and use in source and binary forms are permitted
+ * provided that the above copyright notice and this paragraph are
+ * duplicated in all such forms and that any documentation,
+ * advertising materials, and other materials related to such
+ * distribution and use acknowledge that the software was developed
+ * by the University of California, Berkeley.  The name of the
+ * University may not be used to endorse or promote products derived
+ * from this software without specific prior written permission.
+ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+ * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+ *
+ *	@(#)ffs_inode.c	7.6 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "systm.h"
 #include "mount.h"
-#include "dir.h"
 #include "user.h"
-#include "inode.h"
-#include "fs.h"
+#include "file.h"
 #include "buf.h"
 #include "cmap.h"
+#include "vnode.h"
+#include "../ufs/inode.h"
+#include "../ufs/fs.h"
+#include "../ufs/ufsmount.h"
 #ifdef QUOTA
-#include "quota.h"
+#include "../ufs/quota.h"
 #endif
 #include "kernel.h"
 #include "malloc.h"
@@ -28,12 +41,24 @@
 #define	INOHASH(dev,ino)	(((unsigned)((dev)+(ino)))%INOHSZ)
 #endif
 
+#define INSFREE(ip) {\
+	if (ifreeh) { \
+		*ifreet = (ip); \
+		(ip)->i_freeb = ifreet; \
+	} else { \
+		ifreeh = (ip); \
+		(ip)->i_freeb = &ifreeh; \
+	} \
+	(ip)->i_freef = NULL; \
+	ifreet = &(ip)->i_freef; \
+}
+
 union ihead {				/* inode LRU cache, Chris Maltby */
 	union  ihead *ih_head[2];
 	struct inode *ih_chain[2];
 } ihead[INOHSZ];
 
-struct inode *ifreeh, **ifreet;
+struct inode *ifreeh, **ifreet, *bdevlisth;
 
 /*
  * Initialize hash links for inodes
@@ -54,10 +79,12 @@ ihinit()
 	ip->i_freeb = &ifreeh;
 	ip->i_forw = ip;
 	ip->i_back = ip;
+	ITOV(ip)->v_data = (qaddr_t)ip;
 	for (i = ninode; --i > 0; ) {
 		++ip;
 		ip->i_forw = ip;
 		ip->i_back = ip;
+		ITOV(ip)->v_data = (qaddr_t)ip;
 		*ifreet = ip;
 		ip->i_freeb = ifreet;
 		ifreet = &ip->i_freef;
@@ -65,55 +92,31 @@ ihinit()
 	ip->i_freef = NULL;
 }
 
-#ifdef notdef
 /*
- * Find an inode if it is incore.
- * This is the equivalent, for inodes,
- * of ``incore'' in bio.c or ``pfind'' in subr.c.
- */
-struct inode *
-ifind(dev, ino)
-	dev_t dev;
-	ino_t ino;
-{
-	register struct inode *ip;
-	register union  ihead *ih;
-
-	ih = &ihead[INOHASH(dev, ino)];
-	for (ip = ih->ih_chain[0]; ip != (struct inode *)ih; ip = ip->i_forw)
-		if (ino==ip->i_number && dev==ip->i_dev)
-			return (ip);
-	return ((struct inode *)0);
-}
-#endif notdef
-
-/*
- * Look up an inode by device,inumber.
+ * Look up an vnode/inode by device,inumber.
  * If it is in core (in the inode structure),
  * honor the locking protocol.
  * If it is not in core, read it in from the
  * specified device.
- * If the inode is mounted on, perform
- * the indicated indirection.
+ * Callers must check for mount points!!
  * In all cases, a pointer to a locked
  * inode structure is returned.
- *
- * panic: no imt -- if the mounted file
- *	system is not in the mount table.
- *	"cannot happen"
  */
-struct inode *
-iget(dev, fs, ino)
-	dev_t dev;
-	register struct fs *fs;
+iget(xp, ino, ipp)
+	struct inode *xp;
 	ino_t ino;
+	struct inode **ipp;
 {
-	register struct inode *ip;
-	register union  ihead *ih;
-	register struct mount *mp;
-	register struct buf *bp;
-	register struct dinode *dp;
-	register struct inode *iq;
+	dev_t dev = xp->i_dev;
+	struct mount *mntp = ITOV(xp)->v_mount;
+	register struct fs *fs = VFSTOUFS(mntp)->um_fs;
+	register struct inode *ip, *iq;
+	register struct vnode *vp;
+	struct inode *nip;
+	struct buf *bp;
+	struct dinode tdip, *dp;
+	union  ihead *ih;
+	int error;
 
 loop:
 	ih = &ihead[INOHASH(dev, ino)];
@@ -131,17 +134,8 @@ loop:
 				sleep((caddr_t)ip, PINOD);
 				goto loop;
 			}
-			if ((ip->i_flag&IMOUNT) != 0) {
-				for (mp = &mount[0]; mp < &mount[NMOUNT]; mp++)
-					if(mp->m_inodp == ip) {
-						dev = mp->m_dev;
-						fs = mp->m_fs;
-						ino = ROOTINO;
-						goto loop;
-					}
-				panic("no imt");
-			}
-			if (ip->i_count == 0) {		/* ino on free list */
+			vp = ITOV(ip);
+			if (vp->v_count == 0) {		/* ino on free list */
 				if (iq = ip->i_freef)
 					iq->i_freeb = ip->i_freeb;
 				else
@@ -150,17 +144,153 @@ loop:
 				ip->i_freef = NULL;
 				ip->i_freeb = NULL;
 			}
-			ip->i_count++;
 			ip->i_flag |= ILOCKED;
-			return(ip);
+			vp->v_count++;
+			*ipp = ip;
+			return(0);
 		}
+	if (error = getnewino(dev, ino, &nip)) {
+		*ipp = 0;
+		return (error);
+	}
+	ip = nip;
+	/*
+	 * Read in the disk contents for the inode.
+	 */
+	if (error = bread(VFSTOUFS(mntp)->um_devvp, fsbtodb(fs, itod(fs, ino)),
+	    (int)fs->fs_bsize, &bp)) {
+		/*
+		 * The inode doesn't contain anything useful, so it would
+		 * be misleading to leave it on its hash chain. Iput() will
+		 * take care of putting it back on the free list. We also
+		 * lose its inumber, just in case.
+		 */
+		remque(ip);
+		ip->i_forw = ip;
+		ip->i_back = ip;
+		ip->i_number = 0;
+		INSFREE(ip);
+		ip->i_flag = 0;
+		brelse(bp);
+		*ipp = 0;
+		return(error);
+	}
+	/*
+	 * Check to see if the new inode represents a block device
+	 * for which we already have an inode (either because of
+	 * bdevvp() or because of a different inode representing
+	 * the same block device). If such an alias exists, put the
+	 * just allocated inode back on the free list, and replace
+	 * the contents of the existing inode with the contents of
+	 * the new inode.
+	 */
+	dp = bp->b_un.b_dino;
+	dp += itoo(fs, ino);
+	if ((dp->di_mode & IFMT) != IFBLK) {
+		ip->i_ic = dp->di_ic;
+		brelse(bp);
+	} else {
+again:
+		for (iq = bdevlisth; iq; iq = iq->i_devlst) {
+			if (dp->di_rdev != ITOV(iq)->v_rdev)
+				continue;
+			igrab(iq);
+			if (dp->di_rdev != ITOV(iq)->v_rdev) {
+				iput(iq);
+				goto again;
+			}
+			/*
+			 * Discard unneeded inode.
+			 */
+			remque(ip);
+			ip->i_forw = ip;
+			ip->i_back = ip;
+			ip->i_number = 0;
+			INSFREE(ip);
+			ip->i_flag = 0;
+			/*
+			 * Reinitialize aliased inode.
+			 * We must release the buffer that we just read
+			 * before doing the iupdat() to avoid a possible
+			 * deadlock with updating an inode in the same
+			 * disk block.
+			 */
+			ip = iq;
+			vp = ITOV(iq);
+			tdip.di_ic = dp->di_ic;
+			brelse(bp);
+			error = iupdat(ip, &time, &time, 1);
+			ip->i_ic = tdip.di_ic;
+			remque(ip);
+			insque(ip, ih);
+			ip->i_dev = dev;
+			ip->i_number = ino;
+			if (ip->i_devvp) {
+				vrele(ip->i_devvp);
+				ip->i_devvp = 0;
+			}
+			cache_purge(vp);
+			break;
+		}
+		if (iq == 0) {
+			ip->i_ic = dp->di_ic;
+			brelse(bp);
+			ip->i_devlst = bdevlisth;
+			bdevlisth = ip;
+		}
+	}
+	/*
+	 * Finish inode initialization.
+	 */
+	ip->i_fs = fs;
+	ip->i_devvp = VFSTOUFS(mntp)->um_devvp;
+	ip->i_devvp->v_count++;
+	/*
+	 * Initialize the associated vnode
+	 */
+	vp = ITOV(ip);
+	vinit(vp, mntp, IFTOVT(ip->i_mode), &ufs_vnodeops);
+	if (vp->v_type == VCHR || vp->v_type == VBLK) {
+		vp->v_rdev = ip->i_rdev;
+		vp->v_op = &blk_vnodeops;
+	}
+	if (ino == ROOTINO)
+		vp->v_flag |= VROOT;
+#ifdef QUOTA
+	if (ip->i_mode != 0)
+		ip->i_dquot = inoquota(ip);
+#endif
+	*ipp = ip;
+	return (0);
+}
 
+/*
+ * Allocate a new inode.
+ *
+ * Put it onto its hash chain and lock it so that other requests for
+ * this inode will block if they arrive while we are sleeping waiting
+ * for old data structures to be purged or for the contents of the disk
+ * portion of this inode to be read.
+ */
+getnewino(dev, ino, ipp)
+	dev_t dev;
+	ino_t ino;
+	struct inode **ipp;
+{
+	union ihead *ih;
+	register struct inode *ip, *iq;
+	register struct vnode *vp;
+
+	/*
+	 * Remove the next inode from the free list.
+	 */
 	if ((ip = ifreeh) == NULL) {
 		tablefull("inode");
-		u.u_error = ENFILE;
-		return(NULL);
+		*ipp = 0;
+		return(ENFILE);
 	}
-	if (ip->i_count)
+	vp = ITOV(ip);
+	if (vp->v_count)
 		panic("free inode isn't");
 	if (iq = ip->i_freef)
 		iq->i_freeb = &ifreeh;
@@ -170,65 +300,47 @@ loop:
 	/*
 	 * Now to take inode off the hash chain it was on
 	 * (initially, or after an iflush, it is on a "hash chain"
-	 * consisting entirely of itself, and pointed to by no-one,
-	 * but that doesn't matter), and put it on the chain for
-	 * its new (ino, dev) pair
+	 * consisting entirely of itself, and pointed to by no-one)
+	 * and put it on the chain for its new (ino, dev) pair.
 	 */
 	remque(ip);
-	insque(ip, ih);
 	ip->i_dev = dev;
-	ip->i_fs = fs;
 	ip->i_number = ino;
-	cacheinval(ip);
+	if (dev != NODEV) {
+		ih = &ihead[INOHASH(dev, ino)];
+		insque(ip, ih);
+	}
 	ip->i_flag = ILOCKED;
-	ip->i_count++;
 	ip->i_lastr = 0;
-#ifdef QUOTA
-	dqrele(ip->i_dquot);
-#endif
-#ifdef SECSIZE
-	bp = bread(dev, fsbtodb(fs, itod(fs, ino)), (int)fs->fs_bsize,
-	    fs->fs_dbsize);
-#else SECSIZE
-	bp = bread(dev, fsbtodb(fs, itod(fs, ino)), (int)fs->fs_bsize);
 #endif SECSIZE
 	/*
-	 * Check I/O errors
+	 * Purge old data structures associated with the inode.
 	 */
-	if ((bp->b_flags&B_ERROR) != 0) {
-		brelse(bp);
-		/*
-		 * the inode doesn't contain anything useful, so it would
-		 * be misleading to leave it on its hash chain.
-		 * 'iput' will take care of putting it back on the free list.
-		 */
-		remque(ip);
-		ip->i_forw = ip;
-		ip->i_back = ip;
-		/*
-		 * we also loose its inumber, just in case (as iput
-		 * doesn't do that any more) - but as it isn't on its
-		 * hash chain, I doubt if this is really necessary .. kre
-		 * (probably the two methods are interchangable)
-		 */
-		ip->i_number = 0;
-#ifdef QUOTA
-		ip->i_dquot = NODQUOT;
-#endif
-		iput(ip);
-		return(NULL);
+	cache_purge(vp);
+	if (ip->i_devvp) {
+		vrele(ip->i_devvp);
+		ip->i_devvp = 0;
 	}
-	dp = bp->b_un.b_dino;
-	dp += itoo(fs, ino);
-	ip->i_ic = dp->di_ic;
-	brelse(bp);
 #ifdef QUOTA
-	if (ip->i_mode == 0)
-		ip->i_dquot = NODQUOT;
-	else
-		ip->i_dquot = inoquota(ip);
+	dqrele(ip->i_dquot);
+	ip->i_dquot = NODQUOT;
 #endif
-	return (ip);
+	if (vp->v_type == VBLK) {
+		if (bdevlisth == ip) {
+			bdevlisth = ip->i_devlst;
+		} else {
+			for (iq = bdevlisth; iq; iq = iq->i_devlst) {
+				if (iq->i_devlst != ip)
+					continue;
+				iq->i_devlst = ip->i_devlst;
+				break;
+			}
+			if (iq == NULL)
+				panic("missing bdev");
+		}
+	}
+	*ipp = ip;
+	return (0);
 }
 
 /*
@@ -242,11 +354,13 @@ loop:
 igrab(ip)
 	register struct inode *ip;
 {
+	register struct vnode *vp = ITOV(ip);
+
 	while ((ip->i_flag&ILOCKED) != 0) {
 		ip->i_flag |= IWANT;
 		sleep((caddr_t)ip, PINOD);
 	}
-	if (ip->i_count == 0) {		/* ino on free list */
+	if (vp->v_count == 0) {		/* ino on free list */
 		register struct inode *iq;
 
 		if (iq = ip->i_freef)
@@ -257,8 +371,54 @@ igrab(ip)
 		ip->i_freef = NULL;
 		ip->i_freeb = NULL;
 	}
-	ip->i_count++;
+	vp->v_count++;
 	ip->i_flag |= ILOCKED;
+}
+
+/*
+ * Create a vnode for a block device.
+ * Used for root filesystem, argdev, and swap areas.
+ */
+bdevvp(dev, vpp)
+	dev_t dev;
+	struct vnode **vpp;
+{
+	register struct inode *ip;
+	register struct vnode *vp;
+	struct inode *nip;
+	int error;
+
+	/*
+	 * Check for the existence of an existing vnode.
+	 */
+again:
+	for (ip = bdevlisth; ip; ip = ip->i_devlst) {
+		vp = ITOV(ip);
+		if (dev != vp->v_rdev)
+			continue;
+		igrab(ip);
+		if (dev != vp->v_rdev) {
+			iput(ip);
+			goto again;
+		}
+		IUNLOCK(ip);
+		*vpp = vp;
+		return (0);
+	}
+	if (error = getnewino(NODEV, (ino_t)0, &nip)) {
+		*vpp = 0;
+		return (error);
+	}
+	ip = nip;
+	ip->i_fs = 0;
+	ip->i_devlst = bdevlisth;
+	bdevlisth = ip;
+	vp = ITOV(ip);
+	vinit(vp, 0, VBLK, &blk_vnodeops);
+	vp->v_rdev = dev;
+	IUNLOCK(ip);
+	*vpp = vp;
+	return (0);
 }
 
 /*
@@ -275,54 +435,43 @@ iput(ip)
 	if ((ip->i_flag & ILOCKED) == 0)
 		panic("iput");
 	IUNLOCK(ip);
-	irele(ip);
+	vrele(ITOV(ip));
 }
 
-irele(ip)
-	register struct inode *ip;
-{
-	int mode;
 
-	if (ip->i_count == 1) {
-		ip->i_flag |= ILOCKED;
-		if (ip->i_nlink <= 0 && ip->i_fs->fs_ronly == 0) {
-			itrunc(ip, (u_long)0);
-			mode = ip->i_mode;
-			ip->i_mode = 0;
-			ip->i_rdev = 0;
-			ip->i_flag |= IUPD|ICHG;
-			ifree(ip, ip->i_number, mode);
+ufs_inactive(vp)
+	struct vnode *vp;
+{
+	register struct inode *ip = VTOI(vp);
+	int mode, error;
+
+	if (ITOV(ip)->v_count != 0)
+		panic("ufs_inactive: not inactive");
+	ip->i_flag |= ILOCKED;
+	if (ip->i_nlink <= 0 && (ITOV(ip)->v_mount->m_flag&M_RDONLY) == 0) {
+		error = itrunc(ip, (u_long)0);
+		mode = ip->i_mode;
+		ip->i_mode = 0;
+		ip->i_rdev = 0;
+		ip->i_flag |= IUPD|ICHG;
+		ifree(ip, ip->i_number, mode);
 #ifdef QUOTA
-			(void) chkiq(ip->i_dev, ip, ip->i_uid, 0);
-			dqrele(ip->i_dquot);
-			ip->i_dquot = NODQUOT;
+		(void) chkiq(ip->i_dev, ip, ip->i_uid, 0);
+		dqrele(ip->i_dquot);
+		ip->i_dquot = NODQUOT;
 #endif
-		}
-		IUPDAT(ip, &time, &time, 0);
-		IUNLOCK(ip);
-		ip->i_flag = 0;
-		/*
-		 * Put the inode on the end of the free list.
-		 * Possibly in some cases it would be better to
-		 * put the inode at the head of the free list,
-		 * (eg: where i_mode == 0 || i_number == 0)
-		 * but I will think about that later .. kre
-		 * (i_number is rarely 0 - only after an i/o error in iget,
-		 * where i_mode == 0, the inode will probably be wanted
-		 * again soon for an ialloc, so possibly we should keep it)
-		 */
-		if (ifreeh) {
-			*ifreet = ip;
-			ip->i_freeb = ifreet;
-		} else {
-			ifreeh = ip;
-			ip->i_freeb = &ifreeh;
-		}
-		ip->i_freef = NULL;
-		ifreet = &ip->i_freef;
-	} else if (!(ip->i_flag & ILOCKED))
-		ITIMES(ip, &time, &time);
-	ip->i_count--;
+	}
+	IUPDAT(ip, &time, &time, 0);
+	IUNLOCK(ip);
+	ip->i_flag = 0;
+	/*
+	 * Put the inode on the end of the free list.
+	 * Possibly in some cases it would be better to
+	 * put the inode at the head of the free list,
+	 * (eg: where i_mode == 0 || i_number == 0).
+	 */
+	INSFREE(ip);
+	return (error);
 }
 
 /*
@@ -338,38 +487,36 @@ iupdat(ip, ta, tm, waitfor)
 	struct timeval *ta, *tm;
 	int waitfor;
 {
-	register struct buf *bp;
+	struct buf *bp;
+	struct vnode *vp = ITOV(ip);
 	struct dinode *dp;
 	register struct fs *fs;
 
 	fs = ip->i_fs;
-	if ((ip->i_flag & (IUPD|IACC|ICHG|IMOD)) != 0) {
-		if (fs->fs_ronly)
-			return;
-#ifdef SECSIZE
-		bp = bread(ip->i_dev, fsbtodb(fs, itod(fs, ip->i_number)),
-			(int)fs->fs_bsize, fs->fs_dbsize);
-#else SECSIZE
-		bp = bread(ip->i_dev, fsbtodb(fs, itod(fs, ip->i_number)),
-			(int)fs->fs_bsize);
-#endif SECSIZE
-		if (bp->b_flags & B_ERROR) {
-			brelse(bp);
-			return;
-		}
-		if (ip->i_flag&IACC)
-			ip->i_atime = ta->tv_sec;
-		if (ip->i_flag&IUPD)
-			ip->i_mtime = tm->tv_sec;
-		if (ip->i_flag&ICHG)
-			ip->i_ctime = time.tv_sec;
-		ip->i_flag &= ~(IUPD|IACC|ICHG|IMOD);
-		dp = bp->b_un.b_dino + itoo(fs, ip->i_number);
-		dp->di_ic = ip->i_ic;
-		if (waitfor)
-			bwrite(bp);
-		else
-			bdwrite(bp);
+	if ((ip->i_flag & (IUPD|IACC|ICHG|IMOD)) == 0)
+		return (0);
+	if (vp->v_mount->m_flag & M_RDONLY)
+		return (0);
+	error = bread(ip->i_devvp, fsbtodb(fs, itod(fs, ip->i_number)),
+		(int)fs->fs_bsize, &bp);
+	if (error) {
+		brelse(bp);
+		return (error);
+	}
+	if (ip->i_flag&IACC)
+		ip->i_atime = ta->tv_sec;
+	if (ip->i_flag&IUPD)
+		ip->i_mtime = tm->tv_sec;
+	if (ip->i_flag&ICHG)
+		ip->i_ctime = time.tv_sec;
+	ip->i_flag &= ~(IUPD|IACC|ICHG|IMOD);
+	dp = bp->b_un.b_dino + itoo(fs, ip->i_number);
+	dp->di_ic = ip->i_ic;
+	if (waitfor) {
+		return (bwrite(bp));
+	} else {
+		bdwrite(bp);
+		return (0);
 	}
 }
 
@@ -393,17 +540,16 @@ itrunc(oip, length)
 	register struct fs *fs;
 	register struct inode *ip;
 	struct buf *bp;
-	int offset, osize, size, count, level;
-	long nblocks, blocksreleased = 0;
+	int offset, osize, size, level;
+	long count, nblocks, blocksreleased = 0;
 	register int i;
-	dev_t dev;
+	int error, allerror = 0;
 	struct inode tip;
-	extern long indirtrunc();
 
 	if (oip->i_size <= length) {
 		oip->i_flag |= ICHG|IUPD;
-		iupdat(oip, &time, &time, 1);
-		return;
+		error = iupdat(oip, &time, &time, 1);
+		return (error);
 	}
 	/*
 	 * Calculate index into inode's block list of
@@ -430,25 +576,20 @@ itrunc(oip, length)
 		oip->i_size = length;
 	} else {
 		lbn = lblkno(fs, length);
-		bn = fsbtodb(fs, bmap(oip, lbn, B_WRITE, offset));
-		if (u.u_error || (long)bn < 0)
-			return;
+		error = balloc(oip, lbn, offset, &bn, B_CLRBUF);
+		if (error)
+			return (error);
+		if ((long)bn < 0)
+			panic("itrunc: hole");
 		oip->i_size = length;
 		size = blksize(fs, oip, lbn);
 		count = howmany(size, CLBYTES);
-		dev = oip->i_dev;
-		for (i = 0; i < count; i++)
-#ifdef SECSIZE
-			munhash(dev, bn + i * CLBYTES / fs->fs_dbsize);
-#else SECSIZE
-			munhash(dev, bn + i * CLBYTES / DEV_BSIZE);
-#endif SECSIZE
-		bp = bread(dev, bn, size);
-		if (bp->b_flags & B_ERROR) {
-			u.u_error = EIO;
+			munhash(oip->i_devvp, bn + i * CLBYTES / DEV_BSIZE);
+		error = bread(oip->i_devvp, bn, size, &bp);
+		if (error) {
 			oip->i_size = osize;
 			brelse(bp);
-			return;
+			return (error);
 		}
 		bzero(bp->b_un.b_addr + offset, (unsigned)(size - offset));
 		bdwrite(bp);
@@ -471,7 +612,7 @@ itrunc(oip, length)
 	for (i = NDADDR - 1; i > lastblock; i--)
 		oip->i_db[i] = 0;
 	oip->i_flag |= ICHG|IUPD;
-	syncip(oip);
+	allerror = syncip(oip);
 
 	/*
 	 * Indirect blocks first.
@@ -480,8 +621,11 @@ itrunc(oip, length)
 	for (level = TRIPLE; level >= SINGLE; level--) {
 		bn = ip->i_ib[level];
 		if (bn != 0) {
-			blocksreleased +=
-			    indirtrunc(ip, bn, lastiblock[level], level);
+			error = indirtrunc(ip, bn, lastiblock[level], level,
+				&count);
+			if (error)
+				allerror = error;
+			blocksreleased += count;
 			if (lastiblock[level] < 0) {
 				ip->i_ib[level] = 0;
 				blkfree(ip, bn, (off_t)fs->fs_bsize);
@@ -553,6 +697,7 @@ done:
 #ifdef QUOTA
 	(void) chkdq(oip, -blocksreleased, 0);
 #endif
+	return (allerror);
 }
 
 /*
@@ -565,19 +710,20 @@ done:
  *
  * NB: triple indirect blocks are untested.
  */
-long
-indirtrunc(ip, bn, lastbn, level)
+indirtrunc(ip, bn, lastbn, level, countp)
 	register struct inode *ip;
 	daddr_t bn, lastbn;
 	int level;
+	long *countp;
 {
 	register int i;
 	struct buf *bp;
 	register struct fs *fs = ip->i_fs;
 	register daddr_t *bap;
 	daddr_t *copy, nb, last;
-	long factor;
-	int blocksreleased = 0, nblocks;
+	long blkcount, factor;
+	int nblocks, blocksreleased = 0;
+	int error, allerror = 0;
 
 	/*
 	 * Calculate index in current block of last
@@ -600,18 +746,20 @@ indirtrunc(ip, bn, lastbn, level)
 	bp = bread(ip->i_dev, fsbtodb(fs, bn), (int)fs->fs_bsize,
 	    fs->fs_dbsize);
 #else SECSIZE
-	bp = bread(ip->i_dev, fsbtodb(fs, bn), (int)fs->fs_bsize);
-#endif SECSIZE
-	if (bp->b_flags&B_ERROR) {
+	error = bread(ip->i_devvp, fsbtodb(fs, bn), (int)fs->fs_bsize, &bp);
+	if (error) {
 		brelse(bp);
-		return (0);
+		*countp = 0;
+		return (error);
 	}
 	bap = bp->b_un.b_daddr;
 	MALLOC(copy, daddr_t *, fs->fs_bsize, M_TEMP, M_WAITOK);
 	bcopy((caddr_t)bap, (caddr_t)copy, (u_int)fs->fs_bsize);
 	bzero((caddr_t)&bap[last + 1],
 	  (u_int)(NINDIR(fs) - (last + 1)) * sizeof (daddr_t));
-	bwrite(bp);
+	error = bwrite(bp);
+	if (error)
+		allerror = error;
 	bap = copy;
 
 	/*
@@ -621,9 +769,13 @@ indirtrunc(ip, bn, lastbn, level)
 		nb = bap[i];
 		if (nb == 0)
 			continue;
-		if (level > SINGLE)
-			blocksreleased +=
-			    indirtrunc(ip, nb, (daddr_t)-1, level - 1);
+		if (level > SINGLE) {
+			error = indirtrunc(ip, nb, (daddr_t)-1, level - 1,
+				&blkcount);
+			if (error)
+				allerror = error;
+			blocksreleased += blkcount;
+		}
 		blkfree(ip, nb, (off_t)fs->fs_bsize);
 		blocksreleased += nblocks;
 	}
@@ -634,11 +786,16 @@ indirtrunc(ip, bn, lastbn, level)
 	if (level > SINGLE && lastbn >= 0) {
 		last = lastbn % factor;
 		nb = bap[i];
-		if (nb != 0)
-			blocksreleased += indirtrunc(ip, nb, last, level - 1);
+		if (nb != 0) {
+			error = indirtrunc(ip, nb, last, level - 1, &blkcount);
+			if (error)
+				allerror = error;
+			blocksreleased += blkcount;
+		}
 	}
 	FREE(copy, M_TEMP);
-	return (blocksreleased);
+	*countp = blocksreleased;
+	return (allerror);
 }
 
 /*
@@ -664,14 +821,14 @@ iflush(dev)
 #else
 		if (ip->i_dev == dev)
 #endif
-			if (ip->i_count)
+			if (ITOV(ip)->v_count)
 				return (EBUSY);
 			else {
 				remque(ip);
 				ip->i_forw = ip;
 				ip->i_back = ip;
 				/*
-				 * as i_count == 0, the inode was on the free
+				 * as v_count == 0, the inode was on the free
 				 * list already, just leave it there, it will
 				 * fall off the bottom eventually. We could
 				 * perhaps move it to the head of the free
@@ -683,6 +840,10 @@ iflush(dev)
 				dqrele(ip->i_dquot);
 				ip->i_dquot = NODQUOT;
 #endif
+				if (ip->i_devvp) {
+					vrele(ip->i_devvp);
+					ip->i_devvp = 0;
+				}
 			}
 	}
 	return (0);
@@ -695,7 +856,11 @@ ilock(ip)
 	register struct inode *ip;
 {
 
-	ILOCK(ip);
+	while (ip->i_flag & ILOCKED) {
+		ip->i_flag |= IWANT;
+		(void) sleep((caddr_t)ip, PINOD);
+	}
+	ip->i_flag |= ILOCKED;
 }
 
 /*
@@ -705,5 +870,55 @@ iunlock(ip)
 	register struct inode *ip;
 {
 
-	IUNLOCK(ip);
+	if ((ip->i_flag & ILOCKED) == 0)
+		printf("unlocking unlocked inode %d on dev 0x%x\n",
+			ip->i_number, ip->i_dev);
+	ip->i_flag &= ~ILOCKED;
+	if (ip->i_flag&IWANT) {
+		ip->i_flag &= ~IWANT;
+		wakeup((caddr_t)ip);
+	}
+}
+
+/*
+ * Check mode permission on inode pointer. Mode is READ, WRITE or EXEC.
+ * The mode is shifted to select the owner/group/other fields. The
+ * super user is granted all permissions.
+ *
+ * NB: Called from vnode op table. It seems this could all be done
+ * using vattr's but...
+ */
+iaccess(ip, mode, cred)
+	register struct inode *ip;
+	register int mode;
+	struct ucred *cred;
+{
+	register gid_t *gp;
+	register struct vnode *vp = ITOV(ip);
+	int i;
+
+	/*
+	 * If you're the super-user,
+	 * you always get access.
+	 */
+	if (cred->cr_uid == 0)
+		return (0);
+	/*
+	 * Access check is based on only one of owner, group, public.
+	 * If not owner, then check group. If not a member of the
+	 * group, then check public access.
+	 */
+	if (cred->cr_uid != ip->i_uid) {
+		mode >>= 3;
+		gp = cred->cr_groups;
+		for (i = 0; i < cred->cr_ngroups; i++, gp++)
+			if (ip->i_gid == *gp)
+				goto found;
+		mode >>= 3;
+found:
+		;
+	}
+	if ((ip->i_mode & mode) != 0)
+		return (0);
+	return (EACCES);
 }

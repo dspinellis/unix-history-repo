@@ -1,93 +1,50 @@
 /*
- * Copyright (c) 1982, 1986 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+ * Copyright (c) 1982, 1986, 1989 Regents of the University of California.
+ * All rights reserved.
  *
- *	@(#)ffs_subr.c	7.7 (Berkeley) %G%
+ * Redistribution and use in source and binary forms are permitted
+ * provided that the above copyright notice and this paragraph are
+ * duplicated in all such forms and that any documentation,
+ * advertising materials, and other materials related to such
+ * distribution and use acknowledge that the software was developed
+ * by the University of California, Berkeley.  The name of the
+ * University may not be used to endorse or promote products derived
+ * from this software without specific prior written permission.
+ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+ *
+ *	@(#)ffs_subr.c	7.8 (Berkeley) %G%
  */
 
 #ifdef KERNEL
 #include "param.h"
 #include "systm.h"
-#include "mount.h"
-#include "fs.h"
 #include "buf.h"
-#include "inode.h"
-#include "dir.h"
-#include "user.h"
-#include "quota.h"
+#include "time.h"
 #include "kernel.h"
+#include "file.h"
+#include "mount.h"
+#include "vnode.h"
+#include "../ufs/inode.h"
+#include "../ufs/ufsmount.h"
+#include "../ufs/fs.h"
+#include "../ufs/quota.h"
 #else
 #include <sys/param.h>
 #include <sys/systm.h>
-#include <sys/mount.h>
-#include <sys/fs.h>
 #include <sys/buf.h>
-#include <sys/inode.h>
-#include <sys/dir.h>
-#include <sys/user.h>
-#include <sys/quota.h>
+#include <sys/time.h>
+#include <sys/file.h>
+#include <sys/mount.h>
+#include <sys/vnode.h>
+#include <ufs/inode.h>
+#include <ufs/ufsmount.h>
+#include <ufs/fs.h>
+#include <ufs/quota.h>
 #endif
 
 #ifdef KERNEL
-int	syncprt = 0;
-
-/*
- * Update is the internal name of 'sync'.  It goes through the disk
- * queues to initiate sandbagged IO; goes through the inodes to write
- * modified nodes; and it goes through the mount table to initiate
- * the writing of the modified super blocks.
- */
-update()
-{
-	register struct inode *ip;
-	register struct mount *mp;
-	struct fs *fs;
-
-	if (syncprt)
-		bufstats();
-	if (updlock)
-		return;
-	updlock++;
-	/*
-	 * Write back modified superblocks.
-	 * Consistency check that the superblock
-	 * of each file system is still in the buffer cache.
-	 */
-	for (mp = &mount[0]; mp < &mount[NMOUNT]; mp++) {
-		if (mp->m_fs == NULL || mp->m_fs == (struct fs *)1)   /* XXX */
-			continue;
-		fs = mp->m_fs;
-		if (fs->fs_fmod == 0)
-			continue;
-		if (fs->fs_ronly != 0) {		/* XXX */
-			printf("fs = %s\n", fs->fs_fsmnt);
-			panic("update: rofs mod");
-		}
-		fs->fs_fmod = 0;
-		fs->fs_time = time.tv_sec;
-		sbupdate(mp);
-	}
-	/*
-	 * Write back each (modified) inode.
-	 */
-	for (ip = inode; ip < inodeNINODE; ip++) {
-		if ((ip->i_flag & ILOCKED) != 0 || ip->i_count == 0 ||
-		    (ip->i_flag & (IMOD|IACC|IUPD|ICHG)) == 0)
-			continue;
-		ip->i_flag |= ILOCKED;
-		ip->i_count++;
-		iupdat(ip, &time, &time, 0);
-		iput(ip);
-	}
-	updlock = 0;
-	/*
-	 * Force stale buffer cache information to be flushed,
-	 * for all devices.
-	 */
-	bflush(NODEV);
-}
-
 /*
  * Flush all the blocks associated with an inode.
  * There are two strategies based on the size of the file;
@@ -110,7 +67,7 @@ syncip(ip)
 	register struct buf *bp;
 	struct buf *lastbufp;
 	long lbn, lastlbn;
-	int s;
+	int s, error, allerror = 0;
 	daddr_t blkno;
 
 	fs = ip->i_fs;
@@ -120,16 +77,12 @@ syncip(ip)
 		lastlbn--;
 		s = fsbtodb(fs, fs->fs_frag);
 		for (lbn = 0; lbn < lastlbn; lbn++) {
-			blkno = fsbtodb(fs, bmap(ip, lbn, B_READ));
-			blkflush(ip->i_dev, blkno, s);
-		}
-		if (lastlbn >= 0)
-			blkflush(ip->i_dev, blkno, (int)fsbtodb(fs,
-			    blksize(fs, ip, lbn) / fs->fs_fsize));
-#else SECSIZE
-		for (lbn = 0; lbn < lastlbn; lbn++) {
-			blkno = fsbtodb(fs, bmap(ip, lbn, B_READ));
-			blkflush(ip->i_dev, blkno, blksize(fs, ip, lbn));
+			error = bmap(ip, lbn, &blkno, (daddr_t *)0, (int *)0);
+			if (error)
+				allerror = error;
+			if (error = blkflush(ip->i_devvp, blkno,
+			    blksize(fs, ip, lbn)))
+				allerror = error;
 		}
 #endif SECSIZE
 	} else {
@@ -148,12 +101,15 @@ syncip(ip)
 			}
 			splx(s);
 			notavail(bp);
-			bwrite(bp);
+			if (error = bwrite(bp))
+				allerror = error;
 		}
 	}
-	iupdat(ip, &time, &time, 1);
+	if (error = iupdat(ip, &time, &time, 1))
+		allerror = error;
+	return (allerror);
 }
-#endif
+#endif KERNEL
 
 extern	int around[9];
 extern	int inside[9];
@@ -311,14 +267,14 @@ struct fs *
 getfs(dev)
 	dev_t dev;
 {
-	register struct mount *mp;
+	register struct ufsmount *mp;
 	register struct fs *fs;
 
-	for (mp = &mount[0]; mp < &mount[NMOUNT]; mp++) {
-		if (mp->m_dev != dev || mp->m_fs == NULL ||
-		    mp->m_fs == (struct fs *)1)			/* XXX */
+	for (mp = &mounttab[0]; mp < &mounttab[NMOUNT]; mp++) {
+		if (mp->um_fs == NULL || mp->um_dev != dev ||
+		    mp->um_fs == (struct fs *)1)		/* XXX */
 			continue;
-		fs = mp->m_fs;
+		fs = mp->um_fs;
 		if (fs->fs_magic != FS_MAGIC) {
 			printf("dev = 0x%x, fs = %s\n", dev, fs->fs_fsmnt);
 			panic("getfs: bad magic");
@@ -345,44 +301,14 @@ getfs(dev)
 getfsx(dev)
 	dev_t dev;
 {
-	register struct mount *mp;
+	register struct ufsmount *mp;
 
 	if (dev == swapdev)
 		return (MSWAPX);
-	for(mp = &mount[0]; mp < &mount[NMOUNT]; mp++)
-		if (mp->m_dev == dev)
-			return (mp - &mount[0]);
+	for(mp = &mounttab[0]; mp < &mounttab[NMOUNT]; mp++)
+		if (mp->um_dev == dev)
+			return (mp - &mounttab[0]);
 	return (-1);
-}
-
-/*
- * Print out statistics on the current allocation of the buffer pool.
- * Can be enabled to print out on every ``sync'' by setting "syncprt"
- * above.
- */
-bufstats()
-{
-	int s, i, j, count;
-	register struct buf *bp, *dp;
-	int counts[MAXBSIZE/CLBYTES+1];
-	static char *bname[BQUEUES] = { "LOCKED", "LRU", "AGE", "EMPTY" };
-
-	for (bp = bfreelist, i = 0; bp < &bfreelist[BQUEUES]; bp++, i++) {
-		count = 0;
-		for (j = 0; j <= MAXBSIZE/CLBYTES; j++)
-			counts[j] = 0;
-		s = splbio();
-		for (dp = bp->av_forw; dp != bp; dp = dp->av_forw) {
-			counts[dp->b_bufsize/CLBYTES]++;
-			count++;
-		}
-		splx(s);
-		printf("%s: total-%d", bname[i], count);
-		for (j = 0; j <= MAXBSIZE/CLBYTES; j++)
-			if (counts[j] != 0)
-				printf(", %d-%d", j * CLBYTES, counts[j]);
-		printf("\n");
-	}
 }
 #endif
 
