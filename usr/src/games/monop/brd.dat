@@ -1,0 +1,57 @@
+/*
+ * Copyright (c) 1987 Regents of the University of California.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms are permitted
+ * provided that this notice is preserved and that due credit is given
+ * to the University of California at Berkeley. The name of the University
+ * may not be used to endorse or promote products derived from this
+ * software without specific prior written permission. This software
+ * is provided ``as is'' without express or implied warranty.
+ *
+ *	@(#)brd.dat	5.1 (Berkeley) %G%
+ */
+
+/* name (COLOR)			owner	type	desc		cost	*/
+
+{"=== GO ===",			-1,	SAFE,	0			},
+{"Mediterranean ave. (P)",	-1,	PRPTY,	&prop[0],	60	},
+{"Community Chest i",		-1,	CC,	cc			},
+{"Baltic ave. (P)",		-1,	PRPTY,	&prop[1],	60	},
+{"Income Tax",			-1,	SPEC,	inc_tax			},
+{"Reading RR",			-1,	RR,	&rr[0],		200	},
+{"Oriental ave. (L)",		-1,	PRPTY,	&prop[2],	100	},
+{"Chance i",			-1,	CHANCE,	chance			},
+{"Vermont ave. (L)",		-1,	PRPTY,	&prop[3],	100	},
+{"Connecticut ave. (L)",	-1,	PRPTY,	&prop[4],	120	},
+{"Just Visiting",		-1,	SAFE,	0			},
+{"St. Charles pl. (V)",		-1,	PRPTY,	&prop[5],	140	},
+{"Electric Co.",		-1,	UTIL,	&util[0],	150	},
+{"States ave. (V)",		-1,	PRPTY,	&prop[6],	140	},
+{"Virginia ave. (V)",		-1,	PRPTY,	&prop[7],	160	},
+{"Pennsylvania RR",		-1,	RR,	&rr[1],		200	},
+{"St. James pl. (O)",		-1,	PRPTY,	&prop[8],	180	},
+{"Community Chest ii",		-1,	CC,	cc			},
+{"Tennessee ave. (O)",		-1,	PRPTY,	&prop[9],	180	},
+{"New York ave. (O)",		-1,	PRPTY,	&prop[10],	200	},
+{"Free Parking",		-1,	SAFE,	0			},
+{"Kentucky ave. (R)",		-1,	PRPTY,	&prop[11],	220	},
+{"Chance ii",			-1,	CHANCE,	chance			},
+{"Indiana ave. (R)",		-1,	PRPTY,	&prop[12],	220	},
+{"Illinois ave. (R)",		-1,	PRPTY,	&prop[13],	240	},
+{"B&O RR",			-1,	RR,	&rr[2],		200	},
+{"Atlantic ave. (Y)",		-1,	PRPTY,	&prop[14],	260	},
+{"Ventnor ave. (Y)",		-1,	PRPTY,	&prop[15],	260	},
+{"Water Works",			-1,	UTIL,	&util[1],	150	},
+{"Marvin Gardens (Y)",		-1,	PRPTY,	&prop[16],	280	},
+{"GO TO JAIL",			-1,	SPEC,	goto_jail		},
+{"Pacific ave. (G)",		-1,	PRPTY,	&prop[17],	300	},
+{"N. Carolina ave. (G)",	-1,	PRPTY,	&prop[18],	300	},
+{"Community Chest iii",		-1,	CC,	cc			},
+{"Pennsylvania ave. (G)",	-1,	PRPTY,	&prop[19],	320	},
+{"Short Line RR",		-1,	RR,	&rr[3],		200	},
+{"Chance iii",			-1,	CHANCE,	chance			},
+{"Park place (D)",		-1,	PRPTY,	&prop[20],	350	},
+{"Luxury Tax",			-1,	SPEC,	lux_tax			},
+{"Boardwalk (D)",		-1,	PRPTY,	&prop[21],	400	},
+{"JAIL",			-1,	SPEC				}
