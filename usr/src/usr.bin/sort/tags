@@ -1,0 +1,23 @@
+Msort	sort.c	/^main(argc, argv)$/
+blank	sort.c	/^#define	blank(c)	((c) == ' ' || (c) == '\\t')$/
+cant	sort.c	/^cant(f)$/
+cmp	sort.c	/^cmp(i, j)$/
+cmpa	sort.c	/^cmpa(pa, pb)$/
+copyproto	sort.c	/^copyproto()$/
+diag	sort.c	/^diag(s,t)$/
+disorder	sort.c	/^disorder(s,t)$/
+eol	sort.c	/^eol(p)$/
+field	sort.c	/^field(s,k)$/
+merge	sort.c	/^merge(a,b)$/
+newfile	sort.c	/^newfile()$/
+number	sort.c	/^number(ppa)$/
+oldfile	sort.c	/^oldfile()$/
+qsexc	sort.c	/^#define qsexc(p,q) t= *p;*p= *q;*q=t$/
+qsort	sort.c	/^qsort(a,l)$/
+qstexc	sort.c	/^#define qstexc(p,q,r) t= *p;*p= *r;*r= *q;*q=t$/
+rline	sort.c	/^#define rline(mp)	(fgets((mp)->l, L, (mp)->b) == N/
+safeoutfil	sort.c	/^safeoutfil()$/
+setfil	sort.c	/^setfil(i)$/
+skip	sort.c	/^skip(pp, fp, j)$/
+sort	sort.c	/^sort()$/
+term	sort.c	/^term()$/
