@@ -4,13 +4,17 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)setjmp.h	4.3 (Berkeley) %G%
+ *	@(#)setjmp.h	5.1 (Berkeley) %G%
  */
 
 #ifndef _SETJMP_
 #define _SETJMP_
 
-#ifdef vax
+#ifdef hp300
+#define _JBLEN	17
+#endif
+
+#ifdef i386
 #define _JBLEN	10
 #endif
 
@@ -18,17 +22,37 @@
 #define _JBLEN	10
 #endif
 
-#ifdef hp300
-#define _JBLEN	17
+#ifdef vax
+#define _JBLEN	10
 #endif
 
+/*
+ * sigsetjmp/siglongjmp use the first int to decide if the
+ * signal mask was saved or not.
+ */
+typedef int sigjmp_buf[_JBLEN + 1];
+
+#ifndef _POSIX_SOURCE
 typedef int jmp_buf[_JBLEN];
+#endif
 
 #ifdef __STDC__
-extern int setjmp(jmp_buf), _setjmp(jmp_buf);
-extern void longjmp(jmp_buf, int), _longjmp(jmp_buf, int);
+int sigsetjmp(sigjmp_buf, int);
+void siglongjmp(sigjmp_buf, int);
+#ifndef _POSIX_SOURCE
+extern int setjmp(jmp_buf);
+extern int _setjmp(jmp_buf);
+extern void longjmp(jmp_buf, int);
+extern void _longjmp(jmp_buf, int);
+#endif
 #else
-extern int setjmp(), _setjmp();
-extern int longjmp(), _longjmp();
+int sigsetjmp();
+void siglongjmp();
+#ifndef _POSIX_SOURCE
+extern int setjmp();
+extern int _setjmp();
+extern void longjmp();
+extern void _longjmp();
+#endif
 #endif
 #endif
