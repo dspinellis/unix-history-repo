@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)locore.s	7.20 (Berkeley) %G%
+ *	@(#)locore.s	7.21 (Berkeley) %G%
  */
 
 #include "psl.h"
