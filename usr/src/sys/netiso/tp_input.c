@@ -29,7 +29,7 @@ SOFTWARE.
  *
  * $Header: tp_input.c,v 5.6 88/11/18 17:27:38 nhall Exp $
  * $Source: /usr/argo/sys/netiso/RCS/tp_input.c,v $
- *	@(#)tp_input.c	7.6 (Berkeley) %G% *
+ *	@(#)tp_input.c	7.7 (Berkeley) %G% *
  *
  * tp_input() gets an mbuf chain from ip.  Actually, not directly
  * from ip, because ip calls a net-level routine that strips off
@@ -220,7 +220,6 @@ tp_newsocket(so, fname, cons_channel, class_to_use, netservice)
 {
 	register struct tp_pcb	*tpcb = sototpcb(so); /* old tpcb, needed below */
 	struct tp_pcb *			 newtpcb;
-	extern struct socket *sonewsock();
 
 	/* 
 	 * sonewconn() gets a new socket structure,
@@ -232,7 +231,7 @@ tp_newsocket(so, fname, cons_channel, class_to_use, netservice)
 			so, tpcb, so->so_head, 0);
 	ENDTRACE	
 
-	if ((so = sonewsock(so, SS_ISCONFIRMING)) == (struct socket *)0)
+	if ((so = sonewconn(so, SS_ISCONFIRMING)) == (struct socket *)0)
 		return so;
 	IFTRACE(D_NEWSOCK)
 		tptraceTPCB(TPPTmisc, "newsock: after newconn so, so_head",
