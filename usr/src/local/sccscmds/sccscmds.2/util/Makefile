@@ -1,4 +1,4 @@
-#	@(#)Makefile	1.4	(Berkeley)	85/05/04
+#	@(#)Makefile	1.5	(Berkeley)	87/02/15
 #
 CFLAGS = -O -w
 PWOBJS=	giveup.o lockit.o rename.o userdir.o \
@@ -11,7 +11,7 @@ WROBJS=	write.o syswrite.o
 PW2OBJS=logname.o pexec.o
 
 all: libpw.a libwrt.a libPW.a
-	mv libpw.a libwrt.a libPW.a ..
+	mv -f libpw.a libwrt.a libPW.a ..
 	ranlib ../libpw.a
 	ranlib ../libwrt.a
 	ranlib ../libPW.a
