@@ -1,4 +1,4 @@
-/*	kern_proc.c	4.29	82/07/25	*/
+/*	kern_proc.c	4.30	82/08/10	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -432,9 +432,9 @@ setregs()
 	u.u_ar0[PC] = u.u_exdata.ux_entloc + 2; /* skip over entry mask */
 	for (i=0; i<NOFILE; i++) {
 		if (u.u_pofile[i]&EXCLOSE) {
-			closef(u.u_ofile[i], 1);
+			closef(u.u_ofile[i], 1, u.u_pofile[i]);
 			u.u_ofile[i] = NULL;
-			u.u_pofile[i] &= ~EXCLOSE;
+			u.u_pofile[i] = 0;
 		}
 	}
 
@@ -470,7 +470,6 @@ exit(rv)
 {
 	register int i;
 	register struct proc *p, *q;
-	register struct file *f;
 	register int x;
 
 #ifdef PGINPROF
@@ -508,10 +507,17 @@ exit(rv)
 			sleep((caddr_t)p, PZERO - 1);
 		p->p_flag &= ~SVFDONE;
 	}
-	for (i=0; i<NOFILE; i++) {
+	for (i = 0; i < NOFILE; i++) {
+#ifdef notdef
+		/* why was this like this? */
 		f = u.u_ofile[i];
 		u.u_ofile[i] = NULL;
 		closef(f, 1);
+#else
+		closef(u.u_ofile[i], 1, u.u_pofile[i]);
+		u.u_ofile[i] = NULL;
+		u.u_pofile[i] = 0;
+#endif
 	}
 	ilock(u.u_cdir);
 	iput(u.u_cdir);

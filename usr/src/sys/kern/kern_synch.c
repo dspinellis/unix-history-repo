@@ -1,4 +1,4 @@
-/*	kern_synch.c	4.17	82/07/22	*/
+/*	kern_synch.c	4.18	82/08/10	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -294,6 +294,7 @@ newproc(isvfork)
 	register struct proc *p;
 	register struct proc *rpp, *rip;
 	register int n;
+	register struct file *fp;
 
 	p = NULL;
 	/*
@@ -377,9 +378,16 @@ retry:
 	/*
 	 * Increase reference counts on shared objects.
 	 */
-	for(n=0; n<NOFILE; n++)
-		if (u.u_ofile[n] != NULL)
-			u.u_ofile[n]->f_count++;
+	for (n = 0; n < NOFILE; n++) {
+		fp = u.u_ofile[n];
+		if (fp == NULL)
+			continue;
+		fp->f_count++;
+		if (u.u_pofile[n]&RDLOCK)
+			fp->f_inode->i_rdlockc++;
+		if (u.u_pofile[n]&WRLOCK)
+			fp->f_inode->i_wrlockc++;
+	}
 	u.u_cdir->i_count++;
 	if (u.u_rdir)
 		u.u_rdir->i_count++;
