@@ -25,7 +25,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)fsdb.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)fsdb.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -39,14 +39,35 @@ static char sccsid[] = "@(#)fsdb.c	5.3 (Berkeley) %G%";
  *	-w		open for write
  */
 
+#include <stdio.h>
+#include <setjmp.h>
 #include <sys/param.h>
 #include <signal.h>
+#include <sys/file.h>
+#include <sys/time.h>
+
+#ifndef NFS
 #include <sys/fs.h>
 #include <sys/inode.h>
 #include <sys/dir.h>
-#include <sys/file.h>
-#include <stdio.h>
-#include <setjmp.h>
+#else
+#include <sys/vnode.h>
+#include <ufs/fs.h>
+#include <ufs/inode.h>
+#include <ufs/fsdir.h>
+#endif /*NFS */
+
+/*
+ * Defines from the 4.3-tahoe file system, for systems with the 4.2 or 4.3
+ * file system.
+ */
+#ifndef FS_42POSTBLFMT
+#define cg_blktot(cgp) (((cgp))->cg_btot)
+#define cg_blks(fs, cgp, cylno) (((cgp))->cg_b[cylno])
+#define cg_inosused(cgp) (((cgp))->cg_iused)
+#define cg_blksfree(cgp) (((cgp))->cg_free)
+#define cg_chkmagic(cgp) ((cgp)->cg_magic == CG_MAGIC)
+#endif
 
 /*
  * Never changing defines.
@@ -298,8 +319,10 @@ usage:
 		printf("%s: Bad magic number in file system\n", argv[1]);
 		exit(1);
 	}
+#ifdef FS_42POSTBLFMT
 	if (fs->fs_postblformat == FS_42POSTBLFMT)
 		fs->fs_nrpos = 8;
+#endif
 	printf("fsdb of %s %s -- last mounted on %s\n",
 		argv[1], wrtflag ? "(Opened for write)" : "(Read only)", 
 		&fs->fs_fsmnt[0]);
@@ -1898,9 +1921,11 @@ fmtentry(fn)
 	case IFSOCK:
 		*dp++ = '=';
 		break;
-/*		case IFIFO:
-		*dp++ = 'f';
-		break;		SYSTEM V only */
+#ifdef IFIFO
+	case IFIFO:
+		*dp++ = 'p';
+		break;
+#endif
 	case IFCHR:
 	case IFBLK:
 	case IFREG:
@@ -3786,11 +3811,16 @@ printsb(fs)
 {
 	int c, i, j, k, size;
 
+#ifdef FS_42POSTBLFMT
 	if (fs->fs_postblformat == FS_42POSTBLFMT)
 		fs->fs_nrpos = 8;
 	printf("magic\t%x\tformat\t%s\ttime\t%s", fs->fs_magic,
 	    fs->fs_postblformat == FS_42POSTBLFMT ? "static" : "dynamic",
 	    ctime(&fs->fs_time));
+#else
+	printf("magic\t%x\ttime\t%s",
+	    fs->fs_magic, ctime(&fs->fs_time));
+#endif
 	printf("nbfree\t%d\tndir\t%d\tnifree\t%d\tnffree\t%d\n",
 	    fs->fs_cstotal.cs_nbfree, fs->fs_cstotal.cs_ndir,
 	    fs->fs_cstotal.cs_nifree, fs->fs_cstotal.cs_nffree);
@@ -3807,12 +3837,19 @@ printsb(fs)
 	printf("minfree\t%d%%\toptim\t%s\tmaxcontig %d\tmaxbpg\t%d\n",
 	    fs->fs_minfree, fs->fs_optim == FS_OPTSPACE ? "space" : "time",
 	    fs->fs_maxcontig, fs->fs_maxbpg);
+#ifdef FS_42POSTBLFMT
 	printf("rotdelay %dms\theadswitch %dus\ttrackseek %dus\trps\t%d\n",
 	    fs->fs_rotdelay, fs->fs_headswitch, fs->fs_trkseek, fs->fs_rps);
 	printf("ntrak\t%d\tnsect\t%d\tnpsect\t%d\tspc\t%d\n",
 	    fs->fs_ntrak, fs->fs_nsect, fs->fs_npsect, fs->fs_spc);
 	printf("trackskew %d\tinterleave %d\n",
 	    fs->fs_trackskew, fs->fs_interleave);
+#else
+	printf("rotdelay %dms\trps\t%d\n",
+	    fs->fs_rotdelay, fs->fs_rps);
+	printf("ntrak\t%d\tnsect\t%d\tspc\t%d\n",
+	    fs->fs_ntrak, fs->fs_nsect, fs->fs_spc);
+#endif
 	printf("nindir\t%d\tinopb\t%d\tnspf\t%d\n",
 	    fs->fs_nindir, fs->fs_inopb, fs->fs_nspf);
 	printf("sblkno\t%d\tcblkno\t%d\tiblkno\t%d\tdblkno\t%d\n",
@@ -3823,13 +3860,16 @@ printsb(fs)
 	    fs->fs_csaddr, fs->fs_cssize, fs->fs_csshift, fs->fs_csmask);
 	printf("cgrotor\t%d\tfmod\t%d\tronly\t%d\n",
 	    fs->fs_cgrotor, fs->fs_fmod, fs->fs_ronly);
+#ifdef FS_42POSTBLFMT
 	if (fs->fs_cpc != 0)
 		printf("blocks available in each of %d rotational positions",
 		     fs->fs_nrpos);
 	else
 		printf("insufficient space to maintain rotational tables\n");
+#endif
 	for (c = 0; c < fs->fs_cpc; c++) {
 		printf("\ncylinder number %d:", c);
+#ifdef FS_42POSTBLFMT
 		for (i = 0; i < fs->fs_nrpos; i++) {
 			if (fs_postbl(fs, c)[i] == -1)
 				continue;
@@ -3843,6 +3883,21 @@ printsb(fs)
 					break;
 			}
 		}
+#else
+		for (i = 0; i < NRPOS; i++) {
+			if (fs->fs_postbl[c][i] == -1)
+				continue;
+			printf("\n   position %d:\t", i);
+			for (j = fs->fs_postbl[c][i], k = 1; ;
+			     j += fs->fs_rotbl[j], k++) {
+				printf("%5d", j);
+				if (k % 12 == 0)
+					printf("\n\t\t");
+				if (fs->fs_rotbl[j] == 0)
+					break;
+			}
+		}
+#endif
 	}
 	printf("\ncs[].cs_(nbfree,ndir,nifree,nffree):\n\t");
 	for (i = 0, j = 0; i < fs->fs_cssize; i += fs->fs_bsize, j++) {
@@ -3884,11 +3939,18 @@ printcg(cg)
 	int i,j;
 
 	printf("\ncg %d:\n", cg->cg_cgx);
+#ifdef FS_42POSTBLFMT
 	printf("magic\t%x\ttell\t%x\ttime\t%s",
 	    fs->fs_postblformat == FS_42POSTBLFMT ?
 	    ((struct ocg *)cg)->cg_magic : cg->cg_magic,
 	    fsbtodb(fs, cgtod(fs, cg->cg_cgx)) * fs->fs_fsize / fsbtodb(fs, 1),
 	    ctime(&cg->cg_time));
+#else
+	printf("magic\t%x\ttell\t%x\ttime\t%s",
+	    cg->cg_magic,
+	    fsbtodb(fs, cgtod(fs, cg->cg_cgx)) * fs->fs_fsize / fsbtodb(fs, 1),
+	    ctime(&cg->cg_time));
+#endif
 	printf("cgx\t%d\tncyl\t%d\tniblk\t%d\tndblk\t%d\n",
 	    cg->cg_cgx, cg->cg_ncyl, cg->cg_niblk, cg->cg_ndblk);
 	printf("nbfree\t%d\tndir\t%d\tnifree\t%d\tnffree\t%d\n",
@@ -3909,12 +3971,21 @@ printcg(cg)
 		if (cg_blktot(cg)[i] == 0)
 			continue;
 		printf("   c%d:\t(%d)\t", i, cg_blktot(cg)[i]);
+#ifdef FS_42POSTBLFMT
 		for (j = 0; j < fs->fs_nrpos; j++) {
 			if (fs->fs_cpc == 0 ||
 			    fs_postbl(fs, i % fs->fs_cpc)[j] == -1)
 				continue;
 			printf(" %d", cg_blks(fs, cg, i)[j]);
 		}
+#else
+		for (j = 0; j < NRPOS; j++) {
+			if (fs->fs_cpc == 0 ||
+			    fs->fs_postbl[i % fs->fs_cpc][j] == -1)
+				continue;
+			printf(" %d", cg->cg_b[i][j]);
+		}
+#endif
 		printf("\n");
 	}
 }
