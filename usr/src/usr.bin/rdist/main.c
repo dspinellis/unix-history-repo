@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)main.c	4.11 (Berkeley) 84/04/06";
+static	char *sccsid = "@(#)main.c	4.11 (Berkeley) 84/04/09";
 #endif
 
 #include "defs.h"
@@ -18,8 +18,6 @@ int	qflag;		/* Quiet. Don't print messages */
 int	options;	/* global options */
 int	iamremote;	/* act as remote server for transfering files */
 
-int	filec;		/* number of files to update */
-char	**filev;	/* list of files/directories to update */
 FILE	*fin = NULL;	/* input file pointer */
 int	rem = -1;	/* file descriptor to remote source/sink process */
 char	host[32];	/* host name */
@@ -197,7 +195,7 @@ docmdargs(nargs, args)
 		printf("hosts = ");
 		prnames(hosts);
 	}
-	insert(files, hosts, cmds);
+	insert(NULL, files, hosts, cmds);
 	docmds(0, NULL);
 }
 
