@@ -2,7 +2,7 @@
 
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)commands.y 1.4 %G%";
+static char sccsid[] = "@(#)commands.y 1.5 %G%";
 
 /*
  * Yacc grammar for debugger commands.
@@ -66,7 +66,7 @@ private String curformat = "X";
 %type <y_name>	    name NAME keyword
 %type <y_node>      symbol
 %type <y_node>	    command rcommand cmd step what where examine
-%type <y_node>	    event opt_arglist opt_cond
+%type <y_node>	    event opt_exp_list opt_cond
 %type <y_node>	    exp_list exp term boolean_exp constant address
 %type <y_node>	    alias_command list_command line_number
 %type <y_cmdlist>   actions
@@ -294,6 +294,11 @@ command:
 ;
 runcommand:
     run shellmode arglist
+|
+    RUN
+{
+	fflush(stdout);
+}
 ;
 run:
     RUN
@@ -305,7 +310,7 @@ run:
 arglist:
     arglist arg
 |
-    /* empty */
+    arg
 ;
 arg:
     NAME
@@ -505,15 +510,15 @@ opt_filename:
 	$$ = $1;
 }
 ;
-opt_arglist:
+opt_exp_list:
+    exp_list
+{
+	$$ = $1;
+}
+|
     /* empty */
 {
 	$$ = nil;
-}
-|
-    '(' exp_list ')'
-{
-	$$ = $2;
 }
 ;
 list_command:
@@ -810,7 +815,7 @@ term:
 	$$ = concrete($2);
 }
 |
-    term '(' exp_list ')'
+    term '(' opt_exp_list ')'
 {
 	$$ = build(O_CALL, $1, $3);
 }
