@@ -27,7 +27,7 @@ SOFTWARE.
 /*
  * $Header: iso.c,v 4.11 88/09/19 14:58:35 root Exp $ 
  * $Source: /usr/argo/sys/netiso/RCS/iso.c,v $ 
- *	@(#)iso.c	7.10 (Berkeley) %G%
+ *	@(#)iso.c	7.11 (Berkeley) %G%
  *
  * iso.c: miscellaneous routines to support the iso address family
  */
@@ -60,7 +60,6 @@ static char *rcsid = "$Header: iso.c,v 4.11 88/09/19 14:58:35 root Exp $";
 #include "argo_debug.h"
 
 #ifdef ISO
-#include "argoxtwentyfive.h"
 
 int	iso_interfaces = 0;		/* number of external interfaces */
 extern	struct ifnet loif;	/* loopback interface */
@@ -797,9 +796,9 @@ iso_localifa(siso)
 	return ia_maybe;
 }
 
-#ifdef	NARGOXTWENTYFIVE > 0
+#ifdef	TPCONS
 #include "cons.h"
-#endif	NARGOXTWENTYFIVE > 0
+#endif	TPCONS
 /*
  * FUNCTION:		iso_nlctloutput
  *
@@ -841,7 +840,7 @@ struct mbuf	*m;			/* data for set, buffer for get */
 
 	switch (optname) {
 
-#ifdef	NARGOXTWENTYFIVE > 0
+#ifdef	TPCONS
 		case CONSOPT_X25CRUD:
 			if (cmd == PRCO_GETOPT) {
 				error = EOPNOTSUPP;
@@ -860,7 +859,7 @@ struct mbuf	*m;			/* data for set, buffer for get */
 			bcopy(data, (caddr_t)isop->isop_x25crud, (unsigned)data_len);
 			isop->isop_x25crud_len = data_len;
 			break;
-#endif	NARGOXTWENTYFIVE > 0
+#endif	TPCONS
 
 		default:
 			error = EOPNOTSUPP;
