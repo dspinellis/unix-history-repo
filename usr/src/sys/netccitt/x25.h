@@ -1,3 +1,17 @@
+/*
+ * Copyright (c) University of British Columbia, 1984
+ * Copyright (c) 1990 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * This code is derived from software contributed to Berkeley by
+ * the Laboratory for Computation Vision and the Computer Science Department
+ * of the University of British Columbia.
+ *
+ * %sccs.include.redist.c%
+ *
+ *	@(#)x25.h	7.2 (Berkeley) %G%
+ */
+
 #ifdef KERNEL
 #define PRC_IFUP	3
 #define PRC_LINKUP	4
@@ -51,12 +65,14 @@ struct	x25config {
 	/* packet level parameters */
 	u_short	xc_pwsize:3,	/* default window size */
 		xc_psize:4,	/* default packet size 7=128, 8=256, ... */
-		xc_type:2,	/* network type */
+		xc_type:3,	/* network type */
 #define X25_1976	0
 #define X25_1980	1
 #define X25_1984	2
+#define X25_DDN		3
+#define X25_BASIC	4
 		xc_ptrace:1,	/* packet level tracing flag */
-		xc_rsvd2:6;
+		xc_rsvd2:5;
 	u_char	xc_maxlcn;	/* max logical channels */
 	u_char	xc_rsvd3;
 };
@@ -68,7 +84,8 @@ struct	x25config {
  */
 
 struct	sockaddr_x25 {
-	short	x25_family;	/* must be AF_CCITT */
+	u_char	x25_len;
+	u_char	x25_family;	/* must be AF_CCITT */
 	short	x25_net;	/* network id code (usually a dnic) */
 	struct	x25opts {
 		char	op_flags;	/* miscellaneous options */
