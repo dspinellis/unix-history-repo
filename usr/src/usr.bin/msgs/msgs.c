@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)msgs.c	4.6 %G%";
+static char sccsid[] = "@(#)msgs.c	4.7 %G%";
 #endif lint
 /*
  * msgs - a user bulletin board program
@@ -111,7 +111,7 @@ int argc; char *argv[];
 {
 	bool newrc, already;
 	int rcfirst = 0;		/* first message to print (from .rc) */
-	int rcback = 0;			/* amount to back off of rcfirst*/
+	int rcback = 0;			/* amount to back off of rcfirst */
 	int firstmsg, nextmsg, lastmsg = 0;
 	int blast = 0;
 	FILE *bounds, *msgsrc;
@@ -361,8 +361,8 @@ int argc; char *argv[];
 		perror(fname);
 		exit(errno);
 	}
-	if (rcfirst)
-		firstmsg = rcfirst;
+	if (rcfirst && rcfirst > firstmsg)
+		firstmsg = rcfirst;		/* don't set below first msg */
 	if (newrc) {
 		nextmsg = firstmsg;
 		fseek(msgsrc, 0L, 0);
