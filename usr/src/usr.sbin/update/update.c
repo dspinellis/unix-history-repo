@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)update.c	4.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)update.c	5.1 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/time.h>
@@ -38,14 +38,12 @@ main()
 		exit(1);
 	}
 	for (;;)
-		pause();
-	/*NOTREACHED*/
+		sigpause(sigblock(0L));
+	/* NOTREACHED */
 }
 
-/* VARARGS */
 void
-mysync(i)
-	int i;
+mysync()
 {
 	(void)sync();
 }
