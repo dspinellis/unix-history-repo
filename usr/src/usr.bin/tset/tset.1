@@ -1,0 +1,220 @@
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)tset.1	4.1 (Berkeley) %G%
+.\"
+.TH TSET 1 4/1/81
+.UC 4
+.SH NAME
+tset \- set terminal modes
+.SH SYNOPSIS
+.B tset
+[
+options
+] [
+.B \-m
+[\fIident\fP][\fItest
+.IR baudrate ]:\fItype
+\&...
+] [
+type
+]
+.SH DESCRIPTION
+.I Tset
+causes terminal dependent processing such as setting
+erase and kill characters, setting or resetting delays,
+and the like.
+It first determines the
+.I type
+of terminal involved, names for which are specified by the
+.I /etc/termcap
+data base, and then
+does necessary initializations and mode settings.
+In the case where no argument types are specified,
+.I tset
+simply reads the terminal type out of the environment variable TERM
+and re-initializes the terminal.  The rest of this manual concerns
+itself with type initialization, done typically once at login, and options
+used at initialization time to determine the terminal type and set up
+terminal modes.
+.PP
+When used in a startup script
+.I \&.profile
+(for
+.IR sh (1)
+users) or
+.I \&.login
+(for
+.IR csh (1)
+users) it is desirable to give information about the types of terminal
+usually used on terminals which are not hardwired.
+These ports are initially identified as being
+.I dialup
+or
+.I plugboard
+or
+.I arpanet
+etc.
+To specify
+what terminal type is usually used on these ports
+.B \-m
+is followed by the appropriate port type identifier,
+an optional baud-rate specification,
+and the terminal type to be used if the mapping conditions are satisfied.
+If more than one mapping is specified, the first applicable mapping prevails.
+A missing type identifier matches all identifiers.
+.PP
+Baud rates are specified as with
+.IR stty (1),
+and are compared with the
+speed of the diagnostic output (which is almost always the control terminal).
+The baud rate test may be any combination of:
+.B >,
+.B =,
+.B <,
+.B @,
+and
+.B !;
+.B @
+is a synonym for
+.B =
+and
+.B !
+inverts the sense of the test.  To avoid problems with metacharacters, it
+is best to place the entire argument to
+.B \-m
+within ``\''' characters; users of
+.IR csh (1)
+must also put a ``\e'' before any ``!'' used here.
+.PP
+Thus
+.IP
+tset \-m  \'dialup>300:adm3a\'  \-m  dialup:dw2  \-m  \'plugboard:?adm3a\'
+.LP
+causes the terminal type to be set to an
+.I adm3a
+if the port in use is a dialup at a speed greater than 300 baud;
+to a 
+.I dw2
+if the port is (otherwise) a dialup (i.e. at 300 baud or less).
+If the
+.I type
+above begins with a question mark,
+the user is asked if s/he really wants that type.
+A null response means to use that type;
+otherwise, another type can be entered which will be used instead.
+Thus, in this case, the user will be queried on a plugboard port
+as to whether they are using an
+.I adm3a.
+For other ports the port type will be taken from the
+/etc/ttytype file or a final, default
+.I type
+option may be given on the command line not preceded by a
+.B \-m.
+.PP
+It is often desirable to return the terminal type, as specified by the
+.B \-m
+options, and information about the terminal
+to a shell's environment.  This can be done using the
+.B \-s
+option; using the Bourne shell,
+.IR sh (1):
+.IP
+eval \`tset \-s \fIoptions...\fR\`
+.LP
+or using the C shell,
+.IR csh (1):
+.IP
+set noglob; eval \`tset \-s \fIoptions...\fR\`
+.PP
+These commands cause
+.I tset
+to generate as output a sequence of shell commands which place the variables
+TERM and TERMCAP in the environment; see
+.IR environ (5).
+.PP
+Once the terminal type is known,
+.I tset
+engages in terminal mode setting.
+This normally involves sending an initialization sequence to the
+terminal and setting the single character erase (and optionally
+the line-kill (full line erase)) characters.
+.PP
+On terminals that can backspace but not overstrike
+(such as a \s-2CRT\s0),
+and when the erase character is the default erase character
+(`#' on standard systems),
+the erase character is changed to a Control-H
+(backspace).
+.PP
+The options are:
+.TP
+.B \-e
+set the erase character to be the named character
+.I c
+on all terminals,
+the default being the backspace character on the terminal, usually ^H.
+.TP
+.B \-k
+is similar to
+.B \-e
+but for the line kill character rather than the erase character;
+.I c
+defaults to ^X (for purely historical reasons); ^U is the preferred setting.
+No kill processing is done if
+.B \-k
+is not specified.
+.TP
+.B \-I
+supresses outputting terminal initialization strings.
+.TP
+.B \-Q
+supresses printing the
+``Erase set to'' and ``Kill set to'' messages.
+.TP
+.B \-S
+Outputs the strings to be assigned to
+TERM and TERMCAP in the environment rather than commands for a shell.
+.SH FILES
+.DT
+/etc/ttytype		terminal id to type map database
+.br
+/etc/termcap	terminal capability database
+.SH SEE\ ALSO
+csh(1), setenv(1), sh(1), stty(1), environ(5), ttytype(5), termcap(5)
+.SH AUTHOR
+Eric Allman
+.SH BUGS
+Should be merged with
+.IR stty (1).
+.SH NOTES
+For compatibility with earlier versions of
+.I tset
+a number of flags are accepted whose use is discouraged:
+.TP 10
+\fB\-d\fR type
+equivalent to
+.B \-m
+dialup:type
+.TP 10
+\fB\-p\fR type
+equivalent to
+.B \-m
+plugboard:type
+.TP 10
+\fB\-a\fR type
+equivalent to
+.B \-m
+arpanet:type
+.TP 10
+\fB\-E\fR c
+Sets the erase character to
+.I c
+only if the terminal can backspace.
+.TP 10
+\fB\-\fR
+prints the terminal type on the standard output
+.TP 10
+\fB\-r\fR
+prints the terminal type on the diagnostic output.
