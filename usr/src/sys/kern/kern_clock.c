@@ -1,4 +1,4 @@
-/*	kern_clock.c	4.42	82/10/21	*/
+/*	kern_clock.c	4.43	82/10/30	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -52,9 +52,19 @@
  * update statistics accordingly.
  */
 /*ARGSUSED*/
+#if vax
 hardclock(pc, ps)
 	caddr_t pc;
+	int ps;
 {
+#endif
+#if sun
+hardclock(regs)
+	struct regs regs;
+{
+	int ps = regs.r_sr;
+	caddr_t pc = (caddr_t)regs.r_pc;
+#endif
 	register struct callout *p1;
 	register struct proc *p;
 	register int s, cpstate;
@@ -144,7 +154,7 @@ hardclock(pc, ps)
 #endif
 		cpstate = CP_SYS;
 		if (noproc) {
-			if ((ps&PSL_IPL) != 0)
+			if (BASEPRI(ps))
 				cpstate = CP_IDLE;
 		} else {
 			bumptime(&u.u_ru.ru_stime, tick);
@@ -207,9 +217,20 @@ hardclock(pc, ps)
  * Run periodic events from timeout queue.
  */
 /*ARGSUSED*/
+#if vax
 softclock(pc, ps)
 	caddr_t pc;
+	int ps;
 {
+#endif
+#if sun
+softclock(sirret, regs)
+	caddr_t sirreg;
+	struct regs regs;
+{
+	int ps = regs.r_sr;
+	caddr_t pc = (caddr_t)regs.r_pc;
+#endif
 
 	for (;;) {
 		register struct callout *p1;
