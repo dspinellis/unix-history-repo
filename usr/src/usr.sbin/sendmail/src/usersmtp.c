@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)usersmtp.c	6.19 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	6.20 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)usersmtp.c	6.19 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	6.20 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -439,10 +439,10 @@ smtprset(m, mci, e)
 	smtpquit(m, mci, e);
 }
 /*
-**  SMTPNOOP -- send a NOOP (no operation) command to check the connection state
+**  SMTPPROBE -- check the connection state
 */
 
-smtpnoop(mci)
+smtpprobe(mci)
 	register MCI *mci;
 {
 	int r;
@@ -450,7 +450,7 @@ smtpnoop(mci)
 	extern ENVELOPE BlankEnvelope;
 	ENVELOPE *e = &BlankEnvelope;
 
-	smtpmessage("NOOP", m, mci);
+	smtpmessage("RSET", m, mci);
 	r = reply(m, mci, e, TimeOuts.to_miscshort);
 	if (r < 0 || REPLYTYPE(r) != 2)
 		smtpquit(m, mci, e);
