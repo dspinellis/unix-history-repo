@@ -12,14 +12,14 @@
 .\"*		1919 Addison Street Suite 105				*
 .\"*		Berkeley, California  94704				*
 .\"*									*
-.\"*	VERSION 2.28	First Release: 11 Sept 1978			*
+.\"*	VERSION 2.29	First Release: 11 Sept 1978			*
 .\"*	See file \*(||/revisions for revision history			*
 .\"*									*
 .\"*	Documentation is available.					*
 .\"*									*
 .\"**********************************************************************
 .\"
-.\"	@(#)tmac.orig_me	2.28	%G%
+.\"	@(#)tmac.orig_me	2.29	%G%
 .\"	%beginstrip%
 .\"
 .\"	Code on .de commands:
@@ -773,10 +773,11 @@
 .\"
 .\"	PIC
 .\"
-.de PS			\" *** start picture: $1=height, $2=width in units
+.de PS		\" *** start picture: $1=height, $2=width in units or inches
 .if t \
 .	sp 0.3
-.in (\\n(.lu-\\$2u)/2u
+.nr g7 \\$2
+.in (\\n(.lu-\\n(g7u)/2u
 .ne \\$1u
 .nr g7 \\n(.u
 .ls 1
