@@ -8,7 +8,7 @@ divert(-1)
 #
 
 divert(0)
-VERSIONID(`@(#)hpux10.m4	8.2 (Berkeley) %G%')
+VERSIONID(`@(#)hpux10.m4	8.3 (Berkeley) %G%')
 
 define(`QUEUE_DIR', /var/spool/mqueue)dnl
 define(`ALIAS_FILE', /etc/mail/aliases)dnl
@@ -17,5 +17,5 @@ define(`LOCAL_MAILER_PATH', /usr/bin/rmail)dnl
 define(`LOCAL_MAILER_FLAGS', `m')dnl
 define(`LOCAL_MAILER_ARGS', `rmail -d $u')dnl
 define(`LOCAL_SHELL_PATH', /usr/bin/sh)dnl
-define(`UUCP_MAILER_ARGS', `uux - -r -a$f -gC $h!rmail ($u)')dnl
+define(`UUCP_MAILER_ARGS', `uux - -r -a$g -gC $h!rmail ($u)')dnl
 define(`confTIME_ZONE', `USE_TZ')dnl
