@@ -1,55 +1,30 @@
-/*	tm.c	4.2	%G%	*/
+/*	tm.c	4.3	81/03/15	*/
+
 /*
- * TM tape driver
+ * TM11/TE??
  */
 
 #include "../h/param.h"
 #include "../h/inode.h"
 #include "../h/pte.h"
-#include "../h/uba.h"
+#include "../h/ubareg.h"
 #include "saio.h"
+#include "savax.h"
 
-struct device {
-	short	tmer;
-	short	tmcs;
-	short	tmbc;
-	u_short	tmba;
-	short	tmdb;
-	short	tmrd;
-};
+#include "../h/tmreg.h"
 
-#define TMADDR ((struct device *)(PHYSUMEM + 0772520 - UNIBASE))
-
-#define GO	01
-#define RCOM	02
-#define WCOM	04
-#define WEOT	06
-#define SFORW	010
-#define SREV	012
-#define WIRG	014
-#define REW	016
-
-#define DENS	0		/* 1600 bpi */
-
-#define CRDY	0200		/* tmcs: control unit ready */
-#define TUR	1		/* tmer: tape unit ready */
-#define SDWN	010		/* tmer: tape settle down */
-#define HARD	0102200		/* tmer: ILC, EOT, NXM */
-#define EOT	0040000		/* tmer: at end of tape */
-
-#define SSEEK	1
-#define SIO	2
+u_short	tmstd[] = { 0172520 };
 
 tmopen(io)
 	register struct iob *io;
 {
 	register skip;
 
-	tmstrategy(io, REW);
+	tmstrategy(io, TM_REW);
 	skip = io->i_boff;
 	while (skip--) {
 		io->i_cc = 0;
-		while (tmstrategy(io, SFORW))
+		while (tmstrategy(io, TM_SFORW))
 			;
 	}
 }
@@ -58,71 +33,73 @@ tmclose(io)
 	register struct iob *io;
 {
 
-	tmstrategy(io, REW);
+	tmstrategy(io, TM_REW);
 }
 
 tmstrategy(io, func)
 	register struct iob *io;
 {
 	register int com, unit, errcnt;
-	int word;
-	int info;
+	register struct device *tmaddr =
+	    (struct device *)ubamem(io->i_unit, tmstd[0]);
+	int word, info;
 
 	unit = io->i_unit;
 	errcnt = 0;
 retry:
-	tmquiet();
-	com = (unit<<8)|DENS;
+	tmquiet(tmaddr);
+	com = (unit<<8);
 	info = ubasetup(io, 1);
-	TMADDR->tmbc = -io->i_cc;
-	TMADDR->tmba = info;
+	tmaddr->tmbc = -io->i_cc;
+	tmaddr->tmba = info;
 	if (func == READ)
-		TMADDR->tmcs = com | RCOM | GO;
+		tmaddr->tmcs = com | TM_RCOM | TM_GO;
 	else if (func == WRITE)
-		TMADDR->tmcs = com | WCOM | GO;
-	else if (func == SREV) {
-		TMADDR->tmbc = -1;
-		TMADDR->tmcs = com | SREV | GO;
+		tmaddr->tmcs = com | TM_WCOM | TM_GO;
+	else if (func == TM_SREV) {
+		tmaddr->tmbc = -1;
+		tmaddr->tmcs = com | TM_SREV | TM_GO;
 		return (0);
 	} else
-		TMADDR->tmcs = com | func | GO;
+		tmaddr->tmcs = com | func | TM_GO;
 	for (;;) {
-		word = TMADDR->tmcs;
-		if (word&CRDY)
+		word = tmaddr->tmcs;
+		if (word&TM_CUR)
 			break;
 	}
 		;
-	ubafree(info);
-	word = TMADDR->tmer;
-	if (word&EOT)
+	ubafree(io, info);
+	word = tmaddr->tmer;
+	if (word&TMER_EOT)
 		return(0);
 	if (word < 0) {
 		if (errcnt == 0)
-			printf("tape error: er=%o", TMADDR->tmer);
+			printf("te error: er=%o", tmaddr->tmer);
 		if (errcnt==10) {
 			printf("\n");
 			return(-1);
 		}
 		errcnt++;
-		tmstrategy(io, SREV);
+		tmstrategy(io, TM_SREV);
 		goto retry;
 	}
 	if (errcnt)
 		printf(" recovered by retry\n");
-	return (io->i_cc+TMADDR->tmbc);
+	return (io->i_cc+tmaddr->tmbc);
 }
 
-tmquiet()
+tmquiet(tmaddr)
+	register struct device *tmaddr;
 {
 	register word;
 	for (;;) {
-		word = TMADDR->tmcs;
-		if (word&CRDY)
+		word = tmaddr->tmcs;
+		if (word&TM_CUR)
 			break;
 	}
 	for (;;) {
-		word = TMADDR->tmer;
-		if ((word&TUR) && (word&SDWN)==0)
+		word = tmaddr->tmer;
+		if ((word&TMER_TUR) && (word&TMER_SDWN)==0)
 			break;
 	}
 }

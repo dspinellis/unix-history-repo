@@ -1,92 +1,142 @@
-/*	prf.c	4.1	%G% */
+/*	prf.c	4.2	81/03/15	*/
 
+#include "../h/param.h"
 #include "../h/cons.h"
 #include "../h/mtpr.h"
 
 /*
  * Scaled down version of C Library printf.
- * Only %s %u %d (==%u) %o %x %D %c are recognized.
- * Used to print diagnostic information
- * directly on console tty.
- * Since it is not interrupt driven,
- * all system activities are pretty much
- * suspended.
- * Printf should not be used for chit-chat.
+ * Used to print diagnostic information directly on console tty.
+ * Since it is not interrupt driven, all system activities are
+ * suspended.  Printf should not be used for chit-chat.
+ *
+ * One additional format: %b is supported to decode error registers.
+ * Usage is:
+ *	printf("reg=%b\n", regval, "<base><arg>*");
+ * Where <base> is the output base expressed as a control character,
+ * e.g. \10 gives octal; \20 gives hex.  Each arg is a sequence of
+ * characters, the first of which gives the bit number to be inspected
+ * (origin 1), and the next characters (up to a control character, i.e.
+ * a character <= 32), give the name of the register.  Thus
+ *	printf("reg=%b\n", 3, "\10\2BITTWO\1BITONE\n");
+ * would produce output:
+ *	reg=2<BITTWO,BITONE>
  */
 /*VARARGS1*/
 printf(fmt, x1)
-register char *fmt;
-unsigned x1;
+	char *fmt;
+	unsigned x1;
 {
-	register c;
-	register unsigned int *adx;
-	char *s;
 
-	adx = &x1;
+	prf(fmt, &x1);
+}
+
+prf(fmt, adx)
+	register char *fmt;
+	register u_int *adx;
+{
+	register int b, c, i;
+	char *s;
+	int any;
+
 loop:
-	while((c = *fmt++) != '%') {
+	while ((c = *fmt++) != '%') {
 		if(c == '\0')
 			return;
 		putchar(c);
 	}
+again:
 	c = *fmt++;
-	if(c == 'X')
-		printx((long)*adx);
-	else if(c == 'd' || c == 'u' || c == 'o' || c == 'x')
-		printn((long)*adx, c=='o'? 8: (c=='x'? 16:10));
-	else if(c == 'c')
-		putchar(*adx);
-	else if(c == 's') {
+	/* THIS CODE IS VAX DEPENDENT IN HANDLING %l? AND %c */
+	switch (c) {
+
+	case 'l':
+		goto again;
+	case 'x': case 'X':
+		b = 16;
+		goto number;
+	case 'd': case 'D':
+	case 'u':		/* what a joke */
+		b = 10;
+		goto number;
+	case 'o': case 'O':
+		b = 8;
+number:
+		printn((u_long)*adx, b);
+		break;
+	case 'c':
+		b = *adx;
+		for (i = 24; i >= 0; i -= 8)
+			if (c = (b >> i) & 0x7f)
+				putchar(c);
+		break;
+	case 'b':
+		b = *adx++;
 		s = (char *)*adx;
-		while(c = *s++)
+		printn((u_long)b, *s++);
+		any = 0;
+		if (b) {
+			putchar('<');
+			while (i = *s++) {
+				if (b & (1 << (i-1))) {
+					if (any)
+						putchar(',');
+					any = 1;
+					for (; (c = *s) > 32; s++)
+						putchar(c);
+				} else
+					for (; *s > 32; s++)
+						;
+			}
+			putchar('>');
+		}
+		break;
+
+	case 's':
+		s = (char *)*adx;
+		while (c = *s++)
 			putchar(c);
-	} else if (c == 'D') {
-		printn(*(long *)adx, 10);
-		adx += (sizeof(long) / sizeof(int)) - 1;
+		break;
 	}
 	adx++;
 	goto loop;
 }
 
-printx(x)
-long x;
-{
-	int i;
-
-	for (i = 0; i < 8; i++)
-		putchar("0123456789ABCDEF"[(x>>((7-i)*4))&0xf]);
-}
-
 /*
- * Print an unsigned integer in base b.
+ * Printn prints a number n in base b.
+ * We don't use recursion to avoid deep kernel stacks.
  */
 printn(n, b)
-long n;
+	u_long n;
 {
-	register long a;
+	char prbuf[11];
+	register char *cp;
 
-	if (n<0) {	/* shouldn't happen */
+	if (b == 10 && (int)n < 0) {
 		putchar('-');
-		n = -n;
+		n = (unsigned)(-(int)n);
 	}
-	if(a = n/b)
-		printn(a, b);
-	putchar("0123456789ABCDEF"[(int)(n%b)]);
+	cp = prbuf;
+	do {
+		*cp++ = "0123456789abcdef"[n%b];
+		n /= b;
+	} while (n);
+	do
+		putchar(*--cp);
+	while (cp > prbuf);
 }
 
 /*
  * Print a character on console.
  * Attempts to save and restore device
  * status.
- * If the switches are 0, all
- * printing is inhibited.
  *
  * Whether or not printing is inhibited,
  * the last MSGBUFS characters
  * are saved in msgbuf for inspection later.
  */
 putchar(c)
-register c;
+	register c;
 {
 	register s, timo;
 
@@ -123,10 +173,10 @@ getchar()
 }
 
 gets(buf)
-char	*buf;
+	char *buf;
 {
-register char *lp;
-register c;
+	register char *lp;
+	register c;
 
 	lp = buf;
 	for (;;) {
