@@ -4,7 +4,7 @@
 # specifies the terms and conditions for redistribution.
 #
 #	@(#)Makefile	5.4 (Berkeley) 5/28/86
-#	@(#)Makefile	1.2 (UKC) %G%
+#	@(#)Makefile	1.3 (UKC) %G%
 #
 #	dump.h			header file
 #	dumpitime.c		reads /etc/dumpdates
@@ -66,7 +66,7 @@ dumprtape.o: dumprtape.c
 	${CC} -c -DRDUMP ${CFLAGS} dumprtape.c
 
 clean:
-	rm -f *.o rdump dump errs dumprmain.c dumprtape.c
+	rm -f *.o rdump dump errs dumprmain.c dumprtape.c dumplabel
 
 lint:
 	lint $(DFLAGS) $(SRCS)
