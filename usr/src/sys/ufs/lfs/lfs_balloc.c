@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_balloc.c	7.26 (Berkeley) %G%
+ *	@(#)lfs_balloc.c	7.27 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -101,7 +101,7 @@ lfs_bmaparray(vp, bn, bnp, ap, nump)
 		return (error);
 
 	num = *nump;
-	fs = ip->i_lfs;
+
 	if (num == 0) {
 		*bnp = ip->i_db[bn];
 		if (*bnp == 0)
@@ -109,25 +109,17 @@ lfs_bmaparray(vp, bn, bnp, ap, nump)
 		return (0);
 	}
 
+
+	/* Get disk address out of indirect block array */
+	daddr = ip->i_ib[xap->in_off];
+
 	/* Fetch through the indirect blocks. */
-	bp = NULL;
+	fs = ip->i_lfs;
 	devvp = VFSTOUFS(vp->v_mount)->um_devvp;
-	for (bap = ip->i_ib; num--; off = xap->in_off, ++xap) {
-		off = xap->in_off;
+
+	for (bp = NULL, ++xap; daddr && --num; ++xap) {
+		/* If looking for a meta-block, break out when we find it. */
 		metalbn = xap->in_lbn;
-
-		/*
-		 * In LFS, it's possible to have a block appended to a file
-		 * for which the meta-blocks have not yet been allocated.
-		 * This is a win if the file never gets written or if the
-		 * file's growing.
-		 */
-		if ((daddr = bap[off]) == 0) {
-			daddr = UNASSIGNED;
-			break;
-		}
-
-		/* If searching for a meta-data block, quit when found. */
 		if (metalbn == bn)
 			break;
 
@@ -160,12 +152,12 @@ lfs_bmaparray(vp, bn, bnp, ap, nump)
 				return (error);
 			}
 		}
-		bap = bp->b_un.b_daddr;
+		daddr = bp->b_un.b_daddr[xap->in_off];
 	}
 	if (bp)
 		brelse(bp);
 
-	*bnp = daddr;
+	*bnp = daddr == 0 ? UNASSIGNED : daddr;
 	return (0);
 }
 
@@ -199,7 +191,7 @@ lfs_getlbns(vp, bn, ap, nump)
 
 	/* The first NDADDR blocks are direct blocks. */
 	if (bn < NDADDR)
-		return(0);
+		return (0);
 
 	/* 
 	 * Determine the number of levels of indirection.  After this loop
@@ -278,7 +270,7 @@ lfs_balloc(vp, iosize, lbn, bpp)
 	 */
 	newblock = ip->i_size <= lbn << fs->lfs_bshift;
 	if (!newblock && (error = lfs_bmap(vp, lbn, NULL, &daddr)))
-		return(error);
+		return (error);
 
 	if (newblock || daddr == UNASSIGNED || iosize == fs->lfs_bsize) {
 		*bpp = bp = getblk(vp, lbn, fs->lfs_bsize);
@@ -288,8 +280,8 @@ lfs_balloc(vp, iosize, lbn, bpp)
 			if (iosize != fs->lfs_bsize)
 				clrbuf(bp);
 		}
-		return(0);
+		return (0);
 	}
-	return(bread(vp, lbn, fs->lfs_bsize, NOCRED, bpp));
+	return (bread(vp, lbn, fs->lfs_bsize, NOCRED, bpp));
 
 }
