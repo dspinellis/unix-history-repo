@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_pcb.h	7.14 (Berkeley) %G%
+ *	@(#)tp_pcb.h	7.15 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -83,19 +83,23 @@ SOFTWARE.
 #define REF_OPENING 1	/* in use (has a pcb) but no timers */
 #define REF_FREE 0		/* free to reallocate */
 
-#define N_CTIMERS 		4
-#define N_ETIMERS 		2
+#define N_CTIMERS 		6
 
 struct tp_ref {
-	u_char	 			tpr_state; /* values REF_FROZEN, etc. above */
-	struct Ccallout 	tpr_callout[N_CTIMERS]; /* C timers */
-	struct Ecallout		tpr_calltodo;			/* list of active E timers */
+/*	u_char	 			tpr_state; /* values REF_FROZEN, etc. above */
+/*	struct Ccallout 	tpr_callout[N_CTIMERS]; /* C timers */
+/*	struct Ecallout		tpr_calltodo;			/* list of active E timers */
+#define	tpr_state		tpr_pcb->tp_refstate
+#define	tpr_callout		tpr_pcb->tp_refcallout
+#define	tpr_calltodo 	tpr_pcb->tp_refcalltodo
 	struct tp_pcb 		*tpr_pcb;	/* back ptr to PCB */
 };
 
 struct tp_refinfo {
 	struct tp_ref		*tpr_base;
 	int					tpr_size;
+	int					tpr_maxopen;
+	int					tpr_numopen;
 };
 
 struct tp_param {
@@ -251,6 +255,8 @@ struct tp_pcb {
 #define TPF_NLQOS_PDN	 	TPFLAG_NLQOS_PDN
 #define TPF_PEER_ON_SAMENET	TPFLAG_PEER_ON_SAMENET
 #define TPF_GENERAL_ADDR	TPFLAG_GENERAL_ADDR
+#define TPF_DELACK			0x8
+#define TPF_ACKNOW			0x10
 
 #define PEER_IS_LOCAL(t)	(((t)->tp_flags & TPF_PEER_ON_SAME_NET) != 0)
 #define USES_PDN(t)			(((t)->tp_flags & TPF_NLQOS_PDN) != 0)
@@ -278,8 +284,13 @@ struct tp_pcb {
 #define SHORT_LSUFXP(tpcb) ((short *)((tpcb)->tp_lsuffix))
 #define SHORT_FSUFXP(tpcb) ((short *)((tpcb)->tp_fsuffix))
 
-	u_char 				tp_vers;		/* protocol version */
-	u_char 				tp_peer_acktime; /* used to compute DT retrans time */
+	/* Timer stuff */
+	u_char 				tp_vers;			/* protocol version */
+	u_char 				tp_peer_acktime;	/* used for DT retrans time */
+	u_char	 			tp_refstate;		/* values REF_FROZEN, etc. above */
+	struct tp_pcb		*tp_fasttimeo;		/* limit pcbs to examine */
+	struct Ccallout 	tp_refcallout[N_CTIMERS]; /* C timers */
+	struct Ecallarg		tp_retransargs;		/* dunt ask ... */
 
 	struct sockbuf		tp_Xsnd;		/* for expedited data */
 /*	struct sockbuf		tp_Xrcv;		/* for expedited data */
@@ -341,7 +352,7 @@ extern struct tp_ref *tp_ref;
 extern struct tp_param	tp_param;
 extern struct nl_protosw  nl_protosw[];
 extern struct tp_pcb	*tp_listeners;
-extern struct tp_pcb	*tp_intercepts;
+extern struct tp_pcb	*tp_ftimeolist;
 #endif
 
 #define	sototpcb(so) 	((struct tp_pcb *)(so->so_pcb))

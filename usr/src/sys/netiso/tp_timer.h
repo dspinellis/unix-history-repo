@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_timer.h	7.4 (Berkeley) %G%
+ *	@(#)tp_timer.h	7.5 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -48,19 +48,14 @@ SOFTWARE.
 
 /* C timers - one per tpcb, generally cancelled */
 
-struct	Ccallout {
-	int	c_time;		/* incremental time */
-	int c_active;	/* this timer is active? */
+struct	Ecallarg {
+	u_int	c_arg1;
+	u_int	c_arg2;
+	int		c_arg3;
 };
 
-/* E timers - generally expire or there must be > 1 active per tpcb */
-struct Ecallout {
+struct	Ccallout {
 	int	c_time;		/* incremental time */
-	int c_func;		/* function to call */
-	u_int c_arg1;	/* argument to routine */
-	u_int c_arg2;	/* argument to routine */
-	int c_arg3;		/* argument to routine */
-	struct Ecallout *c_next;
 };
 
 #endif __TP_CALLOUT__

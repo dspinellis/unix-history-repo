@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_timer.c	7.7 (Berkeley) %G%
+ *	@(#)tp_timer.c	7.8 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -74,10 +74,8 @@ SOFTWARE.
 struct	Ecallout *TP_callfree;
 struct	Ecallout *TP_callout; 
 struct	tp_ref *tp_ref;
-int		N_TPREF = 100;
+int		N_TPREF = 127;
 struct	tp_refinfo tp_refinfo;
-
-extern int tp_maxrefopen;  /* highest ref # of an open tp connection */
 
 /*
  * CALLED FROM:
@@ -96,103 +94,15 @@ if (x == 0) panic("tp_timerinit"); bzero((caddr_t)x, s);}
 	/*
 	 * Initialize storage
 	 */
-	GETME(TP_callout, struct Ecallout *, 2 * N_TPREF);
 	GETME(tp_ref, struct tp_ref *, 1 +  N_TPREF);
 	tp_refinfo.tpr_base = tp_ref;
-	tp_refinfo.tpr_size = N_TPREF;  /* XXX: There will be a better way */
-
-	TP_callfree = TP_callout + ((2 * N_TPREF) - 1);
-	for (e = TP_callfree; e > TP_callout; e--)
-		e->c_next = e - 1;
-
-	/* hate to do this but we really don't want zero to be a legit ref */
-	tp_maxrefopen = 1;
-	tp_ref[0].tpr_state = REF_FROZEN;  /* white lie -- no ref timer, don't
-		* want this one to be allocated- ever
-		* unless, of course, you make refs and address instead of an
-		* index - then 0 can be allocated
-		*/
+	tp_refinfo.tpr_size = N_TPREF + 1;  /* Need to start somewhere */
 #undef GETME
 }
 
 /**********************  e timers *************************/
 
-/*
- * CALLED FROM:
- *  tp_slowtimo() every 1/2 second, for each open reference
- * FUNCTION and ARGUMENTS:
- *  (refp) indicates a reference structure that is in use.
- *  This ref structure may contain active E-type timers.
- *  Update the timers and if any expire, create an event and
- *  call the driver.
- */
-static void
-tp_Eclock(refp)
-	struct tp_ref	*refp; /* the reference structure */
-{
-	register struct Ecallout *p1; /* to drift through the list of callouts */
-	struct tp_event			 E; /* event to pass to tp_driver() */
-	int						 tp_driver(); /* drives the FSM */
-
-	/*
-	 * Update real-time timeout queue.
-	 * At front of queue are some number of events which are ``due''.
-	 * The time to these is <= 0 and if negative represents the
-	 * number of ticks which have passed since it was supposed to happen.
-	 * The rest of the q elements (times > 0) are events yet to happen,
-	 * where the time for each is given as a delta from the previous.
-	 * Decrementing just the first of these serves to decrement the time
-	 * to all events.
-	 * 
-	 * This version, which calls the driver directly, doesn't pass
-	 * along the ticks - may want to add the ticks if there's any use
-	 * for them.
-	 */
-	IncStat(ts_Eticks);
-	p1 = refp->tpr_calltodo.c_next;
-	while (p1) {
-		if (--p1->c_time > 0)
-			break;
-		if (p1->c_time == 0)
-			break;
-		p1 = p1->c_next;
-	}
-
-	for (;;) {
-		struct tp_pcb *tpcb;
-		if ((p1 = refp->tpr_calltodo.c_next) == 0 || p1->c_time > 0) {
-			break;
-		}
-		refp->tpr_calltodo.c_next = p1->c_next;
-		p1->c_next = TP_callfree;
-
-#ifndef lint
-		E.ev_number = p1->c_func;
-		E.ATTR(TM_data_retrans).e_low = (SeqNum) p1->c_arg1;
-		E.ATTR(TM_data_retrans).e_high = (SeqNum) p1->c_arg2;
-		E.ATTR(TM_data_retrans).e_retrans =  p1->c_arg3;
-#endif lint
-		IFDEBUG(D_TIMER)
-			printf("E expired! event 0x%x (0x%x,0x%x), pcb 0x%x ref %d\n",
-				p1->c_func, p1->c_arg1, p1->c_arg2, refp->tpr_pcb,
-				refp-tp_ref);
-		ENDDEBUG
-
-		TP_callfree = p1;
-		IncStat(ts_Eexpired);
-		(void) tp_driver( tpcb = refp->tpr_pcb, &E);
-		if (p1->c_func == TM_reference && tpcb->tp_state == TP_CLOSED) {
-			if (tpcb->tp_notdetached) {
-				IFDEBUG(D_CONN)
-					printf("PRU_DETACH: not detached\n");
-				ENDDEBUG
-				tp_detach(tpcb);
-			}
-			free((caddr_t)tpcb, M_PCB); /* XXX wart; where else to do it? */
-		}
-	}
-}
-
+int Enoisy = 1;
 /*
  * CALLED FROM:
  *  tp.trans all over
@@ -208,11 +118,9 @@ tp_etimeout(refp, fun, arg1, arg2, arg3, ticks)
 	int				arg3;
 	register int	ticks;
 {
-	register struct Ecallout *p1, *p2, *pnew;
-		/* p1 and p2 drift through the list of timeout callout structures,
-		 * pnew points to the newly created callout structure
-		 */
 
+	register struct tp_pcb *tpcb = refp->tpr_pcb;
+	register struct Ccallout *callp;
 	IFDEBUG(D_TIMER)
 		printf("etimeout pcb 0x%x state 0x%x\n", refp->tpr_pcb,
 		refp->tpr_pcb->tp_state);
@@ -221,27 +129,21 @@ tp_etimeout(refp, fun, arg1, arg2, arg3, ticks)
 		tptrace(TPPTmisc, "tp_etimeout ref refstate tks Etick", refp-tp_ref,
 		refp->tpr_state, ticks, tp_stat.ts_Eticks);
 	ENDTRACE
-
+	if (tpcb == 0)
+		return;
 	IncStat(ts_Eset);
 	if (ticks == 0)
 		ticks = 1;
-	pnew = TP_callfree;
-	if (pnew == (struct Ecallout *)0)
-		panic("tp timeout table overflow");
-	TP_callfree = pnew->c_next;
-	pnew->c_arg1 = arg1;
-	pnew->c_arg2 = arg2;
-	pnew->c_arg3 = arg3;
-	pnew->c_func = fun;
-	for (p1 = &(refp->tpr_calltodo); 
-							(p2 = p1->c_next) && p2->c_time < ticks; p1 = p2)
-		if (p2->c_time > 0)
-			ticks -= p2->c_time;
-	p1->c_next = pnew;
-	pnew->c_next = p2;
-	pnew->c_time = ticks;
-	if (p2)
-		p2->c_time -= ticks;
+	if (fun == TM_data_retrans) {
+		tpcb->tp_retransargs.c_arg1 = arg1;
+		tpcb->tp_retransargs.c_arg2 = arg2;
+		tpcb->tp_retransargs.c_arg3 = arg3;
+	}
+	callp = tpcb->tp_refcallout + fun;
+	if (Enoisy && callp->c_time)
+		printf("E timer allready set: %d of ref %d\n", fun, tpcb->tp_lref);
+	if (callp->c_time == 0 || callp->c_time > ticks)
+		callp->c_time = ticks;
 }
 
 /*
@@ -255,25 +157,14 @@ tp_euntimeout(refp, fun)
 	struct tp_ref *refp;
 	int			  fun;
 {
-	register struct Ecallout *p1, *p2; /* ptrs to drift through the list */
+	register struct tp_pcb *tpcb = refp->tpr_pcb;
 
 	IFTRACE(D_TIMER)
 		tptrace(TPPTmisc, "tp_euntimeout ref", refp-tp_ref, 0, 0, 0);
 	ENDTRACE
 
-	p1 = &refp->tpr_calltodo; 
-	while ( (p2 = p1->c_next) != 0) {
-		if (p2->c_func == fun)  {
-			if (p2->c_next && p2->c_time > 0) 
-				p2->c_next->c_time += p2->c_time;
-			p1->c_next = p2->c_next;
-			p2->c_next = TP_callfree;
-			TP_callfree = p2;
-			IncStat(ts_Ecan_act);
-			continue;
-		}
-		p1 = p2;
-	}
+	if (tpcb)
+		tpcb->tp_refcallout[fun].c_time = 0;
 }
 
 /*
@@ -281,6 +172,7 @@ tp_euntimeout(refp, fun)
  *  tp.trans, when an incoming ACK causes things to be dropped
  *  from the retransmission queue, and we want their associated
  *  timers to be cancelled.
+ *  NOTE: (by sklower) only called with TM_data_retrans.
  * FUNCTION and ARGUMENTS:
  *  cancel all occurrences of function (fun) where (arg2) < (seq)
  */
@@ -290,24 +182,17 @@ tp_euntimeout_lss(refp, fun, seq)
 	int			  fun;
 	SeqNum		  seq;
 {
-	register struct Ecallout *p1, *p2;
+	register struct tp_pcb *tpcb = refp->tpr_pcb;
 
 	IFTRACE(D_TIMER)
 		tptrace(TPPTmisc, "tp_euntimeoutLSS ref", refp-tp_ref, seq, 0, 0);
 	ENDTRACE
 
-	p1 = &refp->tpr_calltodo; 
-	while ( (p2 = p1->c_next) != 0) {
-		if ((p2->c_func == fun) && SEQ_LT(refp->tpr_pcb, p2->c_arg2, seq))  {
-			if (p2->c_next && p2->c_time > 0) 
-				p2->c_next->c_time += p2->c_time;
-			p1->c_next = p2->c_next;
-			p2->c_next = TP_callfree;
-			TP_callfree = p2;
+	if (tpcb == 0 || tpcb->tp_refcallout[fun].c_time == 0)
+		return;
+	if (SEQ_LT(tpcb, tpcb->tp_retransargs.c_arg2, seq))  {
 			IncStat(ts_Ecan_act);
-			continue;
-		}
-		p1 = p2;
+			tpcb->tp_refcallout[fun].c_time = 0;
 	}
 }
 
@@ -332,36 +217,48 @@ tp_euntimeout_lss(refp, fun, seq)
 ProtoHook
 tp_slowtimo()
 {
-	register int 		r,t;
-	struct Ccallout 	*cp;
-	struct tp_ref		*rp = tp_ref;
+	register struct Ccallout 	*cp, *cpbase;
+	register struct tp_ref		*rp;
+	struct tp_pcb		*tpcb;
 	struct tp_event		E;
-	int 				s = splnet();
+	int 				s = splnet(), t;
 
 	/* check only open reference structures */
 	IncStat(ts_Cticks);
-	rp++;	/* tp_ref[0] is never used */
-	for(  r=1 ; (r <= tp_maxrefopen) ; r++,rp++ ) {
-		if (rp->tpr_state < REF_OPEN) 
+	/* tp_ref[0] is never used */
+	for (rp = tp_ref + tp_refinfo.tpr_maxopen; rp > tp_ref; rp--) {
+		if ((tpcb = rp->tpr_pcb) == 0 || rp->tpr_state < REF_OPEN) 
 			continue;
-
+		cpbase = tpcb->tp_refcallout;
+		t = N_CTIMERS;
 		/* check the C-type timers */
-		cp = rp->tpr_callout;
-		for (t=0 ; t < N_CTIMERS; t++,cp++) {
-			if( cp->c_active ) {
-				if( --cp->c_time <= 0 ) {
-					cp->c_active = FALSE;
-					E.ev_number = t;
-					IFDEBUG(D_TIMER)
-						printf("C expired! type 0x%x\n", t);
-					ENDDEBUG
-					IncStat(ts_Cexpired);
-					tp_driver( rp->tpr_pcb, &E);
+		for (cp = cpbase + t; (--t, --cp) >= cpbase; ) {
+			if (cp->c_time && --(cp->c_time) <= 0 ) {
+				cp->c_time = 0;
+				E.ev_number = t;
+				if (t == TM_data_retrans) {
+					register struct Ecallarg *p1 = &tpcb->tp_retransargs;
+					E.ATTR(TM_data_retrans).e_low = (SeqNum) p1->c_arg1;
+					E.ATTR(TM_data_retrans).e_high = (SeqNum) p1->c_arg2;
+					E.ATTR(TM_data_retrans).e_retrans =  p1->c_arg3;
+				}
+				IFDEBUG(D_TIMER)
+					printf("C expired! type 0x%x\n", t);
+				ENDDEBUG
+				IncStat(ts_Cexpired);
+				tp_driver( rp->tpr_pcb, &E);
+				if (t == TM_reference && tpcb->tp_state == TP_CLOSED) {
+					if (tpcb->tp_notdetached) {
+						IFDEBUG(D_CONN)
+							printf("PRU_DETACH: not detached\n");
+						ENDDEBUG
+						tp_detach(tpcb);
+					}
+					/* XXX wart; where else to do it? */
+					free((caddr_t)tpcb, M_PCB);
 				}
 			}
 		}
-		/* now update the list */
-		tp_Eclock(rp);
 	}
 	splx(s);
 	return 0;
@@ -382,13 +279,14 @@ tp_ctimeout(refp, which, ticks)
 
 	IFTRACE(D_TIMER)
 		tptrace(TPPTmisc, "tp_ctimeout ref which tpcb active", 
-			(int)(refp - tp_ref), which, refp->tpr_pcb, cp->c_active);
+			(int)(refp - tp_ref), which, refp->tpr_pcb, cp->c_time);
 	ENDTRACE
-	if(cp->c_active)
+	if(cp->c_time)
 		IncStat(ts_Ccan_act);
 	IncStat(ts_Cset);
+	if (ticks <= 0)
+		ticks = 1;
 	cp->c_time = ticks;
-	cp->c_active = TRUE;
 }
 
 /*
@@ -407,17 +305,14 @@ tp_ctimeout_MIN(refp, which, ticks)
 
 	IFTRACE(D_TIMER)
 		tptrace(TPPTmisc, "tp_ctimeout_MIN ref which tpcb active", 
-			(int)(refp - tp_ref), which, refp->tpr_pcb, cp->c_active);
+			(int)(refp - tp_ref), which, refp->tpr_pcb, cp->c_time);
 	ENDTRACE
-	if(cp->c_active)
-		IncStat(ts_Ccan_act);
 	IncStat(ts_Cset);
-	if( cp->c_active ) 
+	if (cp->c_time)  {
 		cp->c_time = MIN(ticks, cp->c_time);
-	else  {
+		IncStat(ts_Ccan_act);
+	} else
 		cp->c_time = ticks;
-		cp->c_active = TRUE;
-	}
 }
 
 /*
@@ -436,17 +331,17 @@ tp_cuntimeout(refp, which)
 	cp = &(refp->tpr_callout[which]);
 
 	IFDEBUG(D_TIMER)
-		printf("tp_cuntimeout(0x%x, %d) active %d\n", refp, which, cp->c_active);
+		printf("tp_cuntimeout(0x%x, %d) active %d\n", refp, which, cp->c_time);
 	ENDDEBUG
 
 	IFTRACE(D_TIMER)
 		tptrace(TPPTmisc, "tp_cuntimeout ref which, active", refp-tp_ref, 
-			which, cp->c_active, 0);
+			which, cp->c_time, 0);
 	ENDTRACE
 
-	if(cp->c_active)
+	if (cp->c_time)
 		IncStat(ts_Ccan_act);
 	else
 		IncStat(ts_Ccan_inact);
-	cp->c_active = FALSE;
+	cp->c_time = 0;
 }
