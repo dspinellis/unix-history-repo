@@ -1,4 +1,4 @@
-/*	tty.c	4.16	82/01/15	*/
+/*	tty.c	4.17	82/01/17	*/
 
 /*
  * TTY subroutines common to more than one line discipline
@@ -91,7 +91,7 @@ wflushtty(tp)
 		tp->t_state |= TS_ASLEEP;
 		sleep((caddr_t)&tp->t_outq, TTOPRI);
 	}
-	flushtty(tp, FREAD|FWRITE);
+	flushtty(tp, FREAD);
 	(void) spl0();
 }
 
@@ -112,7 +112,7 @@ register struct tty *tp;
 	if (rw & FWRITE) {
 		wakeup((caddr_t)&tp->t_outq);
 		tp->t_state &= ~TS_TTSTOP;
-		(*cdevsw[major(tp->t_dev)].d_stop)(tp);
+		(*cdevsw[major(tp->t_dev)].d_stop)(tp, rw);
 		while (getc(&tp->t_outq) >= 0)
 			;
 	}
