@@ -1,22 +1,47 @@
-.\"	@(#)sum.1	6.2 (Berkeley) %G%
+.\" Copyright (c) 1991 Regents of the University of California.
+.\" All rights reserved.
 .\"
-.TH SUM 1 ""
-.AT 3
-.SH NAME
-sum \- sum and count blocks in a file
-.SH SYNOPSIS
-.B sum
-file
-.SH DESCRIPTION
-.I Sum
-calculates and prints a 16-bit checksum for the named file,
-and also prints the number of blocks in the file.
-It is typically used to look for bad spots, or
-to validate a file communicated over
-some transmission line.
-.SH "SEE ALSO"
-wc(1)
-.SH DIAGNOSTICS
-`Read error'
-is indistinguishable from end of file on
-most devices; check the block count.
+.\" %sccs.include.redist.roff%
+.\"
+.\"     @(#)sum.1	6.2 (Berkeley) %G%
+.\"
+.Dd 
+.Dt SUM 1
+.Os
+.Sh NAME
+.Nm sum
+.Nd calculate file checksums and block counts
+.Sh SYNOPSIS
+.Nm sum
+.Ar file
+.Sh DESCRIPTION
+The
+.Nm sum
+utility calculates and writes to standard output a
+checksum (16 bit CRC) for each input file,
+and also writes to the standard output the number of blocks
+in each file.
+.Pp
+The following operand is available:
+.Bl -tag -width file
+.It Ar file
+The pathname of the
+.Ar file
+to checksum.
+If no file operands are specified, the
+standard input is used.
+.El
+.Sh SEE ALSO
+.Xr wc 1
+.Sh DIAGNOSTICS
+The
+.Nm sum
+utility exits zero on success,
+and >0 if an error occurs.
+.Pp
+End-of-file may return a read-error.
+.Sh HISTORY
+A
+.Nm
+command appeared in
+.At v7 .
