@@ -1,7 +1,7 @@
-#	@(#)Makefile	7.16 (Berkeley) %G%
+#	@(#)Makefile	7.17 (Berkeley) %G%
 
 DESTDIR=
-INCPATH=-I../..
+INCPATH=-I. -I../..
 VPATH=	../../stand
 
 CC=cc
@@ -11,13 +11,13 @@ AS=as
 RELOC=	FFF80000
 
 CONS= -DDCACONSOLE -DITECONSOLE -DDCMCONSOLE
-DEFS= -DSTANDALONE ${CONS} # -DROMPRF
+DEFS= -DSTANDALONE -DCOMPAT_NOLABEL ${CONS} # -DROMPRF
 CFLAGS=	-O ${INCPATH} ${DEFS}
 
 DRIVERS=autoconf.c cons.c ct.c dca.c dcm.c fhpib.c hil.c hpib.c ite.c \
 	ite_dv.c ite_gb.c ite_hy.c ite_rb.c ite_subr.c ite_tc.c nhpib.c rd.c \
 	scsi.c sd.c
-SRCS=	conf.c machdep.c prf.c ${DRIVERS}
+SRCS=	conf.c label.c machdep.c prf.c ${DRIVERS}
 LIBS=	libsa/libsa.a libdrive.a ${DESTDIR}/usr/lib/libgnulib.a \
 	${DESTDIR}/usr/lib/libc.a
 
@@ -27,10 +27,10 @@ all: ${ALL}
 
 dboot nboot tboot tcopy: ${LIBS}
 
-libsa/libsa.a::
+libsa/libsa.a: FRC
 	cd libsa; make
 
-libdrive.a: conf.o machdep.o prf.o ${DRIVERS:.c=.o}
+libdrive.a: conf.o label.o machdep.o prf.o ${DRIVERS:.c=.o}
 	ar crv $@ $?
 	ranlib $@
 
@@ -38,7 +38,7 @@ ${DRIVERS}: samachdep.h
 
 # depend on DEFS
 
-machdep.o srt0.o: Makefile
+label.o machdep.o srt0.o: Makefile
 cons.o dca.o hil.o: Makefile
 ite.o ite_subr.o ite_dv.o ite_gb.o ite_hy.o ite_rb.o ite_tc.o: Makefile
 
@@ -129,3 +129,5 @@ depend: ${SRCS}
 	mkdep ${INCPATH} ${DEFS} ${SRCS}
 	mkdep -a -p ${INCPATH} ${DEFS} mkboot.c installboot.c
 	cd libsa; make depend
+
+FRC:

@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- * from: Utah $Hdr: srt0.c 1.15 92/06/18$
+ * from: Utah $Hdr: srt0.c 1.18 92/12/21$
  *
- *	@(#)srt0.c	7.6 (Berkeley) %G%
+ *	@(#)srt0.c	7.7 (Berkeley) %G%
  */
 
 /*
@@ -107,7 +107,15 @@ not68030:
 	.long	0x4e7b0005	| movc d0,itt1
 	.long	0x4e7b0006	| movc d0,dtt0
 	.long	0x4e7b0007	| movc d0,dtt1
-	movl	#7,a0@		| we have a 380
+	.word	0xf4d8		| cinva bc
+	movl	MMUCMD,d0	| get MMU register
+	lsrl	#8,d0		| get apparent ID
+	cmpb	#6,d0		| id == 6?
+	jeq	is33mhz		| yes, we have a 433s
+	movl	#7,a0@		| no, we have a 380/425t
+	jra	ihpibcheck
+is33mhz:
+	movl	#8,a0@		| 433s (XXX 425s returns same ID, ugh!)
 	jra	ihpibcheck
 is68020:
 	movl	#1,a0@		| consider a 330 for now
