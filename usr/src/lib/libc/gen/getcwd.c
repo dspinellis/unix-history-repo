@@ -5,7 +5,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)getcwd.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)getcwd.c	5.3 (Berkeley) %G%";
 #endif LIBC_SCCS and not lint
 
 /*
@@ -85,8 +85,8 @@ getwd(pathname)
 				strcpy(dptr, dir->d_name);
 				lstat(curdir, &dd);
 			} while(dd.st_ino != cino || dd.st_dev != cdev);
-		closedir(dirp);
 		pnptr = prepend("/", prepend(dir->d_name, pnptr));
+		closedir(dirp);
 	}
 	if (*pnptr == '\0')		/* current dir == root dir */
 		strcpy(pathname, "/");
