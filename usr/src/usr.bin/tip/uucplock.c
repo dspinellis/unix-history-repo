@@ -1,4 +1,4 @@
-/*	uucplock.c	4.3	81/11/29	*/
+/*	uucplock.c	4.4	82/07/29	*/
 /*
  * defs that come from uucp.h
  */
@@ -49,7 +49,7 @@ ulockf(file, atime)
 	time_t ptime;
 	int ret;
 	static int pid = -1;
-	static char tempfile[NAMESIZE];
+	static char tempfile[30];
 
 	if (pid < 0) {
 		pid = getpid();
