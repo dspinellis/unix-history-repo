@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parseaddr.c	6.57 (Berkeley) %G%";
+static char sccsid[] = "@(#)parseaddr.c	6.58 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -766,7 +766,7 @@ rewrite(pvp, ruleset, e)
 
 				if (ap == NULL)
 					break;
-				while (*ap != NULL)
+				while (*ap != '\0')
 				{
 					if (*avp == NULL ||
 					    strncasecmp(ap, *avp, strlen(*avp)) != 0)
