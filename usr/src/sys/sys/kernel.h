@@ -4,11 +4,10 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kernel.h	8.1 (Berkeley) %G%
+ *	@(#)kernel.h	8.2 (Berkeley) %G%
  */
 
 /* Global variables for the kernel. */
-long rmalloc();
 
 /* 1.1 */
 extern long hostid;
