@@ -7,14 +7,13 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)shell.h	5.5 (Berkeley) %G%
+ *	@(#)shell.h	5.6 (Berkeley) %G%
  */
 
 /*
  * The follow should be set to reflect the type of system you have:
  *	JOBS -> 1 if you have Berkeley job control, 0 otherwise.
  *	SYMLINKS -> 1 if your system includes symbolic links, 0 otherwise.
- *	DIRENT -> 1 if your system has the SVR3 directory(3X) routines.
  *	SHORTNAMES -> 1 if your linker cannot handle long names.
  *	define BSD if you are running 4.2 BSD or later.
  *	define SYSV if you are running under System V.
@@ -28,8 +27,9 @@
 
 #define JOBS 1
 #define SYMLINKS 1
-#define DIRENT 1
-#define BSD
+#ifndef BSD
+#define BSD 1
+#endif
 #define DEBUG 1
 
 #ifdef __STDC__
