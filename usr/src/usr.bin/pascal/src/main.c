@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include "whoami.h"
@@ -113,10 +113,10 @@ main(argc, argv)
 	}
 #	ifdef OBJ
 	    opt('p') = opt('t') = opt('b') = 1;
-#ifdef vax
-	    /* pdx is currently supported only on the vax */
+#if defined(vax) || defined(tahoe)
+	    /* pdx is currently supported on the vax and the tahoe */
 	    opt('g') = 1;
-#endif vax
+#endif
 	    while (argc > 0) {
 		    cp = argv[0];
 		    if (*cp++ != '-')
