@@ -1,4 +1,4 @@
-/*	locore.s	4.27	81/02/25	*/
+/*	locore.s	4.28	81/02/26	*/
 
 #include "../h/mtpr.h"
 #include "../h/trap.h"
@@ -485,7 +485,7 @@ _badaddr:
 	ret
 	.align	2
 9:
-#if VAX==780
+#if VAX780
 	mtpr	$0,$SBIFS
 #endif
 	addl2	(sp)+,sp		# discard mchchk trash
