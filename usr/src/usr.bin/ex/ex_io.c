@@ -1,5 +1,5 @@
 /* Copyright (c) 1981 Regents of the University of California */
-static char *sccsid = "@(#)ex_io.c	7.6	%G%";
+static char *sccsid = "@(#)ex_io.c	7.7	%G%";
 #include "ex.h"
 #include "ex_argv.h"
 #include "ex_temp.h"
@@ -419,11 +419,18 @@ rop2()
 	first = addr2 + 1;
 	ignore(append(getfile, addr2));
 	last = dot;
-	for (a=first; a<=last; a++) {
-		if (a==first+5 && last-first > 10)
-			a = last - 4;
-		getline(*a);
-		checkmodeline(linebuf);
+	/*
+	 *	if the modeline variable is set,
+	 *	check the first and last five lines of the file
+	 *	for a mode line.
+	 */
+	if (value(MODELINE)) {
+		for (a=first; a<=last; a++) {
+			if (a==first+5 && last-first > 10)
+				a = last - 4;
+			getline(*a);
+			checkmodeline(linebuf);
+		}
 	}
 }
 
@@ -858,9 +865,14 @@ char *line;
 	beg = index(line, ':');
 	if (beg == NULL)
 		return;
-	if (beg[-2] != 'e' && beg[-2] != 'v') return;
-	if (beg[-1] != 'x' && beg[-1] != 'i') return;
-
+	if (&beg[-3] < line)
+		return;
+	if (!(  ( (beg[-3] == ' ' || beg[-3] == '\t')
+	        && beg[-2] == 'e'
+		&& beg[-1] == 'x')
+	     || ( (beg[-3] == ' ' || beg[-3] == '\t')
+	        && beg[-2] == 'v'
+		&& beg[-1] == 'i'))) return;
 	strncpy(cmdbuf, beg+1, sizeof cmdbuf);
 	end = rindex(cmdbuf, ':');
 	if (end == NULL)
