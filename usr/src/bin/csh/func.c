@@ -5,8 +5,8 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)sh.func.c	5.10 (Berkeley) 11/20/89";
-#endif
+static char sccsid[] = "@(#)func.c	5.12 (Berkeley) %G%";
+#endif /* not lint */
 
 #include "sh.h"
 #include <sys/ioctl.h>
