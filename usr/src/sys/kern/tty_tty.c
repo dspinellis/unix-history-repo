@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tty_tty.c	7.18 (Berkeley) %G%
+ *	@(#)tty_tty.c	7.19 (Berkeley) %G%
  */
 
 /*
@@ -27,10 +27,6 @@ cttyopen(dev, flag, mode, p)
 	int flag, mode;
 	struct proc *p;
 {
-	USES_VOP_ACCESS;
-	USES_VOP_LOCK;
-	USES_VOP_OPEN;
-	USES_VOP_UNLOCK;
 	struct vnode *ttyvp = cttyvp(p);
 	int error;
 
@@ -51,9 +47,6 @@ cttyread(dev, uio, flag)
 	struct uio *uio;
 	int flag;
 {
-	USES_VOP_LOCK;
-	USES_VOP_READ;
-	USES_VOP_UNLOCK;
 	register struct vnode *ttyvp = cttyvp(uio->uio_procp);
 	int error;
 
@@ -71,9 +64,6 @@ cttywrite(dev, uio, flag)
 	struct uio *uio;
 	int flag;
 {
-	USES_VOP_LOCK;
-	USES_VOP_UNLOCK;
-	USES_VOP_WRITE;
 	register struct vnode *ttyvp = cttyvp(uio->uio_procp);
 	int error;
 
@@ -93,7 +83,6 @@ cttyioctl(dev, cmd, addr, flag, p)
 	int flag;
 	struct proc *p;
 {
-	USES_VOP_IOCTL;
 	struct vnode *ttyvp = cttyvp(p);
 
 	if (ttyvp == NULL)
@@ -114,7 +103,6 @@ cttyselect(dev, flag, p)
 	int flag;
 	struct proc *p;
 {
-	USES_VOP_SELECT;
 	struct vnode *ttyvp = cttyvp(p);
 
 	if (ttyvp == NULL)
