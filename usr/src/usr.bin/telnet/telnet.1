@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)telnet.1	6.14 (Berkeley) %G%
+.\"     @(#)telnet.1	6.15 (Berkeley) %G%
 .\"
 .Vx
 .Vx
@@ -156,11 +156,11 @@ While connected to a remote host,
 .Nm telnet
 command mode may be entered by typing the
 .Nm telnet
-\*(Lqescape character\*(Rq (initially \*(Lq^
-\*(Rq).
+\*(Lqescape character\*(Rq (initially \*(Lq^]\*(Rq).
 When in command mode, the normal terminal editing conventions are available.
 .Pp
-The following .Nm telnet
+The following
+.Nm telnet
 commands are available.
 Only enough of each command to uniquely identify it need be typed
 (this is also true for arguments to the
