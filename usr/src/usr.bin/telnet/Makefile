@@ -53,10 +53,10 @@ LINTFLAGS	= -hbxaz
 ALLH =	defines.h externs.h general.h types.h
 
 ALLC =	commands.c main.c network.c sys_bsd.c sys_dos.c telnet.c \
-		terminal.c utilities.c
+		terminal.c tn3270.c utilities.c
 
 ALLO =	commands$O main$O network$O sys_bsd$O sys_dos$O telnet$O \
-		terminal$O utilities$O
+		terminal$O tn3270$O utilities$O
 
 ALLPRINT =	${ALLH} ${ALLC}
 
