@@ -1,0 +1,85 @@
+###############################################################################
+#
+# quiputailor - ISODE QUIPU Directory Service Specific Tailoring File
+#
+# $Header: /f/osi/quipu/RCS/quiputailor,v 7.5 91/02/22 09:39:43 mrose Interim $
+#
+#
+# $Log:	quiputailor,v $
+# Revision 7.5  91/02/22  09:39:43  mrose
+# Interim 6.8
+# 
+# Revision 7.4  90/10/18  11:33:59  mrose
+# psi
+# 
+# Revision 7.3  90/07/09  14:46:29  mrose
+# sync
+# 
+# Revision 7.2  90/01/11  18:37:25  mrose
+# real-sync
+# 
+# Revision 7.1  89/12/19  16:20:44  mrose
+# sync
+# 
+# Revision 7.0  89/11/23  22:17:59  mrose
+# Release 6.0
+# 
+###############################################################################
+
+
+# this line must occur first
+oidtable	@(ETCDIR)oidtable
+
+mydsaname	CN=toucan
+
+# DSAs to contact if we need a referral to a parent
+
+# ROOT MASTER at University of London Computer Centre
+parent	"cn=Giant Tortoise"	Internet=128.86.8.55+17003|IXI=20433450400255|X121+23421920014855|Janet=000040010550
+
+# US SLAVE at Performance Systems International
+parent	"cn=Fruit Bat"		\'0101\'H/Internet=136.161.128.3+17007
+
+# NO MASTER AT UIO
+parent	"cn=Eel"		'0101'H/Internet=129.241.1.99+2005|Int-X25(80)=242253024222+PID+03018100|TELEX+00728722+X.25(80)+06+20434240001003+PID+03018100
+
+# AU MASTER AT Brisbane
+parent	"cn=Anaconda"		'0101'H/Internet=130.102.128.5+17705|Int-X25(80)=50527372000048+PID+03018100
+
+# shadow alias entries
+# you may want to extend this to other DN attribute types
+shadow		aliasedObjectName
+
+# select which attributes you want to index 
+optimize_attr	commonName
+optimize_attr	surName
+
+# select which part of the DIT to index
+# index_subtree "c=XX@o=YOUR ORGANISATION"
+
+# exceptional logging
+dsaplog		level=exceptions 
+
+# logging directory
+logdir		/tmp/
+
+# default tree directory
+treedir		@(ETCDIR)quipu-db/
+
+# slave updates
+update		off
+
+# level below which users can search
+searchlevel	2
+
+# allow addition of "last modified by" attributes...
+lastmodified 	on
+
+# DSP chaining
+dspchaining	on
+
+# limits...
+adminsize	100
+admintime	60
+cachetime	21600
+conntime	300
