@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_swap.c	7.14 (Berkeley) %G%
+ *	@(#)vm_swap.c	7.15 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -165,18 +165,6 @@ swfree(index)
 		if (blk > dmmax)
 			blk = dmmax;
 		if (vsbase == 0) {
-			/*
-			 * Can't free a block starting at 0 in the swapmap
-			 * but need some space for argmap so use 1/2 this
-			 * hunk which needs special treatment anyways.
-			 */
-			argdev = sp->sw_dev;
-			if (argdev_vp)
-				vrele(argdev_vp);
-			VREF(vp);
-			argdev_vp = vp;
-			rminit(argmap, (long)(blk/2-ctod(CLSIZE)),
-			    (long)ctod(CLSIZE), "argmap", ARGMAPSIZE);
 			/*
 			 * First of all chunks... initialize the swapmap
 			 * the second half of the hunk.
