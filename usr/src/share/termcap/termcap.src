@@ -3,7 +3,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)termcap.src	5.116 (Berkeley) %G%
+#	@(#)termcap.src	5.117 (Berkeley) %G%
 #
 
 #	Termcap source file
@@ -3288,8 +3288,16 @@ pc|ibmpc|ibm pc PC/IX:\
 	:li#24:co#80:am:bs:bw:eo:\
 	:cd=\E[J:ce=\E[K:cl=\Ec:cm=\E[%i%2;%2H:do=\E[B:ho=\E[;H:\
 	:nd=\E[C:up=\E[A:so=\E[7m:se=\E[0m:us=\E[4m:ue=\E[0m:
+# by "Alex R.N. Wetmore" <aw2t+@andrew.cmu.edu>
 pc3|ibmpc3|IBM PC 386BSD Console:\
-	:li#25:tc=pc:
+	:li#25:co#80:am:bs:bw:eo:\
+	:ac=l\332q\304k\277x\263j\331m\300w\302u\264v\301t\303n\305:\
+	:kh=\E[Y:ku=\E[A:kd=\E[B:kl=\E[D:kr=\E[C:\
+	:sr=\E[T:sf=\E[S:\
+	:cd=\E[J:ce=\E[K:cl=\Ec:cm=\E[%i%2;%2H:do=\E[B:ho=\E[;H:\
+	:nd=\E[C:up=\E[A:so=\E[1;7x\E[2;0x:se=\E[1;0x\E[2;7x:\
+	:us=\E[1;7x\E[2;0x:ue=\E[1;0x\E[2;7x:\
+	:md=\E[7m:me=\E[0m\E[1;0x\E[2;7x:
 ibmx|ibmpcx|IBM PC xenix console display:\
 	:al=\E[L:am:bs:cd=\E[J:ce=\E[K:cl=^L:cm=\E[%d;%dH:co#80:\
 	:dc=\E[P:dl=\E[M:do=\E[B:ei=:ho=\E[H:ic=\E[@:im=:li#25:\
