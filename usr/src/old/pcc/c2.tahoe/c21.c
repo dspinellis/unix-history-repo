@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)c21.c	1.7 (Berkeley/CCI) %G%";
+static char sccsid[] = "@(#)c21.c	1.8 (Berkeley/CCI) %G%";
 #endif
 
 /*
@@ -918,19 +918,7 @@ register struct node *q;
 		uses[r] = 0;
 		if(q->subop == DOUBLE)
 			uses[r+1] = 0;
-		{ /* undo any effect on uses in the area between p and q,
-		   * as we are going over it again */
-			register struct node *b;
-			for(b=p; b!=q; b=b->back) {
-				for(r=0; r<NUSE; r++) {
-					if(uses[r] == b)
-						uses[r] = 0;
-					if(useacc == b)
-						useacc = 0;
-				}
-			}
-		}
-		return(p->forw); /* make p the next for bflow */
+		return(q->forw); /* DON'T re-scan code with dated uses[] */
 	}
 	/* it's a store to reg which isnt used elsewhere */
 	if((p=q->forw)->op == CBR) {
