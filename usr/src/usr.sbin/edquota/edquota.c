@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)edquota.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)edquota.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -112,11 +112,11 @@ getentry(name)
 
 editit()
 {
-	register pid, xpid;
-	int stat, omask;
+	register int pid, xpid;
+	long omask;
+	int stat;
 
-#define	mask(s)	(1<<((s)-1))
-	omask = sigblock(mask(SIGINT)|mask(SIGQUIT)|mask(SIGHUP));
+	omask = sigblock(sigmask(SIGINT)|sigmask(SIGQUIT)|sigmask(SIGHUP));
  top:
 	if ((pid = fork()) < 0) {
 		extern errno;
