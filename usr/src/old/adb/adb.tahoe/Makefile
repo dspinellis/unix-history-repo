@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.5 (Berkeley) %G%
+#	@(#)Makefile	5.6 (Berkeley) %G%
 
 PROG=	adb
 SRCS=	access.c command.c expr.c format.c kstack.c machdep.c main.c \
@@ -6,7 +6,7 @@ SRCS=	access.c command.c expr.c format.c kstack.c machdep.c main.c \
 	strings.c sym.c
 .PATH: ${.CURDIR}/../common_source
 
-CFLAGS+= -I${.CURDIR} -I${.CURDIR}/../common_source
+CFLAGS+=-I${.CURDIR} -I${.CURDIR}/../common_source -I/sys
 
 optab.o rodata.o strings.o:
 	${CC} ${CFLAGS} -R -c ${.IMPSRC}
