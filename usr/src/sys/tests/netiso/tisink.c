@@ -12,16 +12,18 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)tisink.c	7.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)tisink.c	7.10 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
  * This is a test program to be a sink for ISO packets.
  */
+#include <unistd.h>
 #include <sys/param.h>
 #include <sys/uio.h>
 #include <sys/socket.h>
 #include <sys/ioctl.h>
+#include <sys/syscall.h>
 #include <net/route.h>
 #include <net/if.h>
 #define  TCPT_NTIMERS 4
@@ -51,13 +53,14 @@ struct  sockaddr_iso faddr, laddr = { sizeof(laddr), AF_ISO };
 struct  sockaddr_iso *siso = &laddr;
 char **xenvp;
 
-long size, forkp = 0, confp, mynamep, verbose = 1, echop = 0;
+long size, forkp = 0, confp = 0, mynamep, verbose = 1, echop = 0;
 long records, intercept = 0, isode_mode = 0, dgramp = 0, tp0mode = 0;
-long dumpnodata = 0, playtag = 0;
+long dumpnodata = 0, playtag = 0, select_mode = 0;
 void savedata();
 
 char buf[2048];
 char your_it[] = "You're it!";
+fd_set readfds, exceptfds;
 
 char *Servername;
 
@@ -196,7 +199,7 @@ tisink()
 			} else {
 				dbprintf("confim ok\n");
 			}
-			sleep(10);
+			sleep(3);
 		    }
 #ifdef ISODE_MODE
 		    if (isode_mode) {
@@ -205,7 +208,8 @@ tisink()
 			    {"/usr/sbin/isod.tsap", fdbuf, "", 0};
 			sprintf(fdbuf, "Z%d", ns);
 			old_isod_main(3, nargv, xenvp);
-		    } else
+			myexit(0);
+		    }
 #endif
 		    for (;;) {
 		    dgram1:
@@ -213,6 +217,8 @@ tisink()
 			msghdr.msg_controllen = sizeof(control);
 			msghdr.msg_namelen = (dgramp ? (sizeof name) : 0);
 			iov->iov_len = sizeof(readbuf);
+			if (select_mode)
+			    sel_recvwait(ns);
 			n = recvmsg(ns, &msghdr, 0);
 			flags = msghdr.msg_flags;
 			count++;
@@ -305,4 +311,32 @@ myexit(n)
 	printf("got %d records\n", records);
 	fflush(stdout);
 	exit(n);
+}
+
+sel_recvwait(fd)
+int fd;
+{
+	int x;
+	do {
+		FD_ZERO(&readfds);
+		FD_ZERO(&exceptfds);
+		FD_SET(fd, &readfds);
+		FD_SET(fd, &exceptfds);
+		x = select(fd+1, &readfds, (fd_set *)0, &exceptfds, (void *)0);
+		dbprintf("select returns %d\n", x);
+	} while (x <= 0 ||
+		 (FD_ISSET(fd,&readfds) == 0 && FD_ISSET(fd,&exceptfds) == 0));
+}
+
+#include <sys/syscall.h>
+/* Here for gdb trapping */
+setsockopt(s, level, optname, optval, optlen)
+int s, level, optname, optlen;
+const void *optval;
+{
+
+	dbprintf("setsocket called s %d, level 0x%x, optname %d, optlen %d\n",
+			s, level, optname, optlen);
+	dumpit("", optval, optlen);
+	return syscall(SYS_setsockopt, s, level, optname, optval, optlen);
 }
