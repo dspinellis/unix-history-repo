@@ -1,56 +1,69 @@
-#	Makefile	4.4	87/05/31
 #
-CFLAGS=-O
-YFLAGS=-d
-FILES=awk.lx.o b.o main.o token.o tran.o lib.o run.o parse.o proctab.o freeze.o
-SOURCE=awk.def awk.g.y awk.lx.l b.c lib.c main.c parse.c \
-	proc.c freeze.c\
-	run.c token.c tran.c
+# Copyright (c) 1987 Regents of the University of California.
+# All rights reserved.  The Berkeley software License Agreement
+# specifies the terms and conditions for redistribution.
+#
+#	@(#)Makefile	4.5	(Berkeley)	%G%
+#
+CFLAGS=	-O
+LIBC=	/lib/libc.a
+YFLAGS=	-d
+OBJS=	awk.lx.o b.o main.o token.o tran.o lib.o run.o parse.o proctab.o \
+	freeze.o
+SRCS=	awk.lx.c b.c lib.c main.c parse.c proctab.c freeze.c run.c \
+	token.c tran.c
 
-awk:	$(FILES) awk.g.o
-	cc $(CFLAGS) awk.g.o  $(FILES)  -lm -o awk
+all: awk
 
-y.tab.h:	awk.g.o
+awk: ${OBJS} awk.g.o ${LIBC}
+	${CC} ${CFLAGS} awk.g.o  ${OBJS} -lm -o $@
 
-awk.h:	y.tab.h
+y.tab.h: awk.g.o
+
+awk.h: y.tab.h
 	-cmp -s y.tab.h awk.h || cp y.tab.h awk.h
 
-$(FILES):	awk.h awk.def
+token.c: awk.h
+	ex - < tokenscript
 
-token.c:	awk.h
-	ex - <tokenscript
+profile: awk.g.o ${OBJS} mon.o
+	${CC} -p -i awk.g.o ${OBJS} mon.o -lm
 
-get:
-	for i in $(SOURCE) Makefile tokenscript README; do \
-		cp /usr/src/bin/awk/$$i .;
-	done
-
-install:
-	install -s awk ${DESTDIR}/bin
-
-profile:	awk.g.o $(FILES) mon.o
-	cc -p -i awk.g.o $(FILES) mon.o -lm
-
-find:
-	egrep -n "$(PAT)" *.[ylhc] awk.def
-
-depend:
-
-list:
-	-pr $(SOURCE) Makefile tokenscript README EXPLAIN
-
-lint:
-	lint -spu b.c main.c token.c tran.c run.c lib.c parse.c -lm |\
-		egrep -v '^(error|free|malloc)'
-
-proctab.c:	proc
-	proc >proctab.c
+proctab.c: proc
+	proc > proctab.c
 
 proc:	awk.h proc.o token.o
-	cc -o proc proc.o token.o
+	${CC} -o $@ proc.o token.o
 
-clean:
-	-rm -f *.o t.* *temp* *.out *junk* y.tab.* awk.h proc proctab.c awk yacc*
+clean: FRC
+	rm -f ${OBJS} core awk awk.h proc proctab.c yacc*
 
-diffs:
-	-for i in $(SOURCE); do echo $$i:; diff $$i /usr/src/cmd/awk | ind; done
+depend: y.tab.h ${SRCS} FRC
+	mkdep ${CFLAGS} ${SRCS}
+
+install:
+	install -s -o bin -g bin -m 755 awk ${DESTDIR}/bin/awk
+
+lint: FRC
+	lint ${CFLAGS} ${SRCS}
+
+tags: proctab.c FRC
+	ctags ${SRCS}
+
+FRC:
+
+# DO NOT DELETE THIS LINE -- mkdep uses it.
+# DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
+
+b.o: b.c awk.def /usr/include/stdio.h awk.h
+lib.o: lib.c /usr/include/stdio.h awk.def awk.h /usr/include/ctype.h
+main.o: main.c /usr/include/stdio.h /usr/include/ctype.h awk.def awk.h
+parse.o: parse.c awk.def awk.h /usr/include/stdio.h
+proctab.o: proctab.c awk.def
+freeze.o: freeze.c /usr/include/stdio.h
+run.o: run.c awk.def /usr/include/math.h awk.h /usr/include/stdio.h
+run.o: /usr/include/fcntl.h
+token.o: token.c awk.h
+tran.o: tran.c /usr/include/stdio.h awk.def awk.h
+
+# IF YOU PUT ANYTHING HERE IT WILL GO AWAY
