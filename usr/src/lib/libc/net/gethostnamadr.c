@@ -5,7 +5,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)gethostnamadr.c	6.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)gethostnamadr.c	6.13 (Berkeley) %G%";
 #endif LIBC_SCCS and not lint
 
 #include <sys/types.h>
@@ -198,7 +198,8 @@ getanswer(msg, msglen, iquery)
 			}
 		}
 
-		bp += ((u_long)bp % sizeof(align));
+		bp += (sizeof(align) - ((u_long)bp % sizeof(align))) &~
+		    sizeof(align);
 
 		if (bp + n >= &hostbuf[sizeof(hostbuf)]) {
 #ifdef DEBUG
