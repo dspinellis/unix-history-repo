@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)csfix.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)csfix.c	6.1 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -63,7 +63,7 @@ main(argc, argv)
 	exit(0);
 }
 
-char	line[160], flagee[160];
+char	line[160], flagee[160], *digitty();
 
 getline()
 {
@@ -99,7 +99,7 @@ reformat()
 		continue;
 	tail = cp + 1;
 	if (cp[-1] == '\b' && cp[-2] == '|')
-		cp =- 2;
+		cp -= 2;
 	c = flagee[cp - line];
 	flagee[cp - line] = 0;
 	printf("\\l'\\w`%s`u-\\w`w `u\\&\\(rh'", flagee);
@@ -157,6 +157,7 @@ fixpxp()
 	printf("%s\\l'\\w`\\0\\0\\0\\0`u-\\w`.`u\\&\\(rh'%s\n", digitty(1), cp + 3);
 }
 
+char *
 digitty(yup)
 	char yup;
 {
