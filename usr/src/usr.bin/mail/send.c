@@ -4,6 +4,7 @@
 #ifdef VMUNIX
 #include <wait.h>
 #endif
+#include <ctype.h>
 
 /*
  * Mail -- a mail program
@@ -11,7 +12,7 @@
  * Mail to others.
  */
 
-static char *SccsId = "@(#)send.c	1.3 %G%";
+static char *SccsId = "@(#)send.c	1.4 %G%";
 
 /*
  * Send message described by the passed pointer to the
@@ -29,25 +30,39 @@ send(mailp, obuf)
 	unsigned int c;
 	FILE *ibuf;
 	char line[LINESIZE];
-	int lc, ishead;
+	int lc, ishead, infld, fline;
 
 	mp = mailp;
 	ibuf = setinput(mp);
 	c = msize(mp);
 	ishead = (mailp->m_flag & MSTATUS) != 0;
+	infld = 0;
+	fline = 1;
 	lc = 0;
 	while (c > 0) {
 		fgets(line, LINESIZE, ibuf);
 		c -= strlen(line);
 		lc++;
 		if (ishead) {
+			if (fline) {
+				fline = 0;
+				goto writeit;
+			}
 			if (line[0] == '\n') {
 				statusput(mailp, obuf);
 				ishead = 0;
 				goto writeit;
 			}
-			if (index(line, ':') == 0)
+			if (isspace(line[0]) && infld)
 				goto writeit;
+			infld = 0;
+			if (!headerp(line)) {
+				statusput(mailp, obuf);
+				putc('\n', obuf);
+				ishead = 0;
+				goto writeit;
+			}
+			infld++;
 			if (icisname(line, "status", 6)) {
 				statusput(mailp, obuf);
 				ishead = 0;
@@ -64,6 +79,21 @@ writeit:
 	if (ishead && (mailp->m_flag & MSTATUS))
 		printf("failed to fix up status field\n");
 	return(lc);
+}
+
+/*
+ * Test if the passed line is a header line, RFC 733 style.
+ */
+headerp(line)
+	register char *line;
+{
+	register char *cp = line;
+
+	while (*cp && !isspace(*cp) && *cp != ':')
+		cp++;
+	while (*cp && isspace(*cp))
+		cp++;
+	return(*cp == ':');
 }
 
 /*
