@@ -1,3 +1,10 @@
+CPLUSPLUSLIB=	yes
+
+# This cruft is necessary due to the way shared library globals are
+# dereferenced.  The libg++ encapsulation of curses makes this necessary.
+
+LDADD+= -lcurses
+
 LIB=		g++
 CC=		gcc
 SRCS=	 	AllocRing.cc Obstack.cc builtin.cc \

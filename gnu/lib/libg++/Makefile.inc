@@ -1,1 +1,4 @@
-NOPIC?= nopic
+SHLIB_MAJOR?= 1
+SHLIB_MINOR?= 0
+
+#NOPIC?= nopic
