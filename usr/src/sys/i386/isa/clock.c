@@ -7,7 +7,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)clock.c	7.3 (Berkeley) %G%
+ *	from: @(#)clock.c	7.2 (Berkeley) 5/12/91
+ *	from NetBSD: Id: clock.c,v 1.6 1993/05/22 08:01:07 cgd Exp 
+ *
+ *	@(#)clock.c	7.4 (Berkeley) %G%
+ *
  */
 
 /*
@@ -21,16 +25,47 @@
 #include <i386/isa/isa.h>
 #include <i386/isa/rtc.h>
 
+/* these should go elsewere (timerreg.h) but to avoid admin overhead... */
+/*
+ * Macros for specifying values to be written into a mode register.
+ */
+#define TIMER_CNTR0     (IO_TIMER1 + 0) /* timer 0 counter port */
+#define TIMER_CNTR1     (IO_TIMER1 + 1) /* timer 1 counter port */
+#define TIMER_CNTR2     (IO_TIMER1 + 2) /* timer 2 counter port */
+#define TIMER_MODE      (IO_TIMER1 + 3) /* timer mode port */
+#define         TIMER_SEL0      0x00    /* select counter 0 */
+#define         TIMER_SEL1      0x40    /* select counter 1 */
+#define         TIMER_SEL2      0x80    /* select counter 2 */
+#define         TIMER_INTTC     0x00    /* mode 0, intr on terminal cnt */
+#define         TIMER_ONESHOT   0x02    /* mode 1, one shot */
+#define         TIMER_RATEGEN   0x04    /* mode 2, rate generator */
+#define         TIMER_SQWAVE    0x06    /* mode 3, square wave */
+#define         TIMER_SWSTROBE  0x08    /* mode 4, s/w triggered strobe */
+#define         TIMER_HWSTROBE  0x0a    /* mode 5, h/w triggered strobe */
+#define         TIMER_LATCH     0x00    /* latch counter for reading */
+#define         TIMER_LSB       0x10    /* r/w counter LSB */
+#define         TIMER_MSB       0x20    /* r/w counter MSB */
+#define         TIMER_16BIT     0x30    /* r/w counter 16 bits, LSB first */
+#define         TIMER_BCD       0x01    /* count in BCD */
+
 #define DAYST 119
 #define DAYEN 303
+
+#ifndef	XTALSPEED
+#define XTALSPEED 1193182
+#endif
 
 startrtclock() {
 	int s;
 
+	findcpuspeed();		/* use the clock (while it's free)
+					to find the cpu speed */
 	/* initialize 8253 clock */
-	outb (IO_TIMER1+3, 0x36);
-	outb (IO_TIMER1, 1193182/hz);
-	outb (IO_TIMER1, (1193182/hz)/256);
+	outb(TIMER_MODE, TIMER_SEL0|TIMER_RATEGEN|TIMER_16BIT);
+
+	/* Correct rounding will buy us a better precision in timekeeping */
+	outb (IO_TIMER1, (XTALSPEED+hz/2)/hz);
+	outb (IO_TIMER1, ((XTALSPEED+hz/2)/hz)/256);
 
 	/* initialize brain-dead battery powered clock */
 	outb (IO_RTC, RTC_STATUSA);
@@ -44,6 +79,32 @@ startrtclock() {
 	outb (IO_RTC, RTC_DIAG);
 	outb (IO_RTC+1, 0);
 }
+
+unsigned int delaycount;	/* calibrated loop variable (1 millisecond) */
+
+#define FIRST_GUESS	0x2000
+findcpuspeed()
+{
+	unsigned char low;
+	unsigned int remainder;
+
+	/* Put counter in count down mode */
+	outb(IO_TIMER1+3, 0x34);
+	outb(IO_TIMER1, 0xff);
+	outb(IO_TIMER1, 0xff);
+	delaycount = FIRST_GUESS;
+	spinwait(1);
+	/* Read the value left in the counter */
+	low 	= inb(IO_TIMER1);	/* least siginifcant */
+	remainder = inb(IO_TIMER1);	/* most significant */
+	remainder = (remainder<<8) + low ;
+	/* Formula for delaycount is :
+	 *  (loopcount * timer clock speed)/ (counter ticks * 1000)
+	 */
+	delaycount = (FIRST_GUESS * (XTALSPEED/1000)) / (0xffff-remainder);
+}
+
+
 
 /* convert 2 digit BCD number */
 bcd(i)
@@ -60,8 +121,8 @@ int y;
 	int i;
 	unsigned long ret;
 
-	ret = 0; y = y - 70;
-	for(i=0;i<y;i++) {
+	ret = 0;
+	for(i = 1970; i < y; i++) {
 		if (i % 4) ret += 365*24*60*60;
 		else ret += 366*24*60*60;
 	}
@@ -111,25 +172,24 @@ inittodr(base)
 	while ((sa&RTCSA_TUP) == RTCSA_TUP)
 		sa = rtcin(RTC_STATUSA);
 
-	sec = bcd(rtcin(RTC_YEAR));
-	leap = !(sec % 4); sec += ytos(sec); /* year    */
+	sec = bcd(rtcin(RTC_YEAR)) + 1900;
+	if (sec < 1970)
+		sec += 100;
+	leap = !(sec % 4); sec = ytos(sec); /* year    */
 	yd = mtos(bcd(rtcin(RTC_MONTH)),leap); sec += yd;	/* month   */
 	t = (bcd(rtcin(RTC_DAY))-1) * 24*60*60; sec += t; yd += t; /* date    */
 	day_week = rtcin(RTC_WDAY);				/* day     */
 	sec += bcd(rtcin(RTC_HRS)) * 60*60;			/* hour    */
 	sec += bcd(rtcin(RTC_MIN)) * 60;			/* minutes */
 	sec += bcd(rtcin(RTC_SEC));				/* seconds */
-	sec -= 24*60*60; /* XXX why ??? */
 
-#ifdef notdef
 	/* XXX off by one? Need to calculate DST on SUNDAY */
 	/* Perhaps we should have the RTC hold GMT time to save */
 	/* us the bother of converting. */
-	yd = yd / 24*60*60;
+	yd = yd / (24*60*60);
 	if ((yd >= DAYST) && ( yd <= DAYEN)) {
 		sec -= 60*60;
 	}
-#endif
 	sec += tz.tz_minuteswest * 60;
 
 	time.tv_sec = sec;
@@ -178,3 +238,17 @@ enablertclock() {
 	setidt(ICU_OFFSET+0, &V(clk), SDT_SYS386IGT, SEL_KPL);
 	splnone();
 }
+
+
+
+
+spinwait(millisecs)
+int millisecs;		/* number of milliseconds to delay */
+{
+	int i, j;
+
+	for (i=0;i<millisecs;i++)
+		for (j=0;j<delaycount;j++)
+			;
+}
+
