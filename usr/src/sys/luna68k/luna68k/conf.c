@@ -7,16 +7,16 @@
  *
  * from: hp300/hp300/conf.c	7.13 (Berkeley) 7/9/92
  *
- *	@(#)conf.c	7.3 (Berkeley) %G%
+ *	@(#)conf.c	7.4 (Berkeley) %G%
  */
 
-#include <sys/param.h>
-#include <sys/systm.h>
-#include <sys/buf.h>
-#include <sys/ioctl.h>
-#include <sys/proc.h>
-#include <sys/tty.h>
-#include <sys/conf.h>
+#include "sys/param.h"
+#include "sys/systm.h"
+#include "sys/buf.h"
+#include "sys/ioctl.h"
+#include "sys/proc.h"
+#include "sys/tty.h"
+#include "sys/conf.h"
 
 int	rawread		__P((dev_t, struct uio *, int));
 int	rawwrite	__P((dev_t, struct uio *, int));
@@ -189,6 +189,9 @@ cdev_decl(sd);
 #include "sio.h"
 cdev_decl(sio);
 
+#include "bmc.h"
+cdev_decl(bmc);
+
 cdev_decl(cd);
 
 cdev_decl(vn);
@@ -232,7 +235,7 @@ struct cdevsw	cdevsw[] =
 	cdev_notdef(),			/* 10 */
 	cdev_notdef(),			/* 11 */
 	cdev_tty_init(NSIO,sio),	/* 12: built-in single-port serial */
-	cdev_notdef(),			/* 13 */
+	cdev_tty_init(NBMC,bmc),	/* 13: console terminal emulator */
 	cdev_notdef(),			/* 14 */
 	cdev_notdef(),			/* 15 */
 	cdev_notdef(),			/* 16 */
