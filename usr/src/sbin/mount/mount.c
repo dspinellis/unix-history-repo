@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mount.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)mount.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -359,6 +359,8 @@ prmount(spec, name, flags)
 		PR("nodev");
 	if (flags & MNT_SYNCHRONOUS)
 		PR("synchronous");
+	if (flags & MNT_ASYNC)
+		PR("asynchronous");
 	if (flags & MNT_QUOTA)
 		PR("with quotas");
 	if (flags & MNT_LOCAL)
@@ -448,6 +450,13 @@ getstdopts(options, flagp)
 				*flagp |= MNT_SYNCHRONOUS;
 			else
 				*flagp &= ~MNT_SYNCHRONOUS;
+			continue;
+		}
+		if (!strcasecmp(opt, "asynchronous")) {
+			if (!negative)
+				*flagp |= MNT_ASYNC;
+			else
+				*flagp &= ~MNT_ASYNC;
 			continue;
 		}
 		if (!strcasecmp(opt, "union")) {
