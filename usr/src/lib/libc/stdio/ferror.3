@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)ferror.3	6.5 (Berkeley) %G%
+.\"	@(#)ferror.3	6.6 (Berkeley) %G%
 .\"
 .TH FERROR 3 ""
 .UC 7
@@ -55,6 +55,10 @@ returns the integer file descriptor associated with the
 .I stream
 (see
 .IR open (2)).
+.SH ERRORS
+These functions should not fail and do not set the external
+variable
+.IR errno .
 .SH "SEE ALSO"
 open(2), stdio(3)
 .SH STANDARDS
