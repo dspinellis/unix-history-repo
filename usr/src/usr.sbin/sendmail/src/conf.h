@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.28 (Berkeley) %G%
+ *	@(#)conf.h	8.29 (Berkeley) %G%
  */
 
 /*
@@ -14,6 +14,7 @@
 
 # include <sys/param.h>
 # include <sys/stat.h>
+# include <sys/file.h>
 # include <fcntl.h>
 # include <signal.h>
 
