@@ -1,4 +1,4 @@
-/*	draw.c	1.4	83/11/30
+/*	draw.c	1.5	84/02/09
  *
  *	This file contains the functions for producing the graphics
  *   images in the canon/imagen driver for ditroff.
@@ -10,9 +10,6 @@
 #include <math.h>
 #include "canon.h"
 
-
-#define TRUE	1
-#define FALSE	0
 				/* imports from dip.c */
 #define  hmot(n)	hpos += n;
 #define  hgoto(n)	hpos = n;
@@ -38,13 +35,12 @@ extern putint();
 #define LONGDASHED 074
 				/* constants... */
 #define  pi		3.14159265358979324
-#define  log2_10	3.3219280948873623
 
 #define START	1
 #define POINT	0
 /* the imagen complains if a path is drawn at < 1, or > limit, so truncate. */
-#define xbound(x)	(x < 1 ? 1 : x > MAXX ? MAXX : x)
-#define ybound(y)	(y < 1 ? 1 : y > MAXY ? MAXY : y)
+#define xbound(x)	((x) < 1 ? 1 : (x) > MAXX ? MAXX : (x))
+#define ybound(y)	((y) < 1 ? 1 : (y) > MAXY ? MAXY : (y))
 
 
 int	linethickness = -1;	/* number of pixels wide to make lines */
@@ -317,6 +313,7 @@ int npts;
     register int yp;
     register int j;		/* inner curve segment traverser */
     register int nseg;		/* effective resolution for each curve */
+    register int pxp, pyp;	/* "previous" line segments' end */
     float t1, t2, t3;		/* calculation temps */
 
 
@@ -343,12 +340,9 @@ int npts;
 					/* dropping the resolution ( == / 8) */
 	nseg = (nseg + (int) sqrt((double)(xp * xp + yp * yp))) >> 3;
 
-	byte(ASPATH);
-	if (nseg)
-	    word(nseg + 1);
-	else
-	    word(2);
-	for (j = 0; j <= nseg; j++) {
+	pxp = (x[i]+x[i+1]+1) >> 1;	/* the start of the first line seg */
+	pyp = (y[i]+y[i+1]+1) >> 1;
+	for (j = 1; j <= nseg; j++) {
 	    w = (float) j / (float) nseg;
 	    t1 = 0.5 * w * w;
 	    w -= 0.5;
@@ -357,15 +351,10 @@ int npts;
 	    t3 = 0.5 * w * w;
 	    xp = t1 * x[i+2] + t2 * x[i+1] + t3 * x[i] + 0.5;
 	    yp = t1 * y[i+2] + t2 * y[i+1] + t3 * y[i] + 0.5;
-	    word(xbound(xp));
-	    word(ybound(yp));
+	    HGtline (pxp, pyp, xp, yp);
+	    pxp = xp;
+	    pyp = yp;
 	}
-	if (nseg == 0) {
-	    word(xbound(xp));
-	    word(ybound(yp));
-	}
-	byte(ADRAW);
-	byte(15);
     }
 }
 
@@ -381,10 +370,12 @@ int npts;
  *----------------------------------------------------------------------------*/
 
 HGArc(cx,cy,px,py,angle)
-int cx, cy, px, py, angle;
+register int cx;
+register int cy;
+int px, py, angle;
 {
     double xs, ys, resolution, fullcircle;
-    register int i;
+    register int mask;
     register int extent;
     register int nx;
     register int ny;
@@ -393,11 +384,16 @@ int cx, cy, px, py, angle;
     xs = px - cx;
     ys = py - cy;
 
-/* calculate drawing parameters */
+		/* calculate how fine to make the lines that build
+		   the circle.  Resolution cannot be dropped, but
+		   mask is used to skip some points for larger
+		   arcs due to Imagen's path length limitations */
 
-    resolution = pow(2.0, floor(log10(sqrt(xs * xs + ys * ys)) * log2_10));
+    resolution = sqrt(xs * xs + ys * ys);
+    mask = (1 << (int) log10(resolution + 1.0)) - 1;
+
     epsilon = 1.0 / resolution;
-    fullcircle = ceil(2 * pi * resolution);
+    fullcircle = (2.0 * pi) * resolution;
     if (angle == 0)
 	extent = fullcircle;
     else 
@@ -405,21 +401,25 @@ int cx, cy, px, py, angle;
 
     byte(ASPATH);			/* start path definition */
     if (extent > 1) {
-	word(extent);			/* number of points */
-	for (i=0; i<extent; ++i) {
+	word(2 + (extent-1) / (mask+1));	/* number of points */
+	word(xbound(px));
+	word(ybound(py));
+	while (--extent >= 0) {
 	    xs += epsilon * ys;
-	    nx = (int) (xs + cx + 0.5);
+	    nx = cx + (int) (xs + 0.5);
 	    ys -= epsilon * xs;
-	    ny = (int) (ys + cy + 0.5);
-	    word(xbound(nx));	/* put out a point on circle */
-	    word(ybound(ny));
+	    ny = cy + (int) (ys + 0.5);
+	    if (!(extent&mask)) {
+		word(xbound(nx));	/* put out a point on circle */
+		word(ybound(ny));
+	    }
 	}   /* end for */
     } else {			/* arc is too small: put out point */
 	word(2);
-	word(xbound(cx));
-	word(ybound(cy));
-	word(xbound(cx));
-	word(ybound(cy));
+	word(xbound(px));
+	word(ybound(py));
+	word(xbound(px));
+	word(ybound(py));
     }
     byte(ADRAW);		/* now draw the arc */
     byte(15);
@@ -705,18 +705,16 @@ register int vis;
  *----------------------------------------------------------------------------*/
 
 HGtline(x0, y0, x1, y1)
-register int x0;
-register int y0;
-int x1;
-int y1;
+int x0, y0, x1, y1;
 {
     register int dx;
     register int dy;
+    register int oldcoord;
     register int res1;
     register int visible;
-    int res2;
-    int xinc;
-    int yinc;
+    register int res2;
+    register int xinc;
+    register int yinc;
 
 
     if (linmod == -1) {
@@ -736,13 +734,18 @@ int y1;
     res1 = 0;
     res2 = 0;
     visible = 0;
-    if (dx >= dy) 
+    if (dx >= dy) {
+	oldcoord = y0;
         while (x0 != x1) {
-            if(((x0&linmod)&&1)^visible) {
-	    	change(x0, y0, visible);
-		visible = !visible;
+            if((x0&linmod) && !visible) {
+		change(x0, y0, 0);
+		visible = 1;
+	    } else if(visible && !(x0&linmod)) {
+		change(x0 - xinc, oldcoord, 1);
+		visible = 0;
 	    }
             if (res1 > res2) {
+		oldcoord = y0;
                 res2 += dx - res1;
                 res1 = 0;
                 y0 += yinc;
@@ -750,13 +753,18 @@ int y1;
             res1 += dy;
             x0 += xinc;
         } 
-    else 
+    } else {
+	oldcoord = x0;
         while (y0 != y1) {
-            if(((y0&linmod)&&1)^visible) {
-		change(x0, y0, visible);
-		visible = !visible;
+            if((y0&linmod) && !visible) {
+		change(x0, y0, 0);
+		visible = 1;
+	    } else if(visible && !(y0&linmod)) {
+		change(oldcoord, y0 - yinc, 1);
+		visible = 0;
 	    }
             if (res1 > res2) {
+		oldcoord = x0;
                 res2 += dy - res1;
                 res1 = 0;
                 x0 += xinc;
@@ -764,5 +772,6 @@ int y1;
             res1 += dx;
             y0 += yinc;
         }
+    }
     if(visible) change(x1, y1, 1);
 }
