@@ -17,7 +17,7 @@ pascal|pasc|p:\
 	program record repeat set then to type until var while with oct hex\
 	external:
 C|c:\
-	:pb=^\d?*?\d?\p\d?\(\a?\):bb={:be=}:cb=/*:ce=*/:sb=":se=\e":lb=':\
+	:pb=^\d?*?\d?\p\d?\(\a?\)(\d|{):bb={:be=}:cb=/*:ce=*/:sb=":se=\e":lb=':\
 	:le=\e':tl:\
 	:kw=asm auto break case char continue default do double else enum\
 	extern float for fortran goto if int long register return short\
