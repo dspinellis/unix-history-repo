@@ -1,4 +1,4 @@
-/*	locore.s	4.66	82/07/15	*/
+/*	locore.s	4.67	82/08/04	*/
 
 #include "../h/mtpr.h"
 #include "../h/trap.h"
@@ -585,8 +585,18 @@ ciloop:
 cishort:
 	prober	$3,r0,(r1)		# bytes accessible ?
 	beql	ersb			# no
-	movc3	12(sp),*4(sp),*8(sp)
-	clrl	r0
+	movl	4(sp),r1
+	movl	8(sp),r3
+	jbr	2f
+1:
+	subl2	r0,12(sp)
+	movc3	r0,(r1),(r3)
+2:
+	movzwl	$65535,r0
+	cmpl	12(sp),r0
+	jgtr	1b
+	movc3	12(sp),(r1),(r3)
+	clrl	r0			#redundant
 	rsb
 
 ersb:
@@ -607,8 +617,18 @@ coloop:
 coshort:
 	probew	$3,r0,(r1)		# bytes accessible?
 	beql	ersb			# no
-	movc3	12(sp),*4(sp),*8(sp)
-	clrl	r0
+	movl	4(sp),r1
+	movl	8(sp),r3
+	jbr	2f
+1:
+	subl2	r0,12(sp)
+	movc3	r0,(r1),(r3)
+2:
+	movzwl	$65535,r0
+	cmpl	12(sp),r0
+	jgtr	1b
+	movc3	12(sp),(r1),(r3)
+	clrl	r0				#redundant
 	rsb
 
 /*
