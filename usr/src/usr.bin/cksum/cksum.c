@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)cksum.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)cksum.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/cdefs.h>
@@ -28,6 +28,9 @@ static char sccsid[] = "@(#)cksum.c	5.4 (Berkeley) %G%";
 #include <string.h>
 #include "extern.h"
 
+void usage __P((void));
+
+int
 main(argc, argv)
 	int argc;
 	char **argv;
@@ -87,6 +90,7 @@ main(argc, argv)
 	exit(rval);
 }
 
+void
 usage()
 {
 	(void)fprintf(stderr, "usage: cksum [-o 1 | 2] [file ...]\n");
