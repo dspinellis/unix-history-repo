@@ -1,4 +1,4 @@
-/*	@(#)mout.c	4.1	%G%	*/
+/*	@(#)mout.c	4.2	%G%	*/
 
 #include <stdio.h>
 #include <mp.h>
@@ -112,7 +112,7 @@ s_div(a,n,q,r) MINT *a,*q; short *r;
 		x=x%n;
 	}
 	*r=x;
-	if(qval[qlen-1]==0) qlen--;
+	if(qlen && qval[qlen-1]==0) qlen--;
 	q->len=qlen;
 	q->val=qval;
 	if(qlen==0) shfree(qval);
