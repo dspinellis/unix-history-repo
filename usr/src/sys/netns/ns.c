@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ns.c	8.3 (Berkeley) %G%
+ *	@(#)ns.c	8.4 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -266,30 +266,22 @@ ns_ifinit(ifp, ia, sns, scrub)
 	 */
 	if (ns_hosteqnh(ns_thishost, ns_zerohost)) {
 		if (ifp->if_ioctl &&
-		     (error = (*ifp->if_ioctl)(ifp, SIOCSIFADDR, ia))) {
-			ia->ia_addr = oldaddr;
-			splx(s);
-			return (error);
-		}
+		     (error = (*ifp->if_ioctl)(ifp, SIOCSIFADDR, (caddr_t)ia)))
+			goto bad;
 		ns_thishost = *h;
 	} else if (ns_hosteqnh(sns->sns_addr.x_host, ns_zerohost)
 	    || ns_hosteqnh(sns->sns_addr.x_host, ns_thishost)) {
 		*h = ns_thishost;
 		if (ifp->if_ioctl &&
-		     (error = (*ifp->if_ioctl)(ifp, SIOCSIFADDR, ia))) {
-			ia->ia_addr = oldaddr;
-			splx(s);
-			return (error);
-		}
+		     (error = (*ifp->if_ioctl)(ifp, SIOCSIFADDR, (caddr_t)ia)))
+			goto bad;
 		if (!ns_hosteqnh(ns_thishost,*h)) {
-			ia->ia_addr = oldaddr;
-			splx(s);
-			return (EINVAL);
+			error = EINVAL;
+			goto bad;
 		}
 	} else {
-		ia->ia_addr = oldaddr;
-		splx(s);
-		return (EINVAL);
+		error = EINVAL;
+		goto bad;
 	}
 	ia->ia_ifa.ifa_metric = ifp->if_metric;
 	/*
@@ -307,7 +299,12 @@ ns_ifinit(ifp, ia, sns, scrub)
 		rtinit(&(ia->ia_ifa), (int)RTM_ADD, RTF_UP);
 	}
 	ia->ia_flags |= IFA_ROUTE;
+	splx(s);
 	return (0);
+bad:
+	ia->ia_addr = oldaddr;
+	splx(s);
+	return (error);
 }
 
 /*
