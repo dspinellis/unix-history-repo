@@ -88,7 +88,7 @@ typedef struct {
 } NameArrayElement;
 
 typedef struct {
-    char
+    unsigned char
 	length,
 	number_matching_session;
     NameArrayElement
@@ -306,7 +306,7 @@ struct highlow {
 	dl,
 	dh;
 #endif	/* defined(vax) */
-#if	defined(sun) || defined(tahoe)
+#if	defined(sun) || defined(tahoe) || defined(ibm032)
 	ah,
 	al,
 	bh,
@@ -315,7 +315,7 @@ struct highlow {
 	cl,
 	dh,
 	dl;
-#endif	/* defined(sun) || defined(tahoe) */
+#endif	/* defined(sun) || defined(tahoe) || defined(ibm032) */
 };
 
 struct words {
