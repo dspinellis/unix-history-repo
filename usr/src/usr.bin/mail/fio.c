@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)fio.c	5.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)fio.c	5.17 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "rcv.h"
@@ -464,7 +464,7 @@ expand(name)
 	l = read(pivec[0], xname, BUFSIZ);
 	close(pivec[0]);
 	if (wait_child(pid) < 0 && wait_status.w_termsig != SIGPIPE) {
-		fprintf(stderr, "\"%s\": Expansion failed.\n");
+		fprintf(stderr, "\"%s\": Expansion failed.\n", name);
 		return NOSTR;
 	}
 	if (l < 0) {
