@@ -1,4 +1,7 @@
-/*	rvsort.c	4.1	80/11/30	*/
+#ifndef lint
+static char sccsid[] = "@(#)rvsort.c	4.2 (Berkeley) %G%";
+#endif
+
 /*
  * Sort troff output for versatec to reduce amount of reverse leading
  */ 
