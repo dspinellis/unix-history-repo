@@ -1,10 +1,11 @@
-/*	refer..c	4.2	83/08/11	*/
+/*	refer..c	4.3	86/04/23	*/
 
 #include <stdio.h>
 #include <ctype.h>
 #include <assert.h>
 
 #define FLAG 003
+#define AFLAG 007
 #define NRFTXT 10000
 #define NRFTBL 500
 #define NTFILE 20
@@ -12,6 +13,7 @@
 #define ANSLEN 1024
 #define TAGLEN 400
 #define NSERCH 20
+#define MXSIG 200		/* max bytes in aggregate signal */
 
 extern FILE *in;
 extern int endpush, sort, labels, keywant, bare;

@@ -1,12 +1,11 @@
 #ifndef lint
-static char *sccsid = "@(#)refer5.c	4.6 (Berkeley) %G%";
+static char *sccsid = "@(#)refer5.c	4.7 (Berkeley) %G%";
 #endif
 
 #include "refer..c"
 #define SAME 0
 #define NFLAB 3000		/* number of bytes to record all labels */
 #define NLABC 1000		/* max number of labels */
-#define MXSIG 200		/* max bytes in aggregate signal */
 
 static char sig[MXSIG];
 static char bflab[NFLAB];
@@ -73,10 +72,7 @@ char *flds[], *nstline, *endline;
 		}
 	}
 	else {
-		if (sort)
-			sprintf(t, "%c%d%c", FLAG, nref, FLAG);
-		else
-			sprintf(t, "%d", nref);
+		sprintf(t, "%c%d%c", FLAG, nref, FLAG);
 	}
 	another = prefix (".[", sd=lookat());
 	if (another && (strcmp(".[\n", sd) != SAME))
@@ -128,7 +124,17 @@ char *flds[], *nstline, *endline;
 			}
 		}
 		else {
-			strcat(sig, ",\\|");
+			if (labels) {
+				strcat(sig, ",\\|");
+			} else {
+				/*
+				 * Seperate reference numbers with AFLAG
+				 * for later sorting and condensing.
+				 */
+				t1[0] = AFLAG;
+				t1[1] = '\0';
+				strcat(sig, t1);
+			}
 			if (fo == ftemp) {	/* hide if need be */
 				sprintf(hidenam, "/tmp/rj%dc", getpid());
 #if EBUG
