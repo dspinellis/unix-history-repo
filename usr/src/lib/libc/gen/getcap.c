@@ -52,7 +52,7 @@ static char sccsid[] = "@(#)getcap.c	5.1 (Berkeley) 8/6/92";
 #include <unistd.h>
 
 #define	BFRAG		1024
-#define	BSIZE		80
+#define	BSIZE		1024
 #define	ESC		('[' & 037)	/* ASCII ESC */
 #define	MAX_RECURSION	32		/* maximum getent recursion */
 #define	SFRAG		100		/* cgetstr mallocs in SFRAG chunks */
@@ -65,7 +65,8 @@ static char	*toprec;	/* Additional record specified by cgetset() */
 static int	 gottoprec;	/* Flag indicating retrieval of toprecord */
 
 static int	cdbget __P((DB *, char **, char *));
-static int 	getent __P((char **, u_int *, char **, int, char *, int));
+static int 	getent __P((char **, u_int *, char **, int, char *, int, char *));
+static int	nfcmp __P((char *, char *));
 
 /*
  * Cgetset() allows the addition of a user specified buffer to be added
@@ -163,7 +164,7 @@ cgetent(buf, db_array, name)
 {
 	u_int dummy;
 
-	return (getent(buf, &dummy, db_array, -1, name, 0));
+	return (getent(buf, &dummy, db_array, -1, name, 0, NULL));
 }
 
 /*
@@ -185,8 +186,8 @@ cgetent(buf, db_array, name)
  *	  MAX_RECURSION.
  */
 static int
-getent(cap, len, db_array, fd, name, depth)
-	char **cap, **db_array, *name;
+getent(cap, len, db_array, fd, name, depth, nfield)
+	char **cap, **db_array, *name, *nfield;
 	u_int *len;
 	int fd, depth;
 {
@@ -362,11 +363,13 @@ getent(cap, len, db_array, fd, name, depth)
 			 * See if this is the record we want ...
 			 */
 			if (cgetmatch(record, name) == 0) {
-				foundit = 1;
-				break;	/* found it! */
+				if (nfield == NULL || !nfcmp(nfield, record)) {
+					foundit = 1;
+					break;	/* found it! */
+				}
 			}
 		}
-		}
+	}
 		if (foundit)
 			break;
 	}
@@ -416,7 +419,8 @@ tc_exp:	{
 			tclen = s - tcstart;
 			tcend = s;
 
-			iret = getent(&icap, &ilen, db_p, fd, tc, depth+1);
+			iret = getent(&icap, &ilen, db_p, fd, tc, depth+1, 
+				      NULL);
 			newicap = icap;		/* Put into a register. */
 			newilen = ilen;
 			if (iret != 0) {
@@ -497,8 +501,8 @@ tc_exp:	{
 			 */
 			scan = s-1;
 		}
+	
 	}
-
 	/*
 	 * Close file (if we opened it), give back any extra memory, and
 	 * return capability, length and success.
@@ -517,7 +521,7 @@ tc_exp:	{
 	if (tc_not_resolved)
 		return (1);
 	return (0);
-}
+}	
 
 static int
 cdbget(capdbp, bp, name)
@@ -640,8 +644,8 @@ cgetnext(bp, db_array)
 	char **db_array;
 {
 	size_t len;
-	int status;
-	char *cp, *line, *rp, buf[BSIZE];
+	int status, i, done;
+	char *cp, *line, *rp, *np, buf[BSIZE], nbuf[BSIZE];
 	u_int dummy;
 
 	if (dbp == NULL)
@@ -688,17 +692,48 @@ cgetnext(bp, db_array)
 			else
 				slash = 0;
 		}			
-		/* line points to a name line */
 
+
+		/* 
+		 * Line points to a name line.
+		 */
+		i = 0;
+		done = 0;
+		np = nbuf;
+		for (;;) {
+			for (cp = line; *cp != '\0'; cp++) {
+				if (*cp == ':') {
+					*np++ = ':';
+					done = 1;
+					break;
+				}
+				if (*cp == '\\')
+					break;
+				*np++ = *cp;
+			}
+			if (done) {
+				*np = '\0';
+				break;
+			} else { /* name field extends beyond the line */
+				line = fgetline(pfp, &len);
+				if (line == NULL && pfp) {
+					(void)fclose(pfp);
+					if (ferror(pfp)) {
+						(void)cgetclose();
+						return (-1);
+					}
+				}
+			}
+		}
 		rp = buf;
-		for(cp = line; *cp != NULL; cp++)
+		for(cp = nbuf; *cp != NULL; cp++)
 			if (*cp == '|' || *cp == ':')
 				break;
 			else
 				*rp++ = *cp;
 
 		*rp = '\0';
-		status = getent(bp, &dummy, db_array, -1, buf, 0);
+		status = getent(bp, &dummy, db_array, -1, buf, 0, nbuf);
 		if (status == -2 || status == -3)
 			(void)cgetclose();
 
@@ -968,4 +1003,26 @@ cgetnum(buf, cap, num)
 	 */
 	*num = n;
 	return (0);
+}
+
+
+/*
+ * Compare name field of record.
+ */
+static int
+nfcmp(nf, rec)
+	char *nf, *rec;
+{
+	char *cp, tmp;
+	int ret;
+	
+	for (cp = rec; *cp != ':'; cp++)
+		;
+	
+	tmp = *(cp + 1);
+	*(cp + 1) = '\0';
+	ret = strcmp(nf, rec);
+	*(cp + 1) = tmp;
+
+	return (ret);
 }
