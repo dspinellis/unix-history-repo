@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)in.c	7.4 (Berkeley) %G%
+ *	@(#)in.c	7.5 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -85,8 +85,10 @@ in_netof(in)
 		net = i & IN_CLASSA_NET;
 	else if (IN_CLASSB(i))
 		net = i & IN_CLASSB_NET;
-	else
+	else if (IN_CLASSC(i))
 		net = i & IN_CLASSC_NET;
+	else
+		return (0);
 
 	/*
 	 * Check whether network is a subnet;
@@ -115,10 +117,11 @@ in_lnaof(in)
 	} else if (IN_CLASSB(i)) {
 		net = i & IN_CLASSB_NET;
 		host = i & IN_CLASSB_HOST;
-	} else {
+	} else if (IN_CLASSC(i)) {
 		net = i & IN_CLASSC_NET;
 		host = i & IN_CLASSC_HOST;
-	}
+	} else
+		return (i);
 
 	/*
 	 * Check whether network is a subnet;
@@ -156,6 +159,27 @@ in_localaddr(in)
 				return (1);
 	}
 	return (0);
+}
+
+/*
+ * Determine whether an IP address is in a reserved set of addresses
+ * that may not be forwarded, or whether datagrams to that destination
+ * may be forwarded.
+ */
+in_canforward(in)
+	struct in_addr in;
+{
+	register u_long i = ntohl(in.s_addr);
+	register u_long net;
+
+	if (IN_EXPERIMENTAL(i))
+		return (0);
+	if (IN_CLASSA(i)) {
+		net = i & IN_CLASSA_NET;
+		if (net == 0 || net == IN_LOOPBACKNET)
+			return (0);
+	}
+	return (1);
 }
 
 int	in_interfaces;		/* number of external internet interfaces */
