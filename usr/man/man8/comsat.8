@@ -1,0 +1,47 @@
+.TH COMSAT 8C "4 March 1983"
+.UC 4
+.SH NAME
+comsat \- biff server
+.SH SYNOPSIS
+.B /etc/comsat
+.SH DESCRIPTION
+.I Comsat
+is the server process which listens for reports of incoming mail
+and notifies users if they have requested this service.
+.I Comsat
+operates with two processes.  The parent process simply waits
+on the child process, in case it dies for some reason.  The
+child process performs the actual work. 
+.I Comsat
+listens on a datagram port associated with the ``biff'' service
+specification (see
+.IR services (5))
+for one line messages of the form
+.PP
+.ti +0.5i
+user@mailbox-offset
+.PP
+If the
+.I user
+specified is logged in to the system and the associated terminal has
+the execute bit turned on (by a ``biff y''), the
+.I offset
+is used as a seek offset into the appropriate mailbox file and
+the first 7 lines or 560 characters of the message are printed
+on the user's terminal.
+.SH FILES
+.DT
+/etc/utmp	to find out who's logged on and on what terminals
+.SH "SEE ALSO"
+biff(1)
+.SH BUGS
+Sometimes 
+.I comsat
+gets stuck and the child process must be killed off to get
+things going again.
+.PP
+Users should be notified of mail which arrives on other
+machines than the one they are currently logged in to.
+.PP
+The notification should appear in a separate window so it
+does not mess up the screen while editing and the like.
