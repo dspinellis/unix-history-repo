@@ -18,7 +18,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)position.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)position.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -119,10 +119,10 @@ pos_clear()
 
 	if (table == 0) {
 		tablesize = sc_height > 25 ? sc_height : 25;
-		table = malloc(tablesize * sizeof *table);
+		table = (off_t *)malloc(tablesize * sizeof *table);
 	} else if (sc_height >= tablesize) {
 		tablesize = sc_height;
-		table = realloc(table, tablesize * sizeof *table);
+		table = (off_t *)realloc(table, tablesize * sizeof *table);
 	}
 
 	for (i = 0;  i < sc_height;  i++)
