@@ -157,7 +157,7 @@ umountall(typelist)
 		fprintf(stderr, "umount: cannot get mount information.\n");
 		exit(1);
 	}
-	for (i=errors=0; i< mntsize; i++) {
+	for (errors = 0, i = mntsize - 1; i >= 0; i--) {
 		if (badtype(mntbuf[i].f_type, typelist) ||
 		    (strcmp(mntbuf[i].f_mntonname, "/") == 0))
 			continue;
