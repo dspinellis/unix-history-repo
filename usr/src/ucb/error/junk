@@ -1,0 +1,43 @@
+overwrite(preciousfile, tmpfile, preciousname)
+	FILE	*preciousfile;
+	FILE	*tmpfile;
+	char	*preciousname;
+{
+	int	nread;
+
+	while((nread = fread(edbuf, 1, sizeof(edbuf), tmpfile)) != NULL){
+		mustwrite(edbuf, nread, preciousfile);
+	}
+}
+
+mustwrite(base, n, preciousfile)
+	char	*base;
+	int	nchars;
+	FILE	*preciousfile;
+{
+	int	nwrote;
+
+	nwrote = fwrite(base, 1, nchars, localfile);
+	if (nwrote == nchars)
+		return;
+	perror(processname);
+	switch(inquire(terse
+	    ? "Botch overwriting: retry? "
+	    : "Botch overwriting the source file: retry? ")){
+	case Q_YES:
+	case Q_yes:
+		mustwrite(base + nwrote, n - nwrote, preciousfile);
+		return;
+	case Q_NO:
+	case Q_no:
+		switch(inquire("Are you sure? ")){
+		case Q_YES:
+		case Q_yes:
+			return;
+		case Q_NO:
+		case Q_no:
+			mustwrite(base + nwrote, n - nwrote, preciousfile);
+			return;
+		}
+	}
+}
