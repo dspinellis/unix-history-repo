@@ -1,5 +1,5 @@
 # ifndef lint
-static char *sccsid ="@(#)local2.c	1.22 (Berkeley) %G%";
+static char *sccsid ="@(#)local2.c	1.23 (Berkeley) %G%";
 # endif
 
 # include "pass2.h"
@@ -1180,9 +1180,12 @@ lastchance( p, cook ) NODE *p; {
 optim2( p ) register NODE *p; {
 	/* do local tree transformations and optimizations */
 
+	int o;
+	int result, i;
+	int lower, upper;
 	register NODE *l, *r;
 
-	switch( p->in.op ) {
+	switch( o = p->in.op ) {
 
 	case AND:
 		/* commute L and R to eliminate complements and constants */
@@ -1252,6 +1255,89 @@ optim2( p ) register NODE *p; {
 			}
 		break;
 
+	case ULE:
+	case ULT:
+	case UGE:
+	case UGT:
+		o -= (UGE-GE);
+	case EQ:
+	case NE:
+	case LE:
+	case LT:
+	case GE:
+	case GT:
+		r = p->in.right;
+		l = p->in.left;
+		if( r->in.op != ICON ||
+		    r->tn.name[0] != '\0' ||
+		    tlen(l) >= tlen(r) )
+			break;
+		switch( l->in.type ) {
+		case CHAR:
+			lower = -(1 << SZCHAR - 1);
+			upper = (1 << SZCHAR - 1) - 1;
+			break;
+		case UCHAR:
+			lower = 0;
+			upper = (1 << SZCHAR) - 1;
+			break;
+		case SHORT:
+			lower = -(1 << SZSHORT - 1);
+			upper = (1 << SZSHORT - 1) - 1;
+			break;
+		case USHORT:
+			lower = 0;
+			upper = (1 << SZSHORT) - 1;
+			break;
+		default:
+			cerror("unsupported OPLOG in optim2");
+			}
+		result = -1;
+		i = r->tn.lval;
+		switch( o ) {
+		case EQ:
+		case NE:
+			if( lower == 0 && (unsigned) i > upper )
+				result = o == NE;
+			else if( i < lower || i > upper )
+				result = o == NE;
+			break;
+		case LT:
+		case GE:
+			if( lower == 0 && (unsigned) i > upper )
+				result = o == LT;
+			else if( i <= lower )
+				result = o != LT;
+			else if( i > upper )
+				result = o == LT;
+			break;
+		case LE:
+		case GT:
+			if( lower == 0 && (unsigned) i >= upper )
+				result = o == LE;
+			else if( i < lower )
+				result = o != LE;
+			else if( i >= upper )
+				result = o == LE;
+			break;
+			}
+		if( result == -1 )
+			break;
+			
+		if( tshape(l, SAREG|SNAME|SCON|SOREG|STARNM) ) {
+			l->in.op = FREE;
+			ncopy(p, r);
+			r->in.op = FREE;
+			p->tn.type = INT;
+			p->tn.lval = result;
+			}
+		else {
+			p->in.op = COMOP;
+			p->in.type = INT;
+			r->tn.type = INT;
+			r->tn.lval = result;
+			}
+		break;
 		}
 	}
 
