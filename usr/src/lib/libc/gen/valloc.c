@@ -1,5 +1,4 @@
-/* @(#)valloc.c	4.1 (Berkeley) %G% */
-#include <valign.h>
+/*	valloc.c	4.2	83/07/01	*/
 
 char	*malloc();
 
@@ -7,9 +6,9 @@ char *
 valloc(i)
 	int i;
 {
-	char *cp = malloc(i + (VALSIZ-1));
-	int j;
+	int valsiz = getpagesize(), j;
+	char *cp = malloc(i + (valsize-1));
 
-	j = ((int)cp + (VALSIZ-1)) &~ (VALSIZ-1);
+	j = ((int)cp + (valsiz-1)) &~ (valsiz-1);
 	return ((char *)j);
 }
