@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)inet.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)inet.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -105,10 +105,10 @@ inet_lnaof(in)
 /*
  * Return the netmask pertaining to an internet address.
  */
-inet_maskof(in)
-	struct in_addr in;
+inet_maskof(inaddr)
+	u_long inaddr;
 {
-	register u_long i = ntohl(in.s_addr);
+	register u_long i = ntohl(inaddr);
 	register u_long mask;
 	register struct interface *ifp;
 
