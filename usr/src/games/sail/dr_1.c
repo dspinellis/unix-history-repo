@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)dr_1.c	2.4 83/11/08";
+static	char *sccsid = "@(#)dr_1.c	2.5 83/12/12";
 #endif
 
 #include "driver.h"
@@ -78,11 +78,9 @@ unfoul()
 			if (sp->file->fouls[k].turnfoul == 0)
 				continue;
 			to = sp->file->fouls[k].toship;
-			if (nat != capship(to)->nationality)
-				continue;
-			if (!toughmelee(sp, to, 0, 0))
-				continue;
-			if (die() <= 2)
+			if ((nat == capship(to)->nationality ||
+			     toughmelee(sp, to, 0, 0)) &&
+			    die() <= 2)
 				cleanfoul(sp, to, k);
 		}
 	}
