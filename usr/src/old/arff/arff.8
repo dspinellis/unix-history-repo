@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)arff.8	6.1 (Berkeley) %G%
+.\"	@(#)arff.8	6.2 (Berkeley) %G%
 .\"
 .TH ARFF 8V ""
 .UC 4
@@ -21,7 +21,8 @@ arff, flcopy \- archiver and copier for floppy
 .SH DESCRIPTION
 .I Arff
 saves and restores files
-on the console floppy disk.
+on VAX console media (the console floppy on the VAX 11/780 and 785,
+the cassette on the 11/730, and the console RL02 on the 8600/8650).
 Its actions are controlled by the
 .I key
 argument.
@@ -32,6 +33,12 @@ at most one function letter and possibly
 one or more function modifiers.
 Other arguments to the command are file
 names specifying which files are to be dumped or restored.
+The default options are correct for the RX01 floppy on the 780;
+for other console media, the
+.B f
+and
+.B m
+flags are required.
 .PP
 Files names have restrictions, because of radix50 considerations.  They
 must be in the form 1-6 alphanumerics followed by "." followed by
@@ -85,8 +92,10 @@ around a floppy disk.  In conjunction with the
 .B f
 option it may be
 used for extracting files from rt11 formatted cartridge disks, for
-example. It may also be used to speed up reading from and writing to 
+example.
+It may also be used to speed up reading from and writing to 
 rx02 floppy disks, by using the `c' device instead of the `b' device.
+It must be used with TU58 or RL02 media.
 .TP 10
 .B c
 causes
@@ -120,21 +129,13 @@ option
 causes only the first
 .I n
 tracks to participate in a copy.
-.PP
-.I Arff
-may also be used with the console TU58 cassettes on the 11/730.
-To do so, the 
-.B m
-key must be specified.   Normally, the
-.B f
-key is also used.
 .SH FILES
 /dev/floppy or /dev/rrx??
 .br
 floppy (in current directory)
 .SH SEE ALSO
-fl(4), rx(4), rxformat(8V)
+crl(4), fl(4), rx(4), tu(4), rxformat(8V)
 .SH AUTHORS
 Keith Sklower, Richard Tuck
 .SH BUGS
-Floppy errors are handled ungracefully;
+Device errors are handled ungracefully.
