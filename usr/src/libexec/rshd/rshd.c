@@ -1,5 +1,5 @@
-/*
- * Copyright (c) 1983, 1988, 1989 The Regents of the University of California.
+/*-
+ * Copyright (c) 1988, 1989 The Regents of the University of California.
  * All rights reserved.
  *
  * %sccs.include.redist.c%
@@ -7,19 +7,20 @@
 
 #ifndef lint
 char copyright[] =
-"@(#) Copyright (c) 1983, 1988, 1089 The Regents of the University of California.\n\
+"@(#) Copyright (c) 1988, 1989 The Regents of the University of California.\n\
  All rights reserved.\n";
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rshd.c	5.36.1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)rshd.c	5.37 (Berkeley) %G%";
 #endif /* not lint */
 
-/* From:
+/*
+ * From:
  *	$Source: /mit/kerberos/ucb/mit/rshd/RCS/rshd.c,v $
- *	$Header: /mit/kerberos/ucb/mit/rshd/RCS/rshd.c,v 5.2 89/07/31 19:30:04 kfall Exp $
+ *	$Header: /mit/kerberos/ucb/mit/rshd/RCS/rshd.c,v 
+ *		5.2 89/07/31 19:30:04 kfall Exp $
  */
-
 
 /*
  * remote shell server:
@@ -31,23 +32,24 @@ static char sccsid[] = "@(#)rshd.c	5.36.1.1 (Berkeley) %G%";
  */
 #include <sys/param.h>
 #include <sys/ioctl.h>
-#include <sys/socket.h>
-#include <sys/file.h>
-#include <sys/signal.h>
 #include <sys/time.h>
+#include <fcntl.h>
+#include <signal.h>
 
+#include <sys/socket.h>
 #include <netinet/in.h>
-
 #include <arpa/inet.h>
-
-#include <stdio.h>
-#include <errno.h>
-#include <pwd.h>
 #include <netdb.h>
-#include <syslog.h>
-#include "pathnames.h"
 
-int	errno;
+#include <pwd.h>
+#include <syslog.h>
+#include <unistd.h>
+#include <errno.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <paths.h>
+
 int	keepalive = 1;
 int	check_all = 0;
 char	*index(), *rindex(), *strncat();
@@ -63,8 +65,7 @@ int	sent_null;
 #define	OPTIONS		"alknvx"
 char	authbuf[sizeof(AUTH_DAT)];
 char	tickbuf[sizeof(KTEXT_ST)];
-int	use_kerberos = 0, vacuous = 0;
-int	encrypt = 0;
+int	doencrypt, use_kerberos, vacuous;
 Key_schedule	schedule;
 #else
 #define	OPTIONS	"aln"
@@ -104,6 +105,11 @@ main(argc, argv)
 			vacuous = 1;
 			break;
 
+#ifdef CRYPT
+		case 'x':
+			doencrypt = 1;
+			break;
+#endif
 #endif
 		case '?':
 		default:
@@ -119,10 +125,16 @@ main(argc, argv)
 		syslog(LOG_ERR, "only one of -k and -v allowed");
 		exit(2);
 	}
+#ifdef CRYPT
+	if (doencrypt && !use_kerberos) {
+		syslog(LOG_ERR, "-k is required for -x");
+		exit(2);
+	}
+#endif
 #endif
 
 	fromlen = sizeof (from);
-	if (getpeername(0, &from, &fromlen) < 0) {
+	if (getpeername(0, (struct sockaddr *)&from, &fromlen) < 0) {
 		syslog(LOG_ERR, "getpeername: %m");
 		_exit(1);
 	}
@@ -212,7 +224,7 @@ doit(fromp)
 		    "Connection received from %s using IP options (ignored):%s",
 		    inet_ntoa(fromp->sin_addr), lbuf);
 		if (setsockopt(0, ipproto, IP_OPTIONS,
-		    (char *)NULL, &optsize) != 0) {
+		    (char *)NULL, optsize) != 0) {
 			syslog(LOG_ERR, "setsockopt IP_OPTIONS NULL: %m");
 			exit(1);
 		}
@@ -262,7 +274,7 @@ doit(fromp)
 				exit(1);
 			}
 		fromp->sin_port = htons(port);
-		if (connect(s, fromp, sizeof (*fromp)) < 0) {
+		if (connect(s, (struct sockaddr *)fromp, sizeof (*fromp)) < 0) {
 			syslog(LOG_INFO, "connect second port: %m");
 			exit(1);
 		}
@@ -335,6 +347,24 @@ doit(fromp)
 		authopts = 0L;
 		strcpy(instance, "*");
 		version[VERSION_SIZE - 1] = '\0';
+#ifdef CRYPT
+		if (doencrypt) {
+			struct sockaddr_in local_addr;
+			rc = sizeof(local_addr);
+			if (getsockname(0, (struct sockaddr *)&local_addr,
+			    &rc) < 0) {
+				syslog(LOG_ERR, "getsockname: %m");
+				error("rlogind: getsockname: %m");
+				exit(1);
+			}
+			authopts = KOPT_DO_MUTUAL;
+			rc = krb_recvauth(authopts, 0, ticket,
+				"rcmd", instance, &fromaddr,
+				&local_addr, kdata, "", schedule,
+				version);
+			des_set_key(kdata->session, schedule);
+		} else
+#endif
 			rc = krb_recvauth(authopts, 0, ticket, "rcmd",
 				instance, &fromaddr,
 				(struct sockaddr_in *) 0,
@@ -402,12 +432,37 @@ fail:
 			error("Can't make pipe.\n");
 			exit(1);
 		}
+#ifdef CRYPT
+#ifdef KERBEROS
+		if (doencrypt) {
+			if (pipe(pv1) < 0) {
+				error("Can't make 2nd pipe.\n");
+				exit(1);
+			}
+			if (pipe(pv2) < 0) {
+				error("Can't make 3rd pipe.\n");
+				exit(1);
+			}
+		}
+#endif
+#endif
 		pid = fork();
 		if (pid == -1)  {
 			error("Can't fork; try again.\n");
 			exit(1);
 		}
 		if (pid) {
+#ifdef CRYPT
+#ifdef KERBEROS
+			if (doencrypt) {
+				static char msg[] = SECURE_MESSAGE;
+				(void) close(pv1[1]);
+				(void) close(pv2[1]);
+				des_write(s, msg, sizeof(msg));
+
+			} else
+#endif
+#endif
 			{
 				(void) close(0); (void) close(1);
 			}
@@ -420,17 +475,47 @@ fail:
 				nfd = pv[0];
 			else
 				nfd = s;
+#ifdef CRYPT
+#ifdef KERBEROS
+			if (doencrypt) {
+				FD_ZERO(&writeto);
+				FD_SET(pv2[0], &writeto);
+				FD_SET(pv1[0], &readfrom);
+
+				nfd = MAX(nfd, pv2[0]);
+				nfd = MAX(nfd, pv1[0]);
+			} else
+#endif
+#endif
 				ioctl(pv[0], FIONBIO, (char *)&one);
 
 			/* should set s nbio! */
 			nfd++;
 			do {
 				ready = readfrom;
+#ifdef CRYPT
+#ifdef KERBEROS
+				if (doencrypt) {
+					wready = writeto;
+					if (select(nfd, &ready,
+					    &wready, (fd_set *) 0,
+					    (struct timeval *) 0) < 0)
+						break;
+				} else
+#endif
+#endif
 					if (select(nfd, &ready, (fd_set *)0,
 					  (fd_set *)0, (struct timeval *)0) < 0)
 						break;
 				if (FD_ISSET(s, &ready)) {
 					int	ret;
+#ifdef CRYPT
+#ifdef KERBEROS
+					if (doencrypt)
+						ret = des_read(s, &sig, 1);
+					else
+#endif
+#endif
 						ret = read(s, &sig, 1);
 					if (ret <= 0)
 						FD_CLR(s, &readfrom);
@@ -444,17 +529,64 @@ fail:
 						shutdown(s, 1+1);
 						FD_CLR(pv[0], &readfrom);
 					} else {
+#ifdef CRYPT
+#ifdef KERBEROS
+						if (doencrypt)
+							(void)
+							  des_write(s, buf, cc);
+						else
+#endif
+#endif
 							(void)
 							  write(s, buf, cc);
 					}
 				}
+#ifdef CRYPT
+#ifdef KERBEROS
+				if (doencrypt && FD_ISSET(pv1[0], &ready)) {
+					errno = 0;
+					cc = read(pv1[0], buf, sizeof(buf));
+					if (cc <= 0) {
+						shutdown(pv1[0], 1+1);
+						FD_CLR(pv1[0], &readfrom);
+					} else
+						(void) des_write(1, buf, cc);
+				}
+
+				if (doencrypt && FD_ISSET(pv2[0], &wready)) {
+					errno = 0;
+					cc = des_read(0, buf, sizeof(buf));
+					if (cc <= 0) {
+						shutdown(pv2[0], 1+1);
+						FD_CLR(pv2[0], &writeto);
+					} else
+						(void) write(pv2[0], buf, cc);
+				}
+#endif
+#endif
 
 			} while (FD_ISSET(s, &readfrom) ||
+#ifdef CRYPT
+#ifdef KERBEROS
+			    (doencrypt && FD_ISSET(pv1[0], &readfrom)) ||
+#endif
+#endif
 			    FD_ISSET(pv[0], &readfrom));
 			exit(0);
 		}
 		setpgrp(0, getpid());
 		(void) close(s); (void) close(pv[0]);
+#ifdef CRYPT
+#ifdef KERBEROS
+		if (doencrypt) {
+			close(pv1[0]); close(pv2[0]);
+			dup2(pv1[1], 1);
+			dup2(pv2[1], 0);
+			close(pv1[1]);
+			close(pv2[1]);
+		}
+#endif
+#endif
 		dup2(pv[1], 2);
 		close(pv[1]);
 	}
