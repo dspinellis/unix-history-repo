@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.11 (Berkeley) %G%
+#	@(#)Makefile	5.12 (Berkeley) %G%
 #
 DESTDIR=
 CFLAGS=	-O
@@ -37,8 +37,11 @@ KMEM=	ps
 
 all:	${SUBDIR} ${STD} ${NSTD} ${SETUID} ${KMEM} cp mv strip
 
-${SUBDIR}: /tmp
+${SUBDIR}: FRC
 	cd $@; make ${MFLAGS}
+
+FRC:
+	
 
 ${STD} ${SETUID} mv cp strip:
 	${CC} ${CFLAGS} -o $@ $@.c
