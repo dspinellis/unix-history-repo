@@ -3869,8 +3869,8 @@ main(argc, argv)
 	if (!strcmp(argv[1], "-d")) {
 	    debug = 1;
 	} else if (!strcmp(argv[1], "-n")) {
-	    if ((argc > 1) && (argv[1][0] != '-')) {	/* get file name */
-		NetTrace = fopen(argv[1], "w");
+	    if ((argc > 1) && (argv[2][0] != '-')) {	/* get file name */
+		NetTrace = fopen(argv[2], "w");
 		argv++;
 		argc--;
 		if (NetTrace == NULL) {
