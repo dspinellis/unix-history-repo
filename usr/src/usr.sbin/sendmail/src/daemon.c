@@ -13,9 +13,9 @@
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	6.13 (Berkeley) %G% (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	6.14 (Berkeley) %G% (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	6.13 (Berkeley) %G% (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	6.14 (Berkeley) %G% (without daemon mode)";
 #endif
 #endif /* not lint */
 
@@ -448,7 +448,8 @@ getrealhostname(fd)
 	extern struct hostent *gethostbyaddr();
 	extern char *inet_ntoa();
 
-	if (getsockname(fd, (struct sockaddr *) &sin, &sinlen) < 0)
+	if (getsockname(fd, (struct sockaddr *) &sin, &sinlen) < 0 ||
+	    sinlen <= 0)
 		return NULL;
 	hp = gethostbyaddr((char *) &sin.sin_addr, sizeof sin.sin_addr,
 			   sin.sin_family);
