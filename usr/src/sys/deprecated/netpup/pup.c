@@ -1,10 +1,10 @@
-/*	pup.c	6.1	83/07/29	*/
+/*	pup.c	6.2	84/08/29	*/
 
-#include "../h/param.h"
-#include "../h/mbuf.h"
-#include "../h/protosw.h"
-#include "../h/socket.h"
-#include "../h/socketvar.h"
+#include "param.h"
+#include "mbuf.h"
+#include "protosw.h"
+#include "socket.h"
+#include "socketvar.h"
 #include "../net/af.h"
 #include "../netpup/pup.h"
 

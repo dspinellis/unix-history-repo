@@ -1,9 +1,9 @@
-/*	pup_proto.c	6.2	84/08/21	*/
+/*	pup_proto.c	6.3	84/08/29	*/
 
-#include "../h/param.h"
-#include "../h/socket.h"
-#include "../h/protosw.h"
-#include "../h/domain.h"
+#include "param.h"
+#include "socket.h"
+#include "protosw.h"
+#include "domain.h"
 
 /*
  * PUP-I protocol family: raw interface
