@@ -1,4 +1,4 @@
-/* @(#)ttyslot.c	4.3 (Berkeley) %G% */
+/* @(#)ttyslot.c	4.4 (Berkeley) %G% */
 
 /*
  * Return the number of the slot in the utmp file
@@ -16,7 +16,7 @@ ttyslot()
 {
 	register struct ttyent *ty;
 	register char *tp, *p;
-	register s, tf;
+	register s;
 
 	if ((tp = ttyname(0)) == NULL &&
 	    (tp = ttyname(1)) == NULL &&
