@@ -4,12 +4,12 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)op.me	5.14 (Berkeley) %G%
+.\"	@(#)op.me	5.15 (Berkeley) %G%
 .\"
 .\" eqn % | troff -me
 .\"if n .ls 2
 .\".he 'Sendmail Installation and Operation Guide''%'
-.\".fo 'Version 5.14''Last Mod %G%'
+.\".fo 'Version 5.15''Last Mod %G%'
 .eh 'SMM:07-%''Sendmail Installation and Operation Guide'
 .oh 'Sendmail Installation and Operation Guide''SMM:07-%'
 .nr si 3n
@@ -40,7 +40,7 @@ Eric Allman
 University of California, Berkeley
 Mammoth Project
 .sp
-Version 5.14
+Version 5.15
 .sp
 For Sendmail Version 5.61
 .)l
@@ -1349,6 +1349,10 @@ Normally, when
 .i sendmail
 is looking up host names from the name server,
 it uses the querytype of
+.q CNAME .
+The
+.b w
+option will ask the name server to use a querytype of
 .q ANY .
 This finds CNAME, A, and MX records,
 and causes the local name server to cache all records it finds,
@@ -1367,11 +1371,11 @@ thus looking for
 .q "mammoth.Berkeley.EDU.HiTech.COM"
 \*- which of course matches
 .q "*.HiTech.COM" .
-To prevent this,
-set the
+.pp
+If you do not have wildcard MX records in your domain,
+you can set the
 .b w
-option, which asserts that you have wildcard records,
-and sendmail must use a less efficient lookup.
+option to get better performance.
 .sh 2 "File Modes"
 .pp
 There are a number of files
@@ -3223,12 +3227,15 @@ will run as this user.
 .ip v
 Run in verbose mode.
 .ip w
-Asserts that this domain (might) have wildcard MX records
+Asserts that this domain does not have wildcard MX records
 in the name server database.
 These wildcards can
 .q capture
 names that are directed outward
 and forward them back to your own site.
+If there are no wildcards matching your domain,
+this option will reduce name server load
+and improve performance.
 .ip x\fILA\fP
 When the system load average exceeds
 .i LA ,
@@ -3583,13 +3590,6 @@ array to indicate its current status.
 This can be used in conjunction with the
 .i ps
 command to find out just what it's up to.
-.ip NO_WILDCARD_MX
-Should be set if there are no wildcard MX nameserver records
-in the local domain.
-If set, this will enable the use of ANY query types, resulting
-in better performance.
-Unfortunately, wildcard MX records in the local domain will mess
-this up, hence the need for this compilation option.
 .uh "Configuration in src/conf.c"
 .pp
 Not all header semantics are defined in the configuration file.
@@ -3935,7 +3935,7 @@ A transcript of the current session.
 .\"Eric Allman
 .\"Britton-Lee, Inc.
 .\".sp
-.\"Version 5.14
+.\"Version 5.15
 .\".ce 0
 .pn 2
 .bp
