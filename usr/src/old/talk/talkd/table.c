@@ -27,7 +27,7 @@ static char sccsid[] = "@(#)table.c	5.1 (Berkeley) 6/6/85";
 
 extern	int debug;
 struct	timeval tp;
-struct	timezone *txp;
+struct	timezone txp;
 
 typedef struct table_entry TABLE_ENTRY;
 

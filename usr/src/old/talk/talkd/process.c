@@ -84,7 +84,7 @@ do_announce(request, response)
 		response->answer = result;
 		return;
 	}
-	hp = gethostbyaddr(&request->ctl_addr.sin_addr,
+	hp = gethostbyaddr((char *)&request->ctl_addr.sin_addr,
 		sizeof(struct in_addr), AF_INET);
 	if (hp == (struct hostent *)0) {
 		response->answer = MACHINE_UNKNOWN;
