@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_subr.c	7.67.1.1 (Berkeley) %G%
+ *	@(#)vfs_subr.c	7.68 (Berkeley) %G%
  */
 
 /*
@@ -16,12 +16,22 @@
 #include <sys/mount.h>
 #include <sys/time.h>
 #include <sys/vnode.h>
+#include <sys/stat.h>
 #include <sys/specdev.h>
 #include <sys/namei.h>
 #include <sys/ucred.h>
 #include <sys/buf.h>
 #include <sys/errno.h>
 #include <sys/malloc.h>
+
+enum vtype iftovt_tab[16] = {
+	VNON, VFIFO, VCHR, VNON, VDIR, VNON, VBLK, VNON,
+	VREG, VNON, VLNK, VNON, VSOCK, VNON, VNON, VBAD,
+};
+int	vttoif_tab[9] = {
+	0, S_IFREG, S_IFDIR, S_IFBLK, S_IFCHR, S_IFLNK,
+	S_IFSOCK, S_IFIFO, S_IFMT,
+};
 
 /*
  * Remove a mount point from the list of mounted filesystems.
@@ -647,8 +657,6 @@ vget(vp)
 	return (0);
 }
 
-int bug_refs = 0;
-
 /*
  * Vnode reference, just increment the count
  */
@@ -657,10 +665,6 @@ void vref(vp)
 {
 
 	vp->v_usecount++;
-	if (vp->v_type != VBLK && curproc)
-		curproc->p_spare[0]++;
-	if (bug_refs)
-		vprint("vref: ");
 }
 
 /*
@@ -687,10 +691,6 @@ void vrele(vp)
 		panic("vrele: null vp");
 #endif
 	vp->v_usecount--;
-	if (vp->v_type != VBLK && curproc)
-		curproc->p_spare[0]--;
-	if (bug_refs)
-		vprint("vref: ");
 	if (vp->v_usecount > 0)
 		return;
 #ifdef DIAGNOSTIC
