@@ -1,1 +1,0 @@
-#define NWD 1

@@ -1,1 +1,0 @@
-#define NFD 1

@@ -1,6 +1,0 @@
-misc.o
-gettytab.o
-getent.o
-genget.o
-encrypt.o
-auth.o
