@@ -4,7 +4,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)op.me	6.42 (Berkeley) %G%
+.\"	@(#)op.me	6.43 (Berkeley) %G%
 .\"
 .\" eqn op.me | pic | troff -me
 .eh 'SMM:07-%''Sendmail Installation and Operation Guide'
@@ -40,9 +40,9 @@ University of California, Berkeley
 Mammoth Project
 eric@CS.Berkeley.EDU
 .sp
-Version 6.42
+Version 6.43
 .sp
-For Sendmail Version 6.55
+For Sendmail Version 6.56
 .)l
 .sp 2
 .pp
@@ -2909,6 +2909,12 @@ destined for particular mailers.
 .nr ii 4n
 .ip a
 Run Extended SMTP (ESMTP) protocol (defined in RFCs 1425, 1426, and 1427).
+.ip b
+Force a blank line on the end of a message.
+This is intended to work around some stupid versions of
+/bin/mail
+that require a blank line, but do not provide it themselves.
+It would not normally be used on network mail.
 .ip c
 Do not include comments in addresses.
 This should only be used if you have to work around
@@ -2962,6 +2968,27 @@ does not have special permissions).
 This mailer wants a
 .q From:
 header line.
+.ip g
+Normally,
+.i sendmail
+sends internally generated email (e.g., error messages)
+using the null return address\**
+.(f
+\**Actually, this only applies to SMTP,
+which uses the ``MAIL FROM:<>'' command.
+.)f
+as required by RFC 1123.
+However, some mailers don't accept a null return address.
+If necessary,
+you can set the
+.b g
+flag to prevent
+.i sendmail
+from obeying the standards;
+error messages will be sent as from the MAILER-DAEMON
+(actually, the value of the
+.b $n
+macro).
 .ip h
 Upper case should be preserved in host names
 for this mailer.
@@ -6103,7 +6130,7 @@ A transcript of the current session.
 .\"Eric Allman
 .\"Britton-Lee, Inc.
 .\".sp
-.\"Version 6.42
+.\"Version 6.43
 .\".ce 0
 .pn 2
 .bp
