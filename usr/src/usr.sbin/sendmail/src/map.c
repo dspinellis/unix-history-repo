@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)map.c	8.71 (Berkeley) %G%";
+static char sccsid[] = "@(#)map.c	8.72 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -462,6 +462,133 @@ map_init(s, rebuild)
 			}
 		}
 	}
+}
+/*
+**  GETCANONNAME -- look up name using service switch
+**
+**	Parameters:
+**		host -- the host name to look up.
+**		hbsize -- the size of the host buffer.
+**		trymx -- if set, try MX records.
+**
+**	Returns:
+**		TRUE -- if the host was found.
+**		FALSE -- otherwise.
+*/
+
+bool
+getcanonname(host, hbsize, trymx)
+	char *host;
+	int hbsize;
+	bool trymx;
+{
+	int nmaps;
+	int mapno;
+	bool found = FALSE;
+	auto int stat;
+	char *maptype[MAXMAPSTACK];
+	short mapreturn[MAXMAPACTIONS];
+	extern int h_errno;
+
+	nmaps = switch_map_find("hosts", maptype, mapreturn);
+	for (mapno = 0; mapno < nmaps; mapno++)
+	{
+		int i;
+
+		if (tTd(38, 20))
+			printf("getcanonname(%s), trying %s\n",
+				host, maptype[mapno]);
+		if (strcmp("files", maptype[mapno]) == 0)
+		{
+			extern bool text_getcanonname __P((char *, int, int *));
+
+			found = text_getcanonname(host, hbsize, &stat);
+		}
+#ifdef NIS
+		else if (strcmp("nis", maptype[mapno]) == 0)
+		{
+			extern bool nis_getcanonname __P((char *, int, int *));
+
+			found = nis_getcanonname(host, hbsize, &stat);
+		}
+#endif
+#ifdef NISPLUS
+		else if (strcmp("nisplus", maptype[mapno]) == 0)
+		{
+			extern bool nisplus_getcanonname __P((char *, int, int *));
+
+			found = nisplus_getcanonname(host, hbsize, &stat);
+		}
+#endif
+#if NAMED_BIND
+		else if (strcmp("dns", maptype[mapno]) == 0)
+		{
+			extern bool dns_getcanonname __P((char *, int, bool, int *));
+
+			found = dns_getcanonname(host, hbsize, trymx, &stat);
+		}
+#endif
+		else
+		{
+			found = FALSE;
+			stat = EX_UNAVAILABLE;
+		}
+		if (found)
+			break;
+
+		/* see if we should continue */
+		if (stat == EX_TEMPFAIL)
+			i = MA_TRYAGAIN;
+		else if (stat == EX_NOHOST)
+			i = MA_NOTFOUND;
+		else
+			i = MA_UNAVAIL;
+		if (bitset(1 << mapno, mapreturn[i]))
+			break;
+	}
+
+	if (found)
+	{
+		char *d;
+
+		if (tTd(38, 20))
+			printf("getcanonname(%s), found\n", host);
+
+		/*
+		**  If returned name is still single token, compensate
+		**  by tagging on $m.  This is because some sites set
+		**  up their DNS or NIS databases wrong.
+		*/
+
+		if ((d = strchr(host, '.')) == NULL || d[1] == '\0')
+		{
+			d = macvalue('m', CurEnv);
+			if (d != NULL &&
+			    hbsize > (int) (strlen(host) + strlen(d) + 1))
+			{
+				if (host[strlen(host) - 1] != '.')
+					strcat(host, ".");
+				strcat(host, d);
+			}
+			else
+			{
+				return FALSE;
+			}
+		}
+		return TRUE;
+	}
+
+	if (tTd(38, 20))
+		printf("getcanonname(%s), failed, stat=%d\n", host, stat);
+
+#if NAMED_BIND
+	if (stat == EX_NOHOST)
+		h_errno = HOST_NOT_FOUND;
+	else
+		h_errno = TRY_AGAIN;
+#endif
+
+	return FALSE;
 }
 /*
 **  NDBM modules
@@ -2774,117 +2901,6 @@ seq_map_store(map, key, val)
 	}
 	syserr("seq_map_store(%s, %s, %s): no writable map",
 		map->map_mname, key, val);
-}
-/*
-**  GETCANONNAME -- look up name using service switch
-**
-**	Parameters:
-**		host -- the host name to look up.
-**		hbsize -- the size of the host buffer.
-**		trymx -- if set, try MX records.
-**
-**	Returns:
-**		TRUE -- if the host was found.
-**		FALSE -- otherwise.
-*/
-
-bool
-getcanonname(host, hbsize, trymx)
-	char *host;
-	int hbsize;
-	bool trymx;
-{
-	int nmaps;
-	int mapno;
-	bool found = FALSE;
-	auto int stat;
-	char *maptype[MAXMAPSTACK];
-	short mapreturn[MAXMAPACTIONS];
-	extern int h_errno;
-
-	nmaps = switch_map_find("hosts", maptype, mapreturn);
-	for (mapno = 0; mapno < nmaps; mapno++)
-	{
-		int i;
-
-		if (tTd(38, 20))
-			printf("getcanonname(%s), trying %s\n",
-				host, maptype[mapno]);
-		if (strcmp("files", maptype[mapno]) == 0)
-			found = text_getcanonname(host, hbsize, &stat);
-#ifdef NIS
-		else if (strcmp("nis", maptype[mapno]) == 0)
-			found = nis_getcanonname(host, hbsize, &stat);
-#endif
-#ifdef NISPLUS
-		else if (strcmp("nisplus", maptype[mapno]) == 0)
-			found = nisplus_getcanonname(host, hbsize, &stat);
-#endif
-#if NAMED_BIND
-		else if (strcmp("dns", maptype[mapno]) == 0)
-			found = dns_getcanonname(host, hbsize, trymx, &stat);
-#endif
-		else
-		{
-			found = FALSE;
-			stat = EX_UNAVAILABLE;
-		}
-		if (found)
-			break;
-
-		/* see if we should continue */
-		if (stat == EX_TEMPFAIL)
-			i = MA_TRYAGAIN;
-		else if (stat == EX_NOHOST)
-			i = MA_NOTFOUND;
-		else
-			i = MA_UNAVAIL;
-		if (bitset(1 << mapno, mapreturn[i]))
-			break;
-	}
-
-	if (found)
-	{
-		char *d;
-
-		if (tTd(38, 20))
-			printf("getcanonname(%s), found\n", host);
-
-		/*
-		**  If returned name is still single token, compensate
-		**  by tagging on $m.  This is because some sites set
-		**  up their DNS or NIS databases wrong.
-		*/
-
-		if ((d = strchr(host, '.')) == NULL || d[1] == '\0')
-		{
-			d = macvalue('m', CurEnv);
-			if (d != NULL &&
-			    hbsize > (int) (strlen(host) + strlen(d) + 1))
-			{
-				if (host[strlen(host) - 1] != '.')
-					strcat(host, ".");
-				strcat(host, d);
-			}
-			else
-			{
-				return FALSE;
-			}
-		}
-		return TRUE;
-	}
-
-	if (tTd(38, 20))
-		printf("getcanonname(%s), failed, stat=%d\n", host, stat);
-
-#if NAMED_BIND
-	if (stat == EX_NOHOST)
-		h_errno = HOST_NOT_FOUND;
-	else
-		h_errno = TRY_AGAIN;
-#endif
-
-	return FALSE;
 }
 /*
 **  NULL stubs
