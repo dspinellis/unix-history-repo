@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_bio.c	7.11 (Berkeley) %G%
+ *	@(#)nfs_bio.c	7.12 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -143,7 +143,7 @@ nfs_write(vp, uio, ioflag, cred)
 	struct buf *bp;
 	struct nfsnode *np = VTONFS(vp);
 	daddr_t lbn, bn;
-	int i, n, on, count, error = 0;
+	int n, on, error = 0;
 
 	/* Should we try and do this ?? */
 	if (vp->v_type == VREG && (ioflag & IO_APPEND))
@@ -179,9 +179,6 @@ nfs_write(vp, uio, ioflag, cred)
 		if (uio->uio_offset+n > np->n_size)
 			np->n_size = uio->uio_offset+n;
 		bn = lbn*(NFS_BIOSIZE/DEV_BSIZE);
-		count = howmany(NFS_BIOSIZE, CLBYTES);
-		for (i = 0; i < count; i++)
-			munhash(vp, bn + i * CLBYTES / DEV_BSIZE);
 again:
 		bp = getblk(vp, bn, NFS_BIOSIZE);
 		if (bp->b_wcred == NOCRED) {
