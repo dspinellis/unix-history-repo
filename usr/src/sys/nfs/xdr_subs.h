@@ -23,6 +23,7 @@
 /*
  * Macros used for conversion to/from xdr representation by nfs...
  * These use the MACHINE DEPENDENT routines ntohl, htonl
+ * As defined by "XDR: External Data Representation Standard" RFC1014
  */
 /* From xdr to machine */
 #define fxdr_unsigned(t, v)	((t)ntohl((long)(v)))
