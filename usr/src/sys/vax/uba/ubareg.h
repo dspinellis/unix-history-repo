@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ubareg.h	7.5 (Berkeley) %G%
+ *	@(#)ubareg.h	7.6 (Berkeley) %G%
  */
 
 /*
@@ -39,11 +39,16 @@
 /*
  * Size of unibus memory address space in pages
  * (also number of map registers).
- * QBAPAGES should be 8192, but umem needs to be expanded.
+ * QBAPAGES should be 8192, but we don't need nearly
+ * that much address space; choose pragmatically.
  */
 #define	UBAPAGES	496
 #define	NUBMREG		496
-#define	QBAPAGES	UBAPAGES	/* for now; should be 8192 */
+#ifdef GATEWAY
+#define	QBAPAGES	1024		/* tunable: min UBAPAGES, max 8192 */
+#else
+#define	QBAPAGES	UBAPAGES	/* tunable: min UBAPAGES, max 8192 */
+#endif
 #define	UBAIOADDR	0760000		/* start of I/O page */
 #define	UBAIOPAGES	16
 
