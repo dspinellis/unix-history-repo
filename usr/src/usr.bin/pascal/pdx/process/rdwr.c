@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)rdwr.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)rdwr.c	5.2 (Berkeley) %G%";
 #endif not lint
 /*
  * These routines are used to access the debuggee process from
@@ -44,7 +44,7 @@ int nbytes;
 {
 	INTFUNC *f;
 
-	f = onsyserr(EIO, &rwerr);
+	f = onsyserr(EIO, rwerr);
 #	if (isvaxpx)
 		badaddr = addr + ENDOFF;
 		pio(process, PREAD, DATASEG, buff, addr + ENDOFF, nbytes);
@@ -67,7 +67,7 @@ int nbytes;
 {
 	INTFUNC *f;
 
-	f = onsyserr(EIO, &rwerr);
+	f = onsyserr(EIO, rwerr);
 #	if (isvaxpx)
 		badaddr = addr + ENDOFF;
 		pio(process, PWRITE, DATASEG, buff, addr + ENDOFF, nbytes);
@@ -89,7 +89,7 @@ int nbytes;
 {
 	INTFUNC *f;
 
-	f = onsyserr(EIO, &rwerr);
+	f = onsyserr(EIO, rwerr);
 	badaddr = addr;
 	pio(process, PREAD, DATASEG, buff, addr, nbytes);
 	onsyserr(EIO, f);
@@ -106,7 +106,7 @@ int nbytes;
 {
 	INTFUNC *f;
 
-	f = onsyserr(EIO, &rwerr);
+	f = onsyserr(EIO, rwerr);
 	badaddr = addr;
 	pio(process, PWRITE, DATASEG, buff, addr, nbytes);
 	onsyserr(EIO, f);
