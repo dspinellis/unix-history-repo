@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)hash.c 1.3 %G%";
+static	char sccsid[] = "@(#)hash.c 1.4 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -57,13 +57,14 @@ struct kwtab yykey[] = {
 	"var",		YVAR,
 	"while",	YWHILE,
 	"with",		YWITH,
-	"oct",		YOCT,	 /* non-standard Pascal */
-	"hex",		YHEX,	 /* non-standard Pascal */
-	"external",	YEXTERN, /* non-standard Pascal */
+	0,		0,	 /* the following keywords are non-standard */
+	"oct",		YOCT,
+	"hex",		YHEX,
+	"external",	YEXTERN,
 	0
 };
 
-char	*lastkey	= &yykey[sizeof yykey/sizeof yykey[0]];
+char *lastkey;
 
 /*
  * Inithash initializes the hash table routines
@@ -86,6 +87,14 @@ inithash(hshtab)
 	htab[0].ht_high = &hshtab[HASHINC];
 	for (ip = yykey; *ip; ip += 2)
 		hash(ip[0], 0)[0] = ip;
+	/*
+	 * If we are not running in "standard-only" mode,
+	 * we load the non-standard keywords.
+	 */
+	if (!opt('s'))
+		for (ip += 2; *ip; ip += 2)
+			hash(ip[0], 0)[0] = ip;
+	lastkey = (char *)ip;
 }
 
 /*
