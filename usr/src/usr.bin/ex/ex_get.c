@@ -1,5 +1,5 @@
 /* Copyright (c) 1981 Regents of the University of California */
-static char *sccsid = "@(#)ex_get.c	7.2	%G%";
+static char *sccsid = "@(#)ex_get.c	7.3	%G%";
 #include "ex.h"
 #include "ex_tty.h"
 
@@ -87,7 +87,7 @@ top:
 		input = 0;
 	}
 	flush();
-	if (intty) {
+	if (!intty) {
 		c = read(0, inline, sizeof inline - 4);
 		if (c < 0)
 			return (lastc = EOF);
