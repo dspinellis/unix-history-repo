@@ -148,7 +148,7 @@ void   setbuf(FILE*, char*);
 void   setbuffer(FILE*, char*, int);
 int    setlinebuf(FILE*);
 int    setvbuf(FILE*, char*, int, size_t);
-int    sscanf(char*, const char* ...);
+int    sscanf(const char*, const char* ...);
 FILE*  tmpfile();
 int    ungetc(int, FILE*);
 int    vfprintf _G_ARGS((FILE*, const char*, _G_va_list));
