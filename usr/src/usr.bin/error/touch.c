@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)touch.c	1.4 (Berkeley) %G%";
+static	char *sccsid = "@(#)touch.c	1.5 (Berkeley) %G%";
 #include <stdio.h>
 #include <ctype.h>
 #include <sys/types.h>
