@@ -63,9 +63,14 @@ keyboard problems.
 	memory.  If you find this to be the case, temporarily remove your
 	extra memory and contact Buslogic for an upgrade!
 
-/usr/bin/find
-	find doesn't work on CDROM's. You need to call find with the
-	"fstype isofs" argument to get it working. The bug seems to be 
-	in the "fts(3)" routines that find uses.
+fsck:
+	fsck can go into an endless loop in the repair/fsck cycle on
+	a corrupted filesystem. The message "VALUES IN SUPER BLOCK
+	DISAGREE WITH THOSE IN FIRST ALTERNATE" is very misleading.
+	fsck compares the superblock with the alternate in the last
+	cylinder group? So if this block is corrupt, you have no chance
+	to get the filesystem repaired. You can answer on the question
+	"UPDATE STANDARD SUPERBLOCK" with yes and get always the same
+	error message on the next fsck.
 
-$Id: KNOWNBUGS,v 1.13 1994/05/01 20:59:41 rgrimes Exp $
+$Id: KNOWNBUGS,v 1.14 1994/06/01 06:33:14 alm Exp $
