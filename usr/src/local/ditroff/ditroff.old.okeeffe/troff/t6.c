@@ -576,9 +576,10 @@ int pos, font;
 	    if (fontlab[i] == font) {		/* list of fonts and see if */
 		register char *c;		/* it's already here to swap */
 
-#define ptrswap(x, y) { c = (char*) (x); x = y; y = c; }
+#define ptrswap(x, y) { c = x; x = y; y = c; }
+#define fptrswap(x, y) { c = (char*) (x); x = y; y = (struct font *) c; }
 
-		ptrswap(fontbase[pos], fontbase[i]);
+		fptrswap(fontbase[pos], fontbase[i]);
 		ptrswap(fontab[pos], fontab[i]);
 		ptrswap(kerntab[pos], kerntab[i]);
 		ptrswap(fitab[pos], fitab[i]);
