@@ -4,7 +4,7 @@
  * specifies the terms and conditions for redistribution.
  */
 
-static char sccsid[] = "@(#)mkdate.c 5.1 %G%";
+static char sccsid[] = "@(#)mkdate.c 5.2 %G%";
 
 static char rcsid[] = "$Header: mkdate.c,v 1.5 84/12/26 10:40:30 linton Exp $";
 
