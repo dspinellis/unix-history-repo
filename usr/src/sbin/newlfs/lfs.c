@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)lfs.c	8.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)lfs.c	8.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -65,7 +65,7 @@ static struct lfs lfs_default =  {
 	/* lfs_ssize */		DFL_LFSSEG/DFL_LFSBLOCK,
 	/* lfs_dsize */		0,
 	/* lfs_bsize */		DFL_LFSBLOCK,
-	/* lfs_fsize */		DFL_LFSBLOCK,
+	/* lfs_fsize */		DFL_LFSFRAG,
 	/* lfs_frag */		1,
 	/* lfs_free */		LFS_FIRST_INUM,
 	/* lfs_bfree */		0,
@@ -95,10 +95,10 @@ static struct lfs lfs_default =  {
 	/* lfs_segshift */	DFL_LFSSEG_SHIFT,
 	/* lfs_bmask */		DFL_LFSBLOCK_MASK,
 	/* lfs_bshift */	DFL_LFSBLOCK_SHIFT,
-	/* lfs_ffmask */	0,
-	/* lfs_ffshift */	0,
-	/* lfs_fbmask */	0,
-	/* lfs_fbshift */	0,
+	/* lfs_ffmask */	DFL_LFS_FFMASK,
+	/* lfs_ffshift */	DFL_LFS_FFSHIFT,
+	/* lfs_fbmask */	DFL_LFS_FBMASK,
+	/* lfs_fbshift */	DFL_LFS_FBSHIFT,
 	/* lfs_fsbtodb */	0,
 	/* lfs_sushift */	0,
 	/* lfs_sboffs */	{ 0 },
@@ -140,12 +140,13 @@ static void make_dir __P(( void *, struct direct *, int));
 static void put __P((int, off_t, void *, size_t));
 
 int
-make_lfs(fd, lp, partp, minfree, block_size, seg_size)
+make_lfs(fd, lp, partp, minfree, block_size, frag_size, seg_size)
 	int fd;
 	struct disklabel *lp;
 	struct partition *partp;
 	int minfree;
 	int block_size;
+	int frag_size;
 	int seg_size;
 {
 	struct dinode *dip;	/* Pointer to a disk inode */
@@ -171,6 +172,7 @@ make_lfs(fd, lp, partp, minfree, block_size, seg_size)
 	u_long *datasump;	/* Used to computed checksum on data */
 	int block_array_size;	/* How many entries in block array */
 	int bsize;		/* Block size */
+	int fsize;		/* Fragment size */
 	int db_per_fb;		/* Disk blocks per file block */
 	int i, j;
 	int off;		/* Offset at which to write */
@@ -183,18 +185,27 @@ make_lfs(fd, lp, partp, minfree, block_size, seg_size)
 
 	if (!(bsize = block_size))
 		bsize = DFL_LFSBLOCK;
+	if (!(fsize = frag_size))
+		fsize = DFL_LFSFRAG;
 	if (!(ssize = seg_size))
 		ssize = DFL_LFSSEG;
 
 	/* Modify parts of superblock overridden by command line arguments */
-	if (bsize != DFL_LFSBLOCK) {
+	if (bsize != DFL_LFSBLOCK || fsize != DFL_LFSFRAG) {
 		lfsp->lfs_bshift = log2(bsize);
 		if (1 << lfsp->lfs_bshift != bsize)
 			fatal("%d: block size not a power of 2", bsize);
 		lfsp->lfs_bsize = bsize;
-		lfsp->lfs_fsize = bsize;
+		lfsp->lfs_fsize = fsize;
 		lfsp->lfs_bmask = bsize - 1;
 		lfsp->lfs_inopb = bsize / sizeof(struct dinode);
+		lfsp->lfs_ffmask = fsize - 1;
+		lfsp->lfs_ffshift = log2(fsize);
+		if (1 << lfsp->lfs_ffshift != fsize)
+			fatal("%d: frag size not a power of 2", fsize);
+		lfsp->lfs_frag = numfrags(lfsp, bsize);
+		lfsp->lfs_fbmask = lfsp->lfs_frag - 1;
+		lfsp->lfs_fbshift = log2(lfsp->lfs_frag);
 /* MIS -- should I round to power of 2 */
 		lfsp->lfs_ifpb = bsize / sizeof(IFILE);
 		lfsp->lfs_sepb = bsize / sizeof(SEGUSE);
@@ -456,6 +467,7 @@ make_lfs(fd, lp, partp, minfree, block_size, seg_size)
 	summary.ss_create = lfsp->lfs_tstamp;
 	summary.ss_nfinfo = 3;
 	summary.ss_ninos = 3;
+	summary.ss_magic = SS_MAGIC;
 	summary.ss_datasum = cksum(datasump, sizeof(u_long) * blocks_used);
 
 	/*
@@ -492,6 +504,7 @@ make_lfs(fd, lp, partp, minfree, block_size, seg_size)
 	/* Now, add the ifile */
 	file_info.fi_nblocks = block_array_size;
 	file_info.fi_version = 1;
+	file_info.fi_lastlength = lfsp->lfs_bsize;
 	file_info.fi_ino = LFS_IFILE_INUM;
 
 	memmove(sump, &file_info, sizeof(FINFO) - sizeof(u_long));
@@ -502,6 +515,7 @@ make_lfs(fd, lp, partp, minfree, block_size, seg_size)
 	/* Now, add the root directory */
 	file_info.fi_nblocks = 1;
 	file_info.fi_version = 1;
+	file_info.fi_lastlength = lfsp->lfs_bsize;
 	file_info.fi_ino = ROOTINO;
 	file_info.fi_blocks[0] = 0;
 	memmove(sump, &file_info, sizeof(FINFO));
@@ -522,6 +536,7 @@ make_lfs(fd, lp, partp, minfree, block_size, seg_size)
 	sp->ss_nfinfo = 0;
 	sp->ss_ninos = 0;
 	sp->ss_datasum = 0;
+	sp->ss_magic = SS_MAGIC;
 
 	/* Now write the summary block for the next partial so it's invalid */
 	lfsp->lfs_tstamp = 0;
