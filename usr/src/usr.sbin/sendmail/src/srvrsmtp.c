@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)srvrsmtp.c	6.8 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	6.9 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)srvrsmtp.c	6.8 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	6.9 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -210,7 +210,7 @@ smtp(e)
 			SmtpPhase = "MAIL";
 
 			/* force a sending host even if no HELO given */
-			if (RealHostName != NULL && macvalue('s', e) == NULL)
+			if (sendinghost == NULL && macvalue('s', e) == NULL)
 				sendinghost = RealHostName;
 
 			/* check for validity of this command */
@@ -229,7 +229,8 @@ smtp(e)
 			/* fork a subprocess to process this command */
 			if (runinchild("SMTP-MAIL", e) > 0)
 				break;
-			define('s', sendinghost, e);
+			if (sendinghost != NULL)
+				define('s', sendinghost, e);
 			define('r', "SMTP", e);
 			initsys(e);
 			setproctitle("%s %s: %s", e->e_id, CurHostName, inp);
