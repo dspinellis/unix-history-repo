@@ -21,7 +21,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)job.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)job.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 /*-
@@ -1241,11 +1241,7 @@ JobRestart(job)
 #endif
 	    )
 	{
-	    if (
-#ifdef sparc	    	    /* KLUDGE */
-		(job->node->type & OP_M68020) ||
-#endif
-		((nLocal >= maxLocal) && ! (job->flags & JOB_SPECIAL)))
+	    if (((nLocal >= maxLocal) && ! (job->flags & JOB_SPECIAL)))
 	    {
 		/*
 		 * Can't be exported and not allowed to run locally -- put it
@@ -1625,11 +1621,7 @@ JobStart (gn, flags, previous)
 	local = TRUE;
     }
 
-    if (local && (
-#ifdef sparc	/* KLUDGE */
-	(gn->type & OP_M68020) ||
-#endif
-	((nLocal >= maxLocal) &&
+    if (local && (((nLocal >= maxLocal) &&
 	 !(job->flags & JOB_SPECIAL) &&
 	 (!(gn->type & OP_NOEXPORT) || (maxLocal != 0)))))
     {
