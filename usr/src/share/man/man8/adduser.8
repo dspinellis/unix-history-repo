@@ -1,8 +1,19 @@
-.\" Copyright (c) 1980 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1980 The Regents of the University of California.
+.\" All rights reserved.
 .\"
-.\"	@(#)adduser.8	6.4 (Berkeley) %G%
+.\" Redistribution and use in source and binary forms are permitted
+.\" provided that the above copyright notice and this paragraph are
+.\" duplicated in all such forms and that any documentation,
+.\" advertising materials, and other materials related to such
+.\" distribution and use acknowledge that the software was developed
+.\" by the University of California, Berkeley.  The name of the
+.\" University may not be used to endorse or promote products derived
+.\" from this software without specific prior written permission.
+.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+.\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\"
+.\"	@(#)adduser.8	6.5 (Berkeley) %G%
 .\"
 .TH ADDUSER 8 ""
 .UC 4
@@ -14,62 +25,23 @@ A new user must choose a login name, which must not already appear in
 the hyphen (``-'') character.  An account can be added by editing a line
 into the passwd file; this must be done with the password file locked
 e.g. by using
+.IR chpass (1)
+or
 .IR vipw (8).
 .PP
 A new user is given a group and user id.
-User id's should be distinct across a system, since they
-are used to control access to files.
-Typically, users working on
-similar projects will be put in the same group.  Thus at UCB we have
-groups for system staff, faculty, graduate students, and a few special
-groups for large projects.  System staff is group \*(lq10\*(rq for historical
-reasons, and the super-user is in this group.
+User id's should be unique for the system, since they are used to
+control access to files.
+Typically, users working on similar projects will be put in the same groups.
+At UCB we have groups for system staff, faculty, graduate students, and
+special groups for large projects.
 .PP
-A skeletal account for a new user \*(lqernie\*(rq would look like:
+A skeletal account for a new user \*(lqernie\*(rq might look like:
 .IP
-ernie::235:20:& Kovacs,508E,7925,6428202:/mnt/grad/ernie:/bin/csh
+ernie::25:30:none:0:0:Ernie Kovacs,508 Evans Hall,x7925,642-8202:/a/users/ernie:/bin/csh
 .PP
-The first field is the login name \*(lqernie\*(rq.  The next field is the
-encrypted password which is not given and must be initialized using
-.IR passwd (1).
-The next two fields are the user and group id's.
-Traditionally, users in group 20 are graduate students and have account
-names with numbers in the 200's.
-The next field gives information about ernie's real name, office and office
-phone and home phone.
-This information is used by the
-.IR finger (1)
-program.
-From this information we can tell that ernie's real name is
-\*(lqErnie Kovacs\*(rq (the & here serves to repeat \*(lqernie\*(rq
-with appropriate capitalization), that his office is 508 Evans Hall,
-his extension is x2-7925, and this his home phone number is 642-8202.
-You can modify the
-.IR finger (1)
-program if necessary to allow different information to be encoded in
-this field.  The UCB version of finger knows several things particular
-to Berkeley \- that phone extensions start \*(lq2\-\*(rq, that offices ending
-in \*(lqE\*(rq are in Evans Hall and that offices ending in \*(lqC\*(rq are
-in Cory Hall. The 
-.IR chfn (1)
-program allows users to change this information.
-.PP
-The final two fields give a login directory and a login shell name.
-Traditionally, user files live on a file system different from /usr.
-Typically the user file systems are mounted on a directories in the root
-named sequentially starting from from the beginning of the alphabet,
-eg /a, /b, /c, etc.
-On each such file system there are subdirectories there for each group
-of users, i.e.: \*(lq/a/staff\*(rq and \*(lq/b/prof\*(rq.
-This is not strictly necessary but keeps the number of files in the
-top level directories reasonably small.
-.PP
-The login shell will default to \*(lq/bin/sh\*(rq if none is given.
-Most users at Berkeley choose \*(lq/bin/csh\*(rq so this is usually
-specified here. The 
-.IR chsh (1)
-program allows users to change their login shell to one of the
-shells in the approved list given in /etc/shells.
+For a description of each of these fields, see
+.IR passwd (5).
 .PP
 It is useful to give new users some help in getting started, supplying
 them with a few skeletal files such as
@@ -82,16 +54,15 @@ if they use \*(lq/bin/csh\*(rq.
 The directory
 \*(lq/usr/skel\*(rq contains skeletal definitions of such files.
 New users should be given copies of these files which, for instance,
-arrange to use
+use
 .IR tset (1)
 automatically at each login.
 .SH FILES
 .ta 2i
-/etc/passwd	password file
+/etc/master.passwd	user database
 .br
 /usr/skel	skeletal login directory
 .SH SEE ALSO
-passwd(1), finger(1), chsh(1), chfn(1), aliases(5), passwd(5), vipw(8)
+chpass(1), finger(1), passwd(1), aliases(5), passwd(5), mkpasswd(8), vipw(8)
 .SH BUGS
-User information should be stored in its own data base separate from
-the password file.
+User information should (and eventually will) be stored elsewhere.
