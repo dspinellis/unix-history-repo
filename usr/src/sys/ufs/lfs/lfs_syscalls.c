@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_syscalls.c	7.6 (Berkeley) %G%
+ *	@(#)lfs_syscalls.c	7.7 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -55,11 +55,15 @@ lfs_markv(p, uap, retval)
 	struct lfs *fs;
 	struct mount *mntp;
 	struct vnode *vp;
+	void *start;
 	ino_t lastino;
 	daddr_t daddr;
 	u_long bsize;
 	int cnt, error;
 
+#ifdef VERBOSE
+	printf("lfs_markv\n");
+#endif
 	if (error = suser(p->p_ucred, &p->p_acflag))
 		return (error);
 
@@ -67,7 +71,7 @@ lfs_markv(p, uap, retval)
 		return (EINVAL);
 
 	cnt = uap->blkcnt;
-	blkp = malloc(cnt * sizeof(BLOCK_INFO), M_SEGMENT, M_WAITOK);
+	start = blkp = malloc(cnt * sizeof(BLOCK_INFO), M_SEGMENT, M_WAITOK);
 	if (error = copyin(uap->blkiov, blkp, cnt * sizeof(BLOCK_INFO))) {
 		free(blkp, M_SEGMENT);
 		return (error);
@@ -102,16 +106,21 @@ lfs_markv(p, uap, retval)
 		if (lfs_vget(mntp, blkp->bi_inode, &vp))
 			continue;
 		ip = VTOI(vp);
-		if (ip->i_mtime > blkp->bi_segcreate) {
-			/* Check to see if the block has been replaced. */
-			if (lfs_bmap(vp, blkp->bi_lbn, NULL, &daddr))
-				continue;
-			if (daddr != blkp->bi_daddr)
-				continue;
+
+		/*
+		 * If modify time later than segment create time, see if the
+		 * block has been replaced.
+		 */
+		if (ip->i_mtime > blkp->bi_segcreate &&
+		    (lfs_bmap(vp, blkp->bi_lbn, NULL, &daddr) ||
+		    daddr != blkp->bi_daddr)) {
+			vput(vp);
+			continue;
 		}
 
 		/* Get the block (from core or the cleaner) and write it. */
 		bp = getblk(vp, blkp->bi_lbn, bsize);
+		vput(vp);
 		if (!(bp->b_flags & B_CACHE) &&
 		    (error = copyin(blkp->bi_bp, bp->b_un.b_daddr, bsize))) {
 			brelse(bp);
@@ -120,10 +129,10 @@ lfs_markv(p, uap, retval)
 		}
 		lfs_bwrite(bp);
 	}
-	free(blkp, M_SEGMENT);
+	free(start, M_SEGMENT);
 
 	cnt = uap->inocnt;
-	inop = malloc(cnt * sizeof(INODE_INFO), M_SEGMENT, M_WAITOK);
+	start = inop = malloc(cnt * sizeof(INODE_INFO), M_SEGMENT, M_WAITOK);
 	if (error = copyin(uap->inoiov, inop, cnt * sizeof(INODE_INFO))) {
 		free(inop, M_SEGMENT);
 		return (error);
@@ -143,10 +152,12 @@ lfs_markv(p, uap, retval)
 		 * lfs_vget that takes the copy and uses it instead of reading
 		 * from disk, if it's not already in the cache.
 		 */
-		if (!lfs_vget(mntp, inop->ii_inode, &vp))
+		if (!lfs_vget(mntp, inop->ii_inode, &vp)) {
 			VTOI(vp)->i_flag |= IMOD;
+			vput(vp);
+		}	
 	}
-	free(inop, M_SEGMENT);
+	free(start, M_SEGMENT);
 	return (lfs_segwrite(mntp, 1));
 }
 
@@ -171,9 +182,13 @@ lfs_bmapv(p, uap, retval)
 	BLOCK_INFO *blkp;
 	struct mount *mntp;
 	struct vnode *vp;
+	void *start;
 	daddr_t daddr;
-	int cnt, error;
+	int cnt, error, step;
 
+#ifdef VERBOSE
+	printf("lfs_bmapv\n");
+#endif
 	if (error = suser(p->p_ucred, &p->p_acflag))
 		return (error);
 
@@ -181,18 +196,24 @@ lfs_bmapv(p, uap, retval)
 		return (EINVAL);
 
 	cnt = uap->blkcnt;
-	blkp = malloc(cnt * sizeof(BLOCK_INFO), M_SEGMENT, M_WAITOK);
+	start = blkp = malloc(cnt * sizeof(BLOCK_INFO), M_SEGMENT, M_WAITOK);
 	if (error = copyin(uap->blkiov, blkp, cnt * sizeof(BLOCK_INFO))) {
 		free(blkp, M_SEGMENT);
 		return (error);
 	}
 
-	for (; cnt--; ++blkp)
-		blkp->bi_daddr = 
-		    lfs_vget(mntp, blkp->bi_inode, &vp) ||
-		    lfs_bmap(vp, blkp->bi_lbn, NULL, &daddr) ?
-			LFS_UNUSED_DADDR : daddr;
-	free(blkp, M_SEGMENT);
+	for (step = cnt; step--; ++blkp) {
+		if (lfs_vget(mntp, blkp->bi_inode, &vp))
+			daddr = LFS_UNUSED_DADDR;
+		else {
+			if (lfs_bmap(vp, blkp->bi_lbn, NULL, &daddr))
+				daddr = LFS_UNUSED_DADDR;
+			vput(vp);
+		}
+		blkp->bi_daddr = daddr;
+        }
+	copyout(start, uap->blkiov, cnt * sizeof(BLOCK_INFO));
+	free(start, M_SEGMENT);
 	return (0);
 }
 
@@ -220,6 +241,9 @@ lfs_segclean(p, uap, retval)
 	struct lfs *fs;
 	int error;
 
+#ifdef VERBOSE
+	printf("lfs_segclean\n");
+#endif
 	if (error = suser(p->p_ucred, &p->p_acflag))
 		return (error);
 
@@ -268,6 +292,9 @@ lfs_segwait(p, uap, retval)
 	u_long timeout;
 	int error, s;
 
+#ifdef VERBOSE
+	printf("lfs_segwait\n");
+#endif
 	if (error = suser(p->p_ucred, &p->p_acflag))
 		return (error);
 
