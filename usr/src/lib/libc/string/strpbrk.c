@@ -16,21 +16,19 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)strpbrk.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)strpbrk.c	5.5 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 char *
-strpbrk(s, brk)
-	register char *s, *brk;
+strpbrk(s1, s2)
+	register char *s1, *s2;
 {
-	register char *p;
-	register c;
+	register int c, sc;
+	register char *scanp;
 
-	while (c = *s) {
-		for (p = brk; *p; p++)
-			if (c == *p)
-				return (s);
-		s++;
-	}
-	return (0);
+	for (; c = *s1; ++s1)
+		for (scanp = s2; sc = *scanp++;)
+			if (sc == c)
+				return(s1);
+	return(0);
 }
