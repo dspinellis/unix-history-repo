@@ -149,23 +149,25 @@ acct_process(p)
 	register struct rusage *ru;
 	struct vnode *vp;
 	struct timeval t, ut, st;
-	int i, s;
+	int error, i, s;
 	struct acct acctbuf;
 	register struct acct *ap = &acctbuf;
 
-	if ((vp = acctp) == NULL)
+	s = splclock();
+	if ((vp = acctp) == NULL) {
+		splx(s);
 		return (0);
+	}
 	if (vp->v_type == VBAD) {
 		(void) vn_close(vp, FWRITE, NOCRED, NULL);
 		acctp = NULL;
+		splx(s);
 		return (0);
 	}
 	bcopy(p->p_comm, ap->ac_comm, sizeof(ap->ac_comm));
 	ru = &p->p_stats->p_ru;
 	calcru(p, &ut, &st, NULL);
-	s = splclock();
 	t = time;
-	splx(s);
 	ap->ac_utime = compress(ut.tv_sec, ut.tv_usec);
 	ap->ac_stime = compress(st.tv_sec, st.tv_usec);
 	timevalsub(&t, &p->p_stats->p_start);
@@ -186,9 +188,11 @@ acct_process(p)
 		ap->ac_tty = NODEV;
 	ap->ac_flag = p->p_acflag;
 	VOP_LEASE(vp, p, p->p_ucred, LEASE_WRITE);
-	return (vn_rdwr(UIO_WRITE, vp, (caddr_t)ap, sizeof (acctbuf), (off_t)0,
+	error = vn_rdwr(UIO_WRITE, vp, (caddr_t)ap, sizeof (acctbuf), (off_t)0,
 		UIO_SYSSPACE, IO_UNIT|IO_APPEND, p->p_ucred, (int *)0,
-		(struct proc *)0));
+		(struct proc *)0);
+	splx(s);
+	return (error);
 }
 
 /*
