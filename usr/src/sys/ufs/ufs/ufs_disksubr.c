@@ -3,13 +3,16 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ufs_disksubr.c	7.2 (Berkeley) %G%
+ *	@(#)ufs_disksubr.c	7.3 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "systm.h"
 #include "buf.h"
 #include "disklabel.h"
+
+#include "dir.h"
+#include "user.h"
 
 /*
  * Seek sort for disks.  We depend on the driver
@@ -106,6 +109,56 @@ insert:
 	ap->av_forw = bp;
 	if (ap == dp->b_actl)
 		dp->b_actl = bp;
+}
+
+/*
+ * Attempt to read a disk label from a device
+ * using the indicated stategy routine.
+ * The label must be partly set up before this:
+ * secpercyl and anything required in the strategy routine
+ * (e.g., sector size) must be filled in before calling us.
+ * Returns null on success and an error string on failure.
+ */
+char *
+readdisklabel(dev, strat, lp)
+	dev_t dev;
+	int (*strat)();
+	register struct disklabel *lp;
+{
+	register struct buf *bp;
+	struct disklabel *dlp;
+	char *msg = NULL;
+
+	if (lp->d_secperunit == 0)
+		lp->d_secperunit = 0x1fffffff;
+	lp->d_npartitions = 1;
+	if (lp->d_partitions[0].p_size == 0)
+		lp->d_partitions[0].p_size = 0x1fffffff;
+	lp->d_partitions[0].p_offset = 0;
+
+	bp = geteblk(DEV_BSIZE);		/* max sector size */
+	bp->b_dev = dev;
+	bp->b_blkno = LABELSECTOR;
+	bp->b_bcount = DEV_BSIZE;
+	bp->b_flags = B_BUSY | B_READ;
+	bp->b_cylin = LABELSECTOR / lp->d_secpercyl;
+	(*strat)(bp);
+	biowait(bp);
+	if (bp->b_flags & B_ERROR) {
+		u.u_error = 0;		/* XXX */
+		msg = "I/O error";
+	} else {
+		dlp = (struct disklabel *)(bp->b_un.b_addr + LABELOFFSET);
+		if (dlp->d_magic != DISKMAGIC || dlp->d_magic2 != DISKMAGIC)
+			msg = "no disk label";
+		else if (dkcksum(dlp) != 0)
+			msg = "disk label corrupted";
+		else
+			*lp = *dlp;
+	}
+	bp->b_flags = B_INVAL | B_AGE;
+	brelse(bp);
+	return (msg);
 }
 
 /*
