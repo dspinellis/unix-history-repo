@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)dmzreg.h	6.1 (Berkeley) %G%
+ *	@(#)dmzreg.h	6.2 (Berkeley) %G%
  */
 
 /*
@@ -34,17 +34,15 @@ struct dmzdevice {
 
 /* aliases for asynchronous indirect control registers */
 #define	IR_TBUF		000	/* transmit character */
-#define	IR_RMS		000	/* receive modem status register */
-#define	IR_TSC		000	/* transmit silo count */
+#define	IR_RMSTSC	000	/* receive modem status, transmit silo count */
 #define	IR_LCTMR	010	/* line control and transmit modem */
 #define	IR_TBA		020	/* transmit buffer address register */
 #define	IR_TCC		030	/* transmit character count (DMA) */
 
 #define	octet_tbf	octet_ir.bytes[0]	/* transmit buffer */
-#define	octet_tbf2	octet_ir.word		/* transmit buffer for 2 chars */
-#define	octet_rms	octet_ir.bytes[1]	/* receive modem status */
-#define	octet_tsc	octet_ir.bytes[0]	/* transmit silo count */
-#define	octet_lctmr	octet_ir.word		/* line control and transmit modem */
+#define	octet_tbf2	octet_ir.word		/* transmit buffer, 2 chars */
+#define	octet_rmstsc	octet_ir.word	/* rcv modem status, xmit silo count */
+#define	octet_lctmr	octet_ir.word		/* line control, xmit modem */
 #define	octet_tba	octet_ir.word		/* transmit buffer address */
 #define	octet_tcc	octet_ir.word		/* transmit character count */
 
@@ -99,57 +97,49 @@ struct dmzdevice {
 #define	DMZ_RD		0000377		/* data */
 #define	DMZ_AT		0000377		/* alarm timeout */
 
-/* bits in dmz_rms (taken from dmfreg.h) */
-#define	DMZ_USR		0004		/* user modem signal (pin 25) */
-#define	DMZ_SR		0010		/* secondary receive */
-#define	DMZ_CTS		0020		/* clear to send */
-#define	DMZ_CAR		0040		/* carrier detect */
-#define	DMZ_RNG		0100		/* ring */
-#define	DMZ_DSR		0200		/* data set ready */
+/* bits in dmz_rmstsc */
+#define	DMZ_TSC		0x00ff		/* transmit silo count */
+#define	DMZ_USRR	0x0400		/* user modem signal (pin 25) */
+#define	DMF_SR		0x0800		/* secondary receive */
+#define	DMZ_CTS		0x1000		/* clear to send */
+#define	DMZ_CAR		0x2000		/* carrier detect */
+#define	DMZ_RNG		0x4000		/* ring */
+#define	DMZ_DSR		0x8000		/* data set ready */
 
-/* bits in dmz_tms (taken from dmfreg.h) */
-#define	DMZ_USW		0001		/* user modem signal (pin 18) */
-#define	DMZ_DTR		0002		/* data terminal ready */
-#define	DMZ_RAT		0004		/* data signal rate select */
-#define	DMZ_ST		0010		/* secondary transmit */
-#define	DMZ_RTS		0020		/* request to send */
-#define	DMZ_BRK		0040		/* pseudo break bit */
-#define	DMZ_PMT		0200		/* preempt output */
+/* bits in dmz_lctmr (tms half) */
+#define	DMZ_USRW	0x0100		/* user modem signal (pin 18) */
+#define	DMZ_DTR		0x0200		/* data terminal ready */
+#define	DMZ_RATE	0x0400		/* data signal rate select */
+#define	DMF_ST		0x0800		/* secondary transmit */
+#define	DMZ_RTS		0x1000		/* request to send */
+#define	DMZ_PREEMPT	0x8000		/* preempt output */
 
-#define	DMZ_ON		(DMZ_DTR|DMZ_RTS)
-#define	DMZ_OFF		0
-
-/* bits in octet_lctmr */
+/* bits in octet_lctmr (lc half) */
 #define	DMZ_MIE		0040		/* modem interrupt enable */
 #define	DMZ_FLS		0020		/* flush transmit silo */
-#define	DMZ_RBK		0010		/* real break bit */
+#define	DMZ_BRK		0010		/* send break bit */
 #define	DMZ_RE		0004		/* receive enable */
 #define	DMZ_AUT		0002		/* auto XON/XOFF */
 #define	DMZ_TE		0001		/* transmit enable */
 #define	DMZ_CF		0300		/* control function */
 
 #define	DMZ_LCE		(DMZ_MIE|DMZ_RE|DMZ_TE)
+#define	DMZ_ON		(DMZ_DTR|DMZ_RTS|DMZ_LCE)
+#define	DMZ_OFF		DMZ_LCE
+
 
 /* bits in octet_tcc */
 #define	DMZ_HA		0140000		/* high address bits */
 
-/* bits in dm lsr, copied from dmzreg.h, copied from dh.c */
-#define	DM_USR		0001000		/* usr modem sig, not a real DM bit */
-#define	DM_DSR		0000400		/* data set ready, not a real DM bit */
-#define	DM_RNG		0000200		/* ring */
-#define	DM_CAR		0000100		/* carrier detect */
-#define	DM_CTS		0000040		/* clear to send */
-#define	DM_SR		0000020		/* secondary receive */
-#define	DM_ST		0000010		/* secondary transmit */
-#define	DM_RTS		0000004		/* request to send */
-#define	DM_DTR		0000002		/* data terminal ready */
-#define	DM_LE		0000001		/* line enable */
+/* bits added to dm lsr for DMGET/DMSET */
+#define	DML_USR		0001000		/* usr modem sig, not a real DM bit */
+#define	DML_DSR		0000400		/* data set ready, not a real DM bit */
 
 #define	DMZ_SIZ		32		/* size of DMZ output silo (per line) */
 
-#define	DMZ(a)		a/24
-#define	OCTET(a)	(a%24)/8
-#define	LINE(a)		(a%24)%8
+#define	DMZ(a)		(a/24)
+#define	OCTET(a)	((a%24)/8)
+#define	LINE(a)		((a%24)%8)
 
 #define	DMZ_NOC_MASK	03
 #define	DMZ_INTERFACE	000
