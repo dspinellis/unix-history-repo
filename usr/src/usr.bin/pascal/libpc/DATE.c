@@ -1,6 +1,13 @@
-/* Copyright (c) 1979 Regents of the University of California */
+/*-
+ * Copyright (c) 1979 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.redist.c%
+ */
 
-static char sccsid[] = "@(#)DATE.c 1.1 %G%";
+#ifndef lint
+static char sccsid[] = "@(#)DATE.c	1.2 (Berkeley) %G%";
+#endif /* not lint */
 
 char	_pd_date[] = {
 	8, 9, 10, 4, 5, 6, 10, 22, 23, 10, 0

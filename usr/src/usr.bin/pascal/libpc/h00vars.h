@@ -1,6 +1,11 @@
-/* Copyright (c) 1979 Regents of the University of California */
-
-/* sccsid[] = "@(#)h00vars.h 1.11 %G%"; */
+/*-
+ * Copyright (c) 1979 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.redist.c%
+ *
+ *	@(#)h00vars.h	1.12 (Berkeley) %G%
+ */
 
 #include <stdio.h>
 #include "whoami.h"

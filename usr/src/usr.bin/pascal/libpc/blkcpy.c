@@ -1,6 +1,13 @@
-/* Copyright (c) 1979 Regents of the University of California */
+/*-
+ * Copyright (c) 1979 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.redist.c%
+ */
 
-static char sccsid[] = "@(#)blkcpy.c 1.3 %G%";
+#ifndef lint
+static char sccsid[] = "@(#)blkcpy.c	1.4 (Berkeley) %G%";
+#endif /* not lint */
 
 blkcpy(from, to, siz)
 	register char	*from;
