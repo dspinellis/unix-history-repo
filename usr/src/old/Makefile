@@ -1,7 +1,7 @@
-#	@(#)Makefile	5.27 (Berkeley) %G%
+#	@(#)Makefile	5.28 (Berkeley) %G%
 
 SUBDIR=	awk compact cpp crypt dbconv eqn groups hostid ld lex make \
-	mkpasswd more ms od refer roff sed sh sum symorder talk tbl \
+	mkpasswd more ms od refer roff sed sh sum symorder tbl \
 	tmac whereis which whoami yacc
 
 .if   (${MACHINE} == "hp300")
