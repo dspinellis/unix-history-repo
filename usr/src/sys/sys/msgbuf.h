@@ -4,16 +4,16 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)msgbuf.h	7.4 (Berkeley) %G%
+ *	@(#)msgbuf.h	7.5 (Berkeley) %G%
  */
 
-#define	MSG_MAGIC	0x063061
 #define	MSG_BSIZE	(4096 - 3 * sizeof(long))
 struct	msgbuf {
+#define	MSG_MAGIC	0x063061
 	long	msg_magic;
-	long	msg_bufx;
-	long	msg_bufr;
-	char	msg_bufc[MSG_BSIZE];
+	long	msg_bufx;		/* write pointer */
+	long	msg_bufr;		/* read pointer */
+	char	msg_bufc[MSG_BSIZE];	/* buffer */
 };
 #ifdef KERNEL
 struct	msgbuf *msgbufp;
