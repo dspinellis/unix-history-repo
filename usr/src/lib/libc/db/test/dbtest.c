@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)dbtest.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)dbtest.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -28,11 +28,13 @@ static char sccsid[] = "@(#)dbtest.c	5.3 (Berkeley) %G%";
 #include <string.h>
 #include <unistd.h>
 
-enum S { COMMAND, GET, PUT, REMOVE, SEQ, SEQFLAG, KEY, DATA };
+enum S { COMMAND, COMPARE, GET, PUT, REMOVE, SEQ, SEQFLAG, KEY, DATA };
 
+void	 compare __P((DBT *, DBT *));
 DBTYPE	 dbtype __P((char *));
 void	 err __P((const char *, ...));
 void	 get __P((DB *, DBT *));
+void	 getdata __P((DB *, DBT *, DBT *));
 void	 put __P((DB *, DBT *, DBT *));
 void	 rem __P((DB *, DBT *));
 void	*rfile __P((char *, size_t *));
@@ -55,7 +57,7 @@ main(argc, argv)
 {
 	enum S command, state;
 	DB *dbp;
-	DBT data, key;
+	DBT data, key, keydata;
 	size_t len;
 	int ch;
 	char *infoarg, *p, buf[8 * 1024];
@@ -108,10 +110,20 @@ main(argc, argv)
 	    (p = fgets(buf, sizeof(buf), stdin)) != NULL; ++lineno) {
 		len = strlen(buf);
 		switch(*p) {
+		case 'c':			/* compare */
+			if (state != COMMAND)
+				err("line %lu: not expecting command", lineno);
+			state = KEY;
+			command = COMPARE;
+			break;
 		case 'e':			/* echo */
 			if (state != COMMAND)
 				err("line %lu: not expecting command", lineno);
-			(void)write(ofd, p + 1, len - 1);
+			/* Don't display the newline, if CR at EOL. */
+			if (p[len - 2] == '\r')
+				--len;
+			if (write(ofd, p + 1, len - 1) != len - 1)
+				err("write: %s", strerror(errno));
 			break;
 		case 'g':			/* get */
 			if (state != COMMAND)
@@ -146,24 +158,24 @@ main(argc, argv)
 		case 'D':			/* data file */
 			if (state != DATA)
 				err("line %lu: not expecting data", lineno);
-			if (command != PUT)
-				err("line %lu: command doesn't take data",
-				    lineno);
 			data.data = rfile(p + 1, &data.size);
-			put(dbp, &key, &data);
-			free(key.data);
-			free(data.data);
-			state = COMMAND;
-			break;
+			goto data;
 		case 'd':			/* data */
 			if (state != DATA)
 				err("line %lu: not expecting data", lineno);
-			if (command != PUT)
-				err("line %lu: command doesn't take data",
-				    lineno);
 			data.data = xmalloc(p + 1, len - 1);
 			data.size = len - 1;
-			put(dbp, &key, &data);
+data:			switch(command) {
+			case COMPARE:
+				compare(&keydata, &data);
+				break;
+			case PUT:
+				put(dbp, &key, &data);
+				break;
+			default:
+				err("line %lu: command doesn't take data",
+				    lineno);
+			}
 			free(key.data);
 			free(data.data);
 			state = COMMAND;
@@ -189,6 +201,10 @@ main(argc, argv)
 				key.size = len - 1;
 			}
 key:			switch(command) {
+			case COMPARE:
+				getdata(dbp, &key, &keydata);
+				state = DATA;
+				break;
 			case GET:
 				get(dbp, &key);
 				if (type != DB_RECNO)
@@ -228,6 +244,26 @@ key:			switch(command) {
 #define	NOSUCHKEY	"get failed, no such key\n"
 
 void
+compare(db1, db2)
+	DBT *db1, *db2;
+{
+	register size_t len;
+	register u_char *p1, *p2;
+
+	if (db1->size != db2->size)
+		printf("compare failed: key->data len %lu != data len %lu\n",
+		    db1->size, db2->size);
+
+	len = MIN(db1->size, db2->size);
+	for (p1 = db1->data, p2 = db2->data; len--;)
+		if (*p1++ != *p2++) {
+			printf("compare failed at offset %d\n",
+			    p1 - (u_char *)db1->data);
+			break;
+		}
+}
+
+void
 get(dbp, kp)
 	DB *dbp;
 	DBT *kp;
@@ -244,6 +280,23 @@ get(dbp, kp)
 	case 1:
 		(void)write(ofd, NOSUCHKEY, sizeof(NOSUCHKEY) - 1);
 		break;
+	}
+}
+
+void
+getdata(dbp, kp, dp)
+	DB *dbp;
+	DBT *kp, *dp;
+{
+	switch(dbp->get(dbp, kp, dp, flags)) {
+	case 0:
+		return;
+	case -1:
+		err("line %lu: getdata: %s", lineno, strerror(errno));
+		/* NOTREACHED */
+	case 1:
+		err("line %lu: get failed, no such key", lineno);
+		/* NOTREACHED */
 	}
 }
 
