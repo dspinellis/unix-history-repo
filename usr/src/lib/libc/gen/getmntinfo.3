@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)getmntinfo.3	6.1 (Berkeley) %G%
+.\"	@(#)getmntinfo.3	6.2 (Berkeley) %G%
 .\"
 .TH GETMNTINFO 3 ""
 .UC 7
@@ -26,8 +26,9 @@ getmntinfo - get information about mounted file systems
 #include <sys/mount.h>
 .LP
 .ft B
-int getmntinfo(mntbufp)
+int getmntinfo(mntbufp, flags)
 struct statfs **mntbufp;
+int flags
 .fi
 .ft R
 .SH DESCRIPTION
@@ -45,6 +46,12 @@ The pointer to the array is stored into
 Otherwise, zero is returned and
 .I mntbufp
 is unmodified.
+.PP
+.I Getmntinfo
+passes its
+.I flags
+parameter transparently to
+.IR getfsstat (2).
 .SH BUGS
 All information is contained in a static area,
 so it must be copied if it is to be saved.
