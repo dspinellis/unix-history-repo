@@ -189,10 +189,10 @@ prompt()
 			putstr(pbuf);
 		}
 		if ((pos = position(BOTTOM)) != NULL_POSITION) {
-			(void)sprintf(pbuf, " byte %qd", pos);
+			(void)sprintf(pbuf, " byte %d", pos);
 			putstr(pbuf);
 			if (!ispipe && (len = ch_length())) {
-				(void)sprintf(pbuf, "/%qd pct %qd%%",
+				(void)sprintf(pbuf, "/%d pct %d%%",
 				    len, ((100 * pos) / len));
 				putstr(pbuf);
 			}
@@ -214,7 +214,7 @@ prompt()
 		else if (!ispipe &&
 		    (pos = position(BOTTOM)) != NULL_POSITION &&
 		    (len = ch_length())) {
-			(void)sprintf(pbuf, " (%qd%%)", ((100 * pos) / len));
+			(void)sprintf(pbuf, " (%d%%)", ((100 * pos) / len));
 			putstr(pbuf);
 		}
 		so_exit();
