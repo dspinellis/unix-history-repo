@@ -36,7 +36,7 @@
 
 #if defined(LIBC_SCCS) && !defined(lint)
 /* from static char sccsid[] = "@(#)crypt.c	5.11 (Berkeley) 6/25/91"; */
-static char rcsid[] = "$Header: /a/cvs/386BSD/src/lib/libc/gen/crypt.c,v 1.3 1993/07/21 17:42:51 nate Exp $";
+static char rcsid[] = "$Header: /usr/chroot/CVS/386BSD/src/lib/libc/gen/crypt.c,v 1.4 1993/07/21 18:32:28 nate Exp $";
 #endif /* LIBC_SCCS and not lint */
 
 #include <unistd.h>
@@ -166,11 +166,14 @@ crypt(pw, salt)
 	m = matrix;
 	*p = 0;
 	for (i = 077; i >= 0; i--) {
-		t = *m++ ^ *m++ ^ vector[0] ^ vector[1];
+		t = *m++;
+		t = t ^ *m++;
+		t = t ^ vector[0];
+		t = t ^ vector[1];
 		b = 0;
 		while (t) {
 			if (t & 1)
-				b ^= 1;
+				b = 1 - b;
 			t >>= 1;
 		}
 		a--;
