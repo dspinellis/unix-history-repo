@@ -29,6 +29,13 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00032
+ * --------------------         -----   ----------------------
+ *
+ * 05 Aug 92    David Greenman          Fix kernel namelist db create/use
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
@@ -309,7 +316,7 @@ kvm_nlist(nl)
 	 * read version out of database
 	 */
 	bcopy("VERSION", symbuf, sizeof ("VERSION")-1);
-	key.dsize = (sizeof ("VERSION") - 1) + 1;
+	key.dsize = (sizeof ("VERSION") - 1);
 	data = dbm_fetch(db, key);
 	if (data.dptr == NULL)
 		goto hard1;
@@ -319,7 +326,7 @@ kvm_nlist(nl)
 	 * read version string from kernel memory
 	 */
 	bcopy("_version", symbuf, sizeof ("_version")-1);
-	key.dsize = (sizeof ("_version")-1) + 1;
+	key.dsize = (sizeof ("_version")-1);
 	data = dbm_fetch(db, key);
 	if (data.dptr == NULL)
 		goto hard1;
@@ -356,7 +363,7 @@ win:
 			return (-1);
 		}
 		(void)strcpy(symbuf, n->n_name);
-		key.dsize = len + 1;
+		key.dsize = len;
 		data = dbm_fetch(db, key);
 		if (data.dptr == NULL || data.dsize != sizeof (struct nlist))
 			continue;
@@ -634,6 +641,11 @@ kvm_freeprocs()
 	}
 }
 
+#ifdef i386
+/* See also ./sys/kern/kern_execve.c */
+#define ARGSIZE		(roundup(ARG_MAX, NBPG))
+#endif
+
 #ifdef NEWVM
 struct user *
 kvm_getu(p)
@@ -691,23 +703,32 @@ kvm_getu(p)
 #endif
 
 #ifdef i386
-      if (kp->kp_eproc.e_vm.vm_pmap.pm_pdir) {
-              struct pde pde;
+	if (kp->kp_eproc.e_vm.vm_pmap.pm_pdir) {
+		struct pde pde;
+		u_int vaddr = USRSTACK-ARGSIZE;
 
-              klseek(kmem,
-                      (long)(kp->kp_eproc.e_vm.vm_pmap.pm_pdir + UPTDI), 0);
-              if (read(kmem, (char *)&pde, sizeof pde) == sizeof pde &&
-                      pde.pd_v) {
+		if ((u_int)kp->kp_eproc.e_vm.vm_maxsaddr + MAXSSIZ < USRSTACK)
+			vaddr -= MAXSSIZ;
+#if 0
+		klseek(kmem,
+			(long)(kp->kp_eproc.e_vm.vm_pmap.pm_pdir + UPTDI), 0);
+#else
+		klseek(kmem,
+		(long)(&kp->kp_eproc.e_vm.vm_pmap.pm_pdir[pdei(vaddr)]), 0);
+#endif
+		if (read(kmem, (char *)&pde, sizeof pde) == sizeof pde
+				&& pde.pd_v) {
 
-                      struct pte pte;
+			struct pte pte;
 
-                      lseek(mem, (long)ctob(pde.pd_pfnum) +
-                              (ptei(USRSTACK-CLBYTES) * sizeof pte), 0);
-                      if (read(mem, (char *)&pte, sizeof pte) == sizeof pte && +                               pte.pg_v) {
-                              argaddr1 = (long)ctob(pte.pg_pfnum);
-                      }
-              }
-      }
+			lseek(mem, (long)ctob(pde.pd_pfnum) +
+				(ptei(vaddr) * sizeof pte), 0);
+			if (read(mem, (char *)&pte, sizeof pte) == sizeof pte
+					&& pte.pg_v) {
+				argaddr1 = (long)ctob(pte.pg_pfnum);
+			}
+		}
+	}
 #endif
 	return(&user.user);
 }
@@ -786,11 +807,20 @@ kvm_getargs(p, up)
 	const struct proc *p;
 	const struct user *up;
 {
+#ifdef i386
+	/* See also ./sys/kern/kern_execve.c */
+	static char cmdbuf[ARGSIZE];
+	static union {
+		char	argc[ARGSIZE];
+		int	argi[ARGSIZE/sizeof (int)];
+	} argspac;
+#else
 	static char cmdbuf[CLBYTES*2];
 	static union {
 		char	argc[CLBYTES*2];
 		int	argi[CLBYTES*2/sizeof (int)];
 	} argspac;
+#endif
 	register char *cp;
 	register int *ip;
 	char c;
@@ -824,6 +854,11 @@ kvm_getargs(p, up)
 		file = swapf;
 #endif
 	} else {
+#ifdef i386
+		lseek(mem, (long)argaddr1, 0);
+		if (read(mem, &argspac.argc[0], ARGSIZE) != ARGSIZE)
+			goto bad;
+#else
 		if (argaddr0) {
 			lseek(mem, (long)argaddr0, 0);
 			if (read(mem, (char *)&argspac, CLBYTES) != CLBYTES)
@@ -833,10 +868,14 @@ kvm_getargs(p, up)
 		lseek(mem, (long)argaddr1, 0);
 		if (read(mem, &argspac.argc[CLBYTES], CLBYTES) != CLBYTES)
 			goto bad;
+#endif
 		file = (char *) memf;
 	}
 #ifdef i386
-	ip = &argspac.argi[(CLBYTES + CLBYTES/2)/sizeof (int)];
+	ip = &argspac.argi[(ARGSIZE-ARG_MAX)/sizeof (int)];
+
+	nbad = 0;
+	for (cp = (char *)ip; cp < &argspac.argc[ARGSIZE-stkoff]; cp++) {
 #else
 	ip = &argspac.argi[CLBYTES*2/sizeof (int)];
 	ip -= 2;                /* last arg word and .long 0 */
@@ -848,18 +887,22 @@ kvm_getargs(p, up)
 	*(char *)ip = ' ';
 	ip++;
 	nbad = 0;
-#endif
+
 	for (cp = (char *)ip; cp < &argspac.argc[CLBYTES*2-stkoff]; cp++) {
-		c = *cp & 0177;
-		if (c == 0)
+#endif
+		c = *cp;
+		if (c == 0) {	/* convert null between arguments to space */
 			*cp = ' ';
+			if (*(cp+1) == 0) break;	/* if null argument follows then no more args */
+			}
 		else if (c < ' ' || c > 0176) {
-			if (++nbad >= 5*(0+1)) {	/* eflg -> 0 XXX */
-				*cp++ = ' ';
+			if (++nbad >= 5*(0+1)) {	/* eflg -> 0 XXX */ /* limit number of bad chars to 5 */
+				*cp++ = '?';
 				break;
 			}
 			*cp = '?';
-		} else if (0 == 0 && c == '=') {	/* eflg -> 0 XXX */
+		}
+		else if (0 == 0 && c == '=') {		/* eflg -> 0 XXX */
 			while (*--cp != ' ')
 				if (cp <= (char *)ip)
 					break;
@@ -870,7 +913,7 @@ kvm_getargs(p, up)
 	while (*--cp == ' ')
 		*cp = 0;
 	cp = (char *)ip;
-	(void) strncpy(cmdbuf, cp, &argspac.argc[CLBYTES*2] - cp);
+	(void) strcpy(cmdbuf, cp);
 	if (cp[0] == '-' || cp[0] == '?' || cp[0] <= ' ') {
 		(void) strcat(cmdbuf, " (");
 		(void) strncat(cmdbuf, p->p_comm, sizeof(p->p_comm));
