@@ -1,5 +1,5 @@
 /*
- *	@(#)ww.h	3.19 83/11/23	
+ *	@(#)ww.h	3.20 83/12/01	
  */
 
 #include <stdio.h>
@@ -27,7 +27,6 @@ struct ww {
 	char ww_modes;		/* current printing modes */
 	char ww_insert :1;	/* insert mode, for printing */
 	char ww_mapnl :1;	/* map \n to \r\n */
-	char ww_haspty :1;	/* has pty */
 	char ww_hascursor :1;	/* has fake cursor */
 	char ww_hasframe :1;	/* frame it */
 	char ww_index;		/* the index, for wwindex[] */
@@ -47,7 +46,6 @@ struct ww {
 
 		/* things for the window process */
 	int ww_pty;		/* file descriptor of pty */
-	int ww_tty;		/* . . . tty */
 	int ww_pid;		/* pid of process, if WWS_HASPROC true */
 	char ww_ttyname[11];	/* "/dev/ttyp?" */
 
@@ -204,4 +202,8 @@ char *strcat();
 #if defined(O_4_1A)||defined(O_4_1C)
 int (*sigset)();
 #define signal(s, v)	sigset((s), (v))
+#else
+#define sigmask(s)	(1 << (s) - 1)
+#define sighold(s)	sigblock(sigmask(s))
+#define sigrelse(s)	sigsetmask(sigblock(0) & ~sigmask(s))
 #endif

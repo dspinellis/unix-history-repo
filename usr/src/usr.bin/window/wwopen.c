@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwopen.c	3.13 83/11/23";
+static	char *sccsid = "@(#)wwopen.c	3.14 83/12/01";
 #endif
 
 #include "ww.h"
@@ -17,6 +17,7 @@ wwopen(flags, nrow, ncol, row, col, nline)
 		wwerrno = WWE_NOMEM;
 		goto bad;
 	}
+	w->ww_pty = -1;
 
 	for (i = 0; i < NWW && wwindex[i] != 0; i++)
 		;
@@ -56,7 +57,6 @@ wwopen(flags, nrow, ncol, row, col, nline)
 	if (flags & WWO_PTY) {
 		if (wwgetpty(w) < 0)
 			goto bad;
-		w->ww_haspty = 1;
 		if (wwsettty(w->ww_pty, &wwwintty) < 0)
 			goto bad;
 	}
@@ -115,10 +115,7 @@ bad:
 			wwfree((char **)w->ww_buf, w->ww_b.t);
 		if (w->ww_nvis != 0)
 			free((char *)(w->ww_nvis + w->ww_w.t));
-		if (w->ww_haspty) {
-			(void) close(w->ww_tty);
-			(void) close(w->ww_pty);
-		}
+		(void) close(w->ww_pty);
 		free((char *)w);
 	}
 	return 0;

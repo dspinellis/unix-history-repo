@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwiomux.c	3.4 83/10/27";
+static	char *sccsid = "@(#)wwiomux.c	3.5 83/12/01";
 #endif
 
 #include "ww.h"
@@ -12,24 +12,23 @@ register int *imask;
 	register int n;
 
 	for (w = wwindex; w < &wwindex[NWW]; w++)
-		if (*w && (*w)->ww_haspty && (*w)->ww_pty >= 0)
+		if (*w && (*w)->ww_pty >= 0)
 			*imask |= 1 << (*w)->ww_pty;
 	if (*imask == 0)
 		return -1;
+	fflush(stdout);
 	n = select(wwdtablesize, imask, (int *)0, (int *)0,
 		(struct timeval *)0);
 	if (n <= 0)
 		return -1;
 	for (w = wwindex; w < &wwindex[NWW]; w++)
-		if (*w && (*w)->ww_haspty && (*w)->ww_pty >= 0
-		    && *imask & 1 << (*w)->ww_pty) {
+		if (*w && (*w)->ww_pty >= 0 && *imask & 1 << (*w)->ww_pty) {
 			n = read((*w)->ww_pty, buf, sizeof buf);
 			if (n < 0) {
-				(*w)->ww_haspty = 0;
 				(void) close((*w)->ww_pty);
-				(void) close((*w)->ww_tty);
+				(*w)->ww_pty = -1;
 			} else if (n > 0)
-				(void) wwwrite((*w), buf, n);
+				(void) wwwrite(*w, buf, n);
 		}
 	return 0;
 }

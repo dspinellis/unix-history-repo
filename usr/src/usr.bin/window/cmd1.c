@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd1.c	3.16 83/11/30";
+static	char *sccsid = "@(#)cmd1.c	3.17 83/12/01";
 #endif
 
 #include "defs.h"
@@ -180,7 +180,7 @@ char *label;
 	wwflush();
 	if (wwspawn(w, shell, shellname, (char *)0) < 0) {
 		c_close(w);
-		error("%s.", wwerror());
+		error("%s: %s.", shell, wwerror());
 		return 0;
 	}
 	return w;
