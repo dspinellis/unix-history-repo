@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)pass4.c	8.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)pass4.c	8.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -29,7 +29,7 @@ pass4()
 	struct inodesc idesc;
 	int n;
 
-	bzero((char *)&idesc, sizeof(struct inodesc));
+	memset(&idesc, 0, sizeof(struct inodesc));
 	idesc.id_type = ADDR;
 	idesc.id_func = pass4check;
 	for (inumber = ROOTINO; inumber <= lastino; inumber++) {

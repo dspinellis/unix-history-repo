@@ -11,7 +11,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)dirs.c	8.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)dirs.c	8.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -385,7 +385,7 @@ putent(dp)
 		(void) fwrite(dirbuf, 1, DIRBLKSIZ, df);
 		dirloc = 0;
 	}
-	bcopy((char *)dp, dirbuf + dirloc, (long)dp->d_reclen);
+	memmove(dirbuf + dirloc, dp, (long)dp->d_reclen);
 	prev = dirloc;
 	dirloc += dp->d_reclen;
 }
@@ -408,7 +408,7 @@ dcvt(odp, ndp)
 	register struct direct *ndp;
 {
 
-	bzero((char *)ndp, (long)(sizeof *ndp));
+	memset(ndp, 0, (long)(sizeof *ndp));
 	ndp->d_ino =  odp->d_ino;
 	ndp->d_type = DT_UNKNOWN;
 	(void) strncpy(ndp->d_name, odp->d_name, ODIRSIZ);
@@ -615,7 +615,7 @@ genliteraldir(name, ino)
 	itp = inotablookup(ino);
 	if (itp == NULL)
 		panic("Cannot find directory inode %d named %s\n", ino, name);
-	if ((ofile = creat(name, 0666)) < 0) {
+	if ((ofile = open(name, O_WRONLY | O_CREAT | O_TRUNC, 0666)) < 0) {
 		fprintf(stderr, "%s: ", name);
 		(void) fflush(stderr);
 		fprintf(stderr, "cannot create file: %s\n", strerror(errno));

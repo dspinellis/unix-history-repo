@@ -15,7 +15,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)quotacheck.c	8.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)quotacheck.c	8.6 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -422,7 +422,7 @@ hasquota(fs, type, qfnamep)
 	}
 	strcpy(buf, fs->fs_mntops);
 	for (opt = strtok(buf, ","); opt; opt = strtok(NULL, ",")) {
-		if (cp = index(opt, '='))
+		if (cp = strchr(opt, '='))
 			*cp++ = '\0';
 		if (type == USRQUOTA && strcmp(opt, usrname) == 0)
 			break;
@@ -486,7 +486,7 @@ addid(id, type, name)
 	if (id > highid[type])
 		highid[type] = id;
 	if (name)
-		bcopy(name, fup->fu_name, len + 1);
+		memmove(fup->fu_name, name, len + 1);
 	else
 		(void)sprintf(fup->fu_name, "%u", id);
 	return (fup);

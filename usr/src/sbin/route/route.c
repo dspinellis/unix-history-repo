@@ -13,7 +13,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)route.c	8.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)route.c	8.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -286,7 +286,7 @@ routename(sa)
 	if (first) {
 		first = 0;
 		if (gethostname(domain, MAXHOSTNAMELEN) == 0 &&
-		    (cp = index(domain, '.')))
+		    (cp = strchr(domain, '.')))
 			(void) strcpy(domain, cp + 1);
 		else
 			domain[0] = 0;
@@ -307,7 +307,7 @@ routename(sa)
 			hp = gethostbyaddr((char *)&in, sizeof (struct in_addr),
 				AF_INET);
 			if (hp) {
-				if ((cp = index(hp->h_name, '.')) &&
+				if ((cp = strchr(hp->h_name, '.')) &&
 				    !strcmp(cp + 1, domain))
 					*cp = 0;
 				cp = hp->h_name;
@@ -637,7 +637,7 @@ newroute(argc, argv)
 			break;
 		if (af == AF_INET && *gateway && hp && hp->h_addr_list[1]) {
 			hp->h_addr_list++;
-			bcopy(hp->h_addr_list[0], &so_gate.sin.sin_addr,
+			memmove(&so_gate.sin.sin_addr, hp->h_addr_list[0],
 			    hp->h_length);
 		} else
 			break;
@@ -782,7 +782,7 @@ getaddr(which, s, hpp)
 		if (which == RTA_DST) {
 			extern short ns_bh[3];
 			struct sockaddr_ns *sms = &(so_mask.sns);
-			bzero((char *)sms, sizeof(*sms));
+			memset(sms, 0, sizeof(*sms));
 			sms->sns_family = 0;
 			sms->sns_len = 6;
 			sms->sns_addr.x_net = *(union ns_net *)ns_bh;
@@ -843,7 +843,7 @@ netdone:
 	if (hp) {
 		*hpp = hp;
 		su->sin.sin_family = hp->h_addrtype;
-		bcopy(hp->h_addr, (char *)&su->sin.sin_addr, hp->h_length);
+		memmove(&su->sin.sin_addr, hp->h_addr, hp->h_length);
 		return (1);
 	}
 	(void) fprintf(stderr, "%s: bad value\n", s);
@@ -973,12 +973,12 @@ rtmsg(cmd, flags)
 
 #define NEXTADDR(w, u) \
 	if (rtm_addrs & (w)) {\
-	    l = ROUNDUP(u.sa.sa_len); bcopy((char *)&(u), cp, l); cp += l;\
+	    l = ROUNDUP(u.sa.sa_len); memmove(cp, &(u), l); cp += l;\
 	    if (verbose) sodump(&(u),"u");\
 	}
 
 	errno = 0;
-	bzero((char *)&m_rtmsg, sizeof(m_rtmsg));
+	memset(&m_rtmsg, 0, sizeof(m_rtmsg));
 	if (cmd == 'a')
 		cmd = RTM_ADD;
 	else if (cmd == 'c')
@@ -1354,7 +1354,7 @@ sockaddr(addr, sa)
 	char *cplim = cp + size;
 	register int byte = 0, state = VIRGIN, new;
 
-	bzero(cp, size);
+	memset(cp, 0, size);
 	cp++;
 	do {
 		if ((*addr >= '0') && (*addr <= '9')) {

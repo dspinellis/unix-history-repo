@@ -15,7 +15,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mount_nfs.c	8.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)mount_nfs.c	8.10 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -432,7 +432,7 @@ main(argc, argv)
 				3 * NFSX_UNSIGNED;
 			    ncd.ncd_verfstr = (u_char *)&kverf;
 			    ncd.ncd_verflen = sizeof (kverf);
-			    bcopy((caddr_t)kcr.session, (caddr_t)ncd.ncd_key,
+			    memmove(ncd.ncd_key, kcr.session,
 				sizeof (kcr.session));
 			    kin.t1 = htonl(ktv.tv_sec);
 			    kin.t2 = htonl(ktv.tv_usec);
@@ -521,14 +521,13 @@ getnfsargs(spec, nfsargsp)
 			warnx("bad ISO address");
 			return (0);
 		}
-		bzero((caddr_t)&isoaddr, sizeof (isoaddr));
-		bcopy((caddr_t)isop, (caddr_t)&isoaddr.siso_addr,
-			sizeof (struct iso_addr));
+		memset(&isoaddr, 0, sizeof (isoaddr));
+		memmove(&isoaddr.siso_addr, isop, sizeof (struct iso_addr));
 		isoaddr.siso_len = sizeof (isoaddr);
 		isoaddr.siso_family = AF_ISO;
 		isoaddr.siso_tlen = 2;
 		isoport = htons(NFS_PORT);
-		bcopy((caddr_t)&isoport, TSEL(&isoaddr), isoaddr.siso_tlen);
+		memmove(TSEL(&isoaddr), &isoport, isoaddr.siso_tlen);
 		hostp = delimp + 1;
 	}
 #endif /* ISO */
@@ -542,9 +541,9 @@ getnfsargs(spec, nfsargsp)
 			warnx("bad net address %s", hostp);
 			return (0);
 		}
-	} else if ((hp = gethostbyname(hostp)) != NULL) {
-		bcopy(hp->h_addr, (caddr_t)&saddr.sin_addr, hp->h_length);
-	} else {
+	} else if ((hp = gethostbyname(hostp)) != NULL)
+		memmove(&saddr.sin_addr, hp->h_addr, hp->h_length);
+	else {
 		warnx("can't get net id for host");
 		return (0);
         }
@@ -555,7 +554,7 @@ getnfsargs(spec, nfsargsp)
 			warnx("can't reverse resolve net address");
 			return (0);
 		}
-		bcopy(hp->h_addr, (caddr_t)&saddr.sin_addr, hp->h_length);
+		memmove(&saddr.sin_addr, hp->h_addr, hp->h_length);
 		strncpy(inst, hp->h_name, INST_SZ);
 		inst[INST_SZ - 1] = '\0';
 		if (cp = strchr(inst, '.'))

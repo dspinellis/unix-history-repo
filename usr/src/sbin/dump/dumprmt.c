@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)dumprmt.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)dumprmt.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -104,7 +104,7 @@ rmtgetconn()
 		if (pwd == NULL)
 			errx(1, "who are you?");
 	}
-	if ((cp = index(rmtpeer, '@')) != NULL) {
+	if ((cp = strchr(rmtpeer, '@')) != NULL) {
 		tuser = rmtpeer;
 		*cp = '\0';
 		if (!okname(tuser))

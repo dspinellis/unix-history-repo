@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)dump.h	8.1 (Berkeley) %G%
+ *	@(#)dump.h	8.2 (Berkeley) %G%
  */
 
 #define MAXINOPB	(MAXBSIZE / sizeof(struct dinode))
@@ -158,8 +158,9 @@ void	sig __P((int signo));
  */
 #ifdef COMPAT
 #include <sys/file.h>
-extern char *index(), *rindex(), *strdup();
-extern char *ctime();
+#define	strchr(a,b)	index(a,b)
+#define	strrchr(a,b)	rindex(a,b)
+extern char *strdup(), *ctime();
 extern int read(), write();
 extern int errno;
 #endif

@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)interactive.c	8.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)interactive.c	8.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -698,7 +698,7 @@ glob_readdir(dirp)
 		return (NULL);
 	adirent.d_fileno = dp->d_ino;
 	adirent.d_namlen = dp->d_namlen;
-	bcopy(dp->d_name, adirent.d_name, dp->d_namlen + 1);
+	memmove(adirent.d_name, dp->d_name, dp->d_namlen + 1);
 	return (&adirent);
 }
 

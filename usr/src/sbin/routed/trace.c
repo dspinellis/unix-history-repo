@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)trace.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)trace.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -184,7 +184,7 @@ trace(ifd, who, p, len, m)
 			len = 0;
 	}
 	if (len > 0)
-		bcopy(p, t->ift_packet, len);
+		memmove(t->ift_packet, p, len);
 	t->ift_size = len;
 	t->ift_metric = m;
 }

@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mkfs.c	8.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)mkfs.c	8.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <unistd.h>
@@ -634,7 +634,7 @@ initcg(cylno, utime)
 	if (cylno == 0)
 		dupper += howmany(sblock.fs_cssize, sblock.fs_fsize);
 	cs = fscs + cylno;
-	bzero(&acg, sblock.fs_cgsize);
+	memset(&acg, 0, sblock.fs_cgsize);
 	acg.cg_time = utime;
 	acg.cg_magic = CG_MAGIC;
 	acg.cg_cgx = cylno;
@@ -821,12 +821,12 @@ fsinit(utime)
 	if (Oflag) {
 		(void)makedir((struct direct *)olost_found_dir, 2);
 		for (i = DIRBLKSIZ; i < sblock.fs_bsize; i += DIRBLKSIZ)
-			bcopy(&olost_found_dir[2], &buf[i],
+			memmove(&buf[i], &olost_found_dir[2],
 			    DIRSIZ(0, &olost_found_dir[2]));
 	} else {
 		(void)makedir(lost_found_dir, 2);
 		for (i = DIRBLKSIZ; i < sblock.fs_bsize; i += DIRBLKSIZ)
-			bcopy(&lost_found_dir[2], &buf[i],
+			memmove(&buf[i], &lost_found_dir[2],
 			    DIRSIZ(0, &lost_found_dir[2]));
 	}
 	node.di_mode = IFDIR | UMASK;
@@ -869,12 +869,12 @@ makedir(protodir, entries)
 	spcleft = DIRBLKSIZ;
 	for (cp = buf, i = 0; i < entries - 1; i++) {
 		protodir[i].d_reclen = DIRSIZ(0, &protodir[i]);
-		bcopy(&protodir[i], cp, protodir[i].d_reclen);
+		memmove(cp, &protodir[i], protodir[i].d_reclen);
 		cp += protodir[i].d_reclen;
 		spcleft -= protodir[i].d_reclen;
 	}
 	protodir[i].d_reclen = spcleft;
-	bcopy(&protodir[i], cp, DIRSIZ(0, &protodir[i]));
+	memmove(cp, &protodir[i], DIRSIZ(0, &protodir[i]));
 	return (DIRBLKSIZ);
 }
 
@@ -1021,7 +1021,7 @@ realloc(ptr, size)
 
 	if ((p = malloc(size)) == NULL)
 		return (NULL);
-	bcopy(ptr, p, size);
+	memmove(p, ptr, size);
 	free(ptr);
 	return (p);
 }
@@ -1037,7 +1037,7 @@ calloc(size, numelm)
 
 	size *= numelm;
 	base = malloc(size);
-	bzero(base, size);
+	memset(base, 0, size);
 	return (base);
 }
 
@@ -1062,7 +1062,7 @@ rdfs(bno, size, bf)
 	int n;
 
 	if (mfs) {
-		bcopy(membase + bno * sectorsize, bf, size);
+		memmove(bf, membase + bno * sectorsize, size);
 		return;
 	}
 	if (lseek(fsi, (off_t)bno * sectorsize, 0) < 0) {
@@ -1089,7 +1089,7 @@ wtfs(bno, size, bf)
 	int n;
 
 	if (mfs) {
-		bcopy(bf, membase + bno * sectorsize, size);
+		memmove(membase + bno * sectorsize, bf, size);
 		return;
 	}
 	if (Nflag)
