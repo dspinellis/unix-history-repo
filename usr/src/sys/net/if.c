@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if.c	7.13 (Berkeley) %G%
+ *	@(#)if.c	7.14 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -13,10 +13,9 @@
 #include "socket.h"
 #include "socketvar.h"
 #include "protosw.h"
-#include "user.h"
+#include "proc.h"
 #include "kernel.h"
 #include "ioctl.h"
-#include "errno.h"
 
 #include "if.h"
 #include "af.h"
@@ -61,6 +60,8 @@ ifubareset(uban)
 
 int if_index = 0;
 struct ifaddr **ifnet_addrs;
+static char *sprint_d();
+
 /*
  * Attach an interface to the
  * list of "active" interfaces.
@@ -70,7 +71,7 @@ if_attach(ifp)
 {
 	unsigned socksize, ifasize;
 	int namelen, unitlen;
-	char workbuf[16];
+	char workbuf[12], *unitname;
 	register struct ifnet **p = &ifnet;
 	register struct sockaddr_dl *sdl;
 	register struct ifaddr *ifa;
@@ -100,9 +101,9 @@ if_attach(ifp)
 	/*
 	 * create a Link Level name for this device
 	 */
-	sprint_d(workbuf, ifp->if_unit);
+	unitname = sprint_d((u_int)ifp->if_unit, workbuf, sizeof(workbuf));
 	namelen = strlen(ifp->if_name);
-	unitlen = strlen(workbuf);
+	unitlen = strlen(unitname);
 #define _offsetof(t, m) ((int)((caddr_t)&((t *)0)->m))
 	socksize = _offsetof(struct sockaddr_dl, sdl_data[0]) +
 			       unitlen + namelen + ifp->if_addrlen;
@@ -122,7 +123,7 @@ if_attach(ifp)
 	sdl->sdl_len = socksize;
 	sdl->sdl_family = AF_LINK;
 	bcopy(ifp->if_name, sdl->sdl_data, namelen);
-	bcopy((caddr_t)workbuf, namelen + (caddr_t)sdl->sdl_data, unitlen);
+	bcopy(unitname, namelen + (caddr_t)sdl->sdl_data, unitlen);
 	sdl->sdl_nlen = (namelen += unitlen);
 	sdl->sdl_index = ifp->if_index;
 	sdl = (struct sockaddr_dl *)(socksize + (caddr_t)sdl);
@@ -396,10 +397,11 @@ ifunit(name)
 /*
  * Interface ioctls.
  */
-ifioctl(so, cmd, data)
+ifioctl(so, cmd, data, p)
 	struct socket *so;
 	int cmd;
 	caddr_t data;
+	struct proc *p;
 {
 	register struct ifnet *ifp;
 	register struct ifreq *ifr;
@@ -414,7 +416,7 @@ ifioctl(so, cmd, data)
 #if defined(INET) && NETHER > 0
 	case SIOCSARP:
 	case SIOCDARP:
-		if (error = suser(u.u_cred, &u.u_acflag))
+		if (error = suser(p->p_ucred, &p->p_acflag))
 			return (error);
 		/* FALL THROUGH */
 	case SIOCGARP:
@@ -437,7 +439,7 @@ ifioctl(so, cmd, data)
 		break;
 
 	case SIOCSIFFLAGS:
-		if (error = suser(u.u_cred, &u.u_acflag))
+		if (error = suser(p->p_ucred, &p->p_acflag))
 			return (error);
 		if (ifp->if_flags & IFF_UP && (ifr->ifr_flags & IFF_UP) == 0) {
 			int s = splimp();
@@ -451,7 +453,7 @@ ifioctl(so, cmd, data)
 		break;
 
 	case SIOCSIFMETRIC:
-		if (error = suser(u.u_cred, &u.u_acflag))
+		if (error = suser(p->p_ucred, &p->p_acflag))
 			return (error);
 		ifp->if_metric = ifr->ifr_metric;
 		break;
@@ -588,21 +590,19 @@ ifconf(cmd, data)
 	return (error);
 }
 
-static sprint_d(cp, n)
-register char *cp;
-u_short n;
+static char *
+sprint_d(n, buf, buflen)
+	u_int n;
+	char *buf;
+	int buflen;
 {
-	register int q, m;
+	register char *cp = buf + buflen - 1;
+
+	*cp = 0;
 	do {
-	    if (n >= 10000) m = 10000;
-		else if (n >= 1000) m = 1000;
-		else if (n >= 100) m = 100;
-		else if (n >= 10) m = 10;
-		else m = 1;
-	    q = n / m;
-	    n -= m * q;
-	    if (q > 9) q = 10; /* For crays with more than 100K interfaces */
-	    *cp++ = "0123456789Z"[q];
-	} while (n > 0);
-	*cp++ = 0;
+		cp--;
+		*cp = "0123456789"[n % 10];
+		n /= 10;
+	} while (n != 0);
+	return (cp);
 }
