@@ -10,11 +10,11 @@
  *
  * This code is derived from software contributed to Berkeley by
  * the Systems Programming Group of the University of Utah Computer
- * Science Department.
+ * Science Department.  Originally from the University of Wisconsin.
  *
  * %sccs.include.proprietary.c%
  *
- *	@(#)shm.h	8.5 (Berkeley) %G%
+ *	@(#)shm.h	8.6 (Berkeley) %G%
  */
 
 /*
