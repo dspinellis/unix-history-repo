@@ -11,7 +11,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)vfprintf.c	5.19 (Berkeley) %G%";
+static char sccsid[] = "@(#)vfprintf.c	5.20 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -238,28 +238,37 @@ pforw:			if (!(flags&LADJUST) && width)
 		case 'x':
 			ARG();
 			base = 16;
-			/* alternate form for hex; leading 0x/X */
-			if (flags&ALT && _ulong) {
-				PUTC('0');
-				PUTC(*fmt);
-			}
+			if (!_ulong)	/* leading 0x/X only if non-zero */
+				flags &= ~ALT;
 num:			t = buf + MAXBUF - 1;
 			do {
 				*t-- = digs[_ulong % base];
 				_ulong /= base;
 			} while(_ulong);
 			digs = "0123456789abcdef";
-			size = buf + MAXBUF - 1 - t;
-			if (size >= prec) {
-				/* alternate form for octal; leading 0 */
-				if (t[1] != '0' && flags&ALT && *fmt == 'o') {
-					*t-- = '0';
-					++size;
+			for (size = buf + MAXBUF - 1 - t; size < prec; ++size)
+				*t-- = '0';
+			if (flags&ALT)
+				switch (base) {
+				case 16:
+					/* avoid "00000x35" */
+					if (padc == '0') {
+						PUTC('0');
+						PUTC(*fmt);
+					}
+					else {
+						*t-- = *fmt;
+						*t-- = '0';
+					}
+					width -= 2;
+					break;
+				case 8:
+					if (t[1] != '0') {
+						*t-- = '0';
+						--width;
+					}
+					break;
 				}
-			}
-			else
-				for (; size < prec; ++size)
-					*t-- = '0';
 			if (!(flags&LADJUST))
 				while (size++ < width)
 					PUTC(padc);
