@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)last.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)last.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -171,6 +171,7 @@ onintr(signo)
 		signal(SIGQUIT, onintr);
 	ct = ctime(&buf[0].ut_time);
 	printf("\ninterrupted %10.10s %5.5s \n", ct, ct + 11);
+	fflush(stdout);
 	if (signo == SIGINT)
 		exit(1);
 }
