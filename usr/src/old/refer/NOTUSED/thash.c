@@ -1,13 +1,15 @@
 #ifndef lint
-static char *sccsid = "@(#)thash.c	4.1 (Berkeley) %G%";
+static char *sccsid = "@(#)thash.c	4.2 (Berkeley) %G%";
 #endif
 
 #include <stdio.h>
+#include "pathnames.h"
+
 #define MAXLINE 750
 
 int nh 500;
 int saw[6000];
-char *comname "/usr/lib/eign";
+char *comname = _PATH_EIGN;
 
 main (argc,argv)
 char *argv[];

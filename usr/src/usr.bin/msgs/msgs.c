@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)msgs.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)msgs.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -41,7 +41,6 @@ static char sccsid[] = "@(#)msgs.c	5.3 (Berkeley) %G%";
 			   (OBJECT must be defined also) */
 /* #define UNBUFFERED	/* use unbuffered output */
 
-#include <stdio.h>
 #include <sys/param.h>
 #include <signal.h>
 #include <sys/dir.h>
@@ -50,7 +49,8 @@ static char sccsid[] = "@(#)msgs.c	5.3 (Berkeley) %G%";
 #include <pwd.h>
 #include <sgtty.h>
 #include <setjmp.h>
-#include "msgs.h"
+#include <stdio.h>
+#include "pathnames.h"
 
 #define CMODE	0666		/* bounds file creation mode */
 #define NO	0
@@ -60,7 +60,6 @@ static char sccsid[] = "@(#)msgs.c	5.3 (Berkeley) %G%";
 #define NLINES	24		/* default number of lines/crt screen */
 #define NDAYS	21		/* default keep time for messages */
 #define DAYS	*24*60*60	/* seconds/day */
-#define TEMP	"/tmp/msgXXXXXX"
 #define MSGSRC	".msgsrc"	/* user's rc file */
 #define BOUNDS	"bounds"	/* message bounds file */
 #define NEXT	"Next message? [yq]"
@@ -206,7 +205,7 @@ int argc; char *argv[];
 	/*
 	 * determine current message bounds
 	 */
-	sprintf(fname, "%s/%s", USRMSGS, BOUNDS);
+	sprintf(fname, "%s/%s", _PATH_MSGS, BOUNDS);
 	bounds = fopen(fname, "r");
 
 	if (bounds != NULL) {
@@ -224,9 +223,9 @@ int argc; char *argv[];
 		bool seenany = NO;
 		DIR	*dirp;
 
-		dirp = opendir(USRMSGS);
+		dirp = opendir(_PATH_MSGS);
 		if (dirp == NULL) {
-			perror(USRMSGS);
+			perror(_PATH_MSGS);
 			exit(errno);
 		}
 
@@ -243,7 +242,7 @@ int argc; char *argv[];
 				continue;
 
 			if (clean)
-				sprintf(inbuf, "%s/%s", USRMSGS, cp);
+				sprintf(inbuf, "%s/%s", _PATH_MSGS, cp);
 
 			while (isdigit(*cp))
 				i = i * 10 + *cp++ - '0';
@@ -290,7 +289,7 @@ int argc; char *argv[];
 
 	if (send) {
 		/*
-		 * Send mode - place msgs in USRMSGS
+		 * Send mode - place msgs in _PATH_MSGS
 		 */
 		bounds = fopen(fname, "w");
 		if (bounds == NULL) {
@@ -299,7 +298,7 @@ int argc; char *argv[];
 		}
 
 		nextmsg = lastmsg + 1;
-		sprintf(fname, "%s/%d", USRMSGS, nextmsg);
+		sprintf(fname, "%s/%d", _PATH_MSGS, nextmsg);
 		newmsg = fopen(fname, "w");
 		if (newmsg == NULL) {
 			perror(fname);
@@ -420,7 +419,7 @@ int argc; char *argv[];
 	 */
 	for (msg = firstmsg; msg <= lastmsg; msg++) {
 
-		sprintf(fname, "%s/%d", USRMSGS, msg);
+		sprintf(fname, "%s/%d", _PATH_MSGS, msg);
 		newmsg = fopen(fname, "r");
 		if (newmsg == NULL)
 			continue;
@@ -576,7 +575,7 @@ int length;
 	if (pause && length > Lpp) {
 		signal(SIGPIPE, SIG_IGN);
 		signal(SIGQUIT, SIG_IGN);
-		sprintf(cmdbuf, PAGE, Lpp);
+		sprintf(cmdbuf, _PATH_PAGER, Lpp);
 		outf = popen(cmdbuf, "w");
 		if (!outf)
 			outf = stdout;
@@ -693,7 +692,7 @@ char *prompt;
 			cmsg = atoi(&inbuf[1]);
 		else
 			cmsg = msg;
-		sprintf(fname, "%s/%d", USRMSGS, cmsg);
+		sprintf(fname, "%s/%d", _PATH_MSGS, cmsg);
 
 		oldpos = ftell(newmsg);
 
@@ -716,9 +715,9 @@ char *prompt;
 				strcpy(fname, "Messages");
 		}
 		else {
-			strcpy(fname, TEMP);
+			strcpy(fname, _PATH_TMP);
 			mktemp(fname);
-			sprintf(cmdbuf, MAIL, fname);
+			sprintf(cmdbuf, _PATH_MAIL, fname);
 			mailing = YES;
 		}
 		cpto = fopen(fname, "a");

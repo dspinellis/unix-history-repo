@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	4.11 (Berkeley) %G%
+#	@(#)Makefile	4.12 (Berkeley) %G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
@@ -85,17 +85,16 @@ depend: ${SRCS}
 	mkdep ${CFLAGS} ${SRCS}
 
 install: ${MAN}
-	-[ -d ${DESTDIR}/usr/lib/refer ] || mkdir ${DESTDIR}/usr/lib/refer
-	install -s -o bin -g bin -m 755 mkey inv hunt ${DESTDIR}/usr/lib/refer
+	install -s -o bin -g bin -m 755 mkey inv hunt ${DESTDIR}/usr/libexec
 	install -s -o bin -g bin -m 755 addbib lookbib sortbib refer \
 		${DESTDIR}/usr/bin
 	install -c -o bin -g bin -m 755 roffbib.sh ${DESTDIR}/usr/bin/roffbib
 	install -c -o bin -g bin -m 755 indxbib.sh ${DESTDIR}/usr/bin/indxbib
-	install -c -o bin -g bin -m 755 tmac.bib ${DESTDIR}/usr/lib/tmac
+	install -c -o bin -g bin -m 755 tmac.bib ${DESTDIR}/usr/share/tmac
 	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat1
 	rm -f ${DESTDIR}/usr/man/cat1/indxbib.0
 	ln ${DESTDIR}/usr/man/cat1/lookbib.0 ${DESTDIR}/usr/man/cat1/indxbib.0
-	(cd /usr/dict/papers; /bin/sh runinv)
+	(cd /usr/share/dict/papers; runinv)
 
 lint: FRC
 	lint ${CFLAGS} ${DLSRCS}

@@ -1,9 +1,10 @@
 #ifndef lint
-static char *sccsid = "@(#)glue4.c	4.2 (Berkeley) %G%";
+static char *sccsid = "@(#)glue4.c	4.3 (Berkeley) %G%";
 #endif
 
 #include <stdio.h>
 #include <ctype.h>
+#include "pathnames.h"
 
 extern char gfile[];
 
@@ -19,7 +20,7 @@ char *in, *out, *arg;
 	strcat(argig, ".ig");
 	strcpy (inp=inb, in);
 	if (gfile[0]==0)
-		sprintf(gfile, "/tmp/rj%dg", getpid());
+		sprintf(gfile, "%s/rj%dg", _PATH_TMP, getpid());
 # if D1
 	fprintf(stderr, "in grepcall, gfile %s in %o out %o\n", gfile,in,out);
 # endif

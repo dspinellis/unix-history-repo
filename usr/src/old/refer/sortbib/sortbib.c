@@ -1,9 +1,11 @@
 #ifndef lint
-static char *sccsid = "@(#)sortbib.c	4.2 (Berkeley) %G%";
+static char *sccsid = "@(#)sortbib.c	4.3 (Berkeley) %G%";
 #endif
 
 #include <stdio.h>
 #include <signal.h>
+#include "pathnames.h"
+
 #define BUF BUFSIZ
 #define MXFILES 16
 
@@ -41,7 +43,7 @@ char *argv[];
 	for (i = 1; i < argc; i++)		/* open files in arg list */
 		if ((fp[i-1] = fopen(argv[i], "r")) == NULL)
 			error(argv[i]);
-	tempfile = "/tmp/SbibXXXXX";		/* tempfile for sorting keys */
+	tempfile = _PATH_TMPS;			/* tempfile for sorting keys */
 	mktemp(tempfile);
 	if (signal(SIGINT,SIG_IGN) != SIG_IGN)	/* remove if interrupted */
 		signal(SIGINT, onintr);

@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	4.8	(Berkeley)	%G%
+#	@(#)Makefile	4.9	(Berkeley)	%G%
 #
 # Possible options:
 #	make		compile source for all terminal tables below
@@ -12,7 +12,7 @@
 #	make clean	remove tab*.o files lying around
 CFLAGS=	-I../common_source
 LIBC=	/lib/libc.a
-DEST=	${DESTDIR}/usr/lib/term
+DEST=	${DESTDIR}/usr/libdata/term
 SRCS=	tab300-12.c tab300.c tab302-12.c tab302.c tab37.c tab382-12.c \
 	tab382.c tab450-12.c tab450.c tab833-12.c tab833.c tabepson.c \
 	tabitoh.c tabitoh12.c tablpr.c tabnec-t.c tabnec.c tabnec12.c \
@@ -63,14 +63,14 @@ ${ALL}:
 clean: FRC
 	rm -f ${OBJS} ${ALL} mktab.o mktab core
 
+cleandir: clean
+	rm -f ${MAN} tags .depend
+
 depend: FRC
 	mkdep ${CFLAGS} ${SRCS}
 
 install: FRC
-	-mkdir ${DEST}
-	for file in ${ALL}; do \
-		install -c -o bin -g bin -m 755 $$file ${DEST}/$$file; \
-	done
+	install -c -o bin -g bin -m 755 ${ALL} ${DEST}
 	rm -f ${DEST}/tabtn300; ln ${DEST}/tablpr ${DEST}/tabtn300
 	rm -f ${DEST}/tabcrt; ln ${DEST}/tablpr ${DEST}/tabcrt
 	rm -f ${DEST}/tab300s; ln ${DEST}/tab302 ${DEST}/tab300s
@@ -88,34 +88,3 @@ tags: FRC
 	ctags ${SRCS}
 
 FRC:
-
-# DO NOT DELETE THIS LINE -- mkdep uses it.
-# DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
-
-tab300-12.o: tab300-12.c code.300
-tab300.o: tab300.c code.300
-tab302-12.o: tab302-12.c code.300
-tab302.o: tab302.c code.300
-tab37.o: tab37.c
-tab382-12.o: tab382-12.c code.300
-tab382.o: tab382.c code.300
-tab450-12.o: tab450-12.c code.300
-tab450.o: tab450.c code.300
-tab833-12.o: tab833-12.c code.aj833
-tab833.o: tab833.c code.aj833
-tabepson.o: tabepson.c
-tabitoh.o: tabitoh.c code.itoh
-tabitoh12.o: tabitoh12.c code.itoh
-tablpr.o: tablpr.c
-tabnec-t.o: tabnec-t.c
-tabnec.o: tabnec.c code.nec
-tabnec12.o: tabnec12.c code.nec
-tabnec25-t.o: tabnec25-t.c
-tabqume.o: tabqume.c
-tabqume12.o: tabqume12.c
-tabx-ecs.o: tabx-ecs.c code.x-ecs
-tabx-ecs12.o: tabx-ecs12.c code.x-ecs
-tabxerox.o: tabxerox.c code.xerox
-tabxerox12.o: tabxerox12.c code.xerox
-
-# IF YOU PUT ANYTHING HERE IT WILL GO AWAY

@@ -1,9 +1,10 @@
 #ifndef lint
-static char *sccsid = "@(#)hunt8.c	4.3 (Berkeley) %G%";
+static char *sccsid = "@(#)hunt8.c	4.4 (Berkeley) %G%";
 #endif
 
 #include <stdio.h>
 #include <assert.h>
+#include "pathnames.h"
 #define unopen(fil) {if (fil!=NULL) {fclose(fil); fil=NULL;}}
 
 extern long indexdate, gdate();
@@ -13,7 +14,7 @@ char *s;
 {
 	/* make a file suitable for fgrep */
 	char tmp[200];
-	sprintf(tmp, "/usr/lib/refer/mkey '%s' > '%s.ig'", s,s);
+	sprintf(tmp, "%s '%s' > '%s.ig'", _PATH_MKEY,s,s);
 	system(tmp);
 }
 

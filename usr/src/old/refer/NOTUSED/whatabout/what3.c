@@ -1,8 +1,9 @@
 #ifndef lint
-static char *sccsid = "@(#)what3.c	4.1 (Berkeley) %G%";
+static char *sccsid = "@(#)what3.c	4.2 (Berkeley) %G%";
 #endif
 
 #include "what..c"
+#include "pathnames.h"
 
 doclook(argc, argv, colevel)
 char *argv[];
@@ -28,7 +29,7 @@ char *argv[];
 		close(fpb[RD]); 
 		close(fpc[RD]); 
 		close(fpc[WR]); 
-		execl("/usr/lib/refer/mkey", "mkey", "-s", 0);
+		execl(_PATH_MKEY, "mkey", "-s", 0);
 		_assert(0);
 	}
 	if (  (pid2 = fork()) == 0)
@@ -41,9 +42,9 @@ char *argv[];
 		close(fpa[WR]); 
 		close(fpb[WR]); 
 		close(fpc[RD]);
-		execl("/usr/lib/refer/hunt", "hunt",
+		execl(_PATH_HUNT, "hunt",
 		/* "-P", */
-		coarg, "-Ty", "-Fn", "/usr/dict/lookall/All", 0);
+		coarg, "-Ty", "-Fn", _PATH_ALL, 0);
 		_assert(0);
 	}
 	_assert (pid1 != -1); 
@@ -52,7 +53,7 @@ char *argv[];
 	close(fpb[WR]); 
 	close(fpa[RD]); 
 	close(fpc[WR]);
-	ansf = fopen("/dev/null", "r");
+	ansf = fopen(_PATH_DEVNULL, "r");
 	fmv (fpc[RD], ansf->_file);
 	for(iarg=1; iarg<argc; iarg++)
 		prod(fpa[WR], argv[iarg]);

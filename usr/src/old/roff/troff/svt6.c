@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)svt6.c	4.1 %G%";
+static char sccsid[] = "@(#)svt6.c	4.2 %G%";
 #endif lint
 
 #include "tdef.h"
@@ -7,6 +7,7 @@ extern
 #include "d.h"
 extern
 #include "v.h"
+#include "pathnames.h"
 
 /*
 troff6.c
@@ -52,7 +53,7 @@ extern int lss1;
 extern int vflag;
 extern int ch0;
 extern int lg;
-char fontfile[] = "/usr/lib/font/ftXX";
+char fontfile[] = _PATH_FONTS;
 int ffi = 16;
 extern int bd;
 extern int level;

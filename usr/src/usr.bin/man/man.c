@@ -22,20 +22,13 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)man.c	5.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)man.c	5.18 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/file.h>
 #include <ctype.h>
-
-#define	DEF_PAGER	"/usr/ucb/more -s"
-#define	DEF_PATH	"/usr/man:/usr/new/man:/usr/local/man"
-#define	LOCAL_PATH	"/usr/local/man"
-#define	NEW_PATH	"/usr/new/man"
-
-#define	NO	0
-#define	YES	1
+#include "pathnames.h"
 
 static char	*command,		/* command buffer */
 		*defpath,		/* default search path */
@@ -126,13 +119,13 @@ main(argc, argv)
 			}
 		}
 		else
-			pager = DEF_PAGER;
+			pager = _PATH_PAGER;
 	if (!(machine = getenv("MACHINE")))
 		machine = MACHINE;
 	if (!defpath && !(defpath = getenv("MANPATH")))
-		defpath = DEF_PATH;
-	locpath = LOCAL_PATH;
-	newpath = NEW_PATH;
+		defpath = _PATH_DEFAULT;
+	locpath = _PATH_LOCAL;
+	newpath = _PATH_NEW;
 	man(argv);
 	/* use system(3) in case someone's pager is "pager arg1 arg2" */
 	if (command)

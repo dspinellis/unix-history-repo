@@ -1,8 +1,10 @@
 #ifndef lint
-static char *sccsid = "@(#)glue3.c	4.2 (Berkeley) %G%";
+static char *sccsid = "@(#)glue3.c	4.3 (Berkeley) %G%";
 #endif
 
 #include "refer..c"
+#include "pathnames.h"
+
 #define move(x, y) close(y); dup(x); close(x);
 
 corout(in, out, rprog, arg, outlen)
@@ -27,7 +29,7 @@ char *in, *out, *rprog;
 		move (fr1, 0);
 		move (fw2, 1);
 		if (rprog[0]!= '/')
-			chdir("/usr/lib/refer");
+			chdir(_PATH_LIB);
 		execl(rprog, "deliv", arg, 0);
 		err ("Can't run %s", rprog);
 	}

@@ -1,9 +1,10 @@
 #ifndef lint
-static char *sccsid = "@(#)lookbib.c	4.5 (Berkeley) %G%";
+static char *sccsid = "@(#)lookbib.c	4.6 (Berkeley) %G%";
 #endif
 
 #include <stdio.h>
 #include <ctype.h>
+#include "pathnames.h"
 
 main(argc, argv)	/* look in biblio for record matching keywords */
 int argc;
@@ -29,9 +30,9 @@ char **argv;
 	}
 	if (!isatty(fileno(stdin)))
 		fp = stdin;
-	else if ((fp = fopen("/dev/tty", "r")) == NULL)
+	else if ((fp = fopen(_PATH_TTY, "r")) == NULL)
 	{
-		perror("lookbib: /dev/tty");
+		perror(_PATH_TTY);
 		exit(1);
 	}
 	(void)sprintf(s, "%s.ia", argv[1]);
@@ -44,7 +45,7 @@ char **argv;
 			exit(1);
 		}
 	}
-	(void)sprintf(hunt, "/usr/lib/refer/hunt %s", argv[1]);
+	(void)sprintf(hunt, "%s %s", _PATH_HUNT, argv[1]);
 
 	if (instructions && isatty(fileno(fp)))
 	{
@@ -61,7 +62,7 @@ char **argv;
 			goto again;
 		if ((hfp = popen(hunt, "w")) == NULL)
 		{
-			perror("lookbib: /usr/lib/refer/hunt");
+			perror("lookbib: hunt");
 			exit(1);
 		}
 		map_lower(s);
