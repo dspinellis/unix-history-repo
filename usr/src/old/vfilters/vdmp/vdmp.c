@@ -1,4 +1,4 @@
-/*  VDMP: version 4.1				updated %G%
+/*  VDMP: version 4.2				updated %G%
  *
  *  reads raster file created by cifplot and dumps it onto the
  *  Varian or Versatec plotter.
@@ -14,7 +14,7 @@
 extern char *ctime();
 extern long time();
 
-char *Sid = "@(#)vdmp.c	4.1\t%G%";
+char *Sid = "@(#)vdmp.c	4.2\t%G%";
 int	plotmd[]	= { VPLOT, 0, 0};
 int	prtmd[]		= { VPRINT, 0, 0};
 char *name = "";
@@ -56,12 +56,21 @@ char **argv;
 			break;
 		}
 	    }
+	/* page feed */
+	if(device == VARIAN) {
+	    ioctl(3, VSETSTATE,prtmd);
+	    write(3,"\f",2);
+	    }
+	if(device == VERSATEC) {
+	    ioctl(3, VSETSTATE,prtmd);
+	    write(3,"\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n",16);
+	    }
 	/* write header */
 	{
 	    char str[512];
 	    long clock;
 	    clock = time(0);
-	    sprintf(str,"%s:%s%s\n\0",name,ctime(&clock),banner);
+	    sprintf(str,"%s:%s%s\n \0",name,ctime(&clock),banner);
 	    ioctl(3, VSETSTATE,prtmd);
 	    write(3,str,strlen(str) & 0xfffffffe); /*makes strlen even*/
 	    }
@@ -72,18 +81,26 @@ char **argv;
 		    sprintf(str,"%s: No such file\n\n\n",argv[b-1]);
 		    ioctl(3, VSETSTATE,prtmd);
 		    write(3,str, strlen(str));
+		    exit(-1);
 		    }
 		  else putplot();
 		  }
+	if(device == VERSATEC) {
+	    ioctl(3, VSETSTATE,prtmd);
+	    write(3,"\n\n\n\n\n\n\n",8);
+	    }
+	exit(0);
 	}
 
 
 putplot()
 {
-     int i;
+     register int i;
+     register char *buf;
 
+     buf = &(vpbuf[0]);
      /* vpd has already opened the Versatec as device 3 */
      ioctl(3, VSETSTATE, plotmd);
-     while( (i=read(in,vpbuf, BUFSIZE)) > 0)
-		write(3,vpbuf,i);
+     while( (i=read(in,buf, BUFSIZE)) > 0)
+		write(3,buf,i);
     }
