@@ -46,7 +46,7 @@
  * SUCH DAMAGE.
  *
  *	from: unknown origin, 386BSD 0.1
- *	$Id: lpt.c,v 1.10 1994/04/06 16:42:33 csgr Exp $
+ *	$Id: lpt.c,v 1.11 1994/04/08 22:13:49 csgr Exp $
  */
 
 /*
@@ -240,7 +240,7 @@ lptprobe(struct isa_device *dvp)
 
 	status = IO_LPTSIZE;
 	/* If port not specified, use bios list */
-	if(dvp->id_iobase < 0) {	/* port? */
+	if(dvp->id_iobase == 0xffff) {	/* port? */
 		if((next_bios_lpt < BIOS_MAX_LPT) &&
 				(*(BIOS_PORTS+next_bios_lpt) != 0) ) {
 			dvp->id_iobase = *(BIOS_PORTS+next_bios_lpt++);
