@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)list.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)list.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "rcv.h"
@@ -389,7 +389,8 @@ getrawlist(line, argv, argc)
 				else if (c == '\\')
 					switch (c = *cp++) {
 					case '\0':
-						*cp2++ = *--cp;
+						*cp2++ = '\\';
+						cp--;
 						break;
 					case '0': case '1': case '2': case '3':
 					case '4': case '5': case '6': case '7':
@@ -418,6 +419,8 @@ getrawlist(line, argv, argc)
 					case 'v':
 						*cp2++ = '\v';
 						break;
+					default:
+						*cp2++ = c;
 					}
 				else if (c == '^') {
 					c = *cp++;
@@ -426,9 +429,11 @@ getrawlist(line, argv, argc)
 					/* null doesn't show up anyway */
 					else if (c >= 'A' && c <= '_' ||
 						 c >= 'a' && c <= 'z')
-						*cp2++ &= 037;
-					else
-						*cp2++ = *--cp;
+						*cp2++ = c & 037;
+					else {
+						*cp2++ = '^';
+						cp--;
+					}
 				} else
 					*cp2++ = c;
 			} else if (c == '"' || c == '\'')
