@@ -3,18 +3,19 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)upmaptype.c	7.2 (Berkeley) %G%
+ *	@(#)upmaptype.c	7.3 (Berkeley) %G%
  */
 
 /*
  * UNIBUS peripheral standalone
  * driver: drive type mapping routine.
  */
-
+#ifdef COMPAT_42
 #include "param.h" 
 #include "inode.h"
 #include "fs.h"
 #include "dkbad.h"
+#include "disklabel.h"
 #include "vmmac.h"
 
 #include "../vax/pte.h"
@@ -24,11 +25,11 @@
 #include "saio.h"
 #include "savax.h"
 
-static short	up9300_off[] = { 0, 27, 0, -1, -1, -1, 562, 82 };
-static short	fj_off[] = { 0, 50, 0, -1, -1, -1, 155, -1 };
-static short	upam_off[] = { 0, 32, 0, 668, 723, 778, 668, 98 };
-static short	up980_off[] = { 0, 100, 0, -1, -1 , -1, 309, -1};
-static short	eagle_off[8] =	{ 0, 17, 0, 391, 408, 728, 391, 87 };
+static short	up9300_off[] = { 0,  27,  0,  -1,  -1,  -1, 562, 82 };
+static short	fj_off[]     = { 0,  50,  0,  -1,  -1,  -1, 155, -1 };
+static short	upam_off[]   = { 0,  32,  0, 668, 723, 778, 668, 98 };
+static short	up980_off[]  = { 0, 100,  0,  -1,  -1,  -1, 309, -1 };
+static short	eagle_off[]  = { 0,  17,  0, 391, 408, 728, 391, 87 };
 
 struct st upst[] = {
 	32,	19,	32*19,	815,	up9300_off,	/* 9300 */
@@ -40,28 +41,49 @@ struct st upst[] = {
 	0,	0,	0,	0,	0,
 };
 
-upmaptype(unit, upaddr)
+upmaptype(unit, upaddr, lp)
 	int unit;
 	register struct updevice *upaddr;
+	register struct disklabel *lp;
 {
 	register struct st *st;
+	register int i;
 	int type = -1;
 
 	upaddr->upcs1 = 0;
 	upaddr->upcs2 = unit % 8;
 	upaddr->uphr = UPHR_MAXTRAK;
-	for (st = upst; st->ntrak != 0; st++)
+	for (st = upst;; ++st) {
+		if (!st->ntrak)
+			return(1);
 		if (upaddr->uphr == st->ntrak - 1) {
 			type = st - upst;
 			break;
 		}
-	if (st->ntrak == 0)
-		printf("up%d: uphr=%x\n", unit, upaddr->uphr);
+	}
 	if (type == 0) {
 		upaddr->uphr = UPHR_MAXCYL;
 		if (upaddr->uphr == 822)	/* CDC 9766 */
-			type++;
+			++type;
 	}
 	upaddr->upcs2 = UPCS2_CLR;
-	return (type);
+	st = &upst[type];
+
+	/* set up a minimal disk label */
+	lp->d_nsectors = st->nsect;
+	lp->d_ntracks = st->ntrak;
+	lp->d_secpercyl = st->nspc;
+	lp->d_ncylinders = st->ncyl;
+	lp->d_secperunit = st->nspc * st->ncyl;
+	lp->d_npartitions = 8;
+	for (i = 0; i < 8; i++)
+		if (st->off[i] == -1)
+			lp->d_partitions[i].p_size = 0;
+		else {
+			lp->d_partitions[i].p_offset = st->off[i] *
+			    lp->d_secpercyl;
+			lp->d_partitions[i].p_size = lp->d_secperunit;
+		}
+	return(0);
 }
+#endif /* COMPAT_42 */
