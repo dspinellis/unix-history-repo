@@ -4,11 +4,18 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)exec.h	7.8 (Berkeley) %G%
+ *	@(#)exec.h	7.9 (Berkeley) %G%
  */
 
 #ifndef	_EXEC_H_
 #define	_EXEC_H_
+
+#if defined(hp300) || defined(i386) || defined(mips)
+#define	__LDPGSZ	4096
+#endif
+#if defined(tahoe) || defined(vax)
+#define	__LDPGSZ	1024
+#endif
 
 #ifndef COFF
 /* Header prepended to each a.out file. */
