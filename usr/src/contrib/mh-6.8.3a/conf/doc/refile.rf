@@ -1,0 +1,121 @@
+.\"	@(MHWARNING)
+.\" @(#)$Id: refile.rf,v 1.12 1992/12/19 00:20:58 jromine Exp $
+.SC REFILE 1
+.NA
+refile \- file message in other folders
+.SY
+refile 
+\%[msgs] 
+\%[\-draft]
+\%[\-link] \%[\-nolink] 
+\%[\-preserve] \%[\-nopreserve]
+\%[\-src\ +folder] 
+\%[\-file\ file] 
+\%[\-rmmproc program] \%[\-normmproc]
++folder ...
+\%[\-help]
+.DE
+\fIRefile\fR moves (\fImv\fR\0(1)) or links (\fIln\fR\0(1)) messages from a
+source folder into one or more destination folders.
+If you think
+of a message as a sheet of paper, this operation is not
+unlike filing the sheet of paper (or copies) in file cabinet
+folders.
+When a message is filed, it is linked into the
+destination folder(s) if possible, and is copied otherwise.
+As long
+as the destination folders are all on the same file system, multiple filing
+causes little storage overhead.
+This facility provides a good way to cross\-file or multiply\-index
+messages.
+For example, if a message is received from Jones about
+the ARPA Map Project, the command
+
+     refile\0cur\0+jones\0+Map
+
+would allow the message to be found in either of the two
+folders `jones' or `Map'.
+
+The option `\-file\ file' directs \fIrefile\fR to use the specified
+file as the source message to be filed, rather than a message from
+a folder.
+Note that the file should be a validly formatted message,
+just like any other \fIMH\fR message.
+It should \fBNOT\fR be in mail drop format
+(to convert a file in mail drop format to a folder of \fIMH\fR messages,
+see \fIinc\fR\0(1)).
+
+If a destination folder doesn't exist, \fIrefile\fR will ask if you
+want to create it.
+A negative response will abort the file operation.
+If the standard input for \fIrefile\fR is \fInot\fR a tty,
+then \fIrefile\fR will not ask any questions and will proceed as if
+the user answered \*(lqyes\*(rq to all questions.
+
+The option `\-link' preserves the source folder copy of the message
+(i.e., it does a \fIln\fR(1) rather than a \fImv\fR(1)), whereas,
+`\-nolink' deletes the filed messages from the source
+folder.
+Normally, when a message is filed, it is assigned the
+next highest number available in each of the destination folders.
+Use of the `\-preserve' switch will override this message
+renaming, but name conflicts may occur, so
+use this switch cautiously.
+
+If `\-link' is not specified (or `\-nolink' is specified),
+the filed messages will be removed from the
+source folder, by renaming them with a site-dependent prefix (usually 
+a comma).
+
+.ne 4
+If the user has a profile component such as
+
+	rmmproc:	/bin/rm
+
+then \fIrefile\fR
+will instead call the named program to delete the message files.
+The user may specify `\-rmmproc program' on the command line
+to override this profile specification.
+The \`-normmproc' option forces 
+the message files to be deleted
+by renaming them as described above.
+
+The `\-draft' switch tells \fIrefile\fR to file the <mh\-dir>/draft.
+.Fi
+^$HOME/\&.mh\(ruprofile~^The user profile
+.Pr
+^Path:~^To determine the user's MH directory
+.Ps
+^Current\-Folder:~^To find the default current folder
+.Ps
+^Folder\-Protect:~^To set mode when creating a new folder
+.Ps
+^rmmproc:~^Program to delete the message
+.Sa
+folder(1)
+.De
+`\-src\ +folder' defaults to the current folder
+.Ds
+`msgs' defaults to cur
+.Ds
+`\-nolink'
+.Ds
+`\-nopreserve'
+.Co
+If `\-src\ +folder' is given, it will become the
+current folder.
+If neither `\-link' nor `all' is specified,
+the current message in the source
+folder will be set to the last message specified; otherwise, the
+current message won't be changed.
+
+If the Previous\-Sequence profile entry is set,
+in addition to defining the named sequences from the source folder,
+\fIrefile\fR will also define those sequences for the destination folders.
+See \fImh\-sequence\fR\0(5) for information concerning the previous sequence.
+.Bu
+Since \fIrefile\fR uses your \fIrmmproc\fP to delete the message,
+the \fIrmmproc\fP must \fBNOT\fP call \fIrefile\fP without 
+specifying `\-normmproc',
+or you will create an infinte loop.
+.En

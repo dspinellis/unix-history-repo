@@ -1,6 +1,0 @@
-#!/bin/sh -
-#
-#	@(#)named.reload	5.2 (Berkeley) 6/27/89
-#	$Id: named.reload.reno,v 4.9.1.1 1993/05/03 00:02:54 vixie Rel $
-#
-kill -HUP `cat /var/run/named.pid`

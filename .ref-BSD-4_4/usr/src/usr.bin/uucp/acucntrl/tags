@@ -1,9 +1,0 @@
-Macucntrl	acucntrl.c	/^main(argc, argv)$/
-NLVALUE	acucntrl.c	/^#define NLVALUE(val)	(nl[val].n_value)$/
-opnttys	acucntrl.c	/^opnttys(device)$/
-pokeinit	acucntrl.c	/^pokeinit(device, uname, enable)$/
-post	acucntrl.c	/^post(device, name)$/
-prefix	acucntrl.c	/^prefix(s1, s2)$/
-setmodem	acucntrl.c	/^setmodem(ttyline, enable)$/
-settys	acucntrl.c	/^settys(enable)$/
-upcase	acucntrl.c	/^upcase(str, len)$/

@@ -1,2 +1,0 @@
-Mnfsiod	nfsiod.c	/^main(argc, argv)$/
-reapchild	nfsiod.c	/^reapchild()$/

@@ -1,0 +1,1437 @@
+.\" @(#)$Id: mh-gen.8,v 2.115 1993/12/01 00:44:23 jromine Exp $
+.\" uneven inter-word spacing (nroff line adjusting) hampers readability
+.if n .na
+.TH MH-GEN 8 MH.6.8.3 [mh.6]
+.SH NAME
+mh-gen \- generating the MH system
+.SH "READ THIS"
+This documentation describes how to configure, generate, and install
+the UCI version of the RAND \fIMH\fR system.  \fBBe certain\fP to 
+read this document completely before you begin.  You probably will
+also want to familiarize yourself with the \fIMH\fP Administrator's
+Guide before you install \fIMH\fP.  A copy can be found in the
+file \fBdoc/ADMIN.doc\fP is the \fIMH\fP sources.
+.SH DISCLAIMER
+Although the \fIMH\fR system was originally developed by the RAND Corporation,
+and is now in the public domain,
+the RAND Corporation assumes no responsibility for \fIMH\fR
+or this particular modification of \fIMH\fR.
+.PP
+In addition,
+the Regents of the University of California issue the following
+\fBdisclaimer\fR in regard to the UCI version of \fIMH\fR:
+.in +.5i
+\*(lqAlthough each program has been tested by its contributor,
+no warranty, express or implied,
+is made by the contributor or the University of California,
+as to the accuracy and functioning of the program
+and related program material,
+nor shall the fact of distribution constitute any such warranty,
+and no responsibility is assumed by the contributor
+or the University of California in connection herewith.\*(rq
+.in -.5i
+.PP
+This version of \fIMH\fR is in the public domain,
+and as such,
+there are no real restrictions on its use.
+The \fIMH\fR source code and documentation have no licensing restrictions
+whatsoever.
+As a courtesy,
+the authors ask only that you provide appropriate credit to the RAND
+Corporation and
+the University of California for having developed the software.
+.SH "GETTING HELP"
+\fIMH\fR is a software package that is neither supported by the RAND
+Corporation nor the University of California.
+However,
+since we do use the software ourselves and plan to continue using (and
+improving) \fIMH\fR,
+bug reports and their associated fixes should be reported back to us so that
+we may include them in future releases.
+The current computer mailbox for \fIMH\fR is \fBBug\-MH@ICS.UCI.EDU\fR
+(in the ARPA Internet),
+and \fB...!ucbvax!ucivax!bug\-mh\fR (UUCP).
+.PP
+Presently,
+there are two Internet discussion groups, \fBMH\-Users@ICS.UCI.EDU\fR
+and \fBMH\-Workers@ICS.UCI.EDU\fR.  \fBMH\-Workers\fP is for people
+discussing code changes to \fIMH\fP.  \fBMH-Users\fP is for general
+discussion about how to use \fIMH\fP.
+\fBMH\-Users\fR is bi-directionally 
+gatewayed into USENET as \fBcomp.mail.mh\fR.
+.SH "HOW TO GET MH"
+Since you probably already have \fIMH\fP,
+you may not need to read this unless you suspect you have an old version.
+There are two ways to get the latest release:
+.PP
+1.  If you can FTP to the ARPA Internet, use anonymous FTP to
+ftp.ics.uci.edu [128.195.1.1] and retrieve the file pub/mh/mh-6.8.tar.Z.
+This is a tar image after being run through the compress program
+(approximately 1.8MB).  There should also be a \fBREADME\fR file in
+that directory which tells what the current release of \fIMH\fP
+is, and how to get updates.
+.PP
+This tar file is also available on louie.udel.edu 
+[128.175.1.3] in portal/mh-6.8.tar.Z.  You may also find MH on
+various other hosts; to make sure you get the latest version and
+don't waste your time re-fixing bugs, it's best to get it from
+either ftp.ics.uci.edu or louie.udel.edu.
+.PP
+2.  You can send $75 US to the address below.
+This covers the cost of a 6250 BPI 9-track magtape,
+handling, and shipping.  In addition, you'll get a
+laser-printed hard-copy of the entire MH documentation set.  Be
+sure to include your USPS address with your check.  Checks 
+must be drawn on U.S\&. funds and should be made payable to:
+
+.ti +1i
+Regents of the University of California
+
+The distribution address is:  
+
+.nf
+.RS 1i
+Univeristy of California at Irvine
+Office of Academic Computing
+360 Computer Science
+Irvine, CA  92717  USA
+
++1 714 856 5153
+.fi
+.RE
+.PP
+Sadly, if you just want the hard-copies of the documentation, you
+still have to pay the $75.  The tar image has the documentation
+source (the manual is in roff format, but the rest are in TeX
+format).  Postscript formatted versions of the TeX papers are 
+available, as are crude tty-conversions of those papers.
+.SH SYNOPSIS
+MAKE
+.SH DESCRIPTION
+This is a description of how one can bring up an \fIMH\fR system.
+It is assumed that you have super-user privileges in order to
+(re\-)install \fIMH\fR.
+Super-user privileges are not required to configure or generate \fIMH\fR.
+.PP
+Become the super-user and cd to /usr/src/local/
+(or whatever you keep your local sources).
+The distribution tape contains the hierarchy for the mh.6-8/ directory.
+Bring the sources on-line:
+.sp 1
+.nf
+# cd /usr/src/local
+% tar xv
+% cd mh-6.8
+.fi
+.SH CONFIGURATION
+First, go to the conf/ directory.
+.sp 1
+.nf
+% cd conf/
+.fi
+.sp 1
+This directory contains files that will produce source files tailored
+for your choice of \fIMH\fR configuration.
+You should edit only the file \fBMH\fR.
+This file contains configuration directives.
+These configuration directives are read by the \fImhconfig\fR program to
+produce customized files.
+.sp
+For examples of various configurations,
+look in the directory \fBconf/examples/\fR.
+The file \fBMH\fR provided in \fBconf/\fR is a reasonable default.
+Lines beginning with `#' are comments, and are not otherwise interpreted.
+.PP
+Here are the \fIMH\fP configuration directives available.  Be sure
+to read through this list completely before attempting to decide
+what directives are appropriate for your system.  
+.sp
+More information on some of these options is available in the
+the \fIAdministrator's Guide\fR.  If you do not have a printed
+copy, you should configure your system with the default
+configuration file, \fBMH\fP, then generate and print a copy
+of the guide (as described below).
+.in +.5i
+
+.de Uh
+.ti -.75i
+.B "\\$1"
+.ne 4
+..
+.Uh "Installation paths"
+.ti -.5i
+bin: /usr/local
+.br
+The directory where user\-invoked programs go (see manual section 1).
+
+.ti -.5i
+etc: /usr/local/lib/mh
+.br
+The directory where pgm\-invoked programs go (see manual section 8).
+
+.ti -.5i
+mail: /usr/spool/mail
+.br
+The directory where the maildrops are stored.
+If this pathname is absolute (i.e., begins with a \fB/\fR\0),
+then the user's maildrop is a file called \fB$USER\fR in this directory.
+If the pathname is not absolute,
+then the user's maildrop is in the user's home directory under the given name.
+
+.ti -.5i
+mandir: /usr/man
+.br
+The parent directory of the manual entries.
+
+.ti -.5i
+manuals: standard
+.br
+Where manual entries should be installed,
+relative to the directory given with \*(lqmandir\*(rq.
+Either \*(lqlocal\*(rq to install manual entries under \fBmanl/\fR,
+or \*(lqnew\*(rq to install manual entries under \fBmann/\fR,
+or \*(lqold\*(rq to install manual entries under \fBmano/\fR,
+or \*(lqstandard\*(rq to install manual entries under \fBman?/\fR,
+or \*(lqbsd44\*(rq to install manual entries as \fBman?/\fIpage\fP.0\fR,
+or \*(lqgen\*(rq to generate but not install them,
+or \*(lqnone\*(rq to neither generate nor install them.
+
+Any of these values may have the suffix \*(lq/cat\*(rq appended 
+to it.   In that case, the manual entries will be formatted
+with \*(lqnroff -man\*(rq and they will be installed in the
+corresponding \*(lqcat?\*(rq directories.
+
+For example,
+to install manual entries under \fB/usr/man/u_man/man?\fR,
+use \*(lqstandard\*(rq and \fB/usr/man/u_man\fR for \*(lqmandir\*(rq.
+To install formatted manual entires under \fB/usr/contrib/man/cat?\fR,
+use \*(lqstandard/cat\*(rq and \fB/usr/contrib/man\fR for \*(lqmandir\*(rq.
+To install formatted manual entries using the BSD44 convention,
+use \*(lqbsd44/cat\*(rq.
+
+.ti -.5i
+chown: /etc/chown
+.br
+The location of the \fIchown\fR\|(8) on your system.
+If \fIchown\fR is in your search path,
+just use the value of \*(lqchown\*(rq.
+On SYS5 systems,
+this should probably be \*(lq/bin/chown\*(rq.
+
+.ti -.5i
+cp: cp
+.br
+The command to copy files when installing, if not \*(lqcp\*(rq.
+(Some sites use \*(lqcp\0\-p\*(rq.)
+
+.ti -.5i
+ln: ln
+.br
+The command to link files together in the source tree, if not \*(lqln\*(rq.
+If you're using something like \fBlndir\fP to keep
+your compile tree separate from your source tree,
+set this to \*(lqln\0\-s\*(rq or \*(lqcp\*(rq.
+
+.ti -.5i
+remove: mv \-f
+.br
+How \fIMH\fR should make backup copies
+of existing files when installing new files.
+To simply remove the old files, use \*(lqrm\0\-f\*(rq.
+
+.Uh "Compiler/loader"
+.ti -.5i
+cc: cc
+.br
+The name of your C compiler, if not \*(lqcc\*(rq.
+
+.ti -.5i
+ccoptions: \-O
+.br
+Options given directly to \fIcc\fR\|(1).
+The most common is \*(lq\-M\*(rq if you're running \fIMH\fR on an ALTOS.
+This defaults to \*(lq\-O\*(rq.  If you define this and want to 
+keep \*(lq\-O\*(rq, be sure to include it explicitly.
+If you're using the \fIGNU\fP C compiler, it should
+include `\-traditional'.  See \*(lqoptions:\*(rq for `\-D' options.
+
+.ti -.5i
+curses: \-lcurses\0\-ltermlib
+.br
+This should be the loader option required to load the \fItermcap\fR\|(3)
+and \fIcurses\fR\|(3) libraries on your system.
+On SYS5 systems, it probably should be just \*(lq\-lcurses\*(rq.
+Some sites have reported that both \*(lq\-lcurses\*(rq and
+\*(lq\-ltermlib\*(rq are necessary.
+
+.ti -.5i
+ldoptions: \-s
+.br
+Options given directly to \fIld\fR\|(1) (via \fIcc\fR\|) at the beginning
+of the command line.
+Useful for machines which require arguments to tell \fIld\fR to increase the
+stack space (e.g. the Gould, which uses \*(lq\-m\08\*(rq).
+Usually, \*(lq\-s\*(rq is a good choice in any event.
+
+.ti -.5i
+ldoptlibs:
+.br
+Options given directly to \fIld\fR\|(1) (via \fIcc\fR\|) at the end of the
+command line.
+The two most common are:
+\*(lq\-ldbm\*(rq if you're running MMDF with the \fIdbm\fR package;
+and, \*(lq\-lndir\*(rq if you are generating \fIMH\fR on a system
+which does not load the new directory access mechanism by default
+(e.g., 4.1BSD, SYS5).
+If you don't have \fIlibndir\fR on your system,
+the sources are in \fBmiscellany/libndir/\fR.
+
+.ti -.5i
+lex: lex \-nt
+.br
+Alternative version of \fIlex\fR.  Used in \fBzotnet/tws/\fR.
+
+.ti -.5i
+oldload: off
+.br
+This controls how \fIMH\fP will try to process library object files to
+eliminate local symbols.
+Support for the ALTOS loader if \*(lqon\*(rq.
+Support for loaders not handling `\-x\0\-r' correctly if \*(lqnone\*(rq.
+
+.ti -.5i
+ranlib: on
+.br
+Support for systems with \fIranlib\fR\|(1).
+For SYSTEM 5 systems,
+this should be \*(lqoff\*(rq which tells \fIMH\fR to use \fIlorder\fR and
+\fItsort\fR instead.
+Some SYSTEM 5 sites reported that running this isn't always sufficient.
+If this is the case,
+then you should edit \fBconf/makefiles/uip\fR to include
+\fB\&../sbr/libmh.a\fR and \fB../zotnet/libzot.a\fR twice in the LIBES
+variable.
+
+.Uh "Message Transport System"
+.ti -.5i
+mts: sendmail
+.br
+Which message transport system to use.
+Either \*(lqmmdf\*(rq to use \fIMMDF\fR as the transport system,
+\*(lqmmdf2\*(rq to use \fIMMDF\-II\fR as the transport system,
+\*(lqsendmail\*(rq to have \fISendMail\fR as the transport system,
+\*(lqzmailer\*(rq to have \fIZMAILER\fP as the transport system,
+or, \*(lqmh\*(rq to have \fIMH\fR as the transport system.
+
+On UNIX systems supporting TCP/IP networking via sockets
+you can add the suffix \*(lq/smtp\*(rq to the mts setting.
+This often yields a superior interface as \fIMH\fR will post mail with the
+local \fISMTP\fR server instead of interacting directly with \fIMMDF\fR or
+\fISendMail\fR.
+Hence, for TCP/IP UNIX systems,
+the \*(lq/smtp\*(rq suffix to either \*(lqsendmail\*(rq or \*(lqmmdf2\*(rq is
+the preferred MTS configuration.
+The \*(lq/smtp\*(rq suffix is described in detail in the \fIAdministrator's
+Guide\fR; be sure to set \*(lqservers:\*(rq as described in
+\fImh\-tailor\fR\|(8) if you use this option.
+
+.ti -.5i
+mf: off
+.br
+Support for mail filtering on those systems in which the message transport
+system isn't integrated with \fIUUCP\fR 
+This option is strictly for an \fIMH\fR system using either \fIMMDF\-I\fR
+as its transport system or one using \*(lqstand\-alone delivery\*(rq.
+
+.Uh "UCI BBoards Facility"
+.ti -.5i
+bboards: off
+.br
+If \*(lqon\*(rq, include support for the UCI BBoards facility.
+BBoards may be enabled with any mts setting.
+If \*(lqoff\*(rq, the BBoard reading program \fIbbc\fR will not be installed.
+If \*(lqnntp\*(rq,
+include support for the UCI BBoards facility to read the Network News
+via the NNTP.
+If \*(lqpop\*(rq (formerly \*(lqpopbboards:\0on\*(rq),
+include support for the UCI BBoards facility via the POP3 service;
+this setting requires \*(lqpop:\0on\*(rq.
+
+.ti -.5i
+bbdelivery: off
+.br
+If \*(lqoff\*(rq,
+the BBoards delivery agent and library files will not be installed.
+If 
+\*(lqon\*(rq,
+and you set \*(lqbboards:\*(rq to something besides \*(lqoff\*(rq,
+then 
+the BBoards delivery agent and library files will be installed
+in the \fIbbhome\fR directory (see below).
+To read remote BBoards,
+the usual configuration would have \fIbbc\fR talk to a \fIPOP3\fR or
+\fINNTP\fR server.
+However, it may be useful to set this to \*(lqoff\*(rq if 
+you NFS mount the \fIbbhome\fR directory from another host
+and want to use \fIbbc\fR to read those files directly.
+
+.ti -.5i
+bbhome: /usr/spool/bboards
+.br
+The home directory for the BBoards user.
+
+.Uh "Post Office Protocol"
+.ti -.5i
+pop: off
+.br
+Support for POP service.
+This allows local delivery for non\-local users
+(a major win).
+See \fBsupport/pop/pop.rfc\fR for more information on the POP.
+This option currently works only on UNIX systems with TCP/IP sockets.
+(It doesn't hurt to enable this option regardless of whether or not
+you intend to use POP.)  See also \*(lqbboards: pop\*(rq to enable
+reading bboards with the POP.
+
+.ti -.5i
+popdir: /usr/etc
+.br
+The directory where the POP daemon (\fBpopd\fP) will be installed.
+
+.ne 5
+.ti -.5i
+options:
+.br
+\&`\-D' options to \fIcc\fR\|(1).
+.sp
+.in +.25i
+.ti -.5i
+APOP='\*(lq/etc/pop.auth\*(rq'
+.br
+This option indicates that the POP daemon will
+support the non-standard \fBAPOP\fP command,
+and specifies the name of \fBAPOP\fP authorization database.
+The \fBAPOP\fP
+command provides a challenge-based authentication system using
+the \fBMD5\fP message digest algorithm.
+This facility is documented in 
+\fIThe Internet Message\fR (ISBN 0\-13\-092941\-7), a book by Marshall T. Rose.
+.sp
+This option also causes the
+\fBpopauth\fP program to be installed, which
+allows the administrator to manipulate the \fBAPOP\fP
+authorization database.
+For more details, see \fBsupport/pop/pop-more.txt\fR
+and the \fIAdministrator's Guide\fP.
+
+.ti -.5i
+DPOP
+.br
+This option indicates that POP subscribers do not have
+entries in the \fIpasswd\fR\|(5) file,
+and instead have their own separate database (a win).
+
+.ti -.5i
+KPOP
+.br
+Support for KERBEROS with POP.
+This code builds
+\fIpopd\fP, \fIinc\fP and \fImsgchk\fP to support only the 
+\*(lqkpop\*(rq protocol.
+This code is still experimental, but is available for 
+those sites wishing to test it.
+
+.ti -.5i
+MPOP
+.br
+This option indicates that the POP daemon will
+support the non-standard
+\fBXTND SCAN\fP command which provides performance
+enhancements when using the POP over low-speed connections.
+This option also causes an interactive POP
+client program, \fBpopi\fP, to be compiled and installed.
+A man page for the \fBpopi\fP program is also provided.
+.sp
+These extensions are described in 
+\fIThe Internet Message\fR, a book by Marshall T. Rose.
+For more details, see \fBsupport/pop/pop-more.txt\fR.
+\fBNote:\fP this option requires \*(lqbboards: pop\*(rq.
+
+.ti -.5i
+POP2
+.br
+Have the POP daemon understand the older
+POP2 protocol as well as the \fIMH\fP POP3 protocol \- a major win.
+The POP daemon auto-magically
+determines which POP protocol your client is using.
+If you're enabling POP service,
+there's no reason not to enable this option as well.
+See also \fIPOPSERVICE\fR.
+
+.ti -.5i
+POPSERVICE
+.br
+The port name the \fIMH\fP POP will use.  For historical reasons,
+this defaults to \*(lqpop\*(rq.
+.sp
+In 1987, the \fIMH\fP POP protocol
+(POP version 3) was published as RFC1081 and
+was assigned its own port number (110),
+which differs from the original POP (version 1 and 2) port number (109).
+.sp
+To have \fIMH\fP POP use the new assigned port number, 
+set POPSERVICE='\*(lqpop3\*(rq', and be sure that this service
+name is listed in your \fB/etc/services\fP file on both POP client
+and server hosts as \*(lq110/tcp\*(rq.
+If you enable \fIPOP2\fP, you can safely leave \fIPOPSERVICE\fP
+undefined unless you are using POP3 clients besides \fIMH\fP.
+
+.ti -.5i
+RPOP
+.br
+This option indicates that support for the UNIX variant of POP,
+RPOP, which uses privileged sockets for authentication be enabled.
+This peacefully co-exists with the standard POP.
+
+.ti -.5i
+SHADOW
+.br
+Indicates that the \fBpopd\fP POP server
+can find encrypted passwords in the
+\fB/etc/shadow\fR file (and not in the \fB/etc/passwd\fR file).
+It should be used only for some (newer) SYSTEM 5 systems.
+.in -.25i
+
+The \*(lqAPOP\*(rq and \*(lqMPOP\*(rq non-standard POP
+facilities are documented in
+\fIThe Internet Message\fR (ISBN 0\-13\-092941\-7),
+a book by Marshall T. Rose.
+For more details, see \fBsupport/pop/pop-more.txt\fR.
+The \*(lqAPOP\*(rq option peacefully co-exists with the standard POP.
+The \*(lqMPOP\*(rq option requires \*(lqbboards: pop\*(rq.
+
+.Uh "Shared libraries"
+.ti -.5i
+sharedlib: off
+.br
+If \*(lqsun4\*(rq,
+makes libmh.a into a SunOS 4.0 (and later) shared library.
+If you enable this, be sure to also use \*(lqoptions SUN40\*(rq.
+If \*(lqsys5\*(rq, 
+makes libmh.a into a SYS5 R4 (and later) shared library.
+If you enable this, be sure to also use \*(lqoptions SVR4\*(rq.
+
+.ti -.5i
+slflags: \-pic
+.br
+The compiler flags to produce position independent code.
+
+.ti -.5i
+slibdir: /usr/local/lib
+.br
+The directory where the \fIMH\fP shared library should go.
+
+.ne 4
+.ti -.25i
+Under SunOS (sun4)
+.br
+Since some \fIMH\fP programs are setuid, they'll only look for
+the library in \*(lqtrusted\*(rq locations.  Putting the library
+somewhere besides \fB/usr/lib\fP or \fB/usr/local/lib\fP is not advisable.
+
+If you \fBmust\fP do this, be sure that you add the 
+path given by \fBslibdir\fP to the compiler's library search list 
+(e.g., \*(lqldoptions:\0\-L/usr/mh/lib\*(rq)
+and make sure the path starts with a leading `/'.
+
+You may need to run \fIldconfig\fP\|(8) manually whenever a new
+shared object is installed on the system.
+See \fIld\fR\|(1) for more information about using shared libraries.
+
+.ti -.25i
+Under Solaris 2.0 (and newer)
+.br
+The above instructions for SunOS apply, except you should set
+the run-time library search path using `\-R' instead of `\-L'
+(e.g., \*(lqldoptions: \-R/usr/mh/lib\*(rq).
+
+.Uh "General System Dependencies"
+.in -.5i
+You should include the following directives 
+which are appropriate for your version of UNIX.
+If you don't know what an
+option does, it probably doesn't apply to you.
+.in +.5i
+
+.ti -.5i
+mailgroup: off
+.br
+If set, \fIinc\fR is made set-group-id to this group name.
+Some SYS5 systems want this to be set to \*(lqmail\*(rq.
+Set this if your \fB/usr/spool/mail\fP is not world-writeable.
+
+Note that \fBslocal\fP doesn't know how to deal with this,
+and will not work under these systems; just making it set-group-id
+will open a security hole.
+If you're using \*(lqmailgroup\*(rq,
+you should remove \fBslocal\fP (and its man page) from your system.
+
+.ti -.5i
+signal: int
+.br
+The base type (int or void) of the function
+parameter/return value of \fIsignal\fR\|(2).
+The default is \fBint\fR.
+Set \*(lqsignal void\*(rq on systems which use this type
+(e.g., SYSTEM 5 V3.0 and later or Sun OS 4.0 and later).
+
+.ti -.5i
+sprintf: char *
+.br
+The return value of the \fIsprintf\fR library routine.
+This defaults to \*(lqchar\0*\*(rq.  Set this to \*(lqint\*(rq if
+you have an older version of SYSTEM 5 which has this routine return an
+\*(lqint\*(rq type.
+
+.ne 5
+.ti -.5i
+options:
+.br
+\&`\-D' options to \fIcc\fR\|(1).
+.sp
+.in +.25i
+.ti -.5i
+ALTOS
+.br
+Use on XENIX/v7 systems.
+Also, be sure to use \*(lqoptions V7\*(rq.
+
+.ti -.5i
+ATTVIBUG
+.br
+This option causes
+\fIMH\fP to return to the \*(lqWhat now?\*(rq
+prompt if your initial editor is \fBvi\fP
+and it exits with non-zero status.
+Use on Sun OS 4.1 and other systems where the
+\fB/usr/ucb/vi\fP editor was changed to
+exit with its status equal to the number of pseudo-\*(lqerrors\*(rq
+encountered during the edit.  This causes a problem for programs that
+test the exit status of their editor and abort if the status is non-zero.
+(This includes \fIMH\fP and programs like \fB/usr/etc/vipw\fP).
+
+.ti -.5i
+AUX
+.br
+Use with AUX systems.
+
+.ti -.5i
+BIND
+.br
+If you are running with the BIND code on UNIX systems
+with TCP/IP sockets (e.g. 4.{2,3}BSD),
+be sure to define this.
+
+.ti -.5i
+BSD41A
+.br
+Use on 4.1a Berkeley UNIX systems.
+
+.ti -.5i
+BSD42
+.br
+Use on Berkeley UNIX systems on or after 4.2BSD.
+
+.ti -.5i
+BSD43
+.br
+Use on 4.3 Berkeley UNIX systems.
+Also, be sure to use \*(lqoptions BSD42\*(rq.
+If \fIopenlog\fR\|(3) (see \*(lqman 3 syslog\*(rq)
+takes three arguments instead of two,
+and your \fIwrite\fR\|(1) command is set\-group\-id
+to group \*(lqtty\*(rq, use this option.
+If only one of these conditions is true, you lose.
+
+.ti -.5i
+BSD44
+.br
+Use on Berkeley UNIX systems on or after 4.4BSD.
+Also, be sure to use \*(lqoptions BSD43\*(rq
+and \*(lqoptions BSD42\*(rq.
+
+.ti -.5i
+DBMPWD
+.br
+Use this option if your \fIgetpwent\fR\|(3) routines read a 
+dbm database (such as with Yellow Pages) instead of doing
+a sequential read of \fB/etc/passwd\fR.
+Without DBMPWD the entire passwd file is read into
+memory one entry at a time for alias expansion.
+This is a performance improvement when reading
+a standard \fB/etc/passwd\fR file,
+but is \fIvery\fR slow on systems with a dbm database.
+At one site that runs
+YP on a large passwd file, it showed a 6:1 performance improvement.
+
+.ti -.5in
+GCOS_HACK
+.br
+The so-called \*(lqgcos\*(rq field of the password file is 
+used as a last resort
+to find the user's full name (see \fImh-profile\fP\|(5) for details).
+Enable this option
+if your \fIpasswd\fP\|(5) man page notes that the `&'
+character in the \*(lqgcos\*(rq field stands for the login name.
+
+.ti -.5i
+FCNTL
+.br
+Directs \fIMH\fP to use the \fBfcntl()\fP system call for kernel-level
+locking.  If you're using a SYS5 system, you may want
+this option.  (See also `FLOCK' and `LOCKF').
+
+.ti -.5i
+FLOCK
+.br
+Directs \fIMH\fP to use the \fBflock()\fP system call for kernel-level
+locking.  If you're on a BSD42 system,
+and you're not using NFS to read or write maildrops,
+you should enable this option.  (See also `FCNTL' and `LOCKF').
+
+.ti -.5i
+HESIOD
+.br
+Support for HESIOD.  
+This code was contributed, and included no documentation.
+
+.ti -.5i
+LOCKF
+.br
+Directs \fIMH\fP to use the \fBlockf()\fP system call for kernel-level
+locking.  If you're using NFS to read or
+write maildrops, you should enable this option.  (See also `FLOCK'
+and `FCNTL').
+
+.ti -.5i
+locname
+.br
+Hard-wires the local name for the host \fIMH\fR is running on.
+For example, locname='\*(lqPICKLE\*(rq'.
+It's probably better to either let UNIX tell \fIMH\fR this information,
+or to put the information in the host specific \fBmtstailor\fR file.
+
+.ti -.5i
+MORE
+.br
+Defines  the location of the \fImore\fR\|(1) program.
+On ALTOS and DUAL systems, set
+MORE='\*(lq/usr/bin/more\*(rq'.
+The default is \*(lq/usr/ucb/more\*(rq.
+
+.ti -.5i
+NDIR
+.br
+For non-Berkeley UNIX systems,
+this \fIMH\fR will try to find the new directory access mechanism by looking
+in \fB<ndir.h>\fR if this option is given.
+Otherwise, \fIMH\fR will try \fB<dir.h>\fR.
+If you still can't get this to work on your system,
+edit \fBh/local.h\fR as appropriate.
+(See also `SYS5DIR'.)
+
+.ti -.5i
+NFS
+.br
+Tells \fIMH\fR to hack around a problem in the NFS C library.
+If you get an undefined symbol \*(lqruserpass\*(rq when compiling
+\fIMH\fP, you probably need this option.  If, however, you include this
+option and get an undefined symbol \*(lq\(ru\^\(ruruserpass\*(rq
+when compiling, then you should omit this option.
+(See also `NORUSERPASS'.)
+
+.ti -.5i
+NOIOCTLH
+.br
+Tells \fIMH\fR not to include the file \fB<sys/ioctl.h>\fR.
+To be used on systems where this file is not present.
+
+.ti -.5i
+NORUSERPASS
+.br
+Tells \fIMH\fR that your system doesn't have the
+\fIruserpass\fP\|(3) routine;
+\fIMH\fR will include its own copy of this
+routine in its library.
+(See also `NFS'.)
+
+.ti -.5i
+NTOHLSWAP
+.br
+Tells \fIMH\fR to use the \fBntohl()\fR macro when processing
+\fImsh\fR binary map files.  \fIMH\fR can use this macro on
+systems with the include file \fBnetinet/in.h\fR,
+to byte-swap the binary information in these map files.
+If you're using the same map files on machines of different
+architectures, enable this option.
+
+.ti -.5i
+RENAME
+.br
+Include this option if your system has a \fBrename()\fP library
+call.  This is true on BSD42 and newer and some SYS5 systems.
+
+.ti -.5i
+SENDMAILBUG
+.br
+Causes SMTP reply code 451 (failure)
+to be considered the same as code 250 (OK).
+Since this might cause problems, only
+enable this if you are certain that your SendMail will
+return this code even when it doesn't mean to indicate a failure.
+
+.\" .ti -.5i
+.\" SMTP_ONEX
+.\" .br
+.\" Causes \fIMH\fP to give the \*(lqONEX\*(rq SMTP command
+.\" when posting mail (a SendMail performance hack).
+.\" Useful only if you're running a SendMail
+.\" which will successfully reset with the \*(lqRSET\*(rq command
+.\" after seeing the \*(lqONEX\*(rq command;
+.\" otherwise, if you enable this 
+.\" you may have problems posting messages with \*(lqBCCs\*(rq.
+.\" 
+.ti -.5i
+SOCKETS
+.br
+Indicates the availability of a socket interface
+for TCP/IP networking that is compatible with 4.{2,3}BSD UNIX.
+It is not necessary to define this when BSD42 is already defined,
+but it might be useful for SYSTEM 5 or HPUX systems with TCP/IP sockets.
+
+.ti -.5i
+SUN40
+.br
+Use on Sun OS 4.0 (and later?) systems.  You also will need
+\*(lqoptions BSD42\*(rq, \*(lqoptions BSD43\*(rq, and
+\*(lqsignal void\*(rq.
+
+If you're using Sun's brain-damaged approach to offering Domain
+Name Service through NIS, be sure to include
+\*(lqoptions BIND\*(rq and
+\*(lqldoptions \-lresolv\*(rq to work around some NIS/DNS bugs.
+
+.ti -.5i
+SYS5
+.br
+Use on AT&T SYSTEM 5 R3 (and newer?) UNIX systems.  See also \fImailgroup\fR.
+
+.ti -.5i
+SYS5DIR
+.br
+Define this if your system uses \*(lqstruct dirent\*(rq
+instead of \*(lqstruct direct\*(rq.
+This is true of System V Release 3.0 and later.
+Uses include file \fB<dirent.h>\fR
+and the routines \fImkdir\fR, \fIrmdir\fR and \fIgetcwd\fR.
+
+.ti -.5i
+SVR4
+.br
+Use on AT&T SYSTEM 5 R4 (and newer?) UNIX systems. You should 
+also include \*(lqoptions SYS5\*(rq and \*(lqoptions SYS5DIR\*(rq.
+See also \fImailgroup\fR.
+You will also need to include \*(lqoldload none\*(rq if your \fBld\fP
+doesn't handle `\-x\0\-r' correctly.
+
+.ti -.5i
+TERMINFO
+.br
+Define TERMINFO if you have it.
+You get it automatically if you're running SYS5, and you don't get
+it if you're not.  (If you're not SYS5, you probably have termcap.)
+
+.ti -.5i
+TZNAME
+.br
+Use time zone names from the \fItzname\fR variable, set via \fItzset\fR.
+Only applicable on SYSTEM 5 systems and only effective when you have
+asked for alpha\-timezones (see the ATZ option).  See also ZONEINFO.
+
+.ti -.5i
+UNISTD
+.br
+Include this option if your system has the file \fB<unistd.h>\fP.
+If not specified, the LOCKF option will include \fB<sys/fcntl.h>\fP.
+
+.ti -.5i
+V7
+.br
+Use on V7 UNIX systems.
+Also, be sure to use \*(lqoptions void=int\*(rq.
+
+.ti -.5i
+VSPRINTF
+.br
+Include this option if your system has the \fIvsprintf\fP\|(3)
+library routine; otherwise, \fI\(rudoprnt\fP\|(3) will be used.
+
+.ti -.5i
+WAITINT
+.br
+BSD42 based systems call the \fIwait\fP\|(2)
+system routine with a pointer to type \fIunion wait\fP.
+Include this option if you included \*(lqoptions BSD42\*(rq, but
+your system calls the \fIwait\fP\|(2)
+system routine with a pointer to type \fIint\fP
+(the non-BSD42 default).
+
+.ti -.5i
+ZONEINFO
+.br
+Specify this if you have a BSD43 based system that keeps time zone
+information /etc/zoneinfo or /usr/lib/zoneinfo (SunOS),
+and where 
+the \fIstruct tm\fP 
+returned by \fIlocaltime\fP\|(3) contains a \fItm_gmtoff\fP element
+(see \fB/usr/include/time.h\fP).
+With this fix the GMT offset specified in outgoing mail
+will be corrected when the TZ enviornment variable is set
+to a different time zone.  See also TZNAME.
+.in -.25i
+
+.Uh "Site Preferences"
+.br
+.in -.5i
+These options change the
+default behavior of \fIMH\fP or enable optional features.
+Add the options which are appropriate for your configuration 
+or your site preferences.
+.in +.5i
+
+.ti -.5i
+editor: prompter
+.br
+The default editor for \fIMH\fR.
+
+.ne 5
+.ti -.5i
+options:
+.br
+\&`\-D' options to \fIcc\fR\|(1).
+.sp
+.in +.25i
+.ne 4
+.ti -.5i
+ATZ
+.br
+Directs \fIMH\fR to use alpha\-timezones whenever possible.
+You should not use this option if you are on the Internet,
+since it will make your host non-compliant with RFC-1123
+(Requirements for Internet Hosts).
+
+.ti -.5i
+ATHENA
+.br
+Makes \fIrepl\fR `\-nocc\0all' the default instead of `\-cc\0all'.
+You may want to enable this if you're using \fIxmh\fR.
+
+.ti -.5i
+BANG
+.br
+Directs \fIMH\fR to favor `!' over `@' in addressing.
+
+.ti -.5i
+BERK
+.br
+Optional for for 4.{2,3}BSD sites running SendMail.
+Disables nearly all of the RFC822 address and header-parsing routines
+in favor of recognizing such formats as ASCnet, and so on.
+If you don't need to disable the parser for this reason,
+you probably want to use \*(lqoptions DUMB\*(rq instead.
+
+.ti -.5i
+COMPAT
+.br
+If you previously ran a version of \fIMH\fR earlier than mh.4 use this option.
+After a short grace period,
+remove it and re-{configure,generate,install} everything.
+
+.ti -.5i
+DUMB
+.br
+Directs \fIMH\fR not to try and rewrite addresses to their 
+\*(lqofficial\*(rq form.
+
+.ti -.5i
+FOLDPROT
+.br
+Defines the octal value for default folder-protection.
+For example, FOLDPROT='\^\*(lq0700\*(rq\^'.
+The default is \*(lq0711\*(rq.
+
+.ti -.5i
+ISI
+.br
+When using \*(lqrepl\0\-ccme\*(rq,
+only \*(lqcc:\*(rq the first address found which belongs to the user;
+any other \fIAlternate-Mailboxes\fR do not receive \*(lqcc:\*(rqs.
+
+.ti -.5i
+LINK
+.br
+Defines the filename for alternate file name for \fIdist\fR and \fIrepl\fR.
+For example, LINK='\^\*(lq\^\\\^\\\^043\*(rq\^'
+to use the pound\-sign character.
+The default is \*(lq@\*(rq.
+
+.ti -.5i
+MHE
+.br
+Enables crude support for Brien Reid's MHE interface.
+Recommended for use with the GNU Emacs mh-e package.
+
+.ti -.5i
+MHRC
+.br
+Enables \fIMH\fR to recognize the \fICShell\fR's `~'\-construct.
+This is useful for sites that run with a ~/.mhrc for their users.
+
+.ti -.5i
+MIME
+.br
+Enables support for multi-media messages,
+as specified in RFC 1341 \-\- a major win.
+This allows you to include things like audio,
+graphics, and the like, in your mail messages.
+Several \fIMH\fP commands are extended to support these multi-media
+messages,
+and the \fImhn\fR command is provided to encode and decode
+\fBMIME\fP messages.
+For more details, see \fBmiscellany/multi-media/READ-ME\fP
+and \fImhn\fR\|(1).
+
+.ti -.5i
+MSGID
+.br
+Enables \fBslocal\fP to detect and surpress duplicate messages received.
+This code uses the \fB<ndbm.h>\fP library,
+and requires \*(lqoptions BSD42\*(rq since
+it uses the \fIflock\fP\|(2) system call for locking.
+(Note that this means its database locking does not work over NFS.)
+It has only been tested under SUN40.
+
+.ti -.5i
+MSGPROT
+.br
+Defines the octal value for default folder-protection.
+For example, MSGPROT='\^\*(lq0600\*(rq\^'.
+The default is \*(lq0644\*(rq.
+
+.ti -.5i
+NOMHSEQ
+.br
+Directs \fIMH\fR to make private sequences the default.
+
+.ti -.5i
+OVERHEAD
+.br
+Enable \fIMH\fR commands to read profile/context from open fd:s
+without doing an open(); see \fImh-profile\fP\|(5) for the details.
+
+.ti -.5i
+RPATHS
+.br
+Directs \fIinc\fR to note UNIX \*(lqFrom\ \*(rq lines as Return-Path: info.
+
+.ti -.5i
+SBACKUP
+.br
+Defines the prefix string for backup file names.
+For example, SBACKUP='\^\*(lq\^\\\^\\\^043\*(rq\^'.
+The default is \*(lq,\*(rq.
+
+.ti -.5i
+TMA
+.br
+Support for the TTI \fItrusted mail agent\fR (TMA).
+Although the TTI TMA is \fBnot\fR in the public domain,
+the \fIMH\fR support for the TTI TMA \fBis\fR in the public domain.
+You should enable this option only if you are licensed to run the TMA
+software
+(otherwise, you don't have the software in your \fIMH\fR source tree).
+
+.ti -.5i
+TTYD
+.br
+Support for TTYD.  This is no longer in wide use, and is not recommended.
+
+.ti -.5i
+UCI
+.br
+First, \*(lq_\*(rq and \*(lq#\*(rq are recognized as the prefixes for
+scratch files.
+Second, support for the UCI group\-leadership mechanism is enabled in
+\fIconflict\fR.
+Third, the first line of the file
+file \fB$HOME/.signature\fR is used as the \fIFull Name\fR part
+of your \*(lqFrom:\*(rq header.
+This may conflict with the interpretation of this file by \fINews\fR.
+If you're not at UCI, you probably don't want this option.
+
+.ti -.5i
+UK
+.br
+Directs the \fIscan\fR program to generate UK-style dates by default.
+
+.ti -.5i
+WHATNOW
+.br
+Enable certain \fIMH\fR commands to act differently when $mhdraft set.
+
+.ti -.5i
+YEARMOD
+.br
+This option makes the \fImh-format\fP \fB%(year)\fP function
+always return a value less than 100.
+Enable this option if you have local \fImh-format\fP\|(5) files
+which cannot handle 4-digit years.
+You should convert these files to use a 4-character field width,
+or use the \fB%(modulo 100)\fP function to obtain a 2-digit year value.
+After a short grace period,
+remove `YEARMOD' and re-{configure,generate,install} everything.
+.in -.25i
+
+.Uh "Testing/debugging"
+.ti -.5i
+debug: off
+.br
+Support for debug mode of \fIMH\fR.
+Don't use this unless you know what you're doing,
+which isn't likely if you're reading this document!
+
+.ti -.5i
+regtest: off
+.br
+Set this to \*(lqon\*(rq
+if you are doing regression testing among different
+compilations of \fIMH\fP, and you do not want the hostname
+and compile date included in \fIMH\fP binaries.  
+
+.sp
+.in -.5i
+.PP
+Now edit \fBconf/config/mtstailor\fR,
+depending on your choice of the setting
+for mts in the \fIMH\fR configuration file.
+for an mts setting of \*(lqmh\*(rq,
+look at the file \fBconf/tailor/mhmts\fR;
+for an mts setting of \*(lqsendmail\*(rq, \*(lqsendmail/smtp\*(rq,
+\*(lqmmdf/smtp\*(rq, or \*(lqmmdf2/smtp\*(rq,
+look at the file \fBconf/tailor/sendmts\fR;
+and,
+for an mts setting of \*(lqmmdf\*(rq, or  \*(lqmmdf2\*(rq,
+look at the file \fBconf/tailor/mmdf\fR.
+.PP
+Now install the configured files into the source areas.  (On SYS5
+systems, or other systems where you get complaints about
+\*(lq_index\*(rq and \*(lq_rindex\*(rq being undefined,
+you should use \*(lqmake sys5\*(rq to compile mhconfig.)
+.sp 1
+.nf
+% make
+% ./mhconfig MH
+.fi
+.PP
+\fBBefore proceeding\fP,
+you should familiarize yourself with the \fIAdministrator's Guide\fR.
+To generate an \fInroff\fR version, go to the doc/ directory
+and type:
+.sp 1
+.nf
+% (cd ../doc/; make ADMIN.doc)
+.fi
+.sp
+.PP
+If you're already running \fIMH\fR at your site,
+you should also read the \fImh\fR changes document \fBCHANGES\fP.
+The source is in \fBpapers/changes/\fR.
+.PP
+After reading the \fIAdministrator's Guide\fR, you may decide
+to change your MH configuration.  If so, cd back to the \fBconf/\fP
+directory, re-edit the files \fBMH\fP
+and \fBconf/config/mtstailor\fR, and re-run \fImhconfig\fP.
+.PP
+You now proceed based on your choice of a transport system
+(the setting for mts above).
+The best interface is achieved with \*(lqsendmail\*(rq
+followed by \*(lqmmdf\*(rq or (\*(lqmmdf2\*(rq),
+and then \*(lqmh\*(rq (stand\-alone delivery, not recommended).
+.SS SENDMAIL
+If you have not enabled BBoards or POP
+then no further MTS\-specific action is required on your part!
+
+If you have enabled POP, but you 
+want to let \fISendMail\fP deliver mail POP mail using its
+standard delivery program \fB/bin/mail\fP,
+then, again, no further MTS\-specific action is required on your part!
+
+Otherwise,
+go to the mts/sendmail/ directory.
+.sp 1
+.nf
+% cd ../mts/sendmail/
+.fi
+.sp 1
+This directory contains files whose definitions correspond to the
+configuration of your \fISendMail\fR system.
+If you have enabled BBoards or POP service,
+then you will need to re\-configure \fISendMail\fR.
+First, in the \*(lqlocal info\*(rq section of your site's
+\fISendMail\fR configuration file,
+choose a free macro/class (B is used in this distribution),
+and add these lines:
+.sp 1
+.in +.5i
+.nf
+# BBoards support
+DBbboards
+CBbboards
+.fi
+.in -.5i
+.sp 1
+Second, immediately after the inclusion of the zerobase file,
+in the \*(lqmachine dependent part of ruleset zero\*(rq section,
+add these lines:
+.sp 1
+.in +.5i
+.nf
+# resolve names for the BBoards system
+R$+<@$=B>		$#bboards$@$2$:$1		topic@bboards
+.fi
+.in -.5i
+.sp 1
+Be sure to use tabs when separating these fields.
+Third, add the line
+.sp 1
+.in +.5i
+.nf
+include(bboardsMH.m4)
+.fi
+.in -.5i
+.sp 1
+after the line
+.sp 1
+.in +.5i
+.nf
+include(localm.m4)
+.fi
+.in -.5i
+.sp 1
+in your site's \fISendMail\fR configuration file.
+Finally, you should link the file \fBmts/sendmail/bboardsMH.m4\fR into your
+\fISendMail\fR cf/ directory and re\-configure \fISendMail\fR.
+.PP
+If you have enabled POP service,
+a similar procedure must be used on the POP service host,
+to re\-configure \fISendMail\fR.
+First, in the \*(lqlocal info\*(rq section of your site's
+\fISendMail\fR configuration file,
+choose a free macro/class (P is used in this distribution),
+and add these lines:
+.sp 1
+.in +.5i
+.nf
+# POP support
+DPpop
+CPpop
+.fi
+.in -.5i
+.sp 1
+Second, immediately after the inclusion of the zerobase file,
+in the \*(lqmachine dependent part of ruleset zero\*(rq section,
+add these lines:
+.sp 1
+.in +.5i
+.nf
+# resolve names for the POP system
+R$+<@$=P>		$#pop$@$2$:$1			subscriber@pop
+.fi
+.in -.5i
+.sp 1
+Be sure to use tabs when separating these fields.
+Third, add the line
+.sp 1
+.in +.5i
+.nf
+include(popMH.m4)
+.fi
+.in -.5i
+.sp 1
+after the line
+.sp 1
+.in +.5i
+.nf
+include(localm.m4)
+.fi
+.in -.5i
+.sp 1
+in your site's \fISendMail\fR configuration file.
+Finally, you should link the file \fBmts/sendmail/popMH.m4\fR into your
+\fISendMail\fR cf/ directory and re\-configure \fISendMail\fR.
+.SS MMDF
+If you want \fIMMDF\fR to be your transport service,
+and have \fBNOT\fR specified \*(lqmmdf/smtp\*(rq (or \*(lqmmdf2/smtp\*(rq)
+as your mts setting,
+then go to the mmdf/ directory.
+(If you're using \*(lqmmdf/smtp\*(rq or \*(lqmmdf2/smtp\*(rq
+as your mts setting, then skip to the next section.)
+.sp 1
+.nf
+% cd ../mts/mmdf/
+.fi
+.sp 1
+This directory contains files whose definitions correspond to the
+configuration of your \fIMMDF\fR system.
+.PP
+If you're running \fIMMDF\-I\fR,
+then copy the following files from wherever you keep the \fIMMDF\fR sources
+to this directory: mmdf/h/ch.h, mmdf/h/conf.h, utildir/conf_util.h,
+utildir/ll_log.h, mmdf/h/mmdf.h, utildir/util.h, mmdf/mmdf_lib.a,
+and utildir/util_lib.a.
+.PP
+If you're running \fIMMDF\-II\fR,
+then copy the following files from where you keep the \fIMMDF\fR sources
+to this directory: h/ch.h, h/conf.h, h/dm.h, h/ll_log.h, h/mmdf.h, h/util.h,
+and lib/libmmdf.a
+.PP
+If you have enabled bboards,
+then the directories \fBsupport/bboards/mmdfI\fR
+and \fBsupport/bboards/mmdfII\fR
+contain information you'll need to
+put a UCI BBoards channel in your \fIMMDF\fR configuration.
+Similarly, if you have enabled option \*(lqmf\*(rq and are
+running \fIMMDF\-I\fR,
+then the \fBzotnet/mf/mmdfI/\fR directory contains information you'll need to
+put a \fIUUCP\fR channel in your \fIMMDF\-I\fR configuration.
+Finally, the directory \fBsupport/pop/mmdfII\fR contains information you'll
+need to put a POP channel in your \fIMMDF\-II\fR configuration.
+.PP
+Note that \fIMMDF\-II\fR is distributed with the BBoards channel,
+although the version in the \fIMH\fR distribution might be more current,
+the version in the \fIMMDF\-II\fR distribution has been tested with that
+revision of \fIMMDF\fR.
+.SS MMDF/SMTP
+If you are using \*(lqmmdf/smtp\*(rq as your mts setting,
+then no further MTS\-specific action is required on your part!
+.SS MMDF2/SMTP
+If you are using \*(lqmmdf2/smtp\*(rq as your mts setting,
+then no further MTS\-specific action is required on your part!
+.SS "STAND\-ALONE DELIVERY"
+If, instead, you want \fIMH\fR to handle its own mail delivery,
+then no further MTS\-specific action is required on your part!
+.SH GENERATION
+Go to the \fIMH\fP top-level directory and generate the system.
+.sp 1
+.nf
+% cd ../; make
+.fi
+.PP
+This will cause a complete generation of the \fIMH\fR system.
+If all goes well, proceed with installation.
+If not, complain, as there \*(lqshould be no problems\*(rq at this step.
+.SH INSTALLATION
+If the directories you chose for the user\-programs,
+support\-programs and manuals
+(\*(lqbin\*(rq, \*(lqetc\*(rq, \*(lqpopdir\*(rq, \*(lqslibdir\*(rq,
+and \*(lqmandir\*(rq in the \fBconf/MH\fR file)
+don't exist,
+you should create them at this point.
+.PP
+Next, if you enabled support for the UCI BBoards facility,
+then create a login
+called \*(lqbboards\*(rq with the following characteristics:
+home directory is \fB/usr/spool/bboards/\fR with mode 755
+(actually, use the value for \*(lqbbhome\*(rq given in the \fIMH\fR
+configuration file),
+login shell is \fB/bin/csh\fR (or \fB/bin/sh\fR),
+and, encrypted password field is \*(lq*\*(rq.
+The \*(lqbboards\*(rq login should own the \fB/usr/spool/bboards/\fR
+directory.
+In addition to creating \fB/usr/spool/bboards/\fR,
+also create \fB/usr/spool/bboards/etc/\fR
+and \fB/usr/spool/bboards/archive/\fR.
+These directories should also be owned by the \*(lqbboards\*(rq login.
+.PP
+If you enabled support for POP,
+then on the POP service host,
+create a login called \*(lqpop\*(rq with the following characteristics:
+home directory is \fB/usr/spool/pop/\fR with mode 755,
+login shell is \fB/bin/csh\fR,
+and, encrypted password field is \*(lq*\*(rq.
+If you don't have \fB/bin/csh\fR on your system (V7),
+then \fB/bin/sh\fR is just fine.
+The \*(lqpop\*(rq login should own the \fB/usr/spool/pop/\fR directory.
+You'll also need to add a line to the \fB/etc/services\fR file and the
+\fB/etc/rc.local\fR file,
+see the \fIAdministrator's Guide\fR  for more details.
+.PP
+If this is not the first time you have installed \fIMH\fR,
+these files will need particular attention:
+
+.nf
+.in +.5i
+.ta \w'VeryVeryBigDirectoryName  'u
+\fIDirectory\fR	\fIFiles\fR
+\*(lqetc/\*(rq	MailAliases, BBoardAliases, mtstailor
+/usr/spool/bboards/	BBoards, \&.cshrc, \&.mh\(ruprofile
+/usr/spool/bboards/etc/	*
+.re
+.in -.5i
+.fi
+.PP
+The \fBMailAliases\fR, \fBBBoardAliases\fR, \fBmtstailor\fR and \fBBBoards\fR
+files will \fBNOT\fP be installed over existing copies;
+you will need to edit these by
+hand and merge in any changes from your previous \fIMH\fR release.
+The other files under \fB/usr/spool/bboards/\fR will be overwritten
+if they exist.
+You may wish to preserve your old versions of these before installing
+\fIMH\fR.
+.PP
+As the super-user, and from the mh.6/ directory, install the system.
+.sp 1
+.nf
+# make inst\-all
+.fi
+.sp 1
+This will cause the \fIMH\fR 
+processes and files to be transferred to the appropriate areas
+with the appropriate attributes.
+.SH TAILORING
+See the \fIAdministrator's Guide\fR for information on tailoring \fIMH\fR for
+the MTS, BBoards, and POP.
+.SH DOCUMENTATION
+In addition to this document,
+the \fIAdministrator's Guide\fP,
+and the \fIUser's Manual\fP,
+there are several documents referenced by the user's manual which may be
+useful.
+The sources for all of these can be found under the \fBpapers/\fR directory.
+.SH "OTHER THINGS"
+Consult the directory \fBmiscellany/\fR for the sources to a number of things
+which aren't part of the mainstream \fIMH\fR distribution,
+but which are still quite useful.
+.SH FILES
+Too numerous to mention.  Really.
+.SH "SEE ALSO"
+make(1)
+.SH BUGS
+The \fImhconfig\fR program should be smarter.
+.PP
+There's no way to print the \fIAdministrator's Guide\fP
+until after you have configured the system; it is difficult
+to configure the system without the \fIAdministrator's Guide\fP.
+.PP
+The Makefiles should know when \fImhconfig\fR has been run and force
+\*(lqmake clean\*(rq behavior.

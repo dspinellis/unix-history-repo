@@ -1,1 +1,0 @@
-../../../old/yacc/PSD.doc

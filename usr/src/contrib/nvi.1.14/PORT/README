@@ -1,0 +1,199 @@
+#	@(#)README	8.22 (Berkeley) 4/14/94
+
+This is the area for building nvi/nex.  There are a number of porting
+directories, for various architecture/OS combinations.  Pick the one
+that's closest to yours and try "make".  For the rest of this file,
+I'll use "MACH" as a fake architecture/OS name.
+
+To PORT to a new system, create the following subdirectories and
+symbolic links.
+
+	mkdir MACH		(for example: mkdir sunos.4.0)
+	cd MACH
+	cp ../Makefile .
+	chmod 664 Makefile
+	ln -s ../clib .
+	ln -s ../curses .
+	ln -s ../db .
+	ln -s ../regex .
+	mkdir include
+	ln -s include sys
+	cd include
+	ln -s ../../include/*.h .
+	rm compat.h
+	cp ../../include/compat.h .
+	chmod 664 compat.h
+	cd ..
+
+The basic idea is that you now have a local area that you can modify.
+In particular, you have local copies of the Makefile and the include
+file compat.h.  Read through the Makefile and compat.h and make whatever
+changes are appropriate to your system.  If there's an architecture
+that's close to yours, you probably should diff the Makefile and
+compat.h in that tree against the standard ones and see what changes
+were necessary, as they're probably necessary for you as well.  Then,
+enter "make" and see what happens!
+
+There are several subroutines that are found in POSIX 1003.2, ANSI
+C, or 4.4BSD that you may not have.  Once you get nvi to compile, go
+through the list of undefined routines and add entries to the MISC
+line in the Makefile as necessary.
+
+If you have to add some functions that are missing (and which aren't
+in the PORT/clib directory), please don't add them in the PORT/clib
+directory.  Add them in a MACH/local directory, and add lines of the
+form:
+
+	function.o: local/function.o
+		${CL} -Ilocal local/function.o
+
+to your local Makefile.
+
+Hopefully, over time, we'll develop a set of system directories that
+are known to work.  If you send me the changes that were necessary to
+make your system work, this will happen much more quickly.
+
+In some of the system directories, you'll see a file named OTHER_PATCHES.
+This is a set of patches which you'll have to make from the top-level nvi
+directory to get nvi to run on this system:
+
+	cd ..
+	patch < PORT/MACH/OTHER_PATCHES
+
+If patch prompts you for the name of the file to modify (some versions
+of patch don't figure it out on their own) use the file name which patch
+displays.
+
+Some other knobs you may have to turn:
+
+In the Makefile:
+	If you have an old (4.3BSD) version of curses, uncomment the
+	inclusion of the curses library in the Makefile.
+
+In include/compat.h:
+	Before attempting to build nvi, you should look through the
+	compat.h file, and adjust it as necessary for your system.
+	It's possible to use the #ifndef construct to figure out if a
+	#ifdef has been set, but C provides no similar method to figure
+	out if a typedef has been done.  Your compile errors should
+	give you a good indication of which ones you need.
+
+You may see warning messages about illegal pointer combinations.  Nvi
+currently uses u_char's to represent characters, and there are some
+places where it uses C library routines that expect char *'s.  This
+inconsistency will be resolved with nvi is made 8-bit clean.  You may
+also see lots of warning messages about #define's being redefined.
+These can mostly be ignored.  In general, I ignore all warning messages
+until something doesn't work.  Some systems produce thousands of lines
+of completely useless warnings.
+
+The other parts of the PORT directory are as follows:
+
+	The directory PORT/db is a copy of the dbopen(3) routines (see
+	PORT/db/VERSION for a version number).  This is a complete
+	database access methods package that is used by nex/nvi as the
+	interface to the underlying file.
+
+	The directory PORT/curses is a copy of the 4.4BSD version of the
+	curses(3) routines.  This is an updated implementation of the
+	traditional BSD curses package.  Use it if you don't have your
+	own version of the curses library, or, if your version is too old
+	to have scrolling support.  (Older versions of BSD curses didn't,
+	and some System V versions don't do it right, and this makes nvi
+	intolerably slow, since it will repaint the entire screen on almost
+	every update.)
+
+	The directory PORT/regex is a copy of the 4.4BSD version of the
+	regular expression routines.  This is an implementation of the
+	POSIX 1003.2 standard regular expression interfaces, done by
+	Henry Spencer.  (The files and functions have similar names to
+	historic RE packages, but they often aren't the same, so be
+	careful.)
+
+	The directory PORT/clib is a set of functions that the 4.4BSD
+	C library had and which your system may not have.  They are
+	added to the MISC line of the Makefile if they aren't defined
+	when you try and load nvi.
+	
+	The directory PORT/include is header files that the 4.4BSD
+	system had which your system may not have.  There is also
+	one really important extra one, named compat.h, which is a
+	set of compatibility work-arounds that you'll almost certainly
+	have to copy and modify for a new system.
+
+	The symbolic link MACH/sys points to the MACH/include directory
+	so that includes of the form <sys/include.h> work.
+
+Some of the more common portability problems:
+
+	Nvi needs the ability to replace the underlying read/write
+	routines in a stdio stream with its own -- see clib/fwopen.c
+	for a detailed explanation.  If you don't have fwopen(3) or
+	similar functionality, add fwopen.o to the MISC line in the
+	Makefile, and add "-DFWOPEN_NOT_AVAILABLE" to the CL= line
+	in the Makefile.
+
+	If you have a System V curses, make sure you add -DSYSV_CURSES
+	to the CL= line in the Makefile.
+
+	If your curses library doesn't have the addnstr(3) interface,
+	add Xaddnstr.o (NOT addnstr.o!) to the MISC line in the
+	Makefile.  If your version of curses doesn't have idlok(3),
+	add addidlok.o to the MISC line in the Makefile.
+
+	If you don't have flock(2), but you do have fcntl(2), add
+	flock.o to the MISC line in the Makefile.  If you don't
+	have fcntl(2) either, add lockf.o to the MISC line in the
+	Makefile.
+
+	If you don't have:
+
+		bsearch(3):	add bsearch.o
+		err(3):		add err.o
+		fchmod(3):	add fchmod.o
+		memchr(3):	add memchr.o
+		memmove(3):	add memmove.o
+		memset(3):	add memset.o
+		mkstemp(3):	add mktemp.o
+		siglist(3):	add siglist.o
+		strdup(3):	add strdup.o
+		strerror(3):	add strerror.o
+		strsep(3):	add strsep.o
+		strtoul(3):	add strtoul.o
+		warn(3):	add err.o
+
+			... to the MISC line in the Makefile.
+
+	If realloc(3) of a NULL pointer on your system isn't the same
+	as a malloc(3) call, add realloc.o to the MISC line in the
+	Makefile.
+
+	If you don't have snprintf/vsnprintf(3), add snprintf.o to the
+	MISC line in the Makefile.  This workaround depends on your
+	system having vsprintf(3) -- if you don't, there's no workaround
+	other than changing the source code to not use the snprintf calls.
+	If you have to make that change, check to see if your vsprintf
+	returns a length or a char *; if it's the latter, make sure you
+	set VSPRINTF_CHARSTAR in the MACH/include/compat.h file.
+
+	If you don't have 4.4BSD's pty interface, but you have 4BSD
+	style pty's, add pty.o to the MISC line.  If you have System
+	V Release 4 style pty's, add pty_s5r4.o to your MISC line.
+
+Pathnames that may have changed:
+
+	All of the pathnames used by nvi are found in the include file
+	pathnames.h, in the top nvi directory.  If any of them aren't
+	correct for your system, copy the pathnames.h include from the
+	nvi directory into your local include directory, and change the
+	#define's as necessary.
+
+	The 4.4BSD C library tags were found in "/var/db/libc.tags", and
+	the kernel tags were found in "/sys/kern/tags".  If these paths
+	are wrong for your system, change the _PATH_TAGS #define in your
+	local copy of pathnames.h
+
+Sendmail:
+	Nvi uses sendmail to send mail to users when edit sessions need
+	to be recovered.  If you don't have a sendmail program on your
+	system, see the RECOVERY section of the vi reference page.

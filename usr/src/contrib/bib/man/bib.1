@@ -1,0 +1,171 @@
+.\"     "@(#)bib.1	4.8    6/18/93";
+.TH BIB 1 "2 September 1988" "Univ. of Arizona"
+.UC 4
+.SH NAME
+bib, listrefs, bibinc, bib2tib \- bibliographic formatter
+.SH SYNOPSIS
+\fBbib\fP [options] ...
+.br
+\fBlistrefs\fP [options] ...
+.br
+\fBbibinc\fP [options] ...
+.SH DESCRIPTION
+\fIBib\fP is a preprocessor for \fInroff\fP or \fItroff\fP(1) that
+formats citations and bibliographies.  The input files (standard input
+default) are copied to the standard output, except for text between [. and .]
+pairs, which are assumed to be keywords for searching a bibliographic database.
+If a matching reference is found a citation is generated replacing the text.
+References are collected, optionally sorted, and written out at a location
+specified by the user.
+Citation and reference formats are controlled by the \-t option.
+.PP
+Reference databases are created using the \fIinvert\fP utility.
+.PP
+The following options are available.
+Note that standard format styles (see the \-t option) set options automatically.
+Thus if a standard format style is used the user need not indicate any
+further options for most documents.
+.IP \-aa 8m
+reduce author\*(CQs first names to abbreviations.
+.IP \-ar\fInum\fP
+reverse the first \fInum\fP author's names.
+If a number is not given all authors names are reversed.
+.IP \-ax
+print authors last names in Caps-Small Caps style.  For example Budd becomes
+B\s-2UDD\s+2.  This style is used by certain ACM publications.
+.IP \-c\fIstr\fP
+build citations according to the template \fIstr\fP.  See the reference
+format designer\*(CQs guide for more information on templates.
+.IP \-d
+changes the default search directory for style files, include files, etc.
+and changes the value of the macro BMACLIB for bib, and of the macro l]
+used to find the troff macro definition file bmac.std.
+Defaults to /usr/new/lib/bmac.  If you have your own private copies of all the
+necessary files, using this option is the easiest way to specify them.
+.IP \-ea
+reduce editors' first names to abbreviations.
+.IP \-ex
+print editors' last names in Caps-Small Caps style (see \-ax option).
+.IP \-er\fInum\fP
+reverse the first \fInum\fP editors' names.  If a number is not given all
+editors' names are reversed.
+.IP \-f
+instead of collecting references, dump each
+reference immediately following the line on which the citation is placed
+(used for footnoted references).
+.IP "\-i \fIfile\fP"
+.ns
+.IP  \-i\fIfile\fP
+process the indicated file, such as a file of definitions.
+(see technical report for a description of file format).
+.IP \-h
+replace citations to three or more adjacent reference items with
+a hyphenated string (eg 2,3,4,5 becomes 2-5).
+This option implies the \-o option.
+.IP \-n\fIstr\fP
+turn off indicated options.  \fIstr\fP must be composed of the letters afhosx.
+.IP \-o
+contiguous citations are ordered according the the reference list before
+being printed (default).
+.IP "\-p \fIfile\fP"
+.ns
+.IP  \-p\fIfile\fP
+instead of searching the file INDEX,
+search the indicated reference files before searching the system file.
+\fIfiles\fP is a comma separated list of inverted indices, created using
+the \fIinvert\fP utility.
+.IP \-s\fIstr\fP
+sort references according to the template \fIstr\fP.
+.IP "\-t \fItype\fP"
+.ns
+.IP \-t\fItype\fP
+use the standard macros and switch settings for the indicated style
+to generate citations and references.
+There are a number of standard styles provided.  In addition users
+can generate their own style macros.  See the format designers guide for
+details.
+.IP \-Tib
+the abbreviations and macros used all use the TiB style of macro call in 
+which the name is enclosed in vertical |bars|.
+.IP \-Tibx
+instead of processing the input files, write the file bib.m4.in
+containing m4(I) macro definitions
+that make converting from bib style to Tib style macros a little easier.
+Note that m4 does not allow ampersands in macro names: this file and all
+of the files to be converted will have to be changed by hand.  The m4 macros
+will \fIonly\fP identify words that bib would normally expand: they do no
+other conversions.  After creating .bib.m4.in, run the scriptfile bib2tib 
+passing
+it the names of the files you wish converted.
+.PP
+\fIListrefs\fP formats an entire reference database file.
+Options to \fIlistrefs\fP
+are the same as for \fIbib\fP.
+.PP
+\fIBibinc\fP is an old hack tool for solving the problem of multiple define
+files for multiple styles.  Some journal styles require that journal names 
+be spelled out completely, while others allow abbreviated names.  Two
+macro definition files are available that allow this multiplicity of
+style: bibinc.fullnames and bibinc.shortnames.  A frequent source of
+error is updating one of these files, and forgetting to update the
+other.  \fIBibinc\fP allows a single file, say bibinc.names, to define
+both the long and the short versions of names, and from which the files
+bibinc.fullnames and bibinc.shortnames can easily be created.
+\fIBibinc\fP can also be used to define macro files for the TiB
+bibliographic preprocessor.
+.PP
+\fIBib2tib\fP will use the bib.m4.in file created with the -Tibx option
+to convert any files you specify into one using the TiB-style macro conventions.
+It is a simple script that does about 95% of the necessary grunge work
+to make this conversion, but be aware that the user will still need to
+eyeball the converted files for correctness.  To make use of the
+facility, run a \fIbib\fP job with the -Tibx option: \fIbib\fP will not
+process the input files, but will create bib.m4.in instead, after
+gathering together all the definitions it can find. Then for each of
+your bibliographic database files, run \fIbibinc\fP.
+.PP
+\fIBib\fP was designed initially for use with the \-ms macros, and
+uses a couple of the \-ms macros (.ip and .lp) in its macro definitions.
+To use it with the \-me macros, prefix the file being sent to nroff/troff
+with the following macro definitions:
+.nf
+.in +1.0i
+\&.de IP
+\&.ip \\$1 \\$2
+\&..
+\&.de LP
+\&.lp
+\&..
+.fi
+.in -1.0i
+.PP
+A file "bibmac.me" containing these macro
+definitions may be found in /usr/new/lib/bmac.
+.SH FILES
+.ta 2i
+INDEX	inverted index for reference database
+.br
+/usr/dict/papers/INDEX	default system index
+.br
+/usr/new/lib/bmac/bmac.*	formatting macro packages
+.br
+/usr/new/lib/bmac/bibinc.names	input to \fIbibinc\fP
+.br
+/usr/new/lib/bmac/tibmacs/*	for use with TiB-style |macros|
+.br
+/usr/new/lib/bmac/bibmacs/*	for use with old bib-style macros
+.br
+/usr/tmp/bibr*	scratch file for collecting references
+.br
+/usr/tmp/bibp*	output of pass one of bib
+.br
+bib.m4.in	macros for converting to TiB (see -Tibx above)
+.SH SEE ALSO
+\fIA UNIX Bibliographic Database Facility\fP, Timothy A. Budd and Gary M. Levin,
+University of Arizona Technical Report 82-1, 1982.
+(includes format designers guide).
+.br
+BIB \- A Program for Formatting Bibliographies, Timothy A. Budd, a BSD UNIX 
+document found in /usr/doc/usd/31.bib.
+.br
+invert(1), troff(1)

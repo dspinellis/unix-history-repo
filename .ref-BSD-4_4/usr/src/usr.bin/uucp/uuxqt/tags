@@ -1,2 +1,0 @@
-APPCMD	uuxqt.c	/^#define APPCMD(d) {\\$/
-Muuxqt	uuxqt.c	/^main(argc, argv)$/

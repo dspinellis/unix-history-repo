@@ -1,7 +1,0 @@
-Mkvm_mkdb	kvm_mkdb.c	/^main(argc, argv)$/
-badfmt	nlist.c	/^#define	badfmt(str)	errx(1, "%s: %s: %s", kfile, s/
-badread	nlist.c	/^badread(nr, p)$/
-basename	kvm_mkdb.c	/^#define	basename(cp)	((p = rindex((cp), '\/')) != /
-create_knlist	nlist.c	/^create_knlist(name, db)$/
-testdb	testdb.c	/^testdb()$/
-usage	kvm_mkdb.c	/^usage()$/

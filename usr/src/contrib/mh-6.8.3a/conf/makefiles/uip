@@ -1,0 +1,1979 @@
+##############################################################################
+#    Instructions to Make, for compilation of MH processes
+#
+#	@(MHWARNING)
+# @(#)$Id: uip,v 2.39 1992/12/18 17:57:45 jromine Exp $
+##############################################################################
+
+# The following entries were inserted during MH configuration
+BINDIR  =	$(DESTDIR)@(MHBINPATH)
+ETCDIR	=	$(DESTDIR)@(MHETCPATH)
+OPTIONS	=	@(MHOPTIONS)
+LDOPTIONS=	@(LDOPTIONS)
+LDOPTLIB=	@(LDOPTLIB)
+LDCURSES=	@(LDCURSES)
+@BEGIN: MMDFMTS
+MTSBRS	=
+MTSMISC	=
+IMTSMISC=
+LMTSMISC=
+TMTSMISC=
+@END: MMDFMTS
+@BEGIN: MHMTS
+MTSBRS	=	dropsbr.o
+@BEGIN: MF
+MTSMISC	=	rmail umhook
+IMTSMISC=	inst-rmail inst-umhook
+LMTSMISC=	l-rmail l-umhook
+TMTSMISC=	rmail umhook
+@END: MF
+@END: MHMTS
+@BEGIN: SENDMTS
+MTSBRS	=
+MTSMISC	=
+IMTSMISC=
+LMTSMISC=
+TMTSMISC=
+@END: SENDMTS
+@BEGIN: SENDMTSHACK
+SMTSMISC=	slocal
+ISMTSMISC=	inst-slocal
+LSMTSMISC=	l-slocal
+TSMTSMISC=	xslocal
+@END: SENDMTSHACK
+SBBOARDS=	$(ETCDIR)/sbboards
+CHOWN	=	@(MHCHOWNPATH)
+REMOVE	=	@(MHREMOVE)
+@BEGIN: BBOARDS
+BBUID	=	bboards
+BBCMDS	=	bbc bbl
+IBBCMDS=	inst-bbc inst-bbl
+LBBCMDS=	l-bbc l-bbl
+TBBCMDS=	xbbc xbbl
+@BEGIN: MHMTS
+BBMISC	=	sbboards
+IBBMISC=	inst-sbboards
+LBBMISC=	l-sbboards
+SBBOARDS=	@(BBHOME)/.mh_receive
+TBBMISC=	xsbboards
+@END: MHMTS
+@BEGIN: SENDMTSHACK
+BBMISC	=	sbboards
+IBBMISC=	inst-sbboards
+LBBMISC=	l-sbboards
+SBBOARDS=	$(ETCDIR)/sbboards
+TBBMISC=	xsbboards
+@END: SENDMTSHACK
+@END: BBOARDS
+@BEGIN: POP
+POPUID	=	pop
+POPLIB	=	popsbr.o
+POPLLIBS=	popsbr.c
+@BEGIN: MPOP
+POPCMDS	=	popi
+IPOPCMDS=	inst-popi
+LPOPCMDS=	l-popi
+TPOPCMS=	xpopi
+@END: MPOP
+@BEGIN: SENDMTSHACK
+POPMISC=	spop
+IPOPMISC=	inst-spop
+LPOPMISC=	l-spop
+TPOPMISC=	xspop
+@END: SENDMTSHACK
+@BEGIN: KPOP
+KRBLIB  =       -lkrb -ldes
+@END: KPOP
+@END: POP
+@BEGIN: BPOP
+PSHLIB	=	popsbr.o
+PSHLLIBS=	popsbr.c 
+@END: BPOP
+@BEGIN: NNTP
+PSHLIB	=	pshsbr.o
+PSHLLIBS=	-DPSHSBR popsbr.c 
+@END: NNTP
+@BEGIN: HESIOD
+HESLIB	=	-lhesiod
+@END: HESIOD
+@BEGIN: TMA
+TMACMDS	=	cipher decipher tma
+ITMACMDS=	inst-cipher inst-decipher inst-tma
+LTMACMDS=	l-cipher l-decipher l-tma
+TTMACMS=	xcipher xdecipher xtma
+#TMAMISC=	kdsc
+#ITMAMISC=	inst-kdsc
+#LKDSMISC=	l-kdsc
+#TTMAMISC=	xkdsc
+TMAOPTS	=	-I../tma/h
+TMALIB	=	tmasbr.o ../tma/libtma.a
+TMALLIBS=	tmasbr.c ../tma/llib-ltma
+KDSLIB	=	../tma/libkds.a ../tma/libtma.a
+KDSLLIBS=	../tma/llib-lkds
+@END: TMA
+
+CP      =       @(CP)
+LN      =       @(LN)
+
+CC	=	@(MHCOMPILER)
+@BEGIN: STDLIB
+LD	=	@(MHCOMPILER)
+@END: STDLIB
+@BEGIN: SHAREDLIB
+LD	=	LD_LIBRARY_PATH=../sbr @(MHCOMPILER)
+@END: SHAREDLIB
+@BEGIN: OPTIM
+CFLAGS	=	$(OPTIONS)
+@END: OPTIM
+@BEGIN: DEBUG
+CFLAGS	=	     $(OPTIONS)
+@END: DEBUG
+LDFLAGS	=	$(LDOPTIONS)
+@BEGIN: STDLIB
+LIBES	=	../config/config.o ../sbr/libmh.a ../mts/libmts.a \
+		../zotnet/libzot.a
+LDLIBS	=	$(LIBES) ../config/version.o $(LDOPTLIB)
+@END: STDLIB
+@BEGIN: SUN4SHLIB
+SLIBVER	=	.@(SLIBVER)
+@END: SUN4SHLIB
+@BEGIN: SHAREDLIB
+LIBES	=	../config/config.o ../sbr/libmh.so ../mts/libmts.a \
+		../zotnet/libzot.a
+LDLIBES	=	../config/config.o -Bdynamic @(SLDFLAG) -lmh$(SLIBVER) \
+		../mts/libmts.a  ../zotnet/libzot.a
+LDLIBS	=	$(LDLIBES) ../config/version.o $(LDOPTLIB)
+@END: SHAREDLIB
+LINT	=	lint
+LFLAGS	=	-bhu $(OPTIONS) $(TMAOPTS)
+LLIBS	=	../sbr/llib-lmh ../zotnet/llib-lzotnet ../mts/llib-lmts
+
+PGMPROT	=	0755
+
+CMDS	=	ali anno burst comp dist folder folders forw inc mark mhmail \
+@BEGIN: MIME
+		mhn \
+@END: MIME
+		mhpath msgchk msh next packf pick prev prompter refile repl \
+		rmf rmm scan send show sortm vmh whatnow whom $(BBCMDS) \
+		$(TMACMDS) $(POPCMDS)
+MISC	=	ap conflict dp install-mh mhl post rcvdist rcvpack rcvstore \
+		rcvtty fmtdump mhparam \
+@BEGIN: SMTP
+		sendmail \
+@END: SMTP
+@BEGIN: SENDMTS
+		spost \
+@END: SENDMTS
+		$(MTSMISC) $(BBMISC) $(POPMISC) $(SMTSMISC) $(TMAMISC)
+
+ICMDS	=	inst-ali inst-anno inst-burst inst-comp inst-dist inst-folder \
+		inst-folders inst-forw inst-inc inst-mark inst-mhmail \
+@BEGIN: MIME
+		inst-mhn \
+@END: MIME
+		inst-mhpath inst-msgchk inst-msh inst-next inst-packf \
+		inst-pick inst-prev inst-prompter inst-refile inst-repl \
+		inst-rmf inst-rmm inst-scan inst-send inst-show inst-sortm \
+		inst-vmh inst-whatnow inst-whom $(IBBCMDS) $(ITMACMDS) \
+		$(IPOPCMDS)
+IMISC	=	inst-ap inst-conflict inst-dp inst-install-mh inst-mhl \
+		inst-post inst-rcvdist inst-rcvpack inst-rcvstore inst-rcvtty \
+		inst-fmtdump inst-mhparam \
+@BEGIN: SMTP
+		inst-sendmail \
+@END: SMTP
+		$(IMTSMISC) \
+@BEGIN: SENDMTS
+		inst-spost \
+@END: SENDMTS
+		$(IBBMISC) $(IPOPMISC) $(ISMTSMISC) $(ITMAMISC)
+
+LCMDS	=	l-ali l-anno l-burst l-comp l-dist l-folder l-forw l-inc \
+		l-mark l-mhmail \
+@BEGIN: MIME
+		l-mhn \
+@END: MIME
+		l-mhpath l-msgchk l-msh l-packf l-pick \
+		l-prompter l-refile l-repl l-rmf l-rmm l-scan l-send \
+		l-show l-sortm l-vmh l-whatnow l-whom $(LBBCMDS) $(LTMACMDS) \
+		$(LPOPCMDS)
+LMISC	=	l-ap l-conflict l-dp l-install-mh l-mhl l-post l-rcvdist \
+		l-rcvpack l-rcvstore l-rcvtty l-fmtdump l-mhparam \
+@BEGIN: SMTP
+		l-sendmail \
+@END: SMTP
+		$(LMTSMISC) $(LBBMISC) \
+@BEGIN: SENDMTS
+		l-spost \
+@END: SENDMTS
+		$(LPOPMISC) $(LSMTSMISC) $(LTMAMISC)
+
+TCMDS	=	xali xanno xburst xcomp xdist xfolder xforw xinc xmark \
+		xmhmail \
+@BEGIN: MIME
+		xmhn \
+@END: MIME
+		xmhpath xmsgchk xmsh xpackf xpick xprompter xrefile \
+		xrepl xrmf xrmm xscan xsend xshow xsortm xvmh xwhatnow xwhom \
+		$(TBBCMDS) $(TTMACMDS) $(TPOPCMDS)
+TMISC	=	xap xconflict xdp xinstall-mh xmhl xpost xrcvdist xrcvpack \
+		xrcvstore xrcvtty xfmtdump xmhparam \
+@BEGIN: SMTP
+		xsendmail \
+@END: SMTP
+		$(TMTSMISC) $(TBBMISC) $(TPOPMISC) \
+		$(TSMTSMISC) \
+@BEGIN: SENDMTS
+		xspost \
+@END: SENDMTS
+		$(TTMAMISC)
+
+.c:;		echo $@
+
+##############################################################################
+#	Generate MH processes
+##############################################################################
+
+all:		$(CMDS) $(MISC)
+
+install:	inst-all clean
+
+inst-all:	$(ICMDS) $(IMISC)
+
+tar:		$(TCMDS) $(TMISC)
+		@touch $(TCMDS) $(TMISC)
+		@make -n inst-all > MAKEUIP
+		@chmod +x MAKEUIP
+		tar $(TFLAGS) MAKEUIP $(TCMDS) $(TMISC)
+		@rm -f MAKEUIP
+
+uninstall:;	-cd $(BINDIR); rm -f $(CMDS)
+		-cd $(ETCDIR); rm -f $(MISC)
+
+lint:		$(LCMDS) $(LMISC)
+
+
+##############################################################################
+#	MH processes
+##############################################################################
+
+inst-ali:	$(BINDIR)/ali
+
+$(BINDIR)/ali:	xali
+		-$(REMOVE) $@ zali
+		$(CP) xali $@
+		-@chmod $(PGMPROT) $@
+		-@ls -l $@
+		-@echo ""
+
+ali:		xali
+
+xali:		ali.o aliasbr.o $(LIBES)
+		$(LD) $(LDFLAGS) -o $@ ali.o aliasbr.o $(LDLIBS)
+
+l-ali:;		$(LINT) $(LFLAGS) ali.c aliasbr.c $(LLIBS) 
+
+
+inst-anno:	$(BINDIR)/anno
+
+$(BINDIR)/anno:	xanno
+		-$(REMOVE) $@ zanno
+		$(CP) xanno $@
+		-@chmod $(PGMPROT) $@
+		-@ls -l $@
+		-@echo ""
+
+anno:		xanno
+
+xanno:		anno.o annosbr.o $(LIBES)
+		$(LD) $(LDFLAGS) -o $@ anno.o annosbr.o $(LDLIBS)
+
+l-anno:;	$(LINT) $(LFLAGS) anno.c annosbr.c $(LLIBS)
+
+
+inst-ap:	$(ETCDIR)/ap
+
+$(ETCDIR)/ap:	xap
+		-$(REMOVE) $@ zap
+		$(CP) xap $@
+		-@chmod $(PGMPROT) $@
+		-@ls -l $@
+		-@echo ""
+
+ap:		xap
+
+xap:		ap.o trmsbr.o $(LIBES)
+		$(LD) $(LDFLAGS) -o $@ ap.o trmsbr.o $(LDLIBS) $(LDCURSES)
+
+l-ap:;		$(LINT) $(LFLAGS) ap.c trmsbr.c $(LLIBS) 
+
+
+inst-bbc:	$(BINDIR)/bbc
+
+$(BINDIR)/bbc:	xbbc
+		-$(REMOVE) $@ zbbc
+@BEGIN: BPOP
+		-chmod u-s zbbc
+@END: BPOP
+		$(CP) xbbc $@
+		-@chmod $(PGMPROT) $@
+@BEGIN: BPOP
+		-$(CHOWN) root $@
+		chmod u+s $@
+@END: BPOP
+		-@ls -l $(BINDIR)/bbc
+		-@echo ""
+
+bbc:		xbbc
+
+xbbc:		bbc.o $(PSHLIB) $(LIBES) 
+		$(LD) $(LDFLAGS) -o $@ bbc.o $(PSHLIB) $(LDLIBS)
+
+l-bbc:;		$(LINT) $(LFLAGS) bbc.c $(PSHLLIBS) $(LLIBS)
+
+pshsbr.c:	popsbr.c
+		rm -f $@
+		$(LN) popsbr.c $@
+
+pshsbr.o:	pshsbr.c
+		$(CC) $(CFLAGS) -DPSHSBR -c pshsbr.c
+
+
+inst-bbl:	$(BINDIR)/bbl
+
+$(BINDIR)/bbl:	xbbl
+		-$(REMOVE) $@ zbbl
+		-chmod u-s zbbl
+		$(CP) xbbl $@
+		-chmod $(PGMPROT) $@
+		-$(CHOWN) $(BBUID) $@
+		chmod u+s $@
+		-@ls -l $@
+		-@echo ""
+
+bbl:		xbbl
+
+xbbl:		bbl.o $(LIBES)
+		$(LD) $(LDFLAGS) -o $@ bbl.o $(LDLIBS)
+
+l-bbl:;		$(LINT) $(LFLAGS) bbl.c $(LLIBS)
+
+
+inst-burst:	$(BINDIR)/burst
+
+$(BINDIR)/burst:	xburst
+		-$(REMOVE) $@ zburst
+		$(CP) xburst $@
+		-@chmod $(PGMPROT) $@
+		-@ls -l $@
+		-@echo ""
+
+burst:		xburst
+
+xburst:		burst.o $(LIBES)
+		$(LD) $(LDFLAGS) -o $@ burst.o $(LDLIBS)
+
+l-burst:;	$(LINT) $(LFLAGS) burst.c $(LLIBS)
+
+
+inst-cipher:	$(BINDIR)/cipher
+
+$(BINDIR)/cipher:	xcipher
+		-$(REMOVE) $@ zcipher
+		$(CP) xcipher $@
+		-@chmod $(PGMPROT) $@
+		-@ls -l $@
+		-@echo ""
+
+cipher:		xcipher
+
+xcipher:	cipher.o $(TMALIB) $(LIBES)
+		$(LD) $(LDFLAGS) -o $@ cipher.o $(TMALIB) $(LDLIBS)
+
+l-cipher:;	$(LINT) $(LFLAGS) cipher.c $(TMALLIBS) $(LLIBS)
+
+
+inst-comp:	$(BINDIR)/comp
+
+$(BINDIR)/comp:	xcomp
+		-$(REMOVE) $@ zcomp
+		$(CP) xcomp $@
+		-@chmod $(PGMPROT) $@
+		-@ls -l $(BINDIR)/comp
+		-@echo ""
+
+comp:		xcomp
+
+xcomp:		comp.o whatnowproc.o \
+			whatnowsbr.o sendsbr.o annosbr.o distsbr.o $(LIBES) 
+		$(LD) $(LDFLAGS) -o $@ comp.o whatnowproc.o \
+			whatnowsbr.o sendsbr.o annosbr.o distsbr.o $(LDLIBS) 
+
+l-comp:;	$(LINT) $(LFLAGS) comp.c whatnowproc.c \
+			whatnowsbr.c sendsbr.c annosbr.c distsbr.c $(LLIBS)
+
+
+inst-conflict:	$(ETCDIR)/conflict
+
+$(ETCDIR)/conflict:	xconflict
+		-$(REMOVE) $@ zconflict
+		$(CP) xconflict $@
+		-@chmod $(PGMPROT) $@
+		-@ls -l $@
+		-@echo ""
+
+conflict:	xconflict
+
+xconflict:	conflict.o aliasbr.o $(LIBES)
+		$(LD) $(LDFLAGS) -o $@ conflict.o aliasbr.o $(LDLIBS)
+
+l-conflict:;	$(LINT) $(LFLAGS) conflict.c aliasbr.c $(LLIBS)
+
+
+inst-decipher:	$(BINDIR)/decipher
+
+$(BINDIR)/decipher:	xdecipher
+		-$(REMOVE) $@ zdecipher
+		$(CP) xdecipher $@
+		-@chmod $(PGMPROT) $@
+		-@ls -l $@
+		-@echo ""
+
+decipher:		xdecipher
+
+xdecipher:	decipher.o $(TMALIB) $(LIBES)
+		$(LD) $(LDFLAGS) -o $@ decipher.o $(TMALIB) $(LDLIBS)
+
+l-decipher:;	$(LINT) $(LFLAGS) decipher.c $(TMALLIBS) $(LLIBS)
+
+
+inst-dist:	$(BINDIR)/dist
+
+$(BINDIR)/dist:	xdist
+		-$(REMOVE) $@ zdist
+		$(CP) xdist $@
+		-@chmod $(PGMPROT) $@
+		-@ls -l $@
+		-@echo ""
+
+dist:		xdist
+
+xdist:		dist.o whatnowproc.o \
+			whatnowsbr.o sendsbr.o annosbr.o distsbr.o $(LIBES) 
+		$(LD) $(LDFLAGS) -o $@ dist.o whatnowproc.o \
+			whatnowsbr.o sendsbr.o annosbr.o distsbr.o $(LDLIBS) 
+
+l-dist:;	$(LINT) $(LFLAGS) dist.c whatnowproc.c \
+			whatnowsbr.c sendsbr.c annosbr.c distsbr.c $(LLIBS)
+
+
+inst-dp:	$(ETCDIR)/dp
+
+$(ETCDIR)/dp:	xdp
+		-$(REMOVE) $@ zdp
+		$(CP) xdp $@
+		-@chmod $(PGMPROT) $@
+		-@ls -l $(ETCDIR)/dp
+		-@echo ""
+
+dp:		xdp
+
+xdp:		dp.o trmsbr.o $(LIBES) 
+		$(LD) $(LDFLAGS) -o $@ dp.o trmsbr.o $(LDLIBS) $(LDCURSES)
+
+l-dp:;		$(LINT) $(LFLAGS) dp.c trmsbr.c $(LLIBS)
+
+
+inst-fmtdump:	$(ETCDIR)/fmtdump
+
+$(ETCDIR)/fmtdump:	xfmtdump
+		-$(REMOVE) $@ zfmtdump
+		cp xfmtdump $@
+		-@chmod $(PGMPROT) $@
+		-@ls -l $@
+		-@echo ""
+
+fmtdump:		xfmtdump
+
+xfmtdump:		fmtdump.o trmsbr.o $(LIBES)
+		$(LD) $(LDFLAGS) -o $@ fmtdump.o $(LDLIBS)
+
+l-fmtdump:;		$(LINT) $(LFLAGS) fmtdump.c $(LLIBS) 
+
+
+inst-folders:	inst-folder
+inst-folder:	$(BINDIR)/folder
+
+$(BINDIR)/folder:	xfolder
+		-$(REMOVE) $@ zfolder
+		$(CP) xfolder $@
+		-@chmod $(PGMPROT) $@
+		rm -f $(BINDIR)/folders
+		-ln $@ $(BINDIR)/folders
+		-@ls -l $@
+		-@echo ""
+
+folders: 	folder
+folder:		xfolder
+
+xfolder:	folder.o $(LIBES) 
+		$(LD) $(LDFLAGS) -o $@ folder.o $(LDLIBS) 
+
+l-folder:;	$(LINT) $(LFLAGS) folder.c $(LLIBS)
+
+
+inst-forw:	$(BINDIR)/forw
+
+$(BINDIR)/forw:	xforw
+		-$(REMOVE) $@ zforw
+		$(CP) xforw $@
+		-@chmod $(PGMPROT) $@
+		-@ls -l $@
+		-@echo ""
+
+forw:		xforw
+
+xforw:		forw.o whatnowproc.o \
+			whatnowsbr.o sendsbr.o annosbr.o distsbr.o $(LIBES) 
+		$(LD) $(LDFLAGS) -o $@ forw.o whatnowproc.o \
+			whatnowsbr.o sendsbr.o annosbr.o distsbr.o $(LDLIBS) 
+
+l-forw:;	$(LINT) $(LFLAGS) forw.c whatnowproc.c \
+			whatnowsbr.c sendsbr.c annosbr.c distsbr.c $(LLIBS)
+
+
+inst-inc:	$(BINDIR)/inc
+
+$(BINDIR)/inc:	xinc
+		-$(REMOVE) $@ zinc
+@BEGIN: POP
+		-chmod u-s zinc
+@END: POP
+		$(CP) xinc $@
+		-@chmod $(PGMPROT) $@
+@BEGIN: MAILGROUP
+		-@chgrp @(MAILGROUP) $@
+		-@chmod g+s $@
+@END: MAILGROUP
+@BEGIN: POP
+		-$(CHOWN) root $@
+		chmod u+s $@
+@END: POP
+		-@ls -l $@
+		-@echo ""
+
+inc:		xinc
+
+xinc:		inc.o scansbr.o dropsbr.o trmsbr.o \
+			$(POPLIB) $(TMALIB) $(LIBES)
+		$(LD) $(LDFLAGS) -o $@ inc.o scansbr.o dropsbr.o \
+			trmsbr.o $(POPLIB) $(TMALIB) $(KRBLIB) $(HESLIB) \
+			$(LDLIBS) $(LDCURSES)
+
+l-inc:;		$(LINT) $(LFLAGS) inc.c scansbr.c \
+			dropsbr.c trmsbr.c $(POPLLIBS) $(TMALLIBS) $(LLIBS)
+
+
+inst-install-mh:	$(ETCDIR)/install-mh
+
+$(ETCDIR)/install-mh:	xinstall-mh
+		-$(REMOVE) $@ zinstall-mh
+		$(CP) xinstall-mh $@
+		-@chmod $(PGMPROT) $@
+		-@ls -l $@
+		-@echo ""
+
+install-mh:	xinstall-mh
+
+xinstall-mh:	install-mh.o $(LIBES) 
+		$(LD) $(LDFLAGS) -o $@ install-mh.o $(LDLIBS) 
+
+l-install-mh:;	$(LINT) $(LFLAGS) install-mh.c $(LLIBS)
+
+
+inst-kdsc:	$(ETCDIR)/kdsc
+
+$(ETCDIR)/kdsc:	xkdsc
+		-$(REMOVE) $@ zkdsc
+		$(CP) xkdsc $@
+		-@chmod $(PGMPROT) $@
+		-@ls -l $@
+		-@echo ""
+
+kdsc:		xkdsc
+
+xkdsc:		kdsc.o $(KDSLIB) $(LIBES)
+		$(LD) $(LDFLAGS) -o $@ kdsc.o $(KDSLIB) $(LDLIBS)
+
+l-kdsc:;	$(LINT) $(LFLAGS) kdsc.c $(KDSLLIBS) $(LLIBS)
+
+
+inst-mark:	$(BINDIR)/mark
+
+$(BINDIR)/mark:	xmark
+		-$(REMOVE) $@ zmark
+		$(CP) xmark $@
+		-@chmod $(PGMPROT) $@
+		-@ls -l $@
+		-@echo ""
+
+mark:		xmark
+
+xmark:		mark.o $(LIBES) 
+		$(LD) $(LDFLAGS) -o $@ mark.o $(LDLIBS) 
+
+l-mark:;	$(LINT) $(LFLAGS) mark.c $(LLIBS)
+
+
+inst-mhl:	$(ETCDIR)/mhl
+
+$(ETCDIR)/mhl:	xmhl
+		-$(REMOVE) $@ zmhl
+		$(CP) xmhl $@
+		-@chmod $(PGMPROT) $@
+		-@ls -l $@
+		-@echo ""
+
+mhl:		xmhl
+
+xmhl:   	mhl.o \
+			mhlsbr.o trmsbr.o $(LIBES) 
+		$(LD) $(LDFLAGS) -o $@ mhl.o \
+			mhlsbr.o trmsbr.o $(LDLIBS) $(LDCURSES)
+
+l-mhl:;		$(LINT) $(LFLAGS) mhl.c \
+			mhlsbr.c trmsbr.c $(LLIBS)
+
+
+inst-mhmail:	$(BINDIR)/mhmail
+
+$(BINDIR)/mhmail:	xmhmail
+		-$(REMOVE) $@ zmhmail
+		$(CP) xmhmail $@
+		-@chmod $(PGMPROT) $@
+		-@ls -l $@
+		-@echo ""
+
+mhmail:		xmhmail
+
+xmhmail:  	mhmail.o $(LIBES) 
+		$(LD) $(LDFLAGS) -o $@ mhmail.o $(LDLIBS)
+
+l-mhmail:;	$(LINT) $(LFLAGS) mhmail.c $(LLIBS)
+
+
+inst-mhn:	$(BINDIR)/mhn
+
+$(BINDIR)/mhn:	xmhn
+		-$(REMOVE) $@ zmhn
+		cp xmhn $@
+		-@chmod $(PGMPROT) $@
+		-@ls -l $@
+		-@echo ""
+
+mhn:		xmhn
+
+xmhn:  		mhn.o ftpsbr.o trmsbr.o $(LIBES) 
+		$(LD) $(LDFLAGS) -o $@ mhn.o ftpsbr.o trmsbr.o \
+				$(LDLIBS) $(LDCURSES)
+
+l-mhn:;		$(LINT) $(LFLAGS) mhn.c ftpsbr.c trmsbr.c $(LLIBS)
+
+
+inst-mhparam:	$(BINDIR)/mhparam
+
+$(BINDIR)/mhparam:	xmhparam
+		-$(REMOVE) $@ zmhparam
+		cp xmhparam $@
+		-@chmod $(PGMPROT) $@
+		-@ls -l $@
+		-@echo ""
+
+mhparam:	xmhparam
+
+xmhparam:	mhparam.o trmsbr.o $(LIBES)
+		$(LD) $(LDFLAGS) -o $@ mhparam.o $(LDLIBS) $(LDCURSES)
+
+l-mhparam:;	$(LINT) $(LFLAGS) mhparam.c $(LLIBS) 
+
+
+inst-mhpath:	$(BINDIR)/mhpath
+
+$(BINDIR)/mhpath:	xmhpath
+		-$(REMOVE) $@ zmhpath
+		$(CP) xmhpath $@
+		-@chmod $(PGMPROT) $@
+		-@ls -l $@
+		-@echo ""
+
+mhpath:		xmhpath
+
+xmhpath:	mhpath.o $(LIBES) 
+		$(LD) $(LDFLAGS) -o $@ mhpath.o $(LDLIBS)
+
+l-mhpath:;	$(LINT) $(LFLAGS) mhpath.c $(LLIBS)
+
+
+inst-msgchk:	$(BINDIR)/msgchk
+
+$(BINDIR)/msgchk:	xmsgchk
+		-$(REMOVE) $@ zmsgchk
+@BEGIN: POP
+		-chmod u-s zmsgchk
+@END: POP
+		$(CP) xmsgchk $@
+		-@chmod $(PGMPROT) $@
+@BEGIN: POP
+		-$(CHOWN) root $@
+		chmod u+s $@
+@END: POP
+		-@ls -l $@
+		-@echo ""
+
+msgchk:		xmsgchk
+
+xmsgchk:	msgchk.o $(POPLIB) $(LIBES)
+		$(LD) $(LDFLAGS) -o $@ msgchk.o $(POPLIB) \
+					$(KRBLIB) $(HESLIB) $(LDLIBS)
+
+l-msgchk:;	$(LINT) $(LFLAGS) msgchk.c $(POPLLIBS) $(LLIBS)
+
+
+inst-msh:	$(BINDIR)/msh
+
+$(BINDIR)/msh:	xmsh
+		-$(REMOVE) $@ zmsh
+		$(CP) xmsh $@
+		-@chmod $(PGMPROT) $@
+		-@ls -l $@
+		-@echo ""
+
+msh:		xmsh
+
+xmsh:		msh.o mshcmds.o vmhsbr.o \
+			picksbr.o scansbr.o dropsbr.o mhlsbr.o trmsbr.o \
+			$(PSHLIB) $(LIBES)
+		$(LD) $(LDFLAGS) -o $@ msh.o mshcmds.o vmhsbr.o \
+			picksbr.o scansbr.o dropsbr.o mhlsbr.o trmsbr.o \
+			$(PSHLIB) $(LDLIBS) $(LDCURSES)
+
+l-msh:;		$(LINT) $(LFLAGS) msh.c mshcmds.c vmhsbr.c \
+			picksbr.c scansbr.c dropsbr.c mhlsbr.c trmsbr.c \
+			$(PSHLLIBS) $(LLIBS)
+
+
+inst-packf:	$(BINDIR)/packf
+
+$(BINDIR)/packf:	xpackf
+		-$(REMOVE) $@ zpackf
+		$(CP) xpackf $@
+		-@chmod $(PGMPROT) $@
+		-@ls -l $@
+		-@echo ""
+
+packf:		xpackf
+
+xpackf:		packf.o dropsbr.o $(LIBES)
+		$(LD) $(LDFLAGS) -o $@ packf.o dropsbr.o $(LDLIBS)
+
+l-packf:;	$(LINT) $(LFLAGS) packf.c dropsbr.c $(LLIBS)
+
+
+inst-pick:	$(BINDIR)/pick
+
+$(BINDIR)/pick:	xpick
+		-$(REMOVE) $@ zpick
+		$(CP) xpick $@
+		-@chmod $(PGMPROT) $@
+		-@ls -l $@
+		-@echo ""
+
+pick:		xpick
+
+xpick:   	pick.o picksbr.o $(LIBES)
+		$(LD) $(LDFLAGS) -o $@ pick.o picksbr.o $(LDLIBS)
+
+l-pick:;	$(LINT) $(LFLAGS) pick.c picksbr.c $(LLIBS)
+
+
+inst-popi:	$(BINDIR)/popi
+
+$(BINDIR)/popi:	xpopi
+		-$(REMOVE) $@ zpopi
+		cp xpopi $@
+		-@chmod $(PGMPROT) $@
+		-@ls -l $@
+		-@echo ""
+
+popi:		xpopi
+
+xpopi:		popi.o $(POPLIB) trmsbr.o $(LIBES)
+		$(LD) $(LDFLAGS) -o $@ popi.o $(POPLIB) trmsbr.o $(LDLIBS) \
+			$(LDCURSES)
+
+l-popi:;	$(LINT) $(LFLAGS) popi.c $(POPLLIBS) trmsbr.c $(LLIBS)
+
+
+inst-post:	$(ETCDIR)/post
+
+$(ETCDIR)/post:	xpost
+		-$(REMOVE) $@ zpost
+@BEGIN: MHMTS
+		-chmod u-s zpost
+@END: MHMTS
+		$(CP) xpost $@
+		-@chmod $(PGMPROT) $@
+@BEGIN: MHMTS
+		-$(CHOWN) root $@
+		chmod u+s $@
+@END: MHMTS
+		-@ls -l $@
+		-@echo ""
+
+post:		xpost
+
+xpost:   	post.o \
+			aliasbr.o $(MTSBRS) $(TMALIB) $(LIBES)
+		$(LD) $(LDFLAGS) -o $@ post.o \
+			aliasbr.o $(MTSBRS) $(TMALIB) $(LDLIBS)
+
+l-post:;	$(LINT) $(LFLAGS) post.c \
+			aliasbr.c $(TMALLIBS) $(LLIBS) 
+
+
+inst-prompter:	$(BINDIR)/prompter
+
+$(BINDIR)/prompter:	xprompter
+		-$(REMOVE) $@ zprompter
+		$(CP) xprompter $@
+		-@chmod $(PGMPROT) $@
+		-@ls -l $@
+		-@echo ""
+
+prompter:	xprompter
+
+xprompter:	prompter.o $(LIBES) 
+		$(LD) $(LDFLAGS) -o $@ prompter.o $(LDLIBS)
+
+l-prompter:;	$(LINT) $(LFLAGS) prompter.c $(LLIBS)
+
+
+inst-rcvdist:	$(ETCDIR)/rcvdist
+
+$(ETCDIR)/rcvdist:	xrcvdist
+		-$(REMOVE) $@ zrcvdist
+		$(CP) xrcvdist $@
+		-@chmod $(PGMPROT) $@
+		-@ls -l $@
+		-@echo ""
+
+rcvdist:	xrcvdist
+
+xrcvdist:	rcvdist.o distsbr.o $(LIBES)
+		$(LD) $(LDFLAGS) -o $@ rcvdist.o distsbr.o $(LDLIBS)
+
+l-rcvdist:;	$(LINT) $(LFLAGS) rcvdist.c distsbr.c $(LLIBS) 
+
+
+inst-rcvpack:	$(ETCDIR)/rcvpack
+
+$(ETCDIR)/rcvpack:	xrcvpack
+		-$(REMOVE) $@ zrcvpack
+		$(CP) xrcvpack $@
+		-@chmod $(PGMPROT) $@
+		-@ls -l $@
+		-@echo ""
+
+rcvpack:	xrcvpack
+
+xrcvpack:	rcvpack.o dropsbr.o $(LIBES)
+		$(LD) $(LDFLAGS) -o $@ rcvpack.o dropsbr.o $(LDLIBS)
+
+l-rcvpack:;	$(LINT) $(LFLAGS) rcvpack.c dropsbr.c $(LLIBS)
+
+
+inst-rcvstore:	$(ETCDIR)/rcvstore
+
+$(ETCDIR)/rcvstore:	xrcvstore
+		-$(REMOVE) $@ zrcvstore
+		$(CP) xrcvstore $@
+		-@chmod $(PGMPROT) $@
+		-@ls -l $@
+		-@echo ""
+
+rcvstore:	xrcvstore
+
+xrcvstore:	rcvstore.o $(LIBES)
+		$(LD) $(LDFLAGS) -o $@ rcvstore.o $(LDLIBS)
+
+l-rcvstore:;	$(LINT) $(LFLAGS) rcvstore.c $(LLIBS)
+
+
+inst-rcvtty:	$(ETCDIR)/rcvtty
+
+$(ETCDIR)/rcvtty:	xrcvtty
+		-$(REMOVE) $@ zrcvtty
+		$(CP) xrcvtty $@
+		-@chmod $(PGMPROT) $@
+@BEGIN: BSD43
+		-@chgrp tty $@
+		-@chmod g+s $@
+@END: BSD43
+		-@ls -l $@
+		-@echo ""
+
+rcvtty:		xrcvtty
+
+xrcvtty:	rcvtty.o scansbr.o trmsbr.o \
+@BEGIN: TTYD
+			ttyw.o \
+@END: TTYD
+			$(LIBES)
+		$(LD) $(LDFLAGS) -o $@ rcvtty.o scansbr.o trmsbr.o \
+@BEGIN: TTYD
+			ttyw.o \
+@END: TTYD
+			$(LDLIBS) $(LDCURSES)
+
+l-rcvtty:;	$(LINT) $(LFLAGS) rcvtty.c scansbr.c trmsbr.c \
+@BEGIN: TTYD
+			ttyw.c \
+@END: TTYD
+			$(LLIBS)
+
+
+inst-refile:	$(BINDIR)/refile
+
+$(BINDIR)/refile:	xrefile
+		-$(REMOVE) $@ zrefile
+		$(CP) xrefile $@
+		-@chmod $(PGMPROT) $@
+		-@ls -l $@
+		-@echo ""
+
+refile:		xrefile
+
+xrefile:  	refile.o $(LIBES) 
+		$(LD) $(LDFLAGS) -o $@ refile.o $(LDLIBS) 
+
+l-refile:;	$(LINT) $(LFLAGS) refile.c $(LLIBS)
+
+
+inst-repl:	$(BINDIR)/repl
+
+$(BINDIR)/repl:	xrepl
+		-$(REMOVE) $@ zrepl
+		$(CP) xrepl $@
+		-@chmod $(PGMPROT) $@
+		-@ls -l $@
+		-@echo ""
+
+repl:		xrepl
+
+xrepl:		repl.o replsbr.o whatnowproc.o \
+			whatnowsbr.o sendsbr.o annosbr.o distsbr.o $(LIBES)
+		$(LD) $(LDFLAGS) -o $@ repl.o replsbr.o whatnowproc.o \
+			whatnowsbr.o sendsbr.o annosbr.o distsbr.o $(LDLIBS)
+
+l-repl:;	$(LINT) $(LFLAGS) repl.c replsbr.c whatnowproc.c \
+			whatnowsbr.c sendsbr.c annosbr.c distsbr.c $(LLIBS) 
+
+
+inst-rmail:	/bin/rmail
+
+/bin/rmail:	xrmail
+		-$(REMOVE) $@ zrmail
+		-chmod u-s zrmail
+		$(CP) xrmail $@
+		-@chmod $(PGMPROT) $@
+		-$(CHOWN) root $@
+		chmod u+s $@
+		-@ls -l $@
+		-@echo ""
+
+rmail:		xrmail
+
+xrmail:   	rmail.o $(LIBES)
+		$(LD) $(LDFLAGS) -o $@ rmail.o $(LDLIBS)
+
+l-rmail:;	$(LINT) $(LFLAGS) rmail.c $(LLIBS) 
+
+
+inst-rmf:	$(BINDIR)/rmf
+
+$(BINDIR)/rmf:	xrmf
+		-$(REMOVE) $@ zrmf
+		$(CP) xrmf $@
+		-@chmod $(PGMPROT) $@
+		-@ls -l $@
+		-@echo ""
+
+rmf:		xrmf
+
+xrmf:   	rmf.o $(LIBES) 
+		$(LD) $(LDFLAGS) -o $@ rmf.o $(LDLIBS)
+
+l-rmf:;		$(LINT) $(LFLAGS) rmf.c $(LLIBS)
+
+
+inst-rmm:	$(BINDIR)/rmm
+
+$(BINDIR)/rmm:	xrmm
+		-$(REMOVE) $@ zrmm
+		$(CP) xrmm $@
+		-@chmod $(PGMPROT) $@
+		-@ls -l $@
+		-@echo ""
+
+rmm:		xrmm
+
+xrmm:   	rmm.o $(LIBES) 
+		$(LD) $(LDFLAGS) -o $@ rmm.o $(LDLIBS)
+
+l-rmm:;		$(LINT) $(LFLAGS) rmm.c $(LLIBS)
+
+
+inst-scan:	$(BINDIR)/scan
+
+$(BINDIR)/scan:	xscan
+		-$(REMOVE) $@ zscan
+		$(CP) xscan $@
+		-@chmod $(PGMPROT) $@
+		-@ls -l $@
+		-@echo ""
+
+scan:		xscan
+
+xscan:   	scan.o \
+			scansbr.o trmsbr.o $(LIBES)
+		$(LD) $(LDFLAGS) -o $@ scan.o \
+			scansbr.o trmsbr.o $(LDLIBS) $(LDCURSES)
+
+l-scan:;	$(LINT) $(LFLAGS) scan.c \
+			scansbr.c trmsbr.c $(LLIBS)
+
+
+inst-send:	$(BINDIR)/send
+
+$(BINDIR)/send:	xsend
+		-$(REMOVE) $@ zsend
+		$(CP) xsend $@
+		-@chmod $(PGMPROT) $@
+		-@ls -l $@
+		-@echo ""
+
+send:		xsend
+
+xsend:   	send.o \
+			sendsbr.o annosbr.o distsbr.o $(LIBES) 
+		$(LD) $(LDFLAGS) -o $@ send.o \
+			sendsbr.o annosbr.o distsbr.o $(LDLIBS)
+
+l-send:;	$(LINT) $(LFLAGS) send.c \
+			sendsbr.c annosbr.c distsbr.c $(LLIBS)
+
+
+inst-next:	inst-show
+inst-prev:	inst-show
+inst-show:	$(BINDIR)/show
+
+$(BINDIR)/show:	xshow
+		-$(REMOVE) $@ zshow
+		$(CP) xshow $@
+		-@chmod $(PGMPROT) $@
+		rm -f $(BINDIR)/next
+		-ln $@ $(BINDIR)/next
+		rm -f $(BINDIR)/prev
+		-ln $@ $(BINDIR)/prev
+		-@ls -l $@
+		-@echo ""
+
+next:		show
+prev:		show
+show:		xshow
+
+xshow:		show.o \
+			mhlsbr.o trmsbr.o $(LIBES) 
+		$(LD) $(LDFLAGS) -o $@ show.o \
+			mhlsbr.o trmsbr.o $(LDLIBS) $(LDCURSES)
+
+l-show:;	$(LINT) $(LFLAGS) show.c \
+			mhlsbr.c trmsbr.c $(LLIBS)
+
+
+inst-sbboards:	$(SBBOARDS)
+
+$(SBBOARDS):	xsbboards
+		-$(REMOVE) $@ zsbboards
+@BEGIN: SENDMTS
+		-chmod u-s zsbboards
+@END: SENDMTS
+		$(CP) xsbboards $@
+		-chmod $(PGMPROT) $@
+@BEGIN: SENDMTS
+		-$(CHOWN) $(BBUID) $@
+		chmod u+s $@
+@END: SENDMTS
+		-@ls -l $@
+		-@echo ""
+
+sbboards:	xsbboards
+
+xsbboards:	sbboards.o dropsbr.o $(LIBES)
+		$(LD) $(LDFLAGS) -o $@ sbboards.o dropsbr.o $(LDLIBS)
+
+l-sbboards:;	$(LINT) $(LFLAGS) sbboards.c dropsbr.c $(LLIBS) 
+
+
+inst-slocal:	$(ETCDIR)/slocal
+
+$(ETCDIR)/slocal:	xslocal
+		-$(REMOVE) $@ zslocal
+		$(CP) xslocal $@
+		-chmod $(PGMPROT) $@
+		-@ls -l $@
+		-@echo ""
+
+slocal:		xslocal
+
+xslocal:	slocal.o aliasbr.o dropsbr.o $(LIBES)
+		$(LD) $(LDFLAGS) -o $@ slocal.o aliasbr.o dropsbr.o $(LDLIBS)
+
+l-slocal:;	$(LINT) $(LFLAGS) slocal.c aliasbr.c dropsbr.c $(LLIBS) 
+
+
+inst-sortm:	$(BINDIR)/sortm
+
+$(BINDIR)/sortm:	xsortm
+		-$(REMOVE) $@ zsortm
+		$(CP) xsortm $@
+		-@chmod $(PGMPROT) $@
+		-@ls -l $@
+		-@echo ""
+
+sortm:		xsortm
+
+xsortm:   	sortm.o $(LIBES) 
+		$(LD) $(LDFLAGS) -o $@ sortm.o $(LDLIBS)
+
+l-sortm:;	$(LINT) $(LFLAGS) sortm.c $(LLIBS)
+
+
+inst-spop:	$(ETCDIR)/spop
+
+$(ETCDIR)/spop:	xspop
+		-$(REMOVE) $@ zspop
+		-chmod u-s zspop
+		$(CP) xspop $@
+		-chmod $(PGMPROT) $@
+		-$(CHOWN) $(POPUID) $@
+		chmod u+s $@
+		-@ls -l $@
+		-@echo ""
+
+spop:		xspop
+
+xspop:		spop.o dropsbr.o $(LIBES)
+		$(LD) $(LDFLAGS) -o $@ spop.o dropsbr.o $(LDLIBS)
+
+spop.o:		spop.c
+		$(CC) $(CFLAGS) -DSPOP -c spop.c
+
+l-spop:;	$(LINT) $(LFLAGS) -DSPOP spop.c dropsbr.c $(LLIBS) 
+
+
+@BEGIN: SENDMTS
+inst-spost:	$(ETCDIR)/spost
+
+$(ETCDIR)/spost:	xspost
+		-$(REMOVE) $@ zspost
+		$(CP) xspost $@
+		-@chmod $(PGMPROT) $@
+		-@ls -l $@
+		-@echo ""
+
+spost:		xspost
+
+xspost:   	spost.o aliasbr.o $(LIBES)
+		$(LD) $(LDFLAGS) -o $@ spost.o aliasbr.o $(LDLIBS)
+
+l-spost:;	$(LINT) $(LFLAGS) spost.c aliasbr.c $(LLIBS)
+@END: SENDMTS
+
+
+@BEGIN: SMTP
+inst-sendmail:	$(ETCDIR)/sendmail
+
+$(ETCDIR)/sendmail:	xsendmail
+		-$(REMOVE) $@ zsendmail
+		cp xsendmail $@
+		-@chmod $(PGMPROT) $@
+		-@ls -l $@
+		-@echo "Don't forget to: ln -s /usr/lib/sendmail $@"
+		-@echo ""
+		
+sendmail:		xsendmail
+
+xsendmail:		sendmail.o $(LIBES)
+		$(LD) $(LDFLAGS) -o $@ sendmail.o $(LDLIBS)
+
+l-sendmail:;		$(LINT) $(LFLAGS) sendmail.c $(LLIBS)
+@END: SMTP
+
+inst-tma:	$(BINDIR)/tma
+
+$(BINDIR)/tma:	xtma
+		-$(REMOVE) $@ ztma
+		$(CP) xtma $@
+		-@chmod $(PGMPROT) $@
+		-@ls -l $@
+		-@echo ""
+
+tma:		xtma
+
+xtma:		tma.o $(TMALIB) $(LIBES)
+		$(LD) $(LDFLAGS) -o $@ tma.o $(TMALIB) $(LDLIBS)
+
+l-tma:;		$(LINT) $(LFLAGS) tma.c $(TMALLIBS) $(LLIBS)
+
+
+inst-umhook:	$(BINDIR)/umhook
+
+$(BINDIR)/umhook:	xumhook
+		-$(REMOVE) $@ zumhook
+		$(CP) xumhook $@
+		-@chmod $(PGMPROT) $@
+		-@ls -l $@
+		-@echo ""
+
+umhook:		xumhook
+
+xumhook:   	umhook.o $(LIBES) 
+		$(LD) $(LDFLAGS) -o $@ umhook.o  $(LDLIBS) $(LDCURSES)
+
+l-umhook:;	$(LINT) $(LFLAGS) umhook.c $(LLIBS)
+
+
+inst-vmh:	$(BINDIR)/vmh
+
+$(BINDIR)/vmh:	xvmh
+		-$(REMOVE) $@ zvmh
+		$(CP) xvmh $@
+		-@chmod $(PGMPROT) $@
+		-@ls -l $@
+		-@echo ""
+
+vmh:		xvmh
+
+xvmh:   	vmh.o vmhsbr.o $(LIBES) 
+		$(LD) $(LDFLAGS) -o $@ vmh.o vmhsbr.o $(LDCURSES) $(LDLIBS)
+
+l-vmh:;		$(LINT) $(LFLAGS) vmh.c vmhsbr.c $(LLIBS)
+
+
+xvmhtest:	vmhtest.o vmhsbr.o $(LIBES)
+		$(LD) $(LDFLAGS) -o $@ vmhtest.o vmhsbr.o $(LDLIBS)
+	
+
+inst-whatnow:	$(BINDIR)/whatnow
+
+$(BINDIR)/whatnow:	xwhatnow
+		-$(REMOVE) $@ zwhatnow
+		$(CP) xwhatnow $@
+		-@chmod $(PGMPROT) $@
+		-@ls -l $@
+		-@echo ""
+
+whatnow:	xwhatnow
+
+xwhatnow:	whatnow.o \
+			whatnowsbr.o sendsbr.o annosbr.o distsbr.o $(LIBES)
+		$(LD) $(LDFLAGS) -o $@ whatnow.o \
+			whatnowsbr.o sendsbr.o annosbr.o distsbr.o $(LDLIBS)
+
+l-whatnow:;	$(LINT) $(LFLAGS) whatnow.c \
+			whatnowsbr.c sendsbr.c annosbr.c distsbr.c $(LLIBS)
+
+
+inst-whom:	$(BINDIR)/whom
+
+$(BINDIR)/whom:	xwhom
+		-$(REMOVE) $@ zwhom
+		$(CP) xwhom $@
+		-@chmod $(PGMPROT) $@
+		-@ls -l $@
+		-@echo ""
+
+whom:		xwhom
+
+xwhom:		whom.o distsbr.o $(LIBES)
+		$(LD) $(LDFLAGS) -o $@ whom.o distsbr.o $(LDLIBS)
+
+l-whom:;	$(LINT) $(LFLAGS) whom.c distsbr.c $(LLIBS)
+
+
+inst-wmh:	$(BINDIR)/wmh
+
+$(BINDIR)/wmh:	xwmh
+		-$(REMOVE) $@ zwmh
+		$(CP) xwmh $@
+		-@chmod $(PGMPROT) $@
+		-@ls -l $@
+		-@echo ""
+
+wmh:		xwmh
+
+xwmh:   	wmh.o vmhsbr.o $(LIBES) 
+		${CC} $(LDFLAGS) -o $@ wmh.o vmhsbr.o $(LDLIBS) \
+			-ltools -lbm -lvt
+
+wmh.o:		wmh.c
+		${CC} $(CFLAGS) -c $*.c
+
+l-wmh:;		$(LINT) $(LFLAGS) wmh.c vmhsbr.c $(LLIBS)
+
+
+##############################################################################
+#	Miscellaneous tasks
+##############################################################################
+
+unconfig:	distribution
+		-rm -f Makefile
+
+distribution:   clean
+
+clean:		unclean
+		-rm -f x* *.o
+
+unclean:;	-rm -f z* _* :* core eddep makedep MAKEUIP
+
+
+##############################################################################
+#  MODIFICATIONS -- Adding a new program (e.g., pickle)
+##############################################################################
+
+#
+#    If it's a user-program, add pickle to CMDS, inst-pickle to ICMDS,
+#	and l-pickle to LCMDS
+#    If not, add pickle to MISC, inst-pickle to IMISC, and l-pickle to
+#	LMISC
+#
+#    Under the "MH processes" section, add this incantation
+#	inst-pickle:	$(BINDIR)/pickle
+#	
+#	$(BINDIR)/pickle:	xpickle
+#			-$(REMOVE) $@ zpickle
+#			cp xpickle $@
+#			-@chmod $(PGMPROT) $@
+#			-@ls -l $@
+#			-@echo ""
+#	
+#	pickle:		xpickle
+#	
+#	xpickle:	pickle.o $(LIBES)
+#			$(LD) $(LDFLAGS) -o $@ pickle.o $(LDLIBS)
+#
+#	l-pickle:;	$(LINT) $(LFLAGS) pickle.c $(LLIBS)
+#	
+#
+#    If other libraries are loaded in, modify the rule for xpickle and
+#    l-pickle to reflect this.
+#
+#    Under the "Dependencies" section, add a line for pickle.o
+#	pickle.o:	../h/mh.h
+#
+#    If other includes are read, modify this rule to reflect this
+
+
+##############################################################################
+#	Dependencies
+##############################################################################
+
+MODULES	=	[a-z]*.c
+
+depend:;	for m in $(MODULES); do ( \
+		    i=`basename $$m .c`; \
+		    echo $$i.o: $$i.c >> makedep; \
+		    grep '^#[ 	]*include' $$i.c | \
+			sed -e 's,[^"]*"/\([^"]*\)".*,'$$i'.o: /\1,' \
+			    -e 's,[^"]*"\([^"]*\)".*,'$$i'.o: \1,' \
+			    -e 's,[^<]*<\(.*\)>.*,#'$$i'.o: /usr/include/\1,' \
+			>> makedep \
+		); done
+		echo '/^# DO NOT DELETE THIS LINE/+2,$$d' > eddep
+		echo '$$r makedep' >> eddep
+		echo 'w' >> eddep
+		cp Makefile _Makefile
+		ed - Makefile < eddep
+		rm eddep makedep
+		echo '# DEPENDENCIES MUST END AT END OF FILE' >> Makefile
+		echo '# IF YOU PUT STUFF HERE IT WILL GO AWAY' >> Makefile
+
+# CONFIGURATION DEPENDENT DEPENDENCIES START HERE
+@BEGIN: MMDFMTS
+post.o:		../mts/mmdf/util.h ../mts/mmdf/mmdf.h
+@END: MMDFMTS
+@BEGIN: SENDMTS
+post.o:		../mts/sendmail/smail.h
+sbboards.o:	../mts/sendmail/smail.h
+spop.o:		../mts/sendmail/smail.h
+@END: SENDMTS
+# CONFIGURATION DEPENDENT DEPENDENCIES END HERE
+
+# DO NOT DELETE THIS LINE
+# DEPENDENCIES START HERE
+ali.o: ali.c
+ali.o: ../h/mh.h
+ali.o: ../h/addrsbr.h
+ali.o: ../h/aliasbr.h
+#ali.o: /usr/include/stdio.h
+aliasbr.o: aliasbr.c
+aliasbr.o: ../h/mh.h
+aliasbr.o: ../h/aliasbr.h
+#aliasbr.o: /usr/include/ctype.h
+#aliasbr.o: /usr/include/grp.h
+#aliasbr.o: /usr/include/pwd.h
+#aliasbr.o: /usr/include/stdio.h
+anno.o: anno.c
+anno.o: ../h/mh.h
+#anno.o: /usr/include/ctype.h
+#anno.o: /usr/include/stdio.h
+annosbr.o: annosbr.c
+annosbr.o: ../h/mh.h
+annosbr.o: ../zotnet/tws.h
+#annosbr.o: /usr/include/errno.h
+#annosbr.o: /usr/include/stdio.h
+#annosbr.o: /usr/include/sys/types.h
+#annosbr.o: /usr/include/sys/stat.h
+ap.o: ap.c
+ap.o: ../h/mh.h
+ap.o: ../h/addrsbr.h
+ap.o: ../h/formatsbr.h
+#ap.o: /usr/include/stdio.h
+bbc.o: bbc.c
+bbc.o: ../h/mh.h
+bbc.o: ../zotnet/bboards.h
+#bbc.o: /usr/include/stdio.h
+@BEGIN: BPOP
+bbc.o: ../zotnet/mts.h
+@END: BPOP
+#bbc.o: /usr/include/errno.h
+#bbc.o: /usr/include/signal.h
+#bbc.o: /usr/include/sys/types.h
+#bbc.o: /usr/include/sys/stat.h
+#bbc.o: /usr/include/sys/wait.h
+#bbc.o: /usr/include/sys/time.h
+#bbc.o: /usr/include/sys/resource.h
+bbl.o: bbl.c
+bbl.o: ../h/mh.h
+bbl.o: ../h/local.h
+bbl.o: ../zotnet/bboards.h
+#bbl.o: /usr/include/ctype.h
+#bbl.o: /usr/include/pwd.h
+#bbl.o: /usr/include/stdio.h
+#bbl.o: /usr/include/sys/types.h
+#bbl.o: /usr/include/ndir.h
+#bbl.o: /usr/include/dir.h
+#bbl.o: /usr/include/sys/dir.h
+#bbl.o: /usr/include/sys/stat.h
+burst.o: burst.c
+burst.o: ../h/mh.h
+#burst.o: /usr/include/stdio.h
+#burst.o: /usr/include/sys/types.h
+#burst.o: /usr/include/sys/stat.h
+cipher.o: cipher.c
+cipher.o: ../h/mh.h
+#cipher.o: /usr/include/sgtty.h
+#cipher.o: /usr/include/signal.h
+#cipher.o: /usr/include/stdio.h
+cipher.o: ../tma/h/tma.h
+comp.o: comp.c
+comp.o: ../h/mh.h
+#comp.o: /usr/include/stdio.h
+#comp.o: /usr/include/sys/types.h
+#comp.o: /usr/include/sys/stat.h
+conflict.o: conflict.c
+conflict.o: ../h/mh.h
+conflict.o: ../h/aliasbr.h
+conflict.o: ../h/local.h
+#conflict.o: /usr/include/stdio.h
+conflict.o: ../zotnet/mts.h
+#conflict.o: /usr/include/grp.h
+#conflict.o: /usr/include/pwd.h
+#conflict.o: /usr/include/sys/types.h
+#conflict.o: /usr/include/ndir.h
+#conflict.o: /usr/include/dir.h
+#conflict.o: /usr/include/sys/param.h
+#conflict.o: /usr/include/sys/dir.h
+#conflict.o: /usr/include/ctype.h
+decipher.o: decipher.c
+decipher.o: ../h/mh.h
+#decipher.o: /usr/include/stdio.h
+decipher.o: ../tma/h/tma.h
+dist.o: dist.c
+dist.o: ../h/mh.h
+#dist.o: /usr/include/stdio.h
+#dist.o: /usr/include/sys/types.h
+#dist.o: /usr/include/sys/stat.h
+distsbr.o: distsbr.c
+distsbr.o: ../h/mh.h
+#distsbr.o: /usr/include/ctype.h
+#distsbr.o: /usr/include/stdio.h
+dp.o: dp.c
+dp.o: ../h/mh.h
+dp.o: ../h/formatsbr.h
+dp.o: ../zotnet/tws.h
+#dp.o: /usr/include/stdio.h
+dropsbr.o: dropsbr.c
+#dropsbr.o: /usr/include/stdio.h
+dropsbr.o: ../h/mh.h
+dropsbr.o: ../h/dropsbr.h
+dropsbr.o: ../zotnet/mts.h
+#dropsbr.o: /usr/include/errno.h
+#dropsbr.o: /usr/include/sys/types.h
+#dropsbr.o: /usr/include/sys/stat.h
+folder.o: folder.c
+folder.o: ../h/mh.h
+folder.o: ../h/local.h
+#folder.o: /usr/include/errno.h
+#folder.o: /usr/include/stdio.h
+#folder.o: /usr/include/sys/types.h
+#folder.o: /usr/include/ndir.h
+#folder.o: /usr/include/dir.h
+#folder.o: /usr/include/sys/dir.h
+#folder.o: /usr/include/sys/stat.h
+forw.o: forw.c
+forw.o: ../h/mh.h
+forw.o: ../h/formatsbr.h
+forw.o: ../zotnet/tws.h
+#forw.o: /usr/include/stdio.h
+#forw.o: /usr/include/sys/types.h
+#forw.o: /usr/include/sys/stat.h
+fmtdump.o: fmtdump.c
+fmtdump.o: ../h/mh.h
+fmtdump.o: ../h/formatsbr.h
+fmtdump.o: ../h/fmtcompile.h
+#fmtdump.o: /usr/include/stdio.h
+ftpsbr.o: ftpsbr.c
+ftpsbr.o: ../h/mh.h
+ftpsbr.o: ../h/mhn.h
+#ftpsbr.o: /usr/include/ctype.h
+#ftpsbr.o: /usr/include/stdio.h
+#ftpsbr.o: /usr/include/arpa/ftp.h
+#ftpsbr.o: /usr/include/varargs.h
+#ftpsbr.o: /usr/include/sys/types.h
+#ftpsbr.o: /usr/include/sys/socket.h
+#ftpsbr.o: /usr/include/netinet/in.h
+#ftpsbr.o: /usr/include/netdb.h
+inc.o: inc.c
+inc.o: ../h/mh.h
+inc.o: ../h/dropsbr.h
+inc.o: ../h/formatsbr.h
+inc.o: ../h/scansbr.h
+inc.o: ../zotnet/tws.h
+#inc.o: /usr/include/stdio.h
+inc.o: ../zotnet/mts.h
+#inc.o: /usr/include/errno.h
+#inc.o: /usr/include/signal.h
+#inc.o: /usr/include/sys/types.h
+#inc.o: /usr/include/sys/stat.h
+install-mh.o: install-mh.c
+install-mh.o: ../h/mh.h
+#install-mh.o: /usr/include/pwd.h
+#install-mh.o: /usr/include/stdio.h
+#install-mh.o: /usr/include/sys/types.h
+#install-mh.o: /usr/include/sys/stat.h
+kdsc.o: kdsc.c
+kdsc.o: ../h/mh.h
+kdsc.o: ../zotnet/tws.h
+kdsc.o: ../tma/h/kds.h
+mark.o: mark.c
+mark.o: ../h/mh.h
+#mark.o: /usr/include/stdio.h
+mhl.o: mhl.c
+mhlsbr.o: mhlsbr.c
+mhlsbr.o: ../h/mh.h
+mhlsbr.o: ../h/addrsbr.h
+mhlsbr.o: ../h/formatsbr.h
+mhlsbr.o: ../zotnet/tws.h
+#mhlsbr.o: /usr/include/ctype.h
+#mhlsbr.o: /usr/include/setjmp.h
+#mhlsbr.o: /usr/include/signal.h
+#mhlsbr.o: /usr/include/stdio.h
+#mhlsbr.o: /usr/include/sys/types.h
+#mhlsbr.o: /usr/include/sys/stat.h
+mhmail.o: mhmail.c
+mhmail.o: ../h/mh.h
+#mhmail.o: /usr/include/stdio.h
+#mhmail.o: /usr/include/signal.h
+mhn.o: mhn.c
+mhn.o: ../h/mh.h
+mhn.o: ../h/mhn.h
+#mhn.o: /usr/include/ctype.h
+#mhn.o: /usr/include/errno.h
+#mhn.o: /usr/include/signal.h
+#mhn.o: /usr/include/stdio.h
+#mhn.o: /usr/include/sys/types.h
+#mhn.o: /usr/include/sys/stat.h
+#mhn.o: /usr/include/sys/wait.h
+mhparam.o: mhparam.c
+mhparam.o: ../h/mh.h
+mhparam.o: ../h/strings.h
+#mhparam.o: /usr/include/stdio.h
+mhpath.o: mhpath.c
+mhpath.o: ../h/mh.h
+#mhpath.o: /usr/include/stdio.h
+msgchk.o: msgchk.c
+msgchk.o: ../h/mh.h
+#msgchk.o: /usr/include/stdio.h
+msgchk.o: ../zotnet/mts.h
+msgchk.o: ../zotnet/tws.h
+#msgchk.o: /usr/include/sys/types.h
+#msgchk.o: /usr/include/sys/stat.h
+#msgchk.o: /usr/include/pwd.h
+msh.o: msh.c
+msh.o: ../h/mh.h
+msh.o: ../h/dropsbr.h
+msh.o: ../h/formatsbr.h
+msh.o: ../h/scansbr.h
+msh.o: ../zotnet/tws.h
+#msh.o: /usr/include/stdio.h
+msh.o: ../zotnet/mts.h
+#msh.o: /usr/include/ctype.h
+#msh.o: /usr/include/sys/types.h
+#msh.o: /usr/include/sys/stat.h
+#msh.o: /usr/include/sgtty.h
+#msh.o: /usr/include/termio.h
+#msh.o: /usr/include/sys/ioctl.h
+#msh.o: /usr/include/pwd.h
+#msh.o: /usr/include/setjmp.h
+#msh.o: /usr/include/signal.h
+msh.o: ../h/mshsbr.h
+msh.o: ../h/vmhsbr.h
+mshcmds.o: mshcmds.c
+mshcmds.o: ../h/mh.h
+mshcmds.o: ../h/dropsbr.h
+mshcmds.o: ../h/formatsbr.h
+mshcmds.o: ../h/scansbr.h
+mshcmds.o: ../zotnet/tws.h
+#mshcmds.o: /usr/include/stdio.h
+mshcmds.o: ../zotnet/mts.h
+#mshcmds.o: /usr/include/ctype.h
+#mshcmds.o: /usr/include/setjmp.h
+#mshcmds.o: /usr/include/signal.h
+mshcmds.o: ../h/mshsbr.h
+@BEGIN: MIME
+mshcmds.o: ../h/mhn.h
+@END: MIME
+packf.o: packf.c
+packf.o: ../h/mh.h
+packf.o: ../h/dropsbr.h
+#packf.o: /usr/include/stdio.h
+pick.o: pick.c
+pick.o: ../h/mh.h
+pick.o: ../zotnet/tws.h
+#pick.o: /usr/include/stdio.h
+picksbr.o: picksbr.c
+picksbr.o: ../h/mh.h
+picksbr.o: ../zotnet/tws.h
+#picksbr.o: /usr/include/stdio.h
+popsbr.o: popsbr.c
+popsbr.o: ../h/strings.h
+#popsbr.o: /usr/include/stdio.h
+#popsbr.o: /usr/include/signal.h
+pshsbr.o: popsbr.c
+pshsbr.o: ../h/strings.h
+pshsbr.o: ../h/nntp.h
+#pshsbr.o: /usr/include/stdio.h
+#pshsbr.o: /usr/include/signal.h
+popi.o: popi.c
+popi.o: ../h/mh.h
+popi.o: ../h/strings.h
+popi.o: ../h/formatsbr.h
+popi.o: ../h/scansbr.h
+popi.o: ../zotnet/mts.h
+#popi.o: /usr/include/errno.h
+#popi.o: /usr/include/sys/errno.h
+#popi.o: /usr/include/stdio.h
+#popi.o: /usr/include/sys/types.h
+#popi.o: /usr/include/sys/stdtypes.h
+#popi.o: /usr/include/sys/sysmacros.h
+#popi.o: /usr/include/sys/stat.h
+#popi.o: /usr/include/sys/types.h
+post.o: post.c
+post.o: ../h/mh.h
+post.o: ../h/addrsbr.h
+post.o: ../h/aliasbr.h
+post.o: ../h/dropsbr.h
+post.o: ../zotnet/tws.h
+#post.o: /usr/include/ctype.h
+#post.o: /usr/include/errno.h
+#post.o: /usr/include/setjmp.h
+#post.o: /usr/include/stdio.h
+#post.o: /usr/include/sys/types.h
+post.o: ../zotnet/mts.h
+#post.o: /usr/include/sys/ioctl.h
+#post.o: /usr/include/sys/stat.h
+#post.o: /usr/include/signal.h
+prompter.o: prompter.c
+prompter.o: ../h/mh.h
+#prompter.o: /usr/include/stdio.h
+#prompter.o: /usr/include/errno.h
+#prompter.o: /usr/include/sgtty.h
+#prompter.o: /usr/include/sys/types.h
+#prompter.o: /usr/include/termio.h
+#prompter.o: /usr/include/sys/ioctl.h
+#prompter.o: /usr/include/setjmp.h
+#prompter.o: /usr/include/signal.h
+rcvdist.o: rcvdist.c
+rcvdist.o: ../h/mh.h
+rcvdist.o: ../h/formatsbr.h
+rcvdist.o: ../h/rcvmail.h
+rcvdist.o: ../zotnet/tws.h
+rcvpack.o: rcvpack.c
+rcvpack.o: ../h/mh.h
+rcvpack.o: ../h/dropsbr.h
+rcvpack.o: ../h/rcvmail.h
+rcvpack.o: ../zotnet/tws.h
+rcvpack.o: ../zotnet/mts.h
+rcvstore.o: rcvstore.c
+rcvstore.o: ../h/mh.h
+#rcvstore.o: /usr/include/errno.h
+#rcvstore.o: /usr/include/signal.h
+#rcvstore.o: /usr/include/stdio.h
+#rcvstore.o: /usr/include/sys/types.h
+#rcvstore.o: /usr/include/sys/stat.h
+rcvtty.o: rcvtty.c
+rcvtty.o: ../h/mh.h
+rcvtty.o: ../h/rcvmail.h
+rcvtty.o: ../h/scansbr.h
+rcvtty.o: ../zotnet/tws.h
+#rcvtty.o: /usr/include/signal.h
+#rcvtty.o: /usr/include/sys/stat.h
+#rcvtty.o: /usr/include/utmp.h
+refile.o: refile.c
+refile.o: ../h/mh.h
+#refile.o: /usr/include/errno.h
+#refile.o: /usr/include/stdio.h
+#refile.o: /usr/include/sys/types.h
+#refile.o: /usr/include/sys/stat.h
+repl.o: repl.c
+repl.o: ../h/mh.h
+#repl.o: /usr/include/stdio.h
+#repl.o: /usr/include/sys/types.h
+#repl.o: /usr/include/sys/stat.h
+replsbr.o: replsbr.c
+replsbr.o: ../h/mh.h
+replsbr.o: ../h/addrsbr.h
+replsbr.o: ../h/formatsbr.h
+#replsbr.o: /usr/include/ctype.h
+#replsbr.o: /usr/include/stdio.h
+rmail.o: rmail.c
+rmail.o: ../h/mh.h
+rmail.o: ../h/addrsbr.h
+rmail.o: ../zotnet/mf.h
+rmail.o: ../zotnet/tws.h
+#rmail.o: /usr/include/stdio.h
+rmail.o: ../zotnet/mts.h
+#rmail.o: /usr/include/signal.h
+rmf.o: rmf.c
+rmf.o: ../h/mh.h
+rmf.o: ../h/local.h
+#rmf.o: /usr/include/stdio.h
+#rmf.o: /usr/include/sys/types.h
+#rmf.o: /usr/include/ndir.h
+#rmf.o: /usr/include/dir.h
+#rmf.o: /usr/include/sys/dir.h
+rmm.o: rmm.c
+rmm.o: ../h/mh.h
+#rmm.o: /usr/include/stdio.h
+sbboards.o: sbboards.c
+sbboards.o: ../h/mh.h
+sbboards.o: ../h/addrsbr.h
+sbboards.o: ../h/dropsbr.h
+sbboards.o: ../zotnet/bboards.h
+sbboards.o: ../zotnet/tws.h
+#sbboards.o: /usr/include/stdio.h
+sbboards.o: ../zotnet/mts.h
+#sbboards.o: /usr/include/pwd.h
+#sbboards.o: /usr/include/sysexits.h
+sbboards.o: ../mts/sendmail/smail.h
+scan.o: scan.c
+scan.o: ../h/mh.h
+scan.o: ../h/formatsbr.h
+scan.o: ../h/scansbr.h
+scan.o: ../zotnet/tws.h
+#scan.o: /usr/include/errno.h
+#scan.o: /usr/include/stdio.h
+scansbr.o: scansbr.c
+scansbr.o: ../h/mh.h
+scansbr.o: ../h/addrsbr.h
+scansbr.o: ../h/formatsbr.h
+scansbr.o: ../h/scansbr.h
+scansbr.o: ../zotnet/tws.h
+#scansbr.o: /usr/include/stdio.h
+#scansbr.o: /usr/include/ctype.h
+#scansbr.o: /usr/include/sys/types.h
+#scansbr.o: /usr/include/sys/stat.h
+send.o: send.c
+send.o: ../h/mh.h
+#send.o: /usr/include/stdio.h
+#send.o: /usr/include/signal.h
+#send.o: /usr/include/sys/types.h
+#send.o: /usr/include/sys/stat.h
+@BEGIN: SMTP
+sendmail.o: sendmail.c
+sendmail.o: ../h/mh.h
+sendmail.o: ../h/strings.h
+sendmail.o: ../h/addrsbr.h
+sendmail.o: ../h/aliasbr.h
+sendmail.o: ../h/dropsbr.h
+sendmail.o: ../zotnet/tws.h
+sendmail.o: ../zotnet/mts.h
+#sendmail.o: /usr/include/ctype.h
+#sendmail.o: /usr/include/errno.h
+#sendmail.o: /usr/include/sys/errno.h
+#sendmail.o: /usr/include/setjmp.h
+#sendmail.o: /usr/include/machine/setjmp.h
+#sendmail.o: /usr/include/stdio.h
+#sendmail.o: /usr/include/sys/types.h
+#sendmail.o: /usr/include/sys/stdtypes.h
+#sendmail.o: /usr/include/sys/sysmacros.h
+#sendmail.o: /usr/include/signal.h
+#sendmail.o: /usr/include/sys/signal.h
+#sendmail.o: /usr/include/vm/faultcode.h
+#sendmail.o: /usr/include/sys/stdtypes.h
+@END: SMTP
+sendsbr.o: sendsbr.c
+sendsbr.o: ../h/mh.h
+#sendsbr.o: /usr/include/setjmp.h
+#sendsbr.o: /usr/include/stdio.h
+#sendsbr.o: /usr/include/signal.h
+#sendsbr.o: /usr/include/sys/types.h
+#sendsbr.o: /usr/include/sys/stat.h
+@BEGIN: MIME
+sendsbr.o: ../h/mhn.h
+@END: MIME
+show.o: show.c
+show.o: ../h/mh.h
+#show.o: /usr/include/stdio.h
+@BEGIN: MIME
+show.o: ../h/mhn.h
+@END: MIME
+slocal.o: slocal.c
+slocal.o: ../h/mh.h
+slocal.o: ../h/dropsbr.h
+slocal.o: ../h/rcvmail.h
+slocal.o: ../zotnet/tws.h
+slocal.o: ../zotnet/mts.h
+#slocal.o: /usr/include/pwd.h
+#slocal.o: /usr/include/signal.h
+#slocal.o: /usr/include/sys/ioctl.h
+#slocal.o: /usr/include/sys/stat.h
+#slocal.o: /usr/include/utmp.h
+sortm.o: sortm.c
+sortm.o: ../h/mh.h
+sortm.o: ../zotnet/tws.h
+#sortm.o: /usr/include/stdio.h
+spop.o: spop.c
+spop.o: ../h/mh.h
+spop.o: ../h/addrsbr.h
+spop.o: ../h/dropsbr.h
+spop.o: ../zotnet/bboards.h
+spop.o: ../zotnet/tws.h
+#spop.o: /usr/include/stdio.h
+spop.o: ../zotnet/mts.h
+#spop.o: /usr/include/pwd.h
+#spop.o: /usr/include/sysexits.h
+spop.o: ../mts/sendmail/smail.h
+spost.o: spost.c
+#spost.o: /usr/include/ctype.h
+#spost.o: /usr/include/stdio.h
+#spost.o: /usr/include/signal.h
+spost.o: ../h/mh.h
+spost.o: ../h/addrsbr.h
+spost.o: ../h/aliasbr.h
+spost.o: ../h/dropsbr.h
+spost.o: ../zotnet/tws.h
+tma.o: tma.c
+tma.o: ../h/mh.h
+tma.o: ../h/addrsbr.h
+tma.o: ../zotnet/tws.h
+tma.o: ../tma/h/tma.h
+tma.o: ../zotnet/mts.h
+tmasbr.o: tmasbr.c
+tmasbr.o: ../h/mh.h
+tmasbr.o: ../h/scansbr.h
+tmasbr.o: ../tma/h/tma.h
+#tmasbr.o: /usr/include/sys/stat.h
+trmsbr.o: trmsbr.c
+trmsbr.o: ../h/mh.h
+#trmsbr.o: /usr/include/stdio.h
+#trmsbr.o: /usr/include/sgtty.h
+#trmsbr.o: /usr/include/sys/types.h
+#trmsbr.o: /usr/include/termio.h
+#trmsbr.o: /usr/include/sys/ioctl.h
+@BEGIN: TTYD
+ttym.o: ttym.c
+#ttym.o: /usr/include/pwd.h
+#ttym.o: /usr/include/signal.h
+#ttym.o: /usr/include/sys/time.h
+ttyw.o: ttyw.c
+#ttyw.o: /usr/include/errno.h
+#ttyw.o: /usr/include/stdio.h
+#ttyw.o: /usr/include/strings.h
+#ttyw.o: /usr/include/sys/types.h
+#ttyw.o: /usr/include/sys/socket.h
+#ttyw.o: /usr/include/netinet/in.h
+#ttyw.o: /usr/include/netdb.h
+#ttyw.o: /usr/include/arpa/inet.h
+ttyw.o: ttyd.h
+ttyw.o: ttym.c
+@END: TTYD
+umhook.o: umhook.c
+umhook.o: ../h/mh.h
+umhook.o: ../zotnet/mf.h
+#umhook.o: /usr/include/stdio.h
+umhook.o: ../zotnet/mts.h
+#umhook.o: /usr/include/pwd.h
+#umhook.o: /usr/include/signal.h
+#umhook.o: /usr/include/sys/ioctl.h
+#umhook.o: /usr/include/sys/types.h
+#umhook.o: /usr/include/sys/stat.h
+vmh.o: vmh.c
+#vmh.o: /usr/include/curses.h
+vmh.o: ../h/mh.h
+vmh.o: ../h/vmhsbr.h
+#vmh.o: /usr/include/ctype.h
+#vmh.o: /usr/include/errno.h
+#vmh.o: /usr/include/setjmp.h
+#vmh.o: /usr/include/signal.h
+#vmh.o: /usr/include/sys/types.h
+#vmh.o: /usr/include/sys/uio.h
+vmhsbr.o: vmhsbr.c
+vmhsbr.o: ../h/mh.h
+vmhsbr.o: ../h/vmhsbr.h
+#vmhsbr.o: /usr/include/stdio.h
+vmhtest.o: vmhtest.c
+vmhtest.o: ../h/mh.h
+vmhtest.o: ../h/vmhsbr.h
+#vmhtest.o: /usr/include/ctype.h
+#vmhtest.o: /usr/include/stdio.h
+whatnow.o: whatnow.c
+whatnowproc.o: whatnowproc.c
+whatnowproc.o: ../h/mh.h
+whatnowproc.o: ../h/strings.h
+#whatnowproc.o: /usr/include/stdio.h
+whatnowsbr.o: whatnowsbr.c
+whatnowsbr.o: ../h/mh.h
+#whatnowsbr.o: /usr/include/stdio.h
+#whatnowsbr.o: /usr/include/signal.h
+#whatnowsbr.o: /usr/include/sys/types.h
+#whatnowsbr.o: /usr/include/sys/stat.h
+whom.o: whom.c
+whom.o: ../h/mh.h
+#whom.o: /usr/include/stdio.h
+#whom.o: /usr/include/signal.h
+# DEPENDENCIES MUST END AT END OF FILE
+# IF YOU PUT STUFF HERE IT WILL GO AWAY

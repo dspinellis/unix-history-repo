@@ -1,2 +1,0 @@
-Mchroot	chroot.c	/^main(argc, argv)$/
-usage	chroot.c	/^usage()$/

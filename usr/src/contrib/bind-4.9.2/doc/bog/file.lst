@@ -1,0 +1,2442 @@
+
+
+
+
+
+
+
+
+
+
+
+                NNaammee SSeerrvveerr OOppeerraattiioonnss GGuuiiddee
+                          ffoorr BBIINNDD
+                        _R_e_l_e_a_s_e _4_._9
+
+                     _R_e_l_e_a_s_e_s _f_r_o_m _4_._9
+                         Paul Vixie
+                     <vixie@pa.dec.com>
+                       <paul@vix.com>
+
+               Digital Equipment Corporation
+                 Network Systems Laboratory
+                   250 University Avenue
+                    Palo Alto  CA  94301
+
+
+                   _R_e_l_e_a_s_e_s _t_h_r_o_u_g_h _4_._8_._3
+                      Kevin J. Dunlap*
+                     Michael J. Karels
+
+              Computer Systems Research Group
+                 Computer Science Division
+ Department of Electrical Engineering and Computer Sciences
+                  University of California
+                    Berkeley  CA  94720
+
+
+
+
+
+11..  IInnttrroodduuccttiioonn
+
+        The Berkeley Internet Name Domain (BIND)  implements
+   an  Internet  name  server for the UNIX operating system.
+   The BIND consists of  a  server  (or  ``daemon'')  and  a
+   _r_e_s_o_l_v_e_r  library.   A  name  server is a network service
+   that enables clients to name  resources  or  objects  and
+   share this information with other objects in the network.
+   This in effect is a  distributed  data  base  system  for
+   objects  in a computer network.  BIND is fully integrated
+   into BSD (4.3 and later releases)  network  programs  for
+   use  in  storing  and  retrieving host names and address.
+____________________
+   *  The author was an employee of Digital Equipment Corpo-
+ration's Ultrix Engineering Advanced Development  Group  and
+was  on  loan  to CSRG when this work was done.  Ultrix is a
+trademark of Digital Equipment Corporation.
+   UNIX is a Trademark of AT&T Bell Laboratories
+
+
+
+
+
+
+
+
+
+
+
+
+SSMMMM::1100--22               NNaammee SSeerrvveerr OOppeerraattiioonnss GGuuiiddee ffoorr BBIINNDD
+
+
+   The system administrator can configure the system to  use
+   BIND  as  a replacement to the older host table lookup of
+   information in the network hosts  file  _/_e_t_c_/_h_o_s_t_s.   The
+   default configuration for BSD uses BIND.
+
+
+22..  BBuuiillddiinngg AA SSyysstteemm wwiitthh aa NNaammee SSeerrvveerr
+
+        BIND  is  composed  of  two  parts.  One is the user
+   interface called the _r_e_s_o_l_v_e_r which consists of  a  group
+   of  routines  that  reside  in the C library _/_l_i_b_/_l_i_b_c_._a.
+   Second is the actual server called _n_a_m_e_d.  This is a dae-
+   mon that runs in the background and services queries on a
+   given network port. The standard port for UDP and TCP  is
+   specified in _/_e_t_c_/_s_e_r_v_i_c_e_s.
+
+   22..11..  RReessoollvveerr RRoouuttiinneess iinn lliibbcc
+
+           When  building  your 4.3BSD system you may either
+      build the C library to use the  name  server  resolver
+      routines  or  use the host table lookup routines to do
+      host  name  and  address  resolution.    The   default
+      resolver  for  4.3BSD uses the name server.  Newer BSD
+      systems include both name server and host table  func-
+      tionality  with preference given to the name server if
+      there is one or if there is a _/_e_t_c_/_r_e_s_o_l_v_._c_o_n_f file.
+
+           Building the C library to  use  the  name  server
+      changes  the way _g_e_t_h_o_s_t_b_y_n_a_m_e(3N), _g_e_t_h_o_s_t_b_y_a_d_d_r(3N),
+      and  _s_e_t_h_o_s_t_e_n_t(3N)  do  their  functions.   The  name
+      server  renders  _g_e_t_h_o_s_t_e_n_t(3N) obsolete, since it has
+      no concept of a next  line  in  the  database.   These
+      library  calls  are  built  with the resolver routines
+      needed to query the name server.
+
+           The _r_e_s_o_l_v_e_r contains functions that build  query
+      packets and exchange them with name servers.
+
+           Before  building  the  4.3BSD  C library, set the
+      variable    _H_O_S_T_L_O_O_K_U_P    equal    to     _n_a_m_e_d     in
+      _/_u_s_r_/_s_r_c_/_l_i_b_/_l_i_b_c_/_M_a_k_e_f_i_l_e.  You then make and install
+      the C library and compiler and then compile  the  rest
+      of  the  4.3BSD system.  For more information see sec-
+      tion 6.6 of ``Installing and Operating 4.3BSD  on  the
+      VAX''.
+
+           If  your operating system isn't VAX 4.3BSD, it is
+      probably  the  case  that  your  vendor  has  included
+      _r_e_s_o_l_v_e_r  support  in  the  supplied  C  Library.  You
+____________________
+   VAX is a Trademark of Digital Equipment Corporation
+
+
+
+
+
+
+
+
+
+
+
+
+NNaammee SSeerrvveerr OOppeerraattiioonnss GGuuiiddee ffoorr BBIINNDD               SSMMMM::1100--33
+
+
+      should consult your vendor's documentation to find out
+      what  has to be done to enable _r_e_s_o_l_v_e_r support.  Note
+      that your vendor's _r_e_s_o_l_v_e_r may be out  of  date  with
+      respect  to  the  one  shipped with BIND, and that you
+      might  want  to  build  BIND's  resolver  library  and
+      install  it, and its include files, into your system's
+      compile/link path so that your  own  network  applica-
+      tions will be able to use the newer features.
+
+
+   22..22..  TThhee NNaammee SSeerrvviiccee
+
+           The  basic function of the name server is to pro-
+      vide information about network  objects  by  answering
+      queries.   The specifications for this name server are
+      defined in RFC1034, RFC1035 and RFC974.   These  docu-
+      ments can be found in _/_u_s_r_/_s_r_c_/_e_t_c_/_n_a_m_e_d_/_d_o_c in 4.3BSD
+      or _f_t_ped from ffttpp..rrss..iinntteerrnniicc..nneett.  It is also  recom-
+      mended   that  you  read  the  related  manual  pages,
+      _n_a_m_e_d(8), _r_e_s_o_l_v_e_r(3), and _r_e_s_o_l_v_e_r(5).
+
+           The advantage of using a  name  server  over  the
+      host table lookup for host name resolution is to avoid
+      the need for a single  centralized  clearinghouse  for
+      all  names.  The authority for this information can be
+      delegated to the different organizations on  the  net-
+      work responsible for it.
+
+           The  host  table lookup routines require that the
+      master file for the entire network be maintained at  a
+      central location by a few people.  This works fine for
+      small networks where there are only a few machines and
+      the different organizations responsible for them coop-
+      erate.  But this does not work well for large networks
+      where machines cross organizational boundaries.
+
+           With  the  name server, the network can be broken
+      into a hierarchy of domains.  The name space is  orga-
+      nized  as a tree according to organizational or admin-
+      istrative boundaries.  Each node, called a _d_o_m_a_i_n,  is
+      given  a label, and the name of the domain is the con-
+      catenation of all the labels of the domains  from  the
+      root  to the current domain, listed from right to left
+      separated by dots.  A label need only be unique within
+      its  domain.  The whole space is partitioned into sev-
+      eral areas called _z_o_n_e_s, each starting at a domain and
+      extending down to the leaf domains or to domains where
+      other zones start.  Zones usually  represent  adminis-
+      trative  boundaries.  An example of a host address for
+      a host at the University of California, Berkeley would
+      look as follows:
+
+          _m_o_n_e_t.._B_e_r_k_e_l_e_y.._E_D_U
+
+
+
+
+
+
+
+
+
+
+SSMMMM::1100--44               NNaammee SSeerrvveerr OOppeerraattiioonnss GGuuiiddee ffoorr BBIINNDD
+
+
+      The  top level domain for educational organizations is
+      EDU; Berkeley is a subdomain of EDU and monet  is  the
+      name of the host.
+
+
+   22..33..  AAbboouutt HHeessiioodd,, aanndd HHSS--ccllaassss RReessoouurrccee RReeccoorrddss
+
+           Hesiod,  developed  by  MIT Project Athena, is an
+      information service built upon BIND.   Its  intent  is
+      similar  to  that of Sun's NIS: to furnish information
+      about users, groups, network-accessible file  systems,
+      printcaps,  and  mail  service throughout an installa-
+      tion.  Aside from its use of BIND rather than separate
+      server  code another important difference between Hes-
+      iod and NIS is that Hesiod is  not  intended  to  deal
+      with  passwords and authentication, but only with data
+      that are not security sensitive.  Hesiod  servers  can
+      be  implemented  by  adding  resource  records to BIND
+      servers;  or  they  can  be  implemented  as  separate
+      servers separately administered.
+
+           To  learn  about and obtain Hesiod make an anony-
+      mous FTP connection to  host  ATHENA-DIST.MIT.EDU  and
+      retrieve  the  compressed  tar  file ppuubb//hheessiioodd..ttaarr..ZZ.
+      You will not need the named and resolver library  por-
+      tions  of the distribution because their functionality
+      has already been integrated into BIND 4.9.   To  learn
+      how  Hesiod  functions as part of the Athena computing
+      environment  obtain   the   paper   ppuubb//uusseenniixx//aatthheennaa--
+      cchhaannggeess..PPSS  from  the above FTP server host.  There is
+      also a tar file of sample Hesiod resource files.
+
+           Whether one should use Hesiod class  is  open  to
+      question, since the same services can probably be pro-
+      vided with class IN, type TXT and type CNAME  records.
+      In either case, the code and documents for Hesiod will
+      suggest how to set up and use the service.
+
+           Note that while BIND  includes  support  for  _H_S-
+      class  queries,  the  zone  transfer logic for non-_I_N-
+      class zones is still experimental.
+
+
+   22..44..  AAbboouutt ````sseeccuurree zzoonneess''''
+
+           Secure zones implement named security on  a  zone
+      by  zone  basis.   It  is designed to use a permission
+      list of networks or hosts which may obtain  particular
+      information from the zone.
+
+           In order to use zone security, named must be com-
+      piled with SECURE_ZONES defined and you must  have  at
+      least  one  secure_zone  TXT RR.  Unless a secure_zone
+
+
+
+
+
+
+
+
+
+
+NNaammee SSeerrvveerr OOppeerraattiioonnss GGuuiiddee ffoorr BBIINNDD               SSMMMM::1100--55
+
+
+      record exists for a given zone, no  restrictions  will
+      be  applied  to  the data in that zone.  The format of
+      the secure_zone TXT RR is:
+
+      secure_zone     addr-class     TXT     string
+
+           The addr-class may be either HS or IN.  The  syn-
+      tax   for   the   TXT   string   is   either  "network
+      address:netmask" or "host IP address:H".
+
+           "network address:netmask" allows queries from  an
+      entire network.  If the netmask is omitted, named will
+      use the default netmask for the network address speci-
+      fied.
+
+           "host  IP  address:H" allows queries from a host.
+      The "H" after the ":"  is  required  to  differentiate
+      the  host  address  from  a network address.  Multiple
+      secure_zone TXT RRs are allowed in the same zone file.
+
+           For example, you can set up a zone to only answer
+      hesiod  requests  from  the  masked  class  B  network
+      130.215.0.0  and  from host 128.23.10.56 by adding the
+      following two TXT RR's:
+
+      secure_zone     HS     TXT     "130.215.0.0:255.255.0.0"
+      secure_zone     HS     TXT     "128.23.10.56:H"
+
+           This  feature can be used to restrict access to a
+      Hesiod password map or to seperate internal and exter-
+      nal  internet address resolution on a firewall machine
+      without needing to run a seperate named  for  internal
+      and external address resolution.
+
+
+33..  TTyyppeess ooff ZZoonneess
+
+        A ``zone'' is a point of delegation in the DNS tree.
+   It contains all names from a certain  point  ``downward''
+   except  those  which  are  delegated to other servers.  A
+   ``delegation point'' has one or more _N_S  records  in  the
+   ``parent zone'', which should be matched by equivalent _N_S
+   records at the root of the ``delegated zone'' (i.e.,  the
+   ``@'' name in the zone file).
+
+        Understanding  the difference between a ``zone'' and
+   a ``domain'' is crucial to the proper operation of a name
+   server.   As  an  example,  consider  the DEC.COM _d_o_m_a_i_n,
+   which includes names such as POBOX1.PA.DEC.COM and  QUAB-
+   BIN.CRL.DEC.COM  even  though  the  DEC.COM _z_o_n_e includes
+   only  _d_e_l_e_g_a_t_i_o_n_s  for  the  PA.DEC.COM  and  CRL.DEC.COM
+   zones.   A  zone  can map exactly to a single domain, but
+   could also include only part of a  domain  (the  rest  of
+
+
+
+
+
+
+
+
+
+
+SSMMMM::1100--66               NNaammee SSeerrvveerr OOppeerraattiioonnss GGuuiiddee ffoorr BBIINNDD
+
+
+   which could be delegated to other name servers).  Techni-
+   cally  speaking,  every  name  in  the  DNS  tree  is   a
+   ``domain'',  even  if it is ``terminal'', that is, has no
+   ``subdomains''.  Technically speaking, every subdomain is
+   a  domain and every domain except the root is also a sub-
+   domain.  The terminology is not intuitive and  you  would
+   do well to read RFC's 1033, 1034, and 1035 to gain a com-
+   plete understanding of this difficult and subtle topic.
+
+        Though BIND is a _D_o_m_a_i_n Name Server, it  deals  pri-
+   marily in terms of _z_o_n_e_s.  The _p_r_i_m_a_r_y and _s_e_c_o_n_d_a_r_y dec-
+   larations in  the  _n_a_m_e_d_._b_o_o_t  file  specify  _z_o_n_e_s,  not
+   _d_o_m_a_i_n_s.   When you ask someone if they are willing to be
+   a secondary server for your ``domain'', you are  actually
+   asking  for  secondary  service  for  some  collection of
+   _z_o_n_e_s.
+
+        Each zone will have one  ``primary''  server,  which
+   loads  the  zone  contents  from some local file which is
+   edited by humans or perhaps generated  mechanically  from
+   some  other  local  file which is edited by humans.  Then
+   there will be some number of ``secondary'' servers, which
+   load  the  zone  contents using the IP/DNS protocol (that
+   is, the secondary servers will contact  the  primary  and
+   fetch  the  zone using IP/TCP).  This set of servers (the
+   primary and all of the secondaries) should be  listed  in
+   the  _N_S records in the parent zone, which will constitute
+   a ``delegation''.  This  set  of  servers  must  also  be
+   listed  in  the zone file itself, usually under the ``@''
+   name which is a magic cookie that means the ``top level''
+   or  ``root'' of current $ORIGIN.  You can list servers in
+   the zone's top-level ``@'' _N_S records that are not in the
+   parent's  _N_S  delegation,  but you cannot list servers in
+   the parent's delegation  that  are  not  present  in  the
+   zone's ``@''.  (This latter condition is one form of what
+   is called a ``lame delegation''.)
+
+
+44..  TTyyppeess ooff SSeerrvveerrss
+
+        Servers do not really have ``types''.  A server  can
+   be  a  primary for some zones and a secondary for others,
+   or it can be only a primary, or only a secondary,  or  it
+   can  serve  no  zones  and  just  answer  queries via its
+   ``cache''.  Previous versions of this  document  referred
+   to  servers  as  ``master'' and ``slave'' but we now feel
+   that those  distinctions  --  and  the  assignment  of  a
+   ``type'' to a name server -- are not useful.
+
+   44..11..  CCaacchhiinngg OOnnllyy SSeerrvveerr
+
+           All servers are caching servers.  This means that
+      the server caches the information that it receives for
+
+
+
+
+
+
+
+
+
+
+NNaammee SSeerrvveerr OOppeerraattiioonnss GGuuiiddee ffoorr BBIINNDD               SSMMMM::1100--77
+
+
+      use  until the data expires.  A _C_a_c_h_i_n_g _O_n_l_y _S_e_r_v_e_r is
+      a server that is not  authoritative  for  any  domain.
+      This  server  services queries and asks other servers,
+      who have the authority, for  the  information  needed.
+      All  servers  keep  data in their cache until the data
+      expires, based on a _T_T_L (``Time To Live'') field which
+      is maintained for all resource records.
+
+   44..22..  RReemmoottee SSeerrvveerr
+
+           A  Remote Server is an option given to people who
+      would like to use a name server from their workstation
+      or  on  a  machine that has a limited amount of memory
+      and CPU cycles.  With this option you can run  all  of
+      the networking programs that use the name server with-
+      out the name server running on the local machine.  All
+      of  the  queries are serviced by a name server that is
+      running on another machine on the network.  This  kind
+      of  host is technically not a ``server'', since it has
+      no cache and does not answer queries.   A  host  which
+      has  an  _/_e_t_c_/_r_e_s_o_l_v_._c_o_n_f  file  listing  only  remote
+      hosts, and which does not run a  name  server  of  its
+      own,  is  sometimes  called  a  Remote Server but more
+      often it is called simply a DNS Client.
+
+   44..33..  SSllaavvee SSeerrvveerr
+
+           A Slave Server is a server that  always  forwards
+      queries  it  cannot satisfy from its cache, to a fixed
+      list of _f_o_r_w_a_r_d_i_n_g servers instead of interacting with
+      the master nameservers for the root and other domains.
+      The queries to the _f_o_r_w_a_r_d_i_n_g  _s_e_r_v_e_r_s  are  recursive
+      queries.  There may be one or more forwarding servers,
+      and  they  are  tried  in  turn  until  the  list   is
+      exhausted.   A  Slave  and  forwarder configuration is
+      typically used when you do not wish all the servers at
+      a  given  site  to be interacting with the rest of the
+      Internet servers.  A typical scenario would involve  a
+      number  of workstations and a departmental timesharing
+      machine with Internet access.  The workstations  might
+      be  administratively  prohibited  from having Internet
+      access.  To give the workstations  the  appearance  of
+      access to the Internet domain system, the workstations
+      could be Slave  servers  to  the  timesharing  machine
+      which  would  forward  the  queries  and interact with
+      other nameservers to resolve the query before  return-
+      ing  the  answer.   An added benefit of using the for-
+      warding feature is that the central machine develops a
+      much  more  complete cache of information that all the
+      workstations can take advantage of.  The use of  Slave
+      mode  and  forwarding  is  discussed further under the
+      description of the named bootfile commands.
+
+
+
+
+
+
+
+
+
+
+
+SSMMMM::1100--88               NNaammee SSeerrvveerr OOppeerraattiioonnss GGuuiiddee ffoorr BBIINNDD
+
+
+           Note that a Slave  Server  still  needs  a  _c_a_c_h_e
+      directive in its bootfile, since it will otherwise not
+      be able to locate the root servers.  There is no  pro-
+      hibition against declaring a server to be a _s_l_a_v_e even
+      though it has _p_r_i_m_a_r_y and/or _s_e_c_o_n_d_a_r_y zones as  well;
+      the  effect  will  still be that anything in the local
+      server's cache or zones will be answered, and anything
+      else will be forwarded using the _f_o_r_w_a_r_d_e_r_s list.
+
+
+55..  SSeettttiinngg uupp YYoouurr OOwwnn DDoommaaiinn
+
+        When  setting  up  a domain that is going to be on a
+   public network the site administrator should contact  the
+   organization  in  charge  of  the network and request the
+   appropriate domain registration  form.   An  organization
+   that  belongs  to multiple networks (such as the _I_n_t_e_r_n_e_t
+   and _B_I_T_N_E_T) should register with only one network.
+
+        The contacts are as follows:
+
+   55..11..  IInntteerrnneett
+
+           Sites on the Internet  who  need  information  on
+      setting  up  a domain should contact the registrar for
+      their network, which is one of the following:
+
+      MILnet   HOSTMASTER@NIC..DDN..MIL
+      other    HOSTMASTER@RS..INTERNIC..NET
+
+      You may also want to be placed  on  the  BIND  mailing
+      list, which is a mail group for people on the Internet
+      who run BIND.  The group discusses future design deci-
+      sions,  operational problems, and other related topic.
+      The address to request being placed  on  this  mailing
+      list is:
+
+          _b_i_n_d_-_r_e_q_u_e_s_t_@_u_u_n_e_t.._u_u.._n_e_t
+
+
+   55..22..  BBIITTNNEETT
+
+           If  you  are  on  the BITNET and need to set up a
+      domain, contact INFO@BITNIC.
+
+   55..33..  SSuubbddoommaaiinnss ooff EExxiissttiinngg DDoommaaiinnss
+
+           If you want a subdomain of some existing  domain,
+      you  should  find  the  contact  point  for the parent
+      domain rather than asking one of the  above  top-level
+      registrars.   There should be a convention that rreeggiiss--
+      ttrraarr@_d_o_m_a_i_n or hhoossttmmaasstteerr@_d_o_m_a_i_n for any given  domain
+
+
+
+
+
+
+
+
+
+
+
+NNaammee SSeerrvveerr OOppeerraattiioonnss GGuuiiddee ffoorr BBIINNDD               SSMMMM::1100--99
+
+
+      will  always  be  an alias for that domain's registrar
+      (somewhat analogous to ppoossttmmaasstteerr), but  there  is  no
+      such  convention.   Try it as a last resort, but first
+      you should examine the _S_O_A record for the  domain  and
+      send mail to the ``responsible person'' shown therein.
+
+
+66..  FFiilleess
+
+        The name server uses several files to load its  data
+   base.   This  section  covers the files and their formats
+   needed for _n_a_m_e_d.
+
+   66..11..  BBoooott FFiillee
+
+           This is the file that is first  read  when  _n_a_m_e_d
+      starts  up.  This tells the server what type of server
+      it is, which zones it has authority over and where  to
+      get  its  initial data.  The default location for this
+      file is _/_e_t_c_/_n_a_m_e_d_._b_o_o_t.  However this can be  changed
+      by  setting  the  _B_O_O_T_F_I_L_E  variable  when you compile
+      _n_a_m_e_d or by specifying the  location  on  the  command
+      line when _n_a_m_e_d is started up.
+
+      66..11..11..  DDoommaaiinn
+
+              A  default  domain  may  be  specified for the
+         nameserver using a line such as
+
+             _d_o_m_a_i_n           _B_e_r_k_e_l_e_y.._E_d_u
+
+         Older name servers use this information  when  they
+         receive  a query for a name without a ``..'' that is
+         not known.  Newer designs assume that the  resolver
+         library  will  append  its  own idea of a ``default
+         domain'' to any unqualified names.  Though the name
+         server  can  still be compiled with support for the
+         _d_o_m_a_i_n directive in the boot file, the  default  is
+         to  leave  it  out  and  we  strenuously  recommend
+         against its use.  If you use this feature,  clients
+         outside  your  local domain which send you requests
+         about unqualified  names  will  have  the  implicit
+         qualification  of  your  domain rather than theirs.
+         The proper  place  for  this  function  is  on  the
+         client,  in  their //eettcc//rreessoollvv..ccoonnff (or equivalent)
+         file.  Use of the _d_o_m_a_i_n  directive  in  your  boot
+         file is strongly discouraged.
+
+      66..11..22..  DDiirreeccttoorryy
+
+              The  _d_i_r_e_c_t_o_r_y  directive specifies the direc-
+         tory in which the nameserver should  run,  allowing
+         the  other  file  names  in  the  boot  file to use
+
+
+
+
+
+
+
+
+
+
+SSMMMM::1100--1100              NNaammee SSeerrvveerr OOppeerraattiioonnss GGuuiiddee ffoorr BBIINNDD
+
+
+         relative path names.  There can be only one  _d_i_r_e_c_-
+         _t_o_r_y  directive  and  it should be given before any
+         other directives that specify file names.
+
+             _d_i_r_e_c_t_o_r_y        _/_v_a_r_/_n_a_m_e_d
+
+         If you have more than a couple of named files to be
+         maintained,  you  may wish to place the named files
+         in a directory such as /var/named  and  adjust  the
+         directory  command  properly.  The main purposes of
+         this command are to  make  sure  named  is  in  the
+         proper  directory  when  trying to include files by
+         relative path names  with  $Include  and  to  allow
+         named  to  run  in a location that is reasonable to
+         dump core if it feels the urge.
+
+      66..11..33..  PPrriimmaarryy SSeerrvviiccee
+
+              The line in the boot file that designates  the
+         server as a primary server for a zone looks as fol-
+         lows:
+
+             _p_r_i_m_a_r_y          _B_e_r_k_e_l_e_y.._E_d_u   _u_c_b_h_o_s_t_s
+
+         The first field specifies that the server is a pri-
+         mary  one  for the zone stated in the second field.
+         The third field is the name of the file from  which
+         the data is read.
+
+      66..11..44..  SSeeccoonnddaarryy SSeerrvviiccee
+
+              The  line for a secondary server is similar to
+         the primary except that it lists addresses of other
+         servers  (usually  primary  servers) from which the
+         zone data will be obtained.
+
+             _s_e_c_o_n_d_a_r_y        _B_e_r_k_e_l_e_y.._E_d_u   _1_2_8.._3_2.._0.._1_0  _1_2_8.._3_2.._0.._4 _u_c_b_h_o_s_t_s_._b_a_k
+
+         The first field specifies that the server is a sec-
+         ondary  master  server  for  the zone stated in the
+         second field.  The two  network  addresses  specify
+         the  name  servers  which  have  data for the zone.
+         Note that at least one of these will be a  _p_r_i_m_a_r_y,
+         and,  unless you are using some protocol other than
+         IP/DNS for your zone transfer mechanism, the others
+         will  all  be other _s_e_c_o_n_d_a_r_y servers.  Having your
+         secondary server pull  data  from  other  secondary
+         servers  is usually unwise, since you can add delay
+         to the propagation of zone  updates  if  your  net-
+         work's connectivity varies in pathological but com-
+         mon ways.  The intended use for multiple  addresses
+         on  a  _s_e_c_o_n_d_a_r_y  declaration  is  when the _p_r_i_m_a_r_y
+         server  has   multiple   network   interfaces   and
+
+
+
+
+
+
+
+
+
+
+NNaammee SSeerrvveerr OOppeerraattiioonnss GGuuiiddee ffoorr BBIINNDD              SSMMMM::1100--1111
+
+
+         therefore  multiple  host addresses.  The secondary
+         server gets its data across the network from one of
+         the listed servers.  The server addresses are tried
+         in the order listed.   If  a  filename  is  present
+         after  the  list  of  primary servers, data for the
+         zone will be dumped into that  file  as  a  backup.
+         When  the  server  is  first  started,  the data is
+         loaded from the backup file if possible, and a pri-
+         mary  server  is  then  consulted to check that the
+         zone is still up-to-date.  Note that  listing  your
+         server  as a _s_e_c_o_n_d_a_r_y server does not neccessarily
+         make it  one  --  the  parent  zone  must  _d_e_l_e_g_a_t_e
+         authority to your server as well as the primary and
+         the other secondaries, or you will be  transferring
+         a  zone  over  for  no reason; no other server will
+         have a reason to query you for that zone unless the
+         parent zone lists you as a server for the zone.
+
+      66..11..55..  CCaacchhiinngg SSeerrvveerr
+
+              You  do  not  need a special line to designate
+         that a server is a caching server.  What denotes  a
+         ``caching only'' server is the absence of authority
+         lines, such as _s_e_c_o_n_d_a_r_y or  _p_r_i_m_a_r_y  in  the  boot
+         file.
+
+              All   servers,   including   ``caching  only''
+         servers, should have a line as follows in the  boot
+         file to prime the name servers cache:
+
+             _c_a_c_h_e                           ..            _r_o_o_t.._c_a_c_h_e
+
+         All  cache  files  listed  will be read in at named
+         boot time and any values still valid will be  rein-
+         stated  in the cache and the root nameserver infor-
+         mation in the cache files will be used until a root
+         query  is  actually  answered  by  one  of the name
+         servers in your cache  file,  at  which  time  that
+         answer  will  be  used  until it times out and your
+         cache file will be ignored.
+
+              Do not put  anything  into  your  _c_a_c_h_e  files
+         other than root server information.
+
+      66..11..66..  FFoorrwwaarrddeerrss
+
+              Any server can make use of _f_o_r_w_a_r_d_e_r_s.  A _f_o_r_-
+         _w_a_r_d_e_r is  another  server  capable  of  processing
+         recursive  queries that is willing to try resolving
+         queries on behalf of other systems.  The _f_o_r_w_a_r_d_e_r_s
+         command specifies forwarders by internet address as
+         follows:
+
+
+
+
+
+
+
+
+
+
+
+SSMMMM::1100--1122              NNaammee SSeerrvveerr OOppeerraattiioonnss GGuuiiddee ffoorr BBIINNDD
+
+
+             _f_o_r_w_a_r_d_e_r_s                      _1_2_8.._3_2.._0.._1_0  _1_2_8.._3_2.._0.._4
+
+         There are two main reasons for wanting  to  do  so.
+         First,  some  systems  may  not  have  full network
+         access and may be prevented  from  sending  any  IP
+         packets into the rest of the Internet and therefore
+         must rely on a forwarder which does have access  to
+         the  full  net.  The second reason is that the for-
+         warder sees a union of all  queries  as  they  pass
+         through  his  server  and  therefore it builds up a
+         very rich cache of data compared to the cache in  a
+         typical  workstation  nameserver.   In  effect, the
+         _f_o_r_w_a_r_d_e_r becomes a meta-cache that all  hosts  can
+         benefit  from, thereby reducing the total number of
+         queries from that site to the rest of the net.
+
+              The effect of  ``forwarders''  is  to  prepend
+         some fixed addresses to the list of name servers to
+         be tried for every query.  Normally  that  list  is
+         made up only of higher-authority servers discovered
+         via _N_S record lookups for the relevant domain.   If
+         the forwarders do not answer, then unless the _s_l_a_v_e
+         directive was given, the  appropriate  servers  for
+         the domains will be queried directly.
+
+      66..11..77..  SSllaavvee SSeerrvveerrss
+
+              Slave mode is used if the use of forwarders is
+         the only possible way to  resolve  queries  due  to
+         lack  of  full net access or if you wish to prevent
+         the nameserver from using  other  than  the  listed
+         forwarders.  Slave mode is activated by placing the
+         simple command
+
+             _s_l_a_v_e
+
+         in the bootfile.  If _s_l_a_v_e is used, then  you  must
+         specify forwarders.  When in slave mode, the server
+         will forward each query to each  of  the  the  for-
+         warders  until  an  answer  is found or the list of
+         forwarders is exhausted.  The server will  not  try
+         to  contact any remote name server other than those
+         named in the _f_o_r_w_a_r_d_e_r_s list.
+
+              So while _f_o_r_w_a_r_d_e_r_s adds to  the  end  of  the
+         ``server  list''  for  each query, _s_l_a_v_e causes the
+         ``server list'' to  contain  _o_n_l_y  those  addresses
+         listed  in  the  _f_o_r_w_a_r_d_e_r_s declarations.  Careless
+         use of the _s_l_a_v_e directive can cause really  horri-
+         ble  forwarding  loops, since you could end up for-
+         warding queries only to some set of hosts which are
+         also  slaves,  and  one or several of them could be
+         forwarding queries back to you.
+
+
+
+
+
+
+
+
+
+
+NNaammee SSeerrvveerr OOppeerraattiioonnss GGuuiiddee ffoorr BBIINNDD              SSMMMM::1100--1133
+
+
+              Use of the _s_l_a_v_e directive should  be  consid-
+         ered very carefully.
+
+      66..11..88..  ZZoonnee TTrraannssffeerr RReessttrriiccttiioonnss
+
+              It may be the case that your organization does
+         not wish to give complete lists of  your  hosts  to
+         anyone  on  the  Internet  who  can reach your name
+         servers.  While it is still possible for people  to
+         ``iterate'' through your address range, looking for
+         _P_T_R records, and build a list  of  your  hosts  the
+         ``slow''  way, it is still considered reasonable to
+         restrict your export of zones via the zone transfer
+         protocol.   To  limit the list of neighbors who can
+         transfer zones from your server, use the
+
+             _x_f_r_n_e_t_s
+
+         directive.  This directive has the same  syntax  as
+         _f_o_r_w_a_r_d_e_r_s except that you can list network numbers
+         in addition to host addresses.   For  example,  you
+         could  add  the  directive  _x_f_r_n_e_t_s _1_6_._0_._0_._0 if you
+         wanted to permit only hosts on Class A network num-
+         ber 16 to transfer zones from your server.  This is
+         not nearly granular enough, and a future version of
+         BIND  will  permit such access-control to be speci-
+         fied on a per-zone basis rather  than  the  current
+         ``global'' basis.
+
+              The  _x_f_r_n_e_t_s  directive  may  also be given as
+         _t_c_p_l_i_s_t for compatibility with interim releases  of
+         BIND 4.9.
+
+              Note  that  _x_f_r_n_e_t_s  support is a compile-time
+         option which your vendor may not have enabled  when
+         they built your operating system.
+
+      66..11..99..  SSoorrttiinngg AAddddrreesssseess
+
+              If  there are multiple addresses available for
+         a name server which BIND  wants  to  contact,  BIND
+         will  try  the  ones  it  believes  are ``closest''
+         first.  ``Closeness'' is defined in terms of  simi-
+         larity-of-address;  that  is,  if one address is on
+         the same _s_u_b_n_e_t as  some  interface  of  the  local
+         host, then that address will be tried first.  Fail-
+         ing that, an address which is on the  same  _n_e_t_w_o_r_k
+         will  be  tried  first.  Failing that, they will be
+         tried in a more-or-less  random  order  unless  the
+         _s_o_r_t_l_i_s_t  directive  was  given  in  the _n_a_m_e_d_._b_o_o_t
+         file.  _s_o_r_t_l_i_s_t has a syntax similar to  _f_o_r_w_a_r_d_e_r_s
+         and  _x_f_r_n_e_t_s; you give it a list of networks and it
+         uses these to ``prefer'' some  remote  name  server
+
+
+
+
+
+
+
+
+
+
+SSMMMM::1100--1144              NNaammee SSeerrvveerr OOppeerraattiioonnss GGuuiiddee ffoorr BBIINNDD
+
+
+         addresses over others.  If you are on a Class C net
+         which has a Class B net between you and the rest of
+         the  Internet,  you  could  try to improve the name
+         server's luck in getting  answers  by  listing  the
+         Class  B  network's number in a _s_o_r_t_l_i_s_t directive.
+         This should have the effect  of  trying  ``closer''
+         servers  before  the  more  ``distant'' ones.  Note
+         that this behaviour is new in BIND 4.9.
+
+              The other and older  effect  of  the  _s_o_r_t_l_i_s_t
+         directive is to cause BIND to sort the _A records in
+         any response it generates, so as to put those which
+         appear  on the _s_o_r_t_l_i_s_t earlier than those which do
+         not.  This is not as helpful as  you  might  think,
+         since  many  clients  will  reorder  the  _A records
+         either at random or using LIFO.
+
+              In actual practice, noone uses this  directive
+         since   it   hardwires  information  which  changes
+         rapidly; a network which is ``close'' today may  be
+         ``distant''  next  month.   Since  BIND builds up a
+         cache of the remote name servers'  response  times,
+         it   will   quickly   converge   on  ``reasonable''
+         behaviour, which isn't the same as ``optimal''  but
+         it's  close  enough.   Future  directions  for BIND
+         include choosing addresses based on local interface
+         metrics  (on  hosts  which  have more than one) and
+         perhaps on routing table information.   We  do  not
+         intend   to  solve  the  generalized  ``multi-homed
+         host'' problem, but we should be able to do a  lit-
+         tle better than we're doing now.  Likewise, we hope
+         to see a higher-level resolver library  that  sorts
+         responses  using  topology  information  that  only
+         exists on the client's host.
+
+
+      66..11..1100..  BBoogguuss NNaammee SSeerrvveerrss
+
+              It happens occasionally that some remote  name
+         server goes ``bad''.  You can tell your name server
+         to refuse to listen to or ask questions of  certain
+         other  name  servers  by  listing them in a _b_o_g_u_s_n_s
+         directive in your _n_a_m_e_d_._b_o_o_t file.  Its  syntax  is
+         the  same  as _f_o_r_w_a_r_d_e_r_s -- you just give it a list
+         of dotted-quad Internet addresses.
+
+              Note that _b_o_g_u_s_n_s support  is  a  compile-time
+         option  which your vendor may not have enabled when
+         they built your operating system.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+NNaammee SSeerrvveerr OOppeerraattiioonnss GGuuiiddee ffoorr BBIINNDD              SSMMMM::1100--1155
+
+
+      66..11..1111..  SSeeggmmeenntteedd BBoooott FFiilleess
+
+              If you are secondary for a lot of  zones,  you
+         may  find  it  convenient  to split your _n_a_m_e_d_._b_o_o_t
+         file  into  a  static  portion  which  hardly  ever
+         changes  (directives  such  as _d_i_r_e_c_t_o_r_y, _s_o_r_t_l_i_s_t,
+         _x_f_r_n_e_t_s and _c_a_c_h_e could go here), and dynamic  por-
+         tions  that  change frequently (all of your _p_r_i_m_a_r_y
+         directives might go in one file, and  all  of  your
+         _s_e_c_o_n_d_a_r_y  directives  might  go in another file --
+         and either or both of these might be fetched  auto-
+         matically  from  some  neighbor  so  that  they can
+         change your list of secondary zones without requir-
+         ing  your active intervention).  You can accomplish
+         this via the _i_n_c_l_u_d_e directive, which takes just  a
+         single  file  name  as its argument.  No quotes are
+         needed around the file name.  The file name will be
+         evaluated  after  the  name  server has changed its
+         working directory to that specified in  the  _d_i_r_e_c_-
+         _t_o_r_y  directive,  so you can use relative pathnames
+         if your system supports them.
+
+   66..22..  RReessoollvveerr CCoonnffiigguurraattiioonn
+
+           The resolver will try to contact a nameserver  on
+      the  localhost  if  it  cannot  find its configuration
+      file.  You should install the  configuration  file  on
+      every host anyway, since you can list the local host's
+      address if the localhost runs a nameserver, and  there
+      is  no other recommended way to specify a system-level
+      default domain.  Note that if you  wish  to  list  the
+      local  host  in  your resolver configuration file, you
+      should  probably  use  its  primary  Internet  address
+      rather  than  a  localhost  alias such as 127.0.0.1 or
+      0.0.0.0.  This is due to a bug in the handling of con-
+      nected  SOCK_DGRAM sockets in some versions of the BSD
+      networking code.  If you must  use  an  address-alias,
+      you  should  prefer  0.0.0.0  (or  simply  ``0'') over
+      127.0.0.1, though be warned that depending on the vin-
+      tage of your BSD-derived networking code, both of them
+      are capable of failing in their own ways.
+
+           The     configuration     file's     name      is
+      _/_e_t_c_/_r_e_s_o_l_v_._c_o_n_f.    This  file  designates  the  name
+      servers on the network that should  be  sent  queries.
+      It  is  considered reasonable to create this file even
+      if you run a local server, since its contents will  be
+      cached by each client of the resolver library when the
+      client makes its first call to a resolver routine.  If
+      you  run  a  name  server  locally,  list  it  in your
+      _r_e_s_o_l_v_._c_o_n_f file.
+
+
+
+
+
+
+
+
+
+
+
+
+SSMMMM::1100--1166              NNaammee SSeerrvveerr OOppeerraattiioonnss GGuuiiddee ffoorr BBIINNDD
+
+
+           The _r_e_s_o_l_v_._c_o_n_f file contains directives, one per
+      line, of the following forms:
+
+          ; comment
+          # another comment
+          domain _l_o_c_a_l_-_d_o_m_a_i_n
+          search _s_e_a_r_c_h_-_l_i_s_t
+          nameserver _s_e_r_v_e_r_-_a_d_d_r_e_s_s
+          sortlist _s_o_r_t_-_l_i_s_t
+
+      The  _d_o_m_a_i_n  and  _s_e_a_r_c_h  directives  should  be given
+      exactly once.  If the _s_e_a_r_c_h directive is  given,  the
+      first  item in the given _s_e_a_r_c_h_-_l_i_s_t will override any
+      previously-specified  _l_o_c_a_l_-_d_o_m_a_i_n.   The   _n_a_m_e_s_e_r_v_e_r
+      directive  may  be given up to three times; additional
+      _n_a_m_e_s_e_r_v_e_r directives will be ignored.   Comments  may
+      be  given  by  starting  a line with a ``;;'' or ``##'';
+      note that comments were not permitted in  versions  of
+      the  resolver  earlier than the one included with BIND
+      4.9 -- so if your vendor's resolver supports comments,
+      you know they are really on the ball.
+
+           The  _l_o_c_a_l_-_d_o_m_a_i_n  will be appended to any query-
+      name that does not contain a ``..''.  _l_o_c_a_l_-_d_o_m_a_i_n  can
+      be  overridden  on  a per-process basis by setting the
+      LOCALDOMAIN environment variable.   Note  that  _l_o_c_a_l_-
+      _d_o_m_a_i_n processing can be disabled by setting an option
+      in the resolver.
+
+           The _s_e_a_r_c_h_-_l_i_s_t is a list of  domains  which  are
+      tried, in order, as qualifying domains for query-names
+      which do not contain a ``..''.  Note  that  _s_e_a_r_c_h_-_l_i_s_t
+      processing can be disabled by setting an option in the
+      resolver.
+
+           The _s_e_r_v_e_r_-_a_d_d_r_e_s_s's are aggregated and then used
+      as   the  default  destination  of  queries  generated
+      through the resolver.  This is, in  other  words,  the
+      way you tell the resolver which name servers it should
+      use.  It is possible for a given client application to
+      override  this list, and this is often done inside the
+      name server (which is itself a _r_e_s_o_l_v_e_r client) and in
+      test programs such as _n_s_l_o_o_k_u_p.
+
+           The  _s_o_r_t_-_l_i_s_t  is  a list of IP address, netmask
+      pairs. Addresses returned by gethostbyname are  sorted
+      tp  the  order  specifed  by this list.  Any addresses
+      that do  not  match  the  address  netmask  pair  will
+      returned  after those that do. The netmask is optional
+      and the natural netmask will be used if not specified.
+
+           Finally,  if the environment variable HOSTALIASES
+      is set, it is taken to contain  the  name  of  a  file
+
+
+
+
+
+
+
+
+
+
+NNaammee SSeerrvveerr OOppeerraattiioonnss GGuuiiddee ffoorr BBIINNDD              SSMMMM::1100--1177
+
+
+      which  in turn contains resolver-level aliases.  These
+      aliases are applied only to names which do not contain
+      any  ``..''  characters, and they are applied to query-
+      names before the query is generated.   Note  that  the
+      resolver  options  governing  the  operation of _l_o_c_a_l_-
+      _d_o_m_a_i_n and _s_e_a_r_c_h_-_l_i_s_t do not apply to HOSTALIASES.
+
+
+   66..33..  CCaacchhee IInniittiiaalliizzaattiioonn
+
+      66..33..11..  rroooott..ccaacchhee
+
+              The name server needs to know the servers that
+         are  the  authoritative  name  servers for the root
+         domain of the network.  To do this we have to prime
+         the name server's cache with the addresses of these
+         higher authorities.  The location of this  file  is
+         specified  in  the  boot  file.  This file uses the
+         Standard Resource Record  Format  (aka.  Masterfile
+         Format) covered further on in this paper.
+
+      66..33..22..  nnaammeedd..llooccaall
+
+              This  file  specifies  the  _P_T_R record for the
+         local loopback interface, better  known  as  _l_o_c_a_l_-
+         _h_o_s_t,  whose  network  address  is  127.0.0.1.  The
+         location of this file  is  specified  in  the  boot
+         file.  It is vitally important to the proper opera-
+         tion  of  every  name  server  that  the  127.0.0.1
+         address have a _P_T_R record pointing back to the name
+         ``llooccaallhhoosstt.._m_y_._d_o_m_._a_i_n''.  The  name  of  this  _P_T_R
+         record  is always ``11..00..00..112277..IINN--AADDDDRR..AARRPPAA''.  This
+         is neccessary if you want your users to be able  to
+         use    hostname-authentication    (_h_o_s_t_s_._e_q_u_i_v   or
+         _~_/_._r_h_o_s_t_s) on the name ``llooccaallhhoosstt''.   As  implied
+         by  this _P_T_R record, there should be an _A record in
+         your    domain     specifying     that     ``llooccaall--
+         hhoosstt.._m_y_._d_o_m_._a_i_n''    has   the   Internet   address
+         127.0.0.1.
+
+
+   66..44..  DDoommaaiinn DDaattaa FFiilleess
+
+           There are two standard files for  specifying  the
+      data  for  a  domain.   These  are _h_o_s_t_s and _h_o_s_t_._r_e_v.
+      These files use the Standard  Resource  Record  Format
+      covered later in this paper.  Note that the file names
+      are arbitrary; many network administrators  prefer  to
+      name  their zone files after the domains they contain,
+      especially in the average case which is where a  given
+      server  is primary and/or secondary for many different
+      zones.
+
+
+
+
+
+
+
+
+
+
+
+SSMMMM::1100--1188              NNaammee SSeerrvveerr OOppeerraattiioonnss GGuuiiddee ffoorr BBIINNDD
+
+
+      66..44..11..  hhoossttss
+
+              This file contains  all  the  data  about  the
+         machines  in  this zone.  The location of this file
+         is specified in the boot file.
+
+      66..44..22..  hhoossttss..rreevv
+
+              This file specifies the  IN-ADDR.ARPA  domain.
+         This  is  a  special domain for allowing address to
+         name mapping.  As internet host  addresses  do  not
+         fall  within domain boundaries, this special domain
+         was  formed  to   allow   inverse   mapping.    The
+         IN-ADDR.ARPA  domain  has four labels preceding it.
+         These labels correspond  to  the  4  octets  of  an
+         Internet  address.   All four octets must be speci-
+         fied even if  an  octets  is  zero.   The  Internet
+         address   128.32.0.4   is  located  in  the  domain
+         4.0.32.128.IN-ADDR.ARPA.   This  reversal  of   the
+         address is awkward to read but allows for the natu-
+         ral grouping of hosts in a network.
+
+   66..55..  SSttaannddaarrdd RReessoouurrccee RReeccoorrdd FFoorrmmaatt
+
+           The records in the name  server  data  files  are
+      called resource records.  The Standard Resource Record
+      Format (RR) is specified in RFC1035.  The following is
+      a general description of these records:
+
+      _{_n_a_m_e_}   _{_t_t_l_}   _a_d_d_r_-_c_l_a_s_s   _R_e_c_o_r_d _T_y_p_e   _R_e_c_o_r_d _S_p_e_c_i_f_i_c _d_a_t_a
+
+      Resource  records  have a standard format shown above.
+      The first field is  always  the  name  of  the  domain
+      record  and it must always start in column 1.  For all
+      RR's other than the first in a file, the name  may  be
+      left  blank;  in that case it takes on the name of the
+      previous RR.  The second field is an optional time  to
+      live field.  This specifies how long this data will be
+      stored in the data base.  By leaving this field  blank
+      the  default time to live is specified in the _S_t_a_r_t _O_f
+      _A_u_t_h_o_r_i_t_y resource  record  (see  below).   The  third
+      field  is the address class; currently, only one class
+      is supported: _I_N  for  internet  addresses  and  other
+      internet information.  Limited support is included for
+      the _H_S  class,  which  is  for  MIT/Athena  ``Hesiod''
+      information.   The fourth field states the type of the
+      resource record.  The fields after that are  dependent
+      on the type of the RR.  Case is preserved in names and
+      data fields when loaded into  the  name  server.   All
+      comparisons  and  lookups in the name server data base
+      are case insensitive.
+
+
+
+
+
+
+
+
+
+
+
+
+NNaammee SSeerrvveerr OOppeerraattiioonnss GGuuiiddee ffoorr BBIINNDD              SSMMMM::1100--1199
+
+
+      TThhee ffoolllloowwiinngg cchhaarraacctteerrss hhaavvee ssppeecciiaall mmeeaanniinnggss::
+
+      ``..''
+           A free standing dot in the name field  refers  to
+           the current domain.
+
+      ``@''
+           A  free  standing @ in the name field denotes the
+           current origin.
+
+      ``....''
+           Two free standing dots represent the null  domain
+           name of the root when used in the name field.
+
+      ``\X''
+           Where  X  is  any  character  other  than a digit
+           (0-9), quotes that character so that its  special
+           meaning  does not apply.  For example, ``\.'' can
+           be used to place a dot character in a label.
+
+      ``\DDD''
+           Where each D is a digit, is the octet correspond-
+           ing  to the decimal number described by DDD.  The
+           resulting octet is assumed to be text and is  not
+           checked for special meaning.
+
+      ``( )''
+           Parentheses are used to group data that crosses a
+           line.  In effect, line terminations are not  rec-
+           ognized within parentheses.
+
+      ``;''
+           Semicolon  starts a comment; the remainder of the
+           line is ignored.
+
+      ``*''
+           An asterisk  signifies  wildcarding.   Note  that
+           this is just another data character whose special
+           meaning comes about  only  during  internal  name
+           server  search  operations.   Wildcarding is only
+           meaningful for some RR types  (notably  _M_X),  and
+           then  only  in  the name field -- not in the data
+           fields.
+
+           Anywhere a name appears --  either  in  the  name
+      field  or  in some data field defined to contain names
+      -- the current origin will be  appended  if  the  name
+      does not end in a ``..''.  This is useful for appending
+      the current domain name to the data, such  as  machine
+      names,  but  may  cause problems where you do not want
+      this to happen.  A good rule of thumb is that, if  the
+      name  is  not in the domain for which you are creating
+      the data file, end the name with a ``..''.
+
+
+
+
+
+
+
+
+
+
+SSMMMM::1100--2200              NNaammee SSeerrvveerr OOppeerraattiioonnss GGuuiiddee ffoorr BBIINNDD
+
+
+      66..55..11..  $$IINNCCLLUUDDEE
+
+              An include line begins with $INCLUDE, starting
+         in  column  1, and is followed by a file name, and,
+         optionally, by a new temporary $ORIGIN to  be  used
+         while  reading this file.  This feature is particu-
+         larly useful for separating different types of data
+         into multiple files.  An example would be:
+
+             $INCLUDE /usr/local/adm/named/data/mail-exchangers
+
+         The  line would be interpreted as a request to load
+         the  file   _/_u_s_r_/_n_a_m_e_d_/_d_a_t_a_/_m_a_i_l_-_e_x_c_h_a_n_g_e_r_s.    The
+         $INCLUDE  command  does not cause data to be loaded
+         into a different zone or tree. This is simply a way
+         to  allow data for a given primary zone to be orga-
+         nized in separate files.  Not even the  ``temporary
+         $ORIGIN''  feature described above is sufficient to
+         cause your data to branch out into some other  zone
+         --  zone  boundaries  can only be introduced in the
+         boot file.
+
+      66..55..22..  ````$$OORRIIGGIINN''''
+
+              The origin is a way of changing the origin  in
+         a  data  file.  The line starts in column 1, and is
+         followed by a domain origin.  This  seems  like  it
+         could be useful for putting more then one zone into
+         a data file, but that's not how it works.  The name
+         server fundamentally requires that a given zone map
+         entirely to some specific file.  You should  there-
+         fore  be  very  careful to use $ORIGIN only once at
+         the top of a file, or, within a file, to change  to
+         a  ``lower''  domain  in the zone  -- never to some
+         other zone altogether.
+
+      66..55..33..  SSOOAA -- SSttaarrtt OOff AAuutthhoorriittyy
+
+
+         _n_a_m_e   _{_t_t_l_}   _a_d_d_r_-_c_l_a_s_s   _S_O_A          _O_r_i_g_i_n                 _P_e_r_s_o_n _i_n _c_h_a_r_g_e
+         @              IN           SOA          ucbvax..Berkeley..Edu..   kjd..ucbvax..Berkeley..Edu.. (
+                                     1993041403   ; Serial
+                                     10800        ; Refresh
+                                     1800         ; Retry
+                                     3600000      ; Expire
+                                     259200 )     ; Minimum
+
+
+         The _S_t_a_r_t _o_f _A_u_t_h_o_r_i_t_y_, _S_O_A_, record designates  the
+         start of a zone.  The name is the name of the zone.
+         Origin is the name of the host on which  this  data
+         file  resides.   Person  in  charge  is the mailing
+
+
+
+
+
+
+
+
+
+
+
+NNaammee SSeerrvveerr OOppeerraattiioonnss GGuuiiddee ffoorr BBIINNDD              SSMMMM::1100--2211
+
+
+         address for the person  responsible  for  the  name
+         server.  The serial number is the version number of
+         this data file; this number should  be  incremented
+         whenever  a  change  is  made  to  the data.  Older
+         servers permitted the use of  a  phantom  ``.''  in
+         this  and other numbers in a zone file; the meaning
+         of n.m was ``n000m'' rather than the more intuitive
+         ``n*1000+m'' (such that 1.234 translated to 1000234
+         rather than to 1234).  This feature has been depre-
+         cated  due  to its obscurity, unpredictability, and
+         lack of neccessity.  Note  that  using  a  ``YYYYM-
+         MDDNN'' notation you can still make 100 changes per
+         day until the year 4294.  You should choose a nota-
+         tion  that  works for you.  If you're a clever _p_e_r_l
+         programmer you could even use _R_C_S  version  numbers
+         to  help  generate  your  zone serial numbers.  The
+         refresh indicates how often, in seconds,  the  sec-
+         ondary  name  servers are to check with the primary
+         name server to see if an  update  is  needed.   The
+         retry  indicates  how long, in seconds, a secondary
+         server should wait before retrying  a  failed  zone
+         transfer.   Expire  is the upper limit, in seconds,
+         that a secondary name server is  to  use  the  data
+         before  it  expires  for lack of getting a refresh.
+         Minimum is the default number of seconds to be used
+         for  the  Time  To  Live  field on resource records
+         which do not specify one in the zone file.   It  is
+         also  an  enforced minimum on Time To Live if it is
+         specified on an RR.  There should only be  one  _S_O_A
+         record per zone.
+
+      66..55..44..  NNSS -- NNaammee SSeerrvveerr
+
+         _{_n_a_m_e_}   _{_t_t_l_}   _a_d_d_r_-_c_l_a_s_s   _N_S   _N_a_m_e _s_e_r_v_e_r_s _n_a_m_e
+                          IN           NS   ucbarpa..Berkeley..Edu..
+
+         The  _N_a_m_e  _S_e_r_v_e_r  record,  _N_S, lists a name server
+         responsible for a given  domain.   The  first  name
+         field  lists  the  domain  that  is serviced by the
+         listed name server.  There should be one _N_S  record
+         for  each  name  server  for  the domain, and every
+         domain should have at least two nameservers.
+
+      66..55..55..  AA -- AAddddrreessss
+
+         _{_n_a_m_e_}    _{_t_t_l_}   _a_d_d_r_-_c_l_a_s_s   _A   _a_d_d_r_e_s_s
+         ucbarpa           IN           A   128..32..0..4
+                           IN           A   10..0..0..78
+
+         The _A_d_d_r_e_s_s record, _A,  lists  the  address  for  a
+         given  machine.  The name field is the machine name
+         and the address  is  the  network  address.   There
+
+
+
+
+
+
+
+
+
+
+
+SSMMMM::1100--2222              NNaammee SSeerrvveerr OOppeerraattiioonnss GGuuiiddee ffoorr BBIINNDD
+
+
+         should  be  one  _A  record  for each address of the
+         machine.
+
+      66..55..66..  HHIINNFFOO -- HHoosstt IInnffoorrmmaattiioonn
+
+         _{_n_a_m_e_}   _{_t_t_l_}   _a_d_d_r_-_c_l_a_s_s   _H_I_N_F_O   _H_a_r_d_w_a_r_e     _O_S
+                          IN           HINFO   VAX-11/780   UNIX
+
+         _H_o_s_t _I_n_f_o_r_m_a_t_i_o_n resource  record,  _H_I_N_F_O,  is  for
+         host  specific  data.   This lists the hardware and
+         operating system that are  running  at  the  listed
+         host.   If  you  want  to  include  a  space in the
+         machine name you must quote the name.  There  could
+         be one _H_I_N_F_O record for each host, though for secu-
+         rity reasons most  domains  don't  have  any  _H_I_N_F_O
+         records at all.  No application depends on them.
+
+
+      66..55..77..  WWKKSS -- WWeellll KKnnoowwnn SSeerrvviicceess
+
+         _{_n_a_m_e_}   _{_t_t_l_}   _a_d_d_r_-_c_l_a_s_s   _W_K_S   _a_d_d_r_e_s_s       _p_r_o_t_o_c_o_l   _l_i_s_t _o_f _s_e_r_v_i_c_e_s
+                          IN           WKS   128..32..0..10   UDP        who route timed domain
+                          IN           WKS   128..32..0..10   TCP        ( echo telnet
+                                                                      discard sunrpc sftp
+                                                                      uucp-path systat daytime
+                                                                      netstat qotd nntp
+                                                                      link chargen ftp
+                                                                      auth time whois mtp
+                                                                      pop rje finger smtp
+                                                                      supdup hostnames
+                                                                      domain
+                                                                      nameserver )
+
+         The  _W_e_l_l _K_n_o_w_n _S_e_r_v_i_c_e_s record, _W_K_S, describes the
+         well known services supported by a particular  pro-
+         tocol at a specified address.  The list of services
+         and port numbers come from  the  list  of  services
+         specified  in  _/_e_t_c_/_s_e_r_v_i_c_e_s_.  There should be only
+         one _W_K_S record per protocol per address.  Note that
+         RFC 1123 says of _W_K_S records:
+
+
+            2.2  Using Domain Name Service
+            ...
+               An application SHOULD NOT rely on the ability to locate a WKS
+               record containing an accurate listing of all services at a
+               particular host address, since the WKS RR type is not often used
+               by Internet sites.  To confirm that a service is present, simply
+               attempt to use it.
+            ...
+               5.2.12  WKS Use in MX Processing: RFC-974, p. 5
+
+
+
+
+
+
+
+
+
+
+
+
+NNaammee SSeerrvveerr OOppeerraattiioonnss GGuuiiddee ffoorr BBIINNDD              SSMMMM::1100--2233
+
+
+                  RFC-974 [SMTP:3] recommended that the domain system be queried
+                  for WKS ("Well-Known Service") records, to verify that each
+                  proposed mail target does support SMTP.  Later experience has
+                  shown that WKS is not widely supported, so the WKS step in MX
+                  processing SHOULD NOT be used.
+            ...
+                  6.1.3.6  Status of RR Types
+            ...
+                          The TXT and WKS RR types have not been widely used by
+                          Internet sites; as a result, an application cannot rely
+                          on the the existence of a TXT or WKS RR in most
+                          domains.
+
+
+      66..55..88..  CCNNAAMMEE -- CCaannoonniiccaall NNaammee
+
+         _a_l_i_a_s_e_s    _{_t_t_l_}   _a_d_d_r_-_c_l_a_s_s   _C_N_A_M_E   _C_a_n_o_n_i_c_a_l _n_a_m_e
+         ucbmonet           IN           CNAME   monet
+
+         The  _C_a_n_o_n_i_c_a_l  _N_a_m_e resource record, _C_N_A_M_E, speci-
+         fies an alias or  nickname  for  the  official,  or
+         canonical,  host  name.   This record should be the
+         only one associated with the alias name.  All other
+         resource  records  should  be  associated  with the
+         canonical  name,  not  with  the   nickname.    Any
+         resource  records  that  include  a  domain name as
+         their value (e.g., NS or MX) _m_u_s_t list the  canoni-
+         cal name, not the nickname.
+
+              Nicknames  are also useful when a host changes
+         its name.  In that case, it is usually a good  idea
+         to  have  a _C_N_A_M_E record so that people still using
+         the old name will get to the right place.
+
+      66..55..99..  PPTTRR -- DDoommaaiinn NNaammee PPooiinntteerr
+
+         _n_a_m_e   _{_t_t_l_}   _a_d_d_r_-_c_l_a_s_s   _P_T_R   _r_e_a_l _n_a_m_e
+         7.0            IN           PTR   monet..Berkeley..Edu..
+
+         A _D_o_m_a_i_n _N_a_m_e _P_o_i_n_t_e_r record, _P_T_R,  allows  special
+         names  to  point  to  some  other  location  in the
+         domain.  The above example of a _P_T_R record is  used
+         in  setting  up  reverse  pointers  for the special
+         _I_N_-_A_D_D_R.._A_R_P_A domain. This line is from the  example
+         _h_o_s_t_s_._r_e_v  file.   _P_T_R  records  are  needed by the
+         _g_e_t_h_o_s_t_b_y_a_d_d_r function.  Note  the  trailing  ``..''
+         which  prevents  BIND  from  appending  the current
+         $ORIGIN.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+SSMMMM::1100--2244              NNaammee SSeerrvveerr OOppeerraattiioonnss GGuuiiddee ffoorr BBIINNDD
+
+
+      66..55..1100..  MMXX -- MMaaiill EExxcchhaannggeerr
+
+         _n_a_m_e             _{_t_t_l_}   _a_d_d_r_-_c_l_a_s_s   _M_X   _p_r_e_f_e_r_e_n_c_e _v_a_l_u_e   _m_a_i_l _e_x_c_h_a_n_g_e_r
+         Munnari..OZ..AU..           IN           MX   0                  Seismo..CSS..GOV..
+         *..IL..                    IN           MX   0                  RELAY..CS..NET..
+
+         _M_a_i_l _e_X_c_h_a_n_g_e_r records, _M_X, are used to  specify  a
+         list  of hosts which are configured to receive mail
+         sent  to  this  domain  name.   Every  name   which
+         receives mail should have an _M_X since if one is not
+         found at the time mail is being  delivered,  an  _M_X
+         will be ``imputed'' with a cost of 0 and a destina-
+         tion of the host itself.  If you  want  a  host  to
+         receive  its  own mail, you should create an _M_X for
+         your host's name, pointing at your host's name.  It
+         is  better  to have this be explicit than to let it
+         be imputed by remote mailers.  In the  first  exam-
+         ple,  above, Seismo..CSS..GOV.. is a mail gateway that
+         knows how to deliver mail to Munnari..OZ..AU...  These
+         two machines may have a private connection or use a
+         different transport medium.  The  preference  value
+         is the order that a mailer should follow when there
+         is more then one way to deliver mail  to  a  single
+         machine.   Note  that lower numbers indicate higher
+         precedence, and that mailers are supposed  to  ran-
+         domize same-valued _M_X hosts so as to distribute the
+         load evenly if the costs are equal.   See  RFC  974
+         for more detailed information.
+
+              Wildcard  names containing the character ``*''
+         may be used  for  mail  routing  with  _M_X  records.
+         There  are likely to be servers on the network that
+         simply state that any mail to a  domain  is  to  be
+         routed through a relay.  Second example, above, all
+         mail to hosts in the domain IL  is  routed  through
+         RELAY.CS.NET.   This is done by creating a wildcard
+         resource record, which states that *.IL has  an  _M_X
+         of  RELAY.CS.NET.  Wildcard _M_X records are not very
+         useful in practice, though, since once a mail  mes-
+         sage  gets  to  the  gateway  for a given domain it
+         still has to be routed _w_i_t_h_i_n that domain and it is
+         not  currently  possible  to  have  an  apparently-
+         different set of _M_X records inside and outside of a
+         domain.   If you won't be needing any Mail Exchang-
+         ers inside your domain, go ahead and  use  a  wild-
+         card.   If  you  want  to  use both wildcard ``top-
+         level'' and specific ``interior'' _M_X records,  note
+         that each specific record will have to ``end with''
+         a complete recitation of the same data that is car-
+         ried  in the top-level record.  This is because the
+         specific _M_X records will take precedence  over  the
+         top-level  wildcard  records,  and  must be able to
+
+
+
+
+
+
+
+
+
+
+
+NNaammee SSeerrvveerr OOppeerraattiioonnss GGuuiiddee ffoorr BBIINNDD              SSMMMM::1100--2255
+
+
+         perform the top-level's if a given interior  domain
+         is  to  be  able  to  receive mail from outside the
+         gateway.  Wildcard _M_X records are very  subtle  and
+         you should be careful with them.
+
+      66..55..1111..  TTXXTT -- TTeexxtt
+
+         _n_a_m_e             _{_t_t_l_}   _a_d_d_r_-_c_l_a_s_s   _T_X_T   _s_t_r_i_n_g
+         Munnari..OZ..AU..           IN           TXT   "foo"
+
+         A  _T_X_T record contains free-form textual data.  The
+         syntax of the text depends on the domain  where  it
+         is found; several systems use _T_X_T records to encode
+         the local user  database  (_/_e_t_c_/_p_a_s_s_w_d)  and  other
+         administrative  data.   MIT Hesiod is one such sys-
+         tem, which, though it  uses  an  addr-class  of  _H_S
+         rather  than  _I_N,  implements its database with _T_X_T
+         records in the DNS.
+
+      66..55..1122..  RRPP -- RReessppoonnssiibbllee PPeerrssoonn
+
+         _o_w_n_e_r      _{_t_t_l_}   _a_d_d_r_-_c_l_a_s_s   _R_P   _m_b_o_x_-_d_o_m_a_i_n_-_n_a_m_e             _T_X_T_-_d_o_m_a_i_n_-_n_a_m_e
+         franklin           IN           RP   ben.franklin.berkeley.edu.   sysadmins.berkeley.edu.
+
+
+              The Responsible Person record, _R_P,  identifies
+         the  name  or  group name of the responsible person
+         for a host.  Often it is desirable to  be  able  to
+         identify  the  responsible  entity for a particular
+         host.  When that host is  down  or  malfunctioning,
+         you  would  want to contact those parties who might
+         be able to repair the host.
+
+              The first field, _m_b_o_x_-_d_o_m_a_i_n_-_n_a_m_e, is a domain
+         name that specifies the mailbox for the responsible
+         person.  Its format in master files  uses  the  DNS
+         convention  for mailbox encoding, identical to that
+         used for the _P_e_r_s_o_n_-_i_n_-_c_h_a_r_g_e mailbox field in  the
+         SOA  record.  In the example above, the mbox domain
+         name       shows       the       encoding       for
+         ``<<bbeenn@@ffrraannkklliinn..bbeerrkkeelleeyy..eedduu>>''.   The  root domain
+         name (just ``..'') may be specified to indicate that
+         no mailbox is available.
+
+              The second field, _T_X_T_-_d_o_m_a_i_n_-_n_a_m_e, is a domain
+         name for which _T_X_T  records  exist.   A  subsequent
+         query  can  be performed to retrieve the associated
+         _T_X_T resource records at _T_X_T domain name.  This pro-
+         vides a level of indirection so that the entity can
+         be referred to from multiple  places  in  the  DNS.
+         The  root domain name (just ``..'') may be specified
+         for TXT domain name to indicate that no  associated
+
+
+
+
+
+
+
+
+
+
+
+SSMMMM::1100--2266              NNaammee SSeerrvveerr OOppeerraattiioonnss GGuuiiddee ffoorr BBIINNDD
+
+
+         _T_X_T  RR  exists.   In  the  example above, ``ssyyssaadd--
+         mmiinnss..bbeerrkkeelleeyy..eedduu..'' is the name of  a  TXT  record
+         that  might  contain some text with names and phone
+         numbers.
+
+              The  format  of  the  _R_P  record   is   class-
+         insensitive.   Multiple _R_P records at a single name
+         may be present in the database, though they  should
+         have identical TTLs.
+
+              The  _R_P  record is still experimental; not all
+         name servers implement or recognize it.
+
+   66..66..  DDiissccuussssiioonn aabboouutt tthhee TTTTLL
+
+           The Time To Live assigned to the records  and  to
+      the  zone  via  the Minimum field in the SOA record is
+      very important. High values will lead  to  lower  BIND
+      network traffic and faster response time. Lower values
+      will tend to generate lots of requests but will  allow
+      faster propagation of changes.
+
+           Only  changes  and  deletions  from  the zone are
+      affected by the TTLs.  Additions  propagate  according
+      to the Refresh value in the SOA.
+
+           Experience  has shown that sites use default TTLs
+      for their zones varying from around 0.5 day to  around
+      7  days. You may wish to consider boosting the default
+      TTL shown in former versions of this  guide  from  one
+      day  (86400  seconds)  to three days (259200 seconds).
+      This will drastically reduce the  number  of  requests
+      made to your name servers.
+
+           If you need fast propagation of changes and dele-
+      tions, it might be wise to reduce the Minimum field  a
+      few  days  before the change, then do the modification
+      itself and augment the TTL to its former value.
+
+           If you know that your zone is pretty stable  (you
+      mainly  add new records without changing regularly old
+      ones) then you may even wish to consider a TTL  higher
+      than three days.
+
+           Note  that in any case, it makes no sense to have
+      records with a TTL below the  SOA  Refresh  delay,  as
+      Delay  is  the  time required for secondaries to get a
+      copy of the newly modified zone.
+
+   66..77..  SSaammppllee FFiilleess
+
+           The following section contains sample  files  for
+      the  name  server.  This covers example boot files for
+
+
+
+
+
+
+
+
+
+
+NNaammee SSeerrvveerr OOppeerraattiioonnss GGuuiiddee ffoorr BBIINNDD              SSMMMM::1100--2277
+
+
+      the different types of servers and example domain data
+      base files.
+
+      66..77..11..  BBoooott FFiilleess
+
+         66..77..11..11..  PPrriimmaarryy SSeerrvveerr
+
+
+            ;
+            ; Boot file for Primary Name Server
+            ;
+
+
+            ; type      domain                 source file or host
+            ;
+            directory   /usr/local/adm/named
+            primary     Berkeley..Edu           ucbhosts
+            primary     32..128..in-addr..arpa    ucbhosts..rev
+            primary     0..0..127..in-addr..arpa   named..local
+            cache       ..                      root..cache
+
+
+
+         66..77..11..22..  SSeeccoonnddaarryy SSeerrvveerr
+
+
+            ;
+            ; Boot file for Secondary Name Server
+            ;
+
+
+            ; type      domain                 source file or host
+            ;
+            directory   /usr/local/adm/named
+            secondary   Berkeley..Edu           128..32..0..4 128..32..0..10 ucbhosts.bak
+            secondary   32..128..in-addr..arpa    128..32..0..4 128..32..0..10 ucbhosts.rev.bak
+            primary     0..0..127..in-addr..arpa   named..local
+            cache       ..                      root..cache
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+SSMMMM::1100--2288              NNaammee SSeerrvveerr OOppeerraattiioonnss GGuuiiddee ffoorr BBIINNDD
+
+
+         66..77..11..33..  CCaacchhiinngg OOnnllyy SSeerrvveerr
+
+
+            ;
+            ; Boot file for Caching Only Name Server
+            ;
+
+
+            ; type      domain                 source file or host
+            ;
+            directory   /usr/local/adm/named
+            cache       ..                      root..cache
+            primary     0..0..127..in-addr..arpa   named..local
+
+
+
+
+
+      66..77..22..  RReemmoottee SSeerrvveerr // DDNNSS CClliieenntt
+
+         66..77..22..11..  //eettcc//rreessoollvv..ccoonnff
+
+
+            domain Berkeley..Edu
+            nameserver 128..32..0..4
+            nameserver 128..32..0..10
+            sortlist 130.155.160.0/255.255.240.0 130.155.0.0
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+NNaammee SSeerrvveerr OOppeerraattiioonnss GGuuiiddee ffoorr BBIINNDD              SSMMMM::1100--2299
+
+
+      66..77..33..  rroooott..ccaacchhee
+
+
+         ;
+         ; Initial cache data for root domain servers.
+         ;
+         ; This data was current as of April 15, 1993.  The official and current
+         ; version is always available from via anonymous FTP from RS.INTERNIC.NET
+         ; as /domain/named.cache.
+         ;
+         ; Thanks to Long-Morrow@CS.Yale.EDU for providing this update.
+         ;
+
+
+         ..                    99999999   IN   NS   NS..NIC..DDN..MIL..
+                              99999999   IN   NS   NS..NASA..GOV..
+                              99999999   IN   NS   KAVA..NISC..SRI..COM..
+                              99999999   IN   NS   TERP..UMD..EDU..
+                              99999999   IN   NS   AOS..ARL..ARMY..MIL..
+                              99999999   IN   NS   C..NYSER..NET..
+                              99999999   IN   NS   NIC..NORDU..NET..
+                              99999999   IN   NS   NS..INTERNIC..NET..
+
+         ;  Prep the cache (hotwire the addresses)..
+         NS..NIC..DDN..MIL..      99999999   IN   A    192..112..36..4
+         NS..NASA..GOV..         99999999   IN   A    128..102..16..10
+         NS..NASA..GOV..         99999999   IN   A    192..52..195..10
+         KAVA..NISC..SRI..COM..   99999999   IN   A    192..33..33..24
+         AOS..ARL..ARMY..MIL..    99999999   IN   A    128..63..4..82
+         AOS..ARL..ARMY..MIL..    99999999   IN   A    192..5..25..82
+         C..NYSER..NET..         99999999   IN   A    192..33..4..12
+         TERP..UMD..EDU..        99999999   IN   A    128..8..10..90
+         NIC..NORDU..NET..       99999999   IN   A    192..36..148..17
+         NS..INTERNIC..NET..     99999999   IN   A    198..41..0..4
+
+
+
+      66..77..44..  nnaammeedd..llooccaall
+
+
+
+         @   IN   SOA   ucbvax..Berkeley..Edu.      kjd..ucbvax..Berkeley..Edu.. (
+                        1993050201                ; Serial
+                        10800                     ; Refresh
+                        1800                      ; Retry
+                        3600000                   ; Expire
+                        259200 )                  ; Minimum
+             IN   NS    ucbvax..Berkeley..Edu..      ; pedantic
+         1   IN   PTR   localhost..Berkeley..Edu..
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+SSMMMM::1100--3300              NNaammee SSeerrvveerr OOppeerraattiioonnss GGuuiiddee ffoorr BBIINNDD
+
+
+      66..77..55..  HHoossttss
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+NNaammee SSeerrvveerr OOppeerraattiioonnss GGuuiiddee ffoorr BBIINNDD              SSMMMM::1100--3311
+
+
+         ;
+         ;    @(#)ucb-hosts    1.2    (berkeley)    88/02/05
+         ;
+
+         @           IN   SOA     ucbvax..Berkeley..Edu..               kjd..monet..Berkeley..Edu.. (
+                                  1988020501                         ; Serial
+                                  10800                              ; Refresh
+                                  1800                               ; Retry
+                                  3600000                            ; Expire
+                                  259200 )                           ; Minimum
+                     IN   NS      ucbarpa..Berkeley..Edu..
+                     IN   NS      ucbvax..Berkeley..Edu..
+         localhost   IN   A       127..1
+                                  ; note that 127.1 is the same as 127.0.0.1; see inet(3n)
+         ucbarpa     IN   A       128..32..4
+                     IN   A       10..0..0..78
+                     IN   HINFO   VAX-11/780 UNIX
+         arpa        IN   CNAME   ucbarpa
+         ernie       IN   A       128..32..6
+                     IN   HINFO   VAX-11/780 UNIX
+         ucbernie    IN   CNAME   ernie
+         monet       IN   A       128..32..7
+                     IN   A       128..32..130..6
+                     IN   HINFO   VAX-11/750 UNIX
+         ucbmonet    IN   CNAME   monet
+         ucbvax      IN   A       10..2..0..78
+                                  ; 128.32.10 means 128.32.0.10; see inet(3n)
+                     IN   A       128..32..10
+                                  ; HINFO and WKS are widely unused,
+                                  ; but we'll show them as examples.
+                     IN   HINFO   VAX-11/750 UNIX
+                     IN   WKS     128.32.0.10 TCP ( echo telnet
+                                  discard sunrpc sftp
+                                  uucp-path systat daytime
+                                  netstat qotd nntp
+                                  link chargen ftp
+                                  auth time whhois mtp
+                                  pop rje finger smtp
+                                  supdup hostnames
+                                  domain
+                                  nameserver )
+         vax         IN   CNAME   ucbvax
+         toybox      IN   A       128..32..131..119
+                     IN   HINFO   Pro350 RT11
+         toybox      IN   MX      0  monet.Berkeley.Edu.
+         csrg        IN   MX      0 Ralph.CS
+                     IN   MX      0 Zhou.CS
+                     IN   MX      0 Painter.CS
+                     IN   MX      0 Riggle.CS
+                     IN   MX      0 Terry.CS
+                     IN   MX      0 Kevin.CS
+
+
+
+
+
+
+
+
+
+
+
+
+SSMMMM::1100--3322              NNaammee SSeerrvveerr OOppeerraattiioonnss GGuuiiddee ffoorr BBIINNDD
+
+
+      66..77..66..  hhoosstt..rreevv
+
+
+         ;
+         ;    @(#)ucb-hosts.rev    1.1    (Berkeley)    86/02/05
+         ;
+
+         @       IN   SOA   ucbvax..Berkeley..Edu..   kjd..monet..Berkeley..Edu.. (
+                            1986020501             ; Serial
+                            10800                  ; Refresh
+                            1800                   ; Retry
+                            3600000                ; Expire
+                            259200 )               ; Minimum
+                 IN   NS    ucbarpa..Berkeley..Edu..
+                 IN   NS    ucbvax..Berkeley..Edu..
+         0..0     IN   PTR   Berkeley-net..Berkeley..EDU..
+                 IN   A     255..255..255..0
+         0..130   IN   PTR   csdiv-net..Berkeley..EDU..
+         4..0     IN   PTR   ucbarpa..Berkeley..Edu..
+         6..0     IN   PTR   ernie..Berkeley..Edu..
+         7..0     IN   PTR   monet..Berkeley..Edu..
+         10..0    IN   PTR   ucbvax..Berkeley..Edu..
+         6..130   IN   PTR   monet..Berkeley..Edu..
+
+
+
+
+77..  DDoommaaiinn MMaannaaggeemmeenntt
+
+        This section contains information for starting, con-
+   trolling and debugging _n_a_m_e_d.
+
+   77..11..  //eettcc//rrcc..llooccaall
+
+           The hostname should be set  to  the  full  domain
+      style  name  in  _/_e_t_c_/_r_c_._l_o_c_a_l using _h_o_s_t_n_a_m_e_(_1_).  The
+      following entry should be added  to  _/_e_t_c_/_r_c_._l_o_c_a_l  to
+      start up _n_a_m_e_d at system boot time:
+
+          _i_f _[ _-_f _/_e_t_c_/_n_a_m_e_d _]_; _t_h_e_n
+               _/_e_t_c_/_n_a_m_e_d [options] _& _e_c_h_o _-_n _' _n_a_m_e_d_' _>_/_d_e_v_/_c_o_n_s_o_l_e
+          _f_i
+
+      This  usually  directly  follows  the lines that start
+      _s_y_s_l_o_g_d.  DDoo NNoott attempt  to  run  _n_a_m_e_d  from  _i_n_e_t_d.
+      This  will  continuously  restart  the name server and
+      defeat the purpose of the cache.
+
+   77..22..  //eettcc//nnaammeedd..ppiidd
+
+           When _n_a_m_e_d is successfully started up  it  writes
+      its  process id into the file _/_e_t_c_/_n_a_m_e_d_._p_i_d.  This is
+
+
+
+
+
+
+
+
+
+
+
+NNaammee SSeerrvveerr OOppeerraattiioonnss GGuuiiddee ffoorr BBIINNDD              SSMMMM::1100--3333
+
+
+      useful to programs that want to send signals to _n_a_m_e_d.
+      The  name of this file may be changed by defining _P_I_D_-
+      _F_I_L_E to the new name when compiling _n_a_m_e_d.
+
+   77..33..  //eettcc//hhoossttss
+
+           The _g_e_t_h_o_s_t_b_y_n_a_m_e_(_) library call  can  detect  if
+      _n_a_m_e_d  is  running.  If it is determined that _n_a_m_e_d is
+      not running it will look in _/_e_t_c_/_h_o_s_t_s to  resolve  an
+      address.   This option was added to allow _i_f_c_o_n_f_i_g_(_8_C_)
+      to configure the  machines  local  interfaces  and  to
+      enable  a  system  manager to access the network while
+      the system is in single user mode.  It is advisable to
+      put  the local machines interface addresses and a cou-
+      ple of machine names and address in _/_e_t_c_/_h_o_s_t_s so  the
+      system manager can rcp files from another machine when
+      the system is in single  user  mode.   The  format  of
+      _/_e_t_c_/_h_o_s_t_s  has  not  changed.  See  _h_o_s_t_s_(_5_) for more
+      information.  Since the process of reading  _/_e_t_c_/_h_o_s_t_s
+      is  slow,  it is not advisable to use this option when
+      the system is in multi user mode.
+
+
+   77..44..  SSiiggnnaallss
+
+           There are several signals that can be sent to the
+      _n_a_m_e_d  process  to have it do tasks without restarting
+      the process.
+
+      77..44..11..  RReellooaadd
+
+              SIGHUP - Causes _n_a_m_e_d to read  _n_a_m_e_d_._b_o_o_t  and
+         reload  the database.  This is useful when you have
+         made a change to a ``primary'' data  file  and  you
+         want  _n_a_m_e_d's  internal  database  to  reflect  the
+         change.  If you build BIND with  the  FORCED_RELOAD
+         option, then SIGHUP also has the effect of schedul-
+         ing  all  ``secondary''  zones  for   serial-number
+         checks, which could lead to zone transfers ahead of
+         the usual schedule.   Normally  serial-number  com-
+         pares  are  done only at the intervals specified in
+         the zone's SOA record.
+
+      77..44..22..  DDeebbuuggggiinngg
+
+              When _n_a_m_e_d is running incorrectly, look  first
+         in  _/_v_a_r_/_l_o_g_/_m_e_s_s_a_g_e_s  and  check  for any messages
+         logged by _s_y_s_l_o_g.  Next send it  a  signal  to  see
+         what  is  happening.   Unless  you  run it with the
+         ``-d'' option, _n_a_m_e_d has very little to say on  its
+         standard  output  or  standard  error.   Everything
+         _n_a_m_e_d has to say, it says to _s_y_s_l_o_g.
+
+
+
+
+
+
+
+
+
+
+
+SSMMMM::1100--3344              NNaammee SSeerrvveerr OOppeerraattiioonnss GGuuiiddee ffoorr BBIINNDD
+
+
+              SIGINT - Dumps the current data base and cache
+         to  _/_v_a_r_/_t_m_p_/_n_a_m_e_d___d_u_m_p_._d_b  This should give you an
+         indication to whether the data base was loaded cor-
+         rectly.   The  name of the dump file may be changed
+         by defining _D_U_M_P_F_I_L_E to the new name when compiling
+         _n_a_m_e_d.
+
+         _N_o_t_e_:  the  following  two  signals  only work when
+         _n_a_m_e_d is built with _D_E_B_U_G defined.
+
+              SIGUSR1 - Turns on debugging.  Each  following
+         USR1  increments  the debug level.  The output goes
+         to _/_v_a_r_/_t_m_p_/_n_a_m_e_d_._r_u_n The name of this  debug  file
+         may  be  changed  by  defining _D_E_B_U_G_F_I_L_E to the new
+         name before compiling _n_a_m_e_d.
+
+              SIGUSR2 - Turns off debugging completely.
+
+         For more detailed debugging, define DEBUG when com-
+         piling the resolver routines into _/_l_i_b_/_l_i_b_c_._a.
+
+              SIGWINCH  -  Toggles  tracing  of all incoming
+         queries if _n_a_m_e_d  has  been  compiled  with  _Q_R_Y_L_O_G
+         defined.  The trace is sent to syslog, and is huge,
+         but it is very useful for tracking down problems.
+
+         To run with tracing of all queries specify  the  _-_q
+         flag  on  the  command  line.  If you routinely log
+         queries you  will  probably  want  to  analyze  the
+         results using the dnsstats stats script in the con-
+         trib directory.
+
+
+
+                      AACCKKNNOOWWLLEEDDGGEEMMEENNTTSS
+
+     Many thanks to the users at U.C. Berkeley  for  falling
+into  many  of the holes involved with integrating BIND into
+the system so that others would be  spared  the  trauma.   I
+would  also  like  to  extend gratitude to Jim McGinness and
+Digital Equipment Corporation for  permitting  me  to  spend
+most of my time on this project.
+
+     Ralph  Campbell,  Doug Kingston, Craig Partridge, Smoot
+Carl-Mitchell, Mike Muuss and everyone  else  on  the  DARPA
+Internet who has contributed to the development of BIND.  To
+the members of the original  BIND  project,  Douglas  Terry,
+Mark Painter, David Riggle and Songnian Zhou.
+
+     Anne  Hughes,  Jim Bloom and Kirk McKusick and the many
+others who have  reviewed  this  paper  giving  considerable
+advice.
+
+
+
+
+
+
+
+
+
+
+
+NNaammee SSeerrvveerr OOppeerraattiioonnss GGuuiiddee ffoorr BBIINNDD              SSMMMM::1100--3355
+
+
+     This   work  was  sponsored  by  the  Defense  Advanced
+Research Projects Agency (DoD), Arpa Order  No.  4871  moni-
+tored  by  the  Naval Electronics Systems Command under con-
+tract No. N00039-84-C-0089.  The views and conclusions  con-
+tained  in this document are those of the authors and should
+not be interpreted as representing official policies, either
+expressed  or  implied,  of  the  Defense  Research Projects
+Agency, of the US Government, or of Digital Equipment Corpo-
+ration.
+
+     Update  for  the  4.9 release: the alpha-test group was
+extremely helpful in furnishing  improvements,  finding  and
+repairing  bugs, and being patient.  I would like to express
+special thanks to Brian Reid for funding this work.   Robert
+Elz,  Alan  Barrett, Paul Albitz, Bryan Beecher, Andrew Par-
+tan, Andy Cherenson, Tom Limoncelli, Berthold Paffrath, Fuat
+Baran,  Anant  Kumar,  Art  Harkin,  Win  Treese, Don Lewis,
+Christophe Wolfhugel, and a cast of dozens  all  helped  out
+above  and  beyond the call of duty.  Special thanks to Phil
+Almquist, who got the project started and contributed a  lot
+of  the  code  and  fixed several of the worst bugs.  [[ _P_a_u_l
+_V_i_x_i_e_, _D_E_C_W_R_L _a_n_d _D_E_C_N_S_L_, _A_p_r_i_l _'_9_3 ]].
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+SSMMMM::1100--3366              NNaammee SSeerrvveerr OOppeerraattiioonnss GGuuiiddee ffoorr BBIINNDD
+
+
+                         RREEFFEERREENNCCEESS
+
+
+[Birrell] Birrell, A. D., Levin, R.,  Needham,  R.  M.,  and
+          Schroeder,  M.D.,  "Grapevine: An Exercise in Dis-
+          tributed  Computing."    In   _C_o_m_m_.   _A_._C_._M_.   _2_5_,
+          4:260-274 April 1982.
+
+[RFC819]  Su,  Z.  Postel, J., "The Domain Naming Convention
+          for Internet User Applications."  _I_n_t_e_r_n_e_t _R_e_q_u_e_s_t
+          _F_o_r  _C_o_m_m_e_n_t  _8_1_9  Network Information Center, SRI
+          International,  Menlo  Park,  California.   August
+          1982.
+
+[RFC974]  Partridge,  C.,  "Mail Routing and The Domain Sys-
+          tem."  _I_n_t_e_r_n_e_t _R_e_q_u_e_s_t _F_o_r  _C_o_m_m_e_n_t  _9_7_4  Network
+          Information Center, SRI International, Menlo Park,
+          California.  February 1986.
+
+[RFC1032] Stahl, M., "Domain Administrators Guide"  _I_n_t_e_r_n_e_t
+          _R_e_q_u_e_s_t  _F_o_r _C_o_m_m_e_n_t _1_0_3_2 Network Information Cen-
+          ter, SRI International,  Menlo  Park,  California.
+          November 1987.
+
+[RFC1033] Lottor, M., "Domain Administrators Guide" _I_n_t_e_r_n_e_t
+          _R_e_q_u_e_s_t _F_o_r _C_o_m_m_e_n_t _1_0_3_3 Network Information  Cen-
+          ter,  SRI  International,  Menlo Park, California.
+          November 1987.
+
+[RFC1034] Mockapetris,  P.,  "Domain  Names  -  Concept  and
+          Facilities."   _I_n_t_e_r_n_e_t  _R_e_q_u_e_s_t  _F_o_r _C_o_m_m_e_n_t _1_0_3_4
+          Network  Information  Center,  SRI  International,
+          Menlo Park, California.  November 1987.
+
+[RFC1035] Mockapetris,  P.,  "Domain  Names - Implementation
+          and Specification."  _I_n_t_e_r_n_e_t _R_e_q_u_e_s_t _F_o_r  _C_o_m_m_e_n_t
+          _1_0_3_5  Network  Information  Center,  SRI  Interna-
+          tional, Menlo Park, California.  November 1987.
+
+[RFC1101] Mockapetris, P., "DNS Encoding  of  Network  Names
+          and  Other  Types."   _I_n_t_e_r_n_e_t _R_e_q_u_e_s_t _F_o_r _C_o_m_m_e_n_t
+          _1_1_0_1  Network  Information  Center,  SRI  Interna-
+          tional, Menlo Park, California.  April 1989.
+
+[RFC1123] R.  Braden,  Editor,  "Requirements  for  Internet
+          Hosts -- Application and Support" _I_n_t_e_r_n_e_t _R_e_q_u_e_s_t
+          _F_o_r  _C_o_m_m_e_n_t  _1_1_2_3 Network Information Center, SRI
+          International, Menlo  Park,  California.   October
+          1989.
+
+[RFC1183] Everhart,  C., Mamakos, L., Ullmann, R., and Mock-
+          apetris, P., "New  DNS  RR  Definitions"  _I_n_t_e_r_n_e_t
+          _R_e_q_u_e_s_t   _F_o_r  _C_o_m_m_e_n_t  _1_1_8_3  Network  Information
+
+
+
+
+
+
+
+
+
+
+NNaammee SSeerrvveerr OOppeerraattiioonnss GGuuiiddee ffoorr BBIINNDD              SSMMMM::1100--3377
+
+
+          Center, SRI International, Menlo Park, California.
+          October 1990.
+
+[Terry]   Terry,  D.  B.,  Painter,  M.,  Riggle, D. W., and
+          Zhou,  S.,  _T_h_e  _B_e_r_k_e_l_e_y  _I_n_t_e_r_n_e_t  _N_a_m_e   _D_o_m_a_i_n
+          _S_e_r_v_e_r_.   Proceedings  USENIX  Summer  Conference,
+          Salt Lake City, Utah.  June 1984, pages 23-31.
+
+[Zhou]    Zhou, S., _T_h_e _D_e_s_i_g_n  _a_n_d  _I_m_p_l_e_m_e_n_t_a_t_i_o_n  _o_f  _t_h_e
+          _B_e_r_k_e_l_e_y  _I_n_t_e_r_n_e_t  _N_a_m_e  _D_o_m_a_i_n  _(_B_I_N_D_)  _S_e_r_v_e_r_s_.
+          UCB/CSD 84/177.  University of California,  Berke-
+          ley, Computer Science Division.  May 1984.
+
+[Mockapetris]
+          Mockapetris,  P.,  Dunlap,  K,  _D_e_v_e_l_o_p_m_e_n_t _o_f _t_h_e
+          _D_o_m_a_i_n _N_a_m_e  _S_y_s_t_e_m  ACM  Computer  Communications
+          Review 18, 4:123-133.  Proceedings ACM SIGCOMM '88
+          Symposium, August 1988.
+
+[Liu]     Liu, C., Albitz, P., _D_N_S _a_n_d _B_I_N_D O'Reilly & Asso-
+          ciates,    Sebastopol,   CA,   502   pages,   ISBN
+          0-937175-82-X 1992
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

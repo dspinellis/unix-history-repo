@@ -1,8 +1,0 @@
-30 4 * * * sa -s > /dev/null
-0 4 * * * calendar -
-15 4 * * * find /usr/preserve -mtime +7 -a -exec rm -f {} \;
-20 4 * * * find /usr/msgs -mtime +21 -a ! -perm 444 -a ! -name bounds -a -exec rm -f {} \;
-40 4 * * * find /usr -name '#*' -atime +3 -exec rm -f {} \;
-0,15,30,45 * * * * /usr/lib/atrun
-0,10,20,30,40,50 * * * * /etc/dmesg - >>/usr/adm/messages
-1,11,21,31,41,51 * * * * (echo -n '	'; date; echo ) >/dev/console

@@ -1,3 +1,0 @@
-mhn-show-application/PostScript: %plpr -Pps
-mhn-store-application/PostScript: %m%P.ps
-mhn-store-text: %m%P.txt

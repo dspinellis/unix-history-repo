@@ -1,0 +1,177 @@
+##############################################################################
+#    Instructions to Make, for compilation of ZOT UIP/utility processes
+#
+#	@(MHWARNING)
+# @(#)$Id: mts,v 1.9 1993/08/20 15:56:12 jromine Exp $
+##############################################################################
+
+# The following entries were inserted during MH configuration
+BINDIR	=	$(DESTDIR)@(MHBINPATH)
+ETCDIR	=	$(DESTDIR)@(MHETCPATH)
+OPTIONS	=	@(MHOPTIONS) -I..
+LDOPTIONS=	@(LDOPTIONS)
+LDOPTLIB=	@(LDOPTLIB)
+CHOWN	=	@(MHCHOWNPATH)
+REMOVE	=	@(MHREMOVE)
+
+CC      =	@(MHCOMPILER)
+@BEGIN: OPTIM
+CFLAGS  =	$(OPTIONS)
+@END: OPTIM
+@BEGIN: DEBUG
+CFLAGS  =	      $(OPTIONS)
+@END: DEBUG
+LINT	=	lint
+LFLAGS	=	-bhu $(OPTIONS)
+LDFLAGS	=	$(LDOPTIONS)
+LLIBS	=
+LIBES	=
+LDLIBS	=	$(LIBES) $(LDOPTLIB)
+FILPROT	=	0644
+PGMPROT	=	0755
+
+OFILES	=	mts.o lock.o client.o
+LFILES	=	l-mts l-lock l-client
+IFILES	=	inst-mtstailor
+
+.c:;            echo $@
+
+######################################################################
+#	Here it is...
+######################################################################
+
+all:		$(OFILES)
+
+lint:		$(LFILES)
+
+install:	inst-all clean
+
+inst-all:	$(IFILES)
+
+tar:;		@touch mtstailor
+		@make -n inst-all > MAKEMTS
+		@chmod +x MAKEMTS
+		tar $(TFLAGS) MAKEMTS mtstailor
+		@rm -f MAKEMTS
+
+uninstall:;
+		-cd $(ETCDIR); rm -f mtstailor
+
+
+##############################################################################
+# mts
+##############################################################################
+
+mts:		mts.o 
+
+l-mts:;		$(LINT) $(LFLAGS) mts.c $(LLIBS)
+
+
+##############################################################################
+# lock
+##############################################################################
+
+lock:		lock.o 
+
+l-lock:;	$(LINT) $(LFLAGS) lock.c $(LLIBS)
+
+
+##############################################################################
+# client
+##############################################################################
+
+client:		client.o 
+
+l-client:;	$(LINT) $(LFLAGS) client.c $(LLIBS)
+
+
+##############################################################################
+# mtstailor
+##############################################################################
+
+inst-mtstailor:	$(ETCDIR)/mtstailor
+
+$(ETCDIR)/mtstailor:	mtstailor
+		-@if [ ! -f $@ ]; then \
+		    $(REMOVE) $@ zmtstailor; \
+		    cp mtstailor $@; \
+		else \
+		    echo "Will not overwrite existing $@"; \
+		fi
+		-@chmod $(FILPROT) $@
+		-@ls -l $@
+		-@echo ""
+
+
+##############################################################################
+#	Miscellaneous tasks
+##############################################################################
+
+unconfig:	distribution
+		-rm -f Makefile
+
+distribution:   clean
+		-rm -f mts.c mtstailor
+
+clean:		unclean
+		-rm -f x* *.o
+
+unclean:;	-rm -f z* _* :* core eddep makedep MAKEMTS
+
+
+##############################################################################
+#	Dependencies
+##############################################################################
+
+MODULES	=	mts lock client
+
+depend:;	for m in $(MODULES); do ( \
+		    i=`basename $$m .c`; \
+		    echo $$i.o: $$i.c >> makedep; \
+		    grep '^#[ 	]*include' $$i.c | \
+			sed -e 's,[^"]*"/\([^"]*\)".*,'$$i'.o: /\1,' \
+			    -e 's,[^"]*"\([^"]*\)".*,'$$i'.o: \1,' \
+			    -e 's,[^<]*<\(.*\)>.*,#'$$i'.o: /usr/include/\1,' \
+			>> makedep \
+		); done
+		echo '/^# DO NOT DELETE THIS LINE/+2,$$d' > eddep
+		echo '$$r makedep' >> eddep
+		echo 'w' >> eddep
+		cp Makefile _Makefile
+		ed - Makefile < eddep
+		rm eddep makedep
+		echo '# DEPENDENCIES MUST END AT END OF FILE' >> Makefile
+		echo '# IF YOU PUT STUFF HERE IT WILL GO AWAY' >> Makefile
+
+# DO NOT DELETE THIS LINE
+# DEPENDENCIES START HERE
+mts.o: mts.c
+mts.o: ../../h/strings.h
+#mts.o: /usr/include/ctype.h
+#mts.o: /usr/include/stdio.h
+mts.o: mts.h
+#mts.o: /usr/include/netdb.h
+#mts.o: /usr/include/whoami.h
+#mts.o: /usr/include/sys/utsname.h
+#mts.o: /usr/include/pwd.h
+#mts.o: /usr/include/fcntl.h
+lock.o: lock.c
+lock.o: ../../h/strings.h
+#lock.o: /usr/include/stdio.h
+lock.o: mts.h
+#lock.o: /usr/include/sys/types.h
+#lock.o: /usr/include/sys/stat.h
+#lock.o: /usr/include/sys/file.h
+#lock.o: /usr/include/signal.h
+client.o: client.c
+client.o: ../../h/strings.h
+#client.o: /usr/include/stdio.h
+client.o: mts.h
+#client.o: /usr/include/errno.h
+#client.o: /usr/include/sys/types.h
+#client.o: /usr/include/sys/socket.h
+#client.o: /usr/include/netinet/in.h
+#client.o: /usr/include/netdb.h
+#client.o: /usr/include/arpa/inet.h
+# DEPENDENCIES MUST END AT END OF FILE
+# IF YOU PUT STUFF HERE IT WILL GO AWAY

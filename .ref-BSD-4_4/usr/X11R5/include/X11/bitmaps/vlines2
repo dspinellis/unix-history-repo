@@ -1,4 +1,0 @@
-#define vlines2_width 2
-#define vlines2_height 1
-static char vlines2_bits[] = {
-   0x01};

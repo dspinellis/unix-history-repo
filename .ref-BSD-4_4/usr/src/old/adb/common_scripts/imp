@@ -1,3 +1,0 @@
-$<<ifnet
-+/"hwunit"16t"hwname"16t"oactive"nDXb+++n"init"16t"output"16t"down"n3p
-+/"state"16t"dropcnt"16t"hosts"n2DXn"hostq"16t"hostent"16t"msgready"nX2Dn"block"16t"lostrfnm"16t"badrfnm"16t"incomplete"n4D"garbage"nD

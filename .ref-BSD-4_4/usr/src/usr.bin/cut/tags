@@ -1,6 +1,0 @@
-Mcut	cut.c	/^main(argc, argv)$/
-c_cut	cut.c	/^c_cut(fp, fname)$/
-err	cut.c	/^err(fmt, va_alist)$/
-f_cut	cut.c	/^f_cut(fp, fname)$/
-get_list	cut.c	/^get_list(list)$/
-usage	cut.c	/^usage()$/

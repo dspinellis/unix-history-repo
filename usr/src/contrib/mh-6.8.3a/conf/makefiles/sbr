@@ -1,0 +1,499 @@
+##############################################################################
+#    Instructions to Make, for compilation of MH modules
+#
+#	@(MHWARNING)
+# @(#)$Id: sbr,v 2.21 1993/02/26 19:01:31 jromine Exp $
+##############################################################################
+
+OPTIONS	=	@(MHOPTIONS)
+
+CC	=	@(MHCOMPILER)
+@BEGIN: OPTIM
+CFLAGS	=	$(OPTIONS)
+@END: OPTIM
+@BEGIN: DEBUG
+CFLAGS	=	     $(OPTIONS)
+@END: DEBUG
+LINT	=	lint
+LFLAGS	=	-bhu $(OPTIONS)
+LLIBS	=
+
+
+@BEGIN: STDLIB
+LIBS	=	libmh.a
+@END: STDLIB
+@BEGIN: SHAREDLIB
+@BEGIN: SUN4SHLIB
+LIBSA	=	libmh.sa
+@END: SUN4SHLIB
+LIBS     =	shared libmh.a libmh.so $(LIBSA)
+SLIBVER	=	@(SLIBVER)
+SLIBDIR =	$(DESTDIR)@(SLIBDIR)
+SLFLAGS=	@(SLFLAGS)
+@END: SHAREDLIB
+
+PGMPROT	=	0755
+
+CFILES	=	add.c adios.c admonish.c addrsbr.c advertise.c advise.c \
+		ambigsw.c atooi.c brkstring.c closefds.c concat.c copy.c \
+		copyip.c cpydata.c cpydgst.c discard.c done.c fdcompare.c \
+		gans.c getans.c getanswer.c getcpy.c help.c fmtcompile.c \
+		formataddr.c formatsbr.c m_atoi.c m_backup.c m_convert.c \
+		m_delete.c m_draft.c m_find.c m_fmsg.c m_foil.c m_getdefs.c \
+		m_getfld.c m_getfolder.c m_gmprot.c m_gmsg.c m_maildir.c \
+		m_name.c m_readefs.c m_remsg.c m_replace.c m_scratch.c \
+		m_seq.c m_seqbits.c m_seqflag.c m_seqnew.c m_setcur.c \
+		m_setseq.c m_setvis.c m_sync.c m_tmpfil.c m_update.c \
+		makedir.c path.c peekc.c pidwait.c pidstatus.c \
+		printsw.c push.c putenv.c pwd.c refile.c remdir.c r1bindex.c \
+@BEGIN: NORUSERPASS
+		ruserpass.c \
+@END: NORUSERPASS
+		showfile.c smatch.c sprintb.c ssequal.c strindex.c trimcpy.c \
+		uleq.c uprf.c vfgets.c formatdef.c m_msgdef.c
+
+
+OFILES	=	add.o adios.o admonish.o addrsbr.o advertise.o advise.o \
+		ambigsw.o atooi.o brkstring.o closefds.o concat.o copy.o \
+		copyip.o cpydata.o cpydgst.o discard.o done.o fdcompare.o \
+		gans.o getans.o getanswer.o getcpy.o help.o fmtcompile.o \
+		formataddr.o formatsbr.o m_atoi.o m_backup.o m_convert.o \
+		m_delete.o m_draft.o m_find.o m_fmsg.o m_foil.o m_getdefs.o \
+		m_getfld.o m_getfolder.o m_gmprot.o m_gmsg.o m_maildir.o \
+		m_name.o m_readefs.o m_remsg.o m_replace.o m_scratch.o \
+		m_seq.o m_seqbits.o m_seqflag.o m_seqnew.o m_setcur.o \
+		m_setseq.o m_setvis.o m_sync.o m_tmpfil.o m_update.o \
+		makedir.o path.o peekc.o pidwait.o pidstatus.o \
+		printsw.o push.o putenv.o pwd.o refile.o remdir.o r1bindex.o \
+@BEGIN: NORUSERPASS
+		ruserpass.o \
+@END: NORUSERPASS
+		showfile.o smatch.o sprintb.o ssequal.o strindex.o trimcpy.o \
+		uleq.o uprf.o vfgets.o formatdef.o m_msgdef.o
+
+@BEGIN: SHAREDLIB
+ODEFS	=	formatdef.o m_msgdef.o
+@END: SHAREDLIB
+
+@BEGIN: OPTIM
+##############################################################################
+#	Generation Rules
+##############################################################################
+
+.c.o:
+@BEGIN: SHAREDLIB
+		-rm -f $@ shared/$@
+		$(CC) $(CFLAGS) -c $(SLFLAGS) $*.c
+		mv $@ shared/$@
+		-rm -f $@
+@END: SHAREDLIB
+		$(CC) $(CFLAGS) -c $*.c
+@BEGIN: NEWLOAD
+		-ld -x -r $@
+		mv a.out $@
+@END: NEWLOAD
+@BEGIN: OLDLOAD
+		cc -s -o $@
+@END: OLDLOAD
+
+@END: OPTIM
+##############################################################################
+#	Generate MH subroutine library
+##############################################################################
+
+all:		$(LIBS)
+
+libmh.a: 	$(OFILES)
+		-mv $@ z$@
+@BEGIN: RANLIB
+		ar r $@ $(OFILES); ranlib $@
+@END: RANLIB
+@BEGIN: LORDER
+		ar r $@ `lorder $(OFILES) | tsort`
+@END: LORDER
+		-@ls -l $@
+		-@echo "MH library built normally"
+
+@BEGIN: SHAREDLIB
+libmh.so:	$(OFILES)
+		-mv -f $@ z$@
+@BEGIN: SUN4SHLIB
+		(cd shared; ld -o ../$@ -assert pure-text $(OFILES))
+@END: SUN4SHLIB
+@BEGIN: SYS5SHLIB
+		(cd shared; ld -G -o ../$@ -h $@.$(SLIBVER) $(OFILES))
+@END: SYS5SHLIB
+		-@rm -f $@.$(SLIBVER)
+		ln $@ $@.$(SLIBVER)
+		-@ls -l $@*
+		-@echo "MH shared library built normally"
+
+@BEGIN: SUN4SHLIB
+libmh.sa:	$(ODEFS)
+		-mv $@ z$@
+@BEGIN: RANLIB
+		ar r $@ $(ODEFS); ranlib $@
+@END: RANLIB
+@BEGIN: LORDER
+		ar r $@ `lorder $(ODEFS) | tsort`
+@END: LORDER
+		-@rm -f $@.$(SLIBVER)
+		ln $@ $@.$(SLIBVER)
+		-@ls -l $@*
+		-@echo "MH data interface description built normally"
+@END: SUN4SHLIB
+
+shared:;	@if [ -d shared ]; then exit 0; else set -x; mkdir shared; fi
+@END: SHAREDLIB
+
+##############################################################################
+#	Miscellaneous tasks
+##############################################################################
+
+@BEGIN: SHAREDLIB
+inst-lib:	libmh.so $(LIBSA)
+		-rm -f $(SLIBDIR)/libmh.so.$(SLIBVER)
+		cp libmh.so.$(SLIBVER) $(SLIBDIR)/libmh.so.$(SLIBVER)
+		-@chmod $(PGMPROT) $(SLIBDIR)/libmh.so.$(SLIBVER)
+		-@ls -l $(SLIBDIR)/libmh.so.*
+		-@echo "Shared library installed normally"
+		-@echo ""
+@BEGIN: SUN4SHLIB
+		-rm -f $(SLIBDIR)/libmh.sa.$(SLIBVER)
+		cp libmh.sa.$(SLIBVER) $(SLIBDIR)/libmh.sa.$(SLIBVER)
+		-@chmod $(PGMPROT) $(SLIBDIR)/libmh.sa.$(SLIBVER)
+@BEGIN: RANLIB
+		cd $(SLIBDIR); ranlib libmh.sa.$(SLIBVER)
+@END: RANLIB
+		-@ls -l $(SLIBDIR)/libmh.sa.*
+		-@echo "Data interface description installed normally"
+		-@echo ""
+@END: SUN4SHLIB
+@END: SHAREDLIB
+@BEGIN: STDLIB
+inst-lib:;
+@END: STDLIB
+
+lint:;		$(LINT) $(LFLAGS) $(CFILES) $(LLIBS)
+
+unconfig:	distribution
+		-rm -f Makefile
+		-rm -rf shared
+
+distribution:   clean
+		-rm -f version
+
+clean:		unclean
+		-rm -f *.o libmh.*
+@BEGIN: SHAREDLIB
+		-rm -f shared/*.o
+@END: SHAREDLIB
+
+unclean:;	-rm -f zlibmh.* _* :* core eddep makedep
+
+
+##############################################################################
+#  MODIFICATIONS -- Adding a new routine (e.g., pickle)
+##############################################################################
+
+#
+#    Add any new .c files to CFILES
+#    Add any new .o files to OFILES
+#
+#
+#    Under the "Dependencies" section, add a line for pickle.o
+#	pickle.o:	../h/mh.h
+#
+#    If other includes are read, modify this rule to reflect this
+#    Of course, if pickle.c doesn't include ../h/mh.h (or any
+#    other includes), you can leave this line out altogether
+
+
+##############################################################################
+#	Dependencies
+##############################################################################
+
+MODULES	=	$(CFILES)
+
+depend:;	for m in $(MODULES); do ( \
+		    i=`basename $$m .c`; \
+		    echo $$i.o: $$i.c >> makedep; \
+		    grep '^#[ 	]*include' $$i.c | \
+			sed -e 's,[^"]*"/\([^"]*\)".*,'$$i'.o: /\1,' \
+			    -e 's,[^"]*"\([^"]*\)".*,'$$i'.o: \1,' \
+			    -e 's,[^<]*<\(.*\)>.*,#'$$i'.o: /usr/include/\1,' \
+			>> makedep \
+		); done
+		echo '/^# DO NOT DELETE THIS LINE/+2,$$d' > eddep
+		echo '$$r makedep' >> eddep
+		echo 'w' >> eddep
+		cp Makefile _Makefile
+		ed - Makefile < eddep
+		rm eddep makedep
+		echo '# DEPENDENCIES MUST END AT END OF FILE' >> Makefile
+		echo '# IF YOU PUT STUFF HERE IT WILL GO AWAY' >> Makefile
+
+# DO NOT DELETE THIS LINE
+# DEPENDENCIES START HERE
+add.o: add.c
+add.o: ../h/mh.h
+#add.o: /usr/include/stdio.h
+adios.o: adios.c
+adios.o: ../h/mh.h
+admonish.o: admonish.c
+admonish.o: ../h/mh.h
+addrsbr.o: addrsbr.c
+addrsbr.o: ../h/mh.h
+addrsbr.o: ../h/addrsbr.h
+addrsbr.o: ../zotnet/mf.h
+#addrsbr.o: /usr/include/stdio.h
+#addrsbr.o: /usr/include/ctype.h
+advertise.o: advertise.c
+advertise.o: ../h/mh.h
+#advertise.o: /usr/include/stdio.h
+#advertise.o: /usr/include/sys/types.h
+#advertise.o: /usr/include/sys/uio.h
+advise.o: advise.c
+advise.o: ../h/mh.h
+ambigsw.o: ambigsw.c
+ambigsw.o: ../h/mh.h
+#ambigsw.o: /usr/include/stdio.h
+atooi.o: atooi.c
+brkstring.o: brkstring.c
+brkstring.o: ../h/mh.h
+closefds.o: closefds.c
+closefds.o: ../h/mh.h
+#closefds.o: /usr/include/stdio.h
+concat.o: concat.c
+concat.o: ../h/mh.h
+#concat.o: /usr/include/stdio.h
+#concat.o: /usr/include/varargs.h
+copy.o: copy.c
+copyip.o: copyip.c
+cpydata.o: cpydata.c
+cpydata.o: ../h/mh.h
+#cpydata.o: /usr/include/stdio.h
+cpydgst.o: cpydgst.c
+cpydgst.o: ../h/mh.h
+#cpydgst.o: /usr/include/stdio.h
+discard.o: discard.c
+discard.o: ../h/mh.h
+#discard.o: /usr/include/stdio.h
+#discard.o: /usr/include/sgtty.h
+#discard.o: /usr/include/sys/types.h
+#discard.o: /usr/include/termio.h
+#discard.o: /usr/include/sys/ioctl.h
+done.o: done.c
+done.o: ../h/mh.h
+fdcompare.o: fdcompare.c
+fdcompare.o: ../h/mh.h
+#fdcompare.o: /usr/include/stdio.h
+gans.o: gans.c
+gans.o: ../h/mh.h
+#gans.o: /usr/include/stdio.h
+getans.o: getans.c
+getans.o: ../h/mh.h
+#getans.o: /usr/include/setjmp.h
+#getans.o: /usr/include/signal.h
+#getans.o: /usr/include/stdio.h
+getanswer.o: getanswer.c
+getanswer.o: ../h/mh.h
+#getanswer.o: /usr/include/stdio.h
+getcpy.o: getcpy.c
+getcpy.o: ../h/mh.h
+#getcpy.o: /usr/include/stdio.h
+help.o: help.c
+help.o: ../h/mh.h
+#help.o: /usr/include/stdio.h
+formatsbr.o: formatsbr.c
+formatsbr.o: ../h/mh.h
+formatsbr.o: ../h/addrsbr.h
+formatsbr.o: ../h/formatsbr.h
+formatsbr.o: ../zotnet/tws.h
+formatsbr.o: ../h/fmtcompile.h
+#formatsbr.o: /usr/include/ctype.h
+#formatsbr.o: /usr/include/stdio.h
+#formatsbr.o: /usr/include/sys/types.h
+#formatsbr.o: /usr/include/sys/stat.h
+fmtcompile.o: fmtcompile.c
+fmtcompile.o: ../h/mh.h
+fmtcompile.o: ../h/addrsbr.h
+fmtcompile.o: ../h/formatsbr.h
+fmtcompile.o: ../zotnet/tws.h
+fmtcompile.o: ../h/fmtcompile.h
+#fmtcompile.o: /usr/include/ctype.h
+#fmtcompile.o: /usr/include/stdio.h
+#fmtcompile.o: /usr/include/sys/types.h
+#fmtcompile.o: /usr/include/sys/stat.h
+formataddr.o: formataddr.c
+formataddr.o: ../h/mh.h
+formataddr.o: ../h/addrsbr.h
+formataddr.o: ../h/formatsbr.h
+#formataddr.o: /usr/include/ctype.h
+#formataddr.o: /usr/include/stdio.h
+m_atoi.o: m_atoi.c
+m_atoi.o: ../h/mh.h
+m_backup.o: m_backup.c
+m_backup.o: ../h/mh.h
+#m_backup.o: /usr/include/stdio.h
+m_convert.o: m_convert.c
+m_convert.o: ../h/mh.h
+#m_convert.o: /usr/include/stdio.h
+#m_convert.o: /usr/include/ctype.h
+m_delete.o: m_delete.c
+m_delete.o: ../h/mh.h
+#m_delete.o: /usr/include/stdio.h
+m_draft.o: m_draft.c
+m_draft.o: ../h/mh.h
+#m_draft.o: /usr/include/errno.h
+#m_draft.o: /usr/include/stdio.h
+#m_draft.o: /usr/include/sys/types.h
+#m_draft.o: /usr/include/sys/stat.h
+m_find.o: m_find.c
+m_find.o: ../h/mh.h
+#m_find.o: /usr/include/stdio.h
+m_fmsg.o: m_fmsg.c
+m_fmsg.o: ../h/mh.h
+#m_fmsg.o: /usr/include/stdio.h
+m_foil.o: m_foil.c
+m_foil.o: ../h/mh.h
+#m_foil.o: /usr/include/stdio.h
+m_getdefs.o: m_getdefs.c
+m_getdefs.o: ../h/mh.h
+#m_getdefs.o: /usr/include/stdio.h
+#m_getdefs.o: /usr/include/errno.h
+#m_getdefs.o: /usr/include/sys/types.h
+#m_getdefs.o: /usr/include/sys/stat.h
+#m_getdefs.o: /usr/include/pwd.h
+m_getfld.o: m_getfld.c
+m_getfld.o: ../h/mh.h
+#m_getfld.o: /usr/include/stdio.h
+m_getfld.o: ../zotnet/mts.h
+#m_getfld.o: /usr/include/ctype.h
+m_getfolder.o: m_getfolder.c
+m_getfolder.o: ../h/mh.h
+#m_getfolder.o: /usr/include/stdio.h
+m_gmprot.o: m_gmprot.c
+m_gmprot.o: ../h/mh.h
+#m_gmprot.o: /usr/include/stdio.h
+m_gmsg.o: m_gmsg.c
+m_gmsg.o: ../h/mh.h
+m_gmsg.o: ../h/local.h
+#m_gmsg.o: /usr/include/stdio.h
+#m_gmsg.o: /usr/include/sys/types.h
+#m_gmsg.o: /usr/include/sys/stat.h
+#m_gmsg.o: /usr/include/ndir.h
+#m_gmsg.o: /usr/include/dir.h
+#m_gmsg.o: /usr/include/sys/dir.h
+m_maildir.o: m_maildir.c
+m_maildir.o: ../h/mh.h
+#m_maildir.o: /usr/include/stdio.h
+m_name.o: m_name.c
+m_name.o: ../h/mh.h
+#m_name.o: /usr/include/stdio.h
+m_readefs.o: m_readefs.c
+m_readefs.o: ../h/mh.h
+#m_readefs.o: /usr/include/stdio.h
+m_remsg.o: m_remsg.c
+m_remsg.o: ../h/mh.h
+#m_remsg.o: /usr/include/stdio.h
+m_replace.o: m_replace.c
+m_replace.o: ../h/mh.h
+#m_replace.o: /usr/include/stdio.h
+m_scratch.o: m_scratch.c
+m_scratch.o: ../h/mh.h
+#m_scratch.o: /usr/include/stdio.h
+m_seq.o: m_seq.c
+m_seq.o: ../h/mh.h
+#m_seq.o: /usr/include/stdio.h
+m_seqbits.o: m_seqbits.c
+m_seqbits.o: ../h/mh.h
+#m_seqbits.o: /usr/include/stdio.h
+m_seqflag.o: m_seqflag.c
+m_seqflag.o: ../h/mh.h
+m_seqnew.o: m_seqnew.c
+m_seqnew.o: ../h/mh.h
+#m_seqnew.o: /usr/include/ctype.h
+#m_seqnew.o: /usr/include/stdio.h
+m_setcur.o: m_setcur.c
+m_setcur.o: ../h/mh.h
+#m_setcur.o: /usr/include/stdio.h
+m_setseq.o: m_setseq.c
+m_setseq.o: ../h/mh.h
+#m_setseq.o: /usr/include/stdio.h
+m_setvis.o: m_setvis.c
+m_setvis.o: ../h/mh.h
+#m_setvis.o: /usr/include/stdio.h
+m_sync.o: m_sync.c
+m_sync.o: ../h/mh.h
+#m_sync.o: /usr/include/stdio.h
+m_tmpfil.o: m_tmpfil.c
+m_tmpfil.o: ../h/mh.h
+#m_tmpfil.o: /usr/include/stdio.h
+m_update.o: m_update.c
+m_update.o: ../h/mh.h
+#m_update.o: /usr/include/stdio.h
+#m_update.o: /usr/include/signal.h
+makedir.o: makedir.c
+makedir.o: ../h/mh.h
+#makedir.o: /usr/include/stdio.h
+path.o: path.c
+path.o: ../h/mh.h
+#path.o: /usr/include/stdio.h
+peekc.o: peekc.c
+peekc.o: ../h/mh.h
+#peekc.o: /usr/include/stdio.h
+pidwait.o: pidwait.c
+pidwait.o: ../h/mh.h
+#pidwait.o: /usr/include/signal.h
+#pidwait.o: /usr/include/stdio.h
+#pidwait.o: /usr/include/sys/wait.h
+pidstatus.o: pidstatus.c
+pidstatus.o: ../h/mh.h
+#pidstatus.o: /usr/include/signal.h
+#pidstatus.o: /usr/include/stdio.h
+printsw.o: printsw.c
+printsw.o: ../h/mh.h
+push.o: push.c
+push.o: ../h/mh.h
+#push.o: /usr/include/stdio.h
+#push.o: /usr/include/signal.h
+putenv.o: putenv.c
+putenv.o: ../h/mh.h
+#putenv.o: /usr/include/stdio.h
+pwd.o: pwd.c
+pwd.o: ../h/mh.h
+pwd.o: ../h/local.h
+#pwd.o: /usr/include/stdio.h
+#pwd.o: /usr/include/sys/types.h
+#pwd.o: /usr/include/sys/stat.h
+#pwd.o: /usr/include/ndir.h
+#pwd.o: /usr/include/dir.h
+refile.o: refile.c
+refile.o: ../h/mh.h
+#refile.o: /usr/include/stdio.h
+remdir.o: remdir.c
+remdir.o: ../h/mh.h
+#remdir.o: /usr/include/stdio.h
+r1bindex.o: r1bindex.c
+showfile.o: showfile.c
+showfile.o: ../h/mh.h
+#showfile.o: /usr/include/stdio.h
+smatch.o: smatch.c
+smatch.o: ../h/mh.h
+sprintb.o: sprintb.c
+sprintb.o: ../h/mh.h
+#sprintb.o: /usr/include/stdio.h
+ssequal.o: ssequal.c
+strindex.o: strindex.c
+trimcpy.o: trimcpy.c
+trimcpy.o: ../h/mh.h
+#trimcpy.o: /usr/include/ctype.h
+#trimcpy.o: /usr/include/stdio.h
+uleq.o: uleq.c
+uprf.o: uprf.c
+vfgets.o: vfgets.c
+vfgets.o: ../h/mh.h
+#vfgets.o: /usr/include/stdio.h
+# DEPENDENCIES MUST END AT END OF FILE
+# IF YOU PUT STUFF HERE IT WILL GO AWAY
