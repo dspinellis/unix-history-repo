@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_serv.c	7.26 (Berkeley) %G%
+ *	@(#)nfs_serv.c	7.27 (Berkeley) %G%
  */
 
 /*
@@ -1320,7 +1320,7 @@ nfsrv_statfs(mrep, md, dpos, cred, xid, mrq, repstat)
 	vput(vp);
 	nfsm_reply(NFSX_STATFS);
 	nfsm_build(sfp, struct nfsv2_statfs *, NFSX_STATFS);
-	sfp->sf_tsize = txdr_unsigned(NFS_MAXDATA);
+	sfp->sf_tsize = txdr_unsigned(NFS_MAXDGRAMDATA);
 	sfp->sf_bsize = txdr_unsigned(sf->f_fsize);
 	sfp->sf_blocks = txdr_unsigned(sf->f_blocks);
 	sfp->sf_bfree = txdr_unsigned(sf->f_bfree);
