@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)api.c	4.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)api.c	4.4 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -36,7 +36,14 @@ static char sccsid[] = "@(#)api.c	4.3 (Berkeley) %G%";
 
 #include "../general/globals.h"
 
-int apitrace = 0;		/* Should we trace API interactions */
+int apitrace = 0;
+
+/*
+ * Some defines for things we use internally.
+ */
+
+#define	PS_SESSION_ID	23
+#define	BUF_SESSION_ID	0
 
 /*
  * General utility routines.
@@ -134,8 +141,10 @@ struct SREGS *sregs;
 	parms.rc = 0x0c;
     } else if (parms.option_code != 0x01) {
 	parms.rc = 0x0d;	/* Invalid option code */
-    } else if (parms.data_code != 0x45) {
+#ifdef	NOTOBS
+    } else if ((parms.data_code != 0x45) && (parms.data_code != 0x00/*OBS*/)) {
 	parms.rc = 0x0b;
+#endif	/* NOTOBS */
     } else {
 	NameArray list;
 
@@ -147,7 +156,7 @@ struct SREGS *sregs;
 	    list.number_matching_session = 1;
 	    list.name_array_element.short_name = parms.data_code;
 	    list.name_array_element.type = TYPE_DFT;
-	    list.name_array_element.session_id = 23;
+	    list.name_array_element.session_id = PS_SESSION_ID;
 	    memcpy(list.name_array_element.long_name, "ONLYSESS",
 			    sizeof list.name_array_element.long_name);
 	    movetothem(FP_SEG(parms.name_array),
@@ -170,7 +179,7 @@ struct SREGS *sregs;
 
     if ((parms.rc !=0) || (parms.function_id != 0)) {
 	parms.rc = 0x0c;
-    } else if (parms.session_id != 23) {
+    } else if (parms.session_id != PS_SESSION_ID) {
 	parms.rc = 0x02;
     } else {
 	parms.rc = 0;
@@ -195,7 +204,7 @@ struct SREGS *sregs;
 
     if ((parms.rc != 0) || (parms.function_id != 0)) {
 	parms.rc = 0x0c;
-    } else if (parms.session_id != 23) {
+    } else if (parms.session_id != PS_SESSION_ID) {
 	parms.rc = 0x02;
     } else {
 	parms.rc = 0;
@@ -224,7 +233,7 @@ struct SREGS *sregs;
 
     if ((parms.rc != 0) || (parms.function_id != 0)) {
 	parms.rc = 0x0c;
-    } else if (parms.session_id != 23) {
+    } else if (parms.session_id != PS_SESSION_ID) {
 	parms.rc = 0x02;
     } else if (parms.intercept_options != 0) {
 	parms.rc = 0x01;
@@ -248,7 +257,7 @@ struct SREGS *sregs;
 
     if ((parms.rc != 0) || (parms.function_id != 0)) {
 	parms.rc = 0x0c;
-    } else if (parms.session_id != 23) {
+    } else if (parms.session_id != PS_SESSION_ID) {
 	parms.rc = 0x02;
     } else if (parms.connectors_task_id != 0) {
 	parms.rc = 04;			/* XXX */
@@ -271,7 +280,7 @@ struct SREGS *sregs;
 
     if ((parms.rc != 0) || (parms.function_id != 0)) {
 	parms.rc = 0x0c;
-    } else if (parms.session_id != 23) {
+    } else if (parms.session_id != PS_SESSION_ID) {
 	parms.rc = 0x02;
     } else if (parms.connectors_task_id != 0) {
 	parms.rc = 0x04;
@@ -346,7 +355,7 @@ struct SREGS *sregs;
 
     if ((parms.rc != 0) || (parms.function_id != 0)) {
 	parms.rc = 0x0c;
-    } else if (parms.session_id != 23) {
+    } else if (parms.session_id != PS_SESSION_ID) {
 	parms.rc = 0x02;
     } else if (parms.connectors_task_id != 0) {
 	parms.rc = 0x04;
@@ -370,7 +379,7 @@ struct SREGS *sregs;
 
     if ((parms.rc != 0) || (parms.function_id != 0)) {
 	parms.rc = 0x0c;
-    } else if (parms.session_id != 23) {
+    } else if (parms.session_id != PS_SESSION_ID) {
 	parms.rc = 0x02;
     } else if (parms.connectors_task_id != 0) {
 	parms.rc = 0x04;
@@ -476,8 +485,8 @@ struct SREGS *sregs;
     length = 1+parms.source_end-source->begin;
     if ((parms.rc != 0) || (parms.function_id !=0)) {
 	parms.rc = 0x0c;
-    } else if (target->session_id == 0) {	/* Target is buffer */
-	if (source->session_id != 23) {		/* A no-no */
+    } else if (target->session_id == BUF_SESSION_ID) {	/* Target is buffer */
+	if (source->session_id != PS_SESSION_ID) {		/* A no-no */
 	    parms.rc = 0x2;
 	} else {
 	    if ((source->begin < 0) || (source->begin > highestof(Host))) {
@@ -501,7 +510,7 @@ struct SREGS *sregs;
 		}
 	    }
 	}
-    } else if (source->session_id != 0) {
+    } else if (source->session_id != BUF_SESSION_ID) {
 	    parms.rc = 0xd;
     } else {
 	/* Send to presentation space (3270 buffer) */
@@ -534,8 +543,11 @@ struct SREGS *sregs;
 	    }
 	}
     }
+    parms.function_id = 0x64;
     movetothem(sregs->es, regs->x.di, (char *)&parms, sizeof parms);
 }
+
+
 /*
  * Operator Information Area Services.
  */
@@ -551,7 +563,7 @@ struct SREGS *sregs;
 
     if ((parms.rc != 0) || (parms.function_id != 0)) {
 	parms.rc = 0x0c;
-    } else if (parms.session_id != 23) {
+    } else if (parms.session_id != PS_SESSION_ID) {
 	parms.rc = 0x02;
     } else {
 	int group = parms.oia_group_number;
@@ -639,7 +651,7 @@ struct SREGS *sregs;
 		}
 		break;
 	    case QUERY_SESSION_CURSOR:
-		if (regs->h.cl != 0xff) {
+		if ((regs->h.cl != 0xff) && (regs->h.cl != 0x00/*OBS*/)) {
 		    regs->x.cx = 0x1206;
 		} else {
 		    regs->x.cx = 0x1200;
@@ -720,5 +732,8 @@ struct SREGS *sregs;
     if (apitrace) {
 	Dump('>', (char *)regs, sizeof *regs);
 	Dump('>', (char *)sregs, sizeof *sregs);
+#ifdef	MSDOS
+	{ char buf[10];  gets(buf); }
+#endif	/* MSDOS */
     }
 }
