@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)input.c	1.7 (Berkeley) 83/02/09";
+static	char *sccsid = "@(#)input.c	1.8 (Berkeley) 83/06/14";
 #include <stdio.h>
 #include <ctype.h>
 #include "error.h"
@@ -21,6 +21,7 @@ Errorclass	make();
 Errorclass	f77();
 Errorclass	pi();
 Errorclass	ri();
+Errorclass	troff();
 /*
  *	Eat all of the lines in the input file, attempting to categorize
  *	them by their various flavors
@@ -56,6 +57,7 @@ eaterrors(r_errorc, r_errorv)
 	   || (( errorclass = f77() ) != C_UNKNOWN)
 	   || ((errorclass = pi() ) != C_UNKNOWN)
 	   || (( errorclass = ri() )!= C_UNKNOWN)
+	   || (( errorclass = troff() )!= C_UNKNOWN)
 	) ;
 	else
 		errorclass = catchall();
@@ -449,3 +451,28 @@ Errorclass catchall()
 	language = INUNKNOWN;
 	return(C_NONSPEC);
 } /* end of catch all*/
+
+Errorclass troff()
+{
+	/*
+	 *	troff source error message, from eqn, bib, tbl...
+	 *	Just like pcc ccom, except uses `'
+	 */
+	if (   (firstchar(wordv[1]) == '`')
+	    && (lastchar(wordv[1]) == ',')
+	    && (next_lastchar(wordv[1]) == '\'')
+	    && (strcmp(wordv[2],"line") == 0)
+	    && (isdigit(firstchar(wordv[3])))
+	    && (lastchar(wordv[3]) == ':') ){
+		clob_last(wordv[1], '\0');	/* drop last , */
+		clob_last(wordv[1], '\0');	/* drop last " */
+		wordv[1]++;			/* drop first " */
+		clob_last(wordv[3], '\0');	/* drop : on line number */
+		wordv[2] = wordv[1];	/* overwrite "line" */
+		wordv++;		/*compensate*/
+		currentfilename = wordv[1];
+		language = INTROFF;
+		return(C_TRUE);
+	}
+	return(C_UNKNOWN);
+}

@@ -1,5 +1,5 @@
 /*
- *  @(#)error.h	1.2 (Berkeley) %G%
+ *  @(#)error.h	1.3 (Berkeley) %G%
  */
 typedef	int	boolean;
 #define	reg	register
@@ -31,6 +31,7 @@ typedef	int	boolean;
 #define	INAPL	15
 #define	INMAKE	16
 #define	INRI	17
+#define	INTROFF	18
 
 extern	int	language;
 /*
@@ -123,6 +124,8 @@ extern struct lang_desc lang_table[];
 #define	ASINCOMMENT	"####"
 #define	RIINCOMMENT	CINCOMMENT
 #define	RIOUTCOMMENT	COUTCOMMENT
+#define	TROFFINCOMMENT	".\\\"###"
+#define	TROFFOUTCOMMENT	NEWLINE
 /*
  *	Defines and resources for determing if a given line
  *	is to be discarded because it refers to a file not to

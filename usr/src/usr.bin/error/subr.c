@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)subr.c	1.3 (Berkeley) %G%";
+static	char *sccsid = "@(#)subr.c	1.4 (Berkeley) %G%";
 #include <stdio.h>
 #include <ctype.h>
 #include "error.h"
@@ -214,6 +214,8 @@ static	char	pioutcomment[] = PIOUTCOMMENT;
 static	char	lispincomment[] = LISPINCOMMENT;
 static	char	riincomment[] = RIINCOMMENT;
 static	char	rioutcomment[] = RIOUTCOMMENT;
+static	char	troffincomment[] = TROFFINCOMMENT;
+static	char	troffoutcomment[] = TROFFOUTCOMMENT;
 
 struct	lang_desc lang_table[] = {
 	/*INUNKNOWN	0*/	"unknown", cincomment,	coutcomment,
@@ -234,6 +236,7 @@ struct	lang_desc lang_table[] = {
 	/*INAPL		15*/	"apl",	".lm",	       newline,
 	/*INMAKE	16*/	"make",	ASINCOMMENT,   newline,
 	/*INRI		17*/	"ri",	riincomment,   rioutcomment,
+	/*INTROFF	18*/	"troff",troffincomment,troffoutcomment,
 				0,	0,	     0
 };
 
