@@ -13,21 +13,16 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)tmpnam.3	5.5 (Berkeley) %G%
+.\"	@(#)tmpnam.3	5.6 (Berkeley) %G%
 .\"
 .TH COMPATS5 3 ""
 .UC 7
 .SH NAME
-ftw, memccpy, memchr, memcmp, memcpy, memset, strchr, 
+memccpy, memchr, memcmp, memcpy, memset, strchr,
 strcspn, strpbrk, strrchr, strspn, strtok, tempnam,
 tmpfile, tmpnam \- System V compatibility routines
 .SH SYNOPSIS
 .nf
-.B #include <ftw.h>
-.B ftw(path, fn, param)
-.B char *path;
-.B int (*fn)(), param;
-.PP
 .B char *memccpy(from, to, ch, count)
 .B char *from, *to;
 .B int ch, count;

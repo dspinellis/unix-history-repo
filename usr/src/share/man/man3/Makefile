@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.9 (Berkeley) %G%
+#	@(#)Makefile	5.10 (Berkeley) %G%
 #
 MDIR=	/usr/man/cat3
 SRCS=	abort.3 abs.3 alarm.3 asinh.3 assert.3 atof.3 bstring.3 byteorder.3 \
@@ -32,8 +32,8 @@ SRCS=	abort.3 abs.3 alarm.3 asinh.3 assert.3 atof.3 bstring.3 byteorder.3 \
 	setjmp.3 \
 	setuid.3 siginterrupt.3 signal.3 sin.3 sinh.3 sleep.3 sqrt.3 \
 	stdio.3 string.3 stty.3 swab.3 syslog.3 system.3 termcap.3 time.3 \
-	times.3 ttyname.3 ualarm.3 ungetc.3 usleep.3 utime.3 valloc.3 \
-	varargs.3 vlimit.3 vtimes.3
+	times.3 treewalk.3 ttyname.3 ualarm.3 ungetc.3 usleep.3 utime.3 \
+	valloc.3 varargs.3 vlimit.3 vtimes.3
 OBJS=	abort.0 abs.0 alarm.0 asinh.0 assert.0 atof.0 bstring.0 byteorder.0 \
 	compat-sys5.0 crypt.0 ctime.0 ctype.0 curses.0 dbm.0 \
 	directory.0 ecvt.0 end.0 erf.0 execl.0 exit.0 exp.0 fclose.0 \
@@ -49,8 +49,8 @@ OBJS=	abort.0 abs.0 alarm.0 asinh.0 assert.0 atof.0 bstring.0 byteorder.0 \
 	setjmp.0 \
 	setuid.0 siginterrupt.0 signal.0 sin.0 sinh.0 sleep.0 sqrt.0 \
 	stdio.0 string.0 stty.0 swab.0 syslog.0 system.0 termcap.0 time.0 \
-	times.0 ttyname.0 ualarm.0 ungetc.0 usleep.0 utime.0 valloc.0 \
-	varargs.0 vlimit.0 vtimes.0
+	times.0 treewalk.0 ttyname.0 ualarm.0 ungetc.0 usleep.0 utime.0 \
+	valloc.0 varargs.0 vlimit.0 vtimes.0
 
 .SUFFIXES: .3 .0
 
@@ -306,7 +306,7 @@ install: FRC
 	ln ${DESTDIR}${MDIR}/gethostbyname.0 ${DESTDIR}${MDIR}/sethostent.0
 	ln ${DESTDIR}${MDIR}/gethostbyname.0 ${DESTDIR}${MDIR}/sethostfile.0
 	ln ${DESTDIR}${MDIR}/gethostbyname.0 ${DESTDIR}${MDIR}/gethostent.0
-	ln ${DESTDIR}${MDIR}/compat-sys5.0 ${DESTDIR}${MDIR}/ftw.0
+	ln ${DESTDIR}${MDIR}/treewalk.0 ${DESTDIR}${MDIR}/ftw.0
 	ln ${DESTDIR}${MDIR}/compat-sys5.0 ${DESTDIR}${MDIR}/memccpy.0
 	ln ${DESTDIR}${MDIR}/compat-sys5.0 ${DESTDIR}${MDIR}/memchr.0
 	ln ${DESTDIR}${MDIR}/compat-sys5.0 ${DESTDIR}${MDIR}/memcmp.0
