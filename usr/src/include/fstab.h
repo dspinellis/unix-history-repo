@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)fstab.h	5.5 (Berkeley) %G%
+ *	@(#)fstab.h	5.6 (Berkeley) %G%
  */
 
 /*
@@ -43,6 +43,8 @@ struct fstab {
 	char	*fs_type;		/* FSTAB_* */
 	int	fs_freq;		/* dump frequency, in days */
 	int	fs_passno;		/* pass number on parallel dump */
+	char	*fs_vfstype;		/* File system type, ufs, nfs */
+	char	*fs_mntops;		/* Mount options ala -o */
 };
 
 struct	fstab *getfsent();
