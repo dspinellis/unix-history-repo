@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.33 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.34 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -148,7 +148,7 @@ checkfilesys(filesys, mntpt, auxdata, child)
 
 	if (preen && child)
 		(void)signal(SIGQUIT, voidquit);
-	devname = filesys;
+	cdevname = filesys;
 	if (debug && preen)
 		pwarn("starting\n");
 	if (setup(filesys) == 0) {
