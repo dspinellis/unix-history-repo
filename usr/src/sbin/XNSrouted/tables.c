@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tables.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)tables.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -145,7 +145,7 @@ rtadd(dst, gate, metric, state)
 	 * from this host, discard the entry.  This should only
 	 * occur because of an incorrect entry in /etc/gateways.
 	 */
-	if (install && ioctl(s, SIOCADDRT, (char *)&rt->rt_rt) < 0) {
+	if (install && rtioctl(ADD, &rt->rt_rt) < 0) {
 		if (errno != EEXIST)
 			perror("SIOCADDRT");
 		if (errno == ENETUNREACH) {
@@ -191,17 +191,21 @@ rtchange(rt, gate, metric)
 	}
 	if (doioctl && install) {
 #ifndef RTM_ADD
-		if (ioctl(s, SIOCADDRT, (char *)&rt->rt_rt) < 0)
-		  syslog(LOG_ERR, "SIOCADDRT dst %s, gw %s: %m",
+		if (rtioctl(ADD, &rt->rt_rt) < 0)
+		  syslog(LOG_ERR, "rtioctl ADD dst %s, gw %s: %m",
 		   xns_ntoa(&((struct sockaddr_ns *)&rt->rt_dst)->sns_addr),
 		   xns_ntoa(&((struct sockaddr_ns *)&rt->rt_router)->sns_addr));
-		if (delete && ioctl(s, SIOCDELRT, (char *)&oldroute) < 0)
-			perror("SIOCDELRT");
+		if (delete && rtioctl(DELETE, &oldroute) < 0)
+			perror("rtioctl DELETE");
 #else
-		if (delete && ioctl(s, SIOCDELRT, (char *)&oldroute) < 0)
-			perror("SIOCDELRT");
-		if (ioctl(s, SIOCADDRT, (char *)&rt->rt_rt) < 0)
-		  syslog(LOG_ERR, "SIOCADDRT dst %s, gw %s: %m",
+		if (delete == 0) {
+			if (rtioctl(ADD, &rt->rt_rt) >= 0)
+				return;
+		} else {
+			if (rtioctl(CHANGE, &rt->rt_rt) >= 0)
+				return;
+		}
+	        syslog(LOG_ERR, "rtioctl ADD dst %s, gw %s: %m",
 		   xns_ntoa(&((struct sockaddr_ns *)&rt->rt_dst)->sns_addr),
 		   xns_ntoa(&((struct sockaddr_ns *)&rt->rt_router)->sns_addr));
 #endif
@@ -222,8 +226,8 @@ rtdelete(rt)
 			rt->rt_ifp->int_name);
 	}
 	TRACE_ACTION(DELETE, rt);
-	if (install && ioctl(s, SIOCDELRT, (char *)&rt->rt_rt))
-		perror("SIOCDELRT");
+	if (install && rtioctl(DELETE, &rt->rt_rt) < 0)
+		perror("rtioctl DELETE");
 	remque(rt);
 	free((char *)rt);
 }
@@ -236,4 +240,54 @@ rtinit()
 		rh->rt_forw = rh->rt_back = (struct rt_entry *)rh;
 	for (rh = hosthash; rh < &hosthash[ROUTEHASHSIZ]; rh++)
 		rh->rt_forw = rh->rt_back = (struct rt_entry *)rh;
+}
+int seqno;
+
+rtioctl(action, ort)
+	int action;
+	struct ortentry *ort;
+{
+#ifndef RTM_ADD
+	switch (action) {
+
+	case ADD:
+		return (ioctl(s, SIOCADDRT, (char *)ort));
+
+	case DELETE:
+		return (ioctl(s, SIOCDELRT, (char *)ort));
+
+	default:
+		return (-1);
+	}
+#else /* RTM_ADD */
+	struct {
+		struct rt_msghdr w_rtm;
+		struct sockaddr w_dst;
+		struct sockaddr w_gate;
+		struct sockaddr_ns w_netmask;
+	} w;
+#define rtm w.w_rtm
+
+	bzero((char *)&w, sizeof(w));
+	rtm.rtm_msglen = sizeof(w);
+	rtm.rtm_version = RTM_VERSION;
+	rtm.rtm_type = (action == ADD ? RTM_ADD :
+				(action == DELETE ? RTM_DELETE : RTM_CHANGE));
+#undef rt_flags
+	rtm.rtm_flags = ort->rt_flags;
+	rtm.rtm_seq = ++seqno;
+	rtm.rtm_addrs = RTA_DST|RTA_GATEWAY;
+	bcopy((char *)&ort->rt_dst, (char *)&w.w_dst, sizeof(w.w_dst));
+	bcopy((char *)&ort->rt_gateway, (char *)&w.w_gate, sizeof(w.w_gate));
+	w.w_gate.sa_family = w.w_dst.sa_family = AF_NS;
+	w.w_gate.sa_len = w.w_dst.sa_len = sizeof(w.w_dst);
+	if (rtm.rtm_flags & RTF_HOST) {
+		rtm.rtm_msglen -= sizeof(w.w_netmask);
+	} else {
+		w.w_netmask = ns_netmask;
+		rtm.rtm_msglen -= 8;
+	}
+	errno = 0;
+	return write(r, (char *)&w, rtm.rtm_msglen);
+#endif  /* RTM_ADD */
 }

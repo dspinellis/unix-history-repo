@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -92,10 +92,20 @@ main(argc, argv)
 #endif
 	openlog("XNSrouted", LOG_PID, LOG_DAEMON);
 
-	ns_anynet.s_net[0] = -1; ns_anynet.s_net[1] = -1;
 	addr.sns_family = AF_NS;
 	addr.sns_len = sizeof(addr);
 	addr.sns_port = htons(IDPPORT_RIF);
+	ns_anynet.s_net[0] = ns_anynet.s_net[1] = -1;
+	ns_netmask.sns_addr.x_net = ns_anynet;
+	ns_netmask.sns_len = 6;
+	r = socket(AF_ROUTE, SOCK_RAW, 0);
+	/* later, get smart about lookingforinterfaces */
+	if (r)
+		shutdown(r, 0); /* for now, don't want reponses */
+	else {
+		fprintf(stderr, "routed: no routing socket\n");
+		exit(1);
+	}
 	s = getsocket(SOCK_DGRAM, 0, &addr);
 	if (s < 0)
 		exit(1);
