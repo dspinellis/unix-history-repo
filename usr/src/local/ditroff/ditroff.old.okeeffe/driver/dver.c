@@ -1,4 +1,4 @@
-/*	dver.c	1.15	84/05/24
+/*	dver.c	1.16	85/04/29
  *
  * VAX Versatec driver for the new troff
  *
@@ -79,7 +79,9 @@ x ..\n	device control functions:
 #ifndef FONTDIR
 #define FONTDIR	"/usr/lib/font"	/* default place to find font descriptions */
 #endif
+#ifndef BITDIR
 #define BITDIR "/usr/lib/vfont" /* default place to look for font rasters */
+#endif
 #define MAXWRIT 4096		/* max characters allowed to write at once */
 
 #define  hmot(n)	hpos += n
@@ -87,7 +89,7 @@ x ..\n	device control functions:
 #define  vmot(n)	vgoto(vpos + (n))
 
 
-char	SccsId[]= "dver.c	1.15	84/05/24";
+char	SccsId[]= "dver.c	1.16	85/04/29";
 
 int	output	= 0;	/* do we do output at all? */
 int	nolist	= 0;	/* output page list if > 0 */
