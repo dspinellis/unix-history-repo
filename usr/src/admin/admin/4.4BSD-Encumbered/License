@@ -1,8 +1,8 @@
-.\" @(#)License	1.7 (CSRG - distribution) %G%
+.\" @(#)License	1.8 (CSRG - distribution) %G%
 .ND
 .po +0.34375i
 .nr PO +0.34375i
-(Rev. 2/92)
+(Rev. 6/92)
 .ps 14
 .ft B
 .ce
@@ -17,9 +17,8 @@ FOURTH BERKELEY SOFTWARE DISTRIBUTION LICENSE AGREEMENT
 .hy 0
 THIS LICENSE AGREEMENT is made and entered into
 by and between THE REGENTS OF THE UNIVERSITY
-OF CALIFORNIA, ('THE REGENTS') a California corporation, and
-\l'2.25i'
-\l'3.1i'\|, a \l'2.6i' having its
+OF CALIFORNIA, (``THE REGENTS'') a California corporation, and
+\l'5.4i'\|, a \l'2.6i' having its
 principal office at \l'3.2i'\|, hereinafter
 ``LICENSEE'', and shall become effective
 on the date of execution by THE REGENTS.
@@ -116,7 +115,8 @@ of the Fourth Berkeley Software Distribution pursuant to this Agreement.
 Distribution is, and shall at all times remain the property of THE
 REGENTS.  LICENSEE shall have no right,
 title or interest therein or thereto except as expressly set forth in
-this Agreement.
+this Agreement.  The version of Fourth Berkeley Distribution
+licensed hereunder is release 4.4BSD-Complete.
 .PP
 \04.\ \ \fBAT&T Proprietary Software. \fR LICENSEE and THE REGENTS 
 agree that the Fourth Berkeley Software
@@ -271,11 +271,11 @@ or proprietary rights infringement based in any manner on LICENSEE's use or
 sublicensing of the Fourth Berkeley Software Distribution.
 .PP
 13.\ \ \fBLimitation of Liability.\fR  THE REGENTS SHALL NOT BE LIABLE FOR ANY
-COSTS, DAMAGES, INCLUDING DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR 
-CONSEQUENTIAL (INCLUDING LOST PROFITS), FEES, INCLUDING, BUT NOT LIMITED TO,
-ATTORNEY'S FEES, OR OTHER LIABILITY WITH RESPECT TO ANY CLAIM BY LICENSEE OR
-ANY THIRD PARTY ON ACCOUNT OF OR ARISING FROM THIS AGREEMENT OR USE OF THE
-FOURTH BERKELEY SOFTWARE DISTRIBUTION.
+COSTS, DAMAGES, INCLUDING, BUT NOT LIMITED TO, DIRECT, INDIRECT, SPECIAL,
+INCIDENTAL, OR CONSEQUENTIAL (INCLUDING LOST PROFITS), FEES, INCLUDING,
+BUT NOT LIMITED TO, ATTORNEY'S FEES, OR OTHER LIABILITY WITH RESPECT TO
+ANY CLAIM BY LICENSEE OR ANY THIRD PARTY ON ACCOUNT OF OR ARISING FROM
+THIS AGREEMENT OR USE OF THE FOURTH BERKELEY SOFTWARE DISTRIBUTION.
 .PP
 14.\ \ \fBLegal Expenses. \fR  In case legal action is taken by
 either party to enforce this Agreement, all costs and expenses,
@@ -302,20 +302,13 @@ the scope of any provision of this Agreement.
 18.\ \ \fBEntire Agreement. \fR  This Agreement contains all the
 agreements, representations, and understandings of the parties hereto
 and supersedes any previous understandings, commitments or
-agreements, oral or written.
+agreements, oral or written.  No modification to this Agreement shall
+be effective unless in a writing signed by both parties.
 .PP
 19.\ \ \fBAuthority. \fR  Each of the undersigned warrants that he/she
 has the authority to bind to this Agreement the party which
 he/she represents.
-.sp 2
-.LP
-.UL \fB\s+2Amendment\ No.\ One:\s-2\fR  
-.IP
-The release distributed under this agreement is 4.2
-of the Fourth Berkeley Software Distribution and
-updates thereto which comprise release 4.3 and 4.4.
-.sp 2
-.PP
+.sp
 IN WITNESS WHEREOF, THE REGENTS 
 and LICENSEE have executed this Agreement
 on the dates specified below.  The
@@ -330,7 +323,6 @@ THE REGENTS OF THE
 UNIVERSITY OF CALIFORNIA
 .br
 (Licensor)
-.R
 .sp 2
 .in +1
 By:\l'|6i-20m'
@@ -342,7 +334,6 @@ By:\l'|6i-20m'
 Date:\l'|6i-20m'
 .in -1
 .sp 3
-.B
 \l'|6.125i-20m'
 .sp 1
 \l'|6.125i-20m'
@@ -360,4 +351,4 @@ By:\l'|6i-20m'
 .sp
 Date:\l'|6i-20m'
 .in -20
-
+.R
