@@ -1,0 +1,66 @@
+
+
+
+CHOWN(1L)                                               CHOWN(1L)
+
+
+NNAAMMEE
+       chown - change the user and group ownership of files
+
+SSYYNNOOPPSSIISS
+       cchhoowwnn  [-Rcfv]  [--recursive]  [--show-changes] [--silent]
+       [--quiet] [--verbose] [user][:.][group] file...
+
+DDEESSCCRRIIPPTTIIOONN
+       This manual page  documents  the  GNU  version  of  cchhoowwnn.
+       cchhoowwnn  changes  the  user  and/or  group ownership of each
+       given file, according to its  first  non-option  argument,
+       which  is interpreted as follows.  If only a user name (or
+       numeric user ID) is given, that user is made the owner  of
+       each  given file, and the files' group is not changed.  If
+       the user name is followed by a colon or dot  and  a  group
+       name  (or  numeric group ID), with no spaces between them,
+       the group ownership of the files is changed as well.  If a
+       colon or dot but no group name follows the user name, that
+       user is made the owner of the files and the group  of  the
+       files is changed to that user's login group.  If the colon
+       or dot and group are given, but the user name is  omitted,
+       only  the  group  of  the  files is changed; in this case,
+       cchhoowwnn performs the same function as cchhggrrpp.
+
+   OOPPTTIIOONNSS
+       -_c, --_s_h_o_w-_c_h_a_n_g_e_s
+              Verbosely describe only files whose ownership actu-
+              ally changes.
+
+       -_f, --_s_i_l_e_n_t, --_q_u_i_e_t
+              Do  not print error messages about files whose own-
+              ership cannot be changed.
+
+       -_v, --_v_e_r_b_o_s_e
+              Verbosely describe ownership changes.
+
+       -_R, --_r_e_c_u_r_s_i_v_e
+              Recursively change  ownership  of  directories  and
+              their contents.
+
+       The  long-named options can be introduced with `+' as well
+       as `--', for compatibility with previous releases.   Even-
+       tually  support  for  `+'  will  be removed, because it is
+       incompatible with the POSIX.2 standard.
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                                                1
+
+

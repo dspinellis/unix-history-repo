@@ -1,0 +1,66 @@
+
+
+
+TOUCH(1L)                                               TOUCH(1L)
+
+
+NNAAMMEE
+       touch - change file timestamps
+
+SSYYNNOOPPSSIISS
+       ttoouucchh     [-acm]     [-r    reference-file]    [-t    MMD-
+       Dhhmm[[CC]YY][.ss]]               [-d                time]
+       [--time={atime,access,use,mtime,modify}]     [--date=time]
+       [--file=reference-file] [--no-create] file...
+
+DDEESSCCRRIIPPTTIIOONN
+       This manual page  documents  the  GNU  version  of  ttoouucchh.
+       ttoouucchh  changes  the  access and modification times of each
+       given file to the current time.  Files that do  not  exist
+       are  created empty.  If the first file name given would be
+       a valid argument to the -_t  option  and  no  timestamp  is
+       given  with  any  of  the -_d, -_r, or -_t options and the --
+       argument is not given, that argument is interpreted as the
+       time for the other files instead of as a filename.
+
+   OOPPTTIIOONNSS
+       -_a, --_t_i_m_e=_a_t_i_m_e, --_t_i_m_e=_a_c_c_e_s_s, --_t_i_m_e=_u_s_e
+              Change the access time only.
+
+       -_c, --_n_o-_c_r_e_a_t_e
+              Do not create files that do not exist.
+
+       -_d, --_d_a_t_e _t_i_m_e
+              Use  _t_i_m_e  (which can be in various common formats)
+              instead of the current time.  It can contain  month
+              names, timezones, `am' and `pm', etc.
+
+       -_m, --_t_i_m_e=_m_t_i_m_e, --_t_i_m_e=_m_o_d_i_f_y
+              Change the modification time only.
+
+       -_r, --_f_i_l_e _r_e_f_e_r_e_n_c_e-_f_i_l_e
+              Use the times of _r_e_f_e_r_e_n_c_e-_f_i_l_e instead of the cur-
+              rent time.
+
+       -_t _M_M_D_D_h_h_m_m[[_C_C]_Y_Y][._s_s]
+              Use the argument  (months,  days,  hours,  minutes,
+              optional   century  and  years,  optional  seconds)
+              instead of the current time.
+
+       The long-named options can be introduced with `+' as  well
+       as  `--', for compatibility with previous releases.  Even-
+       tually support for `+' will  be  removed,  because  it  is
+       incompatible with the POSIX.2 standard.
+
+
+
+
+
+
+
+
+
+
+                                                                1
+
+

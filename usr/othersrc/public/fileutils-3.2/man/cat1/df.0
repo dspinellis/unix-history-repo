@@ -1,0 +1,132 @@
+
+
+
+DF(1L)                                                     DF(1L)
+
+
+NNAAMMEE
+       df - summarize free disk space
+
+SSYYNNOOPPSSIISS
+       ddff [-aikPv] [-t fstype] [--all] [--inodes] [--type fstype]
+       [--kilobytes] [--portability] [path...]
+
+DDEESSCCRRIIPPTTIIOONN
+       This manual page documents the GNU version of ddff.  ddff dis-
+       plays the amount of disk space available on the filesystem
+       containing each argument pathname.  If  no  pathnames  are
+       given,  the  space  available  on  all  currently  mounted
+       filesystems is shown.  Disk space is shown in 1K blocks by
+       default,  unless  the environment variable POSIXLY_CORRECT
+       is set, in which case 512-byte blocks are used.
+
+       If an argument is the full pathname of a disk device  node
+       containing a mounted filesystem, ddff shows the space avail-
+       able on that filesystem rather than on the filesystem con-
+       taining  the  device node (which is almost always the root
+       filesystem).  This version of ddff can not  show  the  space
+       available  on unmounted filesystems, because on most kinds
+       of systems doing so  requires  very  nonportable  intimate
+       knowledge of filesystem structures.
+
+   OOPPTTIIOONNSS
+       -_a, --_a_l_l
+              Include  in  the  listing  filesystems  that have 0
+              blocks,  which  are  omitted  by   default.    Such
+              filesystems  are  typically special-purpose pseudo-
+              filesystems, such as automounter entries.  On  some
+              systems, filesystems of type ``ignore'' or ``auto''
+              are also omitted by default  and  included  in  the
+              listing by this option.
+
+       -_i, --_i_n_o_d_e_s
+              List  inode  usage  information  instead  of  block
+              usage.  An inode is a special kind  of  disk  block
+              that contains information about a file, such as its
+              owner, permissions, timestamps, and location on the
+              disk.
+
+       -_k, --_k_i_l_o_b_y_t_e_s
+              Print  sizes  in  1K  blocks  instead  of  512-byte
+              blocks.  This overrides  the  environment  variable
+              POSIXLY_CORRECT.
+
+       -_P, --_p_o_r_t_a_b_i_l_i_t_y
+              Use  the  POSIX  output  format.   This is like the
+              default format except that  the  information  about
+              each  filesystem  is  always printed on exactly one
+              line; a mount device is never  put  on  a  line  by
+              itself.   This  means that if the mount device name
+              is more  than  20  characters  long  (as  for  some
+
+
+
+                                                                1
+
+
+
+
+
+DF(1L)                                                     DF(1L)
+
+
+              network mounts), the columns are misaligned.
+
+       -_t, --_t_y_p_e _f_s_t_y_p_e
+              Limit  the  listing  to filesystems of type _f_s_t_y_p_e.
+              Multiple filesystem types can be  shown  by  giving
+              multiple  -_t  options.   By default, all filesystem
+              types are listed.
+
+       -_v     Ignored; for compatibility with System  V  versions
+              of ddff.
+
+       The  long-named options can be introduced with `+' as well
+       as `--', for compatibility with previous releases.   Even-
+       tually  support  for  `+'  will  be removed, because it is
+       incompatible with the POSIX.2 standard.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                                                2
+
+

@@ -1,0 +1,132 @@
+
+
+
+LN(1L)                                                     LN(1L)
+
+
+NNAAMMEE
+       ln - make links between files
+
+SSYYNNOOPPSSIISS
+       llnn [options] source [dest]
+       llnn [options] source... directory
+       Options:
+       [-bdfisvF]      [-S      backup-suffix]      [-V     {num-
+       bered,existing,simple}]                        [--version-
+       control={numbered,existing,simple}]  [--backup]  [--direc-
+       tory] [--force] [--interactive]  [--symbolic]  [--verbose]
+       [--suffix=backup-suffix]
+
+DDEESSCCRRIIPPTTIIOONN
+       This  manual page documents the GNU version of llnn.  If the
+       last argument names an existing directory, llnn  links  each
+       other  given  file  into a file with the same name in that
+       directory.  If only one file is given, it links that  file
+       into  the current directory.  Otherwise, if only two files
+       are given, it links the first onto the second.  It  is  an
+       error  if  the  last  argument is not a directory and more
+       than two files are given.  It makes hard links by default.
+       By default, it does not remove existing files.
+
+   OOPPTTIIOONNSS
+       -_b, --_b_a_c_k_u_p
+              Make backups of files that are about to be removed.
+
+       -_d, -_F, --_d_i_r_e_c_t_o_r_y
+              Allow the super-user to make hard links to directo-
+              ries.
+
+       -_f, --_f_o_r_c_e
+              Remove existing destination files.
+
+       -_i, --_i_n_t_e_r_a_c_t_i_v_e
+              Prompt   whether  to  remove  existing  destination
+              files.
+
+       -_s, --_s_y_m_b_o_l_i_c
+              Make symbolic links instead of hard links.
+
+       -_v, --_v_e_r_b_o_s_e
+              Print the name of each file before linking it.
+
+       -_S, --_s_u_f_f_i_x _b_a_c_k_u_p-_s_u_f_f_i_x
+              The suffix used for making simple backup files  can
+              be  set  with  the SSIIMMPPLLEE__BBAACCKKUUPP__SSUUFFFFIIXX environment
+              variable, which can be overridden by  this  option.
+              If  neither  of those is given, the default is `~',
+              as it is in Emacs.
+
+       '-_V, --_v_e_r_s_i_o_n-_c_o_n_t_r_o_l {_n_u_m_b_e_r_e_d,_e_x_i_s_t_i_n_g,_s_i_m_p_l_e}"
+              The type of  backups  made  can  be  set  with  the
+
+
+
+                                                                1
+
+
+
+
+
+LN(1L)                                                     LN(1L)
+
+
+              VVEERRSSIIOONN__CCOONNTTRROOLL  environment variable, which can be
+              overridden by this option.  If  VVEERRSSIIOONN__CCOONNTTRROOLL  is
+              not  set  and this option is not given, the default
+              backup type is `existing'.  The value of  the  VVEERR--
+              SSIIOONN__CCOONNTTRROOLL  environment variable and the argument
+              to this option are like  the  GNU  Emacs  `version-
+              control'  variable;  they  also  recognize synonyms
+              that are more descriptive.  The  valid  values  are
+              (unique abbreviations are accepted):
+
+              `t' or `numbered'
+                     Always make numbered backups.
+
+              `nil' or `existing'
+                     Make  numbered backups of files that already
+                     have them, simple backups of the others.
+
+              `never' or `simple'
+                     Always make simple backups.
+
+       The long-named options can be introduced with `+' as  well
+       as  `--', for compatibility with previous releases.  Even-
+       tually support for `+' will  be  removed,  because  it  is
+       incompatible with the POSIX.2 standard.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                                                2
+
+

@@ -1,0 +1,132 @@
+
+
+
+DD(1L)                                                     DD(1L)
+
+
+NNAAMMEE
+       dd - convert a file while copying it
+
+SSYYNNOOPPSSIISS
+       dddd  [if=file] [of=file] [ibs=bytes] [obs=bytes] [bs=bytes]
+       [cbs=bytes]  [skip=blocks]  [seek=blocks]   [count=blocks]
+       [conv={ascii,ebcdic,ibm,block,unblock,lcase,ucase,swab,noerror,notrunc,
+       sync}]
+
+DDEESSCCRRIIPPTTIIOONN
+       This manual page documents the  GNU  version  of  dddd.   dddd
+       copies  a  file  (from  the standard input to the standard
+       output, by  default)  with  a  user-selectable  blocksize,
+       while optionally performing conversions on it.
+
+   OOPPTTIIOONNSS
+       Numbers can be followed by a multiplier:
+       b=512, k=1024, w=2, xm=number m
+
+       _i_f=_f_i_l_e
+              Read from _f_i_l_e instead of the standard input.
+
+       _o_f=_f_i_l_e
+              Write  to  _f_i_l_e  instead  of  the  standard output.
+              Unless _c_o_n_v=_n_o_t_r_u_n_c is given, truncate _f_i_l_e to  the
+              size  specified  by  _s_e_e_k= (0 bytes if _s_e_e_k= is not
+              given).
+
+       _i_b_s=_b_y_t_e_s
+              Read _b_y_t_e_s bytes at a time.
+
+       _o_b_s=_b_y_t_e_s
+              Write _b_y_t_e_s bytes at a time.
+
+       _b_s=_b_y_t_e_s
+              Read and write _b_y_t_e_s bytes at atime.  Override  ibs
+              and obs.
+
+       _c_b_s=_b_y_t_e_s
+              Convert _b_y_t_e_s bytes at a time.
+
+       _s_k_i_p=_b_l_o_c_k_s
+              Skip _b_l_o_c_k_s ibs-sized blocks at start of input.
+
+       _s_e_e_k=_b_l_o_c_k_s
+              Skip _b_l_o_c_k_s obs-sized blocks at start of output.
+
+       _c_o_u_n_t=_b_l_o_c_k_s
+              Copy only _b_l_o_c_k_s ibs-sized input blocks.
+
+       _c_o_n_v=_c_o_n_v_e_r_s_i_o_n[,_c_o_n_v_e_r_s_i_o_n...]
+              Convert  the  file  as  specified by the _c_o_n_v_e_r_s_i_o_n
+              arguments.
+              Conversions:
+
+
+
+                                                                1
+
+
+
+
+
+DD(1L)                                                     DD(1L)
+
+
+              ascii  Convert EBCDIC to ASCII.
+
+              ebcdic Convert ASCII to EBCDIC.
+
+              ibm    Convert ASCII to alternate EBCDIC.
+
+              block  Pad newline-terminated records  to  size  of
+                     cbs, replacing newline with trailing spaces.
+
+              unblock
+                     Replace trailing spaces in  cbs-sized  block
+                     with newline.
+
+              lcase  Change uppercase characters to lowercase.
+
+              ucase  Change lowercase characters to uppercase.
+
+              swab   Swap  every pair of input bytes.  Unlike the
+                     Unix dd, this works when an  odd  number  of
+                     bytes  are read.  If the input file contains
+                     an odd number of bytes,  the  last  byte  is
+                     simply  copied  (since  there  is nothing to
+                     swap it with).
+
+              noerror
+                     Continue after read errors.
+
+              sync   Pad every input block to size  of  ibs  with
+                     trailing NULs.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                                                2
+
+

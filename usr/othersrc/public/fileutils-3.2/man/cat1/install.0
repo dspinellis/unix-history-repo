@@ -1,0 +1,132 @@
+
+
+
+INSTALL(1L)                                           INSTALL(1L)
+
+
+NNAAMMEE
+       install - copy files and set their attributes
+
+SSYYNNOOPPSSIISS
+       iinnssttaallll [options] [-s] [--strip] source dest
+       iinnssttaallll [options] [-s] [--strip] source... directory
+       iinnssttaallll [options] [-d,--directory] directory...
+       Options:
+       [-c]  [-g  group]  [-m  mode]  [-o  owner] [--group=group]
+       [--mode=mode] [--owner=owner]
+
+DDEESSCCRRIIPPTTIIOONN
+       This manual page documents the  GNU  version  of  iinnssttaallll.
+       iinnssttaallll  copies files and sets their permission modes and,
+       if possible, their owner and group.  Used similarly to ccpp;
+       typically  used  in  Makefiles to copy programs into their
+       destination directories.  It can also be  used  to  create
+       the  destination  directories and any leading directories,
+       and to set the final directory's  modes.   It  refuses  to
+       copy files onto themselves.
+
+   OOPPTTIIOONNSS
+       -_c     Ignored;  for  compatibility with old Unix versions
+              of install.
+
+       -_d, --_d_i_r_e_c_t_o_r_y
+              Create each given directory and its leading  direc-
+              tories,  if  they  do  not  already exist.  Set the
+              owner, group and mode as given on the command  line
+              or  to the defaults.  Also gives any leading direc-
+              tories that are created those attributes.  This  is
+              different  from  the SunOS 4.x _i_n_s_t_a_l_l, which gives
+              directories that it creates the default attributes.
+
+       -_g, --_g_r_o_u_p _g_r_o_u_p
+              Set  the  group  ownership of the installed file or
+              directory to the group ID of _g_r_o_u_p (default is pro-
+              cess's current group).  _g_r_o_u_p may also be a numeric
+              group ID.
+
+       -_m, --_m_o_d_e _m_o_d_e
+              Set the permission mode for the installed  file  or
+              directory  to  _m_o_d_e,  which  can be either an octal
+              number, or a symbolic mode as in chmod, with  0  as
+              the  point of departure.  The default mode is 0755.
+
+       -_o, --_o_w_n_e_r _o_w_n_e_r
+              If run as root, set the ownership of the  installed
+              file  to  the  user  ID of _o_w_n_e_r (default is root).
+              _o_w_n_e_r may also be a numeric user ID.
+
+       -_s, --_s_t_r_i_p
+              Strip the symbol tables from installed programs.
+
+
+
+
+                                                                1
+
+
+
+
+
+INSTALL(1L)                                           INSTALL(1L)
+
+
+       The long-named options can be introduced with `+' as  well
+       as  `--', for compatibility with previous releases.  Even-
+       tually support for `+' will  be  removed,  because  it  is
+       incompatible with the POSIX.2 standard.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                                                2
+
+
