@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_synch.c	7.2 (Berkeley) %G%
+ *	@(#)kern_synch.c	7.3 (Berkeley) %G%
  */
 
 #include "../machine/pte.h"
@@ -111,6 +111,7 @@ updatepri(p)
 	p->p_slptime--;		/* the first time was done in schedcpu */
 	while (a && --p->p_slptime)
 		a = (int) (scale * a) /* + p->p_nice */;
+	p->p_slptime = 0;
 	if (a < 0)
 		a = 0;
 	if (a > 255)
@@ -261,7 +262,6 @@ restart:
 				/* OPTIMIZED INLINE EXPANSION OF setrun(p) */
 				if (p->p_slptime > 1)
 					updatepri(p);
-				p->p_slptime = 0;
 				p->p_stat = SRUN;
 				if (p->p_flag & SLOAD)
 					setrq(p);
@@ -281,7 +281,6 @@ restart:
 				/* END INLINE EXPANSION */
 				goto restart;
 			}
-			p->p_slptime = 0;
 		} else
 			q = &p->p_link;
 	}
@@ -327,12 +326,12 @@ setrun(p)
 	case SIDL:
 		break;
 	}
-	if (p->p_slptime > 1)
-		updatepri(p);
 	p->p_stat = SRUN;
 	if (p->p_flag & SLOAD)
 		setrq(p);
 	splx(s);
+	if (p->p_slptime > 1)
+		updatepri(p);
 	if (p->p_pri < curpri) {
 		runrun++;
 		aston();
