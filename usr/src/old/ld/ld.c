@@ -321,7 +321,8 @@ struct	biobuf *tout, *dout, *trout, *drout, *sout, *strout;
 off_t	offset = sizeof (off_t);
 
 int	ofilfnd;		/* -o given; otherwise move l.out to a.out */
-char	*ofilename = "l.out";
+char	*defaultname;		/* l.out */
+char	*ofilename;		/* name given to -o */
 int	ofilemode;		/* respect umask even for unsucessful ld's */
 int	infil;			/* current input file descriptor */
 char	*filname;		/* and its name */
@@ -360,6 +361,7 @@ char **argv;
 	}
 	if (argc == 1)
 		exit(4);
+	ofilename = defaultname = (char *)genbuildname("l.out");
 	pagesize = getpagesize();
 
 	/* 
@@ -397,7 +399,7 @@ char **argv;
 		case 'o':
 			if (++c >= argc)
 				error(1, "-o where?");
-			ofilename = *p++;
+			ofilename = (char *)genbuildname(*p++);
 			ofilfnd++;
 			continue;
 		case 'u':
@@ -549,7 +551,7 @@ delexit()
 	char c = 0;
 
 	bflush();
-	unlink("l.out");
+	unlink(defaultname);
 	/*
 	 * We have to insure that the last block of the data segment
 	 * is allocated a full pagesize block. If the underlying
@@ -1537,6 +1539,7 @@ load2td(creloc, position, b1, b2)
 finishout()
 {
 	register int i;
+	char *newname;
 	int nsymt;
 
 	if (sflag==0) {
@@ -1546,10 +1549,11 @@ finishout()
 		bwrite(&offset, sizeof offset, sout);
 	}
 	if (!ofilfnd) {
-		unlink("a.out");
-		if (link("l.out", "a.out") < 0)
+		newname = (char *)genbuildname("a.out");
+		unlink(newname);
+		if (link(defaultname, newname) < 0)
 			error(1, "cannot move l.out to a.out");
-		ofilename = "a.out";
+		ofilename = newname;
 	}
 	delarg = errlev;
 	delexit();
@@ -1709,7 +1713,7 @@ char *acp;
 	if (filname[0] == '-' && filname[1] == 'l')
 		infil = libopen(filname + 2, O_RDONLY);
 	else
-		infil = open(filname, O_RDONLY);
+		infil = open((char *)genbuildname(filname), O_RDONLY);
 	if (infil < 0)
 		error(1, "cannot open");
 	fstat(infil, &stb);
