@@ -17,7 +17,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)gram.y	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)gram.y	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "defs.h"
@@ -123,10 +123,13 @@ cmd:		  INSTALL options opt_namelist SM = {
 			$1->sc_options = $2 | options;
 			if ($3 != NULL) {
 				nl = expand($3, E_VARS);
-				if (nl->n_next != NULL)
-					yyerror("only one name allowed\n");
-				$1->sc_name = nl->n_name;
-				free(nl);
+				if (nl) {
+					if (nl->n_next != NULL)
+					    yyerror("only one name allowed\n");
+					$1->sc_name = nl->n_name;
+					free(nl);
+				} else
+					$1->sc_name = NULL;
 			}
 			$$ = $1;
 		}
