@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pk_subr.c	7.11 (Berkeley) %G%
+ *	@(#)pk_subr.c	7.12 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -47,6 +47,7 @@ struct socket *so;
 {
 	register struct pklcd *lcp;
 	register int error = ENOBUFS;
+	int pk_output();
 
 	MALLOC(lcp, struct pklcd *, sizeof (*lcp), M_PCB, M_NOWAIT);
 	if (lcp) {
@@ -66,6 +67,7 @@ struct socket *so;
 		so -> so_pcb = (caddr_t) lcp;
 		so -> so_error = error;
 	}
+	lcp -> lcd_send = pk_output;
 	return (lcp);
 }
 
