@@ -1,4 +1,4 @@
-/*	udp_usrreq.c	4.32	82/09/26	*/
+/*	udp_usrreq.c	4.33	82/10/09	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -7,16 +7,16 @@
 #include "../h/protosw.h"
 #include "../h/socket.h"
 #include "../h/socketvar.h"
-#include "../net/in.h"
+#include "../netinet/in.h"
 #include "../net/if.h"
 #include "../net/route.h"
-#include "../net/in_pcb.h"
-#include "../net/in_systm.h"
-#include "../net/ip.h"
-#include "../net/ip_var.h"
-#include "../net/ip_icmp.h"
-#include "../net/udp.h"
-#include "../net/udp_var.h"
+#include "../netinet/in_pcb.h"
+#include "../netinet/in_systm.h"
+#include "../netinet/ip.h"
+#include "../netinet/ip_var.h"
+#include "../netinet/ip_icmp.h"
+#include "../netinet/udp.h"
+#include "../netinet/udp_var.h"
 #include <errno.h>
 
 /*
