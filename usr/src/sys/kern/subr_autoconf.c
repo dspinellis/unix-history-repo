@@ -6,11 +6,16 @@
  * at Lawrence Berkeley Laboratory under DARPA contract BG 91-66 and
  * contributed to Berkeley.
  *
+ * All advertising materials mentioning features or use of this software
+ * must display the following acknowledgement:
+ *	This product includes software developed by the University of
+ *	California, Lawrence Berkeley Laboratories.
+ *
  * %sccs.include.redist.c%
  *
- *	@(#)subr_autoconf.c	7.4 (Berkeley) %G%
+ *	@(#)subr_autoconf.c	7.5 (Berkeley) %G%
  *
- * from: $Header: subr_autoconf.c,v 1.6 92/06/11 17:56:19 torek Exp $ (LBL)
+ * from: $Header: subr_autoconf.c,v 1.9 92/11/19 01:59:01 torek Exp $ (LBL)
  */
 
 #include <sys/param.h>
@@ -21,7 +26,12 @@
  * Autoconfiguration subroutines.
  */
 
-extern struct cfdata cfdata[];		/* from ioconf.c */
+/*
+ * ioconf.c exports exactly two names: cfdata and cfroots.  All system
+ * devices and drivers are found via these tables.
+ */
+extern struct cfdata cfdata[];
+extern short cfroots[];
 
 #define	ROOT ((struct device *)NULL)
 
@@ -71,7 +81,7 @@ config_search(fn, parent, aux)
 	register struct device *parent;
 	void *aux;
 {
-	register struct cfdata *cf, *pcf;
+	register struct cfdata *cf;
 	register short *p;
 	struct matchinfo m;
 
@@ -82,18 +92,14 @@ config_search(fn, parent, aux)
 	m.pri = 0;
 	for (cf = cfdata; cf->cf_driver; cf++) {
 		/*
-		 * Skip cf if no longer eligible, or if a root entry.
-		 * Otherwise scan through parents for one matching `parent'
-		 * (and alive), and try match function.
+		 * Skip cf if no longer eligible, otherwise scan through
+		 * parents for one matching `parent', and try match function.
 		 */
-		if (cf->cf_fstate == FSTATE_FOUND ||
-		    (p = cf->cf_parents) == NULL)
+		if (cf->cf_fstate == FSTATE_FOUND)
 			continue;
-		while (*p >= 0) {
-			pcf = &cfdata[*p++];
-			if (parent->dv_cfdata == pcf)
+		for (p = cf->cf_parents; *p >= 0; p++)
+			if (parent->dv_cfdata == &cfdata[*p])
 				mapply(&m, cf);
-		}
 	}
 	return (m.match);
 }
@@ -109,6 +115,7 @@ config_rootsearch(fn, rootname, aux)
 	register void *aux;
 {
 	register struct cfdata *cf;
+	register short *p;
 	struct matchinfo m;
 
 	m.fn = fn;
@@ -118,12 +125,14 @@ config_rootsearch(fn, rootname, aux)
 	m.pri = 0;
 	/*
 	 * Look at root entries for matching name.  We do not bother
-	 * with found-state here since only one root should ever be searched.
+	 * with found-state here since only one root should ever be
+	 * searched (and it must be done first).
 	 */
-	for (cf = cfdata; cf->cf_driver; cf++)
-		if (cf->cf_parents == NULL && cf->cf_unit == 0 &&
-		    strcmp(cf->cf_driver->cd_name, rootname) == 0)
+	for (p = cfroots; *p >= 0; p++) {
+		cf = &cfdata[*p];
+		if (strcmp(cf->cf_driver->cd_name, rootname) == 0)
 			mapply(&m, cf);
+	}
 	return (m.match);
 }
 
@@ -217,21 +226,22 @@ config_attach(parent, cf, aux, print)
 	lname = strlen(cd->cd_name);
 	xunit = number(&num[sizeof num], myunit);
 	lunit = &num[sizeof num] - xunit;
+	if (lname + lunit >= sizeof(dev->dv_xname))
+		panic("config_attach: device name too long");
 
-	/* get memory for all device vars, plus expanded name */
-	dev = (struct device *)malloc(cd->cd_devsize + lname + lunit,
-	    M_DEVBUF, M_WAITOK);		/* XXX cannot wait! */
+	/* get memory for all device vars */
+	dev = (struct device *)malloc(cd->cd_devsize, M_DEVBUF, M_WAITOK);
+					/* XXX cannot wait! */
 	bzero(dev, cd->cd_devsize);
 	*nextp = dev;			/* link up */
 	nextp = &dev->dv_next;
 	dev->dv_class = cd->cd_class;
 	dev->dv_cfdata = cf;
-	dev->dv_name = cd->cd_name;
 	dev->dv_unit = myunit;
-	dev->dv_xname = (char *)dev + cd->cd_devsize;
-	bcopy(dev->dv_name, dev->dv_xname, lname);
+	bcopy(cd->cd_name, dev->dv_xname, lname);
 	bcopy(xunit, dev->dv_xname + lname, lunit);
 	dev->dv_parent = parent;
+	bcopy(cd->cd_evnam, dev->dv_evnam, sizeof(cd->cd_evnam));
 	if (parent == ROOT)
 		printf("%s (root)", dev->dv_xname);
 	else {
@@ -269,5 +279,14 @@ config_attach(parent, cf, aux, print)
 	if (cd->cd_devs[dev->dv_unit])
 		panic("config_attach: duplicate %s", dev->dv_xname);
 	cd->cd_devs[dev->dv_unit] = dev;
+
+	/*
+	 * Before attaching, clobber any unfound devices that are
+	 * otherwise identical.
+	 */
+	for (cf = cfdata; cf->cf_driver; cf++)
+		if (cf->cf_driver == cd && cf->cf_unit == dev->dv_unit &&
+		    cf->cf_fstate == FSTATE_NOTFOUND)
+			cf->cf_fstate = FSTATE_FOUND;
 	(*cd->cd_attach)(parent, dev, aux);
 }
