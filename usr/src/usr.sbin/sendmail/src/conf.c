@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.161 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.162 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -1368,7 +1368,7 @@ getla()
 	FILE *fp;
 
 	fp = fopen(_PATH_LOADAVG, "r");
-	if (fp == NULL) 
+	if (fp == NULL)
 	{
 		if (tTd(3, 1))
 			printf("getla: fopen(%s): %s\n",
@@ -1832,7 +1832,7 @@ uname(name)
 			return (0);
 	}
 #endif
-	
+
 	return (-1);
 }
 #endif /* HASUNAME */
@@ -2457,7 +2457,7 @@ lockfile(fd, filename, ext, type)
 
 	if (ext == NULL)
 		ext = "";
-		
+
 	bzero(&lfd, sizeof lfd);
 	if (bitset(LOCK_UN, type))
 		lfd.l_type = F_UNLCK;
@@ -2931,6 +2931,117 @@ sm_getpwuid(uid)
 	return getpwuid(uid);
 }
 /*
+**  LOAD_IF_NAMES -- load interface-specific names into $=w
+**
+**	Parameters:
+**		none.
+**
+**	Returns:
+**		none.
+**
+**	Side Effects:
+**		Loads $=w with the names of all the interfaces.
+*/
+
+#ifdef SIOCGIFCONF
+# include <netdb.h>
+# include <arpa/inet.h>
+# include <net/if.h>
+#endif
+
+void
+load_if_names()
+{
+#ifdef SIOCGIFCONF
+	struct hostent *hp;
+	int s;
+        struct ifconf ifc;
+        struct ifreq *ifr;
+	char interfacebuf[1024];
+	int n;
+	extern char *inet_ntoa();
+	extern struct hostent *gethostbyaddr();
+
+	s = socket(AF_INET, SOCK_DGRAM, 0);
+	if (s == -1)
+		return;
+
+	/* get the list of known IP address from the kernel */
+        ifc.ifc_len = sizeof(interfacebuf);
+        ifc.ifc_buf = interfacebuf;
+	if (ioctl(s, SIOCGIFCONF, (char *)&ifc) < 0)
+	{
+		if (tTd(0, 4))
+			printf("SIOGIFCONF failed: %s\n", errstring(errno));
+		return;
+	}
+
+	/* scan the list of IP address */
+	if (tTd(0, 4))
+		printf("scanning for interface specific names, ifc_len=%d\n",
+			ifc.ifc_len);
+
+        ifr = ifc.ifc_req;
+        for (n = ifc.ifc_len / sizeof(struct ifreq); n > 0; n--, ifr++)
+        {
+		struct in_addr ia;
+		char ip_addr[256];
+
+		if (tTd(0, 20))
+			printf("%s\n", anynet_ntoa((SOCKADDR *) &ifr->ifr_addr));
+
+		if (ifr->ifr_addr.sa_family != AF_INET)
+			continue;
+
+		/* extract IP address from the list*/
+		ia = (((struct sockaddr_in *) (&ifr->ifr_addr))->sin_addr);
+
+		/* save IP address in text from */
+		(void) sprintf(ip_addr, "[%s]",
+			inet_ntoa(((struct sockaddr_in *)(&ifr->ifr_addr))->sin_addr));
+		if (!wordinclass(ip_addr, 'w'))
+		{
+			setclass('w', ip_addr);
+			if (tTd(0, 4))
+				printf("\ta.k.a.: %s\n", ip_addr);
+		}
+
+		/* skip "loopback" interface "lo" */
+		if (strcmp("lo0", ifr->ifr_name) == 0)
+			continue;
+
+		/* lookup name with IP address */
+		hp = sm_gethostbyaddr((char *) &ia, sizeof(ia), AF_INET);
+		if (hp == NULL)
+		{
+			syslog(LOG_CRIT, "gethostbyaddr() failed for %s\n",
+				inet_ntoa(ia));
+			continue;
+		}
+
+		/* save its cname */
+		if (!wordinclass(hp->h_name, 'w'))
+		{
+			setclass('w', hp->h_name);
+			if (tTd(0, 4))
+				printf("\ta.k.a.: %s\n", hp->h_name);
+		}
+
+		/* save all it aliases name */
+		while (*hp->h_aliases)
+		{
+			if (!wordinclass(*hp->h_aliases, 'w'))
+			{
+				setclass('w', *hp->h_aliases);
+				if (tTd(0, 4))
+				printf("\ta.k.a.: %s\n", *hp->h_aliases);
+			}
+			hp->h_aliases++;
+		}
+	}
+#endif
+}
+/*
 **  NI_PROPVAL -- netinfo property value lookup routine
 **
 **	Parameters:
@@ -3069,7 +3180,7 @@ ni_propval(keydir, keyprop, keyval, valprop, sepchar)
 			continue;
 		}
 
-		/* 
+		/*
 		**  Calculate number of bytes needed and build result
 		*/
 
@@ -3082,7 +3193,7 @@ ni_propval(keydir, keyprop, keyval, valprop, sepchar)
 			strcpy(p, ninl.ni_namelist_val[j]);
 			p += strlen(p);
 			*p++ = sepchar;
-		} 
+		}
 		*--p = '\0';
 
 		ni_namelist_free(&ninl);

@@ -13,7 +13,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	8.105 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	8.106 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -411,6 +411,9 @@ main(argc, argv, envp)
 			}
 		}
 	}
+
+	/* probe interfaces and locate any additional names */
+	load_if_names();
 
 	/* current time */
 	define('b', arpadate((char *) NULL), CurEnv);
