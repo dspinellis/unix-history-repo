@@ -1,0 +1,8 @@
+Subject: test/mime12
+MIME-Version: 1.0
+Content-Type: message/rfc822
+Content-Transfer-Encoding: 8bit
+
+Subject: internal message
+
+Some Å 8-bit data
