@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)stty.1	6.10 (Berkeley) %G%
+.\"     @(#)stty.1	6.11 (Berkeley) %G%
 .\"
 .Dd 
 .Dt STTY 1
@@ -20,11 +20,10 @@
 The 
 .Nm stty
 utility sets or reports on terminal
-.Tn I/O
 characteristics for the device that is its standard input.
-If no options or operands are specified, it reports the
-settings of certain characteristics if they differ
-from their default values.
+If no options or operands are specified, it reports the settings of a set
+of characteristics as well as additional ones if they differ from their
+default values.
 Otherwise it modifies
 the terminal state according to the specified arguments.
 Some combinations of arguments are mutually
@@ -46,8 +45,9 @@ Display the current settings for the terminal named by
 .Ar file .
 .It Fl g
 Display all the current settings for the terminal to standard output 
-in a form that may be used as an argument to another invocation of
-.Nm stty .
+in a form that may be used as an argument to a subsequent invocation of
+.Nm stty
+to restore the current terminal state.
 .El
 .Pp
 The following arguments are available to set the terminal
@@ -269,56 +269,9 @@ Set the line discipline to the standard terminal line discipline
 .Dv TTYDISC .
 .El
 .Pp
-If the
-.Fl g
-option is specified, stty writes to standard output
-the current settings in a form that can be used as arguments
-to another instance of stty on the same system.
-.Pp
-If the
-.Fl a
-option is specified, all of the information about the current setting
-is written to standard output
-in the same format described for the arguments above.
-Unless otherwise specified, this information is displayed as
-<space>-separated tokens, on one or
-more lines, with one or more tokens per line.
-.Pp
-If no options are specified, a subset of the
-information displayed for the
-.Fl a
-option is displayed.
-.Pp
-If the terminal input speed and output speed are the same,
-the speed information is displayed as follows:
-.Bd -ragged -offset indent
-"speed %d baud;", <speed>
-.Ed
-.Pp
-Otherwise speeds are displayed as:
-.Pp
-.Bd -ragged -offset indent
-"ispeed %d baud; ospeed %d baud;", <ispeed>, <ospeed>
-.Ed
-.Pp
-Control characters are displayed as:
-.Pp
-.Bd -ragged -offset indent
-"%s = %s;", <control-character name>, <value>
-.Ed
-.Pp
-where value is either the character, or some visual
-representation of the character if it is non-printing, or
-the string "<undef>" if the character is disabled.
-.Pp
 The
 .Nm stty
-utility exits with one of the following values:
-.Bl -tag -width indent
-.It Li \&0
-The terminal options were read or set successfully.
-.It Li \&>0
-An error occurred.
+utility exits with a value of 0 if successful, and >0 if an error occurs.
 .El
 .Sh SEE ALSO
 .Xr stty 4
