@@ -5,9 +5,10 @@
 #  old make program (I recommend that you get and port the new make if you
 #  are going to be doing any signficant work on sendmail).
 #
-#  This has been tested on HP-UX 9.05 on 7xx series.
+#  This has been tested on HP-UX 9.05 on 7xx series and HP-UX 9.04
+#  on 8xx series.
 #
-#	@(#)Makefile.HP-UX	8.7 (Berkeley) %G%
+#	@(#)Makefile.HP-UX	8.8 (Berkeley) %G%
 #
 
 # use O=-O (usual) or O=-g (debugging)
@@ -24,7 +25,7 @@ O=	+O1
 DBMDEF=	-DNDBM -DNEWDB -DNIS
 
 # environment definitions (e.g., -D_AIX3)
-ENVDEF=	
+ENVDEF=	-DSYSV
 
 # see also conf.h for additional compilation flags
 
@@ -36,7 +37,7 @@ LIBDIRS=-L/usr/sww/lib
 
 # libraries required on your system
 #  delete -lresolv if you are not running BIND 4.9.x
-LIBS=	-ldb -ldbm -lresolv
+LIBS=	-ldb -lndbm -lresolv
 
 # location of sendmail binary (usually /usr/sbin or /usr/lib)
 BINDIR=	${DESTDIR}/usr/lib
