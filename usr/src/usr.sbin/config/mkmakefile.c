@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mkmakefile.c	5.26 (Berkeley) %G%";
+static char sccsid[] = "@(#)mkmakefile.c	5.27 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -103,6 +103,7 @@ static	struct users {
 } users[] = {
 	{ 24, 8, 1024 },		/* MACHINE_VAX */
 	{ 4, 2, 128 },			/* MACHINE_TAHOE */
+	{ 8, 2, 64 },			/* MACHINE_HP300 */
 };
 #define	NUSERS	(sizeof (users) / sizeof (users[0]))
 
@@ -168,23 +169,32 @@ makefile()
 	while (fgets(line, BUFSIZ, ifp) != 0) {
 		if (*line == '%')
 			goto percent;
-		if (profiling && strncmp(line, "COPTS=", 6) == 0) {
+		if ((debugging || profiling) &&
+		    strncmp(line, "COPTS=", 6) == 0) {
 			register char *cp;
 
-			fprintf(ofp, _PATH_GPROF, machinename);
 			cp = index(line, '\n');
 			if (cp)
 				*cp = 0;
-			cp = line + 6;
-			while (*cp && (*cp == ' ' || *cp == '\t'))
-				cp++;
-			COPTS = malloc((unsigned)(strlen(cp) + 1));
-			if (COPTS == 0) {
-				printf("config: out of memory\n");
-				exit(1);
+			if (profiling) {
+				cp = line + 6;
+				while (*cp && (*cp == ' ' || *cp == '\t'))
+					cp++;
+				COPTS = malloc((unsigned)(strlen(cp) + 1));
+				if (COPTS == 0) {
+					printf("config: out of memory\n");
+					exit(1);
+				}
+				strcpy(COPTS, cp);
 			}
-			strcpy(COPTS, cp);
-			fprintf(ofp, "%s -pg\n", line);
+			fprintf(ofp, "%s", line);
+			if (debugging)
+				fprintf(ofp, " -g");
+			if (profiling) {
+				fprintf(ofp, " -pg\n");
+				fprintf(ofp, _PATH_GPROF, machinename);
+			} else
+				fprintf(ofp, "\n");
 			continue;
 		}
 		fprintf(ofp, "%s", line);
@@ -216,10 +226,11 @@ read_files()
 	FILE *fp;
 	register struct file_list *tp, *pf;
 	register struct device *dp;
+	struct device *save_dp;
 	register struct opt *op;
 	char *wd, *this, *needs, *devorprof;
 	char fname[32];
-	int nreqs, first = 1, configdep, isdup;
+	int nreqs, first = 1, configdep, isdup, std;
 
 	ftab = 0;
 	(void) strcpy(fname, "files");
@@ -272,19 +283,20 @@ next:
 	devorprof = "";
 	configdep = 0;
 	needs = 0;
+	std = 0;
 	if (eq(wd, "standard"))
-		goto checkdev;
-	if (!eq(wd, "optional")) {
+		std = 1;
+	else if (!eq(wd, "optional")) {
 		printf("%s: %s must be optional or standard\n", fname, this);
 		exit(1);
 	}
-nextopt:
+nextparam:
 	next_word(fp, wd);
 	if (wd == 0)
-		goto doneopt;
+		goto doneparam;
 	if (eq(wd, "config-dependent")) {
 		configdep++;
-		goto nextopt;
+		goto nextparam;
 	}
 	devorprof = wd;
 	if (eq(wd, "device-driver") || eq(wd, "profiling-routine")) {
@@ -296,16 +308,29 @@ nextopt:
 		needs = ns(wd);
 	if (isdup)
 		goto invis;
-	for (dp = dtab; dp != 0; dp = dp->d_next)
-		if (eq(dp->d_name, wd))
-			goto nextopt;
+	for (dp = dtab; dp != 0; save_dp = dp, dp = dp->d_next)
+		if (eq(dp->d_name, wd)) {
+			if (std &&
+			    dp->d_type == PSEUDO_DEVICE && dp->d_slave <= 0)
+				dp->d_slave = 1;
+			goto nextparam;
+		}
+	if (std) {
+		dp = (struct device *) malloc(sizeof *dp);
+		init_dev(dp);
+		dp->d_name = ns(wd);
+		dp->d_type = PSEUDO_DEVICE;
+		dp->d_slave = 1;
+		save_dp->d_next = dp;
+		goto nextparam;
+	}
 	for (op = opt; op != 0; op = op->op_next)
 		if (op->op_value == 0 && opteq(op->op_name, wd)) {
 			if (nreqs == 1) {
 				free(needs);
 				needs = 0;
 			}
-			goto nextopt;
+			goto nextparam;
 		}
 invis:
 	while ((wd = get_word(fp)) != 0)
@@ -318,24 +343,11 @@ invis:
 	tp->f_flags = isdup;
 	goto next;
 
-doneopt:
-	if (nreqs == 0) {
+doneparam:
+	if (std == 0 && nreqs == 0) {
 		printf("%s: what is %s optional on?\n",
 		    fname, this);
 		exit(1);
-	}
-
-checkdev:
-	if (wd) {
-		next_word(fp, wd);
-		if (wd) {
-			if (eq(wd, "config-dependent")) {
-				configdep++;
-				goto checkdev;
-			}
-			devorprof = wd;
-			next_word(fp, wd);
-		}
 	}
 
 save:
@@ -519,6 +531,11 @@ for (ftp = ftab; ftp != 0; ftp = ftp->f_next) {
 			    tp, tp);
 			fprintf(f, "\trm -f %ss\n\n", tp);
 			break;
+
+		case MACHINE_HP300:
+			fprintf(f, "\t${CC} -c ${CFLAGS} %s../%sc\n\n",
+				extras, np);
+			break;
 		}
 		break;
 
@@ -532,6 +549,11 @@ for (ftp = ftab; ftp != 0; ftp = ftp->f_next) {
 			fprintf(f,"\t${C2} -i %ss | ${INLINE} | ${AS} -o %so\n",
 			    tp, tp);
 			fprintf(f, "\trm -f %ss\n\n", tp);
+			break;
+
+		case MACHINE_HP300:
+			fprintf(f, "\t${CC} -c ${CFLAGS} %s../%sc\n\n",
+				extras, np);
 			break;
 		}
 		break;
@@ -560,6 +582,14 @@ for (ftp = ftab; ftp != 0; ftp = ftp->f_next) {
 				COPTS, extras, np);
 			fprintf(f, "\tex - %ss < ${GPROF.EX}\n", tp);
 			fprintf(f, "\t${INLINE} %ss | ${AS} -o %so\n", tp, tp);
+			fprintf(f, "\trm -f %ss\n\n", tp);
+			break;
+
+		case MACHINE_HP300:
+			fprintf(f, "\t${CC} -c -S %s %s../%sc\n",
+				COPTS, extras, np);
+			fprintf(f, "\tex - %ss < ${GPROF.EX}\n", tp);
+			fprintf(f, "\t${AS} -o %so %ss\n", tp, tp);
 			fprintf(f, "\trm -f %ss\n\n", tp);
 			break;
 		}
@@ -612,20 +642,26 @@ do_systemspec(f, fl, first)
 	    fl->f_needs, fl->f_needs);
 	if (first) {
 		fprintf(f, "\t@sh ../conf/newvers.sh\n");
-		fprintf(f, "\t@${CC} $(CFLAGS) -c vers.c\n");
+		fprintf(f, "\t@${CC} ${CFLAGS} -c vers.c\n");
 	}
 	switch (machine) {
 
 	case MACHINE_VAX:
-		fprintf(f, "\t@${LD} -n -o %s -e start -x -T 80000000 ",
-			fl->f_needs);
+		fprintf(f, "\t@${LD} -n -o %s -e start -%c -T 80000000 ",
+			fl->f_needs, debugging ? 'X' : 'x');
 		fprintf(f,
 		    "locore.o emulate.o ${OBJS} vers.o ioconf.o param.o ");
 		break;
 
 	case MACHINE_TAHOE:
-		fprintf(f, "\t@${LD} -n -o %s -e start -x -T C0000800 ",
-			fl->f_needs);
+		fprintf(f, "\t@${LD} -n -o %s -e start -%c -T C0000800 ",
+			fl->f_needs, debugging ? 'X' : 'x');
+		fprintf(f, "locore.o ${OBJS} vers.o ioconf.o param.o ");
+		break;
+
+	case MACHINE_HP300:
+		fprintf(f, "\t@${LD} -n -o %s -e start -%c ",
+			fl->f_needs, debugging ? 'X' : 'x');
 		fprintf(f, "locore.o ${OBJS} vers.o ioconf.o param.o ");
 		break;
 	}
@@ -660,6 +696,11 @@ do_swapspec(f, name)
 		fprintf(f, "\t${C2} swapgeneric.s | ${INLINE}");
 		fprintf(f, " | ${AS} -o swapgeneric.o\n");
 		fprintf(f, "\trm -f swapgeneric.s\n\n");
+		break;
+
+	case MACHINE_HP300:
+		fprintf(f, "\t${CC} -c ${CFLAGS} ");
+		fprintf(f, "../%s/swapgeneric.c\n\n", machinename);
 		break;
 	}
 }

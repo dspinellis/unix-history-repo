@@ -78,7 +78,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)config.y	5.8 (Berkeley) %G%
+ *	@(#)config.y	5.9 (Berkeley) %G%
  */
 
 #include "config.h"
@@ -125,6 +125,9 @@ Config_spec:
 		} else if (!strcmp($2, "tahoe")) {
 			machine = MACHINE_TAHOE;
 			machinename = "tahoe";
+		} else if (!strcmp($2, "hp300")) {
+			machine = MACHINE_HP300;
+			machinename = "hp300";
 		} else
 			yyerror("Unknown machine type");
 	      } |
@@ -729,6 +732,11 @@ check_nexus(dev, num)
 	case MACHINE_TAHOE:
 		if (!eq(dev->d_name, "vba")) 
 			yyerror("only vba's should be connected to the nexus");
+		break;
+
+	case MACHINE_HP300:
+		if (num != QUES)
+			dev->d_addr = num;
 		break;
 	}
 }

@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -50,8 +50,11 @@ main(argc, argv)
 	int ch;
 	char *p;
 
-	while ((ch = getopt(argc, argv, "p")) != EOF)
+	while ((ch = getopt(argc, argv, "gp")) != EOF)
 		switch((char)ch) {
+		case 'g':
+			debugging++;
+			break;
 		case 'p':
 			profiling++;
 			break;
@@ -63,7 +66,7 @@ main(argc, argv)
 	argv += optind;
 
 	if (argc != 1) {
-usage:		fputs("usage: config [-p] sysname\n", stderr);
+usage:		fputs("usage: config [-gp] sysname\n", stderr);
 		exit(1);
 	}
 
@@ -72,7 +75,7 @@ usage:		fputs("usage: config [-p] sysname\n", stderr);
 		exit(2);
 	}
 	if (stat(p = path((char *)NULL), &buf)) {
-		if (mkdir(p, 0755)) {
+		if (mkdir(p, 0777)) {
 			perror(p);
 			exit(2);
 		}
@@ -96,6 +99,11 @@ usage:		fputs("usage: config [-p] sysname\n", stderr);
 	case MACHINE_TAHOE:
 		tahoe_ioconf();
 		vbglue();
+		break;
+
+	case MACHINE_HP300:
+		hp300_ioconf();
+		hpglue();
 		break;
 
 	default:

@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)config.h	5.8 (Berkeley) %G%
+ *	@(#)config.h	5.9 (Berkeley) %G%
  */
 
 /*
@@ -87,7 +87,7 @@ struct device {
 #define QUES	-1	/* -1 means '?' */
 #define	UNKNOWN -2	/* -2 means not set yet */
 	int	d_dk;			/* if init 1 set to number for iostat */
-	int	d_flags;		/* nlags for device init */
+	int	d_flags;		/* flags for device init */
 	struct	device *d_next;		/* Next one in list */
 };
 #define TO_NEXUS	(struct device *)-1
@@ -109,6 +109,7 @@ int	machine;
 char	*machinename;
 #define	MACHINE_VAX	1
 #define	MACHINE_TAHOE	2
+#define MACHINE_HP300	3
 
 /*
  * For each machine, a set of CPU's may be specified as supported.
@@ -166,6 +167,7 @@ struct	file_list *ftab, *conf_list, **confp;
 int	timezone, hadtz;
 int	dst;
 int	profiling;
+int	debugging;
 
 int	maxusers;
 
