@@ -1,0 +1,52 @@
+Must eliminate use of stdio.h; that loses when using GNU libc.
+(It is ok to include stdio.h only when debugging,
+ for the sake of DEBUG_PRINTF.)
+Can this be done?  If not, how do we make this work?
+
+Eliminate the asserts in record.h.
+
+Rename the global functions in core.c to GNU-style names;
+ fix object.m at same time.
+
+
+It is undesirable to use statics variables such as errorStatic in
+handleRuntimeError--as dennisg noted.  Do programs depend on error
+handling to be compatible with what it is on the NeXT?
+
+For example, would it be ok for DoesNotRecognize to return
+a method to be called, rather than a value to be returned?
+
+If that is not ok, I have other ideas, but they are harder to
+implement.
+
+
+
+Why does dennisg say that object_getIvarAddress is not thread-safe?
+
+
+
+objc_msgSend can be faster.
+1. Delete the statement  if (!theReceiver->isa).
+Instead, set the isa field of a deallocated object
+to point to a dummy class called "deallocated".
+This class should have a vector of operations
+at least as long as any class has had during this execution.
+Every element of this vector should point to `abort'.
+Don't bother to print a fancy message; that is a waste of effort.
+For something impossible, abort is *exactly* the right thing to do.
+2. Is it really necessary to call initializeClass here?
+Can't it be done in __objc_execClass, as soon as the class
+is complete?  If you can avoid doing this here, that is
+one fewer statement to execute.
+3. Get rid of objc_trace.
+4. Don't check wether getIMP returns null.
+There should never be a null in the method vector.
+If the method is not defined, store in the vector
+a fake method that will print the appropriate error.
+With these changes, all you need is this:
+  if (theReceiver)
+    return getIMP (theReceiver->isa, aSel);
+  else
+    return nilMethodIMP;
+which is something that could plausibly be open-coded in the future.
+
