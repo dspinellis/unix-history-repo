@@ -1,4 +1,4 @@
-/*	vd.c	1.7	86/01/21	*/
+/*	vd.c	1.8	86/01/23	*/
 
 #include "fsd.h"
 #if NVD > 0
@@ -87,8 +87,7 @@ typedef struct {
 	fmt_mdcb ctlr_mdcb;	/* controller mdcb */
 	fmt_dcb	ctlr_dcb;	/* r/w dcb */
 	fmt_dcb	seek_dcb[4];	/* dcbs for overlapped seeks */
-	/* buffer for raw/swap i/o */
-	char	rawbuf[VDMAXIO];
+	caddr_t	rawbuf;		/* buffer for raw+swap i/o */
 } ctlr_tab;
 
 ctlr_tab vdctlr_info[NVD];
@@ -129,9 +128,10 @@ vdprobe(reg, vm)
 		    CCF_ENP | CCF_EPE | CCF_EDE | CCF_ECE | CCF_ERR;
 	}
 	/*
-	 * Allocate page tables.
+	 * Allocate page tables and i/o buffer.
 	 */
 	vbmapalloc(btoc(VDMAXIO)+1, &ci->map, &ci->utl);
+	ci->rawbuf = calloc(VDMAXIO);
 	/*
 	 * Initialize all the drives to be of an unknown type.
 	 */
