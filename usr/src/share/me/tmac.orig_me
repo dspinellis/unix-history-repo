@@ -12,14 +12,14 @@
 .\"*		1919 Addison Street Suite 105				*
 .\"*		Berkeley, California  94704				*
 .\"*									*
-.\"*	VERSION 2.27	First Release: 11 Sept 1978			*
+.\"*	VERSION 2.28	First Release: 11 Sept 1978			*
 .\"*	See file \*(||/revisions for revision history			*
 .\"*									*
 .\"*	Documentation is available.					*
 .\"*									*
 .\"**********************************************************************
 .\"
-.\"	@(#)tmac.orig_me	2.27	%G%
+.\"	@(#)tmac.orig_me	2.28	%G%
 .\"	%beginstrip%
 .\"
 .\"	Code on .de commands:
@@ -1094,7 +1094,7 @@
 .if n .po 1i
 .if \n(.V=1v \
 .	nr $T 2
-.if \n(.T=0 \
+.if n .if \n(.T=0 \
 .	nr $T 1
 .if \nv=2 \
 \{\
