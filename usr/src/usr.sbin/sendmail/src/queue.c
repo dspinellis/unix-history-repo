@@ -1,9 +1,10 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 # include <sys/dir.h>
+# include <signal.h>
 # include <errno.h>
 
-static char	SccsId[] =	"@(#)queue.c	3.1	%G%";
+static char	SccsId[] =	"@(#)queue.c	3.2	%G%";
 
 /*
 **  QUEUEUP -- queue a message up for future transmission.
@@ -68,6 +69,9 @@ queueup(df)
 	/* output timeout */
 	fprintf(f, "T%ld\n", TimeOut);
 
+	/* output message priority */
+	fprintf(f, "P%d\n", MsgPriority);
+
 	/* output list of recipient addresses */
 	for (i = 0; Mailer[i] != NULL; i++)
 	{
@@ -123,31 +127,76 @@ queueup(df)
 **		runs things in the mail queue.
 */
 
+bool	ReorderQueue;
+
 runqueue()
 {
-	/*
-	**  Order the existing work requests.
-	*/
+	extern reordersig();
 
-	orderq();
-
-	/*
-	**  Process them once at a time.
-	**	The queue could be reordered while we do this to take
-	**	new requests into account.  If so, the existing job
-	**	will be finished but the next thing taken off WorkQ
-	**	may be something else.
-	*/
-
-	while (WorkQ != NULL)
+	for (;;)
 	{
-		WORK *w = WorkQ;
+		/*
+		**  Order the existing work requests.
+		*/
 
-		WorkQ = WorkQ->w_next;
-		dowork(w);
-		free(w->w_name);
-		free((char *) w);
+		orderq();
+
+		if (WorkQ == NULL)
+		{
+			/* no work?  well, maybe later */
+			if (QueueIntvl == 0)
+				break;
+			sleep(QueueIntvl);
+			continue;
+		}
+
+		ReorderQueue = FALSE;
+		if (QueueIntvl != 0)
+		{
+			signal(SIGALRM, reordersig);
+			alarm(QueueIntvl);
+		}
+
+		/*
+		**  Process them once at a time.
+		**	The queue could be reordered while we do this to take
+		**	new requests into account.  If so, the existing job
+		**	will be finished but the next thing taken off WorkQ
+		**	may be something else.
+		*/
+
+		while (WorkQ != NULL)
+		{
+			WORK *w = WorkQ;
+
+			WorkQ = WorkQ->w_next;
+			dowork(w);
+			free(w->w_name);
+			free((char *) w);
+			if (ReorderQueue)
+				break;
+		}
+
+		if (QueueIntvl == 0)
+			break;
 	}
+}
+/*
+**  REORDERSIG -- catch the alarm signal and tell sendmail to reorder queue.
+**
+**	Parameters:
+**		none.
+**
+**	Returns:
+**		none.
+**
+**	Side Effects:
+**		sets the "reorder work queue" flag.
+*/
+
+reordersig()
+{
+	ReorderQueue = TRUE;
 }
 /*
 **  ORDERQ -- order the work queue.
@@ -283,7 +332,8 @@ orderq()
 	if (Debug)
 	{
 		for (w = WorkQ; w != NULL; w = w->w_next)
-			printf("%32s: sz=%ld\n", w->w_name, w->w_size);
+			printf("%32s: pri=%-2d sz=%ld\n", w->w_name, w->w_pri,
+			     w->w_size);
 	}
 # endif DEBUG
 }
@@ -365,13 +415,18 @@ dowork(w)
 		*/
 
 		QueueRun = TRUE;
+		openxscrpt();
 		initsys();
 		readqf(w->w_name);
 		sendall(FALSE);
+# ifdef DEBUG
+		if (Debug > 2)
+			printf("CurTime=%ld, TimeOut=%ld\n", CurTime, TimeOut);
+# endif DEBUG
+		if (QueueUp && CurTime > TimeOut)
+			timeout(w);
 		if (!QueueUp)
 			(void) unlink(w->w_name);
-		else if (CurTime > TimeOut)
-			timeout(w);
 		finis();
 	}
 
@@ -438,7 +493,7 @@ readqf(cf)
 			break;
 
 		  case 'S':		/* sender */
-			setsender(&buf[1]);
+			setsender(newstr(&buf[1]));
 			break;
 
 		  case 'D':		/* data file name */
@@ -450,6 +505,10 @@ readqf(cf)
 
 		  case 'T':		/* timeout */
 			(void) sscanf(&buf[1], "%ld", &TimeOut);
+			break;
+
+		  case 'P':		/* message priority */
+			MsgPriority = atoi(&buf[1]);
 			break;
 
 		  default:
@@ -475,5 +534,14 @@ readqf(cf)
 timeout(w)
 	register WORK *w;
 {
-	printf("timeout(%s)\n", w->w_name);
+# ifdef DEBUG
+	if (Debug > 0)
+		printf("timeout(%s)\n", w->w_name);
+# endif DEBUG
+
+	/* return message to sender */
+	(void) returntosender("Cannot send mail for three days");
+
+	/* arrange to remove files from queue */
+	QueueUp = FALSE;
 }
