@@ -8,7 +8,7 @@
 
 #include "rcv.h"
 
-static char *SccsId = "@(#)names.c	2.7 %G%";
+static char *SccsId = "@(#)names.c	2.8 %G%";
 
 /*
  * Allocate a single element of a name list,
@@ -547,7 +547,7 @@ unpack(np)
 	register struct name *n;
 	char *cp;
 	char hbuf[10];
-	int t, extra, metoo;
+	int t, extra, metoo, verbose;
 
 	n = np;
 	if ((t = lengthof(n)) == 0)
@@ -568,6 +568,9 @@ unpack(np)
 	metoo = value("metoo") != NOSTR;
 	if (metoo)
 		extra++;
+	verbose = value("verbose") != NOSTR;
+	if (verbose)
+		extra++;
 #endif SENDMAIL
 	if (hflag)
 		extra += 2;
@@ -582,6 +585,8 @@ unpack(np)
 	*ap++ = "-i";
 	if (metoo)
 		*ap++ = "-m";
+	if (verbose)
+		*ap++ = "-v";
 #endif SENDMAIL
 	if (hflag) {
 		*ap++ = "-h";
@@ -768,18 +773,30 @@ count(np)
 	return(c);
 }
 
+cmpdomain(name, dname)
+	register char *name, *dname;
+{
+	char buf[BUFSIZ];
+
+	strcpy(buf, dname);
+	buf[strlen(name)] = '\0';
+	return(icequal(name, buf));
+}
+
 /*
- * Delete the given name from a namelist.
+ * Delete the given name from a namelist, using the passed
+ * function to compare the names.
  */
 struct name *
-delname(np, name)
+delname(np, name, cmpfun)
 	register struct name *np;
 	char name[];
+	int (* cmpfun)();
 {
 	register struct name *p;
 
 	for (p = np; p != NIL; p = p->n_flink)
-		if (icequal(p->n_name, name)) {
+		if ((* cmpfun)(p->n_name, name)) {
 			if (p->n_blink == NIL) {
 				if (p->n_flink != NIL)
 					p->n_flink->n_blink = NIL;
