@@ -31,6 +31,14 @@
  * SUCH DAMAGE.
  *
  *	@(#)malloc.h	7.25 (Berkeley) 5/15/91
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00129
+ * --------------------         -----   ----------------------
+ *
+ * 02 Apr 93	Paul Popelka		Added support for PCFS
+ *
  */
 
 #ifndef _MALLOC_H_
@@ -91,7 +99,9 @@
 #define	M_PROC		41	/* Proc structures */
 #define	M_SUBPROC	42	/* Proc sub-structures */
 #define	M_TEMP		49	/* misc temporary data buffers */
-#define	M_LAST		50
+#define	M_PCFSMNT	50	/* PCFS mount structure */
+#define	M_PCFSFAT	51	/* PCFS fat table */
+#define	M_LAST		52
 
 #define INITKMEMNAMES { \
 	"free",		/* 0 M_FREE */ \
@@ -139,6 +149,8 @@
 	"subproc",	/* 42 M_PROC */ \
 	0, 0, 0, 0, 0, 0, \
 	"temp",		/* 49 M_TEMP */ \
+	"PCFS mount",	/* 50 M_PCFSMNT */ \
+	"PCFS fat",	/* 51 M_PCFSFAT */ \
 }
 
 struct kmemstats {

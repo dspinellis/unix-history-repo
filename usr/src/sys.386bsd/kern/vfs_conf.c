@@ -31,6 +31,14 @@
  * SUCH DAMAGE.
  *
  *	@(#)vfs_conf.c	7.3 (Berkeley) 6/28/90
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00129
+ * --------------------         -----   ----------------------
+ *
+ * 02 Apr 93	Paul Popelka		Added support for PCFS
+ *
  */
 
 #include "param.h"
@@ -63,6 +71,10 @@ extern	struct vfsops nfs_vfsops;
 extern	struct vfsops mfs_vfsops;
 #endif
 
+#ifdef PCFS
+extern	struct vfsops pcfs_vfsops;
+#endif
+
 #ifdef ISOFS
 extern	struct vfsops isofs_vfsops;
 #endif
@@ -80,7 +92,11 @@ struct vfsops *vfssw[] = {
 #else
 	(struct vfsops *)0,
 #endif
-	(struct vfsops *)0,	/* 4 = MOUNT_MSDOS */
+#ifdef PCFS
+	&pcfs_vfsops,		/* 4 = MOUNT_MSDOS */
+#else
+	(struct vfsops *)0,
+#endif
 #ifdef ISOFS
 	&isofs_vfsops,		/* 5 = MOUNT_ISOFS */
 #else
