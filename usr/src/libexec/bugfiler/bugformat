@@ -1,5 +1,5 @@
 Subject: Short summary of the problem
-Index:	<source directory>/<source file> 4.2BSD
+Index:	<source directory>/<source file> 4.3BSD
 
 Description:
 	Detailed description of the problem, suggestion, or complaint.
@@ -10,5 +10,5 @@ Fix:
 	If you don't know the fix, don't include this section or "Fix:".
 
 ---------- Remove this line and what's below it. (only for reference) ------
-<source directory> ::=  bin | etc | games | ideas | lib | local | man |
-			misc | sys | ucb | usr.bin | usr.lib
+<source directory> ::=  bin | etc | games | ideas | include | lib | local |
+			man | misc | new | sys | ucb | usr.bin | usr.lib
