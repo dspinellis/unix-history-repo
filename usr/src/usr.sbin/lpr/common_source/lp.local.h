@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lp.local.h	5.5 (Berkeley) %G%
+ *	@(#)lp.local.h	5.6 (Berkeley) %G%
  */
 
 /*
@@ -16,6 +16,7 @@
  *   printing objects files.
  */
 
+#include <sys/types.h>
 #include <a.out.h>
 #include <ar.h>
 
