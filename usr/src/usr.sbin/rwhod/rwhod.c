@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rwhod.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)rwhod.c	5.14 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -56,9 +56,7 @@ struct	sockaddr_in sin = { AF_INET };
 char	myname[32];
 
 struct	nlist nl[] = {
-#define	NL_AVENRUN	0
-	{ "_avenrun" },
-#define	NL_BOOTTIME	1
+#define	NL_BOOTTIME	0
 	{ "_boottime" },
 	0
 };
@@ -324,8 +322,7 @@ onalrm()
 			we->we_idle = htonl(now - stb.st_atime);
 		we++;
 	}
-	(void) lseek(kmemf, (long)nl[NL_AVENRUN].n_value, L_SET);
-	(void) read(kmemf, (char *)avenrun, sizeof (avenrun));
+	(void) getloadavg(avenrun, sizeof(avenrun)/sizeof(avenrun[0]));
 	for (i = 0; i < 3; i++)
 		mywd.wd_loadav[i] = htonl((u_long)(avenrun[i] * 100));
 	cc = (char *)we - (char *)&mywd;
