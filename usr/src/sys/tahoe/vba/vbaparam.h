@@ -1,4 +1,4 @@
-/*	vbaparam.h	1.3	86/12/15	*/
+/*	vbaparam.h	1.4	87/06/30	*/
 
 /*
  * Parameters related to the VERSAbus i/o configuration.
@@ -56,15 +56,3 @@ extern	caddr_t vbbase, vbend;
 #define	VBIOMAPPED(a)	((unsigned)VBIOBASE <= ((unsigned)(a)) && \
 			 ((unsigned)(a)) <= (unsigned)VBIOEND) 
 #define	vboff(addr)	((int)(((caddr_t)(addr)) - VBIOBASE))
-
-/*
- * Page table map sizes.
- *
- * Current VBmap allotments are:
- *	4 vd controllers	32+1 pte's
- *	2 cy controllers	32+1 pte's
- * Current VBMEMmap allotments are:
- *	2 ace controllers	32+1 pte's
- */
-#define	VBPTSIZE	(((4*(32+1))+2*(32+1)+3) &~ 3)
-#define	VBMEMSIZE	((2*(32+1)+3) &~ 3)
