@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- * from: Utah $Hdr: ite_gb.c 1.19 92/01/21$
+ * from: Utah $Hdr: ite_gb.c 1.20 92/12/20$
  *
- *	@(#)ite_gb.c	7.7 (Berkeley) %G%
+ *	@(#)ite_gb.c	7.8 (Berkeley) %G%
  */
 
 #include "ite.h"
@@ -168,8 +168,6 @@ gbox_scroll(ip, sy, sx, count, dir)
 	tile_mover_waitbusy(ip->regbase);
 	REGBASE->write_protect = 0x0;
 	
-	gbox_cursor(ip, ERASE_CURSOR);
-
 	if (dir == SCROLL_UP) {
 		dy = sy - count;
 		height = ip->rows - sy;

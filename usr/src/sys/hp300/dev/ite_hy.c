@@ -10,9 +10,9 @@
  *
  * %sccs.include.redist.c%
  *
- * from: Utah $Hdr: ite_hy.c 1.1 92/01/22$
+ * from: Utah $Hdr: ite_hy.c 1.2 92/12/20$
  *
- *	@(#)ite_hy.c	7.2 (Berkeley) %G%
+ *	@(#)ite_hy.c	7.3 (Berkeley) %G%
  */
 
 #include "ite.h"
@@ -162,8 +162,6 @@ hyper_scroll(ip, sy, sx, count, dir)
 	register int dx = sx;
 	register int height = 1;
 	register int width = ip->cols;
-
-	hyper_cursor(ip, ERASE_CURSOR);
 
 	if (dir == SCROLL_UP) {
 		dy = sy - count;

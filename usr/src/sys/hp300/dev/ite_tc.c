@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- * from: Utah $Hdr: ite_tc.c 1.26 92/01/21$
+ * from: Utah $Hdr: ite_tc.c 1.27 92/12/20$
  *
- *	@(#)ite_tc.c	7.6 (Berkeley) %G%
+ *	@(#)ite_tc.c	7.7 (Berkeley) %G%
  */
 
 #include "ite.h"
@@ -195,8 +195,6 @@ topcat_scroll(ip, sy, sx, count, dir)
 	register int dx = sx;
 	register int height = 1;
 	register int width = ip->cols;
-
-	topcat_cursor(ip, ERASE_CURSOR);
 
 	if (dir == SCROLL_UP) {
 		dy = sy - count;
