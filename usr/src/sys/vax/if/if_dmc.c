@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if_dmc.c	6.10 (Berkeley) %G%
+ *	@(#)if_dmc.c	6.11 (Berkeley) %G%
  */
 
 #include "dmc.h"
@@ -114,16 +114,16 @@ struct dmcbufs {
  * efficiently.
  */
 struct dmc_softc {
-	short	sc_oused;		/* output buffers currently in use */
-	short	sc_iused;		/* input buffers given to DMC */
-	short	sc_flag;		/* flags */
-	int	sc_nticks;		/* seconds since last interrupt */
 	struct	ifnet sc_if;		/* network-visible interface */
 	struct	dmcbufs sc_rbufs[NRCV];	/* receive buffer info */
 	struct	dmcbufs sc_xbufs[NXMT];	/* transmit buffer info */
 	struct	ifubinfo sc_ifuba;	/* UNIBUS resources */
 	struct	ifrw sc_ifr[NRCV];	/* UNIBUS receive buffer maps */
 	struct	ifxmt sc_ifw[NXMT];	/* UNIBUS receive buffer maps */
+	short	sc_oused;		/* output buffers currently in use */
+	short	sc_iused;		/* input buffers given to DMC */
+	short	sc_flag;		/* flags */
+	int	sc_nticks;		/* seconds since last interrupt */
 	int	sc_ubinfo;		/* UBA mapping info for base table */
 	int	sc_errors[4];		/* non-fatal error counters */
 #define sc_datck sc_errors[0]
