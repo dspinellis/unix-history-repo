@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_subr2.c	7.19 (Berkeley) %G%
+ *	@(#)tp_subr2.c	7.20 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -275,7 +275,7 @@ struct tp_pcb *tpcb;
 		tpcb->tp_xtd_format ?	TP_XTD_FMT_BIT :	TP_NML_FMT_BIT ;
 	tpcb->tp_seqhalf = tpcb->tp_seqbit >> 1;
 	tpcb->tp_dt_ticks =
-		MAX(tpcb->tp_dt_ticks, (tpcb->tp_peer_acktime + 2));
+		max(tpcb->tp_dt_ticks, (tpcb->tp_peer_acktime + 2));
 	tp_rsyset(tpcb);
 	
 }
