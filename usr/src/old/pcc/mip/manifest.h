@@ -1,4 +1,4 @@
-/*	manifest.h	4.1	85/03/19	*/
+/*	manifest.h	4.2	87/12/09	*/
 
 #ifndef _MANIFEST_
 #define	_MANIFEST_
@@ -21,7 +21,7 @@
 /*
  * Bogus type values
  */
-#define TNULL	PTR		/* pointer to UNDEF */
+#define TNULL	INCREF(MOETY)	/* pointer to MOETY -- impossible type */
 #define TVOID	FTN		/* function returning UNDEF (for void) */
 
 /*
