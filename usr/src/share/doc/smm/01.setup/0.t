@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)0.t	6.1 (Berkeley) 5/13/86
+.\"	@(#)0.t	1.3 (Berkeley) %G%
 .\"
 .EH 'SMM:1-%''Installing and Operating 4.3BSD-tahoe UNIX on the Tahoe'
 .OH 'Installing and Operating 4.3BSD-tahoe UNIX on the Tahoe''SMM:1-%'

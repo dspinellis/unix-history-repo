@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)2.t	6.1 (Berkeley) 5/14/86
+.\"	@(#)2.t	1.3 (Berkeley) %G%
 .\"
 .ds lq ``
 .ds rq ''
