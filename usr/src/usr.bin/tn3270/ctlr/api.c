@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)api.c	4.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)api.c	4.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -31,6 +31,7 @@ static char sccsid[] = "@(#)api.c	4.1 (Berkeley) %G%";
 #include "../api/disp_asc.h"
 
 #include "screen.h"
+#include "hostctlr.h"
 #include "oia.h"
 
 #include "../general/globals.h"
@@ -495,13 +496,23 @@ struct SREGS *sregs;
     } else if (source->session_id != 0) {
 	    parms.rc = 0xd;
     } else {
-	if ((target->begin < 0) || (source->begin > highestof(Host))) {
-	    parms.rc = 0x07;		/* invalid source definition */
+	/* Send to presentation space (3270 buffer) */
+	if ((target->begin < 0) || (target->begin > highestof(Host))) {
+	    parms.rc = 0x07;		/* invalid target definition */
+	} if (!UnLocked) {
+		parms.rc = 0x03;	/* Keyboard locked */
+	} else if (parms.copy_mode != 0) {
+		parms.rc = 0x0f;	/* Copy of field attr's not allowed */
+	} else if (IsProtected(target->begin) || /* Make sure no protected */
+		    (WhereAttrByte(target->begin) !=	/* in range */
+			    WhereAttrByte(target->begin+length-1))) {
+		parms.rc = 0x0e;	/* Attempt to write in protected */
 	} else {
-	    if ((source->begin+length) > highestof(Host)) {
-		length = highestof(Host)-source->begin;
+	    if ((target->begin+length) > highestof(Host)) {
+		length = highestof(Host)-target->begin;
 		parms.rc = 0x0f;	/* Truncate */
 	    }
+	    TurnOnMdt(target->begin);	/* Things have changed */
 	    if ((source->characteristics == target->characteristics) &&
 		    (source->session_type == target->session_type)) {
 		if (source->characteristics&CHARACTERISTIC_EAB) {
