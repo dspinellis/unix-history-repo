@@ -9,8 +9,8 @@ Finland		ftp.funet.fi:/pub/unix/FreeBSD
 Germany		ftp.informatik.tu-muenchen.de:/pub/comp/os/bsd/FreeBSD
 Germany		ftp.uni-duisburg.de:/pub/unix/FreeBSD
 Hong Kong	ftp.cs.cuhk.hk:/pub/FreeBSD
-Netherlands	ftp.nl.net:/pub/os/FreeBSD		<pauls@inter.nl.net>
+Netherlands	ftp.nl.net:/pub/os/FreeBSD		<archive@nl.net>
 UK		src.doc.ic.ac.uk:/packages/FreeBSD
 
 
-$Id: MIRROR.SITES,v 1.2 1994/01/23 22:33:15 rgrimes Exp $
+$Id: MIRROR.SITES,v 1.3 1994/01/24 08:00:18 chmr Exp $
