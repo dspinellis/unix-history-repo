@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.12 (Berkeley) %G%
+#	@(#)Makefile	5.13 (Berkeley) %G%
 
 # reorder gives an editor command for most common terminals
 # (in reverse order from n'th to 1'st most commonly used)
@@ -20,7 +20,10 @@ cleandir: clean
 beforeinstall:
 	install -o ${BINOWN} -g ${BINGRP} -m 444 termcap \
 	     ${DESTDIR}${BINDIR}/misc
+	echo '  Building termcap database...'
+	cap_mkdb ${DESTDIR}${BINDIR}/misc/termcap
 	install -c -o ${BINOWN} -g ${BINGRP} -m 444 ${.CURDIR}/map3270 \
 	     ${DESTDIR}${BINDIR}/misc
 
+	
 .include <bsd.prog.mk>
