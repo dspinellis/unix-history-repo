@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)telnet.h	5.8 (Berkeley) %G%
+ *	@(#)telnet.h	5.9 (Berkeley) %G%
  */
 
 /*
@@ -81,9 +81,10 @@ char *telcmds[] = {
 #define	TELOPT_TSPEED	32	/* terminal speed */
 #define	TELOPT_LFLOW	33	/* remote flow control */
 #define TELOPT_LINEMODE	34	/* Linemode option */
+#define	TELOPT_AUTHENTICATION 45 /* XXX Auto Authenticate */
 #define	TELOPT_EXOPL	255	/* extended-options-list */
 
-#define	NTELOPTS	(1+TELOPT_LINEMODE)
+#define	NTELOPTS	(1+TELOPT_AUTHENTICATION)
 #ifdef TELOPTS
 char *telopts[NTELOPTS] = {
 	"BINARY", "ECHO", "RCP", "SUPPRESS GO AHEAD", "NAME",
@@ -94,10 +95,12 @@ char *telopts[NTELOPTS] = {
 	"SEND LOCATION", "TERMINAL TYPE", "END OF RECORD",
 	"TACACS UID", "OUTPUT MARKING", "TTYLOC",
 	"3270 REGIME", "X.3 PAD", "NAWS", "TSPEED", "LFLOW",
-	"LINEMODE",
+	"LINEMODE", "UNKNOWN 35", "UNKNOWN 36", "UNKNOWN 37",
+	"UNKNOWN 38", "UNKNOWN 39", "UNKNOWN 40", "UNKNOWN 41",
+	"UNKNOWN 42", "UNKNOWN 43", "UNKNOWN 44", "AUTHENTICATION",
 };
 #define	TELOPT_FIRST	TELOPT_BINARY
-#define	TELOPT_LAST	TELOPT_LINEMODE
+#define	TELOPT_LAST	TELOPT_AUTHENTICATION
 #define	TELOPT_OK(x)	((x) <= TELOPT_LAST && (x) >= TELOPT_FIRST)
 #define	TELOPT(x)	telopts[(x)-TELOPT_FIRST]
 #endif
@@ -165,3 +168,17 @@ char *telopts[NTELOPTS] = {
 #define	SLC_ACK		0x80
 #define	SLC_FLUSHIN	0x40
 #define	SLC_FLUSHOUT	0x20
+
+/*
+ * AUTHENTICATION suboptions
+ */
+
+#define	TELQUAL_AUTHTYPE_NONE		0
+#define	TELQUAL_AUTHTYPE_PRIVATE	1
+#define	TELQUAL_AUTHTYPE_KERBEROS	2
+
+/* Kerberos-specific */
+
+#define	TELQUAL_AUTHTYPE_KERBEROS_V4		4
+#define	TELQUAL_AUTHTYPE_KERBEROS_V5		5
+#define	TELQUAL_AUTHTYPE_KERBEROS_USERNAME	1
