@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kernfs_vnops.c	7.1 (Berkeley) %G%
+ *	@(#)kernfs_vnops.c	7.2 (Berkeley) %G%
  */
 
 /*
@@ -182,7 +182,7 @@ kernfs_lookup(ap)
 #endif
 	if (cnp->cn_namelen == 1 && *pname == '.') {
 		*vpp = dvp;
-		VREF(dvp);	
+		VREF(dvp);
 		/*VOP_LOCK(dvp);*/
 		return (0);
 	}
@@ -193,7 +193,7 @@ kernfs_lookup(ap)
 		VOP_LOCK(rootdir);
 		return (0);
 	}
-	
+
 	/*
 	 * /kern/rootdev is the root device
 	 */
@@ -571,7 +571,7 @@ kernfs_badop()
 }
 
 /*
- * /dev/fd vnode null operation
+ * kernfs vnode null operation
  */
 kernfs_nullop()
 {
