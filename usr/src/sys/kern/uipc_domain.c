@@ -1,4 +1,4 @@
-/*	uipc_domain.c	6.4	85/04/27	*/
+/*	uipc_domain.c	6.5	85/06/02	*/
 
 #include "param.h"
 #include "socket.h"
@@ -65,11 +65,12 @@ found:
 }
 
 struct protosw *
-pffindproto(family, protocol)
-	int family, protocol;
+pffindproto(family, protocol, type)
+	int family, protocol, type;
 {
 	register struct domain *dp;
 	register struct protosw *pr;
+	struct protosw *maybe = 0;
 
 	if (family == 0)
 		return (0);
@@ -78,10 +79,14 @@ pffindproto(family, protocol)
 			goto found;
 	return (0);
 found:
-	for (pr = dp->dom_protosw; pr < dp->dom_protoswNPROTOSW; pr++)
+	for (pr = dp->dom_protosw; pr < dp->dom_protoswNPROTOSW; pr++) {
 		if (pr->pr_protocol == protocol)
 			return (pr);
-	return (0);
+		if (type == SOCK_RAW && pr->pr_type == SOCK_RAW &&
+		    pr->pr_protocol == 0 && maybe == (struct protosw *)0)
+			maybe = pr;
+	}
+	return (maybe);
 }
 
 pfctlinput(cmd, arg)
