@@ -34,10 +34,13 @@
  *
  * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
  * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         1       00061
+ * CURRENT PATCH LEVEL:         2       00062
  * --------------------         -----   ----------------------
  *
  * 11 Dec 92	Williams Jolitz		Fixed tty handling
+ *
+ * 28 Nov 1991	Warren Toomey		Cleaned up the use of COMPAT_43
+ *					in the 386BSD kernel.	 
  */
 static char rcsid[] = "$Header: /usr/bill/working/sys/kern/RCS/tty_pty.c,v 1.3 92/01/21 21:31:23 william Exp $";
 
@@ -614,8 +617,11 @@ ptyioctl(dev, cmd, data, flag)
 			ttyflush(tp, FREAD|FWRITE);
 			return (0);
 
+#ifdef COMPAT_43
+	/* wkt */
 		case TIOCSETP:		
 		case TIOCSETN:
+#endif
 		case TIOCSETD:
 		case TIOCSETA:
 		case TIOCSETAW:
@@ -669,9 +675,10 @@ ptyioctl(dev, cmd, data, flag)
 		case TIOCSETA:
 		case TIOCSETAW:
 		case TIOCSETAF:
+#ifdef	COMPAT_43
+	/* wkt */
 		case TIOCSETP:
 		case TIOCSETN:
-#ifdef	COMPAT_43
 		case TIOCSETC:
 		case TIOCSLTC:
 		case TIOCLBIS:
