@@ -1,4 +1,4 @@
-/*	if_en.c	4.71	82/10/24	*/
+/*	if_en.c	4.71	82/10/31	*/
 
 #include "en.h"
 
@@ -119,7 +119,7 @@ enattach(ui)
 	es->es_if.if_flags = IFF_BROADCAST;
 	es->es_if.if_init = eninit;
 	es->es_if.if_output = enoutput;
-	es->es_if.if_ubareset = enreset;
+	es->es_if.if_reset = enreset;
 	es->es_ifuba.ifu_flags = UBA_NEEDBDP | UBA_NEED16 | UBA_CANTWAIT;
 	if_attach(&es->es_if);
 }
