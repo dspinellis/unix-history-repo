@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)erase.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)erase.c	5.6 (Berkeley) %G%";
 #endif	/* not lint */
 
 #include <curses.h>
@@ -26,20 +26,20 @@ werase(win)
 #ifdef DEBUG
 	__TRACE("werase: (%0.2o)\n", win);
 #endif
-	for (y = 0; y < win->_maxy; y++) {
-		minx = _NOCHANGE;
-		start = win->_y[y];
-		end = &start[win->_maxx];
+	for (y = 0; y < win->maxy; y++) {
+		minx = -1;
+		start = win->lines[y]->line;
+		end = &start[win->maxx];
 		for (sp = start; sp < end; sp++)
 			if (*sp != ' ') {
 				maxx = sp;
-				if (minx == _NOCHANGE)
+				if (minx == -1)
 					minx = sp - start;
 				*sp = ' ';
 			}
-		if (minx != _NOCHANGE)
-			touchline(win, y, minx, maxx - win->_y[y]);
+		if (minx != -1)
+			touchline(win, y, minx, maxx - win->lines[y]->line);
 	}
-	win->_curx = win->_cury = 0;
+	win->curx = win->cury = 0;
 	return (OK);
 }

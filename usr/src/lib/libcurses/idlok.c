@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)idlok.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)idlok.c	5.6 (Berkeley) %G%";
 #endif	/* not lint */
 
 #include <curses.h>
@@ -22,7 +22,7 @@ idlok(win, bf)
 	int bf;
 {
 	if (bf)
-		win->_flags |= _IDLINE;
+		win->flags |= __IDLINE;
 	else
-		win->_flags &= ~_IDLINE;
+		win->flags &= ~__IDLINE;
 }

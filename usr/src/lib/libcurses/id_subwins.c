@@ -6,14 +6,14 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)id_subwins.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)id_subwins.c	5.7 (Berkeley) %G%";
 #endif	/* not lint */
 
 #include <curses.h>
 
 /*
  * __id_subwins --
- *	Re-sync the pointers to _y for all the subwindows.
+ *	Re-sync the pointers to lines for all the subwindows.
  */
 void
 __id_subwins(orig)
@@ -22,17 +22,18 @@ __id_subwins(orig)
 	register WINDOW *win;
 	register int oy, realy, y;
 
-	realy = orig->_begy + orig->_cury;
-	for (win = orig->_nextp; win != orig; win = win->_nextp) {
+	realy = orig->begy + orig->cury;
+	for (win = orig->nextp; win != orig; win = win->nextp) {
 		/*
 		 * If the window ends before our current position, don't need
 		 * to do anything.
 		 */
-		if (win->_begy + win->_maxy <= realy)
+		if (win->begy + win->maxy <= realy)
 			continue;
 
-		oy = orig->_cury;
-		for (y = realy - win->_begy; y < win->_maxy; y++, oy++)
-			win->_y[y] = &orig->_y[oy][win->_ch_off];
+		oy = orig->cury;
+		for (y = realy - win->begy; y < win->maxy; y++, oy++)
+			win->lines[y]->line = 
+				&orig->lines[oy]->line[win->ch_off];
 	}
 }

@@ -6,14 +6,14 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)delch.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)delch.c	5.7 (Berkeley) %G%";
 #endif	/* not lint */
 
 #include <curses.h>
 
 /*
  * wdelch --
- *	Do an insert-char on the line, leaving (_cury, _curx) unchanged.
+ *	Do an insert-char on the line, leaving (cury, curx) unchanged.
  */
 int
 wdelch(win)
@@ -21,12 +21,12 @@ wdelch(win)
 {
 	register char *end, *temp1, *temp2;
 
-	end = &win->_y[win->_cury][win->_maxx - 1];
-	temp1 = &win->_y[win->_cury][win->_curx];
+	end = &win->lines[win->cury]->line[win->maxx - 1];
+	temp1 = &win->lines[win->cury]->line[win->curx];
 	temp2 = temp1 + 1;
 	while (temp1 < end)
 		*temp1++ = *temp2++;
 	*temp1 = ' ';
-	touchline(win, win->_cury, win->_curx, win->_maxx - 1);
+	touchline(win, win->cury, win->curx, win->maxx - 1);
 	return (OK);
 }

@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)box.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)box.c	5.6 (Berkeley) %G%";
 #endif	/* not lint */
 
 #include <curses.h>
@@ -24,16 +24,16 @@ box(win, vert, hor)
 	register int endy, endx, i;
 	register char *fp, *lp;
 
-	endx = win->_maxx;
-	endy = win->_maxy - 1;
-	fp = win->_y[0];
-	lp = win->_y[endy];
+	endx = win->maxx;
+	endy = win->maxy - 1;
+	fp = win->topline->line;
+	lp = win->lines[endy]->line;
 	for (i = 0; i < endx; i++)
 		fp[i] = lp[i] = hor;
 	endx--;
 	for (i = 0; i <= endy; i++)
-		win->_y[i][0] = (win->_y[i][endx] = vert);
-	if (!win->_scroll && (win->_flags & _SCROLLWIN))
+		win->lines[i]->line[0] = (win->lines[i]->line[endx] = vert);
+	if (!(win->flags & __SCROLLOK) && (win->flags & __SCROLLWIN))
 		fp[0] = fp[endx] = lp[0] = lp[endx] = ' ';
 	touchwin(win);
 	return (OK);

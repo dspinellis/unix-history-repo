@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)curses.h	5.12 (Berkeley) %G%
+ *	@(#)curses.h	5.13 (Berkeley) %G%
  */
 
 #ifndef _CURSES_H_
@@ -50,34 +50,46 @@ extern char	*Def_term;		/* Default terminal type. */
 #define	unctrl(c)		__unctrl[(c) & 0x7f]
 #define	unctrllen(ch)		__unctrllen[(ch) & 0x7f]
 
-typedef struct _win_st {		/* Window structure. */
-	short		_cury, _curx;	/* Current x, y coordinates. */
-	short		_maxy, _maxx;	/* Maximum values for curx, cury. */
-	short		_begy, _begx;	/* Window home. */
+/*
+ * A window is a circular doubly linked list of LINEs who's first line is 
+ * given by the topline pointer in the WINDOW structure.
+ */
 
-#define	_ENDLINE	0x001		/* End of screen. */
-#define	_FLUSH		0x002		/* fflush(stdout) after refresh. */
-#define	_FULLLINE	0x004		/* Line width = terminal width. */
-#define	_FULLWIN	0x008		/* Window is a screen. */
-#define	_IDLINE		0x010		/* Insert/delete sequences. */
-#define	_SCROLLWIN	0x020		/* Last char will scroll window. */
+typedef struct __line {
+	struct __line *next, *prev;	/* Next line, previous line. */
+#define	__ISDIRTY	0x01		/* Line is dirty. */
+	u_int flags;
+	u_int hash;			/* Hash value for the line. */
+	size_t firstch, lastch;		/* First and last changed columns. */
 /* 
  * XXX
  * _STANDOUT is the 8th bit, characters themselves are encoded.
  */
-#define	_STANDOUT	0x080		/* Added characters are standout. */
-	unsigned short	_flags;
+#define	__STANDOUT	0x080		/* Added characters are standout. */
+	char *line;			/* Pointer to line itself. */
+} LINE;
 
-	short		_ch_off;	/* x offset for firstch/lastch. */
-	char		_clear;		/* If clear on next refresh. */
-	char		_leave;		/* If cursor left. */
-	char		_scroll;	/* If scrolling permitted. */
-	char		**_y;		/* Line describing the window. */
+typedef struct __window {		/* Window structure. */
+	struct __window	*nextp, *orig;	/* Subwindows list and parent. */
+	size_t begy, begx;		/* Window home. */
+	size_t cury, curx;		/* Current x, y coordinates. */
+	size_t maxy, maxx;		/* Maximum values for curx, cury. */
+	short ch_off;			/* x offset for firstch/lastch. */
+	LINE **lines;			/* Array of pointers to the lines */
+	LINE *topline;			/* Pointer to first line in window */
+	char *wspace;			/* window space (for cleanup) */
 
-#define	_NOCHANGE	-1		/* No change since last refresh. */
-	short		*_firstch;	/* First and last changed in line. */
-	short		*_lastch;
-	struct _win_st	*_nextp, *_orig;/* Subwindows list and parent. */
+#define	__ENDLINE	0x001		/* End of screen. */
+#define	__FLUSH		0x002		/* Fflush(stdout) after refresh. */
+#define	__FULLLINE	0x004		/* Line width = terminal width. */
+#define	__FULLWIN	0x008		/* Window is a screen. */
+#define	__IDLINE	0x010		/* Insert/delete sequences. */
+#define	__SCROLLWIN	0x020		/* Last char will scroll window. */
+#define	__SCROLLOK	0x040		/* Scrolling ok. */
+#define	__CLEAROK	0x080		/* Clear on next refresh. */
+#define __WSTANDOUT	0x100		/* Standout window */
+#define __LEAVEOK	0x200		/* If curser left */	
+	u_int flags;
 } WINDOW;
 
 /* Termcap capabilities. */
@@ -158,13 +170,16 @@ extern char	 __unctrllen[0x80];	/* Control strings length. */
 #define	mvwinsch(win, y, x, c)	(wmove(win, y, x) == ERR ? ERR : winsch(win, c))
 
 /* Random psuedo functions. */
-#define	clearok(win, bf) 	(win->_clear = (bf))
-#define	flushok(win, bf)	((bf) ? (win->_flags |= _FLUSH) : \
-				    (win->_flags &= ~_FLUSH))
-#define	getyx(win, y, x)	(y) = win->_cury, (x) = win->_curx
-#define	leaveok(win, bf)	(win->_leave = (bf))
-#define	scrollok(win, bf)	(win->_scroll = (bf))
-#define	winch(win)		(win->_y[win->_cury][win->_curx] & 0177)
+#define	clearok(win, bf)  ((bf) ? (win->flags |= __CLEAROK) : \
+				  (win->flags &= ~__CLEAROK))
+#define	flushok(win, bf)  ((bf) ? (win->flags |= __FLUSH) : \
+				  (win->flags &= ~__FLUSH))
+#define	scrollok(win, bf) ((bf) ? (win->flags |= __SCROLLOK) : \
+				  (win->flags &= ~__SCROLLOK))
+#define	leaveok(win, bf)  ((bf) ? (win->flags |= __LEAVEOK) : \
+				  (win->flags &= ~__LEAVEOK))
+#define	getyx(win, y, x)	(y) = win->cury, (x) = win->curx
+#define	winch(win)		(win->lines[win->cury]->line[win->curx] & 0177)
 
 /* Public function prototypes. */
 void	 __cputchar __P((int));

@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)move.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)move.c	5.7 (Berkeley) %G%";
 #endif	/* not lint */
 
 #include <curses.h>
@@ -26,9 +26,9 @@ wmove(win, y, x)
 #endif
 	if (x < 0 || y < 0)
 		return (ERR);
-	if (x >= win->_maxx || y >= win->_maxy)
+	if (x >= win->maxx || y >= win->maxy)
 		return (ERR);
-	win->_curx = x;
-	win->_cury = y;
+	win->curx = x;
+	win->cury = y;
 	return (OK);
 }

@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)scroll.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)scroll.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <curses.h>
@@ -26,7 +26,7 @@ scroll(win)
 	__TRACE("scroll: (%0.2o)\n", win);
 #endif
 
-	if (!win->_scroll)
+	if (!(win->flags & __SCROLLOK))
 		return (ERR);
 
 	getyx(win, oy, ox);
@@ -37,7 +37,7 @@ scroll(win)
 	if (win == curscr) {
 		putchar('\n');
 		if (origtermio.c_oflag & ONLCR)
-			win->_curx = 0;
+			win->curx = 0;
 #ifdef DEBUG
 		__TRACE("scroll: win == curscr\n");
 #endif

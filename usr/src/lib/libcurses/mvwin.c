@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mvwin.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)mvwin.c	5.6 (Berkeley) %G%";
 #endif	/* not lint */
 
 #include <curses.h>
@@ -23,26 +23,26 @@ mvwin(win, by, bx)
 	register WINDOW *orig;
 	register int dy, dx;
 
-	if (by + win->_maxy > LINES || bx + win->_maxx > COLS)
+	if (by + win->maxy > LINES || bx + win->maxx > COLS)
 		return (ERR);
-	dy = by - win->_begy;
-	dx = bx - win->_begx;
-	orig = win->_orig;
+	dy = by - win->begy;
+	dx = bx - win->begx;
+	orig = win->orig;
 	if (orig == NULL) {
 		orig = win;
 		do {
-			win->_begy += dy;
-			win->_begx += dx;
+			win->begy += dy;
+			win->begx += dx;
 			__swflags(win);
-			win = win->_nextp;
+			win = win->nextp;
 		} while (win != orig);
 	} else {
-		if (by < orig->_begy || win->_maxy + dy > orig->_maxy)
+		if (by < orig->begy || win->maxy + dy > orig->maxy)
 			return (ERR);
-		if (bx < orig->_begx || win->_maxx + dx > orig->_maxx)
+		if (bx < orig->begx || win->maxx + dx > orig->maxx)
 			return (ERR);
-		win->_begy = by;
-		win->_begx = bx;
+		win->begy = by;
+		win->begx = bx;
 		__swflags(win);
 		__set_subwin(orig, win);
 	}
