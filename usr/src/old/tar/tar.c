@@ -11,7 +11,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)tar.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)tar.c	5.16 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -19,16 +19,18 @@ static char sccsid[] = "@(#)tar.c	5.15 (Berkeley) %G%";
  */
 #include <sys/param.h>
 #include <sys/stat.h>
-#include <sys/file.h>
-#include <sys/dir.h>
 #include <sys/ioctl.h>
 #include <sys/mtio.h>
 #include <sys/time.h>
+#include <dirent.h>
+#include <fcntl.h>
 #include <signal.h>
 #include <errno.h>
 #include <fcntl.h>
-#include <string.h>
+#include <unistd.h>
 #include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
 #include "pathnames.h"
 
 #define TBLOCK	512
@@ -91,11 +93,9 @@ int	first;
 int	prtlinkerr;
 int	freemem = 1;
 int	nblock = 0;
-int	onintr();
-int	onquit();
-int	onhup();
+void	onintr(), onquit(), onhup();
 #ifdef notdef
-int	onterm();
+void	onterm();
 #endif
 
 daddr_t	low;
@@ -107,12 +107,7 @@ FILE	*tfile;
 char	tname[] = _PATH_TMP;
 char	*usefile;
 char	magtape[] = _PATH_MAGTAPE;
-char	*malloc();
-long	time();
-off_t	lseek();
-char	*mktemp();
-char	*getcwd();
-char	*getwd();
+char	*cwd();
 char	*getmem();
 
 extern int errno;
@@ -327,7 +322,7 @@ dorep(argv)
 	char *argv[];
 {
 	register char *cp, *cp2;
-	char wdir[MAXPATHLEN], tempdir[MAXPATHLEN], *parent;
+	char *parent, *wdir;
 
 	if (!cflag) {
 		getdir();
@@ -352,7 +347,7 @@ dorep(argv)
 		}
 	}
 
-	(void) getcwd(wdir);
+	wdir = cwd();
 	while (*argv && ! term) {
 		cp2 = *argv;
 		if (!strcmp(cp2, "-C") && argv[1]) {
@@ -361,8 +356,10 @@ dorep(argv)
 				fprintf(stderr,
 				    "tar: can't change directories to %s: %s\n",
 				    *argv, strerror(errno));
-			} else
-				(void) getcwd(wdir);
+			} else {
+				free(wdir);
+				wdir = cwd();
+			}
 			argv++;
 			continue;
 		}
@@ -378,7 +375,7 @@ dorep(argv)
 				    *argv, strerror(errno));
 				continue;
 			}
-			parent = getcwd(tempdir);
+			parent = cwd();
 			*cp2 = '/';
 			cp2++;
 		}
@@ -467,7 +464,7 @@ putfile(longname, shortname, parent)
 	char buf[TBLOCK];
 	char *bigbuf;
 	register char *cp;
-	struct direct *dp;
+	struct dirent *dp;
 	DIR *dirp;
 	register int i;
 	long l;
@@ -916,18 +913,21 @@ checkdir(name)
 	return (cp[-1]=='/');
 }
 
+void
 onintr()
 {
 	(void) signal(SIGINT, SIG_IGN);
 	term++;
 }
 
+void
 onquit()
 {
 	(void) signal(SIGQUIT, SIG_IGN);
 	term++;
 }
 
+void
 onhup()
 {
 	(void) signal(SIGHUP, SIG_IGN);
@@ -935,6 +935,7 @@ onhup()
 }
 
 #ifdef notdef
+void
 onterm()
 {
 	(void) signal(SIGTERM, SIG_IGN);
@@ -1306,14 +1307,16 @@ bread(fd, buf, size)
 }
 
 char *
-getcwd(buf)
-	char *buf;
+cwd()
 {
-	if (getwd(buf) == NULL) {
-		fprintf(stderr, "tar: %s\n", buf);
+	char *p;
+
+	p = getcwd((char *)NULL, 0);
+	if (p == NULL) {
+		(void)fprintf(stderr, "tar: %s\n", strerror(errno));
 		exit(1);
 	}
-	return (buf);
+	return (p);
 }
 
 getbuf()
