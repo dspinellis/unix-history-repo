@@ -14,7 +14,7 @@
 # WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF MERCHANTIBILITY AND
 # FITNESS FOR A PARTICULAR PURPOSE.
 #
-# @(#)Makefile	5.1 (Berkeley) %G%
+# @(#)Makefile	5.2 (Berkeley) %G%
 #
 
 CFLAGS=	-O
@@ -22,7 +22,6 @@ LIBC=	/lib/libc.a
 SRCS=	rlogind.c
 OBJS=
 MAN=	rlogind.0
-MAN8=	/usr/man/cat8/
 
 all: rlogind
 
@@ -33,14 +32,17 @@ cleandir: clean
 	rm -f tags .depend
 
 clean:
-	rm -f ${OBJS} core rlogind ${MAN}
+	rm -f ${OBJS} core rlogind
+
+cleandir: clean
+	rm -f ${MAN} tags .depend
 
 depend: ${SRCS}
 	mkdep -p ${CFLAGS} ${SRCS}
 
 install: ${MAN}
 	install -s -o bin -g bin -m 755 rlogind ${DESTDIR}/etc/rlogind
-	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}${MAN8}${MAN}
+	install -c -o bin -g bin -m 444 rlogind.0 ${DESTDIR}/usr/man/cat8
 
 lint: ${SRCS}
 	lint ${CFLAGS} ${SRCS}
