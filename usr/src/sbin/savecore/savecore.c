@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)savecore.c	4.10 (Berkeley) 83/02/21";
+static	char *sccsid = "@(#)savecore.c	4.11 (Berkeley) 83/03/21";
 #endif
 
 /*
@@ -144,8 +144,6 @@ read_kmem()
 	Read(kmem, (char *)&dumpdev, sizeof (dumpdev));
 	Lseek(kmem, (long)nl[X_DUMPLO].n_value, 0);
 	Read(kmem, (char *)&dumplo, sizeof (dumplo));
-	Lseek(kmem, (long)nl[X_DUMPSIZE].n_value, 0);
-	Read(kmem, (char *)&dumpsize, sizeof (dumpsize));
 	Lseek(kmem, (long)nl[X_DUMPMAG].n_value, 0);
 	Read(kmem, (char *)&dumpmag, sizeof (dumpmag));
 	dumplo *= 512L;
@@ -275,6 +273,8 @@ save_core()
 	close(ifd);
 	close(ofd);
 	ifd = Open(ddname, 0);
+	Lseek(ifd, (off_t)(dumplo + ok(nl[X_DUMPSIZE].n_value)), 0);
+	Read(ifd, (char *)&dumpsize, sizeof (dumpsize));
 	sprintf(cp, "vmcore.%d", bounds);
 	ofd = Create(path(cp), 0644);
 	Lseek(ifd, (off_t)dumplo, 0);
@@ -381,7 +381,6 @@ Create(file, mode)
 Write(fd, buf, size)
 	int fd, size;
 	char *buf;
-
 {
 
 	if (write(fd, buf, size) < size) {
