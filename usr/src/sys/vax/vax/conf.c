@@ -1,4 +1,4 @@
-/*	conf.c	4.53	82/05/27	*/
+/*	conf.c	4.54	82/06/03	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -288,7 +288,7 @@ struct	tty pt_tty[];
 #endif
 
 #include "lpa.h"
-#if NLA > 0
+#if NLPA > 0
 int	lpaopen(), lpaclose(), lparead(), lpawrite(), lpaioctl();
 #else
 #define	lpaopen		nodev
