@@ -1,0 +1,37 @@
+" 
+|
+| Lisp startup program.
+| insert two new parameters on the argv[] list and re-exec lisp
+|
+	.globl	exece
+start:
+	movl	sp@, d1		| get argc (# of parameters on stack)
+	lea	sp@(4),a3	| save the address of argv[]
+	asll	#2,d1		| multiply argc by 4 to get # of bytes of argv ptrs on stack
+	lea	a3@(4,d1:l),a4	| save the address of arge[] (it's after all of the argv's)
+	movl	#flag,a3@-	| insert (push) the address of the flag string on to top of argv stack
+	movl	#lisp,a3@-	| insert (push) the address of the lisp string on to top of argv stack
+	movl	a3,sp		| set the stack to point to the new stack head.
+|
+|	Set up a call to exece
+	pea	a4@		| push the address of arge on the stack
+	pea	a3@		| push the address of argv on the stack
+	movl	#lisp,sp@-	| push the name of the program on the stack
+	jsr	exece		| now call exece, you've got the right parameters
+exece:
+	moveq    #0x3b,d0
+	movl	a7@(4),d1
+	movl	a7@(8),a0
+	movl	a7@(12),a1
+	trap	#0
+	movl	#0,d0
+	movl	d0,d1
+	trap	#0		| exit if exec fails
+|
+| call exit on a exec failure without losing the return code.
+| we should NEVER return from _exit
+|
+flag:	.asciz	\"-f\"
+lisp:	.asciz	\"/usr/ucb/lisp\"
+.even
+"
