@@ -5,7 +5,7 @@
 #  old make program (I recommend that you get and port the new make if you
 #  are going to be doing any signficant work on sendmail).
 #
-#	@(#)Makefile.LUNA	8.2 (Berkeley) %G%
+#	@(#)Makefile.LUNA	8.3 (Berkeley) %G%
 #
 
 # use O=-O (usual) or O=-g (debugging)
@@ -78,11 +78,22 @@ dirent.h:
 	echo "#include <sys/dir.h>" > dirent.h
 	echo "#define dirent    direct" >> dirent.h
 
-stddef.h stdlib.h unistd.h limits.h:
+stddef.h unistd.h limits.h:
 	if [ -f /usr/include/$@ ]; then \
 		ln -s /usr/include/$@ .; \
 	else \
 		cp /dev/null $@; \
+	fi
+
+stdlib.h:
+	if [ -f /usr/include/stdlib.h ]; then \
+		ln -s /usr/include/stdlib.h .; \
+	else \
+		if [ -f /usr/include/libc.h ]; then \
+			ln -s /usr/include/libc.h stdlib.h; \
+		else \
+			cp /dev/null stdlib.h; \
+		fi; \
 	fi
 
 # just for UNIOS-B
