@@ -1,4 +1,4 @@
-/*	init_main.c	4.10	%G%	*/
+/*	init_main.c	4.11	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -147,6 +147,7 @@ iinit()
 {
 	register struct buf *bp;
 	register struct filsys *fp;
+	register int i;
 
 	(*bdevsw[major(rootdev)].d_open)(rootdev, 1);
 	bp = bread(rootdev, SUPERB);
@@ -162,6 +163,9 @@ iinit()
 	fp->s_ronly = 0;
 	fp->s_lasti = 1;
 	fp->s_nbehind = 0;
+	fp->s_fsmnt[0] = '/';
+	for (i = 1; i < sizeof(fp->s_fsmnt); i++)
+		fp->s_fsmnt[i] = 0;
 	clkinit(fp->s_time);
 	bootime = time;
 }
