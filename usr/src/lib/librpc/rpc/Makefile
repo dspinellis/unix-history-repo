@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.1 (Berkeley) %G%
+#	@(#)Makefile	5.2 (Berkeley) %G%
 
 LIB=	rpc
 CFLAGS+=-I${.CURDIR}
@@ -26,4 +26,5 @@ hdrs: ${HDRS}
 	install -c -o ${BINOWN} -g ${BINGRP} -m 444 ${.ALLSRC} \
 	    ${DESTDIR}/usr/include/rpc
 
+.include <bsd.own.mk>
 .include <bsd.lib.mk>
