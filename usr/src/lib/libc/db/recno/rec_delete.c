@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)rec_delete.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)rec_delete.c	5.6 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -126,7 +126,7 @@ __rec_dleaf(t, h, index)
 	int index;
 {
 	register RLEAF *rl;
-	register index_t *ip, offset;
+	register indx_t *ip, offset;
 	register size_t nbytes;
 	register int cnt;
 	char *from;
@@ -161,7 +161,7 @@ __rec_dleaf(t, h, index)
 			ip[0] += nbytes;
 	for (cnt = &h->linp[NEXTINDEX(h)] - ip; --cnt; ++ip)
 		ip[0] = ip[1] < offset ? ip[1] + nbytes : ip[1];
-	h->lower -= sizeof(index_t);
+	h->lower -= sizeof(indx_t);
 	--t->bt_nrecs;
 	return (RET_SUCCESS);
 }
