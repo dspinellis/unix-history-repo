@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)extern.h	1.2 (Berkeley) %G%
+ *	@(#)extern.h	1.3 (Berkeley) %G%
  */
 
 /*
@@ -170,7 +170,6 @@ int set_dest __P((register ARCHD *, char *, int));
 /*
  * pax.c
  */
-extern char copyright[];
 extern int act;
 extern FSUB *frmt;
 extern int cflag;
