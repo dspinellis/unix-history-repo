@@ -1,47 +1,48 @@
 #
-# Copyright (c) 1987 Regents of the University of California.
-# All rights reserved.  The Berkeley software License Agreement
-# specifies the terms and conditions for redistribution.
+# Copyright (c) 1987 The Regents of the University of California.
+# All rights reserved.
 #
-#	@(#)Makefile	5.3	(Berkeley)	%G%
+# Redistribution and use in source and binary forms are permitted
+# provided that the above copyright notice and this paragraph are
+# duplicated in all such forms and that any documentation,
+# advertising materials, and other materials related to such
+# distribution and use acknowledge that the software was developed
+# by the University of California, Berkeley.  The name of the
+# University may not be used to endorse or promote products derived
+# from this software without specific prior written permission.
+# THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+# IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+# WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+#
+#	@(#)Makefile	5.4 (Berkeley) %G%
 #
 CFLAGS=	-O
 YFLAGS=	-d
 LIBC=	/lib/libc.a
 SRCS=	r.c r0.c r1.c r2.c rio.c rlook.c rlex.c
 OBJS=	r.o r0.o r1.o r2.o rio.o rlook.o rlex.o
+MAN=	ratfor.0
 
 all: ratfor
 
-ratfor:	${OBJS} ${LIBC}
+ratfor: ${OBJS} ${LIBC}
 	${CC} -o $@ ${CFLAGS} ${OBJS}
 
-clean: FRC
+clean:
 	rm -f ${OBJS} core ratfor r.c
 
-depend: ${SRCS} FRC
+cleandir: clean
+	rm -f ${MAN} tags .depend
+
+depend: ${SRCS}
 	mkdep ${CFLAGS} ${SRCS}
 
-install: FRC
+install: ${MAN}
 	install -s -o bin -g bin -m 755 ratfor ${DESTDIR}/usr/bin/ratfor
+	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat1
 
-lint: ${SRCS} FRC
+lint: ${SRCS}
 	lint ${CFLAGS} ${SRCS}
 
-tags: ${SRCS} FRC
+tags: ${SRCS}
 	ctags ${SRCS}
-
-FRC:
-
-# DO NOT DELETE THIS LINE -- mkdep uses it.
-# DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
-
-r.o: r.c
-r0.o: r0.c r.h /usr/include/stdio.h y.tab.h
-r1.o: r1.c r.h /usr/include/stdio.h y.tab.h
-r2.o: r2.c r.h /usr/include/stdio.h y.tab.h
-rio.o: rio.c r.h /usr/include/stdio.h y.tab.h
-rlook.o: rlook.c
-rlex.o: rlex.c r.h /usr/include/stdio.h y.tab.h
-
-# IF YOU PUT ANYTHING HERE IT WILL GO AWAY
