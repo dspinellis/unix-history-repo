@@ -8,11 +8,11 @@
 char copyright[] =
 "@(#) Copyright (c) 1980 Regents of the University of California.\n\
  All rights reserved.\n";
-#endif not lint
+#endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ul.c	5.3 (Berkeley) %G%";
-#endif not lint
+static char sccsid[] = "@(#)ul.c	5.4 (Berkeley) %G%";
+#endif /* not lint */
 
 #include <stdio.h>
 
@@ -52,13 +52,13 @@ main(argc, argv)
 	int argc;
 	char **argv;
 {
-	int c;
-	char *cp, *termtype;
-	FILE *f;
-	char termcap[1024];
-	char *getenv();
 	extern int optind;
 	extern char *optarg;
+	int c;
+	char *termtype;
+	FILE *f;
+	char termcap[1024];
+	char *getenv(), *strcpy();
 
 	termtype = getenv("TERM");
 	if (termtype == NULL || (argv[0][0] == 'c' && !isatty(1)))
@@ -76,7 +76,7 @@ main(argc, argv)
 
 		default:
 			fprintf(stderr,
-				"Usage: %s [ -i ] [ -tTerm ] file...\n",
+				"usage: %s [ -i ] [ -tTerm ] file...\n",
 				argv[0]);
 			exit(1);
 		}
@@ -92,7 +92,7 @@ main(argc, argv)
 
 	case 0:
 		/* No such terminal type - assume dumb */
-		strcpy(termcap, "dumb:os:col#80:cr=^M:sf=^J:am:");
+		(void)strcpy(termcap, "dumb:os:col#80:cr=^M:sf=^J:am:");
 		break;
 	}
 	initcap();
@@ -199,6 +199,11 @@ FILE *f;
 		flushln();
 		continue;
 
+	case '\f':
+		flushln();
+		putchar('\f');
+		continue;
+
 	default:
 		if (c < ' ')	/* non printing */
 			continue;
@@ -250,7 +255,7 @@ flushln()
 	putchar('\n');
 	if (iflag && hadmodes)
 		iattr();
-	fflush(stdout);
+	(void)fflush(stdout);
 	if (upln)
 		upln--;
 	initbuf();
@@ -323,7 +328,7 @@ iattr()
 initbuf()
 {
 
-	bzero(obuf, sizeof (obuf));		/* depends on NORMAL == 0 */
+	bzero((char *)obuf, sizeof (obuf));	/* depends on NORMAL == 0 */
 	col = 0;
 	maxcol = 0;
 	mode &= ALTSET;
@@ -352,7 +357,6 @@ reverse()
 initcap()
 {
 	static char tcapbuf[512];
-	char *termtype;
 	char *bp = tcapbuf;
 	char *getenv(), *tgetstr();
 
@@ -478,62 +482,4 @@ int newmode;
 		}
 	}
 	curmode = newmode;
-}
-/*	@(#)getopt.c	3.2	*/
-#define	ERR(s, c)	if(opterr){\
-	fputs(argv[0], stderr);\
-	fputs(s, stderr);\
-	fputc(c, stderr);\
-	fputc('\n', stderr);}
-
-int	opterr = 1;
-int	optind = 1;
-char	*optarg;
-char	*index();
-
-int
-getopt (argc, argv, opts)
-	char **argv, *opts;
-{
-	static int sp = 1;
-	char c;
-	char *cp;
-
-	if (sp == 1)
-		if (optind >= argc ||
-		   argv[optind][0] != '-' || argv[optind][1] == '\0')
-			return EOF;
-		else if (strcmp(argv[optind], "--") == NULL) {
-			optind++;
-			return EOF;
-		}
-		else if (strcmp(argv[optind], "-?") == NULL) {
-			optind++;
-			return '?';
-		}
-	c = argv[optind][sp];
-	if (c == ':' || (cp=index(opts, c)) == NULL) {
-		ERR (": illegal option -- ", c);
-		if (argv[optind][++sp] == '\0') {
-			optind++;
-			sp = 1;
-		}
-		return '?';
-	}
-	if (*++cp == ':') {
-		if (argv[optind][2] != '\0')
-			optarg = &argv[optind++][sp+1];
-		else if (++optind >= argc) {
-			ERR (": option requires an argument -- ", c);
-			sp = 1;
-			return '?';
-		} else
-			optarg = argv[optind++];
-		sp = 1;
-	}
-	else if (argv[optind][++sp] == '\0') {
-		sp = 1;
-		optind++;
-	}
-	return c;
 }
