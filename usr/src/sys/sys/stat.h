@@ -4,27 +4,27 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)stat.h	7.14 (Berkeley) %G%
+ *	@(#)stat.h	7.15 (Berkeley) %G%
  */
 
 #include <sys/time.h>
 
 struct ostat {
-	u_short	st_dev;			/* inode's device */
+	unsigned short	st_dev;		/* inode's device */
 	ino_t	st_ino;			/* inode's number */
 	mode_t	st_mode;		/* inode protection mode */
 	nlink_t	st_nlink;		/* number of hard links */
-	u_short	st_uid;			/* user ID of the file's owner */
-	u_short	st_gid;			/* group ID of the file's group */
-	u_short	st_rdev;		/* device type */
+	unsigned short	st_uid;		/* user ID of the file's owner */
+	unsigned short	st_gid;		/* group ID of the file's group */
+	unsigned short	st_rdev;	/* device type */
 	long	st_size;		/* file size, in bytes */
 	struct	timespec st_atimespec;	/* time of last access */
 	struct	timespec st_mtimespec;	/* time of last data modification */
 	struct	timespec st_ctimespec;	/* time of last file status change */
 	long	st_blksize;		/* optimal blocksize for I/O */
 	long	st_blocks;		/* blocks allocated for file */
-	u_long	st_flags;		/* user defined flags for file */
-	u_long	st_gen;			/* file generation number */
+	unsigned long	st_flags;	/* user defined flags for file */
+	unsigned long	st_gen;		/* file generation number */
 };
 
 struct stat {
@@ -40,9 +40,9 @@ struct stat {
 	struct	timespec st_ctimespec;	/* time of last file status change */
 	off_t	st_size;		/* file size, in bytes */
 	quad_t	st_blocks;		/* blocks allocated for file */
-	u_long	st_blksize;		/* optimal blocksize for I/O */
-	u_long	st_flags;		/* user defined flags for file */
-	u_long	st_gen;			/* file generation number */
+	unsigned long	st_blksize;	/* optimal blocksize for I/O */
+	unsigned long	st_flags;	/* user defined flags for file */
+	unsigned long	st_gen;		/* file generation number */
 	long	st_lspare;
 	quad_t	st_qspare[2];
 };
