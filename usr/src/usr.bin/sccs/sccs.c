@@ -5,7 +5,7 @@
 # include <sysexits.h>
 # include <whoami.h>
 
-static char SccsId[] = "@(#)sccs.c	1.19 %G%";
+static char SccsId[] = "@(#)sccs.c	1.20 %G%";
 
 # define bitset(bit, word)	((bit) & (word))
 
@@ -199,7 +199,7 @@ command(argv, forkflag)
 		exit(EX_SOFTWARE);
 
 	  case FIX:		/* fix a delta */
-		if (strcmpn(argv[1], "-r", 2) != 0)
+		if (strncmp(argv[1], "-r", 2) != 0)
 		{
 			fprintf(stderr, "Sccs: -r flag needed for fix command\n");
 			break;
@@ -357,7 +357,7 @@ makefile(name)
 	**	3. The name references a directory.
 	*/
 
-	if (strcmpn(name, "s.", 2) == 0)
+	if (strncmp(name, "s.", 2) == 0)
 		return (name);
 	for (p = name; (c = *p) != '\0'; p++)
 	{
@@ -426,14 +426,14 @@ clean(really)
 	gotedit = FALSE;
 	while (fread(&dir, sizeof dir, 1, dirfd) != NULL)
 	{
-		if (dir.d_ino == 0 || strcmpn(dir.d_name, "s.", 2) != 0)
+		if (dir.d_ino == 0 || strncmp(dir.d_name, "s.", 2) != 0)
 			continue;
 		
 		/* got an s. file -- see if the p. file exists */
 		strcpy(buf, SccsPath);
 		strcat(buf, "/p.");
 		basefile = &buf[strlen(buf)];
-		strcpyn(basefile, &dir.d_name[2], sizeof dir.d_name - 2);
+		strncpy(basefile, &dir.d_name[2], sizeof dir.d_name - 2);
 		basefile[sizeof dir.d_name - 2] = '\0';
 		pfp = fopen(buf, "r");
 		if (pfp != NULL)
@@ -448,7 +448,7 @@ clean(really)
 		/* the s. file exists and no p. file exists -- unlink the g-file */
 		if (really)
 		{
-			strcpyn(buf, &dir.d_name[2], sizeof dir.d_name - 2);
+			strncpy(buf, &dir.d_name[2], sizeof dir.d_name - 2);
 			buf[sizeof dir.d_name - 2] = '\0';
 			unlink(buf);
 		}
