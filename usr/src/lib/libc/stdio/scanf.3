@@ -1,6 +1,6 @@
-.\"	@(#)scanf.3	4.1 (Berkeley) %G%
+.\"	@(#)scanf.3	5.1 (Berkeley) %G%
 .\"
-.TH SCANF 3S 
+.TH SCANF 3S  "19 January 1983"
 .AT 3
 .SH NAME
 scanf, fscanf, sscanf \- formatted input conversion
@@ -31,7 +31,7 @@ scanf, fscanf, sscanf \- formatted input conversion
 .SH DESCRIPTION
 .I Scanf
 reads from the standard input stream
-.IR stdin .
+.BR stdin .
 .I Fscanf
 reads from the named input
 .IR stream .
@@ -42,7 +42,7 @@ Each function reads characters, interprets
 them according to a format, and stores the results in its arguments.
 Each expects as arguments
 a control string
-.I format,
+.IR format ,
 described below,
 and a set of
 .I pointer
@@ -157,7 +157,7 @@ The conversion characters
 .B o
 and
 .B x
-may be capitalized or preceeded by
+may be capitalized or preceded by
 .B l
 to indicate that a pointer to
 .B long
@@ -180,7 +180,7 @@ The conversion characters
 .B o
 and
 .B x
-may be preceeded by
+may be preceded by
 .B h
 to indicate a pointer to
 .B short
@@ -230,9 +230,9 @@ with input
 56789 0123 56a72
 .PP
 will assign 56 to
-.I i,
+.IR i ,
 789.0 to
-.I x,
+.IR x ,
 skip `0123',
 and place the string `56\e0' in
 .IR name .
@@ -241,7 +241,8 @@ The next call to
 will return `a'.
 .SH "SEE ALSO"
 atof(3),
-getc(3), printf(3)
+getc(3S),
+printf(3S)
 .SH DIAGNOSTICS
 The 
 .I scanf
