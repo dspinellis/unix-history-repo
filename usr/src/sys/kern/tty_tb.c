@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tty_tb.c	7.2 (Berkeley) %G%
+ *	@(#)tty_tb.c	7.3 (Berkeley) %G%
  */
 
 #include "tb.h"
@@ -38,7 +38,8 @@ struct	tbconf {
 	char	*tbc_stop;	/* stop sequence */
 	char	*tbc_start;	/* start/restart sequence */
 	int	tbc_flags;
-#define	TBF_POL	0x1	/* polhemus hack */
+#define	TBF_POL		0x1	/* polhemus hack */
+#define	TBF_INPROX	0x2	/* tablet has proximity info */
 };
 
 static	int tbdecode(), gtcodecode(), poldecode();
@@ -50,9 +51,13 @@ struct	tbconf tbconf[TBTYPE] = {
 { 5, sizeof (struct tbpos), 0200, tbdecode, "\1CN", "\1RT", "\2", "\4" },
 { 8, sizeof (struct gtcopos), 0200, gtcodecode },
 {17, sizeof (struct polpos), 0200, poldecode, 0, 0, "\21", "\5\22\2\23",
- TBF_POL },
-{ 5, sizeof (struct tbpos), 0100, tblresdecode, "\1CN", "\1PT", "\2", "\4"},
-{ 6, sizeof (struct tbpos), 0200, tbhresdecode, "\1CN", "\1PT", "\2", "\4"},
+  TBF_POL },
+{ 5, sizeof (struct tbpos), 0100, tblresdecode, "\1CN", "\1PT", "\2", "\4",
+  TBF_INPROX },
+{ 6, sizeof (struct tbpos), 0200, tbhresdecode, "\1CN", "\1PT", "\2", "\4",
+  TBF_INPROX },
+{ 5, sizeof (struct tbpos), 0100, tblresdecode, "\1CL\33", "\1PT\33", 0, 0},
+{ 6, sizeof (struct tbpos), 0200, tbhresdecode, "\1CL\33", "\1PT\33", 0, 0},
 };
 
 /*
@@ -166,14 +171,15 @@ tbinput(c, tp)
 	 * Call decode routine only if a full record has been collected.
 	 */
 	if (++tp->t_inbuf == tc->tbc_recsize)
-		(*tc->tbc_decode)(tbp->cbuf, &tbp->rets);
+		(*tc->tbc_decode)(tc, tbp->cbuf, &tbp->rets);
 }
 
 /*
  * Decode GTCO 8 byte format (high res, tilt, and pressure).
  */
 static
-gtcodecode(cp, tbpos)
+gtcodecode(tc, cp, tbpos)
+	struct tbconf *tc;
 	register char *cp;
 	register struct gtcopos *tbpos;
 {
@@ -195,7 +201,8 @@ gtcodecode(cp, tbpos)
  * Decode old Hitachi 5 byte format (low res).
  */
 static
-tbdecode(cp, tbpos)
+tbdecode(tc, cp, tbpos)
+	struct tbconf *tc;
 	register char *cp;
 	register struct tbpos *tbpos;
 {
@@ -219,13 +226,16 @@ tbdecode(cp, tbpos)
  * Decode new Hitach 5-byte format (low res).
  */
 static
-tblresdecode(cp, tbpos)
+tblresdecode(tc, cp, tbpos)
+	struct tbconf *tc;
 	register char *cp;
 	register struct tbpos *tbpos;
 {
 
 	*cp &= ~0100;		/* mask sync bit */
 	tbpos->status = (*cp++ >> 2) | TBINPROX;
+	if (tc->tbc_flags&TBF_INPROX && tbpos->status&020)
+		tbpos->status &= ~(020|TBINPROX);
 	tbpos->xpos = *cp++;
 	tbpos->xpos |= *cp++ << 6;
 	tbpos->ypos = *cp++;
@@ -237,7 +247,8 @@ tblresdecode(cp, tbpos)
  * Decode new Hitach 6-byte format (high res).
  */
 static
-tbhresdecode(cp, tbpos)
+tbhresdecode(tc, cp, tbpos)
+	struct tbconf *tc;
 	register char *cp;
 	register struct tbpos *tbpos;
 {
@@ -251,6 +262,8 @@ tbhresdecode(cp, tbpos)
 	tbpos->ypos |= *cp++ << 7;
 	tbpos->ypos |= *cp++;
 	tbpos->status = (byte >> 2) | TBINPROX;
+	if (tc->tbc_flags&TBF_INPROX && tbpos->status&020)
+		tbpos->status &= ~(020|TBINPROX);
 	tbpos->scount++;
 }
 
@@ -258,7 +271,8 @@ tbhresdecode(cp, tbpos)
  * Polhemus decode.
  */
 static
-poldecode(cp, polpos)
+poldecode(tc, cp, polpos)
+	struct tbconf *tc;
 	register char *cp;
 	register struct polpos *polpos;
 {
