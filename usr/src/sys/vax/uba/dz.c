@@ -1,4 +1,4 @@
-/*	dz.c	4.36	82/05/04	*/
+/*	dz.c	4.37	82/05/12	*/
 
 #include "dz.h"
 #if NDZ > 0
@@ -145,7 +145,7 @@ char	dz_timer;		/* timer started? */
 struct	pdma dzpdma[NDZLINE];
 
 char	dz_speeds[] =
-	{ 0,020,021,022,023,024,0,025,026,027,030,032,034,036,0,0 };
+	{ 0,020,021,022,023,024,0,025,026,027,030,032,034,036,037,0 };
  
 #ifndef PORTSELECTOR
 #define	ISPEED	B300
