@@ -1,10 +1,10 @@
 /*
- * Copyright (c) 1989 The Regents of the University of California.
+ * Copyright (c) 1989, 1991 The Regents of the University of California.
  * All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mount.h	7.23 (Berkeley) %G%
+ *	@(#)mount.h	7.24 (Berkeley) %G%
  */
 
 typedef quad fsid_t;			/* file system id type */
@@ -51,13 +51,13 @@ struct statfs {
 #define	MOUNT_NFS	2
 #define	MOUNT_MFS	3
 #define	MOUNT_PC	4
-#define	MOUNT_MAXTYPE	4
+#define	MOUNT_LFS	5
+#define	MOUNT_MAXTYPE	5
 
 /*
- * Structure per mounted file system.
- * Each mounted file system has an array of
- * operations and an instance record.
- * The file systems are put on a doubly linked list.
+ * Structure per mounted file system.  Each mounted file system has an
+ * array of operations and an instance record.  The file systems are
+ * put on a doubly linked list.
  */
 struct mount {
 	struct mount	*mnt_next;		/* next in mount list */
@@ -136,7 +136,7 @@ struct vfsops {
 	int	(*vfs_fhtovp)	__P((struct mount *mp, struct fid *fhp,
 				    struct vnode **vpp));
 	int	(*vfs_vptofh)	__P((struct vnode *vp, struct fid *fhp));
-	int	(*vfs_init)	__P(());
+	int	(*vfs_init)	__P((void));
 };
 
 #define VFS_MOUNT(MP, PATH, DATA, NDP, P) \
@@ -172,7 +172,7 @@ struct fhandle {
 typedef struct fhandle	fhandle_t;
 
 /*
- * Arguments to mount UFS
+ * Arguments to mount LFS/UFS
  */
 struct ufs_args {
 	char	*fspec;		/* block special device to mount */
@@ -189,7 +189,7 @@ struct mfs_args {
 	caddr_t	base;		/* base address of file system in memory */
 	u_long size;		/* size of file system */
 };
-#endif MFS
+#endif /* MFS */
 
 #ifdef NFS
 /*
@@ -216,6 +216,7 @@ struct nfs_args {
 	int		retrans;	/* times to retry send */
 	char		*hostname;	/* server's name */
 };
+
 /*
  * NFS mount option flags
  */
@@ -232,7 +233,7 @@ struct nfs_args {
 #define	NFSMNT_SPONGY	0x0400	/* spongy mount (soft for stat and lookup) */
 #define	NFSMNT_COMPRESS	0x0800	/* Compress nfs rpc xdr */
 #define	NFSMNT_LOCKBITS	(NFSMNT_SCKLOCK | NFSMNT_WANTSCK)
-#endif NFS
+#endif /* NFS */
 
 #ifdef KERNEL
 /*
