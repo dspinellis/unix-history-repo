@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)pc.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)pc.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -22,17 +22,17 @@ static char sccsid[] = "@(#)pc.c	5.3 (Berkeley) %G%";
 /*
  * Pc - front end for Pascal compiler.
  */
-char	*pc0 = "/usr/lib/pc0";
-char	*pc1 = "/lib/f1";
-char	*pc2 = "/usr/lib/pc2";
-char	*c2 = "/lib/c2";
-char	*pc3 = "/usr/lib/pc3";
-char	*ld = "/bin/ld";
-char	*as = "/bin/as";
+char	*pc0 = "/usr/libexec/pc0";
+char	*pc1 = "/usr/libexec/f1";
+char	*pc2 = "/usr/libexec/pc2";
+char	*c2 = "/usr/libexec/c2";
+char	*pc3 = "/usr/libexec/pc3";
+char	*ld = "/usr/bin/ld";
+char	*as = "/usr/bin/as";
 char	*lpc = "-lpc";
-char	*crt0 = "/lib/crt0.o";
-char	*mcrt0 = "/lib/mcrt0.o";
-char	*gcrt0 = "/usr/lib/gcrt0.o";
+char	*crt0 = "/usr/libexec/crt0.o";
+char	*mcrt0 = "/usr/libexec/mcrt0.o";
+char	*gcrt0 = "/usr/libexec/gcrt0.o";
 
 char	*mktemp();
 char	*tmpdir = "/tmp";
