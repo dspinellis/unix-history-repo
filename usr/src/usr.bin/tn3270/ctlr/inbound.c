@@ -615,7 +615,9 @@ int
 	    case FCN_ESCAPE:
 		StopScreen(1);
 		command(0);
-		ConnectScreen();
+		if (shell_active == 0) {
+		    ConnectScreen();
+		}
 		break;
 
 	    case FCN_RESET:
@@ -915,7 +917,9 @@ int
 	    /* FlushChar(); do we want to flush characters from before? */
 	    StopScreen(1);
 	    command(0);
-	    ConnectScreen();
+	    if (shell_active == 0) {
+		ConnectScreen();
+	    }
 	    break;
 
 	case FCN_DISC:
