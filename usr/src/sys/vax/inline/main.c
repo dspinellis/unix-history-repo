@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	1.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	1.10 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -21,10 +21,21 @@ static char sccsid[] = "@(#)main.c	1.9 (Berkeley) %G%";
 /*
  * These are the pattern tables to be loaded
  */
-struct pats *inittables[] = {
+struct pats *vax_inittables[] = {
 	language_ptab,
 	libc_ptab,
+	vax_libc_ptab,
 	machine_ptab,
+	vax_ptab,
+	0
+};
+
+struct pats *vaxsubset_inittables[] = {
+	language_ptab,
+	libc_ptab,
+	vaxsubset_libc_ptab,
+	machine_ptab,
+	vaxsubset_ptab,
 	0
 };
 
@@ -55,10 +66,25 @@ main(argc, argv)
 	register struct inststoptbl *itp, **ithp;
 	int size;
 	extern char *index();
+	int subset = 0;
 
 	whoami = argv[0];
-	if (argc > 1 && bcmp(argv[1], "-d", 3) == 0)
-		dflag++, argc--, argv++;
+	while (argc > 0 && argv[0][0] == '-') {
+		switch(argv[0][1]) {
+
+		case 's':
+			subset++;
+			break;
+
+		case 'd':
+			dflag++;
+			break;
+
+		default:
+			break;
+		}
+		argc--, argv++;
+	}
 	if (argc > 1)
 		freopen(argv[1], "r", stdin);
 	if (argc > 2)
@@ -66,7 +92,11 @@ main(argc, argv)
 	/*
 	 * Set up the hash table for the patterns.
 	 */
-	for (tablep = inittables; *tablep; tablep++) {
+	if (subset)
+		tablep = vaxsubset_inittables;
+	else
+		tablep = vax_inittables;
+	for ( ; *tablep; tablep++) {
 		for (pp = *tablep; pp->name[0] != '\0'; pp++) {
 			php = &patshdr[hash(pp->name, &size)];
 			pp->size = size;
