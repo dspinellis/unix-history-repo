@@ -3,7 +3,7 @@
 # include <sysexits.h>
 # include "sendmail.h"
 
-static char	SccsId[] =	"@(#)usersmtp.c	3.4	%G%";
+static char	SccsId[] =	"@(#)usersmtp.c	3.5	%G%";
 
 /*
 **  SMTPINIT -- initialize SMTP.
@@ -53,6 +53,19 @@ smtpinit(m, pvp, ctladdr)
 		return (EX_TEMPFAIL);
 
 	/*
+	**  Send the HELO command.
+	**	My mother taught me to always introduce myself, even
+	**	if it is useless.
+	*/
+
+	smtpmessage("HELO %s", HostName);
+	r = reply();
+	if (REPLYTYPE(r) == 5)
+		return (EX_UNAVAILABLE);
+	if (REPLYTYPE(r) != 2)
+		return (EX_TEMPFAIL);
+
+	/*
 	**  Send the MAIL command.
 	**	Designates the sender.
 	*/
@@ -67,7 +80,7 @@ smtpinit(m, pvp, ctladdr)
 	return (EX_OK);
 }
 /*
-**  SMTPMRCP -- designate recipient.
+**  SMTPRCPT -- designate recipient.
 **
 **	Parameters:
 **		to -- address of recipient.
@@ -79,12 +92,12 @@ smtpinit(m, pvp, ctladdr)
 **		Sends the mail via SMTP.
 */
 
-smtpmrcp(to)
+smtprcpt(to)
 	ADDRESS *to;
 {
 	register int r;
 
-	smtpmessage("MRCP To:<%s>", to->q_user);
+	smtpmessage("RCPT To:<%s>", to->q_user);
 
 	r = reply();
 	if (REPLYTYPE(r) == 4)
@@ -103,7 +116,7 @@ smtpmrcp(to)
 **			text of the message with.
 **
 **	Returns:
-**		exit status corresponding to DOIT command.
+**		exit status corresponding to DATA command.
 **
 **	Side Effects:
 **		none.
@@ -133,16 +146,6 @@ smtpfinish(m, editfcn)
 		return (EX_TEMPFAIL);
 	if (r != 250)
 		return (EX_SOFTWARE);
-
-	/*
-	**  Make the actual delivery happen.
-	*/
-
-	smtpmessage("DOIT");
-	r = reply();
-	if (r != 250)
-		return (EX_TEMPFAIL);
-
 	return (EX_OK);
 }
 /*

@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-static char	SccsId[] =	"@(#)srvrsmtp.c	3.7	%G%";
+static char	SccsId[] =	"@(#)srvrsmtp.c	3.8	%G%";
 
 /*
 **  SMTP -- run the SMTP protocol.
@@ -25,28 +25,29 @@ struct cmd
 /* values for cmdcode */
 # define CMDERROR	0	/* bad command */
 # define CMDMAIL	1	/* mail -- designate sender */
-# define CMDMRCP	2	/* mrcp -- designate recipient */
+# define CMDRCPT	2	/* rcpt -- designate recipient */
 # define CMDDATA	3	/* data -- send message text */
-# define CMDDOIT	4	/* doit -- actually do delivery */
 # define CMDRSET	5	/* rset -- reset state */
 # define CMDVRFY	6	/* vrfy -- verify address */
 # define CMDHELP	7	/* help -- give usage info */
 # define CMDNOOP	8	/* noop -- do nothing */
 # define CMDQUIT	9	/* quit -- close connection and die */
 # define CMDMRSQ	10	/* mrsq -- for old mtp compat only */
+# define CMDHELO	11	/* helo -- be polite */
 
 static struct cmd	CmdTab[] =
 {
 	"mail",		CMDMAIL,
-	"mrcp",		CMDMRCP,
+	"rcpt",		CMDRCPT,
+	"mrcp",		CMDRCPT,	/* for old MTP compatability */
 	"data",		CMDDATA,
-	"doit",		CMDDOIT,
 	"rset",		CMDRSET,
 	"vrfy",		CMDVRFY,
 	"help",		CMDHELP,
 	"noop",		CMDNOOP,
 	"quit",		CMDQUIT,
 	"mrsq",		CMDMRSQ,
+	"helo",		CMDHELO,
 	NULL,		CMDERROR,
 };
 
@@ -101,6 +102,10 @@ smtp()
 		/* process command */
 		switch (c->cmdcode)
 		{
+		  case CMDHELO:		/* hello -- introduce yourself */
+			message("250", "%s Pleased to meet you", HostName);
+			break;
+
 		  case CMDMAIL:		/* mail -- designate sender */
 			if (hasmail)
 			{
@@ -124,7 +129,7 @@ smtp()
 			}
 			break;
 
-		  case CMDMRCP:		/* mrcp -- designate recipient */
+		  case CMDRCPT:		/* rcpt -- designate recipient */
 			p = skipword(p, "to");
 			if (p == NULL)
 				break;
@@ -143,31 +148,36 @@ smtp()
 			break;
 
 		  case CMDDATA:		/* data -- text of mail */
-			collect(TRUE);
-			if (Errors == 0)
-			{
-				message("250", "Message stored");
-				hasdata = TRUE;
-			}
-			break;
-
-		  case CMDDOIT:		/* doit -- actually send everything */
 			if (!hasmail)
-				message("503", "Need MAIL command");
-			else if (rcps <= 0)
-				message("503", "Need MRCP (recipient)");
-			else if (!hasdata)
-				message("503", "No message, use DATA");
-			else
 			{
-				if (rcps != 1)
-					HoldErrs = MailBack = TRUE;
-				sendall(FALSE);
-				HoldErrs = FALSE;
-				To = NULL;
-				if (Errors == 0 || rcps != 1)
-					message("250", "Sent");
+				message("503", "Need MAIL command");
+				break;
 			}
+			else if (rcps <= 0)
+			{
+				message("503", "Need RCPT (recipient)");
+				break;
+			}
+
+			/* collect the text of the message */
+			collect(TRUE);
+			if (Errors != 0)
+				break;
+
+			/* if sending to multiple people, mail back errors */
+			if (rcps != 1)
+				HoldErrs = MailBack = TRUE;
+
+			/* send to all recipients */
+			sendall(FALSE);
+
+			/* reset strange modes */
+			HoldErrs = FALSE;
+			To = NULL;
+
+			/* issue success if appropriate */
+			if (Errors == 0 || rcps != 1)
+				message("250", "Sent");
 			break;
 
 		  case CMDRSET:		/* rset -- reset state */

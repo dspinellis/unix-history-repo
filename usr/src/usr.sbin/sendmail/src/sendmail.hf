@@ -1,19 +1,20 @@
-@(#)	sendmail.hf	3.1	%G%
+@(#)	sendmail.hf	3.2	%G%
 smtp	Commands:
-smtp		MAIL	MRCP	DATA	DOIT	RSET
+smtp		HELO	MAIL	RCPT	DATA	RSET
 smtp		NOOP	QUIT	HELP	VRFY
 smtp	For more info use "HELP <topic>".
 help	HELP [ <topic> ]
 help		The HELP command gives help info.
+helo	HELO <hostname>
+helo		Introduce yourself.  I am a boor, so I really don't
+helo		care if you do.
 mail	MAIL FROM: <sender>
 mail		Specifies the sender.
-mrcp	MRCP TO: <recipient>
-mrcp		Specifies the recipient.  Can be used any number of times.
+rcpt	RCPT TO: <recipient>
+rcpt		Specifies the recipient.  Can be used any number of times.
 data	DATA
 data		Following text is collected as the message.
 data		End with a single dot.
-doit	DOIT
-doit		Causes the message to be sent.
 rset	RSET
 rset		Resets the system -- same as QUIT in this implementation.
 quit	QUIT
@@ -23,3 +24,14 @@ vrfy		Not implemented to protocol.  Gives some sexy
 vrfy		information.
 noop	NOOP
 noop		Do nothing.
+send	SEND FROM: <sender>
+send		replaces the MAIL command, and can be used to send
+send		directly to a users terminal.  Not supported in this
+send		implementation.
+soml	SOML FROM: <sender>
+soml		Send or mail.  If the user is logged in, send directly,
+soml		otherwise mail.  Not supported in this implementation.
+saml	SAML FROM: <sender>
+saml		Send and mail.  Send directly to the user's terminal,
+saml		and also mail a letter.  Not supported in this
+saml		implementation.
