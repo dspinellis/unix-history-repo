@@ -4,7 +4,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)op.me	6.11 (Berkeley) %G%
+.\"	@(#)op.me	6.12 (Berkeley) %G%
 .\"
 .\" eqn op.me | pic | troff -me
 .eh 'SMM:07-%''Sendmail Installation and Operation Guide'
@@ -40,7 +40,7 @@ University of California, Berkeley
 Mammoth Project
 eric@CS.Berkeley.EDU
 .sp
-Version 6.11
+Version 6.12
 .sp
 For Sendmail Version 6.23
 .)l
@@ -736,19 +736,25 @@ will print the contents of the mail queue;
 see below).
 This should be a link to /usr/\*(SD/sendmail.
 .sh 1 "NORMAL OPERATIONS"
-.sh 2 "Quick Configuration Startup"
+.sh 2 "``Quick'' Configuration Startup"
 .pp
-A fast version of the configuration file
-may be set up by using the
+A precompiled (``frozen'') version of the configuration file
+can be created using the
 .b \-bz
-flag:
+flag.
+This is really only worthwhile doing
+if you are on a slow processor with a relatively fast I/O system
+(a VAX 11/750 is a good example).
+Since it creates other problems,
+I recommend against using the frozen configuration
+on most current architectures.
+.pp
+To create the freeze file, use
 .(b
 /usr/\*(SD/sendmail \-bz
 .)b
-This creates the file
-.i /etc/sendmail.fc
-(\c
-.q "frozen configuration" ).
+This creates the frozen configuration file
+.i /etc/sendmail.fc .
 This file is an image of
 .i sendmail 's
 data space after reading in the configuration file.
@@ -1774,6 +1780,11 @@ This allows names such as
 ``utc.CS''
 to match the site in Czechoslovakia
 rather than the site in your local Computer Science department.
+It also prefers A and CNAME records over MX records \*-
+that is, if it finds an MX record it makes note of it,
+but keeps looking.
+This way, if you have a wildcard MX record matching your domain,
+it will not assume that all names match.
 .sh 2 "Moving the Per-User Forward Files"
 .pp
 Some sites mount each user's home directory
@@ -2569,6 +2580,10 @@ Any other flags may be used freely
 to conditionally assign headers to messages
 destined for particular mailers.
 .nr ii 4n
+.ip c
+Do not include comments in addresses.
+This should only be used if you have to work around
+a remote mailer that gets confused by comments.
 .ip C
 If mail is
 .i received
@@ -3538,15 +3553,18 @@ One general point applies to all of these philosophies:
 it is almost always a mistake
 to try to do full name resolution.
 For example,
-if you are trying to get names of the form
+if you are on a UUCP-only site
+and you are trying to get names of the form
 .q user@host
-to the Arpanet,
+to the Internet,
 it does not pay to route them to
-.q xyzvax!decvax!ucbvax!c70:user@host
+.q xyzvax!decvax!ucbvax!c70!user@host
 since you then depend on several links not under your control.
 The best approach to this problem
-is to simply forward to
-.q xyzvax!user@host
+is to simply forward the message for
+.q user@host
+to
+.q xyzvax
 and let xyzvax
 worry about it from there.
 In summary,
@@ -3704,7 +3722,7 @@ As a result, header addresses are subject to minimal munging
 .pp
 The canonical form you use
 should almost certainly be as specified in
-the Arpanet protocols
+the Internet protocols
 RFC819 and RFC822.
 Copies of these RFC's are included on the
 .i sendmail
@@ -4584,7 +4602,13 @@ the
 and
 .q From:
 fields are always scanned on ARPANET mail
-to determine the sender;
+to determine the sender\**;
+.(f
+\**Actually, this is no longer true in SMTP;
+this information is contained in the envelope.
+The older ARPANET protocols did not completely distinguish
+envelope from header.
+.)f
 this is used to perform the
 .q "return to sender"
 function.
@@ -4601,7 +4625,11 @@ and used in a number of ways.
 .pp
 The file
 .i conf.c
-also contains the specification of ARPANET reply codes.
+also contains the specification of Internet reply codes\**.
+.(f
+\**Called Arpanet in the source code
+for historic reasons.
+.)f
 There are four classifications these fall into:
 .(b
 .sz -1
@@ -5009,6 +5037,28 @@ mailer.
 A number of internal changes have been made to enhance portability.
 .pp
 Several fixes have been made to increase the paranoia factor.
+.sh 1 "ACKNOWLEDGEMENTS"
+.pp
+I've worked on
+.i sendmail
+for many years,
+and many employers have been remarkably patient
+about letting me work on a large project
+that was not part of my official job.
+This includes time on the INGRES Project at Berkeley,
+at Britton Lee,
+and again on the Mammoth Project at Berkeley.
+.pp
+Much of the second wave of improvements
+should be credited to Bryan Costales of ICSI.
+As he passed me drafts of his book on
+.i sendmail
+I was inspired to start working on things again.
+Bryan was also available to bounce ideas off of.
+.pp
+Many, many people contributed chunks of code and ideas to
+.i sendmail .
+It has proven to be a group network effort.
 .++ A
 .+c "COMMAND LINE FLAGS"
 .ba 0
@@ -5365,7 +5415,7 @@ A transcript of the current session.
 .\"Eric Allman
 .\"Britton-Lee, Inc.
 .\".sp
-.\"Version 6.11
+.\"Version 6.12
 .\".ce 0
 .pn 2
 .bp
