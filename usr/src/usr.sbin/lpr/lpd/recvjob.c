@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)recvjob.c	4.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)recvjob.c	4.7 (Berkeley) %G%";
 #endif
 
 /*
@@ -8,23 +8,32 @@ static char sccsid[] = "@(#)recvjob.c	4.6 (Berkeley) %G%";
  */
 
 #include "lp.h"
+#include <sys/fs.h>
 
-static char    tfname[40];	/* tmp copy of cf before linking */
-static char    *dfname;		/* data files */
+char	*sp = "";
+#define ack()	(void) write(1, sp, 1);
+
+char    tfname[40];		/* tmp copy of cf before linking */
+char    *dfname;		/* data files */
+int	minfree;		/* keep at least minfree blocks available */
+char	*ddev;			/* disk device (for checking free space) */
+int	dfd;			/* file system device descriptor */
+
+char	*find_dev();
 
 recvjob()
 {
 	struct stat stb;
 	char *bp = pbuf;
-	int status;
+	int status, rcleanup();
 
 	/*
 	 * Perform lookup for printer name or abbreviation
 	 */
 	if ((status = pgetent(line, printer)) < 0)
-		fatal("cannot open printer description file");
+		frecverr("cannot open printer description file");
 	else if (status == 0)
-		fatal("unknown printer");
+		frecverr("unknown printer %s", printer);
 	if ((LF = pgetstr("lf", &bp)) == NULL)
 		LF = DEFLOGF;
 	if ((SD = pgetstr("sd", &bp)) == NULL)
@@ -32,30 +41,62 @@ recvjob()
 	if ((LO = pgetstr("lo", &bp)) == NULL)
 		LO = DEFLOCK;
 
-	(void) close(2);
-	(void) open(LF, O_WRONLY|O_APPEND);
 	if (chdir(SD) < 0)
-		fatal("cannot chdir to %s", SD);
-	if (stat(LO, &stb) == 0 && (stb.st_mode & 010)) {
-		/* queue is disabled */
-		putchar('\1');		/* return error code */
-		exit(1);
-	}
+		frecverr("%s: %s: %m", printer, SD);
+	if (stat(LO, &stb) == 0) {
+		if (stb.st_mode & 010) {
+			/* queue is disabled */
+			putchar('\1');		/* return error code */
+			exit(1);
+		}
+	} else if (stat(SD, &stb) < 0)
+		frecverr("%s: %s: %m", printer, SD);
+	minfree = read_number("minfree");
+	ddev = find_dev(stb.st_dev, S_IFBLK);
+	if ((dfd = open(ddev, O_RDONLY)) < 0)
+		syslog(LOG_WARNING, "%s: %s: %m", printer, ddev);
+	signal(SIGTERM, rcleanup);
+	signal(SIGPIPE, rcleanup);
 
 	if (readjob())
 		printjob();
 }
 
-char	*sp = "";
-#define ack()	(void) write(1, sp, 1);
+char *
+find_dev(dev, type)
+	register dev_t dev;
+	register int type;
+{
+	register DIR *dfd = opendir("/dev");
+	struct direct *dir;
+	struct stat stb;
+	char devname[MAXNAMLEN+6];
+	char *dp;
+
+	strcpy(devname, "/dev/");
+	while ((dir = readdir(dfd))) {
+		strcpy(devname + 5, dir->d_name);
+		if (stat(devname, &stb))
+			continue;
+		if ((stb.st_mode & S_IFMT) != type)
+			continue;
+		if (dev == stb.st_rdev) {
+			closedir(dfd);
+			dp = (char *)malloc(strlen(devname)+1);
+			strcpy(dp, devname);
+			return(dp);
+		}
+	}
+	closedir(dfd);
+	frecverr("cannot find device %d, %d", major(dev), minor(dev));
+	/*NOTREACHED*/
+}
 
 /*
  * Read printer jobs sent by lpd and copy them to the spooling directory.
  * Return the number of jobs successfully transfered.
  */
-static
-readjob(printer)
-	char *printer;
+readjob()
 {
 	register int size, nfiles;
 	register char *cp;
@@ -70,7 +111,7 @@ readjob(printer)
 		do {
 			if ((size = read(1, cp, 1)) != 1) {
 				if (size < 0)
-					fatal("Lost connection");
+					frecverr("%s: Lost connection",printer);
 				return(nfiles);
 			}
 		} while (*cp++ != '\n');
@@ -78,7 +119,7 @@ readjob(printer)
 		cp = line;
 		switch (*cp++) {
 		case '\1':	/* cleanup because data sent was bad */
-			cleanup();
+			rcleanup();
 			continue;
 
 		case '\2':	/* read cf file */
@@ -89,12 +130,16 @@ readjob(printer)
 				break;
 			strcpy(tfname, cp);
 			tfname[0] = 't';
+			if (!chksize(size)) {
+				(void) write(1, "\2", 1);
+				continue;
+			}
 			if (!readfile(tfname, size)) {
-				cleanup();
+				rcleanup();
 				continue;
 			}
 			if (link(tfname, cp) < 0)
-				fatal("cannot rename %s", tfname);
+				frecverr("%s: %m", tfname);
 			(void) unlink(tfname);
 			tfname[0] = '\0';
 			nfiles++;
@@ -106,17 +151,20 @@ readjob(printer)
 				size = size * 10 + (*cp++ - '0');
 			if (*cp++ != ' ')
 				break;
+			if (!chksize(size)) {
+				(void) write(1, "\2", 1);
+				continue;
+			}
 			(void) readfile(dfname = cp, size);
 			continue;
 		}
-		fatal("protocol screwup");
+		frecverr("protocol screwup");
 	}
 }
 
 /*
  * Read files send by lpd and copy them to the spooling directory.
  */
-static
 readfile(file, size)
 	char *file;
 	int size;
@@ -128,7 +176,7 @@ readfile(file, size)
 
 	fd = open(file, O_WRONLY|O_CREAT, FILMOD);
 	if (fd < 0)
-		fatal("cannot create %s", file);
+		frecverr("%s: %m", file);
 	ack();
 	err = 0;
 	for (i = 0; i < size; i += BUFSIZ) {
@@ -139,7 +187,7 @@ readfile(file, size)
 		do {
 			j = read(1, cp, amt);
 			if (j <= 0)
-				fatal("Lost connection");
+				frecverr("Lost connection");
 			amt -= j;
 			cp += j;
 		} while (amt > 0);
@@ -153,7 +201,7 @@ readfile(file, size)
 	}
 	(void) close(fd);
 	if (err)
-		fatal("%s: write error", file);
+		frecverr("%s: write error", file);
 	if (noresponse()) {		/* file sent had bad data in it */
 		(void) unlink(file);
 		return(0);
@@ -162,23 +210,62 @@ readfile(file, size)
 	return(1);
 }
 
-static
 noresponse()
 {
 	char resp;
 
 	if (read(1, &resp, 1) != 1)
-		fatal("Lost connection");
+		frecverr("Lost connection");
 	if (resp == '\0')
 		return(0);
 	return(1);
 }
 
 /*
+ * Check to see if there is enough space on the disk for size bytes.
+ * 1 == OK, 0 == Not OK.
+ */
+chksize(size)
+	int size;
+{
+	struct stat stb;
+	register char *ddev;
+	int spacefree;
+	struct fs fs;
+
+	if (dfd < 0 || lseek(dfd, (long)(SBLOCK * DEV_BSIZE), 0) < 0)
+		return(1);
+	if (read(dfd, (char *)&fs, sizeof fs) != sizeof fs)
+		return(1);
+	spacefree = (fs.fs_cstotal.cs_nbfree * fs.fs_frag +
+		fs.fs_cstotal.cs_nffree - fs.fs_dsize * fs.fs_minfree / 100) *
+			fs.fs_fsize / 1024;
+	size = (size + 1023) / 1024;
+	if (minfree + size > spacefree)
+		return(0);
+	return(1);
+}
+
+read_number(fn)
+	char *fn;
+{
+	char lin[80];
+	register FILE *fp;
+
+	if ((fp = fopen(fn, "r")) == NULL)
+		return (0);
+	if (fgets(lin, 80, fp) == NULL) {
+		fclose(fp);
+		return (0);
+	}
+	fclose(fp);
+	return (atoi(lin));
+}
+
+/*
  * Remove all the files associated with the current job being transfered.
  */
-static
-cleanup()
+rcleanup()
 {
 	register int i;
 
@@ -193,12 +280,11 @@ cleanup()
 		} while (dfname[i-2]-- != 'd');
 }
 
-static
-fatal(msg, a1)
+frecverr(msg, a1, a2)
 	char *msg;
 {
-	cleanup();
-	log(msg, a1);
+	rcleanup();
+	syslog(LOG_ERR, msg, a1, a2);
 	putchar('\1');		/* return error code */
 	exit(1);
 }
