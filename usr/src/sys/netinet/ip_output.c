@@ -1,4 +1,4 @@
-/*	ip_output.c	1.24	82/02/12	*/
+/*	ip_output.c	1.25	82/02/18	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -70,7 +70,7 @@ COUNT(IP_OUTPUT);
 	 */
 	m->m_len -= sizeof (struct ip);
 	m->m_off += sizeof (struct ip);
-	for (off = 0; off < ip->ip_len; off += len) {
+	for (off = 0; off < ip->ip_len-hlen; off += len) {
 		struct mbuf *mh = m_get(M_DONTWAIT);
 		struct ip *mhip;
 
@@ -85,8 +85,8 @@ COUNT(IP_OUTPUT);
 		} else
 			mh->m_len = sizeof (struct ip);
 		mhip->ip_off = off >> 3;
-		if (off + len >= ip->ip_len)
-			len = mhip->ip_len = ip->ip_len - off;
+		if (off + len >= ip->ip_len-hlen)
+			len = mhip->ip_len = ip->ip_len - hlen - off;
 		else {
 			mhip->ip_len = len;
 			mhip->ip_off |= IP_MF;
@@ -101,10 +101,10 @@ COUNT(IP_OUTPUT);
 			goto bad;
 		}
 #if vax
-		ip->ip_off = htons((u_short)ip->ip_off);
+		mhip->ip_off = htons((u_short)mhip->ip_off);
 #endif
-		ip->ip_sum = 0;
-		ip->ip_sum = in_cksum(m, hlen);
+		mhip->ip_sum = 0;
+		mhip->ip_sum = in_cksum(mh, hlen);
 		if ((*ifp->if_output)(ifp, mh, PF_INET) == 0)
 			goto bad;
 	}
