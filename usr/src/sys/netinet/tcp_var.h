@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tcp_var.h	6.6 (Berkeley) %G%
+ *	@(#)tcp_var.h	6.7 (Berkeley) %G%
  */
 
 /*
@@ -20,13 +20,14 @@ struct tcpcb {
 	short	t_timer[TCPT_NTIMERS];	/* tcp timers */
 	short	t_rxtshift;		/* log(2) of rexmt exp. backoff */
 	struct	mbuf *t_tcpopt;		/* tcp options */
-	short	t_maxseg;		/* maximum segment size */
+	u_short	t_maxseg;		/* maximum segment size */
 	char	t_force;		/* 1 if forcing out a byte */
 	u_char	t_flags;
 #define	TF_ACKNOW	0x01		/* ack peer immediately */
 #define	TF_DELACK	0x02		/* ack, but try to delay it */
 #define	TF_NODELAY	0x04		/* don't delay packets to coalesce */
 #define	TF_NOOPT	0x08		/* don't use tcp options */
+#define	TF_SENTFIN	0x10		/* have sent FIN */
 	struct	tcpiphdr *t_template;	/* skeletal packet for transmit */
 	struct	inpcb *t_inpcb;		/* back pointer to internet pcb */
 /*
