@@ -1,13 +1,10 @@
 #ifndef lint
-static	char *sccsid = "@(#)main.c	3.15 84/03/03";
+static	char *sccsid = "@(#)main.c	3.16 84/03/23";
 #endif
 
 #include "defs.h"
 #include <sys/signal.h>
 #include <stdio.h>
-
-int nbufline = 48;			/* compatible */
-char escapec = CTRL(p);	
 
 #define next(a) (*++*(a) ? *(a) : (*++(a) ? *(a) : (char *)usage()))
 
@@ -52,6 +49,8 @@ char **argv;
 		} else
 			(void) usage();
 	}
+	nbufline = 48;				/* compatible */
+	escapec = CTRL(p);	
 	if ((shell = getenv("SHELL")) == 0)
 		shell = "/bin/csh";
 	if (shellname = rindex(shell, '/'))

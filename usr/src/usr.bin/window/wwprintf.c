@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwprintf.c	3.2 84/03/03";
+static	char *sccsid = "@(#)wwprintf.c	3.3 84/03/23";
 #endif
 
 #include "ww.h"
@@ -11,7 +11,7 @@ char *fmt;
 {
 #include <stdio.h>
 	struct _iobuf _wwbuf;
-	static char buf[1024];
+	char buf[1024];
 
 	/*
 	 * A danger is that when buf overflows, _flsbuf() will be

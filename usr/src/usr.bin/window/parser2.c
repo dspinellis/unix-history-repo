@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)parser2.c	3.2 84/01/13";
+static	char *sccsid = "@(#)parser2.c	3.3 84/03/23";
 #endif
 
 #include "parser.h"
@@ -18,6 +18,8 @@ register struct value *v;
 	register struct lcmd_tab *c;
 	register struct lcmd_arg *ap;
 	register i;
+	struct value av[LCMD_NARG];
+	register struct value *vp;
 
 	if (name != 0) {
 		if ((c = lcmd_lookup(name)) == 0) {
@@ -28,8 +30,8 @@ register struct value *v;
 		c = 0;
 
 	if (c != 0)
-		for (ap = c->lc_arg; ap->arg_name != 0; ap++)
-			ap->arg_val.v_type = V_ERR;
+		for (vp = av; vp < &av[LCMD_NARG]; vp++)
+			vp->v_type = V_ERR;
 
 	for (i = 0;;) {
 		ap = 0;
@@ -49,6 +51,7 @@ register struct value *v;
 		if (token != T_ASSIGN) {
 			if (c != 0) {
 				ap = &c->lc_arg[i];
+				vp = &av[i];
 				if (ap->arg_name == 0) {
 					p_error("%s: Too many arguments.",
 						c->lc_name);
@@ -85,7 +88,8 @@ register struct value *v;
 				flag = 0;
 			if (tmp) {
 				/* we know c != 0 */
-				for (ap = c->lc_arg; ap->arg_name != 0; ap++)
+				for (ap = c->lc_arg, vp = av;
+				     ap->arg_name != 0; ap++, vp++)
 					if (str_match(tmp, ap->arg_name,
 							ap->arg_minlen))
 						break;
@@ -100,7 +104,7 @@ register struct value *v;
 			}
 		}
 		if (ap != 0) {
-			if (ap->arg_val.v_type != V_ERR) {
+			if (vp->v_type != V_ERR) {
 				p_error("%s: Argument %d (%s) duplicated.",
 					c->lc_name, ap - c->lc_arg + 1,
 					ap->arg_name);
@@ -116,7 +120,7 @@ register struct value *v;
 				val_free(t);
 				flag = 0;
 			} else
-				ap->arg_val = t;
+				*vp = t;
 		}
 		if (token == T_COMMA)
 			(void) s_gettok();
@@ -128,15 +132,15 @@ register struct value *v;
 		flag = 0;		/* look ahead a bit */
 	v->v_type = V_ERR;
 	if (flag)
-		(*c->lc_func)(v);
+		(*c->lc_func)(v, av);
 	if (c != 0)
-		for (ap = c->lc_arg; ap->arg_name != 0; ap++)
-			val_free(ap->arg_val);
+		for (vp = av; vp < &av[LCMD_NARG]; vp++)
+			val_free(*vp);
 	return 0;
 abort:
 	if (c != 0)
-		for (ap = c->lc_arg; ap->arg_name != 0; ap++)
-			val_free(ap->arg_val);
+		for (vp = av; vp < &av[LCMD_NARG]; vp++)
+			val_free(*vp);
 	return -1;
 }
 
