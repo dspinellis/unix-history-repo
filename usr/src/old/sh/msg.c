@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)msg.c	4.3 %G%";
+static char sccsid[] = "@(#)msg.c	4.4 %G%";
 #endif
 
 #
@@ -121,8 +121,8 @@ STRING	sysmsg[] {
 		"Profiling time alarm",
 		"Window changed",
 		"Signal 29",
-		"Signal 30",
-		"Signal 31",
+		"User defined signal 1",
+		"User defined signal 2",
 		"Signal 32",
 };
 INT		num_sysmsg = (sizeof sysmsg / sizeof sysmsg[0]);
