@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1982, 1986 Regents of the University of California.
+ * Copyright (c) 1982, 1986, 1988 Regents of the University of California.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms are permitted
@@ -14,10 +14,11 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)raw_ip.c	7.4 (Berkeley) %G%
+ *	@(#)raw_ip.c	7.5 (Berkeley) %G%
  */
 
 #include "param.h"
+#include "malloc.h"
 #include "mbuf.h"
 #include "socket.h"
 #include "protosw.h"
@@ -32,13 +33,14 @@
 #include "in_systm.h"
 #include "ip.h"
 #include "ip_var.h"
+#include "in_pcb.h"
 
 /*
  * Raw interface to IP protocol.
  */
 
-struct	sockaddr_in ripdst = { AF_INET };
-struct	sockaddr_in ripsrc = { AF_INET };
+struct	sockaddr_in ripdst = { sizeof(ripdst), AF_INET };
+struct	sockaddr_in ripsrc = { sizeof(ripsrc), AF_INET };
 struct	sockproto ripproto = { PF_INET };
 /*
  * Setup generic address and protocol structures
@@ -61,55 +63,40 @@ rip_input(m)
  * Generate IP header and pass packet to ip_output.
  * Tack on options user may have setup with control call.
  */
-rip_output(m0, so)
-	struct mbuf *m0;
+#define	satosin(sa)	((struct sockaddr_in *)(sa))
+rip_output(m, so)
+	register struct mbuf *m;
 	struct socket *so;
 {
-	register struct mbuf *m;
 	register struct ip *ip;
-	int len = 0, error;
-	struct rawcb *rp = sotorawcb(so);
-	struct sockaddr_in *sin;
+	register struct raw_inpcb *rp = sotorawinpcb(so);
+	register struct sockaddr_in *sin;
 
 	/*
-	 * Calculate data length and get an mbuf
-	 * for IP header.
+	 * If the user handed us a complete IP packet, use it.
+	 * Otherwise, allocate an mbuf for a header and fill it in.
 	 */
-	for (m = m0; m; m = m->m_next)
-		len += m->m_len;
-	m = m_get(M_DONTWAIT, MT_HEADER);
-	if (m == 0) {
-		error = ENOBUFS;
-		goto bad;
+	if (rp->rinp_flags & RINPF_HDRINCL)
+		ip = mtod(m, struct ip *);
+	else {
+		M_PREPEND(m, sizeof(struct ip), M_WAIT);
+		ip = mtod(m, struct ip *);
+		ip->ip_tos = 0;
+		ip->ip_off = 0;
+		ip->ip_p = rp->rinp_rcb.rcb_proto.sp_protocol;
+		ip->ip_len = m->m_pkthdr.len;
+		if (sin = satosin(rp->rinp_rcb.rcb_laddr)) {
+			ip->ip_src = sin->sin_addr;
+		} else
+			ip->ip_src.s_addr = 0;
+		if (sin = satosin(rp->rinp_rcb.rcb_faddr))
+		    ip->ip_dst = sin->sin_addr;
+		ip->ip_ttl = MAXTTL;
 	}
-	
-	/*
-	 * Fill in IP header as needed.
-	 */
-	m->m_off = MMAXOFF - sizeof(struct ip);
-	m->m_len = sizeof(struct ip);
-	m->m_next = m0;
-	ip = mtod(m, struct ip *);
-	ip->ip_tos = 0;
-	ip->ip_off = 0;
-	ip->ip_p = rp->rcb_proto.sp_protocol;
-	ip->ip_len = sizeof(struct ip) + len;
-	if (rp->rcb_flags & RAW_LADDR) {
-		sin = (struct sockaddr_in *)&rp->rcb_laddr;
-		if (sin->sin_family != AF_INET) {
-			error = EAFNOSUPPORT;
-			goto bad;
-		}
-		ip->ip_src.s_addr = sin->sin_addr.s_addr;
-	} else
-		ip->ip_src.s_addr = 0;
-	ip->ip_dst = ((struct sockaddr_in *)&rp->rcb_faddr)->sin_addr;
-	ip->ip_ttl = MAXTTL;
-	return (ip_output(m, rp->rcb_options, &rp->rcb_route, 
+	return (ip_output(m,
+	   (rp->rinp_flags & RINPF_HDRINCL)? (struct mbuf *)0: rp->rinp_options,
+	    &rp->rinp_route, 
 	   (so->so_options & SO_DONTROUTE) | IP_ALLOWBROADCAST));
-bad:
-	m_freem(m);
-	return (error);
 }
 
 /*
@@ -122,7 +109,7 @@ rip_ctloutput(op, so, level, optname, m)
 	struct mbuf **m;
 {
 	int error = 0;
-	register struct rawcb *rp = sotorawcb(so);
+	register struct raw_inpcb *rp = sotorawinpcb(so);
 
 	if (level != IPPROTO_IP)
 		error = EINVAL;
@@ -130,8 +117,20 @@ rip_ctloutput(op, so, level, optname, m)
 
 	case PRCO_SETOPT:
 		switch (optname) {
+
 		case IP_OPTIONS:
-			return (ip_pcbopts(&rp->rcb_options, *m));
+			return (ip_pcbopts(&rp->rinp_options, *m));
+
+		case IP_HDRINCL:
+			if (m == 0 || *m == 0 || (*m)->m_len < sizeof (int)) {
+				error = EINVAL;
+				break;
+			}
+			if (*mtod(*m, int *))
+				rp->rinp_flags |= RINPF_HDRINCL;
+			else
+				rp->rinp_flags &= ~RINPF_HDRINCL;
+			break;
 
 		default:
 			error = EINVAL;
@@ -140,24 +139,104 @@ rip_ctloutput(op, so, level, optname, m)
 		break;
 
 	case PRCO_GETOPT:
+		*m = m_get(M_WAIT, MT_SOOPTS);
 		switch (optname) {
+
 		case IP_OPTIONS:
-			*m = m_get(M_WAIT, MT_SOOPTS);
-			if (rp->rcb_options) {
-				(*m)->m_off = rp->rcb_options->m_off;
-				(*m)->m_len = rp->rcb_options->m_len;
-				bcopy(mtod(rp->rcb_options, caddr_t),
+			if (rp->rinp_options) {
+				(*m)->m_len = rp->rinp_options->m_len;
+				bcopy(mtod(rp->rinp_options, caddr_t),
 				    mtod(*m, caddr_t), (unsigned)(*m)->m_len);
 			} else
 				(*m)->m_len = 0;
 			break;
+
+		case IP_HDRINCL:
+			(*m)->m_len = sizeof (int);
+			*mtod(*m, int *) = rp->rinp_flags & RINPF_HDRINCL;
+			break;
+
 		default:
 			error = EINVAL;
+			m_freem(*m);
+			*m = 0;
 			break;
 		}
 		break;
 	}
 	if (op == PRCO_SETOPT && *m)
 		(void)m_free(*m);
+	return (error);
+}
+
+/*ARGSUSED*/
+rip_usrreq(so, req, m, nam, rights, control)
+	register struct socket *so;
+	int req;
+	struct mbuf *m, *nam, *rights, *control;
+{
+	register int error = 0;
+	register struct raw_inpcb *rp = sotorawinpcb(so);
+
+	switch (req) {
+
+	case PRU_ATTACH:
+		if (rp)
+			panic("rip_attach");
+		MALLOC(rp, struct raw_inpcb *, sizeof *rp, M_PCB, M_WAITOK);
+		if (rp == 0)
+			return (ENOBUFS);
+		bzero((caddr_t)rp, sizeof *rp);
+		so->so_pcb = (caddr_t)rp;
+		break;
+
+	case PRU_DETACH:
+		if (rp == 0)
+			panic("rip_detach");
+		if (rp->rinp_options)
+			m_freem(rp->rinp_options);
+		if (rp->rinp_route.ro_rt)
+			RTFREE(rp->rinp_route.ro_rt);
+		if (rp->rinp_rcb.rcb_laddr)
+			rp->rinp_rcb.rcb_laddr = 0;
+		break;
+
+	case PRU_BIND:
+	    {
+		struct sockaddr_in *addr = mtod(nam, struct sockaddr_in *);
+
+		if (nam->m_len != sizeof(*addr))
+			return (EINVAL);
+		if ((ifnet == 0) ||
+		    ((addr->sin_family != AF_INET) &&
+		     (addr->sin_family != AF_IMPLINK)) ||
+		    (addr->sin_addr.s_addr &&
+		     ifa_ifwithaddr((struct sockaddr *)addr) == 0))
+			return (EADDRNOTAVAIL);
+		rp->rinp_rcb.rcb_laddr = (struct sockaddr *)&rp->rinp_laddr;
+		rp->rinp_laddr = *addr;
+		return (0);
+	    }
+	case PRU_CONNECT:
+	    {
+		struct sockaddr_in *addr = mtod(nam, struct sockaddr_in *);
+
+		if (nam->m_len != sizeof(*addr))
+			return (EINVAL);
+		if (ifnet == 0)
+			return (EADDRNOTAVAIL);
+		if ((addr->sin_family != AF_INET) &&
+		     (addr->sin_family != AF_IMPLINK))
+			return (EAFNOSUPPORT);
+		rp->rinp_rcb.rcb_faddr = (struct sockaddr *)&rp->rinp_faddr;
+		rp->rinp_laddr = *addr;
+		soisconnected(so);
+		return (0);
+	    }
+	}
+	error =  raw_usrreq(so, req, m, nam, rights, control);
+
+	if (error && (req == PRU_ATTACH) && so->so_pcb)
+		free(so->so_pcb, M_PCB);
 	return (error);
 }
