@@ -1,6 +1,6 @@
-#	@(#)Makefile	5.9 (Berkeley) %G%
+#	@(#)Makefile	5.10 (Berkeley) %G%
 
-FILES=	airport ascii birthday eqnchar greek inter.phone man.template \
+FILES=	airport ascii birthtoken eqnchar greek inter.phone man.template \
 	na.phone operator
 NOOBJ=	noobj
 
