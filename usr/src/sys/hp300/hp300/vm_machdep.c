@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: vm_machdep.c 1.21 91/04/06$
  *
- *	@(#)vm_machdep.c	8.5 (Berkeley) %G%
+ *	@(#)vm_machdep.c	8.6 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -130,22 +130,28 @@ pagemove(from, to, size)
 	register caddr_t from, to;
 	int size;
 {
-	register struct pte *fpte, *tpte;
+	register vm_offset_t pa;
 
-	if (size % CLBYTES)
+#ifdef DEBUG
+	if (size & CLOFSET)
 		panic("pagemove");
-	fpte = kvtopte(from);
-	tpte = kvtopte(to);
+#endif
 	while (size > 0) {
-		*tpte++ = *fpte;
-		*(int *)fpte++ = PG_NV;
-		TBIS(from);
-		TBIS(to);
-		from += NBPG;
-		to += NBPG;
-		size -= NBPG;
+		pa = pmap_extract(kernel_pmap, (vm_offset_t)from);
+#ifdef DEBUG
+		if (pa == 0)
+			panic("pagemove 2");
+		if (pmap_extract(kernel_pmap, (vm_offset_t)to) != 0)
+			panic("pagemove 3");
+#endif
+		pmap_remove(kernel_pmap,
+			    (vm_offset_t)from, (vm_offset_t)from + PAGE_SIZE);
+		pmap_enter(kernel_pmap,
+			   (vm_offset_t)to, pa, VM_PROT_READ|VM_PROT_WRITE, 1);
+		from += PAGE_SIZE;
+		to += PAGE_SIZE;
+		size -= PAGE_SIZE;
 	}
-	DCIS();
 }
 
 /*
