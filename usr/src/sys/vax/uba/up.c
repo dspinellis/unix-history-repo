@@ -1,4 +1,4 @@
-/*	up.c	4.71	83/02/21	*/
+/*	up.c	4.72	83/03/23	*/
 
 #include "up.h"
 #if NSC > 0
@@ -184,7 +184,6 @@ upslave(ui, reg)
 upattach(ui)
 	register struct uba_device *ui;
 {
-	register struct updevice *upaddr;
 
 	if (upwstart == 0) {
 		timeout(upwatch, (caddr_t)0, hz);
@@ -194,7 +193,6 @@ upattach(ui)
 		dk_mspw[ui->ui_dk] = .0000020345;
 	upip[ui->ui_ctlr][ui->ui_slave] = ui;
 	up_softc[ui->ui_ctlr].sc_ndrive++;
-	upaddr = (struct updevice *)ui->ui_addr;
 	ui->ui_type = upmaptype(ui);
 }
 
