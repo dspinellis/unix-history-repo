@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)vi.summary	4.1 (Berkeley) %G%
+.\"	@(#)vi.summary	5.1 (Berkeley) %G%
 .\"
 .ds CH
 .ds CF
