@@ -6,6 +6,7 @@ BEGIN {
 	print "#include <net/route.h>"
 	print "#include <net/if.h>"
 	print "#include <sys/termios.h>"
+	print "#define COMPAT_43"
 	print "#include <sys/ioctl.h>"
 	print ""
 	print "char *"
