@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)extern.h	5.9 (Berkeley) %G%
+ *	@(#)extern.h	5.10 (Berkeley) %G%
  */
 
 #include <sys/cdefs.h>
@@ -191,10 +191,10 @@ char	 *strsave __P((char *));
 char	 *strspl __P((char *, char *));
 void	  udvar __P((Char *));
 
-#ifndef	NOTUSED
-char	 *strstr __P((const char *, const char *));
-#endif
 #ifndef	SHORT_STRINGS
+# ifdef NOTUSED
+char	 *strstr __P((const char *, const char *));
+# endif /* NOTUSED */
 char	 *strend __P((char *));
 #endif
 
@@ -308,9 +308,7 @@ int	  s_strcmp __P((Char *, Char *));
 int	  s_strncmp __P((Char *, Char *, size_t));
 Char	 *s_strsave __P((Char *));
 Char	 *s_strend __P((Char *));
-#ifdef NOTUSED
 Char	 *s_strstr __P((Char *, Char *));
-#endif
 Char	 *str2short __P((char *));
 Char	**blk2short __P((char **));
 char	 *short2str __P((Char *));

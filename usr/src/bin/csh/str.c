@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)str.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)str.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 #define MALLOC_INCR	128
@@ -347,7 +347,6 @@ s_strend(cp)
     return (cp);
 }
 
-# ifdef NOTUSED
 Char   *
 s_strstr(s, t)
     register Char *s, *t;
@@ -363,7 +362,6 @@ s_strstr(s, t)
     } while (*s++ != '\0');
     return (NULL);
 }
-# endif
 #endif				/* SHORT_STRINGS */
 
 char   *
