@@ -1,4 +1,4 @@
-#	Makefile	4.6	81/03/21
+#	Makefile	4.7	81/03/22
 
 DESTDIR=
 CFLAGS=	-O -DSTANDALONE ${COPTS}
@@ -25,7 +25,7 @@ boot:	boot.o relsrt0.o ${DESTDIR}/usr/lib/libsa.a
 	cp a.out b.out; strip b.out; dd if=b.out of=boot ibs=32 skip=1; rm b.out
 
 sboot:	boot.c relsrt0.o ${DESTDIR}/usr/lib/libsa.a
-	cp boot.c sboot.c
+	cp boot.c sboot.c; chmod +w sboot.c
 	cc -c -O -DJUSTASK sboot.c
 	rm sboot.c
 	ld -N -T ${RELOC} relsrt0.o sboot.o -lsa -lc
@@ -73,13 +73,13 @@ tpicheck: icheck.o tpsrt0.o ${DESTDIR}/usr/lib/libsa.a
 	cp a.out b.out; strip b.out; dd if=b.out of=tpicheck ibs=32 skip=1; rm b.out
 
 srt0.o: srt0.c
-	cc -E -DRELOC=0x${RELOC} srt0.c | as -o srt0.o
+	cc -E -DRELOC=0x${RELOC} ${COPTS} srt0.c | as -o srt0.o
 
-tpsrt0.o: tpsrt0.c
-	cc -E -DRELOC=0x${RELOC} tpsrt0.c | as -o tpsrt0.o 
+tpsrt0.o: srt0.c
+	cc -E -DRELOC=0x${RELOC} -DTP ${COPTS} srt0.c | as -o tpsrt0.o 
 
-relsrt0.o: relsrt0.c
-	cc -E -DRELOC=0x${RELOC} relsrt0.c | as -o relsrt0.o
+relsrt0.o: srt0.c
+	cc -E -DRELOC=0x${RELOC} -DREL ${COPTS} srt0.c | as -o relsrt0.o
 
 print:
 	@pr -f makefile

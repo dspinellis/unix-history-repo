@@ -1,4 +1,4 @@
-/*	ts.c	4.2	81/03/21	*/
+/*	ts.c	4.3	81/03/22	*/
 
 /*
  * TS11 tape driver
@@ -107,10 +107,11 @@ retry:
 	if (ts.ts_sts.s_xs0 & TS_TMK)
 		return (0);
 	if (tsaddr->tssr & TS_SC) {
-		if (errcnt == 0)
-			printf("ts tape error: er=%o", tsaddr->tssr);
+		printf("ts tape error: er=%b, xs0=%b",
+		    tsaddr->tssr, TSSR_BITS,
+		    ts.ts_sts.s_xs0, TSXS0_BITS);
 		if (errcnt==10) {
-			printf("\n");
+			printf("ts: unrecovered error\n");
 			return (-1);
 		}
 		errcnt++;
@@ -119,6 +120,6 @@ retry:
 		goto retry;
 	}
 	if (errcnt)
-		printf(" recovered by retry\n");
+		printf("ts: recovered by retry\n");
 	return (io->i_cc - ts.ts_sts.s_rbpcr);
 }
