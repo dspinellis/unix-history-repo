@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)newwin.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)newwin.c	5.19 (Berkeley) %G%";
 #endif	/* not lint */
 
 #include <curses.h>
@@ -41,12 +41,14 @@ newwin(nl, nc, by, bx)
 
 	win->nextp = win;
 	win->ch_off = 0;
+	win->orig = NULL;
 
 #ifdef DEBUG
 	__CTRACE("newwin: win->ch_off = %d\n", win->ch_off);
 #endif
 
-	for (lp = win->lines[0], i = 0; i < nl; i++, lp = win->lines[i]) {
+	for (i = 0; i < nl; i++) {
+		lp = win->lines[i];
 		lp->flags = 0;
 		for (sp = lp->line, j = 0; j < nc; j++, sp++) {
 			sp->ch = ' ';
