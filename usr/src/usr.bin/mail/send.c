@@ -12,7 +12,7 @@
  * Mail to others.
  */
 
-static char *SccsId = "@(#)send.c	2.5 %G%";
+static char *SccsId = "@(#)send.c	2.6 %G%";
 
 /*
  * Send message described by the passed pointer to the
@@ -26,7 +26,7 @@ send(mailp, obuf, doign)
 {
 	register struct message *mp;
 	register int t;
-	unsigned int c;
+	long c;
 	FILE *ibuf;
 	char line[LINESIZE], field[BUFSIZ];
 	int lc, ishead, infld, fline, dostat;
@@ -34,15 +34,15 @@ send(mailp, obuf, doign)
 
 	mp = mailp;
 	ibuf = setinput(mp);
-	c = msize(mp);
+	c = mp->m_size;
 	ishead = 1;
 	dostat = 1;
 	infld = 0;
 	fline = 1;
 	lc = 0;
-	while (c > 0) {
+	while (c > 0L) {
 		fgets(line, LINESIZE, ibuf);
-		c -= strlen(line);
+		c -= (long) strlen(line);
 		lc++;
 		if (ishead) {
 			/* 

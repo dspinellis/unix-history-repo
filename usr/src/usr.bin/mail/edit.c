@@ -10,7 +10,7 @@
  * Perform message editing functions.
  */
 
-static char *SccsId = "@(#)edit.c	2.3 %G%";
+static char *SccsId = "@(#)edit.c	2.4 %G%";
 
 /*
  * Edit a message list.
@@ -53,7 +53,7 @@ edit1(msgvec, ed)
 	register char *cp, *cp2;
 	register int c;
 	int *ip, pid, mesg, lines;
-	unsigned int ms;
+	long ms;
 	int (*sigint)(), (*sigquit)();
 	FILE *ibuf, *obuf;
 	char edname[15], nbuf[10];
@@ -189,7 +189,7 @@ edit1(msgvec, ed)
 		size = fsize(otf);
 		mp->m_block = blockof(size);
 		mp->m_offset = offsetof(size);
-		ms = 0;
+		ms = 0L;
 		lines = 0;
 		while ((c = getc(ibuf)) != EOF) {
 			if (c == '\n')
