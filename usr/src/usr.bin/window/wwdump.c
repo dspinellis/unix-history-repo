@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwdump.c	3.6 83/09/15";
+static	char *sccsid = "@(#)wwdump.c	3.7 83/09/15";
 #endif
 
 #include "ww.h"
@@ -63,7 +63,6 @@ wwdumpsmap()
 	}
 }
 
-/*
 wwdumpns()
 {
 	register i, j;
@@ -91,4 +90,3 @@ wwdumpos()
 		}
 	}
 }
-*/

@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd5.c	3.6 83/09/15";
+static	char *sccsid = "@(#)cmd5.c	3.7 83/09/15";
 #endif
 
 #include "defs.h"
@@ -7,6 +7,7 @@ static	char *sccsid = "@(#)cmd5.c	3.6 83/09/15";
 /*
  * Window movement.
  */
+
 c_move(w)
 register struct ww *w;
 {
@@ -14,7 +15,6 @@ register struct ww *w;
 	int mincol, minrow;
 	int maxcol, maxrow;
 	int curcol, currow;
-	struct ww *back = w->ww_back;
 
 	col = w->ww_w.l;
 	row = w->ww_w.t;
@@ -46,6 +46,16 @@ register struct ww *w;
 	if (!terse)
 		(void) wwputs("\r\n", cmdwin);
 	wwcurtowin(cmdwin);
+	movewin(w, row, col);
+}
+
+movewin(w, row, col)
+register struct ww *w;
+{
+	struct ww *back = w->ww_back;
+
+	w->ww_altpos.r = w->ww_w.t;
+	w->ww_altpos.c = w->ww_w.l;
 	wwdelete(w);
 	wwmove(w, row, col);
 	wwadd(w, back);
