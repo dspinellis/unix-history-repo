@@ -8,9 +8,9 @@
 
 #ifndef lint
 #ifdef USERDB
-static char sccsid [] = "@(#)udb.c	5.6 (Berkeley) %G% (with USERDB)";
+static char sccsid [] = "@(#)udb.c	5.7 (Berkeley) %G% (with USERDB)";
 #else
-static char sccsid [] = "@(#)udb.c	5.6 (Berkeley) %G% (without USERDB)";
+static char sccsid [] = "@(#)udb.c	5.7 (Berkeley) %G% (without USERDB)";
 #endif
 #endif
 
@@ -201,45 +201,8 @@ udbexpand(a, sendq)
 			break;
 
 		  case UDB_REMOTE:
-			if (sendto(UdbSock, keybuf, keylen, 0,
-				   (struct sockaddr *) &up->udb_addr,
-				   sizeof up->udb_addr) < 0)
-			{
-				continue;
-			}
-			timeout.tv_sec = up->udb_timeout / 10;
-			timeout.tv_usec = (up->udb_timeout % 10) * 100000;
-			do
-			{
-				FD_ZERO(&fdset);
-				FD_SET(UdbSock, &fdset);
-				i = select(FD_SETSIZE, &fdset, NULL, NULL, &timeout);
-			} while (i > 0 && !FD_ISSET(UdbSock, &fdset));
-			if (i <= 0)
-				continue;
-			i = recvfrom(UdbSock, buf, sizeof buf - 1, 0, NULL, NULL);
-			if (i < 0)
-				continue;
-			if (buf[0] != ' ' && buf[0] != '-')
-				continue;
-			breakout = TRUE;
-			while (buf[0] == ' ' || buf[0] == '-')
-			{
-				user = &buf[1];
-				buf[i] = '\0';
-				message(Arpa_Info, "expanded to %s", user);
-				AliasLevel++;
-				sendtolist(user, a, sendq);
-				AliasLevel--;
-
-				/* try for next record */
-				if (buf[0] == ' ')
-					break;
-				i = recvfrom(UdbSock, buf, sizeof buf - 1, 0, NULL, NULL);
-				if (i < 0)
-					break;
-			}
-			break;
+			/* not yet implemented */
+			continue;
 
 		  case UDB_FORWARD:
 			i = strlen(up->udb_fwdhost) + strlen(a->q_user) + 1;
