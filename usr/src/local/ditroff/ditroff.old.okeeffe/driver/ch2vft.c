@@ -1,4 +1,4 @@
-/*	ch2vft.c	1.5	85/01/31
+/*	ch2vft.c	1.6	85/07/03
  *
  * Font translation to vfont format from character format.
  *
@@ -18,7 +18,11 @@
 #include <vfont.h>
 
 
+#ifdef sun
+#define RES		120	/* for SUN vfont, resolution is 120 */
+#else
 #define RES		200	/* for vfont, resolution is 200 */
+#endif
 #define MAXLINE		200
 #define GLYPHSPACE	(MAXLINE * MAXLINE)
 #define MAGICNO		0436
@@ -158,7 +162,11 @@ char **argv;
 	    g[codeindex].down = bound(maxv + 1 - refv);
 	    g[codeindex].right = bound(maxh + 1 - refh);
 	    g[codeindex].left = bound(refh - minh);
+#ifdef sun
+	    g[codeindex].nbytes = (maxv+1-minv) * ((maxh+16-minh) / 16) * 2;
+#else
 	    g[codeindex].nbytes = (maxv + 1 - minv) * ((maxh + 8 - minh) >> 3);
+#endif
 
 				/* convert from characters to bits */
 	    bitp = (glyphs[codeindex] = malloc(g[codeindex].nbytes)) - 1;
@@ -174,6 +182,9 @@ char **argv;
 		    }
 		    if (*chp != '.') *bitp |= 1 << bitwidth;
 		}
+#ifdef sun
+		if (!((bitp - glyphs[codeindex]) & 1)) *++bitp = '\0';
+#endif
 	    } /* for i */
 	} /* else */
     } /* while */
