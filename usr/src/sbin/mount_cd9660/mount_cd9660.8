@@ -1,0 +1,100 @@
+.\" Copyright (c) 1993, 1994
+.\"     The Regents of the University of California.  All rights reserved.
+.\" All rights reserved.
+.\"
+.\" This code is derived from software donated to Berkeley by
+.\" Christopher G. Demetriou.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"     @(#)mount_cd9660.8	8.1 (Berkeley) %G%
+.Dd 
+.Dt MOUNT_ISOFS 8
+.Os NetBSD 0.9
+.Sh NAME
+.Nm mount_cd9660
+.Nd mount an ISO-9660 filesystem
+.Sh SYNOPSIS
+.Nm mount_cd9660
+.Op Fl F Ar fsoptions
+.Op Fl norrip
+.Op Fl gen
+.Op Fl extattr
+.Pa special
+.Pa node
+.Sh DESCRIPTION
+The
+.Nm mount_cd9660
+command attaches the ISO-9660 filesystem residing on
+the device
+.Pa special
+to the global filesystem namespace at the location
+indicated by
+.Pa node .
+This command is normally executed by
+.Xr mount 8
+at boot time.
+.Pp
+If the filesystem includes Rockridge extensions, they are
+used unless the
+.Fl norrip
+flag is used.  If that option is given to
+.Nm
+then the Rockridge extensions will be ignored.
+.Pp
+Version numbers on files are normally stripped on directory listings.
+If you want to see those, use the
+.Fl gen
+flag.
+Otherwise, if there are files with different version numbers on the disk,
+only the last one will be listed.
+In either case, you may open a file with or without explicitly stating the
+version number.
+.Pp
+If a disk contains extended attributes, they are normally ignored.
+You can enable the usage of extended attributes with the
+.Fl extattr
+flag.
+.Sh EXAMPLES
+.Bd -literal -offset indent -compact
+mount_cd9660 /dev/cd0d /cdrom
+mount_cd9660 \-norrip /dev/cd0d /cdrom
+mount_cd9660 \-norrip \-gen /dev/cd0d /cdrom
+mount \-t cd9660 /dev/cd0d /cdrom
+mount \-t cd9660 \-o \-norrip /dev/cd0d /cdrom
+mount \-t cd9660 \-o \-gen,\-extattr /dev/cd0d /cdrom
+.Ed
+.Sh SEE ALSO
+.Xr mount 2 ,
+.Xr unmount 2 ,
+.Xr fstab 5
+.Sh BUGS
+The cd9660 filesystem should support the original "High Sierra"
+("CDROM001") format;
+it does not.
+.Pp
+POSIX device node mapping is currently not supported.
+.Pp
+Version numbers are not stripped if Rockridge extensions are in use.
+In this case, accessing files that don't have Rockridge names without
+version numbers gets the one with the lowest version number and not
+the one with the highest.
+.Pp
+The filesystem name might need some rethinking, and some would
+say it should run as a user process.
+.Pp
+There is no ECMA support.
+.Sh HISTORY
+The
+.Nm mount_cd9660
+utility first appeared in NetBSD 0.8.
+Handling of Rockridge extensions was added for NetBSD 0.9.
+.Sh AUTHORS
+.Bl -tag
+Pace Willisson <pace@blitz.com>, <pace@bsdi.com> wrote the
+original version of the ISO-9660 filesystem.
+.Pp
+Atsushi Murai <amurai@spec.co.jp> wrote the Rockridge support.
+.Pp
+Chris Demetriou <cgd@berkeley.edu> wrote the man page.
+.El
