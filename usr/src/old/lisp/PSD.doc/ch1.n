@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)ch1.n	6.2 (Berkeley) %G%
+.\"	@(#)ch1.n	6.3 (Berkeley) %G%
 .\"
 .\" $Header: ch1.n,v 1.3 83/07/27 15:11:17 layer Exp $
 .Lc \s+2F\s-2RANZ\s0\ L\s-2ISP\s0\s-2 1
@@ -154,7 +154,7 @@ creates uninterned symbols while
 creates 
 .i interned 
 ones.
-.sp 1v
+.(b
 .TS
 box center ; 
 c | c | c |  c .
@@ -175,11 +175,12 @@ print name	get_pname		string
 _
 hash link
 .TE
+.)b
 .sh 3 list
 A list cell has two parts, called the car and cdr.
 List cells are created by the function 
 .i cons .
-.sp 1v
+.(b
 .TS
 box center ;
 c | c | c | c .
@@ -190,6 +191,7 @@ car	car	rplaca	lispval
 _
 cdr	cdr	rplacd	lispval
 .TE
+.)b
 .sh 3 binary
 This type acts as a function header for machine coded functions.
 It has two parts, a pointer to the start of the function and a
@@ -226,7 +228,7 @@ Objects of type binary are created by
 .i cfasl,
 and
 .i getaddress.
-.sp 1v
+.(b
 .TS
 box center ;
 c | c | c | c .
@@ -237,6 +239,7 @@ entry	getentry		string or fixnum
 _
 discipline	getdisc	putdisc	symbol or fixnum
 .TE
+.)b
 .sh 3 fixnum
 A fixnum is an integer constant in the range \(mi2\*[31\*] to
 2\*[31\*]\(mi1.
@@ -323,7 +326,7 @@ The functions
 \fInew-vector\fP, and
 \fIvector\fP, can
 be used to create vectors.
-.sp 1v
+.(b
 .TS
 box center ;
 c | c | c | c .
@@ -337,6 +340,7 @@ property	vprop	vsetprop	lispval
 _
 size	vsize	\-	fixnum
 .TE
+.)b
 .sh 3 array
 Arrays are rather complicated types and are fully described in
 Chapter 9.
@@ -349,7 +353,7 @@ table).
 .br
 Arrays are created by the function
 .i marray .
-.sp 1v
+.(b
 .TS
 box center ;
 c | c | c | c .
@@ -368,6 +372,7 @@ length	getlength	putlength	fixnum
 _
 delta	getdelta	putdelta	fixnum
 .TE
+.)b
 .sh 3 value
 A value cell contains a pointer to a lispval.
 This type is used mainly by arrays of general lisp objects.
@@ -445,7 +450,7 @@ The arguments all have names which begin with a letter  or letters and
 an underscore.
 The letter(s) gives the allowable type(s) for that argument according to
 this table.
-.sp 1v
+.(b
 .TS
 box center ;
 c  | c 
@@ -487,7 +492,7 @@ p	port (or nil)
 _
 h	hunk
 .TE
-
+.)b
 In the first line of a function description,
 those arguments preceded by a quote mark are evaluated (usually 
 before the function is called).
