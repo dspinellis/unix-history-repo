@@ -1,5 +1,5 @@
 #	from: @(#)bsd.lib.mk	5.26 (Berkeley) 5/2/91
-#	$Id$
+#	$Id: bsd.lib.mk,v 1.29 1994/01/31 06:10:30 rgrimes Exp $
 #
 
 .if exists(${.CURDIR}/../Makefile.inc)
@@ -204,7 +204,7 @@ realinstall: beforeinstall
 .endif
 .if !defined(NOPIC)
 .if defined(SHLIB_MAJOR) && defined(SHLIB_MINOR)
-	install ${COPY} -s -o ${LIBOWN} -g ${LIBGRP} -m ${LIBMODE} \
+	install ${COPY} -o ${LIBOWN} -g ${LIBGRP} -m ${LIBMODE} \
 	    lib${LIB}.so.${SHLIB_MAJOR}.${SHLIB_MINOR} ${DESTDIR}${LIBDIR}
 .endif
 .if defined(INSTALL_PIC_ARCHIVE)
