@@ -1,0 +1,473 @@
+#include <stdio.h>
+
+#ifdef unix
+#	include <ctype.h>
+#endif
+
+#include "ftypes"
+#include "defines"
+#include "machdefs"
+
+#define VL 6
+
+#define MAXDIM 20
+#define MAXINCLUDES 10
+#define MAXLITERALS 20
+#define MAXCTL 20
+#define MAXHASH 401
+#define MAXSTNO 201
+#define MAXEXT 200
+#define MAXEQUIV 150
+#define MAXLABLIST 125
+
+typedef union Expression *expptr;
+typedef union Taggedblock *tagptr;
+typedef struct Chain *chainp;
+typedef struct Addrblock *Addrp;
+typedef struct Constblock *Constp;
+typedef struct Exprblock *Exprp;
+typedef struct Nameblock *Namep;
+
+extern FILEP infile;
+extern FILEP diagfile;
+extern FILEP textfile;
+extern FILEP asmfile;
+extern FILEP initfile;
+extern long int headoffset;
+
+extern char token [ ];
+extern int toklen;
+extern int lineno;
+extern char *infname;
+extern int needkwd;
+extern struct Labelblock *thislabel;
+
+extern int maxctl;
+extern int maxequiv;
+extern int maxstno;
+extern int maxhash;
+extern int maxext;
+
+extern flag profileflag;
+extern flag optimflag;
+extern flag nowarnflag;
+extern flag ftn66flag;
+extern flag no66flag;
+extern flag noextflag;
+extern flag shiftcase;
+extern flag undeftype;
+extern flag shortsubs;
+extern flag onetripflag;
+extern flag checksubs;
+extern flag debugflag;
+extern int nerr;
+extern int nwarn;
+extern int ndata;
+
+extern int parstate;
+extern flag headerdone;
+extern int blklevel;
+extern flag saveall;
+extern flag substars;
+extern int impltype[ ];
+extern int implleng[ ];
+extern int implstg[ ];
+
+extern int tyint;
+extern int tylogical;
+extern ftnint typesize[];
+extern int typealign[];
+extern int procno;
+extern int proctype;
+extern char * procname;
+extern int rtvlabel[ ];
+extern int fudgelabel;	/* to confuse the pdp11 optimizer */
+extern Addrp typeaddr;
+extern Addrp retslot;
+extern int cxslot;
+extern int chslot;
+extern int chlgslot;
+extern int procclass;
+extern ftnint procleng;
+extern int nentry;
+extern flag multitype;
+extern int blklevel;
+extern int lastlabno;
+extern int lastvarno;
+extern int lastargslot;
+extern int argloc;
+extern ftnint autoleng;
+extern ftnint bssleng;
+extern int retlabel;
+extern int ret0label;
+extern int dorange;
+extern int regnum[ ];
+extern Namep regnamep[ ];
+extern int maxregvar;
+extern int highregvar;
+extern int nregvar;
+
+extern chainp templist;
+extern int maxdim;
+extern chainp holdtemps;
+extern struct Entrypoint *entries;
+extern struct Rplblock *rpllist;
+extern struct Chain *curdtp;
+extern ftnint curdtelt;
+extern flag toomanyinit;
+
+extern flag inioctl;
+extern int iostmt;
+extern Addrp ioblkp;
+extern int nioctl;
+extern int nequiv;
+extern int eqvstart;	/* offset to eqv number to guarantee uniqueness */
+extern int nintnames;
+
+#ifdef SDB
+extern int dbglabel;
+extern flag sdbflag;
+#endif
+
+struct Chain
+	{
+	chainp nextp;
+	tagptr datap;
+	};
+
+extern chainp chains;
+
+struct Headblock
+	{
+	field tag;
+	field vtype;
+	field vclass;
+	field vstg;
+	expptr vleng;
+	} ;
+
+struct Ctlframe
+	{
+	unsigned ctltype:8;
+	unsigned dostepsign:8;
+	int ctlabels[4];
+	int dolabel;
+	Namep donamep;
+	expptr domax;
+	expptr dostep;
+	};
+#define endlabel ctlabels[0]
+#define elselabel ctlabels[1]
+#define dobodylabel ctlabels[1]
+#define doposlabel ctlabels[2]
+#define doneglabel ctlabels[3]
+extern struct Ctlframe *ctls;
+extern struct Ctlframe *ctlstack;
+extern struct Ctlframe *lastctl;
+
+struct Extsym
+	{
+	char extname[XL];
+	field extstg;
+	unsigned extsave:1;
+	unsigned extinit:1;
+	chainp extp;
+	ftnint extleng;
+	ftnint maxleng;
+	};
+
+extern struct Extsym *extsymtab;
+extern struct Extsym *nextext;
+extern struct Extsym *lastext;
+
+struct Labelblock
+	{
+	int labelno;
+	unsigned blklevel:8;
+	unsigned labused:1;
+	unsigned labinacc:1;
+	unsigned labdefined:1;
+	unsigned labtype:2;
+	ftnint stateno;
+	};
+
+extern struct Labelblock *labeltab;
+extern struct Labelblock *labtabend;
+extern struct Labelblock *highlabtab;
+
+struct Entrypoint
+	{
+	struct Entrypoint *entnextp;
+	struct Extsym *entryname;
+	chainp arglist;
+	int entrylabel;
+	int typelabel;
+	Namep enamep;
+	};
+
+struct Primblock
+	{
+	field tag;
+	field vtype;
+	Namep namep;
+	struct Listblock *argsp;
+	expptr fcharp;
+	expptr lcharp;
+	};
+
+
+struct Hashentry
+	{
+	int hashval;
+	Namep varp;
+	};
+extern struct Hashentry *hashtab;
+extern struct Hashentry *lasthash;
+
+struct Intrpacked	/* bits for intrinsic function description */
+	{
+	unsigned f1:3;
+	unsigned f2:4;
+	unsigned f3:7;
+	};
+
+struct Nameblock
+	{
+	field tag;
+	field vtype;
+	field vclass;
+	field vstg;
+	expptr vleng;
+	char varname[VL];
+	unsigned vdovar:1;
+	unsigned vdcldone:1;
+	unsigned vadjdim:1;
+	unsigned vsave:1;
+	unsigned vprocclass:3;
+	unsigned vregno:4;
+	union	{
+		int varno;
+		struct Intrpacked intrdesc;	/* bits for intrinsic function*/
+		} vardesc;
+	struct Dimblock *vdim;
+	ftnint voffset;
+	union	{
+		chainp namelist;	/* points to chain of names in */
+		chainp vstfdesc;	/* points to (formals, expr) pair */
+		} varxptr;
+	};
+
+
+struct Paramblock
+	{
+	field tag;
+	field vtype;
+	field vclass;
+	field vstg;
+	expptr vleng;
+	char varname[VL];
+	expptr paramval;
+	} ;
+
+
+struct Exprblock
+	{
+	field tag;
+	field vtype;
+	field vclass;
+	field vstg;
+	expptr vleng;
+	unsigned opcode:6;
+	expptr leftp;
+	expptr rightp;
+	};
+
+
+union Constant
+	{
+	char *ccp;
+	ftnint ci;
+	double cd[2];
+	};
+
+struct Constblock
+	{
+	field tag;
+	field vtype;
+	field vclass;
+	field vstg;
+	expptr vleng;
+	union Constant const;
+	};
+
+
+struct Listblock
+	{
+	field tag;
+	field vtype;
+	chainp listp;
+	};
+
+
+
+struct Addrblock
+	{
+	field tag;
+	field vtype;
+	field vclass;
+	field vstg;
+	expptr vleng;
+	int memno;
+	expptr memoffset;
+	unsigned istemp:1;
+	unsigned ntempelt:10;
+	ftnint varleng;
+	};
+
+
+
+struct Errorblock
+	{
+	field tag;
+	field vtype;
+	};
+
+
+union Expression
+	{
+	field tag;
+	struct Headblock headblock;
+	struct Exprblock exprblock;
+	struct Addrblock addrblock;
+	struct Constblock constblock;
+	struct Errorblock errorblock;
+	struct Listblock listblock;
+	struct Primblock primblock;
+	} ;
+
+
+
+struct Dimblock
+	{
+	int ndim;
+	expptr nelt;
+	expptr baseoffset;
+	expptr basexpr;
+	struct
+		{
+		expptr dimsize;
+		expptr dimexpr;
+		} dims[1];
+	};
+
+
+struct Impldoblock
+	{
+	field tag;
+	unsigned isactive:1;
+	unsigned isbusy:1;
+	Namep varnp;
+	Constp varvp;
+	chainp impdospec;
+	expptr implb;
+	expptr impub;
+	expptr impstep;
+	ftnint impdiff;
+	ftnint implim;
+	struct Chain *datalist;
+	};
+
+
+struct Rplblock	/* name replacement block */
+	{
+	struct Rplblock *rplnextp;
+	Namep rplnp;
+	expptr rplvp;
+	expptr rplxp;
+	int rpltag;
+	};
+
+
+
+struct Equivblock
+	{
+	struct Eqvchain *equivs;
+	flag eqvinit;
+	long int eqvtop;
+	long int eqvbottom;
+	} ;
+#define eqvleng eqvtop
+
+extern struct Equivblock *eqvclass;
+
+
+struct Eqvchain
+	{
+	struct Eqvchain *eqvnextp;
+	union
+		{
+		struct Primblock *eqvlhs;
+		Namep eqvname;
+		} eqvitem;
+	long int eqvoffset;
+	} ;
+
+
+union Taggedblock
+	{
+	field tag;
+	struct Headblock headblock;
+	struct Nameblock nameblock;
+	struct Paramblock paramblock;
+	struct Exprblock exprblock;
+	struct Constblock constblock;
+	struct Listblock listblock;
+	struct Addrblock addrblock;
+	struct Errorblock errorblock;
+	struct Primblock primblock;
+	struct Impldoblock impldoblock;
+	} ;
+
+
+
+
+struct Literal
+	{
+	short littype;
+	short litnum;
+	union	{
+		ftnint litival;
+		double litdval;
+		struct	{
+			char litclen;	/* small integer */
+			char litcstr[XL];
+			} litcval;
+		} litval;
+	};
+
+extern struct Literal litpool[ ];
+extern int nliterals;
+
+
+
+/* popular functions with non integer return values */
+
+
+int *ckalloc();
+char *varstr(), *nounder(), *varunder();
+char *copyn(), *copys();
+chainp hookup(), mkchain();
+ftnint convci();
+char *convic();
+char *setdoto();
+double convcd();
+Namep mkname();
+struct Labelblock *mklabel(), *execlab();
+struct Extsym *mkext(), *newentry();
+expptr addrof(), call1(), call2(), call3(), call4();
+Addrp builtin(), mktemp(), mktmpn(), autovar();
+Addrp mkplace(), mkaddr(), putconst(), memversion();
+expptr mkprim(), mklhs(), mkexpr(), mkconv(), mkfunct(), fixexpr(), fixtype();
+expptr errnode(), mkintcon();
+tagptr cpexpr();
+ftnint lmin(), lmax(), iarrlen();
