@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)sys_generic.c	6.12 (Berkeley) %G%
+ *	@(#)sys_generic.c	6.13 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -339,7 +339,7 @@ done:
 		if (error) \
 			u.u_error = error; \
 	}
-	if (u.u_error != EINTR) {
+	if (u.u_error == 0) {
 		putbits(in, 0);
 		putbits(ou, 1);
 		putbits(ex, 2);
