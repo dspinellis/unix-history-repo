@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)mesg.c	4.2 (Berkeley) %G%";
+static char *sccsid = "@(#)mesg.c	4.3 (Berkeley) %G%";
 /*
  * mesg -- set current tty to accept or
  *	forbid write permission.
@@ -26,17 +26,17 @@ char *argv[];
 		exit(13);
 	if(stat(tty, &sbuf) < 0) error("cannot stat");
 	if(argc < 2) {
-		if(sbuf.st_mode & 02)
+		if(sbuf.st_mode & 020)
 			fprintf(stderr,"is y\n");
 		else {	r=1;
 			fprintf(stderr,"is n\n");
 		}
 	} else	switch(*argv[1]) {
 		case 'y':
-			newmode(sbuf.st_mode|022); break;
+			newmode(sbuf.st_mode|020); break;
 
 		case 'n':
-			newmode(sbuf.st_mode&~022); r=1; break;
+			newmode(sbuf.st_mode&~020); r=1; break;
 
 		default:
 			error("usage: mesg [y] [n]");
