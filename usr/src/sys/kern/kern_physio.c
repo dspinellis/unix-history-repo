@@ -1,4 +1,4 @@
-/*	kern_physio.c	6.3	84/08/29	*/
+/*	kern_physio.c	6.4	84/10/31	*/
 
 #include "../machine/pte.h"
 
@@ -192,7 +192,7 @@ physio(strat, bp, dev, rw, mincnt, uio)
 	unsigned (*mincnt)();
 	struct uio *uio;
 {
-	register struct iovec *iov = uio->uio_iov;
+	register struct iovec *iov;
 	register int c;
 	char *a;
 	int s, error = 0;
@@ -200,6 +200,7 @@ physio(strat, bp, dev, rw, mincnt, uio)
 nextiov:
 	if (uio->uio_iovcnt == 0)
 		return (0);
+	iov = uio->uio_iov;
 	if (useracc(iov->iov_base,(u_int)iov->iov_len,rw==B_READ?B_WRITE:B_READ) == NULL)
 		return (EFAULT);
 	s = spl6();
