@@ -1,4 +1,4 @@
-/*	autoconf.c	4.47	83/05/18	*/
+/*	autoconf.c	4.48	83/06/28	*/
 
 /*
  * Setup the system to run on the current machine.
@@ -673,15 +673,14 @@ ubaaccess(pumem, pte)
 swapconf()
 {
 	register struct swdevt *swp;
+	register int nblks;
 
 	for (swp = swdevt; swp->sw_dev; swp++) {
-		if (swp->sw_nblks != 0)
-			continue;
 		if (bdevsw[major(swp->sw_dev)].d_psize)
-			swp->sw_nblks =
+			nblks =
 			  (*bdevsw[major(swp->sw_dev)].d_psize)(swp->sw_dev);
-		if (swp->sw_nblks < 0)
-			swp->sw_nblks = 0;
+		if (swp->sw_nblks == 0 || swp->sw_nblks > nblks)
+			swp->sw_nblks = nblks;
 	}
 	if (!cold)			/* in case called for mba device */
 		return;
