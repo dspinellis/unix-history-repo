@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)dhu.4	6.1 (Berkeley) %G%
+.\"	@(#)dhu.4	6.2 (Berkeley) %G%
 .\"
 .TH DHU 4 ""
 .UC 6
@@ -27,20 +27,20 @@ Bit
 of flags may be specified for a DHU-11 to say that a line is not properly
 connected, and that the line should be treated as hard-wired with carrier
 always present.  Thus specifying ``flags 0x0004'' in the specification of dhu0
-would cause line ttyh2 to be treated in this way.
+would cause line ttyS2 to be treated in this way.
 .PP
 The DHU-11 driver normally uses input silos
 and delays receiver interrupts by 20 milliseconds
 rather than taking an interrupt on each input character.
 .SH FILES
-/dev/tty[hi][0-9a-f]
+/dev/tty[S-Z][0-9a-f]
 .SH "SEE ALSO"
 tty(4)
 .SH DIAGNOSTICS
-\fBdhu(%d,%d): NXM fault\fR.  No response from UNIBUS on a dma transfer
+\fBdhu(%d,%d): NXM fault\fR.  No response from UNIBUS on a DMA transfer
 within a timeout period.  This is often followed by a UNIBUS adapter
 error.  This occurs most frequently when the UNIBUS is heavily loaded
-and when devices which hog the bus (such as rk07's) are present.
+and when devices which hog the bus (such as RK07s) are present.
 It is not serious.
 .PP
 \fBdhu%d: silo overflow\fR.  The character input silo overflowed
