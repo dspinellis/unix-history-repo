@@ -35,7 +35,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)machdep.c	7.4 (Berkeley) 6/3/91
- *	$Id: machdep.c,v 1.42 1994/04/02 07:00:26 davidg Exp $
+ *	$Id: machdep.c,v 1.43 1994/05/29 07:23:40 davidg Exp $
  */
 
 #include "npx.h"
@@ -247,18 +247,6 @@ again:
 	valloc(swbuf, struct buf, nswbuf);
 	valloc(buf, struct buf, nbuf);
 
-#ifndef NOBOUNCE
-	/*
-	 * If there is more than 16MB of memory, allocate some bounce buffers
-	 */
-	if (Maxmem > 4096) {
-		if (bouncepages == 0)
-			bouncepages = 96;	/* largest physio size + extra */
-		v = (caddr_t)((vm_offset_t)((vm_offset_t)v + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1));
-		valloc(bouncememory, char, bouncepages * PAGE_SIZE);
-	}
-#endif
-
 	/*
 	 * End of first pass, size has been calculated so allocate memory
 	 */
@@ -311,6 +299,15 @@ again:
 		nbuf, bufpages * CLBYTES);
 
 #ifndef NOBOUNCE
+	/*
+	 * If there is more than 16MB of memory, allocate some bounce buffers
+	 */
+	if (Maxmem > 4096) {
+		if (bouncepages == 0)
+			bouncepages = 96;	/* largest physio size + extra */
+		bouncememory = (char *)kmem_alloc(kernel_map, bouncepages * PAGE_SIZE);
+	}
+
 	/*
 	 * init bounce buffers
 	 */

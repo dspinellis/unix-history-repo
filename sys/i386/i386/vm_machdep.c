@@ -38,7 +38,7 @@
  *
  *	from: @(#)vm_machdep.c	7.3 (Berkeley) 5/13/91
  *	Utah $Hdr: vm_machdep.c 1.16.1.1 89/06/23$
- *	$Id: vm_machdep.c,v 1.25 1994/05/29 07:28:10 davidg Exp $
+ *	$Id: vm_machdep.c,v 1.26 1994/05/29 18:15:57 ats Exp $
  */
 
 #include "npx.h"
@@ -62,11 +62,13 @@ int rqstats[MAXCLSTATS];
 
 
 #ifndef NOBOUNCE
+vm_map_t	io_map;
+volatile int	kvasfreecnt;
+
 
 caddr_t		bouncememory;
-vm_offset_t	bouncepa, bouncepaend;
 int		bouncepages, bpwait;
-vm_map_t	io_map;
+vm_offset_t	*bouncepa;
 int		bmwait, bmfreeing;
 
 #define BITS_IN_UNSIGNED (8*sizeof(unsigned))
@@ -83,7 +85,6 @@ struct kvasfree {
 	vm_offset_t size;
 } kvaf[MAXBKVA];
 
-int		kvasfreecnt;
 
 vm_offset_t vm_bounce_kva();
 /*
@@ -108,7 +109,7 @@ retry:
 				bounceallocarray[i] |= 1 << (bit - 1) ;
 				bouncefree -= count;
 				splx(s);
-				return bouncepa + (i * BITS_IN_UNSIGNED + (bit - 1)) * NBPG;
+				return bouncepa[(i * BITS_IN_UNSIGNED + (bit - 1))];
 			}
 		}
 	}
@@ -125,7 +126,8 @@ vm_bounce_kva_free(addr, size, now)
 {
 	int s = splbio();
 	kvaf[kvasfreecnt].addr = addr;
-	kvaf[kvasfreecnt++].size = size;
+	kvaf[kvasfreecnt].size = size;
+	++kvasfreecnt;
 	if( now) {
 		/*
 		 * this will do wakeups
@@ -158,10 +160,13 @@ vm_bounce_page_free(pa, count)
 	if (count != 1)
 		panic("vm_bounce_page_free -- no support for > 1 page yet!!!\n");
 
-	index = (pa - bouncepa) / NBPG;
+	for(index=0;index<bouncepages;index++) {
+		if( pa == bouncepa[index])
+			break;
+	}
 
-	if ((index < 0) || (index >= bouncepages))
-		panic("vm_bounce_page_free -- bad index\n");
+	if( index == bouncepages)
+		panic("vm_bounce_page_free: invalid bounce buffer");
 
 	allocindex = index / BITS_IN_UNSIGNED;
 	bit = index % BITS_IN_UNSIGNED;
@@ -191,25 +196,17 @@ more:
 	if (!bmfreeing && kvasfreecnt) {
 		bmfreeing = 1;
 		for (i = 0; i < kvasfreecnt; i++) {
-			/*
-			 * if we have a kva of the right size, no sense
-			 * in freeing/reallocating...
-			 * might affect fragmentation short term, but
-			 * as long as the amount of io_map is
-			 * significantly more than the maximum transfer
-			 * size, I don't think that it is a problem.
-			 */
 			pmap_remove(kernel_pmap,
 				kvaf[i].addr, kvaf[i].addr + kvaf[i].size);
-			if( size && !kva && kvaf[i].size == size) {
-				kva = kvaf[i].addr;
-			} else {
-				kmem_free_wakeup(io_map, kvaf[i].addr,
-					kvaf[i].size);
-			}
+			kmem_free_wakeup(io_map, kvaf[i].addr,
+				kvaf[i].size);
 		}
 		kvasfreecnt = 0;
 		bmfreeing = 0;
+		if( bmwait) {
+			bmwait = 0;
+			wakeup( (caddr_t) io_map);
+		}
 	}
 
 	if( size == 0) {
@@ -217,7 +214,7 @@ more:
 		return NULL;
 	}
 
-	if (!kva && !(kva = kmem_alloc_pageable(io_map, size))) {
+	if ((kva = kmem_alloc_pageable(io_map, size)) == 0) {
 		if( !waitok) {
 			splx(s);
 			return NULL;
@@ -227,7 +224,6 @@ more:
 		goto more;
 	}
 	splx(s);
-
 	return kva;
 }
 
@@ -305,12 +301,14 @@ vm_bounce_alloc(bp)
 		printf("vm_bounce_alloc: b_bufsize(0x%x) < b_bcount(0x%x) !!!!\n",
 			bp->b_bufsize, bp->b_bcount);
 		panic("vm_bounce_alloc");
-		bp->b_bufsize = bp->b_bcount;
 	}
 
-	if( bp->b_bufsize != bp->b_bcount) {
-		printf("size: %d, count: %d\n", bp->b_bufsize, bp->b_bcount);
-	}
+/*
+ *  This is not really necessary
+ *	if( bp->b_bufsize != bp->b_bcount) {
+ *		printf("size: %d, count: %d\n", bp->b_bufsize, bp->b_bcount);
+ *	}
+ */
 		
 
 	vastart = (vm_offset_t) bp->b_un.b_addr;
@@ -390,14 +388,8 @@ vm_bounce_free(bp)
 	struct buf *bp;
 {
 	int i;
-	vm_offset_t origkva, bouncekva;
-	vm_offset_t vastart, vaend;
-	vm_offset_t vapstart, vapend;
-	int countbounce = 0;
-	vm_offset_t firstbouncepa = 0;
-	int firstbounceindex;
+	vm_offset_t origkva, bouncekva, bouncekvaend;
 	int countvmpg;
-	vm_offset_t bcount;
 	int s;
 
 /*
@@ -406,22 +398,21 @@ vm_bounce_free(bp)
 	if ((bp->b_flags & B_BOUNCE) == 0)
 		return;
 
+/*
+ *  This check is not necessary
+ *	if (bp->b_bufsize != bp->b_bcount) {
+ *		printf("vm_bounce_free: b_bufsize=%d, b_bcount=%d\n",
+ *			bp->b_bufsize, bp->b_bcount);
+ *	}
+ */
+
 	origkva = (vm_offset_t) bp->b_savekva;
 	bouncekva = (vm_offset_t) bp->b_un.b_addr;
-
-	vastart = bouncekva;
-	vaend = bouncekva + bp->b_bufsize;
-	bcount = bp->b_bufsize;
-	
-	vapstart = i386_trunc_page(vastart);
-	vapend = i386_round_page(vaend);
-
-	countvmpg = (vapend - vapstart) / NBPG;
 
 /*
  * check every page in the kva space for b_addr
  */
-	for (i = 0; i < countvmpg; i++) {
+	for (i = 0; i < bp->b_bufsize; ) {
 		vm_offset_t mybouncepa;
 		vm_offset_t copycount;
 
@@ -431,30 +422,36 @@ vm_bounce_free(bp)
 /*
  * if this is a bounced pa, then process as one
  */
-		if ((mybouncepa >= bouncepa) && (mybouncepa < bouncepaend)) {
-			if (copycount > bcount)
-				copycount = bcount;
+		if ( mybouncepa != pmap_kextract( i386_trunc_page( origkva))) {
+			if (i < bp->b_bcount) {
+				vm_offset_t tocopy = copycount;
+				if (i + tocopy > bp->b_bcount)
+					tocopy = bp->b_bcount - i;
 /*
  * if this is a read, then copy from bounce buffer into original buffer
  */
-			if (bp->b_flags & B_READ)
-				bcopy((caddr_t) bouncekva, (caddr_t) origkva, copycount);
+				if (bp->b_flags & B_READ)
+					bcopy((caddr_t) bouncekva, (caddr_t) origkva, tocopy);
+			}
 /*
  * free the bounce allocation
  */
-			vm_bounce_page_free(i386_trunc_page(mybouncepa), 1);
+			vm_bounce_page_free(mybouncepa, 1);
 		}
 
 		origkva += copycount;
 		bouncekva += copycount;
-		bcount -= copycount;
+		i += copycount;
 	}
 
 /*
  * add the old kva into the "to free" list
  */
-	bouncekva = i386_trunc_page((vm_offset_t) bp->b_un.b_addr);
-	vm_bounce_kva_free( bouncekva, countvmpg*NBPG, 0);
+	
+	bouncekva= i386_trunc_page((vm_offset_t) bp->b_un.b_addr);
+	bouncekvaend= i386_round_page((vm_offset_t)bp->b_un.b_addr + bp->b_bufsize);
+
+	vm_bounce_kva_free( bouncekva, (bouncekvaend - bouncekva), 0);
 	bp->b_un.b_addr = bp->b_savekva;
 	bp->b_savekva = 0;
 	bp->b_flags &= ~B_BOUNCE;
@@ -470,6 +467,7 @@ void
 vm_bounce_init()
 {
 	vm_offset_t minaddr, maxaddr;
+	int i;
 
 	io_map = kmem_suballoc(kernel_map, &minaddr, &maxaddr, MAXBKVA * NBPG, FALSE);
 	kvasfreecnt = 0;
@@ -484,14 +482,23 @@ vm_bounce_init()
 		panic("Cannot allocate bounce resource array\n");
 
 	bzero(bounceallocarray, bounceallocarraysize * sizeof(unsigned));
+	bouncepa = malloc(bouncepages * sizeof(vm_offset_t), M_TEMP, M_NOWAIT);
+	if (!bouncepa)
+		panic("Cannot allocate physical memory array\n");
 
-	bouncepa = pmap_kextract((vm_offset_t) bouncememory);
-	bouncepaend = bouncepa + bouncepages * NBPG;
+	for(i=0;i<bouncepages;i++) {
+		vm_offset_t pa;
+		if( (pa = pmap_kextract((vm_offset_t) bouncememory + i * NBPG)) >= SIXTEENMEG)
+			panic("bounce memory out of range");
+		if( pa == 0)
+			panic("bounce memory not resident");
+		bouncepa[i] = pa;
+	}
 	bouncefree = bouncepages;
 
 }
-
 #endif /* NOBOUNCE */
+
 
 static void
 cldiskvamerge( kvanew, orig1, orig1cnt, orig2, orig2cnt)
@@ -539,6 +546,13 @@ cldisksort(struct buf *dp, struct buf *bp, vm_offset_t maxio)
 		dp->b_actl = bp;
 		bp->av_forw = NULL;
 		return;
+	}
+
+
+	if (bp->b_flags & B_READ) {
+		while( ap->av_forw && (ap->av_forw->b_flags & B_READ))
+			ap = ap->av_forw;
+		goto insert;
 	}
 
 	/*
@@ -595,12 +609,16 @@ cldisksort(struct buf *dp, struct buf *bp, vm_offset_t maxio)
 
 insert:
 
+#ifndef NOBOUNCE
 	/*
 	 * read clustering with new read-ahead disk drives hurts mostly, so
 	 * we don't bother...
 	 */
 	if( bp->b_flags & (B_READ|B_SYNC))
 		goto nocluster;
+	if( bp->b_bcount != bp->b_bufsize) {
+		goto nocluster;
+	}
 	/*
 	 * we currently only cluster I/O transfers that are at page-aligned
 	 * kvas and transfers that are multiples of page lengths.
@@ -623,7 +641,7 @@ insert:
 		 */
 		if( (ap->b_pblkno + (ap->b_bcount / DEV_BSIZE) == bp->b_pblkno) &&
 			(dp->b_actf != ap) &&
-			((ap->b_flags & ~B_CLUSTER) == bp->b_flags) &&
+			((ap->b_flags & ~(B_CLUSTER|B_BOUNCE)) == (bp->b_flags & ~B_BOUNCE)) &&
 			((ap->b_flags & B_BAD) == 0) &&
 			((ap->b_bcount & PAGE_MASK) == 0) &&
 			(((vm_offset_t) ap->b_un.b_addr & PAGE_MASK) == 0) &&
@@ -649,15 +667,10 @@ insert:
 			 * see if we can allocate a kva, if we cannot, the don't
 			 * cluster.
 			 */
-#ifndef NOBOUNCE
 			kvanew = vm_bounce_kva( PAGE_SIZE * (orig1pages + orig2pages), 0);
-#else
-			kvanew = NULL;
-#endif
 			if( !kvanew) {
 				goto nocluster;
 			}
-
 
 			if( (ap->b_flags & B_CLUSTER) == 0) {
 
@@ -666,9 +679,7 @@ insert:
 				 */
 				newbp = (struct buf *)trypbuf();
 				if( !newbp) {
-#ifndef NOBOUNCE
 					vm_bounce_kva_free( kvanew, PAGE_SIZE * (orig1pages + orig2pages), 1);
-#endif
 					goto nocluster;
 				}
 
@@ -717,9 +728,7 @@ insert:
 				/*
 				 * free the old kva
 				 */
-#ifndef NOBOUNCE
 				vm_bounce_kva_free( orig1begin, ap->b_bufsize, 0);
-#endif
 				--clstats[ap->b_bcount/PAGE_SIZE];
 
 				ap->b_un.b_addr = (caddr_t) kvanew;
@@ -745,7 +754,7 @@ insert:
 		 */
 		} else if( ap->av_forw &&
 			(bp->b_pblkno + (bp->b_bcount / DEV_BSIZE) == ap->av_forw->b_pblkno) &&
-			(bp->b_flags == (ap->av_forw->b_flags & ~B_CLUSTER)) &&
+			((bp->b_flags & ~B_BOUNCE) == (ap->av_forw->b_flags & ~(B_CLUSTER|B_BOUNCE))) &&
 			((ap->av_forw->b_flags & B_BAD) == 0) &&
 			((ap->av_forw->b_bcount & PAGE_MASK) == 0) &&
 			(((vm_offset_t) ap->av_forw->b_un.b_addr & PAGE_MASK) == 0) &&
@@ -770,11 +779,7 @@ insert:
 			 * see if we can allocate a kva, if we cannot, the don't
 			 * cluster.
 			 */
-#ifndef NOBOUNCE
 			kvanew = vm_bounce_kva( PAGE_SIZE * (orig1pages + orig2pages), 0);
-#else
-			kvanew = NULL;
-#endif
 			if( !kvanew) {
 				goto nocluster;
 			}
@@ -789,9 +794,7 @@ insert:
 				 */
 				newbp = (struct buf *)trypbuf();
 				if( !newbp) {
-#ifndef NOBOUNCE
 					vm_bounce_kva_free( kvanew, PAGE_SIZE * (orig1pages + orig2pages), 1);
-#endif
 					goto nocluster;
 				}
 
@@ -829,9 +832,7 @@ insert:
 
 				cldiskvamerge( kvanew, orig1begin, orig1pages, orig2begin, orig2pages);
 				ap = ap->av_forw;
-#ifndef NOBOUNCE
 				vm_bounce_kva_free( orig2begin, ap->b_bufsize, 0);
-#endif
 
 				ap->b_un.b_addr = (caddr_t) kvanew;
 				bp->av_forw = ap->b_clusterf;
@@ -850,6 +851,7 @@ insert:
 			return;
 		}
 	}
+#endif
 	/*
 	 * don't merge
 	 */
