@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)whereis.c	4.2 (Berkeley) %G%";
+static char *sccsid = "@(#)whereis.c	4.3 (Berkeley) %G%";
 #include <sys/types.h>
 #include <stdio.h>
 #include <ctype.h>
@@ -10,13 +10,22 @@ static char *bindirs[] = {
 	"/bin",
 	"/usr/bin",
 	"/usr/games",
+#ifdef CSVAX
+	"/lib",
+	"/usr/ucb",
+	"/usr/lib",
+	"/usr/local",
+	"/usr/new",
+	"/usr/old",
+#endif
 #ifdef CORY
 	"/usr/bin/eecs",
 	"/usr/bin/new",
 	"/usr/bin/v7",
 	"/usr/bin/old",
 	"/usr/bin/UNSUPPORTED",
-#else
+#endif
+#ifdef ARPAVAX
 	"/lib",
 	"/usr/ucb",
 	"/usr/lib",
@@ -40,10 +49,7 @@ static char *mandirs[] = {
 	"/usr/man/manc",
 	"/usr/man/manv7",
 	"/usr/bin/eecs/mane",
-#else
-	"/usr/man/manl",
 #endif
-	"/usr/doc",
 	0
 };
 static char *srcdirs[]  = {
@@ -51,18 +57,26 @@ static char *srcdirs[]  = {
 	"/usr/src/games",
 	"/usr/src/libc/gen",
 	"/usr/src/libc/stdio",
+#ifdef CSVAX
+	"/usr/src/libc/sys",
+	"/usr/src/new",
+	"/usr/src/old",
+	"/usr/src/local",
+	"/usr/src/undoc",
+#endif
 #ifdef CORY
 	"/usr/bin/eecs/src",
 	"/usr/src/cmd/v7",
 	"/usr/src/cmd/new",
 	"/usr/src/cmd/old",
 	"/usr/src/cmd/UNSUPPORTED",
-#else
-	"/usr/src/libc/sys",
-	"/usr/src/new",
-	"/usr/src/old",
-	"/usr/local/src",
-	"/usr/src/undoc",
+#endif
+#ifdef	ARPAVAX
+	"/ra/src/cmd",
+	"/ra/src/new",
+	"/ra/src/old",
+	"/ra/src/libc/gen",
+	"/ra/src/libc/stdio",
 #endif
 	0
 };
