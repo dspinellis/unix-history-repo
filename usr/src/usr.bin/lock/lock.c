@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)lock.c	4.4 (Berkeley) %G%";
+static char *sccsid = "@(#)lock.c	4.5 (Berkeley) %G%";
 #endif
 
 /*
@@ -89,9 +89,16 @@ main(argc, argv)
 	ntty = tty; ntty.sg_flags &= ~ECHO;
 	ioctl(0, TIOCSETN, &ntty);
 	printf("Key: ");
-	fgets(s, sizeof s, stdin);
+	if (fgets(s, sizeof s, stdin) == NULL) {
+		putchar('\n');
+		quit();
+	}
 	printf("\nAgain: ");
-	fgets(s1, sizeof s1, stdin);
+	/*
+	 * Don't need EOF test here, if we get EOF, then s1 != s
+	 * and the right things will happen.
+	 */
+	(void) fgets(s1, sizeof s1, stdin);
 	putchar('\n');
 	if (strcmp(s1, s)) {
 		putchar(07);
@@ -123,7 +130,11 @@ main(argc, argv)
 
 	for (;;) {
 		printf("Key: ");
-		fgets(s, sizeof s, stdin);
+		if (fgets(s, sizeof s, stdin) == NULL) {
+			clearerr(stdin);
+			hi();
+			continue;
+		}
 		if (strcmp(s1, s) == 0)
 			break;
 		if (pwd == (struct passwd *) 0 || pwd->pw_passwd[0] == '\0')
