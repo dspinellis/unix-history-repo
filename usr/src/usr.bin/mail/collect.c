@@ -7,7 +7,7 @@
  * ~ escapes.
  */
 
-static char *SccsId = "@(#)collect.c	2.7 %G%";
+static char *SccsId = "@(#)collect.c	2.7.1.1 %G%";
 
 #include "rcv.h"
 #include <sys/stat.h>
