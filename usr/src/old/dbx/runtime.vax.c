@@ -1,7 +1,7 @@
 
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)runtime.vax.c 1.6 %G%";
+static char sccsid[] = "@(#)runtime.vax.c 1.7 %G%";
 
 /*
  * Runtime organization dependent routines, mostly dealing with
@@ -74,44 +74,49 @@ Frame frp;
     struct Frame frame;
     register Integer i, j, mask;
     Address prev_frame, callpc; 
-    private Integer ntramp=0;
+    static Integer ntramp = 0;
 
     newfrp = frp;
     prev_frame = frp->save_fp;
 
-/*  The check for interrupt generated frames is taken from adb with only
- *  partial understanding : say you're in sub and on a sigxxx siggsub
- *  gets control and dies; the stack does NOT look like main, sub, sigsub.
+/*
+ *  The check for interrupt generated frames is taken from adb with only
+ *  partial understanding.  If you're in "sub" and on a sigxxx "sigsub"
+ *  gets control, then the stack does NOT look like <main, sub, sigsub>.
  *
  *  As best I can make out it looks like:
- *   main (machine check exception block + sub) sysframe  sigsub.
- *  ie when the sig occurs push an exception block on the user stack
- *  and a frame for the routine in which it occured then push another
- *  frame corresponding to a call from the kernel to sigsub.
+ *
+ *     <main, (machine check exception block + sub), sysframe, sigsub>.
+ *
+ *  When the signal occurs an exception block and a frame for the routine
+ *  in which it occured are pushed on the user stack.  Then another frame
+ *  is pushed corresponding to a call from the kernel to sigsub.
  *
  *  The addr in sub at which the exception occured is not in sub.save_pc
- *  but in the machine check exception block. It can be referenced as
- *  sub.save_reg[11].
+ *  but in the machine check exception block.  It is at the magic address
+ *  fp + 76.
  *
  *  The current approach ignores the sys_frame (what adb reports as sigtramp)
- *  and takes the pc for sub from the exception block. This
- *  allows where to report: main sub sigsub, which seems reasonable
+ *  and takes the pc for sub from the exception block.  This allows the
+ *  "where" command to report <main, sub, sigsub>, which seems reasonable.
  */
-    nextf: dread(&frame, prev_frame , sizeof(struct Frame));
-    if(ntramp == 1 ) callpc = (Address) frame.save_reg[11];
-    else callpc=frame.save_pc;
 
+nextf:
+    dread(&frame, prev_frame, sizeof(struct Frame));
+    if (ntramp == 1) {
+	dread(&callpc, prev_frame + 76, sizeof(callpc));
+    } else {
+	callpc = frame.save_pc;
+    }
     if (frame.save_fp == nil) {
 	newfrp = nil;
-    }
-      else if (callpc > 0x80000000 - 0x200 * UPAGES ) {
+    } else if (callpc > 0x80000000 - 0x200 * UPAGES ) {
 	 ntramp++;
 	 prev_frame = frame.save_fp;
 	 goto nextf;
-	}
-      else {
+    } else {
 	frame.save_pc = callpc;
-        ntramp=0;
+        ntramp = 0;
 	mask = ((frame.mask >> 16) & 0x0fff);
 	j = 0;
 	for (i = 0; i < NSAVEREG; i++) {
