@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_lookup.c	7.7 (Berkeley) %G%
+ *	@(#)vfs_lookup.c	7.8 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -231,7 +231,8 @@ dirloop:
 		 */
 		if (ndp->ni_dvp->v_mount->m_flag & M_RDONLY)
 			error = EROFS;
-		if (error != ENOENT || flag != CREATE || *cp != 0)
+		if (flag == LOOKUP || flag == DELETE ||
+		    error != ENOENT || *cp != 0)
 			goto bad;
 		/*
 		 * We return with ni_vp NULL to indicate that the entry
