@@ -1,5 +1,5 @@
 /* Copyright (c) 1981 Regents of the University of California */
-static char *sccsid = "@(#)ex_put.c	7.5	%G%";
+static char *sccsid = "@(#)ex_put.c	7.6	%G%";
 #include "ex.h"
 #include "ex_tty.h"
 #include "ex_vis.h"
@@ -565,7 +565,7 @@ dontcr:
 	/* Move down, if necessary, until we are at the desired line */
 	while (outline < destline) {
 		j = destline - outline;
-		if (j > costDP) {
+		if (j > costDP && DOWN_PARM) {
 			/* Win big on Tek 4025 */
 			tputs(tgoto(DOWN_PARM, 0, j), j, plodput);
 			outline += j;
@@ -595,7 +595,7 @@ dontcr:
 			continue;
 		}
 		j = outcol - destcol;
-		if (j > costLP) {
+		if (j > costLP && LEFT_PARM) {
 			tputs(tgoto(LEFT_PARM, 0, j), j, plodput);
 			outcol -= j;
 		}
@@ -665,7 +665,7 @@ dontcr:
 	 */
 	while (outcol < destcol) {
 		j = destcol - outcol;
-		if (j > costRP) {
+		if (j > costRP && RIGHT_PARM) {
 			/*
 			 * This probably happens rarely, if at all.
 			 * It seems mainly useful for ANSI terminals
