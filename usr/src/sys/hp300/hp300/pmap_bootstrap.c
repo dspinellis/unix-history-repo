@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pmap_bootstrap.c	7.1 (Berkeley) %G%
+ *	@(#)pmap_bootstrap.c	7.2 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -25,30 +25,7 @@
  */
 #define BSDVM_COMPAT	1
 
-#ifdef BOOTDEBUG
-/*
- * Mirrors the actual PT setup done in locore but none of the data
- * structures set up here are actually used.  In this way you can boot
- * the system and compare what it would have done (pmap_bootstrap) with
- * what it should do (locore) when debugging.  See locore.s as well.
- */
-#define RELOC(v, t)	*((t*)((u_int)&(X##v) + firstpa))
-int XSysptsize = 2;
-int Xmmutype = MMU_68040;
-int Xectype = 0;
-int Xmachineid = HP_380;
-int Xprotection_codes[8];
-struct ste *XSysseg;
-struct pte *XSysptmap, *XSysmap;
-u_int XUmap, XCLKbase, XMMUbase;
-char *Xintiobase, *Xintiolimit, *Xextiobase, *Xproc0paddr;
-vm_offset_t Xavail_start, Xavail_end, Xvirtual_avail, Xvirtual_end;
-vm_size_t Xmem_size;
-int Xmaxmem, Xphysmem, Xpmap_aliasmask;
-struct pmap Xkernel_pmap_store;
-#else
 #define RELOC(v, t)	*((t*)((u_int)&(v) + firstpa))
-#endif
 
 extern char *etext;
 extern int Sysptsize;
@@ -75,12 +52,6 @@ struct pte	*CMAP1, *CMAP2, *mmap;
 caddr_t		CADDR1, CADDR2, vmmap;
 struct pte	*msgbufmap;
 struct msgbuf	*msgbufp;
-#ifdef BOOTDEBUG
-struct pte	*XCMAP1, *XCMAP2, *Xmmap;
-caddr_t		XCADDR1, XCADDR2, Xvmmap;
-struct pte	*Xmsgbufmap;
-struct msgbuf	*Xmsgbufp;
-#endif
 #endif
 
 /*
@@ -552,109 +523,3 @@ pmap_showstuff()
 		printf("%x ", protection_codes[i]);
 	printf("\n");
 }
-
-#ifdef BOOTDEBUG
-/*
- *	Bootstrap the system enough to run with virtual memory.
- *	Map the kernel's code and data, and allocate the system page table.
- *
- *	On the HP this is called after mapping has already been enabled
- *	and just syncs the pmap module with what has already been done.
- *	[We can't call it easily with mapping off since the kernel is not
- *	mapped with PA == VA, hence we would have to relocate every address
- *	from the linked base (virtual) address 0 to the actual (physical)
- *	address of 0xFFxxxxxx.]
- */
-void
-Opmap_bootstrap(firstaddr, loadaddr)
-	vm_offset_t firstaddr;
-	vm_offset_t loadaddr;
-{
-#if BSDVM_COMPAT
-	vm_offset_t va;
-	struct pte *pte;
-#endif
-
-	avail_start = firstaddr;
-	avail_end = maxmem << PGSHIFT;
-
-#if BSDVM_COMPAT
-	/* XXX: allow for msgbuf */
-	avail_end -= hp300_round_page(sizeof(struct msgbuf));
-#endif
-
-	mem_size = physmem << PGSHIFT;
-	virtual_avail = VM_MIN_KERNEL_ADDRESS + (firstaddr - loadaddr);
-	virtual_end = VM_MAX_KERNEL_ADDRESS;
-#if defined(DYNPGSIZE)
-	hppagesperpage = PAGE_SIZE / HP_PAGE_SIZE;
-#endif
-
-	/*
-	 * Determine VA aliasing distance if any
-	 */
-	if (ectype == EC_VIRT)
-		switch (machineid) {
-		case HP_320:
-			pmap_aliasmask = 0x3fff;	/* 16k */
-			break;
-		case HP_350:
-			pmap_aliasmask = 0x7fff;	/* 32k */
-			break;
-		}
-
-	/*
-	 * Initialize protection array.
-	 */
-	{
-		register int *kp, prot;
-
-		kp = protection_codes;
-		for (prot = 0; prot < 8; prot++) {
-			switch (prot) {
-			case VM_PROT_NONE | VM_PROT_NONE | VM_PROT_NONE:
-				*kp++ = 0;
-				break;
-			case VM_PROT_READ | VM_PROT_NONE | VM_PROT_NONE:
-			case VM_PROT_READ | VM_PROT_NONE | VM_PROT_EXECUTE:
-			case VM_PROT_NONE | VM_PROT_NONE | VM_PROT_EXECUTE:
-				*kp++ = PG_RO;
-				break;
-			case VM_PROT_NONE | VM_PROT_WRITE | VM_PROT_NONE:
-			case VM_PROT_NONE | VM_PROT_WRITE | VM_PROT_EXECUTE:
-			case VM_PROT_READ | VM_PROT_WRITE | VM_PROT_NONE:
-			case VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE:
-				*kp++ = PG_RW;
-				break;
-			}
-		}
-	}
-	/*
-	 * Kernel page/segment table allocated in locore,
-	 * just initialize pointers.
-	 */
-	kernel_pmap->pm_stab = Sysseg;
-	kernel_pmap->pm_ptab = Sysmap;
-
-	simple_lock_init(&kernel_pmap->pm_lock);
-	kernel_pmap->pm_count = 1;
-
-#if BSDVM_COMPAT
-	/*
-	 * Allocate all the submaps we need
-	 */
-#define	SYSMAP(c, p, v, n)	\
-	v = (c)va; va += ((n)*HP_PAGE_SIZE); p = pte; pte += (n);
-
-	va = virtual_avail;
-	pte = &Sysmap[hp300_btop(va)];
-
-	SYSMAP(caddr_t		,CMAP1		,CADDR1	   ,1		)
-	SYSMAP(caddr_t		,CMAP2		,CADDR2	   ,1		)
-	SYSMAP(caddr_t		,mmap		,vmmap	   ,1		)
-	SYSMAP(struct msgbuf *	,msgbufmap	,msgbufp   ,1		)
-	virtual_avail = va;
-#undef SYSMAP
-#endif
-}
-#endif
