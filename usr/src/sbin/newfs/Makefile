@@ -1,4 +1,4 @@
-#	@(#)Makefile	7.14 (Berkeley) %G%
+#	@(#)Makefile	8.1 (Berkeley) %G%
 
 PROG=	newfs
 CFLAGS+=-DMFS
