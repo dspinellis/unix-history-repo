@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)mkmakefile.c	1.33 (Berkeley) %G%";
+static char sccsid[] = "@(#)mkmakefile.c	1.34 (Berkeley) %G%";
 #endif
 
 /*
@@ -130,18 +130,6 @@ makefile()
 	} else if (maxusers > 128) {
 		printf("maxusers truncated to 128\n");
 		maxusers = 128;
-	}
-#endif
-#ifdef sun
-	if (maxusers == 0) {
-		printf("maxusers not specified; 8 assumed\n");
-		maxusers = 8;
-	} else if (maxusers < 2) {
-		printf("minimum of 2 maxusers assumed\n");
-		maxusers = 2;
-	} else if (maxusers > 32) {
-		printf("maxusers truncated to 32\n");
-		maxusers = 32;
 	}
 #endif
 	fprintf(ofp, "PARAM=-DTIMEZONE=%d -DDST=%d -DMAXUSERS=%d\n",
@@ -431,7 +419,7 @@ for (ftp = ftab; ftp != 0; ftp = ftp->f_next) {
 	tp = tail(np);
 	if (och == 's') {
 		fprintf(f, "\t-ln -s ../%ss %sc\n", np, tp);
-		fprintf(f, "\t${CC} -I. -E ${COPTS} %sc | ${AS} -o %so\n",
+		fprintf(f, "\t${CC} -E ${COPTS} %sc | ${AS} -o %so\n",
 			tp, tp);
 		fprintf(f, "\trm -f %sc\n\n", tp);
 		continue;
@@ -446,7 +434,7 @@ for (ftp = ftab; ftp != 0; ftp = ftp->f_next) {
 		switch (machine) {
 
 		case MACHINE_VAX:
-			fprintf(f, "\t${CC} -I. -c -S ${COPTS} %s../%sc\n",
+			fprintf(f, "\t${CC} -c -S ${COPTS} %s../%sc\n",
 				extras, np);
 			fprintf(f, "\t${C2} %ss | ../%s/inline/inline |",
 			    tp, machinename);
@@ -454,10 +442,6 @@ for (ftp = ftab; ftp != 0; ftp = ftp->f_next) {
 			fprintf(f, "\trm -f %ss\n\n", tp);
 			break;
 
-		case MACHINE_SUN:
-			fprintf(f, "\t${CC} -I. -c -O ${COPTS} %s../%sc\n\n",
-				extras, np);
-			break;
 		}
 		break;
 
@@ -465,7 +449,7 @@ for (ftp = ftab; ftp != 0; ftp = ftp->f_next) {
 		switch (machine) {
 
 		case MACHINE_VAX:
-			fprintf(f, "\t${CC} -I. -c -S ${COPTS} %s../%sc\n",
+			fprintf(f, "\t${CC} -c -S ${COPTS} %s../%sc\n",
 				extras, np);
 			fprintf(f,"\t${C2} -i %ss | ../%s/inline/inline |",
 			    tp, machinename);
@@ -473,9 +457,6 @@ for (ftp = ftab; ftp != 0; ftp = ftp->f_next) {
 			fprintf(f, "\trm -f %ss\n\n", tp);
 			break;
 
-		case MACHINE_SUN:
-			fprintf(f, "\t${CC} -I. -c -O ${COPTS} %s../%sc\n\n",
-				extras, np);
 		}
 		break;
 
@@ -490,7 +471,7 @@ for (ftp = ftab; ftp != 0; ftp = ftp->f_next) {
 		switch (machine) {
 
 		case MACHINE_VAX:
-			fprintf(f, "\t${CC} -I. -c -S %s %s../%sc\n",
+			fprintf(f, "\t${CC} -c -S %s %s../%sc\n",
 				COPTS, extras, np);
 			fprintf(f, "\tex - %ss < ${GPROF.EX}\n", tp);
 			fprintf(f, "\t../%s/inline/inline %ss | ${AS} -o %so\n",
@@ -498,10 +479,6 @@ for (ftp = ftab; ftp != 0; ftp = ftp->f_next) {
 			fprintf(f, "\trm -f %ss\n\n", tp);
 			break;
 
-		case MACHINE_SUN:
-			fprintf(stderr,
-			    "config: don't know how to profile kernel on sun\n");
-			break;
 		}
 		break;
 
@@ -564,10 +541,6 @@ do_systemspec(f, fl, first)
 			fl->f_needs);
 		break;
 
-	case MACHINE_SUN:
-		fprintf(f, "\t@${LD} -o %s -e start -x -T 4000 ",
-			fl->f_needs);
-		break;
 	}
 	fprintf(f, "locore.o ${OBJS} vers.o ioconf.o param.o ");
 	fprintf(f, "swap%s.o\n", fl->f_fn);
@@ -589,14 +562,14 @@ do_swapspec(f, name)
 
 	if (!eq(name, "generic")) {
 		fprintf(f, "swap%s.o: swap%s.c\n", name, name);
-		fprintf(f, "\t${CC} -I. -c -O ${COPTS} swap%s.c\n\n", name);
+		fprintf(f, "\t${CC} -c -O ${COPTS} swap%s.c\n\n", name);
 		return;
 	}
 	fprintf(f, "swapgeneric.o: ../%s/swapgeneric.c\n", machinename);
 	switch (machine) {
 
 	case MACHINE_VAX:
-		fprintf(f, "\t${CC} -I. -c -S ${COPTS} ");
+		fprintf(f, "\t${CC} -c -S ${COPTS} ");
 		fprintf(f, "../%s/swapgeneric.c\n", machinename);
 		fprintf(f, "\t${C2} swapgeneric.s | ");
 		fprintf(f, "../%s/inline/inline", machinename);
@@ -604,10 +577,6 @@ do_swapspec(f, name)
 		fprintf(f, "\trm -f swapgeneric.s\n\n");
 		break;
 
-	case MACHINE_SUN:
-		fprintf(f, "\t${CC} -I. -c -O ${COPTS} ");
-		fprintf(f, "../%s/swapgeneric.c\n\n", machinename);
-		break;
 	}
 }
 
