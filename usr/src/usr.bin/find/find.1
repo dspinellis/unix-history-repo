@@ -1,6 +1,6 @@
-.\"	@(#)find.1	4.1 (Berkeley) %G%
+.\"	@(#)find.1	5.1 (Berkeley) %G%
 .\"
-.TH FIND 1 
+.TH FIND 1  "18 January 1983"
 .AT 3
 .SH NAME
 find \- find files
@@ -65,12 +65,12 @@ is
 where
 .I c
 is
-.B "b, c, d"
+.B "b, c, d, f"
 or
-.B f
+.B l
 for
 block special file, character special file,
-directory or plain file.
+directory, plain file, or symbolic link.
 .TP
 .BR \-links " n"
 True if the file has
@@ -167,6 +167,6 @@ find / \\( \-name a.out \-o \-name '*.o' \\)
 .br
 /etc/group
 .SH "SEE ALSO"
-sh(1), test(1), filsys(5)
+sh(1), test(1), fs(5)
 .SH BUGS
 The syntax is painful.
