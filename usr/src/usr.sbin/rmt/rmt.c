@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rmt.c	4.5 (Berkeley) 84/12/19";
+static char sccsid[] = "@(#)rmt.c	4.6 (Berkeley) 85/01/23";
 #endif
 
 /*
@@ -131,8 +131,10 @@ top:
 		  if (ioctl(tape, MTIOCGET, (char *)&mtget) < 0)
 			goto ioerror;
 		  rval = sizeof (mtget);
+		  (void) sprintf(resp, "A%d\n", rval);
+		  (void) write(1, resp, strlen(resp));
 		  (void) write(1, (char *)&mtget, sizeof (mtget));
-		  goto respond;
+		  goto top;
 		}
 
 	default:
