@@ -1,4 +1,4 @@
-/*	initgroups.c	4.2	83/02/10	*/
+/*	initgroups.c	4.2	83/02/15	*/
 
 /*
  * initgroups
