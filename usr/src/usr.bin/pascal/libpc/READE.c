@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)READE.c 1.5 %G%";
+static char sccsid[] = "@(#)READE.c 1.6 %G%";
 
 #include "h00vars.h"
 
@@ -33,8 +33,6 @@ READE(curfile, name)
 	}
 	if (retval == 0)
 		goto ename;
-	curfile->funit &= ~EOLN;
-	curfile->funit |= SYNC;
 	for (len = 0; len < NAMSIZ && namebuf[len]; len++)
 		/* void */;
 	len++;
