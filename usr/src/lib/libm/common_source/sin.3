@@ -1,7 +1,5 @@
-.\"	@(#)sin.3	6.1 (Berkeley) %G%
-.\"
-.TH SIN 3M  ""
-.AT 3
+.TH SIN 3M  "8 May 1985"
+.UC 4
 .SH NAME
 sin, cos, tan, asin, acos, atan, atan2 \- trigonometric functions
 .SH SYNOPSIS
@@ -14,6 +12,9 @@ sin, cos, tan, asin, acos, atan, atan2 \- trigonometric functions
 .B double cos(x)
 .B double x;
 .PP
+.B double tan(x)
+.B double x;
+.PP
 .B double asin(x)
 .B double x;
 .PP
@@ -23,16 +24,14 @@ sin, cos, tan, asin, acos, atan, atan2 \- trigonometric functions
 .B double atan(x)
 .B double x;
 .PP
-.B double atan2(x, y)
-.B double x, y;
+.B double atan2(y, x)
+.B double y, x;
 .fi
 .SH DESCRIPTION
 .I Sin, cos
 and
 .I tan
 return trigonometric functions of radian arguments.
-The magnitude of the argument should be checked
-by the caller to make sure the result is meaningful.
 .PP
 .I Asin
 returns the arc sin in the range \-\(*p/2 to \(*p/2.
@@ -46,22 +45,39 @@ returns the arc tangent of
 in the range \-\(*p/2 to \(*p/2.
 .PP
 .I Atan2
-returns the arc tangent of
-.I x/y
-in the range \-\(*p to \(*p.
+returns
+.I atan(y/x)
+if
+.I x
+> 0,
+.br
+.I sign(y)*(\(*p \- atan(|y/x|))
+if
+.I x
+< 0,
+.br
+.I zero
+if
+.I x
+= 
+.I y
+= 0 and
+.br
+.I sign(y)*\(*p/2
+if
+.I x
+= 0 but
+.I y
+not equal to 0.
+.SH SEE ALSO
+intro(3M)
 .SH DIAGNOSTICS
 Arguments of magnitude greater than 1 cause
 .I asin
 and
 .I acos
-to return value 0;
+to return the reserved operand on the VAX;
 .I errno
-is set to EDOM.  The value of
-.I tan
-at its singular points is a huge number, and
-.I errno
-is set to ERANGE.
-.SH BUGS
-The value of
-.I tan
-for arguments greater than about 2**31 is garbage.
+is set to EDOM.
+.SH AUTHOR
+Robert P. Corbett, W. Kahan, Stuart McDonald, Kwok-Choi Ng

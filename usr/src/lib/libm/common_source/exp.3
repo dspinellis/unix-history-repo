@@ -1,12 +1,16 @@
-.\"	@(#)exp.3	6.1 (Berkeley) %G%
-.\"
-.TH EXP 3M  ""
-.AT 3
+.TH EXP 3M  "8 May 1985"
+.UC 4
 .SH NAME
-exp, log, log10, pow, sqrt \- exponential, logarithm, power, square root
+exp, log, log10, pow \- exponential, logarithm, power
 .SH SYNOPSIS
 .nf
 .B #include <math.h>
+.PP
+.B double E(x)
+.B double x;
+.PP
+.B double L(x)
+.B double x;
 .PP
 .B double exp(x)
 .B double x;
@@ -19,11 +23,22 @@ exp, log, log10, pow, sqrt \- exponential, logarithm, power, square root
 .PP
 .B double pow(x, y)
 .B double x, y;
-.PP
-.B double sqrt(x)
-.B double x;
 .fi
 .SH DESCRIPTION
+.I E
+returns
+.I exp(x)\-1
+accurately (even if
+.I x
+is close to 0).
+.PP
+.I L
+returns
+.I log(1+x)
+accurately (even if
+.I x
+is close to 0).
+.PP
 .I Exp
 returns the exponential function of 
 .I x.
@@ -37,37 +52,27 @@ returns the base 10 logarithm.
 .I Pow
 returns
 .I  x\u\s8y\s10\d.
-.PP
-.I Sqrt
-returns the square root of 
-.I x.
 .SH SEE ALSO
-hypot(3M),
-sinh(3M),
 intro(3M)
 .SH DIAGNOSTICS
-.I Exp
+.I E,
+.I L,
+.I exp
 and
 .I pow
-return a huge value when the correct value would overflow;
+return the reserved operand on the VAX when the correct value would overflow;
 .I errno
 is set to ERANGE.
 .I Pow
-returns 0 and sets
+returns the reserved operand on the VAX and sets
 .I errno
-to EDOM when the first argument is negative and the second is non-integral or
-when first argument is 0 and the second is less than or equal to 0.
+to EDOM when the first argument is negative and the second is non-integral.
 .PP
 .I Log
-returns 0 when
+returns the reserved operand on the VAX when
 .I x
 is zero or negative;
 .I errno
 is set to EDOM.
-.PP
-.I Sqrt
-returns 0 when 
-.I x
-is negative;
-.I errno
-is set to EDOM.
+.SH AUTHOR
+Kwok-Choi Ng

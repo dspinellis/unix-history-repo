@@ -1,11 +1,5 @@
-.\" Copyright (c) 1983 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
-.\"
-.\"	@(#)math.3	6.1 (Berkeley) %G%
-.\"
-.TH INTRO 3M ""
-.UC 5
+.TH INTRO 3M "8 May 1985"
+.UC 4
 .SH NAME
 intro \- introduction to mathematical library functions
 .SH DESCRIPTION
@@ -19,32 +13,44 @@ Declarations for these functions may be obtained from the include file
 .SH "LIST OF FUNCTIONS"
 .sp 2
 .nf
-.ta \w'atan2'u+2n +\w'gamma.3m'u+10n
+.ta \w'copysign'u+2n +\w'gamma.3m'u+10n
 \fIName\fP	\fIAppears on Page\fP	\fIDescription\fP
-.ta \w'atan2'u+4n +\w'gamma.3m'u+4n
+.ta \w'copysign'u+4n +\w'gamma.3m'u+4n
 .sp 5p
+E	exp.3m	exponential, logarithm, power
+L	exp.3m	exponential, logarithm, power
 acos	sin.3m	trigonometric functions
+acosh	asinh.3m	inverse hyperbolic functions
 asin	sin.3m	trigonometric functions
+asinh	asinh.3m	inverse hyperbolic functions
 atan	sin.3m	trigonometric functions
+atanh	asinh.3m	inverse hyperbolic functions
 atan2	sin.3m	trigonometric functions
-cabs	hypot.3m	Euclidean distance
+cabs	hypot.3m	Euclidean distance, complex absolute value
+cbrt	sqrt.3m	square root, cube root
 ceil	floor.3m	absolute value, floor, ceiling functions
+copysign	ieee.3m	copysign, remainder, exponent manipulations
 cos	sin.3m	trigonometric functions
 cosh	sinh.3m	hyperbolic functions
-exp	exp.3m	exponential, logarithm, power, square root
+drem	ieee.3m	copysign, remainder, exponent manipulations
+erf	erf.3m	error functions
+erfc	erf.3m	error functions
+exp	exp.3m	exponential, logarithm, power
 fabs	floor.3m	absolute value, floor, ceiling functions
 floor	floor.3m	absolute value, floor, ceiling functions
 gamma	gamma.3m	log gamma function
-hypot	hypot.3m	Euclidean distance
+hypot	hypot.3m	Euclidean distance, complex absolute value
 j0	j0.3m	bessel functions
 j1	j0.3m	bessel functions
 jn	j0.3m	bessel functions
-log	exp.3m	exponential, logarithm, power, square root
-log10	exp.3m	exponential, logarithm, power, square root
-pow	exp.3m	exponential, logarithm, power, square root
+log	exp.3m	exponential, logarithm, power
+logb	ieee.3m	copysign, remainder, exponent manipulations
+log10	exp.3m	exponential, logarithm, power
+pow	exp.3m	exponential, logarithm, power
+scalb	ieee.3m	copysign, remainder, exponent manipulations
 sin	sin.3m	trigonometric functions
 sinh	sinh.3m	hyperbolic functions
-sqrt	exp.3m	exponential, logarithm, power, square root
+sqrt	sqrt.3m	square root, cube root
 tan	sin.3m	trigonometric functions
 tanh	sinh.3m	hyperbolic functions
 y0	j0.3m	bessel functions
