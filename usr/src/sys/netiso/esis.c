@@ -24,7 +24,7 @@ SOFTWARE.
 /*
  * ARGO Project, Computer Sciences Dept., University of Wisconsin - Madison
  */
-/*	@(#)esis.c	7.9 (Berkeley) %G% */
+/*	@(#)esis.c	7.10 (Berkeley) %G% */
 #ifndef lint
 static char *rcsid = "$Header: esis.c,v 4.10 88/09/15 18:57:03 hagens Exp $";
 #endif
@@ -451,7 +451,7 @@ int							nsellen;
 	    if (b > buflim) {esis_stat.es_toosmall++; goto bad;}}
 #define ESIS_NEXT_OPTION(b)	{ b += (2 + b[1]); \
 	    if (b > buflim) {esis_stat.es_toosmall++; goto bad;}}
-int ESHonly = 1;
+int ESHonly = 0;
 /*
  
 /*
@@ -554,7 +554,7 @@ struct mbuf		*m;	/* esh pdu */
 struct snpa_hdr	*shp;	/* subnetwork header */
 {
 	struct esis_fixed	*pdu = mtod(m, struct esis_fixed *);
-	u_short				ht;					/* holding time */
+	u_short				ht, newct;			/* holding time */
 	struct iso_addr		*nsap; 				/* Network Entity Title */
 	register u_char		*buf = (u_char *) (pdu + 1);
 	register u_char		*buflim = pdu->esis_hdr_len + (u_char *)pdu;
@@ -576,7 +576,12 @@ struct snpa_hdr	*shp;	/* subnetwork header */
 		case ESISOVAL_ESCT:
 			if (buf[1] != 2)
 				goto bad;
-			CTOH(buf[2], buf[3], esis_config_time);
+			CTOH(buf[2], buf[3], newct);
+			if (esis_config_time != newct) {
+				untimeout(esis_config,0);
+				esis_config_time = newct;
+				esis_config();
+			}
 			break;
 		
 		default:
