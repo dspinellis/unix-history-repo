@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1982, 1986 Regents of the University of California.
  *
- *	@(#)uipc_usrreq.c	7.27 (Berkeley) %G%
+ *	@(#)uipc_usrreq.c	7.28 (Berkeley) %G%
  */
 
 #include "param.h"
