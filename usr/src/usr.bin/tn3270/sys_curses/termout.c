@@ -86,6 +86,23 @@ extern int	tin, tout;		/* file descriptors */
 #include "disp_asc.out"
 
 
+
+/*
+ * init_screen()
+ *
+ * Initialize variables used by screen.
+ */
+
+void
+init_screen()
+{
+    bellwinup = 0;
+#if	defined(SLOWSCREEN)
+    inHighlightMode = 0;
+#endif	/* defined(SLOWSCREEN) */
+}
+
+
 /* OurExitString - designed to keep us from going through infinite recursion */
 
 static void
