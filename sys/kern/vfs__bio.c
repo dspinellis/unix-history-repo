@@ -45,7 +45,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	$Id: vfs__bio.c,v 1.15 1994/01/31 05:57:45 davidg Exp $
+ *	$Id: vfs__bio.c,v 1.16 1994/03/19 22:19:11 wollman Exp $
  */
 
 #include "param.h"
@@ -593,6 +593,10 @@ biowait(register struct buf *bp)
 void
 biodone(register struct buf *bp)
 {
+#ifndef NOBOUNCE
+	if (bp->b_flags & B_BOUNCE)
+		vm_bounce_free(bp);
+#endif
 	bp->b_flags |= B_DONE;
 
 	if ((bp->b_flags & B_READ) == 0)  {

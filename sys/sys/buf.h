@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)buf.h	7.11 (Berkeley) 5/9/90
- *	$Id: buf.h,v 1.6 1993/12/19 00:55:11 wollman Exp $
+ *	$Id: buf.h,v 1.7 1993/12/22 12:51:48 davidg Exp $
  */
 
 #ifndef _SYS_BUF_H_
@@ -107,6 +107,7 @@ struct buf
 	struct	ucred *b_wcred;		/* ref to write credendtials */
 	int	b_dirtyoff;		/* offset in buffer of dirty region */
 	int	b_dirtyend;		/* offset of end of dirty region */
+	caddr_t	b_savekva;		/* saved kva for transfer while bouncing */
 	caddr_t	b_saveaddr;		/* original b_addr for PHYSIO */
 	void *	b_driver1;		/* for private use by the driver */
 	void *	b_driver2;		/* for private use by the driver */
@@ -200,6 +201,7 @@ extern int physio(void (*)(struct buf *), int, struct buf *, int, int,
 #define	B_DRIVER2      0x2000000	/* bits for the driver to use */
 #define	B_DRIVER4      0x3000000	/* bits for the driver to use */
 #define	B_DRIVER8      0x4000000	/* bits for the driver to use */
+#define B_BOUNCE       0x8000000	/* bounce buffer flag */
 
 /*
  * Insq/Remq for the buffer hash lists.
