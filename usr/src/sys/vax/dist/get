@@ -4,7 +4,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)get	4.22 (Berkeley) %G%
+#	@(#)get	4.23 (Berkeley) %G%
 #
 # Shell script to build a mini-root file system
 # in preparation for building a distribution tape.
@@ -95,7 +95,7 @@ sync
 fsck /dev/r${disk}a
 echo 'Root filesystem extracted'
 echo
-echo 'If this is a 8600, update the console rl02'
+echo 'If this is an 8650 or 8600, update the console rl02'
 echo 'If this is a 780 or 785, update the floppy'
 echo 'If this is a 730, update the cassette'
 EOF
