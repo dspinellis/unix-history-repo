@@ -1,0 +1,33 @@
+.\" Copyright (c) 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)dumplfs.8	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt DUMPLFS 8
+.Os BSD 4.4
+.Sh NAME
+.Nm dumplfs
+.Nd dump file system information
+.Sh SYNOPSIS
+.Nm dumplfs
+.Op Ar filesys No \&| Ar device
+.Sh DESCRIPTION
+.Nm Dumplfs
+prints out the file system layout information for the
+LFS file system or special device specified.
+The listing is very long and detailed.
+This command is useful mostly for finding out certain file system
+information such as the file system block size.
+.Sh SEE ALSO
+.Xr fs 5 ,
+.Xr disktab 5 ,
+.Xr disklabel 8 ,
+.Xr newlfs 8 ,
+.Sh HISTORY
+The
+.Nm dumplfs
+command appeared in
+.Bx 4.4 .

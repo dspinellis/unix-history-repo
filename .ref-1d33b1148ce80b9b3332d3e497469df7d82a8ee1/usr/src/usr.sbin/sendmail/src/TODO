@@ -1,0 +1,275 @@
+(Version 8.39 of %G%)
+
+==============================================================================
+For Release 8.7:
+  - another pass through Sun changes
+  - another pass through documentation
+  - change dotted users to plussed users
+  - rip out MIME (on compile flag)
+==============================================================================
+
+Key:
+  X -- extension (user visible change)
+  B -- bug fix
+  S -- security fix
+  E -- enhancement to existing algorithm
+
+
+E ****	forward.5 man page.
+
+X ****	Multiple queues.
+
+X ****	Merge Sun changes.  [8.7]
+
+E ****	Fix parseaddr to return a dummy mailer with QBADADDR set for
+	all cases except null input; change calls to be more sceptical
+	about the return value, checking this bit instead of just
+	checking for == NULL.  (Eric Wassenaar)  [8.7]
+
+X ****	Run time configurable locking -- e.g., compile in HASFLOCK and
+	HASLOCKF, and then choose at runtime between these.
+
+B ****	Aliases with .REDIRECT fail during newaliases if the "n" flag
+	is given.  Problem is, sometimes you want them to, sometimes
+	you don't.  Perhaps two flavors of "error" mailer?
+
+B ****	Calls to gethostbyname with a trailing dot fail if you are
+	not running DNS.
+
+X ****	Add uucp-bang mailer that strips off any domain name from
+	the envelope recipient address first; this is for use in
+	mailer table entries.
+
+X ****	"quote" map (inverse of dequote).  Lets you turn node::user
+	into "node::user"@DECNET.gateway
+
+E ****	Change userdb code to use underlying maps, at least for
+	:mailname; this lets people use NIS to supply generics
+	information.  (Or should the generics code just be broken
+	out into the config file?)
+
+? ****	Should $( [1.2.3.4] $) convert the address to a name?
+
+X ***	Multiple queue runners.
+
+E ***	Have recipient lines rewritten by the user database.
+
+E ***	Arrange to run queue jobs as the owner of that queue file.  This
+	probably requires forcing a fork in order to be able to completely
+	restore the uid/gid portably without leaking out root privileges.
+
+E ***	Long term host status -- store host status on disk for sharing
+	between runs.
+
+X ***	Extend I option to allow setting of retry and timeout values.
+	drl@vuse.vanderbilt.edu (David R. Linn).
+
+X ***	Total connection cache lifespan timeout -- a way to give a
+	timeout on connections regardless of whether they are active
+	or not.  For single threaded servers such as Microsoft SMTP
+	gateway.  Douglas Anderson <dlander@afterlife.ncsc.mil>.
+
+X ***	Create a macro that has message size.
+	Peter Wemm <peter@DIALix.oz.au>
+
+E ***	Dynamically allocate MAXNAME buffers for headers.
+
+E ***	Dynamically allocate "line" buffer in readaliases().
+
+X ***	Add -P to set precedence (e.g., -Pbulk). [8.8]  (BCX)
+
+E ***	Don't send ErrMsgFile to postmaster bounces.  (Josh Smith,
+	josh@osiris.ac.hmc.edu).
+
+E ***	Have daemons that start up check the alias database for
+	correctness and auto-rebuild if necessary.  This is to handle
+	the case of a system crash during an alias database rebuild.
+
+E ***	Eliminate E qf line and e_errorqueue; use e_errorsto a la
+	e_receiptto.  This simplifies and gives symmetry.  (Eric
+	Wassenaar)
+
+X ***	DECNET_RELAY support in configs.
+
+X ***	-wN command line flag to set the width of mailq output.
+	(Allan Johannesen)
+
+E ***	Move mailertable lookup after UUCP-specific class checks?
+	(Kimmo Suominen <kim@tac.nyc.ny.us>)
+
+E ***	Users in more than one list with different owners get duplicate
+	deliveries -- maybe just assign them arbitrarily to one
+	envelope or the other?
+
+E ***	Mailer flag to turn off MX lookups.
+
+E **	Hooks for "mail status daemon" -- send dgrams to a WKS that will
+	announce when jobs are created/destroyed.  Someone needs to write
+	the daemon though....
+
+X **	Mailer timeout (to handle things like local mailers that hang).
+	Perhaps a per-mailer value?
+
+E **	If you get a connection from a host for which you have queued
+	mail, deliver everything to that host.  Intended for dialup SLIP
+	style connections.
+
+X **	Rewriting rules based on incoming mailer.
+
+X **	Have a ruleset (6?) that gets both sender and recipient
+	addresses to check compatibility.  Can you do enough interesting
+	things with this?
+
+X **	Make MAXBADCOMMANDS run time configurable.
+
+E **	Allow mailertable entries of the form ``error:message''.
+
+X **	Have .forward files re-queue if the home directory isn't
+	accessible?  On some option...
+	(Q.G.Campbell@newcastle.ac.uk)
+
+X **	Have local delivery queue if NIS is down?  On some option...
+	(Q.G.Campbell@newcastle.ac.uk)
+
+E **	Have nullclient configuration resolve local names to the local
+	mailer and then redirect them in ruleset 5; this allows you to
+	redirect root differently depending on the client.  It's not
+	clear this is really a good idea though.
+
+E **	Move CurHostAddr into mci struct, and make CurMCI variable
+	point to this, so that logging will give the correct address
+	instead of (0) for cached connections.  Motonori Nakamura.
+
+X **	Allow use of a generalized network service for aliasing?
+	How would the protocol be defined?
+	James Gritton <gritton@byu.edu>.
+
+E **	Make "local configuration error" a temporary failure?
+	(add EX_CONFIG to the markfailure list)
+
+X **	(sigh) BSMTP.
+
+E **	Change listen() high-load backoff to accept and issue a 4xx
+	message so that it responds more quickly.
+
+B **	Commas in NAME envariable cause problems (Peter Wan
+	<peter@cc.gatech.edu>).  Merge with suggestions to use
+	MIME-format for 8-bit characters?
+
+E **	Save address information that comes back as the "additional
+	records" part of an MX lookup, to avoid additional name server
+	attempts.  If there is an MX record without an additional A
+	record, delete it (this avoids a problem with misconfigured
+	DNS situations).
+
+X **	Allow a way to extend the $Z macro with local configuration
+	information.
+
+X **	Allow $x in -bt mode to expand macro "x".  (BCX)  [8.8]
+
+X **	Allow /address in -bt mode to expand address through ruleset 0,
+	aliases, etc. and display results.  [8.8]
+
+X **	"R mailer address" in -bt mode does remotename on address.
+
+E **	Adjust "infinite loop in rule" code to handle entire ruleset
+	(Code from Michael Corrigan).
+
+E **	Allow :include: from command line (not SMTP) to assist in
+	"personal list" management -- i.e., creating lists that
+	cannot be EXPNed.
+
+X **	Database (keyed lookup) auto-rebuild.
+
+X **	Find a good test suite and include in the distribution.
+
+S **	You can use symbolic links to point into protected directories.
+	(AEJ)
+
+X **	Extend OI to allow separate settings for canonification, MX, and A
+	lookups.  [8.8?]
+
+X **	Add $!x class to match any number of words not in class x. (KRE)
+
+X **	LOCAL_RULE_5 (Spencer Sun, spencer@phoenix.Princeton.EDU)
+
+X **	Some way to diddle resolver flags on a per-lookup basis, such
+	as a flag to the map declaration.  (Rick McCarty)
+	- Is this really a good idea?  DNSRCH can be turned off by
+	  putting a dot at the end.  AAONLY?
+
+X **	Extend makemap to "gather" values -- i.e., merge entries that
+	have the same keys. [8.8]  (BCX)
+
+E **	Allow error messages on individual addresses in the qf file.
+	(BCX)
+
+X **	User database extensions for mailing lists:
+	list:precedence -- Precedence: value for new message
+	list:envelopefrom -- envelope "from" value for new message
+	others?  [8.8]
+
+X **	Command line switch to set precedence (for mailing list
+	generation).  (BCX)
+
+B **	Return-Path: header should have <> added if not already there.
+
+X **	Add heuristic to determine if other end is a sendmail; use
+	that to decide whether or not to honor F=I mailer flag.
+	[der Mouse <mouse@collatz.mcrcim.mcgill.edu>]
+
+X **	Automatically drop into MIME mode if you have a full name
+	with 8-bit characters.  See envelope.c 8.19.1.1 and util.c
+	8.17.1.1.  From Anders Ellefsrud <anders@ifi.uio.no>.
+
+X **	-b? flag to read a header and show you what it will look like
+	after all rewriting for an indicated address.
+
+E **	Log $u in logsender() (for=<someaddress>).
+
+B **	Include SOCKADDR in MCI struct for logging (currently gives
+	a sockaddr of zero when printing from the cache).
+
+X **	Allow option to set the characters that are autoquoted in
+	addresses?
+
+X **	Substring map class.
+
+X *	Map that does MB/MR lookups.  Rick McCarty <mccarty@io.com>.
+
+X *	Allow $> anywhere in RHS.  John Boeske <jboeske@ualberta.ca>.
+
+X *	-V flag to print state of all (?) compilation flags.
+
+X *	Handle Expires: header field (if still in queue).
+
+X *	WIN/3B support (non-atomic rename, no h_addr_list, others?)
+	(Bruce Lilly <blilly!bruce@uu.psi.com>)
+
+X *	Sun YBTS daemon uses -ba.  [Martin Kiff <MGK@newton.npl.co.uk>]
+
+B *	EXPN adds @domain to all mailers, including prog.  Is this right?
+	[Bob Henry]
+
+B *	EXPN adds @localhost instead of @$M.  [Pel Emanuelsson]
+
+E *	Change body put code to time out around individual puts.  This will
+	make the timeout algorithm more responsive and more resilient.
+	Unfortunately, it's also a pain in the butt.
+
+X *	Some way to relay unfound local users to another site.
+
+X *	Disable all default RW sets except mailer-specific?
+
+
+-------------------------------------------------------------------------------
+
+IDA Features that have been requested:
+
+* USERMAILER
+
+* LOCAL_MX_HANDLER
+
+* NIS_MAILHOST
+
+* GENERICFROM

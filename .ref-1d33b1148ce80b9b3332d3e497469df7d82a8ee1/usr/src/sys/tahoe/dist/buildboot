@@ -1,0 +1,47 @@
+#!/bin/sh -
+#
+# Copyright (c) 1988, 1990 The Regents of the University of California.
+# All rights reserved.
+#
+# %sccs.include.redist.sh%
+#
+#	@(#)buildboot	1.7 (Berkeley) %G%
+#
+
+if [ X$boot = X ]
+then
+	boot=dk4a		# partition to build bootstrap FS on
+fi
+if [ X$boottype = X ]
+then
+	boottype=xfd		# type of ${boot} partition
+fi
+bootmnt=/tmp/mini		# mount point
+DISTROOT=/nbsd			# place to get programs from
+
+date
+umount /dev/${boot}
+newfs -s 1500 ${boot} ${boottype}
+fsck /dev/r${boot}
+
+mkdir ${bootmnt};
+mount /dev/${boot} ${bootmnt}
+
+cp -p $DISTROOT/stand/copy ${bootmnt}
+cp -p $DISTROOT/boot ${bootmnt}
+
+if [ X$HCX9 != X ]
+then
+	# HCX-9 programs
+	(cd $DISTROOT && cp -p fpevent fppwcs fppwcs_dual hdcwcs ${bootmnt})
+	(cd $DISTROOT && cp -p start_fpp load_diags wcs wcs_dual ${bootmnt})
+else
+	# 6/32, HCX-7, etc. programs
+	cp -p $DISTROOT/stand/vdformat ${bootmnt}
+	(cd $DISTROOT && cp -p wcs fppwcs poc poc1 poc2 fppoc ${bootmnt})
+fi
+
+sync
+umount /dev/${boot}
+fsck /dev/r${boot}
+date

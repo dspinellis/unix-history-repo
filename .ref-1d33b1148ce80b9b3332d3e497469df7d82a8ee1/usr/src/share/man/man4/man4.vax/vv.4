@@ -1,0 +1,113 @@
+.\" Copyright (c) 1983, 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)vv.4	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt VV 4 vax
+.Os BSD 4.2
+.Sh NAME
+.Nm vv
+.Nd Proteon proNET 10 Megabit ring
+.Sh SYNOPSIS
+.Cd "device vv0 at uba0 csr 0161000 vector vvrint vvxint"
+.Sh DESCRIPTION
+The
+.Nm vv
+interface provides access to a 10 Mb/s Proteon
+.Tn proNET
+ring network.
+.Pp
+The network address of the interface must be specified with an
+an
+.Dv SIOCSIFADDR
+.Xr ioctl 2
+before data can be transmitted or received.
+It is only permissible to change the network address while the
+interface is marked
+.Dq down .
+.Pp
+The host's hardware address is discovered by putting the interface in
+digital loopback mode (not joining the ring) and sending a broadcast
+packet from which the hardware address is extracted.
+.Pp
+Transmit timeouts are detected through use of a watchdog routine.
+Lost input interrupts are checked for when packets are sent out.
+.Pp
+If the installation is running
+.Tn CTL
+boards which use the old broadcast
+address of
+.Ql 0
+instead of the new address of
+.Ql 0xff ,
+the define
+.Dv OLD_BROADCAST
+should be specified in the driver.
+.Pp
+The driver can use
+.Dq trailer
+encapsulation to minimize copying
+data on input and output.
+This may be disabled, on a per-interface basis,
+by setting the
+.Dv IFF_NOTRAILERS
+flag with an
+.Dv SIOCSIFFLAGS 
+.Xr ioctl .
+.Sh DIAGNOSTICS
+.Bl -diag
+.It vv%d: host %d.
+The software announces the host
+address discovered during autoconfiguration.
+.Pp
+.It vv%d: can't initialize.
+The software was unable to
+discover the address of this interface, so it deemed
+"dead" will not be enabled.
+.Pp
+.It vv%d: error vvocsr=%b.
+The hardware indicated an error on
+the previous transmission.
+.Pp
+.It vv%d: output timeout.
+The token timer has fired and the
+token will be recreated.
+.Pp
+.It vv%d: error vvicsr=%b.
+The hardware indicated an error
+in reading a packet off the ring.
+.Pp
+.It en%d: can't handle af%d.
+The interface was handed
+a message with addresses formatted in an unsuitable address
+family; the packet was dropped.
+.Pp
+.It vv%d: vs_olen=%d.
+The ring output routine has been
+handed a message with a preposterous length.  This results in
+an immediate 
+.Em panic: vs_olen .
+.El
+.Sh SEE ALSO
+.Xr netintro 4 ,
+.Xr inet 4
+.Sh HISTORY
+The
+.Nm
+driver appeared in
+.Bx 4.2 .
+.Sh BUGS
+The encapsulation of trailer packets in the
+.Bx 4.2
+version of this driver
+was incorrect (the packet type was in
+.Tn VAX
+byte order).
+As a result, the trailer encapsulation in this version is not compatible
+with the
+.Bx 4.2
+.Tn VAX
+version.

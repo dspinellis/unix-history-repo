@@ -1,0 +1,82 @@
+.\" Copyright (c) 1986, 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)tb.4	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt TB 4 vax
+.Os BSD 4.3
+.Sh NAME
+.Nm tb
+.Nd line discipline for digitizing devices
+.Sh SYNOPSIS
+.Cd pseudo-device tb
+.Sh DESCRIPTION
+This line discipline provides a polled interface to many common
+digitizing devices which are connected to a host through a serial line.
+When these devices stream data at high speed, the use of the
+line discipline is critical in minimizing the number of samples
+that would otherwise be lost due to buffer exhaustion in the
+.Xr tty 4
+handler.
+.Pp
+The line discipline is enabled by a sequence:
+.Bd -literal -offset indent
+#include <sys/tablet.h>
+int ldisc = TBLDISC, fildes; ...
+ioctl(fildes, TIOCSETD, &ldisc);
+.Ed
+.Pp
+A typical application program then polls the digitizing device by
+reading a binary data structure which contains: the current X and
+Y positions (in the device coordinate space),
+up-down status of the buttons or pen stylus,
+proximity information (when available), and a count
+of the number of samples received from the input device
+since it was opened.  In addition, devices such as the
+.Tn GTCO
+append tilt and pressure information to the end of
+the aforementioned structure.  For the Polhemus 3-D digitizer
+the structure read is completely different. Refer to the
+include file for a complete description.
+.Pp
+While in tablet mode, normal teletype input and output functions take place.
+Thus, if an 8 bit output data path is desired, it is necessary
+to prepare the output line by putting it into
+.Tn RAW
+mode using
+.Xr ioctl 2 .
+This must be done
+.Em before
+changing the discipline with
+.Dv TIOCSETD ,
+as most
+.Xr ioctl 2
+calls are disabled while in tablet line-discipline mode.
+.Pp
+The line discipline supports
+.Xr ioctl 2
+requests to get/set the operating mode, and to get/set the tablet type
+and operating mode by
+.Em or Ns -ing
+the two values together.
+.Pp
+The line discipline supports digitizing devices which are
+compatible with Hitachi,
+.Tn GTCO ,
+or Polhemus protocol formats.
+For Hitachi there are several formats with that used in the
+newer model
+.Tn HDG-1111B
+the most common.
+.Sh DIAGNOSTICS
+None.
+.Sh SEE ALSO
+.Xr tty 4
+.Sh HISTORY
+The
+.Nm
+interface appeared in
+.Bx 4.3 .

@@ -1,0 +1,73 @@
+.\" Copyright (c) 1993, 1994
+.\"     The Regents of the University of California.  All rights reserved.
+.\" All rights reserved.
+.\"
+.\" This code is derived from software donated to Berkeley by
+.\" Christopher G. Demetriou.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"     @(#)mount_cd9660.8	8.3 (Berkeley) %G%
+.Dd 
+.Dt MOUNT_CD9660 8
+.Os BSD 4
+.Sh NAME
+.Nm mount_cd9660
+.Nd mount an ISO-9660 filesystem
+.Sh SYNOPSIS
+.Nm mount_cd9660
+.Op Fl egr
+.Op Fl o Ar options
+.Ar special | node
+.Sh DESCRIPTION
+The
+.Nm mount_cd9660
+command attaches the ISO-9660 filesystem residing on the device
+.Pa special
+to the global filesystem namespace at the location indicated by
+.Pa node .
+This command is normally executed by
+.Xr mount 8
+at boot time.
+.Pp
+The options are as follows:
+.Bl -tag -width indent
+.It Fl e
+Enable the use of extended attributes.
+.It Fl g
+Do not strip version numbers on files.
+(By default, if there are files with different version numbers on the disk,
+only the last one will be listed.)
+In either case, files may be opened without explicitly stating a
+version number.
+.It Fl o
+Options are specified with a
+.Fl o
+flag followed by a comma separated string of options.
+See the
+.Xr mount 8
+man page for possible options and their meanings.
+.It Fl r
+Do not use any Rockridge extensions included in the filesystem.
+.El
+.Sh SEE ALSO
+.Xr mount 2 ,
+.Xr unmount 2 ,
+.Xr fstab 5 ,
+.Xr mount 8
+.Sh BUGS
+The cd9660 filesystem does not support the original "High Sierra"
+("CDROM001") format.
+.Pp
+POSIX device node mapping is currently not supported.
+.Pp
+Version numbers are not stripped if Rockridge extensions are in use.
+In this case, accessing files that don't have Rockridge names without
+version numbers gets the one with the lowest version number and not
+the one with the highest.
+.Pp
+There is no ECMA support.
+.Sh HISTORY
+The
+.Nm mount_cd9660
+utility first appeared 4.4BSD.

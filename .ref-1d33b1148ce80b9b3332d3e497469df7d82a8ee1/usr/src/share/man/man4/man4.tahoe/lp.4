@@ -1,0 +1,33 @@
+.\" Copyright (c) 1986, 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)lp.4	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt LP 4 tahoe
+.Os BSD 4.3t
+.Sh NAME
+.Nm lp
+.Nd line printer
+.Sh SYNOPSIS
+device lp on the
+.Tn VIOC-P
+.Sh DESCRIPTION
+The
+.Nm lp
+driver provides an interface to 4 serial
+printer lines.
+.Sh FILES
+.Bl -tag -width /dev/lpxx
+.It Pa /dev/lp
+.El
+.Sh SEE ALSO
+.Xr lpr 1 ,
+.Xr vioc 4
+.Sh HISTORY
+The
+.Nm lp
+driver appeared in
+.Bx 4.3 tahoe .

@@ -1,0 +1,50 @@
+Script started on Sat Mar 10 15:16:46 1984
+Warning: no access to tty; thus no job control in this shell...
+% ls -l /usr/lib/uucp
+total 506
+-rw-r--r-- 1 uucp         40 Mar 10 15:13 L-devices
+-rw-r--r-- 1 uucp          0 Mar 10 15:13 L-dialcodes
+-rw-r--r-- 1 uucp        137 Mar 10 15:13 L.cmds
+-rw-r--r-- 1 uucp        206 Mar 10 15:13 L.sys
+-rw-rw-rw- 1 uucp          4 Mar 10 15:13 SEQF
+-rw-r--r-- 1 uucp         38 Mar 10 15:13 USERFILE
+-rwxr-xr-x 1 uucp         10 Mar 10 15:13 disaster.dis
+-rwxr-xr-x 1 uucp      10512 Mar 10 15:13 startuucp.exe
+-rw-r--r-- 1 uucp       2784 Mar 10 15:13 uucico.com
+-rwxr-xr-x 1 uucp     117957 Mar 10 15:13 uucico.exe
+-rwxr-xr-x 1 uucp         42 Mar 10 15:13 uucico.jid
+-rwxr-xr-x 1 uucp      22098 Mar 10 15:13 uuclean.exe
+-rw-r--r-- 1 uucp        238 Mar 10 15:13 uucpclean.com
+-rw-r--r-- 1 uucp        432 Mar 10 15:13 uucpclean.sh
+-rwxr-xr-x 1 uucp      56832 Mar 10 15:13 uucpd.exe
+-rw-r--r-- 1 uucp        234 Mar 10 15:13 uucpmail.com
+-rwxr-xr-x 1 uucp       7285 Mar 10 15:13 uusub.exe
+-rw-r--r-- 1 uucp       2406 Mar 10 15:13 uuxqt.com
+-rwxr-xr-x 1 uucp      31360 Mar 10 15:13 uuxqt.exe
+-rwxr-xr-x 1 uucp         42 Mar 10 15:13 uuxqt.jid
+% ls -l /usr/spool/uucp
+/usr/spool/uucp/C not found
+/usr/spool/uucp/TM not found
+/usr/spool/uucp/D not found
+/usr/spool/uucp/X not found
+total 15
+-rw-rw-rw- 1 uucp        513 Mar 10 02:23 AUDIT
+drwxrwxrwx 1 uucp        512 Mar  9 02:56 D.cims1
+drwxrwxrwx 1 uucp        512 Mar  9 02:56 D.cims1X
+-rw-rw-rw- 1 salkind     174 Mar  8 01:48 ERRLOG
+-rw-rw-rw- 1 system      162 Mar 10 05:28 LOGFILE
+-rw-rw-rw- 1 system        0 Mar 10 03:30 SYSLOG
+drwxrwxrwx 1 uucp        512 Mar  9 02:56 XTMP
+-rw-rw-rw- 1 system     2919 Mar 10 03:30 o.LOGFILE
+-rw-rw-rw- 1 system      649 Mar 10 03:30 o.SYSLOG
+% ls -l /usr/spool/uucppublic
+total 28
+-rw------- 1 uucp        332 Mar  9 05:24 mail.mai
+-rwxr-x--- 1 uucp       2594 Mar 10 14:28 uucico.log
+-rwxr-x--- 1 uucp       2594 Mar 10 11:28 uucico.log.7
+-rwxr-x--- 1 uucp       2168 Mar  9 05:24 uucpmail.log
+-rwxr-x--- 1 uucp        834 Mar  9 00:18 uucpmail.log.1
+-rwxr-x--- 1 uucp       1808 Mar 10 14:28 uuxqt.log
+-rwxr-x--- 1 uucp       1808 Mar 10 11:28 uuxqt.log.10
+% 
+script done on Sat Mar 10 15:18:22 1984

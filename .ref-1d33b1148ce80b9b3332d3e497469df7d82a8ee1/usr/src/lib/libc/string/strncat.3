@@ -1,0 +1,40 @@
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" Chris Torek.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)strncat.3	5.1 (Berkeley) %G%
+.\"
+.TH STRNCAT 3 ""
+.UC 4
+.SH NAME
+strncat \- concatenate strings of limited length
+.SH SYNOPSIS
+.nf
+.ft B
+#include <string.h>
+
+char *
+strncat(char *s, const char *append, size_t count);
+.ft R
+.fi
+.SH DESCRIPTION
+.B Strncat
+appends at most
+.I count
+characters from the null-terminated string
+.I append
+to the end of the null-terminated string
+.IR s ,
+then adds a terminating '\e0'.
+.B Strncat
+returns the pointer
+.IR s .
+.SH SEE ALSO
+strcat(3)
+.SH STANDARDS
+.B Strncat
+conforms to ANSI X3.159-1989 (``ANSI C'').

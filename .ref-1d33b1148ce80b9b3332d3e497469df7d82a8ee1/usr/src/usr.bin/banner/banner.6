@@ -1,0 +1,42 @@
+.\" Copyright (c) 1980, 1993, 1995
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)banner.6	8.2 (Berkeley) %G%
+.\"
+.Dd ""
+.Dt BANNER 6
+.Os
+.Sh NAME
+.Nm banner 
+.Nd print large banner on printer
+.Sh SYNOPSIS
+.Nm banner
+.Op Fl w Ar n
+.Ar message ...
+.Sh DESCRIPTION
+.Nm Banner
+prints a large, high quality banner on the standard output.
+If the message is omitted, it prompts for and reads one line of its
+standard input.
+If
+.Fl w
+is given, the output is changed from a width of 132 to
+.Ar n ,
+suitable for a narrow terminal.
+.Pp
+The output should be printed on paper of the appropriate width,
+with no breaks between the pages.
+.Sh BUGS
+Several ASCII characters are not defined, notably <, >, [, ], \\,
+^, _, {, }, |, and ~.
+Also, the characters ", ', and & are funny looking (but in a useful way.)
+.Pp
+The
+.Fl w
+option is implemented by skipping some rows and columns.
+The smaller it gets, the grainier the output.
+Sometimes it runs letters together.
+.Sh AUTHOR
+Mark Horton

@@ -1,0 +1,58 @@
+.so /usr3/staff/sellgren/BSD/LETTERS/UCHEADERS
+.FH   
+.ND
+.ti +4i
+January 1, 1989
+.ls 1
+.sp 4
+.ce
+\fB\s18Checklist for Hardware/Software 
+.sp 3
+.R
+.ce
+\s11The BSD Networking Software, Release 1 will be used with (check all that
+apply): 
+.sp
+.nr LL 6.5i
+.LP
+.ce
+.B 
+HARDWARE
+.R
+.sp 2
+.IP "_______1." 15
+Minicomputers
+.sp 
+.IP "_______2." 15
+Workstations
+.sp 
+.IP "_______3." 15
+Personal Computers
+.sp
+.IP "_______4." 15
+Standalone systems, embedded controllers
+.sp 2
+.LP
+.ce
+.B
+SOFTWARE
+.R
+.sp 2
+.na
+.IP "_______1." 15
+BSD (versions(s)\l'|5i')
+.sp
+.IP "_______2." 15
+BSD-derived systems (types\l'|5i')
+.sp
+.IP "_______3." 15
+System V (version(s)\l'|5i')
+.sp
+.IP "_______4." 15
+Non-UNIX systems (types\l'|5i')
+.sp
+.IP "_______5." 15
+Others (list:\l'|5i'
+)
+
+

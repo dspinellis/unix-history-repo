@@ -1,0 +1,34 @@
+.\" Copyright (c) 1989, 1993, 1994
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)number.6	8.2 (Berkeley) %G%
+.\"
+.Dd 
+.Dt NUMBER 6
+.Os
+.Sh NAME
+number \- convert Arabic numerals to English
+.Sh SYNOPSIS
+.Nm number
+.Op Fl l
+.Op Ar \&# ...
+.Sh DESCRIPTION
+The
+.Nm number
+utility prints the English equivalent of the number to the standard
+output, with each 10^3 magnitude displayed on a separate line.
+If no argument is specified,
+.Nm number
+reads lines from the standard input.
+.Pp
+The options are as follows:
+.Bl -tag -width Ds
+.It Fl l
+Display the number on a single line.
+.El
+.Sh BUGS
+Although
+.Nm number
+understand fractions, it doesn't understand exponents.

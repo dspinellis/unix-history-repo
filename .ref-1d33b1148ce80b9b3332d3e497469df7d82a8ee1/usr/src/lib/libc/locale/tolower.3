@@ -1,0 +1,62 @@
+.\" Copyright (c) 1989, 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" the American National Standards Committee X3, on Information
+.\" Processing Systems.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)tolower.3	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt TOLOWER 3
+.Os
+.Sh NAME
+.Nm tolower
+.Nd upper case to lower case letter conversion
+.Sh SYNOPSIS
+.Fd #include <ctype.h>
+.Ft int
+.Fn tolower "int c"
+.Sh DESCRIPTION
+The
+.Fn tolower
+function converts an upper-case letter to the corresponding lower-case
+letter.
+.Sh RETURN VALUES
+If the argument is an upper-case letter, the
+.Fn tolower
+function returns the corresponding lower-case letter if there is
+one; otherwise the argument is returned unchanged.
+.\" In the 
+.\" .Em ``C''
+.\" locale,
+.\" .Fn tolower
+.\" maps only the characters for which
+.\" .Xr isupper
+.\" is true to the corresponding characters for which
+.\" .Xr islower
+.\" is true.
+.Sh SEE ALSO
+.Xr isascii 3 ,
+.Xr isalnum 3 ,
+.Xr isalpha 3 ,
+.Xr iscntrl 3 ,
+.Xr isdigit 3 ,
+.Xr isgraph 3 ,
+.Xr islower 3 ,
+.Xr isprint 3 ,
+.Xr ispunct 3 ,
+.Xr isspace 3 ,
+.Xr isupper 3 ,
+.Xr isxdigit 3 ,
+.Xr toascii 3 ,
+.Xr toupper 3 ,
+.Xr stdio 3
+.Xr ascii 7
+.Sh STANDARDS
+The
+.Fn tolower
+function conforms to
+.St -ansiC .

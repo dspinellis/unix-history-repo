@@ -1,0 +1,231 @@
+.\" Copyright (c) 1991, 1993, 19801988
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)up.4	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt UP 4 vax
+.Os BSD 4
+.Sh NAME
+.Nm up
+.Nd unibus storage module controller/drives
+.Sh SYNOPSIS
+.Cd "controller sc0 at uba? csr 0176700 vector upintr
+.Cd "disk up0 at sc0 drive 0"
+.Sh DESCRIPTION
+This is a generic
+.Tn UNIBUS
+storage module disk driver.
+It is specifically designed to work with the
+Emulex
+.Tn SC-21
+and
+.Tn SC-31
+controllers.
+It can be easily
+adapted to other controllers (although bootstrapping will
+not necessarily be directly possible.) 
+.Pp
+The script
+.Xr MAKEDEV 8
+should be used to create the
+.Nm up
+special files; consult
+.Xr mknod 8
+if a special file needs to be made manually.
+It is recommended as a security precaution to not create special files
+for devices which may never be installed.
+.Sh DISK SUPPORT
+The driver interrogates the controller's holding register
+to determine the type of drive attached.  The driver recognizes
+seven different drives:
+.Tn CDC
+9762,
+.Tn CDC
+9766,
+.Tn AMPEX DM Ns 980 ,
+.Tn AMPEX
+9300,
+.Tn AMPEX
+Capricorn,
+.Tn FUJITSU
+160, and
+.Tn FUJITSU
+Eagle
+(the Eagle is not supported by the SC-21).
+.Pp
+Special file names begin with
+.Sq Li up
+and
+.Sq Li rup
+for the block and character files respectively. The second
+component of the name, a drive unit number in the range of zero to
+seven, is represented by a
+.Sq Li ?
+in the disk layouts below. The last component of the name, the
+file system partition, is
+designated by a letter from
+.Sq Li a
+to
+.Sq Li h
+which also corresponds to a minor device number set: zero to seven,
+eight to 15, 16 to 23 and so forth for drive zero, drive two and drive
+three respectively (see
+.Xr physio 4 ) .
+The location and size (in 512 byte sectors) of the
+partitions for the above drives:
+.Bl -column header diskx undefined length
+.Tn CDC No 9762 partitions
+.Sy	disk	start	length	cyls
+	hp?a	0	15884	0-99
+	hp?b	16000	33440	100-309
+	hp?c	0	131680	0-822
+	hp?d	49600	15884	309-408
+	hp?e	65440	55936	409-758
+	hp?f	121440	10080	759-822
+	hp?g	49600	82080	309-822
+
+.Tn CDC No 9766 300M drive partitions:
+.Sy	disk	start	length	cyl
+	up?a	0	15884	0-26
+	up?b	16416	33440	27-81
+	up?c	0	500384	0-822
+	up?d	341696	15884	562-588
+	up?e	358112	55936	589-680
+	up?f	414048	861760	681-822
+	up?g	341696	158528	562-822
+	up?h	49856	291346	82-561
+
+.Tn AMPEX DM Ns No 980 partitions
+.Sy	disk	start	length	cyls
+	hp?a	0	15884	0-99
+	hp?b	16000	33440	100-309
+	hp?c	0	131680	0-822
+	hp?d	49600	15884	309-408
+	hp?e	65440	55936	409-758
+	hp?f	121440	10080	759-822
+	hp?g	49600	82080	309-822
+
+.Tn AMPEX No 9300 300M drive partitions:
+.Sy	disk	start	length	cyl
+	up?a	0	15884	0-26
+	up?b	16416	33440	27-81
+	up?c	0	495520	0-814
+	up?d	341696	15884	562-588
+	up?e	358112	55936	589-680
+	up?f	414048	81312	681-814
+	up?g	341696	153664	562-814
+	up?h	49856	291346	82-561
+
+.Tn AMPEX No Capricorn 330M drive partitions:
+.Sy	disk	start	length	cyl
+	hp?a	0	15884	0-31
+	hp?b	16384	33440	32-97
+	hp?c	0	524288	0-1023
+	hp?d	342016	15884	668-699
+	hp?e	358400	55936	700-809
+	hp?f	414720	109408	810-1023
+	hp?g	342016	182112	668-1023
+	hp?h	50176	291346	98-667
+
+.Tn FUJITSU No 160M drive partitions:
+.Sy	disk	start	length	cyl
+	up?a	0	15884	0-49
+	up?b	16000	33440	50-154
+	up?c	0	263360	0-822
+	up?d	49600	15884	155-204
+	up?e	65600	55936	205-379
+	up?f	121600	141600	380-822
+	up?g	49600	213600	155-822
+
+.Tn FUJITSU No Eagle partitions
+.Sy	disk	start	length	cyls
+	hp?a	0	15884	0-16
+	hp?b	16320	66880	17-86
+	hp?c	0	808320	0-841
+	hp?d	375360	15884	391-407
+	hp?e	391680	55936	408-727
+	hp?f	698880	109248	728-841
+	hp?g	375360	432768	391-841
+	hp?h	83520	291346	87-390
+.El
+.Pp
+The up?a partition is normally used for the root file system,
+the up?b partition as a paging area,
+and the up?c partition for pack-pack copying (it maps the entire disk).
+On 160M drives the up?g partition maps the rest of the pack.
+On other drives both up?g and up?h are used to map the
+remaining cylinders.
+.Sh FILES
+.Bl -tag -width Pa -compact
+.It Pa /dev/up[0-7][a-h]
+block files
+.It Pa /dev/rup[0-7][a-h]
+raw files
+.El
+.Sh DIAGNOSTICS
+.Bl -diag
+.It "up%d%c: hard error %sing fsbn %d[-%d] cs2=%b er1=%b er2=%b."
+An unrecoverable error occurred during transfer of the specified
+filesystem block number(s),
+which are logical block numbers on the indicated partition.
+The contents of the cs2, er1 and er2 registers are printed
+in octal and symbolically with bits decoded.
+The error was either unrecoverable, or a large number of retry attempts
+(including offset positioning and drive recalibration) could not
+recover the error.
+.Pp
+.It "up%d: write locked."
+The write protect switch was set on the drive
+when a write was attempted.  The write operation is not recoverable.
+.Pp
+.It "up%d: not ready."
+The drive was spun down or off line when it was
+accessed.  The i/o operation is not recoverable.
+.Pp
+.It "up%d: not ready (flakey)."
+The drive was not ready, but after
+printing the message about being not ready (which takes a fraction
+of a second) was ready.  The operation is recovered if no further
+errors occur.
+.Pp
+.It "up%d%c: soft ecc reading fsbn %d[-%d]."
+A recoverable ECC error occurred on the
+specified sector of the specified disk partition.
+This happens normally
+a few times a week.  If it happens more frequently than
+this the sectors where the errors are occurring should be checked to see
+if certain cylinders on the pack, spots on the carriage of the drive
+or heads are indicated.
+.Pp
+.It "sc%d: lost interrupt."
+A timer watching the controller detecting
+no interrupt for an extended period while an operation was outstanding.
+This indicates a hardware or software failure.  There is currently a
+hardware/software problem with spinning down drives while they are
+being accessed which causes this error to occur.
+The error causes a
+.Tn UNIBUS
+reset, and retry of the pending operations.
+If the controller continues to lose interrupts, this error will recur
+a few seconds later.
+.El
+.Sh SEE ALSO
+.Xr hk 4 ,
+.Xr hp 4 ,
+.Xr uda 4
+.Sh HISTORY
+The
+.Nm up
+driver appeared in
+.Bx 4.0 .
+.Sh BUGS
+.Pp
+A program to analyze the logged error information (even in its
+present reduced form) is needed.
+.Pp
+The partition tables for the file systems should be read off of each
+pack, as they are never quite what any single installation would prefer,
+and this would make packs more portable.

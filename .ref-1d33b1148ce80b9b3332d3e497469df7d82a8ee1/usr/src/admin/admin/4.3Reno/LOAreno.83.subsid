@@ -1,0 +1,91 @@
+.\" @(#)LOAreno.83.subsid	1.5 (CSRG - distribution) %G%
+.\" .so/usr3/staff/sellgren/BSD/LETTERS/UCHEADERS
+.ll 6.8i
+.nr LL 6.8i
+.nr VS 14
+.vs 14
+.ce
+.B
+LETTER OF AUTHORIZATION
+.R
+.sp 1
+.LP
+(Subsidiary name) desires to obtain a copy of 4.3 BSD-Reno from 
+The Regents of the University of California ("University").
+(Subsidiary name) and (Parent name) warrant that (Subsidiary name)
+is a corporation or other legal entity (i) the majority of whose
+shares or other security entitled to vote for election of directors
+(or other managing authority) is now controlled by (Parent name)
+either directly or indirectly or (ii) the majority of the equity
+interest in which is now owned and controlled by (Parent name)
+either directly or indirectly.  (Parent name) and (Subsidiary name)
+warrant that (Subsidiary name) is authorized by (Parent name) to
+receive a copy of 4.3BSD-Reno under the revised Berkeley License
+Agreement (6/83), Addendum Number One for 4.3BSD, Addendum Number Two
+for 4.3BSD-Tahoe, and the Reno Addendum between the University and
+(Parent name).
+(Parent name) and (Subsidiary name) warrant
+that (Subsidiary name) will abide by said Agreement,
+.\" originally I had just said Addenda for Add 1 and Add2, but I think
+.\" that spelling out the addenda is much clearer and avoids confusion - steve
+said Addendum Number One, said Addendum Number Two, said Reno Addendum
+and any future addenda to said Agreement.
+(Parent name) and (Subsidiary name) hereby agree that each will be
+jointly and severally liable for (Subsidiary name)'s compliance
+with the terms and conditions of said Agreement, Addendum Number One,
+Addendum Number Two, Reno Addendum, and addenda.
+.sp
+.LP
+The below signatories warrant that they have the authority to
+execute this document on behalf of their respective companies and
+bind said companies to the extent set forth in this document.
+The University hereby agrees to provide a copy of 4.3 BSD-Reno to
+(Subsidiary name) based upon the forgoing warranties.
+.sp
+The 4.3BSD-Reno version of 4.3BSD is hereby made available to Licensee,
+on the type of media and for the fee indicated on Exhibit A, under the
+same terms and conditions set forth in the revised Berkeley License
+Agreement (6/83).
+.sp
+.LP
+(Subsidiary name) is allowed to use any software or materials provided
+hereunder only so long as such control or such ownership and control
+referenced in the first paragraph above continues to exist.
+.nf
+.sp 
+(Parent name)
+.sp
+By\l'2.75i'
+.sp
+Title\l'2.65i'
+.sp
+Date\l'2.65i'
+.in +3.5i
+.sp -7
+(Subsidiary name)
+.sp
+By\l'2.75i'
+.sp
+Title\l'2.65i'
+.sp
+Date\l'2.65i'
+.in 0
+.sp
+The Regents of the University of California
+.sp
+By\l'2.75i'
+.sp
+Title\l'2.65i'
+.sp
+Date\l'2.65i'
+.sp
+Please send a copy of 4.3BSD-Reno to:
+.sp -1
+.in +2.5i
+\l'3.5i'
+.sp
+\l'3.5i'
+.sp
+\l'3.5i'
+.sp
+\l'3.5i'

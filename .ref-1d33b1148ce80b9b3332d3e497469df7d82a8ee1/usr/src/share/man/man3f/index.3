@@ -1,0 +1,50 @@
+.\" Copyright (c) 1983, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.proprietary.roff%
+.\"
+.\"	@(#)index.3	8.1 (Berkeley) %G%
+.\"
+.TH INDEX 3F ""
+.UC 5
+.SH NAME
+index, rindex, lnblnk, len \- tell about character objects
+.SH SYNOPSIS
+.B (intrinsic) function index (string, substr)
+.br
+.B character*(*) string, substr
+.sp 1
+.B integer function rindex (string, substr)
+.br
+.B character*(*) string, substr
+.sp 1
+.B function lnblnk (string)
+.br
+.B character*(*) string
+.sp 1
+.B (intrinsic) function len (string)
+.br
+.B character*(*) string
+.SH DESCRIPTION
+.I Index
+.I (rindex)
+returns the index of the first (last) occurrence of the substring
+.I substr
+in
+.I string,
+or zero if it does not occur.
+.I Index
+is an f77 intrinsic function;
+.I rindex
+is a library routine.
+.PP
+.I Lnblnk
+returns the index of the last non-blank character in
+.I string.
+This is useful since all f77 character objects are fixed length, blank padded.
+Intrinsic function
+.I len
+returns the size of the character object argument.
+.SH FILES
+.ie \nM /usr/ucb/lib/libF77.a
+.el /usr/lib/libF77.a

@@ -1,0 +1,97 @@
+.\" Copyright (c) 1980, 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)vlimit.3	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt VLIMIT 3
+.Os BSD 4
+.Sh NAME
+.Nm vlimit
+.Nd control maximum system resource consumption
+.Sh SYNOPSIS
+.Fd #include <sys/vlimit.h>
+.Fn vlimit resource value
+.Sh DESCRIPTION
+.Bf -symbolic
+This interface is obsoleted by getrlimit(2).
+It is available from the compatibility library, libcompat.
+.Ef
+.Pp
+Limits the consumption by the current process and each process
+it creates to not individually exceed 
+.Fa value
+on the specified
+.Fa resource .
+If
+.Fa value
+is specified as \-1, then the current limit is returned and the
+limit is unchanged.
+The resources which are currently controllable are:
+.Bl -tag -width LIM_NORAISE
+.It Dv LIM_NORAISE
+A pseudo-limit; if set non-zero then the limits may not be raised.
+Only the super-user may remove the
+.Em noraise
+restriction.
+.It Dv LIM_CPU
+the maximum
+number of cpu-seconds to be used by each process
+.It Dv LIM_FSIZE
+the largest single file which can be created
+.It Dv LIM_DATA
+the maximum growth of the data+stack region via
+.Xr sbrk 2
+beyond the end of the program text
+.It Dv LIM_STACK
+the maximum
+size of the automatically-extended stack region
+.It Dv LIM_CORE
+the size of the largest core dump that will be created.
+.It Dv LIM_MAXRSS
+a soft limit for the amount of physical memory (in bytes) to be given
+to the program.  If memory is tight, the system will prefer to take memory
+from processes which are exceeding their declared
+.Dv LIM_MAXRSS.
+.El
+.Pp
+Because this information is stored in the per-process information
+this system call must be executed directly by the shell if it
+is to affect all future processes created by the shell;
+.Xr limit
+is thus a built-in command to
+.Xr csh 1 .
+.Pp
+The system refuses to extend the data or stack space when the limits
+would be exceeded in the normal way; a
+.Xr break 2
+call fails if the data space limit is reached, or the process is
+killed when the stack limit is reached (since the stack cannot be
+extended, there is no way to send a signal!).
+.Pp
+A file
+.Tn I/O
+operation which would create a file which is too large
+will cause a signal
+.Dv SIGXFSZ
+to be generated, this normally terminates
+the process, but may be caught.
+When the cpu time limit is exceeded, a signal
+.Dv SIGXCPU
+is sent to the
+offending process; to allow it time to process the signal it is
+given 5 seconds grace by raising the
+.Tn CPU
+time limit.
+.Sh SEE ALSO
+.Xr csh 1
+.Sh HISTORY
+The
+.Fn vlimit
+function appeared in 
+.Bx 4.2 .
+.Sh BUGS
+.Dv LIM_NORAISE
+no longer exists.

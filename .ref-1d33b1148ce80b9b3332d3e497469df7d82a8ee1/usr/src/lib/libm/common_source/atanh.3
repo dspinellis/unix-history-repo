@@ -1,0 +1,57 @@
+.\" Copyright (c) 1985, 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"     @(#)atanh.3	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt ATANH 3
+.Os BSD 4.3
+.Sh NAME
+.Nm atanh
+.Nd inverse hyperbolic tangent function
+.Sh SYNOPSIS
+.Fd #include <math.h>
+.Ft double
+.Fn atanh "double x"
+.Sh DESCRIPTION
+The
+.Fn  atanh
+function computes the inverse hyperbolic tangent
+of the real
+argument
+.Ar x .
+For a discussion of error due to roundoff, see
+.Xr math 3 .
+.Sh RETURN VALUES
+The
+.Fn atanh
+function
+returns the inverse hyperbolic tangent of
+.Ar x
+if successful.
+On the
+.Tn VAX
+and
+.Tn Tahoe ,
+if the argument has absolute value
+bigger than or equal to 1,
+.Fn atanh
+sets the global variable
+.Va errno
+to
+.Er EDOM
+and
+a reserved operand fault is generated.
+.Sh SEE ALSO
+.Xr acosh 3 ,
+.Xr asinh 3 ,
+.Xr exp 3 ,
+.Xr infnan 3
+.Xr math 3 ,
+.Sh HISTORY
+The
+.Fn atanh
+function appeared in
+.Bx 4.3 .

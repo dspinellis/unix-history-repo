@@ -1,0 +1,27 @@
+.\" Copyright 1994
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" This software was developed by the Computer Systems Engineering group
+.\" at Lawrence Berkeley Laboratory under DARPA contract BG 91-66 and
+.\" contributed to Berkeley.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"     @(#)cgsix.4	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt CGSIX 4 sparc
+.Os
+.Sh NAME
+.Nm cgsix
+.Nd accelerated 8-bit color frame buffer
+.Sh SYNOPSIS
+.Cd "cgsix* at sbus? slot ? offset ?"
+.Sh DESCRIPTION
+The 
+.Nm cgsix
+is a memory based color frame buffer.
+It supports the minimal ioctl's needed to run X11.
+.Sh SEE ALSO
+.Xr bwtwo 4 ,
+.Xr cgthree 4

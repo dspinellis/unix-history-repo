@@ -1,0 +1,73 @@
+891a
+#ifdef XMOD
+	fontheight = n;
+#endif
+.
+592a
+#ifdef XMOD
+includefile(filenm)
+char *filenm; {
+
+	FILE *inf;
+	int ch, c1, c2, firstch = 0;
+
+	if (!(inf = fopen(filenm, "r"))) {
+		fprintf(stderr, "psdit: fopen(%s): ", filenm);
+		perror();
+		exit(1);
+	}
+	c1 = fgetc(inf); c2 = fgetc(inf);
+	if (c1 != '%' || c2 != '!')
+		fprintf(stderr, "psdit: %s not a postscript file.\n", filenm),
+		exit(1);
+
+	fputs("%!", tf);
+	while ((ch = fgetc(inf)) != EOF) {
+		fputc(ch, tf);
+		if (firstch && ch == '%') {
+			/* we have to double leading '%'s */
+			fputc('%', tf);
+		}
+		firstch = (ch == '\n');
+	}			
+	fclose(inf);
+}
+#endif
+.
+587a
+#ifdef XMOD
+	case 'X': {		/* \X command from ditroff */
+            int last;
+	    char largebuf[128];
+	    fscanf (fp, "%1s", str);
+	    switch (str[0]) {
+		case 'p' :
+		    FlushShow(0);MoveTo();DoMove();
+		    fgets(largebuf, sizeof(largebuf), fp);
+		    last = strlen(largebuf) - 1;
+		    if (last >= 0 && largebuf[last] == '\n') {
+			ungetc('\n', fp);
+			largebuf[last] = ' ';
+		    }
+		    fputs(largebuf, tf);
+		    putc('\n', tf);
+		    break;
+		case 'f' :
+		    FlushShow(0);MoveTo();DoMove();
+		    if (fscanf(fp, "%s", largebuf) == 1) {
+			char *nl = (char *) index(largebuf, '\n');
+			if (nl) *nl = '\0';
+			includefile(largebuf);
+		    } else
+			fprintf(stderr, "warning - include cmd w/o path.\n");
+		    break;
+	    }
+	}
+	break;
+#endif
+.
+4a
+# define XMOD
+.
+w psdit.c.new
+q

@@ -1,0 +1,667 @@
+.\" Copyright (c) 1986, 1993, 1994 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"	@(#)Title	8.4 (Berkeley) %G%
+.\"
+.af % i
+.nr LL 6.5i
+.EH ''''
+.OH ''''
+.EF ''''
+.OF ''''
+\&
+.sp |1.5i
+.nr PS 36
+.nr VS 39
+.LP
+.ft B
+.ce 3
+4.4BSD
+User's
+Supplementary Documents
+.nr PS 24
+.nr VS 32
+.LP
+.ft B
+.ce 1
+(USD)
+.bp
+\&
+.sp |0.83i
+.nr PS 14
+.nr VS 16.5
+.LP
+Now in its twentieth year, the USENIX Association,
+the UNIX and Advanced Computing Systems professional and technical organization,
+is a not-for-profit membership association of individuals and
+institutions with an interest in UNIX and UNIX-like systems,
+and, by extension, C++, X windows, and other advanced tools and technologies.
+.LP
+USENIX and its members are dedicated to:
+.IP \(bu
+fostering innovation and communicating research and technological developments,
+.IP \(bu
+sharing ideas and experience relevant to UNIX,
+UNIX-related, and advanced computing systems, and
+.IP \(bu
+providing a neutral forum for the exercise of critical
+thought and airing of technical issues.
+.LP
+USENIX publishes a journal (\fBComputing Systems\fP),
+a newsletter (\fI;login:\fP),
+Proceedings from its frequent Conferences and Symposia,
+and a Book Series.
+.LP
+SAGE, The Systems Administrators Guild, a Special Technical Group with
+the USENIX Association, is dedicated to the advancement of system
+administration as a profession.
+.LP
+SAGE brings together systems managers and administrators to:
+.IP \(bu
+propagate knowledge of good professional practice,
+.IP \(bu
+recruit talented individuals to the profession,
+.IP \(bu
+recognize individuals who attain professional excellence,
+.IP \(bu
+foster technical development and share solutions to technical
+problems, and
+.IP \(bu
+communicate in an organized voice with users, management, and vendors
+on system administration topics.
+.bp
+\&
+.sp |1i
+.nr PS 36
+.nr VS 39
+.LP
+.ft B
+.ce 3
+4.4BSD
+User's
+Supplementary Documents
+.nr PS 24
+.nr VS 32
+.LP
+.ft B
+.ce 1
+(USD)
+.sp 1i
+.nr PS 24
+.nr VS 26
+.LP
+.ft B
+.ce 1
+Berkeley Software Distribution
+.nr PS 18
+.nr VS 26
+.LP
+.ft B
+.ce 1
+April, 1994
+.sp 1i
+.nr PS 18
+.nr VS 20
+.LP
+.ft B
+.ce 2
+Computer Systems Research Group
+University of California at Berkeley
+.sp 2.25i
+.nr PS 12
+.nr VS 14.5
+.LP
+.ft B
+.ce 4
+A USENIX Association Book
+O'Reilly & Associates, Inc.
+103 Morris Street, Suite A
+Sebastopol, CA 94572
+.bp
+.hy 0
+.nr PS 9
+.nr VS 11
+.LP
+First Printing, 1994
+.br
+Second Printing, 1995
+.sp 2
+.LP
+Copyright 1979, 1980, 1983, 1986, 1988, 1989, 1991, 1992, 1993, 1994
+The Regents of the University of California.  All rights reserved.
+.sp 2
+.LP
+Other than the specific manual pages and documents listed below
+as copyrighted by AT&T,
+redistribution and use of this manual in source and binary forms,
+with or without modification, are permitted provided that the
+following conditions are met:
+.IP 1)
+Redistributions of this manual must retain the copyright
+notices on this page, this list of conditions and the following disclaimer.
+.IP 2)
+Software or documentation that incorporates part of this manual must
+reproduce the copyright notices on this page, this list of conditions and
+the following disclaimer in the documentation and/or other materials
+provided with the distribution.
+.IP 3)
+All advertising materials mentioning features or use of this software
+must display the following acknowledgement:
+``This product includes software developed by the University of
+California, Berkeley and its contributors.''
+.IP 4)
+Neither the name of the University nor the names of its contributors
+may be used to endorse or promote products derived from this software
+without specific prior written permission.
+.LP
+\fB\s-1THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+SUCH DAMAGE.\s+1\fP
+.sp 2
+.LP
+Documents USD:1, 2, 3, 5, 6, 9, 10, 15, 16, 17, 21, 22, 23, 24, 25, 26, 27,
+and 29 are copyright 1979, AT&T Bell Laboratories, Incorporated.
+Holders of \x'-1p'UNIX\v'-4p'\s-3TM\s0\v'4p'/32V,
+System III, or System V software licenses are
+permitted to copy these documents, or any portion of them,
+as necessary for licensed use of the software,
+provided this copyright notice and statement of permission
+are included.
+.sp 2
+Documents USD:8, 14, and 28 are part of the
+user contributed software.
+.sp 2
+.LP
+The views and conclusions contained in this manual are those of the
+authors and should not be interpreted as representing official policies,
+either expressed or implied, of the Regents of the University of California.
+.sp 2
+.LP
+The 4.4BSD Daemon used on the cover is
+copyright 1994 by Marshall Kirk McKusick
+and is reproduced with permission.
+.br
+This book was printed and bound in the United States of America.
+.br
+Distributed by O'Reilly & Associates, Inc.
+.sp 2
+.IP "[recycle logo]" 16
+This book is printed on acid-free paper with 50% recycled content,
+10-13% post-consumer waste. O'Reilly & Associates is committed to
+using paper with the highest recycled content available consistent
+with high quality.
+.LP
+.sp 2
+ISBN: 1-56592-076-7
+.bp
+.OH '\s10Contents''- % -\s0'
+.EH '\s10- % -''Contents\s0'
+\&
+.sp |1.5i
+.nr PS 24
+.nr VS 26
+.LP
+.ce 1
+\fBContents\fP
+.sp 1
+.nr PS 12
+.nr VS 14
+.IP
+.tl 'Introduction''ix'
+.sp
+.SH
+Getting Started
+.sp
+.IP
+.tl 'Unix for Beginners \- Second Edition''tabbed 1'
+.QP
+An introduction to the most basic uses of the system.
+.sp
+.IP
+.tl 'Learn \- Computer\-Aided Instruction on UNIX (Second Edition)''tabbed 2'
+.QP
+Describes a computer-aided instruction program that walks new users through
+the basics of files, the editor, and document prepararation software.
+.sp
+.SH
+Basic Utilities
+.sp
+.IP
+.tl 'An Introduction to the UNIX Shell''tabbed 3'
+.QP
+Steve Bourne's introduction to the capabilities of 
+.I sh,
+a command interpreter especially popular for writing shell scripts.
+.sp
+.IP
+.tl 'An Introduction to the C shell''tabbed 4'
+.QP
+This introduction to
+.I csh,
+(a command interpreter popular for interactive work) describes many 
+commonly used UNIX commands, assumes little prior knowledge of UNIX,
+and has a glossary useful for beginners.
+.sp
+.IP
+.tl 'DC \- An Interactive Desk Calculator''tabbed 5'
+.QP
+A super HP calculator, if you do not need floating point.
+.sp
+.IP
+.tl 'BC \- An Arbitrary Precision Desk-Calculator Language''tabbed 6'
+.QP
+A front end for DC that provides infix notation, control flow, and 
+built\-in functions.
+.sp
+.SH
+Communicating with the World
+.sp
+.IP
+.tl 'Mail Reference Manual''tabbed 7'
+.QP
+Complete details on one of the programs for sending and reading your mail.
+.sp
+.IP
+.tl 'The Rand MH Message Handling System''tabbed 8'
+.QP
+This system for managing your computer mail uses lots of small programs, 
+instead of one large one.
+.sp
+.SH
+Text Editing
+.sp
+.IP
+.tl 'A Tutorial Introduction to the Unix Text Editor''tabbed 9'
+.QP
+An easy way to get started with the line editor, 
+.I ed.
+.sp
+.IP
+.tl 'Advanced Editing on Unix''tabbed 10'
+.QP
+The next step.
+.sp
+.IP
+.tl 'An Introduction to Display Editing with Vi''tabbed 11'
+.QP
+The document to learn to use the \fIvi\fR screen editor.
+.sp
+.IP
+.tl 'Ex Reference Manual (Version 3.7)''tabbed 12'
+.QP
+The final reference for the \fIex\fR editor.
+.sp
+.IP
+.tl 'Vi Reference Manual''tabbed 13'
+.QP
+The definitive reference for the \fInvi\fR editor.
+.sp
+.IP
+.tl 'Jove Manual for UNIX Users''tabbed 14'
+.QP
+Jove is a small, self-documenting, customizable display editor, based on EMACS.
+A plausible alternative to 
+.I vi.
+.sp
+.IP
+.tl 'SED \- A Non-interactive Text Editor''tabbed 15'
+.QP
+Describes a one-pass variant of 
+.I ed
+useful as a filter for processing large files.
+.sp
+.IP
+.tl 'AWK \- A Pattern Scanning and Processing Language (Second Edition)''tabbed 16'
+.QP
+A program for data selection and transformation.
+.sp
+.SH
+Document Preparation
+.sp
+.IP
+.tl 'Typing Documents on UNIX: Using the \-ms Macros with Troff and Nroff''tabbed 17'
+.QP
+Describes and gives examples of the basic use of the typesetting tools and 
+``-ms'', a frequently used package of formatting requests that make it easier 
+to lay out most documents.
+.sp
+.ne 1i
+.IP
+.tl 'A Revised Version of \-ms''tabbed 18'
+.QP
+A brief description of the Berkeley revisions made to the \-ms formatting
+macros for nroff and troff.
+.sp
+.IP
+.tl 'Writing Papers with \fInroff\fR using \-me''tabbed 19'
+.QP
+Another popular macro package for
+.I nroff.
+.sp
+.IP
+.tl '\-me Reference Manual''tabbed 20'
+.QP
+The final word on \-me.
+.sp
+.IP
+.tl 'NROFF/TROFF User\'s Manual''tabbed 21'
+.QP
+Extremely detailed information about these document formatting programs.
+.sp
+.IP
+.tl 'A TROFF Tutorial''tabbed 22'
+.QP
+An introduction to the most basic uses of
+.I troff 
+for those who really want to know such things, or want to write their 
+own macros.
+.sp
+.IP
+.tl 'A System for Typesetting Mathematics''tabbed 23'
+.QP
+Describes 
+.I eqn, 
+an easy-to-learn language for high-quality mathematical typesetting.
+.sp
+.IP
+.tl 'Typesetting Mathematics \- User\'s Guide (Second Edition)''tabbed 24'
+.QP
+More details about how to use 
+.I eqn.
+.sp
+.IP
+.tl 'Tbl \- A Program to Format Tables''tabbed 25'
+.QP
+A program for easily typesetting tabular material.
+.sp
+.IP
+.tl 'Refer \- A Bibliography System''tabbed 26'
+.QP
+An introduction to one set of tools used to maintain bibliographic databases.
+The major program, 
+.I refer,
+is used to automatically retrieve and format the references 
+based on document citations.
+.sp
+.IP
+.tl 'Some Applications of Inverted Indexes on the UNIX System''tabbed 27'
+.QP
+Mike Lesk's paper describes the
+.I refer 
+programs in a somewhat larger context.
+.sp
+.IP
+.tl 'BIB \- A Program for Formatting Bibliographies''tabbed 28'
+.QP
+This is an alternative to
+.I refer
+for expanding citations in documents.
+.sp
+.IP
+.tl 'Writing Tools \- The STYLE and DICTION Programs''tabbed 29'
+.QP
+These are programs which can help you understand and improve your 
+writing style.
+.sp
+.SH 
+Amusements
+.sp
+.IP
+.tl 'A Guide to the Dungeons of Doom''tabbed 30'
+.QP
+An introduction to the popular game of \fIrogue\fP, a fantasy game
+which is one of the biggest known users of VAX cycles.
+.sp
+.IP
+.tl 'Star Trek''tabbed 31'
+.QP
+You are the Captain of the Starship Enterprise.
+Wipe out the Klingons and save the Federation.
+.sp
+.IP
+.tl 'List of Documents''inside back cover'
+.if o .bp
+\&
+.EH ''''
+.OH ''''
+.bp
+.OH '\s10Introduction''- % -\s0'
+.EH '\s10- % -''Introduction\s0'
+.de IR
+\fI\\$1\^\fR\\$2
+..
+.de RI
+\fR\\$1\fI\\$2\^\fR\\$3
+..
+.ce
+\fB\s24Introduction\s0\fP
+.sp 2
+.nr PS 10
+.nr VS 12
+.LP
+The documentation for 4.4BSD is in a format similar
+to the one used for the 4.2BSD and 4.3BSD manuals.
+It is divided into three sets; each set consists of one or more volumes.
+The abbreviations for the volume names are listed in square brackets;
+the abbreviations for the manual sections are listed in parenthesis.
+.DS
+I. User's Documents
+	User's Reference Manual [URM]
+		Commands (1)
+		Games (6)
+		Macro packages and language conventions (7)
+	User's Supplementary Documents [USD]
+		Getting Started
+		Basic Utilities
+		Communicating with the World
+		Text Editing
+		Document Preparation
+		Amusements
+
+II. Programmer's Documents
+	Programmer's Reference Manual [PRM]
+		System calls (2)
+		Subroutines (3)
+		Special files (4)
+		File formats and conventions (5)
+	Programmer's Supplementary Documents [PSD]
+		Documents of Historic Interest
+		Languages in common use
+		Programming Tools
+		Programming Libraries
+		General Reference
+
+III. System Manager's Manual [SMM]
+	Maintenance commands (8)
+	System Installation and Administration
+.DE
+.LP
+References to individual documents are given as ``volume:document'',
+thus USD:1 refers to the first document in the ``User's Supplementary
+Documents''.
+References to manual pages are given as ``\fIname\fP(section)'' thus
+.IR sh (1)
+refers to the shell manual entry in section 1.
+.LP
+The manual pages give descriptions of the features of the
+4.4BSD system, as developed at the University of California at Berkeley.
+They do not attempt to provide perspective or tutorial information about the
+4.4BSD operating system, its facilities, or its implementation.
+Various documents on those topics are contained in the
+``\s-1UNIX\s+1 User's Supplementary Documents'' (USD), the
+``\s-1UNIX\s+1 Programmer's Supplementary Documents'' (PSD),
+and ``\s-1UNIX\s+1 System Manager's Manual'' (SMM).
+In particular, for an overview see ``The \s-1UNIX\s+1 Time-Sharing System'' (PSD:1)
+by Ritchie and Thompson; for a tutorial see
+``\s8\s-1UNIX\s+1\s10 for Beginners'' (USD:1) by Kernighan,
+and for an guide to the new features of this latest version, see
+``Berkeley Software Architecture Manual (4.4 Edition)'' (PSD:5).
+.LP
+Within the area it surveys, this volume attempts to be timely, complete
+and concise.  Where the latter two objectives conflict,
+the obvious is often left unsaid in favor of brevity.
+It is intended that each program be described as it is, not as it should be.
+Inevitably, this means that various sections will soon be out of date.
+.LP
+Commands are programs intended to be invoked directly by
+the user, in contrast to subroutines, that are
+intended to be called by the user's programs.
+User commands are described in URM section 1.
+Commands generally reside in directory
+.I /bin
+(for
+.IR bin \|ary
+programs).
+Some programs also reside in
+.I
+/\|usr/\|bin,
+.R
+to save space in
+.I  /\|bin.
+.R
+These directories are searched automatically by the command interpreters.
+Additional directories that may be of interest include
+.I
+/\|usr/\|contrib/\|bin,
+.R
+which has contributed software
+.I
+/\|usr/\|old/\|bin,
+.R
+which has old but sometimes still useful software and
+.I
+/\|usr/\|local/\|bin,
+.R
+which contains software local to your site.
+.LP
+Games have been relegated to URM section 6 and
+.I
+/\|usr/\|games,
+.R
+to keep them from contaminating
+the more staid information of URM section 1.
+.LP
+Miscellaneous collection of information necessary for
+writing in various specialized languages such as character codes, 
+macro packages for typesetting, etc is contained in URM section 7.
+.LP
+System calls are entries into the BSD kernel.
+The system call interface is identical to a C language
+procedure call; the equivalent C procedures are described in PRM section 2.
+.LP
+An assortment of subroutines is available;
+they are described in PRM section 3.
+The primary libraries in which they are kept are described in
+.IR intro (3).
+The functions are described in terms of C.
+.LP
+PRM section 4 discusses the characteristics of
+each system ``file'' that refers to an I/O device.
+The names in this section refer to the HP300 device names for the hardware,
+instead of the names of the special files themselves.
+.LP
+The file formats and conventions (PRM section 5)
+documents the structure of particular kinds of files;
+for example, the form of the output of the loader and
+assembler is given.  Excluded are files used by only one command,
+for example the assembler's intermediate files.
+.LP
+Commands and procedures intended for use primarily by the
+system administrator are described in SMM section 8.
+The files described here are almost all kept in the directory
+.I /\|etc.
+The system administration binaries reside in
+.I
+/\|sbin,
+.R
+and
+.I
+/\|usr/\|sbin.
+.LP
+Each section consists of independent entries of a page or so each.
+The name of the entry is in the upper corners of its pages,
+together with the section number.
+Entries within each section are alphabetized.
+The page numbers of each entry start at 1;
+it is infeasible to number consecutively the pages of 
+a document like this that is republished in many variant forms.
+.LP
+All entries are based on a common format;
+not all subsections always appear.
+.RS
+.LP
+The
+.I name
+subsection lists the exact names of the commands and subroutines
+covered under the entry and gives a short description of their purpose.
+.LP
+The
+.IR synopsis ""
+summarizes the use of the program being described.
+A few conventions are used, particularly in the Commands subsection:
+.LP
+.RS
+.B Boldface
+words are considered literals, and are typed just as they appear.
+.LP
+Square brackets [ ] around an argument show that the argument is optional.
+When an argument is given as ``name'', it always refers to a file name.
+.LP
+Ellipses ``.\|.\|.'' are used to show that the previous argument-prototype
+may be repeated.
+.LP
+A final convention is used by the commands themselves.
+An argument beginning with a minus sign ``\-'' usually means that it is an
+option-specifying argument, even if it appears in a position where
+a file name could appear.  Therefore, it is unwise to have files whose
+names begin with ``\-''.
+.LP
+.RE
+The
+.IR description ""
+subsection discusses in detail the subject at hand.
+.LP
+The
+.IR files ""
+subsection gives the names of files that are built into the program.
+.LP
+A
+.I
+see also
+.R
+subsection gives pointers to related information.
+.LP
+A
+.I  diagnostics
+subsection discusses the diagnostic indications that may be produced.
+Messages that are intended to be self-explanatory are not listed.
+.LP
+The
+.IR bugs ""
+subsection gives known bugs and sometimes deficiencies.
+Occasionally the suggested fix is also described.
+.LP
+.RE
+At the beginning of URM, PRM, and SSM is a List of Manual Pages,
+organized by section and alphabetically within each section, and a
+Permuted Index derived from that List.
+Within each index entry, the title of the writeup to which
+it refers is followed by the appropriate section number in parentheses.
+This fact is important because there is considerable
+name duplication among the sections, arising principally from commands that
+exist only to exercise a particular system call.
+Finally, there is a list of documents on the inside back cover of each volume.
+.if o .bp
+\&
+.EH ''''
+.OH ''''

@@ -1,0 +1,12 @@
+/*
+ *	@(#)options.ext	3.1  10/29/86
+ */
+
+/*
+ * Definitions for external routines from options.c.
+ */
+
+extern void
+	OptInit();
+extern int
+	OptOrder();

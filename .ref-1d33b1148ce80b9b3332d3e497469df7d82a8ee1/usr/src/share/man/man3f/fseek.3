@@ -1,0 +1,50 @@
+.\" Copyright (c) 1983, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.proprietary.roff%
+.\"
+.\"	@(#)fseek.3	8.1 (Berkeley) %G%
+.\"
+.TH FSEEK 3F ""
+.UC 5
+.SH NAME
+fseek, ftell \- reposition a file on a logical unit
+.SH SYNOPSIS
+.B integer function fseek (lunit, offset, from)
+.br
+.B integer offset, from
+.sp 1
+.B integer function ftell (lunit)
+.SH DESCRIPTION
+.I lunit
+must refer to an open logical unit.
+.I offset
+is an offset in bytes relative to the position specified by
+.I from.
+Valid values for
+.I from
+are:
+.sp 1
+.in +5
+0 meaning `beginning of the file'
+.br
+1 meaning `the current position'
+.br
+2 meaning `the end of the file'
+.in -5
+.PP
+The value returned by
+.I fseek
+will be 0 if successful, a system error code otherwise.
+(See perror(3F))
+.PP
+.I Ftell
+returns the current position of the file associated with the specified
+logical unit. The value is an offset, in bytes, from the beginning of the file.
+If the value returned is negative, it indicates an error and will be
+the negation of the system error code. (See perror(3F))
+.SH FILES
+.ie \nM /usr/ucb/lib/libU77.a
+.el /usr/lib/libU77.a
+.SH "SEE ALSO"
+fseek(3S), perror(3F)

@@ -1,0 +1,39 @@
+/*	llib-lmp	1.2	86/03/13	*/
+/* LINTLIBRARY */
+#include <stdio.h>
+#include <mp.h>
+	gcd(a,b,c) MINT *a,*b,*c; {}
+	invert(a, b, c) MINT *a, *b, *c; {}
+	m_add(a,b,c) struct mint *a,*b,*c; {}
+	madd(a,b,c) struct mint *a,*b,*c; {}
+	m_sub(a,b,c) struct mint *a,*b,*c; {}
+	msub(a,b,c) struct mint *a,*b,*c; {}
+	mdiv(a,b,q,r) MINT *a,*b,*q,*r; {}
+int	m_dsb(q,n,a,b) short *a,*b; { return 0; }
+long	m_trq(v1,v2,u1,u2,u3) { return 0L; }
+	m_div(a,b,q,r) MINT *a,*b,*q,*r; {}
+int	m_in(a,b,f) MINT *a; FILE *f; { return EOF; }
+	m_out(a,b,f) MINT *a; FILE *f; {}
+	sdiv(a,n,q,r) MINT *a,*q; short n; short *r; {}
+	s_div(a,n,q,r) MINT *a,*q; short n; short *r; {}
+int	min(a) MINT *a; { return 0; }
+int	omin(a) MINT *a; { return 0; }
+	mout(a) MINT *a; {}
+	omout(a) MINT *a; {}
+	fmout(a,f) MINT *a; FILE *f; {}
+int	fmin(a,f) MINT *a; FILE *f; {}
+int	msqrt(a,b,r) MINT *a,*b,*r; { return 0; }
+	mult(a,b,c) struct mint *a,*b,*c; {}
+	m_mult(a,b,c) struct mint *a,*b,*c; {}
+	tradd(a,b,c) long c; int *a; union g {long xx; struct half yy;} *b; {}
+	pow(a,b,c,d) MINT *a,*b,*c,*d; {}
+	rpow(a,n,b) MINT *a,*b; {}
+	move(a,b) MINT *a,*b; {}
+	dummy(){}
+	/* VARARGS */
+short *	xalloc(nint,s) char *s; { static short sh; return &sh; }
+	fatal(s) char *s; { /* NOTREACHED */ }
+	xfree(c) MINT *c; {}
+	mcan(a) MINT *a; {}
+MINT *	itom(n) { static MINT m; return &m; }
+int	mcmp(a,b) MINT *a,*b; { return 0; }

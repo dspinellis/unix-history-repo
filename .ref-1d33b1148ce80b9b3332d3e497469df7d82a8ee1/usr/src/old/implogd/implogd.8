@@ -1,0 +1,63 @@
+.\" Copyright (c) 1983, 1991 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)implogd.8	6.7 (Berkeley) %G%
+.\"
+.Dd 
+.Dt IMPLOGD 8
+.Os BSD 4.2
+.Sh NAME
+.Nm implogd
+.Nd
+.Tn IMP
+logger process
+.Sh SYNOPSIS
+.Nm implogd
+.Sh DESCRIPTION
+.Nm Implogd
+is program which logs error messages from an
+.Tn IMP ,
+placing them in the file
+.Pa /var/log/implog .
+.Pp
+Entries in the file are variable length.  Each log
+entry has a fixed length header of the form:
+.Bd -literal -offset indent
+struct sockstamp {
+	short	sin_family;
+	u_short	sin_port;
+	struct	in_addr sin_addr;
+	time_t	sin_time;
+	int	sin_len;
+};
+.Ed
+.Pp
+followed, possibly, by the message received from the
+.Tn IMP .
+Each time the logging process is started up it places a
+time stamp entry in the file (a header with
+.Ar sin_len
+field set to 0).
+.Pp
+The logging process will catch only those messages from the
+.Tn IMP
+which are not processed by a protocol module, e.g. IP.
+This implies the log should contain only status information such
+as
+.Dq Tn IMP No going down
+messages,
+.Dq host down
+and other error messages,
+and, perhaps, stray
+.Tn NCP
+messages.
+.Sh SEE ALSO
+.Xr imp 4 ,
+.Xr implog 8
+.Sh HISTORY
+The
+.Nm
+command appeared in
+.Bx 4.2 .

@@ -1,0 +1,5 @@
+whatis Rec
+whatis r
+run
+print r
+print r.realValue, r.subrange, r.intValue, r.charValue

@@ -1,0 +1,74 @@
+.\" Copyright (c) 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"     @(#)wait.1	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt WAIT 1
+.Os
+.Sh NAME
+.Nm wait
+.Nd await process completion
+.Sh SYNOPSIS
+.Nm wait
+.Op Ar pid
+.Sh DESCRIPTION
+If invoked with no arguments, the
+.Nm wait
+utility waits until
+all existing child processes in the background
+have terminated.
+.Pp
+Available operands:
+.Bl -tag -width Ds
+.It Ar pid
+If a
+.Ar pid
+operand is specified, and it is the process ID of a
+background child process that still exists, the
+.Nm wait
+utility
+waits until that process has completed and consumes its
+status information, without consuming the status information
+of any other process.
+.Pp
+If a pid operand is specified that is not the process ID of
+a child background process that still exists,
+.Nm wait
+exits
+without waiting for any processes to complete.
+.El
+.Pp
+The
+.Nm wait
+utility exits with one of the following values:
+.Bl -tag -width Ds
+.It \&0
+The
+.Nm wait
+utility was invoked with no operands and
+all of the existing background child processes have
+terminated, or the process specified by the pid
+operand exited normally with 0 as its exit status.
+.It \&>\&0
+The specified process did not exist and its exit
+status information was not available, or the specified
+process existed or its exit status information
+was available, and it terminated with a non-zero
+exit status.
+.El
+.Pp
+If the specified process terminated abnormally due
+to the receipt of a signal, the exit status
+information of
+.Nm wait
+contains that termination status as
+well.
+.Sh STANDARDS
+The
+.Nm wait
+command is expected to be
+.St -p1003.2
+compatible.

@@ -1,0 +1,79 @@
+.\" Copyright (c) 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)MAKEDEV.8	8.1 (Berkeley) %G%
+.\"
+.TH MAKEDEV 8 ""
+.UC 7
+.SH NAME
+MAKEDEV \- create system and device special files
+.SH SYNOPSIS
+MAKEDEV name ...
+.SH DESCRIPTION
+The shell script
+.IR MAKEDEV ,
+found in the ``/dev'' directory, is used to create the common special
+files.
+See
+.IR special (8)
+for a more complete discussion of special files.
+.PP
+.I MAKEDEV
+takes any number of device names as arguments, where the names are
+the common abbreviation for the device.
+There are two special devices, ``std'' and ``local''.
+The former creates the standard devices for the architecture.
+The latter is for devices specific to the local site, and
+executes the shell file ``MAKEDEV.local''.
+.PP
+The i386 supports the following devices.
+Where a device name is followed by a hash sign (``#''), the hash sign
+must be replaced by a unit number.
+.TP 10
+std
+the standard devices (console, drum, fd/*, klog, kmem, mem, null,
+stderr, stdin, stdout, tty)
+.br
+.ns
+.TP 10
+local
+configuration specific devices
+.br
+.ns
+.TP 10
+com#
+standard PC COM ports
+.br
+.ns
+.TP 10
+fd#
+``floppy'' disk drives (3 1/2, 5 1/4)
+.br
+.ns
+.TP 10
+flog#
+kernel logging device
+.br
+.ns
+.TP 10
+pty#
+set of 16 master and slave pseudo terminals
+.br
+.ns
+.TP 10
+wd#
+``winchester'' disk drives (ST506, IDE, ESDI, RLL etc.)
+.br
+.ns
+.TP 10
+wt#
+QIC-interfaced (e.g. not SCSI) 3M cartridge tape
+.SH FILES
+/dev		The special file directory.
+.SH SEE ALSO
+.IR mknod (1), 
+.IR intro (4),
+.IR config (8),
+.IR special (8)

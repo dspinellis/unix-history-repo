@@ -1,0 +1,1008 @@
+-4
+"arg count"
+You typed either too few or too many arguments.
+-6
+"bad date/time"
+The date/time must be a legitimate date/time in the form
+"YY[MM[DD[HH[MM[SS]]]]]".  The program knows about things
+like leap years, so be precise.
+-7
+"bad heuristic level"
+The heuristic level must be a number from 0 to 3.
+-8
+"bad lookahead"
+The lookahead must be an integer greater than 0.
+-26
+"can't open ..."
+The file couldn't be opened for reading.  Either it doesn't exist
+or it isn't readable.
+-42
+"format error at record ..."
+The format of the SCCS file is logically invalid.  The error
+was discovered at the stated record.  See if you can
+find the problem with the prt command.  If not, do a "help stuck".
+-46
+"level not allowed with e"
+You can't specify a level when you're getting with the "e" argument.
+-47
+"level not numeric"
+You erred in typing a level number.
+-48
+"level too big"
+You specified a level greater than the highest level for the
+release, or else one bigger than 9999.
+-49
+"missing file arg"
+You left the file argument off.
+-53
+"not an SCCS file"
+The file isn't an SCCS file,  Use prt if you don't believe it.
+-55
+"out of space"
+There's no more dynamic memory left.  If you got this from
+delta, try a smaller lookahead ("l" argument).  If you got
+it somewhere else, better go to "help stuck".
+-58
+"premature eof"
+The SCCS file ended in a strange place.  Its probably a goner.
+You can try "help stuck", but chances are you're going to
+have to go to a backup copy.
+-63
+"release not numeric"
+You erred in typing a release number.
+-69
+"unknown key letter"
+You typed an illegal argument key letter.
+-71
+"zero release"
+You can't specify release 0.
+-75
+"Who are you?"
+Your entry in "/etc/passwd" is messed up.  Tell the UNIX system
+administrator.
+-83
+"not found"
+No helpful information associated with your argument was found.
+If you're sure you've got it right, do a "help stuck".
+-115
+"hardware -- <message>"
+This error is most likely due to an intermittent hardware error.
+You should report this to your local UNIX support group.
+immediately, since others may be getting the same error and it is useful
+to discover a pattern if one exists.  After reporting it, if you rerun
+the command it will probably not recur.  If it won't go away contact
+your PWB counsellor.
+
+(If required, a core dump will be produced if the file "dump.core" exists
+in the current directory.)
+-201
+"corrupted file"
+The computed hash count of the input SCCS file did not check with the
+stored hash count.  The file may have been damaged since it was last
+accessed.  See your local SCCS maintenance person.
+-202
+"record too big"
+Internal error.  Execute "help stuck".
+(putr called with len > 255.)
+-204
+"can't read `...'"
+The named directory exists but isn't readable.  Checks its modes with
+"ls -ld ...".
+-205
+"`...' too long"
+The pathname is too long.
+-206
+"directory `...' unwritable"
+The effective user (probably you) doesn't have write permission in
+the directory.  Do a "ls -ld ..." to check the modes.
+-207
+"error ... creating `...'"
+An unusual error in attempting to create the file.  Try "help stuck".
+(Function xcreat; number is external errno.)
+-208
+"`...' nonexistent"
+The file does not exist.  Check for typos.
+-209
+"`...' unreadable"
+The file probably exists, but the effective user doesn't have read permission.
+It is also possible that one or more directories in the path aren't executable.
+-210
+"`...' unwritable"
+The file exists, but the effective user doesn't have write permission.
+It is also possible that one or more directories in the path aren't executable.
+-211
+"`...' unreadable or unwritable"
+The file exists, but the effective user either doesn't
+have read permission, or write permission, or both.
+It is also possible that one or more directories in the path aren't executable.
+-212
+"error ... opening `...'"
+An unusual error occurred while opening the file.  Try "help stuck".
+(Function xopen; number is external errno.)
+-213
+"directory `...' nonexistent"
+The directory doesn't exist.  Check for typos.
+-215
+"writable `...' exists"
+For safety's sake, SCCS won't overwrite an existing g-file if it's writable.
+If you don't need the g-file, remove it and rerun the get command.
+-216
+"bad p-file"
+The p-file has the wrong format.  If you have write permission on it you can
+try to fix it with the editor, or else remove it and do another get with an
+e argument.
+-217
+"release too big"
+Release numbers can't be bigger than 9999.
+-218
+"release ... < ... (floor)"
+Either the release you specified or else the default release is lower
+than the lowest allowable release (the floor).  If you're not sure what's
+wrong see your SCCS administrator.
+-219
+"release ... > ... (ceiling)"
+Either the release you specified or else the default release is higher
+than the highest allowable release (the ceiling).  If you're not sure what's
+wrong see your SCCS administrator.
+-220
+"release ... locked"
+The release you specified or the default release is locked.
+Refer questions to your SCCS administrator.
+-222
+"bad range"
+In a delta list, the two limits of a range of deltas were not in ascending
+order.
+-223
+"delta list syntax"
+A list of deltas was syntatically erroneous.  The correct syntax is:
+		<list>	::=  <range> | <list> , <range>
+		<range>	::=  <delta> | <delta> - <delta>
+		<delta>	::=  <rel> | <rel> . <lev>
+-224
+"invalid release"
+In a delta list, one of the following errors was made:
+	1. A release number was less than 1.
+	2. A release number was greater than the highest release which
+	   has a delta.
+-225
+"invalid level"
+A level specified in a delta list does not exist.
+-226
+"vacant release"
+A level was omitted in a delta list, but the specified release has
+no deltas in it.
+-227
+"e not allowed with m"
+You can't use both the -e and -m arguments on the same get command.
+-228
+"being edited at release ... by `...'"
+You can't do a get with an -e argument because someone else already
+did and hasn't made a delta yet.  If that someone else is really you,
+you can regenerate a new file to be edited, if necessary, by using the -k
+argument.  If you want to cancel the reservation entirely, see your
+SCCS administrator, and tell him/her you want the p-file removed.
+-229
+"... already included"
+You mentioned the same delta twice with an -i and/or an -x argument.
+-230
+"... already excluded"
+You mentioned the same delta twice with an -x and/or an -i argument.
+-231
+"internal error in get/enter()"
+Do a "help stuck".
+-232
+"value after ... arg"
+You had something after the indicated keyletter argument and you weren't
+supposed to.
+-301
+"not an SCCS file"
+A file that you think is an SCCS file
+does not begin with the characters "s.".
+-302
+"Release p is empty; accessing r.l"
+No level was specified; the release specified has no deltas.
+The release and level actually being accessed is r.l.
+(If the k keyletter was not explicitly or implicitly supplied, the
+replacement for the 1 and 1 keywords will be r and l, respectively --
+not p and 0.)
+This is not an error, only a warning.
+-303
+"clock set wrong!!!"
+The time of day is wrong.  Contact your local UNIX support group immediately!
+(Try a "date" command.)
+(This error is produced whenever the creation date of the newest delta
+in the SCCS file is newer than the current date.  This will happen
+whenever the date is accidently set wrong.  This error
+will also occur if a delta was created while the clock was
+set ahead - but less than a year - and has since been corrected.
+In this case the current time is correct, but the date of the
+delta is wrong.)
+-304
+"level zero not allowed"
+You are not allowed to specify level zero because level zero doesn't
+mean anything.  If you want the highest level
+of a given release, specify the release number without a level.
+-305
+"No id keywords"
+No SCCS identification keywords were substituted for.
+You may not have any keywords in the file,
+in which case you can ignore this warning.
+If this message came from delta then you just made a
+delta without any keywords.
+If this message came from get then
+the last time you made a delta you changed the lines
+on which they appeared.
+It's a little late to be
+telling you that you messed up the last time you made a delta, but this is
+the best we can do for now, and it's better than nothing.
+
+This isn't an error, only a warning.
+-306
+"Clock may be set wrong!"
+The time of day may be set wrong.
+Check the current time with the "date" command.
+If it is wrong, contact your local UNIX support group immediately!
+(This message is produced whenever the difference between
+the current date and the creation date of the newest delta in
+the SCCS file is greater than one year.)
+-307
+"you are not `...'"
+Your login name is not the same as the one found in the p-file.
+You can't remove a delta when a p-file exists, and the name therein
+is not yours.
+-308
+"you are not `...'"
+Your login name is not the same as the login name
+of the person who made the most recent delta.  Only the person who made
+a delta can remove it (when a p-file exists).
+-309
+"sorry"
+You are not the owner of both the directory containing the sccs file,
+and the sccs file itself.  If a p-file doesn't exist, only the owner
+of the file and directory can remove a delta.
+-310
+"no delta"
+The release and level specified is not the release and level of
+any delta in the sccs file.
+-311
+"sorry"
+You are not the owner of both the directory containing the sccs file,
+and the sccs file itself, or you are not the user who made the named delta.
+-312
+"illegal data on line ..."
+The named line (of the ASCII file) is 5 characters long
+(not counting the newline),
+and the fifth character is one of octal 363, 364, or 365.
+It is illegal to input such data to SCCS.
+-313
+"history too long"
+A history response can be at most 200 characters long.
+-322
+"you are not `...'"
+You are not the same person who last did a `get' with an `e' argument.
+Only the person who did the last `get' with an `e' can make a delta.
+-323
+"read error on standard input"
+A response from the standard input was solicited and 
+an error occurred.
+-324
+"delta will not propagate"
+The delta being made is in a release which is lower than the highest
+numbered release that has deltas. When the SCCS file is gotten
+at any release higher than the one in which this delta is being inserted,
+this delta will NOT be applied.
+This is not an error, only a warning.
+-325
+"more than one link"
+SCCS files may only have one name (link).
+This is because the delta program unlinks the old file
+and then links to the new file.
+-326
+"missing history"
+If you specify the `-' argument (standard input),
+you must supply the history on the command line (-y argument).
+-330
+"error ... linking `...' to `...'"
+An error occurred while linking the first file to the second file.
+The number is the system error number (see INTRO(II)).
+If you can't figure out what happened,
+execute "help stuck".  Remember the error number.
+(Function xlink; number is external errno.)
+-331
+"error ... unlinking `...'"
+An error occurred while unlinking the file.
+The number is the system error number (see INTRO(II)).
+If you can't figure out what happened,
+execute "help stuck".  Remember the error number.
+(Function xunlink; number is external errno.)
+-350
+"write error"
+The file which caused the write error is as large
+as a file can be (currently 1M bytes).
+-351
+"no space!"
+The file system (on which the file which caused the error is being written)
+is out of space.  Very serious!!  Contact someone in
+your local UNIX Support Group immediately!
+Also, if you can remove any files please do so.
+-352
+"write error ..."
+This is probably a transient error.
+Try again; if it happens again do a "help stuck".
+Remember the error number.
+(Function xwrite; number is external errno.)
+-399
+"not authorized to make deltas"
+Your User ID is not on the list of users who are allowed to add deltas to this
+file.  You can execute "prt -h file" to see who is allowed.  See your
+project administrator to get your login on the list.
+-410
+"missing r"
+You didn't give an "r" argument.
+-411
+"no level specified"
+You didn't specify a level.
+-416
+"not the most recent delta"
+Only the most recent delta (the first one printed by prt)
+can be removed.  The release and level you specified are
+not the same as those of the most recent delta.
+-420
+"bad starting record"
+The starting record number (s argument) is not a positive integer.
+-421
+"not an SCCS file"
+The magic number of the named file is not what it should be.
+The file is probably not an SCCS file. If you're sure it is,
+then it has probably been corrupted.
+-450
+"bad ceiling"
+The ceiling (c argument) is not a positive integer.
+-451
+"bad ceiling"
+The ceiling (c argument) is either too large or too small.
+-452
+"bad floor"
+The floor (f argument) is not a positive integer.
+-453
+"bad floor"
+The floor (f argument) is either too large or too small.
+-454
+"bad r argument"
+The release is not a positive integer.
+-455
+"bad r argument"
+The release is either too large or too small.
+-456
+"too many locks"
+More than 5 l arguments were specified.
+-457
+"bad lock"
+A lock (l argument) is not a positive integer.
+-458
+"bad lock"
+A lock (l argument) is either too large or too small.
+-459
+"too many unlocks"
+More than 5 u arguments were specified.
+-460
+"bad unlock"
+An unlock (u argument) is not a positive integer.
+-461
+"bad unlock"
+An unlock (u argument) is either too large or too small.
+-462
+"bad y argument"
+The release is not a positive integer.
+-463
+"bad y argument"
+The release is either too large or too small.
+-464
+"key letter twice"
+A key letter was specified twice.
+This is probably a typo on your part.
+-465
+"more than one file"
+Only one file argument is allowed when an i argument is specified.
+-466
+"file exists"
+The file you are trying to create already exists.
+-467
+"file does not exist"
+The file to be modified does not exist.
+-468
+"read error"
+The named file  is either not an SCCS file,
+or a corrupted SCCS file.
+-469
+"Release X wasn't locked"
+You tried to unlock release X which wasn't locked.
+This is only a warning.
+-470
+"too many locks"
+The file has already been locked some number of times.
+You are trying to add some number of locks which will make
+the total number of locks more than 5.
+-471
+"description too large"
+More than 99 characters of description (d argument) were specified.
+-472
+"person too large"
+More than 13 characters of `person' (p argument) were specified.
+-473
+"type too large"
+More than 9 charcters of `type' (t argument) were specified.
+-474
+"write error"
+An error occured while trying to update the file.
+The system is probably in very bad shape.
+The file did not get updated correctly.
+-475
+-476
+"release X twice"
+You specified X in two lock or unlock arguments.
+This is probably a typo on your part.
+-477
+"person not in passwd file"
+The person to be added (or erased) is not in the system password file.
+*
+* icat/ucat messages
+*
+-600
+"missing account number"
+You forgot to specify an account number (-a argument).
+-601
+"account number"
+The account number specified is either non-numeric,
+or is not four characters long.
+-602
+"bad account number"
+The account number specified is not numeric.
+-603
+"bad forms value"
+The forms value specified is not four characters long.
+-604
+"bad forms value"
+The forms value specified is not numeric.
+-605
+"Bad job class"
+The job class specified is not an alphabetic.
+-606
+"Bad job name"
+The job name specified is longer than eight characters.
+-607
+"program `...' not found"
+The specified program is not in /usr/bin or /bin.
+-608
+"bad location"
+The specified location is not 47, 49, or 51.
+-609
+"bad runid"
+The specified run id is longer than 6 characters.
+-610
+"bad page limit"
+The page limit specified is not numeric.
+-611
+"bad time limit"
+The time limit specified is not numeric.
+*
+* end icat/ucat messages
+*
+*
+*	ifetch, ufetch, and extr messages
+*
+-803
+"missing file arg"
+You forgot to specify a file argument.
+-804
+"premature eof"
+In extr, a prnt file ended at a strange place.
+-805
+-806
+-807
+"format err"
+In epnch, a pnch file has an invalid format.
+-808
+"Possible errors"
+The file being processed by extr
+is not in the proper format -
+this is usually a result of an ifetch or ufetch failure of some kind.
+Examine the printout file!!
+This message is only a warning.
+-809
+"cannot fork - try again"
+The system process table is temporarily full,
+wait a while and try again.
+*
+* vc messages
+*
+-901
+"unknown command on line ..."
+The line given begins with a control character,
+but the command is not a legal one.
+-902
+"`...' never used"
+The given keyword name was never used in any replacements.
+This is only a warning.
+-903
+"`...' never declared"
+The given keyword name never occured in a `dcl'
+statement. If you did declare it, check for typos.
+This is only a warning.
+-904
+"`If' with no matching `end'"
+There is a missing `end' statement,
+or an extra `if' statement.
+-905
+"`...' declared twice on line ..."
+The named keyword has been redeclared 
+on the indicated line.
+-906
+"out of space"
+A maximum of 40 keywords per invocation of vc are allowed.
+This limit has been exceeded.
+-907
+"unmatched `:' on line ..."
+On the given line there is no control character
+to indicate the end of the keyword name. 
+-908
+"keyword name too long on line ..."
+On the indicated line a keyword name exceeds nine characters.
+-909
+"invalid keyword name on line ..."
+On the indicated line the keyword name does not
+start with an alphabetic character, or does not contain
+only alphanumeric characters.
+-910
+"`end' without matching `if' on line ..."
+There is an extra `end' statement or a missing
+`if' statement.
+-911
+"parenthesis error on line ..."
+A left parenthesis occured with no matching right
+parenthesis or a parenthesis was found where it was not expected.
+-912
+"invalid operator on line ..."
+An unrecognized operator was found.
+The legal operators are `!=', `=', `<', and `>'.
+-914
+"non-numerical value on line ..."
+On the indicated line an attempt was made to compare 
+a string which contains non-numeric characters with another
+string using the `<' or `>' operator.
+-915
+"err statement on line ..."
+The user has put an `err' statement on the given line.
+-917
+"syntax on line ..."
+The equal sign has been left out of an `asg' statement,
+or the right side of an `asg' statement is missing.
+-918
+"syntax on line ..."
+The syntax for the `if' statement on
+the indicated line is incorrect.
+An `&' or an `|' occurred in the wrong
+place, or were not found when they were expected.
+-919
+"syntax on line ..."
+There is something strange about the indicated line.
+-920
+"`...' never assigned a value"
+The given keyword name was never used in an assignment statement.
+This is only a warning.
+-916
+"out of space [line ...]"
+The indicated line requires too many replacements.
+Currently, only 32 replacements per line are allowed.
+-e1
+"no space!"
+The file system you are writing to is out of space.
+Very serious!!  Contact someone in the UNIX Support Group immediately!
+If you desire to save your latest changes you must, before leaving
+the editor, do a w command to /tmp/some-unique-file-name
+If you can remove any files please do so.
+If you were writing to a non-existent file, a truncated
+new file has been created.  The approximate number of
+characters written is printed. If useless, remove it.
+-e2
+"no space?"
+<> blocks left
+The file system you are writing to may not have
+enough space to write out this multiple linked file.
+Very serious!!  Contact someone in the UNIX Support Group immediately!
+If you still desire to write, do another 'w' command.
+If there is not enough space, your file will be truncated.
+Therefore, use caution.  It may be smart to save your
+file first by doing a 'w' command to /tmp/some-unique-file-name.
+If you can remove any files please do so.
+-e3
+ustat:
+can't chown:
+System problem. CHOWN or USTAT failed in ED(I). Contact someone
+in UNIX Support Group immediately.
+-e4
+can't link:
+Can not remake file name. Your file exists in the directory you
+were writing to as a funny name.
+Funny name has the first letter of your file name followed by five numbers.
+ls -lt on that directory will show it.
+-570
+"UNIX System <> is not configured for <> RJE [to <>]."
+Send has decided, from the first card of your jobstream,
+whether you want IBM or UNIVAC RJE.  In addition, you may
+or may not have specified a particular host (158,168,1110).
+According to the configuration table, /usr/rje/lines, no
+such connection is provided from this system (/usr/rje/sys).
+-571
+"Aborted."
+The execution of send/gath has been terminated prematurely.
+A signal may have been received, a write error may have
+occurred, the process may have exceeded its core limit,
+or standard input may have been read too far.
+-572
+"Errors detected. Send anyway?"
+This question demands an answer (a string of characters
+terminated by a newline).  Anything beginning "y" or "Y" is 
+affirmative and causes the suspect jobstream to be submitted.
+Otherwise the jobstream is discarded.
+-573
+"Cannot execute queuer."
+Send has located what it thinks is the proper RJE subsystem
+for your job but cannot execute the associated queueing program.
+Please bring this fact to the attention of PWB operations.
+-574
+"Core exceeded."
+The program has been unable to allocate more storage for
+keyword definitions.  Reduce the number of keywords or
+the depth of nesting of input sources (both on a global
+basis).
+-575
+"Cannot create temporary <>."
+Send writes the collected jobstream into a temporary
+file created in the "pool" subdirectory of the appropriate
+RJE subsystem.  The pool directory may have been made
+unwritable to prevent people from adding to a backlog
+of queued jobs.
+-576
+"Write error - {file too large|no space left|number <>}."
+Send/gath will abort if it encounters a write error.
+The first two errors are distinguished, because you
+may be able to do something about them.  Either segment
+your file into smaller pieces or clean up on disk blocks.
+Remaining errors are reported by number, as per intro(II).
+-577
+"Hang-up."
+A hang-up signal has been received (loss of carrier from tty).
+-578
+"Interrupt."
+An interrupt signal has been received (BREAK or DEL from tty).
+-579
+"Quit signal."
+A quit signal has been received (FS from tty).
+-580
+"Signal #<>."
+The process has received an unusual signal, which may indicate
+hardware problems.  The number of the signal is reported.
+-581
+"Line <> of <>, cannot open source <>."
+The specified input source cannot be opened.  If the
+source is an ordinary file argument, examine the name
+(which is repeated) for possible typographical errors.
+Extraneous spaces or tabs are not allowed.  If the source
+is cited on a control line, the -c flag may help.
+-582
+"Line <> of <>, format spec rejected."
+The line containing the format spec is reproduced
+following the diagnostic.  Either it does not conform
+to the syntax of fspec(PWB V), or it specifies
+unreasonable parameters, such as too many tabs or
+excessive s and m values.
+-583
+"Line <> of <>, bad control line ignored."
+The bad control line is reproduced following the
+diagnostic.  It may be too long.  In -s mode, it may
+contain non-graphics or undefined tabs.
+-584
+"Line <> of <>, non-graphic deleted."
+The transformed line is reproduced following the
+diagnostic.  The non-printing ASCII characters whose
+octal codes are 000-010,013-037,177 are excised,
+except when they occur within keywords or keyword
+replacements.
+-585
+"Line <> of <>, undefined tab deleted."
+The transformed line is reproduced following the
+diagnostic.  Tabs beyond the last position at which
+they are set by the format spec are excised.  See
+fspec(PWB V) to learn how to specify tab stops.
+-586
+"Line <> of <>, cannot reverse chdir."
+This diagnostic occurs at the end of included
+sources which have caused a change of current
+directory by citing an argument of the form
+"!chdir <>".  It indicates that the current
+directory cannot be reset to its previous value.
+-587
+"Line <> of <>, cannot run shell (<>)."
+The shell cannot be run on a series of $ arguments
+because a syscall (create, pipe or fork) has failed.
+The file which was to be shelled is reproduced
+following the diagnostic.  This probably indicates
+a scarcity of system resources.
+-588
+"Line <> of <>, default spec rejected."
+The rejected format spec is reproduced following
+the diagnostic.  It occurred in an argument of the
+form ":<>:".  Either the spec does not conform to the
+syntax of fspec(PWB V), or it specifies unreasonable
+parameters, such as too many tabs or excessive s and m
+values.
+-589
+"Line <> of <>, cannot chdir <>."
+It is not possible to execute the change of current
+directory specified by a "!chdir <>" argument.
+-590
+"Line <> of <>, cannot run command (<>)."
+The shell cannot be run for a ! argument because
+a syscall (pipe or fork) has failed.  The command
+which was to be executed is reproduced following
+the diagnostic.  This probably indicates a scarcity
+of system resources.
+-591
+"Line <> of <>, cannot redefine keyword."
+An attempt has been made to assign a new value to
+a keyword which is still active at some source level.
+The current definition of the keyword is reproduced
+following the diagnostic.
+-592
+"Line <> of <>, shell exit {type|code} <>."
+The shell which was invoked to process $ or ! arguments
+has terminated abnormally (type!=0) or has indicated
+error status upon exit (code!=0).  See wait(II).
+The shell file or command which was processed is
+reproduced following the diagnostic.  Since many
+standard UNIX commands (but few PWB commands) return
+an arbitrary status upon exit, you may want to follow
+them with an "exit 0", which will suppress the
+diagnostic.
+-593
+"Line <> of <>, long line detected."
+Gath has encountered a line which violates the s
+parameter of the current format specification.
+The line is reproduced following the diagnostic.
+-594
+"Line <> of <>, long line truncated."
+The transformed line is reproduced following the
+diagnostic.  Send/gath cannot process lines longer
+than about 300 bytes.  The length is further
+constrained by the s parameter of the current format
+specification.  If the line is to be included in
+a jobstream, its length cannot exceed 80 bytes (IBM)
+or 132 bytes (UNIVAC).
+-595
+"Line <> of <>, illegal card excised."
+The line which send will not allow to be included
+in a jobstream is reproduced following the diagnostic.
+Lines beginning "/*$" are excised from IBM jobs
+because they are interpreted as commands by HASP/JES2.
+The beginning of an IBM job is indicated by a line
+which begins with a "/".  UNIVAC runs begin with a
+line of the form "@RUN ..." or "`run ...", etc.
+Until the beginning of a jobstream is detected, all
+lines will be flushed.
+-596
+"Overrun on standard input."
+For the sake of efficiency, data is read from the input
+stream in blocks or 512 bytes.  Data which is not used
+up by the program is returned by seeking backwards on
+file descriptor zero.  Unfortunately, one cannot seek
+on pipes.  The input which is being piped to send/gath
+should not include any arguments of the form "-" or
+"-:prompt".  Neither should it attempt a logical
+end-of-file "~.".
+-597
+"Cannot <> - only <> {blocks|inodes} free on file system <>."
+Before it proceeds very far, send checks that there are
+1500 blocks and 50 inodes free on the file system of the
+destination RJE subsystem.  If there are not, send aborts.
+The queuer which send invokes also checks for free space,
+but it is somewhat more lenient.  If you have unneeded
+files on the full file system, please delete them.
+-598
+"..."
+These diagnostics are issued by the queueing program
+which is invoked by send.  They should only occur if
+a programming error violates the interface between
+the two programs.
+-599
+"<>qer: <>. Try again?"
+The queuer invoked by send has run into trouble,
+perhaps temporary.  Type "y" and newline to try
+again, or hit interrupt to cancel this attempt
+to send.  You might contact PWB operations.
+-send
+send [-lqy] [158,168,1110] file ...
+
+Control lines ("~ file2 ...") include additional files.
+-gath
+gath [-hi] file ...
+
+Control lines include additional files ("~ file2 ...")
+or collect the output of a command ("~!command arg ...").
+*
+* Biscus project interface error messages
+*
+-120
+"line ... of ... - bad format"
+Report this problem to your local SCCS administrator.
+In the meantime, specify the full pathname of the SCCS file.
+If you don't know it you'll just have to wait.
+-121
+"no sccs file for ..."
+Report this problem to your local SCCS administrator immediately!
+-err1
+error 1 "Not owner and not super-user":
+Typically this error indicates
+an attempt to modify a file in some way forbidden
+except to its owner.
+It is also returned for attempts
+by ordinary users to do things
+allowed only to the super-user.
+-err2
+error 2 "No such file or directory":
+This error occurs when a file name is specified
+and the file should exist but doesn't, or when one
+of the directories in a path name does not exist.
+-err3
+error 3 "No such process":
+The process whose number was given to
+signal does not exist, or is already dead.
+-err4
+error 4 "Interrupted system call":
+An asynchronous signal (such as interrupt or quit),
+which the user has elected to catch,
+occurred during a system call.
+If execution is resumed
+after processing the signal,
+it will appear as if the interrupted system call
+returned this error condition.
+-err5
+error 5 "I/O error":
+Some physical I/O error occurred during a
+read or write.
+This error may in some cases occur
+on a call following the one to which it actually applies.
+-err6
+error 6 "No such device or address":
+I/O on a special file refers to a subdevice which does not
+exist,
+or beyond the limits of the device.
+It may also occur when, for example, a tape drive
+is not dialled in or no disk pack is loaded on a drive.
+-err7
+error 7 "Arg list too long":
+An argument list longer than 512 bytes
+(counting the null at the end of each argument)
+is presented to exec.
+-err8
+error 8 "Exec format error":
+A request is made to execute a file
+which, although it has the appropriate permissions,
+does not start with one of the magic numbers
+407 or 410.
+-err9
+error 9 "Bad file number":
+Either a file descriptor refers to no
+open file,
+or a read (resp. write) request is made to
+a file which is open only for writing (resp. reading).
+-err10
+error 10 "No children":
+Wait and the process has no
+living or unwaited-for children.
+-err11
+error 11 "No more processes":
+In a fork,
+the system's process table is full and no
+more processes can for the moment be created.
+-err12
+error 12 "Not enough core":
+During an exec or break,
+a program asks for more core than the system is able to supply.
+This is not a temporary condition; the maximum core size
+is a system parameter.
+The error may also occur if the arrangement
+of text, data, and stack segments is such as to
+require more than the existing 8 segmentation registers.
+-err13
+error 13 "Permission denied":
+An attempt was made to access a file in a way forbidden
+by the protection system.
+-err15
+error 15 "Block device required":
+A plain file was mentioned where a block device was required,
+e.g. in mount.
+-err16
+error 16 "Mount device busy":
+An attempt to mount a device that was already mounted or
+an attempt was made to dismount a device
+on which there is an open file or some process's current
+directory.
+-err17
+error 17 "File exists":
+An existing file was mentioned in an inappropriate context,
+e.g. link.
+-err18
+error 18 "Cross-device link":
+A link to a file on another device
+was attempted.
+-err19
+error 19 "No such device":
+An attempt was made to apply an inappropriate
+system call to a device;
+e.g. read a write-only device.
+-err20
+error 20 "Not a directory":
+A non-directory was specified where a directory
+is required,
+for example in a path name or
+as an argument to chdir.
+-err21
+error 21 "Is a directory":
+An attempt to write on a directory.
+-err22
+error 22 "Invalid argument":
+Some invalid argument:
+currently, dismounting a non-mounted
+device,
+mentioning an unknown signal in signal,
+and giving an unknown request in
+stty to the TIU special file.
+-err23
+error 23 "File table overflow":
+The system's table of open files is full,
+and temporarily no more opens
+can be accepted.
+-err24
+error 24 "Too many open files":
+Only 15 files can be open per process.
+-err25
+error 25 "Not a typewriter":
+The file mentioned in stty or gtty
+is not a typewriter or one of the other
+devices to which these calls apply.
+-err26
+error 26 "Text file busy":
+An attempt to execute a pure-procedure
+program which is currently open for writing
+(or reading!).
+Also an attempt to open for writing a pure-procedure
+program that is being executed.
+-err27
+error 27 "File too large":
+An attempt to make a file larger than the maximum of 32768 blocks.
+-err28
+error 28 "No space left on device":
+During a write
+to an ordinary file,
+there is no free space left on the device.
+-err29
+error 29 "Seek on pipe":
+A seek
+was issued to a pipe.
+This error should also be issued for
+other non-seekable devices.
+-err30
+error 30 "Read-only file system":
+An attempt to modify a file or directory
+was made
+on a device mounted read-only.
+-err31
+error 31 "Too many links":
+An attempt to make more than 127 links to a file.
+-err32
+error 32 "Write on broken pipe":
+A write on a pipe for which there is no process
+to read the data.
+This condition normally generates a signal;
+the error is returned if the signal is ignored.

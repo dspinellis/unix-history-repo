@@ -1,0 +1,48 @@
+.\" @(#)PackingList	1.2 (CSRG - distribution) %G%
+.PO 2i
+.LP
+.PP
+.ls 2
+This distribution box for 4.3BSD contains the following items unless
+otherwise indicated:
+.nf
+.sp 
+\l'.5i' 1- Checklist
+\l'.5i' 2- Cover Letter (dated April l986)
+\l'.5i' 3- 2400' 1600 bpi magnetic tapes OR
+\l'.5i' 1- 2400' 6250 bpi magnetic tape
+\l'.5i' 1- Distribution Cassette (full distribution only)
+\l'.5i' 1- Distribution Floppy (full distribution only)
+\l'.5i' 1- Installing and Operating 4.3BSD on the VAX
+\l'.5i' 1- Changes to the Kernel in 4.3BSD
+.ls 1
+.fi
+\l'.5i' 1- Performance Effects of Disk Subsystem Choices
+                     for VAX Systems Running 4.2BSD
+.ls 2
+.nf
+\l'.5i' 1- gprof: a Call Graph Execution Profiler
+\l'.5i' 2- Vi Reference Cards
+\l'.5i' 1- Master of each side of Vi Reference Card
+\l'.5i' 1- One sided copy of the User's Reference Manual
+\l'.5i' 1- Two sided copy of the User's Reference Manual
+\l'.5i' 1- One sided copy of the User's Supplementary Manual
+\l'.5i' 1- Two sided copy of the User's Supplementary Manual
+\l'.5i' 1- One sided copy of the Programmer's Reference Manual
+\l'.5i' 1- Two sided copy of the Programmer's Reference Manual
+\l'.5i' 1- One sided copy of the Programmer's Supplementary Documents Manual, Volume 1
+\l'.5i' 1- Two sided copy of the Programmer's Supplementary Documents Manual, Volume 1
+\l'.5i' 1- One sided copy of the Programmer's Supplementary Documents Manual, Volume 2
+\l'.5i' 1- Two sided copy of the Programmer's Supplementary Documents Manual, Volume 2
+\l'.5i' 1- One sided copy of the System Manager's Manual
+\l'.5i' 1- Two sided copy of the System Manager's Manual
+\l'.5i' 1- One sided copy of the User Contributed Software Manual
+
+  
+
+
+
+
+
+
+

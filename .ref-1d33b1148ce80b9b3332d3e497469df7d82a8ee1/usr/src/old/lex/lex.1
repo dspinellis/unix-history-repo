@@ -1,0 +1,87 @@
+.\" Copyright 1991 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.proprietary.roff%
+.\"
+.\"	@(#)lex.1	6.3 (Berkeley) %G%
+.\"
+.Dd 
+.Dt LEX 1
+.Os ATT 7th
+.Sh NAME
+.Nm lex
+.Nd generator of lexical analysis programs
+.Sh SYNOPSIS
+.Nm lex
+.Op Fl tvfn
+.Op Ar file
+.Ar ...
+.Sh DESCRIPTION
+The
+.Nm lex
+command
+generates programs to be used in simple lexical analyis of text.
+The input
+.Em files
+(standard input default) contain regular expressions
+to be searched for, and actions written in C to be executed when
+expressions are found.
+.Pp
+A C source program, 'lex.yy.c' is generated, to be compiled thus:
+.Bd -literal -offset indent
+cc lex.yy.c.Fl ll
+.Ed
+.Pp
+This program, when run, copies unrecognized portions of
+the input to the output, and executes the associated
+C action for each regular expression that is recognized.
+.Pp
+The options have the following meanings.
+.Bl -tag -width indent
+.It Fl t
+Place the result on the standard output instead of in file
+.Pa lex.yy.c .
+.It Fl v
+Print a one-line
+summary of statistics of the generated analyzer.
+.It Fl n
+Opposite of
+.Fl v ;
+.Fl n
+is default.
+.It Fl f
+"Faster" compilation: don't bother to pack
+the resulting tables; limited to small programs.
+.Sh EXAMPLE
+.Bd -literal -offset indent
+lex lexcommands
+.Ed
+.Pp
+would draw
+.Nm lex
+instructions from the file
+.Pa lexcommands ,
+and place the output in
+.Pa lex.yy.c
+.Bd -literal -offset indent
+%%
+[A.Em \-Z] putchar(yytext[0]+\&'a\&'\-\&'A\&');
+[ ]+$	;
+[ ]+	putchar(\&' \&');
+.Ed
+.Pp
+is an example of a
+.Nm lex
+program that would be put into a
+.Nm lex
+command file.  This program converts upper case to lower,
+removes blanks at the end of lines,
+and replaces multiple blanks by single blanks.
+.Sh SEE ALSO
+.Xr yacc 1 ,
+.Xr sed 1
+.Rs
+.%A M. E. Lesk
+.%A E. Schmidt
+.%T "The LEX \- Lexical Analyzer Generator"
+.Re

@@ -1,0 +1,23 @@
+.\" Copyright (c) 1983, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.proprietary.roff%
+.\"
+.\"	@(#)getuid.3	8.1 (Berkeley) %G%
+.\"
+.TH GETUID 3F ""
+.UC 5
+.SH NAME
+getuid, getgid \- get user or group ID of the caller
+.SH SYNOPSIS
+.B integer function getuid()
+.sp 1
+.B integer function getgid()
+.SH DESCRIPTION
+These functions return the real user or group ID of the user
+of the process.
+.SH FILES
+.ie \nM /usr/ucb/lib/libU77.a
+.el /usr/lib/libU77.a
+.SH "SEE ALSO"
+getuid(2)

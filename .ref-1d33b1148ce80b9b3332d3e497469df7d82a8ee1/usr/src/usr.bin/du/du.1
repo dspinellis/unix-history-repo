@@ -1,0 +1,91 @@
+.\" Copyright (c) 1990, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"	@(#)du.1	8.2 (Berkeley) %G%
+.\"
+.Dd 
+.Dt DU 1
+.Os
+.Sh NAME
+.Nm du
+.Nd display disk usage statistics
+.Sh SYNOPSIS
+.Nm du
+.Op Fl H | Fl L | Fl P
+.Op Fl a | Fl s
+.Op Fl x
+.Op Ar file ...
+.Sh DESCRIPTION
+The
+.Nm du
+utility displays the file system block usage for each file argument
+and for each directory in the file hierarchy rooted in each directory
+argument.
+If no file is specified, the block usage of the hierarchy rooted in
+the current directory is displayed.
+The number of blocks are in the same units as that returned by the
+.Xr stat 2
+system call, i.e. 512-byte blocks.
+Partial numbers of blocks are rounded up.
+.Pp
+The options are as follows:
+.Bl -tag -width Ds
+.It Fl H
+Symbolic links on the command line are followed.
+(Symbolic links encountered in the tree traversal are not followed.)
+.It Fl L
+All symbolic links are followed.
+.It Fl P
+No symbolic links are followed.
+.It Fl a
+Display an entry for each file in the file hierarchy.
+.It Fl s
+Display only the grand total for the specified files.
+.It Fl x
+Filesystem mount points are not traversed.
+.El
+.Pp
+.Nm Du
+counts the storage used by symbolic links and not the files they
+reference unless the
+.Fl H
+or 
+.Fl L 
+option is specified.
+If either the
+.Fl H
+or
+.Fl L
+options are specified, storage used by any symbolic links which are
+followed is not counted or displayed.
+The
+.Fl H ,
+.Fl L
+and
+.Fl P
+options override each other and the command's actions are determined
+by the last one specified.
+.Pp
+Files having multiple hard links are counted (and displayed) a single
+time per
+.Nm du
+execution.
+.Sh ENVIRONMENTAL VARIABLES
+.Bl -tag -width BLOCKSIZE
+.It Ev BLOCKSIZE
+If the environmental variable
+.Ev BLOCKSIZE
+is set, the block counts will be displayed in units of that size block.
+.El
+.Sh SEE ALSO
+.Xr df 1 ,
+.Xr fts 3 ,
+.Xr symlink 7 ,
+.Xr quot 8
+.Sh HISTORY
+A
+.Nm du
+command appeared in
+.At v6 .

@@ -1,0 +1,36 @@
+.\" Copyright (c) 1983, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.proprietary.roff%
+.\"
+.\"	@(#)etime.3	8.1 (Berkeley) %G%
+.\"
+.TH ETIME 3F ""
+.UC 5
+.SH NAME
+etime, dtime \- return elapsed execution time
+.SH SYNOPSIS
+.B function etime (tarray)
+.br
+.B real tarray(2)
+.sp 1
+.B function dtime (tarray)
+.br
+.B real tarray(2)
+.SH DESCRIPTION
+These two routines return elapsed runtime in seconds for the calling process.
+.I Dtime
+returns the elapsed time since the last call to
+.I dtime,
+or the start of execution on the first call.
+.PP
+The argument array returns user time in the first element and system time
+in the second element.
+The function value is the sum of user and system time.
+.PP
+The resolution of all timing is 1/HZ sec. where HZ is currently 60.
+.SH FILES
+.ie \nM /usr/ucb/lib/libU77.a
+.el /usr/lib/libU77.a
+.SH "SEE ALSO"
+times(2)

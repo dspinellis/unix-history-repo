@@ -1,0 +1,21 @@
+#
+#	"@(#)bib.list	2.3	%G%";
+#
+#  format for listrefs
+#
+I bibinc.shortnames
+T AT
+H
+.so \*(l]/bmac.std
+.de s[   \" start reference
+.nh
+.LP
+..
+.LP
+.if t \{\
+.   nr LL 6.0i
+.   nr LT \n(LL
+.   nr PS 7
+.   nr VS 8.5p\}
+.LP
+.nr X 1

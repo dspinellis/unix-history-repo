@@ -1,0 +1,180 @@
+.\" Copyright (c) 1983, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"	@(#)refer.mac	8.2 (Berkeley) %G%
+.\"
+.SH
+Commented Refer Macros
+.XS
+Commented Refer Macros
+.XE
+.nf
+\f(CW
+.TS
+l l.
+\&.\e" refer macros for citations
+\&.de []
+\&.][ \e\e$1	# mysterious synonym for .][
+\&..
+\&.de ][	# changes .][ according to argument
+\&.if \e\e$1>4 .tm %M undefined (Bell Labs)	# no macros defined above [4
+\&.[\e\e$1	# call one of the macros below
+\&..
+\&.if \en(.V>19 .ds [. \ef1[	# open bracket for nroff
+\&.if \en(.V<20 .ds [. \ef1\es-2\ev'-0.4m'	# superscripting for troff/daisy-wheel
+\&.if \en(.V>19 .ds .] ]\efP	# close bracket for nroff
+\&.if \en(.V<20 .ds .] \ev'0.4m'\es+2\efP	# end troff/daisy-wheel superscripting
+\&.if n .ds [o \e&"	# open quote for nroff
+\&.if n .ds [c \e&"	# close quote for nroff
+\&.if t .ds [o ``	# open quote for troff
+\&.if t .ds [c ''	# close quote for troff
+\&.ds <. .	# period before citation number
+\&.ds <, ,	# comma before citation number
+\&.\e" [0 - other type of citation
+\&.de [0
+\&.FS	# start -ms footnote
+\&.nr [: 0	# has anything been printed?
+\&.if !"\e\e*([F"" .FP \e\e*([F	# number for footnote paragraph
+\&.if !"\e\e*([Q"" \e{\e
+\&.nr [: 1	# if there's a corporate author,
+\&\e\e*([Q\ec	# set [: to 1 and print [Q
+\&.\e}
+\&.if !"\e\e*([A"" \e{\e	# if there's an author,
+\&.nr [: 1	# set [: to 1,
+\&\e\e*([A\ec	# print the author and continue 
+\&.\e}
+\&.if !"\e\e*([T"" \e{\e	# if there's a title,
+\&.if \e\en([:>0 ,	# print comma if there was author,
+\&.nr [: 1	# set [: to 1,
+\&\ef2\e\e*([T\ef1\ec	# and print the title in italics
+\&.\e}
+\&.if !"\e\e*([S"" , \e\e*([S\ec	# series title, not in italics
+\&.if !"\e\e*([V"" , \e\e*([V\ec	# if there's a volume, print it
+\&.if !"\e\e*([P"" \e{\e
+\&.ie \e\en([P>0 , pp. \e\e*([P\ec	# if multiple pages, use pp.
+\&.el , p. \e\e*([P\ec	# if only one page, use p.
+\&.\e}
+\&.if !"\e\e*([C"" , \e\e*([C\ec	# if there's a city, print it
+\&.if !"\e\e*([D"" , \e\e*([D\ec	# if there's a date, print it
+\&.if \e\en([:>0 \e&.	# if [Q [A or [T, print period
+\&.if !"\e\e*([O"" \e\e*([O	# print the other field if present
+\&.FE	# end -ms footnote
+\&..
+\&.\e" [1 - journal article
+\&.de [1
+\&.FS	# start -ms footnote
+\&.if !"\e\e*([F"" .FP \e\e*([F	# number for footnote paragraph
+\&.if !"\e\e*([Q"" \e\e*([Q,	# if corporate author, print it
+\&.if !"\e\e*([A"" \e\e*([A,	# if author, print with comma
+\&.if !"\e\e*([T"" \e\e*([o\e\e*([T,\e\e*([c	# if title, print with quotes
+\&\ef2\e\e*([J\ef1\ec	# always a journal, in italics
+\&.if !"\e\e*([V"" , vol. \e\e*([V\ec	# if volume, print after "vol."
+\&.if !"\e\e*([N"" , no. \e\e*([N\ec	# if number, print after "no."
+\&.if !"\e\e*([P"" \e{\e
+\&.ie \e\en([P>0 , pp. \e\e*([P\ec	# if multiple pages, use pp.
+\&.el , p. \e\e*([P\ec	# if only one page, use p.
+\&.\e}
+\&.if !"\e\e*([I"" , \e\e*([I\ec	# if there's a publisher, print it
+\&.if !"\e\e*([C"" , \e\e*([C\ec	# if there's a city, print it
+\&.if !"\e\e*([D"" , \e\e*([D\ec	# if there's a date, print it
+\&\e&.	# end reference with period
+\&.if !"\e\e*([O"" \e\e*([O	# if other information, print it
+\&.FE	# end -ms footnote
+\&..
+\&.\e" [2 - book
+\&.de [2
+\&.FS	# start -ms footnote
+\&.if !"\e\e*([F"" .FP \e\e*([F	# number for footnote paragraph
+\&.if !"\e\e*([Q"" \e\e*([Q,	# if corporate author, print it
+\&.if !"\e\e*([A"" \e\e*([A,	# if author, print with comma
+\&.if !"\e\e*([T"" \ef2\e\e*([T,\ef1	# title and comma in italics
+\&.if !"\e\e*([S"" \e\e*([S,	# series title, not in italics
+\&.if !"\e\e*([V"" \e\e*([V,	# perhaps [V says "4 vols."
+\&.if !"\e\e*([P"" \e{\e
+\&.ie \e\en([P>0 pp. \e\e*([P,	# if multiple pages, use pp.
+\&.el p. \e\e*([P,	# if only one page, use p.
+\&.\e}
+\&\e\e*([I\ec	# always a publisher with book
+\&.if !"\e\e*([C"" , \e\e*([C\ec	# if there's a city, print it
+\&.if !"\e\e*([D"" , \e\e*([D\ec	# if there's a date, print it
+\&\e&.	# end reference with period
+\&.if !"\e\e*([O"" \e\e*([O	# if other information, print it
+\&.FE	# end -ms footnote
+\&..
+\&.\e" [3 - article in book
+\&.de [3
+\&.FS	# start -ms footnote
+\&.if !"\e\e*([F"" .FP \e\e*([F	# number for footnote paragraph
+\&.if !"\e\e*([Q"" \e\e*([Q,	# if corporate author, print it
+\&.if !"\e\e*([A"" \e\e*([A,	# if author, print with comma
+\&.if !"\e\e*([T"" \e\e*([o\e\e*([T,\e\e*([c	# title and comma in quotes
+\&in \ef2\e\e*([B\ef1\ec	# always "in" book, italicized
+\&.if !"\e\e*([E"" , ed. \e\e*([E\ec	# if an editor, should follow book
+\&.if !"\e\e*([S"" , \e\e*([S\ec	# series title, not in italics
+\&.if !"\e\e*([V"" , vol. \e\e*([V\ec	# if volume, print after "vol."
+\&.if !"\e\e*([P"" \e{\e
+\&.ie \e\en([P>0 , pp. \e\e*([P\ec	# if multiple pages, use pp.
+\&.el , p. \e\e*([P\ec	# if only one page, use p.
+\&.\e}
+\&.if !"\e\e*([I"" , \e\e*([I\ec	# if there's a publisher, print it
+\&.if !"\e\e*([C"" , \e\e*([C\ec	# if there's a city, print it
+\&.if !"\e\e*([D"" , \e\e*([D\ec	# if there's a date, print it
+\&\e&.	# end reference with period
+\&.if !"\e\e*([O"" \e\e*([O	# if other information, print it
+\&.FE	# end -ms footnote
+\&..
+\&.\e" [4 - report
+\&.de [4
+\&.FS	# start -ms footnote
+\&.if !"\e\e*([F"" .FP \e\e*([F	# number for footnote paragraph
+\&.if !"\e\e*([Q"" \e\e*([Q,	# if corporate author, print it
+\&.if !"\e\e*([A"" \e\e*([A,	# if author, print with comma
+\&.if !"\e\e*([T"" \e\e*([o\e\e*([T,\e\e*([c	# title and comma in quotes
+\&.if !"\e\e*([R"" \e\e*([R\ec	# if a report number, print it
+\&.if !"\e\e*([G"" \e& (\e\e*([G)\ec	# put [G string in parentheses
+\&.if !"\e\e*([P"" \e{\e
+\&.ie \e\en([P>0 , pp. \e\e*([P\ec	# if multiple pages, use pp.
+\&.el , p. \e\e*([P\ec	# if only one page, use p.
+\&.\e}
+\&.if !"\e\e*([I"" , \e\e*([I\ec	# if there's a publisher, print it
+\&.if !"\e\e*([C"" , \e\e*([C\ec	# if there's a city, print it
+\&.if !"\e\e*([D"" , \e\e*([D\ec	# if there's a date, print it
+\&\e&.	# end reference with period
+\&.if !"\e\e*([O"" \e\e*([O	# if other information, print it
+\&.FE	# end -ms footnote
+\&..
+\&.de ]<	# mysterious synonym for [<
+\&.[<
+\&..
+\&.de [<	# For footnotes at end of text,
+\&.SH	# with the -e or -s $LIST$ options.
+\&References	# Print References section heading.
+\&.LP	# Initialize; IP references printed,
+\&.rn IP FP	# because FP is replaced by IP,
+\&.rm FS FE	# and footnote macros are removed.
+\&..
+\&.de [>	# mysterious synonym for ]>
+\&.]>
+\&..
+\&.de ]>	# with the -e or -s $LIST$ options,
+\&.sp	# put a space between references
+\&..
+\&.de ]-	# mysterious synonym for [-
+\&.[-
+\&..
+\&.de [-	# Appears at start of references,
+\&.rm [Q [A [T [J [B [E [S [V	# to remove old string definitions--
+\&.rm [N [P [I [C [D [O [R [G	# if you add new field strings,
+\&..	# they should be removed as well.
+\&.de ]]
+\&.\e" circumvent EOF bug in troff	# mysterious fix for .MC output
+\&..
+.TE
+.sp -1
+.LP
+Note that the double quotes in string comparisons are in fact control-g
+characters; this allows fields to contain double quotes.
+.nr LL 6i
+.TC

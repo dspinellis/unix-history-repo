@@ -1,0 +1,53 @@
+.\" Copyright (c) 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)getbsize.3	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt GETBSIZE 3
+.Os BSD 4.4
+.Sh NAME
+.Nm getbsize
+.Nd get user block size
+.Sh SYNOPSIS
+.Fd #include <stdlib.h>
+.Ft char *
+.Fn getbsize "int *headerlenp" "long *blocksizep"
+.Sh DESCRIPTION
+The
+.Nm getbsize
+function determines the user's preferred block size based on the value of the
+.Dq BLOCKSIZE
+environment variable; see
+.Xr environ 7
+for details on its use and format.
+.Pp
+The
+.Nm getbsize
+function returns a pointer to a null-terminated string describing
+the block size, something like
+.Dq 1K-blocks .
+The memory referenced by
+.Fa headerlenp
+is filled in with the length of the string (not including the
+terminating null).
+The memory referenced by
+.Fa blocksizep
+is filled in with block size, in bytes.
+.Pp
+If the user's block size is unreasonable, a warning message is
+written to standard error and the returned information reflects
+a block size of 512 bytes.
+.Sh SEE ALSO
+.Xr df 1 ,
+.Xr du 1 ,
+.Xr ls 1 ,
+.Xr systat 1 ,
+.Xr environ 7
+.Sh HISTORY
+The
+.Nm getbsize
+function call appeared in
+.Bx 4.4 .

@@ -1,0 +1,35 @@
+.\" Copyright (c) 1983, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.proprietary.roff%
+.\"
+.\"	@(#)idate.3	8.1 (Berkeley) %G%
+.\"
+.TH IDATE 3F ""
+.UC 5
+.SH NAME
+idate, itime \- return date or time in numerical form
+.SH SYNOPSIS
+.B subroutine idate (iarray)
+.br
+.B integer iarray(3)
+.sp 1
+.B subroutine itime (iarray)
+.br
+.B integer iarray(3)
+.SH DESCRIPTION
+.I Idate
+returns the current date in
+.I iarray.
+The order is: day, mon, year.
+Month will be in the range 1-12. Year will be \(>= 1969.
+.PP
+.I Itime
+returns the current time in
+.I iarray.
+The order is: hour, minute, second.
+.SH FILES
+.ie \nM /usr/ucb/lib/libU77.a
+.el /usr/lib/libU77.a
+.SH "SEE ALSO"
+ctime(3F), fdate(3F)

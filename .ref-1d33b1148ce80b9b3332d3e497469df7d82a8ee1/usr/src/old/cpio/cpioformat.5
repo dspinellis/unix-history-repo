@@ -1,0 +1,92 @@
+.\" Copyright 1991 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"     @(#)cpioformat.5	5.3 (Berkeley) %G%
+.\"
+.Dd 
+.Dt CPIO 5
+.Os
+.Sh NAME
+.Nm cpio
+.Nd format of cpio archive
+.Sh DESCRIPTION
+The header structure, when the
+.Fl c
+option of
+.Xr cpio 1
+is not used, is:
+.Bd -literal -offset indent
+struct {
+	short	h_magic,
+		h_dev;
+	ushort	h_ino,
+		h_mode,
+		h_uid,
+		h_gid;
+	short	h_nlink,
+		h_rdev,
+		h_mtime[2],
+		h_namesize,
+		h_filesize[2];
+	char	h_name[h_namesize rounded to word];
+} Hdr;
+.Ed
+.Pp
+When the
+.Fl c
+option is used, the header information is described by:
+.Bd -literal -offset indent
+sscanf(Chdr,"%6o%6o%6o%6o%6o%6o%6o%6o%11lo%6o%11lo%s",
+&Hdr.h_magic, &Hdr.h_dev, &Hdr.h_ino, &Hdr.h_mode,
+&Hdr.h_uid, &Hdr.h_gid, &Hdr.h_nlink, &Hdr.h_rdev,
+&Longtime, &Hdr.h_namesize,&Longfile,Hdr.h_name);
+.Ed
+.Pp
+.Fa Longtime
+and
+.Fa Longfile
+are equivalent to
+.Fa Hdr.h_mtime
+and
+.Fa Hdr.h_filesize ,
+respectively.
+The contents of each file are
+recorded in an element of the array of varying lenght
+structures, archive, together with other items describing
+the file.
+Every instance of
+.Fa h_magic
+contains the constant
+070707 (octal).
+The itimes
+.Fa h_dev
+through
+.Fa h_mtime
+have
+meanings explained in
+.Xr stat 2 .
+The length of the null-terminated path name
+.Fa H_name ,
+icluding the null byte, is
+given by
+.Fa h_namesize .
+.Pp
+The last record of the archive always contains the name
+TRAILER!!!.  Special files, directories, and the trailer are
+recorded with
+.Fa H_filesize
+equal to zero.
+.Sh SEE ALSO
+.Xr cpio 1 ,
+.Xr find 1 ,
+.Xr stat 2
+.Sh HISTORY
+A
+.Xr cpio 1
+command appeared in
+.At V .
+This file format is derived from the
+.At V
+sources which were contributed to the public domain by AT&T.

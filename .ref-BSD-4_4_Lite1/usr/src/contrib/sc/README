@@ -1,0 +1,62 @@
+This is a much modified version of the public domain spread sheet sc,
+posted several years ago by Mark Weiser as vc, originally by James Gosling.
+
+Changes since my last version (5.1) are detailed at great length :-)
+in CHANGES (sequent!rgb (Robert Bond)).
+
+When you get it built, try "sc tutorial.sc" for a simple introduction
+to the basic commands.
+
+A new input parser program (psc) has been included.  This program
+formats ascii files for use in the spread sheet.  If you don't have
+getopts, there is a public domain version by Henry Spencer hidden away
+in the VMS_NOTES file.
+
+I have modified the makefile to make it easy for you to call the
+program what you want (I saw at least five different names in
+correspondence and on the net).  Just change "name=sc" and "NAME=SC" to
+"name=myfavoritename" and "NAME=MYFAVORITENAME" and try "make
+myfavoritename".
+
+Similarly, you can make the documentation with "make myfavoritename.man".
+"make install" will make and install the code in EXDIR.  The
+installation steps and documentation all key off of the name.  The
+makefile even changes the name in the nroffable man page.  If you don't
+have nroff, you will have to change sc.man yourself.
+
+This release has been tested against a Sequent S81 running DYNIX 3.0.14
+(BSD 4.2) and an ICM-3216 with system V.3.  The ICM has a National Semi
+32016.  Just check the makefile for the system flags.   I have heard
+reports of lots of other machines that work. If you have problems with
+lex.c, and don't care about arrow keys, define SIMPLE (-DSIMPLE in the
+makefile).  SIMPLE causes the arrow keys to not be used.
+
+Guidelines for Hackers:
+
+If you want to send changes you have made to SC, please feel free to do
+so.  If they work :-) and seem worthwhile, I'll put them in.  Please
+refrain from wholesale "style" or "cleanup" changes.  It is easy to add
+your changes but it makes it hard to merge in the next guy's stuff if
+he used the release as a base.  Leave my $Revision:  identifiers alone-
+they help me track what you used as a base.  If you check the code into
+rcs, delete the "$"s on the Revison lines before you do.
+
+You may not like 4 space indenting and curly braces on the "if" line,
+but your code will look like that before it leaves my hands so you may
+as well abide by the style in the code when you make your changes.  I
+have also been known to break things trying to make them look "right".
+If you do string functions, please, PLEASE pay attention to null
+pointers, use xmalloc and xfree, and xfree those arguments.  And
+don't forget to document your changes in both help.c and sc.doc.
+
+Disclaimer:
+
+Starting 4/4/90: (I will be maintaining Sc for a while at least,
+	Robert Bond has been very busy lately)
+Sc is not a product of Grauel Enterprises, Inc.  It is supplied as
+is with no warranty, express or implied, as a service to Usenet readers.
+It is not copyrighted, either.  Have at it.
+
+					Jeff Buhrt
+					Grauel Enterprises, Inc.
+	{pur-phy (aka: newton.physics.purdue.edu), sequent}!sawmill!buhrt

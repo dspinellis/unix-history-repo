@@ -1,0 +1,100 @@
+.\" Copyright (c) 1980, 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)vfork.2	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt VFORK 2
+.Os BSD 4
+.Sh NAME
+.Nm vfork
+.Nd spawn new process in a virtual memory efficient way
+.Sh SYNOPSIS
+.Fd #include <unistd.h>
+.Ft int
+.Fn vfork void
+.Sh DESCRIPTION
+.Fn Vfork
+can be used to create new processes without fully copying the address
+space of the old process, which is horrendously inefficient in a paged
+environment.  It is useful when the purpose of
+.Xr fork 2
+would have been to create a new system context for an
+.Xr execve .
+.Fn Vfork
+differs from
+.Xr fork
+in that the child borrows the parent's memory and thread of
+control until a call to
+.Xr execve 2
+or an exit (either by a call to
+.Xr exit 2
+or abnormally.)
+The parent process is suspended while the child is using its resources.
+.Pp
+.Fn Vfork
+returns 0 in the child's context and (later) the pid of the child in
+the parent's context.
+.Pp
+.Fn Vfork
+can normally be used just like
+.Xr fork .
+It does not work, however, to return while running in the childs context
+from the procedure that called
+.Fn vfork
+since the eventual return from
+.Fn vfork
+would then return to a no longer existent stack frame.
+Be careful, also, to call
+.Xr _exit
+rather than
+.Xr exit
+if you can't
+.Xr execve ,
+since
+.Xr exit
+will flush and close standard I/O channels, and thereby mess up the
+parent processes standard I/O data structures.
+(Even with
+.Xr fork
+it is wrong to call
+.Xr exit
+since buffered data would then be flushed twice.)
+.Sh SEE ALSO
+.Xr fork 2 ,
+.Xr execve 2 ,
+.Xr sigvec 2 ,
+.Xr wait 2 ,
+.Sh DIAGNOSTICS
+Same as for
+.Xr fork .
+.Sh BUGS
+This system call will be eliminated when proper system sharing
+mechanisms are implemented. 
+Users should not depend on the memory
+sharing semantics of
+.Xr vfork
+as it will, in that case, be made synonymous to
+.Xr fork .
+.Pp
+To avoid a possible deadlock situation,
+processes that are children in the middle
+of a
+.Fn vfork
+are never sent
+.Dv SIGTTOU
+or
+.Dv SIGTTIN
+signals; rather,
+output or
+.Xr ioctl 2
+calls
+are allowed
+and input attempts result in an end-of-file indication.
+.Sh HISTORY
+The
+.Nm
+function call appeared in
+.Bx 3.0 .

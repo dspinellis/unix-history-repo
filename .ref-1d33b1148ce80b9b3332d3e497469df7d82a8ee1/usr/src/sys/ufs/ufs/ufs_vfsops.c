@@ -1,0 +1,200 @@
+/*
+ * Copyright (c) 1991, 1993, 1994
+ *	The Regents of the University of California.  All rights reserved.
+ * (c) UNIX System Laboratories, Inc.
+ * All or some portions of this file are derived from material licensed
+ * to the University of California by American Telephone and Telegraph
+ * Co. or Unix System Laboratories, Inc. and are reproduced herein with
+ * the permission of UNIX System Laboratories, Inc.
+ *
+ * %sccs.include.redist.c%
+ *
+ *	@(#)ufs_vfsops.c	8.8 (Berkeley) %G%
+ */
+
+#include <sys/param.h>
+#include <sys/mbuf.h>
+#include <sys/mount.h>
+#include <sys/proc.h>
+#include <sys/buf.h>
+#include <sys/vnode.h>
+#include <sys/malloc.h>
+
+#include <miscfs/specfs/specdev.h>
+#include "ioctl.h"
+#include "disklabel.h"
+#include "stat.h"
+
+#include <ufs/ufs/quota.h>
+#include <ufs/ufs/inode.h>
+#include <ufs/ufs/ufsmount.h>
+#include <ufs/ufs/ufs_extern.h>
+
+/*
+ * Make a filesystem operational.
+ * Nothing to do at the moment.
+ */
+/* ARGSUSED */
+int
+ufs_start(mp, flags, p)
+	struct mount *mp;
+	int flags;
+	struct proc *p;
+{
+
+	return (0);
+}
+
+/*
+ * Return the root of a filesystem.
+ */
+int
+ufs_root(mp, vpp)
+	struct mount *mp;
+	struct vnode **vpp;
+{
+	struct vnode *nvp;
+	int error;
+
+	if (error = VFS_VGET(mp, (ino_t)ROOTINO, &nvp))
+		return (error);
+	*vpp = nvp;
+	return (0);
+}
+
+/*
+ * Do operations associated with quotas
+ */
+int
+ufs_quotactl(mp, cmds, uid, arg, p)
+	struct mount *mp;
+	int cmds;
+	uid_t uid;
+	caddr_t arg;
+	struct proc *p;
+{
+	int cmd, type, error;
+
+#ifndef QUOTA
+	return (EOPNOTSUPP);
+#else
+	if (uid == -1)
+		uid = p->p_cred->p_ruid;
+	cmd = cmds >> SUBCMDSHIFT;
+
+	switch (cmd) {
+	case Q_SYNC:
+		break;
+	case Q_GETQUOTA:
+		if (uid == p->p_cred->p_ruid)
+			break;
+		/* fall through */
+	default:
+		if (error = suser(p->p_ucred, &p->p_acflag))
+			return (error);
+	}
+
+	type = cmds & SUBCMDMASK;
+	if ((u_int)type >= MAXQUOTAS)
+		return (EINVAL);
+	if (vfs_busy(mp, LK_NOWAIT, 0, p))
+		return (0);
+
+	switch (cmd) {
+
+	case Q_QUOTAON:
+		error = quotaon(p, mp, type, arg);
+		break;
+
+	case Q_QUOTAOFF:
+		error = quotaoff(p, mp, type);
+		break;
+
+	case Q_SETQUOTA:
+		error = setquota(mp, uid, type, arg);
+		break;
+
+	case Q_SETUSE:
+		error = setuse(mp, uid, type, arg);
+		break;
+
+	case Q_GETQUOTA:
+		error = getquota(mp, uid, type, arg);
+		break;
+
+	case Q_SYNC:
+		error = qsync(mp);
+		break;
+
+	default:
+		error = EINVAL;
+		break;
+	}
+	vfs_unbusy(mp, p);
+	return (error);
+#endif
+}
+
+/*
+ * Initial UFS filesystems, done only once.
+ */
+int
+ufs_init(vfsp)
+	struct vfsconf *vfsp;
+{
+	static int done;
+
+	if (done)
+		return (0);
+	done = 1;
+	ufs_ihashinit();
+#ifdef QUOTA
+	dqinit();
+#endif
+	return (0);
+}
+
+/*
+ * This is the generic part of fhtovp called after the underlying
+ * filesystem has validated the file handle.
+ *
+ * Verify that a host should have access to a filesystem, and if so
+ * return a vnode for the presented file handle.
+ */
+int
+ufs_check_export(mp, ufhp, nam, vpp, exflagsp, credanonp)
+	register struct mount *mp;
+	struct ufid *ufhp;
+	struct mbuf *nam;
+	struct vnode **vpp;
+	int *exflagsp;
+	struct ucred **credanonp;
+{
+	register struct inode *ip;
+	register struct netcred *np;
+	register struct ufsmount *ump = VFSTOUFS(mp);
+	struct vnode *nvp;
+	int error;
+
+	/*
+	 * Get the export permission structure for this <mp, client> tuple.
+	 */
+	np = vfs_export_lookup(mp, &ump->um_export, nam);
+	if (np == NULL)
+		return (EACCES);
+
+	if (error = VFS_VGET(mp, ufhp->ufid_ino, &nvp)) {
+		*vpp = NULLVP;
+		return (error);
+	}
+	ip = VTOI(nvp);
+	if (ip->i_mode == 0 || ip->i_gen != ufhp->ufid_gen) {
+		vput(nvp);
+		*vpp = NULLVP;
+		return (ESTALE);
+	}
+	*vpp = nvp;
+	*exflagsp = np->netc_exflags;
+	*credanonp = &np->netc_anon;
+	return (0);
+}

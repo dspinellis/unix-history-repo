@@ -1,0 +1,68 @@
+.\" Copyright (c) 1983, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.proprietary.roff%
+.\"
+.\"	@(#)qsort.3	8.1 (Berkeley) %G%
+.\"
+.TH QSORT 3F ""
+.UC 5
+.SH NAME
+qsort \- quick sort
+.SH SYNOPSIS
+.B subroutine qsort (array, len, isize, compar)
+.br
+.B external compar
+.br
+.B integer*2 compar
+.SH DESCRIPTION
+One dimensional
+.I array
+contains the elements to be sorted.
+.I len
+is the number of elements in the array.
+.I isize
+is the size of an element, typically -
+.sp 1
+.in +5
+4 for
+.B integer
+and
+.B real
+.br
+8 for
+.B "double precision"
+or
+.B complex
+.br
+16 for
+.B "double complex"
+.br
+(length of character object) for
+.B character
+arrays
+.in -5
+.sp 1
+.I Compar
+is the name of a user supplied integer*2 function
+that will determine the sorting order.
+This function will be called with 2 arguments that will be elements of
+.I array.
+The function must return -
+.sp 1
+.in +5
+negative if arg 1 is considered to precede arg 2
+.br
+zero if arg 1 is equivalent to arg 2
+.br
+positive if arg 1 is considered to follow arg 2
+.in -5
+.sp 1
+On return, the elements of
+.I array
+will be sorted.
+.SH FILES
+.ie \nM /usr/ucb/lib/libU77.a
+.el /usr/lib/libU77.a
+.SH "SEE ALSO"
+qsort(3)

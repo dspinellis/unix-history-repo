@@ -1,0 +1,72 @@
+.\" Copyright (c) 1995
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)getvfsbyname.3	8.3 (Berkeley) %G%
+.\"
+.Dd 
+.Dt GETVFSBYNAME 3
+.Os
+.Sh NAME
+.Nm getvfsbyname
+.Nd get information about a filesystem
+.Sh SYNOPSIS
+.Fd #include <sys/types.h>
+.Fd #include <sys/mount.h>
+.Fd #include <kvm.h>
+.br
+.Ft int
+.Fn getvfsbyname "const char *name" "struct vfsconf *vfc"
+.Sh DESCRIPTION
+The
+.Fn getvfsbyname
+function provides access to information about a
+filesystem module that is configured in the kernel.
+If successful,
+the requested filesystem
+.Fa vfsconf
+is returned in the location pointed to by
+.Nm vfc .
+The fields in a
+.Dq Li struct vfsconf
+are defined as follows:
+.Pp
+.Bl -tag -compact -width vfc_refcount
+.It vfc_name
+the name of the filesystem
+.It vfc_typenum
+the filesystem type number assigned by the kernel
+.It vfc_refcount
+the number of active mount points using the filesystem
+.It vfc_flags
+flag bits that are used to initialize a new mount point
+using the filesystem
+.El
+.Sh RETURN VALUES
+If the call to
+.Nm getvfsbyname
+is successful, 0 is returned.
+Otherwise \-1 is returned and
+.Va errno
+is set appropriately.
+.Sh ERRORS
+The following errors may be reported:
+.Bl -tag -width Er
+.It Bq Er EFAULT
+The
+.Fa vfc
+pointer contains an invalid address.
+.It Bq Er ENOENT
+The
+.Fa name
+specifies a filesystem that is unknown or not configured in the kernel.
+.Sh SEE ALSO
+.Xr sysctl 1 ,
+.Xr mount 2 ,
+.Xr sysctl 3 ,
+.Xr mount 8
+.Sh HISTORY
+A variant of the
+.Fn getvfsbyname
+function first appeared in FreeBSD 2.0.

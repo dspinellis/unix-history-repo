@@ -1,0 +1,110 @@
+.\" Copyright (c) 1983, 1990, 1993, 1994
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" the Institute of Electrical and Electronics Engineers, Inc.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)chgrp.1	8.3 (Berkeley) %G%
+.\"
+.Dd 
+.Dt CHGRP 1
+.Os BSD 4.2
+.Sh NAME
+.Nm chgrp
+.Nd change group
+.Sh SYNOPSIS
+.Nm chgrp
+.Oo
+.Fl R
+.Op Fl H | Fl L | Fl P
+.Oc
+.Op Fl f
+.Ar group
+.Ar files ...
+.Sh DESCRIPTION
+The chgrp utility sets the group ID of the file named by each
+.Ar file
+operand to the
+.Ar group
+ID specified by the group operand.
+.Pp
+Options:
+.Bl -tag -width Ds
+.It Fl H
+If the
+.Fl R
+option is specified, symbolic links on the command line are followed.
+(Symbolic links encountered in the tree traversal are not followed.)
+.It Fl L
+If the
+.Fl R
+option is specified, all symbolic links are followed.
+.It Fl P
+If the
+.Fl R
+option is specified, no symbolic links are followed.
+.It Fl R
+Change the group ID for the file hierarchies rooted
+in the files instead of just the files themselves.
+.It Fl f
+The force option ignores errors, except for usage errors and doesn't
+query about strange modes (unless the user does not have proper permissions).
+.El
+.Pp
+Symbolic links don't have groups, so unless the 
+.Fl H
+or
+.Fl L
+option is set,
+.Nm chgrp
+on a symbolic link always succeeds and has no effect.
+The
+.Fl H ,
+.Fl L
+and
+.Fl P
+options are ignored unless the
+.Fl R
+option is specified.
+In addition, these options override each other and the
+command's actions are determined by the last one specified.
+.Pp
+The
+.Ar group
+operand can be either a group name from the group database,
+or a numeric group ID.
+If a group name is also a numeric group ID, the operand is used as a
+group name.
+.Pp
+The user invoking
+.Nm chgrp
+must belong to the specified group and be the owner of the file,
+or be the super-user.
+.Pp
+The
+.Nm chgrp
+utility exits 0 on success, and >0 if an error occurs.
+.Sh COMPATIBILITY
+Previous versions of the
+.Nm chgrp
+utility changed the group of symbolic links specified on the command
+line.
+In this system, symbolic links do not have groups.
+.Sh FILES
+.Bl -tag -width /etc/group -compact
+.It Pa /etc/group
+Group ID file
+.El
+.Sh SEE ALSO
+.Xr chown 2 ,
+.Xr group 5 ,
+.Xr passwd 5 ,
+.Xr fts 3 ,
+.Xr symlink 7 ,
+.Xr chown 8
+.Sh STANDARDS
+The
+.Nm chgrp
+utility is expected to be POSIX 1003.2 compatible.

@@ -1,0 +1,3 @@
+# map for /n
+/defaults	opts:=rw,intr;fs:=${autodir}/${rhost}
+*		rhost:=${key};type:=host;rfs:=/

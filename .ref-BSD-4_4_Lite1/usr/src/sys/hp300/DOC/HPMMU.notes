@@ -1,0 +1,145 @@
+Overview:
+--------
+
+	(Some of this is gleaned from an article in the September 1986
+	Hewlett-Packard Journal and info in the July 1987 HP Communicator)
+
+	Page and segment table entries mimic the Motorola 68851 PMMU,
+	in an effort at upward compatibility.  The HP MMU uses a two
+	level translation scheme.  There are seperate (but equal!)
+	translation tables for both supervisor and user modes.  At the
+	lowest level are page tables.  Each page table consists of one
+	or more 4k pages of 1024x4 byte page table entries.  Each PTE
+	maps one 4k page of VA space.  At the highest level is the
+	segment table.  The segment table is a single 4K page of 1024x4
+	byte entries.  Each entry points to a 4k page of PTEs.  Hence
+	one STE maps 4Mb of VA space and one page of STEs is sufficient
+	to map the entire 4Gb address space (what a coincidence!).  The
+	unused valid bit in page and segment table entries must be
+	zero.
+
+	There are seperate translation lookaside buffers for the user
+	and supervisor modes, each containing 1024 entries.
+
+	To augment the 68020's instruction cache, the HP CPU has an
+	external cache.  A direct-mapped, virtual cache implementation
+	is used with 16 Kbytes of cache on 320 systems and 32 Kbytes on
+	350 systems.  Each cache entry can contain instructions or data,
+	from either user or supervisor space.  Seperate valid bits are
+	kept for user and supervisor entries, allowing for descriminatory
+	flushing of the cache.
+
+	MMU translation and cache-miss detection are done in parallel.
+
+
+Segment table entries:
+------- ----- -------
+
+	bits 31-12:	Physical page frame number of PT page
+	bits 11-4:	Reserved at zero
+			(can software use them?)
+	bit 3:		Reserved at one
+	bit 2:		Set to 1 if segment is read-only, ow read-write
+	bits 1-0:	Valid bits
+			(hardware uses bit 1)
+
+
+Page table entries:
+---- ----- -------
+
+	bits 31-12:	Physical page frame number of page
+	bits 11-7:	Available for software use
+	bit 6:		If 1, inhibits caching of data in this page.
+			(both instruction and external cache)
+	bit 5:		Reserved at zero
+	bit 4:		Hardware modify bit
+	bit 3:		Hardware reference bit
+	bit 2:		Set to 1 if page is read-only, ow read-write
+	bits 1-0:	Valid bits
+			(hardware uses bit 0)
+
+
+Hardware registers:
+-------- ---------
+
+	The hardware has four longword registers controlling the MMU.
+	The registers can be accessed as shortwords also (remember to
+	add 2 to addresses given below).
+
+	5F4000:	Supervisor mode segment table pointer.  Loaded (as longword)
+		with page frame number (i.e. Physaddr >> 12) of the segment
+		table mapping supervisor space.
+	5F4004: User mode segment table pointer.  Loaded (as longword) with
+		page frame number of the segment table mapping user space.
+	5F4008: TLB control register.  Used to invalid large sections of the
+		TLB.  More info below.
+	5F400C:	MMU command/status register.  Defined as follows:
+
+		bit 15:	If 1, indicates a page table fault occured
+		bit 14:	If 1, indicates a page fault occured
+		bit 13: If 1, indicates a protection fault (write to RO page)
+		bit 6:	MC68881 enable.  Tied to chip enable line.
+			(set this bit to enable)
+		bit 5:	MC68020 instruction cache enable.  Tied to Insruction
+			cache disable line.  (set this bit to enable)
+		bit 3:	If 1, indicates an MMU related bus error occured.
+			Bits 13-15 are now valid.
+		bit 2:	External cache enable.  (set this bit to enable)
+		bit 1:	Supervisor mapping enable.  Enables translation of
+			supervisor space VAs.
+		bit 0:	User mapping enable.  Enables translation of user
+			space VAs.
+
+
+	Any bits set by the hardware are cleared only by software.
+	(i.e. bits 3,13,14,15)
+
+Invalidating TLB:
+------------ ---
+
+	All translations:
+		Read the TLB control register (5F4008) as a longword.
+
+	User translations only:
+		Write a longword 0 to TLB register or set the user
+		segment table pointer.
+
+	Supervisor translations only:
+		Write a longword 0x8000 to TLB register or set the
+		supervisor segment table pointer.
+
+	A particular VA translation:
+		Set destination function code to 3 ("purge" space),
+		write a longword 0 to the VA whose translation we are to
+		invalidate, and restore function code.  This apparently
+		invalidates any translation for that VA in both the user
+		and supervisor LB.  Here is what I did:
+
+		#define FC_PURGE 3
+		#define FC_USERD 1
+		_TBIS:
+			movl	sp@(4),a0	| VA to invalidate
+			moveq	#FC_PURGE,d0	| change address space
+			movc	d0,dfc		|   for destination
+			moveq	#0,d0		| zero to invalidate?
+			movsl	d0,a0@		| hit it
+			moveq	#FC_USERD,d0	| back to old
+			movc	d0,dfc		|   address space
+			rts			| done
+
+
+Invalidating the external cache:
+------------ --- -------- -----
+
+	Everything:
+		Toggle the cache enable bit (bit 2) in the MMU control
+		register (5F400C).  Can be done by ANDing and ORing the
+		register location.
+
+	User:
+		Change the user segment table pointer register (5F4004),
+		i.e. read the current value and write it back.
+
+	Supervisor:
+		Change the supervisor segment table pointer register
+		(5F4000), i.e. read the current value and write it back.

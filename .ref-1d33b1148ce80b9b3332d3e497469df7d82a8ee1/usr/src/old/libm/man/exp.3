@@ -1,0 +1,76 @@
+.\"	@(#)exp.3	6.2 (Berkeley) %G%
+.\"
+.TH EXP 3M  ""
+.AT 3
+.SH NAME
+exp, log, log10, pow, sqrt \- exponential, logarithm, power, square root
+.SH SYNOPSIS
+.nf
+.B #include <math.h>
+.PP
+.B double exp(x)
+.B double x;
+.PP
+.B double log(x)
+.B double x;
+.PP
+.B double log10(x)
+.B double x;
+.PP
+.B double pow(x, y)
+.B double x, y;
+.PP
+.B double sqrt(x)
+.B double x;
+.fi
+.SH DESCRIPTION
+.I Exp
+returns the exponential function of 
+.I x.
+.PP
+.I Log
+returns the natural logarithm of 
+.IR x ;
+.I log10
+returns the base 10 logarithm.
+.PP
+.I Pow
+returns
+.if n \
+.I x**y.
+.if t \
+.I  x\u\s8y\s10\d.
+.PP
+.I Sqrt
+returns the square root of 
+.I x.
+.SH SEE ALSO
+hypot(3M),
+sinh(3M),
+intro(3M)
+.SH DIAGNOSTICS
+.I Exp
+and
+.I pow
+return a huge value when the correct value would overflow;
+.I errno
+is set to ERANGE.
+.I Pow
+returns 0 and sets
+.I errno
+to EDOM when the first argument is negative and the second is non-integral or
+when first argument is 0 and the second is less than or equal to 0.
+.PP
+.I Log
+returns 0 when
+.I x
+is zero or negative;
+.I errno
+is set to EDOM.
+.PP
+.I Sqrt
+returns 0 when 
+.I x
+is negative;
+.I errno
+is set to EDOM.
