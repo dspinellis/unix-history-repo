@@ -32,7 +32,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)tty.c	7.44 (Berkeley) 5/28/91
- *	$Id: tty.c,v 1.25 1994/03/21 21:50:30 ache Exp $
+ *	$Id: tty.c,v 1.26 1994/03/23 01:58:08 ache Exp $
  */
 
 /*-
@@ -830,8 +830,10 @@ ttymodem(tp, flag)
 	int flag;
 {
 
+#ifdef DIAGNOSTIC
 	if ((tp->t_state & (TS_ISOPEN | TS_WOPEN)) == 0)
 		printf("ttymodem: not open\n");
+#endif
 	if ((tp->t_state&TS_WOPEN) == 0 && (tp->t_lflag&MDMBUF)) {
 		/*
 		 * MDMBUF: do flow control according to carrier flag
@@ -879,8 +881,10 @@ nullmodem(tp, flag)
 	int flag;
 {
 
+#ifdef DIAGNOSTIC
 	if ((tp->t_state & (TS_ISOPEN | TS_WOPEN)) == 0)
 		printf("nullmodem: not open\n");
+#endif
 	if (flag)
 		tp->t_state |= TS_CARR_ON;
 	else {
