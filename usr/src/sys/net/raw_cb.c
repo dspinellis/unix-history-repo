@@ -1,10 +1,12 @@
-/*	raw_cb.c	6.4	85/05/04	*/
+/*	raw_cb.c	6.5	85/06/02	*/
 
 #include "param.h"
 #include "systm.h"
 #include "mbuf.h"
 #include "socket.h"
 #include "socketvar.h"
+#include "domain.h"
+#include "protosw.h"
 #include "errno.h"
 
 #include "if.h"
@@ -30,8 +32,9 @@
  * Allocate a control block and a nominal amount
  * of buffer space for the socket.
  */
-raw_attach(so)
+raw_attach(so, proto)
 	register struct socket *so;
+	int proto;
 {
 	struct mbuf *m;
 	register struct rawcb *rp;
@@ -45,9 +48,11 @@ raw_attach(so)
 		goto bad2;
 	rp = mtod(m, struct rawcb *);
 	rp->rcb_socket = so;
-	insque(rp, &rawcb);
 	so->so_pcb = (caddr_t)rp;
 	rp->rcb_pcb = 0;
+	rp->rcb_proto.sp_family = so->so_proto->pr_domain->dom_family;
+	rp->rcb_proto.sp_protocol = proto;
+	insque(rp, &rawcb);
 	return (0);
 bad2:
 	sbrelease(&so->so_snd);

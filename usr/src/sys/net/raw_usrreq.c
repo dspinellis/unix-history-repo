@@ -1,4 +1,4 @@
-/*	raw_usrreq.c	6.6	85/05/30	*/
+/*	raw_usrreq.c	6.7	85/06/02	*/
 
 #include "param.h"
 #include "mbuf.h"
@@ -78,7 +78,6 @@ rawintr()
 	int s;
 	struct mbuf *m;
 	register struct rawcb *rp;
-	register struct protosw *lproto;
 	register struct raw_header *rh;
 	struct socket *last;
 
@@ -91,11 +90,10 @@ next:
 	rh = mtod(m, struct raw_header *);
 	last = 0;
 	for (rp = rawcb.rcb_next; rp != &rawcb; rp = rp->rcb_next) {
-		lproto = rp->rcb_socket->so_proto;
-		if (lproto->pr_domain->dom_family != rh->raw_proto.sp_family)
+		if (rp->rcb_proto.sp_family != rh->raw_proto.sp_family)
 			continue;
-		if (lproto->pr_protocol &&
-		    lproto->pr_protocol != rh->raw_proto.sp_protocol)
+		if (rp->rcb_proto.sp_protocol  &&
+		    rp->rcb_proto.sp_protocol != rh->raw_proto.sp_protocol)
 			continue;
 		/*
 		 * We assume the lower level routines have
@@ -179,7 +177,7 @@ raw_usrreq(so, req, m, nam, rights)
 			error = EINVAL;
 			break;
 		}
-		error = raw_attach(so);
+		error = raw_attach(so, (int)nam);
 		break;
 
 	/*
