@@ -37,7 +37,7 @@
  *
  *	from: Utah $Hdr: vm_mmap.c 1.3 90/01/21$
  *	from: @(#)vm_mmap.c	7.5 (Berkeley) 6/28/91
- *	$Id: vm_mmap.c,v 1.15 1993/12/13 13:00:53 davidg Exp $
+ *	$Id: vm_mmap.c,v 1.16 1993/12/19 00:56:06 wollman Exp $
  */
 
 /*
@@ -689,17 +689,25 @@ vm_mmap(map, addr, size, prot, maxprot, flags, handle, foff)
 	 * Changed again: indeed set maximum protection based on
 	 * object permissions.
 	 */
-		rv = vm_map_protect(map, *addr, *addr+size, prot, FALSE);
-		if (rv != KERN_SUCCESS) {
-			(void) vm_deallocate(map, *addr, size);
-			goto out;
-		}
 	/*
 	 * We only need to set max_protection in case it's
 	 * unequal to its default, which is VM_PROT_DEFAULT.
 	 */
 	if(maxprot != VM_PROT_DEFAULT) {
 		rv = vm_map_protect(map, *addr, *addr+size, maxprot, TRUE);
+		if (rv != KERN_SUCCESS) {
+			(void) vm_deallocate(map, *addr, size);
+			goto out;
+		}
+	}
+	/*
+	 * We only need to set the protection if it is unequal
+	 * to the maximum (if it is equal to maxprot, and isn't
+	 * the default, then it would have been set above when
+	 * maximum prot was set.
+	 */
+	if (prot != maxprot) {
+		rv = vm_map_protect(map, *addr, *addr+size, prot, FALSE);
 		if (rv != KERN_SUCCESS) {
 			(void) vm_deallocate(map, *addr, size);
 			goto out;
