@@ -8,7 +8,7 @@
  * Lexical processing of commands.
  */
 
-static char *SccsId = "@(#)lex.c	1.6 %G%";
+static char *SccsId = "@(#)lex.c	1.7 %G%";
 
 /*
  * Set up editing on the given file name.
@@ -479,17 +479,22 @@ char	*greeting	= "Mail version 2.0 %s.  Type ? for help.\n";
 
 announce(pr)
 {
-	int vec[2];
+	int vec[2], mdot;
 	extern char *version;
 	register struct message *mp;
 
 	for (mp = &message[0]; mp < &message[msgCount]; mp++)
 		if (mp->m_flag & MNEW)
 			break;
+	if (mp >= &message[msgCount])
+		for (mp = &message[0]; mp < &message[msgCount]; mp++)
+			if ((mp->m_flag & MREAD) == 0)
+				break;
 	if (mp < &message[msgCount])
-		vec[0] = mp - &message[0] + 1;
+		mdot = mp - &message[0] + 1;
 	else
-		vec[0] = 1;
+		mdot = 1;
+	vec[0] = mdot;
 	vec[1] = 0;
 	if (pr && value("quiet") == NOSTR)
 		printf(greeting, version);
@@ -501,6 +506,7 @@ announce(pr)
 		printf(" [Read only]");
 	printf("\n");
 	headers(vec);
+	dot = &message[mdot - 1];
 }
 
 strace() {}
