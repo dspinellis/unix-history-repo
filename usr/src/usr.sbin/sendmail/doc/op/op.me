@@ -4,7 +4,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)op.me	8.45 (Berkeley) %G%
+.\"	@(#)op.me	8.46 (Berkeley) %G%
 .\"
 .\" eqn op.me | pic | troff -me
 .eh 'SMM:08-%''Sendmail Installation and Operation Guide'
@@ -43,7 +43,7 @@ University of California, Berkeley
 Mammoth Project
 eric@CS.Berkeley.EDU
 .sp
-Version 8.45
+Version 8.46
 .sp
 For Sendmail Version 8.7
 .)l
@@ -1588,7 +1588,7 @@ in the current directory.
 .pp
 .i Sendmail
 gives up its setuid root permissions
-when you use this flag, so it is common to use a publically writable directory
+when you use this flag, so it is common to use a publicly writable directory
 (such as /tmp)
 as the spool directory (QueueDirectory or Q option) while testing.
 .sh 2 "Logging Traffic"
@@ -1781,7 +1781,7 @@ RFC 1123 section 5.3.1.1 recommends that this be at least 30 minutes.
 .sh 3 "Read timeouts"
 .pp
 Timeouts all have option names
-.q Timeout.\fIsupoption\fP .
+.q Timeout.\fIsuboption\fP .
 The recognized
 .i suboption s,
 their default values, and the minimum values
@@ -2210,7 +2210,7 @@ which will fix the privacy problems
 but not the functionality issues.
 Also, this isn't a guarantee of security:
 for example,
-root occassionally sends mail,
+root occasionally sends mail,
 and the daemon often runs as root.
 .sh 3 "Should my alias database be writable?"
 .pp
@@ -2538,7 +2538,7 @@ command line flag, or if the
 (\c
 .b m )
 option is set in the configuration file,
-this behaviour is supressed.
+this behaviour is suppressed.
 Some sites like to run the
 .sm SMTP
 daemon with
@@ -5293,7 +5293,7 @@ Looks up users using
 The
 .b \-v
 flag can be used to specify the name of the field to return
-(although this is normally used only to check the existance
+(although this is normally used only to check the existence
 of a user).
 .ip host
 Canonifies host domain names.
@@ -7211,7 +7211,7 @@ of the last delivery attempt.
 .ip I
 The i-number of the data file;
 this can be used to recover your mail queue
-after a disasterous disk crash.
+after a disastrous disk crash.
 .ip $
 A macro definition.
 The values of certain macros
@@ -7353,7 +7353,7 @@ A transcript of the current session.
 .\"Eric Allman
 .\"Britton-Lee, Inc.
 .\".sp
-.\"Version 8.45
+.\"Version 8.46
 .\".ce 0
 .bp 2
 .rs
