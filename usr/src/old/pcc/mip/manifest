@@ -1,6 +1,7 @@
-/*	manifest	4.2	84/12/03	*/
+/*	manifest	4.3	85/01/18	*/
 
 # include <stdio.h>
+
 /*	manifest constant file for the lex/yacc interface */
 
 # define ERROR 1
@@ -8,39 +9,39 @@
 # define STRING 3
 # define ICON 4
 # define FCON 5
-# define PLUS 6
-# define MINUS 8
-# define MUL 11
-# define AND 14
-# define OR 17
-# define ER 19
-# define QUEST 21
-# define COLON 22
-# define ANDAND 23
-# define OROR 24
+# define DCON 6
+# define PLUS 9
+# define MINUS 11
+# define MUL 14
+# define AND 17
+# define OR 20
+# define ER 22
+# define QUEST 24
+# define COLON 25
+# define ANDAND 26
+# define OROR 27
 
 /* the defines for ASOP, RELOP, EQUOP, DIVOP,
    SHIFTOP, ICOP, UNOP, and STROP have been
    moved to mfile1				*/
 /*	reserved words, etc */
-# define TYPE 33
-# define CLASS 34
-# define STRUCT 35
-# define RETURN 36
-# define GOTO 37
-# define IF 38
-# define ELSE 39
-# define SWITCH 40
-# define BREAK 41
-# define CONTINUE 42
-# define WHILE 43
-# define DO 44
-# define FOR 45
-# define DEFAULT 46
-# define CASE 47
-# define SIZEOF 48
-# define ENUM 49
-
+# define TYPE 36
+# define CLASS 37
+# define STRUCT 38
+# define RETURN 39
+# define GOTO 40
+# define IF 41
+# define ELSE 42
+# define SWITCH 43
+# define BREAK 44
+# define CONTINUE 45
+# define WHILE 46
+# define DO 47
+# define FOR 48
+# define DEFAULT 49
+# define CASE 50
+# define SIZEOF 51
+# define ENUM 52
 
 /*	little symbols, etc. */
 /*	namely,
@@ -61,68 +62,63 @@
 
 /*  These defines are being moved to mfile1
     to alleviate preprocessor problems with
-    second pass files.  
-# define LP 50
-# define RP 51
-# define LC 52
-# define RC 53
-*/
-# define LB 54
-# define RB 55
-# define CM 56
-# define SM 57
-# define ASSIGN 58
+    second pass files: LP, RP, LC, RC */
+# define LB 57
+# define RB 58
+# define CM 59
+# define SM 60
+# define ASSIGN 61
 
 /*	END OF YACC */
 
 /*	left over tree building operators */
-# define COMOP 59
-# define DIV 60
-# define MOD 62
-# define LS 64
-# define RS 66
-# define DOT 68
-# define STREF 69
-# define CALL 70
-# define FORTCALL 73
-# define NOT 76
-# define COMPL 77
-# define INCR 78
-# define DECR 79
-# define EQ 80
-# define NE 81
-# define LE 82
-# define LT 83
-# define GE 84
-# define GT 85
-# define ULE 86
-# define ULT 87
-# define UGE 88
-# define UGT 89
-# define SETBIT 90
-# define TESTBIT 91
-# define RESETBIT 92
-# define ARS 93
-# define REG 94
-# define OREG 95
-# define CCODES 96
-# define FREE 97
-# define STASG 98
-# define STARG 99
-# define STCALL 100
+#define COMOP	62		/* , operator */
+#define DIV	63		/* / */
+#define MOD	65		/* % */
+#define LS	67		/* << */
+#define RS	69		/* >> */
+#define DOT	71		/* . */
+#define STREF	72		/* -> */
+#define CALL	73		/* C function call */
+#define FORTCALL 76		/* Fortran function call */
+#define NOT	79		/* ! */
+#define COMPL	80		/* ~ */
+#define INCR	81		/* ++ */
+#define DECR	82		/* -- */
+#define EQ	83		/* == */
+#define NE	84		/* != */
+#define LE	85		/* <= */
+#define LT	86		/* < */
+#define GE	87		/* >= */
+#define GT	88		/* > */
+#define ULE	89		/* unsigned <= */
+#define ULT	90		/* unsigned < */
+#define UGE	91		/* unsigned >= */
+#define UGT	92		/* unsigned > */
+#define	SETBIT	93		/* unused */
+#define TESTBIT	94		/* unused */
+#define RESETBIT 95		/* unused */
+#define ARS	96		/* arithmetic >> */
+#define REG	97		/* register */
+#define OREG	98		/* offset from register */
+#define CCODES	99		/* condition codes */
+#define FREE	100		/* free node */
+#define STASG	101		/* structure assignment */
+#define STARG	102		/* structure parameter */
+#define STCALL	103		/* call to function returning structure */
 
-/*	some conversion operators */
-# define FLD 103
-# define SCONV 104
-# define PCONV 105
-# define PMCONV 106
-# define PVCONV 107
+/* some conversion operators */
+#define FLD	106		/* field */
+#define SCONV	107		/* storage conversion */
+#define PCONV	108		/* pointer conversion */
+#define PMCONV	109		/* pointer multiply conversion (from +) */
+#define PVCONV	110		/* pointer divide conversion (from -) */
 
-/*	special node operators, used for special contexts */
-# define FORCE 108
-# define CBRANCH 109
-# define INIT 110
-# define CAST 111
+/* special node operators, used for special contexts */
+#define FORCE	111		/* force result, for return values */
+#define CBRANCH	112		/* condition branch */
+#define INIT	113		/* data initialization */
+#define CAST	114		/* type cast */
 
 /*	node types */
 # define LTYPE 02
@@ -303,14 +299,24 @@ union ndu {
 		}fn; /* front node */
 	
 	struct {
-		/* this structure is used when a floating point constant
+		/* this structure is used when a single precision constant
+		   is being computed */
+		int op;
+		int cdim;
+		TWORD type;
+		int csiz;
+		float fval;
+		}fpn; /* FCON node */
+
+	struct {
+		/* this structure is used when a double precision constant
 		   is being computed */
 		int op;
 		int cdim;
 		TWORD type;
 		int csiz;
 		double dval;
-		}fpn; /* floating point node */
+		}dpn; /* DCON node */
 
 	};
 # endif

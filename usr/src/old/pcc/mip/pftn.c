@@ -1,4 +1,7 @@
-static char *sccsid ="@(#)pftn.c	1.5 (Berkeley) %G%";
+#ifndef lint
+static char *sccsid ="@(#)pftn.c	1.6 (Berkeley) %G%";
+#endif lint
+
 # include "mfile1"
 
 unsigned int offsz;
@@ -1013,6 +1016,7 @@ doinit( p ) register NODE *p; {
 
 	register sz, d, s;
 	register TWORD t;
+	int o;
 
 	/* note: size of an individual initializer is assumed to fit into an int */
 
@@ -1061,18 +1065,22 @@ doinit( p ) register NODE *p; {
 	p->in.left = p->in.right;
 	p->in.right = NIL;
 	p->in.left = optim( p->in.left );
-	if( p->in.left->in.op == UNARY AND ){
-		p->in.left->in.op = FREE;
+	o = p->in.left->in.op;
+	if( o == UNARY AND ){
+		o = p->in.left->in.op = FREE;
 		p->in.left = p->in.left->in.left;
 		}
 	p->in.op = INIT;
 
 	if( sz < SZINT ){ /* special case: bit fields, etc. */
-		if( p->in.left->in.op != ICON ) uerror( "illegal initialization" );
+		if( o != ICON ) uerror( "illegal initialization" );
 		else incode( p->in.left, sz );
 		}
-	else if( p->in.left->in.op == FCON ){
-		fincode( p->in.left->fpn.dval, sz );
+	else if( o == FCON ){
+		fincode( p->in.left->fpn.fval, sz );
+		}
+	else if( o == DCON ){
+		fincode( p->in.left->dpn.dval, sz );
 		}
 	else {
 		p = optim(p);

@@ -1,5 +1,13 @@
-static char *sccsid ="@(#)trees.c	4.5 (Berkeley) %G%";
+#ifndef lint
+static char *sccsid ="@(#)trees.c	4.6 (Berkeley) %G%";
+#endif
+
 # include "mfile1"
+
+int bdebug = 0;
+int adebug = 0;
+extern ddebug;
+extern eprint();
 
 	    /* corrections when in violation of lint */
 
@@ -17,6 +25,46 @@ static char *sccsid ="@(#)trees.c	4.5 (Berkeley) %G%";
 # define OTHER 04000
 # define NCVTR 010000
 
+#ifndef BUG1
+printact(t, acts)
+	NODE *t;
+	int acts;
+{
+	static struct actions {
+		int	a_bit;
+		char	*a_name;
+	} actions[] = {
+		{ PUN,		"PUN" },
+		{ CVTL,		"CVTL" },
+		{ CVTR,		"CVTR" },
+		{ TYPL,		"TYPL" },
+		{ TYPR,		"TYPR" },
+		{ TYMATCH,	"TYMATCH" },
+		{ PTMATCH,	"PTMATCH" },
+		{ LVAL,		"LVAL" },
+		{ CVTO,		"CVTO" },
+		{ NCVT,		"NCVT" },
+		{ OTHER,	"OTHER" },
+		{ NCVTR,	"NCVTR" },
+		{ 0 }
+	};
+	register struct actions *p;
+	char *sep = " ";
+
+	printf("actions");
+	for (p = actions; p->a_name; p++)
+		if (p->a_bit & acts) {
+			printf("%s%s", sep, p->a_name);
+			sep = "|";
+		}
+	if (!bdebug) {
+		printf(" for:\n");
+		fwalk(t, eprint, 0);
+	} else
+		putchar('\n');
+}
+#endif
+
 /* node conventions:
 
 	NAME:	rval>0 is stab index for external
@@ -30,9 +78,6 @@ static char *sccsid ="@(#)trees.c	4.5 (Berkeley) %G%";
 
 	*/
 
-int bdebug = 0;
-extern ddebug;
-
 NODE *
 buildtree( o, l, r ) register NODE *l, *r; {
 	register NODE *p, *q;
@@ -40,8 +85,8 @@ buildtree( o, l, r ) register NODE *l, *r; {
 	register opty;
 	register struct symtab *sp;
 	register NODE *lr, *ll;
+	NODE *fixargs();
 	int i;
-	extern int eprint();
 
 # ifndef BUG1
 	if( bdebug ) printf( "buildtree( %s, %o, %o )\n", opst[o], l, r );
@@ -65,7 +110,12 @@ buildtree( o, l, r ) register NODE *l, *r; {
 		}
 
 	else if( o==UNARY MINUS && l->in.op==FCON ){
-		l->fpn.dval = -l->fpn.dval;
+		l->fpn.fval = -l->fpn.fval;
+		return(l);
+		}
+
+	else if( o==UNARY MINUS && l->in.op==DCON ){
+		l->dpn.dval = -l->dpn.dval;
 		return(l);
 		}
 
@@ -122,46 +172,92 @@ buildtree( o, l, r ) register NODE *l, *r; {
 			break;
 			}
 		}
+	else if (opty == BITYPE) {
+		if ((l->in.op == FCON || l->in.op == ICON) &&
+		    (r->in.op == FCON || r->in.op == ICON))
+			switch (o) {
 
-	else if( opty == BITYPE && (l->in.op==FCON||l->in.op==ICON) &&
-		(r->in.op==FCON||r->in.op==ICON) ){
-		switch(o){
-		case PLUS:
-		case MINUS:
-		case MUL:
-		case DIV:
-			if( l->in.op == ICON ){
-				l->fpn.dval = l->tn.lval;
-				}
-			if( r->in.op == ICON ){
-				r->fpn.dval = r->tn.lval;
-				}
-			l->in.op = FCON;
-			l->in.type = l->fn.csiz = DOUBLE;
-			r->in.op = FREE;
-			switch(o){
 			case PLUS:
-				l->fpn.dval += r->fpn.dval;
-				return(l);
 			case MINUS:
-				l->fpn.dval -= r->fpn.dval;
-				return(l);
 			case MUL:
-				l->fpn.dval *= r->fpn.dval;
-				return(l);
 			case DIV:
-				if( r->fpn.dval == 0 ) uerror( "division by 0." );
-				else l->fpn.dval /= r->fpn.dval;
-				return(l);
+				if (l->in.op == ICON)
+					l->fpn.fval = l->tn.lval;
+				if (r->in.op == ICON)
+					r->fpn.fval = r->tn.lval;
+				l->in.op = FCON;
+				l->in.type = l->fn.csiz = FLOAT;
+				r->in.op = FREE;
+				switch (o) {
+
+				case PLUS:
+					l->fpn.fval += r->fpn.fval;
+					return (l);
+
+				case MINUS:
+					l->fpn.fval -= r->fpn.fval;
+					return (l);
+
+				case MUL:
+					l->fpn.fval *= r->fpn.fval;
+					return (l);
+
+				case DIV:
+					if (r->fpn.fval == 0)
+						uerror("division by 0.");
+					else
+						l->fpn.fval /= r->fpn.fval;
+					return (l);
 				}
 			}
-		}
+		else if ((l->in.op == DCON || l->in.op == ICON) &&
+		    (r->in.op == DCON || r->in.op == ICON))
+			switch (o) {
+
+			case PLUS:
+			case MINUS:
+			case MUL:
+			case DIV:
+				if (l->in.op == ICON)
+					l->dpn.dval = l->tn.lval;
+				if (r->in.op == ICON)
+					r->dpn.dval = r->tn.lval;
+				l->in.op = DCON;
+				l->in.type = l->fn.csiz = DOUBLE;
+				r->in.op = FREE;
+				switch (o) {
+
+				case PLUS:
+					l->dpn.dval += r->dpn.dval;
+					return (l);
+
+				case MINUS:
+					l->dpn.dval -= r->dpn.dval;
+					return (l);
+
+				case MUL:
+					l->dpn.dval *= r->dpn.dval;
+					return (l);
+
+				case DIV:
+					if (r->dpn.dval == 0)
+						uerror("division by 0.");
+					else
+						l->dpn.dval /= r->dpn.dval;
+					return (l);
+				}
+			}
+	}
 
 	/* its real; we must make a new node */
 
 	p = block( o, l, r, INT, 0, INT );
 
 	actions = opact(p);
+#ifndef	BUG1
+	if (adebug)
+		printact(p, actions);
+#endif
 
 	if( actions&LVAL ){ /* check left descendent */
 		if( notlval(p->in.left) ) {
@@ -253,6 +349,14 @@ buildtree( o, l, r ) register NODE *l, *r; {
 			break;
 
 		case FCON:
+			p->tn.lval = 0;
+			p->tn.rval = 0;
+			p->in.type = FLOAT;
+			p->fn.cdim = 0;
+			p->fn.csiz = FLOAT;
+			break;
+
+		case DCON:
 			p->tn.lval = 0;
 			p->tn.rval = 0;
 			p->in.type = DOUBLE;
@@ -442,7 +546,7 @@ buildtree( o, l, r ) register NODE *l, *r; {
 			break;
 
 		case CALL:
-			p->in.right = r = strargs( p->in.right );
+			p->in.right = r = fixargs( p->in.right );
 		case UNARY CALL:
 			if( !ISPTR(l->in.type)) uerror("illegal function");
 			p->in.type = DECREF(l->in.type);
@@ -483,12 +587,19 @@ buildtree( o, l, r ) register NODE *l, *r; {
 
 	}
 
+/*
+ * Rewrite arguments in a function call.
+ * Structure arguments are massaged, single
+ * precision floating point constants are
+ * cast to double (to eliminate convert code).
+ */
 NODE *
-strargs( p ) register NODE *p;  { /* rewrite structure flavored arguments */
+fixargs( p ) register NODE *p;  {
+	int o = p->in.op;
 
-	if( p->in.op == CM ){
-		p->in.left = strargs( p->in.left );
-		p->in.right = strargs( p->in.right );
+	if( o == CM ){
+		p->in.left = fixargs( p->in.left );
+		p->in.right = fixargs( p->in.right );
 		return( p );
 		}
 
@@ -497,6 +608,8 @@ strargs( p ) register NODE *p;  { /* rewrite structure flavored arguments */
 		p->in.left = buildtree( UNARY AND, p->in.left, NIL );
 		p = clocal(p);
 		}
+	else if( o == FCON )
+		p = makety(p, DOUBLE, 0, 0);
 	return( p );
 	}
 
@@ -575,10 +688,12 @@ conval( p, o, q ) register NODE *p, *q; {
 		break;
 	case DIV:
 		if( val == 0 ) uerror( "division by 0" );
+		else if ( u ) p->tn.lval = (unsigned) p->tn.lval / val;
 		else p->tn.lval /= val;
 		break;
 	case MOD:
 		if( val == 0 ) uerror( "division by 0" );
+		else if ( u ) p->tn.lval = (unsigned) p->tn.lval % val;
 		else p->tn.lval %= val;
 		break;
 	case AND:
@@ -588,7 +703,7 @@ conval( p, o, q ) register NODE *p, *q; {
 		p->tn.lval |= val;
 		break;
 	case ER:
-		p->tn.lval ^=  val;
+		p->tn.lval ^= val;
 		break;
 	case LS:
 		i = val;
@@ -596,7 +711,8 @@ conval( p, o, q ) register NODE *p, *q; {
 		break;
 	case RS:
 		i = val;
-		p->tn.lval = p->tn.lval >> i;
+		if ( u ) p->tn.lval = (unsigned) p->tn.lval >> i;
+		else p->tn.lval = p->tn.lval >> i;
 		break;
 
 	case UNARY MINUS:
@@ -1009,7 +1125,15 @@ tymatch(p)  register NODE *p; {
 	if( ( t1 == CHAR || t1 == SHORT ) && o!= RETURN ) t1 = INT;
 	if( t2 == CHAR || t2 == SHORT ) t2 = INT;
 
-	if( t1==DOUBLE || t1==FLOAT || t2==DOUBLE || t2==FLOAT ) t = DOUBLE;
+#ifdef SPRECC
+	if( t1 == DOUBLE || t2 == DOUBLE )
+		t = DOUBLE;
+	else if( t1 == FLOAT || t2 == FLOAT )
+		t = FLOAT;
+#else
+	if (t1 == DOUBLE || t1 == FLOAT || t2 == DOUBLE || t2 == FLOAT)
+		t = DOUBLE;
+#endif
 	else if( t1==LONG || t2==LONG ) t = LONG;
 	else t = INT;
 
@@ -1065,19 +1189,49 @@ makety( p, t, d, s ) register NODE *p; TWORD t; {
 		}
 
 	if( p->in.op == ICON ){
-		if( t==DOUBLE||t==FLOAT ){
+		if (t == DOUBLE) {
+			p->in.op = DCON;
+			if (ISUNSIGNED(p->in.type))
+				p->dpn.dval = /* (unsigned CONSZ) */ p->tn.lval;
+			else
+				p->dpn.dval = p->tn.lval;
+			p->in.type = p->fn.csiz = t;
+			return (clocal(p));
+		}
+		if (t == FLOAT) {
 			p->in.op = FCON;
 			if( ISUNSIGNED(p->in.type) ){
-				p->fpn.dval = /* (unsigned CONSZ) */ p->tn.lval;
+				p->fpn.fval = /* (unsigned CONSZ) */ p->tn.lval;
 				}
 			else {
-				p->fpn.dval = p->tn.lval;
+				p->fpn.fval = p->tn.lval;
 				}
 
 			p->in.type = p->fn.csiz = t;
 			return( clocal(p) );
 			}
 		}
+	else if (p->in.op == FCON && t == DOUBLE) {
+		double db;
+
+		p->in.op = DCON;
+		db = p->fpn.fval;
+		p->dpn.dval = db;
+		p->in.type = p->fn.csiz = t;
+		return (clocal(p));
+	} else if (p->in.op == DCON && t == FLOAT) {
+		float fl;
+
+		p->in.op = FCON;
+		fl = p->dpn.dval;
+#ifdef notdef
+		if (fl != p->dpn.dval)
+			werror("float conversion loses precision");
+#endif
+		p->fpn.fval = fl;
+		p->in.type = p->fn.csiz = t;
+		return (clocal(p));
+	}
 
 	return( clocal( block( SCONV, p, NIL, t, d, s ) ) );
 
@@ -1169,6 +1323,7 @@ opact( p )  NODE *p; {
 	case STRING :
 	case ICON :
 	case FCON :
+	case DCON :
 	case CALL :
 	case UNARY CALL:
 	case UNARY MUL:
@@ -1368,16 +1523,19 @@ eprint( p, down, a, b ) register NODE *p; int *a, *b; {
 # endif
 
 prtdcon( p ) register NODE *p; {
-	int i;
+	int o = p->in.op, i;
 
-	if( p->in.op == FCON ){
+	if( o == DCON || o == FCON ){
 		locctr( DATA );
-		defalign( ALDOUBLE );
+		defalign( o == DCON ? ALDOUBLE : ALFLOAT );
 		deflab( i = getlab() );
-		fincode( p->fpn.dval, SZDOUBLE );
+		if( o == FCON )
+			fincode( p->fpn.fval, SZFLOAT );
+		else
+			fincode( p->dpn.dval, SZDOUBLE );
 		p->tn.lval = 0;
 		p->tn.rval = -i;
-		p->in.type = DOUBLE;
+		p->in.type = (o == DCON ? DOUBLE : FLOAT);
 		p->in.op = NAME;
 		}
 	}

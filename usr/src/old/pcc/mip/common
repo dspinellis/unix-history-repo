@@ -21,7 +21,7 @@ unsigned caloff(){
 	do {
 		temp <<= 1;
 		++i;
-		} while( temp > 0 );
+		} while( temp != 0 );
 	off = 1 << (i-1);
 	return (off);
 	}
@@ -170,6 +170,7 @@ struct dopest { int dopeop; char opst[8]; int dopeval; } indope[] = {
 	OREG, "OREG", LTYPE,
 	ICON, "ICON", LTYPE,
 	FCON, "FCON", LTYPE,
+	DCON, "DCON", LTYPE,
 	CCODES, "CCODES", LTYPE,
 	UNARY MINUS, "U-", UTYPE,
 	UNARY MUL, "U*", UTYPE,

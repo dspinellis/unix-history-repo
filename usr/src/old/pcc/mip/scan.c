@@ -1,4 +1,7 @@
-static char *sccsid ="@(#)scan.c	1.4 (Berkeley) %G%";
+#ifndef lint
+static char *sccsid ="@(#)scan.c	1.5 (Berkeley) %G%";
+#endif lint
+
 # include "mfile1"
 # include <a.out.h>
 # include <stab.h>
@@ -69,7 +72,8 @@ mainp1( argc, argv ) int argc; char *argv[]; {  /* control multiple files */
 
 	register i;
 	register char *cp;
-	extern int idebug, bdebug, tdebug, edebug, ddebug, xdebug, gdebug;
+	extern int idebug, bdebug, tdebug, edebug;
+	extern int ddebug, xdebug, gdebug, adebug;
 	extern unsigned int offsz;
 	int fdef = 0;
 	char *release = "PCC/364r1 vax uts3.0";
@@ -108,6 +112,9 @@ mainp1( argc, argv ) int argc; char *argv[]; {  /* control multiple files */
 					break;
 				case 'g':
 					++gdebug;
+					break;
+				case 'a':
+					++adebug;
 					break;
 				case 'G':
 					++gdebug;
@@ -999,11 +1006,13 @@ lxtitle(){
 		for( c=getchar(); isdigit(c); c=getchar() ){
 			val = val*10+ c - '0';
 			}
+		if( c == EOF )
+			continue;
 		ungetc( c, stdin );
 		lineno = val;
 		lxget( ' ', LEXWS );
-		if( (c=getchar()) != '\n' ){
-			for( cp=ftitle; c!='\n'; c=getchar(),++cp ){
+		if( (c=getchar()) != '\n' && c != EOF ){
+			for( cp=ftitle; c!=EOF && c!='\n'; c=getchar(),++cp ){
 				*cp = c;
 				}
 			*cp = '\0';

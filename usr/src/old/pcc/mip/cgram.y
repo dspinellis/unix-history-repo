@@ -1,85 +1,58 @@
-%term NAME  2
-%term STRING  3
-%term ICON  4
-%term FCON  5
-%term PLUS   6
-%term MINUS   8
-%term MUL   11
-%term AND   14
-%term OR   17
-%term ER   19
-%term QUEST  21
-%term COLON  22
-%term ANDAND  23
-%term OROR  24
+%term NAME	2		/* identifier */
+%term STRING	3		/* string constant, "..." */
+%term ICON	4		/* integer constant */
+%term FCON	5		/* single precision floating point constant */
+%term DCON	6		/* double precision floating point constant */
+/* 8 is used in the 2nd pass reader for BITYPE */
+%term PLUS	9		/* + */
+%term MINUS	11		/* - */
+%term MUL	14		/* * */
+%term AND	17		/* & */
+%term OR	20		/* | */
+%term ER	22		/* ^ */
+%term QUEST	24		/* ? */
+%term COLON	25		/* : */
+%term ANDAND	26		/* && */
+%term OROR	27		/* || */
 
-/*	special interfaces for yacc alone */
-/*	These serve as abbreviations of 2 or more ops:
-	ASOP	=, = ops
-	RELOP	LE,LT,GE,GT
-	EQUOP	EQ,NE
-	DIVOP	DIV,MOD
-	SHIFTOP	LS,RS
-	ICOP	ICR,DECR
-	UNOP	NOT,COMPL
-	STROP	DOT,STREF
+%term ASOP	28		/* =, =ops */
+%term RELOP	29		/* LE, LT, GE, GT */
+%term EQUOP	30		/* EQ, NE */
+%term DIVOP	31		/* DIV, MOD */
+%term SHIFTOP	32		/* LS, RS */
+%term INCOP	33		/* INCR, DECR */
+%term UNOP	34		/* NOT, COMPL */
+%term STROP	35		/* DOT, STREF */
 
-	*/
-%term ASOP  25
-%term RELOP  26
-%term EQUOP  27
-%term DIVOP  28
-%term SHIFTOP  29
-%term INCOP  30
-%term UNOP  31
-%term STROP  32
+/* reserved words, etc */
+%term TYPE	36		/* symbol type */
+%term CLASS	37		/* storage type */
+%term STRUCT	38		/* struct */
+%term RETURN	39		/* return */
+%term GOTO	40		/* goto */
+%term IF	41		/* if */
+%term ELSE	42		/* else */
+%term SWITCH	43		/* switch */
+%term BREAK	44		/* break */
+%term CONTINUE	45		/* continue */
+%term WHILE	46		/* while */
+%term DO	47		/* do */
+%term FOR	48		/* for */
+%term DEFAULT	49		/* default */
+%term CASE	50		/* case */
+%term SIZEOF	51		/* sizeof */
+%term ENUM	52		/* enum */
 
-/*	reserved words, etc */
-%term TYPE  33
-%term CLASS  34
-%term STRUCT  35
-%term RETURN  36
-%term GOTO  37
-%term IF  38
-%term ELSE  39
-%term SWITCH  40
-%term BREAK  41
-%term CONTINUE  42
-%term WHILE  43
-%term DO  44
-%term FOR  45
-%term DEFAULT  46
-%term CASE  47
-%term SIZEOF  48
-%term ENUM 49
-
-
-/*	little symbols, etc. */
-/*	namely,
-
-	LP	(
-	RP	)
-
-	LC	{
-	RC	}
-
-	LB	[
-	RB	]
-
-	CM	,
-	SM	;
-
-	*/
-
-%term LP  50
-%term RP  51
-%term LC  52
-%term RC  53
-%term LB  54
-%term RB  55
-%term CM  56
-%term SM  57
-%term ASSIGN  58
+/* little symbols, etc. */
+%term LP	53		/* ( */
+%term RP	54		/* ) */
+%term LC	55		/* { */
+%term RC	56		/* } */
+%term LB	57		/* [ */
+%term RB	58		/* ] */
+%term CM	59		/* , */
+%term SM	60		/* ; */
+%term ASSIGN	61		/* = */
 
 /* at last count, there were 7 shift/reduce, 1 reduce/reduce conflicts
 /* these involved:
@@ -396,6 +369,10 @@ init_declarator:   nfdeclarator
 			={  nidcl( tymerge($<nodep>0,$1) ); }
 		|  fdeclarator
 			={  defid( tymerge($<nodep>0,$1), uclass(curclass) );
+			    if( paramno > 0 ){
+				uerror( "illegal argument" );
+				paramno = 0;
+				}
 			}
 		|  xnfdeclarator optasgn e
 			%prec CM
@@ -792,7 +769,11 @@ term:		   term INCOP
 			    }
 		|  FCON
 			={  $$=buildtree(FCON,NIL,NIL);
-			    $$->fpn.dval = dcon;
+			    $$->fpn.fval = fcon;
+			    }
+		|  DCON
+			={  $$=buildtree(DCON,NIL,NIL);
+			    $$->dpn.dval = dcon;
 			    }
 		|  STRING
 			={  $$ = getstr(); /* get string contents */ }

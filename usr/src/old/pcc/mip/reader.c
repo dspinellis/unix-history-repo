@@ -1,4 +1,7 @@
-static char *sccsid ="@(#)reader.c	4.1 (Berkeley) %G%";
+#ifndef lint
+static char *sccsid ="@(#)reader.c	4.2 (Berkeley) %G%";
+#endif lint
+
 # include "mfile2"
 
 /*	some storage declarations */
@@ -14,6 +17,9 @@ int lineno;
 
 int nrecur;
 int lflag;
+#ifdef FORT
+int Oflag = 0;
+#endif
 extern int Wflag;
 int edebug = 0;
 int xdebug = 0;
@@ -95,6 +101,12 @@ p2init( argc, argv ) char *argv[];{
 
 					++Wflag;
 					break;
+
+#ifdef FORT
+				case 'O':  /* optimizing */
+					++Oflag;
+					break;
+#endif
 
 				default:
 					cerror( "bad option: %c", *cp );
@@ -405,7 +417,7 @@ char *cnames[] = {
 # else
 	"STARNM",
 # endif
-# ifdef WCARD2"
+# ifdef WCARD2
 	"WCARD2",
 # else
 	"STARREG",
@@ -597,7 +609,7 @@ order(p,cook) NODE *p; {
 
 	case FLD:	/* fields of funny type */
 		if ( p1->in.op == UNARY MUL ){
-			offstar( p1->in.left, cook );
+			offstar( p1->in.left );
 			goto again;
 			}
 
@@ -646,11 +658,11 @@ order(p,cook) NODE *p; {
 			p->in.op = FREE;
 			return;
 			}
-		offstar( p->in.left, cook );
+		offstar( p->in.left );
 		goto again;
 
 	case INCR:  /* INCR and DECR */
-		if( setincr(p, cook) ) goto again;
+		if( setincr(p) ) goto again;
 
 		/* x++ becomes (x += 1) -1; */
 
@@ -668,11 +680,11 @@ order(p,cook) NODE *p; {
 		goto again;
 
 	case STASG:
-		if( setstr( p, cook ) ) goto again;
+		if( setstr( p ) ) goto again;
 		goto nomat;
 
 	case ASG PLUS:  /* and other assignment ops */
-		if( setasop(p, cook) ) goto again;
+		if( setasop(p) ) goto again;
 
 		/* there are assumed to be no side effects in LHS */
 
@@ -692,12 +704,12 @@ order(p,cook) NODE *p; {
 		goto again;
 
 	case ASSIGN:
-		if( setasg( p, cook ) ) goto again;
+		if( setasg( p ) ) goto again;
 		goto nomat;
 
 
 	case BITYPE:
-		if( setbin( p, cook ) ) goto again;
+		if( setbin( p ) ) goto again;
 		/* try to replace binary ops by =ops */
 		switch(o){
 

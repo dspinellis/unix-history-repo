@@ -1,4 +1,7 @@
-static char *sccsid ="@(#)match.c	4.1 (Berkeley) %G%";
+#ifndef lint
+static char *sccsid ="@(#)match.c	4.2 (Berkeley) %G%";
+#endif lint
+
 # include "mfile2"
 
 # ifdef WCARD1
@@ -317,7 +320,9 @@ int rtyflg = 0;
 expand( p, cookie, cp ) NODE *p;  register char *cp; {
 	/* generate code by interpreting table entry */
 
+# ifdef NEWZZZ
 	register char c;
+# endif
 	CONSZ val;
 
 	rtyflg = 0;
