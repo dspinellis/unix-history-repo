@@ -1,4 +1,4 @@
-/*	ut.c	4.16	82/08/13	*/
+/*	ut.c	4.17	82/08/22	*/
 
 #include "tj.h"
 #if NUT > 0
@@ -661,13 +661,14 @@ utread(dev, uio)
 /*
  * Raw interface for a write
  */
-utwrite(dev)
+utwrite(dev, uio)
 	dev_t dev;
+	struct uio *uio;
 {
-	utphys(dev, 0);
+	u.u_error = utphys(dev, uio);
 	if (u.u_error)
 		return;
-	physio(utstrategy, &rutbuf[UTUNIT(dev)], dev, B_WRITE, minphys, 0);
+	physio(utstrategy, &rutbuf[UTUNIT(dev)], dev, B_WRITE, minphys, uio);
 }
 
 /*
@@ -682,16 +683,12 @@ utphys(dev, uio)
 	register struct tj_softc *sc;
 	register struct uba_device *ui;
 
-	if (tjunit >= NTJ || (ui=tjdinfo[tjunit]) == 0 || ui->ui_alive == 0) {
-		u.u_error = ENXIO;
-		return;
-	}
+	if (tjunit >= NTJ || (ui=tjdinfo[tjunit]) == 0 || ui->ui_alive == 0)
+		return (ENXIO);
 	sc = &tj_softc[tjunit];
-	if (uio)
-		sc->sc_blkno = bdbtofsb(uio->uio_offset>>9);
-	else
-		sc->sc_blkno = bdbtofsb(u.u_offset>>9);
+	sc->sc_blkno = bdbtofsb(uio->uio_offset>>9);
 	sc->sc_nxrec = sc->sc_blkno+1;
+	return (0);
 }
 
 /*ARGSUSED*/

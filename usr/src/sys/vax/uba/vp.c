@@ -1,4 +1,4 @@
-/*	vp.c	4.16	82/08/13	*/
+/*	vp.c	4.17	82/08/22	*/
 
 #include "vp.h"
 #if NVP > 0
@@ -193,7 +193,11 @@ vpwrite(dev)
 	dev_t dev;
 {
 
-	physio(vpstrategy, &rvpbuf[VPUNIT(dev)], dev, B_WRITE, minvpph, 0);
+	if (VPUNIT(dev) >= NVP)
+		u.u_error = ENXIO;
+	else
+		physio(vpstrategy, &rvpbuf[VPUNIT(dev)], dev, B_WRITE,
+		    minvpph, uio);
 }
 
 vpwait(dev)
