@@ -1,4 +1,4 @@
-/*	dinode.h	4.5	81/03/09	*/
+/*	dinode.h	4.6	81/06/15	*/
 
 /*
  * The I node is the focus of all
@@ -50,6 +50,12 @@ struct	inode
 		} i_d;
 #define	i_rdev	i_d.I_rdev
 #define	i_group	i_d.I_group
+		struct {
+			daddr_t	I_port0;	/* low 16 bits of portid */
+			daddr_t	I_port1;	/* high 16 bits of portid */
+		} i_p;
+#define	i_port0	i_p.I_port0
+#define	i_port1	i_p.I_port1
 	} i_un;
 	short	i_vfdcnt;	/* number of fd's vreading this inode */
 	short	i_hlink;	/* link in hash chain (iget/iput/ifind) */
@@ -86,6 +92,7 @@ struct	inode *namei();
 #define		IFCHR	0020000	/* character special */
 #define		IFBLK	0060000	/* block special */
 #define		IFREG	0100000	/* regular */
+#define		IFPORT	0010000	/* named port */
 #define		IFMPC	0030000	/* multiplexed char special */
 #define		IFMPB	0070000	/* multiplexed block special */
 #define	ISUID	04000		/* set user id on execution */
