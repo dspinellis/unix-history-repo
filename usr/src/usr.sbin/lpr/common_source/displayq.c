@@ -1,4 +1,4 @@
-/*	displayq.c	4.1	83/04/29	*/
+/*	displayq.c	4.2	83/05/13	*/
 /*
  * Routines to display the state of the queue.
  */
@@ -42,7 +42,6 @@ displayq(format)
 	struct stat statb;
 	FILE *fp;
 
-	name = "displayq";
 	lflag = format;
 	totsize = 0;
 	rank = -1;
@@ -54,7 +53,7 @@ displayq(format)
 	if ((LP = pgetstr("lp", &bp)) == NULL)
 		LP = DEFDEVLP;
 	if ((RP = pgetstr("rp", &bp)) == NULL)
-		RP = printer;
+		RP = DEFLP;
 	if ((SD = pgetstr("sd", &bp)) == NULL)
 		SD = DEFSPOOL;
 	if ((LO = pgetstr("lo", &bp)) == NULL)
@@ -117,10 +116,10 @@ displayq(format)
 		if (fp != NULL)
 			fclose(fp);
 		garbage = nitems;
-		if (*LP && stat(LP, &statb) >= 0 && (statb.st_mode & 0777) == 0)
-			status("Warning: %s is down", printer);
+		if (stat(LO, &statb) >= 0 && (statb.st_mode & 0100))
+			printf("Warning: %s is down\n", printer);
 		else
-			status("Warning: no daemon present");
+			printf("Warning: no daemon present\n");
 	} else {
 		register char *cp = current;
 
@@ -131,19 +130,22 @@ displayq(format)
 			cp++;
 		*cp = '\0';
 		fclose(fp);
+		/*
+		 * Print the status file to show what the daemon is doing.
+		 */
+		if (sendtorem)
+			printf("\n%s: ", host);
+		if ((fd = open(ST, FRDONLY|FSHLOCK)) >= 0) {
+			while ((i = read(fd, line, sizeof(line))) > 0)
+				(void) fwrite(line, 1, i, stdout);
+			(void) close(fd);
+		} else
+			putchar('\n');
 	}
 	/*
 	 * Now, examine the control files and print out the jobs to
 	 * be done for each user.
 	 */
-	if (sendtorem)
-		printf("\n%s: ", host);
-	if ((fd = open(ST, FRDONLY|FSHLOCK)) >= 0) {
-		while ((i = read(fd, line, sizeof(line))) > 0)
-			(void) fwrite(line, 1, i, stdout);
-		(void) close(fd);
-	} else
-		putchar('\n');
 	if (!lflag)
 		header();
 	for (i = 0; i < nitems; i++) {
