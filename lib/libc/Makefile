@@ -23,5 +23,6 @@ INSTALL_PIC_ARCHIVE=
 .include "${.CURDIR}/rpc/Makefile.inc"
 .include "${.CURDIR}/regex/Makefile.inc"
 .include "${.CURDIR}/yp/Makefile.inc"
+.include "${.CURDIR}/${MACHINE}/sys/Makefile.inc"
 
 .include <bsd.lib.mk>

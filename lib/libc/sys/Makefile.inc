@@ -26,9 +26,9 @@ ASM=	accept.o access.o acct.o adjtime.o async_daemon.o bind.o chdir.o \
 	sethostname.o setitimer.o setpgid.o setpriority.o setregid.o \
 	setreuid.o setrlimit.o setsid.o setsockopt.o settimeofday.o setuid.o \
 	shmsys.o shutdown.o sigaction.o sigstack.o socket.o socketpair.o \
-	stat.o statfs.o swapon.o symlink.o sync.o truncate.o umask.o uname.o \
-	unlink.o unmount.o utimes.o vadvise.o vm_allocate.o vm_deallocate.o \
-	vm_inherit.o vm_protect.o wait4.o write.o writev.o
+	stat.o statfs.o swapon.o symlink.o sync.o sysarch.o truncate.o \
+	umask.o uname.o unlink.o unmount.o utimes.o vadvise.o vm_allocate.o \
+	vm_deallocate.o vm_inherit.o vm_protect.o wait4.o write.o writev.o
 
 
 PASM=		${ASM:.o=.po}
