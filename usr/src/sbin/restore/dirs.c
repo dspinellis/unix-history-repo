@@ -1,7 +1,7 @@
 /* Copyright (c) 1983 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)dirs.c	3.11	(Berkeley)	83/05/19";
+static char sccsid[] = "@(#)dirs.c	3.12	(Berkeley)	83/06/02";
 #endif
 
 #include "restore.h"
@@ -481,7 +481,7 @@ genliteraldir(name, ino)
 	itp = inotablookup(ino);
 	if (itp == NULL)
 		panic("Cannot find directory inode %d named %s\n", ino, name);
-	if ((ofile = open(name, FWRONLY|FCREATE, 0666)) < 0) {
+	if ((ofile = creat(name, 0666)) < 0) {
 		fprintf(stderr, "%s: ", name);
 		(void) fflush(stderr);
 		perror("cannot create file");
