@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_subs.c	7.34 (Berkeley) %G%
+ *	@(#)nfs_subs.c	7.35 (Berkeley) %G%
  */
 
 /*
@@ -18,6 +18,7 @@
 #include "param.h"
 #include "user.h"
 #include "proc.h"
+#include "filedesc.h"
 #include "systm.h"
 #include "kernel.h"
 #include "mount.h"
@@ -723,7 +724,8 @@ nfs_namei(ndp, fhp, len, mdp, dposp)
 	register int i, rem;
 	register struct mbuf *md;
 	register char *cp;
-	struct vnode *dp;
+	register struct filedesc *fdp = u.u_procp->p_fd;	/* XXX */
+	struct vnode *dp, *savedcdir, *savedrdir;
 	int flag;
 	int error;
 
@@ -786,13 +788,17 @@ nfs_namei(ndp, fhp, len, mdp, dposp)
 	 * Must set current directory here to avoid confusion in namei()
 	 * called from rename()
 	 */
-	ndp->ni_cdir = dp;
-	ndp->ni_rdir = NULLVP;
+	savedcdir = fdp->fd_cdir;
+	savedrdir = fdp->fd_rdir;
+	fdp->fd_cdir = dp;
+	fdp->fd_rdir = NULLVP;
 
 	/*
 	 * And call namei() to do the real work
 	 */
 	error = namei(ndp);
+	fdp->fd_cdir = savedcdir;
+	fdp->fd_rdir = savedrdir;
 	vrele(dp);
 	return (error);
 }
