@@ -1,42 +1,62 @@
 /*
- * Copyright (c) 1983 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+ * Copyright (c) 1983, 1988 Regents of the University of California.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms are permitted
+ * provided that this notice is preserved and that due credit is given
+ * to the University of California at Berkeley. The name of the University
+ * may not be used to endorse or promote products derived from this
+ * software without specific prior written permission. This software
+ * is provided ``as is'' without express or implied warranty.
  */
 
 #ifndef lint
 char copyright[] =
-"@(#) Copyright (c) 1983 Regents of the University of California.\n\
+"@(#) Copyright (c) 1983, 1988 Regents of the University of California.\n\
  All rights reserved.\n";
-#endif not lint
+#endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)hostname.c	5.1 (Berkeley) %G%";
-#endif not lint
+static char sccsid[] = "@(#)hostname.c	5.2 (Berkeley) %G%";
+#endif /* not lint */
 
-/*
- * hostname -- get (or set hostname)
- */
 #include <stdio.h>
-
-char hostname[32];
-extern int errno;
+#include <sys/param.h>
 
 main(argc,argv)
-	char *argv[];
+	int argc;
+	char **argv;
 {
-	int	myerrno;
+	extern int optind;
+	int ch, sflag;
+	char hostname[MAXHOSTNAMELEN], *p, *index();
 
-	argc--;
-	argv++;
-	if (argc) {
-		if (sethostname(*argv,strlen(*argv)))
+	sflag = 0;
+	while ((ch = getopt(argc, argv, "s")) != EOF)
+		switch((char)ch) {
+		case 's':
+			sflag = 1;
+			break;
+		case '?':
+		default:
+			fputs("hostname [-s] [hostname]\n", stderr);
+			exit(1);
+		}
+	argv += optind;
+
+	if (*argv) {
+		if (sethostname(*argv, strlen(*argv))) {
 			perror("sethostname");
-		myerrno = errno;
+			exit(1);
+		}
 	} else {
-		gethostname(hostname,sizeof(hostname));
-		myerrno = errno;
-		printf("%s\n",hostname);
+		if (gethostname(hostname, sizeof(hostname))) {
+			perror("gethostname");
+			exit(1);
+		}
+		if (sflag && (p = index(hostname, '.')))
+			*p = '\0';
+		puts(hostname);
 	}
-	exit(myerrno);
+	exit(0);
 }
