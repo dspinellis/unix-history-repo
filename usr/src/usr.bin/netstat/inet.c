@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)inet.c	4.2 82/10/05";
+static char sccsid[] = "@(#)inet.c	4.3 82/10/06";
 #endif
 
 #include <sys/types.h>
@@ -178,14 +178,15 @@ inetname(in)
 
 	if (!nflag) {
 		if (in_lnaof(in) == INADDR_ANY) {
-			struct netent *np = getnetbyaddr(in_netof(in));
+			struct netent *np = getnetbyaddr(in_netof(in), AF_INET);
 
 			if (np)
 				cp = np->n_name;
 		} else {
 			struct hostent *hp;
 
-			hp = gethostbyaddr(&in, sizeof (struct in_addr));
+			hp = gethostbyaddr(&in, sizeof (struct in_addr),
+				AF_INET);
 			if (hp)
 				cp = hp->h_name;
 		}
