@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)tftpd.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)tftpd.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 
@@ -234,12 +234,28 @@ sendfile(pf)
 		timeout = 0;
 		(void) setjmp(timeoutbuf);
 
+send_data:
+		/* Now, we flush anything pending to be read */
+		/* This is to try to keep in synch between the two sides */
+		while (1) {
+			int i;
+			char rbuf[PKTSIZE];
+
+			(void) ioctl(peer, FIONREAD, &i);
+			if (i) {
+				fromlen = sizeof from;
+				n = recvfrom(peer, rbuf, sizeof (rbuf), 0,
+					(caddr_t)&from, &fromlen);
+			} else {
+				break;
+			}
+		}
 		if (send(peer, dp, size + 4, 0) != size + 4) {
 			perror("tftpd: write");
 			goto abort;
 		}
 		read_ahead(file, pf->f_convert);
-		do {
+		for ( ; ; ) {
 			alarm(rexmtval);        /* read the ack */
 			n = recv(peer, ackbuf, sizeof (ackbuf), 0);
 			alarm(0);
@@ -252,8 +268,17 @@ sendfile(pf)
 
 			if (ap->th_opcode == ERROR)
 				goto abort;
+			
+			if (ap->th_opcode == ACK) {
+				if (ap->th_block == block) {
+					break;
+				}
+				if (ap->th_block == (block -1)) {
+					goto send_data;
+				}
+			}
 
-		}  while (ap->th_opcode != ACK || ap->th_block != block);
+		}
 		block++;
 	} while (size == SEGSIZE);
 abort:
@@ -286,6 +311,21 @@ recvfile(pf)
 		block++;
 		(void) setjmp(timeoutbuf);
 send_ack:
+		/* Now, we flush anything pending to be read */
+		/* This is to try to keep in synch between the two sides */
+		while (1) {
+			int i;
+			char rbuf[PKTSIZE];
+
+			(void) ioctl(peer, FIONREAD, &i);
+			if (i) {
+				fromlen = sizeof from;
+				n = recvfrom(peer, rbuf, sizeof (rbuf), 0,
+					(caddr_t)&from, &fromlen);
+			} else {
+				break;
+			}
+		}
 		if (send(peer, ackbuf, 4, 0) != 4) {
 			perror("tftpd: write");
 			goto abort;
