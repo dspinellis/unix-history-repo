@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)exec.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)exec.c	5.10 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -32,15 +32,19 @@ buildargv(ap, arg, envpp)
 	const char *arg;
 	char ***envpp;
 {
-	register size_t max, off;
-	register char **argv = NULL;
+	static int memsize;
+	static char **argv;
+	register int off;
 
-	for (off = max = 0;; ++off) {
-		if (off >= max) {
-			max += 50;	/* Starts out at 0. */
-			max *= 2;	/* Ramp up fast. */
-			if (!(argv = realloc(argv, max * sizeof(char *))))
-				return(NULL);
+	argv = NULL;
+	for (off = 0;; ++off) {
+		if (off >= memsize) {
+			memsize += 50;	/* Starts out at 0. */
+			memsize *= 2;	/* Ramp up fast. */
+			if (!(argv = realloc(argv, memsize * sizeof(char *)))) {
+				memsize = 0;
+				return (NULL);
+			}
 			if (off == 0) {
 				argv[0] = (char *)arg;
 				off = 1;
@@ -52,7 +56,7 @@ buildargv(ap, arg, envpp)
 	/* Get environment pointer if user supposed to provide one. */
 	if (envpp)
 		*envpp = va_arg(ap, char **);
-	return(argv);
+	return (argv);
 }
 
 int
@@ -74,13 +78,13 @@ execl(name, arg, va_alist)
 #else
 	va_start(ap);
 #endif
-	if (argv = buildargv(ap, arg, (char ***)NULL))
+	if (argv = buildargv(ap, arg, NULL))
 		(void)execve(name, argv, environ);
 	va_end(ap);
 	sverrno = errno;
 	free(argv);
 	errno = sverrno;
-	return(-1);
+	return (-1);
 }
 
 int
@@ -108,7 +112,7 @@ execle(name, arg, va_alist)
 	sverrno = errno;
 	free(argv);
 	errno = sverrno;
-	return(-1);
+	return (-1);
 }
 
 int
@@ -130,13 +134,13 @@ execlp(name, arg, va_alist)
 #else
 	va_start(ap);
 #endif
-	if (argv = buildargv(ap, arg, (char ***)NULL))
+	if (argv = buildargv(ap, arg, NULL))
 		(void)execvp(name, argv);
 	va_end(ap);
 	sverrno = errno;
 	free(argv);
 	errno = sverrno;
-	return(-1);
+	return (-1);
 }
 
 int
@@ -145,7 +149,7 @@ execv(name, argv)
 	char * const *argv;
 {
 	(void)execve(name, argv, environ);
-	return(-1);
+	return (-1);
 }
 
 int
@@ -153,7 +157,9 @@ execvp(name, argv)
 	const char *name;
 	char * const *argv;
 {
-	register int lp, ln;
+	static int memsize;
+	static char **memp;
+	register int cnt, lp, ln;
 	register char *p;
 	int eacces, etxtbsy;
 	char *bp, *cur, *path, buf[MAXPATHLEN];
@@ -207,20 +213,20 @@ retry:		(void)execve(bp, argv, environ);
 			break;
 		case ENOENT:
 			break;
-		case ENOEXEC: {
-			register size_t cnt;
-			register char **ap;
-
-			for (cnt = 0, ap = (char **)argv; *ap; ++ap, ++cnt);
-			if (ap = malloc((cnt + 2) * sizeof(char *))) {
-				bcopy(argv + 1, ap + 2, cnt * sizeof(char *));
-				ap[0] = "sh";
-				ap[1] = bp;
-				(void)execve(_PATH_BSHELL, ap, environ);
-				free(ap);
+		case ENOEXEC:
+			for (cnt = 0; argv[cnt]; ++cnt);
+			if ((cnt + 2) * sizeof(char *) > memsize) {
+				memsize = (cnt + 2) * sizeof(char *);
+				if ((memp = realloc(memp, memsize)) == NULL) {
+					memsize = 0;
+					goto done;
+				}
 			}
+			memp[0] = "sh";
+			memp[1] = bp;
+			bcopy(argv + 1, memp + 2, cnt * sizeof(char *));
+			(void)execve(_PATH_BSHELL, memp, environ);
 			goto done;
-		}
 		case ETXTBSY:
 			if (etxtbsy < 3)
 				(void)sleep(++etxtbsy);
@@ -235,5 +241,5 @@ retry:		(void)execve(bp, argv, environ);
 		errno = ENOENT;
 done:	if (path)
 		free(path);
-	return(-1);
+	return (-1);
 }
