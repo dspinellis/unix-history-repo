@@ -28,6 +28,14 @@
  *
  * This bootblock does not support fdisk partitions, and can only be used
  * as the master boot block.
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00088
+ * --------------------         -----   ----------------------
+ *
+ * 23 Oct 92	Joerg Lohse		changed ccb opcode for compatibility
+ *					with Adaptec AHA-1542A
  */
 
 #include "param.h"
@@ -120,7 +128,7 @@ const struct {
 
 volatile struct mailbox_entry mailbox[2];
 const char ccb[] = {
-	3, /* opcode: normal read/write */
+	0, /* opcode: normal read/write */
 	(target << 5) | 8, /* target num and read flag */
 	10, /* scsi cmd len */
 	1, /* no automatic request for sense */

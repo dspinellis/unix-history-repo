@@ -1,11 +1,22 @@
 #	from: @(#)Makefile	7.9 (Berkeley) 5/8/91
+#
+# PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+# --------------------         -----   ----------------------
+# CURRENT PATCH LEVEL:         1       00088
+# --------------------         -----   ----------------------
+#
+# 23 Oct 92	Joerg Lohse		added rule to compile 'trimhd'
+#					(trimhd = 'dd bs=1 skip=32')
+# 10 Mar 93	Rodney W. Grimes	Fixed DESTDIR and STANDIR so
+#					that make install works correctly
+#
 
-DESTDIR=/
+DESTDIR=/usr
 LD=/usr/bin/ld
 STAND=	/sys/stand
 INCPATH=-I/sys/sys -I/sys -I/sys/ufs  -I${STAND}
 VPATH=	${STAND}
-STANDDIR= ${DESTDIR}/stand
+STANDDIR= ${DESTDIR}/mdec
 
 CC=	cc -traditional
 CPP=	cpp -traditional ${INCPATH} -DSTANDALONE -DAT386
@@ -48,31 +59,31 @@ asbootblk.o: asbootblk.c
 
 # getting booted from disc
 
-wdboot: wdbootblk.o
+wdboot: wdbootblk.o trimhd
 	${LD} -N -T ${RELOC} wdbootblk.o
 	rm -f $@; strip a.out; trimhd 32 <a.out >$@; rm -f a.out; ls -l $@
 
-bootwd:	wsrt0.o boot.o bmap.o cga.o fs.o kbd.o prf.o wd.o printf.o breadwd.o
+bootwd:	wsrt0.o boot.o bmap.o cga.o fs.o kbd.o prf.o wd.o printf.o breadwd.o trimhd
 	${LD} -N -T ${RELOC2} wsrt0.o boot.o bmap.o cga.o kbd.o prf.o printf.o \
 		breadwd.o fs.o wd.o -lc
 	size a.out
 	rm -f $@; strip a.out; trimhd 32 <a.out >$@; rm -f a.out; ls -l $@
 
-fdboot: fdbootblk.o
+fdboot: fdbootblk.o trimhd
 	${LD} -N -T ${RELOC} fdbootblk.o
 	rm -f $@; strip a.out; trimhd 32 <a.out >$@; rm -f a.out; ls -l $@
 
-bootfd:	wsrt0.o boot.o bmap.o cga.o fs.o kbd.o prf.o fd.o printf.o breadfd.o
+bootfd:	wsrt0.o boot.o bmap.o cga.o fs.o kbd.o prf.o fd.o printf.o breadfd.o trimhd
 	${LD} -N -T ${RELOC2} wsrt0.o boot.o bmap.o cga.o kbd.o prf.o printf.o \
 		breadfd.o fs.o fd.o -lc
 	size a.out
 	rm -f $@; strip a.out; trimhd 32 <a.out >$@; rm -f a.out; ls -l $@
 
-asboot:	asbootblk.o
+asboot:	asbootblk.o trimhd
 	${LD} -N -T 7c00 asbootblk.o
 	rm -f $@; strip a.out; trimhd 32 <a.out >$@; rm -f a.out; ls -l $@
 
-bootas:	wsrt0.o boot.o bmap.o cga.o fs.o kbd.o prf.o as.o printf.o breadas.o
+bootas:	wsrt0.o boot.o bmap.o cga.o fs.o kbd.o prf.o as.o printf.o breadas.o trimhd
 	${LD} -N -T ${RELOC2} wsrt0.o boot.o bmap.o cga.o kbd.o prf.o printf.o \
 		breadas.o fs.o as.o -lc
 	size a.out
@@ -98,8 +109,11 @@ breadas.c: breadxx.c
 	rm -f breadas.c
 	sed -e 's/XX/as/' -e 's/xx/as/g'	< breadxx.c >> breadas.c
 
+trimhd:	trimhd.c
+	${CC} ${CFLAGS} -s -o trimhd trimhd.c
+
 clean:
-	rm -f *.o *.exe *.i sm_*.c
+	rm -f *.o *.exe *.i sm_*.c trimhd
 	rm -f a.out bfd bwd fdb wdb ${ALL}
 	rm -f boot[a-wyz]? boot[a-wyz]?? boot[a-wyz]?.c boot[a-wyz]??.c \
 		conf[a-wyz]?.c conf[a-wyz]??.c bread[a-wyz]?.c
