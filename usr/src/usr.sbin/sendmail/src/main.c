@@ -13,7 +13,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.39 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.40 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -55,6 +55,7 @@ char	edata;
 **		Eric Allman, UCB/INGRES (until 10/81)
 **			     Britton-Lee, Inc., purveyors of fine
 **				database computers (from 11/81)
+**			     Now back at UCB at the Mammoth project.
 **		The support of the INGRES Project and Britton-Lee is
 **			gratefully acknowledged.  Britton-Lee in
 **			particular had absolutely nothing to gain from
@@ -397,7 +398,19 @@ main(argc, argv, envp)
 		  case 'I':	/* initialize alias DBM file */
 			OpMode = MD_INITALIAS;
 			break;
-# endif DBM
+# endif /* DBM */
+
+		  case 'R':	/* log raw recipient info */
+			p += 2;
+			if (*p == '\0' && ((p = *++av) == NULL || *p == '-'))
+			{
+				usrerr("Bad -R flag");
+				ExitStat = EX_USAGE;
+				av--;
+				break;
+			}
+			RcptLogFile = newstr(p);
+			break;
 		}
 	}
 
