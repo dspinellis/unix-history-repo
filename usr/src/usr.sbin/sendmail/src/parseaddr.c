@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)parseaddr.c	3.67		%G%);
+SCCSID(@(#)parseaddr.c	3.68		%G%);
 
 /*
 **  PARSE -- Parse an address
@@ -400,7 +400,7 @@ toktype(c)
 		expand("$o", buf, &buf[sizeof buf - 1], CurEnv);
 		(void) strcat(buf, DELIMCHARS);
 	}
-	if (c == MATCHCLASS || c == MATCHREPL)
+	if (c == MATCHCLASS || c == MATCHREPL || c == MATCHNCLASS)
 		return (ONE);
 	if (c == '"')
 		return (QST);
@@ -422,11 +422,11 @@ toktype(c)
 **	For each rewrite rule, 'avp' points the address vector we
 **	are trying to match against, and 'pvp' points to the pattern.
 **	If pvp points to a special match value (MATCHZANY, MATCHANY,
-**	MATCHONE, MATCHCLASS) then the address in avp matched is
-**	saved away in the match vector (pointed to by 'mvp').
+**	MATCHONE, MATCHCLASS, MATCHNCLASS) then the address in avp
+**	matched is saved away in the match vector (pointed to by 'mvp').
 **
 **	When a match between avp & pvp does not match, we try to
-**	back out.  If we back up over a MATCHONE or a MATCHCLASS
+**	back out.  If we back up over MATCHONE, MATCHCLASS, or MATCHNCLASS
 **	we must also back out the match in mvp.  If we reach a
 **	MATCHANY or MATCHZANY we just extend the match and start
 **	over again.
@@ -524,7 +524,8 @@ rewrite(pvp, ruleset)
 				register int class;
 
 			  case MATCHCLASS:
-				/* match any token in a class */
+			  case MATCHNCLASS:
+				/* match any token in (not in) a class */
 				class = rp[1];
 				if (!isalpha(class))
 					goto backup;
@@ -534,6 +535,11 @@ rewrite(pvp, ruleset)
 					class -= 'a';
 				s = stab(ap, ST_CLASS, ST_FIND);
 				if (s == NULL || (s->s_class & (1L << class)) == 0)
+				{
+					if (*rp == MATCHCLASS)
+						goto backup;
+				}
+				else if (*rp == MATCHNCLASS)
 					goto backup;
 
 				/* explicit fall-through */
@@ -579,7 +585,8 @@ rewrite(pvp, ruleset)
 					break;
 				}
 				avp--;
-				if (*rp == MATCHONE || *rp == MATCHCLASS)
+				if (*rp == MATCHONE || *rp == MATCHCLASS ||
+				    *rp == MATCHNCLASS)
 				{
 					/* back out binding */
 					mlp--;
