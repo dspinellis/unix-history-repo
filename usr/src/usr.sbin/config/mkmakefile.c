@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mkmakefile.c	5.24 (Berkeley) %G%";
+static char sccsid[] = "@(#)mkmakefile.c	5.25 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -600,8 +600,7 @@ do_systemspec(f, fl, first)
 	int first;
 {
 
-	fprintf(f, "%s: Makefile ../%s/symbols.sort", machinename,
-	    fl->f_needs);
+	fprintf(f, "%s: Makefile ../%s/symbols.sort", machinename, machinename);
 	if (machine == MACHINE_VAX)
 		fprintf(f, " ${INLINECMD} locore.o emulate.o");
 	else if (machine == MACHINE_TAHOE)
