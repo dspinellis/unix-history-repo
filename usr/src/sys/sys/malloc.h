@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)malloc.h	7.28 (Berkeley) %G%
+ *	@(#)malloc.h	7.29 (Berkeley) %G%
  */
 
 #ifndef _MALLOC_H_
@@ -68,6 +68,12 @@
 #define	M_LFSNODE	44	/* LFS vnode private part */
 #define	M_FFSNODE	45	/* FFS vnode private part */
 #define	M_MFSNODE	46	/* MFS vnode private part */
+#define	M_NQLEASE	47	/* Nqnfs lease */
+#define	M_NQMHOST	48	/* Nqnfs host address table */
+#define	M_NETADDR	49	/* Export host address structure */
+#define	M_NFSSVC	50	/* Nfs server structure */
+#define	M_NFSUID	51	/* Nfs uid mapping structure */
+#define	M_NFSD		52	/* Nfs server daemon structure */
 #define	M_TEMP		74	/* misc temporary data buffers */
 #define	M_LAST		75	/* Must be last type + 1 */
 
@@ -119,8 +125,13 @@
 	"LFS node",	/* 44 M_LFSNODE */ \
 	"FFS node",	/* 45 M_FFSNODE */ \
 	"MFS node",	/* 46 M_MFSNODE */ \
-	NULL, NULL, NULL, \
-	NULL, NULL, NULL, NULL, NULL, \
+	"NQNFS Lease",	/* 47 M_NQLEASE */ \
+	"NQNFS Host",	/* 48 M_NQMHOST */ \
+	"Export Host",	/* 49 M_NETADDR */ \
+	"NFS srvsock",	/* 50 M_NFSSVC */ \
+	"NFS uid",	/* 51 M_NFSUID */ \
+	"NFS daemon",	/* 52 M_NFSD */ \
+	NULL, NULL, \
 	NULL, NULL, NULL, NULL, NULL, \
 	NULL, NULL, NULL, NULL, NULL, \
 	NULL, NULL, NULL, NULL, NULL, \
