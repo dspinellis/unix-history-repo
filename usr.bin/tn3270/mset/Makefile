@@ -1,11 +1,11 @@
-# $Header: /a/cvs/386BSD/src/usr.bin/tn3270/mset/Makefile,v 1.1 1993/06/29 11:54:42 nate Exp $
+# $Header: /a/cvs/386BSD/src/usr.bin/tn3270/mset/Makefile,v 1.2 1993/07/07 20:30:18 nate Exp $
 
 .include <../../Makefile.inc>
 
 CFLAGS += -I${.CURDIR} -I.
 
-MAN1 = mset.0
-MAN5 = map3270.0
+MAN1 = mset.1
+MAN5 = map3270.5
 
 SRCS += astosc.c map3270.c mset.c
 
