@@ -1,5 +1,6 @@
 #include <stdio.h>
 
+#include "../general/general.h"
 #include "../api/api.h"
 #include "spint.h"
 

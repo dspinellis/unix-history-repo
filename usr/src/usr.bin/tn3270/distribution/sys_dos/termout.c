@@ -26,7 +26,7 @@ static	char	sccsid[] = "@(#)outbound.c	3.1  10/29/86";
 
 #include <stdio.h>
 #include <dos.h>
-#include "../general.h"
+#include "../general/general.h"
 
 #include "../telnet.ext"
 
@@ -37,9 +37,9 @@ static	char	sccsid[] = "@(#)outbound.c	3.1  10/29/86";
 #include "../ctlr/outbound.ext"
 #include "../ctlr/screen.h"
 
-#include "../keyboard/map3270.ext"
+#include "../ascii/map3270.ext"
 
-#include "../system/globals.h"
+#include "../general/globals.h"
 
 #include "video.h"
 
