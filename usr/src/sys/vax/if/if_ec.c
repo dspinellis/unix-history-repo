@@ -1,4 +1,4 @@
-/*	if_ec.c	4.7	82/05/07	*/
+/*	if_ec.c	4.8	82/05/20	*/
 
 #include "ec.h"
 #include "imp.h"
@@ -62,10 +62,6 @@ struct	ec_softc {
 	struct	ifnet es_if;		/* network-visible interface */
 	struct	ifuba es_ifuba;		/* UNIBUS resources */
 	short	es_mask;		/* mask for current output delay */
-#ifdef notdef
-	short	es_delay;		/* current output delay */
-	long	es_lastx;		/* host last transmitted to */
-#endif
 	short	es_oactive;		/* is output active? */
 	caddr_t	es_buf[16];		/* virtual addresses of buffers */
 	u_char	es_enaddr[6];		/* board's ethernet address */
@@ -165,10 +161,12 @@ COUNT(ECATTACH);
 		}
 		cp++;
 	}
+#ifdef notdef
 	printf("ec%d: addr=%x:%x:%x:%x:%x:%x\n", ui->ui_unit,
 		es->es_enaddr[0]&0xff, es->es_enaddr[1]&0xff,
 		es->es_enaddr[2]&0xff, es->es_enaddr[3]&0xff,
 		es->es_enaddr[4]&0xff, es->es_enaddr[5]&0xff);
+#endif
 	es->es_if.if_host[0] = ((es->es_enaddr[3]&0xff)<<16) |
 	    ((es->es_enaddr[4]&0xff)<<8) | (es->es_enaddr[5]&0xff);
 	sin = (struct sockaddr_in *)&es->es_if.if_addr;
@@ -223,14 +221,6 @@ ecinit(unit)
 	register i;
 	int s;
 
-#ifdef notdef
-	if (if_ubainit(&es->es_ifuba, ui->ui_ubanum,
-	    sizeof (struct ec_header), (int)btoc(ECMTU)) == 0) { 
-		printf("ec%d: can't initialize\n", unit);
-		es->es_if.if_flags &= ~IFF_UP;
-		return;
-	}
-#endif
 	addr = (struct ecdevice *)ui->ui_addr;
 
 	/*
@@ -248,12 +238,6 @@ ecinit(unit)
 	splx(s);
 	if_rtinit(&es->es_if, RTF_DIRECT|RTF_UP);
 }
-
-#ifdef notdef
-int	enalldelay = 0;
-int	eclastdel = 25;
-int	enlastmask = (~0) << 5;
-#endif
 
 /*
  * Start or restart output on interface.
@@ -293,22 +277,6 @@ COUNT(ECSTART);
 #endif
 	ecput(es->es_buf[ECTBF], m);
 
-#ifdef notdef
-	/*
-	 * Ethernet cannot take back-to-back packets (no
-	 * buffering in interface).  To avoid overrunning
-	 * receivers, enforce a small delay (about 1ms) in interface:
-	 *	* between all packets when ecalldelay
-	 *	* whenever last packet was broadcast
-	 *	* whenever this packet is to same host as last packet
-	 */
-	if (enalldelay || es->es_lastx == 0 || es->es_lastx == dest) {
-		es->es_delay = eclastdel;
-		es->es_mask = eclastmask;
-	}
-	es->es_lastx = dest;
-#endif
-
 restart:
 	/*
 	 * Start the output.
@@ -345,12 +313,8 @@ COUNT(ECXINT);
 		m_freem(es->es_ifuba.ifu_xtofree);
 		es->es_ifuba.ifu_xtofree = 0;
 	}
-	if (es->es_if.if_snd.ifq_head == 0) {
-#ifdef notdef
-		es->es_lastx = 0; /* ? */
-#endif
+	if (es->es_if.if_snd.ifq_head == 0)
 		return;
-	}
 	ecstart(unit);
 }
 
@@ -422,11 +386,6 @@ ecdocoll(unit)
 	addr->ec_xcr = EC_JINTEN|EC_XINTEN|EC_JCLR;
 }
 
-#ifdef notdef
-struct	sockaddr_pup pupsrc = { AF_PUP };
-struct	sockaddr_pup pupdst = { AF_PUP };
-struct	sockproto pupproto = { PF_PUP };
-#endif
 /*
  * Ethernet interface receiver interrupt.
  * If input error just drop packet.
@@ -525,20 +484,6 @@ COUNT(ECREAD);
 		inq = &ipintrq;
 		break;
 #endif
-#ifdef notdef
-#ifdef PUP
-	case ECPUP_PUPTYPE: {
-		struct pup_header *pup = mtod(m, struct pup_header *);
-
-		pupproto.sp_protocol = pup->pup_type;
-		pupdst.spup_addr = pup->pup_dport;
-		pupsrc.spup_addr = pup->pup_sport;
-		raw_input(m, &pupproto, (struct sockaddr *)&pupsrc,
-		  (struct sockaddr *)&pupdst);
-		goto setup;
-	}
-#endif
-#endif
 	default:
 		m_freem(m);
 		goto setup;
@@ -605,15 +550,6 @@ COUNT(ECOUTPUT);
 		type = ECPUP_IPTYPE;
 		off = 0;
 		goto gottype;
-#endif
-#ifdef notdef
-#ifdef PUP
-	case AF_PUP:
-		dest = ((struct sockaddr_pup *)dst)->spup_addr.pp_host;
-		type = ECPUP_PUPTYPE;
-		off = 0;
-		goto gottype;
-#endif
 #endif
 
 	default:
