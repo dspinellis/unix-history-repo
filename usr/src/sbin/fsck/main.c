@@ -1,5 +1,5 @@
 #ifndef lint
-char version[] = "@(#)main.c	2.30 (Berkeley) %G%";
+char version[] = "@(#)main.c	2.31 (Berkeley) %G%";
 #endif
 
 #include <stdio.h>
@@ -1509,10 +1509,11 @@ dpok:
 	dp = (DIRECT *)(dirblk.b_buf + idesc->id_loc);
 	idesc->id_loc += dp->d_reclen;
 	idesc->id_filesize -= dp->d_reclen;
+	if ((idesc->id_loc % DIRBLKSIZ) == 0)
+		return (dp);
 	ndp = (DIRECT *)(dirblk.b_buf + idesc->id_loc);
-	if ((idesc->id_filesize <= 0 && idesc->id_loc % DIRBLKSIZ != 0) ||
-	    (idesc->id_loc < blksiz && idesc->id_filesize > 0 &&
-	     dircheck(idesc, ndp) == 0)) {
+	if (idesc->id_loc < blksiz && idesc->id_filesize > 0 &&
+	    dircheck(idesc, ndp) == 0) {
 		size = DIRBLKSIZ - (idesc->id_loc % DIRBLKSIZ);
 		dp->d_reclen += size;
 		idesc->id_loc += size;
