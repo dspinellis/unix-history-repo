@@ -1,4 +1,4 @@
-/*	ut.c	4.25	82/12/17	*/
+/*	ut.c	4.26	83/02/20	*/
 
 #include "tj.h"
 #if NUT > 0
@@ -41,6 +41,8 @@ int utprobe(), utslave(), utattach(), utdgo(), utintr(), uttimer();
 u_short utstd[] = { 0772440, 0 };
 struct uba_driver utdriver =
   { utprobe, utslave, utattach, utdgo, utstd, "tj", tjdinfo, "ut", utminfo, 0 };
+
+#define	MASKREG(reg)	((reg)&0xffff)
 
 /* bits in minor device */
 #define	TJUNIT(dev)	(minor(dev)&03)
@@ -289,9 +291,7 @@ loop:
 	addr->uttc = sc->sc_dens;
 	sc->sc_dsreg = addr->utds;
 	sc->sc_erreg = addr->uter;
-	/* watch this, sports fans */
-	sc->sc_resid = bp->b_flags&B_READ ?
-		bp->b_bcount - ((-addr->utfc)&0xffff) : -addr->utwc<<1;
+	sc->sc_resid = MASKREG(addr->utfc);
 	/*
 	 * Default is that last command was NOT a write command;
 	 * if we do a write command we will notice this in utintr().
@@ -313,6 +313,10 @@ loop:
 		 */
 		if (bp->b_command == UT_SENSE)
 			goto next;
+		if (bp->b_command == UT_SFORW && (addr->utds & UTDS_EOT)) {
+			bp->b_resid = bp->b_bcount;
+			goto next;
+		}
 		/*
 		 * Set next state; handle timeouts
 		 */
@@ -370,6 +374,11 @@ loop:
 					return;
 				}
 			}
+			if (addr->utds & UTDS_EOT) {
+				bp->b_resid = bp->b_bcount;
+				um->um_tab.b_state = 0;
+				goto next;
+			}
 			um->um_cmd = UT_WCOM;
 		} else
 			um->um_cmd = UT_RCOM;
@@ -422,7 +431,7 @@ utdgo(um)
 	register struct utdevice *addr = (struct utdevice *)um->um_addr;
 
 	addr->utba = (u_short) um->um_ubinfo;
-	addr->utcs1 = um->um_cmd|((um->um_ubinfo>>8)&0x30)|UT_IE|UT_GO;
+	addr->utcs1 = um->um_cmd|((um->um_ubinfo>>8)&0x300)|UT_IE|UT_GO;
 }
 
 /*
@@ -452,8 +461,7 @@ utintr(ut11)
 	sc->sc_timo = INF;
 	sc->sc_dsreg = addr->utds;
 	sc->sc_erreg = addr->uter;
-	sc->sc_resid = bp->b_flags&B_READ ?
-		bp->b_bcount - (-addr->utfc)&0xffff : -addr->utwc<<1;
+	sc->sc_resid = MASKREG(addr->utfc);
 	if ((bp->b_flags&B_READ) == 0)
 		sc->sc_lastiow = 1;
 	state = um->um_tab.b_state;
@@ -475,34 +483,16 @@ utintr(ut11)
 			;
 		addr->utcs1 = UT_CLEAR|UT_GO;
 		/*
-		 * If we hit a tape mark or EOT update our position.
+		 * If we were reading at 1600 or 6250 bpi and the error
+		 * was corrected, then don't consider this an error.
 		 */
-		if (sc->sc_dsreg&(UTDS_TM|UTDS_EOT)) {
-			/*
-			 * Set blkno and nxrec
-			 */
-			if (bp == &cutbuf[UTUNIT(bp->b_dev)]) {
-				if (sc->sc_blkno > bdbtofsb(bp->b_blkno)) {
-					sc->sc_nxrec =
-					      bdbtofsb(bp->b_blkno) - addr->utfc;
-					sc->sc_blkno = sc->sc_nxrec;
-				} else {
-					sc->sc_blkno =
-					      bdbtofsb(bp->b_blkno) + addr->utfc;
-					sc->sc_nxrec = sc->sc_blkno-1;
-				}
-			} else
-				sc->sc_nxrec = bdbtofsb(bp->b_blkno);
-			state = SCOM;		/* force completion */
-			/*
-			 * Stuff so we can unstuff later
-			 * to get the residual.
-			 */
-			addr->utwc = (-bp->b_bcount)>>1;
-			addr->utfc = -bp->b_bcount;
-			if (sc->sc_dsreg&UTDS_EOT)
-				goto harderror;
-			goto opdone;
+		if (sc->sc_errreg & UTER_COR && (bp->b_flags & B_READ) &&
+		    (addr->uttc & UTTC_DEN) != UT_NRZI) {
+			printf(
+			  "ut%d: soft error bn%d cs1=%b er=%b cs2=%b ds=%b\n",
+			  tjunit, bp->b_blkno, cs1, UT_BITS, sc->sc_erreg,
+			  UTER_BITS, cs2, UTCS2_BITS, sc->sc_dsreg, UTDS_BITS);
+			sc->sc_erreg &= ~UTER_COR;
 		}
 		/*
 		 * If we were reading from a raw tape and the only error
@@ -511,13 +501,14 @@ utintr(ut11)
 		 */
 		if (bp == &rutbuf[UTUNIT(bp->b_dev)] && (bp->b_flags&B_READ) &&
 		    (sc->sc_erreg&UTER_FCE))
+			sc->sc_erreg &= ~UTER_FCE;
+		if (sc->sc_errreg == 0)
 			goto ignoreerr;
 		/*
-		 * Fix up errors which occur due to backspacing "over" the
-		 * front of the tape.
+		 * Fix up errors which occur due to backspacing
+		 * "over" the front of the tape.
 		 */
-		if ((sc->sc_dsreg&UTDS_BOT) &&
-		    (bp->b_command == UT_SREV || bp->b_command == UT_SREV) &&
+		if ((sc->sc_dsreg & UTDS_BOT) && bp->b_command == UT_SREV &&
 		    ((sc->sc_erreg &= ~(UTER_NEF|UTER_FCE)) == 0))
 			goto opdone;
 		/*
@@ -529,17 +520,13 @@ utintr(ut11)
 				ubadone(um);
 				goto opcont;
 			}
-		} else
-harderror:
-			/*
-			 * Hard or non-I/O errors on non-raw tape
-			 * cause it to close; also, reading off the
-			 * end of the tape.
-			 */
-			if (sc->sc_openf > 0 &&
-			    bp != &rutbuf[UTUNIT(bp->b_dev)] ||
-			    sc->sc_dsreg&UTDS_EOT)
-				sc->sc_openf = -1;
+		}
+		/*
+		 * Hard or non-I/O errors on non-raw tape
+		 * cause it to close.
+		 */
+		if (sc->sc_openf > 0 && bp != &rutbuf[UTUNIT(bp->b_dev)])
+			sc->sc_openf = -1;
 		/*
 		 * Couldn't recover error.
 		 */
@@ -549,7 +536,34 @@ harderror:
 		bp->b_flags |= B_ERROR;
 		goto opdone;
 	}
+
 ignoreerr:
+	/*
+	 * If we hit a tape mark update our position.
+	 */
+	if (sc->sc_dsreg & UTDS_TM && bp->b_flags & B_READ) {
+		/*
+		 * Set blkno and nxrec
+		 */
+		if (bp == &cutbuf[UTUNIT(bp->b_dev)]) {
+			if (sc->sc_blkno > bdbtofsb(bp->b_blkno)) {
+				sc->sc_nxrec =
+				     bdbtofsb(bp->b_blkno) - addr->utfc;
+				sc->sc_blkno = sc->sc_nxrec;
+			} else {
+				sc->sc_blkno =
+				     bdbtofsb(bp->b_blkno) + addr->utfc;
+				sc->sc_nxrec = sc->sc_blkno-1;
+			}
+		} else
+			sc->sc_nxrec = bdbtofsb(bp->b_blkno);
+		/*
+		 * Note: if we get a tape mark on a read, the
+		 * frame count register will be zero, so b_resid
+		 * will be calculated correctly below.
+		 */
+		goto opdone;
+	}
 	/*
 	 * Advance tape control FSM.
 	 */
@@ -559,7 +573,7 @@ ignoreerr:
 		sc->sc_blkno++;
 		break;
 
-	case SCOM:		/* forw/rev space updates current position */
+	case SCOM:		/* motion commands update current position */
 		if (bp == &cutbuf[UTUNIT(bp->b_dev)])
 		switch (bp->b_command) {
 
@@ -569,6 +583,10 @@ ignoreerr:
 
 		case UT_SREV:
 			sc->sc_blkno += bp->b_repcnt;
+			break;
+
+		case UT_REWOFFL:
+			addr->utcs1 = UT_CLEAR|UT_GO;
 			break;
 		}
 		break;
@@ -601,8 +619,17 @@ opdone:
 	 */
 	um->um_tab.b_errcnt = 0;
 	dp->b_actf = bp->av_forw;
-	bp->b_resid = bp->b_command&B_READ ?
-		bp->b_bcount - ((-addr->utfc)&0xffff) : -addr->utwc<<1;
+	/*
+	 * For read command, frame count register contains
+	 * actual length of tape record.  Otherwise, it
+	 * holds negative residual count.
+	 */
+	if (state == SIO && um->um_cmd == UT_RCOM) {
+		bp->b_resid = 0;
+		if (bp->b_bcount > MASKREG(addr->utfc))
+			bp->b_resid = bp->b_bcount - MASKREG(addr->utfc);
+	} else
+		bp->b_resid = MASKREG(-addr->utfc);
 	ubadone(um);
 	iodone(bp);
 	/*
@@ -738,7 +765,7 @@ utioctl(dev, cmd, data, flag)
 		while (--callcount >= 0) {
 			utcommand(dev, utops[mtop->mt_op], fcount);
 			/* note this depends on the mtop values */
-			if ((mtop->mt_op >= MTFSF || mtop->mt_op <= MTBSR) &&
+			if ((mtop->mt_op >= MTFSF && mtop->mt_op <= MTBSR) &&
 			    bp->b_resid)
 				return (EIO);
 			if ((bp->b_flags&B_ERROR) || (sc->sc_dsreg&UTDS_BOT))
