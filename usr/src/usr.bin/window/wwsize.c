@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)wwsize.c	3.1 %G%";
+static char sccsid[] = "@(#)wwsize.c	3.2 %G%";
 #endif
 
 #include "ww.h"
@@ -18,8 +18,6 @@ register struct ww *w;
 	char **fmap = 0;
 	char m;
 
-	if (w->ww_forw != 0 || w->ww_back != 0)
-		return;				/* sanity */
 	/*
 	 * First allocate new buffers.
 	 */
@@ -147,7 +145,7 @@ register struct ww *w;
 		winsize.ws_row = nrow;
 		winsize.ws_col = ncol;
 		winsize.ws_xpixel = winsize.ws_ypixel = 0;
-		(void) ioctl(w->ww_pty, TIOCSWINSZ, (char *)&winsize);
+		(void) ioctl(w->ww_pty, (int)TIOCSWINSZ, (char *)&winsize);
 	}
 	return 0;
 bad:

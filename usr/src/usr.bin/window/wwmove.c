@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)wwmove.c	3.5 %G%";
+static char sccsid[] = "@(#)wwmove.c	3.6 %G%";
 #endif
 
 #include "ww.h"
@@ -12,9 +12,6 @@ register struct ww *w;
 {
 	register dr, dc;
 	register i;
-
-	if (w->ww_forw != 0 || w->ww_back != 0)
-		return;				/* sanity */
 
 	dr = row - w->ww_w.t;
 	dc = col - w->ww_w.l;

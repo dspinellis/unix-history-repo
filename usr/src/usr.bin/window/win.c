@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)win.c	3.12 %G%";
+static char sccsid[] = "@(#)win.c	3.13 %G%";
 #endif
 
 #include "defs.h"
@@ -227,7 +227,7 @@ stopwin(w)
 {
 	w->ww_stopped = 1;
 	if (w->ww_pty >= 0 && w->ww_ispty)
-		(void) ioctl(w->ww_pty, TIOCSTOP, (char *)0);
+		(void) ioctl(w->ww_pty, (int)TIOCSTOP, (char *)0);
 }
 
 startwin(w)
@@ -235,7 +235,21 @@ startwin(w)
 {
 	w->ww_stopped = 0;
 	if (w->ww_pty >= 0 && w->ww_ispty)
-		(void) ioctl(w->ww_pty, TIOCSTART, (char *)0);
+		(void) ioctl(w->ww_pty, (int)TIOCSTART, (char *)0);
+}
+
+sizewin(w, nrow, ncol)
+register struct ww *w;
+{
+	struct ww *back = w->ww_back;
+
+	w->ww_alt.nr = w->ww_w.nr;
+	w->ww_alt.nc = w->ww_w.nc;
+	wwdelete(w);
+	if (wwsize(w, nrow, ncol) < 0)
+		error("Can't resize window: %s.", wwerror());
+	wwadd(w, back);
+	reframe();
 }
 
 waitnl(w)
