@@ -45,7 +45,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	$Id$
+ *	$Id: kern__physio.c,v 1.2 1993/10/16 15:24:06 rgrimes Exp $
  */
 
 #include "param.h"
@@ -58,7 +58,7 @@
 #include "vm/vm.h"
 #include "specdev.h"
 
-static physio(int (*)(), int, int, int, caddr_t, int *, struct proc *);
+int physio(int (*)(), int, struct buf *, int, int, caddr_t, int *, struct proc *);
 
 /*
  * Driver interface to do "raw" I/O in the address space of a
@@ -77,25 +77,29 @@ rawwrite(dev, uio)
 	return (uioapply(physio, cdevsw[major(dev)].d_strategy, dev, uio));
 }
 
-static physio(strat, dev, off, rw, base, len, p)
+int physio(strat, dev, bp, off, rw, base, len, p)
 	int (*strat)(); 
 	dev_t dev;
+	struct buf *bp;
 	int rw, off;
 	caddr_t base;
 	int *len;
 	struct proc *p;
 {
-	register struct buf *bp;
 	int amttodo = *len, error, amtdone;
 	vm_prot_t ftype;
 	static zero;
 	caddr_t adr;
+	int bp_alloc = (bp == 0);
 
 	rw = rw == UIO_READ ? B_READ : 0;
 
 	/* create and build a buffer header for a transfer */
-	bp = (struct buf *)malloc(sizeof(*bp), M_TEMP, M_NOWAIT);
-	bzero((char *)bp, sizeof(*bp));			/* 09 Sep 92*/
+
+	if (bp_alloc) {
+		bp = (struct buf *)malloc(sizeof(*bp), M_TEMP, M_NOWAIT);
+		bzero((char *)bp, sizeof(*bp));			/* 09 Sep 92*/
+	}
 	bp->b_flags = B_BUSY | B_PHYS | rw;
 	bp->b_proc = p;
 	bp->b_dev = dev;
@@ -112,11 +116,13 @@ static physio(strat, dev, off, rw, base, len, p)
 
 		/* first, check if accessible */
 		if (rw == B_READ && !useracc(base, bp->b_bcount, B_WRITE)) {
-			free(bp, M_TEMP);
+			if (bp_alloc)
+				free(bp, M_TEMP);
 			return (EFAULT);
 		}
 		if (rw == B_WRITE && !useracc(base, bp->b_bcount, B_READ)) {
-			free(bp, M_TEMP);
+			if (bp_alloc)
+				free(bp, M_TEMP);
 			return (EFAULT);
 		}
 
@@ -147,7 +153,8 @@ static physio(strat, dev, off, rw, base, len, p)
 	} while (amttodo && (bp->b_flags & B_ERROR) == 0 && amtdone > 0);
 
 	error = bp->b_error;
-	free(bp, M_TEMP);
+	if (bp_alloc)
+		free(bp, M_TEMP);
 	*len = amttodo;
 	return (error);
 }

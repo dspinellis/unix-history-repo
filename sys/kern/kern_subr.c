@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)kern_subr.c	7.7 (Berkeley) 4/15/91
- *	$Id$
+ *	$Id: kern_subr.c,v 1.2 1993/10/16 15:24:30 rgrimes Exp $
  */
 
 #include "param.h"
@@ -117,7 +117,7 @@ uioapply(func, arg1, arg2, uio)
 			continue;
 		}
 		cnt1 = cnt;
-		error = (*func)(arg1, arg2, uio->uio_offset, uio->uio_rw,
+		error = (*func)(arg1, arg2, NULL, uio->uio_offset, uio->uio_rw,
 			iov->iov_base, &cnt1, uio->uio_procp);
 		cnt -= cnt1;
 		iov->iov_base += cnt;

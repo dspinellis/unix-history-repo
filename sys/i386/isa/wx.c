@@ -36,7 +36,7 @@ static int wdtest = 0;
  * SUCH DAMAGE.
  *
  *	from: @(#)wx.c	7.2 (Berkeley) 5/9/91
- *	$Id: wx.c,v 1.2 1993/10/26 23:04:38 nate Exp $
+ *	$Id: wx.c,v 1.3 1993/11/03 18:04:15 nate Exp $
  */
 
 /* TODO:peel out buffer at low ipl, speed improvement */
@@ -1123,7 +1123,7 @@ wdioctl(dev_t dev, int cmd, caddr_t addr, int flag)
 			auio.uio_segflg = 0;
 			auio.uio_offset =
 				fop->df_startblk * du->dk_dd.d_secsize;
-			error = physio(wdformat, &rwdbuf[unit], dev, B_WRITE,
+			error = physio(wdformat, &rwdbuf[unit], 0, dev, B_WRITE,
 				minphys, &auio);
 			fop->df_count -= auio.uio_resid;
 			fop->df_reg[0] = du->dk_status;

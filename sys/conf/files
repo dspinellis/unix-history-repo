@@ -1,4 +1,4 @@
-# $Id: files,v 1.9 1993/11/07 22:54:36 wollman Exp $
+# $Id: files,v 1.10 1993/11/18 00:06:16 wollman Exp $
 #
 ddb/db_access.c		optional ddb
 ddb/db_aout.c		optional ddb
@@ -199,9 +199,12 @@ pcfs/pcfs_vnops.c	optional pcfs
 scsi/cd.c		optional cd
 scsi/ch.c		optional ch
 scsi/scsiconf.c		optional scbus
+scsi/scsi_base.c	optional scbus
+scsi/scsi_ioctl.c	optional scbus
 scsi/sd.c		optional sd
-scsi/sg.c		optional sg
 scsi/st.c		optional st
+scsi/su.c		optional su
+scsi/uk.c		optional uk
 ufs/mfs_vfsops.c	optional mfs
 ufs/mfs_vnops.c		optional mfs
 ufs/ufs_alloc.c		standard

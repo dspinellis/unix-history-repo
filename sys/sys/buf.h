@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)buf.h	7.11 (Berkeley) 5/9/90
- *	$Id: buf.h,v 1.2 1993/10/16 17:16:21 rgrimes Exp $
+ *	$Id: buf.h,v 1.3 1993/11/07 17:52:21 wollman Exp $
  */
 
 #ifndef _SYS_BUF_H_
@@ -102,6 +102,8 @@ struct buf
 	int	b_dirtyoff;		/* offset in buffer of dirty region */
 	int	b_dirtyend;		/* offset of end of dirty region */
 	caddr_t	b_saveaddr;		/* original b_addr for PHYSIO */
+	void *	b_driver1;		/* for private use by the driver */
+	void *	b_driver2;		/* for private use by the driver */
 };
 
 #define	BQUEUES		4		/* number of free buffer queues */
@@ -178,6 +180,11 @@ void allocbuf(struct buf *, int);
 #define	B_CALL		0x200000	/* call b_iodone from iodone */
 #define	B_RAW		0x400000	/* set by physio for raw transfers */
 #define	B_NOCACHE	0x800000	/* do not cache block after use */
+#define	B_DRIVER       0xF000000	/* Four bits for the driver to use */
+#define	B_DRIVER1      0x1000000	/* bits for the driver to use */
+#define	B_DRIVER2      0x2000000	/* bits for the driver to use */
+#define	B_DRIVER4      0x3000000	/* bits for the driver to use */
+#define	B_DRIVER8      0x4000000	/* bits for the driver to use */
 
 /*
  * Insq/Remq for the buffer hash lists.
