@@ -3,19 +3,20 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	6.1 (Berkeley) %G%
+#	@(#)Makefile	6.2 (Berkeley) %G%
 #
 SRCS=	p.mac p1 p2 p3 p4 p5 p6
 MACROS=	-ms
 PRINTER=Pdp
 TBL=	dtbl -${PRINTER}
 TROFF=	ditroff -${PRINTER}
+REFER=	refer -p /usr/old/dict/papers/Ind -e
 
 paper:	paper.${PRINTER}
 	lpr -${PRINTER} -n paper.${PRINTER}
 
 paper.${PRINTER}: ${SRCS}
-	${TBL} ${SRCS} | ${TROFF} ${MACROS} -t > paper.${PRINTER}
+	${REFER} ${SRCS} | ${TBL} | ${TROFF} ${MACROS} -t > paper.${PRINTER}
 
 clean:
 	rm -f paper.[PT]* *.spell errs Errs make.out
