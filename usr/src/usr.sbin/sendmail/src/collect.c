@@ -1,7 +1,7 @@
 # include <errno.h>
 # include "sendmail.h"
 
-static char	SccsId[] = "@(#)collect.c	3.17	%G%";
+static char	SccsId[] = "@(#)collect.c	3.18	%G%";
 
 /*
 **  COLLECT -- read & parse message header & make temp file.
@@ -170,7 +170,7 @@ maketemp(from)
 	/* from person */
 	xfrom = hvalue("sender");
 	if (xfrom == NULL)
-		xfrom = hvalue("from");
+		xfrom = hvalue("original-from");
 	if (ArpaMode != ARPA_NONE)
 		setfrom(xfrom, NULL);
 
@@ -178,6 +178,56 @@ maketemp(from)
 	p = hvalue("full-name");
 	if (p != NULL)
 		define('x', p);
+	else
+	{
+		register char *q;
+
+		/*
+		**  Try to extract the full name from a general From:
+		**  field.  We take anything which is a comment as a
+		**  first choice.  Failing in that, we see if there is
+		**  a "machine readable" name (in <angle brackets>); if
+		**  so we take anything preceeding that clause.
+		**
+		**  If we blow it here it's not all that serious.
+		*/
+
+		p = hvalue("original-from");
+		q = index(p, '(');
+		if (q != NULL)
+		{
+			int parenlev = 0;
+
+			for (p = q; *p != '\0'; p++)
+			{
+				if (*p == '(')
+					parenlev++;
+				else if (*p == ')' && --parenlev <= 0)
+					break;
+			}
+			if (*p == ')')
+			{
+				*p = '\0';
+				if (*++q != '\0')
+					define('x', newstr(q));
+				*p = ')';
+			}
+		}
+		else if ((q = index(p, '<')) != NULL)
+		{
+			char savec;
+
+			while (*--q == ' ')
+				continue;
+			while (isspace(*p))
+				p++;
+			savec = *++q;
+			*q = '\0';
+			if (*p != '\0')
+				define('x', newstr(p));
+			*q = savec;
+		}
+	}
 
 	/* date message originated */
 	p = hvalue("posted-date");

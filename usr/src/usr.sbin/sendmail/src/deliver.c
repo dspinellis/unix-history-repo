@@ -5,7 +5,7 @@
 # include <syslog.h>
 # endif LOG
 
-static char SccsId[] = "@(#)deliver.c	3.27	%G%";
+static char SccsId[] = "@(#)deliver.c	3.28	%G%";
 
 /*
 **  DELIVER -- Deliver a message to a particular address.
@@ -522,7 +522,10 @@ putmessage(fp, m)
 		if (bitset(H_DELETE, h->h_flags))
 			continue;
 		if (bitset(H_CHECK|H_ACHECK, h->h_flags) && !bitset(h->h_mflags, m->m_flags))
-			continue;
+		{
+			p = ")><(";		/* can't happen (I hope) */
+			goto checkfrom;
+		}
 		if (bitset(H_DEFAULT, h->h_flags))
 		{
 			(void) expand(h->h_value, buf, &buf[sizeof buf]);
@@ -535,6 +538,17 @@ putmessage(fp, m)
 		fprintf(fp, "%s: %s\n", capitalize(h->h_field), p);
 		h->h_flags |= H_USED;
 		anyheader = TRUE;
+
+		/* hack, hack -- output Original-From field if different */
+	checkfrom:
+		if (strcmp(h->h_field, "from") == 0)
+		{
+			extern char *hvalue();
+			char *ofrom = hvalue("original-from");
+
+			if (ofrom != NULL && strcmp(p, ofrom) != 0)
+				fprintf(fp, "Original-From: %s\n", ofrom);
+		}
 	}
 
 	if (anyheader)
