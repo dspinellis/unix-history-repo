@@ -1,4 +1,4 @@
-/*	getpwnamuid.c	4.2	83/12/20	*/
+/*	getpwnamuid.c	4.3	84/01/31	*/
 
 #include <stdio.h>
 #include <pwd.h>
@@ -10,24 +10,23 @@ static char PASSWD[] = "/etc/passwd";
 static char EMPTY[] = "";
 static char line[BUFSIZ+1];
 static struct passwd passwd;
-static datum curkey;
 static DBM *db = 0;
 
 static struct passwd *
 fetchpw(key)
 	datum key;
 {
-        register char *cp;
+        register char *cp, *tp;
 
-        curkey = key;
-        if (curkey.dptr == 0)
+        if (key.dptr == 0)
                 return ((struct passwd *)NULL);
-	key = dbmfetch(db, curkey);
+	key = dbmfetch(db, key);
 	if (key.dptr == 0)
                 return ((struct passwd *)NULL);
         cp = key.dptr;
+	tp = line;
 
-#define	EXPAND(e)	passwd.pw_/**/e = cp; while (*cp++);
+#define	EXPAND(e)	passwd.pw_/**/e = tp; while (*tp++ = *cp++);
 	EXPAND(name);
 	EXPAND(passwd);
 	passwd.pw_uid = *(int *)cp; cp += sizeof (int);
