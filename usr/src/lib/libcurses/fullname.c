@@ -7,33 +7,28 @@
 
 #ifndef lint
 static char sccsid[] = "@(#)fullname.c	5.5 (Berkeley) %G%";
-#endif /* not lint */
-
-# define	reg	register
+#endif	/* not lint */
 
 /*
+ * fullname --
  *	This routine fills in "def" with the full name of the terminal.
- * This is assumed to be the last name in the list of aliases.
- *
+ *	This is assumed to be the last name in the list of aliases.
  */
 char *
 fullname(bp, def)
-reg char	*bp, *def;
+	register char *bp, *def;
 {
+	register char *cp;
 
-	reg char	*cp;
-
-	*def = 0;			/* in case no name */
+	*def = '\0';		/* In case no name. */
 
 	while (*bp && *bp != ':') {
-		cp = def;		/* start of answer */
-		while (*bp && *bp != ':' && *bp != '|') {
-			*cp++ = *bp++;	/* copy name over */
-		}
-		*cp = 0;		/* zero end of name */
-		if (*bp == '|') {
-			bp++;		/* skip over '|' if that is case */
-		}
+		cp = def;	/* Start of answer. */
+		while (*bp && *bp != ':' && *bp != '|')
+			*cp++ = *bp++;	/* Copy name over. */
+		*cp = '\0';		/* Zero end of name. */
+		if (*bp == '|')
+			bp++;		/* Skip over '|' if that is case. */
 	}
-	return(def);
+	return (def);
 }

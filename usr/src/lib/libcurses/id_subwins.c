@@ -7,27 +7,26 @@
 
 #ifndef lint
 static char sccsid[] = "@(#)id_subwins.c	5.5 (Berkeley) %G%";
-#endif /* not lint */
+#endif	/* not lint */
 
-# include	"curses.ext"
+#include <curses.h>
 
 /*
- * _id_subwins:
+ * __id_subwins --
  *	Re-sync the pointers to _y for all the subwindows.
- *
  */
-_id_subwins(orig)
-register WINDOW	*orig;
+void
+__id_subwins(orig)
+	register WINDOW *orig;
 {
-	register WINDOW	*win;
-	register int	realy;
-	register int	y, oy, x;
+	register WINDOW *win;
+	register int oy, realy, x, y;
 
 	realy = orig->_begy + orig->_cury;
 	for (win = orig->_nextp; win != orig; win = win->_nextp) {
 		/*
-		 * If the window ends before our current position,
-		 * don't need to do anything.
+		 * If the window ends before our current position, don't need
+		 * to do anything.
 		 */
 		if (win->_begy + win->_maxy <= realy)
 			continue;
