@@ -1,7 +1,7 @@
 #
 # Machine Language Assist for UC Berkeley Virtual Vax/Unix
 #
-#	locore.s		3.6	%G%
+#	locore.s		3.7	%G%
 #
 
 	.set	HIGH,31		# mask for total disable
@@ -184,6 +184,7 @@ doadump:
 	mtpr	$0,$MAPEN		# turn off memory mapping
 	mtpr	$HIGH,$IPL		# disable interrupts
 	pushr	$0x3fff			# save regs 0 - 13
+	calls	$0,_dumptrc		# print out trace information, if any
 	calls	$0,_dump		# produce dump
 	halt
 
@@ -343,6 +344,12 @@ UBAflt:
 #
 ubapass:
 	incl	_zvcnt
+	cmpl	_zvcnt,$250000
+	jlss	int_ret
+	pushab	$ZERmsg
+	calls	$1,_printf
+	clrl	_zvcnt
+	calls	$0,_ubareset
 	brw 	int_ret
 	.data
 	.globl	_zvcnt
@@ -457,6 +464,7 @@ int_r1:
 	.set	_u,0x80000000 - UPAGES*NBPG
 
 	.data
+	.align	2
 	.globl	_Sysmap
 _Sysmap:
 	.space	6*NBPG
@@ -1361,6 +1369,7 @@ _udiv :
 SBImsg: .asciz	"SBI fault\n"
 UBAmsg: .asciz	"UBA error UBASR %X, FMER %X, FUBAR %X\n"
 straym: .asciz	"Stray Interrupt\n"
+ZERmsg:	.asciz	"ZERO VECTOR "
 
 #
 # Junk.
