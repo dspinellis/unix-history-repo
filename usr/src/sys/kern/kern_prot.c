@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_prot.c	7.23 (Berkeley) %G%
+ *	@(#)kern_prot.c	7.24 (Berkeley) %G%
  */
 
 /*
@@ -302,68 +302,6 @@ setegid(p, uap, retval)
 	p->p_flag |= SUGID;
 	return (0);
 }
-
-#if defined(COMPAT_43) || defined(COMPAT_SUNOS)
-/* ARGSUSED */
-osetreuid(p, uap, retval)
-	register struct proc *p;
-	struct args {
-		int	ruid;
-		int	euid;
-	} *uap;
-	int *retval;
-{
-	register struct pcred *pc = p->p_cred;
-	register uid_t ruid, euid;
-	int error;
-
-	if (uap->ruid == -1)
-	if (ruid != pc->p_ruid && ruid != pc->pc_ucred->cr_uid /* XXX */ &&
-	    (error = suser(pc->pc_ucred, &p->p_acflag)))
-		return (error);
-	if (uap->euid == -1)
-	if (euid != pc->pc_ucred->cr_uid && euid != pc->p_ruid &&
-	    euid != pc->p_svuid && (error = suser(pc->pc_ucred, &p->p_acflag)))
-		return (error);
-	/*
-	 * Everything's okay, do it.  Copy credentials so other references do
-	 * not see our changes.
-	 */
-	pc->pc_ucred = crcopy(pc->pc_ucred);
-	pc->pc_ucred->cr_uid = euid;
-	pc->p_ruid = ruid;
-	p->p_flag |= SUGID;
-	return (0);
-}
-
-/* ARGSUSED */
-osetregid(p, uap, retval)
-	register struct proc *p;
-	struct args {
-		int	rgid;
-		int	egid;
-	} *uap;
-	int *retval;
-{
-	register struct pcred *pc = p->p_cred;
-	register gid_t rgid, egid;
-	int error;
-
-	if (uap->rgid == -1)
-	if (rgid != pc->p_rgid && rgid != pc->pc_ucred->cr_groups[0] /* XXX */ &&
-	    (error = suser(pc->pc_ucred, &p->p_acflag)))
-		return (error);
-	if (uap->egid == -1)
-	if (egid != pc->pc_ucred->cr_groups[0] && egid != pc->p_rgid &&
-	    egid != pc->p_svgid && (error = suser(pc->pc_ucred, &p->p_acflag)))
-		return (error);
-	pc->pc_ucred = crcopy(pc->pc_ucred);
-	pc->pc_ucred->cr_groups[0] = egid;
-	pc->p_rgid = rgid;
-	p->p_flag |= SUGID;
-	return (0);
-}
-#endif /* COMPAT_43 || COMPAT_SUNOS */
 
 /* ARGSUSED */
 setgroups(p, uap, retval)
