@@ -1,23 +1,21 @@
-/*	vfs_syscalls.c	4.22	82/04/01	*/
+/*	vfs_syscalls.c	4.23	82/04/19	*/
 
+/* merged into kernel:	@(#)sys3.c 2.2 4/8/82 */
+
+#ifdef SIMFS
+#include "../h/sysrenam.h"
+#endif
 #include "../h/param.h"
 #include "../h/systm.h"
 #include "../h/dir.h"
 #include "../h/user.h"
-#include "../h/reg.h"
 #include "../h/file.h"
+#include "../h/stat.h"
 #include "../h/inode.h"
-#include "../h/ino.h"
-#include "../h/pte.h"
-#include "../h/vm.h"
+#include "../h/fs.h"
 #include "../h/buf.h"
-#include "../h/mtpr.h"
 #include "../h/proc.h"
 #include "../h/inline.h"
-#include "../h/conf.h"
-#include "../h/socket.h"
-#include "../h/socketvar.h"
-#include "../h/stat.h"
 
 chdir()
 {
@@ -174,7 +172,7 @@ mknod()
 		 * Want to be able to use this to make badblock
 		 * inodes, so don't truncate the dev number.
 		 */
-		ip->i_un.i_rdev = uap->dev;
+		ip->i_rdev = uap->dev;
 		ip->i_flag |= IACC|IUPD|ICHG;
 	}
 
@@ -282,6 +280,9 @@ unlink()
 	struct a {
 		char	*fname;
 	};
+	struct fs *fs;
+	struct buf *bp;
+	int lbn, bn, base;
 
 	pp = namei(uchar, 2, 0);
 	if(pp == NULL)
@@ -294,7 +295,7 @@ unlink()
 		ip = pp;
 		ip->i_count++;
 	} else
-		ip = iget(pp->i_dev, u.u_dent.d_ino);
+		ip = iget(pp->i_dev, pp->i_fs, u.u_dent.d_ino);
 	if(ip == NULL)
 		goto out1;
 	if((ip->i_mode&IFMT)==IFDIR && !suser())
@@ -314,11 +315,32 @@ unlink()
 		goto out;
 	}
 */
-	u.u_offset -= sizeof(struct direct);
-	u.u_base = (caddr_t)&u.u_dent;
-	u.u_count = sizeof(struct direct);
-	u.u_dent.d_ino = 0;
-	writei(pp);
+	if (u.u_count == 0) {
+		/*
+		 * first entry in block, so set d_ino to zero.
+		 */
+		u.u_base = (caddr_t)&u.u_dent;
+		u.u_count = DIRSIZ(&u.u_dent);
+		u.u_dent.d_ino = 0;
+		writei(pp);
+	} else {
+		/*
+		 * updating preceeding entry to skip over current entry.
+		 */
+		fs = pp->i_fs;
+		lbn = lblkno(fs, u.u_offset);
+		base = blkoff(fs, u.u_offset);
+		bn = fsbtodb(fs, bmap(pp, lbn, B_WRITE, base + u.u_count));
+		bp = bread(pp->i_dev, bn, blksize(fs, pp, lbn));
+		if (bp->b_flags & B_ERROR) {
+			brelse(bp);
+			goto out;
+		}
+		((struct direct *)(bp->b_un.b_addr + base))->d_reclen +=
+		    u.u_dent.d_reclen;
+		bwrite(bp);
+		pp->i_flag |= IUPD|ICHG;
+	}
 	ip->i_nlink--;
 	ip->i_flag |= ICHG;
 
@@ -409,7 +431,7 @@ fstat()
 }
 
 /*
- * Stat system call; this follows links.
+ * Stat system call.  This version follows links.
  */
 stat()
 {
@@ -428,7 +450,7 @@ stat()
 }
 
 /*
- * Lstat system call; like stat but doesn't follow links.
+ * Lstat system call.  This version does not follow links.
  */
 lstat()
 {
@@ -454,8 +476,6 @@ stat1(ip, ub)
 	register struct inode *ip;
 	struct stat *ub;
 {
-	register struct dinode *dp;
-	register struct buf *bp;
 	struct stat ds;
 
 	IUPDAT(ip, &time, &time, 0);
@@ -468,18 +488,11 @@ stat1(ip, ub)
 	ds.st_nlink = ip->i_nlink;
 	ds.st_uid = ip->i_uid;
 	ds.st_gid = ip->i_gid;
-	ds.st_rdev = (dev_t)ip->i_un.i_rdev;
+	ds.st_rdev = (dev_t)ip->i_rdev;
 	ds.st_size = ip->i_size;
-	/*
-	 * next the dates in the disk
-	 */
-	bp = bread(ip->i_dev, itod(ip->i_number));
-	dp = bp->b_un.b_dino;
-	dp += itoo(ip->i_number);
-	ds.st_atime = dp->di_atime;
-	ds.st_mtime = dp->di_mtime;
-	ds.st_ctime = dp->di_ctime;
-	brelse(bp);
+	ds.st_atime = ip->i_atime;
+	ds.st_mtime = ip->i_mtime;
+	ds.st_ctime = ip->i_ctime;
 	if (copyout((caddr_t)&ds, (caddr_t)ub, sizeof(ds)) < 0)
 		u.u_error = EFAULT;
 }

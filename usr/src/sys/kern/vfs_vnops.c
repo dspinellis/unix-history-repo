@@ -1,10 +1,12 @@
-/*	vfs_vnops.c	4.22	82/02/27	*/
+/*	vfs_vnops.c	4.23	82/04/19	*/
+
+/* merged into kernel:	@(#)fio.c 2.2 4/8/82 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
 #include "../h/dir.h"
 #include "../h/user.h"
-#include "../h/filsys.h"
+#include "../h/fs.h"
 #include "../h/file.h"
 #include "../h/conf.h"
 #include "../h/inode.h"
@@ -72,7 +74,7 @@ closef(fp, nouser)
 		return;
 	}
 	ip = fp->f_inode;
-	dev = (dev_t)ip->i_un.i_rdev;
+	dev = (dev_t)ip->i_rdev;
 	mode = ip->i_mode & IFMT;
 	ilock(ip);
 	iput(ip);
@@ -101,7 +103,7 @@ closef(fp, nouser)
 		if (fp->f_flag & FSOCKET)
 			continue;
 		if (fp->f_count && (ip = fp->f_inode) &&
-		    ip->i_un.i_rdev == dev && (ip->i_mode&IFMT) == mode)
+		    ip->i_rdev == dev && (ip->i_mode&IFMT) == mode)
 			return;
 	}
 	if (mode == IFBLK) {
@@ -126,7 +128,7 @@ openi(ip, rw)
 	dev_t dev;
 	register unsigned int maj;
 
-	dev = (dev_t)ip->i_un.i_rdev;
+	dev = (dev_t)ip->i_rdev;
 	maj = major(dev);
 	switch (ip->i_mode&IFMT) {
 
@@ -168,7 +170,7 @@ access(ip, mode)
 
 	m = mode;
 	if (m == IWRITE) {
-		if (getfs(ip->i_dev)->s_ronly != 0) {
+		if (ip->i_fs->fs_ronly != 0) {
 			u.u_error = EROFS;
 			return (1);
 		}

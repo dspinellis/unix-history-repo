@@ -1,8 +1,4 @@
-/*	alloc.c	4.1	82/03/25	*/
-
-/* merged into kernel:	@(#)lfs_alloc.c 2.3 %G% */
-
-/* last monet version:	alloc.c	4.8	81/03/08	*/
+/*	lfs_alloc.c	2.4	82/04/19	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -11,7 +7,7 @@
 #include "../h/conf.h"
 #include "../h/buf.h"
 #include "../h/inode.h"
-#include "../h/ndir.h"
+#include "../h/dir.h"
 #include "../h/user.h"
 
 extern u_long		hashalloc();
@@ -70,7 +66,7 @@ alloc(ip, bpref, size)
 	else
 		cg = dtog(fs, bpref);
 	bno = (daddr_t)hashalloc(ip, cg, (long)bpref, size, alloccg);
-	if (bno == 0)
+	if (bno <= 0)
 		goto nospace;
 	bp = getblk(ip->i_dev, fsbtodb(fs, bno), size);
 	clrbuf(bp);
@@ -99,7 +95,6 @@ realloccg(ip, bprev, bpref, osize, nsize)
 	daddr_t bno;
 	register struct fs *fs;
 	register struct buf *bp, *obp;
-	caddr_t cp;
 	int cg;
 	
 	fs = ip->i_fs;
@@ -120,30 +115,24 @@ realloccg(ip, bprev, bpref, osize, nsize)
 			brelse(bp);
 			return (NULL);
 		}
-		bp->b_bcount = nsize;
+		brealloc(bp, nsize);
 		blkclr(bp->b_un.b_addr + osize, nsize - osize);
 		return (bp);
 	}
 	if (bpref >= fs->fs_size)
 		bpref = 0;
 	bno = (daddr_t)hashalloc(ip, cg, (long)bpref, nsize, alloccg);
-	if (bno != 0) {
-		/*
-		 * make a new copy
-		 */
+	if (bno > 0) {
 		obp = bread(ip->i_dev, fsbtodb(fs, bprev), osize);
 		if (obp->b_flags & B_ERROR) {
 			brelse(obp);
 			return (NULL);
 		}
 		bp = getblk(ip->i_dev, fsbtodb(fs, bno), nsize);
-		cp = bp->b_un.b_addr;
-		bp->b_un.b_addr = obp->b_un.b_addr;
-		obp->b_un.b_addr = cp;
-		obp->b_flags |= B_INVAL;
+		bcopy(obp->b_un.b_addr, bp->b_un.b_addr, osize);
+		blkclr(bp->b_un.b_addr + osize, nsize - osize);
 		brelse(obp);
 		fre(ip, bprev, (off_t)osize);
-		blkclr(bp->b_un.b_addr + osize, nsize - osize);
 		return (bp);
 	}
 nospace:
@@ -441,7 +430,7 @@ alloccg(ip, cg, bpref, size)
 		return (bno);
 	}
 	bno = mapsearch(fs, cgp, bpref, allocsiz);
-	if (bno == -1)
+	if (bno < 0)
 		return (NULL);
 	for (i = 0; i < frags; i++)
 		clrbit(cgp->cg_free, bno + i);
@@ -561,7 +550,7 @@ norot:
 	 * available one in this cylinder group.
 	 */
 	bno = mapsearch(fs, cgp, bpref, fs->fs_frag);
-	if (bno == -1)
+	if (bno < 0)
 		return (NULL);
 	cgp->cg_rotor = bno;
 gotit:
@@ -660,8 +649,10 @@ fre(ip, bno, size)
 	if ((unsigned)size > fs->fs_bsize || fragoff(fs, size) != 0)
 		panic("free: bad size");
 	cg = dtog(fs, bno);
-	if (badblock(fs, bno))
+	if (badblock(fs, bno)) {
+		printf("bad block %d, ino %d\n", bno, ip->i_number);
 		return;
+	}
 	bp = bread(ip->i_dev, fsbtodb(fs, cgtod(fs, cg)), fs->fs_bsize);
 	cgp = bp->b_un.b_cg;
 	if (bp->b_flags & B_ERROR || cgp->cg_magic != CG_MAGIC) {
@@ -670,8 +661,10 @@ fre(ip, bno, size)
 	}
 	bno = dtogd(fs, bno);
 	if (size == fs->fs_bsize) {
-		if (isblock(fs, cgp->cg_free, bno/fs->fs_frag))
+		if (isblock(fs, cgp->cg_free, bno/fs->fs_frag)) {
+			printf("free block %d, fs %s\n", bno, fs->fs_fsmnt);
 			panic("free: freeing free block");
+		}
 		setblock(fs, cgp->cg_free, bno/fs->fs_frag);
 		cgp->cg_cs.cs_nbfree++;
 		fs->fs_cstotal.cs_nbfree++;
@@ -866,6 +859,7 @@ badblock(fs, bn)
 {
 
 	if ((unsigned)bn >= fs->fs_size) {
+		printf("bad block %d, ", bn);
 		fserr(fs, "bad block");
 		return (1);
 	}

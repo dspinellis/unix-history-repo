@@ -1,10 +1,10 @@
-/*	init_main.c	4.28	82/03/28	*/
+/*	init_main.c	4.29	82/04/19	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
 #include "../h/dir.h"
 #include "../h/user.h"
-#include "../h/filsys.h"
+#include "../h/fs.h"
 #include "../h/mount.h"
 #include "../h/map.h"
 #include "../h/proc.h"
@@ -45,6 +45,7 @@ main(firstaddr)
 {
 	register int i;
 	register struct proc *p;
+	struct fs *fsp;
 
 	rqinit();
 #include "loop.h"
@@ -96,9 +97,10 @@ main(firstaddr)
 	binit();
 	bswinit();
 	iinit();
-	rootdir = iget(rootdev, (ino_t)ROOTINO);
+	fsp = getfs(rootdev);
+	rootdir = iget(rootdev, fsp, (ino_t)ROOTINO);
 	rootdir->i_flag &= ~ILOCK;
-	u.u_cdir = iget(rootdev, (ino_t)ROOTINO);
+	u.u_cdir = iget(rootdev, fsp, (ino_t)ROOTINO);
 	u.u_cdir->i_flag &= ~ILOCK;
 	u.u_rdir = NULL;
 	u.u_dmap = zdmap;
@@ -159,28 +161,39 @@ main(firstaddr)
 iinit()
 {
 	register struct buf *bp;
-	register struct filsys *fp;
+	register struct fs *fp;
 	register int i;
+	int blks;
 
 	(*bdevsw[major(rootdev)].d_open)(rootdev, 1);
-	bp = bread(rootdev, SUPERB);
+	bp = bread(rootdev, SBLOCK, SBSIZE);
 	if(u.u_error)
 		panic("iinit");
 	bp->b_flags |= B_LOCKED;		/* block can never be re-used */
 	brelse(bp);
 	mount[0].m_dev = rootdev;
 	mount[0].m_bufp = bp;
-	fp = bp->b_un.b_filsys;
-	fp->s_flock = 0;
-	fp->s_ilock = 0;
-	fp->s_ronly = 0;
-	fp->s_lasti = 1;
-	fp->s_nbehind = 0;
-	fp->s_fsmnt[0] = '/';
-	for (i = 1; i < sizeof(fp->s_fsmnt); i++)
-		fp->s_fsmnt[i] = 0;
-	clkinit(fp->s_time);
-	bootime = time;
+	fp = bp->b_un.b_fs;
+	if (fp->fs_magic != FS_MAGIC)
+		panic("root bad magic number");
+	if (fp->fs_bsize > MAXBSIZE)
+		panic("root fs_bsize too big");
+	fp->fs_ronly = 0;
+	fp->fs_fsmnt[0] = '/';
+	for (i = 1; i < sizeof(fp->fs_fsmnt); i++)
+		fp->fs_fsmnt[i] = 0;
+	blks = howmany(fp->fs_cssize, fp->fs_fsize);
+	for (i = 0; i < blks; i += fp->fs_frag) {
+		bp = bread(rootdev, fsbtodb(fp, fp->fs_csaddr + i),
+		    blks - i < fp->fs_frag ?
+			(blks - i) * fp->fs_fsize :
+			fp->fs_bsize);
+		if (u.u_error)
+			panic("root can't read csum");
+		fp->fs_csp[i / fp->fs_frag] = bp->b_un.b_cs;
+		bp->b_flags |= B_LOCKED;
+		brelse(bp);
+	}
 }
 
 /*
@@ -200,10 +213,11 @@ binit()
 		dp->b_flags = B_HEAD;
 	}
 	dp--;				/* dp = &bfreelist[BQUEUES-1]; */
-	for (i=0; i<nbuf; i++) {
+	for (i = 0; i < nbuf; i++) {
 		bp = &buf[i];
 		bp->b_dev = NODEV;
-		bp->b_un.b_addr = buffers + i * BSIZE;
+		bp->b_un.b_addr = buffers + i * MAXBSIZE;
+		bp->b_bcount = MAXBSIZE;
 		bp->b_back = dp;
 		bp->b_forw = dp->b_forw;
 		dp->b_forw->b_back = bp;
