@@ -6,7 +6,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)makeinfo.sh	8.2 (Berkeley) %G%
+#	@(#)makeinfo.sh	8.3 (Berkeley) %G%
 #
 
 usewhoami=0
@@ -17,7 +17,7 @@ do
 	then
 		p="."
 	fi
-	if [ -x $p/whoami ]
+	if [ -f $p/whoami ]
 	then
 		usewhoami=1
 		if [ $usehostname -ne 0 ]
@@ -25,7 +25,7 @@ do
 			break;
 		fi
 	fi
-	if [ -x $p/hostname ]
+	if [ -f $p/hostname ]
 	then
 		usehostname=1
 		if [ $usewhoami -ne 0 ]
