@@ -1,4 +1,4 @@
-#	Makefile	4.16	83/08/14
+#	Makefile	4.17	83/08/19
 #
 DESTDIR=
 CFLAGS=	-O
@@ -256,6 +256,8 @@ size: /usr/include/a.out.h
 strip: strip.c
 strip: /usr/include/a.out.h
 strip: /usr/include/signal.h
+strip: /usr/include/stdio.h
+strip: /usr/include/sys/file.h
 stty: stty.c
 stty: /usr/include/stdio.h
 stty: /usr/include/sgtty.h
@@ -324,3 +326,6 @@ ps: /usr/include/sys/text.h
 ps: /usr/include/sys/stat.h
 ps: /usr/include/sys/mbuf.h
 ps: /usr/include/math.h
+# DEPENDENCIES MUST END AT END OF FILE
+# IF YOU PUT STUFF HERE IT WILL GO AWAY
+# see make depend above
