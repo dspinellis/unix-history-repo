@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	5.28 (Berkeley) %G%
+ *	@(#)conf.h	5.29 (Berkeley) %G%
  */
 
 /*
@@ -41,10 +41,6 @@
 **	#define these if they are available; comment them out otherwise.
 */
 
-# ifdef hpux
-# define SYSTEM5	1
-# endif
-
 # define LOG		1	/* enable logging */
 # define SMTP		1	/* enable user and server SMTP */
 # define QUEUE		1	/* enable queueing */
@@ -56,15 +52,26 @@
 
 # ifdef NEWDB
 # define USERDB		1	/* look in user database (requires NEWDB) */
+# define BTREE_MAP	1	/* enable BTREE mapping type (requires NEWDB) */
+/*# define HASH_MAP	1	/* enable HASH mapping type (requires NEWDB) */
+# endif
+
+# ifdef NDBM
+# define DBM_MAP	1	/* enable DBM mapping type (requires NDBM) */
+# endif
+
+/*
+**  Some general configuration -- you shouldn't have to touch these
+*/
+
+# ifdef hpux
+# define SYSTEM5	1
 # endif
 
 # ifdef SYSTEM5
 
 # define LOCKF		1	/* use System V lockf instead of flock */
 # define SYS5TZ		1	/* use System V style timezones */
-
-# define index		strchr
-# define rindex		strrchr
 
 # endif
 

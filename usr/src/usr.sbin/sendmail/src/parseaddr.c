@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parseaddr.c	5.25 (Berkeley) %G%";
+static char sccsid[] = "@(#)parseaddr.c	5.26 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -1178,6 +1178,7 @@ backup:
 			char **default_rvp;
 			char hbuf[MAXNAME + 1], ubuf[MAXNAME + 1];
 			char *pvpb1[MAXATOM + 1];
+			char *argvect[10];
 			char pvpbuf[PSBUFSIZE];
 			bool match, defaultpart;
 			char begintype;
@@ -1195,7 +1196,6 @@ backup:
 			begintype = **rvp;
 			hbrvp = rvp;
 			ubrvp = NULL;
-			arg_rvp = default_rvp = NULL;
 			if (**rvp == HOSTBEGIN)
 			{
 				endtoken = HOSTEND;
@@ -1212,27 +1212,50 @@ backup:
 
 			/* extract the match part */
 			key_rvp = ++rvp;
+			default_rvp = NULL;
+			arg_rvp = argvect;
+			xpvp = NULL;
+			replac = pvpbuf;
 			while (*rvp != NULL && **rvp != endtoken)
 			{
-				switch (**rvp)
+				int nodetype = **rvp;
+
+				if (nodetype != CANONHOST && nodetype != CANONUSER)
+				{
+					rvp++;
+					continue;
+				}
+
+				*rvp++ = NULL;
+
+				if (xpvp != NULL)
+				{
+					cataddr(xpvp, replac,
+						&pvpbuf[sizeof pvpbuf] - replac);
+					*++arg_rvp = replac;
+					replac += strlen(replac) + 1;
+					xpvp = NULL;
+				}
+				switch (nodetype)
 				{
 				  case CANONHOST:
-					*rvp++ = NULL;
-					arg_rvp = rvp;
+					xpvp = rvp;
 					break;
 
 				  case CANONUSER:
-					*rvp++ = NULL;
 					default_rvp = rvp;
-					break;
-
-				  default:
-					rvp++;
 					break;
 				}
 			}
 			if (*rvp != NULL)
 				*rvp++ = NULL;
+			if (xpvp != NULL)
+			{
+				cataddr(xpvp, replac,
+					&pvpbuf[sizeof pvpbuf] - replac);
+				*++arg_rvp = replac;
+			}
+			*++arg_rvp = NULL;
 
 			/* save the remainder of the input string */
 			trsize = (int) (avp - rvp + 1) * sizeof *rvp;

@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	5.43 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	5.44 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/ioctl.h>
@@ -210,24 +210,24 @@ setupmaps()
 # ifdef BTREE_MAP
 	/* new database file access -- btree files */
 	{
-		extern void bt_map_init();
-		extern char *bt_map_lookup();
+		extern bool bt_map_init();
+		extern char *db_map_lookup();
 
 		s = stab("btree", ST_MAPCLASS, ST_ENTER);
 		s->s_mapclass.map_init = bt_map_init;
-		s->s_mapclass.map_lookup = bt_map_lookup;
+		s->s_mapclass.map_lookup = db_map_lookup;
 	}
 # endif
 
 # ifdef HASH_MAP
 	/* new database file access -- hash files */
 	{
-		extern void hash_map_init();
-		extern char *hash_map_lookup();
+		extern bool hash_map_init();
+		extern char *db_map_lookup();
 
 		s = stab("hash", ST_MAPCLASS, ST_ENTER);
 		s->s_mapclass.map_init = hash_map_init;
-		s->s_mapclass.map_lookup = hash_map_lookup;
+		s->s_mapclass.map_lookup = db_map_lookup;
 	}
 # endif
 
