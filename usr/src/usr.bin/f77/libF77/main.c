@@ -1,5 +1,5 @@
 /* STARTUP PROCEDURE FOR UNIX FORTRAN PROGRAMS */
-char id_libF77[] = "@(#)main.c	2.16	%G%";
+char id_libF77[] = "@(#)main.c	2.17	%G%";
 
 #include <stdio.h>
 #include <signal.h>
@@ -7,7 +7,6 @@ char id_libF77[] = "@(#)main.c	2.16	%G%";
 
 extern int errno;
 char *getenv();
-int f77_dump_flag;
 
 int xargc;
 char **xargv;
@@ -122,6 +121,7 @@ if (act->mesg)
 f77_abort( s, act->core );
 }
 
+extern int _dbsubc;	/* dbsubc is non-zero if -lg was specified to ld */
 f77_abort( err_val, act_core )
 {
 	char first_char, *env_var;
@@ -133,8 +133,12 @@ f77_abort( err_val, act_core )
 	signal(SIGILL, SIG_DFL);
 	sigsetmask(0);			/* don't block */
 
+	/* see if we want a core dump:
+		first line checks for signals like hangup - don't dump then.
+		second line checks if -lg specified to ld (e.g. by saying
+			-g to f77) and checks the f77_dump_flag var. */
 	core_dump = ((nargs() != 2) || act_core) &&
-	    ( (f77_dump_flag && (first_char != 'n')) || first_char == 'y');
+	    ( (_dbsubc && (first_char != 'n')) || first_char == 'y');
 
 	if( !core_dump )
 		fprintf(units[STDERR].ufd,"*** Execution terminated\n");
