@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)def.h	5.3 (Berkeley) %G%
+ *	@(#)def.h	5.4 (Berkeley) %G%
  */
 
 #include <sys/param.h>		/* includes <sys/types.h> */
@@ -276,7 +276,6 @@ char	*salloc();
 char	*savestr();
 char	*skin();
 char	*snarf();
-char	*sprintf();
 char	*value();
 char	*vcopy();
 char	*yankword();

@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)cpp.c	1.16 %G%";
+static char sccsid[] = "@(#)cpp.c	1.17 %G%";
 #endif lint
 
 #ifdef FLEXNAMES
@@ -969,10 +969,10 @@ subst(p,sp) register char *p; struct symtab *sp; {
 	dump();
 	if (sp==ulnloc) {
 		vp=acttxt; *vp++='\0';
-		sprintf(vp,"%d",lineno[ifno]); while (*vp++);
+		(void)sprintf(vp,"%d",lineno[ifno]); while (*vp++);
 	} else if (sp==uflloc) {
 		vp=acttxt; *vp++='\0';
-		sprintf(vp,"\"%s\"",fnames[ifno]); while (*vp++);
+		(void)sprintf(vp,"\"%s\"",fnames[ifno]); while (*vp++);
 	}
 	if (0!=(params= *--vp&0xFF)) {/* definition calls for params */
 		register char **pa;

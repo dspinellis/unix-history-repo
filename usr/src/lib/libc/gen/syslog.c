@@ -5,7 +5,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)syslog.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)syslog.c	5.12 (Berkeley) %G%";
 #endif LIBC_SCCS and not lint
 
 /*
@@ -76,17 +76,17 @@ syslog(pri, fmt, p0, p1, p2, p3, p4)
 
 	/* build the message */
 	o = outline;
-	sprintf(o, "<%d>", pri);
+	(void)sprintf(o, "<%d>", pri);
 	o += strlen(o);
 	time(&now);
-	sprintf(o, "%.15s ", ctime(&now) + 4);
+	(void)sprintf(o, "%.15s ", ctime(&now) + 4);
 	o += strlen(o);
 	if (LogTag) {
 		strcpy(o, LogTag);
 		o += strlen(o);
 	}
 	if (LogStat & LOG_PID) {
-		sprintf(o, "[%d]", getpid());
+		(void)sprintf(o, "[%d]", getpid());
 		o += strlen(o);
 	}
 	if (LogTag) {
@@ -107,14 +107,14 @@ syslog(pri, fmt, p0, p1, p2, p3, p4)
 			continue;
 		}
 		if ((unsigned)olderrno > sys_nerr)
-			sprintf(b, "error %d", olderrno);
+			(void)sprintf(b, "error %d", olderrno);
 		else
 			strcpy(b, sys_errlist[olderrno]);
 		b += strlen(b);
 	}
 	*b++ = '\n';
 	*b = '\0';
-	sprintf(o, buf, p0, p1, p2, p3, p4);
+	(void)sprintf(o, buf, p0, p1, p2, p3, p4);
 	c = strlen(outline);
 	if (c > MAXLINE)
 		c = MAXLINE;

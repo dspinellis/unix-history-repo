@@ -5,7 +5,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)res_mkquery.c	6.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)res_mkquery.c	6.6 (Berkeley) %G%";
 #endif LIBC_SCCS and not lint
 
 #include <stdio.h>
@@ -13,8 +13,6 @@ static char sccsid[] = "@(#)res_mkquery.c	6.5 (Berkeley) %G%";
 #include <netinet/in.h>
 #include <arpa/nameser.h>
 #include <resolv.h>
-
-extern	char *sprintf();
 
 /*
  * Form all types of queries.
@@ -70,8 +68,10 @@ res_mkquery(op, dname, class, type, data, datalen, newrr, buf, buflen)
 		if (!(_res.options & RES_INIT))
 			if (res_init() == -1)
 				return(-1);
-		if (_res.defdname[0] != '\0')
-			dname = sprintf(dnbuf, "%s.%s", dname, _res.defdname);
+		if (_res.defdname[0] != '\0') {
+			(void)sprintf(dnbuf, "%s.%s", dname, _res.defdname);
+			dname = dnbuf;
+		}
 	}
 	/*
 	 * perform opcode specific processing

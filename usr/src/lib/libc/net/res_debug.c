@@ -5,7 +5,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)res_debug.c	5.20 (Berkeley) %G%";
+static char sccsid[] = "@(#)res_debug.c	5.21 (Berkeley) %G%";
 #endif LIBC_SCCS and not lint
 
 #if defined(lint) && !defined(DEBUG)
@@ -348,7 +348,6 @@ p_rr(cp, msg, file)
 }
 
 static	char nbuf[20];
-extern	char *sprintf();
 
 /*
  * Return a string for the type
@@ -409,7 +408,8 @@ p_type(type)
 		return("UNSPEC");
 #endif /* ALLOW_T_UNSPEC */
 	default:
-		return (sprintf(nbuf, "%d", type));
+		(void)sprintf(nbuf, "%d", type);
+		return(nbuf);
 	}
 }
 
@@ -427,6 +427,7 @@ p_class(class)
 	case C_ANY:		/* matches any class */
 		return("ANY");
 	default:
-		return (sprintf(nbuf, "%d", class));
+		(void)sprintf(nbuf, "%d", class);
+		return(nbuf);
 	}
 }

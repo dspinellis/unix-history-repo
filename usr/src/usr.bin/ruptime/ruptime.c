@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)ruptime.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)ruptime.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
@@ -35,7 +35,7 @@ int	hscmp(), ucmp(), lcmp(), tcmp();
 
 char	*interval();
 int	now;
-char	*malloc(), *sprintf();
+char	*malloc();
 int	aflg;
 int 	rflg = 1;
 
