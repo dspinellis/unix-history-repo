@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ktrace.h	7.3 (Berkeley) %G%
+ *	@(#)ktrace.h	7.4 (Berkeley) %G%
  */
 
 /*
@@ -93,11 +93,26 @@ struct ktr_psig {
 };
 
 /*
- * kernel trace points
+ * kernel trace points (in p_traceflag)
  */
+#define KTRFAC_MASK	0x00ffffff
 #define KTRFAC_SYSCALL	(1<<KTR_SYSCALL)
 #define KTRFAC_SYSRET	(1<<KTR_SYSRET)
 #define KTRFAC_NAMEI	(1<<KTR_NAMEI)
 #define KTRFAC_GENIO	(1<<KTR_GENIO)
 #define	KTRFAC_PSIG	(1<<KTR_PSIG)
-#define KTRFAC_INHERIT	0x80000000
+/*
+ * trace flags (also in p_traceflags)
+ */
+#define KTRFAC_ROOT	0x80000000	/* root set this trace */
+#define KTRFAC_INHERIT	0x40000000	/* pass trace flags to children */
+
+#ifndef	KERNEL
+
+#include <sys/cdefs.h>
+
+__BEGIN_DECLS
+int	ktrace __P((const char *, int, int, pid_t));
+__END_DECLS
+
+#endif	/* !KERNEL */
