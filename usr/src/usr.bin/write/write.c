@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)write.c	4.6 %G%";
+static char *sccsid = "@(#)write.c	4.7 %G%";
 /*
  * write to another user
  */
@@ -135,7 +135,7 @@ cont:
 	{ char hostname[32];
 	  gethostname(hostname, sizeof (hostname));
 	  fprintf(tf, "\r\nMessage from ");
-	  fprintf(tf, "%s!%s on %s at %d:%02d ...\r\n",
+	  fprintf(tf, "%s!%s on %s at %d:%02d ...\r\n\007\007\007",
 	      hostname, me, mytty, localclock->tm_hour, localclock->tm_min);
 	}
 	fflush(tf);
@@ -150,7 +150,7 @@ cont:
 			continue;
 		}
 		if (write(fileno(tf), buf, i) != i) {
-			printf("\n\7Write failed (%s logged out?)\n", him);
+			printf("\n\007Write failed (%s logged out?)\n", him);
 			exit(1);
 		}
 		if (buf[i-1] == '\n')
