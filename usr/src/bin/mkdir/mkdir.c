@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)mkdir.c	4.3 (Berkeley) %G%";
+static char *sccsid = "@(#)mkdir.c	4.4 (Berkeley) %G%";
 /*
  * make directory
  */
@@ -15,6 +15,7 @@ main(argc, argv)
 	}
 	while (--argc)
 		if (mkdir(*++argv, 0777) < 0) {
+			fprintf(stderr, "mkdir: ");
 			perror(*argv);
 			errors++;
 		}
