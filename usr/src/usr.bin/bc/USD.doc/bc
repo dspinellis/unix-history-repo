@@ -1,6 +1,6 @@
 .\" %sccs.include.proprietary.roff%
 .\"
-.\"	@(#)bc	8.1 (Berkeley) %G%
+.\"	@(#)bc	8.2 (Berkeley) %G%
 .\"
 .EH 'USD:6-%''BC \- An Arbitrary Precision Desk-Calculator Language'
 .OH 'BC \- An Arbitrary Precision Desk-Calculator Language''USD:6-%'
@@ -698,7 +698,6 @@ R. Morris and L. L. Cherry,
 DC \- An Interactive Desk Calculator.
 .ft
 .LP
-.bp
 .ft B
 .DS C
 Appendix
@@ -770,7 +769,6 @@ Precedence is the same as the order
 of presentation here, with highest appearing first.
 Left or right associativity, where applicable, is
 discussed with each operator.
-.bp
 .NH 2
 Primitive expressions
 .NH 3
