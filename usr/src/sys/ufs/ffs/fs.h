@@ -1,6 +1,6 @@
 /* Copyright (c) 1981 Regents of the University of California */
 
-/*	fs.h	1.6	%G%	*/
+/*	fs.h	1.7	%G%	*/
 
 /*
  * Each disk drive contains some number of file systems.
@@ -71,13 +71,7 @@ struct csum {
 /*
  * Each file system has a number of inodes statically allocated.
  * We allocate one inode slot per NBPI data bytes, expecting this
- * to be far more than we will ever need.  Actually, the directory
- * structure has inode numbers kept in 16 bits, so no more than
- * 65K inodes are possible, and this usually cuts off well above
- * the number suggested by NBPI.
- * 
- * THE DIRECTORY STRUCTURE SHOULD BE CHANGED SOON TO ALLOW
- * LARGER INODE NUMBERS (SEE DIR.H).
+ * to be far more than we will ever need.
  */
 #define	NBPI	2048
 
