@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)disklabel.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)disklabel.c	5.8 (Berkeley) %G%";
 /* from static char sccsid[] = "@(#)disklabel.c	1.2 (Symmetric) 11/28/85"; */
 #endif
 
@@ -151,6 +151,9 @@ main(argc, argv)
 		lp = getbootarea(bootarea, &lab);
 		if (!(t = fopen(argv[1],"r")))
 			Perror(argv[1]);
+#ifdef BOOT
+		rflag = 1;		/* force bootstrap to be written */
+#endif
 		if (getasciilabel(t, lp))
 			writelabel(f, bootarea, lp);
 		break;
@@ -172,6 +175,9 @@ main(argc, argv)
 		makelabel(type, name, &lab);
 		lp = getbootarea(bootarea, &lab);
 		*lp = lab;
+#ifdef BOOT
+		rflag = 1;		/* force bootstrap to be written */
+#endif
 		if (checklabel(lp) == 0)
 			writelabel(f, bootarea, lp);
 		break;
@@ -252,12 +258,13 @@ readlabel(f, boot)
 	else
 		buf = bootarea;
 	lp = (struct disklabel *)(buf + LABELOFFSET);
-	if (rflag == 0 && boot == 0) {
+	if (boot || rflag)
+		if (read(f, buf, BBSIZE) < BBSIZE)
+			Perror(specname);
+	if (rflag == 0) {
 		if (ioctl(f, DIOCGDINFO, lp) < 0)
 			Perror("ioctl DIOCGDINFO");
 	} else {
-		if (read(f, buf, BBSIZE) < BBSIZE)
-			Perror(specname);
 		for (lp = (struct disklabel *)buf;
 		    lp <= (struct disklabel *)(buf + BBSIZE - sizeof(*lp));
 		    lp = (struct disklabel *)((char *)lp + 16))
@@ -348,13 +355,13 @@ display(f, lp)
 		fprintf(f, "type: %d\n", lp->d_type);
 	fprintf(f, "disk: %.*s\n", sizeof(lp->d_typename), lp->d_typename);
 	fprintf(f, "label: %.*s\n", sizeof(lp->d_name), lp->d_name);
-	fprintf(f, "flags: ");
+	fprintf(f, "flags:");
 	if (lp->d_flags & D_REMOVABLE)
-		fprintf(f, "removeable ");
+		fprintf(f, " removeable");
 	if (lp->d_flags & D_ECC)
-		fprintf(f, "ecc ");
+		fprintf(f, " ecc");
 	if (lp->d_flags & D_BADSECT)
-		fprintf(f, "badsect ");
+		fprintf(f, " badsect");
 	fprintf(f, "\n");
 	fprintf(f, "bytes/sector: %d\n", lp->d_secsize);
 	fprintf(f, "sectors/track: %d\n", lp->d_nsectors);
@@ -521,9 +528,8 @@ word(cp)
 {
 	register char c;
 
-	while (*cp != '\0' && !isspace(*cp))
-		if (*cp++ == '#')
-			break;
+	while (*cp != '\0' && !isspace(*cp) && *cp != '#')
+		cp++;
 	if ((c = *cp) != '\0') {
 		*cp++ = '\0';
 		if (c != '#')
