@@ -128,7 +128,7 @@ int tgt_test, long_form;
 	    header = 0;
 	}
 	if (tgt_test) {
-	    c.issue_date += c.lifetime * 5 * 60;
+	    c.issue_date += ((unsigned char) c.lifetime) * 5 * 60;
 	    if (!strcmp(c.service, TICKET_GRANTING_TICKET) &&
 		!strcmp(c.instance, prealm)) {
 		if (time(0) < c.issue_date)
