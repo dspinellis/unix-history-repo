@@ -18,8 +18,9 @@
  *	3. Altered versions must be plainly marked as such, and must not
  *		be misrepresented as being the original software.
  */
-#include <stdio.h>
 #include <regexp.h>
+#include <stdio.h>
+#include <string.h>
 #include "regmagic.h"
 
 #ifndef CHARBITS
@@ -33,8 +34,8 @@
  */
 void
 regsub(prog, source, dest)
-regexp *prog;
-char *source;
+const regexp *prog;
+const char *source;
 char *dest;
 {
 	register char *src;
@@ -53,7 +54,7 @@ char *dest;
 		return;
 	}
 
-	src = source;
+	src = (char *)source;
 	dst = dest;
 	while ((c = *src++) != '\0') {
 		if (c == '&')
