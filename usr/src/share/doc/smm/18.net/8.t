@@ -2,10 +2,12 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)8.t	6.2 (Berkeley) %G%
+.\"	@(#)8.t	6.3 (Berkeley) %G%
 .\"
 .nr H2 1
 .\".ds RH "Protocol/protocol interface
+.br
+.ne 2i
 .NH
 \s+2Protocol/protocol interface\s0
 .PP
@@ -135,4 +137,3 @@ The results of a PRCO_GETOPT call are returned in an mbuf whose address
 is placed in \fImp\fP before return.
 On a PRCO_SETOPT call, \fImp\fP contains the address of an mbuf
 containing the option data; the mbuf should be freed before return.
-'ne 2i

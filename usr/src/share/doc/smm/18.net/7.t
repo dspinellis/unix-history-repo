@@ -2,9 +2,11 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)7.t	6.2 (Berkeley) %G%
+.\"	@(#)7.t	6.3 (Berkeley) %G%
 .\"
 .nr H2 1
+.br
+.ne 30v
 .\".ds RH "Socket/protocol interface
 .NH
 \s+2Socket/protocol interface\s0
@@ -225,4 +227,3 @@ This request allows a protocol to send data destined for another
 protocol module, not a user.  The details of how data is marked
 ``addressed to protocol'' instead of ``addressed to user'' are
 left to the protocol modules.  No protocols currently use this facility.
-'ne 2i

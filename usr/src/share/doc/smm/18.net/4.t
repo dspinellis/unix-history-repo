@@ -2,10 +2,12 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)4.t	6.2 (Berkeley) %G%
+.\"	@(#)4.t	6.3 (Berkeley) %G%
 .\"
 .nr H2 1
 .\".ds RH "Address representation
+.br
+.ne 2i
 .NH
 \s+2Internal address representation\s0
 .PP
@@ -36,4 +38,3 @@ may use larger data areas.
 .FS
 * Later versions of the system may support variable length addresses.
 .FE
-'ne 2i
