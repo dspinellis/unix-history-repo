@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)login.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)login.c	5.16 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -91,6 +91,7 @@ int	usererr = -1;
 char	rusername[NMAX+1], lusername[NMAX+1];
 char	rpassword[NMAX+1];
 char	name[NMAX+1];
+char	me[MAXHOSTNAMELEN];
 char	*rhost;
 
 main(argc, argv)
@@ -103,6 +104,7 @@ main(argc, argv)
 	char *ttyn, *tty;
 	int ldisc = 0, zero = 0, i;
 	char **envnew;
+	char *p, *domain, *index();
 
 	signal(SIGALRM, timedout);
 	alarm(timeout);
@@ -116,6 +118,8 @@ main(argc, argv)
 	 * -h is used by other servers to pass the name of the
 	 * remote host to login so that it may be placed in utmp and wtmp
 	 */
+	(void) gethostname(me, sizeof(me));
+	domain = index(me, '.');
 	while (argc > 1) {
 		if (strcmp(argv[1], "-r") == 0) {
 			if (rflag || hflag) {
@@ -124,6 +128,8 @@ main(argc, argv)
 			}
 			rflag = 1;
 			usererr = doremotelogin(argv[2]);
+			if ((p = index(argv[2], '.')) && strcmp(p, domain) == 0)
+				*p = 0;
 			SCPYN(utmp.ut_host, argv[2]);
 			argc -= 2;
 			argv += 2;
@@ -135,6 +141,8 @@ main(argc, argv)
 				exit(1);
 			}
 			hflag = 1;
+			if ((p = index(argv[2], '.')) && strcmp(p, domain) == 0)
+				*p = 0;
 			SCPYN(utmp.ut_host, argv[2]);
 			argc -= 2;
 			argv += 2;
