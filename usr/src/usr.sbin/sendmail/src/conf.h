@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.18 (Berkeley) %G%
+ *	@(#)conf.h	8.19 (Berkeley) %G%
  */
 
 /*
@@ -188,7 +188,7 @@
 **  NeXTstep
 */
 
-#ifdef __NeXT__
+#ifdef NeXT
 # define HASINITGROUPS	1	/* has initgroups(3) call */
 # define HASFLOCK	1	/* has flock(2) call */
 # define sleep		sleepX
