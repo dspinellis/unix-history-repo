@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tuba_subr.c	7.8 (Berkeley) %G%
+ *	@(#)tuba_subr.c	7.9 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -66,10 +66,15 @@ tuba_init()
 		panic("tuba_init");
 }
 
+struct addr_arg {
+	int	error;
+	int	offset;
+	u_long	sum;
+};
+
 static void
-tuba_getaddr(error, sum, siso, index)
-	int *error;
-	register u_long *sum;
+tuba_getaddr(arg, siso, index)
+	register struct addr_arg *arg;
 	struct sockaddr_iso **siso;
 	u_long index;
 {
@@ -77,50 +82,48 @@ tuba_getaddr(error, sum, siso, index)
 	if (index <= tuba_table_size && (tc = tuba_table[index])) {
 		if (siso)
 			*siso = &tc->tc_siso;
-		REDUCE(*sum, *sum + tc->tc_sum_out);
+		arg->sum += (arg->offset & 1 ? tc->tc_ssum_d : tc->tc_sum_d);
+		arg->offset += tc->tc_siso.siso_nlen + 1;
 	} else
-		*error = 1;
+		arg->error = 1;
 }
 
 tuba_output(m, tp)
 	register struct mbuf *m;
 	struct tcpcb *tp;
 {
-	struct isopcb *isop;
 	register struct tcpiphdr *n;
-	u_long sum, i;
+	struct	isopcb *isop;
+	struct	addr_arg arg;
 
 	if (tp == 0 || (n = tp->t_template) == 0 || 
 	    (isop = (struct isopcb *)tp->t_tuba_pcb) == 0) {
 		isop = &tuba_isopcb;
 		n = mtod(m, struct tcpiphdr *);
-		i = sum = 0;
-		tuba_getaddr(&i, &sum, &tuba_isopcb.isop_faddr,
-				n->ti_dst.s_addr);
-		tuba_getaddr(&i, &sum, &tuba_isopcb.isop_laddr,
-				n->ti_src.s_addr);
+		arg.error = arg.sum = arg.offset = 0;
+		tuba_getaddr(&arg, &tuba_isopcb.isop_faddr, n->ti_dst.s_addr);
+		tuba_getaddr(&arg, &tuba_isopcb.isop_laddr, n->ti_src.s_addr);
+		REDUCE(arg.sum, arg.sum);
 		goto adjust;
 	}
 	if (n->ti_sum == 0) {
-		i = sum = 0;
-		tuba_getaddr(&i, &sum, (struct sockaddr_iso **)0,
-				n->ti_dst.s_addr);
-		tuba_getaddr(&i, &sum, (struct sockaddr_iso **)0,
-				n->ti_src.s_addr);
-		n->ti_sum = sum;
+		arg.error = arg.sum = arg.offset = 0;
+		tuba_getaddr(&arg, (struct sockaddr_iso **)0, n->ti_dst.s_addr);
+		tuba_getaddr(&arg, (struct sockaddr_iso **)0, n->ti_src.s_addr);
+		REDUCE(arg.sum, arg.sum);
+		n->ti_sum = arg.sum;
 		n = mtod(m, struct tcpiphdr *);
 	adjust:
-		if (i) {
+		if (arg.error) {
 			m_freem(m);
 			return (EADDRNOTAVAIL);
 		}
-		REDUCE(n->ti_sum, n->ti_sum + (0xffff ^ sum));
+		REDUCE(n->ti_sum, n->ti_sum + (0xffff ^ arg.sum));
 	}
 	m->m_len -= sizeof (struct ip);
 	m->m_pkthdr.len -= sizeof (struct ip);
 	m->m_data += sizeof (struct ip);
-	i = clnp_output(m, isop, m->m_pkthdr.len, 0);
-	return (i);
+	return (clnp_output(m, isop, m->m_pkthdr.len, 0));
 }
 
 tuba_refcnt(isop, delta)
@@ -223,7 +226,7 @@ tuba_tcpinput(m, src, dst, clnp_len, ce_bit)
 	 */
 	tcpstat.tcps_rcvtotal++;
 	lindex = tuba_lookup(&dst->siso_addr, M_DONTWAIT);
-	findex = tuba_lookup(&dst->siso_addr, M_DONTWAIT);
+	findex = tuba_lookup(&src->siso_addr, M_DONTWAIT);
 	if (lindex == 0 || findex == 0)
 		goto drop;
 	/*
@@ -277,8 +280,11 @@ tuba_tcpinput(m, src, dst, clnp_len, ce_bit)
 		m = m0;
 	}
 	ti = mtod(m, struct tcpiphdr *);
-	ti->ti_src.s_addr = tuba_table[findex]->tc_sum_in;
-	ti->ti_dst.s_addr = tuba_table[lindex]->tc_sum_in;
+	ti->ti_dst.s_addr = tuba_table[lindex]->tc_sum;
+	if (dst->siso_nlen & 1)
+		ti->ti_src.s_addr = tuba_table[findex]->tc_sum;
+	else
+		ti->ti_src.s_addr = tuba_table[findex]->tc_ssum;
 	ti->ti_prev = ti->ti_next = 0;
 	ti->ti_x1 = 0; ti->ti_pr = ISOPROTO_TCP;
 	ti->ti_len = htons((u_short)tlen);
