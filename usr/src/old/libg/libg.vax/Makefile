@@ -1,9 +1,20 @@
 #
-# Copyright (c) 1987 Regents of the University of California.
-# All rights reserved.  The Berkeley software License Agreement
-# specifies the terms and conditions for redistribution.
+# Copyright (c) 1989 The Regents of the University of California.
+# All rights reserved.
 #
-#	@(#)Makefile	5.2	(Berkeley)	%G%
+# Redistribution and use in source and binary forms are permitted
+# provided that the above copyright notice and this paragraph are
+# duplicated in all such forms and that any documentation,
+# advertising materials, and other materials related to such
+# distribution and use acknowledge that the software was developed
+# by the University of California, Berkeley.  The name of the
+# University may not be used to endorse or promote products derived
+# from this software without specific prior written permission.
+# THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+# IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+#
+#	@(#)Makefile	5.3 (Berkeley) %G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
@@ -15,13 +26,13 @@ all: libg.a
 libg.a: dbxxx.s
 	${AS} dbxxx.s -o $@
 
-clean: FRC
+clean:
 	rm -f ${OBJS} core libg.a
 
-install: FRC
+cleandir: clean
+	rm -f ${MAN} tags .depend
+
+install: ${MAN}
 	install -o bin -g bin -m 644 libg.a ${DESTDIR}/usr/lib/libg.a
 
-depend:
-lint:
-tags:
-FRC:
+depend lint tags FRC:
