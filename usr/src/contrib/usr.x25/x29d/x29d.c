@@ -204,7 +204,7 @@ register char **argv;
 	listen(s, 5);
 
 	for (;;) {
-		s truct sockaddr_x25 from;
+		struct sockaddr_x25 from;
 		int fromlen = sizeof (from);
 
 		if ((net = accept(s, (caddr_t)&from, &fromlen)) < 0) {
