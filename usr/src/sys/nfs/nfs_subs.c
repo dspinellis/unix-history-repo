@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_subs.c	7.15 (Berkeley) %G%
+ *	@(#)nfs_subs.c	7.16 (Berkeley) %G%
  */
 
 /*
@@ -631,7 +631,8 @@ nfs_loadattrcache(vpp, mdp, dposp, vaper)
 				 */
 				np = VTONFS(nvp);
 				np->n_vnode = nvp;
-				np->n_flag = NLOCKED;
+				np->n_flag = 0;
+				nfs_lock(nvp);
 				bcopy((caddr_t)&VTONFS(vp)->n_fh,
 					(caddr_t)&np->n_fh, NFSX_FH);
 				insque(np, nfs_hash(&np->n_fh));
