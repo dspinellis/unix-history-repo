@@ -1,4 +1,4 @@
-/*	user.h	3.5	%G%	*/
+/*	user.h	3.6	%G%	*/
 
 #ifdef KERNEL
 #include "../h/pcb.h"
@@ -104,6 +104,7 @@ struct	user
 	time_t	u_outime;		/* user time at last sample */
 	size_t	u_odsize, u_ossize;	/* for (clumsy) expansion swaps */
 	size_t	u_vrpages[NOFILE];	/* number vread pages hanging on fd */
+	int	u_limit[8];		/* see <sys/limit.h> */
 	int	u_stack[1];
 
 					/*
