@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid ="@(#)stab.c	1.12 (Berkeley) %G%";
+static char *sccsid ="@(#)stab.c	1.13 (Berkeley) %G%";
 #endif
 /*
  * Symbolic debugging info interface.
@@ -100,7 +100,6 @@ struct symtab *sym;
 {
     register struct symtab *p;
     char *classname;
-    int offset;
     Boolean ignore;
     static Boolean firsttime = true;
 
@@ -113,11 +112,9 @@ struct symtab *sym;
 	}
 	ignore = false;
 	p = sym;
-	offset = bytes(p->offset);
 	switch (p->sclass) {
 	case REGISTER:
 	    classname = "r";
-	    offset = p->offset;
 	    break;
 
 	/*
@@ -160,7 +157,7 @@ struct symtab *sym;
 	case ENAME:
 	case UNAME:
 	case STNAME:
-	    entertype(p->stype, NILINDEX, FORWARD, dimtab[p->sizoff + 3]);
+	    (void) entertype(p->stype, NILINDEX, FORWARD, dimtab[p->sizoff + 3]);
 	    ignore = true;
 	    break;
 
@@ -321,10 +318,10 @@ private inittypes()
     maketype("double", builtintype(DOUBLE), t_int, 8L, 0L);
     t = builtintype(UNDEF);
     printf("\t.stabs\t\"void:t%d=%d", t, t);
-    geninfo(nil);
+    geninfo((struct symtab *)nil);
     t = builtintype(FARG);
     printf("\t.stabs\t\"???:t%d=%d", t, t_int);
-    geninfo(nil);
+    geninfo((struct symtab *)nil);
 }
 
 /*
@@ -337,7 +334,7 @@ int tnum, eqtnum;
 long lower, upper;
 {
     printf("\t.stabs\t\"%s:t%d=r%d;%d;%d;", name, tnum, eqtnum, lower, upper);
-    geninfo(nil);
+    geninfo((struct symtab *)nil);
 }
 
 /*
@@ -527,6 +524,7 @@ register struct symtab *p;
  * Generate information for a newly-defined structure.
  */
 
+/*ARGSUSED*/
 outstruct(szindex, paramindex)
 int szindex, paramindex;
 {
@@ -537,9 +535,7 @@ int szindex, paramindex;
     if (oldway) {
 	/* do nothing */;
     } else if (gdebug) {
-	i = dimtab[szindex + 3];
-	p = &stab[i];
-	if (p->sname != nil) {
+	if ((i = dimtab[szindex + 3]) >= 0 && (p = &stab[i])->sname != nil) {
 	    strindex = dimtab[p->sizoff + 1];
 	    typeid = typelookup(p->stype, NILINDEX, FORWARD, i);
 	    if (typeid == nil) {
@@ -559,8 +555,10 @@ pstab(name, type)
 char *name;
 int type;
 {
+#ifndef ASSTRINGS
     register int i;
     register char c;
+#endif
 
     if (!gdebug) {
 	return;
@@ -604,7 +602,9 @@ int value;
 }
 #endif
 
+#ifndef STABDOT
 extern char NULLNAME[8];
+#endif
 extern int  labelno;
 extern int  fdefflag;
 
@@ -806,8 +806,10 @@ struct symtab *p; {
 private old_pstab(name, type)
 char *name;
 int type; {
+#ifndef ASSTRINGS
 	register int i;
 	register char c;
+#endif
 	if (!gdebug) return;
 	/* locctr(PROG);  /* .stabs must appear in .text for c2 */
 #ifdef ASSTRINGS
