@@ -1,4 +1,4 @@
-/*	init_main.c	4.13	81/04/13	*/
+/*	init_main.c	4.14	81/04/23	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -45,8 +45,6 @@ main(firstaddr)
 
 	rqinit();
 	startup(firstaddr);
-	if (lotsfree == 0)
-		lotsfree = LOTSFREE;
 
 	/*
 	 * set up system process 0 (swapper)
@@ -95,6 +93,11 @@ main(firstaddr)
 	u.u_rdir = NULL;
 	u.u_dmap = zdmap;
 	u.u_smap = zdmap;
+
+	/*
+	 * Set the scan rate and other parameters of the paging subsystem.
+	 */
+	setupclock();
 
 	/*
 	 * make page-out daemon (process 2)
