@@ -1,5 +1,5 @@
 
-/*	@(#)tmscp.c	7.4 (Berkeley) %G% */
+/*	@(#)tmscp.c	7.5 (Berkeley) %G% */
 
 /****************************************************************
  *                                                              *
@@ -44,8 +44,6 @@ static char *sccsid = "@(#)tmscp.c	1.5	(ULTRIX)	4/18/86";
  */
  
 #include "param.h"
-#include "inode.h"
-#include "fs.h"
 
 #include "../vax/pte.h"
 

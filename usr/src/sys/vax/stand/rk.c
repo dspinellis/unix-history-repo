@@ -3,15 +3,13 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)rk.c	7.7 (Berkeley) %G%
+ *	@(#)rk.c	7.8 (Berkeley) %G%
  */
 
 /*
  * RK611/RK07
  */
 #include "param.h"
-#include "inode.h"
-#include "fs.h"
 #include "disklabel.h"
 
 #include "../vax/pte.h"

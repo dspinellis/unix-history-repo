@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)kdb.c	7.5 (Berkeley) %G%
+ *	@(#)kdb.c	7.6 (Berkeley) %G%
  */
 
 /*
@@ -23,8 +23,6 @@
 #include "machine/pte.h"
 
 #include "param.h"
-#include "inode.h"
-#include "fs.h"
 #include "disklabel.h"
 
 #include "saio.h"

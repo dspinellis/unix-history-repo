@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)mt.c	7.4 (Berkeley) %G%
+ *	@(#)mt.c	7.5 (Berkeley) %G%
  */
 
 /*
@@ -13,8 +13,6 @@
 #include "machine/pte.h"
 
 #include "param.h"
-#include "inode.h"
-#include "fs.h"
 
 #include "../vaxmba/mtreg.h"
 #include "../vaxmba/mbareg.h"

@@ -3,13 +3,11 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)uba.c	7.4 (Berkeley) %G%
+ *	@(#)uba.c	7.5 (Berkeley) %G%
  */
 
 #include "param.h"
-#include "inode.h"
 #include "vm.h"
-#include "fs.h"
 
 #include "../vax/pte.h"
 #include "../vax/cpu.h"

@@ -3,14 +3,12 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)mba.c	7.7 (Berkeley) %G%
+ *	@(#)mba.c	7.8 (Berkeley) %G%
  */
 
 #include "machine/pte.h"
 
 #include "param.h"
-#include "inode.h"
-#include "fs.h"
 #include "vm.h"
 
 #include "../vax/mtpr.h"
