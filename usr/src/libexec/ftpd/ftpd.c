@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ftpd.c	5.22 (Berkeley) %G%";
+static char sccsid[] = "@(#)ftpd.c	5.23 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -301,6 +301,8 @@ user(name)
 		endusershell();
 		if (cp == NULL) {
 			reply(530, "User %s access denied.", name);
+			syslog(LOG_ERR, "FTP LOGIN REFUSED FROM %s, %s",
+			    remotehost, name);
 			pw = (struct passwd *) NULL;
 			return;
 		}
@@ -310,6 +312,8 @@ user(name)
 				*cp = '\0';
 			if (strcmp(line, name) == 0) {
 				reply(530, "User %s access denied.", name);
+				syslog(LOG_ERR, "FTP LOGIN REFUSED FROM %s, %s",
+				    remotehost, name);
 				pw = (struct passwd *) NULL;
 				return;
 			}
@@ -399,10 +403,15 @@ pass(passwd)
 		reply(550, "Can't set uid.");
 		goto bad;
 	}
-	if (guest)
+	if (guest) {
 		reply(230, "Guest login ok, access restrictions apply.");
-	else
+		syslog(LOG_INFO, "ANONYMOUS FTP LOGIN FROM %s, %s",
+		    remotehost, passwd);
+	} else {
 		reply(230, "User %s logged in.", pw->pw_name);
+		syslog(LOG_INFO, "FTP LOGIN FROM %s, %s",
+		    remotehost, pw->pw_name);
+	}
 	home = pw->pw_dir;		/* home dir for globbing */
 	return;
 bad:
