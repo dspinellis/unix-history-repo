@@ -13,7 +13,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	8.133 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	8.134 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -927,6 +927,7 @@ main(argc, argv, envp)
 
 	if (queuemode && OpMode != MD_DAEMON && QueueIntvl == 0)
 	{
+		(void) unsetenv("HOSTALIASES");
 		runqueue(FALSE);
 		finis();
 	}
