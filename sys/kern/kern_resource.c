@@ -196,7 +196,6 @@ setrlimit(p, uap, retval)
 {
 	struct rlimit alim;
 	register struct rlimit *alimp;
-	extern unsigned maxdmap;
 	extern int maxfdescs;
 	int error;
 
@@ -218,10 +217,10 @@ setrlimit(p, uap, retval)
 	switch (uap->which) {
 
 	case RLIMIT_DATA:
-		if (alim.rlim_cur > maxdmap)
-			alim.rlim_cur = maxdmap;
-		if (alim.rlim_max > maxdmap)
-			alim.rlim_max = maxdmap;
+		if (alim.rlim_cur > MAXDSIZ)
+			alim.rlim_cur = MAXDSIZ;
+		if (alim.rlim_max > MAXDSIZ)
+			alim.rlim_max = MAXDSIZ;
 		break;
 
 	case RLIMIT_OFILE:
@@ -231,10 +230,10 @@ setrlimit(p, uap, retval)
 			alim.rlim_max = maxfdescs;
 		break;
 	case RLIMIT_STACK:
-		if (alim.rlim_cur > maxdmap)
-			alim.rlim_cur = maxdmap;
-		if (alim.rlim_max > maxdmap)
-			alim.rlim_max = maxdmap;
+		if (alim.rlim_cur > MAXSSIZ)
+			alim.rlim_cur = MAXSSIZ;
+		if (alim.rlim_max > MAXSSIZ)
+			alim.rlim_max = MAXSSIZ;
 		/*
 		 * Stack is allocated to the max at exec time with only
 		 * "rlim_cur" bytes accessible.  If stack limit is going
