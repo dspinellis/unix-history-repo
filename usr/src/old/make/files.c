@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)files.c	4.7 (Berkeley) 83/05/18";
+static	char *sccsid = "@(#)files.c	4.8 (Berkeley) 83/06/30";
 /* UNIX DEPENDENT PROCEDURES */
 
 
@@ -9,7 +9,7 @@ char *builtin[] =
 #ifdef pwb
 	".SUFFIXES : .L .out .o .c .f .e .r .y .yr .ye .l .s .z .x .t .h .cl",
 #else
-	".SUFFIXES : .out .o .c .f .F .e .r .y .yr .ye .l .s .cl .p",
+	".SUFFIXES : .out .o .c .F .f .e .r .y .yr .ye .l .s .cl .p",
 #endif
 	"YACC=yacc",
 	"YACCR=yacc -r",
