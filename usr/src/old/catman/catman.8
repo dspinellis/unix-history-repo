@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)catman.8	6.3 (Berkeley) %G%
+.\"	@(#)catman.8	6.4 (Berkeley) %G%
 .\"
 .TH CATMAN 8 ""
 .UC 4
@@ -18,7 +18,7 @@ catman \- create the cat files for the manual
 .B \-w
 ] [
 .B \-M
-.I directory
+.I path
 ]
 [ sections ]
 .SH DESCRIPTION
@@ -59,11 +59,16 @@ database to be created.
 No manual reformatting is done.
 .TP
 .B \-M
-update manual pages located in the specified
-.I directory
+updates manual pages located in the set of directories specified by
+.I path
 (/usr/man by default).
+.I Path
+has the form of a colon (`:') separated list of directory names,
+for example `/usr/local/man:/usr/man'.
+If the environment variable `MANPATH' is set,
+its value is used for the default path.
 .PP
-If the nroff source file contains only a line of the form ".so manx/yyy.x",
+If the nroff source file contains only a line of the form `.so manx/yyy.x',
 a link is made in the catx directory to the appropriate preformatted manual
 page.
 This feature allows easy distribution of the preformatted manual pages
