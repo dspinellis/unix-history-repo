@@ -6,7 +6,8 @@
 ;   liszt -mr doctor.l
 ;   mv doctor.o doctor
 
-(declare special enditime startime ticks float-format)
+(declare (special endtime starttime ticks float-format user topipe))
+
 (defun mailbill ()
   (setq endtime (ptime)
 	ticks  (difference (car endtime) (car starttime))
@@ -31,7 +32,6 @@
 		  CARRIAGERETURN RUBOUT LINEFEED FLAG PARSELIST 
 		  RULES FLIPFLOP S D LINE)
 	 (SPECIAL READTABLE)
-	 (FIXSW T)
 	 (EVAL (READ)))
 
 (PROG2  (SETSYNTAX #/' 2 ) 
