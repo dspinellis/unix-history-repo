@@ -5,9 +5,9 @@
 # include "sendmail.h"
 
 # ifdef DBM
-SCCSID(@(#)alias.c	4.8		%G%	(with DBM));
+SCCSID(@(#)alias.c	4.9		%G%	(with DBM));
 # else DBM
-SCCSID(@(#)alias.c	4.8		%G%	(without DBM));
+SCCSID(@(#)alias.c	4.9		%G%	(without DBM));
 # endif DBM
 
 /*
@@ -198,7 +198,7 @@ initaliases(aliasfile, init)
 	(void) strcpy(buf, aliasfile);
 	(void) strcat(buf, ".pag");
 	stb.st_ino = 0;
-	if (!init && (atcnt < 0 || stat(buf, &stb) < 0 || stb.st_mtime < modtime))
+	if (!init && (stat(buf, &stb) < 0 || stb.st_mtime < modtime || atcnt < 0))
 	{
 		errno = 0;
 		if (AutoRebuild && stb.st_ino != 0 &&
@@ -209,11 +209,10 @@ initaliases(aliasfile, init)
 		}
 		else
 		{
-			bool oldverb = Verbose;
-
-			Verbose = TRUE;
+#ifdef LOG
+			syslog(LOG_INFO, "alias database out of date");
+#endif LOG
 			message(Arpa_Info, "Warning: alias database out of date");
-			Verbose = oldverb;
 		}
 	}
 
