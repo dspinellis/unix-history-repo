@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)inode.h	7.9 (Berkeley) %G%
+ *	@(#)inode.h	7.10 (Berkeley) %G%
  */
 
 #ifdef KERNEL
@@ -69,16 +69,16 @@ struct inode {
 #define	i_back		i_chain[1]
 
 /* flags */
-#define	ILOCKED		0x1		/* inode is locked */
-#define	IUPD		0x2		/* file has been modified */
-#define	IACC		0x4		/* inode access time to be updated */
-#define	IWANT		0x8		/* some process waiting on lock */
-#define	ICHG		0x10		/* inode has been changed */
-#define	ISHLOCK		0x20		/* file has shared lock */
-#define	IEXLOCK		0x40		/* file has exclusive lock */
-#define	ILWAIT		0x80		/* someone waiting on file lock */
-#define	IMOD		0x100		/* inode has been modified */
-#define	IRENAME		0x200		/* inode is being renamed */
+#define	ILOCKED		0x0001		/* inode is locked */
+#define	IWANT		0x0002		/* some process waiting on lock */
+#define	IRENAME		0x0004		/* inode is being renamed */
+#define	IUPD		0x0010		/* file has been modified */
+#define	IACC		0x0020		/* inode access time to be updated */
+#define	ICHG		0x0040		/* inode has been changed */
+#define	IMOD		0x0080		/* inode has been modified */
+#define	ISHLOCK		0x0100		/* file has shared lock */
+#define	IEXLOCK		0x0200		/* file has exclusive lock */
+#define	ILWAIT		0x0400		/* someone waiting on file lock */
 
 #ifdef KERNEL
 /*
