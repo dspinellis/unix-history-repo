@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)bib.c	2.8	%G%";
+static char sccsid[] = "@(#)bib.c	2.9	%G%";
 #endif not lint
 /*
         Bib - bibliographic formatter
@@ -249,7 +249,11 @@ citemark(info, huntstr, tail)
 		fprintf(tfd, "%c%s%c", FMTSTART, ncitetemplate, FMTEND);
 		ncitetemplate[0] = 0;
 	}
-	fprintf(tfd, "%c%d%c%s%c%s", c ,n, c, info, CITEEND, doacite?tail:0);
+	if (doacite && (tail != (char *)0))
+	  fprintf(tfd, "%c%d%c%s%c%s", c ,n, c, info, CITEEND, tail);
+	else
+	  fprintf(tfd, "%c%d%c%s%c", c ,n, c, info, CITEEND);
+
 }
 
 /* addc - add a character to hunt string */
