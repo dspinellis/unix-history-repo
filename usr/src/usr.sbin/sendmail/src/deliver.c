@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.41 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.42 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -1343,7 +1343,7 @@ tryhost:
 				rcode, mci->mci_state, firstsig);
 			rcode = EX_SOFTWARE;
 		}
-		else if (rcode == EX_TEMPFAIL && *curhost != '\0')
+		else if (rcode == EX_TEMPFAIL && curhost != NULL && *curhost != '\0')
 		{
 			/* try next MX site */
 			goto tryhost;
@@ -1413,7 +1413,7 @@ tryhost:
 			if (!bitset(MCIF_CACHED, mci->mci_flags))
 				smtpquit(m, mci, e);
 		}
-		if (rcode != EX_OK && *curhost != '\0')
+		if (rcode != EX_OK && curhost != NULL && *curhost != '\0')
 		{
 			/* try next MX site */
 			goto tryhost;
@@ -1809,6 +1809,7 @@ logdelivery(m, mci, stat, ctladdr, e)
 			(void) strcat(bp, p);
 		}
 	}
+	bp += strlen(bp);
 		
 	syslog(LOG_INFO, "%s: to=%s%s, stat=%s",
 	       e->e_id, e->e_to, buf, stat);
