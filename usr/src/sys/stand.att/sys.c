@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)sys.c	6.5 (Berkeley) %G%
+ *	@(#)sys.c	6.6 (Berkeley) %G%
  */
 
 #include "../h/param.h"
@@ -237,11 +237,13 @@ lseek(fdesc, addr, ptr)
 {
 	register struct iob *io;
 
+#ifndef	SMALL
 	if (ptr != 0) {
 		printf("Seek not from beginning of file\n");
 		errno = EOFFSET;
 		return (-1);
 	}
+#endif SMALL
 	fdesc -= 3;
 	if (fdesc < 0 || fdesc >= NFILES ||
 	    ((io = &iob[fdesc])->i_flgs & F_ALLOC) == 0) {
@@ -307,27 +309,6 @@ getc(fdesc)
 	return (c);
 }
 
-/* does this port?
-getw(fdesc)
-	int fdesc;
-{
-	register w,i;
-	register char *cp;
-	int val;
-
-	for (i = 0, val = 0, cp = &val; i < sizeof(val); i++) {
-		w = getc(fdesc);
-		if (w < 0) {
-			if (i == 0)
-				return (-1);
-			else
-				return (val);
-		}
-		*cp++ = w;
-	}
-	return (val);
-}
-*/
 int	errno;
 
 read(fdesc, buf, count)
@@ -357,6 +338,7 @@ read(fdesc, buf, count)
 		errno = EBADF;
 		return (-1);
 	}
+#ifndef	SMALL
 	if ((file->i_flgs & F_FILE) == 0) {
 		file->i_cc = count;
 		file->i_ma = buf;
@@ -367,6 +349,7 @@ read(fdesc, buf, count)
 			errno = file->i_error;
 		return (i);
 	}
+#endif SMALL
 	if (file->i_offset+count > file->i_ino.i_size)
 		count = file->i_ino.i_size - file->i_offset;
 	if ((i = count) <= 0)
@@ -406,6 +389,7 @@ read(fdesc, buf, count)
 	return (count);
 }
 
+#ifndef	SMALL
 write(fdesc, buf, count)
 	int fdesc, count;
 	char *buf;
@@ -439,6 +423,7 @@ write(fdesc, buf, count)
 		errno = file->i_error;
 	return (i);
 }
+#endif SMALL
 
 int	openfirst = 1;
 #ifdef notyet
@@ -596,12 +581,14 @@ badoff:
 		errno = ESRCH;
 		return (-1);
 	}
+#ifndef	SMALL
 	if (how != 0) {
 		printf("Can't write files yet.. Sorry\n");
 		file->i_flgs = 0;
 		errno = EIO;
 		return (-1);
 	}
+#endif SMALL
 	if (openi(i, file) < 0) {
 		errno = file->i_error;
 		return (-1);
@@ -629,6 +616,7 @@ close(fdesc)
 	return (0);
 }
 
+#ifndef	SMALL
 ioctl(fdesc, cmd, arg)
 	int fdesc, cmd;
 	char *arg;
@@ -664,22 +652,6 @@ ioctl(fdesc, cmd, arg)
 		file->i_flgs &= ~F_NBSF;
 		break;
 
-	case SAIOECCLIM:
-		file->i_flgs |= F_ECCLM;
-		break;
-
-	case SAIOECCUNL:
-		file->i_flgs &= ~F_ECCLM;
-		break;
-
-	case SAIOSEVRE:
-		file->i_flgs |= F_SEVRE;
-		break;
-
-	case SAIONSEVRE:
-		file->i_flgs &= ~F_SEVRE;
-		break;
-
 	default:
 		error = devioctl(file, cmd, arg);
 		break;
@@ -688,6 +660,7 @@ ioctl(fdesc, cmd, arg)
 		errno = file->i_error;
 	return (error);
 }
+#endif SMALL
 
 exit()
 {
@@ -704,12 +677,4 @@ _stop(s)
 			close(i);
 	printf("%s\n", s);
 	_rtt();
-}
-
-trap(ps)
-	int ps;
-{
-	printf("Trap %o\n", ps);
-	for (;;)
-		;
 }
