@@ -44,25 +44,38 @@ int	hpbdebug;
 struct	size {
 	daddr_t	nblocks;
 	int	cyloff;
-} hp6_sizes[8] = {
+} rp06_sizes[8] = {
 	15884,	0,		/* A=cyl 0 thru 37 */
 	33440,	38,		/* B=cyl 38 thru 117 */
 	340670,	0,		/* C=cyl 0 thru 814 */
-	0,	0,
-	0,	0,
-	0,	0,
+	15884,	118,		/* D=cyl 118 thru 155 */
+	55936,	156,		/* E=cyl 156 thru 289 */
+	219384,	290,		/* F=cyl 290 thru 814 */
 	291280,	118,		/* G=cyl 118 thru 814 */
 	0,	0,
-}, rm3_sizes[8] = {
+}, rp05_sizes[8] = {
+	15884,	0,		/* A=cyl 0 thru 37 */
+	33440,	38,		/* B=cyl 38 thru 117 */
+	171798,	0,		/* C=cyl 0 thru 410 */
+	15884,	118,		/* D=cyl 118 thru 155 */
+	55936,	156,		/* E=cyl 156 thru 289 */
+	50512,	290,		/* F=cyl 290 thru 410 */
+	122408,	118,		/* G=cyl 118 thru 410 */
+	0,	0,
+}, rm03_sizes[8] = {
 	15884,	0,		/* A=cyl 0 thru 99 */
-	33440,	100,		/* B=cyl 100 thru 309 */
+	33440,	100,		/* B=cyl 100 thru 308 */
 	131680,	0,		/* C=cyl 0 thru 822 */
-	0,	0,
-	0,	0,
-	0,	0,
+	15884,	309,		/* D=cyl 309 thru 408 */
+	55936,	409,		/* E=cyl 409 thru 758 */
+	10144,	759,		/* F=cyl 759 thru 822 */
+#ifdef ARPA
 	81984,	310,		/* G=cyl 310 thru 822 */
+#else
+	82144,	309,		/* G=cyl 309 thru 822 */
+#endif
 	0,	0,
-}, rm5_sizes[8] = {
+}, rm05_sizes[8] = {
 	15884,	0,		/* A=cyl 0 thru 26 */
 	33440,	27,		/* B=cyl 27 thru 81 */
 	500384,	0,		/* C=cyl 0 thru 822 */
@@ -75,57 +88,49 @@ struct	size {
 	15884,	0,		/* A=cyl 0 thru 36 */
 	33440,	37,		/* B=cyl 37 thru 114 */
 	242606,	0,		/* C=cyl 0 thru 558 */
+	15884,	115,		/* D=cyl 115 thru 151 */
+	55936,	152,		/* E=cyl 152 thru 280 */
+	120559,	281,		/* F=cyl 281 thru 558 */
+	192603,	115,		/* G=cyl 115 thru 558 */
 	0,	0,
-	0,	0,
-	0,	0,
-	82080,	115,		/* G=cyl 115 thru 304 */
-	110143,	305,		/* H=cyl 305 thru 558 */
-}, hp7_sizes[8] = {
+}, rp07_sizes[8] = {
 	15884,	0,		/* A=cyl 0 thru 9 */
-	64000,	10,		/* B=cyl 10 thru 49 */
-	1008000,0,		/* C=cyl 0 thru 629 */
-	15884,	330,		/* D=cyl 330 thru 339 */
-	256000,	340,		/* E=cyl 340 thru 499 */
-	207850,	500,		/* F=cyl 500 thru 629 */
-	479850,	330,		/* G=cyl 330 thru 629 */
-	448000,	50,		/* H=cyl 50 thru 329 */
-}, si9775_sizes[8] = {
-	16640,	  0,		/* A=cyl 0 thru 12 */
-	34560,	 13,		/* B=cyl 13 thru 39 */
-	1079040,  0,		/* C=cyl 0 thru 842 */
-	0,	  0,
-	0,	  0,
-	0,	  0,
-	513280,	 40,		/* G=cyl 40 thru 440 */
-	513280,	441,		/* H=cyl 441 thru 841 */
-}, si9730_sizes[8] = {
+	66880,	10,		/* B=cyl 10 thru 51 */
+	1008000, 0,		/* C=cyl 0 thru 629 */
+	15884,	235,		/* D=cyl 235 thru 244 */
+	307200,	245,		/* E=cyl 245 thru 436 */
+	308650,	437,		/* F=cyl 437 thru 629 */
+	631850,	235,		/* G=cyl 235 thru 629 */
+	291346,	52,		/* H=cyl 52 thru 234 */
+}, cdc9775_sizes[8] = {
+	15884,	0,		/* A=cyl 0 thru 12 */
+	66880,	13,		/* B=cyl 13 thru 65 */
+	1079040, 0,		/* C=cyl 0 thru 842 */
+	15884,	294,		/* D=cyl 294 thru 306 */
+	307200,	307,		/* E=cyl 307 thru 546 */
+	378784,	547,		/* F=cyl 547 thru 842 */
+	702624,	294,		/* G=cyl 294 thru 842 */
+	291346,	66,		/* H=cyl 66 thru 293 */
+}, cdc9730_sizes[8] = {
 	15884,	0,		/* A=cyl 0 thru 49 */
 	33440,	50,		/* B=cyl 50 thru 154 */
 	263360,	0,		/* C=cyl 0 thru 822 */
+	15884,	155,		/* D=cyl 155 thru 204 */
+	55936,	205,		/* E=cyl 205 thru 379 */
+	141664,	380,		/* F=cyl 380 thru 822 */
+	213664,	155,		/* G=cyl 155 thru 822 */
 	0,	0,
-	0,	0,
-	0,	0,
-	0,	0,
-	213664,	155,		/* H=cyl 155 thru 822 */
-}, hpam_sizes[8] = {
+}, capricorn_sizes[8] = {
 	15884,	0,		/* A=cyl 0 thru 31 */
 	33440,	32,		/* B=cyl 32 thru 97 */
 	524288,	0,		/* C=cyl 0 thru 1023 */
-	27786,	668,
-	27786,	723,
-	125440,	778,
-	181760,	668,		/* G=cyl 668 thru 1022 */
+	15884,	668,		/* D=cyl 668 thru 699 */
+	55936,	700,		/* E=cyl 700 thru 809 */
+	109472,	810,		/* F=cyl 810 thru 1023 */
+	182176,	668,		/* G=cyl 668 thru 1023 */
 	291346,	98,		/* H=cyl 98 thru 667 */
-}, hpfj_sizes[8] = {
-	15884,	0,		/* A=cyl 0 thru 18 */
-	33440,	19,		/* B=cyl 19 thru 58 */
-	724120,	0,		/* C=cyl 0 thru 841 */
-	0, 0,
-	0, 0,
-	0, 0,
-	381711, 398,		/* G=cyl 398 thru 841 */
-	291346, 59,		/* H=cyl 59 thru 397 */
-}, hpfj48_sizes[8] = {
+}, eagle_sizes[8] = {
+#ifdef MONET
 	15884,	0,		/* A=cyl 0 thru 16 */
 	33440,	17,		/* B=cyl 17 thru 52 */
 	808176,	0,		/* C=cyl 0 thru 841 */
@@ -134,6 +139,16 @@ struct	size {
 	0, 0,
 	465456, 357,		/* G=cyl 357 thru 841 */
 	291346, 53,		/* H=cyl 52 thru 356 */
+#else
+	15884,	0,		/* A=cyl 0 thru 16 */
+	66880,	17,		/* B=cyl 17 thru 86 */
+	809280,	0,		/* C=cyl 0 thru 842 */
+	15884,	391,		/* D=cyl 391 thru 407 */
+	307200,	408,		/* E=cyl 408 thru 727 */
+	110256,	728,		/* F=cyl 728 thru 842 */
+	433776,	391,		/* G=cyl 391 thru 842 */
+	291346,	87,		/* H=cyl 87 thru 390 */
+#endif
 };
 /* END OF STUFF WHICH SHOULD BE READ IN PER DISK */
 
@@ -174,9 +189,7 @@ short	hptypes[] = {
 	-1,
 #define HPDT_EAGLE	11
 	-1,
-#define	HPDT_EAGLE48	12
-	-1,
-#define HPDT_RM02	13
+#define HPDT_RM02	12
 	MBDT_RM02,		/* beware, actually capricorn or eagle */
 	0
 };
@@ -193,19 +206,18 @@ struct hpst {
 	short	ncyl;
 	struct	size *sizes;
 } hpst[] = {
-	32,	5,	32*5,	823,	rm3_sizes,	/* RM03 */
-	32,	19,	32*19,	823,	rm5_sizes,	/* RM05 */
-	22,	19,	22*19,	815,	hp6_sizes,	/* RP06 */
+	32,	5,	32*5,	823,	rm03_sizes,	/* RM03 */
+	32,	19,	32*19,	823,	rm05_sizes,	/* RM05 */
+	22,	19,	22*19,	815,	rp06_sizes,	/* RP06 */
 	31,	14, 	31*14,	559,	rm80_sizes,	/* RM80 */
-	22,	19,	22*19,	411,	hp6_sizes,	/* RP05 */
-	50,	32,	50*32,	630,	hp7_sizes,	/* RP07 */
+	22,	19,	22*19,	411,	rp05_sizes,	/* RP05 */
+	50,	32,	50*32,	630,	rp07_sizes,	/* RP07 */
 	1,	1,	1,	1,	0,		/* ML11A */
 	1,	1,	1,	1,	0,		/* ML11B */
-	32,	40,	32*40,	843,	si9775_sizes,	/* 9775 */
-	32,	10,	32*10,	823,	si9730_sizes,	/* 9730 */
-	32,	16,	32*16,	1024,	hpam_sizes,	/* AMPEX capricorn */
-	43,	20,	43*20,	842,	hpfj_sizes,	/* Fujitsu EAGLE */
-	48,	20,	48*20,	842,	hpfj48_sizes,	/* 48 sector EAGLE */
+	32,	40,	32*40,	843,	cdc9775_sizes,	/* 9775 */
+	32,	10,	32*10,	823,	cdc9730_sizes,	/* 9730 */
+	32,	16,	32*16,	1024,	capricorn_sizes,/* AMPEX capricorn */
+	48,	20,	48*20,	842,	eagle_sizes,	/* Fujitsu EAGLE */
 };
 
 u_char	hp_offset[16] = {
@@ -329,14 +341,10 @@ hpmaptype(mi)
 		hpaddr->hpcs1 = HP_NOP;
 		hpaddr->hphr = HPHR_MAXSECT;
 		nsectors = MASKREG(hpaddr->hphr) + 1;
-		printf("hp%d: ", mi->mi_unit);
-		if (nsectors == 43)
+		if (nsectors == 48) {
 			type = HPDT_EAGLE;
-		else {
-			type = HPDT_EAGLE48;
-			printf("modified ");
+			printf("hp%d: eagle\n", mi->mi_unit);
 		}
-		printf("eagle\n");
 done:
 		hpaddr->hpcs1 = HP_DCLR|HP_GO;
 		return (type);
