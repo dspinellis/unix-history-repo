@@ -1,5 +1,5 @@
 /*
- *	mkheaders.c	1.6	81/04/08
+ *	mkheaders.c	1.7	82/03/28
  * Make all the .h files for the optional entries
  */
 
@@ -51,6 +51,13 @@ bool search;
 	if (dp->d_unit != -1 && eq(dp->d_name, dev))
 	{
 	    count++;
+	    /*
+	     * Allow holes in unit numbering,
+	     * assumption is unit numbering starts
+	     * at zero.
+	     */
+	    if (dp->d_unit + 1 > count)
+	    	count = dp->d_unit + 1;
 	    if (search)
 	    {
 		mp = dp->d_conn;
