@@ -1,29 +1,40 @@
 #
-# Copyright (c) 1980 Regents of the University of California.
-# All rights reserved.  The Berkeley software License Agreement
-# specifies the terms and conditions for redistribution.
+# Copyright (c) 1988 The Regents of the University of California.
+# All rights reserved.
 #
-#	@(#)Makefile	5.24 (Berkeley) 89/04/28
+# Redistribution and use in source and binary forms are permitted
+# provided that the above copyright notice and this paragraph are
+# duplicated in all such forms and that any documentation,
+# advertising materials, and other materials related to such
+# distribution and use acknowledge that the software was developed
+# by the University of California, Berkeley.  The name of the
+# University may not be used to endorse or promote products derived
+# from this software without specific prior written permission.
+# THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+# IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+# WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+#
+#	@(#)Makefile	5.25 (Berkeley) %G%
 #
 # Doing a make install builds /usr/include
 #
-# Define SHARED to indicate whether you want
-# symbolic links to the system source (``symlinks''),
-# or a separate copy (``copies'').
-# (latter useful in environments where it's
-# not possible to keep /sys publicly readable)
+# Define SHARED to indicate whether you want symbolic links to the
+# system source (``symlinks''), or a separate copy (``copies'');
+# (latter useful in environments where it's not possible to keep
+# /sys publicly readable)
 #
-# The ``rm -rf''s used below are safe because rm doesn't
-# follow symbolic links.
+# The ``rm -rf''s used below are safe because rm doesn't follow
+# symbolic links.
 #
 DESTDIR=
-SUBDIRS=arpa pascal protocols
+SUBDIRS=arpa pascal protocols kerberos
 STD=	a.out.h ar.h assert.h ctype.h curses.h ndbm.h dirent.h disktab.h \
-	fcntl.h fstab.h ftw.h grp.h lastlog.h math.h memory.h mp.h mtab.h \
-	netdb.h nlist.h pcc.h pwd.h ranlib.h regexp.h resolv.h setjmp.h \
-	sgtty.h stab.h stdarg.h stdio.h string.h strings.h struct.h \
-	sysexits.h time.h ttyent.h tzfile.h utmp.h varargs.h vfont.h
-LINKS=	errno.h signal.h syslog.h
+	fcntl.h fstab.h ftw.h grp.h limits.h math.h memory.h mp.h mtab.h \
+	netdb.h nlist.h paths.h pcc.h pwd.h ranlib.h regexp.h resolv.h \
+	setjmp.h sgtty.h stab.h stdarg.h stdio.h string.h strings.h \
+	struct.h sysexits.h time.h ttyent.h tzfile.h unistd.h utmp.h \
+	varargs.h vfont.h
+LINKS=	errno.h signal.h syslog.h termios.h
 
 SYSDIRS=	sys net netimp netinet netns
 TAHOEDIRS=	tahoe tahoemath tahoevba tahoeif
@@ -106,6 +117,8 @@ tags:
 	done
 
 clean:
+
+cleandir: clean
 	rm -f tags
 
 depend:
