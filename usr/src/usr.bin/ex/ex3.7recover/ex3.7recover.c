@@ -1,5 +1,5 @@
 /* Copyright (c) 1981 Regents of the University of California */
-static char *sccsid = "@(#)ex3.7recover.c	7.4	%G%";
+static char *sccsid = "@(#)ex3.7recover.c	7.5	%G%";
 #include <stdio.h>	/* mjm: BUFSIZ: stdio = 512, VMUNIX = 1024 */
 #undef	BUFSIZ		/* mjm: BUFSIZ different */
 #undef	EOF		/* mjm: EOF and NULL effectively the same */
@@ -9,7 +9,7 @@ static char *sccsid = "@(#)ex3.7recover.c	7.4	%G%";
 #include "ex_temp.h"
 #include "ex_tty.h"
 #include "local/uparm.h"
-#include "sys/dir.h"
+#include <sys/dir.h>
 
 char xstr[1];		/* make loader happy */
 short tfile = -1;	/* ditto */
@@ -195,15 +195,15 @@ error(str, inf)
 struct svfile {
 	char	sf_name[FNSIZE + 1];
 	int	sf_lines;
-	char	sf_entry[DIRSIZ + 1];
+	char	sf_entry[MAXNAMLEN + 1];
 	time_t	sf_time;
 };
 
 listfiles(dirname)
 	char *dirname;
 {
-	register FILE *dir;
-	struct direct dirent;
+	register DIR *dir;
+	struct direct *dirent;
 	int ecount, qucmp();
 	register int f;
 	char *cp;
@@ -212,7 +212,7 @@ listfiles(dirname)
 	/*
 	 * Open usrpath(preserve), and go there to make things quick.
 	 */
-	dir = fopen(dirname, "r");
+	dir = opendir(dirname);
 	if (dir == NULL) {
 		perror(dirname);
 		return;
@@ -227,13 +227,11 @@ listfiles(dirname)
 	 */
 	fp = &svbuf[0];
 	ecount = 0;
-	while (fread((char *) &dirent, sizeof dirent, 1, dir) == 1) {
-		if (dirent.d_ino == 0)
-			continue;
-		if (dirent.d_name[0] != 'E')
+	while ((dirent = readdir(dir)) != NULL) {
+		if (dirent->d_name[0] != 'E')
 			continue;
 #ifdef DEBUG
-		fprintf(stderr, "considering %s\n", dirent.d_name);
+		fprintf(stderr, "considering %s\n", dirent->d_name);
 #endif
 		/*
 		 * Name begins with E; open it and
@@ -241,7 +239,7 @@ listfiles(dirname)
 		 * If not, then don't bother with this file, it can't
 		 * be ours.
 		 */
-		f = open(dirent.d_name, 0);
+		f = open(dirent->d_name, 0);
 		if (f < 0) {
 #ifdef DEBUG
 			fprintf(stderr, "open failed\n");
@@ -266,13 +264,13 @@ listfiles(dirname)
 		/*
 		 * Saved the day!
 		 */
-		enter(fp++, dirent.d_name, ecount);
+		enter(fp++, dirent->d_name, ecount);
 		ecount++;
 #ifdef DEBUG
-		fprintf(stderr, "entered file %s\n", dirent.d_name);
+		fprintf(stderr, "entered file %s\n", dirent->d_name);
 #endif
 	}
-	ignore(fclose(dir));
+	ignore(closedir(dir));
 
 	/*
 	 * If any files were saved, then sort them and print
@@ -422,18 +420,15 @@ findtmp(dir)
 searchdir(dirname)
 	char *dirname;
 {
-	struct direct dirent;
-	register FILE *dir;
+	struct direct *dirent;
+	register DIR *dir;
 	char dbuf[BUFSIZ];
 
-	dir = fopen(dirname, "r");
+	dir = opendir(dirname);
 	if (dir == NULL)
 		return;
-	/* setbuf(dir, dbuf); this breaks UNIX/370. */
-	while (fread((char *) &dirent, sizeof dirent, 1, dir) == 1) {
-		if (dirent.d_ino == 0)
-			continue;
-		if (dirent.d_name[0] != 'E' || dirent.d_name[DIRSIZ - 1] != 0)
+	while ((dirent = readdir(dir)) != NULL) {
+		if (dirent->d_name[0] != 'E')
 			continue;
 		/*
 		 * Got a file in the directory starting with E...
@@ -441,7 +436,7 @@ searchdir(dirname)
 		 * later, and check that this is really a file
 		 * we are looking for.
 		 */
-		ignore(strcat(strcat(strcpy(nb, dirname), "/"), dirent.d_name));
+		ignore(strcat(strcat(strcpy(nb, dirname), "/"), dirent->d_name));
 		if (yeah(nb)) {
 			/*
 			 * Well, it is the file we are looking for.
@@ -464,7 +459,7 @@ searchdir(dirname)
 		}
 		ignore(close(tfile));
 	}
-	ignore(fclose(dir));
+	ignore(closedir(dir));
 }
 
 /*

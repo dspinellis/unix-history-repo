@@ -1,5 +1,5 @@
 /* Copyright (c) 1981 Regents of the University of California */
-static char *sccsid = "@(#)ex_tty.c	7.5	%G%";
+static char *sccsid = "@(#)ex_tty.c	7.6	%G%";
 #include "ex.h"
 #include "ex_tty.h"
 
@@ -115,7 +115,8 @@ setterm(type)
 			sc[1] = 0;
 			if (olttyc.t_suspc == CTRL(z)) {
 				for (i=0; i<=4; i++)
-					if (arrows[i].cap[0] == CTRL(z))
+					if (arrows[i].cap &&
+					    arrows[i].cap[0] == CTRL(z))
 						addmac(sc, NULL, NULL, arrows);
 			} else
 				addmac(sc, "\32", "susp", arrows);

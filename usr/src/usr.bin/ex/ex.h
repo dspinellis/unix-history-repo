@@ -1,5 +1,5 @@
 /* Copyright (c) 1981 Regents of the University of California */
-/* sccs id:	@(#)ex.h	7.4	%G%  */
+/* sccs id:	@(#)ex.h	7.5	%G%  */
 #ifdef V6
 #include <retrofit.h>
 #endif
@@ -41,7 +41,7 @@
  * of additional terminal descriptions you add to the termcap data base.
  */
 
-#include <sys/types.h>
+#include <sys/param.h>
 #include <ctype.h>
 #include <errno.h>
 #include <signal.h>
@@ -150,6 +150,7 @@ extern	 struct	option options[NOPTS + 1];
  */
 #define	QUOTE	0200
 #define	TRIM	0177
+#undef CTRL
 #define	CTRL(c)	('c' & 037)
 #define	NL	CTRL(j)
 #define	CR	CTRL(m)
