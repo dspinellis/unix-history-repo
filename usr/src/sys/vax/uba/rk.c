@@ -1,4 +1,4 @@
-/*	rk.c	4.4	%G%	*/
+/*	rk.c	4.5	%G%	*/
 
 #include "rk.h"
 #if NRK > 0
@@ -102,7 +102,7 @@ struct	devsize {
 	0,	0,
 	0,	0,
 	0,	0,
-	0,	0,
+	53790,	0,
 };
 
 rkstrategy(bp)
@@ -111,8 +111,8 @@ register struct buf *bp;
 register dn, sz;
 
 	dn = minor(bp->b_dev);
-	sz = (bp->b_bcount>>9);
-	if (dn > (NRK<<3) || sz+bp->b_blkno >= rk_sizes[dn&07].nblocks) {
+	sz = ((bp->b_bcount+511)>>9);
+	if (dn > (NRK<<3) || sz+bp->b_blkno > rk_sizes[dn&07].nblocks) {
 		bp->b_flags |= B_ERROR;
 		iodone(bp);
 		return;
@@ -196,20 +196,18 @@ rkintr()
 		d = (minor(bp->b_dev)>>3);
 		x = 1;
 		if (rkaddr->rkcs1&DI) {
-			printf("DI");
+			printf("rkintr: DI\n");
 		}
 		if (rkaddr->rkds&CDA)
-			printf("CDA ");
+			printf("rkintr: CDA\n");
 		if ((rkaddr->rkds&CDA) || (rkaddr->rkcs1&DI)) {
 			er = (unsigned short)rkaddr->rker;
 			ds = (unsigned short)rkaddr->rkds;
 			rkaddr->rkcs1 = CDT | DCLR | GO;
-			printf("DCLR");
 		} else {
 			if ((rkaddr->rkds&SVAL)==0) {
-				printf("no SVAL\n");
-				x = rkselect(rkaddr, d);
-				printf("x = %d\n", x);
+				x = 0x8000 - rkselect(rkaddr, d);
+				printf("rkintr: no SVAL, delay %d\n", x);
 			}
 			er = (unsigned short)rkaddr->rker;
 			ds = (unsigned short)rkaddr->rkds;
@@ -236,7 +234,6 @@ rkintr()
 			printf("after clears\n");
 			goto bad;
 		}
-		printf("reset\n");
 		rkaddr->rkcs1 = CDT | RESET | GO;
 		while (rkaddr->rkds & PIP)
 			;
