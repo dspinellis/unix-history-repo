@@ -1,18 +1,18 @@
-#	@(#)Files.base	8.9 (Berkeley) %G%
+#	@(#)Files.base	8.10 (Berkeley) %G%
 FAQ
 KNOWNBUGS
-Makefiles/Makefile
+Makefile
 READ_ME
 RELEASE_NOTES
-doc/op/Makefiles/Makefile
+doc/op/Makefile
 doc/op/op.me
-mailstats/Makefiles/Makefile
+mailstats/Makefile
 mailstats/mailstats.c
-makemap/Makefiles/Makefile
-makemap/Makefiles/Makefile.dist
+makemap/Makefile
+makemap/Makefile.dist
 makemap/makemap.8
 makemap/makemap.c
-src/Makefiles/Makefile
+src/Makefile
 src/makesendmail
 src/READ_ME
 src/TRACEFLAGS
