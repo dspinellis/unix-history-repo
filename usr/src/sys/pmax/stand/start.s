@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)start.s	7.1 (Berkeley) %G%
+ *	@(#)start.s	7.2 (Berkeley) %G%
  *
  * start.s -
  *
@@ -25,7 +25,7 @@
  *	v 1.1 90/02/16 16:19:39 shirriff Exp $ SPRITE (DECWRL)
  */
 
-#include <regdef.h>
+#include "../include/regdef.h"
 #include "../include/machConst.h"
 
 /*
