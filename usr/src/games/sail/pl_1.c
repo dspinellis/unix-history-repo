@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)pl_1.c	2.6 84/01/19";
+static	char *sccsid = "@(#)pl_1.c	2.6 84/01/27";
 #endif
 
 #include "player.h"
@@ -80,7 +80,7 @@ reprint:
 		exit(1);
 	}
 	cc = &scene[game];
-	ls = cc->ship + cc->vessels;
+	ls = SHIP(cc->vessels);
 
 	for (n = 0; n < NNATION; n++)
 		nat[n] = 0;
@@ -128,7 +128,7 @@ reprint:
 			goto reprint;
 		}
 		if (randomize) {
-			player = sp - cc->ship;
+			player = sp - SHIP(0);
 		} else {
 			printf("%s\n\n", cc->name);
 			foreachship(sp)

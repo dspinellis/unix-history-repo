@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)dr_1.c	2.7 84/01/19";
+static	char *sccsid = "@(#)dr_1.c	2.7 84/01/27";
 #endif
 
 #include "driver.h"
@@ -21,7 +21,7 @@ char **argv;
 	/* ;;; add code here to check the game number. */
 	game = atoi(argv[1]);
 	cc = &scene[game];
-	ls = &cc->ship[cc->vessels];
+	ls = SHIP(cc->vessels);
 	if (sync_open() < 0) {
 		perror("driver: syncfile");
 		exit(1);
