@@ -1,5 +1,5 @@
 #ifndef	lint
-static char *sccsid = "@(#)find.c	4.18 (Berkeley) %G%";
+static char *sccsid = "@(#)find.c	4.19 (Berkeley) %G%";
 #endif
 
 #include <stdio.h>
@@ -35,6 +35,7 @@ int	Wct = 2560;
 long	Newer;
 
 int	Xdev = 1;	/* true if SHOULD cross devices (file systems) */
+int	follow;		/* true if SHOULD descend symlinked directories */
 struct	stat Devstat;	/* stats of each argument path's file system */
 
 struct stat Statb;
@@ -197,7 +198,7 @@ struct anode *e2() { /* parse NOT (!) */
 struct anode *e3() { /* parse parens and predicates */
 	int exeq(), ok(), glob(),  mtime(), atime(), user(),
 		group(), size(), perm(), links(), print(),
-		type(), ino(), cpio(), newer(),
+		type(), ino(), cpio(), newer(), 
 		nouser(), nogroup(), ls(), dummy();
 	struct anode *p1;
 	int i;
@@ -227,6 +228,10 @@ struct anode *e3() { /* parse parens and predicates */
 	else if (EQ(a, "-xdev")) {
 		Xdev = 0;
 		return (mk(dummy, (struct anode *)0, (struct anode *)0));
+	}
+	else if (EQ(a, "-follow")) {
+		follow=1;
+		return mk(dummy, (struct anode *)0, (struct anode *)0);
 	}
 	b = nxtarg();
 	s = *b;
@@ -634,7 +639,7 @@ descend(name, fname, exlist)
 	int rv = 0;
 	char *endofname;
 
-	if (lstat(fname, &Statb)<0) {
+	if ((follow?stat(fname, &Statb):lstat(fname, &Statb))<0) {
 		fprintf(stderr, "find: bad status < %s >\n", name);
 		return(0);
 	}
