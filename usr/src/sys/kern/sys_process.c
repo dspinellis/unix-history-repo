@@ -4,7 +4,7 @@
  *
  * %sccs.include.proprietary.c%
  *
- *	@(#)sys_process.c	7.36 (Berkeley) %G%
+ *	@(#)sys_process.c	7.37 (Berkeley) %G%
  */
 
 #define IPCREG
@@ -207,7 +207,7 @@ procxmt(p)
 		for (i=0; i<NIPCREG; i++)
 			if (poff == &regs[ipcreg[i]])
 				goto ok;
-#if defined(hp300)
+#if defined(hp300) || defined(luna68k)
 		/*
 		 * In the new frame layout, PS/PC are skewed by 2 bytes.
 		 */
