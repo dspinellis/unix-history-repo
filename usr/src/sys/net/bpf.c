@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *      @(#)bpf.c	7.11 (Berkeley) %G%
+ *      @(#)bpf.c	7.12 (Berkeley) %G%
  *
  * static char rcsid[] =
  * "$Header: bpf.c,v 1.33 91/10/27 21:21:58 mccanne Exp $";
@@ -92,9 +92,9 @@ static int	bpf_initd();
 static int	bpf_allocbufs();
 
 static int
-bpf_movein(uio, linktype, mp, sockp)
+bpf_movein(uio, linktype, mp, sockp, datlen)
 	register struct uio *uio;
-	int linktype;
+	int linktype, *datlen;
 	register struct mbuf **mp;
 	register struct sockaddr *sockp;
 {
@@ -141,6 +141,7 @@ bpf_movein(uio, linktype, mp, sockp)
 	}
 
 	len = uio->uio_resid;
+	*datlen = len - hlen;
 	if ((unsigned)len > MCLBYTES)
 		return (EIO);
 
@@ -472,6 +473,7 @@ bpfwrite(dev, uio)
 	struct mbuf *m;
 	int error, s;
 	static struct sockaddr dst;
+	int datlen;
 
 	if (d->bd_bif == 0)
 		return (ENXIO);
@@ -480,12 +482,13 @@ bpfwrite(dev, uio)
 
 	if (uio->uio_resid == 0)
 		return (0);
-	if (uio->uio_resid > ifp->if_mtu)
-		return (EMSGSIZE);
 
-	error = bpf_movein(uio, (int)d->bd_bif->bif_dlt, &m, &dst);
+	error = bpf_movein(uio, (int)d->bd_bif->bif_dlt, &m, &dst, &datlen);
 	if (error)
 		return (error);
+
+	if (datlen > ifp->if_mtu)
+		return (EMSGSIZE);
 
 	s = splnet();
 #if BSD >= 199103
