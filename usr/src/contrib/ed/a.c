@@ -9,31 +9,36 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)a.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)a.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
+#include <sys/types.h>
+
+#include <db.h>
+#include <regex.h>
+#include <setjmp.h>
+#include <stdio.h>
+
 #include "ed.h"
+#include "extern.h"
 
 /*
  * This sets things up for the central input routine to place the text
  * at the proper location for an append.
  */
-
 void
 a(inputt, errnum)
-
-FILE *inputt;
-int *errnum;
-
+	FILE *inputt;
+	int *errnum;
 {
-  if (rol(inputt, errnum))
-    return;
+	if (rol(inputt, errnum))
+		return;
 
-  if (g_flag == 0)
-    u_clr_stk();
-  if (sigint_flag)
-    SIGINT_ACTION;
-  add_flag = 1;
-  input_lines(inputt, errnum);
-  add_flag = 0;
-} /* end-a */
+	if (g_flag == 0)
+		u_clr_stk();
+	if (sigint_flag)
+		SIGINT_ACTION;
+	add_flag = 1;
+	input_lines(inputt, errnum);
+	add_flag = 0;
+}
