@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- * from: hp300/hp300/pmap.c	7.15 (Berkeley) 12/27/92
+ * from: hp300/hp300/pmap.c	7.16 (Berkeley) 5/20/93
  *
- *	@(#)pmap.c	7.5 (Berkeley) %G%
+ *	@(#)pmap.c	7.6 (Berkeley) %G%
  */
 
 /*
@@ -1026,8 +1026,8 @@ pmap_enter(pmap, va, pa, prot, wired)
 	 * is a valid mapping in the page.
 	 */
 	if (pmap != kernel_pmap)
-		vm_map_pageable(pt_map, trunc_page(pte),
-				round_page(pte+1), FALSE);
+		(void) vm_map_pageable(pt_map, trunc_page(pte),
+				       round_page(pte+1), FALSE);
 
 	/*
 	 * Enter on the PV list if part of our managed memory
@@ -1807,8 +1807,8 @@ pmap_remove_mapping(pmap, va, pte, flags)
 	 * PT page.
 	 */
 	if (pmap != kernel_pmap) {
-		vm_map_pageable(pt_map, trunc_page(pte),
-				round_page(pte+1), TRUE);
+		(void) vm_map_pageable(pt_map, trunc_page(pte),
+				       round_page(pte+1), TRUE);
 #ifdef DEBUG
 		if (pmapdebug & PDB_WIRING)
 			pmap_check_wiring("remove", trunc_page(pte));
@@ -2284,17 +2284,19 @@ pmap_enter_ptpage(pmap, va)
 #ifdef DEBUG
 		if (pmapdebug & (PDB_ENTER|PDB_PTPAGE))
 			printf("enter: about to fault UPT pg at %x\n", va);
+#endif
 		s = vm_fault(pt_map, va, VM_PROT_READ|VM_PROT_WRITE, FALSE);
 		if (s != KERN_SUCCESS) {
 			printf("vm_fault(pt_map, %x, RW, 0) -> %d\n", va, s);
 			panic("pmap_enter: vm_fault failed");
 		}
-#else
-		if (vm_fault(pt_map, va, VM_PROT_READ|VM_PROT_WRITE, FALSE)
-		    != KERN_SUCCESS)
-			panic("pmap_enter: vm_fault failed");
-#endif
 		ptpa = pmap_extract(kernel_pmap, va);
+		/*
+		 * Mark the page clean now to avoid its pageout (and
+		 * hence creation of a pager) between now and when it
+		 * is wired; i.e. while it is on a paging queue.
+		 */
+		PHYS_TO_VM_PAGE(ptpa)->flags |= PG_CLEAN;
 #ifdef DEBUG
 		PHYS_TO_VM_PAGE(ptpa)->flags |= PG_PTPAGE;
 #endif
