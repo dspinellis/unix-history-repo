@@ -1,4 +1,4 @@
-/*	dinode.h	4.19	82/10/31	*/
+/*	dinode.h	4.20	82/11/13	*/
 
 /*
  * The I node is the focus of all file activity in UNIX.
@@ -8,16 +8,16 @@
  * Data in icommon is read in from permanent inode on volume.
  */
 
-#define	NDADDR	8		/* direct addresses in inode */
-#define	NIADDR	2		/* indirect addresses in inode */
+#define	NDADDR	12		/* direct addresses in inode */
+#define	NIADDR	3		/* indirect addresses in inode */
 
 struct inode {
 	struct	inode *i_chain[2];	/* must be first */
 	u_short	i_flag;
 	u_short	i_count;	/* reference count */
 	dev_t	i_dev;		/* device where inode resides */
-	u_short	i_rdlockc;	/* count of locked readers on inode */
-	u_short	i_wrlockc;	/* count of locked writers on inode */
+	u_short	i_shlockc;	/* count of shared locks on inode */
+	u_short	i_exlockc;	/* count of exclusive locks on inode */
 	ino_t	i_number;	/* i number, 1-to-1 with device address */
 	struct	fs *i_fs;	/* file sys associated with this inode */
 	struct	dquot *i_dquot;	/* quota structure controlling this file */
@@ -35,19 +35,24 @@ struct inode {
 		short	ic_nlink;	/*  2: number of links to file */
 		short	ic_uid;		/*  4: owner's user id */
 		short	ic_gid;		/*  6: owner's group id */
-		off_t	ic_size;	/*  8: number of bytes in file */
-		daddr_t	ic_db[NDADDR];	/* 12: disk block addresses */
-		daddr_t	ic_ib[NIADDR];	/* 44: indirect blocks */
-		time_t	ic_atime;	/* 52: time last accessed */
-		time_t	ic_mtime;	/* 56: time last modified */
-		time_t	ic_ctime;	/* 60: time created */
+		quad	ic_size;	/*  8: number of bytes in file */
+		time_t	ic_atime;	/* 16: time last accessed */
+		long	ic_atspare;
+		time_t	ic_mtime;	/* 24: time last modified */
+		long	ic_mtspare;
+		time_t	ic_ctime;	/* 32: time created */
+		long	ic_ctspare;
+		daddr_t	ic_db[NDADDR];	/* 40: disk block addresses */
+		daddr_t	ic_ib[NIADDR];	/* 88: indirect blocks */
+		long	ic_flags;	/* 100: status, currently unused */
+		long	ic_spare[6];	/* 104: reserved, currently unused */
 	} i_ic;
 };
 
 struct dinode {
 	union {
 		struct	icommon di_icom;
-		char	di_size[64];
+		char	di_size[128];
 	} di_un;
 };
 
@@ -55,7 +60,7 @@ struct dinode {
 #define	i_nlink		i_ic.ic_nlink
 #define	i_uid		i_ic.ic_uid
 #define	i_gid		i_ic.ic_gid
-#define	i_size		i_ic.ic_size
+#define	i_size		i_ic.ic_size.val[0]
 #define	i_db		i_ic.ic_db
 #define	i_ib		i_ic.ic_ib
 #define	i_atime		i_ic.ic_atime
@@ -74,7 +79,7 @@ struct dinode {
 #define	di_nlink	di_ic.ic_nlink
 #define	di_uid		di_ic.ic_uid
 #define	di_gid		di_ic.ic_gid
-#define	di_size		di_ic.ic_size
+#define	di_size		di_ic.ic_size.val[0]
 #define	di_db		di_ic.ic_db
 #define	di_ib		di_ic.ic_ib
 #define	di_atime	di_ic.ic_atime
@@ -91,9 +96,14 @@ struct	inode *rootdir;			/* pointer to inode of root directory */
 
 struct	inode *ialloc();
 struct	inode *iget();
+#ifdef notdef
+struct	inode *ifind();
+#endif
 struct	inode *owner();
 struct	inode *maknode();
 struct	inode *namei();
+
+ino_t	dirpref();
 #endif
 
 /* flags */
@@ -104,8 +114,8 @@ struct	inode *namei();
 #define	IWANT		0x10		/* some process waiting on lock */
 #define	ITEXT		0x20		/* inode is pure text prototype */
 #define	ICHG		0x40		/* inode has been changed */
-#define	IRDLOCK		0x80		/* file is read locked */
-#define	IWRLOCK		0x100		/* file is write locked */
+#define	ISHLOCK		0x80		/* file has shared lock */
+#define	IEXLOCK		0x100		/* file has exclusive lock */
 #define	ILWAIT		0x200		/* someone waiting on file lock */
 
 /* modes */

@@ -1,4 +1,4 @@
-/*	fs.h	4.4	82/10/17	*/
+/*	fs.h	4.5	82/11/13	*/
 
 /*
  * Each disk drive contains some number of file systems.
@@ -185,7 +185,9 @@ struct	fs
 	long	fs_fmask;		/* ``fragoff'' calc of frag offsets */
 	long	fs_bshift;		/* ``lblkno'' calc of logical blkno */
 	long	fs_fshift;		/* ``numfrags'' calc number of frags */
-	long	fs_sparecon[16];	/* reserved for future constants */
+	long	fs_maxcontig;		/* max number of contiguous blks */
+	long	fs_maxbpg;		/* max number of blks per cyl group */
+	long	fs_sparecon[14];	/* reserved for future constants */
 /* sizes determined by number of cylinder groups and their sizes */
 	daddr_t fs_csaddr;		/* blk addr of cyl grp summary area */
 	long	fs_cssize;		/* size of cyl grp summary area */

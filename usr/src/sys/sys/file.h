@@ -1,4 +1,4 @@
-/*	file.h	4.13	82/10/10	*/
+/*	file.h	4.14	82/11/13	*/
 
 #ifdef KERNEL
 /*
@@ -45,8 +45,8 @@ struct	file *falloc();
 #define	FWRONLY		0x001		/* open for writing only */
 #define	FRDWR		0x002		/* open for reading and writing */
 #define	FAPPEND		0x004		/* append on each write */
-#define	FRDLOCK		0x008		/* apply read lock */
-#define	FWRLOCK		0x010		/* apply write lock */
+#define	FSHLOCK		0x008		/* apply shared lock */
+#define	FEXLOCK		0x010		/* apply exclusive lock */
 #define	FUNLOCK		0x100		/* release all locks */
 #define	FCREATE		0x200		/* create file if nonexistant */
 #define	FTRUNCATE	0x400		/* truncate file to size 0 on open */
@@ -60,7 +60,7 @@ struct	file *falloc();
 #define	O_APPEND	FAPPEND		/* append */
 #define	O_CREAT		FCREATE		/* open with file create */
 #define	O_TRUNC		FTRUNCATE	/* open with truncation */
-#define	O_EXCL		FWRLOCK		/* exclusive open */
+#define	O_EXCL		FEXLOCK		/* exclusive open */
 
 /* flags supplied to access call */
 #define	FACCESS_EXISTS	0x0	/* does file exist */

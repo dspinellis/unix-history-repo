@@ -1,4 +1,4 @@
-/*	unpcb.h	5.2	82/08/02	*/
+/*	unpcb.h	5.3	82/11/13	*/
 
 /*
  * Protocol control block for an active
@@ -27,6 +27,7 @@ struct	unpcb {
 	struct	unpcb *unp_conn;	/* control block of connected socket */
 	struct	unpcb *unp_refs;	/* referencing socket linked list */
 	struct 	unpcb *unp_nextref;	/* link in unp_refs list */
+	struct	mbuf *unp_remaddr;	/* address of connected socket */
 };
 
 #define	sotounpcb(so)	((struct unpcb *)((so)->so_pcb))

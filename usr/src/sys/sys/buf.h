@@ -1,4 +1,4 @@
-/*	buf.h	4.17	82/10/10	*/
+/*	buf.h	4.18	82/11/13	*/
 
 /*
  * The header for buffers in the buffer pool and otherwise used
@@ -39,6 +39,7 @@ struct buf
 #define	b_actf	av_forw			/* alternate names for driver queue */
 #define	b_actl	av_back			/*    head - isn't history wonderful */
 	long	b_bcount;		/* transfer count */
+	long	b_bufsize;		/* size of allocated buffer */
 #define	b_active b_bcount		/* driver queue head: drive active */
 	short	b_error;		/* returned after I/O */
 	dev_t	b_dev;			/* major+minor device name */
@@ -58,10 +59,12 @@ struct buf
 	struct  proc *b_proc;		/* proc doing physical or swap I/O */
 };
 
-#define	BQUEUES		3		/* number of free buffer queues */
+#define	BQUEUES		4		/* number of free buffer queues */
+
 #define	BQ_LOCKED	0		/* super-blocks &c */
 #define	BQ_LRU		1		/* lru, useful buffers */
 #define	BQ_AGE		2		/* rubbish */
+#define	BQ_EMPTY	3		/* buffer headers with no memory */
 
 #ifdef	KERNEL
 #define	BUFHSZ	63
@@ -86,6 +89,7 @@ struct	buf *realloccg();
 struct	buf *baddr();
 struct	buf *getblk();
 struct	buf *geteblk();
+struct	buf *getnewbuf();
 struct	buf *bread();
 struct	buf *breada();
 
@@ -172,9 +176,3 @@ unsigned minphys();
 	blkclr(bp->b_un.b_addr, bp->b_bcount); \
 	bp->b_resid = 0; \
 }
-
-#ifdef KERNEL
-struct	buf	bfreelist[BQUEUES];	/* buffer chain headers */
-struct	buf	bswlist;	/* free list of swap headers */
-struct	buf	*bclnlist;	/* header for list of cleaned pages */
-#endif

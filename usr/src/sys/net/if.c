@@ -1,4 +1,4 @@
-/*	if.c	4.23	82/10/31	*/
+/*	if.c	4.24	82/11/13	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -140,6 +140,7 @@ if_ifwithaf(af)
 /*
  * Mark an interface down and notify protocols of
  * the transition.
+ * NOTE: must be called at splnet or eqivalent.
  */
 if_down(ifp)
 	register struct ifnet *ifp;
@@ -158,14 +159,11 @@ if_slowtimo()
 {
 	register struct ifnet *ifp;
 
-	for (ifp = ifnet; ifp; ifp = ifp->if_next)
-		if (ifp->if_timer && --ifp->if_timer == 0) {
-			if (ifp->if_watchdog == 0) {
-				printf("%s%d: no watchdog routine\n", 
-					ifp->if_name, ifp->if_unit);
-				continue;
-			}
+	for (ifp = ifnet; ifp; ifp = ifp->if_next) {
+		if (ifp->if_timer == 0 || --ifp->if_timer)
+			continue;
+		if (ifp->if_watchdog)
 			(*ifp->if_watchdog)(ifp->if_unit);
-		}
+	}
 	timeout(if_slowtimo, (caddr_t)0, hz / IFNET_SLOWHZ);
 }

@@ -1,16 +1,4 @@
-/*	proc.h	4.17	82/10/31	*/
-
-#ifdef vax		/* GROT */
-#ifndef QUOTA
-#define	QUOTA		/* GROT */
-#endif
-#ifndef MUSH
-#define	MUSH		/* GROT */
-#endif
-#endif			/* GROT */
-
-#include "mush.h"
-#include "mu_msg.h"
+/*	proc.h	4.18	82/11/13	*/
 
 /*
  * One structure allocated per active
@@ -64,6 +52,7 @@ struct	proc {
 	struct	proc *p_cptr;	/* pointer to youngest living child */
 	struct	proc *p_osptr;	/* pointer to older sibling processes */
 	struct	proc *p_ysptr;	/* pointer to younger siblings */
+	struct	itimerval p_realtimer;
 #ifdef QUOTA
 	struct	quota *p_quota;	/* quotas for this process (MUSH) */
 #endif
@@ -71,7 +60,6 @@ struct	proc {
 	mmsgbuf	p_mb;		/* pending message */
 	int	p_msgflgs;	/* message flags */
 #endif
-	struct	itimerval p_realtimer;
 };
 
 #define	PIDHSZ		63
