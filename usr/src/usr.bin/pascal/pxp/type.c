@@ -1,6 +1,7 @@
-static	char *sccsid = "@(#)type.c	1.2 (Berkeley) %G%";
 /* Copyright (c) 1979 Regents of the University of California */
-#
+
+static	char *sccsid = "@(#)type.c	1.3 (Berkeley) %G%";
+
 /*
  * pxp - Pascal execution profiler
  *
@@ -90,6 +91,10 @@ gtype(r)
 			ppspac();
 			tyscal(r);
 			break;
+		case T_TYCRANG:
+			ppspac();
+			tycrang(r);
+			break;
 		case T_TYRANG:
 			ppspac();
 			tyrang(r);
@@ -104,6 +109,7 @@ gtype(r)
 			ppkw("packed");
 			gtype(r[2]);
 			break;
+		case T_TYCARY:
 		case T_TYARY:
 			ppspac();
 			tyary(r);
@@ -160,6 +166,20 @@ tyscal(r)
 	} else
 		ppid("{constant list}");
 	ppsep(")");
+}
+
+/*
+ * Conformant array subrange.
+ */
+tycrang(r)
+	register int *r;
+{
+
+	ppid(r[2]);
+	ppsep("..");
+	ppid(r[3]);
+	ppsep(":");
+	gtype(r[4]);
 }
 
 /*
