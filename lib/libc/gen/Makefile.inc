@@ -7,9 +7,9 @@ SRCS+=	alarm.c assert.c clock.c crypt.c ctermid.c ctime.c ctype_.c \
 	directory.c difftime.c disklabel.c err.c errlst.c exec.c \
 	fnmatch.c frexp.c fstab.c fts.c getcap.c getcwd.c getgrent.c \
 	getlogin.c getmntinfo.c getpass.c getpwent.c getsubopt.c getttyent.c \
-	getusershell.c glob.c infinity.c initgroups.c isatty.c isctype.c \
-	isinf.c mktemp.c nice.c nlist.c pause.c popen.c psignal.c raise.c \
-	setjmperr.c setmode.c setrgid.c setruid.c siginterrupt.c \
+	getusershell.c glob.c infinity.c initgroups.c insque.c isatty.c \
+	isctype.c isinf.c mktemp.c nice.c nlist.c pause.c popen.c psignal.c \
+	raise.c setjmperr.c setmode.c setrgid.c setruid.c siginterrupt.c \
 	scandir.c siglist.c signal.c sigsetops.c sleep.c syslog.c termios.c \
 	time.c times.c timezone.c ttyname.c ttyslot.c ualarm.c unvis.c \
 	usleep.c utime.c valloc.c vis.c wait.c wait3.c waitpid.c
@@ -41,16 +41,17 @@ MAN3+=	gen/alarm.3 gen/clock.3 gen/crypt.3 gen/ctermid.3 gen/ctime.3 \
 	gen/frexp.3 gen/fts.3 gen/getcwd.3 gen/getcap.3 gen/getdiskbyname.3 \
 	gen/getfsent.3 gen/getgrent.3 gen/getmntinfo.3 gen/getpass.3 \
 	gen/getpwent.3 gen/getsubopt.3 gen/getttyent.3 gen/getusershell.3 \
-	gen/glob.3 gen/initgroups.3 gen/isalnum.3 gen/isalpha.3 gen/isascii.3 \
-	gen/iscntrl.3 gen/isdigit.3 gen/isgraph.3 gen/isinf.3 gen/islower.3 \
-	gen/isprint.3 gen/ispunct.3 gen/isspace.3 gen/isupper.3 gen/isxdigit.3 \
-	gen/ldexp.3 gen/modf.3 gen/nice.3 gen/nlist.3 gen/pause.3 gen/popen.3 \
-	gen/psignal.3 gen/raise.3 gen/regexp.3 gen/scandir.3 gen/setjmp.3 \
-	gen/setmode.3 gen/setuid.3 gen/siginterrupt.3 gen/signal.3 \
-	gen/sigsetops.3 gen/sleep.3 gen/syslog.3 gen/tcsendbreak.3 \
-	gen/time.3 gen/times.3  gen/timezone.3 gen/tolower.3 gen/toupper.3 \
-	gen/ttyname.3 gen/tzset.3 gen/ualarm.3 gen/unvis.3 gen/usleep.3 \
-	gen/utime.3 gen/valloc.3 gen/vis.3
+	gen/glob.3 gen/initgroups.3 gen/insque.3 gen/isalnum.3 gen/isalpha.3 \
+	gen/isascii.3 gen/iscntrl.3 gen/isdigit.3 gen/isgraph.3 gen/isinf.3 \
+	gen/islower.3 gen/isprint.3 gen/ispunct.3 gen/isspace.3 \
+	gen/isupper.3 gen/isxdigit.3 gen/ldexp.3 gen/modf.3 gen/nice.3 \
+	gen/nlist.3 gen/pause.3 gen/popen.3 gen/psignal.3 gen/raise.3 \
+	gen/regexp.3 gen/scandir.3 gen/setjmp.3 gen/setmode.3 gen/setuid.3 \
+	gen/siginterrupt.3 gen/signal.3 gen/sigsetops.3 gen/sleep.3 \
+	gen/syslog.3 gen/tcsendbreak.3 gen/time.3 gen/times.3  \
+	gen/timezone.3 gen/tolower.3 gen/toupper.3 gen/ttyname.3 \
+	gen/tzset.3 gen/ualarm.3 gen/unvis.3 gen/usleep.3 gen/utime.3 \
+	gen/valloc.3 gen/vis.3
 
 MLINKS=	crypt.3 encrypt.3 crypt.3 setkey.3
 MLINKS+=ctime.3 asctime.3 ctime.3 difftime.3 ctime.3 gmtime.3 \
@@ -62,7 +63,6 @@ MLINKS+=err.3 verr.3 err.3 errx.3 err.3 verrx.3 err.3 warn.3 err.3 vwarn.3 \
 	err.3 warnx.3 err.3 vwarnx.3
 MLINKS+=exec.3 execl.3 exec.3 execle.3 exec.3 execlp.3 exec.3 execv.3 \
 	exec.3 execvp.3
-MLINKS+=isinf.3 isnan.3
 MLINKS+=getcwd.3 getwd.3
 MLINKS+=getcap.3 cgetent.3 getcap.3 cgetset.3 getcap.3 cgetmatch.3 \
 	getcap.3 cgetcap.3 getcap.3 cgetnum.3 getcap.3 cgetstr.3 \
@@ -77,6 +77,8 @@ MLINKS+=getpwent.3 endpwent.3 getpwent.3 setpassent.3 getpwent.3 getpwnam.3 \
 MLINKS+=getttyent.3 endttyent.3 getttyent.3 getttynam.3 getttyent.3 setttyent.3
 MLINKS+=getusershell.3 endusershell.3 getusershell.3 setusershell.3
 MLINKS+=glob.3 globfree.3
+MLINKS+=insque.3 remque.3
+MLINKS+=isinf.3 isnan.3
 MLINKS+=popen.3 pclose.3
 MLINKS+=psignal.3 sys_siglist.3
 MLINKS+=regexp.3 regcomp.3 regexp.3 regexec.3 regexp.3 regsub.3 \
