@@ -4,15 +4,15 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)maketape	5.2 (Berkeley) %G%
+#	@(#)maketape	5.3 (Berkeley) %G%
 #
 #	maketape [ 6250 | 1600 [ tapename [ remotetapemachine ] ] ]
 miniroot=dk4a
-bootroot=dk5a
+bootroot=dk2a
 nbsd=dk1a
 nbsdusr=dk2c
-tape=/dev/rmt12
-type=1600
+tape=/dev/rmt20
+type=6250
 
 if [ $# -gt 0 ]; then type=$1; fi
 if [ $# -gt 1 ]; then tape=$2; fi
@@ -28,12 +28,19 @@ mount -r /dev/$nbsdusr /nbsd/usr
 cd /nbsd
 sync
 
+if [ $type = '1600a' ]
+then
+	type=1600
+fi
+
 echo "Add image of bootstrap file system"
-eval dd if=/dev/r${bootroot} count=250 bs=1024 conv=sync \
+eval dd if=/dev/r${bootroot} count=400 bs=1024 conv=sync \
 	${remote+'| rsh $remote dd bs=1024'} of=$tape
+
 echo "Add image of mini-root file system"
 eval dd if=/dev/r${miniroot} count=205 bs=20b conv=sync ${remote+'| rsh'} \
 	${remote-"of=$tape"} ${remote+'/usr/local/20b ">" $tape'}
+
 echo "Add full dump of real file system"
 /etc/${remote+r}dump 0uf $remote${remote+:}${tape} /nbsd
 echo "Add tar image of /usr"
@@ -52,13 +59,17 @@ then
 	then	tape=$x
 	fi
 fi
+
+: tape2:
 echo "Add tar image of system sources"
 cd /nbsd/sys; eval tar cf ${tartape} . \
 	${remote+'| $remote /usr/local/20b ">" $tape'}
+
 echo "Add user source code"
 cd /nbsd/usr/src; eval tar cf ${tartape} Makefile bin cci etc games \
-	include lib local old ucb undoc usr.bin usr.lib \
+	include lib local man old ucb undoc usr.bin usr.lib \
 	${remote+'| $remote /usr/local/20b ">" $tape'}
+
 #echo "Add varian fonts"
 #cd /usr/lib/vfont; eval tar cf ${tartape} . \
 #	${remote+'| $remote /usr/local/20b ">" $tape'}
@@ -73,27 +84,21 @@ then
 	then	tape=$x
 	fi
 fi
+
+: tape3:
 echo "Add user contributed software"
-if [ ${type} != '6250' ]
-then
-	cd /nbsd/usr/src/new; eval tar cf ${tartape} \
-		README Makefile \
-		B X ansi apl bib courier cpm dipress dsh emacs enet help \
-		hyper icon jove kermit mh mkmf mmdf.tar.Z news notes nntp \
-		np100 patch pathalias rcs rn spms sumacc.tar.Z sunrpc \
-		tac tools umodem xns \
-		${remote+'| $remote /usr/local/20b ">" $tape'}
-else
-	cd /nbsd/usr/src/new; eval tar cf ${tartape} \
-		README Makefile \
-		B X ansi apl bib courier cpm dipress dsh emacs enet help \
-		hyper icon jove kermit mh mkmf mmdf news notes nntp \
-		np100 patch pathalias rcs rn spms sumacc sunrpc \
-		tac tools umodem xns \
-		${remote+'| $remote /usr/local/20b ">" $tape'}
-fi
-echo "Add ingres source"
-cd /nbsd/usr/ingres; eval tar cf ${tartape} . \
+# standard (always uncompressed) directories:
+new="README Makefile B X ansi apl bib courier cpm dipress dsh \
+	enet help hyper jove kermit mkmf news notes nntp np100 \
+	patch pathalias rcs rn spms sunrpc tac tools umodem xns"
+uncompress="emacs icon mh mmdf sumacc pup"
+compress="emacs.tar.Z icon.tar.Z mh.tar.Z mmdf.tar.Z sumacc.tar.Z pup.tar.Z"
+cd /nbsd/usr/src/new; eval tar cvf ${tartape} ${new} ${compress} \
 	${remote+'| $remote /usr/local/20b ">" $tape'}
+
+#echo "Add ingres source"
+#cd /nbsd/usr/ingres; eval tar cf ${tartape} . \
+#	${remote+'| $remote /usr/local/20b ">" $tape'}
+
 echo "Done, rewinding tape"
 $remote mt -t ${tape} rew &
