@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)fts.h	5.3 (Berkeley) %G%
+ *	@(#)fts.h	5.4 (Berkeley) %G%
  */
 
 typedef struct fts {
@@ -24,7 +24,7 @@ typedef struct fts {
 	struct ftsent **fts_array;	/* sort array */
 	dev_t sdev;			/* starting device # */
 	char *fts_path;			/* path for this descent */
-	char *fts_wd;			/* starting directory */
+	int fts_sd;			/* starting directory */
 	int fts_pathlen;		/* sizeof(path) */
 	int fts_nitems;			/* elements in the sort array */
 	int (*fts_compar)();		/* compare function */
