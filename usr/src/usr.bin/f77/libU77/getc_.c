@@ -1,5 +1,5 @@
 /*
-char id_getc[] = "@(#)getc_.c	1.3";
+char id_getc[] = "@(#)getc_.c	1.4";
  *
  * get a character from the standard input
  *
@@ -35,6 +35,6 @@ char *c; long clen;
 		clearerr(lu->ufd);
 		return((long)i);
 	}
-	*c = i & 0177;
+	*c = i;
 	return(0L);
 }
