@@ -379,24 +379,24 @@ LocalClearScreen()
 int
 	bellwinup = 0;		/* If != 0, length of bell message */
 static int
-	bellpos0 = 0;		/* Where error message goes */
+	bell_len = 0;		/* Length of error message */
 
-static char	bellstring[100];/* Where message goes */
-
-#define	BELL_SPACES	2	/* 2 spaces between border and bell */
-
-#define	BELL_HIGH_LOW(h,l) { \
-	    h = bellpos0+2*NumberColumns+bellwinup+BELL_SPACES*2; \
-	    l = bellpos0; \
-	}
 
 void
 BellOff()
 {
+    ScreenBuffer a[100];
+    int i;
+
     if (bellwinup) {
-	BELL_HIGH_LOW(Highest,Lowest);
-	TryToSend();
+	unsigned char blank = ' ';
+
+	for (i = 0; i < bell_len; i++) {
+	    a[i].attr = NORMAL;
+	    a[i].data = ' ';
+	}
     }
+    scrwrite(a, bell_len, 24*80);		/* XXX */
 }
 
 
@@ -406,14 +406,19 @@ char *s;
 {
     needToRing = 1;
     if (s) {
-	int len = strlen(s);
+	int i;
+	ScreenBuffer bellstring[100];
 
-	if (len > sizeof bellstring-1) {
+	bell_len = strlen(s);
+	bellwinup = 1;
+	if (bell_len > sizeof bellstring-1) {
 	    OurExitString(stderr, "Bell string too long.", 1);
 	}
-	memcpy(bellstring, s, len+1);
-	BELL_HIGH_LOW(Highest,Lowest);
-	TryToSend();
+	for (i = 0; i < bell_len; i++) {
+	    bellstring[i].attr = STANDOUT;
+	    bellstring[i].data = s[i];
+	}
+	scrwrite(bellstring, bell_len, 24*80);		/* XXX */
     }
 }
 
