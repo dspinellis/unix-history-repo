@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)rk.c	6.9 (Berkeley) %G%
+ *	@(#)rk.c	6.10 (Berkeley) %G%
  */
 
 #include "rk.h"
@@ -59,14 +59,14 @@ struct	rk_softc {
 struct size {
 	daddr_t	nblocks;
 	int	cyloff;
-} rk7_sizes[8] ={
+} rk7_sizes[8] = {
 	15884,	0,		/* A=cyl 0 thru 240 */
 	10032,	241,		/* B=cyl 241 thru 392 */
 	53790,	0,		/* C=cyl 0 thru 814 */
+	15884,	393,		/* D=cyl 393 thru 633 */
 	0,	0,
-	0,	0,
-	0,	0,
-	27786,	393,		/* G=cyl 393 thru 813 */
+	11792,	634,		/* F=cyl 634 thru 814 */
+	27786,	393,		/* G=cyl 393 thru 814, should be 27698 */
 	0,	0,
 }, rk6_sizes[8] ={
 	15884,	0,		/* A=cyl 0 thru 240 */
