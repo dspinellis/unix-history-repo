@@ -4,7 +4,7 @@
  * specifies the terms and conditions for redistribution.
  */
 
-static char sccsid[] = "@(#)symbols.c 5.4 %G%";
+static char sccsid[] = "@(#)symbols.c 5.5 %G%";
 /*
  * Symbol management.
  */
@@ -1060,8 +1060,6 @@ register Node p;
 /*
  * Convert a tree to a type via a conversion operator;
  * if this isn't possible generate an error.
- *
- * Note the tree is call by address, hence the #define below.
  */
 
 private convert(tp, typeto, op)
@@ -1083,7 +1081,6 @@ Operator op;
 	fprintf(stderr, " is improper type");
 	enderrmsg();
     } else if (op != O_NOP and s != typeto) {
-	tree = build(op, tree);
     }
 
 #undef tree
