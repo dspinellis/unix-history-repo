@@ -1,0 +1,40 @@
+TP struct sizes:
+Size of tp_pcb: 0x190 400
+	offset of tp_state in tp_pcb: 0x0 0
+	offset of tp_retrans in tp_pcb: 0x2 2
+	offset of tp_snduna in tp_pcb: 0x28 40
+	offset of tp_lref in tp_pcb: 0x14 20
+	offset of tp_fref in tp_pcb: 0x16 22
+	offset of tp_fsuffix in tp_pcb: 0xdc 220
+	offset of tp_fsuffixlen in tp_pcb: 0xda 218
+	offset of tp_lsuffix in tp_pcb: 0x11e 286
+	offset of tp_lsuffixlen in tp_pcb: 0x11c 284
+	offset of tp_Xsnd in tp_pcb: 0x160 352
+	offset of tp_Xuna in tp_pcb: 0x184 388
+Size of tp_ref: 0x40 64
+	offset of tpr_pcb in tp_ref: 0x3c 60
+	offset of tpr_calltodo in tp_ref: 0x24 36
+Size of tp_stat: 0x1dc 476
+Size of tp_param: 0x4 4
+Size of tp_conn_param: 0x26 38
+Size of tp_rtc: 0x14 20
+Size of nl_protosw: 0x40 64
+Size of tp_Meas: 0x18 24
+ISO struct sizes:
+Size of socket: 0x70 112
+	offset of so_timeo in socket: 0x22 34
+	offset of so_rcv in socket: 0x2c 44
+	offset of so_snd in socket: 0x4c 76
+	offset of so_tpcb in socket: 0x6c 108
+	offset of so_pcb in socket: 0x8 8
+	offset of so_qlen in socket: 0x1e 30
+	offset of so_error in socket: 0x24 36
+	offset of so_state in socket: 0x6 6
+Size of sockbuf: 0x20 32
+	offset of sb_flags in sockbuf: 0x1c 28
+	offset of sb_cc in sockbuf: 0x0 0
+	offset of sb_mb in sockbuf: 0x14 20
+	offset of sb_mbcnt in sockbuf: 0x8 8
+Size of isopcb: 0xa0 160
+Size of cons_pcb: 0xd4 212
+	offset of co_state in cons_pcb: 0xa0 160
