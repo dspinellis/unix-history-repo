@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)temp.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)temp.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "rcv.h"
@@ -38,7 +38,7 @@ tinit()
 {
 	register char *cp;
 	char uname[PATHSIZE];
-	uid_t getuid();
+	int uid;
 
 	mktemp(strcpy(tempMail, "/tmp/RsXXXXXX"));
 	mktemp(strcpy(tempResid, "/tmp/RqXXXXXX"));
@@ -54,8 +54,7 @@ tinit()
 			    myname);
 			exit(1);
 		}
-	}
-	else {
+	} else {
 		uid = getuid();
 		if (username(uid, uname) < 0) {
 			strcpy(myname, "ubluit");
