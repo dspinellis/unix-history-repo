@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)route.c	5.21 (Berkeley) %G%";
+static char sccsid[] = "@(#)route.c	5.22 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <paths.h>
@@ -65,7 +65,7 @@ typedef union sockunion *sup;
 int	pid, rtm_addrs;
 int	s;
 int	forcehost, forcenet, doflush, nflag, af, qflag, Cflag, keyword();
-int	iflag, verbose;
+int	iflag, verbose, aflen = sizeof (struct sockaddr_in);
 struct	sockaddr_in sin = { sizeof(sin), AF_INET };
 struct	in_addr inet_makeaddr();
 char	*malloc(), *routename(), *netname();
@@ -149,11 +149,11 @@ char *argv[];
 
 	if (argc > 1) {
 		argv++;
-		if (argc == 1 && **argv == '-') switch (keyword(1 + *argv)) {
-			case K_INET: af = AF_INET; break;
-			case K_XNS: af = AF_NS; break;
-			case K_LINK: af = AF_LINK; break;
-			case K_OSI: af = AF_ISO; break;
+		if (argc == 2 && **argv == '-') switch (keyword(1 + *argv)) {
+			case K_INET:	af = AF_INET;	break;
+			case K_XNS:	af = AF_NS;	break;
+			case K_LINK:	af = AF_LINK;	break;
+			case K_ISO: case K_OSI:	af = AF_ISO; break;
 			default: goto bad;
 		} else
 			bad: usage(*argv);
@@ -167,7 +167,7 @@ char *argv[];
 	lim = buf + rlen;
 	for (next = buf; next < lim; next += rtm->rtm_msglen) {
 		rtm = (struct rt_msghdr *)next;
-		if ((rtm->rtm_flags & (RTF_GATEWAY|RTF_HOST)) == 0)
+		if ((rtm->rtm_flags & RTF_GATEWAY) == 0)
 			continue;
 		if (af) {
 			struct sockaddr *sa = (struct sockaddr *)(rtm + 1);
@@ -397,15 +397,20 @@ newroute(argc, argv)
 			switch(keyword(1 + *argv)) {
 			case K_LINK:
 				af = AF_LINK;
+				aflen = sizeof(struct sockaddr_dl);
 				break;
 			case K_OSI:
+			case K_ISO:
 				af = AF_ISO;
+				aflen = sizeof(struct sockaddr_iso);
 				break;
 			case K_INET:
 				af = AF_INET;
+				aflen = sizeof(struct sockaddr_in);
 				break;
 			case K_XNS:
 				af = AF_NS;
+				aflen = sizeof(struct sockaddr_ns);
 				break;
 			case K_IFACE:
 				iflag++;
@@ -413,12 +418,12 @@ newroute(argc, argv)
 			case K_HOST:
 				forcehost++;
 				break;
-			case K_NET:
-				forcenet++;
-				break;
 			case K_NETMASK:
 				argc--;
 				(void) getaddr(RTA_NETMASK, *++argv, 0);
+				/* FALLTHROUGH */
+			case K_NET:
+				forcenet++;
 				break;
 			case K_GENMASK:
 				argc--;
@@ -589,26 +594,34 @@ getaddr(which, s, hpp)
 {
 	register union sockunion *su;
 	struct	ns_addr ns_addr();
-	struct iso_addr iso_addr();
+	struct iso_addr *iso_addr();
 	struct hostent *hp;
 	struct netent *np;
 	u_long val;
 
-	if (af == 0)
+	if (af == 0) {
 		af = AF_INET;
+		aflen = sizeof(struct sockaddr_in);
+	}
+	rtm_addrs |= which;
 	switch (which) {
-	case RTA_DST:		su = so_addrs[0]; break;
-	case RTA_GATEWAY:	su = so_addrs[1]; break;
-	case RTA_NETMASK:		su = so_addrs[2]; break;
+	case RTA_DST:		su = so_addrs[0]; su->sa.sa_family = af; break;
+	case RTA_GATEWAY:	su = so_addrs[1]; su->sa.sa_family = af; break;
+	case RTA_NETMASK:	su = so_addrs[2]; break;
 	case RTA_GENMASK:	su = so_addrs[3]; break;
 	default:		usage("Internal Error"); /*NOTREACHED*/
 	}
-	rtm_addrs |= which;
-	su->sa.sa_family = af;
+	su->sa.sa_len = aflen;
 	if (strcmp(s, "default") == 0) {
-		su->sa.sa_len = 0;
-		if (which == RTA_DST)
+		switch (which) {
+		case RTA_DST:
+			forcenet++;
 			getaddr(RTA_NETMASK, s, 0);
+			break;
+		case RTA_NETMASK:
+		case RTA_GENMASK:
+			su->sa.sa_len = 0;
+		}
 		return 0;
 	}
 	if (af == AF_NS)
@@ -617,7 +630,6 @@ getaddr(which, s, hpp)
 		goto do_osi;
 	if (af == AF_LINK)
 		goto do_link;
-	su->sin.sin_len = sizeof(su->sin);
 	if (hpp == 0) hpp = &hp;
 	*hpp = 0;
 	if (((val = inet_addr(s)) != -1) &&
@@ -651,7 +663,6 @@ getaddr(which, s, hpp)
 	fprintf(stderr, "%s: bad value\n", s);
 	exit(1);
 do_xns:
-	su->sns.sns_len = sizeof (su->sns);
 	if (val == 0)
 		return(0);
 	if (which == RTA_DST) {
@@ -666,11 +677,15 @@ do_xns:
 	su->sns.sns_addr = ns_addr(s);
 	return (!ns_nullhost(su->sns.sns_addr));
 do_osi:
-	su->siso.siso_len = sizeof(su->siso);
-	su->siso.siso_addr = iso_addr(s);
+	su->siso.siso_addr = *iso_addr(s);
+	if (which == RTA_NETMASK || which == RTA_GENMASK) {
+		register char *cp = (char *)TSEL(&su->siso);
+		su->siso.siso_nlen = 0;
+		do {--cp ;} while ((cp > (char *)su) && (*cp == 0));
+		su->siso.siso_len = 1 + cp - (char *)su;
+	}
 	return (1);
 do_link:
-	su->sdl.sdl_len = sizeof(su->sdl);
 	link_addr(s, &su->sdl);
 	return (1);
 }
