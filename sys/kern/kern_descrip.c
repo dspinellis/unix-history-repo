@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)kern_descrip.c	7.28 (Berkeley) 6/25/91
- *	$Id: kern_descrip.c,v 1.5 1993/11/25 01:32:54 wollman Exp $
+ *	$Id: kern_descrip.c,v 1.6 1993/12/19 00:51:22 wollman Exp $
  */
 
 #include "param.h"
@@ -93,10 +93,12 @@ dup(p, uap, retval)
 	struct file *fp;
 	int fd, error;
 
+#if 0
 	/*
 	 * XXX Compatibility
 	 */
 	if (uap->i &~ 077) { uap->i &= 077; return (dup2(p, uap, retval)); }
+#endif
 
 	if ((unsigned)uap->i >= fdp->fd_nfiles ||
 	    (fp = fdp->fd_ofiles[uap->i]) == NULL)
