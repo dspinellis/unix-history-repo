@@ -1,0 +1,51 @@
+Update 9-9-92
+
+named now supports a '-s' flag.  Using it means that your secondary server
+supports shuffle A records, and so when sending them via the zone transfer
+mechanism, it will send a "SA' record instead of a plain "A" record.
+
+It also handles the case where a give domain name has some SA records and
+other types of records.  (It shuffles the A records and leaves the rest
+alone.)
+
+------------------------------------------------------------------------------
+
+SA records are a new data type that I have added to BIND 4.8.3.  They are
+"shuffle A records".  They look and act just like A records except the
+nameserver shuffles them up before replying to the requester.
+
+Use SA records in cases where you would like several A records returned, but in
+a different order each time.  There is no support in SA records for any kind of
+scheduling or weighting; you're stuck with randomness.
+
+The syntax of a SA record is identical to the of an A record, except that the
+type field is SA, not A.
+
+SA records are implemented in this way.  An additional record type is defined
+in /usr/include/arpa/nameser.h, namely T_SA (104).  In addition a new named
+data flag is defined, DB_F_SHUFFLE.
+
+db_load() is modified to recognize SA records.  When it finds one, it sets
+the DB_SHUFFLE data flag of the record, but then it falls through to the
+standard A record code.  From this point on only your nameserver knows it
+is a SA record; to the rest of the world (including your secondary servers)
+it will apeear as an A record (EXCEPTION: if you use the -s flag described
+above).
+
+ns_req() and ns_resp() also need to be modified to check to see if the
+DB_SHUFFLE flag is set on any data they are to return.  If they do see
+the flag, then all of the A records with that flag set are shuffled.
+
+The shuffling is handled by a routine called shuffle_rrs() in a new
+source file ns_shuf.c.  The shuffling code is simple.  Records are
+not so much shuffled as they are re-ordered.
+
+The bind4.8.3.tar.Z release in this directory contains a BIND 4.8.3 with
+SA record support.  I would have made some kind of diffs available, but
+because of the various versions of BIND floating about (4.8.1, 4.8.3,
+patched 4.8.3, patched and hacked 4.8.3, . . .) it really isn't very
+easy.
+
+Some future work might include adding SX (shuffle MX) records, getting
+the shuffle code to cope with non-A records, and getting named-xfer to
+preserve SA records in secondaries.
