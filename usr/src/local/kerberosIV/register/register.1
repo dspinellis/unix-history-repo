@@ -29,10 +29,8 @@ A user may only register with Kerberos one time.
 .SH "SEE ALSO"
 registerd(8), kerberos(1)
 .SH DIAGNOSTICS
-\*(lqAlready exists,\*(rq
+\*(lqPrincipal not unique\*(rq
 if the user already exists in the Kerberos database.
 .br
 \*(lqPermission Denied,\*(rq
 if the host on which register is being run is untrusted.
-.SH AUTHOR
-Kevin Fall
