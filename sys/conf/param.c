@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)param.c	7.20 (Berkeley) 6/27/91
- *	$Id$
+ *	$Id: param.c,v 1.3 1993/10/16 16:31:57 rgrimes Exp $
  */
 
 #include "sys/param.h"
@@ -65,7 +65,11 @@
 #endif
 int	hz = HZ;
 int	tick = 1000000 / HZ;
+#ifndef TICKADJ
 int	tickadj = 240000 / (60 * HZ);		/* can adjust 240ms in 60s */
+#else
+int	tickadj = TICKADJ	/* NTP users may prefer a smaller value */
+#endif
 struct	timezone tz = { TIMEZONE, DST };
 #define	NPROC (20 + 16 * MAXUSERS)
 int	maxproc = NPROC;
@@ -138,3 +142,28 @@ char	*buffers;
 struct	proc *pidhash[PIDHSZ];
 struct	pgrp *pgrphash[PIDHSZ];
 int	pidhashmask = PIDHSZ - 1;
+
+/* From kernel.h: */
+long hostid;
+char hostname[MAXHOSTNAMELEN];
+int hostnamelen;
+char domainname[MAXHOSTNAMELEN];
+int domainnamelen;
+
+struct timeval boottime;
+struct timeval time;
+
+int phz;
+int lbolt;
+
+fixpt_t avenrunnable[3];
+#if defined(COMPAT_43) && (defined(vax) || defined(tahoe))
+double	avenrun[3];
+#endif /* COMPAT_43 */
+
+#ifdef GPROF
+u_long s_textsize;
+int profiling;
+u_short *kcount;
+char *s_lowpc;
+#endif
