@@ -11,7 +11,7 @@
  */
 
 #ifdef notdef
-static char sccsid[] = "@(#)quit.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)quit.c	5.7 (Berkeley) %G%";
 #endif /* notdef */
 
 #include "rcv.h"
@@ -39,6 +39,7 @@ quit()
 	extern char tempQuit[], tempResid[];
 	struct stat minfo;
 	char *id;
+	char *mbox;
 
 	/*
 	 * If we are read only, we can't do anything,
@@ -152,6 +153,7 @@ quit()
 	 * just copy saveable entries at the end.
 	 */
 
+	mbox = expand("&");
 	mcount = c;
 	if (value("append") == NOSTR) {
 		if ((obuf = fopen(tempQuit, "w")) == NULL) {

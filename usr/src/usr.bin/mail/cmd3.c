@@ -11,7 +11,7 @@
  */
 
 #ifdef notdef
-static char sccsid[] = "@(#)cmd3.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmd3.c	5.8 (Berkeley) %G%";
 #endif /* notdef */
 
 #include "rcv.h"
@@ -575,108 +575,23 @@ null(e)
  */
 
 file(argv)
-	char **argv;
+	register char **argv;
 {
 	register char *cp;
-	int edit;
 
 	if (argv[0] == NOSTR) {
 		newfileinfo();
-		return(0);
+		return 0;
 	}
-
-	/*
-	 * Acker's!  Must switch to the new file.
-	 * We use a funny interpretation --
-	 *	# -- gets the previous file
-	 *	% -- gets the invoker's post office box
-	 *	%user -- gets someone else's post office box
-	 *	& -- gets invoker's mbox file
-	 *	string -- reads the given file
-	 */
-
-	cp = getfilename(argv[0], &edit);
-	if (cp == NOSTR)
-		return(-1);
-	if (setfile(cp, edit)) {
+	if ((cp = expand(*argv)) == NOSTR)
+		return -1;
+	strcpy(prevfile, mailname);
+	if (setfile(cp, **argv != '%')) {
 		perror(cp);
-		return(-1);
+		return -1;
 	}
 	announce(0);
 	return 0;
-}
-
-/*
- * Evaluate the string given as a new mailbox name.
- * Ultimately, we want this to support a number of meta characters.
- * Possibly:
- *	% -- for my system mail box
- *	%user -- for user's system mail box
- *	# -- for previous file
- *	& -- get's invoker's mbox file
- *	file name -- for any other file
- */
-
-char	prevfile[PATHSIZE];
-
-char *
-getfilename(name, aedit)
-	char *name;
-	int *aedit;
-{
-	register char *cp;
-	char savename[BUFSIZ];
-	char oldmailname[BUFSIZ];
-
-	/*
-	 * Assume we will be in "edit file" mode, until
-	 * proven wrong.
-	 */
-	*aedit = 1;
-	switch (*name) {
-	case '%':
-		*aedit = 0;
-		strcpy(prevfile, mailname);
-		if (name[1] != 0) {
-			strcpy(savename, myname);
-			strcpy(oldmailname, mailname);
-			strncpy(myname, name+1, PATHSIZE-1);
-			myname[PATHSIZE-1] = 0;
-			findmail();
-			cp = savestr(mailname);
-			strcpy(myname, savename);
-			strcpy(mailname, oldmailname);
-			return(cp);
-		}
-		strcpy(oldmailname, mailname);
-		findmail();
-		cp = savestr(mailname);
-		strcpy(mailname, oldmailname);
-		return(cp);
-
-	case '#':
-		if (name[1] != 0)
-			goto regular;
-		if (prevfile[0] == 0) {
-			printf("No previous file\n");
-			return(NOSTR);
-		}
-		cp = savestr(prevfile);
-		strcpy(prevfile, mailname);
-		return(cp);
-
-	case '&':
-		strcpy(prevfile, mailname);
-		if (name[1] == 0)
-			return(mbox);
-		/* Fall into . . . */
-
-	default:
-regular:
-		strcpy(prevfile, mailname);
-		cp = expand(name);
-		return(cp);
-	}
 }
 
 /*
