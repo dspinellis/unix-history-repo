@@ -1,4 +1,13 @@
-static char *sccsid = "@(#)vfontinfo.c	4.4 (Berkeley) %G%";
+/*
+ * Copyright (c) 1983 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ */
+
+#ifndef lint
+static char sccsid[] = "@(#)vfontinfo.c	5.1 (Berkeley) %G%";
+#endif /* not lint */
+
 /* Font Information for VCat-style fonts
  *      Andy Hertzfeld  4/79
  *
@@ -11,7 +20,7 @@ static char *sccsid = "@(#)vfontinfo.c	4.4 (Berkeley) %G%";
 #include <vfont.h>
 
 struct header FontHeader;
-struct dispatch disptable[256] ;
+struct dispatch disptable[256];
 
 char	IName[100];
 char *	rdchar();
@@ -89,7 +98,10 @@ char **argv;
 		printf("raster size %d, ",FontHeader.size);
 		printf("max width %d, max height %d, xtend %d\n",
 			FontHeader.maxx, FontHeader.maxy,FontHeader.xtend);
-		printf("\n ASCII     offset    size  left    right   up     down    width \n");
+		printf("\n");
+		for (i = strlen(argv[1]) + 1; i > 0; --i)
+			printf(" ");
+		printf("ASCII     offset    size  left    right   up     down    width \n");
 	}
 
 	for (i=0; i<256; i++) {
@@ -98,7 +110,8 @@ char **argv;
 			break;
 		if (disptable[j].nbytes != 0) {
 			if (!msgflag)
-				printf("  %3o %2s     %4d   %4d   %4d   %4d   %4d   %4d   %5d\n",
+				printf("%s  %3o %2s     %4d   %4d   %4d   %4d   %4d   %4d   %5d\n",
+					argv[1],
 					j, rdchar(j),
 					disptable[j].addr,
 					disptable[j].nbytes,
