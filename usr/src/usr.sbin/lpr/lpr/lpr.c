@@ -56,7 +56,7 @@
 char lpr_id[] = "~|^`lpr.c:\t4.2\t1 May 1981\n";
 
 #ifndef lint
-static char sccsid[] = "@(#)lpr.c	4.24 (Berkeley) %G%";
+static char sccsid[] = "@(#)lpr.c	4.25 (Berkeley) %G%";
 #endif
 
 /*
@@ -105,6 +105,7 @@ char	buf[BUFSIZ];
 
 int	MX;			/* maximum number of blocks to copy */
 int	MC;			/* maximum number of copies allowed */
+int	DU;			/* daemon user-id */
 char	*SD;			/* spool directory */
 char	*LO;			/* lock file name */
 short	SC;			/* suppress multiple copies */
@@ -269,6 +270,7 @@ main(argc, argv)
 	 */
 	mktemps();
 	tfd = nfile(tfname);
+	(void) fchown(tfd, DU, -1);	/* owned by daemon for protection */
 	card('H', host);
 	card('P', person);
 	if (hdr) {
@@ -465,6 +467,10 @@ nfile(n)
 		printf("%s: cannot create %s\n", name, n);
 		cleanup();
 	}
+	if (fchown(f, userid, -1) < 0) {
+		printf("%s: cannot chown %s\n", name, n);
+		cleanup();
+	}
 	if (++n[inchar] > 'z') {
 		if (++n[inchar-2] == 't') {
 			printf("too many files - break up the job\n");
@@ -612,6 +618,8 @@ chkprinter(s)
 		MX = DEFMX;
 	if ((MC = pgetnum("mc")) < 0)
 		MC = DEFMAXCOPIES;
+	if ((DU = pgetnum("du")) < 0)
+		DU = DEFUID;
 	SC = pgetflag("sc");
 }
 
