@@ -1,4 +1,4 @@
-/*	tty.c	6.11	84/09/10	*/
+/*	tty.c	6.12	84/12/20	*/
 
 #include "../machine/reg.h"
 
@@ -123,7 +123,7 @@ ttywflush(tp)
 ttywait(tp)
 	register struct tty *tp;
 {
-	register int s = spl5();
+	register int s = spltty();
 
 	while ((tp->t_outq.c_cc || tp->t_state&TS_BUSY) &&
 	    tp->t_state&TS_CARR_ON && tp->t_oproc) {	/* kludge for pty */
@@ -142,7 +142,7 @@ ttyflush(tp, rw)
 {
 	register s;
 
-	s = spl6();
+	s = spltty();
 	if (rw & FREAD) {
 		while (getc(&tp->t_canq) >= 0)
 			;
@@ -218,7 +218,7 @@ ttstart(tp)
 {
 	register s;
 
-	s = spl5();
+	s = spltty();
 	if ((tp->t_state & (TS_TIMEOUT|TS_TTSTOP|TS_BUSY)) == 0 &&
 	    tp->t_oproc)		/* kludge for pty */
 		(*tp->t_oproc)(tp);
@@ -240,8 +240,7 @@ ttioctl(tp, com, data, flag)
 
 	/*
 	 * If the ioctl involves modification,
-	 * insist on being able to write the device,
-	 * and hang if in the background.
+	 * hang if in the background.
 	 */
 	switch (com) {
 
@@ -286,14 +285,14 @@ ttioctl(tp, com, data, flag)
 
 		if ((unsigned) t >= nldisp)
 			return (ENXIO);
-		s = spl5();
+		s = spltty();
 		if (tp->t_line)
 			(*linesw[tp->t_line].l_close)(tp);
 		if (t)
 			error = (*linesw[t].l_open)(dev, tp);
 		splx(s);
 		if (error) {
-			s = spl5();
+			s = spltty();
 			if (tp->t_line)
 				(void) (*linesw[tp->t_line].l_open)(dev, tp);
 			splx(s);
@@ -338,7 +337,7 @@ ttioctl(tp, com, data, flag)
 		break;
 
 	case TIOCSTOP:
-		s = spl5();
+		s = spltty();
 		if ((tp->t_state&TS_TTSTOP) == 0) {
 			tp->t_state |= TS_TTSTOP;
 			(*cdevsw[major(tp->t_dev)].d_stop)(tp, 0);
@@ -347,7 +346,7 @@ ttioctl(tp, com, data, flag)
 		break;
 
 	case TIOCSTART:
-		s = spl5();
+		s = spltty();
 		if ((tp->t_state&TS_TTSTOP) || (tp->t_flags&FLUSHO)) {
 			tp->t_state &= ~TS_TTSTOP;
 			tp->t_flags &= ~FLUSHO;
@@ -376,7 +375,7 @@ ttioctl(tp, com, data, flag)
 		tp->t_ispeed = sg->sg_ispeed;
 		tp->t_ospeed = sg->sg_ospeed;
 		newflags = (tp->t_flags&0xffff0000) | (sg->sg_flags&0xffff);
-		s = spl5();
+		s = spltty();
 		if (tp->t_flags&RAW || newflags&RAW || com == TIOCSETP) {
 			ttywait(tp);
 			ttyflush(tp, FREAD);
@@ -466,10 +465,21 @@ ttioctl(tp, com, data, flag)
 		*(int *)data = ((unsigned) tp->t_flags) >> 16;
 		break;
 
-	/* should allow SPGRP and GPGRP only if tty open for reading */
+	/*
+	 * Allow SPGRP only if tty is ours and is open for reading.
+	 */
 	case TIOCSPGRP:
-		tp->t_pgrp = *(int *)data;
+		{
+		struct proc *p;
+		int pgrp = *(int *)data;
+
+		if (u.u_uid && (flag & FREAD) == 0)
+			return (EPERM);
+		if (u.u_uid && u.u_ttyp != tp)
+			return (EACCES);
+		tp->t_pgrp = pgrp;
 		break;
+		}
 
 	case TIOCGPGRP:
 		*(int *)data = tp->t_pgrp;
@@ -500,7 +510,7 @@ ttselect(dev, rw)
 {
 	register struct tty *tp = &cdevsw[major(dev)].d_ttys[minor(dev)];
 	int nread;
-	int s = spl5();
+	int s = spltty();
 
 	switch (rw) {
 
@@ -550,9 +560,11 @@ ttyopen(dev, tp)
 		pp->p_pgrp = tp->t_pgrp;
 	}
 	tp->t_state &= ~TS_WOPEN;
-	tp->t_state |= TS_ISOPEN;
-	if (tp->t_line != NTTYDISC)
-		ttywflush(tp);
+	if ((tp->t_state & TS_ISOPEN) == 0) {
+		tp->t_state |= TS_ISOPEN;
+		if (tp->t_line != NTTYDISC)
+			ttywflush(tp);
+	}
 	return (0);
 }
 
@@ -575,7 +587,7 @@ ttyclose(tp)
 
 /*
  * reinput pending characters after state switch
- * call at spl5().
+ * call at spltty().
  */
 ttypend(tp)
 	register struct tty *tp;
@@ -884,7 +896,7 @@ ttyoutput(c, tp)
 
 		c = 8 - (tp->t_col&7);
 		if ((tp->t_flags&FLUSHO) == 0) {
-			s = spl5();		/* don't interrupt tabs */
+			s = spltty();		/* don't interrupt tabs */
 			c -= b_to_q("        ", c, &tp->t_outq);
 			tk_nout += c;
 			splx(s);
@@ -1021,7 +1033,7 @@ loop:
 	/*
 	 * Take any pending input first.
 	 */
-	s = spl5();
+	s = spltty();
 	if (tp->t_flags&PENDIN)
 		ttypend(tp);
 	splx(s);
@@ -1050,7 +1062,7 @@ loop:
 	 * device interrupts when interrogating rawq.
 	 */
 	if (t_flags&RAW) {
-		s = spl5();
+		s = spltty();
 		if (tp->t_rawq.c_cc <= 0) {
 			if ((tp->t_state&TS_CARR_ON) == 0 ||
 			    (tp->t_state&TS_NBIO)) {
@@ -1077,7 +1089,7 @@ loop:
 	 * No input, sleep on rawq awaiting hardware
 	 * receipt and notification.
 	 */
-	s = spl5();
+	s = spltty();
 	if (qp->c_cc <= 0) {
 		if ((tp->t_state&TS_CARR_ON) == 0 ||
 		    (tp->t_state&TS_NBIO)) {
@@ -1307,7 +1319,7 @@ loop:
 	return (error);
 
 ovhiwat:
-	s = spl5();
+	s = spltty();
 	if (cc != 0) {
 		uio->uio_iov->iov_base -= cc;
 		uio->uio_iov->iov_len += cc;
@@ -1324,6 +1336,7 @@ ovhiwat:
 	}
 	ttstart(tp);
 	if (tp->t_state&TS_NBIO) {
+		splx(s);
 		if (uio->uio_resid == cnt)
 			return (EWOULDBLOCK);
 		return (0);
@@ -1383,7 +1396,7 @@ ttyrub(c, tp)
 				ttyretype(tp);
 				return;
 			}
-			s = spl5();
+			s = spltty();
 			savecol = tp->t_col;
 			tp->t_state |= TS_CNTTB;
 			tp->t_flags |= FLUSHO;
@@ -1447,7 +1460,7 @@ ttyretype(tp)
 	if (tp->t_rprntc != 0377)
 		ttyecho(tp->t_rprntc, tp);
 	(void) ttyoutput('\n', tp);
-	s = spl5();
+	s = spltty();
 	for (cp = tp->t_canq.c_cf; cp; cp = nextc(&tp->t_canq, cp))
 		ttyecho(*cp, tp);
 	for (cp = tp->t_rawq.c_cf; cp; cp = nextc(&tp->t_rawq, cp))
