@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 #define USE_OLD_TTY
@@ -426,7 +426,7 @@ putf(cp)
 {
 	extern char editedhost[];
 	time_t t;
-	char *slash, db[100];
+	char *fmt, *slash, db[100];
 
 	while (*cp) {
 		if (*cp != '%') {
@@ -449,8 +449,10 @@ putf(cp)
 
 		case 'd':
 			(void)time(&t);
-			(void)strftime(db,
-			    sizeof(db), "%l:main.cP on %A, %d %B %Y", &t);
+						/* SCCS *likes* main.c... */
+			fmt = "%l:% %P on %A, %d %B %Y";
+			fmt[4] = 'M';
+			(void)strftime(db, sizeof(db), fmt, &t);
 			puts(db);
 			break;
 
