@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)subr_xxx.c	7.11 (Berkeley) %G%
+ *	@(#)subr_xxx.c	7.12 (Berkeley) %G%
  */
 
 /*
@@ -171,8 +171,9 @@ bcmp(v1, v2, len)
 #endif /* NEED_BCMP */
 
 #ifdef NEED_STRLEN
+size_t
 strlen(s1)
-	register char *s1;
+	register const char *s1;
 {
 	register int len;
 
