@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)displayq.c	4.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)displayq.c	4.11 (Berkeley) %G%";
 #endif
 
 /*
@@ -108,10 +108,27 @@ displayq(format)
 		fatal("cannot chdir to spooling directory");
 	if ((nitems = getq(&queue)) < 0)
 		fatal("cannot examine spooling area\n");
-	if (stat(LO, &statb) >= 0 && (statb.st_mode & 010)) {
-		if (sendtorem)
-			printf("\n%s: ", host);
-		printf("Warning: %s queue is turned off\n", printer);
+	if (stat(LO, &statb) >= 0) {
+		if ((statb.st_mode & 0110) && sendtorem)
+			printf("\n");
+		if (statb.st_mode & 0100) {
+			if (sendtorem)
+				printf("%s: ", host);
+			printf("Warning: %s is down: ", printer);
+			fd = open(ST, O_RDONLY);
+			if (fd >= 0) {
+				(void) flock(fd, LOCK_SH);
+				while ((i = read(fd, line, sizeof(line))) > 0)
+					(void) fwrite(line, 1, i, stdout);
+				(void) close(fd);	/* unlocks as well */
+			} else
+				putchar('\n');
+		}
+		if (statb.st_mode & 010) {
+			if (sendtorem)
+				printf("%s: ", host);
+			printf("Warning: %s queue is turned off\n", printer);
+		}
 	}
 	if (nitems == 0) {
 		if (!sendtorem)
@@ -174,23 +191,9 @@ displayq(format)
  */
 warn()
 {
-	struct stat statb;
-	int i, fd;
-
 	if (sendtorem)
 		printf("\n%s: ", host);
-	if (stat(LO, &statb) >= 0 && (statb.st_mode & 0100)) {
-		printf("Warning: %s is down: ", printer);
-		fd = open(ST, O_RDONLY);
-		if (fd >= 0) {
-			(void) flock(fd, LOCK_SH);
-			while ((i = read(fd, line, sizeof(line))) > 0)
-				(void) fwrite(line, 1, i, stdout);
-			(void) close(fd);	/* unlocks as well */
-		} else
-			putchar('\n');
-	} else
-		printf("Warning: no daemon present\n");
+	printf("Warning: no daemon present\n");
 	current[0] = '\0';
 }
 
