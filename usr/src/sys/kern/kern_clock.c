@@ -1,4 +1,4 @@
-/*	kern_clock.c	4.8	%G%	*/
+/*	kern_clock.c	4.9	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -47,12 +47,12 @@
  * but that hardclock interrupts should never be lost.
  */
 
+/*ARGSUSED*/
 hardclock(pc, ps)
 	caddr_t pc;
 {
 	register struct callo *p1;
 	register struct proc *pp;
-	register long *ip;
 	register int s, cpstate;
 
 	/*
@@ -137,6 +137,7 @@ double	ccpu = 0.95122942450071400909;		/* exp(-1/20) */
  * This routine is blocked by spl1(),
  * which doesn't block device interrupts!
  */
+/*ARGSUSED*/
 softclock(pc, ps)
 	caddr_t pc;
 {
