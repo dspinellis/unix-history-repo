@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)collect.c	8.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)collect.c	8.18 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <errno.h>
@@ -388,6 +388,27 @@ readerr:
 	{
 		usrerr("552 Message exceeds maximum fixed size (%ld)",
 			MaxMessageSize);
+	}
+
+	/* check for illegal 8-bit data */
+	if (HasEightBits)
+	{
+		e->e_flags |= EF_HAS8BIT;
+		if (bitset(MM_MIME8BIT, MimeMode))
+		{
+			/* convert it to MIME */
+			if (hvalue("MIME-Version", e->e_header) == NULL)
+			{
+				char mimebuf[20];
+
+				strcpy(mimebuf, "MIME-Version: 1.0");
+				chompheader(mimebuf, FALSE, e);
+			}
+			if (e->e_bodytype == NULL)
+				e->e_bodytype = "8BITMIME";
+		}
+		else if (!bitset(MM_PASS8BIT, MimeMode))
+			usrerr("554 Eight bit data not allowed");
 	}
 
 	if ((e->e_dfp = fopen(e->e_df, "r")) == NULL)
