@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)lock.1	6.2 (Berkeley) %G%
+.\"	@(#)lock.1	6.3 (Berkeley) %G%
 .\"
 .TH LOCK 1 ""
 .UC
@@ -11,19 +11,18 @@ lock \- reserve a terminal
 .SH SYNOPSIS
 .B lock
 [
-.B \-number
+.B -p
+] [
+.B -number
 ]
 .br
 .SH DESCRIPTION
-.I Lock
-requests a password from the user, reads it again for verification and
-then it will normally not relinquish the terminal until the password is
-repeated. There are three other conditions under it will terminate:
-it accepts the password for root as an alternative to the one given
-by the user, it will timeout after some interval of time,
-and it may be killed by somebody with the appropiate permission.
-The default time limit is 15 minutes but it may be changed with the
-.B \-number
-option where
-.I number
-is the time limit in minutes.
+\fILock\fP requests a password from the user, reads it again for verification
+and then it will normally not relinquish the terminal until the password is
+repeated.  There are three other conditions under which it will terminate: it
+accepts the password for root as an alternative to the one given by the
+user, it will timeout after some interval of time, and it may be killed by
+somebody with the appropriate permission. The default time limit is 15 minutes
+but it may be changed with the \fI-number\fP option where \fInumber\fP is the
+time limit in minutes.  The \fI-p\fP option has \fIlock\fP use the user's
+standard password instead of requesting another one.
