@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)autoconf.c	6.13 (Berkeley) %G%
+ *	@(#)autoconf.c	6.14 (Berkeley) %G%
  */
 
 /*
@@ -308,6 +308,9 @@ probesbi(psbi)
 		case NEX_MEM64I:
 		case NEX_MEM64L:
 		case NEX_MEM64LI:
+		case NEX_MEM256I:
+		case NEX_MEM256L:
+		case NEX_MEM256LI:
 			printf("mcr%d (el) at tr%d\n", nmcr, nexnum);
 			if (nmcr >= 4) {
 				printf("5 mcr's");
@@ -316,12 +319,15 @@ probesbi(psbi)
 			if (cpu == VAX_780)
 				mcrtype[nmcr] = M780EL;
 			mcraddr[nmcr++] = (struct mcr *)nxv;
-			if (nexcsr.nex_type != NEX_MEM64I)
+			if (nexcsr.nex_type != NEX_MEM64I && 
+			  nexcsr.nex_type != NEX_MEM256I)
 				break;
 			/* fall into ... */
 
 		case NEX_MEM64U:
 		case NEX_MEM64UI:
+		case NEX_MEM256U:
+		case NEX_MEM256UI:
 			printf("mcr%d (eu) at tr%d\n", nmcr, nexnum);
 			if (nmcr >= 4) {
 				printf("5 mcr's");
