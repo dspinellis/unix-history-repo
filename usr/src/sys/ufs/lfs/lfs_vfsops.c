@@ -4,62 +4,59 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_vfsops.c	7.61 (Berkeley) %G%
+ *	@(#)lfs_vfsops.c	7.62 (Berkeley) %G%
  */
 
-#ifdef LOGFS
-#include "param.h"
-#include "systm.h"
-#include "namei.h"
-#include "proc.h"
-#include "kernel.h"
-#include "vnode.h"
-#include "specdev.h"
-#include "mount.h"
-#include "buf.h"
-#include "file.h"
-#include "disklabel.h"
-#include "ioctl.h"
-#include "errno.h"
-#include "malloc.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/namei.h>
+#include <sys/proc.h>
+#include <sys/kernel.h>
+#include <sys/vnode.h>
+#include <sys/specdev.h>
+#include <sys/mount.h>
+#include <sys/buf.h>
+#include <sys/file.h>
+#include <sys/disklabel.h>
+#include <sys/ioctl.h>
+#include <sys/errno.h>
+#include <sys/malloc.h>
 #include "ioctl.h"
 #include "disklabel.h"
 #include "stat.h"
 
-#include "../ufs/quota.h"
-#include "../ufs/inode.h"
-#include "../ufs/ufsmount.h"
-#include "lfs.h"
-#include "lfs_extern.h"
+#include <ufs/quota.h>
+#include <ufs/inode.h>
+#include <ufs/ufsmount.h>
+#include <ufs/ufs_extern.h>
 
-static int	lfs_mountfs
-		    __P((struct vnode *, struct mount *, struct proc *));
+#include <lfs/lfs.h>
+#include <lfs/lfs_extern.h>
 
-static int 	lfs_umountdebug __P((struct mount *));
-static int 	lfs_vinvalbuf __P((register struct vnode *));
+static int lfs_mountfs __P((struct vnode *, struct mount *, struct proc *));
 
 struct vfsops lfs_vfsops = {
 	lfs_mount,
 	ufs_start,
 	lfs_unmount,
-	lfs_root,
+	ufs_root,
 	ufs_quotactl,
 	lfs_statfs,
 	lfs_sync,
-	lfs_fhtovp,
+	ufs_fhtovp,
 	ufs_vptofh,
-	lfs_init
+	lfs_init,
 };
 
 /*
  * Flag to allow forcible unmounting.
  */
-extern int doforce;						/* LFS */
+extern int doforce;
 
+int
 lfs_mountroot()
 {
-	/* LFS IMPLEMENT -- lfs_mountroot */
-	panic("lfs_mountroot");
+	panic("lfs_mountroot");		/* XXX -- implement */
 }
 
 /*
@@ -83,6 +80,10 @@ lfs_mount(mp, path, data, ndp, p)
 
 	if (error = copyin(data, (caddr_t)&args, sizeof (struct ufs_args)))
 		return (error);
+
+	/* Until LFS can do NFS right.		XXX */
+	if (args.exflags & MNT_EXPORTED)
+		return (EINVAL);
 	/*
 	 * Process export requests.
 	 */
@@ -216,7 +217,7 @@ lfs_mountfs(devvp, mp, p)
 		goto out;
 	}
 #ifdef DEBUG
-	dump_super(fs);
+	lfs_dump_super(fs);
 #endif
 
 	/* Allocate the mount structure, copy the superblock into it. */
@@ -249,6 +250,17 @@ lfs_mountfs(devvp, mp, p)
 	ump->um_devvp = devvp;
 	for (i = 0; i < MAXQUOTAS; i++)
 		ump->um_quotas[i] = NULLVP;
+
+	/* Initialize UFS glue. */
+	ump->um_blkatoff = lfs_blkatoff;
+	ump->um_write = lfs_write;
+	ump->um_iget = lfs_iget;
+	ump->um_ialloc = lfs_ialloc;
+	ump->um_ifree = lfs_ifree;
+	ump->um_itrunc = lfs_itrunc;
+	ump->um_iupdat = lfs_iupdat;
+	ump->um_bwrite = lfs_bwrite;
+	ump->um_bmap = lfs_bmap;
 
 	/* Read the ifile disk inode and store it in a vnode. */
 	error = bread(devvp, fs->lfs_idaddr, fs->lfs_bsize, NOCRED, &bp);
@@ -354,29 +366,6 @@ return(0);
 	fs = ump->um_lfs;
 	ronly = !fs->lfs_ronly;
 #endif
- * Return root of a filesystem
- */
-lfs_root(mp, vpp)
-	struct mount *mp;
-	struct vnode **vpp;
-{
-	register struct inode *ip;
-	struct inode *nip;
-	struct vnode tvp;
-	int error;
-
-	tvp.v_mount = mp;
-	ip = VTOI(&tvp);
-	ip->i_vnode = &tvp;
-	ip->i_dev = VFSTOUFS(mp)->um_dev;
-	error = lfs_iget(ip, (ino_t)ROOTINO, &nip);		/* LFS */
-	if (error)
-		return (error);
-	*vpp = ITOV(nip);
-	return (0);
-}
-
-/*
  * Get file system statistics.
  */
 lfs_statfs(mp, sbp, p)
@@ -425,8 +414,6 @@ lfs_statfs(mp, sbp, p)
 	return (0);
 }
 
-extern int	syncprt;					/* LFS */
-
 /*
  * Go through the disk queues to initiate sandbagged IO;
  * go through the inodes to write those that have been modified;
@@ -438,6 +425,7 @@ lfs_sync(mp, waitfor)
 	struct mount *mp;
 	int waitfor;
 {
+	extern int syncprt;
 	static int sync_lock, sync_want;
 	int error;
 
@@ -455,7 +443,7 @@ printf("lfs_sync\n");
 	sync_lock = 1;
 
 	if (syncprt)
-		bufstats();
+		ufs_bufstats();
 
 	/* All syncs must be checkpoints until roll-forward is implemented. */
 	error = lfs_segwrite(mp, 1);		
@@ -469,135 +457,3 @@ printf("lfs_sync\n");
 	}
 	return (error);
 }
-
-/*
- * File handle to vnode
- *
- * Have to be really careful about stale file handles:
- * - check that the inode number is in range
- * - call iget() to get the locked inode
- * - check for an unallocated inode (i_mode == 0)
- * - check that the generation number matches
- */
-lfs_fhtovp(mp, fhp, vpp)
-	register struct mount *mp;
-	struct fid *fhp;
-	struct vnode **vpp;
-{
-	register struct ufid *ufhp;
-	register LFS *fs;					/* LFS */
-	register struct inode *ip;
-	IFILE *ifp;
-	struct buf *bp;
-	struct inode *nip;
-	struct vnode tvp;
-	int error;
-
-	ufhp = (struct ufid *)fhp;
-#ifdef NOTLFS							/* LFS */
-	fs = VFSTOUFS(mp)->um_fs;
-	if (ufhp->ufid_ino < ROOTINO ||
-	    ufhp->ufid_ino >= fs->fs_ncg * fs->fs_ipg) {
-		*vpp = NULLVP;
-		return (EINVAL);
-	}
-#else
-	fs = VFSTOUFS(mp)->um_lfs;
-	if (ufhp->ufid_ino < ROOTINO) {
-		*vpp = NULLVP;
-		return (EINVAL);
-	}
-#endif
-	tvp.v_mount = mp;
-	ip = VTOI(&tvp);
-	ip->i_vnode = &tvp;
-	ip->i_dev = VFSTOUFS(mp)->um_dev;
-	if (error = lfs_iget(ip, ufhp->ufid_ino, &nip)) {	/* LFS */
-		*vpp = NULLVP;
-		return (error);
-	}
-	ip = nip;
-	if (ip->i_mode == 0) {
-		iput(ip);
-		*vpp = NULLVP;
-		return (EINVAL);
-	}
-	if (ip->i_gen != ufhp->ufid_gen) {
-		iput(ip);
-		*vpp = NULLVP;
-		return (EINVAL);
-	}
-	*vpp = ITOV(ip);
-	return (0);
-}
-
-static int
-lfs_umountdebug(mp)
-	struct mount *mp;
-{
-	struct vnode *vp;
-	int dirty;
-
-	dirty = 0;
-	if ((mp->mnt_flag & MNT_MPBUSY) == 0)
-		panic("umountdebug: not busy");
-loop:
-	for (vp = mp->mnt_mounth; vp; vp = vp->v_mountf) {
-		if (vget(vp))
-			goto loop;
-		dirty += lfs_vinvalbuf(vp);
-		vput(vp);
-		if (vp->v_mount != mp)
-			goto loop;
-	}
-	return (dirty);
-}
-static int
-lfs_vinvalbuf(vp)
-	register struct vnode *vp;
-{
-	register struct buf *bp;
-	struct buf *nbp, *blist;
-	int s, dirty = 0;
-
-	for (;;) {
-		if (blist = vp->v_dirtyblkhd)
-			/* void */;
-		else if (blist = vp->v_cleanblkhd)
-			/* void */;
-		else
-			break;
-		for (bp = blist; bp; bp = nbp) {
-printf("lfs_vinvalbuf: ino %d, lblkno %d, blkno %lx flags %xl\n",
-VTOI(vp)->i_number, bp->b_lblkno, bp->b_blkno, bp->b_flags);
-			nbp = bp->b_blockf;
-			s = splbio();
-			if (bp->b_flags & B_BUSY) {
-printf("lfs_vinvalbuf: buffer busy, would normally sleep\n");
-/*
-				bp->b_flags |= B_WANTED;
-				sleep((caddr_t)bp, PRIBIO + 1);
-*/
-				splx(s);
-				break;
-			}
-			bremfree(bp);
-			bp->b_flags |= B_BUSY;
-			splx(s);
-			if (bp->b_flags & B_DELWRI) {
-				dirty++;			/* XXX */
-printf("lfs_vinvalbuf: buffer dirty (DELWRI). would normally write\n");
-				break;
-			}
-			if (bp->b_vp != vp)
-				reassignbuf(bp, bp->b_vp);
-			else
-				bp->b_flags |= B_INVAL;
-			brelse(bp);
-		}
-	}
-	if (vp->v_dirtyblkhd || vp->v_cleanblkhd)
-		panic("lfs_vinvalbuf: flush failed");
-	return (dirty);
-}
-#endif /* LOGFS */
