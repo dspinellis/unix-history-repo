@@ -4,12 +4,14 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)buf.h	8.5 (Berkeley) %G%
+ *	@(#)buf.h	8.6 (Berkeley) %G%
  */
 
 #ifndef _SYS_BUF_H_
 #define	_SYS_BUF_H_
 #include <sys/queue.h>
+
+#define NOLIST ((struct buf *)0x87654321)
 
 /*
  * The buffer header describes an I/O operation in the kernel.
