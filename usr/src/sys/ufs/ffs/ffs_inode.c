@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_inode.c	8.4 (Berkeley) %G%
+ *	@(#)ffs_inode.c	8.5 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -328,7 +328,7 @@ done:
 		if (newblks[i] != oip->i_db[i])
 			panic("itrunc2");
 	if (length == 0 &&
-	    (ovp->v_dirtyblkhd.le_next || ovp->v_cleanblkhd.le_next))
+	    (ovp->v_dirtyblkhd.lh_first || ovp->v_cleanblkhd.lh_first))
 		panic("itrunc3");
 #endif /* DIAGNOSTIC */
 	/*
