@@ -1,4 +1,4 @@
-/*	kern_resource.c	6.4	84/11/20	*/
+/*	kern_resource.c	6.5	85/03/08	*/
 
 #include "param.h"
 #include "systm.h"
@@ -149,6 +149,7 @@ setrlimit()
 	} *uap = (struct a *)u.u_ap;
 	struct rlimit alim;
 	register struct rlimit *alimp;
+	extern int maxdmap;
 
 	if (uap->which >= RLIM_NLIMITS) {
 		u.u_error = EINVAL;
@@ -165,13 +166,17 @@ setrlimit()
 	switch (uap->which) {
 
 	case RLIMIT_DATA:
-		if (alim.rlim_cur > ctob(MAXDSIZ))
-			alim.rlim_cur = ctob(MAXDSIZ);
+		if (alim.rlim_cur > maxdmap)
+			alim.rlim_cur = maxdmap;
+		if (alim.rlim_max > maxdmap)
+			alim.rlim_max = maxdmap;
 		break;
 
 	case RLIMIT_STACK:
-		if (alim.rlim_cur > ctob(MAXSSIZ))
-			alim.rlim_cur = ctob(MAXSSIZ);
+		if (alim.rlim_cur > maxdmap)
+			alim.rlim_cur = maxdmap;
+		if (alim.rlim_max > maxdmap)
+			alim.rlim_max = maxdmap;
 		break;
 	}
 	*alimp = alim;
