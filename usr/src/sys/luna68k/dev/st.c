@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)st.c	7.1 (Berkeley) %G%
+ *	@(#)st.c	7.2 (Berkeley) %G%
  */
 
 /*
@@ -394,7 +394,7 @@ stintr(unit, stat)
 	int slave = dq->dq_slave;
 
 	if (bp->b_flags & B_READ) {
-		st_iostat[unit].imin = MIN(dq->dq_imin, st_iostat[unit].imin);
+		st_iostat[unit].imin = min(dq->dq_imin, st_iostat[unit].imin);
 		if (dq->dq_imax > st_iostat[unit].imax) {
 			st_iostat[unit].imax = dq->dq_imax;
 #ifdef ST_IOSTAT
@@ -403,7 +403,7 @@ stintr(unit, stat)
 #endif
 		}
 	} else {
-		st_iostat[unit].omin = MIN(dq->dq_omin, st_iostat[unit].omin);
+		st_iostat[unit].omin = min(dq->dq_omin, st_iostat[unit].omin);
 		if (dq->dq_omax > st_iostat[unit].omax) {
 			st_iostat[unit].omax = dq->dq_omax;
 #ifdef ST_IOSTAT
