@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)bt_open.c	5.22 (Berkeley) %G%";
+static char sccsid[] = "@(#)bt_open.c	5.23 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -165,9 +165,8 @@ __bt_open(fname, flags, mode, openinfo)
 			goto einval;
 		}
 		
-#define	USEFLAGS \
-	(O_CREAT|O_EXCL|O_EXLOCK|O_RDONLY|O_RDWR|O_SHLOCK|O_TRUNC)
-		if ((t->bt_fd = open(fname, flags & USEFLAGS, mode)) < 0)
+		if ((t->bt_fd =
+		    open(fname, flags & __USE_OPEN_FLAGS, mode)) < 0)
 			goto err;
 
 	} else {
