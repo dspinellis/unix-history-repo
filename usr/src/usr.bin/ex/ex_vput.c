@@ -1,5 +1,5 @@
 /* Copyright (c) 1981 Regents of the University of California */
-static char *sccsid = "@(#)ex_vput.c	7.1	%G%";
+static char *sccsid = "@(#)ex_vput.c	7.2	%G%";
 #include "ex.h"
 #include "ex_tty.h"
 #include "ex_vis.h"
@@ -1201,8 +1201,8 @@ def:
 		 * on vt100/tab132 as well as concept.
 		 */
 		if (XN && outcol % WCOLS == 0) {
-			vputc('\r', 0);
-			vputc('\n', 0);
+			vputc('\r');
+			vputc('\n');
 		}
 	}
 }
