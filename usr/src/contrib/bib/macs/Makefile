@@ -1,5 +1,5 @@
 #
-#	@(#)Makefile	1.6	85/09/10
+#	@(#)Makefile	1.7	87/11/16
 #
 DEST	      = $(DESTDIR)/usr/new/lib/bmac
 
@@ -8,6 +8,7 @@ MAKEFILE      = Makefile
 PRINT	      = vtroff
 
 SRCS	      = bib.astro \
+		bib.compsurv \
 		bib.foot \
 		bib.hnf \
 		bib.list \
