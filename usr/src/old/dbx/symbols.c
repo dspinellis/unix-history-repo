@@ -4,7 +4,7 @@
  * specifies the terms and conditions for redistribution.
  */
 
-static char sccsid[] = "@(#)symbols.c 5.1 %G%";
+static char sccsid[] = "@(#)symbols.c 5.2 %G%";
 /*
  * Symbol management.
  */
@@ -111,6 +111,8 @@ boolean showaggrs;
 
 #define nosource(f) (not (f)->symvalue.funcv.src)
 #define isinline(f) ((f)->symvalue.funcv.inline)
+
+#define isreg(s)		(s->level < 0)
 
 #include "tree.h"
 
