@@ -1,5 +1,5 @@
 #! /bin/sh -
-#	@(#)makesyscalls.sh	7.3 (Berkeley) %G%
+#	@(#)makesyscalls.sh	7.4 (Berkeley) %G%
 
 # name of compat option:
 compat=COMPAT_43
@@ -104,9 +104,9 @@ awk < $1 "
 	}
 	$2 == "COMPAT" {
 		printf("int\to%s();\n", $4) > syscompat
-		printf("\tcompat(%d,%s),\t\t/* %d = old_%s */\n", \
+		printf("\tcompat(%d,%s),\t\t/* %d = old %s */\n", \
 		    $3, $4, syscall, $5) > sysent
-		printf("\t\"old %s\",\t\t/* %d = old_%s */\n", \
+		printf("\t\"old_%s\",\t\t/* %d = old %s */\n", \
 		    $5, syscall, $5) > sysnames
 		printf("\t\t\t\t/* %d is old_%s */\n", \
 		    syscall, comment) > syshdr
