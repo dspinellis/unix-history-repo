@@ -1,4 +1,4 @@
-VERSION=3.5
+VERSION=3.6
 #
 # Ex skeletal makefile for VAX VM/Unix version 7
 #
@@ -28,6 +28,8 @@ XSTR=	${BINDIR}/xstr
 DEBUGFLAGS=	-DMDEBUG -DTRACE -g
 NONDEBUGFLAGS=	-O
 DEB=	${NONDEBUGFLAGS}	# or ${DEBUGFLAGS} to to debug
+# NOTE: TIMEBOMB is NOT intended for production use, or even to
+# get off our vax.  It is there to help nail a bug that happens rarely.
 CFLAGS=	-DTABS=8 -DCRYPT -DLISPCODE -DCHDIR -DUCVISUAL -DVFORK -DVMUNIX -DTIMEBOMB ${DEB}
 LDFLAGS=	-z		# or -i or -n
 TERMLIB=	-ltermcap
