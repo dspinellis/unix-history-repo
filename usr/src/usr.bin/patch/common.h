@@ -135,5 +135,4 @@ char *realloc();
 char *strcpy();
 char *strcat();
 long atol();
-long lseek();
 char *mktemp();
