@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)n10.c	4.2 %G%";
+static char sccsid[] = "@(#)n10.c	4.3 %G%";
 #endif lint
 
 #include "tdef.h"
@@ -147,6 +147,7 @@ ptout1()
 			bdmode = 0;
 		}
 	}
+
 	if(xfont == ulfont){
 		for(k=w/t.Char;k>0;k--)oput('_');
 		for(k=w/t.Char;k>0;k--)oput('\b');
@@ -158,6 +159,13 @@ ptout1()
 			oput(' ');
 		}else{
 			if(plotmode)oputs(t.plotoff);
+			/*
+			 * simulate bold font as overstrike if no t.bdon
+			 */
+			if (xfont == 2 && !(*t.bdon & 0377)) {
+				oput(*codep);
+				oput('\b');
+			}
 			*obufp++ = *codep++;
 			if(obufp == (obuf + OBUFSZ + ascii - 1))flusho();
 /*			oput(*codep++);*/
