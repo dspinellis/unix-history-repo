@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_inode.c	7.59 (Berkeley) %G%
+ *	@(#)ffs_inode.c	7.60 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -102,8 +102,6 @@ ffs_update(ap)
 /*
  * Truncate the inode ip to at most length size.  Free affected disk
  * blocks -- the blocks of the file are removed in reverse order.
- *
- * NB: triple indirect blocks are untested.
  */
 ffs_truncate(ap)
 	struct vop_truncate_args /* {
@@ -124,12 +122,14 @@ ffs_truncate(ap)
 	struct buf *bp;
 	int offset, size, level;
 	long count, nblocks, blocksreleased = 0;
+	struct timeval tv;
 	register int i;
 	int aflags, error, allerror;
 	struct inode tip;
 	off_t osize;
 
 	oip = VTOI(ovp);
+	tv = time;
 	if (ovp->v_type == VLNK && ovp->v_mount->mnt_maxsymlinklen > 0) {
 #ifdef DIAGNOSTIC
 		if (length != 0)
@@ -138,11 +138,11 @@ ffs_truncate(ap)
 		bzero((char *)&oip->i_shortlink, (u_int)oip->i_size);
 		oip->i_size = 0;
 		oip->i_flag |= ICHG|IUPD;
-		return (VOP_UPDATE(ovp, &time, &time, 1));
+		return (VOP_UPDATE(ovp, &tv, &tv, 1));
 	}
 	if (oip->i_size <= length) {
 		oip->i_flag |= ICHG|IUPD;
-		return (VOP_UPDATE(ovp, &time, &time, 1));
+		return (VOP_UPDATE(ovp, &tv, &tv, 1));
 	}
 	vnode_pager_setsize(ovp, (u_long)length);
 	/*
@@ -206,7 +206,7 @@ ffs_truncate(ap)
 		oip->i_db[i] = 0;
 	oip->i_flag |= ICHG|IUPD;
 	allerror = vinvalbuf(ovp, length > 0, ap->a_cred, ap->a_p);
-	if (error = VOP_UPDATE(ovp, &time, &time, MNT_WAIT))
+	if (error = VOP_UPDATE(ovp, &tv, &tv, MNT_WAIT))
 		allerror = error;
 
 	/*
