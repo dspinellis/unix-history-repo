@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)pwd.h	5.2 (Berkeley) %G%
+ *	@(#)pwd.h	5.3 (Berkeley) %G%
  */
 
 #include <sys/types.h>
@@ -47,15 +47,15 @@ struct passwd *getpwent(void);
 struct passwd *getpwuid(int);
 struct passwd *getpwnam(const char *);
 int setpwent(void);
-int endpwent(void);
-int setpwfile(const char *);
+void endpwent(void);
+void setpwfile(const char *);
 int setpassent(int);
 #else
 struct passwd *getpwent();
 struct passwd *getpwuid();
 struct passwd *getpwnam();
 int setpwent();
-int endpwent();
-int setpwfile();
+void endpwent();
+void setpwfile();
 int setpassent();
 #endif
