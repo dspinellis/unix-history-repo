@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)collect.c	8.39 (Berkeley) %G%";
+static char sccsid[] = "@(#)collect.c	8.40 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <errno.h>
@@ -514,6 +514,13 @@ readerr:
 			e->e_status = "5.6.1";
 			usrerr("554 Eight bit data not allowed");
 		}
+	}
+	else
+	{
+		/* if it claimed to be 8 bits, well, it lied.... */
+		if (e->e_bodytype != NULL &&
+		    strcasecmp(e->e_bodytype, "8BITMIME") == 0)
+			e->e_bodytype = "7BIT";
 	}
 
 	if ((e->e_dfp = fopen(dfname, "r")) == NULL)

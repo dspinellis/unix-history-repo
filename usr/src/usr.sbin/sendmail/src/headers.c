@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)headers.c	8.59 (Berkeley) %G%";
+static char sccsid[] = "@(#)headers.c	8.60 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <errno.h>
@@ -511,9 +511,14 @@ eatheader(e, full)
 		define('a', p, e);
 
 	/* check to see if this is a MIME message */
-	if ((e->e_bodytype != NULL && strcasecmp(e->e_bodytype, "8BITMIME") == 0) ||
+	if ((e->e_bodytype != NULL &&
+	     strcasecmp(e->e_bodytype, "8BITMIME") == 0) ||
 	    hvalue("MIME-Version", e->e_header) != NULL)
+	{
 		e->e_flags |= EF_IS_MIME;
+		if (HasEightBits)
+			e->e_bodytype = "8BITMIME";
+	}
 
 	/*
 	**  From person in antiquated ARPANET mode
