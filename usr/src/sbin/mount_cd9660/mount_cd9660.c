@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *      @(#)mount_cd9660.c	8.6 (Berkeley) %G%
+ *      @(#)mount_cd9660.c	8.7 (Berkeley) %G%
  */
 
 #ifndef lint
@@ -19,7 +19,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mount_cd9660.c	8.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)mount_cd9660.c	8.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -80,13 +80,13 @@ main(argc, argv)
 	dir = argv[1];
 
 #define DEFAULT_ROOTUID	-2
+	/*
+	 * ISO 9660 filesystems are not writeable.
+	 */
+	mntflags |= MNT_RDONLY;
+	args.export.ex_flags = MNT_EXRDONLY;
 	args.fspec = dev;
 	args.export.ex_root = DEFAULT_ROOTUID;
-
-	if (mntflags & MNT_RDONLY)
-		args.export.ex_flags = MNT_EXRDONLY;
-	else
-		args.export.ex_flags = 0;
 	args.flags = opts;
 
 	if (mount("cd9660", dir, mntflags, &args) < 0)
