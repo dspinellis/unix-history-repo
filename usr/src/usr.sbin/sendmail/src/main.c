@@ -13,7 +13,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	6.20 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	6.21 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -286,7 +286,6 @@ main(argc, argv, envp)
 	(void) signal(SIGPIPE, SIG_IGN);
 	OldUmask = umask(0);
 	OpMode = MD_DELIVER;
-	MotherPid = getpid();
 	FullName = getenv("NAME");
 
 	errno = 0;
@@ -784,6 +783,8 @@ main(argc, argv, envp)
 	{
 		if (!tTd(0, 1))
 		{
+			FILE *pidf;
+
 			/* put us in background */
 			i = fork();
 			if (i < 0)
@@ -791,8 +792,15 @@ main(argc, argv, envp)
 			if (i != 0)
 				exit(0);
 
-			/* get our pid right */
-			MotherPid = getpid();
+			if (OpMode == MD_DAEMON)
+			{
+				pidf = fopen(PidFile, "w");
+				if (pidf != NULL)
+				{
+					fprintf(pidf, "%d\n", getpid());
+					fclose(pidf);
+				}
+			}
 
 			/* disconnect from our controlling tty */
 			disconnect(TRUE);
@@ -917,7 +925,7 @@ finis()
 	dropenvelope(CurEnv);
 
 	/* flush any cached connections */
-	mci_flush();
+	mci_flush(TRUE, NULL);
 
 	/* post statistics */
 	poststats(StatFile);

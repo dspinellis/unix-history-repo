@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)envelope.c	6.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)envelope.c	6.10 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -118,7 +118,7 @@ dropenvelope(e)
 	{
 		auto ADDRESS *rlist = NULL;
 
-		sendtolist(e->e_receiptto, (ADDRESS *) NULL, &rlist, e);
+		(void) sendtolist(e->e_receiptto, (ADDRESS *) NULL, &rlist, e);
 		(void) returntosender("Return receipt", rlist, FALSE, e);
 	}
 
@@ -584,7 +584,7 @@ setsender(from, e)
 	rewrite(pvp, 3);
 	rewrite(pvp, 1);
 	rewrite(pvp, 4);
-	cataddr(pvp, buf, sizeof buf);
+	cataddr(pvp, buf, sizeof buf, '\0');
 	e->e_sender = e->e_returnpath = newstr(buf);
 
 	define('f', e->e_sender, e);

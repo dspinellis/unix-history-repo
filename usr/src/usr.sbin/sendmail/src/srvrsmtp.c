@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)srvrsmtp.c	6.10 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	6.11 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)srvrsmtp.c	6.10 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	6.11 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -116,6 +116,7 @@ smtp(e)
 	message("220", "%s", inp);
 	SmtpPhase = "startup";
 	sendinghost = NULL;
+	gothello = FALSE;
 	for (;;)
 	{
 		/* arrange for backout */
@@ -216,6 +217,11 @@ smtp(e)
 				sendinghost = RealHostName;
 
 			/* check for validity of this command */
+			if (!gothello && bitset(PRIV_NEEDMAILHELO, PrivacyFlags))
+			{
+				message("503", "Polite people say HELO first");
+				break;
+			}
 			if (hasmail)
 			{
 				message("503", "Sender already specified");
@@ -226,6 +232,11 @@ smtp(e)
 				errno = 0;
 				syserr("Nested MAIL command: MAIL %s", p);
 				finis();
+			}
+			if (!enoughspace())
+			{
+				message("452", "Insufficient disk space; try again later");
+				break;
 			}
 
 			/* fork a subprocess to process this command */
@@ -365,6 +376,17 @@ smtp(e)
 			break;
 
 		  case CMDVRFY:		/* vrfy -- verify address */
+			if (bitset(PRIV_NOVRFY|PRIV_NOEXPN, PrivacyFlags))
+			{
+				message("502", "That's none of your business");
+				break;
+			}
+			else if (!gothello &&
+				 bitset(PRIV_NEEDVRFYHELO|PRIV_NEEDEXPNHELO, PrivacyFlags))
+			{
+				message("503", "I demand that you introduce yourself first");
+				break;
+			}
 			if (runinchild("SMTP-VRFY", e) > 0)
 				break;
 			setproctitle("%s: %s", CurHostName, inp);

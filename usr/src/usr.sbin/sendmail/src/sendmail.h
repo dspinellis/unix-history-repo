@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	6.13 (Berkeley) %G%
+ *	@(#)sendmail.h	6.14 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	6.13		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	6.14		%G%";
 # endif lint
 # else /*  _DEFINE */
 # define EXTERN extern
@@ -571,10 +571,24 @@ EXTERN char	ErrorMode;	/* error mode, see below */
 #define EM_BERKNET	'e'		/* special berknet processing */
 #define EM_QUIET	'q'		/* don't print messages (stat only) */
 
-/* offset used to issure that the error messages for name server error
- * codes are unique.
- */
+/* Offset used to ensure that name server error * codes are unique */
 #define	MAX_ERRNO	100
+
+/* privacy flags */
+#define PRIV_PUBLIC		0	/* what have I got to hide? */
+#define PRIV_NEEDMAILHELO	00001	/* insist on HELO for MAIL, at least */
+#define PRIV_NEEDEXPNHELO	00002	/* insist on HELO for EXPN */
+#define PRIV_NEEDVRFYHELO	00004	/* insist on HELO for VRFY */
+#define PRIV_NOEXPN		00010	/* disallow EXPN command entirely */
+#define PRIV_NOVRFY		00020	/* disallow VRFY command entirely */
+#define PRIV_GOAWAY		0xffff	/* don't give no info, anyway, anyhow */
+
+/* struct defining such things */
+struct prival
+{
+	char	*pv_name;	/* name of privacy flag */
+	int	pv_flag;	/* numeric level */
+};
 /*
 **  Global variables.
 */
@@ -611,7 +625,6 @@ EXTERN int	OldUmask;	/* umask when sendmail starts up */
 EXTERN int	Errors;		/* set if errors (local to single pass) */
 EXTERN int	ExitStat;	/* exit status code */
 EXTERN int	AliasLevel;	/* depth of aliasing */
-EXTERN int	MotherPid;	/* proc id of parent process */
 EXTERN int	LineNumber;	/* line number in current input */
 EXTERN time_t	ReadTimeout;	/* timeout on reads */
 EXTERN int	LogLevel;	/* level of logging to perform */
@@ -635,8 +648,10 @@ EXTERN char	*CurHostName;	/* current host we are dealing with */
 EXTERN jmp_buf	TopFrame;	/* branch-to-top-of-loop-on-error frame */
 EXTERN bool	QuickAbort;	/*  .... but only if we want a quick abort */
 EXTERN bool	LogUsrErrs;	/* syslog user errors (e.g., SMTP RCPT cmd) */
+EXTERN int	PrivacyFlags;	/* privacy flags */
 extern char	*ConfFile;	/* location of configuration file [conf.c] */
 extern char	*FreezeFile;	/* location of frozen memory image [conf.c] */
+extern char	*PidFile;	/* location of proc id file [conf.c] */
 extern char	Arpa_Info[];	/* the reply code for Arpanet info [conf.c] */
 extern ADDRESS	NullAddress;	/* a null (template) address [main.c] */
 EXTERN char	SpaceSub;	/* substitution for <lwsp> */
@@ -654,6 +669,7 @@ EXTERN bool	MatchGecos;	/* look for user names in gecos field */
 EXTERN int	MaxMciCache;	/* maximum entries in MCI cache */
 EXTERN time_t	MciCacheTimeout;	/* maximum idle time on connections */
 EXTERN char	*ForwardPath;	/* path to search for .forward files */
+EXTERN long	MinBlocksFree;	/* minimum number of blocks free on queue fs */
 /*
 **  Trace information
 */

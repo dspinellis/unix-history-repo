@@ -29,15 +29,15 @@ ERROR: DBM is no longer supported -- use NDBM instead.
 #ifndef lint
 #ifdef NEWDB
 #ifdef NDBM
-static char sccsid[] = "@(#)alias.c	6.13 (Berkeley) %G% (with NEWDB and NDBM)";
+static char sccsid[] = "@(#)alias.c	6.14 (Berkeley) %G% (with NEWDB and NDBM)";
 #else
-static char sccsid[] = "@(#)alias.c	6.13 (Berkeley) %G% (with NEWDB)";
+static char sccsid[] = "@(#)alias.c	6.14 (Berkeley) %G% (with NEWDB)";
 #endif
 #else
 #ifdef NDBM
-static char sccsid[] = "@(#)alias.c	6.13 (Berkeley) %G% (with NDBM)";
+static char sccsid[] = "@(#)alias.c	6.14 (Berkeley) %G% (with NDBM)";
 #else
-static char sccsid[] = "@(#)alias.c	6.13 (Berkeley) %G% (without NEWDB or NDBM)";
+static char sccsid[] = "@(#)alias.c	6.14 (Berkeley) %G% (without NEWDB or NDBM)";
 #endif
 #endif
 #endif /* not lint */
@@ -112,6 +112,7 @@ alias(a, sendq, e)
 	register ENVELOPE *e;
 {
 	register char *p;
+	int naliases;
 	extern ADDRESS *sendto();
 	extern char *aliaslookup();
 
@@ -148,10 +149,11 @@ alias(a, sendq, e)
 	if (LogLevel > 9)
 		syslog(LOG_INFO, "%s: alias %s => %s", e->e_id, a->q_paddr, p);
 #endif
+	a->q_flags &= ~QSELFREF;
 	AliasLevel++;
 	a->q_child = sendto(p, 1, a, 0);
 	AliasLevel--;
-	if (!bitset(QSELFREF, a->q_flags))
+	if (naliases > 0 && !bitset(QSELFREF, a->q_flags))
 	{
 		if (tTd(27, 5))
 		{

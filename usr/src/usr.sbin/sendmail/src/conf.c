@@ -7,10 +7,11 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	6.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	6.18 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/ioctl.h>
+# include <sys/param.h>
 # include <pwd.h>
 # include "sendmail.h"
 # include "pathnames.h"
@@ -103,6 +104,25 @@ char	Arpa_Usrerr[] =		"501";	/* some (fatal) user error */
 
 char	*ConfFile =	_PATH_SENDMAILCF;	/* runtime configuration */
 char	*FreezeFile =	_PATH_SENDMAILFC;	/* frozen version of above */
+char	*PidFile =	_PATH_SENDMAILPID;	/* stores daemon proc id */
+
+
+
+/*
+**  Privacy values
+*/
+
+struct prival PrivacyValues[] =
+{
+	"public",		PRIV_PUBLIC,
+	"needmailhelo",		PRIV_NEEDMAILHELO,
+	"needexpnnelo",		PRIV_NEEDEXPNHELO,
+	"needvrfyhelo",		PRIV_NEEDVRFYHELO,
+	"noexpn",		PRIV_NOEXPN,
+	"novrfy",		PRIV_NOVRFY,
+	"goaway",		PRIV_GOAWAY,
+	NULL,			PRIV_PUBLIC,
+};
 
 
 
@@ -999,3 +1019,48 @@ initgroups(name, basegid)
 }
 
 #endif
+/*
+**  ENOUGHSPACE -- check to see if there is enough free space on the queue fs
+**
+**	Only implemented if you have statfs.
+**
+**	Parameters:
+**		none.
+**
+**	Returns:
+**		TRUE if there is enough space.
+**		FALSE otherwise.
+*/
+
+#ifndef HASSTATFS
+# if defined(BSD4_4) || defined(__osf__)
+#  define HASSTATFS
+# endif
+#endif
+
+#ifdef HASSTATFS
+#include <sys/mount.h>
+#endif
+
+bool
+enoughspace()
+{
+#ifdef HASSTATFS
+	struct statfs fs;
+	extern int errno;
+	extern char *errstring();
+
+	if (MinBlocksFree > 0 && statfs(QueueDir, &fs) >= 0)
+	{
+		if (tTd(4, 80))
+			printf("enoughspace: bfree=%ld, min=%ld\n",
+				fs.f_bfree, MinBlocksFree);
+		if (fs.f_bfree < MinBlocksFree)
+			return FALSE;
+	}
+	else if (tTd(4, 80))
+		printf("enoughspace: min=%ld: %s\n",
+			MinBlocksFree, errstring(errno));
+#endif
+	return TRUE;
+}

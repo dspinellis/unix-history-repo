@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)collect.c	6.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)collect.c	6.5 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <errno.h>
@@ -246,14 +246,16 @@ readerr:
 	if ((feof(InChannel) || ferror(InChannel)) && OpMode == MD_SMTP)
 	{
 		int usrerr(), syserr();
+
 # ifdef LOG
-		if (RealHostName != NULL && LogLevel > 0)
+		if (RealHostName != NULL && LogLevel > 0 && feof(InChannel))
 			syslog(LOG_NOTICE,
 			    "collect: unexpected close on connection from %s: %m\n",
 			    e->e_from.q_paddr, RealHostName);
 # endif
-		(feof(InChannel) ? usrerr: syserr)
-			("collect: unexpected close, from=%s", e->e_from.q_paddr);
+		(feof(InChannel) ? usrerr : syserr)
+			("collect: unexpected close on connection, from=%s",
+				e->e_from.q_paddr);
 
 		/* don't return an error indication */
 		e->e_to = NULL;

@@ -4,8 +4,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pathnames.h	6.1 (Berkeley) %G%
+ *	@(#)pathnames.h	6.2 (Berkeley) %G%
  */
 
-#define	_PATH_SENDMAILCF	"/etc/sendmail.cf";
-#define	_PATH_SENDMAILFC	"/etc/sendmail.fc";
+#define	_PATH_SENDMAILCF	"/etc/sendmail.cf"
+#define	_PATH_SENDMAILFC	"/etc/sendmail.fc"
+#define _PATH_SENDMAILPID	"/etc/sendmail.pid"

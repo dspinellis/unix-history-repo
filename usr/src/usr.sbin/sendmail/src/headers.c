@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)headers.c	6.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)headers.c	6.8 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <errno.h>
@@ -314,8 +314,8 @@ eatheader(e, queuejob)
 		    !bitset(H_DEFAULT, h->h_flags) &&
 		    (!bitset(EF_RESENT, e->e_flags) || bitset(H_RESENT, h->h_flags)))
 		{
-			sendtolist(h->h_value, (ADDRESS *) NULL,
-				   &e->e_sendqueue, e);
+			(void) sendtolist(h->h_value, (ADDRESS *) NULL,
+					  &e->e_sendqueue, e);
 		}
 
 		/* save the message-id for logging */
@@ -337,7 +337,8 @@ eatheader(e, queuejob)
 
 		/* see if this is an errors-to header */
 		if (bitset(H_ERRORSTO, h->h_flags))
-			sendtolist(h->h_value, (ADDRESS *) NULL, &e->e_errorqueue, e);
+			(void) sendtolist(h->h_value, (ADDRESS *) NULL,
+					  &e->e_errorqueue, e);
 	}
 	if (tTd(32, 1))
 		printf("----------------------------\n");

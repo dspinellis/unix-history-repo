@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	6.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)recipient.c	6.13 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/types.h>
@@ -59,6 +59,7 @@ sendto(list, copyf, ctladdr, qflags)
 	register ADDRESS *al;	/* list of addresses to send to */
 	bool firstone;		/* set on first address sent */
 	char delimiter;		/* the address delimiter */
+	int naddrs;
 	ADDRESS *sibl;		/* sibling pointer in tree */
 	ADDRESS *prev;		/* previous sibling */
 
@@ -79,6 +80,7 @@ sendto(list, copyf, ctladdr, qflags)
 
 	firstone = TRUE;
 	al = NULL;
+	naddrs = 0;
 
 	for (p = list; *p != '\0'; )
 	{
@@ -139,6 +141,7 @@ sendto(list, copyf, ctladdr, qflags)
 	}
 
 	e->e_to = NULL;
+	return (naddrs);
 	if (ctladdr != NULL)
 		ctladdr->q_child = prev;
 	return (prev);
@@ -656,6 +659,7 @@ include(fname, forwarding, ctladdr, sendq, e)
 	char *oldfilename = FileName;
 	int oldlinenumber = LineNumber;
 	register EVENT *ev = NULL;
+	int nincludes;
 	char buf[MAXLINE];
 	static int includetimeout();
 
@@ -718,6 +722,8 @@ include(fname, forwarding, ctladdr, sendq, e)
 	/* read the file -- each line is a comma-separated list. */
 	FileName = fname;
 	LineNumber = 0;
+	ctladdr->q_flags &= ~QSELFREF;
+	nincludes = 0;
 	while (fgets(buf, sizeof buf, fp) != NULL)
 	{
 		register char *p = strchr(buf, '\n');
@@ -740,7 +746,7 @@ include(fname, forwarding, ctladdr, sendq, e)
 		sendto(buf, 1, ctladdr, 0);
 		AliasLevel--;
 	}
-	if (!bitset(QSELFREF, ctladdr->q_flags))
+	if (nincludes > 0 && !bitset(QSELFREF, ctladdr->q_flags))
 	{
 		if (tTd(27, 5))
 		{

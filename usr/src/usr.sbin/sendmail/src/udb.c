@@ -8,9 +8,9 @@
 
 #ifndef lint
 #ifdef USERDB
-static char sccsid [] = "@(#)udb.c	6.8 (Berkeley) %G% (with USERDB)";
+static char sccsid [] = "@(#)udb.c	6.9 (Berkeley) %G% (with USERDB)";
 #else
-static char sccsid [] = "@(#)udb.c	6.8 (Berkeley) %G% (without USERDB)";
+static char sccsid [] = "@(#)udb.c	6.9 (Berkeley) %G% (without USERDB)";
 #endif
 #endif
 
@@ -115,6 +115,7 @@ udbexpand(a, sendq, e)
 	bool breakout;
 	register struct udbent *up;
 	int keylen;
+	int naddrs;
 	char keybuf[MAXKEY];
 	char buf[BUFSIZ];
 
@@ -178,6 +179,8 @@ udbexpand(a, sendq, e)
 				continue;
 			}
 
+			naddrs = 0;
+			a->q_flags &= ~QSELFREF;
 			while (i == 0 && key.size == keylen &&
 					bcmp(key.data, keybuf, keylen) == 0)
 			{
@@ -196,7 +199,7 @@ udbexpand(a, sendq, e)
 						e->e_id, e->e_to, user);
 #endif
 				AliasLevel++;
-				sendtolist(user, a, sendq, e);
+				naddrs += sendtolist(user, a, sendq, e);
 				AliasLevel--;
 
 				if (user != buf)
@@ -205,7 +208,7 @@ udbexpand(a, sendq, e)
 				/* get the next record */
 				i = (*up->udb_dbp->seq)(up->udb_dbp, &key, &info, R_NEXT);
 			}
-			if (!bitset(QSELFREF, a->q_flags))
+			if (naddrs > 0 && !bitset(QSELFREF, a->q_flags))
 			{
 				if (tTd(28, 5))
 				{
@@ -234,10 +237,11 @@ udbexpand(a, sendq, e)
 				user = xalloc(i + 1);
 			(void) sprintf(user, "%s@%s", a->q_user, up->udb_fwdhost);
 			message(Arpa_Info, "expanded to %s", user);
+			a->q_flags &= ~QSELFREF;
 			AliasLevel++;
-			sendtolist(user, a, sendq, e);
+			naddrs = sendtolist(user, a, sendq, e);
 			AliasLevel--;
-			if (!bitset(QSELFREF, a->q_flags))
+			if (naddrs > 0 && !bitset(QSELFREF, a->q_flags))
 			{
 				if (tTd(28, 5))
 				{

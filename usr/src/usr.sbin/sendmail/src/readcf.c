@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readcf.c	6.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)readcf.c	6.9 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -926,6 +926,10 @@ setoption(opt, val, sticky)
 			SpaceSub = ' ';
 		break;
 
+	  case 'b':		/* minimum number of blocks free on queue fs */
+		MinBlocksFree = atol(val);
+		break;
+
 	  case 'c':		/* don't connect to "expensive" mailers */
 		NoConnect = atobool(val);
 		break;
@@ -1091,6 +1095,32 @@ setoption(opt, val, sticky)
 			CurEnv->e_flags |= EF_OLDSTYLE;
 		else
 			CurEnv->e_flags &= ~EF_OLDSTYLE;
+		break;
+
+	  case 'p':		/* select privacy level */
+		p = val;
+		for (;;)
+		{
+			register struct prival *pv;
+			extern struct prival PrivacyValues[];
+
+			while (isascii(*p) && (isspace(*p) || ispunct(*p)))
+				p++;
+			if (*p == '\0')
+				break;
+			val = p;
+			while (isascii(*p) && isalnum(*p))
+				p++;
+			if (*p != '\0')
+				*p++ = '\0';
+
+			for (pv = PrivacyValues; pv->pv_name != NULL; pv++)
+			{
+				if (strcasecmp(val, pv->pv_name) == 0)
+					break;
+			}
+			PrivacyFlags |= pv->pv_flag;
+		}
 		break;
 
 	  case 'P':		/* postmaster copy address for returned mail */

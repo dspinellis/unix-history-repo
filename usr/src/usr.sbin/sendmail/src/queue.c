@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	6.13 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	6.14 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	6.13 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	6.14 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -924,7 +924,7 @@ readqf(e)
 			break;
 
 		  case 'E':		/* specify error recipient */
-			sendtolist(&bp[1], ctladdr, &e->e_errorqueue, e);
+			(void) sendtolist(&bp[1], ctladdr, &e->e_errorqueue, e);
 			break;
 
 		  case 'H':		/* header */
