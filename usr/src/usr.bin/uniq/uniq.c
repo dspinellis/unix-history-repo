@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)uniq.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)uniq.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <stdio.h>
@@ -75,7 +75,7 @@ done:	argc -= optind;
 		dflag = uflag = 1;
 
 	/* because of the +, getopt is messed up */
-	for (; **argv == '+' || **argv == '-'; ++argv, --argc)
+	for (; argc > 0 && (**argv == '+' || **argv == '-'); ++argv, --argc)
 		switch (**argv) {
 		case '+':
 			if ((numchars = atoi(*argv + 1)) < 0)
