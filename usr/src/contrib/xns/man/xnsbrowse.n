@@ -1,0 +1,57 @@
+.TH "XNSBROWSE" 1 "6-FEB-87" "Xerox (WRC)"
+.\" $Header: xnsbrowse.n,v 1.1 87/04/01 13:56:32 ed Exp $
+.SH NAME
+xnsbrowse - View files stored remotely on XNS file servers
+.SH SYNOPSIS
+.B xnsbrowse 
+[
+.B \-f
+] [
+.B \-v
+] [
+.B \-s
+] 
+.B file1 ... filen
+.SH DESCRIPTION
+.I Xnsbrowse
+retrieves the files named in \fIfile1\fR through \fIfilen\fR and pipes them
+to either the viewer specified in the environment variable PAGER or
+directly to \fIstdout\fR.
+.PP
+Only simple text files are viewable. An error will be reported if an attempt
+is made to view a file of another type.
+.PP
+The arguments specified in \fIfile1\fR through \fIfilen\fR may be in one
+of the following three forms, where host is a Clearinghouse name of the form 
+\fIobject:domain:organization\fR (domain and organization are optional):
+.nf
+	[host]filename
+	(host)filename
+	host:filename
+.fi
+.PP
+Credentials for accessing the remote service are determined either from the
+environment variables XNSNAME and XNSPASSWD or, if not defined, by prompting
+the user.
+.PP
+The possible options are:
+.TP
+.B -f
+causes the FilingSubset Protocol to be used instead of Filing.
+.TP
+.B -v
+causes a message to be printed as each file is retrieved.
+.TP
+.BI -s
+causes the output to be delivered to \fIstdout\fR regardless of the value of
+the environment variable PAGER.
+.SH "SEE ALSO"
+more(1), xnscreds(1N)
+.br
+Filing Protocol, \s8XSIS\s0 108605 (May 1986)
+.SH BUGS
+There should be a way to pass other command line switches to the program
+specified in PAGER directly.
+.SH AUTHORS
+Ed Flint
+
