@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)chown.2	6.5 (Berkeley) %G%
+.\"	@(#)chown.2	6.6 (Berkeley) %G%
 .\"
 .TH CHOWN 2 ""
 .UC 4
@@ -48,6 +48,12 @@ with the file locking primitives (see
 .PP
 One of the owner or group id's
 may be left unchanged by specifying it as \-1.
+.PP
+If the final component of
+.I path
+is a symbolic link,
+the ownership and group of the symbolic link is changed,
+not the ownership and group of the file or directory to which it points.
 .SH "RETURN VALUE
 Zero is returned if the operation was successful;
 \-1 is returned if an error occurs, with a more specific
