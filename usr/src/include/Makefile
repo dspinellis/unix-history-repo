@@ -1,4 +1,4 @@
-#	Makefile	4.7	83/12/02
+#	Makefile	4.8	84/04/11
 #
 # Doing a make install builds /usr/include
 #
@@ -15,7 +15,7 @@ DESTDIR=
 SUBDIRS=arpa pascal
 STD=	a.out.h ar.h assert.h ctype.h curses.h dbm.h ndbm.h \
 	disktab.h dumprestor.h fcntl.h fstab.h grp.h \
-	lastlog.h math.h mp.h mtab.h netdb.h nlist.h pwd.h ranlib.h \
+	lastlog.h math.h mp.h mtab.h netdb.h nlist.h ptrace.h pwd.h ranlib.h \
 	setjmp.h sgtty.h stab.h stdio.h strings.h \
 	struct.h syscall.h sysexits.h syslog.h utmp.h varargs.h vfont.h
 LINKS=	errno.h signal.h
