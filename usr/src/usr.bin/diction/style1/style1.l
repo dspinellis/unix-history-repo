@@ -4,7 +4,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)style1.l	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)style1.l	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /* break out words, output cap + word(inverted) */
@@ -357,10 +357,6 @@ wd:
 	}
 "..."	{
 	OUT1(',');
-	}
-"/."	{
-	first = 1;
-	OUT1(END);
 	}
 {A}{A}+"."	{
 		my_yytext[yyleng-1] = '\0';
