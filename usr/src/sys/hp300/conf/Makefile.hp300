@@ -1,4 +1,4 @@
-#	@(#)Makefile.hp300	7.6 (Berkeley) %G%
+#	@(#)Makefile.hp300	7.7 (Berkeley) %G%
 #
 # Makefile for 4.4 BSD
 #
@@ -19,8 +19,8 @@
 # -DQUOTA	compile in file system quotas
 #
 AS=	as
-CC=	cc -Dconst=__const__ -Dvolatile=__volatile__ \
-	    -Dsigned=__signed__ -Dinline=__inline__ -Uunix -fpcc-struct-return
+CC=	cc -Dconst=__const -Dvolatile=__volatile \
+	    -Dsigned=__signed -Dinline=__inline -Uunix -fpcc-struct-return
 LD=	/bin/ld
 TOUCH=	touch -f -c
 
