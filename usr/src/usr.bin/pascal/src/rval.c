@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)rval.c 1.6 %G%";
+static	char sccsid[] = "@(#)rval.c 1.7 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -761,12 +761,13 @@ cstrng:
 			p = rvalue( r[ 2 ] , contype , RREQ );
 			if ( p == NIL ) {
 			    return NIL;
+			}
 			    /*
 			     * since the second pass can't do
 			     *	long op double  or  double op long
 			     * we may have to do some coercing.
 			     */
-			if ( isa( p , "i" ) && isa( p1 , "d" ) )
+			if ( isa( p , "i" ) && isa( p1 , "d" ) ) {
 			    putop( P2SCONV , P2DOUBLE );
 			}
 			p1 = rvalue( r[ 3 ] , p , RREQ );
