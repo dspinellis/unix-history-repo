@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)hunt6.c	4.2 (Berkeley) %G%";
+static char *sccsid = "@(#)hunt6.c	4.3 (Berkeley) %G%";
 #endif
 
 #include <stdio.h>
@@ -12,37 +12,42 @@ extern int soutlen, iflong;
 extern long indexdate;
 
 baddrop(master, nf, fc, nitem, qitem, rprog, full)
-union ptr {
-	unsigned *a; 
-	long *b; 
-} 
-master;
+unsigned *master;
 FILE *fc;
 char *qitem[], *rprog;
 {
 	/* checks list of drops for real bad drops; finds items with "deliv" */
+	union ptr {
+		unsigned *a; 
+		long *b; 
+	} umaster;
 	int i, g, j, need, got, na, len;
 	long lp;
 	char res[100], *ar[50], output[TXTLEN];
 	extern int colevel, reached;
+	
+	if (iflong)
+		umaster.b = (long *) master;
+	else
+		umaster.a = master;
 # if D1
 	if (iflong)
-		fprintf(stderr,"in baddrop, nf %d master %ld %ld %ld\n",
-			nf, master.b[0], master.b[1], master.b[2]);
+		fprintf(stderr,"in baddrop, nf %d umaster %ld %ld %ld\n",
+			nf, umaster.b[0], umaster.b[1], umaster.b[2]);
 	else
-		fprintf(stderr,"in baddrop, nf %d master %d %d %d\n",
-			nf, master.a[0], master.a[1], master.a[2]);
+		fprintf(stderr,"in baddrop, nf %d umaster %d %d %d\n",
+			nf, umaster.a[0], umaster.a[1], umaster.a[2]);
 # endif
 	for (i=g=0; i<nf; i++)
 	{
-		lp = iflong ? master.b[i] : master.a[i];
+		lp = iflong ? umaster.b[i] : umaster.a[i];
 # if D1
 		if (iflong)
-			fprintf(stderr, "i %d master %lo lp %lo\n",
-				i, master.b[i], lp);
+			fprintf(stderr, "i %d umaster %lo lp %lo\n",
+				i, umaster.b[i], lp);
 		else
-			fprintf(stderr, "i %d master %o lp %lo\n",
-				i, master.a[i], lp);
+			fprintf(stderr, "i %d umaster %o lp %lo\n",
+				i, umaster.a[i], lp);
 # endif
 		fseek (fc, lp, 0);
 		fgets( res, 100, fc);
@@ -95,9 +100,9 @@ char *qitem[], *rprog;
 			fprintf(stderr, "fgrep found it\n");
 # endif
 			if (iflong)
-				master.b[g++] = master.b[i];
+				umaster.b[g++] = umaster.b[i];
 			else
-				master.a[g++] = master.a[i];
+				umaster.a[g++] = umaster.a[i];
 			if (full >= g)
 				if (soutput==0)
 					fputs(output, stdout);
