@@ -1,0 +1,114 @@
+.\"	@(#)OSFreport.06.91	1.1	91/06/25
+.ce 2
+Report on the Work at the
+Computer Systems Research Group
+.PP
+This report describes the system and networking research
+for the \s-1UNIX\s0 project in the Computer
+Science Division of the University of California, Berkeley, known as
+the Computer Systems Research Group (\s-1CSRG\s0).
+\s-1CSRG\s0 includes four full-time research staff (Mike Karels,
+Keith Bostic, Marc Teitelbaum and Marshall Kirk McKusick),
+and one three-quarter-time programmer on loan
+from another group (Keith Sklower).
+In addition, two full-time administrative and secretarial people
+handle licensing and software distribution as well as office support.
+Current funding for \s-1CSRG\s0 is provided by the Open Software
+Foundation (\s-1OSF\s0), Hewlett-Packard (HP), and Cray Research.
+.PP
+The goal of the \s-1CSRG\s0 project
+is to use leading edge research ideas in a stable and reliable
+implementation that solves current problems in operating systems research.
+The project also includes incorporation of network protocols and other
+subsystems into the operating system while maintaining consistency
+with the existing system call interface.
+The resulting system is widely used by other
+researchers in operating systems and network protocols.
+The most recent two releases, \s-14.2BSD\s0
+and \s-14.3BSD\s0, provide the
+core of the standard networking and/or operating system software for
+nearly all vendors of \s-1UNIX\s0-based workstations and minicomputers.
+The network support in the current systems released by both \s-1OSF\s0
+(\s-1OSF-1\s0) and \s-1AT&T\s0 (System V, Release 4) is based
+\s-14.3BSD\s0.
+.PP
+\s-1CSRG\s0 anticipates that its next test release,
+tentatively called ``Networking Distribution, Second Release'',
+will contain about 85% of our most recent licensed release,
+\s-14.3BSD\s0-Reno, but will not contain any proprietary code
+and hence will be available without any licenses.
+The only restriction on use or redistribution of this release
+is a requirement that due credit be given to the Regents of
+the University of California and its contributors
+(except for the GNU software, currently the compiler and debugger,
+that have more stringent release requirements).
+.PP
+The next major release, tentatively called
+\s-14.4BSD\s0, will be completed and begin shipment in early to mid 1992.
+We hope that the unencumbering of the source code will be
+complete and that \s-14.4BSD\s0 will not contain any proprietary
+code and hence can be made available without any licenses.
+If the unencumbering is not complete, we will have two distributions.
+The \s-14.4BSD\s0 distribution will contain the full system and will
+require an AT&T source license;
+the unencumbered subset, nicknamed \s-14.4BSD\s0-Lite,
+will be available without an AT&T license.
+We expect that \s-14.4BSD\s0-Lite will contain a bootable system
+and have all the important utilities.
+.PP
+We currently have machine support for 386/486 based PCs
+and Hewlett-Packard's Motorola 68000 based workstations.
+We expect support for Sun's Sparcstations.
+We are moderately confident of having support for
+Hewlett-Packard's new Snake workstations (HP700 series)
+Sony's \s-1MIPS\s0 workstations, DEC microvaxes,
+and DEC's \s-1SPIM\s0 (byte reversed \s-1MIPS\s0) workstations.
+.PP
+The system includes a new
+virtual memory system derived from that of the
+public domain portion of the Mach operating system
+from \s-1CMU\s0 and incorporated into \s-14.3BSD\s0 by the University of Utah.
+The virtual memory system already contains support for multiprocessors.
+In the future, we will extend this multiprocessor support to the
+other major kernel subsystems including the networking, filesystem,
+and terminal handling.
+The kernel level multiprocessing support will also be exported from
+the kernel through the P1003.4a multiprocessing interface to
+user programs that wish to exploit it.
+We expect that the products of this work will become the interfaces and
+implementations of choice for other operating systems and networking
+researchers in the near future.
+.PP
+The file system interface
+has been extended to allow greater flexibility and performance,
+and a freely redistributable version of \s-1NFS\s0 is included.
+The new system integrates an implementation of the
+\s-1ISO OSI\s0 networking protocols into the existing
+socket interface and internal network architecture.
+This work will include a revised internal network
+architecture incorporating the best features of both the existing
+socket support and the ``streams'' layering of the Ninth Edition
+research version of \s-1UNIX\s0.
+Both filesystem and networking interfaces
+improve on previous work with better support for caching in layered
+architectures.
+These caching techniques are based on work done by Van
+Jacobson at the Lawrence Berkeley Laboratory,
+and will be fully exploited by the \s-1TCP/IP\s0 networking protocols.
+The applicability of these techniques in the \s-1OSI\s0 protocol suite
+will be investigated as well.
+.PP
+The system will also include an \s-1IEEE\s0 P1003.1 \s-1(POSIX)\s0 standard
+operating system interface integrated with the existing system
+interface in such a way that both interfaces are fully supported and
+interoperate fully.
+We have also been closely tracking the P1003.2 and P1003.2a shell
+and utility standards, and have been updating our utilities to reflect
+that proposed standard.
+If the standard has been ratified by the time that we prepare to
+ship \s-14.4BSD\s0, we expect to be compliant with it, as well.
+We have been attending the meetings of several other \s-1POSIX\s0
+working groups, including P1003.4 (real-time) P1003.4a (multiprocessing),
+P1003.8 (networked filesystems), and P1003.12 (networking interfaces).
+We hope to prototype and eventually incorporate
+support for these standards as they come into existence.
