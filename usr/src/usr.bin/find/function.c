@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)function.c	8.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)function.c	8.10 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -370,10 +370,21 @@ c_fstype(arg)
 	char *arg;
 {
 	register PLAN *new;
+	struct vfsconf vfc;
     
 	ftsoptions &= ~FTS_NOSTAT;
     
 	new = palloc(N_FSTYPE, f_fstype);
+
+	/*
+	 * Check first for a filesystem name.
+	 */
+	if (getvfsbyname(arg, &vfc) == 0) {
+		new->flags = F_MTTYPE;
+		new->mt_data = vfc.vfc_typenum;
+		return (new);
+	}
+
 	switch (*arg) {
 	case 'l':
 		if (!strcmp(arg, "local")) {
@@ -382,38 +393,10 @@ c_fstype(arg)
 			return (new);
 		}
 		break;
-	case 'm':
-		if (!strcmp(arg, "mfs")) {
-			new->flags = F_MTTYPE;
-			new->mt_data = MOUNT_MFS;
-			return (new);
-		}
-		break;
-	case 'n':
-		if (!strcmp(arg, "nfs")) {
-			new->flags = F_MTTYPE;
-			new->mt_data = MOUNT_NFS;
-			return (new);
-		}
-		break;
-	case 'p':
-		if (!strcmp(arg, "msdos")) {
-			new->flags = F_MTTYPE;
-			new->mt_data = MOUNT_MSDOS;
-			return (new);
-		}
-		break;
 	case 'r':
 		if (!strcmp(arg, "rdonly")) {
 			new->flags = F_MTFLAG;
 			new->mt_data = MNT_RDONLY;
-			return (new);
-		}
-		break;
-	case 'u':
-		if (!strcmp(arg, "ufs")) {
-			new->flags = F_MTTYPE;
-			new->mt_data = MOUNT_UFS;
 			return (new);
 		}
 		break;
