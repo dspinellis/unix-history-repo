@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)fstat.c	5.32 (Berkeley) %G%";
+static char sccsid[] = "@(#)fstat.c	5.33 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -347,7 +347,7 @@ dofiles(p)
 		return;
 	}
 #endif
-	for (i = 0; i <= filed.fd_lastfile; i++) {
+	for (i = 0; i < filed.fd_lastfile; i++) {
 		if (ofiles[i] == NULL)
 			continue;
 		if (!KVM_READ(ofiles[i], &file, sizeof (struct file))) {
@@ -357,8 +357,10 @@ dofiles(p)
 		}
 		if (file.f_type == DTYPE_VNODE)
 			vtrans((struct vnode *)file.f_data, i);
-		else if (file.f_type == DTYPE_SOCKET && checkfile == 0)
-			socktrans((struct socket *)file.f_data, i);
+		else if (file.f_type == DTYPE_SOCKET) {
+			if (checkfile == 0)
+				socktrans((struct socket *)file.f_data, i);
+		}
 		else {
 			dprintf(stderr, 
 				"unknown file type %d for file %d of pid %d\n",
@@ -376,7 +378,7 @@ vtrans(vp, i)
 	struct vnode vn;
 	struct filestat fst;
 	char mode[15];
-	char *badtype, *filename, *getmnton();
+	char *badtype = NULL, *filename, *getmnton();
 
 	filename = badtype = NULL;
 	if (!KVM_READ(vp, &vn, sizeof (struct vnode))) {
