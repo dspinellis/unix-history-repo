@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)glob.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)glob.c	8.2 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -375,10 +375,7 @@ glob0(pattern, pglob)
 	Char *bufnext, patbuf[MAXPATHLEN+1];
 
 	qpatnext = globtilde(pattern, patbuf, pglob);
-
 	oldpathc = pglob->gl_pathc;
-	pglob->gl_matchc = 0;
-
 	bufnext = patbuf;
 
 	/* We don't need to check for buffer overflow any more. */
