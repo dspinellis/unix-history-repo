@@ -1,6 +1,6 @@
 .if n .ls 2
 .he 'Sendmail Installation and Operation Guide''%'
-.fo 'Version 3.18'DRAFT'Last Mod %G%'
+.fo 'Version 3.19'DRAFT'Last Mod %G%'
 .nr si 3n
 .de $0
 .(x
@@ -28,7 +28,7 @@
 Eric Allman
 Britton-Lee, Inc.
 .sp
-Version 3.18
+Version 3.19
 .)l
 .sp
 .(l F
@@ -2950,17 +2950,6 @@ This is intended only for use from the command line.
 .ip m
 Send to me too,
 even if I am in an alias expansion.
-.ip N
-Set the maximum number of connnections that
-.i sendmail
-will accept simultaneously over an IPC connection
-(default four).
-This can be used to try to limit the mail load on your system.
-Note that this only applies to mail coming in
-over an IPC connection,
-so that mail submissions occuring from calling
-.i sendmail
-directly are never restricted.
 .ip o
 Assume that the headers may be in old format,
 i.e.,
@@ -3663,7 +3652,7 @@ INSTALLATION AND OPERATION GUIDE
 Eric Allman
 Britton-Lee, Inc.
 .sp
-Version 3.18
+Version 3.19
 .sp 2
 .sz 14
 DRAFT
