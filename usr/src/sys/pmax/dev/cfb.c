@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)cfb.c	7.7 (Berkeley) %G%
+ *	@(#)cfb.c	7.8 (Berkeley) %G%
  */
 
 /*
@@ -79,6 +79,8 @@
 #include <dc.h>
 #include <dtop.h>
 #include <scc.h>
+
+#define PMAX	/* enable /dev/pm compatibility */
 
 /*
  * These need to be mapped into user space.
@@ -331,6 +333,7 @@ static void
 cfbLoadCursor(cursor)
 	u_short *cursor;
 {
+#ifdef PMAX
 	register int i, j, k, pos;
 	register u_short ap, bp, out;
 
@@ -374,6 +377,7 @@ cfbLoadCursor(cursor)
 		bt459_set_cursor_ram(pos, 0);
 		pos++;
 	}
+#endif /* PMAX */
 }
 
 /*
@@ -478,7 +482,11 @@ cfbinit(cp)
 	 * signature test, X-windows cursor, no overlays, SYNC* PLL,
 	 * normal RAM select, 7.5 IRE pedestal, do sync
 	 */
+#ifndef PMAX
 	bt459_write_reg(regs, BT459_REG_CMD2, 0xc2);
+#else /* PMAX */
+	bt459_write_reg(regs, BT459_REG_CMD2, 0xc0);
+#endif /* PMAX */
 
 	/* get all pixel bits */
 	bt459_write_reg(regs, BT459_REG_PRM, 0xff);
@@ -610,11 +618,24 @@ cfbRestoreCursorColor()
 	bt459_regmap_t *regs = (bt459_regmap_t *)(cfbfb.fr_addr + CFB_OFFSET_BT459);
 	register int i;
 
+#ifndef PMAX
 	bt459_select_reg(regs, BT459_REG_CCOLOR_2);
 	for (i = 0; i < 6; i++) {
 		regs->addr_reg = cursor_RGB[i];
 		MachEmptyWriteBuffer();
 	}
+#else /* PMAX */
+	bt459_select_reg(regs, BT459_REG_CCOLOR_1);
+	for (i = 0; i < 3; i++) {
+		regs->addr_reg = cursor_RGB[i];
+		MachEmptyWriteBuffer();
+	}
+	bt459_select_reg(regs, BT459_REG_CCOLOR_3);
+	for (i = 3; i < 6; i++) {
+		regs->addr_reg = cursor_RGB[i];
+		MachEmptyWriteBuffer();
+	}
+#endif /* PMAX */
 }
 
 /*
