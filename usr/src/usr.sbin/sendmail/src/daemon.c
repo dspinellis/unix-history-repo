@@ -13,9 +13,9 @@
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	6.14 (Berkeley) %G% (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	6.15 (Berkeley) %G% (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	6.14 (Berkeley) %G% (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	6.15 (Berkeley) %G% (without daemon mode)";
 #endif
 #endif /* not lint */
 
@@ -324,40 +324,21 @@ gothostent:
 
 		/* failure, decide if temporary or not */
 	failure:
-		switch (sav_errno)
+		if (transienterror(sav_errno))
+			return EX_TEMPFAIL;
+		else if (sav_errno == EPERM)
 		{
-		  case EISCONN:
-		  case ETIMEDOUT:
-		  case EINPROGRESS:
-		  case EALREADY:
-		  case EADDRINUSE:
-		  case EHOSTDOWN:
-		  case ENETDOWN:
-		  case ENETRESET:
-		  case ENOBUFS:
-		  case ECONNREFUSED:
-		  case ECONNRESET:
-		  case EHOSTUNREACH:
-		  case ENETUNREACH:
-#ifdef ENOSR
-		  case ENOSR:
-#endif
-			/* there are others, I'm sure..... */
-			return (EX_TEMPFAIL);
-
-		  case EPERM:
 			/* why is this happening? */
 			syserr("makeconnection: funny failure, addr=%lx, port=%x",
 				addr.sin_addr.s_addr, addr.sin_port);
 			return (EX_TEMPFAIL);
+		}
+		else
+		{
+			extern char *errstring();
 
-		  default:
-			{
-				extern char *errstring();
-
-				message("%s", errstring(sav_errno));
-				return (EX_UNAVAILABLE);
-			}
+			message("%s", errstring(sav_errno));
+			return (EX_UNAVAILABLE);
 		}
 	}
 

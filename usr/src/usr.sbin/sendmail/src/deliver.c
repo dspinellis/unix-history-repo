@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	6.39 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	6.40 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -971,19 +971,8 @@ openmailer(m, pvp, ctladdr, clever, e)
 			syserr("Cannot exec %s", m->m_mailer);
 			if (m == LocalMailer)
 				_exit(EX_TEMPFAIL);
-			switch (saveerrno)
-			{
-			  case EIO:
-			  case EAGAIN:
-			  case ENOMEM:
-# ifdef EPROCLIM
-			  case EPROCLIM:
-# endif
-# ifdef ETIMEDOUT
-			  case ETIMEDOUT:
-# endif
+			if (transienterror(saveerrno))
 				_exit(EX_TEMPFAIL);
-			}
 			_exit(EX_UNAVAILABLE);
 		}
 

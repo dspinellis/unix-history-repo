@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	6.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)util.c	6.11 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -949,86 +949,4 @@ strcontainedin(a, b)
 			return TRUE;
 		b++;
 	}
-}
-/*
-**  TRANSIENTERROR -- tell if an error code indicates a transient failure
-**
-**	This looks at an errno value and tells if this is likely to
-**	go away if retried later.
-**
-**	Parameters:
-**		err -- the errno code to classify.
-**
-**	Returns:
-**		TRUE if this is probably transient.
-**		FALSE otherwise.
-*/
-
-bool
-transienterror(err)
-	int err;
-{
-	switch (err)
-	{
-	  case EIO:			/* I/O error */
-	  case ENXIO:			/* Device not configured */
-	  case EAGAIN:			/* Resource temporarily unavailable */
-	  case ENOMEM:			/* Cannot allocate memory */
-	  case ENODEV:			/* Operation not supported by device */
-	  case ENFILE:			/* Too many open files in system */
-	  case EMFILE:			/* Too many open files */
-	  case ENOSPC:			/* No space left on device */
-#ifdef ETIMEDOUT
-	  case ETIMEDOUT:		/* Connection timed out */
-#endif
-#ifdef ESTALE
-	  case ESTALE:			/* Stale NFS file handle */
-#endif
-#ifdef ENETDOWN
-	  case ENETDOWN:		/* Network is down */
-#endif
-#ifdef ENETUNREACH
-	  case ENETUNREACH:		/* Network is unreachable */
-#endif
-#ifdef ENETRESET
-	  case ENETRESET:		/* Network dropped connection on reset */
-#endif
-#ifdef ECONNABORTED
-	  case ECONNABORTED:		/* Software caused connection abort */
-#endif
-#ifdef ECONNRESET
-	  case ECONNRESET:		/* Connection reset by peer */
-#endif
-#ifdef ENOBUFS
-	  case ENOBUFS:			/* No buffer space available */
-#endif
-#ifdef ESHUTDOWN
-	  case ESHUTDOWN:		/* Can't send after socket shutdown */
-#endif
-#ifdef ECONNREFUSED
-	  case ECONNREFUSED:		/* Connection refused */
-#endif
-#ifdef EHOSTDOWN
-	  case EHOSTDOWN:		/* Host is down */
-#endif
-#ifdef EHOSTUNREACH
-	  case EHOSTUNREACH:		/* No route to host */
-#endif
-#ifdef EDQUOT
-	  case EDQUOT:			/* Disc quota exceeded */
-#endif
-#ifdef EPROCLIM
-	  case EPROCLIM:		/* Too many processes */
-#endif
-#ifdef EUSERS
-	  case EUSERS:			/* Too many users */
-#endif
-#ifdef EDEADLK
-	  case EDEADLK:			/* Resource deadlock avoided */
-#endif
-		return TRUE;
-	}
-
-	/* nope, must be permanent */
-	return FALSE;
 }
