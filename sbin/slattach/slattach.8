@@ -31,7 +31,7 @@
 .\"
 .\"     @(#)slattach.8	6.4 (Berkeley) 3/16/91
 .\"
-.\"	$Header: /a/cvs/386BSD/src/sbin/slattach/slattach.8,v 1.4 1993/09/06 23:24:05 rgrimes Exp $
+.\"	$Header: /a/cvs/386BSD/src/sbin/slattach/slattach.8,v 1.5 1993/09/07 17:05:51 rich Exp $
 .\"
 .Dd April 4, 1993
 .Dt SLATTACH 8
@@ -44,6 +44,7 @@
 .Op \-a
 .Op \-c
 .Op \-e exit-command
+.Op \-f
 .Op \-h
 .Op \-l
 .Op \-n
@@ -69,6 +70,8 @@ must be able to use VJ header compression for this to work.
 .It Ar \-e exit-command
 Specifies a command to be invoked within a shell (sh -c exit-command)
 before slattach exits.
+.It Ar \-f
+Disables the invocation of daemon() to run slattach in the background.
 .It Ar \-h
 Turn on cts/rts style flow control on the slip port, by default no flow
 control is done.
