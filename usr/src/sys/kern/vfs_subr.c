@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_subr.c	7.6 (Berkeley) %G%
+ *	@(#)vfs_subr.c	7.7 (Berkeley) %G%
  */
 
 /*
@@ -28,56 +28,6 @@
 #include "namei.h"
 #include "ucred.h"
 #include "errno.h"
-
-/*
- * Add a new mount point to the list of mounted filesystems.
- * Lock the filesystem so that namei will not cross into the
- * the tree below the covered vnode.
- */
-vfs_add(mountedvp, mp, flags)
-	register struct vnode *mountedvp;
-	register struct mount *mp;
-	int flags;
-{
-	register int error;
-
-	error = vfs_lock(mp);
-	if (error)
-		return (error);
-	if (mountedvp == (struct vnode *)0) {
-		/*
-		 * We are mounting the root filesystem.
-		 */
-		rootfs = mp;
-		mp->m_next = mp;
-		mp->m_prev = mp;
-	} else {
-		if (mountedvp->v_mountedhere != (struct mount *)0) {
-			vfs_unlock(mp);
-			return(EBUSY);
-		}
-		/*
-		 * Put the new filesystem on the mount list after root.
-		 */
-		mp->m_next = rootfs->m_next;
-		mp->m_prev = rootfs;
-		rootfs->m_next = mp;
-		mp->m_next->m_prev = mp;
-		mountedvp->v_mountedhere = mp;
-	}
-	mp->m_vnodecovered = mountedvp;
-	if (flags & M_RDONLY) {
-		mp->m_flag |= M_RDONLY;
-	} else {
-		mp->m_flag &= ~M_RDONLY;
-	}
-	if (flags & M_NOSUID) {
-		mp->m_flag |= M_NOSUID;
-	} else {
-		mp->m_flag &= ~M_NOSUID;
-	}
-	return (0);
-}
 
 /*
  * Remove a mount point from the list of mounted filesystems.
