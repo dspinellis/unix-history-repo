@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cmdtab.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmdtab.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 #include "ftp_var.h"
@@ -103,6 +103,7 @@ struct cmd cmdtab[] = {
 	{ "glob",	globhelp,	0,	0,	0,	setglob },
 	{ "hash",	hashhelp,	0,	0,	0,	sethash },
 	{ "help",	helphelp,	0,	0,	1,	help },
+	{ "image",	binaryhelp,	0,	1,	1,	setbinary },
 	{ "lcd",	lcdhelp,	0,	0,	0,	lcd },
 	{ "ls",		lshelp,		1,	1,	1,	ls },
 	{ "macdef",	macdefhelp,	0,	0,	0,	macdef },
