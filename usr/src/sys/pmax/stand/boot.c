@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)boot.c	7.5 (Berkeley) %G%
+ *	@(#)boot.c	7.6 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -100,7 +100,7 @@ loadfile(fname)
 		goto err;
 	}
 
-	/* read the COFF header */
+	/* read the exec header */
 	i = read(fd, (char *)&aout, sizeof(aout));
 	if (i != sizeof(aout)) {
 		printf("No a.out header\n");
@@ -119,7 +119,7 @@ loadfile(fname)
 	}
 	i = aout.a_text + aout.a_data;
 #ifndef TEST
-	n = read(fd, (char *)aout.ex_aout.codeStart, i);
+	n = read(fd, (char *)aout.a_entry, i);
 #else
 	n = i;
 #endif
