@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)old.ucb.grep.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)old.ucb.grep.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -51,6 +51,7 @@ int	nsucc;
 int	circf;
 int	blkno;
 long	tln;
+int	retcode = 0;
 
 main(argc, argv)
 char **argv;
@@ -97,7 +98,7 @@ char **argv;
 			goto out;
 
 		default:
-			fprintf(stderr, "Unknown flag\n");
+			fprintf(stderr, "grep: unknown flag\n");
 			continue;
 		}
 	}
@@ -115,7 +116,7 @@ out:
 		argv++;
 		execute(*argv);
 	}
-	exit(nsucc == 0);
+	exit(retcode != 0 ? retcode : nsucc == 0);
 }
 
 compile(astr)
@@ -198,7 +199,8 @@ char *astr;
 		}
 	}
     cerror:
-	fprintf(stderr, "RE error\n");
+	fprintf(stderr, "grep: RE error\n");
+	exit(2);
 }
 
 same(a, b)
@@ -232,6 +234,7 @@ execute(file)
 	if (file) {
 		if ((f = open(file, 0)) < 0) {
 			perror(file);
+			retcode = 2;
 		}
 	} else
 		f = 0;
@@ -242,7 +245,8 @@ execute(file)
 			blksize = BLKSIZE;
 		buf = (char *)malloc(blksize);
 		if (buf == NULL) {
-			fprintf(stderr, "egrep: no memory for %s\n", file);
+			fprintf(stderr, "grep: no memory for %s\n", file);
+			retcode = 2;
 			return;
 		}
 	}
@@ -404,7 +408,8 @@ advance(alp, aep)
 		return (0);
 
 	default:
-		fprintf(stderr, "RE botch\n");
+		fprintf(stderr, "grep: RE botch\n");
+		exit(2);
 	}
 }
 
