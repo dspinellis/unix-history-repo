@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_bio.c	8.1 (Berkeley) %G%
+ *	@(#)nfs_bio.c	8.2 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -297,7 +297,7 @@ again:
 
 	    if (n > 0) {
 		if (!baddr)
-			baddr = bp->b_un.b_addr;
+			baddr = bp->b_data;
 		error = uiomove(baddr + on, (int)n, uio);
 	    }
 	    switch (vp->v_type) {
@@ -463,7 +463,7 @@ again:
 				goto again;
 			}
 		}
-		if (error = uiomove(bp->b_un.b_addr + on, n, uio)) {
+		if (error = uiomove((char *)bp->b_data + on, n, uio)) {
 			bp->b_flags |= B_ERROR;
 			brelse(bp);
 			return (error);
@@ -665,7 +665,7 @@ nfs_doio(bp, cr, p)
 	    panic("doio phys");
 	if (bp->b_flags & B_READ) {
 	    io.iov_len = uiop->uio_resid = bp->b_bcount;
-	    io.iov_base = bp->b_un.b_addr;
+	    io.iov_base = bp->b_data;
 	    uiop->uio_rw = UIO_READ;
 	    switch (vp->v_type) {
 	    case VREG:
@@ -686,7 +686,7 @@ nfs_doio(bp, cr, p)
 				+ diff);
 			if (len > 0) {
 			    len = min(len, uiop->uio_resid);
-			    bzero(bp->b_un.b_addr + diff, len);
+			    bzero((char *)bp->b_data + diff, len);
 			    bp->b_validend = diff + len;
 			} else
 			    bp->b_validend = diff;
@@ -730,7 +730,7 @@ nfs_doio(bp, cr, p)
 		- bp->b_dirtyoff;
 	    uiop->uio_offset = (bp->b_blkno * DEV_BSIZE)
 		+ bp->b_dirtyoff;
-	    io.iov_base = bp->b_un.b_addr + bp->b_dirtyoff;
+	    io.iov_base = (char *)bp->b_data + bp->b_dirtyoff;
 	    uiop->uio_rw = UIO_WRITE;
 	    nfsstats.write_bios++;
 	    if (bp->b_flags & B_APPENDWRITE)

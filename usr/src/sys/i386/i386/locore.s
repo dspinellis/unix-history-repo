@@ -10,7 +10,7 @@
  *	from: @(#)locore.s	7.3 (Berkeley) 5/13/91
  *	from NetBSD: Id: locore.s,v 1.12 1993/05/27 16:44:13 cgd Exp
  *
- *      @(#)locore.s	8.1 (Berkeley) %G%
+ *      @(#)locore.s	8.2 (Berkeley) %G%
  */
 
 
@@ -1085,16 +1085,15 @@ movl	8(%esp),%eax
 	xorl	%eax,%eax		# return (1);
 	incl	%eax
 	ret
+
 /*
- * The following primitives manipulate the run queues.
- * _whichqs tells which of the 32 queues _qs
- * have processes in them.  Setrq puts processes into queues, Remrq
- * removes them from queues.  The running process is on no queue,
- * other processes are on a queue related to p->p_pri, divided by 4
+ * The following primitives manipulate the run queues.  _whichqs tells which
+ * of the 32 queues _qs have processes in them.  Setrunqueue puts processes
+ * into queues, Remrq removes them from queues.  The running process is on
+ * no queue, other processes are on a queue related to p->p_pri, divided by 4
  * actually to shrink the 0-127 range of priorities into the 32 available
  * queues.
  */
-
 	.globl	_whichqs,_qs,_cnt,_panic
 	.comm	_noproc,4
 	.comm	_runrun,4
@@ -1105,7 +1104,7 @@ movl	8(%esp),%eax
  * Call should be made at spl6(), and p->p_stat should be SRUN
  */
 	ALIGN32
-ENTRY(setrq)
+ENTRY(setrunqueue)
 	movl	4(%esp),%eax
 	cmpl	$0,P_RLINK(%eax)	# should not be on q already
 	je	set1
@@ -1124,7 +1123,7 @@ set1:
 	movl	%eax,P_LINK(%ecx)
 	ret
 
-set2:	.asciz	"setrq"
+set2:	.asciz	"setrunqueue"
 
 /*
  * Remrq(p)

@@ -7,11 +7,11 @@
  * the Systems Programming Group of the University of Utah Computer
  * Science Department. Originally from University of Wisconsin.
  *
- * %sccs.include.redist.c%
+ * %sccs.include.proprietary.c%
  *
  * from: Utah $Hdr: uipc_shm.c 1.11 92/04/23$
  *
- *	@(#)sysv_shm.c	8.2 (Berkeley) %G%
+ *	@(#)sysv_shm.c	8.3 (Berkeley) %G%
  */
 
 /*

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)Locore.c	7.6 (Berkeley) %G%
+ *	@(#)Locore.c	7.7 (Berkeley) %G%
  */
 
 #include "dz.h"
@@ -271,7 +271,7 @@ longjmp(lp) label_t *lp; { /*NOTREACHED*/ }
 savectx(lp) label_t *lp; { return (0); }
 
 /*ARGSUSED*/
-setrq(p) struct proc *p; { }
+setrunqueue(p) struct proc *p; { }
 
 /*ARGSUSED*/
 remrq(p) struct proc *p; { }

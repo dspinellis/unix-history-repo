@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)locore.s	7.19 (Berkeley) %G%
+ *	@(#)locore.s	7.20 (Berkeley) %G%
  */
 
 #include "tahoe/include/mtpr.h"
@@ -1345,20 +1345,20 @@ setsav:	.space	14*4
 	.comm	_runrun,4
 /*
  * The following primitives use the fancy TAHOE instructions.
- * _whichqs tells which of the 32 queues _qs
- * have processes in them.  setrq puts processes into queues, remrq
- * removes them from queues.  The running process is on no queue,
- * other processes are on a queue related to p->p_pri, divided by 4
+ * _whichqs tells which of the 32 queues _qs have processes in
+ * them.  Setrunqueue puts processes into queues, remrq removes
+ * them from queues.  The running process is on no queue, other
+ * processes are on a queue related to p->p_pri, divided by 4
  * actually to shrink the 0-127 range of priorities into the 32 available
  * queues.
  */
 
 /*
- * setrq(p), using fancy TAHOE instructions.
+ * setrunqueue(p), using fancy TAHOE instructions.
  *
  * Call should be made at spl8(), and p->p_stat should be SRUN
  */
-ENTRY(setrq, 0)
+ENTRY(setrunqueue, 0)
 	movl	4(fp),r0
 	tstl	P_RLINK(r0)		## firewall: p->p_rlink must be 0
 	beql	set1			##
@@ -1374,7 +1374,7 @@ set1:
 	orl2	r1,_whichqs		# mark queue non-empty
 	ret
 
-set3:	.asciz	"setrq"
+set3:	.asciz	"setrunqueue"
 
 /*
  * remrq(p), using fancy TAHOE instructions

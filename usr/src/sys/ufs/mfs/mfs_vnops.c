@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mfs_vnops.c	8.2 (Berkeley) %G%
+ *	@(#)mfs_vnops.c	8.3 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -149,9 +149,9 @@ mfs_strategy(ap)
 
 		base = mfsp->mfs_baseoff + (bp->b_blkno << DEV_BSHIFT);
 		if (bp->b_flags & B_READ)
-			bcopy(base, bp->b_un.b_addr, bp->b_bcount);
+			bcopy(base, bp->b_data, bp->b_bcount);
 		else
-			bcopy(bp->b_un.b_addr, base, bp->b_bcount);
+			bcopy(bp->b_data, base, bp->b_bcount);
 		biodone(bp);
 	} else if (mfsp->mfs_pid == p->p_pid) {
 		mfs_doio(bp, mfsp->mfs_baseoff);
@@ -183,15 +183,15 @@ mfs_doio(bp, base)
 	caddr_t kernaddr, offset;
 
 	/*
-	 * For phys I/O, map the b_addr into kernel virtual space using
+	 * For phys I/O, map the b_data into kernel virtual space using
 	 * the Mfsiomap pte's.
 	 */
 	if ((bp->b_flags & B_PHYS) == 0) {
-		kernaddr = bp->b_un.b_addr;
+		kernaddr = bp->b_data;
 	} else {
 		if (bp->b_flags & (B_PAGET | B_UAREA | B_DIRTY))
 			panic("swap on memfs?");
-		off = (int)bp->b_un.b_addr & PGOFSET;
+		off = (int)bp->b_data & PGOFSET;
 		npf = btoc(bp->b_bcount + off);
 		/*
 		 * Get some mapping page table entries
@@ -201,7 +201,7 @@ mfs_doio(bp, base)
 			sleep((caddr_t)&mfsmap_want, PZERO-1);
 		}
 		reg--;
-		pte = vtopte(bp->b_proc, btop(bp->b_un.b_addr));
+		pte = vtopte(bp->b_proc, btop(bp->b_data));
 		/*
 		 * Do vmaccess() but with the Mfsiomap page table.
 		 */
@@ -255,9 +255,9 @@ mfs_doio(bp, base)
 
 	base += (bp->b_blkno << DEV_BSHIFT);
 	if (bp->b_flags & B_READ)
-		bp->b_error = copyin(base, bp->b_un.b_addr, bp->b_bcount);
+		bp->b_error = copyin(base, bp->b_data, bp->b_bcount);
 	else
-		bp->b_error = copyout(bp->b_un.b_addr, base, bp->b_bcount);
+		bp->b_error = copyout(bp->b_data, base, bp->b_bcount);
 	if (bp->b_error)
 		bp->b_flags |= B_ERROR;
 	biodone(bp);

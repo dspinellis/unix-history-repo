@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)locore.s	7.31 (Berkeley) %G%
+ *	@(#)locore.s	7.32 (Berkeley) %G%
  */
 
 #include "vax/include/psl.h"
@@ -1601,22 +1601,21 @@ setsav:	.space	10*4
 	.comm	_runrun,4
 
 /*
- * The following primitives use the fancy VAX instructions
- * much like VMS does.  _whichqs tells which of the 32 queues _qs
- * have processes in them.  Setrq puts processes into queues, Remrq
- * removes them from queues.  The running process is on no queue,
- * other processes are on a queue related to p->p_pri, divided by 4
+ * The following primitives manipulate the run queues.  _whichqs tells which
+ * of the 32 queues _qs have processes in them.  Setrunqueue puts processes
+ * into queues, Remrq removes them from queues.  The running process is on
+ * no queue, other processes are on a queue related to p->p_pri, divided by 4
  * actually to shrink the 0-127 range of priorities into the 32 available
  * queues.
  */
 
 /*
- * Setrq(p), using fancy VAX instructions.
+ * Setrunqueue(p), using fancy VAX instructions, just like VMS.
  *
  * Call should be made at splclock(), and p->p_stat should be SRUN
  */
 	.align	1
-JSBENTRY(Setrq, R0)
+JSBENTRY(Setrunqueue, R0)
 	tstl	P_RLINK(r0)		## firewall: p->p_rlink must be 0
 	beql	set1			##
 	pushab	set3			##
@@ -1630,7 +1629,7 @@ set1:
 set2:
 	rsb
 
-set3:	.asciz	"setrq"
+set3:	.asciz	"setrunqueue"
 
 /*
  * Remrq(p), using fancy VAX instructions
