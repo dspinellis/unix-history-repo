@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cmds.c	5.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmds.c	5.19 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -46,7 +46,6 @@ extern	char *remglob();
 extern	char *getenv();
 extern	char *index();
 extern	char *rindex();
-extern	int allbinary;
 extern char reply_string[];
 
 char *mname;
@@ -99,6 +98,15 @@ setpeer(argc, argv)
 		int overbose;
 
 		connected = 1;
+		/*
+		 * Set up defaults for FTP.
+		 */
+		(void) strcpy(typename, "ascii"), type = TYPE_A;
+		curtype = TYPE_A;
+		(void) strcpy(formname, "non-print"), form = FORM_N;
+		(void) strcpy(modename, "stream"), mode = MODE_S;
+		(void) strcpy(structname, "file"), stru = STRU_F;
+		(void) strcpy(bytename, "8"), bytesize = 8;
 		if (autologin)
 			(void) login(argv[1]);
 
@@ -110,7 +118,6 @@ setpeer(argc, argv)
 		overbose = verbose;
 		if (debug == 0)
 			verbose = -1;
-		allbinary = 0;
 		if (command("SYST") == COMPLETE && overbose) {
 			register char *cp, c;
 			cp = index(reply_string+4, ' ');
@@ -129,14 +136,29 @@ setpeer(argc, argv)
 				*cp = c;
 		}
 		if (!strncmp(reply_string, "215 UNIX Type: L8", 17)) {
-			setbinary();
-			allbinary = 1;
+			if (proxy)
+				unix_proxy = 1;
+			else
+				unix_server = 1;
+			/*
+			 * Set type to 0 (not specified by user),
+			 * meaning binary by default, but don't bother
+			 * telling server.  We can use binary
+			 * for text files unless changed by the user.
+			 */
+			type = 0;
+			(void) strcpy(typename, "binary");
 			if (overbose)
 			    printf("Using %s mode to transfer files.\n",
 				typename);
-		} else if (overbose && 
-		    !strncmp(reply_string, "215 TOPS20", 10)) {
-			printf(
+		} else {
+			if (proxy)
+				unix_proxy = 0;
+			else
+				unix_server = 0;
+			if (overbose && 
+			    !strncmp(reply_string, "215 TOPS20", 10))
+				printf(
 "Remember to set tenex mode when transfering binary files from this machine.\n");
 		}
 		verbose = overbose;
@@ -174,8 +196,7 @@ settype(argc, argv)
 		sep = " ";
 		for (p = types; p->t_name; p++) {
 			printf("%s%s", sep, p->t_name);
-			if (*sep == ' ')
-				sep = " | ";
+			sep = " | ";
 		}
 		printf(" ]\n");
 		code = -1;
@@ -200,8 +221,41 @@ settype(argc, argv)
 		comret = command("TYPE %s", p->t_mode);
 	if (comret == COMPLETE) {
 		(void) strcpy(typename, p->t_name);
-		type = p->t_type;
+		curtype = type = p->t_type;
 	}
+}
+
+/*
+ * Internal form of settype; changes current type in use with server
+ * without changing our notion of the type for data transfers.
+ * Used to change to and from ascii for listings.
+ */
+changetype(newtype, show)
+	int newtype, show;
+{
+	register struct types *p;
+	int comret, oldverbose = verbose;
+
+	if (newtype == 0)
+		newtype = TYPE_I;
+	if (newtype == curtype)
+		return;
+	if (debug == 0 && show == 0)
+		verbose = 0;
+	for (p = types; p->t_name; p++)
+		if (newtype == p->t_type)
+			break;
+	if (p->t_name == 0) {
+		printf("ftp: internal error: unknown type %d\n", newtype);
+		return;
+	}
+	if (newtype == TYPE_L && bytename[0] != '\0')
+		comret = command("TYPE %s %s", p->t_mode, bytename);
+	else
+		comret = command("TYPE %s", p->t_mode);
+	if (comret == COMPLETE)
+		curtype = newtype;
+	verbose = oldverbose;
 }
 
 /*
