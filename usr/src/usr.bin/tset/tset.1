@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)tset.1	6.8 (Berkeley) %G%
+.\"	@(#)tset.1	6.9 (Berkeley) %G%
 .\"
 .Dd 
 .Dt TSET 1
@@ -248,21 +248,19 @@ terminal.
 No whitespace characters are permitted in the
 .Fl m
 option argument.
-A missing port type matches all port types.
-To avoid problems with metacharacters, it is best to place the entire
+Also, to avoid problems with metacharacters, it is suggested that the entire
 .Fl m
-option within single quote characters.
-.Nm Csh
-users normally must also place a backslash character (``\e'') before any
-exclamation marks (``!'').
+option argument be placed within single quote characters, and that
+.Nm csh
+users insert a backslash character (``\e'') before any exclamation
+marks (``!'').
 .Sh ENVIRONMENT
 The
 .Nm tset
 command utilizes the
-.Ev SHELL ,
-.Ev TERM
+.Ev SHELL
 and
-.Ev TERMCAP
+.Ev TERM
 environment variables.
 .Sh FILES
 .Bl -tag -width /usr/share/misc/termcap -compact
@@ -300,8 +298,8 @@ and
 options have been deleted from the
 .Nm tset
 utility.
-None of these flags were documented in 4.3BSD and all are of limited
-utility at best.
+None of them were documented in 4.3BSD and all are of limited utility at
+best.
 Executing
 .Nm tset
 as
@@ -332,8 +330,8 @@ This is no longer true.
 .Pp
 Finally, the
 .Nm tset
-implementation has been completely redone as part of the addition to the
+implementation has been completely redone (as part of the addition to the
 system of a
 .St -p1003.1-88
-compliant terminal interface, and will no longer compile on systems with
+compliant terminal interface) and will no longer compile on systems with
 older terminal interfaces.
