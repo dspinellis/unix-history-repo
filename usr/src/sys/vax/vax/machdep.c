@@ -1,4 +1,4 @@
-/*	machdep.c	3.33	%G%	*/
+/*	machdep.c	3.34	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -16,7 +16,7 @@
 #include "../h/cons.h"
 #include "../h/reboot.h"
 
-char	version[] = "VM/UNIX (Berkeley Version 3.33) %H% \n";
+char	version[] = "VM/UNIX (Berkeley Version 3.34) %H% \n";
 int	icode[] =
 {
 	0x9f19af9f,	/* pushab [&"init.vm",0]; pushab */
@@ -104,7 +104,7 @@ clkinit(base)
 
 	if (base < 5*SECYR) {
 		printf("WARNING: preposterous time in file system");
-		time = 6*SECYR + 212*SECDAY + SECDAY/2;
+		time = 6*SECYR + 186*SECDAY + SECDAY/2;
 		clkset();
 		goto check;
 	}
