@@ -1,4 +1,4 @@
-/*	kern_proc.c	3.3	%H%	*/
+/*	kern_proc.c	3.4	%H%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -324,7 +324,7 @@ register struct inode *ip;
 			if(ip->i_mode&ISGID)
 				u.u_gid = ip->i_gid;
 		} else
-			psignal(u.u_procp, SIGTRC);
+			psignal(u.u_procp, SIGTRAP);
 	}
 	u.u_tsize = ts;
 	u.u_dsize = ds;
@@ -339,11 +339,11 @@ bad:
  */
 setregs()
 {
-	register int *rp;
+	register int (**rp)();
 	register i;
 
 	for(rp = &u.u_signal[0]; rp < &u.u_signal[NSIG]; rp++)
-		if((*rp & 1) == 0)
+		if(((int)*rp & 1) == 0)
 			*rp = 0;
 /*
 	for(rp = &u.u_ar0[0]; rp < &u.u_ar0[16];)
@@ -402,7 +402,7 @@ exit(rv)
 	rate.v_pgin -= p->p_aveflt;
 	p->p_aveflt = 0;
 	for(i=0; i<NSIG; i++)
-		u.u_signal[i] = 1;
+		u.u_signal[i] = SIG_IGN;
 	/*
 	 * Release virtual memory.  If we resulted from
 	 * a vfork(), instead give the resources back to
