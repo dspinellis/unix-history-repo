@@ -1,4 +1,4 @@
-/*	kern_prot.c	5.16	83/03/31	*/
+/*	kern_prot.c	5.17	83/05/27	*/
 
 /*
  * System calls related to processes and protection
@@ -138,30 +138,6 @@ setreuid()
 	u.u_uid = euid;
 }
 
-#ifndef NOCOMPAT
-osetuid()
-{
-	register uid;
-	register struct a {
-		int	uid;
-	} *uap;
-
-	uap = (struct a *)u.u_ap;
-	uid = uap->uid;
-	if (u.u_ruid == uid || u.u_uid == uid || suser()) {
-#ifdef QUOTA
-		if (u.u_quota->q_uid != uid) {
-			qclean();
-			qstart(getquota(uid, 0, 0));
-		}
-#endif
-		u.u_uid = uid;
-		u.u_procp->p_uid = uid;
-		u.u_ruid = uid;
-	}
-}
-#endif
-
 setregid()
 {
 	register struct a {
@@ -189,24 +165,6 @@ setregid()
 	u.u_gid = egid;
 }
 
-#ifndef NOCOMPAT
-osetgid()
-{
-	register gid;
-	register struct a {
-		int	gid;
-	} *uap;
-
-	uap = (struct a *)u.u_ap;
-	gid = uap->gid;
-	if (u.u_rgid == gid || u.u_gid == gid || suser()) {
-		leavegroup(u.u_rgid);
-		(void) entergroup(gid);
-		u.u_gid = gid;
-		u.u_rgid = gid;
-	}
-}
-
 setgroups()
 {
 	register struct	a {
@@ -228,41 +186,6 @@ setgroups()
 	for (gp = &u.u_groups[uap->gidsetsize]; gp < &u.u_groups[NGROUPS]; gp++)
 		*gp = NOGROUP;
 }
-
-/*
- * Pid of zero implies current process.
- * Pgrp -1 is getpgrp system call returning
- * current process group.
- */
-osetpgrp()
-{
-	register struct proc *p;
-	register struct a {
-		int	pid;
-		int	pgrp;
-	} *uap;
-
-	uap = (struct a *)u.u_ap;
-	if (uap->pid == 0)
-		p = u.u_procp;
-	else {
-		p = pfind(uap->pid);
-		if (p == 0) {
-			u.u_error = ESRCH;
-			return;
-		}
-	}
-	if (uap->pgrp <= 0) {
-		u.u_r.r_val1 = p->p_pgrp;
-		return;
-	}
-	if (p->p_uid != u.u_uid && u.u_uid && !inferior(p)) {
-		u.u_error = EPERM;
-		return;
-	}
-	p->p_pgrp = uap->pgrp;
-}
-/* END DEFUNCT */
 
 /*
  * Group utility functions.

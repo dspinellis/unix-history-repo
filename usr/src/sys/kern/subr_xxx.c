@@ -1,4 +1,4 @@
-/*	subr_xxx.c	4.21	82/12/17	*/
+/*	subr_xxx.c	4.22	83/05/27	*/
 
 #include "../machine/pte.h"
 
@@ -103,7 +103,7 @@ ffs(mask)
 {
 	register int i;
 
-	for(i=1; i<NSIG; i++) {
+	for(i = 1; i < NSIG; i++) {
 		if (mask & 1)
 			return (i);
 		mask >>= 1;

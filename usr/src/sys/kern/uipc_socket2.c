@@ -1,4 +1,4 @@
-/*	uipc_socket2.c	4.36	83/05/01	*/
+/*	uipc_socket2.c	4.37	83/05/27	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -31,24 +31,24 @@
  * only, bypassing the in-progress calls when setting up a ``connection''
  * takes no time.
  *
- * From the passive side, a socket is created with SO_ACCEPTCONN
- * creating two queues of sockets: so_q0 for connections in progress
+ * From the passive side, a socket is created with
+ * two queues of sockets: so_q0 for connections in progress
  * and so_q for connections already made and awaiting user acceptance.
  * As a protocol is preparing incoming connections, it creates a socket
  * structure queued on so_q0 by calling sonewconn().  When the connection
  * is established, soisconnected() is called, and transfers the
  * socket structure to so_q, making it available to accept().
  * 
- * If a SO_ACCEPTCONN socket is closed with sockets on either
+ * If a socket is closed with sockets on either
  * so_q0 or so_q, these sockets are dropped.
  *
- * If and when higher level protocols are implemented in
+ * If higher level protocols are implemented in
  * the kernel, the wakeups done here will sometimes
- * be implemented as software-interrupt process scheduling.
+ * cause software-interrupt process scheduling.
  */
 
 soisconnecting(so)
-	struct socket *so;
+	register struct socket *so;
 {
 
 	so->so_state &= ~(SS_ISCONNECTED|SS_ISDISCONNECTING);
@@ -57,7 +57,7 @@ soisconnecting(so)
 }
 
 soisconnected(so)
-	struct socket *so;
+	register struct socket *so;
 {
 	register struct socket *head = so->so_head;
 
@@ -65,8 +65,8 @@ soisconnected(so)
 		if (soqremque(so, 0) == 0)
 			panic("soisconnected");
 		soqinsque(head, so, 1);
-		wakeup((caddr_t)&head->so_timeo);
 		sorwakeup(head);
+		wakeup((caddr_t)&head->so_timeo);
 	}
 	so->so_state &= ~(SS_ISCONNECTING|SS_ISDISCONNECTING);
 	so->so_state |= SS_ISCONNECTED;
@@ -76,7 +76,7 @@ soisconnected(so)
 }
 
 soisdisconnecting(so)
-	struct socket *so;
+	register struct socket *so;
 {
 
 	so->so_state &= ~SS_ISCONNECTING;
@@ -87,7 +87,7 @@ soisdisconnecting(so)
 }
 
 soisdisconnected(so)
-	struct socket *so;
+	register struct socket *so;
 {
 
 	so->so_state &= ~(SS_ISCONNECTING|SS_ISCONNECTED|SS_ISDISCONNECTING);
@@ -109,7 +109,7 @@ sonewconn(head)
 	register struct socket *head;
 {
 	register struct socket *so;
-	struct mbuf *m;
+	register struct mbuf *m;
 
 	if (head->so_qlen + head->so_q0len > 3 * head->so_qlimit / 2)
 		goto bad;
@@ -125,8 +125,8 @@ sonewconn(head)
 	so->so_timeo = head->so_timeo;
 	so->so_pgrp = head->so_pgrp;
 	soqinsque(head, so, 0);
-	if ((*so->so_proto->pr_usrreq)(so, PRU_ATTACH, (struct mbuf *)0,
-	  (struct mbuf *)0)) {
+	if ((*so->so_proto->pr_usrreq)(so, PRU_ATTACH,
+	    (struct mbuf *)0, (struct mbuf *)0, (struct mbuf *)0)) {
 		(void) soqremque(so, 0);
 		(void) m_free(m);
 		goto bad;
@@ -212,38 +212,6 @@ socantrcvmore(so)
  */
 
 /*
- * Interface routine to select() system
- * call for sockets.
- */
-soselect(so, rw)
-	register struct socket *so;
-	int rw;
-{
-	int s = splnet();
-
-	switch (rw) {
-
-	case FREAD:
-		if (soreadable(so)) {
-			splx(s);
-			return (1);
-		}
-		sbselqueue(&so->so_rcv);
-		break;
-
-	case FWRITE:
-		if (sowriteable(so)) {
-			splx(s);
-			return (1);
-		}
-		sbselqueue(&so->so_snd);
-		break;
-	}
-	splx(s);
-	return (0);
-}
-
-/*
  * Queue a process for a select on a socket buffer.
  */
 sbselqueue(sb)
@@ -272,7 +240,7 @@ sbwait(sb)
  * Wakeup processes waiting on a socket buffer.
  */
 sbwakeup(sb)
-	struct sockbuf *sb;
+	register struct sockbuf *sb;
 {
 
 	if (sb->sb_sel) {
@@ -325,7 +293,7 @@ sbwakeup(sb)
  */
 
 soreserve(so, sndcc, rcvcc)
-	struct socket *so;
+	register struct socket *so;
 	int sndcc, rcvcc;
 {
 
@@ -349,8 +317,8 @@ sbreserve(sb, cc)
 
 	/* someday maybe this routine will fail... */
 	sb->sb_hiwat = cc;
-	/* the 2 implies names can be no more than 1 mbuf each */
-	sb->sb_mbmax = cc*2;
+	/* * 2 implies names can be no more than 1 mbuf each */
+	sb->sb_mbmax = cc<<1;
 	return (1);
 }
 
@@ -414,15 +382,17 @@ sbappend(sb, m)
  * Return 0 if no space in sockbuf or if
  * can't get mbuf to stuff address in.
  */
-sbappendaddr(sb, asa, m0)
+sbappendaddr(sb, asa, m0, rights0)
 	struct sockbuf *sb;
 	struct sockaddr *asa;
-	struct mbuf *m0;
+	struct mbuf *m0, *rights0;
 {
-	struct sockaddr *msa;
 	register struct mbuf *m;
 	register int len = sizeof (struct sockaddr);
+	register struct mbuf *rights;
 
+	if (rights0)
+		len += rights0->m_len;
 	m = m0;
 	if (m == 0)
 		panic("sbappendaddr");
@@ -437,45 +407,34 @@ sbappendaddr(sb, asa, m0)
 	if (len > sbspace(sb))
 		return (0);
 	m = m_get(M_DONTWAIT, MT_SONAME);
-	if (m == 0)
+	if (m == NULL)
 		return (0);
 	m->m_len = sizeof (struct sockaddr);
-	msa = mtod(m, struct sockaddr *);
-	*msa = *asa;
 	m->m_act = (struct mbuf *)1;
+	*mtod(m, struct sockaddr *) = *asa;
+	if (rights0 == 0 || rights0->m_len == 0) {
+		rights = m_get(M_DONTWAIT, MT_SONAME);
+		if (rights)
+			rights->m_len = 0;
+	} else
+		rights = m_copy(rights0, 0, rights0->m_len);
+	if (rights == 0) {
+		m_freem(m);
+		return (0);
+	}
+	rights->m_act = (struct mbuf *)1;
+	m->m_next = rights;
+	rights->m_next = m0;
 	sbappend(sb, m);
-	sbappend(sb, m0);
 	return (1);
 }
-
-#ifdef notdef
-SBCHECK(sb, str)
-	struct sockbuf *sb;
-	char *str;
-{
-	register int cnt = sb->sb_cc;
-	register int mbcnt = sb->sb_mbcnt;
-	register struct mbuf *m;
-
-	for (m = sb->sb_mb; m; m = m->m_next) {
-		cnt -= m->m_len;
-		mbcnt -= MSIZE;
-		if (m->m_off > MMAXOFF)
-			mbcnt -= CLBYTES;
-	}
-	if (cnt || mbcnt) {
-		printf("cnt %d mbcnt %d\n", cnt, mbcnt);
-		panic(str);
-	}
-}
-#endif
 
 /*
  * Free all mbufs on a sockbuf mbuf chain.
  * Check that resource allocations return to 0.
  */
 sbflush(sb)
-	struct sockbuf *sb;
+	register struct sockbuf *sb;
 {
 
 	if (sb->sb_flags & SB_LOCK)

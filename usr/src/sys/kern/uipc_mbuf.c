@@ -1,4 +1,4 @@
-/*	uipc_mbuf.c	1.42	82/12/17	*/
+/*	uipc_mbuf.c	1.43	83/05/27	*/
 
 #include "../machine/pte.h"
 

@@ -1,4 +1,4 @@
-/*	vfs_xxx.c	4.4	82/12/28	*/
+/*	vfs_xxx.c	4.5	83/05/27	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -38,7 +38,6 @@ uchar()
 #ifndef NOCOMPAT
 #include "../h/file.h"
 #include "../h/nami.h"
-#include "../h/descrip.h"
 #include "../h/kernel.h"
 
 /*
@@ -67,19 +66,13 @@ ofstat()
 	register struct a {
 		int	fd;
 		struct ostat *sb;
-	} *uap;
+	} *uap = (struct a *)u.u_ap;
+	extern struct file *getinode();
 
-	uap = (struct a *)u.u_ap;
-	fp = getf(uap->fd);
+	fp = getinode(uap->fd);
 	if (fp == NULL)
 		return;
-	if (fp->f_type == DTYPE_SOCKET) {
-		struct ostat ub;
-
-		bzero((caddr_t)&ub, sizeof (ub));
-		(void) copyout((caddr_t)&ub, (caddr_t)uap->sb, sizeof (ub));
-	} else
-		ostat1(fp->f_inode, uap->sb);
+	ostat1((struct inode *)fp->f_data, uap->sb);
 }
 
 /*

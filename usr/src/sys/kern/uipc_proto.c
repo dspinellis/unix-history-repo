@@ -1,4 +1,4 @@
-/*	uipc_proto.c	4.27	82/11/02	*/
+/*	uipc_proto.c	4.28	83/05/27	*/
 
 #include "../h/param.h"
 #include "../h/socket.h"
@@ -19,7 +19,7 @@ struct protosw unixsw[] = {
   uipc_usrreq,
   0,		0,		0,		0,
 },
-{ SOCK_DGRAM,	PF_UNIX,	0,		PR_ATOMIC|PR_ADDR,
+{ SOCK_DGRAM,	PF_UNIX,	0,		PR_ATOMIC|PR_ADDR|PR_RIGHTS,
   0,		0,		0,		0,
   uipc_usrreq,
   0,		0,		0,		0,

@@ -1,4 +1,4 @@
-/*	tty_tb.c	4.7	82/12/05	*/
+/*	tty_tb.c	4.8	83/05/27	*/
 
 #include "tb.h"
 #if NTB > 0
@@ -48,7 +48,7 @@ tbopen(dev, tp)
 
 	if (tp->t_line == TABLDISC || tp->t_line == NTABLDISC) {
 		return (EBUSY);
-	wflushtty(tp);
+	ttywflush(tp);
 	tp->t_cp = (char *) &tp->t_un.T_CTLQ;	/* overlay control queue */
 	tp->t_inbuf = 0;
 	tbp = (struct tbposition *) &tp->t_rocount;

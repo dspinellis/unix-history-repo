@@ -1,4 +1,4 @@
-/*	kern_time.c	5.14	82/12/30	*/
+/*	kern_time.c	5.15	83/05/27	*/
 
 #include "../machine/reg.h"
 
@@ -298,73 +298,3 @@ timevalfix(t1)
 		t1->tv_usec -= 1000000;
 	}
 }
-
-#ifndef NOCOMPAT
-otime()
-{
-
-	u.u_r.r_time = time.tv_sec;
-}
-
-ostime()
-{
-	register struct a {
-		int	time;
-	} *uap = (struct a *)u.u_ap;
-	struct timeval tv;
-
-	tv.tv_sec = uap->time;
-	tv.tv_usec = 0;
-	setthetime(&tv);
-}
-
-/* from old timeb.h */
-struct timeb {
-	time_t	time;
-	u_short	millitm;
-	short	timezone;
-	short	dstflag;
-};
-
-oftime()
-{
-	register struct a {
-		struct	timeb	*tp;
-	} *uap;
-	struct timeb tb;
-
-	uap = (struct a *)u.u_ap;
-	(void) spl7();
-	tb.time = time.tv_sec;
-	tb.millitm = time.tv_usec / 1000;
-	(void) spl0();
-	tb.timezone = tz.tz_minuteswest;
-	tb.dstflag = tz.tz_dsttime;
-	u.u_error = copyout((caddr_t)&tb, (caddr_t)uap->tp, sizeof (tb));
-}
-
-oalarm()
-{
-	register struct a {
-		int	deltat;
-	} *uap = (struct a *)u.u_ap;
-	register struct proc *p = u.u_procp;
-	int s = spl7();
-
-	untimeout(realitexpire, (caddr_t)p);
-	timerclear(&p->p_realtimer.it_interval);
-	u.u_r.r_val1 = 0;
-	if (timerisset(&p->p_realtimer.it_value) &&
-	    timercmp(&p->p_realtimer.it_value, &time, >))
-		u.u_r.r_val1 = p->p_realtimer.it_value.tv_sec - time.tv_sec;
-	if (uap->deltat == 0) {
-		timerclear(&p->p_realtimer.it_value);
-		splx(s);
-		return;
-	}
-	p->p_realtimer.it_value = time;
-	p->p_realtimer.it_value.tv_sec += uap->deltat;
-	timeout(realitexpire, (caddr_t)p, hzto(&p->p_realtimer.it_value));
-	splx(s);
-}
-#endif

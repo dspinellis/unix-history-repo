@@ -1,9 +1,9 @@
-/*	ffs_tables.c	2.3	82/07/15	*/
+/*	ffs_tables.c	2.4	83/05/27	*/
 
 #include "../h/param.h"
 
 /*
- * bit patterns for identifying fragments in the block map
+ * Bit patterns for identifying fragments in the block map
  * used as ((map & around) == inside)
  */
 int around[9] = {
@@ -14,7 +14,7 @@ int inside[9] = {
 };
 
 /*
- * given a block map bit pattern, the frag tables tell whether a
+ * Given a block map bit pattern, the frag tables tell whether a
  * particular size fragment is available. 
  *
  * used as:
@@ -25,8 +25,7 @@ int inside[9] = {
  * These tables are used by the scanc instruction on the VAX to
  * quickly find an appropriate fragment.
  */
-
-unsigned char fragtbl124[256] = {
+u_char fragtbl124[256] = {
 	0x00, 0x16, 0x16, 0x2a, 0x16, 0x16, 0x26, 0x4e,
 	0x16, 0x16, 0x16, 0x3e, 0x2a, 0x3e, 0x4e, 0x8a,
 	0x16, 0x16, 0x16, 0x3e, 0x16, 0x16, 0x36, 0x5e,
@@ -61,7 +60,7 @@ unsigned char fragtbl124[256] = {
 	0x9e, 0x9e, 0x9e, 0xbe, 0xaa, 0xbe, 0xce, 0x8a,
 };
 
-unsigned char fragtbl8[256] = {
+u_char fragtbl8[256] = {
 	0x00, 0x01, 0x01, 0x02, 0x01, 0x01, 0x02, 0x04,
 	0x01, 0x01, 0x01, 0x03, 0x02, 0x03, 0x04, 0x08,
 	0x01, 0x01, 0x01, 0x03, 0x01, 0x01, 0x03, 0x05,
@@ -97,8 +96,8 @@ unsigned char fragtbl8[256] = {
 };
 
 /*
- * the actual fragtbl array
+ * The actual fragtbl array.
  */
-unsigned char *fragtbl[MAXFRAG + 1] = {
+u_char *fragtbl[MAXFRAG + 1] = {
 	0, fragtbl124, fragtbl124, 0, fragtbl124, 0, 0, 0, fragtbl8,
 };

@@ -1,4 +1,4 @@
-/*	tty_pty.c	4.30	83/05/21	*/
+/*	tty_pty.c	4.31	83/05/27	*/
 
 /*
  * Pseudo-teletype Driver
@@ -208,7 +208,7 @@ ptcclose(dev)
 	if (tp->t_state & TS_ISOPEN)
 		gsignal(tp->t_pgrp, SIGHUP);
 	tp->t_state &= ~TS_CARR_ON;	/* virtual carrier gone */
-	flushtty(tp, FREAD|FWRITE);
+	ttyflush(tp, FREAD|FWRITE);
 	tp->t_oproc = 0;		/* mark closed */
 }
 
@@ -414,7 +414,7 @@ ptyioctl(dev, cmd, data, flag)
 				pti->pt_flags |= PF_REMOTE;
 			else
 				pti->pt_flags &= ~PF_REMOTE;
-			flushtty(tp, FREAD|FWRITE);
+			ttyflush(tp, FREAD|FWRITE);
 			return (0);
 
 		case FIONBIO:
