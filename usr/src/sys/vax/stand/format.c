@@ -1,4 +1,5 @@
-/*	format.c	6.2	83/09/18	*/
+/*	format.c	6.3	83/09/23	*/
+
 
 /* 
  * Standalone program to do media checking
@@ -53,23 +54,47 @@ errornames[NERRORS] = {
 int	errors[NERRORS];	/* histogram of errors */
 int	pattern;
 
+/*
+ * Purdue/EE severe burnin patterns.
+ */
+unsigned short ppat[] = {
+0031463,0070707,0133333,0155555,0161616,0143434,
+0107070,0016161,0034343,0044444,0022222,0111111,0125252, 052525,
+0125252,0125252,0125252,0125252,0125252,0125252,0125252,0125252,
+#ifndef	SHORTPASS
+0125252,0125252,0125252,0125252,0125252,0125252,0125252,0125252,
+ 052525, 052525, 052525, 052525, 052525, 052525, 052525, 052525,
+#endif
+ 052525, 052525, 052525, 052525, 052525, 052525, 052525, 052525
+ };
+
+#define	NPT	(sizeof (ppat) / sizeof (short))
+int	npat;		/* subscript to ppat[] */
+int	severe;		/* nz if running "severe" burnin */
+int	nbads;		/* subscript for bads */
+long	bads[MAXBADDESC]; /* Bad blocks accumulated */
+
 char	*malloc();
+int	qcompar();
 char	*prompt();
 extern	int end;
 
 main()
 {
 	register int sector, sn;
-	int lastsector, tracksize;
+	int lastsector, tracksize, rtracksize;
 	int unit, fd, resid, i, trk, cyl, debug;
 	struct st st;
 	struct sector *bp, *cbp;
+	char *rbp, *rcbp;
+	int pass, maxpass;
 	char *cp;
 
 	printf("Disk format/check utility\n\n");
 
 again:
-	cp = prompt("Enable debugging (1=bse, 2=ecc, 3=bse+ecc)? ");
+	nbads = 0;
+	cp = prompt("Enable debugging (0=none, 1=bse, 2=ecc, 3=bse+ecc)? ");
 	debug = atoi(cp);
 	if (debug < 0)
 		debug = 0;
@@ -82,90 +107,123 @@ again:
 	if (getpattern())
 		goto again;
 	printf("Start formatting...make sure the drive is online\n");
+	if (severe)
+		ioctl(fd, SAIOSEVRE, (char *) 0);
 	ioctl(fd, SAIONOBAD, (char *)0);
 	ioctl(fd, SAIOECCLIM, (char *)0);
 	ioctl(fd, SAIODEBUG, (char *)debug);
 	if (SSDEV) {
+		if (severe) {
+			printf("Severe burnin doesn't work with RM80 yet\n");
+			exit(1);
+		}
 		ioctl(fd, SAIOSSI, (char *)0);	/* set skip sector inhibit */
 		st.nsect++;
 		st.nspc += st.ntrak;
 	}
 	tracksize = sizeof (struct sector) * st.nsect;
+	rtracksize = SECTSIZ * st.nsect;
 	bp = (struct sector *)malloc(tracksize);
-	bufinit(bp, tracksize);
-	/*
-	 * Begin check, for each track,
-	 *
-	 * 1) Write header and test pattern.
-	 * 2) Write check header and data.
-	 */
-	lastsector = st.nspc * st.ncyl;
-	for (sector = 0; sector < lastsector; sector += st.nsect) {
-		cyl = sector / st.nspc;
-		trk = (sector % st.nspc) / st.nsect;
-		for (i = 0; i < st.nsect; i++) {
-			bp[i].header1 =
-				(u_short) cyl | HDR1_FMT22 | HDR1_OKSCT;
-			bp[i].header2 = ((u_short)trk << 8) + i;
-		}
-		if (sector && (sector % (st.nspc * 10)) == 0)
-			printf("cylinder %d\n", cyl);
+	rbp = malloc(rtracksize);
+	if (severe) {
+		npat = 0;
+		maxpass = NPT;
+	} else
+		maxpass = 1;
+	for (pass = 0; pass < maxpass; pass++) {
+		if (severe)
+			printf("Begin pass %d\n", pass);
+		bufinit(bp, tracksize);
+		if (severe)
+			npat++;
 		/*
-		 * Try and write the headers and data patterns into
-		 * each sector in the track.  Continue until such
-		 * we're done, or until there's less than a sector's
-		 * worth of data to transfer.
+		 * Begin check, for each track,
 		 *
-		 * The lseek call is necessary because of
-		 * the odd sector size (516 bytes)
+		 * 1) Write header and test pattern.
+		 * 2) Read data.  Hardware checks header and data ECC.
+		 *    Read data (esp on Eagles) is much faster when write check.
 		 */
-		for (resid = tracksize, cbp = bp, sn = sector;;) {
-			int cc;
-
-			lseek(fd, sn * SECTSIZ, 0);
-			ioctl(fd, SAIOHDR, (char *)0);
-			cc = write(fd, cbp, resid);
-			if (cc == resid)
-				break;
+		lastsector = st.nspc * st.ncyl;
+		for (sector = 0; sector < lastsector; sector += st.nsect) {
+			cyl = sector / st.nspc;
+			trk = (sector % st.nspc) / st.nsect;
+			for (i = 0; i < st.nsect; i++) {
+				bp[i].header1 =
+					(u_short) cyl | HDR1_FMT22 | HDR1_OKSCT;
+				bp[i].header2 = ((u_short)trk << 8) + i;
+			}
+			if (sector && (sector % (st.nspc * 100)) == 0)
+				printf("cylinder %d\n", cyl);
 			/*
-			 * Don't record errors during write,
-			 * all errors will be found during
-			 * writecheck performed below.
+			 * Try and write the headers and data patterns into
+			 * each sector in the track.  Continue until such
+			 * we're done, or until there's less than a sector's
+			 * worth of data to transfer.
+			 *
+			 * The lseek call is necessary because of
+			 * the odd sector size (516 bytes)
 			 */
-			sn = iob[fd - 3].i_errblk;
-			cbp += sn - sector;
-			resid -= (sn - sector) * sizeof (struct sector);
-			if (resid < sizeof (struct sector)) 
-				break;
-		}
-		/*
-		 * Write check headers and test patterns.
-		 * Retry remainder of track on error until
-		 * we're done, or until there's less than a
-		 * sector to verify.
-		 */
-		for (resid = tracksize, cbp = bp, sn = sector;;) {
-			int cc;
+			for (resid = tracksize, cbp = bp, sn = sector;;) {
+				int cc;
 
-			lseek(fd, sn * SECTSIZ, 0);
-			ioctl(fd, SAIOHCHECK, (char *)0);
-			cc = read(fd, cbp, resid);
-			if (cc == resid)
-				break;
-			sn = iob[fd-3].i_errblk;
-			printf("sector %d, write check error\n", sn);
-			recorderror(fd, sn, &st);
-			/* advance past bad sector */
-			sn++;
-			cbp += sn - sector;
-			resid -= (sn - sector) * sizeof (struct sector);
-			if (resid < sizeof (struct sector)) 
-				break;
+				lseek(fd, sn * SECTSIZ, 0);
+				ioctl(fd, SAIOHDR, (char *)0);
+				cc = write(fd, cbp, resid);
+				if (cc == resid)
+					break;
+				/*
+				 * Don't record errors during write,
+				 * all errors will be found during
+				 * writecheck performed below.
+				 */
+				sn = iob[fd - 3].i_errblk;
+				cbp += sn - sector;
+				resid -= (sn - sector) * sizeof (struct sector);
+				if (resid < sizeof (struct sector)) 
+					break;
+			}
+			/*
+			 * Read test patterns.
+			 * Retry remainder of track on error until
+			 * we're done, or until there's less than a
+			 * sector to verify.
+			 */
+			for (resid = rtracksize, rcbp = rbp, sn = sector;;) {
+				int cc;
+
+				lseek(fd, sn * SECTSIZ, 0);
+				cc = read(fd, rcbp, resid);
+				if (cc == resid)
+					break;
+				sn = iob[fd-3].i_errblk;
+				printf("sector %d, read error\n", sn);
+				if (recorderror(fd, sn, &st) < 0 && pass > 0)
+					goto out;
+				/* advance past bad sector */
+				sn++;
+				rcbp += sn - sector;
+				resid -= ((sn - sector) * SECTSIZ);
+				if (resid < SECTSIZ) 
+					break;
+			}
 		}
 	}
 	/*
 	 * Checking finished.
 	 */
+out:
+	if (severe && nbads) {
+		/*
+		 * Sort bads and insert in bad block table.
+		 */
+		qsort(bads, nbads, sizeof (long), qcompar);
+		severe = 0;
+		for (i = 0; i < nbads; i++) {
+			errno = EECC;	/* for now */
+			recorderror(fd, bads[i], &st);
+		}
+		severe++;
+	}
 	if (errors[FE_TOTAL] || errors[FE_SSE]) {
 		printf("Errors:\n");
 		for (i = 0; i < NERRORS; i++)
@@ -192,9 +250,25 @@ again:
 	printf("Done\n");
 	ioctl(fd,SAIONOSSI,(char *)0);
 	close(fd);
+/*
+	if (severe) {
+		asm("halt");
+		exit(0);
+	}
+*/
 #ifndef JUSTEXIT
 	goto again;
 #endif
+}
+
+qcompar(l1, l2)
+register long *l1, *l2;
+{
+	if (*l1 < *l2)
+		return(-1);
+	if (*l1 == *l2)
+		return(0);
+	return(1);
 }
 
 /*
@@ -243,23 +317,39 @@ writebb(fd, nsects, dbad, st, sw)
 /*
  * Record an error, and if there's room, put
  * it in the appropriate bad sector table.
+ *
+ * If severe burnin store block in a list after making sure
+ * we have not already found it on a prev pass.
  */
 recorderror(fd, bn, st)
 	int fd, bn;
 	register struct st *st;
 {
 	int cn, tn, sn, strk;
+	register i;
 
+	
+	if (severe) {
+		for (i = 0; i < nbads; i++)
+			if (bads[i] == bn)
+				return(0);	/* bn already flagged */
+		if (nbads >= MAXBADDESC) {
+			printf("Bad sector table full, burnin terminating\n");
+			return(-1);
+		}
+		bads[nbads++] = bn;
+		return(0);
+	}
 	if (errors[FE_TOTAL] >= MAXBADDESC) {
 		printf("Too many bad sectors\n");
-		return;
+		return(-1);
 	}
 	if (errors[FE_SSE] >= MAXBADDESC) {
 		printf("Too many skip sector errors\n");
-		return;
+		return(-1);
 	}
 	if (errno < EBSE || errno > EHER)
-		return;
+		return(0);
 	errno -= EBSE;
 	errors[errno]++;
 	cn = bn / st->nspc;
@@ -283,6 +373,7 @@ recorderror(fd, bn, st)
 	/* record the bad sector address and continue */
 	dkbad.bt_bad[errors[FE_TOTAL]].bt_cyl = cn;
 	dkbad.bt_bad[errors[FE_TOTAL]++].bt_trksec = (tn << 8) + sn;
+	return(0);
 }
 
 /*
@@ -323,8 +414,8 @@ top:
 		printf("\n");
 		goto top;
 	}
-	printf("Formatting drive %d on %c%c%d ",
-		iob[fd - 3].i_unit % 8, cp[0], cp[1], iob[fd - 3].i_unit / 8);
+	printf("Formatting drive %c%c%d on adaptor %d: ",
+		cp[0], cp[1], iob[fd - 3].i_unit % 8, iob[fd - 3].i_unit / 8);
 	cp = prompt("verify (yes/no)? ");
 	while (*cp != 'y' && *cp != 'n')
 		cp = prompt("Huh, yes or no? ");
@@ -340,6 +431,7 @@ static struct pattern {
 	{ 0xf00ff00f, 	"RH750 worst case" },
 	{ 0xec6dec6d,	"media worst case" },
 	{ 0xa5a5a5a5,	"alternate 1's and 0's" },
+	{ 0xFFFFFFFF,	"Severe burnin (takes several hours)" },
 	{ 0, 0 },
 };
 
@@ -356,6 +448,9 @@ getpattern()
 	npatterns = p - pat;
 	cp = prompt("Pattern (one of the above, other to restart)? ");
 	pattern = atoi(cp) - 1;
+	severe = 0;
+	if (pat[pattern].pa_value == -1)
+		severe = 1;
 	return (pattern < 0 || pattern >= npatterns);
 }
 
@@ -375,14 +470,21 @@ bufinit(bp, size)
 	register struct pattern *pptr;
 	register long *pp, *last;
 	register struct xsect *lastbuf;
+	int patt;
 
 	size /= sizeof (struct sector);
 	lastbuf = bp + size;
-	pptr = &pat[pattern];
+	if (severe) {
+		patt = ppat[npat] | ((long)ppat[npat] << 16);
+		printf("Write pattern 0x%x\n", patt&0xffff);
+	} else {
+		pptr = &pat[pattern];
+		patt = pptr->pa_value;
+	}
 	while (bp < lastbuf) {
 		last = &bp->buf[128];
 		for (pp = bp->buf; pp < last; pp++)
-			*pp = pptr->pa_value;
+			*pp = patt;
 		bp++;
 	}
 }

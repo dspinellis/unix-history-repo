@@ -1,4 +1,4 @@
-/*	saio.h	6.1	%G%	*/
+/*	saio.h	6.2	%G%	*/
 
 /*
  * Header file for standalone package
@@ -38,6 +38,7 @@ struct	iob {
 #define F_NBSF		0x10	/* no bad sector forwarding */
 #define F_ECCLM		0x20	/* limit # of bits in ecc correction */
 #define F_SSI		0x40	/* set skip sector inhibit */
+#define F_SEVRE		0x80	/* Severe burnin (no retries, no ECC) */
 /* io types */
 #define	F_RDDATA	0x0100	/* read data */
 #define	F_WRDATA	0x0200	/* write data */
@@ -115,6 +116,8 @@ extern	int errno;	/* just like unix */
 #define	SAIONOSSI	(('d'<<8)|10)	/* inhibit skip sector handling */
 #define	SAIOSSDEV	(('d'<<8)|11)	/* is device skip sector type? */
 #define	SAIODEBUG	(('d'<<8)|12)	/* enable/disable debugging */
+#define	SAIOSEVRE	(('d'<<8)|13)	/* severe burnin, no ECC, no retries */
+#define	SAIONSEVRE	(('d'<<8)|14)	/* clear severe burnin */
 
 /* codes for sector header word 1 */
 #define	HDR1_FMT22	0x1000	/* standard 16 bit format */

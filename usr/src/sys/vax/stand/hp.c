@@ -1,4 +1,4 @@
-/*	hp.c	6.1	83/07/29	*/
+/*	hp.c	6.2	83/09/23	*/
 
 /*
  * RP??/RM?? disk driver
@@ -173,8 +173,14 @@ restart:
 	/*
 	 * Successful data transfer, return.
 	 */
-	if ((hpaddr->hpds&HPDS_ERR) == 0 && (mba->mba_sr&MBSR_EBITS) == 0)
+	if ((hpaddr->hpds&HPDS_ERR) == 0 && (mba->mba_sr&MBSR_EBITS) == 0) {
+		if (io->i_errcnt >= 16) {
+			hpaddr->hpcs1 = HP_RTC|HP_GO;
+			while (hpaddr->hpds & HPDS_PIP)
+				;
+		}
 		return (bytecnt);
+	}
 
 	/*
 	 * Error handling.  Calculate location of error.
@@ -183,12 +189,14 @@ restart:
 	if (bytesleft) 
 		bytesleft |= 0xffff0000;	/* sxt */
 	bn = io->i_bn + (io->i_cc + bytesleft) / sectsiz;
+	er1 = MASKREG(hpaddr->hper1);
+	er2 = MASKREG(hpaddr->hper2);
+	if (er1 & (HPER1_DCK|HPER1_ECH))
+		bn--;	/* Error is in Prev block */
 	cn = bn/st->nspc;
 	sn = bn%st->nspc;
 	tn = sn/st->nsect;
 	sn = sn%st->nsect;
-	er1 = MASKREG(hpaddr->hper1);
-	er2 = MASKREG(hpaddr->hper2);
 	if (hpdebug[unit] & (HPF_ECCDEBUG|HPF_BSEDEBUG)) {
 		printf("hp error: (cyl,trk,sec)=(%d,%d,%d) ds=%b\n",
 			cn, tn, sn, MASKREG(hpaddr->hpds), HPDS_BITS);
@@ -220,8 +228,21 @@ restart:
 	 */
 	if (++io->i_errcnt > 27 || (er1 & HPER1_HARD) ||
 	    (!ML11 && (er2 & HPER2_HARD))) {
-		if ((io->i_flgs&F_NBSF) == 0 && hpecc(io, BSE) == 0)
-			goto success;
+		/*
+		 * The last ditch effort to bad sector forward
+		 * below will probably fail since mba byte ctr
+		 * (bcr) is different for BSE and ECC errors and
+		 * the wrong block will be revectored to if one
+		 * has 2 contiguous bad blocks and reads the second.
+		 * For now, we can probably just let a header CRC
+		 * error be handled like a BSE since no data will
+		 * have been transferred and the bcr should the same
+		 * as it would with a BSE error.
+		 * --ghg.
+		 */
+		if (er1 & HPER1_HCRC) 
+			if ((io->i_flgs&F_NBSF) == 0 && hpecc(io, BSE) == 0)
+				goto success;
 hard0:
 		io->i_error = EHER;
 		if (mba->mba_sr & (MBSR_WCKUP|MBSR_WCKLWR))
@@ -280,8 +301,13 @@ skipsect:
 		if (hpecc(io, ECC) == 0)
 			goto success;
 		io->i_error = EECC;
+		io->i_errblk = bn + ssect[unit];
 		return (-1);	
 	} 
+#ifdef F_SEVRE
+	if (io->i_flgs & F_SEVRE)
+		goto hard;
+#endif
 	if (ML11 && (io->i_errcnt >= 16))
 		goto hard0;
 	/* fall thru to retry */
@@ -293,40 +319,21 @@ skipsect:
 	 */
 	if (((io->i_errcnt & 07) == 4) ) {
 		hpaddr->hpcs1 = HP_RECAL|HP_GO;
-		hprecal = 1;
-		goto again;
-	}
-
-	/*
-	 * Recalibration state machine.
-	 */
-	switch (hprecal) {
-
-	case 1:
+		HPWAIT(hpaddr);
 		hpaddr->hpdc = cn;
 		hpaddr->hpcs1 = HP_SEEK|HP_GO;
-		hprecal = 2;
-		goto again;
+		HPWAIT(hpaddr);
+	}
 
-	case 2:
-		if (io->i_errcnt < 16 || (io->i_flgs & F_READ) == 0)
-			goto donerecal;
+	if (io->i_errcnt >= 16 && (io->i_flgs & F_READ)) {
 		hpaddr->hpof = hp_offset[io->i_errcnt & 017]|HPOF_FMT22;
 		hpaddr->hpcs1 = HP_OFFSET|HP_GO;
-		hprecal = 3;
-		goto again;
-
-	case 3:
-	donerecal:
-		hprecal = 0;
-		goto again;
+		HPWAIT(hpaddr);
 	}
-	if (io->i_errcnt >= 16) {
-		hpaddr->hpcs1 = HP_RTC|HP_GO;
-		while (hpaddr->hpds & HPDS_PIP)
-			;
-	}
-	goto again;
+	if (hpdebug[unit] & (HPF_ECCDEBUG|HPF_BSEDEBUG))
+		printf("restart: bn=%d, cc=%d, ma=0x%x hprecal=%d\n",
+		  io->i_bn, io->i_cc, io->i_ma, hprecal);
+	goto restart;	/* retry whole transfer  --ghg */
 
 success:
 	/*
@@ -336,7 +343,6 @@ success:
 	 */
 	bn++;
 	if ((bn-startblock) * sectsiz < bytecnt) {
-again:
 		io->i_bn = bn;
 		io->i_ma = membase + (io->i_bn - startblock)*sectsiz;
 		io->i_cc = bytecnt - (io->i_bn - startblock)*sectsiz;
@@ -344,6 +350,11 @@ again:
 			printf("restart: bn=%d, cc=%d, ma=0x%x hprecal=%d\n",
 			  io->i_bn, io->i_cc, io->i_ma, hprecal);
 		goto restart;
+	}
+	if (io->i_errcnt >= 16) {
+		hpaddr->hpcs1 = HP_RTC|HP_GO;
+		while (hpaddr->hpds & HPDS_PIP)
+			;
 	}
 	return (bytecnt);
 }
@@ -362,6 +373,8 @@ hpecc(io, flag)
 	if (bcr)
 		bcr |= 0xffff0000;		/* sxt */
 	npf = (bcr + io->i_cc) / sectsiz;	/* # sectors read */
+	if (flag == ECC)
+		npf--;		/* Error is in prev block --ghg */
 	bn = io->i_bn + npf + ssect[unit];	/* physical block #*/
 	if (hpdebug[unit]&HPF_ECCDEBUG)
 		printf("bcr=%d npf=%d ssect=%d sectsiz=%d i_cc=%d\n",
@@ -398,6 +411,10 @@ hpecc(io, flag)
 			if ((io->i_flgs & F_ECCLM) && ecccnt++ >= MAXECC)
 				return (1);
 		}
+#ifdef F_SEVRE
+		if (io->i_flgs & F_SEVRE)
+			return(1);
+#endif
 		return (0);
 	}
 

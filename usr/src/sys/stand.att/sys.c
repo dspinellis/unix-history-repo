@@ -1,4 +1,4 @@
-/*	sys.c	6.1	83/07/29	*/
+/*	sys.c	6.2	83/09/23	*/
 
 #include "../h/param.h"
 #include "../h/inode.h"
@@ -566,6 +566,14 @@ ioctl(fdesc, cmd, arg)
 
 	case SAIOECCUNL:
 		file->i_flgs &= ~F_ECCLM;
+		break;
+
+	case SAIOSEVRE:
+		file->i_flgs |= F_SEVRE;
+		break;
+
+	case SAIONSEVRE:
+		file->i_flgs &= ~F_SEVRE;
 		break;
 
 	default:
