@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_syscalls.c	8.1 (Berkeley) %G%
+ *	@(#)nfs_syscalls.c	8.2 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -39,13 +39,13 @@
 #include <nfs/nfs.h>
 #include <nfs/nfsrvcache.h>
 #include <nfs/nfsmount.h>
+#include <nfs/nfsnode.h>
 #include <nfs/nqnfs.h>
 #include <nfs/nfsrtt.h>
 
 /* Global defs. */
 extern u_long nfs_prog, nfs_vers;
 extern int (*nfsrv_procs[NFS_NPROCS])();
-extern struct queue_entry nfs_bufq;
 extern struct proc *nfs_iodwant[NFS_MAXASYNCDAEMON];
 extern int nfs_numasync;
 extern time_t nqnfsstarttime;
@@ -640,14 +640,14 @@ nfssvc_iod(p)
 	 * Just loop around doin our stuff until SIGKILL
 	 */
 	for (;;) {
-		while (nfs_bufq.qe_next == NULL && error == 0) {
+		while (nfs_bufq.tqh_first == NULL && error == 0) {
 			nfs_iodwant[myiod] = p;
 			error = tsleep((caddr_t)&nfs_iodwant[myiod],
 				PWAIT | PCATCH, "nfsidl", 0);
 		}
-		while ((bp = nfs_bufq.qe_next) != NULL) {
+		while ((bp = nfs_bufq.tqh_first) != NULL) {
 			/* Take one off the front of the list */
-			queue_remove(&nfs_bufq, bp, struct buf *, b_freelist);
+			TAILQ_REMOVE(&nfs_bufq, bp, b_freelist);
 			if (bp->b_flags & B_READ)
 			    (void) nfs_doio(bp, bp->b_rcred, (struct proc *)0);
 			else
