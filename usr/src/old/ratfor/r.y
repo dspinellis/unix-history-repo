@@ -1,5 +1,10 @@
 Original BTL Ratfor System for 4.2
-/* @(#)r.y	1.1 (Berkeley) %G% */
+/*-
+ * %sccs.include.proprietary.c%
+ *
+ *	@(#)r.y	1.2 (Berkeley) %G%
+ */
+
 %{
 extern int transfer;
 extern	int	indent;

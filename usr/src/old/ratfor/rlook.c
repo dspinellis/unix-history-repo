@@ -1,7 +1,11 @@
 Original BTL Ratfor System for 4.2
+/*-
+ * %sccs.include.proprietary.c%
+ */
+
 #ifndef lint
-static char sccsid[] = "@(#)rlook.c	1.2 (Berkeley) %G%";
-#endif
+static char sccsid[] = "@(#)rlook.c	1.3 (Berkeley) %G%";
+#endif /* not lint */
 
 #define NULL 0
 #define EOS 0
