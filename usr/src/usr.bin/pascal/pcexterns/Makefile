@@ -1,4 +1,4 @@
-SCCSID = @(#)Makefile 1.11 %G%
+SCCSID = @(#)Makefile 1.12 %G%
 INSTALL = ${DESTDIR}/usr/ucb
 INSTALLIB = ${DESTDIR}/usr/lib
 SRCDIR=	../src
@@ -31,9 +31,10 @@ px_header: px_header.c ${SRCDIR}/objfmt.h config.o
 pc2: pc2.c
 	${CC} ${CFLAGS} pc2.c -lpc -o tmp
 	${CC} ${CFLAGS} -S pc2.c
-	./tmp pc2.s | as -o pc2.o
+	./tmp pc2.s npc2.s
+	as -o pc2.o npc2.s
 	${CC} ${CFLAGS} pc2.o -o pc2
-	rm -f pc2.o pc2.s tmp
+	rm -f pc2.o npc2.s pc2.s tmp
 
 pc3: pc3.c pc3.h ${SRCDIR}/pstab.h
 	${CC} ${CFLAGS} pc3.c -o pc3
