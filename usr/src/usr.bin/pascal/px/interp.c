@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)interp.c 1.15 %G%";
+static char sccsid[] = "@(#)interp.c 1.16 %G%";
 
 #include <math.h>
 #include "whoami.h"
@@ -986,14 +986,14 @@ interpreter(base)
 			if (tl == 0)
 				tl = *pc.sp++;
 			tl1 = pop2();
-			push2((short)(RANG4(tl1, tl, *pc.sp++)));
+			push2((short)(RANG4(tl1, tl, (long)(*pc.sp++))));
 			continue;
 		case O_RANG42:
 			tl = *pc.cp++;
 			if (tl == 0)
 				tl = *pc.sp++;
 			tl1 = pop4();
-			push4(RANG4(tl1, tl, *pc.sp++));
+			push4(RANG4(tl1, tl, (long)(*pc.sp++)));
 			continue;
 		case O_RSNG2:
 			tl = *pc.cp++;
@@ -1010,26 +1010,32 @@ interpreter(base)
 			push4(RSNG4(tl1, tl));
 			continue;
 		case O_RANG4:
-			pc.cp++;
-			tl = *pc.lp++;
+			tl = *pc.cp++;
+			if (tl == 0)
+				tl = *pc.lp++;
 			tl1 = pop4();
 			push4(RANG4(tl1, tl, *pc.lp++));
 			continue;
 		case O_RANG24:
-			pc.cp++;
-			tl = *pc.lp++;
+			tl = *pc.cp++;
+			if (tl == 0)
+				tl = *pc.lp++;
 			tl1 = pop2();
 			push2((short)(RANG4(tl1, tl, *pc.lp++)));
 			continue;
 		case O_RSNG4:
-			pc.cp++;
-			tl = pop4();
-			push4(RSNG4(tl, *pc.lp++));
+			tl = *pc.cp++;
+			if (tl == 0)
+				tl = *pc.lp++;
+			tl1 = pop4();
+			push4(RSNG4(tl1, tl));
 			continue;
 		case O_RSNG24:
-			pc.cp++;
-			tl = pop2();
-			push2((short)(RSNG4(tl, *pc.lp++)));
+			tl = *pc.cp++;
+			if (tl == 0)
+				tl = *pc.lp++;
+			tl1 = pop2();
+			push2((short)(RSNG4(tl1, tl)));
 			continue;
 		case O_STLIM:
 			pc.cp++;
@@ -1156,7 +1162,7 @@ interpreter(base)
 				tl = *pc.usp++;
 			tl1 = pop4();		/* tl1 is the element */
 			tcp = pushsp((long)(0));/* tcp pts to set */
-			tl2 = *pc.usp++;	/* lower bound */
+			tl2 = *pc.sp++;	/* lower bound */
 			tb = IN(tl1, tl2, (long)(*pc.usp++), tcp);
 			popsp(tl);
 			push2((short)(tb));
@@ -1167,41 +1173,35 @@ interpreter(base)
 			ASRT(ts, "");
 			continue;
 		case O_FOR1U:
-			pc.cp++;
-			tcp = popaddr();	/* tcp = ptr to index var */
-			if (*tcp < pop4()) {	/* still going up */
-				tl = *tcp + 1;	/* inc index var */
-				tl1 = *pc.sp++;	/* index lower bound */
-				tl2 = *pc.sp++;	/* index upper bound */
-				if (_runtst)
-					RANG4(tl, tl1, tl2);
-				*tcp = tl;	/* update index var */
-				pc.cp += *pc.sp;/* return to top of loop */
-				continue;
-			}
-			pc.sp += 3;		/* else fall through */
-			continue;
+			/*
+			 * with the shadowing of for loop variables
+			 * the variable is always sizeof(long) hence
+			 * nullifying the need for shorter length
+			 * assignments
+			 */
 		case O_FOR2U:
-			pc.cp++;
-			tsp = (short *)popaddr(); /* tsp = ptr to index var */
-			if (*tsp < pop4()) {	/* still going up */
-				tl = *tsp + 1;	/* inc index var */
-				tl1 = *pc.sp++;	/* index lower bound */
-				tl2 = *pc.sp++;	/* index upper bound */
-				if (_runtst)
-					RANG4(tl, tl1, tl2);
-				*tsp = tl;	/* update index var */
-				pc.cp += *pc.sp;/* return to top of loop */
-				continue;
-			}
-			pc.sp += 3;		/* else fall through */
-			continue;
-		case O_FOR4U:
-			pc.cp++;
+			tl1 = *pc.cp++;		/* tl1 index lower bound */
+			if (tl1 == 0)
+				tl1 = *pc.sp++;
 			tlp = (long *)popaddr(); /* tlp = ptr to index var */
 			if (*tlp < pop4()) {	/* still going up */
 				tl = *tlp + 1;	/* inc index var */
-				tl1 = *pc.lp++;	/* index lower bound */
+				tl2 = *pc.sp++;	/* index upper bound */
+				if (_runtst)
+					RANG4(tl, tl1, tl2);
+				*tlp = tl;	/* update index var */
+				pc.cp += *pc.sp;/* return to top of loop */
+				continue;
+			}
+			pc.sp += 2;		/* else fall through */
+			continue;
+		case O_FOR4U:
+			tl1 = *pc.cp++;		/* tl1 index lower bound */
+			if (tl1 == 0)
+				tl1 = *pc.lp++;
+			tlp = (long *)popaddr(); /* tlp = ptr to index var */
+			if (*tlp < pop4()) {	/* still going up */
+				tl = *tlp + 1;	/* inc index var */
 				tl2 = *pc.lp++;	/* index upper bound */
 				if (_runtst)
 					RANG4(tl, tl1, tl2);
@@ -1209,44 +1209,38 @@ interpreter(base)
 				pc.cp += *pc.sp;/* return to top of loop */
 				continue;
 			}
-			pc.sp += 5;		/* else fall through */
+			pc.sp += 3;		/* else fall through */
 			continue;
 		case O_FOR1D:
-			pc.cp++;
-			tcp = popaddr();	/* tcp = ptr to index var */
-			if (*tcp > pop4()) {	/* still going down */
-				tl = *tcp - 1;	/* inc index var */
-				tl1 = *pc.sp++;	/* index lower bound */
-				tl2 = *pc.sp++;	/* index upper bound */
-				if (_runtst)
-					RANG4(tl, tl1, tl2);
-				*tcp = tl;	/* update index var */
-				pc.cp += *pc.sp;/* return to top of loop */
-				continue;
-			}
-			pc.sp += 3;		/* else fall through */
-			continue;
+			/*
+			 * with the shadowing of for loop variables
+			 * the variable is always sizeof(long) hence
+			 * nullifying the need for shorter length
+			 * assignments
+			 */
 		case O_FOR2D:
-			pc.cp++;
-			tsp = (short *)popaddr(); /* tsp = ptr to index var */
-			if (*tsp > pop4()) {	/* still going down */
-				tl = *tsp - 1;	/* inc index var */
-				tl1 = *pc.sp++;	/* index lower bound */
-				tl2 = *pc.sp++;	/* index upper bound */
-				if (_runtst)
-					RANG4(tl, tl1, tl2);
-				*tsp = tl;	/* update index var */
-				pc.cp += *pc.sp;/* return to top of loop */
-				continue;
-			}
-			pc.sp += 3;		/* else fall through */
-			continue;
-		case O_FOR4D:
-			pc.cp++;
+			tl1 = *pc.cp++;		/* tl1 index lower bound */
+			if (tl1 == 0)
+				tl1 = *pc.sp++;
 			tlp = (long *)popaddr(); /* tlp = ptr to index var */
 			if (*tlp > pop4()) {	/* still going down */
 				tl = *tlp - 1;	/* inc index var */
-				tl1 = *pc.lp++;	/* index lower bound */
+				tl2 = *pc.sp++;	/* index upper bound */
+				if (_runtst)
+					RANG4(tl, tl1, tl2);
+				*tlp = tl;	/* update index var */
+				pc.cp += *pc.sp;/* return to top of loop */
+				continue;
+			}
+			pc.sp += 2;		/* else fall through */
+			continue;
+		case O_FOR4D:
+			tl1 = *pc.cp++;		/* tl1 index lower bound */
+			if (tl1 == 0)
+				tl1 = *pc.lp++;
+			tlp = (long *)popaddr(); /* tlp = ptr to index var */
+			if (*tlp > pop4()) {	/* still going down */
+				tl = *tlp - 1;	/* inc index var */
 				tl2 = *pc.lp++;	/* index upper bound */
 				if (_runtst)
 					RANG4(tl, tl1, tl2);
@@ -1254,7 +1248,7 @@ interpreter(base)
 				pc.cp += *pc.sp;/* return to top of loop */
 				continue;
 			}
-			pc.sp += 5;		/* else fall through */
+			pc.sp += 3;		/* else fall through */
 			continue;
 		case O_READE:
 			pc.cp++;
