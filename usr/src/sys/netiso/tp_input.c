@@ -29,7 +29,7 @@ SOFTWARE.
  *
  * $Header: tp_input.c,v 5.6 88/11/18 17:27:38 nhall Exp $
  * $Source: /usr/argo/sys/netiso/RCS/tp_input.c,v $
- *	@(#)tp_input.c	7.14 (Berkeley) %G% *
+ *	@(#)tp_input.c	7.15 (Berkeley) %G% *
  *
  * tp_input() gets an mbuf chain from ip.  Actually, not directly
  * from ip, because ip calls a net-level routine that strips off
@@ -56,7 +56,6 @@ SOFTWARE.
 static char *rcsid = "$Header: tp_input.c,v 5.6 88/11/18 17:27:38 nhall Exp $";
 #endif lint
 
-#include "argoxtwentyfive.h"
 #include "param.h"
 #include "systm.h"
 #include "mbuf.h"
@@ -68,7 +67,9 @@ static char *rcsid = "$Header: tp_input.c,v 5.6 88/11/18 17:27:38 nhall Exp $";
 #include "time.h"
 #include "kernel.h"
 #include "types.h"
+#include "iso.h"
 #include "iso_errno.h"
+#include "iso_pcb.h"
 #include "tp_param.h"
 #include "tp_timer.h"
 #include "tp_stat.h"
@@ -76,8 +77,15 @@ static char *rcsid = "$Header: tp_input.c,v 5.6 88/11/18 17:27:38 nhall Exp $";
 #include "argo_debug.h"
 #include "tp_trace.h"
 #include "tp_tpdu.h"
-#include "iso.h"
-#include "cons.h"
+
+#include "../net/if.h"
+#ifdef TRUE
+#undef FALSE
+#undef TRUE
+#endif
+#include "../netccitt/x25.h"
+#include "../netccitt/pk.h"
+#include "../netccitt/pk_var.h"
 
 int 	iso_check_csum(), tp_driver(), tp_headersize(), tp_error_emit();
 
@@ -222,7 +230,7 @@ tp_newsocket(so, fname, cons_channel, class_to_use, netservice)
 	u_int						netservice;
 {
 	register struct tp_pcb	*tpcb = sototpcb(so); /* old tpcb, needed below */
-	struct tp_pcb *			 newtpcb;
+	register struct tp_pcb	*newtpcb;
 
 	/* 
 	 * sonewconn() gets a new socket structure,
@@ -333,7 +341,7 @@ ok:
 	return so;
 }
 
-#ifndef CONS
+#ifndef TPCONS
 tpcons_output()
 {
 	return(0);
@@ -846,8 +854,9 @@ again:
 		 * _tpduf is the fixed part; add 2 to get the dref bits of 
 		 * the fixed part (can't take the address of a bit field) 
 		 */
+#ifdef old_history
 		if(cons_channel) {
-#if NARGOXTWENTYFIVE > 0
+#ifdef NARGOXTWENTYFIVE
 			extern struct tp_pcb *cons_chan_to_tpcb();
 
 			tpcb = cons_chan_to_tpcb( cons_channel );
@@ -868,9 +877,13 @@ again:
 				(1 + 2 + (caddr_t)&hdr->_tpduf - (caddr_t)hdr))
 #else
 			printf("tp_input(): X25 NOT CONFIGURED!!\n");
-#endif NARGOXTWENTYFIVE > 0
-			
-		} else {
+#endif
+		} else
+			/* we've now made the error reporting thing check for
+			multiple channels and not close out if more than
+			one in use */
+#endif old_history
+		{
 
 			CHECK( ((int)dref <= 0 || dref >= N_TPREF) ,
 				E_TP_MISM_REFS,ts_inv_dref, nonx_dref,
@@ -1073,6 +1086,14 @@ again:
 				(1 + 2 + (caddr_t)&hdr->_tpdufr.CRCC - (caddr_t)hdr) 
 					/* ^ more or less the location of class */
 				)
+#ifdef TPCONS
+				if (tpcb->tp_netservice == ISO_CONS &&
+					class_to_use == TP_CLASS_0) {
+					struct isopcb *isop = (struct isopcb *)tpcb->tp_npcb;
+					struct pklcd *lcp = (struct pklcd *)isop->isop_chan;
+					lcp->lcd_flags &= ~X25_DG_CIRCUIT;
+				}
+#endif
 			}
 			if( ! tpcb->tp_use_checksum)
 				IncStat(ts_csum_off);
@@ -1096,16 +1117,6 @@ again:
 			(tpcb->tp_nlproto->nlp_mtu)(tpcb->tp_sock, tpcb->tp_sock->so_pcb,
 						&tpcb->tp_l_tpdusize, &tpcb->tp_tpdusize, 0);
 
-#ifdef	CONS
-			/* Could be that this CC came in on a NEW vc, in which case
-			 * we have to confirm it.
-			 */
-			if( cons_channel )
-				cons_netcmd( CONN_CONFIRM, tpcb->tp_npcb, cons_channel, 
-						tpcb->tp_class == TP_CLASS_4);
-#endif	CONS
-
-			tpcb->tp_peer_acktime = acktime;
 
 			/* if called or calling suffices appeared on the CC, 
 			 * they'd better jive with what's in the pcb

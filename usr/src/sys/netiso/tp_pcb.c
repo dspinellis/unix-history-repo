@@ -29,7 +29,7 @@ SOFTWARE.
  *
  * $Header: tp_pcb.c,v 5.4 88/11/18 17:28:24 nhall Exp $
  * $Source: /usr/argo/sys/netiso/RCS/tp_pcb.c,v $
- *	@(#)tp_pcb.c	7.6 (Berkeley) %G% *
+ *	@(#)tp_pcb.c	7.7 (Berkeley) %G% *
  *
  *
  * This is the initialization and cleanup stuff - 
@@ -48,7 +48,6 @@ SOFTWARE.
 static char *rcsid = "$Header: tp_pcb.c,v 5.4 88/11/18 17:28:24 nhall Exp $";
 #endif lint
 
-#include "argoxtwentyfive.h"
 #include "types.h"
 #include "param.h"
 #include "mbuf.h"
@@ -262,7 +261,7 @@ int 	tpclnp_output_dg();
 int		iso_nlctloutput();
 struct isopcb	tp_isopcb;
 #endif ISO
-#if NARGOXTWENTYFIVE > 0
+#ifdef TPCONS
 int		iso_putnetaddr();
 int		iso_getnetaddr();
 int		iso_cmpnetaddr();
@@ -271,14 +270,13 @@ int 	iso_getsufx();
 int 	iso_recycle_tsuffix(); 
 int		tpcons_mtu(); 
 int		iso_pcbbind(); 
-int		iso_pcbconnect(); 
+int		tpcons_pcbconnect(); 
 int		iso_pcbdisconnect(); 
 int 	iso_pcbdetach(); 
 int 	iso_pcballoc(); 
 int 	tpcons_output(); 
-int 	tpcons_output_dg(); 
 struct isopcb	tp_isopcb;
-#endif NARGOXTWENTYFIVE
+#endif TPCONS
 
 
 struct nl_protosw nl_protosw[] = {
@@ -311,14 +309,14 @@ struct nl_protosw nl_protosw[] = {
 	{ 0 },
 #endif INET
 	/* ISO_CONS */
-#if defined(ISO) && (NARGOXTWENTYFIVE > 0)
+#if defined(ISO) && defined(TPCONS)
 	{ AF_ISO, iso_putnetaddr, iso_getnetaddr, iso_cmpnetaddr,
 		iso_putsufx, iso_getsufx,
 		iso_recycle_tsuffix,
-		tpcons_mtu, iso_pcbbind, iso_pcbconnect,
+		tpcons_mtu, iso_pcbbind, tpcons_pcbconnect,
 		iso_pcbdisconnect,	iso_pcbdetach,
 		iso_pcballoc,
-		tpcons_output, tpcons_output_dg, iso_nlctloutput,
+		tpcons_output, tpcons_output, iso_nlctloutput,
 		(caddr_t) &tp_isopcb,
 		},
 #else
