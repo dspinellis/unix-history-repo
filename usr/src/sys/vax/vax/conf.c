@@ -1,4 +1,4 @@
-/*	conf.c	4.66	83/04/15	*/
+/*	conf.c	4.67	83/05/11	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -163,6 +163,17 @@ int	rxopen(),rxstrategy(),rxclose(),rxread(),rxwrite(),rxreset(),rxioctl();
 #define	rxioctl		nodev
 #endif
 
+#include "uu.h"
+#if NUU > 0
+int	uuopen(),uustrategy(),uuclose(),uureset(),uuioctl();
+#else
+#define	uuopen		nodev
+#define uustrategy	nodev
+#define	uuclose		nodev
+#define	uureset		nulldev
+#define	uuioctl		nodev
+#endif
+
 int	swstrategy(),swread(),swwrite();
 
 struct bdevsw	bdevsw[] =
@@ -180,6 +191,7 @@ struct bdevsw	bdevsw[] =
 	utopen,		utclose,	utstrategy,	utdump,	B_TAPE,	/*10*/
 	idcopen,	nodev,		idcstrategy,	idcdump,0,	/*11*/
 	rxopen,		rxclose,	rxstrategy,	nodev,	0,	/*12*/
+	uuopen,		uuclose,	uustrategy,	nodev,	0,	/*13*/
 };
 int	nblkdev = sizeof (bdevsw) / sizeof (bdevsw[0]);
 
