@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_vnops.c	7.18 (Berkeley) %G%
+ *	@(#)vfs_vnops.c	7.19 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -57,7 +57,7 @@ vn_open(ndp, fmode, cmode)
 		if (error = namei(ndp))
 			return (error);
 		if (ndp->ni_vp == NULL) {
-			vattr_null(vap);
+			VATTR_NULL(vap);
 			vap->va_type = VREG;
 			vap->va_mode = cmode;
 			if (error = VOP_CREATE(ndp, vap))
@@ -103,7 +103,7 @@ vn_open(ndp, fmode, cmode)
 		}
 	}
 	if (fmode & FTRUNC) {
-		vattr_null(vap);
+		VATTR_NULL(vap);
 		vap->va_size = 0;
 		if (error = VOP_SETATTR(vp, vap, ndp->ni_cred))
 			goto bad;

@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_syscalls.c	7.44 (Berkeley) %G%
+ *	@(#)vfs_syscalls.c	7.45 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -611,7 +611,7 @@ mknod(scp)
 		error = EEXIST;
 		goto out;
 	}
-	vattr_null(&vattr);
+	VATTR_NULL(&vattr);
 	switch (uap->fmode & S_IFMT) {
 
 	case S_IFMT:	/* used by badsect to flag bad sectors */
@@ -663,7 +663,7 @@ mkfifo(scp)
 		VOP_ABORTOP(ndp);
 		RETURN (EEXIST);
 	} else {
-		vattr_null(&vattr);
+		VATTR_NULL(&vattr);
 		vattr.va_type = VFIFO;
 		vattr.va_mode = (uap->fmode & 07777) &~ scp->sc_cmask;
 	}
@@ -746,7 +746,7 @@ symlink(scp)
 		goto out;
 	}
 	vp = ndp->ni_dvp;
-	vattr_null(&vattr);
+	VATTR_NULL(&vattr);
 	vattr.va_mode = 0777 &~ scp->sc_cmask;
 out:
 	if (error)
@@ -993,7 +993,7 @@ chflags(scp)
 	ndp->ni_nameiop = LOOKUP | FOLLOW | LOCKLEAF;
 	ndp->ni_segflg = UIO_USERSPACE;
 	ndp->ni_dirp = uap->fname;
-	vattr_null(&vattr);
+	VATTR_NULL(&vattr);
 	vattr.va_flags = uap->flags;
 	if (error = namei(ndp))
 		RETURN (error);
@@ -1025,7 +1025,7 @@ fchflags(scp)
 
 	if (error = getvnode(scp->sc_ofile, uap->fd, &fp))
 		RETURN (error);
-	vattr_null(&vattr);
+	VATTR_NULL(&vattr);
 	vattr.va_flags = uap->flags;
 	vp = (struct vnode *)fp->f_data;
 	VOP_LOCK(vp);
@@ -1057,7 +1057,7 @@ chmod(scp)
 	ndp->ni_nameiop = LOOKUP | FOLLOW | LOCKLEAF;
 	ndp->ni_segflg = UIO_USERSPACE;
 	ndp->ni_dirp = uap->fname;
-	vattr_null(&vattr);
+	VATTR_NULL(&vattr);
 	vattr.va_mode = uap->fmode & 07777;
 	if (error = namei(ndp))
 		RETURN (error);
@@ -1089,7 +1089,7 @@ fchmod(scp)
 
 	if (error = getvnode(scp->sc_ofile, uap->fd, &fp))
 		RETURN (error);
-	vattr_null(&vattr);
+	VATTR_NULL(&vattr);
 	vattr.va_mode = uap->fmode & 07777;
 	vp = (struct vnode *)fp->f_data;
 	VOP_LOCK(vp);
@@ -1122,7 +1122,7 @@ chown(scp)
 	ndp->ni_nameiop = LOOKUP | NOFOLLOW | LOCKLEAF;
 	ndp->ni_segflg = UIO_USERSPACE;
 	ndp->ni_dirp = uap->fname;
-	vattr_null(&vattr);
+	VATTR_NULL(&vattr);
 	vattr.va_uid = uap->uid;
 	vattr.va_gid = uap->gid;
 	if (error = namei(ndp))
@@ -1156,7 +1156,7 @@ fchown(scp)
 
 	if (error = getvnode(scp->sc_ofile, uap->fd, &fp))
 		RETURN (error);
-	vattr_null(&vattr);
+	VATTR_NULL(&vattr);
 	vattr.va_uid = uap->uid;
 	vattr.va_gid = uap->gid;
 	vp = (struct vnode *)fp->f_data;
@@ -1189,7 +1189,7 @@ utimes(scp)
 	ndp->ni_nameiop = LOOKUP | FOLLOW | LOCKLEAF;
 	ndp->ni_segflg = UIO_USERSPACE;
 	ndp->ni_dirp = uap->fname;
-	vattr_null(&vattr);
+	VATTR_NULL(&vattr);
 	vattr.va_atime = tv[0];
 	vattr.va_mtime = tv[1];
 	if (error = namei(ndp))
@@ -1223,7 +1223,7 @@ truncate(scp)
 	ndp->ni_nameiop = LOOKUP | FOLLOW | LOCKLEAF;
 	ndp->ni_segflg = UIO_USERSPACE;
 	ndp->ni_dirp = uap->fname;
-	vattr_null(&vattr);
+	VATTR_NULL(&vattr);
 	vattr.va_size = uap->length;
 	if (error = namei(ndp))
 		RETURN (error);
@@ -1260,7 +1260,7 @@ ftruncate(scp)
 		RETURN (error);
 	if ((fp->f_flag & FWRITE) == 0)
 		RETURN (EINVAL);
-	vattr_null(&vattr);
+	VATTR_NULL(&vattr);
 	vattr.va_size = uap->length;
 	vp = (struct vnode *)fp->f_data;
 	VOP_LOCK(vp);
@@ -1393,7 +1393,7 @@ mkdir(scp)
 		VOP_ABORTOP(ndp);
 		RETURN (EEXIST);
 	}
-	vattr_null(&vattr);
+	VATTR_NULL(&vattr);
 	vattr.va_type = VDIR;
 	vattr.va_mode = (uap->dmode & 0777) &~ scp->sc_cmask;
 	error = VOP_MKDIR(ndp, &vattr);

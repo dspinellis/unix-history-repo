@@ -11,7 +11,7 @@
  * from this software without specific prior written permission.
  * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
- *	@(#)uipc_usrreq.c	7.15 (Berkeley) %G%
+ *	@(#)uipc_usrreq.c	7.16 (Berkeley) %G%
  */
 
 #include "param.h"

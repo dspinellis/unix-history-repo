@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_serv.c	7.16 (Berkeley) %G%
+ *	@(#)nfs_serv.c	7.17 (Berkeley) %G%
  */
 
 /*
@@ -128,7 +128,7 @@ nfsrv_setattr(mrep, md, dpos, cred, xid, mrq, repstat)
 		nfsm_reply(0);
 	if (error = nfsrv_access(vp, VWRITE, cred))
 		goto out;
-	vattr_null(vap);
+	VATTR_NULL(vap);
 	/*
 	 * Nah nah nah nah na nah
 	 * There is a bug in the Sun client that puts 0xffff in the mode
@@ -550,7 +550,7 @@ nfsrv_create(mrep, md, dpos, cred, xid, mrq, repstat)
 	ndp->ni_nameiop = CREATE | LOCKPARENT | LOCKLEAF;
 	if (error = nfs_namei(ndp, fhp, len, &md, &dpos))
 		nfsm_reply(0);
-	vattr_null(vap);
+	VATTR_NULL(vap);
 	nfsm_disect(p, u_long *, NFSX_UNSIGNED);
 	/*
 	 * Iff doesn't exist, create it
@@ -836,7 +836,7 @@ nfsrv_symlink(mrep, md, dpos, cred, xid, mrq, repstat)
 		goto out;
 	}
 	vp = ndp->ni_dvp;
-	vattr_null(vap);
+	VATTR_NULL(vap);
 	vap->va_mode = 0777;
 out:
 	if (error)
@@ -887,7 +887,7 @@ nfsrv_mkdir(mrep, md, dpos, cred, xid, mrq, repstat)
 	if (error = nfs_namei(ndp, fhp, len, &md, &dpos))
 		nfsm_reply(0);
 	nfsm_disect(p, u_long *, NFSX_UNSIGNED);
-	vattr_null(vap);
+	VATTR_NULL(vap);
 	vap->va_type = VDIR;
 	vap->va_mode = nfstov_mode(*p++);
 	vp = ndp->ni_vp;
