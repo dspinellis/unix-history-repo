@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_descrip.c	7.22 (Berkeley) %G%
+ *	@(#)kern_descrip.c	7.23 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -137,7 +137,7 @@ fcntl(p, uap, retval)
 	register struct file *fp;
 	register char *pop;
 	struct vnode *vp;
-	int i, error, flags = F_POSIX;
+	int i, tmp, error, flg = F_POSIX;
 	struct flock fl;
 
 	if ((unsigned)uap->fd >= fdp->fd_nfiles ||
@@ -173,20 +173,53 @@ fcntl(p, uap, retval)
 	case F_SETFL:
 		fp->f_flag &= ~FCNTLFLAGS;
 		fp->f_flag |= FFLAGS(uap->arg) & FCNTLFLAGS;
-		if (error = fset(fp, FNDELAY, fp->f_flag & FNDELAY))
+		if (tmp = (fp->f_flag & FNDELAY))
+			fp->f_flag |= FNDELAY;
+		else
+			fp->f_flag &= ~FNDELAY;
+		error = (*fp->f_ops->fo_ioctl)(fp, FIONBIO, (caddr_t)&tmp, p);
+		if (error)
 			return (error);
-		if (error = fset(fp, FASYNC, fp->f_flag & FASYNC))
-			(void) fset(fp, FNDELAY, 0);
+		if (tmp = (fp->f_flag & FASYNC))
+			fp->f_flag |= FASYNC;
+		else
+			fp->f_flag &= ~FASYNC;
+		error = (*fp->f_ops->fo_ioctl)(fp, FIOASYNC, (caddr_t)&tmp, p);
+		if (!error)
+			return (0);
+		fp->f_flag &= ~FNDELAY;
+		tmp = 0;
+		(void) (*fp->f_ops->fo_ioctl)(fp, FIONBIO, (caddr_t)&tmp, p);
 		return (error);
 
 	case F_GETOWN:
-		return (fgetown(fp, retval));
+		if (fp->f_type == DTYPE_SOCKET) {
+			*retval = ((struct socket *)fp->f_data)->so_pgid;
+			return (0);
+		}
+		error = (*fp->f_ops->fo_ioctl)
+			(fp, (int)TIOCGPGRP, (caddr_t)retval, p);
+		*retval = -*retval;
+		return (error);
 
 	case F_SETOWN:
-		return (fsetown(fp, uap->arg));
+		if (fp->f_type == DTYPE_SOCKET) {
+			((struct socket *)fp->f_data)->so_pgid = uap->arg;
+			return (0);
+		}
+		if (uap->arg <= 0) {
+			uap->arg = -uap->arg;
+		} else {
+			struct proc *p1 = pfind(uap->arg);
+			if (p1 == 0)
+				return (ESRCH);
+			uap->arg = p1->p_pgrp->pg_id;
+		}
+		return ((*fp->f_ops->fo_ioctl)
+			(fp, (int)TIOCSPGRP, (caddr_t)&uap->arg, p));
 
 	case F_SETLKW:
-		flags |= F_WAIT;
+		flg |= F_WAIT;
 		/* Fall into F_SETLK */
 
 	case F_SETLK:
@@ -204,15 +237,16 @@ fcntl(p, uap, retval)
 		case F_RDLCK:
 			if ((fp->f_flag & FREAD) == 0)
 				return (EBADF);
-			return (VOP_ADVLOCK(vp, p, F_SETLK, &fl, flags));
+			return (VOP_ADVLOCK(vp, (caddr_t)p, F_SETLK, &fl, flg));
 
 		case F_WRLCK:
 			if ((fp->f_flag & FWRITE) == 0)
 				return (EBADF);
-			return (VOP_ADVLOCK(vp, p, F_SETLK, &fl, flags));
+			return (VOP_ADVLOCK(vp, (caddr_t)p, F_SETLK, &fl, flg));
 
 		case F_UNLCK:
-			return (VOP_ADVLOCK(vp, p, F_UNLCK, &fl, F_POSIX));
+			return (VOP_ADVLOCK(vp, (caddr_t)p, F_UNLCK, &fl,
+				F_POSIX));
 
 		default:
 			return (EINVAL);
@@ -228,7 +262,7 @@ fcntl(p, uap, retval)
 			return (error);
 		if (fl.l_whence == SEEK_CUR)
 			fl.l_start += fp->f_offset;
-		if (error = VOP_ADVLOCK(vp, p, F_GETLK, &fl, F_POSIX))
+		if (error = VOP_ADVLOCK(vp, (caddr_t)p, F_GETLK, &fl, F_POSIX))
 			return (error);
 		return (copyout((caddr_t)&fl, (caddr_t)uap->arg, sizeof (fl)));
 
@@ -236,66 +270,6 @@ fcntl(p, uap, retval)
 		return (EINVAL);
 	}
 	/* NOTREACHED */
-}
-
-fset(fp, bit, value)
-	struct file *fp;
-	int bit, value;
-{
-
-	if (value)
-		fp->f_flag |= bit;
-	else
-		fp->f_flag &= ~bit;
-	return (fioctl(fp, (int)(bit == FNDELAY ? FIONBIO : FIOASYNC),
-	    (caddr_t)&value));
-}
-
-fgetown(fp, valuep)
-	struct file *fp;
-	int *valuep;
-{
-	int error;
-
-	switch (fp->f_type) {
-
-	case DTYPE_SOCKET:
-		*valuep = ((struct socket *)fp->f_data)->so_pgid;
-		return (0);
-
-	default:
-		error = fioctl(fp, (int)TIOCGPGRP, (caddr_t)valuep);
-		*valuep = -*valuep;
-		return (error);
-	}
-}
-
-fsetown(fp, value)
-	struct file *fp;
-	int value;
-{
-
-	if (fp->f_type == DTYPE_SOCKET) {
-		((struct socket *)fp->f_data)->so_pgid = value;
-		return (0);
-	}
-	if (value > 0) {
-		struct proc *p = pfind(value);
-		if (p == 0)
-			return (ESRCH);
-		value = p->p_pgrp->pg_id;
-	} else
-		value = -value;
-	return (fioctl(fp, (int)TIOCSPGRP, (caddr_t)&value));
-}
-
-fioctl(fp, cmd, value)
-	struct file *fp;
-	int cmd;
-	caddr_t value;
-{
-
-	return ((*fp->f_ops->fo_ioctl)(fp, cmd, value));
 }
 
 /*
@@ -352,7 +326,7 @@ fstat(p, uap, retval)
 	switch (fp->f_type) {
 
 	case DTYPE_VNODE:
-		error = vn_stat((struct vnode *)fp->f_data, &ub);
+		error = vn_stat((struct vnode *)fp->f_data, &ub, p);
 		break;
 
 	case DTYPE_SOCKET:
@@ -603,15 +577,15 @@ closef(fp, p)
 		lf.l_len = 0;
 		lf.l_type = F_UNLCK;
 		vp = (struct vnode *)fp->f_data;
-		(void) VOP_ADVLOCK(vp, p, F_UNLCK, &lf, F_POSIX);
+		(void) VOP_ADVLOCK(vp, (caddr_t)p, F_UNLCK, &lf, F_POSIX);
 	}
 	if (--fp->f_count > 0)
 		return (0);
 	if (fp->f_count < 0)
 		panic("closef: count < 0");
 	if (fp->f_type == DTYPE_VNODE)
-		(void) VOP_ADVLOCK(vp, fp, F_UNLCK, &lf, F_FLOCK);
-	error = (*fp->f_ops->fo_close)(fp);
+		(void) VOP_ADVLOCK(vp, (caddr_t)fp, F_UNLCK, &lf, F_FLOCK);
+	error = (*fp->f_ops->fo_close)(fp, p);
 	crfree(fp->f_cred);
 	fp->f_count = 0;
 	return (error);
@@ -650,7 +624,7 @@ flock(p, uap, retval)
 	lf.l_len = 0;
 	if (uap->how & LOCK_UN) {
 		lf.l_type = F_UNLCK;
-		return (VOP_ADVLOCK(vp, fp, F_UNLCK, &lf, F_FLOCK));
+		return (VOP_ADVLOCK(vp, (caddr_t)fp, F_UNLCK, &lf, F_FLOCK));
 	}
 	if (uap->how & LOCK_EX)
 		lf.l_type = F_WRLCK;
@@ -659,8 +633,8 @@ flock(p, uap, retval)
 	else
 		return (EBADF);
 	if (uap->how & LOCK_NB)
-		return (VOP_ADVLOCK(vp, fp, F_SETLK, &lf, F_FLOCK));
-	return (VOP_ADVLOCK(vp, fp, F_SETLK, &lf, F_FLOCK|F_WAIT));
+		return (VOP_ADVLOCK(vp, (caddr_t)fp, F_SETLK, &lf, F_FLOCK));
+	return (VOP_ADVLOCK(vp, (caddr_t)fp, F_SETLK, &lf, F_FLOCK|F_WAIT));
 }
 
 /*
