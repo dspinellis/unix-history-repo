@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)iostat.c	4.18 (Berkeley) 91/01/14";
+static	char *sccsid = "@(#)iostat.c	4.19 (Berkeley) 91/04/11";
 #endif
 
 /*
@@ -284,8 +284,8 @@ stat1(o)
     lseek(mf, where, L_SET); read(mf, &var, sizeof var);
 
 #ifdef vax
-#include <vaxuba/ubavar.h>
-#include <vaxmba/mbavar.h>
+#include <vax/uba/ubavar.h>
+#include <vax/mba/mbavar.h>
 
 read_names()
 {
