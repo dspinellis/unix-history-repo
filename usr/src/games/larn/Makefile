@@ -75,26 +75,73 @@ OPTIONS = -DBSD -DVER=12 -DSUBVER=0 -DWIZID=57 -DSAVEINHOME -DNONAP -DNOLOG
 OBJS= main.o object.o create.o tok.o display.o global.o data.o io.o monster.o\
 	store.o diag.o help.o config.o nap.o bill.o scores.o signal.o moreobj.o\
 	movem.o regen.o fortune.o savelev.o
+SRCS= main.c object.c create.c tok.c display.c global.c data.c io.c monster.c\
+	store.c diag.c help.c config.c nap.c bill.c scores.c signal.c moreobj.c\
+	movem.c regen.c fortune.c savelev.c
 
 DOTFILES= .larn.help .larnmaze .larnopts .lfortune
 
-FLAGS= -O $(OPTIONS) -DLARNHOME=\"$(LARNHOME)/\"
+CFLAGS= -O $(OPTIONS) -DLARNHOME=\"$(LARNHOME)/\"
 
-larn: larn12.0
-larn12.0: $(OBJS) 
-	$(CC) $(FLAGS) $(OBJS) -o larn12.0 $(TERMLIB)
-	size larn12.0
+all: larn
 
-all: larn install
-
-.c.o:	$<
-	$(CC) -c $(FLAGS) $*.c
-	chmod 0600 $*.o
-
-$(OBJS): header.h
+larn: $(OBJS) ${LIBC}
+	$(CC) $(CFLAGS) $(OBJS) -o $@ $(TERMLIB)
 
 install:
-	if test ! -d $(LARNHOME) ; then mkdir $(LARNHOME); fi
-	-chmod a+w $(LARNHOME)
-	cp larn12.0 $(BINDIR)/larn
-	cp $(DOTFILES) $(LARNHOME)
+	-mkdir ${DESTDIR}/usr/games/lib/larnfiles
+	chmod 777 ${DESTDIR}/usr/games/lib/larnfiles
+	install -s -o bin -g bin -m 755 larn ${DESTDIR}/usr/games/larn
+	install -c -o bin -g bin -m 444 .larn.help ${DESTDIR}/usr/games/lib/larnfiles
+	install -c -o bin -g bin -m 444 .larnmaze ${DESTDIR}/usr/games/lib/larnfiles
+	install -c -o bin -g bin -m 444 .larnopts ${DESTDIR}/usr/games/lib/larnfiles
+	install -c -o bin -g bin -m 444 .lfortune ${DESTDIR}/usr/games/lib/larnfiles
+
+clean: FRC
+	rm -f ${OBJS} core larn
+
+depend: FRC
+	mkdep ${CFLAGS} ${SRCS}
+
+lint: FRC
+	lint ${CFLAGS} ${SRCS}
+
+tags: FRC
+	ctags ${SRCS}
+
+FRC:
+
+# DO NOT DELETE THIS LINE -- mkdep uses it.
+# DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
+
+main.o: main.c header.h /usr/include/pwd.h
+object.o: object.c header.h
+create.o: create.c header.h
+tok.o: tok.c /usr/include/sys/types.h /usr/include/sys/ioctl.h
+tok.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h header.h
+display.o: display.c header.h
+global.o: global.c header.h
+data.o: data.c header.h
+io.o: io.c header.h /usr/include/sgtty.h /usr/include/sys/ioctl.h
+io.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
+io.o: /usr/include/varargs.h
+monster.o: monster.c header.h
+store.o: store.c header.h
+diag.o: diag.c /usr/include/sys/types.h /usr/include/sys/times.h
+diag.o: /usr/include/sys/stat.h header.h
+help.o: help.c header.h
+config.o: config.c header.h
+nap.o: nap.c /usr/include/signal.h /usr/include/sys/types.h
+nap.o: /usr/include/sys/timeb.h
+bill.o: bill.c header.h
+scores.o: scores.c /usr/include/sys/types.h /usr/include/sys/times.h
+scores.o: /usr/include/sys/stat.h header.h
+signal.o: signal.c /usr/include/signal.h header.h
+moreobj.o: moreobj.c header.h
+movem.o: movem.c header.h
+regen.o: regen.c header.h
+fortune.o: fortune.c /usr/include/sys/types.h /usr/include/sys/stat.h
+fortune.o: /usr/include/fcntl.h header.h
+savelev.o: savelev.c header.h
+
+# IF YOU PUT ANYTHING HERE IT WILL GO AWAY
