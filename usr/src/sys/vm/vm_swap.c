@@ -1,4 +1,4 @@
-/*	vm_swap.c	4.12	82/10/22	*/
+/*	vm_swap.c	4.13	82/10/31	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -31,7 +31,7 @@ swstrategy(bp)
 	if (rootdev == dumpdev)
 		bp->b_blkno += MINIROOTSIZE;
 #endif
-	sz = (bp->b_bcount+511)/512;
+	sz = howmany(bp->b_bocunt, DEV_BSIZE);
 	off = bp->b_blkno % DMMAX;
 	if (bp->b_blkno+sz > nswap || off+sz > DMMAX) {
 		bp->b_flags |= B_ERROR;
@@ -116,7 +116,10 @@ swfree(index)
 {
 	register swblk_t vsbase;
 	register long blk;
+	dev_t dev;
 
+	dev = swdevt[index].sw_dev;
+	(*bdevsw[major(dev)].d_open)(dev, FREAD|FWRITE);
 	swdevt[index].sw_freed = 1;
 	for (vsbase = index*DMMAX; vsbase < nswap; vsbase += nswdev*DMMAX) {
 		blk = nswap - vsbase;
@@ -129,8 +132,8 @@ swfree(index)
 			 * hunk which needs special treatment anyways.
 			 */
 			argdev = swdevt[0].sw_dev;
-			rminit(argmap, (long)(blk/2-CLSIZE), (long)CLSIZE,
-			    "argmap", ARGMAPSIZE);
+			rminit(argmap, (long)(blk/2-ctod(CLSIZE)),
+			    (long)ctod(CLSIZE), "argmap", ARGMAPSIZE);
 			/*
 			 * First of all chunks... initialize the swapmap
 			 * the second half of the hunk.

@@ -1,4 +1,4 @@
-/*	kern_physio.c	4.34	82/10/21	*/
+/*	kern_physio.c	4.35	82/10/31	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -48,7 +48,7 @@ swap(p, dblkno, addr, nbytes, rdflg, flag, dev, pfcent)
 	u_int pfcent;
 {
 	register struct buf *bp;
-	register int c;
+	register u_int c;
 	int p2dp;
 	register struct pte *dpte, *vpte;
 	int s;
@@ -82,8 +82,9 @@ swap(p, dblkno, addr, nbytes, rdflg, flag, dev, pfcent)
 	} else
 		bp->b_un.b_addr = addr;
 	while (nbytes > 0) {
-		c = imin(ctob(120), nbytes);
-		bp->b_bcount = c;
+		bp->b_bcount = nbytes;
+		minphys(bp);
+		c = bp->b_bcount;
 		bp->b_blkno = dblkno;
 		bp->b_dev = dev;
 		if (flag & B_DIRTY) {
@@ -93,16 +94,12 @@ swap(p, dblkno, addr, nbytes, rdflg, flag, dev, pfcent)
 #ifdef TRACE
 		trace(TR_SWAPIO, dev, bp->b_blkno);
 #endif
-		(*bdevsw[major(dev)].d_strategy)(bp);
+		physstrat(bp, bdevsw[major(dev).d_strategy, PSWP);
 		if (flag & B_DIRTY) {
 			if (c < nbytes)
 				panic("big push");
 			return;
 		}
-		s = spl6();
-		while((bp->b_flags&B_DONE)==0)
-			sleep((caddr_t)bp, PSWP);
-		splx(s);
 		bp->b_un.b_addr += c;
 		bp->b_flags &= ~B_DONE;
 		if (bp->b_flags & B_ERROR) {
@@ -111,7 +108,7 @@ swap(p, dblkno, addr, nbytes, rdflg, flag, dev, pfcent)
 			swkill(p, (char *)0);
 		}
 		nbytes -= c;
-		dblkno += btoc(c);
+		dblkno += c / DEV_BSIZE;
 	}
 	s = spl6();
 	bp->b_flags &= ~(B_BUSY|B_WANTED|B_PHYS|B_PAGET|B_UAREA|B_DIRTY);
@@ -196,16 +193,14 @@ nextiov:
 	while (iov->iov_len > 0) {
 		bp->b_flags = B_BUSY | B_PHYS | rw;
 		bp->b_dev = dev;
-		bp->b_blkno = uio->uio_offset >> PGSHIFT;
+		bp->b_blkno = uio->uio_offset / DEV_BSIZE;
 		bp->b_bcount = iov->iov_len;
 		(*mincnt)(bp);
 		c = bp->b_bcount;
 		u.u_procp->p_flag |= SPHYSIO;
 		vslock(a = bp->b_un.b_addr, c);
-		(*strat)(bp);
+		physstrat(bp, strat, PRIBIO);
 		(void) spl6();
-		while ((bp->b_flags&B_DONE) == 0)
-			sleep((caddr_t)bp, PRIBIO);
 		vsunlock(a, c, rw);
 		u.u_procp->p_flag &= ~SPHYSIO;
 		if (bp->b_flags&B_WANTED)
@@ -228,7 +223,6 @@ nextiov:
 	goto nextiov;
 }
 
-/*ARGSUSED*/
 unsigned
 minphys(bp)
 	struct buf *bp;
