@@ -342,7 +342,7 @@ err:			rval = 1;
 	return (rval);
 }
 
-volatile void
+void
 usage()
 {
 	(void)fprintf(stderr,
