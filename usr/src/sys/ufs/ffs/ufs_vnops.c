@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_vnops.c	7.80 (Berkeley) %G%
+ *	@(#)ufs_vnops.c	7.81 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -678,8 +678,7 @@ relookup(dvp, vpp, cnp)
 		if (*vpp != NULL)
 			panic("leaf should be empty");
 #endif
-		if (cnp->cn_nameiop == LOOKUP || cnp->cn_nameiop == DELETE ||
-		    error != ENOENT)
+		if (error != EJUSTRETURN)
 			goto bad;
 		/*
 		 * If creating and at end of pathname, then can consider

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_lookup.c	7.37 (Berkeley) %G%
+ *	@(#)vfs_lookup.c	7.38 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -341,8 +341,7 @@ dirloop:
 #ifdef NAMEI_DIAGNOSTIC
 		printf("not found\n");
 #endif
-		if (cnp->cn_nameiop == LOOKUP || cnp->cn_nameiop == DELETE ||
-		    error != ENOENT || *cp != 0)
+		if (error != EJUSTRETURN)
 			goto bad;
 		/*
 		 * If creating and at end of pathname, then can consider
