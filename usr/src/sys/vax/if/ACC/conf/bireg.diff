@@ -1,0 +1,19 @@
+*** bireg.h.orig	Thu Nov 30 15:54:10 1989
+--- bireg.h	Thu Nov 30 15:54:10 1989
+***************
+*** 207,213 ****
+  #define BI_BDA		0x0000010e
+  #define BI_MEM1		0x00000001
+  
+! 
+  
+  /* BI control register */
+  #define BICTRL_BIICREV  0xff000000	/* BI interface chip revision */
+--- 207,213 ----
+  #define BI_BDA		0x0000010e
+  #define BI_MEM1		0x00000001
+  
+! #define	BI_ACP7K	0x00008127	/* ACC ACP7000 hardware platform */
+  
+  /* BI control register */
+  #define BICTRL_BIICREV  0xff000000	/* BI interface chip revision */

@@ -1,0 +1,47 @@
+*** bi_data.c.orig	Thu Nov 30 15:54:32 1989
+--- bi_data.c	Thu Nov 30 15:54:31 1989
+***************
+*** 170,175 ****
+--- 170,189 ----
+  #define bvpsspinit binotconf
+  #endif
+  
++ #include "dda.h"
++ #if NDDA > 0
++ int ddaprobe();
++ #else
++ #define ddaprobe binotconf
++ #endif
++ 
++ #include "acp.h"
++ #if NACP > 0
++ int acpprobe();
++ #else
++ #define acpprobe binotconf
++ #endif
++ 
+  int nNVAXBI = NVAXBI;
+  
+  #if NVAXBI > 0
+***************
+*** 186,191 ****
+--- 200,206 ----
+  int (*cibcaprobes[])() = {  biciinit,0};
+  int (*lxprobes[])() = {  lx_init,0};
+  int (*xbibprobes[])() = {xbibinit,0};
++ int (*acp7kprobes[])() = { ddaprobe, acpprobe, 0};
+  
+  struct bisw bisw [] =
+  {
+***************
+*** 235,240 ****
+--- 250,258 ----
+  	{ BI_XBI,	"xbib",		xbibprobes,	nobireset,
+  	  BIF_NOCONF|BIF_SET_HEIE},
+  
++ 	{ BI_ACP7K,	"acp7000",	acp7kprobes,	nobireset,	
++           BIF_DEVICE},
++ 
+  	{ 0 }
+  };
+  int nbitypes = sizeof (bisw) / sizeof (bisw[0]);
