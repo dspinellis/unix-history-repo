@@ -4,7 +4,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)READ_ME	6.5 (Berkeley) %G%
+#	@(#)READ_ME	6.6 (Berkeley) %G%
 #
 
 This directory contains the source files for sendmail.
@@ -27,8 +27,10 @@ several security holes.
 If you are compiling on OSF/1 (DEC Alpha), you must use -lmld.
 
 If you use both -DNDBM and -DNEWDB, you must delete the module ndbm.o
-from libdb.a.  This compatibility module maps ndbm calls into DB
-calls, and breaks things rather badly.
+from libdb.a and delete the file "ndbm.h" from the files that get
+installed (that is, use the OLD ndbm.h, not the new ndbm.h).  This
+compatibility module maps ndbm calls into DB calls, and breaks things
+rather badly.
 
 You probably want to look over the compilation options in conf.h
 before you compile.  These are intended to be per-site information.
@@ -89,4 +91,4 @@ version.c	A master file for Version.c -- it may not exist in
 
 Eric Allman
 
-(Version 6.5, last update %G% 11:54:06)
+(Version 6.6, last update %G% 07:06:31)
