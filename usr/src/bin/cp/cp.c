@@ -25,7 +25,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)cp.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)cp.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -57,17 +57,17 @@ typedef struct {
 	char	*p_end;		/* pointer to NULL at end of path. */
 } path_t;
 
-#define	type(st)	((st).st_mode&S_IFMT)
+#define	type(st)	((st).st_mode & S_IFMT)
 
-char *path_append(), *path_basename();
-void path_restore();
-
-int exit_val;
+uid_t myuid;
+int exit_val, myumask;
 int interactive_flag, preserve_flag, recursive_flag;
 int (*statfcn)();			/* stat function to use */
 char *buf;				/* I/O; malloc for best alignment. */
-char from_buf[MAXPATHLEN + 1],		/* source path buffer */
-     to_buf[MAXPATHLEN + 1];		/* target path buffer */
+void path_restore();
+char *path_append(), *path_basename();
+
+char from_buf[MAXPATHLEN + 1], to_buf[MAXPATHLEN + 1];
 path_t from = {from_buf, from_buf};
 path_t to = {to_buf, to_buf};
 
@@ -95,7 +95,6 @@ main(argc, argv)
 			break;
 		case 'p':
 			preserve_flag = 1;
-			(void)umask(0);
 			break;
 		case 'r':
 		case 'R':
@@ -121,6 +120,12 @@ main(argc, argv)
 		(void)fprintf(stderr, "cp: out of space.\n");
 		exit(1);
 	}
+
+	myuid = getuid();
+
+	/* copy the umask for explicit mode setting */
+	myumask = umask(0);
+	(void)umask(myumask);
 
 	/* consume last argument first. */
 	if (!path_set(&to, argv[--argc]))
@@ -263,14 +268,16 @@ copy()
 		}
 		/* FALLTHROUGH */
 	default:
-		copy_file(&from_stat);
+		copy_file(&from_stat, dne);
 	}
 }
 
-copy_file(fs)
+copy_file(fs, dne)
 	struct stat *fs;
+	int dne;
 {
 	register int from_fd, to_fd, rcount, wcount;
+	struct stat to_stat;
 
 	if ((from_fd = open(from.p_path, O_RDONLY, 0)) == -1) {
 		error(from.p_path);
@@ -278,31 +285,30 @@ copy_file(fs)
 	}
 
 	/*
-	 * In the interactive case, use O_EXCL to notice existing files.
-	 * If the file exists, verify with the user.
-	 *
-	 * If the file DNE, create it with the mode of the from file modified
-	 * by the umask; arguably wrong but it makes copying executables work
-	 * right and it's been that way forever.  The other choice is 666
-	 * or'ed with the execute bits on the from file modified by the umask.
+	 * If the file exists and we're interactive, verify with the user.
+	 * If the file DNE, set the mode to be the from file, minus setuid
+	 * bits, modified by the umask; arguably wrong, but it makes copying
+	 * executables work right and it's been that way forever.  (The
+	 * other choice is 666 or'ed with the execute bits on the from file
+	 * modified by the umask.)
 	 */
-	to_fd = open(to.p_path,
-	    (interactive_flag ? O_EXCL : 0) | O_WRONLY | O_CREAT | O_TRUNC,
-	    fs->st_mode);
+	if (!dne) {
+		if (interactive_flag) {
+			int checkch, ch;
 
-	if (to_fd == -1 && errno == EEXIST && interactive_flag) {
-		int checkch, ch;
-
-		(void)fprintf(stderr, "overwrite %s? ", to.p_path);
-		checkch = ch = getchar();
-		while (ch != '\n' && ch != EOF)
-			ch = getchar();
-		if (checkch != 'y')
-			return;
-		/* try again. */
-		to_fd = open(to.p_path, O_WRONLY | O_CREAT | O_TRUNC,
-		    fs->st_mode);
-	}
+			(void)fprintf(stderr, "overwrite %s? ", to.p_path);
+			checkch = ch = getchar();
+			while (ch != '\n' && ch != EOF)
+				ch = getchar();
+			if (checkch != 'y') {
+				(void)close(from_fd);
+				return;
+			}
+		}
+		to_fd = open(to.p_path, O_WRONLY|O_TRUNC, 0);
+	} else
+		to_fd = open(to.p_path, O_WRONLY|O_CREAT|O_TRUNC,
+		    fs->st_mode & ~(S_ISUID|S_ISGID));
 
 	if (to_fd == -1) {
 		error(to.p_path);
@@ -321,6 +327,29 @@ copy_file(fs)
 		error(from.p_path);
 	if (preserve_flag)
 		setfile(fs, to_fd);
+	/*
+	 * If the source was setuid, set the bits on the copy if the copy
+	 * was created and is owned by the same uid.  If the source was
+	 * setgid, set the bits on the copy if the copy was created and is
+	 * owned by the same gid and the user is a member of that group.
+	 */
+	else if (fs->st_mode & (S_ISUID|S_ISGID)) {
+		if (fs->st_mode&S_ISUID && myuid != fs->st_uid)
+			fs->st_mode &= ~S_ISUID;
+		if (fs->st_mode & S_ISGID) {
+			if (fstat(to_fd, &to_stat)) {
+				error(to.p_path);
+				fs->st_mode &= ~S_ISGID;
+			}
+			else if (fs->st_gid != to_stat.st_gid ||
+			    !ismember(fs->st_gid))
+				fs->st_mode &= ~S_ISGID;
+		}
+		if (fs->st_mode & (S_ISUID|S_ISGID) && fchmod(to_fd,
+		    fs->st_mode & (S_ISUID|S_ISGID|S_IRWXU|S_IRWXG|S_IRWXO) &
+		    ~myumask))
+			error(to.p_path);
+	}
 	(void)close(from_fd);
 	(void)close(to_fd);
 }
@@ -441,34 +470,57 @@ setfile(fs, fd)
 	int fd;
 {
 	static struct timeval tv[2];
-	static int dochown = 1;
+	static enum { SUCCEEDED, FAILED, PERMFAIL } dochown = SUCCEEDED;
 
 	tv[0].tv_sec = fs->st_atime;
 	tv[1].tv_sec = fs->st_mtime;
 	if (utimes(to.p_path, tv))
 		error(to.p_path);
 	/*
-	 * Changing the ownership probably won't succeed, unless we're
-	 * root or POSIX_CHOWN_RESTRICTED is not set.  Try it last so
-	 * everything else gets set first.
+	 * Changing the ownership probably won't succeed, unless we're root or
+	 * POSIX_CHOWN_RESTRICTED is not set.  Set uid before setting the mode;
+	 * current BSD behavior is to remove all setuid bits on chown.  If the
+	 * chown doesn't succeed, turn off all setuid bits.
 	 */
-	if (fd) {
-		if (fchmod(fd, fs->st_mode))
-			error(to.p_path);
-		if (dochown && fchown(fd, fs->st_uid, fs->st_gid) == -1)
+	if (dochown != PERMFAIL) {
+		if ((fd ? fchown(fd, fs->st_uid, fs->st_gid) :
+		    chown(to.p_path, fs->st_uid, fs->st_gid)))
 			if (errno == EPERM)
-				dochown = 0;
-			else
+				dochown = PERMFAIL;
+			else {
+				dochown = FAILED;
 				error(to.p_path);
-	} else {
-		if (chmod(to.p_path, fs->st_mode))
-			error(to.p_path);
-		if (dochown && chown(to.p_path, fs->st_uid, fs->st_gid) == -1)
-			if (errno == EPERM)
-				dochown = 0;
-			else
-				error(to.p_path);
+			}
+		else
+			dochown = SUCCEEDED;
 	}
+	if (dochown != SUCCEEDED)
+		fs->st_mode &= ~(S_ISUID|S_ISGID);
+	fs->st_mode &= S_ISUID|S_ISGID|S_IRWXU|S_IRWXG|S_IRWXO;
+	if (fd ? fchmod(fd, fs->st_mode) : chmod(to.p_path, fs->st_mode))
+		error(to.p_path);
+}
+
+ismember(gid)
+	gid_t gid;
+{
+	extern int errno;
+	register int cnt;
+	static int ngroups, groups[NGROUPS];
+
+	if (!ngroups) {
+		ngroups = getgroups(NGROUPS, groups);
+		if (ngroups == -1) {
+			ngroups = 0;
+			exit_val = 1;
+			(void)fprintf(stderr, "cp: %s\n", strerror(errno));
+			return(0);
+		}
+	}
+	for (cnt = ngroups; cnt--;)
+		if (gid == groups[cnt])
+			return(1);
+	return(0);
 }
 
 error(s)
