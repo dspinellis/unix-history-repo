@@ -27,7 +27,7 @@ SOFTWARE.
 /*
  * $Header: iso.c,v 4.11 88/09/19 14:58:35 root Exp $ 
  * $Source: /usr/argo/sys/netiso/RCS/iso.c,v $ 
- *	@(#)iso.c	7.9 (Berkeley) %G%
+ *	@(#)iso.c	7.10 (Berkeley) %G%
  *
  * iso.c: miscellaneous routines to support the iso address family
  */
@@ -498,7 +498,7 @@ iso_control(so, cmd, data, ifp)
 		break;
 
 	case SIOCAIFADDR_ISO:
-		maskIsNew = 0; hostIsNew = 1; error = u.u_error;
+		maskIsNew = 0; hostIsNew = 1; error = 0;
 		if (ia->ia_addr.siso_family == AF_ISO) {
 			if (ifra->ifra_addr.siso_len == 0) {
 				ifra->ifra_addr = ia->ia_addr;
