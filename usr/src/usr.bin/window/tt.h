@@ -1,5 +1,5 @@
 /*
- * @(#)tt.h	3.11 %G%
+ * @(#)tt.h	3.12 %G%
  */
 
 /*
@@ -73,5 +73,5 @@ int tttputc();
 char tt_ob[512];
 char *tt_obp;
 char *tt_obe;
-#define ttputc(c)	(tt_obp < tt_obe ? *tt_obp++ = (c) \
+#define ttputc(c)	(tt_obp < tt_obe ? (*tt_obp++ = (c)) \
 				: (ttflush(), *tt_obp++ = (c)))
