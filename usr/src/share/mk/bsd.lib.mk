@@ -1,4 +1,4 @@
-#	@(#)bsd.lib.mk	5.26.1.1 (Berkeley) %G%
+#	@(#)bsd.lib.mk	5.30 (Berkeley) %G%
 
 .if exists(${.CURDIR}/../Makefile.inc)
 .include "${.CURDIR}/../Makefile.inc"
@@ -23,7 +23,7 @@ BINMODE?=	555
 .SUFFIXES: .out .o .po .s .c .f .y .l .8 .7 .6 .5 .4 .3 .2 .1 .0
 
 .8.0 .7.0 .6.0 .5.0 .4.0 .3.0 .2.0 .1.0:
-	/usr/old/bin/nroff -mandoc ${.IMPSRC} > ${.TARGET}
+	nroff -man ${.IMPSRC} > ${.TARGET}
 
 .c.o:
 	${CC} ${CFLAGS} -c ${.IMPSRC} 
@@ -35,13 +35,6 @@ BINMODE?=	555
 	@${LD} -X -r ${.TARGET}
 	@mv a.out ${.TARGET}
 
-.if (${MACHINE} == "mips")
-NOPROFILE=1
-.s.o:
-	${AS} ${CFLAGS:M-[ID]*} ${AINC} -o ${.TARGET} ${.IMPSRC}
-	@${LD} -x -r ${.TARGET}
-	@mv a.out ${.TARGET}
-.else
 .s.o:
 	${CPP} -E ${CFLAGS:M-[ID]*} ${AINC} ${.IMPSRC} | \
 	    ${AS} -o ${.TARGET}
@@ -53,9 +46,9 @@ NOPROFILE=1
 	    ${AS} -o ${.TARGET}
 	@${LD} -X -r ${.TARGET}
 	@mv a.out ${.TARGET}
-.endif
 
 MANALL=	${MAN1} ${MAN2} ${MAN3} ${MAN4} ${MAN5} ${MAN6} ${MAN7} ${MAN8}
+manpages: ${MANALL}
 
 .if !defined(NOPROFILE)
 _LIBS=lib${LIB}.a lib${LIB}_p.a
@@ -63,18 +56,17 @@ _LIBS=lib${LIB}.a lib${LIB}_p.a
 _LIBS=lib${LIB}.a
 .endif
 
-all: ${_LIBS} ${MANALL}# llib-l${LIB}.ln
+all: ${_LIBS} # llib-l${LIB}.ln
+.if !defined(NOMAN)
+all: ${MANALL}
+.endif
 
 OBJS+=	${SRCS:R:S/$/.o/g}
 
 lib${LIB}.a:: ${OBJS}
 	@echo building standard ${LIB} library
 	@rm -f lib${LIB}.a
-.if (${MACHINE} == "mips")
-	@${AR} cq lib${LIB}.a `lorder ${OBJS} | tsort` ${LDADD}
-.else
 	@${AR} cTq lib${LIB}.a `lorder ${OBJS} | tsort` ${LDADD}
-.endif
 	ranlib lib${LIB}.a
 
 POBJS+=	${OBJS:.o=.po}
@@ -139,7 +131,10 @@ realinstall: beforeinstall
 .endif
 
 install: afterinstall
-afterinstall: realinstall maninstall
+afterinstall: realinstall
+.if !defined(NOMAN)
+afterinstall: maninstall
+.endif
 .endif
 
 .if !target(lint)
