@@ -3,10 +3,31 @@
  * All rights reserved.
  *
  * %sccs.include.redist.c%
+ * -
+ * Portions Copyright (c) 1993 by Digital Equipment Corporation.
+ * 
+ * Permission to use, copy, modify, and distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies, and that
+ * the name of Digital Equipment Corporation not be used in advertising or
+ * publicity pertaining to distribution of the document or software without
+ * specific, written prior permission.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS" AND DIGITAL EQUIPMENT CORP. DISCLAIMS ALL
+ * WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES
+ * OF MERCHANTABILITY AND FITNESS.   IN NO EVENT SHALL DIGITAL EQUIPMENT
+ * CORPORATION BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL
+ * DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR
+ * PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS
+ * ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS
+ * SOFTWARE.
+ * -
+ * --Copyright--
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)res_init.c	6.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)res_init.c	6.16 (Berkeley) %G%";
+static char rcsid[] = "$Id: res_init.c,v 4.9.1.1 1993/05/02 22:43:03 vixie Rel $";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -24,7 +45,7 @@ static char sccsid[] = "@(#)res_init.c	6.15 (Berkeley) %G%";
  * Resolver state default settings
  */
 
-struct state _res = {
+struct __res_state _res = {
 	RES_TIMEOUT,               	/* retransmition time interval */
 	4,                         	/* number of times to retransmit */
 	RES_DEFAULT,			/* options flags */
@@ -51,20 +72,30 @@ res_init()
 	int haveenv = 0;
 	int havesearch = 0;
 
+#ifdef USELOOPBACK
+	_res.nsaddr.sin_addr = inet_makeaddr(IN_LOOPBACKNET, 1);
+#else
 	_res.nsaddr.sin_addr.s_addr = INADDR_ANY;
+#endif
 	_res.nsaddr.sin_family = AF_INET;
 	_res.nsaddr.sin_port = htons(NAMESERVER_PORT);
 	_res.nscount = 1;
+	_res.pfcode = 0;
 
 	/* Allow user to override the local domain definition */
 	if ((cp = getenv("LOCALDOMAIN")) != NULL) {
 		(void)strncpy(_res.defdname, cp, sizeof(_res.defdname));
+		if ((cp = strpbrk(_res.defdname, " \t\n")) != NULL)
+			*cp = '\0';
 		haveenv++;
 	}
 
 	if ((fp = fopen(_PATH_RESCONF, "r")) != NULL) {
 	    /* read the config file */
 	    while (fgets(buf, sizeof(buf), fp) != NULL) {
+		/* skip comments */
+		if ((*buf == ';') || (*buf == '#'))
+			continue;
 		/* read default domain name */
 		if (!strncmp(buf, "domain", sizeof("domain") - 1)) {
 		    if (haveenv)	/* skip if have from environ */
@@ -74,8 +105,9 @@ res_init()
 			    cp++;
 		    if ((*cp == '\0') || (*cp == '\n'))
 			    continue;
-		    (void)strncpy(_res.defdname, cp, sizeof(_res.defdname) - 1);
-		    if ((cp = index(_res.defdname, '\n')) != NULL)
+		    (void)strncpy(_res.defdname, cp,
+				  sizeof(_res.defdname) - 1);
+		    if ((cp = strpbrk(_res.defdname, " \t\n")) != NULL)
 			    *cp = '\0';
 		    havesearch = 0;
 		    continue;
@@ -89,7 +121,8 @@ res_init()
 			    cp++;
 		    if ((*cp == '\0') || (*cp == '\n'))
 			    continue;
-		    (void)strncpy(_res.defdname, cp, sizeof(_res.defdname) - 1);
+		    (void)strncpy(_res.defdname, cp,
+				  sizeof(_res.defdname) - 1);
 		    if ((cp = index(_res.defdname, '\n')) != NULL)
 			    *cp = '\0';
 		    /*
@@ -119,20 +152,18 @@ res_init()
 		/* read nameservers to query */
 		if (!strncmp(buf, "nameserver", sizeof("nameserver") - 1) &&
 		   nserv < MAXNS) {
+		   struct in_addr a;
+
 		    cp = buf + sizeof("nameserver") - 1;
 		    while (*cp == ' ' || *cp == '\t')
-			    cp++;
-		    if ((*cp == '\0') || (*cp == '\n'))
-			    continue;
-		    if ((_res.nsaddr_list[nserv].sin_addr.s_addr =
-			inet_addr(cp)) == (unsigned)-1) {
-			    _res.nsaddr_list[nserv].sin_addr.s_addr
-				= INADDR_ANY;
-			    continue;
+			cp++;
+		    if ((*cp != '\0') && (*cp != '\n') && inet_aton(cp, &a)) {
+			_res.nsaddr_list[nserv].sin_addr = a;
+			_res.nsaddr_list[nserv].sin_family = AF_INET;
+			_res.nsaddr_list[nserv].sin_port =
+				htons(NAMESERVER_PORT);
+			nserv++;
 		    }
-		    _res.nsaddr_list[nserv].sin_family = AF_INET;
-		    _res.nsaddr_list[nserv].sin_port = htons(NAMESERVER_PORT);
-		    nserv++;
 		    continue;
 		}
 	    }

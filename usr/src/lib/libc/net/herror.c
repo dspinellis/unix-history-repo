@@ -1,12 +1,33 @@
-/*
+/*-
  * Copyright (c) 1987 Regents of the University of California.
  * All rights reserved.
  *
  * %sccs.include.redist.c%
+ * -
+ * Portions Copyright (c) 1993 by Digital Equipment Corporation.
+ * 
+ * Permission to use, copy, modify, and distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies, and that
+ * the name of Digital Equipment Corporation not be used in advertising or
+ * publicity pertaining to distribution of the document or software without
+ * specific, written prior permission.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS" AND DIGITAL EQUIPMENT CORP. DISCLAIMS ALL
+ * WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES
+ * OF MERCHANTABILITY AND FITNESS.   IN NO EVENT SHALL DIGITAL EQUIPMENT
+ * CORPORATION BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL
+ * DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR
+ * PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS
+ * ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS
+ * SOFTWARE.
+ * -
+ * --Copyright--
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)herror.c	6.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)herror.c	6.7 (Berkeley) %G%";
+static char rcsid[] = "$Id: herror.c,v 4.9.1.1 1993/05/02 23:14:35 vixie Rel $";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -52,4 +73,11 @@ herror(s)
 	v->iov_base = "\n";
 	v->iov_len = 1;
 	writev(STDERR_FILENO, iov, (v - iov) + 1);
+}
+
+char *
+hstrerror(err)
+	int err;
+{
+	return (u_int)err < h_nerr ? h_errlist[err] : "Unknown resolver error";
 }

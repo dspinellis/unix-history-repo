@@ -1,12 +1,33 @@
-/*
+/*-
  * Copyright (c) 1985, 1988 Regents of the University of California.
  * All rights reserved.
  *
  * %sccs.include.redist.c%
+ * -
+ * Portions Copyright (c) 1993 by Digital Equipment Corporation.
+ * 
+ * Permission to use, copy, modify, and distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies, and that
+ * the name of Digital Equipment Corporation not be used in advertising or
+ * publicity pertaining to distribution of the document or software without
+ * specific, written prior permission.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS" AND DIGITAL EQUIPMENT CORP. DISCLAIMS ALL
+ * WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES
+ * OF MERCHANTABILITY AND FITNESS.   IN NO EVENT SHALL DIGITAL EQUIPMENT
+ * CORPORATION BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL
+ * DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR
+ * PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS
+ * ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS
+ * SOFTWARE.
+ * -
+ * --Copyright--
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)gethostnamadr.c	6.48 (Berkeley) %G%";
+static char sccsid[] = "@(#)gethostnamadr.c	6.49 (Berkeley) %G%";
+static char rcsid[] = "$Id: gethnamaddr.c,v 4.9.1.1 1993/05/02 22:43:03 vixie Rel $";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -48,11 +69,11 @@ typedef union {
 } querybuf;
 
 typedef union {
-    long al;
+    int32_t al;
     char ac;
 } align;
 
-int h_errno;
+extern int h_errno;
 
 static struct hostent *
 getanswer(answer, anslen, iquery)
@@ -118,11 +139,11 @@ getanswer(answer, anslen, iquery)
 			break;
 		cp += n;
 		type = _getshort(cp);
- 		cp += sizeof(u_short);
+ 		cp += sizeof(u_int16_t);
 		class = _getshort(cp);
- 		cp += sizeof(u_short) + sizeof(u_long);
+ 		cp += sizeof(u_int16_t) + sizeof(u_int32_t);
 		n = _getshort(cp);
-		cp += sizeof(u_short);
+		cp += sizeof(u_int16_t);
 		if (type == T_CNAME) {
 			cp += n;
 			if (ap >= &host_aliases[MAXALIASES-1])
@@ -170,7 +191,7 @@ getanswer(answer, anslen, iquery)
 			}
 		}
 
-		bp += sizeof(align) - ((u_long)bp % sizeof(align));
+		bp += sizeof(align) - ((u_int32_t)bp % sizeof(align));
 
 		if (bp + n >= &hostbuf[sizeof(hostbuf)]) {
 #ifdef DEBUG
@@ -229,7 +250,7 @@ gethostbyname(name)
 				host.h_aliases = host_aliases;
 				host_aliases[0] = NULL;
 				host.h_addrtype = AF_INET;
-				host.h_length = sizeof(u_long);
+				host.h_length = sizeof(u_int32_t);
 				h_addr_ptrs[0] = (char *)&host_addr;
 				h_addr_ptrs[1] = (char *)0;
 #if BSD >= 43 || defined(h_addr)	/* new-style hostent structure */
@@ -298,6 +319,7 @@ gethostbyaddr(addr, len, type)
 	return(hp);
 }
 
+void
 _sethtent(f)
 	int f;
 {
@@ -308,6 +330,7 @@ _sethtent(f)
 	stayopen |= f;
 }
 
+void
 _endhtent()
 {
 	if (hostf && !stayopen) {
@@ -342,8 +365,8 @@ again:
 	host.h_addr_list = host_addrs;
 #endif
 	host.h_addr = hostaddr;
-	*((u_long *)host.h_addr) = inet_addr(p);
-	host.h_length = sizeof (u_long);
+	*((u_int32_t *)host.h_addr) = inet_addr(p);
+	host.h_length = sizeof (u_int32_t);
 	host.h_addrtype = AF_INET;
 	while (*cp == ' ' || *cp == '\t')
 		cp++;
