@@ -1,4 +1,4 @@
-/* @(#)setbuffer.c	4.3 (Berkeley) %G% */
+/* @(#)setbuffer.c	4.4 (Berkeley) %G% */
 #include	<stdio.h>
 
 setbuffer(iop, buf, size)
@@ -25,9 +25,14 @@ setbuffer(iop, buf, size)
 setlinebuf(iop)
 	register struct _iobuf *iop;
 {
+	char *buf;
 	extern char *malloc();
 
 	fflush(iop);
-	setbuffer(iop, malloc(BUFSIZ), BUFSIZ);
-	iop->_flag |= _IOLBF|_IOMYBUF;
+	setbuffer(iop, NULL, 0);
+	buf = malloc(BUFSIZ);
+	if (buf != NULL) {
+		setbuffer(iop, buf, BUFSIZ);
+		iop->_flag |= _IOLBF|_IOMYBUF;
+	}
 }
