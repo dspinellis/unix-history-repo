@@ -180,6 +180,7 @@ main(argc, argv)
 	 * having the password databases out of sync with the master pw file.
 	 */
 	if (pw_fastmkdb(pw) < 0) {
+	rebuild:
 		fprintf(stderr,"%s: WARNING!! Password database mangled, recreating it from scratch\n", progname);
 #endif
 		if(!pw_mkdb())
@@ -193,7 +194,7 @@ main(argc, argv)
 		   if (pfd < 0) {
 			(void)fprintf(stderr,
 			    "%s: %s: %s\n", progname, _PATH_PASSWD, strerror(errno));
-			exit(1);
+			goto rebuild;
 		   }
                    pw->pw_passwd = "*";
 	           pw_copy(pfd, tfd, pw);
