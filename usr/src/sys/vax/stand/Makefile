@@ -1,12 +1,12 @@
-#	Makefile	4.12	81/11/12
+#	Makefile	4.13	81/12/01
 
 DESTDIR=
 CFLAGS=	-O -DSTANDALONE ${COPTS} 
 COPTS=	-DVAX780 -DVAX750 -DVAX7ZZ
 RELOC=	70000
 SRCS=	sys.c conf.c prf.c machdep.c \
-	autoconf.c hp.c ht.c mba.c mt.c rk.c tm.c ts.c up.c uba.c uda.c
-DRIVERS=autoconf.o hp.o ht.o mba.o mt.o rk.o tm.o ts.o up.o uba.o uda.o
+	autoconf.c hp.c ht.c mba.c mt.c rk.c tm.c ts.c up.c uba.c uda.c ut.c
+DRIVERS=autoconf.o hp.o ht.o mba.o mt.o rk.o tm.o ts.o up.o uba.o uda.o ut.o
 
 ALL=	/usr/lib/libsa.a srt0.o boot cat ls icheck mkfs restor \
 	tpicheck tpmkfs tprestor sboot
