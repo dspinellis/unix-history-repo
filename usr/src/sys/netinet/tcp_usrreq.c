@@ -1,4 +1,4 @@
-/*	tcp_usrreq.c	1.70	82/11/03	*/
+/*	tcp_usrreq.c	1.71	83/01/08	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -79,7 +79,7 @@ tcp_usrreq(so, req, m, nam, opt)
 		error = tcp_attach(so);
 		if (error)
 			break;
-		if ((so->so_options & SO_DONTLINGER) == 0)
+		if (so->so_options & SO_LINGER && so->so_linger == 0)
 			so->so_linger = TCP_LINGERTIME;
 		tp = sototcpcb(so);
 		break;
