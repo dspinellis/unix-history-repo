@@ -1,6 +1,13 @@
+/*-
+ * Copyright (c) 1991 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.proprietary.c%
+ */
+
 #ifndef lint
-static char sccsid[] = "@(#)access.c	5.3 (Berkeley) %G%";
-#endif
+static char sccsid[] = "@(#)access.c	5.4 (Berkeley) %G%";
+#endif /* not lint */
 
 /*
  * Adb: access data in file/process address space.

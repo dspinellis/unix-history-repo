@@ -1,6 +1,13 @@
+/*-
+ * Copyright (c) 1991 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.proprietary.c%
+ */
+
 #ifndef lint
-static char sccsid[] = "@(#)sym.c	5.2 (Berkeley) %G%";
-#endif
+static char sccsid[] = "@(#)sym.c	5.3 (Berkeley) %G%";
+#endif /* not lint */
 
 /*
  * adb - symbol table routines

@@ -1,9 +1,10 @@
-/*
- * Copyright (c) 1980 Regents of the University of California.
- * All rights reserved.  The Berkeley Software License Agreement
- * specifies the terms and conditions for redistribution.
+/*-
+ * Copyright (c) 1980, 1991 The Regents of the University of California.
+ * All rights reserved.
  *
- *	@(#)char.h	5.4 (Berkeley) %G%
+ * %sccs.include.redist.c%
+ *
+ *	@(#)char.h	5.5 (Berkeley) %G%
  */
 
 extern unsigned short _cmap[];

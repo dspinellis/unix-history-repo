@@ -1,6 +1,19 @@
+/*-
+ * Copyright (c) 1991 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.proprietary.c%
+ */
+
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.5 (Berkeley) %G%";
-#endif
+char copyright[] =
+"@(#) Copyright (c) 1991 The Regents of the University of California.\n\
+ All rights reserved.\n";
+#endif /* not lint */
+
+#ifndef lint
+static char sccsid[] = "@(#)main.c	5.6 (Berkeley) %G%";
+#endif /* not lint */
 
 /*
  * adb - main command loop and error/interrupt handling
