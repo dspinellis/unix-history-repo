@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)parser5.c	3.4 84/05/06";
+static	char *sccsid = "@(#)parser5.c	3.5 84/05/08";
 #endif
 
 #include "parser.h"
@@ -60,7 +60,7 @@ char flag;
 		struct var *r;
 		if (v->v_type == V_NUM) {
 			v->v_num--;
-			if (cx.x_type != X_BUF || cx.x_arg == 0
+			if (cx.x_type != X_BUF || cx.x_arg == 0 ||
 			    v->v_num < 0 || v->v_num >= cx.x_narg) {
 				p_error("%d: No such argument.", v->v_num);
 				v->v_type = V_ERR;
