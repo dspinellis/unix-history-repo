@@ -1,7 +1,7 @@
 /*
- * acct [ -w wtmp ] [ -d ] [ -p ] [ people ]
+ * ac [ -w wtmp ] [ -d ] [ -p ] [ people ]
  */
-static char *sccsid = "@(#)ac.c	4.5 (Berkeley) %G%";
+static char *sccsid = "@(#)ac.c	4.6 (Berkeley) %G%";
 
 #include <stdio.h>
 #include <ctype.h>
