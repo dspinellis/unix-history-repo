@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)hash.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)hash.c	5.5 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -20,11 +20,6 @@ static char sccsid[] = "@(#)hash.c	5.4 (Berkeley) %G%";
 #include <db.h>
 #include "hash.h"
 #include <string.h>
-
-/* For systems that do not have O_ACCMODE */
-#ifndef O_ACCMODE
-#define O_ACCMODE       (O_RDONLY|O_WRONLY|O_RDWR)
-#endif
 
 /* Fast arithmetic, relying on powers of 2, */
 
