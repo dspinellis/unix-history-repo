@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef NAMED_BIND
-static char sccsid[] = "@(#)domain.c	6.20 (Berkeley) %G% (with name server)";
+static char sccsid[] = "@(#)domain.c	6.21 (Berkeley) %G% (with name server)";
 #else
-static char sccsid[] = "@(#)domain.c	6.20 (Berkeley) %G% (without name server)";
+static char sccsid[] = "@(#)domain.c	6.21 (Berkeley) %G% (without name server)";
 #endif
 #endif /* not lint */
 
@@ -48,8 +48,9 @@ static char	MXHostBuf[MAXMXHOSTS*PACKETSZ];
 **	Parameters:
 **		host -- the name of the host to MX.
 **		mxhosts -- a pointer to a return buffer of MX records.
-**		localhost -- the name of the local host.  All MX records
-**			less preferred than this one will be discarded.
+**		droplocalhost -- If TRUE, all MX records less preferred
+**			than the local host (as determined by $=w) will
+**			be discarded.
 **		rcode -- a pointer to an EX_ status code.
 **
 **	Returns:
@@ -59,10 +60,10 @@ static char	MXHostBuf[MAXMXHOSTS*PACKETSZ];
 **			and 1 is returned.
 */
 
-getmxrr(host, mxhosts, localhost, rcode)
+getmxrr(host, mxhosts, droplocalhost, rcode)
 	char *host;
 	char **mxhosts;
-	char *localhost;
+	bool droplocalhost;
 	int *rcode;
 {
 	extern int h_errno;
@@ -76,6 +77,7 @@ getmxrr(host, mxhosts, localhost, rcode)
 	u_short pref, localpref, type;
 	char *fallbackMX = FallBackMX;
 	static bool firsttime = TRUE;
+	STAB *st;
 	u_short prefer[MAXMXHOSTS];
 	int weight[MAXMXHOSTS];
 
@@ -87,7 +89,9 @@ getmxrr(host, mxhosts, localhost, rcode)
 			/* this entry is bogus */
 			fallbackMX = FallBackMX = NULL;
 		}
-		else if (strcasecmp(fallbackMX, localhost) == 0)
+		else if (droplocalhost &&
+			 (st = stab(fallbackMX, ST_CLASS, ST_FIND)) != NULL &&
+			 bitnset('w', st->s_class))
 		{
 			/* don't use fallback for this pass */
 			fallbackMX = NULL;
@@ -162,7 +166,9 @@ getmxrr(host, mxhosts, localhost, rcode)
 				   (u_char *)bp, buflen)) < 0)
 			break;
 		cp += n;
-		if (strcasecmp(bp, localhost) == 0)
+		if (droplocalhost &&
+		    (st = stab(bp, ST_CLASS, ST_FIND)) != NULL &&
+		    bitnset('w', st->s_class))
 		{
 			if (!seenlocal || pref < localpref)
 				localpref = pref;
