@@ -11,7 +11,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)res_query.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)res_query.c	5.4 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -166,7 +166,6 @@ res_search(name, class, type, answer, anslen)
 		if ((h_errno != HOST_NOT_FOUND && h_errno != NO_DATA) ||
 		    (_res.options & RES_DNSRCH) == 0)
 			break;
-		h_errno = 0;
 	}
 	/*
 	 * If the search/default failed, try the name as fully-qualified,
