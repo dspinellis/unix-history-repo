@@ -1,12 +1,14 @@
 #ifndef lint
-static char sccsid[] = "@(#)rlogind.c	4.2 82/10/07";
+static char sccsid[] = "@(#)rlogind.c	4.3 82/11/14";
 #endif
 
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/socket.h>
-#include <net/in.h>
+
+#include <netinet/in.h>
+
 #include <errno.h>
 #include <pwd.h>
 #include <wait.h>
@@ -58,9 +60,7 @@ main(argc, argv)
 #endif
 	sin.sin_port = htons(sp->s_port);
 	argc--, argv++;
-	if (argc > 0 && !strcmp(argv[0], "-d"))
-		options |= SO_DEBUG, argv++, argc--;
-	if (argc > 0) {
+	if (argc > 0 && !strcmp(argv[0], "-d")) {
 		int port = atoi(argv[0]);
 
 		if (port < 0) {
@@ -70,22 +70,28 @@ main(argc, argv)
 		sin.sin_port = htons(port);
 		argv++, argc--;
 	}
+	f = socket(0, SOCK_STREAM, 0, 0);
+	if (f < 0) {
+		perror("rlogind: socket");
+		exit(1);
+	}
+	if (bind(f, &sin, sizeof (sin), 0) < 0) {
+		perror("rlogind: bind");
+		exit(1);
+	}
+	listen(f, 10);
 	for (;;) {
-		f = socket(SOCK_STREAM, 0, &sin, options);
-		if (f < 0) {
-			perror("socket");
-			sleep(5);
-			continue;
-		}
-		if (accept(f, &from) < 0) {
+		int s, len = sizeof (from);
+
+		s = accept(f, &from, &len, 0);
+		if (s < 0) {
 			perror("accept");
-			close(f);
 			sleep(1);
 			continue;
 		}
 		if (fork() == 0)
-			doit(f, &from);
-		close(f);
+			doit(s, &from);
+		close(s);
 		while (wait3(status, WNOHANG, 0) > 0)
 			continue;
 	}
@@ -179,7 +185,7 @@ gotpty:
 			if (pcc) obits |= (1<<f); else ibits |= (1<<p);
 			if (fcc < 0 && pcc < 0) break;
 /* fprintf(console, "ibits from %d obits from %d\r\n", ibits, obits); */
-			select(32, &ibits, &obits, 10000000);
+			select(16, &ibits, &obits, 0, 0, 0);
 /* fprintf(console, "ibits %d obits %d\r\n", ibits, obits); */
 			if (ibits == 0 && obits == 0) {
 				sleep(5);
@@ -216,7 +222,7 @@ gotpty:
 						if (nstop)
 							stop = nstop;
 						pibuf[0] |= nstop;
-						ioctl(f,SIOCSENDOOB,&pibuf[0]);
+						send(f,&pibuf[0],1,SOF_OOB);
 					}
 					pcc = 0;
 				}
