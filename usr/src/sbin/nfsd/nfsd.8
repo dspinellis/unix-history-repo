@@ -1,159 +1,207 @@
-.\" Copyright (c) 1989 The Regents of the University of California.
+.\" Copyright (c) 1989, 1991 The Regents of the University of California.
 .\" All rights reserved.
 .\"
-.\" %sccs.include.redist.man%
+.\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)nfsd.8	5.8 (Berkeley) %G%
+.\"	@(#)nfsd.8	5.9 (Berkeley) %G%
 .\"
-.TH NFSD 8 ""
-.UC 7
-.SH NAME
-nfsd \- remote NFS server
-.SH SYNOPSIS
-.B nfsd
-[
-.B \-r
-]
-[
-.B \-u
-.I msk,mtch,numprocs
-]
-[
-.B \-t
-.I msk,mtch,hostadr1,hostadr2,...
-]
-[
-.I numprocs
-]
-.SH DESCRIPTION
-.I Nfsd
+.Dd 
+.Dt NFSD 8
+.Os
+.Sh NAME
+.Nm nfsd
+.Nd remote
+.Tn NFS
+server
+.Sh SYNOPSIS
+.Nm nfsd
+.Op Fl r
+.Bk -words
+.Op Fl t Ar msk,mtch,hostadr1,hostadr2,...
+.Ek
+.Bk -words
+.Op Fl u Ar msk,mtch,numprocs
+.Ek
+.Op Ar numprocs
+.Sh DESCRIPTION
+.Nm Nfsd
 runs on a server machine to service
-.SM NFS
+.Tn NFS
 requests from client machines.
 At least one
-.I nfsd
+.Nm nfsd
 must be running for a machine to operate as a server.
 The options
-.B \-u
+.Fl u
 and
-.B \-t
+.Fl t
 are used to indicate which transport protocols are to be served.
-.TP
-.B \-u
-Serve UDP NFS clients.
-.TP
-.B \-t
-Serve TCP NFS clients.
-.TP
-.B \-r
-Register the NFS service with
-.IR portmap (8)
-without creating any servers.
-This option can be used along with the
-.B \-u
-and/or
-.B \-t
-options to re-register NFS if the portmap server is restarted.
-.LP
-The following arguments to the
-.B \-u
+.Pp
+Options available to
+.Nm nfsd :
+.Bl -tag -width Ds
+.It Fl r
+Register the
+.Tn NFS
+service with
+.Xr portmap 8
+without creating any servers. This option can be used along with the
+.Fl u
 or
-.B \-t
+.Fl t
+options to re-register NFS if the portmap server is restarted.
+.It Fl t
+Serve
+.Tn TCP NFS
+clients.
+.It Fl u
+Serve
+.Tn UDP NFS
+clients.
+.El
+.Pp
+The following arguments to the
+.Fl u
+or
+.Fl t
 options are used to specify parameters for service using the respective
 protocol:
-.TP
-.I "msk, mtch"
-These arguments permit restriction of NFS services
+.Bl -tag -width Ds
+.It Ar msk , mtch
+These arguments permit restriction of
+.Tn NFS
+services
 to a subset of the host addresses. The
-.I msk
+.Ar msk
 and
-.I mtch
+.Ar mtch
 are applied to the client host address as follows:
-.sp
+.Pp
+.Bd -filled -offset indent -compact
 if ((
-.I host_address
-&
-.I msk
+.Ar host_address No \&& Em msk
 ) ==
-.I mtch
+.Ar mtch
 )
 .br
-   - service the client request
+	\- service the client request
 .br
 else
 .br
-   - drop the request
-.TP
-.I hostadr1,...
+	\- drop the request
+.Ed
+.It Ar hostadr1 , ...
 You may also specify zero or more specific host addresses to be accepted
 as well as ones that pass the
-.I msk, mtch
+.Ar msk , mtch
 test above.
 This may only be done for transport protocols that are connection based, such
-as TCP.
+as
+.Tn TCP .
 For the internet domain,
-.I msk, mtch
+.Ar msk , mtch
 and
-.I hostadrs'
+.Ar hostadrs
 are specified in internet
-.I dot
+.Em dot
 notation.
-.TP
-.I numprocs
+.It Ar numprocs
 Specifies how many servers to fork off. This may only be specified for
-non-connection based protocols such as UDP.
-.LP
+non-connection based protocols such as
+.Tn UDP .
+.El
+.Pp
 If neither
-.I \-u
+.Fl u
 or
-.I \-t
+.Fl t
 are specified,
-.I numprocs
-servers for UDP accepting requests from all clients are started.
+.Ar numprocs
+servers for
+.Tn UDP
+accepting requests from all clients are started.
 If
-.I numprocs
+.Ar numprocs
 is not specified, it defaults to 1.
-.LP
+.Pp
 For example:
-.sp
-nfsd \-u 255.255.255.0,131.104.48.0,4 \-t 255.255.0.0,131.104.0.0,131.102.31.2
-.IP "- "
-Serves UDP and TCP transports. For UDP,
+.Bd -literal
+nfsd \-u 255.255.255.0,131.104.48.0,4 \-t \e
+	255.255.0.0,131.104.0.0,131.102.31.2
+.Ed
+.Bl -item -offset indent
+.It
+Serves
+.Tn UDP
+and
+.Tn TCP
+transports. For
+.Tn UDP ,
 it runs 4 daemons that accept requests
 from any client on subnet 131.104.48.
-For TCP, it accepts connections from any client on network 131.104
+For
+.Tn TCP ,
+it accepts connections from any client on network 131.104
 plus the client with the address 131.102.31.2.
-.LP
+.El
+.Bd -literal
 nfsd \-u 255.255.240.0,131.104.0.0,6 \-t 0,0
-.IP "- "
-Serves UDP and TCP transports.
-For UDP, it runs 6 daemons that accept requests from clients with
+.Ed
+.Bl -item -offset indent
+.It
+Serves
+.Tn UDP
+and
+.Tn TCP
+transports.
+For
+.Tn UDP ,
+it runs 6 daemons that accept requests from clients with
 addresses in the range 131.104.0.x - 131.104.15.x.
-For TCP, it accepts connections from any client.
-.LP
-nfsd \-u 0,0,4
-.IP "- "
-Serves any UDP client with 4 servers, only.
-.LP
-nfsd 4
-.IP "- "
-Serves any UDP client with 4 servers, only. (Compatibility)
-.LP
+For
+.Tn TCP ,
+it accepts connections from any client.
+.El
+.Pp
+.Li nfsd \-u 0,0,4
+.Bl -item -offset indent
+.It
+Serves any
+.Tn UDP
+client with 4 servers, only.
+.El
+.Pp
+.Li nfsd 4
+.Bl -item -offset indent
+.It
+Serves any
+.Tn UDP
+client with 4 servers, only. (Compatibility)
+.El
+.Pp
 A server should typically run enough daemons to handle
 the maximum level of concurrency from its clients,
 typically four to six.
-.PP
-.I Nfsd
+.Pp
+.Nm Nfsd
 listens for service requests at the port indicated in the
-.SM NFS
+.Tn NFS
 server specification; see
-``Network File System Protocol Specification, RFC1094''
-.SH SEE ALSO
-.IR nfsstat (1),
-.IR nfssvc (2),
-.IR mountd (8),
-.IR portmap (8)
-.SH BUGS
+.%T "Network File System Protocol Specification" ,
+RFC1094.
+.Sh SEE ALSO
+.Xr nfsstat 1 ,
+.Xr nfssvc 2 ,
+.Xr mountd 8 ,
+.Xr portmap 8
+.Sh BUGS
 The client host address restrictions specified here are unrelated to
-the mount restrictions specified in /etc/exports for
-.IR mountd (8).
+the mount restrictions specified in
+.Pa /etc/exports
+for
+.Xr mountd 8 .
+.Sh HISTORY
+The
+.Nm
+command is
+.Ud .
