@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)trap.c	7.7 (Berkeley) %G%
+ *	@(#)trap.c	7.8 (Berkeley) %G%
  */
 
 /*
@@ -341,7 +341,7 @@ syscall(frame)
 	 * Reconstruct pc, assuming lcall $X,y is 7 bytes, as it is always.
 	 */
 	opc = frame.sf_eip - 7;
-	callp = (code >= nsysent) ? &sysent[63] : &sysent[code];
+	callp = ((u_int)code >= nsysent) ? &sysent[63] : &sysent[code];
 	if (callp == sysent) {
 		i = fuword(params);
 		params += sizeof (int);
