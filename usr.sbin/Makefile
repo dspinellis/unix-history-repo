@@ -12,7 +12,7 @@
 #
 
 SUBDIR=	accton arp chown chroot config dbsym dev_mkdb diskpart \
-	edquota flcopy gettable htable inetd iostat keymap kgmon kvm_mkdb lpr \
+	edquota flcopy gettable htable inetd iostat kgmon kvm_mkdb lpr \
 	mtree named portmap pwd_mkdb quotaon repquota rmt rwhod\
 	sendmail sliplogin syslogd timed traceroute trpt trsp update vipw
 
