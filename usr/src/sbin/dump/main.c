@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.16 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -319,7 +319,7 @@ main(argc, argv)
 		tapesize += 10;	/* 10 trailer blocks */
 	else {
 		if (blocksperfile)
-			fetapes = tapesize / blocksperfile;
+			fetapes = (float) tapesize / blocksperfile;
 		else if (cartridge) {
 			/* Estimate number of tapes, assuming streaming stops at
 			   the end of each block written, and not in mid-block.
