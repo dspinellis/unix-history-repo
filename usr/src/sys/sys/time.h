@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)time.h	7.10 (Berkeley) %G%
+ *	@(#)time.h	7.11 (Berkeley) %G%
  */
 
 #ifndef _SYS_TIME_H_
@@ -48,16 +48,13 @@ struct timezone {
 #define	DST_EET		5	/* Eastern European dst */
 #define	DST_CAN		6	/* Canada */
 
-/*
- * Operations on timevals.
- *
- * NB: timercmp does not work for >= or <=.
- */
-#define	timerisset(tvp)		((tvp)->tv_sec || (tvp)->tv_usec)
-#define	timercmp(tvp, uvp, cmp)	\
-	((tvp)->tv_sec cmp (uvp)->tv_sec || \
-	 (tvp)->tv_sec == (uvp)->tv_sec && (tvp)->tv_usec cmp (uvp)->tv_usec)
+/* Operations on timevals. */
 #define	timerclear(tvp)		(tvp)->tv_sec = (tvp)->tv_usec = 0
+#define	timerisset(tvp)		((tvp)->tv_sec || (tvp)->tv_usec)
+#define	timercmp(tvp, uvp, cmp)						\
+	(((tvp)->tv_sec == (uvp)->tv_sec) ?				\
+	    ((tvp)->tv_usec cmp (uvp)->tv_usec) :			\
+	    ((tvp)->tv_sec cmp (uvp)->tv_sec))
 
 /*
  * Names of the interval timers, and structure
