@@ -1,7 +1,7 @@
 #
 # GENERIC DECstation (3100 or 5000/xxx)
 #
-#	@(#)GENERIC.pmax	7.1 (Berkeley) %G%
+#	@(#)GENERIC.pmax	7.2 (Berkeley) %G%
 #
 machine		pmax
 
@@ -58,6 +58,7 @@ controller	cfb0	at nexus0 csr ?
 controller	mfb0	at nexus0 csr ?
 controller	pm0	at nexus0 csr ?
 controller	scc0	at nexus0 csr ?
+controller	scc1	at nexus0 csr ?
 controller	le0	at nexus0 csr ?
 master		sii0	at nexus0 csr ?
 disk		rz0	at sii0 drive 0 slave 0
