@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)rtsock.c	8.3.2.1 (Berkeley) %G%
+ *	@(#)rtsock.c	8.6 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -181,8 +181,7 @@ route_output(m, so)
 	case RTM_DELETE:
 				rtm->rtm_flags, &saved_nrt);
 		if (error == 0) {
-			if ((rt = saved_nrt)->rt_refcnt <= 0)
-				rt->rt_refcnt++;
+			(rt = saved_nrt)->rt_refcnt++;
 			goto report;
 		}
 		break;
@@ -221,6 +220,10 @@ route_output(m, so)
 				if (ifp = rt->rt_ifp) {
 					ifpaddr = ifp->if_addrlist->ifa_addr;
 					ifaaddr = rt->rt_ifa->ifa_addr;
+					if (ifp->if_flags & IFF_POINTOPOINT)
+						brdaddr = rt->rt_ifa->ifa_dstaddr;
+					else
+						brdaddr = 0;
 					rtm->rtm_index = ifp->if_index;
 				} else {
 					ifpaddr = 0;
@@ -687,6 +690,12 @@ sysctl_dumpentry(rn, w)
 	gate = rt->rt_gateway;
 	netmask = rt_mask(rt);
 	genmask = rt->rt_genmask;
+	if (rt->rt_ifp) {
+		ifpaddr = rt->rt_ifp->if_addrlist->ifa_addr;
+		ifaaddr = rt->rt_ifa->ifa_addr;
+		if (rt->rt_ifp->if_flags & IFF_POINTOPOINT)
+			brdaddr = rt->rt_ifa->ifa_dstaddr;
+	}
 	size = rt_msg2(RTM_GET, &info, 0, w);
 	if (w->w_where && w->w_tmem) {
 		register struct rt_msghdr *rtm = (struct rt_msghdr *)w->w_tmem;
