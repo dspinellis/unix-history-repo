@@ -1,4 +1,4 @@
-/*	machdep.c	4.33	81/04/22	*/
+/*	machdep.c	4.34	81/04/28	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -27,6 +27,7 @@
 #include "../h/callout.h"
 #include "../h/cmap.h"
 #include <frame.h>
+#include "../h/port.h"
 
 int	icode[] =
 {
@@ -107,6 +108,7 @@ startup(firstaddr)
 	valloclim(file, struct file, nfile, fileNFILE);
 	valloclim(proc, struct proc, nproc, procNPROC);
 	valloclim(text, struct text, ntext, textNTEXT);
+	valloc(port, struct port, nport);
 	valloc(cfree, struct cblock, nclist);
 	valloc(callout, struct callout, ncallout);
 	valloc(swapmap, struct map, nswapmap = nproc * 2);
