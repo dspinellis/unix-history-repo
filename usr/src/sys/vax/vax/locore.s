@@ -3,13 +3,14 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)locore.s	7.19.1.1 (Berkeley) %G%
+ *	@(#)locore.s	7.20 (Berkeley) %G%
  */
 
 #include "psl.h"
 #include "pte.h"
 
 #include "errno.h"
+#include "syscall.h"
 #include "cmap.h"
 
 #include "mtpr.h"
@@ -847,6 +848,7 @@ _/**/mname:	.globl	_/**/mname;		\
 	.space	(npte)*4;				\
 	.globl	_/**/vname;			\
 	.set	_/**/vname,vaddr(_/**/mname)
+#define	ADDMAP(npte)	.space	(npte)*4
 
 	.data
 	.align	2
@@ -863,13 +865,31 @@ _/**/mname:	.globl	_/**/mname;		\
 	SYSMAP(alignmap	,alignutl	,1		)	/* XXX */
 	SYSMAP(msgbufmap,msgbuf		,MSGBUFPTECNT	)
 	SYSMAP(Mbmap	,mbutl		,NMBCLUSTERS*MCLBYTES/NBPG+CLSIZE )
+#ifdef MFS
+#include "../ufs/mfsiom.h"
 	/*
+	 * Used by the mfs_doio() routine for physical I/O
+	 */
+	SYSMAP(Mfsiomap	,mfsiobuf	,MFS_MAPREG )
+#endif /* MFS */
+#ifdef NFS
+#include "../nfs/nfsiom.h"
+	/*
+	 * Used by the nfs_doio() routine for physical I/O
+	 */
+	SYSMAP(Nfsiomap	,nfsiobuf	,NFS_MAPREG )
+#endif /* NFS */
+	/*
+	 * This is the map used by the kernel memory allocator.
+	 * It is expanded as necessary by the special features
+	 * that use it.
+	 *
 	 * XXX: NEED way to compute kmem size from maxusers,
 	 * device complement
 	 */
-	SYSMAP(kmempt	,kmembase	,300*CLSIZE	)
+	SYSMAP(kmempt	,kmembase	,300*CLSIZE 	)
 #ifdef	GPROF
-	SYSMAP(profmap	,profbase	,600*CLSIZE	)
+				ADDMAP( 600*CLSIZE	)
 #endif
 	SYSMAP(ekmempt	,kmemlimit	,0		)
 
@@ -1093,14 +1113,12 @@ start:
 sigcode:
 	calls	$4,8(pc)	# params pushed by sendsig
 	movl	sp,ap		# calls frame built by sendsig
-	chmk	$103		# cleanup mask and onsigstack
+	chmk	$SYS_sigcleanup	# cleanup mask and onsigstack
 	halt			# sigreturn() does not return!
 	.word	0x3f		# registers 0-5
 	callg	(ap),*16(ap)	# call the signal handler
 	ret			# return to code above
 
-	.set	exec,11
-	.set	exit,1
 	.globl	_icode
 	.globl	_initflags
 	.globl	_szicode
@@ -1113,9 +1131,9 @@ _icode:
 l0:	pushab	b`init-l1(pc)
 l1:	pushl	$2
 	movl	sp,ap
-	chmk	$exec
+	chmk	$SYS_exec
 	pushl	r0
-	chmk	$exit
+	chmk	$SYS_exit
 
 init:	.asciz	"/sbin/init"
 	.align	2
