@@ -1,28 +1,21 @@
-/*
+/*-
  * Copyright (c) 1992 The Regents of the University of California.
  * All rights reserved.
- *
  *
  * %sccs.include.redist.c%
  */
 
-
-#ifndef lint
-static char copyright[] =
-"@(#) Copyright (c) 1992 The Regents of the University of California.\n\
- All rights reserved.\n";
-#endif /* not lint */
-
-#ifndef lint
-static char sccsid[] = "@(#)qsort.c	5.13 (Berkeley) %G%";
-#endif /* not lint */
+#if defined(LIBC_SCCS) && !defined(lint)
+static char sccsid[] = "@(#)qsort.c	5.14 (Berkeley) %G%";
+#endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
+#include <stdlib.h>
 
-static char	*med3 __P((char *, char *, char *, int (*)()));
-static void	 swapfunc __P((char *, char *, int, int));
+static inline char	*med3 __P((char *, char *, char *, int (*)()));
+static inline void	 swapfunc __P((char *, char *, int, int));
 
-#define min(a, b) (a) < (b) ? a : b
+#define min(a, b)	(a) < (b) ? a : b
 
 /*
  * Qsort routine from Bentley & McIlroy's "Engineering a Sort Function".
@@ -41,7 +34,7 @@ static void	 swapfunc __P((char *, char *, int, int));
 #define SWAPINIT(a, es) swaptype = ((char *)a - (char *)0) % sizeof(long) || \
 	es % sizeof(long) ? 2 : es == sizeof(long)? 0 : 1;
 
-static void
+static inline void
 swapfunc(a, b, n, swaptype)
 	char *a, *b;
 	int n, swaptype;
@@ -52,17 +45,17 @@ swapfunc(a, b, n, swaptype)
 		swapcode(char, a, b, n)
 }
 
-#define swap(a, b) \
-	if (swaptype == 0) { \
-		long t = *(long *)(a); \
-		*(long *)(a) = *(long *)(b); \
-		*(long *)(b) = t; \
-	} else \
+#define swap(a, b)					\
+	if (swaptype == 0) {				\
+		long t = *(long *)(a);			\
+		*(long *)(a) = *(long *)(b);		\
+		*(long *)(b) = t;			\
+	} else						\
 		swapfunc(a, b, es, swaptype)
 
 #define vecswap(a, b, n) 	if ((n) > 0) swapfunc(a, b, n, swaptype)
 
-static char *
+static inline char *
 med3(a, b, c, cmp)
 	char *a, *b, *c;
 	int (*cmp)();
@@ -153,4 +146,3 @@ loop:	SWAPINIT(a, es);
 	}
 /*		qsort(pn - r, r / es, es, cmp);*/
 }
-	
