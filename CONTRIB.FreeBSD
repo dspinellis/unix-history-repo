@@ -1,20 +1,24 @@
-			  FreeBSD 1.1
-		        Contributor List
+			  FreeBSD 1.1.5
+		         Contributor List
 
 
 
 Derived Software Contributors:
 
-This software was derived from William F. Jolitz's 386BSD release 0.1. 
+This software was originally derived from William F. Jolitz's 386BSD
+release 0.1, though very little of the original 386BSD specific code
+remains.
+
 Please see the file CONTRIB.386BSD for the list of contributors from 
 386BSD.
 
-Included in this release are the patches from the patch kit version
-0.2.4.  The names of contributors from the patch kit are listed below.
+Included in this release are some of the patches from the old 386BSD
+patch kit version 0.2.4, and therefore the names of contributors from the
+patch kit are also listed below.
 
-There are portions of NetBSD that has been intergraged into FreeBSD
-as well.  We would like to thank all the contributors to NetBSD for
-their work.
+Finally, there are portions of NetBSD that have been integrated into
+FreeBSD as well, and we would therefore like to thank all the contributors
+to NetBSD for their work.
 
 
 Hardware Contributors:
@@ -28,25 +32,27 @@ Dermot McDonnell for his donation of a Toshiba XM3401B CDROM
 drive.
 
 
-FreeBSD core:
+The FreeBSD Core Team (in alphabetical order):
 
 Andrew A. Chernov <ache@astral.msk.su>
-Andrew Moore <alm@netcom.com>
-Andreas Schulz <ats@g386bsd.first.bmd.de>
 John Dyson <dyson@implode.rain.com>
-Geoff Rehmet <csgr@cs.ru.ac.za>
 David Greenman <davidg@Root.COM>
-Jordan K. Hubbard <jkh@whisker.hubbard.ie>
-Nate Williams <nate@bsd.coe.montana.edu>
-Paul Richards <paul@isl.cf.ac.uk>
-Rich Murphey <rich@lamprey.utmb.edu>
 Rodney W. Grimes <rgrimes@cdrom.com>
+Jordan K. Hubbard <jkh@freefall.cdrom.com>
 Scott Mace <smace@neosoft.com>
+Andrew Moore <alm@netcom.com>
+Rich Murphey <rich@lamprey.utmb.edu>
+Geoff Rehmet <csgr@cs.ru.ac.za>
+Paul Richards <paul@isl.cf.ac.uk>
+Andreas Schulz <ats@g386bsd.first.bmd.de>
+Nate Williams <nate@bsd.coe.montana.edu>
 Garrett A. Wollman <wollman@freefall.cdrom.com>
 
 
-Additional FreeBSD Contributors:
+Additional FreeBSD Contributors (no particular order):
 
+Atsushi Murai <amurai@spec.co.jp>
+Keith Moore <?>
 Adam Glass <glass@postgres.berkeley.edu>
 Andrew Herbert <andrew@werple.apana.org.au>
 Bob Wilcox <bob@obiwan.uucp>
@@ -91,7 +97,7 @@ Theo Deraadt <deraadt@fsa.ca>
 Yuval Yarom <yval@cs.huji.ac.il>
 
 
-Patch kit patch contributors:
+Patch kit patch contributors (no particular order):
 
 Adam Glass <glass@postgres.berkeley.edu>
 Adrian Hall <adrian@ibmpcug.co.uk>
@@ -166,7 +172,7 @@ Rich Murphey <rich@lamprey.utmb.edu>
 Rick Macklem <root@snowhite.cis.uoguelph.ca>
 Robert D. Thrush <rd@phoenix.aii.com>
 Rodney W. Grimes <rgrimes@cdrom.com>
-Rog Egge
+Rog Egge <?>
 Sascha Wildner <swildner@channelz.GUN.de>
 Scott Burris <scott@pita.cns.ucla.edu>
 Scott Reynolds <scott@clmqt.marquette.mi.us>
@@ -182,4 +188,4 @@ Wolfgang Solfrank <ws@tools.de>
 Wolfgang Stanglmeier <wolf@dentaro.GUN.de>
 Yuval Yarom <yval@cs.huji.ac.il>
 
-$Id: CONTRIB.FreeBSD,v 1.34 1994/05/13 12:54:49 jkh Exp $
+$Id: CONTRIB.FreeBSD,v 1.35 1994/05/22 18:06:02 joerg Exp $
