@@ -19,7 +19,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)config.h	5.3 (Berkeley) %G%
+ *	@(#)config.h	5.4 (Berkeley) %G%
  */
 
 #define	DEFSHELL	1			/* Bourne shell */
@@ -50,17 +50,6 @@
  */
 #define INCLUDES
 #define LIBRARIES
-
-/*
- * LOCKFILE
- *	This is the name of the lock file which is created in the current
- *	directory if the -l flag isn't given.
- * DONT_LOCK
- *	If this is defined, directory locking will be off by default. The
- *	-l flag will then turn locking on.
- */
-#define LOCKFILE  	"LOCK.make"
-/*#define DONT_LOCK*/
 
 /*
  * SPECIAL_CHAR
