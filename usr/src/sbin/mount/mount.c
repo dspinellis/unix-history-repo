@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mount.c	8.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)mount.c	8.9 (Berkeley) %G%";
 #endif /* not lint */
 
 
@@ -231,6 +231,7 @@ mountfs(spec, name, flags, type, options, mntopts)
 	struct ufs_args args;
 	char *argp, *argv[50];
 	char execname[MAXPATHLEN + 1], flagval[12];
+	char mntpath[MAXPATHLEN];
 
 	if (mntopts)
 		getstdopts(mntopts, &flags);
@@ -240,6 +241,14 @@ mountfs(spec, name, flags, type, options, mntopts)
 		getstdopts(type, &flags);
 	if (force)
 		flags |= MNT_FORCE;
+
+	if (realpath(name, mntpath) == 0) {
+		warn("%s", mntpath);
+		return (1);
+	}
+
+	name = mntpath;
+
 	if (strcmp(name, "/") == 0)
 		flags |= MNT_UPDATE;
 
