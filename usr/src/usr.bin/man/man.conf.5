@@ -1,0 +1,49 @@
+.\" Copyright (c) 1989 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms are permitted
+.\" provided that the above copyright notice and this paragraph are
+.\" duplicated in all such forms and that any documentation,
+.\" advertising materials, and other materials related to such
+.\" distribution and use acknowledge that the software was developed
+.\" by the University of California, Berkeley.  The name of the
+.\" University may not be used to endorse or promote products derived
+.\" from this software without specific prior written permission.
+.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+.\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\"
+.\"	@(#)man.conf.5	5.1 (Berkeley) %G%
+.\"
+.TH MAN.CONF 5 ""
+.SH NAME
+man.conf \- man command's directory list
+.SH DESCRIPTION
+.IR Man (1)
+searches the directories specified in the
+.I man.conf
+file for manual pages to display.
+The
+.I man.conf
+file should contain a list of pathnames, one per line.
+Lines starting with whitespace or a hash character (``#'') are ignored.
+.PP
+Each of these directories should contain sub-directories of the form
+``cat#'', where the ``#'' should be a manual section number, i.e. ``1''
+through ``8'' or ``3f''.
+Each of these sub-directories may in turn have sub-directories of their
+own, per machine type, for example ``tahoe''.
+Manual pages should be pre-formatted (see
+.IR nroff (1))
+and stored in a file named with a trailing ``.0''.
+.PP
+For example, the
+.IR mktemp (3)
+manual page should be stored in ``cat3/mktemp.0''.
+A VAX specific version of it should be stored in ``cat3/vax/mktemp.0''.
+The FORTRAN version should be in ``cat3f/mktemp.0''.
+.FILE
+.SH FILES
+/etc/man.conf	standard manual directory search path
+.SH "SEE ALSO"
+apropos(1), man(1), whatis(1), whereis(1)
