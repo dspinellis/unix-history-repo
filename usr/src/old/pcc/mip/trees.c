@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid ="@(#)trees.c	4.20 (Berkeley) %G%";
+static char *sccsid ="@(#)trees.c	4.21 (Berkeley) %G%";
 #endif
 
 # include "pass1.h"
@@ -1441,9 +1441,9 @@ opact( p )  NODE *p; {
 		if( mt12 & MSTR ) return( LVAL+NCVT+TYPL+OTHER );
 		else if( mt12 & MENU ) return( LVAL+NCVT+TYPL+TYMATCH+PUN );
 	case CAST:
-		if(o==CAST && mt1==0)return(TYPL+TYMATCH);
+		if(o==CAST && mt1==MVOID)return(TYPL+TYMATCH);
 		else if( mt12 & MDBI ) return( TYPL+LVAL+NCVT+TYMATCH );
-		else if( mt2 == 0 &&
+		else if( mt2 == MVOID &&
 		        ( p->in.right->in.op == CALL ||
 			  p->in.right->in.op == UNARY CALL)) break;
 		else if( mt1 & MPTR ) return( LVAL+PTMATCH+PUN );
