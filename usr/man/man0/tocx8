@@ -1,0 +1,11 @@
+bproc(8) boot procedures: UNIX/32V startup.
+crash(8) crash: what to do when the system crashes.
+cron(8) cron: clock daemon.
+fget.demon(8) fget.demon, fget.odemon: fget daemons.
+getty(8) getty: set terminal mode.
+init(8) init: process control initialization.
+lpd(8) lpd: line printer daemon.
+makekey(8) makekey: generate encryption key.
+sticky(8) sticky: executable files with persistent text.
+sysgen(8) sysgen: UNIX/32V system generation from the distribution tape.
+update(8) update: periodically update the super block.
