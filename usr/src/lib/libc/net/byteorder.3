@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)byteorder.3	6.1 (Berkeley) %G%
+.\"	@(#)byteorder.3	6.2 (Berkeley) %G%
 .\"
 .TH BYTEORDER 3N ""
 .UC 5
@@ -33,11 +33,11 @@ these routines are defined as null macros in the include file
 .PP
 These routines are most often used in conjunction with Internet
 addresses and ports as returned by
-.IR gethostent (3N)
+.IR gethostbyname (3N)
 and
 .IR getservent (3N).
 .SH "SEE ALSO"
-gethostent(3N),
+gethostbyname(3N),
 getservent(3N)
 .SH BUGS
 The VAX handles bytes backwards from most everyone else in
