@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fcntl.h	5.12 (Berkeley) %G%
+ *	@(#)fcntl.h	5.13 (Berkeley) %G%
  */
 
 #ifndef _FCNTL_H_
@@ -43,19 +43,20 @@
 #endif
 #define	O_NONBLOCK	0x0004		/* no delay */
 #define	O_APPEND	0x0008		/* set append mode */
-#ifdef KERNEL
-#define	FMARK		0x0010		/* mark during gc() */
-#define	FDEFER		0x0020		/* defer for next gc pass */
-#endif
 #ifndef _POSIX_SOURCE
+#define	O_SHLOCK	0x0010		/* open with shared file lock */
+#define	O_EXLOCK	0x0020		/* open with exclusive file lock */
 #define	O_ASYNC		0x0040		/* signal pgrp when data ready */
-#define	O_SHLOCK	0x0080		/* shared file lock present */
-#define	O_EXLOCK	0x0100		/* exclusive file lock present */
+#define	O_FSYNC		0x0080		/* synchronous writes */
 #endif
 #define	O_CREAT		0x0200		/* create if nonexistant */
 #define	O_TRUNC		0x0400		/* truncate to zero length */
 #define	O_EXCL		0x0800		/* error if already exists */
-#define	O_FSYNC		0x1000		/* synchronous writes */
+#ifdef KERNEL
+#define	FMARK		0x1000		/* mark during gc() */
+#define	FDEFER		0x2000		/* defer for next gc pass */
+#define	FHASLOCK	0x4000		/* descriptor holds advisory lock */
+#endif
 
 /* defined by POSIX 1003.1; BSD default, so no bit required */
 #define	O_NOCTTY	0		/* don't assign controlling terminal */
@@ -66,9 +67,9 @@
 #define	OFLAGS(fflags)	((fflags) - 1)
 
 /* bits to save after open */
-#define	FMASK		(FREAD|FWRITE|FAPPEND|FASYNC|FNONBLOCK)
+#define	FMASK		(FREAD|FWRITE|FAPPEND|FASYNC|FFSYNC|FNONBLOCK)
 /* bits settable by fcntl(F_SETFL, ...) */
-#define	FCNTLFLAGS	(O_NONBLOCK|O_APPEND|O_ASYNC|O_FSYNC)
+#define	FCNTLFLAGS	(FAPPEND|FASYNC|FFSYNC|FNONBLOCK)
 #endif
 
 /*
@@ -79,19 +80,10 @@
 #ifndef _POSIX_SOURCE
 #define	FAPPEND		O_APPEND
 #define	FASYNC		O_ASYNC
-#define	FNDELAY		O_NONBLOCK
+#define	FFSYNC		O_FSYNC
+#define	FNONBLOCK	O_NONBLOCK
 #define	O_NDELAY	O_NONBLOCK
 #endif
-
-#ifdef KERNEL
-#define	FCREAT		O_CREAT		/* not stored in f_flags */
-#define	FEXCL		O_EXCL		/* not stored in f_flags */
-#define	FTRUNC		O_TRUNC		/* not stored in f_flags */
-#define	FEXLOCK		O_EXLOCK
-#define	FSHLOCK		O_SHLOCK
-#define	FNONBLOCK	O_NONBLOCK
-#endif
-
 
 /*
  * Constants used for fcntl(2)
