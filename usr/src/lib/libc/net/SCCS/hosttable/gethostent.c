@@ -16,7 +16,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)gethostent.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)gethostent.c	5.6 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <stdio.h>
@@ -49,7 +49,7 @@ char	*_host_file = "/etc/hosts";
 int	_host_stayopen;
 DBM	*_host_db;	/* set by gethostbyname(), gethostbyaddr() */
 
-static char *any();
+char *strpbrk();
 
 sethostent(f)
 	int f;
@@ -85,11 +85,11 @@ again:
 		return (NULL);
 	if (*p == '#')
 		goto again;
-	cp = any(p, "#\n");
+	cp = strpbrk(p, "#\n");
 	if (cp == NULL)
 		goto again;
 	*cp = '\0';
-	cp = any(p, " \t");
+	cp = strpbrk(p, " \t");
 	if (cp == NULL)
 		goto again;
 	*cp++ = '\0';
@@ -102,7 +102,7 @@ again:
 		cp++;
 	host.h_name = cp;
 	q = host.h_aliases = host_aliases;
-	cp = any(cp, " \t");
+	cp = strpbrk(cp, " \t");
 	if (cp != NULL) 
 		*cp++ = '\0';
 	while (cp && *cp) {
@@ -112,7 +112,7 @@ again:
 		}
 		if (q < &host_aliases[MAXALIASES - 1])
 			*q++ = cp;
-		cp = any(cp, " \t");
+		cp = strpbrk(cp, " \t");
 		if (cp != NULL)
 			*cp++ = '\0';
 	}
@@ -124,20 +124,4 @@ sethostfile(file)
 	char *file;
 {
 	_host_file = file;
-}
-
-static char *
-any(cp, match)
-	register char *cp;
-	char *match;
-{
-	register char *mp, c;
-
-	while (c = *cp) {
-		for (mp = match; *mp; mp++)
-			if (*mp == c)
-				return (cp);
-		cp++;
-	}
-	return ((char *)0);
 }
