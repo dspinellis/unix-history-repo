@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)canfield.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)canfield.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -765,7 +765,9 @@ tabok(cp, des)
 	if ((cp == stock) && (tableau[des] == NIL))
 		return (TRUE);
 	else if (tableau[des] == NIL)
-		if (stock == NIL)
+		if (stock == NIL && 
+		    cp != bottom[0] && cp != bottom[1] && 
+		    cp != bottom[2] && cp != bottom[3])
 			return (TRUE);
 		else 
 			return (FALSE);
@@ -994,7 +996,8 @@ showcards()
 	printw("          ");
 	move(row, stockcol - 1);
 	printw("=---=");
-	getcmd(moverow, movecol, "Hit return to exit");
+	if ( cardsoff == 52 )
+		getcmd(moverow, movecol, "Hit return to exit");
 }
 
 /*
@@ -1533,8 +1536,6 @@ finish()
 		move(originrow, origincol);
 		printw("CONGRATULATIONS!\n");
 		printw("You won the game. That is a feat to be proud of.\n");
-		move(originrow + 4, origincol);
-		printw("Wish to play again?     ");
 		row = originrow + 5;
 		col = origincol;
 	} else {
@@ -1543,14 +1544,12 @@ finish()
 		if (cardsoff > 1)
 			printw("s");
 		printw(" off    ");
-		getcmd(moverow, movecol, "Hit return to continue");
 		move(msgrow, msgcol);
-		printw("Wish to play again?     ");
 		row = moverow;
 		col = movecol;
 	}
 	do {
-		getcmd(row, col, "y or n?");
+		getcmd(row, col, "Play again (y or n)?");
 	} while (srcpile != 'y' && srcpile != 'n');
 	errmsg = TRUE;
 	clearmsg();
