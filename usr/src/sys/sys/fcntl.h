@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fcntl.h	5.4 (Berkeley) %G%
+ *	@(#)fcntl.h	5.5 (Berkeley) %G%
  */
 
 #ifndef F_DUPFD
@@ -77,7 +77,7 @@
 /* mask for file access modes */
 #define	O_ACCMODE	(O_RDONLY|O_WRONLY|O_RDWR)
 
-#if defined(__STDC__)
+#if __STDC__ || c_plusplus
 extern int fcntl(int, int, int);
 extern int creat(const char *, mode_t);
 extern int open(const char *, int, ...);
