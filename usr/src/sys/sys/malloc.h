@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)malloc.h	7.8 (Berkeley) %G%
+ *	@(#)malloc.h	7.9 (Berkeley) %G%
  */
 
 #define KMEMSTATS
@@ -47,6 +47,7 @@
 #define M_CRED		16	/* credentials */
 #define	M_PGRP		17	/* process group header */
 #define	M_SESSION	18	/* session header */
+#define M_IOV		19	/* large iov's */
 #define M_TEMP		49	/* misc temporary data buffers */
 #define M_LAST		50
 
