@@ -41,12 +41,6 @@ keyboard problems.
 	The boot block binaries shipped with the 1.1 BETA release were
 	built using an older version of as and can be installed safely.
 
-/sys/i386/boot
-	You can not have the root file system mounted on /dev/fd1a, it
-	panics on you.  This occurs when booting from floppy and answering
-	the question for what drive the root file system is on with B.
-	This will be fixed by the 1.1 release date.
-
 /sys/i386/isa/bt742a.c
 	The Bt445S and Bt747 controllers can cause problems when ISA DMA
 	is selected as an option.  With the EISA controller the remedy is
@@ -68,4 +62,4 @@ keyboard problems.
 	Problem is already known by the gawk maintainers and will be fixed
 	in the next release of gawk.
 
-$Id: KNOWNBUGS,v 1.8 1994/03/20 00:22:07 jkh Exp $
+$Id: KNOWNBUGS,v 1.9 1994/03/20 18:04:18 ats Exp $
