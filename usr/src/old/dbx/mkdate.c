@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)mkdate.c 1.2 %G%";
+static char rcsid[] = "$Header: mkdate.c,v 1.3 84/03/27 10:21:59 linton Exp $";
 
 #include <stdio.h>
 #include <sys/time.h>
@@ -20,4 +20,26 @@ main()
     gethostname(name, &namelen);
     printf(" (%s)", name);
     printf("\";\n");
+    DoVersionNumber();
+}
+
+DoVersionNumber()
+{
+    FILE *f;
+    int n;
+
+    f = fopen("version", "r");
+    if (f == NULL) {
+	n = 1;
+    } else {
+	fscanf(f, "%d", &n);
+	n = n + 1;
+	fclose(f);
+    }
+    f = fopen("version", "w");
+    if (f != NULL) {
+	fprintf(f, "%d\n", n);
+	fclose(f);
+    }
+    printf("int versionNumber = %d;\n", n);
 }

@@ -1,6 +1,8 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)check.c 1.5 %G%";
+static char sccsid[] = "@(#)check.c 1.5 8/10/83";
+
+static char rcsid[] = "$Header: check.c,v 1.3 84/03/27 10:19:54 linton Exp $";
 
 /*
  * Check a tree for semantic correctness.
@@ -56,6 +58,16 @@ register Node p;
 	case O_STOP:
 	case O_STOPI:
 	    chkstop(p);
+	    break;
+
+	case O_CALL:
+	    if (not isroutine(p->value.arg[0]->nodetype)) {
+		beginerrmsg();
+		fprintf(stderr, "\"");
+		prtree(stderr, p->value.arg[0]);
+		fprintf(stderr, "\" not call-able");
+		enderrmsg();
+	    }
 	    break;
 
 	default:
@@ -120,13 +132,15 @@ Node p;
 	    enderrmsg();
 	}
 	chkblock(place);
-    } else if (place->op == O_SYM) {
-	chkblock(place);
-    } else {
-	if (p->op == O_STOP) {
-	    chkline(place);
+    } else if (place != nil) {
+	if (place->op == O_SYM) {
+	    chkblock(place);
 	} else {
-	    chkaddr(place);
+	    if (p->op == O_STOP) {
+		chkline(place);
+	    } else {
+		chkaddr(place);
+	    }
 	}
     }
 }
@@ -139,13 +153,29 @@ Node p;
 private chkblock(b)
 Node b;
 {
+    Symbol p, outer;
+
     if (b != nil) {
 	if (b->op != O_SYM) {
 	    beginerrmsg();
 	    fprintf(stderr, "expected subprogram, found ");
 	    prtree(stderr, b);
 	    enderrmsg();
-	} else if (not isblock(b->value.sym) or ismodule(b->value.sym)) {
+	} else if (ismodule(b->value.sym)) {
+	    outer = b->value.sym;
+	    while (outer != nil) {
+		find(p, outer->name) where p->block == outer endfind(p);
+		if (p == nil) {
+		    outer = nil;
+		    error("\"%s\" is not a subprogram", symname(b->value.sym));
+		} else if (ismodule(p)) {
+		    outer = p;
+		} else {
+		    outer = nil;
+		    b->value.sym = p;
+		}
+	    }
+	} else if (not isblock(b->value.sym)) {
 	    error("\"%s\" is not a subprogram", symname(b->value.sym));
 	}
     }

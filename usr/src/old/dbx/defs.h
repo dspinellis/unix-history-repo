@@ -1,5 +1,3 @@
-/*	defs.h	1.1	83/08/13	*/
-
 /*
  * Public definitions, common to all.
  */
@@ -41,9 +39,12 @@
 }
 
 typedef int Integer;
+typedef int integer;
 typedef char Char;
 typedef double Real;
+typedef double real;
 typedef enum { false, true } Boolean;
+typedef Boolean boolean;
 typedef char *String;
 
 #define strdup(s)       strcpy(malloc((unsigned) strlen(s) + 1), s)

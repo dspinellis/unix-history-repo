@@ -1,6 +1,8 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)scanner.c 1.9 %G%";
+static char sccsid[] = "@(#)scanner.c 1.8 8/5/83";
+
+static char rcsid[] = "$Header: scanner.c,v 1.3 84/03/27 10:23:50 linton Exp $";
 
 /*
  * Debugger scanner.
@@ -36,7 +38,7 @@ private Charclass *lexclass = class + 1;
 
 private File in;
 private Char linebuf[MAXLINESIZE];
-private Char *curchar;
+private Char *curchar, *prevchar;
 
 #define MAXINCLDEPTH 10
 
@@ -126,6 +128,7 @@ public Token yylex()
 	}
     }
     curchar = p;
+    prevchar = curchar;
     c = *p;
     if (lexclass[c] == ALPHA) {
 	t = getident();
@@ -232,30 +235,26 @@ public Token yylex()
 public yyerror(s)
 String s;
 {
-    register Char *p, *tokenbegin, *tokenend;
-    register Integer len;
+    register char *p;
+    register integer start;
 
     if (streq(s, "syntax error")) {
 	beginerrmsg();
-	tokenend = curchar - 1;
-	tokenbegin = tokenend;
-	while (lexclass[*tokenbegin] != WHITE and tokenbegin > &linebuf[0]) {
-	    --tokenbegin;
-	}
-	len = tokenend - tokenbegin + 1;
-	p = tokenbegin;
+	p = prevchar;
+	start = p - &linebuf[0];
 	if (p > &linebuf[0]) {
 	    while (lexclass[*p] == WHITE and p > &linebuf[0]) {
 		--p;
 	    }
 	}
+	fprintf(stderr, "%s", linebuf);
+	if (start != 0) {
+	    fprintf(stderr, "%*c", start, ' ');
+	}
 	if (p == &linebuf[0]) {
-	    fprintf(stderr, "unrecognized command \"%.*s\"", len, tokenbegin);
+	    fprintf(stderr, "^ unrecognized command");
 	} else {
-	    fprintf(stderr, "syntax error");
-	    if (len != 0) {
-		fprintf(stderr, " on \"%.*s\"", len, tokenbegin);
-	    }
+	    fprintf(stderr, "^ syntax error");
 	}
 	enderrmsg();
     } else {
@@ -288,7 +287,7 @@ private Token getident()
     if (shellmode) {
 	do {
 	    *q++ = *p++;
-	} while (index(" \t\n!&<>*[]()", *p) == nil);
+	} while (index(" \t\n!&<>*[]()'\"", *p) == nil);
     } else {
 	do {
 	    *q++ = *p++;

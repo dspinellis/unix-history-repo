@@ -1,6 +1,8 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)main.c 1.6 %G%";
+static char sccsid[] = "@(#)main.c 1.5 5/17/83";
+
+static char rcsid[] = "$Header: main.c,v 1.3 84/03/27 10:21:40 linton Exp $";
 
 /*
  * Debugger main routine.
@@ -14,6 +16,7 @@ static char sccsid[] = "@(#)main.c 1.6 %G%";
 #include "symbols.h"
 #include "scanner.h"
 #include "process.h"
+#include "runtime.h"
 #include "source.h"
 #include "object.h"
 #include "mappings.h"
@@ -35,6 +38,7 @@ public Boolean lexdebug;		/* trace yylex return values */
 public Boolean tracebpts;		/* trace create/delete breakpoints */
 public Boolean traceexec;		/* trace process execution */
 public Boolean tracesyms;		/* print symbols as their read */
+public Boolean traceblocks;		/* trace blocks while reading symbols */
 
 public File corefile;			/* File id of core dump */
 
@@ -58,18 +62,19 @@ main(argc, argv)
 int argc;
 String argv[];
 {
-    register Integer i;
+    register integer i;
     extern String date;
+    extern integer versionNumber;
 
     cmdname = argv[0];
     catcherrs();
     onsyserr(EINTR, nil);
     setbuf(stdout, outbuf);
-    printf("dbx version of %s.\nType 'help' for help.\n", date);
+    printf("dbx version %d of %s.\nType 'help' for help.\n",
+	versionNumber, date);
     fflush(stdout);
     scanargs(argc, argv);
     language_init();
-    symbols_init();
     process_init();
     if (runfirst) {
 	if (setjmp(env) == FIRST_TIME) {
@@ -85,8 +90,9 @@ String argv[];
     } else {
 	init();
     }
-    setjmp(env);
-    restoretty(stdout, &ttyinfo);
+    if (setjmp(env) != FIRST_TIME) {
+	restoretty(stdout, &ttyinfo);
+    }
     signal(SIGINT, catchintr);
     yyparse();
     putchar('\n');
@@ -117,9 +123,9 @@ public init()
     printf("\n");
     fflush(stdout);
     if (coredump) {
-	curfunc = whatblock(pc);
+	setcurfunc(whatblock(pc));
     } else {
-	curfunc = program;
+	setcurfunc(program);
     }
     bpinit();
     f = fopen(initfile, "r");
@@ -242,13 +248,14 @@ String argv[];
     tracebpts = false;
     traceexec = false;
     tracesyms = false;
+    traceblocks = false;
     foundfile = false;
     corefile = nil;
     coredump = true;
     sourcepath = list_alloc();
     list_append(list_item("."), nil, sourcepath);
     i = 1;
-    while (i < argc and (not foundfile or (corefile == nil and not runfirst))) {
+    while (i < argc and (not foundfile or corefile == nil)) {
 	if (argv[i][0] == '-') {
 	    if (streq(argv[i], "-I")) {
 		++i;
@@ -332,6 +339,10 @@ char c;
 	    tracesyms = true;
 	    break;
 
+	case 'n':
+	    traceblocks = true;
+	    break;
+
 	case 'l':
 #   	    ifdef LEXDEBUG
 		lexdebug = true;
@@ -370,5 +381,6 @@ Ttyinfo *t;
 public quit(r)
 Integer r;
 {
+    pterm(process);
     exit(r);
 }

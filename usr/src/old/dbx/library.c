@@ -1,8 +1,8 @@
-#ifndef lint
-static char sccsid[] = "@(#)library.c	1.4 (Berkeley) %G%";
-#endif
-
 /* Copyright (c) 1982 Regents of the University of California */
+
+static char sccsid[] = "@(#)library.c 1.3 8/7/83";
+
+static char rcsid[] = "$Header: library.c,v 1.3 84/03/27 10:21:12 linton Exp $";
 
 /*
  * General purpose routines.
@@ -20,21 +20,13 @@ static char sccsid[] = "@(#)library.c	1.4 (Berkeley) %G%";
 #define ord(enumcon)	((int) enumcon)
 #define nil(type)	((type) 0)
 
-typedef enum { FALSE, TRUE } Boolean;
+typedef int integer;
+typedef enum { FALSE, TRUE } boolean;
 typedef char *String;
 typedef FILE *File;
 typedef String Filename;
 
 #undef FILE
-
-/*
- * Definitions of standard C library routines that aren't in the
- * standard I/O library, but which are generally useful.
- */
-
-extern long atol();		/* ascii to long */
-extern double atof();		/* ascii to floating point */
-extern char *mktemp();		/* make a temporary file name */
 
 String cmdname;			/* name of command for error messages */
 Filename errfilename;		/* current file associated with error */
@@ -87,7 +79,7 @@ typedef struct {
  */
 
 
-#define MAXNARGS 100    /* unchecked upper limit on max num of arguments */
+#define MAXNARGS 1000    /* unchecked upper limit on max num of arguments */
 #define BADEXEC 127	/* exec fails */
 
 #define ischild(pid)    ((pid) == 0)
@@ -254,7 +246,7 @@ int pid;
     }
 }
 
-private Boolean isptraced(pid)
+private boolean isptraced(pid)
 int pid;
 {
     register Pidlist *p;
@@ -263,7 +255,7 @@ int pid;
     while (p != nil(Pidlist *) and p->pid != pid) {
 	p = p->next;
     }
-    return (Boolean) (p != nil(Pidlist *));
+    return (boolean) (p != nil(Pidlist *));
 }
 
 public pwait(pid, statusp)
@@ -351,72 +343,57 @@ extern int errno;
 extern _mycerror();
 
 /*
- * Default error handling.
+ * Initialize error information, setting defaults for handling errors.
  */
 
-private ERRINFO errinfo[] ={
-/* no error */	ERR_IGNORE,
-/* EPERM */	ERR_IGNORE,
-/* ENOENT */	ERR_IGNORE,
-/* ESRCH */	ERR_IGNORE,
-/* EINTR */	ERR_CATCH,
-/* EIO */	ERR_CATCH,
-/* ENXIO */	ERR_CATCH,
-/* E2BIG */	ERR_CATCH,
-/* ENOEXEC */	ERR_CATCH,
-/* EBADF */	ERR_IGNORE,
-/* ECHILD */	ERR_CATCH,
-/* EAGAIN */	ERR_CATCH,
-/* ENOMEM */	ERR_CATCH,
-/* EACCES */	ERR_CATCH,
-/* EFAULT */	ERR_CATCH,
-/* ENOTBLK */	ERR_CATCH,
-/* EBUSY */	ERR_CATCH,
-/* EEXIST */	ERR_CATCH,
-/* EXDEV */	ERR_CATCH,
-/* ENODEV */	ERR_CATCH,
-/* ENOTDIR */	ERR_CATCH,
-/* EISDIR */	ERR_CATCH,
-/* EINVAL */	ERR_CATCH,
-/* ENFILE */	ERR_CATCH,
-/* EMFILE */	ERR_CATCH,
-/* ENOTTY */	ERR_IGNORE,
-/* ETXTBSY */	ERR_CATCH,
-/* EFBIG */	ERR_CATCH,
-/* ENOSPC */	ERR_CATCH,
-/* ESPIPE */	ERR_CATCH,
-/* EROFS */	ERR_CATCH,
-/* EMLINK */	ERR_CATCH,
-/* EPIPE */	ERR_CATCH,
-/* EDOM */	ERR_CATCH,
-/* ERANGE */	ERR_CATCH,
-/* EQUOT */	ERR_CATCH,
-};
+private ERRINFO *errinfo;
+
+private initErrInfo ()
+{
+    integer i;
+
+    errinfo = alloc(sys_nerr, ERRINFO);
+    for (i = 0; i < sys_nerr; i++) {
+	errinfo[i].func = ERR_CATCH;
+    }
+    errinfo[0].func = ERR_IGNORE;
+    errinfo[EPERM].func = ERR_IGNORE;
+    errinfo[ENOENT].func = ERR_IGNORE;
+    errinfo[ESRCH].func = ERR_IGNORE;
+    errinfo[EBADF].func = ERR_IGNORE;
+    errinfo[ENOTTY].func = ERR_IGNORE;
+    errinfo[EOPNOTSUPP].func = ERR_IGNORE;
+}
 
 public syserr()
 {
     ERRINFO *e;
 
-    e = &errinfo[errno];
-    if (e->func == ERR_CATCH) {
-	if (errno < sys_nerr) {
-	    fatal(sys_errlist[errno]);
-	} else {
-	    fatal("errno %d", errno);
+    if (errno < 0 or errno > sys_nerr) {
+	fatal("errno %d", errno);
+    } else {
+	if (errinfo == nil(ERRINFO *)) {
+	    initErrInfo();
 	}
-    } else if (e->func != ERR_IGNORE) {
-	(*e->func)();
+	e = &(errinfo[errno]);
+	if (e->func == ERR_CATCH) {
+	    fatal(sys_errlist[errno]);
+	} else if (e->func != ERR_IGNORE) {
+	    (*e->func)();
+	}
     }
 }
 
 /*
- * Catcherrs only purpose is to get this module loaded and make
- * sure my cerror is loaded (only applicable when this is in a library).
+ * Catcherrs' purpose is to initialize the errinfo table, get this module
+ * loaded, and make sure my cerror is loaded (only applicable when this is
+ * in a library).
  */
 
 public catcherrs()
 {
     _mycerror();
+    initErrInfo();
 }
 
 /*
@@ -427,6 +404,9 @@ public onsyserr(n, f)
 int n;
 INTFUNC *f;
 {
+    if (errinfo == nil(ERRINFO *)) {
+	initErrInfo();
+    }
     errinfo[n].func = f;
 }
 
@@ -466,22 +446,24 @@ public String sys_siglist[] = {
     nil(String)
 };
 
-public psig(s)
+public psignal(s, n)
 String s;
+integer n;
 {
-    String c;
-    int n;
+    String msg;
+    integer len;
 
-    c = "Unknown signal";
-    if (errno < sys_nsig) {
-	c = sys_errlist[errno];
+    if (n >= 0 and n < sys_nsig) {
+	msg = sys_siglist[n];
+    } else {
+	msg = "Unknown signal";
     }
-    n = strlen(s);
-    if (n > 0) {
-	write(2, s, n);
+    len = strlen(s);
+    if (len > 0) {
+	write(2, s, len);
 	write(2, ": ", 2);
     }
-    write(2, c, strlen(c));
+    write(2, msg, strlen(msg));
     write(2, "\n", 1);
 }
 
@@ -499,7 +481,7 @@ private short nwarnings;
 /* VARARGS2 */
 private errmsg(errname, shouldquit, s, a, b, c, d, e, f, g, h, i, j, k, l, m)
 String errname;
-Boolean shouldquit;
+boolean shouldquit;
 String s;
 {
     fflush(stdout);

@@ -1,6 +1,8 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)tree.c 1.5 %G%";
+static char sccsid[] = "@(#)tree.c 1.5 8/10/83";
+
+static char rcsid[] = "$Header: tree.c,v 1.3 84/03/27 10:24:40 linton Exp $";
 
 /*
  * Parse tree management.
@@ -104,7 +106,6 @@ Operator op;
 	case O_DEBUG:
 	case O_LCON:
 	case O_CONT:
-	case O_DELETE:
 	case O_CATCH:
 	case O_IGNORE:
 	case O_TRACEOFF:
@@ -317,7 +318,6 @@ Command cmd;
 	    fprintf(f, "%s", cmd->value.scon);
 	    break;
 
-	case O_DELETE:
 	case O_CATCH:
 	case O_IGNORE:
 	case O_TRACEOFF:
@@ -581,7 +581,7 @@ Node p;
 }
 
 /*
- * A recursive tree search routine to test if two trees * are equivalent.
+ * A recursive tree search routine to test if two trees are equivalent.
  */
 
 public Boolean tr_equal(t1, t2)

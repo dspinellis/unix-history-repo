@@ -1,11 +1,11 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)coredump.c 1.4 %G%";
+static char sccsid[] = "@(#)coredump.c 1.4 1/25/83";
+
+static char rcsid[] = "$Header: coredump.c,v 1.3 84/03/27 10:20:10 linton Exp $";
 
 /*
  * Deal with the core dump anachronism.
- *
- * If I understood this code, I'd try to make it readable.
  */
 
 #include "defs.h"
@@ -138,7 +138,11 @@ Address addr;
 int nbytes;
 {
     if (addr < datamap.begin) {
-	error("data address 0x%x too low (lb = 0x%x)", addr, datamap.begin);
+	if (hdr.a_magic == OMAGIC) {
+	    error("data address 0x%x too low (lb = 0x%x)", addr, datamap.begin);
+	} else {
+	    coredump_readtext(buff, addr, nbytes);
+	}
     } else if (addr > stkmap.end) {
 	error("data address 0x%x too high (ub = 0x%x)", addr, stkmap.end);
     } else if (addr < stkmap.begin) {

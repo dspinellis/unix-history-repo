@@ -1,6 +1,8 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)operators.c 1.5 %G%";
+static char sccsid[] = "@(#)operators.c 1.4 5/18/83";
+
+static char rcsid[] = "$Header: operators.c,v 1.3 84/03/27 10:22:38 linton Exp $";
 
 /*
  * Tree node classes.
@@ -79,6 +81,10 @@ typedef enum {
     O_TRACEOFF,		/* end tracing source line, variable, or all lines */
 
     O_TYPERENAME,	/* state the type of an expression */
+    O_RERUN,		/* re-run program with the same arguments as before */
+    O_RETURN,		/* continue execution until procedure returns */
+    O_UP,		/* move current function up the call stack */
+    O_DOWN,		/* move current function down the call stack */
 
     O_LASTOP
 } Operator;
@@ -158,7 +164,7 @@ public Opinfo opinfo[] ={
 /* O_CHFILE */		0,	null,		"file",
 /* O_CONT */		0,	null,		"cont",
 /* O_DEBUG */		0,	null,		"debug",
-/* O_DELETE */		0,	null,		"delete",
+/* O_DELETE */		1,	null,		"delete",
 /* O_DUMP */		0,	null,		"dump",
 /* O_EDIT */		0,	null,		"edit",
 /* O_FUNC */		1,	null,		"func",
@@ -199,4 +205,8 @@ public Opinfo opinfo[] ={
 /* O_TRACEON */		1,	null,		"traceon",
 /* O_TRACEOFF */	1,	null,		"traceoff",
 /* O_TYPERENAME */	2,	UNARY,		"traceoff",
+/* O_RERUN */		0,	null,		"rerun",
+/* O_RETURN */		1,	null,		"return",
+/* O_UP */		1,	UNARY,		"up",
+/* O_DOWN */		1,	UNARY,		"down",
 };

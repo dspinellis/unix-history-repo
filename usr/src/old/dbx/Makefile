@@ -1,21 +1,14 @@
-#	@(#)Makefile	4.8 (Berkeley) %G%
 #
 # make file for debugger "dbx"
 #
 # The file "defs.h" is included by all.
-#
-# N.B.:
-#    My version of cerror automatically catches certain errors
-# such as out of memory, I/O error.  If you re-make this with
-# the standard cerror, the program could fault unexpectedly.
 #
 
 .SUFFIXES:
 .SUFFIXES: .h .c .s .o
 
 AOUT	= tdbx
-DESTDIR =
-DEST	= ${DESTDIR}/usr/ucb/dbx
+DEST	= /usr/local/bin/dbx
 
 LIBRARIES =
 
@@ -41,6 +34,7 @@ OBJ = \
     machine.o \
     main.o \
     mappings.o \
+    modula-2.o \
     names.o \
     object.o \
     operators.o \
@@ -51,6 +45,7 @@ OBJ = \
     runtime.o \
     scanner.o \
     source.o \
+    stabstring.o \
     symbols.o \
     tree.o \
     ops.o
@@ -69,6 +64,7 @@ HDR = \
     machine.h \
     main.h \
     mappings.h \
+    modula-2.h \
     names.h \
     object.h \
     operators.h \
@@ -77,8 +73,9 @@ HDR = \
     process.h \
     re.h \
     runtime.h \
-    source.h \
     scanner.h \
+    source.h \
+    stabstring.h \
     symbols.h \
     tree.h \
     ops.h
@@ -102,6 +99,7 @@ SRC = \
     machine.c \
     main.c \
     mappings.c \
+    modula-2.c \
     names.c \
     object.c \
     operators.c \
@@ -140,13 +138,14 @@ profile: ${HDR} ${OBJ}
 	@${CC} ${LDFLAGS} -p date.c ${OBJ} ${LIBRARIES} -o ${AOUT}
 
 y.tab.c: commands.y
+	@echo "expect 2 shift/reduce conflicts"
 	yacc -d commands.y
 
 makedefs: makedefs.c library.o cerror.o
-	${CC} makedefs.c library.o cerror.o -o makedefs
+	${CC} -g makedefs.c library.o cerror.o -o makedefs
 
 mkdate: mkdate.c
-	${CC} mkdate.c -o mkdate
+	${CC} -g mkdate.c -o mkdate
 
 print:
 	@echo "don't print it, it's too long"
@@ -157,18 +156,26 @@ print:
 #
 
 clean:
-	rm -f ${HDR} ${OBJ} y.tab.c y.tab.h \
-	    ${AOUT} mkdate mkdate.o makedefs makedefs.o date.c core
+	rm -f ${HDR} ${OBJ} y.tab.c y.tab.h ${AOUT} \
+	    mkdate mkdate.o makedefs makedefs.o date.c core mon.out prof.out
 
-install:
+testinstall: ${AOUT} test install
+
+test:
+	@chdir tests; make
+
+install: ${AOUT}
 	install ${AOUT} ${DEST}
 
 #
 # Create a tar file called "tape" containing relevant files.
 #
 
+TAPE = tape
+
 tape:
-	tar cfv tape Makefile READ_ME TO_DO ${SRC} makedefs.c mkdate.c
+	tar cfv ${TAPE} \
+	    Makefile ${SRC} makedefs.c mkdate.c tests/ pchanges ptests
 
 #
 # Header dependencies are purposely incomplete since header files

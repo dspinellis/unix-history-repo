@@ -1,6 +1,8 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)events.c 1.3 %G%";
+static char sccsid[] = "@(#)events.c 1.3 4/8/83";
+
+static char rcsid[] = "$Header: events.c,v 1.3 84/03/27 10:20:41 linton Exp $";
 
 /*
  * Event/breakpoint managment.
@@ -14,6 +16,7 @@ static char sccsid[] = "@(#)events.c 1.3 %G%";
 #include "eval.h"
 #include "source.h"
 #include "mappings.h"
+#include "runtime.h"
 #include "process.h"
 #include "machine.h"
 #include "lists.h"
@@ -131,34 +134,44 @@ Cmdlist cmdlist;
 
 /*
  * Delete the event with the given id.
+ * Returns whether it's successful or not.
  */
 
-public delevent(id)
+public boolean delevent (id)
 unsigned int id;
 {
     Event e;
     Breakpoint bp;
     Trcmd t;
+    boolean found;
 
+    found = false;
     foreach (Event, e, eventlist)
 	if (e->id == id) {
-	    list_delete(list_curitem(eventlist), eventlist);
+	    found = true;
 	    foreach (Breakpoint, bp, bplist)
 		if (bp->event == e) {
+		    if (tracebpts) {
+			printf("deleting breakpoint at 0x%x\n", bp->bpaddr);
+			fflush(stdout);
+		    }
 		    list_delete(list_curitem(bplist), bplist);
 		}
 	    endfor
+	    list_delete(list_curitem(eventlist), eventlist);
 	    break;
 	}
     endfor
     foreach (Trcmd, t, eachline)
 	if (t->event->id == id) {
+	    found = true;
 	    printrmtr(t);
 	    list_delete(list_curitem(eachline), eachline);
 	}
     endfor
     foreach (Trcmd, t, eachinst)
 	if (t->event->id == id) {
+	    found = true;
 	    printrmtr(t);
 	    list_delete(list_curitem(eachinst), eachinst);
 	}
@@ -169,6 +182,7 @@ unsigned int id;
 	    single_stepping = false;
 	}
     }
+    return found;
 }
 
 /*
@@ -194,15 +208,17 @@ Event e;
 		if (s == linesym) {
 		    if (place->op == O_QLINE) {
 			line = place->value.arg[1]->value.lcon;
-			addr = objaddr(line,
-			    place->value.arg[0]->value.scon);
+			addr = objaddr(line, place->value.arg[0]->value.scon);
 		    } else {
 			eval(place);
 			line = pop(long);
 			addr = objaddr(line, cursource);
 		    }
 		    if (addr == NOADDR) {
-			delevent(e->id);
+			if (not delevent(e->id)) {
+			    printf("!! dbx.translate: can't undo event %d?\n",
+				e->id);
+			}
 			beginerrmsg();
 			fprintf(stderr, "no executable code at line ");
 			prtree(stderr, place);
@@ -347,7 +363,7 @@ Event e;
     Command cmd;
 
     if (not isredirected()) {
-	printf("(%d) ", e->id);
+	printeventid(e->id);
     }
     cmd = list_element(Command, list_head(e->actions));
     if (cmd->op == O_PRINTCALL) {
@@ -369,6 +385,12 @@ Event e;
 	printcond(e->condition);
     }
     printf("\n");
+}
+
+private printeventid (id)
+integer id;
+{
+    printf("[%d] ", id);
 }
 
 /*
@@ -423,7 +445,11 @@ Cmdlist actions;
     p->bpline = line;
     p->actions = actions;
     if (tracebpts) {
-	printf("new bp at 0x%x\n", addr);
+	if (e == nil) {
+	    printf("new bp at 0x%x for event ??\n", addr, e->id);
+	} else {
+	    printf("new bp at 0x%x for event %d\n", addr, e->id);
+	}
 	fflush(stdout);
     }
     bplist_append(p, bplist);
@@ -440,7 +466,9 @@ public bpfree()
 
     fixbps();
     foreach (Event, e, eventlist)
-	delevent(e->id);
+	if (not delevent(e->id)) {
+	    printf("!! dbx.bpfree: can't delete event %d\n", e->id);
+	}
 	list_delete(list_curitem(eventlist), eventlist);
     endfor
 }
@@ -454,21 +482,32 @@ public Boolean bpact()
 {
     register Breakpoint p;
     Boolean found;
+    integer eventId;
 
     found = false;
     foreach (Breakpoint, p, bplist)
 	if (p->bpaddr == pc) {
 	    if (tracebpts) {
-		printf("breakpoint found at location 0x%x\n", pc);
+		printf("breakpoint for event %d found at location 0x%x\n",
+		    p->event->id, pc);
 	    }
 	    found = true;
 	    if (p->event->temporary) {
-		delevent(p->event->id);
+		if (not delevent(p->event->id)) {
+		    printf("!! dbx.bpact: can't find event %d\n",
+			p->event->id);
+		}
 	    }
 	    evalcmdlist(p->actions);
+	    if (isstopped) {
+		eventId = p->event->id;
+	    }
 	}
     endfor
     if (isstopped) {
+	if (found) {
+	    printeventid(eventId);
+	}
 	printstatus();
     }
     fflush(stdout);
@@ -491,7 +530,6 @@ Cmdlist cmdlist;
 {
     register Trcmd trcmd;
     Breakpoint bp;
-    Node until;
     Cmdlist actions;
     Address ret;
 
@@ -509,9 +547,8 @@ Cmdlist cmdlist;
     }
     ret = return_addr();
     if (ret != 0) {
-	until = build(O_EQ, build(O_SYM, pcsym), build(O_LCON, ret));
 	actions = buildcmdlist(build(O_TRACEOFF, trcmd->trid));
-	event_once(until, actions);
+	bp = bp_alloc(event, (Address) ret, 0, actions);
     }
     if (tracebpts) {
 	printf("adding trace %d for event %d\n", trcmd->trid, event->id);
@@ -614,7 +651,7 @@ Boolean iscall;
     register Trcmd t;
     register Command cmd;
 
-    curfunc = whatblock(pc);
+    setcurfunc(whatblock(pc));
     foreach (Trcmd, t, list)
 	foreach (Command, cmd, t->cmdlist)
 	    if (cmd->op == O_PRINTSRCPOS and
@@ -751,6 +788,13 @@ Node p;
 	isstopped = true;
     } else if (cmp(tp->trvalue, buff, n) != 0) {
 	mov(buff, tp->trvalue, n);
+	mov(buff, sp, n);
+	sp += n;
+	printf("after line %d:\t", prevline);
+	prtree(stdout, p);
+	printf(" = ");
+	printval(p->nodetype);
+	putchar('\n');
 	isstopped = true;
     }
     prevline = curline;
@@ -788,7 +832,9 @@ public fixbps()
     trfree();
     foreach (Event, e, eventlist)
 	if (e->temporary) {
-	    delevent(e->id);
+	    if (not delevent(e->id)) {
+		printf("!! dbx.fixbps: can't find event %d\n", e->id);
+	    }
 	}
     endfor
     foreach (Trcmd, t, eachline)

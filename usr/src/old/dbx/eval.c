@@ -1,6 +1,8 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)eval.c 1.10 %G%";
+static char sccsid[] = "@(#)eval.c 1.10 8/17/83";
+
+static char rcsid[] = "$Header: eval.c,v 1.3 84/03/27 10:20:23 linton Exp $";
 
 /*
  * Tree evaluation.
@@ -17,6 +19,7 @@ static char sccsid[] = "@(#)eval.c 1.10 %G%";
 #include "object.h"
 #include "mappings.h"
 #include "process.h"
+#include "runtime.h"
 #include "machine.h"
 #include <signal.h>
 
@@ -35,6 +38,11 @@ typedef Char Stack;
 #define pop(type) ( \
     (*((type *) (sp -= sizeof(type)))) \
 )
+
+#define popn(n, dest) { \
+    sp -= n; \
+    bcopy(sp, dest, n); \
+}
 
 #define alignstack() { \
     sp = (Stack *) (( ((int) sp) + sizeof(int) - 1)&~(sizeof(int) - 1)); \
@@ -56,7 +64,11 @@ public Boolean useInstLoc = false;
 #define poparg(n, r, fr) { \
     eval(p->value.arg[n]); \
     if (isreal(p->op)) { \
-	fr = pop(double); \
+	if (size(p->value.arg[n]->nodetype) == sizeof(float)) { \
+	    fr = pop(float); \
+	} else { \
+	    fr = pop(double); \
+	} \
     } else if (isint(p->op)) { \
 	r = popsmall(p->value.arg[n]->nodetype); \
     } \
@@ -162,8 +174,6 @@ register Node p;
 		len = size(p->nodetype);
 	    }
 	    rpush(addr, len);
-	addr = pop(long);
-        push(long, addr);
 	    break;
 
 	/*
@@ -335,13 +345,15 @@ register Node p;
 		putchar('\n');
 	    } else {
 		s = p->value.arg[0]->value.sym;
-		find(f, s->name) where
-		    f->class == FUNC or f->class == PROC
-		endfind(f);
-		if (f == nil) {
-		    error("%s is not a procedure or function", symname(s));
+		if (isroutine(s)) {
+		    setcurfunc(s);
+		} else {
+		    find(f, s->name) where isroutine(f) endfind(f);
+		    if (f == nil) {
+			error("%s is not a procedure or function", symname(s));
+		    }
+		    setcurfunc(f);
 		}
-		curfunc = f;
 		addr = codeloc(curfunc);
 		if (addr != NOADDR) {
 		    setsource(srcfilename(addr));
@@ -467,6 +479,12 @@ register Node p;
             debug(p);
 	    break;
 
+	case O_DOWN:
+	    checkref(p->value.arg[0]);
+	    assert(p->value.arg[0]->op == O_LCON);
+	    down(p->value.arg[0]->value.lcon);
+	    break;
+
 	case O_DUMP:
 	    dump();
 	    break;
@@ -481,6 +499,15 @@ register Node p;
 
 	case O_IGNORE:
 	    psigtrace(process, p->value.lcon, false);
+	    break;
+
+	case O_RETURN:
+	    if (p->value.arg[0] == nil) {
+		rtnfunc(nil);
+	    } else {
+		assert(p->value.arg[0]->op == O_SYM);
+		rtnfunc(p->value.arg[0]->value.sym);
+	    }
 	    break;
 
 	case O_RUN:
@@ -505,12 +532,30 @@ register Node p;
 	    stop(p);
 	    break;
 
+	case O_UP:
+	    checkref(p->value.arg[0]);
+	    assert(p->value.arg[0]->op == O_LCON);
+	    up(p->value.arg[0]->value.lcon);
+	    break;
+
 	case O_ADDEVENT:
 	    addevent(p->value.event.cond, p->value.event.actions);
 	    break;
 
 	case O_DELETE:
-	    delevent((unsigned int) p->value.lcon);
+	    n1 = p->value.arg[0];
+	    while (n1->op == O_COMMA) {
+		n2 = n1->value.arg[0];
+		assert(n2->op == O_LCON);
+		if (not delevent((unsigned int) n2->value.lcon)) {
+		    error("unknown event %ld", n2->value.lcon);
+		}
+		n1 = n1->value.arg[1];
+	    }
+	    assert(n1->op == O_LCON);
+	    if (not delevent((unsigned int) n1->value.lcon)) {
+		error("unknown event %ld", n1->value.lcon);
+	    }
 	    break;
 
 	case O_ENDX:
@@ -950,8 +995,12 @@ Node p;
 	if (cond != nil) {
 	    action = build(O_IF, cond, buildcmdlist(action));
 	}
-	if (place != nil and place->op == O_SYM) {
-	    s = place->value.sym;
+	if (place == nil or place->op == O_SYM) {
+	    if (place == nil) {
+		s = program;
+	    } else {
+		s = place->value.sym;
+	    }
 	    t = build(O_EQ, build(O_SYM, procsym), build(O_SYM, s));
 	    if (cond != nil) {
 		action = build(O_TRACEON, (p->op == O_STOPI),
@@ -1038,36 +1087,49 @@ Node var;
 Node exp;
 {
     Address addr;
-    int varsize;
+    integer varsize, expsize;
     char cvalue;
     short svalue;
     long lvalue;
+    float fvalue;
 
     if (not compatible(var->nodetype, exp->nodetype)) {
 	error("incompatible types");
     }
     addr = lval(var);
-    eval(exp);
     varsize = size(var->nodetype);
-    if (varsize < sizeof(long)) {
-	lvalue = pop(long);
-	switch (varsize) {
-	    case sizeof(char):
-		cvalue = lvalue;
-		dwrite(&cvalue, addr, varsize);
-		break;
-
-	    case sizeof(short):
-		svalue = lvalue;
-		dwrite(&svalue, addr, varsize);
-		break;
-
-	    default:
-		panic("bad size %d", varsize);
-	}
+    expsize = size(exp->nodetype);
+    eval(exp);
+    if (varsize == sizeof(float) and expsize == sizeof(double)) {
+	fvalue = (float) pop(double);
+	dwrite(&fvalue, addr, sizeof(fvalue));
     } else {
-	sp -= varsize;
-	dwrite(sp, addr, varsize);
+	if (varsize < sizeof(long)) {
+	    lvalue = 0;
+	    popn(expsize, &lvalue);
+	    switch (varsize) {
+		case sizeof(char):
+		    cvalue = lvalue;
+		    dwrite(&cvalue, addr, sizeof(cvalue));
+		    break;
+
+		case sizeof(short):
+		    svalue = lvalue;
+		    dwrite(&svalue, addr, sizeof(svalue));
+		    break;
+
+		default:
+		    panic("bad size %d", varsize);
+	    }
+	} else {
+	    if (expsize <= varsize) {
+		sp -= expsize;
+		dwrite(sp, addr, expsize);
+	    } else {
+		sp -= expsize;
+		dwrite(sp, addr, varsize);
+	    }
+	}
     }
 }
 
@@ -1080,14 +1142,16 @@ public gripe()
     typedef Operation();
     Operation *old;
     int pid, status;
-
+    extern int versionNumber;
+    char subject[100];
     char *maintainer = "linton@berkeley";
 
     puts("Type control-D to end your message.  Be sure to include");
     puts("your name and the name of the file you are debugging.");
     putchar('\n');
     old = signal(SIGINT, SIG_DFL);
-    pid = back("Mail", stdin, stdout, "-s", "dbx gripe", maintainer, nil);
+    sprintf(subject, "dbx (version %d) gripe", versionNumber);
+    pid = back("Mail", stdin, stdout, "-s", subject, maintainer, nil);
     signal(SIGINT, SIG_IGN);
     pwait(pid, &status);
     signal(SIGINT, old);
@@ -1105,6 +1169,10 @@ public gripe()
 public help()
 {
     puts("run                    - begin execution of the program");
+    puts("print <exp>            - print the value of the expression");
+    puts("where                  - print currently active procedures");
+    puts("stop at <line>         - suspend execution at the line");
+    puts("stop in <proc>         - suspend execution when <proc> is called");
     puts("cont                   - continue execution");
     puts("step                   - single step one line");
     puts("next                   - step to next line (skip over calls)");
@@ -1112,16 +1180,11 @@ public help()
     puts("trace <proc>           - trace calls to the procedure");
     puts("trace <var>            - trace changes to the variable");
     puts("trace <exp> at <line#> - print <exp> when <line> is reached");
-    puts("stop at <line>         - suspend execution at the line");
-    puts("stop in <proc>         - suspend execution when <proc> is called");
     puts("status                 - print trace/stop's in effect");
     puts("delete <number>        - remove trace or stop of given number");
-    puts("call <proc>            - call the procedure");
-    puts("where                  - print currently active procedures");
-    puts("print <exp>            - print the value of the expression");
+    puts("call <proc>            - call a procedure in program");
     puts("whatis <name>          - print the declaration of the name");
     puts("list <line>, <line>    - list source lines");
-    puts("edit <proc>            - edit file containing <proc>");
     puts("gripe                  - send mail to the person in charge of dbx");
     puts("quit                   - exit dbx");
 }

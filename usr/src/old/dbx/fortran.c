@@ -1,6 +1,8 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)fortran.c	1.4	%G%";
+static char sccsid[] = "@(#)fortran.c	1.3	5/20/83";
+
+static char rcsid[] = "$Header: fortran.c,v 1.3 84/03/27 10:20:53 linton Exp $";
 
 /*
  * FORTRAN dependent symbol routines.
@@ -26,20 +28,24 @@ static char sccsid[] = "@(#)fortran.c	1.4	%G%";
 #define isrange(t, name) (t->class == RANGE and istypename(t->type, name))
 
 #define MAXDIM  20
+
+private Language fort;
+
 /*
  * Initialize FORTRAN language information.
  */
 
 public fortran_init()
 {
-    Language lang;
-
-    lang = language_define("fortran", ".f");
-    language_setop(lang, L_PRINTDECL, fortran_printdecl);
-    language_setop(lang, L_PRINTVAL, fortran_printval);
-    language_setop(lang, L_TYPEMATCH, fortran_typematch);
-    language_setop(lang, L_BUILDAREF, fortran_buildaref);
-    language_setop(lang, L_EVALAREF, fortran_evalaref);
+    fort = language_define("fortran", ".f");
+    language_setop(fort, L_PRINTDECL, fortran_printdecl);
+    language_setop(fort, L_PRINTVAL, fortran_printval);
+    language_setop(fort, L_TYPEMATCH, fortran_typematch);
+    language_setop(fort, L_BUILDAREF, fortran_buildaref);
+    language_setop(fort, L_EVALAREF, fortran_evalaref);
+    language_setop(fort, L_MODINIT, fortran_modinit);
+    language_setop(fort, L_HASMODULES, fortran_hasmodules);
+    language_setop(fort, L_PASSADDR, fortran_passaddr);
 }
 
 /*
@@ -164,26 +170,26 @@ Symbol s;
 Symbol eltype;
 
     switch (s->class) {
+
 	case CONST:
+	    
 	    printf("parameter %s = ", symname(s));
             printval(s);
 	    break;
 
         case REF:
             printf(" (dummy argument) ");
-	    /* fall through */
-	case VAR:
-	    if (s->type->class == ARRAY and
-	        (not istypename(s->type->type, "char"))
-	    ) {
-		char bounds[130], *p1, **p;
 
+	case VAR:
+	    if (s->type->class == ARRAY &&
+		 (not istypename(s->type->type,"char")) ) {
+                char bounds[130], *p1, **p;
 		p1 = bounds;
                 p = &p1;
-                mksubs(p, s->type);
+                mksubs(p,s->type);
                 *p -= 1; 
                 **p = '\0';   /* get rid of trailing ',' */
-		printf(" %s %s[%s] ", typename(s), symname(s), bounds);
+		printf(" %s %s[%s] ",typename(s), symname(s), bounds);
 	    } else {
 		printf("%s %s", typename(s), symname(s));
 	    }
@@ -192,15 +198,14 @@ Symbol eltype;
 	case FUNC:
 	    if (not istypename(s->type, "void")) {
                 printf(" %s function ", typename(s) );
-	    } else {
-		printf(" subroutine");
 	    }
+	    else printf(" subroutine");
 	    printf(" %s ", symname(s));
 	    fortran_listparams(s);
 	    break;
 
 	case MODULE:
-	    printf("source file \"%s.f\"", symname(s));
+	    printf("source file \"%s.c\"", symname(s));
 	    break;
 
 	case PROG:
@@ -584,4 +589,25 @@ for(;;) {
 	 while (not done);
          if (i<0) break;
      }
+}
+
+/*
+ * Initialize typetable at beginning of a module.
+ */
+
+public fortran_modinit (typetable)
+Symbol typetable[];
+{
+    /* nothing for now */
+}
+
+public boolean fortran_hasmodules ()
+{
+    return false;
+}
+
+public boolean fortran_passaddr (param, exprtype)
+Symbol param, exprtype;
+{
+    return false;
 }

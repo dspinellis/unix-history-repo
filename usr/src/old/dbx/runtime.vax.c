@@ -1,7 +1,9 @@
 
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)runtime.vax.c 1.10 %G%";
+static char sccsid[] = "@(#)runtime.c 1.8 8/10/83";
+
+static char rcsid[] = "$Header: runtime.c,v 1.3 84/03/27 10:23:40 linton Exp $";
 
 /*
  * Runtime organization dependent routines, mostly dealing with
@@ -38,7 +40,11 @@ struct Frame {
     Word save_reg[NSAVEREG];	/* not necessarily there */
 };
 
+private Frame curframe = nil;
+private struct Frame curframerec;
 private Boolean walkingstack = false;
+
+#define frameeq(f1, f2) ((f1)->save_fp == (f2)->save_fp)
 
 /*
  * Set a frame to the current activation record.
@@ -132,6 +138,50 @@ nextf:
 	newfrp->save_pc = frame.save_pc;
     }
     return newfrp;
+}
+
+/*
+ * Get the current frame information in the given Frame and store the
+ * associated function in the given value-result parameter.
+ */
+
+private getcurfunc (frp, fp)
+Frame frp;
+Symbol *fp;
+{
+    getcurframe(frp);
+    *fp = whatblock(frp->save_pc);
+}
+
+/*
+ * Return the frame associated with the next function up the call stack, or
+ * nil if there is none.  The function is returned in a value-result parameter.
+ * For "inline" functions the statically outer function and same frame
+ * are returned.
+ */
+
+private Frame nextfunc (frp, fp)
+Frame frp;
+Symbol *fp;
+{
+    Symbol t;
+    Frame nfrp;
+
+    t = *fp;
+    checkref(t);
+    if (isinline(t)) {
+	t = container(t);
+	nfrp = frp;
+    } else {
+	nfrp = nextframe(frp);
+	if (nfrp == nil) {
+	    t = nil;
+	} else {
+	    t = whatblock(nfrp->save_pc);
+	}
+    }
+    *fp = t;
+    return nfrp;
 }
 
 /*
@@ -349,9 +399,9 @@ private walkstack(dumpvariables)
 Boolean dumpvariables;
 {
     register Frame frp;
-    register Symbol f;
     register Boolean save;
     register Lineno line;
+    Symbol f;
     struct Frame frame;
 
     if (notstarted(process)) {
@@ -360,8 +410,7 @@ Boolean dumpvariables;
 	save = walkingstack;
 	walkingstack = true;
 	frp = &frame;
-	getcurframe(frp);
-	f = whatblock(frp->save_pc);
+	getcurfunc(frp, &f);
 	do {
 	    printf("%s", symname(f));
 	    if (not isinline(f)) {
@@ -378,14 +427,7 @@ Boolean dumpvariables;
 		dumpvars(f, frp);
 		putchar('\n');
 	    }
-	    if (isinline(f)) {
-		f = container(f);
-	    } else {
-		frp = nextframe(frp);
-		if (frp != nil) {
-		    f = whatblock(frp->save_pc);
-		}
-	    }
+	    frp = nextfunc(frp, &f);
 	} while (frp != nil and f != program);
 	if (dumpvariables) {
 	    printf("in \"%s\":\n", symname(program));
@@ -397,13 +439,115 @@ Boolean dumpvariables;
 }
 
 /*
+ * Set the current function to the given symbol.
+ * We must adjust "curframe" so that subsequent operations are
+ * not confused; for simplicity we simply clear it.
+ */
+
+public setcurfunc (f)
+Symbol f;
+{
+    curfunc = f;
+    curframe = nil;
+}
+
+/*
+ * Set curfunc to be N up/down the stack from its current value.
+ */
+
+public up (n)
+integer n;
+{
+    integer i;
+    Symbol f;
+    Frame frp;
+    boolean done;
+
+    if (not isactive(program)) {
+	error("program is not active");
+    } else if (curfunc == nil) {
+	error("no current function");
+    } else {
+	i = 0;
+	f = curfunc;
+	if (curframe != nil) {
+	    frp = curframe;
+	} else {
+	    frp = findframe(f);
+	}
+	done = false;
+	do {
+	    if (frp == nil) {
+		done = true;
+		error("not that many levels");
+	    } else if (i >= n) {
+		done = true;
+		curfunc = f;
+		curframe = &curframerec;
+		*curframe = *frp;
+	    } else if (f == program) {
+		done = true;
+		error("not that many levels");
+	    } else {
+		frp = nextfunc(frp, &f);
+	    }
+	    ++i;
+	} while (not done);
+    }
+}
+
+public down (n)
+integer n;
+{
+    integer i, depth;
+    register Frame frp;
+    Symbol f;
+    struct Frame frame;
+
+    if (not isactive(program)) {
+	error("program is not active");
+    } else if (curfunc == nil) {
+	error("no current function");
+    } else {
+	depth = 0;
+	frp = &frame;
+	getcurfunc(frp, &f);
+	if (curframe == nil) {
+	    curframe = &curframerec;
+	    *curframe = *(findframe(curfunc));
+	}
+	while ((f != curfunc or !frameeq(frp, curframe)) and f != nil) {
+	    frp = nextfunc(frp, &f);
+	    ++depth;
+	}
+	if (f == nil or n > depth) {
+	    error("not that many levels");
+	} else {
+	    depth -= n;
+	    frp = &frame;
+	    getcurfunc(frp, &f);
+	    for (i = 0; i < depth; i++) {
+		frp = nextfunc(frp, &f);
+		assert(frp != nil);
+	    }
+	    curfunc = f;
+	    *curframe = *frp;
+	}
+    }
+}
+
+/*
  * Find the entry point of a procedure or function.
  */
 
 public findbeginning(f)
 Symbol f;
 {
-    f->symvalue.funcv.beginaddr += 2;
+    if (isinternal(f)) {
+	f->symvalue.funcv.beginaddr += 15;
+    } else {
+	f->symvalue.funcv.beginaddr += 2;
+    }
 }
 
 /*
@@ -514,7 +658,7 @@ Node arglist;
     isstopped = true;
     event_once(build(O_EQ, build(O_SYM, pcsym), build(O_SYM, retaddrsym)),
 	buildcmdlist(build(O_PROCRTN, proc)));
-    cont();
+    cont(0);
     /* NOTREACHED */
 }
 
@@ -541,51 +685,116 @@ Node arglist;
 }
 
 /*
- * Evaluate arguments left-to-right.
+ * Check to see if an expression is correct for a given parameter.
+ * If the given parameter is false, don't worry about type inconsistencies.
+ *
+ * Return whether or not it is ok.
+ */
+
+private boolean chkparam (actual, formal, chk)
+Node actual;
+Symbol formal;
+boolean chk;
+{
+    boolean b;
+
+    b = true;
+    if (chk) {
+	if (formal == nil) {
+	    beginerrmsg();
+	    fprintf(stderr, "too many parameters");
+	    b = false;
+	} else if (not compatible(formal->type, actual->nodetype)) {
+	    beginerrmsg();
+	    fprintf(stderr, "type mismatch for %s", symname(formal));
+	    b = false;
+	}
+    }
+    if (b and formal != nil and isvarparam(formal) and
+	not isopenarray(formal->type) and actual->op != O_RVAL)
+    {
+	beginerrmsg();
+	fprintf(stderr, "expected variable, found \"");
+	prtree(stderr, actual);
+	fprintf(stderr, "\"");
+	b = false;
+    }
+    return b;
+}
+
+/*
+ * Pass an expression to a particular parameter.
+ *
+ * Normally we pass either the address or value, but in some cases
+ * (such as C strings) we want to copy the value onto the stack and
+ * pass its address.
+ */
+
+private passparam (actual, formal)
+Node actual;
+Symbol formal;
+{
+    boolean b;
+    Address addr;
+    Stack *savesp;
+    integer paramsize;
+
+    if (isvarparam(formal) and not isopenarray(formal->type)) {
+	addr = lval(actual->value.arg[0]);
+	push(Address, addr);
+    } else if (passaddr(formal, actual->nodetype)) {
+	savesp = sp;
+	eval(actual);
+	paramsize = sp - savesp;
+	setreg(STKP, reg(STKP) - paramsize);
+	dwrite(savesp, reg(STKP), paramsize);
+	sp = savesp;
+	push(Address, reg(STKP));
+	if (formal != nil and isopenarray(formal->type)) {
+	    push(integer, paramsize div size(formal->type->type));
+	}
+    } else {
+	eval(actual);
+    }
+}
+
+/*
+ * Evaluate an argument list left-to-right.
  */
 
 private Integer evalargs(proc, arglist)
 Symbol proc;
 Node arglist;
 {
-    Node p, exp;
-    Symbol arg;
+    Node p, actual;
+    Symbol formal;
     Stack *savesp;
-    Address addr;
     Integer count;
+    boolean chk;
 
     savesp = sp;
     count = 0;
-    arg = proc->chain;
+    formal = proc->chain;
+    chk = (boolean) (not nosource(proc));
     for (p = arglist; p != nil; p = p->value.arg[1]) {
-	if (p->op != O_COMMA) {
-	    panic("evalargs: arglist missing comma");
-	}
-	if (arg == nil) {
+	assert(p->op == O_COMMA);
+	actual = p->value.arg[0];
+	if (not chkparam(actual, formal, chk)) {
+	    fprintf(stderr, " in call to %s", symname(proc));
 	    sp = savesp;
-	    error("too many parameters to %s", symname(proc));
+	    enderrmsg();
 	}
-	exp = p->value.arg[0];
-	if (not compatible(arg->type, exp->nodetype)) {
-	    sp = savesp;
-	    error("expression for parameter %s is of wrong type", symname(arg));
+	passparam(actual, formal);
+	if (formal != nil) {
+	    formal = formal->chain;
 	}
-	if (arg->class == REF) {
-	    if (exp->op != O_RVAL) {
-		sp = savesp;
-		error("variable expected for parameter \"%s\"", symname(arg));
-	    }
-	    addr = lval(exp->value.arg[0]);
-	    push(Address, addr);
-	} else {
-	    eval(exp);
-	}
-	arg = arg->chain;
 	++count;
     }
-    if (arg != nil) {
-	sp = savesp;
-	error("not enough parameters to %s", symname(proc));
+    if (chk) {
+	if (formal != nil) {
+	    sp = savesp;
+	    error("not enough parameters to %s", symname(proc));
+	}
     }
     return count;
 }
@@ -612,6 +821,8 @@ private pushenv()
     push(String, cursource);
     push(Boolean, isstopped);
     push(Symbol, curfunc);
+    push(Frame, curframe);
+    push(struct Frame, curframerec);
     push(Word, reg(PROGCTR));
     push(Word, reg(STKP));
 }
@@ -626,6 +837,8 @@ public popenv()
 
     setreg(STKP, pop(Word));
     setreg(PROGCTR, pop(Word));
+    curframerec = pop(struct Frame);
+    curframe = pop(Frame);
     curfunc = pop(Symbol);
     isstopped = pop(Boolean);
     filename = pop(String);

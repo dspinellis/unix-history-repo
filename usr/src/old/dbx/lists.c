@@ -1,6 +1,8 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)lists.c 1.2 %G%";
+static char sccsid[] = "@(#)lists.c 1.2 12/15/82";
+
+static char rcsid[] = "$Header: lists.c,v 1.3 84/03/27 10:21:21 linton Exp $";
 
 /*
  * General list definitions.
