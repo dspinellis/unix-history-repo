@@ -1,7 +1,7 @@
-/*	Aemul.c	1.1	86/07/20	*/
+/*	Aemul.c	1.2	90/12/04	*/
 
 
-#include "../tahoealign/align.h"
+#include "align.h"
 emul(infop)	process_info *infop;
 /*
 /*	Extended precision multiplication.

@@ -1,6 +1,6 @@
-/*	Areadable.c	1.1	86/07/20	*/
+/*	Areadable.c	1.2	90/12/04	*/
 
-#include "../tahoealign/align.h" 
+#include "align.h" 
 
 long readable(infop, address, length)
 process_info 	*infop;

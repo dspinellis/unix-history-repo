@@ -1,6 +1,6 @@
-/*	Abit.c	1.1	86/07/20	*/
+/*	Abit.c	1.2	90/12/04	*/
 
-#include "../tahoealign/align.h" 
+#include "align.h" 
 bit(infop) 	process_info *infop;
 /*
 /*	Test set bits

@@ -1,6 +1,6 @@
-/*	Aldd.c	1.1	86/07/20	*/
+/*	Aldd.c	1.2	90/12/04	*/
 
-#include "../tahoealign/align.h"
+#include "align.h"
 ldd(infop)	process_info *infop;
 /*
 /*	Load a double operand into accumulator.

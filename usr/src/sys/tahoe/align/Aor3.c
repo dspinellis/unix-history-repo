@@ -1,6 +1,6 @@
-/*	Aor3.c	1.1	86/07/20	*/
+/*	Aor3.c	1.2	90/12/04	*/
 
-#include "../tahoealign/align.h" 
+#include "align.h" 
 or3 (infop)	process_info *infop;
 /*
 /*	Or , 3 operands.

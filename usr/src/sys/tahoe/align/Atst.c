@@ -1,6 +1,6 @@
-/*	Atst.c	1.1	86/07/20	*/
+/*	Atst.c	1.2	90/12/04	*/
 
-#include "../tahoealign/align.h" 
+#include "align.h" 
 tst(infop)	process_info *infop;
 /*
 /*	Test operand, set condition codes.

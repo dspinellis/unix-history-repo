@@ -1,7 +1,7 @@
-/*	Ashar.c	1.1	86/07/20	*/
+/*	Ashar.c	1.2	90/12/04	*/
 
 
-#include "../tahoealign/align.h" 
+#include "align.h" 
 shar(infop)	process_info *infop;
 /*
 /*	Shift arithmetic right (longword).

@@ -1,6 +1,6 @@
-/*	table.c	1.1	86/07/20	*/
+/*	table.c	1.2	90/12/04	*/
 
-#include "../tahoealign/align.h"
+#include "align.h"
 /*   WARNING !!!  Do not use register 6 and register 7 in any of the emulation
  *       code.  The macro Set_psl has use these two registers to set the
  *       user psl to the current kernel psl.

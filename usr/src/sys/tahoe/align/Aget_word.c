@@ -1,6 +1,6 @@
-/*	Aget_word.c	1.1	86/07/20	*/
+/*	Aget_word.c	1.2	90/12/04	*/
 
-#include	"../tahoealign/align.h"
+#include	"align.h"
 int get_word (infop, address)
 process_info	*infop;
 char		*address;

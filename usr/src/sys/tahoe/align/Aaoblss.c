@@ -1,6 +1,6 @@
-/*	Aaoblss.c	1.1	86/07/20	*/
+/*	Aaoblss.c	1.2	90/12/04	*/
 
-#include "../tahoealign/align.h" 
+#include "align.h" 
 aoblss(infop)	process_info *infop;
 /*
 /*	Add one, branch if less than.

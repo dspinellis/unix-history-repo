@@ -1,6 +1,6 @@
-/*	Amcom.c	1.1	86/07/20	*/
+/*	Amcom.c	1.2	90/12/04	*/
 
-#include "../tahoealign/align.h" 
+#include "align.h" 
 mcom(infop)	process_info *infop;
 /*
 /*	Move complemented 

@@ -1,6 +1,6 @@
-/*	defs.h	1.1	86/07/20	*/
+/*	defs.h	1.2	90/12/04	*/
 
-#include "../tahoe/psl.h"
+#include "../include/psl.h"
 
 /************************************************/
 /*	Basic 6/32 machine definitions 		*/

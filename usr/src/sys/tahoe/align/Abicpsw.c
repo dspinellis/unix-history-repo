@@ -1,6 +1,6 @@
-/*	Abicpsw.c	1.1	86/07/20	*/
+/*	Abicpsw.c	1.2	90/12/04	*/
 
-#include "../tahoealign/align.h" 
+#include "align.h" 
 bicpsw(infop)	process_info *infop;
 /*
 /*	Bits clear in PSW.

@@ -1,6 +1,6 @@
-/*	Apushx.c	1.1	86/07/20	*/
+/*	Apushx.c	1.2	90/12/04	*/
 
-#include "../tahoealign/align.h" 
+#include "align.h" 
 pushx(infop)	process_info *infop;
 /*
 /*	Push operand on the stack.

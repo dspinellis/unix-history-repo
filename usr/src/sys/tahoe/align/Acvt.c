@@ -1,6 +1,6 @@
-/*	Acvt.c	1.1	86/07/20	*/
+/*	Acvt.c	1.2	90/12/04	*/
 
-#include "../tahoealign/align.h"
+#include "align.h"
 cvt(infop) 	process_info *infop;
 /*
 /*	Convert , checks overflow

@@ -1,6 +1,6 @@
-/*	Affc.c	1.1	86/07/20	*/
+/*	Affc.c	1.2	90/12/04	*/
 
-#include "../tahoealign/align.h"
+#include "align.h"
 ffc(infop)	process_info *infop;
 /*
 /*	Find first clear bit.

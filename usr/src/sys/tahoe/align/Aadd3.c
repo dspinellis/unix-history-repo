@@ -1,6 +1,6 @@
-/*	Aadd3.c	1.1	86/07/20	*/
+/*	Aadd3.c	1.2	90/12/04	*/
 
-#include "../tahoealign/align.h" 
+#include "align.h" 
 add3(infop)	process_info *infop;
 /*
 /*	Add , 3 operands.

@@ -1,6 +1,6 @@
-/*	Acvlf.c	1.1	86/07/20	*/
+/*	Acvlf.c	1.2	90/12/04	*/
 
-#include "../tahoealign/align.h"
+#include "align.h"
 cvlf(infop)	process_info *infop;
 /*
 /*	Convert integer to float (into accumulator).

@@ -1,6 +1,6 @@
-/*	Asubd.c	1.1	86/07/20	*/
+/*	Asubd.c	1.2	90/12/04	*/
 
-#include "../tahoealign/align.h"
+#include "align.h"
 subd(infop)	process_info *infop;
 /*
 /*	Subtract operand from accumulator to accumulator (double).

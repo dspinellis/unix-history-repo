@@ -1,6 +1,6 @@
-/*	Adivl2.c	1.1	86/07/20	*/
+/*	Adivl2.c	1.2	90/12/04	*/
 
-#include "../tahoealign/align.h" 
+#include "align.h" 
 divl2(infop) 	process_info *infop;
 /*
 /*	Arithmetic division, 2 operands.
