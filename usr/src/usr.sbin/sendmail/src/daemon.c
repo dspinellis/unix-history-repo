@@ -11,9 +11,9 @@
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	6.1 (Berkeley) %G% (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	6.2 (Berkeley) %G% (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	6.1 (Berkeley) %G% (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	6.2 (Berkeley) %G% (without daemon mode)";
 #endif
 #endif /* not lint */
 
@@ -154,8 +154,8 @@ getrequests()
 				(void) listen(DaemonSocket, 0);
 				refusingconnections = TRUE;
 			}
-			setproctitle("rejecting connections: load average: %.2f",
-				(double)CurrentLA);
+			setproctitle("rejecting connections: load average: %d",
+				CurrentLA);
 			sleep(5);
 			continue;
 		}
