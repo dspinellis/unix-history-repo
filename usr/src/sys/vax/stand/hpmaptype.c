@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)hpmaptype.c	7.3 (Berkeley) %G%
+ *	@(#)hpmaptype.c	7.4 (Berkeley) %G%
  */
 
 /*
@@ -23,17 +23,6 @@
 
 #include "saio.h"
 #include "savax.h"
-
-/*
- * Drive description table.
- */
-struct st {
-	short	nsect;		/* # sectors/track */
-	short	ntrak;		/* # tracks/surfaces/heads */
-	short	nspc;		/* # sectors/cylinder */
-	short	ncyl;		/* # cylinders */
-	short	*off;		/* partition offset table (cylinders) */
-};
 
 short	rp06_off[8] =	{ 0, 38, 0, -1, -1, -1, 118, -1 };
 short	rm03_off[8] =	{ 0, 100, 0, -1, -1, -1, 309, -1 };
