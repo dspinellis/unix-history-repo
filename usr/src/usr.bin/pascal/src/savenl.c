@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)savenl.c 1.3 %G%";
+static char sccsid[] = "@(#)savenl.c 1.4 %G%";
 
 /*
  * savenl - routines for saving namelist and line number information
@@ -31,6 +31,10 @@ static char sccsid[] = "@(#)savenl.c 1.3 %G%";
  */
 
 #include "whoami.h"
+#ifdef OBJ
+        /*
+	 *	and the rest of the file
+	 */
 #include "0.h"
 #include "objfmt.h"
 
@@ -40,11 +44,11 @@ static char sccsid[] = "@(#)savenl.c 1.3 %G%";
  * pdx header files
  */
 
-#include "defs.h"
-#include "object.h"
-#include "object/objsym.rep"
-#include "mappings.h"
-#include "mappings/filetab.h"
+#include "../pdx/defs.h"
+#include "../pdx/object.h"
+#include "../pdx/object/objsym.rep"
+#include "../pdx/mappings.h"
+#include "../pdx/mappings/filetab.h"
 
 LOCAL char *symname = "/tmp/obj.symXXXX";
 LOCAL char *strname = "/tmp/obj.strXXXX";
@@ -305,3 +309,4 @@ char *s;
 	nlsize += (p - s + 1);
 	putc('\0', strfp);
 }
+#endif OBJ
