@@ -4,7 +4,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)READ_ME	8.74 (Berkeley) %G%
+#	@(#)READ_ME	8.75 (Berkeley) %G%
 #
 
 This directory contains the source files for sendmail.
@@ -765,6 +765,12 @@ ConvexOS 10.1 and below
 	to res_init() will fail and you will have absolutely no
 	access to DNS, including MX records.
 
+Amdahl UTS 2.1.5
+	In order to get UTS to work, you will have to port BIND 4.9.
+	The vendor's BIND is reported to be ``totally inadequate.''
+	See sendmail/contrib/AmdahlUTS.patch for the patches necessary
+	to get BIND 4.9 compiled for UTS.
+
 Non-DNS based sites
 	This version of sendmail always tries to connect to the Domain
 	Name System (DNS) to resolve names, regardless of the setting
@@ -902,4 +908,4 @@ version.c	The version number and information about this
 
 Eric Allman
 
-(Version 8.74, last update %G% 07:05:13)
+(Version 8.75, last update %G% 07:00:00)
