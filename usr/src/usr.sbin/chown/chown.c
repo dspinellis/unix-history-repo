@@ -17,7 +17,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)chown.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)chown.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -29,7 +29,7 @@ static char sccsid[] = "@(#)chown.c	5.8 (Berkeley) %G%";
 #include <ctype.h>
 
 static int ischown, uid, gid, fflag, rflag, retval;
-static char *myname;
+static char *gname, *myname;
 
 main(argc, argv)
 	int argc;
@@ -85,37 +85,24 @@ static
 setgid(s)
 	register char *s;
 {
-	register int ngroups;
 	struct group *gr, *getgrnam();
-	int groups[NGROUPS];
-	char *beg;
 
 	if (!*s) {
 		gid = -1;			/* argument was "uid." */
 		return;
 	}
-	for (beg = s; *s && isdigit(*s); ++s);
+	for (gname = s; *s && isdigit(*s); ++s);
 	if (!*s)
-		gid = atoi(beg);
+		gid = atoi(gname);
 	else {
-		if (!(gr = getgrnam(beg))) {
+		if (!(gr = getgrnam(gname))) {
 			if (fflag)
 				exit(0);
 			fprintf(stderr, "%s: unknown group id: %s\n",
-			    myname, beg);
+			    myname, gname);
 			exit(-1);
 		}
 		gid = gr->gr_gid;
-	}
-	/* check now; the kernel returns "EPERM" on later failure */
-	ngroups = getgroups(NGROUPS, groups);
-	while (--ngroups >= 0 && gid != groups[ngroups]);
-	if (ngroups < 0) {
-		if (fflag)
-			exit(0);
-		fprintf(stderr, "%s: you are not a member of group %s.\n",
-		    myname, beg);
-		exit(-1);
 	}
 }
 
@@ -152,11 +139,40 @@ change(file)
 	register struct direct *dp;
 	struct stat buf;
 
-	if (lstat(file, &buf) || chown(file, uid, gid)) {
+	if (chown(file, uid, gid)) {
+		static int euid = -1, ngroups = -1;
+
+		if (uid != -1 && euid == -1 && (euid = geteuid())) {
+			if (fflag)
+				exit(0);
+			err(file);
+			exit(-1);
+		}
+		/* check group membership; kernel just returns EPERM */
+		if (gid != -1 && ngroups == -1) {
+			int groups[NGROUPS];
+
+			ngroups = getgroups(NGROUPS, groups);
+			while (--ngroups >= 0 && gid != groups[ngroups]);
+			if (ngroups < 0) {
+				if (fflag)
+					exit(0);
+				fprintf(stderr,
+				    "%s: you are not a member of group %s.\n",
+				    myname, gname);
+				exit(-1);
+			}
+		}
 		err(file);
 		return;
 	}
-	if (rflag && ((buf.st_mode & S_IFMT) == S_IFDIR)) {
+	if (!rflag)
+		return;
+	if (lstat(file, &buf)) {
+		err(file);
+		return;
+	}
+	if ((buf.st_mode & S_IFMT) == S_IFDIR) {
 		if (chdir(file) < 0 || !(dirp = opendir("."))) {
 			err(file);
 			return;
@@ -181,7 +197,7 @@ err(s)
 {
 	if (fflag)
 		return;
-	fputs(ischown ? "chown: " : "chgrp: ", stderr);
+	fprintf(stderr, "%s: ", myname);
 	perror(s);
 	retval = -1;
 }
