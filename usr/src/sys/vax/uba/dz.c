@@ -1,4 +1,4 @@
-/*	dz.c	4.5	%G%	*/
+/*	dz.c	4.6	%G%	*/
 
 #include "dz.h"
 #if NDZ11 > 0
@@ -115,6 +115,7 @@ char	dz_speeds[] = {
 	0, 020 , 021 , 022 , 023 , 024 , 0, 025,
 	026 , 027 , 030 , 032 , 034 , 036 , 0 , 0,
 };
+char dz_brk[NDZ11];
  
 /*ARGSUSED*/
 dzopen(d, flag)
@@ -165,6 +166,12 @@ dzclose(d)
 	dev = minor(d);
 	tp = &dz_tty[dev];
 	(*linesw[tp->t_line].l_close)(tp);
+	/*
+	 * Turn the break bit off in case it was left on by a TIOCSBRK
+	 * but not turned off by TIOCCBRK
+	 */
+	((struct pdma *)(tp->t_addr))->p_addr->dzbrk =
+		(dz_brk[minor(dev)>>3] &= ~(1 << (dev&07)));
 	if (tp->t_state & HUPCLS)
 		dzmodem(dev, OFF);
 	ttyclose(tp);
@@ -243,7 +250,6 @@ caddr_t addr;
 dev_t dev;
 {
 	register struct tty *tp;
-	static char dz_brk[NDZ11];
  
 	tp = &dz_tty[minor(dev)];
 	cmd = (*linesw[tp->t_line].l_ioctl)(tp, cmd, addr);
