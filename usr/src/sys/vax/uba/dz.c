@@ -140,7 +140,6 @@ dzattach(ui)
 		dz_timer++;
 		timeout(dzscan, (caddr_t)0, hz);
 	}
-	return (1);
 }
 
 /*ARGSUSED*/
