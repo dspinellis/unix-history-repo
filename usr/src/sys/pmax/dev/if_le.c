@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_le.c	8.1 (Berkeley) %G%
+ *	@(#)if_le.c	7.12 (Berkeley) %G%
  */
 
 #include <le.h>
@@ -475,16 +475,15 @@ lestart(ifp)
 		IF_DEQUEUE(&le->sc_if.if_snd, m);
 		if (m == 0)
 			break;
-		len = leput(le, LER2_TBUFADDR(le->sc_r2, bix), m);
 #if NBPFILTER > 0
 		/*
 		 * If bpf is listening on this interface, let it
 		 * see the packet before we commit it to the wire.
 		 */
 		if (ifp->if_bpf)
-			bpf_tap(ifp->if_bpf,
-				LER2_TBUFADDR(le->sc_r2, le->sc_tmd), len);
+			bpf_mtap(ifp->if_bpf, m);
 #endif
+		len = leput(le, LER2_TBUFADDR(le->sc_r2, bix), m);
 		LER2_tmd3(tmd, 0);
 		LER2_tmd2(tmd, -len);
 		LER2_tmd1(tmd, LE_OWN | LE_STP | LE_ENP);
@@ -683,7 +682,7 @@ leread(unit, buf, len)
 {
 	register struct le_softc *le = &le_softc[unit];
 	struct ether_header et;
-    	struct mbuf *m, **hdrmp, **tailmp;
+    	struct mbuf *m;
 	int off, resid, flags;
 	u_short sbuf[2], eth_type;
 	extern struct mbuf *leget();
@@ -725,13 +724,22 @@ leread(unit, buf, len)
 	if (et.ether_dhost[0] & 1)
 		flags |= M_MCAST;
 
+	/*
+	 * Pull packet off interface.  Off is nonzero if packet
+	 * has trailing header; leget will then force this header
+	 * information to be at the front, but we still have to drop
+	 * the type and length which are at the front of any trailer data.
+	 */
+	m = leget(le, buf, len, off, &le->sc_if);
+	if (m == 0)
+		return;
 #if NBPFILTER > 0
 	/*
 	 * Check if there's a bpf filter listening on this interface.
 	 * If so, hand off the raw packet to enet.
 	 */
 	if (le->sc_if.if_bpf) {
-		bpf_tap(le->sc_if.if_bpf, buf, len + sizeof(struct ether_header));
+		bpf_mtap(le->sc_if.if_bpf, m);
 
 		/*
 		 * Keep the packet if it's a broadcast or has our
@@ -745,23 +753,12 @@ leread(unit, buf, len)
 		    (flags & M_BCAST) == 0 &&
 #endif
 		    bcmp(et.ether_dhost, le->sc_addr,
-			sizeof(et.ether_dhost)) != 0)
+			sizeof(et.ether_dhost)) != 0) {
+			m_freem(m);
 			return;
+		}
 	}
 #endif
-
-	/*
-	 * Pull packet off interface.  Off is nonzero if packet
-	 * has trailing header; leget will then force this header
-	 * information to be at the front, but we still have to drop
-	 * the type and length which are at the front of any trailer data.
-	 * The hdrmp and tailmp pointers are used by lebpf_tap() to
-	 * temporarily reorder the mbuf list. See the comment at the beginning
-	 * of lebpf_tap() for all the ugly details.
-	 */
-	m = leget(le, buf, len, off, &le->sc_if, &hdrmp, &tailmp);
-	if (m == 0)
-		return;
 	m->m_flags |= flags;
 	et.ether_type = eth_type;
 	ether_input(&le->sc_if, &et, m);
@@ -800,12 +797,11 @@ leput(le, lebuf, m)
  * Routine to copy from network buffer memory into mbufs.
  */
 struct mbuf *
-leget(le, lebuf, totlen, off, ifp, hdrmp, tailmp)
+leget(le, lebuf, totlen, off, ifp)
 	struct le_softc *le;
 	volatile void *lebuf;
 	int totlen, off;
 	struct ifnet *ifp;
-	struct mbuf ***hdrmp, ***tailmp;
 {
 	register struct mbuf *m;
 	struct mbuf *top = 0, **mp = &top;
@@ -860,10 +856,8 @@ leget(le, lebuf, totlen, off, ifp, hdrmp, tailmp)
 		if (resid == 0) {
 			boff = sizeof (struct ether_header);
 			resid = totlen;
-			*hdrmp = mp;
 		}
 	}
-	*tailmp = mp;
 	return (top);
 }
 
