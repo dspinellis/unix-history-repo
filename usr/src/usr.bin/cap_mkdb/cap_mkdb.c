@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)cap_mkdb.c	1.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)cap_mkdb.c	1.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -85,8 +85,10 @@ main(argc, argv)
  * Any changes to these definitions should be made also in the getcap(3)
  * library routines.
  */
-#define	REFERENCE	(char)0
-#define	RECORD		(char)1
+
+#define RECOK	(char)0
+#define TCERR	(char)1
+
 
 #define NBUFSIZ		(8 * 1024)
 
@@ -126,7 +128,11 @@ db_build(inputfiles)
 		/*
 		 * Store record under name field.
 		 */
-		((char *)(data.data))[0] = RECORD;
+		if (st == 2)
+			((char *)(data.data))[0] = TCERR;
+		else
+			((char *)(data.data))[0] = RECOK;
+			
 		(void)strcpy(&((char *)(data.data))[1], bp);
 		data.size = bplen + 2;
 		key.data = nf;
@@ -144,8 +150,7 @@ db_build(inputfiles)
 		/*
 		 * Store references for other names.
 		 */
-		((char *)(data.data))[0] = REFERENCE;
-		(void)strcpy(&((char *)(data.data))[1], nf);
+		(void)strcpy((char *)(data.data), nf);
 
 		data.size = key.size + 1;	/* need extra byte for tag */
 		key.data = namebuf;
