@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.4 (Berkeley) %G%
+#	@(#)Makefile	5.5 (Berkeley) %G%
 
 DESTDIR=
 STAND=	../../stand
@@ -8,7 +8,7 @@ VPATH=	${STAND}
 # RELOC=80200000 allows for boot prog up to 1D0000 (1900544) bytes long
 RELOC=	80200000
 
-DEFS= -DSTANDALONE -DDS5000 -DSMALL
+DEFS= -DSTANDALONE -DSMALL
 CFLAGS=	-O ${INCPATH} ${DEFS}
 AFLAGS=	-O ${INCPATH} ${DEFS} -DLOCORE
 
