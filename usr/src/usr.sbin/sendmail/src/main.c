@@ -13,7 +13,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	6.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	6.10 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -451,7 +451,6 @@ main(argc, argv, envp)
 
 			/* compatibility flags */
 		  case 'c':	/* connect to non-local mailers */
-		  case 'e':	/* error message disposition */
 		  case 'i':	/* don't let dot stop me */
 		  case 'm':	/* send to me too */
 		  case 'T':	/* set timeout interval */

@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)arpadate.c	6.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)arpadate.c	6.4 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -474,7 +474,7 @@ arpatounix(s, e)
 #endif /* LOG */
 		return(NULL);
 	}
-	if ((n = index(p, '\n')) != NULL)
+	if ((n = strchr(p, '\n')) != NULL)
 		*n = '\0';
 	return(p);
 }
