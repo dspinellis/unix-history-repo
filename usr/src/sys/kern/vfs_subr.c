@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_subr.c	7.98 (Berkeley) %G%
+ *	@(#)vfs_subr.c	7.99 (Berkeley) %G%
  */
 
 /*
@@ -962,9 +962,9 @@ vfinddev(dev, type, vpp)
 		if (dev != vp->v_rdev || type != vp->v_type)
 			continue;
 		*vpp = vp;
-		return (0);
+		return (1);
 	}
-	return (1);
+	return (0);
 }
 
 /*
