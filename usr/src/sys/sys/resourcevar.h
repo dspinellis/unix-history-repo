@@ -4,11 +4,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)resourcevar.h	8.1 (Berkeley) %G%
+ *	@(#)resourcevar.h	8.2 (Berkeley) %G%
  */
 
-#ifndef	_RESOURCEVAR_H_		/* tmp for user.h */
-#define	_RESOURCEVAR_H_
+#ifndef	_SYS_RESOURCEVAR_H_		/* tmp for user.h */
+#define	_SYS_RESOURCEVAR_H_
 
 /*
  * Kernel per-process accounting / statistics
@@ -63,4 +63,4 @@ void	addupc_task __P((struct proc *p, u_long pc, u_int ticks));
 #define	ADDUPROF(p)	addupc_task(p, (p)->p_stats->p_prof.pr_addr, \
 			    (p)->p_stats->p_prof.pr_ticks)
 
-#endif	/* !_RESOURCEVAR_H_ */
+#endif	/* !_SYS_RESOURCEVAR_H_ */

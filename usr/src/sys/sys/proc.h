@@ -4,11 +4,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)proc.h	8.6 (Berkeley) %G%
+ *	@(#)proc.h	8.7 (Berkeley) %G%
  */
 
-#ifndef _PROC_H_
-#define	_PROC_H_
+#ifndef _SYS_PROC_H_
+#define	_SYS_PROC_H_
 
 #include <machine/proc.h>		/* Machine-dependent proc substruct. */
 #include <sys/select.h>			/* For struct selinfo. */
@@ -229,4 +229,4 @@ int	tsleep __P((void *chan, int pri, char *wmesg, int timo));
 void	unsleep __P((struct proc *));
 void	wakeup __P((void *chan));
 #endif	/* KERNEL */
-#endif	/* !_PROC_H_ */
+#endif	/* !_SYS_PROC_H_ */

@@ -4,11 +4,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)types.h	8.1 (Berkeley) %G%
+ *	@(#)types.h	8.2 (Berkeley) %G%
  */
 
-#ifndef _TYPES_H_
-#define	_TYPES_H_
+#ifndef _SYS_TYPES_H_
+#define	_SYS_TYPES_H_
 
 /* Machine type dependent parameters. */
 #include <machine/endian.h>
@@ -127,4 +127,4 @@ struct	uio;
 #endif
 
 #endif /* !_POSIX_SOURCE */
-#endif /* !_TYPES_H_ */
+#endif /* !_SYS_TYPES_H_ */
