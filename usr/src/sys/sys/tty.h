@@ -1,4 +1,4 @@
-/*	tty.h	4.12	82/12/05	*/
+/*	tty.h	4.13	82/12/19	*/
 
 #ifdef KERNEL
 #include "../h/ttychars.h"
@@ -57,7 +57,6 @@ struct tty {
 	int	t_state;		/* some of both */
 	short	t_pgrp;			/* tty */
 	char	t_delct;		/* tty */
-	char	t_char;			/* tty */
 	char	t_line;			/* glue */
 	char	t_col;			/* tty */
 	char	t_ispeed, t_ospeed;	/* device */
