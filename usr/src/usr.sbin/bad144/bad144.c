@@ -44,17 +44,8 @@ int	fflag, add, copy, verbose, nflag;
 int	compare();
 int	dups;
 #define MAXSECSIZE	1024
-#ifndef SCS
 struct	dkbad curbad, oldbad;
 #define	DKBAD_MAGIC	0
-#else SCS
-union {
-	struct dkbad bd;
-	char buf[MAXSECSIZE];
-} currentbad, previousbad;
-#define	curbad	currentbad.bd
-#define oldbad	previousbad.bd
-#endif SCS
 
 char	label[BBSIZE];
 daddr_t	size, getold(), badsn();
@@ -143,11 +134,11 @@ usage:
 	argc--;
 	argv++;
 	if (argc == 0) {
-		sn = getold(f, &curbad);
+		sn = getold(f, &oldbad);
 		printf("bad block information at sector %d in %s:\n",
 		    sn, name);
-		printf("cartridge serial number: %d(10)\n", curbad.bt_csn);
-		switch (curbad.bt_flag) {
+		printf("cartridge serial number: %d(10)\n", oldbad.bt_csn);
+		switch (oldbad.bt_flag) {
 
 		case -1:
 			printf("alignment cartridge\n");
@@ -157,10 +148,10 @@ usage:
 			break;
 
 		default:
-			printf("bt_flag=%x(16)?\n", curbad.bt_flag);
+			printf("bt_flag=%x(16)?\n", oldbad.bt_flag);
 			break;
 		}
-		bt = curbad.bt_bad;
+		bt = oldbad.bt_bad;
 		for (i = 0; i < 126; i++) {
 			bad = (bt->bt_cyl<<16) + bt->bt_trksec;
 			if (bad < 0)
@@ -169,7 +160,7 @@ usage:
 			    bt->bt_cyl, bt->bt_trksec>>8, bt->bt_trksec&0xff);
 			bt++;
 		}
-		(void) checkold();
+		(void) checkold(&oldbad);
 		exit(0);
 	}
 	if (add) {
@@ -179,7 +170,7 @@ usage:
 		 * are in order.  Copy the old table to the new one.
 		 */
 		(void) getold(f, &oldbad);
-		i = checkold();
+		i = checkold(&oldbad);
 		if (verbose)
 			printf("Had %d bad sectors, adding %d\n", i, argc);
 		if (i + argc > 126) {
@@ -308,7 +299,7 @@ checkold()
 	}
 	bt = oldbad.bt_bad;
 	for (i = 0; i < 126; i++, bt++) {
-		if (bt->bt_cyl == -1 && bt->bt_trksec == -1)
+		if (bt->bt_cyl == 0xffff && bt->bt_trksec == 0xffff)
 			break;
 		if ((bt->bt_cyl >= dp->d_ncylinders) ||
 		    ((bt->bt_trksec >> 8) >= dp->d_ntracks) ||
@@ -324,13 +315,15 @@ checkold()
 		    (bt->bt_trksec >> 8)) *
 		    dp->d_nsectors + (bt->bt_trksec & 0xff);
 		if (i > 0 && sn < lsn && !warned) {
-		    fprintf(stderr, "bad144: bad sector file out of order\n");
+		    fprintf(stderr,
+			"bad144: bad sector file is out of order\n");
 		    errors++;
 		    warned++;
 		}
 		if (i > 0 && sn == lsn) {
 		    fprintf(stderr,
-			"bad144: bad sector file contains duplicates\n");
+			"bad144: bad sector file contains duplicates (sn %d)\n",
+			sn);
 		    errors++;
 		}
 		lsn = sn;
