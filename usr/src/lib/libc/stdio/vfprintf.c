@@ -11,7 +11,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)vfprintf.c	5.29 (Berkeley) %G%";
+static char sccsid[] = "@(#)vfprintf.c	5.30 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -91,14 +91,14 @@ _doprnt(fmt0, argp, fp)
 #endif
 			    || ch == '\n' && fp->_flag & _IOLBF) {
 				fp->_cnt = n;
-				fp->_ptr = (u_char *)t;
+				fp->_ptr = t;
 				(void) _flsbuf((u_char)ch, fp);
 				n = fp->_cnt;
 				t = (char *)fp->_ptr;
 			} else
 				*t++ = ch;
 		fp->_cnt = n;
-		fp->_ptr = (u_char *)t;
+		fp->_ptr = t;
 		if (!ch)
 			return (cnt);
 
@@ -193,7 +193,8 @@ rflag:		switch (*++fmt) {
 			 * rational.
 			 */
 			if (prec > MAXFRACT) {
-				fpprec = prec - MAXFRACT;
+				if (*fmt != 'g' && *fmt != 'G' || (flags&ALT))
+					fpprec = prec - MAXFRACT;
 				prec = MAXFRACT;
 			}
 			t = buf;
