@@ -12,9 +12,9 @@
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	8.8 (Berkeley) %G% (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.9 (Berkeley) %G% (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	8.8 (Berkeley) %G% (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.9 (Berkeley) %G% (without daemon mode)";
 #endif
 #endif /* not lint */
 
@@ -23,6 +23,7 @@ static char sccsid[] = "@(#)daemon.c	8.8 (Berkeley) %G% (without daemon mode)";
 # include <netdb.h>
 # include <sys/wait.h>
 # include <sys/time.h>
+# include <arpa/inet.h>
 
 #ifdef NAMED_BIND
 # include <arpa/nameser.h>
@@ -459,10 +460,8 @@ gothostent:
 **		A list of aliases for this host.
 **
 **	Side Effects:
-**		Sets the MyIpAddrs buffer to a list of my IP addresses.
+**		Adds numeric codes to $=w.
 */
-
-struct in_addr	MyIpAddrs[MAXIPADDR + 1];
 
 char **
 myhostname(hostbuf, size)
@@ -486,13 +485,14 @@ myhostname(hostbuf, size)
 		{
 			register int i;
 
-			for (i = 0; i < MAXIPADDR; i++)
+			for (i = 0; hp->h_addr_list[i] != NULL; i++)
 			{
-				if (hp->h_addr_list[i] == NULL)
-					break;
-				MyIpAddrs[i].s_addr = *(u_long *) hp->h_addr_list[i];
+				char ipbuf[100];
+
+				sprintf(ipbuf, "[%s]",
+					inet_ntoa(*((struct in_addr *) hp->h_addr_list[i])));
+				setclass('w', ipbuf);
 			}
-			MyIpAddrs[i].s_addr = 0;
 		}
 
 		return (hp->h_aliases);
@@ -821,15 +821,6 @@ host_map_lookup(map, name, av, statp)
 		return (NULL);
 	*cp = '\0';
 	in_addr = inet_addr(&name[1]);
-
-	/* check to see if this is one of our addresses */
-	for (i = 0; MyIpAddrs[i].s_addr != 0; i++)
-	{
-		if (MyIpAddrs[i].s_addr == in_addr)
-		{
-			return map_rewrite(map, MyHostName, strlen(MyHostName), av);
-		}
-	}
 
 	/* nope -- ask the name server */
 	hp = gethostbyaddr((char *)&in_addr, sizeof(struct in_addr), AF_INET);
