@@ -1,0 +1,17 @@
+ed toc
+/\.xx/;//s/ 	 /(I): /
+/\.xx/;//s/ 	 /(II): /
+/\.xx/;//s/ 	 /(III): /
+/\.xx/;//s/ 	 /(IV): /
+/\.xx/;//s/ 	 /(V): /
+/\.xx/;//s/ 	 /(VI): /
+/\.xx/;//s/ 	 /(VII): /
+/\.xx/;//s/ 	 /(VIII): /
+g/\.xx/.-4,.d
+g/^\./d
+g/^$/d
+$d
+w xtoc
+q
+ptx xtoc index
+rm xtoc
