@@ -1,4 +1,4 @@
-/* tcp_input.c 1.2 81/10/25 */
+/* tcp_input.c 1.3 81/10/25 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -183,16 +183,7 @@ goodseg:
 	acounts[tp->t_state][INRECV]++;
 #ifdef TCPDEBUG
 	if ((tp->t_ucb->uc_flags & UDEBUG) || tcpconsdebug) {
-		tdb.td_tod = time;
-		tdb.td_tcb = tp;
-		tdb.td_old = nstate;
-		tdb.td_inp = INRECV;
-		tdb.td_tim = 0;
-		tdb.td_sno = n->t_seq;
-		tdb.td_ano = n->t_ackno;
-		tdb.td_wno = n->t_win;
-		tdb.td_lno = n->t_len;
-		tdb.td_flg = n->th_flags;
+		tdb_setup(tp, n, INRECV, &tdb);
 	} else
 		tdb.td_tod = 0;
 #endif
@@ -362,12 +353,8 @@ done:
 	 * and enter new state.
 	 */
 #ifdef TCPDEBUG
-	if (tdb.td_tod) {
-		tdb.td_new = nstate;
-		tcp_debug[tdbx++ % TDBSIZE] = tdb;
-		if (tcpconsdebug)
-			tcp_prt(&tdb);
-	}
+	if (tdb.td_tod)
+		tdb_stuff(&tdb, nstate);
 #endif
 	switch (nstate) {
 
@@ -789,3 +776,40 @@ COUNT(PRESENT_DATA);
 	    rcv_empty(tp))
 		to_user(up, UCLOSED);
 }
+
+#ifdef TCPDEBUG
+tdb_setup(tp, n, input, tdp)
+	struct tcb *tp;
+	register struct th *n;
+	int input;
+	register struct tcp_debug *tdp;
+{
+
+	tdp->td_tod = time;
+	tdp->td_tcb = tp;
+	tdp->td_old = tp->t_state;
+	tdp->td_inp = input;
+	tdp->td_tim = 0;
+	tdp->td_new = -1;
+	if (n) {
+		tdp->td_sno = n->t_seq;
+		tdp->td_ano = n->t_ackno;
+		tdp->td_wno = n->t_win;
+		tdp->td_lno = n->t_len;
+		tdp->td_flg = n->th_flags;
+	} else
+		tdp->td_sno = tdp->td_ano = tdp->td_wno = tdp->td_lno =
+		    tdp->td_flg = 0;
+}
+
+tdb_stuff(tdp, nstate)
+	struct tcp_debug *tdp;
+	int nstate;
+{
+
+	tdp->td_new = nstate;
+	tcp_debug[tdbx++ % TDBSIZE] = *tdp;
+	if (tcpconsdebug & 2)
+		tcp_prt(tdp);
+}
+#endif
