@@ -6,7 +6,7 @@
 %{
 
 #ifndef lint
-static char sccsid[] = "@(#)ftpcmd.y	4.3 83/01/16";
+static char sccsid[] = "@(#)ftpcmd.y	4.4 83/01/16";
 #endif
 
 #include <sys/types.h>
@@ -35,8 +35,6 @@ char	**glob();
 static	int cmd_type;
 static	int cmd_form;
 static	int cmd_bytesz;
-
-static	struct passwd nobody = { "?", "?" };
 
 char	*index();
 %}
@@ -69,10 +67,10 @@ cmd:		USER SP username CRLF
 		= {
 			extern struct passwd *getpwnam();
 
-			if (strcmp($3, "ftp") == 0 ||
-			    strcmp($3, "anonymous") == 0) {
+			if ((strcmp($3, "ftp") == 0 ||
+			    strcmp($3, "anonymous") == 0) &&
+			    (pw = getpwnam("ftp")) != NULL) {
 				guest = 1;
-				pw = getpwnam("ftp");
 				reply(331,
 				  "Guest login ok, send ident as password.");
 			} else {
@@ -80,9 +78,9 @@ cmd:		USER SP username CRLF
 				pw = getpwnam($3);
 				reply(331, "Password required for %s.", $3);
 			}
-			free($3);
 			if (pw == NULL)
-				pw = &nobody;
+				reply(530, "User %s unknown.", $3);
+			free($3);
 		}
 	|	PASS SP password CRLF
 		= {
