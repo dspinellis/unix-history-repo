@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)redir.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)redir.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -24,9 +24,11 @@ static char sccsid[] = "@(#)redir.c	5.2 (Berkeley) %G%";
 #include "output.h"
 #include "memalloc.h"
 #include "error.h"
+#include <sys/types.h>
 #include <signal.h>
 #include <fcntl.h>
 #include <errno.h>
+#include <unistd.h>
 
 
 #define EMPTY -2		/* marks an unused slot in redirtab */
@@ -151,7 +153,7 @@ movefd:
 		if ((f = open(fname, O_WRONLY)) < 0
 		 && (f = creat(fname, 0666)) < 0)
 			error("cannot create %s: %s", fname, errmsg(errno, E_CREAT));
-		lseek(f, 0L, 2);
+		lseek(f, (off_t)0, 2);
 #endif
 		goto movefd;
 	case NTOFD:
