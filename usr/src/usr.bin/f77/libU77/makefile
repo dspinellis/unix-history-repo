@@ -1,5 +1,5 @@
 # Makefile for f77 system lib, libU77.a
-#	@(#)makefile	1.10	%G%
+#	@(#)makefile	1.11	%G%
 
 DESTDIR =
 LIB = libU77.a
@@ -20,6 +20,7 @@ SOURCES = \
 	access_.c \
 	alarm_.c \
 	chdir_.c \
+	chmod_.c \
 	ctime_.c \
 	dtime_.c \
 	etime_.c \
@@ -66,6 +67,7 @@ OBJECTS = \
 	access_.o \
 	alarm_.o \
 	chdir_.o \
+	chmod_.o \
 	ctime_.o \
 	dtime_.o \
 	etime_.o \
@@ -158,12 +160,7 @@ Makefile:	makefile
 	@sed -n -e "1,/End of Makefile/p" makefile > Makefile
 
 tape:	Makefile
-	@-ln man/s.makefile man.s.makefile
-	@ls man.s.makefile > /dev/null
-	@rm -f man/s.makefile
-	-tar cbf 20 $(TAPE) READ_ME Makefile man $(SOURCES) mkindx.c mkvers.c
-	@ln man.s.makefile man/s.makefile
-	@rm -f man.s.makefile
+	-tar cbf 20 $(TAPE) READ_ME Makefile $(SOURCES) mkindx.c mkvers.c
 
 
 # below here is SCCS stuff ---
@@ -179,6 +176,10 @@ alarm_.c:	SCCS/s.alarm_.c
 chdir_.c:	SCCS/s.chdir_.c
 	rm -f chdir_.c
 	get SCCS/s.chdir_.c
+
+chmod_.c:	SCCS/s.chmod_.c
+	rm -f chmod_.c
+	get SCCS/s.chmod_.c
 
 ctime_.c:	SCCS/s.ctime_.c
 	rm -f ctime_.c
