@@ -13,7 +13,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	8.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	8.13 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -337,6 +337,7 @@ main(argc, argv, envp)
 			printf("canonical name: %s\n", jbuf);
 		p = newstr(jbuf);
 		define('w', p, CurEnv);
+		define('j', p, CurEnv);
 		setclass('w', p);
 
 		q = strchr(jbuf, '.');
@@ -632,7 +633,6 @@ main(argc, argv, envp)
 			ConfigLevel, MAXCONFIGLEVEL);
 	}
 
-
 # ifdef QUEUE
 	if (queuemode && RealUid != 0)
 	{
@@ -698,6 +698,9 @@ main(argc, argv, envp)
 	/* our name for SMTP codes */
 	expand("\201j", jbuf, &jbuf[sizeof jbuf - 1], CurEnv);
 	MyHostName = jbuf;
+
+	/* make certain that this name is part of the $=w class */
+	setclass('w', MyHostName);
 
 	/* the indices of built-in mailers */
 	st = stab("local", ST_MAILER, ST_FIND);
