@@ -25,7 +25,7 @@ C|c:\
 	#else #endif #if #ifdef #ifndef #include #undef # define else endif\
 	if ifdef ifndef include undef:
 ISP|isp|i:\
-	:pb=\d?\p\d?\:=\d?begin:bb=^begin:be=^end:cb=^!:ce=!:oc:\
+	:cb=!:ce=!|$:oc:\
 	:kw=and begin decode define end eql eqv geq gtr if leave leq lss mod\
 	neq next not or otherwise repeat restart resume sr0 sr1 srd srr sl0 sl1\
 	sld slr tst xor:
