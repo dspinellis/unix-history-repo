@@ -1,4 +1,4 @@
-/*	ip_input.c	1.59	82/12/14	*/
+/*	ip_input.c	1.60	83/01/03	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -88,7 +88,6 @@ next:
 	}
 	if (ipcksum)
 		if (ip->ip_sum = in_cksum(m, hlen)) {
-			printf("ip_sum %x\n", ip->ip_sum);	/* XXX */
 			ipstat.ips_badsum++;
 			goto bad;
 		}
