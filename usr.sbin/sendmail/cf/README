@@ -4,11 +4,11 @@
 
 		Eric Allman <eric@CS.Berkeley.EDU>
 
-		@(#)README	8.3 (Berkeley) 7/13/93
+		@(#)README	8.14 (Berkeley) 9/19/93
 
 
 This document describes the sendmail configuration files being used
-at Berkeley.  These use features in the new (R6) sendmail, and although
+at Berkeley.  These use features in the new (R8) sendmail, and although
 there is an ``OLDSENDMAIL'' mode, they haven't really been tested on
 old versions of sendmail and cannot be expected to work well.
 
@@ -37,10 +37,13 @@ to keep this up in the future.  [Note to GNU folks:  the construct
 "define(`FOO')" should work without my having to add a null value.]
 
 IF YOU DON'T HAVE A BERKELEY MAKE, don't despair!  Just run
-"m4 foo.mc > foo.cf" -- that should be all you need.
+"m4 foo.mc > foo.cf" -- that should be all you need.  There is also
+a fairly crude (but functional) Makefile.dist that works on the
+old version of make.
 
 To get started, you may want to look at tcpproto.mc (for TCP-only
-sites) and uucpproto.m4 (for UUCP-only sites).  Others are versions
+sites), uucpproto.mc (for UUCP-only sites), and clientproto.mc (for
+clusters of clients using a single mail host).  Others are versions
 that we use at Berkeley, although not all are in current use.  For
 example, ucbarpa has gone away, but I've left ucbarpa.mc in because
 it demonstrates some interesting techniques.
@@ -105,7 +108,7 @@ This example exposes the host inside of the CS subdomain -- that is,
 it doesn't try to hide the name of the workstation to the outside
 world.  Changing this to DOMAIN(cs.hidden) would have made outgoing
 messages refer to "<username>@CS.Berkeley.EDU" instead of using the
-local hostname.  Internaly this is effected by using
+local hostname.  Internally this is effected by using
 "MASQUERADE_AS(CS.Berkeley.EDU)".
 
 	MAILER(smtp)
@@ -139,10 +142,9 @@ QUEUE_DIR		[/var/spool/mqueue] The directory containing
 			queue files.
 STATUS_FILE		[/etc/sendmail.st] The file containing status
 			information.
-LOCAL_MAILER_PATH	[/usr/libexec/mail.local] The program used to 
-			deliver local mail.
-LOCAL_MAILER_FLAGS	[rn] The flags used by the local mailer.  The
-			flags lsDFMm are always included.
+LOCAL_MAILER_PATH	[/bin/mail] The program used to deliver local mail.
+LOCAL_MAILER_FLAGS	[rmn] The flags used by the local mailer.  The
+			flags lsDFM are always included.
 LOCAL_MAILER_ARGS	[mail -d $u] The arguments passed to deliver local
 			mail.
 LOCAL_SHELL_PATH	[/bin/sh] The shell used to deliver piped email.
@@ -155,8 +157,11 @@ USENET_MAILER_PATH	[/usr/lib/news/inews] The name of the program
 USENET_MAILER_FLAGS	[rlsDFMmn] The mailer flags for the usenet mailer.
 USENET_MAILER_ARGS	[-m -h -n] The command line arguments for the
 			usenet mailer.
-SMTP_MAILER_FLAGS	[undefined] Flags added to SMTP mailer.
-UUCP_MAILER_FLAGS	[undefined] Flags added to UUCP mailer.
+SMTP_MAILER_FLAGS	[undefined] Flags added to SMTP mailer.  Default
+			flags are `mDFMUX' (and `a' for esmtp mailer).
+UUCP_MAILER_FLAGS	[undefined] Flags added to UUCP mailer.  Default
+			flags are `DFMhuU' (and `m' for suucp mailer, minus
+			`U' for uucp-dom mailer).
 UUCP_MAILER_ARGS	[uux - -r -z -a$f -gC $h!rmail ($u)] The arguments
 			passed to the UUCP mailer.
 UUCP_MAX_SIZE		[100000] The maximum size message accepted for
@@ -166,23 +171,6 @@ HOSTMAP_SPEC		[dbm -o /etc/hostmap] The value for the builtin
 			to change the class, flags, and filename of
 			the hostmap.  The default flag (-o) makes this
 			map optional.
-
-In addition, the following boolean flags may be defined -- the value
-is ignored.
-
-NEED_DOMAIN		If set, the $j macro is defined as $w.$D.
-			If not set, $j is defined as $w.  If this is
-			set, the domain must be defined using the line
-			DD<domainname> (probably in the domain file,
-			but possibly in the .mc file).  You will only
-			need this if you define your system hostname
-			without a domain (type "hostname" -- if it
-			has no dots in the output, you qualify) AND
-			if you are not running the nameserver AND if
-			the first (canonical) name in /etc/hosts for
-			your machine has no domain -- OR if you are
-			running Ultrix or OSF/1 sendmail.  Either of
-			these is probably a mistake.
 
 +---------+
 | DOMAINS |
@@ -207,6 +195,15 @@ LOCAL_RELAY	The site that will handle unqualified names -- that
 		company- or department-wide alias database.  This
 		only works at small sites, and there are better
 		methods.
+
+Each of these can be either ``mailer:hostname'' (in which case the
+mailer is the internal mailer name, such as ``suucp'' and the hostname
+is the name of the host as appropriate for that mailer) or just a
+``hostname'', in which case a default mailer type (usually ``relay'',
+a variant on SMTP) is used.  WARNING: if you have a wildcard MX
+record matching your domain, you probably want to define these to
+have a trailing dot so that you won't get the mail diverted back
+to yourself.
 
 The domain file can also be used to define a domain name, if needed
 (using "DD<domain>") and set certain site-wide features.  If all hosts
@@ -248,6 +245,8 @@ uucp		The Unix-to-Unix Copy Program mailer.  Actually, this
 		names in the $=Y class are sent to suucp.  Note that
 		this is a function of what version of rmail runs on
 		the receiving end, and hence may be out of your control.
+		If smtp is defined, it also defines a "uucp-dom" mailer
+		that uses domain-style rewriting.
 
 usenet		Usenet (network news) delivery.  If this is specified,
 		an extra rule is added to ruleset 0 that forwards all
@@ -284,25 +283,33 @@ use_cw_file	Read the file /etc/sendmail.cw file to get alternate
 		"Cw<name1> <name2> ..." is probably superior.
 		The actual filename can be overridden by redefining
 		confCW_FILE.
+
 redirect	Reject all mail addressed to "address.REDIRECT" with
 		a ``551 User not local; please try <address>'' message.
 		If this is set, you can alias people who have left
 		to their new address with ".REDIRECT" appended.
+
 nouucp		Don't do anything special with UUCP addresses at all.
+
 nocanonify	Don't pass addresses to $[ ... $] for canonification.
 		This would generally only be used by sites that only
 		act as mail gateways or which have user agents that do
-		full canonification themselves.
+		full canonification themselves.  You may also want to
+		use "define(`confBIND_OPTS',`-DNSRCH -DEFNAMES')" to
+		turn off the usual resolver options that do a similar
+		thing.
+
 notsticky	By default, email sent to "user@local.host" are marked
 		as "sticky" -- that is, the local addresses aren't
 		matched against UDB and don't go through ruleset 5.
 		This features disables this treatment.  It would
 		normally be used on network gateway machines.
+
 mailertable	Include a "mailer table" which can be used to override
 		routing for particular domains.  The argument of the
 		FEATURE may be the key definition.  If none is specified,
 		the definition used is:
-			hash /etc/mailertable -o
+			hash -o /etc/mailertable
 		Keys in this database are fully qualified domain names
 		or partial domains preceded by a dot -- for example,
 		"vangogh.CS.Berkeley.EDU" or ".CS.Berkeley.EDU".
@@ -311,32 +318,37 @@ mailertable	Include a "mailer table" which can be used to override
 		where "mailer" is the internal mailer name, and "domain"
 		is where to send the message.  These maps are not
 		reflected into the message header.
+
 domaintable	Include a "domain table" which can be used to provide
 		full domains on unqualified (single word) hosts.  The
 		argument of the FEATURE may be the key definition.  If
 		none is specified, the definition used is:
-			hash /etc/domaintable -o
+			hash -o /etc/domaintable
 		The key in this table is the unqualified host name; the
 		value is the fully qualified domain.  Anything in the
 		domaintable is reflected into headers; that is, this
 		is done in ruleset 3.
+
 bitdomain	Look up bitnet hosts in a table to try to turn them into
 		internet addresses.  The table can be built using the
-		bitdomain program contributed by John Gardiner Meyers.
+		bitdomain program contributed by John Gardiner Myers.
 		The argument of the FEATURE may be the key definition; if
 		none is specified, the definition used is:
-			hash /etc/bitdomain.db -o
+			hash -o /etc/bitdomain.db
 		Keys are the bitnet hostname; values are the corresponding
 		internet hostname.
+
 uucpdomain	Similar feature for UUCP hosts.  The default map definition
 		is:
-			hash /etc/uudomain.db -o
+			hash -o /etc/uudomain.db
 		At the moment there is no automagic tool to build this
 		database.
+
 always_add_domain
 		Include the local host domain even on locally delivered
 		mail.  Normally it is not added unless it is already
 		present.
+
 allmasquerade	If masquerading is enabled (using MASQUERADE_AS), this
 		feature will cause recipient addresses to also masquerade
 		as being from the masquerade host.  Normally they get
@@ -350,8 +362,22 @@ allmasquerade	If masquerading is enabled (using MASQUERADE_AS), this
 		namespace on your masquerade host supersets all the
 		local entries.
 
-Other FEATUREs should be defined, but I was trying to keep these
-config files fairly lean and mean.
+nodns		We aren't running DNS at our site (for example,
+		we are UUCP-only connected).  It's hard to consider
+		this a "feature", but hey, it had to go somewhere.
+
+nullclient	This is a special case -- it creates a stripped down
+		configuration file containing nothing but support for
+		forwarding all mail to a central hub via a local
+		SMTP-based network.  The argument is the name of that
+		hub.
+		
+		The only other feature that should be used in conjunction
+		with this one is "nocanonify" (this causes addresses to
+		be sent unqualified via the SMTP connection; normally
+		they are qualifed with the masquerade name, which
+		defaults to the name of the hub machine).  No mailers
+		should be defined.  No aliasing or forwarding is done.
 
 
 +-------+
@@ -469,6 +495,10 @@ indicated domain, rather than $j.  One normally masquerades as one
 of your own subdomains (for example, it's unlikely that I would
 choose to masquerade as an MIT site).
 
+The masquerade name is not normally canonified, so it is important
+that it be your One True Name, that is, fully qualified and not a
+CNAME.
+
 there are always users that need to be "exposed" -- that is, their
 internal site name should be displayed instead of the masquerade name.
 Root is an example.  You can add users to this list using
@@ -497,8 +527,8 @@ This adds users to class L; you could also use something like
 
 	FL/etc/sendmail.cL
 
-If you want all mail sent to a centralized hub, as for a shared
-/var/spool/mail scheme, use
+If you want all incoming mail sent to a centralized hub, as for a
+shared /var/spool/mail scheme, use
 
 	define(`MAIL_HUB', mailer:hostname)
 
@@ -519,6 +549,20 @@ mammoth.CS.Berkeley.EDU
 Both LOCAL_RELAY and	mail.CS.Berkeley.EDU	  mammoth.CS.Berkeley.EDU
 MAIL_HUB set as above
 
+If you want all outgoing mail to go to a central relay site, define
+SMART_HOST as well.  Briefly:
+
+	LOCAL_RELAY applies to unqualifed names (e.g., "eric").
+	MAIL_HUB applies to names qualified with the name of the
+		local host (e.g., "eric@mastodon.CS.Berkeley.EDU").
+	SMART_HOST applies to names qualified with other hosts.
+
+However, beware that other relays (e.g., UUCP_RELAY, BITNET_RELAY, and
+FAX_RELAY) take precedence over SMART_HOST, so if you really want
+absolutely everything to go to a single central site you will need to
+unset all the other relays -- or better yet, find or build a minimal
+config file that does this.
+
 
 +-------------------------------+
 | NON-SMTP BASED CONFIGURATIONS |
@@ -535,7 +579,7 @@ using:
 
 	define(`SMART_HOST', mailer:hostname)
 
-In this case, the ``mailer:'' defaults to "suucp".  Any messages that
+In this case, the ``mailer:'' defaults to "relay".  Any messages that
 can't be handled using the usual UUCP rules are passed to this host.
 
 If you are on a local SMTP-based net that connects to the outside
@@ -560,6 +604,84 @@ use:
 That is, send directly only to things you found in your DNS lookup;
 anything else goes through SMART_HOST.
 
+If you are not running DNS at all, it is important to use
+FEATURE(nodns) to avoid having sendmail queue everything waiting
+for the name server to come up.
+
+
++-----------+
+| WHO AM I? |
++-----------+
+
+Normally, the $j macro is automatically defined to be your fully
+qualified domain name (FQDN).  Sendmail does this by getting your
+host name using gethostname and then calling gethostbyname on the
+result.  For example, in some environments gethostname returns
+only the root of the host name (such as "foo"); gethostbyname is
+supposed to return the FQDN ("foo.bar.com").  In some (fairly rare)
+cases, gethostbyname may fail to return the FQDN.  In this case
+you MUST define confDOMAIN_NAME to be your fully qualified domain
+name.  This is usually done using:
+
+	Dmbar.com
+	define(`confDOMAIN_NAME', `$w.$m')dnl
+
+
++--------------------+
+| USING MAILERTABLES |
++--------------------+
+
+To use FEATURE(mailertable), you will have to create an external
+database containing the routing information for various domains.
+For example, a mailertable file in text format might be:
+
+	.my.domain		xnet:%1.my.domain
+	uuhost1.my.domain	suucp:uuhost1
+	.bitnet			smtp:relay.bit.net
+
+This should normally be stored in /etc/mailertable.  The actual
+database version of the mailertable is built using:
+
+	makemap hash /etc/mailertable.db < /etc/mailertable
+
+The semantics are simple.  Any LHS entry that does not begin with
+a dot matches the full host name indicated.  LHS entries beginning
+with a dot match anything ending with that domain name -- that is,
+they can be thought of as having a leading "*" wildcard.  Matching
+is done in order of most-to-least qualified -- for example, even
+though ".my.domain" is listed first in the above example, an entry
+of "uuhost1.my.domain" will match the second entry since it is
+more explicit.
+
+The RHS should always be a "mailer:host" pair.  The mailer is the
+configuration name of a mailer (that is, an `M' line in the
+sendmail.cf file).  The "host" will be the hostname passed to
+that mailer.  In domain-based matches (that is, those with leading
+dots) the "%1" may be used to interpolate the wildcarded part of
+the host name.  For example, the first line above sends everything
+addressed to "anything.my.domain" to that same host name, but using
+the (presumably experimental) xnet mailer.
+
+
++--------------------------------+
+| USING USERDB TO MAP FULL NAMES |
++--------------------------------+
+
+The user database was not originally intended for mapping full names
+to login names (e.g., Eric.Allman => eric), but some people are using
+it that way.  (I would recommend that you set up aliases for this
+purpose instead -- since you can specify multiple alias files, this
+is fairly easy.)  The intent was to locate the default maildrop at
+a site, but allow you to override this by sending to a specific host.
+
+If you decide to set up the user database in this fashion, it is
+imperative that you also specify FEATURE(notsticky) -- otherwise,
+e-mail sent to Full.Name@local.host.name will be rejected.
+
+To build the internal form of the user databae, use:
+
+	makemap btree /usr/data/base.db < /usr/data/base.txt
+
 
 +------------------+
 | FlexFAX SOFTWARE |
@@ -569,16 +691,16 @@ Sam Leffler's FlexFAX software is still in beta test -- but he expects a
 public version out "later this week" [as of 3/1/93].  The following
 blurb is direct from Sam:
 
-	$Header: /freefall/a/cvs/386BSD/src/usr.sbin/sendmail/cf/README,v 1.3 1993/07/30 17:20:26 nate Exp $
+	$Header: /usr/people/sam/fax/RCS/HOWTO,v 1.14 93/05/24 11:42:16 sam Exp $
 
 	How To Obtain This Software (in case all you get is this file)
-
+	--------------------------------------------------------------
 	The source code is available for public ftp on
-	    sgi.com			sgi/fax/v2.1beta.tar.Z
+	    sgi.com			sgi/fax/v2.1.src.tar.Z
 		(192.48.153.1)
 
 	You can also obtain inst'able images for Silicon Graphics machines from
-	    sgi.com			sgi/fax/v2.1beta.inst.tar
+	    sgi.com			sgi/fax/v2.1.inst.tar
 		(192.48.153.1)
 
 	For example,
@@ -588,47 +710,69 @@ blurb is direct from Sam:
 	    ... <type in password>
 	    ftp> cd sgi/fax
 	    ftp> binary
-	    ftp> get v2.1beta.tar.Z
+	    ftp> get v2.1.src.tar.Z
 
-	If you cannot use FTP at all, there is a service called "ftpmail"
-	available from gateekeeper.dec.com:  you can send e-mail to this
-	machine and it will use FTP to retrieve files for you and send you the
-	files back again via e-mail.  To find out more about the ftpmail
+	In general, the latest version of the 2.1 release of the software is
+	always available as "v2.1.src.tar.Z" or "v2.1.inst.tar" in the ftp
+	directory.  This file is a link to the appropriate released version (so
+	don't waste your time retrieving the linked file as well!) Any files of
+	the form v2.1.*.patch are shell scripts that can be used to patch older
+	versions of the source code.  For example, the file v2.1.0.patch would
+	contain patches to update v2.1.0.tar.Z.  (Note to beta testers: this is
+	different than the naming conventions used during beta testing.) Patch
+	files only work to go between consecutive versions, so if you are
+	multiple versions behind the latest release, you will need to apply
+	each patch file between your current version and the latest.
+
+
+	Obtaining the Software by Electronic Mail
+	-----------------------------------------
+	Do not send me requests for the software; they will be ignored (without
+	response).  If you cannot use FTP at all, there is a service called
+	"ftpmail" available from gatekeeper.dec.com:  you can send e-mail to
+	this machine and it will use FTP to retrieve files for you and send you
+	the files back again via e-mail.  To find out more about the ftpmail
 	service, send a message to "ftpmail@gatekeeper.dec.com" whose body
 	consists of the single line "help".
 
+
+	Obtaining the Software Within Silicon Graphics
+	----------------------------------------------
 	Internal to Silicon Graphics there are inst'able images on the host
-	flake.asd in the directory /d/dist.  Thus you can do something like:
+	flake.asd in the directory /usr/dist.  Thus you can do something like:
 
-	    % inst -f flake.asd.sgi.com:/d/dist/flexfax
+	    % inst -f flake.asd.sgi.com:/usr/dist/flexfax
 
-	to install the software on your machine.
+	to install the latest version of the software on your machine.
 
+
+	What to do Once You've Retrieved Stuff
+	--------------------------------------
 	The external distributions come in a compressed or uncompressed tar
 	file.  To extract the source distribution:
 
-	    % zcat v2.1beta.tar.Z | tar xf -
+	    % zcat v2.1.src.tar.Z | tar xf -
 
 	(uncompress and extract individual files in current directory).  To
 	unpack and install the client portion of the inst'able distribution:
 
 	    % mkdir dist
-	    % cd dist; tar xf ../v2.1beta.inst.tar; cd ..
+	    % cd dist; tar xf ../v2.1.inst.tar; cd ..
 	    % inst -f dist/flexfax
 	    ...
 	    inst> go
 
 	(Note, the dist subdirectory is because some versions of inst fail if
-	the files are in the current directory.) Server binaries is also
-	included in the inst'able images as flexfax.server.*.  It is not
-	installed by default, so to get it also you need to extract the do:
+	the files are in the current directory.) Server binaries are also
+	included in the inst'able images as flexfax.server.*.  They are not
+	installed by default, so to get them also you need to do:
 
 	    % inst -f flexfax
 	    ...
 	    inst> install flexfax.server.*
 	    inst> go
 
-	The SGI binaries were built for Version 4.0.5 of the IRIX operating
+	The SGI binaries were built for Version 4.0.5H of the IRIX operating
 	system.  They should work w/o problem on earlier versions of the
 	system, but I have not fully tested this.  Also, note that to install a
 	server on an SGI machine, you need to have installed the Display
@@ -636,22 +780,34 @@ blurb is direct from Sam:
 	server will not be able to convert PostScript to facsimile for
 	transmission.
 
-	If you are working from the source distribution, look at the file README
-	in the top of the source tree.  If you are working from the inst images,
-	you need to run faxaddmodem to setup and configure your fax modem.  Do
-	man faxaddmodem for more information.
+	If you are working from the source distribution, look at the file
+	README in the top of the source tree.  If you are working from the inst
+	images, the subsystem flexfax.man.readme contains the README file and
+	other useful pieces of information--the installed files are placed in
+	the directory /usr/local/doc/flexfax).  Basically you will need to run
+	the faxaddmodem script to setup and configure your fax modem.  Consult
+	the README file and the manual page for faxaddmodem for information.
 
-Also from Sam:
 
+	FlexFAX Mail List
+	-----------------
 	A mailing list for users of this software is located on sgi.com.
 	If you want to join this mailing list or have a list-related request
 	such as getting your name removed from it, send a request to
 
-	    flexfax-request@sgi.com
+	    majordomo@whizzer.wpd.sgi.com
+
+	For example, to subscribe, send the line "subscribe flexfax" in
+	the body of your message.  The line "help" will return a list of
+	the commands understood by the mailing list management software.
 
 	Submissions (including bug reports) should be directed to:
 
 	    flexfax@sgi.com
+
+	When corresponding about this software please always specify what
+	version you have, what system you're running on, and, if the problem is
+	specific to your modem, identify the modem and firmware revision.
 
 
 +--------------------------------+
@@ -679,7 +835,7 @@ confFROM_LINE		From $g  $d	Dl	The From_ line used when
 confFROM_HEADER		$?x$x <$g>$|$g$.	The format of an internally
 					Dq	generated From: address.
 confOPERATORS		.:%@!^/[]	Do	Address operator characters.
-confSTMP_LOGIN_MSG	$j Sendmail $v/$Z ready at $b
+confSMTP_LOGIN_MSG	$j Sendmail $v/$Z ready at $b
 					De	The initial (spontaneous)
 						SMTP greeting message.
 confSEVEN_BIT_INPUT	False		O7	Force input to seven bits?
@@ -711,6 +867,9 @@ confBIND_OPTS		(empty)		OI	Default options for BIND.
 confMIME_FORMAT_ERRORS	True		Oj *	Send error messages as MIME-
 						encapsulated messages per
 						RFC 1344.
+confFORWARD_PATH	(undefined)	OJ	The colon-separated list of
+						places to search for .forward
+						files.
 confMCI_CACHE_SIZE	2		Ok	Size of open connection cache.
 confMCI_CACHE_TIMEOUT	5m		OK	Open connection cache timeout.
 confUSE_ERRORS_TO	False		Ol *	Use the Errors-To: header to
@@ -743,6 +902,11 @@ confTIME_ZONE		USE_SYSTEM	Ot	Time zone info -- can be
 confDEF_USER_ID		1		Ou	Default user id.
 confUSERDB_SPEC		(undefined)	OU	User database specification.
 confFALLBACK_MX		(undefined)	OV	Fallback MX host.
+confTRY_NULL_MX_LIST	False		Ow	If we are the best MX for a
+						host and haven't made other
+						arrangements, try connecting
+						to the host directly; normally
+						this would be a config error.
 confQUEUE_LA		8		Ox	Load average at which queue-only
 						function kicks in.
 confREFUSE_LA		12		OX	Load average at which incoming
@@ -756,6 +920,20 @@ confWORK_TIME_FACTOR	(undefined)	OZ	Cost of each delivery attempt.
 confCW_FILE		/etc/sendmail.cw	Name of file used to get the
 					Fw	local additions to the $=w
 						class.
+confSMTP_MAILER		smtp		-	The mailer name used when
+						SMTP connectivity is required.
+						Either "smtp" or "esmtp".
+confLOCAL_MAILER	local		-	The mailer name used when
+						local connectivity is required.
+						Almost always "local".
+confRELAY_MAILER	relay		-	The default mailer name used
+						for relaying any mail (e.g.,
+						to a BITNET_RELAY, a
+						SMART_HOST, or whatever).
+						This can reasonably be "suucp"
+						if you are on a UUCP-connected
+						site.
+confDOMAIN_NAME		(undefined)	Dj	If defined, sets $j.
 
 
 +-----------+
@@ -829,6 +1007,7 @@ RULESETS (* means built in to sendmail)
   90	Mailertable host stripping
   96	Bottom half of Ruleset 3 (ruleset 6 in old sendmail)
   97	Hook for recursive ruleset 0 call (ruleset 7 in old sendmail)
+  98	Local part of ruleset 0 (ruleset 8 in old sendmail)
 
 
 MAILERS
@@ -897,7 +1076,7 @@ CLASSES
    W	UUCP hosts connected to relay $W
    X	UUCP hosts connected to relay $X
    Y	locally connected smart UUCP hosts
-   Z
+   Z	locally connected domain-ized UUCP hosts
    .	the class containing only a dot
 
 

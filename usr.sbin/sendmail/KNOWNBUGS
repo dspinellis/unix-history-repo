@@ -1,0 +1,51 @@
+
+
+	     K N O W N   B U G S   I N   S E N D M A I L
+			     (for 8.6.3)
+
+
+The following are bugs or deficiencies in sendmail that I am aware of
+but which have not been fixed in the current release.  You probably
+want to get the most up to date version of this from FTP.CS.Berkeley.EDU
+in /ucb/sendmail/KNOWNBUGS.
+
+* "SYSERR: openmailer(local): fd 1 not open" message
+
+  File descriptor 1 (standard output) should not be closed during normal
+  processing.  This is checked periodically, and sometimes this condition
+  is found and this message is produced.  Sendmail repairs the problem,
+  and the mail is still delivered, but I still don't know why it happens.
+  (There was a bug that was fixed in 8.6.beta.13 that might be related,
+  but I think this bug still exists.)
+
+* Null bytes are not handled properly.
+
+  Sendmail should handle full binary data.  As it stands, it handles
+  any value from 0x01-0xFF in the body and 0x01-0x80 and 0xA0-0xFF in
+  the header.  Notably missing is 0x00, which would require a major
+  restructuring of the code -- for example, almost no C library support
+  could be used to handle strings.
+
+* Route-addrs missing angle brackets.
+
+  There are cases where route-addrs do not get angle brackets around them,
+  such as in the "-r" flag on mailers or in the From_ line created when
+  mailing to files.
+
+* Duplicate error messages.
+
+  Sometimes identical, duplicate error messages can be generated.  As
+  near as I can tell, this is rare and relatively innocuous.
+
+* No "exposed users" in "nullrelay" configuration.
+
+  The "nullrelay" configuration hides all addresses behind the mail
+  hub name.  Some sites might prefer to expose some names such as
+  root.  This information is always available in Received: lines.
+
+* If you EXPN a list or user that has a program mailer, the output of
+  EXPN will include ``@local.host.name''.  You can't actually mail to
+  this address.  It's not clear what the right behaviour is in this
+  circumstance.
+
+(Version 8.8, last updated 10/24/93)

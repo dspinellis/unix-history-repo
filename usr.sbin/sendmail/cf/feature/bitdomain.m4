@@ -34,12 +34,12 @@ divert(-1)
 #
 
 divert(0)
-VERSIONID(`@(#)bitdomain.m4	8.1 (Berkeley) 6/7/93')
+VERSIONID(`@(#)bitdomain.m4	8.3 (Berkeley) 8/7/93')
 divert(-1)
 
 
 PUSHDIVERT(6)
-Kbitdomain ifelse(_ARG_, `', `hash /etc/bitdomain -o', `_ARG_')
+Kbitdomain ifelse(_ARG_, `', `hash -o /etc/bitdomain', `_ARG_')
 POPDIVERT
 
 

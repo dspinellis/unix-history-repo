@@ -30,7 +30,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)cdefs.h	8.1 (Berkeley) 6/2/93
+ *	@(#)cdefs.h	8.2 (Berkeley) 10/4/93
  */
 
 #ifndef	_CDEFS_H_
@@ -55,6 +55,10 @@
 #define	__P(protos)	protos		/* full-blown ANSI C */
 #define	__CONCAT(x,y)	x ## y
 #define	__STRING(x)	#x
+
+#if !defined(__GNUC__) && !defined(__cplusplus)
+#define	inline
+#endif
 
 #else	/* !(__STDC__ || __cplusplus) */
 #define	__P(protos)	()		/* traditional C preprocessor */

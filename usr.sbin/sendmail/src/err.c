@@ -33,7 +33,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)err.c	8.2 (Berkeley) 7/11/93";
+static char sccsid[] = "@(#)err.c	8.12 (Berkeley) 10/21/93";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -64,13 +64,13 @@ static char sccsid[] = "@(#)err.c	8.2 (Berkeley) 7/11/93";
 **		sets ExitStat.
 */
 
-# ifdef lint
-int	sys_nerr;
-char	*sys_errlist[];
-# endif lint
 char	MsgBuf[BUFSIZ*2];	/* text of most recent message */
 
-static void fmtmsg();
+static void	fmtmsg();
+
+#if defined(NAMED_BIND) && !defined(NO_DATA)
+# define NO_DATA	NO_ADDRESS
+#endif
 
 void
 /*VARARGS1*/
@@ -116,6 +116,11 @@ syserr(fmt, va_alist)
 			CurEnv->e_id == NULL ? "NOQUEUE" : CurEnv->e_id,
 			&MsgBuf[4]);
 # endif /* LOG */
+	if (olderrno == EMFILE)
+	{
+		printopenfds(TRUE);
+		mci_dump_all(TRUE);
+	}
 	if (panic)
 	{
 #ifdef XLA
@@ -265,13 +270,21 @@ putoutmsg(msg, holdmsg)
 	char *msg;
 	bool holdmsg;
 {
+	/* display for debugging */
+	if (tTd(54, 8))
+		printf("--- %s%s\n", msg, holdmsg ? " (held)" : "");
+
 	/* output to transcript if serious */
-	if (CurEnv->e_xfp != NULL && (msg[0] == '4' || msg[0] == '5'))
+	if (CurEnv->e_xfp != NULL && strchr("456", msg[0]) != NULL)
 		fprintf(CurEnv->e_xfp, "%s\n", msg);
 
 	/* output to channel if appropriate */
 	if (holdmsg || (!Verbose && msg[0] == '0'))
 		return;
+
+	/* map warnings to something SMTP can handle */
+	if (msg[0] == '6')
+		msg[0] = '5';
 
 	(void) fflush(stdout);
 	if (OpMode == MD_SMTP)
@@ -286,8 +299,13 @@ putoutmsg(msg, holdmsg)
 	if (!ferror(OutChannel))
 		return;
 
-	/* error on output -- if reporting lost channel, just ignore it */
-	if (feof(InChannel) || ferror(InChannel))
+	/*
+	**  Error on output -- if reporting lost channel, just ignore it.
+	**  Also, ignore errors from QUIT response (221 message) -- some
+	**	rude servers don't read result.
+	*/
+
+	if (feof(InChannel) || ferror(InChannel) || strncmp(msg, "221", 3) == 0)
 		return;
 
 	/* can't call syserr, 'cause we are using MsgBuf */
@@ -295,9 +313,10 @@ putoutmsg(msg, holdmsg)
 #ifdef LOG
 	if (LogLevel > 0)
 		syslog(LOG_CRIT,
-			"%s: SYSERR: putoutmsg (%s): error on output channel sending \"%s\"",
+			"%s: SYSERR: putoutmsg (%s): error on output channel sending \"%s\": %m",
 			CurEnv->e_id == NULL ? "NOQUEUE" : CurEnv->e_id,
-			CurHostName, msg);
+			CurHostName == NULL ? "NO-HOST" : CurHostName,
+			msg);
 #endif
 }
 /*
@@ -316,13 +335,23 @@ putoutmsg(msg, holdmsg)
 puterrmsg(msg)
 	char *msg;
 {
+	char msgcode = msg[0];
+
 	/* output the message as usual */
 	putoutmsg(msg, HoldErrs);
 
 	/* signal the error */
-	Errors++;
-	if (msg[0] == '5')
-		CurEnv->e_flags |= EF_FATALERRS;
+	if (msgcode == '6')
+	{
+		/* notify the postmaster */
+		CurEnv->e_flags |= EF_PM_NOTIFY;
+	}
+	else
+	{
+		Errors++;
+		if (msgcode == '5' && bitset(EF_GLOBALERRS, CurEnv->e_flags))
+			CurEnv->e_flags |= EF_FATALERRS;
+	}
 }
 /*
 **  FMTMSG -- format a message into buffer.
@@ -396,8 +425,12 @@ fmtmsg(eb, to, num, eno, fmt, ap)
 		eb += strlen(eb);
 	}
 
-	if (CurEnv->e_message == NULL && strchr("45", num[0]) != NULL)
+	if (num[0] == '5' || (CurEnv->e_message == NULL && num[0] == '4'))
+	{
+		if (CurEnv->e_message != NULL)
+			free(CurEnv->e_message);
 		CurEnv->e_message = newstr(meb);
+	}
 }
 /*
 **  ERRSTRING -- return string description of error code
@@ -416,9 +449,11 @@ const char *
 errstring(errno)
 	int errno;
 {
-	extern const char *const sys_errlist[];
-	extern int sys_nerr;
 	static char buf[MAXLINE];
+# ifndef ERRLIST_PREDEFINED
+	extern char *sys_errlist[];
+	extern int sys_nerr;
+# endif
 # ifdef SMTP
 	extern char *SmtpPhase;
 # endif /* SMTP */
@@ -460,17 +495,20 @@ errstring(errno)
 		(void) sprintf(buf, "Connection refused by %s", CurHostName);
 		return (buf);
 
+	  case EOPENTIMEOUT:
+		return "Timeout on file open";
+
 # ifdef NAMED_BIND
-	  case HOST_NOT_FOUND + MAX_ERRNO:
+	  case HOST_NOT_FOUND + E_DNSBASE:
 		return ("Name server: host not found");
 
-	  case TRY_AGAIN + MAX_ERRNO:
+	  case TRY_AGAIN + E_DNSBASE:
 		return ("Name server: host name lookup failure");
 
-	  case NO_RECOVERY + MAX_ERRNO:
+	  case NO_RECOVERY + E_DNSBASE:
 		return ("Name server: non-recoverable error");
 
-	  case NO_DATA + MAX_ERRNO:
+	  case NO_DATA + E_DNSBASE:
 		return ("Name server: no data known for name");
 # endif
 	}

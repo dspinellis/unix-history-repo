@@ -33,7 +33,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	8.3 (Berkeley) 7/13/93";
+static char sccsid[] = "@(#)util.c	8.14 (Berkeley) 10/23/93";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -403,7 +403,10 @@ buildfname(gecos, login, buf)
 **
 **	Parameters:
 **		fn -- filename to check.
-**		uid -- uid to compare against.
+**		uid -- user id to compare against.
+**		gid -- group id to compare against.
+**		uname -- user name to compare against (used for group
+**			sets).
 **		mustown -- to be safe, this uid must own the file.
 **		mode -- mode bits that must match.
 **
@@ -415,8 +418,14 @@ buildfname(gecos, login, buf)
 **		none.
 */
 
+#include <grp.h>
+
 #ifndef S_IXOTH
 # define S_IXOTH	(S_IEXEC >> 6)
+#endif
+
+#ifndef S_IXGRP
+# define S_IXGRP	(S_IEXEC >> 3)
 #endif
 
 #ifndef S_IXUSR
@@ -424,35 +433,59 @@ buildfname(gecos, login, buf)
 #endif
 
 int
-safefile(fn, uid, mustown, mode)
+safefile(fn, uid, gid, uname, mustown, mode)
 	char *fn;
 	uid_t uid;
+	gid_t gid;
+	char *uname;
 	bool mustown;
 	int mode;
 {
 	register char *p;
+	register struct group *gr = NULL;
 	struct stat stbuf;
 
 	if (tTd(54, 4))
-		printf("safefile(%s, %d, %d, %o): ", fn, uid, mustown, mode);
+		printf("safefile(%s, uid=%d, gid=%d, mustown=%d, mode=%o):\n",
+			fn, uid, gid, mustown, mode);
 	errno = 0;
 
 	for (p = fn; (p = strchr(++p, '/')) != NULL; *p = '/')
 	{
 		*p = '\0';
-		if (stat(fn, &stbuf) < 0 ||
-		    !bitset(stbuf.st_uid == uid ? S_IXUSR : S_IXOTH,
-			    stbuf.st_mode))
+		if (stat(fn, &stbuf) < 0)
+			break;
+		if (stbuf.st_uid == uid && bitset(S_IXUSR, stbuf.st_mode))
+			continue;
+		if (stbuf.st_gid == gid && bitset(S_IXGRP, stbuf.st_mode))
+			continue;
+#ifndef NO_GROUP_SET
+		if (uname != NULL &&
+		    ((gr != NULL && gr->gr_gid == stbuf.st_gid) ||
+		     (gr = getgrgid(stbuf.st_gid)) != NULL))
 		{
-			int ret = errno;
+			register char **gp;
 
-			if (ret == 0)
-				ret = EACCES;
-			if (tTd(54, 4))
-				printf("[dir %s] %s\n", fn, errstring(ret));
-			*p = '/';
-			return ret;
+			for (gp = gr->gr_mem; *gp != NULL; gp++)
+				if (strcmp(*gp, uname) == 0)
+					break;
+			if (*gp != NULL && bitset(S_IXGRP, stbuf.st_mode))
+				continue;
 		}
+#endif
+		if (!bitset(S_IXOTH, stbuf.st_mode))
+			break;
+	}
+	if (p != NULL)
+	{
+		int ret = errno;
+
+		if (ret == 0)
+			ret = EACCES;
+		if (tTd(54, 4))
+			printf("\t[dir %s] %s\n", fn, errstring(ret));
+		*p = '/';
+		return ret;
 	}
 
 	if (stat(fn, &stbuf) < 0)
@@ -460,24 +493,47 @@ safefile(fn, uid, mustown, mode)
 		int ret = errno;
 
 		if (tTd(54, 4))
-			printf("%s\n", errstring(ret));
+			printf("\t%s\n", errstring(ret));
 
 		errno = 0;
 		return ret;
 	}
-	if (stbuf.st_uid != uid || uid == 0 || !mustown)
+	if (uid == 0)
 		mode >>= 6;
+	else if (stbuf.st_uid != uid)
+	{
+		mode >>= 3;
+		if (stbuf.st_gid == gid)
+			;
+#ifndef NO_GROUP_SET
+		else if (uname != NULL &&
+			 ((gr != NULL && gr->gr_gid == stbuf.st_gid) ||
+			  (gr = getgrgid(stbuf.st_gid)) != NULL))
+		{
+			register char **gp;
+
+			for (gp = gr->gr_mem; *gp != NULL; gp++)
+				if (strcmp(*gp, uname) == 0)
+					break;
+			if (*gp == NULL)
+				mode >>= 3;
+		}
+#endif
+		else
+			mode >>= 3;
+	}
 	if (tTd(54, 4))
-		printf("[uid %d, stat %o] ", stbuf.st_uid, stbuf.st_mode);
+		printf("\t[uid %d, stat %o, mode %o] ",
+			stbuf.st_uid, stbuf.st_mode, mode);
 	if ((stbuf.st_uid == uid || uid == 0 || !mustown) &&
 	    (stbuf.st_mode & mode) == mode)
 	{
 		if (tTd(54, 4))
-			printf("OK\n");
+			printf("\tOK\n");
 		return 0;
 	}
 	if (tTd(54, 4))
-		printf("EACCES\n");
+		printf("\tEACCES\n");
 	return EACCES;
 }
 /*
@@ -576,7 +632,7 @@ dfopen(filename, omode, cmode)
 			locktype = LOCK_EX;
 		else
 			locktype = LOCK_SH;
-		(void) lockfile(fd, filename, locktype);
+		(void) lockfile(fd, filename, NULL, locktype);
 		errno = 0;
 	}
 	if (fd < 0)
@@ -716,6 +772,10 @@ xfclose(fp, a, b)
 {
 	if (tTd(53, 99))
 		printf("xfclose(%x) %s %s\n", fp, a, b);
+#ifdef XDEBUG
+	if (fileno(fp) == 1)
+		syserr("xfclose(%s %s): fd = 1", a, b);
+#endif
 	if (fclose(fp) < 0 && tTd(53, 99))
 		printf("xfclose FAILURE: %s\n", errstring(errno));
 }
@@ -739,6 +799,7 @@ xfclose(fp, a, b)
 */
 
 static jmp_buf	CtxReadTimeout;
+static int	readtimeout();
 
 char *
 sfgets(buf, siz, fp, timeout, during)
@@ -750,7 +811,6 @@ sfgets(buf, siz, fp, timeout, during)
 {
 	register EVENT *ev = NULL;
 	register char *p;
-	static int readtimeout();
 
 	/* set the timeout */
 	if (timeout != 0)
@@ -927,7 +987,7 @@ bool
 atobool(s)
 	register char *s;
 {
-	if (*s == '\0' || strchr("tTyY", *s) != NULL)
+	if (s == NULL || *s == '\0' || strchr("tTyY", *s) != NULL)
 		return (TRUE);
 	return (FALSE);
 }
@@ -968,10 +1028,15 @@ atooct(s)
 **		none.
 */
 
+int
 waitfor(pid)
 	int pid;
 {
+#ifdef WAITUNION
+	union wait st;
+#else
 	auto int st;
+#endif
 	int i;
 
 	do
@@ -980,8 +1045,12 @@ waitfor(pid)
 		i = wait(&st);
 	} while ((i >= 0 || errno == EINTR) && i != pid);
 	if (i < 0)
-		st = -1;
-	return (st);
+		return -1;
+#ifdef WAITUNION
+	return st.w_status;
+#else
+	return st;
+#endif
 }
 /*
 **  BITINTERSECT -- tell if two bitmaps intersect
@@ -1086,7 +1155,7 @@ checkfd012(where)
 
 	for (i = 0; i < 3; i++)
 	{
-		if (fstat(i, &stbuf) < 0)
+		if (fstat(i, &stbuf) < 0 && errno != EOPNOTSUPP)
 		{
 			/* oops.... */
 			int fd;
@@ -1100,5 +1169,125 @@ checkfd012(where)
 			}
 		}
 	}
-#endif XDEBUG
+#endif /* XDEBUG */
+}
+/*
+**  PRINTOPENFDS -- print the open file descriptors (for debugging)
+**
+**	Parameters:
+**		logit -- if set, send output to syslog; otherwise
+**			print for debugging.
+**
+**	Returns:
+**		none.
+*/
+
+#include <netdb.h>
+#include <arpa/inet.h>
+
+printopenfds(logit)
+	bool logit;
+{
+	register int fd;
+	extern int DtableSize;
+
+	for (fd = 0; fd < DtableSize; fd++)
+		dumpfd(fd, FALSE, logit);
+}
+/*
+**  DUMPFD -- dump a file descriptor
+**
+**	Parameters:
+**		fd -- the file descriptor to dump.
+**		printclosed -- if set, print a notification even if
+**			it is closed; otherwise print nothing.
+**		logit -- if set, send output to syslog instead of stdout.
+*/
+
+dumpfd(fd, printclosed, logit)
+	int fd;
+	bool printclosed;
+	bool logit;
+{
+	register struct hostent *hp;
+	register char *p;
+	struct sockaddr_in sin;
+	auto int slen;
+	struct stat st;
+	char buf[200];
+
+	p = buf;
+	sprintf(p, "%3d: ", fd);
+	p += strlen(p);
+
+	if (fstat(fd, &st) < 0)
+	{
+		if (printclosed || errno != EBADF)
+		{
+			sprintf(p, "CANNOT STAT (%s)", errstring(errno));
+			goto printit;
+		}
+		return;
+	}
+
+	slen = fcntl(fd, F_GETFL, NULL);
+	if (slen != -1)
+	{
+		sprintf(p, "fl=0x%x, ", slen);
+		p += strlen(p);
+	}
+
+	sprintf(p, "mode=%o: ", st.st_mode);
+	p += strlen(p);
+	switch (st.st_mode & S_IFMT)
+	{
+	  case S_IFSOCK:
+		sprintf(p, "SOCK ");
+		p += strlen(p);
+		slen = sizeof sin;
+		if (getsockname(fd, (struct sockaddr *) &sin, &slen) < 0)
+			sprintf(p, "(badsock)");
+		else
+		{
+			hp = gethostbyaddr((char *) &sin.sin_addr, slen, AF_INET);
+			sprintf(p, "%s/%d", hp == NULL ? inet_ntoa(sin.sin_addr)
+						   : hp->h_name, ntohs(sin.sin_port));
+		}
+		p += strlen(p);
+		sprintf(p, "->");
+		p += strlen(p);
+		slen = sizeof sin;
+		if (getpeername(fd, (struct sockaddr *) &sin, &slen) < 0)
+			sprintf(p, "(badsock)");
+		else
+		{
+			hp = gethostbyaddr((char *) &sin.sin_addr, slen, AF_INET);
+			sprintf(p, "%s/%d", hp == NULL ? inet_ntoa(sin.sin_addr)
+						   : hp->h_name, ntohs(sin.sin_port));
+		}
+		break;
+
+	  case S_IFCHR:
+		sprintf(p, "CHR: ");
+		p += strlen(p);
+		goto defprint;
+
+	  case S_IFBLK:
+		sprintf(p, "BLK: ");
+		p += strlen(p);
+		goto defprint;
+
+	  default:
+defprint:
+		sprintf(p, "dev=%d/%d, ino=%d, nlink=%d, u/gid=%d/%d, size=%ld",
+			major(st.st_dev), minor(st.st_dev), st.st_ino,
+			st.st_nlink, st.st_uid, st.st_gid, st.st_size);
+		break;
+	}
+
+printit:
+	if (logit)
+		syslog(LOG_INFO, "%s", buf);
+	else
+		printf("%s\n", buf);
 }

@@ -33,7 +33,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)envelope.c	8.3 (Berkeley) 7/13/93";
+static char sccsid[] = "@(#)envelope.c	8.13 (Berkeley) 10/23/93";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -101,6 +101,7 @@ dropenvelope(e)
 	register ENVELOPE *e;
 {
 	bool queueit = FALSE;
+	bool saveit = bitset(EF_FATALERRS, e->e_flags);
 	register ADDRESS *q;
 	char *id = e->e_id;
 	char buf[MAXLINE];
@@ -134,10 +135,19 @@ dropenvelope(e)
 	**  Extract state information from dregs of send list.
 	*/
 
+	e->e_flags &= ~EF_QUEUERUN;
 	for (q = e->e_sendqueue; q != NULL; q = q->q_next)
 	{
 		if (bitset(QQUEUEUP, q->q_flags))
 			queueit = TRUE;
+		if (!bitset(QDONTSEND, q->q_flags) &&
+		    bitset(QBADADDR, q->q_flags))
+		{
+			if (q->q_owner == NULL &&
+			    strcmp(e->e_from.q_paddr, "<>") != 0)
+				(void) sendtolist(e->e_from.q_paddr, NULL,
+						  &e->e_errorqueue, e);
+		}
 	}
 
 	/*
@@ -148,16 +158,14 @@ dropenvelope(e)
 		/* nothing to do */ ;
 	else if (curtime() > e->e_ctime + TimeOuts.to_q_return)
 	{
-		if (!bitset(EF_TIMEOUT, e->e_flags))
-		{
-			(void) sprintf(buf, "Cannot send message for %s",
-				pintvl(TimeOuts.to_q_return, FALSE));
-			if (e->e_message != NULL)
-				free(e->e_message);
-			e->e_message = newstr(buf);
-			message(buf);
-		}
-		e->e_flags |= EF_TIMEOUT|EF_CLRQUEUE;
+		(void) sprintf(buf, "Cannot send message for %s",
+			pintvl(TimeOuts.to_q_return, FALSE));
+		if (e->e_message != NULL)
+			free(e->e_message);
+		e->e_message = newstr(buf);
+		message(buf);
+		e->e_flags |= EF_CLRQUEUE;
+		saveit = TRUE;
 		fprintf(e->e_xfp, "Message could not be delivered for %s\n",
 			pintvl(TimeOuts.to_q_return, FALSE));
 		fprintf(e->e_xfp, "Message will be deleted from queue\n");
@@ -181,7 +189,8 @@ dropenvelope(e)
 				free(e->e_message);
 			e->e_message = newstr(buf);
 			message(buf);
-			e->e_flags |= EF_WARNING|EF_TIMEOUT;
+			e->e_flags |= EF_WARNING;
+			saveit = TRUE;
 		}
 		fprintf(e->e_xfp,
 			"Warning: message still undelivered after %s\n",
@@ -203,7 +212,7 @@ dropenvelope(e)
 	{
 		auto ADDRESS *rlist = NULL;
 
-		(void) sendtolist(e->e_receiptto, (ADDRESS *) NULL, &rlist, e);
+		(void) sendtolist(e->e_receiptto, NULLADDR, &rlist, e);
 		(void) returntosender("Return receipt", rlist, FALSE, e);
 	}
 
@@ -211,9 +220,21 @@ dropenvelope(e)
 	**  Arrange to send error messages if there are fatal errors.
 	*/
 
-	if (bitset(EF_FATALERRS|EF_TIMEOUT, e->e_flags) &&
-	    e->e_errormode != EM_QUIET)
+	if (saveit && e->e_errormode != EM_QUIET)
 		savemail(e);
+
+	/*
+	**  Arrange to send warning messages to postmaster as requested.
+	*/
+
+	if (bitset(EF_PM_NOTIFY, e->e_flags) && PostMasterCopy != NULL &&
+	    !bitset(EF_RESPONSE, e->e_flags) && e->e_class >= 0)
+	{
+		auto ADDRESS *rlist = NULL;
+
+		(void) sendtolist(PostMasterCopy, NULLADDR, &rlist, e);
+		(void) returntosender(e->e_message, rlist, FALSE, e);
+	}
 
 	/*
 	**  Instantiate or deinstantiate the queue.
@@ -222,16 +243,21 @@ dropenvelope(e)
 	if ((!queueit && !bitset(EF_KEEPQUEUE, e->e_flags)) ||
 	    bitset(EF_CLRQUEUE, e->e_flags))
 	{
-		if (tTd(50, 2))
-			printf("Dropping envelope\n");
+		if (tTd(50, 1))
+			printf("\n===== Dropping [dq]f%s =====\n\n", e->e_id);
 		if (e->e_df != NULL)
 			xunlink(e->e_df);
 		xunlink(queuename(e, 'q'));
+
+#ifdef LOG
+		if (LogLevel > 10)
+			syslog(LOG_INFO, "%s: done", id);
+#endif
 	}
 	else if (queueit || !bitset(EF_INQUEUE, e->e_flags))
 	{
 #ifdef QUEUE
-		queueup(e, FALSE, FALSE);
+		queueup(e, bitset(EF_KEEPQUEUE, e->e_flags), FALSE);
 #else /* QUEUE */
 		syserr("554 dropenvelope: queueup");
 #endif /* QUEUE */
@@ -246,11 +272,9 @@ dropenvelope(e)
 		(void) xfclose(e->e_dfp, "dropenvelope", e->e_df);
 	e->e_dfp = NULL;
 	e->e_id = e->e_df = NULL;
-
-#ifdef LOG
-	if (LogLevel > 74)
-		syslog(LOG_INFO, "%s: done", id);
-#endif /* LOG */
+#ifdef XDEBUG
+	checkfd012("dropenvelope");
+#endif
 }
 /*
 **  CLEARENVELOPE -- clear an envelope without unlocking
@@ -420,7 +444,8 @@ settime(e)
 	if (p != NULL)
 		*p = '\0';
 	define('d', dbuf, e);
-	p = newstr(arpadate(dbuf));
+	p = arpadate(dbuf);
+	p = newstr(p);
 	if (macvalue('a', e) == NULL)
 		define('a', p, e);
 	define('b', p, e);
@@ -464,6 +489,15 @@ openxscript(e)
 			syserr("!Can't open /dev/null");
 	}
 	e->e_xfp = fdopen(fd, "w");
+	if (e->e_xfp == NULL)
+	{
+		syserr("!Can't create transcript stream %s", p);
+	}
+	if (tTd(46, 9))
+	{
+		printf("openxscript(%s):\n  ", p);
+		dumpfd(fileno(e->e_xfp), TRUE, FALSE);
+	}
 }
 /*
 **  CLOSEXSCRIPT -- close the transcript file.
@@ -535,7 +569,8 @@ setsender(from, e, delimptr, internal)
 	char *realname = NULL;
 	register struct passwd *pw;
 	char delimchar;
-	char buf[MAXNAME];
+	char *bp;
+	char buf[MAXNAME + 2];
 	char pvpbuf[PSBUFSIZE];
 	extern struct passwd *getpwnam();
 	extern char *FullName;
@@ -558,7 +593,8 @@ setsender(from, e, delimptr, internal)
 
 	delimchar = internal ? '\0' : ' ';
 	if (from == NULL ||
-	    parseaddr(from, &e->e_from, 1, delimchar, delimptr, e) == NULL)
+	    parseaddr(from, &e->e_from, RF_COPYALL|RF_SENDERADDR,
+		      delimchar, delimptr, e) == NULL)
 	{
 		/* log garbage addresses for traceback */
 # ifdef LOG
@@ -584,10 +620,12 @@ setsender(from, e, delimptr, internal)
 		if (from != NULL)
 			SuprErrs = TRUE;
 		if (from == realname ||
-		    parseaddr(from = newstr(realname), &e->e_from, 1, ' ', NULL, e) == NULL)
+		    parseaddr(from = newstr(realname), &e->e_from,
+			      RF_COPYALL|RF_SENDERADDR, ' ', NULL, e) == NULL)
 		{
 			SuprErrs = TRUE;
-			if (parseaddr("postmaster", &e->e_from, 1, ' ', NULL, e) == NULL)
+			if (parseaddr("postmaster", &e->e_from, RF_COPYALL,
+				      ' ', NULL, e) == NULL)
 				syserr("553 setsender: can't even parse postmaster!");
 		}
 	}
@@ -618,7 +656,7 @@ setsender(from, e, delimptr, internal)
 				FullName = NULL;
 
 # ifdef USERDB
-			p = udbsender(from);
+			p = udbsender(e->e_from.q_user);
 
 			if (p != NULL)
 			{
@@ -686,8 +724,15 @@ setsender(from, e, delimptr, internal)
 	(void) rewrite(pvp, 3, e);
 	(void) rewrite(pvp, 1, e);
 	(void) rewrite(pvp, 4, e);
-	cataddr(pvp, NULL, buf, sizeof buf, '\0');
-	e->e_sender = newstr(buf);
+	bp = buf + 1;
+	cataddr(pvp, NULL, bp, sizeof buf - 2, '\0');
+	if (*bp == '@')
+	{
+		/* heuristic: route-addr: add angle brackets */
+		strcat(bp, ">");
+		*--bp = '<';
+	}
+	e->e_sender = newstr(bp);
 	define('f', e->e_sender, e);
 
 	/* save the domain spec if this mailer wants it */

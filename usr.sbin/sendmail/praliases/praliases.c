@@ -1,7 +1,12 @@
 /*
  * Copyright (c) 1983 Eric P. Allman
+<<<<<<< 1.2
+ * Copyright (c) 1988 Regents of the University of California.
+ * All rights reserved.
+=======
  * Copyright (c) 1988, 1993
  *	The Regents of the University of California.  All rights reserved.
+>>>>>>> /tmp/T4010782
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -33,39 +38,78 @@
  */
 
 #ifndef lint
+<<<<<<< 1.2
+char copyright[] =
+"@(#) Copyright (c) 1988 Regents of the University of California.\n\
+ All rights reserved.\n";
+=======
 static char copyright[] =
 "@(#) Copyright (c) 1988, 1993\n\
 	The Regents of the University of California.  All rights reserved.\n";
+>>>>>>> /tmp/T4010782
 #endif /* not lint */
 
 #ifndef lint
+<<<<<<< 1.2
+static char sccsid[] = "@(#)praliases.c	5.5 (Berkeley) 6/1/90";
+=======
 static char sccsid[] = "@(#)praliases.c	8.1 (Berkeley) 6/7/93";
+>>>>>>> /tmp/T4010782
 #endif /* not lint */
 
+<<<<<<< 1.2
+=======
 #include <ndbm.h>
+>>>>>>> /tmp/T4010782
 #include <sendmail.h>
+<<<<<<< 1.2
+=======
 #ifdef NEWDB
 #include <db.h>
 #endif
+>>>>>>> /tmp/T4010782
 
+<<<<<<< 1.2
+typedef struct {
+	char *dptr;
+	int dsize;
+} datum;
+
+
+=======
 int
+>>>>>>> /tmp/T4010782
 main(argc, argv)
+<<<<<<< 1.2
+=======
 	int argc;
+>>>>>>> /tmp/T4010782
 	char **argv;
 {
 	extern char *optarg;
 	extern int optind;
+<<<<<<< 1.2
+	static char *filename = "/usr/lib/aliases";
+	datum content, key, firstkey(), nextkey(), fetch();
+=======
 	DBM *dbp;
 	datum content, key;
 	char *filename;
+>>>>>>> /tmp/T4010782
 	int ch;
+<<<<<<< 1.2
+=======
 #ifdef NEWDB
 	const DB *db;
 	DBT newdbkey, newdbcontent;
 	char buf[MAXNAME];
 #endif
+>>>>>>> /tmp/T4010782
 
+<<<<<<< 1.2
+=======
 	filename = "/etc/aliases";
+>>>>>>> /tmp/T4010782
 	while ((ch = getopt(argc, argv, "f:")) != EOF)
 		switch((char)ch) {
 		case 'f':
@@ -73,12 +117,24 @@ main(argc, argv)
 			break;
 		case '?':
 		default:
+<<<<<<< 1.2
+			fputs("usage: praliases [-f file]\n", stderr);
+=======
 			(void)fprintf(stderr, "usage: praliases [-f file]\n");
+>>>>>>> /tmp/T4010782
 			exit(EX_USAGE);
 		}
 	argc -= optind;
 	argv += optind;
 
+<<<<<<< 1.2
+	if (dbminit(filename) < 0)
+		exit(EX_OSFILE);
+	if (!argc)
+		for (key = firstkey(); key.dptr; key = nextkey(key)) {
+			content = fetch(key);
+			printf("%s:%s\n", key.dptr, content.dptr);
+=======
 #ifdef NEWDB
 	(void) strcpy(buf, filename);
 	(void) strcat(buf, ".db");
@@ -120,9 +176,24 @@ main(argc, argv)
 				(void)printf("%s: No such key\n", key.dptr);
 			else
 				(void)printf("%s:%s\n", key.dptr, content.dptr);
+>>>>>>> /tmp/T4010782
 		}
+<<<<<<< 1.2
+	else for (; *argv; ++argv) {
+		key.dptr = *argv;
+		key.dsize = strlen(*argv) + 1;
+		content = fetch(key);
+		if (!content.dptr)
+			printf("%s: No such key\n", key.dptr);
+		else
+			printf("%s:%s\n", key.dptr, content.dptr);
+=======
 #ifdef NEWDB
+>>>>>>> /tmp/T4010782
 	}
+<<<<<<< 1.2
+=======
 #endif
+>>>>>>> /tmp/T4010782
 	exit(EX_OK);
 }

@@ -36,9 +36,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)usersmtp.c	8.4 (Berkeley) 7/13/93 (with SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	8.13 (Berkeley) 10/24/93 (with SMTP)";
 #else
-static char sccsid[] = "@(#)usersmtp.c	8.4 (Berkeley) 7/13/93 (without SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	8.13 (Berkeley) 10/24/93 (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -61,6 +61,7 @@ char	SmtpMsgBuffer[MAXLINE];		/* buffer for commands */
 char	SmtpReplyBuffer[MAXLINE];	/* buffer for replies */
 char	SmtpError[MAXLINE] = "";	/* save failure error messages */
 int	SmtpPid;			/* pid of mailer */
+bool	SmtpNeedIntro;			/* need "while talking" in transcript */
 
 #ifdef __STDC__
 extern	smtpmessage(char *f, MAILER *m, MCI *mci, ...);
@@ -95,7 +96,7 @@ smtpinit(m, mci, e)
 	if (tTd(18, 1))
 	{
 		printf("smtpinit ");
-		mci_dump(mci);
+		mci_dump(mci, FALSE);
 	}
 
 	/*
@@ -104,6 +105,7 @@ smtpinit(m, mci, e)
 
 	SmtpError[0] = '\0';
 	CurHostName = mci->mci_host;		/* XXX UGLY XXX */
+	SmtpNeedIntro = TRUE;
 	switch (mci->mci_state)
 	{
 	  case MCIS_ACTIVE:
@@ -139,8 +141,10 @@ smtpinit(m, mci, e)
 	SmtpPhase = mci->mci_phase = "client greeting";
 	setproctitle("%s %s: %s", e->e_id, CurHostName, mci->mci_phase);
 	r = reply(m, mci, e, TimeOuts.to_initial, esmtp_check);
-	if (r < 0 || REPLYTYPE(r) != 2)
+	if (r < 0 || REPLYTYPE(r) == 4)
 		goto tempfail1;
+	if (REPLYTYPE(r) != 2)
+		goto unavailable;
 
 	/*
 	**  Send the HELO command.
@@ -182,12 +186,15 @@ tryhelo:
 	**  Check to see if we actually ended up talking to ourself.
 	**  This means we didn't know about an alias or MX, or we managed
 	**  to connect to an echo server.
+	**
+	**	If this code remains at all, "CheckLoopBack" should be
+	**	a mailer flag.  This is a MAYBENEXTRELEASE feature.
 	*/
 
 	p = strchr(&SmtpReplyBuffer[4], ' ');
 	if (p != NULL)
 		*p = '\0';
-	if (strcasecmp(&SmtpReplyBuffer[4], MyHostName) == 0)
+	if (CheckLoopBack && strcasecmp(&SmtpReplyBuffer[4], MyHostName) == 0)
 	{
 		syserr("553 %s config error: mail loops back to myself",
 			MyHostName);
@@ -317,7 +324,7 @@ smtpmailfrom(m, mci, e)
 		printf("smtpmailfrom: CurHost=%s\n", CurHostName);
 
 	/* set up appropriate options to include */
-	if (bitset(MCIF_SIZE, mci->mci_flags))
+	if (bitset(MCIF_SIZE, mci->mci_flags) && e->e_msgsize > 0)
 		sprintf(optbuf, " SIZE=%ld", e->e_msgsize);
 	else
 		strcpy(optbuf, "");
@@ -443,6 +450,7 @@ smtprcpt(to, m, mci, e)
 */
 
 static jmp_buf	CtxDataTimeout;
+static int	datatimeout();
 
 smtpdata(m, mci, e)
 	struct mailer *m;
@@ -452,7 +460,6 @@ smtpdata(m, mci, e)
 	register int r;
 	register EVENT *ev;
 	time_t timeout;
-	static int datatimeout();
 
 	/*
 	**  Send the data.
@@ -518,6 +525,16 @@ smtpdata(m, mci, e)
 	(*e->e_putbody)(mci->mci_out, m, e, NULL);
 
 	clrevent(ev);
+
+	if (ferror(mci->mci_out))
+	{
+		/* error during processing -- don't send the dot */
+		mci->mci_errno = EIO;
+		mci->mci_exitstat = EX_IOERR;
+		mci->mci_state = MCIS_ERROR;
+		smtpquit(m, mci, e);
+		return EX_IOERR;
+	}
 
 	/* terminate the message */
 	fprintf(mci->mci_out, ".%s", m->m_eol);
@@ -724,8 +741,14 @@ reply(m, mci, e, timeout, pfunc)
 #ifdef XDEBUG
 			{
 				char wbuf[MAXLINE];
-				sprintf(wbuf, "%s... reply(%s) during %s",
-					e->e_to, mci->mci_host, SmtpPhase);
+				char *p = wbuf;
+				if (e->e_to != NULL)
+				{
+					sprintf(p, "%s... ", e->e_to);
+					p += strlen(p);
+				}
+				sprintf(p, "reply(%s) during %s",
+					mci->mci_host, SmtpPhase);
 				checkfd012(wbuf);
 			}
 #endif
@@ -739,6 +762,14 @@ reply(m, mci, e, timeout, pfunc)
 		    (bufp[0] == '5' && strncmp(SmtpMsgBuffer, "EHLO", 4) != 0)))
 		{
 			/* serious error -- log the previous command */
+			if (SmtpNeedIntro)
+			{
+				/* inform user who we are chatting with */
+				fprintf(CurEnv->e_xfp,
+					"... while talking to %s:\n",
+					CurHostName);
+				SmtpNeedIntro = FALSE;
+			}
 			if (SmtpMsgBuffer[0] != '\0')
 				fprintf(e->e_xfp, ">>> %s\n", SmtpMsgBuffer);
 			SmtpMsgBuffer[0] = '\0';

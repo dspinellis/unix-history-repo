@@ -36,14 +36,13 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)srvrsmtp.c	8.3 (Berkeley) 7/13/93 (with SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	8.17 (Berkeley) 10/15/93 (with SMTP)";
 #else
-static char sccsid[] = "@(#)srvrsmtp.c	8.3 (Berkeley) 7/13/93 (without SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	8.17 (Berkeley) 10/15/93 (without SMTP)";
 #endif
 #endif /* not lint */
 
 # include <errno.h>
-# include <signal.h>
 
 # ifdef SMTP
 
@@ -83,6 +82,8 @@ struct cmd
 /* non-standard commands */
 # define CMDONEX	16	/* onex -- sending one transaction only */
 # define CMDVERB	17	/* verb -- go into verbose mode */
+/* use this to catch and log "door handle" attempts on your system */
+# define CMDLOGBOGUS	23	/* bogus command that should be logged */
 /* debugging-only commands, only enabled if SMTPDEBUG is defined */
 # define CMDDBGQSHOW	24	/* showq -- show send queue */
 # define CMDDBGDEBUG	25	/* debug -- set debug mode */
@@ -108,13 +109,13 @@ static struct cmd	CmdTab[] =
 	 */
 	"showq",	CMDDBGQSHOW,
 	"debug",	CMDDBGDEBUG,
+	"wiz",		CMDLOGBOGUS,
 	NULL,		CMDERROR,
 };
 
-bool	InChild = FALSE;		/* true if running in a subprocess */
 bool	OneXact = FALSE;		/* one xaction only this run */
 
-#define EX_QUIT		22		/* special code for QUIT command */
+static char	*skipword();
 
 smtp(e)
 	register ENVELOPE *e;
@@ -122,7 +123,6 @@ smtp(e)
 	register char *p;
 	register struct cmd *c;
 	char *cmd;
-	static char *skipword();
 	auto ADDRESS *vrfyqueue;
 	ADDRESS *a;
 	bool gotmail;			/* mail command received */
@@ -149,8 +149,15 @@ smtp(e)
 	CurHostName = RealHostName;
 	setproctitle("server %s startup", CurHostName);
 	expand("\201e", inp, &inp[sizeof inp], e);
-	message("220-%s", inp);
-	message("220 ESMTP spoken here");
+	if (BrokenSmtpPeers)
+	{
+		message("220 %s", inp);
+	}
+	else
+	{
+		message("220-%s", inp);
+		message("220 ESMTP spoken here");
+	}
 	protocol = NULL;
 	sendinghost = macvalue('s', e);
 	gothello = FALSE;
@@ -167,7 +174,7 @@ smtp(e)
 		QuickAbort = FALSE;
 		HoldErrs = FALSE;
 		LogUsrErrs = FALSE;
-		e->e_flags &= ~EF_VRFYONLY;
+		e->e_flags &= ~(EF_VRFYONLY|EF_GLOBALERRS);
 
 		/* setup for the read */
 		e->e_to = NULL;
@@ -187,7 +194,7 @@ smtp(e)
 			message("421 %s Lost input channel from %s",
 				MyHostName, CurHostName);
 #ifdef LOG
-			if (LogLevel > 1)
+			if (LogLevel > (gotmail ? 1 : 19))
 				syslog(LOG_NOTICE, "lost input channel from %s",
 					CurHostName);
 #endif
@@ -248,7 +255,9 @@ smtp(e)
 				SmtpPhase = "server HELO";
 			}
 			sendinghost = newstr(p);
-			if (strcasecmp(p, RealHostName) != 0)
+			if (strcasecmp(p, RealHostName) != 0 &&
+			    (strcasecmp(RealHostName, "localhost") != 0 ||
+			     strcasecmp(p, MyHostName) != 0))
 			{
 				auth_warning(e, "Host %s claimed to be %s",
 					RealHostName, p);
@@ -297,6 +306,8 @@ smtp(e)
 			if (gotmail)
 			{
 				message("503 Sender already specified");
+				if (InChild)
+					finis();
 				break;
 			}
 			if (InChild)
@@ -462,7 +473,7 @@ smtp(e)
 			p = skipword(p, "to");
 			if (p == NULL)
 				break;
-			a = parseaddr(p, (ADDRESS *) NULL, 1, ' ', NULL, e);
+			a = parseaddr(p, NULLADDR, RF_COPYALL, ' ', NULL, e);
 			if (a == NULL)
 				break;
 			a->q_flags |= QPRIMARY;
@@ -474,7 +485,9 @@ smtp(e)
 			e->e_to = p;
 			if (!bitset(QBADADDR, a->q_flags))
 			{
-				message("250 Recipient ok");
+				message("250 Recipient ok%s",
+					bitset(QQUEUEUP, a->q_flags) ?
+						" (will queue)" : "");
 				nrcpts++;
 			}
 			else
@@ -492,7 +505,7 @@ smtp(e)
 				message("503 Need MAIL command");
 				break;
 			}
-			else if (e->e_nrcpts <= 0)
+			else if (nrcpts <= 0)
 			{
 				message("503 Need RCPT (recipient)");
 				break;
@@ -518,10 +531,8 @@ smtp(e)
 
 			/* collect the text of the message */
 			SmtpPhase = "collect";
+			HoldErrs = TRUE;
 			collect(TRUE, doublequeue, e);
-			e->e_flags &= ~EF_FATALERRS;
-			if (Errors != 0)
-				goto abortmessage;
 
 			/*
 			**  Arrange to send to everyone.
@@ -554,9 +565,6 @@ smtp(e)
 			sendall(e, doublequeue ? SM_QUEUE : SM_DEFAULT);
 			e->e_to = NULL;
 
-			/* save statistics */
-			markstats(e, (ADDRESS *) NULL);
-
 			/* issue success if appropriate and reset */
 			if (Errors == 0 || HoldErrs)
 				message("250 %s Message accepted for delivery", id);
@@ -576,9 +584,10 @@ smtp(e)
 				/* if we just queued, poke it */
 				if (doublequeue && e->e_sendmode != SM_QUEUE)
 				{
+					extern pid_t dowork();
+
 					unlockqueue(e);
-					dowork(id, TRUE, TRUE, e);
-					e->e_id = NULL;
+					(void) dowork(id, TRUE, TRUE, e);
 				}
 			}
 
@@ -596,6 +605,7 @@ smtp(e)
 
 		  case CMDRSET:		/* rset -- reset state */
 			message("250 Reset state");
+			e->e_flags |= EF_CLRQUEUE;
 			if (InChild)
 				finis();
 
@@ -643,8 +653,7 @@ smtp(e)
 			}
 			else
 			{
-				(void) sendtolist(p, (ADDRESS *) NULL,
-						  &vrfyqueue, e);
+				(void) sendtolist(p, NULLADDR, &vrfyqueue, e);
 			}
 			if (Errors != 0)
 			{
@@ -658,16 +667,13 @@ smtp(e)
 			}
 			while (vrfyqueue != NULL)
 			{
-				register ADDRESS *a = vrfyqueue->q_next;
-
-				while (a != NULL && bitset(QDONTSEND|QBADADDR, a->q_flags))
-					a = a->q_next;
-
+				a = vrfyqueue;
+				while ((a = a->q_next) != NULL &&
+				       bitset(QDONTSEND|QBADADDR, a->q_flags))
+					continue;
 				if (!bitset(QDONTSEND|QBADADDR, vrfyqueue->q_flags))
 					printvrfyaddr(vrfyqueue, a == NULL);
-				else if (a == NULL)
-					message("554 Self destructive alias loop");
-				vrfyqueue = a;
+				vrfyqueue = vrfyqueue->q_next;
 			}
 			if (InChild)
 				finis();
@@ -678,7 +684,7 @@ smtp(e)
 			break;
 
 		  case CMDNOOP:		/* noop -- do nothing */
-			message("200 OK");
+			message("250 OK");
 			break;
 
 		  case CMDQUIT:		/* quit -- leave mail */
@@ -721,18 +727,18 @@ smtp(e)
 			break;
 
 # else /* not SMTPDEBUG */
-
 		  case CMDDBGQSHOW:	/* show queues */
 		  case CMDDBGDEBUG:	/* set debug mode */
+# endif /* SMTPDEBUG */
+		  case CMDLOGBOGUS:	/* bogus command */
 # ifdef LOG
 			if (LogLevel > 0)
-				syslog(LOG_NOTICE,
+				syslog(LOG_CRIT,
 				    "\"%s\" command from %s (%s)",
 				    c->cmdname, RealHostName,
 				    anynet_ntoa(&RealHostAddr));
 # endif
 			/* FALL THROUGH */
-# endif /* SMTPDEBUG */
 
 		  case CMDERROR:	/* unknown command */
 			message("500 Command unrecognized");

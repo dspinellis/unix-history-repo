@@ -33,7 +33,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)collect.c	8.1 (Berkeley) 6/7/93";
+static char sccsid[] = "@(#)collect.c	8.5 (Berkeley) 10/15/93";
 #endif /* not lint */
 
 # include <errno.h>
@@ -72,6 +72,7 @@ collect(smtpmode, requeueflag, e)
 	bool ignrdot = smtpmode ? FALSE : IgnrDot;
 	char buf[MAXLINE], buf2[MAXLINE];
 	register char *workbuf, *freebuf;
+	bool inputerr = FALSE;
 	extern char *hvalue();
 	extern bool isheader(), flusheol();
 
@@ -79,7 +80,8 @@ collect(smtpmode, requeueflag, e)
 	**  Create the temp file name and create the file.
 	*/
 
-	e->e_df = newstr(queuename(e, 'd'));
+	e->e_df = queuename(e, 'd');
+	e->e_df = newstr(e->e_df);
 	if ((tf = dfopen(e->e_df, O_WRONLY|O_CREAT, FileMode)) == NULL)
 	{
 		syserr("Cannot create %s", e->e_df);
@@ -244,7 +246,7 @@ collect(smtpmode, requeueflag, e)
 	**  Collect the body of the message.
 	*/
 
-	do
+	for (;;)
 	{
 		register char *bp = buf;
 
@@ -268,39 +270,56 @@ collect(smtpmode, requeueflag, e)
 		fputs("\n", tf);
 		if (ferror(tf))
 			tferror(tf, e);
-	} while (sfgets(buf, MAXLINE, InChannel, TimeOuts.to_datablock,
-			"message body read") != NULL);
+		if (sfgets(buf, MAXLINE, InChannel, TimeOuts.to_datablock,
+				"message body read") == NULL)
+			goto readerr;
+	}
 
+	if (feof(InChannel) || ferror(InChannel))
+	{
 readerr:
+		inputerr = TRUE;
+	}
+
 	if (fflush(tf) != 0)
 		tferror(tf, e);
 	(void) fsync(fileno(tf));
 	(void) fclose(tf);
 
 	/* An EOF when running SMTP is an error */
-	if ((feof(InChannel) || ferror(InChannel)) && OpMode == MD_SMTP)
+	if (inputerr && OpMode == MD_SMTP)
 	{
 		char *host;
+		char *problem;
 
 		host = RealHostName;
 		if (host == NULL)
 			host = "localhost";
 
+		if (feof(InChannel))
+			problem = "unexpected close";
+		else if (ferror(InChannel))
+			problem = "I/O error";
+		else
+			problem = "read timeout";
 # ifdef LOG
 		if (LogLevel > 0 && feof(InChannel))
 			syslog(LOG_NOTICE,
-			    "collect: unexpected close on connection from %s, sender=%s: %m\n",
-			    host, e->e_from.q_paddr);
+			    "collect: %s on connection from %s, sender=%s: %m\n",
+			    problem, host, e->e_from.q_paddr);
 # endif
 		(feof(InChannel) ? usrerr : syserr)
-			("451 collect: unexpected close on connection from %s, from=%s",
-				host, e->e_from.q_paddr);
+			("451 collect: %s on connection from %s, from=%s",
+				problem, host, e->e_from.q_paddr);
 
 		/* don't return an error indication */
 		e->e_to = NULL;
 		e->e_flags &= ~EF_FATALERRS;
+		e->e_flags |= EF_CLRQUEUE;
 
 		/* and don't try to deliver the partial message either */
+		if (InChild)
+			ExitStat = EX_QUIT;
 		finis();
 	}
 
@@ -310,6 +329,10 @@ readerr:
 	*/
 
 	eatheader(e, !requeueflag);
+
+	/* collect statistics */
+	if (OpMode != MD_VERIFY)
+		markstats(e, (ADDRESS *) NULL);
 
 	/*
 	**  Add an Apparently-To: line if we have no recipient lines.

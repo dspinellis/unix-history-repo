@@ -33,7 +33,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parseaddr.c	8.3 (Berkeley) 7/11/93";
+static char sccsid[] = "@(#)parseaddr.c	8.14 (Berkeley) 10/22/93";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -56,14 +56,8 @@ static char sccsid[] = "@(#)parseaddr.c	8.3 (Berkeley) 7/11/93";
 **		addr -- the address to parse.
 **		a -- a pointer to the address descriptor buffer.
 **			If NULL, a header will be created.
-**		copyf -- determines what shall be copied:
-**			-1 -- don't copy anything.  The printname
-**				(q_paddr) is just addr, and the
-**				user & host are allocated internally
-**				to parse.
-**			0 -- copy out the parsed user & host, but
-**				don't copy the printname.
-**			+1 -- copy everything.
+**		flags -- describe detail for parsing.  See RF_ definitions
+**			in sendmail.h.
 **		delim -- the character to terminate the address, passed
 **			to prescan.
 **		delimptr -- if non-NULL, set to the location of the
@@ -83,10 +77,10 @@ static char sccsid[] = "@(#)parseaddr.c	8.3 (Berkeley) 7/11/93";
 # define DELIMCHARS	"()<>,;\r\n"	/* default word delimiters */
 
 ADDRESS *
-parseaddr(addr, a, copyf, delim, delimptr, e)
+parseaddr(addr, a, flags, delim, delimptr, e)
 	char *addr;
 	register ADDRESS *a;
-	int copyf;
+	int flags;
 	int delim;
 	char **delimptr;
 	register ENVELOPE *e;
@@ -106,13 +100,6 @@ parseaddr(addr, a, copyf, delim, delimptr, e)
 	if (tTd(20, 1))
 		printf("\n--parseaddr(%s)\n", addr);
 
-	if (invalidaddr(addr))
-	{
-		if (tTd(20, 1))
-			printf("parseaddr-->bad address\n");
-		return NULL;
-	}
-
 	if (delimptr == NULL)
 		delimptr = &delimptrbuf;
 
@@ -122,6 +109,32 @@ parseaddr(addr, a, copyf, delim, delimptr, e)
 		if (tTd(20, 1))
 			printf("parseaddr-->NULL\n");
 		return (NULL);
+	}
+
+	if (invalidaddr(addr, delim == '\0' ? NULL : *delimptr))
+	{
+		if (tTd(20, 1))
+			printf("parseaddr-->bad address\n");
+		return NULL;
+	}
+
+	/*
+	**  Save addr if we are going to have to.
+	**
+	**	We have to do this early because there is a chance that
+	**	the map lookups in the rewriting rules could clobber
+	**	static memory somewhere.
+	*/
+
+	if (bitset(RF_COPYPADDR, flags) && addr != NULL)
+	{
+		char savec = **delimptr;
+
+		if (savec != '\0')
+			**delimptr = '\0';
+		addr = newstr(addr);
+		if (savec != '\0')
+			**delimptr = savec;
 	}
 
 	/*
@@ -135,31 +148,21 @@ parseaddr(addr, a, copyf, delim, delimptr, e)
 	if (rewrite(pvp, 0, e) == EX_TEMPFAIL)
 		queueup = TRUE;
 
-	/*
-	**  See if we resolved to a real mailer.
-	*/
-
-	if (pvp[0] == NULL || (pvp[0][0] & 0377) != CANONNET)
-	{
-		setstat(EX_USAGE);
-		syserr("554 cannot resolve name %s", addr);
-		return (NULL);
-	}
 
 	/*
 	**  Build canonical address from pvp.
 	*/
 
-	a = buildaddr(pvp, a, e);
-	if (a == NULL)
-		return (NULL);
+	a = buildaddr(pvp, a, flags, e);
 
 	/*
 	**  Make local copies of the host & user and then
 	**  transport them out.
 	*/
 
-	allocaddr(a, copyf, addr, *delimptr);
+	allocaddr(a, flags, addr);
+	if (bitset(QBADADDR, a->q_flags))
+		return a;
 
 	/*
 	**  If there was a parsing failure, mark it for queueing.
@@ -201,18 +204,36 @@ parseaddr(addr, a, copyf, delim, delimptr, e)
 */
 
 bool
-invalidaddr(addr)
+invalidaddr(addr, delimptr)
 	register char *addr;
+	char *delimptr;
 {
-	for (; *addr != '\0'; addr++)
+	char savedelim;
+
+	if (delimptr != NULL)
+		savedelim = *delimptr;
+#if 0
+	/* for testing.... */
+	if (strcmp(addr, "INvalidADDR") == 0)
 	{
-		if ((*addr & 0340) != 0200)
-			continue;
-		setstat(EX_USAGE);
-		usrerr("553 Address contained invalid control characters");
+		usrerr("553 INvalid ADDRess");
+		if (delimptr != NULL)
+			*delimptr = savedelim;
 		return TRUE;
 	}
-	return FALSE;
+#endif
+	for (; *addr != '\0'; addr++)
+	{
+		if ((*addr & 0340) == 0200)
+			break;
+	}
+	if (delimptr != NULL)
+		*delimptr = savedelim;
+	if (*addr == '\0')
+		return FALSE;
+	setstat(EX_USAGE);
+	usrerr("553 Address contained invalid control characters");
+	return TRUE;
 }
 /*
 **  ALLOCADDR -- do local allocations of address on demand.
@@ -221,9 +242,9 @@ invalidaddr(addr)
 **
 **	Parameters:
 **		a -- the address to reallocate.
-**		copyf -- the copy flag (see parseaddr for description).
+**		flags -- the copy flag (see RF_ definitions in sendmail.h
+**			for a description).
 **		paddr -- the printname of the address.
-**		delimptr -- a pointer to the address delimiter.  Must be set.
 **
 **	Returns:
 **		none.
@@ -232,34 +253,22 @@ invalidaddr(addr)
 **		Copies portions of a into local buffers as requested.
 */
 
-allocaddr(a, copyf, paddr, delimptr)
+allocaddr(a, flags, paddr)
 	register ADDRESS *a;
-	int copyf;
+	int flags;
 	char *paddr;
-	char *delimptr;
 {
 	if (tTd(24, 4))
-		printf("allocaddr(copyf=%d, paddr=%s)\n", copyf, paddr);
+		printf("allocaddr(flags=%o, paddr=%s)\n", flags, paddr);
 
-	if (copyf > 0 && paddr != NULL)
-	{
-		char savec = *delimptr;
-
-		if (savec != '\0')
-			*delimptr = '\0';
-		a->q_paddr = newstr(paddr);
-		if (savec != '\0')
-			*delimptr = savec;
-	}
-	else
-		a->q_paddr = paddr;
+	a->q_paddr = paddr;
 
 	if (a->q_user == NULL)
 		a->q_user = "";
 	if (a->q_host == NULL)
 		a->q_host = "";
 
-	if (copyf >= 0)
+	if (bitset(RF_COPYPARSE, flags))
 	{
 		a->q_host = newstr(a->q_host);
 		if (a->q_user != a->q_paddr)
@@ -397,18 +406,18 @@ prescan(addr, delim, pvpbuf, delimptr)
 				/* diagnose and patch up bad syntax */
 				if (state == QST)
 				{
-					usrerr("553 Unbalanced '\"'");
+					usrerr("653 Unbalanced '\"' (fixed)");
 					c = '"';
 				}
 				else if (cmntcnt > 0)
 				{
-					usrerr("553 Unbalanced '('");
+					usrerr("653 Unbalanced '(' (fixed)");
 					c = ')';
 				}
 				else if (anglecnt > 0)
 				{
 					c = '>';
-					usrerr("553 Unbalanced '<'");
+					usrerr("653 Unbalanced '<' (fixed)");
 				}
 				else
 					break;
@@ -458,11 +467,8 @@ prescan(addr, delim, pvpbuf, delimptr)
 			{
 				if (cmntcnt <= 0)
 				{
-					usrerr("553 Unbalanced ')'");
-					if (delimptr != NULL)
-						*delimptr = p;
-					CurEnv->e_to = saveto;
-					return (NULL);
+					usrerr("653 Unbalanced ')' (fixed)");
+					c = NOCHAR;
 				}
 				else
 					cmntcnt--;
@@ -475,13 +481,11 @@ prescan(addr, delim, pvpbuf, delimptr)
 			{
 				if (anglecnt <= 0)
 				{
-					usrerr("553 Unbalanced '>'");
-					if (delimptr != NULL)
-						*delimptr = p;
-					CurEnv->e_to = saveto;
-					return (NULL);
+					usrerr("653 Unbalanced '>' (fixed)");
+					c = NOCHAR;
 				}
-				anglecnt--;
+				else
+					anglecnt--;
 			}
 			else if (delim == ' ' && isascii(c) && isspace(c))
 				c = ' ';
@@ -639,6 +643,7 @@ rewrite(pvp, ruleset, e)
 	register struct rewrite *rwr;	/* pointer to current rewrite rule */
 	int ruleno;			/* current rule number */
 	int rstat = EX_OK;		/* return status */
+	int loopcount;
 	struct match mlist[MAXMATCH];	/* stores match on LHS */
 	char *npvp[MAXATOM+1];		/* temporary space for rebuild */
 
@@ -661,10 +666,9 @@ rewrite(pvp, ruleset, e)
 	*/
 
 	ruleno = 1;
+	loopcount = 0;
 	for (rwr = RewriteRules[ruleset]; rwr != NULL; )
 	{
-		int loopcount = 0;
-
 		if (tTd(21, 12))
 		{
 			printf("-----trying rule:");
@@ -874,6 +878,7 @@ rewrite(pvp, ruleset, e)
 				printf("----- rule fails\n");
 			rwr = rwr->r_next;
 			ruleno++;
+			loopcount = 0;
 			continue;
 		}
 
@@ -890,6 +895,7 @@ rewrite(pvp, ruleset, e)
 			rvp++;
 			rwr = rwr->r_next;
 			ruleno++;
+			loopcount = 0;
 		}
 		else if ((*rp & 0377) == CANONHOST)
 		{
@@ -984,6 +990,7 @@ rewrite(pvp, ruleset, e)
 			char *pvpb1[MAXATOM + 1];
 			char *argvect[10];
 			char pvpbuf[PSBUFSIZE];
+			char *nullpvp[1];
 
 			if ((**rvp & 0377) != HOSTBEGIN &&
 			    (**rvp & 0377) != LOOKUPBEGIN)
@@ -1101,6 +1108,12 @@ rewrite(pvp, ruleset, e)
 			{
 				xpvp = key_rvp;
 			}
+			else if (*replac == '\0')
+			{
+				/* null replacement */
+				nullpvp[0] = NULL;
+				xpvp = nullpvp;
+			}
 			else
 			{
 				/* scan the new replacement */
@@ -1173,6 +1186,8 @@ rewrite(pvp, ruleset, e)
 **		tv -- token vector.
 **		a -- pointer to address descriptor to fill.
 **			If NULL, one will be allocated.
+**		flags -- info regarding whether this is a sender or
+**			a recipient.
 **		e -- the current envelope.
 **
 **	Returns:
@@ -1203,15 +1218,18 @@ struct errcodes
 };
 
 ADDRESS *
-buildaddr(tv, a, e)
+buildaddr(tv, a, flags, e)
 	register char **tv;
 	register ADDRESS *a;
+	int flags;
 	register ENVELOPE *e;
 {
 	struct mailer **mp;
 	register struct mailer *m;
 	char *bp;
 	int spaceleft;
+	static MAILER errormailer;
+	static char *errorargv[] = { "ERROR", NULL };
 	static char buf[MAXNAME];
 
 	if (a == NULL)
@@ -1219,10 +1237,20 @@ buildaddr(tv, a, e)
 	bzero((char *) a, sizeof *a);
 
 	/* figure out what net/mailer to use */
-	if ((**tv & 0377) != CANONNET)
+	if (*tv == NULL || (**tv & 0377) != CANONNET)
 	{
 		syserr("554 buildaddr: no net");
-		return (NULL);
+badaddr:
+		a->q_flags |= QBADADDR;
+		a->q_mailer = &errormailer;
+		if (errormailer.m_name == NULL)
+		{
+			/* initialize the bogus mailer */
+			errormailer.m_name = "*error*";
+			errormailer.m_mailer = "ERROR";
+			errormailer.m_argv = errorargv;
+		}
+		return a;
 	}
 	tv++;
 	if (strcasecmp(*tv, "error") == 0)
@@ -1248,8 +1276,22 @@ buildaddr(tv, a, e)
 			syserr("554 buildaddr: error: no user");
 		cataddr(++tv, NULL, buf, sizeof buf, ' ');
 		stripquotes(buf);
-		usrerr(buf);
-		return (NULL);
+		if (isascii(buf[0]) && isdigit(buf[0]) &&
+		    isascii(buf[1]) && isdigit(buf[1]) &&
+		    isascii(buf[2]) && isdigit(buf[2]) &&
+		    buf[3] == ' ')
+		{
+			char fmt[10];
+
+			strncpy(fmt, buf, 3);
+			strcpy(&fmt[3], " %s");
+			usrerr(fmt, buf + 4);
+		}
+		else
+		{
+			usrerr("%s", buf);
+		}
+		goto badaddr;
 	}
 
 	for (mp = Mailer; (m = *mp++) != NULL; )
@@ -1260,7 +1302,7 @@ buildaddr(tv, a, e)
 	if (m == NULL)
 	{
 		syserr("554 buildaddr: unknown mailer %s", *tv);
-		return (NULL);
+		goto badaddr;
 	}
 	a->q_mailer = m;
 
@@ -1297,7 +1339,7 @@ buildaddr(tv, a, e)
 		if (!bitnset(M_LOCALMAILER, m->m_flags))
 		{
 			syserr("554 buildaddr: no host");
-			return (NULL);
+			goto badaddr;
 		}
 		a->q_host = NULL;
 	}
@@ -1306,7 +1348,7 @@ buildaddr(tv, a, e)
 	if (*tv == NULL || (**tv & 0377) != CANONUSER)
 	{
 		syserr("554 buildaddr: no user");
-		return (NULL);
+		goto badaddr;
 	}
 	tv++;
 
@@ -1342,7 +1384,15 @@ buildaddr(tv, a, e)
 		a->q_flags |= QNOTREMOTE;
 	}
 
-	/* do cleanup of final address */
+	/* rewrite according recipient mailer rewriting rules */
+	define('h', a->q_host, e);
+	if (!bitset(RF_SENDERADDR|RF_HEADERADDR, flags))
+	{
+		/* sender addresses done later */
+		(void) rewrite(tv, 2, e);
+		if (m->m_re_rwset > 0)
+		       (void) rewrite(tv, m->m_re_rwset, e);
+	}
 	(void) rewrite(tv, 4, e);
 
 	/* save the result for the command line/RCPT argument */
@@ -1699,7 +1749,7 @@ maplocaluser(a, sendq, e)
 		return;
 
 	/* if non-null, mailer destination specified -- has it changed? */
-	a1 = buildaddr(pvp, NULL, e);
+	a1 = buildaddr(pvp, NULL, 0, e);
 	if (a1 == NULL || sameaddr(a, a1))
 		return;
 
@@ -1711,7 +1761,7 @@ maplocaluser(a, sendq, e)
 		printaddr(a, FALSE);
 	}
 	a1->q_alias = a;
-	allocaddr(a1, 1, NULL, delimptr);
+	allocaddr(a1, RF_COPYALL, NULL);
 	(void) recipient(a1, sendq, e);
 }
 /*

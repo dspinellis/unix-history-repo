@@ -31,7 +31,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)sendmail.h	8.3 (Berkeley) 7/13/93
+ *	@(#)sendmail.h	8.24 (Berkeley) 10/15/93
  */
 
 /*
@@ -41,7 +41,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	8.3		7/13/93";
+static char SmailSccsId[] =	"@(#)sendmail.h	8.24		10/15/93";
 # endif
 # else /*  _DEFINE */
 # define EXTERN extern
@@ -147,6 +147,8 @@ typedef struct address ADDRESS;
 # define QSELFREF	000200	/* this address references itself */
 # define QVERIFIED	000400	/* verified, but not expanded */
 # define QREPORT	001000	/* report this address in return message */
+
+# define NULLADDR	((ADDRESS *) NULL)
 /*
 **  Mailer definition structure.
 **	Every mailer known to the system is declared in this
@@ -190,14 +192,14 @@ typedef struct mailer	MAILER;
 		/*	'F'	/* CF: include From: or Resent-From: */
 # define M_NO_NULL_FROM	'g'	/* sender of errors should be $g */
 # define M_HST_UPPER	'h'	/* preserve host case distinction */
-		/*	'H'	/* UIUC: MAIL11V3: preview headers */
+# define M_PREHEAD	'H'	/* MAIL11V3: preview headers */
 # define M_INTERNAL	'I'	/* SMTP to another sendmail site */
 # define M_LOCALMAILER	'l'	/* delivery is to this host */
 # define M_LIMITS	'L'	/* must enforce SMTP line limits */
 # define M_MUSER	'm'	/* can handle multiple users at once */
 		/*	'M'	/* CF: include Message-Id: */
 # define M_NHDR		'n'	/* don't insert From line */
-		/*	'N'	/* UIUC: MAIL11V3: DATA returns multi-status */
+# define M_MANYSTATUS	'N'	/* MAIL11V3: DATA returns multi-status */
 # define M_FROMPATH	'p'	/* use reverse-path in MAIL FROM: */
 		/*	'P'	/* CF: include Return-Path: */
 # define M_ROPT		'r'	/* mailer takes picky -r flag */
@@ -306,13 +308,13 @@ ENVELOPE
 	char		*e_message;	/* error message */
 	char		*e_statmsg;	/* stat msg (changes per delivery) */
 	char		*e_msgboundary;	/* MIME-style message part boundary */
+	char		*e_origrcpt;	/* original recipient (one only) */
 	char		*e_macro[128];	/* macro definitions */
 };
 
 /* values for e_flags */
 #define EF_OLDSTYLE	000001		/* use spaces (not commas) in hdrs */
 #define EF_INQUEUE	000002		/* this message is fully queued */
-#define EF_TIMEOUT	000004		/* this message is too old */
 #define EF_CLRQUEUE	000010		/* disk copy is no longer needed */
 #define EF_SENDRECEIPT	000020		/* send a return receipt */
 #define EF_FATALERRS	000040		/* fatal errors occured */
@@ -322,6 +324,9 @@ ENVELOPE
 #define EF_VRFYONLY	001000		/* verify only (don't expand aliases) */
 #define EF_WARNING	002000		/* warning message has been sent */
 #define EF_QUEUERUN	004000		/* this envelope is from queue */
+#define EF_GLOBALERRS	010000		/* treat errors as global */
+#define EF_PM_NOTIFY	020000		/* send return mail to postmaster */
+#define EF_METOO	040000		/* send to me too */
 
 EXTERN ENVELOPE	*CurEnv;	/* envelope currently being processed */
 /*
@@ -415,7 +420,7 @@ EXTERN struct rewrite	*RewriteRules[MAXRWSETS];
 struct metamac
 {
 	char	metaname;	/* external code (after $) */
-	char	metaval;	/* internal code (as above) */
+	u_char	metaval;	/* internal code (as above) */
 };
 /*
 **  Information about currently open connections to mailers, or to
@@ -450,6 +455,7 @@ MCI
 #define MCIF_EXPN	000020		/* EXPN command supported */
 #define MCIF_SIZE	000040		/* SIZE option supported */
 #define MCIF_8BITMIME	000100		/* BODY=8BITMIME supported */
+#define MCIF_MULTSTAT	000200		/* MAIL11V3: handles MULT status */
 
 /* states */
 #define MCIS_CLOSED	0		/* no traffic on this connection */
@@ -503,11 +509,12 @@ MAP
 	char		*map_mname;	/* name of this map */
 	int		map_mflags;	/* flags, see below */
 	char		*map_file;	/* the (nominal) filename */
-	void		*map_db1;	/* the open database ptr */
-	void		*map_db2;	/* an "extra" database pointer */
+	ARBPTR_T	map_db1;	/* the open database ptr */
+	ARBPTR_T	map_db2;	/* an "extra" database pointer */
 	char		*map_app;	/* to append to successful matches */
 	char		*map_domain;	/* the (nominal) NIS domain */
 	char		*map_rebuild;	/* program to run to do auto-rebuild */
+	time_t		map_mtime;	/* last database modification time */
 };
 
 /* bit values for map_flags */
@@ -521,6 +528,8 @@ MAP
 # define MF_ALIAS	0x0080		/* this is an alias file */
 # define MF_TRY0NULL	0x0100		/* try with no null byte */
 # define MF_TRY1NULL	0x0200		/* try with the null byte */
+# define MF_LOCKED	0x0400		/* this map is currently locked */
+# define MF_ALIASWAIT	0x0800		/* alias map in aliaswait state */
 # define MF_IMPL_HASH	0x1000		/* implicit: underlying hash database */
 # define MF_IMPL_NDBM	0x2000		/* implicit: underlying NDBM database */
 
@@ -675,10 +684,6 @@ EXTERN char	OpMode;		/* operation mode, see below */
 */
 
 
-/* Offset used to ensure that name server error * codes are unique */
-#define	MAX_ERRNO	100
-
-
 /*
 **  Privacy flags
 **	These are bit values for the PrivacyFlags word.
@@ -691,7 +696,8 @@ EXTERN char	OpMode;		/* operation mode, see below */
 #define PRIV_NOEXPN		00010	/* disallow EXPN command entirely */
 #define PRIV_NOVRFY		00020	/* disallow VRFY command entirely */
 #define PRIV_AUTHWARNINGS	00040	/* flag possible authorization probs */
-#define PRIV_RESTRMAILQ		01000	/* restrict mailq command */
+#define PRIV_RESTRICTMAILQ	01000	/* restrict mailq command */
+#define PRIV_RESTRICTQRUN	02000	/* restrict queue run */
 #define PRIV_GOAWAY		00777	/* don't give no info, anyway, anyhow */
 
 /* struct defining such things */
@@ -703,14 +709,17 @@ struct prival
 
 
 /*
-**  Flags passed to remotename
+**  Flags passed to remotename, parseaddr, allocaddr, and buildaddr.
 */
 
 #define RF_SENDERADDR		0001	/* this is a sender address */
 #define RF_HEADERADDR		0002	/* this is a header address */
 #define RF_CANONICAL		0004	/* strip comment information */
 #define RF_ADDDOMAIN		0010	/* OK to do domain extension */
-
+#define RF_COPYPARSE		0020	/* copy parsed user & host */
+#define RF_COPYPADDR		0040	/* copy print address */
+#define RF_COPYALL		(RF_COPYPARSE|RF_COPYPADDR)
+#define RF_COPYNONE		0
 
 /*
 **  Regular UNIX sockaddrs are too small to handle ISO addresses, so
@@ -735,7 +744,6 @@ union bigsockaddr
 };
 
 #define SOCKADDR	union bigsockaddr
-
 /*
 **  Global variables.
 */
@@ -793,10 +801,12 @@ EXTERN bool	LogUsrErrs;	/* syslog user errors (e.g., SMTP RCPT cmd) */
 EXTERN bool	SendMIMEErrors;	/* send error messages in MIME format */
 EXTERN bool	MatchGecos;	/* look for user names in gecos field */
 EXTERN bool	UseErrorsTo;	/* use Errors-To: header (back compat) */
+EXTERN bool	TryNullMXList;	/* if we are the best MX, try host directly */
+EXTERN bool	CheckLoopBack;	/* check for loopback on HELO packet */
+EXTERN bool	InChild;	/* true if running in an SMTP subprocess */
 EXTERN char	SpaceSub;	/* substitution for <lwsp> */
 EXTERN int	PrivacyFlags;	/* privacy flags */
-extern char	*ConfFile;	/* location of configuration file [conf.c] */
-extern char	*FreezeFile;	/* location of frozen memory image [conf.c] */
+EXTERN char	*ConfFile;	/* location of configuration file [conf.c] */
 extern char	*PidFile;	/* location of proc id file [conf.c] */
 extern ADDRESS	NullAddress;	/* a null (template) address [main.c] */
 EXTERN long	WkClassFact;	/* multiplier for message class -> priority */
@@ -813,6 +823,7 @@ EXTERN long	MaxMessageSize;	/* advertised max size we will accept */
 EXTERN char	*PostMasterCopy;	/* address to get errs cc's */
 EXTERN int	CheckpointInterval;	/* queue file checkpoint interval */
 EXTERN bool	DontPruneRoutes;	/* don't prune source routes */
+EXTERN bool	BrokenSmtpPeers;	/* peers can't handle 2-line greeting */
 EXTERN int	MaxMciCache;		/* maximum entries in MCI cache */
 EXTERN time_t	MciCacheTimeout;	/* maximum idle time on connections */
 EXTERN char	*QueueLimitRecipient;	/* limit queue runs to this recipient */
@@ -829,6 +840,7 @@ EXTERN FILE	*TrafficLogFile;	/* file in which to log all traffic */
 
 EXTERN struct
 {
+			/* RFC 1123-specified timeouts [minimum value] */
 	time_t	to_initial;	/* initial greeting timeout [5m] */
 	time_t	to_mail;	/* MAIL command [5m] */
 	time_t	to_rcpt;	/* RCPT command [5m] */
@@ -841,6 +853,7 @@ EXTERN struct
 	time_t	to_helo;	/* HELO command */
 	time_t	to_quit;	/* QUIT command */
 	time_t	to_miscshort;	/* misc short commands (NOOP, VERB, etc) */
+	time_t	to_ident;	/* IDENT protocol requests */
 			/* following are per message */
 	time_t	to_q_return;	/* queue return timeout */
 	time_t	to_q_warning;	/* queue warning timeout */
@@ -908,10 +921,11 @@ extern ADDRESS		*getctladdr __P((ADDRESS *));
 extern char		*anynet_ntoa __P((SOCKADDR *));
 extern char		*remotename __P((char *, MAILER *, int, int *, ENVELOPE *));
 extern bool		shouldqueue __P((long, time_t));
-extern bool		lockfile __P((int, char *, int));
+extern bool		lockfile __P((int, char *, char *, int));
 extern char		*hostsignature __P((MAILER *, char *, ENVELOPE *));
 extern void		openxscript __P((ENVELOPE *));
 extern void		closexscript __P((ENVELOPE *));
+extern sigfunc_t	setsignal __P((int, sigfunc_t));
 
 /* ellipsis is a different case though */
 #ifdef __STDC__

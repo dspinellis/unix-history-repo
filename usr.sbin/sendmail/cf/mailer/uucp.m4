@@ -42,7 +42,7 @@ POPDIVERT
 ###   UUCP Mailer specification   ###
 #####################################
 
-VERSIONID(`@(#)uucp.m4	8.4 (Berkeley) 7/13/93')
+VERSIONID(`@(#)uucp.m4	8.5 (Berkeley) 7/28/93')
 
 # old UUCP mailer
 Muucp,		P=UUCP_MAILER_PATH, F=CONCAT(DFMhuU, UUCP_MAILER_FLAGS), S=12, R=22, M=UUCP_MAX_SIZE,
@@ -86,8 +86,10 @@ R$* < @ $+ >			$2 ! $1			convert to UUCP format
 
 PUSHDIVERT(4)
 # resolve locally connected UUCP links
+R< @ $=Z . UUCP > : $+		$#uucp-dom $@ $1 $: $2	@host.UUCP: ...
+R$+ < @ $=Z . UUCP >		$#uucp-dom $@ $2 $: $1	user@host.UUCP
 R< @ $=Y . UUCP > : $+		$#suucp $@ $1 $: $2	@host.UUCP: ...
-R< @ $=U . UUCP > : $+		$#uucp $@ $1 $: $2	@host.UUCP: ...
 R$+ < @ $=Y . UUCP >		$#suucp $@ $2 $: $1	user@host.UUCP
+R< @ $=U . UUCP > : $+		$#uucp $@ $1 $: $2	@host.UUCP: ...
 R$+ < @ $=U . UUCP >		$#uucp $@ $2 $: $1	user@host.UUCP
 POPDIVERT

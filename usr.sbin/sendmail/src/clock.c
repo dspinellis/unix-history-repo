@@ -33,11 +33,10 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)clock.c	8.2 (Berkeley) 7/13/93";
+static char sccsid[] = "@(#)clock.c	8.7 (Berkeley) 10/21/93";
 #endif /* not lint */
 
 # include "sendmail.h"
-# include <signal.h>
 
 # ifndef sigmask
 #  define sigmask(s)	(1 << ((s) - 1))
@@ -79,6 +78,7 @@ setevent(intvl, func, arg)
 		return (NULL);
 	}
 
+	(void) setsignal(SIGALRM, SIG_IGN);
 	(void) time(&now);
 
 	/* search event queue for correct position */
@@ -128,7 +128,7 @@ clrevent(ev)
 		return;
 
 	/* find the parent event */
-	(void) signal(SIGALRM, SIG_IGN);
+	(void) setsignal(SIGALRM, SIG_IGN);
 	for (evp = &EventQueue; *evp != NULL; evp = &(*evp)->ev_link)
 	{
 		if (*evp == ev)
@@ -166,11 +166,12 @@ tick()
 	register time_t now;
 	register EVENT *ev;
 	int mypid = getpid();
+	int olderrno = errno;
 #ifdef SIG_UNBLOCK
 	sigset_t ss;
 #endif
 
-	(void) signal(SIGALRM, SIG_IGN);
+	(void) setsignal(SIGALRM, SIG_IGN);
 	(void) alarm(0);
 	now = curtime();
 
@@ -192,19 +193,6 @@ tick()
 				ev->ev_func, ev->ev_arg, ev->ev_pid);
 
 		/* we must be careful in here because ev_func may not return */
-		(void) signal(SIGALRM, tick);
-#ifdef SIG_UNBLOCK
-		/* unblock SIGALRM signal */
-		sigemptyset(&ss);
-		sigaddset(&ss, SIGALRM);
-		sigprocmask(SIG_UNBLOCK, &ss, NULL);
-#else
-#ifdef SIGVTALRM
-		/* reset 4.2bsd signal mask to allow future alarms */
-		(void) sigsetmask(sigblock(0) & ~sigmask(SIGALRM));
-#endif /* SIGVTALRM */
-#endif /* SIG_UNBLOCK */
-
 		f = ev->ev_func;
 		arg = ev->ev_arg;
 		pid = ev->ev_pid;
@@ -218,13 +206,31 @@ tick()
 			else
 				(void) alarm(3);
 		}
+
+		/* restore signals so that we can take ticks while in ev_func */
+		(void) setsignal(SIGALRM, tick);
+#ifdef SIG_UNBLOCK
+		/* unblock SIGALRM signal */
+		sigemptyset(&ss);
+		sigaddset(&ss, SIGALRM);
+		sigprocmask(SIG_UNBLOCK, &ss, NULL);
+#else
+#ifdef SIGVTALRM
+		/* reset 4.2bsd signal mask to allow future alarms */
+		(void) sigsetmask(sigblock(0) & ~sigmask(SIGALRM));
+#endif /* SIGVTALRM */
+#endif /* SIG_UNBLOCK */
+
+		/* call ev_func */
+		errno = olderrno;
 		(*f)(arg);
 		(void) alarm(0);
 		now = curtime();
 	}
-	(void) signal(SIGALRM, tick);
+	(void) setsignal(SIGALRM, tick);
 	if (EventQueue != NULL)
 		(void) alarm((unsigned) (EventQueue->ev_time - now));
+	errno = olderrno;
 }
 /*
 **  SLEEP -- a version of sleep that works with this stuff
@@ -244,13 +250,16 @@ tick()
 */
 
 static bool	SleepDone;
+static int	endsleep();
 
-unsigned int
+#ifndef SLEEP_T
+# define SLEEP_T	unsigned int
+#endif
+
+SLEEP_T
 sleep(intvl)
 	unsigned int intvl;
 {
-	static int endsleep();
-
 	if (intvl == 0)
 		return;
 	SleepDone = FALSE;

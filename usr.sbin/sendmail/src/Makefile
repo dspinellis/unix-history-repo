@@ -1,4 +1,4 @@
-#	@(#)Makefile	8.1 (Berkeley) 6/7/93
+#	@(#)Makefile	8.2 (Berkeley) 8/15/93
 
 PROG=	sendmail
 
@@ -12,15 +12,15 @@ PROG=	sendmail
 # spiral snail, but it will work.
 DBMDEF=	-DNEWDB
 
-CFLAGS+=-I${.CURDIR} ${DBMDEF} -DNETISO -DNO_SYSCONF
+CFLAGS+=-I${.CURDIR} ${DBMDEF} -DMIME
 
 SRCS=	alias.c arpadate.c clock.c collect.c conf.c convtime.c daemon.c \
 	deliver.c domain.c envelope.c err.c headers.c macro.c main.c map.c \
 	mci.c parseaddr.c queue.c readcf.c recipient.c savemail.c srvrsmtp.c \
 	stab.c stats.c sysexits.c trace.c udb.c usersmtp.c \
 	util.c version.c
-DPADD=	${LIBDBM} ${LIBCOMPAT} ${LIBUTIL}
-LDADD=	${LIBUTIL}
+DPADD=	
+LDADD=	$(LIBUTIL)
 MAN1=	newaliases.1
 MAN5=	aliases.5
 MAN8=	sendmail.8 

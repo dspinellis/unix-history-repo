@@ -33,15 +33,14 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.3 (Berkeley) 7/13/93";
+static char sccsid[] = "@(#)conf.c	8.42 (Berkeley) 10/21/93";
 #endif /* not lint */
 
-# include <sys/ioctl.h>
-# include <sys/param.h>
-# include <signal.h>
-# include <pwd.h>
 # include "sendmail.h"
 # include "pathnames.h"
+# include <sys/ioctl.h>
+# include <sys/param.h>
+# include <pwd.h>
 
 /*
 **  CONF.C -- Sendmail Configuration Tables.
@@ -87,7 +86,7 @@ struct hdrinfo	HdrInfo[] =
 	"from",			H_FROM,
 	"reply-to",		H_FROM,
 	"full-name",		H_ACHECK,
-	"return-receipt-to",	H_FROM /* |H_RECEIPTTO */,
+	"return-receipt-to",	H_FROM|H_RECEIPTTO,
 	"errors-to",		H_FROM|H_ERRORSTO,
 
 		/* destination fields */
@@ -128,8 +127,6 @@ struct hdrinfo	HdrInfo[] =
 **  Location of system files/databases/etc.
 */
 
-char	*ConfFile =	_PATH_SENDMAILCF;	/* runtime configuration */
-char	*FreezeFile =	_PATH_SENDMAILFC;	/* frozen version of above */
 char	*PidFile =	_PATH_SENDMAILPID;	/* stores daemon proc id */
 
 
@@ -146,7 +143,8 @@ struct prival PrivacyValues[] =
 	"needvrfyhelo",		PRIV_NEEDVRFYHELO,
 	"noexpn",		PRIV_NOEXPN,
 	"novrfy",		PRIV_NOVRFY,
-	"restrictmailq",	PRIV_RESTRMAILQ,
+	"restrictmailq",	PRIV_RESTRICTMAILQ,
+	"restrictqrun",		PRIV_RESTRICTQRUN,
 	"authwarnings",		PRIV_AUTHWARNINGS,
 	"goaway",		PRIV_GOAWAY,
 	NULL,			0,
@@ -159,6 +157,25 @@ struct prival PrivacyValues[] =
 */
 
 int	DtableSize =	50;		/* max open files; reset in 4.2bsd */
+
+
+/*
+**  Following should be config parameters (and probably will be in
+**  future releases).  In the meantime, setting these is considered
+**  unsupported, and is intentionally undocumented.
+*/
+
+#ifdef BROKENSMTPPEERS
+bool	BrokenSmtpPeers = TRUE;		/* set if you have broken SMTP peers */
+#else
+bool	BrokenSmtpPeers = FALSE;	/* set if you have broken SMTP peers */
+#endif
+#ifdef NOLOOPBACKCHECK
+bool	CheckLoopBack = FALSE;		/* set to check HELO loopback */
+#else
+bool	CheckLoopBack = TRUE;		/* set to check HELO loopback */
+#endif
+
 /*
 **  SETDEFAULTS -- set default values
 **
@@ -491,7 +508,12 @@ checkcompat(to, e)
 # ifdef lint
 	if (to == NULL)
 		to++;
-# endif lint
+# endif /* lint */
+
+	if (tTd(49, 1))
+		printf("checkcompat(to=%s, from=%s)\n",
+			to->q_paddr, e->e_from.q_paddr);
+
 # ifdef EXAMPLE_CODE
 	/* this code is intended as an example only */
 	register STAB *s;
@@ -506,6 +528,29 @@ checkcompat(to, e)
 	}
 # endif /* EXAMPLE_CODE */
 	return (EX_OK);
+}
+/*
+**  SETSIGNAL -- set a signal handler
+**
+**	This is essentially old BSD "signal(3)".
+*/
+
+sigfunc_t
+setsignal(sig, handler)
+	int sig;
+	sigfunc_t handler;
+{
+#if defined(SYS5SIGNALS) || defined(BSD4_3) || defined(_AUX_SOURCE)
+	return signal(sig, handler);
+#else
+	struct sigaction n, o;
+
+	bzero(&n, sizeof n);
+	n.sa_handler = handler;
+	if (sigaction(sig, &n, &o) < 0)
+		return SIG_ERR;
+	return o.sa_handler;
+#endif
 }
 /*
 **  HOLDSIGS -- arrange to hold all signals
@@ -542,6 +587,23 @@ rlsesigs()
 {
 }
 /*
+**  INIT_MD -- do machine dependent initializations
+**
+**	Systems that have global modes that should be set should do
+**	them here rather than in main.
+*/
+
+#ifdef _AUX_SOURCE
+# include	<compat.h>
+#endif
+
+init_md()
+{
+#ifdef _AUX_SOURCE
+	setcompat(getcompat() | COMPAT_BSDPROT);
+#endif
+}
+/*
 **  GETLA -- get the current load average
 **
 **	This code stolen from la.c.
@@ -558,71 +620,36 @@ rlsesigs()
 
 /* try to guess what style of load average we have */
 #define LA_ZERO		1	/* always return load average as zero */
-#define LA_INT		2	/* read kmem for avenrun; interpret as int */
+#define LA_INT		2	/* read kmem for avenrun; interpret as long */
 #define LA_FLOAT	3	/* read kmem for avenrun; interpret as float */
 #define LA_SUBR		4	/* call getloadavg */
+#define LA_MACH		5	/* MACH load averages (as on NeXT boxes) */
+#define LA_SHORT	6	/* read kmem for avenrun; interpret as short */
 
+/* do guesses based on general OS type */
 #ifndef LA_TYPE
-#  if defined(sun) && !defined(BSD)
-#    define LA_TYPE		LA_INT
-#  endif
-#  if defined(mips) || defined(__alpha)
-     /* Ultrix or OSF/1 or RISC/os */
-#    define LA_TYPE		LA_INT
-#    define LA_AVENRUN		"avenrun"
-#  endif
-#  if defined(__hpux)
-#    define LA_TYPE		LA_FLOAT
-#    define LA_AVENRUN		"avenrun"
-#  endif
-#  if defined(__NeXT__)
-#    define LA_TYPE		LA_ZERO
-#  endif
-
-/* now do the guesses based on general OS type */
-#  ifndef LA_TYPE
-#   if defined(SYSTEM5)
-#    define LA_TYPE		LA_INT
-#    define LA_AVENRUN		"avenrun"
-#   else
-#    if defined(BSD)
-#     define LA_TYPE		LA_SUBR
-#    else
-#     define LA_TYPE		LA_ZERO
-#    endif
-#   endif
-#  endif
+# define LA_TYPE	LA_ZERO
 #endif
 
-#if (LA_TYPE == LA_INT) || (LA_TYPE == LA_FLOAT)
+#if (LA_TYPE == LA_INT) || (LA_TYPE == LA_FLOAT) || (LA_TYPE == LA_SHORT)
 
 #include <nlist.h>
 
 #ifndef LA_AVENRUN
-#define LA_AVENRUN	"_avenrun"
+# ifdef SYSTEM5
+#  define LA_AVENRUN	"avenrun"
+# else
+#  define LA_AVENRUN	"_avenrun"
+# endif
 #endif
 
 /* _PATH_UNIX should be defined in <paths.h> */
 #ifndef _PATH_UNIX
-#  if defined(__hpux)
-#    define _PATH_UNIX		"/hp-ux"
-#  endif
-#  if defined(mips) && !defined(ultrix)
-     /* powerful RISC/os */
-#    define _PATH_UNIX		"/unix"
-#  endif
-#  if defined(Solaris2)
-     /* Solaris 2 */
-#    define _PATH_UNIX		"/kernel/unix"
-#  endif
-#  if defined(SYSTEM5)
-#    ifndef _PATH_UNIX
-#      define _PATH_UNIX	"/unix"
-#    endif
-#  endif
-#  ifndef _PATH_UNIX
-#    define _PATH_UNIX		"/vmunix"
-#  endif
+# if defined(SYSTEM5)
+#  define _PATH_UNIX	"/unix"
+# else
+#  define _PATH_UNIX	"/vmunix"
+# endif
 #endif
 
 struct	nlist Nl[] =
@@ -641,12 +668,12 @@ struct	nlist Nl[] =
 #  define FSHIFT	10
 # endif
 
-# if (LA_TYPE == LA_INT)
+# if (LA_TYPE == LA_INT) || (LA_TYPE == LA_SHORT)
 #  define FSHIFT	8
 # endif
 #endif
 
-#if (LA_TYPE == LA_INT) && !defined(FSCALE)
+#if ((LA_TYPE == LA_INT) || (LA_TYPE == LA_SHORT)) && !defined(FSCALE)
 #  define FSCALE	(1 << FSHIFT)
 #endif
 
@@ -656,7 +683,11 @@ getla()
 #if LA_TYPE == LA_INT
 	long avenrun[3];
 #else
+# if LA_TYPE == LA_SHORT
+	short avenrun[3];
+# else
 	double avenrun[3];
+# endif
 #endif
 	extern off_t lseek();
 	extern int errno;
@@ -697,7 +728,7 @@ getla()
 			printf("getla: lseek or read: %s\n", errstring(errno));
 		return (-1);
 	}
-#if LA_TYPE == LA_INT
+#if (LA_TYPE == LA_INT) || (LA_TYPE == LA_SHORT)
 	if (tTd(3, 5))
 	{
 		printf("getla: avenrun = %d", avenrun[0]);
@@ -725,6 +756,22 @@ getla()
 #else
 #if LA_TYPE == LA_SUBR
 
+#ifdef DGUX
+
+#include <sys/dg_sys_info.h>
+
+int getla()
+{
+	struct dg_sys_info_load_info load_info;
+
+	dg_sys_info((long *)&load_info,
+		DG_SYS_INFO_LOAD_INFO_TYPE, DG_SYS_INFO_LOAD_VERSION_0);
+
+	return((int) (load_info.one_minute + 0.5));
+}
+
+#else
+
 getla()
 {
 	double avenrun[3];
@@ -740,6 +787,38 @@ getla()
 	return ((int) (avenrun[0] + 0.5));
 }
 
+#endif /* DGUX */
+#else
+#if LA_TYPE == LA_MACH
+
+/*
+**  This has been tested on NeXT release 2.1.
+*/
+
+#include <mach.h>
+
+getla()
+{
+	processor_set_t default_set;
+	kern_return_t error;
+	unsigned int info_count;
+	struct processor_set_basic_info info;
+	host_t host;
+
+	error = processor_set_default(host_self(), &default_set);
+	if (error != KERN_SUCCESS)
+		return -1;
+	info_count = PROCESSOR_SET_BASIC_INFO_COUNT;
+	if (processor_set_info(default_set, PROCESSOR_SET_BASIC_INFO,
+			       &host, (processor_set_info_t)&info,
+			       &info_count) != KERN_SUCCESS)
+	{
+		return -1;
+	}
+	return (int) (info.load_average + (LOAD_SCALE / 2)) / LOAD_SCALE;
+}
+
+
 #else
 
 getla()
@@ -749,6 +828,7 @@ getla()
 	return (0);
 }
 
+#endif
 #endif
 #endif
 /*
@@ -828,6 +908,9 @@ refuseconnections()
 # ifdef BSD4_4
 #  include <machine/vmparam.h>
 #  include <sys/exec.h>
+#  ifdef __bsdi__
+#   undef PS_STRINGS	/* BSDI 1.0 doesn't do PS_STRINGS as we expect */
+#  endif
 #  ifdef PS_STRINGS
 #   define SETPROC_STATIC static
 #  endif
@@ -904,12 +987,11 @@ setproctitle(fmt, va_alist)
 **		Picks up extant zombies.
 */
 
-# include <sys/wait.h>
-
 void
 reapchild()
 {
-# if defined(WIFEXITED) && !defined(__NeXT__)
+	int olderrno = errno;
+# ifdef HASWAITPID
 	auto int status;
 	int count;
 	int pid;
@@ -937,9 +1019,10 @@ reapchild()
 		continue;
 # endif /* WNOHANG */
 # endif
-# ifdef SYSTEM5
-	(void) signal(SIGCHLD, reapchild);
+# ifdef SYS5SIGNALS
+	(void) setsignal(SIGCHLD, reapchild);
 # endif
+	errno = olderrno;
 }
 /*
 **  UNSETENV -- remove a variable from the environment
@@ -960,7 +1043,7 @@ reapchild()
 **		Modifies environ.
 */
 
-#ifdef UNSETENV
+#ifndef HASUNSETENV
 
 void
 unsetenv(name)
@@ -981,7 +1064,7 @@ unsetenv(name)
 		*pp = pp[1];
 }
 
-#endif /* UNSETENV */
+#endif
 /*
 **  GETDTABLESIZE -- return number of file descriptors
 **
@@ -1011,11 +1094,11 @@ getdtsize()
 		return rl.rlim_cur;
 #endif
 
-# if defined(_SC_OPEN_MAX) && !defined(NO_SYSCONF)
-	return sysconf(_SC_OPEN_MAX);
-# else
-#  ifdef HASGETDTABLESIZE
+# ifdef HASGETDTABLESIZE
 	return getdtablesize();
+# else
+#  ifdef _SC_OPEN_MAX
+	return sysconf(_SC_OPEN_MAX);
 #  else
 	return NOFILE;
 #  endif
@@ -1090,12 +1173,6 @@ uname(name)
 */
 
 #ifndef HASINITGROUPS
-# if !defined(SYSTEM5) || defined(__hpux)
-#  define HASINITGROUPS
-# endif
-#endif
-
-#ifndef HASINITGROUPS
 
 initgroups(name, basegid)
 	char *name;
@@ -1114,34 +1191,187 @@ initgroups(name, basegid)
 pid_t
 setsid __P ((void))
 {
-# ifdef SYSTEM5
+#ifdef TIOCNOTTY
+	int fd;
+
+	fd = open("/dev/tty", 2);
+	if (fd >= 0)
+	{
+		(void) ioctl(fd, (int) TIOCNOTTY, (char *) 0);
+		(void) close(fd);
+	}
+#endif /* TIOCNOTTY */
+# ifdef SYS5SETPGRP
 	return setpgrp();
 # else
-	return 0;
+	return setpgid(0, getpid());
 # endif
 }
 
 #endif
 /*
-**  ENOUGHSPACE -- check to see if there is enough free space on the queue fs
+**  DGUX_INET_ADDR -- inet_addr for DG/UX
+**
+**	Data General DG/UX version of inet_addr returns a struct in_addr
+**	instead of a long.  This patches things.
+*/
+
+#ifdef DGUX
+
+#undef inet_addr
+
+long
+dgux_inet_addr(host)
+	char *host;
+{
+	struct in_addr haddr;
+
+	haddr = inet_addr(host);
+	return haddr.s_addr;
+}
+
+#endif
+/*
+**  GETOPT -- for old systems or systems with bogus implementations
+*/
+
+#ifdef NEEDGETOPT
+
+/*
+ * Copyright (c) 1985 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ */
+
+
+/*
+** this version hacked to add `atend' flag to allow state machine
+** to reset if invoked by the program to scan args for a 2nd time
+*/
+
+#if defined(LIBC_SCCS) && !defined(lint)
+static char sccsid[] = "@(#)getopt.c	4.3 (Berkeley) 3/9/86";
+#endif /* LIBC_SCCS and not lint */
+
+#include <stdio.h>
+
+/*
+ * get option letter from argument vector
+ */
+int	opterr = 1,		/* if error message should be printed */
+	optind = 1,		/* index into parent argv vector */
+	optopt;			/* character checked for validity */
+char	*optarg;		/* argument associated with option */
+
+#define BADCH	(int)'?'
+#define EMSG	""
+#define tell(s)	if (opterr) {fputs(*nargv,stderr);fputs(s,stderr); \
+		fputc(optopt,stderr);fputc('\n',stderr);return(BADCH);}
+
+getopt(nargc,nargv,ostr)
+int	nargc;
+char	**nargv,
+	*ostr;
+{
+	static char	*place = EMSG;	/* option letter processing */
+	static char	atend = 0;
+	register char	*oli;		/* option letter list index */
+
+	if (atend) {
+		atend = 0;
+		place = EMSG;
+	}
+	if(!*place) {			/* update scanning pointer */
+		if (optind >= nargc || *(place = nargv[optind]) != '-' || !*++place) {
+			atend++;
+			return(EOF);
+		}
+		if (*place == '-') {	/* found "--" */
+			++optind;
+			atend++;
+			return(EOF);
+		}
+	}				/* option letter okay? */
+	if ((optopt = (int)*place++) == (int)':' || !(oli = strchr(ostr,optopt))) {
+		if (!*place) ++optind;
+		tell(": illegal option -- ");
+	}
+	if (*++oli != ':') {		/* don't need argument */
+		optarg = NULL;
+		if (!*place) ++optind;
+	}
+	else {				/* need an argument */
+		if (*place) optarg = place;	/* no white space */
+		else if (nargc <= ++optind) {	/* no arg */
+			place = EMSG;
+			tell(": option requires an argument -- ");
+		}
+	 	else optarg = nargv[optind];	/* white space */
+		place = EMSG;
+		++optind;
+	}
+	return(optopt);			/* dump back option letter */
+}
+
+#endif
+/*
+**  VFPRINTF, VSPRINTF -- for old 4.3 BSD systems missing a real version
+*/
+
+#ifdef NEEDVPRINTF
+
+#define MAXARG	16
+
+vfprintf(fp, fmt, ap)
+	FILE *	fp;
+	char *	fmt;
+	char **	ap;
+{
+	char *	bp[MAXARG];
+	int	i = 0;
+
+	while (*ap && i < MAXARG)
+		bp[i++] = *ap++;
+	fprintf(fp, fmt, bp[0], bp[1], bp[2], bp[3],
+			 bp[4], bp[5], bp[6], bp[7],
+			 bp[8], bp[9], bp[10], bp[11],
+			 bp[12], bp[13], bp[14], bp[15]);
+}
+
+vsprintf(s, fmt, ap)
+	char *	s;
+	char *	fmt;
+	char **	ap;
+{
+	char *	bp[MAXARG];
+	int	i = 0;
+
+	while (*ap && i < MAXARG)
+		bp[i++] = *ap++;
+	sprintf(s, fmt, bp[0], bp[1], bp[2], bp[3],
+			bp[4], bp[5], bp[6], bp[7],
+			bp[8], bp[9], bp[10], bp[11],
+			bp[12], bp[13], bp[14], bp[15]);
+}
+
+#endif
+/*
+**  FREESPACE -- see how much free space is on the queue filesystem
 **
 **	Only implemented if you have statfs.
 **
 **	Parameters:
-**		msize -- the size to check against.  If zero, we don't yet
-**			know how big the message will be, so just check for
-**			a "reasonable" amount.
+**		dir -- the directory in question.
+**		bsize -- a variable into which the filesystem
+**			block size is stored.
 **
 **	Returns:
-**		TRUE if there is enough space.
-**		FALSE otherwise.
+**		The number of bytes free on the queue filesystem.
+**		-1 if the statfs call fails.
+**
+**	Side effects:
+**		Puts the filesystem block size into bsize.
 */
-
-#ifndef HASSTATFS
-# if defined(BSD4_4) || defined(__osf__)
-#  define HASSTATFS
-# endif
-#endif
 
 #ifdef HASSTATFS
 # undef HASUSTAT
@@ -1152,10 +1382,10 @@ setsid __P ((void))
 #endif
 
 #ifdef HASSTATFS
-# if defined(sgi) || defined(apollo)
+# if defined(IRIX) || defined(apollo) || defined(_SCO_unix_) || defined(UMAXV) || defined(DGUX)
 #  include <sys/statfs.h>
 # else
-#  if (defined(sun) && !defined(BSD)) || defined(__hpux)
+#  if (defined(sun) && !defined(BSD)) || defined(__hpux) || defined(_CONVEX_SOURCE) || defined(NeXT) || defined(_AUX_SOURCE)
 #   include <sys/vfs.h>
 #  else
 #   include <sys/mount.h>
@@ -1163,9 +1393,10 @@ setsid __P ((void))
 # endif
 #endif
 
-bool
-enoughspace(msize)
-	long msize;
+long
+freespace(dir, bsize)
+	char *dir;
+	long *bsize;
 {
 #if defined(HASSTATFS) || defined(HASUSTAT)
 # if defined(HASUSTAT)
@@ -1181,9 +1412,54 @@ enoughspace(msize)
 #  else
 	struct statfs fs;
 #   define FSBLOCKSIZE	fs.f_bsize
+#   if defined(_SCO_unix_) || defined(IRIX)
+#    define f_bavail f_bfree
+#   endif
 #  endif
 # endif
 	extern int errno;
+
+# if defined(HASUSTAT)
+	if (stat(dir, &statbuf) == 0 && ustat(statbuf.st_dev, &fs) == 0)
+# else
+#  if defined(IRIX) || defined(apollo) || defined(UMAXV) || defined(DGUX)
+	if (statfs(dir, &fs, sizeof fs, 0) == 0)
+#  else
+#   if defined(ultrix)
+	if (statfs(dir, &fs) > 0)
+#   else
+	if (statfs(dir, &fs) == 0)
+#   endif
+#  endif
+# endif
+	{
+		if (bsize != NULL)
+			*bsize = FSBLOCKSIZE;
+		return (fs.f_bavail);
+	}
+#endif
+	return (-1);
+}
+/*
+**  ENOUGHSPACE -- check to see if there is enough free space on the queue fs
+**
+**	Only implemented if you have statfs.
+**
+**	Parameters:
+**		msize -- the size to check against.  If zero, we don't yet
+**		know how big the message will be, so just check for
+**		a "reasonable" amount.
+**
+**	Returns:
+**		TRUE if there is enough space.
+**		FALSE otherwise.
+*/
+
+bool
+enoughspace(msize)
+	long msize;
+{
+	long bfree, bsize;
 
 	if (MinBlocksFree <= 0 && msize <= 0)
 	{
@@ -1192,35 +1468,25 @@ enoughspace(msize)
 		return TRUE;
 	}
 
-# if defined(HASUSTAT)
-	if (stat(QueueDir, &statbuf) == 0 && ustat(statbuf.st_dev, &fs) == 0)
-# else
-#  if defined(sgi) || defined(apollo)
-	if (statfs(QueueDir, &fs, sizeof fs, 0) == 0)
-#  else
-#   if defined(ultrix)
-	if (statfs(QueueDir, &fs) > 0)
-#   else
-	if (statfs(QueueDir, &fs) == 0)
-#   endif
-#  endif
-# endif
+	if ((bfree = freespace(QueueDir, &bsize)) >= 0)
 	{
 		if (tTd(4, 80))
 			printf("enoughspace: bavail=%ld, need=%ld\n",
-				fs.f_bavail, msize);
+				bfree, msize);
 
 		/* convert msize to block count */
-		msize = msize / FSBLOCKSIZE + 1;
+		msize = msize / bsize + 1;
 		if (MinBlocksFree >= 0)
 			msize += MinBlocksFree;
 
-		if (fs.f_bavail < msize)
+		if (bfree < msize)
 		{
 #ifdef LOG
 			if (LogLevel > 0)
-				syslog(LOG_ALERT, "%s: low on space (have %ld, need %ld)",
-					QueueDir, fs.f_bavail, msize);
+				syslog(LOG_ALERT,
+					"%s: low on space (have %ld, %s needs %ld in %s)",
+					CurEnv->e_id, bfree,
+					CurHostName, msize, QueueDir);
 #endif
 			return FALSE;
 		}
@@ -1228,7 +1494,6 @@ enoughspace(msize)
 	else if (tTd(4, 80))
 		printf("enoughspace failure: min=%ld, need=%ld: %s\n",
 			MinBlocksFree, msize, errstring(errno));
-#endif
 	return TRUE;
 }
 /*
@@ -1322,7 +1587,7 @@ transienterror(err)
 #ifdef EADDRNOTAVAIL
 	  case EADDRNOTAVAIL:		/* Can't assign requested address */
 #endif
-#ifdef ENOSR
+#if defined(ENOSR) && (!defined(ENOBUFS) || (ENOBUFS != ENOSR))
 	  case ENOSR:			/* Out of streams resources */
 #endif
 		return TRUE;
@@ -1332,11 +1597,12 @@ transienterror(err)
 	return FALSE;
 }
 /*
-**  LOCKFILE -- lock a file using flock or (shudder) lockf
+**  LOCKFILE -- lock a file using flock or (shudder) fcntl locking
 **
 **	Parameters:
 **		fd -- the file descriptor of the file.
 **		filename -- the file name (for error messages).
+**		ext -- the filename extension.
 **		type -- type of the lock.  Bits can be:
 **			LOCK_EX -- exclusive lock.
 **			LOCK_NB -- non-blocking.
@@ -1347,15 +1613,20 @@ transienterror(err)
 */
 
 bool
-lockfile(fd, filename, type)
+lockfile(fd, filename, ext, type)
 	int fd;
 	char *filename;
+	char *ext;
 	int type;
 {
-# ifdef LOCKF
+# ifndef HASFLOCK
 	int action;
 	struct flock lfd;
 
+	if (ext == NULL)
+		ext = "";
+		
+	bzero(&lfd, sizeof lfd);
 	if (bitset(LOCK_UN, type))
 		lfd.l_type = F_UNLCK;
 	else if (bitset(LOCK_EX, type))
@@ -1368,19 +1639,109 @@ lockfile(fd, filename, type)
 	else
 		action = F_SETLKW;
 
-	lfd.l_whence = lfd.l_start = lfd.l_len = 0;
+	if (tTd(55, 60))
+		printf("lockfile(%s%s, action=%d, type=%d): ",
+			filename, ext, action, lfd.l_type);
 
 	if (fcntl(fd, action, &lfd) >= 0)
+	{
+		if (tTd(55, 60))
+			printf("SUCCESS\n");
 		return TRUE;
+	}
+
+	if (tTd(55, 60))
+		printf("(%s) ", errstring(errno));
+
+	/*
+	**  On SunOS, if you are testing using -oQ/tmp/mqueue or
+	**  -oA/tmp/aliases or anything like that, and /tmp is mounted
+	**  as type "tmp" (that is, served from swap space), the
+	**  previous fcntl will fail with "Invalid argument" errors.
+	**  Since this is fairly common during testing, we will assume
+	**  that this indicates that the lock is successfully grabbed.
+	*/
+
+	if (errno == EINVAL)
+	{
+		if (tTd(55, 60))
+			printf("SUCCESS\n");
+		return TRUE;
+	}
 
 	if (!bitset(LOCK_NB, type) || (errno != EACCES && errno != EAGAIN))
-		syserr("cannot lockf(%s, %o)", filename, type);
+	{
+		int omode = -1;
+#  ifdef F_GETFL
+		int oerrno = errno;
+
+		(void) fcntl(fd, F_GETFL, &omode);
+		errno = oerrno;
+#  endif
+		syserr("cannot lockf(%s%s, fd=%d, type=%o, omode=%o, euid=%d)",
+			filename, ext, fd, type, omode, geteuid());
+	}
 # else
+	if (ext == NULL)
+		ext = "";
+
+	if (tTd(55, 60))
+		printf("lockfile(%s%s, type=%o): ", filename, ext, type);
+
 	if (flock(fd, type) >= 0)
+	{
+		if (tTd(55, 60))
+			printf("SUCCESS\n");
 		return TRUE;
+	}
+
+	if (tTd(55, 60))
+		printf("(%s) ", errstring(errno));
 
 	if (!bitset(LOCK_NB, type) || errno != EWOULDBLOCK)
-		syserr("cannot flock(%s, %o)", filename, type);
+	{
+		int omode = -1;
+#  ifdef F_GETFL
+		int oerrno = errno;
+
+		(void) fcntl(fd, F_GETFL, &omode);
+		errno = oerrno;
+#  endif
+		syserr("cannot flock(%s%s, fd=%d, type=%o, omode=%o, euid=%d)",
+			filename, ext, fd, type, omode, geteuid());
+	}
 # endif
+	if (tTd(55, 60))
+		printf("FAIL\n");
 	return FALSE;
+}
+/*
+**  GETCFNAME -- return the name of the .cf file.
+**
+**	Some systems (e.g., NeXT) determine this dynamically.
+*/
+
+char *
+getcfname()
+{
+	if (ConfFile != NULL)
+		return ConfFile;
+	return _PATH_SENDMAILCF;
+}
+/*
+**  SETVENDOR -- process vendor code from V configuration line
+**
+**	Parameters:
+**		vendor -- string representation of vendor.
+**
+**	Returns:
+**		TRUE -- if ok.
+**		FALSE -- if vendor code could not be processed.
+*/
+
+bool
+setvendor(vendor)
+	char *vendor;
+{
+	return (strcasecmp(vendor, "Berkeley") == 0);
 }

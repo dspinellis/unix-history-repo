@@ -33,11 +33,11 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)savemail.c	8.3 (Berkeley) 7/13/93";
+static char sccsid[] = "@(#)savemail.c	8.16 (Berkeley) 10/21/93";
 #endif /* not lint */
 
-# include <pwd.h>
 # include "sendmail.h"
+# include <pwd.h>
 
 /*
 **  SAVEMAIL -- Save mail on error
@@ -96,8 +96,6 @@ savemail(e)
 		return;
 	}
 
-	e->e_flags &= ~EF_FATALERRS;
-
 	/*
 	**  In the unhappy event we don't know who to return the mail
 	**  to, make someone up.
@@ -106,7 +104,8 @@ savemail(e)
 	if (e->e_from.q_paddr == NULL)
 	{
 		e->e_sender = "Postmaster";
-		if (parseaddr(e->e_sender, &e->e_from, 0, '\0', NULL, e) == NULL)
+		if (parseaddr(e->e_sender, &e->e_from,
+			      RF_COPYPARSE|RF_SENDERADDR, '\0', NULL, e) == NULL)
 		{
 			syserr("553 Cannot parse Postmaster!");
 			ExitStat = EX_SOFTWARE;
@@ -238,24 +237,36 @@ savemail(e)
 			**	joe@x, which gives a response, etc.  Also force
 			**	the mail to be delivered even if a version of
 			**	it has already been sent to the sender.
+			**
+			**  If this is a configuration or local software
+			**	error, send to the local postmaster as well,
+			**	since the originator can't do anything
+			**	about it anyway.  Note that this is a full
+			**	copy of the message (intentionally) so that
+			**	the Postmaster can forward things along.
 			*/
 
-			if (strcmp(e->e_from.q_paddr, "<>") != 0)
-				(void) sendtolist(e->e_from.q_paddr,
-					  (ADDRESS *) NULL,
-					  &e->e_errorqueue, e);
-
-			/* deliver a cc: to the postmaster if desired */
-			if (PostMasterCopy != NULL)
+			if (ExitStat == EX_CONFIG || ExitStat == EX_SOFTWARE)
 			{
-				auto ADDRESS *rlist = NULL;
-
-				(void) sendtolist(PostMasterCopy,
-						  (ADDRESS *) NULL,
-						  &rlist, e);
-				(void) returntosender(e->e_message,
-						      rlist, FALSE, e);
+				(void) sendtolist("postmaster",
+					  NULLADDR, &e->e_errorqueue, e);
 			}
+			if (strcmp(e->e_from.q_paddr, "<>") != 0)
+			{
+				(void) sendtolist(e->e_from.q_paddr,
+					  NULLADDR, &e->e_errorqueue, e);
+			}
+
+			/*
+			**  Deliver a non-delivery report to the
+			**  Postmaster-designate (not necessarily
+			**  Postmaster).  This does not include the
+			**  body of the message, for privacy reasons.
+			**  You really shouldn't need this.
+			*/
+
+			e->e_flags |= EF_PM_NOTIFY;
+
 			q = e->e_errorqueue;
 			if (q == NULL)
 			{
@@ -335,7 +346,9 @@ savemail(e)
 				e->e_to = buf;
 				q = NULL;
 				(void) sendtolist(buf, &e->e_from, &q, e);
-				if (deliver(e, q) == 0)
+				if (q != NULL &&
+				    !bitset(QBADADDR, q->q_flags) &&
+				    deliver(e, q) == 0)
 					state = ESM_DONE;
 				else
 					state = ESM_MAIL;
@@ -457,12 +470,14 @@ returntosender(msg, returnq, sendbody, e)
 	define('_', "localhost", ee);
 	ee->e_puthdr = putheader;
 	ee->e_putbody = errbody;
-	ee->e_flags |= EF_RESPONSE;
+	ee->e_flags |= EF_RESPONSE|EF_METOO;
 	if (!bitset(EF_OLDSTYLE, e->e_flags))
 		ee->e_flags &= ~EF_OLDSTYLE;
 	ee->e_sendqueue = returnq;
-	ee->e_msgsize = e->e_msgsize + ERRORFUDGE;
-	openxscript(ee);
+	ee->e_msgsize = ERRORFUDGE;
+	if (!NoReturn)
+		ee->e_msgsize += e->e_msgsize;
+	initsys(ee);
 	for (q = returnq; q != NULL; q = q->q_next)
 	{
 		if (bitset(QBADADDR, q->q_flags))
@@ -472,7 +487,7 @@ returntosender(msg, returnq, sendbody, e)
 			ee->e_nrcpts++;
 
 		if (!DontPruneRoutes && pruneroute(q->q_paddr))
-			parseaddr(q->q_paddr, q, 0, '\0', NULL, e);
+			parseaddr(q->q_paddr, q, RF_COPYPARSE, '\0', NULL, e);
 
 		if (q->q_alias == NULL)
 			addheader("To", q->q_paddr, ee);
@@ -499,7 +514,7 @@ returntosender(msg, returnq, sendbody, e)
 
 	/* fake up an address header for the from person */
 	expand("\201n", buf, &buf[sizeof buf - 1], e);
-	if (parseaddr(buf, &ee->e_from, 1, '\0', NULL, e) == NULL)
+	if (parseaddr(buf, &ee->e_from, RF_COPYALL|RF_SENDERADDR, '\0', NULL, e) == NULL)
 	{
 		syserr("553 Can't parse myself!");
 		ExitStat = EX_SOFTWARE;
@@ -515,7 +530,7 @@ returntosender(msg, returnq, sendbody, e)
 	eatheader(ee, TRUE);
 
 	/* mark statistics */
-	markstats(ee, (ADDRESS *) NULL);
+	markstats(ee, NULLADDR);
 
 	/* actually deliver the error message */
 	sendall(ee, SM_DEFAULT);
@@ -578,6 +593,32 @@ errbody(fp, m, e)
 	}
 
 	/*
+	**  Output introductory information.
+	*/
+
+	for (q = e->e_parent->e_sendqueue; q != NULL; q = q->q_next)
+		if (bitset(QBADADDR, q->q_flags))
+			break;
+	if (q == NULL && !bitset(EF_FATALERRS, e->e_parent->e_flags))
+	{
+		putline("    **********************************************",
+			fp, m);
+		putline("    **      THIS IS A WARNING MESSAGE ONLY      **",
+			fp, m);
+		putline("    **  YOU DO NOT NEED TO RESEND YOUR MESSAGE  **",
+			fp, m);
+		putline("    **********************************************",
+			fp, m);
+		putline("", fp, m);
+	}
+	sprintf(buf, "The original message was received at %s",
+		arpadate(ctime(&e->e_parent->e_ctime)));
+	putline(buf, fp, m);
+	expand("from \201_", buf, &buf[sizeof buf - 1], e->e_parent);
+	putline(buf, fp, m);
+	putline("", fp, m);
+
+	/*
 	**  Output error message header (if specified and available).
 	*/
 
@@ -620,15 +661,19 @@ errbody(fp, m, e)
 					fp, m);
 				printheader = FALSE;
 			}
-			if (q->q_alias != NULL)
-				strcpy(buf, q->q_alias->q_paddr);
-			else
-				strcpy(buf, q->q_paddr);
+			strcpy(buf, q->q_paddr);
 			if (bitset(QBADADDR, q->q_flags))
-				strcat(buf, "  (hard error -- address deleted)");
+				strcat(buf, "  (unrecoverable error)");
 			else
-				strcat(buf, "  (temporary failure -- will retry)");
+				strcat(buf, "  (transient failure)");
 			putline(buf, fp, m);
+			if (q->q_alias != NULL)
+			{
+				strcpy(buf, "    (expanded from: ");
+				strcat(buf, q->q_alias->q_paddr);
+				strcat(buf, ")");
+				putline(buf, fp, m);
+			}
 		}
 	}
 	if (!printheader)
@@ -666,7 +711,7 @@ errbody(fp, m, e)
 	if (e->e_parent->e_df != NULL)
 	{
 		if (SendBody)
-			putline("   ----- Unsent message follows -----\n", fp, m);
+			putline("   ----- Original message follows -----\n", fp, m);
 		else
 			putline("   ----- Message header follows -----\n", fp, m);
 		(void) fflush(fp);
