@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parseaddr.c	5.26 (Berkeley) %G%";
+static char sccsid[] = "@(#)parseaddr.c	5.27 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -879,8 +879,16 @@ rewrite(pvp, ruleset)
 			cataddr(key_rvp, buf, sizeof buf);
 			argvect[0] = buf;
 			if (map != NULL && bitset(MF_VALID, map->s_map.map_flags))
-				replac = (*map->s_map.map_class->map_lookup)(map,
+			{
+				int bsize = sizeof buf - 1;
+
+				if (map->s_map.map_app != NULL)
+					bsize -= strlen(map->s_map.map_app);
+				replac = (*map->s_map.map_class->map_lookup)(&map->s_map,
 						buf, sizeof buf - 1, argvect);
+				if (replac != NULL && map->s_map.map_app != NULL)
+					strcat(replac, map->s_map.map_app);
+			}
 			else
 				replac = NULL;
 

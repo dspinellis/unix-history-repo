@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	5.44 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	5.45 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/ioctl.h>
@@ -115,13 +115,8 @@ int	RefuseLA;		/* load avg > RefuseLA -> refuse connections */
 
 	/* set up host name lookup map */
 	s = stab("host", ST_MAPCLASS, ST_ENTER);
-	s->s_mapclass.map_init = NULL;
+	s->s_mapclass.map_init = host_map_init;
 	s->s_mapclass.map_lookup = maphostname;
-	hostmapclass = &s->s_mapclass;
-
-	s = stab("host", ST_MAP, ST_ENTER);
-	s->s_map.map_class = hostmapclass;
-	s->s_map.map_flags = MF_VALID;
 
 	/*
 	**  Set up other map classes.
@@ -130,7 +125,7 @@ int	RefuseLA;		/* load avg > RefuseLA -> refuse connections */
 # ifdef DBM_MAP
 	/* dbm file access */
 	{
-		extern void dbm_map_init();
+		extern bool dbm_map_init();
 		extern char *dbm_map_lookup();
 
 		s = stab("dbm", ST_MAPCLASS, ST_ENTER);
@@ -166,7 +161,7 @@ int	RefuseLA;		/* load avg > RefuseLA -> refuse connections */
 # ifdef USERDB_MAP
 	/* user database */
 	{
-		extern void udb_map_init();
+		extern bool udb_map_init();
 		extern char *udb_map_lookup();
 
 		s = stab("udb", ST_MAPCLASS, ST_ENTER);
@@ -175,6 +170,40 @@ int	RefuseLA;		/* load avg > RefuseLA -> refuse connections */
 	}
 # endif
 }
+/*
+**  HOST_MAP_INIT -- initialize host class structures
+*/
+
+bool
+host_map_init(map, mapname, args)
+	MAP *map;
+	char *mapname;
+	char *args;
+{
+	register char *p = args;
+
+	for (;;)
+	{
+		while (isspace(*p))
+			p++;
+		if (*p != '-')
+			break;
+		switch (*++p)
+		{
+		  case 'a':
+			map->map_app = ++p;
+			break;
+		}
+		while (*p != '\0' && !isspace(*p))
+			p++;
+		if (*p != '\0')
+			*p++ = '\0';
+	}
+	if (map->map_app != NULL)
+		map->map_app = newstr(map->map_app);
+	return TRUE;
+}
+
 /*
 **  GETRUID -- get real user id (V7)
 */
