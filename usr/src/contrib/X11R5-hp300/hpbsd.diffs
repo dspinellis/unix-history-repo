@@ -1,0 +1,869 @@
+diff -cr ../X11R5.pure/mit/clients/twm/lex.l mit/clients/twm/lex.l
+*** ../X11R5.pure/mit/clients/twm/lex.l	Sat Dec 16 08:02:02 1989
+--- mit/clients/twm/lex.l	Sun Jun  6 11:10:17 1993
+***************
+*** 43,48 ****
+--- 43,67 ----
+  
+  extern int ParseError;
+  
++ #ifdef FLEX_SCANNER
++ #undef YY_INPUT
++ #define YY_INPUT(buf,result,size) ((result) = doinput((buf),(size)))
++ doinput (buf, size)
++ char *buf;
++ {
++ 	int c;
++ 
++ 	if (size == 0)
++ 		return (0);
++ 
++ 	if ((c = (*twmInputFunc)()) <= 0)
++ 		return (0);
++ 
++ 	buf[0] = c;
++ 	return (1);
++ }
++ #endif
++ 
+  %}
+  
+  string				\"([^"]|\\.)*\"
+***************
+*** 89,94 ****
+--- 108,116 ----
+  %%
+  yywrap() { return(1);}
+  
++ #ifdef FLEX_SCANNER
++ int yylineno;
++ #else
+  #undef unput
+  #undef input
+  #undef output
+***************
+*** 97,99 ****
+--- 119,122 ----
+  #define input()		(*twmInputFunc)()
+  #define output(c)	TwmOutput(c)
+  #define feof()		(1)
++ #endif
+diff -cr ../X11R5.pure/mit/clients/xdm/dm.h mit/clients/xdm/dm.h
+*** ../X11R5.pure/mit/clients/xdm/dm.h	Fri May 28 18:10:30 1993
+--- mit/clients/xdm/dm.h	Sun Jun  6 11:19:29 1993
+***************
+*** 56,63 ****
+--- 56,65 ----
+  #endif
+  #ifndef NGROUPS_MAX
+  # include	<sys/param.h>
++ #ifndef NGROUPS_MAX
+  #ifdef NGROUPS
+  #define NGROUPS_MAX NGROUPS
++ #endif
+  #endif
+  #endif
+  
+diff -cr ../X11R5.pure/mit/clients/xdm/xdmshell.c mit/clients/xdm/xdmshell.c
+*** ../X11R5.pure/mit/clients/xdm/xdmshell.c	Fri Jul 19 10:56:13 1991
+--- mit/clients/xdm/xdmshell.c	Sun Jun  6 11:10:17 1993
+***************
+*** 36,42 ****
+  #include <errno.h>
+  extern int errno;
+  extern int sys_nerr;
+- extern char *sys_errlist[];
+  
+  #ifdef macII
+  #define ON_CONSOLE_ONLY
+--- 36,41 ----
+***************
+*** 62,67 ****
+--- 61,67 ----
+  static char *SysErrorMsg (n)
+      int n;
+  {
++     extern char *sys_errlist[];
+      char *s = (n > 0 && n < sys_nerr) ? sys_errlist[n] : "unknown";
+      return (s ? s : "null system error");
+  }
+diff -cr ../X11R5.pure/mit/clients/xload/Imakefile mit/clients/xload/Imakefile
+*** ../X11R5.pure/mit/clients/xload/Imakefile	Wed Jul 17 16:46:31 1991
+--- mit/clients/xload/Imakefile	Sun Jun  6 11:10:18 1993
+***************
+*** 4,9 ****
+--- 4,13 ----
+  #if defined(SunArchitecture) && defined(i386Architecture)
+    SYS_LIBRARIES = -lkvm
+  #endif
++ #ifdef BSD44
++   SYS_LIBRARIES = -lutil -lkvm
++   EXTRA_DEFINES = -DUSE_GETLOADAVG
++ #endif
+  #if SystemV4
+  #ifdef SonyArchitecture
+    SYS_LIBRARIES = -lmld
+diff -cr ../X11R5.pure/mit/clients/xload/get_load.c mit/clients/xload/get_load.c
+*** ../X11R5.pure/mit/clients/xload/get_load.c	Fri Jul 26 06:21:17 1991
+--- mit/clients/xload/get_load.c	Sun Jun  6 11:10:18 1993
+***************
+*** 114,119 ****
+--- 114,123 ----
+  #endif
+  #endif
+  
++ #ifdef hp9000
++ #include <sys/param.h>
++ #endif
++ 
+  #ifdef X_NOT_POSIX
+  extern long lseek();
+  #endif
+***************
+*** 182,187 ****
+--- 186,209 ----
+       lastNullCpu = info.cpu_total.low32;
+  }
+  #else /* not apollo */
++ #if defined(USE_GETLOADAVG)
++ 
++ void InitLoadPoint()			   /* getloadavg() library version */
++ {
++ }
++ 
++ /* ARGSUSED */
++ void GetLoadPoint( w, closure, call_data ) /* getloadavg() library version */
++ Widget	w;		/* unused */
++ caddr_t	closure;	/* unused */
++ caddr_t	call_data;	/* pointer to (double) return value */
++ {
++     double *loadavg = (double *)call_data;
++     if (getloadavg(loadavg, 1) != 1)
++ 	*loadavg = 1.0;
++ }
++ 
++ #else /* not USE_GETLOADAVG */
+  #if defined(SYSV) && defined(SYSV386)
+  /*
+   * inspired by 'avgload' by John F. Haugh II
+***************
+*** 561,567 ****
+  	(void) lseek(kmem, loadavg_seek, 0);
+  #endif
+  
+! #if defined(sun) || defined (UTEK) || defined(sequent) || defined(alliant) || defined(SVR4) || defined(sgi) || defined(hcx)
+  	{
+  		long temp;
+  		(void) read(kmem, (char *)&temp, sizeof(long));
+--- 583,589 ----
+  	(void) lseek(kmem, loadavg_seek, 0);
+  #endif
+  
+! #if defined(sun) || defined (UTEK) || defined(sequent) || defined(alliant) || defined(SVR4) || defined(sgi) || defined(hcx) || defined(hp9000)
+  	{
+  		long temp;
+  		(void) read(kmem, (char *)&temp, sizeof(long));
+***************
+*** 712,717 ****
+--- 734,740 ----
+  #endif /* LOADSTUB else */
+  #endif /* KVM_ROUTINES else */
+  #endif /* SYSV && SYSV386 else */
++ #endif /* USE_GETLOADAVG */
+  
+  static xload_error(str1, str2)
+  char *str1, *str2;
+diff -cr ../X11R5.pure/mit/clients/xman/Imakefile mit/clients/xman/Imakefile
+*** ../X11R5.pure/mit/clients/xman/Imakefile	Fri May 28 18:08:17 1993
+--- mit/clients/xman/Imakefile	Sun Jun  6 11:10:18 1993
+***************
+*** 10,17 ****
+  #endif
+  MANPATHS = $(SYSMANPATH) $(LOCALMANPATH)
+  HELPFILE = -DHELPFILE=\"$(LIBDIR)$(PATHSEP)xman.help\"
+  	
+!         DEFINES = $(HELPFILE) $(MANPATHS)
+          DEPLIBS = XawClientDepLibs
+  LOCAL_LIBRARIES = XawClientLibs
+             SRCS = ScrollByL.c handler.c man.c buttons.c help.c \
+--- 10,20 ----
+  #endif
+  MANPATHS = $(SYSMANPATH) $(LOCALMANPATH)
+  HELPFILE = -DHELPFILE=\"$(LIBDIR)$(PATHSEP)xman.help\"
++ #if BSD44
++ BSD44MAN = -DBSD44MAN
++ #endif
+  	
+!         DEFINES = $(HELPFILE) $(MANPATHS) $(BSD44MAN)
+          DEPLIBS = XawClientDepLibs
+  LOCAL_LIBRARIES = XawClientLibs
+             SRCS = ScrollByL.c handler.c man.c buttons.c help.c \
+diff -cr ../X11R5.pure/mit/clients/xman/vendor.h mit/clients/xman/vendor.h
+*** ../X11R5.pure/mit/clients/xman/vendor.h	Wed Aug 21 06:49:23 1991
+--- mit/clients/xman/vendor.h	Sun Jun  6 11:10:19 1993
+***************
+*** 29,35 ****
+   * complete than the cat directories.
+   */
+  
+! #if ( defined(UTEK) || defined(apollo) )
+  #  define SEARCHDIR  CAT
+  #else
+  #  define SEARCHDIR  MAN
+--- 29,35 ----
+   * complete than the cat directories.
+   */
+  
+! #if ( defined(UTEK) || defined(apollo) || defined(BSD44MAN) )
+  #  define SEARCHDIR  CAT
+  #else
+  #  define SEARCHDIR  MAN
+***************
+*** 62,67 ****
+--- 62,70 ----
+  #ifdef sgi
+  #  define SYSMANPATH "/usr/catman/a_man:/usr/catman/g_man:/usr/catman/p_man:/usr/catman/u_man:/usr/man/p_man:/usr/man/u_man:/usr/man"
+  #endif /* sgi */
++ #ifdef BSD44MAN
++ #  define SYSMANPATH "/usr/share/man:/usr/share/man/old:/usr/contrib/man:/usr/local/man"
++ #endif
+  
+  #ifndef SYSMANPATH
+  #  define SYSMANPATH "/usr/man"
+diff -cr ../X11R5.pure/mit/clients/xset/xset.c mit/clients/xset/xset.c
+*** ../X11R5.pure/mit/clients/xset/xset.c	Tue Jul 23 10:32:47 1991
+--- mit/clients/xset/xset.c	Sun Jun  6 11:10:19 1993
+***************
+*** 33,38 ****
+--- 33,43 ----
+  #include <X11/extensions/MITMisc.h>
+  #endif
+  
++ #ifdef _BSD_RUNE_T_
++ /* override clash with bsd44 ctype.h macro */
++ #undef isnumber
++ #endif
++ 
+  #define ON 1
+  #define OFF 0
+  
+diff -cr ../X11R5.pure/mit/clients/xterm/main.c mit/clients/xterm/main.c
+*** ../X11R5.pure/mit/clients/xterm/main.c	Fri May 28 18:46:35 1993
+--- mit/clients/xterm/main.c	Sun Jun  6 11:21:24 1993
+***************
+*** 142,147 ****
+--- 142,149 ----
+  #include <sys/resource.h>
+  #endif
+  #ifdef hpux
++ #define USE_SYSV_UTMP
++ #define HAS_UTMP_UT_HOST
+  #define HAS_BSD_GROUPS
+  #include <sys/ptyio.h>
+  #endif /* hpux */
+***************
+*** 177,186 ****
+  #endif /* apollo */
+  
+  #include <utmp.h>
+  #ifdef LASTLOG
+  #include <lastlog.h>
+  #endif
+! #include <sys/param.h>	/* for NOFILE */
+  
+  #ifdef  PUCC_PTYD
+  #include <local/openpty.h>
+--- 179,190 ----
+  #endif /* apollo */
+  
+  #include <utmp.h>
++ #include <sys/param.h>	/* for NOFILE */
+  #ifdef LASTLOG
++ #if !defined(BSD4_4)
+  #include <lastlog.h>
+  #endif
+! #endif
+  
+  #ifdef  PUCC_PTYD
+  #include <local/openpty.h>
+***************
+*** 192,203 ****
+--- 196,218 ----
+  #endif
+  
+  #ifndef UTMP_FILENAME
++ #ifdef _PATH_UTMP
++ #define UTMP_FILENAME _PATH_UTMP
++ #else
+  #define UTMP_FILENAME "/etc/utmp"
+  #endif
++ #endif
+  #ifndef LASTLOG_FILENAME
++ #ifdef _PATH_LASTLOG
++ #define LASTLOG_FILENAME _PATH_LASTLOG
++ #else
+  #define LASTLOG_FILENAME "/usr/adm/lastlog"  /* only on BSD systems */
+  #endif
++ #endif
+  #ifndef WTMP_FILENAME
++ #ifdef _PATH_WTMP
++ #define WTMP_FILENAME _PATH_WTMP
++ #else
+  #if defined(SYSV)
+  #define WTMP_FILENAME "/etc/wtmp"
+  #else
+***************
+*** 204,209 ****
+--- 219,225 ----
+  #define WTMP_FILENAME "/usr/adm/wtmp"
+  #endif
+  #endif
++ #endif
+  
+  #include <signal.h>
+  
+***************
+*** 390,396 ****
+--- 406,416 ----
+   */
+  #ifdef USE_LOGIN_DASH_P
+  #ifndef LOGIN_FILENAME
++ #if defined(BSD4_4)
++ #define LOGIN_FILENAME "/usr/bin/login"
++ #else
+  #define LOGIN_FILENAME "/bin/login"
++ #endif
+  #endif
+  static char bin_login[] = LOGIN_FILENAME;
+  #endif
+Common subdirectories: ../X11R5.pure/mit/clients/xterm/tektests and mit/clients/xterm/tektests
+diff -cr ../X11R5.pure/mit/config/Imake.tmpl mit/config/Imake.tmpl
+*** ../X11R5.pure/mit/config/Imake.tmpl	Fri May 28 18:10:24 1993
+--- mit/config/Imake.tmpl	Sun Jun  6 11:22:55 1993
+***************
+*** 77,82 ****
+--- 77,89 ----
+  #define HPArchitecture
+  #endif /* hpux */
+  
++ #ifdef hp9000
++ #define MacroIncludeFile <hpbsd.cf>
++ #define MacroFile hpbsd.cf
++ #undef hp9000
++ #define HPBSDArchitecture
++ #endif /* hp9000 */
++ 
+  #ifdef att
+  #define MacroIncludeFile <att.cf>
+  #define MacroFile att.cf
+***************
+*** 182,187 ****
+--- 189,201 ----
+  #define RsArchitecture
+  #endif
+  #endif /* ibm */
++ 
++ #ifdef SOL
++ #undef luna
++ #define MacroIncludeFile <sol.cf>
++ #define MacroFile sol.cf
++ #define Mc68000Architecture
++ #endif
+  
+  #ifdef luna
+  #undef luna
+diff -cr ../X11R5.pure/mit/config/imake.c mit/config/imake.c
+*** ../X11R5.pure/mit/config/imake.c	Fri Jul 26 09:51:12 1991
+--- mit/config/imake.c	Sun Jun  6 11:10:21 1993
+***************
+*** 107,114 ****
+--- 107,120 ----
+  #ifdef X_NOT_POSIX
+  #include <sys/file.h>
+  #else
++ #if defined(hp9000) || defined(luna68k)
++ #undef _POSIX_SOURCE
++ #endif
+  #include <unistd.h>
++ #if defined(hp9000) || defined(luna68k)
++ #define _POSIX_SOURCE
+  #endif
++ #endif
+  #if defined(X_NOT_POSIX) || defined(_POSIX_SOURCE)
+  #include <signal.h>
+  #else
+***************
+*** 211,217 ****
+--- 217,227 ----
+  char	*ReadLine();
+  char	*CleanCppInput();
+  char	*Strdup();
++ #if defined(__STDC__) || defined(__GNUC__)
++ char	*Emalloc(int);
++ #else
+  char	*Emalloc();
++ #endif
+  
+  boolean	verbose = FALSE;
+  boolean	show = TRUE;
+diff -cr ../X11R5.pure/mit/config/imakemdep.h mit/config/imakemdep.h
+*** ../X11R5.pure/mit/config/imakemdep.h	Mon Aug 26 07:39:59 1991
+--- mit/config/imakemdep.h	Sun Jun  6 11:26:21 1993
+***************
+*** 126,131 ****
+--- 126,134 ----
+  #if defined(_IBMR2) && !defined(DEFAULT_CPP)
+  #define DEFAULT_CPP "/usr/lpp/X11/Xamples/util/cpp/cpp"
+  #endif
++ #if (defined(hp9000) || defined(luna68k)) && !defined(DEFAULT_CPP)
++ #define DEFAULT_CPP "/usr/libexec/cpp"
++ #endif
+  
+  /*
+   * Step 5:  cpp_argv
+***************
+*** 156,161 ****
+--- 159,167 ----
+  #ifdef unix
+  	"-Uunix",	/* remove unix symbol so that filename unix.c okay */
+  #endif
++ #if defined(hp9000) || defined(luna68k)
++ 	"-traditional",
++ #endif
+  #ifdef M4330
+  	"-DM4330",	/* Tektronix */
+  #endif
+***************
+*** 272,277 ****
+--- 278,286 ----
+  #ifdef hpux
+  	{"hpux", "1"},
+  #endif
++ #ifdef hp9000
++ 	{"hp9000", "1"},
++ #endif
+  #ifdef vax
+  	{"vax", "1"},
+  #endif
+***************
+*** 321,326 ****
+--- 330,338 ----
+  #endif
+  #ifdef luna2
+  	{"luna2", "1"},
++ #endif
++ #ifdef luna68k
++ 	{"luna68k", "1"},
+  #endif
+  #ifdef luna88k
+  	{"luna88k", "1"},
+diff -cr ../X11R5.pure/mit/demos/x11perf/x11perf.c mit/demos/x11perf/x11perf.c
+*** ../X11R5.pure/mit/demos/x11perf/x11perf.c	Sat Jul 27 13:07:54 1991
+--- mit/demos/x11perf/x11perf.c	Sun Jun  6 11:10:21 1993
+***************
+*** 781,788 ****
+  		    int k = j;
+  		    do {
+  			doit[k] = True;
+! 		    } while (strcmp(cp2, (test[k].option + 1)) != 0 &&
+! 			     (test[k].versions & xparms.version) &&
+  			     test[++k].option != NULL);
+  		    if (*cp2 != '-' && test[k].option == NULL)
+  			usage();
+--- 781,788 ----
+  		    int k = j;
+  		    do {
+  			doit[k] = True;
+! 		    } while (!(strcmp(cp2, (test[k].option + 1)) == 0 &&
+! 			       (test[k].versions & xparms.version)) &&
+  			     test[++k].option != NULL);
+  		    if (*cp2 != '-' && test[k].option == NULL)
+  			usage();
+diff -cr ../X11R5.pure/mit/demos/xgc/lex.l mit/demos/xgc/lex.l
+*** ../X11R5.pure/mit/demos/xgc/lex.l	Sat Jul 22 05:01:33 1989
+--- mit/demos/xgc/lex.l	Sun Jun  6 11:10:22 1993
+***************
+*** 10,15 ****
+--- 10,18 ----
+  #include "gram.h"
+  #include "constants.h"
+  
++ #ifdef FLEX_SCANNER
++ int yylineno;
++ #endif
+  %}
+  
+  %p				4000
+diff -cr ../X11R5.pure/mit/extensions/server/xinput/xexevents.c mit/extensions/server/xinput/xexevents.c
+*** ../X11R5.pure/mit/extensions/server/xinput/xexevents.c	Thu Jul 25 07:48:38 1991
+--- mit/extensions/server/xinput/xexevents.c	Sun Jun  6 11:10:22 1993
+***************
+*** 733,738 ****
+--- 733,739 ----
+      XID   id;
+      {
+      register InputClientsPtr other, prev;
++     extern int RT_INPUTCLIENT;
+      if (!wOtherInputMasks(pWin))
+  	return(Success);
+      prev = 0;
+diff -cr ../X11R5.pure/mit/fonts/clients/mkfontdir/mkfontdir.c mit/fonts/clients/mkfontdir/mkfontdir.c
+*** ../X11R5.pure/mit/fonts/clients/mkfontdir/mkfontdir.c	Wed Jul 17 12:33:46 1991
+--- mit/fonts/clients/mkfontdir/mkfontdir.c	Sun Jun  6 11:29:53 1993
+***************
+*** 39,48 ****
+--- 39,50 ----
+  #endif
+  #ifndef PATH_MAX
+  #include <sys/param.h>
++ #ifndef PATH_MAX
+  #ifdef MAXPATHLEN
+  #define PATH_MAX MAXPATHLEN
+  #else
+  #define PATH_MAX 1024
++ #endif
+  #endif
+  #endif
+  
+diff -cr ../X11R5.pure/mit/lib/X/XConnDis.c mit/lib/X/XConnDis.c
+*** ../X11R5.pure/mit/lib/X/XConnDis.c	Fri May 28 19:59:32 1993
+--- mit/lib/X/XConnDis.c	Sun Jun  6 11:10:23 1993
+***************
+*** 452,458 ****
+--- 452,462 ----
+      sprintf (unaddr.sun_path, "%s%d", X_UNIX_PATH, idisplay);
+  
+      addr = (struct sockaddr *) &unaddr;
++ #ifdef SUN_LEN
++     addrlen = SUN_LEN(&unaddr);
++ #else
+      addrlen = strlen(unaddr.sun_path) + sizeof(unaddr.sun_family);
++ #endif
+  
+  #ifdef hpux /* this is disgusting */
+      ounaddr.sun_family = AF_UNIX;
+diff -cr ../X11R5.pure/mit/lib/X/Xsi/XlcLoad.c mit/lib/X/Xsi/XlcLoad.c
+*** ../X11R5.pure/mit/lib/X/Xsi/XlcLoad.c	Fri May 28 20:08:39 1993
+--- mit/lib/X/Xsi/XlcLoad.c	Sun Jun  6 11:10:24 1993
+***************
+*** 111,116 ****
+--- 111,121 ----
+      }
+  }
+  
++ #ifdef _FSTDIO
++ 	/* do not conflict with fgetline in bsd stdio */
++ #define fgetline fgetlineX
++ #endif
++ 
+  static char *
+  fgetline(buf, len, fp)
+      char       *buf;
+diff -cr ../X11R5.pure/mit/lib/Xaw/AsciiSrc.c mit/lib/Xaw/AsciiSrc.c
+*** ../X11R5.pure/mit/lib/Xaw/AsciiSrc.c	Fri Jul 26 10:10:21 1991
+--- mit/lib/Xaw/AsciiSrc.c	Sun Jun  6 11:10:24 1993
+***************
+*** 92,98 ****
+  static String MyStrncpy(), StorePiecesInString();
+  static Boolean SetValues(), WriteToFile();
+  extern int errno, sys_nerr;
+- extern char* sys_errlist[];
+  
+  #define superclass		(&textSrcClassRec)
+  AsciiSrcClassRec asciiSrcClassRec = {
+--- 92,97 ----
+***************
+*** 989,994 ****
+--- 988,994 ----
+  	    String params[2];
+  	    Cardinal num_params = 2;
+  	    char msg[11];
++ 	    extern char* sys_errlist[];
+  	    
+  	    params[0] = src->ascii_src.string;
+  	    if (errno <= sys_nerr)
+diff -cr ../X11R5.pure/mit/lib/Xaw/TextPop.c mit/lib/Xaw/TextPop.c
+*** ../X11R5.pure/mit/lib/Xaw/TextPop.c	Fri Jul 26 10:11:11 1991
+--- mit/lib/Xaw/TextPop.c	Sun Jun  6 11:10:25 1993
+***************
+*** 61,67 ****
+  #include <errno.h>
+  
+  extern int errno, sys_nerr;
+- extern char* sys_errlist[];
+  
+  #define INSERT_FILE ("Enter Filename:")
+  
+--- 61,66 ----
+***************
+*** 226,231 ****
+--- 225,231 ----
+    TextWidget ctx = (TextWidget) closure;
+    char buf[BUFSIZ], msg[BUFSIZ];
+    Widget temp_widget;
++   extern char* sys_errlist[];
+  
+    sprintf(buf, "%s.%s", FORM_NAME, TEXT_NAME);
+    if ( (temp_widget = XtNameToWidget(ctx->text.file_insert, buf)) == NULL ) {
+diff -cr ../X11R5.pure/mit/lib/Xmu/LocBitmap.c mit/lib/Xmu/LocBitmap.c
+*** ../X11R5.pure/mit/lib/Xmu/LocBitmap.c	Wed Jul  3 01:10:42 1991
+--- mit/lib/Xmu/LocBitmap.c	Sun Jun  6 11:31:12 1993
+***************
+*** 40,49 ****
+--- 40,51 ----
+  #endif /* X_NOT_POSIX */
+  #ifndef PATH_MAX
+  #include <sys/param.h>
++ #ifndef PATH_MAX
+  #ifdef MAXPATHLEN
+  #define PATH_MAX MAXPATHLEN
+  #else
+  #define PATH_MAX 1024
++ #endif
+  #endif
+  #endif /* PATH_MAX */
+  
+diff -cr ../X11R5.pure/mit/rgb/Imakefile mit/rgb/Imakefile
+*** ../X11R5.pure/mit/rgb/Imakefile	Fri May 28 18:08:22 1993
+--- mit/rgb/Imakefile	Sun Jun  6 11:10:25 1993
+***************
+*** 12,20 ****
+           SRCS = $(SRCS1) $(SRCS2)
+           OBJS = $(OBJS1) $(OBJS2)
+       PROGRAMS = rgb showrgb
+      DATAFILES = rgb.pag rgb.dir
+        DATADEP = rgb.dir		/* just want one run of rgb */
+! #if !(defined(SGIArchitecture) || SystemV4)
+         DBMLIB = -ldbm
+  #endif
+  #if defined(SparcArchitecture) && HasGcc
+--- 12,25 ----
+           SRCS = $(SRCS1) $(SRCS2)
+           OBJS = $(OBJS1) $(OBJS2)
+       PROGRAMS = rgb showrgb
++ #if HasDB
++     DATAFILES = rgb.db
++       DATADEP = rgb.db
++ #else
+      DATAFILES = rgb.pag rgb.dir
+        DATADEP = rgb.dir		/* just want one run of rgb */
+! #endif
+! #if !(defined(SGIArchitecture) || SystemV4 || HasDB)
+         DBMLIB = -ldbm
+  #endif
+  #if defined(SparcArchitecture) && HasGcc
+diff -cr ../X11R5.pure/mit/rgb/rgb.c mit/rgb/rgb.c
+*** ../X11R5.pure/mit/rgb/rgb.c	Mon Jul  1 08:39:37 1991
+--- mit/rgb/rgb.c	Sun Jun  6 11:10:26 1993
+***************
+*** 31,42 ****
+  #include <errno.h>
+  extern int errno;			/* some systems are still stupid */
+  extern int sys_nerr;
+- extern char *sys_errlist[];
+  
+  char *ProgramName;
+  
+  char *SysError ()
+  {
+      return ((errno >= 0 && errno < sys_nerr) ? sys_errlist[errno] : "?");
+  }
+  
+--- 31,42 ----
+  #include <errno.h>
+  extern int errno;			/* some systems are still stupid */
+  extern int sys_nerr;
+  
+  char *ProgramName;
+  
+  char *SysError ()
+  {
++     extern char *sys_errlist[];
+      return ((errno >= 0 && errno < sys_nerr) ? sys_errlist[errno] : "?");
+  }
+  
+***************
+*** 67,72 ****
+--- 67,73 ----
+      else
+  	dbname = RGB_DB;
+  
++ #ifndef DBM_SUFFIX
+      strcpy (name, dbname);
+      strcat (name, ".dir");
+      fd = open (name, O_WRONLY|O_CREAT, 0666);
+***************
+*** 90,95 ****
+--- 91,100 ----
+      (void) close (fd);
+  
+      rgb_dbm = dbm_open (dbname, O_RDWR, 0666);
++ #else
++     /* using Berkeley DB ndbm compatibility */
++     rgb_dbm = dbm_open (dbname, O_RDWR | O_CREAT, 0666);
++ #endif
+      if (!rgb_dbm) {
+  	fprintf (stderr,
+  		 "%s:  unable to open dbm database \"%s\" (error %d, %s)\n",
+diff -cr ../X11R5.pure/mit/server/Imakefile mit/server/Imakefile
+*** ../X11R5.pure/mit/server/Imakefile	Fri May 28 18:10:33 1993
+--- mit/server/Imakefile	Sun Jun  6 11:35:27 1993
+***************
+*** 46,53 ****
+--- 46,57 ----
+  #if SystemV4 && X386Server
+          SYSLIBS = -lm /usr/ucblib/libucb.a
+  #else
++ #ifdef HasDB
++         SYSLIBS = -lm
++ #else
+          SYSLIBS = -lm -ldbm
+  #endif
++ #endif
+             CBRT = ddx/mi/cbrt.o
+  
+  XCOMM
+***************
+*** 113,118 ****
+--- 117,126 ----
+  ALL1 = XmacII
+  #endif
+  
++ #if XsolServer
++ ALL1 = Xsol
++ #endif
++ 
+  #if XlunaServer
+  ALL1 = Xluna
+  #endif
+***************
+*** 125,130 ****
+--- 133,142 ----
+  ALL1 = X386
+  #endif
+  
++ #if XhpBSDServer
++ ALL1 = XhpBSD
++ #endif
++ 
+  #if XnonServer
+  ALL2 = Xnon
+  #endif
+***************
+*** 297,302 ****
+--- 309,327 ----
+  #endif /* XmacIIServer */
+  
+  
++ #if XsolServer
++ XCOMM
++ XCOMM OMRON Luna server for 4.4BSD
++ XCOMM
++ SUBDIRS0 = MFBSubdirs ddx/sol
++ SOLDIRS = $(SUBDIRS0) $(DEPDIRS)
++ SOLOBJS = ddx/sol/solInit.o
++ SOLLIBS = MFBLibs ddx/sol/libsol.a $(MFB) $(MI)
++ 
++ ServerTarget(Xsol,$(SOLDIRS),$(SOLOBJS),$(SOLLIBS),$(SYSLIBS))
++ #endif /* XlunaServer */
++ 
++ 
+  #if XlunaServer
+  XCOMM
+  XCOMM OMRON Luna server
+***************
+*** 343,348 ****
+--- 368,388 ----
+  INSTPGMFLAGS = $(INSTUIDFLAGS)     /* server must be suid root  */
+  ServerTarget(X386,$(X386DIRS),$(X386OBJS),$(X386LIBS),$(SYSLIBS))
+  #endif /* X386Server */
++ 
++ 
++ #if XhpBSDServer
++ XCOMM
++ XCOMM XhpBSD server for BSD on HP Series 300/400/700 machines
++ XCOMM
++ SUBDIRS0 = StdSubdirs ddx/hpbsd
++ HPBSDDIRS = $(SUBDIRS0) $(DEPDIRS)
++ HPBSDOBJS = ddx/hpbsd/init.o
++ HPBSDLIBS0 = ddx/hpbsd/topcat/libtopcat.a ddx/hpbsd/hyperion/libhyper.a
++ HPBSDLIBS1 = ddx/hpbsd/libhpbsd.a ddx/hpbsd/input/libinput.a
++ HPBSDLIBS2 = ddx/hpbsd/cfb/libcfb.a ddx/hpbsd/mfb/libmfb.a
++ HPBSDLIBS = $(HPBSDLIBS0) $(HPBSDLIBS1) $(HPBSDLIBS2) StdLibs $(FONT)
++ ServerTarget(XhpBSD,$(HPBSDDIRS),$(HPBSDOBJS),$(HPBSDLIBS),$(SYSLIBS))
++ #endif /* XhpBSDServer */
+  
+  
+  #if XnonServer
+diff -cr ../X11R5.pure/mit/server/include/servermd.h mit/server/include/servermd.h
+*** ../X11R5.pure/mit/server/include/servermd.h	Mon Jul  1 03:29:43 1991
+--- mit/server/include/servermd.h	Sun Jun  6 11:10:27 1993
+***************
+*** 178,183 ****
+--- 178,192 ----
+  
+  #endif /* hpux */
+  
++ #if defined(hp9000)				/* BSD on hp's */
++ 
++ #define IMAGE_BYTE_ORDER	MSBFirst
++ #define BITMAP_BIT_ORDER	MSBFirst
++ #define GLYPHPADBYTES		2
++ #define GETLEFTBITS_ALIGNMENT	4
++ 
++ #endif /* hp9000 */
++ 
+  #if defined (M4310) || defined(M4315) || defined(M4317) || defined(M4319) || defined(M4330)
+  
+  #define IMAGE_BYTE_ORDER	MSBFirst        /* Values for Pegasus only */
+diff -cr ../X11R5.pure/mit/util/makedepend/main.c mit/util/makedepend/main.c
+*** ../X11R5.pure/mit/util/makedepend/main.c	Fri Jul 26 03:51:49 1991
+--- mit/util/makedepend/main.c	Sun Jun  6 11:10:27 1993
+***************
+*** 13,18 ****
+--- 13,24 ----
+  #endif
+  #include <signal.h>
+  
++ #ifdef X_NOT_POSIX
++ #include <sys/file.h>
++ #else
++ #include <unistd.h>
++ #endif
++ 
+  #ifdef DEBUG
+  int	_debugmask;
+  #endif
+***************
+*** 267,278 ****
+--- 273,288 ----
+  	sigemptyset(&sig_act.sa_mask);
+  	sigaddset(&sig_act.sa_mask, SIGINT);
+  	sigaddset(&sig_act.sa_mask, SIGQUIT);
++ #ifdef SIGBUS
+  	sigaddset(&sig_act.sa_mask, SIGBUS);
++ #endif
+  	sigaddset(&sig_act.sa_mask, SIGILL);
+  	sigaddset(&sig_act.sa_mask, SIGSEGV);
+  	sigaddset(&sig_act.sa_mask, SIGHUP);
+  	sigaddset(&sig_act.sa_mask, SIGPIPE);
++ #ifdef SIGSYS
+  	sigaddset(&sig_act.sa_mask, SIGSYS);
++ #endif
+  #else
+  	sig_act.sa_mask = ((1<<(SIGINT -1))
+  			   |(1<<(SIGQUIT-1))
+***************
+*** 288,296 ****
+--- 298,310 ----
+  	sigaction(SIGINT, &sig_act, (struct sigaction *)0);
+  	sigaction(SIGQUIT, &sig_act, (struct sigaction *)0);
+  	sigaction(SIGILL, &sig_act, (struct sigaction *)0);
++ #ifdef SIGBUS
+  	sigaction(SIGBUS, &sig_act, (struct sigaction *)0);
++ #endif
+  	sigaction(SIGSEGV, &sig_act, (struct sigaction *)0);
++ #ifdef SIGSYS
+  	sigaction(SIGSYS, &sig_act, (struct sigaction *)0);
++ #endif
+  #endif /* USGISH 
