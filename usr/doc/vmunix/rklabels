@@ -1,0 +1,27 @@
+
+4.1bsd VAX UNIX System 7/10/81
+
+Put this pack in RK drive 0
+Has root file sys and /usr
+
+Serial number: ________
+
+
+
+4.1bsd VAX UNIX System 7/10/81
+
+Put this pack in RK drive 1
+Has backup root and /usr/src
+
+Serial number: ________
+
+
+
+4.1bsd VAX UNIX System 7/10/81
+
+This pack has additional materials
+Mount as /dev/hk?c, for some ?, e.g.
+	mount /dev/hk1c /mnt
+
+Serial number: ________
+
