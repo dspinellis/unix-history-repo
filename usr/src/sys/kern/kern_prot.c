@@ -1,4 +1,4 @@
-/*	kern_prot.c	5.11	82/11/13	*/
+/*	kern_prot.c	5.12	82/11/22	*/
 
 /*
  * System calls related to processes and protection
@@ -127,16 +127,14 @@ setreuid()
 	/*
 	 * Everything's okay, do it.
 	 */
-	if (ruid != u.u_ruid) {
 #ifdef QUOTA
-		if (u.u_quota->q_uid != ruid) {
-			qclean();
-			qstart(getquota(ruid, 0, 0));
-		}
-#endif
-		u.u_procp->p_uid = ruid;
-		u.u_ruid = ruid;
+	if (u.u_quota->q_uid != ruid) {
+		qclean();
+		qstart(getquota(ruid, 0, 0));
 	}
+#endif
+	u.u_procp->p_uid = ruid;
+	u.u_ruid = ruid;
 	u.u_uid = euid;
 }
 
