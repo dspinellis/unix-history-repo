@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)init.c	6.19 (Berkeley) %G%";
+static char sccsid[] = "@(#)init.c	6.20 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -114,7 +114,7 @@ session_t *sessions;
 
 char **construct_argv __P((char *));
 void start_window_system __P((session_t *));
-void collect_child __P((int));
+void collect_child __P((pid_t));
 pid_t start_getty __P((session_t *));
 void transition_handler __P((int));
 void alrm_handler __P((int));
