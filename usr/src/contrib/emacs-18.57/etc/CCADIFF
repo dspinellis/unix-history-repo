@@ -1,0 +1,159 @@
+Differences between GNU Emacs and CCA Emacs.
+Copyright (c) 1985 Richard M. Stallman
+
+   Permission is granted to anyone to make or distribute verbatim copies
+   of this document as received, in any medium, provided that the
+   copyright notice and permission notice are preserved,
+   and that the distributor grants the recipient permission
+   for further redistribution as permitted by this notice.
+
+* GNU Emacs Lisp vs CCA Elisp.
+
+GNU Emacs Lisp does not have a distinction between Lisp functions
+and Emacs functions, or between Lisp variables and Emacs variables.
+The Lisp and the editor are integrated.  A Lisp function defined
+with defun is callable as an editor command if you put an
+interactive calling spec in it; for example, 
+  (defun forward-character (n)
+    (interactive "p")
+    (goto-char (+ (point) n)))
+defines a function of one argument that moves point forward by
+a specified number of characters.  Programs could call this function,
+as in (forward-character 6), or it could be assigned to a key,
+in which case the "p" says to pass the prefix numeric arg as
+the function's argument.  As a result of this feature, you often
+need not have two different functions, one to be called by programs
+and another to read arguments from the user conveniently; the same
+function can do both.
+
+CCA Elisp tries to be a subset of Common Lisp and tries to
+have as many Common Lisp functions as possible (though it is still
+only a small fraction of full Common Lisp).  GNU Emacs Lisp
+is somewhat similar to Common Lisp just because of my Maclisp
+and Lisp Machine background, but it has several distinct incompatibilities
+in both syntax and semantics.  Also, I have not attempted to
+provide many Common Lisp functions that you could write in Lisp,
+or others that provide no new capability in the circumstances.
+
+GNU Emacs Lisp does not have packages, readtables, or character objects
+(it uses integers to represent characters).
+
+On the other hand, windows, buffers, relocatable markers and processes
+are first class objects in GNU Emacs Lisp.  You can get information about them
+and do things to them in a Lispy fashion.  Not so in CCA Emacs.
+
+In GNU Emacs Lisp, you cannot open a file and read or write characters
+or Lisp objects from it.  This feature is painful to support, and
+is not fundamentally necessary in an Emacs, because instead you
+can read the file into a buffer, read or write characters or
+Lisp objects in the buffer, and then write the buffer into the file.
+
+On the other hand, GNU Emacs Lisp does allow you to rename, delete, add
+names to, and copy files; also to find out whether a file is a
+directory, whether it is a symbolic link and to what name, whether
+you can read it or write it, find out its directory component,
+expand a relative pathname, find completions of a file name, etc.,
+which you cannot do in CCA Elisp.
+
+GNU Emacs Lisp uses dynamic scope exclusively.  This enables you to
+bind variables which affect the execution of the editor, such as
+indent-tabs-mode.
+
+GNU Emacs Lisp code is normally compiled into byte code.  Most of the
+standard editing commands are written in Lisp, and many are
+dumped, pure, in the Emacs that users normally run.
+
+GNU Emacs allows you to interrupt a runaway Lisp program with
+Control-g.
+
+* GNU Emacs Editing Advantages
+
+GNU Emacs is faster for many things, especially insertion of text
+and file I/O.
+
+GNU Emacs allows you to undo more than just the last command
+with the undo command (C-x u, or C-_).  You can undo quite a ways back.
+Undo information is separate for each buffer; changes in one buffer
+do not affect your ability to undo in another buffer.
+
+GNU Emacs commands that want to display some output do so by putting
+it in a buffer and displaying that buffer in a window.  This
+technique comes from Gosling Emacs.  It has both advantages and
+disadvantages when compared with the technique, copied by CCA Emacs
+from my original Emacs which inherited it from TECO, of having "type
+out" which appears on top of the text in the current window but
+disappears automatically at the next input character.
+
+GNU Emacs does not use the concept of "subsystems".  Instead, it uses
+highly specialized major modes.  For example, dired in GNU Emacs has
+the same commands as dired does in other versions of Emacs, give or
+take a few, but it is a major mode, not a subsystem.  The advantage
+of this is that you do not have to "exit" from dired and lose the
+state of dired in order to edit files again.  You can simply switch
+to another buffer, and switch back to the dired buffer later.  You
+can also have several dired buffers, looking at different directories.
+
+It is still possible to write a subsystem--your own command loop--
+in GNU Emacs, but it is not recommended, since writing a major mode
+for a special buffer is better.
+
+Recursive edits are also rarely used, for the same reason: it is better
+to make a new buffer and put it in a special major mode.  Sending
+mail is done this way.
+
+GNU Emacs expects everyone to use find-file (C-x C-f) for reading
+in files; its C-x C-v command kills the current buffer and then finds
+the specified file.
+
+As a result, users do not need to think about the complexities
+of subsystems, recursive edits, and various ways to read in files
+or what to do if a buffer contains changes to some other file.
+
+GNU Emacs uses its own format of tag table, made by the "etags"
+program.  This format makes finding a tag much faster.
+
+Dissociated Press is supported.
+
+
+* GNU Emacs Editing Disadvantages.
+
+GNU Emacs does not display the location of the mark.
+
+GNU Emacs does not have a concept of numbers of buffers,
+or a permanent ordering of buffers, or searching through multiple
+buffers.  The tags-search command provides a way to search
+through several buffers automatically.
+
+GNU Emacs does not provide commands to visit files without
+setting the buffer's default directory.  Users can write such
+commands in Lisp by copying the code of the standard file
+visiting commands and modifying them.
+
+GNU Emacs does not support "plus options" in the command
+arguments or in buffer-selection commands, except for line numbers.
+
+GNU Emacs does not support encryption.  Down with security!
+
+GNU Emacs does not support replaying keystroke files,
+and does not normally write keystroke files.
+
+
+* Neutral Differences
+
+GNU Emacs uses TAB, not ESC, to complete file names, buffer names,
+command names, etc.
+
+GNU Emacs uses ESC to terminate searches, instead of
+the C-d uses by CCA Emacs.  (Actually, this character is controlled
+by a parameter in GNU Emacs.)  C-M-s in GNU Emacs is an interactive
+regular expression search, but you can get to a noninteractive
+one by typing ESC right after the C-M-s.
+
+In GNU Emacs, C-x s asks, for each modified file buffer, whether
+to save it.
+
+GNU Emacs indicates line continuation with "\" and line
+truncation (at either margin) with "$".
+
+The command to resume a tags-search or tags-query-replace in
+GNU Emacs is Meta-Comma.
