@@ -4,16 +4,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mathimpl.h	5.3 (Berkeley) %G%
+ *	@(#)mathimpl.h	5.4 (Berkeley) %G%
  */
 
+#include <sys/cdefs.h>
 #include <math.h>
-
-#ifdef __STDC__
-#define const const
-#else
-#define const /**/
-#endif
 
 #if defined(vax)||defined(tahoe)
 
