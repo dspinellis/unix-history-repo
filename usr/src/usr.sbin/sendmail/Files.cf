@@ -1,4 +1,4 @@
-#	@(#)Files.cf	8.12 (Berkeley) %G%
+#	@(#)Files.cf	8.13 (Berkeley) %G%
 cf/README
 cf/cf/Makefile
 cf/cf/Makefile.dist
@@ -58,6 +58,7 @@ cf/m4/proto.m4
 cf/m4/version.m4
 cf/mailer/fax.m4
 cf/mailer/local.m4
+cf/mailer/mail11.m4
 cf/mailer/pop.m4
 cf/mailer/procmail.m4
 cf/mailer/smtp.m4
