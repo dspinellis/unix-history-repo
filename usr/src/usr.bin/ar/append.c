@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)append.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)append.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -42,6 +42,7 @@ append(argv)
 	if (lseek(afd, (off_t)0, SEEK_END) == (off_t)-1)
 		error(archive);
 
+	/* Read from disk, write to an archive; pad on write. */
 	SETCF(0, 0, afd, archive, WPAD);
 	while (file = *argv++) {
 		if ((fd = open(file, O_RDONLY)) < 0) {
@@ -54,8 +55,7 @@ append(argv)
 			(void)printf("q - %s\n", rname(file));
 		cf.rfd = fd;
 		cf.rname = file;
-		put_header(&cf, &sb);
-		copyfile(&cf, sb.st_size);
+		put_object(&cf, &sb);
 		(void)close(fd);
 	}
 	close_archive(afd);
