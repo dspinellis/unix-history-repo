@@ -1,9 +1,15 @@
 .\" from Symmetric Computer Systems.
 .\" Modifications Copyright (c) 1987 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" All rights reserved.
 .\"
-.\"	@(#)disklabel.8	6.4 (Berkeley) %G%
+.\" Redistribution and use in source and binary forms are permitted
+.\" provided that this notice is preserved and that due credit is given
+.\" to the University of California at Berkeley. The name of the University
+.\" may not be used to endorse or promote products derived from this
+.\" software without specific prior written permission. This software
+.\" is provided ``as is'' without express or implied warranty.
+.\"
+.\"	@(#)disklabel.8	6.5 (Berkeley) %G%
 .\"
 .TH DISKLABEL 8 ""
 .UC 5
@@ -42,6 +48,12 @@ disklabel \- read and write disk pack label
 [
 .I priboot secboot
 ]
+.br
+.B disklabel
+[
+.B \-NW
+]
+.I disk
 .SH DESCRIPTION
 .I Disklabel
 can be used to install, examine or modify the label on a disk drive or pack.
@@ -133,8 +145,7 @@ is used.
 When the editor terminates, the formatted label is reread
 and used to rewrite the disk label.
 .PP
-Finally,
-with the 
+With the
 .B \-R
 flag,
 .I disklabel
@@ -148,6 +159,9 @@ option is also given,
 a block-0 bootstrap is installed on machines that use one;
 either the disktype or the names of the bootstrap files must be specified
 on such machines.
+.PP
+Finally, the \fB-NW\fP flags for \fIdisklabel\fP explicitly disallow and
+allow, respectively, writing of the pack label area on the selected disk.
 .SH FILES
 /etc/disktab
 .br
