@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	6.34 (Berkeley) %G%";
+static char sccsid[] = "@(#)recipient.c	6.35 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -535,9 +535,12 @@ finduser(name, fuzzyp)
 			return (pw);
 		}
 	}
-#endif
 	if (tTd(29, 4))
 		printf("no fuzzy match found\n");
+#else
+	if (tTd(29, 4))
+		printf("not found (fuzzy disabled)\n");
+#endif
 	return (NULL);
 }
 /*
