@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)subr_xxx.c	7.6 (Berkeley) %G%
+ *	@(#)subr_xxx.c	7.7 (Berkeley) %G%
  */
 
 #include "errno.h"
@@ -46,7 +46,7 @@ imax(a, b)
 
 unsigned
 min(a, b)
-	u_int a, b;
+	unsigned a, b;
 {
 
 	return (a < b ? a : b);
@@ -54,14 +54,14 @@ min(a, b)
 
 unsigned
 max(a, b)
-	u_int a, b;
+	unsigned a, b;
 {
 
 	return (a > b ? a : b);
 }
 #endif
 
-#if !defined(vax) && !defined(tahoe)
+#if !defined(vax) && !defined(tahoe) && !defined(hp300)
 ffs(mask)
 	register long mask;
 {
@@ -77,7 +77,7 @@ ffs(mask)
 }
 #endif
 
-#if !defined(vax)
+#if !defined(vax) && !defined(hp300)
 bcmp(s1, s2, len)
 	register char *s1, *s2;
 	register unsigned len;
