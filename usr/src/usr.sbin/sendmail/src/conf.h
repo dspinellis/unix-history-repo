@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.193 (Berkeley) %G%
+ *	@(#)conf.h	8.194 (Berkeley) %G%
  */
 
 /*
@@ -1521,6 +1521,9 @@ extern int	errno;
 #  ifdef NOERROR
 #   undef NOERROR		/* avoid compiler conflict with stream.h */
 #  endif
+# endif
+# ifndef __ksr__
+extern int h_errno;
 # endif
 #endif
 
