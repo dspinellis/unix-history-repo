@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)subr.c	4.1 (Berkeley) 83/07/06";
+static char sccsid[] = "@(#)subr.c	4.2 (Berkeley) 83/07/07";
 #endif
 
 /*
@@ -193,31 +193,38 @@ struct delayval {
  */
 
 struct delayval	crdelay[] = {
-	20,		CR1,
-	30,		CR2,
-	40,		CR3,
+	1,		CR1,
+	2,		CR2,
+	3,		CR3,
+	83,		CR1,
+	166,		CR2,
 	0,		CR3,
 };
 
 struct delayval nldelay[] = {
 	1,		NL1,		/* special, calculated */
-	16,		NL2,
-	30,		NL3,
+	2,		NL2,
+	3,		NL3,
+	100,		NL2,
 	0,		NL3,
 };
 
 struct delayval	bsdelay[] = {
+	1,		BS1,
 	0,		0,
 };
 
 struct delayval	ffdelay[] = {
+	1,		FF1,
 	1750,		FF1,
 	0,		FF1,
 };
 
 struct delayval	tbdelay[] = {
-	10,		TAB1,
-	20,		TAB2,
+	1,		TAB1,
+	2,		TAB2,
+	3,		XTABS,		/* this is expand tabs */
+	100,		TAB1,
 	0,		TAB2,
 };
 
