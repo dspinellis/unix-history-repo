@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	8.56 (Berkeley) %G%
+ *	@(#)sendmail.h	8.57 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	8.56		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	8.57		%G%";
 # endif
 # else /*  _DEFINE */
 # define EXTERN extern
@@ -127,18 +127,18 @@ struct address
 
 typedef struct address ADDRESS;
 
-# define QDONTSEND	000001	/* don't send to this address */
-# define QBADADDR	000002	/* this address is verified bad */
-# define QGOODUID	000004	/* the q_uid q_gid fields are good */
-# define QPRIMARY	000010	/* set from argv */
-# define QQUEUEUP	000020	/* queue for later transmission */
-# define QSENT		000040	/* has been successfully delivered */
-# define QNOTREMOTE	000100	/* not an address for remote forwarding */
-# define QSELFREF	000200	/* this address references itself */
-# define QVERIFIED	000400	/* verified, but not expanded */
-# define QREPORT	001000	/* report this address in return message */
-# define QBOGUSSHELL	002000	/* this entry has an invalid shell listed */
-# define QUNSAFEADDR	004000	/* address aquired through an unsafe path */
+# define QDONTSEND	0x0001	/* don't send to this address */
+# define QBADADDR	0x0002	/* this address is verified bad */
+# define QGOODUID	0x0004	/* the q_uid q_gid fields are good */
+# define QPRIMARY	0x0008	/* set from argv */
+# define QQUEUEUP	0x0010	/* queue for later transmission */
+# define QSENT		0x0020	/* has been successfully delivered */
+# define QNOTREMOTE	0x0040	/* not an address for remote forwarding */
+# define QSELFREF	0x0080	/* this address references itself */
+# define QVERIFIED	0x0100	/* verified, but not expanded */
+# define QREPORT	0x0200	/* report this address in return message */
+# define QBOGUSSHELL	0x0400	/* this entry has an invalid shell listed */
+# define QUNSAFEADDR	0x0800	/* address aquired through an unsafe path */
 
 # define NULLADDR	((ADDRESS *) NULL)
 # define QPSEUDO	000040	/* only on the list for verification */
@@ -255,18 +255,19 @@ struct hdrinfo
 extern struct hdrinfo	HdrInfo[];
 
 /* bits for h_flags and hi_flags */
-# define H_EOH		00001	/* this field terminates header */
-# define H_RCPT		00002	/* contains recipient addresses */
-# define H_DEFAULT	00004	/* if another value is found, drop this */
-# define H_RESENT	00010	/* this address is a "Resent-..." address */
-# define H_CHECK	00020	/* check h_mflags against m_flags */
-# define H_ACHECK	00040	/* ditto, but always (not just default) */
-# define H_FORCE	00100	/* force this field, even if default */
-# define H_TRACE	00200	/* this field contains trace information */
-# define H_FROM		00400	/* this is a from-type field */
-# define H_VALID	01000	/* this field has a validated value */
-# define H_RECEIPTTO	02000	/* this field has return receipt info */
-# define H_ERRORSTO	04000	/* this field has error address info */
+# define H_EOH		0x0001	/* this field terminates header */
+# define H_RCPT		0x0002	/* contains recipient addresses */
+# define H_DEFAULT	0x0004	/* if another value is found, drop this */
+# define H_RESENT	0x0008	/* this address is a "Resent-..." address */
+# define H_CHECK	0x0010	/* check h_mflags against m_flags */
+# define H_ACHECK	0x0020	/* ditto, but always (not just default) */
+# define H_FORCE	0x0040	/* force this field, even if default */
+# define H_TRACE	0x0080	/* this field contains trace information */
+# define H_FROM		0x0100	/* this is a from-type field */
+# define H_VALID	0x0200	/* this field has a validated value */
+# define H_RECEIPTTO	0x0400	/* this field has return receipt info */
+# define H_ERRORSTO	0x0800	/* this field has error address info */
+# define H_CTE		0x1000	/* this field is a content-transfer-encoding */
 /*
 **  Information about currently open connections to mailers, or to
 **  hosts that we have looked up recently.
@@ -293,17 +294,17 @@ MCI
 
 
 /* flag bits */
-#define MCIF_VALID	000001		/* this entry is valid */
-#define MCIF_TEMP	000002		/* don't cache this connection */
-#define MCIF_CACHED	000004		/* currently in open cache */
-#define MCIF_ESMTP	000010		/* this host speaks ESMTP */
-#define MCIF_EXPN	000020		/* EXPN command supported */
-#define MCIF_SIZE	000040		/* SIZE option supported */
-#define MCIF_8BITMIME	000100		/* BODY=8BITMIME supported */
-#define MCIF_7BIT	000200		/* strip this message to 7 bits */
-#define MCIF_MULTSTAT	000400		/* MAIL11V3: handles MULT status */
-#define MCIF_INHEADER	001000		/* currently outputing header */
-#define MCIF_CVT8TO7	002000		/* convert from 8 to 7 bits */
+#define MCIF_VALID	0x0001		/* this entry is valid */
+#define MCIF_TEMP	0x0002		/* don't cache this connection */
+#define MCIF_CACHED	0x0004		/* currently in open cache */
+#define MCIF_ESMTP	0x0008		/* this host speaks ESMTP */
+#define MCIF_EXPN	0x0010		/* EXPN command supported */
+#define MCIF_SIZE	0x0020		/* SIZE option supported */
+#define MCIF_8BITMIME	0x0040		/* BODY=8BITMIME supported */
+#define MCIF_7BIT	0x0080		/* strip this message to 7 bits */
+#define MCIF_MULTSTAT	0x0100		/* MAIL11V3: handles MULT status */
+#define MCIF_INHEADER	0x0200		/* currently outputing header */
+#define MCIF_CVT8TO7	0x0400		/* convert from 8 to 7 bits */
 
 /* states */
 #define MCIS_CLOSED	0		/* no traffic on this connection */
@@ -719,16 +720,16 @@ EXTERN int	MimeMode;
 */
 
 #define PRIV_PUBLIC		0	/* what have I got to hide? */
-#define PRIV_NEEDMAILHELO	00001	/* insist on HELO for MAIL, at least */
-#define PRIV_NEEDEXPNHELO	00002	/* insist on HELO for EXPN */
-#define PRIV_NEEDVRFYHELO	00004	/* insist on HELO for VRFY */
-#define PRIV_NOEXPN		00010	/* disallow EXPN command entirely */
-#define PRIV_NOVRFY		00020	/* disallow VRFY command entirely */
-#define PRIV_AUTHWARNINGS	00040	/* flag possible authorization probs */
-#define PRIV_NORECEIPTS		00100	/* disallow return receipts */
-#define PRIV_RESTRICTMAILQ	01000	/* restrict mailq command */
-#define PRIV_RESTRICTQRUN	02000	/* restrict queue run */
-#define PRIV_GOAWAY		00777	/* don't give no info, anyway, anyhow */
+#define PRIV_NEEDMAILHELO	0x0001	/* insist on HELO for MAIL, at least */
+#define PRIV_NEEDEXPNHELO	0x0002	/* insist on HELO for EXPN */
+#define PRIV_NEEDVRFYHELO	0x0004	/* insist on HELO for VRFY */
+#define PRIV_NOEXPN		0x0008	/* disallow EXPN command entirely */
+#define PRIV_NOVRFY		0x0010	/* disallow VRFY command entirely */
+#define PRIV_AUTHWARNINGS	0x0020	/* flag possible authorization probs */
+#define PRIV_NORECEIPTS		0x0040	/* disallow return receipts */
+#define PRIV_RESTRICTMAILQ	0x1000	/* restrict mailq command */
+#define PRIV_RESTRICTQRUN	0x2000	/* restrict queue run */
+#define PRIV_GOAWAY		0x0fff	/* don't give no info, anyway, anyhow */
 
 /* struct defining such things */
 struct prival
@@ -742,12 +743,12 @@ struct prival
 **  Flags passed to remotename, parseaddr, allocaddr, and buildaddr.
 */
 
-#define RF_SENDERADDR		0001	/* this is a sender address */
-#define RF_HEADERADDR		0002	/* this is a header address */
-#define RF_CANONICAL		0004	/* strip comment information */
-#define RF_ADDDOMAIN		0010	/* OK to do domain extension */
-#define RF_COPYPARSE		0020	/* copy parsed user & host */
-#define RF_COPYPADDR		0040	/* copy print address */
+#define RF_SENDERADDR		0x001	/* this is a sender address */
+#define RF_HEADERADDR		0x002	/* this is a header address */
+#define RF_CANONICAL		0x004	/* strip comment information */
+#define RF_ADDDOMAIN		0x008	/* OK to do domain extension */
+#define RF_COPYPARSE		0x010	/* copy parsed user & host */
+#define RF_COPYPADDR		0x020	/* copy print address */
 #define RF_COPYALL		(RF_COPYPARSE|RF_COPYPADDR)
 #define RF_COPYNONE		0
 
