@@ -1,0 +1,24 @@
+2!date
+g/Sun /s//Sunday, /
+g/Mon /s//Monday, /
+g/Tue /s//Tuesday, /
+g/Wed /s//Wednesday, /
+g/Thu /s//Thursday, /
+g/Fri /s//Friday, /
+g/Sat /s//Saturday, /
+g/Jan /s//January /
+g/Feb /s//February /
+g/Mar /s//March /
+g/Apr /s//April /
+g/Jun /s//June /
+g/Jul /s//July /
+g/Aug /s//August /
+g/Sep /s//September /
+g/Oct /s//October /
+g/Nov /s//November /
+g/Dec /s//December /
+g/  /s// /
+2s/ ..:..:.. .../,/
+2s/^/	"Last update on /
+2s/$/.",/
+wq
