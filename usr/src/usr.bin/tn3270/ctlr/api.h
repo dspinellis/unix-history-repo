@@ -2,6 +2,10 @@
  * This file contains header information used by the PC API routines.
  */
 
+#if	!defined(MSDOS)
+#define far			/* For 'far *' checks */
+#endif	/* !defined(MSDOS) */
+
 #define	API_INTERRUPT_NUMBER	0x7A		/* API Interrupt Number */
 
 /*
@@ -315,7 +319,7 @@ typedef struct {
 #define	OIA_COLOR_GROUP_2			0x0b
 #	define	OIA_SELECTED		0x80
 
-#define	OIA_COMMUNICATION_ERROR_REMINDER	0x0c
+#define	OIA_COMM_ERROR_REMINDER		0x0c
 #	define	OIA_COMM_ERROR		0x80
 #	define	OIA_RTM			0x40
 
@@ -340,3 +344,53 @@ typedef struct {
 
 
 
+#if	defined(MSDOS)
+
+#if	!defined(FP_SEG)
+#include <dos.h>
+#endif	/* !defined(FP_SEG) */
+
+#else	/* defined(MSDOS) */
+
+/*
+ * These definitions are here to provide the descriptions of
+ * some registers which are, normally, defined in <dos.h> on
+ * a dos system.
+ */
+
+
+struct highlow {
+    char
+	ah,
+	al,
+	bh,
+	bl,
+	ch,
+	cl,
+	dh,
+	dl;
+};
+
+struct words {
+    int
+	ax,
+	bx,
+	cx,
+	dx,
+	si,
+	di;
+};
+
+union REGS {
+    struct highlow h;
+    struct words x;
+};
+
+struct SREGS {
+    int
+	cs,
+	ds,
+	es,
+	ss;
+};
+#endif	/* defined(MSDOS) (else section) */
