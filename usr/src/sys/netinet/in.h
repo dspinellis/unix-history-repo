@@ -4,12 +4,12 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)in.h	8.2 (Berkeley) %G%
+ *	@(#)in.h	8.3 (Berkeley) %G%
  */
 
 /*
  * Constants and structures defined by the internet system,
- * Per RFC 790, September 1981.
+ * Per RFC 790, September 1981, and numerous additions.
  */
 
 /*
@@ -86,9 +86,9 @@ struct in_addr {
 #define	INADDR_NONE		0xffffffff		/* -1 return */
 #endif
 
-#define INADDR_UNSPEC_GROUP	(u_long)0xe0000000	/* 224.0.0.0   */
-#define INADDR_ALLHOSTS_GROUP	(u_long)0xe0000001	/* 224.0.0.1   */
-#define INADDR_MAX_LOCAL_GROUP	(u_long)0xe00000ff	/* 224.0.0.255 */
+#define	INADDR_UNSPEC_GROUP	(u_long)0xe0000000	/* 224.0.0.0 */
+#define	INADDR_ALLHOSTS_GROUP	(u_long)0xe0000001	/* 224.0.0.1 */
+#define	INADDR_MAX_LOCAL_GROUP	(u_long)0xe00000ff	/* 224.0.0.255 */
 
 #define	IN_LOOPBACKNET		127			/* official! */
 
@@ -119,33 +119,33 @@ struct ip_opts {
  * Options for use with [gs]etsockopt at the IP level.
  * First word of comment is data type; bool is stored in int.
  */
-#define	IP_OPTIONS	1	/* buf/ip_opts; set/get IP per-packet options */
+#define	IP_OPTIONS		1    /* buf/ip_opts; set/get IP options */
+#define	IP_HDRINCL		2    /* int; header is included with data */
+#define	IP_TOS			3    /* int; IP type of service and preced. */
+#define	IP_TTL			4    /* int; IP time to live */
+#define	IP_RECVOPTS		5    /* bool; receive all IP opts w/dgram */
+#define	IP_RECVRETOPTS		6    /* bool; receive IP opts for response */
+#define	IP_RECVDSTADDR		7    /* bool; receive IP dst addr w/dgram */
+#define	IP_RETOPTS		8    /* ip_opts; set/get IP options */
+#define	IP_MULTICAST_IF		9    /* u_char; set/get IP multicast i/f  */
+#define	IP_MULTICAST_TTL	10   /* u_char; set/get IP multicast ttl */
+#define	IP_MULTICAST_LOOP	11   /* u_char; set/get IP multicast loopback */
+#define	IP_ADD_MEMBERSHIP	12   /* ip_mreq; add an IP group membership */
+#define	IP_DROP_MEMBERSHIP	13   /* ip_mreq; drop an IP group membership */
 
-#define	IP_MULTICAST_IF		2 /* in_addr; set/get IP multicast interface */
-#define	IP_MULTICAST_TTL	3 /* u_char; set/get IP multicast timetolive */
-#define	IP_MULTICAST_LOOP	4 /* u_char; set/get IP multicast loopback */
-#define	IP_ADD_MEMBERSHIP	5 /* ip_mreq; add an IP group membership */
-#define	IP_DROP_MEMBERSHIP	6 /* ip_mreq; drop an IP group membership */
-
-
-#define	IP_HDRINCL	7	/* int; header is included with data (raw) */
-#define	IP_TOS		8	/* int; IP type of service and precedence */
-#define	IP_TTL		9	/* int; IP time to live */
-#define	IP_RECVOPTS	10	/* bool; receive all IP options w/datagram */
-#define	IP_RECVRETOPTS	11	/* bool; receive IP options for response */
-#define	IP_RECVDSTADDR	12	/* bool; receive IP dst addr w/datagram */
-#define	IP_RETOPTS	13	/* ip_opts; set/get IP per-packet options */
-
-#define	IP_DEFAULT_MULTICAST_TTL 1	/* normally limit m'casts to 1 hop */
-#define	IP_DEFAULT_MULTICAST_LOOP 1	/* normally hear sends if a member */
-#define	IP_MAX_MEMBERSHIPS	20	/* per socket */
+/*
+ * Defaults and limits for options
+ */
+#define	IP_DEFAULT_MULTICAST_TTL  1	/* normally limit m'casts to 1 hop  */
+#define	IP_DEFAULT_MULTICAST_LOOP 1	/* normally hear sends if a member  */
+#define	IP_MAX_MEMBERSHIPS	20	/* per socket; must fit in one mbuf */
 
 /*
  * Argument structure for IP_ADD_MEMBERSHIP and IP_DROP_MEMBERSHIP.
  */
 struct ip_mreq {
-	struct in_addr	imr_multiaddr;	/* IP multicast address of group */
-	struct in_addr	imr_interface;	/* local IP address of interface */
+	struct	in_addr imr_multiaddr;	/* IP multicast address of group */
+	struct	in_addr imr_interface;	/* local IP address of interface */
 };
 
 /*
@@ -154,9 +154,9 @@ struct ip_mreq {
  * Third level is protocol number.
  * Fourth level is desired variable within that protocol.
  */
-#define IPPROTO_MAXID	(IPPROTO_IDP + 1)	/* don't list to IPPROTO_MAX */
+#define	IPPROTO_MAXID	(IPPROTO_IDP + 1)	/* don't list to IPPROTO_MAX */
 
-#define CTL_IPPROTO_NAMES { \
+#define	CTL_IPPROTO_NAMES { \
 	{ "ip", CTLTYPE_NODE }, \
 	{ "icmp", CTLTYPE_NODE }, \
 	{ "igmp", CTLTYPE_NODE }, \
