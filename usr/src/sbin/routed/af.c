@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)af.c	4.1 %G%";
+static char sccsid[] = "@(#)af.c	4.2 %G%";
 #endif
 
 #include <sys/types.h>
@@ -13,15 +13,19 @@ static char sccsid[] = "@(#)af.c	4.1 %G%";
  * Address family support routines
  */
 int	null_hash(), null_netmatch(), null_output(),
-	null_portmatch(), null_checkhost(), null_canon();
+	null_portmatch(), null_portcheck(),
+	null_checkhost(), null_canon();
 int	inet_hash(), inet_netmatch(), inet_output(),
-	inet_portmatch(), inet_checkhost(), inet_canon();
+	inet_portmatch(), inet_portcheck(),
+	inet_checkhost(), inet_canon();
 #define NIL \
 	{ null_hash,		null_netmatch,		null_output, \
-	  null_portmatch,	null_checkhost,		null_canon }
+	  null_portmatch,	null_portcheck,		null_checkhost, \
+	  null_canon }
 #define	INET \
 	{ inet_hash,		inet_netmatch,		inet_output, \
-	  inet_portmatch,	inet_checkhost,		inet_canon }
+	  inet_portmatch,	inet_portcheck,		inet_checkhost, \
+	  inet_canon }
 
 struct afswitch afswitch[AF_MAX] =
 	{ NIL, NIL, INET, INET, NIL, NIL, NIL, NIL, NIL, NIL, NIL };
@@ -51,6 +55,17 @@ inet_portmatch(sin)
 	int port = ntohs(sin->sin_port);
 
 	return (port == IPPORT_ROUTESERVER);
+}
+
+/*
+ * Verify the message is from a "trusted" port.
+ */
+inet_portcheck(sin)
+	struct sockaddr_in *sin;
+{
+	int port = ntohs(sin->sin_port);
+
+	return (port <= IPPORT_RESERVED);
 }
 
 /*
@@ -119,6 +134,13 @@ null_output(a1, n)
 
 /*ARGSUSED*/
 null_portmatch(a1)
+	struct sockaddr *a1;
+{
+	return (0);
+}
+
+/*ARGSUSED*/
+null_portcheck(a1)
 	struct sockaddr *a1;
 {
 	return (0);
