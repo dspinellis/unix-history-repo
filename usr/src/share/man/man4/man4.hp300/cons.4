@@ -1,0 +1,35 @@
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" the Systems Programming Group of the University of Utah Computer
+.\" Science Department.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)cons.4	5.1 (Berkeley) %G%
+.\"
+.TH CONS 4 ""
+.UC 7
+.SH NAME
+cons \- HP300 console interface
+.SH DESCRIPTION
+This release supports a ``virtual'' console device used for kernel
+.I printf
+messages and accessed in user mode via /dev/console.
+It is virtual in the sense that it is attached to a hardware interface
+at boot time.
+Currently the choices are limited to:
+a bit-mapped display acting as an
+.I "internal terminal emulator"
+(ITE),
+the builtin serial interface (dca),
+or a ``null'' console in that order.
+.SH FILES
+/dev/console
+.SH "SEE ALSO"
+tty(4), reboot(8)
+.SH BUGS
+You should be able to specify potential console devices at
+.I config
+time.
