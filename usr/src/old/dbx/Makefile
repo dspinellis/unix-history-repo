@@ -1,8 +1,7 @@
-#	@(#)Makefile	5.25 (Berkeley) %G%
+#	@(#)Makefile	5.26 (Berkeley) %G%
 
 PROG=	dbx
 CFLAGS+=-I. -I${.CURDIR}
-MAN5=	dbx.0
 HDRS=	asm.h events.h c.h check.h coredump.h debug.h eval.h fortran.h \
 	keywords.h languages.h lists.h machine.h main.h mappings.h \
 	modula-2.h names.h object.h operators.h pascal.h printsym.h \
@@ -14,15 +13,16 @@ SRCS=	asm.c events.c c.c check.c coredump.c debug.c eval.c fortran.c \
 	process.c scanner.c source.c stabstring.c symbols.c tree.c \
 	${MACHINE}.c runtime.${MACHINE}.c ops.${MACHINE}.c
 OBJS+=	cerror.${MACHINE}.o commands.o date.o
+
 LDADD=	-lcompat
 DPADD=	${LIBCOMPAT}
-CLEANFILES+=mkdate makedefs makedefs.o date.c y.tab.h \
+CLEANFILES+=mkdate makedefs makedefs.o date.c y.tab.h dbx.5.0 \
 	${HDRS} ${MACHINE}.h runtime.${MACHINE}.h ops.${MACHINE}.h
 
 .c.h:
 	./makedefs -f ${.CURDIR}/$*.c $*.h
 
-all: ${HDRS}
+all: ${HDRS} dbx.5.0
 
 machine.h: ${MACHINE}.h
 	rm -f machine.h
@@ -46,5 +46,9 @@ makedefs: makedefs.c library.o cerror.${MACHINE}.o
 
 mkdate: mkdate.c
 	${CC} ${CFLAGS} ${.CURDIR}/mkdate.c -o $@
+
+beforeinstall:
+	install -c -o ${MANOWN} -g ${MANGRP} -m ${MANMODE} dbx.5.0 \
+            ${DESTDIR}${MANDIR}5/dbx.0
 
 .include <bsd.prog.mk>
