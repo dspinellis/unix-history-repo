@@ -1,4 +1,4 @@
-#	@(#)Makefile	4.2	(Berkeley)	83/05/27
+#	@(#)Makefile	4.3	(Berkeley)	83/05/27
 #
 DESTDIR=
 CFLAGS=	# -O
@@ -39,6 +39,9 @@ ${PROG}: ${OBJS} ${HDRS}
 
 ${OBJS}:
 	cc ${CFLAGS} -c $*.c
+
+tags:	./tags $(SRCS)
+	ctags $(SRCS)
 
 install: ${PROG}
 	install ${PROG} ${DESTDIR}/usr/local/${PROG}
@@ -83,6 +86,7 @@ compkl.o: trek.h
 computer.o: computer.c
 computer.o: trek.h
 computer.o: getpar.h
+computer.o: /usr/include/stdio.h
 damage.o: damage.c
 damage.o: trek.h
 damaged.o: damaged.c
@@ -106,6 +110,7 @@ externs.o: trek.h
 getcodi.o: getcodi.c
 getcodi.o: getpar.h
 getpar.o: getpar.c
+getpar.o: /usr/include/stdio.h
 getpar.o: getpar.h
 help.o: help.c
 help.o: trek.h
@@ -123,6 +128,8 @@ lrscan.o: lrscan.c
 lrscan.o: trek.h
 main.o: main.c
 main.o: trek.h
+main.o: /usr/include/stdio.h
+main.o: /usr/include/sgtty.h
 move.o: move.c
 move.o: trek.h
 nova.o: nova.c
@@ -138,6 +145,7 @@ play.o: getpar.h
 ram.o: ram.c
 ram.o: trek.h
 ranf.o: ranf.c
+ranf.o: /usr/include/stdio.h
 rest.o: rest.c
 rest.o: trek.h
 rest.o: getpar.h
@@ -164,6 +172,7 @@ srscan.o: getpar.h
 systemname.o: systemname.c
 systemname.o: trek.h
 torped.o: torped.c
+torped.o: /usr/include/stdio.h
 torped.o: trek.h
 utility.o: utility.c
 visual.o: visual.c
@@ -173,6 +182,8 @@ warp.o: trek.h
 win.o: win.c
 win.o: trek.h
 win.o: getpar.h
+cgetc.o: cgetc.c
+cgetc.o: /usr/include/stdio.h
 # DEPENDENCIES MUST END AT END OF FILE
 # IF YOU PUT STUFF HERE IT WILL GO AWAY
 # see make depend above
