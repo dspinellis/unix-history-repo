@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)jobs.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)jobs.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "shell.h"
@@ -70,7 +70,6 @@ STATIC char *commandtext();
 
 
  
-#if JOBS
 /*
  * Turn job control on and off.
  *
@@ -90,8 +89,8 @@ setjobctl(on) {
 	if (on) {
 		do { /* while we are in the background */
 			if (ioctl(2, TIOCGPGRP, (char *)&initialpgrp) < 0) {
-				out2str("ash: can't access tty; job control turned off\n");
-				jflag = 0;
+				out2str("sh: can't access tty; job control turned off\n");
+				mflag = 0;
 				return;
 			}
 			if (initialpgrp == -1)
@@ -101,11 +100,13 @@ setjobctl(on) {
 				continue;
 			}
 		} while (0);
+#ifdef OLD_TTY_DRIVER
 		if (ioctl(2, TIOCGETD, (char *)&ldisc) < 0 || ldisc != NTTYDISC) {
-			out2str("ash: need new tty driver to run job control; job control turned off\n");
-			jflag = 0;
+			out2str("sh: need new tty driver to run job control; job control turned off\n");
+			mflag = 0;
 			return;
 		}
+#endif
 		setsignal(SIGTSTP);
 		setsignal(SIGTTOU);
 		setsignal(SIGTTIN);
@@ -120,7 +121,6 @@ setjobctl(on) {
 	}
 	jobctl = on;
 }
-#endif
 
 
 #ifdef mkinit
@@ -510,7 +510,7 @@ forkshell(jp, n, mode)
 		clear_traps();
 #if JOBS
 		jobctl = 0;		/* do job control only in root shell */
-		if (wasroot && mode != FORK_NOJOB && jflag) {
+		if (wasroot && mode != FORK_NOJOB && mflag) {
 			if (jp == NULL || jp->nprocs == 0)
 				pgrp = getpid();
 			else
@@ -550,7 +550,7 @@ forkshell(jp, n, mode)
 		}
 		return pid;
 	}
-	if (rootshell && mode != FORK_NOJOB && jflag) {
+	if (rootshell && mode != FORK_NOJOB && mflag) {
 		if (jp == NULL || jp->nprocs == 0)
 			pgrp = pid;
 		else
@@ -781,7 +781,7 @@ waitproc(block, status)
 #endif
 	if (block == 0)
 		flags |= WNOHANG;
-	return wait3((union wait *)status, flags, (struct rusage *)NULL);
+	return wait3(status, flags, (struct rusage *)NULL);
 #else
 #ifdef SYSV
 	int (*save)();
@@ -837,6 +837,8 @@ cmdtxt(n)
 	int i;
 	char s[2];
 
+	if (n == NULL)
+		return;
 	switch (n->type) {
 	case NSEMI:
 		cmdtxt(n->nbinary.ch1);
