@@ -2,7 +2,7 @@
  *	Copyright (c) 1982 Regents of the University of California
  */
 #ifndef lint
-static char sccsid[] = "@(#)asmain.c 4.11 %G%";
+static char sccsid[] = "@(#)asmain.c 4.12 %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -14,14 +14,7 @@ static char sccsid[] = "@(#)asmain.c 4.11 %G%";
 #include "asscan.h"
 #include "asexpr.h"
 
-#ifdef UNIX
-#define	unix_lang_name "VAX/UNIX Assembler V%G% 4.11"
-#endif
-
-#ifdef VMS
-#define vms_lang_name "VAX/VMS C Assembler V1.00"
-#endif VMS
-
+#define	unix_lang_name "VAX/UNIX Assembler V%G% 4.12"
 /*
  *	variables to manage reading the assembly source files
  */
@@ -51,13 +44,7 @@ int 	debug = 0;
 int	toktrace = 0;
 #endif
 
-int	useVM =		/*put the temp file in virtual memory*/
-#ifdef VMS
-	1;		/*VMS has virtual memory (duh)*/
-#endif VMS
-#ifdef UNIX
- 	0;
-#endif
+int	useVM =	0;
 
 char	*endcore;	/*where to get more symbol space*/
 
@@ -171,15 +158,7 @@ BFILE	*relocfile;			/* concatnated relocation info */
  *
  *	We use relfil to output the symbol table information.
  */
-
-char	*tmpdirprefix =
-#ifdef UNIX
-			"/tmp/";
-#else VMS
-			"/usr/tmp/";
-#endif
-
-
+char	*tmpdirprefix = "/tmp/";
 int delexit();
 
 main(argc, argv)
@@ -235,7 +214,7 @@ main(argc, argv)
 		yywarning("These are not defined for all implementations of the VAX architecture.\n");
 
 	exit(anyerrs != 0);
-}	/*end of UNIX main*/
+}
 
 argprocess(argc, argv)
 	int	argc;

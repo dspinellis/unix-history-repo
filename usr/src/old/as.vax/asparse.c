@@ -2,7 +2,7 @@
  *	Copyright (c) 1982 Regents of the University of California
  */
 #ifndef lint
-static char sccsid[] = "@(#)asparse.c 4.14 %G%";
+static char sccsid[] = "@(#)asparse.c 4.15 %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -303,24 +303,10 @@ restlab:
 		seg_number += NLOC;
 	flushfield(NBPW/4);
 	dotp = &usedot[seg_number];
-#ifdef UNIX
 	if (passno==2) {	/* go salt away in pass 2*/
 		txtfil = usefile[seg_number];
 		relfil = rusefile[seg_number];
 	}
-#endif UNIX
-#ifdef VMS
-	if (passno==2) {
-		puchar(vms_obj_ptr,6);		/*  setpl  */
-		puchar(vms_obj_ptr,seg_number);	/* psect # */
-		plong(vms_obj_ptr,dotp->e_xvalue);/*  offset */
-		puchar(vms_obj_ptr,80);		/*  setrb  */
-		if((vms_obj_ptr-sobuf) > 400){
-			write(objfil,sobuf,vms_obj_ptr-sobuf);
-			vms_obj_ptr=sobuf+1;	/*flush buf*/
-		}
-	}
-#endif VMS
 	break;
 
 	/*
@@ -422,7 +408,6 @@ restlab:
 	space_value = locxp->e_xvalue;
   ospace:
 	flushfield(NBPW/4);
-#ifdef UNIX
 	{
 		static char spacebuf[128];
 		while (space_value > sizeof(spacebuf)){
@@ -431,21 +416,8 @@ restlab:
 		}
 		outs(spacebuf, space_value);
 	}
-#endif UNIX
-#ifdef VMS
-	dotp->e_xvalue += space_value;		/*bump pc*/
-	if (passno==2){
-	  puchar(vms_obj_ptr,81);		/* AUGR  */
-	  pulong(vms_obj_ptr,space_value);/* incr  */
-	  if ((vms_obj_ptr-sobuf) > 400) {
-		write(objfil,sobuf,vms_obj_ptr-sobuf);
-		vms_obj_ptr=sobuf+1;		/*pur buf*/
-	  }
-	}
-#endif VMS
 	break;
 
-#ifdef UNIX
 	/*
 	 *	.fill rep, size, value
 	 *	repeat rep times: fill size bytes with (truncated) value
@@ -476,7 +448,6 @@ restlab:
 			bwrite((char *)&locxp->e_xvalue, fill_size, txtfil);
 	}
 	break;
-#endif UNIX
 
    case IASCII:		/* .ascii [ <stringlist> ] */
    case IASCIZ: 	/* .asciz [ <stringlist> ] */
@@ -500,7 +471,6 @@ restlab:
 		 */
 		mystrlen = stringp->sd_strlen;
 		mystrlen += (auxval == IASCIZ) ? 1 : 0;
-#ifdef UNIX
 		if (passno == 2){
 			if (stringp->sd_place & STR_CORE){
 				outs(stringp->sd_string, mystrlen);
@@ -518,23 +488,6 @@ restlab:
 		} else {
 			dotp->e_xvalue += mystrlen;
 		}
-#endif UNIX
-#ifdef VMS
-		{
-			reg int i;
-			for (i=0; i < stringp->str_lg; i++){
-			  dotp->e_xvalue += 1;
-			    if (passno==2){
-				puchar(vms_obj_ptr,-1);
-			  	puchar(vms_obj_ptr,stringp->str[i]);
-			  	if (vms_obj_ptr-sobuf > 400) {
-				  write(objfil,sobuf,vms_obj_ptr-sobuf);
-				  vms_obj_ptr = sobuf + 1;
-			  	}
-			    }
-			}
-		}
-#endif VMS
 		shift;		/*over the STRING*/
 		if (val == CM)	/*could be a split string*/
 			shift;

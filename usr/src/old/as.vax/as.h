@@ -1,17 +1,10 @@
 /*
  *	Copyright (c) 1982 Regents of the University of California
- *	@(#)as.h 4.15 %G%
+ *	@(#)as.h 4.16 %G%
  */
-#ifdef VMS
-# define	vax	1
-# define	VAX	1
-#endif VMS
-
 #define	reg	register
 
 #include <sys/types.h>
-#ifdef UNIX
-
 #ifdef FLEXNAMES
 #  include <a.out.h>
 #  include <stab.h>
@@ -20,17 +13,6 @@
 #  include "a.out.h"
 #  include <stab.h>
 #endif FLEXNAMES
-
-#endif UNIX 
-#ifdef VMS
-
-#ifdef UNIXDEVEL
-#  include <a.out.h>
-#else not UNIXDEVEL
-#  include <aout.h>
-#endif not UNIXDEVEL
-
-#endif VMS
 
 #define readonly
 #define	NINST		300
@@ -64,7 +46,6 @@
 #endif not NCPString
 
 #define	NCPName	NCPS
-#ifdef UNIX
 # ifndef FLEXNAMES
 #	ifndef NCPS
 #		undef	NCPName
@@ -76,12 +57,6 @@
 #		define	NCPName	4096
 #	endif not NCPS
 # endif FLEXNAMES
-# endif UNIX
-
-# ifdef VMS
-#	define	NCPName	15
-# endif VMS
-
 /*
  *	Check sizes, and compiler error if sizes botch
  */
@@ -158,10 +133,6 @@ extern	char	*ty_string[];	/* {TYPB..TYPH} ==> printable */
 #define	FW	0x3
 #define	DW	0x7
 #define	OW	0xF
-
-#ifdef VMS
-#  define PAGRND	0x1FFL
-#endif VMS
 
 #define	round(x,y)	(((x)+(y)) & ~(y))
 
@@ -425,13 +396,6 @@ struct strdesc *savestr();
 	 */
 	extern	struct	symtab	*lastnam;
 	extern	struct	symtab	*lastjxxx;	
-
-#ifdef VMS
-	extern	char	*vms_obj_ptr;		/* object buffer pointer */
-	extern	char	sobuf[];		/* object buffer         */
-	extern	int	objfil;			/* VMS object file descriptor */
-#endif VMS
-
 	/*
 	 *	Lgensym is used to make up funny names for local labels.
 	 *	lgensym[i] is the current funny number to put after
@@ -513,14 +477,7 @@ struct strdesc *savestr();
 
 #define outs(cp, lg) dotp->e_xvalue += (lg); if (passno == 2) bwrite((cp), (lg), (txtfil))
 
-#ifdef UNIX
 #define	Outb(o)	outb(o)
-#endif UNIX
-
-#ifdef VMS
-#define	Outb(o)	{*vms_obj_ptr++=-1;*vms_obj_ptr++=(char)o;dotp->e_xvalue+=1;}
-#endif VMS
-
 /*
  *	Most of the time, the argument to flushfield is a power of two constant,
  *	the calculations involving it can be optimized to shifts.
