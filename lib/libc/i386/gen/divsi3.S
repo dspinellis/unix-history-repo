@@ -39,6 +39,7 @@
 #endif /* LIBC_SCCS and not lint */
 
 	.globl ___divsi3
+	.type ___divsi3,@function
 ___divsi3:
 	movl 4(%esp),%eax
 	cltd

@@ -2,6 +2,7 @@
 .text
 	.align 2
 .globl ___fixdfsi
+.type ___fixdfsi,@function
 ___fixdfsi:
 	pushl %ebp
 	movl %esp,%ebp

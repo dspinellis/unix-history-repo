@@ -39,6 +39,7 @@
 #endif /* LIBC_SCCS and not lint */
 
 	.globl ___udivsi3
+	.type ___udivsi3,@function
 ___udivsi3:
 	movl 4(%esp),%eax
 	xorl %edx,%edx

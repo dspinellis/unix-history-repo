@@ -49,6 +49,7 @@
 /* With CHOP mode on, frndint behaves as TRUNC does.  Useful. */
 .text
 .globl _modf
+.type _modf,@function
 _modf:
 	pushl %ebp
 	movl %esp,%ebp
