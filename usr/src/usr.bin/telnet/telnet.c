@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)telnet.c	4.24 (Berkeley) %G%";
+static char sccsid[] = "@(#)telnet.c	4.25 (Berkeley) %G%";
 #endif
 
 /*
@@ -115,8 +115,11 @@ main(argc, argv)
 	setbuf(stdin, 0);
 	setbuf(stdout, 0);
 	prompt = argv[0];
-	if (argc > 1 && !strcmp(argv[1], "-d"))
-		debug = SO_DEBUG, argv++, argc--;
+	if (argc > 1 && !strcmp(argv[1], "-d")) {
+		debug = 1;
+		argv++;
+		argc--;
+	}
 	if (argc != 1) {
 		if (setjmp(toplevel) != 0)
 			exit(0);
@@ -182,7 +185,8 @@ tn(argc, argv)
 		perror("telnet: socket");
 		return;
 	}
-	if (debug && setsockopt(net, SOL_SOCKET, SO_DEBUG, 0, 0) < 0)
+	if (debug &&
+	    setsockopt(net, SOL_SOCKET, SO_DEBUG, &debug, sizeof(debug)) < 0)
 		perror("setsockopt (SO_DEBUG)");
 	signal(SIGINT, intr);
 	signal(SIGPIPE, deadpeer);
@@ -728,11 +732,12 @@ setcrmod()
 setdebug()
 {
 
-	debug = !debug;
+	debug = debug ? 0 : 1;
 	printf("%s turn on socket level debugging.\n",
 		debug ? "Will" : "Wont");
 	fflush(stdout);
-	if (debug && net > 0 && setsockopt(net, SOL_SOCKET, SO_DEBUG, 0, 0) < 0)
+	if (net > 0 &&
+	    setsockopt(net, SOL_SOCKET, SO_DEBUG, &debug, sizeof(debug)) < 0)
 		perror("setsockopt (SO_DEBUG)");
 }
 
