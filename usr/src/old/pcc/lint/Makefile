@@ -1,5 +1,5 @@
 #
-#	@(#)Makefile	1.17	(Berkeley)	%G%
+#	@(#)Makefile	1.18	(Berkeley)	%G%
 #
 M=/usr/src/lib/mip
 P=/usr/src/lib/pcc/pcc.${MACHINE}
@@ -95,7 +95,10 @@ lpass2: lpass2.o hash.o
 
 lpass2.o: $M/manifest.h lmanifest.h pcclocal.h macdefs.h
 	${CC} ${CFLAGS} -c -I$M -I. lpass2.c
-	
+
+hash.o: hash.c
+	${CC} ${CFLAGS} -c -I$M -I. hash.c
+
 lintall:
 	lint -hpv -I. -I$M  $M/cgram.c $M/xdefs.c $M/scan.c \
 		$M/pftn.c $M/trees.c $M/optim.c lint.c
