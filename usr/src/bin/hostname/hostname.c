@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1983, 1988 Regents of the University of California.
+ * Copyright (c) 1988, 1993 Regents of the University of California.
  * All rights reserved.
  *
  * %sccs.include.redist.c%
@@ -7,51 +7,55 @@
 
 #ifndef lint
 char copyright[] =
-"@(#) Copyright (c) 1983, 1988 Regents of the University of California.\n\
+"@(#) Copyright (c) 1988, 1993 Regents of the University of California.\n\
  All rights reserved.\n";
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)hostname.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)hostname.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
-#include <stdio.h>
 #include <sys/param.h>
 
+#include <err.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+
+int
 main(argc,argv)
 	int argc;
-	char **argv;
+	char *argv[];
 {
 	extern int optind;
 	int ch, sflag;
-	char hostname[MAXHOSTNAMELEN], *p, *index();
+	char *p, hostname[MAXHOSTNAMELEN];
 
 	sflag = 0;
 	while ((ch = getopt(argc, argv, "s")) != EOF)
-		switch((char)ch) {
+		switch (ch) {
 		case 's':
 			sflag = 1;
 			break;
 		case '?':
 		default:
-			fputs("hostname [-s] [hostname]\n", stderr);
+			(void)fprintf(stderr,
+			    "usage: hostname [-s] [hostname]\n");
 			exit(1);
 		}
+	argc -= optind;
 	argv += optind;
 
 	if (*argv) {
-		if (sethostname(*argv, strlen(*argv))) {
-			perror("sethostname");
-			exit(1);
-		}
+		if (sethostname(*argv, strlen(*argv)))
+			err(1, "sethostname");
 	} else {
-		if (gethostname(hostname, sizeof(hostname))) {
-			perror("gethostname");
-			exit(1);
-		}
-		if (sflag && (p = index(hostname, '.')))
+		if (gethostname(hostname, sizeof(hostname)))
+			err(1, "gethostname");
+		if (sflag && (p = strchr(hostname, '.')))
 			*p = '\0';
-		puts(hostname);
+		(void)printf("%s\n", hostname);
 	}
 	exit(0);
 }
