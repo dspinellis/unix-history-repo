@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rshd.c	5.22 (Berkeley) %G%";
+static char sccsid[] = "@(#)rshd.c	5.23 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -199,12 +199,8 @@ doit(fromp)
       }
 #endif
 
-	if (fromp->sin_port >= IPPORT_RESERVED ||
-	    fromp->sin_port < IPPORT_RESERVED/2) {
-		syslog(LOG_NOTICE, "Connection from %s on illegal port",
-			inet_ntoa(fromp->sin_addr));
-		exit(1);
-	}
+#ifdef	KERBEROS
+	if (!use_kerberos)
 
 	(void) alarm(60);
 	port = 0;
@@ -227,10 +223,8 @@ doit(fromp)
 			syslog(LOG_ERR, "can't get stderr port: %m");
 			exit(1);
 		}
-		if (port >= IPPORT_RESERVED) {
-			syslog(LOG_ERR, "2nd port not reserved\n");
-			exit(1);
-		}
+#ifdef	KERBEROS
+		if (!use_kerberos)
 		fromp->sin_port = htons((u_short)port);
 		if (connect(s, fromp, sizeof (*fromp)) < 0) {
 			syslog(LOG_INFO, "connect second port: %m");
@@ -291,7 +285,6 @@ doit(fromp)
 		error("Login incorrect.\n");
 		exit(1);
 	}
-	endpwent();
 	if (chdir(pwd->pw_dir) < 0) {
 		(void) chdir("/");
 #ifdef notdef
@@ -380,6 +373,10 @@ doit(fromp)
 		cp++;
 	else
 		cp = pwd->pw_shell;
+	endpwent();
+	if (!pwd->pw_uid)
+		syslog(LOG_NOTICE, "ROOT shell from %s@%s, comm: %s\n",
+			remuser, hostname, cmdbuf);
 	execl(pwd->pw_shell, cp, "-c", cmdbuf, 0);
 	perror(pwd->pw_shell);
 	exit(1);
@@ -439,8 +436,8 @@ local_domain(h)
 usage()
 {
 #ifdef	KERBEROS
-	syslog(LOG_ERR, "usage: rshd [-l] [-n]");
+	syslog(LOG_ERR, "usage: rshd [-ln]");
 #else
-	syslog(LOG_ERR, "usage: rshd [-l] [-n] [-k] [-v] [-e]");
+	syslog(LOG_ERR, "usage: rshd [-lknvx]");
 #endif
 }
