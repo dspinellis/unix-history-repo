@@ -6,12 +6,14 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)getenv.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)getenv.c	5.10 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <stdlib.h>
 #include <stddef.h>
 #include <string.h>
+
+char *__findenv __P((const char *, int *));
 
 /*
  * getenv --
@@ -22,13 +24,12 @@ getenv(name)
 	const char *name;
 {
 	int offset;
-	char *_findenv();
 
-	return(_findenv(name, &offset));
+	return (__findenv(name, &offset));
 }
 
 /*
- * _findenv --
+ * __findenv --
  *	Returns pointer to value associated with name, if any, else NULL.
  *	Sets offset to be the offset of the name/value combination in the
  *	environmental array, for use by setenv(3) and unsetenv(3).
@@ -37,20 +38,24 @@ getenv(name)
  *	This routine *should* be a static; don't use it.
  */
 char *
-_findenv(name, offset)
-	register char *name;
+__findenv(name, offset)
+	register const char *name;
 	int *offset;
 {
 	extern char **environ;
 	register int len;
-	register char **P, *C;
+	register const char *np;
+	register char **p, *c;
 
-	for (C = name, len = 0; C && *C && *C != '='; ++C, ++len);
-	for (P = environ; P && *P; ++P)
-		if (!strncmp(*P, name, len))
-			if (*(C = *P + len) == '=') {
-				*offset = P - environ;
-				return(++C);
-			}
-	return(NULL);
+	if (name == NULL || environ == NULL)
+		return (NULL);
+	for (np = name; *np && *np != '='; ++np)
+		continue;
+	len = np - name;
+	for (p = environ; (c = *p) != NULL; ++p)
+		if (strncmp(c, name, len) == 0 && c[len] == '=') {
+			*offset = p - environ;
+			return (c + 1);
+		}
+	return (NULL);
 }
