@@ -22,30 +22,25 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)echo.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)echo.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <stdio.h>
 
+/* ARGSUSED */
 main(argc, argv)
 	int argc;
 	char **argv;
 {
-	extern int optind;
-	int ch, nflag;
+	int nflag;
 
-	nflag = 0;
-	while ((ch = getopt(argc, argv, "n")) != EOF)
-		switch(ch) {
-		case 'n':
-			nflag = 1;
-			break;
-		case '?':
-		default:
-			(void)fprintf(stderr, "usage: echo [-n] [arg ...]\n");
-			exit(1);
-		}
-	argv += optind;
+	++argv;
+	if (!strcmp(*argv, "-n")) {
+		++argv;
+		nflag = 1;
+	}
+	else
+		nflag = 0;
 
 	while (*argv) {
 		(void)printf("%s", *argv);
