@@ -1,4 +1,4 @@
-/*	ut.c	4.26	83/02/20	*/
+/*	ut.c	4.27	83/02/20	*/
 
 #include "tj.h"
 #if NUT > 0
@@ -486,7 +486,7 @@ utintr(ut11)
 		 * If we were reading at 1600 or 6250 bpi and the error
 		 * was corrected, then don't consider this an error.
 		 */
-		if (sc->sc_errreg & UTER_COR && (bp->b_flags & B_READ) &&
+		if (sc->sc_erreg & UTER_COR && (bp->b_flags & B_READ) &&
 		    (addr->uttc & UTTC_DEN) != UT_NRZI) {
 			printf(
 			  "ut%d: soft error bn%d cs1=%b er=%b cs2=%b ds=%b\n",
