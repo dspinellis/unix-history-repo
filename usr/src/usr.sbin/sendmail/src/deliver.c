@@ -6,7 +6,7 @@
 # include <log.h>
 # endif LOG
 
-static char SccsId[] = "@(#)deliver.c	1.10	%G%";
+static char SccsId[] = "@(#)deliver.c	1.11	%G%";
 
 /*
 **  DELIVER -- Deliver a message to a particular address.
@@ -307,6 +307,8 @@ giveresponse(stat, force, m)
 	extern char *SysExMsg[];
 	register int i;
 	extern int N_SysEx;
+	extern long MsgSize;
+	char buf[30];
 
 	i = stat - EX__BASE;
 	if (i < 0 || i > N_SysEx)
@@ -342,11 +344,14 @@ giveresponse(stat, force, m)
 	**	that.
 	*/
 
-# ifdef LOG
 	if (statmsg == NULL)
-		logmsg(LOG_INFO, "%s->%s: error %d", From.q_paddr, To, stat);
-	else
-		logmsg(LOG_INFO, "%s->%s: %s", From.q_paddr, To, statmsg);
+	{
+		sprintf(buf, "error %d", stat);
+		statmsg = buf;
+	}
+
+# ifdef LOG
+	logmsg(LOG_INFO, "%s->%s: %ld: %s", From.q_paddr, To, MsgSize, statmsg);
 # endif LOG
 	setstat(stat);
 	return (stat);

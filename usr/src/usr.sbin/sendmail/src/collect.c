@@ -3,7 +3,7 @@
 # include <errno.h>
 # include "dlvrmail.h"
 
-static char	SccsId[] = "@(#)collect.c	1.5	%G%";
+static char	SccsId[] = "@(#)collect.c	1.6	%G%";
 
 /*
 **  MAKETEMP -- read & parse message header & make temp file.
@@ -37,7 +37,8 @@ static char	SccsId[] = "@(#)collect.c	1.5	%G%";
 **		temp buffer can be deallocated.
 */
 
-char	MsgId[MAXNAME];
+char	MsgId[MAXNAME];		/* message-id, determined or created */
+long	MsgSize;		/* size of message in bytes */
 
 char *
 maketemp()
@@ -126,6 +127,7 @@ maketemp()
 			if (firstline && !SaveFrom)
 				continue;
 			fputs(">", tf);
+			MsgSize++;
 		}
 
 		if (inheader && !isspace(buf[0]))
@@ -159,6 +161,7 @@ maketemp()
 			if (p != NULL && MsgId[0] == '\0')
 				prescan(p, MsgId, &MsgId[sizeof MsgId - 1], '\0');
 		}
+		MsgSize += strlen(buf);
 		fputs(buf, tf);
 		firstline = FALSE;
 		if (ferror(tf))
