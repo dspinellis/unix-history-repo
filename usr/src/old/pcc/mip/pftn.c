@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid ="@(#)pftn.c	1.22 (Berkeley) %G%";
+static char *sccsid ="@(#)pftn.c	1.23 (Berkeley) %G%";
 #endif lint
 
 # include "pass1.h"
@@ -104,6 +104,10 @@ defid( q, class ) register NODE *q; register int class; {
 	if( stp == UNDEF|| stp == FARG ) goto enter;
 
 	if( type != stp ) goto mismatch;
+	if( blevel > slev && (class == AUTO || class == REGISTER) )
+		/* new scope */
+		goto mismatch;
+
 	/* test (and possibly adjust) dimensions */
 	dsym = p->dimoff;
 	ddef = q->fn.cdim;
