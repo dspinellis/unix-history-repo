@@ -1,4 +1,4 @@
-SCCSID = @(#)Makefile 1.1 %G%
+SCCSID = @(#)Makefile 1.2 %G%
 INSTALL = ${DESTDIR}/usr/ucb
 INSTALLIB = ${DESTDIR}/usr/lib
 PX_HEADER = px_header
@@ -10,7 +10,7 @@ install: all pxref.p
 	dd if=px_header of=${INSTALLIB}/${PX_HEADER} conv=sync
 	cp pc pix ${INSTALL}
 	cp how* pc2 pc3 ${INSTALLIB}
-	cp pmerge ${INSTALLIB}
+	cp pmerge ${INSTALL}/pmerge
 	pc -w pxref.p -o ${INSTALL}/pxref
 
 pix: pix.c
