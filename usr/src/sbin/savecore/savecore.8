@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)savecore.8	6.7 (Berkeley) %G%
+.\"     @(#)savecore.8	6.8 (Berkeley) %G%
 .\"
 .Dd 
 .Dt SAVECORE 8
@@ -13,84 +13,82 @@
 .Nd "save a core dump of the operating system"
 .Sh SYNOPSIS
 .Nm savecore
-.Op Fl fv
-.Ar dirname
-.Op Ar system
-.Nm savecore
 .Fl c
+.Nm savecore
+.Op Fl fvz
+.Op Fl N Ar system
+.Ar directory
 .Sh DESCRIPTION
+.Nm Savecore
+copies the currently running kernel and its associated core dump into
+.Fa directory ,
+and enters a reboot message and information about the core dump into
+the system log.
+.Pp
+The options are as follows:
+.Bl -tag -width directory
+.It Fl c
+Clears the dump, so that future invocations of
+.Nm savecore
+will ignore it.
+.It Fl f
+Forces a dump to be taken even if the dump doesn't appear correct or there
+is insufficient disk space.
+.It Fl N
+Use
+.Ar system
+as the kernel instead of the default ``/vmunix''.
+.It Fl v
+Prints out some additional debugging information.
+.It Fl z
+Compresses the core dump and kernel (see
+.Xr compress 1 ).
+.El
+.Pp
+.Nm Savecore
+checks the core dump in various ways to make sure that it is current and
+that it corresponds to the currently running system.
+If it passes these checks, it saves the core image in
+.Ar directory Ns Pa /vmcore.#
+and the system in
+.Ar directory Ns Pa /vmunix.#
+The ``#'' is the number from the first line of the file
+.Ar directory Ns Pa /bounds ,
+and it is incremented and stored back into the file each time
+.Nm savecore
+successfully runs.
+.Pp
+.Nm Savecore
+also checks the available disk space before attempting to make the copies.
+If there is insufficient disk space in the filesystem containing
+.Ar directory ,
+or if the file
+.Ar directory Ns Pa /minfree
+exists and the number of free kilobytes (for non-superusers) in the
+filesystem after the copies were made would be less than the number
+in the first line of this file, the copies are not attempted.
+.Pp
+If
+.Nm savecore
+successfully copies the kernel and the core dump, the core dump is cleared
+so that future invocations of
+.Nm savecore
+will ignore it.
+.Pp
 .Nm Savecore
 is meant to be called near the end of the initialization file
 .Pa /etc/rc
 (see
 .Xr rc 8 ) .
-Its function
-is to save the core dump of the system (assuming one was made) and to
-write a reboot message in the shutdown log.
-.Pp
-Options supported by
-.Nm savecore :
-.Bl -tag -width dirname
-.It Fl c
-Clears the dump without saving it.
-.It Fl f
-Forces a dump to be taken even if the magic number indicates
-there isn't a dump.
-.It Fl v
-Prints out some extra information.
-.El
-.Pp
-Operands supported by
-.Nm savecore :
-.Bl -tag -width dirname
-.It Ar dirname
-The directory name where the core dump will be written.
-.It Ar system
-If the core dump was from a system other than
-.Pa /vmunix ,
-the name
-of that system must be supplied as
-.Ar system .
-.El
-.Pp
-.Nm Savecore
-checks the core dump to be certain it corresponds with the
-current running unix.  If the core dump is current, it saves the core
-image in
-.Ar dirname Ns Pa /vmcore.n
-and the namelist
-in
-.Ar dirname Ns Pa /vmunix.n
-Sequence numbers are incremented and appended to the end of the pathnames
-each time
-.Nm savecore
-is run in the directory.
-.Pp
-Before savecore writes out a core image, it reads a number from the file
-.Ar dirname Ns Pa /minfree .
-If the number of free kilobytes on the filesystem which contains
-.Ar dirname
-is less than the number obtained from the minfree file,
-the core dump is not saved.
-If the minfree file does not exist, savecore always writes out the core
-file (assuming that a core dump was taken).
-.Pp
-.Nm Savecore
-also logs a reboot message using facility
-.Dv LOG_AUTH
-(see
-.Xr syslog 3 )
-If the system crashed as a result of a panic,
-.Nm savecore
-logs the panic string too.
 .Sh FILES
 .Bl -tag -width /vmunixxx -compact
 .It Pa /vmunix
 current
 .Tn UNIX
 .El
-.Sh BUGS
-Can be fooled into thinking a core dump is the wrong size.
+.Sh SEE ALSO
+.Xr compress 1 ,
+.Xr syslogd 8
 .Sh HISTORY
 The
 .Nm
