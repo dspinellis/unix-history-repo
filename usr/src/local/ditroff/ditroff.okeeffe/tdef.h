@@ -125,7 +125,7 @@
 #define	NTAB	40	/* tab stops */
 #define	NSO	5	/* "so" depth */
 #define	WDSIZE	270	/* word buffer size */
-#define	LNSIZE	680	/* line buffer size */
+#define	LNSIZE	1024	/* line buffer size */
 #define	NDI	5	/* number of diversions */
 #define	NTRTAB	512	/* number of items in trtab[] */
 #define NWIDCACHE 512	/* number of items in widcache[] */
