@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)htable.c	4.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)htable.c	4.5 (Berkeley) %G%";
 #endif
 
 /*
@@ -10,10 +10,10 @@ static char sccsid[] = "@(#)htable.c	4.4 (Berkeley) %G%";
 #include <ctype.h>
 #include <errno.h>
 #include <netdb.h>
-#include <sys/socket.h>
 
 #include "htable.h"		/* includes <sys/types.h> */
 
+#include <sys/socket.h>
 #include <netinet/in.h>
 
 #define	INTERNET	10	/* gag */
