@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)rval.c 1.14 %G%";
+static char sccsid[] = "@(#)rval.c 1.15 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -398,12 +398,17 @@ cstrng:
 		if (r[0] == T_MINUS) {
 #		    ifdef OBJ
 			put(1, O_NEG2 + (width(q) >> 2));
+			return (isa(q, "d") ? q : nl+T4INT);
 #		    endif OBJ
 #		    ifdef PC
-			sconv(p2type(q), P2INT);
-			putop( P2UNARY P2MINUS , P2INT );
+			if (isa(q, "i")) {
+			    sconv(p2type(q), P2INT);
+			    putop( P2UNARY P2MINUS, P2INT);
+			    return nl+T4INT;
+			}
+			putop( P2UNARY P2MINUS, P2DOUBLE);
+			return nl+TDOUBLE;
 #		    endif PC
-		    return (isa(q, "d") ? q : nl+T4INT);
 		}
 		return (q);
 
