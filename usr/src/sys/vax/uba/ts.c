@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ts.c	7.3 (Berkeley) %G%
+ *	@(#)ts.c	7.4 (Berkeley) %G%
  */
 
 #include "ts.h"
@@ -427,8 +427,10 @@ tsstart(um)
 	 * Start the controller if there is something for it to do.
 	 */
 loop:
-	if ((bp = um->um_tab.b_actf->b_actf) == NULL)
+	if ((bp = um->um_tab.b_actf->b_actf) == NULL) {
+		um->um_tab.b_active = 0;
 		return;
+	}
 	tsunit = TSUNIT(bp->b_dev);
 	ui = tsdinfo[tsunit];
 	sc = &ts_softc[tsunit];
