@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)time.h	5.9 (Berkeley) %G%
+ *	@(#)time.h	5.10 (Berkeley) %G%
  */
 
 #ifndef _TIME_H_
@@ -48,17 +48,24 @@ struct tm {
 #include <sys/cdefs.h>
 
 __BEGIN_DECLS
+char *asctime __P((const struct tm *));
+clock_t clock __P((void));
+char *ctime __P((const time_t *));
+double difftime __P((const time_t, const time_t));
 struct tm *gmtime __P((const time_t *));
 struct tm *localtime __P((const time_t *));
 time_t mktime __P((const struct tm *));
+size_t strftime __P((char *, size_t, const char *, const struct tm *));
 time_t time __P((time_t *));
-clock_t clock __P((void));
-double difftime __P((const time_t, const time_t));
-char *asctime __P((const struct tm *));
-char *ctime __P((const time_t *));
-char *timezone __P((int , int));
+
+#ifndef _ANSI_SOURCE
 void tzset __P((void));
+#endif /* not ANSI */
+
+#if !defined(_ANSI_SOURCE) && !defined(_POSIX_SOURCE)
+char *timezone __P((int, int));
 void tzsetwall __P((void));
+#endif /* neither ANSI nor POSIX */
 __END_DECLS
 
 #endif /* !_TIME_H_ */

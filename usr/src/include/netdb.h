@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)netdb.h	5.11 (Berkeley) %G%
+ *	@(#)netdb.h	5.12 (Berkeley) %G%
  */
 
 #define	_PATH_HEQUIV	"/etc/hosts.equiv"
@@ -50,11 +50,6 @@ struct	protoent {
 	int	p_proto;	/* protocol # */
 };
 
-struct hostent	*gethostbyname(), *gethostbyaddr(), *gethostent();
-struct netent	*getnetbyname(), *getnetbyaddr(), *getnetent();
-struct servent	*getservbyname(), *getservbyport(), *getservent();
-struct protoent	*getprotobyname(), *getprotobynumber(), *getprotoent();
-
 /*
  * Error return codes from gethostbyname() and gethostbyaddr()
  * (left in extern int h_errno).
@@ -65,3 +60,30 @@ struct protoent	*getprotobyname(), *getprotobynumber(), *getprotoent();
 #define	NO_RECOVERY	3 /* Non recoverable errors, FORMERR, REFUSED, NOTIMP */
 #define	NO_DATA		4 /* Valid name, no data record of requested type */
 #define	NO_ADDRESS	NO_DATA		/* no address, look for MX record */
+
+#include <sys/cdefs.h>
+
+__BEGIN_DECLS
+void		endhostent __P((void));
+void		endnetent __P((void));
+void		endprotoent __P((void));
+void		endservent __P((void));
+struct hostent	*gethostbyaddr __P((const void *, int, int));
+struct hostent	*gethostbyname __P((const char *));
+/* struct hostent *gethostent __P((void)); */
+struct netent	*getnetbyaddr __P((long, int)); /* u_long? */
+struct netent	*getnetbyname __P((const char *));
+struct netent	*getnetent __P((void));
+struct protoent	*getprotobyname __P((const char *));
+struct protoent	*getprotobynumber __P((int));
+struct protoent	*getprotoent __P((void));
+struct servent	*getservbyname __P((const char *, const char *));
+struct servent	*getservbyport __P((int, const char *));
+struct servent	*getservent __P((void));
+void		herror __P((const char *));
+void		sethostent __P((int));
+/* void		sethostfile __P((const char *)); */
+void		setnetent __P((int));
+void		setprotoent __P((int));
+void		setservent __P((int));
+__END_DECLS
