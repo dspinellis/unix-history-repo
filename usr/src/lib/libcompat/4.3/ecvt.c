@@ -1,4 +1,7 @@
-/* @(#)ecvt.c	4.1 (Berkeley) %G% */
+#if defined(LIBC_SCCS) && !defined(lint)
+static char sccsid[] = "@(#)ecvt.c	5.1 (Berkeley) %G%";
+#endif LIBC_SCCS and not lint
+
 /*
  *	ecvt converts to decimal
  *	the number of digits is specified by ndigit
