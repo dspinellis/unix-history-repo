@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)machdep.c	6.18 (Berkeley) %G%
+ *	@(#)machdep.c	6.19 (Berkeley) %G%
  */
 
 #include "reg.h"
@@ -122,11 +122,10 @@ startup(firstaddr)
 	 * We allocate 1/2 as many swap buffer headers as file i/o buffers.
 	 */
 	if (bufpages == 0)
-		if (physmem < (2 * 1024 * 1024))
+		if (physmem < (2 * 1024 * CLSIZE))
 			bufpages = physmem / 10 / CLSIZE;
 		else
-			bufpages =
-			    ((2 * 1024 * 1024) / 5 + physmem / 5) / CLSIZE;
+			bufpages = ((2 * 1024 * CLSIZE + physmem) / 20) / CLSIZE;
 	if (nbuf == 0) {
 		nbuf = bufpages / 2;
 		if (nbuf < 16)
@@ -241,7 +240,27 @@ startup(firstaddr)
 	 * Configure the system.
 	 */
 	configure();
+	switch (cpu) {
 
+	case VAX_780:
+		setcache(0x200000);
+		break;
+	case VAX_750:
+	case VAX_730:
+		setcache(0);
+		break;
+	case VAX_8600:
+		setcache(3);
+		break;
+	}
+
+#if VAX8600
+	/*
+	 * Enable Fbox on 8600 if it exists
+	 */
+	if ((cpu == VAX_8600) && ((mfpr(ACCS) & 0xff) != 0))
+		mtpr(ACCS, 0x8000);
+#endif
 	/*
 	 * Clear restart inhibit flags.
 	 */
@@ -381,7 +400,7 @@ sendsig(p, sig, mask)
  * Return to previous pc and psl as specified by
  * context left by sendsig. Check carefully to
  * make sure that the user has not modified the
- * psl to gain improper privileges or to cause
+ * psl to gain improper priviledges or to cause
  * a machine fault.
  */
 sigreturn()
@@ -783,6 +802,13 @@ dumpsys()
  * Machine check error recovery code.
  * Print out the machine check frame and then give up.
  */
+#if VAX8600
+#define NMC8600	6
+char *mc8600[] = {
+	"unkn type",	"fbox error",	"ebox error",	"ibox error",
+	"mbox error",	"tbuf error"
+};
+#endif
 #if defined(VAX780) || defined(VAX750)
 char *mc780[] = {
 	"cp read",	"ctrl str par",	"cp tbuf par",	"cp cache par",
@@ -842,6 +868,33 @@ struct mc730frame {
 	int	mc3_pc;			/* trapped pc */
 	int	mc3_psl;		/* trapped psl */
 };
+struct mc8600frame {
+	int	mc6_bcnt;		/* byte count == 0x58 */
+	int	mc6_ehmsts;
+	int	mc6_evmqsav;
+	int	mc6_ebcs;
+	int	mc6_edpsr;
+	int	mc6_cslint;
+	int	mc6_ibesr;
+	int	mc6_ebxwd1;
+	int	mc6_ebxwd2;
+	int	mc6_ivasav;
+	int	mc6_vibasav;
+	int	mc6_esasav;
+	int	mc6_isasav;
+	int	mc6_cpc;
+	int	mc6_mstat1;
+	int	mc6_mstat2;
+	int	mc6_mdecc;
+	int	mc6_merg;
+	int	mc6_cshctl;
+	int	mc6_mear;
+	int	mc6_medr;
+	int	mc6_accs;
+	int	mc6_cses;
+	int	mc6_pc;			/* trapped pc */
+	int	mc6_psl;		/* trapped psl */
+};
 
 machinecheck(cmcf)
 	caddr_t cmcf;
@@ -850,30 +903,51 @@ machinecheck(cmcf)
 
 	printf("machine check %x: ", type);
 	switch (cpu) {
-#if VAX780
-	case VAX_780:
-#endif
-#if VAX750
-	case VAX_750:
-#endif
-#if defined(VAX780) || defined(VAX750)
-		printf("%s%s\n", mc780[type&0xf],
-		    (type&0xf0) ? " abort" : " fault"); 
-		break;
-#endif
-#if VAX730
-	case VAX_730:
-		if (type < NMC730)
-			printf("%s", mc730[type]);
+#if VAX8600
+	case VAX_8600: {
+		register struct mc8600frame *mcf = (struct mc8600frame *)cmcf;
+
+		if (mcf->mc6_ebcs & 0x8000)
+			mcf->mc6_ehmsts |= 0x4;
+		else if (mcf->mc6_ehmsts & 0x10000000)
+			mcf->mc6_ehmsts |= 0x1;
+		else if (mcf->mc6_ebcs & 0x1e00)	
+			if (mcf->mc6_ebcs & 0x200)
+				mcf->mc6_ehmsts |= 0x4;
+			else
+				mcf->mc6_ehmsts |= 0x2;
+		else if (mcf->mc6_ehmsts & 0x2000)
+			mcf->mc6_ehmsts |= 0x3;
+		if (!(mcf->mc6_ehmsts & 0xf) && (mcf->mc6_mstat1 & 0xf00))
+			mcf->mc6_ehmsts |= 0x5;
+		type = mcf->mc6_ehmsts & 0x7;
+		if (type < NMC8600)
+			printf("machine check %x: %s", type, mc8600[type]);
 		printf("\n");
+		printf("\tehm.sts %x evmqsav %x ebcs %x edpsr %x cslint %x\n",
+		    mcf->mc6_ehmsts, mcf->mc6_evmqsav, mcf->mc6_ebcs,
+		    mcf->mc6_edpsr, mcf->mc6_cslint);
+		printf("\tibesr %x ebxwd %x %x ivasav %x vibasav %x\n",
+		    mcf->mc6_ibesr, mcf->mc6_ebxwd1, mcf->mc6_ebxwd2,
+		    mcf->mc6_ivasav, mcf->mc6_vibasav);
+		printf("\tesasav %x isasav %x cpc %x mstat %x %x mdecc %x\n",
+		    mcf->mc6_esasav, mcf->mc6_isasav, mcf->mc6_cpc,
+		    mcf->mc6_mstat1, mcf->mc6_mstat2, mcf->mc6_mdecc);
+		printf("\tmerg %x cshctl %x mear %x medr %x accs %x cses %x\n",
+		    mcf->mc6_merg, mcf->mc6_cshctl, mcf->mc6_mear,
+		    mcf->mc6_medr, mcf->mc6_accs, mcf->mc6_cses);
+		printf("\tpc %x psl %x\n", mcf->mc6_pc, mcf->mc6_psl);
+		mtpr(EHSR, 0);
 		break;
+	};
 #endif
-	}
-	switch (cpu) {
 #if VAX780
 	case VAX_780: {
 		register struct mc780frame *mcf = (struct mc780frame *)cmcf;
+
 		register int sbifs;
+		printf("%s%s\n", mc780[type&0xf],
+		    (type&0xf0) ? " abort" : " fault"); 
 		printf("\tcpues %x upc %x va/viba %x dreg %x tber %x %x\n",
 		   mcf->mc8_cpues, mcf->mc8_upc, mcf->mc8_vaviba,
 		   mcf->mc8_dreg, mcf->mc8_tber0, mcf->mc8_tber1);
@@ -891,8 +965,10 @@ machinecheck(cmcf)
 #if VAX750
 	case VAX_750: {
 		register struct mc750frame *mcf = (struct mc750frame *)cmcf;
-		int mcsr = mfpr(MCSR);
 
+		int mcsr = mfpr(MCSR);
+		printf("%s%s\n", mc780[type&0xf],
+		    (type&0xf0) ? " abort" : " fault"); 
 		mtpr(TBIA, 0);
 		mtpr(MCESR, 0xf);
 		printf("\tva %x errpc %x mdr %x smr %x rdtimo %x tbgpar %x cacherr %x\n",
@@ -911,6 +987,10 @@ machinecheck(cmcf)
 #if VAX730
 	case VAX_730: {
 		register struct mc730frame *mcf = (struct mc730frame *)cmcf;
+
+		if (type < NMC730)
+			printf("%s", mc730[type]);
+		printf("\n");
 		printf("params %x,%x pc %x psl %x mcesr %x\n",
 		    mcf->mc3_parm[0], mcf->mc3_parm[1],
 		    mcf->mc3_pc, mcf->mc3_psl, mfpr(MCESR));
@@ -953,4 +1033,28 @@ physstrat(bp, strat, prio)
 	while ((bp->b_flags & B_DONE) == 0)
 		sleep((caddr_t)bp, prio);
 	splx(s);
+}
+
+setcache(val)
+int val;
+{
+	switch(cpu) {
+#if VAX780
+	case VAX_780:
+		mtpr(SBIMT, val);
+		break;
+#endif
+#if VAX750
+	case VAX_750:
+		mtpr(CADR, val);
+		break;
+#endif
+#if VAX8600
+	case VAX_8600:
+		mtpr(CSWP, val);
+		break;
+#endif
+	default:
+		break;
+	}
 }

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)pte.h	6.5 (Berkeley) %G%
+ *	@(#)pte.h	6.6 (Berkeley) %G%
  */
 
 /*
@@ -86,5 +86,6 @@ extern	struct pte mmap[];
 extern	struct pte msgbufmap[];
 extern	struct pte camap[];
 extern	struct pte Nexmap[][16];
+extern	struct pte Ioamap[][1];
 #endif
 #endif

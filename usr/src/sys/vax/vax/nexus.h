@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)nexus.h	6.2 (Berkeley) %G%
+ *	@(#)nexus.h	6.3 (Berkeley) %G%
  */
 
 /*
@@ -15,6 +15,11 @@
  * At boot time the system looks through the array of available
  * slots and finds the interconnects for the machine.
  */
+#if VAX8600
+#define	NNEX8600	16
+#define	NEXA8600	((struct nexus *)(0x20000000))
+#define	NEXB8600	((struct nexus *)(0x22000000))
+#endif
 #if VAX780
 #define	NNEX780	16
 #define	NEX780	((struct nexus *)0x20000000)
@@ -29,7 +34,11 @@
 #endif
 #define	NEXSIZE	0x2000
 
+#if VAX8600
+#define	MAXNNEXUS 32
+#else 
 #define	MAXNNEXUS 16
+#endif
 
 #ifndef LOCORE
 struct	nexus {
