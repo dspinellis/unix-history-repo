@@ -1,9 +1,10 @@
 #ifndef lint
-static char sccsid[] = "@(#)selsub.c	4.4	(Berkeley)	%G%";
+static char sccsid[] = "@(#)selsub.c	4.5	(Berkeley)	%G%";
 #endif not lint
 
 #include "stdio.h"
 #include "sys/types.h"
+#include "sys/file.h"
 #include "sys/stat.h"
 #include "lrnref.h"
 
@@ -122,11 +123,14 @@ char *argv[];
 	}
 	/* after this point, we have a working directory. */
 	/* have to call wrapup to clean up */
-	if (access(sprintf(ans1, "%s/%s/Init", direct, sname), 04)==0)
-		if (system(sprintf(ans1, "%s/%s/Init %s", direct, sname, level)) != 0) {
+	(void)sprintf(ans1, "%s/%s/Init", direct, sname);
+	if (access(ans1, R_OK)==0) {
+		(void)sprintf(ans1, "%s/%s/Init %s", direct, sname, level);
+		if (system(ans1) != 0) {
 			printf("Leaving learn.\n");
 			wrapup(1);
 		}
+	}
 }
 
 chknam(name)
