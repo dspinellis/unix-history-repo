@@ -1,9 +1,7 @@
-# include <stdio.h>
-# include <ctype.h>
 # include <errno.h>
 # include "sendmail.h"
 
-static char	SccsId[] = "@(#)collect.c	3.15	%G%";
+static char	SccsId[] = "@(#)collect.c	3.16	%G%";
 
 /*
 **  COLLECT -- read & parse message header & make temp file.
@@ -32,6 +30,7 @@ static char	SccsId[] = "@(#)collect.c	3.15	%G%";
 */
 
 long	MsgSize;		/* size of message in bytes */
+FILE	*TempFile;		/* the tempfile (after creation) */
 
 collect()
 {
@@ -186,7 +185,7 @@ collect()
 		.... so we will ignore the problem for the time being */
 	}
 
-	if (freopen(InFileName, "r", stdin) == NULL)
+	if ((TempFile = fopen(InFileName, "r")) == NULL)
 		syserr("Cannot reopen %s", InFileName);
 
 # ifdef DEBUG

@@ -1,8 +1,7 @@
-# include <stdio.h>
 # include <pwd.h>
 # include "sendmail.h"
 
-static char	SccsId[] = "@(#)savemail.c	3.12	%G%";
+static char	SccsId[] = "@(#)savemail.c	3.13	%G%";
 
 /*
 **  SAVEMAIL -- Save mail on error
@@ -39,7 +38,7 @@ savemail()
 	extern char *ttypath();
 	static int exclusive;
 
-	if (exclusive++)
+	if (exclusive++ || TempFile == NULL)
 		return;
 
 	/*

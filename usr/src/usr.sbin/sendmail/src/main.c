@@ -1,13 +1,11 @@
-# include <stdio.h>
 # include <signal.h>
-# include <ctype.h>
 # include <pwd.h>
 # include "sendmail.h"
 # ifdef LOG
 # include <syslog.h>
 # endif LOG
 
-static char	SccsId[] = "@(#)main.c	3.21	%G%";
+static char	SccsId[] = "@(#)main.c	3.22	%G%";
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.

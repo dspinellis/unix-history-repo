@@ -1,11 +1,9 @@
-# include <stdio.h>
-# include <ctype.h>
 # include "sendmail.h"
 # ifdef LOG
 # include <syslog.h>
 # endif LOG
 
-static char	SccsId[] = "@(#)err.c	3.8	%G%";
+static char	SccsId[] = "@(#)err.c	3.9	%G%";
 
 extern bool	HasXscrpt;
 
