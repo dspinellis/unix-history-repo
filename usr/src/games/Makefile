@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.15.1.2 (Berkeley) %G%
+#	@(#)Makefile	5.16 (Berkeley) %G%
 
 Missing: adventure boggle ching dungeon hunt phantasia quiz warp 
 
