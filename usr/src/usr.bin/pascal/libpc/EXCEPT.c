@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)EXCEPT.c 1.3 %G%";
+static char sccsid[] = "@(#)EXCEPT.c 1.4 %G%";
 
 #include	<signal.h>
 
@@ -21,23 +21,28 @@ EXCEPT(signum, type)
 	 * Volume 1 of the 1978 VAX 11/780 Architecture Handbook
 	 */
 	switch (type) {
-	case 1:
+	case FPE_INTOVF_TRAP:
 		ERROR("Integer overflow\n");
 		return;
-	case 2:
+	case FPE_INTDIV_TRAP:
 		ERROR("Integer division by zero\n");
 		return;
-	case 3:
+	case FPE_FLTOVF_TRAP:
+	case FPE_FLTOVF_FAULT:
 		ERROR("Real overflow\n");
 		return;
-	case 4:
+	case FPE_FLTDIV_TRAP:
+	case FPE_FLTDIV_FAULT:
 		ERROR("Real division by zero\n");
 		return;
-	case 5:
+	case FPE_FLTUND_TRAP:
+	case FPE_FLTUND_FAULT:
 		ERROR("Real underflow\n");
 		return;
+	case FPE_DECOVF_TRAP:
+	case FPE_SUBRNG_TRAP:
 	default:
-		ERROR("Panic: Computational error in interpreter\n");
+		ERROR("Undefined arithmetic exception type (%d)\n", type);
 		return;
 	}
 #endif vax
