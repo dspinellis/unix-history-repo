@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)union_vnops.c	8.20 (Berkeley) %G%
+ *	@(#)union_vnops.c	8.21 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -865,6 +865,7 @@ union_remove(ap)
 	if (un->un_uppervp != NULLVP) {
 		struct vnode *dvp = dun->un_uppervp;
 		struct vnode *vp = un->un_uppervp;
+		struct componentname *cnp = ap->a_cnp;
 
 		FIXUP(dun);
 		VREF(dvp);
@@ -875,9 +876,9 @@ union_remove(ap)
 		un->un_flags |= UN_KLOCK;
 		vput(ap->a_vp);
 
-		if (un->un_lowervp != NULLVP)
-			ap->a_cnp->cn_flags |= DOWHITEOUT;
-		error = VOP_REMOVE(dvp, vp, ap->a_cnp);
+		if (union_dowhiteout(un, cnp->cn_cred, cnp->cn_proc))
+			cnp->cn_flags |= DOWHITEOUT;
+		error = VOP_REMOVE(dvp, vp, cnp);
 		if (!error)
 			union_removed_upper(un);
 	} else {
@@ -1098,6 +1099,7 @@ union_rmdir(ap)
 	if (un->un_uppervp != NULLVP) {
 		struct vnode *dvp = dun->un_uppervp;
 		struct vnode *vp = un->un_uppervp;
+		struct componentname *cnp = ap->a_cnp;
 
 		FIXUP(dun);
 		VREF(dvp);
@@ -1108,8 +1110,8 @@ union_rmdir(ap)
 		un->un_flags |= UN_KLOCK;
 		vput(ap->a_vp);
 
-		if (un->un_lowervp != NULLVP)
-			ap->a_cnp->cn_flags |= DOWHITEOUT;
+		if (union_dowhiteout(un, cnp->cn_cred, cnp->cn_proc))
+			cnp->cn_flags |= DOWHITEOUT;
 		error = VOP_RMDIR(dvp, vp, ap->a_cnp);
 		if (!error)
 			union_removed_upper(un);
