@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)savecore.c	5.36 (Berkeley) %G%";
+static char sccsid[] = "@(#)savecore.c	5.37 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -367,7 +367,7 @@ err2:			syslog(LOG_WARNING,
 			exit(1);
 		}
 	} else
-		ofd = Create(path, S_IRUSR | S_IWUSR);
+		ofd = Create(path, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
 	syslog(LOG_NOTICE, "writing %skernel to %s",
 	    compress ? "compressed " : "", path);
 	while ((nr = read(ifd, buf, sizeof(buf))) > 0) {
