@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)cron.c	4.16 (Berkeley) %G%";
+static char *sccsid = "@(#)cron.c	4.17 (Berkeley) %G%";
 #endif
 
 #include <sys/types.h>
@@ -33,7 +33,7 @@ struct	tm *loct;
 struct	tm *localtime();
 char	*malloc();
 char	*realloc();
-int	reapchild();
+void	reapchild();
 int	flag;
 char	*list;
 char	*listend;
@@ -352,12 +352,13 @@ register c;
 	return(n);
 }
 
+void
 reapchild()
 {
 	union wait status;
 	int pid;
 
-	while ((pid = wait3(&status, WNOHANG, (struct rusage *)0)) > 0)
+	while ((pid = wait3((int *)&status, WNOHANG, (struct rusage *)0)) > 0)
 		dprintf(debug, "%d: child exits with signal %d status %d\n",
 			pid, status.w_termsig, status.w_retcode),
 			fflush (debug);

@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)implogd.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)implogd.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -84,7 +84,7 @@ main()
 #endif
 	for (fromlen = sizeof(from);;) {
 		len = recvfrom(s, request, sizeof(request), 0,
-		    &from, &fromlen);
+		    (struct sockaddr *)&from, &fromlen);
 		if (len < 0) {
 			syslog(LOG_ERR, "recvfrom: %m\n");
 			continue;
