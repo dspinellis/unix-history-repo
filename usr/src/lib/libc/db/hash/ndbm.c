@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)ndbm.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)ndbm.c	5.2 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -33,6 +33,7 @@ int	flags;
 int	mode;
 {
     HASHINFO	info;
+    char path[MAXPATHLEN];
 
     info.bsize = 1024;
     info.ffactor = 5;
@@ -40,7 +41,8 @@ int	mode;
     info.ncached = NULL;
     info.hash = NULL;
     info.lorder = 0;
-    return( hash_open ( file, flags, mode, &info ) );
+    (void)sprintf(path, "%s%s", file, DBM_SUFFIX);
+    return( hash_open ( path, flags, mode, &info ) );
 }
 
 extern void 
