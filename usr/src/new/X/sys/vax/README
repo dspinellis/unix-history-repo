@@ -1,0 +1,3 @@
+This is a copy of our system configuration file as an example of what is
+required to add the device driver.
+Files.vax has to be edited to add reference to the Vs100 driver.
