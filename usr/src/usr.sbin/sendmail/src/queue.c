@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	8.62 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	8.41.1.1 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	8.62 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	8.41.1.1 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -239,15 +239,10 @@ queueup(e, queueall, announce)
 		fprintf(tfp, "$_%s\n", denlstring(p));
 
 	/* output name of sender */
-	if (bitnset(M_UDBENVELOPE, e->e_from.q_mailer->m_flags))
-		p = e->e_sender;
-	else
-		p = e->e_from.q_paddr;
-	fprintf(tfp, "S%s\n", denlstring(p));
+	fprintf(tfp, "S%s\n", denlstring(e->e_from.q_paddr));
 
 	/* output ESMTP-supplied "original" information */
 	if (e->e_envid != NULL)
-		fprintf(tfp, "Z%s\n", denlstring(e->e_envid));
 
 	/* output list of error recipients */
 	printctladdr(NULL, NULL);
@@ -268,25 +263,7 @@ queueup(e, queueall, announce)
 		{
 			printctladdr(q, tfp);
 			if (q->q_orcpt != NULL)
-				fprintf(tfp, "Q%s\n", denlstring(q->q_orcpt));
-			putc('R', tfp);
-			if (bitset(QPRIMARY, q->q_flags))
-				putc('P', tfp);
-			if (bitset(QPINGONSUCCESS, q->q_flags))
-				putc('S', tfp);
-			if (bitset(QPINGONFAILURE, q->q_flags))
-				putc('F', tfp);
-			if (bitset(QPINGONDELAY, q->q_flags))
-				putc('D', tfp);
-			if (bitset(QHAS_RET_PARAM, q->q_flags))
-			{
-				if (bitset(QRET_HDRS, q->q_flags))
-					putc('N', tfp);
-				else
-					putc('B', tfp);
-			}
-			putc(':', tfp);
-			fprintf(tfp, "%s\n", denlstring(q->q_paddr));
+			fprintf(tfp, "R%s\n", denlstring(q->q_paddr));
 			if (announce)
 			{
 				e->e_to = q->q_paddr;
