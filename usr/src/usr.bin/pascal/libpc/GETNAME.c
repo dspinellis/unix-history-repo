@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)GETNAME.c 1.7 %G%";
+static char sccsid[] = "@(#)GETNAME.c 1.8 %G%";
 
 #include "h00vars.h"
 
@@ -14,6 +14,8 @@ static char sccsid[] = "@(#)GETNAME.c 1.7 %G%";
  * temporary names are generated, and given
  * names are blank trimmed.
  */
+
+static char *tmpname = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 
 struct iorec *
 GETNAME(filep, name, namlim, datasize)
@@ -52,10 +54,15 @@ GETNAME(filep, name, namlim, datasize)
 			filep->flev = GLVL;
 		else
 			filep->flev = filep;
-		do {
-			if (++_filefre == MAXFILES)
-				_filefre = PREDEF + 1;
-		} while (_actfile[_filefre] != FILNIL);
+		for (_filefre++; _filefre < MAXFILES; _filefre++)
+			if (_actfile[_filefre] == FILNIL)
+				goto gotone;
+		for (_filefre = PREDEF + 1; _filefre < MAXFILES; _filefre++)
+			if (_actfile[_filefre] == FILNIL)
+				goto gotone;
+		ERROR("File table overflow\n");
+		return;
+gotone:
 		filep->fblk = _filefre;
 		_actfile[_filefre] = filep;
 		/*
@@ -108,8 +115,7 @@ GETNAME(filep, name, namlim, datasize)
 		 * a new one of the form #tmp.xxxxxx
 		 */
 		filep->funit |= TEMP;
-		sprintf(filep->fname, "#tmp.%c%d", filep->fblk <= 'z' - 'a' + 1
-		    ? 'a' + filep->fblk : 'A' + filep->fblk - ('z' - 'a' + 1),
+		sprintf(filep->fname, "#tmp.%c%d", tmpname[filep->fblk],
 		    getpid());
 		filep->pfname = &filep->fname[0];
 		return(filep);
