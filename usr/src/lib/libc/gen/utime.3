@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)utime.3	4.1 (Berkeley) %G%
+.\"	@(#)utime.3	5.1 (Berkeley) %G%
 .\"
-.TH UTIME 2
+.TH UTIME 3C "1 April 1983"
 .UC 4
 .SH NAME
 utime \- set file times
@@ -17,6 +17,10 @@ utime \- set file times
 .B time_t timep[2];
 .fi
 .SH DESCRIPTION
+.ft B
+This interface is obsoleted by utimes(2).
+.ft R
+.PP
 The
 .I utime
 call
@@ -26,13 +30,9 @@ from the
 .I timep
 vector
 to set the corresponding recorded times for
-.I file.
+.IR file .
 .PP
 The caller must be the owner of the file or the super-user.
 The `inode-changed' time of the file is set to the current time.
 .SH SEE ALSO
-stat (2)
-.SH "ASSEMBLER (PDP-11)"
-(utime = 30.)
-.br
-.B sys utime; file; timep
+utimes(2), stat(2)
