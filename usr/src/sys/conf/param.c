@@ -1,4 +1,4 @@
-/*	param.c	6.2	84/01/03	*/
+/*	param.c	6.3	84/01/09	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
