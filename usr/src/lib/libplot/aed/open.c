@@ -1,6 +1,13 @@
+/*-
+ * Copyright (c) 1983 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.proprietary.c%
+ */
+
 #ifndef lint
-static char sccsid[] = "@(#)open.c	4.1 (Berkeley) 11/11/83";
-#endif
+static char sccsid[] = "@(#)open.c	5.3 (Berkeley) %G%";
+#endif /* not lint */
 
 /*
  * Displays plot files on a AED512 graphics terminal.
