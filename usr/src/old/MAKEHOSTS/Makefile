@@ -1,4 +1,6 @@
-#	@(#)Makefile	5.1 (Berkeley) %G%
+#	@(#)Makefile	5.2 (Berkeley) %G%
+
+NOOBJ=	noobj
 
 MAKEHOSTS all clean cleandir depend lint tags:
 
