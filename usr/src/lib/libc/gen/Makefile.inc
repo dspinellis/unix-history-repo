@@ -1,10 +1,10 @@
-#	@(#)Makefile.inc	5.24 (Berkeley) %G%
+#	@(#)Makefile.inc	5.25 (Berkeley) %G%
 
 # gen sources
 .PATH: ${.CURDIR}/${MACHINE}/gen ${.CURDIR}/gen ${.CURDIR}/gen/regexp
 
-SRCS+=	alarm.c clock.c closedir.c crypt.c ctermid.c ctime.c ctype.c \
-	ctype_case.c \
+SRCS+=	alarm.c assert.c clock.c closedir.c crypt.c ctermid.c ctime.c \
+	ctype.c ctype_case.c \
 	difftime.c disklabel.c errlst.c exec.c fnmatch.c frexp.c fstab.c \
 	fts.c getcwd.c getgrent.c getgrouplist.c getlogin.c getmntinfo.c \
 	getnetgrent.c getpass.c getpwent.c getttyent.c getusershell.c glob.c \
