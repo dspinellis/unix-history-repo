@@ -1,7 +1,7 @@
 #
 # Machine Language Assist for UC Berkeley Virtual Vax/Unix
 #
-#	locore.s		3.10	%G%
+#	locore.s		3.11	%G%
 #
 
 	.set	HIGH,31		# mask for total disable
@@ -345,7 +345,7 @@ ubapass:
 	incl	_zvcnt
 	cmpl	_zvcnt,$250000
 	jlss	int_ret
-	pushab	$ZERmsg
+	pushab	ZERmsg
 	calls	$1,_printf
 	clrl	_zvcnt
 	calls	$0,_ubareset
@@ -745,20 +745,20 @@ start:
 	movl	$0x78,PHYSUBA+4		# init & interrupt enable
 
 	movl	Scbbase+MCKVEC,r5	# save machine check entry
-	movab	startint+INTSTK,Scbbase+MCKVEC	# set new vector address
+	movab	2f+INTSTK,Scbbase+MCKVEC	# set new vector address
 #
 # Will now see how much memory there really is
 # in 64kb chunks.  Save number of bytes in r7.
 #
 	mtpr	$HIGH-1,$IPL		# allow machine check interrupts
 	clrl	r7
-startlp:
+1:
 	tstl	(r7)			# this chunk really there?
-	acbl	$8096*1024-1,$64*1024,r7,startlp	# loop till mach check
-	brb 	startint		# full load of memory
+	acbl	$8096*1024-1,$64*1024,r7,1b	# loop till mach check
+	brb 	2f			# full load of memory
 
 	.align	2
-startint:
+2:
 	mtpr	$0,$SBIFS		# clear sbi fault status
 	movl	r5,Scbbase+MCKVEC	# restore machine check vector
 	movl	$_intstack+2048,sp	# reset interrupt stack pointer
@@ -767,8 +767,7 @@ startint:
 #
 	movab	_end,r5
 	movl	r5,_cmap
-	bbss	$31,_cmap,cm0
-cm0:
+	bbss	$31,_cmap,0f; 0:
 	subl3	r5,r7,r1
 	divl2	$(NBPG*CLSIZE)+CMSIZE,r1
 	mull2	$CMSIZE,r1
@@ -779,12 +778,11 @@ cm0:
 #
 	movab	_edata,r6
 	movl	_ecmap,r5		# clear to end of cmap[]
-	bbcc	$31,r5,strtclr0
-strtclr0:
+	bbcc	$31,r5,0f; 0:
 	addl2	$(UPAGES*NBPG)+NBPG+NBPG,r5
-strtclr:
+1:
 	clrq	(r6)
-	acbl	r5,$8,r6,strtclr
+	acbl	r5,$8,r6,1b
 
 #
 # Finagle _trap and _syscall to save r0-r11 so
@@ -800,20 +798,18 @@ strtclr:
 # Initialize system page table
 #
 	movab	_etext+NBPG-1,r1	# end of kernel text segment
-	bbcc	$31,r1,strt1		# turn off high order bit
-strt1:
+	bbcc	$31,r1,0f; 0:		# turn off high order bit
 	ashl	$-9,r1,r1		# last page of kernel text
 	clrl	r2			# point at first kernel text page
-strtlp1:
+1:
 	bisl3	$PG_V|PG_KR,r2,_Sysmap[r2]	# initialize page table entry
-	aoblss	r1,r2,strtlp1		# fill text entries
+	aoblss	r1,r2,1b		# fill text entries
 	addl3	_ecmap,$NBPG-1,r1	# end of cmap[]
-	bbcc	$31,r1,strt2		# turn off high order bit
-strt2:
+	bbcc	$31,r1,0f; 0:		# turn off high order bit
 	ashl	$-9,r1,r1		# last page of kernel data
-strtlp2:
+1:
 	bisl3	$PG_V|PG_KW,r2,_Sysmap[r2]	# fill data entries
-	aoblss	r1,r2,strtlp2
+	aoblss	r1,r2,1b
 #
 # initialize memory controller mapping
 #
@@ -826,35 +822,35 @@ strtlp2:
 	movl	$PHYSUBA/NBPG,r1	# page frame number for uba
 	movab	UBA0map,r2		# page table address
 	movab	15(r1),r3		# last pt entry
-strtlp3:
+1:
 	bisl3	$PG_V|PG_KW,r1,(r2)+	# init pt entry
-	aobleq	r3,r1,strtlp3
+	aobleq	r3,r1,1b
 	movl	$PHYSUMEM/NBPG,r1
 	movab	UMEMmap,r2		# page table address
 	movab	15(r1),r3		# limit
-strtlp4:
+1:
 	bisl3	$PG_V|PG_KW,r1,(r2)+
-	aobleq	r3,r1,strtlp4
+	aobleq	r3,r1,1b
 	movl	$PHYSMBA0/NBPG,r1
 	movab	MBA0map,r2
 	movab	15(r1),r3
-strtlp5:
+1:
 	bisl3	$PG_V|PG_KW,r1,(r2)+
-	aobleq	r3,r1,strtlp5
+	aobleq	r3,r1,1b
 	movl	$PHYSMBA1/NBPG,r1
 	movab	MBA1map,r2
 	movab	15(r1),r3
-strtlp6:
+1:
 	bisl3	$PG_V|PG_KW,r1,(r2)+
-	aobleq	r3,r1,strtlp6
+	aobleq	r3,r1,1b
 
 	mtpr	$1,$TBIA		# invalidate all trans buffer entries
 	mtpr	$1,$MAPEN		# turn on memory mapping
-	jmp 	*$startmap		# put system virtual address in pc
+	jmp 	*$0f			# put system virtual address in pc
 #
 # Now we move forward, virtually.
 #
-startmap:
+0:
 	ashl	$-9,r7,_maxmem		# set maxmem = btoc(r7)
 	movl	_maxmem,_physmem
 	movl	_maxmem,_freemem
@@ -871,8 +867,7 @@ startmap:
 #
 # set up u area page table
 #
-	bbcc	$31,r6,strt3
-strt3:
+	bbcc	$31,r6,0f; 0:
 	ashl	$-9,r6,r3			# r3 = btoc(r6)
 	bisl3	$PG_V|PG_KW,r3,_Usrptmap	# init first upt entry
 	movab	_usrpt,r0
@@ -887,14 +882,14 @@ strt3:
 	mtpr	r2,$P1BR
 	movl	$UPAGES,r2
 	movab	_u+NBPG*UPAGES,r1
-	jbr	strt3b
-strt3a:
+	jbr	2f
+1:
 	incl	r3
 	moval	-NBPG(r1),r1
 	bisl3	$PG_V|PG_URKW,r3,-(r0)
 	mtpr	r1,$TBIS
-strt3b:
-	sobgeq	r2,strt3a
+2:
+	sobgeq	r2,1b
 
 	movab	UPAGES*NBPG(r1),PCB_KSP(r1)	# init ksp
 	mnegl	$1,PCB_ESP(r1)			# invalidate esp
@@ -907,7 +902,7 @@ strt3b:
 	mfpr	$P1LR,PCB_P1LR(r1)
 	movl	$CLSIZE,PCB_SZPT(r1)		# init u.u_pcb.pcb_szpt
 
-	movab	strt3c,PCB_PC(r1)		# initial pc
+	movab	1f,PCB_PC(r1)			# initial pc
 	clrl	PCB_PSL(r1)			# mode(k,k), ipl=0
 	ashl	$9,r3,r3
 	mtpr	r3,$PCBB			# first pcbb
@@ -921,13 +916,12 @@ strt3b:
 #
 # put signal trampoline code in u. area
 #
-strt3c:
+1:
 	movab	_u,r0
 	movc3	$12,sigcode,PCB_SIGC(r0)
 
 	addl3	_ecmap,$NBPG-1,r0		# calculate firstaddr
-	bbcc	$31,r0,strt4
-strt4:
+	bbcc	$31,r0,0f; 0:
 	ashl	$-9,r0,-(sp)			# convert to clicks and stack
 	calls	$1,_main			# startup, fork off /etc/init.vm
 #
@@ -958,25 +952,25 @@ _addupc:	.globl	_addupc
 	.word	0x0000
 	movl	8(ap),r2		# &u.u_prof
 	subl3	8(r2),4(ap),r0		# corrected pc
-	blss	addret
+	blss	9f
 	extzv	$1,$31,r0,r0		# logical right shift
 	extzv	$1,$31,12(r2),r1	# ditto for scale
 	emul	r1,r0,$0,r0
 	ashq	$-14,r0,r0
 	tstl	r1
-	bneq	addret
+	bneq	9f
 	incl	r0
 	bicb2	$1,r0
-	blss	addret
+	blss	9f
 	cmpl	r0,4(r2)		# length
-	bgequ	addret
+	bgequ	9f
 	addl2	(r2),r0			# base
 	probew	$3,$2,(r0)
-	beql	adderr
+	beql	8f
 	addw2	12(ap),(r0)
-addret:
+9:
 	ret
-adderr:
+8:
 	clrl	12(r2)
 	ret
 
