@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rwhod.c	4.12 (Berkeley) 83/06/01";
+static char sccsid[] = "@(#)rwhod.c	4.13 (Berkeley) 83/06/02";
 #endif
 
 #include <sys/types.h>
@@ -184,8 +184,8 @@ main()
 			we = wd.wd_we;
 			for (i = 0; i < n; i++) {
 				we->we_idle = ntohl(we->we_idle);
-				we->we_utmp.ut_time =
-				    ntohl(we->we_utmp.ut_time);
+				we->we_utmp.out_time =
+				    ntohl(we->we_utmp.out_time);
 				we++;
 			}
 		}
