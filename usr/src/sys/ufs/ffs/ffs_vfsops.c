@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_vfsops.c	7.68 (Berkeley) %G%
+ *	@(#)ffs_vfsops.c	7.69 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -208,13 +208,11 @@ ffs_mountfs(devvp, mp, p)
 	caddr_t base, space;
 	int havepart = 0, blks;
 	int error, i, size;
-	int needclose = 0;
 	int ronly;
 	extern struct vnode *rootvp;
 
 	if (error = VOP_OPEN(devvp, ronly ? FREAD : FREAD|FWRITE, NOCRED, p))
 		return (error);
-	needclose = 1;
 	if (VOP_IOCTL(devvp, DIOCGPART, (caddr_t)&dpart, FREAD, NOCRED, p) != 0)
 		size = DEV_BSIZE;
 	else {
@@ -331,8 +329,7 @@ ffs_mountfs(devvp, mp, p)
 out:
 	if (bp)
 		brelse(bp);
-	if (needclose)
-		(void)VOP_CLOSE(devvp, ronly ? FREAD : FREAD|FWRITE, NOCRED, p);
+	(void)VOP_CLOSE(devvp, ronly ? FREAD : FREAD|FWRITE, NOCRED, p);
 	if (ump) {
 		free(ump->um_fs, M_UFSMNT);
 		free(ump, M_UFSMNT);
