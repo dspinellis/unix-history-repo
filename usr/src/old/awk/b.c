@@ -1,4 +1,6 @@
-/*	b.c	4.1	82/05/07	*/
+#ifndef lint
+static char sccsid[] = "@(#)b.c	4.2 %G%";
+#endif
 
 #include "awk.def"
 #include "stdio.h"

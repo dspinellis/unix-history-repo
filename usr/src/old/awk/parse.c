@@ -1,4 +1,6 @@
-/*	parse.c	4.1	82/05/07	*/
+#ifndef lint
+static char sccsid[] = "@(#)parse.c	4.2 %G%";
+#endif
 
 #include "awk.def"
 #include "awk.h"

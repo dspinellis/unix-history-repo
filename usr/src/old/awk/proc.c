@@ -1,4 +1,6 @@
-/*	proc.c	4.2	83/02/09	*/
+#ifndef lint
+static char sccsid[] = "@(#)proc.c	4.3 %G%";
+#endif
 
 #include "awk.h"
 #define NULL 0
