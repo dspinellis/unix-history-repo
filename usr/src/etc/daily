@@ -1,6 +1,6 @@
 #!/bin/sh -
 #
-#	@(#)daily	5.10 (Berkeley) %G%
+#	@(#)daily	5.11 (Berkeley) %G%
 #
 PATH=/bin:/usr/bin:/sbin:/usr/sbin:/usr/local
 host=`hostname -s`
@@ -11,8 +11,8 @@ echo ""
 echo "Removing scratch and junk files:"
 if [ -d /tmp ]; then
 	cd /tmp && {
-	find .	! -name . -atime +3 -exec rm -f {} \;
-	find .	! -name . -type d -mtime +1 -exec rmdir {} \; >/dev/null 2>&1; }
+	find . -type f -atime +3 -exec rm -f {} \;
+	find . ! -name . -type d -mtime +1 -exec rmdir {} \; >/dev/null 2>&1; }
 fi
 
 if [ -d /var/tmp ]; then
