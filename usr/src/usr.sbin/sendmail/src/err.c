@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)err.c	8.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)err.c	8.17 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -472,16 +472,16 @@ errstring(errno)
 
 # ifdef NAMED_BIND
 	  case HOST_NOT_FOUND + E_DNSBASE:
-		return ("Name server: host not found");
+		return ("Name server: %s: host not found", CurHostName);
 
 	  case TRY_AGAIN + E_DNSBASE:
-		return ("Name server: host name lookup failure");
+		return ("Name server: %s: host name lookup failure", CurHostName);
 
 	  case NO_RECOVERY + E_DNSBASE:
-		return ("Name server: non-recoverable error");
+		return ("Name server: %s: non-recoverable error", CurHostName);
 
 	  case NO_DATA + E_DNSBASE:
-		return ("Name server: no data known for name");
+		return ("Name server: %s: no data known", CurHostName);
 # endif
 
 	  case EPERM:
