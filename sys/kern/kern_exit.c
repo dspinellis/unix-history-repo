@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)kern_exit.c	7.35 (Berkeley) 6/27/91
- *	$Id: kern_exit.c,v 1.11 1993/12/19 00:51:24 wollman Exp $
+ *	$Id: kern_exit.c,v 1.12 1994/01/21 09:56:24 davidg Exp $
  */
 
 #include "param.h"
@@ -158,7 +158,7 @@ kexit(p, rv)
 				(void) ttywait(sp->s_ttyp);
 				vgoneall(sp->s_ttyvp);
 			}
-			vrele(sp->s_ttyvp);
+			vn_close(sp->s_ttyvp, FREAD|FWRITE, p->p_ucred, p);
 			sp->s_ttyvp = NULL;
 			/*
 			 * s_ttyp is not zero'd; we use this to indicate
@@ -175,7 +175,7 @@ kexit(p, rv)
 	 * release trace file
 	 */
 	if (p->p_tracep)
-		vrele(p->p_tracep);
+		vn_close(p->p_tracep, FREAD|FWRITE, p->p_ucred, p);
 #endif
 
 	/* current process does not exist, as far as other parts of the
