@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)map.c	8.32 (Berkeley) %G%";
+static char sccsid[] = "@(#)map.c	8.33 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -2135,7 +2135,7 @@ switch_map_open(map, mode)
 		printf("switch_map_open(%s, %s, %d)\n",
 			map->map_mname, map->map_file, mode);
 
-	nmaps = switch_map_find(map->map_file, maptype);
+	nmaps = switch_map_find(map->map_file, maptype, map->map_return);
 	if (tTd(38, 19))
 	{
 		printf("\tswitch_map_find => %d\n", nmaps);

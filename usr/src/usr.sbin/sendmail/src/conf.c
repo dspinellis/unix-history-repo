@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.110 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.111 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -489,15 +489,26 @@ inithostmaps()
 **		maptype -- an out-array of strings containing the types
 **			of access to use for this service.  There can
 **			be at most MAXMAPSTACK types for a single service.
+**		mapreturn -- an out-array of return information bitmaps
+**			for the map.
 **
 **	Returns:
 **		The number of map types filled in, or -1 for failure.
 */
 
+#ifdef SOLARIS
+# include <nsswitch.h>
+#endif
+
+#if defined(ultrix) || defined(__osf__)
+# include <sys/svcinfo.h>
+#endif
+
 int
-switch_map_find(service, maptype)
+switch_map_find(service, maptype, mapreturn)
 	char *service;
 	char *maptype[MAXMAPSTACK];
+	short mapreturn[3];
 {
 	register FILE *fp;
 	int svcno;
@@ -522,11 +533,11 @@ switch_map_find(service, maptype)
 	{
 		maptype[svcno] = lk->service_name;
 		if (lk->actions[__NSW_NOTFOUND] == __NSW_RETURN)
-			map->map_return[MA_NOTFOUND] |= 1 << svcno;
+			mapreturn[MA_NOTFOUND] |= 1 << svcno;
 		if (lk->actions[__NSW_TRYAGAIN] == __NSW_RETURN)
-			map->map_return[MA_TRYAGAIN] |= 1 << svcno;
+			mapreturn[MA_TRYAGAIN] |= 1 << svcno;
 		if (lk->actions[__NSW_UNAVAIL] == __NSW_RETURN)
-			map->map_return[MA_TRYAGAIN] |= 1 << svcno;
+			mapreturn[MA_TRYAGAIN] |= 1 << svcno;
 		svcno++;
 	}
 	return svcno;
@@ -539,7 +550,7 @@ switch_map_find(service, maptype)
 	svc = getsvc();
 	if (strcmp(service, "hosts") == 0)
 		svc = SVC_HOSTS;
-	else if strcmp(service, "aliases") == 0)
+	else if (strcmp(service, "aliases") == 0)
 		svc = SVC_ALIASES;
 	else if (strcmp(service, "passwd") == 0)
 		svc = SVC_PASSWD;

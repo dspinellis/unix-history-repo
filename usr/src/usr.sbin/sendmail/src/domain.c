@@ -10,9 +10,9 @@
 
 #ifndef lint
 #if NAMED_BIND
-static char sccsid[] = "@(#)domain.c	8.26 (Berkeley) %G% (with name server)";
+static char sccsid[] = "@(#)domain.c	8.27 (Berkeley) %G% (with name server)";
 #else
-static char sccsid[] = "@(#)domain.c	8.26 (Berkeley) %G% (without name server)";
+static char sccsid[] = "@(#)domain.c	8.27 (Berkeley) %G% (without name server)";
 #endif
 #endif /* not lint */
 
@@ -416,8 +416,9 @@ mx_enabled()
 	if (firsttime)
 	{
 		int nmaps;
+		short mapreturn[3];
 
-		nmaps = switch_map_find("hosts", maptype);
+		nmaps = switch_map_find("hosts", maptype, mapreturn);
 		hasmx = FALSE;
 		if (nmaps > 0 && nmaps <= MAXMAPSTACK)
 		{
