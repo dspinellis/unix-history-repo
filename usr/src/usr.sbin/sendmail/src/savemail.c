@@ -2,7 +2,7 @@
 # include <pwd.h>
 # include "sendmail.h"
 
-static char	SccsId[] = "@(#)savemail.c	3.7	%G%";
+static char	SccsId[] = "@(#)savemail.c	3.8	%G%";
 
 /*
 **  SAVEMAIL -- Save mail on error
@@ -147,7 +147,6 @@ savemail()
 	**	and we all know what poor typists programmers are.
 	*/
 
-	To = NULL;
 	setuid(getuid());
 	setgid(getgid());
 	setpwent();
@@ -170,12 +169,10 @@ savemail()
 		/* we have a home directory; open dead.letter */
 		strcpy(buf, p);
 		strcat(buf, "/dead.letter");
-		if (mailfile(buf) != EX_OK)
-			message("050", "Cannot save mail, sorry");
-		else
-			message("050", "Letter saved in dead.letter");
+		To = buf;
+		i = mailfile(buf);
+		giveresponse(i, TRUE, Mailer[0]);
 	}
-	else
 
 	/* add terminator to writeback message */
 	if (WriteBack)
