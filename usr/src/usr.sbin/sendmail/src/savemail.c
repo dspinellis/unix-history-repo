@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)savemail.c	8.39 (Berkeley) %G%";
+static char sccsid[] = "@(#)savemail.c	8.40 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -654,7 +654,13 @@ errbody(mci, e, separator, flags)
 		**  Output per-message information.
 		*/
 
-		/* Original-MTS-Type: is optional */
+		/* OMTS from MAIL FROM: line */
+		if (e->e_parent->e_omts != NULL)
+		{
+			(void) sprintf(buf, "Original-MTS-Type: %s",
+				e->e_parent->e_omts);
+			putline(buf, mci);
+		}
 
 		/* original envelope id from MAIL FROM: line */
 		if (e->e_parent->e_envid != NULL)
@@ -664,10 +670,21 @@ errbody(mci, e, separator, flags)
 			putline(buf, mci);
 		}
 
-		/* Final-MTS-Type: is optional (always INET?) */
+		/* Final-MTS-Type: is required -- our type */
+		putline("Final-MTS-Type: Internet", mci);
 
 		/* Final-MTA: seems silly -- this is in the From: line */
 		(void) sprintf(buf, "Final-MTA: %s", MyHostName);
+		putline(buf, mci);
+
+		/* Received-From: shows where we got this message from */
+		expand("Received-From: \201_", buf, &buf[sizeof buf - 1],
+				e->e_parent);
+		putline(buf, mci);
+
+		/* Arrival-Date: -- when it arrived here */
+		(void) sprintf(buf, "Arrival-Date: %s",
+			arpadate(ctime(&e->e_parent->e_ctime)));
 		putline(buf, mci);
 
 		/*
@@ -682,10 +699,10 @@ errbody(mci, e, separator, flags)
 				continue;
 			putline("", mci);
 
-			/* Rcpt: -- the name from the RCPT command */
+			/* Recipient: -- the name from the RCPT command */
 			for (r = q; r->q_alias != NULL; r = r->q_alias)
 				continue;
-			(void) sprintf(buf, "Rcpt: %s", r->q_paddr);
+			(void) sprintf(buf, "Recipient: %s", r->q_paddr);
 			putline(buf, mci);
 
 			/* Action: -- what happened? */
@@ -722,6 +739,18 @@ errbody(mci, e, separator, flags)
 			/* Final-Log-Id: -- why isn't this per-message? */
 			(void) sprintf(buf, "Final-Log-Id: %s", e->e_id);
 			putline(buf, mci);
+
+			/* Expiry-Date: -- for delayed messages only */
+			if (bitset(QQUEUEUP, q->q_flags) &&
+			    !bitset(QBADADDR, q->q_flags))
+			{
+				time_t xdate;
+
+				xdate = e->e_ctime + TimeOuts.to_q_return[e->e_timeoutclass];
+				sprintf(buf, "Expiry-Date: %s",
+					arpadate(ctime(&xdate)));
+				putline(buf, mci);
+			}
 
 			/* Original-Rcpt: -- passed from on high */
 			if (q->q_orcpt != NULL)
