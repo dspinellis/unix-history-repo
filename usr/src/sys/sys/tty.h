@@ -1,4 +1,4 @@
-/*	tty.h	4.4	81/04/19	*/
+/*	tty.h	4.5	81/06/11	*/
 
 #ifdef KERNEL
 #include "../h/ioctl.h"
@@ -109,7 +109,7 @@ short	tthiwat[NSPEEDS], ttlowat[NSPEEDS];
 #define	TTHIWAT(tp)	tthiwat[(tp)->t_ospeed&TTMASK]
 #define	TTLOWAT(tp)	ttlowat[(tp)->t_ospeed&TTMASK]
 #endif
-#define	TTYHOG	256
+#define	TTYHOG	255
 
 /* hardware bits */
 #define	DONE	0200
