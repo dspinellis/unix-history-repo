@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.22 (Berkeley) %G%
+#	@(#)Makefile	5.22 (Berkeley) 6/3/87
 #
 DESTDIR=
 CFLAGS=	-O
@@ -16,6 +16,13 @@ SUBDIR=	adb as awk csh diff make sed sh tp
 #
 SCRIPT=	false true
 
+# C source that lives in the current directory
+#
+SRCS=	ar.c cat.c cc.c chgrp.c chmod.c cmp.c date.c dd.c du.c echo.c ed.c \
+	expr.c grep.c hostid.c hostname.c kill.c ld.c ln.c ls.c machine.c \
+	mkdir.c mt.c nice.c nm.c od.c pagesize.c pr.c ps.c pwd.c rm.c \
+	rmail.c rmdir.c size.c stty.c sync.c tar.c tee.c test.c time.c who.c
+
 # C programs that live in the current directory and do not need
 # explicit make lines.
 #
@@ -25,257 +32,176 @@ STD=	ar cat cc chgrp chmod cmp date dd du echo ed grep hostid \
 
 # C programs that live in the current directory and need explicit make lines.
 #
-NSTD=	expr
+NSTD=	expr ps
 
-# Programs that must run setuid to root
+# Programs that get installed with special permissions
 #
-SETUID=	login mail passwd rcp su
+PERM=	df login mail passwd rcp su wall write
 
-# Programs that run set-group-id operator
-#
-OPERATOR= df
-
-# Programs that must run set-group-id kmem.
-#
-KMEM=	ps
-
-# Programs that must run set-group-id tty.
-#
-TTY=	wall write
-
-BINS=	${STD} ${NSTD} ${SETUID} ${OPERATOR} ${KMEM} ${TTY} cp mv strip
+BINS=	${STD} ${NSTD} ${PERM} cp mv strip
 
 all:	${SUBDIR} ${BINS}
 
 ${SUBDIR}: FRC
 	cd $@; make ${MFLAGS}
 
-FRC:
-	
-
-${STD} ${SETUID} ${OPERATOR} ${TTY} mv cp strip:
+${STD} ${PERM} mv cp strip:
 	${CC} ${CFLAGS} -o $@ $@.c
 
 # take care with cp, strip, and mv, install uses them
-install:
-	install -s cp ${DESTDIR}/bin/newcp; \
+install: FRC
+	install -s -o bin -g bin -m 755 cp ${DESTDIR}/bin/newcp; \
 		mv ${DESTDIR}/bin/newcp ${DESTDIR}/bin/cp;
-	install -s strip ${DESTDIR}/bin/newstrip; \
+	install -s -o bin -g bin -m 755 strip ${DESTDIR}/bin/newstrip; \
 		mv ${DESTDIR}/bin/newstrip ${DESTDIR}/bin/strip;
-	rm -f ${DESTDIR}/bin/mv; cp mv ${DESTDIR}/bin/mv; rm -f mv; \
-		strip ${DESTDIR}/bin/mv; chmod 755 ${DESTDIR}/bin/mv
+	install -c -s -o bin -g bin -m 755 mv ${DESTDIR}/bin/mv
+	rm -f mv
 	-for i in ${SUBDIR}; do \
 		(cd $$i; make ${MFLAGS} DESTDIR=${DESTDIR} install); done
-	-for i in ${SCRIPT}; do (install -c $$i.sh ${DESTDIR}/bin/$$i); done
-	-for i in ${STD} ${NSTD}; do (install -s $$i ${DESTDIR}/bin/$$i); done
-	-for i in ${SETUID}; do \
-		(install -o root -m 4755 -s $$i ${DESTDIR}/bin/$$i); done
-	-for i in ${OPERATOR}; do \
-		(install -g operator -m 2755 -s $$i ${DESTDIR}/bin/$$i); done
-	-for i in ${KMEM}; do \
-		(install -g kmem -m 2755 -s $$i ${DESTDIR}/bin/$$i); done
-	-for i in ${TTY}; do \
-		(install -g tty -m 2755 -s $$i ${DESTDIR}/bin/$$i); done
+	-for i in ${SCRIPT}; do \
+		(install -c -o bin -g bin -m 755 $$i.sh ${DESTDIR}/bin/$$i); \
+	done
+	-for i in ${STD}; do \
+		(install -s -o bin -g bin -m 755 $$i ${DESTDIR}/bin/$$i); \
+	done
+# programs that run with special permissions
+	install -s -o root -o bin -m 4755 login ${DESTDIR}/bin/login
+	install -s -o root -o bin -m 4755 mail ${DESTDIR}/bin/mail
+	install -s -o root -o bin -m 4755 passwd ${DESTDIR}/bin/passwd
+	install -s -o root -o bin -m 4755 rcp ${DESTDIR}/bin/rcp
+	install -s -o root -o bin -m 4755 su ${DESTDIR}/bin/su
+	install -s -o bin -g operator -m 2755 df ${DESTDIR}/bin/df
+	install -s -o bin -g kmem -m 2755 ps ${DESTDIR}/bin/ps
+	install -s -o bin -g tty -m 2755 wall ${DESTDIR}/bin/wall
+	install -s -o bin -g tty -m 2755 write ${DESTDIR}/bin/write
+	install -s -o bin -g bin -m 755 expr ${DESTDIR}/bin/expr
+# directories and links
 	rm -f ${DESTDIR}/bin/[; ln ${DESTDIR}/bin/test ${DESTDIR}/bin/[
 	rm -f ${DESTDIR}/bin/e; ln ${DESTDIR}/bin/ed ${DESTDIR}/bin/e
 	rm -f ${DESTDIR}/bin/chfn; ln ${DESTDIR}/bin/passwd ${DESTDIR}/bin/chfn
 	rm -f ${DESTDIR}/bin/chsh; ln ${DESTDIR}/bin/passwd ${DESTDIR}/bin/chsh
 
-clean:
+clean: FRC
 	rm -f ${BINS} expr.c a.out core *.s *.o errs
 	for i in ${SUBDIR}; do (cd $$i; make ${MFLAGS} clean); done
 
-depend: expr.c
+depend: expr.c FRC
 	for i in ${SUBDIR}; do (cd $$i; make ${MFLAGS} depend); done
-	for i in ${BINS}; do \
-	    cc -M ${INCPATH} $$i.c | sed 's/\.o//' | \
-	    awk ' { if ($$1 != prev) \
-		{ if (rec != "") print rec; rec = $$0; prev = $$1; } \
-		else { if (length(rec $$2) > 78) { print rec; rec = $$0; } \
-		else rec = rec " " $$2 } } \
-		END { print rec } ' >> makedep; done
-	echo '/^# DO NOT DELETE THIS LINE/+2,$$d' >eddep
-	echo '$$r makedep' >>eddep
-	echo 'w' >>eddep
-	cp Makefile Makefile.bak
-	ed - Makefile < eddep
-	rm eddep makedep
-	echo '# DEPENDENCIES MUST END AT END OF FILE' >> Makefile
-	echo '# IF YOU PUT STUFF HERE IT WILL GO AWAY' >> Makefile
-	echo '# see make depend above' >> Makefile
+	mkdep ${CFLAGS} ${SRCS}
+
+FRC:
 
 # Files listed in ${NSTD} have explicit make lines given below.
 
 expr: expr.o
-	cc ${CFLAGS} -o expr expr.o
+	${CC} ${CFLAGS} -o $@ expr.o
 
 ps:
-	cc ${CFLAGS} -o ps ps.c -lm
+	${CC} ${CFLAGS} -o $@ ps.c -lm
 
-# DO NOT DELETE THIS LINE -- make depend uses it
+# DO NOT DELETE THIS LINE -- mkdep uses it.
+# DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
 
-ar: ar.c /usr/include/sys/param.h /usr/include/sys/types.h
-ar: /usr/include/signal.h /usr/include/machine/machparam.h
-ar: /usr/include/sys/stat.h /usr/include/sys/time.h /usr/include/time.h
-ar: /usr/include/stdio.h /usr/include/ar.h
-cat: cat.c /usr/include/stdio.h /usr/include/sys/types.h
-cat: /usr/include/sys/stat.h
-cc: cc.c /usr/include/sys/param.h /usr/include/sys/types.h
-cc: /usr/include/signal.h /usr/include/machine/machparam.h /usr/include/stdio.h
-cc: /usr/include/ctype.h /usr/include/signal.h /usr/include/sys/dir.h
-chgrp: chgrp.c /usr/include/stdio.h /usr/include/ctype.h
-chgrp: /usr/include/sys/types.h /usr/include/sys/stat.h /usr/include/grp.h
-chgrp: /usr/include/pwd.h /usr/include/sys/dir.h
-chmod: chmod.c /usr/include/stdio.h /usr/include/sys/types.h
-chmod: /usr/include/sys/stat.h /usr/include/sys/dir.h
-cmp: cmp.c /usr/include/sys/param.h /usr/include/sys/types.h
-cmp: /usr/include/signal.h /usr/include/machine/machparam.h
-cmp: /usr/include/sys/file.h /usr/include/sys/stat.h /usr/include/stdio.h
-cmp: /usr/include/ctype.h
-date: date.c /usr/include/sys/param.h /usr/include/sys/types.h
-date: /usr/include/signal.h /usr/include/machine/machparam.h
-date: /usr/include/sys/time.h /usr/include/time.h /usr/include/sys/file.h
-date: /usr/include/errno.h /usr/include/syslog.h /usr/include/utmp.h
-date: /usr/include/tzfile.h /usr/include/stdio.h /usr/include/ctype.h
-date: /usr/include/strings.h /usr/include/sys/socket.h
-date: /usr/include/netinet/in.h /usr/include/netdb.h
-date: /usr/include/protocols/timed.h
-dd: dd.c /usr/include/sys/file.h /usr/include/stdio.h /usr/include/signal.h
-du: du.c /usr/include/stdio.h /usr/include/sys/param.h /usr/include/sys/types.h
-du: /usr/include/signal.h /usr/include/machine/machparam.h
-du: /usr/include/sys/stat.h /usr/include/sys/dir.h
-echo: echo.c /usr/include/stdio.h
-ed: ed.c /usr/include/signal.h /usr/include/sgtty.h /usr/include/sys/ioctl.h
-ed: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h /usr/include/setjmp.h
-grep: grep.c /usr/include/stdio.h /usr/include/ctype.h
-hostid: hostid.c /usr/include/sys/types.h /usr/include/stdio.h
-hostid: /usr/include/ctype.h /usr/include/netdb.h
-hostname: hostname.c /usr/include/stdio.h
-kill: kill.c /usr/include/signal.h /usr/include/ctype.h
-ld: ld.c /usr/include/sys/param.h /usr/include/sys/types.h
-ld: /usr/include/signal.h /usr/include/machine/machparam.h
-ld: /usr/include/signal.h /usr/include/stdio.h /usr/include/ctype.h
-ld: /usr/include/ar.h /usr/include/a.out.h /usr/include/sys/exec.h
-ld: /usr/include/ranlib.h /usr/include/sys/stat.h /usr/include/sys/file.h
-ln: ln.c /usr/include/stdio.h /usr/include/sys/types.h /usr/include/sys/stat.h
-ln: /usr/include/errno.h
-ls: ls.c /usr/include/sys/param.h /usr/include/sys/types.h
-ls: /usr/include/signal.h /usr/include/machine/machparam.h
-ls: /usr/include/sys/stat.h /usr/include/sys/dir.h /usr/include/stdio.h
-ls: /usr/include/sgtty.h /usr/include/sys/ioctl.h /usr/include/sys/ttychars.h
-ls: /usr/include/sys/ttydev.h /usr/include/pwd.h /usr/include/grp.h
-ls: /usr/include/utmp.h
-machine: machine.c /usr/include/sys/param.h /usr/include/sys/types.h
-machine: /usr/include/signal.h /usr/include/machine/machparam.h
-mkdir: mkdir.c /usr/include/stdio.h
-mt: mt.c /usr/include/stdio.h /usr/include/ctype.h /usr/include/sys/types.h
-mt: /usr/include/sys/mtio.h /usr/include/sys/ioctl.h
-mt: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
-mt: /usr/include/tahoevba/cyreg.h
-nice: nice.c /usr/include/stdio.h /usr/include/sys/time.h /usr/include/time.h
-nice: /usr/include/sys/resource.h
-nm: nm.c /usr/include/sys/types.h /usr/include/sys/file.h /usr/include/ar.h
-nm: /usr/include/stdio.h /usr/include/ctype.h /usr/include/a.out.h
-nm: /usr/include/sys/exec.h /usr/include/stab.h /usr/include/ranlib.h
-od: od.c /usr/include/stdio.h /usr/include/sys/types.h /usr/include/sys/stat.h
-pagesize: pagesize.c
-pr: pr.c /usr/include/stdio.h /usr/include/signal.h /usr/include/sys/types.h
-pr: /usr/include/sys/stat.h
-pwd: pwd.c /usr/include/stdio.h /usr/include/sys/param.h
-pwd: /usr/include/sys/types.h /usr/include/signal.h
-pwd: /usr/include/machine/machparam.h
-rm: rm.c /usr/include/stdio.h /usr/include/sys/param.h /usr/include/sys/types.h
-rm: /usr/include/signal.h /usr/include/machine/machparam.h
-rm: /usr/include/sys/stat.h /usr/include/sys/dir.h /usr/include/sys/file.h
-rmail: rmail.c /usr/include/stdio.h /usr/include/sysexits.h
-rmdir: rmdir.c /usr/include/stdio.h
-size: size.c /usr/include/stdio.h /usr/include/a.out.h /usr/include/sys/exec.h
-stty: stty.c /usr/include/stdio.h /usr/include/sys/ioctl.h
-stty: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
-sync: sync.c
-tar: tar.c /usr/include/stdio.h /usr/include/sys/param.h
-tar: /usr/include/sys/types.h /usr/include/signal.h
-tar: /usr/include/machine/machparam.h /usr/include/sys/stat.h
-tar: /usr/include/sys/dir.h /usr/include/sys/ioctl.h
-tar: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
-tar: /usr/include/sys/mtio.h /usr/include/sys/time.h /usr/include/time.h
-tar: /usr/include/signal.h /usr/include/errno.h /usr/include/fcntl.h
-tee: tee.c /usr/include/signal.h /usr/include/sys/types.h
-tee: /usr/include/sys/stat.h /usr/include/errno.h
-test: test.c /usr/include/stdio.h /usr/include/sys/types.h
-test: /usr/include/sys/stat.h
-time: time.c /usr/include/stdio.h /usr/include/signal.h
-time: /usr/include/sys/types.h /usr/include/sys/time.h /usr/include/time.h
-time: /usr/include/sys/resource.h
-who: who.c /usr/include/stdio.h /usr/include/utmp.h /usr/include/pwd.h
-who: /usr/include/ctype.h
-expr: expr.c /usr/include/stdio.h
-login: login.c /usr/include/sys/param.h /usr/include/sys/types.h
-login: /usr/include/signal.h /usr/include/machine/machparam.h
-login: /usr/include/sys/quota.h /usr/include/sys/stat.h /usr/include/sys/time.h
-login: /usr/include/time.h /usr/include/sys/resource.h /usr/include/sys/file.h
-login: /usr/include/sgtty.h /usr/include/sys/ioctl.h
-login: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
-login: /usr/include/utmp.h /usr/include/signal.h /usr/include/pwd.h
-login: /usr/include/stdio.h /usr/include/lastlog.h /usr/include/errno.h
-login: /usr/include/ttyent.h /usr/include/syslog.h /usr/include/grp.h
-mail: mail.c /usr/include/sys/param.h /usr/include/sys/types.h
-mail: /usr/include/signal.h /usr/include/machine/machparam.h
-mail: /usr/include/sys/stat.h /usr/include/sys/file.h /usr/include/ctype.h
-mail: /usr/include/stdio.h /usr/include/pwd.h /usr/include/utmp.h
-mail: /usr/include/signal.h /usr/include/setjmp.h /usr/include/sysexits.h
-mail: /usr/include/sys/socket.h /usr/include/netinet/in.h /usr/include/netdb.h
-passwd: passwd.c /usr/include/sys/types.h /usr/include/sys/file.h
-passwd: /usr/include/sys/time.h /usr/include/time.h /usr/include/sys/resource.h
-passwd: /usr/include/stdio.h /usr/include/signal.h /usr/include/pwd.h
-passwd: /usr/include/ndbm.h /usr/include/errno.h /usr/include/strings.h
-passwd: /usr/include/ctype.h
-rcp: rcp.c /usr/include/sys/param.h /usr/include/sys/types.h
-rcp: /usr/include/signal.h /usr/include/machine/machparam.h
-rcp: /usr/include/sys/stat.h /usr/include/sys/time.h /usr/include/time.h
-rcp: /usr/include/sys/ioctl.h /usr/include/sys/ttychars.h
-rcp: /usr/include/sys/ttydev.h /usr/include/netinet/in.h /usr/include/stdio.h
-rcp: /usr/include/signal.h /usr/include/pwd.h /usr/include/ctype.h
-rcp: /usr/include/netdb.h /usr/include/errno.h /usr/include/sys/dir.h
-su: su.c /usr/include/stdio.h /usr/include/pwd.h /usr/include/grp.h
-su: /usr/include/syslog.h /usr/include/sys/types.h /usr/include/sys/time.h
-su: /usr/include/time.h /usr/include/sys/resource.h
-df: df.c /usr/include/sys/param.h /usr/include/sys/types.h
-df: /usr/include/signal.h /usr/include/machine/machparam.h
-df: /usr/include/sys/fs.h /usr/include/sys/stat.h /usr/include/errno.h
-df: /usr/include/stdio.h /usr/include/fstab.h /usr/include/mtab.h
-ps: ps.c /usr/include/stdio.h /usr/include/ctype.h /usr/include/a.out.h
-ps: /usr/include/sys/exec.h /usr/include/pwd.h /usr/include/sys/param.h
-ps: /usr/include/sys/types.h /usr/include/signal.h
-ps: /usr/include/machine/machparam.h /usr/include/sys/ioctl.h
-ps: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
-ps: /usr/include/sys/tty.h /usr/include/sys/ttychars.h
-ps: /usr/include/sys/ttydev.h /usr/include/sys/dir.h /usr/include/sys/user.h
-ps: /usr/include/machine/pcb.h /usr/include/sys/dmap.h /usr/include/sys/time.h
-ps: /usr/include/time.h /usr/include/sys/resource.h /usr/include/sys/namei.h
-ps: /usr/include/sys/uio.h /usr/include/errno.h /usr/include/sys/proc.h
-ps: /usr/include/machine/pte.h /usr/include/sys/vm.h /usr/include/sys/vmparam.h
-ps: /usr/include/machine/vmparam.h /usr/include/sys/vmmac.h
-ps: /usr/include/sys/vmmeter.h /usr/include/sys/vmsystm.h
-ps: /usr/include/sys/text.h /usr/include/sys/stat.h /usr/include/sys/mbuf.h
-ps: /usr/include/math.h /usr/include/errno.h /usr/include/utmp.h
-wall: wall.c /usr/include/stdio.h /usr/include/utmp.h /usr/include/errno.h
-wall: /usr/include/signal.h /usr/include/sys/time.h /usr/include/time.h
-wall: /usr/include/fcntl.h /usr/include/sys/types.h /usr/include/sys/stat.h
-write: write.c /usr/include/stdio.h /usr/include/ctype.h
-write: /usr/include/sys/types.h /usr/include/sys/stat.h /usr/include/signal.h
-write: /usr/include/utmp.h /usr/include/sys/time.h /usr/include/time.h
-cp: cp.c /usr/include/stdio.h /usr/include/sys/param.h /usr/include/sys/types.h
-cp: /usr/include/signal.h /usr/include/machine/machparam.h
-cp: /usr/include/sys/stat.h /usr/include/sys/dir.h /usr/include/sys/time.h
-cp: /usr/include/time.h
-mv: mv.c /usr/include/sys/param.h /usr/include/sys/types.h
-mv: /usr/include/signal.h /usr/include/machine/machparam.h
-mv: /usr/include/sys/stat.h /usr/include/sys/time.h /usr/include/time.h
-mv: /usr/include/stdio.h /usr/include/sys/dir.h /usr/include/errno.h
-mv: /usr/include/signal.h
-strip: strip.c /usr/include/a.out.h /usr/include/sys/exec.h
-strip: /usr/include/signal.h /usr/include/stdio.h /usr/include/sys/file.h
-# DEPENDENCIES MUST END AT END OF FILE
-# IF YOU PUT STUFF HERE IT WILL GO AWAY
-# see make depend above
+ar.o: ar.c /usr/include/sys/param.h /usr/include/sys/types.h
+ar.o: /usr/include/signal.h /usr/include/machine/machparam.h
+ar.o: /usr/include/sys/stat.h /usr/include/sys/time.h /usr/include/time.h
+ar.o: /usr/include/stdio.h /usr/include/ar.h
+cat.o: cat.c /usr/include/stdio.h /usr/include/sys/types.h
+cat.o: /usr/include/sys/stat.h
+cc.o: cc.c /usr/include/sys/param.h /usr/include/sys/types.h
+cc.o: /usr/include/signal.h /usr/include/machine/machparam.h
+cc.o: /usr/include/stdio.h /usr/include/ctype.h /usr/include/signal.h
+cc.o: /usr/include/sys/dir.h
+chgrp.o: chgrp.c /usr/include/stdio.h /usr/include/ctype.h
+chgrp.o: /usr/include/sys/types.h /usr/include/sys/stat.h /usr/include/grp.h
+chgrp.o: /usr/include/pwd.h /usr/include/sys/dir.h
+chmod.o: chmod.c /usr/include/stdio.h /usr/include/sys/types.h
+chmod.o: /usr/include/sys/stat.h /usr/include/sys/dir.h
+cmp.o: cmp.c /usr/include/sys/param.h /usr/include/sys/types.h
+cmp.o: /usr/include/signal.h /usr/include/machine/machparam.h
+cmp.o: /usr/include/sys/file.h /usr/include/sys/stat.h /usr/include/stdio.h
+cmp.o: /usr/include/ctype.h
+date.o: date.c /usr/include/sys/param.h /usr/include/sys/types.h
+date.o: /usr/include/signal.h /usr/include/machine/machparam.h
+date.o: /usr/include/sys/time.h /usr/include/time.h /usr/include/sys/file.h
+date.o: /usr/include/errno.h /usr/include/syslog.h /usr/include/utmp.h
+date.o: /usr/include/tzfile.h /usr/include/stdio.h /usr/include/ctype.h
+date.o: /usr/include/strings.h /usr/include/sys/socket.h
+date.o: /usr/include/netinet/in.h /usr/include/netdb.h
+date.o: /usr/include/protocols/timed.h
+dd.o: dd.c /usr/include/sys/file.h /usr/include/stdio.h /usr/include/signal.h
+du.o: du.c /usr/include/stdio.h /usr/include/sys/param.h
+du.o: /usr/include/sys/types.h /usr/include/signal.h
+du.o: /usr/include/machine/machparam.h /usr/include/sys/stat.h
+du.o: /usr/include/sys/dir.h
+echo.o: echo.c /usr/include/stdio.h
+ed.o: ed.c /usr/include/signal.h /usr/include/sgtty.h /usr/include/sys/ioctl.h
+ed.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
+ed.o: /usr/include/setjmp.h
+grep.o: grep.c /usr/include/stdio.h /usr/include/ctype.h
+hostid.o: hostid.c /usr/include/sys/types.h /usr/include/stdio.h
+hostid.o: /usr/include/ctype.h /usr/include/netdb.h
+hostname.o: hostname.c /usr/include/stdio.h
+kill.o: kill.c /usr/include/signal.h /usr/include/ctype.h
+ld.o: ld.c /usr/include/sys/param.h /usr/include/sys/types.h
+ld.o: /usr/include/signal.h /usr/include/machine/machparam.h
+ld.o: /usr/include/signal.h /usr/include/stdio.h /usr/include/ctype.h
+ld.o: /usr/include/ar.h /usr/include/a.out.h /usr/include/sys/exec.h
+ld.o: /usr/include/ranlib.h /usr/include/sys/stat.h /usr/include/sys/file.h
+ln.o: ln.c /usr/include/stdio.h /usr/include/sys/types.h
+ln.o: /usr/include/sys/stat.h /usr/include/errno.h
+ls.o: ls.c /usr/include/sys/param.h /usr/include/sys/types.h
+ls.o: /usr/include/signal.h /usr/include/machine/machparam.h
+ls.o: /usr/include/sys/stat.h /usr/include/sys/dir.h /usr/include/stdio.h
+ls.o: /usr/include/sgtty.h /usr/include/sys/ioctl.h /usr/include/sys/ttychars.h
+ls.o: /usr/include/sys/ttydev.h /usr/include/pwd.h /usr/include/grp.h
+ls.o: /usr/include/utmp.h
+machine.o: machine.c /usr/include/sys/param.h /usr/include/sys/types.h
+machine.o: /usr/include/signal.h /usr/include/machine/machparam.h
+mkdir.o: mkdir.c /usr/include/stdio.h
+mt.o: mt.c /usr/include/stdio.h /usr/include/ctype.h /usr/include/sys/types.h
+mt.o: /usr/include/sys/mtio.h /usr/include/sys/ioctl.h
+mt.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
+mt.o: /usr/include/tahoevba/cyreg.h
+nice.o: nice.c /usr/include/stdio.h /usr/include/sys/time.h /usr/include/time.h
+nice.o: /usr/include/sys/resource.h
+nm.o: nm.c /usr/include/sys/types.h /usr/include/sys/file.h /usr/include/ar.h
+nm.o: /usr/include/stdio.h /usr/include/ctype.h /usr/include/a.out.h
+nm.o: /usr/include/sys/exec.h /usr/include/stab.h /usr/include/ranlib.h
+od.o: od.c /usr/include/stdio.h /usr/include/sys/types.h
+od.o: /usr/include/sys/stat.h
+pagesize.o: pagesize.c
+pr.o: pr.c /usr/include/stdio.h /usr/include/signal.h /usr/include/sys/types.h
+pr.o: /usr/include/sys/stat.h
+pwd.o: pwd.c /usr/include/stdio.h /usr/include/sys/param.h
+pwd.o: /usr/include/sys/types.h /usr/include/signal.h
+pwd.o: /usr/include/machine/machparam.h
+rm.o: rm.c /usr/include/stdio.h /usr/include/sys/param.h
+rm.o: /usr/include/sys/types.h /usr/include/signal.h
+rm.o: /usr/include/machine/machparam.h /usr/include/sys/stat.h
+rm.o: /usr/include/sys/dir.h /usr/include/sys/file.h
+rmail.o: rmail.c /usr/include/stdio.h /usr/include/sysexits.h
+rmdir.o: rmdir.c /usr/include/stdio.h
+size.o: size.c /usr/include/stdio.h /usr/include/a.out.h
+size.o: /usr/include/sys/exec.h
+stty.o: stty.c /usr/include/stdio.h /usr/include/sys/ioctl.h
+stty.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
+sync.o: sync.c
+tar.o: tar.c /usr/include/stdio.h /usr/include/sys/param.h
+tar.o: /usr/include/sys/types.h /usr/include/signal.h
+tar.o: /usr/include/machine/machparam.h /usr/include/sys/stat.h
+tar.o: /usr/include/sys/dir.h /usr/include/sys/ioctl.h
+tar.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
+tar.o: /usr/include/sys/mtio.h /usr/include/sys/time.h /usr/include/time.h
+tar.o: /usr/include/signal.h /usr/include/errno.h /usr/include/fcntl.h
+tee.o: tee.c /usr/include/signal.h /usr/include/sys/types.h
+tee.o: /usr/include/sys/stat.h /usr/include/errno.h
+test.o: test.c /usr/include/stdio.h /usr/include/sys/types.h
+test.o: /usr/include/sys/stat.h
+time.o: time.c /usr/include/stdio.h /usr/include/signal.h
+time.o: /usr/include/sys/types.h /usr/include/sys/time.h /usr/include/time.h
+time.o: /usr/include/sys/resource.h
+who.o: who.c /usr/include/stdio.h /usr/include/utmp.h /usr/include/pwd.h
+who.o: /usr/include/ctype.h
+
+# IF YOU PUT ANYTHING HERE IT WILL GO AWAY
