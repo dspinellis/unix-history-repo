@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)arff.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)arff.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/types.h>
@@ -741,7 +741,7 @@ rtr(name)
 				continue;
 			}
 	}
-	if (type = 'r')
+	if (type == 'r')
 		printf("%s: no slot for file, file deleted\n",name);
 	else
 		printf("%s: no slot for file\n", name);
