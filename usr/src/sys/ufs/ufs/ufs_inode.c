@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_inode.c	8.7 (Berkeley) %G%
+ *	@(#)ufs_inode.c	8.8 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -27,21 +27,6 @@
 
 u_long	nextgennumber;		/* Next generation number to assign. */
 int	prtactive = 0;		/* 1 => print out reclaim of active vnodes */
-
-int
-ufs_init()
-{
-	static int done;
-
-	if (done)
-		return (0);
-	done = 1;
-	ufs_ihashinit();
-#ifdef QUOTA
-	dqinit();
-#endif
-	return (0);
-}
 
 /*
  * Last reference to an inode.  If necessary, write or delete it.
