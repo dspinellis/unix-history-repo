@@ -1,7 +1,8 @@
 #!/bin/sh
-#	dumpall.sh	1.1	%G%
+#	dumpall.sh	1.2	%G%
 #	shell script to do all pending dumps
 #	Asks for confirmation before proceeding
+PATH=:/etc:/bin:/usr/bin:
 list=`dump w|sed -e '/^ /!d
 	/^ /s/^  //
 	s/	.*$//'`
