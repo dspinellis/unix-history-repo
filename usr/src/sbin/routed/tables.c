@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)tables.c	4.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)tables.c	4.7 (Berkeley) %G%";
 #endif
 
 /*
@@ -150,26 +150,12 @@ rtchange(rt, gate, metric)
 {
 	int doioctl = 0, metricchanged = 0;
 	struct rtentry oldroute;
-#define	NDEBUG
-#ifdef	NDEBUG
-	int turntraceoff = 0;
-#endif
 
 	if (!equal(&rt->rt_router, gate))
 		doioctl++;
 	if (metric != rt->rt_metric)
 		metricchanged++;
 	if (doioctl || metricchanged) {
-#ifdef	NDEBUG
-		if (rt->rt_state & RTS_INTERFACE) {
-		    if (!tracing) {
-			traceon("/usr/adm/routed.log");
-			turntraceoff = 1;
-			fprintf(ftrace, "**** Changing route from interface\n");
-			fprintf(ftrace, "rt_timer = %d\n", rt->rt_timer);
-		    }
-		}
-#endif
 		TRACE_ACTION(CHANGE FROM, rt);
 		if (doioctl) {
 			oldroute = rt->rt_rt;
@@ -188,10 +174,6 @@ rtchange(rt, gate, metric)
 		if (ioctl(s, SIOCDELRT, (char *)&oldroute) < 0)
 			perror("SIOCDELRT");
 	}
-#ifdef	NDEBUG
-	if (turntraceoff)
-		traceoff();
-#endif
 }
 
 rtdelete(rt)
@@ -203,6 +185,37 @@ rtdelete(rt)
 		perror("SIOCDELRT");
 	remque(rt);
 	free((char *)rt);
+}
+
+/*
+ * If we have an interface to the wide, wide world,
+ * add an entry for an Internet default route (wildcard) to the internal
+ * tables and advertise it.  This route is not added to the kernel routes,
+ * but this entry prevents us from listening to other people's defaults
+ * and installing them in the kernel here.
+ */
+rtdefault()
+{
+	struct afhash h;
+	register struct rt_entry *rt;
+	struct rthash *rh;
+	extern struct sockaddr inet_default;
+
+	rt = (struct rt_entry *)malloc(sizeof (*rt));
+	if (rt == 0)
+		return;
+	rt->rt_hash = h.afh_nethash;
+	rt->rt_dst = inet_default;
+	rt->rt_router = rt->rt_dst;
+	(*afswitch[AF_INET].af_hash)(&rt->rt_dst, &h);
+	rh = &nethash[h.afh_nethash % ROUTEHASHSIZ];
+	rt->rt_metric = 0;
+	rt->rt_timer = 0;
+	rt->rt_flags = RTF_UP | RTF_GATEWAY;
+	rt->rt_state = RTS_CHANGED | RTS_PASSIVE;
+	rt->rt_ifp = 0;
+	insque(rt, rh);
+	TRACE_ACTION(ADD, rt);
 }
 
 rtinit()

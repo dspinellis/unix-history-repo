@@ -1,11 +1,12 @@
 #ifndef lint
-static char sccsid[] = "@(#)startup.c	4.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)startup.c	4.5 (Berkeley) %G%";
 #endif
 
 /*
  * Routing Table Management Daemon
  */
 #include "defs.h"
+#include <sys/ioctl.h>
 #include <net/if.h>
 #include <nlist.h>
 
@@ -14,6 +15,7 @@ int	kmem = -1;
 int	lookforinterfaces = 1;
 int	performnlist = 1;
 int	externalinterfaces = 0;		/* # of remote and local interfaces */
+int	gateway = 0;		/* 1 if we are a gateway to parts beyond */
 
 struct nlist nl[] = {
 #define	N_IFNET		0
@@ -41,6 +43,8 @@ ifinit()
 			goto bad;
 		}
 		performnlist = 0;
+		if (gateway)
+			rtdefault();
 	}
 	if (kmem < 0) {
 		kmem = open("/dev/kmem", 0);
@@ -89,6 +93,14 @@ ifinit()
 		if ((ifs.if_flags & IFF_POINTOPOINT) == 0 ||
 		    if_ifwithaddr(&ifs.if_dstaddr) == 0)
 			externalinterfaces++;
+		if ((ifs.if_flags & IFF_LOCAL) == 0 && gateway == 0) {
+			/*
+			 * If we have an interface to a non-local network,
+			 * we are a candidate for use as a gateway.
+			 */
+			gateway = 1;
+			rtdefault();
+		}
 		lseek(kmem, ifs.if_name, 0);
 		read(kmem, name, sizeof (name));
 		name[sizeof (name) - 1] = '\0';
@@ -165,6 +177,7 @@ gwkludge()
 	char *type, *dname, *gname, *qual, buf[BUFSIZ];
 	struct interface *ifp;
 	int metric;
+	struct rt_entry route;
 
 	fp = fopen("/etc/gateways", "r");
 	if (fp == NULL)
@@ -175,6 +188,7 @@ gwkludge()
 	type = buf + (((BUFSIZ - 64) * 2) / 3);
 	bzero((char *)&dst, sizeof (dst));
 	bzero((char *)&gate, sizeof (gate));
+	bzero((char *)&route, sizeof(route));
 	/* format: {net | host} XX gateway XX metric DD [passive]\n */
 #define	readentry(fp) \
 	fscanf((fp), "%s %s gateway %s metric %d %s\n", \
@@ -186,6 +200,26 @@ gwkludge()
 			continue;
 		if (!gethostnameornumber(gname, &gate))
 			continue;
+		if (strcmp(qual, "passive") == 0) {
+			/*
+			 * Passive entries aren't placed in our tables,
+			 * only the kernel's, so we don't copy all of the
+			 * external routing information within a net.
+			 * Internal machines should use the default
+			 * route to a suitable gateway (like us).
+			 */
+			route.rt_dst = *(struct sockaddr *) &dst;
+			route.rt_router = *(struct sockaddr *) &gate;
+			route.rt_flags = RTF_UP;
+			if (strcmp(type, "host") == 0)
+				route.rt_flags |= RTF_HOST;
+			if (metric)
+				route.rt_flags |= RTF_GATEWAY;
+			(void) ioctl(s, SIOCADDRT, (char *)&route.rt_rt);
+			continue;
+		}
+		/* assume no duplicate entries */
+		externalinterfaces++;
 		ifp = (struct interface *)malloc(sizeof (*ifp));
 		bzero((char *)ifp, sizeof (*ifp));
 		ifp->int_flags = IFF_REMOTE;
@@ -195,11 +229,6 @@ gwkludge()
 			ifp->int_flags |= IFF_POINTOPOINT;
 			ifp->int_dstaddr = *((struct sockaddr *)&dst);
 		}
-		if (strcmp(qual, "passive") == 0)
-			ifp->int_flags |= IFF_PASSIVE;
-		else
-			/* assume no duplicate entries */
-			externalinterfaces++;
 		ifp->int_addr = *((struct sockaddr *)&gate);
 		ifp->int_metric = metric;
 		ifp->int_next = ifnet;
