@@ -50,7 +50,7 @@ vaxuba/rl.c		optional rl device-driver
 vaxuba/rx.c		optional rx device-driver
 vaxuba/tm.c		optional te device-driver
 vaxuba/ts.c		optional ts device-driver
-vaxuba/uba.c		standard device-driver
+vaxuba/uba.c		optional uba device-driver
 vaxuba/uda.c		optional ra device-driver
 vaxuba/up.c		optional up device-driver
 vaxuba/ut.c		optional tj device-driver
