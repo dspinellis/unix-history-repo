@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)union_vfsops.c	2.2 (Berkeley) %G%
+ *	@(#)union_vfsops.c	8.1 (Berkeley) %G%
  */
 
 /*

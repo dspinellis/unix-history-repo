@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)union_vnops.c	2.2 (Berkeley) %G%
+ *	@(#)union_vnops.c	8.1 (Berkeley) %G%
  */
 
 #include <sys/param.h>
