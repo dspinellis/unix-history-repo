@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)passwd.c	4.25 (Berkeley) %G%";
+static char sccsid[] = "@(#)passwd.c	4.26 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -344,37 +344,45 @@ getloginshell(pwd, u, arg)
 	if (pwd->pw_shell == 0 || *pwd->pw_shell == '\0')
 		pwd->pw_shell = DEFSHELL;
 	if (u != 0) {
-		for (valid = getusershell(); valid; valid = getusershell())
-			if (strcmp(pwd->pw_shell, valid) == 0)
-				break;
-		if (valid == NULL) {
-			printf("Cannot change from restricted shell %s\n",
-				pwd->pw_shell);
-			exit(1);
-		}
+		do {
+			valid = getusershell();
+			if (valid == NULL) {
+				printf("Cannot change from restricted shell %s\n",
+					pwd->pw_shell);
+				exit(1);
+			}
+		} while (strcmp(pwd->pw_shell, valid) != 0);
 	}
-	setusershell();
 	if (arg != 0) {
 		(void) strncpy(newshell, arg, sizeof newshell - 1);
-		newshell[sizeof newshell - 1] = 0;
+		newshell[sizeof newshell - 1] = '\0';
 	} else {
 		printf("Old shell: %s\nNew shell: ", pwd->pw_shell);
 		(void)fgets(newshell, sizeof (newshell) - 1, stdin);
 		cp = index(newshell, '\n');
 		if (cp)
 			*cp = '\0';
-	}
-	if (newshell[0] == '\0' || strcmp(newshell, pwd->pw_shell) == 0) {
-		printf("Login shell unchanged.\n");
-		exit(1);
+		if (newshell[0] == 0) {
+			puts("Login shell unchanged.");
+			exit(1);
+		}
 	}
 	/*
 	 * Allow user to give shell name w/o preceding pathname.
 	 */
-	if (u == 0) {
-		valid = newshell;
-	} else {
-		for (valid = getusershell(); valid; valid = getusershell()) {
+	if (u != 0 || newshell[0] != '/') {
+		endusershell();
+		do {
+			valid = getusershell();
+			if (valid == 0) {
+				if (u == 0) {
+					valid = newshell;
+					break;
+				}
+				printf("%s is unacceptable as a new shell.\n",
+					newshell);
+				exit(1);
+			}
 			if (newshell[0] == '/') {
 				cp = valid;
 			} else {
@@ -384,13 +392,12 @@ getloginshell(pwd, u, arg)
 				else
 					cp++;
 			}
-			if (strcmp(newshell, cp) == 0)
-				break;
-		}
+		} while (strcmp(newshell, cp) != 0);
+	} else {
+		valid = newshell;
 	}
-	if (valid == 0) {
-		printf("%s is unacceptable as a new shell.\n",
-		    newshell);
+	if (strcmp(valid, pwd->pw_shell) == 0) {
+		puts("Login shell unchanged.");
 		exit(1);
 	}
 	if (access(valid, X_OK) < 0) {
