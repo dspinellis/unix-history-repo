@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)bibdoc.ms	8.2 (Berkeley) %G%
+.\"	@(#)bibdoc.ms	8.3 (Berkeley) %G%
 .\"
 .EH 'USD:28-%''BIB \- A Program for Formatting Bibliographies'
 .OH 'BIB \- A Program for Formatting Bibliographies''USD:28-%'
@@ -1676,17 +1676,16 @@ Not all names are listed here.  See BMACLIB/bibmacs/bibinc.fullnames for a
 complete list.
 .sp
 .TS
-expand;
-l s
-l l.
+lw(2i) s
+lw(2i) l.
 \fBMiscellaneous Names\fP
-a_um	\*(:a
-o_um	\*(:o
-u_um	\*(:u
-A_um	\*(:A
-O_um	\*(:O
-U_um	\*(:U
-o_sl	\*(/o
+a_um	\h'-1.0p'\v'-0.4p'\*(:\v'0.4p'\h'1.0p'a
+o_um	\h'-0.8p'\v'-0.4p'\*(:\v'0.4p'\h'0.8p'o
+u_um	\h'-0.8p'\v'-0.4p'\*(:\v'0.4p'\h'0.8p'u
+A_um	\h'0.6p'\v'-2.0p'\*(:\v'2.0p'\h'-0.6p'A
+O_um	\h'0.7p'\v'-2.5p'\*(:\v'2.5p'\h'-0.7p'O
+U_um	\h'0.7p'\v'-2.5p'\*(:\v'2.5p'\h'-0.7p'U
+o_sl	\v'1.0p'/\v'-1.0p'\h'-3.7p'o\h'3.7p'
 AMP	&
 dash	\(hy
 ARCH	Architecture
@@ -1702,7 +1701,7 @@ DEPT	Department
 DISS	Dissertation
 ENG	Engineering
 EE	Electrical Engineering
-fuer	f\*(:ur
+fuer	f\h'0.8p'\v'-0.4p'\*(:\v'0.4p'\h'0.5p'ur
 INTL	International
 JOUR	Journal
 LANG	Language
@@ -1726,9 +1725,8 @@ UNIVCA	University of California
 .TE	
 .sp
 .TS
-expand;
-l s
-l l.
+lw(2i) s
+lw(2i) l.
 \fBJournal Names\fP
 ACMCS	ACM Computing Surveys
 ACTA	Acta Informatica
@@ -1784,7 +1782,6 @@ TSE	IEEE Transactions on Softare Engineering
 .TE
 .sp
 .TS
-expand;
 l s
 l l.
 \fBSelected Conferences\fP
@@ -1817,9 +1814,8 @@ WJCC	PROC Western Joint Computer CONF
 .TE
 .sp
 .TS
-expand;
-l s
-l l.
+lw(1i) s
+lw(1i) l.
 \fBPlace Names\fP
 BTLHO	Bell Laboratories
 BTLMH	Bell Laboratories
@@ -1831,15 +1827,15 @@ MITLCS	MIT Laboratory for Computer Science
 SUCS	Computer Science Department, Stanford University
 SUCSL	Computer Systems Lab., Stanford Electronics Lab., Dept. of Electrical Engineering and Computer Science
 SUEE	Department of Electrical Engineering, Stanford University
-TUM	Technische Universit\*:at M\*:unchen
+TUM	Technische Universit\*:\h'0.7p'at M\*:\h'0.5p'unchen
 UCB	University of California, Berkeley
 UCBCS	Computer Science Division, EECS, UCB
 UCBERL	ERL, EECS, UCB
 .TE
 .sp
 .TS
-l s
-l l.
+lw(1i) s
+lw(1i) l.
 \fBMonths of the year\fP
 JAN	January
 FEB	February
@@ -1856,8 +1852,8 @@ DEC	December
 .TE
 .sp
 .TS
-l s
-l l.
+lw(1i) s
+lw(1i) l.
 \fBPublishers\fP
 ACADEMIC	Academic Press
 ACPRESS	Academic Press
