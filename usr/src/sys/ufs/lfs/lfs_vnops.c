@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)lfs_vnops.c	7.11 (Berkeley) %G%
+ *	@(#)lfs_vnops.c	7.12 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -224,6 +224,8 @@ ufs_getattr(vp, vap, cred)
 	vap->va_atime.tv_sec = ip->i_atime;
 	vap->va_mtime.tv_sec = ip->i_mtime;
 	vap->va_ctime.tv_sec = ip->i_ctime;
+	vap->va_flags = ip->i_flags;
+	vap->va_gen = ip->i_gen;
 	/* this doesn't belong here */
 	if (vp->v_type == VBLK)
 		vap->va_blocksize = BLKDEV_IOSIZE;
@@ -258,7 +260,7 @@ ufs_setattr(vp, vap, cred)
 	if ((vap->va_type != VNON) || (vap->va_nlink != VNOVAL) ||
 	    (vap->va_fsid != VNOVAL) || (vap->va_fileid != VNOVAL) ||
 	    (vap->va_blocksize != VNOVAL) || (vap->va_rdev != VNOVAL) ||
-	    ((int)vap->va_bytes != VNOVAL)) {
+	    ((int)vap->va_bytes != VNOVAL) || (vap->va_gen != VNOVAL)) {
 		return (EINVAL);
 	}
 	/*
@@ -289,6 +291,18 @@ ufs_setattr(vp, vap, cred)
 	}
 	if (vap->va_mode != (u_short)VNOVAL)
 		error = chmod1(vp, (int)vap->va_mode, cred);
+	if (vap->va_flags != VNOVAL) {
+		if (cred->cr_uid != ip->i_uid &&
+		    (error = suser(cred, &u.u_acflag)))
+			return (error);
+		if (cred->cr_uid == 0) {
+			ip->i_flags = vap->va_flags;
+		} else {
+			ip->i_flags &= 0xffff0000;
+			ip->i_flags |= (vap->va_flags & 0xffff);
+		}
+		ip->i_flag |= ICHG;
+	}
 	return (error);
 }
 
