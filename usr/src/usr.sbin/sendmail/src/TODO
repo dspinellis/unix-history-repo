@@ -1,4 +1,4 @@
-(Version 8.13 of %G%)
+(Version 8.14 of %G%)
 
 Key:
   X -- extension (user visible change)
@@ -42,6 +42,13 @@ E ****	Fix parseaddr to return a dummy mailer with QBADADDR set for
 
 X ****	Run time configurable locking -- e.g., compile in HASFLOCK and
 	HASLOCKF, and then choose at runtime between these.
+
+B ****	Aliases with .REDIRECT fail during newaliases if the "n" flag
+	is given.  Problem is, sometimes you want them to, sometimes
+	you don't.  Perhaps two flavors of "error" mailer?
+
+B ****	Calls to gethostbyname with a trailing dot fail if you are
+	not running DNS.
 
 E ****	Move delivery forking from sendenvelope to sendall so that
 	the connection cache works between split envelopes, and to
@@ -92,6 +99,8 @@ E ***	Eliminate E qf line and e_errorqueue; use e_errorsto a la
 B ***	Fix syslog buffer overflow problems.
 
 X ***	DECNET_RELAY support in configs.
+
+X **	(sigh) BSMTP.
 
 X **	"E" configuration line that sets environment variables.
 
@@ -145,6 +154,11 @@ X **	Add "bestmx" map -- returns "best MX host" for this address.
 	Allows you to do automatic detection of when you are the best
 	MX for a given address.  [8.7?]
 
+X **	Some way to diddle resolver flags on a per-lookup basis, such
+	as a flag to the map declaration.  (Rick McCarty)
+	- Is this really a good idea?  DNSRCH can be turned off by
+	  putting a dot at the end.  AAONLY?
+
 X **	Extend makemap to "gather" values -- i.e., merge entries that
 	have the same keys. [8.8]  (BCX)
 
@@ -157,6 +171,9 @@ X **	User database extensions for mailing lists:
 	list:precedence -- Precedence: value for new message
 	list:envelopefrom -- envelope "from" value for new message
 	others?  [8.8]
+
+X **	Command line switch to set precedence (for mailing list
+	generation).  (BCX)
 
 B **	Restore `T' line to eliminate X-Authentication-Warning: at
 	inappropriate times.  (Christophe Wolfhugel)
