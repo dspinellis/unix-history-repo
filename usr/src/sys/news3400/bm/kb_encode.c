@@ -9,7 +9,7 @@
  *
  * from: $Hdr: kb_encode.c,v 4.300 91/06/09 06:14:51 root Rel41 $ SONY
  *
- *	@(#)kb_encode.c	7.2 (Berkeley) %G%
+ *	@(#)kb_encode.c	7.3 (Berkeley) %G%
  */
 
 #include "../include/fix_machine_type.h"
@@ -40,6 +40,8 @@ extern Key_table *key_table_addr;
 int	kbd_status;
 int	shifttype;
 extern int iscaps;
+
+static kbd_shift(), kbd_pfunc(), kbd_normal(), put_kana();
 
 /*
  *	kbd_encode(c)
