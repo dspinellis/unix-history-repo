@@ -1,4 +1,4 @@
-/* tcp_usrreq.c 1.19 81/10/30 */
+/* tcp_usrreq.c 1.20 81/10/30 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -24,7 +24,7 @@ COUNT(TCP_TIMEO);
 	/*
 	 * Search through tcb's and update active timers.
 	 */
-	for (tp = tcb_head; tp != NULL; tp = tp->t_tcb_next) {
+	for (tp = tcb.tcb_next; tp != (struct tcb *)&tcb; tp = tp->tcb_next) {
 		if (tp->t_init != 0 && --tp->t_init == 0)
 			tcp_usrreq(ISTIMER, TINIT, tp, 0);
 		if (tp->t_rexmt != 0 && --tp->t_rexmt == 0)
@@ -171,72 +171,82 @@ COUNT(TCP_USRREQ);
 	splx(s);
 }
 
-tcp_open(tp, mode)                /* set up a tcb for a connection */
+/*
+ * Open routine, called to initialize newly created tcb fields.
+ */
+tcp_open(tp, mode)
 	register struct tcb *tp;
 	int mode;
 {
-	register struct ucb *up;
-COUNT(T_OPEN);
+	register struct ucb *up = tp->t_ucb;
+COUNT(TCP_OPEN);
 
-	/* enqueue the tcb */
+	/*
+	 * Link in tcb queue and make
+	 * initialize empty reassembly queue.
+	 */
+	tp->tcb_next = tcb.tcb_next;
+	tcb.tcb_next->tcb_prev = tp;
+	tp->tcb_prev = (struct tcb *)&tcb;
+	tcb.tcb_next = tp;
+	tp->t_rcv_next = tp->t_rcv_prev = (struct th *)tp;
 
-	if (tcb_head == NULL) {
-		tcb_head = tp;
-		tcb_tail = tp;
-	} else {
-		tp->t_tcb_next = tcb_head;
-		tcb_head->t_tcb_prev = tp;
-		tcb_head = tp;
-	}
-
-	/* initialize non-zero tcb fields */
-
-	tp->t_rcv_next = (struct th *)tp;
-	tp->t_rcv_prev = (struct th *)tp;
+	/*
+	 * Initialize sequence numbers and
+	 * round trip retransmit timer.
+	 * (Other fields were init'd to zero when tcb allocated.)
+	 */
 	tp->t_xmtime = T_REXMT;
-	tp->snd_end = tp->seq_fin = tp->snd_nxt = tp->snd_hi =
-	              tp->snd_una = tp->iss = tcp_iss;
+	tp->snd_end = tp->seq_fin = tp->snd_nxt = tp->snd_hi = tp->snd_una =
+	    tp->iss = tcp_iss;
 	tp->snd_off = tp->iss + 1;
 	tcp_iss += (ISSINCR >> 1) + 1;
 
-	/* set timeout for open */
-
-	up = tp->t_ucb;
-	tp->t_init = (up->uc_timeo != 0 ? up->uc_timeo :
-					(mode == ACTIVE ? T_INIT : 0));
-	up->uc_timeo = 0;       /* overlays uc_ssize */
+	/*
+	 * Set timeout for open.
+	 * SHOULD THIS BE A HIGHER LEVEL FUNCTION!?! THINK SO.
+	 */
+	if (up->uc_timeo)
+		tp->t_init = up->uc_timeo;
+	else if (mode == ACTIVE)
+		tp->t_init = T_INIT;
+	/* else
+		tp->t_init = 0; */
+	up->uc_timeo = 0;				/* ### */
 }
 
+/*
+ * Internal close of a connection, shutting down the tcb.
+ */
 tcp_close(tp, state)
 	register struct tcb *tp;
 	short state;
 {
-	register struct ucb *up;
+	register struct ucb *up = tp->t_ucb;
 	register struct th *t;
 	register struct mbuf *m;
-COUNT(T_CLOSE);
+COUNT(TCP_CLOSE);
 
-	up = tp->t_ucb;
-
+	/*
+	 * Cancel all timers.
+	 * SHOULD LOOP HERE !?!
+	 */
 	tp->t_init = tp->t_rexmt = tp->t_rexmttl = tp->t_persist = 
 	    tp->t_finack = 0;
 
-	/* delete tcb */
+	/*
+	 * Remque the tcb
+	 */
+	tp->tcb_prev->tcb_next = tp->tcb_next;
+	tp->tcb_next->tcb_prev = tp->tcb_prev;
 
-	if (tp->t_tcb_prev == NULL)
-		tcb_head = tp->t_tcb_next;
-	else
-		tp->t_tcb_prev->t_tcb_next = tp->t_tcb_next;
-	if (tp->t_tcb_next == NULL)
-		tcb_tail = tp->t_tcb_prev;
-	else
-		tp->t_tcb_next->t_tcb_prev = tp->t_tcb_prev;
-
-	/* free all data on receive and send buffers */
-
+	/*
+	 * Discard all buffers...
+	 *
+	 * SHOULD COUNT EACH RESOURCE TO 0 AND PANIC IF CONFUSED
+	 */
 	for (t = tp->t_rcv_next; t != (struct th *)tp; t = t->t_next)
 		m_freem(dtom(t));
-
 	if (up->uc_rbuf != NULL) {
 		m_freem(up->uc_rbuf);
 		up->uc_rbuf = NULL;
@@ -251,31 +261,50 @@ COUNT(T_CLOSE);
 		m_freem(m);
 		tp->t_rcv_unack = NULL;
 	}
+
+	/*
+	 * Free tcp send template.
+	 */
 	if (up->uc_template) {
 		m_free(dtom(up->uc_template));
 		up->uc_template = 0;
 	}
+
+	/*
+	 * Free the tcb
+	 * WOULD THIS BETTER BE DONE AT USER CLOSE?
+	 */
 	wmemfree((caddr_t)tp, 1024);
 	up->uc_tcb = NULL;
 
-	/* lower buffer allocation and decrement host entry */
-
+	/*
+	 * Lower buffer allocation.
+	 * SHOULD BE A M_ROUTINE CALL.
+	 */
 	mbstat.m_lowat -= up->uc_snd + (up->uc_rhiwat/MSIZE) + 2;
 	mbstat.m_hiwat = 2 * mbstat.m_lowat;
+
+	/*
+	 * Free routing table entry.
+	 */
 	if (up->uc_host != NULL) {
 		h_free(up->uc_host);
 		up->uc_host = NULL;
 	}
 
-	/* if user has initiated close (via close call), delete ucb
-	   entry, otherwise just wakeup so user can issue close call */
-
+	/*
+	 * If user has initiated close (via close call), delete ucb
+	 * entry, otherwise just wakeup so user can issue close call
+	 */
 	if (tp->tc_flags&TC_USR_ABORT)
         	up->uc_proc = NULL;
 	else
-        	to_user(up, state);
+        	to_user(up, state);			/* ### */
 }
 
+/*
+ * User routine to send data queue headed by m0 into the protocol.
+ */
 tcp_usrsend(tp, m0)
 	register struct tcb *tp;
 	struct mbuf *m0;
@@ -284,7 +313,7 @@ tcp_usrsend(tp, m0)
 	register struct ucb *up = tp->t_ucb;
 	register off;
 	seq_t last;
-COUNT(SSS_SEND);
+COUNT(TCP_USRSEND);
 
 	last = tp->snd_off;
 	for (m = n = m0; m != NULL; m = m->m_next) {
@@ -325,6 +354,9 @@ COUNT(SSS_SEND);
 	return (SAME);
 }
 
+/*
+ * TCP timer went off processing.
+ */
 tcp_timers(tp, timertype)
 	register struct tcb *tp;
 	int timertype;
@@ -414,28 +446,10 @@ COUNT(TO_USER);
 }
 
 #ifdef TCPDEBUG
-tcp_prt(tdp)
-	register struct tcp_debug *tdp;
-{
-COUNT(TCP_PRT);
-
-	printf("TCP(%x) %s x %s",
-	    tdp->td_tcb, tcpstates[tdp->td_old], tcpinputs[tdp->td_inp]);
-	if (tdp->td_inp == ISTIMER)
-		printf("(%s)", tcptimers[tdp->td_tim]);
-	printf(" --> %s",
-	    tcpstates[(tdp->td_new > 0) ? tdp->td_new : tdp->td_old]);
-	/* GROSS... DEPENDS ON SIGN EXTENSION OF CHARACTERS */
-	if (tdp->td_new < 0)
-		printf(" (FAILED)");
-	if (tdp->td_sno) {
-		printf(" sno %x ano %x win %d len %d flags %x",
-		    tdp->td_sno, tdp->td_ano, tdp->td_wno, tdp->td_lno, tdp->td_flg);
-	}
-	printf("\n");
-}
-#endif
-#ifdef TCPDEBUG
+/*
+ * TCP debugging utility subroutines.
+ * THE NAMES OF THE FIELDS USED BY THESE ROUTINES ARE STUPID.
+ */
 tdb_setup(tp, n, input, tdp)
 	struct tcb *tp;
 	register struct th *n;
@@ -443,6 +457,7 @@ tdb_setup(tp, n, input, tdp)
 	register struct tcp_debug *tdp;
 {
 
+COUNT(TDB_SETUP);
 	tdp->td_tod = time;
 	tdp->td_tcb = tp;
 	tdp->td_old = tp->t_state;
@@ -464,10 +479,34 @@ tdb_stuff(tdp, nstate)
 	struct tcp_debug *tdp;
 	int nstate;
 {
+COUNT(TDB_STUFF);
 
 	tdp->td_new = nstate;
 	tcp_debug[tdbx++ % TDBSIZE] = *tdp;
 	if (tcpconsdebug & 2)
 		tcp_prt(tdp);
+}
+
+/* BETTER VERSION OF THIS ROUTINE? */
+tcp_prt(tdp)
+	register struct tcp_debug *tdp;
+{
+COUNT(TCP_PRT);
+
+	printf("TCP(%x) %s x %s",
+	    tdp->td_tcb, tcpstates[tdp->td_old], tcpinputs[tdp->td_inp]);
+	if (tdp->td_inp == ISTIMER)
+		printf("(%s)", tcptimers[tdp->td_tim]);
+	printf(" --> %s",
+	    tcpstates[(tdp->td_new > 0) ? tdp->td_new : tdp->td_old]);
+	/* GROSS... DEPENDS ON SIGN EXTENSION OF CHARACTERS */
+	if (tdp->td_new < 0)
+		printf(" (FAILED)");
+	if (tdp->td_sno) {
+		printf(" sno %x ano %x win %d len %d flags %x",
+		    tdp->td_sno, tdp->td_ano, tdp->td_wno,
+		    tdp->td_lno, tdp->td_flg);
+	}
+	printf("\n");
 }
 #endif
