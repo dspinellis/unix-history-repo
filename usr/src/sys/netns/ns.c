@@ -1,9 +1,9 @@
 /*
- * Copyright (c) 1982 Regents of the University of California.
+ * Copyright (c) 1984, 1985 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ns.c	6.5 (Berkeley) %G%
+ *	@(#)ns.c	6.6 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -66,7 +66,7 @@ ns_control(so, cmd, data, ifp)
 	/*
 	 * Find address for this interface, if it exists.
 	 */
-	if (ifp==0)
+	if (ifp == 0)
 		return (EADDRNOTAVAIL);
 	for (ia = ns_ifaddr; ia; ia = ia->ia_next)
 		if (ia->ia_ifp == ifp)
@@ -103,10 +103,8 @@ ns_control(so, cmd, data, ifp)
 
 	switch (cmd) {
 
-	case SIOCSIFDSTADDR:
-		return (EOPNOTSUPP);
-
 	case SIOCSIFADDR:
+	case SIOCSIFDSTADDR:
 		if (ia == (struct ns_ifaddr *)0) {
 			m = m_getclr(M_WAIT, MT_IFADDR);
 			if (m == (struct mbuf *)NULL)
@@ -127,6 +125,27 @@ ns_control(so, cmd, data, ifp)
 			ia->ia_ifp = ifp;
 			IA_SNS(ia)->sns_family = AF_NS;
 		}
+	}
+
+	switch (cmd) {
+
+	case SIOCSIFDSTADDR:
+		if ((ifp->if_flags & IFF_POINTOPOINT) == 0)
+			return (EINVAL);
+		if (ia->ia_flags & IFA_ROUTE) {
+			rtinit(&ia->ia_dstaddr, &ia->ia_addr,
+				(int)SIOCDELRT, RTF_HOST);
+			ia->ia_flags &= ~IFA_ROUTE;
+		}
+		if (ifp->if_ioctl) {
+			int error = (*ifp->if_ioctl)(ifp, SIOCSIFDSTADDR, ia);
+			if (error)
+				return (error);
+		}
+		ia->ia_dstaddr = ifr->ifr_dstaddr;
+		return (0);
+
+	case SIOCSIFADDR:
 		return
 		    (ns_ifinit(ifp, ia, (struct sockaddr_ns *)&ifr->ifr_addr));
 
@@ -164,22 +183,23 @@ ns_ifinit(ifp, ia, sns)
 	if (ns_hosteqnh(sns->sns_addr.x_host, ns_broadhost)) {
 		ns_thishost = ns_zerohost;
 		splx(s);
-		return(EINVAL);
+		return (0);
 	}
 
 	/*
 	 * Delete any previous route for an old address.
 	 */
-
 	bzero((caddr_t)&netaddr, sizeof (netaddr));
 	netaddr.sns_family = AF_NS;
 	netaddr.sns_addr.x_host = ns_broadhost;
 	netaddr.sns_addr.x_net = ia->ia_net;
 	if (ia->ia_flags & IFA_ROUTE) {
 		if ((ifp->if_flags & IFF_POINTOPOINT) == 0) {
-		    rtinit((struct sockaddr *)&netaddr, &ia->ia_addr, -1);
+		    rtinit((struct sockaddr *)&netaddr, &ia->ia_addr,
+				    (int)SIOCDELRT, 0);
 		} else
-		    rtinit((struct sockaddr *)&ia->ia_dstaddr, &ia->ia_addr, -1);
+		    rtinit(&ia->ia_dstaddr, &ia->ia_addr,
+				    (int)SIOCDELRT, RTF_HOST);
 	}
 
 	/*
@@ -191,25 +211,12 @@ ns_ifinit(ifp, ia, sns)
 	if (ifp->if_flags & IFF_BROADCAST) {
 		ia->ia_broadaddr = * (struct sockaddr *) &netaddr;
 	}
-	/*
-	 * Point to point links are a little touchier --
-	 * We have to have an address of our own first,
-	 * and will use the supplied address as that of the other end.
-	 */
-	if (ifp->if_flags & IFF_POINTOPOINT) {
-		struct sockaddr_ns *sns2 = IA_SNS(ia);
-		if (ns_hosteqnh(ns_zerohost,ns_thishost))
-			return(EINVAL);
-		ia->ia_dstaddr = ia->ia_addr;
-		sns2->sns_addr.x_host = ns_thishost;
-		sns->sns_addr.x_host = ns_thishost;
-	}
+
 	/*
 	 * Give the interface a chance to initialize
 	 * if this is its first address,
 	 * and to validate the address if necessary.
 	 */
-
 	if (ns_hosteqnh(ns_thishost, ns_zerohost)) {
 		if (ifp->if_ioctl &&
 		     (error = (*ifp->if_ioctl)(ifp, SIOCSIFADDR, ia))) {
@@ -225,24 +232,26 @@ ns_ifinit(ifp, ia, sns)
 			splx(s);
 			return (error);
 		}
-		if(!ns_hosteqnh(ns_thishost,*h)) {
+		if (!ns_hosteqnh(ns_thishost,*h)) {
 			splx(s);
 			return (EINVAL);
 		}
 	} else {
 		splx(s);
-		return(EINVAL);
+		return (EINVAL);
 	}
+
 	/*
 	 * Add route for the network.
 	 */
-	if ((ifp->if_flags & IFF_POINTOPOINT) == 0) {
-		rtinit((struct sockaddr *)&netaddr, &ia->ia_addr, RTF_UP);
-	} else
-		rtinit((struct sockaddr *)&ia->ia_dstaddr, &ia->ia_addr,
+	if (ifp->if_flags & IFF_POINTOPOINT)
+		rtinit(&ia->ia_dstaddr, &ia->ia_addr, (int)SIOCADDRT,
 			RTF_HOST|RTF_UP);
+	else
+		rtinit(&ia->ia_broadaddr, &ia->ia_addr, (int)SIOCADDRT,
+			RTF_UP);
 	ia->ia_flags |= IFA_ROUTE;
-	return(0);
+	return (0);
 }
 
 /*
@@ -254,24 +263,23 @@ ns_iaonnetof(dst)
 {
 	register struct ns_ifaddr *ia;
 	register struct ns_addr *compare;
-	struct ifnet *ifp;
+	register struct ifnet *ifp;
+	struct ns_ifaddr *ia_maybe = 0;
 	long net = ns_netof(*dst);
 	static struct ns_addr laddr;
-	struct ns_ifaddr *ia_maybe = 0;
 
 	for (ia = ns_ifaddr; ia; ia = ia->ia_next) {
-		laddr.x_net = ia->ia_net;
-		if (ns_netof(laddr) == net) {
-			ia_maybe = ia;
-			ifp = ia->ia_ifp;
-			if (ifp) {
-				if (ifp->if_flags & IFF_POINTOPOINT) {
-					compare = &satons_addr(ia->ia_dstaddr);
-					if (ns_hosteq(*dst, *compare))
-						return (ia);
-					else
-						continue;
-				} else
+		if (ifp = ia->ia_ifp) {
+			if (ifp->if_flags & IFF_POINTOPOINT) {
+				compare = &satons_addr(ia->ia_dstaddr);
+				if (ns_hosteq(*dst, *compare))
+					return (ia);
+				laddr.x_net = ia->ia_net;
+				if (ns_netof(laddr) == net)
+					ia_maybe = ia;
+			} else {
+				laddr.x_net = ia->ia_net;
+				if (ns_netof(laddr) == net)
 					return (ia);
 			}
 		}

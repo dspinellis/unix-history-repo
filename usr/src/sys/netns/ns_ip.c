@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ns_ip.c	6.10 (Berkeley) %G%
+ *	@(#)ns_ip.c	6.11 (Berkeley) %G%
  */
 
 /*
@@ -64,7 +64,7 @@ nsipattach()
 	register struct mbuf *m = m_getclr(M_DONTWAIT, MT_PCB);
 	register struct ifnet *ifp;
 
-	if (m==0) return (0);
+	if (m == NULL) return (NULL);
 	m->m_off = MMINOFF;
 	m->m_len = sizeof(struct ifnet_en);
 	m->m_next = nsip_list;
@@ -78,7 +78,7 @@ nsipattach()
 	ifp->if_flags = IFF_POINTOPOINT;
 	ifp->if_unit = nsipif.if_unit++;
 	if_attach(ifp);
-	return(dtom(ifp));
+	return (dtom(ifp));
 }
 
 
@@ -98,6 +98,9 @@ nsipioctl(ifp, cmd, data)
 
 	case SIOCSIFADDR:
 		ifp->if_flags |= IFF_UP;
+		/* fall into: */
+
+	case SIOCSIFDSTADDR:
 		/*
 		 * Everything else is done at a higher level.
 		 */
@@ -128,8 +131,8 @@ idpip_input(m, ifp)
 	register struct ifqueue *ifq = &nsintrq;
 	int len, s;
 
-	if(nsip_hold_input) {
-		if(nsip_lastin) {
+	if (nsip_hold_input) {
+		if (nsip_lastin) {
 			m_freem(nsip_lastin);
 		}
 		nsip_lastin = m_copy(m, 0, (int)M_COPYALL);
@@ -140,7 +143,7 @@ idpip_input(m, ifp)
 	nsipif.if_ipackets++;
 	s = sizeof (struct ip) + sizeof (struct idp);
 	if ((m->m_off > MMAXOFF || m->m_len < s) &&
-	    (m = m_pullup(m, s))==0) {
+	    (m = m_pullup(m, s)) == 0) {
 		nsipif.if_ierrors++;
 		return;
 	}
@@ -149,7 +152,7 @@ idpip_input(m, ifp)
 	if (ip->ip_hl > (sizeof (struct ip) >> 2)) {
 		ip_stripoptions(ip, (struct mbuf *)0);
 		if (m->m_len < s) {
-			if ((m = m_pullup(m, s))==0) {
+			if ((m = m_pullup(m, s)) == 0) {
 				nsipif.if_ierrors++;
 				return;
 			}
@@ -170,7 +173,7 @@ idpip_input(m, ifp)
 	if (ip->ip_len != len) {
 		if (len > ip->ip_len) {
 			nsipif.if_ierrors++;
-			if(nsip_badlen) m_freem(nsip_badlen);
+			if (nsip_badlen) m_freem(nsip_badlen);
 			nsip_badlen = m;
 			return;
 		}
@@ -243,7 +246,7 @@ nsipoutput(ifn, m0, dst)
 	len =  ntohs(idp->idp_len);
 	if (len & 1) len++;		/* Preserve Garbage Byte */
 	m = m0;
-	if(m->m_off < MMINOFF + sizeof (struct ip)) {
+	if (m->m_off < MMINOFF + sizeof (struct ip)) {
 		m = m_get(M_DONTWAIT, MT_HEADER);
 		if (m == 0) {
 			m_freem(m0);
@@ -283,7 +286,7 @@ nsipoutput(ifn, m0, dst)
 	return (error);
 bad:
 	m_freem(m0);
-	return(ENETUNREACH);
+	return (ENETUNREACH);
 }
 
 struct ifreq ifr = {"nsip0"};
@@ -297,8 +300,14 @@ nsip_route(m)
 	struct route ro;
 	struct ifnet_en *ifn;
 	struct sockaddr_in *src;
+
 	/*
-	 * First, determine if we can get to the destination
+	 * First, make sure we already have an ns address:
+	 */
+	if (ns_hosteqnh(ns_thishost, ns_zerohost))
+		return (EADDRNOTAVAIL);
+	/*
+	 * Now, determine if we can get to the destination
 	 */
 	bzero((caddr_t)&ro, sizeof (ro));
 	ro.ro_dst = *(struct sockaddr *)ip_dst;
@@ -306,8 +315,10 @@ nsip_route(m)
 	if (ro.ro_rt == 0 || ro.ro_rt->rt_ifp == 0) {
 		return (ENETUNREACH);
 	}
+
 	/*
 	 * And see how he's going to get back to us:
+	 * i.e., what return ip address do we use?
 	 */
 	{
 		register struct in_ifaddr *ia;
@@ -319,10 +330,12 @@ nsip_route(m)
 		if (ia == 0)
 			ia = in_ifaddr;
 		if (ia == 0) {
+			RTFREE(ro.ro_rt);
 			return (EADDRNOTAVAIL);
 		}
 		src = (struct sockaddr_in *)&ia->ia_addr;
 	}
+
 	/*
 	 * Is there a free (pseudo-)interface or space?
 	 */
@@ -333,10 +346,12 @@ nsip_route(m)
 	}
 	if (m == (struct mbuf *) 0)
 		m = nsipattach();
-	if (m==NULL) {return (ENOBUFS);}
+	if (m == NULL) {
+		RTFREE(ro.ro_rt);
+		return (ENOBUFS);
+	}
 	ifn = mtod(m, struct ifnet_en *);
 
-	ro.ro_rt->rt_use++;
 	ifn->ifen_route = ro;
 	ifn->ifen_dst =  ip_dst->sin_addr;
 	ifn->ifen_src = src->sin_addr;
@@ -346,7 +361,10 @@ nsip_route(m)
 	 */
 	ifr.ifr_name[4] = '0' + nsipif.if_unit - 1;
 	ifr.ifr_dstaddr = * (struct sockaddr *) ns_dst;
-	return(ns_control((struct socket *)0, (int)SIOCSIFADDR, (caddr_t)&ifr,
+	(void)ns_control((struct socket *)0, (int)SIOCSIFDSTADDR, (caddr_t)&ifr,
+			(struct ifnet *)ifn);
+	satons_addr(ifr.ifr_addr).x_host = ns_thishost;
+	return (ns_control((struct socket *)0, (int)SIOCSIFADDR, (caddr_t)&ifr,
 			(struct ifnet *)ifn));
 }
 
@@ -372,7 +390,7 @@ nsip_ctlinput(cmd, sa)
 	struct sockaddr_in *sin;
 	int in_rtchange();
 
-	if ((unsigned)cmd > PRC_NCMDS)
+	if ((unsigned)cmd >= PRC_NCMDS)
 		return;
 	if (sa->sa_family != AF_INET && sa->sa_family != AF_IMPLINK)
 		return;
