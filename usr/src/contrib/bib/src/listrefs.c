@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)listrefs.c	2.2	%G%";
+static char sccsid[] = "@(#)listrefs.c	2.3	%G%";
 #endif not lint
 /*
         Listrefs - list references for bib system
@@ -27,42 +27,60 @@ static char sccsid[] = "@(#)listrefs.c	2.2	%G%";
 
 FILE *tfd;
 
+#ifndef INCORE
 FILE *rfd;                      /* reference file position */
 char reffile[] = TMPREFFILE;    /* temporary file (see bib.h) */
-long int refspos[MAXLIST];      /* references temporary file, seek positions */
+#endif INCORE
+struct refinfo refinfo[MAXLIST];      /* references temporary file, seek positions */
+struct refinfo *refshash[HASHSIZE];
 long int rend = 1;              /* last used position in reference file */
 int numrefs = -1;               /* number of references */
-char *citestr[MAXLIST];         /* citation strings */
 extern int sort;                /* see if things are to be sorted */
 extern char bibfname[];
 extern int biblineno;
 
+#include <signal.h>
 main(argc, argv)
    int argc;
    char **argv;
 {  char defult[120];
-   int  i, rcomp();
+   int  i, rcomp(), intr();
 
+   signal(SIGINT, intr);
    tfd = stdout;
    strcpy(defult, BMACLIB);
    strcat(defult,"/bib.list");
+#ifndef INCORE
    mktemp(reffile);
    rfd = fopen(reffile,"w+");
    if (rfd == NULL)
       error("can't open temporary reference file");
    putc('x', rfd);      /* put garbage in first position */
+#endif not INCORE
 
    doargs(argc, argv, defult);
 
    if (sort)
-      qsort(refspos, numrefs+1, sizeof(long), rcomp);
-   makecites(citestr);
+      qsort(refinfo, numrefs, sizeof(struct refinfo), rcomp);
+   makecites();
    disambiguate();
 
-   for (i = 0; i <= numrefs; i++)
+   for (i = 0; i < numrefs; i++)
       dumpref(i, stdout);
 
-   exit(0);
+   cleanup(0);
+}
+intr()
+{
+  cleanup(1);
+}
+cleanup(val)
+{
+#ifndef INCORE
+  fclose(rfd);
+  unlink(reffile);
+#endif not INCORE
+  exit(val);
 }
 
 /* rdtext - process a file */
@@ -70,6 +88,7 @@ main(argc, argv)
    FILE *ifile;
 {  char c, *p, rec[REFSIZE];
    int i;
+   int hash, lg;
 
    biblineno = 1;
    for (;;) {
@@ -99,17 +118,17 @@ main(argc, argv)
       *p = 0;
       expand(rec);
 
-      if (numrefs++ > MAXLIST)
-         error("too many references");
-      refspos[numrefs] = rend;
-#ifdef READWRITE
-      fixrfd( WRITE );          /* fix access mode of rfd, if nec. */
-#else
-      fseek(rfd, rend, 0);
-#endif
-      i = strlen(rec) + 1;
-      fwrite(rec, 1, i, rfd);
-      rend = rend + i;
+      /* didn't match any existing reference, create new one */
+      if (numrefs >= MAXLIST)
+	error("too many references, max of %d", MAXLIST);
+      hash = strhash(rec);
+      lg = strlen(rec) + 1;
+      refinfo[numrefs].ri_pos = rend;
+      refinfo[numrefs].ri_length = lg;
+      refinfo[numrefs].ri_hp = refshash[hash];
+      refinfo[numrefs].ri_n = numrefs;
+      refshash[hash] = &refinfo[numrefs];
+      wrref(&refinfo[numrefs], rec);
+      numrefs++;
       }
 }
-
