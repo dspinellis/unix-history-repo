@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)n5.c	2.1 (CWI) 85/07/18";
+static char sccsid[] = "@(#)n5.c	2.2 (CWI) 87/03/31";
 #endif lint
 #include "tdef.h"
 #include <sgtty.h>
@@ -484,7 +484,7 @@ e0:
 	flushi();
 	if ((nxev >= NEV) || (nxev < 0) || (evi >= EVLSZ)) {
 		flusho();
-		errprint("cannot do ev.");
+		errprint("cannot do ev %d. (evi %d)", nxev, evi);
 		if (error)
 			done2(040);
 		else 
