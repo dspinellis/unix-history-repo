@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if_ether.h	6.6 (Berkeley) %G%
+ *	@(#)if_ether.h	6.7 (Berkeley) %G%
  */
 
 /*
@@ -21,8 +21,8 @@ struct	ether_header {
 
 /*
  * The ETHERTYPE_NTRAILER packet types starting at ETHERTYPE_TRAIL have
- * (type-ETHERPUP_TRAIL)*512 bytes of data followed
- * by a PUP type (as given above) and then the (variable-length) header.
+ * (type-ETHERTYPE_TRAIL)*512 bytes of data followed
+ * by an ETHER type (as given above) and then the (variable-length) header.
  */
 #define	ETHERTYPE_TRAIL		0x1000		/* Trailer packet */
 #define	ETHERTYPE_NTRAILER	16
@@ -38,19 +38,18 @@ struct	ether_header {
  * RFC 826.
  */
 struct	ether_arp {
-	u_short	arp_hrd;	/* format of hardware address */
-#define ARPHRD_ETHER 	1	/* ethernet hardware address */
-	u_short	arp_pro;	/* format of proto. address (ETHERPUP_IPTYPE) */
-	u_char	arp_hln;	/* length of hardware address (6) */
-	u_char	arp_pln;	/* length of protocol address (4) */
-	u_short	arp_op;
-#define	ARPOP_REQUEST	1	/* request to resolve address */
-#define	ARPOP_REPLY	2	/* response to previous request */
+	struct	arphdr ea_hdr;	/* fixed-size header */
 	u_char	arp_sha[6];	/* sender hardware address */
 	u_char	arp_spa[4];	/* sender protocol address */
 	u_char	arp_tha[6];	/* target hardware address */
 	u_char	arp_tpa[4];	/* target protocol address */
 };
+#define	arp_hrd	ea_hdr.ar_hrd
+#define	arp_pro	ea_hdr.ar_pro
+#define	arp_hln	ea_hdr.ar_hln
+#define	arp_pln	ea_hdr.ar_pln
+#define	arp_op	ea_hdr.ar_op
+
 
 /*
  * Structure shared between the ethernet driver modules and
@@ -77,4 +76,5 @@ struct	arptab {
 #ifdef	KERNEL
 u_char etherbroadcastaddr[6];
 struct	arptab *arptnew();
+char *ether_sprintf();
 #endif
