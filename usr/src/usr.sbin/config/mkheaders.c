@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mkheaders.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)mkheaders.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -36,9 +36,14 @@ do_count(dev, hname, search)
 	int search;
 {
 	register struct device *dp, *mp;
-	register int count;
+	register int count, hicount;
 
-	for (count = 0,dp = dtab; dp != 0; dp = dp->d_next)
+	/*
+	 * After this loop, "count" will be the actual number of units,
+	 * and "hicount" will be the highest unit declared.  do_header()
+	 * must use this higher of these values.
+	 */
+	for (hicount = count = 0, dp = dtab; dp != 0; dp = dp->d_next)
 		if (dp->d_unit != -1 && eq(dp->d_name, dev)) {
 			if (dp->d_type == PSEUDO_DEVICE) {
 				count =
@@ -51,8 +56,8 @@ do_count(dev, hname, search)
 			 * assumption is unit numbering starts
 			 * at zero.
 			 */
-			if (dp->d_unit + 1 > count)
-				count = dp->d_unit + 1;
+			if (dp->d_unit + 1 > hicount)
+				hicount = dp->d_unit + 1;
 			if (search) {
 				mp = dp->d_conn;
 				if (mp != 0 && mp != TO_NEXUS &&
@@ -62,7 +67,7 @@ do_count(dev, hname, search)
 				}
 			}
 		}
-	do_header(dev, hname, count);
+	do_header(dev, hname, count > hicount ? count : hicount);
 }
 
 do_header(dev, hname, count)
