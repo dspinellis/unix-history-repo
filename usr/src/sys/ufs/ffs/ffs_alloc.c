@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ffs_alloc.c	7.2 (Berkeley) %G%
+ *	@(#)ffs_alloc.c	7.3 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -239,9 +239,9 @@ realloccg(ip, bprev, bpref, osize, nsize)
 			u.u_ru.ru_oublock--;		/* delete charge */
 		}
 		brelse(obp);
-		free(ip, bprev, (off_t)osize);
+		blkfree(ip, bprev, (off_t)osize);
 		if (nsize < request)
-			free(ip, bno + numfrags(fs, nsize),
+			blkfree(ip, bno + numfrags(fs, nsize),
 				(off_t)(request - nsize));
 		ip->i_blocks += btodb(nsize - osize);
 		ip->i_flag |= IUPD|ICHG;
@@ -849,7 +849,7 @@ gotit:
  * free map. If a fragment is deallocated, a possible 
  * block reassembly is checked.
  */
-free(ip, bno, size)
+blkfree(ip, bno, size)
 	register struct inode *ip;
 	daddr_t bno;
 	off_t size;
@@ -864,7 +864,7 @@ free(ip, bno, size)
 	if ((unsigned)size > fs->fs_bsize || fragoff(fs, size) != 0) {
 		printf("dev = 0x%x, bsize = %d, size = %d, fs = %s\n",
 		    ip->i_dev, fs->fs_bsize, size, fs->fs_fsmnt);
-		panic("free: bad size");
+		panic("blkfree: bad size");
 	}
 	cg = dtog(fs, bno);
 	if (badblock(fs, bno)) {
@@ -888,7 +888,7 @@ free(ip, bno, size)
 		if (isblock(fs, cgp->cg_free, fragstoblks(fs, bno))) {
 			printf("dev = 0x%x, block = %d, fs = %s\n",
 			    ip->i_dev, bno, fs->fs_fsmnt);
-			panic("free: freeing free block");
+			panic("blkfree: freeing free block");
 		}
 		setblock(fs, cgp->cg_free, fragstoblks(fs, bno));
 		cgp->cg_cs.cs_nbfree++;
@@ -912,7 +912,7 @@ free(ip, bno, size)
 			if (isset(cgp->cg_free, bno + i)) {
 				printf("dev = 0x%x, block = %d, fs = %s\n",
 				    ip->i_dev, bno + i, fs->fs_fsmnt);
-				panic("free: freeing free frag");
+				panic("blkfree: freeing free frag");
 			}
 			setbit(cgp->cg_free, bno + i);
 		}
