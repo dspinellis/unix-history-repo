@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)ncheck.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)ncheck.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -19,7 +19,6 @@ static char sccsid[] = "@(#)ncheck.c	5.2 (Berkeley) %G%";
  */
 
 #define	NB		500
-#define	HSIZE		20011
 #define	MAXNINDIR	(MAXBSIZE / sizeof (daddr_t))
 
 #include <sys/param.h>
@@ -42,8 +41,9 @@ struct	htab
 	ino_t	h_ino;
 	ino_t	h_pino;
 	char	*h_name;
-} htab[HSIZE];
-char strngtab[30 * HSIZE];
+} *htab;
+char *strngtab;
+long hsize;
 int strngloc;
 
 struct dirstuff {
@@ -132,6 +132,14 @@ check(file)
 		nerror++;
 		return;
 	}
+	hsize = sblock.fs_ipg * sblock.fs_ncg - sblock.fs_cstotal.cs_nifree + 1;
+	htab = (struct htab *)malloc(hsize * sizeof(struct htab));
+	strngtab = (char *)malloc(30 * hsize);
+	if (htab == 0 || strngtab == 0) {
+		printf("not enough memory to allocate tables\n");
+		nerror++;
+		return;
+	}
 	ino = 0;
 	for (c = 0; c < sblock.fs_ncg; c++) {
 		bread(fsbtodb(&sblock, cgimin(&sblock, c)), (char *)itab,
@@ -164,7 +172,7 @@ check(file)
 		}
 	}
 	close(fi);
-	for (i = 0; i < HSIZE; i++)
+	for (i = 0; i < hsize; i++)
 		htab[i].h_ino = 0;
 	for (i = iflg; i < NB; i++)
 		ilist[i].ino = 0;
@@ -327,16 +335,16 @@ lookup(i, ef)
 {
 	register struct htab *hp;
 
-	for (hp = &htab[i%HSIZE]; hp->h_ino;) {
+	for (hp = &htab[i%hsize]; hp->h_ino;) {
 		if (hp->h_ino==i)
 			return(hp);
-		if (++hp >= &htab[HSIZE])
+		if (++hp >= &htab[hsize])
 			hp = htab;
 	}
 	if (ef==0)
 		return(0);
-	if (++nhent >= HSIZE) {
-		fprintf(stderr, "ncheck: out of core-- increase HSIZE\n");
+	if (++nhent >= hsize) {
+		fprintf(stderr, "ncheck: hsize of %d is too small\n", hsize);
 		exit(1);
 	}
 	hp->h_ino = i;
