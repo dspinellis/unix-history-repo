@@ -6,7 +6,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)sed.test	5.3 (Berkeley) %G%
+#	@(#)sed.test	5.4 (Berkeley) %G%
 #
 
 # sed Regression Tests
@@ -504,7 +504,7 @@ test_error()
 	$TEST 'y/a/b' && exit 1
 	$TEST 'y/a/b/c/d' && exit 1
 	$TEST '!' && exit 1
-	$TEST supercalifrangolisticexprialidociussupercalifrangolisticexprialidocius
+	$TEST supercalifrangolisticexprialidociussupercalifrangolisticexcius
 	set +x
 	exec 0>&3 1>&4 2>&5
 }
