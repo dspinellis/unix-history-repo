@@ -15,7 +15,7 @@
  *
  *  October 1992
  *
- *	$Id: pcfs_vnops.c,v 1.4 1993/12/19 00:54:32 wollman Exp $
+ *	$Id: pcfs_vnops.c,v 1.5 1994/03/15 20:28:54 ache Exp $
  */
 
 #include "param.h"
@@ -1560,7 +1560,7 @@ pcfs_bmap(vp, bn, vpp, bnp)
 		*vpp = dep->de_devvp;
 	if (bnp == NULL)
 		return 0;
-	return pcbmap(dep, bn << (pmp->pm_cnshift - pmp->pm_bnshift), bnp, 0);
+	return pcbmap(dep, bn, bnp, 0);
 }
 
 int
