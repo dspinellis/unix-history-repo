@@ -9,18 +9,18 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)README	3.9 (Berkeley) %G%
+ *	@(#)README	3.10 (Berkeley) %G%
  */
 
 Compilation notes:
 
      There is only one compiler option:
 
-	vax		use Vax byte ordering (found in ww.h)
-			It should already be defined in the preprocessor.
-			It turns out that all of the other machines that
-			I know are running window (68000, CCI, MIPS) are
-			big endians, so the single "#ifdef vax" suffices.
+	vax		use Vax byte order (found in ww.h)
+			Actually MIPSEL is also little-endian.
+			Anyway, they should already be defined in the
+			preprocessor.
+			If neither is defined, big-endian is assumed.
 
      Ok, there's another one, STR_DEBUG.  It turns on consistency checks
      in the string allocator.  It's been left on since performace doesn't
