@@ -1,0 +1,268 @@
+VI_MESSAGE_CATALOG
+Unable to create temporary fileX
+Warning: %s is not a regular fileX
+%s already locked, session is read-onlyX
+%s: removeX
+%s: closeX
+%s: removeX
+%s: removeX
+Read-only file, not written; use ! to overrideX
+Read-only file, not writtenX
+%s exists, not written; use ! to overrideX
+%s exists, not writtenX
+Use ! to write a partial fileX
+Partial file, not writtenX
+Interrupted write: %s: existing file: %lu lines, %lu charactersX
+%s: file modified more recently than this copy; use ! to overrideX
+%s: file modified more recently than this copyX
+Interrupted write: %s: new file: %lu lines, %lu charactersX
+%s: WARNING: FILE TRUNCATEDX
+Interrupted write: %s: %lu lines, %lu charactersX
+File modified since last complete write; write or use ! to overrideX
+File modified since last complete write; write or use :edit! to overrideX
+File modified since last complete write; write or use ! to overrideX
+File is a temporary; exit will discard modificationsX
+%s: existing file: %lu lines, %lu charactersX
+%s/%d: unable to get line %uX
+%s/%d: unable to delete line %uX
+%s/%d: unable to append to line %uX
+%s/%d: unable to insert at line %uX
+%s/%d: unable to store line %uX
+%s/%d: unable to get last lineX
+%s/%d: log put errorX
+Log restartedX
+log fileX
+Logging not being performed, undo not possibleX
+No changes to undoX
+Logging not being performed, undo not possibleX
+Logging not being performed, roll-forward not possibleX
+No changes to re-doX
+Vi's standard input and output must be a terminalX
+-T support not compiled into this versionX
+Unable to set command line window size optionX
+%s/%s: not sourced: not owned by you or rootX
+%s/%s: not sourced: not owned by youX
+%s/%s: not sourced: writeable by a user other than the ownerX
+%s: not sourced: not owned by you or rootX
+%s: not sourced: not owned by youX
+%s: not sourced: writeable by a user other than the ownerX
+Mark %s: not setX
+Mark %s: the line was deletedX
+Mark %s: cursor position no longer existsX
+Unable to set default %s optionX
+Usage: %sX
+no %s option: 'set all' gives all option valuesX
+set: [no]%s option doesn't take a valueX
+set: %s option isn't a booleanX
+set: illegal number %sX
+set: %s option isn't a booleanX
+
+Screen columns too small, less than %dX
+Screen lines too small, less than %dX
+The lisp option is not implementedX
+messages not turned off: %sX
+messages not turned on: %sX
+The modeline(s) option may never be setX
+The paragraph option must be in two character groupsX
+The section option must be in two character groupsX
+The shiftwidth may not be set to 0X
+The sourceany option may never be setX
+Tab stops may not be set to 0X
+
+Window too small, less than %dX
+The default buffer is emptyX
+Buffer %s is emptyX
+Files with newlines in the name are unrecoverableX
+Modifications not recoverable if the session failsX
+Preservation failed: %sX
+Modifications not recoverable if the session failsX
+File backup failed: %sX
+Information on user id %u not foundX
+Unable to lock recovery fileX
+Recovery file buffer overrunX
+Recovery fileX
+%s: malformed recovery fileX
+%s: malformed recovery fileX
+No files named %s, readable by you, to recoverX
+There are older versions of this file for you to recoverX
+There are other files for you to recoverX
+not sending email: %sX
+No non-printable character foundX
+%s: keys flushedX
+%s: new file: %lu lines, %lu charactersX
+%s: %lu lines, %lu charactersX
+Error: X
+Command not available in ex modeX
+%s: unknown terminal typeX
+no \"li\" terminal capability for %sX
+no \"co\" terminal capability for %sX
+Unknown command nameX
+The %s command is unknownX
+The %s command is not currently supportedX
+The %s command can't be used as part of a global commandX
+The %s command requires that a file have already been read inX
+Count may not be zeroX
+%s: bad line specificationX
+Internal syntax table error (%s: %s)X
+Usage: %sX
+The %s command doesn't permit an address of 0X
+ex: temporary buffer not releasedX
+Flag offset before line 1X
+Flag offset past end-of-fileX
+Ex command failed: remaining command input discardedX
+The second address is smaller than the firstX
+No mark name suppliedX
+\\ not followed by / or ?X
+
+Reference to a line number less than 0X
+Illegal address: the file is emptyX
+Illegal address: only %lu lines in the fileX
+No more files to editX
+No previous files to editX
+No previous files to rewindX
+No previous command to replace \"!\"X
+No filename to substitute for %%X
+No filename to substitute for #X
+Error: execl: %sX
+I/O error: %sX
+No previous buffer to executeX
+Buffer %s is emptyX
+Usage: %sX
+File modified since last complete write; write or use ! to overrideX
+Unable to find home directory locationX
+New current directory: %sX
+InterruptedX
+No following lines to joinX
+No input map entriesX
+No command map entriesX
+The %s character may not be remappedX
+\"%s\" isn't currently mappedX
+Mark names must be a single characterX
+%s exists, not written; use ! to overrideX
+New exrc file: %sX
+%sX
+Destination line is inside move rangeX
+The open command requires that the open option be setX
+The open command is not yet implementedX
+Preservation of this file not possibleX
+File preservedX
+%s expanded into too many file namesX
+Only regular files may be readX
+Interrupted read: %s: %lu lines, %lu charactersX
+%s: %lu lines, %lu charactersX
+The script command is only available in vi modeX
+No command to executeX
+shiftwidth option set to 0X
+Count overflowX
+Count underflowX
+Regular expression specified; r flag meaninglessX
+The #, l and p flags may not be combined with the c flag in vi modeX
+No match foundX
+%s: search pattern not foundX
+No previous tag enteredX
+%s: search pattern not foundX
+The tags stack is emptyX
+Less than %s entries on the tags stack; use :display t[ags]X
+No file named %s on the tags stack; use :display t[ags]X
+The tags stack is emptyX
+%s: tag not foundX
+%s: corrupted tag in %sX
+More files to edit; use n[ext] to go to the next file, q[uit]! to quitX
+The visual command requires that the open option be setX
+%s expanded into too many file namesX
+Empty fileX
+No previous F, f, T or t searchX
+%s not foundX
+No previous file to editX
+Usage: %sX
+Resulting number too largeX
+Resulting number too smallX
+No match character on this lineX
+Matching character not foundX
+No more characters to eraseX
+Illegal character; quote to enterX
+Already at the beginning of the insertX
+No characters to replaceX
+No other screen to switch toX
+No previous search patternX
+Characters after search string, line offset, and/or z commandX
+Search wrapped to original positionX
+Already at end-of-fileX
+Already at end-of-fileX
+Movement past the end-of-fileX
+Already at end-of-lineX
+Already at end-of-lineX
+Movement past the end-of-lineX
+No cursor movement madeX
+Already at the beginning of the fileX
+Movement past the beginning of the fileX
+Already in the first columnX
+No characters to deleteX
+Usage: %sX
+vi: temporary buffer not releasedX
+Buffers should be specified before the commandX
+Only one buffer can be specifiedX
+Buffers should be specified before the commandX
+%s isn't a vi commandX
+%s isn't a vi commandX
+No command to repeatX
+Usage: %sX
+%s may not be used as a motion commandX
+Already in command modeX
+Cursor not in a wordX
+Cursor not in a numberX
+Number larger than %luX
+No TERM environment variable set, or TERM set to \"unknown\"X
+%s: unknown terminal type, or terminal lacks necessary featuresX
+%s: terminal type lacks necessary featuresX
+Windows option value is too large, max is %uX
+Movement past the end-of-screenX
+Movement past the beginning-of-screenX
+Screen must be larger than %d to splitX
+You may not background your only displayed screenX
+There are no background screensX
+There's no background screen editing a file named %sX
+The screen cannot shrinkX
+The screen cannot growX
+The screen can only shrink to %d rowsX
+Termcap has no code for the %s function keyX
+This terminal has no %s keyX
+No previous regular expressionX
+line length overflowX
+The file %s is not a message catalogX
+No abbreviations to displayX
+Abbreviations must end with a \"word\" characterX
+Abbreviations may not contain tabs or spacesX
+Abbreviations may not mix word/non-word characters, except at the endX
+\"%s\" is not an abbreviationX
+File empty; nothing to searchX
+Reached end-of-file without finding the patternX
+Pattern not foundX
+Reached top-of-file without finding the patternX
+Search wrappedX
+No previous search patternX
+
+Interrupted.X
+Interrupted.X
+
+
+
+
+
+The Athena widget screen is not yet implementedX
+Illegal address combinationX
+Address value overflowX
+Address value underflowX
+%s expanded into too many file namesX
+%s: not a regular fileX
+%s: not owned by youX
+%s: accessible by a user other than the ownerX
+No tags to displayX
+No background screens to displayX
+No cut buffers to displayX
+No file list to displayX
+%s: read lock was unavailableX
+%s: write lock was unavailableX
+Screen columns too large, greater than %dX
+Screen lines too large, greater than %dX
+File readonly, modifications not auto-writtenX

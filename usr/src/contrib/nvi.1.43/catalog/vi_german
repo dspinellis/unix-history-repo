@@ -1,0 +1,267 @@
+VI_MESSAGE_CATALOG
+Nicht moeglich temporaere Datei anzulegenX
+Warnung: %s ist keine regulaere DateiX
+%s ist bereits gesperrt, nur-lese EditorsitzungX
+%s: loeschenX
+%s: schliessenX
+%s: loeschenX
+%s: loeschenX
+Nur-lese Datei, nicht geschrieben; verwende ! zum UeberschreibenX
+Nur-lese Datei, nicht geschriebenX
+%s existiert, nicht geschrieben; verwende ! zum UeberschreibenX
+%s existiert, nicht geschriebenX
+Verwende ! zum Schreiben eines Teils der DateiX
+Teil der Datei, nicht geschriebenX
+Unterbrochenes Schreiben: %s: existierende Datei: %lu Zeilen, %lu ZeichenX
+%s: Datei wurde spaeter als diese Kopie veraendert; verwende ! zum UeberschreibenX
+%s: Datei wurde spaeter als diese Kopie veraendertX
+Unterbrochenes Schreiben: %s: neue Datei: %lu Zeilen, %lu ZeichenX
+%s: WARNUNG: DATEI ABGESCHNITTENX
+Unterbrochenes Schreiben: %s: %lu Zeilen, %lu ZeichenX
+Datei wurde seit dem letzten vollstaendigen Schreiben geaendert; schreibe oder verwende ! zum ignorierenX
+Datei wurde seit dem letzten vollstaendigen Schreiben geaendert; schreibe oder verwende :edit! zum ignorierenX
+Datei wurde seit dem letzten vollstaendigen Schreiben geaendert; schreibe oder verwende ! zum ignorierenX
+Datei ist temporaer; beim Verlassen gehen die Aenderungen verlorenX
+%s: existierende Datei: %lu Zeilen, %lu ZeichenX
+%s/%d: kann Zeile %u nicht lesenX
+%s/%d: kann Zeile %u nicht loeschenX
+%s/%d: kann an Zeile %u nicht anfuegenX
+%s/%d: kann in Zeile %u nicht einfuegenX
+%s/%d: kann Zeile %u nicht speichernX
+%s/%d: kann letzte Zeile nicht lesenX
+%s/%d: ProtokollschreibfehlerX
+Portokollierung neu begonnenX
+ProtokolldateiX
+Keine Protokollierung aktiv, rueckgaengig machen nicht moeglichX
+Keine Aenderungen rueckgaengig zu machenX
+Keine Protokollierung aktiv, rueckgaengig machen nicht moeglichX
+Keine Protokollierung aktiv, Wiederholung von Aenderungen nicht moeglichX
+Keine Aenderungen zu wiederholenX
+Vi's Standardein- und ausgabe muss ein Terminal seinX
+Bei dieser Version wird die -T Option nicht unterstuetztX
+Setzen der Fenstergroesse mit Kommandozeilenoption nicht moeglichX
+%s/%s: nicht gelesen: gehoehrt weder Ihnen noch rootX
+%s/%s: nicht gelesen: gehoehrt nicht IhnenX
+%s/%s: nicht gelesen: anderer Benutzer als Eigentuemer hat SchreibrechtX
+%s: nicht gelesen: gehoehrt weder Ihnen noch rootX
+%s: nicht gelesen: gehoehrt nicht IhnenX
+%s: nicht gelesen: anderer Benutzer als Eigentuemer hat SchreibrechtX
+Marke %s: nicht gesetztX
+Marke %s: die Zeile wurde geloeschtX
+Marke %s: Cursorposition existiert nicht mehrX
+Setzen der Voreinstellung fuer %s Option nicht moeglichX
+Benutzung: %sX
+keine %s Option: 'set all' zeigt alle Optionen mit Werten anX
+set: der [no]%s Option kann kein Wert zugewiesen werdenX
+set: %s ist keine boolsche OptionX
+set: ungueltige Zahl %sX
+set: %s ist keine boolsche OptionX
+
+Zu wenig Bildschirmspalten, weniger als %dX
+Zu wenig Bildschirmzeilen, weniger als %dX
+Die lisp Option ist nicht implementiertX
+Messages nicht abgeschalten: %sX
+Messages nicht eingeschalten: %sX
+Die modeline(s) Option kann nie gesetzt werdenX
+Die paragraph Option muss Gruppen zu zwei Zeichen enthaltenX
+Die section Option muss Gruppen zu zwei Zeichen enthaltenX
+shiftwidth kann nicht auf 0 gesetzt werdenX
+Die sourceany Option kann nie gesetzt werdenX
+Tabulatorpositionen duerfen nicht auf 0 gesetzt werdenX
+
+Fenster zu klein, weniger als %dX
+Der Standardpuffer ist leerX
+Puffer %s ist leerX
+Dateien mit newlines im Namen sind nicht wiederherstellbarX
+Aenderungen nicht wiederherstellbar falls die Editorsitzung schief gehtX
+Rettungsmechanismus funktioniert nicht: %sX
+Aenderungen nicht wiederherstellbar falls die Editorsitzung schief gehtX
+Sicherung der Datei gescheitert: %sX
+Informationen ueber den Benutzer mit id %u nicht gefundenX
+Wiederherstellungsdatei kann nicht gesperrt werdenX
+Puffer der Wiederherstellungsdatei uebergelaufenX
+WiederherstellungsdateiX
+%s: Wiederherstellungsdatei hat falsches FormatX
+%s: Wiederherstellungsdatei hat falsches FormatX
+Keine von Ihnen lesbaren Dateien mit Namen %s zum WiederherstellenX
+Es gibt aeltere Versionen dieser Datei von Ihnen zum WiederherstellenX
+Sie haben noch andere Dateien zum WiederherstellenX
+schicke keine email: %sX
+Keine nichtdruckbaren Zeichen gefundenX
+%s: Eingabezeichen ignoriertX
+%s: neue Datei: %lu Zeilen, %lu ZeichenX
+%s: %lu Zeilen, %lu ZeichenX
+Fehler: X
+Kommando im ex Modus nicht verfuegbarX
+%s: unbekannter TerminaltypX
+%s hat keine \"li\" TerminaleigenschaftX
+%s hat keine \"co\" TerminaleigenschaftX
+Unbekannter KommandonameX
+Das Kommando %s ist unbekanntX
+Das Kommando %s wird zur Zeit nicht unterstuetztX
+Das Kommando %s kann nicht als Teil eines global Kommandos verwendet werdenX
+Das Kommando %s verlangt, dass bereits eine Datei eingelesen wurdeX
+Count darf nicht Null seinX
+%s: falsche ZeilenangabeX
+Interner Syntaxtabellenfehler (%s: %s)X
+Benutzung: %sX
+Das Kommando %s erlaubt keine Adresse 0X
+ex: temporaerer Puffer nicht freigegebenX
+Flagoffset vor Zeile 1X
+Flagoffset hinter dem DateiendeX
+Ex Kommando misslungen: restliche Kommandoeingabe ignoriertX
+Die zweite Adresse ist kleiner als die ersteX
+Kein Markenname angegebenX
+\\ ohne folgenden / oder ?X
+
+Referenz auf eine negative ZeilennummerX
+Ungueltige Adresse: die Datei ist leerX
+Ungueltige Adresse: nur %lu Zeilen in der DateiX
+Keine weiteren Dateien zu edierenX
+Keine vorhergehenden Dateien zu edierenX
+Keine vorhergehenden Dateien fuer rewindX
+Kein vorhergehendes Kommando um \"!\" zu ersetzenX
+Kein Dateiname fuer %%X
+Kein Dateiname fuer #X
+Fehler: execl: %sX
+I/O Fehler: %sX
+Kein vorhergehender Puffer zum AusfuehrenX
+Puffer %s ist leerX
+Benutzung: %sX
+Datei wurde seit dem letzten vollstaendigen Schreiben geaendert; schreibe oder verwende ! zum ignorierenX
+Kann Homedirectory nicht bestimmenX
+Neues aktuelles Directory: %sX
+UnterbrochenX
+Keine folgenden Zeilen zum VerbindenX
+Kein Eingabe-Map EintragX
+Kein Kommando-Map EintragX
+Das %s Zeichen kann nicht umgemappt werdenX
+\"%s\" ist momentan nicht gemapptX
+Markennamen muessen einzelne Buchstaben seinX
+%s existiert, nicht geschrieben; verwende ! zum UeberschreibenX
+Neue .exrc Datei: %s. X
+%sX
+Zielzeile ist innerhalb des VerschiebebereichsX
+Das open Kommando verlangt, dass die open Option gesetzt istX
+Das open Kommando ist nocht nicht implementiertX
+Rettung dieser Datei nicht moeglichX
+Datei gerettetX
+%s wurde in zu viele Dateinamen expandiertX
+Nur regulaere Dateien koennen gelesen werdenX
+Unterbrochenes Lesen: %s: %lu Zeilen, %lu ZeichenX
+%s: %lu Zeilen, %lu ZeichenX
+Das script Kommando ist nur im vi Modus verfuegbarX
+Kein Kommando auszufuehrenX
+shiftwidth Option auf 0 gesetztX
+Count ueberlaufX
+Count unterlaufX
+Regulaerer Ausdruck angegeben; r Flag bedeutungslosX
+Die #, l und p Flags koennen im vi Modus nicht mit dem c Flag kombiniert werdenX
+Keine Uebereinstimmung gefundenX
+%s: Suchmuster nicht gefundenX
+Kein vorhergehender Tag angegebenX
+%s: Suchmuster nicht gefundenX
+Der Tag Stack ist leerX
+Weniger als %s Eintraege auf dem Tag Stack; verwende :display t[ags]X
+Keine Datei namens %s auf dem Tag Stack; verwende :display t[ags]X
+Der Tag Stack ist leerX
+%s: Tag nicht gefundenX
+%s: kaputter Tag in %sX
+Weitere Dateien zu edieren; verwende n[ext] um zur naechsten Datei zu gehen, q[uit]! zum VerlassenX
+Das visual Kommando verlangt dass die open Option gesetzt istX
+%s wurde in zu viele Dateinamen expandiertX
+Leere DateiX
+Keine vorhergehende F, f, T oder t SucheX
+%s nicht gefundenX
+Keine vorhergehende Datei zu edierenX
+Benutzung: %sX
+Sich ergebende Zahl ist zu grossX
+Sich ergebende Zahl ist zu kleinX
+Kein korrespondierendes Zeichen in dieser ZeileX
+Korrespondierendes Zeichen nicht gefundenX
+Keine weiteren Zeichen zu loeschenX
+Nicht erlaubtes Zeichen; maskiere zum EingebenX
+Bereits am Anfang der EingabeX
+Keine Zeichen zu ersetzenX
+Keine andere Anzeige zum HinschaltenX
+Kein altes SuchmusterX
+Zeichen nach Suchmuster, Zeilenoffset und/oder z KommandoX
+Suche zur urspruenglichen Position umgeschlagenX
+Bereits am DateiendeX
+Bereits am DateiendeX
+Bewegung hinter das DateiendeX
+Bereits am ZeilenendeX
+Bereits am ZeilenendeX
+Bewegung hinter das ZeilenendeX
+Keine Cursorbewegung gemachtX
+Bereits am DateianfangX
+Bewegung vor den DateianfangX
+Bereits in der ersten SpalteX
+Keine Zeichen zu loeschenX
+Benutzung: %sX
+vi: temporaerer Puffer nicht freigegebenX
+Puffer sollen vor dem Kommando angegeben werdenX
+Es kann nur ein Puffer angegeben werdenX
+Puffer sollen vor dem Kommando angegeben werdenX
+%s ist kein vi KommandoX
+%s ist kein vi KommandoX
+Kein Kommando zu wiederholenX
+Benutzung: %sX
+%s kann nicht als Bewegungskommando verwendet werdenX
+Bereits im KommandomodusX
+Cursor nicht in einem WortX
+Cursor nicht in einer ZahlX
+Zahl groesser als %luX
+Keine TERM Environment Variable gesetzt oder TERM auf \"unknown\" gesetztX
+%s: unbekannter Terminaltyp oder dem Terminal fehlen noetige EigenschaftenX
+%s: Terminaltype fehlen noetige EigenschaftenX
+Wert der Window Option ist zu gross, max ist %uX
+Bewegung hinter das AnzeigenendeX
+Bewegung vor den AnzeigenanfangX
+Anzeige muss zum Zerlegen groesser als %d seinX
+Die einzige dargestellte Anzeige kann nicht in den Hintergrund gebracht werdenX
+Keine Hintergrundanzeigen vorhandenX
+Es gibt keine Hintergrundanzeige die eine Datei namens %s ediertX
+Die Anzeige kann nicht verkleinert werdenX
+Die Anzeige kann nicht vergroessert werdenX
+Die Anzeige kann nur auf %d Zeilen verkleinert werdenX
+Termcap hat keinen Code fuer die %s FunktionstasteX
+Dieses Terminal hat keine %s TasteX
+Kein vorhergehender regulaerer AusdruckX
+Zeilenlaengen UeberlaufX
+Die Datei %s ist kein MeldungskatalogX
+Keine Abkuerzungen zum AnzeigenX
+Abkuerzungen muessen mit einem \"Wort\"-Zeichen endenX
+Abkuerzungen duerfen keine Tabulator- oder Leerzeichen enthaltenX
+In Abkuerzungen duerfen ausser am Ende Wort- und Nicht-Wort-Zeichen nicht gemischt werdenX
+\"%s\" ist keine AbkuerzungX
+Datei leer; nichts zu suchenX
+Dateiende erreicht, ohne das Suchmuster zu findenX
+Suchmuster nicht gefundenX
+Dateianfang erreicht, ohne das Suchmuster zu findenX
+Suche umgeschlagenX
+Kein altes SuchmusterX
+
+Unterbrochen.X
+Unterbrochen.X
+
+
+
+
+
+Die Athena Widget Anzeige ist noch nicht implementiertX
+Ungueltige AdresskombinationX
+Adresswert zu grossX
+Adresswert zu kleinX
+%s wurde in zu viele Dateinamen expandiertX
+%s: keine regulaere DateiX
+%s: gehoehrt nicht IhnenX
+%s: anderer Benutzer als Eigentuemer hat ZugriffX
+Keine Tags anzuzeigenX
+Keine Hintegrundanzeigen vorhandenX
+Keine Puffer anzuzeigenX
+Keine Dateiliste zum AnzeigenX
+%s: Lesesperrung war nicht moeglichX
+%s: Schreibsperrung war nicht moeglichX
+Anzeige hat zu viele Spalten, mehr als %dX
+Anzeige hat zu viele Zeilen, mehr als %dX
