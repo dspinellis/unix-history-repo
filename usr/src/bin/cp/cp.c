@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)cp.c	5.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)cp.c	5.19 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -39,6 +39,7 @@ static char sccsid[] = "@(#)cp.c	5.18 (Berkeley) %G%";
 #include <sys/time.h>
 #include <stdio.h>
 #include <errno.h>
+#include <stdlib.h>
 #include <string.h>
 
 #define	type(st)	((st).st_mode & S_IFMT)
@@ -51,10 +52,9 @@ typedef struct {
 PATH_T from = { "", from.p_path };
 PATH_T to = { "", to.p_path };
 
-extern int errno;
 uid_t myuid;
 int exit_val, myumask;
-int interactive_flag, preserve_flag, recursive_flag;
+int iflag, pflag, rflag;
 int (*statfcn)();
 char *buf, *pname;
 char *path_append(), *path_basename();
@@ -66,8 +66,8 @@ main(argc, argv)
 	extern int optind;
 	struct stat to_stat;
 	register int c, r;
-	int force_flag, symfollow, lstat(), stat();
-	char *old_to, *p, *malloc();
+	int symfollow, lstat(), stat();
+	char *old_to, *p;
 
 	/*
 	 * cp is used by mv(1) -- except for usage statements, print
@@ -75,24 +75,24 @@ main(argc, argv)
 	 */
 	pname = (p = rindex(*argv,'/')) ? ++p : *argv;
 
-	force_flag = symfollow = 0;
+	symfollow = 0;
 	while ((c = getopt(argc, argv, "Rfhipr")) != EOF) {
 	switch ((char)c) {
 		case 'f':
-			force_flag = 1;
+			iflag = 0;
 			break;
 		case 'h':
 			symfollow = 1;
 			break;
 		case 'i':
-			interactive_flag = isatty(fileno(stdin));
+			iflag = isatty(fileno(stdin));
 			break;
 		case 'p':
-			preserve_flag = 1;
+			pflag = 1;
 			break;
 		case 'r':
 		case 'R':
-			recursive_flag = 1;
+			rflag = 1;
 			break;
 		case '?':
 		default:
@@ -105,9 +105,6 @@ main(argc, argv)
 
 	if (argc < 2)
 		usage();
-
-	if (force_flag)
-		interactive_flag = 0;
 
 	buf = (char *)malloc(MAXBSIZE);
 	if (!buf) {
@@ -125,7 +122,7 @@ main(argc, argv)
 	if (!path_set(&to, argv[--argc]))
 		exit(exit_val);
 
-	statfcn = symfollow || !recursive_flag ? stat : lstat;
+	statfcn = symfollow || !rflag ? stat : lstat;
 
 	/*
 	 * Cp has two distinct cases:
@@ -211,7 +208,7 @@ copy()
 		copy_link(!dne);
 		return;
 	case S_IFDIR:
-		if (!recursive_flag) {
+		if (!rflag) {
 			(void)fprintf(stderr,
 			    "%s: %s is a directory (not copied).\n",
 			    pname, from.p_path);
@@ -243,7 +240,7 @@ copy()
 		 * same as the from directory, umodified by the umask;
 		 * arguably wrong, but it's been that way forever.
 		 */
-		if (preserve_flag)
+		if (pflag)
 			setfile(&from_stat, 0);
 		else if (dne)
 			(void)chmod(to.p_path, from_stat.st_mode);
@@ -254,9 +251,9 @@ copy()
 		 * if recursive flag on, try and create the special device
 		 * otherwise copy the contents.
 		 */
-		if (recursive_flag) {
+		if (rflag) {
 			copy_special(&from_stat, !dne);
-			if (preserve_flag)
+			if (pflag)
 				setfile(&from_stat, 0);
 			return;
 		}
@@ -287,7 +284,7 @@ copy_file(fs, dne)
 	 * modified by the umask.)
 	 */
 	if (!dne) {
-		if (interactive_flag) {
+		if (iflag) {
 			int checkch, ch;
 
 			(void)fprintf(stderr, "overwrite %s? ", to.p_path);
@@ -319,7 +316,7 @@ copy_file(fs, dne)
 	}
 	if (rcount < 0)
 		error(from.p_path);
-	if (preserve_flag)
+	if (pflag)
 		setfile(fs, to_fd);
 	/*
 	 * If the source was setuid, set the bits on the copy if the copy
@@ -400,7 +397,7 @@ copy_dir()
 		}
 		path_restore(&from, old_from);
 done:		dir_list[i] = NULL;
-		(void)free((char *)dp);
+		(void)free((void *)dp);
 	}
 
 	/* copy directories */
@@ -410,21 +407,21 @@ done:		dir_list[i] = NULL;
 			continue;
 		old_from = path_append(&from, dp->d_name, (int) dp->d_namlen);
 		if (!old_from) {
-			(void)free((char *)dp);
+			(void)free((void *)dp);
 			continue;
 		}
 		old_to = path_append(&to, dp->d_name, (int) dp->d_namlen);
 		if (!old_to) {
-			(void)free((char *)dp);
+			(void)free((void *)dp);
 			path_restore(&from, old_from);
 			continue;
 		}
 		copy();
-		free((char *)dp);
+		free((void *)dp);
 		path_restore(&from, old_from);
 		path_restore(&to, old_to);
 	}
-	free((char *)dir_list);
+	free((void *)dir_list);
 }
 
 copy_link(exists)
