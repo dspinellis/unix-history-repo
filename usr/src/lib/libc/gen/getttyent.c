@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)getttyent.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)getttyent.c	5.10 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <ttyent.h>
@@ -27,7 +27,8 @@ getttynam(tty)
 	while (t = getttyent())
 		if (!strcmp(tty, t->ty_name))
 			break;
-	return(t);
+	endttyent();
+	return (t);
 }
 
 struct ttyent *
@@ -41,10 +42,10 @@ getttyent()
 	static char *skip(), *value();
 
 	if (!tf && !setttyent())
-		return(NULL);
+		return (NULL);
 	for (;;) {
 		if (!fgets(p = line, sizeof(line), tf))
-			return(NULL);
+			return (NULL);
 		/* skip lines that are too big */
 		if (!index(p, '\n')) {
 			while ((c = getc(tf)) != '\n' && c != EOF)
@@ -95,7 +96,7 @@ getttyent()
 		tty.ty_comment = 0;
 	if (p = index(p, '\n'))
 		*p = '\0';
-	return(&tty);
+	return (&tty);
 }
 
 #define	QUOTED	1
@@ -135,25 +136,27 @@ skip(p)
 		}
 	}
 	*--t = '\0';
-	return(p);
+	return (p);
 }
 
 static char *
 value(p)
 	register char *p;
 {
-	return((p = index(p, '=')) ? ++p : NULL);
+
+	return ((p = index(p, '=')) ? ++p : NULL);
 }
 
 int
 setttyent()
 {
+
 	if (tf) {
 		(void)rewind(tf);
-		return(1);
+		return (1);
 	} else if (tf = fopen(_PATH_TTYS, "r"))
-		return(1);
-	return(0);
+		return (1);
+	return (0);
 }
 
 int
@@ -164,7 +167,7 @@ endttyent()
 	if (tf) {
 		rval = !(fclose(tf) == EOF);
 		tf = NULL;
-		return(rval);
+		return (rval);
 	}
-	return(1);
+	return (1);
 }
