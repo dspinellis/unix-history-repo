@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)swapgeneric.c	7.8 (Berkeley) %G%
+ *	@(#)swapgeneric.c	7.9 (Berkeley) %G%
  */
 
 #include "mba.h"
@@ -103,10 +103,10 @@ gotit:
 		for (mi = mbdinit; mi->mi_driver; mi++) {
 			if (mi->mi_alive == 0)
 				continue;
-			if (mi->mi_unit == 0 && mi->mi_driver ==
+			if (mi->mi_unit == unit && mi->mi_driver ==
 			    (struct mba_driver *)gc->gc_driver) {
-				printf("root on %s0\n",
-				    mi->mi_driver->md_dname);
+				printf("root on %s%d\n",
+				    mi->mi_driver->md_dname, unit);
 				goto found;
 			}
 		}
@@ -114,10 +114,10 @@ gotit:
 		for (ui = ubdinit; ui->ui_driver; ui++) {
 			if (ui->ui_alive == 0)
 				continue;
-			if (ui->ui_unit == 0 && ui->ui_driver ==
+			if (ui->ui_unit == unit && ui->ui_driver ==
 			    (struct uba_driver *)gc->gc_driver) {
-				printf("root on %s0\n",
-				    ui->ui_driver->ud_dname);
+				printf("root on %s%d\n",
+				    ui->ui_driver->ud_dname, unit);
 				goto found;
 			}
 		}
