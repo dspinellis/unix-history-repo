@@ -37,10 +37,14 @@
  *
  * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
  * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         1       00017
+ * CURRENT PATCH LEVEL:         2       00117
  * --------------------         -----   ----------------------
  *
  * 18 Aug 92	Frank Maclachlan	*See comments below
+ * 25 Mar 93	Rodney W. Grimes	Added counter for stray interrupt,
+ *					turned on logging of stray interrupts,
+ *					Now prints maddr, msize, and flags
+ *					after finding a device.
  */
 static char rcsid[] = "$Header: /usr/src/sys.386bsd/i386/isa/RCS/isa.c,v 1.2 92/01/21 14:34:23 william Exp Locker: root $";
 
@@ -179,7 +183,7 @@ config_isadev(isdp, mp)
 		return (1);
 	} else	return(0);
 }
-#else
+#else /* notyet */
 /*
  * Configure all ISA devices
  */
@@ -222,25 +226,47 @@ config_isadev(isdp, mp)
 		isdp->id_alive = (*dp->probe)(isdp);
 		if (isdp->id_alive) {
 			printf("%s%d", dp->name, isdp->id_unit);
+			/*
+			 * The attach should really be after all the printf's
+			 * but until all the drivers are fixed do it here.
+			 * There is a comment below that shows where this
+			 * really belongs.  Rod Grimes 04/10/93
+			 */
 			(*dp->attach)(isdp);
-			printf(" at 0x%x ", isdp->id_iobase);
+			printf(" at 0x%x", isdp->id_iobase);
+			if ((isdp->id_iobase + isdp->id_alive - 1) !=
+			     isdp->id_iobase)
+				printf("-0x%x",
+				       isdp->id_iobase + isdp->id_alive - 1);
+			printf(" ");
+			if(isdp->id_irq)
+				printf("irq %d ", ffs(isdp->id_irq)-1);
+			if (isdp->id_drq != -1)
+				printf("drq %d ", isdp->id_drq);
+			if (isdp->id_maddr != 0)
+				printf("maddr 0x%x ", kvtop(isdp->id_maddr));
+			if (isdp->id_msize != 0)
+				printf("msize %d ", isdp->id_msize);
+			if (isdp->id_flags != 0)
+				printf("flags 0x%x ", isdp->id_flags);
+			printf("on isa\n");
+
+			/* This is the place the attach should be done! */
 			if(isdp->id_irq) {
 				int intrno;
 
 				intrno = ffs(isdp->id_irq)-1;
-				printf("irq %d ", intrno);
 				INTREN(isdp->id_irq);
-				if(mp)INTRMASK(*mp,isdp->id_irq);
+				if(mp)
+					INTRMASK(*mp,isdp->id_irq);
 				setidt(ICU_OFFSET+intrno, isdp->id_intr,
 					 SDT_SYS386IGT, SEL_KPL);
 			}
-			if (isdp->id_drq != -1) printf("drq %d ", isdp->id_drq);
-			printf("on isa\n");
 		}
 		return (1);
 	} else	return(0);
 }
-#endif
+#endif /* (!) notyet */
 
 #define	IDTVEC(name)	__CONCAT(X,name)
 /* default interrupt vector table entries */
@@ -504,11 +530,23 @@ isa_nmi(cd) {
  */
 isa_strayintr(d) {
 
-#ifdef notdef
 	/* DON'T BOTHER FOR NOW! */
 	/* for some reason, we get bursts of intr #7, even if not enabled! */
-	log(LOG_ERR,"ISA strayintr %x", d);
-#endif
+	/*
+	 * Well the reason you got bursts of intr #7 is because someone
+	 * raised an interrupt line and dropped it before the 8259 could
+	 * prioritize it.  This is documented in the intel data book.  This
+	 * means you have BAD hardware!  I have changed this so that only
+	 * the first 5 get logged, then it quits logging them, and puts
+	 * out a special message. rgrimes 3/25/1993
+	 */
+	extern u_long isa_stray_intrcnt;
+
+	isa_stray_intrcnt++;
+	if (isa_stray_intrcnt <= 5)
+		log(LOG_ERR,"ISA strayintr %x\n", d);
+	if (isa_stray_intrcnt == 5)
+		log(LOG_CRIT,"Too many ISA strayintr not logging any more\n");
 }
 
 /*
