@@ -7,7 +7,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)mount_umap.8	8.2 (Berkeley) %G%
+.\"	@(#)mount_umap.8	8.3 (Berkeley) %G%
 .\"
 .Dd ""
 .Dt MOUNT_UMAP 8
@@ -17,6 +17,7 @@
 .Nd sample file system layer
 .Sh SYNOPSIS
 .Nm mount_umap
+.Op Fl o Ar options
 .Ar target
 .Ar mount-point
 .Ar uid-mapfile
@@ -29,6 +30,18 @@ that uses a different set of uids and gids than the local system.
 Such a file system could be mounted from a remote site via NFS or
 it could be a file system on removable media brought from some
 foreign location that uses a different password file.
+.Pp
+The options are as follows:
+.Bl -tag -width indent
+.It Fl o
+Options are specified with a
+.Fl o
+flag followed by a comma separated string of options.
+See the
+.Xr mount 8
+man page for possible options and their meanings.
+.El
+.Pp
 The
 .Nm mount_umap
 command uses a set of files provided by the user to make correspondences
