@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)data.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)data.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /*	data.c		Larn is copyrighted 1986 by Noah Morgan. */
@@ -105,7 +105,7 @@ char stealth[MAXX][MAXY];	/*  0=sleeping 1=awake monst*/
 char iven[26];			/*	inventory for player			*/
 short ivenarg[26];		/*	inventory for player			*/
 char lastmonst[40];		/*	this has the name of the current monster	*/
-char beenhere[MAXLEVEL+MAXVLEVEL]=0;	/*  1 if have been on this level */
+char beenhere[MAXLEVEL+MAXVLEVEL]={0};	/*  1 if have been on this level */
 char VERSION=VER;	/*	this is the present version # of the program	*/
 char SUBVERSION=SUBVER;
 char nosignal=0;	/* set to 1 to disable the signals from doing anything */
@@ -353,7 +353,7 @@ char *potionname[] = {
 /*
 	spell data
  */
-char spelknow[SPNUM]=0;
+char spelknow[SPNUM]={0};
 char splev[] = { 1, 4, 9, 14, 18, 22, 26, 29, 32, 35, 37, 37, 37, 37, 37 };
 
 char *spelcode[]={
