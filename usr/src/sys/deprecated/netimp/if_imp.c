@@ -1,4 +1,4 @@
-/*	if_imp.c	4.43	82/10/22	*/
+/*	if_imp.c	4.44	82/10/31	*/
 
 #include "imp.h"
 #if NIMP > 0
@@ -89,7 +89,7 @@ impattach(ui, reset)
 	ifp->if_name = "imp";
 	ifp->if_mtu = IMPMTU - sizeof(struct imp_leader);
 	ifp->if_net = ui->ui_flags;
-	ifp->if_ubareset = reset;
+	ifp->if_reset = reset;
 	/* the host and imp fields will be filled in by the imp */
 	sin = (struct sockaddr_in *)&ifp->if_addr;
 	sin->sin_family = AF_INET;
