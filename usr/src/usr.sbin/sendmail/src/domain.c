@@ -10,9 +10,9 @@
 
 #ifndef lint
 #if NAMED_BIND
-static char sccsid[] = "@(#)domain.c	8.36 (Berkeley) %G% (with name server)";
+static char sccsid[] = "@(#)domain.c	8.37 (Berkeley) %G% (with name server)";
 #else
-static char sccsid[] = "@(#)domain.c	8.36 (Berkeley) %G% (without name server)";
+static char sccsid[] = "@(#)domain.c	8.37 (Berkeley) %G% (without name server)";
 #endif
 #endif /* not lint */
 
@@ -369,7 +369,7 @@ mxrand(host)
 	return hfunc;
 }
 /*
-**  GETCANONNAME -- get the canonical name for named host
+**  DNS_GETCANONNAME -- get the canonical name for named host using DNS
 **
 **	This algorithm tries to be smart about wildcard MX records.
 **	This is hard to do because DNS doesn't tell is if we matched
@@ -391,6 +391,7 @@ mxrand(host)
 **			This is a value-result parameter.
 **		hbsize -- the size of the host buffer.
 **		trymx -- if set, try MX records as well as A and CNAME.
+**		statp -- pointer to place to store status.
 **
 **	Returns:
 **		TRUE -- if the host matched.
@@ -398,10 +399,11 @@ mxrand(host)
 */
 
 bool
-getcanonname(host, hbsize, trymx)
+dns_getcanonname(host, hbsize, trymx, statp)
 	char *host;
 	int hbsize;
 	bool trymx;
+	int *statp;
 {
 	extern int h_errno;
 	register u_char *eom, *ap;
@@ -428,7 +430,10 @@ getcanonname(host, hbsize, trymx)
 		printf("getcanonname(%s)\n", host);
 
 	if ((_res.options & RES_INIT) == 0 && res_init() == -1)
-		return (FALSE);
+	{
+		*statp = EX_UNAVAILABLE;
+		return FALSE;
+	}
 
 	/*
 	**  Initialize domain search list.  If there is at least one
@@ -505,6 +510,7 @@ cnameloop:
 			{
 				/* the name server seems to be down */
 				h_errno = TRY_AGAIN;
+				*statp = EX_TEMPFAIL;
 				return FALSE;
 			}
 
@@ -555,6 +561,7 @@ cnameloop:
 				if (tTd(8, 20))
 					printf("qdcount failure (%d)\n",
 						ntohs(hp->qdcount));
+				*statp = EX_SOFTWARE;
 				return FALSE;		/* ???XXX??? */
 			}
 		}
@@ -607,6 +614,7 @@ cnameloop:
 						CurEnv->e_message = newstr(ebuf);
 					}
 					h_errno = NO_RECOVERY;
+					*statp = EX_CONFIG;
 					return FALSE;
 				}
 
@@ -656,7 +664,10 @@ cnameloop:
 	}
 
 	if (mxmatch == NULL)
+	{
+		*statp = EX_NOHOST;
 		return FALSE;
+	}
 
 	/* create matching name and return */
 	(void) sprintf(nbuf, "%.*s%s%.*s", MAXDNAME, host,
@@ -664,6 +675,7 @@ cnameloop:
 			MAXDNAME, mxmatch);
 	strncpy(host, nbuf, hbsize);
 	host[hbsize - 1] = '\0';
+	*statp = EX_OK;
 	return TRUE;
 }
 
@@ -715,39 +727,4 @@ gethostalias(host)
 	return hbuf;
 }
 
-
-#else /* not NAMED_BIND */
-
-bool
-getcanonname(host, hbsize, trymx)
-	char *host;
-	int hbsize;
-	bool trymx;
-{
-	struct hostent *hp;
-	char *p;
-
-	hp = sm_gethostbyname(host);
-	if (hp == NULL)
-		return (FALSE);
-	p = hp->h_name;
-	if (strchr(p, '.') == NULL)
-	{
-		/* first word is a short name -- try to find a long one */
-		char **ap;
-
-		for (ap = hp->h_aliases; *ap != NULL; ap++)
-			if (strchr(*ap, '.') != NULL)
-				break;
-		if (*ap != NULL)
-			p = *ap;
-	}
-
-	if (strlen(p) >= hbsize)
-		return (FALSE);
-
-	(void) strcpy(host, p);
-	return (TRUE);
-}
-
-#endif /* not NAMED_BIND */
+#endif /* NAMED_BIND */

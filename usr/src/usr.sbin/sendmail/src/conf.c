@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.158 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.159 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -553,6 +553,9 @@ switch_map_find(service, maptype, mapreturn)
 	struct svcinfo *svcinfo;
 	int svc;
 
+	for (svcno = 0; svcno < MAXMAPACTIONS; svcno++)
+		mapreturn[svcno] = 0;
+
 	svcinfo = getsvc();
 	if (svcinfo == NULL)
 		goto punt;
@@ -598,6 +601,9 @@ switch_map_find(service, maptype, mapreturn)
 	**  Fall-back mechanism.
 	*/
 
+	for (svcno = 0; svcno < MAXMAPACTIONS; svcno++)
+		mapreturn[svcno] = 0;
+
 	svcno = 0;
 	fp = fopen(ServiceSwitchFile, "r");
 	if (fp != NULL)
@@ -636,6 +642,9 @@ switch_map_find(service, maptype, mapreturn)
 
 	/* if the service file doesn't work, use an absolute fallback */
   punt:
+	for (svcno = 0; svcno < MAXMAPACTIONS; svcno++)
+		mapreturn[svcno] = 0;
+	svcno = 0;
 	if (strcmp(service, "aliases") == 0)
 	{
 		maptype[svcno++] = "files";
