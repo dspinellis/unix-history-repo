@@ -1,112 +1,112 @@
 /*
- * Copyright (c) 1983 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+ * Copyright (c) 1983 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms are permitted
+ * provided that the above copyright notice and this paragraph are
+ * duplicated in all such forms and that any documentation,
+ * advertising materials, and other materials related to such
+ * distribution and use acknowledge that the software was developed
+ * by the University of California, Berkeley.  The name of the
+ * University may not be used to endorse or promote products derived
+ * from this software without specific prior written permission.
+ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+ * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
 
 #ifndef lint
 char copyright[] =
-"@(#) Copyright (c) 1983 Regents of the University of California.\n\
+"@(#) Copyright (c) 1983 The Regents of the University of California.\n\
  All rights reserved.\n";
-#endif not lint
+#endif /* not lint */
 
 #ifndef lint
 static char sccsid[] = "@(#)ruptime.c	5.5 (Berkeley) %G%";
-#endif not lint
+#endif /* not lint */
 
 #include <sys/param.h>
-#include <stdio.h>
 #include <sys/dir.h>
+#include <sys/file.h>
 #include <protocols/rwhod.h>
-
-DIR	*dirp;
+#include <stdio.h>
 
 #define	NHOSTS	100
 int	nhosts;
-struct	hs {
+struct hs {
 	struct	whod *hs_wd;
 	int	hs_nusers;
 } hs[NHOSTS];
 struct	whod awhod;
-int	hscmp(), ucmp(), lcmp(), tcmp();
 
 #define	WHDRSIZE	(sizeof (awhod) - sizeof (awhod.wd_we))
 #define	RWHODIR		"/usr/spool/rwho"
+#define	down(h)		(now - (h)->hs_wd->wd_recvtime > 11 * 60)
 
-char	*interval();
-int	now;
-char	*malloc();
-int	aflg;
-int 	rflg = 1;
-
-#define down(h)		(now - (h)->hs_wd->wd_recvtime > 11 * 60)
+time_t	now;
+int	rflg = 1;
+int	hscmp(), ucmp(), lcmp(), tcmp();
 
 main(argc, argv)
 	int argc;
 	char **argv;
 {
-	struct direct *dp;
-	int f, i, t;
-	char buf[sizeof(struct whod)]; int cc;
-	char *name;
+	extern char *optarg;
+	extern int optind;
 	register struct hs *hsp = hs;
 	register struct whod *wd;
 	register struct whoent *we;
-	int maxloadav = 0;
+	register DIR *dirp;
+	struct direct *dp;
+	int aflg, cc, ch, f, i, maxloadav;
+	char buf[sizeof(struct whod)];
 	int (*cmp)() = hscmp;
+	time_t time();
+	char *interval(), *malloc();
 
-	name = *argv;
-	while (*++argv) 
-		while (**argv)
-			switch (*(*argv)++) {
-			case 'a':
-				aflg++;
-				break;
-			case 'l':
-				cmp = lcmp;
-				break;
-			case 'u':
-				cmp = ucmp;
-				break;
-			case 't':
-				cmp = tcmp;
-				break;
-			case 'r':
-				rflg = -rflg;
-				break;
-			case '-':
-				break;
-			default: 
-				fprintf(stderr, "Usage: %s [ -ar [ lut ] ]\n",
-					name);
-				exit (1);
-			}
-	time(&t);
-	if (chdir(RWHODIR) < 0) {
-		perror(RWHODIR);
-		exit(1);
-	}
-	dirp = opendir(".");
-	if (dirp == NULL) {
+	aflg = 0;
+	maxloadav = -1;
+	while ((ch = getopt(argc, argv, "alrut")) != EOF)
+		switch((char)ch) {
+		case 'a':
+			aflg = 1;
+			break;
+		case 'l':
+			cmp = lcmp;
+			break;
+		case 'r':
+			rflg = -1;
+			break;
+		case 't':
+			cmp = tcmp;
+			break;
+		case 'u':
+			cmp = ucmp;
+			break;
+		default: 
+			fprintf(stderr, "usage: ruptime [-alrut]\n");
+			exit(1);
+		}
+
+	if (chdir(RWHODIR) || (dirp = opendir(".")) == NULL) {
 		perror(RWHODIR);
 		exit(1);
 	}
 	while (dp = readdir(dirp)) {
-		if (dp->d_ino == 0)
-			continue;
-		if (strncmp(dp->d_name, "whod.", 5))
+		if (dp->d_ino == 0 || strncmp(dp->d_name, "whod.", 5))
 			continue;
 		if (nhosts == NHOSTS) {
-			fprintf(stderr, "too many hosts\n");
+			fprintf(stderr, "ruptime: too many hosts\n");
 			exit(1);
 		}
-		f = open(dp->d_name, 0);
+		f = open(dp->d_name, O_RDONLY, 0);
 		if (f > 0) {
 			cc = read(f, buf, sizeof(struct whod));
 			if (cc >= WHDRSIZE) {
+				/* NOSTRICT */
 				hsp->hs_wd = (struct whod *)malloc(WHDRSIZE);
 				wd = (struct whod *)buf;
-				bcopy(buf, hsp->hs_wd, WHDRSIZE);
+				bcopy(wd, hsp->hs_wd, WHDRSIZE);
 				hsp->hs_nusers = 0;
 				for (i = 0; i < 2; i++)
 					if (wd->wd_loadav[i] > maxloadav)
@@ -117,15 +117,15 @@ main(argc, argv)
 						hsp->hs_nusers++;
 				nhosts++; hsp++;
 			}
+			(void)close(f);
 		}
-		(void) close(f);
 	}
-	(void) time(&now);
-	qsort((char *)hs, nhosts, sizeof (hs[0]), cmp);
-	if (nhosts == 0) {
-		printf("no hosts!?!\n");
+	if (!nhosts) {
+		printf("ruptime: no hosts!?!\n");
 		exit(1);
 	}
+	qsort((char *)hs, nhosts, sizeof (hs[0]), cmp);
+	(void)time(&now);
 	for (i = 0; i < nhosts; i++) {
 		hsp = &hs[i];
 		if (down(hsp)) {
@@ -151,34 +151,33 @@ main(argc, argv)
 }
 
 char *
-interval(time, updown)
-	int time;
+interval(tval, updown)
+	time_t tval;
 	char *updown;
 {
 	static char resbuf[32];
 	int days, hours, minutes;
 
-	if (time < 0 || time > 365*24*60*60) {
-		(void) sprintf(resbuf, "   %s ??:??", updown);
-		return (resbuf);
+	if (tval < 0 || tval > 365*24*60*60) {
+		(void)sprintf(resbuf, "   %s ??:??", updown);
+		return(resbuf);
 	}
-	minutes = (time + 59) / 60;		/* round to minutes */
+	minutes = (tval + 59) / 60;		/* round to minutes */
 	hours = minutes / 60; minutes %= 60;
 	days = hours / 24; hours %= 24;
 	if (days)
-		(void) sprintf(resbuf, "%s %2d+%02d:%02d",
+		(void)sprintf(resbuf, "%s %2d+%02d:%02d",
 		    updown, days, hours, minutes);
 	else
-		(void) sprintf(resbuf, "%s    %2d:%02d",
+		(void)sprintf(resbuf, "%s    %2d:%02d",
 		    updown, hours, minutes);
-	return (resbuf);
+	return(resbuf);
 }
 
 hscmp(h1, h2)
 	struct hs *h1, *h2;
 {
-
-	return (rflg * strcmp(h1->hs_wd->wd_hostname, h2->hs_wd->wd_hostname));
+	return(rflg * strcmp(h1->hs_wd->wd_hostname, h2->hs_wd->wd_hostname));
 }
 
 /*
@@ -187,16 +186,15 @@ hscmp(h1, h2)
 lcmp(h1, h2)
 	struct hs *h1, *h2;
 {
-
 	if (down(h1))
 		if (down(h2))
-			return (tcmp(h1, h2));
+			return(tcmp(h1, h2));
 		else
-			return (rflg);
+			return(rflg);
 	else if (down(h2))
-		return (-rflg);
+		return(-rflg);
 	else
-		return (rflg * 
+		return(rflg *
 			(h2->hs_wd->wd_loadav[0] - h1->hs_wd->wd_loadav[0]));
 }
 
@@ -206,16 +204,15 @@ lcmp(h1, h2)
 ucmp(h1, h2)
 	struct hs *h1, *h2;
 {
-
 	if (down(h1))
 		if (down(h2))
-			return (tcmp(h1, h2));
+			return(tcmp(h1, h2));
 		else
-			return (rflg);
+			return(rflg);
 	else if (down(h2))
-		return (-rflg);
+		return(-rflg);
 	else
-		return (rflg * (h2->hs_nusers - h1->hs_nusers));
+		return(rflg * (h2->hs_nusers - h1->hs_nusers));
 }
 
 /*
@@ -224,9 +221,7 @@ ucmp(h1, h2)
 tcmp(h1, h2)
 	struct hs *h1, *h2;
 {
-	long t1, t2;
-
-	return (rflg * (
+	return(rflg * (
 		(down(h2) ? h2->hs_wd->wd_recvtime - now
 			  : h2->hs_wd->wd_sendtime - h2->hs_wd->wd_boottime)
 		-
