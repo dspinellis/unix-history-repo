@@ -1,4 +1,4 @@
-#	@(#)README.68040	7.2 (Berkeley) %G%
+#	@(#)README.68040	8.1 (Berkeley) %G%
 
 In order to do floating point on the 68040 you need to incorporate the
 HP-UX 7.05 version of Motorola's FP emulation library as hpux_float.o
