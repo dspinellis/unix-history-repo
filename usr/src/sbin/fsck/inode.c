@@ -1,5 +1,5 @@
 #ifndef lint
-static char version[] = "@(#)inode.c	3.4 (Berkeley) %G%";
+static char version[] = "@(#)inode.c	3.5 (Berkeley) %G%";
 #endif
 
 #include <sys/param.h>
@@ -60,6 +60,7 @@ iblock(idesc, ilevel, isize)
 	register daddr_t *aplim;
 	int i, n, (*func)(), nif, sizepb;
 	BUFAREA ib;
+	extern int pass1check();
 
 	if (idesc->id_type == ADDR) {
 		func = idesc->id_func;
@@ -78,6 +79,18 @@ iblock(idesc, ilevel, isize)
 	nif = isize / sizepb + 1;
 	if (nif > NINDIR(&sblock))
 		nif = NINDIR(&sblock);
+	if (idesc->id_func == pass1check && nif < NINDIR(&sblock)) {
+		aplim = &ib.b_un.b_indir[NINDIR(&sblock)];
+		for (ap = &ib.b_un.b_indir[nif]; ap < aplim; ap++) {
+			if (*ap == 0)
+				continue;
+			if (dofix(idesc, "PARTIALLY TRUNCATED INODE")) {
+				*ap = 0;
+				dirty(&ib);
+			}
+		}
+		flush(&dfile, &ib);
+	}
 	aplim = &ib.b_un.b_indir[nif];
 	for (ap = ib.b_un.b_indir, i = 1; ap < aplim; ap++, i++)
 		if (*ap) {
