@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)mount.h	7.1 (Berkeley) %G%
+ *	@(#)mount.h	7.2 (Berkeley) %G%
  */
 
 typedef quad fsid_t;			/* file system id type */
@@ -97,6 +97,7 @@ struct vfsops {
 	int	(*vfs_statfs)(	/* mp, sbp */ );
 	int	(*vfs_sync)(	/* mp, waitfor */ );
 	int	(*vfs_fhtovp)(	/* mp, fhp, vpp */ );
+	int	(*vfs_vptofh)(	/* vp, fhp */ );
 };
 
 #define VFS_MOUNT(MP, PATH, DATA, NDP) \
@@ -106,6 +107,7 @@ struct vfsops {
 #define VFS_STATFS(MP, SBP)	  (*(MP)->m_op->vfs_statfs)(MP, SBP)
 #define VFS_SYNC(MP, WAITFOR)	  (*(MP)->m_op->vfs_sync)(MP, WAITFOR)
 #define VFS_FHTOVP(MP, FHP, VPP)  (*(MP)->m_op->vfs_fhtovp)(MP, FHP, VPP)
+#define	VFS_VPTOFH(VP, FHP)	  (*(VP)->v_mount->m_op->vfs_vptofh)(VP, FHP)
 
 /*
  * forcibly flags for vfs_umount().
@@ -154,6 +156,14 @@ struct ufs_args {
 };
 
 #ifdef NFS
+/*
+ * File Handle (32 bytes for version 2), variable up to 1024 for version 3
+ */
+struct fhandle {
+	u_char	fh_bytes[32];
+};
+typedef struct fhandle fhandle_t;
+
 /*
  * Arguments to mount NFS
  */
