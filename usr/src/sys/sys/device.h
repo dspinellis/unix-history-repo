@@ -9,13 +9,13 @@
  * All advertising materials mentioning features or use of this software
  * must display the following acknowledgement:
  *	This product includes software developed by the University of
- *	California, Lawrence Berkeley Laboratories.
+ *	California, Lawrence Berkeley Laboratory.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)device.h	7.5 (Berkeley) %G%
+ *	@(#)device.h	7.6 (Berkeley) %G%
  *
- * from: $Header: device.h,v 1.7 92/11/17 01:55:17 torek Exp $ (LBL)
+ * from: $Header: device.h,v 1.9 93/02/01 19:34:50 torek Exp $ (LBL)
  */
 
 /*
@@ -38,8 +38,14 @@ struct device {
 	int	dv_unit;		/* device unit number */
 	char	dv_xname[16];		/* external name (name + unit) */
 	struct	device *dv_parent;	/* pointer to parent device */
-	int	dv_evcnt[2];		/* event counters */
-	char	dv_evnam[2][8];		/* and their names */
+};
+
+/* `event' counters (use zero or more per device instance, as needed) */
+struct evcnt {
+	struct	evcnt *ev_next;		/* linked list */
+	struct	device *ev_dev;		/* associated device */
+	int	ev_count;		/* how many have occurred */
+	char	ev_name[8];		/* what to call them (systat display) */
 };
 
 /*
@@ -76,7 +82,6 @@ struct cfdriver {
 	enum	devclass cd_class;	/* device classification */
 	size_t	cd_devsize;		/* size of dev data (for malloc) */
 	void	*cd_aux;		/* additional driver, if any */
-	char	cd_evnam[2][8];		/* names for dv_evnam */
 	int	cd_ndevs;		/* size of cd_devs array */
 };
 
@@ -91,10 +96,20 @@ typedef int (*cfprint_t) __P((void *, char *));
 #define	UNCONF	1		/* print " not configured\n" */
 #define	UNSUPP	2		/* print " not supported\n" */
 
+/*
+ * Pseudo-device attach information (function + number of pseudo-devs).
+ */
+struct pdevinit {
+	void	(*pdev_attach) __P((int));
+	int	pdev_count;
+};
+
 struct	device *alldevs;	/* head of list of all devices */
+struct	evcnt *allevents;	/* head of list of all events */
 
 struct cfdata *config_search __P((cfmatch_t, struct device *, void *));
 struct cfdata *config_rootsearch __P((cfmatch_t, char *, void *));
 int config_found __P((struct device *, void *, cfprint_t));
 int config_rootfound __P((char *, void *));
 void config_attach __P((struct device *, struct cfdata *, void *, cfprint_t));
+void evcnt_attach __P((struct device *, const char *, struct evcnt *));
