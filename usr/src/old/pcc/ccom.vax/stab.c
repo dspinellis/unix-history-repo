@@ -5,7 +5,7 @@
  * symbolic debugging information into the object file.
  */
 
-static char *sccsid ="@(#)stab.c	1.4 (Berkeley) %G%";
+static char *sccsid ="@(#)stab.c	1.5 (Berkeley) %G%";
 
 #include "mfile1"
 
@@ -196,7 +196,7 @@ int strtag;
 	    if (arrindex == NILINDEX) {
 		break;
 	    } else {
-		tword = type >> TSHIFT;
+		tword = type;
 		i1 = arrindex;
 		i2 = t->tarray;
 		while (ISARY(tword) and dimtab[i1] == dimtab[i2]) {
