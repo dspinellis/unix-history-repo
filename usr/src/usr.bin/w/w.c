@@ -11,212 +11,162 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)w.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)w.c	5.16 (Berkeley) %G%";
 #endif not lint
 
 /*
  * w - print system status (who and what)
  *
  * This program is similar to the systat command on Tenex/Tops 10/20
+ *
  */
 #include <sys/param.h>
-#include <nlist.h>
-#include <stdio.h>
-#include <ctype.h>
 #include <utmp.h>
 #include <sys/stat.h>
-#include <sys/dir.h>
 #include <sys/user.h>
 #include <sys/proc.h>
 #include <sys/ioctl.h>
 #include <machine/pte.h>
 #include <sys/vm.h>
 #include <sys/tty.h>
-#include <sys/kinfo.h>
+#include <nlist.h>
+#include <kvm.h>
+#include <ctype.h>
 #include <paths.h>
+#include <strings.h>
+#include <stdio.h>
 
-#define ARGWIDTH	33	/* # chars left on 80 col crt for args */
-
-struct pr {
-	short	w_pid;			/* proc.p_pid */
-	char	w_flag;			/* proc.p_flag */
-	short	w_size;			/* proc.p_size */
-	long	w_seekaddr;		/* where to find args */
-	long	w_lastpg;		/* disk address of stack */
-	int	w_igintr;		/* INTR+3*QUIT, 0=die, 1=ign, 2=catch */
-	time_t	w_time;			/* CPU time used by this process */
-	time_t	w_ctime;		/* CPU time used by children */
-	dev_t	w_tty;			/* tty device of process */
-	int	w_uid;			/* uid of process */
-	char	w_comm[15];		/* user.u_comm, null terminated */
-	char	w_args[ARGWIDTH+1];	/* args if interesting process */
-} *pr;
-int	nproc;
-
-struct	nlist nl[] = {
-	{ "_nproc" },
-#define	X_NPROC		0
-	{ "_boottime" },
-#define	X_BOOTTIME	1
-	{ "_proc" },
-#define	X_PROC		2
-	{ "_swapdev" },
-#define	X_SWAPDEV	3
-	{ "_Usrptmap" },
-#define	X_USRPTMA	4
-	{ "_usrpt" },
-#define	X_USRPT		5
-	{ "_nswap" },
-#define	X_NSWAP		6
-	{ "_dmmin" },
-#define	X_DMMIN		7
-	{ "_dmmax" },
-#define	X_DMMAX		8
-	{ "" },
-};
-
-FILE	*ps;
-FILE	*ut;
-FILE	*bootfd;
-int	kmem;
-int	mem;
-int	swap;			/* kmem, mem, and swap */
-int	nswap;
-int	dmmin, dmmax;
-dev_t	tty;
-int	uid;
-char	doing[520];		/* process attached to terminal */
-time_t	proctime;		/* cpu time of process in doing */
-double	avenrun[3];
-struct	proc *aproc;
-pid_t	pgid;
-pid_t	tpgid;
-
-#define	DIV60(t)	((t+30)/60)    /* x/60 rounded */ 
-#define	TTYEQ		(tty == pr[i].w_tty)
-#define IGINT		(1+3*1)		/* ignoring both SIGINT & SIGQUIT */
-
-char	*getargs();
-char	*ctime();
-char	*rindex();
-FILE	*popen();
-struct	tm *localtime();
-time_t	findidle();
-
-int	debug;			/* true if -d flag: debugging output */
-int	ttywidth = 80;		/* width of tty */
+char	*program;
+int	ttywidth;		/* width of tty */
+int	argwidth;		/* width of tty */
 int	header = 1;		/* true if -h flag: don't print heading */
-int	lflag = 1;		/* true if -l flag: long style output */
-int	prfrom = 1;		/* true if not -f flag: print host from */
-int	login;			/* true if invoked as login shell */
-time_t	idle;			/* number of minutes user is idle */
+int	wcmd = 1;		/* true if this is w(1), and not uptime(1) */
 int	nusers;			/* number of users logged in now */
 char *	sel_user;		/* login of particular user selected */
-char firstchar;			/* first char of name of prog invoked as */
-time_t	jobtime;		/* total cpu time visible */
 time_t	now;			/* the current time of day */
 struct	timeval boottime;
 time_t	uptime;			/* time of last reboot & elapsed time since */
-int	np;			/* number of processes currently active */
 struct	utmp utmp;
-union {
-	struct user U_up;
-	char	pad[NBPG][UPAGES];
-} Up;
-#define	up	Up.U_up
+struct	winsize ws;
+int	sortidle;		/* sort bu idle time */
+
+
+/*
+ * One of these per active utmp entry.  
+ */
+struct	entry {
+	struct	entry *next;
+	struct	utmp utmp;
+	dev_t	tdev;		/* dev_t of terminal */
+	int	idle;		/* idle time of terminal in minutes */
+	struct	proc *proc;	/* list of procs in foreground */
+	char	*args;		/* arg list of interesting process */
+} *ep, *ehead = NULL, **nextp = &ehead;
+
+struct nlist nl[] = {
+	{ "_boottime" },
+#define X_BOOTTIME	0
+	{ "" },
+};
+
+#define USAGE "[ -hi ] [ user ]"
+#define usage()	fprintf(stderr, "usage: %s: %s\n", program, USAGE)
 
 main(argc, argv)
 	char **argv;
 {
-	int days, hrs, mins;
-	register int i, j;
-	char *cp;
-	register int curpid, empty;
+	register int i;
 	struct winsize win;
+	register struct proc *p;
+	struct eproc *e;
+	struct stat *stp, *ttystat();
+	FILE *ut;
+	char *cp;
+	int ch;
+	extern char *optarg;
+	extern int optind;
+	char *strsave();
 
-	login = (argv[0][0] == '-');
-	cp = rindex(argv[0], '/');
-	firstchar = login ? argv[0][1] : (cp==0) ? argv[0][0] : cp[1];
-	cp = argv[0];	/* for Usage */
+	program = argv[0];
+	/*
+	 * are we w(1) or uptime(1)
+	 */
+	if ((cp = rindex(program, '/')) || *(cp = program) == '-')
+		cp++;
+	if (*cp == 'u')
+		wcmd = 0;
 
-	while (argc > 1) {
-		if (argv[1][0] == '-') {
-			for (i=1; argv[1][i]; i++) {
-				switch(argv[1][i]) {
-
-				case 'd':
-					debug++;
-					break;
-
-				case 'f':
-					prfrom = !prfrom;
-					break;
-
-				case 'h':
-					header = 0;
-					break;
-
-				case 'l':
-					lflag++;
-					break;
-
-				case 's':
-					lflag = 0;
-					break;
-
-				case 'u':
-				case 'w':
-					firstchar = argv[1][i];
-					break;
-
-				default:
-					fprintf(stderr, "w: Bad flag %s\n",
-						argv[1]);
-					exit(1);
-				}
-			}
-		} else {
-			if (!isalnum(argv[1][0]) || argc > 2) {
-				fprintf(stderr, 
-				       "Usage: %s [ -hlsfuw ] [ user ]\n", cp);
-				exit(1);
-			} else
-				sel_user = argv[1];
+	while ((ch = getopt(argc, argv, "hiflsuw")) != EOF)
+		switch((char)ch) {
+		case 'h':
+			header = 0;
+			break;
+		case 'i':
+			sortidle++;
+			break;
+		case 'f': case 'l': case 's': case 'u': case 'w':
+			error("[-flsuw] no longer supported");
+			usage();
+			exit(1);
+		case '?':
+		default:
+			usage();
+			exit(1);
 		}
-		argc--; argv++;
+	argc -= optind;
+	argv += optind;
+	if (argc == 1) {
+		sel_user = argv[0];
+		argv++, argc--;
 	}
-
-	if ((kmem = open(_PATH_KMEM, 0)) < 0) {
-		fprintf(stderr, "w: no %s.\n", _PATH_KMEM);
+	if (argc) {
+		usage();
 		exit(1);
 	}
-	nlist(_PATH_UNIX, nl);
-	if (nl[0].n_type==0) {
-		fprintf(stderr, "w: no %s namelist.\n", _PATH_UNIX);
-		exit(1);
-	}
 
-	if (firstchar == 'u')	/* uptime(1) */
-		nl[X_BOOTTIME+1].n_name = "";
-	else {			/* then read in procs, get window size */
-		readpr();
-		if (ioctl(1, TIOCGWINSZ, &win) != -1 && win.ws_col > 70)
-			ttywidth = win.ws_col;
+	if (header && kvm_nlist(nl) != 0) {
+		error("can't get namelist");
+		exit (1);
 	}
-
-	ut = fopen(_PATH_UTMP, "r");
 	time(&now);
-	if (header) {
-		/* Print time of day */
-		prtat(&now);
+	ut = fopen(_PATH_UTMP, "r");
+	while (fread(&utmp, sizeof(utmp), 1, ut)) {
+		if (utmp.ut_name[0] == '\0')
+			continue;
+		nusers++;
+		if (wcmd == 0 || (sel_user && 
+		    strncmp(utmp.ut_name, sel_user, UT_NAMESIZE) != 0))
+			continue;
+		if ((ep = (struct entry *)
+		     calloc(1, sizeof (struct entry))) == NULL) {
+			error("out of memory");
+			exit(1);
+		}
+		*nextp = ep;
+		nextp = &(ep->next);
+		bcopy(&utmp, &(ep->utmp), sizeof (struct utmp));
+		stp = ttystat(ep->utmp.ut_line);
+		ep->tdev = stp->st_rdev;
+		ep->idle = ((now - stp->st_atime) + 30) / 60; /* secs->mins */
+		if (ep->idle < 0)
+			ep->idle = 0;
+	}
+	fclose(ut);
 
+	if (header || wcmd == 0) {
+		double	avenrun[3];
+		int days, hrs, mins;
+
+		/*
+		 * Print time of day 
+		 */
+		fputs(attime(&now), stdout);
 		/*
 		 * Print how long system has been up.
 		 * (Found by looking for "boottime" in kernel)
 		 */
-		lseek(kmem, (long)nl[X_BOOTTIME].n_value, 0);
-		read(kmem, &boottime, sizeof (boottime));
-
+		(void)kvm_read((off_t)nl[X_BOOTTIME].n_value, &boottime, 
+			sizeof (boottime));
 		uptime = now - boottime.tv_sec;
 		uptime += 30;
 		days = uptime / (60*60*24);
@@ -238,11 +188,6 @@ main(argc, argv)
 		}
 
 		/* Print number of users logged in to system */
-		while (fread(&utmp, sizeof(utmp), 1, ut)) {
-			if (utmp.ut_name[0] != '\0')
-				nusers++;
-		}
-		rewind(ut);
 		printf("  %d user%s", nusers, nusers>1?"s":"");
 
 		/*
@@ -256,179 +201,161 @@ main(argc, argv)
 			printf(" %.2f", avenrun[i]);
 		}
 		printf("\n");
-		if (firstchar == 'u')	/* if this was uptime(1), finished */
+		if (wcmd == 0)		/* if uptime(1) then done */
 			exit(0);
+#define HEADER	"USER    TTY FROM              LOGIN@  IDLE WHAT\n"
+#define WUSED	(sizeof (HEADER) - sizeof ("WHAT\n"))
+		printf(HEADER);
+	}
 
-		/* Headers for rest of output */
-		if (lflag && prfrom)
-			printf("USER    TTY FROM            LOGIN@  IDLE   JCPU   PCPU  WHAT\n");
-		else if (lflag)
-			printf("USER     TTY       LOGIN@  IDLE   JCPU   PCPU  WHAT\n");
-		else if (prfrom)
-			printf("USER    TTY FROM            IDLE  WHAT\n");
+	for (p = kvm_nextproc(); p != NULL; p = kvm_nextproc()) {
+		if (p->p_stat == SZOMB || (p->p_flag & SCTTY) == 0)
+			continue;
+		e = kvm_geteproc(p);
+		for (ep = ehead; ep != NULL; ep = ep->next) {
+			if (ep->tdev == e->e_tdev && e->e_pgid == e->e_tpgid) {
+				/*
+				 * Proc is in foreground of this terminal
+				 */
+				if (proc_compare(ep->proc, p))
+					ep->proc = p;
+				break;
+			}
+		}
+	}
+	if ((ioctl(1, TIOCGWINSZ, &ws) == -1 &&
+	     ioctl(2, TIOCGWINSZ, &ws) == -1 &&
+	     ioctl(0, TIOCGWINSZ, &ws) == -1) || ws.ws_col == 0)
+	       ttywidth = 79;
+        else
+	       ttywidth = ws.ws_col - 1;
+	argwidth = ttywidth - WUSED;
+	if (argwidth < 4)
+		argwidth = 8;
+	for (ep = ehead; ep != NULL; ep = ep->next) {
+		ep->args = strsave(kvm_getargs(ep->proc, kvm_getu(ep->proc)));
+		if (ep->args == NULL) {
+			error("out of memory");
+			exit(1);
+		}
+	}
+	/* sort by idle time */
+	if (sortidle && ehead != NULL) {
+		struct entry *from = ehead, *save;
+		
+		ehead = NULL;
+		while (from != NULL) {
+			for (nextp = &ehead; 
+			    (*nextp) && from->idle >= (*nextp)->idle;
+			    nextp = &(*nextp)->next)
+				;
+			save = from;
+			from = from->next;
+			save->next = *nextp;
+			*nextp = save;
+		}
+	}
+			
+	for (ep = ehead; ep != NULL; ep = ep->next) {
+		printf("%-*.*s %-2.2s %-*.*s %s",
+			UT_NAMESIZE, UT_NAMESIZE, ep->utmp.ut_name,
+			strncmp(ep->utmp.ut_line, "tty", 3) == 0 ? 
+				ep->utmp.ut_line+3 : ep->utmp.ut_line,
+			UT_HOSTSIZE, UT_HOSTSIZE, *ep->utmp.ut_host ?
+				ep->utmp.ut_host : "-",
+			attime(&ep->utmp.ut_time));
+		if (ep->idle >= 36 * 60)
+			printf(" %ddays ", (ep->idle + 12 * 60) / (24 * 60));
 		else
-			printf("USER    TTY  IDLE  WHAT\n");
-		fflush(stdout);
+			prttime(ep->idle, " ");
+		printf("%.*s\n", argwidth, ep->args);
 	}
-
-
-	for (;;) {	/* for each entry in utmp */
-		if (fread(&utmp, sizeof(utmp), 1, ut) == NULL) {
-			fclose(ut);
-			exit(0);
-		}
-		if (utmp.ut_name[0] == '\0')
-			continue;	/* that tty is free */
-		if (sel_user && strncmp(utmp.ut_name, sel_user, UT_NAMESIZE) != 0)
-			continue;	/* we wanted only somebody else */
-
-		gettty();
-		jobtime = 0;
-		proctime = 0;
-		strcpy(doing, "-");	/* default act: normally never prints */
-		empty = 1;
-		curpid = -1;
-		idle = findidle();
-		for (i=0; i<np; i++) {	/* for each process on this tty */
-			if (!(TTYEQ))
-				continue;
-			jobtime += pr[i].w_time + pr[i].w_ctime;
-			proctime += pr[i].w_time;
-			/* 
-			 * Meaning of debug fields following proc name is:
-			 * & by itself: ignoring both SIGINT and QUIT.
-			 *		(==> this proc is not a candidate.)
-			 * & <i> <q>:   i is SIGINT status, q is quit.
-			 *		0 == DFL, 1 == IGN, 2 == caught.
-			 * *:		proc pgrp == tty pgrp.
-			 */
-			 if (debug) {
-				printf("\t\t%d\t%s", pr[i].w_pid, pr[i].w_args);
-				if ((j=pr[i].w_igintr) > 0)
-					if (j==IGINT)
-						printf(" &");
-					else
-						printf(" & %d %d", j%3, j/3);
-				printf("\n");
-			}
-			if (empty && pr[i].w_igintr!=IGINT) {
-				empty = 0;
-				curpid = -1;
-			}
-			if(pr[i].w_pid>curpid && (pr[i].w_igintr!=IGINT || empty)){
-				curpid = pr[i].w_pid;
-				strcpy(doing, lflag ? pr[i].w_args : pr[i].w_comm);
-#ifdef notdef
-				if (doing[0]==0 || doing[0]=='-' && doing[1]<=' ' || doing[0] == '?') {
-					strcat(doing, " (");
-					strcat(doing, pr[i].w_comm);
-					strcat(doing, ")");
-				}
-#endif
-			}
-		}
-		putline();
-	}
-}
-
-/* figure out the major/minor device # pair for this tty */
-gettty()
-{
-	char ttybuf[20];
-	struct stat statbuf;
-
-	ttybuf[0] = 0;
-	strcpy(ttybuf, _PATH_DEV);
-	strcat(ttybuf, utmp.ut_line);
-	stat(ttybuf, &statbuf);
-	tty = statbuf.st_rdev;
-	uid = statbuf.st_uid;
 }
 
 /*
- * putline: print out the accumulated line of info about one user.
+ * Returns 1 if p2 is "better" than p1
+ *
+ * The algorithm for picking the "interesting" process is thus:
+ *
+ *	1) (Only foreground processes are eligable - implied)
+ *	2) Runnable processes are favored over anything
+ *	   else.  The runner with the highest cpu
+ *	   utilization is picked (p_cpu).  Ties are
+ *	   broken by picking the highest pid.
+ *	3  Next, the sleeper with the shortest sleep
+ *	   time is favored.  With ties, we pick out
+ *	   just short-term sleepers (p_pri <= PZERO).
+ *	   Further ties are broken by picking the highest
+ *	   pid.
+ *
  */
-putline()
+#define isrun(p)	(((p)->p_stat == SRUN) || ((p)->p_stat == SIDL))
+proc_compare(p1, p2)
+	register struct proc *p1, *p2;
 {
-	register int tm;
-	int width = ttywidth - 1;
 
-	/* print login name of the user */
-	printf("%-*.*s ", UT_NAMESIZE, UT_NAMESIZE, utmp.ut_name);
-	width -= UT_NAMESIZE + 1;
-
-	/* print tty user is on */
-	if (lflag && !prfrom) {
-		/* long form: all (up to) UT_LINESIZE chars */
-		printf("%-*.*s", UT_LINESIZE, UT_LINESIZE, utmp.ut_line);
-		width -= UT_LINESIZE;
-	 } else {
-		/* short form: 2 chars, skipping 'tty' if there */
-		if (utmp.ut_line[0]=='t' && utmp.ut_line[1]=='t' && utmp.ut_line[2]=='y')
-			printf("%-2.2s", &utmp.ut_line[3]);
-		else
-			printf("%-2.2s", utmp.ut_line);
-		width -= 2;
+	if (p1 == NULL)
+		return (1);
+	/*
+	 * see if at least one of them is runnable
+	 */
+	switch (isrun(p1)<<1 | isrun(p2)) {
+	case 0x01:
+		return (1);
+	case 0x10:
+		return (0);
+	case 0x11:
+		/*
+		 * tie - favor one with highest recent cpu utilization
+		 */
+		if (p2->p_cpu > p1->p_cpu)
+			return (1);
+		if (p1->p_cpu > p2->p_cpu)
+			return (0);
+		return (p2->p_pid > p1->p_pid);	/* tie - return highest pid */
 	}
-
-	if (prfrom) {
-		if (*utmp.ut_host == '\0')
-			printf(" -             ");
-		else
-			printf(" %-14.14s", utmp.ut_host);
-		width -= 15;
-	}
-
-	if (lflag) {
-		/* print when the user logged in */
-		prtat(&utmp.ut_time);
-		width -= 8;
-	}
-
-	/* print idle time */
-	if (idle >= 36 * 60)
-		printf(" %ddays ", (idle + 12 * 60) / (24 * 60));
-	else
-		prttime(idle," ");
-	width -= 7;
-
-	if (lflag) {
-		/* print CPU time for all processes & children */
-		prttime(jobtime," ");
-		width -= 7;
-		/* print cpu time for interesting process */
-		prttime(proctime," ");
-		width -= 7;
-	}
-
-	/* what user is doing, either command tail or args */
-	printf(" %-.*s\n", width-1, doing);
-	fflush(stdout);
+	/* 
+	 * pick the one with the smallest sleep time
+	 */
+	if (p2->p_slptime > p1->p_slptime)
+		return (1);
+	if (p1->p_slptime > p2->p_slptime)
+		return (0);
+	/*
+	 * favor the one sleeping in a "short term" sleep
+	 */
+	if (p2->p_pri <= PZERO && p1->p_pri > PZERO)
+		return (1);
+	if (p1->p_pri <= PZERO && p2->p_pri > PZERO)
+		return (0);
+	return(p2->p_pid > p1->p_pid);		/* tie - return highest pid */
 }
 
-/* find & return number of minutes current tty has been idle */
-time_t
-findidle()
-{
-	struct stat stbuf;
-	long lastaction, diff;
-	char ttyname[20];
 
-	strcpy(ttyname, _PATH_DEV);
-	strncat(ttyname, utmp.ut_line, UT_LINESIZE);
-	stat(ttyname, &stbuf);
-	time(&now);
-	lastaction = stbuf.st_atime;
-	diff = now - lastaction;
-	diff = DIV60(diff);
-	if (diff < 0) diff = 0;
-	return(diff);
+struct stat *
+ttystat(line)
+{
+	static struct stat statbuf;
+	char ttybuf[sizeof (_PATH_DEV) + UT_LINESIZE + 1];
+
+	sprintf(ttybuf, "%s/%.*s", _PATH_DEV, UT_LINESIZE, line);
+	(void) stat(ttybuf, &statbuf);
+
+	return (&statbuf);
 }
 
-#define	HR	(60 * 60)
-#define	DAY	(24 * HR)
-#define	MON	(30 * DAY)
+char *
+strsave(cp)
+	char *cp;
+{
+	register unsigned len;
+	register char *dp;
 
+	len = strlen(cp);
+	dp = (char *)calloc(len+1, sizeof (char));
+	(void) strcpy(dp, cp);
+	return (dp);
+}
 /*
  * prttime prints a time in hours and minutes or minutes and seconds.
  * The character string tail is printed at the end, obvious
@@ -448,288 +375,47 @@ prttime(tim, tail)
 	printf("%s", tail);
 }
 
-char *weekday[] = { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" };
-char *month[] = { "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-		"Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
+#include <varargs.h>
 
-/* prtat prints a 12 hour time given a pointer to a time of day */
-prtat(time)
-	long *time;
+warning(va_alist)
+	va_dcl
 {
-	struct tm *p;
-	register int hr, pm;
+	char *fmt;
+	va_list ap;
 
-	p = localtime(time);
-	hr = p->tm_hour;
-	pm = (hr > 11);
-	if (hr > 11)
-		hr -= 12;
-	if (hr == 0)
-		hr = 12;
-	if (now - *time <= 18 * HR)
-		prttime(hr * 60 + p->tm_min, pm ? "pm" : "am");
-	else if (now - *time <= 7 * DAY)
-		printf(" %*s%d%s", hr < 10 ? 4 : 3, weekday[p->tm_wday], hr,
-		   pm ? "pm" : "am");
-	else
-		printf(" %2d%s%2d", p->tm_mday, month[p->tm_mon], p->tm_year);
+	fprintf(stderr, "%s: warning: ", program);
+	va_start(ap);
+	fmt = va_arg(ap, char *);
+	(void) vfprintf(stderr, fmt, ap);
+	va_end(ap);
+	fprintf(stderr, "\n");
 }
 
-/*
- * readpr finds and reads in the array pr, containing the interesting
- * parts of the proc and user tables for each live process.
- * We only accept procs whos controlling tty has a pgrp equal to the
- * pgrp of the proc.  This accurately defines the notion of the current
- * process(s), but because of time skew, we always read in the tty struct
- * after reading the proc, even though the same tty struct may have been
- * read earlier on.
- */
-readpr()
+error(va_alist)
+	va_dcl
 {
-	int mf, addr, c;
-	int szpt, pfnum, i;
-	struct pte *Usrptma, *usrpt, *pte, apte;
-	struct dblock db;
-	struct kinfo_proc *kp;
-	register struct proc *p;
-	int nentries;
+	char *fmt;
+	va_list ap;
 
-	Usrptma = (struct pte *) nl[X_USRPTMA].n_value;
-	usrpt = (struct pte *) nl[X_USRPT].n_value;
-	if((mem = open(_PATH_MEM, 0)) < 0) {
-		fprintf(stderr, "w: no %s.\n", _PATH_MEM);
-		exit(1);
-	}
-	if ((swap = open(_PATH_DRUM, 0)) < 0) {
-		fprintf(stderr, "w: no %s\n", _PATH_DRUM);
-		exit(1);
-	}
-	/*
-	 * read mem to find swap dev.
-	 */
-	lseek(kmem, (long)nl[X_SWAPDEV].n_value, 0);
-	read(kmem, &nl[X_SWAPDEV].n_value, sizeof(nl[X_SWAPDEV].n_value));
-	/*
-	 * Find base of and parameters of swap
-	 */
-	lseek(kmem, (long)nl[X_NSWAP].n_value, 0);
-	read(kmem, &nswap, sizeof(nswap));
-	lseek(kmem, (long)nl[X_DMMIN].n_value, 0);
-	read(kmem, &dmmin, sizeof(dmmin));
-	lseek(kmem, (long)nl[X_DMMAX].n_value, 0);
-	read(kmem, &dmmax, sizeof(dmmax));
-	/*
-	 * Read proc table.
-	 */
-	np = 0;
-	nentries = kvm_getkproc(&kp);
-	pr = (struct pr *)calloc(nentries, sizeof (struct pr));
-	for (i=0; i < nentries; i++, kp++) {
-		p = &kp->kp_proc;
-		/* decide if it's an interesting process */
-		if (p->p_stat==0 || p->p_stat==SZOMB 
-		    || p->p_stat==SSTOP)
-			continue;
-		/* find & read in the user structure */
-		if ((p->p_flag & SLOAD) == 0) {
-			/* not in memory - get from swap device */
-			addr = dtob(p->p_swaddr);
-			lseek(swap, (long)addr, 0);
-			if (read(swap, &up, sizeof(up)) != sizeof(up)) {
-				continue;
-			}
-		} else {
-			int p0br, cc;
-#define INTPPG (NBPG / sizeof (int))
-			struct pte pagetbl[NBPG / sizeof (struct pte)];
-			/* loaded, get each page from memory separately */
-			szpt = p->p_szpt;
-			p0br = (int)p->p_p0br;
-			pte = &Usrptma[btokmx(p->p_p0br) + szpt-1];
-			lseek(kmem, (long)pte, 0);
-			if (read(kmem, &apte, sizeof(apte)) != sizeof(apte))
-				continue;
-			lseek(mem, ctob(apte.pg_pfnum), 0);
-			if (read(mem,pagetbl,sizeof(pagetbl)) != sizeof(pagetbl))   
-cont:
-				continue;
-			for(cc=0; cc<UPAGES; cc++) {	/* get u area */
-				int upage = pagetbl[NPTEPG-UPAGES+cc].pg_pfnum;
-				lseek(mem,ctob(upage),0);
-				if (read(mem,((int *)&up)+INTPPG*cc,NBPG) != NBPG)
-					goto cont;
-			}
-			szpt = up.u_pcb.pcb_szpt;
-			pr[np].w_seekaddr = ctob(apte.pg_pfnum);
-		}
-		vstodb(0, CLSIZE, &up.u_smap, &db, 1);
-		pr[np].w_lastpg = dtob(db.db_base);
-		if (kp->kp_eproc.kp_tdev == NODEV)
-			continue;
-
-		/* only include a process whose tty has a pgrp which matchs its own */
-		if (kp->kp_eproc.kp_pgid != kp->kp_eproc.kp_tpgid)
-			continue;
-
-		/* save the interesting parts */
-		pr[np].w_pid = p->p_pid;
-		pr[np].w_flag = p->p_flag;
-		pr[np].w_size = p->p_dsize + p->p_ssize;
-		pr[np].w_igintr = (((int)up.u_signal[2]==1) +
-		    2*((int)up.u_signal[2]>1) + 3*((int)up.u_signal[3]==1)) +
-		    6*((int)up.u_signal[3]>1);
-		pr[np].w_time =
-		    up.u_ru.ru_utime.tv_sec + up.u_ru.ru_stime.tv_sec;
-		pr[np].w_ctime =
-		    up.u_cru.ru_utime.tv_sec + up.u_cru.ru_stime.tv_sec;
-		pr[np].w_tty = kp->kp_eproc.kp_tdev;
-		pr[np].w_uid = p->p_uid;
-		strcpy(pr[np].w_comm, p->p_comm, MAXCOMLEN+1);
-		/*
-		 * Get args if there's a chance we'll print it.
-		 * Can't just save pointer: getargs returns static place.
-		 * Can't use strncpy, it blank pads.
-		 */
-		pr[np].w_args[0] = 0;
-		strncat(pr[np].w_args,getargs(&pr[np]),ARGWIDTH);
-		if (pr[np].w_args[0]==0 || pr[np].w_args[0]=='-' && pr[np].w_args[1]<=' ' || pr[np].w_args[0] == '?') {
-			strcat(pr[np].w_args, " (");
-			strcat(pr[np].w_args, pr[np].w_comm);
-			strcat(pr[np].w_args, ")");
-		}
-		np++;
-	}
+	fprintf(stderr, "%s: ", program);
+	va_start(ap);
+	fmt = va_arg(ap, char *);
+	(void) vfprintf(stderr, fmt, ap);
+	va_end(ap);
+	fprintf(stderr, "\n");
 }
 
-/*
- * getargs: given a pointer to a proc structure, this looks at the swap area
- * and tries to reconstruct the arguments. This is straight out of ps.
- */
-char *
-getargs(p)
-	struct pr *p;
+syserror(va_alist)
+	va_dcl
 {
-	int c, addr, nbad;
-	static int abuf[CLSIZE*NBPG/sizeof(int)];
-	struct pte pagetbl[NPTEPG];
-	register int *ip;
-	register char *cp, *cp1;
+	char *fmt;
+	va_list ap;
+	extern errno;
 
-	if ((p->w_flag & SLOAD) == 0) {
-		lseek(swap, p->w_lastpg, 0);
-		if (read(swap, abuf, sizeof(abuf)) != sizeof(abuf))
-			return(p->w_comm);
-	} else {
-		c = p->w_seekaddr;
-		lseek(mem,c,0);
-		if (read(mem,pagetbl,NBPG) != NBPG)
-			return(p->w_comm);
-		if (pagetbl[NPTEPG-CLSIZE-UPAGES].pg_fod==0 && pagetbl[NPTEPG-CLSIZE-UPAGES].pg_pfnum) {
-			lseek(mem,ctob(pagetbl[NPTEPG-CLSIZE-UPAGES].pg_pfnum),0);
-			if (read(mem,abuf,sizeof(abuf)) != sizeof(abuf))
-				return(p->w_comm);
-		} else {
-			lseek(swap, p->w_lastpg, 0);
-			if (read(swap, abuf, sizeof(abuf)) != sizeof(abuf))
-				return(p->w_comm);
-		}
-	}
-	abuf[sizeof(abuf)/sizeof(abuf[0])-1] = 0;
-	for (ip = &abuf[sizeof(abuf)/sizeof(abuf[0])-2]; ip > abuf;) {
-		/* Look from top for -1 or 0 as terminator flag. */
-		if (*--ip == -1 || *ip == 0) {
-			cp = (char *)(ip+1);
-			if (*cp==0)
-				cp++;
-			nbad = 0;	/* up to 5 funny chars as ?'s */
-			for (cp1 = cp; cp1 < (char *)&abuf[sizeof(abuf)/sizeof(abuf[0])]; cp1++) {
-				c = *cp1&0177;
-				if (c==0)  /* nulls between args => spaces */
-					*cp1 = ' ';
-				else if (c < ' ' || c > 0176) {
-					if (++nbad >= 5) {
-						*cp1++ = ' ';
-						break;
-					}
-					*cp1 = '?';
-				} else if (c=='=') {	/* Oops - found an
-							 * environment var, back
-							 * over & erase it. */
-					*cp1 = 0;
-					while (cp1>cp && *--cp1!=' ')
-						*cp1 = 0;
-					break;
-				}
-			}
-			while (*--cp1==' ')	/* strip trailing spaces */
-				*cp1 = 0;
-			return(cp);
-		}
-	}
-	return (p->w_comm);
-}
-
-/*
- * Given a base/size pair in virtual swap area,
- * return a physical base/size pair which is the
- * (largest) initial, physically contiguous block.
- */
-vstodb(vsbase, vssize, dmp, dbp, rev)
-	register int vsbase;
-	int vssize;
-	struct dmap *dmp;
-	register struct dblock *dbp;
-{
-	register int blk = dmmin;
-	register swblk_t *ip = dmp->dm_map;
-
-	vsbase = ctod(vsbase);
-	vssize = ctod(vssize);
-	if (vsbase < 0 || vsbase + vssize > dmp->dm_size)
-		panic("vstodb");
-	while (vsbase >= blk) {
-		vsbase -= blk;
-		if (blk < dmmax)
-			blk *= 2;
-		ip++;
-	}
-	if (*ip <= 0 || *ip + blk > nswap)
-		panic("vstodb *ip");
-	dbp->db_size = MIN(vssize, blk - vsbase);
-	dbp->db_base = *ip + (rev ? blk - (vsbase + dbp->db_size) : vsbase);
-}
-
-panic(cp)
-	char *cp;
-{
-
-	/* printf("%s\n", cp); */
-}
-
-#define PROCSLOP	(5 * sizeof (struct kinfo_proc))
-kvm_getkproc(bp)
-	char **bp;
-{
-	int ret; 
-	int copysize;
-	int need;
-	char *buff;
-
-	if ((ret = syscall(63, KINFO_PROC_ALL, NULL, NULL, 0)) == -1) {
-		perror("ktable, error getting estimate");
-		return (0);
-	}
-	copysize = ret + PROCSLOP;   /* XXX PROCSLOP should be in header ? */
-	buff = (char *)malloc(copysize);
-	if (buff == NULL) {
-		fprintf(stderr, "out of memory");
-		exit (1);
-	}
-	if ((ret = syscall(63, KINFO_PROC_ALL, buff, &copysize, 0)) == -1) {
-		perror("ktable");
-		return (0);
-	}
-	*bp = buff;
-
-	return (copysize / sizeof (struct kinfo_proc));
+	fprintf(stderr, "%s: ", program);
+	va_start(ap);
+	fmt = va_arg(ap, char *);
+	(void) vfprintf(stderr, fmt, ap);
+	va_end(ap);
+	fprintf(stderr, ": %s\n", strerror(errno));
 }
