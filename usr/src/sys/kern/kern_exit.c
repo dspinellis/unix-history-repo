@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_exit.c	7.43 (Berkeley) %G%
+ *	@(#)kern_exit.c	7.44 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -67,6 +67,8 @@ exit(p, rv)
 #ifdef PGINPROF
 	vmsizmon();
 #endif
+	if (p->p_flag & SPROFIL)
+		stopprofclock(p);
 	MALLOC(p->p_ru, struct rusage *, sizeof(struct rusage),
 		M_ZOMBIE, M_WAITOK);
 	/*

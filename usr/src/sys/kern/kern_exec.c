@@ -4,7 +4,7 @@
  *
  * %sccs.include.proprietary.c%
  *
- *	@(#)kern_exec.c	7.59 (Berkeley) %G%
+ *	@(#)kern_exec.c	7.60 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -728,6 +728,8 @@ badmap:
 	vm->vm_dsize = ds;
 	vm->vm_ssize = btoc(ssize);
 	p->p_stats->p_prof.pr_scale = 0;
+	if (p->p_flag & SPROFIL)
+		stopprofclock(p);
 #if defined(tahoe)
 	/* move this when tahoe cpu_exec is created */
 	p->p_addr->u_pcb.pcb_savacc.faddr = (float *)NULL;
