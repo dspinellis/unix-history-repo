@@ -1,4 +1,4 @@
-/*	tftpd.c	4.7	82/12/25	*/
+/*	tftpd.c	4.8	83/05/03	*/
 
 /*
  * Trivial file transfer protocol server.
@@ -9,6 +9,8 @@
 
 #include <netinet/in.h>
 
+#include <arpa/tftp.h>
+
 #include <signal.h>
 #include <stat.h>
 #include <stdio.h>
@@ -16,8 +18,6 @@
 #include <errno.h>
 #include <ctype.h>
 #include <netdb.h>
-
-#include "tftp.h"
 
 extern	int errno;
 struct	sockaddr_in sin = { AF_INET };
