@@ -1,19 +1,6 @@
+static	char *sccsid = "@(#)savecore.c	4.4 (Berkeley) 81/04/28";
 /*
- *	savecore.c	4.3	81/04/14
- * savecore dirname
- *	Written by Michael Toy (UCB)
- *	Program meant to be called from the /etc/rc file for saving the
- * dump of a crashed system.  If the core file has not already been saved
- * then save it in dirname (if there is at least minfree blocks on the
- * device the directory is on.)
- *	1) Make certain "dirname" exists
- *	2) Get dumpdev and dumplo from vmunix/kmem
- *	3) Find dump device name get time from core image
- *	4) Look in "dirname" generate a name se
- *		vmunix.n
- *		vmcore.n
- *	5) Check in "dirname"/minfree to be certain there is space
- *	6) Make entry in shutdown log with date and cause of crash
+ * savecore
  */
 
 #include <stdio.h>
@@ -24,12 +11,13 @@
 #include <sys/filsys.h>
 #include <time.h>
 
-#define LEEWAY (60L*60L*24L*3L)	/* Maximum reasonable dump age diff (3 days )*/
-#define eq(a,b) (strcmp(a,b)==0)
-#define ok(number) (number&0x7fffffff)
+#define	DAY	(60L*60L*24L)
+#define	LEEWAY	(3*DAY)
+
+#define eq(a,b) (!strcmp(a,b))
+#define ok(number) ((number)&0x7fffffff)
+
 #define SHUTDOWNLOG "/usr/adm/shutdownlog"
-#define TRUE (1)
-#define FALSE (0)
 
 struct nlist nl[] = {
 #define X_DUMPDEV	0
@@ -47,54 +35,50 @@ struct nlist nl[] = {
 	{ 0 },
 };
 
-char *dirname;				/* Directory to save dumps in */
-char *ddname;				/* Name of dump device */
-char *find_dev();
-int minfree;				/* Minimum free blocks on device */
-dev_t dumpdev;				/* Dump device */
-time_t dumptime;			/* Time the dump was taken */
-int dumplo;				/* Where dump starts on dumpdev */
-int physmem;				/* Amount of memory in machine */
-time_t now;				/* Current date */
-char *path(), *malloc();
-char vers[80], core_vers[80];
-char panic_mesg[80];
-int panicstr;
-int do_the_dump = TRUE;
+char	*dirname;			/* directory to save dumps in */
+char	*ddname;			/* name of dump device */
+char	*find_dev();
+dev_t	dumpdev;			/* dump device */
+time_t	dumptime;			/* time the dump was taken */
+int	dumplo;				/* where dump starts on dumpdev */
+int	physmem;			/* amount of memory in machine */
+time_t	now;				/* current date */
+char	*path();
+unsigned malloc();
+char	*ctime();
+char	vers[80];
+char	core_vers[80];
+char	panic_mesg[80];
+int	panicstr;
+int	do_the_dump = 1;
+off_t	lseek();
+off_t	Lseek();
 
 main(argc, argv)
-char **argv;
-int argc;
+	char **argv;
+	int argc;
 {
-	if (argc != 2)
-	{
+
+	if (argc != 2) {
 		fprintf(stderr, "usage: savecore dirname\n");
 		exit(1);
 	}
 	dirname = argv[1];
-	if (access(dirname, 2) < 0)
-	{
+	if (access(dirname, 2) < 0) {
 		perror(dirname);
-		exit(4);
+		exit(1);
 	}
-	/*
-	 * Now invoke the local dieties so that things get done
-	 */
-	time(&now);
+	(void) time(&now);
 	read_kmem();
 	log_entry();
 	if (do_the_dump && get_crashtime() && check_space())
 		save_core();
 }
 
-/*
- * find_dev
- *	Lookup a dev in the /dev directory, return the dev name
- */
-
-char *find_dev(dev, type)
-register dev_t dev;
-register int type;
+char *
+find_dev(dev, type)
+	register dev_t dev;
+	register int type;
 {
 	register int dfd = Open("/dev", 0);
 	struct direct dir;
@@ -103,116 +87,29 @@ register int type;
 	char *dp;
 
 	strcpy(devname, "/dev/");
-	while(Read(dfd, &dir, sizeof dir) > 0)
-	{
+	while(Read(dfd, (char *)&dir, sizeof dir) > 0) {
 		if (dir.d_ino == 0)
 			continue;
 		strncpy(devname + 5, dir.d_name, DIRSIZ);
 		devname[DIRSIZ] = '\0';
-		if (stat(devname, &statb))
+		if (stat(devname, &statb)) {
 			perror(devname);
-		else
-		{
-			if ((statb.st_mode&S_IFMT) != type)
-				continue;
-			if (dev == statb.st_rdev)
-			{
-				close(dfd);
-				dp = malloc(strlen(devname)+1);
-				strcpy(dp, devname);
-				return dp;
-			}
+			continue;
+		}
+		if ((statb.st_mode&S_IFMT) != type)
+			continue;
+		if (dev == statb.st_rdev) {
+			close(dfd);
+			dp = (char *)malloc(strlen(devname)+1);
+			strcpy(dp, devname);
+			return dp;
 		}
 	}
 	close(dfd);
 	fprintf(stderr, "Can't find device %d,%d\n", major(dev), minor(dev));
-	exit(7);
+	exit(1);
+	/*NOTREACHED*/
 }
-
-/*
- * Open
- *	Open and exit if open fails
- */
-
-Open(name, rw)
-char *name;
-int rw;
-{
-	int fd;
-
-	if ((fd = open(name, rw)) < 0)
-	{
-		perror(name);
-		exit(2);
-	}
-	return fd;
-}
-
-/*
- * Read, like read but checks bad return codes
- */
-
-Read(fd, buff, size)
-int fd, size;
-char *buff;
-{
-	int ret;
-
-	if ((ret = read(fd, buff, size)) < 0)
-	{
-		perror("reading");
-		exit(3);
-	}
-	return ret;
-}
-
-/*
- * Lseek
- *	A "safe" lseek
- */
-
-long Lseek(fd, off, flag)
-int fd, flag;
-long off;
-{
-	long ret;
-
-	if ((ret = lseek(fd, off, flag)) == -1L)
-	{
-		perror("lseek");
-		exit(5);
-	}
-	return ret;
-}
-
-Create(file, mode)
-char *file;
-int mode;
-{
-	register int fd;
-
-	if ((fd = creat(file, mode)) < 0)
-	{
-		perror(file);
-		exit(9);
-	}
-	return fd;
-}
-
-Write(fd, buf, size)
-int fd, size;
-char *buf;
-{
-	if (write(fd, buf, size) < size)
-	{
-		perror("Writing");
-		exit(10);
-	}
-}
-
-/*
- * Get dumpdev and dumplo from kmem/vmunix
- */
 
 read_kmem()
 {
@@ -221,132 +118,105 @@ read_kmem()
 	register char *cp;
 
 	nlist("/vmunix", nl);
-	if (nl[X_DUMPDEV].n_value == 0)
-	{
-	    fprintf(stderr, "savecore: dumpdev not in namelist\n");
-	    exit(6);
+	if (nl[X_DUMPDEV].n_value == 0) {
+		fprintf(stderr, "/vmunix: dumpdev not in namelist\n");
+		exit(1);
 	}
-	if (nl[X_DUMPLO].n_value == 0)
-	{
-	    fprintf(stderr, "savecore: dumplo not in namelist\n");
-	    exit(6);
+	if (nl[X_DUMPLO].n_value == 0) {
+		fprintf(stderr, "/vmunix: dumplo not in namelist\n");
+		exit(1);
 	}
-	if (nl[X_TIME].n_value == 0)
-	{
-	    fprintf(stderr, "savecore: time not in namelist\n");
-	    exit(6);
+	if (nl[X_TIME].n_value == 0) {
+		fprintf(stderr, "/vmunix: time not in namelist\n");
+		exit(1);
 	}
-	if (nl[X_PHYSMEM].n_value == 0)
-	{
-		fprintf("savecore: physmem not in namelist\n");
-		exit(6);
+	if (nl[X_PHYSMEM].n_value == 0) {
+		fprintf(stderr, "/vmunix: physmem not in namelist\n");
+		exit(1);
 	}
-	if (nl[X_VERSION].n_value == 0)
-	{
-		fprintf("savecore: version not in namelist\n");
-		exit(6);
+	if (nl[X_VERSION].n_value == 0) {
+		fprintf(stderr, "/vmunix: version not in namelist\n");
+		exit(1);
 	}
-	if (nl[X_PANICSTR].n_value == 0)
-	{
-		fprintf("savecore: panicstr not in namelist\n");
-		exit(6);
+	if (nl[X_PANICSTR].n_value == 0) {
+		fprintf(stderr, "/vmunix: panicstr not in namelist\n");
+		exit(1);
 	}
 	kmem = Open("/dev/kmem", 0);
-	Lseek(kmem, nl[X_DUMPDEV].n_value, 0);
-	Read(kmem, &dumpdev, sizeof dumpdev);
-	Lseek(kmem, nl[X_DUMPLO].n_value, 0);
-	Read(kmem, &dumplo, sizeof dumplo);
-	Lseek(kmem, nl[X_PHYSMEM].n_value, 0);
-	Read(kmem, &physmem, sizeof physmem);
-	Lseek(kmem, nl[X_PANICSTR].n_value, 0);
-	Read(kmem, &panicstr, sizeof panicstr);
+	Lseek(kmem, (long)nl[X_DUMPDEV].n_value, 0);
+	Read(kmem, (char *)&dumpdev, sizeof dumpdev);
+	Lseek(kmem, (long)nl[X_DUMPLO].n_value, 0);
+	Read(kmem, (char *)&dumplo, sizeof dumplo);
+	Lseek(kmem, (long)nl[X_PHYSMEM].n_value, 0);
+	Read(kmem, (char *)&physmem, sizeof physmem);
 	dumplo *= 512L;
 	ddname = find_dev(dumpdev, S_IFBLK);
-	/*
-	 * Check for version mismatch
-	 */
-	if ((fp = fdopen(kmem, "r")) == NULL)
-	{
+	if ((fp = fdopen(kmem, "r")) == NULL) {
 		fprintf(stderr, "Couldn't fdopen kmem\n");
-		exit(11);
+		exit(1);
 	}
-	fseek(fp, nl[X_VERSION].n_value, 0);
+	fseek(fp, (long)nl[X_VERSION].n_value, 0);
 	fgets(vers, sizeof vers, fp);
 	fclose(fp);
-	if ((fp = fopen(ddname, "r")) == NULL)
-	{
+	if ((fp = fopen(ddname, "r")) == NULL) {
 		perror(ddname);
-		exit(12);
+		exit(1);
 	}
-	fseek(fp, dumplo+ok(nl[X_VERSION].n_value), 0);
+	fseek(fp, (off_t)(dumplo+ok(nl[X_VERSION].n_value)), 0);
 	fgets(core_vers, sizeof core_vers, fp);
 	fclose(fp);
-	if (!eq(vers, core_vers))
-	{
-		fprintf(stderr, "Version mismatch:\n\t%sand\n\t%s",
-				vers,core_vers);
-		fprintf(stderr, "Core not saved\n");
-		do_the_dump = FALSE;
+	if (!eq(vers, core_vers)) {
+		fprintf(stderr, "Vmunix version mismatch:\n\t%sand\n\t%s",
+		    vers,core_vers);
+		fprintf(stderr, "; image not saved\n");
+		do_the_dump = 0;
 		return;
 	}
-	/*
-	 * Now check the panic string
-	 */
-	if (panicstr)
-	{
-		fp = fopen(ddname, "r");
-		fseek(fp, dumplo + ok(panicstr));
+	fp = fopen(ddname, "r");
+	fseek(fp, (off_t)(dumplo + ok(nl[X_PANICSTR].n_value)), 0);
+	fread((char *)&panicstr, sizeof panicstr, 1, fp);
+	if (panicstr) {
+		fseek(fp, dumplo + ok(panicstr), 0);
 		cp = panic_mesg;
 		do
 			*cp = getc(fp);
 		while (*cp++);
-		fclose(fp);
 	}
+	fclose(fp);
 }	
 
-/*
- * Now get the time of the crash
- */
-
- get_crashtime()
- {
+get_crashtime()
+{
 	int dumpfd;
 	time_t clobber = (time_t)0;
 
 	dumpfd = Open(ddname, 2);
-	Lseek(dumpfd, dumplo + ok(nl[X_TIME].n_value), 0);
-	Read(dumpfd, &dumptime, sizeof dumptime);
-	Lseek(dumpfd, dumplo + ok(nl[X_TIME].n_value), 0);
-	Write(dumpfd, &clobber, sizeof clobber);
+	Lseek(dumpfd, (off_t)(dumplo + ok(nl[X_TIME].n_value)), 0);
+	Read(dumpfd, (char *)&dumptime, sizeof dumptime);
+	Lseek(dumpfd, (off_t)(dumplo + ok(nl[X_TIME].n_value)), 0);
+	Write(dumpfd, (char *)&clobber, sizeof clobber);
 	close(dumpfd);
 	if (dumptime == 0)
-		return FALSE;
+		return 0;
 	printf("System went down at %s", ctime(&dumptime));
 	if (dumptime < now - LEEWAY || dumptime > now + LEEWAY) {
 		printf("Dump time is unreasonable\n");
-		return FALSE;
-	} else {
-		return TRUE;
+		return 0;
 	}
+	return 1;
 }
 
-/*
- * Put a file name in the proper perspective
- */
-
-char *path(file)
+char *
+path(file)
+	char *file;
 {
-	register char *cp = malloc(strlen(file) + strlen(dirname) + 2);
+	register char *cp = (char *)malloc(strlen(file) + strlen(dirname) + 2);
 
-	strcpy(cp, dirname);
-	strcat(cp, "/");
-	strcat(cp, file);
+	(void) strcpy(cp, dirname);
+	(void) strcat(cp, "/");
+	(void) strcat(cp, file);
 	return cp;
 }
-
-/*
- * Check to make certain that there is enough space for this dump
- */
 
 check_space()
 {
@@ -355,83 +225,59 @@ check_space()
 	register int dfd;
 	struct filsys sblk;
 
-	/*
-	 * First find the number of free blocks
-	 */
-	stat(dirname, &dsb);
+	if (stat(dirname, &dsb) < 0) {
+		perror(dirname);
+		exit(1);
+	}
 	ddev = find_dev(dsb.st_dev, S_IFBLK);
 	dfd = Open(ddev, 0);
 	Lseek(dfd, 1L<<BSHIFT, 0);
-	Read(dfd, &sblk, sizeof sblk);
+	Read(dfd, (char *)&sblk, sizeof sblk);
 	close(dfd);
-	/*
-	 * Now check against maximum allowed
-	 */
-	if (read_number("minfree") > sblk.s_tfree)
-	{
-		fprintf(stderr, "*** Dump not done, not enough space ***\n");
-		return FALSE;
+	if (read_number("minfree") > sblk.s_tfree) {
+		fprintf(stderr, "Dump omitted, not enough space on device\n");
+		return (0);
 	}
-	else
-		return TRUE;
+	return (1);
 }
 
-/*
- * Read a number from a file
- */
-
 read_number(fn)
-char *fn;
+	char *fn;
 {
 	char lin[80];
 	register FILE *fp;
 
 	if ((fp = fopen(path(fn), "r")) == NULL)
 		return 0;
-	else
-	{
-		if (fgets(lin, 80, fp) == NULL)
-		{
-			fclose(fp);
-			return 0;
-		}
-		else
-		{
-			fclose(fp);
-			return atoi(lin);
-		}
+	if (fgets(lin, 80, fp) == NULL) {
+		fclose(fp);
+		return 0;
 	}
+	fclose(fp);
+	return atoi(lin);
 }
 
 save_core()
 {
 	register int n;
-	char buffer[BUFSIZ];
+	char buffer[32*NBPG];
 	register char *cp = buffer;
 	register int ifd, ofd, bounds;
 	register FILE *fp;
 
 	bounds = read_number("bounds");
-	/*
-	 * Copy the vmunix file
-	 */
 	ifd = Open("/vmunix", 0);
 	ofd = Create(path(sprintf(cp, "vmunix.%d", bounds)), 0666);
 	while((n = Read(ifd, cp, BUFSIZ)) > 0)
 		Write(ofd, cp, n);
 	close(ifd);
 	close(ofd);
-	/*
-	 * Make the core file
-	 */
 	ifd = Open(ddname, 0);
 	ofd = Create(path(sprintf(cp, "vmcore.%d", bounds)), 0666);
-	Lseek(ifd, dumplo, 0);
-	printf("Saving %d bytes of image in vmcore.%d\n",
-	    NBPG * physmem, bounds);
-	while(physmem > 0)
-	{
-		n = Read(ifd, cp, BUFSIZ);
+	Lseek(ifd, (off_t)dumplo, 0);
+	printf("Saving %d bytes of image in vmcore.%d\n", NBPG*physmem, bounds);
+	while(physmem > 0) {
+		n = Read(ifd, cp, (physmem > 32 ? 32 : physmem) * NBPG);
 		Write(ofd, cp, n);
 		physmem -= n/NBPG;
 	}
@@ -457,14 +303,85 @@ log_entry()
 	struct tm *tm, *localtime();
 
 	tm = localtime(&now);
-	fp = fopen(SHUTDOWNLOG, "a");
+	fp = fopen("/usr/adm/shutdownlog", "a");
+	if (fp == 0)
+		return;
 	fseek(fp, 0L, 2);
 	fprintf(fp, "%02d:%02d  %s %s %2d, %4d.  Reboot", tm->tm_hour,
 		tm->tm_min, days[tm->tm_wday], months[tm->tm_mon],
 		tm->tm_mday, tm->tm_year + 1900);
 	if (panicstr)
-		fprintf(fp, " -- panic %s\n", panic_mesg);
+		fprintf(fp, " after panic: %s\n", panic_mesg);
 	else
 		putc('\n', fp);
 	fclose(fp);
+}
+
+/*
+ * Versions of std routines that exit on error.
+ */
+
+Open(name, rw)
+	char *name;
+	int rw;
+{
+	int fd;
+
+	if ((fd = open(name, rw)) < 0) {
+		perror(name);
+		exit(1);
+	}
+	return fd;
+}
+
+Read(fd, buff, size)
+	int fd, size;
+	char *buff;
+{
+	int ret;
+
+	if ((ret = read(fd, buff, size)) < 0) {
+		perror("read");
+		exit(1);
+	}
+	return ret;
+}
+
+off_t
+Lseek(fd, off, flag)
+	int fd, flag;
+	long off;
+{
+	long ret;
+
+	if ((ret = lseek(fd, off, flag)) == -1L) {
+		perror("lseek");
+		exit(1);
+	}
+	return ret;
+}
+
+Create(file, mode)
+	char *file;
+	int mode;
+{
+	register int fd;
+
+	if ((fd = creat(file, mode)) < 0) {
+		perror(file);
+		exit(1);
+	}
+	return fd;
+}
+
+Write(fd, buf, size)
+	int fd, size;
+	char *buf;
+
+{
+
+	if (write(fd, buf, size) < size) {
+		perror("write");
+		exit(1);
+	}
 }
