@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	6.13 (Berkeley) 5/15/86
+#	@(#)Makefile	7.3 (Berkeley) %G%
 #
 DESTDIR=/
 INCPATH=-I. -I../h
