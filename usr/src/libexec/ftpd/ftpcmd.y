@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ftpcmd.y	5.12 (Berkeley) %G%
+ *	@(#)ftpcmd.y	5.13 (Berkeley) %G%
  */
 
 /*
@@ -25,7 +25,7 @@
 %{
 
 #ifndef lint
-static char sccsid[] = "@(#)ftpcmd.y	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)ftpcmd.y	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -598,28 +598,27 @@ getline(s, n, iop)
 		}
 	}
 	while (--n > 0 && (c = getc(iop)) != EOF) {
-		c = 0377 & c;
-		while (c == IAC) {
-			switch (c = 0377 & getc(iop)) {
+		while ((0377&c) == IAC) {
+			switch (0377&(c = getc(iop))) {
 			case WILL:
 			case WONT:
-				c = 0377 & getc(iop);
-				printf("%c%c%c", IAC, WONT, c);
+				c = getc(iop);
+				printf("%c%c%c", IAC, WONT, 0377&c);
 				(void) fflush(stdout);
 				break;
 			case DO:
 			case DONT:
-				c = 0377 & getc(iop);
-				printf("%c%c%c", IAC, DONT, c);
+				c = getc(iop);
+				printf("%c%c%c", IAC, DONT, 0377&c);
 				(void) fflush(stdout);
 				break;
 			default:
 				break;
 			}
-			c = 0377 & getc(iop); /* try next character */
+			c = getc(iop); /* try next character */
 		}
-		*cs++ = c;
-		if (c=='\n')
+		*cs++ = 0377&c;
+		if ((0377&c) == '\n')
 			break;
 	}
 	if (c == EOF && cs == s)
@@ -655,7 +654,7 @@ yylex()
 	register char *cp;
 	register struct tab *p;
 	int n;
-	char c;
+	char c, *strpbrk();
 
 	for (;;) {
 		switch (state) {
@@ -668,14 +667,11 @@ yylex()
 				dologout(0);
 			}
 			(void) alarm(0);
-			if (index(cbuf, '\r')) {
-				cp = index(cbuf, '\r');
-				cp[0] = '\n'; cp[1] = 0;
+			if ((cp = index(cbuf, '\r'))) {
+				*cp++ = '\n'; *cp = '\0';
 			}
-			if (index(cbuf, ' '))
-				cpos = index(cbuf, ' ') - cbuf;
-			else
-				cpos = index(cbuf, '\n') - cbuf;
+			if ((cp = strpbrk(cbuf, " \n")))
+				cpos = cp - cbuf;
 			if (cpos == 0) {
 				cpos = 4;
 			}
@@ -811,7 +807,7 @@ yylex()
 }
 
 upper(s)
-	char *s;
+	register char *s;
 {
 	while (*s != '\0') {
 		if (islower(*s))
