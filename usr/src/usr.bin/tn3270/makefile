@@ -37,13 +37,6 @@
 #
 #	Here are some which are used throughout the system:
 #
-#	SLOWSCREEN	-	If SLOWSCREEN is defined, we generate code
-#				that attempts to optimize the line between
-#				the computer (on which tn3270 runs) and the
-#				user's terminal (which line may be 1200 baud,
-#				or some such) at the cost of CPU time on
-#				the above referenced computer.
-#
 #	unix		-	Compiles in unix specific stuff.
 #
 #	msdos		-	Compiles in msdos specific stuff.
@@ -53,8 +46,7 @@ CC	= cc
 PRINT	= print
 ACTION = sccs tell
 
-DEFINES = -DSLOWSCREEN
-DEFINES = -DSLOWSCREEN
+DEFINES =
 
 INCLUDES = -I. -I..
 
@@ -94,17 +86,13 @@ ALLPRINT =	${ALLH} ${ALLC}
 ALLSOURCE =	${ALLPRINT} makefile makefile.mak README
 
 # The places where the various components live...
-# (We put ctlr first so that a 'make clean; make' will work.  If
-#	ascii is first, then since the make in ascii does some
-#	sub-makes in ctlr, the bsd make utility decides not to
-#	bother with doing a full make in ctlr.)
 
-SUBDIR =	ctlr ascii sys general api
+SUBDIR =	api apilib ascii ctlr general sys
 
 # The following are directories we don't do regular make's in, but
 # we do make everywhere, print, and sourcelist in.
 
-EXTRADIR =	apilib arpa sys_dos tools
+EXTRADIR =	arpa sys_dos tools
 
 # The libraries we use.  The order here is important.
 # ctlr.lib and sys.lib should come first, then api.lib
@@ -117,12 +105,11 @@ SUBLIB =	ctlr/ctlr.lib sys/sys.lib \
 .s.o:
 	/lib/cpp -E $< | as -o $@
 
-all:	${SUBDIR} tn3270 mset
-
-${SUBDIR}: FRC
-	cd $@; make ${MFLAGS} "CFLAGS=${CFLAGS}"
+all:	FRC tn3270 mset
 
 FRC:
+	for i in ${SUBDIR}; \
+		do (cd $$i; make ${MFLAGS} "CFLAGS=${CFLAGS}"); done
 
 tn3270:	telnet.o ${SUBLIB}
 	${CC} ${CFLAGS} -o tn3270 telnet.o \
