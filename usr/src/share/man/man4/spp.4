@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)spp.4	1.1 (Berkeley) %G%
+.\"	@(#)spp.4	1.2 (Berkeley) %G%
 .\"
 .TH SPP 4P "July 30, 1985"
 .UC 6
@@ -117,11 +117,19 @@ exists.
 SO_DEFAULT_HEADERS
 when set, this determines the data stream type and whether
 the end of message bit is to be set on every ensuing packet.
+.TP 20
+SO_MTU
+This specifies the maximum ammount of user data in a single packet.
+The default is 576 bytes - sizeof(struct spidp).  This quantity
+affects windowing -- increasing it without increasing the amount
+of buffering in the socket will lower the number of unread packets
+accepted.  Anything larger than the default will not be forwarded
+by a bona fide XEROX product internetwork router.
+The data argument for the setsockopt call must be
+an unsigned short.
 .SH SEE ALSO
 intro(4N), ns(4F)
 .SH BUGS
-There should be a socket option to increase the nominal
-maximum SPP packet size.
 There should be some way to reflect record boundaries in
 a stream.
 For stream mode, there should be an option to get the data stream type of
