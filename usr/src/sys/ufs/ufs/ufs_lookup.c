@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_lookup.c	7.23 (Berkeley) %G%
+ *	@(#)ufs_lookup.c	7.24 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -107,8 +107,10 @@ ufs_lookup(vdp, ndp)
 
 		if (error == ENOENT)
 			return (error);
+#ifdef PARANOID
 		if (vdp == ndp->ni_rdir && ndp->ni_isdotdot)
 			panic("ufs_lookup: .. through root");
+#endif
 		/*
 		 * Get the next vnode in the path.
 		 * See comment below starting `Step through' for
