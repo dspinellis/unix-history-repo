@@ -1,4 +1,4 @@
-/*	kern_descrip.c	5.4	82/08/10	*/
+/*	kern_descrip.c	5.5	82/08/22	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -159,22 +159,26 @@ dselect()
 
 dnblock()
 {
+#ifdef notdef
 	register struct a {
 		int	d;
 		int	how;
 	} *uap = (struct a *)u.u_ap;
 
 	/* XXX */
+#endif
 }
 
 dsignal()
 {
+#ifdef notdef
 	register struct a {
 		int	d;
 		int	how;
 	} *uap = (struct a *)u.u_ap;
 
 	/* XXX */
+#endif
 }
 
 int	nselcoll;
