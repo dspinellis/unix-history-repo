@@ -1,0 +1,32 @@
+This directory contains cf files for these machines:
+
+	cad		/* cad.berkeley.edu */
+	cadgroup	/* any cadgroup machine */
+	cc		/* computer center microvax */
+	cchem		/* any machine in college of chemistry */
+	cogsci		/* cogsci (to deal with uucp link) */
+	ic		/* ic (to deal with uucp link) */
+	okeeffe		/* okeeffe (to deal with uucp link) */
+	ucbarpa		/* ucbarpa (to deal with uucp link) */
+	ucbvax		/* ucbvax (to deal with uucp link) */
+
+	ucbproto.cf	/* any Berkeley nameserver/hosttable machine */
+
+	tcpproto.cf	/* any TCP/IP (SMTP) based machine */
+	uucproto.cf	/* any UUCP only machine */
+	tcpuucpproto.cf	/* a UUCP hub on a TCP/IP (SMTP) network */
+
+Most all of the good stuff is contained in proto.mc.  For all
+machines except ucbvax, all the .mc files do is define some m4
+constants and include proto.mc.
+
+To make a file, say
+
+	make cad.cf
+
+for example.
+
+N.B.: if you intend to maintain configuration files for more than
+one or two machines, you should probably create ".mc" files along
+the lines of the machine names above and use m4.  If you just try
+to modify ".cf" files you'll eventually go insane.
