@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)conf.c	7.8 (Berkeley) %G%
+ *	@(#)conf.c	7.9 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -555,6 +555,47 @@ int	iiioctl(), iiclose(), iiopen();
 #define iiioctl nodev
 #endif
 
+#ifdef	DATAKIT
+#include "datakit.h"
+#include "dktty.h"
+#include "kmc.h"
+#endif
+
+#if !defined(NDATAKIT) || NDATAKIT == 0
+#define	dkopen	nodev
+#define	dkclose	nodev
+#define	dkread	nodev
+#define	dkwrite	nodev
+#define	dkioctl	nodev
+#else
+int	dkopen(),dkclose(),dkread(),dkwrite(),dkioctl();
+#endif
+
+#if !defined(NDKTTY) || NDKTTY == 0
+#define	dktopen		nodev
+#define	dktclose	nodev
+#define	dktread		nodev
+#define	dktwrite	nodev
+#define	dktioctl	nodev
+#define	dktstop		nulldev
+#define	dkt		0
+#else
+int	dktopen(),dktclose(),dktread(),dktwrite(),dktioctl(), dktstop();
+struct tty dkt[];
+#endif
+
+#if !defined(NKMC) || NKMC > 0
+int kmcopen(), kmcclose(), kmcwrite(), kmcioctl(), kmcread();
+int kmcrint(), kmcload(), kmcset(), kmcdclr();
+#else
+#define kmcopen nodev
+#define kmcclose nodev
+#define kmcwrite nodev
+#define kmcioctl nodev
+#define kmcread nodev
+#define kmcdclr nodev
+#endif
+
 int	ttselect(), seltrue();
 
 struct cdevsw	cdevsw[] =
@@ -692,6 +733,16 @@ struct cdevsw	cdevsw[] =
 	nodev,		nodev,
 	iiopen,		iiclose,	nulldev,	nulldev,	/*43*/
 	iiioctl,	nulldev,	nulldev,	0,
+	seltrue,	nodev,
+	/* Datakit major devices */
+	dkopen, 	dkclose,	dkread, 	dkwrite,	/* 44*/
+	dkioctl,	nulldev,	nulldev,	0,
+	seltrue,	nodev,
+	dktopen, 	dktclose,	dktread, 	dktwrite,	/* 45*/
+	dktioctl,	dktstop,	nulldev,	dkt,
+	ttselect,	nodev,
+	kmcopen,	kmcclose,	kmcread,	kmcwrite,	/* 46*/
+	kmcioctl,	nulldev,	kmcdclr,	0,
 	seltrue,	nodev,
 };
 int	nchrdev = sizeof (cdevsw) / sizeof (cdevsw[0]);
