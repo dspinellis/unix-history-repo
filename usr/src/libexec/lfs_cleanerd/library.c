@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)library.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)library.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -26,14 +26,12 @@ static char sccsid[] = "@(#)library.c	5.2 (Berkeley) %G%";
 
 void	 add_blocks __P((FS_INFO *, BLOCK_INFO *, int *, SEGSUM *, caddr_t,
 	     daddr_t, daddr_t));
-void	 add_inodes __P((FS_INFO *, INODE_INFO *, int *, SEGSUM *, caddr_t,
+void	 add_inodes __P((FS_INFO *, BLOCK_INFO *, int *, SEGSUM *, caddr_t,
 	     daddr_t));
 int	 bi_compare __P((const void *, const void *));
 int	 bi_toss __P((const void *, const void *, const void *));
 void	 get_ifile __P((FS_INFO *));
 int	 get_superblock __P((FS_INFO *, struct lfs *));
-int	 ii_compare __P((const void *, const void *));
-int	 ii_toss __P((const void *, const void *, const void *));
 int	 pseg_valid __P((FS_INFO *, SEGSUM *));
 
 /*
@@ -163,7 +161,6 @@ get_ifile (fsp)
 	int count, fid;
 
 	ifp = NULL;
-	sync();
 	ifile_name = malloc(strlen(fsp->fi_statfsp->f_mntonname) +
 	    strlen(IFILE_NAME)+2);
 	strcat(strcat(strcpy(ifile_name, fsp->fi_statfsp->f_mntonname), "/"),
@@ -226,31 +223,26 @@ redo_read:
  * pair will be listed at most once.
  */
 int 
-lfs_segmapv(fsp, seg, seg_buf, blocks, bcount, inodes, icount)
+lfs_segmapv(fsp, seg, seg_buf, blocks, bcount)
 	FS_INFO *fsp;		/* pointer to local file system information */
 	int seg;		/* the segment number */
 	caddr_t seg_buf;	/* the buffer containing the segment's data */
 	BLOCK_INFO **blocks;	/* OUT: array of block_info for live blocks */
 	int *bcount;		/* OUT: number of active blocks in segment */
-	INODE_INFO **inodes;	/* OUT: array of inode_info for live inodes */
-	int *icount; 		/* OUT: number of active inodes in segment */
 {
 	BLOCK_INFO *bip;
-	INODE_INFO *iip;
 	SEGSUM *sp;
 	SEGUSE *sup;
 	struct lfs *lfsp;
 	caddr_t s, segend;
 	daddr_t pseg_addr, seg_addr;
-	int nblocks, num_iblocks;
+	int nelem, nblocks;
 	time_t timestamp;
 
 	lfsp = &fsp->fi_lfs;
-	num_iblocks = lfsp->lfs_ssize;
-	if (!(bip = malloc(lfsp->lfs_ssize * sizeof(BLOCK_INFO))))
+	nelem = 2 * lfsp->lfs_ssize;
+	if (!(bip = malloc(nelem * sizeof(BLOCK_INFO))))
 		goto err0;
-	if (!(iip = malloc(lfsp->lfs_ssize * sizeof(INODE_INFO))))
-		goto err1;
 
 	sup = SEGUSE_ENTRY(lfsp, fsp->fi_segusep, seg);
 	s = seg_buf + (sup->su_flags & SEGUSE_SUPERBLOCK ? LFS_SBPAD : 0);
@@ -261,7 +253,6 @@ lfs_segmapv(fsp, seg, seg_buf, blocks, bcount, inodes, icount)
 #endif /* VERBOSE */
 
 	*bcount = 0;
-	*icount = 0;
 	for (segend = seg_buf + seg_size(lfsp), timestamp = 0; s < segend; ) {
 		sp = (SEGSUM *)s;
 #ifdef VERBOSE
@@ -279,47 +270,34 @@ lfs_segmapv(fsp, seg, seg_buf, blocks, bcount, inodes, icount)
 			break;
 		timestamp = ((SEGSUM*)s)->ss_create;
 
-		/*
-		 * Right now we die if we run out of room, we could probably
-		 * recover if we were smart.
-		 */
-		if (*icount + sp->ss_ninos > num_iblocks) {
-			num_iblocks = *icount + sp->ss_ninos;
-			iip = realloc (iip, num_iblocks * sizeof(INODE_INFO));
-			if (!iip)
-				goto err1;
+		if (*bcount + nblocks + sp->ss_ninos > nelem) {
+			nelem = *bcount + nblocks + sp->ss_ninos;
+			bip = realloc (bip, nelem * sizeof(BLOCK_INFO));
+			if (!bip)
+				goto err0;
 		}
-		add_inodes(fsp, iip, icount, sp, seg_buf, seg_addr);
 		add_blocks(fsp, bip, bcount, sp, seg_buf, seg_addr, pseg_addr);
+		add_inodes(fsp, bip, bcount, sp, seg_buf, seg_addr);
 		pseg_addr += fsbtodb(lfsp, nblocks) +
 		    bytetoda(fsp, LFS_SUMMARY_SIZE);
 		s += (nblocks << lfsp->lfs_bshift) + LFS_SUMMARY_SIZE;
 	}
-	qsort(iip, *icount, sizeof(INODE_INFO), ii_compare);
 	qsort(bip, *bcount, sizeof(BLOCK_INFO), bi_compare);
-	toss(iip, icount, sizeof(INODE_INFO), ii_toss, NULL);
 	toss(bip, bcount, sizeof(BLOCK_INFO), bi_toss, NULL);
 #ifdef VERBOSE
 	{
 		BLOCK_INFO *_bip;
-		INODE_INFO *_iip;
 		int i;
 
 		printf("BLOCK INFOS\n");
 		for (_bip = bip, i=0; i < *bcount; ++_bip, ++i)
 			PRINT_BINFO(_bip);
-		printf("INODE INFOS\n");
-		for (_iip = iip, i=0; i < *icount; ++_iip, ++i)
-			PRINT_IINFO(1, _iip);
 	}
 #endif
 	*blocks = bip;
-	*inodes = iip;
 	return (0);
 
-err1:	free(bip);
 err0:	*bcount = 0;
-	*icount = 0;
 	return (-1);
 	
 }
@@ -342,8 +320,7 @@ add_blocks (fsp, bip, countp, sp, seg_buf, segaddr, psegaddr)
 	IFILE	*ifp;
 	FINFO	*fip;
 	caddr_t	bp;
-	daddr_t	*dp;
-	daddr_t *iaddrp;	/* pointer to current inode block */
+	daddr_t	*dp, *iaddrp;
 	int db_per_block, i, j;
 	u_long page_size;
 
@@ -390,9 +367,9 @@ add_blocks (fsp, bip, countp, sp, seg_buf, segaddr, psegaddr)
  * actually added.
  */
 void
-add_inodes (fsp, iip, countp, sp, seg_buf, seg_addr)
+add_inodes (fsp, bip, countp, sp, seg_buf, seg_addr)
 	FS_INFO *fsp;		/* pointer to super block */
-	INODE_INFO *iip;
+	BLOCK_INFO *bip;	/* block info array */
 	int *countp;		/* pointer to current number of inodes */
 	SEGSUM *sp;		/* segsum pointer */
 	caddr_t	seg_buf;	/* the buffer containing the segment's data */
@@ -401,7 +378,7 @@ add_inodes (fsp, iip, countp, sp, seg_buf, seg_addr)
 	struct dinode *di;
 	struct lfs *lfsp;
 	IFILE *ifp;
-	INODE_INFO *ip;
+	BLOCK_INFO *bp;
 	daddr_t	*daddrp;
 	ino_t inum;
 	int i;
@@ -409,10 +386,10 @@ add_inodes (fsp, iip, countp, sp, seg_buf, seg_addr)
 	if (sp->ss_ninos <= 0)
 		return;
 	
-	ip = iip + *countp;
+	bp = bip + *countp;
 	lfsp = &fsp->fi_lfs;
 #ifdef VERBOSE
-	(void) printf("INODE_INFOS:\n");
+	(void) printf("INODES:\n");
 #endif
 	daddrp = (daddr_t *)((caddr_t)sp + LFS_SUMMARY_SIZE);
 	for (i = 0; i < sp->ss_ninos; ++i) {
@@ -424,15 +401,16 @@ add_inodes (fsp, iip, countp, sp, seg_buf, seg_addr)
 			++di;
 		
 		inum = di->di_inum;
-		ip->ii_daddr = *daddrp;
-		ip->ii_inode = inum;
-		ip->ii_dinode = di;
-		ip->ii_segcreate = sp->ss_create;
+		bp->bi_lbn = LFS_UNUSED_LBN;
+		bp->bi_inode = inum;
+		bp->bi_daddr = *daddrp;
+		bp->bi_bp = di;
+		bp->bi_segcreate = sp->ss_create;
 
 		ifp = IFILE_ENTRY(lfsp, fsp->fi_ifilep, inum);
-		PRINT_IINFO(ifp->if_daddr == *daddrp, ip);
+		PRINT_INODE(ifp->if_daddr == *daddrp, ip);
 		if (ifp->if_daddr == *daddrp) {
-			ip++;
+			bp++;
 			++(*countp);
 		} 
 	}
@@ -579,8 +557,16 @@ bi_compare(a, b)
 
 	if (diff = (int)(ba->bi_inode - bb->bi_inode))
 		return (diff);
-	if (diff = (int)(ba->bi_lbn - bb->bi_lbn))
-		return (diff);
+	if (diff = (int)(ba->bi_lbn - bb->bi_lbn)) {
+		if (ba->bi_lbn == LFS_UNUSED_LBN)
+			return(-1);
+		else if (bb->bi_lbn == LFS_UNUSED_LBN)
+			return(1);
+		else if (ba->bi_lbn < 0)
+			return(1);
+		else
+			return (diff);
+	}
 	if (diff = (int)(ba->bi_segcreate - bb->bi_segcreate))
 		return (diff);
 	diff = (int)(ba->bi_daddr - bb->bi_daddr);
@@ -599,49 +585,6 @@ bi_toss(dummy, a, b)
 	bb = b;
 
 	return(ba->bi_inode == bb->bi_inode && ba->bi_lbn == bb->bi_lbn);
-}
-
-/*
- * Right now, we never look at the actually data being
- * passed to the kernel in iip->ii_dinode.  Therefore,
- * if the same inode appears twice in the same block
- * (i.e.  has the same disk address), it doesn't matter
- * which entry we pass.  However, if we get the kernel
- * to start looking at the dinode, then we will care
- * and we'll need some way to distinguish which inode
- * is the more recent one.
- */
-int
-ii_compare(a, b)
-	const void *a;
-	const void *b;
-{
-	const INODE_INFO *ia, *ib;
-	int diff;
-
-	ia = a;
-	ib = b;
-
-	if (diff = (int)(ia->ii_inode - ib->ii_inode))
-		return (diff);
-	if (diff = (int)(ia->ii_segcreate - ib->ii_segcreate))
-		return (diff);
-	diff = (int)(ia->ii_daddr - ib->ii_daddr);
-	return (diff);
-}
-
-int
-ii_toss(dummy, a, b)
-	const void *dummy;
-	const void *a;
-	const void *b;
-{
-	const INODE_INFO *ia, *ib;
-
-	ia = a;
-	ib = b;
-
-	return(ia->ii_inode == ib->ii_inode);
 }
 
 void
