@@ -1,7 +1,19 @@
-#
-/*      Re-coding of advent in C: data initialization                   */
+/*-
+ * Copyright (c) 1991 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * The game adventure was original written Fortran by Will Crowther
+ * and Don Woods.  It was later translated to C and enhanced by
+ * Jim Gillogly.
+ *
+ * %sccs.include.redist.c%
+ */
 
-static char sccsid[] = "	init.c	4.2	89/03/05	";
+#ifndef lint
+static char sccsid[] = "@(#)init.c	5.1 (Berkeley) %G%";
+#endif /* not lint */
+
+/*      Re-coding of advent in C: data initialization                   */
 
 #include <sys/types.h>
 #include <stdio.h>
