@@ -1,4 +1,4 @@
-.\"	@(#)NBSreport.10.88	1.5	88/10/21
+.\"	@(#)NBSreport.10.88	1.6	88/10/23
 .\" *troff -me
 .sp 2
 .ce 100
@@ -9,8 +9,9 @@ in the DASH and Berkeley UNIX Projects\s-2\fP
 .sp 2
 Susan L. Graham
 Domenico Ferrari
+David P. Anderson
 Marshall Kirk McKusick
-Michael J Karels
+Michael J. Karels
 Keith Sklower
 Marc Teitelbaum
 .ce 0
