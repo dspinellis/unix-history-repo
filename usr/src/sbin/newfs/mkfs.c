@@ -6,9 +6,10 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mkfs.c	6.24 (Berkeley) %G%";
+static char sccsid[] = "@(#)mkfs.c	6.25 (Berkeley) %G%";
 #endif /* not lint */
 
+#include <unistd.h>
 #include <sys/param.h>
 #include <sys/time.h>
 #include <sys/wait.h>
@@ -116,6 +117,7 @@ mkfs(pp, fsys, fi, fo)
 	long postblsize, rotblsize, totalsbsize;
 	int ppid, status;
 	time_t utime;
+	quad_t sizepb;
 	void started();
 
 #ifndef STANDALONE
@@ -190,18 +192,8 @@ mkfs(pp, fsys, fi, fo)
 	}
 	sblock.fs_bmask = ~(sblock.fs_bsize - 1);
 	sblock.fs_fmask = ~(sblock.fs_fsize - 1);
-	/*
-	 * Planning now for future expansion.
-	 */
-#	ifdef _NOQUAD
-		sblock.fs_qbmask.val[_QUAD_HIGHWORD] = 0;
-		sblock.fs_qbmask.val[_QUAD_LOWWORD] = ~sblock.fs_bmask;
-		sblock.fs_qfmask.val[_QUAD_HIGHWORD] = 0;
-		sblock.fs_qfmask.val[_QUAD_LOWWORD] = ~sblock.fs_fmask;
-#	else /* QUAD */
-		sblock.fs_qbmask = ~sblock.fs_bmask;
-		sblock.fs_qfmask = ~sblock.fs_fmask;
-#	endif /* QUAD */
+	sblock.fs_qbmask = ~sblock.fs_bmask;
+	sblock.fs_qfmask = ~sblock.fs_fmask;
 	for (sblock.fs_bshift = 0, i = sblock.fs_bsize; i > 1; i >>= 1)
 		sblock.fs_bshift++;
 	for (sblock.fs_fshift = 0, i = sblock.fs_fsize; i > 1; i >>= 1)
@@ -232,6 +224,11 @@ mkfs(pp, fsys, fi, fo)
 		sblock.fs_cgmask <<= 1;
 	if (!POWEROF2(sblock.fs_ntrak))
 		sblock.fs_cgmask <<= 1;
+	sblock.fs_maxfilesize = sblock.fs_bsize * NDADDR - 1;
+	for (sizepb = sblock.fs_bsize, i = 0; i < NIADDR; i++) {
+		sizepb *= NINDIR(&sblock);
+		sblock.fs_maxfilesize += sizepb;
+	}
 	/*
 	 * Validate specified/determined secpercyl
 	 * and calculate minimum cylinders per group.
@@ -920,21 +917,21 @@ caddr_t
 malloc(size)
 	register u_long size;
 {
-	u_long base, i;
+	char *base, *i;
 	static u_long pgsz;
 	struct rlimit rlp;
 
 	if (pgsz == 0) {
 		base = sbrk(0);
 		pgsz = getpagesize() - 1;
-		i = (base + pgsz) &~ pgsz;
+		i = (char *)((u_long)(base + pgsz) &~ pgsz);
 		base = sbrk(i - base);
 		if (getrlimit(RLIMIT_DATA, &rlp) < 0)
 			perror("getrlimit");
 		rlp.rlim_cur = rlp.rlim_max;
 		if (setrlimit(RLIMIT_DATA, &rlp) < 0)
 			perror("setrlimit");
-		memleft = rlp.rlim_max - base;
+		memleft = rlp.rlim_max - (u_long)base;
 	}
 	size = (size + pgsz) &~ pgsz;
 	if (size > memleft)
@@ -997,7 +994,7 @@ rdfs(bno, size, bf)
 		bcopy(membase + bno * sectorsize, bf, size);
 		return;
 	}
-	if (lseek(fsi, bno * sectorsize, 0) < 0) {
+	if (lseek(fsi, (off_t)bno * sectorsize, 0) < 0) {
 		printf("seek error: %ld\n", bno);
 		perror("rdfs");
 		exit(33);
@@ -1026,7 +1023,7 @@ wtfs(bno, size, bf)
 	}
 	if (Nflag)
 		return;
-	if (lseek(fso, bno * sectorsize, 0) < 0) {
+	if (lseek(fso, (off_t)bno * sectorsize, 0) < 0) {
 		printf("seek error: %ld\n", bno);
 		perror("wtfs");
 		exit(35);
