@@ -2,11 +2,20 @@
  * Copyright (c) 1990 Regents of the University of California.
  * All rights reserved.
  *
+ * This software was developed by the Computer Systems Engineering group
+ * at Lawrence Berkeley Laboratory under DARPA contract BG 91-66 and
+ * contributed to Berkeley.
+ *
+ * All advertising materials mentioning features or use of this software
+ * must display the following acknowledgement:
+ *	This product includes software developed by the University of
+ *	California, Lawrence Berkeley Laboratories.
+ *
  * %sccs.include.redist.c%
  *
  * from: @(#) $Header: kgdb_proto.h,v 1.3 91/03/12 22:06:43 mccanne Exp $ (LBL)
  *
- *	@(#)kgdb_proto.h	7.3 (Berkeley) %G%
+ *	@(#)kgdb_proto.h	7.4 (Berkeley) %G%
  */
 
 /*
