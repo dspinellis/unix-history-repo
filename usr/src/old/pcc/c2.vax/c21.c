@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)c21.c 4.9 %G%";
+static	char sccsid[] = "@(#)c21.c 4.10 %G%";
 /* char C21[] = {"@(#)c21.c 1.83 80/10/16 21:18:22 JFR"}; /* sccs ident */
 
 /*
@@ -275,9 +275,9 @@ ashadd:
 		**
 		** also byte- and word-size fields:
 		**	extv	$n*8,$8,A,B	>	cvtbl	n+A,B
-		**	extv	$n*16,$16,A,B	>	cvtwl	n+A,B
+		**	extv	$n*16,$16,A,B	>	cvtwl	2n+A,B
 		**	extzv	$n*8,$8,A,B	>	movzbl	n+A,B
-		**	extzv	$n*16,$16,A,B	>	movzwl	n+A,B
+		**	extzv	$n*16,$16,A,B	>	movzwl	2n+A,B
 		*/
 		register struct	node	*pf;	/* forward node */
 		register struct	node	*pn;	/* next node (after pf) */
@@ -322,7 +322,9 @@ ashadd:
 			if (coff == 0)
 				strcpy(regs[RT1], regs[RT3]);
 			else
-				sprintf(regs[RT1], "%d%s%s", coff, regs[RT3][0]=='(' ? "":"+",
+				sprintf(regs[RT1], "%d%s%s",
+					(flen == 8 ? coff : 2*coff),
+					(regs[RT3][0] == '(' ? "" : "+"),
 					regs[RT3]);
 			strcpy(regs[RT2], regs[RT4]);
 			regs[RT3][0] = '\0'; regs[RT4][0] = '\0';
@@ -789,6 +791,7 @@ bicopt(p) register struct node *p; {
 */
 	register char *cp1,*cp2; int r;
 	char src[C2_ASIZE];
+	char lhssiz, subop;
 	if (!bixprep(p,JBCC)) return(p);
 	if (f==0) {/* the BIC isolates low order bits */
 		siz=pos; pos=0;
@@ -804,9 +807,29 @@ bicopt(p) register struct node *p; {
 					delnode(p->back);
 				}
 			}
+			/*
+			 * 'pos', 'siz' known; find out the size of the
+			 * left-hand operand of what the bicl will turn into.
+			 */
+			if (pos==0 && siz==16)
+				lhssiz = WORD;	/* movzwl */
+			else
+				lhssiz = BYTE;	/* movzbl or extzvl */
 			if (p->back->op==CVT || p->back->op==MOVZ) {/* greedy, aren't we? */
 				splitrand(p->back); cp1=regs[RT1]; cp2=regs[RT2];
-				if (equstr(src,cp2) && okio(cp1) && !indexa(cp1)
+				/*
+				 * If indexa(cp1) || autoid(cp1), the fold may
+				 * still be OK if the CVT/MOVZ has the same
+				 * size operand on its left size as what we
+				 * will turn the bicl into.
+				 * However, if the CVT is from a float or
+				 * double, forget it!
+				 */
+				subop = p->back->subop&0xF;	/* type of LHS of CVT/MOVZ */
+				if (equstr(src,cp2) && okio(cp1)
+				  && subop != FFLOAT && subop != DFLOAT
+				  && subop != GFLOAT && subop != HFLOAT
+				  && ((!indexa(cp1) && !autoid(cp1)) || lhssiz == subop)
 				  && 0<=(r=isreg(cp2)) && r<NUSE
 				  && bitsize[p->back->subop&0xF]>=(pos+siz)
 				  && bitsize[p->back->subop>>4]>=(pos+siz)) {/* good CVT */
@@ -816,8 +839,8 @@ bicopt(p) register struct node *p; {
 			}
 			/* 'pos', 'siz' known; source of field is in 'src' */
 			splitrand(p); /* retrieve destination of BICL */
-			if (siz==8 && pos==0) {
-				p->combop = T(MOVZ,U(BYTE,LONG));
+			if ((siz==8 || siz==16) && pos==0) {
+				p->combop = T(MOVZ,U(lhssiz,LONG));
 				sprintf(line,"%s,%s",src,lastrand);
 			} else {
 				p->combop = T(EXTZV,LONG);
@@ -1387,3 +1410,10 @@ register char	*cp;
 		return (1);
 	return (0);
 }
+
+autoid(p) register char *p; {/* 1-> uses autoincrement/autodecrement; 0->doesn't */
+	if (*p == '-' && *(p+1) == '(') return(1);
+	while (*p) p++;
+	if (*--p == '+' && *--p == ')') return(1);
+	return(0);
+  }
