@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)newfs.c	6.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)newfs.c	6.15 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -552,7 +552,7 @@ rewritelabel(s, fd, lp)
 	lp->d_checksum = 0;
 	lp->d_checksum = dkcksum(lp);
 	if (ioctl(fd, DIOCWDINFO, (char *)lp) < 0) {
-		perror("ioctl (GWINFO)");
+		perror("ioctl (WDINFO)");
 		fatal("%s: can't rewrite disk label", s);
 	}
 #if vax
