@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)printjob.c	4.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)printjob.c	4.16 (Berkeley) %G%";
 #endif
 
 /*
@@ -36,6 +36,7 @@ static char	length[10] = "-l";	/* page length in lines */
 static char	pxwidth[10] = "-x";	/* page width in pixels */
 static char	pxlength[10] = "-y";	/* page length in pixels */
 static char	indent[10] = "-i0";	/* indentation size in characters */
+static char	tmpfile[] = "errsXXXXXX"; /* file name for filter output */
 
 printjob()
 {
@@ -59,6 +60,8 @@ printjob()
 	signal(SIGINT, onintr);
 	signal(SIGQUIT, onintr);
 	signal(SIGTERM, onintr);
+
+	(void) mktemp(tmpfile);
 
 	/*
 	 * uses short form file names
@@ -151,9 +154,8 @@ again:
 				ofilter = 0;
 			}
 			(void) close(pfd);	/* close printer */
-			(void) lseek(lfd, pidoff, 0);
-			if (write(lfd, "\n", 1) != 1)
-				log("can't write (%d) control file name", errno);
+			if (ftruncate(lfd, pidoff) < 0)
+				log("can't truncate lock file (%d)", errno);
 			openpr();		/* try to reopen printer */
 			goto restart;
 		}
@@ -174,6 +176,7 @@ again:
 			if (TR != NULL)		/* output trailer */
 				(void) write(ofd, TR, strlen(TR));
 		}
+		(void) unlink(tmpfile);
 		exit(0);
 	}
 	goto again;
@@ -264,7 +267,7 @@ printit(file)
 			if (RS) {			/* restricted */
 				if (getpwnam(logname) == (struct passwd *)0) {
 					bombed = 2;
-					sendmail(bombed);
+					sendmail(line+1, bombed);
 					goto pass2;
 				}
 			}
@@ -281,7 +284,7 @@ printit(file)
 			if (line[1] != '\0')
 				strncpy(class, line+1, sizeof(class)-1);
 			else if (class[0] == '\0')
-				gethostname(class, sizeof (class));
+				gethostname(class, sizeof(class));
 			continue;
 
 		case 'T':	/* header title for pr */
@@ -310,11 +313,18 @@ printit(file)
 			continue;
 
 		default:	/* some file to print */
-			if ((i = print(line[0], line+1)) > 0) {
+			switch (i = print(line[0], line+1)) {
+			case -1:
+				if (!bombed)
+					bombed = 1;
+				break;
+			case 1:
 				(void) fclose(cfp);
 				return(1);
-			} else if (i < 0)
-				bombed = 1;
+			case 2:
+				bombed = 3;
+				sendmail(logname, bombed);
+			}
 			title[0] = '\0';
 			continue;
 
@@ -331,15 +341,15 @@ pass2:
 	while (getline(cfp))
 		switch (line[0]) {
 		case 'M':
-			if (bombed != 2)		/* already sent if 2 */
-				sendmail(bombed);
+			if (bombed < 2)		/* already sent if >= 2 */
+				sendmail(line+1, bombed);
 			continue;
 
 		case 'U':
 			(void) unlink(line+1);
 		}
 	/*
-	 * clean-up incase another control file exists
+	 * clean-up in case another control file exists
 	 */
 	(void) fclose(cfp);
 	(void) unlink(file);
@@ -349,7 +359,9 @@ pass2:
 /*
  * Print a file.
  * Set up the chain [ PR [ | {IF, OF} ] ] or {IF, RF, TF, NF, DF, CF, VF}.
- * Return -1 if a non-recoverable error occured, 1 if a recoverable error and
+ * Return -1 if a non-recoverable error occured,
+ * 2 if the filter detected some errors (but printed the job anyway),
+ * 1 if we should try to reprint this job and
  * 0 if all is well.
  * Note: all filters take stdin as the file, stdout as the printer,
  * stderr as the log file, and must not ignore SIGINT.
@@ -359,8 +371,9 @@ print(format, file)
 	int format;
 	char *file;
 {
-	register int n, fi, fo;
+	register int n;
 	register char *prog;
+	int fi, fo;
 	char *av[15], buf[BUFSIZ];
 	int pid, p[2], stopped = 0;
 	union wait status;
@@ -505,6 +518,9 @@ start:
 	if ((child = dofork(DORETURN)) == 0) {	/* child */
 		dup2(fi, 0);
 		dup2(fo, 1);
+		n = open(tmpfile, O_WRONLY|O_CREAT, 0664);
+		if (n >= 0)
+			dup2(n, 2);
 		for (n = 3; n < NOFILE; n++)
 			(void) close(n);
 		execv(prog, av);
@@ -526,13 +542,15 @@ start:
 		}
 	}
 	tof = 0;
-	if (!WIFEXITED(status) || status.w_retcode > 1) {
-		log("Daemon Filter '%c' Malfunction (%d)", format, status.w_retcode);
+	if (!WIFEXITED(status)) {
+		log("Daemon filter '%c' terminated (%d)", format, status.w_termsig);
 		return(-1);
-	} else if (status.w_retcode == 1)
-		return(1);
-	tof = 1;
-	return(0);
+	} else if (status.w_retcode > 2) {
+		log("Daemon filter '%c' exited (%d)", format, status.w_retcode);
+		return(-1);
+	} else if (status.w_retcode == 0)
+		tof = 1;
+	return(status.w_retcode);
 }
 
 /*
@@ -794,17 +812,19 @@ dropit(c)
  *   tell people about job completion
  */
 static
-sendmail(bombed)
+sendmail(user, bombed)
+	char *user;
 	int bombed;
 {
-	static int p[2];
 	register int i;
-	int stat;
+	int p[2], s;
 	register char *cp;
 	char buf[100];
+	struct stat stb;
+	FILE *fp;
 
 	pipe(p);
-	if ((stat = dofork(DORETURN)) == 0) {		/* child */
+	if ((s = dofork(DORETURN)) == 0) {		/* child */
 		dup2(p[0], 0);
 		for (i = 3; i < NOFILE; i++)
 			(void) close(i);
@@ -812,12 +832,12 @@ sendmail(bombed)
 			cp++;
 		else
 			cp = MAIL;
-		sprintf(buf, "%s@%s", line+1, fromhost);
+		sprintf(buf, "%s@%s", user, fromhost);
 		execl(MAIL, cp, buf, 0);
 		exit(0);
-	} else if (stat > 0) {				/* parent */
+	} else if (s > 0) {				/* parent */
 		dup2(p[1], 1);
-		printf("To: %s@%s\n", line+1, fromhost);
+		printf("To: %s@%s\n", user, fromhost);
 		printf("Subject: printer job\n\n");
 		printf("Your printer job ");
 		if (*jobname)
@@ -833,13 +853,23 @@ sendmail(bombed)
 		case 2:
 			printf("\ncould not be printed without an account on %s\n", host);
 			break;
+		case 3:
+			if (stat(tmpfile, &stb) < 0 || stb.st_size == 0 ||
+			    (fp = fopen(tmpfile, "r")) == NULL) {
+				printf("\nwas printed but had some errors\n");
+				break;
+			}
+			printf("\nwas printed but had the following errors:\n");
+			while ((i = getc(fp)) != EOF)
+				putchar(i);
+			(void) fclose(fp);
 		}
 		fflush(stdout);
 		(void) close(1);
 	}
 	(void) close(p[0]);
 	(void) close(p[1]);
-	wait(&stat);
+	wait(&s);
 }
 
 /*
@@ -883,6 +913,7 @@ dofork(action)
 static
 onintr()
 {
+	(void) unlink(tmpfile);
 	kill(0, SIGINT);
 	if (ofilter > 0)
 		kill(ofilter, SIGCONT);
