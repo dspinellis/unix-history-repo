@@ -1,4 +1,4 @@
-/*	dh.c	3.9	%H%	*/
+/*	dh.c	3.10	%H%	*/
 
 /*
  *	DH-11 driver
@@ -340,7 +340,8 @@ dhxint(dev)
 				tp->t_state &= ~FLUSH;
 			else {
 				addr->un.dhcsrl = (d&017)|IENAB;
-				ndflush(&tp->t_outq, (int)addr->dhcar-UBACVT(tp->t_outq.c_cf));
+				ndflush(&tp->t_outq,
+				    (int)addr->dhcar-UBACVT(tp->t_outq.c_cf));
 			}
 			if (tp->t_line)
 				(*linesw[tp->t_line].l_start)(tp);

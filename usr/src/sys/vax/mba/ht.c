@@ -1,4 +1,4 @@
-/*	ht.c	3.2	%H%	*/
+/*	ht.c	3.3	%H%	*/
 
 /*
  * TJU16 tape driver
@@ -109,8 +109,6 @@ htclose(dev, flag)
 		(void) hcommand(dev, WEOF);
 		(void) hcommand(dev, SREV);
 	}
-/*	(void) hcommand(dev, REW);	*/
-/* for 'mtm' file positioning */
 	if((minor(dev)&4) == 0) /* no 4 -> rewind */
 		(void) hcommand(dev, REW);
 	h_openf[unit] = 0;
@@ -307,16 +305,17 @@ htintr(mbastat, as)
 
 	case SSFOR:
 	case SSREV:
+#define blk dbtofsb(bp->b_blkno)
 		if(HTADDR->htds & TM) {
 			if(state == SSREV) {
-				h_nxrec[unit] = dbtofsb(bp->b_blkno) - (HTADDR->htfc&0xffff);
+				h_nxrec[unit] = blk - (HTADDR->htfc&0xffff);
 				h_blkno[unit] = h_nxrec[unit];
 			} else {
-				h_nxrec[unit] = dbtofsb(bp->b_blkno) + (HTADDR->htfc & 0xffff) - 1;
-				h_blkno[unit] = dbtofsb(bp->b_blkno) + (HTADDR->htfc & 0xffff);
+				h_nxrec[unit] = blk + (HTADDR->htfc&0xffff) - 1;
+				h_blkno[unit] = blk + (HTADDR->htfc & 0xffff);
 			}
 		} else
-			h_blkno[unit] = dbtofsb(bp->b_blkno);
+			h_blkno[unit] = blk;
 		break;
 
 	default:

@@ -1,4 +1,4 @@
-/*	vm_meter.c	3.2	%H%	*/
+/*	vm_meter.c	3.3	%H%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -100,8 +100,8 @@ loop:
 
 	case SRUN:
 		if ((rp->p_flag&SLOAD) == 0) {
-			rppri = rp->p_time - rp->p_swrss / nz((maxpgio/2) * CLSIZE) + rp->p_slptime
-			    - (rp->p_nice-NZERO)*8;
+			rppri = rp->p_time - rp->p_swrss / nz((maxpgio/2) * CLSIZE) +
+			    rp->p_slptime - (rp->p_nice-NZERO)*8;
 			if (rppri > outpri) {
 				if (rp->p_poip)
 					continue;
@@ -198,7 +198,7 @@ hardswap:
 		} else if (!sleeper && (rp->p_stat==SRUN||rp->p_stat==SSLEEP)) {
 			rppri = rp->p_rssize;
 			if (rp->p_textp)
-				rppri += rp->p_textp->x_rssize / rp->p_textp->x_ccount;
+				rppri += rp->p_textp->x_rssize/rp->p_textp->x_ccount;
 			if (biggot < nbig)
 				nbp = &bigp[biggot++];
 			else {
