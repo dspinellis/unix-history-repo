@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)intro.2	6.14 (Berkeley) %G%
+.\"     @(#)intro.2	6.15 (Berkeley) %G%
 .\"
 .Dd 
 .Dt INTRO 2
@@ -12,7 +12,7 @@
 .Nm intro
 .Nd introduction to system calls and error numbers
 .Sh SYNOPSIS
-.Fd #include <errno.h>
+.Fd #include <sys/errno.h>
 .Sh DESCRIPTION
 This section provides an overview of the system calls,
 their error returns, and other common definitions and concepts.
@@ -67,7 +67,7 @@ or
 .Dv SIGQUIT )
 was caught by the process during the execution of an interruptible
 function. If the signal handler performs a normal return, the
-interupted function call will seem to have returned the error condition.
+interrupted function call will seem to have returned the error condition.
 .It Er 5 EIO Em "Input/output error" .
 Some physical input or output error occurred.
 This error not be reported until a subsequent operation on the same file
@@ -105,7 +105,7 @@ child processes.
 .It Er 11 EDEADLK Em "Resource deadlock avoided" .
 An attempt was made to lock a system resource that
 would have resulted in a deadlock situation.
-.It Er 12 ENOMEM Em "Cannnot allocate memory" .
+.It Er 12 ENOMEM Em "Cannot allocate memory" .
 The new process image required more memory than was allowed by the hardware
 or by system-imposed memory management constraints.
 A lack of swap space is normally temporary; however,
@@ -350,7 +350,7 @@ which is now unavailable as referenced by the file descriptor.
 This may indicate the file was deleted on the
 .Tn NFS 
 server or some 
-other catastrophic event occured.
+other catastrophic event occurred.
 .It Er 72 EBADRPC Em "RPC struct is bad" .
 Exchange of
 .Tn RPC
@@ -391,12 +391,25 @@ Each active process is a member of a process group that is identified by
 a non-negative integer called the process group ID.  This is the process
 ID of the group leader.  This grouping permits the signaling of related
 processes (see
-.Xr killpg 2 )
+.Xr termios 4 )
 and the job control mechanisms of
 .Xr csh 1 .
-.It  Tty Group ID
-Each active process can be a member of a terminal group that is identified
-by a non-negative integer called the tty group ID.  This grouping is used
+.It Session
+A session is a set of one or more process groups.
+A session is created by a successful call to
+.Xr setsid 2 ,
+which causes the caller to become the only member of the only process
+group in the new session.
+The process is known as the session leader.
+Only a session leader may acquire a terminal as its controlling terminal (see
+.Xr termios 4 ) .
+A session leader with a controlling terminal is known as a controlling process.
+.It  "Tty Process Group ID"
+A terminal may be acquired by a session leader as its controlling terminal.
+Once a terminal is associated with a session, any of the process groups
+within the session may be placed into the foreground by setting
+the terminal process group ID to the ID of the process group.
+This facility is used
 to arbitrate between multiple jobs contending for the same terminal;
 (see
 .Xr csh 1
@@ -415,20 +428,40 @@ the real group ID.
 All processes have a real user ID and real group ID.
 These are initialized from the equivalent attributes
 of the process that created it.
-.It "Effective User Id, Effective Group Id, and Access Groups"
-Access to system resources is governed by three values:
-the effective user ID, the effective group ID, and the
-group access list.
+.It "Effective User Id, Effective Group Id, and Group Access List"
+Access to system resources is governed by two values:
+the effective user ID, and the group access list.
+The first member of the group access list is also known as the
+effective group ID.
+(In POSIX.1, the group access list is known as the set of supplementary
+group IDs, and it is unspecified whether the effective group ID is
+a member of the list.)
 .Pp
 The effective user ID and effective group ID are initially the
 process's real user ID and real group ID respectively.  Either
 may be modified through execution of a set-user-ID or set-group-ID
 file (possibly by one its ancestors) (see
 .Xr execve 2 ) .
+By convention, the effective group ID (the first member of the group access
+list) is duplicated, so that the execution of a set-group-ID program
+does not result in the loss of the original (real) group ID.
 .Pp
-The group access list is an additional set of group ID's
+The group access list is a set of group ID's
 used only in determining resource accessibility.  Access checks
 are performed as described below in ``File Access Permissions''.
+.It  "Saved Set User ID and Saved Set Group ID"
+When a process executes a new file, the effective user ID is set
+to the owner of the file if the file is set-user-ID, and the effective
+group ID (first element of the group access list) is set to the group
+of the file if the file is set-group-ID.
+The effective user ID of the process is then recorded as the saved set-user-ID,
+and the effective group ID of the process is recorded as the saved set-group-ID.
+These values may be used to regain those values as the effective user
+or group ID after reverting to the real ID (see
+.Xr setuid 2 ) .
+(In POSIX.1, the saved set-user-ID and saved set-group-ID are optional,
+and are used in setuid and setgid, but this does not work as desired
+for the super-user.)
 .It  Super-user
 A process is recognized as a
 .Em super-user
@@ -582,8 +615,3 @@ for a specific group of protocols.  Each socket has an address
 chosen from the address family in which the socket was created.
 .Sh SEE ALSO
 intro(3), perror(3)
-.Sh HISTORY
-An
-.Nm intro
-appeared in
-.At v6 .
