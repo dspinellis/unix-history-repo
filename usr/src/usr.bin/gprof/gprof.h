@@ -1,4 +1,4 @@
-    /* sccsid:  @(#)gprof.h	1.15 (Berkeley) %G% */
+    /* sccsid:  @(#)gprof.h	1.16 (Berkeley) %G% */
 
 #include <stdio.h>
 #include <sys/types.h>
@@ -38,10 +38,10 @@ char	*gmonname;
 #define	GMONSUM			"gmon.sum"
 	
     /*
-     *	the directory where the descriptions of the fields
-     *	of the profiles are kept.
+     *	blurbs on the flat and graph profiles.
      */
-#define	BLURBLIB		"/usr/lib/"
+#define	FLAT_BLURB	"/usr/lib/gprof.flat.blurb"
+#define	CALLG_BLURB	"/usr/lib/gprof.callg.blurb"
 
     /*
      *	a constructed arc,

@@ -1,4 +1,4 @@
-SCCSID = @(#)Makefile	1.17 (Berkeley) %G%
+SCCSID = @(#)Makefile	1.18 (Berkeley) %G%
 
 DFLAGS = 
 CFLAGS = -O ${DFLAGS}
@@ -16,10 +16,10 @@ GPROFOBJS =	gprof.o arcs.o dfn.o lookup.o calls.o hertz.o \
 gprof: ${GPROFOBJS}
 	cc -o gprof ${CFLAGS} ${GPROFOBJS}
 
-install: gprof flat.blurb callg.blurb
+install: gprof gprof.flat.blurb gprof.callg.blurb
 	${INSTALL} gprof ${DESTDIR}/usr/ucb/gprof
-	cp flat.blurb ${DESTDIR}/usr/lib/flat.blurb
-	cp callg.blurb ${DESTDIR}/usr/lib/callg.blurb
+	cp gprof.flat.blurb ${DESTDIR}/usr/lib
+	cp gprof.callg.blurb ${DESTDIR}/usr/lib
 
 clean:
 	${RM} ${GPROFOBJS} errs gprof
@@ -32,7 +32,7 @@ print:
 	@ pr makefile
 	@ pr gcrt0.h
 	@ pr ${GPROFHDRS} ${GPROFSRCS}
-	@ pr flat.blurb callg.blurb
+	@ pr gprof.flat.blurb gprof.callg.blurb
 
 lint:
 	lint ${LINTFLAGS} ${DFLAGS} ${GPROFSRCS}
