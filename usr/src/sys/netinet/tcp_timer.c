@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tcp_timer.c	7.1 (Berkeley) %G%
+ *	@(#)tcp_timer.c	7.2 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -46,6 +46,7 @@ tcp_fasttimo()
 		    (tp->t_flags & TF_DELACK)) {
 			tp->t_flags &= ~TF_DELACK;
 			tp->t_flags |= TF_ACKNOW;
+			tcpstat.tcps_delack++;
 			(void) tcp_output(tp);
 		}
 	splx(s);
@@ -147,9 +148,11 @@ tcp_timers(tp, timer)
 	case TCPT_REXMT:
 		tp->t_rxtshift++;
 		if (tp->t_rxtshift > TCP_MAXRXTSHIFT) {
+			tcpstat.tcps_timeoutdrop++;
 			tp = tcp_drop(tp, ETIMEDOUT);
 			break;
 		}
+		tcpstat.tcps_rexmttimeo++;
 		if (tp->t_srtt == 0)
 			rexmt = tcp_beta * TCPTV_SRTTDFLT;
 		else
@@ -180,6 +183,7 @@ tcp_timers(tp, timer)
 	 * Force a byte to be output, if possible.
 	 */
 	case TCPT_PERSIST:
+		tcpstat.tcps_persisttimeo++;
 		tcp_setpersist(tp);
 		tp->t_force = 1;
 		(void) tcp_output(tp);
@@ -191,6 +195,7 @@ tcp_timers(tp, timer)
 	 * or drop connection if idle for too long.
 	 */
 	case TCPT_KEEP:
+		tcpstat.tcps_keeptimeo++;
 		if (tp->t_state < TCPS_ESTABLISHED)
 			goto dropit;
 		if (tp->t_inpcb->inp_socket->so_options & SO_KEEPALIVE &&
@@ -198,21 +203,25 @@ tcp_timers(tp, timer)
 		    	if (tp->t_idle >= TCPTV_MAXIDLE)
 				goto dropit;
 			/*
-			 * Saying tp->rcv_nxt-1 lies about what
-			 * we have received, and by the protocol spec
-			 * requires the correspondent TCP to respond.
-			 * Saying tp->snd_una-1 causes the transmitted
-			 * byte to lie outside the receive window; this
-			 * is important because we don't necessarily
-			 * have a byte in the window to send (consider
-			 * a one-way stream!)
+			 * Send a packet designed to force a response
+			 * if the peer is up and reachable:
+			 * either an ACK if the connection is still alive,
+			 * or an RST if the peer has closed the connection
+			 * due to timeout or reboot.
+			 * Using sequence number tp->snd_una-1
+			 * causes the transmitted zero-length segment
+			 * to lie outside the receive window;
+			 * by the protocol spec, this requires the
+			 * correspondent TCP to respond.
 			 */
+			tcpstat.tcps_keepprobe++;
 			tcp_respond(tp,
-			    tp->t_template, tp->rcv_nxt-1, tp->snd_una-1, 0);
+			    tp->t_template, tp->rcv_nxt, tp->snd_una-1, 0);
 		}
 		tp->t_timer[TCPT_KEEP] = TCPTV_KEEP;
 		break;
 	dropit:
+		tcpstat.tcps_keepdrops++;
 		tp = tcp_drop(tp, ETIMEDOUT);
 		break;
 	}

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tcp_subr.c	7.2 (Berkeley) %G%
+ *	@(#)tcp_subr.c	7.3 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -118,7 +118,6 @@ tcp_respond(tp, ti, ack, seq, flags)
 		*mtod(m, struct tcpiphdr *) = *ti;
 		ti = mtod(m, struct tcpiphdr *);
 		flags = TH_ACK;
-		tlen = 1;
 	} else {
 		m = dtom(ti);
 		m_freem(m->m_next);
@@ -129,8 +128,8 @@ tcp_respond(tp, ti, ack, seq, flags)
 		xchg(ti->ti_dst.s_addr, ti->ti_src.s_addr, u_long);
 		xchg(ti->ti_dport, ti->ti_sport, u_short);
 #undef xchg
-		tlen = 0;
 	}
+	tlen = 0;
 	ti->ti_next = ti->ti_prev = 0;
 	ti->ti_x1 = 0;
 	ti->ti_len = htons((u_short)(sizeof (struct tcphdr) + tlen));
@@ -187,7 +186,9 @@ tcp_drop(tp, errno)
 	if (TCPS_HAVERCVDSYN(tp->t_state)) {
 		tp->t_state = TCPS_CLOSED;
 		(void) tcp_output(tp);
-	}
+		tcpstat.tcps_drops++;
+	} else
+		tcpstat.tcps_conndrops++;
 	so->so_error = errno;
 	return (tcp_close(tp));
 }
@@ -222,6 +223,7 @@ tcp_close(tp)
 	inp->inp_ppcb = 0;
 	soisdisconnected(so);
 	in_pcbdetach(inp);
+	tcpstat.tcps_closed++;
 	return ((struct tcpcb *)0);
 }
 
