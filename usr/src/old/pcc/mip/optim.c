@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid ="@(#)optim.c	4.3 (Berkeley) %G%";
+static char *sccsid ="@(#)optim.c	4.4 (Berkeley) %G%";
 #endif lint
 
 # include "mfile1"
@@ -139,10 +139,32 @@ optim(p) register NODE *p; {
 			RV(p) = -RV(p);
 			o = p->in.op = MINUS;
 			}
-		break;
+		/*FALLTHROUGH*/
+	case RS:
+	case LS:
+		/* Operations with zero -- DAS 1/20/85 */
+		if( (o==PLUS || o==MINUS || o==OR || o==ER || o==LS || o==RS)
+		    && nncon(p->in.right) && RV(p)==0 ) goto zapright;
+			break;
 
 	case DIV:
 		if( nncon( p->in.right ) && p->in.right->tn.lval == 1 ) goto zapright;
+		/* Unsigned division by a power of two -- DAS 1/13/85 */
+		if( nncon(p->in.right) && (i=ispow2(RV(p)))>=0 &&
+		    ISUNSIGNED(p->in.type) ){
+			o = p->in.op = RS;
+			p->in.right->in.type = p->in.right->fn.csiz = INT;
+			RV(p) = i;
+			}
+		break;
+
+	case MOD:
+		/* Unsigned mod by a power of two -- DAS 1/13/85 */
+		if( nncon(p->in.right) && (i=ispow2(RV(p)))>=0 &&
+		    ISUNSIGNED(p->in.type) ){
+			o = p->in.op = AND;
+			RV(p)--;
+			}
 		break;
 
 	case EQ:
