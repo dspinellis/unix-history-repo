@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)operators.c 1.3 %G%";
+static char sccsid[] = "@(#)operators.c 1.4 %G%";
 
 /*
  * Tree node classes.
@@ -36,6 +36,7 @@ typedef enum {
     O_CATCH,		/* catch a signal before program does */
     O_CHFILE,		/* change (or print) the current source file */
     O_CONT,		/* continue execution */
+    O_DEBUG,		/* invoke a dbx internal debugging routine */
     O_DELETE,		/* remove a trace/stop */
     O_DUMP,		/* dump out variables */
     O_EDIT,		/* edit a file (or function) */
@@ -155,6 +156,7 @@ public Opinfo opinfo[] ={
 /* O_CATCH */		0,	null,		"catch",
 /* O_CHFILE */		0,	null,		"file",
 /* O_CONT */		0,	null,		"cont",
+/* O_DEBUG */		0,	null,		"debug",
 /* O_DELETE */		0,	null,		"delete",
 /* O_DUMP */		0,	null,		"dump",
 /* O_EDIT */		0,	null,		"edit",
