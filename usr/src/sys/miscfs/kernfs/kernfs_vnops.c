@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kernfs_vnops.c	7.6 (Berkeley) %G%
+ *	@(#)kernfs_vnops.c	7.7 (Berkeley) %G%
  */
 
 /*
@@ -299,7 +299,6 @@ kernfs_access(ap)
 {
 	struct vnode *vp = ap->a_vp;
 	struct ucred *cred = ap->a_cred;
-	struct kern_target *kt = VTOKERN(vp)->kf_kt;
 	mode_t mode = ap->a_mode;
 
 	if (mode & VEXEC) {
@@ -309,8 +308,12 @@ kernfs_access(ap)
 	}
 
 	if (cred->cr_uid == 0) {
-		if ((mode & VWRITE) && !(kt->kt_rw & VWRITE))
-			return (EROFS);
+		if ((vp->v_flag & VROOT) == 0) {
+			struct kern_target *kt = VTOKERN(vp)->kf_kt;
+
+			if ((mode & VWRITE) && !(kt->kt_rw & VWRITE))
+				return (EROFS);
+		}
 		return (0);
 	}
 
@@ -333,7 +336,6 @@ kernfs_getattr(ap)
 	struct vattr *vap = ap->a_vap;
 	int error = 0;
 	char strbuf[KSTRING];
-	struct kern_target *kt = VTOKERN(vp)->kf_kt;
 
 	bzero((caddr_t) vap, sizeof(*vap));
 	vattr_null(vap);
@@ -361,6 +363,7 @@ kernfs_getattr(ap)
 		vap->va_fileid = 2;
 		vap->va_size = DEV_BSIZE;
 	} else {
+		struct kern_target *kt = VTOKERN(vp)->kf_kt;
 		int nbytes;
 #ifdef KERNFS_DIAGNOSTIC
 		printf("kernfs_getattr: stat target %s\n", kt->kt_name);
@@ -409,12 +412,18 @@ kernfs_read(ap)
 {
 	struct vnode *vp = ap->a_vp;
 	struct uio *uio = ap->a_uio;
-	struct kern_target *kt = VTOKERN(vp)->kf_kt;
+	struct kern_target *kt;
 	char strbuf[KSTRING];
 	int off = uio->uio_offset;
 	int len = 0;
 	char *cp = strbuf;
 	int error;
+
+	if (vp->v_flag & VROOT)
+		return (0);
+
+	kt = VTOKERN(vp)->kf_kt;
+
 #ifdef KERNFS_DIAGNOSTIC
 	printf("kern_read %s\n", kt->kt_name);
 #endif
@@ -438,12 +447,17 @@ kernfs_write(ap)
 {
 	struct vnode *vp = ap->a_vp;
 	struct uio *uio = ap->a_uio;
-	struct kern_target *kt = VTOKERN(vp)->kf_kt;
+	struct kern_target *kt;
 	char strbuf[KSTRING];
 	int len = uio->uio_resid;
 	char *cp = strbuf;
 	int xlen;
 	int error;
+
+	if (vp->v_flag & VROOT)
+		return (0);
+
+	kt = VTOKERN(vp)->kf_kt;
 
 	if (uio->uio_offset != 0)
 		return (EINVAL);
