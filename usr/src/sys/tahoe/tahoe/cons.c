@@ -1,4 +1,4 @@
-/*	cons.c	7.7	90/12/16	*/
+/*	cons.c	7.8	91/05/08	*/
 
 /*
  * Tahoe console processor driver
@@ -224,7 +224,7 @@ cnioctl(dev, cmd, addr, flag)
 	return (error);
 }
 
-int	consintr = 1;
+extern	int consintr;
 /*
  * Got a console transmission interrupt -
  * the console processor wants another character.
