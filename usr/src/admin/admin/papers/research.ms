@@ -1,3 +1,4 @@
+.\" @(#)research.ms	1.2 %G%
 .\" *troff -ms
 .rm CM
 .sp 2
@@ -5,8 +6,8 @@
 \fB\s+2Current Research by
 The Computer Systems Research Group
 of Berkeley\s-2\fP
-.ds DT "February 10, 1989
-.\" \fBDRAFT of \*(DT\fP
+.ds DT "
+\fB\*(DT\fP
 .sp 2
 .nf
 Marshall Kirk McKusick
@@ -28,7 +29,7 @@ The Computer Systems Research Group at Berkeley
 has now embarked on a new development phase to
 update other major components of the system, as well as to offer
 new functionality.
-There are five major ongoing projects.
+There are six major ongoing projects.
 The first is to develop an OSI network protocol suite and to integrate
 existing ISO applications into Berkeley UNIX.
 The second is to develop and support an interface compliant with the
@@ -38,16 +39,20 @@ its performance and limit congestion on slow and/or lossy networks.
 The fourth is to provide a standard interface to file systems
 so that multiple local and remote file systems can be supported,
 much as multiple networking protocols are supported by 4.3BSD.
-The fifth is to evaluate alternate access control mechanisms and
+The fifth is to replace the 4.3BSD virtual memory system
+in order to support mapped files, larger memories, copy-on-write on fork
+and I/O, and better portability.
+The final project is to evaluate alternate access control mechanisms and
 audit the existing security features of the system, particularly
 with respect to network services.
 Other areas of work include multi-architecture support, 
 a general purpose kernel memory allocator, disk labels, and
 extensions to the 4.2BSD fast filesystem.
 .PP
-We are planning to finish implementation prototypes for each of the
-five main areas of work over the next year, and provide an informal
-test release sometime next year for interested developers.
+Several of these projects are nearing completion,
+while others are in the prototype stage.
+We are planning to provide an informal test release sometime this summer
+to interested developers containing most of these changes.
 After incorporating feedback and refinements from the testers,
 they will appear in the next full Berkeley release, which is typically
 made about a year after the test release.
@@ -58,7 +63,7 @@ made about a year after the test release.
 Recently Completed Projects
 .PP
 There have been several changes in the system that were included
-in the recent 4.3BSD Tahoe release.
+in the 4.3BSD Tahoe release.
 .NH 2
 Multi-architecture support
 .PP
@@ -140,15 +145,18 @@ The network architecture of 4.2BSD was designed to accommodate
 multiple network protocol families and address formats,
 and an implementation of the ISO OSI network protocols
 should enter into this framework without much difficulty.
-We plan to 
-implement the OSI connectionless internet protocol (CLNP),
-and device drivers for X.25, 802.3, and possibly 802.5 interfaces, and
-to integrate these with an OSI transport class 4 (TP-4) implementation.
+The current system implements the OSI Connectionless Network Protocol (CLNP),
+the End System\-Intermediate System protocol (ES-IS),
+and OSI transport class 4 (TP-4).
+Device drivers for 802.3 are included,
+and device drivers for X.25 and possibly 802.5 interfaces
+are expected to be added.
 We will also incorporate into the Berkeley Software Distribution an
 updated ISO Development Environment (ISODE)
-featuring International Standard (IS) versions of utilities.
+featuring International Standard (IS) versions of OSI applications.
 ISODE implements the session and presentation layers of the OSI protocol suite,
-and will include an implementation of the file transfer protocol (FTAM).
+and includes an implementation of the file transfer protocol (FTAM)
+and the OSI Virtual Terminal protocol (VT).
 It is also possible that an X.400 implementation now being done at
 University College, London and the University of Nottingham
 will be available for testing and distribution.  
@@ -188,22 +196,26 @@ the site of an existing OSINET member, such as the NBS.
 .NH 2
 Compliance with POSIX 1003
 .PP
-Berkeley became involved several months ago in the development
-of the IEEE POSIX P1003.1 system interface standard.
+Berkeley has been involved in the development
+of the IEEE POSIX standards since the last draft of the P1003.1
+system interface standard.
 Since then, we have been parcipating in the working groups
 of P1003.2 (shell and application utility interface),
-P1003.6 (security), P1003.7 (system administration), and P1003.8
-(networking).
+P1003.4 (real-time and other system extensions),
+P1003.6 (security), P1003.7 (system administration),
+P1003.8 (transparent remote file access) and
+P1003.12 (process-to-process network interface).
 .PP
 The IEEE published the POSIX P1003.1 standard in late 1988.
-POSIX related changes to the BSD system have included a new terminal
+POSIX-related changes to the BSD system have included a new terminal
 driver, support for POSIX sessions and job control, expanded signal
 functionality, restructured directory access routines, and new set-user
 and set-group id facilities.
-We currently have a prototype implementation of the
-POSIX driver with extensions to provide binary compatibility with
+We have an implementation of the POSIX driver with extensions
+similar to those in the old Berkeley terminal driver.
+A compatibility module provides binary compatibility with
 applications developed for the old Berkeley terminal driver.
-We also have a prototype implementation of the 4.2BSD-based POSIX
+We also have an implementation of the 4.2BSD-based POSIX
 job control facility.
 .PP
 The P1003.2 draft is currently being voted on by the IEEE
@@ -222,7 +234,7 @@ additional implementations.
 Improvements to the TCP/IP Networking Protocols
 .PP
 The Internet and the Berkeley collection of local-area networks
-have both grown at high rates in the last year.
+have both grown at high rates in the last several years.
 The Bay Area Regional Research Network (BARRNet),
 connecting several UC campuses, Stanford and NASA-Ames
 has recently become operational, increasing the complexity
@@ -234,7 +246,7 @@ to keep accommodating the current topology,
 and are participating in the development of new routing algorithms
 and standard protocols.
 .PP
-Recent work in collaboration with Van Jacobson of the Lawrence Berkeley
+Work in collaboration with Van Jacobson of the Lawrence Berkeley
 Laboratory has led to the design and implementation of several new algorithms
 for TCP that improve throughput on both local and long-haul networks
 while reducing unnecessary retransmission.
@@ -255,11 +267,11 @@ these changes reduce unnecessary retransmission over difficult paths
 such as Satnet by nearly two orders of magnitude
 while improving throughput dramatically.
 .PP
-The current TCP implementation is now being readied
-for more widespread distribution via the network and as a 
+The current TCP implementation is now available
+via the network and as a 
 standard Berkeley distribution unencumbered by any commercial licensing.
 We are continuing to refine the TCP and IP implementations
-using the ARPANET, BARRNet, the NSF network
+using the the NSF network, BARRNet, ARPANET/Milnet,
 and local campus nets as testbeds.
 In addition, we are incorporating applicable algorithms from this work
 into the TP-4 protocol implementation.
@@ -311,20 +323,60 @@ This requires a detailed study of the existing protocols,
 and discussion with their implementors to determine whether
 they could modify their implementation to fit within our proposed
 framework.  We have studied the various file system interfaces to determine
-their generality, completeness, robustness, efficiency, and aesthetics
-and are currently working on a file system interface
+their generality, completeness, robustness, efficiency, and aesthetics.
+We have implemeneted a file system interface
 that we believe includes the best features of
-each of the existing implementations.
+each of the previous implementations.
 This work and the rationale underlying its development
 have been presented to major software vendors as an early step
 toward convergence on a standard compatible file system interface.
 Briefly, the proposal adopts the 4.3BSD calling convention for file
 name lookup but otherwise is closely related to Sun's VFS
 and DEC's GFS. [Karels86].
+.PP
+Non-propietary client and server implementations of Sun's NFS protocol have been
+produced in this new framework at the University of Guelph.
+This NFS version has been tested successfully
+at the most recent ``Connectathon,''
+and both the filesystem interface and NFS will be included
+in the Open Software Foundation's first system release, OSF/1.
+.PP
+One additional file system has been added under the new interface,
+a virtual-memory-resident file system (MFS).
+This file system is used for temporary file storage in /tmp,
+and greatly speeds ``I/O'' for creation and use of temporary files.
+.NH 2
+Virtual Memory
+.PP
+The 4.3BSD virtual memory system is a direct descendent of the original
+Berkeley virtual memory system for 3BSD, released in 1979.
+The state of the art in virtual memory hardware and software has
+changed tremendously in that time.
+There are several problems with the current system:
+.IP 1.
+Other than shared code regions, shared memory is not supported.
+.IP 2.
+Memory-mapped files and devices are not supported.
+.IP 3.
+Backing store is fully allocated for each process section,
+preventing support of sparse address spaces and requiring excessive
+backing store for large-memory systems.
+.IP 4.
+The implementation is tightly coupled to the VAX page table format.
+.LP
+Most of these problems have been addressed in the virtual memory system
+in the Mach system from Carnegie-Mellon University.
+That virtual memory system has been ported to 4.3BSD at the University
+of Utah, and work has begun to convert to the BSD
+.I mmap\^ ()
+interface for mapped files and shared memory.
+That virtual memory system is expected to be the basis for the 4.4BSD
+system, and its integration and development at Berkeley will begin
+in the next few months.
 .NH 2
 System Security
 .PP
-The recent invasion of the DARPA Internet by a quickly reproducing ``worm''
+The invasion of the DARPA Internet by a quickly reproducing ``worm''
 highlighted the need for a thorough review of the access
 safeguards built into the system.
 Until now, we have taken a passive approach to dealing with
@@ -373,17 +425,37 @@ they simply reboot their workstation in single user mode.
 Thus, a better authentication mechanism is needed.
 At present, we believe that the MIT Kerberos authentication
 server [Steiner88] provides the best solution to this problem.
-We propose to investigate Kerberos further as well as other
-authentication mechanisms and then to integrate
-the best one into Berkeley UNIX.
-Part of this integration would be the addition of the
-authentication mechanism into utilities such as
-telnet, login, remote shell, etc.
-We will add support for telnet (eventually replacing rlogin),
+We have integrated the current version of Kerberos into our current system
+and are beginning installation in a larger part of the Berkeley Computer
+Science Division.
+This integration includes the addition of the
+authentication mechanism in utilities such as
+telnet, login, remote shell, etc., as well as conversion aids.
+We plan to add support for telnet (eventually replacing rlogin),
 the X window system, and the mail system within an authentication
 domain (a Kerberos \fIrealm\fP).
-We hope to replace the existing password authentication on each host
+We hope to replace the existing password authentication completely
 with the network authentication system.
+.NH 2
+Other projects
+.PP
+There are numerous other projects in progress within CSRG and in other
+groups that are targetted for inclusion in 4.4BSD.
+.PP
+In addition to the system interface changes made for POSIX compliance,
+the system call interface is being updated in several other areas.
+Minor extensions to the socket interface facilitate use of OSI-specific
+features.
+Other calls are being consolidated and updated.
+Full compatibility with the older interfaces will be retained for one
+release cycle.
+.PP
+Support for the Hewlett-Packard 9000/300 series of workstations
+and servers has been added by the University of Utah.
+Another group has done a port to AT-style i386 systems
+and is adding support for various peripherals.
+Ports to the line of servers from MIPS
+and to the MIPS-based DEC workstations are in progress as well.
 .NH
 References
 .sp
