@@ -1,4 +1,4 @@
-/*	mtpr.h	4.4	81/02/21	*/
+/*	mtpr.h	4.5	81/02/25	*/
 
 /*
  * VAX processor register numbers
@@ -35,7 +35,7 @@
 #define	PMR	0x3d		/* performance monitor enable */
 #define	SID	0x3e		/* system identification */
 
-#if VAX==780
+#if VAX780
 #define	ACCS	0x28		/* accelerator control and status */
 #define	ACCR	0x29		/* accelerator maintenance */
 #define	WCSA	0x2c		/* WCS address */
@@ -50,7 +50,7 @@
 #define	MBRK	0x3c		/* micro-program breakpoint */
 #endif
 
-#if VAX==750
+#if VAX750
 #define	MCSR	0x17		/* machine check status register */
 #define	CSRS	0x1c		/* console storage receive status register */
 #define	CSRD	0x1d		/* console storage receive data register */
