@@ -3,7 +3,7 @@
 /*
  *	This routine erases everything on the window.
  *
- * %G% (Berkeley) @(#)clrtobot.c	1.1
+ * @(#)clrtobot.c	1.2 (Berkeley) %G%
  */
 wclrtobot(win)
 reg WINDOW	*win; {
@@ -23,14 +23,8 @@ reg WINDOW	*win; {
 					minx = sp - win->_y[y];
 				*sp = ' ';
 			}
-		if (minx != _NOCHANGE) {
-			if (win->_firstch[y] > minx
-			     || win->_firstch[y] == _NOCHANGE)
-				win->_firstch[y] = minx;
-			if (win->_lastch[y] < maxx - win->_y[y])
-				win->_lastch[y] = maxx - win->_y[y];
-		}
+		if (minx != _NOCHANGE)
+			touchline(win, y, minx, maxx - &win->_y[y][startx]);
 		startx = 0;
 	}
-	win->_curx = win->_cury = 0;
 }
