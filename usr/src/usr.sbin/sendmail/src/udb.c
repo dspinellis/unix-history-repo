@@ -8,9 +8,9 @@
 
 #ifndef lint
 #ifdef USERDB
-static char sccsid [] = "@(#)udb.c	6.3 (Berkeley) %G% (with USERDB)";
+static char sccsid [] = "@(#)udb.c	6.4 (Berkeley) %G% (with USERDB)";
 #else
-static char sccsid [] = "@(#)udb.c	6.3 (Berkeley) %G% (without USERDB)";
+static char sccsid [] = "@(#)udb.c	6.4 (Berkeley) %G% (without USERDB)";
 #endif
 #endif
 
@@ -18,7 +18,6 @@ static char sccsid [] = "@(#)udb.c	6.3 (Berkeley) %G% (without USERDB)";
 
 #ifdef USERDB
 
-#include <sys/file.h>
 #include <sys/time.h>
 #include <errno.h>
 #include <fcntl.h>
