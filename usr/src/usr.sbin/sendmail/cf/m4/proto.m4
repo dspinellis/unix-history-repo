@@ -8,7 +8,7 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(`@(#)proto.m4	8.38 (Berkeley) %G%')
+VERSIONID(`@(#)proto.m4	8.39 (Berkeley) %G%')
 
 MAILER(local)dnl
 
@@ -92,8 +92,8 @@ DR`'ifdef(`LOCAL_RELAY', LOCAL_RELAY)
 # who gets all local email traffic ($R has precedence for unqualified names)
 DH`'ifdef(`MAIL_HUB', MAIL_HUB)
 
-# who I masquerade as (can be $j)
-DM`'ifdef(`MASQUERADE_NAME', MASQUERADE_NAME, $j)
+# who I masquerade as (null for no masquerading)
+DM`'ifdef(`MASQUERADE_NAME', MASQUERADE_NAME)
 
 # class L: names that should be delivered locally, even if we have a relay
 # class E: names that should be exposed as from this host, even if we masquerade
