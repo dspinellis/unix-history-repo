@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)collect.c	8.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)collect.c	8.11 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <errno.h>
@@ -414,8 +414,34 @@ tferror(tf, e)
 {
 	if (errno == ENOSPC)
 	{
+		struct stat st;
+		long avail;
+		long bsize;
+
+		NoReturn = TRUE;
+		if (fstat(fileno(tf), &st) < 0)
+			st.st_size = 0;
 		(void) freopen(e->e_df, "w", tf);
-		fputs("\nMAIL DELETED BECAUSE OF LACK OF DISK SPACE\n\n", tf);
+		if (st.st_size <= 0)
+			fprintf(tf, "\n*** Mail could not be accepted");
+		else if (sizeof st.st_size > sizeof (long))
+			fprintf(tf, "\n*** Mail of at least %qd bytes could not be accepted\n",
+				st.st_size);
+		else
+			fprintf(tf, "\n*** Mail of at least %ld bytes could not be accepted\n",
+				st.st_size);
+		fprintf(tf, "*** at %s due to lack of disk space for temp file.\n",
+			MyHostName);
+		avail = freespace(QueueDir, &bsize);
+		if (avail > 0)
+		{
+			if (bsize > 1024)
+				avail *= bsize / 1024;
+			else if (bsize < 1024)
+				avail /= 1024 / bsize;
+			fprintf(tf, "*** Currently, %ld kilobytes are available for mail temp files.\n",
+				avail);
+		}
 		usrerr("452 Out of disk space for temp file");
 	}
 	else
