@@ -4,13 +4,14 @@
  *
  * %sccs.include.redist.c%
  *
- *      @(#)conf.c	7.9 (Berkeley) %G%
+ *      @(#)conf.c	7.10 (Berkeley) %G%
  */
 
 #include "sys/param.h"
 #include "sys/systm.h"
 #include "sys/buf.h"
 #include "sys/ioctl.h"
+#include "sys/proc.h"
 #include "sys/tty.h"
 #include "sys/conf.h"
 
@@ -26,7 +27,7 @@ int	ttselect	__P((dev_t, int, struct proc *));
 	int n __P((dev_t, int, caddr_t, int, struct proc *))
 
 /* bdevsw-specific types */
-#define	dev_type_dump(n)	int n __P((dev_t))
+#define	dev_type_dump(n)	int n __P(())
 #define	dev_type_size(n)	int n __P((dev_t))
 
 #define	dev_decl(n,t)	__CONCAT(dev_type_,t)(__CONCAT(n,t))
