@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)mkfs.c	2.13 (Berkeley) %G%";
+static	char *sccsid = "@(#)mkfs.c	2.14 (Berkeley) %G%";
 #endif
 
 /*
@@ -48,9 +48,9 @@ static	char *sccsid = "@(#)mkfs.c	2.13 (Berkeley) %G%";
  * ROTDELAY gives the minimum number of milliseconds to initiate
  * another disk transfer on the same cylinder. It is used in
  * determining the rotationally optimal layout for disk blocks
- * within a file; the default of fs_rotdelay is 2ms.
+ * within a file; the default of fs_rotdelay is 4ms.
  */
-#define ROTDELAY	2
+#define ROTDELAY	4
 
 /*
  * MAXCONTIG sets the default for the maximum number of blocks
