@@ -1,0 +1,2 @@
+cp iutil ../../lib/iutil
+ranlib ../../lib/iutil
