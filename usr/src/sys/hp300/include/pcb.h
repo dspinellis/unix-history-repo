@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: pcb.h 1.14 91/03/25$
  *
- *	@(#)pcb.h	7.6 (Berkeley) %G%
+ *	@(#)pcb.h	7.7 (Berkeley) %G%
  */
 
 #include <machine/frame.h>
@@ -28,22 +28,13 @@ struct pcb
 	int	pcb_regs[12];	/* D2-D7, A2-A7 */
 	caddr_t	pcb_onfault;	/* for copyin/out faults */
 	struct	fpframe pcb_fpregs; /* 68881/2 context save area */
-	int	pcb_exec[16];	/* exec structure for core dumps */
 };
-
-/* flags */
-
-#define PCB_HPUXMMAP	0x0010	/* VA space is multiple mapped */
-#define PCB_HPUXTRACE	0x0020	/* being traced by an HPUX process */
-#define PCB_HPUXBIN	0x0040	/* loaded from an HPUX format binary */
-				/* note: does NOT imply SHPUX */
-#define PCB_CCBDATA	0x0100	/* copyback caching of data */
-#define PCB_CCBSTACK	0x0200	/* copyback caching of stack */
 
 /*
  * The pcb is augmented with machine-dependent additional data for
- * core dumps. For the hp300, there is nothing to add.
+ * core dumps. For the hp300, this includes an HP-UX exec header
+ * which is dumped for HP-UX processes.
  */
 struct md_coredump {
-	long	md_pad[8];
+	int	md_exec[16];	/* exec structure for HP-UX core dumps */
 };
