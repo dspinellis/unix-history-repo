@@ -13,7 +13,7 @@
 
 #ifndef lint
 static char sccsid[] =
-"@(#)support.c	1.1 (Berkeley) 5/23/85; 1.6 (ucb.elefunt) %G%";
+"@(#)support.c	1.1 (Berkeley) 5/23/85; 1.7 (ucb.elefunt) %G%";
 #endif not lint
 
 /* 
@@ -190,7 +190,6 @@ double x,p;
 #else /* IEEE */
         if( ( *px & mexp ) == mexp || p == zero )
 #endif
-
                 return( (x != x)? x:zero/zero );
 
         else  if ( ((*pp & mexp)>>gap) <= 1 ) 
@@ -221,7 +220,10 @@ double x,p;
                 if ( x > hp )
                     { x -= p ;  if ( x >= hp ) x -= p ; }
 
-		*px = *px ^ sign;
+#if (defined(VAX)||defined(TAHOE))
+		if (x)
+#endif
+			*px ^= sign;
                 return( x);
 
             }
