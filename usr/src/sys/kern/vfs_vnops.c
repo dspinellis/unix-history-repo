@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_vnops.c	7.4 (Berkeley) %G%
+ *	@(#)vfs_vnops.c	7.5 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -484,10 +484,10 @@ vn_fhtovp(fhp, lockflag, vpp)
 
 	if ((mp = getvfs(&fhp->fh_fsid)) == NULL)
 		return (ESTALE);
-	if (error = VFS_FHTOVP(mp, &fhp->fh_fid, vpp))
-		return (error);
-	if (lockflag)
-		VOP_LOCK(*vpp);
+	if (VFS_FHTOVP(mp, &fhp->fh_fid, vpp))
+		return (ESTALE);
+	if (!lockflag)
+		VOP_UNLOCK(*vpp);
 	return (0);
 }
 
