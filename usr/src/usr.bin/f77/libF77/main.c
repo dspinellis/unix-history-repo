@@ -1,5 +1,5 @@
 /* STARTUP PROCEDURE FOR UNIX FORTRAN PROGRAMS */
-char id_libF77[] = "@(#)main.c	2.4	%G%";
+char id_libF77[] = "@(#)main.c	2.5	%G%";
 
 #include <stdio.h>
 #include <signal.h>
@@ -48,7 +48,7 @@ struct action {
 	{ 0, 0},			/* SIGTRAP */
 	{"IOT Trap", 1},		/* SIGIOT  */
 	{"EMT trap", 1},		/* SIGEMT  */
-	{"Floating Point Exception", 1},/* SIGFPE  */
+	{"Arithmetic Exception", 1},	/* SIGFPE  */
 	{ 0, 0},			/* SIGKILL */
 	{"Bus error", 1},		/* SIGBUS  */
 	{"Segmentation violation", 1},	/* SIGSEGV */
@@ -59,21 +59,50 @@ struct action {
 	{ 0, 0},			/* unassigned */
 };
 
+#ifdef UCBVAX
+struct action act_fpe[] = {
+	{"Integer overflow", 1},
+	{"Integer divide by 0", 1},
+	{"Floating point overflow", 1},
+	{"Floating divide by zero", 1},
+	{"Floating point underflow", 1},
+	{"Decimal overflow", 1},
+	{"Subscript range", 1},
+	{"Floating point overflow", 0},
+	{"Floating divide by zero", 0},
+	{"Floating point underflow", 0},
+};
+#endif
 
-sigdie(s)
-int s;
+sigdie(s, t, pc)
+int s; int t; long pc;
 {
 extern unit units[];
 register struct action *act = &sig_act[s-1];
 /* clear buffers, then print error message */
 f_exit();
-if (act->mesg) fprintf(units[STDERR].ufd, "%s\n", act->mesg);
+if (act->mesg)
+	{
+#ifdef UCBVAX
+	fprintf(units[STDERR].ufd, "%s", act->mesg);
+	if (s == SIGFPE)
+		fprintf(units[STDERR].ufd, ": %s\n", act_fpe[t-1].mesg);
+	else
+		putc('\n', units[STDERR].ufd);
+#else
+	fprintf(units[STDERR].ufd, "%s\n", act->mesg);
+#endif
+	}
 _cleanup();
 
 if(act->core)
 	{
 	/* now get a core */
+#ifdef VAX
+	signal(SIGILL, SIG_DFL);
+#else
 	signal(SIGIOT, SIG_DFL);
+#endif
 	abort();
 	}
 exit(s);
