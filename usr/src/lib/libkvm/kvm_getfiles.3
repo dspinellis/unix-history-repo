@@ -7,7 +7,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)kvm_getfiles.3	8.1 (Berkeley) %G%
+.\"     @(#)kvm_getfiles.3	8.2 (Berkeley) %G%
 .\"
 .Dd 
 .Dt KVM_GETFILES 3
@@ -39,7 +39,7 @@ returned.  No predicates are currently defined.
 The number of processes found is returned in the reference parameter
 .Fa cnt .
 The files are returned as a contiguous array of file structures,
-preceeded by the address of the first file entry in the kernel.
+preceded by the address of the first file entry in the kernel.
 This memory is owned by kvm and is not guaranteed to be persistent across
 subsequent kvm library calls.  Data should be copied out if it needs to be
 saved.

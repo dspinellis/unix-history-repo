@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)getcap.3	8.2 (Berkeley) %G%
+.\"	@(#)getcap.3	8.3 (Berkeley) %G%
 .\"
 .Dd ""
 .Dt GETCAP 3 
@@ -210,7 +210,7 @@ Upon completion of the database 0 is returned,  1 is returned upon successful
 return of record with possibly more remaining (we haven't reached the end of 
 the database yet), 2 is returned if the record contains an unresolved
 .Nm tc 
-expansion, \-1 is returned if an system error occured, and \-2
+expansion, \-1 is returned if an system error occurred, and \-2
 is returned if a potential reference loop is detected (see 
 .Ic tc=
 comments below).
