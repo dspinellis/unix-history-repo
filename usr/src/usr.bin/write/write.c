@@ -25,7 +25,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)write.c	4.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)write.c	4.17 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -40,24 +40,20 @@ static char sccsid[] = "@(#)write.c	4.16 (Berkeley) %G%";
 #include <stdio.h>
 #include <strings.h>
 
-#define STRCPY(s1, s2) \
-    { (void)strncpy(s1, s2, sizeof(s1)); s1[sizeof(s1) - 1] = '\0'; }
-
-int uid;					/* myuid */
+extern int errno;
 
 main(argc, argv)
 	int argc;
 	char **argv;
 {
-	extern int errno;
 	register char *cp;
-	char tty[MAXPATHLEN];
-	int msgsok, myttyfd;
 	time_t atime;
-	char *mytty, *getlogin(), *ttyname();
+	uid_t myuid;
+	int msgsok, myttyfd;
+	char tty[MAXPATHLEN], *mytty, *getlogin(), *ttyname();
 	void done();
 
-	/* check that sender has write enabled. */
+	/* check that sender has write enabled */
 	if (isatty(fileno(stdin)))
 		myttyfd = fileno(stdin);
 	else if (isatty(fileno(stdout)))
@@ -82,13 +78,13 @@ main(argc, argv)
 		exit(1);
 	}
 
-	uid = getuid();
+	myuid = getuid();
 
 	/* check args */
 	switch (argc) {
 	case 2:
-		search_utmp(argv[1], tty, mytty);
-		do_write(tty, mytty);
+		search_utmp(argv[1], tty, mytty, myuid);
+		do_write(tty, mytty, myuid);
 		break;
 	case 3:
 		if (!strncmp(argv[2], "/dev/", 5))
@@ -101,13 +97,13 @@ main(argc, argv)
 		}
 		if (term_chk(argv[2], &msgsok, &atime, 1))
 			exit(1);
-		if (uid && !msgsok) {
+		if (myuid && !msgsok) {
 			(void)fprintf(stderr,
 			    "write: %s has messages disabled on %s\n",
 			    argv[1], argv[2]);
 			exit(1);
 		}
-		do_write(argv[2], mytty);
+		do_write(argv[2], mytty, myuid);
 		break;
 	default:
 		(void)fprintf(stderr, "usage: write user [tty]\n");
@@ -152,8 +148,9 @@ utmp_chk(user, tty)
  * Special case for writing to yourself - ignore the terminal you're
  * writing from, unless that's the only terminal with messages enabled.
  */
-search_utmp(user, tty, mytty)
+search_utmp(user, tty, mytty, myuid)
 	char *user, *tty, *mytty;
+	uid_t myuid;
 {
 	struct utmp u;
 	time_t bestatime, atime;
@@ -171,10 +168,11 @@ search_utmp(user, tty, mytty)
 	while (read(ufd, (char *) &u, sizeof(u)) == sizeof(u))
 		if (strncmp(user, u.ut_name, sizeof(u.ut_name)) == 0) {
 			++nloggedttys;
-			STRCPY(atty, u.ut_line);
+			(void)strncpy(atty, u.ut_line, UT_LINESIZE);
+			atty[UT_LINESIZE] = '\0';
 			if (term_chk(atty, &msgsok, &atime, 0))
 				continue;	/* bad term? skip */
-			if (uid && !msgsok)
+			if (myuid && !msgsok)
 				continue;	/* skip ttys with msgs off */
 			if (strcmp(atty, mytty) == 0) {
 				user_is_me = 1;
@@ -222,8 +220,8 @@ term_chk(tty, msgsokP, atimeP, showerror)
 	(void)sprintf(path, "/dev/%s", tty);
 	if (stat(path, &s) < 0) {
 		if (showerror)
-			(void)fprintf(stderr, "write: %s: %s\n",
-			    path, strerror(errno));
+			(void)fprintf(stderr,
+			    "write: %s: %s\n", path, strerror(errno));
 		return(1);
 	}
 	*msgsokP = (s.st_mode & (S_IWRITE >> 3)) != 0;	/* group write bit */
@@ -234,8 +232,9 @@ term_chk(tty, msgsokP, atimeP, showerror)
 /*
  * do_write - actually make the connection
  */
-do_write(tty, mytty)
+do_write(tty, mytty, myuid)
 	char *tty, *mytty;
+	uid_t myuid;
 {
 	register char *login, *nows;
 	register struct passwd *pwd;
@@ -250,12 +249,12 @@ do_write(tty, mytty)
 		exit(1);
 	}
 
-	/* catch ^C. */
 	(void)signal(SIGINT, done);
+	(void)signal(SIGHUP, done);
 
-	/* print greeting. */
+	/* print greeting */
 	if ((login = getlogin()) == NULL)
-		if (pwd = getpwuid(getuid()))
+		if (pwd = getpwuid(myuid))
 			login = pwd->pw_name;
 		else
 			login = "???";
@@ -265,10 +264,10 @@ do_write(tty, mytty)
 	nows = ctime(&now);
 	nows[16] = '\0';
 	(void)printf("\r\n\007\007\007Message from %s@%s on %s at %s ...\r\n",
-	    login, host, mytty, nows  + 11);
+	    login, host, mytty, nows + 11);
 
 	while (fgets(line, sizeof(line), stdin) != NULL)
-		massage_fputs(line);
+		wr_fputs(line);
 }
 
 /*
@@ -282,10 +281,10 @@ done()
 }
 
 /*
- * massage_fputs - like fputs(), but makes control characters visible and
+ * wr_fputs - like fputs(), but makes control characters visible and
  *     turns \n into \r\n
  */
-massage_fputs(s)
+wr_fputs(s)
 	register char *s;
 {
 	register char c;
