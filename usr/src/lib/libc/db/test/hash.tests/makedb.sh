@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-#	@(#)makedb.sh	5.3 (Berkeley) %G%
+#	@(#)makedb.sh	8.1 (Berkeley) %G%
 
 awk '{i++; print $0; print i;}' /usr/share/dict/words > WORDS
 ls /bin /usr/bin /usr/ucb /etc | egrep '^(...|....|.....|......)$' | \
