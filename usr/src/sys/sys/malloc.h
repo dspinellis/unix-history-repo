@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)malloc.h	7.3 (Berkeley) %G%
+ *	@(#)malloc.h	7.4 (Berkeley) %G%
  */
 
 #define KMEMSTATS
@@ -33,12 +33,16 @@
 #define M_GPROF		13	/* kernel profiling buffer */
 #define M_IOCTLOPS	14	/* ioctl data buffer */
 #define M_SUPERBLK	15	/* super block data */
-#define M_TEMP		16	/* misc temporary data buffers */
+#define M_CRED		16	/* credentials */
+#define M_TEMP		49	/* misc temporary data buffers */
 #define M_LAST		50
 
 struct kmemstats {
 	long	ks_inuse;	/* # of packets of this type currently in use */
 	long	ks_calls;	/* total packets of this type ever allocated */
+	long 	ks_memuse;	/* total memory held in bytes */
+	u_short	ks_limblocks;	/* number of times blocked for hitting limit */
+	u_short	ks_mapblocks;	/* number of times blocked for kernel map */
 	long	ks_maxused;	/* maximum number ever used */
 	long	ks_limit;	/* most that are allowed to exist */
 };
