@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)dol.c	5.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)dol.c	5.19 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -415,10 +415,10 @@ Dgetdol()
 	if (dimen)
 	    stderror(ERR_NOTALLOWED, "$?#");
 	for (np = wbuf; read(OLDSTD, &tnp, 1) == 1; np++) {
-	    *np = tnp;
+	    *np = (unsigned char) tnp;
 	    if (np >= &wbuf[BUFSIZ - 1])
 		stderror(ERR_LTOOLONG);
-	    if (SIGN_EXTEND_CHAR(tnp) <= 0 || tnp == '\n')
+	    if (tnp == '\n')
 		break;
 	}
 	*np = 0;
