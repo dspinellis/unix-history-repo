@@ -1,4 +1,4 @@
-#	@(#)Makefile	2.3	%G%
+#	@(#)Makefile	2.4	%G%
 #
 CC = cc
 .c.o:
@@ -80,6 +80,20 @@ bibdoc:
 
 doc/INDEX:	doc/testrefs
 	cd doc; invert -p INDEX testrefs
+
+styleman:
+	sed -e 's/STYLE/stdn - standard numeric/' tstyles | bib -tstdn >show.stdn
+	sed -e 's/STYLE/stdsn - standard sorted numeric/' tstyles | bib -tstdsn >show.stdsn
+	sed -e 's/STYLE/stda - standard alphabetic/' tstyles | bib -tstda >show.stda
+	sed -e 's/STYLE/opena - open alphabetic/' tstyles | bib -topena >show.opena
+	sed -e 's/STYLE/openn - open numeric/' tstyles | bib -topenn >show.openn
+	sed -e 's/STYLE/astro - astrophysical journal style/' tstyles | bib -tastro >show.astro
+	sed -e 's/STYLE/hnf - Hanson Normal Form/' tstyles | bib -thnf >show.hnf
+	sed -e 's/STYLE/list - listrefs default/' tstyles | bib -tlist >show.list
+	sed -e 's/STYLE/spe - S P and E Journal style/' tstyles | bib -tspe2 >show.spe
+	sed -e 's/STYLE/supn - superscripted numeric style/' tstyles | bib -tsupn >show.supn
+	sed -e 's/STYLE/foot - footnoted citations/' tstyles | bib -tfoot >show.foot
+	vtroff -ms styletop show.*
 
 clean:	
 	-rm -f *.o bib invert listrefs lookup tags

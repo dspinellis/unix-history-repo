@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)alpha.seek.c	2.1	%G%";
+static char sccsid[] = "@(#)alpha.seek.c	2.2	%G%";
 #endif not lint
 
 # include "stdio.h"
