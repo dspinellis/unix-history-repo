@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fs.h	8.3 (Berkeley) %G%
+ *	@(#)fs.h	8.4 (Berkeley) %G%
  */
 
 /*
@@ -230,6 +230,21 @@ struct fs {
     (((fs)->fs_postblformat == FS_42POSTBLFMT) \
     ? ((fs)->fs_space) \
     : ((u_char *)((char *)(fs) + (fs)->fs_rotbloff)))
+
+/*
+ * The size of a cylinder group is calculated by CGSIZE. The maximum size
+ * is limited by the fact that cylinder groups are at most one block.
+ * Its size is derived from the size of the maps maintained in the 
+ * cylinder group and the (struct cg) size.
+ */
+#define CGSIZE(fs) \
+    /* base cg */	(sizeof(struct cg) + sizeof(long) + \
+    /* blktot size */	(fs)->fs_cpg * sizeof(long) + \
+    /* blks size */	(fs)->fs_cpg * (fs)->fs_nrpos * sizeof(short) + \
+    /* inode map */	howmany((fs)->fs_ipg, NBBY) + \
+    /* block map */	howmany((fs)->fs_cpg * (fs)->fs_spc / NSPF(fs), NBBY) +\
+    /* cluster sum */	(fs)->fs_contigsumsize * sizeof(long) + \
+    /* cluster map */	howmany((fs)->fs_cpg * (fs)->fs_spc / NSPB(fs), NBBY))
 
 /*
  * Convert cylinder group to base address of its global summary info.
