@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ip_output.c	7.1 (Berkeley) %G%
+ *	@(#)ip_output.c	7.2 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -24,7 +24,7 @@
 #include "ip_var.h"
 
 #ifdef vax
-#include "../vax/mtpr.h"
+#include "../machine/mtpr.h"
 #endif
 
 struct mbuf *ip_insertoptions();

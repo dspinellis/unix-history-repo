@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tcp.h	7.1 (Berkeley) %G%
+ *	@(#)tcp.h	7.2 (Berkeley) %G%
  */
 
 typedef	u_long	tcp_seq;
@@ -16,9 +16,13 @@ struct tcphdr {
 	u_short	th_dport;		/* destination port */
 	tcp_seq	th_seq;			/* sequence number */
 	tcp_seq	th_ack;			/* acknowledgement number */
-#ifdef vax
+#if ENDIAN == LITTLE
 	u_char	th_x2:4,		/* (unused) */
 		th_off:4;		/* data offset */
+#endif
+#if ENDIAN == BIG
+	u_char	th_off:4,		/* data offset */
+		th_x2:4;		/* (unused) */
 #endif
 	u_char	th_flags;
 #define	TH_FIN	0x01

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ip.h	7.1 (Berkeley) %G%
+ *	@(#)ip.h	7.2 (Berkeley) %G%
  */
 
 /*
@@ -20,9 +20,13 @@
  * against negative integers quite easily, and fail in subtle ways.
  */
 struct ip {
-#ifdef vax
+#if ENDIAN == LITTLE
 	u_char	ip_hl:4,		/* header length */
 		ip_v:4;			/* version */
+#endif
+#if ENDIAN == BIG
+	u_char	ip_v:4,			/* version */
+		ip_hl:4;		/* header length */
 #endif
 	u_char	ip_tos;			/* type of service */
 	short	ip_len;			/* total length */
@@ -73,8 +77,14 @@ struct	ip_timestamp {
 	u_char	ipt_code;		/* IPOPT_TS */
 	u_char	ipt_len;		/* size of structure (variable) */
 	u_char	ipt_ptr;		/* index of current entry */
+#if ENDIAN == LITTLE
 	u_char	ipt_flg:4,		/* flags, see below */
 		ipt_oflw:4;		/* overflow counter */
+#endif
+#if ENDIAN == BIG
+	u_char	ipt_oflw:4,		/* overflow counter */
+		ipt_flg:4;		/* flags, see below */
+#endif
 	union {
 		n_long	ipt_time[1];
 		struct	ipt_ta {
