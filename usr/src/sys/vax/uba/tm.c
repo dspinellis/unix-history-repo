@@ -1,4 +1,4 @@
-/*	tm.c	4.33	81/04/08	*/
+/*	tm.c	4.34	81/04/09	*/
 
 #include "te.h"
 #if NTM > 0
@@ -97,6 +97,8 @@ struct	te_softc {
 	short	sc_lastcmd;	/* last command to handle direction changes */
 #endif
 	u_short	sc_dens;	/* prototype command with density info */
+	daddr_t	sc_timo;	/* time until timeout expires */
+	short	sc_tact;	/* timeout is active */
 } te_softc[NTM];
 #ifdef unneeded
 int	tmgapsdcnt;		/* DEBUG */
@@ -172,6 +174,7 @@ tmattach(ui)
 	tetotm[ui->ui_unit] = ui->ui_mi->um_ctlr;
 }
 
+int	tmtimer();
 /*
  * Open the device.  Tapes are unique open
  * devices, so we refuse if it is already open.
@@ -221,6 +224,13 @@ get:
 	sc->sc_nxrec = INF;
 	sc->sc_lastiow = 0;
 	sc->sc_dens = dens;
+	(void) spl6();
+	if (sc->sc_tact == 0) {
+		sc->sc_timo = INF;
+		sc->sc_tact = 1;
+		timeout(tmtimer, dev, 5*hz);
+	}
+	(void) spl0();
 }
 
 /*
@@ -389,8 +399,18 @@ loop:
 		 */
 		if (bp->b_command == TM_SENSE)
 			goto next;
-		um->um_tab.b_active =
-		    bp->b_command == TM_REW ? SREW : SCOM;
+		/*
+		 * Set next state; give 5 minutes to complete
+		 * rewind, or 10 seconds per iteration (minimum 60
+		 * seconds and max 5 minute) to complete other ops.
+		 */
+		if (bp->b_command == TM_REW) {
+			um->um_tab.b_active = SREW;
+			sc->sc_timo = 5 * 60;
+		} else {
+			um->um_tab.b_active = SCOM;
+			sc->sc_timo = min(max(10 * bp->b_repcnt, 60), 5 * 60);
+		}
 		if (bp->b_command == TM_SFORW || bp->b_command == TM_SREV)
 			addr->tmbc = bp->b_repcnt;
 		goto dobpcmd;
@@ -446,6 +466,7 @@ loop:
 				tmgapsdcnt++;
 		sc->sc_lastcmd = TM_RCOM;		/* will serve */
 #endif
+		sc->sc_timo = 60;	/* premature, but should serve */
 		(void) ubago(ui);
 		return;
 	}
@@ -462,6 +483,7 @@ loop:
 		bp->b_command = TM_SREV;
 		addr->tmbc = dbtofsb(bp->b_blkno) - blkno;
 	}
+	sc->sc_timo = min(max(10 * -addr->tmbc, 60), 5 * 60);
 dobpcmd:
 #ifdef notdef
 	/*
@@ -541,6 +563,7 @@ tmintr(tm11)
 	 * An operation completed... record status
 	 */
 	sc = &te_softc[teunit];
+	sc->sc_timo = INF;
 	sc->sc_dsreg = addr->tmcs;
 	sc->sc_erreg = addr->tmer;
 	sc->sc_resid = addr->tmbc;
@@ -665,6 +688,21 @@ opcont:
 	tmstart(um);
 }
 
+tmtimer(dev)
+	int dev;
+{
+	register struct te_softc *sc = &te_softc[TEUNIT(dev)];
+
+	if (sc->sc_timo != INF && (sc->sc_timo -= 5) < 0) {
+		printf("te%d: lost interrupt\n");
+		sc->sc_timo = INF;
+		(void) spl5();
+		tmintr(TMUNIT(dev));
+		(void) spl0();
+	}
+	timeout(tmtimer, dev, 5*hz);
+}
+
 tmseteof(bp)
 	register struct buf *bp;
 {
@@ -764,7 +802,8 @@ tmreset(uban)
 			else
 				um->um_tab.b_actl->b_forw = dp;
 			um->um_tab.b_actl = dp;
-			te_softc[teunit].sc_openf = -1;
+			if (te_softc[teunit].sc_openf > 0)
+				te_softc[teunit].sc_openf = -1;
 		}
 		tmstart(um);
 	}
