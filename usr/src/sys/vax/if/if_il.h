@@ -1,4 +1,4 @@
-/*	if_il.h	4.1	82/05/21	*/
+/*	if_il.h	4.2	82/06/23	*/
 
 /*
  * Structure of an Ethernet header -- transmit format
@@ -32,9 +32,9 @@ struct	il_rheader {
 #define	ILPUP_NTRAILER	16
 
 /*
- * Structure of Statistics Record
+ * Structure of statistics record
  */
-struct	il_stat {
+struct	il_stats {
 	u_short	ils_fill1;
 	u_short	ils_length;		/* Length (should be 62) */
 	u_char	ils_addr[6];		/* Ethernet Address */
