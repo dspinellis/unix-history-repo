@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cmds.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmds.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -1135,7 +1135,7 @@ user(argc, argv)
 	int argc;
 	char **argv;
 {
-	char acct[80], *mygetpass();
+	char acct[80], *getpass();
 	int n, aflag = 0;
 
 	if (argc < 2) {
@@ -1154,7 +1154,7 @@ user(argc, argv)
 	n = command("USER %s", argv[1]);
 	if (n == CONTINUE) {
 		if (argc < 3 )
-			argv[2] = mygetpass("Password: "), argc++;
+			argv[2] = getpass("Password: "), argc++;
 		n = command("PASS %s", argv[2]);
 	}
 	if (n == CONTINUE) {
@@ -1371,7 +1371,7 @@ account(argc,argv)
 	int argc;
 	char **argv;
 {
-	char acct[50], *mygetpass(), *ap;
+	char acct[50], *getpass(), *ap;
 
 	if (argc > 1) {
 		++argv;
@@ -1386,7 +1386,7 @@ account(argc,argv)
 		ap = acct;
 	}
 	else {
-		ap = mygetpass("Account:");
+		ap = getpass("Account:");
 	}
 	(void) command("ACCT %s", ap);
 }
