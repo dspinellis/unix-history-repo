@@ -1,4 +1,4 @@
-/*	hpboot.c	4.1	83/02/16	*/
+/*	hpboot.c	4.2	83/02/27	*/
 
 /*
  * RP??/RM?? 1st level boot program: loads next 7.5Kbytes from
@@ -76,6 +76,9 @@ rprdy:
 	movl	RP_sr(r9),r0
 	bbc	$RP_pDRY,r0,rprdy
 	bbs	$RP_pERR,r0,rperr
+	clrl	r3
+/* Eagle's are too fast for the controller. Slow the thing down. */
+buzz:	acbl	$2000,$1,r3,buzz
 	bicpsw	$2
 	jbr	clear
 rperr:
