@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)query.c	4.4 %G%";
+static char sccsid[] = "@(#)query.c	4.5 %G%";
 #endif
 
 #include <sys/param.h>
@@ -110,8 +110,8 @@ rip_input(from, size)
 		if (size < sizeof (struct netinfo))
 			break;
 		sin = (struct sockaddr_in *)&n->rip_dst;
-		if (in_lnaof(sin->sin_addr) == INADDR_ANY) {
-			np = getnetbyaddr(in_netof(sin->sin_addr), AF_INET);
+		if (inet_lnaof(sin->sin_addr) == INADDR_ANY) {
+			np = getnetbyaddr(inet_netof(sin->sin_addr), AF_INET);
 			name = np ? np->n_name : "???";
 		} else {
 			hp = gethostbyaddr(&sin->sin_addr,
@@ -122,45 +122,4 @@ rip_input(from, size)
 			sin->sin_addr, n->rip_metric);
 		size -= sizeof (struct netinfo), n++;
 	}
-}
-
-/*
- * Return the network number from an internet
- * address; handles class a/b/c network #'s.
- */
-in_netof(in)
-	struct in_addr in;
-{
-#if vax || pdp11
-	register u_long net;
-
-	if ((in.s_addr&IN_CLASSA) == 0)
-		return (in.s_addr & IN_CLASSA_NET);
-	if ((in.s_addr&IN_CLASSB) == 0)
-		return ((int)htons((u_short)(in.s_addr & IN_CLASSB_NET)));
-	net = htonl((u_long)(in.s_addr & IN_CLASSC_NET));
-	net >>= 8;
-	return ((int)net);
-#else
-	return (IN_NETOF(in));
-#endif
-}
-
-/*
- * Return the local network address portion of an
- * internet address; handles class a/b/c network
- * number formats.
- */
-in_lnaof(in)
-	struct in_addr in;
-{
-#if vax || pdp11
-#define	IN_LNAOF(in) \
-	(((in).s_addr&IN_CLASSA) == 0 ? (in).s_addr&IN_CLASSA_LNA : \
-		((in).s_addr&IN_CLASSB) == 0 ? (in).s_addr&IN_CLASSB_LNA : \
-			(in).s_addr&IN_CLASSC_LNA)
-	return ((int)htonl((u_long)IN_LNAOF(in)));
-#else
-	return (IN_LNAOF(in));
-#endif
 }
