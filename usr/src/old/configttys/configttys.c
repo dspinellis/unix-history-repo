@@ -6,7 +6,7 @@
  */
 
 #ifndef	lint
-char	sccsid[]	= "@(#)configttys.c	4.1 Berkeley %G%";
+char	sccsid[]	= "@(#)configttys.c	4.2 Berkeley %G%";
 #endif
 
 #include <stdio.h>
@@ -174,8 +174,8 @@ char	**argv;
 			quit(1);
 		}
 
-		fprintf(conf, conformat, "port", "active", "speed\t", "terminal name");
-		fprintf(conf, conformat, "----", "------", "-----\t", "-------------");
+		fprintf(conf, conformat, "port", "login", "speed\t", "terminal type");
+		fprintf(conf, conformat, "----", "-----", "-----\t", "-------------");
 		for (ty = ttys; ty->ty_active; ty++)
 		{
 			fprintf(conf, conformat, ty->ty_port,
@@ -557,22 +557,3 @@ char	*port;
 
 	return((struct ttytype *)0);
 }
-
-/* DELETE this for 4.2bsd */
-
-#include <errno.h>
-
-rename (from, to)
-char	*from, *to;
-{
-	extern int	errno;
-
-	if (unlink(to) < 0)
-		if (errno != ENOENT)
-			return(-1);
-	if (link(from, to) == 0)
-		return (unlink(from));
-	else
-		return(-1);
-}
-
