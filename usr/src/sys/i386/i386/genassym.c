@@ -7,11 +7,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)genassym.c	5.7 (Berkeley) %G%
+ *	@(#)genassym.c	5.8 (Berkeley) %G%
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)genassym.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)genassym.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sys/param.h"
@@ -34,10 +34,11 @@ static char sccsid[] = "@(#)genassym.c	5.7 (Berkeley) %G%";
 
 main()
 {
-	register struct proc *p = (struct proc *)0;
-	register struct vmmeter *vm = (struct vmmeter *)0;
-	register struct user *up = (struct user *)0;
-	register struct rusage *rup = (struct rusage *)0;
+	struct proc *p = (struct proc *)0;
+	struct vmmeter *vm = (struct vmmeter *)0;
+	struct user *up = (struct user *)0;
+	struct rusage *rup = (struct rusage *)0;
+	struct uprof *uprof = (struct uprof *)0;
 	vm_map_t map = (vm_map_t)0;
 	pmap_t pmap = (pmap_t)0;
 	struct pcb *pcb = (struct pcb *)0;
@@ -116,6 +117,10 @@ main()
 	printf("#define\tU_RU %d\n", &up->u_ru);
 	printf("#define\tU_PROF %d\n", &up->u_prof);
 	printf("#define\tU_PROFSCALE %d\n", &up->u_prof.pr_scale);
+	printf("#define\tPR_BASE %d\n", &uprof.pr_base);
+	printf("#define\tPR_SIZE %d\n", &uprof.pr_size);
+	printf("#define\tPR_OFF %d\n", &uprof.pr_off);
+	printf("#define\tPR_SCALE %d\n", &uprof.pr_scale);
 	printf("#define\tRU_MINFLT %d\n", &rup->ru_minflt);
 	printf("#define\tPCB_FLAGS %d\n", &pcb->pcb_flags);
 	printf("#define\tFP_WASUSED %d\n", FP_WASUSED);
