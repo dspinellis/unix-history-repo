@@ -1,8 +1,7 @@
 /*
- *	@(#)raw_hy.c	6.1	%G%
+ *	@(#)raw_hy.c	6.2	%G%
  *
- * 4.2 BSD Unix kernel - NSC HYPERchannel support
- * NEEDS WORK FOR 4.3
+ * 4.3 BSD Unix kernel - NSC HYPERchannel support
  *
  * $Header: raw_hy.c,v 3.1 84/02/15 04:27:44 steveg Exp $
  * $Locker:  $
@@ -24,8 +23,12 @@
 #include "../net/route.h"
 #include "../net/raw_cb.h"
 
+#ifdef	BBNNET
+#define	INET
+#endif
 #include "../netinet/in.h"
 #include "../netinet/in_systm.h"
+#include "../netinet/in_var.h"
 #include "if_hy.h"
 
 /*
@@ -46,7 +49,7 @@ rhy_output(m, so)
 	int error = 0;
 	register struct sockaddr_in *sin;
 	register struct rawcb *rp = sotorawcb(so);
-	struct ifnet *ifp;
+	struct in_ifaddr *ia;
 
 	/*
 	 * Verify user has supplied necessary space
@@ -60,9 +63,9 @@ rhy_output(m, so)
 
 	sin = (struct sockaddr_in *)&rp->rcb_faddr;
 	/* no routing here */
-	ifp = if_ifonnetof((int)sin->sin_addr.s_net);
-	if (ifp)
-		return (hyoutput(ifp, m, (struct sockaddr *)sin));
+	ia = in_iaonnetof(in_netof(sin->sin_addr));
+	if (ia)
+		return (hyoutput(ia->ia_ifp, m, (struct sockaddr *)sin));
 	error = ENETUNREACH;
 bad:
 	m_freem(m);
