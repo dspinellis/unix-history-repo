@@ -128,7 +128,7 @@ another:
 	}
 
 #ifdef	KERBEROS
-	if(argc > 0 && !strcmp(*argv, "-x")) {
+	if(argc > 0 && !strncmp(*argv, "-x", 2)) {
 		encrypt = 1;
 		des_set_key(cred.session, schedule);
 		argv++, argc--;
@@ -217,8 +217,8 @@ try_connect:
 			}
 		} else {
 			fprintf(stderr,
-			    "%s: error getting local realm %s\n",
-			    argv0[0], krb_err_txt[rem]);
+			    "%s: error getting local realm\n",
+			    argv0[0]);
 			exit(1);
 		}
 		if((rem < 0) && errno == ECONNREFUSED) {
@@ -231,7 +231,6 @@ try_connect:
 			old_warning("remote host doesn't support Kerberos");
 			goto try_connect;
 		}
-
 	} else {
 		if(encrypt) {
 			fprintf(stderr,"The -x flag requires Kerberos authentication\n");
