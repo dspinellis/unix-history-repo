@@ -1,5 +1,5 @@
 
-/*	@(#)tmscp.c	7.3 (Berkeley) %G% */
+/*	@(#)tmscp.c	7.4 (Berkeley) %G% */
 
 /****************************************************************
  *                                                              *
@@ -104,7 +104,7 @@ tmscpopen(io)
 		if (tmscpaddr == 0)
 			tmscpaddr = (struct tmscpdevice *)ubamem(io->i_adapt, tmscpstd[0]);
 		if (tmscp_ubaddr == 0) {
-			ctmscpbuf.i_unit = io->i_unit;
+			ctmscpbuf = *io;
 			ctmscpbuf.i_ma = (caddr_t)&tmscp;
 			ctmscpbuf.i_cc = sizeof(tmscp);
 			tmscp_ubaddr = (struct tmscp *)ubasetup(&ctmscpbuf, 2);
