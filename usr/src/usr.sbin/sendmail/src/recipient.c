@@ -2,7 +2,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)recipient.c	4.2		%G%);
+SCCSID(@(#)recipient.c	4.3		%G%);
 
 /*
 **  SENDTOLIST -- Designate a send list.
@@ -229,8 +229,14 @@ recipient(a, sendq)
 	**  Finish setting up address structure.
 	*/
 
+	/* set the queue timeout */
 	a->q_timeout = TimeOut;
 
+	/* map user & host to lower case if requested on non-aliases */
+	if (a->q_alias == NULL)
+		loweraddr(a);
+
+	/* get unquoted user for file, program or user.name check */
 	(void) strcpy(buf, a->q_user);
 	for (p = buf; *p != '\0' && !quoted; p++)
 	{
