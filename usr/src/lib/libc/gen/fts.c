@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)fts.c	5.33 (Berkeley) %G%";
+static char sccsid[] = "@(#)fts.c	5.34 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -237,6 +237,7 @@ fts_read(sp)
 	register FTSENT *p, *tmp;
 	register int instr;
 	register char *t;
+	int saved_errno;
 
 	/* If finished or unrecoverable error, return NULL. */
 	if (sp->fts_cur == NULL || ISSET(FTS_STOP))
@@ -315,16 +316,18 @@ fts_read(sp)
 					    p->fts_parent->fts_accpath;
 			}
 		} else if ((sp->fts_child = fts_build(sp, BREAD)) == NULL) {
-			p->fts_flags |= FTS_DONTCHDIR;
 			if (ISSET(FTS_STOP))
 				return (NULL);
 			if (p->fts_level == FTS_ROOTLEVEL &&
-			    FCHDIR(sp, sp->fts_rfd)) {
+			    !ISSET(FTS_NOCHDIR) && FCHDIR(sp, sp->fts_rfd)) {
+				saved_errno = errno;
 				(void)close(sp->fts_rfd);
+				errno = saved_errno;
 				SET(FTS_STOP);
 				return (NULL);
 			}
-			(void)close(sp->fts_rfd);
+			p->fts_flags |= FTS_DONTCHDIR;
+			p->fts_info = FTS_DP;
 			return (p);
 		}
 		p = sp->fts_child;
@@ -391,14 +394,18 @@ name:		t = sp->fts_path + NAPPEND(p->fts_parent);
 	 */
 	if (p->fts_level == FTS_ROOTLEVEL) {
 		if (FCHDIR(sp, sp->fts_rfd)) {
+			saved_errno = errno;
 			(void)close(sp->fts_rfd);
+			errno = saved_errno;
 			SET(FTS_STOP);
 			return (NULL);
 		}
 		(void)close(sp->fts_rfd);
 	} else if (p->fts_flags & FTS_SYMFOLLOW) {
 		if (FCHDIR(sp, p->fts_symfd)) {
+			saved_errno = errno;
 			(void)close(p->fts_symfd);
+			errno = saved_errno;
 			SET(FTS_STOP);
 			return (NULL);
 		}
@@ -704,12 +711,9 @@ mem1:				saved_errno = errno;
 		return (NULL);
 	}
 
-	/* If didn't find anything, just do the post-order visit */
-	if (!nitems) {
-		if (type == BREAD)
-			cur->fts_info = FTS_DP;
+	/* If didn't find anything, return NULL. */
+	if (!nitems)
 		return (NULL);
-	}
 
 	/* Sort the entries. */
 	if (sp->fts_compar && nitems > 1)
