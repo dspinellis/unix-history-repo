@@ -1,5 +1,5 @@
 /*
- * @(#)screen.h	3.1 (Berkeley) %G%
+ * @(#)screen.h	3.2 (Berkeley) %G%
  */
 
 #define	INCLUDED_SCREEN
@@ -42,9 +42,27 @@
 #define FieldAttributesPointer(p)	(IsStartFieldPointer(p)? \
 				    GetHostPointer(p): \
 				    GetHost(WhereAttrByte((p)-&Host[0])))
-#define TurnOffMdt(x)	ModifyHost(WhereAttrByte(x), &= ~ATTR_MDT)
-#define TurnOnMdt(x)	ModifyHost(WhereAttrByte(x), |= ATTR_MDT)
-#define HasMdt(x)	(GetHost(x)&ATTR_MDT)	/* modified tag */
+
+/*
+ * The MDT functions need to protect against the case where the screen
+ * is unformatted (sigh).
+ */
+
+/* Turn off the Modified Data Tag */
+#define TurnOffMdt(x) \
+    if (HasMdt(WhereAttrByte(x))) { \
+	ModifyMdt(x, 0); \
+    }
+
+/* Turn on the Modified Data Tag */
+#define TurnOnMdt(x) \
+    if (!HasMdt(WhereAttrByte(x))) { \
+	ModifyMdt(x, 1); \
+    }
+
+/* If this location has the MDT bit turned on (implies start of field) ... */
+#define HasMdt(x) \
+    ((GetHost(x)&(ATTR_MDT|ATTR_MASK)) == (ATTR_MDT|ATTR_MASK))
 
 	/*
 	 * Is the screen formatted?  Some algorithms change depending
