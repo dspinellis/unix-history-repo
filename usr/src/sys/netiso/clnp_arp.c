@@ -46,13 +46,13 @@ static char *rcsid = "$Header: clnp_arp.c,v 4.2 88/06/29 14:58:32 hagens Exp $";
 #include "../net/if.h"
 #include "../net/route.h"
 
-#include "../netiso/iso.h"
-#include "../netiso/iso_var.h"
-#include "../netiso/iso_map.h"
-#include "../netiso/iso_snpac.h"
-#include "../netiso/clnp.h"
-#include "../netiso/clnp_stat.h"
-#include "../netiso/argo_debug.h"
+#include "iso.h"
+#include "iso_var.h"
+#include "iso_map.h"
+#include "iso_snpac.h"
+#include "clnp.h"
+#include "clnp_stat.h"
+#include "argo_debug.h"
 
 #define	MAPTAB_BSIZ	20		/* bucket size */
 #define	MAPTAB_NB	13		/* number of buckets */
@@ -103,7 +103,7 @@ char				*edst;	/* RESULT: ethernet address */
 
  	destiso = &dst->siso_addr;
 
-	if (destiso->isoa_afi == AFI_SNA) {
+	if (destiso->isoa_genaddr[0] == AFI_SNA) {
 		/*
 		 *	This is a subnetwork address. Return it immediately
 		 */
@@ -120,7 +120,7 @@ char				*edst;	/* RESULT: ethernet address */
 			ENDDEBUG
 			return(-1);
 		}
-		bcopy((caddr_t) destiso->sna_idi, (caddr_t)edst, sna_len);
+		bcopy((caddr_t)&destiso->isoa_genaddr[1], (caddr_t)edst, sna_len);
 		return (1);
 	}
 
@@ -239,7 +239,7 @@ isomap_ioctl(cmd, data)
 int		cmd;		/* ioctl to process */
 caddr_t	data;	/* data for the cmd */
 {
-	register struct arpreq	*ar = (struct arpreq *)data;
+	register struct arpreq_iso	*ar = (struct arpreq_iso *)data;
 	register struct maptab	*at;
 	register struct sockaddr_iso	*siso;
 	register struct iso_addr		*isoa;
@@ -247,7 +247,7 @@ caddr_t	data;	/* data for the cmd */
 	/*
 	 *	only process commands for the ISO address family
 	 */
-	if (ar->arp_pa.sa_family != AF_ISO)
+	if (ar->arp_pa.siso_family != AF_ISO)
 		return(EAFNOSUPPORT);
 	
 	/* look up this address in table */
