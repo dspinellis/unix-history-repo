@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)lpd.8	6.2 (Berkeley) %G%
+.\"	@(#)lpd.8	6.3 (Berkeley) %G%
 .\"
 .TH LPD 8 ""
 .UC 5
@@ -190,7 +190,8 @@ and
 /dev/lp*	line printer devices
 /dev/printer	socket for local requests
 /etc/hosts.equiv	lists machine names allowed printer access
-/etc/hosts.lpd	lists machine names allowed printer access
+/etc/hosts.lpd	lists machine names allowed printer access,
+		but not under same administrative control.
 .fi
 .SH "SEE ALSO"
 lpc(8),
