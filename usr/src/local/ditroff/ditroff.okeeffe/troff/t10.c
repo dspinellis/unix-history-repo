@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)t10.c	2.2 (CWI) 88/03/09";
+static char sccsid[] = "@(#)t10.c	2.3 (CWI) 88/03/18";
 #endif lint
 #include "tdef.h"
 #include <sgtty.h>
@@ -295,12 +295,21 @@ tchar	*pi;
 		xbits(i, 2);
 	if (k < 040 && k != DRAWFCN)
 		return(outsize);
-	if (widcache[k-32].fontpts == (xfont<<8) + xpts  && !setwdf) {
-		w = widcache[k-32].width;
-		bd = 0;
-		cs = 0;
-	} else
-		w = getcw(k-32);
+	/*
+	 * Bug fix, if k == DRAWFCN, thewidcache gets a negative index.
+	 * This worked by magic on the vax and tahoe, but caused somtimes
+	 * a segment violaton on the suns.
+	 *
+	 * The code was plainly wrong (jna).
+	 */
+	if ( k != DRAWFCN) {
+		if (widcache[k-32].fontpts == (xfont<<8) + xpts  && !setwdf) {
+			w = widcache[k-32].width;
+			bd = 0;
+			cs = 0;
+		} else
+			w = getcw(k-32);
+	}
 	j = z = 0;
 	if (k != DRAWFCN) {
 		if (cs) {
