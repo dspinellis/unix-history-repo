@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rshd.c	4.8 83/01/13";
+static char sccsid[] = "@(#)rshd.c	4.9 83/01/18";
 #endif
 
 #include <sys/ioctl.h>
@@ -16,6 +16,7 @@ static char sccsid[] = "@(#)rshd.c	4.8 83/01/13";
 #include <netdb.h>
 
 int	errno;
+int	reapchild();
 struct	sockaddr_in sin = { AF_INET };
 struct	passwd *getpwnam();
 char	*index(), *rindex(), *sprintf();
@@ -33,7 +34,6 @@ main(argc, argv)
 	int argc;
 	char **argv;
 {
-	union wait status;
 	int f;
 	struct sockaddr_in from;
 	struct servent *sp;
@@ -89,14 +89,16 @@ main(argc, argv)
 		perror("rshd: bind");
 		exit(1);
 	}
+	signal(SIGCHLD, reapchild);
 	listen(f, 10);
 	for (;;) {
 		int g, len = sizeof (from);
 
 		g = accept(f, &from, &len, 0);
 		if (g < 0) {
+			if (errno == EINTR)
+				continue;
 			perror("rshd: accept");
-			sleep(1);
 			continue;
 		}
 		if (fork() == 0) {
@@ -104,9 +106,15 @@ main(argc, argv)
 			doit(g, &from);
 		}
 		close(g);
-		while (wait3(status, WNOHANG, 0) > 0)
-			continue;
 	}
+}
+
+reapchild()
+{
+	union wait status;
+
+	while (wait3(&status, WNOHANG, 0) > 0)
+		;
 }
 
 char	username[20] = "USER=";
