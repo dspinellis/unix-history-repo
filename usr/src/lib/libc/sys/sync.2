@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)sync.2	4.1 (Berkeley) %G%
+.\"	@(#)sync.2	5.1 (Berkeley) %G%
 .\"
-.TH SYNC 2 
+.TH SYNC 2 "12 February 1983"
 .UC 4
 .SH NAME
 sync \- update super-block
@@ -17,18 +17,16 @@ memory that should be on disk to be written out.
 This includes modified super blocks,
 modified i-nodes, and delayed block I/O.
 .PP
-It should be used by programs which examine a file system,
+.I Sync
+should be used by programs which examine a file system,
 for example
-.I "icheck, df,"
+.I "fsck, df,"
 etc.
-It is mandatory before a boot.
+.I Sync
+is mandatory before a boot.
 .SH "SEE ALSO"
-sync(1), update(8)
+fsync(2), sync(8), update(8)
 .SH BUGS
 The writing, although scheduled, is not necessarily
 complete upon return from 
 .IR sync .
-.SH "ASSEMBLER (PDP-11)"
-(sync = 36.)
-.br
-.B sys sync
