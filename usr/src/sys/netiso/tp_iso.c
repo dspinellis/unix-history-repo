@@ -28,7 +28,7 @@ SOFTWARE.
  * ARGO TP
  * $Header: /var/src/sys/netiso/RCS/tp_iso.c,v 5.1 89/02/09 16:20:51 hagens Exp $
  * $Source: /var/src/sys/netiso/RCS/tp_iso.c,v $
- *	@(#)tp_iso.c	7.9 (Berkeley) %G%
+ *	@(#)tp_iso.c	7.10 (Berkeley) %G%
  *
  * Here is where you find the iso-dependent code.  We've tried
  * keep all net-level and (primarily) address-family-dependent stuff
@@ -317,7 +317,7 @@ tpclnp_mtu(so, isop, size, negot )
 	struct iso_ifaddr *ia = 0;
 	register int i;
 	int windowsize = so->so_rcv.sb_hiwat;
-	int clnp_size;
+	int clnp_size, mtu;
 	int sizeismtu = 0;
 	register struct rtentry *rt = isop->isop_route.ro_rt;
 
@@ -344,16 +344,16 @@ tpclnp_mtu(so, isop, size, negot )
 		return;
 	}
 
+
+
 	/* TODO - make this indirect off the socket structure to the
 	 * network layer to get headersize
 	 */
-	if (isop->isop_laddr)
-		clnp_size = clnp_hdrsize(isop->isop_laddr->siso_addr.isoa_len);
-	else
-		clnp_size = 20;
-
-	if(*size > ifp->if_mtu - clnp_size) {
-		*size = ifp->if_mtu - clnp_size;
+	clnp_size = sizeof(struct clnp_fixed) + sizeof(struct clnp_segment) +
+			2 * sizeof(struct iso_addr);
+	mtu = SN_MTU(ifp, rt) - clnp_size;
+	if(*size > mtu) {
+		*size = mtu;
 		sizeismtu = 1;
 	}
 	/* have to transform size to the log2 of size */
