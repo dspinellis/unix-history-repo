@@ -5,7 +5,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)run.test	5.4 (Berkeley) %G%
+#	@(#)run.test	5.5 (Berkeley) %G%
 #
 
 # db regression tests
@@ -110,7 +110,7 @@ test3()
 		$PROG -o $TMP3 $type $TMP2
 		if (cmp -s $TMP1 $TMP3) ; then
 		else
-			printf "test2: type %s: failed\n" $type
+			printf "test3: type %s: failed\n" $type
 			exit 1
 		fi
 	done
