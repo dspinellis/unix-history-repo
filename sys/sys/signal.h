@@ -41,7 +41,7 @@
 
 #ifndef _POSIX_SOURCE
 #include <machine/trap.h>	/* codes for SIGILL, SIGFPE */
-#endif /* _POSIX_SOURCE */
+#endif /* !_POSIX_SOURCE */
 
 #define	SIGHUP	1	/* hangup */
 #define	SIGINT	2	/* interrupt */
@@ -49,27 +49,27 @@
 #define	SIGILL	4	/* illegal instruction (not reset when caught) */
 #ifndef _POSIX_SOURCE
 #define	SIGTRAP	5	/* trace trap (not reset when caught) */
-#endif
+#endif /* !_POSIX_SOURCE */
 #define	SIGABRT	6	/* abort() */
 #ifndef _POSIX_SOURCE
 #define	SIGIOT	SIGABRT	/* compatibility */
 #define	SIGEMT	7	/* EMT instruction */
-#endif
+#endif /* !_POSIX_SOURCE */
 #define	SIGFPE	8	/* floating point exception */
 #define	SIGKILL	9	/* kill (cannot be caught or ignored) */
 #ifndef _POSIX_SOURCE
 #define	SIGBUS	10	/* bus error */
-#endif
+#endif /* !_POSIX_SOURCE */
 #define	SIGSEGV	11	/* segmentation violation */
 #ifndef _POSIX_SOURCE
 #define	SIGSYS	12	/* bad argument to system call */
-#endif
+#endif /* !_POSIX_SOURCE */
 #define	SIGPIPE	13	/* write on a pipe with no one to read it */
 #define	SIGALRM	14	/* alarm clock */
 #define	SIGTERM	15	/* software termination signal from kill */
 #ifndef _POSIX_SOURCE
 #define	SIGURG	16	/* urgent condition on IO channel */
-#endif
+#endif /* !_POSIX_SOURCE */
 #define	SIGSTOP	17	/* sendable stop signal not from tty */
 #define	SIGTSTP	18	/* stop signal from tty */
 #define	SIGCONT	19	/* continue a stopped process */
@@ -84,7 +84,7 @@
 #define	SIGPROF	27	/* profiling time alarm */
 #define SIGWINCH 28	/* window size changes */
 #define SIGINFO	29	/* information request */
-#endif
+#endif /* !_POSIX_SOURCE */
 #define SIGUSR1 30	/* user defined signal 1 */
 #define SIGUSR2 31	/* user defined signal 2 */
 
@@ -92,7 +92,7 @@
 
 #ifndef _POSIX_SOURCE
 typedef	void (*sig_t) __P((int));
-#endif
+#endif /* !_POSIX_SOURCE */
 
 typedef void (*__sighandler_t) __P((int));
 typedef unsigned int sigset_t;
@@ -122,7 +122,7 @@ struct	sigaction {
 #ifndef _POSIX_SOURCE
 #define SA_ONSTACK	0x0001	/* take signal on signal stack */
 #define SA_RESTART	0x0002	/* do not restart system on signal return */
-#endif
+#endif /* !_POSIX_SOURCE */
 #define SA_NOCLDSTOP	0x0004	/* do not generate SIGCHLD on child stop */
 
 /*
@@ -202,10 +202,9 @@ struct	sigcontext {
  */
 #define sigmask(m)	(1 << ((m)-1))
 
-#define	SIG_ERR		((__sighandler_t) -1)
-#endif	/* _POSIX_SOURCE */
+#endif /* !_POSIX_SOURCE */
   
-#define	BADSIG		((__sighandler_t) -1)
+#define	SIG_ERR		((__sighandler_t) -1)
 #define	SIG_DFL		((__sighandler_t) 0)
 #define	SIG_IGN		((__sighandler_t) 1)
 
