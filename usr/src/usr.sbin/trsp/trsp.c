@@ -25,7 +25,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)trsp.c	6.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)trsp.c	6.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -56,6 +56,7 @@ static char sccsid[] = "@(#)trsp.c	6.3 (Berkeley) %G%";
 #include <stdio.h>
 #include <errno.h>
 #include <nlist.h>
+#include "pathnames.h"
 
 unsigned long	ntime;
 int	sflag;
@@ -78,7 +79,10 @@ main(argc, argv)
 	char **argv;
 {
 	int i, mask = 0, npcbs = 0;
-	char *system = "/vmunix", *core = "/dev/kmem";
+	char *system, *core;
+
+	system = _PATH_UNIX;
+	core = _PATH_KMEM;
 
 	argc--, argv++;
 again:

@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)trpt.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)trpt.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <machine/pte.h>
@@ -59,6 +59,7 @@ static char sccsid[] = "@(#)trpt.c	5.6 (Berkeley) %G%";
 #include <stdio.h>
 #include <errno.h>
 #include <nlist.h>
+#include "pathnames.h"
 
 struct nlist nl[] = {
 #define	N_TCP_DEBUG	0
@@ -116,13 +117,14 @@ main(argc, argv)
 			break;
 		case '?':
 		default:
-			fputs("usage: trpt [-afjst] [-p hex-address] [system [core]]\n", stderr);
+			(void)fprintf(stderr,
+"usage: trpt [-afjst] [-p hex-address] [system [core]]\n");
 			exit(1);
 		}
 	argc -= optind;
 	argv += optind;
 
-	core = "/dev/kmem";
+	core = _PATH_KMEM;
 	if (argc > 0) {
 		system = *argv;
 		argc--, argv++;
@@ -133,7 +135,7 @@ main(argc, argv)
 		}
 	}
 	else
-		system = "/vmunix";
+		system = _PATH_UNIX;
 
 	if (nlist(system, nl) < 0 || !nl[0].n_value) {
 		fprintf(stderr, "trpt: %s: no namelist\n", system);
