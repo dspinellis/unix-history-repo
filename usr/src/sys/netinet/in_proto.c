@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)in_proto.c	7.10 (Berkeley) %G%
+ *	@(#)in_proto.c	7.11 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -26,7 +26,7 @@ int	ip_init(),ip_slowtimo(),ip_drain(),ip_sysctl();
 int	icmp_input(),icmp_sysctl();
 int	igmp_init(),igmp_input(),igmp_fasttimo();
 int	udp_input(),udp_ctlinput();
-int	udp_usrreq();
+int	udp_usrreq(),udp_sysctl();
 int	udp_init();
 int	tcp_input(),tcp_ctlinput();
 int	tcp_usrreq(),tcp_ctloutput();
@@ -66,7 +66,7 @@ struct protosw inetsw[] = {
 { SOCK_DGRAM,	&inetdomain,	IPPROTO_UDP,	PR_ATOMIC|PR_ADDR,
   udp_input,	0,		udp_ctlinput,	ip_ctloutput,
   udp_usrreq,
-  udp_init,	0,		0,		0,
+  udp_init,	0,		0,		0,		udp_sysctl
 },
 { SOCK_STREAM,	&inetdomain,	IPPROTO_TCP,	PR_CONNREQUIRED|PR_WANTRCVD,
   tcp_input,	0,		tcp_ctlinput,	tcp_ctloutput,
