@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_syscalls.c	8.12 (Berkeley) %G%
+ *	@(#)vfs_syscalls.c	8.13 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -1735,7 +1735,8 @@ out:
 	FREE(tond.ni_cnd.cn_pnbuf, M_NAMEI);
 out1:
 	p->p_spare[1]--;
-	vrele(fromnd.ni_startdir);
+	if (fromnd.ni_startdir)
+		vrele(fromnd.ni_startdir);
 	FREE(fromnd.ni_cnd.cn_pnbuf, M_NAMEI);
 	CHECKREFS("rename");
 	if (error == -1)
