@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)dmf.4	6.2 (Berkeley) %G%
+.\"	@(#)dmf.4	6.3 (Berkeley) %G%
 .\"
 .TH DMF 4 ""
 .UC 5
@@ -16,9 +16,11 @@ dmf \- DMF-32, terminal multiplexor
 .SH DESCRIPTION
 The 
 .I dmf
-device provides 8 lines of asynchronous serial line support. The first two
-of these have full modem control
-(the DMF-32 provides other services, but these are not supported by the driver).
+device provides 8 lines of asynchronous serial line support.
+The first two of these have full modem control.
+The device also provides a line printer port
+similar to the LP-11.
+Other features of the DMF-32 are not supported.
 .PP
 Each line attached to a DMF-32 serial line port behaves as described
 in
@@ -34,52 +36,53 @@ of flags may be specified for a
 .I dmf
 to to say that a line is not properly connected, and that the
 line should be treated as hard-wired with carrier always present.
-Thus specifying ``flags 0x0004'' in the specification of 
+Thus specifying ``flags 0x04'' in the specification of 
 .IR dmf 0
-would cause line ttyh2 to be treated in this way.
+would cause line ttyA2 to be treated in this way.
 .PP
-The
+The serial line part of the
 .I dmf
 driver normally uses input silos and polls for input at each clock
 tick (10 milliseconds).
+.PP
+A line printer port on
+.I dmf\^n
+is designated by
+a minor device number of the form 128+\fIn\fP.
+Columns and lines per page may be changed from the default
+132 columns and 66 lines by encoding the number of columns
+in bits 8-15 of flags and the number of lines in bits 16-23.
+This device does not provide the fancy output canonicalization
+features of the
+.IR lp (4)
+driver.
 .SH FILES
-/dev/tty[hi][0-9a-f]
+/dev/tty[A-I][0-7]
 .br
-/dev/ttyd[0-9a-f]
+/dev/ttyd[0-7]
+.br
+/dev/lp
 .SH SEE ALSO
 tty(4)
 .SH DIAGNOSTICS
 .BR "dmf%d: NXM line %d" .
-No response from UNIBUS on a dma transfer
+No response from UNIBUS on a DMA transfer
 within a timeout period.  This is often followed by a UNIBUS adapter
 error.  This occurs most frequently when the UNIBUS is heavily loaded
-and when devices which hog the bus (such as rk07's) are present.
+and when devices which hog the bus (such as RK07s) are present.
 It is not serious.
 .PP
 .BR "dmf%d: silo overflow" .
 The character input silo overflowed
 before it could be serviced.  This can happen if a hard error occurs
 when the CPU is running with elevated priority, as the system will
-then print a message on the console with interrupts disabled.  If the
-Berknet
-is running on a
-.I dh
-line at high speed (e.g. 9600 baud), there is only 1/15th of a second of
-buffering capacity in the silo, and overrun is possible.  This may
-cause a few input characters to be lost to users and a network
-packet is likely to be corrupted, but the network will recover.
+then print a message on the console with interrupts disabled.
 It is not serious.
 .PP
-.BR dmfsrint .
-.br
-.BR dmfsxint .
-.br
-.BR dmfdaint .
-.br
+.BR dmfsrint ,
+.BR dmfsxint ,
+.BR dmfdaint ,
 .BR dmfdbint .
-.br
-.BR dmflint .
-.br
 One of the unsupported parts of the dmf interrupted; something
 is amiss, check your interrupt vectors for a conflict with another
 device.
