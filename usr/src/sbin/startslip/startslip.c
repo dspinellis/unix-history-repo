@@ -13,7 +13,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)startslip.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)startslip.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -63,6 +63,7 @@ main(argc, argv)
 {
 	extern char *optarg;
 	extern int optind;
+	char *cp, **ap;
 	int ch, disc;
 	int fd = -1;
 	void sighup();
@@ -275,6 +276,15 @@ restart:
 	                break;
 	        }
 	}
+	
+	/*
+	 * Security hack.  Do not want private information such as the
+	 * password and possible phone number to be left around.
+	 * So we clobber the arguments.
+	 */
+	for (ap = argv - optind + 1; ap < argv + 3; ap++)
+		for (cp = *ap; *cp != 0; cp++)
+			*cp = '\0';
 
 	/*
 	 * Attach
