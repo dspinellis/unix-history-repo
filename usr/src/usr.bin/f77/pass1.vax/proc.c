@@ -15,8 +15,14 @@ static char sccsid[] = "@(#)proc.c	5.3 (Berkeley) %G%";
  *
  * University of Utah CS Dept modification history:
  *
- * $Header: proc.c,v 3.11 85/06/04 03:45:29 donn Exp $
+ * $Header: proc.c,v 5.2 85/08/10 05:03:34 donn Exp $
  * $Log:	proc.c,v $
+ * Revision 5.2  85/08/10  05:03:34  donn
+ * Support for NAMELIST i/o from Jerry Berkman.
+ * 
+ * Revision 5.1  85/08/10  03:49:14  donn
+ * 4.3 alpha
+ * 
  * Revision 3.11  85/06/04  03:45:29  donn
  * Changed retval() to recognize that a function declaration might have
  * bombed out earlier, leaving an error node behind...
@@ -737,9 +743,10 @@ return(leng);
 		char namelistname[16];
 		struct namelistentry
 			{
-			char varname[16];
+			char varname[16]; #  16 plus null padding -> 20
 			char *varaddr;
-			int type; # negative means -type= number of chars
+			short int type;
+			short int len;	# length of type
 			struct dimensions *dimp; # null means scalar
 			} names[];
 		};
@@ -784,13 +791,15 @@ for(q = np->varxptr.namelist ; q ; q = q->nextp)
 		preven(ALILONG);
 		putstr(asmfile, varstr(VL,v->varname), 16);
 		praddr(asmfile, v->vstg, v->vardesc.varno, v->voffset);
-		prconi(asmfile, TYINT,
+		prconi(asmfile, TYSHORT, type );
+		prconi(asmfile, TYSHORT,
 			type==TYCHAR ?
-			    -(v->vleng->constblock.const.ci) : (ftnint) type);
+			    (v->vleng->constblock.const.ci) :
+					(ftnint) typesize[type]);
 		if(v->vdim)
 			{
 			praddr(asmfile, STGINIT, dimno, (ftnint)dimoffset);
-			dimoffset += 3 + v->vdim->ndim;
+			dimoffset += (3 + v->vdim->ndim) * SZINT;
 			}
 		else
 			praddr(asmfile, STGNULL,0,(ftnint) 0);
