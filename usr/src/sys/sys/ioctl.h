@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ioctl.h	8.2 (Berkeley) %G%
+ *	@(#)ioctl.h	8.3 (Berkeley) %G%
  */
 
 #ifndef	_SYS_IOCTL_H_
@@ -41,7 +41,7 @@ struct ttysize {
  */
 #define	IOCPARM_MASK	0x1fff		/* parameter length, at most 13 bits */
 #define	IOCPARM_LEN(x)	(((x) >> 16) & IOCPARM_MASK)
-#define	IOCBASECMD(x)	((x) & ~IOCPARM_MASK)
+#define	IOCBASECMD(x)	((x) & ~(IOCPARM_MASK << 16))
 #define	IOCGROUP(x)	(((x) >> 8) & 0xff)
 
 #define	IOCPARM_MAX	NBPG		/* max size of ioctl, mult. of NBPG */
