@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)err.c	8.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)err.c	8.18 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -419,6 +419,7 @@ const char *
 errstring(errno)
 	int errno;
 {
+	char *dnsmsg;
 	static char buf[50];
 
 	if (errno > 0 && errno < sys_nerr)
