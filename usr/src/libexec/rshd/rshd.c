@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rshd.c	4.10 83/01/22";
+static char sccsid[] = "@(#)rshd.c	4.11 83/01/22";
 #endif
 
 #include <sys/ioctl.h>
@@ -131,7 +131,7 @@ doit(f, fromp)
 	char cmdbuf[NCARGS+1], *cp;
 	char locuser[16], remuser[16];
 	struct passwd *pwd;
-	int s;
+	int s, backoff;
 	struct hostent *hp;
 	short port;
 	int pv[2], pid, ready, readfrom, cc;
@@ -149,37 +149,55 @@ doit(f, fromp)
 	  }
 	}
 #endif
-	dup2(f, 0);
-	dup2(f, 1);
-	dup2(f, 2);
 	fromp->sin_port = ntohs((u_short)fromp->sin_port);
 	if (fromp->sin_family != AF_INET ||
-	    fromp->sin_port >= IPPORT_RESERVED)
+	    fromp->sin_port >= IPPORT_RESERVED) {
+		fprintf(stderr, "rshd: malformed from address\n");
 		exit(1);
+	}
 	(void) alarm(60);
 	port = 0;
 	for (;;) {
 		char c;
-		if (read(f, &c, 1) != 1)
+		if (read(f, &c, 1) != 1) {
+			int how = 1+1;
+
+			perror("rshd: read");
+			shutdown(f, &how);
 			exit(1);
+		}
 		if (c == 0)
 			break;
 		port = port * 10 + c - '0';
 	}
 	(void) alarm(0);
 	if (port != 0) {
-		int lport = IPPORT_RESERVED - 1;
+		int lport = IPPORT_RESERVED - 1, retryshift;
 		s = rresvport(&lport);
-		if (s < 0)
+		if (s < 0) {
+			perror("rshd: can't get stderr port");
 			exit(1);
-		if (port >= IPPORT_RESERVED)
-			goto protofail;
-		(void) alarm(60);
+		}
+		if (port >= IPPORT_RESERVED) {
+			fprintf(stderr, "rshd: 2nd port not reserved\n");
+			exit(1);
+		}
 		fromp->sin_port = htons((u_short)port);
-		if (connect(s, fromp, sizeof (*fromp), 0) < 0)
+		for (backoff = 1; backoff != 0; backoff <<= 1) {
+			(void) alarm(60);
+			if (connect(s, fromp, sizeof (*fromp), 0) >= 0)
+				break;
+			(void) alarm(0);
+			sleep(backoff);
+		}
+		if (backoff == 0) {
+			perror("rshd: connect");
 			exit(1);
-		(void) alarm(0);
+		}
 	}
+	dup2(f, 0);
+	dup2(f, 1);
+	dup2(f, 2);
 	hp = gethostbyaddr(&fromp->sin_addr, sizeof (struct in_addr),
 		fromp->sin_family);
 	if (hp == 0) {
