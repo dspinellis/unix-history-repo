@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1982, 1986 Regents of the University of California.
  *
- *	@(#)uipc_usrreq.c	7.24 (Berkeley) %G%
+ *	@(#)uipc_usrreq.c	7.25 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -13,6 +13,7 @@
 #include "socketvar.h"
 #include "unpcb.h"
 #include "un.h"
+#include "namei.h"
 #include "inode.h"
 #include "file.h"
 #include "stat.h"
@@ -38,6 +39,7 @@ uipc_usrreq(so, req, m, nam, control)
 	struct unpcb *unp = sotounpcb(so);
 	register struct socket *so2;
 	register int error = 0;
+	struct proc *p = curproc;	/* XXX */
 
 	if (req == PRU_CONTROL)
 		return (EOPNOTSUPP);
@@ -64,7 +66,7 @@ uipc_usrreq(so, req, m, nam, control)
 		break;
 
 	case PRU_BIND:
-		error = unp_bind(unp, nam);
+		error = unp_bind(unp, nam, p);
 		break;
 
 	case PRU_LISTEN:
@@ -73,7 +75,7 @@ uipc_usrreq(so, req, m, nam, control)
 		break;
 
 	case PRU_CONNECT:
-		error = unp_connect(so, nam);
+		error = unp_connect(so, nam, p);
 		break;
 
 	case PRU_CONNECT2:
@@ -137,7 +139,7 @@ uipc_usrreq(so, req, m, nam, control)
 		break;
 
 	case PRU_SEND:
-		if (control && (error = unp_internalize(control)))
+		if (control && (error = unp_internalize(control, p)))
 			break;
 		switch (so->so_type) {
 
@@ -149,7 +151,7 @@ uipc_usrreq(so, req, m, nam, control)
 					error = EISCONN;
 					break;
 				}
-				error = unp_connect(so, nam);
+				error = unp_connect(so, nam, p);
 				if (error)
 					break;
 			} else {
@@ -332,9 +334,10 @@ unp_detach(unp)
 		unp_gc();
 }
 
-unp_bind(unp, nam)
+unp_bind(unp, nam, p)
 	struct unpcb *unp;
 	struct mbuf *nam;
+	struct proc *p;
 {
 	struct sockaddr_un *soun = mtod(nam, struct sockaddr_un *);
 	register struct inode *ip;
@@ -376,9 +379,10 @@ unp_bind(unp, nam)
 	return (0);
 }
 
-unp_connect(so, nam)
+unp_connect(so, nam, p)
 	struct socket *so;
 	struct mbuf *nam;
+	struct proc *p;
 {
 	register struct sockaddr_un *soun = mtod(nam, struct sockaddr_un *);
 	register struct inode *ip;
@@ -411,7 +415,7 @@ unp_connect(so, nam)
 		error = ENOTSOCK;
 		goto bad;
 	}
-	if (error = VOP_ACCESS(vp, VWRITE, curproc->p_ucred))
+	if (error = VOP_ACCESS(vp, VWRITE, p->p_ucred, p))
 		goto bad;
 	so2 = ip->i_socket;
 	if (so2 == 0) {
@@ -582,10 +586,11 @@ unp_externalize(rights)
 	return (0);
 }
 
-unp_internalize(control)
+unp_internalize(control, p)
 	struct mbuf *control;
+	struct proc *p;
 {
-	struct filedesc *fdp = curproc->p_fd;		/* XXX */
+	struct filedesc *fdp = p->p_fd;
 	register struct cmsghdr *cm = mtod(control, struct cmsghdr *);
 	register struct file **rp;
 	register struct file *fp;
