@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rwhod.c	4.3 82/04/20";
+static char sccsid[] = "@(#)rwhod.c	4.4 82/10/10";
 #endif
 
 #include <stdio.h>
@@ -13,8 +13,10 @@ static char sccsid[] = "@(#)rwhod.c	4.3 82/04/20";
 #include <sys/stat.h>
 #include <nlist.h>
 #include <sys/ioctl.h>
+#include <ctype.h>
+#include <netdb.h>
 
-struct	sockaddr_in sin = { AF_INET, IPPORT_WHOSERVER };
+struct	sockaddr_in sin = { AF_INET };
 
 extern	errno;
 
@@ -42,7 +44,17 @@ main()
 	struct sockaddr_in from;
 	char path[64];
 	int addr;
+	struct servent *sp;
 
+	sp = getservbyname("who", "udp");
+	if (sp == 0) {
+		fprintf(stderr, "rwhod: udp/who: unknown service\n");
+		exit(1);
+	}
+#if vax || pdp11
+	sp->s_port = htons(sp->s_port);
+#endif
+	sin.sin_port = sp->s_port;
 #ifndef DEBUG
 	if (fork())
 		exit(0);
@@ -62,17 +74,17 @@ main()
 	(void) chdir("/dev");
 	(void) signal(SIGHUP, getkmem);
 	if (getuid()) {
-		fprintf(stderr, "not super user\n");
+		fprintf(stderr, "rwhod: not super user\n");
 		exit(1);
 	}
 	addr = rhost(&localnet);
 	if (addr == -1) {
-		fprintf(stderr, "no localnet for whod\n");
+		fprintf(stderr, "rwhod: no localnet\n");
 		exit(1);
 	}
 	sin.sin_addr.s_addr = addr;
 	if (rhost(&myname) == -1) {
-		fprintf(stderr, "don't know my name\n");
+		fprintf(stderr, "rwhod: don't know \"myname\"\n");
 		exit(1);
 	}
 	strncpy(mywd.wd_hostname, myname, sizeof (mywd.wd_hostname) - 1);
@@ -82,16 +94,13 @@ main()
 		utmpf = open("/etc/utmp", 0);
 	}
 	if (utmpf < 0) {
-		perror("/etc/utmp");
+		perror("rwhod: /etc/utmp");
 		exit(1);
 	}
 	getkmem();
-#ifdef vax
-	sin.sin_port = htons(sin.sin_port);
-#endif
 again:
 	if ((s = socket(SOCK_DGRAM, 0, &sin, 0)) < 0) {
-		perror("socket");
+		perror("rwhod: socket");
 		sleep(5);
 		goto again;
 	}
@@ -104,32 +113,55 @@ again:
 		cc = receive(s, &from, (char *)&wd, sizeof (struct whod));
 		if (cc <= 0) {
 			if (cc < 0 && errno != EINTR)
-				perror("receive");
+				perror("rwhod: receive");
 			continue;
 		}
-#ifdef vax
-		from.sin_port = ntohs(from.sin_port);
+		if (from.sin_port != sp->s_port) {
+			fprintf(stderr, "rwhod: %d: bad from port\n",
+				ntohs(from.sin_port));
+			continue;
+		}
+#ifdef notdef
+		if (gethostbyname(wd.wd_hostname) == 0) {
+			fprintf(stderr, "rwhod: %s: unknown host\n",
+				wd.wd_hostname);
+			continue;
+		}
 #endif
-		if (from.sin_port != IPPORT_WHOSERVER) {
-			printf("bad from port %d\n", from.sin_port);
+		if (!verify(wd.wd_hostname)) {
+			fprintf(stderr, "rwhod: malformed host name from %x\n",
+				from.sin_addr);
 			continue;
 		}
-/*
-		if (rhost(&wd.wd_hostname) == -1) {
-			printf("unknown host %s\n", wd.wd_hostname);
-			continue;
-		}
-*/
 		(void) sprintf(path, "/etc/whod.%s", wd.wd_hostname);
 		whod = creat(path, 0666);
 		if (whod < 0) {
-			printf("can't create %s\n", path);
+			fprintf(stderr, "rwhod: ");
+			perror(path);
 			continue;
 		}
 		(void) time(&wd.wd_recvtime);
 		(void) write(whod, (char *)&wd, cc);
 		(void) close(whod);
 	}
+}
+
+/*
+ * Check out host name for unprintables
+ * and other funnies before allowing a file
+ * to be created.  Sorry, but blanks aren't allowed.
+ */
+verify(name)
+	register char *name;
+{
+	register int size = 0;
+
+	while (*name) {
+		if (!isascii(*name) || !isalnum(*name))
+			return (0);
+		name++, size++;
+	}
+	return (size > 0);
 }
 
 int	utmptime;
