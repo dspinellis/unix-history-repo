@@ -1,4 +1,4 @@
-/*	@(#)if_sl.c	5.3 (Berkeley) %G% */
+/*	@(#)if_sl.c	5.4 (Berkeley) %G% */
 
 /*
  * Serial Line interface
@@ -200,6 +200,10 @@ sloutput(ifp, m, dst)
 	if (sc->sc_ttyp == NULL) {
 		m_freem(m);
 		return (ENETDOWN);	/* sort of */
+	}
+	if ((sc->sc_ttyp->t_state & TS_CARR_ON) == 0) {
+		m_freem(m);
+		return (EHOSTUNREACH);
 	}
 	s = splimp();
 	if (IF_QFULL(&ifp->if_snd)) {
