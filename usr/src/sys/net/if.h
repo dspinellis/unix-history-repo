@@ -1,4 +1,4 @@
-/*	if.h	4.15	82/06/23	*/
+/*	if.h	4.16	82/10/31	*/
 
 /*
  * Structures defining a network interface, providing a packet
@@ -57,7 +57,7 @@ struct ifnet {
 /* procedure handles */
 	int	(*if_init)();		/* init routine */
 	int	(*if_output)();		/* output routine */
-	int	(*if_ubareset)();	/* uba reset routine */
+	int	(*if_reset)();		/* bus reset routine */
 	int	(*if_watchdog)();	/* timer routine */
 /* generic interface statistics */
 	int	if_ipackets;		/* packets received on interface */
