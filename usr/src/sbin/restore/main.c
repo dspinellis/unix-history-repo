@@ -1,6 +1,6 @@
 /* Copyright (c) 1981 Regents of the University of California */
 
-char version[] = "@(#)main.c 1.6 %G%";
+char version[] = "@(#)main.c 1.7 %G%";
 
 /*	Modified to include h option (recursively extract all files within
  *	a subtree) and m option (recreate the heirarchical structure of
@@ -29,6 +29,12 @@ char version[] = "@(#)main.c 1.6 %G%";
 #include "../h/dir.h"
 #include "../h/user.h"
 #include "../h/dumprestor.h"
+#include <sys/mtio.h>
+
+struct odirect {
+	u_short	d_ino;
+	char	d_name[DIRSIZ];
+};
 
 #define	MWORD(m,i) (m[(unsigned)(i-1)/MLEN])
 #define	MBIT(i)	(1<<((unsigned)(i-1)%MLEN))
@@ -37,15 +43,20 @@ char version[] = "@(#)main.c 1.6 %G%";
 #define	BIT(i,w)	(MWORD(w,i) & MBIT(i))
 
 ino_t	ino, maxi;
+struct inode *cur_ip;
 
-int	mt;
-
-int	eflag = 0, hflag = 0, mflag = 0;
+int	eflag = 0, hflag = 0, mflag = 0, cvtdir = 0;
 
 char	mounted = 0;
 dev_t	dev = 0;
 char	tapename[] = "/dev/rmt8";
 char	*magtape = tapename;
+int	mt;
+int	dumpnum = 1;
+int	volno = 1;
+int	curblk = 0;
+int	bct = NTREC+1;
+char	tbf[NTREC*TP_BSIZE];
 
 #ifdef STANDALONE
 char	mbuf[50];
@@ -78,22 +89,9 @@ struct xtrlist {
 } *xtrlist[MAXINO];
 int xtrcnt = 0;
 
-#include <sys/mtio.h>
-struct mtop tcom;
-
-int dumpnum = 1;
-int	volno = 1;
-
-struct inode *cur_ip;
-
 short	dumpmap[MSIZ];
 short	clrimap[MSIZ];
 char	clearedbuf[BSIZE];
-
-int curblk = 0;
-
-int bct = NTREC+1;
-char tbf[NTREC*TP_BSIZE];
 
 extern char *ctime();
 ino_t search();
@@ -179,6 +177,8 @@ doit(command, argc, argv)
 	int	argc;
 	char	*argv[]; 
 {
+	struct mtop tcom;
+
 #ifndef STANDALONE
 	if ((mt = open(magtape, 0)) < 0) {
 		fprintf(stderr, "%s: cannot open tape\n", magtape);
@@ -197,7 +197,7 @@ doit(command, argc, argv)
 		mt = open(mbuf, 0);
 	} while (mt == -1);
 	magtape = mbuf;
-	clearbuf(clearedbuf);
+	blkclr(clearedbuf, BSIZE);
 #endif
 	switch(command) {
 #ifndef STANDALONE
@@ -229,7 +229,7 @@ extractfiles(argc, argv)
 	register struct xtrlist *xp;
 	struct xtrlist **xpp;
 	ino_t	d;
-	int	xtrfile(), skip(), null();
+	int	xtrfile(), xtrskip(), xtrcvtdir(), xtrcvtskip(), null();
 	int	mode;
 	char	name[BUFSIZ + 1];
 
@@ -240,7 +240,7 @@ extractfiles(argc, argv)
 	if (checkvol(&spcl, 1) == 0) {
 		fprintf(stderr, "Tape is not volume 1 of the dump\n");
 	}
-	pass1();  /* This sets the various maps on the way by */
+	pass1(1);  /* This sets the various maps on the way by */
 	while (argc--) {
 		if ((d = psearch(*argv)) == 0 || BIT(d,dumpmap) == 0) {
 			fprintf(stdout, "%s: not on tape\n", *argv++);
@@ -253,26 +253,22 @@ extractfiles(argc, argv)
 		else
 			allocxtr(d, *argv++, XINUSE);
 	}
-
-
-	if(dumpnum > 1)
-		tcom.mt_op = MTBSF;
-	else	tcom.mt_op = MTREW;
-	tcom.mt_count = 1;
-
-newvol:
-	flsht();
-	ioctl(mt,MTIOCTOP,&tcom);
 	if (dumpnum > 1) {
-		tcom.mt_op = MTFSF;
-		tcom.mt_count = 1;
-		ioctl(mt,MTIOCTOP,&tcom);
+		/*
+		 * if this is a multi-dump tape we always start with 
+		 * volume 1, so as to avoid accidentally restoring
+		 * from a different dump!
+		 */
+		resetmt();
+		dumpnum = 1;
+		volno = 1;
+		readhdr(&spcl);
+		goto rbits;
 	}
-	lseek(mt, (long)0, 0);
-
-
+newvol:
+	resetmt();
 getvol:
-	fprintf(stderr, "Mount desired tape volume: Specify volume #: ");
+	fprintf(stderr, "Mount desired tape volume; Specify volume #: ");
 	if (gets(tbf) == NULL)
 		return;
 	volno = atoi(tbf);
@@ -350,7 +346,22 @@ again:
 					getfile(null, null, spcl.c_dinode.di_size);
 					break;
 				}
-				/* else fall through */
+				fprintf(stdout, "extract file %s\n", name);
+				if ((ofile = xcreat(name, 0666)) < 0) {
+					fprintf(stderr, "%s: cannot create file\n", name);
+					xp->x_flags |= XTRACTD;
+					xtrcnt--;
+					goto skipfile;
+				}
+				xchown(name, spcl.c_dinode.di_uid, spcl.c_dinode.di_gid);
+				if (cvtdir)
+					getfile(xtrcvtdir, xtrcvtskip,
+					    spcl.c_dinode.di_size);
+				else
+					getfile(xtrfile, xtrskip,
+					    spcl.c_dinode.di_size);
+				xclose(ofile);
+				break;
 			case IFREG:
 				fprintf(stdout, "extract file %s\n", name);
 				if ((ofile = xcreat(name, 0666)) < 0) {
@@ -360,7 +371,7 @@ again:
 					goto skipfile;
 				}
 				xchown(name, spcl.c_dinode.di_uid, spcl.c_dinode.di_gid);
-				getfile(xtrfile, skip, spcl.c_dinode.di_size);
+				getfile(xtrfile, xtrskip, spcl.c_dinode.di_size);
 				xclose(ofile);
 				break;
 			}
@@ -404,11 +415,11 @@ restorfiles(command, argv)
 	char command;
 	char **argv;
 {
-	int	rstrfile(), rstrskip();
+	int	rstrfile(), rstrskip(), rstrcvtdir(), rstrcvtskip();
 	register struct dinode *dp;
 	register struct inode *ip;
 	struct fs *fs;
-	int mode;
+	int mode, type;
 	char mount[BUFSIZ + 1];
 	char *ptr[2];
 
@@ -459,6 +470,8 @@ restorfiles(command, argv)
 		fprintf(stderr, "Tape is not volume %d\n", volno);
 		done(1);
 	}
+	pass1(0);
+	gethead(&spcl); /* volume header already checked above */
 	gethead(&spcl);
 	for (;;) {
 ragain:
@@ -533,14 +546,17 @@ ragain:
 		ip->i_atime = dp->di_atime;
 		ip->i_mtime = dp->di_mtime;
 		ip->i_ctime = dp->di_ctime;
-		if ((ip->i_mode & IFMT) == IFCHR ||
-		    (ip->i_mode & IFMT) == IFBLK)
+		type = ip->i_mode & IFMT;
+		if (type == IFCHR || type == IFBLK)
 			ip->i_rdev = dp->di_rdev;
 		ip->i_size = 0;
 		cur_ip = ip;
 		u.u_offset = 0;
 		u.u_segflg = 1;
-		getfile(rstrfile, rstrskip, dp->di_size);
+		if (cvtdir && type == IFDIR)
+			getfile(rstrcvtdir, rstrcvtskip, dp->di_size);
+		else
+			getfile(rstrfile, rstrskip, dp->di_size);
 		ip->i_mode = mode;
 		ip->i_flag &= ~(IUPD|IACC);
 		ip->i_flag |= ICHG;
@@ -553,12 +569,14 @@ ragain:
  * by name
  */
 #ifndef STANDALONE
-pass1()
+pass1(savedir)
+	int savedir;
 {
 	register int i;
 	register struct dinode *ip;
 	struct direct nulldir;
-	int	putdir(), null();
+	char buf[TP_BSIZE];
+	int putdir(), null();
 
 	nulldir.d_ino = 0;
 	strncpy(nulldir.d_name, "/", DIRSIZ);
@@ -576,10 +594,9 @@ pass1()
 		}
 		if (checktype(&spcl, TS_INODE) == 0) {
 finish:
-/*	
-			close(mt);
-*/
-			freopen(dirfile, "r", df);
+			if (savedir)
+				freopen(dirfile, "r", df);
+			resetmt();
 			return;
 		}
 		ip = &spcl.c_dinode;
@@ -587,9 +604,29 @@ finish:
 		if (i != IFDIR) {
 			goto finish;
 		}
+		if (spcl.c_inumber == ROOTINO) {
+			readtape(buf);
+			bct--; /* push back this block */
+			if (((struct direct *)buf)->d_ino != ROOTINO) {
+				if (((struct odirect *)buf)->d_ino != ROOTINO) {
+					fprintf(stderr, "bad root directory\n");
+					done(1);
+				}
+				fprintf(stderr, "converting to new directory format\n");
+				cvtdir = 1;
+			}
+			if (!savedir && !cvtdir) {
+				/* if no conversion, just return */
+				goto finish;
+			}
+		}
 		allocinotab(spcl.c_inumber, seekpt);
-		getfile(putdir, null, spcl.c_dinode.di_size);
-		putent(&nulldir);
+		if (savedir) {
+			getfile(putdir, null, spcl.c_dinode.di_size);
+			putent(&nulldir);
+		} else {
+			getfile(null, null, spcl.c_dinode.di_size);
+		}
 	}
 }
 #endif
@@ -602,12 +639,25 @@ putdir(buf, size)
 	char *buf;
 	int size;
 {
+	struct direct cvtbuf;
+	register struct odirect *odp;
+	struct odirect *eodp;
 	register struct direct *dp;
-	register int i;
+	struct direct *edp;
 
-	for (dp = (struct direct *)buf, i = 0; i < size; dp++, i += sizeof(*dp))
-		if (dp->d_ino != 0)
-			putent(dp);
+	if (cvtdir) {
+		eodp = (struct odirect *)&buf[size];
+		for (odp = (struct odirect *)buf; odp < eodp; odp++)
+			if (odp->d_ino != 0) {
+				dcvt(odp, &cvtbuf);
+				putent(&cvtbuf);
+			}
+	} else {
+		edp = (struct direct *)&buf[size];
+		for (dp = (struct direct *)buf; dp < edp; dp++)
+			if (dp->d_ino != 0)
+				putent(dp);
+	}
 }
 
 putent(dp)
@@ -615,6 +665,23 @@ putent(dp)
 {
 	fwrite(dp, 1, sizeof(struct direct), df);
 	seekpt = ftell(df);
+}
+
+dcvt(odp, ndp)
+	register struct odirect *odp;
+	register struct direct *ndp;
+{
+	register struct inotab *itp;
+
+	blkclr(ndp, sizeof *ndp);
+	ndp->d_ino =  odp->d_ino;
+	strncpy(ndp->d_name, odp->d_name, DIRSIZ);
+	for (itp = inotab[INOHASH(odp->d_ino)]; itp; itp = itp->t_next) {
+		if (itp->t_ino != odp->d_ino)
+			continue;
+		ndp->d_mode = IFDIR;
+		break;
+	}
 }
 
 /*
@@ -806,22 +873,50 @@ xtrfile(buf, size)
 	long	size;
 {
 	if (xwrite(ofile, buf, (int) size) == -1) {
-		perror("extract write:");
+		perror("extract write");
 		done(1);
 	}
 }
 
-skip(buf, size)
+xtrskip(buf, size)
 	char *buf;
 	long size;
 {
 	if (xseek(ofile, size, 1) == -1) {
-		perror("extract seek:");
+		perror("extract seek");
+		done(1);
+	}
+}
+
+xtrcvtdir(buf, size)
+	struct odirect *buf;
+	long size;
+{
+	struct direct cvtbuf[BLKING * FRAG * TP_BSIZE / sizeof(struct odirect)];
+	struct odirect *odp, *edp;
+	struct direct *dp;
+
+	edp = &buf[size / sizeof(struct odirect)];
+	for (odp = buf, dp = cvtbuf; odp < edp; odp++, dp++) 
+		dcvt(odp, dp);
+	size = size * sizeof(struct direct) / sizeof(struct odirect);
+	if (xwrite(ofile, cvtbuf, (int) size) == -1) {
+		perror("extract write");
+		done(1);
+	}
+}
+
+xtrcvtskip(buf, size)
+	char *buf;
+	long size;
+{
+	fprintf(stderr, "unallocated block in directory\n");
+	if (xseek(ofile, size, 1) == -1) {
+		perror("extract seek");
 		done(1);
 	}
 }
 #endif
-
 
 rstrfile(buf, size)
 	char *buf;
@@ -831,7 +926,7 @@ rstrfile(buf, size)
 	u.u_count = size;
 	writei(cur_ip);
 	if (u.u_error) {
-		perror("restor write:");
+		perror("restor write");
 		done(1);
 	}
 }
@@ -840,6 +935,34 @@ rstrskip(buf, size)
 	char *buf;
 	long size;
 {
+	u.u_offset += size;
+}
+
+rstrcvtdir(buf, size)
+	struct odirect *buf;
+	long size;
+{
+	struct direct cvtbuf[BLKING * FRAG * TP_BSIZE / sizeof(struct odirect)];
+	struct odirect *odp, *edp;
+	struct direct *dp;
+
+	edp = &buf[size / sizeof(struct odirect)];
+	for (odp = buf, dp = cvtbuf; odp < edp; odp++, dp++) 
+		dcvt(odp, dp);
+	u.u_base = (char *)cvtbuf;
+	u.u_count = size * sizeof(struct direct) / sizeof(struct odirect);
+	writei(cur_ip);
+	if (u.u_error) {
+		perror("restor write");
+		done(1);
+	}
+}
+
+rstrcvtskip(buf, size)
+	char *buf;
+	long size;
+{
+	fprintf(stderr, "unallocated block in directory\n");
 	u.u_offset += size;
 }
 
@@ -908,6 +1031,34 @@ copy(f, t, s)
 	while (--i);
 }
 
+blkclr(buf, size)
+	char *buf;
+	int size;
+{
+	asm("movc5	$0,(r0),$0,8(ap),*4(ap)");
+}
+
+resetmt()
+{
+	struct mtop tcom;
+
+	if(dumpnum > 1)
+		tcom.mt_op = MTBSF;
+	else
+		tcom.mt_op = MTREW;
+	tcom.mt_count = 1;
+	flsht();
+	if (ioctl(mt,MTIOCTOP,&tcom) == -1) {
+		/* kludge for disk dumps */
+		lseek(mt, (long)0, 0);
+	}
+	if (dumpnum > 1) {
+		tcom.mt_op = MTFSF;
+		tcom.mt_count = 1;
+		ioctl(mt,MTIOCTOP,&tcom);
+	}
+}
+
 checkvol(b, t)
 	struct s_spcl *b;
 	int t;
@@ -958,6 +1109,23 @@ checktype(b, t)
 	return(b->c_type == t);
 }
 
+/*
+ * read a bit mask from the tape into m.
+ */
+readbits(m)
+	short	*m;
+{
+	register int i;
+
+	i = spcl.c_count;
+
+	while (i--) {
+		readtape((char *) m);
+		m += (TP_BSIZE/(MLEN/BITS));
+	}
+	while (gethead(&spcl) == 0)
+		;
+}
 
 checksum(b)
 	int *b;
@@ -974,6 +1142,40 @@ checksum(b)
 		return(0);
 	}
 	return(1);
+}
+
+/*
+ *	Check for access into each directory in the pathname of an extracted
+ *	file and create such a directory if needed in preparation for moving 
+ *	the file to its proper home.
+ */
+checkdir(name)
+	register char *name;
+{
+	register char *cp;
+	int i;
+
+	for (cp = name; *cp; cp++) {
+		if (*cp == '/') {
+			*cp = '\0';
+			if (xaccess(name, 01) < 0) {
+				register int pid, rp;
+
+				xumount();
+				if ((pid = fork()) == 0) {
+					execl("/bin/xmkdir", "xmkdir", name, 0);
+					execl("/usr/bin/xmkdir", "xmkdir", name, 0);
+					execl("./xmkdir", "xmkdir", name, 0);
+					fprintf(stderr, "xrestor: cannot find xmkdir!\n");
+					done(0);
+				}
+				while ((rp = wait(&i)) >= 0 && rp != pid)
+					;
+				xmount(envp);
+			}
+			*cp = '/';
+		}
+	}
 }
 
 /*
@@ -1004,35 +1206,6 @@ iexist(dev, ino)
 	}
 	brelse(bp);
 	return (1);
-}
-
-/*
- * read a bit mask from the tape into m.
- */
-readbits(m)
-	short	*m;
-{
-	register int i;
-
-	i = spcl.c_count;
-
-	while (i--) {
-		readtape((char *) m);
-		m += (TP_BSIZE/(MLEN/BITS));
-	}
-	while (gethead(&spcl) == 0)
-		;
-}
-
-done(exitcode)
-	int exitcode;
-{
-#ifndef STANDALONE
-	unlink(dirfile);
-#endif
-	if (mounted)
-		xumount();
-	exit(exitcode);
 }
 
 allocinotab(ino, seekpt)
@@ -1077,36 +1250,13 @@ allocxtr(ino, name, flags)
 		fprintf(stdout, "%s: inode %u\n", xp->x_name, ino);
 }
 
-/*
- *	Check for access into each directory in the pathname of an extracted
- *	file and create such a directory if needed in preparation for moving 
- *	the file to its proper home.
- */
-checkdir(name)
-	register char *name;
+done(exitcode)
+	int exitcode;
 {
-	register char *cp;
-	int i;
-
-	for (cp = name; *cp; cp++) {
-		if (*cp == '/') {
-			*cp = '\0';
-			if (xaccess(name, 01) < 0) {
-				register int pid, rp;
-
-				xumount();
-				if ((pid = fork()) == 0) {
-					execl("/bin/xmkdir", "xmkdir", name, 0);
-					execl("/usr/bin/xmkdir", "xmkdir", name, 0);
-					execl("./xmkdir", "xmkdir", name, 0);
-					fprintf(stderr, "xrestor: cannot find xmkdir!\n");
-					done(0);
-				}
-				while ((rp = wait(&i)) >= 0 && rp != pid)
-					;
-				xmount(envp);
-			}
-			*cp = '/';
-		}
-	}
+#ifndef STANDALONE
+	unlink(dirfile);
+#endif
+	if (mounted)
+		xumount();
+	exit(exitcode);
 }
