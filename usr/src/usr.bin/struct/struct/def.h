@@ -1,7 +1,7 @@
 /*-
  * %sccs.include.proprietary.c%
  *
- *	@(#)def.h	4.3 (Berkeley) %G%
+ *	@(#)def.h	8.1 (Berkeley) %G%
  */
 
 #define ASSERT(P,R)	{if (!(P)) {fprintf(stderr,"failed assertion in routine R: P\n"); abort();}}

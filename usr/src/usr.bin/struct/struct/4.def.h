@@ -1,7 +1,7 @@
 /*-
  * %sccs.include.proprietary.c%
  *
- *	@(#)4.def.h	4.3 (Berkeley) %G%
+ *	@(#)4.def.h	8.1 (Berkeley) %G%
  */
 
 #define YESTAB	TRUE
