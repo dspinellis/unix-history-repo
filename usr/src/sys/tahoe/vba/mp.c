@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)mp.c	7.4 (Berkeley) %G%
+ *	@(#)mp.c	7.5 (Berkeley) %G%
  */
 
 #include "mp.h"
@@ -176,35 +176,32 @@ mpopen(dev, mode)
 		sleep((caddr_t)&tp->t_canq, TTIPRI);
 	while (tp->t_state & TS_WOPEN) 
 		sleep((caddr_t)&tp->t_canq, TTIPRI);
-	if (tp->t_state & TS_ISOPEN) {
-		splx(s);
-		return (0);
-	}
 	tp->t_state |= TS_WOPEN;
 	tp->t_addr = (caddr_t)ms;
 	tp->t_oproc = mpstart;
 	tp->t_dev = dev;
-	ttychars(tp);
-	if (tp->t_ispeed == 0) {
-		tp->t_ispeed = B9600;
-		tp->t_ospeed = B9600;
-		tp->t_flags |= ODDP|EVENP|ECHO;
+	if ((tp->t_state & TS_ISOPEN) == 0) {
+		ttychars(tp);
+		if (tp->t_ispeed == 0) {
+			tp->t_ispeed = B9600;
+			tp->t_ospeed = B9600;
+			tp->t_flags = ODDP|EVENP|ECHO;
+		}
+		/*
+		 * Initialize port state: init MPCC interface
+		 * structures for port and setup modem control.
+		 */
+		mp->mp_proto = MPPROTO_ASYNC;		/* XXX */
+		error = mpportinit(ms, mp, port);
+		if (error)
+			goto bad;
+		ev = mpparam(unit);
+		if (ev == 0) {
+			error = ENOBUFS;
+			goto bad;
+		}
+		mpcmd(ev, EVCMD_OPEN, 0, ms->ms_mb, port);
 	}
-	/*
-	 * Initialize port state: init MPCC interface
-	 * structures for port and setup modem control.
-	 */
-	mp->mp_proto = MPPROTO_ASYNC;		/* XXX */
-	error = mpportinit(ms, mp, port);
-	if (error)
-		goto bad;
-	ev = mpparam(unit);
-	if (ev == 0) {
-		error = ENOBUFS;
-		goto bad;
-	}
-	mpmodem(unit, MMOD_ON);
-	mpcmd(ev, EVCMD_OPEN, 0, ms->ms_mb, port);
 	while ((tp->t_state & TS_CARR_ON) == 0)
 		sleep((caddr_t)&tp->t_rawq, TTIPRI);
 	error = (*linesw[tp->t_line].l_open)(dev,tp);
