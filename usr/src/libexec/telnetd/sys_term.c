@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)sys_term.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)sys_term.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "telnetd.h"
@@ -72,6 +72,10 @@ struct termbuf {
 # ifdef	SYSV_TERMIO
 #	define termios termio
 # endif
+# ifndef TCSETA
+# define TCSETA TIOCSETA
+# define TCGETA TIOCGETA
+# endif /* 4.4BSD */
 struct termios termbuf, termbuf2;	/* pty control structure */
 #endif	/* USE_TERMIO */
 
