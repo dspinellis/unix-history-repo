@@ -4,7 +4,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)MAKEDEV	4.18 (Berkeley) %G%
+#	@(#)MAKEDEV	4.19 (Berkeley) %G%
 #
 # Device "make" file.  Valid arguments:
 #	std	standard devices
@@ -28,6 +28,7 @@
 #	dz*	unibus dz11 and dz32
 #	dh*	unibus dh11 and emulations (e.g. Able dmax, Emulex cs-11)
 #	dmf*	unibus dmf32
+#	dhu*    unibus dhu11
 # Pseudo terminals:
 #	pty*	set of 16 master and slave pseudo terminals
 # Printers:
@@ -57,7 +58,7 @@ std)
 	/etc/mknod mem		c 3 0	; chmod 640 mem ; chgrp kmem mem
 	/etc/mknod null		c 3 2	; chmod 666 null
 	/etc/mknod tty		c 2 0	; chmod 666 tty
-	/etc/mknod klog		c 33 0	; chmod 644 klog
+	/etc/mknod klog		c 33 0	; chmod 600 klog
 	;;
 
 ht*|tm*|ts*|mt*|ut*)
@@ -130,6 +131,7 @@ hp*|hk*|up*|ra*|rl*|rb*)
 		/etc/mknod r${name}${unit}h	c $chr `expr $unit '*' 8 + 7`
 		fi
 		chgrp operator ${name}${unit}[a-h] r${name}${unit}[a-h]
+		chmod 640 ${name}${unit}[a-h] r${name}${unit}[a-h]
 		;;
 	*)
 		echo bad unit for disk in: $i
@@ -183,8 +185,9 @@ dz*)
 	esac
 	;;
 
-dh*|dmf*)
+dhu*|dh*|dmf*)
 	case $i in
+	dhu*) name=dhu; major=34;;
 	dh*) name=dh; major=12;;
 	dmf*) name=dmf; major=22;;
 	esac
