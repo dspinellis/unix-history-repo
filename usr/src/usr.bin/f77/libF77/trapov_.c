@@ -274,7 +274,7 @@ got_illegal_instruction(signo, codeword, myaddr, trap_pc, ps)
 		if (opnd == NULL) {
 			fprintf(units[STDERR].ufd, "Can't get operand address: 0x%x, %d\n",
 				pc, o_no);
-			force_abort();
+			f77_abort();
 		}
 		if (type == F && opnd->o_long == 0x00008000) {
 			/* found one */
@@ -294,7 +294,7 @@ got_illegal_instruction(signo, codeword, myaddr, trap_pc, ps)
 
 	if (no_reserved == 0) {
 		fprintf(units[STDERR].ufd, "Can't find any reserved operand!\n");
-		force_abort();
+		f77_abort();
 	}
 }
 /*
@@ -331,7 +331,7 @@ is_floating_operation(opcode)
 got_illegal_poly(opcode)
 {
 	fprintf(units[STDERR].ufd, "Can't do 'poly' instructions yet\n");
-	force_abort();
+	f77_abort();
 }
 
 
@@ -346,7 +346,7 @@ got_illegal_poly(opcode)
 got_illegal_emod(opcode)
 {
 	fprintf(units[STDERR].ufd, "Can't do 'emod' instructions yet\n");
-	force_abort();
+	f77_abort();
 }
 
 
@@ -432,7 +432,7 @@ advance_pc(type)
 				} else {
 					fprintf(units[STDERR].ufd, "Bad type %d in advance\n",
 						type);
-					force_abort();
+					f77_abort();
 				}
 			}
 			return;
@@ -458,7 +458,7 @@ advance_pc(type)
 		
 		default:
 			fprintf(units[STDERR].ufd, "Bad mode 0x%x in op_length()\n", mode);
-			force_abort();
+			f77_abort();
 	}
 }
 
@@ -532,7 +532,7 @@ get_operand_address(type)
 		
 		default:
 			fprintf(units[STDERR].ufd, "Bad mode 0x%x in get_addr()\n", mode);
-			force_abort();
+			f77_abort();
 	}
 	return NULL;
 }
@@ -551,7 +551,7 @@ contents_of_reg(reg)
 	else if (reg >= 7 && reg <= 11) value = regs7t11[reg];
 	else {
 		fprintf(units[STDERR].ufd, "Bad register 0x%x to contents_of()\n", reg);
-		force_abort();
+		f77_abort();
 		value = -1;
 	}
 	return value;
@@ -568,7 +568,7 @@ addr_of_reg(reg)
 		return (anyval *) &regs7t11[reg];
 	}
 	fprintf(units[STDERR].ufd, "Bad reg 0x%x to addr_of()\n", reg);
-	force_abort();
+	f77_abort();
 	return NULL;
 }
 /*
@@ -606,26 +606,14 @@ fetch_long()
 	pc += 4;
 	return *old_pc;
 }
-/*
- *	force_abort - force us to abort.
- *
- *	We have to change the signal handler for illegal instructions back,
- *	or we'll end up calling 'got_illegal_instruction()' again when
- *	abort() does it's dirty work.
- */
-force_abort()
-{
-	signal(SIGILL, SIG_DFL);
-	abort();
-}
-
+
 
 type_length(type)
 {
 	if (type == F) return 4;
 	if (type == D) return 8;
 	fprintf(units[STDERR].ufd, "Bad type 0x%x in type_length()\n", type);
-	force_abort();
+	f77_abort();
 	return -1;
 }
 
