@@ -16,13 +16,13 @@ releases in the GAMMA distribution.  This 1.0 distribution fixes
 many of the first-run problems our GAMMA and EPSILON users reported back
 to us.
 
-Additionally, many packages such as XFree86 1.3, xview 3.2, elm, nntp,
+Additionally, many packages such as XFree86 2.0, xview 3.2, elm, nntp,
 mh and dozens of other miscellaneous utilities have been ported and
 are now available as add-ons.  See then next section of this document
 for more details.
 
-For a list of contributors, please see the file "CONTRIB.FreeBSD",
-which should be bundled with your distribution.
+For a list of contributors, please see the files "CONTRIB.FreeBSD" and
+"CONTRIB.386BSD", which should be bundled with your distribution.
 
 The core of FreeBSD does not contain DES code which would inhibit its
 being exported outside the United States.  There is an add-on package
@@ -95,7 +95,7 @@ Isolan AT 4141-0 (16 bit)
 
 Isolink 4110     (8 bit)
 
-Novell NE1000 and NE2000 ethernet interface.
+Novell NE1000, NE2000, and NE2100 ethernet interface.
 
 3Com 3C503 Etherlink II
 
@@ -106,7 +106,11 @@ Various 2 and 4 port serial/parallel cards.
 
 Simple (AST-like) multiport serial cards.
 
-Mitsumi CDROM interface and drive.
+BOCA ATIO66 6 port serial card using shared IRQ.
+
+STB 4 port card using shared IRQ.
+
+Mitsumi (LU005 and FX001D) CDROM interface and drive.
 
 Adlib, Soundblaster, Soundblaster Pro, ProAudioSpectrum, Gravis UltraSound
 and Roland MPU-401 sound cards.
@@ -126,19 +130,9 @@ You may obtain FreeBSD in a variety of ways:
 You can ftp FreeBSD and any or all of its optional packages from
 `freebsd.cdrom.com' - the offical FreeBSD release site.
 
-The FreeBSD software is being mirrored at the following locations:
-
-Country		Site/Directory
-=======		=====================================================
-
-Austria		ftp.tu-graz.ac.at:/pub/FreeBSD
-Germany		ftp.informatik.tu-muenchen.de:pub/comp/os/bsd/FreeBSD
-Germany		ftp.uni-duisburg.de:/pub/unix/FreeBSD
-Hong Kong	ftp.cs.cuhk.hk:/pub/FreeBSD
-The Netherlands	ftp.nl.net:/pub/os/FreeBSD
-United Kingdom	src.doc.ic.ac.uk:/packages/FreeBSD
-U.S.A.		ftp.dsu.edu:/pub/FreeBSD
-
+For other locations that mirror the FreeBSD software see the file
+MIRROR.SITES.  Please ftp the distribution from the nearest site
+to you netwise.
 
 If you do not have access to the internet and electronic mail is your
 only recourse, then you may still fetch the files by sending mail to
@@ -292,4 +286,4 @@ hope you enjoy this release of FreeBSD!
 
 			The FreeBSD Core Group
 
-$Id: RELNOTES.FreeBSD,v 1.21 1994/02/01 03:51:28 ache Exp $
+$Id: RELNOTES.FreeBSD,v 1.22 1994/02/06 21:14:09 jkh Exp $
