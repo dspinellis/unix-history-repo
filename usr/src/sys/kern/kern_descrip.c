@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_descrip.c	7.41 (Berkeley) %G%
+ *	@(#)kern_descrip.c	7.42 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -21,6 +21,7 @@
 #include <sys/fcntl.h>
 #include <sys/malloc.h>
 #include <sys/syslog.h>
+#include <sys/unistd.h>
 #include <sys/resourcevar.h>
 
 /*
@@ -399,6 +400,44 @@ fstat(p, uap, retval)
 	if (error == 0)
 		error = copyout((caddr_t)&ub, (caddr_t)uap->sb, sizeof (ub));
 	return (error);
+}
+
+/*
+ * Return pathconf information about a file descriptor.
+ */
+struct fpathconf_args {
+	int	fd;
+	int	name;
+};
+/* ARGSUSED */
+fpathconf(p, uap, retval)
+	struct proc *p;
+	register struct fpathconf_args *uap;
+	int *retval;
+{
+	struct filedesc *fdp = p->p_fd;
+	struct file *fp;
+	struct vnode *vp;
+
+	if ((unsigned)uap->fd >= fdp->fd_nfiles ||
+	    (fp = fdp->fd_ofiles[uap->fd]) == NULL)
+		return (EBADF);
+	switch (fp->f_type) {
+
+	case DTYPE_SOCKET:
+		if (uap->name != _PC_PIPE_BUF)
+			return (EINVAL);
+		*retval = PIPE_BUF;
+		return (0);
+
+	case DTYPE_VNODE:
+		vp = (struct vnode *)fp->f_data;
+		return (VOP_PATHCONF(vp, uap->name, retval));
+
+	default:
+		panic("fpathconf");
+	}
+	/*NOTREACHED*/
 }
 
 /*
