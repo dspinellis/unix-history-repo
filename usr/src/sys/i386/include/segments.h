@@ -1,19 +1,19 @@
 /*-
+ * Copyright (c) 1989, 1990 William F. Jolitz
  * Copyright (c) 1990 The Regents of the University of California.
  * All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * William Jolitz.
  *
- * %sccs.include.386.c%
+ * %sccs.include.redist.c%
  *
- *	@(#)segments.h	5.3 (Berkeley) %G%
+ *	@(#)segments.h	7.1 (Berkeley) %G%
  */
 
 /*
  * 386 Segmentation Data Structures and definitions
  *	William F. Jolitz (william@ernie.berkeley.edu) 6/20/1989
- * Copyright (c) 1989,1990 William F. Jolitz
  */
 
 /*
