@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)locore.s	7.30 (Berkeley) %G%
+ *	@(#)locore.s	7.31 (Berkeley) %G%
  */
 
 #include "vax/include/psl.h"
@@ -39,7 +39,7 @@
 	.set	PGSHIFT,9
 	.set	SYSTEM,0x80000000	# virtual address of system start
 
-	.set	NISP,3		# number of interrupt stack pages
+	.set	NISP,5		# number of interrupt stack pages
 
 /*
  * User structure is UPAGES at top of user space.
@@ -380,6 +380,7 @@ SCBVEC(netintr):
 #endif
 #ifdef INET
 	bbcc	$NETISR_IP,_netisr,1f; calls $0,_ipintr; 1:
+	bbcc	$NETISR_ARP,_netisr,1f; calls $0,_arpintr; 1:
 #endif
 #ifdef NS
 	bbcc	$NETISR_NS,_netisr,1f; calls $0,_nsintr; 1:
