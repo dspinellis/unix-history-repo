@@ -2,7 +2,7 @@
 
 PROG=	rshd
 SRCS=	rshd.c
-MAN8=	rshd.0
+MAN8=	rshd.8
 DPADD=	${LIBUTIL}
 LDADD=	-lutil
 .PATH: ${.CURDIR}/../../usr.bin/rlogin

@@ -11,7 +11,7 @@
 PROG=	ftpd
 CFLAGS+=-I${.CURDIR}/../../usr.bin/ftp -DSETPROCTITLE -DDES
 SRCS=	ftpd.c ftpcmd.c glob.c logwtmp.c popen.c vers.c
-MAN8=	ftpd.0
+MAN8=	ftpd.8
 CLEANFILES+=ftpcmd.c y.tab.h
 .PATH:	${.CURDIR}/../../usr.bin/ftp
 
