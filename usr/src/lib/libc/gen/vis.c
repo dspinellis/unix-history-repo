@@ -16,106 +16,97 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)vis.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)vis.c	5.2 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
 #include <ctype.h>
 #include <cencode.h>
 
-#define	iswhite(c)	((c)==' '||(c)=='\t'||(c)=='\n')
 #define	isoctal(c)	(((u_char)(c)) >= '0' && ((u_char)(c)) <= '7')
 
 /*
- * cencode
+ * vis - visually encode characters
  */
-
-/*VARARGS2*/
 char *
-cencode(sc, flags, rachar)
-	char sc, rachar;
+vis(dst, c, flag, nextc)
+	register char *dst, c;
+	char nextc;
+	register int flag;
 {
-	static char buff[5];
-	register char *s = buff;
-	register u_char c = sc;
-
-	if (isgraph(c) || (!(flags&CENC_WHITE) && iswhite(c))) {
-		if (c == '\\')
-			*s++ = '\\';
-		*s++ = c;
-		goto done;
+	if (isascii(c) && isgraph(c) ||
+	   ((flag & VIS_WHITE) == 0 && 
+		(c == ' ' || c == '\n' || (flag & VIS_TAB) == 0 && c == '\t')) ||
+	   ((flag & VIS_SAFE) && (c == '\b' || c == '\007' || c == '\r'))) {
+		*dst++ = c;
+		if (c == '\\' && (flag & VIS_NOSLASH) == 0)
+			*dst++ = '\\';
+		*dst = '\0';
+		return (dst);
 	}
-	*s++ = '\\';
-	if (flags&CENC_CSTYLE) {
+
+	if ((flag & VIS_NOSLASH) == 0)
+		*dst++ = '\\';
+	if (flag & VIS_CSTYLE) {
 		switch(c) {
 		case '\n':
-			*s++ = 'n';
+			*dst++ = 'n';
 			goto done;
 		case '\r':
-			*s++ = 'r';
+			*dst++ = 'r';
 			goto done;
 		case '\b':
-			*s++ = 'b';
+			*dst++ = 'b';
 			goto done;
-		case '\007':
-			*s++ = 'a';
+		case '\007':	/* waiting for ansi compiler */
+			*dst++ = 'a';
 			goto done;
 		case '\v':
-			*s++ = 'v';
+			*dst++ = 'v';
 			goto done;
 		case '\t':
-			*s++ = 't';
+			*dst++ = 't';
 			goto done;
 		case '\f':
-			*s++ = 'f';
+			*dst++ = 'f';
 			goto done;
 		case ' ':
-			*s++ = 's';
+			*dst++ = 's';
 			goto done;
 		case '\0':
-			*s++ = '0';
-			if (!(flags&CENC_RACHAR) || isoctal(rachar)) {
-				*s++ = '0';
-				*s++ = '0';
+			*dst++ = '0';
+			if ((flag & VIS_NEXTC) == 0 || isoctal(nextc)) {
+				*dst++ = '0';
+				*dst++ = '0';
 			}
 			goto done;
 		}
 	}
-	if ((flags&CENC_GRAPH) && (c&0177) != ' ') {
-		if (c & 0200) {
-			c &= 0177;
-			*s++ = 'M';
-		}
-		if (iscntrl(c)) {
-			*s++ = '^';
-			if (c == 0177)
-				*s++ = '?';
-			else
-				*s++ = c + '@';
-		} else {
-			*s++ = '-';
-			*s++ = c;
-		}
+	if (((c & 0177) == ' ') || (flag & VIS_OCTAL)) {	
+		*dst++ = ((u_char)c >> 6 & 07) + '0';
+		*dst++ = ((u_char)c >> 3 & 07) + '0';
+		*dst++ = ((u_char)c & 07) + '0';
 		goto done;
 	}
-	if (flags&CENC_OCTAL) {
-		if (flags&CENC_RACHAR && !isoctal(rachar))
-			(void)sprintf(s, "%o", (int)c);
+	if (c & 0200) {
+		c &= 0177;
+		*dst++ = 'M';
+	}
+	if (iscntrl(c)) {
+		*dst++ = '^';
+		if (c == 0177)
+			*dst++ = '?';
 		else
-			(void)sprintf(s, "%03o", (int)c);
-		while (*s++)
-			;
-		goto done;
+			*dst++ = c + '@';
+	} else {
+		*dst++ = '-';
+		*dst++ = c;
 	}
-	/*
-	 * Couldn't encode.
-	 */
-	s--;
-	*s = c;
 done:
-	*s = '\0';
-	return(buff);
+	*dst = '\0';
+	return (dst);
 }
+
 
 /*
  * decode driven by state machine
@@ -130,26 +121,26 @@ done:
 /*
  *
  */
-cdecode(c, cp, flags)
+cunvis(c, cp, flags)
 	char c;
 	char *cp;
 {
 	static int state = S_NORMAL;
-	u_char buildchar;
-	int octal;
+	static u_char buildchar;
+	static int octal;
 
-	if (flags&CDEC_END) {
+	if (flags&UNVIS_END) {
 		int ostate = state;
 		state = S_NORMAL;
 		if (ostate == S_OCTAL) {
 			*cp = buildchar;
-			return(CDEC_OK);
+			return(UNVIS_OK);
 		} else if (ostate == S_META1) {
 			/* slightly forgiving, if not wrong */
 			*cp = ' ' | 0200;
-			return(CDEC_OK);
+			return(UNVIS_OK);
 		} else
-			return(ostate == S_NORMAL ? CDEC_NOCHAR : CDEC_SYNBAD);
+			return(ostate == S_NORMAL ? UNVIS_NOCHAR : CDEC_SYNBAD);
 	}
 
 	switch (state) {
@@ -157,67 +148,67 @@ cdecode(c, cp, flags)
 		buildchar = 0;
 		if (c == '\\') {
 			state = S_START;
-			return(CDEC_NEEDMORE);
-		} else if (flags&CDEC_HAT && c == '^') {
+			return(UNVIS_NEEDMORE);
+		} else if (flags&UNVIS_HAT && c == '^') {
 			state = S_CTRL;
-			return(CDEC_NEEDMORE);
+			return(UNVIS_NEEDMORE);
 		} else {
 			*cp = c;
-			return(CDEC_OK);
+			return(UNVIS_OK);
 		}
 		break;
 	case S_START:
 		state = S_NORMAL;
 		if (c == '\\') {
 			*cp = c;
-			return(CDEC_OK);
+			return(UNVIS_OK);
 		}
 		if (isoctal(c)) {
 			buildchar = (c-'0');
 			octal = 1;
 			state = S_OCTAL;
-			return(CDEC_NEEDMORE);
+			return(UNVIS_NEEDMORE);
 		} 
 		switch(c) {
 		case 'M':
 			buildchar |= 0200;
 			state = S_META;
-			return(CDEC_NEEDMORE);
+			return(UNVIS_NEEDMORE);
 		case '^':
 			state = S_CTRL;
-			return(CDEC_NEEDMORE);
+			return(UNVIS_NEEDMORE);
 		case 'n':
 			*cp = '\n';
-			return(CDEC_OK);
+			return(UNVIS_OK);
 		case 'r':
 			*cp = '\r';
-			return(CDEC_OK);
+			return(UNVIS_OK);
 		case 'b':
 			*cp = '\b';
-			return(CDEC_OK);
+			return(UNVIS_OK);
 		case 'a':
 			*cp = '\007';
-			return(CDEC_OK);
+			return(UNVIS_OK);
 		case 'v':
 			*cp = '\v';
-			return(CDEC_OK);
+			return(UNVIS_OK);
 		case 't':
 			*cp = '\t';
-			return(CDEC_OK);
+			return(UNVIS_OK);
 		case 'f':
 			*cp = '\f';
-			return(CDEC_OK);
+			return(UNVIS_OK);
 		case 's':			/* does anyone use this ? */
 			*cp = ' ';
-			return(CDEC_OK);
+			return(UNVIS_OK);
 		case 'E':
 			*cp = '\033';
-			return(CDEC_OK);
+			return(UNVIS_OK);
 		case '\n':
-			return(CDEC_NOCHAR);	/* hidden newline */
+			return(UNVIS_NOCHAR);	/* hidden newline */
 		}
 		state = S_NORMAL;
-		return(CDEC_SYNBAD);
+		return(UNVIS_SYNBAD);
 	case S_META:
 		if (c == '-')
 			state = S_META1;
@@ -225,13 +216,13 @@ cdecode(c, cp, flags)
 			state = S_CTRL;
 		else {
 			state = S_NORMAL;
-			return(CDEC_SYNBAD);
+			return(UNVIS_SYNBAD);
 		}
-		return(CDEC_NEEDMORE);
+		return(UNVIS_NEEDMORE);
 	case S_META1:
 		state = S_NORMAL;
 		*cp = c | buildchar;
-		return(CDEC_OK);
+		return(UNVIS_OK);
 	case S_CTRL:
 		if (c == '?')
 			buildchar |= 0177;
@@ -239,20 +230,50 @@ cdecode(c, cp, flags)
 			buildchar |= c&037;
 		state = S_NORMAL;
 		*cp = buildchar;
-		return(CDEC_OK);
+		return(UNVIS_OK);
 	case S_OCTAL:
 		if (isoctal(c)) {
 			buildchar = (buildchar<<3) + (c-'0');
 			if (++octal == 3) {
 				state = S_NORMAL;
 				*cp = buildchar;
-				return(CDEC_OK);
+				return(UNVIS_OK);
 			} else
-				return(CDEC_NEEDMORE);
+				return(UNVIS_NEEDMORE);
 		} else {
 			state = S_NORMAL;
 			*cp = buildchar;
-			return(CDEC_OKPUSH);
+			return(UNVIS_OKPUSH);
 		}
 	}
+}
+
+/*
+ * strvis - visually encode characters from src into dst
+ *
+ *	If len >= 0, encodes exactly len chars from src (including NULL's).
+ *	Otherwise, stops before first NULL in src.  In all cases, dst is 
+ *	NULL terminated.
+ *
+ *	Dst must be 4 times the size of src to account for possible
+ *	expansion.  The length of dst, not including the trailing NULL,
+ *	is returned.
+ */
+strvis(dst, src, len, flag)
+	register char *dst, *src;
+	register int len;
+{
+	char *start = dst;
+
+	for (;;) {
+		if (len > 0) { 
+			if (len-- == 0)
+				break;
+		} else if (!*src)
+			break;
+		dst = vis(dst, *src, flag | VIS_NEXTC, *(src+1));
+		src++;
+	}
+
+	return (dst - start);
 }
