@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)inet.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)inet.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -99,4 +99,69 @@ inet_lnaof(in)
 		if ((ifp->int_netmask & net) == ifp->int_net)
 			return (host &~ ifp->int_subnetmask);
 	return (host);
+}
+
+/*
+ * Return RTF_HOST if the address is
+ * for an Internet host, RTF_SUBNET for a subnet,
+ * 0 for a network.
+ */
+inet_rtflags(sin)
+	struct sockaddr_in *sin;
+{
+	register u_long i = ntohl(sin->sin_addr.s_addr);
+	register u_long net, host;
+	register struct interface *ifp;
+
+	if (IN_CLASSA(i)) {
+		net = i & IN_CLASSA_NET;
+		host = i & IN_CLASSA_HOST;
+	} else if (IN_CLASSB(i)) {
+		net = i & IN_CLASSB_NET;
+		host = i & IN_CLASSB_HOST;
+	} else {
+		net = i & IN_CLASSC_NET;
+		host = i & IN_CLASSC_HOST;
+	}
+
+	if (host == 0)
+		return (0);	/* network */
+	/*
+	 * Check whether this network is subnetted;
+	 * if so, check whether this is a subnet or a host.
+	 */
+	for (ifp = ifnet; ifp; ifp = ifp->int_next)
+		if (net == ifp->int_net) {
+			if ((host &~ ifp->int_subnetmask) == 0)
+				return (RTF_SUBNET);
+			else
+				return (RTF_HOST);
+		}
+	return (RTF_HOST);
+}
+
+/*
+ * Return true if a route to subnet rtsin should be sent to dst.
+ * Send it only if dst is on the same logical network,
+ * or the route turns out to be for the net (aka subnet 0).
+ */
+inet_sendsubnet(rtsin, dst)
+	struct sockaddr_in *rtsin, *dst;
+{
+	register u_long rt = ntohl(rtsin->sin_addr.s_addr);
+	register u_long d = ntohl(dst->sin_addr.s_addr);
+
+	if (IN_CLASSA(rt)) {
+		if ((rt & IN_CLASSA_HOST) == 0)
+			return (1);
+		return ((rt & IN_CLASSA_NET) == (d & IN_CLASSA_NET));
+	} else if (IN_CLASSB(rt)) {
+		if ((rt & IN_CLASSB_HOST) == 0)
+			return (1);
+		return ((rt & IN_CLASSB_NET) == (d & IN_CLASSB_NET));
+	} else {
+		if ((rt & IN_CLASSC_HOST) == 0)
+			return (1);
+		return ((rt & IN_CLASSC_NET) == (d & IN_CLASSC_NET));
+	}
 }
