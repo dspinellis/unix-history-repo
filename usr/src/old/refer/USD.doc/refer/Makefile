@@ -1,4 +1,4 @@
-#	@(#)Makefile	6.4 (Berkeley) %G%
+#	@(#)Makefile	8.1 (Berkeley) %G%
 
 # refer.mac should be typed on a 12 pitch Daisy wheel printer
 DIR=	usd/26.refer
