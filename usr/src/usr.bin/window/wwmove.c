@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwmove.c	3.2 83/09/15";
+static	char *sccsid = "@(#)wwmove.c	3.3 83/09/16";
 #endif
 
 #include "ww.h"
@@ -51,6 +51,16 @@ register struct ww *w;
 			w->ww_fmap[i] -= dc;
 	}
 	w->ww_nvis -= dr;
+	for (i = w->ww_i.t; i < w->ww_i.b; i++) {
+		register j = w->ww_i.l;
+		register char *win = &w->ww_win[i][j];
+		int nvis = 0;
+
+		for (; j < w->ww_i.r; j++)
+			if (*win++ == 0)
+				nvis++;
+		w->ww_nvis[i] = nvis;
+	}
 	w->ww_buf -= dr;
 	for (i = w->ww_b.t; i < w->ww_b.b; i++)
 		w->ww_buf[i] -= dc;
