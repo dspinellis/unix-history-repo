@@ -1,5 +1,7 @@
 /usr/src/share/man/man1/intro.1
 /usr/src/old/adb/common_source/adb.1
+/usr/src/contrib/groff-1.08/addftinfo/addftinfo.1
+/usr/src/contrib/groff-1.08/afmtodit/afmtodit.1
 /usr/src/contrib/ansi/ansitape.1
 /usr/src/usr.bin/apply/apply.1
 /usr/src/usr.bin/apropos/apropos.1
@@ -55,6 +57,7 @@
 /usr/src/bin/sh/bltin/echo.1
 /usr/src/bin/ed/ed.1
 /usr/src/contrib/emacs-18.57/etc/emacs.1
+/usr/src/contrib/groff-1.08/eqn/eqn.1
 /usr/src/usr.bin/error/error.1
 /usr/src/usr.bin/ex/ex.1
 /usr/src/usr.bin/expand/expand.1
@@ -76,6 +79,11 @@
 /usr/src/usr.bin/gprof/gprof.1
 /usr/src/usr.bin/graph/graph.1
 /usr/src/usr.bin/grep/egrep/grep.1
+/usr/src/contrib/groff-1.08/grodvi/grodvi.1
+/usr/src/contrib/groff-1.08/groff/groff.1
+/usr/src/contrib/groff-1.08/grog/grog.1
+/usr/src/contrib/groff-1.08/grops/grops.1
+/usr/src/contrib/groff-1.08/grotty/grotty.1
 /usr/src/usr.bin/id/groups.1
 /usr/src/contrib/gzip-1.0.7/gzip.1
 /usr/src/usr.bin/head/head.1
@@ -85,6 +93,7 @@
 /usr/src/usr.bin/id/id.1
 /usr/src/contrib/rcs-V5.6/man/ident.1
 /usr/src/usr.bin/indent/indent.1
+/usr/src/contrib/groff-1.08/indxbib/indxbib.1
 /usr/src/usr.bin/xinstall/install.1
 /usr/src/contrib/bib/man/invert.1
 /usr/src/usr.bin/join/join.1
@@ -105,6 +114,7 @@
 /usr/src/usr.bin/learn/learn/learn.1
 /usr/src/usr.bin/leave/leave.1
 /usr/src/usr.bin/lex/lex.1
+/usr/src/contrib/groff-1.08/lkbib/lkbib.1
 /usr/src/bin/ln/ln.1
 /usr/src/usr.bin/locate/locate/locate.1
 /usr/src/usr.bin/lock/lock.1
@@ -112,6 +122,7 @@
 /usr/src/usr.bin/login/login.1
 /usr/src/usr.bin/logname/logname.1
 /usr/src/usr.bin/look/look.1
+/usr/src/contrib/groff-1.08/lookbib/lookbib.1
 /usr/src/usr.bin/lorder/lorder.1
 /usr/src/usr.sbin/lpr/lpq/lpq.1
 /usr/src/usr.sbin/lpr/lpr/lpr.1
@@ -141,6 +152,7 @@
 /usr/src/usr.bin/nice/nice.1
 /usr/src/usr.bin/nm/nm.1
 /usr/src/usr.bin/nohup/nohup.1
+/usr/src/contrib/groff-1.08/nroff/nroff.1
 /usr/src/contrib/bind-4.9/man/nslookup.1
 /usr/src/usr.bin/hexdump/od.1
 /usr/src/usr.bin/pagesize/pagesize.1
@@ -148,11 +160,15 @@
 /usr/src/usr.bin/paste/paste.1
 /usr/src/usr.bin/patch/patch.1
 /usr/src/bin/pax/pax.1
+/usr/src/contrib/perl-4.036/perl.1
+/usr/src/contrib/groff-1.08/pfbtops/pfbtops.1
+/usr/src/contrib/groff-1.08/pic/pic.1
 /usr/src/usr.bin/plot/plot.1
 /usr/src/usr.bin/pr/pr.1
 /usr/src/usr.bin/printenv/printenv.1
 /usr/src/usr.bin/printf/printf.1
 /usr/src/bin/ps/ps.1
+/usr/src/contrib/groff-1.08/psbb/psbb.1
 /usr/src/usr.bin/ptx/ptx.1
 /usr/src/bin/pwd/pwd.1
 /usr/src/usr.bin/quota/quota.1
@@ -166,6 +182,7 @@
 /usr/src/contrib/rcs-V5.6/man/rcsintro.1
 /usr/src/contrib/rcs-V5.6/man/rcsmerge.1
 /usr/src/usr.bin/rdist/rdist.1
+/usr/src/contrib/groff-1.08/refer/refer.1
 /usr/src/kerberosIV/register/register.1
 /usr/src/usr.bin/rev/rev.1
 /usr/src/contrib/rcs-V5.6/man/rlog.1
@@ -204,10 +221,12 @@
 /usr/src/usr.bin/tail/tail.1
 /usr/src/usr.bin/talk/talk.1
 /usr/src/old/tar/tar.1
+/usr/src/contrib/groff-1.08/tbl/tbl.1
 /usr/src/usr.bin/tcopy/tcopy.1
 /usr/src/usr.bin/tee/tee.1
 /usr/src/usr.bin/telnet/telnet.1
 /usr/src/bin/test/test.1
+/usr/src/contrib/groff-1.08/tfmtodit/tfmtodit.1
 /usr/src/usr.bin/tftp/tftp.1
 /usr/src/usr.bin/time/time.1
 /usr/src/usr.bin/tip/tip.1
@@ -215,6 +234,7 @@
 /usr/src/usr.bin/touch/touch.1
 /usr/src/usr.bin/tput/tput.1
 /usr/src/usr.bin/tr/tr.1
+/usr/src/contrib/groff-1.08/troff/troff.1
 /usr/src/usr.bin/true/true.1
 /usr/src/usr.bin/tset/tset.1
 /usr/src/usr.bin/tsort/tsort.1
