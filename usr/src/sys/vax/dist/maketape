@@ -19,5 +19,7 @@ echo "Add full dump of real file system"
 /etc/rdump 0uf ${machine}:/dev/rmt12 /
 echo "Add tar image of system sources"
 cd /sys; tar cf - . | ${machine} dd of=/dev/rmt12 ibs=20b obs=20b
+echo "Add tar image of manuals"
+cd /a/man; tar cf - man* | ${machine} dd of=/dev/rmt12 ibs=20b obs=20b
 echo "Done, rewind"
 ${machine} rewind
