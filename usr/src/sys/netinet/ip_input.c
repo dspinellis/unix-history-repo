@@ -1,4 +1,4 @@
-/*	ip_input.c	1.67	83/05/12	*/
+/*	ip_input.c	1.68	83/05/15	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -166,7 +166,7 @@ next:
 	 * their address, so take packets from them
 	 * if we're acting as a network disk server.
 	 */
-	if (ip->ip_dst.s_addr == INADDR_ANY &&
+	if (in_netof(ip->ip_dst) == INADDR_ANY &&
 	    (in_netof(ip->ip_src) == INADDR_ANY &&
 	     in_lnaof(ip->ip_src) != INADDR_ANY))
 		goto ours;

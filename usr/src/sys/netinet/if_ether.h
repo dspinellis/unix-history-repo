@@ -1,4 +1,4 @@
-/*	if_ether.h	4.4	83/03/15	*/
+/*	if_ether.h	4.5	83/05/15	*/
 
 /*
  * Structure of a 10Mb/s Ethernet header.
@@ -24,8 +24,6 @@ struct	ether_header {
 #define	ETHERMTU	1500
 #define	ETHERMIN	(60-14)
 
-u_char etherbroadcastaddr[6];			/* 6 bytes of 0xFF */
-
 /*
  * Ethernet Address Resolution Protocol.
  *
@@ -48,7 +46,6 @@ struct	ether_arp {
 	u_char	arp_tpa[4];	/* target protocol address */
 };
 
-#ifdef	KERNEL
 /*
  * Structure shared between the ethernet driver modules and
  * the address resolution code.  For example, each ec_softc or il_softc
@@ -60,6 +57,8 @@ struct	arpcom {
 	struct	arpcom *ac_ac;	/* link to next ether driver */
 };
 
+#ifdef	KERNEL
+u_char etherbroadcastaddr[6];			/* 6 bytes of 0xFF */
 struct	in_addr arpmyaddr();
 struct	arptab *arptnew();
 #endif
