@@ -1,10 +1,10 @@
 /*-
- * Copyright (c) 1991, 1993
+ * Copyright (c) 1991, 1993, 1994
  *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)extern.h	8.2 (Berkeley) %G%
+ *	@(#)extern.h	8.3 (Berkeley) %G%
  */
 
 #include <sys/cdefs.h>
@@ -15,7 +15,6 @@ PLAN	*find_create __P((char ***));
 int	 find_execute __P((PLAN *, char **));
 PLAN	*find_formplan __P((char **));
 PLAN	*not_squish __P((PLAN *));
-OPTION	*option __P((char *));
 PLAN	*or_squish __P((PLAN *));
 PLAN	*paren_squish __P((PLAN *));
 struct stat;
