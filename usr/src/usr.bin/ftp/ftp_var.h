@@ -1,4 +1,4 @@
-/*	ftp_var.h	4.2	83/02/21	*/
+/*	ftp_var.h	4.3	83/03/01	*/
 
 /*
  * FTP global variables.
@@ -14,6 +14,7 @@ int	fromatty;		/* input is from a terminal */
 int	interactive;		/* interactively prompt on m* cmds */
 int	debug;			/* debugging level */
 int	bell;			/* ring bell on cmd completion */
+int	doglob;			/* glob local file names */
 int	autologin;		/* establish user account on connection */
 
 char	typename[32];		/* name of file transfer type */
