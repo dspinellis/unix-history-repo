@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- * from: Utah $Hdr: hpux.h 1.27 92/12/23$
+ * from: Utah $Hdr: hpux.h 1.30 93/06/28$
  *
- *	@(#)hpux.h	8.1 (Berkeley) %G%
+ *	@(#)hpux.h	7.9 (Berkeley) %G%
  */
 
 #include <hp/hpux/hpux_exec.h>
@@ -138,8 +138,8 @@ struct hpuxuser {
 #define	HPUXFTRUNC	00001000
 #define	HPUXFEXCL	00002000
 #define HPUXFSYNCIO	00100000
+#define HPUXNONBLOCK	00200000
 #define HPUXFREMOTE	01000000
-#define FUSECACHE	04000000
 
 /* HP-UX only sysV shmctl() commands */
 #define SHM_LOCK	3	/* Lock segment in core */
