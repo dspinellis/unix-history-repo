@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)w.c	5.30 (Berkeley) %G%";
+static char sccsid[] = "@(#)w.c	5.31 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -74,7 +74,7 @@ struct	entry {
 struct nlist nl[] = {
 	{ "_boottime" },
 #define X_BOOTTIME	0
-#if defined(hp300)
+#if defined(hp300) || defined(i386)
 	{ "_cn_tty" },
 #define X_CNTTY		1
 #endif
@@ -155,7 +155,7 @@ main(argc, argv)
 		bcopy(&utmp, &(ep->utmp), sizeof (struct utmp));
 		stp = ttystat(ep->utmp.ut_line);
 		ep->tdev = stp->st_rdev;
-#if defined(hp300)
+#if defined(hp300) || defined(i386)
 		/*
 		 * XXX  If this is the console device, attempt to ascertain
 		 * the true console device dev_t.
