@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.10 (Berkeley) %G%
+#	@(#)Makefile	5.11 (Berkeley) %G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
@@ -24,7 +24,7 @@ MAN=	tset.0
 all: tset
 
 tset: ${SRCS} ${LIBC}
-	${CC} -o $@ ${CFLAGS} ${SRCS} -ltermlib
+	${CC} -o $@ ${CFLAGS} ${SRCS} -ltermlib -lcompat
 
 clean:
 	rm -f ${OBJS} core tset

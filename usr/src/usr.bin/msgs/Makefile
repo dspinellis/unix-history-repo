@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.6 (Berkeley) %G%
+#	@(#)Makefile	5.7 (Berkeley) %G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
@@ -25,7 +25,7 @@ MAN=	msgs.0
 all: msgs
 
 msgs: ${LIBC}
-	${CC} -o $@ ${CFLAGS} msgs.c -ltermlib
+	${CC} -o $@ ${CFLAGS} msgs.c -ltermlib -lcompat
 
 clean:
 	rm -f ${OBJS} core msgs

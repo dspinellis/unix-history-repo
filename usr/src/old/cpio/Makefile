@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.5 (Berkeley) %G%
+#	@(#)Makefile	5.6 (Berkeley) %G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
@@ -25,7 +25,7 @@ MAN=	cpio.0 cpio_format.0
 all: cpio
 
 cpio: ${LIBC}
-	${CC} -o $@ ${CFLAGS} cpio.c
+	${CC} -o $@ ${CFLAGS} cpio.c -lcompat
 
 clean:
 	rm -f ${OBJS} core cpio
