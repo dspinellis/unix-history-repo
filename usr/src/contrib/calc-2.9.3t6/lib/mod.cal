@@ -1,0 +1,211 @@
+/*
+ * Copyright (c) 1993 David I. Bell
+ * Permission is granted to use, distribute, or modify this source,
+ * provided that this copyright notice remains intact.
+ *
+ * Routines to handle numbers modulo a specified number.
+ *	a (mod N)
+ */
+
+obj mod {a};			/* definition of the object */
+
+global mod_value = 100;		/* modulus value (value of N) */
+
+
+define mod(a)
+{
+	local obj mod	x;
+
+	if (!isreal(a) || !isint(a))
+		quit "Bad argument for mod function";
+	x.a = a % mod_value;
+	return x;
+}
+
+
+define mod_print(a)
+{
+	if (digits(mod_value) <= 20)
+		print a.a, "(mod", mod_value : ")" :;
+	else
+		print a.a, "(mod N)" :;
+}
+
+
+define mod_one()
+{
+	return mod(1);
+}
+
+
+define mod_cmp(a, b)
+{
+	if (isnum(a))
+		return (a % mod_value) != b.a;
+	if (isnum(b))
+		return (b % mod_value) != a.a;
+	return a.a != b.a;
+}
+
+
+define mod_rel(a, b)
+{
+	if (isnum(a))
+		a = mod(a);
+	if (isnum(b))
+		b = mod(b);
+	if (a.a < b.a)
+		return -1;
+	return a.a != b.a;
+}
+
+
+define mod_add(a, b)
+{
+	local obj mod	x;
+
+	if (isnum(b)) {
+		if (!isint(b))
+			quit "Adding non-integer";
+		x.a = (a.a + b) % mod_value;
+		return x;
+	}
+	if (isnum(a)) {
+		if (!isint(a))
+			quit "Adding non-integer";
+		x.a = (a + b.a) % mod_value;
+		return x;
+	}
+	x.a = (a.a + b.a) % mod_value;
+	return x;
+}
+
+
+define mod_sub(a, b)
+{
+	return a + (-b);
+}
+
+
+define mod_neg(a)
+{
+	local obj mod	x;
+
+	x.a = mod_value - a.a;
+	return x;
+}
+
+
+define mod_mul(a, b)
+{
+	local obj mod	x;
+
+	if (isnum(b)) {
+		if (!isint(b))
+			quit "Multiplying by non-integer";
+		x.a = (a.a * b) % mod_value;
+		return x;
+	}
+	if (isnum(a)) {
+		if (!isint(a))
+			quit "Multiplying by non-integer";
+		x.a = (a * b.a) % mod_value;
+		return x;
+	}
+	x.a = (a.a * b.a) % mod_value;
+	return x;
+}
+
+
+define mod_square(a)
+{
+	local obj mod	x;
+
+	x.a = a.a^2 % mod_value;
+	return x;
+}
+
+
+define mod_inc(a)
+{
+	local x;
+
+	x = a;
+	if (++x.a == mod_value)
+		x.a = 0;
+	return x;
+}
+
+
+define mod_dec(a)
+{
+	local x;
+
+	x = a;
+	if (--x.a < 0)
+		x.a = mod_value - 1;
+	return x;
+}
+
+
+define mod_inv(a)
+{
+	local obj mod	x;
+
+	x.a = minv(a.a, mod_value);
+	return x;
+}
+
+
+define mod_div(a, b)
+{
+	local c, x, y;
+
+	obj mod x, y;
+	if (isnum(a))
+		a = mod(a);
+	if (isnum(b))
+		b = mod(b);
+	c = gcd(a.a, b.a);
+	x.a = a.a / c;
+	y.a = b.a / c;
+	return x * inverse(y);
+}
+
+
+define mod_pow(a, b)
+{
+	local x, y, z;
+
+	obj mod x;
+	y = a;
+	z = b;
+	if (b < 0) {
+		y = inverse(a);
+		z = -b;
+	}
+	x.a = pmod(y.a, z, mod_value);
+	return x;
+}
+
+
+global lib_debug;
+if (lib_debug >= 0) {
+    print "obj mod {a} defined";
+    print "mod(a) defined";
+    print "mod_print(a) defined";
+    print "mod_one(a) defined";
+    print "mod_cmp(a, b) defined";
+    print "mod_rel(a, b) defined";
+    print "mod_add(a, b) defined";
+    print "mod_sub(a, b) defined";
+    print "mod_mod(a, b) defined";
+    print "mod_square(a) defined";
+    print "mod_inc(a) defined";
+    print "mod_dec(a) defined";
+    print "mod_inv(a) defined";
+    print "mod_div(a, b) defined";
+    print "mod_pow(a, b) defined";
+    print "mod_value defined";
+    print "set mod_value as needed";
+}

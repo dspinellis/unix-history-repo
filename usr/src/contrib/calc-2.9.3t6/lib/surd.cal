@@ -1,0 +1,288 @@
+/*
+ * Copyright (c) 1993 David I. Bell
+ * Permission is granted to use, distribute, or modify this source,
+ * provided that this copyright notice remains intact.
+ *
+ * Calculate using quadratic surds of the form: a + b * sqrt(D).
+ */
+
+obj surd {a, b};		/* definition of the surd object */
+
+global surd_type = -1;		/* type of surd (value of D) */
+static obj surd surd__;		/* example surd for testing against */
+
+
+define surd(a,b)
+{
+	local x;
+
+	obj surd x;
+	x.a = a;
+	x.b = b;
+	return x;
+}
+
+
+define surd_print(a)
+{
+	print "surd(" : a.a : ", " : a.b : ")" :;
+}
+
+
+define surd_conj(a)
+{
+	local	x;
+
+	obj surd x;
+	x.a = a.a;
+	x.b = -a.b;
+	return x;
+}
+
+
+define surd_norm(a)
+{
+	return a.a^2 + abs(surd_type) * a.b^2;
+}
+
+
+define surd_value(a, xepsilon)
+{
+	local	epsilon;
+
+	epsilon = xepsilon;
+	if (isnull(epsilon))
+		epsilon = epsilon();
+	return a.a + a.b * sqrt(surd_type, epsilon);
+}
+
+define surd_add(a, b)
+{
+	local obj surd	x;
+
+	if (!istype(b, x)) {
+		x.a = a.a + b;
+		x.b = a.b;
+		return x;
+	}
+	if (!istype(a, x)) {
+		x.a = a + b.a;
+		x.b = b.b;
+		return x;
+	}
+	x.a = a.a + b.a;
+	x.b = a.b + b.b;
+	if (x.b)
+		return x;
+	return x.a;
+}
+
+
+define surd_sub(a, b)
+{
+	local obj surd	x;
+
+	if (!istype(b, x)) {
+		x.a = a.a - b;
+		x.b = a.b;
+		return x;
+	}
+	if (!istype(a, x)) {
+		x.a = a - b.a;
+		x.b = -b.b;
+		return x;
+	}
+	x.a = a.a - b.a;
+	x.b = a.b - b.b;
+	if (x.b)
+		return x;
+	return x.a;
+}
+
+
+define surd_inc(a)
+{
+	local	x;
+
+	x = a;
+	x.a++;
+	return x;
+}
+
+
+define surd_dec(a)
+{
+	local	x;
+
+	x = a;
+	x.a--;
+	return x;
+}
+
+
+define surd_neg(a)
+{
+	local obj surd	x;
+
+	x.a = -a.a;
+	x.b = -a.b;
+	return x;
+}
+
+
+define surd_mul(a, b)
+{
+	local obj surd	x;
+
+	if (!istype(b, x)) {
+		x.a = a.a * b;
+		x.b = a.b * b;
+	} else if (!istype(a, x)) {
+		x.a = b.a * a;
+		x.b = b.b * a;
+	} else {
+		x.a = a.a * b.a + surd_type * a.b * b.b;
+		x.b = a.a * b.b + a.b * b.a;
+	}
+	if (x.b)
+		return x;
+	return x.a;
+}
+
+
+define surd_square(a)
+{
+	local obj surd	x;
+
+	x.a = a.a^2 + a.b^2 * surd_type;
+	x.b = a.a * a.b * 2;
+	if (x.b)
+		return x;
+	return x.a;
+}
+
+
+define surd_scale(a, b)
+{
+	local obj surd	x;
+
+	x.a = scale(a.a, b);
+	x.b = scale(a.b, b);
+	return x;
+}
+
+
+define surd_shift(a, b)
+{
+	local obj surd	x;
+
+	x.a = a.a << b;
+	x.b = a.b << b;
+	if (x.b)
+		return x;
+	return x.a;
+}
+
+
+define surd_div(a, b)
+{
+	local x, y;
+
+	if ((a == 0) && b)
+		return 0;
+	obj surd x;
+	if (!istype(b, x)) {
+		x.a = a.a / b;
+		x.b = a.b / b;
+		return x;
+	}
+	y = b;
+	y.b = -b.b;
+	return (a * y) / (b.a^2 - surd_type * b.b^2);
+}
+
+
+define surd_inv(a)
+{
+	return 1 / a;
+}
+
+
+define surd_sgn(a)
+{
+	if (surd_type < 0)
+		quit "Taking sign of complex surd";
+	if (a.a == 0)
+		return sgn(a.b);
+	if (a.b == 0)
+		return sgn(a.a);
+	if ((a.a > 0) && (a.b > 0))
+		return 1;
+	if ((a.a < 0) && (a.b < 0))
+		return -1;
+	return sgn(a.a^2 - a.b^2 * surd_type) * sgn(a.a);
+}
+
+
+define surd_cmp(a, b)
+{
+	if (!istype(a, surd__))
+		return ((b.b != 0) || (a != b.a));
+	if (!istype(b, surd__))
+		return ((a.b != 0) || (b != a.a));
+	return ((a.a != b.a) || (a.b != b.b));
+}
+
+
+define surd_rel(a, b)
+{
+	local x, y;
+
+	if (surd_type < 0)
+		quit "Relative comparison of complex surds";
+	if (!istype(a, surd__)) {
+		x = a - b.a;
+		y = -b.b;
+	} else if (!istype(b, surd__)) {
+		x = a.a - b;
+		y = a.b;
+	} else {
+		x = a.a - b.a;
+		y = a.b - b.b;
+	}
+	if (y == 0)
+		return sgn(x);
+	if (x == 0)
+		return sgn(y);
+	if ((x < 0) && (y < 0))
+		return -1;
+	if ((x > 0) && (y > 0))
+		return 1;
+	return sgn(x^2 - y^2 * surd_type) * sgn(x);
+}
+
+global lib_debug;
+if (lib_debug >= 0) {
+    print "obj surd {a, b} defined";
+    print "surd(a, b) defined";
+    print "surd_print(a) defined";
+    print "surd_conj(a) defined";
+    print "surd_norm(a) defined";
+    print "surd_value(a, xepsilon) defined";
+    print "surd_add(a, b) defined";
+    print "surd_sub(a, b) defined";
+    print "surd_inc(a) defined";
+    print "surd_dec(a) defined";
+    print "surd_neg(a) defined";
+    print "surd_mul(a, b) defined";
+    print "surd_square(a) defined";
+    print "surd_scale(a, b) defined";
+    print "surd_shift(a, b) defined";
+    print "surd_div(a, b) defined";
+    print "surd_inv(a) defined";
+    print "surd_sgn(a) defined";
+    print "surd_cmp(a, b) defined";
+    print "surd_rel(a, b) defined";
+    print "surd_type defined";
+    print "set surd_type as needed";
+}

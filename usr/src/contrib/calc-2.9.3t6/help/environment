@@ -1,0 +1,83 @@
+Environment variables
+
+	CALCPATH
+
+	    A :-separated list of directories used to search for
+	    scripts filenames that do not begin with /, ./ or ~.
+
+	    If this variable does not exist, a compiled value
+	    is used.  Typically compiled in value is:
+
+			.:./lib:~/lib:${LIBDIR}/calc
+	
+	    where ${LIBDIR} is usually:
+
+			/usr/local/lib/calc
+
+	    This value is used by the READ command.  It is an error
+	    if no such readable file is found.
+	
+	
+	CALCRC
+
+	    On startup (unless -h or -q was given on the command
+	    line), calc searches for files along the :-separated
+	    $CALCRC environment variable.
+
+	    If this variable does not exist, a compiled value
+	    is used.  Typically compiled in value is:
+
+			${LIBDIR}/startup:~/.calcrc
+	
+	    where ${LIBDIR} is usually:
+
+			/usr/local/lib/calc
+
+	    Missing files along the $CALCRC path are silently ignored.
+	
+	CALCBINDINGS
+
+	    On startup (unless -h or -q was given on the command
+	    line), calc reads key bindings from the filename specified
+	    in the $CALCRC environment variable.  These key bindings
+	    are used for command line editing and the command history.
+
+	    If this variable does not exist, a compiled value is used.
+	    Typically compiled in value is:
+
+			${LIBDIR}/bindings
+	
+	    where ${LIBDIR} is usually:
+
+			/usr/local/lib/calc
+
+	    If the file could not be opened, or if standard input is not
+	    a terminal, then calc will still run, but fancy command line
+	    editing is disabled.
+
+	HOME
+
+	    This value is taken to be the home directory of the
+	    current user.  It is used when files begin with '~/'.
+
+	    If this variable does not exist, the home directory password 
+	    entry of the current user is used.  If that information
+	    is not available, '.' is used.
+	
+	PAGER
+
+	    When invoking help, this environment variable is used
+	    to display a help file.
+
+	    If this variable does not exist, a compiled value
+	    is used.  Typically compiled in value is something
+	    such as 'more', 'less', 'pg' or 'cat'.
+	
+	SHELL
+
+	    When a !-command is used, the program indicated by
+	    this environment variable is used.
+
+	    If this variable does not exist, a compiled value
+	    is used.  Typically compiled in value is something
+	    such as 'sh' is used.

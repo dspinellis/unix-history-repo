@@ -1,0 +1,32 @@
+/*
+ * Copyright (c) 1993 David I. Bell
+ * Permission is granted to use, distribute, or modify this source,
+ * provided that this copyright notice remains intact.
+ *
+ * A prime test, base a, on p*2^x+1 for even x>m.
+ */
+
+define bigprime(a, m, p)
+{
+	local n1, n;
+
+	n1 = 2^m * p;
+	for (;;) {
+		m++;
+		n1 += n1;
+		n = n1 + 1;
+		if (isodd(m))
+			continue;
+		print m;
+		if (pmod(a, n1 / 2, n) != n1)
+			continue;
+		if (pmod(a, n1 / p, n) == 1)
+			continue;
+		print "	" : n;
+	}
+}
+
+global lib_debug;
+if (lib_debug >= 0) {
+    print "bigprime(a, m, p) defined";
+}

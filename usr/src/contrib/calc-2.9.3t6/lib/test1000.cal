@@ -1,0 +1,12 @@
+/*
+ * Copyright (c) 1994 Landon Curt Noll
+ * Permission is granted to use, distribute, or modify this source,
+ * provided that this copyright notice remains intact.
+ *
+ * By: Landon Curt Noll
+ *     chongo@toad.com  -or-  ...!{pyramid,sun,uunet}!hoptoad!chongo
+ *
+ * This library is used by the 1000 serise of the regress.cal test suite.
+ */
+
+++value;

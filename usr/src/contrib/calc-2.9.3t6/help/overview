@@ -1,0 +1,123 @@
+			CALC - An arbitrary precision calculator.
+				by David I. Bell
+
+
+	This is a calculator program with arbitrary precision arithmetic.
+	All numbers are represented as fractions with arbitrarily large
+	numerators and denominators which are always reduced to lowest terms.
+	Real or exponential format numbers can be input and are converted
+	to the equivalent fraction.  Hex, binary, or octal numbers can be
+	input by using numbers with leading '0x', '0b' or '0' characters.
+	Complex numbers can be input using a trailing 'i', as in '2+3i'.
+	Strings and characters are input by using single or double quotes.
+
+	Commands are statements in a C-like language, where each input
+	line is treated as the body of a procedure.  Thus the command
+	line can contain variable declarations, expressions, labels,
+	conditional tests, and loops.  Assignments to any variable name
+	will automatically define that name as a global variable.  The
+	other important thing to know is that all non-assignment expressions
+	which are evaluated are automatically printed.  Thus, you can evaluate 
+	an expression's value by simply typing it in.
+
+	Many useful built-in mathematical functions are available.  Use
+	the 'show builtins' command to list them.  You can also define
+	your own functions by using the 'define' keyword, followed by a
+	function declaration very similar to C.  Functions which only
+	need to return a simple expression can be defined using an
+	equals sign, as in the example 'define sc(a,b) = a^3 + b^3'.
+	Variables in functions can be defined as either 'global', 'local',
+	or 'static'.  Global variables are common to all functions and the
+	command line, whereas local variables are unique to each function
+	level, and are destroyed when the function returns.  Static variables
+	are scoped within single input files, or within functions, and are
+	never destroyed.  Variables are not typed at definition time, but
+	dynamically change as they are used.  So you must supply the correct
+	type of variable to those functions and operators which only work
+	for a subset of types.
+
+	By default, arguments to functions are passed by value (even
+	matrices).  For speed, you can put an ampersand before any
+	variable argument in a function call, and that variable will be
+	passed by reference instead.  However, if the function changes
+	its argument, the variable will change.  Arguments to built-in
+	functions and object manipulation functions are always called
+	by reference.  If a user-defined function takes more arguments
+	than are passed, the undefined arguments have the null value.
+	The 'param' function returns function arguments by argument
+	number, and also returns the number of arguments passed.  Thus
+	functions can be written to handle an arbitrary number of
+	arguments.
+
+	The mat statement is used to create a matrix.  It takes a
+	variable name, followed by the bounds of the matrix in square
+	brackets.  The lower bounds are zero by default, but colons can
+	be used to change them.  For example 'mat foo[3, 1:10]' defines
+	a two dimensional matrix, with the first index ranging from 0
+	to 3, and the second index ranging from 1 to 10.  The bounds of
+	a matrix can be an expression calculated at runtime.
+
+	Lists of values are created using the 'list' function, and values can
+	be inserted or removed from either the front or the end of the list.
+	List elements can be indexed directly using double square brackets.
+
+	The obj statement is used to create an object.  Objects are
+	user-defined values for which user-defined routines are
+	implicitly called to perform simple actions such as add,
+	multiply, compare, and print. Objects types are defined as in
+	the example 'obj complex {real, imag}', where 'complex' is the
+	name of the object type, and 'real' and 'imag' are element
+	names used to define the value of the object (very much like
+	structures).  Variables of an object type are created as in the
+	example 'obj complex x,y', where 'x' and 'y' are variables.
+	The elements of an object are referenced using a dot, as in the
+	example 'x.real'. All user-defined routines have names composed
+	of the object type and the action to perform separated by an
+	underscore, as in the example 'complex_add'.  The command 'show
+	objfuncs' lists all the definable routines.  Object routines
+	which accept two arguments should be prepared to handle cases
+	in which either one of the arguments is not of the expected
+	object type.
+
+	These are the differences between the normal C operators and
+	the ones defined by the calculator.  The '/' operator divides
+	fractions, so that '7 / 2' evaluates to 7/2. The '//' operator
+	is an integer divide, so that '7 // 2' evaluates to 3.  The '^'
+	operator is a integral power function, so that 3^4 evaluates to
+	81.  Matrices of any dimension can be treated as a zero based
+	linear array using double square brackets, as in 'foo[[3]]'.
+	Matrices can be indexed by using commas between the indices, as
+	in foo[3,4].  Object and list elements can be referenced by
+	using double square brackets.
+
+	The print statement is used to print values of expressions.
+	Separating values by a comma puts one space between the output
+	values, whereas separating values by a colon concatenates the
+	output values.  A trailing colon suppresses printing of the end
+	of line.  An example of printing is 'print \"The square of\",
+	x, \"is\", x^2\'.
+
+	The 'config' function is used to modify certain parameters that
+	affect calculations or the display of values.  For example, the
+	output display mode can be set using 'config(\"mode\", type)',
+	where 'type' is one of 'frac', 'int', 'real', 'exp', 'hex',
+	'oct', or 'bin'.  The default output mode is real.  For the
+	integer, real, or exponential formats, a leading '~' indicates
+	that the number was truncated to the number of decimal places
+	specified by the default precision.  If the '~' does not
+	appear, then the displayed number is the exact value.
+
+	The number of decimal places printed is set by using
+	'config(\"display\", n)'.  The default precision for
+	real-valued functions can be set by using 'epsilon(x)', where x
+	is the required precision (such as 1e-50).
+
+	There is a command stack feature so that you can easily
+	re-execute previous commands and expressions from the terminal.
+	You can also edit the current command before it is completed.
+	Both of these features use emacs-like commands.
+
+	Files can be read in by using the 'read filename' command.
+	These can contain both functions to be defined, and expressions
+	to be calculated.  Global variables which are numbers can be
+	saved to a file by using the 'write filename' command.
