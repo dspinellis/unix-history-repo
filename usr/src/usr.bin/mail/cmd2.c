@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cmd2.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmd2.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "rcv.h"
@@ -138,7 +138,7 @@ save1(str, mark, cmd, ignore)
 	char *cmd;
 	struct ignoretab *ignore;
 {
-	register int *ip, mesg;
+	register int *ip;
 	register struct message *mp;
 	char *file, *disp;
 	int f, *msgvec;
@@ -170,9 +170,8 @@ save1(str, mark, cmd, ignore)
 		return(1);
 	}
 	for (ip = msgvec; *ip && ip-msgvec < msgCount; ip++) {
-		mesg = *ip;
-		touch(mesg);
-		mp = &message[mesg-1];
+		mp = &message[*ip - 1];
+		touch(mp);
 		if (send(mp, obuf, ignore, NOSTR) < 0) {
 			perror(file);
 			fclose(obuf);
@@ -267,10 +266,9 @@ deltype(msgvec)
 
 	lastdot = dot - &message[0] + 1;
 	if (delm(msgvec) >= 0) {
-		list[0] = dot - &message[0];
-		list[0]++;
+		list[0] = dot - &message[0] + 1;
 		if (list[0] > lastdot) {
-			touch(list[0]);
+			touch(dot);
 			list[1] = NULL;
 			return(type(list));
 		}
@@ -293,17 +291,16 @@ delm(msgvec)
 	int *msgvec;
 {
 	register struct message *mp;
-	register *ip, mesg;
+	register *ip;
 	int last;
 
 	last = NULL;
 	for (ip = msgvec; *ip != NULL; ip++) {
-		mesg = *ip;
-		touch(mesg);
-		mp = &message[mesg-1];
+		mp = &message[*ip - 1];
+		touch(mp);
 		mp->m_flag |= MDELETED|MTOUCH;
 		mp->m_flag &= ~(MPRESERVE|MSAVED|MBOX);
-		last = mesg;
+		last = *ip;
 	}
 	if (last != NULL) {
 		dot = &message[last-1];
@@ -333,14 +330,11 @@ undelete(msgvec)
 	int *msgvec;
 {
 	register struct message *mp;
-	register *ip, mesg;
+	register *ip;
 
-	for (ip = msgvec; ip-msgvec < msgCount; ip++) {
-		mesg = *ip;
-		if (mesg == 0)
-			return;
-		touch(mesg);
-		mp = &message[mesg-1];
+	for (ip = msgvec; *ip && ip-msgvec < msgCount; ip++) {
+		mp = &message[*ip - 1];
+		touch(mp);
 		dot = mp;
 		mp->m_flag &= ~MDELETED;
 	}
@@ -449,7 +443,7 @@ ignore1(list, tab, which)
 	register struct ignore *igp;
 	char **ap;
 
-	if (argcount(list) == 0)
+	if (*list == NOSTR)
 		return igshow(tab, which);
 	for (ap = list; *ap != 0; ap++) {
 		istrcpy(field, *ap);

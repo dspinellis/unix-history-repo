@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cmd3.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmd3.c	5.16 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "rcv.h"
@@ -205,10 +205,10 @@ _respond(msgvec)
 	 * Delete my name from the reply list,
 	 * and with it, all my alternate names.
 	 */
-	np = delname(np, myname, icequal);
+	np = delname(np, myname);
 	if (altnames)
 		for (ap = altnames; *ap; ap++)
-			np = delname(np, *ap, icequal);
+			np = delname(np, *ap);
 	if (np != NIL && replyto == NOSTR)
 		np = cat(np, extract(rcv, GTO));
 	else if (np == NIL) {
@@ -222,10 +222,10 @@ _respond(msgvec)
 	head.h_subject = reedit(head.h_subject);
 	if (replyto == NOSTR && (cp = skin(hfield("cc", mp))) != NOSTR) {
 		np = elide(extract(cp, GCC));
-		np = delname(np, myname, icequal);
+		np = delname(np, myname);
 		if (altnames != 0)
 			for (ap = altnames; *ap; ap++)
-				np = delname(np, *ap, icequal);
+				np = delname(np, *ap);
 		head.h_cc = np;
 	} else
 		head.h_cc = NIL;
@@ -342,7 +342,7 @@ set(arglist)
 	char varbuf[BUFSIZ], **ap, **p;
 	int errs, h, s;
 
-	if (argcount(arglist) == 0) {
+	if (*arglist == NOSTR) {
 		for (h = 0, s = 1; h < HSHSIZE; h++)
 			for (vp = variables[h]; vp != NOVAR; vp = vp->v_link)
 				s++;
@@ -428,7 +428,7 @@ group(argv)
 	int s;
 	char **ap, *gname, **p;
 
-	if (argcount(argv) == 0) {
+	if (*argv == NOSTR) {
 		for (h = 0, s = 1; h < HSHSIZE; h++)
 			for (gh = groups[h]; gh != NOGRP; gh = gh->g_link)
 				s++;
@@ -442,7 +442,7 @@ group(argv)
 			printgroup(*p);
 		return(0);
 	}
-	if (argcount(argv) == 1) {
+	if (argv[1] == NOSTR) {
 		printgroup(*argv);
 		return(0);
 	}

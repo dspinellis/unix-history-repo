@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)collect.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)collect.c	5.14 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -274,7 +274,7 @@ cont:
 			 * Write the message on a file.
 			 */
 			cp = &linebuf[2];
-			while (any(*cp, " \t"))
+			while (*cp == ' ' || *cp == '\t')
 				cp++;
 			if (*cp == '\0') {
 				fprintf(stderr, "Write what file!?\n");
@@ -299,10 +299,7 @@ cont:
 				printf("No messages to send from!?!\n");
 				break;
 			}
-			cp = &linebuf[2];
-			while (any(*cp, " \t"))
-				cp++;
-			if (forward(cp, collf, c) < 0)
+			if (forward(linebuf + 2, collf, c) < 0)
 				goto err;
 			goto cont;
 		case '?':
@@ -475,7 +472,7 @@ forward(ms, fp, f)
 	char ms[];
 	FILE *fp;
 {
-	register int *msgvec, *ip;
+	register int *msgvec;
 	extern char tempMail[];
 	struct ignoretab *ig;
 	char *tabst;
@@ -485,7 +482,7 @@ forward(ms, fp, f)
 		return(0);
 	if (getmsglist(ms, msgvec, 0) < 0)
 		return(0);
-	if (*msgvec == NULL) {
+	if (*msgvec == 0) {
 		*msgvec = first(0, MMNORM);
 		if (*msgvec == NULL) {
 			printf("No appropriate messages\n");
@@ -499,10 +496,12 @@ forward(ms, fp, f)
 		tabst = "\t";
 	ig = isupper(f) ? NULL : ignore;
 	printf("Interpolating:");
-	for (ip = msgvec; *ip != NULL; ip++) {
-		touch(*ip);
-		printf(" %d", *ip);
-		if (send(&message[*ip-1], fp, ig, tabst) < 0) {
+	for (; *msgvec != 0; msgvec++) {
+		struct message *mp = message + *msgvec - 1;
+
+		touch(mp);
+		printf(" %d", *msgvec);
+		if (send(mp, fp, ig, tabst) < 0) {
 			perror(tempMail);
 			return(-1);
 		}

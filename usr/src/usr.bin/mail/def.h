@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)def.h	5.15 (Berkeley) %G%
+ *	@(#)def.h	5.16 (Berkeley) %G%
  */
 
 #include <sys/param.h>		/* includes <sys/types.h> */
@@ -301,5 +301,3 @@ struct	name	*outof();
 struct	name	*put();
 struct	name	*usermap();
 struct	var	*lookup();
-long	transmit();
-int	icequal();

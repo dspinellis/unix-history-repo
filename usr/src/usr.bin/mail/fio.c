@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)fio.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)fio.c	5.15 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "rcv.h"
@@ -474,7 +474,7 @@ expand(name)
 	for (cp = &xname[l-1]; *cp == '\n' && cp > xname; cp--)
 		;
 	cp[1] = '\0';
-	if (any(' ', xname) && stat(xname, &sbuf) < 0) {
+	if (index(xname, ' ') && stat(xname, &sbuf) < 0) {
 		fprintf(stderr, "\"%s\": Ambiguous\n", name);
 		return NOSTR;
 	}

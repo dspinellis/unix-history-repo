@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)head.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)head.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "rcv.h"
@@ -130,66 +130,64 @@ copyin(src, space)
  * date string as documented in the manual.  The template
  * below is used as the criterion of correctness.
  * Also, we check for a possible trailing time zone using
- * the auxtype template.
+ * the tmztype template.
  */
 
-#define	L	1		/* A lower case char */
-#define	S	2		/* A space */
-#define	D	3		/* A digit */
-#define	O	4		/* An optional digit or space */
-#define	C	5		/* A colon */
-#define	N	6		/* A new line */
-#define U	7		/* An upper case char */
-
-char ctypes[] = { U,L,L,S,U,L,L,S,O,D,S,D,D,C,D,D,C,D,D,S,D,D,D,D,0 };
-char tmztypes[] = { U,L,L,S,U,L,L,S,O,D,S,D,D,C,D,D,C,D,D,S,U,U,U,S,D,D,D,D,0 };
+/*
+ * 'A'	An upper case char
+ * 'a'	A lower case char
+ * ' '	A space
+ * '0'	A digit
+ * 'O'	An optional digit or space
+ * ':'	A colon
+ * 'N'	A new line
+ */
+char ctype[] = "Aaa Aaa O0 00:00:00 0000";
+char tmztype[] = "Aaa Aaa O0 00:00:00 AAA 0000";
 
 isdate(date)
 	char date[];
 {
 
-	if (cmatch(date, ctypes))
-		return (1);
-	return (cmatch(date, tmztypes));
+	return cmatch(date, ctype) || cmatch(date, tmztype);
 }
 
 /*
  * Match the given string (cp) against the given template (tp).
  * Return 1 if they match, 0 if they don't
  */
-
 cmatch(cp, tp)
 	register char *cp, *tp;
 {
 
 	while (*cp && *tp)
 		switch (*tp++) {
-		case L:
+		case 'a':
 			if (!islower(*cp++))
 				return 0;
 			break;
-		case U:
+		case 'A':
 			if (!isupper(*cp++))
 				return 0;
 			break;
-		case S:
+		case ' ':
 			if (*cp++ != ' ')
 				return 0;
 			break;
-		case D:
+		case '0':
 			if (!isdigit(*cp++))
 				return 0;
 			break;
-		case O:
+		case 'O':
 			if (*cp != ' ' && !isdigit(*cp))
 				return 0;
 			cp++;
 			break;
-		case C:
+		case ':':
 			if (*cp++ != ':')
 				return 0;
 			break;
-		case N:
+		case 'N':
 			if (*cp++ != '\n')
 				return 0;
 			break;
@@ -231,18 +229,4 @@ nextword(wp, wbuf)
 	if (c == 0)
 		return (NOSTR);
 	return (wp - 1);
-}
-
-/*
- * Is c contained in s?
- */
-any(c, s)
-	register c;
-	register char *s;
-{
-
-	while (*s)
-		if (*s++ == c)
-			return 1;
-	return 0;
 }

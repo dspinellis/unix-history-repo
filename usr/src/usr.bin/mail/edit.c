@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)edit.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)edit.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "rcv.h"
@@ -71,24 +71,23 @@ edit1(msgvec, type)
 	 */
 	for (i = 0; msgvec[i] && i < msgCount; i++) {
 		int (*sigint)();
-		int m = msgvec[i];
 
 		if (i > 0) {
 			char buf[100];
 			char *p;
 
-			printf("Edit message %d [ynq]? ", m);
+			printf("Edit message %d [ynq]? ", msgvec[i]);
 			if (fgets(buf, sizeof buf, stdin) == 0)
 				break;
-			for (p = buf; any(*p, " \t"); p++)
+			for (p = buf; *p == ' ' || *p == '\t'; p++)
 				;
 			if (*p == 'q')
 				break;
 			if (*p == 'n')
 				continue;
 		}
-		dot = mp = &message[m - 1];
-		touch(m);
+		dot = mp = &message[msgvec[i] - 1];
+		touch(mp);
 		sigint = signal(SIGINT, SIG_IGN);
 		fp = run_editor(setinput(mp), mp->m_size, type, readonly);
 		if (fp != NULL) {

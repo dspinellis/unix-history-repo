@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)list.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)list.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "rcv.h"
@@ -483,7 +483,7 @@ scan(sp)
 	 * strip away leading white space.
 	 */
 
-	while (any(c, " \t"))
+	while (c == ' ' || c == '\t')
 		c = *cp++;
 
 	/*
@@ -536,14 +536,14 @@ scan(sp)
 	 */
 
 	quotec = 0;
-	if (any(c, "'\"")) {
+	if (c == '\'' || c == '"') {
 		quotec = c;
 		c = *cp++;
 	}
 	while (c != '\0') {
 		if (c == quotec)
 			break;
-		if (quotec == 0 && any(c, " \t"))
+		if (quotec == 0 && (c == ' ' || c == '\t'))
 			break;
 		if (cp2 - lexstring < STRINGLEN-1)
 			*cp2++ = c;
