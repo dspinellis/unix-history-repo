@@ -1,0 +1,1028 @@
+ (Chess) - GNU Chess
+ (EUC) - EUC encoding of runes
+ (MAKEDEV) - create system and device special files
+ (TP) - ISO Transport Protocol
+ (USERFILE) - UUCP pathname permissions file
+ (UTF2) - Universal character set Transformation Format encoding of runes
+ (XNSrouted) - NS Routing Information Protocol daemon
+ (abort) - abnormal termination
+ (abort) - cause abnormal program termination
+ (abs) - integer absolute value function
+ (ac) - display connect time accounting
+ (acc) - ACC LH/DH IMP interface
+ (accept) - accept a connection on a socket
+ (access) - check access permissions of a file or pathname
+ (access) - determine accessibility of a file
+ (acct) - enable or disable process accounting
+ (acct) - execution accounting file
+ (ace) - ACC 10 Mb/s Ethernet interface
+ (acos) - arc cosine function
+ (acosh) - inverse hyperbolic cosine function
+ (acucntrl) - turn around tty line between dialin and dialout
+ (ad) - Data Translation A/D converter
+ (adb) - debugger
+ (addbib) - create or extend bibliographic database
+ (addftinfo) -	add information to troff font files for use with groff
+ (adduser) - procedure for adding new users
+ (adjtime) - correct the time to allow synchronization of the system clock
+ (adventure) - an exploration game
+ (afmtodit) - create font files for use with groff -Tps
+ (alarm) - execute a subroutine after a specified time
+ (alarm) - set signal timer alarm
+ (aliases) - aliases file for sendmail
+ (alloca) - memory allocator
+ (amd) - automatically mount file systems
+ (amq) - automounter query tool
+ (apply) - apply a command to a set of arguments
+ (apropos) - locate commands by keyword lookup
+ (ar) - archive (library) file format
+ (ar) - create and maintain library archives
+ (arithmetic) - quiz on simple arithmetic
+ (arp) - address resolution display and control
+ (ascii) - octal, hexadecimal and decimal ASCII character sets
+ (asin) - arc sine function
+ (asinh) - inverse hyperbolic sine function
+ (assert) - expression verification macro
+ (at) - schedule execution of commands `at' a given time
+ (atan) - arc tangent function of one variable
+ (atan2) - arc tangent function of two variables
+ (atanh) - inverse hyperbolic tangent function
+ (atc) - air traffic controller game
+ (atexit) - register a function to be called on exit
+ (atof) - convert ASCII string to double
+ (atoi) - convert ASCII string to integer
+ (atol) - convert ASCII string to long integer
+ (atq) - display the at(1) job queue
+ (atrm) - remove jobs spooled by at(1)
+ (autoconf) - diagnostics from autoconfiguration code
+ (autoconf) - diagnostics from the autoconfiguration code
+ (awk) - pattern scanning and processing language
+ (backgammon) - the game of backgammon
+ (badsect) - create files to contain bad sectors
+ (banner) - print large banner on printer
+ (battlestar) - a tropical adventure game
+ (bc) - arbitrary-precision arithmetic language and calculator
+ (bcmp) - compare byte string
+ (bcopy) - copy byte string
+ (bdes) - encrypt/decrypt using the Data Encryption Standard
+ (biff) - be notified if mail arrives and who it is from
+ (bind) - bind a name to a socket
+ (bit) - and, or, xor, not, rshift, lshift bitwise functions
+ (boggle) - word search game
+ (boot) - system bootstrapping procedures
+ (bsearch) - binary search of a sorted table
+ (btree) - btree database access method
+ (bugfiler) - file bug reports in folders automatically
+ (bwtwo) - monochromatic frame buffer
+ (bzero) - write zeroes to a byte string
+ (caesar) - decrypt caesar cyphers
+ (cal) - displays a calendar
+ (calendar) - reminder service
+ (calloc) - allocate clean memory (zero initialized space)
+ (cat) - concatenate and print files
+ (cd) - change working directory
+ (ceil) - smallest integral value not greater than x
+ (cgthree) - 8-bit color frame buffer
+ (chdir) - change default directory
+ (checknr) - check nroff/troff files
+ (chflags) - change file flags
+ (chgrp) - change group
+ (ching) - the book of changes and other cookies
+ (chmod) - change file modes
+ (chmod) - change mode of a file
+ (chown) - change file owner and group
+ (chpass) - add or change user database information
+ (chroot) - change root directory
+ (cksum) - display file checksums and block counts
+ (clnp) - Connectionless-Mode Network Protocol
+ (clock) - determine processor time used
+ (close) - delete a descriptor
+ (clri) - clear i-node
+ (cltp) - ISO Connectionless Transport Protocol
+ (cmp) - compare two files
+ (col) - filter reverse line feeds from input
+ (colcrt) - filter nroff output for CRT previewing
+ (colrm) - remove columns from a file
+ (column) - columnate lists
+ (comm) - select or reject lines common to two files
+ (comsat) - biff server
+ (config) - build system configuration files
+ (confstr) - get string-valued configurable variables
+ (connect) - initiate a connection on a socket
+ (cons) - HP300 console interface
+ (cons) - VAX-11 console interface
+ (core) - memory image file format
+ (cos) - cosine function
+ (cosh) - hyperbolic cosine function
+ (cp) - copy files
+ (crash) - UNIX system failures
+ (creat) - create a new file
+ (cribbage) - the card game cribbage
+ (crl) - VAX 8600 console RL02 interface
+ (cron) - clock daemon
+ (crontab) - chronological services schedule file
+ (crypt) - encode/decode
+ (csh) - a shell (command interpreter) with C-like syntax
+ (css) - DEC IMP-11A LH/DH IMP interface
+ (ct) - C/A/T phototypesetter interface
+ (ct) - CS/80 cartridge tape interface
+ (ctags) - create a tags file
+ (ctermid) - generate terminal pathname
+ (curses) - screen functions with ``optimal'' cursor motion
+ (cut) - select portions of each line of a file
+ (cy) - Cipher/tapemaster magtape interface
+ (daemon) - run in the background
+ (date) - display or set date and time
+ (dbopen) - database access methods
+ (dc) - desk calculator
+ (dca) - HP 98644A communications interface
+ (dcl) - HP 98628A communications link
+ (dcm) - HP 98642A communications multiplexer
+ (dd) - convert and copy a file
+ (ddn) - DDN Standard Mode X.25 IMP interface
+ (de) - DEC DEUNA 10 Mb/s Ethernet interface
+ (deroff) - remove nroff, troff, tbl and eqn constructs
+ (devname) - get device name
+ (df) - display free disk space
+ (dh) - DH-11/ DM-11 multiplexer device interface
+ (dhu) - DHU-11 communications multiplexer
+ (diff) - differential file and directory comparator
+ (diff3) - 3-way differential file comparison
+ (dig) - send domain name query packets to name servers
+ (disklabel) - disk pack label
+ (disklabel) - read and write disk pack label
+ (diskpart) - calculate default disk partition sizes
+ (disktab) - disk description file
+ (div) - return quotient and remainder from division
+ (dm) - dungeon master
+ (dmc) - DEC DMC-11/ DMR-11 point-to-point communications device
+ (dmesg) - display the system message buffer
+ (dmf) - DMF-32 terminal multiplexor
+ (dmz) - DMZ-32 terminal multiplexor
+ (dn) - DN-11 autocall unit interface
+ (dr) - Ikon DR-11W interface
+ (drtest) - standalone disk test program
+ (drum) - paging device
+ (du) - display disk usage statistics
+ (dump) - filesystem backup
+ (dumpfs) - dump file system information
+ (dumplfs) - dump file system information
+ (dv) - HP98730 ``DaVinci'' device interface
+ (dz) - DZ-11 multiplexer device interface
+ (ec) - 3Com 10 Mb/s Ethernet interface
+ (echo) - write arguments to the standard output
+ (ed) - text editor
+ (edquota) - edit user quotas
+ (en) - Xerox 3 Mb/s Ethernet interface
+ (enp) - CMC 10 Mb/s Ethernet interface
+ (environ) - user environment
+ (eqn) - format equations for troff
+ (eqnchar) - special character definitions for eqn
+ (error) - analyze and disperse compiler error messages
+ (ex) - Excelan 10 Mb/s Ethernet interface
+ (execve) - execute a file
+ (exit) - perform normal program termination
+ (exit) - terminate process with status
+ (exit) - terminate the calling process
+ (exports) - define remote mount points for NFS mount requests
+ (expr) - evaluate arguments as an expression
+ (fabs) - floating-point absolute value function
+ (false) - return false value
+ (fclose) - close a stream
+ (fcntl) - file control
+ (fdate) - return date and time in an ASCII string
+ (ffs) - find first bit set in a bit string
+ (fgetline) - get a line from a stream
+ (file) - identify file content
+ (find) - walk a file hierarchy
+ (finger) - user information lookup program
+ (fingerd) - remote user information server
+ (fish) - play ``Go Fish''
+ (fl) - console floppy interface
+ (flock) - apply or remove an advisory lock on an open file
+ (floor) - largest integral value not greater than x
+ (flush) - flush output to a logical unit
+ (fmod) - floating-point remainder function
+ (fmt) - simple text formatter
+ (fnmatch) - match filename or pathname
+ (fold) - fold long lines for finite width output device
+ (fork) - create a copy of this process
+ (fork) - create a new process
+ (format) - how to format disk packs
+ (format) - how to format disks and tapes
+ (fortune) - print a random, hopefully interesting, adage
+ (fpr) - print Fortran file
+ (free) - free up memory allocated with malloc, calloc or realloc
+ (frexp) - convert floating-point number to fractional and integral components
+ (from) - print names of those who have sent mail
+ (fsck) - filesystem consistency check and interactive repair
+ (fsdb) - file system debugger
+ (fsinfo) - co-ordinate site-wide filesystem information
+ (fsplit) - split a multi-routine Fortran file into individual files
+ (fstab) - static information about the filesystems
+ (fstat) - file status
+ (fsync) - synchronize a file's in-core state with that on disk
+ (ftime) - get date and time
+ (ftp) - ARPANET file transfer program
+ (ftpd) - Internet File Transfer Protocol server
+ (fts) - traverse a file hierarchy
+ (gb) - HP98700 ``Gatorbox'' device interface
+ (gcore) - get core images of running process
+ (getbsize) - get user block size
+ (getcwd) - get pathname of current working directory
+ (getdirentries) - get directory entries in a filesystem independent format
+ (getdiskbyname) - get generic disk description by its name
+ (getdtablesize) - get descriptor table size
+ (getenv) - get value of environment variables
+ (getfh) - get file handle
+ (getfsstat) - get list of all mounted filesystems
+ (getgrouplist) - calculate group access list
+ (getgroups) - get group access list
+ (getloadavg) - get system load averages
+ (getlog) - get user's login name
+ (getmntinfo) - get information about mounted file systems
+ (getopt) - get option character from command line argument list
+ (getpagesize) - get system page size
+ (getpass) - get a password
+ (getpeername) - get name of connected peer
+ (getpgrp) - get process group
+ (getpid) - get process id
+ (getpw) - get name from uid
+ (getrusage) - get information about resource utilization
+ (getsockname) - get socket name
+ (getsubopt) - get sub options from an argument
+ (getty) - set terminal mode
+ (gettytab) - terminal configuration data base
+ (getwd) - get working directory pathname
+ (gprof) - display call graph profile data
+ (graph) - draw a graph
+ (grep) - file pattern searcher
+ (grf) - HP graphics frame buffer device interface
+ (grodvi) - convert groff output to TeX dvi format
+ (groff) - front end for the groff document formatting system
+ (grog) - guess options for groff command
+ (grops) - PostScript driver for groff
+ (grotty) - groff driver for typewriter-like devices
+ (group) - format of the group permissions file
+ (groups) - show group memberships
+ (hack) - exploring The Dungeons of Doom
+ (hangman) - the game of hangman
+ (hash) - hash database access method
+ (hdh) - ACC IF-11/HDH IMP interface
+ (head) - display first lines of a file
+ (hexdump) - ascii, decimal, hexadecimal, octal dump
+ (hier) - layout of filesystems
+ (hil) - Human Interface Link device driver
+ (hk) - RK6-11/ RK06 and RK07 disk interface
+ (hostname) - host name resolution description
+ (hostname) - set or print name of current host system
+ (hostnm) - get name of current host
+ (hosts) - host name data base
+ (hp) - MASSBUS disk interface
+ (ht) - TM-03/ TE-16, TU-45, TU-77 MASSBUS magtape device interface:
+ (hy) - Network Systems Hyperchannel interface
+ (icheck) - file system storage consistency check
+ (icmp) - Internet Control Message Protocol
+ (id) - return user identity
+ (idp) - Xerox Internet Datagram Protocol
+ (ifconfig) - configure network interface parameters
+ (ik) - Evans and Sutherland Picture System 300 graphics device interface
+ (ik) - Ikonas frame buffer, graphics device interface
+ (il) - Interlan NI1010 10 Mb/s Ethernet interface
+ (indent) - indent and format C program source
+ (index) - locate character in string
+ (indxbib) - make inverted index for bibliographic databases
+ (inet) - Internet protocol family
+ (inetd) - internet ``super-server''
+ (infnan) - signals invalid floating-point operations on a VAX (temporary)
+ (init) - process control initialization
+ (initgroups) - initialize group access list
+ (install) - install binaries
+ (installboot) - installs a boot program in a file system
+ (intro) - introduction to FORTRAN library functions
+ (intro) - introduction to general commands (tools and utilities)
+ (intro) - introduction to special files and hardware support
+ (intro) - introduction to system calls and error numbers
+ (intro) - introduction to system maintenance and operation commands
+ (intro) - introduction to the C libraries
+ (intro) - miscellaneous information pages
+ (ioctl) - control device
+ (ioinit) - change f77 I/O initialization
+ (iostat) - report I/O statistics
+ (ip) - Internet Protocol
+ (isalnum) - alphanumeric character test
+ (isalpha) - alphabetic character test
+ (isascii) - test for ASCII character
+ (isblank) - space or tab character test
+ (iscntrl) - control character test
+ (isdigit) - decimal-digit character test
+ (isgraph) - printing character test (space character exculsive)
+ (islower) - lower-case character test
+ (iso) - ISO protocol family
+ (isprint) - printing character test (space character inclusive)
+ (ispunct) - punctuation character test
+ (isspace) - white-space character test
+ (isupper) - upper-case character test
+ (isxdigit) - hexadecimal-digit character test
+ (ite) - HP Internal Terminal Emulator
+ (ix) - Interlan Np100 10 Mb/s Ethernet interface
+ (join) - relational database operator
+ (jot) - print sequential or random data
+ (kdestroy) - destroy Kerberos tickets
+ (kdump) - display kernel trace data
+ (kerberos) - introduction to the Kerberos system
+ (kg) - KL-11/ DL-11W line clock
+ (kgmon) - generate a dump of the operating system's profile buffers
+ (kill) - send a signal to a process
+ (kill) - send signal to a process
+ (kill) - terminate or signal a process
+ (killpg) - send signal to a process group
+ (kinit) - Kerberos login utility
+ (klist) - list currently held Kerberos tickets
+ (kpasswdd) - Kerberos password changing daemon
+ (ksrvtgt) - fetch and store Kerberos ticket-granting-ticket using a service key
+ (kstash) -  stash Kerberos key distribution center database master key
+ (ktrace) - enable kernel process tracing
+ (ktrace) - process tracing
+ (kuserok) - Kerberos version of ruserok
+ (kvm) - kernel memory interface
+ (labs) - return the absolute value of a long integer
+ (lam) - laminate files
+ (larn) - exploring the caverns of Larn
+ (last) - indicate last logins of users and ttys
+ (lastcomm) - show last commands executed in reverse order
+ (ld) - link editor
+ (ldexp) - mutliply floating-point number by integral power of 2
+ (ldiv) - return quotient and remainder from division
+ (le) - AMD 7990 LANCE ethernet interface
+ (le) - HP AMD 7990 LANCE Ethernet interface
+ (learn) - computer aided instruction about UNIX
+ (leave) - remind you when you have to leave
+ (lex) - fast lexical analyzer generator
+ (lex) - generator of lexical analysis programs
+ (link) - make a hard file link
+ (link) - make a link to an existing file
+ (listen) - listen for connections on a socket
+ (lkbib) - search bibliographic databases
+ (ln) - make links
+ (lo) - software loopback network interface
+ (loc) - return the address of an object
+ (locate) - find files
+ (lock) - reserve a terminal
+ (logger) - make entries in the system log
+ (login) - log into the computer
+ (logname) - display user's login name
+ (look) - display lines beginning with a given string
+ (lookbib) - search bibliographic databases
+ (lorder) - list dependencies for object files
+ (lp) - line printer
+ (lpc) - line printer control program
+ (lpd) - line printer spooler daemon
+ (lpq) - spool queue examination program
+ (lpr) - off line print
+ (lprm) - remove jobs from the line printer spooling queue
+ (lptest) - generate lineprinter ripple pattern
+ (ls) - list directory contents
+ (lseek) - reposition read/write file offset
+ (m4) - macro language preprocessor for ratfor(1) and pascal(1)
+ (madvise) - give advise about use of memory
+ (mail) - send and receive mail
+ (mailaddr) - mail addressing description
+ (make) - maintain program dependencies
+ (make) - maintain program groups
+ (makekey) - make encrypted keys or passwords
+ (makemap) - create database maps for sendmail
+ (malloc) - general memory allocation function
+ (man) - (deprecated) macros to typeset manual
+ (man) - display the on-line manual pages
+ (map3270) -  database for mapping ascii keystrokes into IBM 3270 keys
+ (math) - introduction to mathematical library functions
+ (mdoc) - quick reference guide for the -mdoc macro package
+ (me) - macros for formatting papers
+ (memccpy) - copy string until character found
+ (memchr) - locate byte in byte string
+ (memcmp) - compare byte string
+ (memcpy) - copy byte string
+ (memmove) - copy byte string
+ (memset) - write a byte to byte string
+ (mesg) - display (do not display) messages from other users
+ (mille) - play Mille Bournes
+ (mincore) - get advise about use of memory
+ (mkdep) - construct Makefile dependency list
+ (mkdir) - make a directory file
+ (mkdir) - make directories
+ (mkfifo) - make a fifo file
+ (mkfifo) - make fifos
+ (mklocale) - make LC_CTYPE locale files
+ (mknod) - build special file
+ (mknod) - make a special file node
+ (mkproto) - construct a prototype file system
+ (mkstr) - create an error message file by massaging C source
+ (mktemp) - make temporary file name (unique)
+ (mm) - groff mm macros
+ (mmap) - map files or devices into memory
+ (modf) - extract signed integral and fractional values from floating-point number
+ (monop) - Monopoly game
+ (more) - file perusal filter for crt viewing
+ (mountd) - service remote NFS mount requests
+ (mprotect) - control the protection of pages
+ (ms) - text formatting macros
+ (mset) - retrieve ASCII to IBM 3270 keyboard map
+ (msgs) - system messages and junk mail program
+ (msync) - synchronize a mapped region
+ (mt) - TM78/ TU-78 MASSBUS magtape interface
+ (mt) - magnetic tape manipulating program
+ (mtio) - UNIX magtape interface
+ (mtree) - map a directory hierarchy
+ (munmap) - remove a mapping
+ (mv) - move files
+ (named) - Internet domain name server
+ (ncheck) - generate names from i-numbers
+ (netgroup) - defines network groups
+ (netstat) - show network status
+ (networking) - introduction to networking facilities
+ (networks) - network name data base
+ (newaliases) - rebuild the data base for the mail aliases file
+ (newlfs) - construct a new LFS file system
+ (nfsd) - remote NFS server
+ (nfsiod) - local NFS asynchronous I/O server
+ (nfsstat) - display NFS statistics
+ (nfssvc) - NFS services
+ (nice) - execute a command at a low scheduling priority
+ (nice) - set program scheduling priority
+ (nlist) - retrieve symbol table name list from an executable file
+ (nm) - display name list (symbol table)
+ (nohup) - invoke a command immune to hangups
+ (nologin) - politely refuse a login
+ (np) - Interlan Np100 10 Mb/s Ethernet interface
+ (nroff) - emulate nroff command with groff
+ (nroff) - text formatting
+ (ns) - Xerox Network Systems(tm) protocol family
+ (nsip) - software network interface encapsulating NS packets in IP packets
+ (nslookup) - query Internet name servers interactively
+ (null) - the null device
+ (number) - convert Arabic numerals to English
+ (od) - octal, decimal, hex, ascii dump
+ (open) - open or create a file for reading or writing
+ (openprom) - OPENPROM and EEPROM interface
+ (operator) - C operator precedence and order of evaluation
+ (pac) - printer/plotter accounting information
+ (pagesize) - print system page size
+ (passwd) - format of the password file
+ (passwd) - modify a user's password
+ (paste) - merge corresponding or subsequent lines of files
+ (pause) - stop until signal
+ (pax) - read and write file archives and copy directory hierarchies
+ (pcl) - DEC CSS PCL-11 B Network Interface
+ (pfbtops) -  translate a PostScript font in .pfb format to ASCII
+ (phantasia) - an interterminal fantasy game
+ (phones) - remote host phone number data base
+ (pic) - compile pictures for troff or TeX
+ (pig) - eformatray inputway asway Igpay Atinlay
+ (ping) - send ICMP ECHO_REQUEST packets to network hosts
+ (pipe) - create descriptor pair for interprocess communication
+ (plot) - graphics filters
+ (plot) - graphics interface
+ (pom) - display the phase of the moon
+ (portmap) - DARPA port to RPC program number mapper
+ (ppi) - HP-IB printer/plotter interface
+ (pr) - Print files.
+ (pr) - print files
+ (printcap) - printer capability data base
+ (printf) - formatted output
+ (profil) - control process profiling
+ (protocols) - protocol name data base
+ (ps) - Evans and Sutherland Picture System 2 graphics device interface
+ (ps) - process status
+ (psbb) - extract bounding box from PostScript document
+ (pstat) - display system data structures
+ (ptrace) - process trace
+ (ptx) - permuted index
+ (pty) - pseudo terminal driver
+ (pwcache) - cache password and group entries
+ (pwd) - return working directory name
+ (qe) - DEC DEQNA Q-bus 10 Mb/s Ethernet interface
+ (qsort) - quick sort
+ (quiz) - random knowledge tests
+ (quot) - display total block usage per user for a file
+ (quota) - display disk usage and limits
+ (quotacheck) - filesystem quota consistency checker
+ (quotactl) - manipulate filesystem quotas
+ (radixsort) - radix sort
+ (rain) - animated raindrops display
+ (raise) - send a signal to the current process
+ (ranlib) - archive (library) table-of-contents format
+ (ranlib) - table-of-contents for archive libraries
+ (rb) - HP98720 ``Renaissance'' device interface
+ (rbootd) - HP remote boot server
+ (rc) - command script for auto-reboot and daemons
+ (rcp) - remote file copy
+ (rd) - CS/80 disk interface
+ (rdist) - remote file distribution program
+ (readlink) - read value of a symbolic link
+ (realloc) - reallocation of memory function
+ (reboot) - UNIX bootstrapping procedures
+ (reboot) - reboot system or halt processor
+ (recno) - record number database access method
+ (refer) - find and insert literature references in documents
+ (refer) - preprocess bibliographic references for groff
+ (register) - register with Kerberos
+ (registerd) - Kerberos registration daemon
+ (remote) - remote host description file
+ (remove) - remove directory entry
+ (rename) - change the name of a file
+ (rename) - rename a file
+ (renice) - alter priority of running processes
+ (repquota) - summarize quotas for a file system
+ (resolver) - resolver configuration file
+ (restore) - restore files or file systems from backups made with dump
+ (rev) - reverse lines of a file
+ (revoke) - revoke file access
+ (rexec) - return stream to a remote command
+ (rexecd) - remote execution server
+ (rhost) - look up host names using domain server
+ (rindex) - locate character in string
+ (rint) - and round-to-closest integer functions
+ (rlogin) - remote login
+ (rlogind) - remote login server
+ (rm) - remove directory entries
+ (rmail) - handle remote mail received via uucp
+ (rmdir) - remove a directory file
+ (rmdir) - remove directories
+ (rmt) - remote magtape protocol module
+ (robots) - fight off villainous robots
+ (roffbib) - run off bibliographic database
+ (rogue) - exploring The Dungeons of Doom
+ (route) - kernel packet forwarding database
+ (route) - manually manipulate the routing tables (Interim)
+ (routed) - network routing daemon
+ (rs) - reshape a data array
+ (rsh) - remote shell
+ (rshd) - remote shell server
+ (ruptime) - show host status of local machines
+ (rwho) - who is logged in on local machines
+ (rwhod) - system status server
+ (rx) - DEC RX02 floppy disk interface
+ (sail) - multi-user wooden ships and iron men
+ (savecore) - save a core dump of the operating system
+ (sccs) - front end for the SCCS subsystem
+ (script) - make typescript of terminal session
+ (scsiformat) - format SCSI disks and show SCSI parameters
+ (sed) - stream editor
+ (sed) - stream editor.
+ (select) - synchronous I/O multiplexing
+ (sendbug) - mail a system bug report to 4bsd-bugs
+ (sendmail) - send mail over the internet
+ (services) - service name data base
+ (setgroups) - set group access list
+ (setregid) - set real and effective group ID
+ (setreuid) - set real and effective user ID's
+ (setsid) - create session and set process group ID
+ (sh) - command interpreter (shell)
+ (sh) - shell command interpreter
+ (shar) - create a shell archive of files
+ (shells) - shell database
+ (showmount) - show remote nfs mounts on host
+ (shutdown) - close down the system at a given time
+ (shutdown) - shut down part of a full-duplex connection
+ (sigaction) - software signal facilities
+ (sigaltstack) - set and/or get signal stack context
+ (sigblock) - block signals
+ (siginterrupt) - allow signals to interrupt system calls
+ (signal) - change the action for a signal
+ (signal) - simplified software signal facilities
+ (sigpause) - atomically release blocked signals and wait for interrupt
+ (sigpending) - get pending signals
+ (sigprocmask) - manipulate current signal mask
+ (sigreturn) - return from signal
+ (sigsetmask) - set current signal mask
+ (sigstack) - set and/or get signal stack context
+ (sigsuspend) - atomically release blocked signals and wait for interrupt
+ (sigvec) - software signal facilities
+ (sin) - sine function
+ (sinh) - hyperbolic sine function
+ (size) - display object file segment sizes (text, data and bss)
+ (slattach) - attach serial lines as network interfaces
+ (sleep) - suspend execution for an interval
+ (sleep) - suspend execution for an interval of time
+ (sleep) - suspend process execution for interval of seconds
+ (sliplogin) - attach a serial line network interface
+ (socket) - create an endpoint for communication
+ (socketpair) - create a pair of connected sockets
+ (soelim) - eliminate .so's from nroff input
+ (sort) - sort or merge text files
+ (sortbib) - sort bibliographic database
+ (spline) - interpolate smooth curve
+ (split) - split a file into pieces
+ (spp) - Xerox Sequenced Packet Protocol
+ (stab) - symbol table types
+ (startslip) - dial up and login to a slip server
+ (statfs) - get file system statistics
+ (stdarg) - variable argument lists
+ (stdio) - standard input/output library functions
+ (sticky) - sticky text and append-only directories
+ (strcasecmp) - compare strings, ignoring case
+ (strcat) - concatenate strings
+ (strchr) - locate character in string
+ (strcmp) - compare strings
+ (strcoll) - compare strings according to current collation
+ (strcpy) - copy strings
+ (strcspn) - span the complement of a string
+ (strdup) - save a copy of a string
+ (strftime) - format date and time
+ (strings) - find printable strings in a file
+ (strip) - remove unnecessary information from executable files
+ (strlen) - find length of string
+ (strmode) - convert inode status information into a symbolic string
+ (strpbrk) - locate multiple characters in string
+ (strrchr) - locate character in string
+ (strsep) - separate strings
+ (strspn) - span a string
+ (strstr) - locate a substring in a string
+ (strtod) - convert ASCII string to double
+ (struct) - structure Fortran programs
+ (strxfrm) - transform a string under locale
+ (stty) - set the options for a terminal device interface
+ (style) - analyze surface characteristics of a document
+ (su) - substitute user identity
+ (sum) - calculate file checksums and block counts
+ (swab) - swap adjacent bytes
+ (swapon) - add a swap device for interleaved paging/swapping
+ (swapon) - specify additional device for paging and swapping
+ (symlink) - make symbolic link to a file
+ (symlink) - symbolic link handling
+ (symorder) - rearrange name list
+ (sync) - force completion of pending disk writes (flush cache)
+ (sync) - synchronize disk block in-core status with that on disk
+ (sysconf) - get configurable system variables
+ (sysctl) - get or set kernel state
+ (sysctl) - get or set system information
+ (syslogd) - log systems messages
+ (systat) - display system statistics on a crt
+ (system) - execute a UNIX command
+ (system) - pass a command to the shell
+ (tail) - display the last part of a file
+ (talk) - talk to another user
+ (talkd) - remote user communication server
+ (tan) - tangent function
+ (tanh) - hyperbolic tangent function
+ (tar) - tape archive file format
+ (tar) - tape archiver
+ (tb) - line discipline for digitizing devices
+ (tbl) - format tables for nroff or troff
+ (tbl) - format tables for troff
+ (tc) - HP98544 98550 ``Topcat'' and ``Catseye'' device interface
+ (tcgetpgrp) - get foreground process group ID
+ (tcopy) - copy and/or verify mag tapes
+ (tcp) - Internet Transmission Control Protocol
+ (tcsetpgrp) - set foreground process group ID
+ (tee) - pipe fitting
+ (telnet) - user interface to the TELNET protocol
+ (telnetd) - DARPA TELNET protocol server
+ (term) - conventional names for terminals
+ (termcap) - terminal capability data base
+ (termios) - general terminal line discipline
+ (test) - Condition evaluation utility.
+ (test) - condition evaluation utility
+ (tetris) - the game of tetris
+ (tfmtodit) - create font files for use with groff -Tdvi
+ (tftp) - trivial file transfer program
+ (tftpd) - Internet Trivial File Transfer Protocol server
+ (time) - get time of day
+ (time) - time command execution
+ (timed) - time server daemon
+ (timedc) - timed control program
+ (times) - process times
+ (timezone) - return the timezone abbreviation
+ (tm) - TM-11/ TE-10 magtape device interface
+ (tmscp) - DEC TMSCP magtape interface
+ (tn3270) - full-screen remote login to IBM VM/CMS
+ (toascii) - convert a byte to 7-bit ASCII
+ (tolower) - upper case to lower case letter conversion
+ (touch) - change file access and modification times
+ (toupper) - lower case to upper case letter conversion
+ (tput) - terminal capability interface
+ (tr) - translate characters
+ (traceroute) - print the route packets take to network host
+ (traper) - trap arithmetic errors
+ (trapov) - trap and repair floating point overflow
+ (trek) - trekkie game
+ (troff) - format documents
+ (trpt) - transliterate protocol trace
+ (trsp) - transliterate sequenced packet protocol trace
+ (true) - return true value
+ (ts) - TS-11 magtape interface
+ (tset) - terminal initialization
+ (tsort) - topological sort of a directed graph
+ (tty) - general terminal interface
+ (tty) - return user's terminal name
+ (ttys) - terminal initialization information
+ (tu) - VAX-11/730 and VAX-11/750 TU58 console cassette interface
+ (tunefs) - tune up an existing file system
+ (types) - system data types
+ (tzfile) - time zone information
+ (ualarm) - schedule signal after specified time
+ (uda) - UDA50 disk controller interface
+ (udp) - Internet User Datagram Protocol
+ (ul) - do underlining
+ (umask) - set file creation mode mask
+ (uname) - display information about the system
+ (ungetc) - un-get character from input stream
+ (unifdef) - remove ifdef'ed lines
+ (uniq) - report or filter out repeated lines in a file
+ (units) - conversion program
+ (unix) - UNIX-domain protocol family
+ (unlink) - remove a directory entry
+ (unlink) - remove directory entry
+ (unvis) - revert a visual representation of data back to original form
+ (up) - unibus storage module controller/drives
+ (update) - flush internal filesystem caches to disk frequently
+ (uptime) - show how long system has been running
+ (users) - list current users
+ (usleep) - suspend execution for interval of microseconds
+ (ut) - UNIBUS TU45 tri-density tape drive interface
+ (utime) - set file times
+ (utimes) - set file access and modification times
+ (uu) - TU58/ DECtape II UNIBUS cassette interface
+ (uuclean) - uucp spool directory clean-up
+ (uucp) - unix to unix copy
+ (uuencode) - format of an encoded uuencode file
+ (uulog) - display UUCP log entries
+ (uuname) - list names of UUCP hosts
+ (uupoll) - poll a remote UUCP site
+ (uuq) - examine or manipulate the uucp queue
+ (uusend) - send a file to a remote host
+ (uusnap) - show snapshot of the UUCP system
+ (uux) - unix to unix command execution
+ (uuxqt) - UUCP execution file interpreter
+ (va) - Benson-Varian interface
+ (vacation) - return ``I am not here'' indication
+ (valloc) - aligned memory allocation function
+ (vd) - VERSAbus storage module controller/drives
+ (vfork) - spawn new process in a virtual memory efficient way
+ (vgrind) - grind nice listings of programs
+ (vgrindefs) - language definition data base for vgrind(1)
+ (vipw) - edit the password file
+ (vis) - display non-printable characters in a visual format
+ (vis) - visually encode characters
+ (vlimit) - control maximum system resource consumption
+ (vmstat) - report virtual memory statistics
+ (vp) - Versatec interface
+ (vtimes) - get information about resource utilization
+ (vv) - Proteon proNET 10 Megabit ring
+ (vx) - communications multiplexor
+ (w) - who present users are and what they are doing
+ (wait) - await process completion
+ (wait) - wait for a process to terminate
+ (wall) - write a message to users
+ (wc) - word, line, and byte count
+ (what) - show what versions of object modules were used to construct a file
+ (whatis) - describe what a command is
+ (whereis) - locate programs
+ (which) - locate a program file including aliases and paths
+ (who) - display who is logged in
+ (whoami) - display effective user id
+ (whois) - Internet user name directory service
+ (window) - window environment
+ (worm) - play the growing worm game
+ (worms) - animate worms on a display terminal
+ (write) - send a message to another user
+ (wump) - hunt the wumpus in an underground cave
+ (xargs) - construct argument list(s) and execute utility
+ (xneko) - cat-and-mouse chase in an X window
+ (xroach) - cockroaches hide under your windows
+ (xstr) - extract strings from C programs to implement shared strings
+ (yacc) - an LALR(1) parser generator
+ (yacc) - yet another compiler-compiler
+ (yes) - be repetitively affirmative
+ (yyfix) - extract tables from y.tab.c
+ (zopen) - compressed stream open function
+CP, remote (cons) - Tahoe console interface
+accton (sa) - system accounting
+addr, link_ntoa (link) - elementary address specification routines for link level access
+addr, ns_ntoa (ns) - Xerox NS(tm) address conversion routines
+aliases (L) - UUCP hostname alias file
+alloc, bit_clear, bit_decl, bit_ffs, bit_nclear, bit_nset, bit_set, bitstr_size, bit_test (bit) - bit-string manipulation macros
+alphasort (scandir) - scan a directory
+amd-map (mk) - create database maps for Amd
+aton, inet_addr, inet_network, inet_ntoa, inet_makeaddr, inet_lnaof, inet_netof (inet) - Internet address manipulation routines
+bcopy, bzero, memccpy, memchr, memcmp, memcpy, memmove, memset (bcmp) -	byte string operations
+cabs (hypot) - euclidean distance and complex absolute value functions
+canonicalize_principal, acl_check, acl_exact_match, acl_add, acl_delete, acl_initialize (acl) - access control list routines
+cfscores (canfield) - the solitaire card game canfield
+cfsetispeed, cfgetospeed, cfsetospeed, cfsetspeed, cfmakeraw, tcgetattr, tcsetattr (cfgetispeed) - manipulating the termios structure
+cgetset, cgetmatch, cgetcap, cgetnum, cgetstr, cgetustr, cgetfirst, cgetnext, cgetclose (cgetent) - capability database access routines
+char (groff) - groff character names
+cleanerd (lfs) - garbage collect a log-structured file system
+cmds (L) - UUCP remote command permissions file
+comp, re_exec (re) - regular expression handler
+conf (dm) - dm configuration file
+conf (man) - configuration file for man(1)
+conf (syslog) - syslogd(8) configuration file
+ctime, difftime, gmtime, localtime, mktime (asctime) - transform binary date and time value to ASCII
+ctime, ltime, gmtime (time) - return system time
+cu (tip) - connect to a remote system
+destroy (kdb) -	destroy Kerberos key distribution center database
+devices (L) - UUCP device description file
+dialcodes (L) - UUCP phone number index file
+dirent (dir) - directory file format
+dirname (basename) - return filename or directory portion of pathname
+drand, irand (rand) - return random values
+drandm, irandm (random) - better random number generator
+drem, finite, logb, scalb (copysign) - IEEE 754 floating point support
+dtime (etime) - return elapsed execution time
+dumpdates (dump) - incremental dump format
+dup2 (dup) - duplicate an existing file descriptor
+edit (ex) - text editor
+edit (kdb) -   Kerberos key distribution center database editing utility
+env (printenv) - print out the environment, set and print environment
+erfc (erf) - error function operators
+etext, edata (end) - end boundaries of image segments
+execlp, execle, exect, execv, execvp (execl) - execute a file
+explain (diction) - print wordy sentences; thesaurus for diction
+expm1, log, log10, log1p, pow (exp) - exponential, logarithm, power functions
+fasthalt (fastboot) - reboot/halt the system without checking the disks
+fchdir (chdir) - change current working directory
+fchflags (chflags) - set file flags
+fchmod (chmod) - change mode of file
+fchown (chown) - change owner and group of a file
+fcvt, gcvt (ecvt) - output conversion
+fdesc (mount) - mount the file-descriptor file system
+fdopen, freopen (fopen) - stream open functions
+feof, ferror, fileno (clearerr) - check and reset stream status
+fgetc (getc) - get a character from a logical unit
+flmax, ffrac, dflmin, dflmax, dffrac, inmax (flmin) -	return extreme values
+fmout, gcd, invert, itom m_in, m_out, madd, mcmp, mdiv, min, mout, move, msqrt, msub, mult, omin, omout, pow, rpow, sdiv, (fmin) - multiple precision integer arithmetic
+font (groff) -	format of groff device and font description files
+format (re) - POSIX 1003.2 regular expressions
+fpathconf (pathconf) - get configurable pathname variables
+fpecnt (trpfpe) - trap and repair floating point faults
+fprintf, sprintf, snprintf, vprintf, vfprintf, vsprintf, vsnprintf (printf) - formatted output conversion
+fpurge (fflush) - flush a stream
+fputc (putc) - write a character to a fortran logical unit
+free, falloc (malloc) - memory allocator
+free, realloc, calloc, alloca (malloc) - general memory allocation operations
+fropen, fwopen (funopen) - open a stream
+fscanf, sscanf, vscanf, vsscanf, vfscanf (scanf) - input format conversion
+fseek, fsetpos, ftell, rewind (fgetpos) - reposition a stream
+ftell (fseek) - reposition a file on a logical unit
+ftruncate (truncate) - truncate a file to a specified length
+functions (bessel) - of two kinds for integer orders
+fwrite (fread) - binary stream input/output
+gamma (lgamma) - log gamma function, gamma function
+gerror, ierrno (perror) - get system error messages
+getc, getchar, getw (fgetc) - get next character or word from input stream
+getegid (getgid) - get group process identification
+geterr (kvm) - get error message on kvm descriptor
+geteuid (getuid) - get user identification
+getfiles (kvm) - survey open files
+getfsspec, getfsfile, setfsent, endfsent (getfsent) - get file system descriptor file entry
+getgid (getuid) - get user or group ID of the caller
+getgrnam, getgrgid, setgroupent, setgrent, endgrent (getgrent) - group database operations
+gethostbyaddr, gethostent, sethostent, endhostent, herror (gethostbyname) - get network host entry
+getloadavg (kvm) - get error message on kvm descriptor
+getnetbyaddr, getnetbyname, setnetent, endnetent (getnetent) - get network entry
+getppid (getpid) - get parent or calling process identification
+getprocs, kvm_getargv, kvm_getenvv (kvm) - access user process state
+getprotobynumber, getprotobyname, setprotoent, endprotoent (getprotoent) -     get protocol entry
+getpwnam, getpwuid, setpassent, setpwent, endpwent (getpwent) - password database operations
+gets (fgets) - get a line from a stream
+getservbyport, getservbyname, setservent, endservent (getservent) - get service entry
+getttynam, setttyent, endttyent (getttyent) - get ttys file entry
+globfree (glob) - generate pathnames matching a pattern
+gtty (stty) - set and get terminal state (defunct)
+halt (reboot) - stopping and restarting the system
+heapsort, mergesort (qsort) - sort functions
+htons, ntohl, ntohs (htonl) - convert values between host and network byte order
+iargc (getarg) - return command line arguments
+init (kdb) -  initialize Kerberos key distribution center database
+init, tf_get_pname, tf_get_pinst, tf_get_cred, tf_close (tf) - routines for manipulating a Kerberos ticket file
+innetgr, setnetgrent, endnetgrent (getnetgrent) - netgroup database operations
+inode (fs) - format of file system volume
+is (es) - End System to Intermediate System Routing Protocol
+isalpha, isascii, isblank, iscntrl, isdigit, isgraph, islower, isprint, ispunct, isspace, isupper, isxdigit, toascii tolower, toupper, (isalnum) -     character classification macros
+isatty (ttynam) - find name of a terminal port
+isatty, ttyslot (ttyname) - get name of associated terminal (tty) from file descriptor
+isnan (isinf) - test for infinity or not-a-number (NaN)
+itime (idate) - return date or time in numerical form
+j1, jn, y0, y1, yn (j0) - bessel functions of first and second kind
+kerberosIV/krb.conf (etc) - Kerberos configuration file
+kerberosIV/krb.realms (etc) - host to Kerberos realm translation file
+kernfs (mount) - mount the /kern file system
+keypair (make) - generate Kerberos host key pair
+kmem (mem) - main memory
+kmem (mem) - memory files
+kmem, kUmem (mem) - memory files
+kmem, vmem (mem) - main memory
+lfind, (lsearch) - linear searching routines
+lfs (mount) - mount a log-structured file system
+local (mail) - store mail in a mailbox
+localeconv (setlocale) - natural language formatting for C
+lofs (mount) - mount a virtual copy of an existing filesystem sub-tree
+lookbib (indxbib) - build inverted index for a bibliography, find references in a bibliography
+lstat, fstat (stat) - get file status
+mbrrune, mbmb (mbrune) - multibyte rune support for C
+mbstowcs, mbtowc, wcstombs, wctomb (mblen) - multibyte character support for C
+mfs (newfs) - construct a new file system
+mk_req, krb_rd_req, krb_kntoln, krb_set_key, krb_get_cred, krb_mk_priv, krb_rd_priv, krb_mk_safe, krb_rd_safe, krb_mk_err, krb_rd_err, krb_ck_repl (krb) - Kerberos authentication library
+mkdb (cap) - create capability database
+mkdb (dev) - create /dev database
+mkdb (kvm) - create kernel database
+mkdb (pwd) - generate the password databases
+monstartup (moncontrol) - control execution profile
+munlock (mlock) - lock (unlock) physical pages in memory
+neqn, checkeq (eqn) - typeset mathematics
+nfs (mount) - mount nfs file systems
+nlist (kvm) - retrieve symbol table names from a kernel image
+nroff (troff) - text formatting and typesetting
+null (mount) - demonstrate the use of a null file system layer
+open, kvm_openfiles, kvm_close (kvm) - initialize kernel virtual memory access
+openpl et al. (plot) - f77 library interface to plot (3X)	libraries.
+openpl, erase, label, line, circle, arc, move, cont, point, linemod, space, closepl (plot) - graphics interface
+out (a) - format of executable binary files
+out (groff) - groff intermediate output format
+page (more) - file perusal filter for crt viewing
+pclose (popen) - process I/O
+portal (mount) - mount the portal daemon
+ppt, morse (bcd) - reformat input as punch cards, paper tape or morse code
+primes (factor) - factor a number, generate primes
+putc, putchar, putw (fputc) - output a character or word to a stream
+putenv, setenv, unsetenv (getenv) - environment variable functions
+puts (fputs) - output a line to a stream
+query, res_search, res_mkquery, res_send, res_init, dn_comp, dn_expand (res) - resolver routines
+quotaoff (quotaon) - turn filesystem quotas on and off
+read, kvm_write (kvm) - read or write kernel virtual memory
+read_password, des_string_to_key, des_random_key, des_set_key, des_ecb_encrypt, des_cbc_encrypt, des_pcbc_encrypt, des_cbc_cksum, des_quad_cksum, (des) - (new)	DES encryption
+readdir, telldir, seekdir, rewinddir, closedir, dirfd (opendir) - directory operations
+readv (read) - read input
+realmofhost, krb_get_phost, krb_get_krbhst, krb_get_admhst, krb_get_lrealm (krb) - additional Kerberos utility routines
+recvfrom, recvmsg (recv) - receive a message from a socket
+regexec, regerror, regfree (regcomp) - regular-expression library
+regexec, regsub, regerror (regcomp) - regular expression handlers
+reload (named) -  cause the name server to synchronize its database
+remque (insque) - insert/remove element from a queue
+restart (named) - stop and restart the name server
+rindex, lnblnk, len (index) - tell about character objects
+rresvport, ruserok (rcmd) - routines for returning a stream to a remote command
+samples (mdoc) - tutorial sampler for writing BSD manuals with -mdoc
+sbrk (brk) - change data segment size
+sendauth, krb_recvauth, krb_net_write, krb_net_read (krb) -	Kerberos routines for sending authentication via network stream sockets
+sendto, sendmsg (send) - send a message from a socket
+set_tkt_string (krb) - set Kerberos ticket cache file name
+setbuffer, setlinebuf, setvbuf (setbuf) - stream buffering operations
+seteuid, setgid, setegid, (setuid) - set user and group ID
+sethostid (gethostid) - get/set unique identifier of current host
+sethostname (gethostname) - get/set name of current host
+setinvalidrune, sgetrune, sputrune (setrunelocale) - rune support for C
+setitimer (getitimer) - get/set value of interval timer
+setkey, encrypt, des_setkey, des_cipher (crypt) - DES encryption
+setlogin (getlogin) - get/set login name
+setmode (getmode) - modify mode bits
+setpgrp (setpgid) - set process group
+setpriority (getpriority) - get/set program scheduling priority
+setrgid (setruid) - set user and group ID
+setrlimit (getrlimit) - control maximum system resource consumption
+setsockopt (getsockopt) - get and set options on sockets
+settimeofday (gettimeofday) - get/set date and time
+setusershell, endusershell (getusershell) - get legal user shells
+short (long) - integer object conversion
+sigfillset, sigaddset, sigdelset, sigismember (sigemptyset) - manipulate signal sets
+siglongjmp, setjmp, longjmp, _setjmp, _longjmp longjmperror (sigsetjmp) -     non-local jumps
+snscore (snake) - display chase game
+spellin, spellout (spell) - find spelling errors
+sqrt (cbrt) - cube root and square root functions
+srand (rand) - bad random number generator
+srandom, initstate, setstate (random) - better random number generator;	routines for changing generators
+srvtab (ext) -	extract service key files from Kerberos key distribution center database
+stdin, stdout, stderr (fd) - file descriptor files
+strerror, sys_errlist, sys_nerr (perror) - system error messages
+strncat, strchr, strrchr, strcmp, strncmp, strcasecmp, strncasecmp, strcpy, strncpy, strerror, strlen, strpbrk, strsep, strspn, strcspn, strstr, strtok, index, rindex (strcat) - string specific functions
+strsep (strtok) - string token operations
+strtoq (strtol) - convert string value to a long or quad_t integer
+strtouq (strtoul) - convert a string to an unsigned long or uquad_t
+strunvis (unvis) - decode a visual representation of characters
+sys (L) - UUCP remote host description file
+sys_siglist sys_signame (psignal) - system signal messages
+syscall (syscall) - indirect system call
+tcdrain, tcflush, tcflow (tcsendbreak) - line control functions
+tclose, tread, twrite, trewin, tskipf, tstate (topen) - f77 tape I/O
+tgetnum, tgetflag, tgetstr, tgoto, tputs (tgetent) - terminal independent operation routines
+tmpfile, tmpnam (tempnam) - temporary file routines
+tzsetwall (tzset) - initialize time conversion information
+umap (mount) - sample file system layer
+umount (mount) - mount and dismount file systems
+uncompact, ccat (compact) - compress and uncompress files, and cat them
+uncompress, zcat (compress) - compress and expand data
+unexpand (expand) - expand tabs to spaces, and vice versa
+unmount (mount) - mount or dismount a filesystem
+util (kdb) -   Kerberos key distribution center database utility
+uucpd (uucico) - transfer files queued by uucp or uux
+uudecode (uuencode) - encode/decode a binary file
+verr, errx, verrx, warn, vwarn, warnx, vwarnx (err) - formatted error messages
+view (vi) - screen oriented (visual) display editor based on ex
+vsyslog, openlog, closelog, setlogmask (syslog) - control system log
+waitpid, wait4, wait3 (wait) - wait for process terminatation
+writev (write) - write output
+wtmp, lastlog (utmp) - login records
+xfer (named) - ancillary agent for inbound zone transfers
+xget, enroll (xsend) - private encrypted mail
