@@ -19,12 +19,14 @@ POPDIVERT
 ###   Local and Program Mailer specification   ###
 ##################################################
 
-VERSIONID(`@(#)local.m4	8.14 (Berkeley) %G%')
+VERSIONID(`@(#)local.m4	8.15 (Berkeley) %G%')
 
-Mlocal,		P=LOCAL_MAILER_PATH, F=CONCAT(`lsDFMAw5:/|@', LOCAL_MAILER_FLAGS), S=10, R=20/40, T=DNS/RFC822/X-Unix,
-		ifdef(`LOCAL_MAILER_MAX', `M=LOCAL_MAILER_MAX, ')A=LOCAL_MAILER_ARGS
-Mprog,		P=LOCAL_SHELL_PATH, F=CONCAT(`lsDFMo', LOCAL_SHELL_FLAGS), S=10, R=20/40, D=LOCAL_SHELL_DIR, T=X-Unix,
-		ifdef(`LOCAL_MAILER_MAX', `M=LOCAL_MAILER_MAX, ')A=LOCAL_SHELL_ARGS
+Mlocal,		P=LOCAL_MAILER_PATH, F=CONCAT(`lsDFMAw5:/|@', LOCAL_MAILER_FLAGS), S=10, R=20/40,
+		_OPTINS(`LOCAL_MAILER_MAX', `M=', `, ')_OPTINS(`LOCAL_MAILER_CHARSET', `C=', `, ')T=DNS/RFC822/X-Unix,
+		A=LOCAL_MAILER_ARGS
+Mprog,		P=LOCAL_SHELL_PATH, F=CONCAT(`lsDFMo', LOCAL_SHELL_FLAGS), S=10, R=20/40, D=LOCAL_SHELL_DIR
+		_OPTINS(`LOCAL_MAILER_MAX', `M=', `, ')T=X-Unix,
+		A=LOCAL_SHELL_ARGS
 
 S10
 R<@>			$n			errors to mailer-daemon
