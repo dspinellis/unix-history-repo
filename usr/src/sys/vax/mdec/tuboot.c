@@ -1,4 +1,4 @@
-/*	tuboot.c	4.4	83/06/22	*/
+/*	tuboot.c	4.5	83/06/29	*/
 
 /*
  * VAX tu58 console cassette boot block
@@ -312,7 +312,7 @@ getc:
 	mfpr	$RXCS,r0
 	bbc	$RXCS_pd,r0,getc	/* receiver ready ? */
 	mfpr	$RXDB,r0
-	movzbl	r0,r0
+	extzv	$0,$7,r0,r0
 	cmpb	r0,$015
 	bneq	putc			/* echo and return */
 	bsbb	putc			/* carriage return */
