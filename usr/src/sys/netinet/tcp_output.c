@@ -1,4 +1,4 @@
-/*	tcp_output.c	4.53	83/05/12	*/
+/*	tcp_output.c	4.54	83/05/12	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -45,9 +45,6 @@ tcp_output(tp)
 	unsigned optlen = 0;
 	int sendalot;
 
-
-	if (tp->t_state == TCPS_CLOSED)
-		return (EINVAL);
 	/*
 	 * Determine length of data that should be transmitted,
 	 * and flags that will be used.
