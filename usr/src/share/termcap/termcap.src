@@ -1,6 +1,6 @@
 # ------------------------
 #
-#	Termcap source file @(#)termcap.src	1.46	(Berkeley) %G%
+#	Termcap source file @(#)termcap.src	1.47	(Berkeley) %G%
 #	Kevin Layer, Berkeley
 #	Craig Leres, Berkeley
 #	Mark Horton, Berkeley
@@ -1456,19 +1456,19 @@ do|vt200-ws|vt220-ws|dec vt200 series; 132 col.; smooth scroll:\
 	:is=\E>\E[?3h\E[?4h\E[?5l\E[?7h\E[?8h\E[1;24r\E[24;1H:\
 	:rs=\E>\E[?3h\E[?4h\E[?5l\E[?7h\E[?8h:\
 	:co#132:tc=vt200:
-vs|vs100|dec vs100 under xpty:\
-	:do=^J:le=^H:ho=\E[H:\
+vs|xterm|vs100|xterm terminal emulator (X window system):\
+	:cr=^M:do=^J:nl=^J:bl=^G:le=^H:ho=\E[H:\
 	:co#80:li#65:cl=\E[H\E[2J:bs:am:cm=\E[%i%d;%dH:nd=\E[C:up=\E[A:\
 	:ce=\E[K:cd=\E[J:so=\E[7m:se=2\E[m:us=\E[4m:ue=\E[m:\
 	:md=\E[1m:mr=\E[7m:me=2\E[m:\
 	:ku=\EOA:kd=\EOB:kr=\EOC:kl=\EOD:kb=^H:\
-	:k1=\EOP:k2=\EOQ:k3=\EOR:k4=\EOS:pt:sf=\n:sr=\EM:\
+	:k1=\EOP:k2=\EOQ:k3=\EOR:k4=\EOS:ta=^I:pt:sf=\n:sr=\EM:\
 	:al=\E[L:dl=\E[M:ic=\E[@:dc=\E[P:\
 	:MT:ks=\E[?1h\E=:ke=\E[?1l\E>:\
 	:is=\E[r\E\E[m\E[2J\E[H\E[?7h\E[?1;3;4;5;6l:\
 	:rs\E[r\E<\E[m\E[2J\E[H\E[?7h\E[?1;3;4;5;6l:
-v2|vs100s|dec vs100 (small screen) under xpty:\
-	:co#80:li#24:tc=vs100:
+v2|xterms|vs100s|xterm terminal emulator (small)(X window system):\
+	:co#80:li#24:tc=xterm:
 # # --------------------------------
 #
 # h: HEWLETT PACKARD
