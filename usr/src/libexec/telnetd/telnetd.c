@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)telnetd.c	5.30 (Berkeley) %G%";
+static char sccsid[] = "@(#)telnetd.c	5.31 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -332,7 +332,8 @@ gotpty:
 	 */
 	execl("/bin/login", "login", "-h", host,
 					terminaltype ? "-p" : 0, 0);
-	fatalperror(f, "/bin/login");
+	syslog(LOG_ERR, "/bin/login: %m\n");
+	fatalperror(2, "/bin/login");
 	/*NOTREACHED*/
 }
 
