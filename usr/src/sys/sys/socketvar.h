@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)socketvar.h	6.7 (Berkeley) %G%
+ *	@(#)socketvar.h	6.8 (Berkeley) %G%
  */
 
 /*
@@ -84,7 +84,8 @@ struct socket {
 
 /* how much space is there in a socket buffer (so->so_snd or so->so_rcv) */
 #define	sbspace(sb) \
-    (MIN((sb)->sb_hiwat-(sb)->sb_cc, ((sb)->sb_mbmax-(sb)->sb_mbcnt)))
+    (MIN((((int)(sb)->sb_hiwat)-(int)(sb)->sb_cc),\
+	 (((int)(sb)->sb_mbmax)-(int)(sb)->sb_mbcnt)))
 
 /* do we have to send all at once on a socket? */
 #define	sosendallatonce(so) \
