@@ -79,7 +79,7 @@ char copyright[] =
 
 #ifndef lint
 static char sccsid[] = "@(#)slattach.c	4.6 (Berkeley) 6/1/90";
-static char rcsid[] = "$Header: /a/cvs/386BSD/src/sbin/slattach/slattach.c,v 1.8 1993/09/10 17:56:41 rgrimes Exp $";
+static char rcsid[] = "$Header: /a/cvs/386BSD/src/sbin/slattach/slattach.c,v 1.9 1993/09/14 12:10:48 jkh Exp $";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -136,7 +136,7 @@ usage: %s [-achlnz] [-e command] [-r command] [-s speed] [-u command] device\n\
   -a      -- autoenable VJ compression\n\
   -c      -- enable VJ compression\n\
   -e ECMD -- run ECMD before exiting\n\
-  -f      -- run in "foreground" (don't detach from controlling tty)\n\
+  -f      -- run in foreground (don't detach from controlling tty)\n\
   -h      -- turn on cts/rts style flow control\n\
   -l      -- disable modem control (CLOCAL) and ignore carrier detect\n\
   -n      -- throw out ICMP packets\n\
