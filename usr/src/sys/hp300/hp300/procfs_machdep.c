@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)procfs_machdep.c	8.3 (Berkeley) %G%
+ *	@(#)procfs_machdep.c	8.4 (Berkeley) %G%
  *
  * From:
  *	$Id: procfs_i386.c,v 3.2 1993/12/15 09:40:17 jsp Exp $
@@ -112,15 +112,19 @@ procfs_write_fpregs(p, fpregs)
 
 
 int
-procfs_sstep(p)
+procfs_sstep(p, sstep)
 	struct proc *p;
+	int sstep;
 {
 	int error;
 	struct reg r;
 
 	error = procfs_read_regs(p, &r);
 	if (error == 0) {
-		r.r_sr |= PSL_T;
+		if (sstep)
+			r.r_sr |= PSL_T;
+		else
+			r.r_sr |= PSL_T;
 		error = procfs_write_regs(p, &r);
 	}
 
