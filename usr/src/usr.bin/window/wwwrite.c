@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)wwwrite.c	3.24 %G%";
+static char sccsid[] = "@(#)wwwrite.c	3.25 %G%";
 #endif
 
 /*
@@ -11,6 +11,11 @@ static char sccsid[] = "@(#)wwwrite.c	3.24 %G%";
 #include "ww.h"
 #include "tt.h"
 #include "char.h"
+
+#define UPDATE() \
+	if (!w->ww_noupdate && w->ww_cur.r >= 0 && w->ww_cur.r < wwnrow && \
+	    wwtouched[w->ww_cur.r]) \
+		wwupdate1(w->ww_cur.r, w->ww_cur.r + 1)
 
 /*
  * To support control character expansion, we save the old
@@ -73,8 +78,7 @@ int n;
 				w->ww_buf -= w->ww_w.t - w->ww_b.t;
 				break;
 			case 'H':
-				if (!w->ww_noupdate && wwtouched[w->ww_cur.r])
-					wwupdate1(w->ww_cur.r, w->ww_cur.r + 1);
+				UPDATE();
 				WWcursor(w->ww_win, 0, 0);
 				break;
 			case 'J':
@@ -84,8 +88,7 @@ int n;
 				Wclearline(w->ww_win, 0);
 				break;
 			case 'L':
-				if (!w->ww_noupdate && wwtouched[w->ww_cur.r])
-					wwupdate1(w->ww_cur.r, w->ww_cur.r + 1);
+				UPDATE();
 				Winslines(w->ww_win, 1);
 				if (w->ww_refresh)
 					Wrefresh(1);
@@ -102,8 +105,7 @@ int n;
 				w->ww_insert = 0;
 				break;
 			case 'Y':
-				if (!w->ww_noupdate && wwtouched[w->ww_cur.r])
-					wwupdate1(w->ww_cur.r, w->ww_cur.r + 1);
+				UPDATE();
 				w->ww_wstate = 2;
 				break;
 			case 's':

@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)cmd.c	3.33 %G%";
+static char sccsid[] = "@(#)cmd.c	3.34 %G%";
 #endif
 
 /*
@@ -17,7 +17,8 @@ docmd()
 	register struct ww *w;
 	char out = 0;
 
-				break;
+				if (c != escapec)
+					break;
 			case 'h': case 'j': case 'k': case 'l':
 			case ctrl(y):
 			case ctrl(e):
@@ -28,7 +29,6 @@ docmd()
 			case ctrl(s):
 			case ctrl(q):
 			case ctrl([):
-			foo:
 				if (selwin == 0) {
 					error("No window.");
 					continue;
@@ -59,7 +59,7 @@ docmd()
 				break;
 			case 'c':
 				if ((w = getwin()) != 0)
-					c_close(w);
+					closewin(w);
 				break;
 			case 'w':
 				c_window();

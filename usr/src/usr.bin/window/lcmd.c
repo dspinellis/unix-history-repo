@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)lcmd.c	3.24 %G%";
+static char sccsid[] = "@(#)lcmd.c	3.25 %G%";
 #endif
 
 /*
@@ -25,6 +25,7 @@ int l_list();
 int l_nline();
 int l_select();
 int l_shell();
+int l_smooth();
 int l_source();
 int l_terse();
 int l_time();
@@ -45,6 +46,7 @@ struct lcmd_arg arg_nline[];
 struct lcmd_arg arg_close[];
 struct lcmd_arg arg_select[];
 struct lcmd_arg arg_shell[];
+struct lcmd_arg arg_smooth[];
 struct lcmd_arg arg_source[];
 struct lcmd_arg arg_terse[];
 struct lcmd_arg arg_time[];
@@ -68,6 +70,7 @@ struct lcmd_tab lcmd_tab[] = {
 	"nlines",	1,	l_nline,	arg_nline,
 	"select",	2,	l_select,	arg_select,
 	"shell",	2,	l_shell,	arg_shell,
+	"smooth",	2,	l_smooth,	arg_smooth,
 	"source",	2,	l_source,	arg_source,
 	"terse",	2,	l_terse,	arg_terse,
 	"time",		2,	l_time,		arg_time,

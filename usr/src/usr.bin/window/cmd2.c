@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)cmd2.c	3.33 %G%";
+static char sccsid[] = "@(#)cmd2.c	3.34 %G%";
 #endif
 
 /*
@@ -53,12 +53,13 @@ char *help_longcmd[] = {
 	":nline lines            Set default window buffer size to `lines'",
 	":select #               Select window #",
 	":shell string ...       Set default shell program to `string ...'",
+	":smooth # flag          Set window # to smooth scroll mode",
 	":source filename        Execute commands in `filename'",
 	":terse flag             Set terse mode",
 	":unalias name           Undefine `name' as an alias",
 	":unset variable         Deallocate `variable'",
 	":variable               List all variables",
-	":window row col nrow ncol [nline label pty frame shell]",
+	":window [row col nrow ncol nline label pty frame mapnl keepopen smooth shell]",
 	"                        Open a window at `row', `col' of size `nrow', `ncol',",
 	"                        with `nline' lines in the buffer, and `label'",
 	":write # string ...     Write `string ...' to window # as input",

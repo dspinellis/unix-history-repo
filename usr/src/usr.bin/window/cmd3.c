@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)cmd3.c	3.13 %G%";
+static char sccsid[] = "@(#)cmd3.c	3.14 %G%";
 #endif
 
 /*
@@ -16,42 +16,6 @@ struct ww *openwin();
 char *strtime();
 
 doclose(w)
-register struct ww *w;
-{
-	char didit = 0;
-	struct ww *w1;
-
-	if (w != 0) {
-		if (w == selwin)
-			setselwin(0);
-		wwclose(w);
-		didit++;
-	} else {
-		for (w = wwhead; w;) {
-			if (w == cmdwin) {
-				w = w->ww_next;
-				continue;
-			}
-			w = (w1 = w)->ww_next;
-			if (w1 == selwin)
-				setselwin(0);
-			if (w->ww_state == WW_HASPROC && w->ww_pid == 0) {
-				wwprintf(cmdwin, "%d: pid == 0.  ",
-					w->ww_ident);
-			} else {
-				wwclose(w1);
-				didit++;
-			}
-		}
-	}
-	if (selwin == 0) {
-		for (w = wwhead; w && w == cmdwin; w = w->ww_next)
-	}
-	if (didit)
-		reframe();
-}
-*/
-
 setescape(esc)
 register char *esc;
 {
