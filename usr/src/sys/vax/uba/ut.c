@@ -1,4 +1,4 @@
-/*	ut.c	4.7	81/11/11	*/
+/*	ut.c	4.8	81/11/13	*/
 
 #include "tj.h"
 #if NUT > 0
@@ -451,6 +451,7 @@ utintr(ut11)
 	/*
 	 * Record status...
 	 */
+	sc->sc_timo = INF;
 	sc->sc_dsreg = addr->utds;
 	sc->sc_erreg = addr->uter;
 	sc->sc_resid = bp->b_flags&B_READ ?
