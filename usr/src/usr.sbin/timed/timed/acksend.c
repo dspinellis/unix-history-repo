@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)acksend.c	2.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)acksend.c	2.3 (Berkeley) %G%";
 #endif not lint
 
 #include "globals.h"
@@ -50,7 +50,7 @@ struct netinfo *net;
 			fprintf(fd, "broadcast: ");
 		else
 			fprintf(fd, "%s: ", name);
-		print(message);
+		print(message, addr);
 	}
 	bytenetorder(message);
 	do {

@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)slave.c	2.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)slave.c	2.4 (Berkeley) %G%";
 #endif not lint
 
 #include "globals.h"
@@ -18,7 +18,7 @@ slave()
 {
 	int length;
 	int senddateack;
-	long electiontime, refusetime;
+	long electiontime, refusetime, looktime;
 	u_short seq;
 	char candidate[MAXHOSTNAMELEN];
 	struct tsp *msg, to, *readmsg();
@@ -34,9 +34,22 @@ slave()
 	struct sockaddr_in server;
 	register struct netinfo *ntp;
 	int ind;
+	struct tsp resp;
+	extern int Mflag;
 #ifdef MEASURE
 	extern FILE *fp;
 #endif
+	if (slavenet) {
+		resp.tsp_type = TSP_SLAVEUP;
+		resp.tsp_vers = TSPVERSION;
+		(void)strcpy(resp.tsp_name, hostname);
+		bytenetorder(&resp);
+		if (sendto(sock, (char *)&resp, sizeof(struct tsp), 0,
+		    &slavenet->dest_addr, sizeof(struct sockaddr_in)) < 0) {
+			syslog(LOG_ERR, "sendto: %m");
+			exit(1);
+		}
+	}
 
 	if (status & MASTER) {
 #ifdef MEASURE
@@ -63,6 +76,10 @@ slave()
 
 	(void)gettimeofday(&time, (struct timezone *)0);
 	electiontime = time.tv_sec + delay2;
+	if (Mflag && nignorednets > 0)
+		looktime = time.tv_sec + delay2;
+	else
+		looktime = 0;
 
 loop:
 	length = sizeof(struct sockaddr_in);
@@ -72,13 +89,64 @@ loop:
 			fprintf(fd, "election timer expired\n");
 		longjmp(jmpenv, 1);
 	}
+	if (looktime && time.tv_sec > looktime) {
+		if (trace) 
+			fprintf(fd, "Looking for nets to master\n");
+		
+		for (ntp = nettab; ntp != NULL; ntp = ntp->next) {
+			if (ntp->status == IGNORE) {
+				lookformaster(ntp);
+				if (ntp->status == MASTER)
+					masterup(ntp);
+				else
+					ntp->status = IGNORE;
+			}
+		}
+		setstatus();
+		
+		if (nignorednets > 0) {
+			(void)gettimeofday(&time, (struct timezone *)0);
+			looktime = time.tv_sec + delay2;
+		}
+	}
 	wait.tv_sec = electiontime - time.tv_sec + 10;
 	wait.tv_usec = 0;
 	msg = readmsg(TSP_ANY, (char *)ANYADDR, &wait, (struct netinfo *)NULL);
 	if (msg != NULL) {
 		switch (msg->tsp_type) {
+		case TSP_DATE:
+#ifdef TESTING
+		case TSP_TEST:
+#endif
+		case TSP_MSITE:
+		case TSP_TRACEOFF:
+		case TSP_TRACEON:
+			break;
+		case TSP_MASTERUP:
+			if (fromnet == NULL) {
+				if (trace) {
+					fprintf(fd, "slave ignored: ");
+					print(msg, &from);
+				}
+				goto loop;
+			}
+			break;
+		default:
+			if (fromnet == NULL || fromnet->status == IGNORE) {
+				if (trace) {
+					fprintf(fd, "slave ignored: ");
+					print(msg, &from);
+				}
+				goto loop;
+			}
+			break;
+		}
+
+		switch (msg->tsp_type) {
 
 		case TSP_ADJTIME:
+			if (fromnet->status != SLAVE)
+				break;
 			(void)gettimeofday(&time, (struct timezone *)0);
 			electiontime = time.tv_sec + delay2;
 			if (seq != msg->tsp_seq) {
@@ -92,6 +160,8 @@ loop:
 			}
 			break;
 		case TSP_SETTIME:
+			if (fromnet->status != SLAVE)
+				break;
 			if (seq == msg->tsp_seq)
 				break;
 
@@ -121,6 +191,10 @@ loop:
 			}
 			break;
 		case TSP_MASTERUP:
+			if (slavenet && fromnet != slavenet)
+				break;
+			makeslave(fromnet);
+			setstatus();
 			msg->tsp_type = TSP_SLAVEUP;
 			msg->tsp_vers = TSPVERSION;
 			(void)strcpy(msg->tsp_name, hostname);
@@ -139,45 +213,10 @@ loop:
 			refusetime = 0;
 			break;
 		case TSP_MASTERREQ:
-			for (ntp = nettab; ntp != NULL; ntp = ntp->next) {
-				if ((ntp->mask & from.sin_addr.s_addr) ==
-				    ntp->net) {
-					if (ntp->status == MASTER)
-						break;
-				}
-			}
-			if (!(status & MASTER) || ntp == NULL) {
-				(void)gettimeofday(&time, (struct timezone *)0);
-				electiontime = time.tv_sec + delay2;
+			if (fromnet->status != SLAVE)
 				break;
-			}
-			ind = addmach(msg->tsp_name, &from);
-			if (trace)
-				prthp();
-			if (hp[ind].seq !=  msg->tsp_seq) {
-				hp[ind].seq = msg->tsp_seq;
-				to.tsp_type = TSP_SETTIME;
-				(void)strcpy(to.tsp_name, hostname);
-				/*
-				 * give the upcoming slave the time
-				 * to check its input queue before
-				 * setting the time
-				 */
-				sleep(1);
-				to.tsp_time.tv_usec = 0;
-				(void) gettimeofday(&mytime,
-				    (struct timezone *)0);
-				to.tsp_time.tv_sec = mytime.tv_sec;
-				answer = acksend(&to, &hp[ind].addr,
-				    hp[ind].name, TSP_ACK,
-				    (struct netinfo *)NULL);
-				if (answer == NULL) {
-					syslog(LOG_ERR,
-					    "ERROR ON SETTIME machine: %s",
-					    hp[ind].name);
-					slvcount--;
-				}
-			}
+			(void)gettimeofday(&time, (struct timezone *)0);
+			electiontime = time.tv_sec + delay2;
 			break;
 		case TSP_DATE:
 			saveaddr = from;
@@ -189,6 +228,8 @@ loop:
 				if (ntp->status == SLAVE)
 					break;
 			}
+			if (ntp == NULL)
+				break;
 			answer = acksend(msg, &ntp->dest_addr, (char *)ANYADDR,
 			    TSP_DATEACK, ntp);
 			if (answer != NULL) {
@@ -206,16 +247,7 @@ loop:
 			break;
 		case TSP_DATEREQ:
 			saveaddr = from;
-			if (status != SUBMASTER)
-				break;
-			for (ntp = nettab; ntp != NULL; ntp = ntp->next) {
-				if ((ntp->mask & from.sin_addr.s_addr) ==
-				    ntp->net) {
-					if (ntp->status == MASTER)
-						break;
-				}
-			}
-			if (ntp == NULL)
+			if (status != SUBMASTER || fromnet->status != MASTER)
 				break;
 			for (ntp = nettab; ntp != NULL; ntp = ntp->next) {
 				if (ntp->status == SLAVE)
@@ -257,48 +289,83 @@ loop:
 			trace = OFF;
 			break;
 		case TSP_SLAVEUP:
-			if (!(status & MASTER))
-				break;
-			for (ntp = nettab; ntp != NULL; ntp = ntp->next) {
-				if ((ntp->mask & from.sin_addr.s_addr) ==
-				    ntp->net) {
-					if (ntp->status == MASTER)
-						addmach(msg->tsp_name, &from);
-					break;
-				}
+			if ((status & MASTER) && fromnet->status == MASTER) {
+				ind = addmach(msg->tsp_name, &from);
+				newslave(ind, msg->tsp_seq);
 			}
 			break;
 		case TSP_ELECTION:
-			(void)gettimeofday(&time, (struct timezone *)0);
-			electiontime = time.tv_sec + delay2;
-			seq = 0;            /* reset sequence number */
-			if (time.tv_sec < refusetime)
-				msg->tsp_type = TSP_REFUSE;
-			else {
-				msg->tsp_type = TSP_ACCEPT;
-				refusetime = time.tv_sec + 30;
+			if (fromnet->status == SLAVE) {
+				(void)gettimeofday(&time, (struct timezone *)0);
+				electiontime = time.tv_sec + delay2;
+				seq = 0;            /* reset sequence number */
+				if (time.tv_sec < refusetime)
+					msg->tsp_type = TSP_REFUSE;
+				else {
+					msg->tsp_type = TSP_ACCEPT;
+					refusetime = time.tv_sec + 30;
+				}
+				(void)strcpy(candidate, msg->tsp_name);
+				(void)strcpy(msg->tsp_name, hostname);
+				answerdelay();
+				server = from;
+				answer = acksend(msg, &server, candidate, TSP_ACK,
+				    (struct netinfo *)NULL);
+				if (answer == NULL) {
+					syslog(LOG_ERR, "problem in election\n");
+				}
 			}
-			(void)strcpy(candidate, msg->tsp_name);
-			(void)strcpy(msg->tsp_name, hostname);
-			answerdelay();
-			server = from;
-			answer = acksend(msg, &server, candidate, TSP_ACK,
-			    (struct netinfo *)NULL);
-			if (answer == NULL) {
-				syslog(LOG_ERR, "problem in election\n");
+			else {	/* fromnet->status == MASTER */
+				to.tsp_type = TSP_QUIT;
+				(void)strcpy(to.tsp_name, hostname);
+				server = from;
+				answer = acksend(&to, &server, msg->tsp_name,
+				    TSP_ACK, (struct netinfo *)NULL);
+				if (answer == NULL) {
+					syslog(LOG_ERR, "election error");
+				} else {
+					(void) addmach(msg->tsp_name, &from);
+				}
 			}
 			break;
+                case TSP_CONFLICT:
+			if (fromnet->status != MASTER)
+				break;
+                        /*
+                         * After a network partition, there can be
+                         * more than one master: the first slave to
+                         * come up will notify here the situation.
+                         */
+                        (void)strcpy(to.tsp_name, hostname);
+
+                        if (fromnet == NULL)
+                                break;
+                        for(;;) {
+                                to.tsp_type = TSP_RESOLVE;
+                                answer = acksend(&to, &fromnet->dest_addr,
+                                    (char *)ANYADDR, TSP_MASTERACK, fromnet);
+                                if (answer == NULL)
+                                        break;
+                                to.tsp_type = TSP_QUIT;
+                                server = from;
+                                msg = acksend(&to, &server, answer->tsp_name,
+                                    TSP_MASTERACK, (struct netinfo *)NULL);
+                                if (msg == NULL) {
+                                        syslog(LOG_ERR, "error on sending QUIT");
+                                } else {
+                                        (void) addmach(answer->tsp_name, &from);                                }
+                        }
+                        masterup(fromnet);
+                        break;
 		case TSP_MSITE:
+			if (!slavenet)
+				break;
 			msaveaddr = from;
 			msg->tsp_type = TSP_MSITEREQ;
 			msg->tsp_vers = TSPVERSION;
 			(void)strcpy(msg->tsp_name, hostname);
-			for (ntp = nettab; ntp != NULL; ntp = ntp->next) {
-				if (ntp->status == SLAVE)
-					break;
-			}
-			answer = acksend(msg, &ntp->dest_addr, (char *)ANYADDR,
-			    TSP_ACK, ntp);
+			answer = acksend(msg, &slavenet->dest_addr,
+					 (char *)ANYADDR, TSP_ACK, slavenet);
 			if (answer != NULL) {
 				msg->tsp_type = TSP_ACK;
 				length = sizeof(struct sockaddr_in);
@@ -314,6 +381,15 @@ loop:
 		case TSP_ACCEPT:
 		case TSP_REFUSE:
 			break;
+		case TSP_RESOLVE:
+			break;
+		case TSP_QUIT:
+			/* become slave */
+#ifdef MEASURE
+			(void)fclose(fp);
+#endif
+			longjmp(jmpenv, 2);
+			break;
 #ifdef TESTING
 		case TSP_TEST:
 			electiontime = 0;
@@ -324,13 +400,13 @@ loop:
 				break;
 			if (trace) {
 				fprintf(fd, "garbage: ");
-				print(msg);
+				print(msg, &from);
 			}
 			break;
 		default:
 			if (trace) {
 				fprintf(fd, "garbage: ");
-				print(msg);
+				print(msg, &from);
 			}
 			break;
 		}

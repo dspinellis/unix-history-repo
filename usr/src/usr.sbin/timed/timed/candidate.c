@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)candidate.c	2.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)candidate.c	2.2 (Berkeley) %G%";
 #endif not lint
 
 #include "globals.h"
@@ -108,7 +108,7 @@ struct netinfo *net;
 			default:
 				if (trace) {
 					fprintf(fd, "candidate: ");
-					print(resp);
+					print(resp, &from);
 				}
 				break;
 			}
