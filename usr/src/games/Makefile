@@ -1,4 +1,4 @@
-#	@(#)Makefile	4.4	(Berkeley)	%G%
+#	@(#)Makefile	4.5	(Berkeley)	%G%
 #
 DESTDIR=
 CFLAGS=	-O
@@ -10,7 +10,7 @@ WORK=	aard ddl mpu
 # Programs that live in subdirectories, and have makefiles of their own.
 #
 SUBDIR=	adventure backgammon boggle compat cribbage doctor fortune \
-	mille monop quiz snake zork
+	mille monop quiz snake zork hangman
 
 # Shell scripts that need only be installed and are never removed.
 #
@@ -19,7 +19,7 @@ SUBDIR=	adventure backgammon boggle compat cribbage doctor fortune \
 # C programs that live in the current directory and do not need
 # explicit make lines.
 #
-STD=	arithmetic btlgammon banner bcd chess fish number wump
+STD=	arithmetic btlgammon banner bcd chess fish number ohangman wump
 
 # C programs that live in the current directory and need explicit make lines.
 #
@@ -67,9 +67,6 @@ depend:
 
 canfield:
 	cc -o canfield canfield.c -lcurses -ltermcap
-
-hangman:
-	cc -o hangman hangman.c -lcurses -ltermcap -lm
 
 rain:
 	cc -o rain rain.c -lcurses -ltermcap
