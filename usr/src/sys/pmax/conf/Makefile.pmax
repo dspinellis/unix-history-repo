@@ -1,4 +1,4 @@
-#	@(#)Makefile.pmax	7.1 (Berkeley) %G%
+#	@(#)Makefile.pmax	7.2 (Berkeley) %G%
 #
 # Makefile for 4.4 BSD
 #
@@ -44,16 +44,16 @@ AFLAGS=	-O2 -DLOCORE ${COPTS}
 NORMAL_C=	${CC} -c ${CFLAGS} ${PROF} $<
 NORMAL_C_C=	${CC} -c ${CFLAGS} ${PROF} ${PARAM} $<
 
-DRIVER_C=	${CC} -c ${CFLAGS} ${PROF} $<
-DRIVER_C_C=	${CC} -c ${CFLAGS} ${PROF} ${PARAM} $<
+DRIVER_C=	${CC} -c ${COPTS} ${PROF} $<
+DRIVER_C_C=	${CC} -c ${COPTS} ${PROF} ${PARAM} $<
 
 PROFILE_C=	${CC} -S -c ${COPTS} $<; \
 		ex - $*.s < ${GPROF.EX}; \
 		${AS} -o $@ $*.s; \
 		rm -f $*.s
 
-NORMAL_S=	${CPP} ${COPTS} $< | ${AS} -o $@
-NORMAL_S_C=	${CPP} ${COPTS} ${PARAM} $< | ${AS} -o $@
+NORMAL_S=	${AS} -o $@ ${COPTS} $<
+NORMAL_S_C=	${AS} -o $@ ${COPTS} ${PARAM} $<
 
 %OBJS
 
