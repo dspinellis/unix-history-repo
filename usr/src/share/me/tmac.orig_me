@@ -14,7 +14,9 @@
 .\"*	Documentation is available.					*
 .\"*									*
 .\"**********************************************************************
-.\" %beginstrip%
+.\"
+.\"	@(#)tmac.orig_me	1.6	%G%
+.\"	%beginstrip%
 .\"
 .\"	Code on .de commands:
 .\"		***	a user interface macro.
@@ -23,8 +25,6 @@
 .\"		$$$	a macro which may be redefined by the user
 .\"			to provide variant functions.
 .\"		---	an internal macro.
-.\"
-.\"	@(#)tmac.orig_me	1.5	%G%
 .\"
 .if !\n(.V .tm You are using the wrong version of NROFF/TROFF!!
 .if !\n(.V .tm This macro package works only on the version seven
@@ -975,6 +975,11 @@
 .	ds < \v'0.4m'\x'0.2m'\s-3
 .	ds > \s0\v'-0.4m'
 .	ds - \-
+.	nr fi 0.3i
+.\}
+.if n \
+\{\
+.	nr fi 3n
 .\}
 .nr _o \n(.o
 .if n .po 1i
@@ -987,6 +992,8 @@
 .	nr $T 0
 .	po -0.5i		\" make ugly line on LHS
 .\}
+.if \nv \
+.	po 1i			\" for vtroff
 .if \n($T \
 \{\
 .	if \n($T=1 \
