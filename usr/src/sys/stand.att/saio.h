@@ -1,4 +1,4 @@
-/*	saio.h	4.12	%G%	*/
+/*	saio.h	4.13	%G%	*/
 
 /*
  * header file for standalone package
@@ -36,9 +36,8 @@ struct	iob {
 #define F_ALLOC		0x4	/* buffer allocated */
 #define F_FILE		0x8	/* file instead of device */
 #define F_NBSF		0x10	/* no bad sector forwarding */
-#define F_ECCLM		0x20	/* limit the number of bad bits accepted in ecc's */
-#define F_SSI		0x40	/* set skip sector inhibit,
-				 * enable access to all sectors */
+#define F_ECCLM		0x20	/* limit # of bits in ecc correction */
+#define F_SSI		0x40	/* set skip sector inhibit */
 /* io types */
 #define	F_RDDATA	0x0100	/* read data */
 #define	F_WRDATA	0x0200	/* write data */
@@ -61,12 +60,16 @@ struct devsw {
 
 struct devsw devsw[];
 
+/*
+ * Drive description table.
+ * Returned from SAIODEVDATA call.
+ */
 struct st {
-	short	nsect;	/* number of sectors per track */
-	short	ntrak;	/* number of tracks/surfaces/heads... */
-	short	nspc;	/* number of sectors per cylinder */
-	short	ncyl;	/* number of cylinders */
-	short	*off;
+	short	nsect;		/* # sectors/track */
+	short	ntrak;		/* # tracks/surfaces/heads... */
+	short	nspc;		/* # sectors/cylinder */
+	short	ncyl;		/* # cylinders */
+	short	*off;		/* partition offset table (cylinders) */
 };
 
 /*
@@ -102,20 +105,19 @@ extern	int errno;	/* just like unix */
 #define EBSE	11	/* bad sector error */
 #define EWCK	12	/* write check error */
 #define EHER	13	/* hard error */
-#define EECC	14	/* severe ecc error, sector recorded as bad*/
+#define EECC	14	/* uncorrectable ecc error */
 
 /* ioctl's -- for disks just now */
 #define	SAIOHDR		(('d'<<8)|1)	/* next i/o includes header */
 #define	SAIOCHECK	(('d'<<8)|2)	/* next i/o checks data */
 #define	SAIOHCHECK	(('d'<<8)|3)	/* next i/o checks header & data */
 #define	SAIONOBAD	(('d'<<8)|4)	/* inhibit bad sector forwarding */
-#define	SAIODOBAD	(('d'<<8)|5)	/* do bad sector forwarding */
-#define	SAIOECCLIM	(('d'<<8)|6)	/* report sectors as bad if more than
-					 * 5 bits are bad in ecc */
+#define	SAIODOBAD	(('d'<<8)|5)	/* enable bad sector forwarding */
+#define	SAIOECCLIM	(('d'<<8)|6)	/* limit ecc correction to 5 bits */
 #define	SAIOECCUNL	(('d'<<8)|7)	/* use standard ecc procedures */
 #define SAIODEVDATA	(('d'<<8)|8)	/* get device data */
 #define SAIOSSI		(('d'<<8)|9)	/* set skip sector inhibit */
-#define SAIONOSSI	(('d'<<8)|10)	/* normal skip sector handling */
+#define SAIONOSSI	(('d'<<8)|10)	/* inhibit skip sector handling */
 #define SAIOSSDEV	(('d'<<8)|11)	/* is device skip sector type? */
 
 /* codes for sector header word 1 */
