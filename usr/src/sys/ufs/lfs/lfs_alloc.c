@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_alloc.c	7.55 (Berkeley) %G%
+ *	@(#)lfs_alloc.c	7.56 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -66,13 +66,14 @@ lfs_valloc(ap)
 
 	/* Extend IFILE so that the next lfs_valloc will succeed. */
 	if (fs->lfs_free == LFS_UNUSED_INUM) {
-		bb = fsbtodb(fs, 1);
-		if (!ISSPACE(fs, bb, ap->a_cred))
-			return(ENOSPC);
 		vp = fs->lfs_ivnode;
 		ip = VTOI(vp);
 		blkno = lblkno(fs, ip->i_size);
-		bp = getblk(vp, blkno, fs->lfs_bsize);
+		lfs_balloc(vp, fs->lfs_bsize, blkno, &bp);
+		ip->i_size += fs->lfs_bsize;
+		vnode_pager_setsize(vp, (u_long)ip->i_size);
+		vnode_pager_uncache(vp);
+
 		i = (blkno - fs->lfs_segtabsz - fs->lfs_cleansz) *
 		    fs->lfs_ifpb;
 		fs->lfs_free = i;
@@ -84,12 +85,6 @@ lfs_valloc(ap)
 		}
 		ifp--;
 		ifp->if_nextfree = LFS_UNUSED_INUM;
-
-		ip->i_blocks += btodb(fs->lfs_bsize);
-		fs->lfs_bfree -= btodb(fs->lfs_bsize);
-		ip->i_size += fs->lfs_bsize;
-		vnode_pager_setsize(vp, (u_long)ip->i_size);
-		vnode_pager_uncache(vp);
 		if (error = VOP_BWRITE(bp))
 			return (error);
 	}
@@ -98,8 +93,8 @@ lfs_valloc(ap)
 	if (error = lfs_vcreate(ap->a_pvp->v_mount, new_ino, &vp))
 		return (error);
 
-	ip = VTOI(vp);
 
+	ip = VTOI(vp);
 	/* Zero out the direct and indirect block addresses. */
 	bzero(&ip->i_din, sizeof(struct dinode));
 	ip->i_din.di_inumber = new_ino;
@@ -157,6 +152,8 @@ lfs_vcreate(mp, ino, vpp)
 	ip->i_flag = IMOD;
 	ip->i_dev = ump->um_dev;
 	ip->i_number = ip->i_din.di_inumber = ino;
+ip->i_din.di_spare[0] = 0xdeadbeef;
+ip->i_din.di_spare[1] = 0xdeadbeef;
 	ip->i_lfs = ump->um_lfs;
 #ifdef QUOTA
 	for (i = 0; i < MAXQUOTAS; i++)
