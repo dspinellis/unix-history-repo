@@ -1,6 +1,6 @@
-.\"	@(#)atof.3	4.1 (Berkeley) %G%
+.\"	@(#)atof.3	5.1 (Berkeley) %G%
 .\"
-.TH ATOF 3 
+.TH ATOF 3  "19 January 1983"
 .AT 3
 .SH NAME
 atof, atoi, atol \- convert ASCII to numbers
@@ -18,24 +18,21 @@ atof, atoi, atol \- convert ASCII to numbers
 .SH DESCRIPTION
 These functions convert a string pointed to by
 .I nptr
-to floating, integer, and long integer
-representation respectively.
+to floating, integer, and long integer representation respectively.
 The first unrecognized character ends the string.
 .PP
 .I Atof
-recognizes an optional string of tabs and spaces,
-then an optional sign, then
+recognizes an optional string of spaces, then an optional sign, then
 a string of digits optionally containing a decimal
-point, then an optional `e' or `E' followed
-by an optionally signed integer.
+point, then an optional `e' or `E' followed by an optionally signed integer.
 .PP
 .I Atoi
 and
 .I atol
-recognize an optional string of tabs and spaces,
-then an optional sign, then a string of
+recognize an optional string of spaces, then an optional sign, then a
+string of
 digits.
 .SH SEE ALSO
-scanf(3)
+scanf(3S)
 .SH BUGS
 There are no provisions for overflow.
