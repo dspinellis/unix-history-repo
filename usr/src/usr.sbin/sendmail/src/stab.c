@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-static char SccsId[] = "@(#)stab.c	3.6	%G%";
+static char SccsId[] = "@(#)stab.c	3.7	%G%";
 
 /*
 **  STAB -- manage the symbol table
@@ -19,13 +19,11 @@ static char SccsId[] = "@(#)stab.c	3.6	%G%";
 **
 **	Side Effects:
 **		can update the symbol table.
-**
-**	Notes:
-**		Obviously, this deserves a better algorithm.  But
-**		for the moment......
 */
 
-static STAB	*SymTab;
+# define STABSIZE	400
+
+static STAB	*SymTab[STABSIZE];
 
 STAB *
 stab(name, type, op)
@@ -33,20 +31,43 @@ stab(name, type, op)
 	int type;
 	int op;
 {
-	register STAB *s = SymTab;
-	register STAB **ps = &SymTab;
+	register STAB *s;
+	register STAB **ps;
 	extern bool sameword();
+	register int hfunc;
+	register char *p;
 
 # ifdef DEBUG
 	if (Debug > 4)
 		printf("STAB: %s %d ", name, type);
 # endif DEBUG
 
-	while (s != NULL && (!sameword(name, s->s_name) || s->s_type != type))
+	/*
+	**  Compute the hashing function
+	**
+	**	We could probably do better....
+	*/
+
+	hfunc = type;
+	for (p = name; *p != '\0'; p++)
+		hfunc = ((hfunc << 7) | lower(*p)) % STABSIZE;
+
+# ifdef DEBUG
+	if (Debug > 15)
+		printf("(hfunc=%d) ", hfunc);
+# endif DEBUG
+
+	ps = &SymTab[hfunc];
+	while ((s = *ps) != NULL && (!sameword(name, s->s_name) || s->s_type != type))
 	{
 		ps = &s->s_next;
 		s = s->s_next;
 	}
+
+	/*
+	**  Dispose of the entry.
+	*/
+
 	if (s != NULL || op == ST_FIND)
 	{
 # ifdef DEBUG
@@ -55,11 +76,15 @@ stab(name, type, op)
 			if (s == NULL)
 				printf("not found\n");
 			else
-				printf("type %d class %x\n", s->s_type, s->s_class);
+				printf("type %d val %x\n", s->s_type, s->s_class);
 		}
 # endif DEBUG
 		return (s);
 	}
+
+	/*
+	**  Make a new entry and link it in.
+	*/
 
 # ifdef DEBUG
 	if (Debug > 4)
@@ -73,7 +98,7 @@ stab(name, type, op)
 	makelower(s->s_name);
 	s->s_type = type;
 
-	/* and link it in */
+	/* link it in */
 	*ps = s;
 
 	return (s);
