@@ -33,15 +33,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)nfs_vnops.c	7.60 (Berkeley) 5/24/91
- *
- * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
- * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         1       00090
- * --------------------         -----   ----------------------
- *
- * 02 Mar 93	Greg Hackney		Make NFS client POSIX compliant (anon)
- *
+ *	From:	@(#)nfs_vnops.c	7.60 (Berkeley) 5/24/91
+ *	$Id$
  */
 
 /*
@@ -207,6 +200,7 @@ int nfs_numasync = 0;
 /*
  * nfs null call from vfs.
  */
+int
 nfs_null(vp, cred, p)
 	struct vnode *vp;
 	struct ucred *cred;
@@ -227,6 +221,7 @@ nfs_null(vp, cred, p)
  * nfs access vnode op.
  * Essentially just get vattr and then imitate iaccess()
  */
+int
 nfs_access(vp, mode, cred, p)
 	struct vnode *vp;
 	int mode;
@@ -273,6 +268,7 @@ found:
  * Just check to see if the type is ok
  */
 /* ARGSUSED */
+int
 nfs_open(vp, mode, cred, p)
 	struct vnode *vp;
 	int mode;
@@ -293,6 +289,7 @@ nfs_open(vp, mode, cred, p)
  * For reg files, invalidate any buffer cache entries.
  */
 /* ARGSUSED */
+int
 nfs_close(vp, fflags, cred, p)
 	register struct vnode *vp;
 	int fflags;
@@ -319,6 +316,7 @@ nfs_close(vp, fflags, cred, p)
 /*
  * nfs getattr call from vfs.
  */
+int
 nfs_getattr(vp, vap, cred, p)
 	register struct vnode *vp;
 	struct vattr *vap;
@@ -328,6 +326,7 @@ nfs_getattr(vp, vap, cred, p)
 	return (nfs_dogetattr(vp, vap, cred, 0, p));
 }
 
+int
 nfs_dogetattr(vp, vap, cred, tryhard, p)
 	register struct vnode *vp;
 	struct vattr *vap;
@@ -357,6 +356,7 @@ nfs_dogetattr(vp, vap, cred, tryhard, p)
 /*
  * nfs setattr call.
  */
+int
 nfs_setattr(vp, vap, cred, p)
 	register struct vnode *vp;
 	register struct vattr *vap;
@@ -416,6 +416,7 @@ nfs_setattr(vp, vap, cred, p)
  * First look in cache
  * If not found, unlock the directory nfsnode and do the rpc
  */
+int
 nfs_lookup(vp, ndp, p)
 	register struct vnode *vp;
 	register struct nameidata *ndp;
@@ -608,6 +609,7 @@ nfsmout:
  * nfs read call.
  * Just call nfs_bioread() to do the work.
  */
+int
 nfs_read(vp, uiop, ioflag, cred)
 	register struct vnode *vp;
 	struct uio *uiop;
@@ -622,6 +624,7 @@ nfs_read(vp, uiop, ioflag, cred)
 /*
  * nfs readlink call
  */
+int
 nfs_readlink(vp, uiop, cred)
 	struct vnode *vp;
 	struct uio *uiop;
@@ -636,6 +639,7 @@ nfs_readlink(vp, uiop, cred)
  * Do a readlink rpc.
  * Called by nfs_doio() from below the buffer cache.
  */
+int
 nfs_readlinkrpc(vp, uiop, cred)
 	register struct vnode *vp;
 	struct uio *uiop;
@@ -664,6 +668,7 @@ nfs_readlinkrpc(vp, uiop, cred)
  * nfs read rpc call
  * Ditto above
  */
+int
 nfs_readrpc(vp, uiop, cred)
 	register struct vnode *vp;
 	struct uio *uiop;
@@ -707,6 +712,7 @@ nfsmout:
 /*
  * nfs write call
  */
+int
 nfs_writerpc(vp, uiop, cred)
 	register struct vnode *vp;
 	struct uio *uiop;
@@ -749,6 +755,7 @@ nfsmout:
  * set to specify the file type and the size field for rdev.
  */
 /* ARGSUSED */
+int
 nfs_mknod(ndp, vap, cred, p)
 	struct nameidata *ndp;
 	struct ucred *cred;
@@ -800,6 +807,7 @@ nfs_mknod(ndp, vap, cred, p)
 /*
  * nfs file create call
  */
+int
 nfs_create(ndp, vap, p)
 	register struct nameidata *ndp;
 	register struct vattr *vap;
@@ -847,6 +855,7 @@ nfs_create(ndp, vap, p)
  *     else
  *	  do the remove rpc
  */
+int
 nfs_remove(ndp, p)
 	register struct nameidata *ndp;
 	struct proc *p;
@@ -895,6 +904,7 @@ nfs_remove(ndp, p)
 /*
  * nfs file remove rpc called from nfs_inactive
  */
+int
 nfs_removeit(sp, p)
 	register struct sillyrename *sp;
 	struct proc *p;
@@ -921,6 +931,7 @@ nfs_removeit(sp, p)
 /*
  * nfs file rename call
  */
+int
 nfs_rename(sndp, tndp, p)
 	register struct nameidata *sndp, *tndp;
 	struct proc *p;
@@ -969,6 +980,7 @@ nfs_rename(sndp, tndp, p)
 /*
  * nfs file rename rpc called from nfs_remove() above
  */
+int
 nfs_renameit(sndp, sp, p)
 	register struct nameidata *sndp;
 	register struct sillyrename *sp;
@@ -1001,6 +1013,7 @@ nfs_renameit(sndp, sp, p)
 /*
  * nfs hard link create call
  */
+int
 nfs_link(vp, ndp, p)
 	register struct vnode *vp;
 	register struct nameidata *ndp;
@@ -1041,6 +1054,7 @@ nfs_link(vp, ndp, p)
 /*
  * nfs symbolic link create call
  */
+int
 nfs_symlink(ndp, vap, nm, p)
 	struct nameidata *ndp;
 	struct vattr *vap;
@@ -1085,6 +1099,7 @@ nfs_symlink(ndp, vap, nm, p)
 /*
  * nfs make dir call
  */
+int
 nfs_mkdir(ndp, vap, p)
 	register struct nameidata *ndp;
 	struct vattr *vap;
@@ -1148,6 +1163,7 @@ nfs_mkdir(ndp, vap, p)
 /*
  * nfs remove directory call
  */
+int
 nfs_rmdir(ndp, p)
 	register struct nameidata *ndp;
 	struct proc *p;
@@ -1192,6 +1208,7 @@ nfs_rmdir(ndp, p)
  * order so that it looks more sensible. This appears consistent with the
  * Ultrix implementation of NFS.
  */
+int
 nfs_readdir(vp, uiop, cred, eofflagp)
 	register struct vnode *vp;
 	struct uio *uiop;
@@ -1234,6 +1251,7 @@ nfs_readdir(vp, uiop, cred, eofflagp)
  * Readdir rpc call.
  * Called from below the buffer cache by nfs_doio().
  */
+int
 nfs_readdirrpc(vp, uiop, cred)
 	register struct vnode *vp;
 	struct uio *uiop;
@@ -1382,6 +1400,7 @@ static char hextoasc[] = "0123456789abcdef";
  * to create the same funny name between the nfs_lookitup() fails and the
  * nfs_rename() completes, but...
  */
+int
 nfs_sillyrename(ndp, p)
 	register struct nameidata *ndp;
 	struct proc *p;
@@ -1436,6 +1455,7 @@ bad:
  * into the nfsnode table.
  * If fhp != NULL it copies the returned file handle out
  */
+int
 nfs_lookitup(sp, fhp, p)
 	register struct sillyrename *sp;
 	nfsv2fh_t *fhp;
@@ -1476,6 +1496,7 @@ nfs_lookitup(sp, fhp, p)
  *    a lot more work than bcopy() and also it currently happens in the
  *    context of the swapper process (2).
  */
+int
 nfs_bmap(vp, bn, vpp, bnp)
 	struct vnode *vp;
 	daddr_t bn;
@@ -1494,6 +1515,7 @@ nfs_bmap(vp, bn, vpp, bnp)
  * If the biod's are running, queue a request
  * otherwise just call nfs_doio() to get it done
  */
+int
 nfs_strategy(bp)
 	register struct buf *bp;
 {
@@ -1552,6 +1574,7 @@ nfs_strategy(bp)
  * otherwise it is called by the nfsiods to do what would normally be
  * partially disk interrupt driven.
  */
+int
 nfs_doio(bp)
 	register struct buf *bp;
 {
@@ -1559,7 +1582,7 @@ nfs_doio(bp)
 	register struct vnode *vp;
 	struct nfsnode *np;
 	struct ucred *cr;
-	int error;
+	int error = 0;
 	struct uio uio;
 	struct iovec io;
 #if !defined(hp300) && !defined(i386)
@@ -1637,6 +1660,8 @@ nfs_doio(bp)
 				 */
 				bp->b_blkno = uiop->uio_offset;
 				break;
+			      default:
+				panic("nfs_doio bad type");
 			};
 			bp->b_error = error;
 		} else {
@@ -1669,6 +1694,7 @@ nfs_doio(bp)
  * NB Currently unsupported.
  */
 /* ARGSUSED */
+int
 nfs_mmap(vp, fflags, cred, p)
 	struct vnode *vp;
 	int fflags;
@@ -1685,6 +1711,7 @@ nfs_mmap(vp, fflags, cred, p)
  *	associated with the vnode.
  */
 /* ARGSUSED */
+int
 nfs_fsync(vp, fflags, cred, waitfor, p)
 	register struct vnode *vp;
 	int fflags;
@@ -1708,6 +1735,7 @@ nfs_fsync(vp, fflags, cred, waitfor, p)
  * NFS advisory byte-level locks.
  * Currently unsupported.
  */
+int
 nfs_advlock(vp, id, op, fl, flags)
 	struct vnode *vp;
 	caddr_t id;
@@ -1722,6 +1750,7 @@ nfs_advlock(vp, id, op, fl, flags)
 /*
  * Print out the contents of an nfsnode.
  */
+int
 nfs_print(vp)
 	struct vnode *vp;
 {
@@ -1740,4 +1769,5 @@ nfs_print(vp)
 	if (np->n_lockwaiter)
 		printf(" waiting pid %d", np->n_lockwaiter);
 	printf("\n");
+	return(0);
 }

@@ -33,15 +33,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)nfs_bio.c	7.19 (Berkeley) 4/16/91
- *
- * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
- * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         1       00147
- * --------------------         -----   ----------------------
- *
- * 20 Apr 93	Paul Kranenburg		Detect and prevent kernel deadlocks in
- *					VM system
+ *	From:	@(#)nfs_bio.c	7.19 (Berkeley) 4/16/91
+ *	$Id$
  */
 
 #include "param.h"
@@ -54,6 +47,9 @@
 #include "trace.h"
 #include "mount.h"
 #include "resourcevar.h"
+#ifdef	PROTOTYPESDONE
+#include "vm/vnode_pager.h"
+#endif	/*PROTOTYPESDONE*/
 
 #include "nfsnode.h"
 #include "nfsv2.h"
@@ -69,6 +65,7 @@
  * Vnode op for read using bio
  * Any similarity to readip() is purely coincidental
  */
+int
 nfs_bioread(vp, uio, ioflag, cred)
 	register struct vnode *vp;
 	register struct uio *uio;
@@ -81,7 +78,7 @@ nfs_bioread(vp, uio, ioflag, cred)
 	struct vattr vattr;
 	daddr_t lbn, bn, rablock;
 	int diff, error = 0;
-	long n, on;
+	long n = 0, on = 0;
 
 #ifdef lint
 	ioflag = ioflag;
@@ -167,6 +164,8 @@ nfs_bioread(vp, uio, ioflag, cred)
 		error = bread(vp, uio->uio_offset, NFS_DIRBLKSIZ, cred, &bp);
 		n = MIN(uio->uio_resid, NFS_DIRBLKSIZ - bp->b_resid);
 		break;
+            default:
+		;
 	    };
 	    if (error) {
 		brelse(bp);
@@ -185,6 +184,8 @@ nfs_bioread(vp, uio, ioflag, cred)
 	    case VDIR:
 		uio->uio_offset = bp->b_blkno;
 		break;
+            default:
+		;
 	    };
 	    brelse(bp);
 	} while (error == 0 && uio->uio_resid > 0 && n != 0);
@@ -194,6 +195,7 @@ nfs_bioread(vp, uio, ioflag, cred)
 /*
  * Vnode op for write using bio
  */
+int
 nfs_write(vp, uio, ioflag, cred)
 	register struct vnode *vp;
 	register struct uio *uio;

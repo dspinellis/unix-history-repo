@@ -33,8 +33,12 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)nfsnode.h	7.12 (Berkeley) 4/16/91
+ *	From:	@(#)nfsnode.h	7.12 (Berkeley) 4/16/91
+ *	$Id$
  */
+
+#ifndef __h_nfsnode
+#define __h_nfsnode 1
 
 /*
  * The nfsnode is the nfs equivalent to ufs's inode. Any similarity
@@ -219,3 +223,6 @@ int	nfs_advlock __P((
 		int op,
 		struct flock *fl,
 		int flags));
+
+void	nfs_nput __P((struct vnode *));
+#endif /* __h_nfsnode */

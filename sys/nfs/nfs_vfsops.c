@@ -33,7 +33,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)nfs_vfsops.c	7.31 (Berkeley) 5/6/91
+ *	From:	@(#)nfs_vfsops.c	7.31 (Berkeley) 5/6/91
+ *	$Id$
  */
 
 #include "param.h"
@@ -47,6 +48,7 @@
 #include "buf.h"
 #include "mbuf.h"
 #include "socket.h"
+#include "socketvar.h"
 #include "systm.h"
 
 #include "../net/if.h"
@@ -89,6 +91,7 @@ void nfs_disconnect();
 /*
  * nfs statfs call
  */
+int
 nfs_statfs(mp, sbp, p)
 	struct mount *mp;
 	register struct statfs *sbp;
@@ -149,13 +152,14 @@ nfs_statfs(mp, sbp, p)
  * - hand craft the swap nfs vnode hanging off a fake mount point
  * - build the rootfs mount point and call mountnfs() to do the rest.
  */
+int
 nfs_mountroot()
 {
 	register struct mount *mp;
 	register struct mbuf *m;
 	struct socket *so;
 	struct vnode *vp;
-	int error;
+/*	int error;*/
 
 	/*
 	 * Do enough of ifconfig(8) so that critical net interface can
@@ -163,7 +167,9 @@ nfs_mountroot()
 	 */
 	if (socreate(nfs_diskless.myif.ifra_addr.sa_family, &so, SOCK_DGRAM, 0))
 		panic("nfs ifconf");
-	if (ifioctl(so, SIOCAIFADDR, &nfs_diskless.myif))
+	/* XXX - this probably will crash with a vm_fault, since
+	   ifioctl expects to get a valid process pointer */
+	if (ifioctl(so, SIOCAIFADDR, (caddr_t)&nfs_diskless.myif, 0))
 		panic("nfs ifconf2");
 	soclose(so);
 
@@ -182,8 +188,15 @@ nfs_mountroot()
 		bcopy((caddr_t)&nfs_diskless.mygateway, (caddr_t)&rt.rt_gateway,
 			sizeof (struct sockaddr_in));
 		rt.rt_flags = (RTF_UP | RTF_GATEWAY);
-		if (rtioctl(SIOCADDRT, (caddr_t)&rt))
-			panic("nfs root route");
+		{
+		  /* copied over from rtioctl() -GW */
+		  extern struct sockaddr_in icmpmask;
+		  if (rtrequest(RTM_ADD, &rt.rt_dst, &rt.rt_gateway,
+				(struct sockaddr *)&icmpmask,
+				RTF_UP | RTF_GATEWAY,
+				(struct rtentry **)0))
+		    panic("nfs root route");
+		}
 	}
 #endif	/* COMPAT_43 */
 
@@ -258,7 +271,9 @@ nfs_mountroot()
 	mp->mnt_vnodecovered = NULLVP;
 	vfs_unlock(mp);
 	rootvp = vp;
+#ifndef __386BSD__
 	inittodr((time_t)0);	/* There is no time in the nfs fsstat so ?? */
+#endif
 	return (0);
 }
 
@@ -272,6 +287,7 @@ nfs_mountroot()
  * an error after that means that I have to release the mbuf.
  */
 /* ARGSUSED */
+int
 nfs_mount(mp, path, data, ndp, p)
 	struct mount *mp;
 	char *path;
@@ -311,6 +327,7 @@ nfs_mount(mp, path, data, ndp, p)
 /*
  * Common code for mount and mountroot
  */
+int
 mountnfs(argp, mp, nam, pth, hst, vpp)
 	register struct nfs_args *argp;
 	register struct mount *mp;
@@ -444,6 +461,7 @@ bad:
 /*
  * unmount system call
  */
+int
 nfs_unmount(mp, mntflags, p)
 	struct mount *mp;
 	int mntflags;
@@ -506,6 +524,7 @@ nfs_unmount(mp, mntflags, p)
 /*
  * Return root of a filesystem
  */
+int
 nfs_root(mp, vpp)
 	struct mount *mp;
 	struct vnode **vpp;
@@ -531,6 +550,7 @@ extern int syncprt;
  * Flush out the buffer cache
  */
 /* ARGSUSED */
+int
 nfs_sync(mp, waitfor)
 	struct mount *mp;
 	int waitfor;
@@ -548,6 +568,7 @@ nfs_sync(mp, waitfor)
  * At this point, this should never happen
  */
 /* ARGSUSED */
+int
 nfs_fhtovp(mp, fhp, vpp)
 	struct mount *mp;
 	struct fid *fhp;
@@ -561,6 +582,7 @@ nfs_fhtovp(mp, fhp, vpp)
  * Vnode pointer to File handle, should never happen either
  */
 /* ARGSUSED */
+int
 nfs_vptofh(vp, fhp)
 	struct vnode *vp;
 	struct fid *fhp;
@@ -573,6 +595,7 @@ nfs_vptofh(vp, fhp)
  * Vfs start routine, a no-op.
  */
 /* ARGSUSED */
+int
 nfs_start(mp, flags, p)
 	struct mount *mp;
 	int flags;
@@ -585,6 +608,7 @@ nfs_start(mp, flags, p)
 /*
  * Do operations associated with quotas, not supported
  */
+int
 nfs_quotactl(mp, cmd, uid, arg, p)
 	struct mount *mp;
 	int cmd;

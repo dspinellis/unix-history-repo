@@ -33,8 +33,12 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)rpcv2.h	7.4 (Berkeley) 6/28/90
+ *	From:	@(#)rpcv2.h	7.4 (Berkeley) 6/28/90
+ *	$Id$
  */
+
+#ifndef __h_rpcv2
+#define __h_rpcv2 1
 
 /*
  * Definitions for Sun RPC Version 2, from
@@ -85,3 +89,5 @@
 #define	RPCMNT_NAMELEN	255
 #define	RPCMNT_PATHLEN	1024
 #define	RPCPROG_NFS	100003
+
+#endif /* __h_rpcv2 */

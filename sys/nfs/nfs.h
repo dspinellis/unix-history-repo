@@ -33,8 +33,12 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)nfs.h	7.11 (Berkeley) 4/19/91
+ *	From:	@(#)nfs.h	7.11 (Berkeley) 4/19/91
+ *	$Id$
  */
+
+#ifndef __h_nfs
+#define __h_nfs 1
 
 /*
  * Tunable constants for nfs
@@ -162,3 +166,5 @@ struct nfsstats {
 #ifdef KERNEL
 struct nfsstats nfsstats;
 #endif /* KERNEL */
+
+#endif /* __h_nfs */

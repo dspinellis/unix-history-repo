@@ -33,7 +33,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)nfs_node.c	7.34 (Berkeley) 5/15/91
+ *	From:	@(#)nfs_node.c	7.34 (Berkeley) 5/15/91
+ *	$Id$
  */
 
 #include "param.h"
@@ -72,6 +73,7 @@ union nhead {
  * Initialize hash links for nfsnodes
  * and build nfsnode free list.
  */
+void
 nfs_nhinit()
 {
 	register int i;
@@ -111,6 +113,7 @@ nfs_hash(fhp)
  * In all cases, a pointer to a
  * nfsnode structure is returned.
  */
+int
 nfs_nget(mntp, fhp, npp)
 	struct mount *mntp;
 	register nfsv2fh_t *fhp;
@@ -163,6 +166,7 @@ loop:
 	return (0);
 }
 
+int
 nfs_inactive(vp, p)
 	struct vnode *vp;
 	struct proc *p;
@@ -219,6 +223,7 @@ nfs_inactive(vp, p)
 /*
  * Reclaim an nfsnode so that it can be used for other purposes.
  */
+int
 nfs_reclaim(vp)
 	register struct vnode *vp;
 {
@@ -247,7 +252,7 @@ int donfslocking = 0;
 /*
  * Lock an nfsnode
  */
-
+int
 nfs_lock(vp)
 	struct vnode *vp;
 {
@@ -265,11 +270,13 @@ nfs_lock(vp)
 	np->n_lockwaiter = 0;
 	np->n_lockholder = curproc->p_pid;
 	np->n_flag |= NLOCKED;
+	return(0);
 }
 
 /*
  * Unlock an nfsnode
  */
+int
 nfs_unlock(vp)
 	struct vnode *vp;
 {
@@ -281,11 +288,13 @@ nfs_unlock(vp)
 		np->n_flag &= ~NWANT;
 		wakeup((caddr_t)np);
 	}
+	return(0);
 }
 
 /*
  * Check for a locked nfsnode
  */
+int
 nfs_islocked(vp)
 	struct vnode *vp;
 {
@@ -300,6 +309,7 @@ nfs_islocked(vp)
  * since I can't decide if dirs. should be locked, I will check for
  * the lock and be flexible
  */
+void
 nfs_nput(vp)
 	struct vnode *vp;
 {
@@ -315,6 +325,7 @@ nfs_nput(vp)
  * done. Currently nothing to do.
  */
 /* ARGSUSED */
+int
 nfs_abortop(ndp)
 	struct nameidata *ndp;
 {

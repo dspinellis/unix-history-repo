@@ -33,16 +33,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)nfs_serv.c	7.40 (Berkeley) 5/15/91
- *
- * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
- * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         3       00090
- * --------------------         -----   ----------------------
- *
- * 08 Sep 92	Rick "gopher I"		Fix "truncate" (conflicting?)
- * 28 Aug 92	Arne Henrik Juul	Fixed NFS "create" bug
- * 02 Mar 92	Greg Hackney		Make NFS POSIX compliant (anon fix)
+ *	From:	@(#)nfs_serv.c	7.40 (Berkeley) 5/15/91
+ *	$Id$
  */
 
 /*
@@ -95,6 +87,7 @@ nfstype nfs_type[9]={ NFNON, NFREG, NFDIR, NFBLK, NFCHR, NFLNK, NFNON,
 /*
  * nfs getattr service
  */
+int
 nfsrv_getattr(mrep, md, dpos, cred, xid, mrq, repstat, p)
 	struct mbuf **mrq;
 	struct mbuf *mrep, *md;
@@ -132,6 +125,7 @@ nfsrv_getattr(mrep, md, dpos, cred, xid, mrq, repstat, p)
 /*
  * nfs setattr service
  */
+int
 nfsrv_setattr(mrep, md, dpos, cred, xid, mrq, repstat, p)
 	struct mbuf **mrq;
 	struct mbuf *mrep, *md;
@@ -207,6 +201,7 @@ out:
 /*
  * nfs lookup rpc
  */
+int
 nfsrv_lookup(mrep, md, dpos, cred, xid, mrq, repstat, p)
 	struct mbuf **mrq;
 	struct mbuf *mrep, *md;
@@ -257,6 +252,7 @@ nfsrv_lookup(mrep, md, dpos, cred, xid, mrq, repstat, p)
 /*
  * nfs readlink service
  */
+int
 nfsrv_readlink(mrep, md, dpos, cred, xid, mrq, repstat, p)
 	struct mbuf **mrq;
 	struct mbuf *mrep, *md;
@@ -340,6 +336,7 @@ out:
 /*
  * nfs read service
  */
+int
 nfsrv_read(mrep, md, dpos, cred, xid, mrq, repstat, p)
 	struct mbuf **mrq;
 	struct mbuf *mrep, *md;
@@ -450,6 +447,7 @@ nfsrv_read(mrep, md, dpos, cred, xid, mrq, repstat, p)
 /*
  * nfs write service
  */
+int
 nfsrv_write(mrep, md, dpos, cred, xid, mrq, repstat, p)
 	struct mbuf *mrep, *md, **mrq;
 	caddr_t dpos;
@@ -564,6 +562,7 @@ nfsrv_write(mrep, md, dpos, cred, xid, mrq, repstat, p)
  * if it already exists, just set length		* 28 Aug 92*
  * do NOT truncate unconditionally !
  */
+int
 nfsrv_create(mrep, md, dpos, cred, xid, mrq, repstat, p)
 	struct mbuf *mrep, *md, **mrq;
 	caddr_t dpos;
@@ -626,7 +625,7 @@ nfsrv_create(mrep, md, dpos, cred, xid, mrq, repstat, p)
 				error = ENXIO;
 				goto out;
 #endif /* FIFO */
-			} else if (error = suser(cred, (short *)0)) {
+			} else if (error = suser(cred, (u_short *)0)) {
 				VOP_ABORTOP(&nd);
 				vput(nd.ni_dvp);
 				goto out;
@@ -701,11 +700,13 @@ out:
 	vrele(nd.ni_startdir);
 	free(nd.ni_pnbuf, M_NAMEI);
 	nfsm_reply(0);
+	return 0;
 }
 
 /*
  * nfs remove service
  */
+int
 nfsrv_remove(mrep, md, dpos, cred, xid, mrq, repstat, p)
 	struct mbuf *mrep, *md, **mrq;
 	caddr_t dpos;
@@ -735,7 +736,7 @@ nfsrv_remove(mrep, md, dpos, cred, xid, mrq, repstat, p)
 		nfsm_reply(0);
 	vp = nd.ni_vp;
 	if (vp->v_type == VDIR &&
-		(error = suser(cred, (short *)0)))
+		(error = suser(cred, (u_short *)0)))
 		goto out;
 	/*
 	 * The root of a mounted filesystem cannot be deleted.
@@ -764,6 +765,7 @@ out:
 /*
  * nfs rename service
  */
+int
 nfsrv_rename(mrep, md, dpos, cred, xid, mrq, repstat, p)
 	struct mbuf *mrep, *md, **mrq;
 	caddr_t dpos;
@@ -882,6 +884,7 @@ nfsmout:
 /*
  * nfs link service
  */
+int
 nfsrv_link(mrep, md, dpos, cred, xid, mrq, repstat, p)
 	struct mbuf *mrep, *md, **mrq;
 	caddr_t dpos;
@@ -944,6 +947,7 @@ out1:
 /*
  * nfs symbolic link service
  */
+int
 nfsrv_symlink(mrep, md, dpos, cred, xid, mrq, repstat, p)
 	struct mbuf *mrep, *md, **mrq;
 	caddr_t dpos;
@@ -1024,6 +1028,7 @@ nfsmout:
 /*
  * nfs mkdir service
  */
+int
 nfsrv_mkdir(mrep, md, dpos, cred, xid, mrq, repstat, p)
 	struct mbuf *mrep, *md, **mrq;
 	caddr_t dpos;
@@ -1100,6 +1105,7 @@ nfsmout:
 /*
  * nfs rmdir service
  */
+int
 nfsrv_rmdir(mrep, md, dpos, cred, xid, mrq, repstat, p)
 	struct mbuf *mrep, *md, **mrq;
 	caddr_t dpos;
@@ -1187,6 +1193,7 @@ out:
  *	to including the status longwords that are not a part of the dir.
  *	"entry" structures, but are in the rpc.
  */
+int
 nfsrv_readdir(mrep, md, dpos, cred, xid, mrq, repstat, p)
 	struct mbuf **mrq;
 	struct mbuf *mrep, *md;
@@ -1376,6 +1383,7 @@ again:
 /*
  * nfs statfs service
  */
+int
 nfsrv_statfs(mrep, md, dpos, cred, xid, mrq, repstat, p)
 	struct mbuf **mrq;
 	struct mbuf *mrep, *md;
@@ -1419,6 +1427,7 @@ nfsrv_statfs(mrep, md, dpos, cred, xid, mrq, repstat, p)
  * Null operation, used by clients to ping server
  */
 /* ARGSUSED */
+int
 nfsrv_null(mrep, md, dpos, cred, xid, mrq, repstat, p)
 	struct mbuf **mrq;
 	struct mbuf *mrep, *md;
@@ -1441,6 +1450,7 @@ nfsrv_null(mrep, md, dpos, cred, xid, mrq, repstat, p)
  * No operation, used for obsolete procedures
  */
 /* ARGSUSED */
+int
 nfsrv_noop(mrep, md, dpos, cred, xid, mrq, repstat, p)
 	struct mbuf **mrq;
 	struct mbuf *mrep, *md;
@@ -1472,6 +1482,7 @@ nfsrv_noop(mrep, md, dpos, cred, xid, mrq, repstat, p)
  *     this because it opens a security hole, but since the nfs server opens
  *     a security hole the size of a barn door anyhow, what the heck.
  */
+int
 nfsrv_access(vp, flags, cred, p)
 	register struct vnode *vp;
 	int flags;
@@ -1491,6 +1502,8 @@ nfsrv_access(vp, flags, cred, p)
 			switch (vp->v_type) {
 			case VREG: case VDIR: case VLNK:
 				return (EROFS);
+			      default:
+				;
 			}
 		}
 		/*

@@ -33,15 +33,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)nfs_syscalls.c	7.26 (Berkeley) 4/16/91
- *
- * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
- * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         1       00053
- * --------------------         -----   ----------------------
- *
- * 08 Sep 92    Rick "gopher I"         Fix "reserved port" bug, fixed for
- *                                              AIX3.2 NFS clients
+ *	From:	@(#)nfs_syscalls.c	7.26 (Berkeley) 4/16/91
+ *	$Id$
  */
 
 #include "param.h"
@@ -116,6 +109,7 @@ struct getfh_args {
 };
 
 /* ARGSUSED */
+int
 getfh(p, uap, retval)
 	struct proc *p;
 	register struct getfh_args *uap;
@@ -163,6 +157,7 @@ struct nfssvc_args {
 };
 
 /* ARGSUSED */
+int
 nfssvc(p, uap, retval)
 	struct proc *p;
 	register struct nfssvc_args *uap;
@@ -324,6 +319,7 @@ bad:
  * Never returns unless it fails or gets killed
  */
 /* ARGSUSED */
+int
 async_daemon(p, uap, retval)
 	struct proc *p;
 	struct args *uap;

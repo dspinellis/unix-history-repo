@@ -33,15 +33,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)nfs_socket.c	7.23 (Berkeley) 4/20/91
- *
- * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
- * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         1       00053
- * --------------------         -----   ----------------------
- *
- * 08 Sep 92    Rick "gopher I"         Fix "reserved port" bug, fixed for
- *						AIX3.2 NFS clients
+ *	From:	@(#)nfs_socket.c	7.23 (Berkeley) 4/20/91
+ *	$Id$
  */
 
 /*
@@ -155,6 +148,7 @@ int nfs_tcpnodelay = 1;
  * Initialize sockets and congestion for a new NFS connection.
  * We do not free the sockaddr if error.
  */
+int
 nfs_connect(nmp)
 	register struct nfsmount *nmp;
 {
@@ -285,6 +279,7 @@ bad:
  * If this fails the mount point is DEAD!
  * nb: Must be called with the nfs_solock() set on the mount point.
  */
+int
 nfs_reconnect(rep, nmp)
 	register struct nfsreq *rep;
 	register struct nfsmount *nmp;
@@ -340,6 +335,7 @@ nfs_disconnect(nmp)
  * must be called with an nfs_solock() on the socket.
  * "rep == NULL" indicates that it has been called from a server.
  */
+int
 nfs_send(so, nam, top, rep)
 	register struct socket *so;
 	struct mbuf *nam;
@@ -394,6 +390,7 @@ nfs_send(so, nam, top, rep)
  * For SOCK_STREAM we must be very careful to read an entire record once
  * we have read any of it, even if the system call has been interrupted.
  */
+int
 nfs_receive(so, aname, mp, rep)
 	register struct socket *so;
 	struct mbuf **aname;
@@ -403,8 +400,8 @@ nfs_receive(so, aname, mp, rep)
 	struct uio auio;
 	struct iovec aio;
 	register struct mbuf *m;
-	struct mbuf *m2, *mnew, **mbp;
-	caddr_t fcp, tcp;
+	struct mbuf *m2 = 0, *mnew, **mbp;
+	caddr_t fcp, tcp = 0;
 	u_long len;
 	struct mbuf **getnam;
 	int error, siz, mlen, soflags, rcvflg;
@@ -616,6 +613,7 @@ errout:
  * with outstanding requests using the xid, until ours is found.
  */
 /* ARGSUSED */
+int
 nfs_reply(nmp, myrep)
 	struct nfsmount *nmp;
 	struct nfsreq *myrep;
@@ -625,8 +623,8 @@ nfs_reply(nmp, myrep)
 	register int error = 0;
 	u_long rxid;
 	struct mbuf *mp, *nam;
-	char *cp;
-	int cnt, xfer;
+/*	char *cp; */
+/*	int cnt, xfer; */
 
 	/*
 	 * Loop around until we get our own reply
@@ -736,6 +734,7 @@ nfs_reply(nmp, myrep)
  *	  by mrep or error
  * nb: always frees up mreq mbuf list
  */
+int
 nfs_request(vp, mreq, xid, procnum, procp, tryhard, mp, mrp, mdp, dposp)
 	struct vnode *vp;
 	struct mbuf *mreq;
@@ -932,6 +931,7 @@ nfsmout:
  * - verify it
  * - fill in the cred struct.
  */
+int
 nfs_getreq(so, prog, vers, maxproc, nam, mrp, mdp, dposp, retxid, procnum, cr,
 	msk, mtch, wascomp, repstat)				/* 08 Aug 92*/
 	struct socket *so;
@@ -1061,6 +1061,7 @@ nfsmout:
  * Generate the rpc reply header
  * siz arg. is used to decide if adding a cluster is worthwhile
  */
+int
 nfs_rephead(siz, retxid, err, mrq, mbp, bposp)
 	int siz;
 	u_long retxid;
@@ -1128,7 +1129,9 @@ nfs_rephead(siz, retxid, err, mrq, mbp, bposp)
  * To avoid retransmission attempts on STREAM sockets (in the future) make
  * sure to set the r_retry field to 0 (implies nm_retry == 0).
  */
-nfs_timer()
+void
+nfs_timer(arg)
+     caddr_t arg;
 {
 	register struct nfsreq *rep;
 	register struct mbuf *m;
@@ -1197,7 +1200,8 @@ nfs_timer()
 			nfsstats.rpcretries++;
 			if ((nmp->nm_flag & NFSMNT_NOCONN) == 0)
 			    error = (*so->so_proto->pr_usrreq)(so, PRU_SEND, m,
-			    (caddr_t)0, (struct mbuf *)0, (struct mbuf *)0);
+			    (struct mbuf *)0, (struct mbuf *)0,
+			    (struct mbuf *)0);
 			else
 			    error = (*so->so_proto->pr_usrreq)(so, PRU_SEND, m,
 			    nmp->nm_nam, (struct mbuf *)0, (struct mbuf *)0);
@@ -1257,6 +1261,7 @@ nfs_timer()
  */
 #define NFS_RTO(nmp)	(((nmp)->nm_srtt >> 3) + (nmp)->nm_rttvar)
 
+void
 nfs_updatetimer(nmp)
 	register struct nfsmount *nmp;
 {
@@ -1305,6 +1310,7 @@ nfs_updatetimer(nmp)
 		nmp->nm_window = NFS_MAXWINDOW;
 }
 
+void
 nfs_backofftimer(nmp)
 	register struct nfsmount *nmp;
 {
@@ -1340,6 +1346,7 @@ nfs_backofftimer(nmp)
  * Test for a termination signal pending on procp.
  * This is used for NFSMNT_INT mounts.
  */
+int
 nfs_sigintr(p)
 	register struct proc *p;
 {
@@ -1350,9 +1357,10 @@ nfs_sigintr(p)
 		return (0);
 }
 
+void
 nfs_msg(p, server, msg)
 	struct proc *p;
-	char *server, *msg;
+	const char *server, *msg;
 {
 	tpr_t tpr;
 
@@ -1370,6 +1378,7 @@ nfs_msg(p, server, msg)
  * and also to avoid race conditions between the processes with nfs requests
  * in progress when a reconnect is necessary.
  */
+void
 nfs_solock(flagp)
 	register int *flagp;
 {
@@ -1384,6 +1393,7 @@ nfs_solock(flagp)
 /*
  * Unlock the stream socket for others.
  */
+void
 nfs_sounlock(flagp)
 	register int *flagp;
 {
@@ -1402,6 +1412,7 @@ nfs_sounlock(flagp)
  * if they are the same.
  * If there is any doubt, return FALSE.
  */
+int
 nfs_netaddr_match(nam1, nam2)
 	struct mbuf *nam1, *nam2;
 {
@@ -1435,6 +1446,7 @@ nfs_netaddr_match(nam1, nam2)
  * - Compare for == with match
  * return TRUE if not equal
  */
+int
 nfs_badnam(nam, msk, mtch)
 	register struct mbuf *nam, *msk, *mtch;
 {
