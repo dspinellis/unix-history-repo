@@ -26,7 +26,7 @@ SOFTWARE.
  */
 /* $Header: /var/src/sys/netiso/RCS/clnp_subr.c,v 5.1 89/02/09 16:20:46 hagens Exp $ */
 /* $Source: /var/src/sys/netiso/RCS/clnp_subr.c,v $ */
-/*	@(#)clnp_subr.c	7.6 (Berkeley) %G% */
+/*	@(#)clnp_subr.c	7.7 (Berkeley) %G% */
 
 #ifndef lint
 static char *rcsid = "$Header: /var/src/sys/netiso/RCS/clnp_subr.c,v 5.1 89/02/09 16:20:46 hagens Exp $";
@@ -232,6 +232,7 @@ struct snpa_hdr		*inbound_shp;	/* subnetwork header of inbound packet */
 		ENDDEBUG
 		clnp->cnf_type &= ~CNF_ERR_OK; /* so we don't generate an ER */
 		clnp_discard(m, 0);
+		INCSTAT(cns_cantforward);
 		goto done;
 	}
 
@@ -269,6 +270,7 @@ struct snpa_hdr		*inbound_shp;	/* subnetwork header of inbound packet */
 			printf("clnp_forward: can't route packet (errno %d)\n", error);
 		ENDDEBUG
 		clnp_discard(m, ADDR_DESTUNREACH);
+		INCSTAT(cns_cantforward);
 		goto done;
 	}
 	ifp = ia->ia_ifp;
@@ -303,6 +305,8 @@ struct snpa_hdr		*inbound_shp;	/* subnetwork header of inbound packet */
 		struct iso_addr	*mysrc = &ia->ia_addr.siso_addr;
 		if (mysrc == NULL) {
 			clnp_discard(m, ADDR_DESTUNREACH);
+			INCSTAT(cns_cantforward);
+			clnp_stat.cns_forward--;
 			goto done;
 		} else {
 			(void) clnp_dooptions(m, oidx, ifp, mysrc);
