@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)radix.c	7.9 (Berkeley) %G%
+ *	@(#)radix.c	7.10 (Berkeley) %G%
  */
 
 /*
@@ -16,10 +16,9 @@
 #include "malloc.h"
 #define	M_DONTWAIT M_NOWAIT
 #endif
-struct radix_node_head *mask_rnhead;
-#define rn_maskhead mask_rnhead->rnh_treetop
 struct radix_mask *rn_mkfreelist;
-struct radix_node_head *radix_node_head;
+struct radix_node_head *mask_rnhead;
+#define rn_maskhead (mask_rnhead->rnh_treetop)
 #undef Bcmp
 #define Bcmp(a, b, l) (l == 0 ? 0 : bcmp((caddr_t)(a), (caddr_t)(b), (u_long)l))
 /*
@@ -86,6 +85,7 @@ rn_search_m(v, head, m)
 };
 
 
+#define MAXKEYLEN 52
 static int gotOddMasks;
 static char maskedKey[MAXKEYLEN];
 
@@ -569,9 +569,30 @@ out:
 	tt[1].rn_flags &= ~RNF_ACTIVE;
 	return (tt);
 }
+
+rn_walk(rn, f, w)
+	register struct radix_node *rn;
+	register int (*f)();
+	caddr_t  w;
+{
+	int error;
+	for (;;) {
+		while (rn->rn_b >= 0)
+			rn = rn->rn_l;	/* First time through node, go left */
+		if (error = (*f)(rn, w))
+			return (error);	/* Process Leaf */
+		while (rn->rn_p->rn_r == rn) {	/* if coming back from right */
+			rn = rn->rn_p;		/* go back up */
+			if (rn->rn_flags & RNF_ROOT)
+				return 0;
+		}
+		rn = rn->rn_p->rn_r;		/* otherwise, go right*/
+	}
+	return 0;
+}
 char rn_zeros[MAXKEYLEN], rn_ones[MAXKEYLEN];
 
-rn_inithead(head, off, af)
+rn_inithead(head, off)
 struct radix_node_head **head;
 int off;
 {
@@ -593,21 +614,20 @@ int off;
 	tt->rn_b = -1 - off;
 	*ttt = *tt;
 	ttt->rn_key = rn_ones;
-	rnh->rnh_af = af;
+	rnh->rnh_add = rn_addroute;
+	rnh->rnh_delete = rn_delete;
+	rnh->rnh_match = rn_match;
+	rnh->rnh_walk = rn_walk;
 	rnh->rnh_treetop = t;
-	if (radix_node_head == 0) {
+	if (mask_rnhead == 0) {
 		caddr_t cp = rn_ones, cplim = rn_ones + MAXKEYLEN;
 		while (cp < cplim)
 			*cp++ = -1;
-		if (rn_inithead(&radix_node_head, 0, 0) == 0) {
+		if (rn_inithead(&mask_rnhead, 0) == 0) {
 			Free(rnh);
 			*head = 0;
 			return (0);
 		}
-		mask_rnhead = radix_node_head;
 	}
-	rnh->rnh_next = radix_node_head->rnh_next;
-	if (radix_node_head != rnh)
-		radix_node_head->rnh_next = rnh;
 	return (1);
 }
