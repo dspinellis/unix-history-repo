@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)pltroff.c	3.1 (CWI) 85/07/30";
+static char sccsid[] = "@(#)pltroff.c	3.2 (CWI) 85/08/15";
 #endif lint
 
 #include <stdio.h>
@@ -345,6 +345,6 @@ dot() {
 	/* on the 202, l. is good but small. */
 	/* in general, use a smaller, shifted period and hope */
 
-	printf("\\&\\f1\\h'-.1m'\\v'.03m'\\s-3.\\s+3\\fP\n");
+	printf("\\&\\f1\\h'-.05m'\\v'.03m'\\s-3.\\s+3\\fP\n");
 	flyback();
 }
