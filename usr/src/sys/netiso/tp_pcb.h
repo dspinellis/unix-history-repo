@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_pcb.h	7.10 (Berkeley) %G%
+ *	@(#)tp_pcb.h	7.11 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -241,18 +241,12 @@ struct tp_pcb {
 		tp_decbit:3,			/* dec bit was set, we're in reneg mode  */
 		tp_cebit_off:1,			/* the real DEC bit algorithms not in use */
 		tp_flags:8,				/* values: */
-#define TPF_CONN_DATA_OUT	TPFLAG_CONN_DATA_OUT
-#define TPF_CONN_DATA_IN	TPFLAG_CONN_DATA_IN
-#define TPF_DISC_DATA_IN	TPFLAG_DISC_DATA_IN
-#define TPF_DISC_DATA_OUT	TPFLAG_DISC_DATA_OUT
-#define TPF_XPD_PRESENT 	TPFLAG_XPD_PRESENT 
 #define TPF_NLQOS_PDN	 	TPFLAG_NLQOS_PDN
 #define TPF_PEER_ON_SAMENET	TPFLAG_PEER_ON_SAMENET
+#define TPF_GENERAL_ADDR	TPFLAG_GENERAL_ADDR
 
-#define PEER_IS_LOCAL(t) \
-			(((t)->tp_flags & TPF_PEER_ON_SAME_NET)==TPF_PEER_ON_SAME_NET)
-#define USES_PDN(t)	\
-			(((t)->tp_flags & TPF_NLQOS_PDN)==TPF_NLQOS_PDN)
+#define PEER_IS_LOCAL(t)	(((t)->tp_flags & TPF_PEER_ON_SAME_NET) != 0)
+#define USES_PDN(t)			(((t)->tp_flags & TPF_NLQOS_PDN) != 0)
 
 		tp_unused:16;
 
