@@ -14,9 +14,9 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.3 (Berkeley) %G%
+#	@(#)Makefile	5.4 (Berkeley) %G%
 #
-CFLAGS=	-O
+CFLAGS=	-O -I..
 SRCS=	cabs.c cbrt.c
 OBJS=	cabs.o cbrt.o sqrt.o support.o
 
