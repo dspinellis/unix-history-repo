@@ -26,15 +26,15 @@ ERROR: DBM is no longer supported -- use NDBM instead.
 #ifndef lint
 #ifdef NEWDB
 #ifdef NDBM
-static char sccsid[] = "@(#)alias.c	6.28 (Berkeley) %G% (with NEWDB and NDBM)";
+static char sccsid[] = "@(#)alias.c	6.29 (Berkeley) %G% (with NEWDB and NDBM)";
 #else
-static char sccsid[] = "@(#)alias.c	6.28 (Berkeley) %G% (with NEWDB)";
+static char sccsid[] = "@(#)alias.c	6.29 (Berkeley) %G% (with NEWDB)";
 #endif
 #else
 #ifdef NDBM
-static char sccsid[] = "@(#)alias.c	6.28 (Berkeley) %G% (with NDBM)";
+static char sccsid[] = "@(#)alias.c	6.29 (Berkeley) %G% (with NDBM)";
 #else
-static char sccsid[] = "@(#)alias.c	6.28 (Berkeley) %G% (without NEWDB or NDBM)";
+static char sccsid[] = "@(#)alias.c	6.29 (Berkeley) %G% (without NEWDB or NDBM)";
 #endif
 #endif
 #endif /* not lint */
@@ -147,6 +147,7 @@ alias(a, sendq, e)
 	if (bitset(EF_VRFYONLY, e->e_flags))
 	{
 		a->q_flags |= QVERIFIED;
+		e->e_nrcpts++;
 		return;
 	}
 	message("aliased to %s", p);

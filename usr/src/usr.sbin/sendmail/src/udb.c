@@ -8,9 +8,9 @@
 
 #ifndef lint
 #ifdef USERDB
-static char sccsid [] = "@(#)udb.c	6.15 (Berkeley) %G% (with USERDB)";
+static char sccsid [] = "@(#)udb.c	6.16 (Berkeley) %G% (with USERDB)";
 #else
-static char sccsid [] = "@(#)udb.c	6.15 (Berkeley) %G% (without USERDB)";
+static char sccsid [] = "@(#)udb.c	6.16 (Berkeley) %G% (without USERDB)";
 #endif
 #endif
 
@@ -186,6 +186,7 @@ udbexpand(a, sendq, e)
 				if (bitset(EF_VRFYONLY, e->e_flags))
 				{
 					a->q_flags |= QVERIFIED;
+					e->e_nrcpts++;
 					return EX_OK;
 				}
 
