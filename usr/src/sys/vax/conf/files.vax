@@ -8,6 +8,8 @@ vax/dkbad.c		standard
 vax/flp.c		standard
 vax/in_cksum.c		optional inet
 vax/ka630.c		standard
+vax/kdb_machdep.c	optional kdb
+vax/kdb_opset.c		optional kdb
 vax/ns_cksum.c		optional ns
 vax/machdep.c		standard config-dependent
 vax/mem.c		standard
@@ -44,7 +46,9 @@ vaxuba/ct.c		optional ct device-driver
 vaxuba/dh.c		optional dh device-driver
 vaxuba/dhu.c		optional dhu device-driver
 vaxuba/dmf.c		optional dmf device-driver
+vaxuba/dmx.c		optional dmf device-driver
 vaxuba/dmz.c		optional dmz device-driver
+vaxuba/dmx.c		optional dmz device-driver
 vaxuba/dn.c		optional dn device-driver
 vaxuba/dz.c		optional dz device-driver
 vaxuba/kgclock.c	optional kg device-driver
@@ -67,3 +71,5 @@ vaxuba/uu.c		optional uu device-driver
 vaxuba/va.c		optional va device-driver
 vaxuba/vp.c		optional vp device-driver
 vaxuba/vs.c		optional vs device-driver
+ultrix/qv.c		optional qv device-driver
+ultrix/qd.c		optional qd device-driver
