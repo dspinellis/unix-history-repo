@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	6.71 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	6.72 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -1939,7 +1939,7 @@ mailfile(filename, ctladdr, e)
 		(void) umask(OldUmask);
 
 		if (stat(filename, &stb) < 0)
-			stb.st_mode = 0666;
+			stb.st_mode = FileMode;
 		mode = stb.st_mode;
 
 		/* limit the errors to those actually caused in the child */
@@ -1991,7 +1991,7 @@ mailfile(filename, ctladdr, e)
 		}
 		FileName = filename;
 		LineNumber = 0;
-		f = dfopen(filename, "a");
+		f = dfopen(filename, O_WRONLY|O_CREAT|O_APPEND, FileMode);
 		if (f == NULL)
 		{
 			message("554 cannot open");

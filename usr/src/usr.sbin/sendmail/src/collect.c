@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)collect.c	6.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)collect.c	6.16 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <errno.h>
@@ -51,13 +51,12 @@ maketemp(from)
 	*/
 
 	e->e_df = newstr(queuename(e, 'd'));
-	if ((tf = dfopen(e->e_df, "w")) == NULL)
+	if ((tf = dfopen(e->e_df, O_WRONLY|O_CREAT, FileMode)) == NULL)
 	{
 		syserr("Cannot create %s", e->e_df);
 		NoReturn = TRUE;
 		finis();
 	}
-	(void) chmod(e->e_df, FileMode);
 
 	/*
 	**  Tell ARPANET to go ahead.

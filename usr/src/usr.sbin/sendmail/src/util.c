@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	6.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)util.c	6.18 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -447,39 +447,61 @@ fixcrlf(line, stripnl)
 **	whatever), so this tries to get around it.
 */
 
+struct omodes
+{
+	int	mask;
+	int	mode;
+	char	*farg;
+} OpenModes[] =
+{
+	O_ACCMODE,		O_RDONLY,		"r",
+	O_ACCMODE|O_APPEND,	O_WRONLY,		"w",
+	O_ACCMODE|O_APPEND,	O_WRONLY|O_APPEND,	"a",
+	O_TRUNC,		0,			"w+",
+	O_APPEND,		O_APPEND,		"a+",
+	0,			0,			"r+",
+};
+
 FILE *
-dfopen(filename, mode)
+dfopen(filename, omode, cmode)
 	char *filename;
-	char *mode;
+	int omode;
+	int cmode;
 {
 	register int tries;
-	register FILE *fp;
+	FILE *fp;
+	int fd;
+	register struct omodes *om;
 	struct stat st;
+
+	for (om = OpenModes; om->mask != 0; om++)
+		if ((omode & om->mask) == om->mode)
+			break;
 
 	for (tries = 0; tries < 10; tries++)
 	{
 		sleep((unsigned) (10 * tries));
 		errno = 0;
-		fp = fopen(filename, mode);
-		if (fp != NULL)
+		fd = open(filename, omode, cmode);
+		if (fd >= 0)
 			break;
 		if (errno != ENFILE && errno != EINTR)
 			break;
 	}
-	if (fp != NULL && fstat(fileno(fp), &st) >= 0 && S_ISREG(st.st_mode))
+	if (fd >= 0 && fstat(fd, &st) >= 0 && S_ISREG(st.st_mode))
 	{
 		int locktype;
 		extern bool lockfile();
 
 		/* lock the file to avoid accidental conflicts */
-		if (*mode == 'w' || *mode == 'a')
+		if ((omode & O_ACCMODE) != O_RDONLY)
 			locktype = LOCK_EX;
 		else
 			locktype = LOCK_SH;
-		(void) lockfile(fileno(fp), filename, locktype);
+		(void) lockfile(fd, filename, locktype);
 		errno = 0;
 	}
-	return (fp);
+	return fdopen(fd, om->farg);
 }
 /*
 **  PUTLINE -- put a line like fputs obeying SMTP conventions
