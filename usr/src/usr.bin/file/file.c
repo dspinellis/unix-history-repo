@@ -1,5 +1,5 @@
 #ifndef lint
-static	char sccsid[] = "@(#)file.c	4.11 (Berkeley) %G%";
+static	char sccsid[] = "@(#)file.c	4.12 (Berkeley) %G%";
 #endif
 /*
  * file - determine type of file
@@ -111,8 +111,8 @@ char *file;
 	case S_IFCHR:
 	case S_IFBLK:
 		printf("%s special (%d/%d)\n",
-			mbuf.st_mode&S_IFMT == S_IFCHR ? "character" : "block",
-			major(mbuf.st_rdev), minor(mbuf.st_rdev));
+		    (mbuf.st_mode&S_IFMT) == S_IFCHR ? "character" : "block",
+		     major(mbuf.st_rdev), minor(mbuf.st_rdev));
 		return;
 
 	case S_IFSOCK:
