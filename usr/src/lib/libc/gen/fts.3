@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)fts.3	5.3 (Berkeley) %G%
+.\"	@(#)fts.3	5.4 (Berkeley) %G%
 .\"
 .TH FTS 3 ""
 .UC 7
@@ -142,6 +142,12 @@ This option causes the routine
 to return structures for the directory entries ``.'' and ``..''.
 By default they are ignored unless specified as an argument to
 .IR ftsopen .
+.TP
+FTS_XDEV
+This option keeps
+.I fts
+from descending into directories that have a different device number
+than the file the descent began from.
 .PP
 The argument
 .I compar
