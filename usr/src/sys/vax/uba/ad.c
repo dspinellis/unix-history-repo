@@ -1,4 +1,4 @@
-/*	ad.c	4.2	82/07/15	*/
+/*	ad.c	4.3	82/08/01	*/
 
 #include "ad.h"
 #if NAD > 0
@@ -93,15 +93,13 @@ adioctl(dev, cmd, addr, flag)
 	short int chan;
 
 	switch (cmd) {
-	case AD_CHAN:
+
+	case ADIOSCHAN:
 		adp = &ad[ADUNIT(dev)];
-		chan  = fuword(addr);
-		if(chan == -1)
-			u.u_error = EFAULT;
-		else
-			adp->ad_chan = chan<<8;
+		adp->ad_chan = (*(int *)data)<<8;
 		break;
-	case AD_READ:
+
+	case ADIOGETW:
 		adp = &ad[ADUNIT(dev)];
 		spl6();
 		adaddr->ad_csr = adp->ad_chan;
@@ -115,8 +113,9 @@ adioctl(dev, cmd, addr, flag)
 		while(adp->ad_state&ADBUSY)
 			sleep((caddr_t)adp, ADWAITPRI);
 		spl0();
-		(void) suword(addr, adp->ad_softdata);
+		*(int *)data = adp->ad_softdata;
 		break;
+
 	default:
 		u.u_error = ENOTTY;	/* Not a legal ioctl cmd. */
 	}

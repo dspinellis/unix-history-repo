@@ -1,4 +1,4 @@
-/*	dh.c	4.46	82/07/15	*/
+/*	dh.c	4.47	82/08/01	*/
 
 #include "dh.h"
 #if NDH > 0
@@ -390,32 +390,37 @@ dhrint(dh)
  * Ioctl for DH11.
  */
 /*ARGSUSED*/
-dhioctl(dev, cmd, addr, flag)
-	caddr_t addr;
+dhioctl(dev, cmd, data, flag)
+	caddr_t data;
 {
 	register struct tty *tp;
 	register unit = minor(dev);
 
 	tp = &dh11[unit];
-	cmd = (*linesw[tp->t_line].l_ioctl)(tp, cmd, addr);
+	cmd = (*linesw[tp->t_line].l_ioctl)(tp, cmd, data, flag);
 	if (cmd == 0)
 		return;
-	if (ttioctl(tp, cmd, addr, flag)) {
-		if (cmd==TIOCSETP || cmd==TIOCSETN)
+	if (ttioctl(tp, cmd, data, flag)) {
+		if (cmd == TIOCSETP || cmd == TIOCSETN)
 			dhparam(unit);
 	} else switch(cmd) {
+
 	case TIOCSBRK:
 		((struct dhdevice *)(tp->t_addr))->dhbreak |= 1<<(unit&017);
 		break;
+
 	case TIOCCBRK:
 		((struct dhdevice *)(tp->t_addr))->dhbreak &= ~(1<<(unit&017));
 		break;
+
 	case TIOCSDTR:
 		dmctl(unit, DML_DTR|DML_RTS, DMBIS);
 		break;
+
 	case TIOCCDTR:
 		dmctl(unit, DML_DTR|DML_RTS, DMBIC);
 		break;
+
 	default:
 		u.u_error = ENOTTY;
 	}

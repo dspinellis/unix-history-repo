@@ -1,4 +1,4 @@
-/*	mt.c	4.5	82/07/15	*/
+/*	mt.c	4.6	82/08/01	*/
 
 #include "mu.h"
 #if NMT > 0
@@ -23,8 +23,8 @@
 #include "../h/pte.h"
 #include "../h/mbareg.h"
 #include "../h/mbavar.h"
-#include "../h/mtio.h"
 #include "../h/ioctl.h"
+#include "../h/mtio.h"
 #include "../h/cmap.h"
 #include "../h/cpu.h"
 
@@ -492,10 +492,10 @@ mtphys(dev)
 }
 
 /*ARGSUSED*/
-mtioctl(dev, cmd, addr, flag)
+mtioctl(dev, cmd, data, flag)
 	dev_t dev;
 	int cmd;
-	caddr_t addr;
+	caddr_t data;
 	int flag;
 {
 	register struct mu_softc *sc = &mu_softc[MUUNIT(dev)];
@@ -503,35 +503,38 @@ mtioctl(dev, cmd, addr, flag)
 	register callcount;
 	register int op;
 	int fcount;
-	struct mtop mtop;
-	struct mtget mtget;
+	struct mtop *mtop;
+	struct mtget *mtget;
 	/* we depend of the values and order of the MT codes here */
 	static mtops[] =
 	{MT_WTM,MT_SFORWF,MT_SREVF,MT_SFORW,MT_SREV,MT_REW,MT_UNLOAD,MT_SENSE};
 
 	switch (cmd) {
-		case MTIOCTOP:	/* tape operation */
-		if (copyin((caddr_t)addr, (caddr_t)&mtop, sizeof(mtop))) {
-			u.u_error = EFAULT;
-			return;
-		}
-		switch(mtop.mt_op) {
+
+	case MTIOCTOP:	/* tape operation */
+		mtop = (struct mtop *)mtop;
+		switch(mtop->mt_op) {
+
 		case MTWEOF:
-			callcount = mtop.mt_count;
+			callcount = mtop->mt_count;
 			fcount = 1;
 			break;
+
 		case MTFSF: case MTBSF:
-			callcount = mtop.mt_count;
+			callcount = mtop->mt_count;
 			fcount = 1;
 			break;
+
 		case MTFSR: case MTBSR:
 			callcount = 1;
-			fcount = mtop.mt_count;
+			fcount = mtop->mt_count;
 			break;
+
 		case MTREW: case MTOFFL:
 			callcount = 1;
 			fcount = 1;
 			break;
+
 		default:
 			u.u_error = ENXIO;
 			return;
@@ -540,7 +543,7 @@ mtioctl(dev, cmd, addr, flag)
 			u.u_error = ENXIO;
 			return;
 		}
-		op = mtops[mtop.mt_op];
+		op = mtops[mtop->mt_op];
 		if (op == MT_WTM)
 			op |= sc->sc_dens;
 		while (--callcount >= 0) {
@@ -551,7 +554,7 @@ mtioctl(dev, cmd, addr, flag)
 				mtcommand(dev, op, n);
 				fcount -= n;
 			} while (fcount);
-			if ((mtop.mt_op == MTFSR || mtop.mt_op == MTBSR) &&
+			if ((mtop->mt_op == MTFSR || mtop->mt_op == MTBSR) &&
 			    bp->b_resid) {
 				u.u_error = EIO;
 				break;
@@ -561,15 +564,16 @@ mtioctl(dev, cmd, addr, flag)
 		}
 		geterror(bp);
 		return;
+
 	case MTIOCGET:
-		mtget.mt_erreg = sc->sc_erreg;
-		mtget.mt_resid = sc->sc_resid;
+		mtget = (struct mtget *)data;
+		mtget->mt_erreg = sc->sc_erreg;
+		mtget->mt_resid = sc->sc_resid;
 		mtcommand(dev, MT_SENSE, 1);	/* update drive status */
-		mtget.mt_dsreg = sc->sc_dsreg;
-		mtget.mt_type = MT_ISMT;
-		if (copyout((caddr_t)&mtget, addr, sizeof(mtget)))
-			u.u_error = EFAULT;
+		mtget->mt_dsreg = sc->sc_dsreg;
+		mtget->mt_type = MT_ISMT;
 		return;
+
 	default:
 		u.u_error = ENXIO;
 	}

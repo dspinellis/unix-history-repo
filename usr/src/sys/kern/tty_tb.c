@@ -1,4 +1,4 @@
-/*	tty_tb.c	4.1	82/06/26	*/
+/*	tty_tb.c	4.2	82/08/01	*/
 
 #include "tb.h"
 #if NTB > 0
@@ -47,8 +47,8 @@ struct tbposition {
  */
 /*ARGSUSED*/
 tbopen(dev, tp)
-dev_t dev;
-register struct tty *tp;
+	dev_t dev;
+	register struct tty *tp;
 {
 	register struct tbposition *tbp;
 
@@ -196,9 +196,9 @@ tbdecode(cp, tbposition)
  * those which get parameters (gtty and get special characters).
  */
 /*ARGSUSED*/
-tbioctl(tp, cmd, addr)
-struct tty *tp;
-caddr_t addr;
+tbioctl(tp, cmd, data, flag)
+	struct tty *tp;
+	caddr_t data;
 {
 
 	if ((cmd>>8) != 't')

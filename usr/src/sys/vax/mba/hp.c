@@ -1,4 +1,4 @@
-/*	hp.c	4.50	82/06/27	*/
+/*	hp.c	4.51	82/08/01	*/
 
 #ifdef HPDEBUG
 int	hpdebug;
@@ -34,6 +34,7 @@ int	hpbdebug;
 #include "../h/vm.h"
 #include "../h/cmap.h"
 #include "../h/dkbad.h"
+#include "../h/ioctl.h"
 #include "../h/dkio.h"
 
 #include "../h/hpreg.h"
@@ -645,14 +646,15 @@ hpwrite(dev)
 }
 
 /*ARGSUSED*/
-hpioctl(dev, cmd, addr, flag)
+hpioctl(dev, cmd, data, flag)
 	dev_t dev;
 	int cmd;
-	caddr_t addr;
+	caddr_t data;
 	int flag;
 {
 
 	switch (cmd) {
+
 	case DKIOCHDR:	/* do header read/write */
 		hphdr[minor(dev)>>3] = 1;
 		return;

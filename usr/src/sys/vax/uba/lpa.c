@@ -1,4 +1,4 @@
-/*	lpa.c	4.2	82/07/15	*/
+/*	lpa.c	4.3	82/08/01	*/
 #include "lpa.h"
 #if NLPA > 0
 
@@ -382,9 +382,9 @@ register short ubanum;
 TRACER("DMDT\n");
 }
 
-lpaioctl(dev, cmd, addr, flag)
-dev_t dev;
-caddr_t *addr;
+lpaioctl(dev, cmd, data, flag)
+	dev_t dev;
+	caddr_t data;
 {
 	register int unit = LPAUNIT(dev);
 	register struct lpa_softc *sc = &lpa_softc[unit];
@@ -397,7 +397,7 @@ caddr_t *addr;
 		short *baddr;
 		short rate;
 		short wc;
-	} iocb;
+	} *iocb;
 
 TRACER("IOCTL IN\n");
 	if (cmd != TIOCSETP) {
@@ -413,20 +413,16 @@ TRACER("NO DMDT\n");
 		return;
 	}
 #endif
-	if (copyin(addr, (caddr_t)&iocb, sizeof(iocb))) {
-TRACER("COPYIN FAULT\n");
-		u.u_error = EFAULT;
-		return;
-	}
+	iocb = (struct iocb *)data;
 	p = (short *) sc->sc_buffer->b_un.b_addr;	/* CLOCK START */
 	*p++ = CLOCK | CLOCKA;			/* mode */
 	*p++ = ENACTR | R1M | MFIE | MRI;	/* clock status */
-	*p = iocb.rate;				/* clock preset */
+	*p = iocb->rate;			/* clock preset */
 	lpacmd(sc->sc_buffer, lpaaddr, sc, ui->ui_ubanum);
 TRACER("CLOCK STARTED\n");
 	p = (short *) sc->sc_buffer->b_un.b_addr;	/* DATA TRANSFER START*/
 	*p++ = (sc->sc_device << 7) | DTS | SCHAN;	/* mode */
-	sc->sc_count = iocb.wc & 017777;	/* word count per buffer */
+	sc->sc_count = iocb->wc & 017777;	/* word count per buffer */
 	*p++ = sc->sc_count;
 							/* user status word */
 	sc->sc_ustatbuf.b_un.b_addr = (caddr_t) &sc->sc_ustat;
@@ -437,10 +433,10 @@ TRACER("CLOCK STARTED\n");
 	v = sc->sc_ubaustat;
 	*p++ = v;
 	*p = (v >> 16) & 03;		/* into low portion of word */
-	sc->sc_nbuf = (iocb.wc >> 13) & 07;	/* number of buffers */
+	sc->sc_nbuf = (iocb->wc >> 13) & 07;	/* number of buffers */
 	*p++ |= sc->sc_nbuf++ << 8;		/* into high portion of word */
 					/* buffer addresses */
-	if (useracc(sc->sc_ubuffer.b_un.b_addr = (caddr_t) iocb.baddr,
+	if (useracc(sc->sc_ubuffer.b_un.b_addr = (caddr_t) iocb->baddr,
 		    sc->sc_ubuffer.b_bcount = sc->sc_count * sc->sc_nbuf * 2,
 		    (i = (sc->sc_device)? B_READ : B_WRITE) ) == NULL) {
 TRACER("USER BUFFER FAULT\n");

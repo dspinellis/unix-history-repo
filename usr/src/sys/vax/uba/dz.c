@@ -1,4 +1,4 @@
-/*	dz.c	4.39	82/07/15	*/
+/*	dz.c	4.40	82/08/01	*/
 
 #include "dz.h"
 #if NDZ > 0
@@ -351,22 +351,21 @@ dzrint(dz)
 }
  
 /*ARGSUSED*/
-dzioctl(dev, cmd, addr, flag)
+dzioctl(dev, cmd, data, flag)
 	dev_t dev;
-	caddr_t addr;
+	caddr_t data;
 {
 	register struct tty *tp;
 	register int unit = minor(dev);
 	register int dz = unit >> 3;
 	register struct device *dzaddr;
-	int temp;
  
 	tp = &dz_tty[unit];
-	cmd = (*linesw[tp->t_line].l_ioctl)(tp, cmd, addr);
+	cmd = (*linesw[tp->t_line].l_ioctl)(tp, cmd, data, flag);
 	if (cmd == 0)
 		return;
-	if (ttioctl(tp, cmd, addr, flag)) {
-		if (cmd==TIOCSETP || cmd==TIOCSETN)
+	if (ttioctl(tp, cmd, data, flag)) {
+		if (cmd == TIOCSETP || cmd == TIOCSETN)
 			dzparam(unit);
 	} else switch(cmd) {
 
@@ -377,6 +376,7 @@ dzioctl(dev, cmd, addr, flag)
 		else
 			dzaddr->dzbrk = (dz_brk[dz] |= 1 << (unit&07));
 		break;
+
 	case TIOCCBRK:
 		dzaddr = ((struct pdma *)(tp->t_addr))->p_addr;
 		if (dzaddr->dzcsr&DZ_32)
@@ -384,35 +384,31 @@ dzioctl(dev, cmd, addr, flag)
 		else
 			dzaddr->dzbrk = (dz_brk[dz] &= ~(1 << (unit&07)));
 		break;
+
 	case TIOCSDTR:
 		(void) dzmctl(dev, DZ_DTR|DZ_RTS, DMBIS);
 		break;
+
 	case TIOCCDTR:
 		(void) dzmctl(dev, DZ_DTR|DZ_RTS, DMBIC);
 		break;
+
 	case TIOCMSET:
-		if (copyin(addr, (caddr_t) &temp, sizeof(temp)))
-			u.u_error = EFAULT;
-		else
-			(void) dzmctl(dev, dmtodz(temp), DMSET);
+		(void) dzmctl(dev, dmtodz(*(int *)data), DMSET);
 		break;
+
 	case TIOCMBIS:
-		if (copyin(addr, (caddr_t) &temp, sizeof(temp)))
-			u.u_error = EFAULT;
-		else
-			(void) dzmctl(dev, dmtodz(temp), DMBIS);
+		(void) dzmctl(dev, dmtodz(*(int *)data), DMBIS);
 		break;
+
 	case TIOCMBIC:
-		if (copyin(addr, (caddr_t) &temp, sizeof(temp)))
-			u.u_error = EFAULT;
-		else
-			(void) dzmctl(dev, dmtodz(temp), DMBIC);
+		(void) dzmctl(dev, dmtodz(*(int *)data), DMBIC);
 		break;
+
 	case TIOCMGET:
-		temp = dztodm(dzmctl(dev, 0, DMGET));
-		if (copyout((caddr_t) &temp, addr, sizeof(temp)))
-			u.u_error = EFAULT;
+		*(int *)data = dztodm(dzmctl(dev, 0, DMGET));
 		break;
+
 	default:
 		u.u_error = ENOTTY;
 	}

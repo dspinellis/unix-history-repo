@@ -1,4 +1,4 @@
-/*	ht.c	4.24	82/07/15	*/
+/*	ht.c	4.25	82/08/01	*/
 
 #include "tu.h"
 #if NHT > 0
@@ -22,8 +22,8 @@
 #include "../h/pte.h"
 #include "../h/mbareg.h"
 #include "../h/mbavar.h"
-#include "../h/mtio.h"
 #include "../h/ioctl.h"
+#include "../h/mtio.h"
 #include "../h/cmap.h"
 #include "../h/cpu.h"
 
@@ -449,45 +449,48 @@ htphys(dev)
 }
 
 /*ARGSUSED*/
-htioctl(dev, cmd, addr, flag)
+htioctl(dev, cmd, data, flag)
 	dev_t dev;
 	int cmd;
-	caddr_t addr;
+	caddr_t data;
 	int flag;
 {
 	register struct tu_softc *sc = &tu_softc[TUUNIT(dev)];
 	register struct buf *bp = &chtbuf[HTUNIT(dev)];
 	register callcount;
 	int fcount;
-	struct mtop mtop;
-	struct mtget mtget;
+	struct mtop *mtop;
+	struct mtget *mtget;
 	/* we depend of the values and order of the MT codes here */
 	static htops[] =
    {HT_WEOF,HT_SFORW,HT_SREV,HT_SFORW,HT_SREV,HT_REW,HT_REWOFFL,HT_SENSE};
 
 	switch (cmd) {
-		case MTIOCTOP:	/* tape operation */
-		if (copyin((caddr_t)addr, (caddr_t)&mtop, sizeof(mtop))) {
-			u.u_error = EFAULT;
-			return;
-		}
-		switch(mtop.mt_op) {
+
+	case MTIOCTOP:	/* tape operation */
+		mtop = (struct mtop *)data;
+		switch (mtop->mt_op) {
+
 		case MTWEOF:
-			callcount = mtop.mt_count;
+			callcount = mtop->mt_count;
 			fcount = 1;
 			break;
+
 		case MTFSF: case MTBSF:
-			callcount = mtop.mt_count;
+			callcount = mtop->mt_count;
 			fcount = INF;
 			break;
+
 		case MTFSR: case MTBSR:
 			callcount = 1;
-			fcount = mtop.mt_count;
+			fcount = mtop->mt_count;
 			break;
+
 		case MTREW: case MTOFFL:
 			callcount = 1;
 			fcount = 1;
 			break;
+
 		default:
 			u.u_error = ENXIO;
 			return;
@@ -497,8 +500,8 @@ htioctl(dev, cmd, addr, flag)
 			return;
 		}
 		while (--callcount >= 0) {
-			htcommand(dev, htops[mtop.mt_op], fcount);
-			if ((mtop.mt_op == MTFSR || mtop.mt_op == MTBSR) &&
+			htcommand(dev, htops[mtop->mt_op], fcount);
+			if ((mtop->mt_op == MTFSR || mtop->mt_op == MTBSR) &&
 			    bp->b_resid) {
 				u.u_error = EIO;
 				break;
@@ -508,14 +511,15 @@ htioctl(dev, cmd, addr, flag)
 		}
 		geterror(bp);
 		return;
+
 	case MTIOCGET:
-		mtget.mt_dsreg = sc->sc_dsreg;
-		mtget.mt_erreg = sc->sc_erreg;
-		mtget.mt_resid = sc->sc_resid;
-		mtget.mt_type = MT_ISHT;
-		if (copyout((caddr_t)&mtget, addr, sizeof(mtget)))
-			u.u_error = EFAULT;
+		mtget = (struct mtget *)data;
+		mtget->mt_dsreg = sc->sc_dsreg;
+		mtget->mt_erreg = sc->sc_erreg;
+		mtget->mt_resid = sc->sc_resid;
+		mtget->mt_type = MT_ISHT;
 		return;
+
 	default:
 		u.u_error = ENXIO;
 	}
