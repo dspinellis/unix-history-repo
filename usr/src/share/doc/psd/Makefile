@@ -1,4 +1,7 @@
-#	@(#)Makefile	5.2 (Berkeley) %G%
+#	@(#)Makefile	5.3 (Berkeley) %G%
+
+# The following modules do not build/install:
+# 10.gdb, 13.rcs
 
 # Missing:  00.contents 01.Clang 02.f77 03.f77io 05.as 09.lint 10.adb 11.dbx
 #	    12.make 15.yacc 16.lex 17.m4
