@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ex_vget.c	6.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)ex_vget.c	6.10 (Berkeley) %G%";
 #endif not lint
 
 #include "ex.h"
@@ -137,7 +137,7 @@ again:
 			Peek2key = 0;
 			break;
 		case 'q':	/* f2 -> ^C */
-			c = CTRL(c);
+			c = CTRL('c');
 			Peek2key = 0;
 			break;
 		case 'p':	/* f1 -> esc */
@@ -216,8 +216,8 @@ getesc()
 	c = getkey();
 	switch (c) {
 
-	case CTRL(v):
-	case CTRL(q):
+	case CTRL('v'):
+	case CTRL('q'):
 		c = getkey();
 		return (c);
 
@@ -275,13 +275,13 @@ readecho(c)
 		ex_putchar('\n');
 	vscrap();
 	Pline = OP;
-	if (Peek_key != ATTN && Peek_key != QUIT && Peek_key != CTRL(h)) {
+	if (Peek_key != ATTN && Peek_key != QUIT && Peek_key != CTRL('h')) {
 		cursor = sc;
 		vclreol();
 		return (0);
 	}
 blewit:
-	OPeek = Peek_key==CTRL(h) ? 0 : Peek_key; Peek_key = 0;
+	OPeek = Peek_key==CTRL('h') ? 0 : Peek_key; Peek_key = 0;
 	splitw = 0;
 	vclean();
 	vshow(dot, NOLINE);
@@ -405,7 +405,7 @@ beep()
 	if (VB)
 		vputp(VB, 0);
 	else
-		vputc(CTRL(g));
+		vputc(CTRL('g'));
 }
 
 /*

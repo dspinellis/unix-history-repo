@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ex.h	7.8 (Berkeley) %G%
+ *	@(#)ex.h	7.9 (Berkeley) %G%
  */
 
 #ifdef V6
@@ -175,9 +175,9 @@ extern	 struct	option options[NOPTS + 1];
 #ifndef vms
 #undef CTRL
 #endif
-#define	CTRL(c)	('c' & 037)
-#define	NL	CTRL(j)
-#define	CR	CTRL(m)
+#define	CTRL(c)	(c & 037)
+#define	NL	CTRL('j')
+#define	CR	CTRL('m')
 #define	DELETE	0177		/* See also ATTN, QUIT in ex_tune.h */
 #define	ESCAPE	033
 

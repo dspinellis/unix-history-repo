@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ex_vops2.c	6.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)ex_vops2.c	6.10 (Berkeley) %G%";
 #endif not lint
 
 #include "ex.h"
@@ -494,12 +494,12 @@ vgetline(cnt, gcursor, aescaped, commch)
 			 */
 #ifndef USG3TTY
 			if (c == tty.sg_erase)
-				c = CTRL(h);
+				c = CTRL('h');
 			else if (c == tty.sg_kill)
 				c = -1;
 #else
 			if (c == tty.c_cc[VERASE])
-				c = CTRL(h);
+				c = CTRL('h');
 			else if (c == tty.c_cc[VKILL])
 				c = -1;
 #endif
@@ -527,7 +527,7 @@ vgetline(cnt, gcursor, aescaped, commch)
 			 *		This is hard because stuff has
 			 *		already been saved for repeat.
 			 */
-			case CTRL(h):
+			case CTRL('h'):
 bakchar:
 				cp = gcursor - 1;
 				if (cp < ogcursor) {
@@ -548,7 +548,7 @@ bakchar:
 			/*
 			 * ^W		Back up a white/non-white word.
 			 */
-			case CTRL(w):
+			case CTRL('w'):
 				wdkind = 1;
 				for (cp = gcursor; cp > ogcursor && isspace(cp[-1]); cp--)
 					continue;
@@ -610,8 +610,8 @@ vbackup:
 			 *
 			 * ^V		Synonym for ^Q
 			 */
-			case CTRL(q):
-			case CTRL(v):
+			case CTRL('q'):
+			case CTRL('v'):
 				x = destcol, y = destline;
 				ex_putchar('^');
 				vgoto(y, x);
@@ -749,8 +749,8 @@ vbackup:
 		 *		Unless in repeat where this means these
 		 *		were superquoted in.
 		 */
-		case CTRL(d):
-		case CTRL(t):
+		case CTRL('d'):
+		case CTRL('t'):
 			if (vglobp)
 				goto def;
 			/* fall into ... */
@@ -758,11 +758,11 @@ vbackup:
 		/*
 		 * ^D|QUOTE	Is a backtab (in a repeated command).
 		 */
-		case CTRL(d) | QUOTE:
+		case CTRL('d') | QUOTE:
 			*gcursor = 0;
 			cp = vpastwh(genbuf);
 			c = whitecnt(genbuf);
-			if (ch == CTRL(t)) {
+			if (ch == CTRL('t')) {
 				/*
 				 * ^t just generates new indent replacing
 				 * current white space rounded up to soft
