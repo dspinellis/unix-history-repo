@@ -9,7 +9,7 @@
 #include "rcv.h"
 #include <ctype.h>
 
-static char *SccsId = "@(#)optim.c	1.2 %G%";
+static char *SccsId = "@(#)optim.c	1.3 %G%";
 
 /*
  * Map a name into the correct network "view" of the
@@ -111,7 +111,7 @@ struct netmach {
 	"ingres",	'i',		AN|SN,
 	"ing70",	'i',		AN|SN,
 	"berkeley",	'i',		AN|SN,
-	"ingvax",	'j',		SN,
+	"ingvax",	'j',		SN|BN,
 	"virus",	'k',		SN,
 	"vlsi",		'l',		SN,
 	"image",	'm',		SN,
@@ -119,7 +119,7 @@ struct netmach {
 	"sesm",		'o',		SN,
 	"q",		'q',		SN,
 	"research",	'R',		BN,
-	"arpavax",	'r',		SN,
+	"arpavax",	'r',		SN|BN,
 	"src",		's',		SN,
 	"mathstat",	't',		SN,
 	"csvax",	'v',		BN|SN,
@@ -447,7 +447,7 @@ mtype(mid)
 
 /*
  * Take a network name and optimize it.  This gloriously messy
- * opertions takes place as follows:  the name with machine names
+ * operation takes place as follows:  the name with machine names
  * in it is tokenized by mapping each machine name into a single
  * character machine id (netlook).  The separator characters (network
  * metacharacters) are left intact.  The last component of the network
@@ -542,6 +542,12 @@ optim1(netstr, name)
 
 	cp = netstr;
 	prefer(cp);
+	/*
+	 * If the address ultimately points back to us,
+	 * just return a null network path.
+	 */
+	if (strlen(cp) > 1 && cp[strlen(cp) - 2] == LOCAL)
+		return;
 	strcpy(name, "");
 	while (*cp != 0) {
 		strcpy(path, "");
@@ -682,7 +688,6 @@ optimimp(net, name)
 }
 
 /*
-
  * Perform global optimization on the given network path.
  * The trick here is to look ahead to see if there are any loops
  * in the path and remove them.  The interpretation of loops is
@@ -773,18 +778,13 @@ best(src, dest)
 
 	stype = nettype(src);
 	dtype = nettype(dest);
+	fflush(stdout);
 	if (stype == 0 || dtype == 0) {
 		printf("ERROR:  unknown internal machine id\n");
 		return(0);
 	}
-	if ((stype & dtype) == 0) {
-#ifdef DELIVERMAIL
-		if (src != LOCAL)
-#endif
-			printf("No way to get from \"%s\" to \"%s\"\n", 
-			    netname(src), netname(dest));
+	if ((stype & dtype) == 0)
 		return(0);
-	}
 	np = &netorder[0];
 	while ((np->no_stat & stype & dtype) == 0)
 		np++;
