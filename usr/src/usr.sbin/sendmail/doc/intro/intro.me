@@ -21,7 +21,7 @@ Berkeley, California  94720
 .(f
 This is
 .if \n(DR draft
-version 3.17,
+version 3.18,
 last modified on %G%.
 .if \n(DR Please do not distribute this version without permission
 .if \n(DR of the author.
@@ -1376,6 +1376,18 @@ Upper case should be preserved in host names.
 .ip e
 This mailer is expensive,
 and it may be desirable to limit usage.
+.ip R
+The recipient addresses should be rewritten to be relative to the
+receiver, rather than relative to the sender.
+This is always done with sender addresses,
+but should only be done on recipients
+if the host you are sending to knows that it is being done.
+Setting this flag makes it easy to do a
+.q reply
+command in a user mail program
+(since all that must be done is send to all addresses in the message header),
+but user mail programs that try to rewrite the addresses
+will be completely confused.
 .ip A
 This mailer wants an ARPANET standard header
 (equivalent to the

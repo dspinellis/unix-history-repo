@@ -6,7 +6,7 @@
 # include <syslog.h>
 # endif LOG
 
-SCCSID(@(#)deliver.c	3.76		%G%);
+SCCSID(@(#)deliver.c	3.77		%G%);
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -1084,7 +1084,7 @@ putheader(fp, m)
 				*p = '\0';
 
 				/* translate the name to be relative */
-				name = remotename(name, m);
+				name = remotename(name, m, FALSE);
 				if (*name == '\0')
 					continue;
 
@@ -1175,6 +1175,9 @@ isatword(p)
 **
 **	Parameters:
 **		name -- the name to translate.
+**		force -- if set, forces rewriting even if the mailer
+**			does not request it.  Used for rewriting
+**			sender addresses.
 **
 **	Returns:
 **		the text string representing this address relative to
@@ -1189,11 +1192,11 @@ isatword(p)
 */
 
 char *
-remotename(name, m)
+remotename(name, m, force)
 	char *name;
 	struct mailer *m;
+	bool force;
 {
-# ifdef NOTDEF
 	static char buf[MAXNAME];
 	char lbuf[MAXNAME];
 	extern char *macvalue();
@@ -1203,6 +1206,16 @@ remotename(name, m)
 	extern char **prescan();
 	register char **pvp;
 	extern char *getxpart();
+
+	/*
+	**  See if this mailer wants the name to be rewritten.  There are
+	**  many problems here, owing to the standards for doing replies.
+	**  In general, these names should only be rewritten if we are
+	**  sending to another host that runs sendmail.
+	*/
+
+	if (!bitset(M_RELRCPT, m->m_flags) && !force)
+		return;
 
 	/*
 	**  Do general rewriting of name.
@@ -1258,10 +1271,6 @@ remotename(name, m)
 		printf("remotename(%s) => `%s'\n", name, buf);
 # endif DEBUG
 	return (buf);
-# else NOTDEF
-	/* oh bother, this breaks UUCP......   */
-	return (name);
-# endif NOTDEF
 }
 /*
 **  SAMEFROM -- tell if two text addresses represent the same from address.
