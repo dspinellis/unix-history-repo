@@ -1,4 +1,4 @@
-/*	@(#)if_slvar.h	7.2 (Berkeley) %G% */
+/*	@(#)if_slvar.h	7.3 (Berkeley) %G% */
 
 /*
  * Definitions for SLIP interface data structures
@@ -22,7 +22,9 @@ struct sl_softc {
 	long	sc_lasttime;		/* last time a char arrived */
 	long	sc_starttime;		/* last time a char arrived */
 	long	sc_abortcount;		/* number of abort esacpe chars */
+#ifdef INET				/* XXX */
 	struct	slcompress sc_comp;	/* tcp compression data */
+#endif
 };
 
 /* flags */
@@ -33,3 +35,4 @@ struct sl_softc {
 /* this stuff doesn't belong here... */
 #define	SLIOCGFLAGS	_IOR('t', 90, int)	/* get configuration flags */
 #define	SLIOCSFLAGS	_IOW('t', 89, int)	/* set configuration flags */
+#define	SLIOGUNIT	_IOW('t', 88, int)	/* get slip unit number */

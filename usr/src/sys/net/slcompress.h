@@ -1,16 +1,10 @@
 /*
- *			THIS CODE IS NOT FOR DISTRIBUTION!
- *	KEEP YOUR GRUBBY HANDS OFF UNLESS AUTHORIZED BY VAN JACOBSON TO COPY!
- *			ASK SAM, MIKE, OR BILL ABOUT IT.
- */
-
-/*
  * Definitions for tcp compression routines.
  *
  * Copyright (c) 1988, 1989 by Van Jacobson, Lawrence Berkeley Laboratory
  * All rights reserved.
  *
- * $Header: slcompress.h,v 1.3 89/03/19 18:10:38 van Locked $
+ * $Header: slcompress.h,v 1.6 89/06/05 08:29:13 van Exp $
  */
 
 #define MAX_STATES 16		/* must be > 2 and < 256 */
@@ -28,13 +22,6 @@
  * sequence number changes, one change per bit set in the header
  * (there may be no changes and there are two special cases where
  * the receiver implicitly knows what changed -- see below).
- *
- * { Note that the ip version number field this overlays is 4 bits
- *   wide, and that we use type 4 to pass thru unaltered packets,
- *   type 5 to pass thru uncompressed packets that will be state
- *   information indexed by conversation. If msb (e.g type 8) is
- *   set, the other type bits are stolen to encode the difference
- *   information of a compressed TCP packet. -wfj }
  * 
  * There are 5 numbers which can change (they are always inserted
  * in the following order): TCP urgent pointer, window,
@@ -68,7 +55,7 @@
 
 /* packet types */
 #define TYPE_IP 0x40
-#define TYPE_UNCOMPRESSED_TCP 0x50
+#define TYPE_UNCOMPRESSED_TCP 0x70
 #define TYPE_COMPRESSED_TCP 0x80
 #define TYPE_ERROR 0x00
 
@@ -111,10 +98,20 @@ struct cstate {
  * per line).
  */
 struct slcompress {
-	struct cstate *last_cs;			/* most recently used tstate */
-	u_char last_recv;			/* last rcvd conn. id */
-	u_char last_xmit;			/* last sent conn. id */
+	struct cstate *last_cs;	/* most recently used tstate */
+	u_char last_recv;	/* last rcvd conn. id */
+	u_char last_xmit;	/* last sent conn. id */
 	u_short flags;
+#ifndef NO_SL_STATS
+	int sls_packets;	/* outbound packets */
+	int sls_compressed;	/* outbound compressed packets */
+	int sls_searches;	/* searches for connection state */
+	int sls_misses;		/* times couldn't find conn. state */
+	int sls_uncompressedin;	/* inbound uncompressed packets */
+	int sls_compressedin;	/* inbound compressed packets */
+	int sls_errorin;	/* inbound unknown type packets */
+	int sls_tossed;		/* inbound packets tossed because of error */
+#endif
 	struct cstate tstate[MAX_STATES];	/* xmit connection states */
 	struct cstate rstate[MAX_STATES];	/* receive connection states */
 };
@@ -123,4 +120,4 @@ struct slcompress {
 
 extern void sl_compress_init(/* struct slcompress * */);
 extern u_char sl_compress_tcp(/* struct mbuf *, struct ip *, struct slcompress * */);
-extern struct mbuf *sl_uncompress_tcp(/* struct mbuf *, u_char, struct slcompress * */);
+extern int sl_uncompress_tcp(/* u_char **, int,  u_char, struct slcompress * */);
