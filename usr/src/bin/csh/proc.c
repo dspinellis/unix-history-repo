@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)proc.c	4.12 (Berkeley) 83/07/01";
+static	char *sccsid = "@(#)proc.c	4.13 (Berkeley) 84/08/31";
 
 #include "sh.h"
 #include "sh.dir.h"
@@ -139,17 +139,17 @@ found:
 pnote()
 {
 	register struct process *pp;
-	int flags;
+	int flags, omask;
 
 	neednote = 0;
 	for (pp = proclist.p_next; pp != PNULL; pp = pp->p_next) {
 		if (pp->p_flags & PNEEDNOTE) {
-			sighold(SIGCHLD);
+			omask = sigblock(sigmask(SIGCHLD));
 			pp->p_flags &= ~PNEEDNOTE;
 			flags = pprint(pp, NUMBER|NAME|REASON);
 			if ((flags&(PRUNNING|PSTOPPED)) == 0)
 				pflush(pp);
-			sigrelse(SIGCHLD);
+			sigsetmask(omask);
 		}
 	}
 }
@@ -161,11 +161,12 @@ pnote()
 pwait()
 {
 	register struct process *fp, *pp;
+	int omask;
 
 	/*
 	 * Here's where dead procs get flushed.
 	 */
-	sighold(SIGCHLD);
+	omask = sigblock(sigmask(SIGCHLD));
 	for (pp = (fp = &proclist)->p_next; pp != PNULL; pp = (fp = pp)->p_next)
 		if (pp->p_pid == 0) {
 			fp->p_next = pp->p_next;
@@ -176,9 +177,7 @@ pwait()
 			xfree((char *)pp);
 			pp = fp;
 		}
-	sigrelse(SIGCHLD);
-	if (setintr)
-		sigignore(SIGINT);
+	sigsetmask(omask);
 	pjwait(pcurrjob);
 }
 
@@ -190,7 +189,11 @@ pjwait(pp)
 	register struct process *pp;
 {
 	register struct process *fp;
-	int jobflags, reason;
+	int jobflags, reason, omask;
+	int (*old)();
+
+	if (setintr)
+		old = signal(SIGINT, SIG_IGN);
 
 	while (pp->p_pid != pp->p_jobid)
 		pp = pp->p_friends;
@@ -204,17 +207,17 @@ pjwait(pp)
 	 * and the target process, or any of its friends, are running
 	 */
 	fp = pp;
+	omask = sigblock(sigmask(SIGCHLD));
 	for (;;) {
-		sighold(SIGCHLD);
 		jobflags = 0;
 		do
 			jobflags |= fp->p_flags;
-		while((fp = (fp->p_friends)) != pp);
+		while ((fp = (fp->p_friends)) != pp);
 		if ((jobflags & PRUNNING) == 0)
 			break;
-		sigpause(sigblock(0) &~ mask(SIGCHLD));
+		sigpause(0);
 	}
-	sigrelse(SIGCHLD);
+	sigsetmask(omask);
 	if (tpgrp > 0)
 		ioctl(FSHTTY, TIOCSPGRP, &tpgrp);	/* get tty back */
 	if ((jobflags&(PSIGNALED|PSTOPPED|PTIME)) ||
@@ -241,6 +244,8 @@ pjwait(pp)
 	if (reason && exiterr)
 		exitstat();
 	pflush(pp);
+	if (setintr)
+		signal(SIGINT, old);
 }
 
 /*
@@ -249,19 +254,18 @@ pjwait(pp)
 dowait()
 {
 	register struct process *pp;
+	int omask;
 
 	pjobs++;
-	if (setintr)
-		sigrelse(SIGINT);
+	omask = sigblock(sigmask(SIGCHLD));
 loop:
-	sighold(SIGCHLD);
 	for (pp = proclist.p_next; pp; pp = pp->p_next)
 		if (pp->p_pid && /* pp->p_pid == pp->p_jobid && */
 		    pp->p_flags&PRUNNING) {
-			sigpause(sigblock(0) &~ mask(SIGCHLD));
+			sigpause(0);
 			goto loop;
 		}
-	sigrelse(SIGCHLD);
+	sigsetmask(omask);
 	pjobs = 0;
 }
 
@@ -705,8 +709,6 @@ dofg(v)
 	do {
 		pp = pfind(*v);
 		pstart(pp, 1);
-		if (setintr)
-			sigignore(SIGINT);
 		pjwait(pp);
 	} while (*v && *++v);
 }
@@ -722,8 +724,6 @@ dofg1(v)
 	okpcntl();
 	pp = pfind(v[0]);
 	pstart(pp, 1);
-	if (setintr)
-		sigignore(SIGINT);
 	pjwait(pp);
 }
 
@@ -812,14 +812,14 @@ pkill(v, signum)
 {
 	register struct process *pp, *np;
 	register int jobflags = 0;
-	int pid;
+	int omask, pid, err = 0;
 	char *cp;
 	extern char *sys_errlist[];
-	int err = 0;
 
+	omask = sigmask(SIGCHLD);
 	if (setintr)
-		sighold(SIGINT);
-	sighold(SIGCHLD);
+		omask |= sigmask(SIGINT);
+	omask = sigblock(omask) & ~omask;
 	while (*v) {
 		cp = globone(*v);
 		if (*cp == '%') {
@@ -859,9 +859,7 @@ cont:
 		xfree(cp);
 		v++;
 	}
-	sigrelse(SIGCHLD);
-	if (setintr)
-		sigrelse(SIGINT);
+	sigsetmask(omask);
 	if (err)
 		error(NOSTR);
 }
@@ -874,9 +872,9 @@ pstart(pp, foregnd)
 	int foregnd;
 {
 	register struct process *np;
-	int jobflags = 0;
+	int omask, jobflags = 0;
 
-	sighold(SIGCHLD);
+	omask = sigblock(sigmask(SIGCHLD));
 	np = pp;
 	do {
 		jobflags |= np->p_flags;
@@ -896,7 +894,7 @@ pstart(pp, foregnd)
 		ioctl(FSHTTY, TIOCSPGRP, &pp->p_jobid);
 	if (jobflags&PSTOPPED)
 		killpg(pp->p_jobid, SIGCONT);
-	sigrelse(SIGCHLD);
+	sigsetmask(omask);
 }
 
 panystop(neednl)
@@ -1008,7 +1006,7 @@ pfork(t, wanttty)
 {
 	register int pid;
 	bool ignint = 0;
-	int pgrp;
+	int pgrp, omask;
 
 	/*
 	 * A child will be uninterruptible only under very special
@@ -1025,13 +1023,12 @@ pfork(t, wanttty)
 	/*
 	 * Hold SIGCHLD until we have the process installed in our table.
 	 */
-	sighold(SIGCHLD);
+	omask = sigblock(sigmask(SIGCHLD));
 	while ((pid = fork()) < 0)
 		if (setintr == 0)
 			sleep(FORKSLEEP);
 		else {
-			sigrelse(SIGINT);
-			sigrelse(SIGCHLD);
+			sigsetmask(omask);
 			error("No more processes");
 		}
 	if (pid == 0) {
@@ -1043,7 +1040,6 @@ pfork(t, wanttty)
 		child++;
 		if (setintr) {
 			setintr = 0;		/* until I think otherwise */
-			sigrelse(SIGCHLD);
 			/*
 			 * Children just get blown away on SIGINT, SIGQUIT
 			 * unless "onintr -" seen.
@@ -1074,17 +1070,11 @@ pfork(t, wanttty)
 		 */
 		if (t->t_dflg & FNOHUP)
 			signal(SIGHUP, SIG_IGN);
-		if (t->t_dflg & FNICE) {
-/* sigh...
-			nice(20);
-			nice(-10);
-*/
-			nice(t->t_nice);
-		}
-
+		if (t->t_dflg & FNICE)
+			setpriority(PRIO_PROCESS, 0, t->t_nice);
 	} else {
 		palloc(pid, t);
-		sigrelse(SIGCHLD);
+		sigsetmask(omask);
 	}
 
 	return (pid);

@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)file.c 1.2 (Berkeley from Hp Labs) %G%";
+static	char *sccsid = "@(#)file.c 1.3 (Berkeley from Hp Labs) %G%";
 
 /*
  * Tenex style file name recognition, .. and more.
@@ -13,15 +13,6 @@ static	char *sccsid = "@(#)file.c 1.2 (Berkeley from Hp Labs) %G%";
 #include <sys/dir.h>
 #include <signal.h>
 #include <pwd.h>
-
-/*
- * For 4.2bsd signals.
- *
- * (can't include sh.h)
- */
-#define	mask(s)		(1 << ((s)-1))
-#define	sigsys(s, a)	signal(s, a)
-#define	sighold(s)	sigblock(mask(s))
 
 extern short SHIN, SHOUT;
 
@@ -42,7 +33,9 @@ static struct tchars  tchars;		/* INT, QUIT, XON, XOFF, EOF, BRK */
 static
 setup_tty (on)
 {
-    sigignore (SIGINT);
+    int omask;
+
+    omask = sigblock(sigmask(SIGINT));
     if (on)
     {
 	struct sgttyb sgtty;
@@ -68,7 +61,7 @@ setup_tty (on)
 	tchars.t_brkc = -1;
 	ioctl (SHIN, TIOCSETC, &tchars);
     }
-    sigrelse (SIGINT);
+    sigsetmask (omask);
 }
 
 /*
@@ -78,14 +71,16 @@ static
 back_to_col_1 ()
 {
     struct sgttyb tty, tty_normal;
-    sigignore (SIGINT);
+    int omask;
+
+    omask = sigblock (sigmask(SIGINT));
     ioctl (SHIN, TIOCGETP, &tty);
     tty_normal = tty;
     tty.sg_flags &= ~CRMOD;
     ioctl (SHIN, TIOCSETN, &tty);
     (void) write (SHOUT, "\r", 1);
     ioctl (SHIN, TIOCSETN, &tty_normal);
-    sigrelse (SIGINT);
+    sigsetmask (omask);
 }
 
 /*
@@ -97,8 +92,9 @@ char  *string;
 {
     register char  *p;
     struct sgttyb   tty, tty_normal;
+    int omask;
 
-    sigignore (SIGINT);
+    omask = sigblock (sigmask(SIGINT));
     ioctl (SHOUT, TIOCGETP, &tty);
     tty_normal = tty;
     tty.sg_flags &= ~ECHO;
@@ -107,7 +103,7 @@ char  *string;
     for (p = string; *p; p++)
 	ioctl (SHOUT, TIOCSTI, p);
     ioctl (SHOUT, TIOCSETN, &tty_normal);
-    sigrelse (SIGINT);
+    sigsetmask (omask);
 }
 
 /*
@@ -348,11 +344,11 @@ register char **items;
 }
 
 #define FREE_ITEMS(items)\
-{\
-    sighold (SIGINT);\
+{   int omask;\
+    omask = sigblock (sigmask(SIGINT));\
     free_items (items);\
     items = NULL;\
-    sigrelse (SIGINT);\
+    sigsetmask (omask);\
 }
 
 /*
