@@ -1,27 +1,26 @@
-#	Makefile	7.5	86/11/16
+#	Makefile	7.6	87/02/23
 #
 DESTDIR=
 LIBS=	libsa.a ${DESTDIR}/lib/libc.a
-COPTS=	-O -I. -I../h
-CFLAGS=	-DSTANDALONE -DTAHOE ${COPTS}
 RELOC=	800
 MTBOOTRELOC=e0000
-BOOTRELOC=2e0000
+BOOTRELOC=e0000
+COPTS=	-O -I. -I../h
+CFLAGS=	-DSTANDALONE -DTAHOE -DRELOC=0x${RELOC} ${COPTS}
 SRCS=	sys.c conf.c prf.c machdep.c 
 DRIVERS=udc.o cy.o vd.o
 LDT1MBSYSOPT=-T ${MTBOOTRELOC} -x
 LDTSYSOPT=-T ${BOOTRELOC} -x
 LDTOPT=	-T ${RELOC} -e _entry -x
 CFILES=	boot.c cat.c conf.c ls.c prf.c srt0.c sys.c ls.c \
-	fastcopy.c devcopy.c cat.c  vd.c cy.c
+	fastcopy.c devcopy.c copy.c cat.c  vd.c cy.c
 SUBDIR=	vdformat
-ALL=	boot boot1mb cat ls devcopy fastcopy
+ALL=	boot cat copy ls devcopy fastcopy
 
 all:	srt0.o libsa.a ${ALL} ${SUBDIR}
 
 install: all
 	-mkdir ${DESTDIR}/stand
-	install -c -m 644 libsa.a ${DESTDIR}/usr/lib/libsa.a
 	for i in ${ALL}; do \
 		install -m 644 $$i ${DESTDIR}/stand/$$i; \
 	done
@@ -63,6 +62,9 @@ cat:	cat.o srt0.o ${LIBS}
 devcopy: devcopy.o srt0.o ${LIBS}
 	ld ${LDTOPT} -o devcopy -s srt0.o devcopy.o ${LIBS}
 
+copy:	copy.o srt0.o ncy.o ${LIBS}
+	ld ${LDTOPT} -o copy srt0.o copy.o ncy.o ${LIBS}
+
 fastcopy: fastcopy.o srt0.o ncy.o ${LIBS}
 	ld ${LDTOPT} -o fastcopy -s srt0.o fastcopy.o ncy.o ${LIBS}
 
@@ -78,21 +80,18 @@ ls:	ls.o srt0.o ${LIBS}
 	ld ${LDTOPT} -o ls -s srt0.o ls.o ${LIBS}
 
 srt0.o: srt0.c
-	${CC} -E -DRELOC=0x${RELOC} ${CFLAGS} srt0.c | ${AS} -o srt0.o
+	${CC} -E ${CFLAGS} srt0.c | ${AS} -o srt0.o
 
 bootsrt0.o: srt0.c
-	${CC} -E -DRELOC=0x${BOOTRELOC} -DREL ${CFLAGS} srt0.c | \
+	${CC} -E -DBOOTRELOC=0x${BOOTRELOC} -DREL ${CFLAGS} srt0.c | \
 	    ${AS} -o bootsrt0.o
 
 boot1mbsrt0.o: srt0.c
-	${CC} -E -DRELOC=0x${MTBOOTRELOC} -DREL ${CFLAGS} srt0.c | \
+	${CC} -E -DBOOTRELOC=0x${MTBOOTRELOC} -DREL ${CFLAGS} srt0.c | \
 	    ${AS} -o boot1mbsrt0.o
 
-sfrt0.o: sfrt0.c
-	${CC} -E -DRELOC=0x${RELOC} -DREL ${CFLAGS} sfrt0.c | \
-	    ${AS} -o sfrt0.o
-
 ncy.c:	cy.c
+	rm -f ncy.c
 	ln cy.c ncy.c
 
 ncy.o:	ncy.c
@@ -100,7 +99,7 @@ ncy.o:	ncy.c
 
 print:
 	@pr -f makefile
-	@/usr/ucb/ls -l | pr -f
+	@ls -l | pr -f
 	@pr -f *.h *.c *.lst
 
 depend:
