@@ -1,7 +1,7 @@
 #
 #	Makefile for sendmail base directory
 #
-#		@(#)Makefile	4.4		%G%
+#		@(#)Makefile	4.5		%G%
 #
 
 ALL=	src/sendmail aux/syslog
@@ -11,7 +11,7 @@ ALLDIRS=include adm src aux md cf lib doc adb test
 BACKUP=	calder
 SENDMAIL=$(DESTDIR)/usr/lib/sendmail
 SYSLOG=	/usr/spool/mqueue/syslog
-HOST=	`hostname | sed s/ucb//`
+HOST=	`hostname | sed -e 's/ucb//' -e 's/\..*//'`
 
 LN=	ln -s
 CP=	cp
