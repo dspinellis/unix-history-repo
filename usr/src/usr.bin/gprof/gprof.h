@@ -1,4 +1,4 @@
-    /* sccsid:  @(#)gprof.h	1.5 (Berkeley) %G% */
+    /* sccsid:  @(#)gprof.h	1.6 (Berkeley) %G% */
 
 #include <stdio.h>
 #include <sys/types.h>
@@ -125,8 +125,9 @@ off_t	ssiz;			/* size of the string table */
 struct	exec xbuf;		/* exec header of a.out */
 unsigned char	*textspace;		/* text space of a.out in core */
 
-int	zflg;
-int	cflag;
+int	zflg;				/* zero time/called functions, too */
+int	cflag;				/* discovered call graph, too */
+int	aflag;				/* static functions, too */
 
     /*
      * booleans
@@ -178,6 +179,7 @@ bool		dfn_numbered();
 		findcalls();
 		flatprofheader();
 		flatprofline();
+bool		funcsymbol();
 		getnfile();
 		getpfile();
 		getstrtab();
