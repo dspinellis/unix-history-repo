@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)wwupdate.c	3.23 (Berkeley) %G%";
+static char sccsid[] = "@(#)wwupdate.c	3.24 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ww.h"
@@ -28,10 +28,10 @@ wwupdate1(top, bot)
 	register j;
 	char *touched;
 	struct ww_update *upd;
-	char didit;
 	char check_clreos = 0;
 	int scan_top, scan_bot;
 
+	xxflush();
 	wwnupdate++;
 	{
 		register char *t1 = wwtouched + top, *t2 = wwtouched + bot;
@@ -225,7 +225,7 @@ simple:
 			tt.tt_nmodes = m;
 			if (wwwrap
 			    && i == wwnrow - 1 && q - buf + c == wwncol) {
-				if (tt.tt_hasinsert) {
+				if (tt.tt_setinsert) {
 					if (q - buf != 1) {
 						(*tt.tt_move)(i, c);
 						(*tt.tt_write)(buf + 1,
@@ -242,6 +242,22 @@ simple:
 						tt.tt_ninsert = 1;
 						(*tt.tt_write)(&ns[-2].c_c, 1);
 						tt.tt_ninsert = 0;
+					}
+				} else if (tt.tt_inschar) {
+					if (q - buf != 1) {
+						(*tt.tt_move)(i, c);
+						(*tt.tt_write)(buf + 1,
+							q - buf - 1);
+						(*tt.tt_move)(i, c);
+						(*tt.tt_inschar)(1);
+						(*tt.tt_write)(buf, 1);
+					} else {
+						(*tt.tt_move)(i, c - 1);
+						(*tt.tt_write)(buf, 1);
+						tt.tt_nmodes = ns[-2].c_m;
+						(*tt.tt_move)(i, c - 1);
+						(*tt.tt_inschar)(1);
+						(*tt.tt_write)(&ns[-2].c_c, 1);
 					}
 				} else {
 					if (q - buf > 1) {

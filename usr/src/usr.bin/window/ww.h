@@ -1,4 +1,4 @@
-/*	@(#)ww.h	3.52 89/02/16		*/
+/*	@(#)ww.h	3.53 89/05/11		*/
  * Copyright (c) 1983 Regents of the University of California.
  * All rights reserved.
  *
@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ww.h	3.52 (Berkeley) %G%
+ *	@(#)ww.h	3.53 (Berkeley) %G%
  */
 
 #include <sgtty.h>

@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)tt.h	3.20 (Berkeley) %G%
+ *	@(#)tt.h	3.21 (Berkeley) %G%
  */
 
 /*
@@ -29,6 +29,7 @@ struct tt {
 	int (*tt_move)();
 	int (*tt_insline)();
 	int (*tt_delline)();
+	int (*tt_inschar)();
 	int (*tt_delchar)();
 	int (*tt_write)();		/* write a whole block */
 	int (*tt_putc)();		/* write one character */
@@ -54,7 +55,6 @@ struct tt {
 		/* terminal info */
 	int tt_nrow;			/* number of display rows */
 	int tt_ncol;			/* number of display columns */
-	char tt_hasinsert;		/* has insert character */
 	char tt_availmodes;		/* the display modes supported */
 	char tt_wrap;			/* has auto wrap around */
 	char tt_retain;			/* can retain below (db flag) */

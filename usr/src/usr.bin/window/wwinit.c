@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)wwinit.c	3.32 (Berkeley) %G%";
+static char sccsid[] = "@(#)wwinit.c	3.33 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ww.h"
@@ -96,7 +96,7 @@ wwinit()
 		wwaddcap1(WWT_USR, &kp);
 	if (tt.tt_insline && tt.tt_delline || tt.tt_setscroll)
 		wwaddcap1(WWT_ALDL, &kp);
-	if (tt.tt_hasinsert)
+	if (tt.tt_inschar || tt.tt_setinsert)
 		wwaddcap1(WWT_IMEI, &kp);
 	if (tt.tt_delchar)
 		wwaddcap1(WWT_DC, &kp);

@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)wwinschar.c	3.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)wwinschar.c	3.17 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ww.h"
@@ -92,19 +92,14 @@ short c;
 	/*
 	 * Can/Should we use delete character?
 	 */
-	if (tt.tt_hasinsert && nvis > (wwncol - col) / 2) {
+	if ((tt.tt_inschar || tt.tt_setinsert) && nvis > (wwncol - col) / 2) {
 		register union ww_char *p, *q;
 
-		tt.tt_ninsert = 1;
-		tt.tt_nmodes = c >> WWC_MSHIFT & tt.tt_availmodes;
-		(*tt.tt_move)(row, col);
-		(*tt.tt_putc)(c & WWC_CMASK);
-		tt.tt_ninsert = 0;
-
+		xxinschar(row, col, c & wwavailmodes << WWC_MSHIFT);
 		p = &wwos[row][wwncol];
 		q = p - 1;
 		for (i = wwncol - col; --i > 0;)
 			*--p = *--q;
-		q->c_w = c;
+		q->c_w = tt.tt_setinsert ? c : ' ';
 	}
 }

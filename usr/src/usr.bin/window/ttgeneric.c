@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ttgeneric.c	3.37 (Berkeley) %G%";
+static char sccsid[] = "@(#)ttgeneric.c	3.38 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ww.h"
@@ -49,11 +49,15 @@ struct tt_str *gen_PC;
 struct tt_str *gen_CM;
 struct tt_str *gen_IM;
 struct tt_str *gen_IC;
+struct tt_str *gen_ICn;
 struct tt_str *gen_IP;
 struct tt_str *gen_EI;
 struct tt_str *gen_DC;
+struct tt_str *gen_DCn;
 struct tt_str *gen_AL;
+struct tt_str *gen_ALn;
 struct tt_str *gen_DL;
+struct tt_str *gen_DLn;
 struct tt_str *gen_CE;
 struct tt_str *gen_CD;
 struct tt_str *gen_CL;
@@ -78,7 +82,9 @@ struct tt_str *gen_AE;
 struct tt_str *gen_XS;
 struct tt_str *gen_XE;
 struct tt_str *gen_SF;
+struct tt_str *gen_SFn;
 struct tt_str *gen_SR;
+struct tt_str *gen_SRn;
 struct tt_str *gen_CS;
 char gen_MI;
 char gen_MS;
@@ -147,20 +153,26 @@ register new;
 	tt.tt_modes = new;
 }
 
-gen_insline()
+gen_insline(n)
 {
 	if (tt.tt_modes)			/* for concept 100 */
 		gen_setmodes(0);
-	if (gen_AL)
-		tttputs(gen_AL, gen_LI - tt.tt_row);
+	if (gen_ALn)
+		ttpgoto(gen_ALn, 0, n, gen_LI - tt.tt_row);
+	else
+		while (--n >= 0)
+			tttputs(gen_AL, gen_LI - tt.tt_row);
 }
 
-gen_delline()
+gen_delline(n)
 {
 	if (tt.tt_modes)			/* for concept 100 */
 		gen_setmodes(0);
-	if (gen_DL)
-		tttputs(gen_DL, gen_LI - tt.tt_row);
+	if (gen_DLn)
+		ttpgoto(gen_DLn, 0, n, gen_LI - tt.tt_row);
+	else
+		while (--n >= 0)
+			tttputs(gen_DL, gen_LI - tt.tt_row);
 }
 
 gen_putc(c)
@@ -307,21 +319,42 @@ gen_clear()
 	ttxputs(gen_CL);
 }
 
-gen_delchar()
+gen_inschar(n)
 {
-	tttputs(gen_DC, gen_CO - tt.tt_col);
+	if (gen_ICn)
+		ttpgoto(gen_ICn, 0, n, gen_CO - tt.tt_col);
+	else
+		while (--n >= 0)
+			tttputs(gen_IC, gen_CO - tt.tt_col);
 }
 
-gen_scroll_down()
+gen_delchar(n)
+{
+	if (gen_DCn)
+		ttpgoto(gen_DCn, 0, n, gen_CO - tt.tt_col);
+	else
+		while (--n >= 0)
+			tttputs(gen_DC, gen_CO - tt.tt_col);
+}
+
+gen_scroll_down(n)
 {
 	gen_move(tt.tt_scroll_bot, 0);
-	ttxputs(gen_SF);
+	if (gen_SFn)
+		ttpgoto(gen_SFn, 0, n, n);
+	else
+		while (--n >= 0)
+			ttxputs(gen_SF);
 }
 
-gen_scroll_up()
+gen_scroll_up(n)
 {
 	gen_move(tt.tt_scroll_top, 0);
-	ttxputs(gen_SR);
+	if (gen_SRn)
+		ttpgoto(gen_SRn, 0, n, n);
+	else
+		while (--n >= 0)
+			ttxputs(gen_SR);
 }
 
 gen_setscroll(top, bot)
@@ -341,11 +374,15 @@ tt_generic()
 	gen_CM = ttxgetstr("cm");		/* may not work */
 	gen_IM = ttxgetstr("im");
 	gen_IC = tttgetstr("ic");
+	gen_ICn = tttgetstr("IC");
 	gen_IP = tttgetstr("ip");
 	gen_EI = ttxgetstr("ei");
 	gen_DC = tttgetstr("dc");
+	gen_DCn = tttgetstr("DC");
 	gen_AL = tttgetstr("al");
+	gen_ALn = tttgetstr("AL");
 	gen_DL = tttgetstr("dl");
+	gen_DLn = tttgetstr("DL");
 	gen_CE = tttgetstr("ce");
 	gen_CD = tttgetstr("cd");
 	gen_CL = ttxgetstr("cl");
@@ -370,7 +407,9 @@ tt_generic()
 	gen_XS = ttxgetstr("XS");
 	gen_XE = ttxgetstr("XE");
 	gen_SF = ttxgetstr("sf");
+	gen_SFn = ttxgetstr("SF");
 	gen_SR = ttxgetstr("sr");
+	gen_SRn = ttxgetstr("SR");
 	gen_CS = ttxgetstr("cs");
 	gen_MI = tgetflag("mi");
 	gen_MS = tgetflag("ms");
@@ -425,6 +464,10 @@ tt_generic()
 	if (gen_UG > 0 || gen_US && gen_SO && ttstrcmp(gen_US, gen_SO) == 0)
 		gen_US = 0;
 
+	if (gen_IM)
+		tt.tt_setinsert = gen_setinsert;
+	else if (gen_IC)
+		tt.tt_inschar = gen_inschar;
 	if (gen_DC)
 		tt.tt_delchar = gen_delchar;
 	if (gen_AL)
@@ -453,7 +496,6 @@ tt_generic()
 		tt.tt_availmodes |= WWM_GRP;
 	if (gen_XS)
 		tt.tt_availmodes |= WWM_USR;
-	tt.tt_hasinsert = gen_IM || gen_IC;
 	tt.tt_wrap = gen_AM;
 	tt.tt_retain = gen_DB;
 	tt.tt_ncol = gen_CO;
@@ -464,7 +506,6 @@ tt_generic()
 	tt.tt_putc = gen_putc;
 	tt.tt_move = gen_move;
 	tt.tt_clear = gen_clear;
-	tt.tt_setinsert = gen_setinsert;
 	tt.tt_setmodes = gen_setmodes;
 	tt.tt_frame = gen_AS && ttstrcmp(gen_AS, &ansi_AS) == 0 ?
 		ansi_frame : gen_frame;
