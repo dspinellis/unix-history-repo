@@ -6,7 +6,7 @@
 
 # ifdef _DEFINE
 # define EXTERN
-static char SmailSccsId[] =	"@(#)sendmail.h	3.52.1.1	%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	3.53	%G%";
 # else  _DEFINE
 # define EXTERN extern
 # endif _DEFINE
@@ -67,6 +67,7 @@ struct address
 	short		q_uid;		/* user-id of receiver (if known) */
 	short		q_gid;		/* group-id of receiver (if known) */
 	char		*q_home;	/* home dir (local mailer only) */
+	char		*q_fullname;	/* full name if known */
 	char		*q_fullname;	/* full name of this person */
 	time_t		q_timeout;	/* timeout for this address */
 	struct address	*q_next;	/* chain */

@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-static char	SccsId[] =	"@(#)srvrsmtp.c	3.8.1.1	%G%";
+static char	SccsId[] =	"@(#)srvrsmtp.c	3.9	%G%";
 
 /*
 **  SMTP -- run the SMTP protocol.
@@ -191,8 +191,6 @@ smtp()
 			finis();
 
 		  case CMDVRFY:		/* vrfy -- verify address */
-			a = sendto(p, 1, (ADDRESS *) NULL, QPSEUDO);
-			if (Errors == 0)
 				paddrtree(a);
 			break;
 

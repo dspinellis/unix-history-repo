@@ -2,7 +2,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-static char SccsId[] = "@(#)recipient.c	3.28.1.1	%G%";
+static char SccsId[] = "@(#)recipient.c	3.29	%G%";
 
 /*
 **  SENDTO -- Designate a send list.
@@ -349,6 +349,8 @@ recipient(a)
 			{
 				char nbuf[MAXNAME];
 
+				char nbuf[MAXNAME];
+
 				if (strcmp(a->q_user, pw->pw_name) != 0)
 				{
 					a->q_user = newstr(pw->pw_name);
@@ -358,6 +360,9 @@ recipient(a)
 				a->q_uid = pw->pw_uid;
 				a->q_gid = pw->pw_gid;
 				a->q_flags |= QGOODUID;
+				buildfname(pw->pw_gecos, pw->pw_name, nbuf);
+				if (nbuf[0] != '\0')
+					a->q_fullname = newstr(nbuf);
 				fullname(pw, nbuf);
 				if (nbuf[0] != '\0')
 					a->q_fullname = newstr(nbuf);
