@@ -1,5 +1,5 @@
 #! /bin/sh
-#	@(#)MAKEDEV	4.12	%G%
+#	@(#)MAKEDEV	4.13	%G%
 #
 # Device "make" file.  Valid arguments:
 #	std	standard devices (for 730 must be followed by tu0 & tu1)
@@ -11,6 +11,7 @@
 #	mt*	massbus tu78
 #	ut*	unibus tu45 emulations (e.g.si 9700)
 #	tu*	730 tu58 console cassettes (tu0 in front, tu1 on side)
+#	uu*	tu58 cassettes on dl11 controller
 # Disks:
 #	hp*	massbus rm??
 #	hk*	unibus rk06 and rk07
@@ -137,6 +138,21 @@ rx*)
 		;;
 	esac
 	;;
+
+uu*)
+	unit=`expr $i : '..\(.*\)'`
+	name=uu; blk=13;
+	case $unit in
+	0|1|2|3)
+		/etc/mknod ${name}${unit}	b $blk `expr $unit '*' 2 + 0`
+		/etc/mknod ${name}${unit}a	b $blk `expr $unit '*' 2 + 1`
+		;;
+	*)
+		echo bad unit for uu cassette in: $i
+		;;
+	esac
+	;;
+
 dz*)
 	unit=`expr $i : 'dz\(.*\)'`
 	case $unit in
