@@ -16,7 +16,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -124,7 +124,7 @@ main(argc, argv)
 	else
 		add_file(NULL);
 	process();
-	cfclose(prog);
+	cfclose(prog, NULL);
 	if (fclose(stdout))
 		err(FATAL, "stdout: %s", strerror(errno));
 	exit (0);

@@ -10,7 +10,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)compile.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)compile.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -40,7 +40,8 @@ static struct s_command
 static char	 *duptoeol __P((char *));
 static struct s_command
 		 *findlabel __P((struct s_command *, struct s_command *));
-static void	  fixuplabel __P((struct s_command *, struct s_command *));
+static void	  fixuplabel __P((struct s_command *, struct s_command *,
+		  	struct s_command *));
 
 /*
  * Command specification.  This is used to drive the command parser.
@@ -93,7 +94,7 @@ void
 compile()
 {
 	*compile_stream(NULL, &prog, NULL) = NULL;
-	fixuplabel(prog, prog);
+	fixuplabel(prog, prog, NULL);
 	appends = xmalloc(sizeof(struct s_appends) * appendnum);
 	match = xmalloc((maxnsub + 1) * sizeof(regmatch_t));
 }
@@ -645,12 +646,12 @@ findlabel(l, cp)
  * TODO: Remove } nodes
  */
 static void
-fixuplabel(root, cp)
-	struct s_command *root, *cp;
+fixuplabel(root, cp, end)
+	struct s_command *root, *cp, *end;
 {
 	struct s_command *cp2;
 
-	for (; cp; cp = cp->next)
+	for (; cp != end; cp = cp->next)
 		switch (cp->code) {
 		case ':':
 			if (findlabel(cp, root))
@@ -672,7 +673,7 @@ fixuplabel(root, cp)
 			cp->u.c = cp2;
 			break;
 		case '{':
-			fixuplabel(root, cp->u.c);
+			fixuplabel(root, cp->u.c, cp->next);
 			break;
 		}
 }
