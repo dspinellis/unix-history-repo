@@ -1,4 +1,4 @@
-/*	kern_sig.c	6.14	85/03/19	*/
+/*	kern_sig.c	6.15	85/05/22	*/
 
 #include "../machine/reg.h"
 #include "../machine/pte.h"
@@ -206,8 +206,7 @@ kill()
 	}
 	switch (uap->pid) {
 	case -1:		/* broadcast signal */
-		if (suser())
-			u.u_error = killpg1(uap->signo, 0, 1);
+		u.u_error = killpg1(uap->signo, 0, 1);
 		break;
 	case 0:			/* signal own process group */
 		u.u_error = killpg1(uap->signo, 0, 0);
@@ -247,18 +246,19 @@ killpg1(signo, pgrp, all)
 		 */
 		pgrp = u.u_procp->p_pgrp;
 		if (pgrp == 0)
-			return (EINVAL);
+			return (ESRCH);
 	}
 	for (f = 0, p = allproc; p != NULL; p = p->p_nxt) {
 		if ((p->p_pgrp != pgrp && !all) || p->p_ppid == 0 ||
 		    (p->p_flag&SSYS) || (all && p == u.u_procp))
 			continue;
-		f++;
 		if (u.u_uid != 0 && u.u_uid != p->p_uid &&
 		    (signo != SIGCONT || !inferior(p))) {
-			error = EPERM;
+			if (!all)
+				error = EPERM;
 			continue;
 		}
+		f++;
 		if (signo)
 			psignal(p, signo);
 	}
