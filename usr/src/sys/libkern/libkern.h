@@ -4,54 +4,54 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)libkern.h	8.1 (Berkeley) %G%
+ *	@(#)libkern.h	8.2 (Berkeley) %G%
  */
 
 #include <sys/types.h>
 
-static inline int
+static __inline int
 imax(a, b)
 	int a, b;
 {
 	return (a > b ? a : b);
 }
-static inline int
+static __inline int
 imin(a, b)
 	int a, b;
 {
 	return (a < b ? a : b);
 }
-static inline long
+static __inline long
 lmax(a, b)
 	long a, b;
 {
 	return (a > b ? a : b);
 }
-static inline long
+static __inline long
 lmin(a, b)
 	long a, b;
 {
 	return (a < b ? a : b);
 }
-static inline u_int
+static __inline u_int
 max(a, b)
 	u_int a, b;
 {
 	return (a > b ? a : b);
 }
-static inline u_int
+static __inline u_int
 min(a, b)
 	u_int a, b;
 {
 	return (a < b ? a : b);
 }
-static inline u_long
+static __inline u_long
 ulmax(a, b)
 	u_long a, b;
 {
 	return (a > b ? a : b);
 }
-static inline u_long
+static __inline u_long
 ulmin(a, b)
 	u_long a, b;
 {
