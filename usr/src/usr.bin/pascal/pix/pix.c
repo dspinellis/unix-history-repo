@@ -1,11 +1,15 @@
-#
+/* Copyright (c) 1979 Regents of the University of California */
+
+static char sccsid[] = "@(#)pix.c 1.2 %G%";
+
 /*
  * pix - pi then px
  *
  * Bill Joy UCB August 26, 1977
  */
-static	char *sccsid = "@(#)pix.c	1.1 (Berkeley) %G%";
 
+#include "whoami.h"
+#include "objfmt.h"
 #define	ERRS	1
 
 char	*name;
@@ -59,17 +63,8 @@ main(argc, argv)
 		}
 		argv[ac] = 0;
 		argv[0] = name - 2;
-#ifdef CORY
-		/* Temporary to allow accounting to distinguish pix's and pi's */
 		do
-			execv("/usr/bin/pix-pi", argv);
-		while (errno == ETXTBSY);
-#endif
-		do
-			execv("/usr/ucb/pi", argv);
-		while (errno == ETXTBSY);
-		do
-			execv("/usr/bin/pi", argv);
+			execv(PI_COMP, argv);
 		while (errno == ETXTBSY);
 		write(2, "Can't find pi\n", 14);
 		onintr();
@@ -88,17 +83,8 @@ main(argc, argv)
 	ac--;
 	argv[ac] = name - 2;
 	argv[argc] = 0;
-#ifdef CORY
-	/* Temporary to allow accounting to distinguish pix's and px's */
 	do
-		execv("/usr/bin/pix-px", &argv[ac]);
-	while (errno == ETXTBSY);
-#endif
-	do
-		execv("/usr/ucb/px", &argv[ac]);
-	while (errno == ETXTBSY);
-	do
-		execv("/usr/bin/px", &argv[ac]);
+		execv(PX_INTRP, &argv[ac]);
 	while (errno == ETXTBSY);
 	write(2, "Can't find px\n", 14);
 	onintr();
