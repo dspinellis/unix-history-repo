@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)union_vfsops.c	8.8 (Berkeley) %G%
+ *	@(#)union_vfsops.c	8.9 (Berkeley) %G%
  */
 
 /*
@@ -334,12 +334,6 @@ union_root(mp, vpp)
 	struct union_mount *um = MOUNTTOUNIONMOUNT(mp);
 	int error;
 	int loselock;
-
-#ifdef UNION_DIAGNOSTIC
-	printf("union_root(mp = %x, lvp = %x, uvp = %x)\n", mp,
-			um->um_lowervp,
-			um->um_uppervp);
-#endif
 
 	/*
 	 * Return locked reference to root.
