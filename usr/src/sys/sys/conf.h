@@ -1,4 +1,4 @@
-/*	conf.h	4.3	%G%	*/
+/*	conf.h	4.4	%G%	*/
 
 /*
  * Declaration of block device
@@ -15,7 +15,7 @@ extern struct bdevsw
 	int	(*d_close)();
 	int	(*d_strategy)();
 	int	(*d_dump)();
-	struct buf *d_tab;
+	int	d_flags;
 } bdevsw[];
 
 /*
