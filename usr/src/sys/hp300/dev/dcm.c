@@ -11,7 +11,7 @@
  *
  * from: $Hdr: dcm.c 1.17 89/10/01$
  *
- *	@(#)dcm.c	7.3 (Berkeley) %G%
+ *	@(#)dcm.c	7.4 (Berkeley) %G%
  */
 
 /*
@@ -266,6 +266,7 @@ dcmopen(dev, flag)
 	tp->t_param = dcmparam;
 	tp->t_dev = dev;
 	if ((tp->t_state & TS_ISOPEN) == 0) {
+		tp->t_state |= TS_WOPEN;
 		ttychars(tp);
 		tp->t_iflag = TTYDEF_IFLAG;
 		tp->t_oflag = TTYDEF_OFLAG;
