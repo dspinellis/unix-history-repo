@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.1 (Berkeley) %G%
+#	@(#)Makefile	5.2 (Berkeley) %G%
 #
 DESTDIR=
 CC = /bin/cc
@@ -12,7 +12,7 @@ CFLAGS = -O
 all:	boggle bogdict
 
 bogdict: comp sfile
-	if [ -f /usr/local/lib/w2a ]; \
+	-if [ -f /usr/local/lib/w2a ]; \
 		then dict=/usr/local/lib/w2a; \
 		else dict=/usr/dict/words; fi; \
 	sed -f sfile $$dict | uniq | comp >bogdict
