@@ -1,5 +1,5 @@
 /* Copyright (c) 1981 Regents of the University of California */
-static char *sccsid = "@(#)ex_vops2.c	6.5 %G%";
+static char *sccsid = "@(#)ex_vops2.c	6.6 %G%";
 #include "ex.h"
 #include "ex_tty.h"
 #include "ex_vis.h"
@@ -112,6 +112,7 @@ vappend(ch, cnt, indent)
 	bool escape;
 	int repcnt, savedoomed;
 	short oldhold = hold;
+	int oldmask;
 
 	/*
 	 * Before a move in hardopen when the line is dirty
@@ -201,6 +202,7 @@ vappend(ch, cnt, indent)
 	 */
 	gobblebl = 0;
 
+	oldmask = sigblock(sigmask(SIGWINCH));
 	/*
 	 * Text gathering loop.
 	 * New text goes into genbuf starting at gcursor.
@@ -378,6 +380,7 @@ vappend(ch, cnt, indent)
 	doomed = 0;
 	wcursor = cursor;
 	vmove();
+	(void)sigsetmask(oldmask);
 }
 
 /*
