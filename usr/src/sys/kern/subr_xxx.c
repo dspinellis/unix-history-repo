@@ -1,4 +1,4 @@
-/*	subr_xxx.c	4.13	82/07/24	*/
+/*	subr_xxx.c	4.14	82/07/25	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -158,6 +158,7 @@ calloc(size)
 	cacur += size;
 	return (res);
 }
+
 #ifndef vax
 ffs(mask)
 	register long mask;
@@ -171,8 +172,7 @@ ffs(mask)
 	}
 	return (0);
 }
-#endif
-#ifndef vax
+
 ffs(mask)
 	register long mask;
 {
@@ -185,5 +185,25 @@ ffs(mask)
 	}
 	return (0);
 }
-#endif
 
+bcmp(s1, s2, len)
+	register char *s1, *s2;
+	register int len;
+{
+
+	while (--len)
+		if (*s1++ != *s2++)
+			return (1);
+	return (0);
+}
+
+strlen(s1)
+	register char *s1;
+{
+	register int len;
+
+	for (len = 0; *s1++ != '\0'; len++)
+		/* void */;
+	return (len);
+}
+#endif
