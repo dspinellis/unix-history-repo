@@ -1,4 +1,4 @@
-/* @(#)isatty.c	4.1 (Berkeley) %G% */
+/* @(#)isatty.c	4.2 (Berkeley) %G% */
 /*
  * Returns 1 iff file is a tty
  */
@@ -9,7 +9,7 @@ isatty(f)
 {
 	struct sgttyb ttyb;
 
-	if (gtty(f, &ttyb) < 0)
+	if (ioctl(f, TIOCGETP, &ttyb) < 0)
 		return(0);
 	return(1);
 }
