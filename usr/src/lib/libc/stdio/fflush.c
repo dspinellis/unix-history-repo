@@ -32,6 +32,13 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00047
+ * --------------------         -----   ----------------------
+ *
+ * 27 Nov 1992	Dave Rivers		Fixed fflush() to use correct flags.
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
@@ -49,7 +56,7 @@ fflush(fp)
 	if (fp == NULL)
 		return (_fwalk(__sflush));
 
-	if ((fp->_flags & __SWR) == 0) {
+	if ((fp->_flags & (__SWR | __SRW)) == 0) {
 		errno = EBADF;
 		return (EOF);
 	}
