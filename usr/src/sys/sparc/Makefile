@@ -1,11 +1,17 @@
-#	@(#)Makefile	8.1 (Berkeley) %G%
+#	@(#)Makefile	7.3 (Berkeley) %G%
 
-# Makefile for sparc tags file
+# Makefile for sparc links, tags file
 
 .include "../kern/Make.tags.inc"
 
 all:
-	@echo "make tags only"
+	@echo "make links or tags only"
+
+DIRS=	conf dev fpu include rcons sbus sparc sunos
+
+links::
+	-for i in ${DIRS}; do \
+	    (cd $$i && { rm -f tags; ln -s ${SYSTAGS} tags; }) done
 
 SPARC=	/sys/sparc/dev/*.[ch] /sys/sparc/fpu/*.[ch] \
 	/sys/sparc/include/*.[ch] /sys/sparc/rcons/*.[ch] \
@@ -14,8 +20,10 @@ SPARC=	/sys/sparc/dev/*.[ch] /sys/sparc/fpu/*.[ch] \
 ASPARC=	/sys/sparc/sparc/*.s
 
 tags::
-	-ctags -dt ${COMM} ${SPARC}
+	-ctags -wdt ${COMM} ${SPARC}
 	egrep "^ENTRY(.*)|^ALTENTRY(.*)" ${ASPARC} | \
 	    sed "s;\([^:]*\):\([^(]*\)(\([^, )]*\)\(.*\);\3 \1 /^\2(\3\4$$/;" \
 		>> tags
 	sort -o tags tags
+	chown bin.wsrc tags
+	chmod 444 tags
