@@ -106,7 +106,9 @@ net/if_loop.c		optional loop
 net/if_sl.c		optional sl
 net/raw_cb.c		standard
 net/raw_usrreq.c	standard
+net/radix.c		standard
 net/route.c		standard
+net/rtsock.c		standard
 net/slcompress.c	optional sl
 netimp/if_imp.c		optional imp
 netimp/if_imphost.c	optional imp
@@ -145,13 +147,13 @@ netiso/clnp_output.c	optional iso
 netiso/clnp_raw.c	optional iso
 netiso/clnp_subr.c	optional iso
 netiso/clnp_timer.c	optional iso
+netiso/cltp_usrreq.c	optional iso
 netiso/esis.c		optional iso
 netiso/iso.c		optional iso
 netiso/iso_chksum.c	optional iso
 netiso/iso_pcb.c	optional iso
 netiso/iso_proto.c	optional iso
 netiso/iso_snpac.c	optional iso
-netiso/iso_usrreq.c	optional iso
 netiso/tp_astring.c	optional iso
 netiso/tp_astring.c	optional tpip
 netiso/tp_cons.c	optional iso
