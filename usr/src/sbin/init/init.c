@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)init.c	6.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)init.c	6.11.1.1 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -508,6 +508,33 @@ single_user()
 		 */
 		setctty(_PATH_CONSOLE);
 
+#ifdef KTRACEHACK
+		{
+			static int tracing = 0;
+			int foo, pid;
+
+			if (tracing) goto skip;
+			foo = open("/traceinit", O_RDONLY, 0);
+			if (foo != -1) {
+				close(foo);
+				if ((pid = fork()) == 0) {
+					execl("/sbin/mount", "mount", "-uw",
+						 "/", 0);
+					_exit(-1);
+				}
+				waitpid(pid, 0, 0);
+				if (fork() == 0) {
+					execl("/ktrace", "ktrace", "-aip",
+						 "1", 0);
+					_exit(-1);
+				}
+				waitpid(pid, 0, 0);
+				tracing = 1;
+			}
+			skip: ;
+		}
+#endif /* KTRACEHACK */
+				
 #ifdef DEBUGSHELL
 		{
 			char altshell[128], *cp = altshell;
