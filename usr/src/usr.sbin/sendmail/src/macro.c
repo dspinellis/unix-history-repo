@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)macro.c	8.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)macro.c	8.8 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -403,10 +403,10 @@ macid(p, ep)
 bool
 wordinclass(str, cl)
 	char *str;
-	char cl;
+	int cl;
 {
 	register STAB *s;
 
 	s = stab(str, ST_CLASS, ST_FIND);
-	return s != NULL && bitnset(cl, s->s_class);
+	return s != NULL && bitnset(cl & 0xff, s->s_class);
 }
