@@ -1,0 +1,2 @@
+rm -f /etc/mtab
+/etc/update
