@@ -5,21 +5,16 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)gethostnamadr.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)gethostnamadr.c	5.2 (Berkeley) %G%";
 #endif not lint
-
-/*
- * Copyright (c) 1985 Regents of the University of California
- *	All Rights Reserved
- */
 
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
 #include <stdio.h>
-#include <nameser.h>
-#include <resolv.h>
+#include <arpa/nameser.h>
+#include <arpa/resolv.h>
 
 #define	MAXALIASES	35
 
