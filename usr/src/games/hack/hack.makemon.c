@@ -22,6 +22,7 @@ register struct permonst *ptr;
 	register struct monst *mtmp;
 	register tmp, ct;
 	boolean anything = (!ptr);
+	extern boolean in_mklev;
 
 	if(x != 0 || y != 0) if(m_at(x,y)) return((struct monst *) 0);
 	if(ptr){
@@ -62,13 +63,12 @@ gotmon:
 		mtmp->mimic = 1;
 		mtmp->mappearance = ']';
 	}
-	{ extern boolean in_mklev;
 	if(!in_mklev) {
 		if(x == u.ux && y == u.uy && ptr->mlet != ' ')
 			mnexto(mtmp);
 		if(x == 0 && y == 0)
 			rloc(mtmp);
-	}}
+	}
 	if(ptr->mlet == 's' || ptr->mlet == 'S') {
 		mtmp->mhide = mtmp->mundetected = 1;
 		if(in_mklev)
