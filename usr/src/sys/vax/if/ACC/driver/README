@@ -1,0 +1,13 @@
+
+Some of the files in this directory:
+
+if_dda.c		-- the main driver module
+if_dda_uqbus.c		-- included module for ACP5250/ACP6250 boards
+if_dda_bibus.c		-- included module for ACP7250 only
+if_ddareg.h		-- dda register descriptions
+if_ddavar.h		-- shared data between acpconfig and the driver
+
+if_pi.c			-- programmer's interface option
+if_pivar.h		-- include file for PI for pre-4.3+tahoe systems
+if_pivar.h.tahoe	-- include file for PI for 4.3+tahoe and 4.4bsd
+if_x29.c		-- X29 interface option
