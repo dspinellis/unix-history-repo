@@ -1,0 +1,16 @@
+#print
+To make a new copy of a file, the easiest
+way is to use the "cp" command.
+If you type 
+  cp x y
+a copy of file "x" is made and named "y".
+This directory contains a file named "george";
+make a copy named  "steve".
+Then type "ready".
+#create george
+this is file george
+#user
+#cmp steve george
+#log
+#next
+11.2b 5
