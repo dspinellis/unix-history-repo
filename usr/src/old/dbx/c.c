@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)c.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)c.c	5.6 (Berkeley) %G%";
 #endif not lint
 
 static char rcsid[] = "$Header: c.c,v 1.5 84/12/26 10:38:23 linton Exp $";
@@ -299,7 +299,7 @@ Integer indent;
 		    printf("%s ", p);
 		}
 	    }
-	    printf("%s {\n", t->class == RECORD ? "struct" : "union");
+	    printf("{\n");
 	    for (i = t->chain; i != nil; i = i->chain) {
 		assert(i->class == FIELD);
 		printdecl(i, indent+4);
