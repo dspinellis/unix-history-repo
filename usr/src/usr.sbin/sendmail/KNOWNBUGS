@@ -42,4 +42,12 @@ in /ucb/sendmail/KNOWNBUGS.
   this address.  It's not clear what the right behaviour is in this
   circumstance.
 
-(Version 8.6, last updated %G%)
+* You can't use a ``mailer:relay.host'' for UUCP_RELAY or the relay
+  host in the SITECONFIG macro (the second argument) in the
+  configurations.  If the goal is to use ESMTP instead of SMTP,
+  define `confRELAY_MAILER' to `esmtp' and use no mailer name.  Note
+  that the default mailer used for relays (`relay') does use ESMTP
+  by default (it didn't in prior releases).  This problem does not
+  occur for other relays (BITNET or CSNET) or mailertable entries.
+
+(Version 8.7, last updated %G%)
