@@ -1,16 +1,18 @@
-static	char sccsid[] = "@(#)ln.c 4.3 %G%";
+static	char sccsid[] = "@(#)ln.c 4.4 %G%";
 /*
  * ln
  */
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <errno.h>
 
 struct	stat stb;
 int	fflag;		/* force flag set? */
 int	sflag;
 char	name[BUFSIZ];
 char	*rindex();
+extern	int errno;
 
 main(argc, argv)
 	int argc;
@@ -75,7 +77,10 @@ linkit(from, to)
 		to = name;
 	}
 	if ((*linkf)(from, to) < 0) {
-		perror(from);
+		if (errno == EEXIST)
+			perror(to);
+		else
+			perror(from);
 		return (1);
 	}
 	return (0);
