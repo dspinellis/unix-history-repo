@@ -6,7 +6,7 @@
 # include <syslog.h>
 # endif LOG
 
-SCCSID(@(#)deliver.c	3.63		%G%);
+SCCSID(@(#)deliver.c	3.64		%G%);
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -854,8 +854,6 @@ putmessage(fp, m, xdot)
 	if (!bitset(M_NHDR, m->m_flags))
 	{
 # ifdef UGLYUUCP
-		char *p = rindex(m->m_mailer, '/');
-
 		if (bitset(M_UGLYUUCP, m->m_flags))
 			(void) expand("From $f  $d remote from $U", buf,
 					&buf[sizeof buf - 1]);

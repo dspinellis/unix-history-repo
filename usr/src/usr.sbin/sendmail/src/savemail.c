@@ -1,7 +1,7 @@
 # include <pwd.h>
 # include "sendmail.h"
 
-SCCSID(@(#)savemail.c	3.25		%G%);
+SCCSID(@(#)savemail.c	3.26		%G%);
 
 /*
 **  SAVEMAIL -- Save mail on error
@@ -30,9 +30,9 @@ savemail()
 	char buf[MAXLINE+1];
 	extern struct passwd *getpwnam();
 	register char *p;
-	register int i;
 	extern char *ttypath();
 	static int exclusive;
+	typedef int (*fnptr)();
 
 	if (exclusive++)
 		return;
@@ -154,8 +154,8 @@ savemail()
 		(void) expand("$z/dead.letter", buf, &buf[sizeof buf - 1]);
 		To = buf;
 		q = NULL;
-		sendto(buf, -1, NULL, &q);
-		(void) deliver(q, NULL);
+		sendto(buf, -1, (ADDRESS *) NULL, &q);
+		(void) deliver(q, (fnptr) NULL);
 	}
 
 	/* add terminator to writeback message */
