@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)cp.1	6.2 (Berkeley) %G%
+.\"	@(#)cp.1	6.3 (Berkeley) %G%
 .\"
 .TH CP 1 ""
 .UC 4
@@ -11,12 +11,12 @@ cp \- copy
 .SH SYNOPSIS
 .B cp
 [
-.B \-ip
+.B \-hip
 ] file1 file2
 .PP
 .B cp
 [
-.B \-ipr
+.B \-hipr
 ] file ... directory
 .SH DESCRIPTION
 .I File1
@@ -48,12 +48,12 @@ If the
 .B \-i
 option is specified, 
 .I cp
-will prompt the user with the name of the file
-whenever the copy will cause an old file to be
-overwritten. An answer of 'y' will cause 
+will prompt the user with the name of the file whenever the copy
+will cause an old file to be overwritten.
+An answer of 'y' will cause 
 .I cp
-to continue. Any other answer will prevent it
-from overwriting the file.
+to continue.
+Any other answer will prevent it from overwriting the file.
 .PP
 If the
 .B \-r
@@ -61,5 +61,14 @@ option is specified and any of the source files are directories,
 .I cp
 copies each subtree rooted at that name; in this case
 the destination must be a directory.
+.I Cp
+does not follow symbolic links if the
+.B -r
+option is specified.
+The
+.B -h
+option forces
+.I cp
+to always follow symbolic links.
 .SH "SEE ALSO"
-cat(1), mv(1), rcp(1C)
+cat(1), mv(1), rcp(1)
