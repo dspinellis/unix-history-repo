@@ -1511,7 +1511,7 @@ Xy|4113-nd|tek4113-nd|tektronix 4113 color graphics, no dialog area:\
 	:.ns:.as=\E^N:.ae=\E^O:
 Xz|4105|tek4105:\
 	:al=\E[1L:am:bs:cd=\E[J:ce=\E[K:cl=\E[2J\E[H:cm=\E[%i%2;%2H:co#80:\
-	:dc=\E[1P:dl=\E[1M:dn=\E[1B:ho=\E[H:im=\E[4h:li#30:mi:nd=\E[1C:\
+	:dc=\E[1P:dl=\E[1M:do=\E[1B:ho=\E[H:im=\E[4h:li#30:mi:nd=\E[1C:\
 	:as=\E[1m:ae=\E[0m:ms:pt:se=\E[0m:so=\E[7m:up=\E[1A:kb=^h:ku=\E[1A:\
 	:kd=\E[1B:kl=\E[1D:kr=\E[1C:us=\E[4m:ue=\E[0m:is=\E%!1\E[?6l\E[0m:\
 	:mr=\E[<3m:md=\E[<4m:mh=\E[<6m:mb=\E[<7m:me=\E[<1m:ti=\E%!1\E[?6l:xt:
@@ -1877,7 +1877,7 @@ d4|gt40|dec gt40:\
 d5|vt50|dec vt50:\
 	:do=^J:le=^H:bs:cd=\EJ:ce=\EK:cl=\EH\EJ:co#80:li#12:nd=\EC:pt:up=\EA:
 d6|vt125|vt125-am|DEC vt125:\
-	:xn:do=^J:co#80:li#24:cl=50\E[H\E[2J:dC=10:dN=10:\
+	:xn:do=^J:co#80:li#24:cl=50\E[H\E[2J:dC=10:dN#10:\
 	:le=^H:am:bs:cm=5\E[%i%d;%dH:nd=2\E[C:up=2\E[A:ce=3\E[K:cd=50\E[J:\
 	:so=2\E[7m:se=2\E[m:us=2\E[4m:ue=2\E[m:md=2\E[1m:mr=2\E[7m:mb=2\E[5m:\
 	:me=2\E[m:is=\E[1;24r\E[24;1H\E>\E[?3l\E[?4l\E[?5l\E[?7h\E[?8h:\
@@ -1894,7 +1894,7 @@ d7|gigi|dec gigi terminal:\
 	:ks=200\E[?1h\E=:ke=200\E[?1l\E>:\
 	:ku=\EOA:kd=\EOB:kr=\EOC:kl=\EOD:\
 	:kh=\E[H:k1=\EOP:k2=\EOQ:k3=\EOR:k4=\EOS:pt:sr=200\EM:\
-	:dC=50:dF=200:dN=50:dT=50:
+	:dC=50:dF=200:dN#50:dT=50:
 dI|dw1|decwriter I:\
 	:do=^J:le=^H:bs:co#72:hc:os:
 # From tut@Topaz.CC Thu May 12 14:49:02 1983
@@ -2334,15 +2334,14 @@ mm|mime|mime1|mime2|mimei|mimeii|microterm mime1:\
 # These termcaps (for mime 2a) put the terminal in low intensity mode
 # since high intensity mode is so obnoxious.
 ms|mime2a-s|microterm mime2a (emulating an enhanced soroc iq120):\
-	:do=^J:\
-	:al=20*^A:am:le=^H:bs:cd=20*\EJ:ce=\EK:cl=\EL:cm=\E=%+ %+ :co#80:dc=\ED:\
+	:do=^J:al=20*^A:am:le=^H:bs:cd=20*\EJ:ce=\EK:cl=\EL:cm=\E=%+ %+ :\
+	:us=\E6:ue=\E7:co#80:dc=\ED:\
 	:dl=20*^W:kl=^H:kr=^L:ku=^K:kd=^J:ho=^^:is=\E):sr=\EI\
-	:im=\EE:ei=^Z:ip=2:li#24:nd=^L:so=\E\072:se=\E;:up=\EI:\
-	:us=\E6:ue=\E7:
+	:im=\EE:ei=^Z:ip=2:li#24:nd=^L:so=\E\072:se=\E;:up=\EI:
 # This is the preferred mode (but ^X can't be used as a kill character)
 mv|mime2a|mime2a-v|microterm mime2a (emulating an enhanced vt52):\
 	:do=^J:al=20*^A:le=^H:bs:cd=20*\EQ:co#80:ce=\EP:cl=\EL:cm=\EY%+ %+ :\
-	:is=^Ydc=^N:dl=20*^W:ip=2:ei=^Z:ho=\EH:im=^O:kd=\EB:kl=\ED:kr=\EC:\
+	:is=^Y:dc=^N:dl=20*^W:ip=2:ei=^Z:ho=\EH:im=^O:kd=\EB:kl=\ED:kr=\EC:\
 	:ku=\EA:li#24:nd=\EC:pt:se=\E9:so=\E8:up=\EA:sr=\EA:us=\E4:ue=\E5:
 mx|mime3ax|mime-3ax|mime1 emulating enhanced 3a:\
 	:al=80^A:dl=80^W:pt:ce=^X:cd=^_:tc=mime3a:
@@ -2361,7 +2360,7 @@ po|owl|perkin elmer 1200:\
 	:ct=\E3:st=\E1:do=^J:al=5.5*\EL:am:le=^H:\
 	:bs:cd=5.5*\EJ:ce=5.5\EI:cl=132\EH\EJ:ho=\EH:ll=\EH\EA:\
 	:cm=\EX%+ \EY%+ :co#80:dc=5.5*\EO:dl=5.5*\EM:ei=:ic=\EN:im=:ip=5.5*:\
-	:kb=^h:in:li#24:nd=\EC:up=\EA:se?=\E!\200:so?=\E!^H:vb=^P^B^P^C:\
+	:kb=^h:in:li#24:nd=\EC:up=\EA:se=\E!\200:so=\E!^H:vb=^P^B^P^C:\
 	:k1=\ERA:k2=\ERB:k3=\ERC:k4=\ERD:k5=\ERE:k6=\ERF:\
 	:k7=\ERG:k8=\ERH:k9=\ERI:k0=\ERJ:
 # # --------------------------------
@@ -2441,8 +2440,8 @@ t8|ti800|ti omni 800:\
 	:do=^J:le=^H:bs:co#132:hc:os:
 # From lesleymw@topaz.berkeley.edu
 t9|ti931|ti 931:\
-	al=\EN:am:bs:cd=\EJ:ce=\EI:cl=\EL:cm=\EY%+ %+ :co=#80:dl=\EO:do=\EB:\
-	eo:ho=\EH:li=#24:ku=\EA:kd=\EB:kr=\EC:kl=\ED:mi:nd:sf=\Eb:sr=\Ea:up=\EA:
+	al=\EN:am:bs:cd=\EJ:ce=\EI:cl=\EL:cm=\EY%+ %+ :co#80:dl=\EO:do=\EB:\
+	eo:ho=\EH:li#24:ku=\EA:kd=\EB:kr=\EC:kl=\ED:mi:nd:sf=\Eb:sr=\Ea:up=\EA:
 # # --------------------------------
 #
 # v: TELEVIDEO
@@ -2498,7 +2497,7 @@ vk|tvi925vbn|925vbn|televideo model 925 visual bells no so or ul:\
 v9|925a|tvi925a|TeleVideo Model 925:\
 	:al=\EE:am:bs:bt=\EI:bw:cd=\EY:ce=\ET:cl=^Z:cm=\E=%+ %+ :co#80:dc=\EW:\
 	:dl=\ER:do=^V:ei=:ic=\EQ:if=/usr/share/tabset/std:im=:kb=^H:kd=^V:\
-	:kh=^^:kl=^H:kn#12:kr=^L:ku=^K:li#24:nd=^L:pt:se=\EG0:sg=#1:so=\EG4:\
+	:kh=^^:kl=^H:kn#12:kr=^L:ku=^K:li#24:nd=^L:pt:se=\EG0:sg#1:so=\EG4:\
 	:ue=\EG0:ug#1:up=^K:us=\EG8:is=\El\
 	:vb=\Eb\200\200\200\200\200\200\200\200\200\200\200\200\200\200\Ed:\
 	:ve=\E.4:vs=\E.2:
@@ -2970,7 +2969,7 @@ z6|v50|visual 50:\
 	:so=\EU:se=\ET:up=^K:
 z7|trs2|trsII|trs80II|Radio Shack Model II using P&T CP/M:\
 	:nl=^_:al=^D:am:bs:cd=^B:ce=^A:cl=^L:cm=\EY%+ %+ :co#80:\
-	:dl=^K:do=^_:ho=^F:li#24:nd=^]:ms:pt:se=^O:so=^N:up:=^^:\
+	:dl=^K:do=^_:ho=^F:li#24:nd=^]:ms:pt:se=^O:so=^N:up=^^:\
 	:kb=^H:kd=^_:kl=^\:kr=^]:ku=^^:
 #From {pbrown,ctl}@ocf.berkeley.edu, 12 Mar 90
 zp|coco3|os9LII|Tandy CoCo3 24*80 OS9 Level II:\
@@ -3051,7 +3050,7 @@ zi|apple-80|apple II with smarterm 80 col:\
 #
 zj|lisa|apple lisa xenix console display (white on black):\
 	:al=\E[L:am:bs:cd=\E[J:ce=\E[K:cl=^L:cm=\E[%i%d;%dH:co#88:\
-	:dc=\E[P:dl=\E[M:dn=\E[B:ei=:ho=\E[H:ic=\E[@:im=:li#32:\
+	:dc=\E[P:dl=\E[M:do=\E[B:ei=:ho=\E[H:ic=\E[@:im=:li#32:\
 	:nd=\E[C:ms:pt:so=\E[m:se=\E[7m:us=\E[4m:ue=\E[7m:up=\E[A:\
 	:kb=^h:ku=\E[A:kd=\E[B:kl=\E[D:kr=\E[C:eo:\
 	:is=\E[7m^L:GS=\E[11m:GE=\E[10m:GV=\140:GH=a:G1=c:\
@@ -3069,7 +3068,7 @@ pc|ibmpc|ibm pc PC/IX:\
 	:nd=\E[C:up=\E[A:so=\E[7m:se=\E[0m:us=\E[4m:ue=\E[0m:
 zk|ibmx|ibmpcx|IBM PC xenix console display:\
 	:al=\E[L:am:bs:cd=\E[J:ce=\E[K:cl=^L:cm=\E[%d;%dH:co#80:\
-	:dc=\E[P:dl=\E[M:dn=\E[B:ei=:ho=\E[H:ic=\E[@:im=:li#25:\
+	:dc=\E[P:dl=\E[M:do=\E[B:ei=:ho=\E[H:ic=\E[@:im=:li#25:\
 	:nd=\E[C:ms:se=\E[0m:so=\E[7m:us=\E[4m:\
 	:ue=\E[m:up=\E[A:MR=\E[0m:\
 	:kb=^h:kh=\E[Y:ku=\E[A:kd=\E[B:kl=\E[D:kr=\E[C:eo:\
