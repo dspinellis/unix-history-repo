@@ -6,14 +6,17 @@
 .\"
 .\" %sccs.include.proprietary.man%
 .\"
-.\"	@(#)m4.1	6.9 (Berkeley) %G%
+.\"	@(#)m4.1	6.10 (Berkeley) %G%
 .\"
-.Vx
 .Dd 
+.Os ATT 7
 .Dt M4 1
 .Sh NAME
 .Nm m4
-.Nd macro language preprocessor for Ratfor and Pascal
+.Nd macro language preprocessor for
+.Xr ratfor 1
+and
+.Xr pascal 1
 .Sh SYNOPSIS
 .Nm m4
 .Op options
@@ -23,15 +26,15 @@ is a macro language
 preprocessor
 for Ratfor, Pascal, and similar languages which do not
 have a built-in macro processing capability.
-M4 reads standard input, and writes the results to the standard output.
+.Nm M4
+reads standard input, and writes the results to the standard output.
 .Pp
 The options and their effects are as follows:
 .Pp
-.Tw _Dname[=Val]
-.Tp Cx Fl D
-.Ar name
-.Op Ar \&=Val
-.Cx
+.Sm off
+.Bl -tag -width _Dname[=Val]
+.It Fl D Ar name Op Ar \&=Val
+.Sm on
 Defines
 .Ar name
 to
@@ -39,12 +42,10 @@ to
 or to null in
 the absence of
 .Ar val .
-.Tp Cx Fl U
-.Ar name
-.Cx
-undefines
-.Ar name  .
-.Tp
+.It Fl U Ns Ar name
+Undefines
+.Ar name .
+.El
 .Pp
 The
 .Nm m4
@@ -53,78 +54,73 @@ processor provides a kind of
 like syntax and
 some of the macro functions will
 be familiar:
-.Tw \&undiver
-.Tp Ic define
+.Bl -tag -width \&undiver
+.It Ic define
 .Ar define(name [, val])
-.br
-the second argument is installed as the value of the macro
-whose name is the first argument. If there is no second argument,
+the second argument is installed
+as the value of the macro
+whose name is the first argument.
+If there is no second argument,
 the value is null.
 Each occurrence of
-.Cx Ic $
-.Ar n
-.Cx
+.Ic $ Ns Ar n
 in the replacement text,
 where
 .Ar n
 is a digit,
 is replaced by the
-.Cx Ar n
-.Cx \'th
-.Cx
+.Ar n Ns 'th
 argument.
 Argument 0 is the name of the macro;
 missing arguments are replaced by the null string.
-.Tp Ic defn
+.It Ic defn
 .Ar defn(name [, name ...])
-.br
-returns the quoted definition of its argument(s). Useful in renaming
-macros.
-.Tp Ic undefine
+returns the quoted definition
+of its argument(s).
+Useful in renaming macros.
+.It Ic undefine
 .Ar undefine(name [, name ...])
-.br
-removes the definition of the macro(s) named. If there is
+removes the definition of
+the macro(s) named.
+If there is
 more than one definition for the named macro, (due to previous use of
 .Ic pushdef )
 all definitions are removed.
-.Tp Ic  pushdef
+.It Ic  pushdef
 .Ar pushdef(name [, val])
-.br
 like
 .Ic define  ,
 but saves any previous definition by stacking the current definition.
-.Tp Ic popdef
+.It Ic popdef
 .Ar popdef(name [, name ...])
-.br
 removes current definition of its argument(s),
 exposing the previous one if any.
-.Tp Ic ifdef
+.It Ic ifdef
 .Ar ifdef(name, if-def [, ifnot-def])
-.br
-if the first argument is defined, the value is the second argument,
+if the first argument is defined,
+the value is the second argument,
 otherwise the third.
 If there is no third argument, the value is null.
-.Tp Ic shift
+.It Ic shift
 .Ar shift(arg, arg, arg, ...)
-.br
 returns all but its first argument.
 The other arguments are quoted and pushed back with
 commas in between.
 The quoting nullifies the effect of the extra scan that
 will subsequently be performed.
-.Tp Ic changequote
+.It Ic changequote
 .Ar changequote(lqchar, rqchar)
-.br
-change quote symbols to the first and second arguments.
+change quote symbols to the
+first and second arguments.
 With no arguments, the quotes are reset back to the default
 characters (i.e.,
 .Ic \*(ga
 and
 .Ic \*(aa ).
-.Tp Ic changecom
+.It Ic changecom
 .Ar changecom(lcchar, rcchar)
-.br
-change left and right comment markers from the default
+change left and right
+comment markers from the default
 .Ic #
 and
 .Ic newline  .
@@ -133,9 +129,8 @@ the default characters.
 With one argument, the left marker becomes the argument and
 the right marker becomes newline.
 With two arguments, both markers are affected.
-.Tp Ic divert
+.It Ic divert
 .Ar divert(divnum)
-.br
 .Nm m4
 maintains 10 output streams,
 numbered 0-9.  initially stream 0 is the current stream.
@@ -145,10 +140,10 @@ macro changes the current output stream to its (digit-string)
 argument.
 Output diverted to a stream other than 0 through 9
 disappears into bitbucket.
-.Tp Ic undivert
+.It Ic undivert
 .Ar undivert([divnum [, divnum ...])
-.br
-causes immediate output of text from diversions named as
+causes immediate output
+of text from diversions named as
 argument(s), or all diversions if no argument.
 Text may be undiverted into another diversion.
 Undiverting discards the diverted text. At the end of input processing,
@@ -158,161 +153,152 @@ forces an automatic
 unless
 .Ic m4wrap
 is defined.
-.Tp Ic divnum
+.It Ic divnum
 .Ar divnum()
-.br
 returns the value of the current output stream.
-.Tp Ic dnl
+.It Ic dnl
 .Ar dnl()
-.br
 reads and discards characters up to and including the next newline.
-.Tp Ic ifelse
+.It Ic ifelse
 .Ar ifelse(arg, arg, if-same [, ifnot-same \&| arg,\ arg\ ...])
-.br
-has three or more arguments.
+has
+three or more arguments.
 If the first argument is the same string as the second,
 then the value is the third argument.
 If not, and if there are more than four arguments, the process is
 repeated with arguments 4, 5, 6 and 7.
 Otherwise, the value is either the fourth string, or, if it is not present,
 null.
-.Tp Ic incr
+.It Ic incr
 .Ar incr(num)
-.br
 returns the value of its argument incremented by 1.
 The value of the argument is calculated
 by interpreting an initial digit-string as a decimal number.
-.Tp Ic decr
+.It Ic decr
 .Ar decr(num)
-.br
 returns the value of its argument decremented by 1.
-.Tp Ic eval
+.It Ic eval
 .Ar eval(expression)
-.br
-evaluates its argument as a constant expression, using integer arithmetic.
+evaluates its argument as a constant expression,
+using integer arithmetic.
 The evaluation mechanism is very similar to that of
 .Xr cpp
 (#if expression).
 The expression can involve only integer constants and character constants,
 possibly connected by the binary operators
-.Ds I
-*	/	%	+	-	>>	<<	<	>
-<=	>=	==	!=	&	^		&&
-.De
+.Bd -literal -offset indent
+*     /     %     +     -     >>    <<    <     >
+      <=    >=    ==    !=    &     ^     &&
+.Ed
+.Pp
 or the unary operators
 .Ic  \&~ \&!
 or by the ternary operator
 .Ic  \&? \&:  .
 Parentheses may be used for grouping. Octal numbers may be specified as
 in C.
-.Tp Ic len
+.It Ic len
 .Ar len(string)
-.br
 returns the number of characters in its argument.
-.Tp Ic index
+.It Ic index
 .Ar index(search-string, string)
-.br
-returns the position in its first argument where the second argument
+returns the position
+in its first argument where the second argument
 begins (zero origin),
 or \-1 if the second argument does not occur.
-.Tp Ic substr
+.It Ic substr
 .Ar substr(string, index [, length])
-.br
 returns a substring of its first argument.
 The second argument is a zero origin
 number selecting the first character (internally treated as an expression);
 the third argument indicates the length of the substring.
 A missing third argument is taken to be large enough to extend to
 the end of the first string.
-.Tp Ic translit
+.It Ic translit
 .Ar translit(source, from [, to])
-.br
-transliterates the characters in its first argument
+transliterates
+the characters in its first argument
 from the set given by the second argument to the set given by the third.
 If the third argument is shorter than the second, all extra characters
 in the second argument are deleted from the first argument. If the third
 argument is missing altogether, all characters in the second argument are
 deleted from the first argument.
-.Tp Ic include
+.It Ic include
 .Ar include(filename)
-.br
-returns the contents of the file named in the argument.
-.Tp Ic sinclude
+returns
+the contents of the file named in the argument.
+.It Ic sinclude
 .Ar sinclude(filename)
-.br
 is identical to
 .Ic include  ,
 except that it
 says nothing if the file is inaccessible.
-.Tp Ic paste
+.It Ic paste
 .Ar paste(filename)
-.br
-returns the contents of the file named in the argument without any
+returns
+the contents of the file named in the argument without any
 processing, unlike
 .Ic include .
-.Tp Ic spaste
+.It Ic spaste
 .Ar spaste(filename)
-.br
 is identical to
 .Ic paste  ,
 except that it says nothing if the file is inaccessible.
-.Tp Ic syscmd
+.It Ic syscmd
 .Ar syscmd(command)
-.br
 executes the
-UNIX
+.Ux
 command given in the first argument.
 No value is returned.
-.Tp Ic sysval
+.It Ic sysval
 .Ar sysval()
-.br
 is the return code from the last call to
 .Ic syscmd  .
-.Tp Ic maketemp
+.It Ic maketemp
 .Ar maketemp(string)
-.br
 fills in a string of
-XXXXXX
+.Li XXXXXX
 in its argument with the current process
 ID.
-.Tp Ic m4exit
+.It Ic m4exit
 .Ar m4exit([exitcode])
-.br
 causes immediate exit from
 .Nm m4  .
 Argument 1, if given, is the exit code;
 the default is 0.
-.Tp Ic m4wrap
+.It Ic m4wrap
 .Ar m4wrap(m4-macro-or-built-in)
-.br
 argument 1 will be pushed back at final
 .Ic EOF  ;
 .Dl example: m4wrap(`dumptable()').
-.Tp Ic errprint
+.It Ic errprint
 .Ar errprint(str [, str, str, ...])
-.br
-prints its argument(s) on stderr. If there is more than one argument,
+prints its
+argument(s) on stderr. If there is more than one argument,
 each argument is separated by a space during the output.
-.Tp Ic dumpdef
+.It Ic dumpdef
 .Ar dumpdef([name, name, ...])
-.br
 prints current names and definitions,
 for the named items, or for all if no arguments are given.
-.Tp
+.El
 .Sh AUTHOR
 Ozan S. Yigit (oz)
 .Sh BUGS
-A sufficiently complex M4 macro set is about as readable
+A sufficiently complex
+.Nm M4
+macro set is about as readable
 as
-.Ar APL  .
+.Tn APL  .
 .Pp
-All complex uses of M4 require the ability to program in deep recursion.
+All complex uses of
+.Nm M4
+require the ability to program in deep recursion.
 Previous lisp experience is recommended.
 .Sh EXAMPLES
 The following macro program illustrates the type of things that
-can be done with M4.
-.Pp
-.Ds I
+can be done with
+.Nm M4 .
+.Bd -literal -offset indent
 changequote(<,>) define(HASHVAL,99) dnl
 define(hash,<expr(str(substr($1,1),0)%HASHVAL)>) dnl
 define(str,
@@ -328,22 +314,20 @@ define(TSTART,
 define(TEND,<	"",0
 };>)
 dnl
-.De
+.Ed
 .Pp
 Thus a keyword table containing the keyword string and its pre-calculated
 hash value may be generated thus:
-.Pp
-.Ds I
+.Bd -literal -offset indent
 TSTART
 	KEYWORD("foo")
 	KEYWORD("bar")
 	KEYWORD("baz")
 TEND
-.De
+.Ed
 .Pp
 which will expand into:
-.Pp
-.Ds I
+.Bd -literal -offset indent
 struct prehash {
 	char *keyword;
 	int   hashval;
@@ -353,7 +337,7 @@ struct prehash {
 	"baz",20,
 	"",0
 };
-.De
+.Ed
 .Pp
 Presumably, such a table would speed up the installation of the
 keywords into a dynamic hash table. (Note that the above macro
@@ -366,12 +350,17 @@ does not handle character constants.)
 .Xr cc 1 ,
 .Xr cpp 1 .
 .Xr m4 1
-.br
-.Em The M4 Macro Processor
-by B. W. Kernighan and D. M. Ritchie.
+.Rs
+.%T "The M4 Macro Processor"
+.%A B. W. Kernighan
+.%A D. M. Ritchie.
+.Re
 .Sh HISTORY
+An
 .Nm M4
-command appeared in Version 7 AT&T UNIX.  The
-.Nm m4
+command appeared in
+.At v7 .
+The
+.Nm M4
 command this page describes is derived from code
 contributed by Ozan S. Yigit.
