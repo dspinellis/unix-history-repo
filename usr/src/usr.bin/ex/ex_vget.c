@@ -1,5 +1,5 @@
 /* Copyright (c) 1981 Regents of the University of California */
-static char *sccsid = "@(#)ex_vget.c	6.3 %G%";
+static char *sccsid = "@(#)ex_vget.c	6.4 %G%";
 #include "ex.h"
 #include "ex_tty.h"
 #include "ex_vis.h"
@@ -48,6 +48,7 @@ peekbr()
 }
 
 short	precbksl;
+jmp_buf	readbuf;
 
 /*
  * Get a keystroke, including a ^@.
@@ -102,6 +103,8 @@ getATTN:
 	}
 	flusho();
 again:
+	if (setjmp(readbuf))
+		goto getATTN;
 	if ((c=read(slevel == 0 ? 0 : ttyindes, &ch, 1)) != 1) {
 		if (errno == EINTR)
 			goto getATTN;
