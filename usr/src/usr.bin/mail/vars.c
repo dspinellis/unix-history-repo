@@ -8,7 +8,7 @@
  * Variable handling stuff.
  */
 
-static char *SccsId = "@(#)vars.c	2.1 %G%";
+static char *SccsId = "@(#)vars.c	2.2 %G%";
 
 /*
  * Assign a value to a variable.
@@ -153,6 +153,9 @@ hash(name)
 
 	for (cp = name, h = 0; *cp; h = (h << 2) + *cp++)
 		;
-	h &= ~0100000;
+	if (h < 0)
+		h = -h;
+	if (h < 0)
+		h = 0;
 	return(h % HSHSIZE);
 }
