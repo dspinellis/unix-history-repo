@@ -10,11 +10,11 @@
 #include <stdio.h>
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)strsep.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)strsep.c	5.6 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
- * Get next token from string *stringp, where tokens are nonempty
+ * Get next token from string *stringp, where tokens are possibly-empty
  * strings separated by characters from delim.  
  *
  * Writes NULs into the string at *stringp to end tokens.
@@ -22,7 +22,7 @@ static char sccsid[] = "@(#)strsep.c	5.5 (Berkeley) %G%";
  * On return, *stringp points past the last NUL written (if there might
  * be further tokens), or is NULL (if there are definitely no more tokens).
  *
- * If *stringp is NULL, strtoken returns NULL.
+ * If *stringp is NULL, strsep returns NULL.
  */
 char *
 strsep(stringp, delim)
