@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)ping.8	8.2 (Berkeley) %G%
+.\"     @(#)ping.8	8.3 (Berkeley) %G%
 .\"
 .Dd 
 .Dt PING 8
@@ -15,12 +15,13 @@
 packets to network hosts
 .Sh SYNOPSIS
 .Nm ping
-.Op Fl dfnqrvR
+.Op Fl Rdfnqrv
 .Op Fl c Ar count
 .Op Fl i Ar wait
 .Op Fl l Ar preload
 .Op Fl p Ar pattern
 .Op Fl s Ar packetsize
+.Ar host
 .Sh DESCRIPTION
 .Nm Ping
 uses the
