@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-	.asciz "@(#)urem.s	5.3 (Berkeley) %G%"
+	.asciz "@(#)urem.s	5.4 (Berkeley) %G%"
 #endif /* LIBC_SCCS and not lint */
 
 #include "DEFS.h"
@@ -42,21 +42,25 @@ Ldifference:
 
 ASENTRY(aurem,0)
 	movl	DIVISOR,r2
-	jlss	Laeasy		# big divisor: settle by comparison
+	jlss	La_easy		# big divisor: settle by comparison
 	movl	DIVIDEND,r3
 	movl	(r3),r0
-	jlss	Lahard		# big dividend: need extended division
+	jlss	La_hard		# big dividend: need extended division
 	divl3	r2,r0,r1	# small divisor and dividend: signed modulus
 	mull2	r2,r1
-	subl3	r1,r0,(r3)
+	subl2	r1,r0
+	movl	r0,(r3)		# leave the value of the assignment in r0
 	ret
-Lahard:
+La_hard:
 	clrl	r1
-	ediv	r2,r0,r1,(r3)
+	ediv	r2,r0,r1,r0
+	movl	r0,(r3)
 	ret
-Laeasy:
+La_easy:
 	subl3	r2,(r3),r0
-	jcs	Ldividend	# if divisor is bigger, leave dividend alone
+	jcs	La_dividend	# if divisor is bigger, leave dividend alone
 	movl	r0,(r3)		# if divisor goes in once, store difference
-Ldividend:
+	ret
+La_dividend:
+	movl	(r3),r0
 	ret
