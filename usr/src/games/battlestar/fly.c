@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)fly.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)fly.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "externs.h"
@@ -42,7 +42,6 @@ visual()
 	void moveenemy();
 
 	destroyed = 0;
-	savetty();
 	if(initscr() == ERR){
 		puts("Whoops!  No more memory...");
 		return(0);
