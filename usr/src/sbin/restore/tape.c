@@ -1,7 +1,7 @@
 /* Copyright (c) 1983 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)tape.c	3.11	(Berkeley)	83/04/17";
+static char sccsid[] = "@(#)tape.c	3.11	(Berkeley)	83/04/18";
 #endif
 
 #include "restore.h"
@@ -173,8 +173,11 @@ again:
 		newvol = 0;
 	while (newvol <= 0) {
 		fprintf(stderr, "Specify next volume #: ");
-		if (gets(tbf) == NULL)
-			continue;
+		do	{
+			(void) fgets(tbf, BUFSIZ, stdin);
+		} while (!feof(stdin) && tbf[0] == '\n');
+		if (feof(stdin))
+			done(1);
 		newvol = atoi(tbf);
 		if (newvol <= 0) {
 			fprintf(stderr,
@@ -249,7 +252,7 @@ setdumpnum()
 #ifdef RRESTOR
 	rmtioctl(MTFSF, dumpnum - 1);
 #else
-	if (ioctl(mt, MTIOCTOP, &tcom) < 0)
+	if (ioctl(mt, (int)MTIOCTOP, (char *)&tcom) < 0)
 		perror("ioctl MTFSF");
 #endif
 }
@@ -454,7 +457,7 @@ xtrlnkfile(buf, size)
 		    curfile.name, lnkbuf, buf, pathlen);
 		done(1);
 	}
-	strcat(lnkbuf, buf);
+	(void) strcat(lnkbuf, buf);
 }
 
 xtrlnkskip(buf, size)
