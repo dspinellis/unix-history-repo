@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_vfsops.c	8.19 (Berkeley) %G%
+ *	@(#)ffs_vfsops.c	8.20 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -258,6 +258,7 @@ ffs_reload(mountp, cred, p)
 	struct fs *fs, *newfs;
 	struct partinfo dpart;
 	int i, blks, size, error;
+	long *lp;
 
 	if ((mountp->mnt_flag & MNT_RDONLY) == 0)
 		return (EINVAL);
@@ -283,6 +284,11 @@ ffs_reload(mountp, cred, p)
 		return (EIO);		/* XXX needs translation */
 	}
 	fs = VFSTOUFS(mountp)->um_fs;
+	/*
+	 * Copy pointer fields back into superblock before copying in	XXX
+	 * new superblock. These should really be in the ufsmount.	XXX
+	 * Note that important parameters (eg fs_ncg) are unchanged.
+	 */
 	bcopy(&fs->fs_csp[0], &newfs->fs_csp[0], sizeof(fs->fs_csp));
 	newfs->fs_maxcluster = fs->fs_maxcluster;
 	bcopy(newfs, fs, (u_int)fs->fs_sbsize);
@@ -305,6 +311,14 @@ ffs_reload(mountp, cred, p)
 			return (error);
 		bcopy(bp->b_data, fs->fs_csp[fragstoblks(fs, i)], (u_int)size);
 		brelse(bp);
+	}
+	/*
+	 * We no longer know anything about clusters per cylinder group.
+	 */
+	if (fs->fs_contigsumsize > 0) {
+		lp = fs->fs_maxcluster;
+		for (i = 0; i < fs->fs_ncg; i++)
+			*lp++ = fs->fs_contigsumsize;
 	}
 loop:
 	for (vp = mountp->mnt_vnodelist.lh_first; vp != NULL; vp = nvp) {
