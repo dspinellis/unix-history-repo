@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)fsdb.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)fsdb.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -3431,11 +3431,11 @@ OTX:
 				}
 				if (count == 1) {
 					printf("\taccessed: %s",
-						ctime(&ip->di_atime.tv_sec));
+						ctime(&ip->di_atime.ts_sec));
 					printf("\tmodified: %s",
-						ctime(&ip->di_mtime.tv_sec));
+						ctime(&ip->di_mtime.ts_sec));
 					printf("\tcreated : %s",
-						ctime(&ip->di_ctime.tv_sec));
+						ctime(&ip->di_ctime.ts_sec));
 				}
 				if (tcount)
 					printf("\n");
