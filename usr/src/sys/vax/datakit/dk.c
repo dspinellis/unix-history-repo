@@ -300,9 +300,11 @@ dkopen(dev, flag)
 {
 	register struct	dkdev	*tp;
 	register chan;
-	register struct nameidata *ndp = &u.u_nd;
+	register struct nameidata *ndp = &u.u_nd;	/* XXX */
+	struct proc *p = u.u_procp;			/* XXX */
+	struct vnode *vp;
 	struct	file *fp;
-	int	 m;
+	int	 m, error;
 
 #ifdef lint
 	(void) dk_xint(0, 0);
@@ -344,7 +346,7 @@ dkopen(dev, flag)
 		 * throw away vnode for dk0. (/dev/dk/dial)
 		 * Build standard name of new one, and ask namei for it.
 		 */
-		fp = u.u_ofile[u.u_r.r_val1];
+		fp = u.u_ofile[-1 - p->p_dupfd];
 
 		dksnamer(dname, chan);
 		/* log(LOG_ERR, "dname=%s chan=%d\n", dname, chan); */
