@@ -1,10 +1,10 @@
 /*
- * Copyright (c) 1989 The Regents of the University of California.
+ * Copyright (c) 1989, 1991 The Regents of the University of California.
  * All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_vfsops.c	7.55 (Berkeley) %G%
+ *	@(#)lfs_vfsops.c	7.56 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -135,23 +135,39 @@ ufs_mount(mp, path, data, ndp, p)
 			mp->mnt_flag &= ~MNT_EXRDONLY;
 		mp->mnt_exroot = args.exroot;
 	}
-	if ((mp->mnt_flag & MNT_UPDATE) == 0) {
-		if ((error = getmdev(&devvp, args.fspec, ndp, p)) != 0)
-			return (error);
-		error = mountfs(devvp, mp, p);
-	} else {
+	/*
+	 * If updating, check whether changing from read-only to
+	 * read/write; if there is no device name, that's all we do.
+	 */
+	if (mp->mnt_flag & MNT_UPDATE) {
 		ump = VFSTOUFS(mp);
 		fs = ump->um_fs;
 		if (fs->fs_ronly && (mp->mnt_flag & MNT_RDONLY) == 0)
 			fs->fs_ronly = 0;
-		/*
-		 * Verify that the specified device is the one that
-		 * is really being used for the root file system.
-		 */
 		if (args.fspec == 0)
 			return (0);
-		if ((error = getmdev(&devvp, args.fspec, ndp, p)) != 0)
-			return (error);
+	}
+	/*
+	 * Not an update, or updating the name: look up the name
+	 * and verify that it refers to a sensible block device.
+	 */
+	ndp->ni_nameiop = LOOKUP | FOLLOW;
+	ndp->ni_segflg = UIO_USERSPACE;
+	ndp->ni_dirp = args.fspec;
+	if (error = namei(ndp, p))
+		return (error);
+	devvp = ndp->ni_vp;
+	if (devvp->v_type != VBLK) {
+		vrele(devvp);
+		return (ENOTBLK);
+	}
+	if (major(devvp->v_rdev) >= nblkdev) {
+		vrele(devvp);
+		return (ENXIO);
+	}
+	if ((mp->mnt_flag & MNT_UPDATE) == 0)
+		error = mountfs(devvp, mp, p);
+	else {
 		if (devvp != ump->um_devvp)
 			error = EINVAL;	/* needs translation */
 		else
@@ -719,36 +735,5 @@ ufs_vptofh(vp, fhp)
 	ufhp->ufid_len = sizeof(struct ufid);
 	ufhp->ufid_ino = ip->i_number;
 	ufhp->ufid_gen = ip->i_gen;
-	return (0);
-}
-
-/*
- * Check that the user's argument is a reasonable
- * thing on which to mount, and return the device number if so.
- */
-getmdev(devvpp, fname, ndp, p)
-	struct vnode **devvpp;
-	caddr_t fname;
-	register struct nameidata *ndp;
-	struct proc *p;
-{
-	register struct vnode *vp;
-	int error;
-
-	ndp->ni_nameiop = LOOKUP | FOLLOW;
-	ndp->ni_segflg = UIO_USERSPACE;
-	ndp->ni_dirp = fname;
-	if (error = namei(ndp, p))
-		return (error);
-	vp = ndp->ni_vp;
-	if (vp->v_type != VBLK) {
-		vrele(vp);
-		return (ENOTBLK);
-	}
-	if (major(vp->v_rdev) >= nblkdev) {
-		vrele(vp);
-		return (ENXIO);
-	}
-	*devvpp = vp;
 	return (0);
 }
