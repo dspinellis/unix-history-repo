@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)null_vnops.c	1.4 (Berkeley) %G%
+ *	@(#)null_vnops.c	1.5 (Berkeley) %G%
  *
  * Ancestors:
  *	@(#)lofs_vnops.c	1.2 (Berkeley) 6/18/92
@@ -40,6 +40,7 @@
  *
  * INVOKING OPERATIONS ON LOWER LAYERS
  *
+ * 
  * NEEDSWORK: Describe methods to invoke operations on the lower layer
  * (bypass vs. VOP).
  *
@@ -113,8 +114,8 @@ null_bypass(ap)
 	/*
 	 * We require at least one vp.
 	 */
-	if (descp->vdesc_vp_offsets==NULL ||
-	    descp->vdesc_vp_offsets[0]==VDESC_NO_OFFSET)
+	if (descp->vdesc_vp_offsets == NULL ||
+	    descp->vdesc_vp_offsets[0] == VDESC_NO_OFFSET)
 		panic ("null_bypass: no vp's in map.\n");
 #endif
 
@@ -124,8 +125,8 @@ null_bypass(ap)
 	 * the first mapped vnode's operation vector.
 	 */
 	reles = descp->vdesc_flags;
-	for (i=0; i<VDESC_MAX_VPS; reles>>=1, i++) {
-		if (descp->vdesc_vp_offsets[i]==VDESC_NO_OFFSET)
+	for (i = 0; i < VDESC_MAX_VPS; reles >>= 1, i++) {
+		if (descp->vdesc_vp_offsets[i] == VDESC_NO_OFFSET)
 			break;   /* bail out at end of list */
 		vps_p[i] = this_vp_p = 
 			VOPARG_OFFSETTO(struct vnode**,descp->vdesc_vp_offsets[i],ap);
@@ -139,11 +140,16 @@ null_bypass(ap)
 		} else {
 			old_vps[i] = *this_vp_p;
 			*(vps_p[i]) = NULLVPTOLOWERVP(*this_vp_p);
+			/*
+			 * XXX - Several operations have the side effect
+			 * of vrele'ing their vp's.  We must account for
+			 * that.  (This should go away in the future.)
+			 */
 			if (reles & 1)
 				VREF(*this_vp_p);
-		};
+		}
 			
-	};
+	}
 
 	/*
 	 * Call the operation on the lower layer
@@ -157,26 +163,40 @@ null_bypass(ap)
 	 * to their original value.
 	 */
 	reles = descp->vdesc_flags;
-	for (i=0; i<VDESC_MAX_VPS; reles>>=1, i++) {
-		if (descp->vdesc_vp_offsets[i]==VDESC_NO_OFFSET)
+	for (i = 0; i < VDESC_MAX_VPS; reles >>= 1, i++) {
+		if (descp->vdesc_vp_offsets[i] == VDESC_NO_OFFSET)
 			break;   /* bail out at end of list */
 		if (old_vps[i]) {
 			*(vps_p[i]) = old_vps[i];
 			if (reles & 1)
 				vrele(*(vps_p[i]));
-		};
-	};
+		}
+	}
 
 	/*
-	 * Map the possible out-going vpp.
+	 * Map the possible out-going vpp
+	 * (Assumes that the lower layer always returns
+	 * a VREF'ed vpp unless it gets an error.)
 	 */
 	if (descp->vdesc_vpp_offset != VDESC_NO_OFFSET &&
 	    !(descp->vdesc_flags & VDESC_NOMAP_VPP) &&
 	    !error) {
-		vppp=VOPARG_OFFSETTO(struct vnode***,
+		/*
+		 * XXX - even though some ops have vpp returned vp's,
+		 * several ops actually vrele this before returning.
+		 * We must avoid these ops.
+		 * (This should go away.)
+		 */
+		if (descp->vdesc_flags & VDESC_VPP_WILLRELE) {
+#ifdef NULLFS_DIAGNOSTIC
+			printf("null_bypass (%s), lowervpp->usecount = %d\n", vdesc->vdesc_name, (**vppp)->v_usecount);
+#endif
+			return (error);
+		}
+		vppp = VOPARG_OFFSETTO(struct vnode***,
 				 descp->vdesc_vpp_offset,ap);
 		error = null_node_create(old_vps[0]->v_mount, **vppp, *vppp);
-	};
+	}
 
 	return (error);
 }
@@ -190,20 +210,42 @@ null_getattr(ap)
 	struct vop_getattr_args *ap;
 {
 	int error;
-	if (error=null_bypass(ap))
+	if (error = null_bypass(ap))
 		return error;
 	/* Requires that arguments be restored. */
 	ap->a_vap->va_fsid = ap->a_vp->v_mount->mnt_stat.f_fsid.val[0];
 	return 0;
 }
 
+/*
+ * XXX - Ideally inactive does not release the lowervp
+ * so the null_node can stay around in the cache and be reused.
+ * Unfortunately, this currently causes "locking against self"
+ * problems in the UFS, so currently AVOID_CACHING hacks
+ * around the bug.
+ */
+#define AVOID_CACHING
 
 int
 null_inactive (ap)
 	struct vop_inactive_args *ap;
 {
-#ifdef NULLFS_DIAGNOSTIC
-	printf("null_inactive(ap->a_vp = %x->%x)\n", ap->a_vp, NULLVPTOLOWERVP(ap->a_vp));
+#ifdef AVOID_CACHING
+	struct vnode *vp = ap->a_vp;
+	struct null_node *xp = VTONULL(vp);
+	struct vnode *lowervp = xp->null_lowervp;
+
+	xp->null_lowervp = NULL;
+	remque(xp);
+	FREE(vp->v_data, M_TEMP);
+	vp->v_data = NULL;
+	vp->v_type = VBAD;   /* The node is clean (no reclaim needed). */
+	vrele (lowervp);
+#else
+#ifdef DIAGNOSTIC
+	if (VOP_ISLOCKED(ap->a_vp)) {
+		panic ("null_inactive: inactive node is locked.");
+	};
 #endif
 	/*
 	 * Do nothing (and _don't_ bypass).
@@ -217,22 +259,40 @@ null_inactive (ap)
 	 * That's too much work for now.
 	 */
 	return 0;
+#endif
 }
 
+int
 null_reclaim (ap)
 	struct vop_reclaim_args *ap;
 {
-	struct vnode *targetvp;
-#ifdef NULLFS_DIAGNOSTIC
-	printf("null_reclaim(ap->a_vp = %x->%x)\n", ap->a_vp, NULLVPTOLOWERVP(ap->a_vp));
+	struct vnode *vp = ap->a_vp;
+	struct null_node *xp = VTONULL(vp);
+	struct vnode *lowervp = xp->null_lowervp;
+
+#ifdef AVOID_CACHING
+	return 0;
+#else
+	/*
+	 * Note: at this point, vp->v_op == dead_vnodeop_p,
+	 * so we can't call VOPs on ourself.
+	 */
+	/* After this assignment, this node will not be re-used. */
+#ifdef DIAGNOSTIC
+	if (lowervp->v_usecount == 1 && ISLOCKED(lowervp)) {
+		panic("null_reclaim: lowervp is locked but must go away.");
+	};
 #endif
-	remque(VTONULL(ap->a_vp));	     /* NEEDSWORK: What? */
-	vrele (NULLVPTOLOWERVP(ap->a_vp));   /* release lower layer */
-	FREE(ap->a_vp->v_data, M_TEMP);
-	ap->a_vp->v_data = 0;
-	return (0);
+	xp->null_lowervp = NULL;
+	remque(xp);
+	FREE(vp->v_data, M_TEMP);
+	vp->v_data = NULL;
+	vrele (lowervp);
+	return 0;
+#endif
 }
 
+int
 null_bmap (ap)
 	struct vop_bmap_args *ap;
 {
@@ -243,6 +303,7 @@ null_bmap (ap)
 	return VOP_BMAP(NULLVPTOLOWERVP(ap->a_vp), ap->a_bn, ap->a_vpp, ap->a_bnp);
 }
 
+int
 null_strategy (ap)
 	struct vop_strategy_args *ap;
 {
@@ -268,7 +329,7 @@ null_print (ap)
 	struct vop_print_args *ap;
 {
 	register struct vnode *vp = ap->a_vp;
-	printf ("tag VT_NULLFS, vp=%x, lowervp=%x\n", vp, NULLVPTOLOWERVP(vp));
+	printf ("\ttag VT_NULLFS, vp=%x, lowervp=%x\n", vp, NULLVPTOLOWERVP(vp));
 	return 0;
 }
 
