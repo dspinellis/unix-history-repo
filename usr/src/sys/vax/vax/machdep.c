@@ -1,4 +1,4 @@
-/*	machdep.c	4.37	81/05/12	*/
+/*	machdep.c	4.38	81/08/31	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -33,6 +33,7 @@
 #include <frame.h>
 #include "../h/port.h"
 #include "../h/rpb.h"
+#include "../h/msgbuf.h"
 
 int	icode[] =
 {
@@ -68,9 +69,9 @@ startup(firstaddr)
 	/*
 	 * Initialize error message buffer (at end of core).
 	 */
-	maxmem -= CLSIZE;
+	maxmem -= btoc(sizeof (struct msgbuf));
 	pte = msgbufmap;
-	for (i = 0; i < CLSIZE; i++)
+	for (i = 0; i < btoc(sizeof (struct msgbuf)); i++)
 		*(int *)pte++ = PG_V | PG_KW | (maxmem + i);
 	mtpr(TBIA, 1);
 
