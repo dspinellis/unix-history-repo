@@ -12,25 +12,26 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)iostat.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)iostat.c	5.16 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/buf.h>
 #include <sys/dkstat.h>
-#include <signal.h>
-#include <fcntl.h>
-#include <nlist.h>
-#include <unistd.h>
-#include <stdio.h>
+
 #include <ctype.h>
-#include <stdlib.h>
-#include <string.h>
-#include <paths.h>
+#include <fcntl.h>
 #include <kvm.h>
 #include <limits.h>
+#include <nlist.h>
+#include <paths.h>
+#include <signal.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 
-struct nlist nl[] = {
+struct nlist namelist[] = {
 #define	X_DK_TIME	0
 	{ "_dk_time" },
 #define	X_DK_XFER	1
@@ -89,7 +90,7 @@ char **dr_name;
 kvm_t *kd;
 
 #define nlread(x, v) \
-	kvm_read(kd, nl[x].n_value, &(v), sizeof(v))
+	kvm_read(kd, namelist[x].n_value, &(v), sizeof(v))
 
 #include "names.c"				/* XXX */
 
@@ -142,9 +143,9 @@ main(argc, argv)
         kd = kvm_openfiles(nlistf, memf, NULL, O_RDONLY, errbuf);
 	if (kd == 0)
 		err("kvm_openfiles: %s", errbuf);
-	if (kvm_nlist(kd, nl) == -1)
+	if (kvm_nlist(kd, namelist) == -1)
 		err("kvm_nlist: %s", kvm_geterr(kd));
-	if (nl[X_DK_NDRIVE].n_type == 0)
+	if (namelist[X_DK_NDRIVE].n_type == 0)
 		err("dk_ndrive not found in namelist");
 	(void)nlread(X_DK_NDRIVE, dk_ndrive);
 	if (dk_ndrive <= 0)
@@ -172,7 +173,7 @@ main(argc, argv)
 	(void)nlread(X_STATHZ, stathz);
 	if (stathz)
 		hz = stathz;
-	(void)kvm_read(kd, nl[X_DK_WPMS].n_value, dk_wpms,
+	(void)kvm_read(kd, namelist[X_DK_WPMS].n_value, dk_wpms,
 		dk_ndrive * sizeof(dk_wpms));
 
 	/*
@@ -236,19 +237,19 @@ main(argc, argv)
 			phdr(0);
 			hdrcnt = 20;
 		}
-		(void)kvm_read(kd, nl[X_DK_TIME].n_value,
+		(void)kvm_read(kd, namelist[X_DK_TIME].n_value,
 		    cur.dk_time, dk_ndrive * sizeof(long));
-		(void)kvm_read(kd, nl[X_DK_XFER].n_value,
+		(void)kvm_read(kd, namelist[X_DK_XFER].n_value,
 		    cur.dk_xfer, dk_ndrive * sizeof(long));
-		(void)kvm_read(kd, nl[X_DK_WDS].n_value,
+		(void)kvm_read(kd, namelist[X_DK_WDS].n_value,
 		    cur.dk_wds, dk_ndrive * sizeof(long));
-		(void)kvm_read(kd, nl[X_DK_SEEK].n_value,
+		(void)kvm_read(kd, namelist[X_DK_SEEK].n_value,
 		    cur.dk_seek, dk_ndrive * sizeof(long));
-		(void)kvm_read(kd, nl[X_TK_NIN].n_value,
+		(void)kvm_read(kd, namelist[X_TK_NIN].n_value,
 		    &cur.tk_nin, sizeof(cur.tk_nin));
-		(void)kvm_read(kd, nl[X_TK_NOUT].n_value,
+		(void)kvm_read(kd, namelist[X_TK_NOUT].n_value,
 		    &cur.tk_nout, sizeof(cur.tk_nout));
-		(void)kvm_read(kd, nl[X_CP_TIME].n_value,
+		(void)kvm_read(kd, namelist[X_CP_TIME].n_value,
 		    cur.cp_time, sizeof(cur.cp_time));
 		for (i = 0; i < dk_ndrive; i++) {
 			if (!dr_select[i])
