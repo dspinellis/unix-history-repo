@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)forop.c 1.9 %G%";
+static char sccsid[] = "@(#)forop.c 1.10 %G%";
 
 #include	"whoami.h"
 #include	"0.h"
@@ -47,17 +47,10 @@ forop( arg )
 	int		goc;		/* saved gocnt */
 	int		again;		/* label at the top of the loop */
 	int		after;		/* label after the end of the loop */
-	bool		shadowed;	/* shadowing for var in temporary? */
-	long		s_offset;	/* saved offset of real for variable */
-	long		s_flags;	/* saved flags of real for variable */
-	long		s_forv;		/* saved NL_FORV of the for variable */
-#	ifdef PC
-	    char	s_extra_flags;	/* saved extra_flags of the for var */
-#	endif PC
+	struct nl	shadow_nl;	/* saved namelist entry for loop var */
 
 	goc = gocnt;
 	forvar = NIL;
-	shadowed = FALSE;
 	if ( arg == NIL ) {
 	    goto byebye;
 	}
@@ -87,7 +80,7 @@ nogood:
 	if ( forvar == NIL ) {
 	    goto nogood;
 	}
-	s_forv = forvar -> value[ NL_FORV ];
+	shadow_nl = *forvar;
 	if ( lhs[3] != NIL ) {
 	    error("For variable %s must be unqualified", forvar->symbol);
 	    goto nogood;
@@ -249,16 +242,10 @@ nogood:
 	     *	replace them with the initial expression's offset,
 	     *	and mark it as being a for variable.
 	     */
-	shadowed = TRUE;
-	s_offset = forvar -> value[ NL_OFFS ];
-	s_flags = forvar -> nl_flags;
-	forvar -> value[ NL_OFFS ] = initnlp -> value[ NL_OFFS ];
-	forvar -> nl_flags = cbn;
+	*forvar = *initnlp;
+	forvar -> symbol = shadow_nl.symbol;
+	forvar -> nl_next = shadow_nl.nl_next;
 	forvar -> value[ NL_FORV ] = FORVAR;
-#	ifdef PC
-	    s_extra_flags = forvar -> extra_flags;
-	    forvar -> extra_flags = initnlp -> extra_flags;
-#	endif PC
 	    /*
 	     * and don't forget ...
 	     */
@@ -350,14 +337,7 @@ nogood:
 byebye:
 	noreach = 0;
 	if (forvar != NIL) {
-	    forvar -> value[ NL_FORV ] = s_forv;
-	}
-	if ( shadowed ) {
-	    forvar -> value[ NL_OFFS ] = s_offset;
-	    forvar -> nl_flags = s_flags;
-#	    ifdef PC
-		forvar -> extra_flags = s_extra_flags;
-#	    endif PC
+	    *forvar = shadow_nl;
 	}
 	if ( goc != gocnt ) {
 	    putcnt();
