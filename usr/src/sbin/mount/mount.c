@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mount.c	5.41 (Berkeley) %G%";
+static char sccsid[] = "@(#)mount.c	5.42 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -327,8 +327,10 @@ mountfs(spec, name, flags, type, options, mntopts)
 			if (flags & MNT_UPDATE)
 				fprintf(stderr, "Specified device does %s\n",
 					"not match mounted device");
-			else
+			else if (mnttype == MOUNT_UFS)
 				fprintf(stderr, "Bogus super block\n");
+			else
+				perror((char *)NULL);
 			break;
 		case EOPNOTSUPP:
 			fprintf(stderr, "Operation not supported\n");
@@ -660,18 +662,22 @@ getnfsargs(spec, nfsargsp)
 	struct timeval pertry, try;
 	enum clnt_stat clnt_stat;
 	int so = RPC_ANYSOCK;
-	char *hostp, *delimp;
+	char *fsp, *hostp, *delimp;
 	u_short tport;
 	static struct nfhret nfhret;
 	static char nam[MNAMELEN + 1];
+	char buf[MAXPATHLEN + 1];
 
+	strncpy(buf, spec, MAXPATHLEN);
+	buf[MAXPATHLEN] = '\0';
 	strncpy(nam, spec, MNAMELEN);
 	nam[MNAMELEN] = '\0';
-	if ((delimp = index(spec, '@')) != NULL) {
+	if ((delimp = index(buf, '@')) != NULL) {
 		hostp = delimp + 1;
-	} else if ((delimp = index(spec, ':')) != NULL) {
-		hostp = spec;
-		spec = delimp + 1;
+		fsp = buf;
+	} else if ((delimp = index(buf, ':')) != NULL) {
+		hostp = buf;
+		fsp = delimp + 1;
 	} else {
 		fprintf(stderr,
 		    "No <host>:<dirpath> or <dirpath>@<host> spec\n");
@@ -683,7 +689,7 @@ getnfsargs(spec, nfsargsp)
 		return (0);
 	}
 	bcopy(hp->h_addr, (caddr_t)&saddr.sin_addr, hp->h_length);
-	nfhret.stat = EACCES;	/* Mark not yet successful */
+	nfhret.stat = ETIMEDOUT;	/* Mark not yet successful */
 	while (retrycnt > 0) {
 		saddr.sin_family = AF_INET;
 		saddr.sin_port = htons(PMAPPORT);
@@ -704,7 +710,7 @@ getnfsargs(spec, nfsargsp)
 				try.tv_sec = 10;
 				try.tv_usec = 0;
 				clnt_stat = clnt_call(clp, RPCMNT_MOUNT,
-				    xdr_dir, spec, xdr_fh, &nfhret, try);
+				    xdr_dir, fsp, xdr_fh, &nfhret, try);
 				if (clnt_stat != RPC_SUCCESS) {
 					if ((opflags & ISBGRND) == 0)
 						clnt_perror(clp, "Bad MNT RPC");
@@ -729,7 +735,7 @@ getnfsargs(spec, nfsargsp)
 	if (nfhret.stat) {
 		if (opflags & ISBGRND)
 			exit(1);
-		fprintf(stderr, "Can't access %s: ", spec);
+		fprintf(stderr, "Mount RPC error on %s: ", spec);
 		errno = nfhret.stat;
 		perror((char *)NULL);
 		return (0);
