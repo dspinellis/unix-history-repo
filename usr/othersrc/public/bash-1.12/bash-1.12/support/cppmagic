@@ -1,0 +1,28 @@
+#!/bin/sh
+# Make a list of flags to pass to /lib/cpp.
+#
+
+if [ "$2" ]; then
+  Cpp=$2
+else
+  if [ -f /lib/cpp ]; then
+    Cpp=/lib/cpp
+  else
+    Cpp=cpp
+  fi
+fi
+
+TRADITIONAL=
+FLAGS=
+
+# First flag might be `-traditional' if this is Gnu Cpp.
+unknown_flag=`$Cpp -traditional /dev/null 2>&1 |
+  		egrep 'known|recognized|valid|bad'`
+if [ ! "$unknown_flag" ]; then
+  TRADITIONAL=-traditional
+fi
+
+if [ "$1" ]; then
+   FLAGS=`$1`
+fi
+echo $TRADITIONAL $FLAGS
