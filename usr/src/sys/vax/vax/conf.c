@@ -1,4 +1,4 @@
-/*	conf.c	4.16	%G%	*/
+/*	conf.c	4.17	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -42,7 +42,7 @@ int	htopen(),htclose(),htstrategy(),htread(),htwrite(),htdump();
 #endif
 
 #include "rk.h"
-#if NRK > 0
+#if NRK11 > 0
 int	rkstrategy(),rkread(),rkwrite(),rkintr(),rkdump();
 #else
 #define	rkstrategy	nodev

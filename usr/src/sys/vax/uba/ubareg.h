@@ -1,4 +1,4 @@
-/*	ubareg.h	4.9	81/02/21	*/
+/*	ubareg.h	4.10	81/02/22	*/
 
 /*
  * UNIBUS adaptor
@@ -154,6 +154,8 @@ struct	uba_hd {
 	int	uh_bdpfree;		/* free bdp's */
 	int	uh_hangcnt;		/* number of ticks hung */
 	int	uh_zvcnt;		/* number of 0 vectors */
+	short	uh_users;		/* transient bdp use count */
+	short	uh_xclu;		/* an rk07 is using this uba! */
 #define	UAMSIZ	50
 	struct	map *uh_map;
 } uba_hd[MAXNUBA];
