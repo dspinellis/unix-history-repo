@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)arp.c	1.2 (Berkeley) %G%";
+static	char *sccsid = "@(#)arp.c	1.3 (Berkeley) %G%";
 #endif
 
 /*
@@ -99,12 +99,12 @@ set(argc, argv)
 	hp = gethostbyname(host);
 	if (hp == NULL) {
 		fprintf(stderr, "arp: %s: unknown host\n", host);
-		return (1);
+		return;
 	}
 	bzero((caddr_t)&ar, sizeof ar);
 	ar.arp_pa.sa_family = AF_INET;
 	sin = (struct sockaddr_in *)&ar.arp_pa;
-	sin->sin_addr = *(struct in_addr *)hp->h_addr;
+	bcopy((char *)hp->h_addr, (char *)&sin->sin_addr, sizeof sin->sin_addr);
 	ea = (u_char *)ar.arp_ha.sa_data;
 	if (ether_aton(eaddr, ea))
 		return;
@@ -195,7 +195,7 @@ delete(host)
 	bzero((caddr_t)&ar, sizeof ar);
 	ar.arp_pa.sa_family = AF_INET;
 	sin = (struct sockaddr_in *)&ar.arp_pa;
-	sin->sin_addr = *(struct in_addr *)hp->h_addr;
+	bcopy((char *)hp->h_addr, (char *)&sin->sin_addr, sizeof sin->sin_addr);
 	s = socket(AF_INET, SOCK_DGRAM, 0);
 	if (s < 0) {
                 perror("arp: socket");
