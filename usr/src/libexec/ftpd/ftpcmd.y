@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ftpcmd.y	5.20 (Berkeley) %G%
+ *	@(#)ftpcmd.y	5.20.1.1 (Berkeley) %G%
  */
 
 /*
@@ -25,7 +25,7 @@
 %{
 
 #ifndef lint
-static char sccsid[] = "@(#)ftpcmd.y	5.20 (Berkeley) %G%";
+static char sccsid[] = "@(#)ftpcmd.y	5.20.1.1 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -63,8 +63,6 @@ extern  int transflag;
 extern  char tmpline[];
 char	**glob();
 
-off_t	restart_point;
-
 static	int cmd_type;
 static	int cmd_form;
 static	int cmd_bytesz;
@@ -100,7 +98,6 @@ cmd_list:	/* empty */
 	|	cmd_list cmd
 		= {
 			fromname = (char *) 0;
-			restart_point = (off_t) 0;
 		}
 	|	cmd_list rcmd
 	;
@@ -480,22 +477,12 @@ rcmd:		RNFR check_login SP pathname CRLF
 		= {
 			char *renamefrom();
 
-			restart_point = (off_t) 0;
 			if ($2 && $4) {
 				fromname = renamefrom((char *) $4);
 				if (fromname == (char *) 0 && $4) {
 					free((char *) $4);
 				}
 			}
-		}
-	|	REST SP byte_size CRLF
-		= {
-			long atol();
-
-			fromname = (char *) 0;
-			restart_point = $3;
-			reply(350, "Restarting at %ld. %s", restart_point,
-			    "Send STORE or RETRIEVE to initiate transfer.");
 		}
 	;
 		
@@ -712,7 +699,7 @@ struct tab cmdtab[] = {		/* In order defined in RFC 765 */
 	{ "MRSQ", MRSQ, OSTR, 0,	"(mail recipient scheme question)" },
 	{ "MRCP", MRCP, STR1, 0,	"(mail recipient)" },
 	{ "ALLO", ALLO, ARGS, 1,	"allocate storage (vacuously)" },
-	{ "REST", REST, ARGS, 1,	"(restart command)" },
+	{ "REST", REST, ARGS, 0,	"(restart command)" },
 	{ "RNFR", RNFR, STR1, 1,	"<sp> file-name" },
 	{ "RNTO", RNTO, STR1, 1,	"<sp> file-name" },
 	{ "ABOR", ABOR, ARGS, 1,	"(abort operation)" },
