@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)vmstat.c	1.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)vmstat.c	1.4 (Berkeley) %G%";
 #endif
 
 /*
@@ -47,6 +47,11 @@ static char sccsid[] = "@(#)vmstat.c	1.3 (Berkeley) %G%";
 #define MEMCOL		 0
 #define DISKROW		 7	/* uses 5 rows and 35 cols */
 #define DISKCOL		 0
+
+/*
+ * Maximum number of times that the clock may no longer advance.
+ */
+#define LOOPMAX	10
 
 #if DK_NDRIVE > 6
 #undef DK_NDRIVE
@@ -181,7 +186,7 @@ main(argc,argv)
 	char **argv;
 {
 	time_t now, lastime, starttime;
-	int i, l, c;
+	int i, l, c, loopcnt;
 	int psiz;
 	int interv;
 	int hits;
@@ -289,7 +294,7 @@ main(argc,argv)
 	crmode();
 	layout();
 
-	for (;;) {
+	for (loopcnt = 0; loopcnt < LOOPMAX; loopcnt++) {
 		while (state == STOP)
 			waittty(delay*10);
 		time(&now);
@@ -307,6 +312,7 @@ main(argc,argv)
 		}
 		if (etime < 5.0)	/* < 5 ticks - ignore this trash */
 			continue;
+		loopcnt = 0;
 		etime /= hertz;
 		inttotal = 0;
 		for (i = 0; i < nintr; i++) {
@@ -470,6 +476,11 @@ main(argc,argv)
 		refresh();
 		waittty(delay);
 	}
+	clear();
+	mvprintw(2, 10, "THE SYSTEM CLOCK HAS DIED!");
+	refresh();
+	sleep(5);
+	finish();
 }
 
 /* calculate number of users on the system */
