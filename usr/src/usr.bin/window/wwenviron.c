@@ -11,7 +11,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)wwenviron.c	3.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)wwenviron.c	3.19 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ww.h"
@@ -49,15 +49,8 @@ register struct ww *wp;
 	 * 1. setenv() copies the string,
 	 * 2. we've already called tgetent which copies the termcap entry.
 	 */
-	(void) sprintf(buf, "%sco#%d:li#%d:%s%s%s%s%s%s%s",
-		WWT_TERMCAP, wp->ww_w.nc, wp->ww_w.nr,
-		wwavailmodes & WWM_REV ? WWT_REV : "",
-		wwavailmodes & WWM_BLK ? WWT_BLK : "",
-		wwavailmodes & WWM_UL ? WWT_UL : "",
-		wwavailmodes & WWM_GRP ? WWT_GRP : "",
-		wwavailmodes & WWM_DIM ? WWT_DIM : "",
-		wwavailmodes & WWM_USR ? WWT_USR : "",
-		wwkeys);
+	(void) sprintf(buf, "%sco#%d:li#%d:%s",
+		WWT_TERMCAP, wp->ww_w.nc, wp->ww_w.nr, wwwintermcap);
 	(void) setenv("TERMCAP", buf, 1);
 	(void) sprintf(buf, "%d", wp->ww_id + 1);
 	(void) setenv("WINDOW_ID", buf, 1);
