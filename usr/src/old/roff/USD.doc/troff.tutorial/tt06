@@ -1,4 +1,4 @@
-.\"	@(#)tt06	5.1 (Berkeley) %G%
+.\"	@(#)tt06	6.1 (Berkeley) %G%
 .\"
 .NH
 Local Motions: Drawing lines and characters
@@ -274,7 +274,7 @@ can be constructed with a big comma and a big period above it:
 .P1
 \es+6\ez,\ev'\(mi0.25m'.\ev'0.25m'\es0 
 .P2
-`0.25m' is an empirical constant.
+`0.25m' is an experimentally-derived constant.
 .PP
 A more ornate overstrike is given by the bracketing function
 .BD \eb ,
