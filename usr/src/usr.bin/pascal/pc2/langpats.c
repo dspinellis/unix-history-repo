@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)langpats.c 1.2 %G%";
+static char sccsid[] = "@(#)langpats.c 1.3 %G%";
 
 #include <stdio.h>
 #include <ctype.h>
@@ -15,13 +15,12 @@ struct pats {
 	char	*replace;
 } ptab[] = {
 
-	{ "ACTFILE\n",
+	{ "1,_ACTFILE\n",
 "	movl	(sp)+,r1\n\
 	movl	12(r1),r0\n" },
 
-	{ "fgetc\n",
-"	decl	*(sp)\n\
-	jgeq	1f\n\
+	{ "1,_fgetc\n",
+"	sobgeq	*(sp),1f\n\
 	calls	$1,__filbuf\n\
 	jbr     2f\n\
 1:\n\
@@ -30,9 +29,8 @@ struct pats {
 	incl	(r1)\n\
 2:\n" },
 
-	{ "fputc\n",
-"	decl	*4(sp)\n\
-	jgeq	1f\n\
+	{ "2,_fputc\n",
+"	sobgeq	*4(sp),1f\n\
 	calls	$2,__flsbuf\n\
 	jbr	2f\n\
 1:\n\
@@ -42,7 +40,7 @@ struct pats {
 	incl	(r1)\n\
 2:\n" },
 
-	{ "blkcpy\n",
+	{ "3,_blkcpy\n",
 "	movl	4(sp),r1\n\
 	movl	8(sp),r3\n\
 1:\n\
@@ -57,21 +55,21 @@ struct pats {
 	addl2	$8,sp\n\
 	movc3	r0,(r1),(r3)\n" },
 
-	{ "blkclr\n",
+	{ "2,_blkclr\n",
 "	movl	4(sp),r3\n\
+	subl3	r3,r3,-4(sp)\n\
+	jbr	2f\n\
 1:\n\
+	subl2	r0,(sp)\n\
+	movc5	$0,(r3),$0,r0,(r3)\n\
+2:\n\
 	movzwl	$65535,r0\n\
 	cmpl	(sp),r0\n\
-	jleq	1f\n\
-	subl2	r0,(sp)\n\
-	movc5	$0,(r1),$0,r0,(r3)\n\
-	jbr	1b\n\
-1:\n\
-	movl	(sp)+,r0\n\
-	addl2	$4,sp\n\
-	movc5	$0,(r1),$0,r0,(r3)\n" },
+	jgtr	1b\n\
+	movq	(sp)+,r0\n\
+	movc5	$0,(r3),$0,r0,(r3)\n" },
 
-	{ "LOCC\n",
+	{ "3,_LOCC\n",
 "	movl	(sp)+,r5\n\
 	movl	(sp)+,r4\n\
 	movl	(sp)+,r1\n\
@@ -88,13 +86,13 @@ struct pats {
 	locc	r5,r4,(r1)\n\
 2:\n" },
 
-	{ "ROUND\n",
+	{ "1,_ROUND\n",
 "	cvtrdl	(sp)+,r0\n" },
 
-	{ "TRUNC\n",
+	{ "1,_TRUNC\n",
 "	cvtdl	(sp)+,r0\n" },
 
-	{ "FCALL\n",
+	{ "1,_FCALL\n",
 "	movl	(sp),r0\n\
 	ashl	$3,4(r0),r1\n\
 	movc3	r1,__disply+8,8(r0)[r1]\n\
@@ -103,13 +101,13 @@ struct pats {
 	movc3	r1,8(r0),__disply+8\n\
 	movl	*(sp)+,r0\n" },
 
-	{ "FRTN\n",
+	{ "2,_FRTN\n",
 "	movl	(sp)+,r0\n\
 	ashl	$3,4(r0),r1\n\
 	movc3	r1,8(r0)[r1],__disply+8\n\
 	movl	(sp)+,r0\n" },
 
-	{ "FSAV\n",
+	{ "3,_FSAV\n",
 "	movl	8(sp),r0\n\
 	movl	(sp)+,(r0)\n\
 	movl	(sp)+,4(r0)\n\
@@ -117,7 +115,7 @@ struct pats {
 	movc3	r1,__disply+8,8(r0)\n\
 	movl	(sp)+,r0\n" },
 
-	{ "RELEQ\n",
+	{ "3,_RELEQ\n",
 "	movl	(sp)+,r4\n\
 	movl	(sp)+,r1\n\
 	movl	(sp)+,r3\n\
@@ -138,7 +136,7 @@ struct pats {
 	clrl	r0\n\
 4:\n" },
 
-	{ "RELNE\n",
+	{ "3,_RELNE\n",
 "	movl	(sp)+,r4\n\
 	movl	(sp)+,r1\n\
 	movl	(sp)+,r3\n\
@@ -157,7 +155,7 @@ struct pats {
 	movl	$1,r0\n\
 4:\n" },
 
-	{ "RELSLT\n",
+	{ "3,_RELSLT\n",
 "	movl	(sp)+,r4\n\
 	movl	(sp)+,r1\n\
 	movl	(sp)+,r3\n\
@@ -179,7 +177,7 @@ struct pats {
 	movl	$1,r0\n\
 5:\n" },
 
-	{ "RELSLE\n",
+	{ "3,_RELSLE\n",
 "	movl	(sp)+,r4\n\
 	movl	(sp)+,r1\n\
 	movl	(sp)+,r3\n\
@@ -201,7 +199,7 @@ struct pats {
 	movl	$1,r0\n\
 5:\n" },
 
-	{ "RELSGT\n",
+	{ "3,_RELSGT\n",
 "	movl	(sp)+,r4\n\
 	movl	(sp)+,r1\n\
 	movl	(sp)+,r3\n\
@@ -223,7 +221,7 @@ struct pats {
 	movl	$1,r0\n\
 5:\n" },
 
-	{ "RELSGE\n",
+	{ "3,_RELSGE\n",
 "	movl	(sp)+,r4\n\
 	movl	(sp)+,r1\n\
 	movl	(sp)+,r3\n\
@@ -245,7 +243,7 @@ struct pats {
 	movl	$1,r0\n\
 5:\n" },
 
-	{ "ADDT\n",
+	{ "4,_ADDT\n",
 "	movl	(sp)+,r0\n\
 	movl	(sp)+,r1\n\
 	movl	(sp)+,r2\n\
@@ -255,7 +253,7 @@ struct pats {
 	bisl3	(r1)+,(r2)+,(r3)+\n\
 	sobgtr	r4,1b\n" },
 
-	{ "SUBT\n",
+	{ "4,_SUBT\n",
 "	movl	(sp)+,r0\n\
 	movl	(sp)+,r1\n\
 	movl	(sp)+,r2\n\
@@ -265,7 +263,7 @@ struct pats {
 	bicl3	(r2)+,(r1)+,(r3)+\n\
 	sobgtr	r4,1b\n" },
 
-	{ "MULT\n",
+	{ "4,_MULT\n",
 "	movl	(sp)+,r0\n\
 	movl	(sp)+,r1\n\
 	movl	(sp)+,r2\n\
@@ -276,15 +274,16 @@ struct pats {
 	bicl3	r5,(r2)+,(r3)+\n\
 	sobgtr	r4,1b\n" },
 
-	{ "IN\n",
+	{ "4,_IN\n",
 "	clrl	r0\n\
 	movl	(sp)+,r1\n\
 	subl2	(sp)+,r1\n\
 	cmpl	r1,(sp)+\n\
 	jgtru	1f\n\
-	jbc	r1,*(sp)+,1f\n\
+	jbc	r1,*(sp),1f\n\
 	movl	$1,r0\n\
-1:\n" }
+1:\n\
+	addl2	$4,sp\n" }
 };
 
 struct pats		*htbl[HSHSIZ];
@@ -337,8 +336,8 @@ main(argc, argv)
 	while (fgets(line, BUFSIZ, stdin)) {
 		for (cp = line; *cp && *cp == '\t'; )
 			cp++;
-		CHK('c'); CHK('a'); CHK('l'); CHK('l'); CHK('s'); CHK('\t');
-		CHK('$'); if (!isdigit(*cp++)) goto copy; CHK(','); CHK('_');
+		CHK('c'); CHK('a'); CHK('l'); CHK('l'); CHK('s');
+		CHK('\t'); CHK('$');
 		HASH(cp, hp);
 		while (*hp) {
 			if (RELEQ(size, (*hp)->name, cp)) {
