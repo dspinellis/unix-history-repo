@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_le.c	7.8 (Berkeley) %G%
+ *	@(#)if_le.c	7.9 (Berkeley) %G%
  */
 
 #include "le.h"
@@ -803,7 +803,9 @@ lererror(unit, msg)
 	log(LOG_WARNING,
 	    "le%d: ierror(%s): from %s: buf=%d, len=%d, rmd1=%b\n",
 	    unit, msg,
-	    len > 11 ? ether_sprintf(&le->sc_r2->ler2_rbuf[le->sc_rmd][6]) : "unknown",
+	    len > 11 ?
+		ether_sprintf((u_char *)&le->sc_r2->ler2_rbuf[le->sc_rmd][6]) :
+		"unknown",
 	    le->sc_rmd, len,
 	    rmd->rmd1,
 	    "\20\20OWN\17ERR\16FRAM\15OFLO\14CRC\13RBUF\12STP\11ENP");
@@ -824,7 +826,9 @@ lexerror(unit)
 	log(LOG_WARNING,
 	    "le%d: oerror: to %s: buf=%d, len=%d, tmd1=%b, tmd3=%b\n",
 	    unit,
-	    len > 5 ? ether_sprintf(&le->sc_r2->ler2_tbuf[0][0]) : "unknown",
+	    len > 5 ?
+		ether_sprintf((u_char *)&le->sc_r2->ler2_tbuf[0][0]) :
+		"unknown",
 	    0, len,
 	    tmd->tmd1,
 	    "\20\20OWN\17ERR\16RES\15MORE\14ONE\13DEF\12STP\11ENP",

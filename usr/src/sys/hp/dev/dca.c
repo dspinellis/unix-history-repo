@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)dca.c	7.13 (Berkeley) %G%
+ *	@(#)dca.c	7.14 (Berkeley) %G%
  */
 
 #include "dca.h"
@@ -400,9 +400,12 @@ dcamint(unit, dca)
 	}
 }
 
-dcaioctl(dev, cmd, data, flag)
+dcaioctl(dev, cmd, data, flag, p)
 	dev_t dev;
+	int cmd;
 	caddr_t data;
+	int flag;
+	struct proc *p;
 {
 	register struct tty *tp;
 	register int unit = UNIT(dev);
@@ -410,7 +413,7 @@ dcaioctl(dev, cmd, data, flag)
 	register int error;
  
 	tp = &dca_tty[unit];
-	error = (*linesw[tp->t_line].l_ioctl)(tp, cmd, data, flag);
+	error = (*linesw[tp->t_line].l_ioctl)(tp, cmd, data, flag, p);
 	if (error >= 0)
 		return (error);
 	error = ttioctl(tp, cmd, data, flag);

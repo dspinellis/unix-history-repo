@@ -11,7 +11,7 @@
  *
  * from: $Hdr: dcm.c 1.26 91/01/21$
  *
- *	@(#)dcm.c	7.15 (Berkeley) %G%
+ *	@(#)dcm.c	7.16 (Berkeley) %G%
  */
 
 /*
@@ -695,9 +695,12 @@ dcmmint(unit, mcnd, dcm)
 	}
 }
 
-dcmioctl(dev, cmd, data, flag)
+dcmioctl(dev, cmd, data, flag, p)
 	dev_t dev;
+	int cmd;
 	caddr_t data;
+	int flag;
+	struct proc *p;
 {
 	register struct tty *tp;
 	register int unit = UNIT(dev);
@@ -711,7 +714,7 @@ dcmioctl(dev, cmd, data, flag)
 		       unit, cmd, *data, flag);
 #endif
 	tp = &dcm_tty[unit];
-	error = (*linesw[tp->t_line].l_ioctl)(tp, cmd, data, flag);
+	error = (*linesw[tp->t_line].l_ioctl)(tp, cmd, data, flag, p);
 	if (error >= 0)
 		return (error);
 	error = ttioctl(tp, cmd, data, flag);
