@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)bang.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)bang.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -38,54 +38,65 @@ bang(inputt, errnum)
 	FILE *inputt;
 	int *errnum;
 {
-	static int l_cnt_last_pos;		/* "!!", l_shellcmd offset */
+	static int l_cnt_last_pos=0;		/* "!!", l_shellcmd offset */
 	static char l_shellcmd[FILENAME_LEN];	/* "!!" */
-	int l_cnt = 0, l_esc = 0;
+	static char l_shellcmd2[FILENAME_LEN];	/* "!!" */
+	int l_cnt = 0, l_esc=0, l_flag=0;
+
+	memcpy(l_shellcmd, l_shellcmd2, FILENAME_LEN);
 
 	for (;;) {
-		ss = getchar();
-		if ((ss == '\\') && (l_esc == 0)) {
-			ss = getchar();
+		ss = getc(inputt);
+		l_esc = 0;
+		if (ss == '\\') {
+			ss = getc(inputt);
 			l_esc = 1;
-		} else
-			l_esc = 0;
-		if ((ss == '\n') || (ss == EOF)) {
-			if (l_cnt == 0) {
-				strcpy(help_msg, "no shell command given");
-				*errnum = -1;
-				ungetc('\n', inputt);
-				return;
-			}
+		}
+		if (((!l_esc) && (ss == '\n')) || (ss == EOF)) {
 			l_shellcmd[l_cnt] = '\0';
 			break;
 		} else
-			if ((ss == '!') && (l_esc == 0)) {
+			if ((ss == '!') && (l_cnt == 0) && (l_esc == 0)) {
+				if (l_cnt_last_pos == 0) {
+					strcpy(help_msg,
+					    "no remembered command");
+					*errnum = -1;
+					return;
+				}
 				l_cnt = l_cnt_last_pos;
-				printf("%s\n", l_shellcmd);
+				l_flag = 1;
 			}
 			else
 				if ((ss == '%') && (l_esc == 0)) {
-					l_shellcmd[l_cnt] = '\0';
 					if (filename_current) {
+						l_shellcmd[l_cnt] = '\0';
 						strcat(l_shellcmd,
 						    filename_current);
 						l_cnt =
 						    l_cnt +
-						    strlen(filename_current);
+						    strlen(filename_current); 
+					}
+					else {
+						strcpy(help_msg,
+						    "no current filename");
+						*errnum = -1;
+						return;
 					}
 				} else
 					l_shellcmd[l_cnt++] = ss;
 		if (l_cnt >= FILENAME_LEN) {
 			strcpy(help_msg, "shell command too long");
 			*errnum = -1;
-			ungetc('\n', inputt);
 			return;
 		}
 	}
 
+	if (l_flag)
+		printf("%s\n", l_shellcmd);
 	system(l_shellcmd);
 	if (explain_flag > 0)	/* for the -s option */
 		printf("!\n");
 	l_cnt_last_pos = l_cnt;
+	memcpy(l_shellcmd2, l_shellcmd, FILENAME_LEN);
 	*errnum = 0;
 }

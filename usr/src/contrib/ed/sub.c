@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)sub.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)sub.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -40,7 +40,7 @@ s(inputt, errnum)
 	static char *l_match = NULL, *l_repl = NULL;
 	LINE *l_s_ret, *l_temp_line, *l_temp_line2, *l_kval, *l_last;
 	int l_s_flag, l_count, l_matched, l_nflag, l_cnt, yy, l_sr_flag = 0;
-	int l_err, l_sl, l_rep_flag, l_u_reuse_flag=0;
+	int l_err, l_sl, l_rep_flag, l_u_reuse_flag=0, l_local_len;
 	char *l_match2 = NULL, *l_local = NULL, *l_local_temp = NULL;
 #ifndef REG_STARTEND
 	size_t l_offset = 0;
@@ -187,13 +187,15 @@ bcg2:
 		l_rep_flag = 1;
 #ifndef REG_STARTEND
 		l_offset = 0;
+#else
+		l_local_len = current->len;
 #endif
 		do {
 			RE_match[0].rm_so = RE_match[0].rm_eo;
 #ifdef REG_STARTEND
 			l_matched = regexec_n(&RE_comp, l_local,
 			    (size_t)RE_SEC, RE_match, 0, l_count,
-			    (size_t)current->len, 0);
+			    (size_t)l_local_len, 0);
 #else
 			l_matched = regexec_n(&RE_comp, l_local,
 			    (size_t)RE_SEC, RE_match, 0, l_count,
@@ -225,7 +227,7 @@ bcg2:
 #ifdef REG_STARTEND
 				l_local = re_replace(l_local,
 				    (size_t)(RE_SEC - 1), RE_match, &l_repl[1]);
-				(current->len) = strlen(l_local);
+				l_local_len = strlen(l_local);
 #else
 				l_local = re_replace(l_local,
 				    (size_t)(RE_SEC - 1), RE_match, &l_repl[1],

@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -44,7 +44,7 @@ static char sccsid[] = "@(#)main.c	5.10 (Berkeley) %G%";
 
 int nn_max, nn_max_flag, Start_default, End_default, address_flag;
 int zsnum, filename_flag, add_flag=0, join_flag=0;
-int help_flag=0, gut_num;
+int help_flag=0, gut_num=-1;
 #ifdef STDIO
 FILE *fhtmp;
 int file_seek;
@@ -120,6 +120,7 @@ main(argc, argv)
 		ed_exit(4);
 	Start_default = End_default = 0;
 	zsnum = 22;		/* for the 'z' command */
+	help_msg[0] = '\0';
 	u_stk = NULL;
 	d_stk = NULL;
 	u_current = u_top = u_bottom = NULL;
@@ -153,10 +154,10 @@ main(argc, argv)
 				l_err = 1;
 			case 'v':
 #ifdef BSD
-				printf("ed: in BSD mode:\n");
+				(void)printf("ed: in BSD mode:\n");
 #endif
 #ifdef POSIX
-				printf("ed: in POSIX mode:\n");
+				(void)printf("ed: in POSIX mode:\n");
 #endif
 				break;
 			default:
@@ -215,7 +216,7 @@ cmd_loop(inputt, errnum)
 			sigint_flag = 0;
 			GV_flag = 0;	/* safest place to do these flags */
 			g_flag = 0;
-			printf("\n?\n");
+			(void)printf("\n?\n");
 			break;
 		case HANGUP:		/* shouldn't get here. */
 			break;
@@ -283,7 +284,8 @@ cmd_loop(inputt, errnum)
 			case 'h':
 				if (rol(inputt, errnum))
 					break;
-				(void)printf("%s\n", help_msg);
+				if (help_msg[0])
+					(void)printf("%s\n", help_msg);
 				*errnum = 1;
 				break;
 			case 'H':
@@ -291,7 +293,9 @@ cmd_loop(inputt, errnum)
 					break;
 				if (help_flag == 0) {
 					help_flag = 1;
-					printf("?: %s\n", help_msg);
+					if (help_msg[0])
+						(void)printf("%s\n",
+						    help_msg);
 				} else
 					help_flag = 0;
 				*errnum = 1;
@@ -497,10 +501,11 @@ cmd_loop(inputt, errnum)
 errmsg:				while (((ss = getc(inputt)) != '\n') &&
 				    (ss != EOF));
 				exit_code = 4;
-				if (help_flag == 1)
-					printf("?: %s\n", help_msg);
-				else
-					printf("?\n");
+				if (g_flag == 0) {
+					(void)printf("?\n");
+					if (help_flag)
+						(void)printf("%s\n", help_msg);
+				}
 /* for people wanting scripts to carry on after a cmd error, then
  * define NOENDONSCRIPT on the compile line.
  */
@@ -511,8 +516,6 @@ errmsg:				while (((ss = getc(inputt)) != '\n') &&
 					q(inputt, errnum);
 				}
 #endif
-				if (g_flag > 0)
-					return;
 				break;
 			}
 			l_last = ss;
