@@ -1,14 +1,16 @@
-#	Makefile	4.1	%G%
+#	Makefile	4.2	%G%
 
+CPU=	780
 DESTDIR=
-CFLAGS = -O -DSTANDALONE
+CFLAGS=	-O -DSTANDALONE -DVAX=${CPU}
+COPTS=	-DVAX=${CPU}
 RELOC=	70000
-DRIVERS=hp.o ht.o mba.o up.o uba.o
+DRIVERS=hp.o ht.o mba.o rk.o tm.o up.o uba.o
 
 all:	/usr/lib/libsa.a srt0.o boot cat ls icheck mkfs restor \
 	tpicheck tpmkfs tprestor sboot
 
-/usr/lib/libsa.a:	sys.o conf.o hp.o ht.o mba.o up.o uba.o prf.o machdep.o 
+/usr/lib/libsa.a:	sys.o conf.o ${DRIVERS} prf.o machdep.o 
 	ar crv ${DESTDIR}/usr/lib/libsa.a $?
 	ranlib ${DESTDIR}/usr/lib/libsa.a
 
@@ -71,13 +73,16 @@ tpicheck: icheck.o tpsrt0.o ${DESTDIR}/usr/lib/libsa.a
 	cp a.out b.out; strip b.out; dd if=b.out of=tpicheck ibs=32 skip=1; rm b.out
 
 srt0.o: rel.m ../h/mtpr.m ../h/mba.m ../h/uba.m srt0.s
-	as -o srt0.o rel.m ../h/mtpr.m ../h/mba.m ../h/uba.m srt0.s
+	/lib/cpp -DVAX=${CPU} srt0.s >srt0.i
+	as -o srt0.o rel.m ../h/mtpr.m ../h/mba.m ../h/uba.m srt0.i
 
 tpsrt0.o: rel.m ../h/mtpr.m ../h/mba.m ../h/uba.m tpsrt0.s
-	as -o tpsrt0.o rel.m ../h/mtpr.m ../h/mba.m ../h/uba.m tpsrt0.s
+	/lib/cpp -DVAX=${CPU} tpsrt0.s >tpsrt0.i
+	as -o tpsrt0.o rel.m ../h/mtpr.m ../h/mba.m ../h/uba.m tpsrt0.i
 
 relsrt0.o: rel.m ../h/mtpr.m ../h/mba.m ../h/uba.m relsrt0.s
-	as -o relsrt0.o rel.m ../h/mtpr.m ../h/mba.m ../h/uba.m relsrt0.s
+	/lib/cpp -DVAX=${CPU} relsrt0.s >relsrt0.i
+	as -o relsrt0.o rel.m ../h/mtpr.m ../h/mba.m ../h/uba.m relsrt0.i
 
 rpboot: rpboot.s
 	as rpboot.s
@@ -96,7 +101,7 @@ vgrindt:
 	@vgrind -t *.c;
 
 clean:
-	rm -f *.o *.exe
+	rm -f *.o *.exe *.i
 	rm -f a.out b.out boot cat ls icheck mkfs restor rpboot \
 	    tpicheck tpmkfs tprestor sboot
 
