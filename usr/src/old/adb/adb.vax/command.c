@@ -1,4 +1,6 @@
-#
+#ifndef lint
+static	char sccsid[] = "@(#)command.c	4.5 %G%";
+#endif
 /*
  *
  *	UNIX debugger
@@ -6,7 +8,6 @@
  */
 
 #include "defs.h"
-static	char sccsid[] = "@(#)command.c 4.4 %G%";
 
 MSG		BADEQ;
 MSG		NOMATCH;

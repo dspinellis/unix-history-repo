@@ -1,4 +1,6 @@
-#
+#ifndef lint
+static	char sccsid[] = "@(#)input.c	4.2 %G%";
+#endif
 /*
  *
  *	UNIX debugger
@@ -6,7 +8,6 @@
  */
 
 #include "defs.h"
-static	char sccsid[] = "@(#)input.c 4.1 %G%";
 
 INT		mkfault;
 CHAR		line[LINSIZ];
