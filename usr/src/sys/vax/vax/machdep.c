@@ -1,4 +1,4 @@
-/*	machdep.c	3.9	%G%	*/
+/*	machdep.c	3.10	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -14,7 +14,7 @@
 #include "../h/psl.h"
 #include "../h/uba.h"
 
-char	version[] = "VM/UNIX (Berkeley Version 3.9) %H% \n";
+char	version[] = "VM/UNIX (Berkeley Version 3.10) %H% \n";
 int	icode[] =
 {
 	0x9f19af9f,	/* pushab [&"init.vm",0]; pushab */
@@ -57,9 +57,7 @@ startup(firstaddr)
 	meminit(unixsize, maxmem);
 	maxmem -= (unixsize+1);
 	printf("avail mem = %d\n", ctob(maxmem));
-	mfree(swapmap, nswap - CLSIZE, CLSIZE);
 	mfree(kernelmap, USRPTSIZE, 1);
-	swplo--;
 	mbainit();
 	ubainit();
 	timeout(memchk, (caddr_t)0, 60);	/* it will pick its own intvl */
