@@ -1,0 +1,11 @@
+#! /bin/sh
+for I in 1 3 5 8 ; do
+    for F in *.$I ; do
+	D=`basename $F $I`
+	dest = /usr/contrib/man/cat${I}/${D}.0
+	nroff -man $F >${dest}
+	chown bin.bin ${dest}
+	chmod 444 ${dest}
+    done
+done
+
