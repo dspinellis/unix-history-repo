@@ -227,6 +227,7 @@ try_connect:
 			rem = krb_get_lrealm(krb_realm, 1);
 		}
 		if(rem == KSUCCESS) {
+			setreuid(0,getuid());
 			if(encrypt) {
 				rem = krcmd_mutual(
 					&host, sp->s_port,
@@ -241,6 +242,7 @@ try_connect:
 					0, krb_realm
 				);
 			}
+			setuid(geteuid());
 		} else {
 			fprintf(
 				stderr,
