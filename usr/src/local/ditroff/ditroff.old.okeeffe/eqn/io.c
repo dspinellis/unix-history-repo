@@ -153,9 +153,14 @@ nrwid(n1, p, n2) int n1, p, n2; {
 	printf(".nr %d \\w'\\s%d\\*(%d'\n", n1, EFFPS(p), n2);
 }
 
+char *getenv();
+
 setfile(argc, argv) int argc; char *argv[]; {
 	static char *nullstr = "-";
+	char *cp;
 
+	if ((cp = getenv("PRINTER"))) device = cp;
+	if ((cp = getenv("TYPESETTER"))) device = cp;
 	svargc = --argc;
 	svargv = argv;
 	while (svargc > 0 && svargv[1][0] == '-') {
