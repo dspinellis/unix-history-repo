@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tty.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)tty.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -60,7 +60,7 @@ grabh(hp, gflags)
 #ifndef TIOCSTI
 	ttyset = 0;
 #endif
-	if (gtty(fileno(stdin), &ttybuf) < 0) {
+	if (ioctl(fileno(stdin), TIOCGETP, &ttybuf) < 0) {
 		perror("gtty");
 		return(-1);
 	}
