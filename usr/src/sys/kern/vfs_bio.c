@@ -1,4 +1,4 @@
-/*	vfs_bio.c	4.24	82/01/17	*/
+/*	vfs_bio.c	4.25	82/01/17	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -419,9 +419,10 @@ struct buf *
 geteblk()
 {
 	register struct buf *bp, *dp;
+	int s;
 
 loop:
-	(void) spl6();
+	s = spl6();
 	for (dp = &bfreelist[BQUEUES-1]; dp > bfreelist; dp--)
 		if (dp->av_forw != dp)
 			break;
@@ -430,7 +431,7 @@ loop:
 		sleep((caddr_t)dp, PRIBIO+1);
 		goto loop;
 	}
-	(void) spl0();
+	splx(s);
 	bp = dp->av_forw;
 	notavail(bp);
 	if (bp->b_flags & B_DELWRI) {
@@ -459,11 +460,12 @@ loop:
 iowait(bp)
 register struct buf *bp;
 {
+	int s;
 
-	(void) spl6();
+	s = spl6();
 	while ((bp->b_flags&B_DONE)==0)
 		sleep((caddr_t)bp, PRIBIO);
-	(void) spl0();
+	splx(s);
 	geterror(bp);
 }
 
@@ -565,15 +567,16 @@ swap(p, dblkno, addr, nbytes, rdflg, flag, dev, pfcent)
 	register int c;
 	int p2dp;
 	register struct pte *dpte, *vpte;
+	int s;
 
-	(void) spl6();
+	s = spl6();
 	while (bswlist.av_forw == NULL) {
 		bswlist.b_flags |= B_WANTED;
 		sleep((caddr_t)&bswlist, PSWP+1);
 	}
 	bp = bswlist.av_forw;
 	bswlist.av_forw = bp->av_forw;
-	(void) spl0();
+	splx(s);
 
 	bp->b_flags = B_BUSY | B_PHYS | rdflg | flag;
 	if ((bp->b_flags & (B_DIRTY|B_PGIN)) == 0)
@@ -612,10 +615,10 @@ swap(p, dblkno, addr, nbytes, rdflg, flag, dev, pfcent)
 				panic("big push");
 			return;
 		}
-		(void) spl6();
+		s = spl6();
 		while((bp->b_flags&B_DONE)==0)
 			sleep((caddr_t)bp, PSWP);
-		(void) spl0();
+		splx(s);
 		bp->b_un.b_addr += c;
 		bp->b_flags &= ~B_DONE;
 		if (bp->b_flags & B_ERROR) {
@@ -626,7 +629,7 @@ swap(p, dblkno, addr, nbytes, rdflg, flag, dev, pfcent)
 		nbytes -= c;
 		dblkno += btoc(c);
 	}
-	(void) spl6();
+	s = spl6();
 	bp->b_flags &= ~(B_BUSY|B_WANTED|B_PHYS|B_PAGET|B_UAREA|B_DIRTY);
 	bp->av_forw = bswlist.av_forw;
 	bswlist.av_forw = bp;
@@ -635,7 +638,7 @@ swap(p, dblkno, addr, nbytes, rdflg, flag, dev, pfcent)
 		wakeup((caddr_t)&bswlist);
 		wakeup((caddr_t)&proc[2]);
 	}
-	(void) spl0();
+	splx(s);
 }
 
 /*
@@ -676,9 +679,10 @@ dev_t dev;
 {
 	register struct buf *bp;
 	register struct buf *flist;
+	int s;
 
 loop:
-	(void) spl6();
+	s = spl6();
 	for (flist = bfreelist; flist < &bfreelist[BQUEUES]; flist++)
 	for (bp = flist->av_forw; bp != flist; bp = bp->av_forw) {
 		if (bp->b_flags&B_DELWRI && (dev == NODEV||dev==bp->b_dev)) {
@@ -688,7 +692,7 @@ loop:
 			goto loop;
 		}
 	}
-	(void) spl0();
+	splx(s);
 }
 
 /*
@@ -712,12 +716,13 @@ unsigned (*mincnt)();
 {
 	register int c;
 	char *a;
+	int s;
 
 	if (useracc(u.u_base,u.u_count,rw==B_READ?B_WRITE:B_READ) == NULL) {
 		u.u_error = EFAULT;
 		return;
 	}
-	(void) spl6();
+	s = spl6();
 	while (bp->b_flags&B_BUSY) {
 		bp->b_flags |= B_WANTED;
 		sleep((caddr_t)bp, PRIBIO+1);
@@ -742,7 +747,7 @@ unsigned (*mincnt)();
 		u.u_procp->p_flag &= ~SPHYSIO;
 		if (bp->b_flags&B_WANTED)
 			wakeup((caddr_t)bp);
-		(void) spl0();
+		splx(s);
 		bp->b_un.b_addr += c;
 		u.u_count -= c;
 		u.u_offset += c;
