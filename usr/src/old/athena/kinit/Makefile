@@ -17,7 +17,7 @@
 # @(#)Makefile	5.1 (Berkeley) 10/18/88
 #
 
-CFLAGS=	-g -DKERBEROS
+CFLAGS=	-O -DKERBEROS
 LIBC=	/lib/libc.a
 LIBS=	/usr/lib/libkrb.a /usr/lib/libdes.a
 SRCS=	kinit.c
