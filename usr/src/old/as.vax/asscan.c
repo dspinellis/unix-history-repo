@@ -1,5 +1,5 @@
 /* Copyright (c) 1980 Regents of the University of California */
-static	char sccsid[] = "@(#)asscan.c 4.4 %G%";
+static	char sccsid[] = "@(#)asscan.c 4.5 %G%";
 #include <stdio.h>
 #include "as.h"
 #include "asscan.h"
@@ -801,9 +801,19 @@ scan_dot_s(bufferbox)
 				goto ret;
 			} 
 			if (val == 'f') {
-				yylval = 1;
-				val = BFINT;
-				goto ret;
+				/*
+				 *	Well, it appears to be a local label
+				 *	reference, but check to see if
+				 *	the next character makes it a floating
+				 *	point constant.
+				 */
+				forb = getchar();
+				ungetc(forb);
+				if (!(INCHARSET(forb,(DIGIT|SIGN|FLOATEXP|POINT)))){
+					yylval = 1;
+					val = BFINT;
+					goto ret;
+				}
 			}
 			if (INCHARSET(val, HEXFLAG)){
 				base = 16;
