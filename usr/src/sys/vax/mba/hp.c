@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)hp.c	6.10 (Berkeley) %G%
+ *	@(#)hp.c	6.11 (Berkeley) %G%
  */
 
 #ifdef HPDEBUG
@@ -266,12 +266,9 @@ struct	hpsoftc {
 #define	RP06	(hptypes[mi->mi_type] <= MBDT_RP06)
 #define	RM80	(hptypes[mi->mi_type] == MBDT_RM80)
 
+#define hpunit(dev)	(minor(dev) >> 3)
 #define	MASKREG(reg)	((reg)&0xffff)
 #define HPWAIT(mi, addr) (((addr)->hpds & HPDS_DRY) || hpwait(mi))
-
-#ifdef INTRLVE
-daddr_t dkblock();
-#endif
 
 /*ARGSUSED*/
 hpattach(mi, slave)
@@ -409,7 +406,7 @@ done:
 hpopen(dev)
 	dev_t dev;
 {
-	register int unit = minor(dev) >> 3;
+	register int unit = hpunit(dev);
 	register struct mba_device *mi;
 
 	if (unit >= NHP || (mi = hpinfo[unit]) == 0 || mi->mi_alive == 0)
@@ -429,24 +426,36 @@ hpstrategy(bp)
 
 	sz = bp->b_bcount;
 	sz = (sz+511) >> 9;
-	unit = dkunit(bp);
-	if (unit >= NHP)
+	unit = hpunit(bp->b_dev);
+	if (unit >= NHP) {
+		bp->b_error = ENXIO;
 		goto bad;
+	}
 	mi = hpinfo[unit];
-	if (mi == 0 || mi->mi_alive == 0)
+	if (mi == 0 || mi->mi_alive == 0) {
+		bp->b_error = ENXIO;
 		goto bad;
+	}
 	st = &hpst[mi->mi_type];
 	if (ML11) {
 		struct hpsoftc *sc = &hpsoftc[unit];
 
 		if (bp->b_blkno < 0 ||
-		    dkblock(bp)+sz > sc->sc_mlsize)
+		    bp->b_blkno+sz > sc->sc_mlsize) {
+			if (bp->b_blkno == sc->sc_mlsize + 1)
+			    goto done;
+			bp->b_error = EINVAL;
 			goto bad;
+		}
 		bp->b_cylin = 0;
 	} else {
 		if (bp->b_blkno < 0 ||
-		    (bn = dkblock(bp))+sz > st->sizes[xunit].nblocks)
+		    (bn = bp->b_blkno)+sz > st->sizes[xunit].nblocks) {
+			if (bp->b_blkno == st->sizes[xunit].nblocks + 1)
+			    goto done;
+			bp->b_error = EINVAL;
 			goto bad;
+		}
 		bp->b_cylin = bn/st->nspc + st->sizes[xunit].cyloff;
 	}
 	s = spl5();
@@ -458,6 +467,7 @@ hpstrategy(bp)
 
 bad:
 	bp->b_flags |= B_ERROR;
+done:
 	iodone(bp);
 	return;
 }
@@ -505,7 +515,7 @@ hpustart(mi)
 		return (MBU_DODATA);
 	if ((hpaddr->hpds & HPDS_DREADY) != HPDS_DREADY)
 		return (MBU_DODATA);
-	bn = dkblock(bp);
+	bn = bp->b_blkno;
 	sn = bn % st->nspc;
 	tn = sn / st->nsect;
 	sn = sn % st->nsect;
@@ -542,7 +552,7 @@ hpstart(mi)
 	if (bp->b_flags & B_BAD)
 		bn = sc->sc_badbn;
 	else
-		bn = dkblock(bp) + sc->sc_pgdone;
+		bn = bp->b_blkno + sc->sc_pgdone;
 	if (ML11)
 		hpaddr->hpda = bn;
 	else {
@@ -598,7 +608,8 @@ hpdtint(mi, mbsr)
 			er2 &= ~HPER2_BSE;
 		}
 		if (er1 & HPER1_WLE) {
-			log(KERN_RECOV, "hp%d: write locked\n", dkunit(bp));
+			log(KERN_RECOV, "hp%d: write locked\n",
+			    hpunit(bp->b_dev));
 			bp->b_flags |= B_ERROR;
 		} else if (sc->sc_hdr) {
 			goto hard;
@@ -634,7 +645,7 @@ hard:
 			if (bp->b_flags & B_BAD)
 				bp->b_blkno = sc->sc_badbn;
 			else {
-				bp->b_blkno = dkblock(bp) + btop(bp->b_bcount -
+				bp->b_blkno = bp->b_blkno + btop(bp->b_bcount -
 				    MASKREG(-mi->mi_mba->mba_bcr));
 				if (er1 & (HPER1_DCK | HPER1_ECH))
 					bp->b_blkno--;
@@ -739,7 +750,7 @@ hpread(dev, uio)
 	dev_t dev;
 	struct uio *uio;
 {
-	register int unit = minor(dev) >> 3;
+	register int unit = hpunit(dev);
 
 	if (unit >= NHP)
 		return (ENXIO);
@@ -750,7 +761,7 @@ hpwrite(dev, uio)
 	dev_t dev;
 	struct uio *uio;
 {
-	register int unit = minor(dev) >> 3;
+	register int unit = hpunit(dev);
 
 	if (unit >= NHP)
 		return (ENXIO);
@@ -768,7 +779,7 @@ hpioctl(dev, cmd, data, flag)
 	switch (cmd) {
 
 	case DKIOCHDR:	/* do header read/write */
-		hpsoftc[minor(dev) >> 3].sc_hdr = 1;
+		hpsoftc[hpunit(dev)].sc_hdr = 1;
 		return (0);
 
 	default:
@@ -795,7 +806,7 @@ hpecc(mi, flag)
 	else
 		npf = btop(bp->b_bcount - bcr);
 	o = (int)bp->b_un.b_addr & PGOFSET;
-	bn = dkblock(bp);
+	bn = bp->b_blkno;
 	cn = bp->b_cylin;
 	sn = bn%(st->nspc) + npf;
 	tn = sn/st->nsect;
@@ -814,7 +825,7 @@ hpecc(mi, flag)
 		bn--;
 		if (bp->b_flags & B_BAD)
 			bn = sc->sc_badbn;
-		log(KERN_RECOV, "hp%d%c: soft ecc sn%d\n", dkunit(bp),
+		log(KERN_RECOV, "hp%d%c: soft ecc sn%d\n", hpunit(bp->b_dev),
 		    'a'+(minor(bp->b_dev)&07), bn);
 		mask = MASKREG(rp->hpec2);
 		i = MASKREG(rp->hpec1) - 1;		/* -1 makes 0 origin */
@@ -910,7 +921,7 @@ hpdump(dev)
 
 	num = maxfree;
 	start = 0;
-	unit = minor(dev) >> 3;
+	unit = hpunit(dev);
 	if (unit >= NHP)
 		return (ENXIO);
 #define	phys(a,b)	((b)((int)(a)&0x7fffffff))
@@ -963,7 +974,7 @@ hpdump(dev)
 hpsize(dev)
 	dev_t dev;
 {
-	int unit = minor(dev) >> 3;
+	int unit = hpunit(dev);
 	struct mba_device *mi;
 	struct hpst *st;
 
