@@ -27,7 +27,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.19 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.20 (Berkeley) %G%";
 #endif /* not lint */
 
 /*-
@@ -122,7 +122,7 @@ MainParseArgs(argc, argv)
 	register char *cp;
 	char c;
 
-	while((c = getopt(argc, argv, "D:I:d:ef:ij:knqrst")) != -1) {
+rearg:	while((c = getopt(argc, argv, "D:I:d:ef:ij:knqrst")) != -1) {
 		switch(c) {
 		case 'D':
 			Var_Set(optarg, "1", VAR_GLOBAL);
@@ -250,12 +250,16 @@ MainParseArgs(argc, argv)
 	 * perform them if so. Else take them to be targets and stuff them
 	 * on the end of the "create" list.
 	 */
-	for (argv += optind; *argv; ++argv)
+	for (argv += optind, argc -= optind; *argv; ++argv, --argc)
 		if (Parse_IsVar(*argv))
 			Parse_DoVar(*argv, VAR_CMD);
 		else {
 			if (!**argv)
 				Punt("illegal (null) argument.");
+			if (**argv == '-') {
+				optind = 0;
+				goto rearg;
+			}
 			(void)Lst_AtEnd(create, (ClientData)*argv);
 		}
 }
