@@ -1,6 +1,6 @@
 #
 
-static	char	*SccsID[] = "@(#)config.c	1.4 %G%";
+static	char	*SccsID[] = "@(#)config.c	1.5 %G%";
 
 /*
  * This file contains definitions of network data used by Mail
@@ -77,7 +77,7 @@ struct netorder netorder[] = {
  * bit map kind.  With this transformation, we can deal with more than
  * one character having the same meaning easily.
  */
-struct nettypetab nettypetab[] = {
+struct ntypetab ntypetab[] = {
 	'%',	AN,
 	'@',	AN,
 	':',	SN,
@@ -86,7 +86,7 @@ struct nettypetab nettypetab[] = {
 	0,	0
 };
 
-struct netkindtab netkindtab[] = {
+struct nkindtab nkindtab[] = {
 	AN,	IMPLICIT,
 	BN,	EXPLICIT,
 	SN,	IMPLICIT,
