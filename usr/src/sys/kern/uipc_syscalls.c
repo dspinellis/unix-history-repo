@@ -1,4 +1,4 @@
-/*	uipc_syscalls.c	4.36	82/11/13	*/
+/*	uipc_syscalls.c	4.37	82/11/15	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -38,7 +38,7 @@ socket()
 		goto freeopt;
 	fp->f_flag = FREAD|FWRITE;
 	fp->f_type = DTYPE_SOCKET;
-	u.u_error = socreate(AF_UNSPEC, &so, uap->type, uap->protocol, &aopt);
+	u.u_error = socreate(uap->domain, &so, uap->type, uap->protocol, &aopt);
 	if (u.u_error)
 		goto bad;
 	fp->f_socket = so;
@@ -305,6 +305,7 @@ sendto()
 	if (u.u_error)
 		goto bad;
 	u.u_error = sosend(fp->f_socket, to, &auio, uap->flags);
+	u.u_r.r_val1 = uap->len - auio.uio_resid;
 bad:
 	m_freem(to);
 }
@@ -342,6 +343,7 @@ send()
 	if (u.u_error)
 		return;
 	u.u_error = sosend(fp->f_socket, (struct mbuf *)0, &auio, uap->flags);
+	u.u_r.r_val1 = uap->len - auio.uio_resid;
 }
 
 recvfrom()
