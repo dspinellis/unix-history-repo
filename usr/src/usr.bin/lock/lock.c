@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)lock.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)lock.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -64,7 +64,7 @@ main(argc, argv)
 	struct itimerval ntimer, otimer;
 	struct tm *timp;
 	int ch, sectimeout, usemine;
-	char *ap, *mypw, *rootpw, *ttynam, *tzn;
+	char *ap, *mypw, *ttynam, *tzn;
 	char hostname[MAXHOSTNAMELEN], s[BUFSIZ], s1[BUFSIZ];
 	char *crypt(), *ttyname();
 
@@ -92,8 +92,6 @@ main(argc, argv)
 			exit(1);
 	}
 	timeout.tv_sec = sectimeout * 60;
-
-	rootpw = (pw = getpwnam("root")) ? strdup(pw->pw_passwd) : NULL;
 
 	setuid(getuid());		/* discard privs */
 
@@ -165,8 +163,6 @@ main(argc, argv)
 				break;
 		}
 		else if (!strcmp(s, s1))
-			break;
-		if (rootpw && !strcmp(rootpw, crypt(s, rootpw)))
 			break;
 		printf("\07\n");
 		if (ioctl(0, TIOCGETP, &ntty))
