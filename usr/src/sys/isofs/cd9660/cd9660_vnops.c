@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)cd9660_vnops.c	8.14 (Berkeley) %G%
+ *	@(#)cd9660_vnops.c	8.15 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -680,6 +680,7 @@ cd9660_readlink(ap)
 	ISODIR	*dirp;
 	ISOMNT	*imp;
 	struct	buf *bp;
+	struct	uio *uio;
 	u_short	symlen;
 	int	error;
 	char	*symname;
@@ -687,6 +688,7 @@ cd9660_readlink(ap)
 
 	ip  = VTOI(ap->a_vp);
 	imp = ip->i_mnt;
+	uio = ap->a_uio;
 
 	if (imp->iso_ftype != ISO_FTYPE_RRIP)
 		return (EINVAL);
