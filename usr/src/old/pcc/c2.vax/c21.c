@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)c21.c 4.8 %G%";
+static	char sccsid[] = "@(#)c21.c 4.9 %G%";
 /* char C21[] = {"@(#)c21.c 1.83 80/10/16 21:18:22 JFR"}; /* sccs ident */
 
 /*
@@ -13,20 +13,20 @@ static	char sccsid[] = "@(#)c21.c 4.8 %G%";
 int ioflag;
 int biti[NUSE] = {1,2,4,8,16,32};
 int bitsize[] = {	/* index by type codes */
-	0,		/* not allocated */
-	8,		/* BYTE */
-	16,		/* WORD */
-	32,		/* LONG */
-	32,		/* FFLOAT /
-	64,		/* DFLOAT */
-	64,		/* GFLOAT */
-	128,		/* HFLOAT */
-	64,		/* QUAD */
-	128,		/* OCTA */
-	0,		/* OP2 */
-	0,		/* OP3 */
-	0,		/* OPB */
-	0		/* OPX */
+	0,		/* 0	not allocated */
+	8,		/* 1	BYTE */
+	16,		/* 2	WORD */
+	32,		/* 3	LONG */
+	32,		/* 4	FFLOAT /
+	64,		/* 5	DFLOAT */
+	64,		/* 6	QUAD */
+	0,		/* 7	OP2 */
+	0,		/* 8	OP3 */
+	0,		/* 9	OPB */
+	0,		/* 10	OPX */
+	64,		/* 11	GFLOAT */
+	128,		/* 12	HFLOAT */
+	128		/* 13	OCTA */
 };
 int pos,siz; long f; /* for bit field communication */
 struct node *uses[NUSE]; /* for backwards flow analysis */
