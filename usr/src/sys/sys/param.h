@@ -1,4 +1,4 @@
-/*	param.h	3.1	%H%	*/
+/*	param.h	3.2	%H%	*/
 
 /*
  * tunable variables
@@ -67,7 +67,14 @@
 #define	SIGSYS	12	/* bad system call */
 #define	SIGPIPE	13	/* end of pipe */
 #define	SIGCLK	14	/* alarm clock */
-#define	SIGTRM	15	/* Catchable termination */
+#define	SIGTRM	15	/* catchable termination */
+
+/*
+ * Return values from tsleep().
+ */
+#define	TS_OK	0	/* normal wakeup */
+#define	TS_TIME	1	/* timed-out wakeup */
+#define	TS_SIG	2	/* asynchronous signal wakeup */
 
 /*
  * fundamental constants of the implementation--
