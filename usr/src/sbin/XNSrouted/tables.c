@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tables.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)tables.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -31,6 +31,7 @@ static char sccsid[] = "@(#)tables.c	5.7 (Berkeley) %G%";
 #endif
 
 extern	char *xns_ntoa();
+#define FIXLEN(s) { if ((s)->sa_len == 0) (s)->sa_len = sizeof (*(s));}
 
 int	install = !DEBUG;		/* if 1 call kernel */
 int	delete = 1;
@@ -121,6 +122,8 @@ rtadd(dst, gate, metric, state)
 	int af = dst->sa_family, flags;
 	u_int hash;
 
+	FIXLEN(dst);
+	FIXLEN(gate);
 	if (af >= AF_MAX)
 		return;
 	(*afswitch[af].af_hash)(dst, &h);
@@ -171,6 +174,7 @@ rtchange(rt, gate, metric)
 	int doioctl = 0, metricchanged = 0;
 	struct rtentry oldroute;
 
+	FIXLEN(gate);
 	if (!equal(&rt->rt_router, gate))
 		doioctl++;
 	if (metric != rt->rt_metric)
@@ -196,12 +200,21 @@ rtchange(rt, gate, metric)
 		TRACE_ACTION(CHANGE TO, rt);
 	}
 	if (doioctl && install) {
+#ifndef RTM_ADD
 		if (ioctl(s, SIOCADDRT, (char *)&rt->rt_rt) < 0)
 		  syslog(LOG_ERR, "SIOCADDRT dst %s, gw %s: %m",
 		   xns_ntoa(&((struct sockaddr_ns *)&rt->rt_dst)->sns_addr),
 		   xns_ntoa(&((struct sockaddr_ns *)&rt->rt_router)->sns_addr));
 		if (delete && ioctl(s, SIOCDELRT, (char *)&oldroute) < 0)
 			perror("SIOCDELRT");
+#else
+		if (delete && ioctl(s, SIOCDELRT, (char *)&oldroute) < 0)
+			perror("SIOCDELRT");
+		if (ioctl(s, SIOCADDRT, (char *)&rt->rt_rt) < 0)
+		  syslog(LOG_ERR, "SIOCADDRT dst %s, gw %s: %m",
+		   xns_ntoa(&((struct sockaddr_ns *)&rt->rt_dst)->sns_addr),
+		   xns_ntoa(&((struct sockaddr_ns *)&rt->rt_router)->sns_addr));
+#endif
 	}
 }
 
@@ -209,6 +222,11 @@ rtdelete(rt)
 	struct rt_entry *rt;
 {
 
+	struct sockaddr *sa = &(rt->rt_rt.rt_gateway);
+	FIXLEN(sa);
+#undef rt_dst
+	sa = &(rt->rt_rt.rt_dst);
+	FIXLEN(sa);
 	if (rt->rt_state & RTS_INTERFACE) {
 		syslog(LOG_ERR, "deleting route to interface %s (timed out)",
 			rt->rt_ifp->int_name);
