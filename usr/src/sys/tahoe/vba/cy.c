@@ -1,4 +1,4 @@
-/*	cy.c	1.10	87/01/30	*/
+/*	cy.c	1.11	87/04/01	*/
 
 #include "yc.h"
 #if NCY > 0
@@ -74,24 +74,21 @@ struct	vba_driver cydriver =
 #define	T_3200BPI	0x08		/* unused */
 
 #define	INF	1000000L		/* close to infinity */
-#define	CYMAXIO	(32*NBPG)		/* max i/o size */
 
 /*
  * Software state and shared command areas per controller.
  *
- * The i/o buffer must be defined statically to insure
- * it's address will fit in 20-bits (YECH!!!!!!!!!!!!!!)
+ * The i/o intermediate buffer must be allocated in startup()
+ * so its address will fit in 20-bits (YECH!!!!!!!!!!!!!!).
  */
 struct cy_softc {
-	struct	pte *cy_map;	/* pte's for mapped buffer i/o */
-	caddr_t	cy_utl;		/* mapped virtual address */
 	int	cy_bs;		/* controller's buffer size */
 	struct	cyscp *cy_scp;	/* system configuration block address */
 	struct	cyccb cy_ccb;	/* channel control block */
 	struct	cyscb cy_scb;	/* system configuration block */
 	struct	cytpb cy_tpb;	/* tape parameter block */
 	struct	cytpb cy_nop;	/* nop parameter block for cyintr */
-	char	cy_buf[CYMAXIO];/* intermediate buffer */
+	struct	vb_buf cy_rbuf;	/* vba resources */
 } cy_softc[NCY];
 
 /*
@@ -164,7 +161,12 @@ cyprobe(reg, vm)
 		/*
 		 * Allocate page tables.
 		 */
-		vbmapalloc(btoc(CYMAXIO)+1, &cy->cy_map, &cy->cy_utl);
+		if (cybuf == 0) {
+			printf("no cy buffer!!!\n");
+			return (0);
+		}
+		cy->cy_rbuf.vb_rawbuf = cybuf + ctlr * CYMAXIO;
+		vbainit(&cy->cy_rbuf, CYMAXIO, VB_20BIT);
 
 		br = 0x13, cvec = 0x80;			/* XXX */
 		return (sizeof (struct cyccb));
@@ -217,7 +219,7 @@ cyinit(ctlr, addr)
 	 * Initialize the system configuration pointer.
 	 */
 	/* make kernel writable */
-	pte = (int *)vtopte((struct proc *)0, btop(cy->cy_scp)); 
+	pte = (int *)&Sysmap[btop((int)cy->cy_scp &~ KERNBASE)]; 
 	*pte &= ~PG_PROT; *pte |= PG_KW;
 	mtpr(TBIS, cy->cy_scp);
 	/* load the correct values in the scp */
@@ -353,6 +355,7 @@ cyclose(dev, flag)
 	dlog((LOG_INFO, "%d soft errors in %d blocks\n",
 	    yc->yc_softerrs, yc->yc_blks));
 	yc->yc_openf = 0;
+	return (0);
 }
 
 /*
@@ -412,7 +415,6 @@ cystrategy(bp)
 	dlog((LOG_INFO, "cystrategy(%o, %x)\n", bp->b_dev, bp->b_command));
 	dp = &ycutab[ycunit];
 	bp->av_forw = NULL;
-	bp->b_errcnt = 0;
 	vm = ycdinfo[ycunit]->ui_mi;
 	/* BEGIN GROT */
 	if (bp == &rcybuf[CYUNIT(bp->b_dev)]) {
@@ -424,7 +426,6 @@ cystrategy(bp)
 			biodone(bp);
 			return;
 		}
-		vbasetup(bp, CYMAXIO);
 	}
 	/* END GROT */
 	s = spl3();
@@ -510,6 +511,7 @@ loop:
 			yc->yc_timo = imin(imax(10*(int)bp->b_repcnt,60),5*60);
 		}
 		cy->cy_tpb.tprec = htoms(bp->b_repcnt);
+		dlog((LOG_INFO, "bpcmd "));
 		goto dobpcmd;
 	}
 	/*
@@ -518,7 +520,7 @@ loop:
 	 * yc->yc_nxrec by cyphys causes them to be skipped normally
 	 * (except in the case of retries).
 	 */
-	if (bdbtofsb(bp->b_blkno) > yc->yc_nxrec) {
+	if (bp->b_blkno > yc->yc_nxrec) {
 		/*
 		 * Can't read past known end-of-file.
 		 */
@@ -526,7 +528,7 @@ loop:
 		bp->b_error = ENXIO;
 		goto next;
 	}
-	if (bdbtofsb(bp->b_blkno) == yc->yc_nxrec && bp->b_flags&B_READ) {
+	if (bp->b_blkno == yc->yc_nxrec && bp->b_flags&B_READ) {
 		/*
 		 * Reading at end of file returns 0 bytes.
 		 */
@@ -538,8 +540,8 @@ loop:
 		/*
 		 * Writing sets EOF.
 		 */
-		yc->yc_nxrec = bdbtofsb(bp->b_blkno) + 1;
-	if ((blkno = yc->yc_blkno) == bdbtofsb(bp->b_blkno)) {
+		yc->yc_nxrec = bp->b_blkno + 1;
+	if ((blkno = yc->yc_blkno) == bp->b_blkno) {
 		caddr_t addr;
 		int cmd;
 
@@ -554,7 +556,7 @@ loop:
 		 */
 		if (bp->b_flags&B_READ) {
 			if ((bp->b_bcount > cy->cy_bs &&
-			    yc->yc_blksize > cy->cy_bs) || bp->b_errcnt)
+			    yc->yc_blksize > cy->cy_bs) || vm->um_tab.b_errcnt)
 				cmd = CY_RCOM;
 			else
 				cmd = CY_BRCOM;
@@ -573,8 +575,7 @@ loop:
 			cmd = (bp->b_bcount > cy->cy_bs) ? CY_WCOM : CY_BWCOM;
 		}
 		vm->um_tab.b_active = SIO;
-		addr = (caddr_t)vbastart(bp, cy->cy_buf,
-		    (long *)cy->cy_map, cy->cy_utl);
+		addr = (caddr_t)vbasetup(bp, &cy->cy_rbuf, 1);
 		cy->cy_tpb.tpcmd = cmd;
 		cy->cy_tpb.tpcontrol = yc->yc_dens;
 		if (cmd == CY_RCOM || cmd == CY_WCOM)
@@ -606,12 +607,12 @@ loop:
 	 * for raw tapes only on error retries.
 	 */
 	vm->um_tab.b_active = SSEEK;
-	if (blkno < bdbtofsb(bp->b_blkno)) {
+	if (blkno < bp->b_blkno) {
 		bp->b_command = CY_SFORW;
-		cy->cy_tpb.tprec = htoms(bdbtofsb(bp->b_blkno) - blkno);
+		cy->cy_tpb.tprec = htoms(bp->b_blkno - blkno);
 	} else {
 		bp->b_command = CY_SREV;
-		cy->cy_tpb.tprec = htoms(blkno - bdbtofsb(bp->b_blkno));
+		cy->cy_tpb.tprec = htoms(blkno - bp->b_blkno);
 	}
 	yc->yc_timo = imin(imax(10 * htoms(cy->cy_tpb.tprec), 60), 5*60);
 dobpcmd:
@@ -624,9 +625,11 @@ dobpcmd:
 	if (bp->b_command&CYCW_REV) {
 		cy->cy_tpb.tpcmd = bp->b_command &~ CYCW_REV;
 		cy->cy_tpb.tpcontrol = yc->yc_dens | CYCW_REV;
+dlog((LOG_INFO, "cmd %x control %x\n", cy->cy_tpb.tpcmd, cy->cy_tpb.tpcontrol));
 	} else {
 		cy->cy_tpb.tpcmd = bp->b_command;
 		cy->cy_tpb.tpcontrol = yc->yc_dens;
+dlog((LOG_INFO, "cmd %x control %x\n", cy->cy_tpb.tpcmd, cy->cy_tpb.tpcontrol));
 	}
 	cy->cy_tpb.tpstatus = 0;
 	cy->cy_tpb.tpcount = 0;
@@ -645,12 +648,10 @@ dobpcmd:
 next:
 	/*
 	 * Done with this operation due to error or the
-	 * fact that it doesn't do anything.  Release VERSAbus
-	 * resource (if any), dequeue the transfer and continue
+	 * fact that it doesn't do anything.
+	 * Dequeue the transfer and continue
 	 * processing this slave.
 	 */
-	if (bp == &rcybuf[CYUNIT(bp->b_dev)])
-		vbadone(bp, cy->cy_buf, (long *)cy->cy_map, cy->cy_utl);
 	vm->um_tab.b_errcnt = 0;
 	dp->b_actf = bp->av_forw;
 	biodone(bp);
@@ -660,18 +661,18 @@ next:
 /*
  * Cy interrupt routine.
  */
-cyintr(cipher)
-	int cipher;
+cyintr(cyunit)
+	int cyunit;
 {
 	struct buf *dp;
 	register struct buf *bp;
-	register struct vba_ctlr *vm = cyminfo[cipher];
+	register struct vba_ctlr *vm = cyminfo[cyunit];
 	register struct cy_softc *cy;
 	register struct yc_softc *yc;
-	int cyunit, err;
+	int err;
 	register state;
 
-	dlog((LOG_INFO, "cyintr(%d)\n", cipher));
+	dlog((LOG_INFO, "cyintr(%d)\n", cyunit));
 	/*
 	 * First, turn off the interrupt from the controller
 	 * (device uses Multibus non-vectored interrupts...yech).
@@ -686,7 +687,6 @@ cyintr(cipher)
 		return;
 	}
 	bp = dp->b_actf;
-	cyunit = CYUNIT(bp->b_dev);
 	cy = &cy_softc[cyunit];
 	cyuncachetpb(cy);
 	yc = &yc_softc[YCUNIT(bp->b_dev)];
@@ -752,7 +752,7 @@ cyintr(cipher)
 			if (htoms(cy->cy_tpb.tprec) > cy->cy_bs &&
 			    bp->b_bcount > cy->cy_bs && 
 			    yc->yc_blksize <= cy->cy_bs &&
-			    bp->b_errcnt++ == 0) {
+			    vm->um_tab.b_errcnt++ == 0) {
 				yc->yc_blkno++;
 				goto opcont;
 			} else
@@ -827,7 +827,7 @@ ignoreerr:
 		goto opdone;
 	
 	case SSEEK:
-		yc->yc_blkno = bdbtofsb(bp->b_blkno);
+		yc->yc_blkno = bp->b_blkno;
 		goto opcont;
 
 	case SERASE:
@@ -849,8 +849,8 @@ opdone:
 	 * Save resid and release resources.
 	 */
 	bp->b_resid = bp->b_bcount - htoms(cy->cy_tpb.tpcount);
-	if (bp == &rcybuf[CYUNIT(bp->b_dev)])
-		vbadone(bp, cy->cy_buf, (long *)cy->cy_map, cy->cy_utl);
+	if (bp != &ccybuf[cyunit])
+		vbadone(bp, &cy->cy_rbuf);
 	biodone(bp);
 	/*
 	 * Circulate slave to end of controller
@@ -898,20 +898,18 @@ cyseteof(bp)
 	register struct yc_softc *yc = &yc_softc[YCUNIT(bp->b_dev)];
 
 	if (bp == &ccybuf[cyunit]) {
-		if (yc->yc_blkno > bdbtofsb(bp->b_blkno)) {
+		if (yc->yc_blkno > bp->b_blkno) {
 			/* reversing */
-			yc->yc_nxrec = bdbtofsb(bp->b_blkno) -
-			    htoms(cy->cy_tpb.tpcount);
+			yc->yc_nxrec = bp->b_blkno - htoms(cy->cy_tpb.tpcount);
 			yc->yc_blkno = yc->yc_nxrec;
 		} else {
-			yc->yc_blkno = bdbtofsb(bp->b_blkno) +
-			    htoms(cy->cy_tpb.tpcount);
+			yc->yc_blkno = bp->b_blkno + htoms(cy->cy_tpb.tpcount);
 			yc->yc_nxrec = yc->yc_blkno - 1;
 		}
 		return;
 	}
 	/* eof on read */
-	yc->yc_nxrec = bdbtofsb(bp->b_blkno);
+	yc->yc_nxrec = bp->b_blkno;
 }
 
 cyread(dev, uio)
@@ -955,7 +953,7 @@ cyphys(dev, uio)
 	if (ycunit >= NYC || (vi = ycdinfo[ycunit]) == 0 || vi->ui_alive == 0)
 		return (ENXIO);
 	yc = &yc_softc[ycunit];
-	a = bdbtofsb(uio->uio_offset >> DEV_BSHIFT);
+	a = uio->uio_offset >> DEV_BSHIFT;
 	yc->yc_blkno = a;
 	yc->yc_nxrec = a + 1;
 	return (0);
