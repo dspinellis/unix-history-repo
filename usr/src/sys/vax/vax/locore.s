@@ -1,7 +1,7 @@
 #
 # Machine Language Assist for UC Berkeley Virtual Vax/Unix
 #
-#	locore.s		4.1	%G%
+#	locore.s		4.2	%G%
 #
 
 	.set	HIGH,31		# mask for total disable
@@ -1337,32 +1337,6 @@ kacerr:
 	clrl	r0		# error
 	ret
 
-#
-# unsigned int divide:
-#	(int) i = udiv( (int)dvdnd , (int) divis)
-#
-#  unsigned int remainder:
-#	(int) j = urem( (int)dvdnd , (int) divis)
-#
-	.text
-	.align	1
-	.globl	_udiv
-_udiv :
-	.word	0  			# no reg save
-	movl	4(ap),r0  		# dividend
-	clrl	r1
-	ediv	8(ap),r0,r0,r1  	# quotient in r0
-	ret
-
-#	.globl	_urem
-#	.align 	1
-#_urem:
-#	.word	0
-#	movl	4(ap),r0
-#	clrl	r1
-#	ediv	8(ap),r0,r1,r0  	#  remainder in r0
-#	ret
-
 # ==============
 # Error messages
 # ==============
@@ -1370,8 +1344,8 @@ _udiv :
 	.data
 SBIflt:	.asciz	"UBA SBI Fault SR %X CNFGR %X\n"
 SBImsg: .asciz	"SBI fault\n"
-UBAmsg: .asciz	"UBA error SR %x, FMER %x, FUBAR %o\n"
-straym: .asciz	"Stray Interrupt\n"
+UBAmsg:	.asciz	"UBA error SR %x, FMER %x, FUBAR %o\n"
+straym:	.asciz	"Stray Interrupt\n"
 ZERmsg:	.asciz	"ZERO VECTOR "
 
 #
