@@ -1,0 +1,54 @@
+There are two possible calling sequences from compiled code.
+Arguments are stored on the `namestack', the bottom argument is
+pointed at by r7 and r6 points one above the top argument.
+
+Calling sequence when transfer tables are used:
+
+	foreach arg
+	 compute and stack using (r6)+
+	 for example: movl r0,(r6)+
+	movab -n(r6),r7    where n = 4*number of args to fcn
+	calls  $0,*trantb+m      where m is the index of the function
+				 in the transfer table.
+	movl r7,r6		restore r6
+
+
+Local functions: these are functions only accessable within a file.
+
+	foreach arg
+	 compute and stack using (r6)+
+	jsb	LOCALNAME	go directly to the function, it will 
+				restore r6 before it returns.
+
+
+Header code for functions:
+Through a transfer table:
+topsim is the label jumped to when tail merging.
+For non lexprs:
+
+	.word	0x5c0		# save r6, r7, r8, r10
+    [   movab	mcounts,r0	# if profiling, mcounts replaced by fasl
+	jsb	mcount	]
+	movab	linker,r8	# set up r8
+	movl	r7,r10		# set up oldlbot
+	movab	n(r10),r6	# n = 4*Number of args expected.
+topsim:
+
+
+For lexprs:
+	.word	0x5c0
+    [   movab	mcounts,r0	# if profiling. [mcounts replaced by fasl]
+	jsb	mcount	]
+	movab	linker,r8	# set up r8
+	subl3	$4,r7,-(sp)	# address one word below bottom of args
+topsim:
+	movl	r6,r10		# first free addr to arg base
+	subl3	r7,r6,r0	# number of args * 4 into r0
+	movab 	0x1400(r0),(r6)+ # stack boxed number of args
+	movl	0(r10),-(sp)	# also store on stack so user can't clobber
+
+
+For local functions:
+	movl	r10,-(sp)	# save r10
+	movab	-n(r6),r10	# set up arg base using arg top
+topsim:
