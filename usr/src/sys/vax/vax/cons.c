@@ -1,4 +1,4 @@
-/*	cons.c	3.6	%G%	*/
+/*	cons.c	3.7	%G%	*/
 
 /*
  * Vax console driver and floppy interface
@@ -121,7 +121,7 @@ caddr_t addr;
 	cmd = (*linesw[tp->t_line].l_ioctl)(tp, cmd, addr);
 	if (cmd == 0)
 		return;
-	if (ttioccom(cmd, tp, addr, dev) == 0)
+	if (ttioccomm(cmd, tp, addr, dev) == 0)
 		u.u_error = ENOTTY;
 }
 
