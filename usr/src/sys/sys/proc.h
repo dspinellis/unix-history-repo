@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)proc.h	7.27 (Berkeley) %G%
+ *	@(#)proc.h	7.28 (Berkeley) %G%
  */
 
 #ifndef _PROC_H_
@@ -171,6 +171,7 @@ struct	pcred {
 #define	SPHYSIO	0x0001000	/* doing physical i/o */
 #define	STRC	0x0004000	/* process is being traced */
 #define	SWTED	0x0008000	/* another tracing flag */
+#define	SADVLCK	0x0040000	/* process may hold a POSIX advisory lock */
 /* the following should be moved to machine-dependent areas */
 #define	SOWEUPC	0x0002000	/* owe process an addupc() call at next ast */
 #ifdef HPUXCOMPAT
