@@ -1,5 +1,5 @@
 /*
- *	Copyright (c) 1984, 1985, 1986 by the Regents of the
+ *	Copyright (c) 1984-1987 by the Regents of the
  *	University of California and by Gregory Glenn Minshall.
  *
  *	Permission to use, copy, modify, and distribute these
@@ -21,12 +21,12 @@
 
 #ifndef lint
 static char copyright[] =
-"@(#) Copyright (c) 1984, 1985, 1986 Regents of the University of California.\n\
+"@(#) Copyright (c) 1984-1987 Regents of the University of California.\n\
  All rights reserved.\n";
 #endif	/* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)telnet.c	3.1  10/29/86";
+static char sccsid[] = "@(#)telnet.c	1.17 (Berkeley) %G%";
 #endif	/* not lint */
 
 /*
@@ -616,6 +616,8 @@ int fd;
 #include <signal.h>
 #include <process.h>
 
+#include <dos.h>
+
 #if	!defined(SO_OOBINLINE)
 #define	SO_OOBINLINE
 #endif	/* !defined(SO_OOBINLINE) */
@@ -870,8 +872,38 @@ static void
 TerminalNewMode(f)				/* MSDOS */
 register int f;
 {
+    union REGS inregs;
+    struct SREGS segregs;
+    static old_1b_offset = 0, old_1b_segment = 0;
+
     globalmode = f;
     signal(SIGINT, CtrlCInterrupt);
+    if (MODE_COMMAND_LINE(f)) {
+	if (old_1b_segment|old_1b_offset) {
+	    inregs.h.ah = 0x25;
+	    inregs.h.al = 0x1b;
+	    inregs.x.dx = old_1b_offset;
+	    segregs.ds = old_1b_segment;
+	    intdosx(&inregs, &inregs, &segregs);
+	    old_1b_segment = old_1b_offset = 0;
+	}
+    } else {
+	if ((old_1b_segment|old_1b_offset) == 0) {
+	    extern void iret_subr();
+	    void (far *foo_subr)() = iret_subr;
+
+	    inregs.h.ah = 0x35;
+	    inregs.h.al = 0x1b;
+	    intdosx(&inregs, &inregs, &segregs);
+	    old_1b_segment = segregs.es;
+	    old_1b_offset = inregs.x.bx;
+	    inregs.h.ah = 0x25;
+	    inregs.h.al = 0x1b;
+	    inregs.x.dx = FP_OFF(foo_subr);
+	    segregs.ds = FP_SEG(foo_subr);
+	    intdosx(&inregs, &inregs, &segregs);
+	}
+    }
 }
 
 
@@ -3906,7 +3938,7 @@ main(argc, argv)
 	} else {
 #if	defined(TN3270) && defined(unix)
 	    if (!strcmp(argv[1], "-t")) {
-		if ((argc > 1) && (argv[1][0] != '-')) { /* get file name */
+		if ((argc > 1) && (argv[2][0] != '-')) { /* get file name */
 		    transcom = tline;
 		    (void) strcpy(transcom, argv[1]);
 		    argv++;
