@@ -2,9 +2,8 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)2.3.t	5.1 (Berkeley) %G%
+.\"	@(#)2.3.t	6.1 (Berkeley) %G%
 .\"
-.\" 2.3.t 5.1 86/05/08
 .sh "Interprocess communications
 .NH 3
 Interprocess communication primitives
@@ -61,7 +60,8 @@ and interfaces; it has no specific semantics.
 .PP
 Other socket types can be defined.\(dg
 .FS
-\(dg 4.2BSD does not support the SOCK_RDM and SOCK_SEQPACKET types.
+\(dg 4.3BSD does not support the SOCK_RDM and SOCK_SEQPACKET types
+in the INET family; it does not support SOCK_RDM in the NS family.
 .FE
 .PP
 Each socket may have a concrete \fIprotocol\fP associated with it.
@@ -136,7 +136,7 @@ It is also possible to create connected pairs of sockets without
 using the domain's name space to rendezvous; this is done with the
 \fIsocketpair\fP call\(dg:
 .FS
-\(dg 4.2BSD supports \fIsocketpair\fP creation only in the ``unix''
+\(dg 4.3BSD supports \fIsocketpair\fP creation only in the ``unix''
 communication domain.
 .FE
 .DS
@@ -298,7 +298,7 @@ Naming
 Socket names are strings and may appear in the UNIX file
 system name space through portals\(dg.
 .FS
-\(dg The 4.2BSD implementation of the UNIX domain embeds
+\(dg The 4.3BSD implementation of the UNIX domain embeds
 bound sockets in the UNIX file system name space; this
 is a side effect of the implementation.
 .FE
@@ -314,7 +314,7 @@ INTERNET domain
 This section describes briefly how the INTERNET domain is
 mapped to the model described in this section.  More
 information will be found in the document describing the
-network implementation in 4.2BSD.
+network implementation in 4.3BSD.
 .NH 4
 Socket types and protocols
 .PP
