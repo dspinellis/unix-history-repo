@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)err.c	6.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)err.c	6.12 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -248,6 +248,11 @@ putmsg(msg, holdmsg)
 		else
 			fprintf(OutChannel, "%s\n", &msg[4]);
 		(void) fflush(OutChannel);
+		if (ferror(OutChannel))
+		{
+			HoldErrs = TRUE;
+			syserr("putmsg: error on output channel");
+		}
 	}
 }
 /*
