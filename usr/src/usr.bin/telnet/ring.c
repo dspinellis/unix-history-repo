@@ -117,6 +117,18 @@ int count;
     ring->acktime = ++ring_clock;
 }
 
+/*
+ * We just sent and acked some data.
+ */
+void
+ring_sent_acked(ring, count)
+Ring *ring;
+int count;
+{
+    ring_sent(ring, count);
+    ring_acked(ring, count);
+}
+
 
 /* Buffer state query routines */
 
