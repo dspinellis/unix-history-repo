@@ -10,6 +10,7 @@ contrib/bitdomain.c
 contrib/converting.sun.configs
 contrib/expn.pl
 contrib/mail.local.linux
+contrib/mailprio
 contrib/mh.patch
 contrib/mmuegel
 contrib/oldbind.compat.c
