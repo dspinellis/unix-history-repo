@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)locore.s	7.4 (Berkeley) %G%
+ *	@(#)locore.s	7.5 (Berkeley) %G%
  */
 
 #include "../tahoe/mtpr.h"
@@ -634,7 +634,12 @@ _/**/mname:	.globl	_/**/mname;		\
 	SYSMAP(VMEMmap	,vmem		,VBIOSIZE 	)
 	SYSMAP(VMEMmap1	,vmem1		,0		)
 #include "ace.h"
+#if NACE > 0
 				ADDMAP(	NACE*32	)
+#endif
+#if NHD > 0
+				ADDMAP( NHDC )
+#endif
 	SYSMAP(VMEMend	,vmemend	,0		)
 
 	SYSMAP(VBmap	,vbbase		,CLSIZE		)
