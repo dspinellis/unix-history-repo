@@ -9,7 +9,7 @@
  * More user commands.
  */
 
-static char *SccsId = "@(#)cmd2.c	2.3 %G%";
+static char *SccsId = "@(#)cmd2.c	2.4 %G%";
 
 /*
  * If any arguments were given, go to the next applicable argument
@@ -92,26 +92,48 @@ hitit:
 }
 
 /*
- * Save the indicated messages at the end of the passed file name.
+ * Save a message in a file.  Mark the message as saved
+ * so we can discard when the user quits.
  */
-
 save(str)
+	char str[];
+{
+
+	return(save1(str, 1));
+}
+
+/*
+ * Copy a message to a file without affected its saved-ness
+ */
+copycmd(str)
+	char str[];
+{
+
+	return(save1(str, 0));
+}
+
+/*
+ * Save/copy the indicated messages at the end of the passed file name.
+ * If mark is true, mark the message "saved."
+ */
+save1(str, mark)
 	char str[];
 {
 	register int *ip, mesg;
 	register struct message *mp;
-	char *file, *disp;
+	char *file, *disp, *cmd;
 	int f, *msgvec, lc, cc, t;
 	FILE *obuf;
 	struct stat statb;
 
+	cmd = mark ? "save" : "copy";
 	msgvec = (int *) salloc((msgCount + 2) * sizeof *msgvec);
 	if ((file = snarf(str, &f)) == NOSTR)
 		return(1);
 	if (!f) {
 		*msgvec = first(0, MMNORM);
 		if (*msgvec == NULL) {
-			printf("No messages to save.\n");
+			printf("No messages to %s.\n", cmd);
 			return(1);
 		}
 		msgvec[1] = NULL;
@@ -142,7 +164,8 @@ save(str)
 		}
 		lc += t;
 		cc += msize(mp);
-		mp->m_flag |= MSAVED;
+		if (mark)
+			mp->m_flag |= MSAVED;
 	}
 	fflush(obuf);
 	if (ferror(obuf))
