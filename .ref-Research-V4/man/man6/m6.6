@@ -1,0 +1,110 @@
+.th M6 VI 11/15/72
+.sh NAME
+m6 \*- general purpose macro processor
+.sh SYNOPSIS
+.bd m6
+[
+.bd \*-d
+arg1 ] [ arg2 [ arg3 ] ]
+.sh DESCRIPTION
+.it M6
+takes input from file arg2 (or standard input if arg2 is missing)
+and places output on file arg3 (or standard output).
+A working file of definitions, ``m.def'',
+is initialized from  file arg1 if that is supplied.
+.it M6
+differs from the standard [1] in these
+respects:
+.s3
+#trace:, #source: and #end:
+are not defined.
+.s3
+#meta,arg1,arg2: transfers the role of metacharacter
+arg1 to character arg2. If two metacharacters become identical
+thereby, the outcome of further processing is not guaranteed.
+For example, to make [ ]{} play the
+roles of #:<> type
+.s3
+.in+5
+\\\#meta,<\\\#>,[:
+.br
+[meta,<:>,]:
+.br
+[meta,[substr,<<>>,1,1;,{]
+.br
+[meta,[substr,{{>>,2,1;,}]
+.in-5
+.s3
+#del,arg1: deletes the definition of macro arg1.
+.s3
+#save: and #rest: save and restore the definition table together with
+the current metacharacters on file
+m.def.
+.s3
+#def,arg1,arg2,arg3: works as in the standard with the extension
+that an integer may be
+supplied to arg3 to cause the new macro to perform the
+action of a specified builtin before its replacement text is evaluated.
+Thus all builtins
+except #def: can be retrieved even after deletion.
+Codes for arg3 are:
+.s3
+.in+5
+.nf
+0 \*- no function
+1,2,3,4,5,6 \*- gt,eq,ge,lt,ne,le
+7,8 \*- seq,sne
+9,10,11,12,13 \*- add,sub,mpy,div,exp
+20 \*- if
+21,22 \*- def,copy
+23 \*- meta
+24 \*- size
+25 \*- substr
+26,27 \*- go,gobk
+28 \*- del
+29 \*- dnl
+30,31 \*- save,rest
+.fi
+.in-5
+.sh FILES
+m.def	working file of definitions
+.br
+/usr/lang/mdir/m6a	m6 processor proper (/usr/bin/m6 is only an initializer)
+.br
+/usr/lang/mdir/m6b	default initialization for m.def
+.br
+/bin/cp	used for copying initial value of m.def
+.sh "SEE ALSO"
+[1] A. D. Hall,
+The M6 Macroprocessor, Bell Telephone Laboratories, 1969
+.sh DIAGNOSTICS
+``err''
+\*- a bug, an unknown builtin or a bad definition table
+.br
+``oprd''\*-can't open input or initial definitions
+.br
+``opwr''\*-can't open output
+.br
+``ova'' \*- overflow of nested arguments
+.br
+``ovc'' \*- overflow of calls
+.br
+``ovd'' \*- overflow of definitions
+.br
+``Try again'' \*- no process available for copying m.def
+.sh AUTHOR
+M. D. McIlroy
+.sh BUGS
+Characters in internal tables are stored
+one per word.
+They really should be packed to improve capacity.
+For want of space (and because of unpacked formats) no file arguments
+have been provided to #save: or #rest:,
+and no check is made on the actual opening of file m.def.
+Again to save space,
+garbage collection makes calls on #save: and #rest: and so overwrites
+m.def.
+.s3
+Since the program is written in the defunct language
+B it is currently unavailable.
+Expressions of interest may make a C version appear.

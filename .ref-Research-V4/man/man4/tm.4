@@ -1,0 +1,28 @@
+.th TM IV 10/15/73
+.sh NAME
+tm \*- TM-11/TU-10 magtape interface
+.sh DESCRIPTION
+The files
+.it "mt0, ..., mt7"
+refer to the DEC TU10/TM11 magtape.
+When opened for reading or writing,
+the magtape is rewound.
+A tape consists of a
+series of 512 byte records terminated by an
+end-of-file.
+When the magtape is closed
+after writing,
+an end-of-file is written.
+.s3
+The magtape can only be opened once at
+any instant.
+.sh FILES
+/dev/mt?
+.sh "SEE ALSO"
+tp(I)
+.sh BUGS
+If you hit the EOF mark
+or get other non-data errors it refuses to do anything more
+until closed.
+There has to be some reasonable way to deal
+with multi-file tapes.

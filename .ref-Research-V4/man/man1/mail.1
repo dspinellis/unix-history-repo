@@ -1,0 +1,72 @@
+.th MAIL I 10/25/72
+.sh NAME
+mail  \*-  send mail to another user
+.sh SYNOPSIS
+.bd mail
+[
+.bd \*-yn
+]
+.br
+.bd mail
+letter person ...
+.br
+.bd mail
+person
+.sh DESCRIPTION
+.it Mail
+without an argument searches for a file called
+.it mailbox,
+prints
+it if present, and asks if it should be saved.  If the answer
+is
+.bd y,
+the mail is renamed
+.it mbox,
+otherwise it is deleted.
+.it Mail
+with a
+.bd \*-y
+or
+.bd \*-n
+argument works the same way, except
+that the answer to the question is supplied by the argument.
+.s3
+When followed by the names of a letter
+and one or more people,
+the letter is appended to
+each person's
+.it mailbox.
+When a
+.it person
+is specified without a
+.it letter,
+the letter is taken from the sender's standard input up to an EOT.
+Each letter is preceded by the sender's name and a postmark.
+.s3
+A
+.it person
+is either
+a user name recognized by
+.bd login,
+in which case the mail
+is sent to the default working directory of that user,
+or the path name of a directory,
+in which case
+.it mailbox
+in that directory is used.
+.s3
+When a user logs in he is informed of the presence
+of mail.
+.sh FILES
+/etc/passwd	to identify sender and locate persons
+.br
+mailbox		input mail
+.br
+mbox		saved mail
+.sh "SEE ALSO"
+login(I)
+.sh BUGS
+The mail should be prepended rather than
+appended to the mailbox.
+The old mbox should not
+be destroyed when new mail is saved.

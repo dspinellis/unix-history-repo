@@ -1,0 +1,57 @@
+.th SORT I 5/7/73
+.sh NAME
+sort \*- sort a file
+.sh SYNOPSIS
+.bd sort
+[
+.bd \*-anr
+] [ \fB+\fIn\fR ] [ \fB\*-\fIn\fR ] [ input [ output ] ]
+.sh DESCRIPTION
+.it Sort
+sorts
+.it input
+and writes the result on
+.it output.
+If the output file is not given,
+the standard output is used.
+If the input file is missing,
+the standard input is used.
+Thus
+.it sort
+may be used as a filter.
+The input and output file may be the same.
+.s3
+The sort is line-by-line in increasing ASCII collating sequence,
+except that upper-case letters are considered
+the same as the corresponding lower-case letters.
+.s3
+.it Sort
+understands several flag arguments.
+.s3
+.lp +4 4
+\fB\*-a\fR	Use strict ASCII collating sequence.
+.s3
+.lp +4 4
+\fB\*-n\fR	An initial numeric string is sorted by numerical value.
+.s3
+.lp +4 4
+\fB\*-r\fR	Output is in reverse order.
+.s3
+.lp +4 4
+\fB\*-\fIn\fR	The first \fIn\fR fields in each line
+are ignored.  A field is defined as a string of non-space, non-tab
+characters separated by tabs and spaces from its neighbors.
+.s3
+.lp +4 4
+\fB+\fIn\fR	The first \fIn\fR characters are ignored
+in the sort.
+Fields (with \fB\*-\fIn\fR)
+are skipped before characters.
+.s3
+.i0
+.sh FILES
+/tmp/stm?
+.sh BUGS
+The
+largest file that can be
+sorted is about 128K bytes.

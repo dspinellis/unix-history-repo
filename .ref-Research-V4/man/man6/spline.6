@@ -1,0 +1,57 @@
+.th SPLINE VI 10/20/73
+.sh NAME
+spline \*- interpolate smooth curve
+.sh SYNOPSIS
+.bd spline
+[ option ] ...
+.sh DESCRIPTION
+.it Spline
+takes pairs of numbers from the standard input as abcissas and ordinates
+of a function.
+It produces a similar set, which
+is approximately equally spaced and
+includes the input set, on the standard output.
+The cubic spline output
+(R. W. Hamming,
+.ft I
+Numerical Methods for Engineers and Scientists,
+.ft R
+2nd ed., 349ff)
+has two continuous derivatives,
+and sufficiently many points to look smooth when plotted, for
+example by
+.it plot
+(I).
+.s3
+The following options are recognized,
+each as a separate argument.
+.s3
+.lp +5 5
+\fBa\fR	Supply abscissas automatically (they are missing from
+the input); spacing is given by the next
+argument, or is assumed to be 1 if next argument is not a number.
+.s3
+.lp +5 5
+\fBn\fR	Output approximately 
+.it n
+points, where
+.it n
+is given by the next argument.
+(Default
+.it n
+= 100.)
+.s3
+.lp +5 5
+\fBp\fR	Make output periodic, i.e. match
+derivatives at ends.
+First and last input values should normally agree.
+.s3
+.lp +5 5
+\fBx\fR	Next 1 (or 2) arguments are lower (and upper) \fIx\fR limits.
+.i0
+.sh "SEE ALSO"
+plot(I)
+.sh AUTHOR
+M. D. McIlroy
+.sh BUGS
+A limit of 1000 input points is enforced silently.

@@ -1,0 +1,7 @@
+cvopt $1.s $1.i
+rm a.out
+as $1.i
+if -r a.out rm $1.i
+mv a.out $1.o
+ar r tab.a $1.o
+rm $1.o

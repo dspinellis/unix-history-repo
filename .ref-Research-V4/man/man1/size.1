@@ -1,0 +1,18 @@
+.th SIZE I 9/2/72
+.sh NAME
+size \*- size of an object file
+.sh SYNOPSIS
+.bd size
+[ object ... ]
+.sh DESCRIPTION
+The
+size, in bytes, of the
+object files are printed.
+If no file is given,
+.bd a.out
+is default.
+The size is printed in decimal for the
+text, data, and bss portions of each file.
+The sum of these is also printed in octal
+and decimal.
+.sh BUGS

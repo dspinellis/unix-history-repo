@@ -1,0 +1,30 @@
+.th CDB I 8/15/73
+.sh NAME
+cdb \*- C debugger
+.sh SYNOPSIS
+.bd cdb
+[ core [ a.out ]]
+.sh DESCRIPTION
+.it Cdb
+is a debugging program for use with C programs.
+It is by no means completed,
+and this section is essentially only a placeholder
+for the actual description.
+.s3
+Even the present
+.it cdb
+has one useful feature:
+the command 
+.s3
+.bd "	$"
+.s3
+will give a stack
+trace
+of the core image of a terminated C program.
+The calls are listed in the order made;
+the actual arguments to each routine are given
+in octal.
+.sh "SEE ALSO"
+cc(I), db(I), C Reference Manual
+.sh BUGS
+It has to be fixed to work with the new system.

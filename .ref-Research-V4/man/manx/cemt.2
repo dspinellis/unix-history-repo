@@ -1,0 +1,30 @@
+.pa 1
+.he 'CEMT (II)'9/4/72'CEMT (II)'
+.ti 0
+NAME		cemt  --  catch emt traps
+.sp
+.ti 0
+.nf
+SYNOPSIS	sys cemt; arg  / cemt = 29.
+.fi
+.sp
+.ti 0
+DESCRIPTION	This call
+allows one to catch traps resulting from
+the emt___ instruction.
+Arg___ is a location within the program; emt___ traps
+are sent to that location.
+The normal effect of emt___ traps may be restored by giving
+an arg___ equal to 0.
+.sp
+To return after catching the emt___
+trap, execute the rti___ instruction.
+.sp
+.ti 0
+SEE ALSO	--
+.sp
+.ti 0
+DIAGNOSTICS	--
+.sp
+.ti 0
+BUGS		--

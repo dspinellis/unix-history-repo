@@ -1,0 +1,17 @@
+.th RF IV 10/15/73
+.sh NAME
+rf \*- RF11/RS11 fixed-head disk file
+.sh DESCRIPTION
+This file refers to the
+concatenation of all RS-11 disks.
+.s3
+Each disk contains 1024 256-word blocks.
+The length of the combined RF file is
+1024\*X(minor+1) blocks.
+That is minor device zero
+is 1024 blocks long;
+minor device one is 2048,
+etc.
+.sh FILES
+/dev/rf0
+.sh BUGS

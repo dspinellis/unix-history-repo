@@ -1,0 +1,160 @@
+.pa 1
+.he 'SALLOC (III)'6/15/72'SALLOC (III)'
+.ti 0
+.nf
+NAME		salloc -- string manipulation routines
+.fi
+.sp
+.ti 0
+.nf
+SYNOPSIS	(get size in r0)
+.br
+jsr	pc,allocate
+.sp
+(get source pointer in r0,
+destination pointer in r1)
+jsr	pc,copy
+.sp
+jsr	pc,wc
+.sp
+(all following instructions assume r1 contains pointer)
+
+jsr	pc,release
+
+(get character in r0)
+jsr	pc,putchar
+.sp
+jsr	pc,lookchar
+(character in r0)
+
+jsr	pc,getchar
+(character in r0)
+
+(get character in r0)
+jsr	pc,alterchar
+
+(get position in r0)
+jsr	pc,seekchar
+
+jsr	pc,backspace
+(character in r0)
+
+(get word in r0)
+jsr	pc,putword
+
+jsr	pc,lookword
+(word in r0)
+
+jsr	pc,getword
+(word in r0)
+
+(get word in r0)
+jsr	pc,alterword
+
+jsr	pc,backword
+(word in r0)
+
+jsr	pc,length
+(length in r0)
+
+jsr	pc,position
+(position in r0)
+
+jsr	pc,rewind
+
+jsr	pc,create
+
+jsr	pc,fsfile
+
+jsr	pc,zero
+
+.fi
+.ti 0
+DESCRIPTION	This package is a complete set of routines
+for dealing with almost arbitrary
+length strings of words and bytes.
+The strings are stored on a disk file, so the sum of
+their lengths can be considerably larger than
+the available core.
+
+For each string there is a header of four words, namely
+a write pointer, a read pointer and pointers to the beginning and end of
+the block containing the string.
+Initially the read and write pointers point to the beginning of the string.
+All routines that refer to a string require the header address in r1.
+Unless the string is destroyed by the call,
+upon return r1 will point to the same string, although
+the string may have grown to the extent that it had to be
+be moved.
+
+.ul
+allocate
+obtains a string of the requested size and returns
+a pointer to its header in r1.
+.sp
+release_______ releases a string back to free storage.
+.sp
+putchar_______ and putword_______ write a byte or word respectively into the string
+and advance the write pointer.
+
+.ul
+lookchar
+and
+.ul
+lookword
+read
+a byte or word respectively from the string but do not advance the read pointer.
+
+getchar_______ and getword_______ read a byte or word respectively from the string and advance the read pointer.
+
+alterchar_________ and alterword_________ write a byte or word respectively into the string where the read pointer
+is pointing and advance the read pointer.
+
+backspace_________ and backword________ read the last byte or word written and decrement the write pointer.
+
+All write operations will automatically get a larger block if the current block is exceeded.
+All read operations return with the error bit set if attempting to read beyond the write pointer.
+.sp
+seekchar________ moves the read pointer to the offset specified in r0.
+
+length______ returns the current length of the string (beginning pointer to write pointer) in r0.
+
+position________ returns the current offset of the read pointer in r0.
+
+rewind______ moves the read pointer to the beginning of the string.
+
+create______ returns the read and write pointers to the beginning of the string.
+
+fsfile______ moves the read pointer to the current position of the write pointer.
+
+zero____ zeros the whole string and sets the write pointer to the beginning of the string.
+
+copy____ copies the string whose header pointer is in r0 to the string whose header pointer is in
+r1.
+Care should be taken in using the copy instruction since r1 will be changed if the contents of the source string
+is bigger than the destination string.
+
+wc__ forces the contents of the internal buffers and the header blocks to be written on disc.
+.sp
+.ti 0
+FILES		The allocator is in
+/lib/libs.a;
+the -s__ option to ld__ will link edit
+references to the allocator.
+
+alloc.d is the temporary file used to contain
+the strings.
+
+.ti 0
+SEE ALSO	--
+.sp
+.ti 0
+DIAGNOSTICS	"error in copy" if a disk write error occurs during the execution of the copy instruction.
+"error in allocator" if any routine is called with a bad header pointer.
+"Cannot open output file" if file alloc.d cannot be created or opened.
+"Out of space" if there's no available block of the requested size or no headers available for a new block.
+.sp
+.fi
+.in16
+.ti 0
+BUGS		--

@@ -1,0 +1,28 @@
+.th WC I 3/15/72
+.sh NAME
+wc \*- get (English) word count
+.sh SYNOPSIS
+.bd wc
+files
+.sh DESCRIPTION
+.it Wc
+provides a count of the words, text lines, and control lines for
+each argument file.
+If no files are provided,
+.it wc
+reads the standard input.
+.s3
+A text line is a sequence of characters not beginning with `\fB.\fR',
+`!' or `\*a'
+and ended by a new-line.
+A control line is a line beginning with `\fB.\fR',
+`!' or `\*a'.
+A word is a sequence of characters bounded by the beginning
+of a line, by the end of a line, or by a blank or a tab.
+.s3
+When
+there is more than one input file,
+a grand total is also printed.
+.sh DIAGNOSTICS
+none; arguments not found are ignored.
+.sh BUGS

@@ -1,0 +1,40 @@
+.pa 1
+.he 'PROFIL (II)'3/7/73'PROFIL (II)'
+.ti 0
+NAME		profil -- execution time profile
+.s3
+.ti 0
+SYNOPSIS	profil = 44.		/ not in assembler
+.br
+sys	profil; buff; bufsiz; offset; scale
+.s3
+.ti 0
+DESCRIPTION	buff____
+points to an area of core whose length (in bytes) is given by
+bufsiz______.
+After this call, the user's program counter (pc)
+is examined each clock tick (60th second);
+offset______ is subtracted from it, and the result multiplied by
+scale_____.
+If the resulting number corresponds to a word
+inside buff____, that word is incremented.
+.s3
+The scale is interpreted as an unsigned,
+fixed-point fraction with binary point at the
+left: 177777(8) gives a 1-1 mapping of pc's to words
+in buff____; 77777(8) maps each pair of instruction words
+together.
+2(8) maps all instructions onto the beginning of
+buff____ (producing a non-interrupting core clock).
+.s3
+Profiling is turned off by giving a scale_____ of 0 or 1.
+It is rendered
+inffective by giving a bufsiz______ of 0.
+.s3
+.ti 0
+SEE ALSO	[profiling subroutines]
+.s3
+.ti 0
+BUGS		Profiling must be turned off before
+an exec____(II), since incrementation of
+the buffer is not automatically stopped.

@@ -1,0 +1,77 @@
+.th "DDSPUT, DDSINIT" III 1/15/73
+.sh NAME
+ddsput \*- put a character on display data set
+.sh SYNOPSIS
+(file descriptor in r0)
+.br
+jsr    pc,ddsinit
+.s3
+(character in r0)
+.br
+jsr    pc,ddsput
+.sh DESCRIPTION
+These routines
+used to
+provide an interface to the Display Data Set, a peculiar
+device which can be called by Picturephone sets and which
+will display some of the ASCII character set and certain
+other graphics on the Picturephone screen.
+.s3
+If the DC11 or other interface hardware is not already
+set up to talk to the Display Data Set, the
+entry should be called with the appropriate file descriptor in r0.
+On the only known DDS attached to UNIX, the associated special file
+is called
+.bd "/dev/ttyc."/p
+.s3
+.it ddsinit
+also clears the display.
+.se
+Thereafter, characters may be displayed
+by calling
+.it ddsput.
+To the extent possible,
+.it ddsput
+simulates an ordinary terminal.
+Characters falling to the right of the 22x22 screen
+area are ignored; the 23rd line on the screen causes
+the screen to be erased and that line to be put at the top
+of the new display.
+Certain ASCII characters are interpreted specially as follows:
+.s3
+.lp +6 -6
+FF	clear screen, go to top left
+.lp +6 -6
+HT	expand to right number of spaces
+.lp +5 -5
+DC1	treat as reverse line feed (move N)
+.lp +5 -5
+DC2	move cursor 1 place right (move E)
+.lp +5 -5
+DC3	forward line feed (move S)
+.lp +5 -5
+DC4	backspace 1 position (move W)
+.lp +5 -5
+SO	enter graph mode
+.lp +5 -5
+SI   leave graph mode
+.lp +5 -5
+CR	put cursor at start of current line
+.i0
+.s3
+Graph mode allows display of the non-ASCII characters and
+will be described when hell freezes over.
+.s3
+Lower-case ASCII alphabetics are mapped into upper case.
+Several ASCII non-alphabetic graphics
+are unavailable as well.  Also the lower right circle of
+the "%" character is missing.
+Also one of the circuit cards in the DDS has a crack in it and
+sometimes it doesn't work.
+All in all,
+it is best to avoid this device.
+.sh FILES
+kept in /lib/liba.a
+.sh "SEE ALSO"
+AT&T writeup on DDS
+BUGS		yes

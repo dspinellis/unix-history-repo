@@ -1,0 +1,56 @@
+.pa 1
+.he 'INTR (II)'3/15/72'INTR (II)'
+.ti 0
+NAME		intr  --  set interrupt handling
+.s3
+.ti 0
+SYNOPSIS	sys intr; arg  / intr = 27.
+.s3
+.nf
+intr(label)
+int *label;
+.fi
+.s3
+.ti 0
+DESCRIPTION	When arg___ is 0,
+interrupts (ASCII DELETE) are ignored.
+When arg___ is 1,
+interrupts cause their normal result, that is, force an exit____.
+When arg___ is a location within the program, control is
+transferred to that location when an interrupt occurs.
+.s3
+After an interrupt is caught, it is possible to resume
+execution by means of an rti___ instruction; however, great
+care must be exercised, since
+all I/O is terminated abruptly upon an interrupt.
+In particular, reads of the typewriter tend to return
+with 0 characters read, thus simulating an end of file.
+.s3
+From C, the interface is slightly different.
+An argument of 0 or 1 has the
+afore-mentioned effect of suppressing and forcing termination on
+interrupts respectively.
+An argument which is a label causes control
+to be sent to the label when an interrupt occurs;
+however the stack is set to have the same value
+as it did when intr____ was called;
+thus control returns to the complete execution environment
+pertaining at the time of the call to intr____.
+It is an error to call intr____ in a subroutine
+and return from that subroutine, since
+if an interrupt occurs
+control will be returned
+to a non-existent
+environment.
+.s3
+It is not possible (with the C version of this call)
+to resume execution after an interrupt.
+.s3
+.ti 0
+SEE ALSO	quit(II)
+.s3
+.ti 0
+DIAGNOSTICS	--
+.s3
+.ti 0
+BUGS		--

@@ -1,0 +1,47 @@
+.th DU I 1/20/73
+.sh NAME
+du  \*-  summarize disk usage
+.sh SYNOPSIS
+.bd du
+[
+.bd \*-s
+] [
+.bd \*-a
+] [ name ... ]
+.sh DESCRIPTION
+.it Du
+gives the number of blocks contained in all files
+and (recursively) directories within each specified directory or
+file
+.it name.
+If
+.it name
+is missing,
+`\fB.\fR'
+is used.
+.s3
+The optional argument
+.bd \*-s
+causes only the grand total to
+be given.
+The optional argument
+.bd \*-a
+causes an entry to be generated
+for each file.
+Absence of either causes an entry to be generated for
+each directory only.
+.s3
+A file which has two links to it is only counted once.
+.sh BUGS
+Non-directories
+given as arguments (not under
+.bd \*-a
+option) are not listed.
+.s3
+Removable
+file systems do not work correctly
+since i-numbers may be repeated while the corresponding
+files are distinct.
+.it Du
+should maintain an i-number list per root directory
+encountered.

@@ -1,0 +1,37 @@
+.pa 1
+.he 'ACCT (VIII)'1/20/73'ACCT (VIII)'
+.ti 0
+NAME		acct -- login accounting
+.sp
+.ti 0
+SYNOPSIS	acct____ [ -w__ wtmp ] [ -p__ ] [ -d__ ] people
+.sp
+.ti 0
+DESCRIPTION	acct____
+produces a printout giving
+connect time
+for each user who has logged in
+during the life of the current wtmp____ file.
+A total is also produced.
+-w__ is used to specify an alternate wtmp file.
+-p__ prints individual totals; without this option,
+only totals are printed.
+-d__ causes a printout for each midnight to midnight
+period.
+The people______ argument will limit the
+printout to only the specified login names.
+If no wtmp file is given,
+/usr/adm/wtmp_____________
+is used.
+.sp
+.ti 0
+FILES		/usr/adm/wtmp
+.sp
+.ti 0
+SEE ALSO	init(VII), login(I), wtmp(V).
+.sp
+.ti 0
+DIAGNOSTICS	"Cannot open 'wtmp'" if argument is unreadable.
+.sp
+.ti 0
+BUGS		--
