@@ -23,7 +23,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.19 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -146,10 +146,10 @@ main(argc, argv, envp)
 	**	But also be sure that 0, 1, & 2 are open.
 	*/
 
-	i = open("/dev/null", 2);
+	i = open("/dev/null", O_RDWR);
 	while (i >= 0 && i < 2)
 		i = dup(i);
-	for (i = 3; i < 50; i++)
+	for (i = getdtablesize(); i > 2; --i)
 		(void) close(i);
 	errno = 0;
 
