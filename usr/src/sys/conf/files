@@ -244,3 +244,5 @@ miscfs/nullfs/null_subr.c	optional nullfs
 miscfs/umapfs/umap_vnops.c	optional umapfs
 miscfs/umapfs/umap_vfsops.c	optional umapfs
 miscfs/umapfs/umap_subr.c	optional umapfs
+miscfs/kernfs/kernfs_vfsops.c	optional kernfs
+miscfs/kernfs/kernfs_vnops.c	optional kernfs
