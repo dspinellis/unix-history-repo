@@ -1,13 +1,13 @@
 /*
- * Copyright (c) 1988, 1989, 1990 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1988, 1989, 1990, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * Adam de Boor.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lstInt.h	5.4 (Berkeley) %G%
+ *	@(#)lstInt.h	8.1 (Berkeley) %G%
  */
 
 /*-
