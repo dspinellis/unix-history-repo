@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)Title	6.1 (Berkeley) %G%
+.\"	@(#)Title	6.2 (Berkeley) %G%
 .\"
 .ps 18
 .vs 22
@@ -43,7 +43,7 @@ for licensed use of the software is granted to licensees of this
 software, provided this copyright notice and statement of permission
 are included.
 .sp 2
-Documents SMM:8, 17, and 18
+Documents SMM:17, 18, and 21
 are copyright 1979, AT&T Bell Laboratories, Incorporated.
 Documents SMM:9 and 19 are modifications of earlier documents that
 are copyrighted 1979 by AT&T Bell Laboratories, Incorporated.
