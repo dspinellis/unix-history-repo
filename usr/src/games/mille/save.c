@@ -16,12 +16,13 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)save.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)save.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include	"mille.h"
 #include	<sys/types.h>
 #include	<sys/stat.h>
+#include	<string.h>
 #ifndef	unctrl
 #include	"unctrl.h"
 #endif
@@ -44,11 +45,10 @@ int	read(), write();
 /*
  *	This routine saves the current game for use at a later date
  */
-extern int	errno;
-extern char	*sys_errlist[];
 
 save() {
 
+	extern int	errno;
 	reg char	*sp;
 	reg int		outf;
 	reg time_t	*tp;
@@ -101,7 +101,7 @@ over:
 		return FALSE;
 
 	if ((outf = creat(buf, 0644)) < 0) {
-		error(sys_errlist[errno]);
+		error(strerror(errno));
 		return FALSE;
 	}
 	mvwaddstr(Score, ERR_Y, ERR_X, buf);
