@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)clnp_input.c	7.13 (Berkeley) %G%
+ *	@(#)clnp_input.c	7.14 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -509,21 +509,9 @@ struct snpa_hdr	*shp;	/* subnetwork header */
 		IFDEBUG(D_INPUT)
 			printf("clnp_input: echoing packet\n");
 		ENDDEBUG
-		/*
-		 *	Switch the source and destination address,
-		 */
-		hoff = (caddr_t)clnp + sizeof(struct clnp_fixed);
-		CLNP_INSERT_ADDR(hoff, src);
-		CLNP_INSERT_ADDR(hoff, dst);
-		clnp->cnf_type &= ~CNF_TYPE;
-		clnp->cnf_type |= CLNP_ECR;
-
-		/*
-		 *	Forward back to sender
-		 */
-		clnp_forward(m, (int)
-			(clnp->cnf_type & CNF_SEG_OK ? seg_part.cng_tot_len : seg_len),
-			&src, oidxp, seg_off, 0);
+		(void)clnp_echoreply(m,
+			(clnp->cnf_type & CNF_SEG_OK ? (int)seg_part.cng_tot_len : seg_len),
+			&source, &target, oidxp);
 		break;
 
 	default:

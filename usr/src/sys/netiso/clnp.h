@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)clnp.h	7.8 (Berkeley) %G%
+ *	@(#)clnp.h	7.9 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -33,8 +33,8 @@ SOFTWARE.
 /*
  * ARGO Project, Computer Sciences Dept., University of Wisconsin - Madison
  */
-/* $Header: /var/src/sys/netiso/RCS/clnp.h,v 5.1 89/02/09 16:17:22 hagens Exp $ */
-/* $Source: /var/src/sys/netiso/RCS/clnp.h,v $ */
+/* $Header: /big/BSD4.4/isis-usr/src/sys/netiso/RCS/clnp.h,v 1.1 1992/02/07 18:14:59 hagens Exp hagens $ */
+/* $Source: /big/BSD4.4/isis-usr/src/sys/netiso/RCS/clnp.h,v $ */
 
 #ifndef BYTE_ORDER
 /*
@@ -267,12 +267,13 @@ struct clnp_optidx {
 #define	CLNP_NO_ER		0x020	/* do not generate ERs */
 #define CLNP_SEND_RAW	0x080	/* send pkt as RAW DT rather than TP DT */
 #define	CLNP_NO_CKSUM	0x100	/* don't use clnp checksum */
-#define CLNP_ECHO		0x200	/* fake echo function */
+#define CLNP_ECHO		0x200	/* send echo request */
 #define	CLNP_NOCACHE	0x400	/* don't store cache information */
+#define CLNP_ECHOR		0x800	/* send echo reply */
 
 /* valid clnp flags */
 #define CLNP_VFLAGS		(CLNP_SEND_RAW|CLNP_NO_SEG|CLNP_NO_ER|CLNP_NO_CKSUM\
-	|CLNP_ECHO|CLNP_NOCACHE)
+	|CLNP_ECHO|CLNP_NOCACHE|CLNP_ECHOR)
 
 /* 
  *	Constants used by clnp
