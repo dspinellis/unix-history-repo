@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)tunefs.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)tunefs.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -201,17 +201,15 @@ getsb(fs, file)
 
 	fi = open(file, 2);
 	if (fi < 0) {
-		fprintf(stderr, "cannot open");
-		perror(file);
+		fprintf(stderr, "tunefs: %s: %s\n", file, strerror(errno));
 		exit(3);
 	}
 	if (bread(SBOFF, (char *)fs, SBSIZE)) {
-		fprintf(stderr, "bad super block");
-		perror(file);
+		fprintf(stderr, "tunefs: %s: bad super block\n", file);
 		exit(4);
 	}
 	if (fs->fs_magic != FS_MAGIC) {
-		fprintf(stderr, "%s: bad magic number\n", file);
+		fprintf(stderr, "tunefs: %s: bad magic number\n", file);
 		exit(5);
 	}
 	dev_bsize = fs->fs_fsize / fsbtodb(fs, 1);
