@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_vfsops.c	8.11 (Berkeley) %G%
+ *	@(#)ffs_vfsops.c	8.12 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -505,7 +505,7 @@ ffs_unmount(mp, mntflags, p)
 {
 	register struct ufsmount *ump;
 	register struct fs *fs;
-	int error, flags, ronly;
+	int error, flags;
 
 	flags = 0;
 	if (mntflags & MNT_FORCE) {
@@ -517,9 +517,8 @@ ffs_unmount(mp, mntflags, p)
 		return (error);
 	ump = VFSTOUFS(mp);
 	fs = ump->um_fs;
-	ronly = !fs->fs_ronly;
 	ump->um_devvp->v_specflags &= ~SI_MOUNTEDON;
-	error = VOP_CLOSE(ump->um_devvp, ronly ? FREAD : FREAD|FWRITE,
+	error = VOP_CLOSE(ump->um_devvp, fs->fs_ronly ? FREAD : FREAD|FWRITE,
 		NOCRED, p);
 	vrele(ump->um_devvp);
 	free(fs->fs_csp[0], M_UFSMNT);
