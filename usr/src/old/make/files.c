@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)files.c	4.5 (Berkeley) 82/06/17";
+static	char *sccsid = "@(#)files.c	4.6 (Berkeley) 83/02/09";
 /* UNIX DEPENDENT PROCEDURES */
 
 
@@ -18,7 +18,7 @@ char *builtin[] =
 	"LEX=lex",
 	"LFLAGS=",
 	"CC=cc",
-#ifdef vax
+#if defined(vax) || defined(sun)
 	"AS=as",
 #else
 	"AS=as -",
@@ -147,11 +147,7 @@ for(s = filename ; *s!='\0' && *s!='(' ; ++s)
 if(*s == '(')
 	return(lookarch(filename));
 
-#if vax
 if (stat(filename, &buf) < 0)
-#else
-if(stat(filename,&buf) < 0) 
-#endif
 	return(0);
 else	return(buf.st_mtime);
 }
@@ -517,7 +513,7 @@ fread( (char *) &objhead, sizeof(objhead), 1, arfd);
 if (N_BADMAG(objhead))
 	fatal1("%s is not an object module", arfname);
 skip = objhead.a_text + objhead.a_data;
-#ifdef vax
+#if defined(vax) || defined(sun)
 skip += objhead.a_trsize + objhead.a_drsize;
 #else
 if(! objhead.a_flag )
