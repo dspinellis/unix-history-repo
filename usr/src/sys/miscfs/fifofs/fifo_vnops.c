@@ -4,23 +4,23 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fifo_vnops.c	7.16 (Berkeley) %G%
+ *	@(#)fifo_vnops.c	7.17 (Berkeley) %G%
  */
 
-#include "param.h"
-#include "proc.h"
-#include "time.h"
-#include "namei.h"
-#include "vnode.h"
-#include "socket.h"
-#include "socketvar.h"
-#include "stat.h"
-#include "systm.h"
-#include "ioctl.h"
-#include "file.h"
-#include "fifo.h"
-#include "errno.h"
-#include "malloc.h"
+#include <sys/param.h>
+#include <sys/proc.h>
+#include <sys/time.h>
+#include <sys/namei.h>
+#include <sys/vnode.h>
+#include <sys/socket.h>
+#include <sys/socketvar.h>
+#include <sys/stat.h>
+#include <sys/systm.h>
+#include <sys/ioctl.h>
+#include <sys/file.h>
+#include <sys/errno.h>
+#include <sys/malloc.h>
+#include <miscfs/fifofs/fifo.h>
 
 /*
  * This structure is associated with the FIFO vnode and stores
@@ -39,20 +39,20 @@ struct vnodeopv_entry_desc fifo_vnodeop_entries[] = {
 	{ &vop_lookup_desc, fifo_lookup },		/* lookup */
 	{ &vop_create_desc, fifo_create },		/* create */
 	{ &vop_mknod_desc, fifo_mknod },		/* mknod */
-	{ &vop_open_desc, fifo_open },		/* open */
+	{ &vop_open_desc, fifo_open },			/* open */
 	{ &vop_close_desc, fifo_close },		/* close */
 	{ &vop_access_desc, fifo_access },		/* access */
 	{ &vop_getattr_desc, fifo_getattr },		/* getattr */
 	{ &vop_setattr_desc, fifo_setattr },		/* setattr */
-	{ &vop_read_desc, fifo_read },		/* read */
+	{ &vop_read_desc, fifo_read },			/* read */
 	{ &vop_write_desc, fifo_write },		/* write */
 	{ &vop_ioctl_desc, fifo_ioctl },		/* ioctl */
 	{ &vop_select_desc, fifo_select },		/* select */
-	{ &vop_mmap_desc, fifo_mmap },		/* mmap */
+	{ &vop_mmap_desc, fifo_mmap },			/* mmap */
 	{ &vop_fsync_desc, fifo_fsync },		/* fsync */
-	{ &vop_seek_desc, fifo_seek },		/* seek */
+	{ &vop_seek_desc, fifo_seek },			/* seek */
 	{ &vop_remove_desc, fifo_remove },		/* remove */
-	{ &vop_link_desc, fifo_link },		/* link */
+	{ &vop_link_desc, fifo_link },			/* link */
 	{ &vop_rename_desc, fifo_rename },		/* rename */
 	{ &vop_mkdir_desc, fifo_mkdir },		/* mkdir */
 	{ &vop_rmdir_desc, fifo_rmdir },		/* rmdir */
@@ -62,9 +62,9 @@ struct vnodeopv_entry_desc fifo_vnodeop_entries[] = {
 	{ &vop_abortop_desc, fifo_abortop },		/* abortop */
 	{ &vop_inactive_desc, fifo_inactive },		/* inactive */
 	{ &vop_reclaim_desc, fifo_reclaim },		/* reclaim */
-	{ &vop_lock_desc, fifo_lock },		/* lock */
+	{ &vop_lock_desc, fifo_lock },			/* lock */
 	{ &vop_unlock_desc, fifo_unlock },		/* unlock */
-	{ &vop_bmap_desc, fifo_bmap },		/* bmap */
+	{ &vop_bmap_desc, fifo_bmap },			/* bmap */
 	{ &vop_strategy_desc, fifo_strategy },		/* strategy */
 	{ &vop_print_desc, fifo_print },		/* print */
 	{ &vop_islocked_desc, fifo_islocked },		/* islocked */
