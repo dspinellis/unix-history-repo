@@ -14,7 +14,7 @@
 # WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF MERCHANTIBILITY AND
 # FITNESS FOR A PARTICULAR PURPOSE.
 #
-# @(#)Makefile	5.2 (Berkeley) %G%
+# @(#)Makefile	5.3 (Berkeley) %G%
 #
 
 DEFS=	-DLIBC_SCCS
@@ -29,20 +29,21 @@ OBJS=	login.o logout.o logwtmp.o
 	@-ld -x -r $*.o
 	@mv a.out $*.o
 
-all: libutil libutil_p
+all: libutil.a libutil_p.a llib-lutil.ln
 
-libutil libutil_p: ${OBJS}
-	@echo building profiled libutil
-	@cd profiled; ar cu ../libutil_p ${OBJS}
-	ranlib libutil_p
+libutil.a libutil_p.a: ${OBJS}
 	@echo building normal libutil
-	@ar cu libutil ${OBJS}
-	ranlib libutil
+	@ar cu libutil.a ${OBJS}
+	ranlib libutil.a
+	@echo building profiled libutil
+	@cd profiled; ar cu ../libutil_p.a ${OBJS}
+	ranlib libutil_p.a
 
-tags:
+llib-lutil.ln: ${SRCS}
+	lint -Cutil ${CFLAGS} ${SRCS}
 
 clean:
-	rm -f ${OBJS} profiled/*.o libutil libutil_p
+	rm -f ${OBJS} profiled/*.o libutil.a libutil_p.a
 
 cleandir: clean
 	rm -f .depend
@@ -51,8 +52,11 @@ depend:
 	mkdep ${CFLAGS} ${SRCS}
 
 install:
-	install -o bin -g bin -m 644 libutil ${DESTDIR}/usr/lib/libutil.a
-	ranlib ${DESTDIR}/usr/lib/libutil.a
-	install -o bin -g bin -m 644 libutil_p ${DESTDIR}/usr/lib/libutil_p.a
-	ranlib ${DESTDIR}/usr/lib/libutil_p.a
+	install -o bin -g bin -m 644 libutil.a ${DESTDIR}/usr/lib
+	ranlib -t ${DESTDIR}/usr/lib/libutil.a
+	install -o bin -g bin -m 644 libutil_p.a ${DESTDIR}/usr/lib
+	ranlib -t ${DESTDIR}/usr/lib/libutil_p.a
+	install -o bin -g bin -m 644 llib-lutil.ln ${DESTDIR}/usr/libexec/lint
 
+tags:
+	ctags ${SRCS}
