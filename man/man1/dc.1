@@ -1,0 +1,196 @@
+.pa 1
+.he 'DC (I)'1/15/73'DC (I)'
+.ti 0
+NAME		dc -- desk calculator
+.sp
+.ti 0
+SYNOPSIS	dc__ [file]
+.sp
+.ti 0
+DESCRIPTION	dc__
+is an arbitrary precision integer arithmetic package.
+The overall structure of dc is
+a stacking (reverse Polish) calculator.
+The following constructions are recognized
+by the calculator:
+.sp
+.in +3
+.ti -3
+number
+.br
+The value of the number is pushed on the stack.
+A number is an unbroken string of the digits 0-9.
+It may be preceded by an underscore (_) to input a
+negative number.
+.sp
+.ti -3
++_ -_ *_ /_ %_ ^_
+.br
+The top two values on the stack are added (+_),
+subtracted (-_), multiplied (*_), divided (/_),
+remaindered (%_) or exponentiated (^).
+The two entries are popped off the stack;
+the result is pushed on the stack in their place.
+.sp
+.ti -3
+s_x
+.br
+The top of the stack is popped and stored into
+a register named x, where x may be any character.
+.sp
+.ti -3
+l_x
+.br
+The value in register x is pushed on the stack.
+The register x is not altered.
+All registers start with zero value.
+.sp
+.ti -3
+d_
+.br
+The top value on the stack is pushed on the stack.
+Thus the top value is duplicated.
+.sp
+.ti -3
+p_
+.br
+The top value on the stack is printed.
+The top value remains unchanged.
+.sp
+.ti -3
+f_
+.br
+All values on the stack and in registers are printed.
+.sp
+.ti -3
+.ul 1
+q
+.br
+exits the program. If executing a string, the nesting level is
+popped by two.
+.sp
+.ti -3
+.ul
+x
+.br
+treats the top element of the stack as a character string
+and executes it as a string of dc commands.
+.sp
+.ti -3
+[...]_____
+.br
+puts the bracketed ascii string onto the top of the stack.
+.sp
+.ti -3
+<_x =_x >_x
+.br
+The top two elements of the stack are popped and compared.
+Register x is executed if they obey the stated
+relation.
+.sp
+.ti -3
+.ul
+v
+.br
+replaces the top element on the stack by its square root.
+.sp
+.ti -3
+!_
+.br
+interprets the rest of the line as a UNIX command.
+.sp
+.ti -3
+c_
+.br
+All values on the stack are popped.
+.sp
+.ti -3
+i_
+.br
+The top value on the stack is popped and used as the
+number radix for further input.
+.sp
+.ti -3
+o_
+.br
+the top value on the stack is popped and used as the
+number radix for further output.
+.sp
+.ti -3
+z_
+.br
+the stack level is pushed onto the stack.
+.sp
+.ti -3
+?_
+.br
+a line of input is taken from the input source (usually the console)
+and executed.
+.sp
+.ti -3
+new-line
+.br
+ignored except as the name of a register or to end the
+response to a ?_.
+.sp
+.ti -3
+space
+.br
+ignored except as the name of a register or to terminate a number.
+.br
+.sp
+.in -3
+If a file name is given, input is taken from that file until
+end-of-file, then input is taken from the console.
+.sp
+An example to 
+calculate the monthly, weekly and
+hourly rates for a $10,000/year salary.
+.sp
+.nf
+.in +3
+10000
+100*	(now in cents)
+dsa	(non-destructive store)
+12/	(pennies per month)
+la52/	(pennies per week)
+d10*	(deci-pennies per week)
+375/	(pennies per hour)
+f	(print all results)
+     512
+     19230
+     83333
+"a"  1000000
+.sp
+.in -3
+An example which prints the first ten values of n! is
+.in +3
+[la1+dsa*pla10>x]sx
+0sa1
+lxx
+.sp
+.fi
+.in -3
+.ti 0
+FILES		--
+.sp
+.ti 0
+SEE ALSO	msh(VII), salloc(III)
+.sp
+.ti 0
+DIAGNOSTICS	(x) ? for unrecognized character x.
+.br
+(x) ? for not enough elements on the stack to do what was asked
+by command x.
+.br
+"Out of space" when the free list is exhausted (too many digits).
+.br
+"Out of headers" for too many numbers being kept around.
+.br
+"Out of pushdown" for too many items on the stack.
+.br
+"Nesting Depth" for too many levels of nested execution.
+.sp
+.ti 0
+.ti 0
+BUGS		--
