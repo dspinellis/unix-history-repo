@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)tape.c	3.25	(Berkeley)	85/01/18";
+static char sccsid[] = "@(#)tape.c	3.26	(Berkeley)	85/02/18";
 #endif
 
 /* Copyright (c) 1983 Regents of the University of California */
@@ -15,7 +15,7 @@ static char sccsid[] = "@(#)tape.c	3.25	(Berkeley)	85/01/18";
 static long	fssize = MAXBSIZE;
 static int	mt = -1;
 static int	pipein = 0;
-static char	*magtape;
+static char	magtape[BUFSIZ];
 static int	bct;
 static char	*tbf;
 static union	u_spcl endoftapemark;
@@ -36,7 +36,7 @@ setinput(source)
 	char *source;
 {
 #ifdef RRESTORE
-	char *host;
+	char *host, *tape;
 #endif RRESTORE
 
 	flsht();
@@ -48,13 +48,14 @@ setinput(source)
 	terminal = stdin;
 #ifdef RRESTORE
 	host = source;
-	magtape = index(host, ':');
-	if (magtape == 0) {
+	tape = index(host, ':');
+	if (tape == 0) {
 nohost:
 		msg("need keyletter ``f'' and device ``host:tape''\n");
 		done(1);
 	}
-	*magtape++ = '\0';
+	*tape++ = '\0';
+	(void) strcpy(magtape, tape);
 	if (rmthost(host) == 0)
 		done(1);
 	setuid(getuid());	/* no longer need or want root privileges */
@@ -75,7 +76,7 @@ nohost:
 		}
 		pipein++;
 	}
-	magtape = source;
+	(void) strcpy(magtape, source);
 #endif RRESTORE
 }
 
@@ -242,18 +243,24 @@ again:
 		return;
 	}
 	closemt();
-	fprintf(stderr, "Mount tape volume %d then type return ", newvol);
+	fprintf(stderr, "Mount tape volume %d\n", newvol);
+	fprintf(stderr, "then enter tape name (default: %s) ", magtape);
 	(void) fflush(stderr);
-	while (getc(terminal) != '\n')
-		if (feof(terminal))
-			done(1);
+	(void) fgets(tbf, BUFSIZ, terminal);
+	if (feof(terminal))
+		done(1);
+	if (tbf[0] != '\n') {
+		(void) strcpy(magtape, tbf);
+		magtape[strlen(magtape) - 1] = '\0';
+	}
 #ifdef RRESTORE
 	if ((mt = rmtopen(magtape, 0)) == -1)
 #else
 	if ((mt = open(magtape, 0)) == -1)
 #endif
 	{
-		fprintf(stderr, "Cannot open tape!\n");
+		fprintf(stderr, "Cannot open %s\n", magtape);
+		volno = -1;
 		goto again;
 	}
 gethdr:
