@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cmdtab.c	5.8.1.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmdtab.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ftp_var.h"
@@ -28,15 +28,16 @@ int	setascii(), setbell(), setbinary(), setdebug(), setform();
 int	setglob(), sethash(), setmode(), setpeer(), setport();
 int	setprompt(), setstruct();
 int	settenex(), settrace(), settype(), setverbose();
-int	disconnect(), syst();
+int	disconnect(), restart(), reget(), syst();
 int	cd(), lcd(), delete(), mdelete(), user();
 int	ls(), mls(), get(), mget(), help(), append(), put(), mput();
 int	quit(), renamefile(), status();
-int	quote(), rmthelp(), shell();
+int	quote(), rmthelp(), shell(), site();
 int	pwd(), makedir(), removedir(), setcr();
 int	account(), doproxy(), reset(), setcase(), setntrans(), setnmap();
 int	setsunique(), setrunique(), cdup(), macdef(), domacro();
-int	sizecmd(), modtime(), rmtstatus();
+int	sizecmd(), modtime(), newer(), rmtstatus();
+int	do_chmod(), do_umask(), idle();
 
 char	accounthelp[] =	"send account command to remote server";
 char	appendhelp[] =	"append to a file";
@@ -46,6 +47,7 @@ char	binaryhelp[] =	"set binary transfer type";
 char	casehelp[] =	"toggle mget upper/lower case id mapping";
 char	cdhelp[] =	"change remote working directory";
 char	cduphelp[] = 	"change remote working directory to parent directory";
+char	chmodhelp[] =	"change file permissions of remote file";
 char	connecthelp[] =	"connect to remote tftp";
 char	crhelp[] =	"toggle carriage return stripping on ascii gets";
 char	deletehelp[] =	"delete remote file";
@@ -57,6 +59,7 @@ char	formhelp[] =	"set file transfer format";
 char	globhelp[] =	"toggle metacharacter expansion of local file names";
 char	hashhelp[] =	"toggle printing `#' for each buffer transferred";
 char	helphelp[] =	"print local help information";
+char	idlehelp[] =	"get (set) idle timer on remote side";
 char	lcdhelp[] =	"change local working directory";
 char	lshelp[] =	"list contents of remote directory";
 char	macdefhelp[] =  "define a macro";
@@ -64,10 +67,11 @@ char	mdeletehelp[] =	"delete multiple files";
 char	mdirhelp[] =	"list contents of multiple remote directories";
 char	mgethelp[] =	"get multiple files";
 char	mkdirhelp[] =	"make directory on the remote machine";
-char	mlshelp[] =	"nlist contents of multiple remote directories";
+char	mlshelp[] =	"list contents of multiple remote directories";
 char	modtimehelp[] = "show last modification time of remote file";
 char	modehelp[] =	"set file transfer mode";
 char	mputhelp[] =	"send multiple files";
+char	newerhelp[] =	"get file if remote file is newer than local file ";
 char	nlisthelp[] =	"nlist contents of remote directory";
 char	nmaphelp[] =	"set templates for default file name mapping";
 char	ntranshelp[] =	"set translation table for default file name mapping";
@@ -78,13 +82,16 @@ char	pwdhelp[] =	"print working directory on remote machine";
 char	quithelp[] =	"terminate ftp session and exit";
 char	quotehelp[] =	"send arbitrary ftp command";
 char	receivehelp[] =	"receive file";
+char	regethelp[] =	"get file restarting at end of local file";
 char	remotehelp[] =	"get help from remote server";
 char	renamehelp[] =	"rename file";
+char	restarthelp[]=	"restart file transfer at bytecount";
 char	rmdirhelp[] =	"remove directory on the remote machine";
 char	rmtstatushelp[]="show status of remote machine";
 char	runiquehelp[] = "toggle store unique for local files";
 char	resethelp[] =	"clear queued command replies";
 char	sendhelp[] =	"send one file";
+char	sitehelp[] =	"send site specific command to remote server\n\t\tTry \"rhelp site\" or \"site help\" for more information";
 char	shellhelp[] =	"escape to the shell";
 char	sizecmdhelp[] = "show size of remote file";
 char	statushelp[] =	"show current status";
@@ -94,6 +101,7 @@ char	systemhelp[] =  "show remote system type";
 char	tenexhelp[] =	"set tenex file transfer type";
 char	tracehelp[] =	"toggle packet tracing";
 char	typehelp[] =	"set file transfer type";
+char	umaskhelp[] =	"get (set) umask on remote side";
 char	userhelp[] =	"send new user information";
 char	verbosehelp[] =	"toggle verbose mode";
 
@@ -109,6 +117,7 @@ struct cmd cmdtab[] = {
 	{ "case",	casehelp,	0,	0,	1,	setcase },
 	{ "cd",		cdhelp,		0,	1,	1,	cd },
 	{ "cdup",	cduphelp,	0,	1,	1,	cdup },
+	{ "chmod",	chmodhelp,	0,	1,	1,	do_chmod },
 	{ "close",	disconhelp,	0,	1,	1,	disconnect },
 	{ "cr",		crhelp,		0,	0,	0,	setcr },
 	{ "delete",	deletehelp,	0,	1,	1,	delete },
@@ -120,6 +129,7 @@ struct cmd cmdtab[] = {
 	{ "glob",	globhelp,	0,	0,	0,	setglob },
 	{ "hash",	hashhelp,	0,	0,	0,	sethash },
 	{ "help",	helphelp,	0,	0,	1,	help },
+	{ "idle",	idlehelp,	0,	1,	1,	idle },
 	{ "image",	binaryhelp,	0,	1,	1,	setbinary },
 	{ "lcd",	lcdhelp,	0,	0,	0,	lcd },
 	{ "ls",		lshelp,		1,	1,	1,	ls },
@@ -132,6 +142,7 @@ struct cmd cmdtab[] = {
 	{ "mode",	modehelp,	0,	1,	1,	setmode },
 	{ "modtime",	modtimehelp,	0,	1,	1,	modtime },
 	{ "mput",	mputhelp,	1,	1,	1,	mput },
+	{ "newer",	newerhelp,	1,	1,	1,	newer },
 	{ "nmap",	nmaphelp,	0,	0,	1,	setnmap },
 	{ "nlist",	nlisthelp,	1,	1,	1,	ls },
 	{ "ntrans",	ntranshelp,	0,	0,	1,	setntrans },
@@ -144,14 +155,16 @@ struct cmd cmdtab[] = {
 	{ "quit",	quithelp,	0,	0,	0,	quit },
 	{ "quote",	quotehelp,	1,	1,	1,	quote },
 	{ "recv",	receivehelp,	1,	1,	1,	get },
-	{ "remotehelp",	remotehelp,	0,	1,	1,	rmthelp },
+	{ "reget",	regethelp,	1,	1,	1,	reget },
 	{ "rstatus",	rmtstatushelp,	0,	1,	1,	rmtstatus },
 	{ "rhelp",	remotehelp,	0,	1,	1,	rmthelp },
 	{ "rename",	renamehelp,	0,	1,	1,	renamefile },
 	{ "reset",	resethelp,	0,	1,	1,	reset },
+	{ "restart",	restarthelp,	1,	1,	1,	restart },
 	{ "rmdir",	rmdirhelp,	0,	1,	1,	removedir },
 	{ "runique",	runiquehelp,	0,	0,	1,	setrunique },
 	{ "send",	sendhelp,	1,	1,	1,	put },
+	{ "site",	sitehelp,	0,	1,	1,	site },
 	{ "size",	sizecmdhelp,	1,	1,	1,	sizecmd },
 	{ "status",	statushelp,	0,	0,	1,	status },
 	{ "struct",	structhelp,	0,	1,	1,	setstruct },
@@ -161,6 +174,7 @@ struct cmd cmdtab[] = {
 	{ "trace",	tracehelp,	0,	0,	0,	settrace },
 	{ "type",	typehelp,	0,	1,	1,	settype },
 	{ "user",	userhelp,	0,	1,	1,	user },
+	{ "umask",	umaskhelp,	0,	1,	1,	do_umask },
 	{ "verbose",	verbosehelp,	0,	0,	0,	setverbose },
 	{ "?",		helphelp,	0,	0,	1,	help },
 	{ 0 },
