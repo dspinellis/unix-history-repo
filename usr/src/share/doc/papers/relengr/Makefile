@@ -3,16 +3,17 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	1.1 (Berkeley) %G%
+#	@(#)Makefile	1.2 (Berkeley) %G%
 #
 SRCS=	0.t 1.t 2.t 3.t
 MACROS=	-ms
 PRINTER=Plz
 TROFF=	ditroff -${PRINTER}
-REFER=	refer -m -n -e -l -s -p ref.bib
+REFER=	../../book/ref/refer -m -n -e -l -s -p ref.bib
 
 paper.${PRINTER}: ${SRCS}
-	${REFER} ${SRCS} | ${TROFF} ${MACROS} -t | psdit >paper.${PRINTER}
+	${REFER} ${SRCS} | ${TROFF} ${MACROS} -t tmac.srefs - | \
+		psdit >paper.${PRINTER}
 
 print: paper.${PRINTER}
 	lpr -${PRINTER} paper.${PRINTER}
