@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)proc.h	7.9 (Berkeley) %G%
+ *	@(#)proc.h	7.10 (Berkeley) %G%
  */
 
 /*
@@ -24,7 +24,7 @@ struct	pgrp {
 	struct	proc *pg_mem;	/* pointer to pgrp members */
 	struct	session *pg_session;	/* pointer to session */
 	pid_t	pg_id;		/* pgrp id */
-	short	pg_jobc;	/* # procs qualifying pgrp for job control */
+	int	pg_jobc;	/* # procs qualifying pgrp for job control */
 };
 
 /*
@@ -83,7 +83,7 @@ struct	proc {
 	int	p_cpticks;	/* ticks of cpu time */
 	fixpt_t	p_pctcpu;	/* %cpu for this process during p_time */
 	short	p_ndx;		/* proc index for memall (because of vfork) */
-	short	p_idhash;	/* hashed based on p_pid for kill+exit+... */
+	struct	proc *p_hash;	/* hashed based on p_pid for kill+exit+... */
 	struct	proc *p_pptr;	/* pointer to process structure of parent */
 	struct	proc *p_cptr;	/* pointer to youngest living child */
 	struct	proc *p_osptr;	/* pointer to older sibling processes */
@@ -128,17 +128,16 @@ struct kinfo_proc {
 	} kp_eproc;
 };
 
-#define	PIDHSZ		64
-#define	PIDHASH(pid)	((pid) & (PIDHSZ - 1))
-
 #ifdef KERNEL
-pid_t	pidhash[PIDHSZ];
-struct	proc *pfind();
-struct	pgrp *pgrphash[PIDHSZ];
-struct 	pgrp *pgfind();		/* find process group by id */
-struct	proc *proc, *procNPROC;	/* the proc table itself */
+#define	PIDHASH(pid)	((pid) & pidhashmask)
+extern	int pidhashmask;		/* in param.c */
+extern	struct proc *pidhash[];		/* in param.c */
+struct	proc *pfind();			/* find process by id */
+extern	struct pgrp *pgrphash[];	/* in param.c */
+struct 	pgrp *pgfind();			/* find process group by id */
+struct	proc *proc, *procNPROC;		/* the proc table itself */
 struct	proc *freeproc, *zombproc, *allproc;
-			/* lists of procs in various states */
+					/* lists of procs in various states */
 int	nproc;
 
 #define	NQS	32		/* 32 run queues */
@@ -186,5 +185,5 @@ int	whichqs;		/* bit mask summarizing non-empty qs's */
 #define	SOWEUPC	0x0200000	/* owe process an addupc() call at next ast */
 #define	SSEL	0x0400000	/* selecting; wakeup/waiting danger */
 #define SEXEC	0x0800000	/* process called exec */
-#define	SPTECHG	0x1000000	/* pte's for process have changed */
-#define	SLOGIN	0x2000000	/* a login process (legit child of init) */
+
+#define	SPTECHG	0x0000000	/* pte's for process have changed XXX */
