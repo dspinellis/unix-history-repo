@@ -4,7 +4,7 @@
 # include "sendmail.h"
 # include <sys/file.h>
 
-SCCSID(@(#)main.c	4.3		%G%);
+SCCSID(@(#)main.c	4.4		%G%);
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -57,9 +57,10 @@ ERROR %%%%   Cannot have daemon mode without SMTP   %%%% ERROR
 
 
 
-main(argc, argv)
+main(argc, argv, envp)
 	int argc;
 	char **argv;
+	char **envp;
 {
 	register char *p;
 	char **av;
@@ -82,6 +83,7 @@ main(argc, argv)
 	extern intsig();
 	extern char **myhostname();
 	extern char *arpadate();
+	extern char **environ;
 
 	/*
 	**  Check to see if we reentered.
@@ -123,6 +125,9 @@ main(argc, argv)
 	}
 	if (*av == NULL)
 		readconfig = !thaw(FreezeFile);
+
+	/* reset the environment after the thaw */
+	environ = envp;
 
 	/*
 	**  Now do basic initialization
