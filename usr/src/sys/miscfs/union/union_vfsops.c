@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)union_vfsops.c	8.15 (Berkeley) %G%
+ *	@(#)union_vfsops.c	8.16 (Berkeley) %G%
  */
 
 /*
@@ -171,7 +171,7 @@ union_mount(mp, path, data, ndp, p)
 	mp->mnt_flag |= (um->um_uppervp->v_mount->mnt_flag & MNT_RDONLY);
 
 	mp->mnt_data = (qaddr_t) um;
-	getnewfsid(mp, MOUNT_UNION);
+	vfs_getnewfsid(mp);
 
 	(void) copyinstr(path, mp->mnt_stat.f_mntonname, MNAMELEN - 1, &size);
 	bzero(mp->mnt_stat.f_mntonname + size, MNAMELEN - size);
@@ -363,18 +363,6 @@ union_root(mp, vpp)
 }
 
 int
-union_quotactl(mp, cmd, uid, arg, p)
-	struct mount *mp;
-	int cmd;
-	uid_t uid;
-	caddr_t arg;
-	struct proc *p;
-{
-
-	return (EOPNOTSUPP);
-}
-
-int
 union_statfs(mp, sbp, p)
 	struct mount *mp;
 	struct statfs *sbp;
@@ -417,7 +405,6 @@ union_statfs(mp, sbp, p)
 	if (error)
 		return (error);
 
-	sbp->f_type = MOUNT_UNION;
 	sbp->f_flags = mstat.f_flags;
 	sbp->f_bsize = mstat.f_bsize;
 	sbp->f_iosize = mstat.f_iosize;
@@ -444,6 +431,7 @@ union_statfs(mp, sbp, p)
 	sbp->f_ffree = mstat.f_ffree;
 
 	if (sbp != &mp->mnt_stat) {
+		sbp->f_type = mp->mnt_vfc->vfc_typenum;
 		bcopy(&mp->mnt_stat.f_fsid, &sbp->f_fsid, sizeof(sbp->f_fsid));
 		bcopy(mp->mnt_stat.f_mntonname, sbp->f_mntonname, MNAMELEN);
 		bcopy(mp->mnt_stat.f_mntfromname, sbp->f_mntfromname, MNAMELEN);
@@ -451,53 +439,22 @@ union_statfs(mp, sbp, p)
 	return (0);
 }
 
-int
-union_sync(mp, waitfor, cred, p)
-	struct mount *mp;
-	int waitfor;
-	struct ucred *cred;
-	struct proc *p;
-{
+/*
+ * XXX - Assumes no data cached at union layer.
+ */
+#define union_sync ((int (*) __P((struct mount *, int, struct ucred *, \
+	    struct proc *)))nullop)
 
-	/*
-	 * XXX - Assumes no data cached at union layer.
-	 */
-	return (0);
-}
-
-int
-union_vget(mp, ino, vpp)
-	struct mount *mp;
-	ino_t ino;
-	struct vnode **vpp;
-{
-	
-	return (EOPNOTSUPP);
-}
-
-int
-union_fhtovp(mp, fidp, nam, vpp, exflagsp, credanonp)
-	struct mount *mp;
-	struct fid *fidp;
-	struct mbuf *nam;
-	struct vnode **vpp;
-	int *exflagsp;
-	struct ucred **credanonp;
-{
-
-	return (EOPNOTSUPP);
-}
-
-int
-union_vptofh(vp, fhp)
-	struct vnode *vp;
-	struct fid *fhp;
-{
-
-	return (EOPNOTSUPP);
-}
-
-int union_init __P((void));
+#define union_fhtovp ((int (*) __P((struct mount *, struct fid *, \
+	    struct mbuf *, struct vnode **, int *, struct ucred **)))eopnotsupp)
+int union_init __P((struct vfsconf *));
+#define union_quotactl ((int (*) __P((struct mount *, int, uid_t, caddr_t, \
+	    struct proc *)))eopnotsupp)
+#define union_sysctl ((int (*) __P((int *, u_int, void *, size_t *, void *, \
+	    size_t, struct proc *)))eopnotsupp)
+#define union_vget ((int (*) __P((struct mount *, ino_t, struct vnode **))) \
+	    eopnotsupp)
+#define union_vptofh ((int (*) __P((struct vnode *, struct fid *)))eopnotsupp)
 
 struct vfsops union_vfsops = {
 	union_mount,
@@ -511,4 +468,5 @@ struct vfsops union_vfsops = {
 	union_fhtovp,
 	union_vptofh,
 	union_init,
+	union_sysctl,
 };
