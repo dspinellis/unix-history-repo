@@ -160,6 +160,7 @@
 #define	SYS_fstatfs	158
 #define	SYS_async_daemon	160
 #define	SYS_getfh	161
+#define	SYS_uname	164
 #define	SYS_shmsys	171
 #define	SYS_setgid	181
 #define	SYS_setegid	182
