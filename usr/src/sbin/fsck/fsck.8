@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)fsck.8	6.2 (Berkeley) %G%
+.\"	@(#)fsck.8	6.3 (Berkeley) %G%
 .\"
 .TH FSCK 8 ""
 .UC 4
@@ -22,6 +22,8 @@ filesystem ...
 [
 .B \-b
 block#
+] [
+.B \-c
 ] [
 .B \-y
 ] [
@@ -62,10 +64,10 @@ Unreferenced inodes
 Link counts in inodes too large
 .ns
 .IP
-Missing blocks in the free list
+Missing blocks in the free map
 .ns
 .IP
-Blocks in the free list also in files
+Blocks in the free map also in files
 .ns
 .IP
 Counts in the super-block wrong
@@ -123,7 +125,7 @@ The following flags are interpreted by
 .TP 6
 .B \-b
 Use the block specified immediately after the flag as
-the super block for the file system.  Block 32 is always
+the super block for the file system.  Block 32 is usually
 an alternate super block.
 .TP 6
 .B  \-y
@@ -136,6 +138,27 @@ to continue after essentially unlimited trouble has been encountered.
 Assume a no response to all questions asked by 
 .I fsck;
 do not open the file system for writing.
+.TP 6
+.B  \-c
+If the file system is in the old (static table) format,
+convert it to the new (dynamic table) format.
+If the file system is in the new format,
+convert it to the old format provided the old format
+can support the filesystem configuration.
+In interactive mode,
+.I fsck
+will list the direction the conversion is to be made
+and ask whether the conversion should be done.
+If a negative answer is given,
+no further operations are done on the filesystem.
+In preen mode,
+the direction of the conversion is listed and done if
+possible without user interaction.
+Conversion in preen mode is best used when all the file systems
+are being converted at once.
+The format of a file system can be determined from the
+first line of output from 
+.IR dumpfs (8).
 .PP
 If no filesystems are given to 
 .I fsck
@@ -147,13 +170,13 @@ the file
 Inconsistencies checked are as follows:
 .TP 6
 1.
-Blocks claimed by more than one inode or the free list.
+Blocks claimed by more than one inode or the free map.
 .br
 .br
 .ns
 .TP 6
 2.
-Blocks claimed by an inode or the free list outside the range of the file system.
+Blocks claimed by an inode outside the range of the file system.
 .br
 .br
 .ns
@@ -170,6 +193,8 @@ Size checks:
 .ns
 .IP "" 12
 Directory size not of proper format.
+.br
+Partially truncated file.
 .br
 .br
 .ns
@@ -205,14 +230,13 @@ Super Block checks:
 .br
 .ns
 .IP "" 12
-.br
 More blocks for inodes than there are in the file system.
 .br
 .br
 .ns
 .TP 6
 9.
-Bad free block list format.
+Bad free block map format.
 .br
 .br
 .ns
