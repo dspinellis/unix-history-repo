@@ -1,4 +1,4 @@
-/* %G% (Berkeley) @(#)curses.h	1.4 */
+/* %G% (Berkeley) @(#)curses.h	1.5 */
 # ifndef WINDOW
 
 # include	<stdio.h>
@@ -109,7 +109,7 @@ int	__void__;
 #define	mvgetch(y,x)		mvwgetch(stdscr,y,x)
 #define	mvaddstr(y,x,str)	mvwaddstr(stdscr,y,x,str)
 #define	mvgetstr(y,x)		mvwgetstr(stdscr,y,x)
-#define	mvinch(y,x)		mvwinch(win,y,x)
+#define	mvinch(y,x)		mvwinch(stdscr,y,x)
 
 /*
  * psuedo functions
