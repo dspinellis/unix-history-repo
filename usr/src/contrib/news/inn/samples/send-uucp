@@ -1,0 +1,116 @@
+#! /bin/sh
+##  $Revision: 1.11 $
+##  SH script to send UUCP batches out.
+
+##  =()<. @<_PATH_SHELLVARS>@>()=
+. /var/spool/news/data/innshellvars
+
+PROGNAME=`basename $0`
+LOCK=${LOCKS}/LOCK.${PROGNAME}
+LOG=${MOST_LOGS}/${PROGNAME}.log
+
+MAXJOBS=200
+UUXFLAGS="- -r -gd"
+
+##  Start logging.
+test ! -f ${LOG} && touch ${LOG}
+chmod 0660 ${LOG}
+exec >>${LOG} 2>&1
+echo "${PROGNAME}: [$$] begin `date`"
+cd ${BATCH}
+
+##  Anyone else there?
+trap 'rm -f ${LOCK} ; exit 1' 1 2 3 15
+shlock -p $$ -f ${LOCK} || {
+    echo "${PROGNAME}: [$$] locked by [`cat ${LOCK}`]"
+    exit 0
+}
+
+##  Who are we sending to?
+if [ -n "$1" ] ; then
+    LIST="$*"
+else
+    LIST=""
+    case `date +%H` in
+    01|04|07|21|23)
+	LIST="kurz-ai aoa clsib21 leafusa metasoft"
+	;;
+    06|12|15|17|20)
+	LIST="esca"
+	;;
+    esac
+fi
+
+case ${HAVE_UUSTAT} in
+DONT)
+    TEMP=${TMPDIR}/uuq$$
+    uuq -h |tr -d : >${TEMP}
+    ;;
+esac
+
+##  Do the work...
+for SITE in ${LIST}; do
+
+    ##  See if any data is ready for host.
+    BATCHFILE=${SITE}.uucp
+    if [ -f ${SITE}.work ] ; then
+	cat ${SITE}.work >>${BATCHFILE}
+	rm -f ${SITE}.work
+    fi
+    mv ${SITE} ${SITE}.work
+    ctlinnd -s -t30 flush ${SITE} || continue
+    cat ${SITE}.work >>${BATCHFILE}
+    rm -f ${SITE}.work
+    if [ ! -s ${BATCHFILE} ] ; then
+	echo "${PROGNAME}: [$$] no articles for ${SITE}"
+	rm -f ${BATCHFILE}
+	continue
+    fi
+
+    ##  Get number of jobs for the current site.
+    case ${HAVE_UUSTAT} in
+    DONT)
+	JOBS=`${AWK} \
+	    'BEGIN{X=0}  {if ($1 == "'$SITE'") X=$2}  END{print X}' <${TEMP}`
+	;;
+    DO)
+	JOBS=`uustat -s${SITE} | grep rnews | wc -l`
+	;;
+    *)
+	JOBS=0
+	;;
+    esac
+    if [ ${JOBS} -ge ${MAXJOBS} ] ; then
+	echo "${PROGNAME}: [$$] ${JOBS} files already queued for ${SITE}"
+	continue
+    fi
+    QUEUEJOBS=`expr ${MAXJOBS} - ${JOBS}`
+
+    ##  Get the compression flags.
+    echo "${PROGNAME}: [$$] begin ${SITE}"
+    case "${SITE}" in
+    esca)
+	COMPRESS="compress -b12"
+	;;
+    *)
+	COMPRESS="compress"
+	;;
+    esac
+
+    time batcher -N ${QUEUEJOBS} \
+	-p"(echo '#! cunbatch' ; exec ${COMPRESS} ) | uux ${UUXFLAGS} %s!rnews" \
+	${SITE} ${BATCHFILE}
+
+    echo "${PROGNAME}: [$$] end ${SITE}"
+done
+
+case ${HAVE_UUSTAT} in
+DONT)
+    rm -f ${TEMP}
+    ;;
+esac
+
+##  Remove the lock file.
+rm -f ${LOCK}
+
+echo "${PROGNAME}: [$$] end `date`"

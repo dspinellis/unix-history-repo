@@ -1,0 +1,33 @@
+#! /bin/sh
+##  $Revision: 1.13 $
+##  Checkgroups control-message handler.
+
+PROG=checkgroups
+##  Some shells don't pass in $* unless we explicitly pass it in here.
+##  =()<. @<_PATH_PARSECTL>@ "$@">()=
+. /var/spool/news/data/parsecontrol "$@"
+
+case ${ACTION} in
+mail)
+    export FROM CONTROLPROGS NEWSUSER ARTICLE
+    (
+	echo "${FROM} posted the following checkgroups message:"
+	${SED} -e '/^$/q' -e 's/^/    /' <${ARTICLE}
+	echo ''
+	echo 'If you want to process it, then feed the body of the'
+	echo 'message into docheckgroups while running as the'
+	echo "\"${NEWSUSER}\" userid:"
+	echo ''
+	echo "${CONTROLPROGS}/docheckgroups <<-EOF-"
+	${SED} -e '1,/^$/d' <${ARTICLE}
+	echo '-EOF-'
+    ) | ${MAILCMD} -s "checkgroups by ${FROM}" ${NEWSMASTER}
+    ;;
+doit)
+    ${SED} -e '1,/^$/d' <${ARTICLE} \
+	| ${CONTROLPROGS}/docheckgroups \
+	| ${WRITELOG} ${LOGFILE} "checkgroups by ${FROM}"
+    ;;
+esac
+
+exit

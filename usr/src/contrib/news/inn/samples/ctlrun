@@ -1,0 +1,58 @@
+#!/bin/sh
+##  $Revision: 1.6 $
+##  Run all control messages named on the command line, or in the spool
+##  directory.
+
+##  =()<. @<_PATH_SHELLVARS>@>()=
+. /var/spool/news/data/innshellvars
+
+INP=${TMPDIR}/inp$$
+TEMP=${TMPDIR}/ctl$$
+case "$#" in
+0)
+    cd ${SPOOL}/control
+    ls
+    ;;
+*)
+    ls $*
+    ;;
+esac >${INP}
+
+cat ${INP} | while read ARTICLE ; do
+    # Get the headers.
+    ${SED} -e '/^$/q' < ${ARTICLE} >${TEMP}
+    # Get the Control line into $1..$9 and check it.
+    set ""`grep '^Control:' <${TEMP}`
+    WHAT=""
+    case "$2" in
+    ihave|sendme|checkgroups|sendsys|senduuname|version|newgroup|rmgroup)
+	WHAT=$2
+	;;
+    cancel)
+	WHAT=skip
+	;;
+    esac
+    test "${WHAT}" = "skip" && continue
+
+    # If no control line, try the subject line.
+    if [ -z "${WHAT}" ] ; then
+	# Get the subject line into $1..$9 and check it.
+	set ""`grep '^Subject:' <${TEMP}`
+	test "$2" != "cmsg" && continue
+	case "$3" in
+	ihave|sendme|checkgroups|sendsys|senduuname|version|newgroup|rmgroup)
+	    WHAT=$3
+	    ;;
+	esac
+    fi
+    test -z "${WHAT}" && continue
+
+    FROM=`grep "^From:" <${TEMP} \
+	| ${SED} -e 's/From:\(.*\)/\1/' -e 's/ (.*)//' -e 's/.*<\(.*\)>/\1/'`
+    test -z "${FROM}" && FROM=${NEWSMASTER}
+    REPLYTO=${FROM}
+
+    ${CONTROLPROGS}/${WHAT} ${FROM} ${REPLYTO} control/${ARTICLE}
+    rm -f ${TEMP}
+done
+rm -f ${INP}

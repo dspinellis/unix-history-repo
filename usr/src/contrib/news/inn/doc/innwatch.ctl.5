@@ -1,0 +1,215 @@
+.\" $Revision: 1.3 $
+.TH INNWATCH.CTL 5
+.SH NAME
+innwatch.ctl \- control Usenet supervision by innwatch
+.SH DESCRIPTION
+The file
+.\" =()<.I @<_PATH_CTLWATCH>@>()=
+.I /var/spool/news/data/innwatch.ctl
+is used to determine what actions are taken during the periodic
+supervisions by
+.IR innwatch .
+.PP
+The file consists of a series of lines; blank lines and lines beginning
+with a number sign (``#'') are ignored.
+All other lines consist of seven fields, each preceded by a delimiting
+character:
+.RS
+:label:state:condition:test:limit:command:reason
+.RE
+.PP
+The delimiter can be any one of several non-alphanumeric characters that does
+not appear elsewhere in the line; there is no way to quote it to
+include it in any of the fields.
+Any of ``!'', ``,'', ``:'', ``@'', ``;'', or ``?'' is a good choice.
+Each line can have a different delimiter; the first character on each line
+is the delimiter for that line.
+White space surrounding delimiters, except before the first, is ignored,
+and does not form part of the fields, white space within fields is
+permitted.
+All delimiters must be present.
+.PP
+The first field is a label for the control line.
+It is used as an internal state indicator and in
+.I ctlinnd
+messages to control the server.
+If omitted, the line number is used.
+.PP
+The second field specifies when this control line should be used.
+It consists of a list of labels,
+and special indicators,
+separated by whitespace.
+If the current state matches against any of the labels in this field,
+this line will be used as described below.
+The values that may be used are:
+.IP "\-"
+This line matches if the current state is the same as the label on
+this line, or if the current state is ``run,'' the initial state.
+This is also the default state if this field is empty.
+.IP "+"
+This line matches if the current state is ``run.''
+.IP "*"
+This line always matches.
+.IP "label"
+This line matches if the current state is the specified ``label.''
+.IP "\-label"
+This line matches if the current state is not the specified ``label.''
+.PP
+The third field specifies a shell command that is invoked if this line matches.
+Do not use any shell filename expansion characters such as ``*'', ``?'',
+or ``['' (even quoted, they're not likely to work as intended).
+If the command succeeds, as indicated by its exit status, it is expected
+to have printed a single integer to standard output.
+This gives the value of this control line, to be used below.
+If the command fails, the line is ignored.
+The command is executed with its current directory set to the news spool
+directory,
+.\" =()<.IR @<_PATH_SPOOL>@ .>()=
+.IR /var/spool/news/spool .
+.PP
+The fourth field specifies the operator to use to test the value returned above.
+It should be one of the two letter numeric test operators defined in
+.IR test (1)
+such as ``eq'', ``lt'' and the like.
+The leading dash (`'\-'') should not be included.
+.PP
+The fifth field specifies a constant with which to compare the value using
+the operator just defined.
+This is done by invoking the command
+.RS
+test value -operator constant
+.RE
+The line is said to ``succeed'' if it returns true.
+.PP
+The sixth field specifies what should be done if the line succeeds,
+and in some cases if it fails.
+Any of the following words may be used:
+.IP throttle
+Causes
+.I innwatch
+to throttle the server if this line succeeds.
+It also sets the state to the value of the line's label.
+If the line fails, and the state was previously equal to
+the label on this line (that is, this line had previously succeeded),
+then a
+.I go
+command will be sent to the server, and
+.I innwatch
+will return to the ``run'' state.
+The ``throttle'' is only performed if the current state is ``run'' or a
+state other than the label of this line, regardless of whether the command
+succeeds.
+.IP pause
+Is identical to ``throttle'' except that the server is paused.
+.IP shutdown
+Sends a ``shutdown'' command to the server.
+It is for emergency use only.
+.IP flush
+Sends a ``flush'' command to the server.
+.IP go
+Causes
+.I innwatch
+to send a ``go'' command to the server and to set the state to ``run.''
+.IP exit
+Causes
+.I innwatch
+to exit.
+.PP
+.IP skip
+The result of the control file is skipped for the current pass.
+.PP
+The last field specifies the reason that is used in those
+.I ctlinnd
+commands that require one.
+More strictly, it is part of the reason \(em
+.I innwatch
+appends some information to it.
+In order to enable other sites to recognize the state of the local
+.I innd
+server, this field should usually be set to one of several standard
+values.
+Use ``No\ space'' if the server is rejecting articles because of a lack
+of filesystem resources.
+Use ``loadav'' if the server is rejecting articles because of a lack
+of CPU resources.
+.PP
+Once
+.I innwatch
+has taken some action as a consequence of its control line, it skips the
+rest of the control file for this pass.
+If the action was to restart the server (that is, issue a ``go'' command),
+then the next pass will commence almost immediately, so that
+.I innwatch
+can discover any other condition that may mean that the server should
+be suspended again.
+.SH EXAMPLES
+.RS
+.nf
+@@@df .|awk 'NR==2 {print $4}'@lt@10000@throttle@No space
+@@@df -i .|awk 'NR==2 {print $4}'@lt@1000@throttle@No space (inodes)
+.fi
+.RE
+.PP
+The first line causes the server to be throttled if the free space drops
+below 10000 units
+(using whatever units
+.I df
+uses), and restarted again when free space increases above the threshold.
+.PP
+The second line does the same for inodes.
+.PP
+The next three lines act as a group and should
+appear in the following order.
+It is easier to explain them, however, if they are described from the last up.
+.RS
+.nf
+!load!load hiload!loadavg!lt!5!go!
+:hiload:+ load:loadavg:gt:8:throttle:loadav
+/load/+/loadavg/ge/6/pause/loadav
+.fi
+.RE
+The final line causes the server to be paused if
+.I innwatch
+is in the ``run'' state and the load average rises to, or above, six.
+The state is set to ``load'' when this happens.
+The previous line causes the server to be throttled when
+.I innwatch
+is in the ``run'' or ``load'' state, and the load average rises above eight.
+The state is set to ``hiload'' when this happens.
+Note that
+.I innwatch
+can switch the server from ``paused'' to ``throttled'' if the load average
+rises from below six to between six and seven, and then to above eight.
+The first line causes the server to be sent a ``go'' command if
+.I innwatch
+is in the ``load'' or ``hiload'' state, and the load average drops below five.
+.PP
+Note that all three lines assume a mythical command
+.I loadavg
+that is assumed to print the current load average as an integer.
+In more practical circumstances, a pipe of
+.I uptime
+into
+.I awk
+is more likely to be useful.
+.SH BUGS
+This file must be tailored for each individual site, the sample supplied
+is truly no more than a sample.
+The file should be ordered so that the more common problems are tested first.
+.PP
+The ``run'' state is not actually identified by the label with that three
+letter name, and using it will not work as expected.
+.PP
+Using an ``unusual'' character for the delimiter such as ``('', ``*'',
+``&'', ``\(ga'', ``\(aa'', and the like, is likely to lead to obscure and
+hard to locate bugs.
+.SH HISTORY
+Written by <kre@munnari.oz.au> for InterNetNews.
+.de R$
+This is revision \\$3, dated \\$4.
+..
+.R$ $Id: innwatch.ctl.5,v 1.3 1993/01/29 16:42:58 rsalz Exp $
+.SH "SEE ALSO"
+innd(8),
+ctlinnd(8),
+news.daily(8).

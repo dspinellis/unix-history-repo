@@ -1,0 +1,351 @@
+#! /bin/sh
+##  $Revision: 1.21 $
+##  Summarize INN log files.
+##  Optional arguments:
+##	norotate	Do not rotate logfiles
+
+##  =()<. @<_PATH_SHELLVARS>@>()=
+. /var/spool/news/data/innshellvars
+
+##  If you get an error from this line:
+##	sh -c 'egrep "`ls /etc`" /dev/null'
+##  then get a better egrep, like the FSF one.
+
+##  Directory where old log files are kept.
+OLD=${MOST_LOGS}/OLD
+##  If you want to archive the active file, enable this line.
+ACTIVEFILE=${ACTIVE}
+##  Number of lines of error in each category to report.
+TOP=${TOP-20}
+##  NN log file.
+NN=${NEWSLIB}/nn/Log
+##  Where nntpsend, if used, writes its log information.
+NNTPSEND=${MOST_LOGS}/nntpsend.log
+##  Where news.daily places expire output, unless noexplog was used.
+EXPLOG=${MOST_LOGS}/expire.log
+
+##  If you divide your news syslog into separate files, list them here.
+SYSLOG_CRIT=${MOST_LOGS}/news.crit
+SYSLOG_ERR=${MOST_LOGS}/news.err
+SYSLOG_NOTICE=${MOST_LOGS}/news.notice
+SYSLOGS="${SYSLOG_CRIT} ${SYSLOG_ERR} ${SYSLOG_NOTICE}"
+
+##  Where tally control and unwanted processors are found.
+TALLY_CONTROL=${NEWSBIN}/tally.control
+TALLY_UNWANTED=${NEWSBIN}/tally.unwanted
+UNWANTED_LOG=${MOST_LOGS}/unwanted.log
+CONTROL_LOG=${MOST_LOGS}/control.log
+CONTROL_DATA=
+test -f ${MOST_LOGS}/newgroup.log && CONTROL_DATA=${MOST_LOGS}/newgroup.log
+test -f ${MOST_LOGS}/rmgroup.log \
+	&& CONTROL_DATA="${CONTROL_DATA} ${MOST_LOGS}/rmgroup.log"
+
+##  Build up the list of log files to process.
+LOGS="${ERRLOG} ${EXPLOG} ${LOG} ${ACTIVEFILE} ${SYSLOGS} ${UNWANTED_LOG}"
+test -n "${NNTPSEND}" -a -f "${NNTPSEND}" && LOGS="${LOGS} ${NNTPSEND}"
+test -n "${CONTROL_DATA}" && LOGS="${LOGS} ${CONTROL_LOG}"
+for F in checkgroups default ihave newgroup rmgroup sendme \
+	 sendsys senduuname version miscctl; do
+    test -f ${MOST_LOGS}/${F}.log && LOGS="${LOGS} ${MOST_LOGS}/${F}.log"
+done
+
+PROGNAME=scanlogs
+LOCK=${LOCKS}/LOCK.${PROGNAME}
+
+##  Set defaults.
+ROTATE=true
+
+##  Parse JCL.
+for I
+do
+    case "X$I" in
+    Xnonn)
+	# Ignore this.
+	;;
+    Xnorotate)
+	ROTATE=false
+	;;
+    *)
+	echo "Unknown flag ${I}" 1>&2
+	exit 1
+	;;
+    esac
+done
+
+##  Make sure every log exists.
+for F in ${LOGS} ; do
+    test ! -f ${F} && touch ${F}
+done
+
+##  Temporary files.
+T=${TMPDIR}/scan$$
+PROBS=${TMPDIR}/scanlog$$
+trap "rm -f ${T} ${PROBS}; exit 0" 0 1 2 3 15
+
+##  Rotate the logs?
+if ${ROTATE} ; then
+    ##  Lock out others.
+    shlock -p $$ -f ${LOCK} || {
+	echo "$0: Locked by `cat ${LOCK}`"
+	exit 1
+    }
+    trap "rm -f ${T} ${PROBS} ${LOCK}; exit 0" 1 2 3 15
+
+    HERE=`pwd`
+    cd ${MOST_LOGS}
+
+    ctlinnd -s pause "Flushing log and syslog files" 2>&1
+    ctlinnd -s flushlogs 2>&1 || {
+	echo 'Cannot flush logs.'
+	rm -f ${LOCK}
+	exit 1
+    }
+
+    ##  Make sure these .old files exist, in case innd is down.
+    for F in ${LOG} ${ERRLOG} ${EXPLOG} ; do
+	if [ ! -f ${F}.old ]; then
+	    rm -f ${F}.old
+	    cp ${F} ${F}.old
+	    cat /dev/null >${F}
+	fi
+    done
+
+    ##  Copy syslog files, truncating old inode since syslog has it open.
+    for F in ${SYSLOGS}; do
+	rm -f ${F}.old
+	cp ${F} ${F}.old
+	cat /dev/null >${F}
+    done
+
+    ##  Make a copy of the active file.
+    if [ -n ${ACTIVEFILE} ] ; then
+	BASE=`basename ${ACTIVEFILE}`
+	rm -f ${OLD}/${BASE}.old
+	cp ${ACTIVEFILE} ${OLD}/${BASE}.old
+    fi
+
+    ##  These are live files, so use link rather than copy.
+    for F in ${NNTPSEND} ; do
+	if [ -f ${F} ]; then
+	    rm -f ${F}.old ${F}.new
+	    ln ${F} ${F}.old
+	    touch ${F}.new
+	    chmod 0660 ${F}.new
+	    mv ${F}.new ${F}
+	fi
+    done
+
+    ##  Tally control messages if we logged them.
+    test -n "${CONTROL_DATA}" && cat ${CONTROL_DATA} | ${TALLY_CONTROL}
+    ${TALLY_UNWANTED} <${LOG}.old
+
+    ctlinnd -s go "Flushing log and syslog files" 2>&1
+
+    cd ${OLD}
+    for F in ${LOGS}; do
+	##  Process the current (just-flushed) log
+	BASE=`basename ${F}`
+	rm -f ${OLD}/${BASE}
+	case ${F} in
+	${SYSLOG_CRIT}|${ERRLOG}|${EXPLOG}|${LOG}|${SYSLOG_NOTICE})
+	    ##  Make a link that can be deleted (since if not rotating
+	    ##  we delete the copy that is made in ${TMPDIR}).
+	    mv ${F}.old ${OLD}/${BASE}
+	    rm -f ${OLD}/${BASE}.0
+	    ln ${OLD}/${BASE} ${OLD}/${BASE}.0
+	    ;;
+	${ACTIVEFILE})
+	    mv ${BASE}.old ${OLD}/${BASE}
+	    ;;
+	${SYSLOG_ERR})
+	    mv ${F}.old ${OLD}/${BASE}
+	    ;;
+	*)
+	    if [ -f ${F}.old ]; then
+		mv ${F}.old ${OLD}/${BASE}
+	    else
+		rm -f ${OLD}/${BASE} ${F}.new
+		touch ${F}.new
+		chmod 0660 ${F}.new
+		ln ${F} ${OLD}/${BASE}
+		mv ${F}.new ${F}
+	    fi
+	    ;;
+	esac
+    done
+    cd ${HERE}
+
+    ##  Truncate logs from send-nntp and/or send-uucp.
+    if [ -s ${MOST_LOGS}/send-nntp.log ] ; then
+	${COMPRESS} <${MOST_LOGS}/send-nntp.log >${OLD}/send-nntp.1${Z}
+	cat /dev/null >${MOST_LOGS}/send-nntp.log
+    fi
+    if [ -s ${MOST_LOGS}/send-uucp.log ] ; then
+	${COMPRESS} <${MOST_LOGS}/send-uucp.log >${OLD}/send-uucp.1${Z}
+	cat /dev/null >${MOST_LOGS}/send-uucp.log
+    fi
+else
+    ##  Don't use the real OLD directory, instead use TMPDIR
+    OLD=${TMPDIR}
+
+    ##  Make a snapshot of what we need for below.
+    ctlinnd -s pause "Snapshot log and syslog files" 2>&1
+    for F in ${SYSLOG_CRIT} ${ERRLOG} ${EXPLOG} ${LOG} ${SYSLOG_NOTICE} ; do
+	BASE=`basename ${F}`
+	rm -f ${OLD}/${BASE}.0
+	cp ${F} ${OLD}/${BASE}.0
+    done
+    ctlinnd -s go "Snapshot log and syslog files" 2>&1
+fi
+
+##
+##  We now (finally!) have copies of the log files where we need them.
+##
+
+##  Display syslog critical messages.
+BASE=`basename ${SYSLOG_CRIT}`
+OLD_SYSLOG=${OLD}/${BASE}.0
+if [ -s ${OLD_SYSLOG} ] ; then
+    echo Syslog critical messages:
+    cat ${OLD_SYSLOG}
+    echo ---------
+    echo ''
+fi
+rm -f ${OLD_SYSLOG}
+
+##  Display error log.
+BASE=`basename ${ERRLOG}`
+OLD_ERRLOG=${OLD}/${BASE}.0
+if [ -s ${OLD_ERRLOG} ] ; then
+    echo Error log:
+    cat ${OLD_ERRLOG}
+    echo ---------
+    echo ''
+fi
+rm -f ${OLD_ERRLOG}
+
+##  Display expire log messages
+BASE=`basename ${EXPLOG}`
+OLD_EXPLOG=${OLD}/${BASE}.0
+if [ -s ${OLD_EXPLOG} ] ; then
+    echo Expire messages:
+    cat ${OLD_EXPLOG}
+    echo ---------
+    echo ''
+fi
+rm -f ${OLD_EXPLOG}
+
+##  Scan for various problems in articles we were offered or sent.
+BASE=`basename ${LOG}`
+OLD_LOG=${OLD}/${BASE}.0
+if [ -f ${OLD_LOG} ]; then
+    ${AWK} '$4 == "-" || $4 == "j" { print }' <${OLD_LOG} >${PROBS}
+
+    ${AWK} '$4 == "-" { print $5; }' ${PROBS} \
+	    | sort | uniq -c | sort -nr | ${SED} ${TOP}q >${T}
+    if [ -s ${T} ] ; then
+	echo Top ${TOP} sites sending bad articles:
+	cat ${T}
+	echo ''
+    fi
+
+    ${AWK} '$4 == "j" { print $5; }' ${PROBS} \
+	    | sort | uniq -c | sort -nr | ${SED} ${TOP}q >${T}
+    if [ -s ${T} ] ; then
+	echo Top ${TOP} sites sending junked "(unwanted)" articles:
+	cat ${T}
+	echo ''
+    fi
+
+
+    ${EGREP} '437 Unwanted distribution' ${PROBS} | ${SED} 's/.*"\(.*\)".*/\1/' \
+	    | sort | uniq -c | sort -nr | ${SED} ${TOP}q >${T}
+    if [ -s ${T} ] ; then
+	echo Top ${TOP} unwanted distributions by number of articles:
+	cat ${T}
+	echo ''
+    fi
+
+    ${EGREP} '437 Unapproved for' ${PROBS} | ${SED} 's/.*"\(.*\)".*/\1/' \
+	    | sort | uniq -c | sort -nr | ${SED} ${TOP}q >${T}
+    if [ -s ${T} ] ; then
+	echo Top ${TOP} supposedly-moderated groups with unmoderated postings:
+	cat ${T}
+	echo ''
+    fi
+
+    ${EGREP} '437 Unwanted newsgroup' ${PROBS} | ${SED} 's/.*"\(.*\)".*/\1/' \
+	    | sort | uniq -c | sort -nr | ${SED} ${TOP}q >${T}
+    if [ -s ${T} ] ; then
+	echo Top ${TOP} unwanted newsgroups:
+	cat ${T}
+	echo ''
+    fi
+
+    ##  Your egrep may complain about this regular expression being too long;
+    ##  if so, complain to your vendor and try GNU egrep.
+    P1='No body|EOF in headers|"Message-ID"|No colon-space in '
+    P2='Missing ".*" header|Linecount|Bad Date|Too old'
+    ${EGREP} "${P1}|${P2}" ${PROBS} \
+	    | ${SED} -e 's/.*437 //' \
+		-e 's/Linecount.*/Linecount wrong/' -e 's/Too old.*/Too old/' \
+	    | sort | uniq -c | sort -nr | ${SED} ${TOP}q >${T}
+    if [ -s ${T} ] ; then
+	echo Top ${TOP} general message problems:
+	cat ${T}
+	echo ''
+    fi
+
+    ${EGREP} "${P1}|${P2}" ${PROBS} | ${AWK} '{print $5}' \
+	    | sort | uniq -c | sort -nr | ${SED} ${TOP}q >${T}
+    if [ -s ${T} ] ; then
+	echo Top ${TOP} sites sending news with bad headers:
+	cat ${T}
+	echo ''
+    fi
+    rm -f ${PROBS}
+fi
+rm -f ${OLD_LOG}
+
+##  Summarize syslog information
+BASE=`basename ${SYSLOG_NOTICE}`
+OLD_SYSLOG=${OLD}/${BASE}.0
+if [ -s ${OLD_SYSLOG} ] ; then
+    echo Syslog summary:
+    ##  Portable work-around some debugging syslogs.
+    ${SED} -e 's/{news.[a-z]*} //' <${OLD_SYSLOG} | ${AWK} -f ${NEWSLIB}/innlog.awk
+    echo ---------
+    echo ''
+fi
+rm -f ${OLD_SYSLOG}
+
+##  Compress and rotate the logs.
+if ${ROTATE} ; then
+    cd ${OLD}
+    for F in ${LOGS} ; do
+	##  Skip if file doesn't exist.
+	BASE=`basename ${F}`
+	test -f ${BASE} || continue
+
+	##  Compress the file.
+	${COMPRESS} <${BASE} >${BASE}.0${Z} && rm -f ${BASE}
+	chmod 0440 ${BASE}.0${Z}
+
+	##  Do rotation.
+	EXT=${CYCLES}
+	rm -f ${BASE}.${CYCLES}${Z}
+	while [ ${EXT} -gt 0 ] ; do
+	    NEXT=${EXT}
+	    EXT=`expr ${EXT} - 1`
+	    test -f ${BASE}.${EXT}${Z} \
+		&& rm -f ${BASE}.${NEXT}${Z} \
+		&& mv ${BASE}.${EXT}${Z} ${BASE}.${NEXT}${Z}
+	done
+    done
+
+    ##  Remove lock.
+    rm -f ${LOCK}
+fi
+
+##  All done.
+exit 0
