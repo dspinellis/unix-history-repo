@@ -13,7 +13,7 @@
 
 #ifndef lint
 static char sccsid[] =
-"@(#)support.c	1.1 (Berkeley) 5/23/85; 1.3 (ucb.elefunt) %G%";
+"@(#)support.c	1.1 (Berkeley) 5/23/85; 1.4 (ucb.elefunt) %G%";
 #endif not lint
 
 /* 
@@ -186,12 +186,19 @@ double x,p;
         *pp &= msign ;
 
 #ifdef VAX
-        if( ( *px & mexp ) == ~msign || p == zero )
+        if( ( *px & mexp ) == ~msign )
 #else /* IEEE */
-        if( ( *px & mexp ) == mexp || p == zero )
+        if( ( *px & mexp ) == mexp )
 #endif
+		return  (x-p)-(x-p);	/* create nan if x is inf */
+	if(p==zero) return zero/zero;
+#ifdef VAX
+        if( ( *pp & mexp ) == ~msign )
+#else /* IEEE */
+        if( ( *pp & mexp ) == mexp )
+#endif
+		{ if (p != p) return p; else return x;}
 
-                return( (x != x)? x:zero/zero );
 
         else  if ( ((*pp & mexp)>>gap) <= 1 ) 
                 /* subnormal p, or almost subnormal p */
