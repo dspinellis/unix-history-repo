@@ -1,8 +1,8 @@
 %token CPU IDENT CONFIG ANY DEVICE UBA MBA NEXUS CSR DRIVE VECTOR
-%token CONTROLLER PSEUDO_DEVICE FLAGS ID SEMICOLON NUMBER OPTIONS TRACE
-%token DISK SLAVE AT
+%token CONTROLLER PSEUDO_DEVICE FLAGS ID SEMICOLON NUMBER FPNUMBER OPTIONS TRACE
+%token DISK SLAVE AT HZ TIMEZONE DST MAXUSERS
 %{
-/*	config.y	1.3	81/02/26	*/
+/*	config.y	1.4	81/03/06	*/
 #include "config.h"
 #include <stdio.h>
 	struct device cur;
@@ -28,11 +28,24 @@ Spec:
 
 Config_spec:
 	CPU Save_id NUMBER = {
-		    cpu_type = ns(sprintf(errbuf, "%s%d", $2, $3));
+		    struct cputype *cp = malloc(sizeof (struct cputype));
+		    cp->cpu_name = ns(sprintf(errbuf, "%s%d", $2, $3));
+		    cp->cpu_next = cputype;
+		    cputype = cp;
 		    free(temp_id);
 		    } |
 	IDENT ID { ident = ns($2); } |
-	CONFIG Save_id ID = { mkconf(temp_id, $3); free(temp_id); }
+	CONFIG Save_id ID = { mkconf(temp_id, $3); free(temp_id); } |
+	HZ NUMBER = {
+		hz = $2;
+		if (hz != 50 && hz != 60)
+		    yyerror("strange value for HZ");
+		} |
+	TIMEZONE NUMBER = { timezone = 60 * $2; check_tz(); } |
+	TIMEZONE NUMBER DST = { timezone = 60 * $2; dst = 1; check_tz(); } |
+	TIMEZONE FPNUMBER = { timezone = $2; check_tz(); } |
+	TIMEZONE FPNUMBER DST = { timezone = $2; dst = 1; check_tz(); } |
+	MAXUSERS NUMBER = { maxusers = $2; }
 	;
 
 Save_id:
@@ -75,7 +88,7 @@ Dev_info:
 
 Con_info:
 	AT Dev NUMBER = { cur.d_conn = connect($2, $3); } |
-	AT NEXUS NUMBER = { cur.d_conn = -1; }
+	AT NEXUS NUMBER = { check_nexus(&cur, $2); cur.d_conn = TO_NEXUS; }
 	;
     
 Info_list:
@@ -167,13 +180,20 @@ register int num;
 	register struct device *dp;
 	struct device *huhcon();
 
-	if (num == -1)
+	if (num == QUES)
 	    return huhcon(dev);
 	for (dp = dtab; dp != NULL; dp = dp->d_next)
-		if ((num == dp->d_unit || num == -1)
-		    && eq(dev, dp->d_name))
+		if (num == dp->d_unit) && eq(dev, dp->d_name))
+		    if (dp->d_type != CONTROLLER)
+		    {
+			yyerror(sprintf(errbuf,
+			    "%s connected to non-controller", dev));
+			return NULL;
+		    }
+		    else
 			return dp;
 	yyerror(sprintf(errbuf, "%s %d not defined", dev, num));
+	return NULL;
 }
 
 /*
@@ -201,32 +221,44 @@ register char *dev;
     dcp = dp->d_conn;
     /*
      * Now see if there is already a wildcard entry for this device
+     * (e.g. Search for a "uba ?")
      */
     for (; dp != NULL; dp = dp->d_next)
 	if (eq(dev, dp->d_name) && dp->d_unit == -1)
 	    break;
     /*
-     * If there isn't, make one
+     * If there isn't, make one becuase everything needs to be connected
+     * to something.
      */
     if (dp == NULL)
     {
 	dp = &rdev;
 	init_dev(dp);
-	dp->d_unit = -1;
+	dp->d_unit = QUES;
 	dp->d_name = ns(dev);
 	newdev(dp);
 	dp = dtab;
 	/*
 	 * Connect it to the same thing that other similar things are
 	 * connected to, but make sure it is a wildcard unit
+	 * (e.g. up connected to sc ?, here we make connect sc? to a uba?)
+	 * If other things like this are on the NEXUS or if the aren't
+	 * connected to anything, then make the same connection, else
+	 * call ourself to connect to another unspecific device.
 	 */
-	if (dcp == -1 || dcp == NULL)
+	if (dcp == TO_NEXUS || dcp == NULL)
 	    dp->d_conn = dcp;
 	else
-	    dp->d_conn = connect(dcp->d_name, -1);
+	    dp->d_conn = connect(dcp->d_name, QUES);
     }
     return dp;
 }
+
+/*
+ * init_dev:
+ *	Set up the fields in the current device to their
+ *	default values.
+ */
 
 init_dev(dp)
 register struct device *dp;
@@ -236,6 +268,21 @@ register struct device *dp;
     dp->d_conn = NULL;
     dp->d_vec1 = dp->d_vec2 = NULL;
     dp->d_addr = dp->d_flags = dp->d_dk = 0;
-    dp->d_slave = -1;
-    dp->d_drive = dp->d_unit = -17;
+    dp->d_slave = dp->d_drive = dp->d_unit = UNKNOWN;
+}
+
+/*
+ * Check_nexus:
+ *	Make certain that this is a reasonable type of thing to put
+ *	on the nexus.
+ */
+
+check_nexus(dev, num)
+register struct device *dev;
+int num;
+{
+    if (!eq(dev->d_name, "uba") && !eq(dev->d_name, "mba"))
+	yyerror("only uba's and mba's should be connected to the nexus");
+    if (num != QUES)
+	yyerror("can't give specific nexus numbers");
 }

@@ -1,5 +1,5 @@
 /*
- * mkmakefile.c	1.3	81/02/26
+ * mkmakefile.c	1.4	81/03/06
  *	Functions in this file build the makefile from the files list
  *	and the information in the config table
  */
@@ -62,11 +62,45 @@ makefile()
 {
     FILE *ifp, *ofp;
     char line[BUFSIZ];
+    struct cputype *cp;
 
     read_files();			/* Read in the "files" file */
     ifp = fopen("../conf/makefile", "r");
+    if (ifp == NULL) {
+	perror("../conf/makefile");
+	exit(1);
+    }
     ofp = fopen(path("makefile"), "w");
-    fprintf(ofp, "IDENT=-D%s -D%s\n", raise(ident), cpu_type);
+    if (ofp == NULL) {
+	perror(path("makefile"));
+	exit(1);
+    }
+    fprintf(ofp, "IDENT=-D%s", raise(ident));
+    if (cputype == NULL) {
+	printf("cpu type must be specified\n");
+	exit(1);
+    }
+    for (cp = cputype; cp; cp = cp->cpu_next)
+	fprintf(ofp, " -D%s", cp->cpu_name);
+    fprintf(ofp, "\n");
+    if (hz == 0) {
+	printf("hz not specified; 50hz assumed\n");
+	hz = 50;
+    }
+    if (hadtz == 0)
+	printf("timezone not specified; gmt assumed\n");
+    if (maxusers == 0) {
+	printf("maxusers not specified; 24 assumed\n");
+	maxusers = 24;
+    } else if (maxusers < 8) {
+	printf("minimum of 8 maxusers assumed\n");
+	maxusers = 8;
+    } else if (maxusers > 100) {
+	printf("maxusers truncated to 100\n");
+	maxusers = 128;
+    }
+    fprintf(ofp, "PARAM=-DHZ=%d -DTIMEZONE=%d -DDST=%d -DMAXUSERS=%d\n",
+	hz, timezone, dst, maxusers);
     while(fgets(line, BUFSIZ, ifp) != NULL)
     {
 	if (*line != '%')
@@ -291,12 +325,12 @@ register FILE *f;
     putc('\n', f);
     for (fl = conf_list; fl != NULL; fl = fl->f_next)
     {
-	fprintf(f, "\n%s: makefile locore.o ${OBJS} ioconf.o swap%s.o\n",
+	fprintf(f, "\n%s: makefile locore.o ${OBJS} ioconf.o param.o swap%s.o\n",
 		fl->f_needs, fl->f_fn);
 	fprintf(f, "\t@echo loading %s\n\t@rm -f %s\n\t",
 		fl->f_needs, fl->f_needs);
 	fprintf(f,
-	    "@ld -n -o %s -e start -x -T 80000000 locore.o ${OBJS} ioconf.o swap%s.o\n",
+	    "@ld -n -o %s -e start -x -T 80000000 locore.o ${OBJS} ioconf.o param.o swap%s.o\n",
 	    fl->f_needs, fl->f_fn);
 	fprintf(f, "\t@echo rearranging symbols\n");
 	fprintf(f, "\t@-symorder ../sys/symbols.sort %s\n", fl->f_needs);

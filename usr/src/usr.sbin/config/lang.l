@@ -1,5 +1,5 @@
 %{
-/*	lang.l	1.4	81/02/26	*/
+/*	lang.l	1.5	81/03/06	*/
 
 #include <ctype.h>
 #include "y.tab.h"
@@ -22,6 +22,7 @@ struct kt {
 	"csr", CSR, "nexus", NEXUS, "drive", DRIVE, "vector", VECTOR,
 	"pseudo-device", PSEUDO_DEVICE, "flags", FLAGS, "trace", TRACE,
 	"disk", DISK, "tape", DEVICE, "slave", SLAVE, "at", AT,
+	"hz", HZ, "timezone", TIMEZONE, "dst", DST, "maxusers", MAXUSERS,
 	0,0,
 };
 %}
@@ -53,6 +54,11 @@ WORD	[A-Za-z_][-A-Za-z_]*
 			yylval = atoi(yytext);
 			tprintf("#D:%d ", yylval);
 			return NUMBER;
+		}
+[0-9]"."[0-9]*	{
+			float atof();
+			yylval = (int) (60 * atof(yytext) + 0.5);
+			return FPNUMBER;
 		}
 "?"		{
 			yylval = -1;
