@@ -1,6 +1,8 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)stkrval.c 1.7 %G%";
+#ifndef lint
+static char sccsid[] = "@(#)stkrval.c 1.8 %G%";
+#endif
 
 #include "whoami.h"
 #include "0.h"
@@ -10,6 +12,7 @@ static char sccsid[] = "@(#)stkrval.c 1.7 %G%";
 #ifdef PC
 #   include "pcops.h"
 #endif PC
+#include "tree_ty.h"
 
 /*
  * stkrval Rvalue - an expression, and coerce it to be a stack quantity.
@@ -26,7 +29,7 @@ static char sccsid[] = "@(#)stkrval.c 1.7 %G%";
  */
 struct nl *
 stkrval(r, contype , required )
-	register int *r;
+	register struct tnode *r;
 	struct nl *contype;
 	long	required;
 {
@@ -34,36 +37,40 @@ stkrval(r, contype , required )
 	register struct nl *q;
 	register char *cp, *cp1;
 	register int c, w;
-	int **pt;
+	struct tnode *pt;
 	long l;
-	double f;
+	union
+	{
+		double pdouble;
+		long   plong[2];
+	}f;
 
-	if (r == NIL)
-		return (NIL);
+	if (r == TR_NIL)
+		return (NLNIL);
 	if (nowexp(r))
-		return (NIL);
+		return (NLNIL);
 	/*
 	 * The root of the tree tells us what sort of expression we have.
 	 */
-	switch (r[0]) {
+	switch (r->tag) {
 
 	/*
 	 * The constant nil
 	 */
 	case T_NIL:
 #		ifdef OBJ
-		    put(2, O_CON14, 0);
+		    (void) put(2, O_CON14, 0);
 #		endif OBJ
 #		ifdef PC
-		    putleaf( P2ICON , 0 , 0 , P2INT , 0 );
+		    putleaf( P2ICON , 0 , 0 , P2INT , (char *) 0 );
 #		endif PC
 		return (nl+TNIL);
 
 	case T_FCALL:
 	case T_VAR:
-		p = lookup(r[2]);
-		if (p == NIL || p->class == BADUSE)
-			return (NIL);
+		p = lookup(r->var_node.cptr);
+		if (p == NLNIL || p->class == BADUSE)
+			return (NLNIL);
 		switch (p->class) {
 		case VAR:
 			/*
@@ -72,18 +79,18 @@ stkrval(r, contype , required )
 			 * the rvalue by a
 			 * stklval and an ind.
 			 */
-			if (r[3] != NIL)
+			if (r->var_node.qual != TR_NIL)
 				goto ind;
 			q = p->type;
-			if (q == NIL)
-				return (NIL);
+			if (q == NLNIL)
+				return (NLNIL);
 			if (classify(q) == TSTR)
 				return(stklval(r, NOFLAGS));
 #			ifdef OBJ
 				return (stackRV(p));
 #			endif OBJ
 #			ifdef PC
-			    q = rvalue( r , contype , required );
+			    q = rvalue( r , contype , (int) required );
 			    if (isa(q, "sbci")) {
 				sconv(p2type(q),P2INT);
 			    }
@@ -99,27 +106,27 @@ stkrval(r, contype , required )
 			 */
 ind:
 			q = stklval(r, NOFLAGS);
-			if (q == NIL)
-				return (NIL);
+			if (q == NLNIL)
+				return (NLNIL);
 			if (classify(q) == TSTR)
 				return(q);
 #			ifdef OBJ
 			    w = width(q);
 			    switch (w) {
 				    case 8:
-					    put(1, O_IND8);
+					    (void) put(1, O_IND8);
 					    return(q);
 				    case 4:
-					    put(1, O_IND4);
+					    (void) put(1, O_IND4);
 					    return(q);
 				    case 2:
-					    put(1, O_IND24);
+					    (void) put(1, O_IND24);
 					    return(q);
 				    case 1:
-					    put(1, O_IND14);
+					    (void) put(1, O_IND14);
 					    return(q);
 				    default:
-					    put(2, O_IND, w);
+					    (void) put(2, O_IND, w);
 					    return(q);
 			    }
 #			endif OBJ
@@ -134,19 +141,19 @@ ind:
 #			endif PC
 
 		case CONST:
-			if (r[3] != NIL) {
-				error("%s is a constant and cannot be qualified", r[2]);
-				return (NIL);
+			if (r->var_node.qual != TR_NIL) {
+				error("%s is a constant and cannot be qualified", r->var_node.cptr);
+				return (NLNIL);
 			}
 			q = p->type;
-			if (q == NIL)
-				return (NIL);
+			if (q == NLNIL)
+				return (NLNIL);
 			if (q == nl+TSTR) {
 				/*
 				 * Find the size of the string
 				 * constant if needed.
 				 */
-				cp = p->ptr[0];
+				cp = (char *) p->ptr[0];
 cstrng:
 				cp1 = cp;
 				for (c = 0; *cp++; c++)
@@ -155,12 +162,12 @@ cstrng:
 				if (contype != NIL && !opt('s')) {
 					if (width(contype) < c && classify(contype) == TSTR) {
 						error("Constant string too long");
-						return (NIL);
+						return (NLNIL);
 					}
 					w = width(contype);
 				}
 #				ifdef OBJ
-				    put(2, O_LVCON, lenstr(cp1, w - c));
+				    (void) put(2, O_LVCON, lenstr(cp1, w - c));
 				    putstr(cp1, w - c);
 #				endif OBJ
 #				ifdef PC
@@ -172,16 +179,17 @@ cstrng:
 				 * width.
 				 * cleaned out by stat.
 				 */
-				q = defnl(0, STR, 0, w);
+				q = defnl((char *) 0, STR, NLNIL, w);
 				q->type = q;
 				return (q);
 			}
 			if (q == nl+T1CHAR) {
 #			    ifdef OBJ
-				put(2, O_CONC4, (int)p->value[0]);
+				(void) put(2, O_CONC4, (int)p->value[0]);
 #			    endif OBJ
 #			    ifdef PC
-				putleaf(P2ICON, p -> value[0], 0, P2INT, 0);
+				putleaf(P2ICON, p -> value[0], 0, P2INT, 
+						(char *) 0);
 #			    endif PC
 			    return(q);
 			}
@@ -192,33 +200,33 @@ cstrng:
 			    switch (width(q)) {
 			    case 8:
 #ifndef DEBUG
-				    put(2, O_CON8, p->real);
+				    (void) put(2, O_CON8, p->real);
 				    return(q);
 #else
 				    if (hp21mx) {
-					    f = p->real;
-					    conv(&f);
-					    l = f.plong;
-					    put(2, O_CON4, l);
+					    f.pdouble = p->real;
+					    conv((int *) (&f.pdouble));
+					    l = f.plong[1];
+					    (void) put(2, O_CON4, l);
 				    } else
-					    put(2, O_CON8, p->real);
+					    (void) put(2, O_CON8, p->real);
 				    return(q);
 #endif
 			    case 4:
-				    put(2, O_CON4, p->range[0]);
+				    (void) put(2, O_CON4, p->range[0]);
 				    return(q);
 			    case 2:
-				    put(2, O_CON24, (short)p->range[0]);
+				    (void) put(2, O_CON24, (short)p->range[0]);
 				    return(q);
 			    case 1:
-				    put(2, O_CON14, p->value[0]);
+				    (void) put(2, O_CON14, p->value[0]);
 				    return(q);
 			    default:
 				    panic("stkrval");
 			    }
 #			endif OBJ
 #			ifdef PC
-			    q = rvalue( r , contype , required );
+			    q = rvalue( r , contype , (int) required );
 			    if (isa(q,"sbci")) {
 				sconv(p2type(q),P2INT);
 			    }
@@ -230,31 +238,31 @@ cstrng:
 			/*
 			 * Function call
 			 */
-			pt = (int **)r[3];
-			if (pt != NIL) {
-				switch (pt[1][0]) {
+			pt = r->var_node.qual;
+			if (pt != TR_NIL) {
+				switch (pt->list_node.list->tag) {
 				case T_PTR:
 				case T_ARGL:
 				case T_ARY:
 				case T_FIELD:
 					error("Can't qualify a function result value");
-					return (NIL);
+					return (NLNIL);
 				}
 			}
 #			ifdef OBJ
 			    q = p->type;
 			    if (classify(q) == TSTR) {
 				    c = width(q);
-				    put(2, O_LVCON, even(c+1));
+				    (void) put(2, O_LVCON, even(c+1));
 				    putstr("", c);
-				    put(1, PTR_DUP);
+				    (void) put(1, PTR_DUP);
 				    p = funccod(r);
-				    put(2, O_AS, c);
+				    (void) put(2, O_AS, c);
 				    return(p);
 			    }
 			    p = funccod(r);
 			    if (width(p) <= 2)
-				    put(1, O_STOI);
+				    (void) put(1, O_STOI);
 #			endif OBJ
 #			ifdef PC
 			    p = pcfunccod( r );
@@ -266,12 +274,12 @@ cstrng:
 
 		case TYPE:
 			error("Type names (e.g. %s) allowed only in declarations", p->symbol);
-			return (NIL);
+			return (NLNIL);
 
 		case PROC:
 		case FPROC:
 			error("Procedure %s found where expression required", p->symbol);
-			return (NIL);
+			return (NLNIL);
 		default:
 			panic("stkrvid");
 		}
@@ -293,10 +301,10 @@ cstrng:
 	case T_GT:
 	case T_LT:
 	case T_IN:
-		p = rvalue(r, contype , required );
+		p = rvalue(r, contype , (int) required );
 #		ifdef OBJ
 		    if (width(p) <= 2)
-			    put(1, O_STOI);
+			    (void) put(1, O_STOI);
 #		endif OBJ
 #		ifdef PC
 		    if (isa(p,"sbci")) {
@@ -305,12 +313,12 @@ cstrng:
 #		endif PC
 		return (p);
 	case T_CSET:
-		p = rvalue(r, contype , required );
+		p = rvalue(r, contype , (int) required );
 		return (p);
 	default:
-		if (r[2] == NIL)
-			return (NIL);
-		switch (r[0]) {
+		if (r->const_node.cptr == (char *) NIL)
+			return (NLNIL);
+		switch (r->tag) {
 		default:
 			panic("stkrval3");
 
@@ -318,34 +326,35 @@ cstrng:
 		 * An octal number
 		 */
 		case T_BINT:
-			f = a8tol(r[2]);
+			f.pdouble = a8tol(r->const_node.cptr);
 			goto conint;
 	
 		/*
 		 * A decimal number
 		 */
 		case T_INT:
-			f = atof(r[2]);
+			f.pdouble = atof(r->const_node.cptr);
 conint:
-			if (f > MAXINT || f < MININT) {
+			if (f.pdouble > MAXINT || f.pdouble < MININT) {
 				error("Constant too large for this implementation");
-				return (NIL);
+				return (NLNIL);
 			}
-			l = f;
+			l = f.pdouble;
 			if (bytes(l, l) <= 2) {
 #			    ifdef OBJ
-				put(2, O_CON24, (short)l);
+				(void) put(2, O_CON24, (short)l);
 #			    endif OBJ
 #			    ifdef PC
-				putleaf( P2ICON , (short) l , 0 , P2INT , 0 );
+				putleaf( P2ICON , (short) l , 0 , P2INT , 
+						(char *) 0 );
 #			    endif PC
 				return(nl+T4INT);
 			}
 #			ifdef OBJ
-			    put(2, O_CON4, l); 
+			    (void) put(2, O_CON4, l); 
 #			endif OBJ
 #			ifdef PC
-			    putleaf( P2ICON , l , 0 , P2INT , 0 );
+			    putleaf( P2ICON , (int) l , 0 , P2INT , (char *) 0 );
 #			endif PC
 			return (nl+T4INT);
 	
@@ -354,10 +363,10 @@ conint:
 		 */
 		case T_FINT:
 #		   	ifdef OBJ
-			    put(2, O_CON8, atof(r[2]));
+			    (void) put(2, O_CON8, atof(r->const_node.cptr));
 #			endif OBJ
 #			ifdef PC
-			    putCON8( atof( r[2] ) );
+			    putCON8( atof( r->const_node.cptr ) );
 #			endif PC
 			return (nl+TDOUBLE);
 	
@@ -367,13 +376,14 @@ conint:
 		 * no constant string of length one.
 		 */
 		case T_STRNG:
-			cp = r[2];
+			cp = r->const_node.cptr;
 			if (cp[1] == 0) {
 #				ifdef OBJ
-				    put(2, O_CONC4, cp[0]);
+				    (void) put(2, O_CONC4, cp[0]);
 #				endif OBJ
 #				ifdef PC
-				    putleaf( P2ICON , cp[0] , 0 , P2INT , 0 );
+				    putleaf( P2ICON , cp[0] , 0 , P2INT , 
+						(char *) 0 );
 #				endif PC
 				return(nl+T1CHAR);
 			}
@@ -387,32 +397,33 @@ conint:
 /*
  * push a value onto the interpreter stack, longword aligned.
  */
-stackRV(p)
+struct nl 
+*stackRV(p)
 	struct nl *p;
 {
 	struct nl *q;
 	int w, bn;
 
 	q = p->type;
-	if (q == NIL)
-		return (NIL);
+	if (q == NLNIL)
+		return (NLNIL);
 	bn = BLOCKNO(p->nl_block);
 	w = width(q);
 	switch (w) {
 	case 8:
-		put(2, O_RV8 | bn << 8+INDX, (int)p->value[0]);
+		(void) put(2, O_RV8 | bn << 8+INDX, (int)p->value[0]);
 		break;
 	case 4:
-		put(2, O_RV4 | bn << 8+INDX, (int)p->value[0]);
+		(void) put(2, O_RV4 | bn << 8+INDX, (int)p->value[0]);
 		break;
 	case 2:
-		put(2, O_RV24 | bn << 8+INDX, (int)p->value[0]);
+		(void) put(2, O_RV24 | bn << 8+INDX, (int)p->value[0]);
 		break;
 	case 1:
-		put(2, O_RV14 | bn << 8+INDX, (int)p->value[0]);
+		(void) put(2, O_RV14 | bn << 8+INDX, (int)p->value[0]);
 		break;
 	default:
-		put(3, O_RV | bn << 8+INDX, (int)p->value[0], w);
+		(void) put(3, O_RV | bn << 8+INDX, (int)p->value[0], w);
 		break;
 	}
 	return (q);

@@ -1,6 +1,8 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)call.c 1.24 %G%";
+#ifndef lint
+static	char sccsid[] = "@(#)call.c 1.25 %G%";
+#endif
 
 #include "whoami.h"
 #include "0.h"
@@ -12,6 +14,7 @@ static	char sccsid[] = "@(#)call.c 1.24 %G%";
 #   include "pcops.h"
 #endif PC
 #include "tmps.h"
+#include "tree_ty.h"
 
 /*
  * Call generates code for calls to
@@ -49,20 +52,19 @@ static	char sccsid[] = "@(#)call.c 1.24 %G%";
  *		(t=p,temp = ( t -> entryaddr )(...args...,t,s),FRTN(t,s),&temp)
  */
 struct nl *
-call(p, argv, porf, psbn)
+call(p, argv_node, porf, psbn)
 	struct nl *p;
-	int *argv, porf, psbn;
+	struct tnode	*argv_node;	/* list node */
+	int porf, psbn;
 {
 	register struct nl *p1, *q;
-	int *r;
-	struct nl	*p_type_class = classify( p -> type );
+	struct tnode *rnode;
 	bool chk = TRUE;
  	struct nl	*savedispnp;	/* temporary to hold saved display */
 #	ifdef PC
-	    long	p_p2type = p2type( p );
+	    int		p_type_class = classify( p -> type );
 	    long	p_type_p2type = p2type( p -> type );
 	    bool	noarguments;
-	    long	calltype;	/* type of the call */
 		/*
 		 *	these get used if temporaries and structures are used
 		 */
@@ -78,20 +80,20 @@ call(p, argv, porf, psbn)
  	    /*
  	     * allocate space to save the display for formal calls
  	     */
-	    savedispnp = tmpalloc( sizeof display , NIL , NOREG );
+	    savedispnp = tmpalloc( (long) sizeof display , NLNIL , NOREG );
  	}
 #	ifdef OBJ
 	    if (p->class == FFUNC || p->class == FPROC) {
- 		put(2, O_LV | cbn << 8 + INDX ,
+ 		(void) put(2, O_LV | cbn << 8 + INDX ,
  			(int) savedispnp -> value[ NL_OFFS ] );
-		put(2, PTR_RV | psbn << 8+INDX, (int)p->value[NL_OFFS]);
+		(void) put(2, PTR_RV | psbn << 8+INDX, (int)p->value[NL_OFFS]);
 	    }
 	    if (porf == FUNC) {
 		    /*
 		     * Push some space
 		     * for the function return type
 		     */
-		    put(2, O_PUSH, leven(-lwidth(p->type)));
+		    (void) put(2, O_PUSH, leven(-lwidth(p->type)));
 	    }
 #	endif OBJ
 #	ifdef PC
@@ -102,11 +104,11 @@ call(p, argv, porf, psbn)
 		 *	after the FCALL for the call to FRTN
 		 */
 	    if ( p -> class == FFUNC || p -> class == FPROC ) {
-		tempdescrp = tmpalloc(sizeof( struct formalrtn *) , NIL ,
-					REGOK );
-		putRV( 0 , cbn , tempdescrp -> value[ NL_OFFS ] ,
+		tempdescrp = tmpalloc((long) (sizeof( struct formalrtn *)),
+					NLNIL, REGOK );
+		putRV((char *) 0 , cbn , tempdescrp -> value[ NL_OFFS ] ,
 			tempdescrp -> extra_flags , P2PTR|P2STRTY );
-		putRV( 0 , psbn , p -> value[ NL_OFFS ] ,
+		putRV((char *) 0 , psbn , p -> value[ NL_OFFS ] ,
 			p -> extra_flags , P2PTR|P2STRTY );
 		putop( P2ASSIGN , P2PTR | P2STRTY );
 	    }
@@ -116,7 +118,6 @@ call(p, argv, porf, psbn)
 		 *	otherwise, it's P2UNDEF.
 		 */
 	    temptype = P2UNDEF;
-	    calltype = P2INT;
 	    if ( porf == FUNC ) {
 		p_type_width = width( p -> type );
 		switch( p_type_class ) {
@@ -125,12 +126,12 @@ call(p, argv, porf, psbn)
 		    case TREC:
 		    case TFILE:
 		    case TARY:
-			calltype = temptype = P2STRTY;
+			temptype = P2STRTY;
 			p_type_align = align( p -> type );
 			break;
 		    default:
 			if ( p -> class == FFUNC ) {
-			    calltype = temptype = p2type( p -> type );
+			    temptype = p2type( p -> type );
 			}
 			break;
 		}
@@ -140,8 +141,8 @@ call(p, argv, porf, psbn)
 			 *	temp
 			 *	for (temp = ...
 			 */
-		    putRV( 0 , cbn , tempnlp -> value[ NL_OFFS ] ,
-			    tempnlp -> extra_flags , temptype );
+		    putRV((char *) 0 , cbn , tempnlp -> value[ NL_OFFS ] ,
+			    tempnlp -> extra_flags , (int) temptype );
 		}
 	    }
 	    switch ( p -> class ) {
@@ -160,11 +161,12 @@ call(p, argv, porf, psbn)
 			     *	... ( t -> entryaddr )( ...
 			     */
 			    /* 	the descriptor */
-			putRV( 0 , cbn , tempdescrp -> value[ NL_OFFS ] ,
+			putRV((char *) 0 , cbn , tempdescrp -> value[ NL_OFFS ] ,
 				tempdescrp -> extra_flags , P2PTR | P2STRTY );
 			    /*	the entry address within the descriptor */
 			if ( FENTRYOFFSET != 0 ) {
-			    putleaf( P2ICON , FENTRYOFFSET , 0 , P2INT , 0 );
+			    putleaf( P2ICON , FENTRYOFFSET , 0 , P2INT , 
+						(char *) 0 );
 			    putop( P2PLUS , 
 				ADDTYPE(
 				    ADDTYPE( ADDTYPE( p2type( p ) , P2FTN ) ,
@@ -195,23 +197,24 @@ call(p, argv, porf, psbn)
 	 * arguments to the proc/func.
 	 *	... ( ... args ... ) ...
 	 */
-	for (p1 = plist(p); p1 != NIL; p1 = p1->chain) {
-	    if (argv == NIL) {
+	for (p1 = plist(p); p1 != NLNIL; p1 = p1->chain) {
+	    if (argv_node == TR_NIL) {
 		    error("Not enough arguments to %s", p->symbol);
-		    return (NIL);
+		    return (NLNIL);
 	    }
 	    switch (p1->class) {
 		case REF:
 			/*
 			 * Var parameter
 			 */
-			r = argv[1];
-			if (r != NIL && r[0] != T_VAR) {
+			rnode = argv_node->list_node.list;
+			if (rnode != TR_NIL && rnode->tag != T_VAR) {
 				error("Expression given (variable required) for var parameter %s of %s", p1->symbol, p->symbol);
 				chk = FALSE;
 				break;
 			}
-			q = lvalue( (int *) argv[1], MOD | ASGN , LREQ );
+			q = lvalue( argv_node->list_node.list,
+					MOD | ASGN , LREQ );
 			if (q == NIL) {
 				chk = FALSE;
 				break;
@@ -227,7 +230,8 @@ call(p, argv, porf, psbn)
 			 * Value parameter
 			 */
 #			ifdef OBJ
-			    q = rvalue(argv[1], p1->type , RREQ );
+			    q = rvalue(argv_node->list_node.list,
+					p1->type , RREQ );
 #			endif OBJ
 #			ifdef PC
 				/*
@@ -240,22 +244,26 @@ call(p, argv, porf, psbn)
 				case TREC:
 				case TSET:
 				case TSTR:
-				    q = stkrval( argv[1] , p1 -> type , LREQ );
+				q = stkrval(argv_node->list_node.list,
+						p1 -> type , (long) LREQ );
 				    break;
 				case TINT:
 				case TSCAL:
 				case TBOOL:
 				case TCHAR:
 				    precheck( p1 -> type , "_RANG4" , "_RSNG4" );
-				    q = stkrval( argv[1] , p1 -> type , RREQ );
+				q = stkrval(argv_node->list_node.list,
+						p1 -> type , (long) RREQ );
 				    postcheck(p1 -> type, nl+T4INT);
 				    break;
 				case TDOUBLE:
-				    q = stkrval( argv[1] , p1 -> type , RREQ );
+				q = stkrval(argv_node->list_node.list,
+						p1 -> type , (long) RREQ );
 				    sconv(p2type(q), P2DOUBLE);
 				    break;
 				default:
-				    q = rvalue( argv[1] , p1 -> type , RREQ );
+				    q = rvalue(argv_node->list_node.list,
+						p1 -> type , RREQ );
 				    break;
 			    }
 #			endif PC
@@ -263,7 +271,8 @@ call(p, argv, porf, psbn)
 				chk = FALSE;
 				break;
 			}
-			if (incompat(q, p1->type, argv[1])) {
+			if (incompat(q, p1->type,
+				argv_node->list_node.list)) {
 				cerror("Expression type clashed with type of value parameter %s of %s", p1->symbol, p->symbol);
 				chk = FALSE;
 				break;
@@ -283,7 +292,7 @@ call(p, argv, porf, psbn)
 				case TSTR:
 					putstrop( P2STARG
 					    , p2type( p1 -> type )
-					    , lwidth( p1 -> type )
+					    , (int) lwidth( p1 -> type )
 					    , align( p1 -> type ) );
 			    }
 #			endif PC
@@ -292,15 +301,22 @@ call(p, argv, porf, psbn)
 			/*
 			 * function parameter
 			 */
-			q = flvalue( (int *) argv[1] , p1 );
-			chk = (chk && fcompat(q, p1));
+			q = flvalue(argv_node->list_node.list, p1 );
+			/*chk = (chk && fcompat(q, p1));*/
+			if ((chk) && (fcompat(q, p1)))
+			    chk = TRUE;
+			else
+			    chk = FALSE;
 			break;
 		case FPROC:
 			/*
 			 * procedure parameter
 			 */
-			q = flvalue( (int *) argv[1] , p1 );
-			chk = (chk && fcompat(q, p1));
+			q = flvalue(argv_node->list_node.list, p1 );
+			/* chk = (chk && fcompat(q, p1)); */
+			if ((chk) && (fcompat(q, p1)))
+			    chk = TRUE;
+			else chk = FALSE;
 			break;
 		default:
 			panic("call");
@@ -316,24 +332,24 @@ call(p, argv, porf, psbn)
 			putop( P2LISTOP , P2INT );
 		}
 #	    endif PC
-	    argv = argv[2];
+	    argv_node = argv_node->list_node.next;
 	}
-	if (argv != NIL) {
+	if (argv_node != TR_NIL) {
 		error("Too many arguments to %s", p->symbol);
-		rvlist(argv);
-		return (NIL);
+		rvlist(argv_node);
+		return (NLNIL);
 	}
 	if (chk == FALSE)
-		return NIL;
+		return NLNIL;
 #	ifdef OBJ
 	    if ( p -> class == FFUNC || p -> class == FPROC ) {
-		put(2, PTR_RV | psbn << 8+INDX, (int)p->value[NL_OFFS]);
- 		put(2, O_LV | cbn << 8 + INDX ,
+		(void) put(2, PTR_RV | psbn << 8+INDX, (int)p->value[NL_OFFS]);
+ 		(void) put(2, O_LV | cbn << 8 + INDX ,
  			(int) savedispnp -> value[ NL_OFFS ] );
-		put(1, O_FCALL);
-		put(2, O_FRTN, even(width(p->type)));
+		(void) put(1, O_FCALL);
+		(void) put(2, O_FRTN, even(width(p->type)));
 	    } else {
-		put(2, O_CALL | psbn << 8, (long)p->value[NL_ENTLOC]);
+		(void) put(2, O_CALL | psbn << 8, (long)p->value[NL_ENTLOC]);
 	    }
 #	endif OBJ
 #	ifdef PC
@@ -345,13 +361,13 @@ call(p, argv, porf, psbn)
 		 *	space into which to save the display.
 		 */
 	    if ( p -> class == FFUNC || p -> class == FPROC ) {
-		putRV( 0 , cbn , tempdescrp -> value[ NL_OFFS ] ,
+		putRV((char *) 0 , cbn , tempdescrp -> value[ NL_OFFS ] ,
 			tempdescrp -> extra_flags , P2PTR|P2STRTY );
 		if ( !noarguments ) {
 		    putop( P2LISTOP , P2INT );
 		}
 		noarguments = FALSE;
- 		putLV( 0 , cbn , savedispnp -> value[ NL_OFFS ] ,
+ 		putLV((char *) 0 , cbn , savedispnp -> value[ NL_OFFS ] ,
  			savedispnp -> extra_flags , P2PTR | P2STRTY );
  		putop( P2LISTOP , P2INT );
 	    }
@@ -370,17 +386,17 @@ call(p, argv, porf, psbn)
 		    case TDOUBLE:
 		    case TPTR:
 			putop( ( noarguments ? P2UNARY P2CALL : P2CALL ) ,
-				p_type_p2type );
+				(int) p_type_p2type );
 			if ( p -> class == FFUNC ) {
-			    putop( P2ASSIGN , p_type_p2type );
+			    putop( P2ASSIGN , (int) p_type_p2type );
 			}
 			break;
 		    default:
 			putstrop( ( noarguments ? P2UNARY P2STCALL : P2STCALL ),
-				ADDTYPE( p_type_p2type , P2PTR ) ,
-				p_type_width , p_type_align );
-			putstrop(P2STASG, ADDTYPE(p_type_p2type, P2PTR),
-				lwidth(p -> type), align(p -> type));
+				(int) ADDTYPE( p_type_p2type , P2PTR ) ,
+				(int) p_type_width ,(int) p_type_align );
+			putstrop(P2STASG, (int) ADDTYPE(p_type_p2type, P2PTR),
+				(int) lwidth(p -> type), align(p -> type));
 			break;
 		}
 	    } else {
@@ -393,9 +409,9 @@ call(p, argv, porf, psbn)
 		putop( P2COMOP , P2INT );
 		putleaf( P2ICON , 0 , 0 , ADDTYPE( P2FTN | P2INT , P2PTR ) ,
 			"_FRTN" );
-		putRV( 0 , cbn , tempdescrp -> value[ NL_OFFS ] ,
+		putRV((char *) 0 , cbn , tempdescrp -> value[ NL_OFFS ] ,
 			tempdescrp -> extra_flags , P2PTR | P2STRTY );
- 		putLV( 0 , cbn , savedispnp -> value[ NL_OFFS ] ,
+ 		putLV((char *) 0 , cbn , savedispnp -> value[ NL_OFFS ] ,
  			savedispnp -> extra_flags , P2PTR | P2STRTY );
  		putop( P2LISTOP , P2INT );
 		putop( P2CALL , P2INT );
@@ -408,11 +424,11 @@ call(p, argv, porf, psbn)
 		 */
 	    if ( porf == FUNC && temptype != P2UNDEF ) {
 		if ( temptype != P2STRTY ) {
-		    putRV( 0 , cbn , tempnlp -> value[ NL_OFFS ] ,
-			    tempnlp -> extra_flags , p_type_p2type );
+		    putRV((char *) 0 , cbn , tempnlp -> value[ NL_OFFS ] ,
+			    tempnlp -> extra_flags , (int) p_type_p2type );
 		} else {
-		    putLV( 0 , cbn , tempnlp -> value[ NL_OFFS ] ,
-			    tempnlp -> extra_flags , p_type_p2type );
+		    putLV((char *) 0 , cbn , tempnlp -> value[ NL_OFFS ] ,
+			    tempnlp -> extra_flags , (int) p_type_p2type );
 		}
 		putop( P2COMOP , P2INT );
 	    }
@@ -424,11 +440,11 @@ call(p, argv, porf, psbn)
 }
 
 rvlist(al)
-	register int *al;
+	register struct tnode *al;
 {
 
-	for (; al != NIL; al = al[2])
-		rvalue( (int *) al[1], NLNIL , RREQ );
+	for (; al != TR_NIL; al = al->list_node.next)
+		(void) rvalue( al->list_node.list, NLNIL , RREQ );
 }
 
     /*
@@ -441,52 +457,56 @@ fcompat( formal , actual )
 {
     register struct nl	*f_chain;
     register struct nl	*a_chain;
+    extern struct nl	*plist();
     bool compat = TRUE;
 
-    if ( formal == NIL || actual == NIL ) {
+    if ( formal == NLNIL || actual == NLNIL ) {
 	return FALSE;
     }
     for (a_chain = plist(actual), f_chain = plist(formal);
-         f_chain != NIL;
+         f_chain != NLNIL;
 	 f_chain = f_chain->chain, a_chain = a_chain->chain) {
 	if (a_chain == NIL) {
 	    error("%s %s declared on line %d has more arguments than",
 		parnam(formal->class), formal->symbol,
-		linenum(formal));
+		(char *) linenum(formal));
 	    cerror("%s %s declared on line %d",
 		parnam(actual->class), actual->symbol,
-		linenum(actual));
+		(char *) linenum(actual));
 	    return FALSE;
 	}
 	if ( a_chain -> class != f_chain -> class ) {
 	    error("%s parameter %s of %s declared on line %d is not identical",
 		parnam(f_chain->class), f_chain->symbol,
-		formal->symbol, linenum(formal));
+		formal->symbol, (char *) linenum(formal));
 	    cerror("with %s parameter %s of %s declared on line %d",
 		parnam(a_chain->class), a_chain->symbol,
-		actual->symbol, linenum(actual));
+		actual->symbol, (char *) linenum(actual));
 	    compat = FALSE;
 	} else if (a_chain->class == FFUNC || a_chain->class == FPROC) {
-	    compat = (compat && fcompat(f_chain, a_chain));
+	    /*compat = (compat && fcompat(f_chain, a_chain));*/
+	    if ((compat) && (fcompat(f_chain, a_chain)))
+		compat = TRUE;
+	    else compat = FALSE;
 	}
 	if ((a_chain->class != FPROC && f_chain->class != FPROC) &&
 	    (a_chain->type != f_chain->type)) {
 	    error("Type of %s parameter %s of %s declared on line %d is not identical",
 		parnam(f_chain->class), f_chain->symbol,
-		formal->symbol, linenum(formal));
+		formal->symbol, (char *) linenum(formal));
 	    cerror("to type of %s parameter %s of %s declared on line %d",
 		parnam(a_chain->class), a_chain->symbol,
-		actual->symbol, linenum(actual));
+		actual->symbol, (char *) linenum(actual));
 	    compat = FALSE;
 	}
     }
     if (a_chain != NIL) {
 	error("%s %s declared on line %d has fewer arguments than",
 	    parnam(formal->class), formal->symbol,
-	    linenum(formal));
+	    (char *) linenum(formal));
 	cerror("%s %s declared on line %d",
 	    parnam(actual->class), actual->symbol,
-	    linenum(actual));
+	    (char *) linenum(actual));
 	return FALSE;
     }
     return compat;
@@ -512,7 +532,7 @@ parnam(nltype)
     }
 }
 
-plist(p)
+struct nl *plist(p)
     struct nl *p;
 {
     switch (p->class) {
@@ -523,7 +543,12 @@ plist(p)
 	case FUNC:
 	    return p->chain;
 	default:
-	    panic("plist");
+	    {
+		panic("plist");
+		return(NLNIL); /* this is here only so lint won't complain
+				  panic actually aborts */
+	    }
+
     }
 }
 

@@ -1,9 +1,12 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)yyerror.c 1.2 %G%";
+#ifndef lint
+static	char sccsid[] = "@(#)yyerror.c 1.3 %G%";
+#endif
 
 #include "whoami.h"
 #include "0.h"
+#include "tree_ty.h"	/* must be included for yy.h */
 #include "yy.h"
 
 /*
@@ -20,13 +23,15 @@ static	char sccsid[] = "@(#)yyerror.c 1.2 %G%";
  * be changed to use the new library "lS".
 #endif
  */
+/*VARARGS*/
 yerror(s, a1, a2, a3, a4, a5)
 	char *s;
+	char *a1, *a2, *a3, *a4, *a5;
 {
 #ifdef PI
 	char buf[256];
 #endif
-	register int i, j;
+	register int i;
 	static yySerrs;
 #ifdef PXP
 	int ofout;
@@ -43,7 +48,7 @@ yerror(s, a1, a2, a3, a4, a5)
 #endif
 	yyResume = 0;
 #ifdef PI
-	geterr(s, buf);
+	geterr((int) s, buf);
 	s = buf;
 #endif
 	yysync();
@@ -90,10 +95,10 @@ brerror(where, what)
 	if (where == 0) {
 		line = yyeline;
 		setpfx(' ');
-		error("End matched %s on line %d", what, where);
+		error("End matched %s on line %d", what, (char *) where);
 		return;
 	}
 	if (where < 0)
 		where = -where;
-	yerror("Inserted keyword end matching %s on line %d", what, where);
+	yerror("Inserted keyword end matching %s on line %d", what, (char *) where);
 }

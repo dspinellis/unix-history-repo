@@ -1,9 +1,12 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)yyrecover.c 1.3 %G%";
+#ifndef lint
+static char sccsid[] = "@(#)yyrecover.c 1.4 %G%";
+#endif
 
 #include "whoami.h"
 #include "0.h"
+#include "tree_ty.h"	/* must be included for yy.h */
 #include "yy.h"
 
 /*
@@ -126,7 +129,8 @@ char	delmult[6]	= {INFINITY, INFINITY, INFINITY, 6, 3, 1};
 /*
  * Action arrays of the parser needed here
  */
-int	yyact[], yypact[], *yypv;
+union semstack *yypv;
+int		yyact[], yypact[];
 
 /*
  * Yytips is the tip of the stack when using
@@ -156,7 +160,7 @@ struct	yytok *YC;
  * the point of error.
  */
 
-bool	yyunique = 1;
+bool	yyunique = TRUE;
 
 STATIC	unsigned yyTshifts;
 
@@ -188,7 +192,7 @@ yyrecover(Ps0, idfail)
 	int yyrwant, yyrhave;
 
 #ifdef PI
-	Recovery = 1;
+	Recovery = TRUE;
 #endif
 
 	YC = &YC0[1];
@@ -215,7 +219,7 @@ yyrecover(Ps0, idfail)
 	 */
 	if (yychar < 0)
 		yychar = yylex();
-	copy(&YC[0], &Y, sizeof Y);
+	copy((char *) (&YC[0]), (char *) (&Y), sizeof Y);
 
 	/*
 	 * Set the default action and cost
@@ -227,7 +231,7 @@ yyrecover(Ps0, idfail)
 	 */
 	for (yCcnt = 1; yCcnt < YCSIZ; yCcnt++) {
 		yychar = yylex();
-		copy(&YC[yCcnt], &Y, sizeof YC[0]);
+		copy((char *) (&YC[yCcnt]), (char *) (&Y), sizeof YC[0]);
 #ifdef DEBUG
 		Eprintf(" | %s%s", tokname(&YC[yCcnt] , 0 )
 				 , tokname(&YC[yCcnt] , 1 ));
@@ -258,10 +262,11 @@ yyrecover(Ps0, idfail)
 		 * stack, and null them out to free
 		 * up the reduction in question.
 		 */
-		i = yypv[0];
-		yypv[0] = nullsem(YID);
-		c = correct(NOCHAR, 0, CCHIDCOST, &repmult[2], Ps0, yypv);
-		yypv[0] = i;
+		i = yypv[0].i_entry;
+		yypv[0].i_entry = nullsem(YID);
+		c = correct(NOCHAR, 0, CCHIDCOST, &repmult[2], Ps0,
+				(int *) yypv);
+		yypv[0].i_entry = i;
 #ifdef DEBUG
 		if (c < CPRLIMIT || fulltrace)
 			Eprintf("Cost %2d Replace %s identifier with %s identifier\n", c, classes[yyrhave], classes[yyrwant]);
@@ -273,7 +278,7 @@ yyrecover(Ps0, idfail)
 	/*
 	 * First try correcting the state we are in
 	 */
-	trystate(Ps0, yypv, 0, &insmult[1], &delmult[1], &repmult[1]);
+	trystate(Ps0, (int *) yypv, 0, &insmult[1], &delmult[1], &repmult[1]);
 
 	/*
 	 * Now, if we just shifted over a terminal, try
@@ -281,8 +286,9 @@ yyrecover(Ps0, idfail)
 	 */
 	if (OY.Yychar != -1 && OY.Yylval != nullsem(OY.Yychar)) {
 		YC--;
-		copy(&YC[0], &OY, sizeof YC[0]);
-		trystate(Ps0 - 1, yypv - 1, 1, insmult, delmult, repmult);
+		copy((char *) (&YC[0]), (char *) (&OY), sizeof YC[0]);
+		trystate(Ps0 - 1, (int *) (yypv - 1), 1, insmult, delmult,
+				repmult);
 		if (cflag == 0)
 			YC++;
 		else {
@@ -301,7 +307,7 @@ yyrecover(Ps0, idfail)
 	 * routine to print the error message with the text
 	 * of the correct line.
 	 */
-	copy(&Y, &YC[0], sizeof Y);
+	copy((char *) (&Y), (char *) (&YC[0]), sizeof Y);
 
 	/*
 	 * Unique symbol insertion.
@@ -355,7 +361,7 @@ yyrecover(Ps0, idfail)
 	 * having the attributes of the input at the
 	 * point of error.
 	 */
-	copy(&ACtok, &YC[0], sizeof ACtok);
+	copy((char *) (&ACtok), (char *) (&YC[0]), sizeof ACtok);
 	acchar = cchar;
 	aclval = nullsem(acchar);
 	if (aclval != NIL)
@@ -368,16 +374,16 @@ yyrecover(Ps0, idfail)
 		case CPANIC:
 			setpfx('E');
 			if (idfail) {
-				copy(&Y, &OY, sizeof Y);
+				copy((char *) (&Y), (char *) (&OY), sizeof Y);
 				if (yyrhave == NIL) {
 #ifdef PI
-					if (yybaduse(yypv[0], yyeline, ISUNDEF) == NIL)
+					if (yybaduse(yypv[0].cptr, yyeline, ISUNDEF) == NIL)
 #endif
 						yerror("Undefined identifier");
 				} else {
 					yerror("Improper %s identifier", classes[yyrhave]);
 #ifdef PI
-					yybaduse(yypv[0], yyeline, NIL);
+					(void) yybaduse(yypv[0].cptr, yyeline, NIL);
 #endif
 				}
 				/*
@@ -415,7 +421,7 @@ yyrecover(Ps0, idfail)
 			    tokname(&YC[0] , 1 ),
 			    tokname(&ACtok , 0 ),
 			    tokname(&ACtok , 1 ));
-			copy(&YC[0], &ACtok, sizeof YC[0]);
+			copy((char *) (&YC[0]), (char *) (&ACtok), sizeof YC[0]);
 			i = 0;
 			yyshifts = 0;
 			break;
@@ -458,7 +464,7 @@ yyrecover(Ps0, idfail)
 		 * to make it work.
 		 */
 		case CCHIDENT:
-			copy(&Y, &OY, sizeof Y);
+			copy((char *) (&Y), (char *) (&OY), sizeof Y);
 #ifdef PI
 			i = 1 << yyrwant;
 #endif
@@ -470,9 +476,9 @@ yyrecover(Ps0, idfail)
 			} else
 				yerror("Replaced %s id with a %s id", classes[yyrhave], classes[yyrwant]);
 #ifdef PI
-			yybaduse(yypv[0], yyeline, i);
+			(void) yybaduse(yypv[0].cptr, yyeline, i);
 #endif
-			yypv[0] = nullsem(YID);
+			yypv[0].i_entry = nullsem(YID);
 			i = 0;
 			yyshifts = 0;
 			break;
@@ -495,7 +501,7 @@ yyrecover(Ps0, idfail)
 	/*
 	 * We succeeded if we didn't "panic".
 	 */
-	Recovery = 0;
+	Recovery = FALSE;
 	Ps = Ps0;
 	return (cact != CPANIC);
 }
@@ -528,7 +534,6 @@ trystate(Ps0, Pv0, flag, insmult, delmult, repmult)
 	 * table for looking at feasible alternatives.
 	 */
 	register int c, *ap;
-	int i, *actions;
 
 #ifdef DEBUG
 	Eprintf("Trying state %d\n", *Ps0);
@@ -579,7 +584,7 @@ trystate(Ps0, Pv0, flag, insmult, delmult, repmult)
 	 * Loop through the test actions
 	 * for this state.
 	 */
-	for (actions = ap; *ap <= 0; ap += 2) {
+	for (; *ap <= 0; ap += 2) {
 		/*
 		 * Extract the token of this action
 		 */
@@ -592,7 +597,7 @@ trystate(Ps0, Pv0, flag, insmult, delmult, repmult)
 		Tprintf("  Try Insert %s%s cost=%d\n"
 			, charname(acchar , 0 )
 			, charname(acchar , 1 )
-			, inscost(acchar));
+			, inscost(acchar, YC[0].Yychar));
 #endif
 		c = inscost(acchar, YC[0].Yychar);
 #ifndef DEBUG
@@ -686,6 +691,7 @@ correct(fchar, origin, c, multvec, Ps0, Pv0)
 	int *Ps0, *Pv0;
 {
 	register char *mv;
+	extern int *loccor();
 
 	/*
 	 * Ps is the top of the parse stack after the most
@@ -712,7 +718,7 @@ correct(fchar, origin, c, multvec, Ps0, Pv0)
 	mv = multvec;
 	do {
 		if (fchar != NOCHAR) {
-			copy(&ntok, &YC[0], sizeof ntok);
+			copy((char *) (&ntok), (char *) (&YC[0]), sizeof ntok);
 			ntok.Yychar = fchar, ntok.Yylval = nullsem(fchar);
 			fchar = NOCHAR;
 			ps = loccor(ps, &ntok);
@@ -742,6 +748,7 @@ extern	int yygo[], yypgo[], yyr1[], yyr2[];
  * If we succeed, we return a new top of stack
  * pointer, else we return NIL.
  */
+int *
 loccor(ps, ntok)
 	int *ps;
 	struct yytok *ntok;
@@ -771,7 +778,6 @@ loccor(ps, ntok)
 newstate:
 	p = &yyact[ yypact[yytips[yytipct - 1]+1] ];
 
-actn:
 	/*
 	 * Search the parse actions table
 	 * for something useful to do.
@@ -786,6 +792,8 @@ actn:
 		/*
 		 * SHIFT
 		 */
+		default:
+			panic("loccor");
 		case 2:
 			n &= 07777;
 			yyredfail = 0;
@@ -810,7 +818,7 @@ tipover:
 		 */
 		case 3:
 			n &= 07777;
-			if (yyEactr(n, yytipv[yytipct - 1]) == 0) {
+			if (yyEactr(n, (char *) yytipv[yytipct - 1]) == 0) {
 #ifdef DEBUG
 				Tprintf("\tYyEactr objects: have %s id, want %s id\n", classes[yyidhave], classes[yyidwant]);
 #endif
@@ -860,5 +868,4 @@ tipover:
 #endif
 			return (0);
 	}
-	panic("loccor");
 }

@@ -1,6 +1,8 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)gen.c 1.2 %G%";
+#ifndef lint
+static char sccsid[] = "@(#)gen.c 1.3 %G%";
+#endif
 
 #include "whoami.h"
 #ifdef OBJ
@@ -165,9 +167,11 @@ gen(p, o, w1, w2)
 	int p, o, w1, w2;
 {
 	register i, j;
-	int op, off;
+	int op;
 
 	switch (p) {
+		default:
+			panic("gen");
 		case O_AS2:
 		case NIL:
 			i = j = -1;
@@ -189,28 +193,26 @@ gen(p, o, w1, w2)
 			i <<= 2;
 			i |= j;
 			if (p == O_AS2) {
-				put(1, O_AS2 + asgntab[i]);
+				(void) put(1, O_AS2 + asgntab[i]);
 				return (NIL);
 			}
 			op = arop[o];
 			if (op == O_REL2) {
-				put(1, (op + reltab[i]) | (o - T_EQ) << 8+INDX);
+				(void) put(1, (op + reltab[i]) | (o - T_EQ) << 8+INDX);
 				return (nl+TBOOL);
 			}
-			put(1, i == 15 ? ar8op[o-T_DIVD] : op | artab[i]);
+			(void) put(1, i == 15 ? ar8op[o-T_DIVD] : op | artab[i]);
 			return (op == O_DVD2 && !divchk ? nl+TDOUBLE : nl+arret[i]);
 		case TREC:
 		case TSTR:
-			put(2, O_RELG | (o - T_EQ) << 8+INDX, w1);
+			(void) put(2, O_RELG | (o - T_EQ) << 8+INDX, w1);
 			return (nl+TBOOL);
 		case TSET:
 			op = setop[o-T_MULT];
 			if (op == O_RELT)
 				op |= (o - T_EQ)<<8+INDX;
-			put(2, op, w1);
+			(void) put(2, op, w1);
 			return (o >= T_EQ ? nl+TBOOL : nl+TSET);
-		default:
-			panic("gen");
 	}
 }
 #endif OBJ

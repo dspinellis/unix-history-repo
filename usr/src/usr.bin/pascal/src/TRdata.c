@@ -1,12 +1,14 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)TRdata.c 1.1 %G%";
+#ifndef lint
+static	char sccsid[] = "@(#)TRdata.c 1.2 %G%";
+#endif
 
 #include "whoami.h"
 #include "0.h"
 #ifdef	PI1
 #ifdef	DEBUG
-char	*trnames[]
+char	*trnames[] =
 {
 	0,
 	"MINUS",
@@ -94,7 +96,9 @@ char	*trnames[]
 #endif
 #endif
 
-char	*trdesc[]
+#ifndef PC
+#ifndef OBJ
+char	*trdesc[] =
 {
 	0,
 	"dp",
@@ -179,7 +183,9 @@ char	*trdesc[]
 	"npp",
 	"x"
 };
-char	*opnames[]
+#endif
+#endif
+char	*opnames[] =
 {
 	0,
 	"unary -",

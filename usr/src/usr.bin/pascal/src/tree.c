@@ -1,6 +1,8 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)tree.c 1.2 %G%";
+#ifndef lint
+static	char sccsid[] = "@(#)tree.c 1.3 %G%";
+#endif
 
 #include "whoami.h"
 #include "0.h"
@@ -67,7 +69,9 @@ inittree()
  * which was always true before we
  * segmented the tree space.
  */
-int *tree(cnt, a)
+/*VARARGS*/
+struct tnode *
+tree(cnt, a)
 	int cnt;
 {
 	register int *p, *q;
@@ -88,7 +92,7 @@ int *tree(cnt, a)
 		 * to tralloc.
 		 */
 		tralloc(TREENMAX);
-	return (q);
+	return ((struct tnode *) q);
 }
 
 /*
@@ -105,24 +109,24 @@ tralloc(howmuch)
 
 	if (spacep + howmuch >= tract->tr_high) {
 		i = TRINC;
-		cp = malloc(i * sizeof ( int ));
+		cp = malloc((unsigned) (i * sizeof ( int )));
 		if (cp == 0) {
 			yerror("Ran out of memory (tralloc)");
 			pexit(DIED);
 		}
-		spacep = cp;
+		spacep = (int *) cp;
 		tract++;
 		if (tract >= &ttab[MAXTREE]) {
 			yerror("Ran out of tree tables");
 			pexit(DIED);
 		}
-		tract->tr_low = cp;
+		tract->tr_low = (int *) cp;
 		tract->tr_high = tract->tr_low+i;
 	}
 }
 
 extern	int yylacnt;
-extern	bottled;
+extern	struct B *bottled;
 #ifdef PXP
 #endif
 /*
@@ -146,7 +150,7 @@ trfree()
 #endif
 	spacep = space;
 	while (tract->tr_low > spacep || tract->tr_high <= spacep) {
-		free(tract->tr_low);
+		free((char *) tract->tr_low);
 		tract->tr_low = NIL;
 		tract->tr_high = NIL;
 		tract--;
@@ -171,9 +175,9 @@ copystr(token)
 
 	i = (strlen(token) + sizeof ( int )) & ~( ( sizeof ( int ) ) - 1 );
 	tralloc(i / sizeof ( int ));
-	strcpy(spacep, token);
-	cp = spacep;
-	spacep = cp + i;
+	(void) pstrcpy((char *) spacep, token);
+	cp = (char *) spacep;
+	spacep = ((int *) cp + i);
 	tralloc(TREENMAX);
-	return (cp);
+	return ((int) cp);
 }

@@ -1,9 +1,12 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)yyparse.c 1.2 %G%";
+#ifndef lint
+static char sccsid[] = "@(#)yyparse.c 1.3 %G%";
+#endif
 
 #include "whoami.h"
 #include "0.h"
+#include "tree_ty.h"	/* must be included for yy.h */
 #include "yy.h"
 
 /*
@@ -12,7 +15,7 @@ static char sccsid[] = "@(#)yyparse.c 1.2 %G%";
  */
 
 int	yystate;	/* Current parser state */
-int	*yypv;
+union semstack *yypv;
 unsigned yytshifts = 1;	/* Number of "true" shifts */
 
 /*
@@ -28,7 +31,7 @@ int	yypact[];
 /*
  * Parse and parallel semantic stack
  */
-int	yyv[MAXDEPTH];
+union semstack	yyv[MAXDEPTH];
 int	yys[MAXDEPTH];
 
 /*
@@ -41,6 +44,9 @@ yyparse()
 	register int *ps, n, *p;
 	int paniced, *panicps, idfail;
 
+#ifdef lint
+	panicps = (int *) 0;
+#endif
 	yystate = 0;
 	yychar = yylex();
 	OY.Yychar = -1;
@@ -71,7 +77,6 @@ newstate:
 	 * new parser state.
 	 */
 	p = &yyact[ yypact[yystate+1] ]; 
-actn:
 	/*
 	 * Search the parse actions table
 	 * for something useful to do.
@@ -104,7 +109,7 @@ actn:
 #endif
 			OYcopy();
 			yystate = n & 07777;
-			yyval = yylval;
+			yyval.i_entry = yylval;
 #ifdef PI
 			yychar = -1;
 #else
@@ -120,7 +125,8 @@ actn:
 		case 3:
 			n &= 07777;
 			N = yyr2[n];
-			if (N == 1 && OY.Yychar == YID && !yyEactr(n, yypv[0])) {
+			if (N == 1 && OY.Yychar == YID && !yyEactr(n,
+							yypv[0].cptr)) {
 				idfail = 1;
 				goto errin;
 			}

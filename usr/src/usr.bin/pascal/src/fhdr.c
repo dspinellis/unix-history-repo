@@ -1,6 +1,8 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)fhdr.c 1.6 %G%";
+#ifndef lint
+static char sccsid[] = "@(#)fhdr.c 1.7 %G%";
+#endif
 
 #include "whoami.h"
 #include "0.h"
@@ -8,6 +10,7 @@ static char sccsid[] = "@(#)fhdr.c 1.6 %G%";
 #include "opcode.h"
 #include "objfmt.h"
 #include "align.h"
+#include "tree_ty.h"
 
 /*
  * this array keeps the pxp counters associated with
@@ -38,21 +41,22 @@ int	nfppatch;
 
 struct nl *
 funchdr(r)
-	int *r;
+	struct tnode *r;
 {
 	register struct nl *p;
-	register *il, **rl;
-	struct nl *cp, *dp;
-	int s, o, *pp;
+	register struct tnode *rl;
+	struct nl *cp, *dp, *temp;
+	int o;
 
-	if (inpflist(r[2])) {
+	if (inpflist(r->p_dec.id_ptr)) {
 		opush('l');
 		yyretrieve();	/* kludge */
 	}
 	pfcnt++;
 	parts[ cbn ] |= RPRT;
-	line = r[1];
-	if (r[3] == NIL && (p=lookup1(r[2])) != NIL && bn == cbn) {
+	line = r->p_dec.line_no;
+	if (r->p_dec.param_list == TR_NIL &&
+		(p=lookup1(r->p_dec.id_ptr)) != NIL && bn == cbn) {
 		/*
 		 * Symbol already defined
 		 * in this block. it is either
@@ -64,15 +68,15 @@ funchdr(r)
 		 *     and enter() will complain.
 		 */
 		if (  ( ( p->nl_flags & NFORWD ) != 0 )
-		   && (  ( p->class == FUNC && r[0] == T_FDEC )
-		      || ( p->class == PROC && r[0] == T_PDEC ) ) ) {
+		   && (  ( p->class == FUNC && r->tag == T_FDEC )
+		      || ( p->class == PROC && r->tag == T_PDEC ) ) ) {
 			/*
 			 * Grammar doesnt forbid
 			 * types on a resolution
 			 * of a forward function
 			 * declaration.
 			 */
-			if (p->class == FUNC && r[4])
+			if (p->class == FUNC && r->p_dec.type)
 				error("Function type should be given only in forward declaration");
 			/*
 			 * get another counter for the actual
@@ -98,41 +102,51 @@ funchdr(r)
 	 * do level one processing.
 	 */
 
-	 if ((r[0] != T_PROG) && (!progseen))
+	 if ((r->tag != T_PROG) && (!progseen))
 		level1();
 
 
 	/*
 	 * Declare the prog/proc/func
 	 */
-	switch (r[0]) {
+	switch (r->tag) {
 	    case T_PROG:
 		    progseen = TRUE;
 		    if (opt('z'))
 			    monflg = TRUE;
-		    program = p = defnl(r[2], PROG, 0, 0);
-		    p->value[3] = r[1];
+		    program = p = defnl(r->p_dec.id_ptr, PROG, NLNIL, 0);
+		    p->value[3] = r->p_dec.line_no;
 		    break;
 	    case T_PDEC:
-		    if (r[4] != NIL)
+		    if (r->p_dec.type != TR_NIL)
 			    error("Procedures do not have types, only functions do");
-		    p = enter(defnl(r[2], PROC, 0, 0));
+		    p = enter(defnl(r->p_dec.id_ptr, PROC, NLNIL, 0));
 		    p->nl_flags |= NMOD;
 #		    ifdef PC
-			enclosing[ cbn ] = r[2];
+			enclosing[ cbn ] = r->p_dec.id_ptr;
 			p -> extra_flags |= NGLOBAL;
 #		    endif PC
 		    break;
 	    case T_FDEC:
-		    il = r[4];
-		    if (il == NIL)
+		    {
+			register struct tnode *il;
+		    il = r->p_dec.type;
+		    if (il == TR_NIL)
 			    error("Function type must be specified");
-		    else if (il[0] != T_TYID) {
-			    il = NIL;
+		    else if (il->tag != T_TYID) {
+			    temp = NLNIL;
 			    error("Function type can be specified only by using a type identifier");
 		    } else
-			    il = gtype(il);
-		    p = enter(defnl(r[2], FUNC, il, NIL));
+			    temp = gtype(il);
+		    }
+		    {
+			register struct nl *il;
+
+		    il = temp;
+		    p = enter(defnl(r->p_dec.id_ptr, FUNC, il, NIL));
+
+		    }
+
 		    p->nl_flags |= NMOD;
 		    /*
 		     * An arbitrary restriction
@@ -150,14 +164,14 @@ funchdr(r)
 				    error("Functions should not return %ss", clnames[o]);
 		    }
 #		    ifdef PC
-			enclosing[ cbn ] = r[2];
+			enclosing[ cbn ] = r->p_dec.id_ptr;
 			p -> extra_flags |= NGLOBAL;
 #		    endif PC
 		    break;
 	    default:
 		    panic("funchdr");
 	}
-	if (r[0] != T_PROG) {
+	if (r->tag != T_PROG) {
 		/*
 		 * Mark this proc/func as
 		 * being forward declared
@@ -177,7 +191,7 @@ funchdr(r)
 		 */
 		if (p->class == FUNC) {
 #			ifdef OBJ
-			    cp = defnl(r[2], FVAR, p->type, 0);
+			    cp = defnl(r->p_dec.id_ptr, FVAR, p->type, 0);
 #			endif OBJ
 #			ifdef PC
 				/*
@@ -190,7 +204,7 @@ funchdr(r)
 				 * with the offset kept in the fvar.
 				 */
 
-			    cp = defnl(r[2], FVAR, p->type,
+			    cp = defnl(r->p_dec.id_ptr, FVAR, p->type,
 				(int)-leven(roundup(
 			            (int)(DPOFF1+lwidth(p->type)),
 				    (long)align(p->type))));
@@ -203,7 +217,7 @@ funchdr(r)
 		 * Enter the parameters
 		 * and compute total size
 		 */
-	        p->value[NL_OFFS] = params(p, r[3]);
+	        p->value[NL_OFFS] = params(p, r->p_dec.param_list);
 		/*
 		 * because NL_LINENO field in the function 
 		 * namelist entry has been used (as have all
@@ -211,9 +225,9 @@ funchdr(r)
 		 * stored in the NL_LINENO field of its fvar.
 		 */
 		if (p->class == FUNC)
-		    p->ptr[NL_FVAR]->value[NL_LINENO] = r[1];
+		    p->ptr[NL_FVAR]->value[NL_LINENO] = r->p_dec.line_no;
 		else
-		    p->value[NL_LINENO] = r[1];
+		    p->value[NL_LINENO] = r->p_dec.line_no;
 		cbn--;
 	} else { 
 		/*
@@ -222,16 +236,16 @@ funchdr(r)
 		 */
 #		ifdef OBJ
 		    if (monflg) {
-			    put(1, O_PXPBUF);
+			    (void) put(1, O_PXPBUF);
 			    cntpatch = put(2, O_CASE4, (long)0);
 			    nfppatch = put(2, O_CASE4, (long)0);
 		    }
 #		endif OBJ
 		cp = p;
-		for (rl = r[3]; rl; rl = rl[2]) {
-			if (rl[1] == NIL)
+		for (rl = r->p_dec.param_list; rl; rl = rl->list_node.next) {
+			if (rl->list_node.list == TR_NIL)
 				continue;
-			dp = defnl(rl[1], VAR, 0, 0);
+			dp = defnl((char *) rl->list_node.list, VAR, NLNIL, 0);
 			cp->chain = dp;
 			cp = dp;
 		}
@@ -241,20 +255,20 @@ funchdr(r)
 	 * the "entry point" of
 	 * the prog/proc/func.
 	 */
-	p->value[NL_ENTLOC] = getlab();
+	p->value[NL_ENTLOC] = (int) getlab();
 	if (monflg) {
 		bodycnts[ cbn ] = getcnt();
 		p->value[ NL_CNTR ] = 0;
 	}
 #	ifdef OBJ
-	    put(2, O_TRA4, (long)p->value[NL_ENTLOC]);
+	    (void) put(2, O_TRA4, (long)p->value[NL_ENTLOC]);
 #	endif OBJ
 #	ifdef PTREE
 	    {
 		pPointer	PF = tCopy( r );
 
 		pSeize( PorFHeader[ nesting ] );
-		if ( r[0] != T_PROG ) {
+		if ( r->tag != T_PROG ) {
 			pPointer	*PFs;
 
 			PFs = &( pDEF( PorFHeader[ nesting ] ).PorFPFs );
@@ -287,23 +301,23 @@ funchdr(r)
 	 */
 fparams(p, formal)
 	register struct nl *p;
-	int *formal;
+	struct tnode *formal;		/* T_PFUNC or T_PPROC */
 {
-	params(p, formal[3]);
-	p -> value[ NL_LINENO ] = formal[4];
+	(void) params(p, formal->pfunc_node.param_list);
+	p -> value[ NL_LINENO ] = formal->pfunc_node.line_no;
 	p -> ptr[ NL_FCHAIN ] = p -> chain;
 	p -> chain = NIL;
 }
 
 params(p, formalist)
 	register struct nl *p;
-	int *formalist;
+	struct tnode *formalist;	/* T_LISTPP */
 {
 	struct nl *chainp, *savedp;
 	struct nl *dp;
-	register int **formalp;		/* an element of the formal list */
-	register int *formal;		/* a formal */
-	int *typ, *idlist;
+	register struct tnode *formalp;	/* an element of the formal list */
+	register struct tnode *formal;	/* a formal */
+	struct tnode *typ, *idlist;
 	int w, o;
 
 	/*
@@ -323,40 +337,42 @@ params(p, formalist)
 		 */
 	    o = DPOFF2;
 #	endif PC
-	for (formalp = formalist; formalp != NIL; formalp = formalp[2]) {
-		p = NIL;
-		formal = formalp[1];
-		if (formal == NIL)
+	for (formalp = formalist; formalp != TR_NIL;
+			formalp = formalp->list_node.next) {
+		p = NLNIL;
+		formal = formalp->list_node.list;
+		if (formal == TR_NIL)
 			continue;
 		/*
 		 * Parametric procedures
 		 * don't have types !?!
 		 */
-		typ = formal[2];
-		if ( typ == NIL ) {
-		    if ( formal[0] != T_PPROC ) {
+		typ = formal->pfunc_node.type;
+		if ( typ == TR_NIL ) {
+		    if ( formal->tag != T_PPROC ) {
 			error("Types must be specified for arguments");
-			p = NIL;
+			p = NLNIL;
 		    }
 		} else {
-		    if ( formal[0] == T_PPROC ) {
+		    if ( formal->tag == T_PPROC ) {
 			error("Procedures cannot have types");
-			p = NIL;
+			p = NLNIL;
 		    } else {
-			if (typ[0] != T_TYID) {
+			if (typ->tag != T_TYID) {
 				error("Types for arguments can be specified only by using type identifiers");
-				p = NIL;
+				p = NLNIL;
 			} else {
 				p = gtype(typ);
 			}
 		    }
 		}
-		for (idlist = formal[1]; idlist != NIL; idlist = idlist[2]) {
-			switch (formal[0]) {
+		for (idlist = formal->param.id_list; idlist != TR_NIL;
+				idlist = idlist->list_node.next) {
+			switch (formal->tag) {
 			    default:
 				    panic("funchdr2");
 			    case T_PVAL:
-				    if (p != NIL) {
+				    if (p != NLNIL) {
 					    if (p->class == FILET)
 						    error("Files cannot be passed by value");
 					    else if (p->nl_flags & NFILES)
@@ -367,69 +383,77 @@ params(p, formalist)
 					w = lwidth(p);
 					o -= even(w);
 #					ifdef DEC11
-					    dp = defnl(idlist[1], VAR, p, o);
+					    dp = defnl((char *) idlist->list_node.list,
+								VAR, p, o);
 #					else
-					    dp = defnl(idlist[1], VAR, p,
-						(w < 2) ? o + 1 : o);
+					    dp = defnl((char *) idlist->list_node.list,
+						    VAR,p, (w < 2) ? o + 1 : o);
 #					endif DEC11
 #				    endif OBJ
 #				    ifdef PC
-					o = roundup(o, A_STACK);
+					o = roundup(o, (long) A_STACK);
 					w = lwidth(p);
 #					ifndef DEC11
 					    if (w <= sizeof(int)) {
 						o += sizeof(int) - w;
 					    }
 #					endif not DEC11
-					dp = defnl(idlist[1], VAR, p, o);
+					dp = defnl((char *) idlist->list_node.list,VAR,
+							p, o);
 					o += w;
 #				    endif PC
 				    dp->nl_flags |= NMOD;
 				    break;
 			    case T_PVAR:
 #				    ifdef OBJ
-					dp = defnl(idlist[1], REF, p, o -= sizeof ( int * ) );
+					dp = defnl((char *) idlist->list_node.list, REF,
+						    p, o -= sizeof ( int * ) );
 #				    endif OBJ
 #				    ifdef PC
-					dp = defnl( idlist[1] , REF , p
-						, o = roundup( o , (long)A_STACK ) );
+					dp = defnl( (char *) idlist->list_node.list, REF,
+						    p , 
+					    o = roundup( o , (long)A_STACK ) );
 					o += sizeof(char *);
 #				    endif PC
 				    break;
 			    case T_PFUNC:
-				    if (idlist[2] != NIL) {
+				    if (idlist->list_node.next != TR_NIL) {
 					error("Each function argument must be declared separately");
-					idlist[2] = NIL;
+					idlist->list_node.next = TR_NIL;
 				    }
 #				    ifdef OBJ
-					dp = defnl(idlist[1], FFUNC, p, o -= sizeof ( int * ) );
+					dp = defnl((char *) idlist->list_node.list,FFUNC,
+						p, o -= sizeof ( int * ) );
 #				    endif OBJ
 #				    ifdef PC
-					dp = defnl( idlist[1] , FFUNC , p
-						, o = roundup( o , (long)A_STACK ) );
+					dp = defnl( (char *) idlist->list_node.list , 
+						FFUNC , p ,
+						o = roundup( o , (long)A_STACK ) );
 					o += sizeof(char *);
 #				    endif PC
 				    dp -> nl_flags |= NMOD;
 				    fparams(dp, formal);
 				    break;
 			    case T_PPROC:
-				    if (idlist[2] != NIL) {
+				    if (idlist->list_node.next != TR_NIL) {
 					error("Each procedure argument must be declared separately");
-					idlist[2] = NIL;
+					idlist->list_node.next = TR_NIL;
 				    }
 #				    ifdef OBJ
-					dp = defnl(idlist[1], FPROC, p, o -= sizeof ( int * ) );
+					dp = defnl((char *) idlist->list_node.list,
+					    FPROC, p, o -= sizeof ( int * ) );
 #				    endif OBJ
 #				    ifdef PC
-					dp = defnl( idlist[1] , FPROC , p
-						, o = roundup( o , (long)A_STACK ) );
+					dp = defnl( (char *) idlist->list_node.list ,
+						FPROC , p,
+						o = roundup( o , (long)A_STACK ) );
 					o += sizeof(char *);
 #				    endif PC
 				    dp -> nl_flags |= NMOD;
 				    fparams(dp, formal);
 				    break;
 			    }
-			if (dp != NIL) {
+			if (dp != NLNIL) {
 #				ifdef PC
 				    dp -> extra_flags |= NPARAM;
 #				endif PC
@@ -445,7 +469,7 @@ params(p, formalist)
 		 * of our above code to
 		 * calculate offsets
 		 */
-	    for (dp = p->chain; dp != NIL; dp = dp->chain)
+	    for (dp = p->chain; dp != NLNIL; dp = dp->chain)
 		    dp->value[NL_OFFS] += -o + DPOFF2;
 	    return (-o + DPOFF2);
 #	endif OBJ

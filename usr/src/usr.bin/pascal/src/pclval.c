@@ -1,12 +1,15 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)pclval.c 1.4 %G%";
+#ifndef lint
+static	char sccsid[] = "@(#)pclval.c 1.5 %G%";
+#endif
 
 #include "whoami.h"
 #include "0.h"
 #include "tree.h"
 #include "opcode.h"
 #include "objfmt.h"
+#include "tree_ty.h"
 #ifdef PC
 	/*
 	 *	and the rest of the file
@@ -26,39 +29,41 @@ extern	int flagwas;
  * once to put out the calls and once to put out the address to be checked.
  */
 struct nl *
-pclvalue( r , modflag , required )
-	int	*r;
+pclvalue( var , modflag , required )
+	struct tnode	*var;
 	int	modflag;
 	int	required;
 {
 	register struct nl	*p;
-	register		*c, *co;
+	register struct tnode 	*c, *co;
 	int			f, o;
-	int			tr[2], trp[3];
-	struct nl		*firstp;
-	struct nl		*lastp;
+	struct tnode		l_node, tr;
+	VAR_NODE		*v_node;
+	LIST_NODE		*tr_ptr;
+	struct nl		*firstp, *lastp;
 	char			*firstsymbol;
 	char			firstextra_flags;
 	int			firstbn;
 
-	if ( r == NIL ) {
-		return NIL;
+	if ( var == TR_NIL ) {
+		return NLNIL;
 	}
-	if ( nowexp( r ) ) {
-		return NIL;
+	if ( nowexp( var ) ) {
+		return NLNIL;
 	}
-	if ( r[0] != T_VAR ) {
+	if ( var->tag != T_VAR ) {
 		error("Variable required");	/* Pass mesgs down from pt of call ? */
-		return NIL;
+		return NLNIL;
 	}
-	firstp = p = lookup( r[2] );
-	if ( p == NIL ) {
-		return NIL;
+	v_node = &(var->var_node);
+	firstp = p = lookup( v_node->cptr );
+	if ( p == NLNIL ) {
+		return NLNIL;
 	}
 	firstsymbol = p -> symbol;
 	firstbn = bn;
 	firstextra_flags = p -> extra_flags;
-	c = r[3];
+	c = v_node->qual;
 	if ( ( modflag & NOUSE ) && ! lptr( c ) ) {
 		p -> nl_flags = flagwas;
 	}
@@ -70,24 +75,25 @@ pclvalue( r , modflag , required )
 	 * are the named classes, i.e. CONST, TYPE
 	 * VAR, PROC, FUNC, REF, or a WITHPTR.
 	 */
+	 tr_ptr = &(l_node.list_node);
 	if ( p -> class == WITHPTR ) {
 		/*
 		 * Construct the tree implied by
 		 * the with statement
 		 */
-	    trp[0] = T_LISTPP;
-	    trp[1] = tr;
-	    trp[2] = r[3];
-	    tr[0] = T_FIELD;
-	    tr[1] = r[2];
-	    c = trp;
+	    l_node.tag = T_LISTPP;
+	    tr_ptr->list = &(tr);
+	    tr_ptr->next = v_node->qual;
+	    tr.tag = T_FIELD;
+	    tr.field_node.id_ptr = v_node->cptr;
+	    c = &(l_node);
 	}
 	    /*
 	     *	this not only puts out the names of functions to call
 	     *	but also does all the semantic checking of the qualifications.
 	     */
-	if ( ! nilfnil( p , c , modflag , firstp , r[2] ) ) {
-	    return NIL;
+	if ( ! nilfnil( p , c , modflag , firstp , v_node->cptr ) ) {
+	    return NLNIL;
 	}
 	switch (p -> class) {
 		case WITHPTR:
@@ -109,7 +115,7 @@ pclvalue( r , modflag , required )
 			break;
 		default:
 			error("%s %s found where variable required", classes[p -> class], p -> symbol);
-			return (NIL);
+			return (NLNIL);
 	}
 	/*
 	 * Loop and handle each
@@ -119,19 +125,19 @@ pclvalue( r , modflag , required )
 	    ( modflag & ASGN ) &&
 	    ( p -> value[ NL_FORV ] & FORVAR ) ) {
 		error("Can't modify the for variable %s in the range of the loop", p -> symbol);
-		return (NIL);
+		return (NLNIL);
 	}
-	for ( ; c != NIL ; c = c[2] ) {
-		co = c[1];
-		if ( co == NIL ) {
-			return NIL;
+	for ( ; c != TR_NIL ; c = c->list_node.next ) {
+		co = c->list_node.list;
+		if ( co == TR_NIL ) {
+			return NLNIL;
 		}
 		lastp = p;
 		p = p -> type;
-		if ( p == NIL ) {
-			return NIL;
+		if ( p == NLNIL ) {
+			return NLNIL;
 		}
-		switch ( co[0] ) {
+		switch ( co->tag ) {
 			case T_PTR:
 				/*
 				 * Pointer qualification.
@@ -143,7 +149,7 @@ pclvalue( r , modflag , required )
 				} else {
 					if (o) {
 					    putleaf( P2ICON , o , 0 , P2INT
-						    , 0 );
+						    , (char *) 0 );
 					    putop( P2PLUS , P2PTR | P2CHAR );
 					}
 				}
@@ -185,11 +191,11 @@ pclvalue( r , modflag , required )
 				} else {
 					if (o) {
 					    putleaf( P2ICON , o , 0 , P2INT
-						    , 0 );
+						    , (char *) 0 );
 					    putop( P2PLUS , P2INT );
 					}
 				}
-				arycod( p , co[1] );
+				(void) arycod( p , co->ary_node.expr_list );
 				f = o = 0;
 				continue;
 			case T_FIELD:
@@ -198,7 +204,7 @@ pclvalue( r , modflag , required )
 				 * an offset with some 
 				 * semantic checking.
 				 */
-				p = reclook(p, co[1]);
+				p = reclook(p, co->field_node.id_ptr);
 				o += p -> value[0];
 				continue;
 			default:
@@ -215,7 +221,7 @@ pclvalue( r , modflag , required )
 		}
 	} else {
 		if (o) {
-		    putleaf( P2ICON , o , 0 , P2INT , 0 );
+		    putleaf( P2ICON , o , 0 , P2INT , (char *) 0 );
 		    putop( P2PLUS , P2INT );
 		}
 		if ( required == RREQ ) {
@@ -231,30 +237,31 @@ pclvalue( r , modflag , required )
      *	or nil for pointers (if checking is on) on the way back.
      *	this returns true or false.
      */
+bool
 nilfnil( p , c , modflag , firstp , r2 )
-    struct nl	*p;
-    int		*c;
+    struct nl	 *p;
+    struct tnode *c;
     int		modflag;
     struct nl	*firstp;
     char	*r2;		/* no, not r2-d2 */
     {
-	int		*co;
+	struct tnode 	*co;
 	struct nl	*lastp;
 	int		t;
 
-	if ( c == NIL ) {
+	if ( c == TR_NIL ) {
 	    return TRUE;
 	}
-	co = (int *) ( c[1] );
-	if ( co == NIL ) {
+	co = ( c->list_node.list );
+	if ( co == TR_NIL ) {
 		return FALSE;
 	}
 	lastp = p;
 	p = p -> type;
-	if ( p == NIL ) {
+	if ( p == NLNIL ) {
 		return FALSE;
 	}
-	switch ( co[0] ) {
+	switch ( co->tag ) {
 	    case T_PTR:
 		    /*
 		     * Pointer qualification.
@@ -283,7 +290,7 @@ nilfnil( p , c , modflag , firstp , r2 )
 			    goto bad;
 		    }
 		    codeoff();
-		    t = arycod( p , co[1] );
+		    t = arycod( p , co->ary_node.expr_list );
 		    codeon();
 		    switch ( t ) {
 			    case 0:
@@ -302,18 +309,18 @@ nilfnil( p , c , modflag , firstp , r2 )
 			    error(". allowed only on records, not on %ss", nameof(p));
 			    goto bad;
 		    }
-		    if ( co[1] == NIL ) {
+		    if ( co->field_node.id_ptr == NIL ) {
 			    return FALSE;
 		    }
-		    p = reclook( p , co[1] );
+		    p = reclook( p , co->field_node.id_ptr );
 		    if ( p == NIL ) {
-			    error("%s is not a field in this record", co[1]);
+			    error("%s is not a field in this record", co->field_node.id_ptr);
 			    goto bad;
 		    }
 		    if ( modflag & MOD ) {
 			    p -> nl_flags |= NMOD;
 		    }
-		    if ( ( modflag & NOUSE ) == 0 || lptr( c[2] ) ) {
+		    if ((modflag & NOUSE) == 0 || lptr(c->field_node.other )) {
 			    p -> nl_flags |= NUSED;
 		    }
 		    break;
@@ -323,13 +330,13 @@ nilfnil( p , c , modflag , firstp , r2 )
 	    /*
 	     *	recursive call, check the rest of the qualifications.
 	     */
-	if ( ! nilfnil( p , c[2] , modflag , firstp , r2 ) ) {
+	if ( ! nilfnil( p , c->list_node.next , modflag , firstp , r2 ) ) {
 	    return FALSE;
 	}
 	    /*
 	     *	the point of all this.
 	     */
-	if ( co[0] == T_PTR ) {
+	if ( co->tag == T_PTR ) {
 	    if ( p -> class == PTR ) {
 		    if ( opt( 't' ) ) {
 			putleaf( P2ICON , 0 , 0

@@ -1,6 +1,8 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)conv.c 1.4 %G%";
+#ifndef lint
+static char sccsid[] = "@(#)conv.c 1.5 %G%";
+#endif
 
 #include "whoami.h"
 #ifdef PI
@@ -9,7 +11,9 @@ static char sccsid[] = "@(#)conv.c 1.4 %G%";
 #ifdef PC
 #   include	"pcops.h"
 #endif PC
+#include "tree_ty.h"
 
+#ifndef PC
 #ifndef PI0
 /*
  * Convert a p1 into a p2.
@@ -19,19 +23,19 @@ static char sccsid[] = "@(#)conv.c 1.4 %G%";
 convert(p1, p2)
 	struct nl *p1, *p2;
 {
-	if (p1 == NIL || p2 == NIL)
+	if (p1 == NLNIL || p2 == NLNIL)
 		return;
 	switch (width(p1) - width(p2)) {
 		case -7:
 		case -6:
-			put(1, O_STOD);
+			(void) put(1, O_STOD);
 			return;
 		case -4:
-			put(1, O_ITOD);
+			(void) put(1, O_ITOD);
 			return;
 		case -3:
 		case -2:
-			put(1, O_STOI);
+			(void) put(1, O_STOI);
 			return;
 		case -1:
 		case 0:
@@ -39,13 +43,14 @@ convert(p1, p2)
 			return;
 		case 2:
 		case 3:
-			put(1, O_ITOS);
+			(void) put(1, O_ITOS);
 			return;
 		default:
 			panic("convert");
 	}
 }
-#endif
+#endif 
+#endif PC
 
 /*
  * Compat tells whether
@@ -56,6 +61,7 @@ convert(p1, p2)
  */
 compat(p1, p2, t)
 	struct nl *p1, *p2;
+	struct tnode *t;
 {
 	register c1, c2;
 
@@ -78,15 +84,15 @@ compat(p1, p2, t)
 			if (c2 == TDOUBLE)
 				return (1);
 #ifndef PI0
-			if (c2 == TINT && divflg == 0 && t != NIL ) {
-				divchk= 1;
+			if (c2 == TINT && divflg == FALSE && t != TR_NIL ) {
+				divchk= TRUE;
 				c1 = classify(rvalue(t, NLNIL , RREQ ));
-				divchk = NIL;
+				divchk = FALSE;
 				if (c1 == TINT) {
 					error("Type clash: real is incompatible with integer");
 					cerror("This resulted because you used '/' which always returns real rather");
 					cerror("than 'div' which divides integers and returns integers");
-					divflg = 1;
+					divflg = TRUE;
 					return (NIL);
 				}
 			}
@@ -135,6 +141,7 @@ compat(p1, p2, t)
 }
 
 #ifndef PI0
+#ifndef PC
 /*
  * Rangechk generates code to
  * check if the type p on top
@@ -146,8 +153,10 @@ rangechk(p, q)
 	struct nl *p, *q;
 {
 	register struct nl *rp;
+#ifdef OBJ
 	register op;
 	int wq, wrp;
+#endif
 
 	if (opt('t') == 0)
 		return;
@@ -174,21 +183,21 @@ rangechk(p, q)
 		    if (rp->range[0] != 0) {
 #    		    ifndef DEBUG
 			    if (wrp <= 2)
-				    put(3, O_RANG2+op, ( short ) rp->range[0],
+				    (void) put(3, O_RANG2+op, ( short ) rp->range[0],
 						     ( short ) rp->range[1]);
 			    else if (rp != nl+T4INT)
-				    put(3, O_RANG4+op, rp->range[0], rp->range[1] );
+				    (void) put(3, O_RANG4+op, rp->range[0], rp->range[1] );
 #    		    else
 			    if (!hp21mx) {
 				    if (wrp <= 2)
-					    put(3, O_RANG2+op,( short ) rp->range[0],
+					    (void) put(3, O_RANG2+op,( short ) rp->range[0],
 							    ( short ) rp->range[1]);
 				    else if (rp != nl+T4INT)
-					    put(3, O_RANG4+op,rp->range[0],
+					    (void) put(3, O_RANG4+op,rp->range[0],
 							     rp->range[1]);
 			    } else
 				    if (rp != nl+T2INT && rp != nl+T4INT)
-					    put(3, O_RANG2+op,( short ) rp->range[0],
+					    (void) put(3, O_RANG2+op,( short ) rp->range[0],
 							    ( short ) rp->range[1]);
 #    		    endif
 			break;
@@ -199,9 +208,9 @@ rangechk(p, q)
 		     */
 	    case SCAL:
 		    if (wrp <= 2)
-			    put(2, O_RSNG2+op, ( short ) rp->range[1]);
+			    (void) put(2, O_RSNG2+op, ( short ) rp->range[1]);
 		    else
-			    put( 2 , O_RSNG4+op, rp->range[1]);
+			    (void) put( 2 , O_RSNG4+op, rp->range[1]);
 		    break;
 	    default:
 		    panic("rangechk");
@@ -214,6 +223,7 @@ rangechk(p, q)
 	    panic("rangechk()");
 #	endif PC
 }
+#endif
 #endif
 #endif
 
@@ -284,10 +294,12 @@ postcheck(need, have)
 	    if ( need != nl + T4INT ) {
 		sconv(p2type(have), P2INT);
 		if (need -> range[0] != 0 ) {
-		    putleaf( P2ICON , need -> range[0] , 0 , P2INT , 0 );
+		    putleaf( P2ICON , (int) need -> range[0] , 0 , P2INT ,
+							(char *) 0 );
 		    putop( P2LISTOP , P2INT );
 		}
-		putleaf( P2ICON , need -> range[1] , 0 , P2INT , 0 );
+		putleaf( P2ICON , (int) need -> range[1] , 0 , P2INT ,
+				(char *) 0 );
 		putop( P2LISTOP , P2INT );
 		putop( P2CALL , P2INT );
 		sconv(P2INT, p2type(have));
@@ -307,8 +319,8 @@ conv(dub)
 	int *dub;
 {
 	int newfp[2];
-	double *dp = dub;
-	long *lp = dub;
+	double *dp = ((double *) dub);
+	long *lp = ((long *) dub);
 	register int exp;
 	long mant;
 

@@ -1,9 +1,12 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)yylex.c 1.3 %G%";
+#ifndef lint
+static char sccsid[] = "@(#)yylex.c 1.4 %G%"; */
+#endif
 
 #include "whoami.h"
 #include "0.h"
+#include "tree_ty.h"	/* must be included for yy.h */
 #include "yy.h"
 
 /*
@@ -16,12 +19,12 @@ int	yylacnt;
 struct	yytok Yla[YYLASIZ];
 
 unyylex(y)
-	struct yylex *y;
+	struct yytok *y;
 {
 
 	if (yylacnt == YYLASIZ)
 		panic("unyylex");
-	copy(&Yla[yylacnt], y, sizeof Yla[0]);
+	copy((char *) &Yla[yylacnt], (char *) y, sizeof Yla[0]);
 	yylacnt++;
 
 }
@@ -29,14 +32,14 @@ unyylex(y)
 yylex()
 {
 	register c;
-	register **ip;
+	register int **ip;
 	register char *cp;
 	int f;
 	char delim;
 
 	if (yylacnt != 0) {
 		yylacnt--;
-		copy(&Y, &Yla[yylacnt], sizeof Y);
+		copy((char *) &Y, (char *) &Yla[yylacnt], sizeof Y);
 		return (yychar);
 	}
 	if (c = yysavc)
@@ -89,9 +92,9 @@ next:
 						*cp |= ' ';
 					}
 			yysavc = c;
-			ip = hash(0, 1);
-			if (*ip < yykey || *ip >= lastkey) {
-				yylval = *ip;
+			ip = (int **) hash((char *) 0, 1);
+			if (*ip < (int *) yykey || *ip >= (int *) lastkey) {
+				yylval = (int) *ip;
 				return (YID);
 			}
 			yylval = yyline;
@@ -184,7 +187,7 @@ infpnumb:
 				do {
 					c = readch();
 					if (c == '\n') {
-						yerror("Unmatched %c for string", delim);
+						yerror("Unmatched %c for string", (char *) delim);
 						if (cp == token)
 							*cp++ = ' ', cp++;
 						break;
@@ -292,7 +295,7 @@ nonterm:
 			if ( opt('s') ) {
 			    yyset();
 			    standard();
-			    yerror("%c is non-standard", c);
+			    yerror("%c is non-standard", (char *) c);
 			}
 			return c;
 		default:

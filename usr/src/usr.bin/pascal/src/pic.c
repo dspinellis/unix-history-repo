@@ -1,6 +1,8 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)pic.c 1.1 %G%";
+#ifndef lint
+static	char sccsid[] = "@(#)pic.c 1.2 %G%";
+#endif
 
 #include "OPnames.h"
 

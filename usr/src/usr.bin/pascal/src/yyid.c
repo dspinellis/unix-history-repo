@@ -1,13 +1,16 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
+#ifndef lint
 static char sccsid[] = "@(#)yyid.c 1.5 %G%";
+#endif
 
 #include "whoami.h"
 #include "0.h"
+#include "tree_ty.h"	/* must be included for yy.h */
 #include "yy.h"
 
 #ifdef PI
-extern	int *yypv;
+extern	union semstack *yypv;
 /*
  * Determine whether the identifier whose name
  * is "cp" can possibly be a kind, which is a
@@ -54,7 +57,7 @@ identis(cp, kind)
 gotit:
 	if (p->class == BADUSE && !Recovery) {
 		yybadref(p, OY.Yyeline);
-		yypv[0] = NIL;
+		yypv[0].i_entry = NIL;
 	}
 	return (1);
 }
@@ -64,6 +67,7 @@ gotit:
  * line and use implying the addition of kindmask
  * to the mask of kind information.
  */
+struct nl *
 yybaduse(cp, line, kindmask)
 	register char *cp;
 	int line, kindmask;
@@ -77,7 +81,7 @@ yybaduse(cp, line, kindmask)
 			break;
 	oldp = p;
 	if (p == NIL || p->class != BADUSE)
-		p = enter(defnl(cp, BADUSE, 0, 0));
+		p = enter(defnl(cp, BADUSE, NLNIL, 0));
 	p->value[NL_KINDS] |= kindmask;
 	yybadref(p, line);
 	return (oldp);
@@ -87,7 +91,7 @@ yybaduse(cp, line, kindmask)
      *	ud is initialized so that esavestr will allocate
      *	sizeof ( struct udinfo ) bytes for the 'real' struct udinfo
      */
-struct	udinfo ud = { ~0 , ~0 , 0};
+struct	udinfo ud = { ~0 , (struct udinfo *) ~0 , 0};
 /*
  * Record a reference to an undefined identifier,
  * or one which is improperly used.
@@ -98,12 +102,12 @@ yybadref(p, line)
 {
 	register struct udinfo *udp;
 
-	if (p->chain != NIL && p->chain->ud_line == line)
+	if (p->chain != NIL && ((struct udinfo *) p->chain)->ud_line == line)
 		return;
-	udp = esavestr(&ud);
+	udp = (struct udinfo *) esavestr((char *) &ud);
 	udp->ud_line = line;
-	udp->ud_next = p->chain;
-	p->chain = udp;
+	udp->ud_next = (struct udinfo *) p->chain;
+	p->chain = (struct nl *) udp;
 }
 
 #define	varkinds	((1<<CONST)|(1<<VAR)|(1<<REF)|(1<<ARRAY)|(1<<PTR) \
@@ -137,9 +141,9 @@ yyidok1(p, kind)
 	register struct nl *p;
 	int kind;
 {
-	int i;
 
 	switch (kind) {
+		default:
 		case FUNC:
 			return (   p -> class == FUNC
 				|| p -> class == FVAR

@@ -1,6 +1,8 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)string.c 1.2 %G%";
+#ifndef lint
+static	char sccsid[] = "@(#)string.c 1.3 %G%";
+#endif
 
 #include "whoami.h"
 #include "0.h"
@@ -76,7 +78,7 @@ savestr(cp)
 #endif
 		strng = strngp;
 	}
-	strcpy(strngp, cp);
+	(void) pstrcpy(strngp, cp);
 	cp = strngp;
 	strngp = cp + i;
 #ifdef PI0
@@ -87,6 +89,7 @@ savestr(cp)
 
 #ifndef PI1
 #ifndef PXP
+char *
 esavestr(cp)
 	char *cp;
 {

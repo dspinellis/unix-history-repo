@@ -1,6 +1,8 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)savenl.c 1.5 %G%";
+#ifndef lint
+static char sccsid[] = "@(#)savenl.c 1.6 %G%";
+#endif
 
 /*
  * savenl - routines for saving namelist and line number information
@@ -62,6 +64,8 @@ LOCAL FILE *linesfp;
 
 LOCAL long nlsize;
 
+extern FILE *fopen();
+
 /*
  * create temporary files for the namelist info
  */
@@ -69,10 +73,10 @@ LOCAL long nlsize;
 startnlfile()
 {
 	nlsize = 0;
-	mktemp(symname);
-	mktemp(strname);
-	mktemp(filesname);
-	mktemp(linesname);
+	(void) mktemp(symname);
+	(void) mktemp(strname);
+	(void) mktemp(filesname);
+	(void) mktemp(linesname);
 	symfp = fopen(symname, "w");
 	strfp = fopen(strname, "w");
 	filesfp = fopen(filesname, "w");
@@ -94,13 +98,14 @@ startnlfile()
 copynlfile()
 {
 	register int n;
+	extern long lseek();
 	int symfd, strfd, filesfd, linesfd;
 	char buff[BUFSIZ];
 
-	fclose(symfp);
-	fclose(strfp);
-	fclose(filesfp);
-	fclose(linesfp);
+	(void) fclose((FILE *) symfp);
+	(void) fclose((FILE *) strfp);
+	(void) fclose((FILE *) filesfp);
+	(void) fclose((FILE *) linesfp);
 	if (!opt('g')) {
 		removenlfile();
 		return;
@@ -113,8 +118,8 @@ copynlfile()
 		fprintf(stderr, "sync error on /tmp/obj");
 		pexit(ERRS);
 	}
-	lseek(ofil, 0L, 2);
-	write(ofil, &nlhdr, sizeof(nlhdr));
+	(void) lseek(ofil, 0L, 2);
+	write(ofil, (char *) (&nlhdr), sizeof(nlhdr));
 	n = read(strfd, buff, BUFSIZ - sizeof(nlhdr));
 	write(ofil, buff, n);
 	cat(strfd);
@@ -133,7 +138,7 @@ int fd;
 	while ((n = read(fd, buff, BUFSIZ)) > 0) {
 		write(ofil, buff, n);
 	}
-	close(fd);
+	(void) close(fd);
 }
 
 removenlfile()
@@ -167,6 +172,7 @@ struct nls {
 
 struct nl nl[], *nlp, ntab[], *nlact;
 
+/*VARARGS*/
 savenl(to, rout)
 struct nl *to;
 {
@@ -174,18 +180,17 @@ struct nl *to;
 	register OBJSYM *s;
 	OBJSYM tmpsym;
 	struct nls *nlsp;
-	int v;
 
 	if (to != NIL) {
-		putblock(rout);
+		putblock((char *) rout);
 	} else {
 		putblock("main program");
 	}
-	nlsp = nlact;
+	nlsp = (struct nls *) nlact;
 	s = &tmpsym;
 	for (p = nlp; p != to;) {
 		if (p == nlsp->nls_low) {
-			if (nlsp == &ntab[0])
+			if (nlsp == ((struct nls *) &ntab[0]))
 				break;
 			nlsp--;
 			p = nlsp->nls_high;
@@ -196,7 +201,7 @@ struct nl *to;
 		}
 		nlhdr.nsyms++;
 		nlsize += sizeof(OBJSYM) + sizeof(int);
-		putw(symno(p), symfp);
+		(void) putw(symno(p), symfp);
 		if (p->symbol != NULL) {
 			s->strindex = nlhdr.stringsize;
 			putstring(p->symbol);
@@ -215,7 +220,7 @@ struct nl *to;
 			s->osymvalue.ovarnt.vtorecno = symno(p->ptr[2]);
 			s->osymvalue.ovarnt.vtagno = symno(p->ptr[3]);
 		}
-		fwrite(s, sizeof(*s), 1, symfp);
+		fwrite((char *) s, sizeof(*s), 1, symfp);
 	}
 }
 
@@ -238,10 +243,10 @@ int line;
 		nlhdr.nlines++;
 		nlsize += sizeof(OBJLINE);
 		info.separate.lineincr = line - oline;
-		info.separate.addrincr = lc - olc;
-		putw(info.together, linesfp);
+		info.separate.addrincr = ((unsigned short) (lc - olc));
+		(void) putw((int) info.together, linesfp);
 		oline = line;
-		olc = lc;
+		olc = (int) lc;
 	}
 }
 
@@ -267,12 +272,12 @@ int line;
 	if (lc == 0) {
 		ft.addr = 0;
 	} else {
-		ft.addr = lc - HEADER_BYTES;
+		ft.addr = ((LINENO) lc - HEADER_BYTES );
 	}
 	ft.filename = (char *) nlhdr.stringsize;
 	putstring(s);
 	ft.lineindex = nlhdr.nlines;
-	fwrite(&ft, sizeof(ft), 1, filesfp);
+	fwrite((char *) (&ft), sizeof(ft), 1, filesfp);
 }
 
 /*
@@ -282,15 +287,14 @@ int line;
 LOCAL putblock(s)
 char *s;
 {
-	register int i;
 	static OBJSYM zerosym;
 
 	nlhdr.nsyms++;
 	nlsize += sizeof(OBJSYM) + sizeof(int);
-	putw(0, symfp);
+	(void) putw(0, symfp);
 	zerosym.strindex = nlhdr.stringsize;
 	putstring(s);
-	fwrite(&zerosym, sizeof(zerosym), 1, symfp);
+	fwrite((char *) (&zerosym), sizeof(zerosym), 1, symfp);
 }
 
 /*

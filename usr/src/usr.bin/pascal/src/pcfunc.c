@@ -1,6 +1,8 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)pcfunc.c 1.13 %G%";
+#ifndef lint
+static	char sccsid[] = "@(#)pcfunc.c 1.14 %G%";
+#endif
 
 #include "whoami.h"
 #ifdef PC
@@ -14,6 +16,7 @@ static	char sccsid[] = "@(#)pcfunc.c 1.13 %G%";
 #include "pc.h"
 #include "pcops.h"
 #include "tmps.h"
+#include "tree_ty.h"
 
 /*
  * Funccod generates code for
@@ -21,15 +24,17 @@ static	char sccsid[] = "@(#)pcfunc.c 1.13 %G%";
  * call to generate calls to user
  * defined functions and procedures.
  */
+struct nl *
 pcfunccod( r )
-	int	 *r;
+	struct tnode	 *r; /* T_FCALL */
 {
 	struct nl *p;
 	register struct nl *p1;
-	register int *al;
+	register struct tnode *al;
 	register op;
-	int argc, *argv;
-	int tr[2], tr2[4];
+	int argc;
+	struct tnode *argv;
+	struct tnode tr, tr2;
 	char		*funcname;
 	struct nl	*tempnlp;
 	long		temptype;
@@ -40,17 +45,17 @@ pcfunccod( r )
 	 * is defined and the name of
 	 * a function.
 	 */
-	p = lookup(r[2]);
-	if (p == NIL) {
-		rvlist(r[3]);
-		return (NIL);
+	p = lookup(r->pcall_node.proc_id);
+	if (p == NLNIL) {
+		rvlist(r->pcall_node.arg);
+		return (NLNIL);
 	}
 	if (p->class != FUNC && p->class != FFUNC) {
 		error("%s is not a function", p->symbol);
-		rvlist(r[3]);
-		return (NIL);
+		rvlist(r->pcall_node.arg);
+		return (NLNIL);
 	}
-	argv = r[3];
+	argv = r->pcall_node.arg;
 	/*
 	 * Call handles user defined
 	 * procedures and functions
@@ -61,7 +66,7 @@ pcfunccod( r )
 	 * Count the arguments
 	 */
 	argc = 0;
-	for (al = argv; al != NIL; al = al[2])
+	for (al = argv; al != TR_NIL; al = al->list_node.next)
 		argc++;
 	/*
 	 * Built-in functions have
@@ -91,7 +96,7 @@ noargs:
 			if (argc != 0) {
 				error("%s takes no arguments", p->symbol);
 				rvlist(argv);
-				return (NIL);
+				return (NLNIL);
 			}
 			putleaf( P2ICON , 0 , 0
 				, ADDTYPE( P2FTN | P2INT , P2PTR )
@@ -102,27 +107,28 @@ noargs:
 			if (argc != 0) {
 				error("%s takes no arguments", p->symbol);
 				rvlist(argv);
-				return (NIL);
+				return (NLNIL);
 			}
 			putleaf( P2ICON , 0 , 0
 				, ADDTYPE( P2FTN | P2INT , P2PTR )
 				, "_time" );
-			putleaf( P2ICON , 0 , 0 , P2INT , 0 );
+			putleaf( P2ICON , 0 , 0 , P2INT , (char *) 0 );
 			putop( P2CALL , P2INT );
 			return (nl+T4INT);
 		case O_EOF:
 		case O_EOLN:
 			if (argc == 0) {
-				argv = tr;
-				tr[1] = tr2;
-				tr2[0] = T_VAR;
-				tr2[2] = input->symbol;
-				tr2[1] = tr2[3] = NIL;
+				argv = &(tr);
+				tr.list_node.list = &(tr2);
+				tr2.tag = T_VAR;
+				tr2.var_node.cptr = input->symbol;
+				tr2.var_node.line_no = NIL;
+				tr2.var_node.qual = TR_NIL;
 				argc = 1;
 			} else if (argc != 1) {
 				error("%s takes either zero or one argument", p->symbol);
 				rvlist(argv);
-				return (NIL);
+				return (NLNIL);
 			}
 		}
 	/*
@@ -132,20 +138,24 @@ noargs:
 	if (argc != 1) {
 		error("%s takes exactly one argument", p->symbol);
 		rvlist(argv);
-		return (NIL);
+		return (NLNIL);
 	}
 	/*
 	 * find out the type of the argument
 	 */
 	codeoff();
-	p1 = stkrval((int *) argv[1], NLNIL , RREQ );
+	p1 = stkrval( argv->list_node.list, NLNIL , (long) RREQ );
 	codeon();
-	if (p1 == NIL)
-		return (NIL);
+	if (p1 == NLNIL)
+		return (NLNIL);
 	/*
 	 * figure out the return type and the funtion name
 	 */
 	switch (op) {
+	    case 0:
+			error("%s is an unimplemented 6000-3.4 extension", p->symbol);
+	    default:
+			panic("func1");
 	    case O_EXP:
 		    funcname = opt('t') ? "_EXP" : "_exp";
 		    goto mathfunc;
@@ -170,11 +180,11 @@ noargs:
 mathfunc:
 		    if (isnta(p1, "id")) {
 			    error("%s's argument must be integer or real, not %s", p->symbol, nameof(p1));
-			    return (NIL);
+			    return (NLNIL);
 		    }
 		    putleaf( P2ICON , 0 , 0
 			    , ADDTYPE( P2FTN | P2DOUBLE , P2PTR ) , funcname );
-		    p1 = stkrval( (int *) argv[1] , NLNIL , RREQ );
+		    p1 = stkrval(  argv->list_node.list , NLNIL , (long) RREQ );
 		    sconv(p2type(p1), P2DOUBLE);
 		    putop( P2CALL , P2DOUBLE );
 		    return nl + TDOUBLE;
@@ -185,39 +195,39 @@ mathfunc:
 		    }
 		    putleaf( P2ICON , 0 , 0
 			    , ADDTYPE( P2FTN | P2INT , P2PTR ) , "_EXPO" );
-		    p1 = stkrval( (int *) argv[1] , NLNIL , RREQ );
+		    p1 = stkrval( argv->list_node.list , NLNIL , (long) RREQ );
 		    sconv(p2type(p1), P2DOUBLE);
 		    putop( P2CALL , P2INT );
 		    return ( nl + T4INT );
 	    case O_UNDEF:
 		    if ( isnta( p1 , "id" ) ) {
 			    error("%s's argument must be integer or real, not %s", p->symbol, nameof(p1));
-			    return NIL;
+			    return NLNIL;
 		    }
-		    p1 = stkrval( (int *) argv[1] , NLNIL , RREQ );
-		    putleaf( P2ICON , 0 , 0 , P2CHAR , 0 );
+		    p1 = stkrval( argv->list_node.list , NLNIL , (long) RREQ );
+		    putleaf( P2ICON , 0 , 0 , P2CHAR , (char *) 0 );
 		    putop( P2COMOP , P2CHAR );
 		    return ( nl + TBOOL );
 	    case O_SEED:
 		    if (isnta(p1, "i")) {
 			    error("seed's argument must be an integer, not %s", nameof(p1));
-			    return (NIL);
+			    return (NLNIL);
 		    }
 		    putleaf( P2ICON , 0 , 0
 			    , ADDTYPE( P2FTN | P2INT , P2PTR ) , "_SEED" );
-		    p1 = stkrval( (int *) argv[1] , NLNIL , RREQ );
+		    p1 = stkrval( argv->list_node.list , NLNIL , (long) RREQ );
 		    putop( P2CALL , P2INT );
 		    return nl + T4INT;
 	    case O_ROUND:
 	    case O_TRUNC:
 		    if ( isnta( p1 , "d" ) ) {
 			    error("%s's argument must be a real, not %s", p->symbol, nameof(p1));
-			    return (NIL);
+			    return (NLNIL);
 		    }
 		    putleaf( P2ICON , 0 , 0
 			    , ADDTYPE( P2FTN | P2INT , P2PTR )
 			    , op == O_ROUND ? "_ROUND" : "_TRUNC" );
-		    p1 = stkrval( (int *) argv[1] , NLNIL , RREQ );
+		    p1 = stkrval( argv->list_node.list , NLNIL , (long) RREQ );
 		    putop( P2CALL , P2INT );
 		    return nl + T4INT;
 	    case O_ABS2:
@@ -225,46 +235,46 @@ mathfunc:
 			    putleaf( P2ICON , 0 , 0
 				, ADDTYPE( P2FTN | P2DOUBLE , P2PTR )
 				, "_fabs" );
-			    p1 = stkrval( (int *) argv[1] , NLNIL , RREQ );
+			    p1 = stkrval( argv->list_node.list , NLNIL ,(long) RREQ );
 			    putop( P2CALL , P2DOUBLE );
 			    return nl + TDOUBLE;
 			}
 			if ( isa( p1 , "i" ) ) {
 			    putleaf( P2ICON , 0 , 0
 				, ADDTYPE( P2FTN | P2INT , P2PTR ) , "_abs" );
-			    p1 = stkrval( (int *) argv[1] , NLNIL , RREQ );
+			    p1 = stkrval( argv->list_node.list , NLNIL , (long) RREQ );
 			    putop( P2CALL , P2INT );
 			    return nl + T4INT;
 			}
 			error("%s's argument must be an integer or real, not %s", p->symbol, nameof(p1));
-			return NIL;
+			return NLNIL;
 	    case O_SQR2:
 			if ( isa( p1 , "d" ) ) {
 			    temptype = P2DOUBLE;
 			    rettype = nl + TDOUBLE;
-			    tempnlp = tmpalloc(sizeof(double), rettype, REGOK);
+			    tempnlp = tmpalloc((long) (sizeof(double)), rettype, REGOK);
 			} else if ( isa( p1 , "i" ) ) {
 			    temptype = P2INT;
 			    rettype = nl + T4INT;
-			    tempnlp = tmpalloc(sizeof(long), rettype, REGOK);
+			    tempnlp = tmpalloc((long) (sizeof(long)), rettype, REGOK);
 			} else {
 			    error("%s's argument must be an integer or real, not %s", p->symbol, nameof(p1));
-			    return NIL;
+			    return NLNIL;
 			}
-			putRV( 0 , cbn , tempnlp -> value[ NL_OFFS ] ,
-				tempnlp -> extra_flags , temptype , 0 );
-			p1 = rvalue( (int *) argv[1] , NLNIL , RREQ );
-			sconv(p2type(p1), temptype);
-			putop( P2ASSIGN , temptype );
-			putRV( 0 , cbn , tempnlp -> value[ NL_OFFS ] ,
-				tempnlp -> extra_flags , temptype , 0 );
-			putRV( 0 , cbn , tempnlp -> value[ NL_OFFS ] ,
-				tempnlp -> extra_flags , temptype , 0 );
-			putop( P2MUL , temptype );
-			putop( P2COMOP , temptype );
+			putRV( (char *) 0 , cbn , tempnlp -> value[ NL_OFFS ] ,
+				tempnlp -> extra_flags , (char) temptype  );
+			p1 = rvalue( argv->list_node.list , NLNIL , RREQ );
+			sconv(p2type(p1), (int) temptype);
+			putop( P2ASSIGN , (int) temptype );
+			putRV((char *) 0 , cbn , tempnlp -> value[ NL_OFFS ] ,
+				tempnlp -> extra_flags , (char) temptype );
+			putRV((char *) 0 , cbn , tempnlp -> value[ NL_OFFS ] ,
+				tempnlp -> extra_flags , (char) temptype );
+			putop( P2MUL , (int) temptype );
+			putop( P2COMOP , (int) temptype );
 			return rettype;
 	    case O_ORD2:
-			p1 = stkrval( (int *) argv[1] , NLNIL , RREQ );
+			p1 = stkrval( argv->list_node.list , NLNIL , (long) RREQ );
 			if (isa(p1, "bcis")) {
 				return (nl+T4INT);
 			}
@@ -276,32 +286,32 @@ mathfunc:
 			}
 			error("ord's argument must be of scalar type, not %s",
 				nameof(p1));
-			return (NIL);
+			return (NLNIL);
 	    case O_SUCC2:
 	    case O_PRED2:
 			if (isa(p1, "d")) {
 				error("%s is forbidden for reals", p->symbol);
-				return (NIL);
+				return (NLNIL);
 			}
 			if ( isnta( p1 , "bcsi" ) ) {
 			    error("%s's argument must be of scalar type, not %s", p->symbol, nameof(p1));
-			    return NIL;
+			    return NLNIL;
 			}
 			if ( opt( 't' ) ) {
 			    putleaf( P2ICON , 0 , 0
 				    , ADDTYPE( P2FTN | P2INT , P2PTR )
 				    , op == O_SUCC2 ? "_SUCC" : "_PRED" );
-			    p1 = stkrval( (int *) argv[1] , NLNIL , RREQ );
+			    p1 = stkrval( argv->list_node.list , NLNIL , (long) RREQ );
 			    tempnlp = p1 -> class == TYPE ? p1 -> type : p1;
-			    putleaf( P2ICON, tempnlp -> range[0], 0, P2INT, 0 );
+			    putleaf( P2ICON, (int) tempnlp -> range[0], 0, P2INT, (char *) 0 );
 			    putop( P2LISTOP , P2INT );
-			    putleaf( P2ICON, tempnlp -> range[1], 0, P2INT, 0 );
+			    putleaf( P2ICON, (int) tempnlp -> range[1], 0, P2INT, (char *) 0 );
 			    putop( P2LISTOP , P2INT );
 			    putop( P2CALL , P2INT );
 			    sconv(P2INT, p2type(p1));
 			} else {
-			    p1 = stkrval( (int *) argv[1] , NLNIL , RREQ );
-			    putleaf( P2ICON , 1 , 0 , P2INT , 0 );
+			    p1 = stkrval( argv->list_node.list , NLNIL , (long) RREQ );
+			    putleaf( P2ICON , 1 , 0 , P2INT , (char *) 0 );
 			    putop( op == O_SUCC2 ? P2PLUS : P2MINUS , P2INT );
 			    sconv(P2INT, p2type(p1));
 			}
@@ -313,69 +323,65 @@ mathfunc:
 	    case O_ODD2:
 			if (isnta(p1, "i")) {
 				error("odd's argument must be an integer, not %s", nameof(p1));
-				return (NIL);
+				return (NLNIL);
 			}
-			p1 = stkrval( (int *) argv[1] , NLNIL , RREQ );
+			p1 = stkrval( argv->list_node.list , NLNIL , (long) RREQ );
 			    /*
 			     *	THIS IS MACHINE-DEPENDENT!!!
 			     */
-			putleaf( P2ICON , 1 , 0 , P2INT , 0 );
+			putleaf( P2ICON , 1 , 0 , P2INT , (char *) 0 );
 			putop( P2AND , P2INT );
 			sconv(P2INT, P2CHAR);
 			return nl + TBOOL;
 	    case O_CHR2:
 			if (isnta(p1, "i")) {
 				error("chr's argument must be an integer, not %s", nameof(p1));
-				return (NIL);
+				return (NLNIL);
 			}
 			if (opt('t')) {
 			    putleaf( P2ICON , 0 , 0
 				, ADDTYPE( P2FTN | P2CHAR , P2PTR ) , "_CHR" );
-			    p1 = stkrval( (int *) argv[1] , NLNIL , RREQ );
+			    p1 = stkrval( argv->list_node.list , NLNIL , (long) RREQ );
 			    putop( P2CALL , P2CHAR );
 			} else {
-			    p1 = stkrval( (int *) argv[1] , NLNIL , RREQ );
+			    p1 = stkrval( argv->list_node.list , NLNIL , (long) RREQ );
 			    sconv(P2INT, P2CHAR);
 			}
 			return nl + TCHAR;
 	    case O_CARD:
 			if (isnta(p1, "t")) {
 			    error("Argument to card must be a set, not %s", nameof(p1));
-			    return (NIL);
+			    return (NLNIL);
 			}
 			putleaf( P2ICON , 0 , 0
 			    , ADDTYPE( P2FTN | P2INT , P2PTR ) , "_CARD" );
-			p1 = stkrval( (int *) argv[1] , NLNIL , LREQ );
-			putleaf( P2ICON , lwidth( p1 ) , 0 , P2INT , 0 );
+			p1 = stkrval( argv->list_node.list , NLNIL , (long) LREQ );
+			putleaf( P2ICON , (int) lwidth( p1 ) , 0 , P2INT , (char *) 0 );
 			putop( P2LISTOP , P2INT );
 			putop( P2CALL , P2INT );
 			return nl + T4INT;
 	    case O_EOLN:
 			if (!text(p1)) {
 				error("Argument to eoln must be a text file, not %s", nameof(p1));
-				return (NIL);
+				return (NLNIL);
 			}
 			putleaf( P2ICON , 0 , 0
 			    , ADDTYPE( P2FTN | P2INT , P2PTR ) , "_TEOLN" );
-			p1 = stklval( (int *) argv[1] , NOFLAGS );
+			p1 = stklval( argv->list_node.list , NOFLAGS );
 			putop( P2CALL , P2INT );
 			sconv(P2INT, P2CHAR);
 			return nl + TBOOL;
 	    case O_EOF:
 			if (p1->class != FILET) {
 				error("Argument to eof must be file, not %s", nameof(p1));
-				return (NIL);
+				return (NLNIL);
 			}
 			putleaf( P2ICON , 0 , 0
 			    , ADDTYPE( P2FTN | P2INT , P2PTR ) , "_TEOF" );
-			p1 = stklval( (int *) argv[1] , NOFLAGS );
+			p1 = stklval( argv->list_node.list , NOFLAGS );
 			putop( P2CALL , P2INT );
 			sconv(P2INT, P2CHAR);
 			return nl + TBOOL;
-	    case 0:
-			error("%s is an unimplemented 6000-3.4 extension", p->symbol);
-	    default:
-			panic("func1");
 	}
 }
 #endif PC

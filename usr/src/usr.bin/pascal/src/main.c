@@ -1,12 +1,15 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
+#ifndef lint
 static	char copyright[] =
 	    "@(#)Copyright (c) 1979 Regents of the University of California";
 
-static char sccsid[] = "@(#)main.c 1.9 %G%";
+static char sccsid[] = "@(#)main.c 1.10 %G%";
+#endif
 
 #include "whoami.h"
 #include "0.h"
+#include "tree_ty.h"		/* must be included for yy.h */
 #include "yy.h"
 #include <signal.h>
 #include "objfmt.h"
@@ -21,16 +24,22 @@ static char sccsid[] = "@(#)main.c 1.9 %G%";
  */
 
 char	piusage[]	= "pi [ -blnpstuw ] [ -i file ... ] name.p";
-char	pixusage[]	= "pix [ -blnpstuw ] [ -i file ... ] name.p [ arg ... ]";
-char	pcusage[]	= "pc [ options ] [ -o file ] [ -i file ... ] name.p";
 
 char	*usageis	= piusage;
 
 #ifdef OBJ
-    char	*obj	= "obj";
+
+char	pixusage[]	= "pix [ -blnpstuw ] [ -i file ... ] name.p [ arg ... ]";
+char	*obj	= "obj";
+
 #endif OBJ
+
 #ifdef PC
-    char	*pcname = "pc.pc0";
+
+char	*pcname = "pc.pc0";
+char	pcusage[]	= "pc [ options ] [ -o file ] [ -i file ... ] name.p";
+FILE	*pcstream = NULL;
+
 #endif PC
 #ifdef PTREE
     char	*pTreeName = "pi.pTree";
@@ -41,7 +50,6 @@ int	onintr();
 extern	char *lastname;
 
 FILE	*ibuf;
-FILE	*pcstream = NULL;
 
 /*
  * these are made real variables
@@ -62,6 +70,9 @@ main(argc, argv)
 {
 	register char *cp;
 	register c;
+	FILE *fopen();
+	extern char *myctime();
+	extern long lseek();
 	int i;
 
 	if (argv[0][0] == 'a')
@@ -122,7 +133,7 @@ main(argc, argv)
 				    opt('r')++;
 				    continue;
 			    case 'U':
-				    yyunique = 0;
+				    yyunique = FALSE;
 				    continue;
 #endif
 			    case 'b':
@@ -193,7 +204,7 @@ main(argc, argv)
 			    opt('r')++;
 			    break;
 		    case 'U':
-			    yyunique = 0;
+			    yyunique = FALSE;
 			    break;
 #endif
 		    case 'b':
@@ -290,7 +301,7 @@ usage:
 	    }
 #	endif PTREE
 	if ( signal( SIGINT , SIG_IGN ) != SIG_IGN )
-		signal( SIGINT , onintr );
+		(void) signal( SIGINT , onintr );
 	if (opt('l')) {
 		opt('n')++;
 		yysetfile(filename);
@@ -377,7 +388,7 @@ pexit(c)
 onintr()
 {
 
-	signal( SIGINT , SIG_IGN );
+	(void) signal( SIGINT , SIG_IGN );
 	pexit(NOSTART);
 }
 
@@ -389,7 +400,7 @@ geterr(seekpt, buf)
 	char *buf;
 {
 
-	lseek(efil, (long) seekpt, 0);
+	(void) lseek(efil, (long) seekpt, 0);
 	if (read(efil, buf, 256) <= 0)
 		perror(err_file), pexit(DIED);
 }
@@ -405,10 +416,10 @@ header()
 	anyheaders++;
 #	ifdef OBJ
 	    printf("Berkeley Pascal PI -- Version %s\n\n%s  %s\n\n",
-		    version, myctime(&tvec), filename);
+		    version, myctime((int *) (&tvec)), filename);
 #	endif OBJ
 #	ifdef PC
 	    printf("Berkeley Pascal PC -- Version %s\n\n%s  %s\n\n",
-		    version, myctime(&tvec), filename);
+		    version, myctime((int *) (&tvec)), filename);
 #	endif PC
 }

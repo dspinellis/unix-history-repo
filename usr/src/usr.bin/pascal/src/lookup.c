@@ -1,6 +1,8 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)lookup.c 1.2 %G%";
+#ifndef lint
+static	char sccsid[] = "@(#)lookup.c 1.3 %G%";
+#endif
 
 #include "whoami.h"
 #include "0.h"
@@ -19,16 +21,16 @@ lookup(s)
 	register char *s;
 {
 	register struct nl *p;
-	register struct udinfo *udp;
+	register struct udinfo;
 
 	if (s == NIL) {
 		nocascade();
-		return (NIL);
+		return (NLNIL);
 	}
 	p = lookup1(s);
-	if (p == NIL) {
+	if (p == NLNIL) {
 		derror("%s is undefined", s);
-		return (NIL);
+		return (NLNIL);
 	}
 	if (p->class == FVAR) {
 		p = p->chain;
@@ -61,7 +63,7 @@ lookup1(s)
 	register int i;
 
 	if (s == NIL)
-		return (NIL);
+		return (NLNIL);
 	bn = cbn;
 #ifndef PI0
 	/*
@@ -70,9 +72,9 @@ lookup1(s)
 	 * statements (expensive since they
 	 * are not hashed).
 	 */
-	for (p = withlist; p != NIL; p = p->nl_next) {
+	for (p = withlist; p != NLNIL; p = p->nl_next) {
 		q = p->type;
-		if (q == NIL)
+		if (q == NLNIL)
 			continue;
 		if (reclook(q, s) != NIL)
 			/*
@@ -87,7 +89,7 @@ lookup1(s)
 	 * pointer value. (Simple, but effective)
 	 */
 	i = (int) s & 077;
-	for (p = disptab[i]; p != NIL; p = p->nl_next)
+	for (p = disptab[i]; p != NLNIL; p = p->nl_next)
 		if (p->symbol == s && p->class != FIELD && p->class != BADUSE) {
 			bn = (p->nl_block & 037);
 #ifndef PI0
@@ -96,7 +98,7 @@ lookup1(s)
 #endif
 			return (p);
 		}
-	return (NIL);
+	return (NLNIL);
 }
 
 #ifndef PI01
@@ -107,7 +109,7 @@ nlfund(sp)
 	register int i;
 
 	i = (int) sp & 077;
-	for (p = disptab[i]; p != NIL; p = p->nl_next)
+	for (p = disptab[i]; p != NLNIL; p = p->nl_next)
 	if (p->symbol == sp && (p->nl_block & 037) == 0)
 		return (nloff(p));
 	return (0);
