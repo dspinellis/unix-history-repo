@@ -1,8 +1,8 @@
 # Makefile for the f77 math & startup lib - libF77.a
 
-#	@(#)makefile	1.2	%G%
+#	@(#)makefile	1.3	%G%
 
-LIBDIR = /usr/cc/lib
+LIBDIR = /usr/ucb/lib
 TAPE = /dev/nrmt1
 
 # compile, then strip unnecessary symbols
@@ -45,11 +45,12 @@ libF77.a:	$(ALL)
 c_abs.c c_cos.c c_div.c c_div.c c_exp.c c_log.c c_sin.c c_sqrt.c d_cnjg.c d_imag.c pow_ci.c pow_zi.c pow_zz.c r_cnjg.c r_imag.c z_abs.c z_cos.c z_div.c z_div.c z_exp.c z_log.c z_sin.c z_sqrt.c:	complex
 
 install:	libF77.a
+#	mv $(LIBDIR)/libF77.a $(LIBDIR)/libF77.a.old
 	cp libF77.a $(LIBDIR)/libF77.a
 	ranlib $(LIBDIR)/libF77.a
 
 clean:
-	rm -f *.o libF77.a
+	rm -f $(ALL) libF77.a
 
 SOURCES = main.c s_rnge.c abort_.c getarg_.c iargc_.c signal_.c s_stop.c \
 	s_paus.c system_.c getenv_.c rand_.c bit.c range.c \
