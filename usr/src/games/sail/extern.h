@@ -1,5 +1,5 @@
 /*
- * sccsid = "@(#)extern.h	1.2 83/05/19";
+ * sccsid = "@(#)extern.h	1.3 83/05/20";
  */
 #include <stdio.h>
 #include <signal.h>
