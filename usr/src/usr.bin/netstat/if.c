@@ -154,26 +154,22 @@ intpr(interval, ifnetaddr)
 				{
 				struct sockaddr_dl *sdl =
 					(struct sockaddr_dl *)sa;
-				printf("<Link>      ");
-				cp = (char *)LLADDR(sdl);
-				n = sdl->sdl_alen;
-				if (n > 0) goto hexprint;
-				printf("%-15s ", "");
+				    cp = (char *)LLADDR(sdl);
+				    n = sdl->sdl_alen;
 				}
-				break;
+				m = printf("<Link>");
+				goto hexprint;
 			default:
-				printf("af%2d: ", sa->sa_family);
-				for (cp = sa->sa_data + sa->sa_len;
-						    cp >= sa->sa_data; --cp)
-					if (*cp != 0)
-						break;
+				m = printf("(%d)", sa->sa_family);
+				for (cp = sa->sa_len + (char *)sa;
+					--cp > sa->sa_data && (*cp == 0);) {}
 				n = cp - sa->sa_data + 1;
 				cp = sa->sa_data;
 			hexprint:
-				m = 12 - (3 * n);
-				while (--n)
-					printf("%02x.", *cp++ & 0xff);
-				printf("%02x ", *cp & 0xff);
+				while (--n >= 0)
+					m += printf("%x%c", *cp++ & 0xff,
+						    n > 0 ? '.' : ' ');
+				m = 28 - m;
 				while (m-- > 0)
 					putchar(' ');
 				break;
