@@ -1,4 +1,4 @@
-/*	kern_proc.c	4.37	82/09/06	*/
+/*	kern_proc.c	4.38	82/09/08	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -526,7 +526,6 @@ exit(rv)
 	p = u.u_procp;
 	p->p_flag &= ~(STRC|SULOCK);
 	p->p_flag |= SWEXIT;
-	timerclear(&p->p_seltimer);
 	(void) spl6();
 	if ((int)SIG_IGN & 1)
 		p->p_siga0 = ~0;
@@ -541,6 +540,7 @@ exit(rv)
 	p->p_pctcpu = 0;
 	for (i=0; i<NSIG; i++)
 		u.u_signal[i] = SIG_IGN;
+	untimeout(unrto, p);
 	/*
 	 * Release virtual memory.  If we resulted from
 	 * a vfork(), instead give the resources back to
@@ -725,7 +725,7 @@ loop:
 		u.u_r.r_val1 = 0;
 		return;
 	}
-	if ((u.u_procp->p_flag&SNUSIG) && setjmp(u.u_qsav)) {
+	if ((u.u_procp->p_flag&SNUSIG) && setjmp(&u.u_qsave)) {
 		u.u_eosys = RESTARTSYS;
 		return;
 	}
