@@ -16,40 +16,21 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)seekdir.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)seekdir.c	5.6 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
 #include <dirent.h>
 
 /*
- * seek to an entry in a directory.
- * Only values returned by "telldir" should be passed to seekdir.
+ * Seek to an entry in a directory.
+ * _seekdir is in telldir.c so that it can share opaque data structures.
  */
 void
 seekdir(dirp, loc)
-	register DIR *dirp;
+	DIR *dirp;
 	long loc;
 {
-	register struct ddloc *lp;
-	struct dirent *dp;
-	extern long lseek();
 
-	lp = dirp->dd_hash[LOCHASH(loc)];
-	while (lp != NULL) {
-		if (lp->loc_index == loc)
-			break;
-		lp = lp->loc_next;
-	}
-	if (lp == NULL)
-		return;
-	if (lp->loc_loc == dirp->dd_loc && lp->loc_seek == dirp->dd_seek)
-		return;
-	(void) lseek(dirp->dd_fd, lp->loc_seek, 0);
-	dirp->dd_loc = 0;
-	while (dirp->dd_loc < lp->loc_loc) {
-		dp = readdir(dirp);
-		if (dp == NULL)
-			return;
-	}
+	_seekdir(dirp, loc);
 }
