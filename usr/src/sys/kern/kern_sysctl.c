@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)kern_sysctl.c	7.6 (Berkeley) %G%
+ *	@(#)kern_sysctl.c	7.7 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -173,8 +173,8 @@ again:
 			eproc.e_sess = p->p_pgrp->pg_session;
 			eproc.e_pgid = p->p_pgrp->pg_id;
 			eproc.e_jobc = p->p_pgrp->pg_jobc;
-			tp = p->p_pgrp->pg_session->s_ttyp;
-			if ((p->p_flag&SCTTY) && tp != NULL) {
+			if (tp = p->p_pgrp->pg_session->s_ttyp) {
+				/* up to caller to check for SCTTY */
 				eproc.e_tdev = tp->t_dev;
 				eproc.e_tpgid = tp->t_pgrp ? 
 					tp->t_pgrp->pg_id : -1;
