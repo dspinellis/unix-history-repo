@@ -1,4 +1,4 @@
-/*	lfs_inode.c	4.13	82/06/29	*/
+/*	lfs_inode.c	4.14	82/06/30	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -98,8 +98,8 @@ iget(dev, fs, ino)
 	register struct fs *fs;
 	ino_t ino;
 {
-	register struct inode *ip;	/* known to be r11 - see "asm" below */
-	register union  ihead *ih;	/* known to be r10 - see "asm" below */
+	register struct inode *ip;
+	register union  ihead *ih;
 	register struct mount *mp;
 	register struct buf *bp;
 	register struct dinode *dp;
@@ -157,19 +157,8 @@ loop:
 	 * but that doesn't matter), and put it on the chain for
 	 * its new (ino, dev) pair
 	 */
-#ifndef	UNFAST
-	asm("remque	(r11),r0");
-	asm("insque	(r11),(r10)");
-#else
-		/* remque */
-	ip->i_back->i_forw = ip->i_forw;
-	ip->i_forw->i_back = ip->i_back;
-		/* insque */
-	ip->i_forw = ih->ih_chain[0];
-	ip->i_back = (struct inode *)ih;
-	ih->ih_chain[0]->i_back = ip;
-	ih->ih_chain[0] = ip;
-#endif
+	remque(ip);
+	insque(ip, ih);
 	ip->i_dev = dev;
 	ip->i_fs = fs;
 	ip->i_number = ino;
@@ -187,12 +176,7 @@ loop:
 		 * be misleading to leave it on its hash chain.
 		 * 'iput' will take care of putting it back on the free list.
 		 */
-#ifndef	UNFAST
-		asm("remque	(r11),r0");
-#else
-		ip->i_back->i_forw = ip->i_forw;
-		ip->i_forw->i_back = ip->i_back;
-#endif
+		remque(ip);
 		ip->i_forw = ip;
 		ip->i_back = ip;
 		/*
@@ -571,7 +555,7 @@ wdir(ip)
 iflush(dev)
 	dev_t dev;
 {
-	register struct inode *ip;	/* known to be r11 - see 'asm' below */
+	register struct inode *ip;
 	register open = 0;
 
 	for (ip = inode; ip < inodeNINODE; ip++) {
@@ -579,12 +563,7 @@ iflush(dev)
 			if (ip->i_count)
 				return(-1);
 			else {
-#ifndef	UNFAST
-				asm("remque	(r11),r0");
-#else
-				ip->i_back->i_forw = ip->i_forw;
-				ip->i_forw->i_back = ip->i_back;
-#endif
+				remque(ip);
 				ip->i_forw = ip;
 				ip->i_back = ip;
 				/*
