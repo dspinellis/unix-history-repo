@@ -13,7 +13,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)disk.h	5.3 (Berkeley) %G%
+ *	@(#)disk.h	5.4 (Berkeley) %G%
  *
  * from: $Header: disk.h,v 1.3 92/12/02 03:43:24 torek Exp $ (LBL)
  */
