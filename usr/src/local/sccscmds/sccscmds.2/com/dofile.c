@@ -1,7 +1,7 @@
 # include	"../hdr/defines.h"
 # include	<ndir.h>
 
-SCCSID(@(#)dofile.c	1.2);
+SCCSID(@(#)dofile.c	1.3);
 
 int	nfiles;
 char	had_dir;
@@ -37,7 +37,7 @@ int (*func)();
 			return;
 		(void) readdir(dir);	/* skip . */
 		(void) readdir(dir);	/* and .. */
-		while (dp = readdir(dp)) {
+		while (dp = readdir(dir)) {
 			sprintf(str,"%s/%s", p, dp->d_name);
 			if(sccsfile(str)) {
 				Ffile = str;
