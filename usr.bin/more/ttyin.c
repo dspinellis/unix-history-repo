@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 1989 The Regents of the University of California.
+ * Copyright (c) 1988 Mark Nudleman
+ * Copyright (c) 1988 Regents of the University of California.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -29,10 +30,50 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- *	@(#)pathnames.h	5.2 (Berkeley) 6/1/90
  */
 
-#include <paths.h>
+#ifndef lint
+static char sccsid[] = "@(#)ttyin.c	5.4 (Berkeley) 6/1/90";
+#endif /* not lint */
 
-#define	_PATH_HELPFILE	"/usr/share/misc/more.help"
+/*
+ * Routines dealing with getting input from the keyboard (i.e. from the user).
+ */
+
+#include <less.h>
+
+static int tty;
+
+/*
+ * Open keyboard for input.
+ * (Just use file descriptor 2.)
+ */
+open_getchr()
+{
+	tty = 2;
+}
+
+/*
+ * Get a character from the keyboard.
+ */
+getchr()
+{
+	char c;
+	int result;
+
+	do
+	{
+		result = iread(tty, &c, 1);
+		if (result == READ_INTR)
+			return (READ_INTR);
+		if (result < 0)
+		{
+			/*
+			 * Don't call error() here,
+			 * because error calls getchr!
+			 */
+			quit();
+		}
+	} while (result != 1);
+	return (c & 0177);
+}

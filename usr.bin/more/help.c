@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 1989 The Regents of the University of California.
+ * Copyright (c) 1988 Mark Nudleman
+ * Copyright (c) 1988 Regents of the University of California.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -29,10 +30,20 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- *	@(#)pathnames.h	5.2 (Berkeley) 6/1/90
  */
 
-#include <paths.h>
+#ifndef lint
+static char sccsid[] = "@(#)help.c	5.7 (Berkeley) 6/1/90";
+#endif /* not lint */
 
-#define	_PATH_HELPFILE	"/usr/share/misc/more.help"
+#include <sys/param.h>
+#include <less.h>
+#include "pathnames.h"
+
+help()
+{
+	char cmd[MAXPATHLEN + 20];
+
+	(void)sprintf(cmd, "-more %s", _PATH_HELPFILE);
+	lsystem(cmd);
+}
