@@ -2,23 +2,23 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)dump.5	4.1 (Berkeley) %G%
+.\"	@(#)dump.5	5.1 (Berkeley) %G%
 .\"
-.TH DUMP 5 
+.TH DUMP 5  "18 July 1983"
 .UC 4
 .SH NAME
-dump, ddate \- incremental dump format
+dump, dumpdates \- incremental dump format
 .SH SYNOPSIS
 .B #include <sys/types.h>
 .br
-.B #include <sys/ino.h>
+.B #include <sys/inode.h>
 .br
 .B #include <dumprestor.h>
 .SH DESCRIPTION
 Tapes used by
 .I dump
 and
-.IR restor (1)
+.IR restore (8)
 contain:
 .nf
 .IP ""
@@ -73,17 +73,13 @@ struct	idates {
 #define	DUMPINFMT	"%16s %c %[^\en]\en"	/* inverse for scanf */
 .fi
 .PP
-.I NTREC
-is the number of 1024 byte records in a physical
+NTREC is the number of 1024 byte records in a physical
 tape block.
-.I MLEN
-is the number of bits in a bit map word.
-.I MSIZ 
-is the number of bit map words.
+MLEN is the number of bits in a bit map word.
+MSIZ is the number of bit map words.
 .PP
 The
-.I TS_
-entries are used in the
+TS_ entries are used in the
 .I c_type
 field to indicate what sort of header
 this is.
@@ -147,23 +143,20 @@ The current number of this (1024-byte) record.
 .TP
 c_inumber
 The number of the inode being dumped if this
-is of type
-.I TS_INODE.
+is of type TS_INODE.
 .TP
 c_magic
-This contains the value
-.I MAGIC
+This contains the value MAGIC
 above, truncated as needed.
 .TP
 c_checksum
 This contains whatever value is needed to
-make the record sum to 
-.I CHECKSUM.
+make the record sum to CHECKSUM.
 .TP
 c_dinode
 This is a copy of the inode as it appears on the
 file system; see
-.IR filsys (5).
+.IR fs (5).
 .TP
 c_count
 The count of characters in
@@ -177,22 +170,20 @@ present on the file system, otherwise the character is non-zero.
 If the block was not present on the file system, no block was dumped;
 the block will be restored as a hole in the file.
 If there is not sufficient space in this record to describe
-all of the blocks in a file,
-.I TS_ADDR
+all of the blocks in a file, TS_ADDR
 records will be scattered through the file, each one
 picking up where the last left off.
 .PD
 .PP
 Each volume except the last ends with a tapemark (read as an end
 of file).
-The last volume ends with a
-.I TS_END
+The last volume ends with a TS_END
 record and then the tapemark.
 .PP
 The structure
 .I idates
-describes an entry of the file
-.I /etc/ddate
+describes an entry in the file
+.I /etc/dumpdates
 where dump history is kept.
 The fields of the structure are:
 .TP \w'TS_INODE\ 'u
@@ -204,7 +195,7 @@ The dumped filesystem is
 id_incno
 The level number of the dump tape;
 see
-.IR dump (1).
+.IR dump (8).
 .TP
 id_ddate
 The date of the incremental dump in system format
@@ -212,6 +203,9 @@ see
 .IR types (5).
 .PD
 .SH FILES
-/etc/ddate
+/etc/dumpdates
 .SH "SEE ALSO"
-dump(8), dumpdir(8), restor(8), filsys(5), types(5)
+dump(8),
+restore(8),
+fs(5),
+types(5)
