@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)savecore.c	4.4 (Berkeley) 81/04/28";
+static	char *sccsid = "@(#)savecore.c	4.5 (Berkeley) 81/05/14";
 /*
  * savecore
  */
@@ -165,13 +165,9 @@ read_kmem()
 	fseek(fp, (off_t)(dumplo+ok(nl[X_VERSION].n_value)), 0);
 	fgets(core_vers, sizeof core_vers, fp);
 	fclose(fp);
-	if (!eq(vers, core_vers)) {
-		fprintf(stderr, "Vmunix version mismatch:\n\t%sand\n\t%s",
+	if (!eq(vers, core_vers))
+		fprintf(stderr, "Warning: vmunix version mismatch:\n\t%sand\n\t%s",
 		    vers,core_vers);
-		fprintf(stderr, "; image not saved\n");
-		do_the_dump = 0;
-		return;
-	}
 	fp = fopen(ddname, "r");
 	fseek(fp, (off_t)(dumplo + ok(nl[X_PANICSTR].n_value)), 0);
 	fread((char *)&panicstr, sizeof panicstr, 1, fp);
