@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rshd.c	5.21 (Berkeley) %G%";
+static char sccsid[] = "@(#)rshd.c	5.22 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -134,7 +134,7 @@ doit(fromp)
 	(void) signal(SIGQUIT, SIG_DFL);
 	(void) signal(SIGTERM, SIG_DFL);
 #ifdef DEBUG
-	{ int t = open("/dev/tty", 2);
+	{ int t = open(_PATH_TTY, 2);
 	  if (t >= 0) {
 		ioctl(t, TIOCNOTTY, (char *)0);
 		(void) close(t);
@@ -368,6 +368,8 @@ doit(fromp)
 		pwd->pw_shell = _PATH_BSHELL;
 	(void) setgid((gid_t)pwd->pw_gid);
 	initgroups(pwd->pw_name, pwd->pw_gid);
+	if (setlogname(pwd->pw_name, strlen(pwd->pw_name)) < 0)
+		syslog(LOG_NOTICE, "setlogname() failed: %m");
 	(void) setuid((uid_t)pwd->pw_uid);
 	environ = envinit;
 	strncat(homedir, pwd->pw_dir, sizeof(homedir)-6);
