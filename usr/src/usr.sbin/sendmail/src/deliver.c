@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.138 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.139 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -2565,10 +2565,7 @@ mailfile(filename, ctladdr, e)
 		int oflags = O_WRONLY|O_APPEND;
 
 		if (e->e_lockfp != NULL)
-		{
-			fclose(e->e_lockfp);
-			e->e_lockfp = NULL;
-		}
+			(void) close(fileno(e->e_lockfp));
 
 		(void) setsignal(SIGINT, SIG_DFL);
 		(void) setsignal(SIGHUP, SIG_DFL);
