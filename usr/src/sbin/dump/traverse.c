@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)traverse.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)traverse.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -31,14 +31,14 @@ void	dmpindir();
  * hence the estimate may be high.
  */
 long
-blockest(ip)
-	struct dinode *ip;
+blockest(dp)
+	register struct dinode *dp;
 {
 	long blkest, sizeest;
 
 	/*
-	 * ip->di_size is the size of the file in bytes.
-	 * ip->di_blocks stores the number of sectors actually in the file.
+	 * dp->di_size is the size of the file in bytes.
+	 * dp->di_blocks stores the number of sectors actually in the file.
 	 * If there are more sectors than the size would indicate, this just
 	 *	means that there are indirect blocks in the file or unused
 	 *	sectors in the last file block; we can safely ignore these
@@ -50,11 +50,11 @@ blockest(ip)
 	 *	dump blocks (sizeest vs. blkest in the indirect block
 	 *	calculation).
 	 */
-	blkest = howmany(dbtob(ip->di_blocks), TP_BSIZE);
-	sizeest = howmany(ip->di_size, TP_BSIZE);
+	blkest = howmany(dbtob(dp->di_blocks), TP_BSIZE);
+	sizeest = howmany(dp->di_size, TP_BSIZE);
 	if (blkest > sizeest)
 		blkest = sizeest;
-	if (ip->di_size > sblock->fs_bsize * NDADDR) {
+	if (dp->di_size > sblock->fs_bsize * NDADDR) {
 		/* calculate the number of indirect blocks on the dump tape */
 		blkest +=
 			howmany(sizeest - NDADDR * sblock->fs_bsize / TP_BSIZE,
@@ -124,7 +124,7 @@ mapdirs(maxino, tapesize)
 	long *tapesize;
 {
 	register struct	dinode *dp;
-	register int i, bits;
+	register int i, dirty;
 	register char *map;
 	register ino_t ino;
 	long filesize, blkcnt = 0;
@@ -132,11 +132,11 @@ mapdirs(maxino, tapesize)
 
 	for (map = dumpdirmap, ino = 0; ino < maxino; ) {
 		if ((ino % NBBY) == 0)
-			bits = *map++;
+			dirty = *map++;
 		else
-			bits >>= 1;
+			dirty >>= 1;
 		ino++;
-		if ((bits & 1) == 0 || TSTINO(ino, dumpinomap))
+		if ((dirty & 1) == 0 || TSTINO(ino, dumpinomap))
 			continue;
 		dp = getino(ino);
 		filesize = dp->di_size;
@@ -256,8 +256,8 @@ searchdir(ino, blkno, size, filesize)
  * Dump the contents of an inode to tape.
  */
 void
-dumpino(ip, ino)
-	struct dinode *ip;
+dumpino(dp, ino)
+	register struct dinode *dp;
 	ino_t ino;
 {
 	int mode, level, cnt;
@@ -268,28 +268,28 @@ dumpino(ip, ino)
 		dumpmap(dumpinomap, TS_BITS, ino);
 	}
 	CLRINO(ino, dumpinomap);
-	spcl.c_dinode = *ip;
+	spcl.c_dinode = *dp;
 	spcl.c_type = TS_INODE;
 	spcl.c_count = 0;
 	/*
 	 * Check for freed inode.
 	 */
-	if ((mode = (ip->di_mode & IFMT)) == 0)
+	if ((mode = (dp->di_mode & IFMT)) == 0)
 		return;
 	if ((mode != IFDIR && mode != IFREG && mode != IFLNK) ||
-	    ip->di_size == 0) {
+	    dp->di_size == 0) {
 		writeheader(ino);
 		return;
 	}
-	if (ip->di_size > NDADDR * sblock->fs_bsize)
+	if (dp->di_size > NDADDR * sblock->fs_bsize)
 		cnt = NDADDR * sblock->fs_frag;
 	else
-		cnt = howmany(ip->di_size, sblock->fs_fsize);
-	blksout(&ip->di_db[0], cnt, ino);
-	if ((size = ip->di_size - NDADDR * sblock->fs_bsize) <= 0)
+		cnt = howmany(dp->di_size, sblock->fs_fsize);
+	blksout(&dp->di_db[0], cnt, ino);
+	if ((size = dp->di_size - NDADDR * sblock->fs_bsize) <= 0)
 		return;
 	for (level = 0; level < NIADDR; level++) {
-		dmpindir(ino, ip->di_ib[level], level, &size);
+		dmpindir(ino, dp->di_ib[level], level, &size);
 		if (size <= 0)
 			return;
 	}
