@@ -1,4 +1,4 @@
-/*	tcp_usrreq.c	1.78	83/05/27	*/
+/*	tcp_usrreq.c	1.79	83/06/14	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -150,6 +150,13 @@ tcp_usrreq(so, req, m, nam, rights)
 		tp->iss = tcp_iss; tcp_iss += TCP_ISSINCR/2;
 		tcp_sendseqinit(tp);
 		error = tcp_output(tp);
+		break;
+
+	/*
+	 * Create a TCP connection between two sockets.
+	 */
+	case PRU_CONNECT2:
+		error = EOPNOTSUPP;
 		break;
 
 	/*

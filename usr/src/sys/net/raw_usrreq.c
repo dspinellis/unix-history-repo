@@ -1,4 +1,4 @@
-/*	raw_usrreq.c	4.27	83/06/12	*/
+/*	raw_usrreq.c	4.28	83/06/14	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -174,11 +174,11 @@ raw_usrreq(so, req, m, nam, rights)
 	case PRU_ATTACH:
 		if ((so->so_state & SS_PRIV) == 0) {
 			error = EACCES;
-			goto release;
+			break;
 		}
 		if (rp) {
 			error = EINVAL;
-			goto release;
+			break;
 		}
 		error = raw_attach(so);
 		break;
@@ -190,7 +190,7 @@ raw_usrreq(so, req, m, nam, rights)
 	case PRU_DETACH:
 		if (rp == 0) {
 			error = ENOTCONN;
-			goto release;
+			break;
 		}
 		raw_detach(rp);
 		break;
@@ -204,16 +204,20 @@ raw_usrreq(so, req, m, nam, rights)
 	case PRU_CONNECT:
 		if (rp->rcb_flags & RAW_FADDR) {
 			error = EISCONN;
-			goto release;
+			break;
 		}
 		raw_connaddr(rp, nam);
 		soisconnected(so);
 		break;
 
+	case PRU_CONNECT2:
+		error = EOPNOTSUPP;
+		goto release;
+
 	case PRU_BIND:
 		if (rp->rcb_flags & RAW_LADDR) {
 			error = EINVAL;			/* XXX */
-			goto release;
+			break;
 		}
 		error = raw_bind(so, nam);
 		break;
@@ -221,7 +225,7 @@ raw_usrreq(so, req, m, nam, rights)
 	case PRU_DISCONNECT:
 		if ((rp->rcb_flags & RAW_FADDR) == 0) {
 			error = ENOTCONN;
-			goto release;
+			break;
 		}
 		raw_disconnect(rp);
 		soisdisconnected(so);
@@ -242,12 +246,12 @@ raw_usrreq(so, req, m, nam, rights)
 		if (nam) {
 			if (rp->rcb_flags & RAW_FADDR) {
 				error = EISCONN;
-				goto release;
+				break;
 			}
 			raw_connaddr(rp, nam);
 		} else if ((rp->rcb_flags & RAW_FADDR) == 0) {
 			error = ENOTCONN;
-			goto release;
+			break;
 		}
 		error = (*so->so_proto->pr_output)(m, so);
 		m = NULL;
@@ -262,7 +266,9 @@ raw_usrreq(so, req, m, nam, rights)
 		break;
 
 	case PRU_CONTROL:
-		return (EOPNOTSUPP);
+		m = NULL;
+		error = EOPNOTSUPP;
+		break;
 
 	/*
 	 * Not supported.
