@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)chkpth.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)chkpth.c	5.4 (Berkeley) %G%";
 #endif
 
 #include "uucp.h"
@@ -16,14 +16,12 @@ struct userpath *Uhead = NULL;
 struct userpath *Mchdef = NULL, *Logdef = NULL;
 int Uptfirst = 1;
 
-/*******
- *	chkpth(logname, mchname, path)
- *	char *path, *logname, *mchname;
- *
- *	chkpth  -  this routine will check the path table for the
+/*LINTLIBRARY*/
+
+/*
+ *	this routine will check the path table for the
  *	machine or log name (non-null parameter) to see if the
- *	input path (path)
- *	starts with an acceptable prefix.
+ *	input path (path) starts with an acceptable prefix.
  *
  *	return codes:  0  |  FAIL
  */
@@ -49,7 +47,7 @@ char *path, *logname, *mchname;
 	for (u = Uhead; u != NULL; ) {
 		if (*logname != '\0' && strcmp(logname, u->us_lname) == SAME)
 			break;
-		if (*mchname != '\0' && strncmp(mchname, u->us_mname, 7) == SAME)
+		if (*mchname != '\0' && strncmp(mchname, u->us_mname, MAXBASENAME) == SAME)
 			break;
 		u = u->unext;
 	}
@@ -127,8 +125,8 @@ rdpth()
 		else
 			pc = u->us_lname + strlen(u->us_lname);
 		u->us_mname = pc;
-		if (strlen(u->us_mname) > 7)
-			u->us_mname[7] = '\0';
+		if (strlen(u->us_mname) > MAXBASENAME)
+			u->us_mname[MAXBASENAME] = '\0';
 		if (*u->us_lname == '\0' && Logdef == NULL)
 			Logdef = u;
 		if (*u->us_mname == '\0' && Mchdef == NULL)
