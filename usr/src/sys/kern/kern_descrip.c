@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_descrip.c	7.23 (Berkeley) %G%
+ *	@(#)kern_descrip.c	7.24 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -173,21 +173,15 @@ fcntl(p, uap, retval)
 	case F_SETFL:
 		fp->f_flag &= ~FCNTLFLAGS;
 		fp->f_flag |= FFLAGS(uap->arg) & FCNTLFLAGS;
-		if (tmp = (fp->f_flag & FNDELAY))
-			fp->f_flag |= FNDELAY;
-		else
-			fp->f_flag &= ~FNDELAY;
+		tmp = fp->f_flag & FNONBLOCK;
 		error = (*fp->f_ops->fo_ioctl)(fp, FIONBIO, (caddr_t)&tmp, p);
 		if (error)
 			return (error);
-		if (tmp = (fp->f_flag & FASYNC))
-			fp->f_flag |= FASYNC;
-		else
-			fp->f_flag &= ~FASYNC;
+		tmp = fp->f_flag & FASYNC;
 		error = (*fp->f_ops->fo_ioctl)(fp, FIOASYNC, (caddr_t)&tmp, p);
 		if (!error)
 			return (0);
-		fp->f_flag &= ~FNDELAY;
+		fp->f_flag &= ~FNONBLOCK;
 		tmp = 0;
 		(void) (*fp->f_ops->fo_ioctl)(fp, FIONBIO, (caddr_t)&tmp, p);
 		return (error);
