@@ -1,5 +1,5 @@
 /* Copyright (c) 1981 Regents of the University of California */
-static char *sccsid = "@(#)ex_vadj.c	7.3	%G%";
+static char *sccsid = "@(#)ex_vadj.c	7.4	%G%";
 #include "ex.h"
 #include "ex_tty.h"
 #include "ex_vis.h"
@@ -256,18 +256,28 @@ vinslin(p, cnt, l)
 		 * Use insert line.
 		 */
 		vgoto(p, 0);
-		if (VA)
-			vputp(tgoto(VA, 0, p), WECHO + 1 - p);
-		else
+		if (AL_PARM && (cnt>1 || *AL==0)) {
+			/* insert cnt lines.  Should do @'s too. */
+			vputp(tgoto(AL_PARM, p, cnt), WECHO+1-p);
+		}
+		else if (CS && *AL==0) {
+			/* vt100 change scrolling region to fake AL */
+			vputp(SC, 1);
+			vputp(tgoto(CS, LINES-1,p), 1);
+			vputp(RC, 1);	/* CS homes stupid cursor */
+			for (i=cnt; i>0; i--)
+				vputp(SR, 1);	/* should do @'s */
+			vputp(tgoto(CS, LINES-1,0), 1);
+			vputp(RC, 1);	/* Once again put it back */
+		}
+		else {
 			vputp(AL, WECHO + 1 - p);
-		for (i = cnt - 1; i > 0; i--) {
-			vgoto(outline+1, 0);
-			if (VA)
-				vputp(tgoto(VA, 0, outline), WECHO + 1 - outline);
-			else
+			for (i = cnt - 1; i > 0; i--) {
+				vgoto(outline+1, 0);
 				vputp(AL, WECHO + 1 - outline);
-			if ((hold & HOLDAT) == 0)
-				putchar('@');
+				if ((hold & HOLDAT) == 0)
+					putchar('@');
+			}
 		}
 		vadjAL(p, cnt);
 	} else
@@ -726,11 +736,23 @@ vdellin(p, cnt, l)
 	 * and physical internal data structures.
 	 */
 	vgoto(p, 0);
-	for (i = 0; i < cnt; i++)
-		if (VD)
-			vputp(tgoto(VD, 0, p), WECHO - p);
-		else
+	if (DL_PARM && (cnt>1 || *DL==0)) {
+		vputp(tgoto(DL_PARM, p, cnt), WECHO-p);
+	}
+	else if (CS && *DL==0) {
+		/* vt100: fake DL by changing scrolling region */
+		vputp(SC, 1);	/* Save since CS homes stupid cursor */
+		vputp(tgoto(CS, LINES-1, p), 1);
+		vputp(tgoto(CM, 0, 23), 1);	/* Go to lower left corner */
+		for (i=0; i<cnt; i++)		/* .. and scroll cnt times */
+			putchar('\n');		/* should check NL too */
+		vputp(tgoto(CS, LINES-1, 0), 1);/* restore scrolling region */
+		vputp(RC, 1);			/* put cursor back */
+	}
+	else {
+		for (i = 0; i < cnt; i++)
 			vputp(DL, WECHO - p);
+	}
 	vadjDL(p, cnt);
 	vcloseup(l, cnt);
 }

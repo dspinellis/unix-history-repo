@@ -1,5 +1,5 @@
 /* Copyright (c) 1981 Regents of the University of California */
-/* sccs id:	@(#)ex_tty.h	7.2	%G%  */
+/* sccs id:	@(#)ex_tty.h	7.3	%G%  */
 /*
  * Capabilities from termcap
  *
@@ -30,17 +30,21 @@ var	char	tspace[256];	/* Space for capability strings */
 var	char	*aoftspace;	/* Address of tspace for relocation */
 
 var	char	*AL;		/* P* Add new blank line */
+var	char	*AL_PARM;	/* P* Add n new blank lines */
 extern	char	*BC;		/*    Back cursor */
 var	char	*BT;		/* P  Back tab */
 var	char	*CD;		/* P* Clear to end of display */
 var	char	*CE;		/* P  Clear to end of line */
 var	char	*CL;		/* P* Clear screen */
-var	char	*CM;		/* P  Cursor motion */
+var	char	*CM;		/* PG Cursor motion */
+var	char	*CS;		/* PG Change scrolling region (vt100) */
 var	char	*xCR;		/* P  Carriage return */
 var	char	*DC;		/* P* Delete character */
 var	char	*DL;		/* P* Delete line sequence */
+var	char	*DL_PARM;	/* P* Delete n lines */
 var	char	*DM;		/*    Delete mode (enter)  */
 var	char	*DO;		/*    Down line sequence */
+var	char	*DOWN_PARM;	/*    Down n lines */
 var	char	*ED;		/*    End delete mode */
 var	char	*EI;		/*    End insert mode */
 var	char	*F0,*F1,*F2,*F3,*F4,*F5,*F6,*F7,*F8,*F9;
@@ -56,10 +60,14 @@ var	char	*KL;		/*    Keypad left arrow */
 var	char	*KR;		/*    Keypad right arrow */
 var	char	*KS;		/*    Keypad start xmitting */
 var	char	*KU;		/*    Keypad up arrow */
+var	char	*LEFT_PARM;	/*    Left n chars */
 var	char	*LL;		/*    Quick to last line, column 0 */
 var	char	*ND;		/*    Non-destructive space */
+var	char	*RIGHT_PARM;	/*    Right n spaces */
 var	char	*xNL;		/*    Line feed (new line) */
 extern	char	PC;		/*    Pad character */
+var	char	*RC;		/*    Restore cursor from last SC */
+var	char	*SC;		/*    Save cursor */
 var	char	*SE;		/*    Standout end (may leave space) */
 var	char	*SF;		/* P  Scroll forwards */
 var	char	*SO;		/*    Stand out begin (may leave space) */
@@ -68,6 +76,7 @@ var	char	*TA;		/* P  Tab (other than ^I or with padding) */
 var	char	*TE;		/*    Terminal end sequence */
 var	char	*TI;		/*    Terminal initial sequence */
 extern	char	*UP;		/*    Upline */
+var	char	*UP_PARM;	/*    Up n lines */
 var	char	*VB;		/*    Visible bell */
 var	char	*VE;		/*    Visual end sequence */
 var	char	*VS;		/*    Visual start sequence */
@@ -89,7 +98,6 @@ var	bool	UL;		/* Underlining works even though !os */
 var	bool	XB;		/* Beehive (no escape key, simulate with f1) */
 var	bool	XN;		/* A newline gets eaten after wrap (concept) */
 var	bool	XT;		/* Tabs are destructive */
-var	bool	XV;		/* VT100 - run AL and DL through tgoto */
 var	bool	XX;		/* Tektronix 4025 insert line */
 	/* X? is reserved for severely nauseous glitches */
 	/* If there are enough of these we may need bit masks! */
@@ -147,8 +155,11 @@ var	bool	normtty;	/* Have to restore normal mode from normf */
 ttymode ostart(), setty(), unixex();
 
 var	short	costCM;	/* # chars to output a typical CM, with padding etc. */
-var	short	costSR;	/* likewise */
-var	short	costAL;
+var	short	costSR;	/* likewise for scroll reverse */
+var	short	costAL;	/* likewise for insert line */
+var	short	costDP;	/* likewise for DOWN_PARM */
+var	short	costLP;	/* likewise for LEFT_PARM */
+var	short	costRP;	/* likewise for RIGHT_PARM */
 
 #ifdef VMUNIX
 # define MAXNOMACS	128	/* max number of macros of each kind */

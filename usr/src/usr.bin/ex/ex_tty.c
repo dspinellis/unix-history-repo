@@ -1,5 +1,5 @@
 /* Copyright (c) 1981 Regents of the University of California */
-static char *sccsid = "@(#)ex_tty.c	7.3	%G%";
+static char *sccsid = "@(#)ex_tty.c	7.4	%G%";
 #include "ex.h"
 #include "ex_tty.h"
 
@@ -38,10 +38,11 @@ gettmode()
 
 char *xPC;
 char **sstrs[] = {
-	&AL, &BC, &BT, &CD, &CE, &CL, &CM, &xCR, &DC, &DL, &DM, &DO, &ED, &EI,
-	&F0, &F1, &F2, &F3, &F4, &F5, &F6, &F7, &F8, &F9,
+	&AL, &BC, &BT, &CD, &CE, &CL, &CM, &xCR, &CS, &DC, &DL, &DM, &DO,
+	&ED, &EI, &F0, &F1, &F2, &F3, &F4, &F5, &F6, &F7, &F8, &F9,
 	&HO, &IC, &IM, &IP, &KD, &KE, &KH, &KL, &KR, &KS, &KU, &LL, &ND, &xNL,
-	&xPC, &SE, &SF, &SO, &SR, &TA, &TE, &TI, &UP, &VA, &VB, &VD, &VS, &VE
+	&xPC, &RC, &SC, &SE, &SF, &SO, &SR, &TA, &TE, &TI, &UP, &VB, &VS, &VE,
+	&AL_PARM, &DL_PARM, &UP_PARM, &DOWN_PARM, &LEFT_PARM, &RIGHT_PARM
 };
 bool *sflags[] = {
 	&AM, &BS, &DA, &DB, &EO, &HC, &HZ, &IN, &MI, &NC, &NS, &OS, &UL,
@@ -92,8 +93,9 @@ setterm(type)
 	/*
 	 * Handle funny termcap capabilities
 	 */
-	if (VA) AL="";
-	if (VD) DL="";
+	if (CS && SC && RC) AL=DL="";
+	if (AL_PARM && AL==NULL) AL="";
+	if (DL_PARM && DL==NULL) DL="";
 	if (IC && IM==NULL) IM="";
 	if (IC && EI==NULL) EI="";
 
@@ -132,6 +134,9 @@ setterm(type)
 		CA = 1, costCM = cost(tgoto(CM, 8, 10));
 	costSR = cost(SR);
 	costAL = cost(AL);
+	costDP = cost(tgoto(DOWN_PARM, 10, 10));
+	costLP = cost(tgoto(LEFT_PARM, 10, 10));
+	costRP = cost(tgoto(RIGHT_PARM, 10, 10));
 	PC = xPC ? xPC[0] : 0;
 	aoftspace = tspace;
 	CP(ttytype, longname(ltcbuf, type));
@@ -160,7 +165,7 @@ zap()
 		*(*fp++) = tgetflag(namp);
 		namp += 2;
 	} while (*namp);
-	namp = "albcbtcdceclcmcrdcdldmdoedeik0k1k2k3k4k5k6k7k8k9hoicimipkdkekhklkrkskullndnlpcsesfsosrtatetiupvavbvdvsve";
+	namp = "albcbtcdceclcmcrcsdcdldmdoedeik0k1k2k3k4k5k6k7k8k9hoicimipkdkekhklkrkskullndnlpcrcscsesfsosrtatetiupvbvsveALDLUPDOLERI";
 	sp = sstrs;
 	do {
 		*(*sp++) = tgetstr(namp, &aoftspace);
@@ -214,7 +219,7 @@ char *str;
 {
 	int countnum();
 
-	if (str == NULL)
+	if (str == NULL || *str=='O')	/* OOPS */
 		return 10000;	/* infinity */
 	costnum = 0;
 	tputs(str, LINES, countnum);
