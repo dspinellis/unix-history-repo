@@ -1,5 +1,5 @@
 /*
-char id_format[] = "@(#)format.h	1.2";
+char id_format[] = "@(#)format.h	1.3";
  *
  * format parser definitions
  */
@@ -29,8 +29,8 @@ struct syl
 #define SP 	18
 #define SS 	19
 #define P 	20
-#define BN 	21
-#define BZ 	22
+#define BNZ 	21
+#define B 	22
 #define F 	23
 #define E 	24
 #define EE 	25
