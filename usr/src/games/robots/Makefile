@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.2 (Berkeley) %G%
+#	@(#)Makefile	5.3 (Berkeley) %G%
 #
 DESTDIR=
 HDRS=		robot.h
@@ -28,3 +28,5 @@ install: robots
 
 clean:
 	rm -f a.out core *.o robots lint.out errs
+
+depend:

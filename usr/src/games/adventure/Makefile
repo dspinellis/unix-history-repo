@@ -1,4 +1,4 @@
-#	Makefile	4.3	85/09/07
+#	Makefile	4.4	87/05/31
 
 DESTDIR=
 CFILES=	done.c init.c io.c main.c save.c subr.c vocab.c wizard.c
@@ -42,6 +42,8 @@ advsaver: advsaver.s
 
 lint:
 	lint $(CFILES) >& lint.out
+
+depend:
 
 clean:
 	rm -f ${OBJS} a.out advent core errs
