@@ -1,4 +1,4 @@
-/*	lfs_inode.c	3.1	%H%	*/
+/*	lfs_inode.c	3.2	%H%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -178,7 +178,7 @@ register struct inode *ip;
 			ip->i_flag |= IUPD|ICHG;
 			ifree(ip->i_dev, ip->i_number);
 		}
-		iupdat(ip, &time, &time);
+		IUPDAT(ip, &time, &time);
 		prele(ip);
 		i = INOHASH(ip->i_dev, ip->i_number);
 		x = ip - inode;
