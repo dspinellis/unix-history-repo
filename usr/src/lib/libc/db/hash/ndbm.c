@@ -28,7 +28,7 @@ static char sccsid[] = "@(#)ndbm.c	5.3 (Berkeley) %G%";
 */
 extern DBM *
 dbm_open( file, flags, mode )
-char 	*file;
+const char 	*file;
 int	flags;
 int	mode;
 {
@@ -119,7 +119,7 @@ datum	key;
 {
     int	status;
 
-    status = (db->delete)( db, (DBT *)&key );
+    status = (db->del)( db, (DBT *)&key );
     if ( status ) {
 	return(-1);
     } else {
