@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1991, 1993
+ * Copyright (c) 1991, 1993, 1994
  *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
@@ -7,12 +7,12 @@
 
 #ifndef lint
 static char copyright[] =
-"@(#) Copyright (c) 1991, 1993\n\
+"@(#) Copyright (c) 1991, 1993, 1994\n\
 	The Regents of the University of California.  All rights reserved.\n";
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)pwd.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)pwd.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -34,8 +34,17 @@ main(argc, argv)
 	int ch;
 	char *p;
 
-	while ((ch = getopt(argc, argv, "")) != EOF)
+	/*
+	 * Flags for pwd are a bit strange.  The POSIX 1003.2B/D9 document
+	 * has an optional -P flag for physical, which is what this program
+	 * will produce by default.  The logical flag, -L, should fail, as
+	 * there's no way to display a logical path after forking.  We don't
+	 * document either flag, only adding -P for future portability.
+	 */
+	while ((ch = getopt(argc, argv, "P")) != EOF)
 		switch (ch) {
+		case 'P':
+			break;
 		case '?':
 		default:
 			usage();
@@ -46,10 +55,8 @@ main(argc, argv)
 	if (argc != 0)
 		usage();
 
-	if ((p = getcwd(NULL, 0)) == NULL) {
+	if ((p = getcwd(NULL, 0)) == NULL)
 		err(1, NULL);
-		exit(1);
-	}
 	(void)printf("%s\n", p);
 	exit(0);
 }
