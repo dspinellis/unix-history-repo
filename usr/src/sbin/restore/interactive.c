@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)interactive.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)interactive.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "restore.h"
@@ -30,6 +30,7 @@ struct afile {
 	char	*fname;		/* file name */
 	short	fflags;		/* extraction flags, if any */
 	char	ftype;		/* file type, e.g. LEAF or NODE */
+	char	finotype;	/* file type specified in directory entry */
 };
 struct arglist {
 	struct afile	*head;	/* start of argument list */
@@ -635,7 +636,7 @@ addg(dp, as1, as3, ap)
 		while (*s2++ = *++s1)
 			/* void */;
 	}
-	if (mkentry(buf, dp->d_ino, ap) == FAIL)
+	if (mkentry(buf, dp, ap) == FAIL)
 		return (-1);
 }
 
@@ -670,7 +671,7 @@ printlist(name, ino, basename)
 			    (strcmp(dp->d_name, ".") == 0 ||
 			     strcmp(dp->d_name, "..") == 0))
 				continue;
-			if (!mkentry(dp->d_name, dp->d_ino, &alist))
+			if (!mkentry(dp->d_name, dp, &alist))
 				return;
 		}
 	}
@@ -688,9 +689,9 @@ printlist(name, ino, basename)
 /*
  * Read the contents of a directory.
  */
-mkentry(name, ino, ap)
+mkentry(name, dp, ap)
 	char *name;
-	ino_t ino;
+	struct direct *dp;
 	register struct arglist *ap;
 {
 	register struct afile *fp;
@@ -707,7 +708,11 @@ mkentry(name, ino, ap)
 	if (ap->head == 0)
 		ap->head = ap->last = ap->base;
 	fp = ap->last;
-	fp->fnum = ino;
+	fp->fnum = dp->d_ino;
+	if (oldinofmt)
+		fp->finotype = DT_UNKNOWN;
+	else
+		fp->finotype = dp->d_type;
 	fp->fname = savename(name);
 	fp++;
 	if (fp == ap->head + ap->nent) {
@@ -815,8 +820,36 @@ fmtentry(fp)
 			*dp++ = '?';
 		else
 			*dp++ = *cp;
-	if (fp->ftype == NODE)
-		*dp++ = '/';
+	switch(fp->finotype) {
+
+	case DT_LNK:
+		*dp++ = '@';
+		break;
+
+	case DT_FIFO:
+	case DT_SOCK:
+		*dp++ = '=';
+		break;
+
+	case DT_CHR:
+	case DT_BLK:
+		*dp++ = '#';
+		break;
+
+	case DT_UNKNOWN:
+	case DT_DIR:
+		if (fp->ftype == NODE)
+			*dp++ = '/';
+		break;
+
+	case DT_REG:
+		/* nothing */
+		break;
+
+	default:
+		fprintf(stderr, "Warning: undefined file type %d\n",
+		    fp->finotype);
+	}
 	*dp++ = 0;
 	return (fmtres);
 }
