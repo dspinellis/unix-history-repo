@@ -1,0 +1,115 @@
+.nr _C \n(.C
+.cp 0
+.ftr AX ABI
+.ftr KR BMR
+.ftr KI BMI
+.ftr KB BMB
+.ftr KX BMBI
+.ftr CW CR
+.ftr CO CI
+.ftr CX CBI
+.ftr H HR
+.ftr HO HI
+.ftr HX HBI
+.ftr Hr HNR
+.ftr Hi HNI
+.ftr Hb HNB
+.ftr Hx HNBI
+.ftr NX NBI
+.ftr PA PR
+.ftr PX PBI
+.ftr ZI ZCMI
+.ftr C CR
+.char \(rn \h'-\w'\(sr'u'\(rn\h'\w'\(sr'u'
+.char \[parenlefttp] \[parenlefttp]\h'.016m'
+.char \[parenleftbt] \[parenleftbt]\h'.016m'
+.char \[parenleftex] \[parenleftex]\h'.016m'
+.char \[parenrighttp] \[parenrighttp]\h'.016m'
+.char \[parenrightbt] \[parenrightbt]\h'.016m'
+.char \[parenrightex] \[parenrightex]\h'.016m'
+.char \[ci] \v'-.25m'\h'.05m'\D'c .5m'\h'.05m'\v'.25m'
+.char \[sq] \h'.05m'\D'l .5m 0'\D'l 0 -.5m'\D'l -.5m 0'\D'l 0 .5m'\h'.55m'
+.char \[ru] \D'l .5m 0'
+.char \[ul] \v'.25m'\D'l .5m 0'\v'-.25m'
+.char \[br] \Z'\v'.25m'\D'l 0 -1m''
+.char \[or] \h'.1m'\Z'\D'l 0 -.675m''\h'.1m'
+.char \[12] \v'-.7m\s[\\n(.s*6u/10u]+.7m'1\v'-.7m\s0+.7m'\
+\(f/\s[\\n(.s*6u/10u]2\s0
+.char \[14] \v'-.7m\s[\\n(.s*6u/10u]+.7m'1\v'-.7m\s0+.7m'\
+\(f/\s[\\n(.s*6u/10u]4\s0
+.char \[34] \v'-.7m\s[\\n(.s*6u/10u]+.7m'3\v'-.7m\s0+.7m'\
+\(f/\s[\\n(.s*6u/10u]4\s0
+.char \[S1] \v'-.2m'\s-31\s+3\v'+.2m'
+.char \[S2] \v'-.2m'\s-32\s+3\v'+.2m'
+.char \[S3] \v'-.2m'\s-33\s+3\v'+.2m'
+.tr \[char178]\[S2]
+.tr \[char179]\[S3]
+.tr \[char185]\[S1]
+.tr \[char188]\[14]
+.tr \[char189]\[12]
+.tr \[char190]\[34]
+.char \[Fi] ffi
+.char \[Fl] ffl
+.char \[ff] ff
+.char \[ij] ij
+.char \[IJ] IJ
+.if !c\[tm] .char \[tm] \s-3\v'-.3m'TM\v'+.3m'\s+3
+.cp \n(_C
+.\" ignore the rest of the file in compatibility mode
+.if \n(.C .nx /dev/null
+.de ps-achar
+.char \\$1 \\$3\
+\k[acc]\
+\h'(u;-\w'\\$2'-\w'\\$3'/2+\\\\n[skw]+(\w'x'*0)-\\\\n[skw])'\
+\v'(u;\w'x'*0+\\\\n[rst]+(\w'\\$3'*0)-\\\\n[rst])'\
+\\$2\
+\v'(u;\w'x'*0-\\\\n[rst]+(\w'\\$3'*0)+\\\\n[rst])'\
+\h'|\\\\n[acc]u'
+.ie '\\$3'\(.i' .hcode \\$1i
+.el .hcode \\$1\\$3
+..
+.if !c\['y] \{\
+.ps-achar \['y] \[aa] y
+.tr \[char253]\['y]
+.\}
+.if !c\['Y] \{\
+.ps-achar \['Y] \[aa] Y
+.tr \[char221]\['Y]
+.\}
+.if !c\['c] .ps-achar \['c] \[aa] c
+.if !c\['C] .ps-achar \['C] \[aa] C
+.de ps-bb
+.nr ps-nargs \\n[.$]
+.if \\n[ps-nargs]=4 \{\
+.	nr ps-llx 0\\$1
+.	nr ps-lly 0\\$2
+.	nr ps-urx 0\\$3
+.	nr ps-ury 0\\$4
+.\}
+..
+.de PSPIC
+.sy echo .ps-bb `psbb \\$1` >/tmp/psbb\\n[$$]
+.so /tmp/psbb\\n[$$]
+.if \\n[ps-nargs]=4 \{\
+.	nr ps-wid (\\n[ps-urx]-\\n[ps-llx])
+.	nr ps-ht (\\n[ps-ury]-\\n[ps-lly])
+.	if \\n[ps-wid]<0 .nr ps-wid 0-\\n[ps-wid]
+.	if \\n[ps-ht]<0 .nr ps-ht 0-\\n[ps-ht]
+.	ie \\n[.$]>=2 .nr ps-deswid (i;\\$2)
+.	el .nr ps-deswid \\n[.l]-\\n[.i]<?\\n[ps-wid]p
+.	ie \\n[.$]>=3 .nr ps-desht (i;\\$3)
+.	el .nr ps-desht \\n[ps-deswid]*1000+(\\n[ps-wid]/2)/\\n[ps-wid]\
+*\\n[ps-ht]+500/1000
+.	ne \\n[ps-desht]u+1v
+.	sp \\n[ps-desht]u
+.	nr ps-offset \\n[.l]-\\n[.i]-\\n[ps-deswid]/2
+.	ie \\n[.$]>=3 \
+\h'\\n[ps-offset]u'\X'ps: import \\$1 \\n[ps-llx] \\n[ps-lly] \\n[ps-urx] \
+\\n[ps-ury] \\n[ps-deswid] \\n[ps-desht]'
+.	el \
+\h'\\n[ps-offset]u'\X'ps: import \\$1 \\n[ps-llx] \\n[ps-lly] \\n[ps-urx] \
+\\n[ps-ury] \\n[ps-deswid]'
+.	br
+.\}
+.sy rm /tmp/psbb\\n[$$]
+..
