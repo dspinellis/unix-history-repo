@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)chown.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)chown.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -44,7 +44,7 @@ main(argc, argv)
 	extern int optind;
 	register char *cp;
 	int ch;
-	char *index(), *rindex();
+	char curpath[MAXPATHLEN], *reset, *index(), *rindex();
 
 	myname = (cp = rindex(*argv, '/')) ? cp + 1 : *argv;
 	ischown = myname[2] == 'o';
@@ -81,8 +81,17 @@ main(argc, argv)
 		setgid(*argv);
 	}
 
-	while (*++argv)
+	while (*++argv) {
+		if (reset = index(*argv, '/'))
+			(void)getwd(curpath);
 		change(*argv);
+		if (reset && chdir(curpath)) {
+			if (fflag)
+				exit(0);
+			err(curpath);
+			exit(-1);
+		}
+	}
 	exit(retval);
 }
 
@@ -208,10 +217,12 @@ static
 err(s)
 	char *s;
 {
+	extern int errno;
+	char *strerror();
+
 	if (fflag)
 		return;
-	fprintf(stderr, "%s: ", myname);
-	perror(s);
+	fprintf(stderr, "%s: %s: %s", myname, s, strerror(errno));
 	retval = -1;
 }
 
