@@ -1,3 +1,7 @@
+/*	@(#)read.c	6.2 (Berkeley) %G%
+
+Modified for Berkeley Unix by Donn Seeley, donn@okeeffe.berkeley.edu  */
+
 /* read.c - read a source file -
    Copyright (C) 1986,1987 Free Software Foundation, Inc.
 
@@ -328,6 +332,8 @@ read_a_source_file (buffer)
 	      if ( c == ':' )
 		{
 		  colon(s);	/* user-defined label */
+		  if (flagseen['g'])
+		    stabf(s);	/* set line number for function definition */
 		  * input_line_pointer ++ = ':'; /* Put ':' back for error messages' sake. */
 				/* Input_line_pointer -> after ':'. */
 		  SKIP_WHITESPACE();
@@ -377,6 +383,10 @@ read_a_source_file (buffer)
 		    }
 		  else
 		    {		/* machine instruction */
+		      /* If source file debugging, emit a stab. */
+		      if (flagseen['g'])
+			linestab();
+
 		      /* WARNING: c has char, which may be end-of-line. */
 		      /* Also: input_line_pointer -> `\0` where c was. */
 		      * input_line_pointer = c;
@@ -1370,6 +1380,85 @@ pseudo_set (symbolP)
       BAD_CASE( segment );
       break;
     }
+}
+
+/*
+ * stabs(file), stabf(func) and stabd(line) -- for the purpose of
+ * source file debugging of assembly files, generate file,
+ * function and line number stabs, respectively.
+ * stabs() and stabd() are normally called through a function linestab()
+ * in input-scrub.c which understands about logical line numbers.
+ */
+
+#include <stab.h>
+
+static int stabs_done;
+
+stabs(file)
+     char *file;
+{
+  /* .stabs "file",100,0,0,. */
+  (void) symbol_new(file,
+		    N_SO,
+		    0,
+		    0,
+		    obstack_next_free(& frags) - frag_now->fr_literal,
+		    frag_now);
+  stabs_done = 1;
+}
+
+stabf(func)
+     char *func;
+{
+  symbolS *symbolP;
+  static int void_undefined = 1;
+
+  /* crudely filter uninteresting labels: require an initial '_' */
+  if (now_seg != SEG_TEXT || *func++ != '_')
+    return;
+
+  /* don't emit a function stab until a file stab has been seen */
+  if (!stabs_done)
+    linestab();
+
+  /* assembly functions are assumed to have void type */
+  if (void_undefined)
+    {
+      /* .stabs "void:t15=15",128,0,0,0 */
+      (void) symbol_new("void:t1=1",
+			N_LSYM,
+			0,
+			0,
+			0,
+			&zero_address_frag);
+      void_undefined = 0;
+    }
+
+  /* .stabs "func:F1",36,0,0,. */
+  symbolP = symbol_new((char *) 0,
+		       N_FUN,
+		       0,
+		       0,
+		       obstack_next_free(& frags) - frag_now->fr_literal,
+		       frag_now);
+  obstack_grow(&notes, func, strlen(func));
+  obstack_1grow(&notes, ':');
+  obstack_1grow(&notes, 'F');
+  obstack_1grow(&notes, '1');
+  obstack_1grow(&notes, '\0');
+  symbolP->sy_name = obstack_finish(&notes);
+}
+
+stabd(line)
+     unsigned line;
+{
+  /* .stabd 68,0,line */
+  (void) symbol_new((char *)0,
+		    N_SLINE,
+		    0,
+		    line,
+		    obstack_next_free(& frags) - frag_now->fr_literal,
+		    frag_now);
 }
 
 /*
