@@ -11,7 +11,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tape.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)tape.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -676,7 +676,7 @@ xtrskip(buf, size)
 	long size;
 {
 
-	if (lseek(ofile, size, SEEK_CUR) == (long)-1) {
+	if (lseek(ofile, size, SEEK_CUR) == -1) {
 		fprintf(stderr,
 		    "seek error extracting inode %d, name %s\nlseek: %s\n",
 			curfile.ino, curfile.name, strerror(errno));
