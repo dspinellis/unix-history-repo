@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1988 University of Utah.
- * Copyright (c) 1990 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1990, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * the Systems Programming Group of the University of Utah Computer
@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: itereg.h 1.3 92/01/21$
  *
- *	@(#)itereg.h	7.3 (Berkeley) %G%
+ *	@(#)itereg.h	8.1 (Berkeley) %G%
  */
 
 /*
