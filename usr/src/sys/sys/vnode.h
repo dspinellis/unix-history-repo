@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vnode.h	7.46 (Berkeley) %G%
+ *	@(#)vnode.h	7.47 (Berkeley) %G%
  */
 
 #ifndef KERNEL
@@ -270,6 +270,16 @@ struct vnodeops {
 #define	VNOVAL	(-1)
 
 #ifdef KERNEL
+/*
+ * Convert between vnode types and inode formats (since POSIX.1
+ * defines mode word of stat structure in terms of inode formats).
+ */
+extern enum vtype	iftovt_tab[];
+extern int		vttoif_tab[];
+#define IFTOVT(mode)	(iftovt_tab[((mode) & IFMT) >> 12])
+#define VTTOIF(indx)	(vttoif_tab[(int)(indx)])
+#define MAKEIMODE(indx, mode)	(int)(VTTOIF(indx) | (mode))
+
 /*
  * public vnode manipulation functions
  */
