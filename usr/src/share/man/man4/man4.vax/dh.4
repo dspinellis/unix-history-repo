@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)dh.4	6.1 (Berkeley) %G%
+.\"	@(#)dh.4	6.2 (Berkeley) %G%
 .\"
 .TH DH 4 ""
 .UC 4
@@ -32,11 +32,15 @@ connected, and that the line should be treated as hard-wired with carrier
 always present.  Thus specifying ``flags 0x0004'' in the specification of dh0
 would cause line ttyh2 to be treated in this way.
 .PP
-The dh driver normally uses input silos
-and polls for input at each clock tick (10 milliseconds)
-rather than taking an interrupt on each input character.
+The
+.I dh
+driver monitors the rate of input on each board,
+and switches between the use of character-at-a-time interrupts
+and input silos.
+While the silo is enabled during periods of high-speed input,
+the driver polls for input 30 times per second.
 .SH FILES
-/dev/tty[hi][0-9a-f]
+/dev/tty[h-o][0-9a-f]
 .br
 /dev/ttyd[0-9a-f]
 .SH "SEE ALSO"
@@ -51,12 +55,5 @@ It is not serious.
 \fBdh%d: silo overflow\fR.  The character input silo overflowed
 before it could be serviced.  This can happen if a hard error occurs
 when the CPU is running with elevated priority, as the system will
-then print a message on the console with interrupts disabled.  If the
-Berknet
-is running on a
-.I dh
-line at high speed (e.g. 9600 baud), there is only 1/15th of a second of
-buffering capacity in the silo, and overrun is possible.  This may
-cause a few input characters to be lost to users and a network
-packet is likely to be corrupted, but the network will recover.
+then print a message on the console with interrupts disabled.
 It is not serious.

@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)dmz.4	6.2 (Berkeley) %G%
+.\"	@(#)dmz.4	6.3 (Berkeley) %G%
 .\"
 .TH DMZ 4 "April 7, 1986"
 .UC 5
@@ -42,13 +42,11 @@ to be treated in this way.
 .PP
 The
 .I dmz
-driver normally uses input silos and polls for input at each clock
-tick (10 milliseconds).
-It uses an adaptive algorithm on output
-to decide whether to use programmed I/O or DMA
-based on the amount of data to send.
+driver normally enables the input silos with a short timeout
+(30 milliseconds); this allows multiple characters to be received
+per interrupt during periods of high-speed input.
 .SH FILES
-/dev/tty[abc][0-9a-n]
+/dev/tty[abcefg][0-9a-n]
 .SH SEE ALSO
 tty(4)
 .SH DIAGNOSTICS
@@ -65,3 +63,7 @@ before it could be serviced.  This can happen if a hard error occurs
 when the CPU is running with elevated priority, as the system will
 then print a message on the console with interrupts disabled.
 It is not serious.
+.SH BUGS
+It should be possible to set the silo timeout with a configuration file option,
+as the value is a trade-off between efficiency and response time for flow
+control and character echo.

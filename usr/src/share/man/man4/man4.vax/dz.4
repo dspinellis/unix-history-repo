@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)dz.4	6.1 (Berkeley) %G%
+.\"	@(#)dz.4	6.2 (Berkeley) %G%
 .\"
 .TH DZ 4 ""
 .UC 4
@@ -11,9 +11,9 @@ dz \- DZ-11 communications multiplexer
 .SH SYNOPSIS
 .B "device dz0 at uba0 csr 0160100 vector dzrint dzxint"
 .SH DESCRIPTION
-A dz-11 provides 8 communication lines with partial modem control,
+A DZ11 provides 8 communication lines with partial modem control,
 adequate for UNIX dialup use.
-Each line attached to the DZ-11 communications multiplexer
+Each line attached to the DZ11 communications multiplexer
 behaves as described in
 .IR tty (4)
 and may be set to run at any of 16 speeds; see
@@ -27,9 +27,13 @@ connected, and that the line should be treated as hard-wired with carrier
 always present.  Thus specifying ``flags 0x04'' in the specification of dz0
 would cause line tty02 to be treated in this way.
 .PP
-The dz driver normally uses its input silos
-and polls for input at each clock tick (10 milliseconds)
-rather than taking an interrupt on each input character.
+The
+.I dz
+driver monitors the rate of input on each board,
+and switches between the use of character-at-a-time interrupts
+and input silos.
+While the silo is enabled during periods of high-speed input,
+the driver polls for input 30 times per second.
 .SH FILES
 /dev/tty[0-9][0-9]
 .br
@@ -41,12 +45,5 @@ tty(4)
 \fBdz%d: silo overflow\fR.  The 64 character input silo overflowed
 before it could be serviced.  This can happen if a hard error occurs
 when the CPU is running with elevated priority, as the system will
-then print a message on the console with interrupts disabled.  If the
-Berknet
-is running on a
-.I dz
-line at high speed (e.g. 9600 baud), there is only 1/15th of a second of
-buffering capacity in the silo, and overrun is possible.  This may
-cause a few input characters to be lost to users and a network
-packet is likely to be corrupted, but the network will recover.
+then print a message on the console with interrupts disabled.
 It is not serious.

@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)dmf.4	6.3 (Berkeley) %G%
+.\"	@(#)dmf.4	6.4 (Berkeley) %G%
 .\"
 .TH DMF 4 ""
 .UC 5
@@ -21,6 +21,9 @@ The first two of these have full modem control.
 The device also provides a line printer port
 similar to the LP-11.
 Other features of the DMF-32 are not supported.
+During autoconfiguration, the driver examines the configuration of each DMF-32
+and adjusts the interrupt vectors so that fewer vector locations are used
+if possible.
 .PP
 Each line attached to a DMF-32 serial line port behaves as described
 in
@@ -39,11 +42,13 @@ line should be treated as hard-wired with carrier always present.
 Thus specifying ``flags 0x04'' in the specification of 
 .IR dmf 0
 would cause line ttyA2 to be treated in this way.
+Flags should be set for all lines without hardware support for modem control.
 .PP
 The serial line part of the
 .I dmf
-driver normally uses input silos and polls for input at each clock
-tick (10 milliseconds).
+driver normally enables the input silos with a short timeout
+(30 milliseconds); this allows multiple characters to be received
+per interrupt during periods of high-speed input.
 .PP
 A line printer port on
 .I dmf\^n
@@ -57,7 +62,7 @@ features of the
 .IR lp (4)
 driver.
 .SH FILES
-/dev/tty[A-I][0-7]
+/dev/tty[A-CE-I][0-7]
 .br
 /dev/ttyd[0-7]
 .br
@@ -86,3 +91,7 @@ It is not serious.
 One of the unsupported parts of the dmf interrupted; something
 is amiss, check your interrupt vectors for a conflict with another
 device.
+.SH BUGS
+It should be possible to set the silo timeout with a configuration file option,
+as the value is a trade-off between efficiency and response time for flow
+control and character echo.
