@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1983 Regents of the University of California.
+ * Copyright (c) 1983, 1988 Regents of the University of California.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms are permitted
@@ -12,12 +12,12 @@
 
 #ifndef lint
 char copyright[] =
-"@(#) Copyright (c) 1983 Regents of the University of California.\n\
+"@(#) Copyright (c) 1983, 1988 Regents of the University of California.\n\
  All rights reserved.\n";
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -29,16 +29,16 @@ static char sccsid[] = "@(#)main.c	5.12 (Berkeley) %G%";
 
 #include <net/if.h>
 
-#include <errno.h>
-#include <signal.h>
-#include <syslog.h>
+#include <sys/errno.h>
+#include <sys/signal.h>
+#include <sys/syslog.h>
 
 int	supplier = -1;		/* process should supply updates */
 int	gateway = 0;		/* 1 if we are a gateway to parts beyond */
 int	debug = 0;
 
 struct	rip *msg = (struct rip *)packet;
-int	hup(), rtdeleteall();
+int	hup(), rtdeleteall(), sigtrace();
 
 main(argc, argv)
 	int argc;
@@ -74,7 +74,12 @@ main(argc, argv)
 			continue;
 		}
 		if (strcmp(*argv, "-t") == 0) {
-			tracepackets++;
+			if (tracehistory == 0)
+				tracehistory++;
+			else {
+				tracehistory = 0;
+				tracepackets++;
+			}
 			setlogmask(LOG_DEBUG);
 			argv++, argc--;
 			continue;
@@ -142,6 +147,8 @@ main(argc, argv)
 	signal(SIGHUP, hup);
 	signal(SIGTERM, hup);
 	signal(SIGINT, rtdeleteall);
+	signal(SIGUSR1, sigtrace);
+	signal(SIGUSR2, sigtrace);
 	timer();
 
 	for (;;) {
@@ -163,6 +170,7 @@ process(fd)
 {
 	struct sockaddr from;
 	int fromlen = sizeof (from), cc, omask;
+	time_t now;
 
 	cc = recvfrom(fd, packet, sizeof (packet), 0, &from, &fromlen);
 	if (cc <= 0) {
@@ -172,6 +180,10 @@ process(fd)
 	}
 	if (fromlen != sizeof (struct sockaddr_in))
 		return;
+	if (traceactions && !tracepackets) {
+		(void) time(&now);
+		curtime = ctime(&now);
+	}
 	omask = sigblock(sigmask(SIGALRM));
 	rip_input(&from, cc);
 	sigsetmask(omask);
