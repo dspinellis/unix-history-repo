@@ -6,28 +6,30 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)termios.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)termios.c	5.4 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
 #include <sys/errno.h>
 #include <sys/ioctl.h>
 #include <sys/tty.h>
-#include <sys/termios.h>
+#include <termios.h>
 #include <stdio.h>
+#include <unistd.h>
 
+int
 tcgetattr(fd, t)
 	int fd;
 	struct termios *t;
 {
-	extern errno;
 
 	return(ioctl(fd, TIOCGETA, t));
 }
 
+int
 tcsetattr(fd, opt, t)
 	int fd, opt;
-	struct termios *t;
+	const struct termios *t;
 {
 	struct termios localterm;
 
@@ -41,50 +43,67 @@ tcsetattr(fd, opt, t)
 		return (ioctl(fd, TIOCSETA, t));
 	else if (opt == TCSADRAIN)
 		return (ioctl(fd, TIOCSETAW, t));
-	else
-		return (ioctl(fd, TIOCSETAF, t));
+	return (ioctl(fd, TIOCSETAF, t));
 }
 
+int
+#if __STDC__
+tcsetpgrp(int fd, pid_t pgrp)
+#else
 tcsetpgrp(fd, pgrp)
+	int fd;
+	pid_t pgrp;
+#endif
 {
 	return(ioctl(fd, TIOCSPGRP, &pgrp));
 }
 
+pid_t
 tcgetpgrp(fd)
 {
-	int pgrp;
+	pid_t pgrp;
 
 	if (ioctl(fd, TIOCGPGRP, &pgrp) < 0)
 		return(-1);
 	return(pgrp);
 }
 
+speed_t
 cfgetospeed(t)
-	struct termios *t;
+	const struct termios *t;
 {
 	return(t->c_ospeed);
 }
 
+speed_t
 cfgetispeed(t)
-	struct termios *t;
+	const struct termios *t;
 {
 	return(t->c_ispeed);
 }
 
+int
 cfsetospeed(t, speed)
 	struct termios *t;
+	speed_t speed;
 {
 	t->c_ospeed = speed;
+	return 0;
 }
 
+int
 cfsetispeed(t, speed)
 	struct termios *t;
+	speed_t speed;
 {
 	t->c_ispeed = speed;
+	return 0;
 }
 
+void
 cfsetspeed(t, speed)
 	struct termios *t;
+	speed_t speed;
 {
 	t->c_ispeed = t->c_ospeed = speed;
 }
@@ -94,6 +113,7 @@ cfsetspeed(t, speed)
  * character-at-a-time mode with no characters interpreted,
  * 8-bit data path.
  */
+void
 cfmakeraw(t)
 	struct termios *t;
 {

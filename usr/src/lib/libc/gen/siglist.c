@@ -6,10 +6,11 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)siglist.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)siglist.c	5.6 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <signal.h>
+#include <unistd.h>
 
 char	*sys_siglist[NSIG] = {
 	"Signal 0",

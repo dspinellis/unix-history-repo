@@ -6,17 +6,19 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)fstab.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)fstab.c	5.15 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/errno.h>
 #include <fstab.h>
 #include <unistd.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 static FILE *_fs_fp;
 static struct fstab _fs_fstab;
+static error();
 
 static
 fstabscan()
@@ -25,7 +27,6 @@ fstabscan()
 #define	MAXLINELENGTH	1024
 	static char line[MAXLINELENGTH];
 	char subline[MAXLINELENGTH];
-	char *fgets(), *strtok();
 	int typexx;
 
 	for (;;) {
@@ -102,7 +103,7 @@ fstabscan()
 			return(1);
 
 bad:		/* no way to distinguish between EOF and syntax error */
-		write(EFTYPE);
+		error(EFTYPE);
 	}
 	/* NOTREACHED */
 }
@@ -117,7 +118,7 @@ getfsent()
 
 struct fstab *
 getfsspec(name)
-	register char *name;
+	register const char *name;
 {
 	if (setfsent())
 		while (fstabscan())
@@ -128,7 +129,7 @@ getfsspec(name)
 
 struct fstab *
 getfsfile(name)
-	register char *name;
+	register const char *name;
 {
 	if (setfsent())
 		while (fstabscan())

@@ -6,13 +6,17 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)timezone.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)timezone.c	5.10 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
 #include <sys/time.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <tzfile.h>
+
+char *_tztab();
 
 /*
  * timezone --
@@ -31,7 +35,6 @@ timezone(zone, dst)
 {
 	register char	*beg,
 			*end;
-	char	*getenv(), *index(), *strncpy(), *_tztab();
 
 	if (beg = getenv("TZNAME")) {		/* set in environment */
 		if (end = index(beg, ',')) {	/* "PST,PDT" */

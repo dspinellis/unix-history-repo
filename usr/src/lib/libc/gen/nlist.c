@@ -6,13 +6,14 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)nlist.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)nlist.c	5.8 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
 #include <sys/file.h>
 #include <a.out.h>
 #include <stdio.h>
+#include <string.h>
 #include <unistd.h>
 
 typedef struct nlist NLIST;
@@ -20,8 +21,9 @@ typedef struct nlist NLIST;
 #define	_name	n_un.n_name
 #define	ISVALID(p)	(p->_name && p->_name[0])
 
+int
 nlist(name, list)
-	char *name;
+	const char *name;
 	NLIST *list;
 {
 	register NLIST *p, *s;

@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)syslog.c	5.32 (Berkeley) %G%";
+static char sccsid[] = "@(#)syslog.c	5.33 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -17,30 +17,51 @@ static char sccsid[] = "@(#)syslog.c	5.32 (Berkeley) %G%";
 #include <sys/errno.h>
 #include <netdb.h>
 #include <string.h>
+#if __STDC__
+#include <stdarg.h>
+#else
 #include <varargs.h>
+#endif
+#include <time.h>
+#include <unistd.h>
 #include <paths.h>
 #include <stdio.h>
 
 static int	LogFile = -1;		/* fd for log */
 static int	connected;		/* have done connect */
 static int	LogStat = 0;		/* status bits, set by openlog() */
-static char	*LogTag = "syslog";	/* string to tag the entry with */
+static const char *LogTag = "syslog";	/* string to tag the entry with */
 static int	LogFacility = LOG_USER;	/* default facility code */
 
 /*
  * syslog, vsyslog --
  *	print message on log file; output is intended for syslogd(8).
  */
-syslog(pri, fmt, args)
-	int pri, args;
+void
+#if __STDC__
+syslog(int pri, const char *fmt, ...)
+#else
+syslog(pri, fmt, va_alist)
+	int pri;
 	char *fmt;
+	va_dcl
+#endif
 {
-	vsyslog(pri, fmt, &args);
+	va_list ap;
+
+#if __STDC__
+	va_start(ap, fmt);
+#else
+	va_start(ap);
+#endif
+	vsyslog(pri, fmt, ap);
+	va_end(ap);
 }
 
+void
 vsyslog(pri, fmt, ap)
 	int pri;
-	register char *fmt;
+	register const char *fmt;
 	va_list ap;
 {
 	register int cnt;
@@ -112,8 +133,9 @@ vsyslog(pri, fmt, ap)
 	}
 
 	/* get connected, output the message to the local logger */
-	if ((connected || !openlog(LogTag, LogStat | LOG_NDELAY, 0)) &&
-	    send(LogFile, tbuf, cnt, 0) >= 0)
+	if (!connected)
+		openlog(LogTag, LogStat | LOG_NDELAY, 0);
+	if (send(LogFile, tbuf, cnt, 0) >= 0)
 		return;
 
 	/* see if should attempt the console */
@@ -136,8 +158,9 @@ vsyslog(pri, fmt, ap)
 
 static struct sockaddr SyslogAddr;	/* AF_UNIX address of local logger */
 
+void
 openlog(ident, logstat, logfac)
-	char *ident;
+	const char *ident;
 	int logstat, logfac;
 {
 	if (ident != NULL)
@@ -164,6 +187,7 @@ openlog(ident, logstat, logfac)
 			connected = 1;
 }
 
+void
 closelog()
 {
 	(void)close(LogFile);

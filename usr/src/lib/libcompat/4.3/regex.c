@@ -5,10 +5,14 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)regex.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)regex.c	5.4 (Berkeley) %G%";
 #endif LIBC_SCCS and not lint
 
-#
+#include <unistd.h>
+
+static int advance();
+static int backref();
+static int cclass();
 
 /*
  * routines to do regular expression matching
@@ -101,7 +105,7 @@ static	char	circf;
  */
 char *
 re_comp(sp)
-	register char	*sp;
+	register const char	*sp;
 {
 	register int	c;
 	register char	*ep = expbuf;
@@ -225,7 +229,7 @@ re_comp(sp)
  */
 int
 re_exec(p1)
-	register char	*p1;
+	register const char	*p1;
 {
 	register char	*p2 = expbuf;
 	register int	c;

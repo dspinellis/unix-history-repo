@@ -6,18 +6,19 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)valloc.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)valloc.c	5.5 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
-char	*malloc();
+#include <stdlib.h>
+#include <unistd.h>
 
-char *
+void *
 valloc(i)
-	int i;
+	size_t i;
 {
 	int valsiz = getpagesize(), j;
-	char *cp = malloc(i + (valsiz-1));
+	void *cp = malloc(i + (valsiz-1));
 
 	j = ((int)cp + (valsiz-1)) &~ (valsiz-1);
-	return ((char *)j);
+	return ((void *)j);
 }

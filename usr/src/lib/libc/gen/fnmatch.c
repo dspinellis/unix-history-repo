@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)fnmatch.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)fnmatch.c	5.4 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -51,7 +51,8 @@ rangematch(pattern, test)
 }
 
 fnmatch(pattern, string, flags)
-	register char *pattern, *string;
+	register const char *pattern;
+	register const char *string;
 	int flags;
 {
 	register char c;

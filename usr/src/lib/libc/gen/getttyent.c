@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)getttyent.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)getttyent.c	5.9 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <ttyent.h>
@@ -19,7 +19,7 @@ static FILE *tf;
 
 struct ttyent *
 getttynam(tty)
-	char *tty;
+	const char *tty;
 {
 	register struct ttyent *t;
 
@@ -38,7 +38,7 @@ getttyent()
 	register char *p;
 #define	MAXLINELENGTH	100
 	static char line[MAXLINELENGTH];
-	char *skip(), *value();
+	static char *skip(), *value();
 
 	if (!tf && !setttyent())
 		return(NULL);
@@ -145,6 +145,7 @@ value(p)
 	return((p = index(p, '=')) ? ++p : NULL);
 }
 
+int
 setttyent()
 {
 	if (tf) {
@@ -155,6 +156,7 @@ setttyent()
 	return(0);
 }
 
+int
 endttyent()
 {
 	int rval;

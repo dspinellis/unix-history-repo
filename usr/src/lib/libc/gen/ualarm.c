@@ -6,10 +6,11 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)ualarm.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)ualarm.c	5.5 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/time.h>
+#include <unistd.h>
 
 #define	USPS	1000000		/* # of microseconds in a second */
 

@@ -6,20 +6,23 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)initgroups.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)initgroups.c	5.7 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
  * initgroups
  */
-#include <stdio.h>
 #include <sys/param.h>
+#include <stdio.h>
+#include <string.h>
+#include <unistd.h>
 #include <grp.h>
 
 struct group *getgrent();
 
+int
 initgroups(uname, agroup)
-	char *uname;
+	const char *uname;
 	int agroup;
 {
 	int groups[NGROUPS], ngroups = 0;

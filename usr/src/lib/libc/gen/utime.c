@@ -6,15 +6,16 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)utime.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)utime.c	5.4 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/time.h>
 #include <utime.h>
 
+int
 utime(path, times)
-	char *path;
-	struct utimbuf *times;
+	const char *path;
+	const struct utimbuf *times;
 {
 	struct timeval tv[2];
 

@@ -6,17 +6,19 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)sleep.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)sleep.c	5.6 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/time.h>
 #include <sys/signal.h>
+#include <unistd.h>
 
 #define	setvec(vec, a) \
 	vec.sv_handler = a; vec.sv_mask = vec.sv_onstack = 0
 
 static int ringring;
 
+unsigned int
 sleep(seconds)
 	unsigned int seconds;
 {
@@ -24,15 +26,15 @@ sleep(seconds)
 	struct itimerval itv, oitv;
 	struct sigvec vec, ovec;
 	long omask;
-	void sleephandler();
+	static void sleephandler();
 
 	itp = &itv;
 	if (!seconds)
-		return;
+		return 0;
 	timerclear(&itp->it_interval);
 	timerclear(&itp->it_value);
 	if (setitimer(ITIMER_REAL, itp, &oitv) < 0)
-		return;
+		return seconds;
 	itp->it_value.tv_sec = seconds;
 	if (timerisset(&oitv.it_value)) {
 		if (timercmp(&oitv.it_value, &itp->it_value, >))
@@ -59,6 +61,7 @@ sleep(seconds)
 	(void) sigvec(SIGALRM, &ovec, (struct sigvec *)0);
 	(void) sigsetmask(omask);
 	(void) setitimer(ITIMER_REAL, &oitv, (struct itimerval *)0);
+	return 0;
 }
 
 static void

@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)getusershell.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)getusershell.c	5.7 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -14,6 +14,8 @@ static char sccsid[] = "@(#)getusershell.c	5.6 (Berkeley) %G%";
 #include <sys/stat.h>
 #include <ctype.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
 
 #define SHELLS "/etc/shells"
 
@@ -43,6 +45,7 @@ getusershell()
 	return (ret);
 }
 
+void
 endusershell()
 {
 	
@@ -55,6 +58,7 @@ endusershell()
 	curshell = NULL;
 }
 
+void
 setusershell()
 {
 
@@ -67,7 +71,6 @@ initshells()
 	register char **sp, *cp;
 	register FILE *fp;
 	struct stat statb;
-	extern char *malloc(), *calloc();
 
 	if (shells != NULL)
 		free((char *)shells);
