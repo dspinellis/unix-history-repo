@@ -1,6 +1,6 @@
     /* Copyright (c) 1980 Regents of the University of California */
 
-    /*	static	char sccsid[] = "@(#)pc3.h 1.5 %G%"; */
+    /*	static	char sccsid[] = "@(#)pc3.h 1.6 %G%"; */
 
     /*
      *	a symbol table entry.
@@ -9,15 +9,15 @@ struct symbol {
     char		*name;			/* pointer to string table */
     short		desc;			/* symbol description */
     int			lookup;			/* whether new or old */
+    struct symbol	*fromp;			/* its defining .p file */
     union {					/* either */
 	struct {				/*   for a symbol, */
-	    struct symbol	*fromp;		/*     its defining .p file */
 	    struct symbol	*fromi;		/*     its defining .i file */
 	    long		iline;		/*     the .i file line */
 	    struct symbol	*rfilep;	/*     its resolving file */
 	    long		rline;		/*     resolving file line */
 	}		sym_str;
-	time_t		modtime;		/*   for a file, its st_mtime */
+	long		checksum;		/*   for a file, its checksum */
     }			sym_un;
 };
 
@@ -27,7 +27,6 @@ struct symbol {
 struct fileinfo {
     FILE		*file;
     char		*name;
-    time_t		modtime;
     off_t		nextoffset;
 };
 
