@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)whois.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)whois.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/types.h>
@@ -57,6 +57,7 @@ main(argc, argv)
 		perror("whois: socket");
 		exit(2);
 	}
+	bzero((caddr_t)&sin, sizeof (sin));
 	sin.sin_family = hp->h_addrtype;
 	if (bind(s, &sin, sizeof (sin), 0) < 0) {
 		perror("whois: bind");
