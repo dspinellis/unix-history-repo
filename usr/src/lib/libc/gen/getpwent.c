@@ -16,7 +16,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)getpwent.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)getpwent.c	5.10 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -252,14 +252,16 @@ fetch_pw(key)
 	return(1);
 }
 
+#define	_MAX_PASSWD_SIZE	50
+static char pwbuf[_MAX_PASSWD_SIZE];
+
 static
 getpw()
 {
-	static char pwbuf[50];
-	off_t lseek();
 	long pos, atol();
 	int fd, n;
 	char *p;
+	off_t lseek();
 
 	if (geteuid())
 		return;
