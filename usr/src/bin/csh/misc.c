@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)misc.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)misc.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sh.h"
@@ -133,7 +133,7 @@ saveblk(v)
     return (onewv);
 }
 
-#ifdef notdef
+#ifdef NOTUSED
 char   *
 strstr(s, t)
     register char *s, *t;
@@ -150,7 +150,7 @@ strstr(s, t)
     return ((char *) 0);
 }
 
-#endif				/* notdef */
+#endif /* NOTUSED */
 
 #ifndef SHORT_STRINGS
 char   *

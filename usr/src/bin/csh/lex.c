@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)lex.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)lex.c	5.12 (Berkeley) %G%";
 
 #endif				/* not lint */
 
@@ -1322,7 +1322,6 @@ bgetc()
 #endif
     char    tbuf[BUFSIZ + 1];
 
-#ifdef TELL
     if (cantell) {
 	if (fseekp < fbobp || fseekp > feobp) {
 	    fbobp = feobp = fseekp;
@@ -1345,7 +1344,6 @@ bgetc()
 	fseekp++;
 	return (c);
     }
-#endif
 
 again:
     buf = (int) fseekp / BUFSIZ;
@@ -1427,10 +1425,8 @@ bfree()
 {
     register int sb, i;
 
-#ifdef TELL
     if (cantell)
 	return;
-#endif
     if (whyles)
 	return;
     sb = (int) (fseekp - 1) / BUFSIZ;
@@ -1449,30 +1445,27 @@ bseek(l)
     off_t   l;
 
 {
-#ifdef notdef
-    register struct whyle *wp;
-
-#endif
 
     fseekp = l;
-#ifdef TELL
     if (!cantell) {
+#ifdef notdef
+	register struct whyle *wp;
 #endif
+
 	if (!whyles)
 	    return;
 #ifdef notdef
 	/*
 	 * Christos: I don't understand this? both wp and l are local. What is
 	 * this used for? I suspect the author meant fseek = wp->w_start
+	 * This seek/tell stuff needs to be re-written...
 	 */
 	for (wp = whyles; wp->w_next; wp = wp->w_next)
 	    continue;
 	if (wp->w_start > l)
 	    l = wp->w_start;
 #endif
-#ifdef TELL
     }
-#endif
 }
 
 /* any similarity to bell telephone is purely accidental */
@@ -1493,7 +1486,6 @@ btoeof()
     bfree();
 }
 
-#ifdef TELL
 void
 settell()
 {
@@ -1508,5 +1500,3 @@ settell()
     fseekp = fbobp = feobp = lseek(SHIN, (off_t) 0, L_INCR);
     cantell = 1;
 }
-
-#endif
