@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)ftpd.c	4.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)ftpd.c	4.11 (Berkeley) %G%";
 #endif
 
 /*
@@ -369,14 +369,8 @@ dataconn(name, size, mode)
 		usedefault = 1;
 		return (fdopen(data, mode));
 	}
-	/*
-	 * If no PORT command was specified,
-	 * use the default address.
-	 */
-	if (usedefault) {
+	if (usedefault)
 		data_dest = his_addr;
-		data_dest.sin_port = htons(ntohs(sp->s_port) - 1);
-	}
 	usedefault = 1;
 	reply(150, "Opening data connection for %s (%s,%d)%s.",
 	    name, ntoa(data_dest.sin_addr.s_addr),
