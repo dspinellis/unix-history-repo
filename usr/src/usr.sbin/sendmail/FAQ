@@ -1,6 +1,6 @@
 			    Sendmail Version 8
 			Frequently Asked Questions
-		         Version 8.4 of %G%
+		         Version 8.5 of %G%
 
 
 This FAQ is specific to Version 8 of sendmail.  Other questions,
@@ -41,6 +41,10 @@ in src/READ_ME and cf/README.
 	Diffs and instructions for building this version of make under
 	SunOS 4.1.x are available on ftp.css.itd.umich.edu in
 	/pub/systems/sun/Net2-make.sun4.diff.Z.
+
+	There is also a Linux version available on the main Linux
+	distribution sites as pmake; this version is included as
+	standard with the current Slackware distributions.
 ----------------------------------------------------------------------
   * What macro package do I use to format the V8 man pages?
 
