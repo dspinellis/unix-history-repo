@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)tail.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)tail.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -33,9 +33,10 @@ char *fname;
 static void obsolete __P((char **));
 static void usage __P((void));
 
+int
 main(argc, argv)
 	int argc;
-	char **argv;
+	char *argv[];
 {
 	struct stat sb;
 	FILE *fp;
@@ -103,6 +104,9 @@ main(argc, argv)
 	argc -= optind;
 	argv += optind;
 
+	if (fflag && argc > 1)
+		err(1, "-f option only appropriate for a single file");
+
 	/*
 	 * If displaying in reverse, don't permit follow option, and convert
 	 * style values.
@@ -112,7 +116,7 @@ main(argc, argv)
 			usage();
 		if (style == FBYTES)
 			style = RBYTES;
-		if (style == FLINES)
+		else if (style == FLINES)
 			style = RLINES;
 	}
 
@@ -131,7 +135,8 @@ main(argc, argv)
 
 	if (*argv)
 		for (first = 1; fname = *argv++;) {
-			if ((fp = fopen(fname, "r")) == NULL) {
+			if ((fp = fopen(fname, "r")) == NULL ||
+			    fstat(fileno(fp), &sb)) {
 				ierr();
 				continue;
 			}
@@ -145,12 +150,12 @@ main(argc, argv)
 				reverse(fp, style, off, &sb);
 			else
 				forward(fp, style, off, &sb);
+			(void)fclose(fp);
 		}
 	else {
-		fp = stdin;
 		fname = "stdin";
 
-		if (fstat(fileno(fp), &sb)) {
+		if (fstat(fileno(stdin), &sb)) {
 			ierr();
 			exit(1);
 		}
@@ -159,15 +164,16 @@ main(argc, argv)
 		 * Determine if input is a pipe.  4.4BSD will set the SOCKET
 		 * bit in the st_mode field for pipes.  Fix this then.
 		 */
-		if (lseek(fileno(fp), 0L, SEEK_CUR) == -1 && errno == ESPIPE) {
+		if (lseek(fileno(stdin), 0L, SEEK_CUR) == -1 &&
+		    errno == ESPIPE) {
 			errno = 0;
 			fflag = 0;		/* POSIX.2 requires this. */
 		}
 
 		if (rflag)
-			reverse(fp, style, off, &sb);
+			reverse(stdin, style, off, &sb);
 		else
-			forward(fp, style, off, &sb);
+			forward(stdin, style, off, &sb);
 	}
 	exit(rval);
 }
@@ -179,7 +185,7 @@ main(argc, argv)
  */
 static void
 obsolete(argv)
-	char **argv;
+	char *argv[];
 {
 	register char *ap, *p, *t;
 	int len;
@@ -264,6 +270,6 @@ static void
 usage()
 {
 	(void)fprintf(stderr,
-	    "usage: tail [-f | -r] [-b # | -c # | -n #] [file]\n");
+	    "usage: tail [-f | -r] [-b # | -c # | -n #] [file ...]\n");
 	exit(1);
 }
