@@ -1,7 +1,6 @@
-#	Makefile	5.1	86/07/02
+#	Makefile	5.2	86/07/02
 #
 DESTDIR=
-CFLAGS=	-O
 SRCS=	addd.s addf.s cmpd.s cmpf.s cvtdl.s cvtfl.s cvtld.s cvtlf.s cvtud.s \
 	cvtuf.s divd.s divf.s fnorm.s fp_exp.s modf.s muld.s mulf.s negd.s \
 	negf.s sfnorm.s sfp_exp.s subd.s subf.s
@@ -11,18 +10,10 @@ OBJS=	addd.o addf.o cmpd.o cmpf.o cvtdl.o cvtfl.o cvtld.o cvtlf.o cvtud.o \
 TAGSFILE=tags
 
 .s.o:
-	/lib/cpp -E -DPROF $*.s | ${AS} -o $*.o
+	/lib/cpp -E ${DEFS} -DPROF $*.s | ${AS} -o $*.o
 	ld -X -r $*.o
 	mv a.out profiled/$*.o
-	/lib/cpp -E $*.s | ${AS} -o $*.o
-	ld -x -r $*.o
-	mv a.out $*.o
-
-.c.o:
-	${CC} -pg -DPROF ${CFLAGS} -c $*.c
-	ld -X -r $*.o
-	mv a.out profiled/$*.o
-	${CC} ${CFLAGS} -c $*.c
+	/lib/cpp -E ${DEFS} $*.s | ${AS} -o $*.o
 	ld -x -r $*.o
 	mv a.out $*.o
 
