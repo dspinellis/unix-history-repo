@@ -3,12 +3,11 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)subr_prf.c	7.19 (Berkeley) %G%
+ *	@(#)subr_prf.c	7.20 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "systm.h"
-#include "seg.h"
 #include "buf.h"
 #include "conf.h"
 #include "reboot.h"
@@ -23,7 +22,6 @@
 #include "syslog.h"
 #include "malloc.h"
 
-#include "machine/mtpr.h"
 #ifdef KADB
 #include "machine/kdbparam.h"
 #endif
@@ -88,16 +86,16 @@ int	consintr;
 #endif
 
 /*VARARGS1*/
-printf(fmt, x1)
+printf(fmt, args)
 	char *fmt;
-	unsigned x1;
+	unsigned args;
 {
 #if defined(tahoe)
 	register int savintr;
 
 	savintr = consintr, consintr = 0;	/* disable interrupts */
 #endif
-	prf(fmt, &x1, TOCONS | TOLOG, (struct tty *)NULL);
+	prf(fmt, &args, TOCONS | TOLOG, (struct tty *)NULL);
 	if (!panicstr)
 		logwakeup();
 #if defined(tahoe)
@@ -112,20 +110,20 @@ printf(fmt, x1)
  * in a reasonable time.
  */
 /*VARARGS1*/
-uprintf(fmt, x1)
+uprintf(fmt, args)
 	char *fmt;
-	unsigned x1;
+	unsigned args;
 {
-	register struct proc *p = u.u_procp;
+	register struct proc *p = curproc;
 
 	if (p->p_flag & SCTTY && p->p_session->s_ttyvp)
-		prf(fmt, &x1, TOTTY, p->p_session->s_ttyp);
+		prf(fmt, &args, TOTTY, p->p_session->s_ttyp);
 }
 
 tpr_t
 tprintf_open()
 {
-	register struct proc *p = u.u_procp;
+	register struct proc *p = curproc;
 
 	if (p->p_flag & SCTTY && p->p_session->s_ttyvp) {
 		SESSHOLD(p->p_session);
@@ -146,10 +144,10 @@ tprintf_close(sess)
  * with the given session.  
  */
 /*VARARGS2*/
-tprintf(sess, fmt, x1)
+tprintf(sess, fmt, args)
 	register tpr_t sess;
 	char *fmt;
-	unsigned x1;
+	unsigned args;
 {
 	int flags = TOLOG;
 
@@ -157,7 +155,7 @@ tprintf(sess, fmt, x1)
 
 	if (sess && sess->s_ttyvp && ttycheckoutq(sess->s_ttyp, 0))
 		flags |= TOTTY;
-	prf(fmt, &x1, flags, sess->s_ttyp);
+	prf(fmt, &args, flags, sess->s_ttyp);
 	logwakeup();
 }
 
@@ -168,18 +166,18 @@ tprintf(sess, fmt, x1)
  * If there is no process reading the log yet, it writes to the console also.
  */
 /*VARARGS2*/
-log(level, fmt, x1)
+log(level, fmt, args)
 	char *fmt;
-	unsigned x1;
+	unsigned args;
 {
 	register s = splhigh();
 	extern int log_open;
 
 	logpri(level);
-	prf(fmt, &x1, TOLOG, (struct tty *)NULL);
+	prf(fmt, &args, TOLOG, (struct tty *)NULL);
 	splx(s);
 	if (!log_open)
-		prf(fmt, &x1, TOCONS, (struct tty *)NULL);
+		prf(fmt, &args, TOCONS, (struct tty *)NULL);
 	logwakeup();
 }
 
@@ -193,22 +191,22 @@ logpri(level)
 }
 
 /*VARARGS1*/
-addlog(fmt, x1)
+addlog(fmt, args)
 	char *fmt;
-	unsigned x1;
+	unsigned args;
 {
 	register s = splhigh();
 
-	prf(fmt, &x1, TOLOG, (struct tty *)NULL);
+	prf(fmt, &args, TOLOG, (struct tty *)NULL);
 	splx(s);
 	if (!log_open)
-		prf(fmt, &x1, TOCONS, (struct tty *)NULL);
+		prf(fmt, &args, TOCONS, (struct tty *)NULL);
 	logwakeup();
 }
 
-prf(fmt, adx, flags, ttyp)
+prf(fmt, argp, flags, ttyp)
 	register char *fmt;
-	register u_int *adx;
+	register u_int *argp;
 	struct tty *ttyp;
 {
 	register int b, c, i;
@@ -240,10 +238,10 @@ again:
 	case 'o': case 'O':
 		b = 8;
 number:
-		printn((u_long)*adx, b, flags, ttyp);
+		printn((u_long)*argp, b, flags, ttyp);
 		break;
 	case 'c':
-		b = *adx;
+		b = *argp;
 #if BYTE_ORDER == LITTLE_ENDIAN
 		for (i = 24; i >= 0; i -= 8)
 			if (c = (b >> i) & 0x7f)
@@ -255,8 +253,8 @@ number:
 #endif
 		break;
 	case 'b':
-		b = *adx++;
-		s = (char *)*adx;
+		b = *argp++;
+		s = (char *)*argp;
 		printn((u_long)b, *s++, flags, ttyp);
 		any = 0;
 		if (b) {
@@ -276,27 +274,27 @@ number:
 		break;
 
 	case 's':
-		s = (char *)*adx;
+		s = (char *)*argp;
 		while (c = *s++)
 			putchar(c, flags, ttyp);
 		break;
 
 	case 'r':
-		s = (char *)*adx++;
-		prf(s, (u_int *)*adx, flags, ttyp);
+		s = (char *)*argp++;
+		prf(s, (u_int *)*argp, flags, ttyp);
 		break;
 
 	case '%':
 		putchar('%', flags, ttyp);
 		break;
 	}
-	adx++;
+	argp++;
 	goto loop;
 }
 
 /*
  * Printn prints a number n in base b.
- * We don't use recursion to avoid deep kernel stacks.
+ * We avoid recursion to avoid deep kernel stacks.
  */
 printn(n, b, flags, ttyp)
 	u_long n;
@@ -335,10 +333,12 @@ panic(s)
 
 	if (panicstr)
 		bootopt |= RB_NOSYNC;
-	else {
+	else
 		panicstr = s;
-	}
 	printf("panic: %s\n", s);
+#ifdef KGDB
+	kgdb_panic();
+#endif
 #ifdef KADB
 	if (boothowto & RB_KDB) {
 		int x = splnet();	/* below kdb pri */

@@ -4,16 +4,17 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	7.6 (Berkeley) %G%
+ *	@(#)conf.h	7.7 (Berkeley) %G%
  */
 
 struct bdevsw {
-	int (*d_open)();
-	int (*d_close)();
-	int (*d_strategy)();
-	int (*d_ioctl)();
-	int (*d_dump)();
-	int (*d_psize)();
+	int (*d_open)	__P((dev_t dev, int mode, int devtype, struct proc *p));
+	int (*d_close)	__P((dev_t dev, int fflag, int devtype, struct proc *));
+	int (*d_strategy) __P((struct buf *bp));
+	int (*d_ioctl)	__P((dev_t dev, int cmd, caddr_t data, int fflag,
+				struct proc *p));
+	int (*d_dump)	__P((dev_t dev));
+	int (*d_psize)	__P((dev_t dev));
 	int d_flags;
 };
 
@@ -22,17 +23,20 @@ struct bdevsw bdevsw[];
 #endif
 
 struct cdevsw {
-	int (*d_open)();
-	int (*d_close)();
-	int (*d_read)();
-	int (*d_write)();
-	int (*d_ioctl)();
-	int (*d_stop)();
-	int (*d_reset)();
+	int (*d_open)	__P((dev_t dev, int mode, int devtype, struct proc *p));
+	int (*d_close)	__P((dev_t dev, int fflag, int devtype, struct proc *));
+	int (*d_read)	__P((dev_t dev, struct uio *uio, int ioflag,
+				struct proc *p));
+	int (*d_write)	__P((dev_t dev, struct uio *uio, int ioflag,
+				struct proc *p));
+	int (*d_ioctl)	__P((dev_t dev, int cmd, caddr_t data, int fflag,
+				struct proc *p));
+	int (*d_stop)	__P((struct tty *tp, int rw));
+	int (*d_reset)	__P((int uban));	/* XXX */
 	struct tty *d_ttys;
-	int (*d_select)();
-	int (*d_mmap)();
-	int (*d_strategy)();
+	int (*d_select)	__P((dev_t dev, int which, struct proc *p));
+	int (*d_mmap)	__P((dev_t dev, ...));
+	int (*d_strategy) __P((struct buf *bp));
 };
 
 #ifdef KERNEL

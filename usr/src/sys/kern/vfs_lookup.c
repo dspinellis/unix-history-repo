@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_lookup.c	7.26 (Berkeley) %G%
+ *	@(#)vfs_lookup.c	7.27 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -62,10 +62,10 @@
  *
  * NOTE: (LOOKUP | LOCKPARENT) currently returns the parent vnode unlocked.
  */
-namei(ndp)
+namei(ndp, p)
 	register struct nameidata *ndp;
+	struct proc *p;
 {
-	struct proc *p = u.u_procp;		/* XXX */
 	register struct filedesc *fdp;	/* pointer to file descriptor state */
 	register char *cp;		/* pointer into pathname argument */
 	register struct vnode *dp = 0;	/* the directory we are searching */
@@ -83,6 +83,7 @@ namei(ndp)
 	/*
 	 * Setup: break out flag bits into variables.
 	 */
+	ndp->ni_cred = p->p_ucred;
 	fdp = p->p_fd;
 	ndp->ni_dvp = NULL;
 	flag = ndp->ni_nameiop & OPMASK;
@@ -301,7 +302,7 @@ dirloop:
 		auio.uio_rw = UIO_READ;
 		auio.uio_segflg = UIO_SYSSPACE;
 		auio.uio_resid = MAXPATHLEN;
-		if (error = VOP_READLINK(dp, &auio, ndp->ni_cred)) {
+		if (error = VOP_READLINK(dp, &auio, p->p_ucred)) {
 			if (ndp->ni_pathlen > 1)
 				free(cp, M_NAMEI);
 			goto bad2;

@@ -4,15 +4,18 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)user.h	7.16 (Berkeley) %G%
+ *	@(#)user.h	7.17 (Berkeley) %G%
  */
 
-#include <machine/pcb.h>
-#include <sys/dmap.h>
+#ifndef KERNEL
 #include <sys/time.h>
 #include <sys/resource.h>
+#include <sys/uio.h>
+#endif
+#include <machine/pcb.h>
+#include <sys/signalvar.h>
+#include <sys/resourcevar.h>
 #include <sys/namei.h>
-#include <sys/ucred.h>
 
 /*
  * Per process structure containing data that
@@ -21,68 +24,21 @@
  
 struct	user {
 	struct	pcb u_pcb;
-	struct	proc *u_procp;		/* pointer to proc structure */
-	int	*u_ar0;			/* address of users saved R0 */
+	struct	proc *u_procp;		/* pointer to proc structure XXX */
+	label_t	u_ssave;		/* label variable for swapping XXX */
+#define curproc	u.u_procp		/* XXX */
 
-/* 1.1 - processes and protection */
-#define u_cred u_nd.ni_cred
-#define u_uid	u_cred->cr_uid		/* effective user id */
-#define u_gid	u_cred->cr_gid		/* effective group id */
-
-/* 1.2 - memory management */
-	segsz_t u_tsize;		/* text size (clicks) */
-	segsz_t u_dsize;		/* data size (clicks) */
-	segsz_t u_ssize;		/* stack size (clicks) */
-	struct	dmap u_pad1[4];
-	label_t	u_ssave;		/* label variable for swapping */
-	caddr_t	u_taddr;		/* user virtual address of text */
-	caddr_t	u_daddr;		/* user virtual address of data */
-	time_t	u_outime;		/* user time at last sample */
-	caddr_t u_maxsaddr;		/* user VA at max stack growth */
-
-/* 1.3 - signal management */
-	sig_t	u_signal[NSIG];		/* disposition of signals */
-	int	u_sigmask[NSIG];	/* signals to be blocked */
-	int	u_sigonstack;		/* signals to take on sigstack */
-	int	u_sigintr;		/* signals that interrupt syscalls */
-	int	u_oldmask;		/* saved mask from before sigpause */
-	struct	sigstack u_sigstack;	/* sp & on stack state variable */
-#define	u_onstack	u_sigstack.ss_onstack
-#define	u_sigsp		u_sigstack.ss_sp
-	int	u_sig;			/* for core dump/debugger XXX */
-	int	u_code;			/* for core dump/debugger XXX */
-
-/* 1.4 - descriptor management */
-	long	u_pad2[82];
-
-/* 1.5 - timing and statistics */
-	struct	rusage u_ru;		/* stats for this proc */
-	struct	rusage u_cru;		/* sum of stats for reaped children */
-	struct	itimerval u_timer[3];
-	struct	timeval u_start;
-	short	u_acflag;
-
-	struct uprof {			/* profile arguments */
-		short	*pr_base;	/* buffer base */
-		unsigned pr_size;	/* buffer size */
-		unsigned pr_off;	/* pc offset */
-		unsigned pr_scale;	/* pc scaling */
-	} u_prof;
+	struct	sigacts u_sigacts;	/* p_sigacts points here (use it!) */
+	struct	pstats u_stats;		/* rusage, profiling & timers */
 
 /* 1.6 - resource controls */
-	struct	rlimit u_rlimit[RLIM_NLIMITS];
 
-/* namei & co. */
-	struct	nameidata u_nd;
+	int	u_spare[1];
 
-	long	u_spare[8];
-	int	u_stack[1];
 };
 
 /* u_error codes */
-#ifdef KERNEL
-#include "errno.h"
-#else
+#ifndef KERNEL
 #include <errno.h>
 #endif
 

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_physio.c	7.16 (Berkeley) %G%
+ *	@(#)kern_physio.c	7.17 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -44,6 +44,7 @@ physio(strat, bp, dev, rw, mincnt, uio)
 {
 	register struct iovec *iov;
 	register int requested, done;
+	register struct proc *p = curproc;
 	char *a;
 	int s, allocbuf = 0, error = 0;
 	struct buf *getswbuf();
@@ -68,7 +69,7 @@ physio(strat, bp, dev, rw, mincnt, uio)
 			splx(s);
 		}
 		bp->b_error = 0;
-		bp->b_proc = u.u_procp;
+		bp->b_proc = p;
 #ifdef HPUXCOMPAT
 		if (ISHPMMADDR(iov->iov_base))
 			bp->b_un.b_addr = (caddr_t)HPMMBASEADDR(iov->iov_base);
@@ -82,7 +83,7 @@ physio(strat, bp, dev, rw, mincnt, uio)
 			bp->b_bcount = iov->iov_len;
 			(*mincnt)(bp);
 			requested = bp->b_bcount;
-			u.u_procp->p_flag |= SPHYSIO;
+			p->p_flag |= SPHYSIO;
 			vslock(a = bp->b_un.b_addr, requested);
 #if defined(hp300) || defined(i386)
 			vmapbuf(bp);
@@ -95,7 +96,7 @@ physio(strat, bp, dev, rw, mincnt, uio)
 			vunmapbuf(bp);
 #endif
 			vsunlock(a, requested, rw);
-			u.u_procp->p_flag &= ~SPHYSIO;
+			p->p_flag &= ~SPHYSIO;
 			if (bp->b_flags&B_WANTED)	/* rare */
 				wakeup((caddr_t)bp);
 			splx(s);
@@ -163,7 +164,7 @@ freeswbuf(bp)
 	if (bswlist.b_flags & B_WANTED) {
 		bswlist.b_flags &= ~B_WANTED;
 		wakeup((caddr_t)&bswlist);
-		wakeup((caddr_t)&proc[2]);
+		wakeup((caddr_t)pageproc);
 	}
 	splx(s);
 }

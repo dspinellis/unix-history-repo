@@ -1,10 +1,10 @@
 /*
- * Copyright (c) 1982, 1986, 1989 Regents of the University of California.
+ * Copyright (c) 1982, 1986, 1989, 1991 Regents of the University of California.
  * All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)signal.h	7.15 (Berkeley) %G%
+ *	@(#)signal.h	7.16 (Berkeley) %G%
  */
 
 #ifndef	_SIGNAL_H_
@@ -61,17 +61,13 @@
 #define SIGUSR1 30	/* user defined signal 1 */
 #define SIGUSR2 31	/* user defined signal 2 */
 
-#ifndef _POSIX_SOURCE
-typedef	void (*sig_t)();
-#endif
+#include <sys/cdefs.h>
 
-#ifndef KERNEL
-void	(*signal())();
+#ifndef _POSIX_SOURCE
+typedef	void (*sig_t) __P((int));
 #endif
 
 typedef unsigned int sigset_t;
-
-#include <sys/cdefs.h>
 
 __BEGIN_DECLS
 int	sigaddset __P((sigset_t *, int));
@@ -123,6 +119,15 @@ struct	sigvec {
 #define sv_onstack sv_flags	/* isn't compatibility wonderful! */
 
 /*
+ * Structure used in sigaltstack call.
+ */
+struct	sigaltstack {
+	char	*ss_base;		/* signal stack base */
+	int	ss_len;			/* signal stack length */
+	int	ss_onstack;		/* current status */
+};
+
+/*
  * Structure used in sigstack call.
  */
 struct	sigstack {
@@ -159,42 +164,31 @@ struct	sigcontext {
 #define	SIG_DFL		(void (*)())0
 #define	SIG_IGN		(void (*)())1
 
-#ifdef KERNEL
-#define	SIG_CATCH	(void (*)())2
-#define	SIG_HOLD	(void (*)())3
-
-#define	sigcantmask	(sigmask(SIGKILL)|sigmask(SIGSTOP))
-/*
- * get signal action for process and signal; currently only for current process
- */
-#define SIGACTION(p, sig)	(u.u_signal[(sig)])
-
-/*
- * Determine signal that should be delivered to process p, the current process,
- * 0 if none.  If there is a pending stop signal with default action,
- * the process stops in issig().
- */
-#define	CURSIG(p) \
-	(((p)->p_sig == 0 || \
-	    ((p)->p_flag&STRC) == 0 && ((p)->p_sig &~ (p)->p_sigmask) == 0) ? \
-	    0 : issig())
-
-/*
- * Clear a pending signal from a process.
- */
-#define	CLRSIG(p, sig)	{ (p)->p_sig &= ~sigmask(sig); }
-
-#endif /* KERNEL */
-
 #ifndef KERNEL
 #include <sys/types.h>
 
 __BEGIN_DECLS
+void	(*signal __P((int, void (*) __P((int))))) __P((int));
+int	raise __P((int));
+#ifndef	_ANSI_SOURCE
 int	kill __P((pid_t, int));
 int	sigaction __P((int, const struct sigaction *, struct sigaction *));
 int	sigpending __P((sigset_t *));
 int	sigprocmask __P((int, const sigset_t *, sigset_t *));
 int	sigsuspend __P((const sigset_t *));
+#endif	/* !_ANSI_SOURCE */
+#if !defined(_ANSI_SOURCE) && !defined(_POSIX_SOURCE)
+int	killpg __P((pid_t, int));
+void	psignal __P((unsigned, const char *));
+int	sigblock __P((int));
+int	siginterrupt __P((int, int));
+int	sigpause __P((int));
+int	sigreturn __P((struct sigcontext *));
+int	sigsetmask __P((int));
+int	sigstack __P((const struct sigstack *, struct sigstack *));
+int	sigvec __P((int, struct sigvec *, struct sigvec *));
+#endif /* !_ANSI_SOURCE && !_POSIX_SOURCE */
 __END_DECLS
-#endif
+
+#endif	/* !KERNEL */
 #endif	/* !_SIGNAL_H_ */
