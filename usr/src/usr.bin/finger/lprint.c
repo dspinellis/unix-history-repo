@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)lprint.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)lprint.c	5.14 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -21,6 +21,7 @@ static char sccsid[] = "@(#)lprint.c	5.13 (Berkeley) %G%";
 
 #define	LINE_LEN	80
 #define	TAB_LEN		8		/* 8 spaces between tabs */
+#define	_PATH_FORWARD	".forward"
 #define	_PATH_PLAN	".plan"
 #define	_PATH_PROJECT	".project"
 
@@ -32,8 +33,10 @@ lflag_print()
 	for (pn = phead;;) {
 		lprint(pn);
 		if (!pplan) {
-			(void)show_text(pn->dir, _PATH_PROJECT, "Project:");
-			if (!show_text(pn->dir, _PATH_PLAN, "Plan:"))
+			(void)show_text(pn->dir,
+			    _PATH_FORWARD, "Mail forwarded to");
+			(void)show_text(pn->dir, _PATH_PROJECT, "Project");
+			if (!show_text(pn->dir, _PATH_PLAN, "Plan"))
 				(void)printf("No Plan.\n");
 		}
 		if (!(pn = pn->next))
@@ -76,22 +79,23 @@ lprint(pn)
 	if (pn->office && pn->officephone &&
 	    strlen(pn->office) + strlen(pn->officephone) +
 	    sizeof(OFFICE_TAG) + 2 <= 5 * TAB_LEN) {
-		(void)sprintf(tbuf, "%s: %s, %s", OFFICE_TAG, pn->office,
-		    prphone(pn->officephone));
+		(void)snprintf(tbuf, sizeof(tbuf), "%s: %s, %s",
+		    OFFICE_TAG, pn->office, prphone(pn->officephone));
 		oddfield = demi_print(tbuf, oddfield);
 	} else {
 		if (pn->office) {
-			(void)sprintf(tbuf, "%s: %s", OFFICE_TAG, pn->office);
+			(void)snprintf(tbuf, sizeof(tbuf), "%s: %s",
+			    OFFICE_TAG, pn->office);
 			oddfield = demi_print(tbuf, oddfield);
 		}
 		if (pn->officephone) {
-			(void)sprintf(tbuf, "%s: %s", OFFICE_PHONE_TAG,
-			    prphone(pn->officephone));
+			(void)snprintf(tbuf, sizeof(tbuf), "%s: %s",
+			    OFFICE_PHONE_TAG, prphone(pn->officephone));
 			oddfield = demi_print(tbuf, oddfield);
 		}
 	}
 	if (pn->homephone) {
-		(void)sprintf(tbuf, "%s: %s", "Home Phone",
+		(void)snprintf(tbuf, sizeof(tbuf), "%s: %s", "Home Phone",
 		    prphone(pn->homephone));
 		oddfield = demi_print(tbuf, oddfield);
 	}
@@ -212,13 +216,42 @@ demi_print(str, oddfield)
 show_text(directory, file_name, header)
 	char *directory, *file_name, *header;
 {
-	register int ch, lastc;
+	struct stat sb;
 	register FILE *fp;
+	register int ch, cnt, lastc;
+	register char *p;
+	int fd, nr;
 
-	(void)sprintf(tbuf, "%s/%s", directory, file_name);
-	if ((fp = fopen(tbuf, "r")) == NULL)
+	(void)snprintf(tbuf, sizeof(tbuf), "%s/%s", directory, file_name);
+	if ((fd = open(tbuf, O_RDONLY)) < 0 || fstat(fd, &sb) ||
+	    sb.st_size == 0)
 		return(0);
-	(void)printf("%s\n", header);
+
+	/* If short enough, and no newlines, show it on a single line.*/
+	if (sb.st_size <= LINE_LEN - strlen(header) - 5) {
+		nr = read(fd, tbuf, sizeof(tbuf));
+		if (nr <= 0) {
+			(void)close(fd);
+			return(0);
+		}
+		for (p = tbuf, cnt = nr; cnt--; ++p)
+			if (*p == '\n')
+				break;
+		if (cnt <= 1) {
+			(void)printf("%s: ", header);
+			for (p = tbuf, cnt = nr; cnt--; ++p)
+				vputc(lastc = *p);
+			if (lastc != '\n')
+				(void)putchar('\n');
+			(void)close(fd);
+			return(1);
+		}
+		else
+			(void)lseek(fd, 0L, SEEK_SET);
+	}
+	if ((fp = fdopen(fd, "r")) == NULL)
+		return(0);
+	(void)printf("%s:\n", header);
 	while ((ch = getc(fp)) != EOF)
 		vputc(lastc = ch);
 	if (lastc != '\n')
