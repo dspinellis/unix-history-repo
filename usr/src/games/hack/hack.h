@@ -25,7 +25,6 @@ typedef struct {
 #include	"def.obj.h"
 #include	"def.flag.h"
 
-extern char *sprintf();
 #define	plur(x)	(((x) == 1) ? "" : "s")
 
 #define	BUFSZ	256	/* for getlin buffers */

@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)boggle.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)boggle.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 #include <ctype.h>
@@ -638,7 +638,7 @@ char **argv;
 			printboard();
 			games++;
 			if (logfile >= 0) {
-				sprintf(&logbuff[0], "%4d", games);
+				(void)sprintf(&logbuff[0], "%4d", games);
 				lseek(logfile, logloc, 0);
 				write(logfile, &logbuff[0], 4);
 			}
