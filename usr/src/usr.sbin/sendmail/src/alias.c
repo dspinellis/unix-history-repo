@@ -30,12 +30,12 @@ ERROR: DBM is no longer supported -- use NDBM instead.
 
 #ifndef lint
 #ifdef NEWDB
-static char sccsid[] = "@(#)alias.c	6.1 (Berkeley) %G% (with NEWDB)";
+static char sccsid[] = "@(#)alias.c	6.2 (Berkeley) %G% (with NEWDB)";
 #else
 #ifdef NDBM
-static char sccsid[] = "@(#)alias.c	6.1 (Berkeley) %G% (with NDBM)";
+static char sccsid[] = "@(#)alias.c	6.2 (Berkeley) %G% (with NDBM)";
 #else
-static char sccsid[] = "@(#)alias.c	6.1 (Berkeley) %G% (without NDBM)";
+static char sccsid[] = "@(#)alias.c	6.2 (Berkeley) %G% (without NDBM)";
 #endif
 #endif
 #endif /* not lint */
@@ -167,18 +167,31 @@ char *
 aliaslookup(name)
 	char *name;
 {
+	int i;
+	char keybuf[MAXNAME + 1];
 # if defined(NEWDB) || defined(NDBM)
 	DBdatum rhs, lhs;
 	int s;
+# else /* neither NEWDB nor NDBM */
+	register STAB *s;
+# endif
 
 	/* create a key for fetch */
-	lhs.xx.data = name;
-	lhs.xx.size = strlen(name) + 1;
+	i = strlen(name) + 1;
+	if (i > sizeof keybuf)
+		i = sizeof keybuf;
+	bcopy(name, keybuf, i);
+	if (!bitnset(M_USR_UPPER, LocalMailer->m_flags))
+		makelower(keybuf);
+
+# if defined(NEWDB) || defined(NDBM)
+	lhs.xx.size = i;
+	lhs.xx.data = keybuf;
 # ifdef NEWDB
 	if (AliasDBptr != NULL)
 	{
-		s = AliasDBptr->get(AliasDBptr, &lhs.dbt, &rhs.dbt, 0);
-		if (s == 0)
+		i = AliasDBptr->get(AliasDBptr, &lhs.dbt, &rhs.dbt, 0);
+		if (i == 0)
 			return (rhs.dbt.data);
 	}
 # ifdef NDBM
@@ -195,7 +208,7 @@ aliaslookup(name)
 # else /* neither NEWDB nor NDBM */
 	register STAB *s;
 
-	s = stab(name, ST_ALIAS, ST_FIND);
+	s = stab(keybuf, ST_ALIAS, ST_FIND);
 	if (s != NULL)
 		return (s->s_alias);
 # endif
@@ -692,21 +705,48 @@ readaliases(aliasfile, init, e)
 		if (init)
 		{
 			DBdatum key, content;
+			int putstat;
 
 			key.xx.size = lhssize;
 			key.xx.data = al.q_user;
 			content.xx.size = rhssize;
 			content.xx.data = rhs;
 # ifdef NEWDB
-			if (dbp->put(dbp, &key.dbt, &content.dbt, 0) != 0)
+			putstat = dbp->put(dbp, &key.dbt, &content.dbt,
+					   R_NOOVERWRITE);
+			if (putstat > 0)
+			{
+				usrerr("Warning: duplicate alias name %s",
+					al.q_user);
+				putstat = dbp->put(dbp, &key.dbt,
+						   &content.dbt, 0);
+			}
+			if (putstat != 0)
 				syserr("readaliases: db put (%s)", al.q_user);
 # endif
 # ifdef IF_MAKEDBMFILES
 			IF_MAKEDBMFILES
-				if (dbm_store(dbmp, key.dbm, content.dbm, DBM_REPLACE) != 0)
+			{
+				putstat = dbm_store(dbmp, key.dbm, content.dbm,
+						    DBM_INSERT);
+				if (putstat > 0)
+				{
+					usrerr("Warning: duplicate alias name %s",
+						al.q_user);
+					putstat = dbm_store(dbmp, key.dbm,
+							content.dbm, DBM_REPLACE);
+				}
+				if (putstat != 0)
 					syserr("readaliases: dbm store (%s)",
 						al.q_user);
+			}
 # endif
+			if (al.q_paddr != NULL)
+				free(al.q_paddr);
+			if (al.q_host != NULL)
+				free(al.q_host);
+			if (al.q_user != NULL)
+				free(al.q_user);
 		}
 		else
 # endif /* NDBM */
