@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)hash_page.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)hash_page.c	5.13 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /******************************************************************************
@@ -675,9 +675,9 @@ overflow_page ( )
     /* Check if we need to allocate a new bitmap page */
     if ( free_bit == (hashp->BSIZE << BYTE_SHIFT) - 1 ) {
 	free_page++;
+#define	OVMSG	"hash: out of overflow pages; increase page size\n"
 	if ( free_page >= NCACHED ) {
-	    fprintf ( stderr, 
-		"HASH: Out of overflow pages.  Increase page size\n" );
+	    (void) write (STDERR_FILENO, OVMSG, sizeof(OVMSG) - 1);
 	    return(NULL);
 	}
 	/* 
@@ -708,8 +708,7 @@ overflow_page ( )
 
     /* Calculate address of the new overflow page */
     if ( offset > SPLITMASK ) {
-	fprintf ( stderr, 
-	    "HASH: Out of overflow pages.  Increase page size\n" );
+	(void) write (STDERR_FILENO, OVMSG, sizeof(OVMSG) - 1);
 	return(NULL);
     }
     addr = OADDR_OF(splitnum, offset);
