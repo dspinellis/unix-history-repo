@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)files.c	4.3 (Berkeley) 82/03/14";
+static	char *sccsid = "@(#)files.c	4.4 (Berkeley) 82/04/20";
 /* UNIX DEPENDENT PROCEDURES */
 
 
@@ -131,7 +131,6 @@ char *builtin[] =
 	0 };
 
 #include "defs"
-#include <sys/types.h>
 
 
 TIMETYPE exists(filename)
@@ -167,9 +166,8 @@ return(t);
 
 
 
-#include <sys/dir.h>
-FSTATIC char n15[15];
-FSTATIC char *n15end	= &n15[14];
+FSTATIC char nbuf[MAXNAMLEN + 1];
+FSTATIC char *nbufend	= &nbuf[MAXNAMLEN];
 
 
 
@@ -178,17 +176,17 @@ register char *pat; /* pattern to be matched in directory */
 int mkchain;  /* nonzero if results to be remembered */
 struct depblock *nextdbl;  /* final value for chain */
 {
-FILE * dirf;
+DIR *dirf;
 register int i;
 int nread, cldir;
 char *dirname, *dirpref, *endir, *filepat, *p, temp[100];
 char fullname[100], *p1, *p2;
 struct nameblock *q;
 struct depblock *thisdbl;
-struct opendir *od;
+struct dirhdr *od;
 struct pattern *patp;
 
-struct direct entry[32];
+struct direct *dptr;
 
 
 thisdbl = 0;
@@ -227,18 +225,19 @@ for(od = firstod; od; od = od->nxtopendir)
 	if(! unequal(dirname, od->dirn) )
 		{
 		dirf = od->dirfc;
-		fseek(dirf, 0L, 0); /* start over at the beginning  */
+		if (dirf != NULL)
+			rewinddir(dirf); /* start over at the beginning  */
 		break;
 		}
 
 if(dirf == NULL)
 	{
-	dirf = fopen(dirname, "r");
+	dirf = opendir(dirname);
 	if(nopdir >= MAXDIR)
 		cldir = YES;
 	else	{
 		++nopdir;
-		od = ALLOC(opendir);
+		od = ALLOC(dirhdr);
 		od->nxtopendir = firstod;
 		firstod = od;
 		od->dirfc = dirf;
@@ -252,37 +251,33 @@ if(dirf == NULL)
 	fatal("Cannot open");
 	}
 
-else do
+else for (dptr = readdir(dirf); dptr != NULL; dptr = readdir(dirf))
 	{
-	nread = fread( (char *) &entry[0], sizeof(struct direct), 32, dirf) ;
-	for(i=0; i<nread; ++i)
-		if(entry[i].d_ino!= 0)
+	p1 = dptr->d_name;
+	p2 = nbuf;
+	while( (p2<nbufend) && (*p2++ = *p1++)!='\0' )
+		/* void */;
+	if( amatch(nbuf,filepat) )
+		{
+		concat(dirpref,nbuf,fullname);
+		if( (q=srchname(fullname)) ==0)
+			q = makename(copys(fullname));
+		if(mkchain)
 			{
-			p1 = entry[i].d_name;
-			p2 = n15;
-			while( (p2<n15end) &&
-			  (*p2++ = *p1++)!='\0' );
-			if( amatch(n15,filepat) )
-				{
-				concat(dirpref,n15,fullname);
-				if( (q=srchname(fullname)) ==0)
-					q = makename(copys(fullname));
-				if(mkchain)
-					{
-					thisdbl = ALLOC(depblock);
-					thisdbl->nxtdepblock = nextdbl;
-					thisdbl->depname = q;
-					nextdbl = thisdbl;
-					}
-				}
+			thisdbl = ALLOC(depblock);
+			thisdbl->nxtdepblock = nextdbl;
+			thisdbl->depname = q;
+			nextdbl = thisdbl;
 			}
-
-	} while(nread==32);
+		}
+	}
 
 if(endir != 0)  *endir = '/';
 
-if(cldir)
-	fclose(dirf);
+if(cldir) {
+	closedir(dirf);
+	dirf = NULL;
+}
 return(thisdbl);
 }
 
@@ -393,7 +388,7 @@ static struct nlist objentry;
 TIMETYPE lookarch(filename)
 char *filename;
 {
-char *p, *q, *send, s[15];
+char *p, *q, *send, s[MAXNAMLEN + 1];
 int i, nc, nsym, objarch;
 
 for(p = filename; *p!= '(' ; ++p)
@@ -411,7 +406,7 @@ if(*p == '(')
 else
 	{
 	objarch = NO;
-	nc = 14;
+	nc = MAXNAMLEN;
 	}
 send = s + nc;
 

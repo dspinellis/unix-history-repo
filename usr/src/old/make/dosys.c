@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)dosys.c	4.2 (Berkeley) 82/03/14";
+static	char *sccsid = "@(#)dosys.c	4.3 (Berkeley) 82/04/20";
 #include "defs"
 #include <signal.h>
 
@@ -80,12 +80,13 @@ return(status);
 
 doclose()	/* Close open directory files before exec'ing */
 {
-register struct opendir *od;
+register struct dirhdr *od;
 
 for (od = firstod; od; od = od->nxtopendir)
-	if (od->dirfc != NULL)
-		/* fclose(od->dirfc); */
-		close(od->dirfc->_file);
+	if (od->dirfc != NULL) {
+		closedir(od->dirfc);
+		od->dirfc = NULL;
+	}
 }
 
 
@@ -131,7 +132,6 @@ return( await() );
 
 #include <errno.h>
 
-#include <sys/types.h>
 #include <sys/stat.h>
 
 
