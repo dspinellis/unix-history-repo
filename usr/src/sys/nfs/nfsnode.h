@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfsnode.h	7.3 (Berkeley) %G%
+ *	@(#)nfsnode.h	7.4 (Berkeley) %G%
  */
 
 /*
@@ -32,13 +32,10 @@ struct nfsnode {
 	struct	nfsnode *n_chain[2];	/* must be first */
 	nfsv2fh_t n_fh;			/* NFS File Handle */
 	long	n_flag;			/* Flag for locking.. */
-	long	n_id;		/* unique identifier */
-	struct	vnode n_vnode;	/* vnode associated with this nfsnode */
+	struct	vnode *n_vnode;	/* vnode associated with this nfsnode */
 	long	n_attrstamp;	/* Time stamp (sec) for attributes */
 	struct	vattr n_vattr;	/* Vnode attribute cache */
 	struct	sillyrename *n_sillyrename;	/* Ptr to silly rename struct */
-	struct nfsnode  *n_freef;	/* free list forward */
-	struct nfsnode **n_freeb;	/* free list back */
 	daddr_t	n_lastr;	/* Last block read for read ahead */
 	u_long	n_size;		/* Current size of file */
 	time_t	n_mtime;	/* Prev modify time to maintain data cache consistency*/
@@ -49,11 +46,6 @@ struct nfsnode {
 #define	n_back		n_chain[1]
 
 #ifdef KERNEL
-struct nfsnode *nfsnode;		/* the nfsnode table itself */
-struct nfsnode *nfsnodeNNFSNODE;	/* the end of the nfsnode table */
-int	nnfsnode;			/* number of slots in the table */
-long	nextnfsnodeid;		/* unique id generator */
-
 extern struct vnodeops nfsv2_vnodeops;	/* vnode operations for nfsv2 */
 extern struct vnodeops nfsv2chr_vnodeops; /* vnode operations for chr devices */
 
@@ -61,7 +53,7 @@ extern struct vnodeops nfsv2chr_vnodeops; /* vnode operations for chr devices */
  * Convert between nfsnode pointers and vnode pointers
  */
 #define VTONFS(vp)	((struct nfsnode *)(vp)->v_data)
-#define NFSTOV(np)	((struct vnode *)&(np)->n_vnode)
+#define NFSTOV(np)	((struct vnode *)(np)->n_vnode)
 #endif
 /*
  * Flags for n_flag
