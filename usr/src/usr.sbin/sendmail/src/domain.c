@@ -10,9 +10,9 @@
 
 #ifndef lint
 #if NAMED_BIND
-static char sccsid[] = "@(#)domain.c	8.24 (Berkeley) %G% (with name server)";
+static char sccsid[] = "@(#)domain.c	8.25 (Berkeley) %G% (with name server)";
 #else
-static char sccsid[] = "@(#)domain.c	8.24 (Berkeley) %G% (without name server)";
+static char sccsid[] = "@(#)domain.c	8.25 (Berkeley) %G% (without name server)";
 #endif
 #endif /* not lint */
 
@@ -869,15 +869,28 @@ getcanonname(host, hbsize, trymx)
 	bool trymx;
 {
 	struct hostent *hp;
+	char *p;
 
 	hp = gethostbyname(host);
 	if (hp == NULL)
 		return (FALSE);
+	p = hp->h_name;
+	if (strchr(p, '.') == NULL)
+	{
+		/* first word is a short name -- try to find a long one */
+		char **ap;
 
-	if (strlen(hp->h_name) >= hbsize)
+		for (ap = hp->h_aliases; *ap != NULL; ap++)
+			if (strchr(*ap, '.') != NULL)
+				break;
+		if (*ap != NULL)
+			p = *ap;
+	}
+
+	if (strlen(p) >= hbsize)
 		return (FALSE);
 
-	(void) strcpy(host, hp->h_name);
+	(void) strcpy(host, p);
 	return (TRUE);
 }
 
