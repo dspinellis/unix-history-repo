@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kdbparam.h	7.1 (Berkeley) %G%
+ *	@(#)kdbparam.h	7.2 (Berkeley) %G%
  */
 
 /*
@@ -29,7 +29,7 @@
 /* return the program counter value modified if we are in a delay slot */
 #define	kdbgetpc(pcb)		(kdbvar[kdbvarchk('t')] < 0 ? \
 	(pcb).pcb_regs[34] + 4 : (pcb).pcb_regs[34])
-#define	kdbishiddenreg(p)	((p) >= &kdbreglist[29])
+#define	kdbishiddenreg(p)	((p) >= &kdbreglist[33])
 #define	kdbisbreak(type)	(((type) & MACH_CR_EXC_CODE) == 0x24)
 
 /* check for address wrap around */
