@@ -92,7 +92,7 @@
 **		Copyright 1980 Regents of the University of California
 */
 
-static char SccsId[] = "@(#)sccs.c	1.53 %G%";
+static char SccsId[] = "@(#)sccs.c	1.54 %G%";
 
 /*******************  Configuration Information  ********************/
 
@@ -183,8 +183,10 @@ struct sccsprog SccsProg[] =
 	"delta",	PROG,	0,			PROGPATH(delta),
 	"get",		PROG,	0,			PROGPATH(get),
 	"help",		PROG,	NO_SDOT,		PROGPATH(help),
+	"prs",		PROG,	0,			PROGPATH(prs),
 	"prt",		PROG,	0,			PROGPATH(prt),
 	"rmdel",	PROG,	REALUSER,		PROGPATH(rmdel),
+	"val",		PROG,	0,			PROGPATH(val),
 	"what",		PROG,	NO_SDOT,		PROGPATH(what),
 	"sccsdiff",	SHELL,	REALUSER,		PROGPATH(sccsdiff),
 	"edit",		CMACRO,	NO_SDOT,		"get -e",
