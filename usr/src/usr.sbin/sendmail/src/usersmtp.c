@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)usersmtp.c	5.26 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	5.27 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)usersmtp.c	5.26 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	5.27 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -445,12 +445,14 @@ reply(m)
 				errno = EPIPE;
 # endif /* ECONNRESET */
 
-			message(Arpa_TSyserr, "reply: read error");
+			message(Arpa_TSyserr, "reply: read error from %s",
+				mci->mci_host);
 			/* if debugging, pause so we can see state */
 			if (tTd(18, 100))
 				pause();
 # ifdef LOG
-			syslog(LOG_INFO, "%s", &MsgBuf[4]);
+			if (LogLevel > 0)
+				syslog(LOG_INFO, "%s", &MsgBuf[4]);
 # endif /* LOG */
 			SmtpState = SMTP_CLOSED;
 			smtpquit(m, mci, e);
