@@ -17,7 +17,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	5.28 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	5.29 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sendmail.h>
@@ -1161,7 +1161,8 @@ putbody(fp, m, e)
 		{
 			e->e_dfp = fopen(e->e_df, "r");
 			if (e->e_dfp == NULL)
-				syserr("Cannot open %s", e->e_df);
+				syserr("putbody: Cannot open %s for %s from %s",
+				e->e_df, e->e_to, e->e_from);
 		}
 		else
 			putline("<<< No Message Collected >>>", fp, m);
@@ -1224,6 +1225,7 @@ mailfile(filename, ctladdr)
 {
 	register FILE *f;
 	register int pid;
+	ENVELOPE *e = CurEnv;
 
 	/*
 	**  Fork so we can change permissions here.
@@ -1252,7 +1254,17 @@ mailfile(filename, ctladdr)
 		if (bitset(0111, stb.st_mode))
 			exit(EX_CANTCREAT);
 		if (ctladdr == NULL)
-			ctladdr = &CurEnv->e_from;
+			ctladdr = &e->e_from;
+		/* we have to open the dfile BEFORE setuid */
+		if (e->e_dfp == NULL &&  e->e_df != NULL)
+		{
+			e->e_dfp = fopen(e->e_df, "r");
+			if (e->e_dfp == NULL) {
+				syserr("mailfile: Cannot open %s for %s from %s",
+				e->e_df, e->e_to, e->e_from);
+			}
+		}
+
 		if (!bitset(S_ISGID, stb.st_mode) || setgid(stb.st_gid) < 0)
 		{
 			if (ctladdr->q_uid == 0)
@@ -1294,6 +1306,7 @@ mailfile(filename, ctladdr)
 			return (EX_UNAVAILABLE);
 		else
 			return ((st >> 8) & 0377);
+		/*NOTREACHED*/
 	}
 }
 /*
@@ -1321,6 +1334,7 @@ sendall(e, mode)
 	register ADDRESS *q;
 	bool oldverbose;
 	int pid;
+	FILE *lockfp, *queueup();
 
 	/* determine actual delivery mode */
 	if (mode == SM_DEFAULT)
@@ -1349,7 +1363,9 @@ sendall(e, mode)
 
 	if (e->e_hopcount > MAXHOP)
 	{
-		syserr("sendall: too many hops (%d max)", MAXHOP);
+		errno = 0;
+		syserr("sendall: too many hops %d (%d max): from %s, to %s",
+			e->e_hopcount, MAXHOP, e->e_from, e->e_to);
 		return;
 	}
 
@@ -1365,7 +1381,7 @@ sendall(e, mode)
 	if ((mode == SM_QUEUE || mode == SM_FORK ||
 	     (mode != SM_VERIFY && SuperSafe)) &&
 	    !bitset(EF_INQUEUE, e->e_flags))
-		queueup(e, TRUE, mode == SM_QUEUE);
+		lockfp = queueup(e, TRUE, mode == SM_QUEUE);
 #endif QUEUE
 
 	oldverbose = Verbose;
@@ -1392,6 +1408,8 @@ sendall(e, mode)
 		{
 			/* be sure we leave the temp files to our child */
 			e->e_id = e->e_df = NULL;
+			if (lockfp != NULL)
+				(void) fclose(lockfp);
 			return;
 		}
 
@@ -1426,8 +1444,11 @@ sendall(e, mode)
 	**  Now run through and check for errors.
 	*/
 
-	if (mode == SM_VERIFY)
+	if (mode == SM_VERIFY) {
+		if (lockfp != NULL)
+			(void) fclose(lockfp);
 		return;
+	}
 
 	for (q = e->e_sendqueue; q != NULL; q = q->q_next)
 	{
@@ -1475,6 +1496,10 @@ sendall(e, mode)
 		if (qq == NULL && bitset(QBADADDR, q->q_flags))
 			sendtolist(e->e_from.q_paddr, qq, &e->e_errorqueue);
 	}
+
+	/* this removes the lock on the file */
+	if (lockfp != NULL)
+		(void) fclose(lockfp);
 
 	if (mode == SM_FORK)
 		finis();
