@@ -15,22 +15,7 @@
 #include <machine/endian.h>
 #endif
 
-#define	CHAR_BIT	NBBY
-#define	CHAR_MAX	0x7f
-#define	CHAR_MIN	0x80
-#define	CLK_TCK		60			/* for times() */
-#define	INT_MAX		0x7fffffff
-#define	INT_MIN		0x80000000
-#define	LONG_MAX	0x7fffffff
-#define	LONG_MIN	0x80000000
-#define	SCHAR_MAX	0x7f
-#define	SCHAR_MIN	0x80
-#define	SHRT_MAX	0x7fff
-#define	SHRT_MIN	0x8000
-#define	UCHAR_MAX	0xff
-#define	UINT_MAX	0xffffffff
-#define	ULONG_MAX	0xffffffff
-#define	USHRT_MAX	0xffff
+#include <machine/machlimits.h>
 
 #define	KERNBASE	0x80000000	/* start of kernel virtual */
 #define	BTOPKERNBASE	((u_long)KERNBASE >> PGSHIFT)
@@ -67,6 +52,30 @@
 #define	SINCR		4		/* increment of stack/NBPG */
 
 #define	UPAGES		10		/* pages of u-area */
+
+/*
+ * Constants related to network buffer management.
+ * MCLBYTES must be no larger than CLBYTES (the software page size), and,
+ * on machines that exchange pages of input or output buffers with mbuf
+ * clusters (MAPPED_MBUFS), MCLBYTES must also be an integral multiple
+ * of the hardware page size.
+ */
+#define	MSIZE		128		/* size of an mbuf */
+#define	MAPPED_MBUFS			/* can do scatter-gather I/O */
+#if CLBYTES > 1024
+#define	MCLBYTES	1024
+#define	MCLSHIFT	10
+#define	MCLOFSET	(MCLBYTES - 1)
+#else
+#define	MCLBYTES	CLBYTES
+#define	MCLSHIFT	CLSHIFT
+#define	MCLOFSET	CLOFSET
+#endif
+#ifdef GATEWAY
+#define	NMBCLUSTERS	512		/* map size, max cluster allocation */
+#else
+#define	NMBCLUSTERS	256		/* map size, max cluster allocation */
+#endif
 
 /*
  * Some macros for units conversion
