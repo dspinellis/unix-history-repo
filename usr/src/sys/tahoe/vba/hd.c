@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)hd.c	7.8 (Berkeley) %G%
+ *	@(#)hd.c	7.9 (Berkeley) %G%
  */
 
 #include "hd.h"
@@ -26,7 +26,6 @@
 #include "param.h"
 #include "buf.h"
 #include "conf.h"
-#include "dir.h"
 #include "dkstat.h"
 #include "disklabel.h"
 #include "file.h"
