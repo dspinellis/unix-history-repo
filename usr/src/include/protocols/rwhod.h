@@ -1,15 +1,20 @@
-/*	rwhod.h	4.3	82/12/24	*/
+/*	rwhod.h	4.4	83/05/04	*/
 
+/*
+ * rwho protocol packet format.
+ */
 struct	whod {
-	int	wd_sendtime;
-	int	wd_recvtime;
-	char	wd_hostname[32];
-	int	wd_loadav[3];
-	int	wd_boottime;
+	char	wd_type;		/* packet type, see below */
+	char	wd_pad[3];
+	int	wd_sendtime;		/* time stamp by sender */
+	int	wd_recvtime;		/* time stamp applied by receiver */
+	char	wd_hostname[32];	/* hosts's name */
+	int	wd_loadav[3];		/* load average as in uptime */
+	int	wd_boottime;		/* time system booted */
 	struct	whoent {
-		struct	utmp we_utmp;
-		int	we_idle;
+		struct	utmp we_utmp;	/* active tty info */
+		int	we_idle;	/* tty idle time */
 	} wd_we[1024 / sizeof (struct whoent)];
 };
 
-#define	RWHODIR	"/usr/spool/rwho"	/* where data is stored */
+#define	WHODTYPE_STATUS	1		/* host status */
