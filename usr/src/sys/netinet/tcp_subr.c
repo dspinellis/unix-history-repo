@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tcp_subr.c	7.1 (Berkeley) %G%
+ *	@(#)tcp_subr.c	7.2 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -230,6 +230,18 @@ tcp_drain()
 
 }
 
+/*
+ * Notify a tcp user of an asynchronous error;
+ * just wake up so that he can collect error status.
+ */
+tcp_notify(inp)
+	register struct inpcb *inp;
+{
+
+	wakeup((caddr_t) &inp->inp_socket->so_timeo);
+	sorwakeup(inp->inp_socket);
+	sowwakeup(inp->inp_socket);
+}
 tcp_ctlinput(cmd, sa)
 	int cmd;
 	struct sockaddr *sa;
@@ -264,7 +276,7 @@ tcp_ctlinput(cmd, sa)
 		if (inetctlerrmap[cmd] == 0)
 			return;		/* XXX */
 		in_pcbnotify(&tcb, &sin->sin_addr, (int)inetctlerrmap[cmd],
-			(int (*)())0);
+			tcp_notify);
 	}
 }
 
