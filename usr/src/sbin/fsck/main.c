@@ -1,5 +1,5 @@
 #ifndef lint
-char version[] = "@(#)main.c	2.26 (Berkeley) %G%";
+char version[] = "@(#)main.c	2.27 (Berkeley) %G%";
 #endif
 
 #include <stdio.h>
@@ -7,9 +7,12 @@ char version[] = "@(#)main.c	2.26 (Berkeley) %G%";
 #include <sys/param.h>
 #include <sys/fs.h>
 #include <sys/inode.h>
-#include <sys/dir.h>
 #include <sys/stat.h>
+#include <sys/wait.h>
 #include <fstab.h>
+#define KERNEL
+#include <sys/dir.h>
+#undef KERNEL
 
 /* RECONSTRUCT ONLY BAD CG IN PASS 6 */
 
@@ -18,6 +21,7 @@ typedef	int	(*SIG_TYP)();
 #define	MAXNINDIR	(MAXBSIZE / sizeof (daddr_t))
 #define	MAXINOPB	(MAXBSIZE / sizeof (struct dinode))
 #define	SPERB		(MAXBSIZE / sizeof(short))
+#define MINDIRSIZE	(sizeof (struct dirtemplate))
 
 #define	MAXDUP	10		/* limit on dup blks (per inode) */
 #define	MAXBAD	10		/* limit on bad blks (per inode) */
@@ -40,8 +44,6 @@ typedef struct direct	DIRECT;
 #define	BADBLK	((dp->di_mode & IFMT) == IFMT)
 #define	SPECIAL	(BLK || CHR)
 
-ino_t	startinum;		/* blk num of first in raw area */
-
 struct bufarea {
 	struct bufarea	*b_next;		/* must be first */
 	daddr_t	b_bno;
@@ -62,7 +64,7 @@ typedef struct bufarea BUFAREA;
 BUFAREA	inoblk;			/* inode blocks */
 BUFAREA	fileblk;		/* other blks in filesys */
 BUFAREA	sblk;			/* file system superblock */
-BUFAREA	cgblk;
+BUFAREA	cgblk;			/* cylinder group blocks */
 
 #define	initbarea(x)	(x)->b_dirty = 0;(x)->b_bno = (daddr_t)-1
 #define	dirty(x)	(x)->b_dirty = 1
@@ -79,6 +81,24 @@ struct filecntl {
 	int	wfdes;
 	int	mod;
 } dfile;			/* file descriptors for filesys */
+
+struct inodesc {
+	char id_type;		/* type of descriptor, DATA or ADDR */
+	int (*id_func)();	/* function to be applied to blocks of inode */
+	ino_t id_number;	/* inode number described */
+	ino_t id_parent;	/* for DATA nodes, their parent */
+	daddr_t id_blkno;	/* current block number being examined */
+	int id_numfrags;	/* number of frags contained in block */
+	long id_filesize;	/* for DATA nodes, the size of the directory */
+	int id_loc;		/* for DATA nodes, current location in dir */
+	int id_entryno;		/* for DATA nodes, current entry number */
+	DIRECT *id_dirp;	/* for data nodes, ptr to current entry */
+	enum {DONTKNOW, NOFIX, FIX} id_fix; /* policy on fixing errors */
+};
+/* file types */
+#define	DATA	1
+#define	ADDR	2
+
 
 #define	DUPTBLSIZE	100	/* num of dup blocks to remember */
 daddr_t	duplist[DUPTBLSIZE];	/* dup block table */
@@ -104,23 +124,17 @@ char	*freemap;		/* ptr to secondary blk allocation map */
 char	*statemap;		/* ptr to inode state table */
 short	*lncntp;		/* ptr to link count table */
 
-char	*pathp;			/* pointer to pathname position */
-char	*thisname;		/* ptr to current pathname component */
 char	*srchname;		/* name being searched for in dir */
-char	pathname[BUFSIZ];
+char	pathname[BUFSIZ];	/* current pathname */
+char	*pathp;			/* pointer to pathname position */
 char	*endpathname = &pathname[BUFSIZ - 2];
 
 char	*lfname = "lost+found";
 
-ino_t	inum;			/* inode we are currently working on */
-ino_t	dnum;			/* directory inode currently being worked on */
 ino_t	imax;			/* number of inodes */
-ino_t	parentdir;		/* i number of parent directory */
 ino_t	lastino;		/* hiwater mark of inodes */
 ino_t	lfdir;			/* lost & found directory */
-ino_t	orphan;			/* orphaned inode */
 
-off_t	filsize;		/* num blks seen in file */
 off_t	maxblk;			/* largest logical blk in file */
 off_t	bmapsz;			/* num chars in blockmap */
 
@@ -151,10 +165,7 @@ struct	dinode zino;
 #define	getfmap(x)	isset(freemap, x)
 #define	clrfmap(x)	clrbit(freemap, x)
 
-#define	DATA	1
-#define	ADDR	0
-
-#define	ALTERD	010
+#define	ALTERED	010
 #define	KEEPON	04
 #define	SKIP	02
 #define	STOP	01
@@ -163,15 +174,13 @@ int	(*signal())();
 long	lseek();
 time_t	time();
 DINODE	*ginode();
+DIRECT	*fsck_readdir();
 BUFAREA	*getblk();
-int	dirscan();
-int	findino();
 int	catch();
-int	mkentry();
-int	chgdd();
-int	pass1check(), pass1bcheck(), pass2check(), pass4check(), pass5check();
-int	(*pfunc)();
-char	*rawname(), *rindex(), *unrawname();
+int	findino(), mkentry(), chgdd();
+int	pass1check(), pass1bcheck(), pass2check(), pass4check();
+char	*rawname(), *unrawname();
+char	*calloc(), *strcpy(), *strcat(), *rindex();
 extern int inside[], around[];
 extern unsigned char *fragtbl[];
 
@@ -193,7 +202,12 @@ main(argc, argv)
 			break;
 
 		case 'b':
-			bflag = atoi(argv[0]+1);
+			if (argv[0][1] != '\0') {
+				bflag = atoi(argv[0]+1);
+			} else {
+				bflag = atoi(*++argv);
+				argc--;
+			}
 			printf("Alternate super block location: %d\n", bflag);
 			break;
 
@@ -218,7 +232,7 @@ main(argc, argv)
 		}
 	}
 	if (signal(SIGINT, SIG_IGN) != SIG_IGN)
-		signal(SIGINT, catch);
+		(void)signal(SIGINT, catch);
 	if (argc) {
 		while (argc-- > 0) {
 			hotroot = 0;
@@ -257,15 +271,15 @@ main(argc, argv)
 			}
 		}
 		if (preen) {
-			int status;
+			union wait status;
 			while (wait(&status) != -1)
-				sumstatus |= status;
+				sumstatus |= status.w_retcode;
 		}
 		passno++;
 	} while (anygtr);
 	if (sumstatus)
 		exit(8);
-	endfsent();
+	(void)endfsent();
 	exit(0);
 }
 
@@ -319,12 +333,6 @@ retry:
 checkfilesys(filesys)
 	char *filesys;
 {
-	register DINODE *dp;
-	register ino_t *blp;
-	register int i, n;
-	ino_t savino;
-	int b, c, j, partial, ndb;
-	daddr_t d, s;
 
 	devname = filesys;
 	if (setup(filesys) == 0) {
@@ -349,22 +357,22 @@ checkfilesys(filesys)
 		pass1b();
 	}
 
-/* 2: traverse directories to check reference counts */
+/* 2: traverse directories from root to mark all connected directories */
 	if (preen == 0)
 		printf("** Phase 2 - Check Pathnames\n");
 	pass2();
 
-/* 3 */
+/* 3: scan inodes looking for disconnected directories */
 	if (preen == 0)
 		printf("** Phase 3 - Check Connectivity\n");
 	pass3();
 
-/* 4 */
+/* 4: scan inodes looking for disconnected files; check reference counts */
 	if (preen == 0)
 		printf("** Phase 4 - Check Reference Counts\n");
 	pass4();
 
-/* 5 */
+/* 5: check resource counts in cylinder groups */
 	if (preen == 0)
 		printf("** Phase 5 - Check Cyl groups\n");
 	pass5();
@@ -381,14 +389,14 @@ checkfilesys(filesys)
 	    n_files, n_blks - howmany(sblock.fs_cssize, sblock.fs_fsize),
 	    n_ffree + sblock.fs_frag * n_bfree, n_ffree, n_bfree);
 	if (dfile.mod) {
-		time(&sblock.fs_time);
+		(void)time(&sblock.fs_time);
 		sbdirty();
 	}
 	ckfini();
 	free(blockmap);
 	free(freemap);
 	free(statemap);
-	free(lncntp);
+	free((char *)lncntp);
 	if (!dfile.mod)
 		return;
 	if (!preen) {
@@ -407,11 +415,12 @@ setup(dev)
 {
 	dev_t rootdev;
 	struct stat statb;
-	int super = bflag ? bflag : SBLOCK;
-	int i, j, size;
-	int c, d, cgd;
+	daddr_t super = bflag ? bflag : SBLOCK;
+	int i, j, c, d, cgd;
+	long size;
+	BUFAREA asblk;
+#	define altsblock asblk.b_un.b_fs
 
-	bflag = 0;
 	if (stat("/", &statb) < 0)
 		errexit("Can't stat root\n");
 	rootdev = statb.st_dev;
@@ -455,10 +464,11 @@ setup(dev)
 	initbarea(&fileblk);
 	initbarea(&inoblk);
 	initbarea(&cgblk);
+	initbarea(&asblk);
 	/*
 	 * Read in the super block and its summary info.
 	 */
-	if (bread(&dfile, &sblock, super, SBSIZE) == 0)
+	if (bread(&dfile, (char *)&sblock, super, (long)SBSIZE) == 0)
 		return (0);
 	sblk.b_bno = super;
 	sblk.b_size = SBSIZE;
@@ -471,33 +481,41 @@ setup(dev)
 		{ badsb("NCG OUT OF RANGE"); return (0); }
 	if (sblock.fs_cpg < 1 || sblock.fs_cpg > MAXCPG)
 		{ badsb("CPG OUT OF RANGE"); return (0); }
-	if (sblock.fs_nsect < 1)
-		{ badsb("NSECT < 1"); return (0); }
-	if (sblock.fs_ntrak < 1)
-		{ badsb("NTRAK < 1"); return (0); }
-	if (sblock.fs_spc != sblock.fs_nsect * sblock.fs_ntrak)
-		{ badsb("SPC DOES NOT JIVE w/NTRAK*NSECT"); return (0); }
-	if (sblock.fs_ipg % INOPB(&sblock))
-		{ badsb("INODES NOT MULTIPLE OF A BLOCK"); return (0); }
-	if (cgdmin(&sblock, 0) >= sblock.fs_cpg * sblock.fs_spc / NSPF(&sblock))
-		{ badsb("IMPLIES MORE INODE THAN DATA BLOCKS"); return (0); }
 	if (sblock.fs_ncg * sblock.fs_cpg < sblock.fs_ncyl ||
 	    (sblock.fs_ncg - 1) * sblock.fs_cpg >= sblock.fs_ncyl)
 		{ badsb("NCYL DOES NOT JIVE WITH NCG*CPG"); return (0); }
-	if (sblock.fs_fpg != sblock.fs_cpg * sblock.fs_spc / NSPF(&sblock))
-		{ badsb("FPG DOES NOT JIVE WITH CPG & SPC"); return (0); }
-	if (sblock.fs_size * NSPF(&sblock) <=
-	    (sblock.fs_ncyl - 1) * sblock.fs_spc)
-		{ badsb("SIZE PREPOSTEROUSLY SMALL"); return (0); }
-	if (sblock.fs_size * NSPF(&sblock) > sblock.fs_ncyl * sblock.fs_spc)
+	if (sblock.fs_sbsize > SBSIZE)
 		{ badsb("SIZE PREPOSTEROUSLY LARGE"); return (0); }
-	/* rest we COULD repair... */
-	if (sblock.fs_cgsize != fragroundup(&sblock,
-	    sizeof(struct cg) + howmany(sblock.fs_fpg, NBBY)))
-		{ badsb("CGSIZE INCORRECT"); return (0); }
-	if (sblock.fs_cssize !=
-	    fragroundup(&sblock, sblock.fs_ncg * sizeof(struct csum)))
-		{ badsb("CSSIZE INCORRECT"); return (0); }
+	/*
+	 * Set all possible fields that could differ, then do check
+	 * of whole super block against an alternate super block.
+	 * When an alternate super-block is specified this check is skipped.
+	 */
+	if (bflag)
+		goto sbok;
+	if (getblk(&asblk, cgsblock(&sblock, sblock.fs_ncg - 1),
+	    sblock.fs_sbsize) == 0)
+		return (0);
+	altsblock.fs_link = sblock.fs_link;
+	altsblock.fs_rlink = sblock.fs_rlink;
+	altsblock.fs_time = sblock.fs_time;
+	altsblock.fs_cstotal = sblock.fs_cstotal;
+	altsblock.fs_cgrotor = sblock.fs_cgrotor;
+	altsblock.fs_fmod = sblock.fs_fmod;
+	altsblock.fs_clean = sblock.fs_clean;
+	altsblock.fs_ronly = sblock.fs_ronly;
+	altsblock.fs_flags = sblock.fs_flags;
+	altsblock.fs_maxcontig = sblock.fs_maxcontig;
+	altsblock.fs_minfree = sblock.fs_minfree;
+	altsblock.fs_rotdelay = sblock.fs_rotdelay;
+	altsblock.fs_maxbpg = sblock.fs_maxbpg;
+	bcopy((char *)sblock.fs_csp, (char *)altsblock.fs_csp,
+		sizeof sblock.fs_csp);
+	bcopy((char *)sblock.fs_fsmnt, (char *)altsblock.fs_fsmnt,
+		sizeof sblock.fs_fsmnt);
+	if (bcmp((char *)&sblock, (char *)&altsblock, (int)sblock.fs_sbsize))
+		{ badsb("TRASHED VALUES IN SUPER BLOCK"); return (0); }
+sbok:
 	fmax = sblock.fs_size;
 	imax = sblock.fs_ncg * sblock.fs_ipg;
 	n_bad = cgsblock(&sblock, 0); /* boot block plus dedicated sblock */
@@ -507,35 +525,36 @@ setup(dev)
 	for (i = 0, j = 0; i < sblock.fs_cssize; i += sblock.fs_bsize, j++) {
 		size = sblock.fs_cssize - i < sblock.fs_bsize ?
 		    sblock.fs_cssize - i : sblock.fs_bsize;
-		sblock.fs_csp[j] = (struct csum *)calloc(1, size);
-		bread(&dfile, (char *)sblock.fs_csp[j],
+		sblock.fs_csp[j] = (struct csum *)calloc(1, (unsigned)size);
+		if (bread(&dfile, (char *)sblock.fs_csp[j],
 		    fsbtodb(&sblock, sblock.fs_csaddr + j * sblock.fs_frag),
-		    size);
+		    size) == 0)
+			return (0);
 	}
 	/*
 	 * allocate and initialize the necessary maps
 	 */
 	bmapsz = roundup(howmany(fmax, NBBY), sizeof(short));
-	blockmap = (char *)calloc(bmapsz, sizeof (char));
+	blockmap = calloc((unsigned)bmapsz, sizeof (char));
 	if (blockmap == NULL) {
 		printf("cannot alloc %d bytes for blockmap\n", bmapsz);
-		exit(1);
+		goto badsb;
 	}
-	freemap = (char *)calloc(bmapsz, sizeof (char));
+	freemap = calloc((unsigned)bmapsz, sizeof (char));
 	if (freemap == NULL) {
 		printf("cannot alloc %d bytes for freemap\n", bmapsz);
-		exit(1);
+		goto badsb;
 	}
-	statemap = (char *)calloc(imax+1, sizeof(char));
+	statemap = calloc((unsigned)(imax + 1), sizeof(char));
 	if (statemap == NULL) {
 		printf("cannot alloc %d bytes for statemap\n", imax + 1);
-		exit(1);
+		goto badsb;
 	}
-	lncntp = (short *)calloc(imax+1, sizeof(short));
+	lncntp = (short *)calloc((unsigned)(imax + 1), sizeof(short));
 	if (lncntp == NULL) {
 		printf("cannot alloc %d bytes for lncntp\n", 
 		    (imax + 1) * sizeof(short));
-		exit(1);
+		goto badsb;
 	}
 	for (c = 0; c < sblock.fs_ncg; c++) {
 		cgd = cgdmin(&sblock, c);
@@ -548,33 +567,37 @@ setup(dev)
 			setbmap(d);
 	}
 
-	startinum = imax + 1;
 	return (1);
 
 badsb:
 	ckfini();
 	return (0);
+#	undef altsblock
 }
 
 pass1()
 {
 	register int c, i, n, j;
 	register DINODE *dp;
-	int savino, ndb, partial;
+	int ndb, partial;
+	struct inodesc idesc;
+	ino_t inumber;
 
-	pfunc = pass1check;
-	inum = 0;
+	bzero((char *)&idesc, sizeof(struct inodesc));
+	idesc.id_type = ADDR;
+	idesc.id_func = pass1check;
+	inumber = 0;
 	n_blks += howmany(sblock.fs_cssize, sblock.fs_fsize);
 	for (c = 0; c < sblock.fs_ncg; c++) {
 		if (getblk(&cgblk, cgtod(&sblock, c), sblock.fs_cgsize) == 0)
 			continue;
 		if (cgrp.cg_magic != CG_MAGIC) {
-			pfatal("cg %d: bad magic number\n", c);
-			bzero((caddr_t)&cgrp, sblock.fs_cgsize);
+			pfatal("CG %d: BAD MAGIC NUMBER\n", c);
+			bzero((char *)&cgrp, (int)sblock.fs_cgsize);
 		}
 		n = 0;
-		for (i = 0; i < sblock.fs_ipg; i++, inum++) {
-			dp = ginode();
+		for (i = 0; i < sblock.fs_ipg; i++, inumber++) {
+			dp = ginode(inumber);
 			if (dp == NULL)
 				continue;
 			n++;
@@ -582,11 +605,11 @@ pass1()
 				if (!isset(cgrp.cg_iused, i)) {
 					if (debug)
 						printf("%d bad, not used\n",
-						    inum);
+						    inumber);
 					inosumbad++;
 				}
 				n--;
-				lastino = inum;
+				lastino = inumber;
 				if (!preen && BADBLK &&
 				    reply("HOLD BAD BLOCK") == 1) {
 					dp->di_size = sblock.fs_fsize;
@@ -620,33 +643,36 @@ pass1()
 						goto unknown;
 					}
 				n_files++;
-				lncntp[inum] = dp->di_nlink;
+				lncntp[inumber] = dp->di_nlink;
 				if (dp->di_nlink <= 0) {
 					if (badlnp < &badlncnt[MAXLNCNT])
-						*badlnp++ = inum;
+						*badlnp++ = inumber;
 					else {
 						pfatal("LINK COUNT TABLE OVERFLOW");
 						if (reply("CONTINUE") == 0)
 							errexit("");
 					}
 				}
-				statemap[inum] = DIRCT ? DSTATE : FSTATE;
-				badblk = dupblk = 0; filsize = 0; maxblk = 0;
-				ckinode(dp, ADDR);
-				filsize *= btodb(sblock.fs_fsize);
-				if (dp->di_blocks != filsize) {
+				statemap[inumber] = DIRCT ? DSTATE : FSTATE;
+				badblk = dupblk = 0; maxblk = 0;
+				idesc.id_number = inumber;
+				idesc.id_filesize = 0;
+				(void)ckinode(dp, &idesc);
+				idesc.id_filesize *= btodb(sblock.fs_fsize);
+				if (dp->di_blocks != idesc.id_filesize) {
 					pwarn("INCORRECT BLOCK COUNT I=%u (%ld should be %ld)",
-					    inum, dp->di_blocks, filsize);
+					    inumber, dp->di_blocks,
+					    idesc.id_filesize);
 					if (preen)
 						printf(" (CORRECTED)\n");
 					else if (reply("CORRECT") == 0)
 						continue;
-					dp->di_blocks = filsize;
+					dp->di_blocks = idesc.id_filesize;
 					inodirty();
 				}
 				continue;
 		unknown:
-				pfatal("UNKNOWN FILE TYPE I=%u", inum);
+				pfatal("UNKNOWN FILE TYPE I=%u", inumber);
 				if (reply("CLEAR") == 1) {
 					zapino(dp);
 					inodirty();
@@ -656,7 +682,7 @@ pass1()
 				if (isset(cgrp.cg_iused, i)) {
 					if (debug)
 						printf("%d bad, marked used\n",
-						    inum);
+						    inumber);
 					inosumbad++;
 					n--;
 				}
@@ -669,7 +695,8 @@ pass1()
 						partial++;
 				if (partial || dp->di_mode != 0 ||
 				    dp->di_size != 0) {
-					pfatal("PARTIALLY ALLOCATED INODE I=%u", inum);
+					pfatal("PARTIALLY ALLOCATED INODE I=%u",
+						inumber);
 					if (reply("CLEAR") == 1) {
 						zapino(dp);
 						inodirty();
@@ -692,20 +719,21 @@ pass1()
 	}
 }
 
-pass1check(blk, size)
-	daddr_t blk;
-	int size;
+pass1check(idesc)
+	register struct inodesc *idesc;
 {
 	register daddr_t *dlp;
 	int res = KEEPON;
-	int anyout;
+	int anyout, nfrags;
+	daddr_t blkno = idesc->id_blkno;
 
-	anyout = outrange(blk, size);
-	for (; size > 0; blk++, size--) {
-		if (anyout && outrange(blk, 1)) {
-			blkerr("BAD", blk);
+	anyout = outrange(blkno, idesc->id_numfrags);
+	for (nfrags = idesc->id_numfrags; nfrags > 0; blkno++, nfrags--) {
+		if (anyout && outrange(blkno, 1)) {
+			blkerr(idesc->id_number, "BAD", blkno);
 			if (++badblk >= MAXBAD) {
-				pwarn("EXCESSIVE BAD BLKS I=%u", inum);
+				pwarn("EXCESSIVE BAD BLKS I=%u",
+					idesc->id_number);
 				if (preen)
 					printf(" (SKIPPING)\n");
 				else if (reply("CONTINUE") == 0)
@@ -713,10 +741,11 @@ pass1check(blk, size)
 				return (STOP);
 			}
 			res = SKIP;
-		} else if (getbmap(blk)) {
-			blkerr("DUP", blk);
+		} else if (getbmap(blkno)) {
+			blkerr(idesc->id_number, "DUP", blkno);
 			if (++dupblk >= MAXDUP) {
-				pwarn("EXCESSIVE DUP BLKS I=%u", inum);
+				pwarn("EXCESSIVE DUP BLKS I=%u",
+					idesc->id_number);
 				if (preen)
 					printf(" (SKIPPING)\n");
 				else if (reply("CONTINUE") == 0)
@@ -730,19 +759,19 @@ pass1check(blk, size)
 				return (STOP);
 			}
 			for (dlp = duplist; dlp < muldup; dlp++)
-				if (*dlp == blk) {
-					*enddup++ = blk;
+				if (*dlp == blkno) {
+					*enddup++ = blkno;
 					break;
 				}
 			if (dlp >= muldup) {
 				*enddup++ = *muldup;
-				*muldup++ = blk;
+				*muldup++ = blkno;
 			}
 		} else {
 			n_blks++;
-			setbmap(blk);
+			setbmap(blkno);
 		}
-		filsize++;
+		idesc->id_filesize++;
 	}
 	return (res);
 }
@@ -751,16 +780,21 @@ pass1b()
 {
 	register int c, i;
 	register DINODE *dp;
+	struct inodesc idesc;
+	ino_t inumber;
 
-	pfunc = pass1bcheck;
-	inum = 0;
+	bzero((char *)&idesc, sizeof(struct inodesc));
+	idesc.id_type = ADDR;
+	idesc.id_func = pass1bcheck;
+	inumber = 0;
 	for (c = 0; c < sblock.fs_ncg; c++) {
-		for (i = 0; i < sblock.fs_ipg; i++, inum++) {
-			dp = ginode();
+		for (i = 0; i < sblock.fs_ipg; i++, inumber++) {
+			dp = ginode(inumber);
 			if (dp == NULL)
 				continue;
-			if (statemap[inum] != USTATE &&
-			    (ckinode(dp, ADDR) & STOP))
+			idesc.id_number = inumber;
+			if (statemap[inumber] != USTATE &&
+			    (ckinode(dp, &idesc) & STOP))
 				goto out1b;
 		}
 	}
@@ -768,21 +802,21 @@ out1b:
 	flush(&dfile, &inoblk);
 }
 
-pass1bcheck(blk, size)
-	daddr_t blk;
-	int size;
+pass1bcheck(idesc)
+	register struct inodesc *idesc;
 {
 	register daddr_t *dlp;
-	int res = KEEPON;
+	int nfrags, res = KEEPON;
+	daddr_t blkno = idesc->id_blkno;
 
-	for (; size > 0; blk++, size--) {
-		if (outrange(blk, 1))
+	for (nfrags = idesc->id_numfrags; nfrags > 0; blkno++, nfrags--) {
+		if (outrange(blkno, 1))
 			res = SKIP;
 		for (dlp = duplist; dlp < muldup; dlp++)
-			if (*dlp == blk) {
-				blkerr("DUP", blk);
+			if (*dlp == blkno) {
+				blkerr(idesc->id_number, "DUP", blkno);
 				*dlp = *--muldup;
-				*muldup = blk;
+				*muldup = blkno;
 				if (muldup == duplist)
 					return (STOP);
 			}
@@ -793,28 +827,31 @@ pass1bcheck(blk, size)
 pass2()
 {
 	register DINODE *dp;
+	struct inodesc rootdesc;
 
-	inum = ROOTINO;
-	thisname = pathp = pathname;
-	pfunc = pass2check;
-	switch (statemap[inum]) {
+	bzero((char *)&rootdesc, sizeof(struct inodesc));
+	rootdesc.id_type = ADDR;
+	rootdesc.id_func = pass2check;
+	rootdesc.id_number = ROOTINO;
+	pathp = pathname;
+	switch (statemap[ROOTINO]) {
 
 	case USTATE:
 		errexit("ROOT INODE UNALLOCATED. TERMINATING.\n");
 
 	case FSTATE:
 		pfatal("ROOT INODE NOT DIRECTORY");
-		if (reply("FIX") == 0 || (dp = ginode()) == NULL)
+		if (reply("FIX") == 0 || (dp = ginode(ROOTINO)) == NULL)
 			errexit("");
 		dp->di_mode &= ~IFMT;
 		dp->di_mode |= IFDIR;
 		inodirty();
 		inosumbad++;
-		statemap[inum] = DSTATE;
+		statemap[ROOTINO] = DSTATE;
 		/* fall into ... */
 
 	case DSTATE:
-		descend();
+		descend(&rootdesc, ROOTINO);
 		break;
 
 	case CLEAR:
@@ -822,126 +859,240 @@ pass2()
 		printf("\n");
 		if (reply("CONTINUE") == 0)
 			errexit("");
-		statemap[inum] = DSTATE;
-		descend();
+		statemap[ROOTINO] = DSTATE;
+		descend(&rootdesc, ROOTINO);
 	}
 }
 
-pass2check(dirp)
-	register DIRECT *dirp;
+pass2check(idesc)
+	struct inodesc *idesc;
 {
-	register char *p;
-	register n;
+	register DIRECT *dirp = idesc->id_dirp;
+	char *curpathloc;
+	int n, entrysize, ret = 0;
 	DINODE *dp;
+	DIRECT proto;
 
-	if ((inum = dirp->d_ino) == 0)
-		return (KEEPON);
-	thisname = pathp;
+	/* 
+	 * check for "."
+	 */
+	if (idesc->id_entryno != 0)
+		goto chk1;
+	if (dirp->d_ino != 0 && dirp->d_namlen == 1 && dirp->d_name[0] == '.') {
+		if (dirp->d_ino != idesc->id_number) {
+			direrr(idesc->id_number, "BAD INODE NUMBER FOR '.'");
+			dirp->d_ino = idesc->id_number;
+			ret |= dofix(idesc);
+		}
+		goto chk1;
+	}
+	direrr(idesc->id_number, "MISSING '.'");
+	proto.d_ino = idesc->id_number;
+	proto.d_namlen = 1;
+	(void)strcpy(proto.d_name, ".");
+	entrysize = DIRSIZ(&proto);
+	if (dirp->d_ino != 0) {
+		pfatal("CANNOT FIX, FIRST ENTRY IN DIRECTORY CONTAINS %s\n",
+			dirp->d_name);
+	} else if (dirp->d_reclen < entrysize) {
+		pfatal("CANNOT FIX, INSUFFICIENT SPACE TO ADD '.'\n");
+	} else if (dirp->d_reclen < 2 * entrysize) {
+		proto.d_reclen = dirp->d_reclen;
+		bcopy((char *)&proto, (char *)dirp, entrysize);
+		ret |= dofix(idesc);
+	} else {
+		n = dirp->d_reclen - entrysize;
+		proto.d_reclen = entrysize;
+		bcopy((char *)&proto, (char *)dirp, entrysize);
+		idesc->id_entryno++;
+		lncntp[dirp->d_ino]--;
+		dirp = (DIRECT *)((char *)(dirp) + entrysize);
+		bzero((char *)dirp, n);
+		dirp->d_reclen = n;
+		ret |= dofix(idesc);
+	}
+chk1:
+	if (idesc->id_entryno > 1)
+		goto chk2;
+	proto.d_ino = idesc->id_parent;
+	proto.d_namlen = 2;
+	(void)strcpy(proto.d_name, "..");
+	entrysize = DIRSIZ(&proto);
+	if (idesc->id_entryno == 0) {
+		n = DIRSIZ(dirp);
+		if (dirp->d_reclen < n + entrysize)
+			goto chk2;
+		proto.d_reclen = dirp->d_reclen - n;
+		dirp->d_reclen = n;
+		idesc->id_entryno++;
+		lncntp[dirp->d_ino]--;
+		dirp = (DIRECT *)((char *)(dirp) + n);
+		bzero((char *)dirp, n);
+		dirp->d_reclen = n;
+	}
+	if (dirp->d_ino != 0 && dirp->d_namlen == 2 &&
+	    strcmp(dirp->d_name, "..") == 0) {
+		if (dirp->d_ino != idesc->id_parent) {
+			direrr(idesc->id_number, "BAD INODE NUMBER FOR '..'");
+			dirp->d_ino = idesc->id_parent;
+			ret |= dofix(idesc);
+		}
+		goto chk2;
+	}
+	direrr(idesc->id_number, "MISSING '..'");
+	if (dirp->d_ino != 0) {
+		pfatal("CANNOT FIX, SECOND ENTRY IN DIRECTORY CONTAINS %s\n",
+			dirp->d_name);
+	} else if (dirp->d_reclen < entrysize) {
+		pfatal("CANNOT FIX, INSUFFICIENT SPACE TO ADD '..'\n");
+	} else {
+		proto.d_reclen = dirp->d_reclen;
+		bcopy((char *)&proto, (char *)dirp, entrysize);
+		ret |= dofix(idesc);
+	}
+chk2:
+	if (dirp->d_ino == 0)
+		return (ret|KEEPON);
+	if (idesc->id_entryno >= 2 &&
+	    dirp->d_namlen <= 2 &&
+	    dirp->d_name[0] == '.') {
+		if (dirp->d_namlen == 1) {
+			direrr(idesc->id_number, "EXTRA '.' ENTRY");
+			dirp->d_ino = 0;
+			return (KEEPON | dofix(idesc));
+		}
+		if (dirp->d_name[1] == '.') {
+			direrr(idesc->id_number, "EXTRA '..' ENTRY");
+			dirp->d_ino = 0;
+			return (KEEPON | dofix(idesc));
+		}
+	}
+	curpathloc = pathp;
+	*pathp++ = '/';
 	if (pathp + dirp->d_namlen >= endpathname) {
 		*pathp = '\0';
 		errexit("NAME TOO LONG %s%s\n", pathname, dirp->d_name);
 	}
-	for (p = dirp->d_name; p < &dirp->d_name[MAXNAMLEN]; )
-		if ((*pathp++ = *p++) == 0) {
-			--pathp;
-			break;
-		}
-	*pathp = 0;
+	bcopy(dirp->d_name, pathp, dirp->d_namlen + 1);
+	pathp += dirp->d_namlen;
+	idesc->id_entryno++;
 	n = 0;
-	if (inum > imax || inum <= 0)
-		n = direrr("I OUT OF RANGE");
-	else {
+	if (dirp->d_ino > imax || dirp->d_ino <= 0) {
+		direrr(dirp->d_ino, "I OUT OF RANGE");
+		n = reply("REMOVE");
+	} else {
 again:
-		switch (statemap[inum]) {
+		switch (statemap[dirp->d_ino]) {
 		case USTATE:
-			n = direrr("UNALLOCATED");
+			direrr(dirp->d_ino, "UNALLOCATED");
+			n = reply("REMOVE");
 			break;
 
 		case CLEAR:
-			if ((n = direrr("DUP/BAD")) == 1)
+			direrr(dirp->d_ino, "DUP/BAD");
+			if ((n = reply("REMOVE")) == 1)
 				break;
-			if ((dp = ginode()) == NULL)
+			if ((dp = ginode(dirp->d_ino)) == NULL)
 				break;
-			statemap[inum] = DIRCT ? DSTATE : FSTATE;
+			statemap[dirp->d_ino] = DIRCT ? DSTATE : FSTATE;
 			goto again;
 
 		case FSTATE:
-			lncntp[inum]--;
+			lncntp[dirp->d_ino]--;
 			break;
 
 		case DSTATE:
-			lncntp[inum]--;
-			descend();
+			descend(idesc, dirp->d_ino);
+			if (statemap[dirp->d_ino] != CLEAR) {
+				lncntp[dirp->d_ino]--;
+			} else {
+				dirp->d_ino = 0;
+				ret |= ALTERED;
+			}
 			break;
 		}
 	}
-	pathp = thisname;
+	pathp = curpathloc;
+	*pathp = '\0';
 	if (n == 0)
-		return (KEEPON);
+		return (ret|KEEPON);
 	dirp->d_ino = 0;
-	return (KEEPON|ALTERD);
+	return (ret|KEEPON|ALTERED);
 }
 
 pass3()
 {
-	ino_t savino;
 	register DINODE *dp;
+	struct inodesc idesc;
+	ino_t inumber, orphan;
+	int len;
 
-	for (inum = ROOTINO; inum <= lastino; inum++) {
-		if (statemap[inum] == DSTATE) {
-			pfunc = findino;
+	bzero((char *)&idesc, sizeof(struct inodesc));
+	idesc.id_type = DATA;
+	for (inumber = ROOTINO; inumber <= lastino; inumber++) {
+		if (statemap[inumber] == DSTATE) {
+			idesc.id_func = findino;
 			srchname = "..";
-			savino = inum;
+			idesc.id_parent = inumber;
 			do {
-				orphan = inum;
-				if ((dp = ginode()) == NULL)
+				orphan = idesc.id_parent;
+				if ((dp = ginode(orphan)) == NULL)
 					break;
-				filsize = dp->di_size;
-				parentdir = 0;
-				ckinode(dp, DATA);
-				if ((inum = parentdir) == 0)
+				idesc.id_parent = 0;
+				idesc.id_filesize = dp->di_size;
+				idesc.id_number = orphan;
+				(void)ckinode(dp, &idesc);
+				if (idesc.id_parent == 0)
 					break;
-			} while (statemap[inum] == DSTATE);
-			inum = orphan;
-			if (linkup() == 1) {
-				thisname = pathp = pathname;
-				*pathp++ = '?';
-				pfunc = pass2check;
-				descend();
+			} while (statemap[idesc.id_parent] == DSTATE);
+			if (linkup(orphan, idesc.id_parent) == 1) {
+				pathp = pathname;
+				*pathp++ = '/';
+				len = strlen(lfname);
+				bcopy(lfname, pathp, len + 1);
+				pathp += len;
+				*pathp++ = '/';
+				pathp += lftempname(pathp, orphan);
+				idesc.id_func = pass2check;
+				idesc.id_number = lfdir;
+				descend(&idesc, orphan);
 			}
-			inum = savino;
 		}
 	}
 }
 
 pass4()
 {
-	register int n;
-	register ino_t *blp;
+	register ino_t inumber, *blp;
+	int n;
+	struct inodesc idesc;
 
-	pfunc = pass4check;
-	for (inum = ROOTINO; inum <= lastino; inum++) {
-		switch (statemap[inum]) {
+	bzero((char *)&idesc, sizeof(struct inodesc));
+	idesc.id_type = ADDR;
+	idesc.id_func = pass4check;
+	for (inumber = ROOTINO; inumber <= lastino; inumber++) {
+		idesc.id_number = inumber;
+		switch (statemap[inumber]) {
 
 		case FSTATE:
-			n = lncntp[inum];
+			n = lncntp[inumber];
 			if (n)
-				adjust((short)n);
+				adjust(&idesc, (short)n);
 			else {
 				for (blp = badlncnt;blp < badlnp; blp++)
-					if (*blp == inum) {
-						clri("UNREF", 1);
+					if (*blp == inumber) {
+						clri(&idesc, "UNREF", 1);
 						break;
 					}
 			}
 			break;
 
 		case DSTATE:
-			clri("UNREF", 1);
+			clri(&idesc, "UNREF", 1);
 			break;
 
 		case CLEAR:
-			clri("BAD/DUP", 1);
+			clri(&idesc, "BAD/DUP", 1);
 			break;
 		}
 	}
@@ -957,22 +1108,23 @@ pass4()
 	flush(&dfile, &fileblk);
 }
 
-pass4check(blk, size)
-	daddr_t blk;
+pass4check(idesc)
+	register struct inodesc *idesc;
 {
 	register daddr_t *dlp;
-	int res = KEEPON;
+	int nfrags, res = KEEPON;
+	daddr_t blkno = idesc->id_blkno;
 
-	for (; size > 0; blk++, size--) {
-		if (outrange(blk, 1))
+	for (nfrags = idesc->id_numfrags; nfrags > 0; blkno++, nfrags--) {
+		if (outrange(blkno, 1))
 			res = SKIP;
-		else if (getbmap(blk)) {
+		else if (getbmap(blkno)) {
 			for (dlp = duplist; dlp < enddup; dlp++)
-				if (*dlp == blk) {
+				if (*dlp == blkno) {
 					*dlp = *--enddup;
 					return (KEEPON);
 				}
-			clrbmap(blk);
+			clrbmap(blkno);
 			n_blks--;
 		}
 	}
@@ -994,9 +1146,9 @@ pass5()
 	n_index = sblock.fs_ncg * (cgdmin(&sblock, 0) - cgtod(&sblock, 0));
 	for (c = 0; c < sblock.fs_ncg; c++) {
 		cbase = cgbase(&sblock, c);
-		bzero(botot, sizeof (botot));
-		bzero(bo, sizeof (bo));
-		bzero(frsum, sizeof (frsum));
+		bzero((char *)botot, sizeof (botot));
+		bzero((char *)bo, sizeof (bo));
+		bzero((char *)frsum, sizeof (frsum));
 		/*
 		 * need to account for the super blocks
 		 * which appear (inaccurately) bad
@@ -1005,8 +1157,8 @@ pass5()
 		if (getblk(&cgblk, cgtod(&sblock, c), sblock.fs_cgsize) == 0)
 			continue;
 		if (cgrp.cg_magic != CG_MAGIC) {
-			pfatal("cg %d: bad magic number\n", c);
-			bzero((caddr_t)&cgrp, sblock.fs_cgsize);
+			pfatal("CG %d: BAD MAGIC NUMBER\n", c);
+			bzero((char *)&cgrp, (int)sblock.fs_cgsize);
 		}
 		for (b = 0; b < sblock.fs_fpg; b += sblock.fs_frag) {
 			blk = blkmap(&sblock, cgrp.cg_free, b);
@@ -1025,11 +1177,11 @@ pass5()
 			}
 			for (d = 0; d < sblock.fs_frag; d++)
 				if ((blk & (1<<d)) &&
-				    pass5check(cbase+b+d,1) == STOP)
+				    pass5check(cbase + b + d, (long)1) == STOP)
 					goto out5;
 			fragacct(&sblock, blk, frsum, 1);
 		}
-		if (bcmp(cgrp.cg_frsum, frsum, sizeof (frsum))) {
+		if (bcmp((char *)cgrp.cg_frsum, (char *)frsum, sizeof(frsum))) {
 			if (debug)
 			for (i = 0; i < sblock.fs_frag; i++)
 				if (cgrp.cg_frsum[i] != frsum[i])
@@ -1037,7 +1189,7 @@ pass5()
 				    c, i, cgrp.cg_frsum[i], frsum[i]);
 			frsumbad++;
 		}
-		if (bcmp(cgrp.cg_btot, botot, sizeof (botot))) {
+		if (bcmp((char *)cgrp.cg_btot, (char *)botot, sizeof (botot))) {
 			if (debug)
 			for (n = 0; n < sblock.fs_cpg; n++)
 				if (botot[n] != cgrp.cg_btot[n])
@@ -1045,7 +1197,7 @@ pass5()
 				    c, n, cgrp.cg_btot[n], botot[n]);
 			offsumbad++;
 		}
-		if (bcmp(cgrp.cg_b, bo, sizeof (bo))) {
+		if (bcmp((char *)cgrp.cg_b, (char *)bo, sizeof (bo))) {
 			if (debug)
 			for (i = 0; i < NRPOS; i++)
 				if (bo[n][i] != cgrp.cg_b[n][i])
@@ -1091,10 +1243,10 @@ out5:
 
 pass5check(blk, size)
 	daddr_t blk;
-	int size;
+	long size;
 {
 
-	if (outrange(blk, size)) {
+	if (outrange(blk, (int)size)) {
 		fixcg = 1;
 		if (preen)
 			pfatal("BAD BLOCKS IN BIT MAPS.");
@@ -1116,35 +1268,42 @@ pass5check(blk, size)
 	return (KEEPON);
 }
 
-ckinode(dp, flg)
+ckinode(dp, idesc)
 	DINODE *dp;
-	register flg;
+	register struct inodesc *idesc;
 {
 	register daddr_t *ap;
-	register ret;
-	int (*func)(), n, ndb, size, offset;
-	ino_t number = inum;
+	int ret, n, ndb, offset;
 	DINODE dino;
 
 	if (SPECIAL)
 		return (KEEPON);
 	dino = *dp;
-	func = (flg == ADDR) ? pfunc : dirscan;
+	idesc->id_fix = DONTKNOW;
+	idesc->id_entryno = 0;
 	ndb = howmany(dino.di_size, sblock.fs_bsize);
 	for (ap = &dino.di_db[0]; ap < &dino.di_db[NDADDR]; ap++) {
 		if (--ndb == 0 && (offset = blkoff(&sblock, dino.di_size)) != 0)
-			size = numfrags(&sblock, fragroundup(&sblock, offset));
+			idesc->id_numfrags =
+				numfrags(&sblock, fragroundup(&sblock, offset));
 		else
-			size = sblock.fs_frag;
-		dnum = number;
-		if (*ap && (ret = (*func)(*ap, size)) & STOP)
+			idesc->id_numfrags = sblock.fs_frag;
+		if (*ap == 0)
+			continue;
+		idesc->id_blkno = *ap;
+		if (idesc->id_type == ADDR)
+			ret = (*idesc->id_func)(idesc);
+		else
+			ret = dirscan(idesc);
+		if (ret & STOP)
 			return (ret);
 	}
+	idesc->id_numfrags = sblock.fs_frag;
 	for (ap = &dino.di_ib[0], n = 1; n <= 2; ap++, n++) {
-		dnum = number;
 		if (*ap) {
-			ret = iblock(*ap, n, flg,
-			    dino.di_size - sblock.fs_bsize * NDADDR);
+			idesc->id_blkno = *ap;
+			ret = iblock(idesc, n,
+				dino.di_size - sblock.fs_bsize * NDADDR);
 			if (ret & STOP)
 				return (ret);
 		}
@@ -1152,27 +1311,26 @@ ckinode(dp, flg)
 	return (KEEPON);
 }
 
-iblock(blk, ilevel, flg, isize)
-	daddr_t blk;
+iblock(idesc, ilevel, isize)
+	struct inodesc *idesc;
 	register ilevel;
-	int isize;
+	long isize;
 {
 	register daddr_t *ap;
 	register daddr_t *aplim;
-	register int i, n;
-	int (*func)(), nif;
+	int i, n, (*func)(), nif;
 	BUFAREA ib;
 
-	if (flg == ADDR) {
-		func = pfunc;
-		if (((n = (*func)(blk, sblock.fs_frag)) & KEEPON) == 0)
+	if (idesc->id_type == ADDR) {
+		func = idesc->id_func;
+		if (((n = (*func)(idesc)) & KEEPON) == 0)
 			return (n);
 	} else
 		func = dirscan;
-	if (outrange(blk, sblock.fs_frag))		/* protect thyself */
+	if (outrange(idesc->id_blkno, idesc->id_numfrags)) /* protect thyself */
 		return (SKIP);
 	initbarea(&ib);
-	if (getblk(&ib, blk, sblock.fs_bsize) == NULL)
+	if (getblk(&ib, idesc->id_blkno, sblock.fs_bsize) == NULL)
 		return (SKIP);
 	ilevel--;
 	if (ilevel == 0) {
@@ -1185,11 +1343,12 @@ iblock(blk, ilevel, flg, isize)
 	aplim = &ib.b_un.b_indir[nif];
 	for (ap = ib.b_un.b_indir, i = 1; ap < aplim; ap++, i++)
 		if (*ap) {
+			idesc->id_blkno = *ap;
 			if (ilevel > 0)
-				n = iblock(*ap, ilevel, flg,
+				n = iblock(idesc, ilevel,
 				    isize - i*NINDIR(&sblock)*sblock.fs_bsize);
 			else
-				n = (*func)(*ap, sblock.fs_frag);
+				n = (*func)(idesc);
 			if (n & STOP)
 				return (n);
 		}
@@ -1229,176 +1388,199 @@ outrange(blk, cnt)
 	return (0);
 }
 
-blkerr(s, blk)
-	daddr_t blk;
+blkerr(ino, s, blk)
+	ino_t ino;
 	char *s;
+	daddr_t blk;
 {
 
-	pfatal("%ld %s I=%u", blk, s, inum);
+	pfatal("%ld %s I=%u", blk, s, ino);
 	printf("\n");
-	statemap[inum] = CLEAR;
+	statemap[ino] = CLEAR;
 }
 
-descend()
+descend(parentino, inumber)
+	struct inodesc *parentino;
+	ino_t inumber;
 {
 	register DINODE *dp;
-	register char *savname;
-	off_t savsize;
+	struct inodesc curino;
 
-	statemap[inum] = FSTATE;
-	if ((dp = ginode()) == NULL)
+	bzero((char *)&curino, sizeof(struct inodesc));
+	statemap[inumber] = FSTATE;
+	if ((dp = ginode(inumber)) == NULL)
 		return;
-	savname = thisname;
-	*pathp++ = '/';
-	savsize = filsize;
-	filsize = dp->di_size;
-	ckinode(dp, DATA);
-	thisname = savname;
-	*--pathp = 0;
-	filsize = savsize;
+	if (dp->di_size == 0) {
+		direrr(inumber, "ZERO LENGTH DIRECTORY");
+		if (reply("REMOVE") == 1)
+			statemap[inumber] = CLEAR;
+		return;
+	}
+	if (dp->di_size < MINDIRSIZE) {
+		direrr(inumber, "DIRECTORY TOO SHORT");
+		dp->di_size = MINDIRSIZE;
+		if (reply("FIX") == 1)
+			inodirty();
+	}
+	curino.id_type = DATA;
+	curino.id_func = parentino->id_func;
+	curino.id_parent = parentino->id_number;
+	curino.id_number = inumber;
+	curino.id_filesize = dp->di_size;
+	(void)ckinode(dp, &curino);
 }
 
-struct dirstuff {
-	int loc;
-	int blkno;
-	int blksiz;
-	ino_t number;
-	enum {DONTKNOW, NOFIX, FIX} fix;
-};
-
-dirscan(blk, nf)
-	daddr_t blk;
-	int nf;
+dirscan(idesc)
+	register struct inodesc *idesc;
 {
 	register DIRECT *dp;
-	struct dirstuff dirp;
-	int blksiz, dsize, n;
+	int dsize, n;
+	long blksiz;
 	char dbuf[DIRBLKSIZ];
 
-	if (outrange(blk, 1)) {
-		filsize -= sblock.fs_bsize;
+	if (idesc->id_type != DATA)
+		errexit("wrong type to dirscan %d\n", idesc->id_type);
+	blksiz = idesc->id_numfrags * sblock.fs_fsize;
+	if (outrange(idesc->id_blkno, idesc->id_numfrags)) {
+		idesc->id_filesize -= blksiz;
 		return (SKIP);
 	}
-	blksiz = nf * sblock.fs_fsize;
-	dirp.loc = 0;
-	dirp.blkno = blk;
-	dirp.blksiz = blksiz;
-	if (dirp.number != dnum) {
-		dirp.number = dnum;
-		dirp.fix = DONTKNOW;
-	}
-	for (dp = readdir(&dirp); dp != NULL; dp = readdir(&dirp)) {
+	idesc->id_loc = 0;
+	for (dp = fsck_readdir(idesc); dp != NULL; dp = fsck_readdir(idesc)) {
 		dsize = dp->d_reclen;
-		bcopy(dp, dbuf, dsize);
-		if ((n = (*pfunc)(dbuf)) & ALTERD) {
-			if (getblk(&fileblk, blk, blksiz) != NULL) {
-				bcopy(dbuf, dp, dsize);
+		bcopy((char *)dp, dbuf, dsize);
+		idesc->id_dirp = (DIRECT *)dbuf;
+		if ((n = (*idesc->id_func)(idesc)) & ALTERED) {
+			if (getblk(&fileblk, idesc->id_blkno, blksiz) != NULL) {
+				bcopy(dbuf, (char *)dp, dsize);
 				dirty(&fileblk);
 				sbdirty();
 			} else
-				n &= ~ALTERD;
+				n &= ~ALTERED;
 		}
 		if (n & STOP) 
 			return (n);
 	}
-	return (filsize > 0 ? KEEPON : STOP);
+	return (idesc->id_filesize > 0 ? KEEPON : STOP);
 }
 
 /*
  * get next entry in a directory.
  */
 DIRECT *
-readdir(dirp)
-	register struct dirstuff *dirp;
+fsck_readdir(idesc)
+	register struct inodesc *idesc;
 {
 	register DIRECT *dp, *ndp;
-	long size;
+	long size, blksiz;
 
-	if (getblk(&fileblk, dirp->blkno, dirp->blksiz) == NULL) {
-		filsize -= dirp->blksiz - dirp->loc;
+	blksiz = idesc->id_numfrags * sblock.fs_fsize;
+	if (getblk(&fileblk, idesc->id_blkno, blksiz) == NULL) {
+		idesc->id_filesize -= blksiz - idesc->id_loc;
 		return NULL;
 	}
-	while (dirp->loc % DIRBLKSIZ == 0 && filsize > 0 &&
-	    dirp->loc < dirp->blksiz) {
-		dp = (DIRECT *)(dirblk.b_buf + dirp->loc);
-	   	if (dp->d_ino < imax &&
-		    dp->d_namlen <= MAXNAMLEN && dp->d_namlen >= 0 &&
-		    dp->d_reclen > 0 && dp->d_reclen <= DIRBLKSIZ)
-			break;
-		dirp->loc += DIRBLKSIZ;
-		filsize -= DIRBLKSIZ;
-		if (dirp->fix == DONTKNOW) {
-			pfatal("DIRECTORY %D CORRUPTED", dirp->number);
-			dirp->fix = NOFIX;
-			if (reply("SALVAGE") != 0)
-				dirp->fix = FIX;
-		}
-		if (dirp->fix != FIX)
-			continue;
+	if (idesc->id_loc % DIRBLKSIZ == 0 && idesc->id_filesize > 0 &&
+	    idesc->id_loc < blksiz) {
+		dp = (DIRECT *)(dirblk.b_buf + idesc->id_loc);
+		if (dircheck(idesc, dp))
+			goto dpok;
+		idesc->id_loc += DIRBLKSIZ;
+		idesc->id_filesize -= DIRBLKSIZ;
 		dp->d_reclen = DIRBLKSIZ;
 		dp->d_ino = 0;
 		dp->d_namlen = 0;
-		dirty(&fileblk);
-	}
-	if (filsize <= 0 || dirp->loc >= dirp->blksiz)
-		return NULL;
-	dp = (DIRECT *)(dirblk.b_buf + dirp->loc);
-	dirp->loc += dp->d_reclen;
-	filsize -= dp->d_reclen;
-	ndp = (DIRECT *)(dirblk.b_buf + dirp->loc);
-	if ((filsize <= 0 && dirp->loc % DIRBLKSIZ != 0) ||
-	    (dirp->loc < dirp->blksiz && filsize > 0 &&
-	    (ndp->d_ino >= imax ||
-	    ndp->d_namlen > MAXNAMLEN || ndp->d_namlen < 0 ||
-	    ndp->d_reclen <= 0 || 
-	    ndp->d_reclen > DIRBLKSIZ - (dirp->loc % DIRBLKSIZ)))) {
-		size = DIRBLKSIZ - (dirp->loc % DIRBLKSIZ);
-		dirp->loc += size;
-		filsize -= size;
-		if (dirp->fix == DONTKNOW) {
-			pfatal("DIRECTORY %D CORRUPTED", dirp->number);
-			dirp->fix = NOFIX;
-			if (reply("SALVAGE") != 0)
-				dirp->fix = FIX;
-		}
-		if (dirp->fix == FIX) {
-			dp->d_reclen += size;
+		dp->d_name[0] = '\0';
+		if (idesc->id_fix == DONTKNOW)
+			direrr(idesc->id_number, "DIRECTORY CORRUPTED");
+		if (dofix(idesc))
 			dirty(&fileblk);
-		}
+		return (dp);
+	}
+dpok:
+	if (idesc->id_filesize <= 0 || idesc->id_loc >= blksiz)
+		return NULL;
+	dp = (DIRECT *)(dirblk.b_buf + idesc->id_loc);
+	idesc->id_loc += dp->d_reclen;
+	idesc->id_filesize -= dp->d_reclen;
+	ndp = (DIRECT *)(dirblk.b_buf + idesc->id_loc);
+	if ((idesc->id_filesize <= 0 && idesc->id_loc % DIRBLKSIZ != 0) ||
+	    (idesc->id_loc < blksiz && idesc->id_filesize > 0 &&
+	     dircheck(idesc, ndp) == 0)) {
+		size = DIRBLKSIZ - (idesc->id_loc % DIRBLKSIZ);
+		dp->d_reclen += size;
+		idesc->id_loc += size;
+		idesc->id_filesize -= size;
+		if (idesc->id_fix == DONTKNOW)
+			direrr(idesc->id_number, "DIRECTORY CORRUPTED");
+		if (dofix(idesc))
+			dirty(&fileblk);
 	}
 	return (dp);
 }
 
-direrr(s)
+/*
+ * Verify that a directory entry is valid.
+ * This is a superset of the checks made in the kernel.
+ */
+dircheck(idesc, dp)
+	struct inodesc *idesc;
+	register DIRECT *dp;
+{
+	register int size;
+	register char *cp;
+	int spaceleft;
+
+	size = DIRSIZ(dp);
+	spaceleft = DIRBLKSIZ - (idesc->id_loc % DIRBLKSIZ);
+	if (dp->d_ino < imax &&
+	    dp->d_reclen != 0 &&
+	    dp->d_reclen <= spaceleft &&
+	    (dp->d_reclen & 0x3) == 0 &&
+	    dp->d_reclen >= size &&
+	    idesc->id_filesize >= size &&
+	    dp->d_namlen <= MAXNAMLEN) {
+		if (dp->d_ino == 0)
+			return (1);
+		for (cp = dp->d_name, size = 0; size < dp->d_namlen; size++)
+			if (*cp == 0 || (*cp++ & 0200))
+				return (0);
+		if (*cp == 0)
+			return (1);
+	}
+	return (0);
+}
+
+direrr(ino, s)
+	ino_t ino;
 	char *s;
 {
 	register DINODE *dp;
 
 	pwarn("%s ", s);
-	pinode();
+	pinode(ino);
 	printf("\n");
-	if ((dp = ginode()) != NULL && ftypeok(dp))
-		pfatal("%s=%s", DIRCT?"DIR":"FILE", pathname);
+	if ((dp = ginode(ino)) != NULL && ftypeok(dp))
+		pfatal("%s=%s\n", DIRCT?"DIR":"FILE", pathname);
 	else
-		pfatal("NAME=%s", pathname);
-	return (reply("REMOVE"));
+		pfatal("NAME=%s\n", pathname);
 }
 
-adjust(lcnt)
-	register short lcnt;
+adjust(idesc, lcnt)
+	register struct inodesc *idesc;
+	short lcnt;
 {
 	register DINODE *dp;
 
-	if ((dp = ginode()) == NULL)
+	if ((dp = ginode(idesc->id_number)) == NULL)
 		return;
 	if (dp->di_nlink == lcnt) {
-		if (linkup() == 0)
-			clri("UNREF", 0);
+		if (linkup(idesc->id_number, (ino_t)0) == 0)
+			clri(idesc, "UNREF", 0);
 	}
 	else {
 		pwarn("LINK COUNT %s",
-			(lfdir==inum)?lfname:(DIRCT?"DIR":"FILE"));
-		pinode();
+			(lfdir==idesc->id_number)?lfname:(DIRCT?"DIR":"FILE"));
+		pinode(idesc->id_number);
 		printf(" COUNT %d SHOULD BE %d",
 			dp->di_nlink, dp->di_nlink-lcnt);
 		if (preen) {
@@ -1415,25 +1597,26 @@ adjust(lcnt)
 	}
 }
 
-clri(s, flg)
+clri(idesc, s, flg)
+	register struct inodesc *idesc;
 	char *s;
+	int flg;
 {
 	register DINODE *dp;
 
-	if ((dp = ginode()) == NULL)
+	if ((dp = ginode(idesc->id_number)) == NULL)
 		return;
 	if (flg == 1) {
 		pwarn("%s %s", s, DIRCT?"DIR":"FILE");
-		pinode();
+		pinode(idesc->id_number);
 	}
 	if (preen || reply("CLEAR") == 1) {
 		if (preen)
 			printf(" (CLEARED)\n");
 		n_files--;
-		pfunc = pass4check;
-		ckinode(dp, ADDR);
+		(void)ckinode(dp, idesc);
 		zapino(dp);
-		statemap[inum] = USTATE;
+		statemap[idesc->id_number] = USTATE;
 		inodirty();
 		inosumbad++;
 	}
@@ -1451,23 +1634,27 @@ badsb(s)
 }
 
 DINODE *
-ginode()
+ginode(inumber)
+	ino_t inumber;
 {
 	daddr_t iblk;
+	static ino_t startinum = 0;	/* blk num of first in raw area */
 
-	if (inum < ROOTINO || inum > imax) {
-		if (debug && (inum < 0 || inum > imax))
-			printf("inum out of range (%d)\n", inum);
+
+	if (inumber < ROOTINO || inumber > imax) {
+		if (debug && inumber > imax)
+			printf("inumber out of range (%d)\n", inumber);
 		return (NULL);
 	}
-	if (inum < startinum || inum >= startinum + INOPB(&sblock)) {
-		iblk = itod(&sblock, inum);
+	if (startinum == 0 ||
+	    inumber < startinum || inumber >= startinum + INOPB(&sblock)) {
+		iblk = itod(&sblock, inumber);
 		if (getblk(&inoblk, iblk, sblock.fs_bsize) == NULL) {
 			return (NULL);
 		}
-		startinum = (inum / INOPB(&sblock)) * INOPB(&sblock);
+		startinum = (inumber / INOPB(&sblock)) * INOPB(&sblock);
 	}
-	return (&inoblk.b_un.b_dinode[inum % INOPB(&sblock)]);
+	return (&inoblk.b_un.b_dinode[inumber % INOPB(&sblock)]);
 }
 
 ftypeok(dp)
@@ -1537,9 +1724,9 @@ getline(fp, loc, maxlen)
 
 BUFAREA *
 getblk(bp, blk, size)
-	daddr_t blk;
 	register BUFAREA *bp;
-	int size;
+	daddr_t blk;
+	long size;
 {
 	register struct filecntl *fcp;
 	daddr_t dblk;
@@ -1564,7 +1751,7 @@ flush(fcp, bp)
 {
 
 	if (bp->b_dirty)
-		bwrite(fcp, bp->b_un.b_buf, bp->b_bno, bp->b_size);
+		(void)bwrite(fcp, bp->b_un.b_buf, bp->b_bno, (long)bp->b_size);
 	bp->b_dirty = 0;
 }
 
@@ -1591,19 +1778,20 @@ ckfini()
 		flush(&dfile, &sblk);
 	}
 	flush(&dfile, &inoblk);
-	close(dfile.rfdes);
-	close(dfile.wfdes);
+	(void)close(dfile.rfdes);
+	(void)close(dfile.wfdes);
 }
 
-pinode()
+pinode(ino)
+	ino_t ino;
 {
 	register DINODE *dp;
 	register char *p;
 	char uidbuf[BUFSIZ];
 	char *ctime();
 
-	printf(" I=%u ", inum);
-	if ((dp = ginode()) == NULL)
+	printf(" I=%u ", ino);
+	if ((dp = ginode(ino)) == NULL)
 		return;
 	printf(" OWNER=");
 	if (getpw((int)dp->di_uid, uidbuf) == 0) {
@@ -1627,6 +1815,7 @@ makecg()
 	int c, blk;
 	daddr_t dbase, d, dlower, dupper, dmax;
 	long i, j, s;
+	ino_t inumber;
 	register struct csum *cs;
 	register DINODE *dp;
 
@@ -1645,7 +1834,7 @@ makecg()
 		dlower = cgsblock(&sblock, c) - dbase;
 		dupper = cgdmin(&sblock, c) - dbase;
 		cs = &sblock.fs_cs(&sblock, c);
-		cgrp.cg_time = time(0);
+		(void)time(&cgrp.cg_time);
 		cgrp.cg_magic = CG_MAGIC;
 		cgrp.cg_cgx = c;
 		if (c == sblock.fs_ncg - 1)
@@ -1663,11 +1852,11 @@ makecg()
 		cgrp.cg_irotor = 0;
 		for (i = 0; i < sblock.fs_frag; i++)
 			cgrp.cg_frsum[i] = 0;
-		inum = sblock.fs_ipg * c;
-		for (i = 0; i < sblock.fs_ipg; inum++, i++) {
+		inumber = sblock.fs_ipg * c;
+		for (i = 0; i < sblock.fs_ipg; inumber++, i++) {
 			cgrp.cg_cs.cs_nifree++;
 			clrbit(cgrp.cg_iused, i);
-			dp = ginode();
+			dp = ginode(inumber);
 			if (dp == NULL)
 				continue;
 			if (ALLOC) {
@@ -1738,11 +1927,11 @@ makecg()
 		sblock.fs_cstotal.cs_nifree += cgrp.cg_cs.cs_nifree;
 		sblock.fs_cstotal.cs_ndir += cgrp.cg_cs.cs_ndir;
 		*cs = cgrp.cg_cs;
-		bwrite(&dfile, &cgrp, fsbtodb(&sblock, cgtod(&sblock, c)),
-		    sblock.fs_cgsize);
+		(void)bwrite(&dfile, (char *)&cgrp,
+			fsbtodb(&sblock, cgtod(&sblock, c)), sblock.fs_cgsize);
 	}
 	for (i = 0, j = 0; i < sblock.fs_cssize; i += sblock.fs_bsize, j++) {
-		bwrite(&dfile, (char *)sblock.fs_csp[j],
+		(void)bwrite(&dfile, (char *)sblock.fs_csp[j],
 		    fsbtodb(&sblock, sblock.fs_csaddr + j * sblock.fs_frag),
 		    sblock.fs_cssize - i < sblock.fs_bsize ?
 		    sblock.fs_cssize - i : sblock.fs_bsize);
@@ -1752,24 +1941,25 @@ makecg()
 	sbdirty();
 }
 
-findino(dirp)
-	register DIRECT *dirp;
+findino(idesc)
+	struct inodesc *idesc;
 {
+	register DIRECT *dirp = idesc->id_dirp;
+
 	if (dirp->d_ino == 0)
 		return (KEEPON);
 	if (!strcmp(dirp->d_name, srchname)) {
 		if (dirp->d_ino >= ROOTINO && dirp->d_ino <= imax)
-			parentdir = dirp->d_ino;
+			idesc->id_parent = dirp->d_ino;
 		return (STOP);
 	}
 	return (KEEPON);
 }
 
-mkentry(dirp)
-	register DIRECT *dirp;
+mkentry(idesc)
+	struct inodesc *idesc;
 {
-	register ino_t in;
-	register char *p;
+	register DIRECT *dirp = idesc->id_dirp;
 	DIRECT newent;
 	int newlen, oldlen;
 
@@ -1784,45 +1974,39 @@ mkentry(dirp)
 	newent.d_reclen = dirp->d_reclen - oldlen;
 	dirp->d_reclen = oldlen;
 	dirp = (struct direct *)(((char *)dirp) + oldlen);
-	dirp->d_ino = orphan;
+	dirp->d_ino = idesc->id_parent;	/* ino to be entered is in id_parent */
 	dirp->d_reclen = newent.d_reclen;
-	p = &dirp->d_name[2];
-	for (in = imax; in > 0; in /= 10)
-		p++;
-	*--p = 0;
-	dirp->d_namlen = p - dirp->d_name;
-	in = orphan;
-	while (p > dirp->d_name) {
-		*--p = (in % 10) + '0';
-		in /= 10;
-	}
-	*p = '#';
-	return (ALTERD|STOP);
+	dirp->d_namlen = lftempname(dirp->d_name, idesc->id_parent);
+	return (ALTERED|STOP);
 }
 
-chgdd(dirp)
-	register DIRECT *dirp;
+chgdd(idesc)
+	struct inodesc *idesc;
 {
+	register DIRECT *dirp = idesc->id_dirp;
+
 	if (dirp->d_name[0] == '.' && dirp->d_name[1] == '.' &&
 	dirp->d_name[2] == 0) {
 		dirp->d_ino = lfdir;
-		return (ALTERD|STOP);
+		return (ALTERED|STOP);
 	}
 	return (KEEPON);
 }
 
-linkup()
+linkup(orphan, pdir)
+	ino_t orphan;
+	ino_t pdir;
 {
 	register DINODE *dp;
 	register lostdir;
-	register ino_t pdir;
+	struct inodesc idesc;
 
-	if ((dp = ginode()) == NULL)
+	bzero((char *)&idesc, sizeof(struct inodesc));
+	if ((dp = ginode(orphan)) == NULL)
 		return (0);
 	lostdir = DIRCT;
-	pdir = parentdir;
 	pwarn("UNREF %s ", lostdir ? "DIR" : "FILE");
-	pinode();
+	pinode(orphan);
 	if (preen && dp->di_size == 0)
 		return (0);
 	if (preen)
@@ -1830,28 +2014,23 @@ linkup()
 	else
 		if (reply("RECONNECT") == 0)
 			return (0);
-	orphan = inum;
 	if (lfdir == 0) {
-		inum = ROOTINO;
-		if ((dp = ginode()) == NULL) {
-			inum = orphan;
+		if ((dp = ginode(ROOTINO)) == NULL)
 			return (0);
-		}
-		pfunc = findino;
 		srchname = lfname;
-		filsize = dp->di_size;
-		parentdir = 0;
-		ckinode(dp, DATA);
-		inum = orphan;
-		if ((lfdir = parentdir) == 0) {
+		idesc.id_type = DATA;
+		idesc.id_func = findino;
+		idesc.id_number = ROOTINO;
+		idesc.id_filesize = dp->di_size;
+		(void)ckinode(dp, &idesc);
+		if ((lfdir = idesc.id_parent) == 0) {
 			pfatal("SORRY. NO lost+found DIRECTORY");
 			printf("\n\n");
 			return (0);
 		}
 	}
-	inum = lfdir;
-	if ((dp = ginode()) == NULL || !DIRCT || statemap[inum] != FSTATE) {
-		inum = orphan;
+	if ((dp = ginode(lfdir)) == NULL ||
+	     !DIRCT || statemap[lfdir] != FSTATE) {
 		pfatal("SORRY. NO lost+found DIRECTORY");
 		printf("\n\n");
 		return (0);
@@ -1860,27 +2039,29 @@ linkup()
 		dp->di_size = fragroundup(&sblock, dp->di_size);
 		inodirty();
 	}
-	filsize = dp->di_size;
-	inum = orphan;
-	pfunc = mkentry;
-	if ((ckinode(dp, DATA) & ALTERD) == 0) {
+	idesc.id_type = DATA;
+	idesc.id_func = mkentry;
+	idesc.id_number = lfdir;
+	idesc.id_filesize = dp->di_size;
+	idesc.id_parent = orphan;	/* this is the inode to enter */
+	if ((ckinode(dp, &idesc) & ALTERED) == 0) {
 		pfatal("SORRY. NO SPACE IN lost+found DIRECTORY");
 		printf("\n\n");
 		return (0);
 	}
-	lncntp[inum]--;
+	lncntp[orphan]--;
 	if (lostdir) {
-		pfunc = chgdd;
-		dp = ginode();
-		filsize = dp->di_size;
-		ckinode(dp, DATA);
-		inum = lfdir;
-		if ((dp = ginode()) != NULL) {
+		dp = ginode(orphan);
+		idesc.id_type = DATA;
+		idesc.id_func = chgdd;
+		idesc.id_number = orphan;
+		idesc.id_filesize = dp->di_size;
+		(void)ckinode(dp, &idesc);
+		if ((dp = ginode(lfdir)) != NULL) {
 			dp->di_nlink++;
 			inodirty();
-			lncntp[inum]++;
+			lncntp[lfdir]++;
 		}
-		inum = orphan;
 		pwarn("DIR I=%u CONNECTED. ", orphan);
 		printf("PARENT WAS I=%u\n", pdir);
 		if (preen == 0)
@@ -1889,32 +2070,57 @@ linkup()
 	return (1);
 }
 
-bread(fcp, buf, blk, size)
-	daddr_t blk;
-	register struct filecntl *fcp;
-	register size;
-	char *buf;
+/*
+ * generate a temporary name for the lost+found directory.
+ */
+lftempname(bufp, ino)
+	char *bufp;
+	ino_t ino;
 {
-	if (lseek(fcp->rfdes, dbtob(blk), 0) < 0)
+	register ino_t in;
+	register char *cp;
+	int namlen;
+
+	cp = bufp + 2;
+	for (in = imax; in > 0; in /= 10)
+		cp++;
+	*--cp = 0;
+	namlen = cp - bufp;
+	in = ino;
+	while (cp > bufp) {
+		*--cp = (in % 10) + '0';
+		in /= 10;
+	}
+	*cp = '#';
+	return (namlen);
+}
+
+bread(fcp, buf, blk, size)
+	register struct filecntl *fcp;
+	char *buf;
+	daddr_t blk;
+	long size;
+{
+	if (lseek(fcp->rfdes, (long)dbtob(blk), 0) < 0)
 		rwerr("SEEK", blk);
-	else if (read(fcp->rfdes, buf, size) == size)
+	else if (read(fcp->rfdes, buf, (int)size) == size)
 		return (1);
 	rwerr("READ", blk);
 	return (0);
 }
 
 bwrite(fcp, buf, blk, size)
-	daddr_t blk;
 	register struct filecntl *fcp;
-	register size;
 	char *buf;
+	daddr_t blk;
+	long size;
 {
 
 	if (fcp->wfdes < 0)
 		return (0);
-	if (lseek(fcp->wfdes, dbtob(blk), 0) < 0)
+	if (lseek(fcp->wfdes, (long)dbtob(blk), 0) < 0)
 		rwerr("SEEK", blk);
-	else if (write(fcp->wfdes, buf, size) == size) {
+	else if (write(fcp->wfdes, buf, (int)size) == size) {
 		fcp->mod = 1;
 		return (1);
 	}
@@ -1944,7 +2150,7 @@ unrawname(cp)
 		return (cp);
 	if (*(dp+1) != 'r')
 		return (cp);
-	strcpy(dp+1, dp+2);
+	(void)strcpy(dp+1, dp+2);
 	return (cp);
 }
 
@@ -1958,11 +2164,39 @@ rawname(cp)
 	if (dp == 0)
 		return (0);
 	*dp = 0;
-	strcpy(rawbuf, cp);
+	(void)strcpy(rawbuf, cp);
 	*dp = '/';
-	strcat(rawbuf, "/r");
-	strcat(rawbuf, dp+1);
+	(void)strcat(rawbuf, "/r");
+	(void)strcat(rawbuf, dp+1);
 	return (rawbuf);
+}
+
+/*
+ * determine whether an inode should be fixed.
+ */
+dofix(idesc)
+	register struct inodesc *idesc;
+{
+	switch (idesc->id_fix) {
+
+	case DONTKNOW:
+		if (reply("FIX") == 0) {
+			idesc->id_fix = NOFIX;
+			return (0);
+		}
+		idesc->id_fix = FIX;
+		return (ALTERED);
+
+	case FIX:
+		return (ALTERED);
+
+	case NOFIX:
+		return (0);
+
+	default:
+		errexit("UNKNOWN INODESC FIX MODE %d\n", idesc->id_fix);
+	}
+	/* NOTREACHED */
 }
 
 /* VARARGS1 */
@@ -2020,10 +2254,15 @@ pwarn(s, a1, a2, a3, a4, a5, a6)
 	printf(s, a1, a2, a3, a4, a5, a6);
 }
 
+#ifndef lint
+/*
+ * Stub for routines from kernel.
+ */
 panic(s)
 	char *s;
 {
 
-	pfatal("internal inconsistency: %s\n");
+	pfatal("INTERNAL INCONSISTENCY: %s\n", s);
 	exit(12);
 }
+#endif
