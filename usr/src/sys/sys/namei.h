@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)namei.h	6.10 (Berkeley) %G%
+ *	@(#)namei.h	6.11 (Berkeley) %G%
  */
 
 #ifndef _NAMEI_
