@@ -641,8 +641,10 @@ bt_map_open(map, mode)
 			syserr("Cannot open BTREE database %s", map->map_file);
 		return FALSE;
 	}
-#if !OLD_NEWDB && HASFLOCK
+#if !OLD_NEWDB
 	fd = db->fd(db);
+#endif
+#if HASFLOCK
 # if !defined(O_EXLOCK)
 	if (mode == O_RDWR && fd >= 0)
 	{
@@ -725,8 +727,10 @@ hash_map_open(map, mode)
 			syserr("Cannot open HASH database %s", map->map_file);
 		return FALSE;
 	}
-#if !OLD_NEWDB && HASFLOCK
+#if !OLD_NEWDB
 	fd = db->fd(db);
+#endif
+#if HASFLOCK
 # if !defined(O_EXLOCK)
 	if (mode == O_RDWR && fd >= 0)
 	{
