@@ -54,7 +54,7 @@
 #include <ctype.h>
 #include "rst.h"
 
-char 	sccsid[] = "@(#)makeifont.c	1.3	(Berkeley)	%G%";
+char 	sccsid[] = "@(#)makeifont.c	1.4	(Berkeley)	%G%";
 
 #define PCNTUP		62	/* percent of maximum height for an ascender */
 #define PCNTDOWN	73	/* percent of maximum droop for a descender */
@@ -85,7 +85,7 @@ char	*fontname = "XX";	/* troff name of font - set on command line */
 char	*fontdir = FONTDIR;	/* place to look for fonts */
 char	IName[100];		/* input file name put here */
 char	*rdchar ();		/* function makes strings for ascii */
-int	FID = -1;		/* input file number */
+FILE *	FID = NULL;		/* input file number */
 
 int	maxdown = 0;		/* size of the most "droopy" character */
 int	maxup = 0;		/* size of the tallest character */
@@ -146,27 +146,27 @@ char *ispecial[] = {
 	"?1", "?2", "cr", "", "/", "A", "B", "C", "D", "E", "F", "G", "H", "I",
 	"J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W",
 	"X", "Y", "Z", "cu", "ca", "c+", "an", "or", "|-", "-|", "lf", "rf",
-	"lc", "rc", "{", "}", "<", ">", "bv", "||", "[[", "]]", "", "", "sr",
+	"lc", "rc", "{", "}", "<", ">", "br", "||", "[[", "]]", "", "", "sr",
 	"#", "gr", "is", "ux", "dx", "rx", "dm", "sc", "dg", "dd", "pp", "@",
 	"co", "", "$"
 };
-int	nspecial = 0;
+int	nspecial = 2;
 char *sspecial[SYNON] = {
-	"",""
+	"lh", "La",	"rh", "Ra"
 };
 
 char *imath[] = {
-	"", "", "", "", "lf", "rf", "lc", "rc", "", "", "", "",
-	"", "", "", "", "", "", "", "", "", "", "",
+	"Bl", "Br", "LT", "RT", "LB", "RB", "rt", "rk", "rb", "lt", "lk", "lb",
+	"rc", "lc", "rf", "lf", "bv", "ci", "", "", "", "", "", "",
 	"", "", "", "", "", "", "", "", "", "", "", "",
-	"", "", "", "", "", "", "", "", "", "", "", "Bl", "Br",
-	"", "", "", "", "", "", "", "", "lt", "rt", "lb", "rb",
-	"lk", "rk", "", "", "", "", "", "", "", "", "", "", "", "", "",
 	"", "", "", "", "", "", "", "", "", "", "", "",
-	"", "", "", "", "", "", "", "", "", "", "", "", "",
-	"LT", "RT", "LB", "RB", "", "", "", "", "", "", "", "", "",
-	"", "", "", "", "", "", "",
-	"", "?0", "", "", "", "", "?1", "?2"
+	"", "", "", "", "", "", "", "", "", "", "", "",
+	"", "", "", "", "", "", "", "", "", "", "", "",
+	"", "", "", "", "", "", "", "", "", "", "", "",
+	"", "", "", "", "", "", "", "", "", "", "", "",
+	"", "", "", "", "", "", "", "", "", "", "", "",
+	"", "", "", "", "", "", "", "", "", "", "", "",
+	"", "", "", "", "", "", "", ""
 };
 int	nmath = 0;
 char *smath[SYNON] = {
@@ -177,14 +177,14 @@ char *iitalics[] = {
 	"*G", "*D", "*H", "*L", "*C", "*P", "*S", "*U", "*F", "*Q", "*W",
 	"*a", "*b", "*g", "*d", "*e", "*z", "*y", "*h", "*i", "*k", "*l",
 	"*m", "*n", "*c", "*p", "*r", "*s", "*t", "*u", "*f", "*x", "id",
-	"!", "\"", "el", "?0", "pd", "&", "'", "(", ")", "*", "+", ",", "hy",
+	"!", "\"", "el", "Fi", "pd", "&", "'", "(", ")", "*", "+", ",", "hy",
 	".", "/", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", ":", ";",
 	"<", "=", ">", "?",
 	"id", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M",
 	"N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z", "[",
-	"", "]", "", "", "`", "a", "b", "c", "d", "e", "f", "g", "h",
+	"ff", "]", "fi", "fl", "`", "a", "b", "c", "d", "e", "f", "g", "h",
 	"i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v",
-	"w", "x", "y", "z", "*q", "*w", "?2", "?1", "w-"
+	"w", "x", "y", "z", "*q", "*w", "?2", "?1", "Fl"
 };
 int	nitalics = 15;
 char *sitalics[SYNON] = {
@@ -272,42 +272,35 @@ char **argv;
 		    break;
 
 	  case 'p': pointsize = atoi(++*argv);	/* point size */
-		    if (pointsize < MINSIZE || pointsize > MAXSIZE) {
-			fprintf(stderr, "Illegal point size: %d\n", pointsize);
-			exit(1);
-		    }
+		    if (pointsize < MINSIZE || pointsize > MAXSIZE)
+			error("illegal point size: %d", pointsize);
 		    break;
 
 	  case 'r': res = atoi(++*argv);	/* resolution */
-		    if (res < MINRES || res > MAXRES) {
-			fprintf(stderr, "Illegal resolution: %d\n", res);
-			exit(1);
-		    }
+		    if (res < MINRES || res > MAXRES)
+			error("illegal resolution: %d", res);
 		    break;
 
-	   default: fprintf(stderr, "Bad option: %c", **argv);
-		    exit(1);
+	   default: error("bad option: %c", **argv);
 	}
     }
 
 							/* open font file */
-    for (i = 0; FID < 0 && (psize = psizelist[i]) > 0; i++) {
+    for (i = 0; FID == NULL && (psize = psizelist[i]) > 0; i++) {
 	sprintf (IName, "%s/%s.r%d", fontdir, *argv, psize);
-	FID = open (IName, 0);
+	FID = fopen (IName, "r");
     }
-    if (FID < 0) { 
-	fprintf (stderr, "Can't find %s\n", *argv);
-	exit (8); 
-    }
+    if (FID == NULL)
+	error("can't find %s", *argv);
 
-    i = read(FID, &filemark[0], FMARK);
-    if (strncmp(filemark, "Rast", 4) || i != FMARK)
-	    error("Bad File Mark in Font file.");
+    for (i = 0; i < FMARK; filemark[i++] = getc(FID));
+    if (strncmp(filemark, "Rast", 4))
+	    error("bad File Mark in Font file.");
 
     p.p_size = rd2();
     p.p_version = rd1();
     if (p.p_version)
-	error("Wrong version of Font file.");
+	error("wrong version of Font file.");
     p.p_glyph = rd3();
     p.p_first = rd2();
     p.p_last = rd2();
@@ -325,13 +318,13 @@ char **argv;
     p.p_id = rd4();
     p.p_res = rd2();
     if (p.p_res != res)
-	    error("Wrong resolution in Font file.");
+	    error("wrong resolution in Font file.");
 
     i = p.p_glyph - 44;
     idstrings = (unsigned char *) malloc (i);
     endstring = idstrings + i;
-    if (read(FID, idstrings, i) != i)
-	    error("Bad preamble in Font file.");
+    while (i--) if (getc(FID) == EOF)
+	    error("bad preamble in Font file.");
 
     for (i = p.p_first; i <= p.p_last; i++) {
 	    g[i].g_height = rd2();
@@ -358,8 +351,8 @@ char **argv;
     printf ("# char	width	u/d	octal\ncharset\n");
 			/* the octal values for the following characters are */
 			/* purposefully OUT of the range for characters (128) */
-    printf ("\\|	%4d	 0	0200\n\\^	%4d	 0	0200\n",
-								i / 3, i / 6);
+    printf ("\\|	%4d	 0	0%o\n\\^	%4d	 0	0%o\n",
+						i / 3, DIRSIZ, i / 6, DIRSIZ);
 
     for (j = p.p_first; j <= p.p_last; j++) {
 	if (g[j].g_bitp != 0) {
@@ -379,7 +372,7 @@ char **argv;
 
 *******************************************************************************/
 
-    for (j=0; j<256; j++) {
+    for (j=0; j<DIRSIZ; j++) {
 	if (g[j].g_bitp != 0) {
 	    type = (int) (((g[j].g_up * 100) / maxup) > PCNTUP) * 2 | (int)
 	    	((((g[j].g_height - (g[j].g_up+1)) * 100)/maxdown) > PCNTDOWN);
@@ -432,19 +425,22 @@ register char *p;
 }
 
 
-error(string)
+/*VARARGS1*/
+error(string, a1, a2, a3, a4)
 char *string;
 { 
-    printf("\nmakefont: %s\n",string);
+    fprintf(stderr, "makefont: ");
+    fprintf(stderr, string, a1, a2, a3, a4);
+    fprintf(stderr, "\n");
     exit(8);
 }
 
 rd1()
 {
-    unsigned char i;
+    int i;
 
-    if(read (FID, &i, 1) != 1) error("File read error");
-    return (int) i;
+    if((i = getc(FID)) == EOF) error("file read error");
+    return i;
 }
 
 rd2()
