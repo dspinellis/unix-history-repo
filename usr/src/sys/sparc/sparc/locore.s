@@ -13,7 +13,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)locore.s	8.3 (Berkeley) %G%
+ *	@(#)locore.s	8.4 (Berkeley) %G%
  *
  * from: $Header: locore.s,v 1.51 93/04/21 06:19:37 torek Exp $
  */
