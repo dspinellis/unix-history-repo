@@ -1,4 +1,4 @@
-/*	tcp_timer.h	4.6	82/01/17	*/
+/*	tcp_timer.h	4.7	82/02/03	*/
 
 /*
  * Definitions of the TCP timers.  These timers are counted
@@ -66,6 +66,8 @@
 #define	TCPTV_MAX	( 30*PR_SLOWHZ)		/* maximum allowable value */
 
 #define	TCP_LINGERTIME	120			/* linger at most 2 minutes */
+
+#define	TCP_MAXRXTSHIFT	10			/* maximum retransmits */
 
 #ifdef	TCPTIMERS
 char *tcptimers[] =

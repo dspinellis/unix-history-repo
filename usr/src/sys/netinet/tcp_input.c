@@ -1,4 +1,4 @@
-/*	tcp_input.c	1.51	82/01/25	*/
+/*	tcp_input.c	1.52	82/02/03	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -276,6 +276,7 @@ trimthenstep6:
 		if (tp->rcv_nxt != ti->ti_seq)
 			goto dropafterack;
 		if (ti->ti_len > 0) {
+			m_adj(m, ti->ti_len);
 			ti->ti_len = 0;
 			ti->ti_flags &= ~(TH_PUSH|TH_FIN);
 		}
@@ -284,10 +285,11 @@ trimthenstep6:
 		 * If segment begins before rcv_nxt, drop leading
 		 * data (and SYN); if nothing left, just ack.
 		 */
-		if (SEQ_GT(tp->rcv_nxt, ti->ti_seq)) {
-			todrop = tp->rcv_nxt - ti->ti_seq;
+		todrop = tp->rcv_nxt - ti->ti_seq;
+		if (todrop > 0) {
 			if (tiflags & TH_SYN) {
 				tiflags &= ~TH_SYN;
+				ti->ti_flags &= ~TH_SYN;
 				ti->ti_seq++;
 				if (ti->ti_urp > 1) 
 					ti->ti_urp--;
@@ -304,19 +306,16 @@ trimthenstep6:
 				ti->ti_urp -= todrop;
 			else {
 				tiflags &= ~TH_URG;
-				/* ti->ti_flags &= ~TH_URG; */
-				/* ti->ti_urp = 0; */
+				ti->ti_flags &= ~TH_URG;
+				ti->ti_urp = 0;
 			}
-			/* tiflags &= ~TH_SYN; */
-			/* ti->ti_flags &= ~TH_SYN; */
 		}
 		/*
 		 * If segment ends after window, drop trailing data
 		 * (and PUSH and FIN); if nothing left, just ACK.
 		 */
-		if (SEQ_GT(ti->ti_seq+ti->ti_len, tp->rcv_nxt+tp->rcv_wnd)) {
-			todrop =
-			     ti->ti_seq+ti->ti_len - (tp->rcv_nxt+tp->rcv_wnd);
+		todrop = (ti->ti_seq+ti->ti_len) - (tp->rcv_nxt+tp->rcv_wnd);
+		if (todrop > 0) {
 			if (todrop > ti->ti_len)
 				goto dropafterack;
 			m_adj(m, -todrop);
@@ -838,7 +837,7 @@ COUNT(TCP_REASS);
 	 */
 	if ((struct tcpiphdr *)q->ti_prev != (struct tcpiphdr *)tp) {
 		register int i;
-		q = (struct tcpiphdr *)(q->ti_prev);
+		q = (struct tcpiphdr *)q->ti_prev;
 		/* conversion to int (in i) handles seq wraparound */
 		i = q->ti_seq + q->ti_len - ti->ti_seq;
 		if (i > 0) {
@@ -855,10 +854,12 @@ COUNT(TCP_REASS);
 	 * While we overlap succeeding segments trim them or,
 	 * if they are completely covered, dequeue them.
 	 */
-	while (q != (struct tcpiphdr *)tp &&
-	    SEQ_GT(ti->ti_seq + ti->ti_len, q->ti_seq)) {
+	while (q != (struct tcpiphdr *)tp) {
 		register int i = (ti->ti_seq + ti->ti_len) - q->ti_seq;
+		if (i <= 0)
+			break;
 		if (i < q->ti_len) {
+			q->ti_seq += i;
 			q->ti_len -= i;
 			m_adj(dtom(q), i);
 			break;
