@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)macro.c	8.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)macro.c	8.5 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -317,7 +317,7 @@ macid(p, ep)
 	if (tTd(35, 14))
 		printf("macid(%s) => ", p);
 
-	if (*p == '\0')
+	if (*p == '\0' || (p[0] == '{' && p[1] == '}'))
 	{
 		syserr("Name required for macro/class");
 		if (ep != NULL)
@@ -337,7 +337,12 @@ macid(p, ep)
 	}
 	bp = mbuf;
 	while (*++p != '\0' && *p != '}' && bp < &mbuf[sizeof mbuf])
-		*bp++ = *p;
+	{
+		if (isascii(*p) && (isalnum(*p) || *p == '_'))
+			*bp++ = *p;
+		else
+			syserr("Invalid macro/class character %c", *p);
+	}
 	*bp = '\0';
 	mid = -1;
 	if (*p == '\0')
