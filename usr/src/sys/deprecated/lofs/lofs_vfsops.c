@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lofs_vfsops.c	1.3 (Berkeley) %G%
+ *	@(#)lofs_vfsops.c	7.1 (Berkeley) %G%
  *
  * $Id: lofs_vfsops.c,v 1.9 1992/05/30 10:26:24 jsp Exp jsp $
  */
@@ -25,7 +25,7 @@
 #include <sys/mount.h>
 #include <sys/namei.h>
 #include <sys/malloc.h>
-#include <lofs/lofs.h>
+#include <miscfs/lofs/lofs.h>
 
 /*
  * Mount loopback copy of existing name space
@@ -182,9 +182,6 @@ lofs_unmount(mp, mntflags, p)
 	 * ever get anything cached at this level at the
 	 * moment, but who knows...
 	 */
-	/* mntflushbuf(mp, 0);  */
-	/* if (mntinvalbuf(mp, 1))
-		return (EBUSY); */
 	if (rootvp->v_usecount > 1)
 		return (EBUSY);
 	if (error = vflush(mp, rootvp, flags))
