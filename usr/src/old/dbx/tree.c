@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)tree.c 1.4 %G%";
+static char sccsid[] = "@(#)tree.c 1.5 %G%";
 
 /*
  * Parse tree management.
@@ -374,6 +374,8 @@ Command cmd;
  * Print out a trace/stop command name.
  */
 
+#define fprintI(f, b) { if (b) fprintf(f, "i"); }
+
 private print_tracestop(f, cmd)
 File f;
 Command cmd;
@@ -388,10 +390,18 @@ Command cmd;
 	stopcmd = list_element(Command, list_head(ifcmd->value.event.actions));
 	checkref(stopcmd);
 	if (stopcmd->op == O_STOPX) {
-	    fprintf(f, "%s if ", cmd->value.trace.inst ? "stopi" : "stop");
+	    fprintf(f, "stop");
+	    fprintI(f, cmd->value.trace.inst);
+	    fprintf(f, " if ");
 	    prtree(f, ifcmd->value.event.cond);
 	    done = true;
 	}
+    } else if (ifcmd->op == O_STOPIFCHANGED) {
+	fprintf(f, "stop");
+	fprintI(f, cmd->value.trace.inst);
+	fprintf(f, " ");
+	prtree(f, ifcmd->value.arg[0]);
+	done = true;
     }
     if (not done) {
 	fprintf(f, "%s ", cmd->value.trace.inst ? "tracei" : "trace");
@@ -405,7 +415,7 @@ Command cmd;
 }
 
 /*
- * Print a tree back out in Pascal form.
+ * Print out a tree.
  */
 
 public prtree(f, p)
