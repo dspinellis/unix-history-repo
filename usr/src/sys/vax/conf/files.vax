@@ -18,6 +18,7 @@ vax/urem.s		standard
 vax/vm_machdep.c	standard
 vaxif/if_acc.c		optional acc imp device-driver
 vaxif/if_css.c		optional css imp device-driver
+vaxif/if_de.c		optional de device-driver
 vaxif/if_dmc.c		optional dmc device-driver
 vaxif/if_ec.c		optional ec device-driver
 vaxif/if_en.c		optional en inet device-driver
