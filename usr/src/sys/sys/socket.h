@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)socket.h	7.14 (Berkeley) %G%
+ *	@(#)socket.h	7.15 (Berkeley) %G%
  */
 
 /*
@@ -159,6 +159,7 @@ struct msghdr {
 #define	MSG_TRUNC	0x10		/* data discarded before delivery */
 #define	MSG_CTRUNC	0x20		/* control data lost before delivery */
 #define	MSG_WAITALL	0x40		/* wait for full request or error */
+#define	MSG_DONTWAIT	0x80		/* this message should be nonblocking */
 
 /*
  * Header for ancillary data objects in msg_control buffer.
