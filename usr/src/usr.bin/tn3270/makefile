@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)makefile	4.5 (Berkeley) %G%
+#	@(#)makefile	4.6 (Berkeley) %G%
 #
 
 # Makefile for tn3270 and friends...
@@ -123,7 +123,7 @@ RANLIB	= ranlib
 PRINT	= print
 ACTION = @sccs tell
 
-DEFINES= ${LINT_ARGS} -DTERMCAP -DSRCRT -DKLUDGELINEMODE
+DEFINES= ${LINT_ARGS} -DTERMCAP -DSRCRT -DKLUDGELINEMODE -DUSE_TERMIO
 
 INCLUDES = -I. -I..
 
@@ -174,7 +174,7 @@ SUBDIR =	api ascii ctlr general ${SYS} telnet
 # The following are directories we don't do regular make's in, but
 # we do make everywhere, print, and sourcelist in.
 
-EXTRADIR =	arpa sys_dos tools utilities
+EXTRADIR =	tools
 
 # The libraries we use.  The order here is important.
 # syslib.a and ctlrlib.a should come first, then the rest.
