@@ -1,4 +1,4 @@
-/*	dz.c	4.1	%G%	*/
+/*	dz.c	4.2	%G%	*/
 
 #include "../conf/dz.h"
 #if NDZ11 > 0
@@ -17,6 +17,7 @@
 #include "../h/pdma.h"
 #include "../h/bk.h"
 #include "../h/file.h"
+#include "../h/mx.h"
 
 /*
  * When running dz's using only SAE (silo alarm) on input
