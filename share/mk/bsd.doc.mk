@@ -1,17 +1,17 @@
 #	@(#)bsd.doc.mk	5.3 (Berkeley) 1/2/91
 
-PRINTER=psc
+PRINTER?=	ps
 
 BIB?=		bib
-EQN?=		deqn -P${PRINTER}
-GREMLIN?=	grn -P${PRINTER}
+EQN?=		eqn
+GREMLIN?=	grn
 GRIND?=		vgrind -f
 INDXBIB?=	indxbib
-PIC?=		pic -P${PRINTER}
+PIC?=		pic
 REFER?=		refer
-ROFF?=		ditroff -t ${MACROS} ${PAGES} -P${PRINTER}
+ROFF?=		groff -T${PRINTER} ${MACROS} ${PAGES}
 SOELIM?=	soelim
-TBL?=		dtbl -P${PRINTER}
+TBL?=		tbl
 
 .PATH: ${.CURDIR}
 
@@ -30,7 +30,7 @@ install:
 	    Makefile ${FILES} ${EXTRA} ${DESTDIR}${BINDIR}/${DIR}
 
 spell: ${SRCS}
-	spell ${SRCS} | sort | comm -23 - spell.ok > paper.spell
+		spell ${SRCS} | sort | comm -23 - spell.ok > paper.spell
 
 BINDIR?=	/usr/share/doc
 BINGRP?=	bin
