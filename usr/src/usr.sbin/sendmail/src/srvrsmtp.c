@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)srvrsmtp.c	6.50 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	6.51 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)srvrsmtp.c	6.50 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	6.51 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -694,17 +694,22 @@ printvrfyaddr(a, last)
 	strcpy(fmtbuf, "250");
 	fmtbuf[3] = last ? ' ' : '-';
 
-	if (strchr(a->q_paddr, '<') != NULL)
-		strcpy(&fmtbuf[4], "%s");
-	else if (a->q_fullname == NULL)
-		strcpy(&fmtbuf[4], "<%s>");
+	if (a->q_fullname == NULL)
+	{
+		if (strchr(a->q_user, '@') == NULL)
+			strcpy(&fmtbuf[4], "<%s@%s>");
+		else
+			strcpy(&fmtbuf[4], "<%s>");
+		message(fmtbuf, a->q_user, MyHostName);
+	}
 	else
 	{
-		strcpy(&fmtbuf[4], "%s <%s>");
-		message(fmtbuf, a->q_fullname, a->q_paddr);
-		return;
+		if (strchr(a->q_user, '@') == NULL)
+			strcpy(&fmtbuf[4], "%s <%s@%s>");
+		else
+			strcpy(&fmtbuf[4], "%s <%s>");
+		message(fmtbuf, a->q_fullname, a->q_user, MyHostName);
 	}
-	message(fmtbuf, a->q_paddr);
 }
 /*
 **  HELP -- implement the HELP command.
