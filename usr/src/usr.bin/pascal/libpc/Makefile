@@ -1,4 +1,4 @@
-SCCSID = "@(#)Makefile 1.3 %G%"
+SCCSID = "@(#)Makefile 1.4 %G%"
 CFLAGS = -O
 LIB = ${DESTDIR}/usr/lib
 LD= ld
@@ -59,9 +59,9 @@ install: libpc
 	cp libpc ${LIB}/libpc.a
 	${RANLIB} ${LIB}/libpc.a
 
-libpc: h01errs.h ${OBJS} ${SYOBJ}
+libpc: h01errs.h ${OBJS} ${SYOBJ} ${EXOBJ}
 	${RM} libpc
-	${AR} cr libpc ${OBJS} ${SYOBJ}
+	${AR} cr libpc ${OBJS} ${SYOBJ} ${EXOBJ}
 	${RANLIB} libpc
 
 h01errs.h: errdata make.ed1 ashdr.s
