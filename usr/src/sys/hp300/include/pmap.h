@@ -9,7 +9,7 @@
  * The CMU software License Agreement specifies the terms and conditions
  * for use and redistribution.
  *
- *	@(#)pmap.h	7.3 (Berkeley) %G%
+ *	@(#)pmap.h	7.4 (Berkeley) %G%
  */
 
 #ifndef	_PMAP_MACHINE_
@@ -71,6 +71,7 @@ pv_entry_t	pv_table;		/* array of entries, one per page */
 #define pa_index(pa)		atop(pa - vm_first_phys)
 #define pa_to_pvh(pa)		(&pv_table[pa_index(pa)])
 
+#define	pmap_kernel()			(kernel_pmap)
 #define	pmap_resident_count(pmap)	((pmap)->pm_stats.resident_count)
 
 extern	struct pte *Sysmap;
