@@ -10,7 +10,6 @@ tahoe/mem.c		standard
 tahoe/ns_cksum.c	optional ns
 tahoe/sys_machdep.c	standard
 tahoe/trap.c		standard
-tahoe/ufs_machdep.c	standard
 tahoe/vm_machdep.c	standard
 tahoe/udiv.s		standard
 tahoe/urem.s		standard
