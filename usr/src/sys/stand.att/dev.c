@@ -4,12 +4,12 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)dev.c	7.12 (Berkeley) %G%
+ *	@(#)dev.c	7.13 (Berkeley) %G%
  */
 
-#include "sys/param.h"
-#include "stand/saio.h"			/* used from machine/stand dir */
+#include <sys/param.h>
 #include <setjmp.h>
+#include "saio.h"
 
 /*
  * NB: the value "io->i_dev", used to offset the devsw[] array in the
@@ -111,6 +111,7 @@ nodev(io)
 	struct iob *io;
 {
 	errno = EBADF;
+	return(-1);
 }
 
 /* ARGSUSED */
