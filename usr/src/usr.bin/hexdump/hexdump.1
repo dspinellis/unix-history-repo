@@ -1,0 +1,311 @@
+.\" Copyright (c) 1989 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms are permitted
+.\" provided that the above copyright notice and this paragraph are
+.\" duplicated in all such forms and that any documentation,
+.\" advertising materials, and other materials related to such
+.\" distribution and use acknowledge that the software was developed
+.\" by the University of California, Berkeley.  The name of the
+.\" University may not be used to endorse or promote products derived
+.\" from this software without specific prior written permission.
+.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+.\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\"
+.\"	@(#)hexdump.1	5.1 (Berkeley) %G%
+.\"
+.TH HEXDUMP 1 ""
+.UC 7
+.SH NAME
+hexdump - ascii, decimal, hexadecimal, octal dump
+.SH SYNOPSIS
+hexdump
+.ft B
+[
+.I -bcdov
+.ft B
+] [
+.I -e format_string
+.ft B
+] [
+.I -f format_file
+.ft B
+] [
+.I -n length
+.ft B
+] [
+.I -s skip
+.ft B
+] [
+.I file ...
+.ft B
+]
+.ft R
+.SH DESCRIPTION
+The hexdump utility is a filter that displays the specified files, or
+the standard input, if no files are specified, in a user specified
+format.
+.PP
+The options are as follows:
+.TP
+-b
+Display the input offset in hexadecimal, followed by sixteen
+space-separated, three column, zero-filled, bytes of input data,
+in octal, per line.
+It is equivalent to specifying the following format strings:
+.ti +5
+"%07.7_Ax\en"
+.ti +5
+"%07.7_ax  " 16/1 "%03o " "\en"
+.TP
+-c
+Display the input offset in hexadecimal, followed by sixteen
+space-separated, three column, space-filled, characters of input
+data per line.
+It is equivalent to specifying the following format strings:
+.ti +5
+"%07.7_Ax\en"
+.ti +5
+"%07.7_ax  " 16/1 "%3_c " "\en"
+.TP
+-d
+Display the input offset in hexadecimal, followed by eight
+space-separated, five column, zero-filled, two-byte units
+of input data, in unsigned decimal, per line.
+It is equivalent to specifying the following format strings:
+.ti +5
+"%07.7_Ax\en"
+.ti +5
+"%07.7_ax  " 8/2 "%05u " "\en"
+.TP
+-e
+Specify a format string to be used for displaying data.
+.TP
+-f
+Specify a file that contains one or more newline separated format strings.
+Empty lines and lines whose first non-blank character is a hash mark
+(#) are ignored.
+.TP
+-n
+Interpret only
+.I length
+bytes of input.
+.TP
+-o
+Display the input offset in hexadecimal, followed by eight
+space-separated, six column, zero-filled, two byte quantities of
+input data, in octal, per line.
+It is equivalent to specifying the following format strings:
+.ti +5
+"%07.7_Ax\en"
+.ti +5
+"%07.7_ax  " 8/2 "%06o " "\en"
+.TP
+-s
+Skip
+.I offset
+bytes from the beginning of the input.
+By default,
+.I offset
+is interpreted as a decimal number.
+With a leading ``0x'' or ``0X'',
+.I offset
+is interpreted as a hexadecimal number,
+otherwise, with a leading ``0'',
+.I offset
+is interpreted as an octal number.
+Appending the character ``b'', ``k'', or ``m'' to
+.I offset
+causes it to be interpreted as a multiple of 512, 1024, or 1048576,
+respectively.
+.TP
+-v
+The
+.I -v
+option causes hexdump to display all input data.
+Without the
+.I -v
+option, any number of groups of output lines, which would be
+identical to the immediately preceding group of output lines (except
+for the input offsets), are replaced with a line comprised of a
+single asterisk.
+.PP
+For each input file,
+.I hexdump
+sequentially copies the input to standard output, transforming the
+data according to the format strings specified by the
+.I -e
+and
+.I -f
+options, in the order that they were specified.
+.PP
+A format string contains any number of format units, separated by
+whitespace.
+A format unit contains up to three items: an iteration count, a byte
+count, and a format.
+.PP
+The iteration count is an optional positive integer, which defaults to
+one.
+Each format is applied iteration count times.
+.PP
+The byte count is an optional positive integer.
+If specified it defines the number of bytes to be interpreted by
+each iteration of the format.
+.PP
+If an iteration count and/or a byte count is specified, a single slash
+must be placed after the iteration count and/or before the byte count
+to disambiguate them.
+Any whitespace before or after the slash is ignored.
+.PP
+The format is required and must be surrounded by double quote
+(" ") marks.
+It is interpreted as a fprintf-style format string, with the
+following exceptions:
+.TP
+.B \(bu
+An asterisk (*) may not be used as a field width or precision.
+.TP
+.B \(bu
+A byte count or field precision is required for each ``s'' conversion
+character.
+.TP
+.B \(bu
+The conversion characters ``h'', ``l'', ``n'', and ``p'' are not
+supported.
+.TP
+.B \(bu
+The single character escape sequences (\ea, \eb, \ef, \en, \er,
+\et, and \ev) described in the C standard are supported.
+.PP
+Hexdump also supports the the following additional conversion strings:
+.PP
+.TP
+_a[dox]
+Display the input offset, cumulative across input files, of the
+next byte to be displayed.
+The appended characters ``d'', ``o'', and ``x'' specify the display base
+as decimal, octal or hexadecimal respectively.
+.TP
+_A[dox]
+Identical to the _a conversion string except that it is only performed
+once, when all of the input data has been processed.
+.TP
+_c
+Output characters in the default character set.
+Nonprinting characters are displayed in hexadecimal, except for those
+representable by standard escape notation, which are displayed
+as follows:
+.in +5
+.TS
+l l.
+NUL	\e0
+<alert character>	\ea
+<backspace>	\eb
+<form-feed>	\ef
+<newline>	\en
+<carriage return>	\er
+<tab>	\et
+<vertical tab>	\ev
+.TE
+.TP
+_p
+Output characters in the default character set.
+Nonprinting characters are displayed as a single ``.''.
+.TP
+_u
+Output US ASCII characters, with the exception that control characters are
+displayed using the following, lower-case, names.
+Characters greater than 0xff, hexadecimal, are displayed as hexadecimal
+strings.
+.in +5
+.TS
+l l l l l l.
+00 nul	001 soh	002 stx	003 etx	004 eot	005 enq
+06 ack	007 bel	008 bs	009 ht	00A lf	00B vt
+0C ff	00D cr	00E so	00F si	010 dle	011 dc1
+12 dc2	013 dc3	014 dc4	015 nak	016 syn	017 etb
+18 can	019 em	01A sub	01B esc	01C fs	01D gs
+01E rs	01F us	0FF del
+.TE
+.PP
+The default and supported byte counts are as follows:
+.in +5
+.TS
+l l l.
+Conversion type	Default (bytes)	Other Supported (bytes)
+_
+%_c	1
+%_p	1
+%_u	1
+%c	1
+%d  (%i)	4	1, 2
+%o	4	1, 2
+%u	4	1, 2
+%x  (%X)	4	1, 2
+%e  (%E)	8	4
+%f	8	4
+%g  (%G)	8	4
+.TE
+.PP
+The amount of data interpreted by each format string is the sum of the
+data required by each format unit, which is the iteration count times the
+byte count, or the iteration count times the number of bytes required by
+the format if the byte count is not specified.
+.PP
+The input is manipulated in ``blocks'', where a block is defined as the
+largest amount of data specified by any format string.
+Format strings interpreting less than an input block's worth of data,
+whose last format unit both interprets some number of bytes and does
+not have a specified iteration count, have the the interation count
+incremented until the entire input block has been processed or there
+is not enough data remaining in the block to satisfy the format string.
+.PP
+If, either as a result of user specification or hexdump modifying
+the iteration count as described above, an iteration count is
+greater than one, no trailing whitespace characters are output
+during the last iteration.
+.PP
+It is an error to specify a byte count as well as multiple conversion
+characters or strings unless all but one of the conversion characters
+or strings is ``_a'' or ``_A''.
+.PP
+If, as a result of the specification of the
+.I -n
+option or end-of-file being reached, input data only partially
+satisfies a format string, the input block is zero-padded sufficiently
+to display all available data (i.e. any format units overlapping the
+end of data will display some number of the zero bytes).
+.PP
+Further output by such format strings is replaced by an equivalent
+number of spaces.
+An equivalent number of spaces is defined as the number of spaces
+output by an ``s'' conversion character with the same field width
+and precision as the original conversion character or conversion
+string but with any ``+'', `` '', or ``#'' conversion flag characters
+removed, and referencing a NULL string.
+Trailng spaces and tabs (possibly interspersed with newlines) are
+not output; the interspersed newlines are.
+.PP
+If no format strings are specified, the default display is equivalent
+to specifying the following format strings:
+.ti +5
+"%07.7_Ax\en"
+.ti +5
+"%07.7_ax  " 8/2 "%04x " "\en"
+.sp
+This displays the input offset in hexadecimal, followed by eight, space
+separated, four column, zero-filled, two-byte quantities of input
+data, in hexadecimal, per line.
+.PP
+.I Hexdump
+exits 0 on success and >0 if an error occurred.
+.SH EXAMPLES
+Display the input in perusal format:
+.sp
+.ti +5
+"%06.6_ao "  12/1 "%3o "
+.ti +5
+"\et\et" "%_p "
+.ti +5
+"\en"
