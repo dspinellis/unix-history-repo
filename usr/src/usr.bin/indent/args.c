@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)args.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)args.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -95,6 +95,8 @@ struct pro {
     "nbad",	PRO_BOOL,	false,	OFF, &blanklines_after_declarations,
     "bbb",	PRO_BOOL,	false,	ON,  &blanklines_before_blockcomments,
     "nbbb",	PRO_BOOL,	false,	OFF, &blanklines_before_blockcomments,
+    "ps",	PRO_BOOL,	false,	ON,	&pointer_as_binop,
+    "nps",	PRO_BOOL,	false,	OFF,	&pointer_as_binop,
     "troff",	PRO_BOOL,	false,	ON,	&troff,
     "T",	PRO_SPECIAL,	0,	KEY,	0,
  /* whew! */
