@@ -7,10 +7,14 @@ LDADD=	-lutil
 BINOWN=	root
 BINMODE=4555
 
-.if exists(/usr/lib/libcrypt.a)
-#CFLAGS+=-DKERBEROS
-DPADD+= ${LIBCRYPT} #${LIBKRB}
-LDADD+= -lcrypt #-lkrb
+.if exists(${LIBCRYPT})
+DPADD+= ${LIBCRYPT}
+LDADD+= -lcrypt
+.endif
+.if exists(${LIBKRB})
+DPADD+= ${LIBKRB} ${LIBDES}
+LDADD+= -lkrb -ldes
+CFLAGS+= -DKERBEROS
 .endif
 
 .include <bsd.prog.mk>
