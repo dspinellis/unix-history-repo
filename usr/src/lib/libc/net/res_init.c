@@ -16,7 +16,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)res_init.c	6.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)res_init.c	6.12 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -82,7 +82,7 @@ res_init()
 		    cp = buf + sizeof("domain") - 1;
 		    while (*cp == ' ' || *cp == '\t')
 			    cp++;
-		    if (*cp == '\0')
+		    if ((*cp == '\0') || (*cp == '\n'))
 			    continue;
 		    (void)strncpy(_res.defdname, cp, sizeof(_res.defdname) - 1);
 		    if ((cp = index(_res.defdname, '\n')) != NULL)
@@ -97,7 +97,7 @@ res_init()
 		    cp = buf + sizeof("search") - 1;
 		    while (*cp == ' ' || *cp == '\t')
 			    cp++;
-		    if (*cp == '\0')
+		    if ((*cp == '\0') || (*cp == '\n'))
 			    continue;
 		    (void)strncpy(_res.defdname, cp, sizeof(_res.defdname) - 1);
 		    if ((cp = index(_res.defdname, '\n')) != NULL)
@@ -128,7 +128,7 @@ res_init()
 		    cp = buf + sizeof("nameserver") - 1;
 		    while (*cp == ' ' || *cp == '\t')
 			    cp++;
-		    if (*cp == '\0')
+		    if ((*cp == '\0') || (*cp == '\n'))
 			    continue;
 		    if ((_res.nsaddr_list[nserv].sin_addr.s_addr =
 			inet_addr(cp)) == (unsigned)-1) 
