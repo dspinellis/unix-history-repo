@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_syscalls.c	7.82 (Berkeley) %G%
+ *	@(#)vfs_syscalls.c	7.83 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -898,7 +898,7 @@ lseek(p, uap, retval)
 	nuap.fdes = uap->fdes;
 	nuap.off = uap->off;
 	nuap.sbase = uap->sbase;
-	error = qseek(p, &nuap, &qret);
+	error = __lseek(p, &nuap, &qret);
 	*retval = qret;
 	return (error);
 }
@@ -907,7 +907,7 @@ lseek(p, uap, retval)
 /*
  * Seek system call.
  */
-qseek(p, uap, retval)
+__lseek(p, uap, retval)
 	struct proc *p;
 	register struct args {
 		int	fdes;
@@ -1005,7 +1005,7 @@ out1:
  * This version follows links.
  */
 /* ARGSUSED */
-stat(p, uap, retval)
+ostat(p, uap, retval)
 	struct proc *p;
 	register struct args {
 		char	*fname;
@@ -1035,7 +1035,7 @@ stat(p, uap, retval)
  * This version does not follow links.
  */
 /* ARGSUSED */
-lstat(p, uap, retval)
+olstat(p, uap, retval)
 	struct proc *p;
 	register struct args {
 		char	*fname;
@@ -1094,7 +1094,7 @@ cvtstat(st, ost)
  * This version follows links.
  */
 /* ARGSUSED */
-qstat(p, uap, retval)
+stat(p, uap, retval)
 	struct proc *p;
 	register struct args {
 		char	*fname;
@@ -1122,7 +1122,7 @@ qstat(p, uap, retval)
  * This version does not follow links.
  */
 /* ARGSUSED */
-lqstat(p, uap, retval)
+lstat(p, uap, retval)
 	struct proc *p;
 	register struct args {
 		char	*fname;
@@ -1468,7 +1468,7 @@ truncate(p, uap, retval)
 
 	nuap.fname = uap->fname;
 	nuap.length = uap->length;
-	return (qtruncate(p, &nuap, retval));
+	return (__truncate(p, &nuap, retval));
 }
 
 /*
@@ -1490,7 +1490,7 @@ ftruncate(p, uap, retval)
 
 	nuap.fd = uap->fd;
 	nuap.length = uap->length;
-	return (fqtruncate(p, &nuap, retval));
+	return (__ftruncate(p, &nuap, retval));
 }
 #endif /* COMPAT_43 */
 
@@ -1498,7 +1498,7 @@ ftruncate(p, uap, retval)
  * Truncate a file given its path name.
  */
 /* ARGSUSED */
-qtruncate(p, uap, retval)
+__truncate(p, uap, retval)
 	struct proc *p;
 	register struct args {
 		char	*fname;
@@ -1537,7 +1537,7 @@ out:
  * Truncate a file given a file descriptor.
  */
 /* ARGSUSED */
-fqtruncate(p, uap, retval)
+__ftruncate(p, uap, retval)
 	struct proc *p;
 	register struct args {
 		int	fd;
