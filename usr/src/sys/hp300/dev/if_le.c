@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_le.c	7.3 (Berkeley) %G%
+ *	@(#)if_le.c	7.4 (Berkeley) %G%
  */
 
 #include "le.h"
@@ -106,6 +106,7 @@ struct	le_softc {
 	int	sc_rxoff;
 	int	sc_txoff;
 	int	sc_busy;
+	short	sc_iflags;
 #if NBPFILTER > 0
 	caddr_t sc_bpf;
 #endif
@@ -777,6 +778,16 @@ leioctl(ifp, cmd, data)
 		} else if (ifp->if_flags & IFF_UP &&
 		    (ifp->if_flags & IFF_RUNNING) == 0)
 			leinit(ifp->if_unit);
+		/*
+		 * If the state of the promiscuous bit changes, the interface
+		 * must be reset to effect the change.
+		 */
+		if (((ifp->if_flags ^ le->sc_iflags) & IFF_PROMISC) &&
+		    (ifp->if_flags & IFF_RUNNING)) {
+			le->sc_iflags = ifp->if_flags;
+			lereset(ifp->if_unit);
+			lestart(ifp);
+		}
 		break;
 
 	default:
