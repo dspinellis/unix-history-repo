@@ -4,7 +4,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)READ_ME	8.5 (Berkeley) %G%
+#	@(#)READ_ME	8.6 (Berkeley) %G%
 #
 
 This directory contains the source files for sendmail.
@@ -40,20 +40,21 @@ _AIX3		Define this if you are IBM AIX 3.x.
 
 If you are a system that sendmail has already been ported to, you
 probably won't have to touch these.  But if you are porting, you may
-have to tweak the following compilation flags in order to get
-it to compile and link properly:
+have to tweak the following compilation flags in conf.h in order to
+get it to compile and link properly:
 
-UNSETENV	Define this if your system library does NOT include the
-		"unsetenv" subroutine.
 SYSTEM5		Adjust for System V.
 LOCKF		Set this if you do not have the flock system call -- it
 		will revert to System V file locking.  There are some
 		semantic gotchas, so flock is preferred.  Implied by
 		SYSTEM5.
-SYS5TZ		Use System V-style time zones.  If not set, the TZ
-		environment variable is ignored.  Implied by SYSTEM5.
 HASUNAME	Set if you have the "uname" system call.  Implied by
 		SYSTEM5.
+HASSETENV	Define this if your system library has the "setenv"
+		call.  If not defined, sendmail defines this in terms
+		of the putenv(3) routine.
+HASUNSETENV	Define this if your system library has the "unsetenv"
+		subroutine.
 HASSTATFS	Define this if you have the statfs(2) system call.  It's
 		not a disaster to get this wrong -- but you do lose the
 		queue free space code.
@@ -97,6 +98,10 @@ LA_TYPE		The type of load average your kernel supports.  These
 		the load average as "zero" (and does so on all architectures).
 		The actual code is in conf.c -- it can be tweaked if you
 		are brave.
+ERRLIST_PREDEFINED
+		If set, assumes that some header file defines sys_errlist.
+		This may be needed if you get type conflicts on this
+		variable -- otherwise don't worry about it.
 
 There are a bunch of features that you can decide to compile in, such
 as selecting various database packages and special protocol support.
@@ -223,4 +228,4 @@ version.c	The version number and information about this
 
 Eric Allman
 
-(Version 8.5, last update %G% 20:50:04)
+(Version 8.6, last update %G% 15:35:37)

@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.6 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -472,36 +472,9 @@ rlsesigs()
 #define LA_FLOAT	3	/* read kmem for avenrun; interpret as float */
 #define LA_SUBR		4	/* call getloadavg */
 
+/* do guesses based on general OS type */
 #ifndef LA_TYPE
-#  if defined(sun) && !defined(BSD)
-#    define LA_TYPE		LA_INT
-#  endif
-#  if defined(mips) || defined(__alpha)
-     /* Ultrix or OSF/1 or RISC/os */
-#    define LA_TYPE		LA_INT
-#    define LA_AVENRUN		"avenrun"
-#  endif
-#  if defined(__hpux)
-#    define LA_TYPE		LA_FLOAT
-#    define LA_AVENRUN		"avenrun"
-#  endif
-#  if defined(__NeXT__)
-#    define LA_TYPE		LA_ZERO
-#  endif
-
-/* now do the guesses based on general OS type */
-#  ifndef LA_TYPE
-#   if defined(SYSTEM5)
-#    define LA_TYPE		LA_INT
-#    define LA_AVENRUN		"avenrun"
-#   else
-#    if defined(BSD)
-#     define LA_TYPE		LA_SUBR
-#    else
-#     define LA_TYPE		LA_ZERO
-#    endif
-#   endif
-#  endif
+# define LA_TYPE	LA_ZERO
 #endif
 
 #if (LA_TYPE == LA_INT) || (LA_TYPE == LA_FLOAT)
@@ -509,30 +482,20 @@ rlsesigs()
 #include <nlist.h>
 
 #ifndef LA_AVENRUN
-#define LA_AVENRUN	"_avenrun"
+# ifdef SYSTEM5
+#  define LA_AVENRUN	"avenrun"
+# else
+#  define LA_AVENRUN	"_avenrun"
+# endif
 #endif
 
 /* _PATH_UNIX should be defined in <paths.h> */
 #ifndef _PATH_UNIX
-#  if defined(__hpux)
-#    define _PATH_UNIX		"/hp-ux"
-#  endif
-#  if defined(mips) && !defined(ultrix)
-     /* powerful RISC/os */
-#    define _PATH_UNIX		"/unix"
-#  endif
-#  if defined(Solaris2)
-     /* Solaris 2 */
-#    define _PATH_UNIX		"/kernel/unix"
-#  endif
-#  if defined(SYSTEM5)
-#    ifndef _PATH_UNIX
-#      define _PATH_UNIX	"/unix"
-#    endif
-#  endif
-#  ifndef _PATH_UNIX
-#    define _PATH_UNIX		"/vmunix"
-#  endif
+# if defined(SYSTEM5)
+#  define _PATH_UNIX	"/unix"
+# else
+#  define _PATH_UNIX	"/vmunix"
+# endif
 #endif
 
 struct	nlist Nl[] =
