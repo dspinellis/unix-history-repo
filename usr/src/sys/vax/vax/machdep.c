@@ -1,4 +1,4 @@
-/*	machdep.c	4.22	81/03/06	*/
+/*	machdep.c	4.23	81/03/08	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -13,7 +13,8 @@
 #include "../h/proc.h"
 #include "../h/psl.h"
 #include "../h/buf.h"
-#include "../h/uba.h"
+#include "../h/ubavar.h"
+#include "../h/ubareg.h"
 #include "../h/cons.h"
 #include "../h/reboot.h"
 #include "../h/conf.h"
@@ -30,7 +31,7 @@
 int	coresw = 0;
 int	printsw = 0;
 
-char	version[] = "VAX/UNIX (Berkeley Version 4.22) 81/03/06 11:38:06 \n";
+char	version[] = "VAX/UNIX (Berkeley Version 4.23) 81/03/08 16:18:25 \n";
 int	icode[] =
 {
 	0x9f19af9f,	/* pushab [&"init",0]; pushab */
