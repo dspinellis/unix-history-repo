@@ -1,16 +1,16 @@
-.\"	@(#)cron.8	6.5 (Berkeley) %G%
+.\"	@(#)cron.8	6.6 (Berkeley) %G%
 .\"
 .TH CRON 8 ""
 .AT 3
 .SH NAME
 cron \- clock daemon
 .SH SYNOPSIS
-.B /etc/cron
+.B cron
 .SH DESCRIPTION
 .I Cron
 executes commands at specified dates and times
 according to the instructions in the files
-/usr/lib/crontab and /usr/lib/crontab.local.
+/etc/crontab and /etc/crontab.local.
 None, either one, or both of these files may be present.
 Since
 .I cron
@@ -88,6 +88,6 @@ crontab files are checked by
 .I cron
 every minute, on the minute.
 .SH FILES
-/usr/lib/crontab
+/etc/crontab
 .br
-/usr/lib/crontab.local
+/etc/crontab.local
