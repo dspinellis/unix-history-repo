@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)envelope.c	8.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)envelope.c	8.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -414,7 +414,8 @@ settime(e)
 	if (p != NULL)
 		*p = '\0';
 	define('d', dbuf, e);
-	p = newstr(arpadate(dbuf));
+	p = arpadate(dbuf);
+	p = newstr(p);
 	if (macvalue('a', e) == NULL)
 		define('a', p, e);
 	define('b', p, e);
