@@ -1,5 +1,5 @@
 #! /bin/sh
-#	@(#)get	4.7	%G%
+#	@(#)get	4.8	%G%
 #
 # Shell script to build a mini-root file system
 # in preparation for building a distribution tape.
@@ -65,21 +65,21 @@ cat >etc/fstab <<EOF
 /dev/rb0a:/a:xx:1:1
 EOF
 cat >xtr <<'EOF'
-: ${disc?'Usage: disc=xx type=tt tape=yy xtr'}
-: ${type?'Usage: disc=xx type=tt tape=yy xtr'}
-: ${tape?'Usage: disc=xx type=tt tape=yy xtr'}
+: ${disk?'Usage: disk=xx type=tt tape=yy xtr'}
+: ${type?'Usage: disk=xx type=tt tape=yy xtr'}
+: ${tape?'Usage: disk=xx type=tt tape=yy xtr'}
 set -x
-/etc/newfs ${disc}0a ${type}
+/etc/newfs ${disk}0a ${type}
 sync
-/etc/fsck /dev/r${disc}0a
-/etc/mount /dev/${disc}0a /a
+/etc/fsck /dev/r${disk}0a
+/etc/mount /dev/${disk}0a /a
 cd /a
 /etc/restor xsf 3 /dev/${tape}0
 cd /
 sync
-/etc/umount /dev/${disc}0a
+/etc/umount /dev/${disk}0a
 sync
-/etc/fsck /dev/r${disc}0a
+/etc/fsck /dev/r${disk}0a
 echo 'Root filesystem extracted'
 echo
 echo 'If this is a 780, update floppy'
