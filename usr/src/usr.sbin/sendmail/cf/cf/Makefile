@@ -1,4 +1,4 @@
-#	@(#)Makefile	8.12 (Berkeley) %G%
+#	@(#)Makefile	8.13 (Berkeley) %G%
 
 #
 #  This Makefile uses the new Berkeley "make" program.  See Makefile.dist
@@ -68,6 +68,7 @@ M4FILES=\
 	../m4/version.m4 \
 	../mailer/fax.m4 \
 	../mailer/local.m4 \
+	../mailer/mail11.m4 \
 	../mailer/pop.m4 \
 	../mailer/procmail.m4 \
 	../mailer/smtp.m4 \

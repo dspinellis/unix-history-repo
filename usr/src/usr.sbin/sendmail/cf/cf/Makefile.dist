@@ -1,7 +1,7 @@
 #
 #  Makefile for configuration files.
 #
-#	@(#)Makefile.dist	8.4 (Berkeley) %G%
+#	@(#)Makefile.dist	8.5 (Berkeley) %G%
 #
 
 #
@@ -69,6 +69,7 @@ M4FILES=\
 	../m4/version.m4 \
 	../mailer/fax.m4 \
 	../mailer/local.m4 \
+	../mailer/mail11.m4 \
 	../mailer/pop.m4 \
 	../mailer/procmail.m4 \
 	../mailer/smtp.m4 \
