@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)extern.h	5.3 (Berkeley) %G%
+ *	@(#)extern.h	5.4 (Berkeley) %G%
  */
 
 struct entry	*addentry __P((char *, ino_t, int));
@@ -19,7 +19,7 @@ void		 createlinks __P((void));
 long		 deletefile __P((char *, ino_t, int));
 void		 deleteino __P((ino_t));
 ino_t		 dirlookup __P((const char *));
-void	 	 done __P((int));
+__dead void 	 done __P((int));
 void		 dumpsymtable __P((char *, long));
 void		 err __P((const char *, ...));
 void	 	 extractdirs __P((int));
@@ -34,7 +34,6 @@ void		 getfile __P((void (*)(char *, long), void (*)(char *, long)));
 void		 getvol __P((long));
 void		 initsymtable __P((char *));
 int	 	 inodetype __P((ino_t));
-struct inotab	*inotablookup __P((ino_t));
 int		 linkit __P((char *, char *, int));
 struct entry	*lookupino __P((ino_t));
 struct entry	*lookupname __P((char *));
@@ -48,7 +47,6 @@ void		 newnode __P((struct entry *));
 void		 newtapebuf __P((long));
 long		 nodeupdates __P((char *, ino_t, int));
 void	 	 onintr __P((int));
-RST_DIR		*opendirfile __P((const char *));
 void		 panic __P((const char *, ...));
 void		 pathcheck __P((char *));
 struct direct	*pathsearch __P((const char *));
@@ -75,3 +73,11 @@ void	 	 treescan __P((char *, ino_t, long (*)(char *, ino_t, int)));
 ino_t		 upperbnd __P((ino_t));
 long		 verifyfile __P((char *, ino_t, int));
 void		 xtrnull __P((char *, long));
+
+/* From ../dump/dumprmt.c */
+void		rmtclose __P((void));
+int		rmthost __P((char *));
+int		rmtioctl __P((int, int));
+int		rmtopen __P((char *, int));
+int		rmtread __P((char *, int));
+int		rmtseek __P((int, int));

@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -45,7 +45,6 @@ time_t	dumptime;
 time_t	dumpdate;
 FILE 	*terminal;
 
-static void err __P((const char *, ...));
 static void obsolete __P((int *, char **[]));
 static void usage __P((void));
 
@@ -323,7 +322,7 @@ obsolete(argcp, argvp)
 #include <varargs.h>
 #endif
 
-void
+__dead void
 #if __STDC__
 err(const char *fmt, ...)
 #else
