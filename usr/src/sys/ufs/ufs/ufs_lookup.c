@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_lookup.c	7.49 (Berkeley) %G%
+ *	@(#)ufs_lookup.c	7.50 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -65,16 +65,13 @@ int	dirchk = 0;
  * NOTE: (LOOKUP | LOCKPARENT) currently returns the parent inode unlocked.
  */
 int
-ufs_lookup (ap)
+ufs_lookup(ap)
 	struct vop_lookup_args /* {
 		struct vnode *a_dvp;
 		struct vnode **a_vpp;
 		struct componentname *a_cnp;
 	} */ *ap;
 {
-	USES_VOP_ACCESS;
-	USES_VOP_BLKATOFF;
-	USES_VOP_VGET;
 	register struct vnode *vdp;	/* vnode for directory being searched */
 	register struct inode *dp;	/* inode for directory being searched */
 	struct buf *bp;			/* a buffer of directory entries */
@@ -89,7 +86,7 @@ ufs_lookup (ap)
 	doff_t endsearch;		/* offset to end directory search */
 	doff_t prevoff;			/* prev entry dp->i_offset */
 	struct inode *pdp;		/* saved dp during symlink work */
-	struct vnode *tdp;		/* returned by VOP_VGET */
+	struct vnode *tdp;		/* returned by VFS_VGET */
 	doff_t enduseful;		/* pointer past last used dir slot */
 	u_long bmask;			/* block offset mask */
 	int lockparent;			/* 1 => lockparent flag is set */
@@ -437,7 +434,7 @@ found:
 			*vpp = vdp;
 			return (0);
 		}
-		if (error = VOP_VGET(vdp, dp->i_ino, &tdp))
+		if (error = VFS_VGET(vdp->v_mount, dp->i_ino, &tdp))
 			return (error);
 		/*
 		 * If directory is "sticky", then user must own
@@ -474,7 +471,7 @@ found:
 		 */
 		if (dp->i_number == dp->i_ino)
 			return (EISDIR);
-		if (error = VOP_VGET(vdp, dp->i_ino, &tdp))
+		if (error = VFS_VGET(vdp->v_mount, dp->i_ino, &tdp))
 			return (error);
 		*vpp = tdp;
 		cnp->cn_flags |= SAVENAME;
@@ -505,7 +502,7 @@ found:
 	pdp = dp;
 	if (flags & ISDOTDOT) {
 		IUNLOCK(pdp);	/* race to get the inode */
-		if (error = VOP_VGET(vdp, dp->i_ino, &tdp)) {
+		if (error = VFS_VGET(vdp->v_mount, dp->i_ino, &tdp)) {
 			ILOCK(pdp);
 			return (error);
 		}
@@ -516,7 +513,7 @@ found:
 		VREF(vdp);	/* we want ourself, ie "." */
 		*vpp = vdp;
 	} else {
-		if (error = VOP_VGET(vdp, dp->i_ino, &tdp))
+		if (error = VFS_VGET(vdp->v_mount, dp->i_ino, &tdp))
 			return (error);
 		if (!lockparent || !(flags & ISLASTCN))
 			IUNLOCK(pdp);
@@ -605,10 +602,6 @@ ufs_direnter(ip, dvp, cnp)
 	struct vnode *dvp;
 	register struct componentname *cnp;
 {
-	USES_VOP_BLKATOFF;
-	USES_VOP_BWRITE;
-	USES_VOP_TRUNCATE;
-	USES_VOP_WRITE;
 	register struct direct *ep, *nep;
 	register struct inode *dp;
 	struct buf *bp;
@@ -758,8 +751,6 @@ ufs_dirremove(dvp, cnp)
 	struct vnode *dvp;
 	struct componentname *cnp;
 {
-	USES_VOP_BLKATOFF;
-	USES_VOP_BWRITE;
 	register struct inode *dp;
 	struct direct *ep;
 	struct buf *bp;
@@ -800,8 +791,6 @@ ufs_dirrewrite(dp, ip, cnp)
 	struct inode *dp, *ip;
 	struct componentname *cnp;
 {
-	USES_VOP_BLKATOFF;
-	USES_VOP_BWRITE;
 	struct buf *bp;
 	struct direct *ep;
 	struct vnode *vdp = ITOV(dp);
@@ -890,7 +879,6 @@ ufs_checkpath(source, target, cred)
 	struct inode *source, *target;
 	struct ucred *cred;
 {
-	USES_VOP_VGET;
 	struct dirtemplate dirbuf;
 	register struct inode *ip;
 	struct vnode *vp;
@@ -938,7 +926,7 @@ ufs_checkpath(source, target, cred)
 		if (dirbuf.dotdot_ino == rootino)
 			break;
 		ufs_iput(ip);
-		if (error = VOP_VGET(vp, dirbuf.dotdot_ino, &vp))
+		if (error = VFS_VGET(vp->v_mount, dirbuf.dotdot_ino, &vp))
 			break;
 		ip = VTOI(vp);
 	}
