@@ -1,4 +1,4 @@
-/*	mba.c	4.18	81/03/09	*/
+/*	mba.c	4.19	81/03/10	*/
 
 #include "mba.h"
 #if NMBA > 0
@@ -85,8 +85,10 @@ loop:
 		 * Mark device busy during non-data transfer
 		 * and count this as a ``seek'' on the device.
 		 */
-		if (mi->mi_dk >= 0)
+		if (mi->mi_dk >= 0) {
 			dk_seek[mi->mi_dk]++;
+			dk_busy |= (1 << mi->mi_dk);
+		}
 		mi->mi_tab.b_active = 1;
 		return;
 
