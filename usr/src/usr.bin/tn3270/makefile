@@ -141,7 +141,7 @@ install:
 
 clean:
 	rm -f $(ALLO) mset tn3270 errs makefile.bak tn3270.a
-	for i in ${SUBDIR}; do (cd $$i; make ${MFLAGS} clean); done
+	for i in ${SUBDIR} tools; do (cd $$i; make ${MFLAGS} clean); done
 	rm -f t1 tmp/*.o
 	-rmdir tmp
 

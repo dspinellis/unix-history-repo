@@ -136,10 +136,10 @@ extern char	*inet_ntoa();
 #define min(x,y)	((x<y)? x:y)
 
 #if	defined(TN3270)
-static char	Ibuf[8*BUFSIZ], *Ifrontp = Ibuf, *Ibackp = Ibuf;
+static char	Ibuf[8*BUFSIZ], *Ifrontp, *Ibackp;
 #endif	/* defined(TN3270) */
 
-static char	ttyobuf[2*BUFSIZ], *tfrontp = ttyobuf, *tbackp = ttyobuf;
+static char	ttyobuf[2*BUFSIZ], *tfrontp, *tbackp;
 #define	TTYADD(c)	{ if (!(SYNCHing||flushout)) { *tfrontp++ = c; } }
 #define	TTYLOC()	(tfrontp)
 #define	TTYMAX()	(ttyobuf+sizeof ttyobuf-1)
@@ -147,17 +147,17 @@ static char	ttyobuf[2*BUFSIZ], *tfrontp = ttyobuf, *tbackp = ttyobuf;
 #define	TTYBYTES()	(tfrontp-tbackp)
 #define	TTYROOM()	(TTYMAX()-TTYLOC()+1)
 
-static char	netobuf[2*BUFSIZ], *nfrontp = netobuf, *nbackp = netobuf;
+static char	netobuf[2*BUFSIZ], *nfrontp, *nbackp;
 #define	NETADD(c)	{ *nfrontp++ = c; }
 #define	NET2ADD(c1,c2)	{ NETADD(c1); NETADD(c2); }
 #define NETLOC()	(nfrontp)
 #define	NETMAX()	(netobuf+sizeof netobuf-1)
 #define	NETBYTES()	(nfrontp-nbackp)
 #define	NETROOM()	(NETMAX()-NETLOC()+1)
-static char	*neturg = 0;		/* one past last byte of urgent data */
+static char	*neturg;		/* one past last byte of urgent data */
 
-static char	subbuffer[100] = { 0 },
-		*subpointer, *subend = 0;	 /* buffer for sub-options */
+static char	subbuffer[100],
+		*subpointer, *subend;	 /* buffer for sub-options */
 #define	SB_CLEAR()	subpointer = subbuffer;
 #define	SB_TERM()	subend = subpointer;
 #define	SB_ACCUM(c)	if (subpointer < (subbuffer+sizeof subbuffer)) { \
@@ -171,8 +171,8 @@ static char	sb_terminal[] = { IAC, SB,
 #define	SBTERMMODEL	13
 
 
-static char	hisopts[256] = { 0 };
-static char	myopts[256] = { 0 };
+static char	hisopts[256];
+static char	myopts[256];
 
 static char	doopt[] = { IAC, DO, '%', 'c', 0 };
 static char	dont[] = { IAC, DONT, '%', 'c', 0 };
@@ -187,71 +187,71 @@ struct cmd {
 	int	needconnect;	/* Do we need to be connected to execute? */
 };
 
-static char	sibuf[BUFSIZ], *sbp = 0;
+static char	sibuf[BUFSIZ], *sbp;
 static char	tibuf[BUFSIZ], *tbp;
 static fd_set ibits, obits, xbits;
 
 
 static int
-	connected = 0,
-	net = 0,
-	scc = 0,
-	tcc = 0,
-	showoptions = 0,
-	In3270 = 0,		/* Are we in 3270 mode? */
-	ISend = 0,		/* trying to send network data in */
+	connected,
+	net,
+	scc,
+	tcc,
+	showoptions,
+	In3270,		/* Are we in 3270 mode? */
+	ISend,		/* trying to send network data in */
 	debug = 0,
-	crmod = 0,
-	netdata = 0,
+	crmod,
+	netdata,
 	telnetport = 1;
 
-static FILE	*NetTrace = 0;
+static FILE	*NetTrace = 0;		/* Not in bss, since needs to stay */
 
 #define	CONTROL(x)	((x)&0x1f)		/* CTRL(x) is not portable */
 
 static char
 	*prompt = 0,
-	escape = CONTROL(']'),
-	echoc = CONTROL('E');
+	escape,
+	echoc;
 
 static int
-	SYNCHing = 0,		/* we are in TELNET SYNCH mode */
-	flushout = 0,		/* flush output */
+	SYNCHing,		/* we are in TELNET SYNCH mode */
+	flushout,		/* flush output */
 	autoflush = 0,		/* flush output when interrupting? */
-	autosynch = 0,		/* send interrupt characters with SYNCH? */
-	localchars = 0,		/* we recognize interrupt/quit */
-	donelclchars = 0,	/* the user has set "localchars" */
-	dontlecho = 0;		/* do we suppress local echoing right now? */
+	autosynch,		/* send interrupt characters with SYNCH? */
+	localchars,		/* we recognize interrupt/quit */
+	donelclchars,	/* the user has set "localchars" */
+	dontlecho;		/* do we suppress local echoing right now? */
 
 /*	The following are some tn3270 specific flags */
 #if	defined(TN3270)
 
 static int
-	Sent3270TerminalType = 0;	/* Have we said we are a 3270? */
+	Sent3270TerminalType;	/* Have we said we are a 3270? */
 
 /* Some real, live, globals. */
 int
 #if	defined(unix)
-	HaveInput = 0,		/* There is input available to scan */
+	HaveInput,		/* There is input available to scan */
 #endif	/* defined(unix) */
-	tout = 0,			/* Output file descriptor */
-	tin = 0;			/* Input file descriptor */
+	tout,			/* Output file descriptor */
+	tin;			/* Input file descriptor */
 #if	defined(unix)
 char	*transcom = 0;	/* transparent mode command (default: none) */
 #endif	/* defined(unix) */
 
 #else	/* defined(TN3270) */
-static int tin = 0, tout = 0;		/* file descriptors */
+static int tin, tout;		/* file descriptors */
 #endif	/* defined(TN3270) */
 
 static char	line[200];
 #if	defined(TN3270) && defined(unix)
 static char	tline[200];
 #endif	/* defined(TN3270) && defined(unix) */
-static int	margc = 0;
+static int	margc;
 static char	*margv[20];
 
-static jmp_buf	toplevel;
+static jmp_buf	toplevel = 0;
 static jmp_buf	peerdied;
 
 extern	int errno;
@@ -264,9 +264,9 @@ static struct	servent *sp = 0;
 static struct	tchars otc = { 0 }, ntc = { 0 };
 static struct	ltchars oltc = { 0 }, nltc = { 0 };
 static struct	sgttyb ottyb = { 0 }, nttyb = { 0 };
-static int	flushline = 1;
+static int	flushline;
 
-static char	*hostname = 0;
+static char	*hostname;
 static char	hnamebuf[32];
 
 /*
@@ -281,9 +281,43 @@ static struct {
 	modenegotiated,		/* last time operating mode negotiated */
 	didnetreceive,		/* last time we read data from network */
 	gotDM;			/* when did we last see a data mark */
-} clocks = { 0 };
+} clocks;
 
 #define	settimer(x)	clocks.x = clocks.system++
+
+/*
+ * Initialize variables.
+ */
+
+static void
+tninit()
+{
+    extern char edata, end;
+
+    bzero(&edata, &end - &edata);
+    Ifrontp = Ibackp = Ibuf;
+    tfrontp = tbackp = ttyobuf;
+    nfrontp = nbackp = netobuf;
+    
+    /* Don't change telnetport */
+
+    /* Don't change NetTrace */
+
+    escape = CONTROL(']');
+    echoc = CONTROL('E');
+
+    flushline = 1;
+    sp = getservbyname("telnet", "tcp");
+    if (sp == 0) {
+	ExitString(stderr, "telnet: tcp/telnet: unknown service\n",1);
+	/*NOTREACHED*/
+    }
+
+#if	defined(TN3270)
+    terminit();
+    ctlrinit();
+#endif	/* defined(TN3270) */
+}
 
 /*
  * Various utility routines.
@@ -1183,7 +1217,7 @@ suboption()
 
 #if	defined(TN3270)
 	    /*
-	     * Try to send a 3270 type terminal name.  Decide which one base
+	     * Try to send a 3270 type terminal name.  Decide which one based
 	     * on the format of our screen, and (in the future) color
 	     * capaiblities.
 	     */
@@ -1253,10 +1287,9 @@ SetIn3270()
 					&& hisopts[TELOPT_BINARY]) {
 	if (!In3270) {
 	    In3270 = 1;
-	    OptInit();		/* initialize mappings */
+	    Init3270();		/* Initialize 3270 functions */
 	    /* initialize terminal key mapping */
-	    (void) DataFromTerminal(ttyobuf, 0);
-	    StartScreen();	/* Start terminal going */
+	    InitTerminal();	/* Start terminal going */
 	    setconnmode();
 	}
     } else {
@@ -2772,7 +2805,9 @@ suspend()
 
 /*VARARGS*/
 static
-bye()
+bye(argc, argv)
+int	argc;		/* Number of arguments */
+char	*argv[];	/* arguments */
 {
     if (connected) {
 	shutdown(net, 2);
@@ -2780,30 +2815,22 @@ bye()
 	close(net);
 	connected = 0;
 	/* reset options */
-	bzero((char *)hisopts, sizeof hisopts);
-	bzero((char *)myopts, sizeof myopts);
-	SYNCHing = flushout = 0;
-	flushline = 1;
+	tninit();
 #if	defined(TN3270)
-		/*
-		 * The problem is that we were called from command() which
-		 * was called from DataFrom3270() which was called from
-		 * DataFromTerminal() which was called from...
-		 *
-		 * So, just quit.
-		 */
-	if (In3270) {
-	    Exit(0);
-	}
+	SetIn3270();		/* Get out of 3270 mode */
 #endif	/* defined(TN3270) */
     }
-    return 1;
+    if ((argc != 2) || (strcmp(argv[1], "fromquit") != 0)) {
+	longjmp(toplevel, 1);
+	/* NOTREACHED */
+    }
+    return 1;			/* Keep lint, etc., happy */
 }
 
 /*VARARGS*/
 quit()
 {
-	(void) call(bye, "bye", 0);
+	(void) call(bye, "bye", "fromquit", 0);
 	Exit(0);
 	/*NOTREACHED*/
 	return 1;			/* just to keep lint happy */
@@ -3185,11 +3212,8 @@ main(argc, argv)
 	int argc;
 	char *argv[];
 {
-    sp = getservbyname("telnet", "tcp");
-    if (sp == 0) {
-	ExitString(stderr, "telnet: tcp/telnet: unknown service\n",1);
-	/*NOTREACHED*/
-    }
+    tninit();		/* Clear out things */
+
     NetTrace = stdout;
     ioctl(0, TIOCGETP, (char *)&ottyb);
     ioctl(0, TIOCGETC, (char *)&otc);
