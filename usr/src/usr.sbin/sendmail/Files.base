@@ -1,4 +1,4 @@
-#	@(#)Files.base	8.2 (Berkeley) %G%
+#	@(#)Files.base	8.3 (Berkeley) %G%
 CHANGES-R5-R8
 FAQ
 KNOWNBUGS
@@ -21,6 +21,7 @@ src/Makefile.AIX
 src/Makefile.AUX
 src/Makefile.BSD43
 src/Makefile.BSDI
+src/Makefile.CLIX
 src/Makefile.ConvexOS
 src/Makefile.DGUX
 src/Makefile.Dell
