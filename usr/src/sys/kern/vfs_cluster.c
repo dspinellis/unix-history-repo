@@ -1,4 +1,4 @@
-/*	vfs_cluster.c	4.32	82/06/01	*/
+/*	vfs_cluster.c	4.33	82/06/07	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -41,10 +41,10 @@ bread(dev, blkno, size)
  * read-ahead block (which is not allocated to the caller)
  */
 struct buf *
-breada(dev, blkno, rablkno, size)
+breada(dev, blkno, size, rablkno, rasize)
 	dev_t dev;
-	daddr_t blkno, rablkno;
-	int size;
+	daddr_t blkno; int size;
+	daddr_t rablkno; int rasize;
 {
 	register struct buf *bp, *rabp;
 
@@ -70,7 +70,7 @@ breada(dev, blkno, rablkno, size)
 	 * on it also (as above).
 	 */
 	if (rablkno && !incore(dev, rablkno)) {
-		rabp = getblk(dev, rablkno, size);
+		rabp = getblk(dev, rablkno, rasize);
 		if (rabp->b_flags & B_DONE) {
 			brelse(rabp);
 			trace(TR_BREADHITRA, dev, blkno);
@@ -83,13 +83,14 @@ breada(dev, blkno, rablkno, size)
 	}
 
 	/*
-	 * If we get here with bp NULL, then the block
-	 * must've been in core and bread will find it for us.
+	 * If block was in core, let bread get it.
+	 * If block wasn't in core, then the read was started
+	 * above, and just wait for it.
 	 */
-	if(bp == NULL)
-		return(bread(dev, blkno, size));
+	if (bp == NULL)
+		return (bread(dev, blkno, size));
 	biowait(bp);
-	return(bp);
+	return (bp);
 }
 
 /*
