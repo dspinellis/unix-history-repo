@@ -3,10 +3,10 @@
 # include "sendmail.h"
 
 # ifndef SMTP
-SCCSID(@(#)usersmtp.c	4.3		%G%	(no SMTP));
+SCCSID(@(#)usersmtp.c	4.4		%G%	(no SMTP));
 # else SMTP
 
-SCCSID(@(#)usersmtp.c	4.3		%G%);
+SCCSID(@(#)usersmtp.c	4.4		%G%);
 
 
 
@@ -44,6 +44,7 @@ int	SmtpState;			/* connection state, see below */
 **
 **	Returns:
 **		appropriate exit status -- EX_OK on success.
+**		If not EX_OK, it should close the connection.
 **
 **	Side Effects:
 **		creates connection and sends initial protocol.
@@ -85,17 +86,17 @@ smtpinit(m, pvp)
 
 	/*
 	**  Get the greeting message.
-	**	This should appear spontaneously.  Give it two minutes to
+	**	This should appear spontaneously.  Give it five minutes to
 	**	happen.
 	*/
 
 	if (setjmp(CtxGreeting) != 0)
-		return (EX_TEMPFAIL);
-	gte = setevent(120, greettimeout, 0);
+		goto tempfail;
+	gte = setevent(300, greettimeout, 0);
 	r = reply(m);
 	clrevent(gte);
 	if (r < 0 || REPLYTYPE(r) != 2)
-		return (EX_TEMPFAIL);
+		goto tempfail;
 
 	/*
 	**  Send the HELO command.
@@ -105,11 +106,11 @@ smtpinit(m, pvp)
 	smtpmessage("HELO %s", m, HostName);
 	r = reply(m);
 	if (r < 0)
-		return (EX_TEMPFAIL);
+		goto tempfail;
 	else if (REPLYTYPE(r) == 5)
-		return (EX_UNAVAILABLE);
+		goto unavailable;
 	else if (REPLYTYPE(r) != 2)
-		return (EX_TEMPFAIL);
+		goto tempfail;
 
 	/*
 	**  If this is expected to be another sendmail, send some internal
@@ -122,13 +123,13 @@ smtpinit(m, pvp)
 		smtpmessage("VERB", m);
 		r = reply(m);
 		if (r < 0)
-			return (EX_TEMPFAIL);
+			goto tempfail;
 
 		/* tell it we will be sending one transaction only */
 		smtpmessage("ONEX", m);
 		r = reply(m);
 		if (r < 0)
-			return (EX_TEMPFAIL);
+			goto tempfail;
 	}
 
 	/*
@@ -157,12 +158,25 @@ smtpinit(m, pvp)
 	}
 	r = reply(m);
 	if (r < 0 || REPLYTYPE(r) == 4)
-		return (EX_TEMPFAIL);
+		goto tempfail;
 	else if (r == 250)
 		return (EX_OK);
 	else if (r == 552)
-		return (EX_UNAVAILABLE);
+		goto unavailable;
+
+	/* protocol error -- close up */
+	smtpquit(m);
 	return (EX_PROTOCOL);
+
+	/* signal a temporary failure */
+  tempfail:
+	smtpquit(m);
+	return (EX_TEMPFAIL);
+
+	/* signal service unavailable */
+  unavailable:
+	smtpquit(m);
+	return (EX_UNAVAILABLE);
 }
 
 
