@@ -4,7 +4,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)maketape	4.26 (Berkeley) %G%
+#	@(#)maketape	4.27 (Berkeley) %G%
 #
 #	maketape [ 6250 | 1600 [ tapename [ remotetapemachine ] ] ]
 miniroot=hp0d
@@ -22,7 +22,7 @@ umount /dev/hp2g
 umount /dev/hp2a
 mount -r /dev/hp2a /c/nbsd
 mount -r /dev/hp2g /c/nbsd/usr
-cd /nbsd/tp
+cd tp
 tp cmf /tmp/tape.$$ boot copy format
 cd /nbsd/sys/mdec
 echo "Build 1st level boot block file"
