@@ -1,4 +1,4 @@
-/*	ioctl.h	3.5	%G%	*/
+/*	ioctl.h	3.6	%G%	*/
 /*
  * ioctl definitions, and special character and local tty definitions
  */
@@ -82,6 +82,7 @@ struct ltchars {
 
 #define	NETLDISC	1		/* line discip for berk net */
 #define	NTTYDISC	2
+#define	OKILDISC	3
 
 #define	DIOCLSTN	(('d'<<8)|1)
 #define	DIOCNTRL	(('d'<<8)|2)
