@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)error.c	3.4 83/12/07";
+static	char *sccsid = "@(#)error.c	3.5 84/01/12";
 #endif
 
 #include "defs.h"
@@ -38,10 +38,7 @@ char *fmt;
 			return;
 		}
 	}
-	if (w->ww_cur.r >= w->ww_w.b - 2) {
-		waitnl(w);
-		(void) wwputs("\033E", w);
-	}
+	more(w);
 }
 
 err_end()
