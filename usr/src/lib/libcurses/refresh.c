@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)refresh.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)refresh.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <curses.h>
@@ -180,7 +180,8 @@ makech(win, wy)
 		}
 		domvcur(ly, lx, y, wx + win->_begx);
 #ifdef DEBUG
-		__TRACE("makech: 1: wx = %d, lx = %d\n", wx, lx);
+		__TRACE("makech: 1: wx = %d, lx = %d, newy = %d, newx = %d\n", 
+		    wx, lx, y, wx + win->_begx);
 #endif
 		ly = y;
 		lx = wx + win->_begx;
