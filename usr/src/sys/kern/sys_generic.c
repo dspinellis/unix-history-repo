@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sys_generic.c	8.6 (Berkeley) %G%
+ *	@(#)sys_generic.c	8.7 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -470,7 +470,7 @@ select(p, uap, retval)
 {
 	fd_set ibits[3], obits[3];
 	struct timeval atv;
-	int s, ncoll, error = 0, timo;
+	int s, ncoll, error = 0, timo, doblock;
 	u_int ni;
 
 	bzero((caddr_t)ibits, sizeof(ibits));
@@ -499,14 +499,14 @@ select(p, uap, retval)
 			error = EINVAL;
 			goto done;
 		}
+		/*
+		 * Don't let a short time get rounded down to zero
+		 * and cause us to sleep forever, but exactly zero
+		 * means "do not block".
+		 */
+		doblock = (atv.tv_usec || atv.tv_sec);
 		s = splclock();
 		timevaladd(&atv, (struct timeval *)&time);
-		timo = hzto(&atv);
-		/*
-		 * Avoid inadvertently sleeping forever.
-		 */
-		if (timo == 0)
-			timo = 1;
 		splx(s);
 	} else
 		timo = 0;
@@ -517,17 +517,24 @@ retry:
 	if (error || *retval)
 		goto done;
 	s = splhigh();
-	/* this should be timercmp(&time, &atv, >=) */
-	if (uap->tv && (time.tv_sec > atv.tv_sec ||
-	    time.tv_sec == atv.tv_sec && time.tv_usec >= atv.tv_usec)) {
-		splx(s);
-		goto done;
+	if (uap->tv) {
+		if (timercmp(&time, &atv, >=)) {
+			splx(s);
+			goto done;
+		}
+		timo = hzto(&atv);
+		/*
+		 * Avoid inadvertently sleeping forever.
+		 */
+		if (doblock && timo == 0)
+			timo = 1;
 	}
 	if ((p->p_flag & P_SELECT) == 0 || nselcoll != ncoll) {
 		splx(s);
 		goto retry;
 	}
 	p->p_flag &= ~P_SELECT;
+	doblock = 0;
 	error = tsleep((caddr_t)&selwait, PSOCK | PCATCH, "select", timo);
 	splx(s);
 	if (error == 0)
