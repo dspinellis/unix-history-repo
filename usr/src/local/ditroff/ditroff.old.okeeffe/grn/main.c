@@ -1,4 +1,4 @@
-/*	main.c	1.16	(Berkeley) 84/04/17
+/*	main.c	1.17	(Berkeley) 84/05/25
  *
  *	This file contains the main and file system dependent routines
  * for processing gremlin files into troff input.  The program watches
@@ -21,8 +21,8 @@
  *	    the picture.  At most one command may reside on each line, and
  *	    each command is followed by a parameter separated by white space.
  *	    The commands are as follows, and may be abbreviated down to one
- *	    character (with exception of "scale" down to "sc") and may be
- *	    upper or lower case.
+ *	    character (with exception of "scale" and "stipple" down to "sc"
+ *	    and "st") and may be upper or lower case.
  *
  *			      default  -  make all settings in the current
  *					  .GS/.GE the global defaults.
@@ -31,6 +31,9 @@
  *					  by an integer point size).
  *	roman, italics, bold, special  -  set gremlin's fonts to any other
  *					  troff font (one or two characters)
+ *			   stipple, l  -  use a stipple font for polygons.  Arg
+ *					  is troff font name.  No Default.  Can
+ *					  use only one stipple font per picture.
  *			     scale, x  -  scale is IN ADDITION to the global
  *					  scale factor from the default.
  *			   pointscale  -  turn on scaling point sizes to
@@ -84,7 +87,7 @@ extern POINT *PTInit(), *PTMakePoint();
 #define BIG	999999999999.0		/* unweildly large floating number */
 
 
-char	SccsId[] = "main.c	1.16	84/04/17";
+char	SccsId[] = "main.c	1.17	84/05/25";
 
 char	*printer = DEFAULTDEV;	/* device to look up resolution of */
 char	*gremlib = GREMLIB;	/* place to find files after current dir. */
@@ -110,10 +113,12 @@ int	defthick[STYLES] = {  1, 1, 5, 1, 1, 3  };
 int	style[STYLES] = {  DOTTED, DOTDASHED, SOLID, DASHED, SOLID, SOLID  };
 double	scale = 1.0;		/* no scaling, default */
 int	defpoint = 0;		/* flag for pointsize scaling */
+char *  defstipple = (char *) 0;
 
 int	thick[STYLES];	/* thicknesses set by defaults, then by commands */
 char	*tfont[FONTS];	/* fonts originally set to deffont values, then */
 int 	tsize[SIZES];	/*    optionally changed by commands inside grn */
+char *  stipple;
 
 double	xscale;		/* scaling factor from individual pictures */
 double	troffscale;	/* scaling factor at output time */ 
@@ -323,6 +328,7 @@ initpic()
     for (i = 0; i < SIZES; i++) {	/* font size defaults */
 	tsize[i] = defsize[i];
     }
+    stipple = defstipple;
 
     gremlinfile[0] = 0;		/* filename is "null" */
     setdefault = 0;		/* this is not the default settings (yet) */
@@ -430,12 +436,16 @@ int baseline;
 ".br\n.nr g1 %du\n.nr g2 %du\n%s.nr g3 \\n(.f\n.nr g4 \\n(.s\n\\0\n.sp -1\n",
 			xright-xleft, ybottom-ytop, GScommand);
 
+		if (stipple) {		/* stipple requested for this picture */
+		    printf(".st %s\n", stipple);
+		}
+
 		lastx = xleft;		/* note where we are, (upper left */
 		lastyline = lasty = ytop;	/* corner of the picture) */
 
 		e = PICTURE;
-		while (!DBNullelt(e)) {
-		    HGPrintElt(e);	/* traverse picture;  print elements */
+		while (!DBNullelt(e)) {	/* traverse picture;  print elements */
+		    HGPrintElt(e, baseline);
 		    e = DBNextElt(e);
 		}
 				/* decide where to end picture */
@@ -452,6 +462,9 @@ int baseline;
 					/* out the ".GE" line from user */
 		if (flyback)
 		    printf(".sp -1\n");
+		if (stipple) {		/* restore stipple to previous */
+		    printf(".st\n");
+		}
 		printf("\\D't %du'\\D's %du'\n", DEFTHICK, DEFSTYLE);
 		printf(".br\n.ft \\n(g3\n.ps \\n(g4\n%s", inputline);
 	    } else {
@@ -469,7 +482,7 @@ int baseline;
  |		point sizes are NOT saved.  The scaling is done each time a
  |		new picture is started.
  |
- | Side Efct:	defpoint, scale, deffont, defsize and defthick are modified.
+ | Side Efct:	scale, and def* are modified.
  *----------------------------------------------------------------------------*/
 
 savestate()
@@ -485,6 +498,7 @@ savestate()
     for (i = 0; i < SIZES; i++) {	/* font size defaults */
 	defsize[i] = tsize[i];
     }
+    defstipple = stipple;	/* if stipple has been set, it's remembered */
 
     scale *= xscale;		/* default scale of individual pictures */
     defpoint = pointscale;	/* flag for scaling pointsizes from x factors */
@@ -576,8 +590,16 @@ char *line;
 	nofont:	error("no fontname specified in line %d", linenum);
 		break;
 	    }
+	    if (str1[1] == 't') goto stipplecommand;	/* or stipple */
+
 	    tfont[3] = malloc(strlen(str2) + 1);
 	    strcpy(tfont[3], str2);
+	    break;
+
+	case 'l':	/* l */
+	stipplecommand:	/* stipple */
+	    stipple = malloc(strlen(str2) + 1);
+	    strcpy(stipple, str2);
 	    break;
 
 	case 't':	/* thick */
