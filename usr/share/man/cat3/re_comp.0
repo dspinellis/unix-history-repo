@@ -1,0 +1,56 @@
+RE_COMP(3)                  BSD Programmer's Manual                 RE_COMP(3)
+
+NNAAMMEE
+     rree__ccoommpp, rree__eexxeecc - regular expression handler
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<uunniissttdd..hh>>
+
+     _c_h_a_r _*
+     rree__ccoommpp(_c_o_n_s_t _c_h_a_r _*_s);
+
+     _i_n_t
+     rree__eexxeecc(_c_o_n_s_t _c_h_a_r _*_s);
+
+DDEESSCCRRIIPPTTIIOONN
+     This interface is made obsolete by regex(3).
+
+     The rree__ccoommpp() function compiles a string into an internal form suitable
+     for pattern matching.  The rree__eexxeecc() function checks the argument string
+     against the last string passed to rree__ccoommpp().
+
+     The rree__ccoommpp() function returns 0 if the string _s was compiled successful-
+     ly; otherwise a string containing an error message is returned. If
+     rree__ccoommpp() is passed 0 or a null string, it returns without changing the
+     currently compiled regular expression.
+
+     The rree__eexxeecc() function returns 1 if the string _s matches the last com-
+     piled regular expression, 0 if the string _s failed to match the last com-
+     piled regular expression, and -1 if the compiled regular expression was
+     invalid (indicating an internal error).
+
+     The strings passed to both rree__ccoommpp() and rree__eexxeecc() may have trailing or
+     embedded newline characters; they are terminated by NULs. The regular ex-
+     pressions recognized are described in the manual entry for ed(1),  given
+     the above difference.
+
+DDIIAAGGNNOOSSTTIICCSS
+     The rree__eexxeecc() function returns -1 for an internal error.
+
+     The rree__ccoommpp() function returns one of the following strings if an error
+     occurs:
+
+           No previous regular expression,
+           Regular expression too long,
+           unmatched \(,
+           missing ],
+           too many \(\) pairs,
+           unmatched \).
+
+SSEEEE AALLSSOO
+     ed(1),  ex(1),  egrep(1),  fgrep(1),  grep(1),  regex(3)
+
+HHIISSTTOORRYY
+     The rree__ccoommpp() and rree__eexxeecc() functions appeared in 4.0BSD.
+
+4.4BSD                           June 4, 1993                                1
