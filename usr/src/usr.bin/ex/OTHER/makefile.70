@@ -64,8 +64,6 @@ SRCS=	ex.h ex_argv.h ex_re.h ex_temp.h ex_tty.h ex_tune.h ex_vars.h ex_vis.h\
 	${CC} ${CFLAGS} -c x.c 
 	mv x.o $*.o
 
-${OBJS}:	${SRCS}
-
 # 11/23, 34, 40 and other non split I/D machines
 # each of the 5 overlays must stay less than 16K.
 # a.out: ${OBJS}
@@ -86,7 +84,9 @@ a.out: ${OBJS}
 	       ex_vput.o ex_put.o ex_subr.o ${PRINTF} strings.o \
 	       ex_data.o ${TERMLIB} -lovc 
 
-all:	a.out exrecover expreserve tags
+all:	a.out exrecover expreserve
+
+${OBJS}:	${SRCS}
 
 tags:	/tmp
 	${CTAGS} -w ex.[hc] ex_*.[hc]
