@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)const.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)const.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 #include "whoami.h"
@@ -19,8 +19,8 @@ static char sccsid[] = "@(#)const.c	5.2 (Berkeley) %G%";
  * part into the namelist.
  */
 #ifndef PI1
-constbeg( lineofyconst )
-    int	lineofyconst;
+constbeg( lineofyconst , linenum )
+    int	lineofyconst, linenum;
 {
     static bool	const_order = FALSE;
     static bool	const_seen = FALSE;
