@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)sysconf.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)sysconf.c	8.2 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -50,7 +50,7 @@ sysconf(name)
 		mib[1] = KERN_ARGMAX;
 		break;
 	case _SC_CHILD_MAX:
-		return (getrlimit(RLIMIT_NPROC, &rl) ? -1 : rl.rlim_max);
+		return (getrlimit(RLIMIT_NPROC, &rl) ? -1 : rl.rlim_cur);
 	case _SC_CLK_TCK:
 		return (CLK_TCK);
 	case _SC_JOB_CONTROL:
@@ -62,7 +62,7 @@ sysconf(name)
 		mib[1] = KERN_NGROUPS;
 		break;
 	case _SC_OPEN_MAX:
-		return (getrlimit(RLIMIT_NOFILE, &rl) ? -1 : rl.rlim_max);
+		return (getrlimit(RLIMIT_NOFILE, &rl) ? -1 : rl.rlim_cur);
 	case _SC_STREAM_MAX:
 		mib[0] = CTL_USER;
 		mib[1] = USER_STREAM_MAX;
