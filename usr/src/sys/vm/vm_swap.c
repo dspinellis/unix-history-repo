@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_swap.c	7.16 (Berkeley) %G%
+ *	@(#)vm_swap.c	7.17 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -207,7 +207,7 @@ swfree(p, index)
 
 	sp = &swdevt[index];
 	vp = sp->sw_vp;
-	if (error = VOP_OPEN(vp, FREAD|FWRITE, p->p_ucred))
+	if (error = VOP_OPEN(vp, FREAD|FWRITE, p->p_ucred, p))
 		return (error);
 	sp->sw_freed = 1;
 	nblks = sp->sw_nblks;
