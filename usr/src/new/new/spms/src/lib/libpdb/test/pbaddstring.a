@@ -1,0 +1,52 @@
+!<arch>
+Ipbaddstring    418698004   968   27    100644  105       `
+aaa
+bbb|ccc
+ddd|eee:
+fff:lp=here:id=butnothere
+ggg|
+hhh|iii:lp=andhere
+
+:jjj
+kkk|lll|:lp:lp=andherealso:
+
+Opbaddstring    418698004   968   27    100644  199       `
+aaalp=new_string:
+bbb|ccclp=new_string:
+ddd|eee:lp=new_string:
+fff:lp=new_string:id=butnothere
+ggg|lp=new_string:
+hhh|iii:lp=new_string:
+:lp=new_string:
+:jjjlp=new_string:
+kkk|lll|:lp:lp=new_string:
+
+Tpbaddstring.c  418698009   968   27    100644  561       `
+/*
+ * pbaddstring()
+ * pbskipfield()
+ */
+#include <stdio.h>
+#include "path.h"
+#include "pdb.h"
+
+char *PGN = "Tpbaddstring";		/* program name */
+
+main()
+{
+	int closepdb();			/* close database */
+	int pbaddstring();		/* add string field */
+	int pgetent();			/* load next entry into buffer */
+	PDB *mustopenpdb();		/* must open database or die */
+	PDB *pdbp;			/* database stream */
+	
+	pdbp = mustopenpdb("Ipbaddstring", ".", "r");
+	while (pgetent(pdbp) != EOF)
+		{
+		pbaddstring("lp", "new_string");
+		printf("%s\n", pdbp->pbuf);
+		}
+	closepdb(pdbp);
+	exit(0);
+}
+

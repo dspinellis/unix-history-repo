@@ -1,0 +1,212 @@
+!<arch>
+Itreerm         418431198   968   27    100644  48        `
+mar
+may
+nov
+aug
+apr
+jan
+dec
+jul
+feb
+jun
+oct
+sep
+Otreerm         418431198   968   27    100644  1033      `
+				sep
+			oct
+		nov
+	may
+mar
+				jun
+			jul
+		jan
+				feb
+			dec
+	aug
+		apr
+
+----------------------------------------
+
+				sep
+			oct
+		nov
+	may
+jun
+			jul
+		jan
+				feb
+			dec
+	aug
+		apr
+
+----------------------------------------
+
+			sep
+		oct
+	nov
+jun
+			jul
+		jan
+				feb
+			dec
+	aug
+		apr
+
+----------------------------------------
+
+		sep
+	oct
+jun
+			jul
+		jan
+				feb
+			dec
+	aug
+		apr
+
+----------------------------------------
+
+		sep
+	oct
+jun
+			jul
+		jan
+				feb
+			dec
+	apr
+
+----------------------------------------
+
+		sep
+	oct
+jun
+		jul
+	jan
+			feb
+		dec
+
+----------------------------------------
+
+		sep
+	oct
+jun
+		jul
+	feb
+		dec
+
+----------------------------------------
+
+		sep
+	oct
+jun
+		jul
+	feb
+
+----------------------------------------
+
+		sep
+	oct
+jun
+	feb
+
+----------------------------------------
+
+		sep
+	oct
+jun
+
+----------------------------------------
+
+	sep
+oct
+
+----------------------------------------
+
+sep
+
+----------------------------------------
+
+
+----------------------------------------
+
+entire tree removed
+
+Ttreerm.c       418431198   968   27    100644  1428      `
+/*
+ * treerm()
+ */
+#include <stdio.h>
+#include "tree.h"
+#include "null.h"
+
+#define KEYSIZE 10
+
+char *PGN = "Ttreerm";			/* program name */
+int level = 0;				/* current level in tree */
+
+main()
+{
+	TREE *root;			/* root of tree */
+	TREE *tree();			/* binary tree search and insert */
+	TREE *treerm();			/* binary tree deletion */
+	char key[KEYSIZE];		/* input key buffer */
+	void inorderprint();		/* print a binary tree inorder */
+
+	root = NULL;
+	/* tree search and insertion */
+	while (gets(key) != NULL)
+		{
+		root = tree(root, key);
+		}
+
+	/* tree deletion */
+	rewind(stdin);
+	inorderprint(root);
+	printf("\n----------------------------------------\n\n");
+	while (gets(key) != NULL)
+		{
+		root = treerm(root, key);
+		inorderprint(root);
+		printf("\n----------------------------------------\n\n");
+		}
+
+	/* tree search and insertion */
+	rewind(stdin);
+	while (gets(key) != NULL)
+		{
+		root = tree(root, key);
+		}
+	
+	/* tree deletion */
+	root = treerm(root, NULL);
+	if (root == NULL)
+		printf("entire tree removed\n");
+	exit(0);
+}
+
+
+
+/*
+ * Inorderprint prints a binary tree in inorder.
+ */
+void
+inorderprint(p)
+	TREE *p;			/* current node pointer */
+{
+	int i;				/* tree level index */
+	void inorderprint();		/* print tree inorder */
+
+	if (p != NULL)
+		{
+		level++;
+		inorderprint(p->right);
+		level--;
+		for (i = level; i > 0; --i)
+			putchar('\t');
+		printf("%s\n", p->key);
+		level++;
+		inorderprint(p->left);
+		level--;
+		}
+}

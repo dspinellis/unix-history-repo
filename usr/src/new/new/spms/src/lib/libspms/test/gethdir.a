@@ -1,0 +1,53 @@
+!<arch>
+Igethdir        418696290   968   27    100644  8         `
+root
+
+?
+Ogethdir        418974791   968   27    100644  78        `
+/
+../../../..
+Tgethdir: unknown user ?
+/
+../../../..
+Tgethdir: unknown user ?
+Tgethdir.c      418696292   968   27    100644  421       `
+/*
+ * gethdir()
+ */
+#include <stdio.h>
+
+#define NAMESIZE 10
+
+char *PGN = "Tgethdir";			/* program name */
+
+main()
+{
+	char *gets();			/* get line from stdin */
+	char *gethdir();		/* get home directory pathname */
+	char login[NAMESIZE];		/* login name */
+	char *pp;			/* pathname pointer */
+
+	while (gets(login) != NULL)
+		if ((pp = gethdir(login)) != NULL)
+			{
+			printf("%s\n", pp);
+			fflush(stdout);
+			}
+	exit(0);
+}
+
+
+Tgethdir.sh     418974771   968   27    100755  231       `
+#!/bin/csh -f
+#
+# gethdir()
+#
+setenv ROOTPROJECT ../../../..
+Tgethdir < Igethdir >& T_OUTPUT
+setenv HOME ../../../..
+Tgethdir < Igethdir >>& T_OUTPUT
+diff T_OUTPUT Ogethdir
+set diffstatus = $status
+rm -f T_OUTPUT
+exit($diffstatus)
+

@@ -1,0 +1,131 @@
+!<arch>
+Islpop          418431507   968   27    100644  157       `
+^aaa
+-aaa
+^bbb
+$ccc
+^aaa
+-2*
+-aaa
+-*
+^bbb
+$ccc
+^aaa
+-1*
+-1ccc
+-1*
+-*
+^bbb
+$ccc
+^aaa
+-ccc
+-bbb
+-aaa
+-ccc
+-bbb
+-aaa
+^bbb
+$ccc
+^aaa
+-4ccc
+-0*
+-0bbb
+-1ccc
+-0ccc
+
+Oslpop          418431507   968   27    100644  332       `
+aaa
+empty list
+bbb
+bbb	ccc
+aaa	bbb	ccc
+aaa	bbb
+bbb
+empty list
+bbb
+bbb	ccc
+aaa	bbb	ccc
+aaa	ccc
+aaa
+can't pop
+aaa
+empty list
+bbb
+bbb	ccc
+aaa	bbb	ccc
+can't pop
+aaa	bbb	ccc
+can't pop
+aaa	bbb	ccc
+bbb	ccc
+can't pop
+bbb	ccc
+ccc
+can't pop
+ccc
+bbb	ccc
+bbb	ccc	ccc
+aaa	bbb	ccc	ccc
+can't pop
+aaa	bbb	ccc	ccc
+bbb	ccc	ccc
+ccc	ccc
+ccc
+empty list
+Tslpop.c        418431506   968   27    100644  1180      `
+/*
+ * slpop()
+ */
+#include <ctype.h>
+#include <stdio.h>
+#include "slist.h"
+#include "yesno.h"
+
+#define KEYSIZE 10
+
+char *PGN = "Tslpop";
+
+main()
+{
+	char key[KEYSIZE];		/* key to be added */
+	char *gets();			/* get a line from stdin */
+	char *keyp;			/* pointer to key */
+	char *slappend();		/* append key */
+	char *slprepend();		/* prepend key */
+	int nkey;			/* key to be popped */
+	int slpop();			/* pop list item */
+	SLIST *slinit();		/* initialize list */
+	SLIST *slist;			/* pointer to list head block */
+	void slprint();			/* print list */
+
+	slist = slinit();
+	while (gets(key) != NULL)
+		{
+		if (key[0] == '^')
+			slprepend(key+1, slist);
+		else if (key[0] == '$')
+			slappend(key+1, slist);
+		else if (key[0] == '-')
+			{
+			if (isdigit(key[1]))
+				{
+				nkey = key[1] - '0';
+				keyp = (key[2] == '*') ? NULL : key+2;
+				if (slpop(keyp, nkey, slist) == NO)
+					printf("can't pop\n");
+				}
+			else	{
+				keyp = (key[1] == '*') ? NULL : key+1;
+				if (slpop(keyp, 0, slist) == NO)
+					printf("can't pop\n");
+				}
+			}
+		else
+			fatal("illegal key %s",key);
+		if (slist->nk > 0)
+			slprint(10, 8, YES, stdout, slist);
+		else
+			printf("empty list\n");
+		}
+	exit(0);
+}

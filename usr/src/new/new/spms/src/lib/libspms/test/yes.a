@@ -1,0 +1,31 @@
+!<arch>
+Iyes            418696467   968   27    100644  42        `
+yes
+y
+ye
+   yes
+	yes
+	yes	
+	y     
+
+	no 	
+Oyes            418696468   968   27    100644  28        `
+yes
+yes
+yes
+yes
+yes
+yes
+yes
+Tyes.c          418696470   968   27    100644  106       `
+/*
+ * yes()
+ */
+main()
+{
+	int yes();			/* is reply yes? */
+
+	while (yes())
+		printf("yes\n");
+	exit(0);
+}

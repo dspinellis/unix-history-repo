@@ -1,0 +1,73 @@
+!<arch>
+Ipbstretch      418698197   968   27    100644  105       `
+aaa
+bbb|ccc
+ddd|eee:
+fff:lp=here:id=butnothere
+ggg|
+hhh|iii:lp=andhere
+
+:jjj
+kkk|lll|:lp:lp=andherealso:
+
+Opbstretch      418871361   968   27    100644  260       `
+aaaaaa
+bbbbbb|ccc
+dddddd|eee:
+ffffff:lp=here:id=butnothere
+gggggg|
+hhhhhh|iii:lp=andhere
+
+:jj:jjj
+kkkkkk|lll|:lp:lp=andherealso:
+
+|ccc
+|eee:
+:lp=here:id=butnothere
+|
+|iii:lp=andhere
+
+j
+|lll|:lp:lp=andherealso:
+Tpbstretch: ./Ipbstretch database buffer exceeded
+Tpbstretch.c    418698205   968   27    100644  831       `
+/*
+ * pbshrink()
+ * pbstretch()
+ */
+#include <stdio.h>
+#include "path.h"
+#include "pdb.h"
+
+extern char *CURPBUF;			/* current database buffer */
+char *PGN = "Tpbstretch";		/* program name */
+
+main()
+{
+	int closepdb();			/* close database */
+	int pbstretch();		/* stretch buffer */
+	int pgetent();			/* load next entry into buffer */
+	PDB *mustopenpdb();		/* must open database or die */
+	PDB *pdbp;			/* database stream */
+	void pbshrink();		/* shrink buffer */
+	
+	pdbp = mustopenpdb("Ipbstretch", ".", "r");
+	while (pgetent(pdbp) != EOF)
+		{
+		pbstretch(CURPBUF, 3);
+		printf("%s\n", pdbp->pbuf);
+		}
+	rewindpdb(pdbp);
+	while (pgetent(pdbp) != EOF)
+		{
+		pbshrink(CURPBUF, 3);
+		printf("%s\n", pdbp->pbuf);
+		}
+	fflush(stdout);
+	rewindpdb(pdbp);
+	if (pgetent(pdbp) != EOF)
+		pbstretch(CURPBUF, 2048);
+	closepdb(pdbp);
+	exit(0);
+}
+

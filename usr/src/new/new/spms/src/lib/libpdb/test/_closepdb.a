@@ -1,0 +1,74 @@
+!<arch>
+I_closepdb      418697924   968   27    100644  105       `
+aaa
+bbb|ccc
+ddd|eee:
+fff:lp=here:id=butnothere
+ggg|
+hhh|iii:lp=andhere
+
+:jjj
+kkk|lll|:lp:lp=andherealso:
+
+O_closepdb      418697924   968   27    100644  105       `
+aaa
+bbb|ccc
+ddd|eee:
+fff:lp=here:id=butnothere
+ggg|
+hhh|iii:lp=andhere
+
+:jjj
+kkk|lll|:lp:lp=andherealso:
+
+T_closepdb.c    418697926   968   27    100644  713       `
+/*
+ * _closepdb()
+ */
+#include <stdio.h>
+#include "path.h"
+#include "pdb.h"
+#include "yesno.h"
+
+#define KEYSIZE 10
+
+char *PGN = "T_closepdb";		/* program name */
+
+main()
+{
+	int _closepdb();		/* close database */
+	int i;				/* input case counter */
+	int pbaddkey();			/* add key */
+	int pgetent();			/* load next entry into buffer */
+	int pputent();			/* write buffer to database */
+	PDB *mustopenpdb();		/* must open database or die */
+	PDB *pdbp;			/* database stream */
+	
+	pdbp = mustopenpdb("T_INPUT", ".", "rw");
+	for (i = 1; pgetent(pdbp) != EOF; i++)
+		{
+		switch (i)
+			{
+			case 4: pbaddkey("new");
+				break;
+			case 7: pbaddkey("new");
+				break;
+			}
+		pputent(pdbp);
+		}
+	_closepdb(pdbp);
+	exit(0);
+}
+
+T_closepdb.sh   418870167   968   27    100755  175       `
+#!/bin/csh -f
+#
+# _closepdb()
+#
+cp I_closepdb T_INPUT
+T_closepdb >& ERROR
+cat T_INPUT ERROR | diff - O_closepdb
+set diffstatus = $status
+rm -f T_INPUT ERROR
+exit($diffstatus)
+

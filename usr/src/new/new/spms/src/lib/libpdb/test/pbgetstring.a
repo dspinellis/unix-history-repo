@@ -1,0 +1,46 @@
+!<arch>
+Ipbgetstring    418698105   968   27    100644  105       `
+aaa
+bbb|ccc
+ddd|eee:
+fff:lp=here:id=butnothere
+ggg|
+hhh|iii:lp=andhere
+
+:jjj
+kkk|lll|:lp:lp=andherealso:
+
+Opbgetstring    418698105   968   27    100644  25        `
+here
+andhere
+andherealso
+
+Tpbgetstring.c  418698120   968   27    100644  648       `
+/*
+ * pbcpyfield()
+ * pbgetstring()
+ */
+#include <stdio.h>
+#include "path.h"
+#include "pdb.h"
+
+#define STRINGSIZE PATHSIZE
+
+char *PGN = "Tpbgetstring";		/* program name */
+
+main()
+{
+	char *pbgetstring();		/* get specified string field */
+	char string[STRINGSIZE];	/* receiving string */
+	int closepdb();			/* close database */
+	int pgetent();			/* load next entry into buffer */
+	PDB *mustopenpdb();		/* must open database or die */
+	PDB *pdbp;			/* database stream */
+	
+	pdbp = mustopenpdb("Ipbgetstring", ".", "r");
+	while (pgetent(pdbp) != EOF)
+		if (*(pbgetstring("lp", string)) != '\0')
+			printf("%s\n", string);
+	closepdb(pdbp);
+	exit(0);
+}

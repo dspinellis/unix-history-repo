@@ -1,0 +1,37 @@
+!<arch>
+Ipathcat        418696347   968   27    100644  335       `
+aaa bbb
+aaa/ bbb
+aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+
+Opathcat        418696348   968   27    100644  300       `
+aaa/bbb
+aaa/bbb
+Tpathcat: pathname too long
+aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+Tpathcat.c      418696350   968   27    100644  494       `
+/*
+ * pathcat()
+ */
+#include <stdio.h>
+#include "path.h"
+
+char *PGN = "Tpathcat";
+
+main()
+{
+	char buf[BUFSIZ];		/* input buffer */
+	char *gets();			/* get a line from stdin */
+	char p1[PATHSIZE];		/* first pathname */
+	char p1_p2[PATHSIZE];		/* concatenated path */
+	char p2[PATHSIZE];		/* last pathname */
+	char *pathcat();		/* pathname concatenation */
+
+	while (gets(buf) != NULL)
+		{
+		sscanf(buf, "%s%s", p1, p2);
+		printf("%s\n", pathcat(p1_p2, p1, p2));
+		fflush(stdout);
+		}
+	exit(0);
+}

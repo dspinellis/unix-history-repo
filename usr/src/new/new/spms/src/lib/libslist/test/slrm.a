@@ -1,0 +1,120 @@
+!<arch>
+Islrm           418431530   968   27    100644  155       `
+^aaa
+-aaa
+^bbb
+^aaa
+$ccc
+^aaa
+^bbb
+-aaa
+-ccc
+-bbb
+^aaa
+^bbb
+^bbb
+^aaa
+-aaa
+^aaa
+^aaa
+-bbb
+-aaa
+-aaa
+$ccc
+$ddd
+-ddd
+-ccc
+$ccc
+$ddd
+^aaa
+-ccc
+-ddd
+^aaa
+-aaa
+
+Oslrm           418431530   968   27    100644  294       `
+aaa
+empty list
+bbb
+aaa	bbb
+aaa	bbb	ccc
+aaa	aaa	bbb	ccc
+bbb	aaa	aaa	bbb	ccc
+bbb	bbb	ccc
+bbb	bbb
+empty list
+aaa
+bbb	aaa
+bbb	bbb	aaa
+aaa	bbb	bbb	aaa
+bbb	bbb
+aaa	bbb	bbb
+aaa	aaa	bbb	bbb
+aaa	aaa
+empty list
+empty list
+ccc
+ccc	ddd
+ccc
+empty list
+ccc
+ccc	ddd
+aaa	ccc	ddd
+aaa	ddd
+aaa
+aaa	aaa
+empty list
+Tslrm.c         418431529   968   27    100644  1029      `
+/*
+ * slrm()
+ */
+#include <stdio.h>
+#include "slist.h"
+#include "yesno.h"
+
+#define KEYSIZE 10
+
+char *PGN = "Tslrm";
+
+main()
+{
+	char key[KEYSIZE];		/* key to be added */
+	char *gets();			/* get a line from stdin */
+	char *slappend();		/* append key */
+	char *slprepend();		/* prepend key */
+	SLIST *slinit();		/* initialize list */
+	SLIST *slist;			/* pointer to list head block */
+	void slprint();			/* print list */
+	void slrm();			/* remove list item */
+
+	slist = slinit();
+	while (gets(key) != NULL)
+		if (key[0] == '^')
+			{
+			slprepend(key+1, slist);
+			if (slist->nk > 0)
+				slprint(10, 8, YES, stdout, slist);
+			else
+				printf("empty list\n");
+			}
+		else if (key[0] == '$')
+			{
+			slappend(key+1, slist);
+			if (slist->nk > 0)
+				slprint(10, 8, YES, stdout, slist);
+			else
+				printf("empty list\n");
+			}
+		else if (key[0] == '-')
+			{
+			slrm(key+1, slist);
+			if (slist->nk > 0)
+				slprint(10, 8, YES, stdout, slist);
+			else
+				printf("empty list\n");
+			}
+		else
+			fatal("illegal key %s",key);
+	exit(0);
+}
+

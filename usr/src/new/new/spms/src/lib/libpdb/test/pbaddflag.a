@@ -1,0 +1,49 @@
+!<arch>
+Ipbaddflag      418697979   968   27    100644  105       `
+aaa
+bbb|ccc
+ddd|eee:
+fff:lp=here:id=butnothere
+ggg|
+hhh|iii:lp=andhere
+
+:jjj
+kkk|lll|:lp:lp=andherealso:
+
+Opbaddflag      418697979   968   27    100644  130       `
+aaalp:
+bbb|ccclp:
+ddd|eee:lp:
+fff:lp=here:id=butnotherelp:
+ggg|lp:
+hhh|iii:lp=andherelp:
+:lp:
+:jjjlp:
+kkk|lll|:lp:lp=andherealso:
+Tpbaddflag.c    418697986   968   27    100644  518       `
+/*
+ * pbaddflag()
+ */
+#include <stdio.h>
+#include "path.h"
+#include "pdb.h"
+
+char *PGN = "Tpbaddflag";		/* program name */
+
+main()
+{
+	int closepdb();			/* close database */
+	int pbaddflag();		/* add flag field */
+	int pgetent();			/* load next entry into buffer */
+	PDB *mustopenpdb();		/* must open database or die */
+	PDB *pdbp;			/* database stream */
+	
+	pdbp = mustopenpdb("Ipbaddflag", ".", "r");
+	while (pgetent(pdbp) != EOF)
+		{
+		pbaddflag("lp");
+		printf("%s\n", pdbp->pbuf);
+		}
+	closepdb(pdbp);
+	exit(0);
+}

@@ -1,0 +1,117 @@
+!<arch>
+Ihtrm           418431886   968   27    100644  526       `
++10th	The		1
++1st	Software	2
++2nd	Project		3
++3rd	Management	4
++4th	System		5
++5th	(SPMS)		6
++6th	is		7
++7th	a		8
++8th	system		9
++9th	for		10
++aaa	management	11
++Aaa	of		12
++BBB	medium		13
++bbb	to		14
++Bbb	large		15
++bbb/	software	16
++bb/	systems.	17
++It	has		18
++been	designed	19
++for	users		20
++with	a		21
++wide	range		22
++of	experience	23
++It	experience	24
++been	range		25
++for	a		26
++with	users		27
++wide	designed	28
++of	has		29
+-3rd	Management	4
+-Bbb	large		15
+-It	experience	24
+-Aaa	of		12
+?for	users		20
+-for	users		20
+Ohtrm           418431886   968   27    100644  467       `
+10th The 1
+1st Software 2
+2nd Project 3
+3rd Management 4
+4th System 5
+5th (SPMS) 6
+6th is 7
+7th a 8
+8th system 9
+9th for 10
+aaa management 11
+Aaa of 12
+BBB medium 13
+bbb to 14
+Bbb large 15
+bbb/ software 16
+bb/ systems. 17
+It has 18
+been designed 19
+for users 20
+with a 21
+wide range 22
+of experience 23
+It experience 24
+been range 25
+for a 26
+with users 27
+wide designed 28
+of has 29
+3rd: Not found
+Bbb: Not found
+It: Not found
+Aaa: Not found
+for a 26
+for: Not found
+
+Thtrm.c         418431886   968   27    100644  1007      `
+/*
+ * htrm()
+ * htbrm()
+ */
+#include <stdio.h>
+#include "null.h"
+#include "hash.h"
+
+#define HASHTABLESIZE	227
+#define KEYSIZE		10
+#define STRSIZE		128
+
+char *PGN = "Thtrm";
+
+main()
+{
+	char key[KEYSIZE];		/* key to be added */
+	char string[STRSIZE];		/* string to be added */
+	HASH *hashtable;		/* pointer to hash table */
+	HASH *htinit();			/* initialize hash table */
+	HASHBLK *htb;			/* current hash table block */
+	HASHBLK *htinstall();		/* install hash table entry */
+	HASHBLK *htlookup();		/* find hash table entry */
+	int value;			/* integer value */
+	void htrm();			/* remove hash table entry */
+
+	hashtable = htinit(HASHTABLESIZE);
+	while (scanf("%s%s%d", key, string, &value) != EOF)
+		{
+		if (*key == '+')
+			htinstall(key+1, string, value, hashtable);
+		else if (*key == '-')
+			htrm(key+1, hashtable);
+		if ((htb = htlookup(key+1, hashtable)) != NULL)
+			printf("%s %s %d\n", htb->h_key,htb->h_def,htb->h_val);
+		else
+			printf("%s: Not found\n", key+1);
+		}
+	htrm(NULL, hashtable);
+	exit(0);
+}
+

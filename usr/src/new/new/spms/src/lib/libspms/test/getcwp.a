@@ -1,0 +1,46 @@
+!<arch>
+Ogetcwp         418696284   968   27    100644  66        `
+a
+Tgetcwp: no project environment
+Tgetcwp: no project environment
+Tgetcwp.c       418696286   968   27    100644  345       `
+/*
+ * getcwp()
+ * getproject()
+ */
+#include <stdio.h>
+#include "null.h"
+
+char *PGN = "Tgetcwp";			/* program name */
+
+main()
+{
+	char *getcwp();			/* get current project pathname */
+	char *p;			/* pathname pointer */
+
+	if ((p = getcwp()) != NULL)
+		{
+		printf("%s\n", p);
+		fflush(stdout);
+		}
+	else
+		warn("no project environment");
+	exit(0);
+}
+
+Tgetcwp.sh      418870298   968   27    100755  236       `
+#!/bin/csh -f
+#
+# getcwp()
+# getproject()
+#
+setenv PROJECT a
+Tgetcwp >& T_OUTPUT
+unsetenv PROJECT
+Tgetcwp >>& T_OUTPUT
+setenv PROJECT ""
+Tgetcwp >>& T_OUTPUT
+diff T_OUTPUT Ogetcwp
+set diffstatus=$status
+rm -f T_OUTPUT
+exit($diffstatus)
