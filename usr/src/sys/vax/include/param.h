@@ -10,6 +10,8 @@
  * Machine dependent constants for vax.
  */
 
+#define	MACHINE	"vax"
+
 #ifndef ENDIAN
 /*
  * Definitions for byte order,
