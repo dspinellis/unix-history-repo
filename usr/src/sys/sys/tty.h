@@ -1,4 +1,4 @@
-/*	tty.h	6.2	84/08/28	*/
+/*	tty.h	6.3	84/12/31	*/
 
 #ifdef KERNEL
 #include "ttychars.h"
@@ -62,6 +62,7 @@ struct tty {
 	char	t_ispeed, t_ospeed;	/* device */
 	char	t_rocount, t_rocol;	/* tty */
 	struct	ttychars t_chars;	/* tty */
+	struct	winsize t_winsize;	/* window size */
 /* be careful of tchars & co. */
 #define	t_erase		t_chars.tc_erase
 #define	t_kill		t_chars.tc_kill
