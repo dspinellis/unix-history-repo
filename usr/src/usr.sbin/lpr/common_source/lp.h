@@ -1,4 +1,11 @@
-/*	lp.h	4.9	85/02/27	*/
+/*
+ * Copyright (c) 1983 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@(#)lp.h	5.1 (Berkeley) %G%
+ */
+
 /*
  * Global definitions for the line printer system.
  */
