@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)sys_process.c	6.4 (Berkeley) %G%
+ *	@(#)sys_process.c	6.5 (Berkeley) %G%
  */
 
 #include "../machine/reg.h"
@@ -143,7 +143,7 @@ procxmt()
 		if (xp = u.u_procp->p_textp) {
 			if (xp->x_count!=1 || xp->x_iptr->i_mode&ISVTX)
 				goto error;
-			xp->x_iptr->i_flag |= IXMOD;	/* XXX */
+			xp->x_flag |= XTRC;
 		}
 		i = -1;
 		if ((i = suiword((caddr_t)ipc.ip_addr, ipc.ip_data)) < 0) {

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_exec.c	6.14 (Berkeley) %G%
+ *	@(#)kern_exec.c	6.15 (Berkeley) %G%
  */
 
 #include "../machine/reg.h"
@@ -388,7 +388,7 @@ getxfile(ip, ep, nargc, uid, gid)
 		pagi = SPAGI;
 	else
 		pagi = 0;
-	if (ip->i_flag & IXMOD) {			/* XXX */
+	if (ip->i_text && (ip->i_text->x_flag & XTRC)) {
 		u.u_error = ETXTBSY;
 		goto bad;
 	}
