@@ -17,12 +17,12 @@ LINTFLAGS	= -hbxaz
 # The source files...
 ALLH =	dctype.h ebc_disp.h hostctlr.h kbdctlr.h options.h screen.h scrnctlr.h
 
-MOSTC =	dctype.c ebc_disp.c genbsubs.c inbound.c options.c outbound.c
+MOSTC =	dctype.c ebc_disp.c inbound.c options.c outbound.c
 
 ALLC = ${MOSTC}
 ALLC = ${MOSTC}
 
-MOSTO =	dctype.o ebc_disp.o genbsubs.o inbound.o options.o outbound.o
+MOSTO =	dctype.o ebc_disp.o inbound.o options.o outbound.o
 
 ALLO	= $(MOSTO)
 
@@ -85,4 +85,4 @@ inbound.o: dctype.h ebc_disp.h ../system/globals.h inbound.ext outbound.ext
 inbound.o: ../telnet.ext 3270pc.out
 options.o: options.h ../system/globals.h options.ext
 outbound.o: hostctlr.h screen.h ebc_disp.h ../system/globals.h options.ext
-outbound.o: ../telnet.ext inbound.ext outbound.ext bsubs.ext
+outbound.o: ../telnet.ext inbound.ext outbound.ext

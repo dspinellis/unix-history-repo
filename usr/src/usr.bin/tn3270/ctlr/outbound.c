@@ -24,8 +24,6 @@ static	char	sccsid[] = "@(#)outbound.c	3.1  10/29/86";
 #endif	/* lint */
 
 
-#include <stdio.h>
-
 #include "hostctlr.h"
 #include "screen.h"
 #include "ebc_disp.h"
@@ -35,7 +33,7 @@ static	char	sccsid[] = "@(#)outbound.c	3.1  10/29/86";
 #include "../telnet.ext"
 #include "inbound.ext"
 #include "outbound.ext"
-#include "bsubs.ext"
+#include "../system/bsubs.ext"
 
 #define SetHighestLowest(position) { \
 					if (position < Lowest) { \
@@ -361,7 +359,12 @@ int	control;				/* this buffer ended block? */
 		break;
 	    case ORDER_EUA:    /* (from [here,there), ie: half open interval] */
 		Ensure(2);
-		c = FieldAttributes(WhereAttrByte(BufferAddress));
+		/*
+		 * Compiler error - msc version 4.0:
+		 *			"expression too complicated".
+		 */
+		i = WhereAttrByte(BufferAddress);
+		c = FieldAttributes(i);
 		for (i = Addr3270(buffer[0], buffer[1]); i != BufferAddress;
 				BufferAddress = ScreenInc(BufferAddress)) {
 		    if (!IsProtectedAttr(BufferAddress, c)) {
