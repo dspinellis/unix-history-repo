@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)chown.c	4.1 (Berkeley) %G%";
+static char *sccsid = "@(#)chown.c	4.2 (Berkeley) %G%";
 /*
  * chown uid file ...
  */
@@ -13,6 +13,7 @@ struct	passwd	*pwd,*getpwnam();
 struct	stat	stbuf;
 int	uid;
 int	status;
+int	fflag;
 
 main(argc, argv)
 char *argv[];
@@ -20,8 +21,12 @@ char *argv[];
 	register c;
 
 	if(argc < 3) {
-		printf("usage: chown uid file ...\n");
+		printf("usage: chown -f uid file ...\n");
 		exit(4);
+	}
+	if (strcmp(argv[1], "-f") == 0) {
+		fflag++;
+		argv++, argc--;
 	}
 	if(isnumber(argv[1])) {
 		uid = atoi(argv[1]);
@@ -36,7 +41,7 @@ char *argv[];
 cho:
 	for(c=2; c<argc; c++) {
 		stat(argv[c], &stbuf);
-		if(chown(argv[c], uid, stbuf.st_gid) < 0) {
+		if(chown(argv[c], uid, stbuf.st_gid) < 0 && !fflag) {
 			perror(argv[c]);
 			status = 1;
 		}
