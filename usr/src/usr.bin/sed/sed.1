@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)sed.1	5.1 (Berkeley) %G%
+.\"	@(#)sed.1	5.2 (Berkeley) %G%
 .\"
 .Dd ""
 .Dt SED 1
@@ -106,7 +106,7 @@ cumulatively across input files), a dollar
 .Pc
 character that addresses the last line of input, or a context address
 (which consists of a regular expression preceded and followed by a
-delimiter.
+delimiter).
 .Pp
 A command line with no addresses selects every pattern space.
 .Pp
@@ -160,6 +160,23 @@ The escape sequence \en matches a newline character embedded in the
 pattern space.
 You can't, however, use a literal newline character in an address or
 in the substitute command.
+.El
+.Pp
+One special feature of
+.Nm sed
+regular expressions is that they can default to the last regular
+expression used.
+If a regular expression is empty, i.e. just the delimiter characters
+are specified, the last regular expression encountered is used instead.
+The last regular expression is defined as the last regular expression
+used as part of an address or substitute command, and at run-time, not
+compile-time.
+For example, the command
+.Dq /abc/s//XXX/
+will substitute
+.Dq XXX
+for the pattern
+.Dq abc .
 .Sh "Sed Functions"
 In the following list of commands, the maximum number of permissible
 addresses for each command is indicated by [0addr], [1addr], or [2addr],
