@@ -4,12 +4,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_ihash.c	7.4 (Berkeley) %G%
+ *	@(#)ufs_ihash.c	7.5 (Berkeley) %G%
  */
 
 #include <sys/param.h>
 #include <sys/systm.h>
-#include <sys/namei.h>
 #include <sys/vnode.h>
 #include <sys/malloc.h>
 
@@ -20,14 +19,8 @@
 /*
  * Structures associated with inode cacheing.
  */
-union ihash {
-	union	ihash *ih_head[2];
-	struct	inode *ih_chain[2];
-} *ihashtbl;
-#define	ih_forw	ih_chain[0]
-#define	ih_back	ih_chain[1]
-
-u_long	ihash;			/* size of hash table - 1 */
+struct inode **ihashtbl;
+u_long	ihash;		/* size of hash table - 1 */
 #define	INOHASH(dev, ino)	(((dev) + (ino)) & ihash)
 
 /*
@@ -36,20 +29,8 @@ u_long	ihash;			/* size of hash table - 1 */
 void
 ufs_ihashinit()
 {
-	register union ihash *ihp;
-	long ihashsize;
 
-	ihashsize = roundup((desiredvnodes + 1) * sizeof *ihp / 2,
-		NBPG * CLSIZE);
-	ihashtbl = (union ihash *)malloc((u_long)ihashsize,
-	    M_UFSMNT, M_WAITOK);
-	for (ihash = 1; ihash <= ihashsize / sizeof *ihp; ihash <<= 1)
-		continue;
-	ihash = (ihash >> 1) - 1;
-	for (ihp = &ihashtbl[ihash]; ihp >= ihashtbl; ihp--) {
-		ihp->ih_head[0] = ihp;
-		ihp->ih_head[1] = ihp;
-	}
+	ihashtbl = hashinit(desiredvnodes, M_UFSMNT, &ihash);
 }
 
 /*
@@ -58,16 +39,15 @@ ufs_ihashinit()
  */
 struct vnode *
 ufs_ihashget(dev, ino)
-	/* dev_t */ int dev;
+	dev_t dev;
 	ino_t ino;
 {
-	register union ihash *ihp;
-	register struct inode *ip;
+	register struct inode **ipp, *ip;
 	struct vnode *vp;
 
-	ihp = &ihashtbl[INOHASH(dev, ino)];
+	ipp = &ihashtbl[INOHASH(dev, ino)];
 loop:
-	for (ip = ihp->ih_forw; ip != (struct inode *)ihp; ip = ip->i_forw) {
+	for (ip = *ipp; ip; ip = ip->i_next) {
 		if (ino != ip->i_number || dev != ip->i_dev)
 			continue;
 		if ((ip->i_flag & ILOCKED) != 0) {
@@ -90,6 +70,31 @@ void
 ufs_ihashins(ip)
 	struct inode *ip;
 {
-	insque(ip, &ihashtbl[INOHASH(ip->i_dev, ip->i_number)]);
+	struct inode **ipp, *iq;
+
+	ipp = &ihashtbl[INOHASH(ip->i_dev, ip->i_number)];
+	if (iq = *ipp)
+		iq->i_prev = &ip->i_next;
+	ip->i_next = iq;
+	ip->i_prev = ipp;
+	*ipp = ip;
 	ILOCK(ip);
+}
+
+/*
+ * Remove the inode from the hash table.
+ */
+void
+ufs_ihashrem(ip)
+	register struct inode *ip;
+{
+	register struct inode *iq;
+
+	if (iq = ip->i_next)
+		iq->i_prev = ip->i_prev;
+	*ip->i_prev = iq;
+#ifdef DIAGNOSTIC
+	ip->i_next = NULL;
+	ip->i_prev = NULL;
+#endif
 }

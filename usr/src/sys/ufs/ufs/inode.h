@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)inode.h	7.28 (Berkeley) %G%
+ *	@(#)inode.h	7.29 (Berkeley) %G%
  */
 
 #include <ufs/ufs/dinode.h>
@@ -30,7 +30,8 @@
  * being used.
  */
 struct inode {
-	struct	inode *i_chain[2]; /* hash chain, MUST be first */
+	struct	inode *i_next;	/* hash chain forward */
+	struct	inode **i_prev;	/* hash chain back */
 	struct	vnode *i_vnode;	/* vnode associated with this inode */
 	struct	vnode *i_devvp;	/* vnode for block I/O */
 	u_long	i_flag;		/* see below */
@@ -78,8 +79,6 @@ struct inode {
 #define	i_shortlink	i_din.di_shortlink
 #define i_flags		i_din.di_flags
 #define i_gen		i_din.di_gen
-#define	i_forw		i_chain[0]
-#define	i_back		i_chain[1]
 
 /* flags */
 #define	ILOCKED		0x0001		/* inode is locked */
