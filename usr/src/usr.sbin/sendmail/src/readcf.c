@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)readcf.c	3.21		%G%);
+SCCSID(@(#)readcf.c	3.22		%G%);
 
 /*
 **  READCF -- read control file.
@@ -178,7 +178,7 @@ readcf(cfname, safe)
 				if (wd[0] != '\0')
 				{
 					s = stab(wd, ST_CLASS, ST_ENTER);
-					s->s_class |= 1 << class;
+					s->s_class |= 1L << class;
 				}
 				*p = delim;
 			}
@@ -234,7 +234,7 @@ fileclass(class, filename, fmt)
 		if (sscanf(buf, fmt, wordbuf) != 1)
 			continue;
 		s = stab(wordbuf, ST_CLASS, ST_ENTER);
-		s->s_class |= 1 << class;
+		s->s_class |= 1L << class;
 	}
 
 	(void) fclose(f);
@@ -407,7 +407,7 @@ printrules()
 struct optlist
 {
 	char	opt_name;	/* external name of option */
-	int	opt_value;	/* internal name of option */
+	u_long	opt_value;	/* internal name of option */
 };
 struct optlist	OptList[] =
 {

@@ -7,7 +7,7 @@
 # include <syslog.h>
 # endif LOG
 
-SCCSID(@(#)main.c	3.71		%G%);
+SCCSID(@(#)main.c	3.72		%G%);
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -431,7 +431,7 @@ main(argc, argv)
 
 			if (m == NULL)
 				continue;
-			printf("mailer %d: %s %s %o %s\n", i, m->m_name,
+			printf("mailer %d: %s %s %lo %s\n", i, m->m_name,
 			       m->m_mailer, m->m_flags, m->m_from);
 		}
 	}

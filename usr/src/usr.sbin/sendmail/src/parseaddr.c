@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)parseaddr.c	3.39		%G%);
+SCCSID(@(#)parseaddr.c	3.40		%G%);
 
 /*
 **  PARSE -- Parse an address
@@ -507,7 +507,7 @@ rewrite(pvp, ruleset)
 				else
 					class -= 'a';
 				s = stab(ap, ST_CLASS, ST_FIND);
-				if (s == NULL || (s->s_class & (1 << class)) == 0)
+				if (s == NULL || (s->s_class & (1L << class)) == 0)
 					goto fail;
 
 				/* explicit fall-through */
