@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_syscalls.c	8.25 (Berkeley) %G%
+ *	@(#)vfs_syscalls.c	8.26 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -145,7 +145,7 @@ mount(p, uap, retval)
 		vput(vp);
 		return (ENODEV);
 	}
-	if (vp->v_usecount > 1 || vp->v_mountedhere != NULL) {
+	if (vp->v_mountedhere != NULL) {
 		vput(vp);
 		return (EBUSY);
 	}
