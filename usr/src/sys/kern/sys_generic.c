@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)sys_generic.c	7.7 (Berkeley) %G%
+ *	@(#)sys_generic.c	7.8 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -174,19 +174,6 @@ ioctl()
 	}
 	com = uap->cmd;
 
-#if defined(vax) && defined(COMPAT)
-	/*
-	 * Map old style ioctl's into new for the
-	 * sake of backwards compatibility (sigh).
-	 */
-	if ((com&~0xffff) == 0) {
-		com = mapioctl(com);
-		if (com == 0) {
-			u.u_error = EINVAL;
-			return;
-		}
-	}
-#endif
 	if (com == FIOCLEX) {
 		u.u_pofile[uap->fdes] |= UF_EXCLOSE;
 		return;
