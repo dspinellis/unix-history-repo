@@ -2,7 +2,7 @@
  * Copyright (c) 1988 The Regents of the University of California.
  * All rights reserved.
  *
- *	@(#)machdep.h	5.1 (Berkeley) %G%
+ *	@(#)machdep.h	5.2 (Berkeley) %G%
  */
 
 /*
@@ -118,5 +118,3 @@ addr_t	getpc();
  */
 #define	INSTACK(a)	(((a) & 0xc0000000) == 0x80000000) /* p2 space */
 #define	INKERNEL(a)	(((a) & 0xc0000000) == 0xc0000000) /* sys space */
-
-#define	KERNTEXTOFF	(KERNBASE + 0x800)	/* start of kernel text */
