@@ -1,4 +1,4 @@
-/* @(#)dterm.c	1.3	(Berkeley)	%G%"
+/* @(#)dterm.c	1.4	(Berkeley)	%G%"
  *
  *	Converts ditroff output to text on a terminal.  It is NOT meant to
  *	produce readable output, but is to show one how one's paper is (in
@@ -21,6 +21,9 @@
  *
  *	  -w	sets h = 20, v = 12, l = 131, also sets -c to allow for 
  *		extra-wide printouts on the printer.
+ *
+ *	-fxxx	get special character definition file "xxx".  Default is
+ *		/usr/lib/font/devter/specfile.
  */
 
 
@@ -33,6 +36,7 @@
 #define	PGWIDTH		133
 #define	PGHEIGHT	110
 #define LINELEN		78
+#define SPECFILE	"/usr/lib/font/devter/specfile"
 
 #define hgoto(n)	hpos = n
 #define vgoto(n)	vpos = n
@@ -47,25 +51,20 @@
 #define sqr(x)		(long int)(x)*(x)
 
 
-char	SccsId [] = "@(#)dterm.c	1.3	(Berkeley)	%G%";
+char	SccsId [] = "@(#)dterm.c	1.4	(Berkeley)	%G%";
 
-			/* here're the special characters... */
-char *spectab[] ={
-	"em", "-", "hy", "-", "en", "-", "ru", "_", "l.", ".", "L.", ".",
-	"br", "|", "vr", "|", "fm", "'", "or", "|", "ga", "`", "aa", "'",
-	"ul", "_", "\\_","_", "pl", "+", "mi", "-", "eq", "=", "ap", "~",
-	"sl", "/", "bv", "|",
-	0, 0
-};
+char	**spectab;		/* here go the special characters */
+char	*specfile = SPECFILE;	/* place to look up special characters */
+char	*malloc();
 
-int 	keepon	= 0;	/* flag:  Do we not stop at the end of each page? */
-int	output	= 0;	/* do we do output at all? */
-int	nolist	= 0;	/* output page list if > 0 */
-int	olist[20];	/* pairs of page numbers */
+int 	keepon	= 0;		/* flag:  Don't stop at the end of each page? */
+int	output	= 0;		/* do we do output at all? */
+int	nolist	= 0;		/* output page list if > 0 */
+int	olist[20];		/* pairs of page numbers */
 
-float	hscale	= 10.0;	/* characters and lines per inch for output device */
-float	vscale	= 6.0;	/*	(defaults are for printer) */
-FILE	*fp = stdin;	/* input file pointer */
+float	hscale	= 10.0;		/* characters and lines per inch for output */
+float	vscale	= 6.0;		/*	device (defaults are for printer) */
+FILE	*fp = stdin;		/* input file pointer */
 
 char	pagebuf[PGHEIGHT][PGWIDTH];
 int	minh	= PGWIDTH;
@@ -82,9 +81,8 @@ int	npmax;		/* high-water mark of np */
 int	pgnum[40];	/* their actual numbers */
 long	pgadr[40];	/* their seek addresses */
 
-int	DP	= 10;	/* step size for drawing */
-int	drawdot	= '.';	/* draw with this character */
-int	drawsize = 1;	/* shrink by this factor when drawing */
+int	DP;			/* step size for drawing */
+int	drawdot = '.';		/* draw with this character */
 int	maxdots	= 32000;	/* maximum number of dots in an object */
 
 
@@ -96,22 +94,25 @@ char **argv;
 	argv++;
 	while (argc > 1 && **argv == '-') {
 	    switch (*(++*argv)) {
-		case 'l':
+		case 'f':		/* special character filepath */
+			specfile = ++*argv;
+			break;
+		case 'l':		/* output line length */
 			linelen = atoi(++*argv) - 1;
 			break;
-		case 'h':
+		case 'h':		/* horizontal scale (char/inch) */
 			hscale = atof(++*argv);
 			break;
-		case 'v':
+		case 'v':		/* vertical scale (char/inch) */
 			vscale = atof(++*argv);
 			break;
-		case 'o':
+		case 'o':		/* output list */
 			outlist(++*argv);
 			break;
-		case 'c':
+		case 'c':		/* continue (^L too) at endofpage */
 			keepon = 1;
 			break;
- 		case 'w':
+ 		case 'w':		/* "wide" format */
 			hscale = 16.0;
 			vscale = 9.6;
 			linelen = 131;
@@ -323,7 +324,8 @@ FILE *fp;
 		fscanf(fp, "%d", &n);
 		hscale = (float) n / hscale;
 		vscale = (float) n / vscale;
-		break;
+		if((DP = n / 10 - 6) < 1) DP = 1;	/* guess the drawing */
+		break;					/* resolution */
 	case 'f':	/* font used */
 	case 'T':	/* device name */
 	case 't':	/* trailer */
@@ -347,7 +349,14 @@ error(f, s, a1, a2, a3, a4, a5, a6, a7) {
 t_init(reinit)	/* initialize device */
 int reinit;
 {
-	int i, j;
+	register int i;
+	register int j;
+	register FILE *fp;	/* file to look up special characters */
+	register char *charptr;	/* string pointer to step through specials */
+	register char *tabptr;	/* string pointer for spectab setting */
+	char specials[5000];	/* intermediate input buffer (made bigger */
+				/*   than we'll EVER use... */
+
 
 	fflush(stdout);
 	hpos = vpos = 0;
@@ -358,6 +367,39 @@ int reinit;
 	maxh = 0;
 	minv = PGHEIGHT;
 	maxv = 0;
+
+	if (reinit) return;		/* if this is the first time, read */
+					/* special character table file. */
+	if ((fp = fopen (specfile, "r")) != NULL) {
+	    charptr = &specials[0];
+	    for (i = 2; fscanf(fp, "%s", charptr) != EOF; i += 2) {
+		charptr += strlen(charptr) + 1;
+	    }
+	    fclose(fp);
+	    *charptr++ = '\0';			/* ending strings */
+	    *charptr++ = '\0';
+						/* allocate table */
+	    spectab = (char **) malloc(i * sizeof(char*));
+	    spectab[0] = tabptr = malloc(j = (int) (charptr - &specials[0]));
+
+						/* copy whole table */
+	    for (charptr = &specials[0]; j--; *tabptr++ = *charptr++);
+
+	    tabptr = spectab[j];		/* set up pointers to table */
+	    for (j = 0; i--; j++) {
+		spectab[j] = tabptr;
+		tabptr += strlen(tabptr) + 1;
+	    }
+
+	} else {	/* didn't find table - allocate a null one */
+
+	    error (!FATAL, "Can't open special character file: %s", specfile);
+	    spectab = (char **) malloc(2 * sizeof(char*));
+	    spectab[0] = malloc (2);
+	    spectab[1] = spectab[0] + 1;
+	    *spectab[0] = '\0';
+	    *spectab[1] = '\0';
+	}
 }
 
 
@@ -502,7 +544,6 @@ char *s;
 {
 	int i;
 	char *p;
-	extern char *spectab[];
 	static char prev[10] = "";
 	static int previ;
 
@@ -510,7 +551,7 @@ char *s;
 		return;
 	if (strcmp(s, prev) != 0) {
 		previ = -1;
-		for (i = 0; spectab[i] != 0; i += 2)
+		for (i = 0; *spectab[i] != '\0'; i += 2)
 			if (strcmp(spectab[i], s) == 0) {
 				strcpy(prev, s);
 				previ = i;
@@ -521,7 +562,7 @@ char *s;
 		for (p = spectab[previ+1]; *p; p++)
 			store(*p);
 	} else
-		prev[0] = 0;
+		prev[0] = '\0';
 }
 
 
@@ -624,7 +665,6 @@ char *s;
 	    if (abs (xd) > abs (yd)) {
 		val = slope = (float) xd/yd;
 		numdots = abs (xd);
-		numdots = min(numdots, maxdots);
 		dirmot = 'h';
 		perp = 'v';
 		motincr = DP * sgn (xd);
@@ -632,12 +672,12 @@ char *s;
 	    } else {
 		val = slope = (float) yd/xd;
 		numdots = abs (yd);
-		numdots = min(numdots, maxdots);
 		dirmot = 'v';
 		perp = 'h';
 		motincr = DP * sgn (yd);
 		perpincr = DP * sgn (xd);
 	    }
+	    numdots = min(numdots, maxdots);
 	    incrway = sgn ((int) slope);
 	    for (i = 0; i < numdots; i++) {
 		val -= incrway;
