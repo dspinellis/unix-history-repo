@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ffs_vnops.c	7.18 (Berkeley) %G%
+ *	@(#)ffs_vnops.c	7.19 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -64,6 +64,7 @@ int	ufs_lookup(),
 	ufs_readlink(),
 	ufs_abortop(),
 	ufs_inactive(),
+	ufs_reclaim(),
 	ufs_lock(),
 	ufs_unlock(),
 	ufs_bmap(),
@@ -95,6 +96,7 @@ struct vnodeops ufs_vnodeops = {
 	ufs_readlink,
 	ufs_abortop,
 	ufs_inactive,
+	ufs_reclaim,
 	ufs_lock,
 	ufs_unlock,
 	ufs_bmap,
@@ -220,8 +222,8 @@ ufs_getattr(vp, vap, cred)
 	vap->va_uid = ip->i_uid;
 	vap->va_gid = ip->i_gid;
 	vap->va_rdev = (dev_t)ip->i_rdev;
-	vap->va_size = ip->i_ic.ic_size.val[0];
-	vap->va_size1 = ip->i_ic.ic_size.val[1];
+	vap->va_size = ip->i_din.di_qsize.val[0];
+	vap->va_size1 = ip->i_din.di_qsize.val[1];
 	vap->va_atime.tv_sec = ip->i_atime;
 	vap->va_atime.tv_usec = 0;
 	vap->va_mtime.tv_sec = ip->i_mtime;
