@@ -7,7 +7,7 @@
 
 
 #ifndef lint
-static char sccsid[] = "@(#)tables.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)tables.c	5.6 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -20,6 +20,8 @@ static char sccsid[] = "@(#)tables.c	5.5 (Berkeley) %G%";
 #ifndef DEBUG
 #define	DEBUG	0
 #endif
+
+extern	char *xns_ntoa();
 
 int	install = !DEBUG;		/* if 1 call kernel */
 int	delete = 1;
@@ -142,7 +144,8 @@ rtadd(dst, gate, metric, state)
 	 * occur because of an incorrect entry in /etc/gateways.
 	 */
 	if (install && ioctl(s, SIOCADDRT, (char *)&rt->rt_rt) < 0) {
-		syslog(LOG_ERR,"SIOCADDRT: %m");
+		if (errno != EEXIST)
+			perror("SIOCADDRT");
 		if (errno == ENETUNREACH) {
 			TRACE_ACTION(DELETE, rt);
 			remque(rt);
@@ -185,10 +188,11 @@ rtchange(rt, gate, metric)
 	}
 	if (doioctl && install) {
 		if (ioctl(s, SIOCADDRT, (char *)&rt->rt_rt) < 0)
-			syslog(LOG_ERR,"SIOCADDRT %m");
-		if (delete)
-		if (ioctl(s, SIOCDELRT, (char *)&oldroute) < 0)
-			syslog(LOG_ERR,"SIOCDELRT %m");
+		  syslog(LOG_ERR, "SIOCADDRT dst %s, gw %s: %m",
+		   xns_ntoa(&((struct sockaddr_ns *)&rt->rt_dst)->sns_addr),
+		   xns_ntoa(&((struct sockaddr_ns *)&rt->rt_router)->sns_addr));
+		if (delete && ioctl(s, SIOCDELRT, (char *)&oldroute) < 0)
+			perror("SIOCDELRT");
 	}
 }
 
