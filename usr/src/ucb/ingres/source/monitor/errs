@@ -1,0 +1,52 @@
+cc -I../h -g -I../ctlmod -c ttymon.c
+cc -I../h -g -I../ctlmod -c monitor.c
+cc -I../h -g -I../ctlmod -c clear.c
+cc -I../h -g -I../ctlmod -c edit.c
+cc -I../h -g -I../ctlmod -c go.c
+cc -I../h -g -I../ctlmod -c trapquery.c
+cc -I../h -g -I../ctlmod -c print.c
+cc -I../h -g -I../ctlmod -c quit.c
+cc -I../h -g -I../ctlmod -c shell.c
+cc -I../h -g -I../ctlmod -c eval.c
+cc -I../h -g -I../ctlmod -c writeout.c
+cc -I../h -g -I../ctlmod -c xwait.c
+cc -I../h -g -I../ctlmod -c clrline.c
+cc -I../h -g -I../ctlmod -c prompt.c
+cc -I../h -g -I../ctlmod -c getch.c
+cc -I../h -g -I../ctlmod -c branch.c
+cc -I../h -g -I../ctlmod -c newdirec.c
+cc -I../h -g -I../ctlmod -c include.c
+cc -I../h -g -I../ctlmod -c getfilenm.c
+cc -I../h -g -I../ctlmod -c expr.c
+cc -I../h -g -I../ctlmod -c mcall.c
+cc -I../h -g -I../ctlmod -c mac.c
+cc -I../h -g -I../ctlmod -c buf.c
+cc -I../h -g -I../ctlmod -c syscntrl.c
+ar rvu monlib ttymon.o monitor.o clear.o edit.o go.o trapquery.o print.o quit.o shell.o eval.o writeout.o xwait.o clrline.o prompt.o getch.o branch.o newdirec.o include.o getfilenm.o expr.o mcall.o mac.o buf.o syscntrl.o
+ar: creating monlib
+a - ttymon.o
+a - monitor.o
+a - clear.o
+a - edit.o
+a - go.o
+a - trapquery.o
+a - print.o
+a - quit.o
+a - shell.o
+a - eval.o
+a - writeout.o
+a - xwait.o
+a - clrline.o
+a - prompt.o
+a - getch.o
+a - branch.o
+a - newdirec.o
+a - include.o
+a - getfilenm.o
+a - expr.o
+a - mcall.o
+a - mac.o
+a - buf.o
+a - syscntrl.o
+chmod 664 monlib
+ranlib monlib
