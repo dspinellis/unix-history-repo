@@ -1,7 +1,7 @@
 /*
  * Define global variables
  *
- * @(#)curses.c	1.1 (Berkeley) %G%
+ * @(#)curses.c	1.2 (Berkeley) %G%
  */
 # include	"curses.h"
 
@@ -30,6 +30,6 @@ SGTTY	_tty;			/* tty modes				*/
 bool	AM, BS, CA, DA, DB, EO, GT, HZ, IN, MI, MS, NC, OS, UL, XN,
 	NONL, UPPERCASE, normtty, _pfast;
 
-char	*AL, *BC, *BT, *CD, *CE, *CL, *CM, *DC, *DL, *DM, *DO, *ED,
-	*EI, *HO, *IC, *IM, *IP, *LL, *MA, *ND, *SE, *SF, *SO, *SR,
-	*TA, *TE, *TI, *UC, *UE, *UP, *US, *VB, *VE, *VS, PC;
+char	*AL, *BC, *BT, *CD, *CE, *CL, *CM, *CR, *DC, *DL, *DM, *DO,
+	*ED, *EI, *HO, *IC, *IM, *IP, *LL, *MA, *ND, *NL, *SE, *SF,
+	*SO, *SR, *TA, *TE, *TI, *UC, *UE, *UP, *US, *VB, *VE, *VS, PC;
