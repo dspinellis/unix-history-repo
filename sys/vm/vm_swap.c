@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vm_swap.c	7.18 (Berkeley) 5/6/91
- *	$Id$
+ *	$Id: vm_swap.c,v 1.4 1993/10/16 16:20:56 rgrimes Exp $
  */
 
 #include "param.h"
@@ -87,7 +87,7 @@ swapinit()
 		panic("swapvp");
 	if (error = swfree(&proc0, 0)) {
 		printf("\nwarning: no swap space present (yet)\n");
-		/* printf("(swfree (..., 0) -> %d)\n", error);	/* XXX */
+		/* printf("(swfree (..., 0) -> %d)\n", error);*/	/* XXX */
 		/*panic("swapinit swfree 0");*/
 	}
 
