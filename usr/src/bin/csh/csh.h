@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley Software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)csh.h	5.2 (Berkeley) %G%
+ *	@(#)csh.h	5.3 (Berkeley) %G%
  */
 
 #include <sys/time.h>
@@ -14,6 +14,7 @@
 #include <errno.h>
 #include <setjmp.h>
 #include "sh.local.h"
+#include "sh.char.h"
 
 /*
  * C shell
@@ -161,7 +162,11 @@ struct	Bin {
 #define	fblocks	B.Bfblocks
 #define	fbuf	B.Bfbuf
 
+#define btell()	fseekp
+
+#ifndef btell
 off_t	btell();
+#endif
 
 /*
  * The shell finds commands in loops by reseeking the input

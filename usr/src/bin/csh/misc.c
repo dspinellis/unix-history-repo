@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)misc.c	5.2 (Berkeley) %G%";
+static char *sccsid = "@(#)misc.c	5.3 (Berkeley) %G%";
 #endif
 
 #include "sh.h"
@@ -13,26 +13,6 @@ static char *sccsid = "@(#)misc.c	5.2 (Berkeley) %G%";
 /*
  * C Shell
  */
-
-letter(c)
-	register char c;
-{
-
-	return (c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c == '_');
-}
-
-digit(c)
-	register char c;
-{
-
-	return (c >= '0' && c <= '9');
-}
-
-alnum(c)
-	register char c;
-{
-	return (letter(c) || digit(c));
-}
 
 any(c, s)
 	register int c;
@@ -84,14 +64,11 @@ calloc(i, j)
 	register unsigned i;
 	unsigned j;
 {
-	register char *cp, *dp;
+	char *cp;
 
 	i *= j;
-	dp = cp = xalloc(i);
-	if (i != 0)
-		do
-			*dp++ = 0;
-		while (--i);
+	cp = xalloc(i);
+	bzero(cp, (int)i);
 	return (cp);
 }
 
