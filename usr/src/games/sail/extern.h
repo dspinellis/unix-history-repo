@@ -1,5 +1,5 @@
 /*
- * @(#)extern.h	2.1 83/10/31
+ * @(#)extern.h	2.2 83/11/03
  */
 #include <stdio.h>
 #include <signal.h>
@@ -21,7 +21,7 @@
 #define Xfouled2(a,b)	Snagged2(a, b, 0, 1)
 #define Xsnagged2(a,b)	(Snagged2(a, b, 0, 1) || Snagged2(a, b, 1, 1))
 
-#define sterncolour(sp)	((sp)->file->stern+'0'-((sp)->file->captured?16:0))
+#define sterncolour(sp)	((sp)->file->stern+'0'-((sp)->file->captured?10:0))
 #define sternrow(sp)	((sp)->file->row + dr[(sp)->file->dir])
 #define sterncol(sp)	((sp)->file->col + dc[(sp)->file->dir])
 
