@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)sync.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)sync.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include "externs.h"
@@ -75,7 +75,7 @@ sync_open()
 		sync_fp = fopen(sync_file, "r+");
 	if (sync_fp == NULL)
 		return -1;
-	sync_seek == 0;
+	sync_seek = 0;
 	return 0;
 }
 
@@ -110,15 +110,15 @@ Write(type, ship, isstr, a, b, c, d)
 
 Sync()
 {
-	int (*sig1)(), (*sig2)();
+	int (*sighup)(), (*sigint)();
 	register n;
 	int type, shipnum, isstr, a, b, c, d;
 	char buf[80];
 	char erred = 0;
 	extern errno;
 
-	sig1 = signal(SIGHUP, SIG_IGN);
-	sig2 = signal(SIGINT, SIG_IGN);
+	sighup = signal(SIGHUP, SIG_IGN);
+	sigint = signal(SIGINT, SIG_IGN);
 	for (n = TIMEOUT; --n >= 0;) {
 #ifdef LOCK_EX
 		if (flock(fileno(sync_fp), LOCK_EX|LOCK_NB) >= 0)
@@ -180,7 +180,8 @@ bad:
 out:
 	if (!erred && sync_bp != sync_buf) {
 		(void) fseek(sync_fp, 0L, 2);
-		(void) fputs(sync_buf, sync_fp);
+		(void) fwrite(sync_buf, sizeof *sync_buf, sync_bp - sync_buf,
+			sync_fp);
 		(void) fflush(sync_fp);
 		sync_bp = sync_buf;
 	}
@@ -190,8 +191,8 @@ out:
 #else
 	(void) unlink(sync_lock);
 #endif
-	(void) signal(SIGHUP, sig1);
-	(void) signal(SIGINT, sig2);
+	(void) signal(SIGHUP, sighup);
+	(void) signal(SIGINT, sigint);
 	return erred ? -1 : 0;
 }
 
