@@ -37,8 +37,8 @@ digit(c)
 }
 error(s,p,d)
 	{
-	if(!eof)fprintf(errorf,"%d: ",yyline);
-	fprintf(errorf,"(Error) ");
+	fprintf(errorf,"\"%s\", line %d: (Error) ",
+		fptr > 0 ? sargv[fptr] : "<stdin>", yyline);
 	fprintf(errorf,s,p,d);
 	putc('\n',errorf);
 # ifdef DEBUG
@@ -57,8 +57,8 @@ error(s,p,d)
 
 warning(s,p,d)
 	{
-	if(!eof)fprintf(errorf,"%d: ",yyline);
-	fprintf(errorf,"(Warning) ");
+	fprintf(errorf,"\"%s\", line %d: (Warning) ",
+		fptr > 0 ? sargv[fptr] : "<stdin>", yyline);
 	fprintf(errorf,s,p,d);
 	putc('\n',errorf);
 	fflush(errorf);
@@ -371,17 +371,25 @@ error("Premature EOF");
 }
 gch(){
 	register int c;
+	static int hadeof;
+
+	if (hadeof) {
+		hadeof = 0;
+		yyline = 0;
+	}
 	prev = pres;
 	c = pres = peek;
 	peek = pushptr > pushc ? *--pushptr : getc(fin);
 	if(peek == EOF && sargc > 1){
+		hadeof = 1;
 		fclose(fin);
 		fin = fopen(sargv[++fptr],"r");
-		if(fin == NULL)
+		if(fin == NULL) {
+			yyline = 0;
 			error("Cannot open file %s",sargv[fptr]);
+		}
 		peek = getc(fin);
 		sargc--;
-		sargv++;
 		}
 	if(c == EOF) {
 		eof = TRUE;
