@@ -1,0 +1,31 @@
+.pa 1
+.he 'SUM (I)'3/15/72'SUM (I)'
+.ti 0
+NAME		sum  --  sum file
+.sp
+.ti 0
+SYNOPSIS	sum___ name\d1\u ...
+.sp
+.ti 0
+DESCRIPTION	sum___
+sums the contents of the bytes (mod 2^16) of
+one or more files and prints the answer in octal.
+A separate sum is printed for each file specified,
+along with the number of whole or partial
+512-byte blocks read.
+
+In practice, sum___ is often used to verify that
+all of a special file can be read without error.
+.sp
+.ti 0
+FILES		none
+.sp
+.ti 0
+SEE ALSO	--
+.sp
+.ti 0
+DIAGNOSTICS	"oprd" if the file cannot be
+opened; "?" if an error is discovered during the read.
+.sp
+.ti 0
+BUGS		none
