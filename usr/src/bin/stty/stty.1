@@ -3,14 +3,14 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)stty.1	6.7 (Berkeley) %G%
+.\"     @(#)stty.1	6.8 (Berkeley) %G%
 .\"
 .Dd 
 .Dt STTY 1
 .Os BSD 4.4
 .Sh NAME
 .Nm stty
-.Nd Set the options for a terminal.
+.Nd set the options for a terminal device interface
 .Sh SYNOPSIS
 .Nm stty
 .Op Fl a Ar \&| Fl g
@@ -34,8 +34,8 @@ The following options are available:
 Write to standard output all the current settings
 for the terminal.
 .Tp Fl g
-Write to standard output the current settings in an
-unspecified form that can be used as arguments to
+Write the current settings to standard output in a
+form that can be used as arguments to
 another stty utility on the same system.
 .Tp
 .Pp
@@ -278,12 +278,17 @@ Recognized control-characters:
 .Tp Cm saved settings
 Set the current terminal
 characteristics to the saved settings
-produced by the -g option.
+produced by the
+.Fl g
+option.
 .Tc Cm min
 .Ws
 .Ar number
 .Cx
-time number
+.Tc Cm time
+.Ws
+.Ar number
+.Cx
 Set the value of min or time to
 number.
 MIN and TIME are used in
@@ -312,24 +317,30 @@ In addition
 Reset ERASE and KILL characters
 back to system defaults.
 .Tp Cm sane
-Resets all modes to some reasonable,
-unspecified, values.
+Resets all modes to reasonable values for interactive terminal use.
+.Tp Cm tty
+Set the line discipline to the standard terminal line discipline TTYDISC.
 .Tp
 .Pp
-If the -g option is specified, stty writes to standard output
+If the
+.Fl g
+option is specified, stty writes to standard output
 the current settings in a form that can be used as arguments
 to another instance of stty on the same system.
 .Pp
-If the -a option is specified, all of the information as
-described in arguments is written to standard output.
-Unless
-otherwise specified, this information shall be displayed as
-<space>-separated tokens in an unspecified format, on one or
-more lines, with an unspecified number of tokens per line.
-Additional information may be displayed as well.
+If the
+.Fl a
+option is specified, all of the information about the current setting
+is written to standard output
+in the same format described for the arguments above.
+Unless otherwise specified, this information is displayed as
+<space>-separated tokens, on one or
+more lines, with one or more tokens per line.
 .Pp
-If no options are specified, an unspecified subset of the
-information displayed for the -a option is displayed.
+If no options are specified, a subset of the
+information displayed for the
+.Fl a
+option is displayed.
 .Pp
 If the terminal input speed and output speed are the same,
 the speed information is displayed as follows:
