@@ -15,26 +15,19 @@ static char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)mountd.c	8.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)mountd.c	8.4 (Berkeley) %G%";
 #endif not lint
 
-#include <pwd.h>
-#include <grp.h>
-#include <unistd.h>
-#include <stdlib.h>
 #include <sys/param.h>
-#include <sys/ioctl.h>
-#include <sys/stat.h>
 #include <sys/file.h>
-#include <sys/ucred.h>
+#include <sys/ioctl.h>
+#define CD9660
 #include <sys/mount.h>
 #include <sys/socket.h>
-#include <sys/errno.h>
-#include <sys/signal.h>
-#include <stdio.h>
-#include <string.h>
+#include <sys/stat.h>
 #include <sys/syslog.h>
-#include <netdb.h>
+#include <sys/ucred.h>
+
 #include <rpc/rpc.h>
 #include <rpc/pmap_clnt.h>
 #include <rpc/pmap_prot.h>
@@ -43,10 +36,20 @@ static char sccsid[] = "@(#)mountd.c	8.3 (Berkeley) %G%";
 #endif
 #include <nfs/rpcv2.h>
 #include <nfs/nfsv2.h>
-#include "pathnames.h"
+
+#include <errno.h>
+#include <grp.h>
+#include <netdb.h>
+#include <pwd.h>
+#include <signal.h>
 #ifdef DEBUG
 #include <stdarg.h>
 #endif
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include "pathnames.h"
 
 /*
  * Structures for keeping the mount list and export list
@@ -572,10 +575,10 @@ get_exportlist()
 		} targs;
 
 		switch (fsp->f_type) {
-		case MOUNT_UFS:
-		case MOUNT_ISOFS:
 		case MOUNT_MFS:
-			targs.ua.fspec = (char *)0;
+		case MOUNT_UFS:
+		case MOUNT_CD9660:
+			targs.ua.fspec = NULL;
 			targs.ua.export.ex_flags = MNT_DELEXPORT;
 			if (mount(fsp->f_type, fsp->f_mntonname,
 				  fsp->f_flags | MNT_UPDATE,
