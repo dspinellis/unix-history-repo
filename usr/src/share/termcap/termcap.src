@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)termcap.src	5.55 (Berkeley) %G%
+#	@(#)termcap.src	5.56 (Berkeley) %G%
 #
 #	Termcap source file
 #	John Kunze, Berkeley
@@ -2782,8 +2782,25 @@ wt|wy85-w|wyse85-w|wyse 85 in 132-column mode:\
 wu|wy85-wvb|wyse85-wvb|wyse 85 with visual bell 132-columns:\
 	:vb=\E[30h\E,\E[30l:\
 	:tc=wy85:
+# From pett@cgl.ucsf.edu
+wv|wy99|wyse-99gt|wyse99gt|wyse 99GT, 80 col, native mode:\
+	:is=\E\140\072\Ee(\Ew1\Ee-\Ee$\Ee'\EeT^T:ct=\E0:st=\E1:gn:\
+	:li#24:co#80:bl=^G:am:bw:ul:hs:as=\EcE:ae=\EcD:bt=\EI:\
+	:ma=^Kj^Jk^Hh^Ll^^H:cm=\Ea%i%2R%3C:it#8:\
+	:vs=^^\EY\E\140\072:vi=\E`0:es:ws#80:\
+	:lm#0:md=\Ee1\EG6:me=\Ee0\E(:mh=\Ee1\EGb:mb=\Ee1\EG2:\
+	:mk=\Ee1\EG1:mp=\E):mr=\Ee1\EG4:pf=^T:po=\EP\E7:ps=:\Ed&\E7\
+	:fs=\004:ds=\EA31:i2=\EA30:vb=\E\1361\E\1360:da:db:sf=^J:sr=\Ej:\
+	:cl=^Z:ce=\ET:cd=\EY:al=\EE:dl=\ER:dc=\EW:\
+	:so=\EGt:se=\EG0:sg#1:ue=\EG0:us=\EG8:ug#1:ll=\Ea24R1C:\
+	:pt:bs:nd=^L:up=^K:do=^J:ho=^^:kl=^H:kr=^L:ku=^K:kd=^J:kh=^^:kn#20:\
+	:ei=\Er:im=\Eq:ic=:mi:if=/usr/share/tabset/stdcrt:\
+	:k1=^A@^M:k2=^AA^M:k3=^AB^M:k4=^AC^M:k5=^AD^M:\
+	:k6=^AE^M:k7=^AF^M:k8=^AG^M:k9=^AH^M:k0=^AI^M:\
+	:l1=^A`^M:l2=^Aa^M:l3=^Ab^M:l4=^Ac^M:l5=^Ad^M:\
+	:l6=^Ae^M:l7=^Af^M:l8=^Ag^M:l9=^Ah^M:l0=^Ai^M:
 # From freudent@eric.ultra.nyu.edu (Eric Freudenthal)
-wv|wy100q|Wyse 100 for Quotron:\
+ww|wy100q|Wyse 100 for Quotron:\
 	:al=\EE:bs:bt=\EI:cd=\EY:ce=\ET:cl=^Z:cm=\E=%+ %+ :co#80:\
 	:dc=\EW:dl=\ER:do=^J:ei=\Er:im=\Eq:is=\E`\072\200\EC\EDF\E0\E'\E(\EA21:\
 	:kd=^J:kl=^H:kr=^L:ku=^K:li#24:nd=^L:up=^K:us=\EG8:ue=\EG0:\
