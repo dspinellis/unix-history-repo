@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)diffdir.c 4.4 1/25/81";
+static	char *sccsid = "@(#)diffdir.c	4.5 (Berkeley) 81/02/28";
 
 #include "diff.h"
 /*
