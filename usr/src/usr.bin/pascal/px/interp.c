@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)interp.c 1.16 %G%";
+static char sccsid[] = "@(#)interp.c 1.17 %G%";
 
 #include <math.h>
 #include "whoami.h"
@@ -91,6 +91,13 @@ struct iorec	*_actfile[MAXFILES] = {
 };
 
 /*
+ * stuff for pdx
+ */
+
+union progcntr *pcaddrp;
+asm(".globl _loopaddr");
+
+/*
  * Px profile array
  */
 #ifdef PROFILE
@@ -128,6 +135,8 @@ interpreter(base)
 	union progcntr tpc;
 	struct iorec **ip;
 
+	pcaddrp = &pc;
+
 	/*
 	 * Setup sets up any hardware specific parameters before
 	 * starting the interpreter. Typically this is inline replaced
@@ -150,6 +159,8 @@ interpreter(base)
 	stp = (struct stack *)pushsp((long)(sizeof(struct stack)));
 	_dp = &_display.frame[0];
 	pc.cp = base;
+
+	asm("_loopaddr:");
 	for(;;) {
 #		ifdef DEBUG
 		if (++opcptr == 10)
@@ -160,6 +171,10 @@ interpreter(base)
 		_profcnts[*pc.ucp]++;
 #		endif PROFILE
 		switch (*pc.ucp++) {
+		case O_BPT:			/* breakpoint trap */
+			asm(".byte 0");
+			pc.ucp--;
+			continue;
 		case O_NODUMP:
 			_nodump = TRUE;
 			/* and fall through */

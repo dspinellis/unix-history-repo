@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)int.c 1.4 %G%";
+static char sccsid[] = "@(#)int.c 1.5 %G%";
 
 /*
  * px - interpreter for Berkeley Pascal
@@ -16,6 +16,14 @@ static char sccsid[] = "@(#)int.c 1.4 %G%";
 #include	"whoami.h"
 #include	"vars.h"
 #include	"objfmt.h"
+
+/*
+ * New stuff for pdx
+ */
+
+extern char *end;
+extern loopaddr();
+union progcntr *pcaddrp;	/* address of interpreter frame address */
 
 main(ac,av)
 
@@ -39,24 +47,21 @@ main(ac,av)
 	/*
 	 * Determine how PX was invoked, and how to process the program 
 	 */
-	if (_argv[0][0] == '-' && _argv[0][1] == 'o') {
-		file = &_argv[0][2];
+	file = _argv[1];
+	if (!strcmp(_argv[0], "pdx")) {
+		_mode = PDX;
+		_argv += 2; _argc -= 2;
+	} else if (!strcmp(_argv[0], "pix")) {
 		_mode = PIX;
-	} else if (_argc <= 1) {
-		file = "obj";
-		_mode = PX;
-	} else if (_argv[1][0] != '-') {
-		file = _argv[1];
-		_mode = PX;
-	} else if (_argv[1][1] == 0) {
-		file = _argv[0];
+		_argv++; _argc--;
+	} else if (!strcmp(_argv[0], "pipe")) {
 		_mode = PIPE;
-		_argc -= 1;
-		_argv[1] = _argv[0];
-		_argv = &_argv[1];
+		file = "PIPE";
+		_argv++; _argc--;
 	} else {
-		fputs("Improper specification of object file to PX\n",stderr);
-		exit(1);
+		_mode = PX;
+		if (_argc <= 1)
+			file = "obj";
 	}
 
 	/*
@@ -70,15 +75,18 @@ main(ac,av)
 			perror(file);
 			exit(1);
 		}
-		fseek(prog,(long)(HEADER_BYTES-sizeof(struct pxhdr)),0);
 		fread(&pxhd,sizeof(struct pxhdr),1,prog);
-	}
-	if (pxhd.maketime < createtime) {
-		fprintf(stderr,"%s is obsolete and must be recompiled\n",file);
-		exit(1);
+		if (pxhd.magicnum != MAGICNUM) {
+			fseek(prog,(long)(HEADER_BYTES-sizeof(struct pxhdr)),0);
+			fread(&pxhd,sizeof(struct pxhdr),1,prog);
+		}
 	}
 	if (pxhd.magicnum != MAGICNUM) {
 		fprintf(stderr,"%s is not a Pascal interpreter file\n",file);
+		exit(1);
+	}
+	if (pxhd.maketime < createtime) {
+		fprintf(stderr,"%s is obsolete and must be recompiled\n",file);
 		exit(1);
 	}
 
@@ -99,8 +107,6 @@ main(ac,av)
 	} else {
 		bytesread = fread(objprog,1,(int)pxhd.objsize,prog);
 		fclose(prog);
-		if (_mode == PIX)
-			unlink(file);
 	}
 	if (bytesread != pxhd.objsize) {
 		fprintf(stderr,"Read error occurred while loading %s\n",file);
@@ -119,6 +125,14 @@ main(ac,av)
 	signal(SIGSEGV,memsize);
 	signal(SIGFPE,except);
 	signal(SIGTRAP,liberr);
+
+	/*
+	 * See if we're being watched by the debugger, if so set a trap.
+	 */
+	if (_mode == PDX || (_mode == PIX && pxhd.symtabsize > 0)) {
+		inittrap(&_display, &_dp, objprog, &pcaddrp, loopaddr);
+	}
+
 	/*
 	 * do it
 	 */
@@ -136,4 +150,20 @@ main(ac,av)
 	PFLUSH();
 	/* pfree(objprog); */
 	psexit(0);
+}
+
+/*
+ * Generate an IOT trap to tell the debugger that the object code
+ * has been read in.  Parameters are there for debugger to look at,
+ * not the procedure.
+ */
+
+static inittrap(dispaddr, dpaddr, endaddr, pcaddrp, loopaddrp)
+union disply *dispaddr;
+struct disp *dpaddr;
+char *endaddr;
+union progcntr **pcaddrp;
+char **loopaddrp;
+{
+	kill(getpid(), SIGIOT);
 }
