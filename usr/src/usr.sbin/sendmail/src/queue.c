@@ -5,10 +5,10 @@
 # include <errno.h>
 
 # ifndef QUEUE
-SCCSID(@(#)queue.c	3.47		%G%	(no queueing));
+SCCSID(@(#)queue.c	3.48		%G%	(no queueing));
 # else QUEUE
 
-SCCSID(@(#)queue.c	3.47		%G%);
+SCCSID(@(#)queue.c	3.48		%G%);
 
 /*
 **  QUEUEUP -- queue a message up for future transmission.
@@ -52,7 +52,7 @@ queueup(e, queueall)
 		syserr("queueup: cannot create temp file %s", tf);
 		return;
 	}
-	(void) chmod(tf, 0600);
+	(void) chmod(tf, FileMode);
 
 # ifdef DEBUG
 	if (tTd(40, 1))
@@ -75,7 +75,7 @@ queueup(e, queueall)
 			(void) fclose(tfp);
 			return;
 		}
-		(void) chmod(e->e_df, 0600);
+		(void) chmod(e->e_df, FileMode);
 		(*e->e_putbody)(dfp, Mailer[1], FALSE);
 		(void) fclose(dfp);
 	}

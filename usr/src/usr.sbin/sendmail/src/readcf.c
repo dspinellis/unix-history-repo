@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)readcf.c	3.39		%G%);
+SCCSID(@(#)readcf.c	3.40		%G%);
 
 /*
 **  READCF -- read control file.
@@ -622,6 +622,8 @@ setoption(opt, val, safe, sticky)
 		tval = convtime(val);
 	else if (index("gLu", opt) != NULL)
 		ival = atoi(val);
+	else if (index("F", opt) != NULL)
+		ival = atooct(val);
 	else if (index("acfimosv", opt) != NULL)
 		bval = atobool(val);
 	else if (index("be", opt) != NULL)
@@ -705,6 +707,10 @@ setoption(opt, val, safe, sticky)
 			HoldErrs = TRUE;
 			break;
 		}
+		break;
+
+	  case 'F':		/* file mode */
+		FileMode = ival;
 		break;
 
 	  case 'f':		/* save Unix-style From lines on front */
