@@ -1,14 +1,13 @@
 .\" %sccs.include.proprietary.roff%
 .\"
-.\"	@(#)m5	8.1 (Berkeley) %G%
+.\"	@(#)m5	6.3 (Berkeley) %G%
 .\"
-.pn 28
 .ds H T
 .tr |
 .tr ~|
 .de x1
 .xx
-.ftB
+.ft B
 .in .2i
 .nf
 .ne 2.1
@@ -16,18 +15,18 @@
 ..
 .de x2
 .fi
-.in0
-.ftR
+.in 0
+.ft R
 .xx
 ..
 .br
 .ce
-.ftB
+.ft B
 .rs
 .sp 0.5i
 TUTORIAL EXAMPLES
-.ftR
-.sp2
+.ft R
+.sp 2
 .nr p 0
 .2C
 .ns
@@ -339,7 +338,7 @@ footnote doesn't completely fit in the available space.
 &da FN	\e"divert (append) footnote
 &ev 1	\e"in environment 1
 &if \e\en+x=1 .fs	 \e"if first, include separator
-.lg0
+.lg 0
 &fi	\e"fill mode
 .lg
 &&
