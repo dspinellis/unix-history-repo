@@ -11,7 +11,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)vfprintf.c	5.24 (Berkeley) %G%";
+static char sccsid[] = "@(#)vfprintf.c	5.25 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -136,11 +136,7 @@ rflag:		switch (*++fmt) {
 			--fmt;
 			goto rflag;
 		case 'L':
-			/*
-			 * C doesn't have a long double; use long for now.
-			 * flags |= LONGDBL;
-			 */
-			flags |= LONGINT;
+			flags |= LONGDBL;
 			goto rflag;
 		case 'h':
 			flags |= SHORTINT;
@@ -190,7 +186,7 @@ rflag:		switch (*++fmt) {
 			}
 			goto pforw;
 		case 'n':
-			if (flags&LONGDBL || flags&LONGINT)
+			if (flags&LONGINT)
 				*va_arg(argp, long *) = cnt;
 			else if (flags&SHORTINT)
 				*va_arg(argp, short *) = cnt;
