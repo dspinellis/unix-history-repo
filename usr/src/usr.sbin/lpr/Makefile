@@ -8,9 +8,10 @@
 #
 CFLAGS=-O
 LDFLAGS=
-LIBDIR=/usr/lib
-BINDIR=/usr/ucb
-SPOOLDIR=/usr/spool/lpd
+DESTDIR=
+LIBDIR=${DESTDIR}/usr/lib
+BINDIR=${DESTDIR}/usr/ucb
+SPOOLDIR=${DESTDIR}/usr/spool/lpd
 CXREF=/usr/ucb/ctags -x
 ROOT=root
 DAEMON=daemon
