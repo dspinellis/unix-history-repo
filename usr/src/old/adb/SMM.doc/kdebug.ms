@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)kdebug.ms	5.1 (Berkeley) %G%
+.\"	@(#)kdebug.ms	6.1 (Berkeley) %G%
 .\"
 .bd S B 3
 .de UX
@@ -22,18 +22,13 @@
 Using ADB to Debug the
 .UX
 Kernel
-.br
-Revised January, 1983
 .AU
-Samuel J. Leffler
-.AU
-William N. Joy
+Samuel J. Leffler and William N. Joy
 .AI
 Computer Systems Research Group
 Department of Electrical Engineering and Computer Science
 University of California, Berkeley
 Berkeley, California  94720
-(415) 642-7780
 .de IR
 \fI\\$1\fP\\$2
 ..
@@ -74,8 +69,13 @@ program after a system crash.
 The reader is expected to have at least a
 passing familiarity with the debugger command
 language.
+.sp
+.LP
+Revised 
 .AE
-.ND
+.LP
+.OH 'Using ADB to Debug the Kernel''SMM:3-%'
+.EH 'SMM:3-%''Using ADB to Debug the Kernel'
 .ds LH "Using ADB on the UNIX Kernel
 .ds RH Introduction
 .ds CF \*(DY
@@ -83,8 +83,6 @@ language.
 .nr H1 1
 .ds CH "
 .bp
-.nr % 1
-.ds CH "\(hy \\n(PN \(hy
 .LG
 .B
 .ce
@@ -211,7 +209,7 @@ instruction).
 Once the stack pointer has been located, the command
 .sp 1
 .ti +5
-\fB.\^$\^c\fP
+\&\fB.\^$\^c\fP
 .sp 1
 will generate a stack trace.
 An alternate method may be used when a trace of a particular
