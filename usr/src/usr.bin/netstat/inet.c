@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)inet.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)inet.c	5.6 (Berkeley) %G%";
 #endif not lint
 
 #include <strings.h>
@@ -140,16 +140,16 @@ tcp_stats(off, name)
 		return;
 	klseek(kmem, off, 0);
 	read(kmem, (char *)&tcpstat, sizeof (tcpstat));
-	printf("%s:\n\t%d incomplete header%s\n", name,
+	printf("%s:\n\t%u incomplete header%s\n", name,
 		tcpstat.tcps_hdrops, plural(tcpstat.tcps_hdrops));
-	printf("\t%d bad checksum%s\n",
+	printf("\t%u bad checksum%s\n",
 		tcpstat.tcps_badsum, plural(tcpstat.tcps_badsum));
-	printf("\t%d bad header offset field%s\n",
+	printf("\t%u bad header offset field%s\n",
 		tcpstat.tcps_badoff, plural(tcpstat.tcps_badoff));
 #ifdef notdef
-	printf("\t%d bad segment%s\n",
+	printf("\t%u bad segment%s\n",
 		tcpstat.tcps_badsegs, plural(tcpstat.badsegs));
-	printf("\t%d unacknowledged packet%s\n",
+	printf("\t%u unacknowledged packet%s\n",
 		tcpstat.tcps_unack, plural(tcpstat.tcps_unack));
 #endif
 }
@@ -167,11 +167,11 @@ udp_stats(off, name)
 		return;
 	klseek(kmem, off, 0);
 	read(kmem, (char *)&udpstat, sizeof (udpstat));
-	printf("%s:\n\t%d incomplete header%s\n", name,
+	printf("%s:\n\t%u incomplete header%s\n", name,
 		udpstat.udps_hdrops, plural(udpstat.udps_hdrops));
-	printf("\t%d bad data length field%s\n",
+	printf("\t%u bad data length field%s\n",
 		udpstat.udps_badlen, plural(udpstat.udps_badlen));
-	printf("\t%d bad checksum%s\n",
+	printf("\t%u bad checksum%s\n",
 		udpstat.udps_badsum, plural(udpstat.udps_badsum));
 }
 
@@ -188,25 +188,25 @@ ip_stats(off, name)
 		return;
 	klseek(kmem, off, 0);
 	read(kmem, (char *)&ipstat, sizeof (ipstat));
-	printf("%s:\n\t%d total packets received\n", name,
+	printf("%s:\n\t%u total packets received\n", name,
 		ipstat.ips_total);
-	printf("\t%d bad header checksum%s\n",
+	printf("\t%u bad header checksum%s\n",
 		ipstat.ips_badsum, plural(ipstat.ips_badsum));
-	printf("\t%d with size smaller than minimum\n", ipstat.ips_tooshort);
-	printf("\t%d with data size < data length\n", ipstat.ips_toosmall);
-	printf("\t%d with header length < data size\n", ipstat.ips_badhlen);
-	printf("\t%d with data length < header length\n", ipstat.ips_badlen);
-	printf("\t%d fragment%s received\n",
+	printf("\t%u with size smaller than minimum\n", ipstat.ips_tooshort);
+	printf("\t%u with data size < data length\n", ipstat.ips_toosmall);
+	printf("\t%u with header length < data size\n", ipstat.ips_badhlen);
+	printf("\t%u with data length < header length\n", ipstat.ips_badlen);
+	printf("\t%u fragment%s received\n",
 		ipstat.ips_fragments, plural(ipstat.ips_fragments));
-	printf("\t%d fragment%s dropped (dup or out of space)\n",
+	printf("\t%u fragment%s dropped (dup or out of space)\n",
 		ipstat.ips_fragdropped, plural(ipstat.ips_fragdropped));
-	printf("\t%d fragment%s dropped after timeout\n",
+	printf("\t%u fragment%s dropped after timeout\n",
 		ipstat.ips_fragtimeout, plural(ipstat.ips_fragtimeout));
-	printf("\t%d packet%s forwarded\n",
+	printf("\t%u packet%s forwarded\n",
 		ipstat.ips_forward, plural(ipstat.ips_forward));
-	printf("\t%d packet%s not forwardable\n",
+	printf("\t%u packet%s not forwardable\n",
 		ipstat.ips_cantforward, plural(ipstat.ips_cantforward));
-	printf("\t%d redirect%s sent\n",
+	printf("\t%u redirect%s sent\n",
 		ipstat.ips_redirectsent, plural(ipstat.ips_redirectsent));
 }
 
@@ -246,9 +246,9 @@ icmp_stats(off, name)
 		return;
 	klseek(kmem, off, 0);
 	read(kmem, (char *)&icmpstat, sizeof (icmpstat));
-	printf("%s:\n\t%d call%s to icmp_error\n", name,
+	printf("%s:\n\t%u call%s to icmp_error\n", name,
 		icmpstat.icps_error, plural(icmpstat.icps_error));
-	printf("\t%d error%s not generated 'cuz old message was icmp\n",
+	printf("\t%u error%s not generated 'cuz old message was icmp\n",
 		icmpstat.icps_oldicmp, plural(icmpstat.icps_oldicmp));
 	for (first = 1, i = 0; i < ICMP_IREQREPLY + 1; i++)
 		if (icmpstat.icps_outhist[i] != 0) {
@@ -256,16 +256,16 @@ icmp_stats(off, name)
 				printf("\tOutput histogram:\n");
 				first = 0;
 			}
-			printf("\t\t%s: %d\n", icmpnames[i],
+			printf("\t\t%s: %u\n", icmpnames[i],
 				icmpstat.icps_outhist[i]);
 		}
-	printf("\t%d message%s with bad code fields\n",
+	printf("\t%u message%s with bad code fields\n",
 		icmpstat.icps_badcode, plural(icmpstat.icps_badcode));
-	printf("\t%d message%s < minimum length\n",
+	printf("\t%u message%s < minimum length\n",
 		icmpstat.icps_tooshort, plural(icmpstat.icps_tooshort));
-	printf("\t%d bad checksum%s\n",
+	printf("\t%u bad checksum%s\n",
 		icmpstat.icps_checksum, plural(icmpstat.icps_checksum));
-	printf("\t%d message%s with bad length\n",
+	printf("\t%u message%s with bad length\n",
 		icmpstat.icps_badlen, plural(icmpstat.icps_badlen));
 	for (first = 1, i = 0; i < ICMP_IREQREPLY + 1; i++)
 		if (icmpstat.icps_inhist[i] != 0) {
@@ -273,10 +273,10 @@ icmp_stats(off, name)
 				printf("\tInput histogram:\n");
 				first = 0;
 			}
-			printf("\t\t%s: %d\n", icmpnames[i],
+			printf("\t\t%s: %u\n", icmpnames[i],
 				icmpstat.icps_inhist[i]);
 		}
-	printf("\t%d message response%s generated\n",
+	printf("\t%u message response%s generated\n",
 		icmpstat.icps_reflect, plural(icmpstat.icps_reflect));
 }
 
