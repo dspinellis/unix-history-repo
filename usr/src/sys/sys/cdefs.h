@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)cdefs.h	8.6 (Berkeley) %G%
+ *	@(#)cdefs.h	8.7 (Berkeley) %G%
  */
 
 #ifndef	_CDEFS_H_
