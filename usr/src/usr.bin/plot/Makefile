@@ -1,4 +1,4 @@
-#	Makefile	4.4	83/11/11
+#	Makefile	4.5	85/01/04
 #
 CFLAGS=	-O
 ALL=	tek t300 t300s t450 aedplot bgplot crtplot dumbplot gigiplot \
