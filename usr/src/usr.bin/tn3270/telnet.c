@@ -68,7 +68,7 @@ static char sccsid[] = "@(#)telnet.c	3.1  10/29/86";
  *
  *	unix		-	Compiles in unix specific stuff.
  *
- *	msdos		-	Compiles in msdos specific stuff.
+ *	MSDOS		-	Compiles in MSDOS specific stuff.
  *
  */
 
@@ -122,8 +122,8 @@ extern char	*inet_ntoa();
 #include "ctlr/options.ext"
 #include "ctlr/outbound.ext"
 #include "keyboard/termin.ext"
-#include "general.h"
 #endif	/* defined(TN3270) */
+#include "general.h"
 
 
 
@@ -240,6 +240,16 @@ static int
 static int
 	Sent3270TerminalType;	/* Have we said we are a 3270? */
 
+/* Some real, live, globals. */
+int
+	tout,			/* Output file descriptor */
+	tin;			/* Input file descriptor */
+
+#else	/* defined(TN3270) */
+static int tin, tout;		/* file descriptors */
+#endif	/* defined(TN3270) */
+
+
 /*
  * Telnet receiver states for fsm
  */
@@ -254,14 +264,6 @@ static int
 #define	TS_SE		8		/* looking for sub-option end */
 
 static int	telrcv_state = TS_DATA;
-/* Some real, live, globals. */
-int
-	tout,			/* Output file descriptor */
-	tin;			/* Input file descriptor */
-
-#else	/* defined(TN3270) */
-static int tin, tout;		/* file descriptors */
-#endif	/* defined(TN3270) */
 
 static char	line[200];
 static int	margc;
@@ -301,19 +303,23 @@ static struct {
 /*	Various modes */
 #define	MODE_LINE(m)	(modelist[m].modetype & LINE)
 #define	MODE_LOCAL_CHARS(m)	(modelist[m].modetype &  LOCAL_CHARS)
+#define	MODE_LOCAL_ECHO(m)	(modelist[m].modetype & LOCAL_ECHO)
+#define	MODE_COMMAND_LINE(m)	(modelist[m].modetype & COMMAND_LINE)
 
 #define	LOCAL_CHARS	0x01		/* Characters processed locally */
 #define	LINE		0x02		/* Line-by-line mode of operation */
+#define	LOCAL_ECHO	0x04		/* Echoing locally */
+#define	COMMAND_LINE	0x08		/* Command line mode */
 
 static struct {
     char *modedescriptions;
     char modetype;
 } modelist[] = {
-	{ "telnet command mode", 0 },
+	{ "telnet command mode", COMMAND_LINE },
 	{ "character-at-a-time mode", 0 },
-	{ "character-at-a-time mode (local echo)", LOCAL_CHARS },
+	{ "character-at-a-time mode (local echo)", LOCAL_ECHO|LOCAL_CHARS },
 	{ "line-by-line mode (remote echo)", LINE | LOCAL_CHARS },
-	{ "line-by-line mode", LINE | LOCAL_CHARS },
+	{ "line-by-line mode", LINE | LOCAL_ECHO | LOCAL_CHARS },
 	{ "line-by-line mode (local echoing suppressed)", LINE | LOCAL_CHARS },
 	{ "3270 mode", 0 },
 };
@@ -342,12 +348,15 @@ static struct	ltchars oltc = { 0 }, nltc = { 0 };
 static struct	sgttyb ottyb = { 0 }, nttyb = { 0 };
 
 
+#define	TerminalWrite(fd,buf,n)	write(fd,buf,n)
+#define	TerminalRead(fd,buf,n)	read(fd,buf,n)
+
 /*
  *
  */
 
 static int
-TerminalAutoFlush()
+TerminalAutoFlush()					/* unix */
 {
 #if	defined(LNOFLSH)
     ioctl(0, TIOCLGET, (char *)&autoflush);
@@ -358,9 +367,10 @@ TerminalAutoFlush()
 }
 
 /*
- * TerminalEditLine()
+ * TerminalSpecialChars()
  *
- * Look at an input character, and decide what to do.
+ * Look at an input character to see if it is a special character
+ * and decide what to do.
  *
  * Output:
  *
@@ -369,7 +379,7 @@ TerminalAutoFlush()
  */
 
 int
-TerminalEditLine(c)			/* unix */
+TerminalSpecialChars(c)			/* unix */
 int	c;
 {
     void doflush(), intp(), sendbrk();
@@ -432,7 +442,7 @@ TerminalRestoreState()				/* unix */
 
 
 static void
-TerminalNewMode(f)
+TerminalNewMode(f)					/* unix */
 register int f;
 {
     static int prevmode = 0;
@@ -555,6 +565,14 @@ register int f;
 }
 
 
+int
+NetClose(net)
+int	net;
+{
+    return close(net);
+}
+
+
 static void
 NetNonblockingIO(fd, onoff)				/* unix */
 int
@@ -591,6 +609,7 @@ int fd;
 
 #if	defined(MSDOS)
 #include <time.h>
+#include <signal.h>
 
 #if	!defined(SO_OOBINLINE)
 #define	SO_OOBINLINE
@@ -598,12 +617,234 @@ int fd;
 
 
 static char
+    termEofChar,
     termEraseChar,
     termFlushChar,
     termIntChar,
     termKillChar,
-    termQuitChar,
-    termEofChar;
+    termLiteralNextChar,
+    termQuitChar;
+
+
+/*
+ * MSDOS doesn't have anyway of deciding whether a full-edited line
+ * is ready to be read in, so we need to do character-by-character
+ * reads, and then do the editing in the program (in the case where
+ * we are supporting line-by-line mode).
+ *
+ * The following routines, which are internal to the MSDOS-specific
+ * code, accomplish this miracle.
+ */
+
+#define Hex(c)	HEX[(c)&0xff]
+
+static survivorSetup = 0;		/* Do we have ^C hooks in? */
+
+static int
+	lineend = 0,		/* There is a line terminator */
+	ctrlCCount = 0;
+
+static char	linein[200],		/* Where input line is assembled */
+		*nextin = linein,	/* Next input character */
+		*nextout = linein;	/* Next character to be consumed */
+
+#define consumechar() \
+    if ((++nextout) >= nextin) { \
+	nextout = nextin = linein; \
+	lineend = 0; \
+    }
+
+#define	characteratatime()	(!MODE_LINE(globalmode))	/* one by one */
+
+
+/*
+ * killone()
+ *
+ *  Erase the last character on the line.
+ */
+
+static void
+killone()
+{
+    if (lineend) {
+	return;			/* ??? XXX */
+    }
+    if (nextin == linein) {
+	return;			/* Nothing to do */
+    }
+    nextin--;
+    if (!(isspace(*nextin) || isprint(*nextin))) {
+	putchar('\b');
+	putchar(' ');
+	putchar('\b');
+    }
+    putchar('\b');
+    putchar(' ');
+    putchar('\b');
+}
+
+
+/*
+ * setlineend()
+ *
+ *  Decide if it's time to send the current line up to the user
+ * process.
+ */
+
+static void
+setlineend()
+{
+    if (nextin == nextout) {
+	return;
+    }
+    if (characteratatime()) {
+	lineend = 1;
+    } else if (nextin >= (linein+sizeof linein)) {
+	lineend = 1;
+    } else {
+	int c = *(nextin-1);
+	if ((c == termIntChar)
+		|| (c == termQuitChar)
+		|| (c == termEofChar)) {
+	    lineend = 1;
+	} else if (c == termFlushChar) {
+	    lineend = 1;
+	} else if ((c == '\n') || (c == '\r')) {
+	    lineend = 1;
+	}
+    }
+    /* Otherwise, leave it alone (reset by 'consumechar') */
+}
+
+/*
+ * OK, what we do here is:
+ *
+ *   o  If we are echoing, then
+ *	o  Look for character erase, line kill characters
+ *	o  Echo the character (using '^' if a control character)
+ *   o  Put the character in the input buffer
+ *   o  Set 'lineend' as necessary
+ */
+
+static void
+DoNextChar(c)
+int	c;			/* Character to process */
+{
+    static char literalnextcharacter = 0;
+
+    if (nextin >= (linein+sizeof linein)) {
+	putchar('\7');		/* Ring bell */
+	setlineend();
+	return;
+    }
+    if (MODE_LOCAL_CHARS(globalmode)) {
+	/* Look for some special character */
+	if (!literalnextcharacter) {
+	    if (c == termEraseChar) {
+		killone();
+		setlineend();
+		return;
+	    } else if (c == termKillChar) {
+		while (nextin != linein) {
+		    killone();
+		}
+		setlineend();
+		return;
+	    } else if (c == termLiteralNextChar) {
+		literalnextcharacter = 1;
+		return;
+	    }
+	}
+
+	if (MODE_LOCAL_ECHO(globalmode)) {
+	    if ((literalnextcharacter == 0) && ((c == '\r') || (c == '\n'))) {
+		putchar('\r');
+		putchar('\n');
+		c = '\n';
+	    } else if (!isprint(c) && !isspace(c)) {
+		putchar('^');
+		putchar(c^0x40);
+	    } else {
+		putchar(c);
+	    }
+	}
+	literalnextcharacter = 0;
+    }
+    *nextin++ = c;
+    setlineend();
+}
+
+static int
+inputExists()
+{
+    int input;
+    static state = 0;
+
+    while (ctrlCCount) {
+	DoNextChar(0x03);
+	ctrlCCount--;
+    }
+    if (lineend) {
+	return 1;
+    }
+    if (!kbhit()) {
+	return lineend;
+    }
+    input = getch();			/* MSC - get console character */
+#if	0	/* For BIOS variety of calls */
+    if ((input&0xff) == 0) {
+	if ((input&0xff00) == 0x0300) {		/* Null */
+	    DoNextChar(0);
+	} else {
+	    DoNextChar(0x01);
+	    if (input&0x8000) {
+		DoNextChar(0x01);
+		DoNextChar((input>>8)&0x7f);
+	    } else {
+		DoNextChar((input>>8)&0xff);
+	    }
+	}
+    } else {
+	DoNextChar(input&0xff);
+    }
+#endif	/* 0 */
+    if ((input&0xff) == 0) {
+	DoNextChar(0x01);		/* ^A */
+    } else {
+	DoNextChar(input&0xff);
+    }
+    return lineend;
+}
+
+
+void
+CtrlCInterrupt()
+{
+    if (!MODE_COMMAND_LINE(globalmode)) {
+	ctrlCCount++;		/* XXX */
+	signal(SIGINT, CtrlCInterrupt);
+    } else {
+	closeallsockets();
+	exit();
+    }
+}
+
+/*
+ * The MSDOS routines, called from elsewhere.
+ */
+
+
+static int
+TerminalAutoFlush()				/* MSDOS */
+{
+    return 1;
+}
+
+static int
+TerminalCanRead()
+{
+    return inputExists();
+}
 
 
 /*
@@ -615,14 +856,71 @@ TerminalFlushOutput()				/* MSDOS */
 {
 }
 
+
+static void
+TerminalNewMode(f)				/* MSDOS */
+register int f;
+{
+    globalmode = f;
+    signal(SIGINT, CtrlCInterrupt);
+}
+
+
+int
+TerminalRead(fd, buffer, count)
+int	fd;
+char	*buffer;
+int	count;
+{
+    int done = 0;
+
+    for (;;) {
+	while (inputExists() && (done < count)) {
+	    *buffer++ = *nextout;
+	    consumechar();
+	    done++;
+	}
+	if (done) {
+	    return(done);
+	} else {
+	    return 0;
+	}
+    }
+}
+
+
 static void
 TerminalSaveState()				/* MSDOS */
 {
 }
 
+int
+TerminalSpecialChars(c)			/* MSDOS */
+{
+    return 1;
+}
+
+
 static void
 TerminalRestoreState()				/* MSDOS */
 {
+}
+
+
+static int
+TerminalWrite(fd, buffer, count)		/* MSDOS */
+int	fd;
+char	*buffer;
+int	count;
+{
+    return fwrite(buffer, sizeof (char), count, stdout);
+}
+
+
+static int
+NetClose(fd)
+{
+    return closesocket(fd);
 }
 
 static void
@@ -633,7 +931,7 @@ int
 {
     if (SetSockOpt(net, SOL_SOCKET, SO_NONBLOCKING, onoff)) {
 	perror("setsockop (SO_NONBLOCKING) ");
-	XXX();
+	ExitString(stderr, "exiting\n", 1);
     }
 }
 
@@ -659,7 +957,11 @@ int fd;
 static void
 tninit()
 {
+#if	defined(TN3270)
+    Sent3270TerminalType = 0;
     Ifrontp = Ibackp = Ibuf;
+#endif	/* defined(TN3270) */
+
     tfrontp = tbackp = ttyobuf;
     nfrontp = nbackp = netobuf;
     
@@ -677,7 +979,6 @@ tninit()
 #endif	/* defined(unix) */
 
     SYNCHing = 0;
-    Sent3270TerminalType = 0;
 
     errno = 0;
 
@@ -955,7 +1256,7 @@ int	length;			/* length of suboption data */
 		    char tmpbuf[sizeof subbuffer];
 		    int minlen = min(length, sizeof tmpbuf);
 
-		    bcopy(pointer+2, tmpbuf, minlen);
+		    memcpy(tmpbuf, pointer+2, minlen);
 		    tmpbuf[minlen-1] = 0;
 		    fprintf(NetTrace, "is %s.\n", tmpbuf);
 		}
@@ -1023,7 +1324,7 @@ netflush()
 
     if ((n = nfrontp - nbackp) > 0) {
 	if (!neturg) {
-	    n = write(net, nbackp, n);	/* normal write */
+	    n = send(net, nbackp, n, 0);	/* normal write */
 	} else {
 	    n = neturg - nbackp;
 	    /*
@@ -1045,7 +1346,7 @@ netflush()
 	if (errno != ENOBUFS && errno != EWOULDBLOCK) {
 	    setcommandmode();
 	    perror(hostname);
-	    close(net);
+	    NetClose(net);
 	    neturg = 0;
 	    longjmp(peerdied, -1);
 	    /*NOTREACHED*/
@@ -1149,7 +1450,7 @@ netclear()
 		next = nextitem(next);
 	    } while (wewant(next) && (nfrontp > next));
 	    length = next-thisitem;
-	    bcopy(thisitem, good, length);
+	    memcpy(good, thisitem, length);
 	    good += length;
 	    thisitem = next;
 	} else {
@@ -1233,7 +1534,7 @@ ttyflush()
 
     if ((n = tfrontp - tbackp) > 0) {
 	if (!(SYNCHing||flushout)) {
-	    n = write(tout, tbackp, n);
+	    n = TerminalWrite(tout, tbackp, n);
 	} else {
 	    TerminalFlushOutput();
 	    /* we leave 'n' alone! */
@@ -1503,18 +1804,24 @@ suboption()
 	     * capaiblities.
 	     */
 #if	defined(unix)
-	    if ((initscr() != ERR) &&	/* Initialize curses to get line size */
-		(LINES >= 24) && (COLS >= 80)) {
+	    if (initscr() != ERR) {	/* Initialize curses to get line size */
+		MaxNumberLines = LINES;
+		MaxNumberColumns = COLS;
+	    }
+#else	/* defined(unix) */
+	    InitTerminal();
+#endif	/* defined(unix) */
+	    if ((MaxNumberLines >= 24) && (MaxNumberColumns >= 80)) {
 		Sent3270TerminalType = 1;
-		if ((LINES >= 27) && (COLS >= 132)) {
+		if ((MaxNumberLines >= 27) && (MaxNumberColumns >= 132)) {
 		    MaxNumberLines = 27;
 		    MaxNumberColumns = 132;
 		    sb_terminal[SBTERMMODEL] = '5';
-		} else if (LINES >= 43) {
+		} else if (MaxNumberLines >= 43) {
 		    MaxNumberLines = 43;
 		    MaxNumberColumns = 80;
 		    sb_terminal[SBTERMMODEL] = '4';
-		} else if (LINES >= 32) {
+		} else if (MaxNumberLines >= 32) {
 		    MaxNumberLines = 32;
 		    MaxNumberColumns = 80;
 		    sb_terminal[SBTERMMODEL] = '3';
@@ -1531,14 +1838,11 @@ suboption()
 			"Programming error:  MAXSCREENSIZE too small.\n", 1);
 		    /*NOTREACHED*/
 		}
-		bcopy(sb_terminal, nfrontp, sizeof sb_terminal);
+		memcpy(nfrontp, sb_terminal, sizeof sb_terminal);
 		printsub(">", nfrontp+2, sizeof sb_terminal-2);
 		nfrontp += sizeof sb_terminal;
 		return;
 	    }
-#else	/* defined(unix) */
-	    XXX();
-#endif	/* defined(unix) */
 #endif	/* defined(TN3270) */
 
 	    name = getenv("TERM");
@@ -1888,18 +2192,22 @@ register char	*buffer;		/* where the data is */
 register int	count;			/* how much to send */
 {
     int origCount;
+#if	defined(unix)
     fd_set	o;
 
-    origCount = count;
     FD_ZERO(&o);
+#endif	/* defined(unix) */
+    origCount = count;
 
     while (count) {
 	if (tfrontp >= ttyobuf+sizeof ttyobuf) {
 	    ttyflush();
 	    while (tfrontp >= ttyobuf+sizeof ttyobuf) {
+#if	defined(unix)
 		FD_SET(tout, &o);
 		(void) select(tout+1, (fd_set *) 0, &o, (fd_set *) 0,
 						(struct timeval *) 0);
+#endif	/* defined(unix) */
 		ttyflush();
 	    }
 	}
@@ -1917,20 +2225,26 @@ register int	count;			/* how much to send */
 void
 EmptyTerminal()
 {
+#if	defined(unix)
     fd_set	o;
 
     FD_ZERO(&o);
+#endif	/* defined(unix) */
 
     if (tfrontp == tbackp) {
+#if	defined(unix)
 	FD_SET(tout, &o);
 	(void) select(tout+1, (int *) 0, &o, (int *) 0,
 			(struct timeval *) 0);	/* wait for TTLOWAT */
+#endif	/* defined(unix) */
     } else {
 	while (tfrontp != tbackp) {
 	    ttyflush();
+#if	defined(unix)
 	    FD_SET(tout, &o);
 	    (void) select(tout+1, (int *) 0, &o, (int *) 0,
 				(struct timeval *) 0);	/* wait for TTLOWAT */
+#endif	/* defined(unix) */
 	}
     }
 }
@@ -1947,7 +2261,7 @@ Push3270()
     if (scc) {
 	if (Ifrontp+scc > Ibuf+sizeof Ibuf) {
 	    if (Ibackp != Ibuf) {
-		bcopy(Ibackp, Ibuf, Ifrontp-Ibackp);
+		memcpy(Ibuf, Ibackp, Ifrontp-Ibackp);
 		Ifrontp -= (Ibackp-Ibuf);
 		Ibackp = Ibuf;
 	    }
@@ -2075,12 +2389,14 @@ int	block;			/* should we block in the select ? */
     if ((!MODE_LINE(globalmode) || flushline) && NETBYTES()) {
 	FD_SET(net, &obits);
     } 
+#if	!defined(MSDOS)
     if (TTYBYTES()) {
 	FD_SET(tout, &obits);
     }
     if ((tcc == 0) && NETROOM()) {
 	FD_SET(tin, &ibits);
     }
+#endif	/* !defined(MSDOS) */
 #   if !defined(TN3270)
     if (TTYROOM()) {
 	FD_SET(net, &ibits);
@@ -2100,7 +2416,7 @@ int	block;			/* should we block in the select ? */
     }
 #endif	/* defined(TN3270) && defined(unix) */
     if ((c = select(16, &ibits, &obits, &xbits,
-			block? (struct timeval *)0 : &TimeValue)) < 1) {
+			block? (struct timeval *)0 : &TimeValue)) < 0) {
 	if (c == -1) {
 		    /*
 		     * we can get EINTR if we are in line mode,
@@ -2198,20 +2514,20 @@ int	block;			/* should we block in the select ? */
 	    if (atmark) {
 		c = recv(net, sbp+scc, canread, MSG_OOB);
 		if ((c == -1) && (errno == EINVAL)) {
-		    c = read(net, sbp+scc, canread);
+		    c = recv(net, sbp+scc, canread, 0);
 		    if (clocks.didnetreceive < clocks.gotDM) {
 			SYNCHing = stilloob(net);
 		    }
 		}
 	    } else {
-		c = read(net, sbp+scc, canread);
+		c = recv(net, sbp+scc, canread, 0);
 	    }
 	} else {
-	    c = read(net, sbp+scc, canread);
+	    c = recv(net, sbp+scc, canread, 0);
 	}
 	settimer(didnetreceive);
 #else	/* !defined(SO_OOBINLINE) */
-	c = read(net, sbp+scc, canread);
+	c = recv(net, sbp+scc, canread, 0);
 #endif	/* !defined(SO_OOBINLINE) */
 	if (c < 0 && errno == EWOULDBLOCK) {
 	    c = 0;
@@ -2228,12 +2544,17 @@ int	block;			/* should we block in the select ? */
     /*
      * Something to read from the tty...
      */
-    if (FD_ISSET(tin, &ibits)) {
+#if	defined(MSDOS)
+    if ((tcc == 0) && NETROOM() && TerminalCanRead())
+#else	/* defined(MSDOS) */
+    if (FD_ISSET(tin, &ibits))
+#endif	/* defined(MSDOS) */
+				    {
 	FD_CLR(tin, &ibits);
 	if (tcc == 0) {
 	    tbp = tibuf;	/* nothing left, reset */
 	}
-	c = read(tin, tbp, tibuf+sizeof tibuf - tbp);
+	c = TerminalRead(tin, tbp, tibuf+sizeof tibuf - tbp);
 	if (c < 0 && errno == EWOULDBLOCK) {
 	    c = 0;
 	} else {
@@ -2293,7 +2614,7 @@ int	block;			/* should we block in the select ? */
 		    }
 		}
 		if (localchars) {
-		    if (TerminalEditLine(sc) == 0) {
+		    if (TerminalSpecialChars(sc) == 0) {
 			break;
 		    }
 		}
@@ -2340,7 +2661,12 @@ int	block;			/* should we block in the select ? */
 	returnValue = Push3270();
 #	endif /* !defined(TN3270) */
     }
-    if (FD_ISSET(tout, &obits) && (TTYBYTES() > 0)) {
+#if	defined(MSDOS)
+    if (TTYBYTES())
+#else	/* defined(MSDOS) */
+    if (FD_ISSET(tout, &obits) && (TTYBYTES() > 0))
+#endif	/* defined(MSDOS) */
+						    {
 	FD_CLR(tout, &obits);
 	returnValue = ttyflush();
     }
@@ -2353,6 +2679,12 @@ int	block;			/* should we block in the select ? */
 static void
 telnet()
 {
+#if	defined(MSDOS)
+#define	SCHED_BLOCK	0		/* Don't block in MSDOS */
+#else	/* defined(MSDOS) */
+#define	SCHED_BLOCK	1
+#endif	/* defined(MSDOS) */
+
 #if	defined(TN3270) && defined(unix)
     int myPid;
 #endif	/* defined(TN3270) */
@@ -2394,7 +2726,7 @@ telnet()
 
 #   if !defined(TN3270)
     for (;;) {
-	if (Scheduler(1) == -1) {
+	if (Scheduler(SCHED_BLOCK) == -1) {
 	    setcommandmode();
 	    return;
 	}
@@ -2404,7 +2736,7 @@ telnet()
 	int schedValue;
 
 	while (!In3270) {
-	    if (Scheduler(1) == -1) {
+	    if (Scheduler(SCHED_BLOCK) == -1) {
 		setcommandmode();
 		return;
 	    }
@@ -2425,7 +2757,7 @@ telnet()
 	    schedValue = DoTerminalOutput();
 	}
 	if (schedValue) {
-	    if (Scheduler(1) == -1) {
+	    if (Scheduler(SCHED_BLOCK) == -1) {
 		setcommandmode();
 		return;
 	    }
@@ -3069,7 +3401,7 @@ char	*argv[];	/* arguments */
     if (connected) {
 	shutdown(net, 2);
 	printf("Connection closed.\n");
-	close(net);
+	NetClose(net);
 	connected = 0;
 	/* reset options */
 	tninit();
@@ -3167,9 +3499,9 @@ tn(argc, argv)
 	char *argv[];
 {
     register struct hostent *host = 0;
-#if defined(msdos)
+#if defined(MSDOS)
     char *cp;
-#endif	/* defined(msdos) */
+#endif	/* defined(MSDOS) */
 
     if (connected) {
 	printf("?Already connected to %s\n", hostname);
@@ -3187,13 +3519,13 @@ tn(argc, argv)
 	printf("usage: %s host-name [port]\n", argv[0]);
 	return 0;
     }
-#if	defined(msdos)
+#if	defined(MSDOS)
     for (cp = argv[1]; *cp; cp++) {
 	if (isupper(*cp)) {
 	    *cp = tolower(*cp);
 	}
     }
-#endif	/* defined(msdos) */
+#endif	/* defined(MSDOS) */
     sin.sin_addr.s_addr = inet_addr(argv[1]);
     if (sin.sin_addr.s_addr != -1) {
 	sin.sin_family = AF_INET;
@@ -3204,9 +3536,10 @@ tn(argc, argv)
 	if (host) {
 	    sin.sin_family = host->h_addrtype;
 #if	defined(h_addr)		/* In 4.3, this is a #define */
-	    bcopy(host->h_addr_list[0], (caddr_t)&sin.sin_addr, host->h_length);
+	    memcpy((caddr_t)&sin.sin_addr,
+				host->h_addr_list[0], host->h_length);
 #else	/* defined(h_addr) */
-	    bcopy(host->h_addr, (caddr_t)&sin.sin_addr, host->h_length);
+	    memcpy((caddr_t)&sin.sin_addr, host->h_addr, host->h_length);
 #endif	/* defined(h_addr) */
 	    hostname = host->h_name;
 	} else {
@@ -3259,11 +3592,11 @@ tn(argc, argv)
 		errno = oerrno;
 		perror((char *)0);
 		host->h_addr_list++;
-		bcopy(host->h_addr_list[0],
-		    (caddr_t)&sin.sin_addr, host->h_length);
+		memcpy((caddr_t)&sin.sin_addr, 
+			host->h_addr_list[0], host->h_length);
 		fprintf(stderr, "Trying %s...\n",
 			inet_ntoa(sin.sin_addr));
-		(void) close(net);
+		(void) NetClose(net);
 		continue;
 	    }
 #endif	/* defined(h_addr) */
@@ -3279,6 +3612,7 @@ tn(argc, argv)
     call(status, "status", "notmuch", 0);
     if (setjmp(peerdied) == 0)
 	telnet();
+    NetClose(net);
     ExitString(stderr, "Connection closed by foreign host.\n",1);
     /*NOTREACHED*/
 }
