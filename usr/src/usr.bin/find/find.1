@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)find.1	6.3 (Berkeley) %G%
+.\"	@(#)find.1	6.4 (Berkeley) %G%
 .\"
 .TH FIND 1 ""
 .AT 3
@@ -206,6 +206,11 @@ to traverse down into a file system different
 from the one on which current
 .I argument
 pathname resides.
+.TP
+.B \-follow
+Always true;
+causes find to traverse symbolic links to directories.
+Normally find does not traverse symbolic links.
 .PP
 The primaries may be combined using the following operators
 (in order of decreasing precedence):
