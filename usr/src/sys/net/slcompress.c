@@ -1,4 +1,4 @@
-/*	slcompress.c	7.1	89/06/28	*/
+/*	slcompress.c	7.2	89/06/29	*/
 
 /*
  *			THIS CODE IS NOT FOR DISTRIBUTION!
@@ -324,20 +324,17 @@ sl_compress_tcp(m, ip, comp)
 		comp->last_xmit = cs->cs_id;
 		hlen -= deltaS + 4;
 		cp += hlen; m->m_len -= hlen; m->m_off += hlen;
-		*cp++ = changes | NEW_C;
+		*cp++ = TYPE_COMPRESSED_TCP | changes | NEW_C;
 		*cp++ = cs->cs_id;
 	} else {
 		hlen -= deltaS + 3;
 		cp += hlen; m->m_len -= hlen; m->m_off += hlen;
-		*cp++ = changes;
+		*cp++ = TYPE_COMPRESSED_TCP | changes;
 	}
 	*cp++ = deltaA >> 8;
 	*cp++ = deltaA;
 	BCOPY(new_seq, cp, deltaS);
 	++sls_compressed;
-	/* note: low order version bits used */
-	ip = mtod(m, struct ip *);
-	ip->ip_v |= (TYPE_COMPRESSED_TCP>>4);
 	return (TYPE_COMPRESSED_TCP);
 
 	/*
