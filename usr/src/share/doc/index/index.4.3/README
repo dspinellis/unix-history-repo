@@ -1,0 +1,187 @@
+The process of putting together the index:
+
+A. For the 4.3 distribution and the first Usenix printing:
+
+1. The Indexer (a hairy lisp program) was run on the inputs,
+which consisted of troff -a documents and troff -a man pages (many files)
+which were specially marked up mechanically -- the page numbers
+had TeX-like tags.   The run took more than a day for 3500 pages...
+
+(The program runs on a Symbolics lisp machine; it was a collaborative
+effort among several programmers at Thinking Machines Corporation in 
+Cambridge, MA.)  There are a few knobs to adjust the sort of indexing
+considered significant, but several passes over the index and over the
+documents eliminating badly chosen examples of index-worthy occurrences
+of terms were necessary. This took weeks of human time.  
+
+After that there was a final pass of sed/emacs editing to make things barely
+reasonable enough to publish, resulting in a file with this content:
+Each line contains an example of an index term considered worthy of 
+indexing, the name of the file containing it, a not-too-useful
+percentage-within-the file of the occurrence, and the page number within
+document.
+
+For example (some blanks compressed out for readability):
+"here" shell scripts				 CSH.1:  40% CSH(1)-8
+#define						 CC.1:  46% CC(1)-2
+    "						 F77.1:  28% F77(1)-1
+    "						 SMM.19:  96% SMM:19-26
+    "						 PS1.01:  77% PS1:1-26
+#else						 PS1.01:  82% PS1:1-27
+#endif						 PS1.01:  82% PS1:1-28
+#if						 PS1.01:  80% PS1:1-27
+#if !defined					 PS1.01:  81% PS1:1-27
+#ifdef						 CTAGS.1:	94%
+    "						 PS1.01:  81% PS1:1-27
+#ifdefs, removing				 UNIFDEF.1:   2% UNIFDEF(1)-1
+#ifndef						 PS1.01:  81% PS1:1-27
+#include					 F77.1:  29% F77(1)-1
+    "						 PS1.01:  79% PS1:1-27
+#include files					 HIER.7:  46% HIER(7)-4
+#include path					 CC.1:  50% CC(1)-2
+#line						 PS1.01:  82% PS1:1-28
+#undef						 PS1.01:  79% PS1:1-26
+
+Wrong page numbers can result from initial pages with the page number in a
+footer (usually only on the first page of -me documents, so these references
+appear to be on page 0).  Bad page numbers can also result in the
+unfortunate case that, for some reason, the ASCII approximation that was
+indexed is not exactly what ended up being printed (or was printed on a
+different printer).  In this case, they're often "almost right", 
+usually off by a page approaching the end of the document.  
+
+It was also necessary to index documents in several batches, because the
+volumes would freeze individually, even though this would involve duplicate
+human work.  The result is several output files which must be consolidated by
+sorting and merging.  Notice that the presence of the ditto marks
+(representing additional occurences of duplicate index terms, and intended
+as a convenience to the reader) makes sorting and merging difficult.  
+
+2. The duphead program replaces the ditto marks in any indexes
+with headers duplicated from the header line above them. 
+
+3. The resulting form of the index is then split (according to the first
+character of index term) into 27 files (one for each letter and one for
+everything else) then sorted, then merged, using splitindex.sh.  (This
+strategem is useful for shortening the sorting time).
+
+4. The unduphead program replaces the duplicated heads with ditto marks again.
+
+One unsolved problem with this coalescing procedure:
+The indexer has some knowledge about singular and plural rules in English,
+and tries to reduce all plurals to their singular form which has caused some
+amusing bugs (e.g. /sys is obviously a plural term, the singular of which
+it believes must be /sie...).  The unduphead procedure has no such knowledge,
+so if an entry is listed as both "filesystem" and "filesystems", or, even
+worse "file systems" these are separate entries.  Anyway, such entries need to
+be combined manually.
+
+So now the index looks like this:
+  
+"here" shell scripts		CSH.1:  40% CSH(1)-8
+#define		CC.1:  46% CC(1)-2
+  "    F77.1:  28% F77(1)-1
+  "    PS1.01:  77% PS1:1-26
+  "    PS1.02:	7% PS1:2-5
+  "    PS1.18:	31% PS1:18-8
+  "    SMM.19:  96% SMM:19-26
+#else		PS1.01:  82% PS1:1-27
+#endif		PS1.01:  82% PS1:1-27
+#if		PS1.01:  80% PS1:1-27  
+#if !defined		PS1.01:  81% PS1:1-27
+#ifdef		CTAGS.1:	94%
+  "    PS1.01:  81% PS1:1-27 
+#ifdefs, removing		UNIFDEF.1:   2% UNIFDEF(1)-1
+#ifndef		PS1.01:  81% PS1:1-27
+#include		F77.1:  29% F77(1)-1
+  "    PS1.01:  79% PS1:1-27
+  "    PS1.04:  79% PS1:4-40 
+#include files		HIER.7:  46% HIER(7)-4  
+
+5. The reduce program condenses the information in consecutive entries with 
+the same index term using heuristically-derived rules and some knowledge about
+the documents.  For example, references to most of a document's pages
+will be reduced to a single reference to the entire document;
+individual references to contiguous pages will be reduced to a reference to
+a range of pages, and ranges will be combined even across single-page gaps, 
+etc.  (The guiding belief is that if there are many references to a term in 
+a document it is probably "about" that term in a global sense.)
+Reduce also groups together the references within published volumes and
+outputs them in volume order (User man pages together, User supplementary
+docs together, etc.)  Reduce also inserts troff macros, which are
+defined in index.macs.  
+
+Macro and defined symbol usage:
+.L is used for large headings, which appear only at the beginning of a 
+letter or other index category.
+.X is used for each index entry.
+The aliased symbol \*(tx is a dash; this hack is the only way we could think
+of to have a dash appear but not cause it to be recognized by troff's
+hyphenation routines, which would normally break index entries across
+the dash.  This way an individual entry will always be within the same
+line.
+
+6. The output now looks something like, and is now ready to print using
+print.sh (which merely supplies the right troff argument magic):
+.L "4.3BSD System Index"
+.L "special characters and numbers"
+.X "#define"
+cc(1)\*(tx2, f77(1)\*(tx1, \s-1PS1\s0:1\*(tx26, \s-1PS1\s0:2\*(tx5, \s-1PS1\s0:18\*(tx8, \s-1SMM\s0:19\*(tx26
+.X "#else"
+\s-1PS1\s0:1\*(tx27
+.X "#endif"
+\s-1PS1\s0:1\*(tx27
+.X "#if"
+\s-1PS1\s0:1\*(tx27 
+.X "#if !defined"
+\s-1PS1\s0:1\*(tx27
+.X "#ifdef"
+ctags(1), \s-1PS1\s0:1\*(tx27 
+.X "#ifdefs, removing"
+unifdef(1)
+.X "#ifndef"
+\s-1PS1\s0:1\*(tx27
+.X "#include"
+f77(1)\*(tx1, \s-1PS1\s0:1\*(tx27, \s-1PS1\s0:4\*(tx40 
+.X "#include files"
+hier(7)\*(tx4 
+.X "#include path"
+cc(1)\*(tx2
+.X "#line"
+\s-1PS1\s0:1\*(tx28
+.X "#undef"
+\s-1PS1\s0:1\*(tx26
+
+B. The future.
+1. The index terms need to be inserted back into the troff sources
+for the documents. The current scheme is to use a macro which outputs
+the index term and the current output byte count and page offset (output to a 
+separate file descriptor). This will enable documents to evolve without
+losing the indexing work.
+
+2. An index of page numbers and byte offsets in troff -a needs to be
+made.  This can be used for fast access to individual pages of the 
+formatted documents for browsing.
+
+3.  A browser needs to be written to take advantage of the possible views
+of documents.
+
+At least these views should be accomodated:
+- index view
+- table of contents view
+- apropos view
+
+What is a view?  It's an editable (at least searchable and scrollable) list
+of index terms (and how it's organized is a matter of taste and religion)
+and a list of pointers to places in documents.  The browser needs to
+understand only the pointers, not how the index is organized.
+
+Other requirements:
+The browser should keep a list of places in the index where the user has
+been, as well as a list of places documents.  It should be easy to return
+to places been to recently.
+
+The browser should run on bitmap displays with full function, and on
+curses-supporting asynch terminals with reduced function.
+
+
