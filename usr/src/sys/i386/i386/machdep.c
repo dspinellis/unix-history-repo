@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)machdep.c	7.16 (Berkeley) %G%
+ *	@(#)machdep.c	7.17 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -26,6 +26,9 @@
 #include <sys/malloc.h>
 #include <sys/mbuf.h>
 #include <sys/msgbuf.h>
+#include <sys/ioctl.h>
+#include <sys/tty.h>
+#include <sys/sysctl.h>
 
 #include <net/netisr.h>
 
@@ -41,6 +44,7 @@ extern vm_offset_t avail_end;
 #include <machine/psl.h>
 #include <machine/specialreg.h>
 #include <i386/isa/rtc.h>
+#include <i386/i386/cons.h>
 
 /*
  * Declare these as initialized data so we can patch them.
