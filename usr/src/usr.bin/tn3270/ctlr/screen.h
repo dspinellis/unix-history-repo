@@ -28,10 +28,6 @@
 
 /* These know how fields are implemented... */
 
-#define	FieldInc(p)	FieldFind(FieldForward, p, LowestScreen())
-#define	FieldDec(p)	(HighestScreen() - \
-				FieldFind(FieldReverse, \
-					HighestScreen()-(p), HighestScreen()))
 #define WhereAttrByte(p)	(IsStartField(p)? p: FieldDec(p))
 #define	WhereHighByte(p)	ScreenDec(FieldInc(p))
 #define WhereLowByte(p)		ScreenInc(WhereAttrByte(p))
@@ -54,13 +50,9 @@
 #define IsStartField(x)	((Host[x].data&ATTR_MASK) == ATTR_MASK)
 #define IsStartFieldPointer(p)	(((p)->data&ATTR_MASK) == ATTR_MASK)
 
-#define NewField(p,a)	(Host[p].data = (a)|ATTR_MASK, \
-			    FieldForward[p] = FieldReverse[ScreenSize-p-1] = 1)
-#define DeleteField(p)	(Host[p].data = 0, \
-			    FieldForward[p] = FieldReverse[ScreenSize-p-1] = 0)
-#define	DeleteAllFields()	(bzero(FieldForward, sizeof FieldForward), \
-				    bzero(FieldReverse, sizeof FieldReverse))
-
+#define NewField(p,a)	(Host[p].data = (a)|ATTR_MASK)
+#define DeleteField(p)	(Host[p].data = 0)
+#define	DeleteAllFields()
 
 /* The following are independent of the implementation of fields */
 #define IsProtectedAttr(p,a)	(IsStartField(p) || ((a)&ATTR_PROT))

@@ -61,3 +61,81 @@ register int b;
     }
     return(i-1);
 }
+
+/*
+ * memNIchr(const void *s, int c, size_t n, int and)
+ *
+ * Like memchr, but the comparison is '((*s)&and) == c'.
+ *
+ */
+
+unsigned char *
+memNIchr(s, c, n, and)
+char *s;
+int c;
+unsigned int n;
+int and;
+{
+    register unsigned char _c, *_s, _and;
+
+    _and = and;
+    _c = (c&_and);
+    _s = (unsigned char *)s;
+    while (n--) {
+	if (((*_s)&_and) == _c) {
+	    return _s;
+	}
+	_s++;
+    }
+    return 0;
+}
+
+/*
+ * memNDchr(const void *s, int c, size_t n, int and)
+ *
+ * Like memchr, but the comparison is '((*s)&and) == c',
+ * and we increment our way through s by "stride" ('s += stride').
+ *
+ * We optimize for the most used strides of +1 and -1.
+ */
+
+unsigned char *
+memNSchr(s, c, n, and, stride)
+char *s;
+int c;
+unsigned int n;
+int and;
+int stride;
+{
+    register unsigned char _c, *_s, _and;
+
+    _and = and;
+    _c = (c&_and);
+    _s = (unsigned char *)s;
+    switch (stride) {
+    case 1:
+	while (n--) {
+	    if (((*_s)&_and) == _c) {
+		return _s;
+	    }
+	    _s++;
+	}
+	break;
+    case -1:
+	while (n--) {
+	    if (((*_s)&_and) == _c) {
+		return _s;
+	    }
+	    _s--;
+	}
+	break;
+    default:
+	while (n--) {
+	    if (((*_s)&_and) == _c) {
+		return _s;
+	    }
+	    _s += stride;
+	}
+    }
+    return 0;
+}
