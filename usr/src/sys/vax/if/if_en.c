@@ -1,4 +1,4 @@
-/*	if_en.c	4.30	82/01/19	*/
+/*	if_en.c	4.31	82/01/30	*/
 
 #include "en.h"
 
@@ -294,6 +294,7 @@ COUNT(ENCOLLIDE);
 	enstart(unit);
 }
 
+int	enprintierrors;
 /*
  * Ethernet interface receiver interrupt.
  * If input error just drop packet.
@@ -323,6 +324,7 @@ COUNT(ENRINT);
 	UBAPURGE(es->es_ifuba.ifu_uba, es->es_ifuba.ifu_r.ifrw_bdp);
 	if (addr->en_istat&EN_IERROR) {
 		es->es_if.if_ierrors++;
+		if (enprintierrors)
 		printf("en%d: input error\n", unit);
 		goto setup;
 	}
