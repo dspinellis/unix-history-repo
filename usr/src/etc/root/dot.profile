@@ -4,7 +4,6 @@ export PATH
 BLOCKSIZE=1k
 export BLOCKSIZE
 
-export TERM
 echo 'erase ^H, kill ^U, intr ^C status ^T'
 stty erase '^H' kill '^U' intr '^C' status '^T' crt
 
