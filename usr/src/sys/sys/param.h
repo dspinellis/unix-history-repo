@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)param.h	7.3 (Berkeley) %G%
+ *	@(#)param.h	7.4 (Berkeley) %G%
  */
 
 #define	BSD	43		/* 4.3 * 10, as cpp doesn't do floats */
@@ -19,6 +19,7 @@
 #define	NOFILE	64		/* max open files per process */
 #define	CANBSIZ	256		/* max size of typewriter line */
 #define	NCARGS	20480		/* # characters in exec arglist */
+#define	MAXINTERP	32	/* maximum interpreter file name length */
 #define	NGROUPS	16		/* max number groups */
 #define MAXHOSTNAMELEN	64	/* maximum hostname size */
 
