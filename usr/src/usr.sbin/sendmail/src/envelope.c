@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)envelope.c	5.25 (Berkeley) %G%";
+static char sccsid[] = "@(#)envelope.c	5.26 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -398,6 +398,7 @@ closexscript(e)
 **	Parameters:
 **		from -- the person we would like to believe this message
 **			is from, as specified on the command line.
+**		e -- the envelope in which we would like the sender set.
 **
 **	Returns:
 **		none.
@@ -406,8 +407,9 @@ closexscript(e)
 **		sets sendmail's notion of who the from person is.
 */
 
-setsender(from)
+setsender(from, e)
 	char *from;
+	register ENVELOPE *e;
 {
 	register char **pvp;
 	char *realname = NULL;
@@ -455,7 +457,7 @@ setsender(from)
 	}
 
 	SuprErrs = TRUE;
-	if (from == NULL || parseaddr(from, &CurEnv->e_from, 1, '\0') == NULL)
+	if (from == NULL || parseaddr(from, &e->e_from, 1, '\0') == NULL)
 	{
 		/* log garbage addresses for traceback */
 		if (from != NULL)
@@ -473,20 +475,20 @@ setsender(from)
 # endif LOG
 		}
 		from = newstr(realname);
-		if (parseaddr(from, &CurEnv->e_from, 1, '\0') == NULL &&
-		    parseaddr("postmaster", &CurEnv->e_from, 1, '\0') == NULL)
+		if (parseaddr(from, &e->e_from, 1, '\0') == NULL &&
+		    parseaddr("postmaster", &e->e_from, 1, '\0') == NULL)
 		{
 			syserr("setsender: can't even parse postmaster!");
 		}
 	}
 	else
 		FromFlag = TRUE;
-	CurEnv->e_from.q_flags |= QDONTSEND;
-	loweraddr(&CurEnv->e_from);
+	e->e_from.q_flags |= QDONTSEND;
+	loweraddr(&e->e_from);
 	SuprErrs = FALSE;
 
-	if (CurEnv->e_from.q_mailer == LocalMailer &&
-	    (pw = getpwnam(CurEnv->e_from.q_user)) != NULL)
+	if (e->e_from.q_mailer == LocalMailer &&
+	    (pw = getpwnam(e->e_from.q_user)) != NULL)
 	{
 		/*
 		**  Process passwd file entry.
@@ -494,36 +496,36 @@ setsender(from)
 
 
 		/* extract home directory */
-		CurEnv->e_from.q_home = newstr(pw->pw_dir);
-		define('z', CurEnv->e_from.q_home, CurEnv);
+		e->e_from.q_home = newstr(pw->pw_dir);
+		define('z', e->e_from.q_home, e);
 
 		/* extract user and group id */
-		CurEnv->e_from.q_uid = pw->pw_uid;
-		CurEnv->e_from.q_gid = pw->pw_gid;
+		e->e_from.q_uid = pw->pw_uid;
+		e->e_from.q_gid = pw->pw_gid;
 
 		/* if the user has given fullname already, don't redefine */
 		if (FullName == NULL)
-			FullName = macvalue('x', CurEnv);
+			FullName = macvalue('x', e);
 		if (FullName != NULL && FullName[0] == '\0')
 			FullName = NULL;
 
 		/* extract full name from passwd file */
 		if (FullName == NULL && pw->pw_gecos != NULL &&
-		    strcmp(pw->pw_name, CurEnv->e_from.q_user) == 0)
+		    strcmp(pw->pw_name, e->e_from.q_user) == 0)
 		{
-			buildfname(pw->pw_gecos, CurEnv->e_from.q_user, buf);
+			buildfname(pw->pw_gecos, e->e_from.q_user, buf);
 			if (buf[0] != '\0')
 				FullName = newstr(buf);
 		}
 		if (FullName != NULL)
-			define('x', FullName, CurEnv);
+			define('x', FullName, e);
 	}
 	else
 	{
-		if (CurEnv->e_from.q_home == NULL)
-			CurEnv->e_from.q_home = getenv("HOME");
-		CurEnv->e_from.q_uid = getuid();
-		CurEnv->e_from.q_gid = getgid();
+		if (e->e_from.q_home == NULL)
+			e->e_from.q_home = getenv("HOME");
+		e->e_from.q_uid = getuid();
+		e->e_from.q_gid = getgid();
 	}
 
 	/*
@@ -545,10 +547,10 @@ setsender(from)
 	rewrite(pvp, 1);
 	rewrite(pvp, 4);
 	cataddr(pvp, buf, sizeof buf);
-	CurEnv->e_sender = CurEnv->e_returnpath = newstr(buf);
+	e->e_sender = e->e_returnpath = newstr(buf);
 
 # ifdef USERDB
-	if (CurEnv->e_from.q_mailer == LocalMailer)
+	if (e->e_from.q_mailer == LocalMailer)
 	{
 		extern char *udbsender();
 		register char *p = udbsender(from);
@@ -566,24 +568,24 @@ setsender(from)
 				rewrite(pvp, 1);
 				rewrite(pvp, 4);
 				cataddr(pvp, buf, sizeof buf);
-				CurEnv->e_sender = newstr(buf);
+				e->e_sender = newstr(buf);
 			}
 		}
 	}
 # endif /* USERDB */
 
-	define('f', CurEnv->e_sender, CurEnv);
+	define('f', e->e_sender, e);
 
 	/* save the domain spec if this mailer wants it */
-	if (CurEnv->e_from.q_mailer != NULL &&
-	    bitnset(M_CANONICAL, CurEnv->e_from.q_mailer->m_flags))
+	if (e->e_from.q_mailer != NULL &&
+	    bitnset(M_CANONICAL, e->e_from.q_mailer->m_flags))
 	{
 		extern char **copyplist();
 
 		while (*pvp != NULL && strcmp(*pvp, "@") != 0)
 			pvp++;
 		if (*pvp != NULL)
-			CurEnv->e_fromdomain = copyplist(pvp, TRUE);
+			e->e_fromdomain = copyplist(pvp, TRUE);
 	}
 }
 /*
