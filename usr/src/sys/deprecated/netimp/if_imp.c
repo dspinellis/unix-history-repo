@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if_imp.c	6.8 (Berkeley) %G%
+ *	@(#)if_imp.c	6.9 (Berkeley) %G%
  */
 
 #include "imp.h"
@@ -99,6 +99,9 @@ impattach(ui, reset)
 	struct imp_softc *sc;
 	register struct ifnet *ifp;
 
+#ifdef lint
+	impintr();
+#endif
 	if (ui->ui_unit >= NIMP) {
 		printf("imp%d: not configured\n", ui->ui_unit);
 		return (0);
@@ -375,7 +378,7 @@ impdown(sc)
 	splx(s);
 }
 
-/*VARARGS*/
+/*VARARGS2*/
 impmsg(sc, fmt, a1, a2, a3)
 	struct imp_softc *sc;
 	char *fmt;
@@ -419,10 +422,12 @@ impintr()
 		switch (cp->dl_link) {
 
 		case IMPLINK_IP:
-			pfctlinput(cp->dl_mtype, (caddr_t)&impsrc);
+			pfctlinput((int)cp->dl_mtype,
+			    (struct sockaddr *)&impsrc);
 			break;
 		default:
-			raw_ctlinput(cp->dl_mtype, (caddr_t)&impsrc);
+			raw_ctlinput((int)cp->dl_mtype,
+			    (struct sockaddr *)&impsrc);
 			break;
 		}
 
@@ -704,7 +709,7 @@ imp_leader_to_addr(ap, ip, ifp)
 	register struct imp_leader *ip;
 	struct ifnet *ifp;
 {
-	register long final;
+	register u_long final;
 	register struct sockaddr_in *sin;
 	int imp = htons(ip->il_imp);
 
@@ -729,9 +734,9 @@ imp_leader_to_addr(ap, ip, ifp)
  */
 imp_addr_to_leader(imp, a)
 	register struct imp_leader *imp;
-	long a;
+	u_long a;
 {
-	register long addr = htonl(a);		/* host order */
+	register u_long addr = htonl(a);
 
 	imp->il_network = 0;	/* !! */
 
@@ -745,6 +750,6 @@ imp_addr_to_leader(imp, a)
 		imp->il_host = ((addr>>4) & 0xF);
 		imp->il_imp = addr & 0xF;
 	}
-	imp->il_imp = htons(imp->il_imp);	/* network order! */
+	imp->il_imp = htons(imp->il_imp);
 }
 #endif
