@@ -8,7 +8,7 @@
  * Lexical processing of commands.
  */
 
-static char *SccsId = "@(#)lex.c	1.12 %G%";
+static char *SccsId = "@(#)lex.c	1.13 %G%";
 
 /*
  * Set up editing on the given file name.
@@ -224,7 +224,7 @@ execute(linebuf, contxt)
 		return(0);
 	}
 	cp2 = word;
-	while (*cp && !any(*cp, " \t0123456789$^./-+*'\""))
+	while (*cp && !any(*cp, " \t0123456789$^.:/-+*'\""))
 		*cp2++ = *cp++;
 	*cp2 = '\0';
 
