@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	6.34 (Berkeley) %G%
+ *	@(#)conf.h	6.35 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,6 @@
 # include <sys/param.h>
 # include <sys/stat.h>
 # include <fcntl.h>
-# include "cdefs.h"
 
 /*
 **  Table sizes, etc....
