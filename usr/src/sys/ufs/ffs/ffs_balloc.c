@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_balloc.c	7.22 (Berkeley) %G%
+ *	@(#)ffs_balloc.c	7.23 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -18,101 +18,10 @@
 
 #include <ufs/ufs/quota.h>
 #include <ufs/ufs/inode.h>
+#include <ufs/ufs/ufs_extern.h>
 
 #include <ufs/ffs/fs.h>
 #include <ufs/ffs/ffs_extern.h>
-
-/*
- * Bmap converts a the logical block number of a file
- * to its physical block number on the disk. The conversion
- * is done by using the logical block number to index into
- * the array of block pointers described by the dinode.
- */
-int
-ffs_bmap(ap)
-	struct vop_bmap_args /* {
-		struct vnode *a_vp;
-		daddr_t  a_bn;
-		struct vnode **a_vpp;
-		daddr_t *a_bnp;
-	} */ *ap;
-{
-	register daddr_t bn = ap->a_bn;
-	register daddr_t *bnp = ap->a_bnp;
-	register struct inode *ip;
-	register struct fs *fs;
-	register daddr_t nb;
-	struct buf *bp;
-	daddr_t *bap;
-	int i, j, sh;
-	int error;
-
-	/*
-	 * Check for underlying vnode requests and ensure that logical
-	 * to physical mapping is requested.
-	 */
-	ip = VTOI(ap->a_vp);
-	if (ap->a_vpp != NULL)
-		*ap->a_vpp = ip->i_devvp;
-	if (bnp == NULL)
-		return (0);
-	if (bn < 0)
-		return (EFBIG);
-	fs = ip->i_fs;
-
-	/*
-	 * The first NDADDR blocks are direct blocks
-	 */
-	if (bn < NDADDR) {
-		nb = ip->i_db[bn];
-		if (nb == 0) {
-			*bnp = (daddr_t)-1;
-			return (0);
-		}
-		*bnp = fsbtodb(fs, nb);
-		return (0);
-	}
-	/*
-	 * Determine the number of levels of indirection.
-	 */
-	sh = 1;
-	bn -= NDADDR;
-	for (j = NIADDR; j > 0; j--) {
-		sh *= NINDIR(fs);
-		if (bn < sh)
-			break;
-		bn -= sh;
-	}
-	if (j == 0)
-		return (EFBIG);
-	/*
-	 * Fetch through the indirect blocks.
-	 */
-	nb = ip->i_ib[NIADDR - j];
-	if (nb == 0) {
-		*bnp = (daddr_t)-1;
-		return (0);
-	}
-	for (; j <= NIADDR; j++) {
-		if (error = bread(ip->i_devvp, fsbtodb(fs, nb),
-		    (int)fs->fs_bsize, NOCRED, &bp)) {
-			brelse(bp);
-			return (error);
-		}
-		bap = bp->b_un.b_daddr;
-		sh /= NINDIR(fs);
-		i = (bn / sh) % NINDIR(fs);
-		nb = bap[i];
-		if (nb == 0) {
-			*bnp = (daddr_t)-1;
-			brelse(bp);
-			return (0);
-		}
-		brelse(bp);
-	}
-	*bnp = fsbtodb(fs, nb);
-	return (0);
-}
 
 /*
  * Balloc defines the structure of file system storage
@@ -131,13 +40,15 @@ ffs_balloc(ip, bn, size, cred, bpp, flags)
 	register daddr_t nb;
 	struct buf *bp, *nbp;
 	struct vnode *vp = ITOV(ip);
-	int osize, nsize, i, j, sh, error;
+	struct indir indirs[NIADDR + 2];
+	int osize, nsize, num, j, error;
 	daddr_t newb, lbn, *bap, pref;
 
 	*bpp = (struct buf *)0;
 	if (bn < 0)
 		return (EFBIG);
 	fs = ip->i_fs;
+	lbn = bn;
 
 	/*
 	 * If the next write will extend the file into a new block,
@@ -220,28 +131,25 @@ ffs_balloc(ip, bn, size, cred, bpp, flags)
 	 * Determine the number of levels of indirection.
 	 */
 	pref = 0;
-	sh = 1;
-	lbn = bn;
-	bn -= NDADDR;
-	for (j = NIADDR; j > 0; j--) {
-		sh *= NINDIR(fs);
-		if (bn < sh)
-			break;
-		bn -= sh;
-	}
-	if (j == 0)
-		return (EFBIG);
+	if (error = ufs_getlbns(vp, bn, indirs, &num))
+		return(error);
+#ifdef DIAGNOSTIC
+	if (num < 1)
+		panic ("ffs_balloc: ufs_bmaparray returned indirect block\n");
+#endif
 	/*
 	 * Fetch the first indirect block allocating if necessary.
 	 */
-	nb = ip->i_ib[NIADDR - j];
+	--num;
+	nb = ip->i_ib[indirs[0].in_off];
 	if (nb == 0) {
 		pref = ffs_blkpref(ip, lbn, 0, (daddr_t *)0);
 	        if (error = ffs_alloc(ip, lbn, pref, (int)fs->fs_bsize,
 		    cred, &newb))
 			return (error);
 		nb = newb;
-		bp = getblk(ip->i_devvp, fsbtodb(fs, nb), fs->fs_bsize);
+		bp = getblk(vp, indirs[1].in_lbn, fs->fs_bsize);
+		bp->b_blkno = fsbtodb(fs, newb);
 		clrbuf(bp);
 		/*
 		 * Write synchronously so that indirect blocks
@@ -251,25 +159,24 @@ ffs_balloc(ip, bn, size, cred, bpp, flags)
 			ffs_blkfree(ip, nb, fs->fs_bsize);
 			return (error);
 		}
-		ip->i_ib[NIADDR - j] = nb;
+		ip->i_ib[indirs[0].in_off] = newb;
 		ip->i_flag |= IUPD|ICHG;
 	}
 	/*
 	 * Fetch through the indirect blocks, allocating as necessary.
 	 */
-	for (; ; j++) {
-		error = bread(ip->i_devvp, fsbtodb(fs, nb),
-		    (int)fs->fs_bsize, NOCRED, &bp);
+	for (j = 1; ; ) {
+		error = bread(vp, indirs[j].in_lbn, (int)fs->fs_bsize, NOCRED,
+		    &bp);
 		if (error) {
 			brelse(bp);
 			return (error);
 		}
 		bap = bp->b_un.b_daddr;
-		sh /= NINDIR(fs);
-		i = (bn / sh) % NINDIR(fs);
-		nb = bap[i];
-		if (j == NIADDR)
+		nb = bap[indirs[j].in_off];
+		if (j == num)
 			break;
+		j += 1;
 		if (nb != 0) {
 			brelse(bp);
 			continue;
@@ -282,7 +189,8 @@ ffs_balloc(ip, bn, size, cred, bpp, flags)
 			return (error);
 		}
 		nb = newb;
-		nbp = getblk(ip->i_devvp, fsbtodb(fs, nb), fs->fs_bsize);
+		nbp = getblk(vp, indirs[j].in_lbn, fs->fs_bsize);
+		nbp->b_blkno = fsbtodb(fs, nb);
 		clrbuf(nbp);
 		/*
 		 * Write synchronously so that indirect blocks
@@ -293,27 +201,22 @@ ffs_balloc(ip, bn, size, cred, bpp, flags)
 			brelse(bp);
 			return (error);
 		}
-		bap[i] = nb;
+		bap[indirs[j].in_off] = nb;
 		/*
 		 * If required, write synchronously, otherwise use
-		 * delayed write. If this is the first instance of
-		 * the delayed write, reassociate the buffer with the
-		 * file so it will be written if the file is sync'ed.
+		 * delayed write.
 		 */
 		if (flags & B_SYNC) {
 			bwrite(bp);
-		} else if (bp->b_flags & B_DELWRI) {
-			bdwrite(bp);
 		} else {
 			bdwrite(bp);
-			reassignbuf(bp, vp);
 		}
 	}
 	/*
 	 * Get the data block, allocating if necessary.
 	 */
 	if (nb == 0) {
-		pref = ffs_blkpref(ip, lbn, i, &bap[0]);
+		pref = ffs_blkpref(ip, lbn, indirs[j].in_off, &bap[0]);
 		if (error =
 		    ffs_alloc(ip, lbn, pref, (int)fs->fs_bsize, cred, &newb)) {
 			brelse(bp);
@@ -324,20 +227,15 @@ ffs_balloc(ip, bn, size, cred, bpp, flags)
 		nbp->b_blkno = fsbtodb(fs, nb);
 		if (flags & B_CLRBUF)
 			clrbuf(nbp);
-		bap[i] = nb;
+		bap[indirs[j].in_off] = nb;
 		/*
 		 * If required, write synchronously, otherwise use
-		 * delayed write. If this is the first instance of
-		 * the delayed write, reassociate the buffer with the
-		 * file so it will be written if the file is sync'ed.
+		 * delayed write.
 		 */
 		if (flags & B_SYNC) {
 			bwrite(bp);
-		} else if (bp->b_flags & B_DELWRI) {
-			bdwrite(bp);
 		} else {
 			bdwrite(bp);
-			reassignbuf(bp, vp);
 		}
 		*bpp = nbp;
 		return (0);
