@@ -9,7 +9,7 @@
  *
  * from: $Hdr: fb_mfbs.c,v 4.300 91/06/27 20:42:43 root Rel41 $ SONY
  *
- *	@(#)x.c	5.1 (Berkeley) %G%
+ *	@(#)x.c	8.1 (Berkeley) %G%
  */
 
 #include <sys/param.h>
