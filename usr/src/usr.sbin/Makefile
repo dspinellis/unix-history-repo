@@ -1,10 +1,9 @@
-#	@(#)Makefile	5.13 (Berkeley) %G%
+#	@(#)Makefile	5.14 (Berkeley) %G%
 
-# BROKEN pstat
 SUBDIR=	ac accton amd arp chown chroot cron dev_mkdb diskpart edquota \
-	inetd kgmon kvm_mkdb lpr mkproto mtree named portmap pwd_mkdb \
-	quot quotaon repquota rmt rwhod sa sendmail sliplogin syslogd \
-	traceroute trpt trsp update vipw
+	inetd kgmon kvm_mkdb lpr mkproto mtree named portmap pstat \
+	pwd_mkdb quot quotaon repquota rmt rwhod sa sendmail sliplogin \
+	syslogd traceroute trpt trsp update vipw
 
 .if   make(clean) || make(cleandir)
 SUBDIR+=bad144 dlmpcc flcopy rxformat timed
