@@ -6,13 +6,13 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)proc_compare.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)proc_compare.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
  * Returns 1 if p2 is more active than p1
  *
- * The algorithm for picking the "interesting" process is thus:
+ * The algorithm for picking the "more active" process is thus:
  *
  *	1) Runnable processes are favored over anything
  *	   else.  The runner with the highest cpu
@@ -24,10 +24,19 @@ static char sccsid[] = "@(#)proc_compare.c	5.1 (Berkeley) %G%";
  *	   Further ties are broken by picking the highest
  *	   pid.
  *
- *	TODO - consider whether to use pctcpu
+ *	NOTE - if you change this, be sure to consider making
+ *	   the change in the kernel too (^T in kern/tty.c).
+ *
+ *	TODO - consider whether pctcpu should be used
  *
  */
+
+#include <sys/param.h>
+#include <sys/time.h>
+#include <sys/proc.h>
+
 #define isrun(p)	(((p)->p_stat == SRUN) || ((p)->p_stat == SIDL))
+
 proc_compare(p1, p2)
 	register struct proc *p1, *p2;
 {
