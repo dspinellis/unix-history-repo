@@ -1,4 +1,4 @@
-#	@(#)Makefile	1.22 (Berkeley) %G%
+#	@(#)Makefile	8.1 (Berkeley) %G%
 #
 # make file for pdx
 #
