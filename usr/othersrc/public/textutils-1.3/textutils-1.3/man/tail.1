@@ -1,0 +1,75 @@
+.TH TAIL 1L \" -*- nroff -*-
+.SH NAME
+tail \- output the last part of files
+.SH SYNOPSIS
+.B tail
+[\-c [+]N[bkm]] [\-n [+]N] [\-fqv] [\-\-bytes=[+]N[bkm]] [\-\-lines=[+]N]
+[\-\-follow] [\-\-quiet] [\-\-silent] [\-\-verbose] [file...]
+
+.B tail
+[{\-,+}Nbcfklmqv] [file...]
+.SH DESCRIPTION
+This manual page
+documents the GNU version of
+.BR tail .
+.B tail
+prints the last part (10 lines by default) of each given file; it
+reads from standard input if no files are given or when a filename of
+`\-' is encountered.  If more than one file is given, it prints a
+header consisting of the file's name enclosed in `==>' and `<=='
+before the output for each file.
+.PP
+The GNU
+.B tail
+can output any amount of data, unlike the Unix version, which uses a
+fixed size buffer.  It has no
+.I \-r
+option (print in reverse).  Reversing a file is really a different job
+from printing the end of a file; the BSD
+.B tail
+can only reverse files that are at most as large as its buffer, which
+is typically 32k.  A reliable and more versatile way to reverse files is
+the GNU
+.B tac
+command.
+.SS OPTIONS
+.PP
+.B tail
+accepts two option formats: the new one, in which numbers are
+arguments to the option letters, and the old one, in which a `+' or
+`\-' and optional number precede any option letters.
+.PP
+If a number (`N') starts with a `+',
+.B tail
+begins printing with the Nth item from the start of each file, instead
+of from the end.
+.TP
+.I "\-c N, \-\-bytes N"
+Tail by N bytes.  N is a nonzero integer, optionally followed by one
+of the following characters to specify a different unit.
+.RS
+.IP b
+512-byte blocks.
+.IP k
+1-kilobyte blocks.
+.IP m
+1-megabyte blocks.
+.RE
+.TP
+.I "\-f, \-\-follow"
+Loop forever trying to read more characters at the end of the file, on
+the assumption that the file is growing.  Ignored if reading from a
+pipe.  Cannot be used if more than one file is given.
+.TP
+.I "\-l, \-n N, \-\-lines N"
+Tail by N lines.
+.TP
+.I "\-q, \-\-quiet, \-\-silent"
+Never print filename headers.
+.TP
+.I "\-v, \-\-verbose"
+Always print filename headers.
+.PP
+The long-named options can be introduced with `+' as well as `\-\-',
+for compatibility with previous releases.  Eventually support for `+'
+will be removed, because it is incompatible with the POSIX.2 standard.
