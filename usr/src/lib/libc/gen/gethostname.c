@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)gethostname.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)gethostname.c	5.2 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -26,5 +26,7 @@ gethostname(name, namelen)
 
 	mib[0] = CTL_KERN;
 	mib[1] = KERN_HOSTNAME;
-	return (sysctl(mib, 2, name, &namelen, NULL, 0));
+	if (sysctl(mib, 2, name, &namelen, NULL, 0) == -1)
+		return (-1);
+	return (0);
 }
