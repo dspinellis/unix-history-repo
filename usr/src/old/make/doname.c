@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)doname.c	4.4 (Berkeley) 84/11/28";
+static	char *sccsid = "@(#)doname.c	4.4 (Berkeley) 84/12/23";
 #include "defs"
 
 /*  BASIC PROCEDURE.  RECURSIVE.  */
@@ -282,6 +282,8 @@ register char *s;
 char *s1;
 struct depblock *p, *srchdir();
 
+if (q->depname == NULL)
+	return;
 s1 = q->depname->namep;
 for(s=s1 ; ;) switch(*s++)
 	{
