@@ -1,0 +1,383 @@
+cc -O -c -DVAX -DUCBVAX Version.c
+ld -r -x Version.o
+mv a.out Version.o
+cc -O -c -DVAX -DUCBVAX main.c
+ld -r -x main.o
+mv a.out main.o
+cc -O -c -DVAX -DUCBVAX s_rnge.c
+ld -r -x s_rnge.o
+mv a.out s_rnge.o
+cc -O -c -DVAX -DUCBVAX abort_.c
+ld -r -x abort_.o
+mv a.out abort_.o
+cc -O -c -DVAX -DUCBVAX exit_.c
+ld -r -x exit_.o
+mv a.out exit_.o
+cc -O -c -DVAX -DUCBVAX long_.c
+ld -r -x long_.o
+mv a.out long_.o
+cc -O -c -DVAX -DUCBVAX signal_.c
+ld -r -x signal_.o
+mv a.out signal_.o
+cc -O -c -DVAX -DUCBVAX system_.c
+ld -r -x system_.o
+mv a.out system_.o
+cc -O -c -DVAX -DUCBVAX s_stop.c
+ld -r -x s_stop.o
+mv a.out s_stop.o
+cc -O -c -DVAX -DUCBVAX s_paus.c
+ld -r -x s_paus.o
+mv a.out s_paus.o
+cc -O -c -DVAX -DUCBVAX rand_.c
+ld -r -x rand_.o
+mv a.out rand_.o
+cc -O -c -DVAX -DUCBVAX range.c
+ld -r -x range.o
+mv a.out range.o
+cc -O -c -DVAX -DUCBVAX traper_.c
+ld -r -x traper_.o
+mv a.out traper_.o
+cc -O -c -DVAX -DUCBVAX dbesj0_.c
+ld -r -x dbesj0_.o
+mv a.out dbesj0_.o
+cc -O -c -DVAX -DUCBVAX dbesj1_.c
+ld -r -x dbesj1_.o
+mv a.out dbesj1_.o
+cc -O -c -DVAX -DUCBVAX dbesjn_.c
+ld -r -x dbesjn_.o
+mv a.out dbesjn_.o
+cc -O -c -DVAX -DUCBVAX dbesy0_.c
+ld -r -x dbesy0_.o
+mv a.out dbesy0_.o
+cc -O -c -DVAX -DUCBVAX dbesy1_.c
+ld -r -x dbesy1_.o
+mv a.out dbesy1_.o
+cc -O -c -DVAX -DUCBVAX dbesyn_.c
+ld -r -x dbesyn_.o
+mv a.out dbesyn_.o
+cc -O -c -DVAX -DUCBVAX besj0_.c
+ld -r -x besj0_.o
+mv a.out besj0_.o
+cc -O -c -DVAX -DUCBVAX besj1_.c
+ld -r -x besj1_.o
+mv a.out besj1_.o
+cc -O -c -DVAX -DUCBVAX besjn_.c
+ld -r -x besjn_.o
+mv a.out besjn_.o
+cc -O -c -DVAX -DUCBVAX besy0_.c
+ld -r -x besy0_.o
+mv a.out besy0_.o
+cc -O -c -DVAX -DUCBVAX besy1_.c
+ld -r -x besy1_.o
+mv a.out besy1_.o
+cc -O -c -DVAX -DUCBVAX besyn_.c
+ld -r -x besyn_.o
+mv a.out besyn_.o
+cc -O -c -DVAX -DUCBVAX bit.c
+ld -r -x bit.o
+mv a.out bit.o
+cc -O -c -DVAX -DUCBVAX pow_ci.c
+ld -r -x pow_ci.o
+mv a.out pow_ci.o
+cc -O -c -DVAX -DUCBVAX pow_dd.c
+ld -r -x pow_dd.o
+mv a.out pow_dd.o
+cc -O -c -DVAX -DUCBVAX pow_di.c
+ld -r -x pow_di.o
+mv a.out pow_di.o
+cc -O -c -DVAX -DUCBVAX pow_hh.c
+ld -r -x pow_hh.o
+mv a.out pow_hh.o
+cc -O -c -DVAX -DUCBVAX pow_ii.c
+ld -r -x pow_ii.o
+mv a.out pow_ii.o
+cc -O -c -DVAX -DUCBVAX pow_ri.c
+ld -r -x pow_ri.o
+mv a.out pow_ri.o
+cc -O -c -DVAX -DUCBVAX pow_zi.c
+ld -r -x pow_zi.o
+mv a.out pow_zi.o
+cc -O -c -DVAX -DUCBVAX pow_zz.c
+ld -r -x pow_zz.o
+mv a.out pow_zz.o
+cc -O -c -DVAX -DUCBVAX c_abs.c
+ld -r -x c_abs.o
+mv a.out c_abs.o
+cc -O -c -DVAX -DUCBVAX c_cos.c
+ld -r -x c_cos.o
+mv a.out c_cos.o
+cc -O -c -DVAX -DUCBVAX c_div.c
+ld -r -x c_div.o
+mv a.out c_div.o
+cc -O -c -DVAX -DUCBVAX c_exp.c
+ld -r -x c_exp.o
+mv a.out c_exp.o
+cc -O -c -DVAX -DUCBVAX c_log.c
+ld -r -x c_log.o
+mv a.out c_log.o
+cc -O -c -DVAX -DUCBVAX c_sin.c
+ld -r -x c_sin.o
+mv a.out c_sin.o
+cc -O -c -DVAX -DUCBVAX c_sqrt.c
+ld -r -x c_sqrt.o
+mv a.out c_sqrt.o
+cc -O -c -DVAX -DUCBVAX z_abs.c
+ld -r -x z_abs.o
+mv a.out z_abs.o
+cc -O -c -DVAX -DUCBVAX z_cos.c
+ld -r -x z_cos.o
+mv a.out z_cos.o
+cc -O -c -DVAX -DUCBVAX z_div.c
+ld -r -x z_div.o
+mv a.out z_div.o
+cc -O -c -DVAX -DUCBVAX z_exp.c
+ld -r -x z_exp.o
+mv a.out z_exp.o
+cc -O -c -DVAX -DUCBVAX z_log.c
+ld -r -x z_log.o
+mv a.out z_log.o
+cc -O -c -DVAX -DUCBVAX z_sin.c
+ld -r -x z_sin.o
+mv a.out z_sin.o
+cc -O -c -DVAX -DUCBVAX z_sqrt.c
+ld -r -x z_sqrt.o
+mv a.out z_sqrt.o
+cc -O -c -DVAX -DUCBVAX r_abs.c
+ld -r -x r_abs.o
+mv a.out r_abs.o
+cc -O -c -DVAX -DUCBVAX r_acos.c
+ld -r -x r_acos.o
+mv a.out r_acos.o
+cc -O -c -DVAX -DUCBVAX r_asin.c
+ld -r -x r_asin.o
+mv a.out r_asin.o
+cc -O -c -DVAX -DUCBVAX r_atan.c
+ld -r -x r_atan.o
+mv a.out r_atan.o
+cc -O -c -DVAX -DUCBVAX r_atn2.c
+ld -r -x r_atn2.o
+mv a.out r_atn2.o
+cc -O -c -DVAX -DUCBVAX r_cnjg.c
+ld -r -x r_cnjg.o
+mv a.out r_cnjg.o
+cc -O -c -DVAX -DUCBVAX r_cos.c
+ld -r -x r_cos.o
+mv a.out r_cos.o
+cc -O -c -DVAX -DUCBVAX r_cosh.c
+ld -r -x r_cosh.o
+mv a.out r_cosh.o
+cc -O -c -DVAX -DUCBVAX r_dim.c
+ld -r -x r_dim.o
+mv a.out r_dim.o
+cc -O -c -DVAX -DUCBVAX r_exp.c
+ld -r -x r_exp.o
+mv a.out r_exp.o
+cc -O -c -DVAX -DUCBVAX r_imag.c
+ld -r -x r_imag.o
+mv a.out r_imag.o
+cc -O -c -DVAX -DUCBVAX r_int.c
+ld -r -x r_int.o
+mv a.out r_int.o
+cc -O -c -DVAX -DUCBVAX r_lg10.c
+ld -r -x r_lg10.o
+mv a.out r_lg10.o
+cc -O -c -DVAX -DUCBVAX r_log.c
+ld -r -x r_log.o
+mv a.out r_log.o
+cc -O -c -DVAX -DUCBVAX r_mod.c
+ld -r -x r_mod.o
+mv a.out r_mod.o
+cc -O -c -DVAX -DUCBVAX r_nint.c
+ld -r -x r_nint.o
+mv a.out r_nint.o
+cc -O -c -DVAX -DUCBVAX r_sign.c
+ld -r -x r_sign.o
+mv a.out r_sign.o
+cc -O -c -DVAX -DUCBVAX r_sin.c
+ld -r -x r_sin.o
+mv a.out r_sin.o
+cc -O -c -DVAX -DUCBVAX r_sinh.c
+ld -r -x r_sinh.o
+mv a.out r_sinh.o
+cc -O -c -DVAX -DUCBVAX r_sqrt.c
+ld -r -x r_sqrt.o
+mv a.out r_sqrt.o
+cc -O -c -DVAX -DUCBVAX r_tan.c
+ld -r -x r_tan.o
+mv a.out r_tan.o
+cc -O -c -DVAX -DUCBVAX r_tanh.c
+ld -r -x r_tanh.o
+mv a.out r_tanh.o
+cc -O -c -DVAX -DUCBVAX d_abs.c
+ld -r -x d_abs.o
+mv a.out d_abs.o
+cc -O -c -DVAX -DUCBVAX d_acos.c
+ld -r -x d_acos.o
+mv a.out d_acos.o
+cc -O -c -DVAX -DUCBVAX d_asin.c
+ld -r -x d_asin.o
+mv a.out d_asin.o
+cc -O -c -DVAX -DUCBVAX d_atan.c
+ld -r -x d_atan.o
+mv a.out d_atan.o
+cc -O -c -DVAX -DUCBVAX d_atn2.c
+ld -r -x d_atn2.o
+mv a.out d_atn2.o
+cc -O -c -DVAX -DUCBVAX d_cnjg.c
+ld -r -x d_cnjg.o
+mv a.out d_cnjg.o
+cc -O -c -DVAX -DUCBVAX d_cos.c
+ld -r -x d_cos.o
+mv a.out d_cos.o
+cc -O -c -DVAX -DUCBVAX d_cosh.c
+ld -r -x d_cosh.o
+mv a.out d_cosh.o
+cc -O -c -DVAX -DUCBVAX d_dim.c
+ld -r -x d_dim.o
+mv a.out d_dim.o
+cc -O -c -DVAX -DUCBVAX d_exp.c
+ld -r -x d_exp.o
+mv a.out d_exp.o
+cc -O -c -DVAX -DUCBVAX d_imag.c
+ld -r -x d_imag.o
+mv a.out d_imag.o
+cc -O -c -DVAX -DUCBVAX d_int.c
+ld -r -x d_int.o
+mv a.out d_int.o
+cc -O -c -DVAX -DUCBVAX d_lg10.c
+ld -r -x d_lg10.o
+mv a.out d_lg10.o
+cc -O -c -DVAX -DUCBVAX d_log.c
+ld -r -x d_log.o
+mv a.out d_log.o
+cc -O -c -DVAX -DUCBVAX d_mod.c
+ld -r -x d_mod.o
+mv a.out d_mod.o
+cc -O -c -DVAX -DUCBVAX d_nint.c
+ld -r -x d_nint.o
+mv a.out d_nint.o
+cc -O -c -DVAX -DUCBVAX d_prod.c
+ld -r -x d_prod.o
+mv a.out d_prod.o
+cc -O -c -DVAX -DUCBVAX d_sign.c
+ld -r -x d_sign.o
+mv a.out d_sign.o
+cc -O -c -DVAX -DUCBVAX d_sin.c
+ld -r -x d_sin.o
+mv a.out d_sin.o
+cc -O -c -DVAX -DUCBVAX d_sinh.c
+ld -r -x d_sinh.o
+mv a.out d_sinh.o
+cc -O -c -DVAX -DUCBVAX d_sqrt.c
+ld -r -x d_sqrt.o
+mv a.out d_sqrt.o
+cc -O -c -DVAX -DUCBVAX d_tan.c
+ld -r -x d_tan.o
+mv a.out d_tan.o
+cc -O -c -DVAX -DUCBVAX d_tanh.c
+ld -r -x d_tanh.o
+mv a.out d_tanh.o
+cc -O -c -DVAX -DUCBVAX i_abs.c
+ld -r -x i_abs.o
+mv a.out i_abs.o
+cc -O -c -DVAX -DUCBVAX i_dim.c
+ld -r -x i_dim.o
+mv a.out i_dim.o
+cc -O -c -DVAX -DUCBVAX i_dnnt.c
+ld -r -x i_dnnt.o
+mv a.out i_dnnt.o
+cc -O -c -DVAX -DUCBVAX i_indx.c
+ld -r -x i_indx.o
+mv a.out i_indx.o
+cc -O -c -DVAX -DUCBVAX i_len.c
+ld -r -x i_len.o
+mv a.out i_len.o
+cc -O -c -DVAX -DUCBVAX i_mod.c
+ld -r -x i_mod.o
+mv a.out i_mod.o
+cc -O -c -DVAX -DUCBVAX i_nint.c
+ld -r -x i_nint.o
+mv a.out i_nint.o
+cc -O -c -DVAX -DUCBVAX i_sign.c
+ld -r -x i_sign.o
+mv a.out i_sign.o
+cc -O -c -DVAX -DUCBVAX h_abs.c
+ld -r -x h_abs.o
+mv a.out h_abs.o
+cc -O -c -DVAX -DUCBVAX h_dim.c
+ld -r -x h_dim.o
+mv a.out h_dim.o
+cc -O -c -DVAX -DUCBVAX h_dnnt.c
+ld -r -x h_dnnt.o
+mv a.out h_dnnt.o
+cc -O -c -DVAX -DUCBVAX h_indx.c
+ld -r -x h_indx.o
+mv a.out h_indx.o
+cc -O -c -DVAX -DUCBVAX h_len.c
+ld -r -x h_len.o
+mv a.out h_len.o
+cc -O -c -DVAX -DUCBVAX h_mod.c
+ld -r -x h_mod.o
+mv a.out h_mod.o
+cc -O -c -DVAX -DUCBVAX h_nint.c
+ld -r -x h_nint.o
+mv a.out h_nint.o
+cc -O -c -DVAX -DUCBVAX h_sign.c
+ld -r -x h_sign.o
+mv a.out h_sign.o
+cc -O -c -DVAX -DUCBVAX l_ge.c
+ld -r -x l_ge.o
+mv a.out l_ge.o
+cc -O -c -DVAX -DUCBVAX l_gt.c
+ld -r -x l_gt.o
+mv a.out l_gt.o
+cc -O -c -DVAX -DUCBVAX l_le.c
+ld -r -x l_le.o
+mv a.out l_le.o
+cc -O -c -DVAX -DUCBVAX l_lt.c
+ld -r -x l_lt.o
+mv a.out l_lt.o
+cc -O -c -DVAX -DUCBVAX hl_ge.c
+ld -r -x hl_ge.o
+mv a.out hl_ge.o
+cc -O -c -DVAX -DUCBVAX hl_gt.c
+ld -r -x hl_gt.o
+mv a.out hl_gt.o
+cc -O -c -DVAX -DUCBVAX hl_le.c
+ld -r -x hl_le.o
+mv a.out hl_le.o
+cc -O -c -DVAX -DUCBVAX hl_lt.c
+ld -r -x hl_lt.o
+mv a.out hl_lt.o
+cc -O -c -DVAX -DUCBVAX ef1asc_.c
+ld -r -x ef1asc_.o
+mv a.out ef1asc_.o
+cc -O -c -DVAX -DUCBVAX ef1cmc_.c
+ld -r -x ef1cmc_.o
+mv a.out ef1cmc_.o
+cc -O -c -DVAX -DUCBVAX s_cat.c
+ld -r -x s_cat.o
+mv a.out s_cat.o
+cc -O -c -DVAX -DUCBVAX rindex_.c
+ld -r -x rindex_.o
+mv a.out rindex_.o
+cc -O -c -DVAX -DUCBVAX s_cmp.c
+ld -r -x s_cmp.o
+mv a.out s_cmp.o
+cc -O -c -DVAX -DUCBVAX s_copy.c
+ld -r -x s_copy.o
+mv a.out s_copy.o
+cc -O -c -DVAX -DUCBVAX lnblnk_.c
+ld -r -x lnblnk_.o
+mv a.out lnblnk_.o
+cc -O -c -DVAX -DUCBVAX cabs.c
+ld -r -x cabs.o
+mv a.out cabs.o
+cc -O -c -DVAX -DUCBVAX tanh.c
+ld -r -x tanh.o
+mv a.out tanh.o
+cc -O -c -DVAX -DUCBVAX sinh.c
+ld -r -x sinh.o
+mv a.out sinh.o
+Loading...
+-rw-rw-r--  1 mckusick    31014 Nov  7 18:53 libF77.a
