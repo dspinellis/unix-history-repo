@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)fns.doc	1.5 (Berkeley) %G%
+.\"     @(#)fns.doc	1.6 (Berkeley) %G%
 .\"
 .Ds
 .Fn addch "char ch" \(dg
@@ -414,7 +414,7 @@ all subwindows are moved along with it.
 .Ds
 .Fn mvwprintw "WINDOW *win" "int y" "int x" "const char *fmt" "..."
 .De
-Equivalent to 
+Equivalent to:
 .(l
 wmove(win, y, x);
 printw(fmt, ...);
@@ -422,7 +422,7 @@ printw(fmt, ...);
 .Ds
 .Fn mvwscanw "WINDOW *win" "int y" "int x" "const char *fmt" "..."
 .De
-Equivalent to 
+Equivalent to:
 .(l
 wmove(win, y, x);
 scanw(fmt, ...);
