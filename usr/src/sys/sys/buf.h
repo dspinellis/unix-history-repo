@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)buf.h	7.21 (Berkeley) %G%
+ *	@(#)buf.h	7.22 (Berkeley) %G%
  */
 
 #ifndef _BUF_H_
@@ -118,10 +118,10 @@ void	cluster_callback __P((struct buf *));
 int	cluster_read __P((struct vnode *, u_quad_t, daddr_t, long,
 	    struct ucred *, struct buf **));
 void	cluster_write __P((struct buf *, u_quad_t));
-struct buf *getblk __P((struct vnode *, daddr_t, int));
+struct buf *getblk __P((struct vnode *, daddr_t, int, int, int));
 struct buf *geteblk __P((int));
-struct buf *getnewbuf __P((void));
-int	incore __P((struct vnode *, daddr_t));
+struct buf *getnewbuf __P((int slpflag, int slptimeo));
+struct buf *incore __P((struct vnode *, daddr_t));
 u_int	minphys __P((struct buf *bp));
 __END_DECLS
 #endif
@@ -129,31 +129,34 @@ __END_DECLS
 /*
  * These flags are kept in b_flags.
  */
-#define	B_WRITE		0x000000	/* non-read pseudo-flag */
-#define	B_READ		0x000001	/* read when I/O occurs */
-#define	B_DONE		0x000002	/* transaction finished */
-#define	B_ERROR		0x000004	/* transaction aborted */
-#define	B_BUSY		0x000008	/* not on av_forw/back list */
-#define	B_PHYS		0x000010	/* physical IO */
-#define	B_XXX		0x000020	/* was B_MAP, alloc UNIBUS on pdp-11 */
-#define	B_WANTED	0x000040	/* issue wakeup when BUSY goes off */
-#define	B_AGE		0x000080	/* delayed write for correct aging */
-#define	B_ASYNC		0x000100	/* don't wait for I/O completion */
-#define	B_DELWRI	0x000200	/* write at exit of avail list */
-#define	B_TAPE		0x000400	/* this is a magtape (no bdwrite) */
-#define	B_UAREA		0x000800	/* add u-area to a swap operation */
-#define	B_PAGET		0x001000	/* page in/out of page table space */
-#define	B_DIRTY		0x002000	/* dirty page to be pushed out async */
-#define	B_PGIN		0x004000	/* pagein op, so swap() can count it */
-#define	B_CACHE		0x008000	/* did bread find us in the cache ? */
-#define	B_INVAL		0x010000	/* does not contain valid info  */
-#define	B_LOCKED	0x020000	/* locked in core (not reusable) */
-#define	B_HEAD		0x040000	/* a buffer header, not a buffer */
-#define	B_GATHERED	0x080000	/* LFS: already in a segment */
-#define	B_BAD		0x100000	/* bad block revectoring in progress */
-#define	B_CALL		0x200000	/* call b_iodone from iodone */
-#define	B_RAW		0x400000	/* set by physio for raw transfers */
-#define	B_NOCACHE	0x800000	/* do not cache block after use */
+#define	B_WRITE		0x00000000	/* non-read pseudo-flag */
+#define	B_READ		0x00000001	/* read when I/O occurs */
+#define	B_DONE		0x00000002	/* transaction finished */
+#define	B_ERROR		0x00000004	/* transaction aborted */
+#define	B_BUSY		0x00000008	/* not on av_forw/back list */
+#define	B_PHYS		0x00000010	/* physical IO */
+#define	B_XXX		0x00000020	/* was B_MAP, alloc UNIBUS on pdp-11 */
+#define	B_WANTED	0x00000040	/* issue wakeup when BUSY goes off */
+#define	B_AGE		0x00000080	/* delayed write for correct aging */
+#define	B_ASYNC		0x00000100	/* don't wait for I/O completion */
+#define	B_DELWRI	0x00000200	/* write at exit of avail list */
+#define	B_TAPE		0x00000400	/* this is a magtape (no bdwrite) */
+#define	B_UAREA		0x00000800	/* add u-area to a swap operation */
+#define	B_PAGET		0x00001000	/* page in/out of page table space */
+#define	B_DIRTY		0x00002000	/* dirty page to be pushed out async */
+#define	B_PGIN		0x00004000	/* pagein op, so swap() can count it */
+#define	B_CACHE		0x00008000	/* did bread find us in the cache ? */
+#define	B_INVAL		0x00010000	/* does not contain valid info  */
+#define	B_LOCKED	0x00020000	/* locked in core (not reusable) */
+#define	B_HEAD		0x00040000	/* a buffer header, not a buffer */
+#define	B_GATHERED	0x00080000	/* LFS: already in a segment */
+#define	B_BAD		0x00100000	/* bad block revectoring in progress */
+#define	B_CALL		0x00200000	/* call b_iodone from iodone */
+#define	B_RAW		0x00400000	/* set by physio for raw transfers */
+#define	B_NOCACHE	0x00800000	/* do not cache block after use */
+#define	B_WRITEINPROG	0x01000000	/* write in progress on buffer */
+#define	B_APPENDWRITE	0x02000000	/* append-write in progress on buffer */
+#define	B_EINTR		0x04000000	/* I/O was interrupted */
 
 #define	iodone	biodone
 #define	iowait	biowait
