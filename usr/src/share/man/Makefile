@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.13 (Berkeley) %G%
+#	@(#)Makefile	8.1 (Berkeley) %G%
 
 # Missing: man3f
 
