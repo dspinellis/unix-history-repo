@@ -2,39 +2,10 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)Cover.infopacket	5.1 (Berkeley) %G%
+.\"	@(#)Cover.infopacket	5.2 (Berkeley) %G%
 .\"
-./v 0 .nf .LP
-.nf
-.ev 1
-.ll +10
-.ND
-.ps 12
-.ft B
-UNIVERSITY OF CALIFORNIA, BERKELEY
-.ft R 
-.sp
-.vs 7p
-.ie \nv \s20\l'25_'\s6
-.el \s20\l'22_'\s6
-.br
-.sp 3p BERKELEY \  \(bu \  DAVIS \  \(bu \  IRVINE \  \(bu \ 
-LOS ANGELES \  \(bu \  RIVERSIDE \  \(bu \  SAN DIEGO
-\  \(bu \  SAN FRANCISCO \  \(bu \  SANTA BARBARA \  \(bu \  SANTA CRUZ
-.br
-.sp -3p
-.ie \nv \s20\l'25_'\s7
-.el \s20\l'22_'\s7
-.nf
-.vs 9p
-.sp
-COLLEGE OF ENGINEERING  \l'25 '        BERKELEY, CALIFORNIA 94720
-DEPARTMENT OF ELECTRICAL ENGINEERING
-  AND COMPUTER SCIENCES \l'30 '
-COMPUTER SCIENCE DIVISION
-.fi
-.sp
-.ev 0
+.so HEADERS
+.NH
 .LP
 .rs
 .sp .75i
@@ -126,9 +97,9 @@ How to obtain 4.3BSD
 .PP
 This section should be read by existing licensees as well as new licensees.
 All previous 4.2BSD licensees will be required to sign
-Addendum Number One to the revised Berkeley License Agreement (6/83).  The
+Addendum Number One to the Berkeley License Agreement (6/83).  The
 fee for the 4.3BSD update is $600.00.  For new licensees, we require 
-execution of the aforementioned revised Berkeley License Agreement (6/83),
+execution of the aforementioned revised Berkeley License Agreement (4/86),
 in which reference to the inclusion of 4.3BSD has been incorporated.  The
 fee for release 4.3BSD for new licensees is $1,000.00. 
 .PP
@@ -153,7 +124,7 @@ following material before the distribution can be sent:
 .IP \(bu
 \fBTwo\fR copies of the \fBcurrent\fR Software Agreement between your company or institution and
 AT&T (Western Electric) that authorize you as a source licensee for
-UNIX/32V; System III; System V, 1.0; or System V, 2.0, Vax Version.  Note that a complete copy of the
+UNIX/32V; System III; System V, 1.0; or System V, 2.0.  Note that a complete copy of the
 agreement up to the Schedule is required, not 
 just the cover and/or signature page.
 Letters authorizing additional CPUs are not sufficient and not necessary 
@@ -190,7 +161,7 @@ If you must issue a Purchase Order, please issue one that is blank-backed.
 If this is not possible, insert and initialize in the body of the Purchase
 Order the following clause: "The terms and conditions of this Purchase
 Order are not acceptable.  The revised Berkeley License Agreement
-(6/83) prevails."
+(4/86) prevails."
 .IP \(bu
 The Site Information Form and Equipment List completely filled out and dated.
 The signed Berkeley License Agreement will be sent to the person listed
