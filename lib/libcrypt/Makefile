@@ -2,8 +2,8 @@
 
 LIB=	crypt
 SRCS=	auth.c crypt.c encrypt.c misc.c
-#SHLIB_MAJOR= 0
-#SHLIB_MINOR= 0
+SHLIB_MAJOR= 0
+SHLIB_MINOR= 0
 
 # Do DES encryption?
 CFLAGS+= -DDES_ENCRYPT

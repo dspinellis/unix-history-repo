@@ -1,8 +1,8 @@
 #	from: @(#)Makefile    5.10 (Berkeley) 6/24/90
-#	$Id: Makefile,v 1.1 1993/09/14 17:48:18 jtc Exp $
+#	$Id: Makefile,v 1.2 1993/11/07 12:00:50 paul Exp $
 
-#SHLIB_MAJOR= 0
-#SHLIB_MINOR= 0
+SHLIB_MAJOR= 0
+SHLIB_MINOR= 0
 
 .PATH: ${.CURDIR}/../../include/rpcsvc /usr/src/include/rpcsvc
 

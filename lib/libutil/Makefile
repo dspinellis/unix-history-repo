@@ -1,7 +1,7 @@
 #	@(#)Makefile	5.10 (Berkeley) 5/6/91
 
-#SHLIB_MAJOR= 0
-#SHLIB_MINOR= 0
+SHLIB_MAJOR= 0
+SHLIB_MINOR= 0
 
 LIB=	util
 # kvm.c needs -I/sys
