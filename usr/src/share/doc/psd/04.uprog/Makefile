@@ -1,26 +1,10 @@
-#
-# Copyright (c) 1986 Regents of the University of California.
-# All rights reserved.  The Berkeley software License Agreement
-# specifies the terms and conditions for redistribution.
-#
-#	@(#)Makefile	6.2 (Berkeley) %G%
-#
-SRCS=	p0 p1 p2 p3 p4 p5 p6 p8 p9
-MAC = p.mac
-MACROS=	-ms
-PRINTER=Pdp
-TROFF=	ditroff -${PRINTER}
+#	@(#)Makefile	6.3 (Berkeley) %G%
 
-paper:	paper.${PRINTER}
-	lpr -${PRINTER} -n paper.${PRINTER}
+DIR=	ps2/03.uprog
+SRCS=	p.mac p0 p1 p2 p3 p4 p5 p6 p8 p9
+MACROS=	-ms
 
 paper.${PRINTER}: ${SRCS}
-	${TROFF} -t ${MACROS} ${MAC} ${SRCS} > paper.${PRINTER}
+	${ROFF} ${MAC} ${SRCS} > ${.TARGET}
 
-clean:
-	rm -f paper.[PT]* *.spell errs Errs make.out
-
-spell:	${SRCS}
-	@for i in ${SRCS}; do \
-		echo $$i; spell $$i | sort | comm -23 - spell.ok > $$i.spell; \
-	done
+.include <bsd.doc.mk>

@@ -1,18 +1,11 @@
-#
-# Copyright (c) 1983 Regents of the University of California.
-# All rights reserved.  The Berkeley software License Agreement
-# specifies the terms and conditions for redistribution.
-#
-#	@(#)Makefile	6.1 (Berkeley) %G%
-#
-TROFF=	ditroff -Pdp
-TBL=	dtbl -Pdp
+#	@(#)Makefile	6.2 (Berkeley) %G%
 
-FILES=	abs.ms motivation.ms equip.ms methodology.ms tests.ms results.ms \
+DIR=	papers/diskperf
+SRCS=	abs.ms motivation.ms equip.ms methodology.ms tests.ms results.ms \
 	conclusions.ms appendix.ms
+MACROS=	-ms
 
-paper:	${FILES}
-	${TBL} ${FILES} | ${TROFF} -ms
+paper.${PRINTER}: ${SRCS}
+	${TBL} ${SRCS} | ${ROFF} > ${.TARGET}
 
-preview:${FILES}
-	tbl ${FILES} | nroff -ms | colcrt
+.include <bsd.doc.mk>
