@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_apx.c	7.2 (Berkeley) %G%
+ *	@(#)if_apx.c	7.3 (Berkeley) %G%
  */
 
 /*
@@ -36,6 +36,7 @@
 
 int	apxprobe(), apxattach(), apxstart(), apx_uprim(), apx_meminit();
 int	apxinit(), x25_ifoutput(), x25_rtrequest(), apxioctl(), apxreset();
+int	apxctr();
 void	apx_ifattach(), apxinput(), apxintr(), apxtint(), apaxrint();
 
 struct apx_softc {
@@ -101,11 +102,12 @@ apxprobe(id)
 	struct	apc_reg *reg = (struct apc_reg *)id->id_iobase;
 	register struct	apx_softc *apx = apx_softc + unit;
 
-	/* Set and read DTR defeat in channel 0 to test presence of apc */
-	outb(&reg->axr_altmode, 4);
-	if (inb(&reg->axr_altmode) == 0)
+	apx->apx_if.if_unit = unit;
+	apx->apx_reg = reg;
+	if (apxctr(apx) == 0) {
+		apxerror(apx, "no response from timer chip", 0);
 		return 0;			/* No board present */
-
+	}
 	for (subunit = 0; subunit < 2; subunit++, apx++) {
 		/* Set and read DTR mode to test present of SGS thompson chip */
 		apx->apx_if.if_unit = unit++;
@@ -135,7 +137,6 @@ apxattach(id)
 	apx_ifattach(unit + 1);
 	return (0);
 }
-
 /* End bus & endian dependence */
 
 /*
@@ -182,6 +183,17 @@ apxinit(unit)
 	return 0;
 }
 
+apxctr(apx)
+	register struct apx_softc *apx;
+{
+	APX_WCSR(apx, axr_ccr, 0xb0); /* select ctr 2, write lsb+msb, mode 0 */
+	APX_WCSR(apx, axr_cnt2, 0x1);
+	APX_WCSR(apx, axr_cnt2, 0x0);
+	DELAY(50);
+	APX_WCSR(apx, axr_ccr, 0xD4); /* latch status, ctr 2; */
+	return APX_RCSR(apx, axr_cnt2);
+}
+
 apxreset(unit)
 	int	unit;
 {
@@ -208,6 +220,7 @@ apxreset(unit)
 	    apx_uprim(apx, SG_STAT, "status request") ||
 	    apx_uprim(apx, SG_TRANS, "transparent mode"))
 		return 0;
+	(void) apxctr(apx);
 	SG_WCSR(apx, 0, SG_INEA);
 	return 1;
 }
@@ -225,7 +238,7 @@ apx_uprim(apx, request, ident)
 	SG_WCSR(apx, 1, request | SG_UAV);
 	do {
 		reply = SG_RCRS(1);
-		if (timo >= TIMO | reply & 0x8000) {
+		if (timo++ >= TIMO | reply & 0x8000) {
 			apxerror(apx, ident, reply);
 			return 1;
 		}
@@ -404,7 +417,7 @@ register struct ifnet *ifp;
 caddr_t buffer;
 {
 	register struct ifqueue *inq;
-	struct mbuf *m, *apxget();
+	struct mbuf *m, *m_devget();
 	extern struct ifqueue hdintrq, ipintrq;
 	int isr;
 
@@ -427,7 +440,7 @@ caddr_t buffer;
 	if (len <= 0)
 		return;
 
-	m = apxget(buffer, len , 0, ifp);
+	m = m_devget(buffer, len, 0, ifp, (void (*)())0);
 	if (m == 0)
 		return;
 
@@ -438,73 +451,6 @@ caddr_t buffer;
 		IF_ENQUEUE(inq, m);
 		schednetisr(isr);
 	}
-}
-
-/*
- * Routine to copy from board local memory into mbufs.
- */
-struct mbuf *
-apxget(buf, totlen, off0, ifp)
-	char *buf;
-	int totlen, off0;
-	struct ifnet *ifp;
-{
-	register struct mbuf *m;
-	struct mbuf *top = 0, **mp = &top;
-	register int off = off0, len;
-	register char *cp;
-	char *epkt;
-
-	cp = buf;
-	epkt = cp + totlen;
-	if (off) {
-		cp += off + 2 * sizeof(u_short);
-		totlen -= 2 * sizeof(u_short);
-	}
-
-	MGETHDR(m, M_DONTWAIT, MT_DATA);
-	if (m == 0)
-		return (0);
-	m->m_pkthdr.rcvif = ifp;
-	m->m_pkthdr.len = totlen;
-	m->m_len = MHLEN;
-
-	while (totlen > 0) {
-		if (top) {
-			MGET(m, M_DONTWAIT, MT_DATA);
-			if (m == 0) {
-				m_freem(top);
-				return (0);
-			}
-			m->m_len = MLEN;
-		}
-		len = min(totlen, epkt - cp);
-		if (len >= MINCLSIZE) {
-			MCLGET(m, M_DONTWAIT);
-			if (m->m_flags & M_EXT)
-				m->m_len = len = min(len, MCLBYTES);
-			else
-				len = m->m_len;
-		} else {
-			/*
-			 * Place initial small packet/header at end of mbuf.
-			 */
-			if (len < m->m_len) {
-				if (top == 0 && len + max_linkhdr <= m->m_len)
-					m->m_data += max_linkhdr;
-				m->m_len = len;
-			} else
-				len = m->m_len;
-		}
-		bcopy(cp, mtod(m, caddr_t), (unsigned)len);
-		cp += len;
-		*mp = m;
-		mp = &m->m_next;
-		totlen -= len;
-		if (cp == epkt)
-			cp = buf;
-	}
-	return (top);
 }
 
 /*
