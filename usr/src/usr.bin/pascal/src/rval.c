@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)rval.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)rval.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include "whoami.h"
@@ -648,6 +648,13 @@ cstrng:
 		p = rvalue(r->expr_node.lhs, NLNIL , RREQ );
 #		ifdef PC
 		    sconv(p2type(p), PCCT_INT);
+#		ifdef tahoe
+		    /* prepare for ediv workaround, see below. */
+		    if (r->tag == T_MOD) {
+			(void) rvalue(r->expr_node.lhs, NLNIL, RREQ);
+			sconv(p2type(p), PCCT_INT);
+		    }
+#		endif tahoe
 #		endif PC
 		p1 = rvalue(r->expr_node.rhs, NLNIL , RREQ );
 #		ifdef PC
@@ -667,8 +674,39 @@ cstrng:
 		    return (gen(NIL, r->tag, width(p), width(p1)));
 #		endif OBJ
 #		ifdef PC
+#		ifndef tahoe
 		    putop( r->tag == T_DIV ? PCC_DIV : PCC_MOD , PCCT_INT );
 		    return ( nl + T4INT );
+#		else tahoe
+		    putop( PCC_DIV , PCCT_INT );
+		    if (r->tag == T_MOD) {
+		    /*
+		     * avoid f1 bug: PCC_MOD would generate an 'ediv',
+		     * which would reuire too many registers to evaluate
+		     * things like
+		     * var i:boolean;j:integer; i := (j+1) = (j mod 2);
+		     * so, instead of
+		     *                PCC_MOD
+		     *		        / \
+		     *	               p   p1
+		     * we put
+		     *                  PCC_MINUS
+		     *                    /   \
+		     *			 p   PCC_MUL               
+		     *			      /   \
+		     *			  PCC_DIV  p1
+		     *                      / \
+		     *                     p  p1
+		     *
+		     * we already have put p, p, p1, PCC_DIV. and now...
+		     */
+			    rvalue(r->expr_node.rhs, NLNIL , RREQ );
+			    sconv(p2type(p1), PCCT_INT);
+			    putop( PCC_MUL, PCCT_INT );
+			    putop( PCC_MINUS, PCCT_INT );
+		    }
+		    return ( nl + T4INT );
+#		endif tahoe
 #		endif PC
 
 	case T_EQ:
