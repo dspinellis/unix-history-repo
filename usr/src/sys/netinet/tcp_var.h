@@ -1,4 +1,4 @@
-/*	tcp_var.h	4.12	81/12/09	*/
+/*	tcp_var.h	4.13	81/12/12	*/
 
 /*
  * Kernel variables for tcp.
@@ -10,13 +10,13 @@
 struct tcpcb {
 	struct	tcpiphdr *seg_next;	/* sequencing queue */
 	struct	tcpiphdr *seg_prev;
-	int	t_state;		/* state of this connection */
+	short	t_state;		/* state of this connection */
 	short	t_timer[TCPT_NTIMERS];	/* tcp timers */
 	short	t_rxtshift;		/* log(2) of rexmt exp. backoff */
 	struct	mbuf *t_tcpopt;		/* tcp options */
 	struct	mbuf *t_ipopt;		/* ip options */
 	short	t_maxseg;		/* maximum segment size */
-	short	t_force;		/* 1 if forcing out a byte */
+	char	t_force;		/* 1 if forcing out a byte */
 	u_char	t_flags;
 #define	TF_ACKNOW	0x01			/* ack peer immediately */
 #define	TF_DELACK	0x02			/* ack, but try to delay it */
@@ -32,14 +32,14 @@ struct tcpcb {
 /* send sequence variables */
 	tcp_seq	snd_una;		/* send unacknowledged */
 	tcp_seq	snd_nxt;		/* send next */
-	u_short	snd_wnd;		/* send window */
 	tcp_seq	snd_up;			/* send urgent pointer */
 	tcp_seq	snd_wl1;		/* window update seg seq number */
 	tcp_seq	snd_wl2;		/* window update seg ack number */
 	tcp_seq	iss;			/* initial send sequence number */
+	u_short	snd_wnd;		/* send window */
 /* receive sequence variables */
-	tcp_seq	rcv_nxt;		/* receive next */
 	short	rcv_wnd;		/* receive window */
+	tcp_seq	rcv_nxt;		/* receive next */
 	tcp_seq	rcv_up;			/* receive urgent pointer */
 	tcp_seq	irs;			/* initial receive sequence number */
 /*

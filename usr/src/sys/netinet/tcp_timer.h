@@ -1,4 +1,4 @@
-/*	tcp_timer.h	4.2	81/12/02	*/
+/*	tcp_timer.h	4.3	81/12/12	*/
 
 /*
  * Definitions of the TCP timers.  These timers are counted
@@ -43,20 +43,20 @@
  * amount of time, then we drop the connection.
  */
 
-#define	TCP_TTL		60		/* time to live for TCP segs */
+#define	TCP_TTL		15		/* time to live for TCP segs */
 /*
  * Time constants.
  */
-#define	TCPTV_MSL	(120*PR_SLOWHZ)		/* max seg lifetime */
+#define	TCPTV_MSL	( 30*PR_SLOWHZ)		/* max seg lifetime */
 #define	TCPTV_SRTTBASE	(  1*PR_SLOWHZ)		/* base roundtrip time */
-#define	TCPTV_KEEP	(240*PR_SLOWHZ)		/* keep alive - 4 mins */
+#define	TCPTV_KEEP	( 60*PR_SLOWHZ)		/* keep alive - 1 min */
 #define	TCPTV_PERSMIN	(  5*PR_SLOWHZ)		/* retransmit persistance */
 
 #define	TCPTV_MAXIDLE	(  4*TCPTV_KEEP)	/* maximum allowable idle
 						   time before drop conn */
 
 #define	TCPTV_MIN	(  1*PR_SLOWHZ)		/* minimum allowable value */
-#define	TCPTV_MAX	(480*PR_SLOWHZ)		/* maximum allowable value */
+#define	TCPTV_MAX	(120*PR_SLOWHZ)		/* maximum allowable value */
 
 #ifdef	TCPTIMERS
 char *tcptimers[] =
@@ -86,9 +86,10 @@ float	tcp_alpha, tcp_beta;
 /*
  * Force a time value to be in a certain range.
  */
-#define	TCPT_RANGESET(tv, value, tvmin, tvmax) \
+#define	TCPT_RANGESET(tv, value, tvmin, tvmax) { \
 	(tv) = (value); \
 	if ((tv) < (tvmin)) \
 		(tv) = (tvmin); \
 	if ((tv) > (tvmax)) \
-		(tv) = (tvmax);
+		(tv) = (tvmax); \
+}

@@ -1,4 +1,4 @@
-/* tcp_timer.c 4.5 81/12/02 */
+/* tcp_timer.c 4.6 81/12/12 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -45,7 +45,12 @@ COUNT(TCP_SLOWTIMO);
 	/*
 	 * Search through tcb's and update active timers.
 	 */
-	for (ip = tcb.inp_next; ip != &tcb; ip = ip->inp_next) {
+	ip = tcb.inp_next;
+	if (ip == 0) {
+		splx(s);
+		return;
+	}
+	for (; ip != &tcb; ip = ip->inp_next) {
 		tp = intotcpcb(ip);
 		for (i = 0; i < TCPT_NTIMERS; i++) {
 			if (tp->t_timer[i] && --tp->t_timer[i] == 0)
@@ -70,6 +75,7 @@ tcp_canceltimers(tp)
 	register int i;
 
 COUNT(TCP_CANCELTIMERS);
+printf("tcp_canceltimers %x\n", tp);
 	for (i = 0; i < TCPT_NTIMERS; i++)
 		tp->t_timer[i] = 0;
 }
@@ -83,6 +89,7 @@ tcp_timers(tp, timer)
 {
 
 COUNT(TCP_TIMERS);
+printf("tcp_timers %x %d\n", tp, timer);
 	switch (timer) {
 
 	/*
@@ -104,6 +111,7 @@ COUNT(TCP_TIMERS);
 		TCPT_RANGESET(tp->t_timer[TCPT_REXMT],
 		    ((int)(2 * tp->t_srtt)) << tp->t_rxtshift,
 		    TCPTV_MIN, TCPTV_MAX);
+printf("rexmt timer now %d\n", tp->t_timer[TCPT_REXMT]);
 		tp->snd_nxt = tp->snd_una;
 		/* this only transmits one segment! */
 		(void) tcp_output(tp);
@@ -119,6 +127,7 @@ COUNT(TCP_TIMERS);
 		tp->t_force = 0;
 		TCPT_RANGESET(tp->t_timer[TCPT_PERSIST],
 		    2 * tp->t_srtt, TCPTV_PERSMIN, TCPTV_MAX);
+printf("persist timer now %d\n", tp->t_timer[TCPT_PERSIST]);
 		return;
 
 	/*
@@ -128,9 +137,11 @@ COUNT(TCP_TIMERS);
 	case TCPT_KEEP:
 		if (tp->t_state < TCPS_ESTABLISHED ||
 		    tp->t_idle >= TCPTV_MAXIDLE) {
+printf("drop because of keep alive\n");
 			tcp_drop(tp, ETIMEDOUT);
 			return;
 		}
+printf("send keep alive\n");
 		tcp_respond(tp->t_template, tp->rcv_nxt, tp->snd_una-1, 0);
 		tp->t_timer[TCPT_KEEP] = TCPTV_KEEP;
 		return;

@@ -1,4 +1,4 @@
-/* tcp_usrreq.c 1.39 81/12/03 */
+/* tcp_usrreq.c 1.40 81/12/12 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -20,6 +20,7 @@
 #include "../net/tcpip.h"
 #include "../errno.h"
 
+extern char *tcpstates[];
 struct	tcpcb *tcp_newtcpcb();
 /*
  * Process a TCP user request for tcp tb.  If this is a send request
@@ -42,6 +43,7 @@ COUNT(TCP_USRREQ);
 	 * Make sure attached.  If not,
 	 * only PRU_ATTACH is valid.
 	 */
+printf("tcp_usrreq %d so %x inp %x\n", req, so, inp);
 	if (inp == 0 && req != PRU_ATTACH) {
 		splx(s);
 		return (EINVAL);
@@ -63,8 +65,8 @@ COUNT(TCP_USRREQ);
 		if (error)
 			break;
 		inp = (struct inpcb *)so->so_pcb;
+		tp = tcp_newtcpcb(inp);
 		if (so->so_options & SO_ACCEPTCONN) {
-			tp = tcp_newtcpcb(inp);
 			if (tp == 0) {
 				in_pcbdetach(inp);
 				error = ENOBUFS;
@@ -84,17 +86,26 @@ COUNT(TCP_USRREQ);
 		if (error)
 			break;
 		tp = tcp_newtcpcb(inp);
-		if (tp == 0) {
-			in_pcbdisconnect(inp);
-			error = ENOBUFS;
-			break;
-		}
+		if (tp == 0)
+			goto badcon;
 		tp->t_template = tcp_template(tp);
+		if (tp->t_template == 0)
+			goto badcon2;
 		tp->t_inpcb = inp;
 		inp->inp_ppcb = (caddr_t)tp;
 		soisconnecting(so);
 		tp->t_state = TCPS_SYN_SENT;
+		tp->t_timer[TCPT_KEEP] = TCPTV_KEEP;
+		tp->iss = tcp_iss; tcp_iss += TCP_ISSINCR/2;
+		tcp_sendseqinit(tp);
 		(void) tcp_output(tp);
+		break;
+
+badcon2:
+		(void) m_free(dtom(tp));
+badcon:
+		in_pcbdisconnect(inp);
+		error = ENOBUFS;
 		break;
 
 	case PRU_ACCEPT:
@@ -106,30 +117,15 @@ COUNT(TCP_USRREQ);
 			tcp_close(tp);
 		else {
 			soisdisconnecting(so);
+			tcp_usrclosed(tp);
 			(void) tcp_output(tp);
 		}
 		break;
 
 	case PRU_SHUTDOWN:
 		socantsendmore(so);
-		switch (tp->t_state) {
-
-		case TCPS_LISTEN:
-		case TCPS_SYN_SENT:
-			tp->t_state = TCPS_CLOSED;
-			break;
-
-		case TCPS_SYN_RECEIVED:
-		case TCPS_ESTABLISHED:
-			tp->t_state = TCPS_FIN_WAIT_1;
-			(void) tcp_output(tp);
-			break;
-
-		case TCPS_CLOSE_WAIT:
-			tp->t_state = TCPS_LAST_ACK;
-			(void) tcp_output(tp);
-			break;
-		}
+		tcp_usrclosed(tp);
+		(void) tcp_output(tp);
 		break;
 
 	case PRU_RCVD:
@@ -176,4 +172,37 @@ COUNT(TCP_USRREQ);
 	}
 	splx(s);
 	return (error);
+}
+
+pseqno(tp)
+struct tcpcb *tp;
+{
+printf("tp %x state %s rcv_nxt %x rcv_wnd %d irs %x\n", tp, tcpstates[tp->t_state],tp->rcv_nxt, tp->rcv_wnd, tp->irs);
+printf("snd_una %x snd_nxt %x snd_wnd %d snd_wl1 %x snd_wl2 %x iss %x\n",
+tp->snd_una, tp->snd_nxt, tp->snd_wnd, tp->snd_wl1, tp->snd_wl2, tp->iss);
+}
+
+tcp_usrclosed(tp)
+	struct tcpcb *tp;
+{
+
+printf("usrclosed in %s\n", tcpstates[tp->t_state]);
+	switch (tp->t_state) {
+
+	case TCPS_LISTEN:
+	case TCPS_SYN_SENT:
+		tp->t_state = TCPS_CLOSED;
+		tcp_close(tp);
+		break;
+
+	case TCPS_SYN_RECEIVED:
+	case TCPS_ESTABLISHED:
+		tp->t_state = TCPS_FIN_WAIT_1;
+		break;
+
+	case TCPS_CLOSE_WAIT:
+		tp->t_state = TCPS_LAST_ACK;
+		break;
+	}
+printf("after usrclosed state %s\n", tcpstates[tp->t_state]);
 }

@@ -1,4 +1,4 @@
-/*	tcp_output.c	4.21	81/12/02	*/
+/*	tcp_output.c	4.22	81/12/12	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -20,12 +20,9 @@
 #include "../net/tcpip.h"
 #include "../errno.h"
 
+char *tcpstates[]; /* XXX */
 /*
- * Tcp output routine: figure out what should be sent
- * and, if nothing, send a null segment anyways if force is nonzero
- * (e.g. to be sure to send an ACK).
- *
- * This routine can be called only after SYNs have been exchanged.
+ * Tcp output routine: figure out what should be sent and send it.
  */
 tcp_output(tp)
 	register struct tcpcb *tp;
@@ -50,6 +47,8 @@ COUNT(TCP_OUTPUT);
 	len = MIN(so->so_snd.sb_cc, tp->snd_wnd+tp->t_force) - off;
 	if (len > tp->t_maxseg)
 		len = tp->t_maxseg;
+	if (len < 0)
+		len = 0;		/* FIN can cause -1 */
 	flags = tcp_outflags[tp->t_state];
 	if (len < so->so_snd.sb_cc)
 		flags &= ~TH_FIN;
@@ -79,6 +78,7 @@ COUNT(TCP_OUTPUT);
 	/*
 	 * No reason to send a segment, just return.
 	 */
+printf("tcp_output: nothing to send\n");
 	return (0);
 
 send:
@@ -90,12 +90,13 @@ send:
 	MGET(m, 0);
 	if (m == 0)
 		return (0);
-	m->m_off = MMAXOFF - sizeof(struct tcpiphdr);
+	m->m_off = MMAXOFF - sizeof (struct tcpiphdr);
 	m->m_len = sizeof (struct tcpiphdr);
 	if (len) {
 		m->m_next = m_copy(so->so_snd.sb_mb, off, len);
 		if (m->m_next == 0)
 			len = 0;
+if (m->m_next) printf("copy *mtod()=%x\n", *mtod(m->m_next, char *));
 	}
 	ti = mtod(m, struct tcpiphdr *);
 	if (tp->t_template == 0)
@@ -106,8 +107,12 @@ send:
 	 * Fill in fields, remembering maximum advertised
 	 * window for use in delaying messages about window sizes.
 	 */
-	ti->ti_seq = htonl(tp->snd_nxt);
-	ti->ti_ack = htonl(tp->rcv_nxt);
+	ti->ti_seq = tp->snd_nxt;
+	ti->ti_ack = tp->rcv_nxt;
+#if vax
+	ti->ti_seq = htonl(ti->ti_seq);
+	ti->ti_ack = htonl(ti->ti_ack);
+#endif
 	if (tp->t_tcpopt) {
 		m0 = m->m_next;
 		m->m_next = m_get(0);
@@ -148,26 +153,25 @@ send:
 		ti->ti_len = htons((u_short)(len + sizeof (struct tcphdr)));
 	ti->ti_sum = in_cksum(m, sizeof (struct tcpiphdr) + len);
 
+printf("tcp_output: ti %x flags %x seq %x ack %x win %d len %d sum %x\n",
+ti, ti->ti_flags, htonl(ti->ti_seq), htonl(ti->ti_ack), htons(ti->ti_win), ti->ti_len, ti->ti_sum);
+
 	/*
 	 * Advance snd_nxt over sequence space of this segment
 	 */
 	if (flags & (TH_SYN|TH_FIN))
-		len++;
+		tp->snd_nxt++;
 	tp->snd_nxt += len;
 
 	/*
 	 * If this transmission closes the window,
-	 * start persistance timer at 2 round trip
-	 * times but at least TCPTV_PERSMIN ticks.
+	 * start persistance timer at 2 round trip times
+	 * but at least TCPTV_PERSMIN ticks.
 	 */
-	if (tp->snd_una + tp->snd_wnd >= tp->snd_nxt &&
-	    tp->t_timer[TCPT_PERSIST] == 0) {
-		tp->t_timer[TCPT_PERSIST] = 2 * tp->t_srtt;
-		if (tp->t_timer[TCPT_PERSIST] < TCPTV_PERSMIN)
-			tp->t_timer[TCPT_PERSIST] = TCPTV_PERSMIN;
-		if (tp->t_timer[TCPT_PERSIST] > TCPTV_MAX)
-			tp->t_timer[TCPT_PERSIST] = TCPTV_MAX;
-	}
+	if (SEQ_GT(tp->snd_nxt, tp->snd_una+tp->snd_wnd) &&
+	    tp->t_timer[TCPT_PERSIST] == 0)
+		TCPT_RANGESET(tp->t_timer[TCPT_PERSIST],
+		    2 * tp->t_srtt, TCPTV_PERSMIN, TCPTV_MAX);
 
 	/*
 	 * Time this transmission if not a retransmission and
@@ -180,19 +184,17 @@ send:
 
 	/*
 	 * Set retransmit timer if not currently set.
-	 * Initial value for retransmit timer to tcp_beta*tp->t_srtt,
-	 * with a minimum of TCPTV_MIN and a max of TCPTV_MAX.
+	 * Initial value for retransmit timer to tcp_beta*tp->t_srtt.
 	 * Initialize shift counter which is used for exponential
 	 * backoff of retransmit time.
 	 */
-	if (tp->t_timer[TCPT_REXMT] == 0) {
-		tp->t_timer[TCPT_REXMT] = tcp_beta * tp->t_srtt;
-		if (tp->t_timer[TCPT_REXMT] < TCPTV_MIN)
-			tp->t_timer[TCPT_REXMT] = TCPTV_MIN;
-		if (tp->t_timer[TCPT_REXMT] > TCPTV_MAX)
-			tp->t_timer[TCPT_REXMT] = TCPTV_MAX;
+	if (tp->t_timer[TCPT_REXMT] == 0 && tp->snd_nxt != tp->snd_una) {
+		TCPT_RANGESET(tp->t_timer[TCPT_REXMT],
+		    tcp_beta * tp->t_srtt, TCPTV_MIN, TCPTV_MAX);
+printf("rexmt timer set to %d\n", tp->t_timer[TCPT_REXMT]);
 		tp->t_rxtshift = 0;
 	}
+else printf("REXMT timer is already %d, snd_nxt %x snd_una %x\n", tp->t_timer[TCPT_REXMT], tp->snd_nxt, tp->snd_una);
 
 	/*
 	 * Fill in IP length and desired time to live and
@@ -200,18 +202,22 @@ send:
 	 */
 	((struct ip *)ti)->ip_len = len + sizeof (struct tcpiphdr);
 	((struct ip *)ti)->ip_ttl = TCP_TTL;
-	if (ip_output(m, tp->t_ipopt) == 0)
+	if (ip_output(m, tp->t_ipopt) == 0) {
+printf("ip_output failed\n");
 		return (0);
+	}
 
 	/*
 	 * Data sent (as far as we can tell).
 	 * If this advertises a larger window than any other segment,
-	 * then record its sequence to be used in suppressing messages.
+	 * then remember the size of the advertised window.
 	 * Drop send for purpose of ACK requirements.
 	 */
-	if (win > 0 && SEQ_GT(tp->rcv_nxt+win, tp->rcv_adv))
+	if (win > 0 && SEQ_GT(tp->rcv_nxt+win, tp->rcv_adv)) {
 		tp->rcv_adv = tp->rcv_nxt + win;
+	}
 	tp->t_flags &= ~(TF_ACKNOW|TF_DELACK);
-	tp->snd_max = tp->snd_nxt;
+	if (SEQ_GT(tp->snd_nxt, tp->snd_max))
+		tp->snd_max = tp->snd_nxt;
 	return (1);
 }

@@ -1,4 +1,4 @@
-/*	tcp_input.c	1.38	81/12/09	*/
+/*	tcp_input.c	1.39	81/12/12	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -13,6 +13,7 @@
 #include "../net/ip.h"
 #include "../net/ip_var.h"
 #include "../net/tcp.h"
+#define TCPSTATES
 #include "../net/tcp_fsm.h"
 #include "../net/tcp_seq.h"
 #include "../net/tcp_timer.h"
@@ -21,6 +22,7 @@
 #include "../errno.h"
 
 int	tcpcksum = 1;
+struct	sockaddr_in tcp_in = { AF_INET };
 
 /*
  * TCP input routine, follows pages 65-76 of the
@@ -40,15 +42,17 @@ tcp_input(m0)
 
 COUNT(TCP_INPUT);
 	/*
-	 * Get ip and tcp header together in first mbuf.
-	 * Note: ip leaves ip header in first mbuf.
+	 * Get IP and TCP header together in first mbuf.
+	 * Note: IP leaves IP header in first mbuf.
 	 */
 	m = m0;
 	ti = mtod(m, struct tcpiphdr *);
-	if (((struct ip *)ti)->ip_len > sizeof (struct ip))
+	if (((struct ip *)ti)->ip_hl > (sizeof (struct ip) >> 2))
 		ip_stripoptions((struct ip *)ti, (struct mbuf *)0);
 	if (m->m_len < sizeof (struct tcpiphdr)) {
+printf("m->m_len %d\n", m->m_len);
 		if (m_pullup(m, sizeof (struct tcpiphdr)) == 0) {
+printf("tcp_input: header drop\n");
 			tcpstat.tcps_hdrops++;
 			goto drop;
 		}
@@ -56,7 +60,7 @@ COUNT(TCP_INPUT);
 	}
 
 	/*
-	 * Checksum extended tcp header and data.
+	 * Checksum extended TCP header and data.
 	 */
 	tlen = ((struct ip *)ti)->ip_len;
 	len = sizeof (struct ip) + tlen;
@@ -75,11 +79,12 @@ COUNT(TCP_INPUT);
 	}
 
 	/*
-	 * Check that tcp offset makes sense,
-	 * process tcp options and adjust length.
+	 * Check that TCP offset makes sense,
+	 * process TCP options and adjust length.
 	 */
 	off = ti->ti_off << 2;
 	if (off < sizeof (struct tcphdr) || off > tlen) {
+printf("tcp_input: bad offset\n");
 		tcpstat.tcps_badoff++;
 		goto drop;
 	}
@@ -92,7 +97,7 @@ COUNT(TCP_INPUT);
 
 #if vax
 	/*
-	 * Convert tcp protocol specific fields to host format.
+	 * Convert TCP protocol specific fields to host format.
 	 */
 	ti->ti_seq = ntohl(ti->ti_seq);
 	ti->ti_ack = ntohl(ti->ti_ack);
@@ -108,13 +113,23 @@ COUNT(TCP_INPUT);
 
 	/*
 	 * If the state is CLOSED (i.e., TCB does not exist) then
-	 * all data in the incoming segment is discarded.  (p. 65).
+	 * all data in the incoming segment is discarded.
 	 */
 	if (inp == 0)
 		goto dropwithreset;
 	tp = intotcpcb(inp);
 	if (tp == 0)
 		goto dropwithreset;
+printf("tcp_input: segment seq %x ack %x win %x inp %x flags",
+ti->ti_seq, ti->ti_ack, ti->ti_win, inp);
+if (ti->ti_flags & TH_FIN) printf(" FIN");
+if (ti->ti_flags & TH_SYN) printf(" SYN");
+if (ti->ti_flags & TH_RST) printf(" RST");
+if (ti->ti_flags & TH_PUSH) printf(" PUSH");
+if (ti->ti_flags & TH_ACK) printf(" ACK");
+if (ti->ti_flags & TH_URG) printf(" URG");
+printf("\n");
+printf("tcp_input: "); pseqno(tp);
 	so = inp->inp_socket;
 
 	/*
@@ -144,7 +159,7 @@ COUNT(TCP_INPUT);
 	 * Also initialize tp->snd_nxt to tp->iss+1 and tp->snd_una to tp->iss.
 	 * Fill in remote peer address fields if not previously specified.
 	 * Enter SYN_RECEIVED state, and process any other fields of this
-	 * segment in this state.  (p. 65)
+	 * segment in this state.
 	 */
 	case TCPS_LISTEN:
 		if (tiflags & TH_RST)
@@ -153,12 +168,22 @@ COUNT(TCP_INPUT);
 			goto dropwithreset;
 		if ((tiflags & TH_SYN) == 0)
 			goto drop;
+		tcp_in.sin_addr = ti->ti_src;
+		tcp_in.sin_port = ti->ti_sport;
+		if (in_pcbconnect(inp, (struct sockaddr *)&tcp_in))
+			goto drop;
+		tp->t_template = tcp_template(tp);
+		if (tp->t_template == 0) {
+			in_pcbdisconnect(inp);
+			goto drop;
+		}
 		tp->iss = tcp_iss; tcp_iss += TCP_ISSINCR/2;
 		tp->irs = ti->ti_seq;
 		tcp_sendseqinit(tp);
 		tcp_rcvseqinit(tp);
 		tp->t_state = TCPS_SYN_RECEIVED;
-		in_pcbconnect(inp, ti->ti_src, ti->ti_sport);
+		tp->t_timer[TCPT_KEEP] = TCPTV_KEEP;
+printf("tcp_input: out of LISTEN: ");
 		goto trimthenstep6;
 
 	/*
@@ -186,15 +211,18 @@ COUNT(TCP_INPUT);
 		if ((tiflags & TH_SYN) == 0)
 			goto drop;
 		tp->snd_una = ti->ti_ack;
+		tp->t_timer[TCPT_REXMT] = 0;
 		tp->irs = ti->ti_seq;
 		tcp_rcvseqinit(tp);
 		tp->t_flags |= TF_ACKNOW;
 		if (SEQ_GT(tp->snd_una, tp->iss)) {
+			soisconnected(so);
 			tp->t_state = TCPS_ESTABLISHED;
 			(void) tcp_reass(tp, (struct tcpiphdr *)0);
 			tp->snd_wl1 = ti->ti_seq;
 		} else
 			tp->t_state = TCPS_SYN_RECEIVED;
+printf("tcp_input: out of SYN_SENT: ");
 		goto trimthenstep6;
 
 trimthenstep6:
@@ -210,6 +238,8 @@ trimthenstep6:
 			ti->ti_len = tp->rcv_wnd;
 			ti->ti_flags &= ~TH_FIN;
 		}
+printf("ti->ti_len %d\n", ti->ti_len);
+pseqno(tp);
 		goto step6;
 	}
 
@@ -230,6 +260,7 @@ trimthenstep6:
 			ti->ti_len = 0;
 			ti->ti_flags &= ~(TH_PUSH|TH_FIN);
 		}
+printf("tcp_input %x: window 0, drop text and FIN\n", tp);
 	} else {
 		/*
 		 * If segment begins before rcv_nxt, drop leading
@@ -237,6 +268,7 @@ trimthenstep6:
 		 */
 		if (SEQ_GT(tp->rcv_nxt, ti->ti_seq)) {
 			todrop = tp->rcv_nxt - ti->ti_seq;
+printf("tcp_input %x: drop %d dup bytes\n", tp, todrop);
 			if (tiflags & TH_SYN) {
 				ti->ti_seq++;
 				if (ti->ti_urp > 1) 
@@ -290,6 +322,9 @@ trimthenstep6:
 	case TCPS_SYN_RECEIVED:
 		if (inp->inp_socket->so_options & SO_ACCEPTCONN) {
 			tp->t_state = TCPS_LISTEN;
+			tp->t_timer[TCPT_KEEP] = 0;
+			(void) m_free(dtom(tp->t_template));
+			tp->t_template = 0;
 			in_pcbdisconnect(inp);
 			goto drop;
 		}
@@ -339,10 +374,13 @@ trimthenstep6:
 		if (SEQ_GT(tp->snd_una, ti->ti_ack) ||
 		    SEQ_GT(ti->ti_ack, tp->snd_max))
 			goto dropwithreset;
+		tp->snd_una++;			/* SYN acked */
+		tp->t_timer[TCPT_REXMT] = 0;
 		soisconnected(so);
 		tp->t_state = TCPS_ESTABLISHED;
 		(void) tcp_reass(tp, (struct tcpiphdr *)0);
-		tp->snd_wl1 = tp->ti_seq - 1;
+		tp->snd_wl1 = ti->ti_seq - 1;
+printf("tcp_input: to ESTAB:\n"); pseqno(tp);
 		/* fall into ... */
 
 	/*
@@ -358,20 +396,26 @@ trimthenstep6:
 	case TCPS_FIN_WAIT_2:
 	case TCPS_CLOSE_WAIT:
 	case TCPS_CLOSING:
+	case TCPS_LAST_ACK:
+	case TCPS_TIME_WAIT:
 #define	ourfinisacked	(acked > 0)
 
-		if (SEQ_LT(ti->ti_ack, tp->snd_una))
+		if (SEQ_LEQ(ti->ti_ack, tp->snd_una))
 			break;
 		if (SEQ_GT(ti->ti_ack, tp->snd_max))
 			goto dropafterack;
 		acked = ti->ti_ack - tp->snd_una;
-		if (acked > so->so_snd.sb_cc) {
-			sbflush(&so->so_snd);
+printf("tcp_input: got ack of %d bytes\n", acked);
+		if (acked >= so->so_snd.sb_cc) {
 			acked -= so->so_snd.sb_cc;
-			/* if acked our FIN is acked */
+			/* if acked > 0 our FIN is acked */
+			sbdrop(&so->so_snd, so->so_snd.sb_cc);
+			tp->t_timer[TCPT_REXMT] = 0;
 		} else {
 			sbdrop(&so->so_snd, acked);
 			acked = 0;
+			TCPT_RANGESET(tp->t_timer[TCPT_REXMT],
+			    tcp_beta * tp->t_srtt, TCPTV_MIN, TCPTV_MAX);
 		}
 		tp->snd_una = ti->ti_ack;
 
@@ -380,20 +424,14 @@ trimthenstep6:
 		 * number was acked, update smoothed round trip time.
 		 */
 		if (tp->t_rtt && SEQ_GT(ti->ti_ack, tp->t_rtseq)) {
-			tp->t_srtt =
-			    tcp_beta * tp->t_srtt +
-			    (1 - tcp_beta) * tp->t_rtt;
+			if (tp->t_srtt == 0)
+				tp->t_srtt = tp->t_rtt;
+			else
+				tp->t_srtt =
+				    tcp_alpha * tp->t_srtt +
+				    (1 - tcp_alpha) * tp->t_rtt;
+printf("tcp_input: rtt sampled %d, srtt now %d\n", tp->t_rtt, (int)(100* tp->t_srtt));
 			tp->t_rtt = 0;
-		}
-
-		/*
-		 * Update window information.
-		 */
-		if (SEQ_LT(tp->snd_wl1, ti->ti_seq) ||
-		    tp->snd_wl1==ti->ti_seq && SEQ_LEQ(tp->snd_wl2,ti->ti_seq)) {
-			tp->snd_wnd = ti->ti_win;
-			tp->snd_wl1 = ti->ti_seq;
-			tp->snd_wl2 = ti->ti_ack;
 		}
 
 		switch (tp->t_state) {
@@ -415,9 +453,13 @@ trimthenstep6:
 		 * the segment.
 		 */
 		case TCPS_CLOSING:
-			if (ourfinisacked)
+			if (ourfinisacked) {
 				tp->t_state = TCPS_TIME_WAIT;
-			goto drop;
+				tcp_canceltimers(tp);
+				tp->t_timer[TCPT_2MSL] = 2 * TCPTV_MSL;
+				soisdisconnected(so);
+			}
+			break;
 
 		/*
 		 * The only thing that can arrive in  LAST_ACK state
@@ -426,8 +468,10 @@ trimthenstep6:
 		 * and return.
 		 */
 		case TCPS_LAST_ACK:
-			if (ourfinisacked)
+			if (ourfinisacked) {
+printf("tcp_input: LAST ACK close\n");
 				tcp_close(tp);
+			}
 			goto drop;
 
 		/*
@@ -436,6 +480,7 @@ trimthenstep6:
 		 * it and restart the finack timer.
 		 */
 		case TCPS_TIME_WAIT:
+printf("tcp_input: TIME_WAIT restart timer\n");
 			tp->t_timer[TCPT_2MSL] = 2 * TCPTV_MSL;
 			goto dropafterack;
 		}
@@ -444,9 +489,24 @@ trimthenstep6:
 
 step6:
 	/*
+	 * Update window information.
+	 */
+printf("update win wl1 %x ti->ti_seq %x wl2 %x?", tp->snd_wl1, ti->ti_seq, tp->snd_wl2);
+	if (SEQ_LT(tp->snd_wl1, ti->ti_seq) ||
+	    tp->snd_wl1==ti->ti_seq && SEQ_LEQ(tp->snd_wl2,ti->ti_seq)) {
+printf("yes\n");
+		tp->snd_wnd = ti->ti_win;
+		tp->snd_wl1 = ti->ti_seq;
+		tp->snd_wl2 = ti->ti_ack;
+		if (tp->snd_wnd > 0)
+			tp->t_timer[TCPT_PERSIST] = 0;
+	}
+else printf("no\n");
+
+	/*
 	 * If an URG bit is set in the segment and is greater than the
 	 * current known urgent pointer, then signal the user that the
-	 * remote side has urgent data.  This should not happen
+	 * remote side has out of band data.  This should not happen
 	 * in CLOSE_WAIT, CLOSING, LAST-ACK or TIME_WAIT STATES since
 	 * a FIN has been received from the remote side.  In these states
 	 * we ignore the URG.
@@ -455,7 +515,7 @@ step6:
 		if (SEQ_GT(ti->ti_urp, tp->rcv_up)) {
 			tp->rcv_up = ti->ti_urp;
 #if 0
-			soisurgendata(so);		/* XXX */
+			sohasoutofband(so);		/* XXX */
 #endif
 		}
 
@@ -467,16 +527,15 @@ step6:
 	 * case PRU_RCVD).  If a FIN has already been received on this
 	 * connection then we just ignore the text.
 	 */
-	if (ti->ti_len) {
-		if (TCPS_HAVERCVDFIN(tp->t_state))
-			goto drop;
+	if (ti->ti_len && TCPS_HAVERCVDFIN(tp->t_state) == 0) {
 		off += sizeof (struct ip);		/* drop IP header */
 		m->m_off += off;
 		m->m_len -= off;
 		tiflags = tcp_reass(tp, ti);
 		tp->t_flags |= TF_ACKNOW;		/* XXX TF_DELACK */
-	} else
+	} else {
 		m_freem(m);
+	}
 
 	/*
 	 * If FIN is received then if we haven't received SYN and
@@ -486,9 +545,12 @@ step6:
 	if ((tiflags & TH_FIN)) {
 		if (TCPS_HAVERCVDSYN(tp->t_state) == 0)
 			goto drop;
-		socantrcvmore(so);
-		tp->t_flags |= TF_ACKNOW;
-		tp->rcv_nxt++;
+		if (TCPS_HAVERCVDFIN(tp->t_state) == 0) {
+			socantrcvmore(so);
+			tp->t_flags |= TF_ACKNOW;
+			tp->rcv_nxt++;
+		}
+printf("tcp_input: %x got FIN\n", tp);
 		switch (tp->t_state) {
 
 	 	/*
@@ -514,9 +576,10 @@ step6:
 		 * standard timers.
 		 */
 		case TCPS_FIN_WAIT_2:
-			tp->t_state = TCPS_TIME_WAIT;;
+			tp->t_state = TCPS_TIME_WAIT;
 			tcp_canceltimers(tp);
 			tp->t_timer[TCPT_2MSL] = 2 * TCPTV_MSL;
+			soisdisconnected(so);
 			break;
 
 		/*
@@ -536,17 +599,19 @@ step6:
 
 dropafterack:
 	/*
-	 * Generate an ACK, then drop incoming segment.
+	 * Generate an ACK dropping incoming segment.
 	 * Make ACK reflect our state.
 	 */
+printf("tcp_input: dropafterack\n");
 	if (tiflags & TH_RST)
 		goto drop;
 	tcp_respond(ti, tp->rcv_nxt, tp->snd_nxt, TH_ACK);
 	return;
 
 dropwithreset:
+printf("tcp_input: dropwithreset\n");
 	/*
-	 * Generate a RST, then drop incoming segment.
+	 * Generate a RST, dropping incoming segment.
 	 * Make ACK acceptable to originator of segment.
 	 */
 	if (tiflags & TH_RST)
@@ -561,6 +626,7 @@ dropwithreset:
 	return;
 
 drop:
+printf("tcp_input: drop\n");
 	/*
 	 * Drop space held by incoming segment and return.
 	 */
@@ -638,25 +704,18 @@ COUNT(TCP_REASS);
 	 */
 	insque(ti, q->ti_prev);
 
-	/*
-	 * Advance rcv_next through newly completed sequence space.
-	 */
-	while (ti->ti_seq == tp->rcv_nxt) {
-		tp->rcv_nxt += ti->ti_len;
-		flags = ti->ti_flags & TH_FIN;
-		ti = (struct tcpiphdr *)ti->ti_next;
-		if (ti == (struct tcpiphdr *)tp)
-			break;
-	}
-
 present:
 	/*
-	 * Present data to user.
+	 * Present data to user, advancing rcv_nxt through
+	 * completed sequence space.
 	 */
 	if (tp->t_state < TCPS_ESTABLISHED)
-		return (flags);
+		return (0);
 	ti = tp->seg_next;
-	while (ti != (struct tcpiphdr *)tp && ti->ti_seq < tp->rcv_nxt) {
+	while (ti != (struct tcpiphdr *)tp && ti->ti_seq == tp->rcv_nxt) {
+		tp->rcv_nxt += ti->ti_len;
+		flags = ti->ti_flags & TH_FIN;
+printf("move %d bytes to user; rcv_nxt now %x\n", ti->ti_len, tp->rcv_nxt);
 		remque(ti);
 		sbappend(&so->so_rcv, dtom(ti));
 		ti = (struct tcpiphdr *)ti->ti_next;
@@ -667,6 +726,7 @@ present:
 		sorwakeup(so);
 	return (flags);
 drop:
+printf("tcp_reass drop\n");
 	m_freem(dtom(ti));
 	return (flags);
 }
