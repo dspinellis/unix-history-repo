@@ -25,7 +25,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)primes.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)primes.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -38,14 +38,13 @@ static char sccsid[] = "@(#)primes.c	5.2 (Berkeley) %G%";
  * usage:
  *	primes [start [stop]]
  *
- *	Print primes >= start and <= stop.  If stop is omitted,
+ *	Print primes >= start and < stop.  If stop is omitted,
  *	the value 4294967295 (2^32-1) is assumed.  If start is
  *	omitted, start is read from standard input.
  *
- *	Prints "ouch" if start or stop is > 4294967295 (2^32-1)
- *	or if a non-numeric is read on stdin.
+ *	Prints "ouch" if start or stop is bogus.
  *
- * Validation check: there are 664579 primes between 0 and 10^7
+ * validation check: there are 664579 primes between 0 and 10^7
  */
 
 #include <stdio.h>

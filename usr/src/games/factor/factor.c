@@ -25,7 +25,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)factor.c	4.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)factor.c	4.3 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -38,13 +38,13 @@ static char sccsid[] = "@(#)factor.c	4.2 (Berkeley) %G%";
  * usage:
  *	factor [number] ...
  *
- * With no args, reads numbers from stdin and factors them.
- * With 1 or more args, factors such args.  Factors are printed
- * in assending order, with a leading tab, one per line.
+ * The form of the output is:
  *
- * When more than one arg is supplied, the argument value, left
- * justified is printed before the set of factors.  This is not
- * one for reading values from input for historical reasons.
+ *	number: factor1 factor1 factor2 factor3 factor3 factor3 ...
+ *
+ * where factor1 < factor2 < factor3 < ...
+ *
+ * If no args are given, the list of numbers are read from stdin.
  */
 
 #include <stdio.h>
