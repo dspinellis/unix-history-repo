@@ -1,0 +1,18 @@
+.th WTMP V 9/10/73
+.sh NAME
+wtmp \*- user login history
+.sh DESCRIPTION
+This
+file records all logins and logouts.
+Its format is exactly like utmp(V) except that
+a null user name indicates a logout on the associated
+typewriter, and the typewriter name `x' indicates
+that UNIX was rebooted at that point.
+.s3
+Wtmp is maintained by login(I) and init(VII).
+Neither of these programs creates the file,
+so if it is removed record-keeping is turned off.
+.s3
+This file resides in directory /tmp.
+.sh "SEE ALSO"
+init(VII), login(I)
