@@ -39,6 +39,7 @@ char copyright[] =
 
 #ifndef lint
 static char sccsid[] = "@(#)dumpmain.c	5.16 (Berkeley) 4/24/91";
+static char rcsid[] = "$Header: /b/source/CVS/src/sbin/dump/dumpmain.c,v 1.4 1993/04/20 09:07:41 mycroft Exp $";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -99,7 +100,7 @@ main(argc, argv)
 	level = '0';
 	argv++;
 	argc -= 2;
-	for (cp = *argv++; *cp; cp++) {
+	for (cp = *argv++; cp && *cp; cp++) {
 		switch (*cp) {
 		case '-':
 			continue;

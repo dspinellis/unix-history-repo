@@ -1,4 +1,6 @@
 #	@(#)Makefile	5.12 (Berkeley) 3/7/91
+#
+#	$Header$
 
 #	dump.h			header file
 #	dumpitime.c		reads /etc/dumpdates
@@ -23,7 +25,7 @@ CLEANFILES=dumprmain.o dumprtape.o dumprmt.o rdump
 all: rdump
 
 rdump: ${ROBJS} ${LIBC}
-	${CC} -o ${.TARGET} ${CFLAGS} ${ROBJS}
+	${CC} ${LDFLAGS} -o ${.TARGET} ${ROBJS} ${LDADD}
 
 dumprmain.o: dumpmain.o
 	${CC} -c -DRDUMP ${CFLAGS} ${.CURDIR}/dumpmain.c -o ${.TARGET}

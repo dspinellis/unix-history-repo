@@ -33,6 +33,7 @@
 
 #ifndef lint
 static char sccsid[] = "@(#)dumptape.c	5.18 (Berkeley) 4/24/91";
+static char rcsid[] = "$Header: /b/source/CVS/src/sbin/dump/dumptape.c,v 1.3 1993/03/23 00:27:15 cgd Exp $";
 #endif /* not lint */
 
 #include <sys/param.h>

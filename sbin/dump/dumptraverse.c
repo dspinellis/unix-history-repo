@@ -29,18 +29,11 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
- * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         1       00110
- * --------------------         -----   ----------------------
- *
- * 28 Mar 93    Keith Bostic    Fix bug where max inode not mapped.
- *
  */
 
 #ifndef lint
 static char sccsid[] = "@(#)dumptraverse.c	5.11 (Berkeley) 3/7/91";
+static char rcsid[] = "$Header: /b/source/CVS/src/sbin/dump/dumptraverse.c,v 1.5 1993/06/13 21:08:27 mycroft Exp $";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -114,7 +107,7 @@ mapfiles(maxino, tapesize)
 	register struct dinode *dp;
 	int anydirskipped = 0;
 
-	for (ino = 0; ino <= maxino; ino++) {             /* PATCH 110 */
+	for (ino = 0; ino <= maxino; ino++) {
 		dp = getino(ino);
 		if ((mode = (dp->di_mode & IFMT)) == 0)
 			continue;
@@ -314,6 +307,13 @@ dumpino(dp, ino)
 	if ((mode != IFDIR && mode != IFREG && mode != IFLNK) ||
 	    dp->di_size == 0) {
 		writeheader(ino);
+		return;
+	}
+	if (DFASTLINK(*dp)) {
+		spcl.c_addr[0] = 1;
+		spcl.c_count = 1;
+		writeheader(ino);
+		writerec(dp->di_symlink);
 		return;
 	}
 	if (dp->di_size > NDADDR * sblock->fs_bsize)
