@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)headers.c	5.22 (Berkeley) %G%";
+static char sccsid[] = "@(#)headers.c	5.23 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/param.h>
@@ -45,7 +45,6 @@ chompheader(line, def, e)
 	struct hdrinfo *hi;
 	bool cond = FALSE;
 	BITMAP mopts;
-	extern char *crackaddr();
 	extern ADDRESS *sendto();
 
 	if (tTd(31, 6))
@@ -464,6 +463,7 @@ crackaddr(addr)
 	int copylev;
 	bool qmode;
 	bool putgmac = FALSE;
+	bool quoteit = FALSE;
 	register char *bp;
 	static char buf[MAXNAME];
 
@@ -488,6 +488,20 @@ crackaddr(addr)
 	{
 		if (copylev > 0 || c == ' ')
 			*bp++ = c;
+
+		/* check for characters that may have to be quoted */
+		if (index(".'@,;:[]", c) != NULL)
+		{
+			/*
+			**  If these occur as the phrase part of a <>
+			**  construct, but are not inside of () or already
+			**  quoted, they will have to be quoted.  Note that
+			**  now (but don't actually do the quoting).
+			*/
+
+			if (cmtlev <= 0 && !qmode)
+				quoteit = TRUE;
+		}
 
 		/* check for backslash escapes */
 		if (c == '\\')
@@ -532,11 +546,35 @@ crackaddr(addr)
 		/* check for angle brackets */
 		if (c == '<')
 		{
+			register char *q;
+
 			/* oops -- have to change our mind */
-			bcopy(addr, buf, p - addr);
-			bp = &buf[p - addr];
+			bp = buf;
+			if (quoteit)
+			{
+				*bp++ = '"';
+
+				/* back up over the '<' and any spaces */
+				--p;
+				while (isspace(*--p))
+					continue;
+				p++;
+			}
+			for (q = addr; q < p; )
+			{
+				c = *q++;
+				if (quoteit && c == '"')
+					*bp++ = '\\';
+				*bp++ = c;
+			}
+			if (quoteit)
+			{
+				*bp++ = '"';
+				while ((*bp++ = *p++) != '<')
+					continue;
+			}
 			copylev = 0;
-			putgmac = FALSE;
+			putgmac = quoteit = FALSE;
 			continue;
 		}
 
