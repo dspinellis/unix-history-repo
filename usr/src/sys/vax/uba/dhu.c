@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)dhu.c	4.4 (Berkeley) %G%
+ *	@(#)dhu.c	4.5 (Berkeley) %G%
  */
 
 /*
@@ -59,7 +59,7 @@ struct	uba_driver dhudriver =
 #define	UNIT(x)	(minor(x))
 
 #ifndef PORTSELECTOR
-#define ISPEED	B300
+#define ISPEED	B9600
 #define IFLAGS	(EVENP|ODDP|ECHO)
 #else
 #define ISPEED	B4800
@@ -324,32 +324,11 @@ dhurint(dhu)
 				/* decode diagnostic messages */
 				continue;
 			}
-			if ((tp->t_state & TS_WOPEN) == 0 &&
-			    (tp->t_flags & MDMBUF)) {
-				if (c & DHU_ST_DCD) {
-					tp->t_state &= ~TS_TTSTOP;
-					ttstart(tp);
-				} else if ((tp->t_state & TS_TTSTOP) == 0) {
-					tp->t_state |= TS_TTSTOP;
-					dhustop(tp, 0);
-				}
-			} else if ((c & DHU_ST_DCD) == 0 &&
-				   (dhusoftCAR[dhu] & (1<<line)) == 0) {
-				if ((tp->t_state & TS_WOPEN) == 0 &&
-				    (tp->t_flags & NOHANG) == 0) {
-					gsignal(tp->t_pgrp, SIGHUP);
-					gsignal(tp->t_pgrp, SIGCONT);
-					(void) dhumctl((dhu<<4)|line,
-								DHU_OFF, DMSET);
-					ttyflush(tp, FREAD|FWRITE);
-				}
-				tp->t_state &= ~TS_CARR_ON;
-			} else {
-				if ((tp->t_state & TS_CARR_ON) == 0) {
-					tp->t_state |= TS_CARR_ON;
-					wakeup((caddr_t)&tp->t_rawq);
-				}
-			}
+			if (c & DHU_ST_DCD)
+				(void)(*linesw[tp->t_line].l_modem)(tp, 1);
+			else if ((dhusoftCAR[dhu] & (1<<line)) == 0 &&
+			    (*linesw[tp->t_line].l_modem)(tp, 0) == 0)
+				(void) dhumctl((dhu<<4)|line, DHU_OFF, DMSET);
 			continue;
 		}
 		if ((tp->t_state&TS_ISOPEN) == 0) {
@@ -357,7 +336,7 @@ dhurint(dhu)
 #ifdef PORTSELECTOR
 			if ((tp->t_state&TS_WOPEN) == 0)
 #endif
-			continue;
+				continue;
 		}
 		if (c & DHU_RB_PE)
 			if ((tp->t_flags&(EVENP|ODDP)) == EVENP ||

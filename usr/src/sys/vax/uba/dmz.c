@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)dmz.c	6.1 (Berkeley) %G%
+ *	@(#)dmz.c	6.2 (Berkeley) %G%
  */
 
 /*
@@ -72,6 +72,14 @@ struct {
 char dmz_speeds[] = {
 	0, 0, 1, 2, 3, 4, 0, 5, 6, 7, 010, 012, 014, 016, 017, 0 
 };
+
+#ifndef	PORTSELECTOR
+#define	ISPEED	B9600
+#define	IFLAGS	(EVENP|ODDP|ECHO)
+#else
+#define	ISPEED	B4800
+#define	IFLAGS	(EVENP|ODDP)
+#endif
 
 #ifndef lint
 int ndmz = NDMZLINES;		/* Used by pstat/iostat */
@@ -203,10 +211,8 @@ dmzopen(device, flag)
 
 	if ((tp->t_state & TS_ISOPEN) == 0) {
 		ttychars(tp);
-		if (tp->t_ispeed == 0) {
-			tp->t_ispeed = tp->t_ospeed = B300;
-			tp->t_flags = ODDP | EVENP | ECHO;
-		}
+		tp->t_ispeed = tp->t_ospeed = ISPEED;
+		tp->t_flags = IFLAGS;
 		dmzparam(unit);
 		dmz_softc[unit].dmz_state = 0;
 	}
@@ -399,7 +405,7 @@ dmzrint(controller, octet)
 	register struct tty *tp0;
 	register int unit;
 	register struct uba_device *ui;
-	int overrun, priority;
+	int overrun;
 
 	overrun = 0;
 	ui = dmzinfo[controller];
@@ -412,35 +418,27 @@ dmzrint(controller, octet)
 		unit = (character >> 8) & 07;	/* unit is bits 8-10 of rb */
 		tp = tp0 + (octet * 8 + unit);
 
-		if (character & DMZ_DSC) {
-			if ((dmzsoftCAR[controller] & (1 << (octet * 8 + unit))) == 0) {
-				priority = spl5();
-				dmz_addr->octet[octet].octet_csr = DMZ_IE | IR_RMS | unit;
-				if (dmz_addr->octet[octet].octet_rms & DMZ_CAR &&
-				    (tp->t_state & TS_CARR_ON) == 0) {
-					tp->t_state |= TS_CARR_ON;
-					wakeup((caddr_t) &tp->t_rawq);
-				} else {
-					if (tp->t_state & TS_CARR_ON) {
-						gsignal(tp->t_pgrp, SIGHUP);
-						gsignal(tp->t_pgrp, SIGCONT);
-						dmz_addr->octet[octet].octet_csr =
-						   DMZ_IE | IR_LCTMR | unit;
-						dmz_addr->octet[octet].octet_lctmr =
-						   dmz_addr->octet[octet].octet_lctmr &
-						   ((DMZ_OFF<<8) | 0xff);
-						ttyflush(tp, FREAD|FWRITE);
-					}
-					tp->t_state &= ~TS_CARR_ON;
-				}
-				splx(priority);
+		if (character & DMZ_DSC &&
+		    (dmzsoftCAR[controller] & (1 << (octet * 8 + unit))) == 0) {
+			dmz_addr->octet[octet].octet_csr = DMZ_IE | IR_RMS | unit;
+			if (dmz_addr->octet[octet].octet_rms & DMZ_CAR)
+				(void)(*linesw[tp->t_line].l_modem)(tp, 1);
+			else if ((*linesw[tp->t_line].l_modem)(tp, 0) == 0) {
+				dmz_addr->octet[octet].octet_csr =
+				   DMZ_IE | IR_LCTMR | unit;
+				dmz_addr->octet[octet].octet_lctmr =
+				   dmz_addr->octet[octet].octet_lctmr &
+				   ((DMZ_OFF<<8) | 0xff);
 			}
 			continue;
 		}
 
-		if ((tp->t_state & TS_ISOPEN) == 0) {
-			wakeup((caddr_t) tp);
-			continue;
+		if ((tp->t_state&TS_ISOPEN)==0) {
+			wakeup((caddr_t)&tp->t_rawq);
+#ifdef PORTSELECTOR
+			if ((tp->t_state&TS_WOPEN) == 0)
+#endif
+				continue;
 		}
 
 		if (character & DMZ_PE) {
@@ -743,7 +741,7 @@ dmzmctl(device, bits, how)
 	dmz_addr->octet[octet].octet_csr = DMZ_IE | IR_LCTMR | (unit & 07);
 	temp = dmz_addr->octet[octet].octet_lctmr;
 	modem_status |= ((temp>>8) & (0x1f));
-	line_control = (temp & (0x1f));
+	line_control = (temp & (0x3f));
 
 	if (line_control & DMZ_BRK)
 		modem_status |= DMZ_BRK;

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)dh.c	6.11 (Berkeley) %G%
+ *	@(#)dh.c	6.12 (Berkeley) %G%
  */
 
 #include "dh.h"
@@ -55,7 +55,7 @@ struct	uba_driver dmdriver =
 	{ dmprobe, 0, dmattach, 0, dmstd, "dm", dminfo };
 
 #ifndef	PORTSELECTOR
-#define	ISPEED	B300
+#define	ISPEED	B9600
 #define	IFLAGS	(EVENP|ODDP|ECHO)
 #else
 #define	ISPEED	B4800
@@ -216,15 +216,9 @@ dhopen(dev, flag)
 	 */
 	if ((tp->t_state&TS_ISOPEN) == 0) {
 		ttychars(tp);
-#ifndef PORTSELECTOR
-		if (tp->t_ispeed == 0) {
-#endif
-			tp->t_ispeed = ISPEED;
-			tp->t_ospeed = ISPEED;
-			tp->t_flags = IFLAGS;
-#ifndef PORTSELECTOR
-		}
-#endif
+		tp->t_ispeed = ISPEED;
+		tp->t_ospeed = ISPEED;
+		tp->t_flags = IFLAGS;
 		dhparam(unit);
 	}
 	/*
@@ -297,13 +291,12 @@ dhrint(dh)
 	while ((c = addr->dhrcr) < 0) {
 		tp = tp0 + ((c>>8)&0xf);
 		dhchars[dh]++;
-#ifndef PORTSELECTOR
 		if ((tp->t_state&TS_ISOPEN)==0) {
-#else
-		if ((tp->t_state&(TS_ISOPEN|TS_WOPEN))==0) {
+			wakeup((caddr_t)&tp->t_rawq);
+#ifdef PORTSELECTOR
+			if ((tp->t_state&TS_WOPEN) == 0)
 #endif
-			wakeup((caddr_t)tp);
-			continue;
+				continue;
 		}
 		if (c & DH_PE)
 			if ((tp->t_flags&(EVENP|ODDP))==EVENP
@@ -759,30 +752,11 @@ dmintr(dm)
 		if (addr->dmcsr&DM_CF) {
 			unit = addr->dmcsr & 0xf;
 			tp = &dh11[(dm << 4) + unit];
-			wakeup((caddr_t)&tp->t_rawq);
-			if ((tp->t_state&TS_WOPEN) == 0 &&
-			    (tp->t_flags & MDMBUF)) {
-				if (addr->dmlstat & DML_CAR) {
-					tp->t_state &= ~TS_TTSTOP;
-					ttstart(tp);
-				} else if ((tp->t_state&TS_TTSTOP) == 0) {
-					tp->t_state |= TS_TTSTOP;
-					dhstop(tp, 0);
-				}
-			} else if ((addr->dmlstat & DML_CAR)==0) {
-				if ((tp->t_state & TS_CARR_ON) &&
-				    (tp->t_flags & NOHANG) == 0 &&
-				    (dhsoftCAR[dm] & (1<<unit)) == 0) {
-					if (tp->t_state & TS_ISOPEN) {
-						gsignal(tp->t_pgrp, SIGHUP);
-						gsignal(tp->t_pgrp, SIGCONT);
-						addr->dmlstat = 0;
-						ttyflush(tp, FREAD|FWRITE);
-					}
-					tp->t_state &= ~TS_CARR_ON;
-				}
-			} else
-				tp->t_state |= TS_CARR_ON;
+			if (addr->dmlstat & DML_CAR)
+				(void)(*linesw[tp->t_line].l_modem)(tp, 1);
+			else if ((dhsoftCAR[dm] & (1<<unit)) == 0 &&
+			    (*linesw[tp->t_line].l_modem)(tp, 0) == 0)
+				addr->dmlstat = 0;
 		}
 		addr->dmcsr = DM_IE|DM_SE;
 	}
