@@ -4,7 +4,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)READ_ME	8.71 (Berkeley) %G%
+#	@(#)READ_ME	8.72 (Berkeley) %G%
 #
 
 This directory contains the source files for sendmail.
@@ -13,23 +13,23 @@ For detailed instructions, please read the document ../doc/op.me:
 
 	eqn ../doc/op.me | pic | ditroff -me
 
+DO NOT USE MAKE to compile sendmail -- instead, use the "makesendmail"
+script located in the src directory.  It will find an appropriate
+Makefile, and create an appropriate obj.* subdirectory so that
+multiplatform support works easily.
+
 The Makefile is for the new (4.4BSD) Berkeley make and uses syntax
 that is not recognized by older makes.  It also has assumptions
 about the 4.4 file system layout built in.  See below for details
 about other Makefiles.
 
-There is also a Makefile.dist which is much less clever, but works on
-the old traditional make.  You can use this using:
+If you are porting to a new architecture for which there is no existing
+Makefile, you might start with Makefile.dist.  This works on the old
+traditional make, but isn't customized for any particular architecture.
 
-	make -f Makefile.dist
-
-**************************************************
-**  Read below for more details of Makefiles.	**
-**************************************************
-
-There is also a shell script (makesendmail) that tries to be clever
-about using object subdirectories.  It's pretty straightforward, and
-may help if you share a source tree among different architectures.
+	**************************************************
+	**  Read below for more details of Makefiles.	**
+	**************************************************
 
 **************************************************************************
 **  IMPORTANT:  DO NOT USE OPTIMIZATION (``-O'') IF YOU ARE RUNNING	**
@@ -51,6 +51,14 @@ very suspicious of gcc -O.
 | MAKEFILES |
 +-----------+
 
+By far, the easiest way to compile sendmail is to use the "makesendmail"
+script.  This uses the "uname" command to figure out what architecture
+you are on and selects a proper Makefile accordingly.  It also creates
+a subdirectory per object format, so that multiarchitecture support is
+easy.  In general this should be all you need.  However, if for some
+reason this doesn't work (e.g., NeXT systems don't have the "uname"
+command) you may have to set up your compile environment by hand.
+
 The "Makefile"s in these directories are from 4.4 BSD, and hence
 really only work properly if you are on a 4.4 system.  In particular,
 they use new syntax that will not be recognized on old make programs,
@@ -62,17 +70,15 @@ outside of the sendmail tree.
 Instead, you should use one of the other Makefiles, such as
 Makefile.SunOS for a SunOS system, and so forth.  These should
 work with the version of make that is appropriate for that
-system.
-
-There are a bunch of other Makefiles for other systems with names
-like Makefile.HPUX for an HP-UX system.  They use the version of
-make that is native for that system.  These are the Makefiles that
-I use, and they have "Berkeley quirks" in them.  I can't guarantee
-that they will work unmodified in your environment.  Many of them
-include -I/usr/sww/include/db and -L/usr/sww/lib -- this is Berkeley's
-location (the ``Software Warehouse'') for the new database libraries,
-described below.  You don't have to remove these definitions if you
-don't have these directories.
+system.  All other Makefiles are in the "src/Makefiles" subdirectory.
+They use the version of make that is native for that system.  These
+are the Makefiles that I use, and they have "Berkeley quirks" in them.
+I can't guarantee that they will work unmodified in your environment.
+In particular, Many of them include -I/usr/sww/include/db and
+-L/usr/sww/lib -- these are Berkeley's locations in the ``Software
+Warehouse'' for the new database libraries, described below.  You don't
+have to remove these definitions if you don't have these directories,
+but you may have to remove -DNEWDB from the DBMDEF definition.
 
 Please look for an appropriate Makefile before you start trying to
 compile with Makefile or Makefile.dist.
@@ -108,10 +114,11 @@ The three options are NEWDB (the new Berkeley DB package), NDBM (the
 older DBM implementation -- the very old V7 implementation is no
 longer supported), and NIS (Network Information Services).  Used alone
 these just include the support they indicate.  [If you are using NEWDB,
-get the latest version from FTP.CS.Berkeley.EDU in /ucb/4bsd.  DO NOT
-use the version from the Net2 distribution!  However, if you are on
-BSD/386 or 386BSD-based systems, use the one that already exists
-on your system.  You may need to #define OLD_NEWDB 1 to do this.]
+get the latest version from FTP.CS.Berkeley.EDU in /ucb/4bsd/db.tar.Z
+(or db.tar.gz).  DO NOT use the version from the Net2 distribution!
+However, if you are on BSD/386 or 386BSD-based systems, use the one
+that already exists on your system.  You may need to #define OLD_NEWDB
+1 to do this.]
 
 [NOTE WELL: it is CRITICAL that you remove ndbm.o from libdb.a and
 ndbm.h from the appropriate include directories if you want to get
@@ -138,8 +145,12 @@ or the existance of /var/yp/Makefile), sendmail adds the special
 tokens "YP_LAST_MODIFIED" and "YP_MASTER_NAME", both of which are
 required if the NDBM file is to be used as an NIS map.
 
-All of -DNEWDB, -DNDBM, and -DNIS are normally defined in the DBMDEF
-line in the Makefile.
+There is also preliminary support for NIS+ (-DNISPLUS), Hesiod
+(-DHESIOD), and NetInfo (-DNETINFO).  These have not been well
+tested.
+
+All of -DNEWDB, -DNDBM, -DNIS, -DNISPLUS, -DHESIOD, and -DNETINFO are
+normally defined in the DBMDEF line in the Makefile.
 
 
 +---------------+
@@ -890,4 +901,4 @@ version.c	The version number and information about this
 
 Eric Allman
 
-(Version 8.71, last update %G% 16:46:51)
+(Version 8.72, last update %G% 14:13:06)
