@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)inode.h	7.19 (Berkeley) %G%
+ *	@(#)inode.h	7.20 (Berkeley) %G%
  */
 
 #include <ufs/ufs/dinode.h>
@@ -38,7 +38,7 @@ struct inode {
 	struct	lockf *i_lockf;	/* head of byte-level lock list */
 	long	i_diroff;	/* offset in dir, where we found last entry */
 	off_t	i_endoff;	/* end of useful stuff in directory */
-	u_quad	i_modrev;	/* revision level for lease */
+	u_quad_t i_modrev;	/* revision level for lease */
 	pid_t	i_lockholder;	/* DEBUG: holder of inode lock */
 	pid_t	i_lockwaiter;	/* DEBUG: latest blocked for inode lock */
 	long	i_spare[16];	/* spares to round up to 256 bytes */
@@ -49,10 +49,14 @@ struct inode {
 #define	i_nlink		i_din.di_nlink
 #define	i_uid		i_din.di_uid
 #define	i_gid		i_din.di_gid
-#if BYTE_ORDER == LITTLE_ENDIAN || defined(tahoe) /* ugh! -- must be fixed */
+#ifdef _NOQUAD
+#define i_size	i_din.di_qsize.val[_QUAD_LOWWORD]
+#else
+#define i_size	i_din.di_qsize
+#endif
+#if defined(tahoe) /* ugh! -- must be fixed */
+#undef i_size
 #define	i_size		i_din.di_qsize.val[0]
-#else /* BYTE_ORDER == BIG_ENDIAN */
-#define	i_size		i_din.di_qsize.val[1]
 #endif
 #define	i_db		i_din.di_db
 #define	i_ib		i_din.di_ib
@@ -118,8 +122,10 @@ extern int		vttoif_tab[];
 		(ip)->i_flag |= IMOD; \
 		if ((ip)->i_flag&IACC) \
 			(ip)->i_atime = (t1)->tv_sec; \
-		if ((ip)->i_flag&IUPD) \
+		if ((ip)->i_flag&IUPD) { \
 			(ip)->i_mtime = (t2)->tv_sec; \
+			INCRQUAD((ip)->i_modrev); \
+		} \
 		if ((ip)->i_flag&ICHG) \
 			(ip)->i_ctime = time.tv_sec; \
 		(ip)->i_flag &= ~(IACC|IUPD|ICHG); \
