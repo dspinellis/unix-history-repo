@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)cap_mkdb.c	1.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)cap_mkdb.c	1.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -28,7 +28,7 @@ static char sccsid[] = "@(#)cap_mkdb.c	1.4 (Berkeley) %G%";
 #include <unistd.h>
 
 static void	 db_build __P((char **));
-static void	 err __P((const char *, ...));
+static void	 err __P((int, const char *, ...));
 static void	 getnamefield __P((char **, char *));
 static void	 usage __P((void));
 
@@ -74,7 +74,7 @@ main(argc, argv)
 
 #define CAPDBNAMEEXTLEN		3	/* ".db" */
 	if ((capdb = malloc(strlen(outname) + CAPDBNAMEEXTLEN + 1)) == NULL)
-		err("%s", strerror(errno));
+		err(1, "%s", strerror(errno));
 	(void)sprintf(capdb, "%s.db", outname);
 
         db_build(inputfiles);
@@ -101,13 +101,12 @@ db_build(inputfiles)
 	DB *capdbp;
 	DBT key, data;
 	size_t lastlen, bplen;
-	int st;
+	int st, stdb, i;
 	char *cp, *np, *bp, *nf, namebuf[NBUFSIZ];
-	int i;
-
+	
 	if ((capdbp = dbopen(capdb, O_CREAT | O_TRUNC | O_WRONLY, 
             DEFFILEMODE, DB_HASH, NULL)) == NULL)
-		err("%s: %s", capdb, strerror(errno));
+		err(1, "%s: %s", capdb, strerror(errno));
 	docapdbunlink = 1;
 	
 	lastlen = 0;
@@ -120,7 +119,7 @@ db_build(inputfiles)
 		if ((bplen = strlen(bp)) > lastlen) {
 			if ((data.data =
 			    realloc(data.data, bplen + 2)) == NULL)
-				err("%s", strerror(errno));
+				err(1, "%s", strerror(errno));
 			lastlen = bplen;
 		}
 
@@ -132,10 +131,14 @@ db_build(inputfiles)
 		data.size = bplen + 2;
 		key.data = nf;
 		key.size = strlen(nf) + 1;
-		if (capdbp->put(capdbp, &key, &data, 0) < 0)
-			err("put: %s", strerror(errno));
-		
-		printf("Hashed %d records.\r", i++);
+		if ((stdb = capdbp->put(capdbp, &key, &data, R_NOOVERWRITE))
+		    < 0)
+			err(1, "put: %s", strerror(errno));
+		if (stdb == 1) {
+			err(0, "put: record '%s' already exists -- only first reference is stored", nf);
+			continue;
+		}
+		printf("Hashed %d capability records.\r", i++);
 		fflush(stdout);
 
 		/*
@@ -151,8 +154,13 @@ db_build(inputfiles)
 			if (*cp == ':' || *cp == '|') {
 				*np = '\0';
 				key.size = strlen(namebuf) + 1;
-				if (capdbp->put(capdbp, &key, &data, 0) < 0)
-					err("put: %s", strerror(errno));
+				if ((stdb = 
+				    capdbp->put(capdbp, &key, &data, 
+                   	  	    R_NOOVERWRITE)) < 0)
+					err(1, "put: %s", strerror(errno));
+				if (stdb == 1)
+					err(0, "put: record '%s' already exists -- only first reference is stored.", 
+					    namebuf);
 				np = namebuf;
 				continue;
 			}	      	      
@@ -160,11 +168,11 @@ db_build(inputfiles)
 		}
 	}
 	if (capdbp->close(capdbp) < 0)
-		err("%s", strerror(errno));
+		err(1, "%s", strerror(errno));
 	if (st == -1)
-		err("%s", strerror(errno));
+		err(1, "%s", strerror(errno));
 	if (st == -2)
-		err("potential reference loop detected");
+		err(1, "potential reference loop detected");
 	free(data.data);
 	free(nf);
 	free(bp);
@@ -186,7 +194,7 @@ getnamefield(nf, bp)
 
 	if ((newsize = cp - bp + 1) > nfsize) {
 		if ((*nf = realloc(*nf, newsize)) == NULL)
-			err("%s", strerror(errno));
+			err(1, "%s", strerror(errno));
 		nfsize = newsize;
 	}
 	(void)strcpy(*nf, bp);
@@ -209,7 +217,7 @@ usage()
 
 void
 #if __STDC__
-err(const char *fmt, ...)
+err(int fatal, const char *fmt, ...)
 #else
 err(fmt, va_alist)
 	char *fmt;
@@ -222,12 +230,14 @@ err(fmt, va_alist)
 #else
 	va_start(ap);
 #endif
+	(void)fprintf(stderr, "\n");
 	(void)fprintf(stderr, "cap_mkdb: ");
 	(void)vfprintf(stderr, fmt, ap);
 	va_end(ap);
 	(void)fprintf(stderr, "\n");
-	if (docapdbunlink)
-		(void)unlink(capdb);
-	exit(1);
-	/* NOTREACHED */
+	if (fatal) {
+		if (docapdbunlink)
+			(void)unlink(capdb);
+		exit(1);
+	}
 }
