@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)param.c	7.11 (Berkeley) %G%
+ *	@(#)param.c	7.12 (Berkeley) %G%
  */
 
 #ifndef lint
@@ -37,6 +37,11 @@ char copyright[] =
 #include "../sys/mbuf.h"
 #include "../ufs/quota.h"
 #include "../sys/kernel.h"
+#ifdef SYSVSHM
+#include "machine/vmparam.h"
+#include "../sys/shm.h"
+#endif
+
 /*
  * System parameter formulae.
  *
@@ -56,14 +61,34 @@ int	tickadj = 240000 / (60 * HZ);		/* can adjust 240ms in 60s */
 struct	timezone tz = { TIMEZONE, DST };
 #define	NPROC (20 + 8 * MAXUSERS)
 int	nproc = NPROC;
-int	ntext = 36 + MAXUSERS;
-#define NVNODE ((NPROC + 16 + MAXUSERS) + 32)
+#define	NTEXT (36 + MAXUSERS)
+int	ntext = NTEXT;
+#define NVNODE (NPROC + NTEXT + 300)
 int	desiredvnodes = NVNODE;
 int	nfile = 16 * (NPROC + 16 + MAXUSERS) / 10 + 32;
 int	ncallout = 16 + NPROC;
 int	nclist = 60 + 12 * MAXUSERS;
 int     nmbclusters = NMBCLUSTERS;
 int	fscale = FSCALE;	/* kernel uses `FSCALE', user uses `fscale' */
+
+/*
+ * Values in support of System V compatible shared memory.
+ */
+#ifdef SYSVSHM
+#define	SHMMAX	(SHMMAXPGS*NBPG)
+#define SHMMIN	1
+#define SHMMNI	32			/* <= SHMMMNI in shm.h */
+#define	SHMSEG	8
+#define SHMALL	(SHMMAXPGS/CLSIZE)
+
+struct	shminfo shminfo = {
+	SHMMAX,
+	SHMMIN,
+	SHMMNI,
+	SHMSEG,
+	SHMALL
+};
+#endif
 
 /*
  * These are initialized at bootstrap time
