@@ -22,12 +22,15 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)snscore.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)snscore.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <stdio.h>
+#include <sys/types.h>
 #include <pwd.h>
-char *recfile = "/usr/games/lib/snakerawscores";
+#include "pathnames.h"
+
+char *recfile = _PATH_RAWSCORES;
 #define MAXPLAYERS 256
 
 struct	passwd	*getpwuid();

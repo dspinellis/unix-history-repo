@@ -12,7 +12,7 @@
  * from this software without specific prior written permission.
  * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
- * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
 
 #ifndef lint
@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)snake.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)snake.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -39,20 +39,7 @@ static char sccsid[] = "@(#)snake.c	5.6 (Berkeley) %G%";
 #include <sys/param.h>
 #include <pwd.h>
 #include "snake.h"
-
-	/*
-	 * This is the data file for scorekeeping.
-	 */
-#ifndef SNAKERAWSCORES
-#define SNAKERAWSCORES	"/usr/games/lib/snakerawscores"
-#endif
-
-	/*
-	 * If it exists, a log is kept here.  Otherwise it isn't.
-	 */
-#ifndef LOGFILE
-#define LOGFILE	"/usr/games/lib/snake.log"
-#endif
+#include "pathnames.h"
 
 #define PENALTY  10	/* % penalty for invoking spacewarp	*/
 
@@ -466,7 +453,7 @@ int	iscore, flag;
 	/*
 	 * Neg uid, 0, and 1 cannot have scores recorded.
 	 */
-	if ((uid=getuid()) > 1 && (rawscores=open(SNAKERAWSCORES,2))>=0) {
+	if ((uid=getuid()) > 1 && (rawscores=open(_PATH_RAWSCORES,2))>=0) {
 		/* Figure out what happened in the past */
 		read(rawscores, &allbscore, sizeof(short));
 		read(rawscores, &allbwho, sizeof(short));
@@ -866,7 +853,7 @@ char *msg;
 	FILE *logfile;
 	long t;
 
-	if ((logfile=fopen(LOGFILE, "a")) != NULL) {
+	if ((logfile=fopen(_PATH_LOGFILE, "a")) != NULL) {
 		time(&t);
 		fprintf(logfile, "%s $%d %dx%d %s %s", getlogin(), cashvalue, lcnt, ccnt, msg, ctime(&t));
 		fclose(logfile);
