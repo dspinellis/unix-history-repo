@@ -1,0 +1,51 @@
+.pa 1
+.he 'PIPE (II)'1/15/73'PIPE (II)'
+.ti 0
+NAME		pipe -- create a pipe
+.sp
+.ti 0
+SYNOPSIS	sys pipe	/ pipe = 42.; not in assembler
+.br
+(file descriptor in r0)
+.sp
+.ti 0
+DESCRIPTION	The
+pipe____
+system call
+creates an I/O mechanism called a pipe.
+The file descriptor returned can
+be used in both read and write operations.
+When the pipe is written,
+the data is buffered up to 504 bytes
+at which time the writing process is suspended.
+A read on the pipe will pick up the buffered data.
+.sp
+It is assumed that after the
+pipe____ has been set up,
+two (or more)
+cooperating processes
+(created by subsequent fork____ calls)
+will pass data through the
+pipe with read____ and write_____ calls.
+
+The shell has a syntax
+to set up a linear array of processes
+connected by pipes.
+.sp
+Read calls on an empty
+pipe (no buffered data) with only one end
+(no synonymous file
+descriptors resulting from fork____ or dup___)
+return an end-of-file.
+Write calls under similar conditions are ignored.
+
+.ti 0
+SEE ALSO	sh(I), read(II), write(II), fork(II)
+.sp
+.ti 0
+DIAGNOSTICS	The error
+bit (c-bit) is set if
+10 files are already open.
+.sp
+.ti 0
+BUGS		--
