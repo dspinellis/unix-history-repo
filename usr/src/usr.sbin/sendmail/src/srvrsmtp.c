@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)srvrsmtp.c	6.15 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	6.16 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)srvrsmtp.c	6.15 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	6.16 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -114,7 +114,7 @@ smtp(e)
 	CurHostName = RealHostName;
 	setproctitle("srvrsmtp %s", CurHostName);
 	expand("\201e", inp, &inp[sizeof inp], e);
-	message("220", "%s", inp);
+	message("220 %s", inp);
 	SmtpPhase = "startup";
 	sendinghost = NULL;
 	gothello = FALSE;
@@ -140,7 +140,7 @@ smtp(e)
 		if (p == NULL)
 		{
 			/* end of file, just die */
-			message("421", "%s Lost input channel from %s",
+			message("421 %s Lost input channel from %s",
 				MyHostName, CurHostName);
 #ifdef LOG
 			if (LogLevel > 1)
@@ -196,7 +196,7 @@ smtp(e)
 				**  or connected to an echo server
 				*/
 
-				message("553", "%s config error: mail loops back to myself",
+				message("553 %s config error: mail loops back to myself",
 					MyHostName);
 				break;
 			}
@@ -222,23 +222,23 @@ smtp(e)
 			/* check for validity of this command */
 			if (!gothello && bitset(PRIV_NEEDMAILHELO, PrivacyFlags))
 			{
-				message("503", "Polite people say HELO first");
+				message("503 Polite people say HELO first");
 				break;
 			}
 			if (gotmail)
 			{
-				message("503", "Sender already specified");
+				message("503 Sender already specified");
 				break;
 			}
 			if (InChild)
 			{
 				errno = 0;
-				syserr("Nested MAIL command: MAIL %s", p);
+				syserr("503 Nested MAIL command: MAIL %s", p);
 				finis();
 			}
 			if (!enoughspace())
 			{
-				message("452", "Insufficient disk space; try again later");
+				message("452 Insufficient disk space; try again later");
 				break;
 			}
 
@@ -264,7 +264,7 @@ smtp(e)
 			}
 			QuickAbort = TRUE;
 			setsender(p, e);
-			message("250", "Sender ok");
+			message("250 Sender ok");
 			gotmail = TRUE;
 			break;
 
@@ -297,11 +297,11 @@ smtp(e)
 			/* no errors during parsing, but might be a duplicate */
 			e->e_to = p;
 			if (!bitset(QBADADDR, a->q_flags))
-				message("250", "Recipient ok");
+				message("250 Recipient ok");
 			else
 			{
 				/* punt -- should keep message in ADDRESS.... */
-				message("550", "Addressee unknown");
+				message("550 Addressee unknown");
 			}
 			e->e_to = NULL;
 			break;
@@ -310,12 +310,12 @@ smtp(e)
 			SmtpPhase = "DATA";
 			if (!gotmail)
 			{
-				message("503", "Need MAIL command");
+				message("503 Need MAIL command");
 				break;
 			}
 			else if (e->e_nrcpts <= 0)
 			{
-				message("503", "Need RCPT (recipient)");
+				message("503 Need RCPT (recipient)");
 				break;
 			}
 
@@ -362,7 +362,7 @@ smtp(e)
 
 			/* issue success if appropriate and reset */
 			if (Errors == 0 || HoldErrs)
-				message("250", "Ok");
+				message("250 Ok");
 			else
 				e->e_flags &= ~EF_FATALERRS;
 
@@ -378,7 +378,7 @@ smtp(e)
 			break;
 
 		  case CMDRSET:		/* rset -- reset state */
-			message("250", "Reset state");
+			message("250 Reset state");
 			if (InChild)
 				finis();
 
@@ -394,14 +394,14 @@ smtp(e)
 			if (bitset(vrfy ? PRIV_NOVRFY : PRIV_NOEXPN,
 						PrivacyFlags))
 			{
-				message("502", "That's none of your business");
+				message("502 That's none of your business");
 				break;
 			}
 			else if (!gothello &&
 				 bitset(vrfy ? PRIV_NEEDVRFYHELO : PRIV_NEEDEXPNHELO,
 						PrivacyFlags))
 			{
-				message("503", "I demand that you introduce yourself first");
+				message("503 I demand that you introduce yourself first");
 				break;
 			}
 			if (runinchild(vrfy ? "SMTP-VRFY" : "SMTP-EXPN", e) > 0)
@@ -419,11 +419,11 @@ smtp(e)
 			break;
 
 		  case CMDNOOP:		/* noop -- do nothing */
-			message("200", "OK");
+			message("200 OK");
 			break;
 
 		  case CMDQUIT:		/* quit -- leave mail */
-			message("221", "%s closing connection", MyHostName);
+			message("221 %s closing connection", MyHostName);
 			if (InChild)
 				ExitStat = EX_QUIT;
 			finis();
@@ -431,12 +431,12 @@ smtp(e)
 		  case CMDVERB:		/* set verbose mode */
 			Verbose = TRUE;
 			SendMode = SM_DELIVER;
-			message("200", "Verbose mode");
+			message("200 Verbose mode");
 			break;
 
 		  case CMDONEX:		/* doing one transaction only */
 			OneXact = TRUE;
-			message("200", "Only one transaction");
+			message("200 Only one transaction");
 			break;
 
 # ifdef SMTPDEBUG
@@ -448,7 +448,7 @@ smtp(e)
 		  case CMDDBGDEBUG:	/* set debug mode */
 			tTsetup(tTdvect, sizeof tTdvect, "0-99.1");
 			tTflag(p);
-			message("200", "Debug set");
+			message("200 Debug set");
 			break;
 
 # else /* not SMTPDEBUG */
@@ -466,12 +466,12 @@ smtp(e)
 # endif /* SMTPDEBUG */
 
 		  case CMDERROR:	/* unknown command */
-			message("500", "Command unrecognized");
+			message("500 Command unrecognized");
 			break;
 
 		  default:
 			errno = 0;
-			syserr("smtp: unknown code %d", c->cmdcode);
+			syserr("500 smtp: unknown code %d", c->cmdcode);
 			break;
 		}
 	}
@@ -511,7 +511,7 @@ skipword(p, w)
 	if (*p != ':')
 	{
 	  syntax:
-		message("501", "Syntax error");
+		message("501 Syntax error");
 		Errors++;
 		return (NULL);
 	}
@@ -524,6 +524,41 @@ skipword(p, w)
 		goto syntax;
 
 	return (p);
+}
+/*
+**  PRINTVRFYADDR -- print an entry in the verify queue
+**
+**	Parameters:
+**		a -- the address to print
+**		last -- set if this is the last one.
+**
+**	Returns:
+**		none.
+**
+**	Side Effects:
+**		Prints the appropriate 250 codes.
+*/
+
+printvrfyaddr(a, last)
+	register ADDRESS *a;
+	bool last;
+{
+	char fmtbuf[20];
+
+	strcpy(fmtbuf, "250");
+	fmtbuf[3] = last ? ' ' : '-';
+
+	if (strchr(a->q_paddr, '<') != NULL)
+		strcpy(&fmtbuf[4], "%s");
+	else if (a->q_fullname == NULL)
+		strcpy(&fmtbuf[4], "<%s>");
+	else
+	{
+		strcpy(&fmtbuf[4], "%s <%s>");
+		message(fmtbuf, a->q_fullname, a->q_paddr);
+		return;
+	}
+	message(fmtbuf, a->q_paddr);
 }
 /*
 **  HELP -- implement the HELP command.
@@ -550,7 +585,7 @@ help(topic)
 	{
 		/* no help */
 		errno = 0;
-		message("502", "HELP not implemented");
+		message("502 HELP not implemented");
 		return;
 	}
 
@@ -574,15 +609,15 @@ help(topic)
 			else
 				p++;
 			fixcrlf(p, TRUE);
-			message("214-", p);
+			message("214-%s", p);
 			noinfo = FALSE;
 		}
 	}
 
 	if (noinfo)
-		message("504", "HELP topic unknown");
+		message("504 HELP topic unknown");
 	else
-		message("214", "End of HELP info");
+		message("214 End of HELP info");
 	(void) fclose(hf);
 }
 /*

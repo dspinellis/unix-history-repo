@@ -12,9 +12,9 @@
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	6.7 (Berkeley) %G% (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	6.8 (Berkeley) %G% (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	6.7 (Berkeley) %G% (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	6.8 (Berkeley) %G% (without daemon mode)";
 #endif
 #endif /* not lint */
 
@@ -93,7 +93,7 @@ getrequests()
 	sp = getservbyname("smtp", "tcp");
 	if (sp == NULL)
 	{
-		syserr("server \"smtp\" unknown");
+		syserr("554 server \"smtp\" unknown");
 		goto severe;
 	}
 	srvraddr.sin_family = AF_INET;
@@ -205,7 +205,7 @@ makeconnection(host, port, mci, usesecureport)
 		}
 		if (p == NULL || hid == -1)
 		{
-			usrerr("Invalid numeric domain spec \"%s\"", host);
+			usrerr("553 Invalid numeric domain spec \"%s\"", host);
 			return (EX_NOHOST);
 		}
 		addr.sin_addr.s_addr = hid;
@@ -241,7 +241,7 @@ makeconnection(host, port, mci, usesecureport)
 
 		if (sp == NULL)
 		{
-			syserr("makeconnection: server \"smtp\" unknown");
+			syserr("554 makeconnection: server \"smtp\" unknown");
 			return (EX_OSERR);
 		}
 		addr.sin_port = sp->s_port;
@@ -336,7 +336,7 @@ makeconnection(host, port, mci, usesecureport)
 			{
 				extern char *errstring();
 
-				message(Arpa_Info, "%s", errstring(sav_errno));
+				message("%s", errstring(sav_errno));
 				return (EX_UNAVAILABLE);
 			}
 		}

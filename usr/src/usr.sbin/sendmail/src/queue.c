@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	6.16 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	6.17 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	6.16 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	6.17 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -235,7 +235,7 @@ queueup(e, queueall, announce)
 			if (announce)
 			{
 				e->e_to = q->q_paddr;
-				message(Arpa_Info, "queued");
+				message("queued");
 				if (LogLevel > 8)
 					logdelivery("queued", e);
 				e->e_to = NULL;

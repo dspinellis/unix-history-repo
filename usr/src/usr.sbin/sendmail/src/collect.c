@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)collect.c	6.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)collect.c	6.8 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <errno.h>
@@ -64,7 +64,7 @@ maketemp(from)
 	*/
 
 	if (smtpmode)
-		message("354", "Enter mail, end with \".\" on a line by itself");
+		message("354 Enter mail, end with \".\" on a line by itself");
 
 	/*
 	**  Try to read a UNIX-style From line
@@ -254,7 +254,7 @@ readerr:
 			    e->e_from.q_paddr, RealHostName);
 # endif
 		(feof(InChannel) ? usrerr : syserr)
-			("collect: unexpected close on connection, from=%s",
+			("451 collect: unexpected close on connection, from=%s",
 				e->e_from.q_paddr);
 
 		/* don't return an error indication */
@@ -323,7 +323,7 @@ flusheol(buf, fp)
 	while (strchr(p, '\n') == NULL)
 	{
 		if (printmsg)
-			usrerr("header line too long");
+			usrerr("553 header line too long");
 		printmsg = FALSE;
 		if (sfgets(junkbuf, MAXLINE, fp, TimeOuts.to_datablock) == NULL)
 			return (FALSE);

@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)err.c	6.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)err.c	6.6 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -53,14 +53,12 @@ syserr(fmt, va_alist)
 	register char *p;
 	int olderrno = errno;
 	VA_LOCAL_DECL
-	extern char Arpa_PSyserr[];
-	extern char Arpa_TSyserr[];
 
 	/* format and output the error message */
 	if (olderrno == 0)
-		p = Arpa_PSyserr;
+		p = "554";
 	else
-		p = Arpa_TSyserr;
+		p = "451";
 	VA_START(fmt);
 	fmtmsg(MsgBuf, (char *) NULL, p, olderrno, fmt, ap);
 	VA_END;
@@ -112,14 +110,13 @@ usrerr(fmt, va_alist)
 {
 	VA_LOCAL_DECL
 	extern char SuprErrs;
-	extern char Arpa_Usrerr[];
 	extern int errno;
 
 	if (SuprErrs)
 		return;
 
 	VA_START(fmt);
-	fmtmsg(MsgBuf, CurEnv->e_to, Arpa_Usrerr, errno, fmt, ap);
+	fmtmsg(MsgBuf, CurEnv->e_to, "501", errno, fmt, ap);
 	VA_END;
 	puterrmsg(MsgBuf);
 
@@ -151,10 +148,9 @@ usrerr(fmt, va_alist)
 
 /*VARARGS2*/
 #ifdef __STDC__
-message(char *num, char *msg, ...)
+message(char *msg, ...)
 #else
-message(num, msg, va_alist)
-	char *num;
+message(msg, va_alist)
 	char *msg;
 	va_dcl
 #endif
@@ -163,7 +159,7 @@ message(num, msg, va_alist)
 
 	errno = 0;
 	VA_START(msg);
-	fmtmsg(MsgBuf, CurEnv->e_to, num, 0, msg, ap);
+	fmtmsg(MsgBuf, CurEnv->e_to, "050", 0, msg, ap);
 	VA_END;
 	putmsg(MsgBuf, FALSE);
 }
@@ -187,10 +183,9 @@ message(num, msg, va_alist)
 
 /*VARARGS2*/
 #ifdef __STDC__
-nmessage(char *num, char *msg, ...)
+nmessage(char *msg, ...)
 #else
-nmessage(num, msg, va_alist)
-	char *num;
+nmessage(msg, va_alist)
 	char *msg;
 	va_dcl
 #endif
@@ -199,7 +194,7 @@ nmessage(num, msg, va_alist)
 
 	errno = 0;
 	VA_START(msg);
-	fmtmsg(MsgBuf, (char *) NULL, num, 0, msg, ap);
+	fmtmsg(MsgBuf, (char *) NULL, "050", 0, msg, ap);
 	VA_END;
 	putmsg(MsgBuf, FALSE);
 }

@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)envelope.c	6.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)envelope.c	6.12 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -145,7 +145,7 @@ dropenvelope(e)
 #ifdef QUEUE
 		queueup(e, FALSE, FALSE);
 #else /* QUEUE */
-		syserr("dropenvelope: queueup");
+		syserr("554 dropenvelope: queueup");
 #endif /* QUEUE */
 	}
 
@@ -460,7 +460,7 @@ setsender(from, e)
 		    strchr(from, '!') == NULL && getuid() != 0)
 		{
 			/* network sends -r regardless (why why why?) */
-			/* syserr("%s, you cannot use the -f flag", realname); */
+			/* syserr("501 %s, you cannot use the -f flag", realname); */
 			from = NULL;
 		}
 	}
@@ -490,7 +490,7 @@ setsender(from, e)
 		{
 			SuprErrs = TRUE;
 			if (parseaddr("postmaster", &e->e_from, 1, '\0', e) == NULL)
-				syserr("setsender: can't even parse postmaster!");
+				syserr("553 setsender: can't even parse postmaster!");
 		}
 	}
 	else
@@ -579,7 +579,7 @@ setsender(from, e)
 		if (LogLevel > 2)
 			syslog(LOG_NOTICE, "cannot prescan from (%s)", from);
 # endif
-		usrerr("cannot prescan from (%s)", from);
+		usrerr("553 cannot prescan from (%s)", from);
 		finis();
 	}
 	rewrite(pvp, 3);

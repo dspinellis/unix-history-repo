@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mci.c	6.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)mci.c	6.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -161,7 +161,7 @@ mci_uncache(mcislot, doquit)
 
 	if (doquit)
 	{
-		message(Arpa_Info, "Closing connection to %s", mci->mci_host);
+		message("Closing connection to %s", mci->mci_host);
 
 		mci->mci_flags &= ~MCIF_CACHED;
 
