@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)local_passwd.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)local_passwd.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -95,7 +95,7 @@ getnewpasswd(pw)
 	/* grab a random printable character that isn't a colon */
 	(void)srandom((int)time((time_t *)NULL));
 #ifdef NEWSALT
-	salt[0] = '_';
+	salt[0] = _PASSWORD_EFMT1;
 	to64(&salt[1], (long)(29 * 25), 4);
 	to64(&salt[5], random(), 4);
 #else
