@@ -1,14 +1,16 @@
 #ifndef lint
-static char sccsid[] = "@(#)route.c	4.4 82/10/07";
+static char sccsid[] = "@(#)route.c	4.5 82/11/14";
 #endif
 
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/mbuf.h>
+
 #include <net/if.h>
-#include <net/in.h>
 #define	KERNEL		/* to get routehash and RTHASHSIZ */
 #include <net/route.h>
+#include <netinet/in.h>
+
 #include <netdb.h>
 
 extern	int kmem;

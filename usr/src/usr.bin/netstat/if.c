@@ -1,11 +1,13 @@
 #ifndef lint
-static char sccsid[] = "@(#)if.c	4.3 82/10/07";
+static char sccsid[] = "@(#)if.c	4.4 82/11/14";
 #endif
 
 #include <sys/types.h>
 #include <sys/socket.h>
-#include <net/in.h>
+
 #include <net/if.h>
+#include <netinet/in.h>
+
 #include <stdio.h>
 
 extern	int kmem;
