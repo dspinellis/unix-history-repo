@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)autoconf.c	6.23 (Berkeley) %G%
+ *	@(#)autoconf.c	6.24 (Berkeley) %G%
  */
 
 /*
@@ -222,9 +222,9 @@ probenexi(pnc)
 	union nexcsr nexcsr;
 	int i;
 	
-	nexnum = 0, nxv = &nexus[nsbi * NNEX8600];
+	nexnum = 0, nxv = &nexus[nsbi * NNEXSBI];
 	for (; nexnum < pnc->psb_nnexus; nexnum++, nxp++, nxv++) {
-		ioaccess((caddr_t)nxp, Nexmap[nsbi * 16 + nexnum],
+		ioaccess((caddr_t)nxp, Nexmap[nsbi * NNEXSBI + nexnum],
 		     sizeof(struct nexus));
 		if (badaddr((caddr_t)nxv, 4))
 			continue;
