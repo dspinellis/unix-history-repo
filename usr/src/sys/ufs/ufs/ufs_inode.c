@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_inode.c	7.42 (Berkeley) %G%
+ *	@(#)ufs_inode.c	7.43 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -13,6 +13,7 @@
 #include <sys/vnode.h>
 #include <sys/mount.h>
 #include <sys/kernel.h>
+#include <sys/malloc.h>
 
 #include <ufs/ufs/quota.h>
 #include <ufs/ufs/inode.h>
@@ -32,8 +33,8 @@ ufs_init()
 	first = 0;
 
 #ifdef DIAGNOSTIC
-	if (VN_MAXPRIVATE < sizeof(struct inode))
-		panic("ufs_init: inode too small");
+	if ((sizeof(struct inode) - 1) & sizeof(struct inode))
+		printf("ufs_init: bad size %d\n", sizeof(struct inode));
 #endif
 	ufs_ihashinit();
 	dqinit();
@@ -62,7 +63,7 @@ ufs_reclaim(vp)
 	register struct vnode *vp;
 {
 	register struct inode *ip;
-	int i;
+	int i, type;
 
 	if (prtactive && vp->v_usecount != 0)
 		vprint("ufs_reclaim: pushing active", vp);
@@ -71,8 +72,6 @@ ufs_reclaim(vp)
 	 */
 	ip = VTOI(vp);
 	remque(ip);
-	ip->i_forw = ip;
-	ip->i_back = ip;
 	/*
 	 * Purge old data structures associated with the inode.
 	 */
@@ -89,7 +88,21 @@ ufs_reclaim(vp)
 		}
 	}
 #endif
-	ip->i_flag = 0;
+	switch (vp->v_mount->mnt_stat.f_type) {
+	case MOUNT_UFS:
+		type = M_FFSNODE;
+		break;
+	case MOUNT_MFS:
+		type = M_MFSNODE;
+		break;
+	case MOUNT_LFS:
+		type = M_LFSNODE;
+		break;
+	default:
+		panic("ufs_reclaim: not ufs file");
+	}
+	FREE(vp->v_data, type);
+	vp->v_data = NULL;
 	return (0);
 }
 
@@ -103,13 +116,13 @@ ufs_ilock(ip)
 
 	while (ip->i_flag & ILOCKED) {
 		ip->i_flag |= IWANT;
-		if (ip->i_spare0 == curproc->p_pid)
+		if (ip->i_lockholder == curproc->p_pid)
 			panic("locking against myself");
-		ip->i_spare1 = curproc->p_pid;
+		ip->i_lockwaiter = curproc->p_pid;
 		(void) sleep((caddr_t)ip, PINOD);
 	}
-	ip->i_spare1 = 0;
-	ip->i_spare0 = curproc->p_pid;
+	ip->i_lockwaiter = 0;
+	ip->i_lockholder = curproc->p_pid;
 	ip->i_flag |= ILOCKED;
 	curproc->p_spare[2]++;
 }
@@ -124,7 +137,7 @@ ufs_iunlock(ip)
 
 	if ((ip->i_flag & ILOCKED) == 0)
 		vprint("ufs_iunlock: unlocked inode", ITOV(ip));
-	ip->i_spare0 = 0;
+	ip->i_lockholder = 0;
 	ip->i_flag &= ~ILOCKED;
 	curproc->p_spare[2]--;
 	if (ip->i_flag&IWANT) {
