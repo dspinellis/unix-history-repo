@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)2.0.t	6.1 (Berkeley) %G%
+.\"	@(#)2.0.t	6.2 (Berkeley) %G%
 .\"
 .ds ss 1
 .sh "System facilities
@@ -19,8 +19,8 @@ always specified relative to such a context.
 .br
 Files are used to store uninterpreted sequence of bytes on which
 random access \fIreads\fP and \fIwrites\fP may occur.
-Pages from files may also be mapped into process address space.
-A directory may be read as a file\(dg.
+Pages from files may also be mapped into process address space.\(dg
+A directory may be read as a file.
 .FS
 \(dg Support for mapping files is not included in the 4.3 release.
 .FE

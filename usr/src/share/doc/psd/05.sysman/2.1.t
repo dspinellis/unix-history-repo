@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)2.1.t	6.1 (Berkeley) %G%
+.\"	@(#)2.1.t	6.2 (Berkeley) %G%
 .\"
 .sh "Generic operations
 .PP
@@ -43,7 +43,7 @@ are possible.
 .PP
 Scattering of data on input or gathering of data for output
 is also possible using an array of input/output vector descriptors.
-The type for the descriptors is defined in <sys/uio.h> as:
+The type for the descriptors is defined in \fI<sys/uio.h>\fP as:
 .DS
 ._f
 struct iovec {
@@ -81,7 +81,7 @@ queues and setting of terminal parameters; operations on
 disks cause formatting operations to occur; operations on tapes
 control tape positioning.
 .PP
-The names for basic control operations are defined in <sys/ioctl.h>.
+The names for basic control operations are defined in \fI<sys/ioctl.h>\fP.
 .NH 3
 Non-blocking and asynchronous operations
 .PP
@@ -90,7 +90,7 @@ its descriptors sets the descriptor in non-blocking mode as
 described in section 1.5.4.  Thereafter the \fIread\fP call will
 return a specific EWOULDBLOCK error indication if there is no data to be
 \fIread\fP.  The process may
-\fIdselect\fP the associated descriptor to determine when a read is
+\fIselect\fP the associated descriptor to determine when a read is
 possible.
 .PP
 Output attempted when a descriptor can accept less than is requested
@@ -103,8 +103,9 @@ Operations other than data input or output
 may be performed on a descriptor in a non-blocking fashion.
 These operations will return with a characteristic error indicating
 that they are in progress
-if they cannot return immediately.  The descriptor
+if they cannot complete immediately.  The descriptor
 may then be \fIselect\fPed for \fIwrite\fP to find out
-when the operation can be retried.  When \fIselect\fP indicates
-the descriptor is writeable, a respecification of the original
-operation will return the result of the operation.
+when the operation has been completed.  When \fIselect\fP indicates
+the descriptor is writeable, the operation has completed.
+Depending on the nature of the descriptor and the operation,
+additional activity may be started or the new state may be tested.

@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)1.0.t	6.1 (Berkeley) %G%
+.\"	@(#)1.0.t	6.2 (Berkeley) %G%
 .\"
 .ds ss 1
 .sh "Kernel primitives
@@ -15,7 +15,7 @@ implemented either by the system, or in cooperation with a
 this section 1.
 .PP
 The facilities implemented in the kernel are those which define the
-\fIUNIX virtual machine\fP which each process runs in.
+\fIUNIX virtual machine\fP in which each process runs.
 Like many real machines, this virtual machine has memory management hardware,
 an interrupt facility, timers and counters.  The UNIX
 virtual machine also allows access to files and other objects through a set of

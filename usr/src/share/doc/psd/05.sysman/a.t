@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)a.t	6.2 (Berkeley) %G%
+.\"	@(#)a.t	6.3 (Berkeley) %G%
 .\"
 .ds RH Summary of facilities
 .bp
@@ -47,7 +47,7 @@ setpgrp	set process group
 .in +5
 .TS
 lw(1.6i) aw(3i).
-<mman.h>	memory management definitions
+<sys/mman.h>	memory management definitions
 sbrk	change data section size
 sstk\(dg	change stack section size
 .FS

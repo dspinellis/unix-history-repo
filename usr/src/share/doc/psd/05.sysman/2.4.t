@@ -2,15 +2,16 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)2.4.t	6.1 (Berkeley) %G%
+.\"	@(#)2.4.t	6.2 (Berkeley) %G%
 .\"
 .sh "Terminals and Devices
 .NH 3
 Terminals
 .PP
-Terminals support \fIread\fP and \fIwrite\fP i/o operations,
+Terminals support \fIread\fP and \fIwrite\fP I/O operations,
 as well as a collection of terminal specific \fIioctl\fP operations,
-to control input character editing, and output delays.
+to control input character interpretation and editing,
+and output format and delays.
 .NH 4
 Terminal input
 .PP
@@ -59,14 +60,18 @@ by \fIstop output\fP and \fIstart output\fP control characters.  Output
 may be flushed with the \fIflush output\fP character; and a \fIliteral
 character\fP may be used to force literal input of the immediately
 following character in the input line.
+.PP
+Input characters may be echoed to the terminal as they are received.
+Non-graphic ASCII input characters may be echoed as a two-character
+printable representation, ``^character.''
 .NH 4
 Terminal output
 .PP
 On output, the terminal handler provides some simple formatting services.
 These include converting the carriage return character to the
-two character return-linefeed sequence, displaying non-graphic
-ASCII characters as ``^character'', inserting delays after certain
-standard control characters, expanding tabs, and providing translations
+two character return-linefeed sequence,
+inserting delays after certain standard control characters,
+expanding tabs, and providing translations
 for upper-case only terminals.
 .NH 4
 Terminal control operations
@@ -75,7 +80,12 @@ When a terminal is first opened it is initialized to a standard
 state and configured with a set of standard control, editing,
 and interrupt characters.  A process
 may alter this configuration with certain
-control operations, specifying parameters in a standard structure:
+control operations, specifying parameters in a standard structure:\(dg
+.FS
+\(dg The control interface described here is an internal interface only
+in 4.3BSD.  Future releases will probably use a modified interface
+based on currently-proposed standards.
+.FE
 .DS
 ._f
 struct ttymode {
