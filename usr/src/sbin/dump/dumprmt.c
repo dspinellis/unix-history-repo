@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)dumprmt.c	1.6 (Berkeley) %G%";
+static	char *sccsid = "@(#)dumprmt.c	1.7 (Berkeley) %G%";
 
 #include <sys/param.h>
 #include <sys/mtio.h>
@@ -7,6 +7,7 @@ static	char *sccsid = "@(#)dumprmt.c	1.6 (Berkeley) %G%";
 #include <netinet/in.h>
 
 #include <stdio.h>
+#include <pwd.h>
 #include <netdb.h>
 
 #define	TS_CLOSED	0
@@ -38,6 +39,8 @@ rmtconnaborted()
 rmtgetconn()
 {
 	static struct servent *sp = 0;
+	struct passwd *pw;
+	char *name = "root";
 
 	if (sp == 0) {
 		sp = getservbyname("shell", "tcp");
@@ -46,7 +49,10 @@ rmtgetconn()
 			exit(1);
 		}
 	}
-	rmtape = rcmd(&rmtpeer, sp->s_port, "root", "root", "/etc/rmt", 0);
+	pw = getpwuid(getuid());
+	if (pw && pw->pw_name)
+		name = pw->pw_name;
+	rmtape = rcmd(&rmtpeer, sp->s_port, name, name, "/etc/rmt", 0);
 }
 
 rmtopen(tape, mode)
