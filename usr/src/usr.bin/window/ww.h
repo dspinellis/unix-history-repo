@@ -1,5 +1,5 @@
 /*
- *	@(#)ww.h	3.29 84/04/08	
+ *	@(#)ww.h	3.30 84/04/09	
  */
 
 #include <sgtty.h>
@@ -185,7 +185,6 @@ int wwnwread, wwnwreade, wwnwreadz, wwnwreadd, wwnwreadc, wwnwreadp;
 int wwnselect, wwnselecte, wwnselectz;
 
 	/* quicky macros */
-#define wwbell()	write(1, "\7", 1)
 #define wwsetcursor(r,c) (wwcursorrow = (r), wwcursorcol = (c))
 #define wwcurtowin(w)	wwsetcursor((w)->ww_cur.r, (w)->ww_cur.c)
 #define wwunbox(w)	wwunframe(w)
