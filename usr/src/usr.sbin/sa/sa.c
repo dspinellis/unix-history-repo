@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)sa.c	4.8 (Berkeley) 84/07/18";
+static char *sccsid = "@(#)sa.c	4.9 (Berkeley) %G%";
 #endif
 
 /*
@@ -256,6 +256,9 @@ char	*getname();
 #endif	DEBUG
 
 
+char *usracct = USRACCT;
+char *savacct = SAVACCT;
+
 int	cellcmp();
 cell	*junkp = 0;
 /*
@@ -396,16 +399,51 @@ main(argc, argv)
 		case 'm':
 			mflg++;
 			break;
+
+		case 'U':
+		case 'S':
+			if (i != 1 || argv[0][2]) {	/* gross! */
+				fprintf(stderr, "-U and -S options must be separate\n");
+				exit(1);
+			}
+			argc++, argv--;			/* backup - yuk */
+			goto doUS;
+
+		default:
+		    	fprintf(stderr, "Invalid option %c\n", argv[0][1]);
+			exit(1);
 		}
 	}
+
+#define optfile(f) {if (argc < 2) \
+			{ fprintf(stderr, "Missing filename\n"); exit(1); } \
+			argc--, argv++; f = argv[0]; }
+
+doUS:
+	for (argc--, argv++; argc && argv[0][0] == '-'; argc--, argv++) {
+		switch(argv[0][1]) {
+		    case 'U':
+		    	optfile(usracct);
+			break;
+
+		    case 'S':
+		    	optfile(savacct);
+			break;
+
+		    default:
+		    	fprintf(stderr, "Invalid option %c\n", argv[0][1]);
+			exit(1);
+		}
+	}
+
 	if (thres == 0)
 		thres = 1;
 	if (iflg==0)
 		init();
-	if (argc<2)
+	if (argc<1)
 		doacct(ACCT);
-	else while (--argc)
-		doacct(*++argv);
+	else while (argc--)
+		doacct(*argv++);
 	if (uflg) {
 		return;
 	}
@@ -437,7 +475,7 @@ main(argc, argv)
 	}
 	if (sflg) {
 		signal(SIGINT, SIG_IGN);
-		if ((ff = fopen(USRACCT, "w")) != NULL) {
+		if ((ff = fopen(usracct, "w")) != NULL) {
 			static	struct	user ZeroUser = {0};
 			struct 	user	*up;
 			int	uid;
@@ -457,7 +495,7 @@ main(argc, argv)
 						sizeof(struct Olduser),1,ff);
 			}
 		}
-		if ((ff = fopen(SAVACCT, "w")) == NULL) {
+		if ((ff = fopen(savacct, "w")) == NULL) {
 			printf("Can't save\n");
 			exit(0);
 		}
@@ -540,7 +578,7 @@ printmoney()
 				printf("%7u %9.2fcpu %10.0ftio %12.0fk*sec\n",
 					up->us_cnt, up->us_ctime / 60,
 					up->us_io,
-					up->us_imem / 60);
+					up->us_imem / AHZ);
 			}
 		}
 	}
@@ -558,14 +596,14 @@ column(n, a, b, c, d, e)
 	}
 	col(n, a, treal, "re");
 	if (oflg)
-		col(n, 60*64*(b/(b+c)), tcpu+tsys, "u/s");
+		col(n, 60*AHZ*(b/(b+c)), tcpu+tsys, "u/s");
 	else if(lflg) {
 		col(n, b, tcpu, "u");
 		col(n, c, tsys, "s");
 	} else
 		col(n, b+c, tcpu+tsys, "cp");
 	if(tflg)
-		printf("%8.1f", a/(b+c), "re/cp");
+		printf("%8.1fre/cp", a/(b+c));
 	if(dflg || !Dflg)
 		printf("%10.0favio", e/(n?n:1));
 	else
@@ -573,7 +611,7 @@ column(n, a, b, c, d, e)
 	if (kflg || !Kflg)
 		printf("%10.0fk", d/((b+c)!=0.0?(b+c):1.0));
 	else
-		printf("%10.0fk*sec", d/60);
+		printf("%10.0fk*sec", d/AHZ);
 }
 
 col(n, a, m, cp)
@@ -582,8 +620,8 @@ col(n, a, m, cp)
 {
 
 	if(jflg)
-		printf("%11.2f%s", a/(n*64.), cp); else
-		printf("%11.2f%s", a/(60*64.), cp);
+		printf("%11.2f%s", a/(n*(double)AHZ), cp); else
+		printf("%11.2f%s", a/(60.*(double)AHZ), cp);
 	if(cflg) {
 		if(a == m)
 			printf("%9s", ""); else
@@ -635,17 +673,17 @@ char *f;
 			*cp = '\0';
 		x = expand(fbuf.ac_utime) + expand(fbuf.ac_stime);
 		y = pgtok((u_short)fbuf.ac_mem);
-		z = expand(fbuf.ac_io) >> 6;
+		z = expand(fbuf.ac_io) / AHZ;
 		if (uflg) {
-			printf("%3d %6.2f cpu %8uk mem %6d io %.*s\n",
-			    fbuf.ac_uid, x / 64.0, y, z, NC, fbuf.ac_comm);
+			printf("%3d %6.2f cpu %8luk mem %6ld io %.*s\n",
+			    fbuf.ac_uid, x/(double)AHZ, y, z, NC, fbuf.ac_comm);
 			continue;
 		}
 		up = finduser(fbuf.ac_uid);
 		if (up == 0)
 			continue;	/* preposterous user id */
 		up->us_cnt++;
-		up->us_ctime += x;
+		up->us_ctime += x/(double)AHZ;
 		up->us_imem += x * y;
 		up->us_io += z;
 		ncom += 1.0;
@@ -830,7 +868,7 @@ init()
 	int uid;
 	FILE *f;
 
-	if ((f = fopen(SAVACCT, "r")) == NULL)
+	if ((f = fopen(savacct, "r")) == NULL)
 		goto gshm;
 	while (fread((char *)&tbuf, sizeof(struct process), 1, f) == 1) {
 		tp = enter(tbuf.name);
@@ -849,7 +887,7 @@ init()
 	}
 	fclose(f);
  gshm:
-	if ((f = fopen(USRACCT, "r")) == NULL)
+	if ((f = fopen(usracct, "r")) == NULL)
 		return;
 	for(uid = 0;
 	    fread((char *)&(userbuf.oldu), sizeof(struct Olduser), 1, f) == 1;
@@ -959,7 +997,8 @@ getnames()
 
 	setpwent();
 	while (pw = getpwent()){
-		if ( (tp = wasuser(pw->pw_uid)) != 0)
+		/* use first name in passwd file for duplicate uid's */
+		if ((tp = wasuser(pw->pw_uid)) != 0 && !isalpha(tp->us_name[0]))
 			strncpy(tp->us_name, pw->pw_name, NAMELG);
 	}
 	endpwent();
