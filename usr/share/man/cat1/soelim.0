@@ -1,0 +1,66 @@
+
+
+
+SOELIM(1)              BSD Reference Manual             SOELIM(1)
+
+
+NNAAMMEE
+       soelim - interpret .so requests in groff input
+
+SSYYNNOOPPSSIISS
+       ssooeelliimm [ --CCvv ] [ _f_i_l_e_s... ]
+
+DDEESSCCRRIIPPTTIIOONN
+       ssooeelliimm reads _f_i_l_e_s and replaces lines of the form
+
+              ..ssoo _f_i_l_e
+
+       by  the  contents of _f_i_l_e.  It is useful if files included
+       with ssoo need to be preprocessed.  Normally, ssooeelliimm  should
+       be invoked with the --ss option of ggrrooffff.
+
+OOPPTTIIOONNSS
+       --CC     Recognize  ..ssoo  even  when  followed by a character
+              other than space or newline.
+
+       --vv     Print the version number.
+
+SSEEEE AALLSSOO
+       ggrrooffff(1)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Groff Version 1.08      15 September 1992                       1
+
+
+
+
+

@@ -1,0 +1,66 @@
+
+
+
+LKBIB(1)               BSD Reference Manual              LKBIB(1)
+
+
+NNAAMMEE
+       lkbib - search bibliographic databases
+
+SSYYNNOOPPSSIISS
+       llkkbbiibb [ --vv ] [ --ii_f_i_e_l_d_s ] [ --pp_f_i_l_e_n_a_m_e ] [ --tt_n ] _k_e_y...
+
+DDEESSCCRRIIPPTTIIOONN
+       llkkbbiibb searches bibliographic databases for references that
+       contain the keys _k_e_y...  and prints any  references  found
+       on  the  standard output.  llkkbbiibb will search any databases
+       given by --pp options, and then  a  default  database.   The
+       default database is taken from the RREEFFEERR environment vari-
+       able    if    it    is    set,     otherwise     it     is
+       //uussrr//sshhaarree//ddiicctt//ppaappeerrss//IInndd.  For each database _f_i_l_e_n_a_m_e to
+       be searched, if an index _f_i_l_e_n_a_m_e..ii created by  iinnddxxbbiibb(1)
+       exists,  then  it will be searched instead; each index can
+       cover multiple databases.
+
+OOPPTTIIOONNSS
+       --vv     Print the version number.
+
+       --pp_f_i_l_e_n_a_m_e
+              Search _f_i_l_e_n_a_m_e.  Multiple --pp options can be  used.
+
+       --ii_s_t_r_i_n_g
+              When  searching  files  for  which no index exists,
+              ignore the contents of fields whose  names  are  in
+              _s_t_r_i_n_g.
+
+       --tt_n    Only  require  the first _n characters of keys to be
+              given.  Initially _n is 6.
+
+EENNVVIIRROONNMMEENNTT
+       RREEFFEERR  Default database.
+
+FFIILLEESS
+       //uussrr//sshhaarree//ddiicctt//ppaappeerrss//IInndd  Default database to be used if
+                                   the RREEFFEERR environment variable
+                                   is not set.  _f_i_l_e_n_a_m_e..ii  Index
+                                   files.
+
+SSEEEE AALLSSOO
+       rreeffeerr(1), llooookkbbiibb(1), iinnddxxbbiibb(1)
+
+
+
+
+
+
+
+
+
+
+
+Groff Version 1.08        6 August 1992                         1
+
+
+
+
+
