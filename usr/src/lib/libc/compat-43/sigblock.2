@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)sigblock.2	6.1 (Berkeley) %G%
+.\"	@(#)sigblock.2	6.2 (Berkeley) %G%
 .\"
 .TH SIGBLOCK 2 ""
 .UC 5
@@ -10,20 +10,25 @@
 sigblock \- block signals
 .SH SYNOPSIS
 .nf
+.B #include <signal.h>
+
 .B sigblock(mask);
 .B int mask;
+
+.B mask = sigmask(signum)
 .SH DESCRIPTION
 .I Sigblock
 causes the signals specified in
 .I mask
 to be added to the set of signals currently
-being blocked from delivery.  Signal
-.I i
-is blocked if the
-.IR i -th
-bit in 
+being blocked from delivery.
+Signals are blocked if the
+corresding bit in 
 .I mask
-is a 1.
+is a 1; the macro
+.I sigmask
+is provided to construct the mask for a given
+.IR signum .
 .PP
 It is not possible to block SIGKILL,
 SIGSTOP, or SIGCONT;  this restriction is silently
@@ -31,4 +36,4 @@ imposed by the system.
 .SH "RETURN VALUE
 The previous set of masked signals is returned.
 .SH "SEE ALSO"
-kill(2), sigvec(2), sigsetmask(2),
+kill(2), sigvec(2), sigsetmask(2)
