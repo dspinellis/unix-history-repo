@@ -1,0 +1,64 @@
+SYNCH_IN	addbytes.c	/^#define	SYNCH_IN()	{y = win->_cury; x = win->_curx/
+SYNCH_OUT	addbytes.c	/^#define	SYNCH_OUT()	{win->_cury = y; win->_curx = /
+_id_subwins	id_subwins.c	/^_id_subwins(orig)$/
+_putchar	putchar.c	/^_putchar(c)$/
+_set_subwin_	newwin.c	/^_set_subwin_(orig, win)$/
+_sprintw	printw.c	/^_sprintw(win, fmt, ap)$/
+_sscans	scanw.c	/^_sscans(win, fmt, ap)$/
+_swflags_	newwin.c	/^_swflags_(win)$/
+_winwrite	printw.c	/^_winwrite(cookie, buf, n)$/
+box	box.c	/^box(win, vert, hor)$/
+delwin	delwin.c	/^delwin(win)$/
+domvcur	refresh.c	/^domvcur(oy, ox, ny, nx)$/
+endwin	endwin.c	/^endwin()$/
+fgoto	cr_put.c	/^fgoto()$/
+fullname	fullname.c	/^fullname(bp, def)$/
+getcap	cr_tty.c	/^getcap(name)$/
+gettmode	cr_tty.c	/^gettmode() {$/
+idlok	idlok.c	/^idlok(win, bf)$/
+initscr	initscr.c	/^initscr() {$/
+longname	longname.c	/^longname(bp, def)$/
+makech	refresh.c	/^makech(win, wy)$/
+makenew	newwin.c	/^makenew(num_lines, num_cols, begy, begx)$/
+mask	tstp.c	/^#define	mask(s)	(1 << ((s)-1))$/
+mvcur	cr_put.c	/^mvcur(ly, lx, y, x)$/
+mvprintw	mvprintw.c	/^mvprintw(y, x, fmt, va_alist)$/
+mvscanw	mvscanw.c	/^mvscanw(y, x, fmt, va_alist)$/
+mvwin	mvwin.c	/^mvwin(win, by, bx)$/
+mvwprintw	mvprintw.c	/^mvwprintw(win, y, x, fmt, va_alist)$/
+mvwscanw	mvscanw.c	/^mvwscanw(win, y, x, fmt, va_alist)$/
+newwin	newwin.c	/^newwin(num_lines, num_cols, begy, begx)$/
+overlay	overlay.c	/^overlay(win1, win2)$/
+overwrite	overwrite.c	/^overwrite(win1, win2)$/
+plod	cr_put.c	/^plod(cnt)$/
+plodput	cr_put.c	/^plodput(c)$/
+printw	printw.c	/^printw(fmt, va_alist)$/
+scanw	scanw.c	/^scanw(fmt, va_alist)$/
+scroll	scroll.c	/^scroll(win)$/
+setterm	cr_tty.c	/^setterm(type)$/
+subwin	newwin.c	/^subwin(orig, num_lines, num_cols, begy, begx)$/
+tabcol	cr_put.c	/^tabcol(col, ts)$/
+touchline	touchwin.c	/^touchline(win, y, sx, ex)$/
+touchoverlap	toucholap.c	/^touchoverlap(win1, win2)$/
+touchwin	touchwin.c	/^touchwin(win)$/
+tstp	tstp.c	/^tstp() {$/
+waddbytes	addbytes.c	/^waddbytes(win, bytes, count)$/
+waddch	addch.c	/^waddch(win, c)$/
+waddstr	addstr.c	/^waddstr(win,str)$/
+wclear	clear.c	/^wclear(win)$/
+wclrtobot	clrtobot.c	/^wclrtobot(win)$/
+wclrtoeol	clrtoeol.c	/^wclrtoeol(win)$/
+wdelch	delch.c	/^wdelch(win)$/
+wdeleteln	deleteln.c	/^wdeleteln(win)$/
+werase	erase.c	/^werase(win)$/
+wgetch	getch.c	/^wgetch(win)$/
+wgetstr	getstr.c	/^wgetstr(win,str)$/
+winsch	insch.c	/^winsch(win, c)$/
+winsertln	insertln.c	/^winsertln(win)$/
+wmove	move.c	/^wmove(win, y, x)$/
+wprintw	printw.c	/^wprintw(win, fmt, va_alist)$/
+wrefresh	refresh.c	/^wrefresh(win)$/
+wscanw	scanw.c	/^wscanw(win, fmt, va_alist)$/
+wstandend	standout.c	/^wstandend(win)$/
+wstandout	standout.c	/^wstandout(win)$/
+zap	cr_tty.c	/^zap()$/
