@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)uda.c	7.12 (Berkeley) %G%
+ *	@(#)uda.c	7.13 (Berkeley) %G%
  *
  */
 
@@ -160,7 +160,7 @@ struct udastats {
  */
 struct ra_info {
 	daddr_t	ra_dsize;	/* size in sectors */
-	u_long	ra_type;	/* drive type */
+/*	u_long	ra_type;	/* drive type */
 #define	RA_TYPE_RX50	7	/* special: see udaopen */
 	u_long	ra_mediaid;	/* media id */
 	int	ra_state;	/* open/closed state */
@@ -533,6 +533,20 @@ udaattach(ui)
 		udawstart++;
 	}
 	if (ui->ui_dk >= 0)
+
+	/*
+	 * Floppies cannot be brought on line unless there is
+	 * a disk in the drive.  Since an ONLINE while cold
+	 * takes ten seconds to fail, and (when notyet becomes now)
+	 * no sensible person will swap to one, we just
+	 * defer the ONLINE until someone tries to use the drive.
+	 *
+	 * THIS ASSUMES THAT DRIVE TYPES ?X? ARE FLOPPIES
+	 */
+	if (MSCP_MID_ECH(1, ra_info[unit].ra_mediaid) == 'X' - '@') {
+		printf("ra%d: floppy\n", unit);
+		return;
+	}
 		dk_mspw[ui->ui_dk] = 1.0 / (60 * 31 * 256);	/* approx */
 	udaip[ui->ui_ctlr][ui->ui_slave] = ui;
 
@@ -599,7 +613,7 @@ udainit(ctlr)
 			 UDA_STEP1 | UDA_NV)
 
 	sc->sc_state = ST_IDLE;	/* in case init fails */
-	udaddr = (struct udadevice *) um->um_addr;
+	udaddr = (struct udadevice *)um->um_addr;
 	udaddr->udaip = 0;
 	timo = todr() + 1000;
 	while ((udaddr->udasa & STEP0MASK) == 0) {
@@ -611,6 +625,7 @@ udainit(ctlr)
 	if ((udaddr->udasa & STEP0MASK) != UDA_STEP1) {
 		printf("uda%d: init failed, sa=%b\n", ctlr,
 			udaddr->udasa, udasr_bits);
+		udasaerror(um, 0);
 		return (-1);
 	}
 
@@ -732,6 +747,7 @@ udaopen(dev, flag, fmt)
 	return (0);
 }
 
+/* ARGSUSED */
 /*ARGSUSED*/
 udaclose(dev, flags, fmt)
 	dev_t dev;
@@ -776,7 +792,6 @@ uda_rainit(ui, flags)
 	int flags;
 {
 	register struct uda_softc *sc = &uda_softc[ui->ui_ctlr];
-	register struct disklabel *lp;
 	register struct mscp *mp;
 	register int unit = ui->ui_unit;
 	register struct ra_info *ra;
@@ -862,12 +877,12 @@ uda_rasave(unit, mp, check)
 {
 	register struct ra_info *ra = &ra_info[unit];
 
-	if (check && ra->ra_type != mp->mscp_guse.guse_drivetype) {
+	if (check && ra->ra_type != mp->mscp_guse.guse_mediaid) {
 		printf("ra%d: changed types! was %d now %d\n", unit,
-			ra->ra_type, mp->mscp_guse.guse_drivetype);
+			ra->ra_type, mp->mscp_guse.guse_mediaid);
 		ra->ra_state = CLOSED;	/* ??? */
 	}
-	ra->ra_type = mp->mscp_guse.guse_drivetype;
+	/* ra->ra_type = mp->mscp_guse.guse_drivetype; */
 	ra->ra_mediaid = mp->mscp_guse.guse_mediaid;
 	ra->ra_geom.rg_nsectors = mp->mscp_guse.guse_nspt;
 	ra->ra_geom.rg_ngroups = mp->mscp_guse.guse_group;
@@ -1053,7 +1068,7 @@ loop:
 	}
 
 	if (udaddr->udasa & UDA_ERR) {	/* ctlr fatal error */
-		udasaerror(um);
+		udasaerror(um, 1);
 		goto out;
 	}
 
@@ -1131,7 +1146,7 @@ out:
 		udastats.cmd[sc->sc_ncmd]++;
 		sc->sc_ncmd = 0;
 #endif
-		i = ((struct udadevice *) um->um_addr)->udaip;
+		i = ((struct udadevice *)um->um_addr)->udaip;
 	}
 	sc->sc_flags &= ~(SC_INSTART | SC_STARTPOLL);
 }
@@ -1185,18 +1200,74 @@ udaiodone(mi, bp, info)
 	um->um_tab.b_active--;	/* another transfer done */
 }
 
-/*
- * The error bit was set in the controller status register.  Gripe,
- * reset the controller, requeue pending transfers.
- */
-udasaerror(um)
-	register struct uba_ctlr *um;
-{
+static struct saerr {
+	int	code;		/* error code (including UDA_ERR) */
+	char	*desc;		/* what it means: Efoo => foo error */
+} saerr[] = {
+	{ 0100001, "Eunibus packet read" },
+	{ 0100002, "Eunibus packet write" },
+	{ 0100003, "EUDA ROM and RAM parity" },
+	{ 0100004, "EUDA RAM parity" },
+	{ 0100005, "EUDA ROM parity" },
+	{ 0100006, "Eunibus ring read" },
+	{ 0100007, "Eunibus ring write" },
+	{ 0100010, " unibus interrupt master failure" },
+	{ 0100011, "Ehost access timeout" },
+	{ 0100012, " host exceeded command limit" },
+	{ 0100013, " unibus bus master failure" },
+	{ 0100014, " DM XFC fatal error" },
+	{ 0100015, " hardware timeout of instruction loop" },
+	{ 0100016, " invalid virtual circuit id" },
+	{ 0100017, "Eunibus interrupt write" },
+	{ 0104000, "Efatal sequence" },
+	{ 0104040, " D proc ALU" },
+	{ 0104041, "ED proc control ROM parity" },
+	{ 0105102, "ED proc w/no BD#2 or RAM parity" },
+	{ 0105105, "ED proc RAM buffer" },
+	{ 0105152, "ED proc SDI" },
+	{ 0105153, "ED proc write mode wrap serdes" },
+	{ 0105154, "ED proc read mode serdes, RSGEN & ECC" },
+	{ 0106040, "EU proc ALU" },
+	{ 0106041, "EU proc control reg" },
+	{ 0106042, " U proc DFAIL/cntl ROM parity/BD #1 test CNT" },
+	{ 0106047, " U proc const PROM err w/D proc running SDI test" },
+	{ 0106055, " unexpected trap" },
+	{ 0106071, "EU proc const PROM" },
+	{ 0106072, "EU proc control ROM parity" },
+	{ 0106200, "Estep 1 data" },
+	{ 0107103, "EU proc RAM parity" },
+	{ 0107107, "EU proc RAM buffer" },
+	{ 0107115, " test count wrong (BD 12)" },
+	{ 0112300, "Estep 2" },
+	{ 0122240, "ENPR" },
+	{ 0122300, "Estep 3" },
+	{ 0142300, "Estep 4" },
+	{ 0, " unknown error code" }
+};
 
-	printf("uda%d: controller error, sa=%b\n", um->um_ctlr,
-		((struct udadevice *) um->um_addr)->udasa, udasr_bits);
-	mscp_requeue(&uda_softc[um->um_ctlr].sc_mi);
-	(void) udainit(um->um_ctlr);
+/*
+ * If the error bit was set in the controller status register, gripe,
+ * then (optionally) reset the controller and requeue pending transfers.
+ */
+udasaerror(um, doreset)
+	register struct uba_ctlr *um;
+	int doreset;
+{
+	register int code = ((struct udadevice *)um->um_addr)->udasa;
+	register struct saerr *e;
+
+	if ((code & UDA_ERR) == 0)
+		return;
+	for (e = saerr; e->code; e++)
+		if (e->code == code)
+			break;
+	printf("uda%d: controller error, sa=0%o (%s%s)\n",
+		um->um_ctlr, code, e->desc + 1,
+		*e->desc == 'E' ? " error" : "");
+	if (doreset) {
+		mscp_requeue(&uda_softc[um->um_ctlr].sc_mi);
+		(void) udainit(um->um_ctlr);
+	}
 }
 
 /*
@@ -1209,7 +1280,7 @@ udaintr(ctlr)
 {
 	register struct uba_ctlr *um = udaminfo[ctlr];
 	register struct uda_softc *sc = &uda_softc[ctlr];
-	register struct udadevice *udaddr = (struct udadevice *) um->um_addr;
+	register struct udadevice *udaddr = (struct udadevice *)um->um_addr;
 	register struct uda *ud;
 	register struct mscp *mp;
 	register int i;
@@ -1255,14 +1326,15 @@ udaintr(ctlr)
 initfailed:
 			printf("uda%d: init step %d failed, sa=%b\n",
 				ctlr, i, udaddr->udasa, udasr_bits);
+			udasaerror(um, 0);
 			sc->sc_state = ST_IDLE;
 			if (sc->sc_flags & SC_DOWAKE) {
 				sc->sc_flags &= ~SC_DOWAKE;
-				wakeup((caddr_t) sc);
+				wakeup((caddr_t)sc);
 			}
 			return;
 		}
-		udaddr->udasa = (int) &sc->sc_uda->uda_ca.ca_rspdsc[0] |
+		udaddr->udasa = (int)&sc->sc_uda->uda_ca.ca_rspdsc[0] |
 			(cpu == VAX_780 || cpu == VAX_8600 ? UDA_PI : 0);
 		sc->sc_state = ST_STEP2;
 		return;
@@ -1275,7 +1347,7 @@ initfailed:
 			i = 2;
 			goto initfailed;
 		}
-		udaddr->udasa = ((int) &sc->sc_uda->uda_ca.ca_rspdsc[0]) >> 16;
+		udaddr->udasa = ((int)&sc->sc_uda->uda_ca.ca_rspdsc[0]) >> 16;
 		sc->sc_state = ST_STEP3;
 		return;
 
@@ -1342,7 +1414,7 @@ initfailed:
 	}
 
 	if (udaddr->udasa & UDA_ERR) {	/* ctlr fatal error */
-		udasaerror(um);
+		udasaerror(um, 1);
 		return;
 	}
 
@@ -1374,31 +1446,6 @@ initfailed:
 	udastart(um);
 }
 
-#ifndef GENERIC_RAW
-struct buf rudabuf[NRA];
-
-/*
- * Read and write.
- */
-udaread(dev, uio)
-	dev_t dev;
-	struct uio *uio;
-{
-
-	return (physio(udastrategy, &rudabuf[udaunit(dev)], dev, B_READ,
-		minphys, uio));
-}
-
-udawrite(dev, uio)
-	dev_t dev;
-	struct uio *uio;
-{
-
-	return (physio(udastrategy, &rudabuf[udaunit(dev)], dev, B_WRITE,
-		minphys, uio));
-}
-#endif /* GENERIC_RAW */
-
 /*
  * Initialise the various data structures that control the UDA50.
  */
@@ -1425,7 +1472,7 @@ udainitds(ctlr)
 }
 
 /*
- * Handle an error datagram.  All we do now is decode it.
+ * Handle an error datagram.
  */
 udadgram(mi, mp)
 	struct mscp_info *mi;
@@ -1433,6 +1480,15 @@ udadgram(mi, mp)
 {
 
 	mscp_decodeerror(mi->mi_md->md_mname, mi->mi_ctlr, mp);
+	/*
+	 * SDI status information bytes 10 and 11 are the microprocessor
+	 * error code and front panel code respectively.  These vary per
+	 * drive type and are printed purely for field service information.
+	 */
+	if (mp->mscp_format == M_FM_SDI)
+		printf("\tsdi uproc error code 0x%x, front panel code 0x%x\n",
+			mp->mscp_erd.erd_sdistat[10],
+			mp->mscp_erd.erd_sdistat[11]);
 }
 
 /*
@@ -1669,7 +1725,7 @@ udaioctl(dev, cmd, data, flag)
 		 * Return the microcode revision for the UDA50 running
 		 * this drive.
 		 */
-		*(int *) data = uda_softc[uddinfo[unit]->ui_ctlr].sc_micro;
+		*(int *)data = uda_softc[uddinfo[unit]->ui_ctlr].sc_micro;
 		break;
 #endif
 
@@ -1783,7 +1839,7 @@ udadump(dev)
 	unit = udaunit(dev);
 	if (unit >= NRA)
 		return (ENXIO);
-#define	phys(cast, addr)	((cast) ((int) addr & 0x7fffffff))
+#define	phys(cast, addr)	((cast) ((int)addr & 0x7fffffff))
 	ui = phys(struct uba_device *, udadinfo[unit]);
 	if (ui == NULL || ui->ui_alive == 0)
 		return (ENXIO);
@@ -1876,8 +1932,8 @@ udadump(dev)
 		 * Then do the write.
 		 */
 		for (i = 0; i < blk; i++)
-			*(int *) io++ = UBAMR_MRV | (btop(start) + i);
-		*(int *) io = 0;
+			*(int *)io++ = UBAMR_MRV | (btop(start) + i);
+		*(int *)io = 0;
 		ud->uda1_cmd.mscp_unit = ui->ui_slave;
 		ud->uda1_cmd.mscp_seq.seq_lbn = btop(start) + blkoff;
 		ud->uda1_cmd.mscp_seq.seq_bytecount = blk << PGSHIFT;
@@ -1925,7 +1981,7 @@ udadumpcmd(op, ud, ui)
 	register int n;
 #define mp (&ud->uda1_rsp)
 
-	udaddr = (struct udadevice *) ui->ui_physaddr;
+	udaddr = (struct udadevice *)ui->ui_physaddr;
 	ud->uda1_cmd.mscp_opcode = op;
 	ud->uda1_cmd.mscp_msglen = MSCP_MSGLEN;
 	ud->uda1_rsp.mscp_msglen = MSCP_MSGLEN;
@@ -2009,43 +2065,7 @@ udasize(dev)
 struct size {
 	daddr_t nblocks;
 	daddr_t blkoff;
-} ra25_sizes[8] = {
-	15884,	0,		/* A=blk 0 thru 15883 */
-	10032,	15884,		/* B=blk 15884 thru 49323 */
-	-1,	0,		/* C=blk 0 thru end */
-	0,	0,		/* D=blk 340670 thru 356553 */
-	0,	0,		/* E=blk 356554 thru 412489 */
-	0,	0,		/* F=blk 412490 thru end */
-	-1,	25916,		/* G=blk 49324 thru 131403 */
-	0,	0,		/* H=blk 131404 thru end */
-}, rx50_sizes[8] = {
-	800,	0,		/* A=blk 0 thru 799 */
-	0,	0,
-	-1,	0,		/* C=blk 0 thru end */
-	0,	0,
-	0,	0,
-	0,	0,
-	0,	0,
-	0,	0,
-}, rd52_sizes[8] = {
-	15884,	0,		/* A=blk 0 thru 15883 */
-	9766,	15884,		/* B=blk 15884 thru 25649 */
-	-1,	0,		/* C=blk 0 thru end */
-	0,	0,		/* D=unused */
-	0,	0,		/* E=unused */
-	0,	0,		/* F=unused */
-	-1,	25650,		/* G=blk 25650 thru end */
-	0,	0,		/* H=unused */
-}, rd53_sizes[8] = {
-	15884,	0,		/* A=blk 0 thru 15883 */
-	33440,	15884,		/* B=blk 15884 thru 49323 */
-	-1,	0,		/* C=blk 0 thru end */
-	0,	0,		/* D=unused */
-	33440,	0,		/* E=blk 0 thru 33439 */
-	-1,	33440,		/* F=blk 33440 thru end */
-	-1,	49324,		/* G=blk 49324 thru end */
-	-1,	15884,		/* H=blk 15884 thru end */
-}, ra60_sizes[8] = {
+} ra60_sizes[8] = {
 	15884,	0,		/* A=sectors 0 thru 15883 */
 	33440,	15884,		/* B=sectors 15884 thru 49323 */
 	400176,	0,		/* C=sectors 0 thru 400175 */
@@ -2054,6 +2074,15 @@ struct size {
 	350852,	49324,		/* F=sectors 49324 thru 400175 */
 	157570,	242606,		/* UCB G => G=sectors 242606 thru 400175 */
 	193282,	49324,		/* UCB H => H=sectors 49324 thru 242605 */
+}, ra70_sizes[8] = {
+	15884,	0,		/* A=blk 0 thru 15883 */
+	33440,	15972,		/* B=blk 15972 thru 49323 */
+	-1,	0,		/* C=blk 0 thru end */
+	15884,	341220,		/* D=blk 341220 thru 357103 */
+	55936,	357192,		/* E=blk 357192 thru 413127 */
+	-1,	413457,		/* F=blk 413457 thru end */
+	-1,	341220,		/* G=blk 341220 thru end */
+	291346,	49731,		/* H=blk 49731 thru 341076 */
 }, ra80_sizes[8] = {
 	15884,	0,		/* A=sectors 0 thru 15883 */
 	33440,	15884,		/* B=sectors 15884 thru 49323 */
@@ -2064,6 +2093,28 @@ struct size {
 	192696,	49910,		/* G=sectors 49910 thru 242605 */
 	111202,	131404,		/* 4.2 H => H=sectors 131404 thru 242605 */
 }, ra81_sizes[8] ={
+#ifdef MARYLAND
+#ifdef ENEEVAX
+	30706,	0,		/* A=cyl    0 thru   42 + 2 sectors */
+	40696,	30706,		/* B=cyl   43 thru   99 - 2 sectors */
+	-1,	0,		/* C=cyl    0 thru 1247 */
+	-1,	71400,		/* D=cyl  100 thru 1247 */
+
+	15884,	0,		/* E=blk      0 thru  15883 */
+	33440,	15884,		/* F=blk  15884 thru  49323 */
+	82080,	49324,		/* G=blk  49324 thru 131403 */
+	-1,	131404,		/* H=blk 131404 thru    end */
+#else
+	67832,	0,		/* A=cyl    0 thru   94 + 2 sectors */
+	67828,	67832,		/* B=cyl   95 thru  189 - 2 sectors */
+	-1,	0,		/* C=cyl    0 thru 1247 */
+	-1,	135660,		/* D=cyl  190 thru 1247 */
+	0,	0,
+	0,	0,
+	0,	0,
+	0,	0,
+#endif ENEEVAX
+#else
 /*
  * These are the new standard partition sizes for ra81's.
  * An RA_COMPAT system is compiled with D, E, and F corresponding
@@ -2102,37 +2153,76 @@ struct size {
 	193282,	49324,		/* H=sectors 49324 thru 242605 */
 
 #endif UCBRA
+#endif MARYLAND
+}, ra82_sizes[8] = {
+	15884,	0,		/* A=blk 0 thru 15883 */
+	66880,	16245,		/* B=blk 16245 thru 83124 */
+	-1,	0,		/* C=blk 0 thru end */
+	15884,	375345,		/* D=blk 375345 thru 391228 */
+	307200,	391590,		/* E=blk 391590 thru 698789 */
+	-1,	699390,		/* F=blk 699390 thru end */
+	-1,	375345,		/* G=blk 375345 thru end */
+	291346,	83790,		/* H=blk 83790 thru 375135 */
+}, rc25_sizes[8] = {
+	15884,	0,		/* A=blk 0 thru 15883 */
+	10032,	15884,		/* B=blk 15884 thru 49323 */
+	-1,	0,		/* C=blk 0 thru end */
+	0,	0,		/* D=blk 340670 thru 356553 */
+	0,	0,		/* E=blk 356554 thru 412489 */
+	0,	0,		/* F=blk 412490 thru end */
+	-1,	25916,		/* G=blk 49324 thru 131403 */
+	0,	0,		/* H=blk 131404 thru end */
+}, rd52_sizes[8] = {
+	15884,	0,		/* A=blk 0 thru 15883 */
+	9766,	15884,		/* B=blk 15884 thru 25649 */
+	-1,	0,		/* C=blk 0 thru end */
+	0,	0,		/* D=unused */
+	0,	0,		/* E=unused */
+	0,	0,		/* F=unused */
+	-1,	25650,		/* G=blk 25650 thru end */
+	0,	0,		/* H=unused */
+}, rd53_sizes[8] = {
+	15884,	0,		/* A=blk 0 thru 15883 */
+	33440,	15884,		/* B=blk 15884 thru 49323 */
+	-1,	0,		/* C=blk 0 thru end */
+	0,	0,		/* D=unused */
+	33440,	0,		/* E=blk 0 thru 33439 */
+	-1,	33440,		/* F=blk 33440 thru end */
+	-1,	49324,		/* G=blk 49324 thru end */
+	-1,	15884,		/* H=blk 15884 thru end */
+}, rx50_sizes[8] = {
+	800,	0,		/* A=blk 0 thru 799 */
+	0,	0,
+	-1,	0,		/* C=blk 0 thru end */
+	0,	0,
+	0,	0,
+	0,	0,
+	0,	0,
+	0,	0,
 };
 
 /*
- * Drive type index decoding table.  `ut_name' is null iff the
- * type is not known.
+ * Media ID decoding table.
  */
 struct	udatypes {
+	u_long	ut_id;		/* media drive ID */
 	char	*ut_name;	/* drive type name */
 	struct	size *ut_sizes;	/* partition tables */
 	int	ut_nsectors, ut_ntracks, ut_ncylinders;
 } udatypes[] = {
-	NULL,		NULL,
-		0, 0, 0,
-	"ra80",		ra80_sizes,	/* 1 = ra80 */
-		31, 14, 559,
-	"rc25-removable", ra25_sizes,	/* 2 = rc25-r */
-		42, 4, 302,
-	"rc25-fixed",	ra25_sizes,	/* 3 = rc25-f */
-		42, 4, 302,
-	"ra60",		ra60_sizes,	/* 4 = ra60 */
-		42, 4, 2382,
-	"ra81",		ra81_sizes,	/* 5 = ra81 */
-		51, 14, 1248,
-	NULL,		NULL,		/* 6 = ? */
-		0, 0, 0,
-	"rx50",		rx50_sizes,	/* 7 = rx50 */
-		10, 1, 80,
-	"rd52",		rd52_sizes,	/* 8 = rd52 */
-		18, 7, 480,
-	"rd53",		rd53_sizes,	/* 9 = rd53 */
-		18, 8, 963,
+	{ MSCP_MKDRIVE2('R', 'A', 60), "ra60", ra60_sizes, 42, 4, 2382 },
+	{ MSCP_MKDRIVE2('R', 'A', 70), "ra70", ra70_sizes, 33, 11, 1507 },
+	{ MSCP_MKDRIVE2('R', 'A', 80), "ra80", ra80_sizes, 31, 14, 559 },
+	{ MSCP_MKDRIVE2('R', 'A', 81), "ra81", ra81_sizes, 51, 14, 1248 },
+	{ MSCP_MKDRIVE2('R', 'A', 82), "ra82", ra82_sizes, 57, 14, 1423 },
+	{ MSCP_MKDRIVE2('R', 'C', 25), "rc25-removable",
+						rc25_sizes, 42, 4, 302 },
+	{ MSCP_MKDRIVE3('R', 'C', 'F', 25), "rc25-fixed",
+						rc25_sizes, 42, 4, 302 },
+	{ MSCP_MKDRIVE2('R', 'D', 52), "rd52", rd52_sizes, 18, 7, 480 },
+	{ MSCP_MKDRIVE2('R', 'D', 53), "rd53", rd53_sizes, 18, 8, 963 },
+	{ MSCP_MKDRIVE2('R', 'X', 50), "rx50", rx50_sizes, 10, 1, 80 },
+	0
 };
 
 #define NTYPES (sizeof(udatypes) / sizeof(*udatypes))
@@ -2150,26 +2240,34 @@ udamaptype(unit, lp)
 
 	lp->d_secsize = 512;
 	lp->d_secperunit = ra->ra_dsize;
-	if ((u_long)ra->ra_type >= NTYPES) {
-		printf("ra%d: don't have a partition table for", unit);
-		mscp_printmedia(ra->ra_mediaid);
-		lp->d_nsectors = ra->ra_geom.rg_nsectors;
-		lp->d_ntracks = ra->ra_geom.rg_ntracks;
-		lp->d_ncylinders = ra->ra_geom.rg_ncyl;
-		printf(";\nusing (t,s,c)=(%d,%d,%d)\n", lp->d_nsectors,
-			lp->d_ntracks, lp->d_ncylinders);
-		lp->d_secpercyl = lp->d_nsectors * lp->d_ntracks;
-		lp->d_typename[0] = 'r';
-		lp->d_typename[1] = 'a';
-		lp->d_typename[2] = '?';
-		lp->d_typename[3] = '?';
-		lp->d_typename[4] = 0;
-		lp->d_npartitions = 1;
-		lp->d_partitions[0].p_offset = 0;
-		lp->d_partitions[0].p_size = lp->d_secperunit;
-		return (0);
-	}
-	ut = &udatypes[ra->ra_type];
+	i = MSCP_MEDIA_DRIVE(ra->ra_mediaid);
+	for (ut = udatypes; ut->ut_id; ut++)
+		if (ut->ut_id == i)
+			goto found;
+
+	/* not one we know; fake up a label for the whole drive */
+	lp->d_nsectors = ra->ra_geom.rg_nsectors;
+	lp->d_ntracks = ra->ra_geom.rg_ntracks;
+	lp->d_ncylinders = ra->ra_geom.rg_ncyl;
+	i = ra->ra_mediaid;	/* print the port type too */
+	printf("ra%d: don't have a partition table for %c%c %c%c%c%d;\n\
+using (s,t,c)=(%d,%d,%d)\n",
+		unit, MSCP_MID_CHAR(4, i), MSCP_MID_CHAR(3, i),
+		MSCP_MID_CHAR(2, i), MSCP_MID_CHAR(1, i),
+		MSCP_MID_CHAR(0, i), MSCP_MID_CHAR(0, i),
+		MSCP_MID_NUM(i), lp->d_nsectors,
+		lp->d_ntracks, lp->d_ncylinders);
+	lp->d_secpercyl = lp->d_nsectors * lp->d_ntracks;
+	lp->d_typename[0] = 'r';
+	lp->d_typename[1] = 'a';
+	lp->d_typename[2] = '?';
+	lp->d_typename[3] = '?';
+	lp->d_typename[4] = 0;
+	lp->d_npartitions = 1;
+	lp->d_partitions[0].p_offset = 0;
+	lp->d_partitions[0].p_size = lp->d_secperunit;
+	return (0);
+found:
 	p = ut->ut_name;
 	for (i = 0; i < sizeof(lp->d_typename) - 1 && *p; i++)
 		lp->d_typename[i] = *p++;
