@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)od.c	5.6 (Berkeley) %G%";
+static char *sccsid = "@(#)od.c	5.7 (Berkeley) %G%";
 /*
  * od -- octal, hex, decimal, character dump of data in a file.
  *
@@ -84,7 +84,7 @@ struct dfmt	string	= { 0,               0,  8,        0,    NO, st_put, 0};
 char	usage[]	= "usage: od [-abcdfhilopsvx] [file] [[+]offset[.][b] [label]]";
 char	dbuf[DBUF_SIZE];
 char	lastdbuf[DBUF_SIZE];
-int	addr_base;
+int	addr_base = 8;			/* default address base is OCTAL */
 long	addr;
 long	label = -1L;
 int	_parity = NO;
@@ -324,7 +324,7 @@ char	**argv;
 	same = -1;
 	while ((n = fread(dbuf, 1, DBUF_SIZE, stdin)) > 0)
 	{
-		if (same>=0 && strncmp(dbuf, lastdbuf, DBUF_SIZE) == 0 && !showall)
+		if (same>=0 && bufncmp(dbuf, lastdbuf, DBUF_SIZE) == 0 && !showall)
 		{
 			if (same==0)
 			{
@@ -835,6 +835,16 @@ register char *s;
 		a *= 1024;
 
 	return(a);
+}
+
+bufncmp(a, b, n)
+char	*a;
+char	*b;
+int	n;
+{
+	while (n--)
+		if (*a++ != *b++)
+			return(1);
 }
 
 offset(a)
