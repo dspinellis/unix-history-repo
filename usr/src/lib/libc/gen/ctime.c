@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)ctime.c	5.26 (Berkeley) %G%";
+static char sccsid[] = "@(#)ctime.c	5.27 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -1165,12 +1165,8 @@ const int	base;
 		*tensptr += *unitsptr / base;
 		*unitsptr %= base;
 	} else if (*unitsptr < 0) {
-		--*tensptr;
-		*unitsptr += base;
-		if (*unitsptr < 0) {
-			*tensptr -= 1 + (-*unitsptr) / base;
-			*unitsptr = base - (-*unitsptr) % base;
-		}
+		*tensptr -= 1 + (-(*unitsptr + 1)) / base;
+		*unitsptr = base - 1 - (-(*unitsptr + 1)) % base;
 	}
 }
 
