@@ -6,7 +6,7 @@
 %{
 
 #ifndef lint
-static char sccsid[] = "@(#)ftpcmd.y	4.6 83/01/16";
+static char sccsid[] = "@(#)ftpcmd.y	4.7 83/02/02";
 #endif
 
 #include <sys/types.h>
@@ -75,7 +75,7 @@ cmd:		USER SP username CRLF
 					reply(331,
 				  "Guest login ok, send ident as password.");
 				}
-			} else {
+			} else if (checkuser($3)) {
 				guest = 0;
 				pw = getpwnam($3);
 				reply(331, "Password required for %s.", $3);
