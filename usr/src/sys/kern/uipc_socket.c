@@ -1,4 +1,4 @@
-/*	uipc_socket.c	4.13	81/11/22	*/
+/*	uipc_socket.c	4.14	81/11/22	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -263,7 +263,6 @@ COUNT(SOSEND);
 #define	snderr(errno)	{ error = errno; splx(s); goto release; }
 
 	s = splnet();
-	nullchk("sosend in", so->so_snd.sb_mb);
 again:
 	if ((so->so_state & SS_ISCONNECTED) == 0) {
 		if (so->so_proto->pr_flags & PR_CONNREQUIRED)
@@ -275,7 +274,6 @@ again:
 		snderr(so->so_error);
 	if (top) {
 		error = (*so->so_proto->pr_usrreq)(so, PRU_SEND, top, asa);
-		nullchk("sosend after PRU_SEND", so->so_snd.sb_mb);
 		if (error) {
 			splx(s);
 			goto release;
@@ -317,13 +315,11 @@ nopages:
 			len = MIN(MLEN, u.u_count);
 		}
 		iomove(mtod(m, caddr_t), len, B_WRITE);
-		nullblk("sosend", m, len);
 		m->m_len = len;
 		*mp = m;
 		mp = &m->m_next;
 		space = sbspace(&so->so_snd);
 	}
-	nullchk("sosend top", top);
 	s = splnet();
 	goto again;
 
@@ -342,10 +338,6 @@ soreceive(so, asa)
 
 COUNT(SORECEIVE);
 restart:
-	nullchk("soreceive restart", so->so_rcv.sb_mb);
-	for (m = so->so_rcv.sb_mb; m; m = m->m_next)
-		printf("%d ", m->m_len);
-	printf("\n");
 	sblock(&so->so_rcv);
 	s = splnet();
 
@@ -365,19 +357,14 @@ restart:
 		splx(s);
 		goto restart;
 	}
-	printf("soreceive about to\n");
-	psndrcv(&so->so_snd, &so->so_rcv);
 	m = so->so_rcv.sb_mb;
 	if (m == 0)
 		panic("receive");
 	if (so->so_proto->pr_flags & PR_ADDR) {
-		printf("m_len %d\n", m->m_len);
 		if (m->m_len != sizeof (struct sockaddr))
 			panic("soreceive addr");
 		if (asa)
 			bcopy(mtod(m, caddr_t), (caddr_t)asa, sizeof (*asa));
-		else
-			bzero((caddr_t)asa, sizeof (*asa));
 		so->so_rcv.sb_cc -= m->m_len;
 		so->so_rcv.sb_mbcnt -= MSIZE;
 		m = m_free(m);
@@ -386,8 +373,6 @@ restart:
 		so->so_rcv.sb_mb = m;
 	}
 	eor = 0;
-	printf("soreceive before receive loop\n");
-	psndrcv(&so->so_snd, &so->so_rcv);
 	do {
 		len = MIN(m->m_len, u.u_count);
 		if (len == m->m_len) {
@@ -395,9 +380,6 @@ restart:
 			sbfree(&so->so_rcv, m);
 		}
 		splx(s);
-		nullblk("soreceive", m, len);
-		if (len)
-		printf("%o\n", *mtod(m, caddr_t));
 		iomove(mtod(m, caddr_t), len, B_READ);
 		s = splnet();
 		if (len == m->m_len) {
@@ -409,8 +391,6 @@ restart:
 			so->so_rcv.sb_cc -= len;
 		}
 	} while ((m = so->so_rcv.sb_mb) && u.u_count && !eor);
-	printf("after receive loop\n");
-	psndrcv(&so->so_snd, &so->so_rcv);
 	if ((so->so_proto->pr_flags & PR_ATOMIC) && eor == 0)
 		do {
 			if (m == 0)
@@ -421,11 +401,8 @@ restart:
 			MFREE(m, n);
 			m = n;
 		} while (eor == 0);
-	printf("soreceive after drop remnants\n");
-	psndrcv(&so->so_snd, &so->so_rcv);
 	if ((so->so_proto->pr_flags & PR_WANTRCVD) && so->so_pcb)
 		(*so->so_proto->pr_usrreq)(so, PRU_RCVD, 0, 0);
-	nullchk("receive after PRU_RCVD", so->so_rcv.sb_mb);
 release:
 	sbunlock(&so->so_rcv);
 	splx(s);
@@ -458,41 +435,4 @@ COUNT(SOIOCTL);
 		break;
 
 	}
-}
-
-nullchk(where, m0)
-	char *where;
-	struct mbuf *m0;
-{
-	register struct mbuf *m;
-
-	for (m = m0; m; m = m->m_next)
-		if (nullany(mtod(m, caddr_t), m->m_len))
-			goto bad;
-	return;
-bad:
-	printf("nullchk: %s\n", where);
-	for (m = m0; m; m = m->m_next)
-		printf("\t%x len %d: %s\n", m, m->m_len,
-		    nullany(mtod(m, caddr_t), m->m_len) ? "BAD" : "OK");
-}
-
-nullblk(where, m, len)
-	char *where;
-	struct mbuf *m;
-	int len;
-{
-
-	if (nullany(mtod(m, caddr_t), len))
-		printf("nullblk: %s m=%x len=%d\n", where, m, len);
-}
-
-nullany(cp, len)
-	char *cp;
-	int len;
-{
-	for (; len > 0; len--)
-		if (*cp++ == 0)
-			return (0);		/* XXX */
-	return (0);
 }
