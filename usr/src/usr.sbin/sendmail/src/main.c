@@ -13,12 +13,13 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	8.55 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	8.56 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
 
 #include "sendmail.h"
+#include <netdb.h>
 #if NAMED_BIND
 #include <arpa/nameser.h>
 #include <resolv.h>
@@ -97,6 +98,7 @@ main(argc, argv, envp)
 	char *argv0 = argv[0];
 	struct passwd *pw;
 	struct stat stb;
+	struct hostent *hp;
 	char jbuf[60];			/* holds MyHostName */
 	extern int DtableSize;
 	extern time_t convtime();
@@ -250,7 +252,7 @@ main(argc, argv, envp)
 	define('v', Version, CurEnv);
 
 	/* hostname */
-	av = myhostname(jbuf, sizeof jbuf);
+	hp = myhostname(jbuf, sizeof jbuf);
 	if (jbuf[0] != '\0')
 	{
 		struct	utsname	utsname;
@@ -288,17 +290,35 @@ main(argc, argv, envp)
 			p = jbuf;
 		}
 		if (tTd(0, 4))
-			printf("UUCP nodename: %s\n", p);
+			printf(" UUCP nodename: %s\n", p);
 		p = newstr(p);
 		define('k', p, CurEnv);
 		setclass('k', p);
 		setclass('w', p);
 	}
-	while (av != NULL && *av != NULL)
+	if (hp != NULL)
 	{
-		if (tTd(0, 4))
-			printf("\ta.k.a.: %s\n", *av);
-		setclass('w', *av++);
+		for (av = hp->h_aliases; av != NULL && *av != NULL; av++)
+		{
+			if (tTd(0, 4))
+				printf("\ta.k.a.: %s\n", *av);
+			setclass('w', *av);
+		}
+		if (hp->h_addrtype == AF_INET && hp->h_length == 4)
+		{
+			register int i;
+
+			for (i = 0; hp->h_addr_list[i] != NULL; i++)
+			{
+				char ipbuf[100];
+
+				sprintf(ipbuf, "[%s]",
+					inet_ntoa(*((struct in_addr *) hp->h_addr_list[i])));
+				if (tTd(0, 4))
+					printf("\ta.k.a.: %s\n", ipbuf);
+				setclass('w', ipbuf);
+			}
+		}
 	}
 
 	/* current time */
