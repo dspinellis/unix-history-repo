@@ -1,0 +1,7 @@
+# Define SYSV as -DSYSV if you are using a System V operating system.
+SYSV = -DSYSV -DSVR4
+RANLIB = true
+INSTALL = /usr/ucb/install -c
+
+# The l flag generates a warning from the SVR4 archiver, remove it.
+AR_FLAGS = cq
