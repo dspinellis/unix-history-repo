@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)login.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)login.c	5.11 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -524,43 +524,9 @@ doremoteterm(term, tp)
 				tp->sg_ispeed = tp->sg_ospeed = cpp-speeds;
 				break;
 			}
-		compatsiz(cp);
 	}
 	tp->sg_flags = ECHO|CRMOD|ANYP|XTABS;
 }
-
-/* BEGIN TRASH
- *
- * This is here only long enough to get us by to the revised rlogin
- */
-compatsiz(cp)
-	char *cp;
-{
-	struct winsize ws;
-
-	ws.ws_row = ws.ws_col = -1;
-	ws.ws_xpixel = ws.ws_ypixel = -1;
-	if (cp) {
-		ws.ws_row = atoi(cp);
-		cp = index(cp, ',');
-		if (cp == 0)
-			goto done;
-		ws.ws_col = atoi(++cp);
-		cp = index(cp, ',');
-		if (cp == 0)
-			goto done;
-		ws.ws_xpixel = atoi(++cp);
-		cp = index(cp, ',');
-		if (cp == 0)
-			goto done;
-		ws.ws_ypixel = atoi(++cp);
-	}
-done:
-	if (ws.ws_row != -1 && ws.ws_col != -1 &&
-	    ws.ws_xpixel != -1 && ws.ws_ypixel != -1)
-		ioctl(0, TIOCSWINSZ, &ws);
-}
-/* END TRASH */
 
 /*
  * Set the value of var to be arg in the Unix 4.2 BSD environment env.
