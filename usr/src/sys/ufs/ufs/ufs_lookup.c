@@ -1,4 +1,4 @@
-/*	ufs_lookup.c	4.33	82/12/21	*/
+/*	ufs_lookup.c	4.34	82/12/22	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -159,7 +159,7 @@ dirloop2:
 	 * e.g. like "/." or ".".
 	 */
 	if (u.u_dent.d_name[0] == 0) {
-		if (flag) {
+		if (flag || lockparent) {
 			u.u_error = ENOENT;
 			goto bad;
 		}
