@@ -14,15 +14,15 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)pathnames.h	5.1 (Berkeley) %G%
+ *	@(#)pathnames.h	5.2 (Berkeley) %G%
  */
 
 #include <paths.h>
 
 #define	_PATH_ALL	"/usr/dict/lookall/All"
-#define	_PATH_EIGN	"/usr/lib/eign"
+#define	_PATH_EIGN	"/usr/share/dict/eign"
 #define	_PATH_HUNT	"/usr/libexec/hunt"
-#define	_PATH_IND	"/usr/share/dict/papers/Ind"
+#define	_PATH_IND	"/var/db/Ind"
 #define	_PATH_LIB	"/usr/libexec"
 #define	_PATH_MKEY	"/usr/libexec/mkey"
 #define	_PATH_PWD	"/bin/pwd"
