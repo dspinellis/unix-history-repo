@@ -1,4 +1,4 @@
-/*	compact.h	4.2	83/02/23	*/
+/*	compact.h	4.3	83/05/04	*/
 
 #define VAX 11/780
 
@@ -13,7 +13,7 @@ typedef long longint;
 #include <sys/stat.h>
 #include <stdio.h>
 
-#define LNAME 80
+#define LNAME 1024
 #define NEW flist; flist = flist -> next
 #define LLEAF 010
 #define RLEAF 04
