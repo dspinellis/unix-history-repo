@@ -1,12 +1,15 @@
-.\"	@(#)mktemp.3	5.1 (Berkeley) %G%
+.\"	@(#)mktemp.3	6.1 (Berkeley) %G%
 .\"
-.TH MKTEMP 3  "19 January 1983"
+.TH MKTEMP 3  ""
 .AT 3
 .SH NAME
 mktemp \- make a unique file name
 .SH SYNOPSIS
 .nf
 .B char *mktemp(template)
+.B char *template;
+.sp
+.B mkstemp(template)
 .B char *template;
 .fi
 .SH DESCRIPTION
@@ -18,5 +21,11 @@ address of the template.
 The template should look like a file name with six trailing
 X's, which will be replaced with the
 current process id and a unique letter.
+.I Mkstemp
+makes the same replacement to the template but returns an open file descriptor
+for the template file suitable for reading or writing.
+.I Mkstemp
+avoids the potential race between the creation of the unique
+file name and its being opened for use.
 .SH "SEE ALSO"
 getpid(2)
