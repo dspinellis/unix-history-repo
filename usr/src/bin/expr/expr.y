@@ -228,7 +228,7 @@ register char *p;
 	register num;
 	extern char *braslist[], *braelist[], *loc2;
 
-	compile(p, expbuf, &expbuf[512], 0);
+	compile(p, expbuf, &expbuf[ESIZE], 0);
 	if(nbra > 1)
 		yyerror("Too many '\\('s");
 	if(advance(s, expbuf)) {
@@ -661,7 +661,7 @@ register	count;
 	return(1);
 }
 
-static char *sccsid = "@(#)expr.y	4.3 (Berkeley) %G%";
+static char *sccsid = "@(#)expr.y	4.4 (Berkeley) %G%";
 yyerror(s)
 
 {
