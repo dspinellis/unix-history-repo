@@ -1,4 +1,4 @@
-/*	up.c	6.1	83/07/29	*/
+/*	up.c	6.2	83/09/23	*/
 
 /*
  * UNIBUS peripheral standalone driver
@@ -54,6 +54,7 @@ upopen(io)
 	if (io->i_boff < 0 || io->i_boff > 7)
 		_stop("up bad unit");
 	upaddr = (struct updevice *)ubamem(unit, ubastd[0]);
+	upaddr->upcs2 = unit % 8;
 	while ((upaddr->upcs1 & UP_DVA) == 0)
 		;
 	if (up_gottype[unit] == 0) {
@@ -140,13 +141,11 @@ restart:
 	 * If transfer has completed, free UNIBUS
 	 * resources and return transfer size.
 	 */
-	if ((upaddr->upds&UPDS_ERR) == 0 && (upaddr->upcs1&UP_TRE) == 0) {
-		ubafree(io, info);
-		return (io->i_cc);
-	}
+	if ((upaddr->upds&UPDS_ERR) == 0 && (upaddr->upcs1&UP_TRE) == 0)
+		goto done;
 	if (updebug[unit] & (UPF_ECCDEBUG|UPF_BSEDEBUG)) {
 		printf("up error: (cyl,trk,sec)=(%d,%d,%d) ",
-		  upaddr->updc, upaddr->upda>>8, (upaddr->upda&0x1f)-1);
+		  upaddr->updc, upaddr->upda>>8, upaddr->upda&0xff);
 		printf("cs2=%b er1=%b er2=%b wc=%d\n",
 	    	  upaddr->upcs2, UPCS2_BITS, upaddr->uper1, 
 		  UPER1_BITS, upaddr->uper2, UPER2_BITS, upaddr->upwc);
@@ -189,6 +188,12 @@ hard:
 		   UPER1_BITS, upaddr->uper2, UPER2_BITS);
 		upaddr->upcs1 = UP_TRE|UP_DCLR|UP_GO;
 		io->i_errblk = bn;
+		if (io->i_errcnt >= 16) {
+			upaddr->upof = UPOF_FMT22;
+			upaddr->upcs1 = UP_RTC|UP_GO;
+			while ((upaddr->upds&UPDS_DRY) == 0)
+				DELAY(25);
+		}
 		return (io->i_cc + upaddr->upwc * sizeof(short));
 	}
 	if (upaddr->uper2 & UPER2_BSE) {
@@ -201,12 +206,21 @@ hard:
 	 * ECC error. If a soft error, correct it;
 	 * otherwise fall through and retry the transfer.
 	 */
-	if ((upaddr->uper1 & (UPER1_DCK|UPER1_ECH)) == UPER1_DCK) {
+	if ((upaddr->uper1 & (UPER1_DCK|UPER1_ECH|UPER1_HCRC)) == UPER1_DCK) {
 		if (upecc(io, ECC) == 0)
+#ifdef F_SEVRE
+		    if (io->i_flgs & F_SEVRE)
+			return (-1);
+		    else
+#endif
 			goto success;
 		io->i_error = EECC;
 		goto hard;
 	} 
+#ifdef F_SEVRE
+	if (io->i_flgs & F_SEVRE)
+		goto hard;
+#endif
 	/*
 	 * Clear drive error and, every eight attempts,
 	 * (starting with the fourth)
@@ -215,45 +229,16 @@ hard:
 	upaddr->upcs1 = UP_TRE|UP_DCLR|UP_GO;
 	if ((io->i_errcnt&07) == 4 ) {
 		upaddr->upcs1 = UP_RECAL|UP_GO;
-		recal = 1;
-		goto restart;
-	}
-	/*
-	 * Advance recalibration finite state machine
-	 * if recalibrate in progress, through
-	 *	RECAL
-	 *	SEEK
-	 *	OFFSET (optional)
-	 *	RETRY
-	 */
-	switch (recal) {
-
-	case 1:
+		while ((upaddr->upds&UPDS_DRY) == 0)
+			DELAY(25);
 		upaddr->updc = cn;
 		upaddr->upcs1 = UP_SEEK|UP_GO;
-		recal = 2;
-		goto restart;
-
-	case 2:
-		if (io->i_errcnt < 16 || (func & READ) == 0)
-			goto donerecal;
+		while ((upaddr->upds&UPDS_DRY) == 0)
+			DELAY(25);
+	}
+	if (io->i_errcnt >= 16 && (func & READ)) {
 		upaddr->upof = up_offset[io->i_errcnt & 017] | UPOF_FMT22;
 		upaddr->upcs1 = UP_OFFSET|UP_GO;
-		recal = 3;
-		goto restart;
-
-	donerecal:
-	case 3:
-		recal = 0;
-		break;
-	}
-	/*
-	 * If we were offset positioning,
-	 * return to centerline.
-	 */
-	if (io->i_errcnt >= 16) {
-		upaddr->upof = UPOF_FMT22;
-		upaddr->upcs1 = UP_RTC|UP_GO;
 		while ((upaddr->upds&UPDS_DRY) == 0)
 			DELAY(25);
 	}
@@ -266,10 +251,21 @@ success:
 		doprintf++;
 		goto restart;
 	}
+done:
 	/*
 	 * Release UNIBUS 
 	 */
 	ubafree(io, info);
+	/*
+	 * If we were offset positioning,
+	 * return to centerline.
+	 */
+	if (io->i_errcnt >= 16) {
+		upaddr->upof = UPOF_FMT22;
+		upaddr->upcs1 = UP_RTC|UP_GO;
+		while ((upaddr->upds&UPDS_DRY) == 0)
+			DELAY(25);
+	}
 	return (io->i_cc);
 }
 
@@ -299,6 +295,8 @@ upecc(io, flag)
 	 */
 	twc = up->upwc;
 	npf = ((twc * sizeof(short)) + io->i_cc) / sectsiz;
+	if (flag == ECC)
+		npf--;
 	if (updebug[unit] & UPF_ECCDEBUG)
 		printf("npf=%d mask=0x%x ec1=%d wc=%d\n",
 			npf, up->upec2, up->upec1, twc);
@@ -324,7 +322,6 @@ upecc(io, flag)
 		 * the transfer at which the correction
 		 * applied.
 		 */
-		npf--;
 		i = up->upec1 - 1;		/* -1 makes 0 origin */
 		bit = i & 07;
 		o = (i & ~07) >> 3;
@@ -360,6 +357,13 @@ upecc(io, flag)
 			if ((io->i_flgs&F_ECCLM) && ++ecccnt > MAXECC)
 				return (1);
 		}
+#ifdef F_SEVRE
+		if (io->i_flgs & F_SEVRE) {
+			io->i_error = EECC;
+			io->i_bn = bn;
+			return(1);
+		}
+#endif
 		return (0);
 	}
 
