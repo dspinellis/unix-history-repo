@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwlabel.c	3.5 83/08/19";
+static	char *sccsid = "@(#)wwlabel.c	3.6 83/08/26";
 #endif
 
 #include "ww.h"
@@ -13,7 +13,7 @@ register char *l;
 	char ulc, top, urc, left, right, llc, bottom, lrc;
 
 	if (w->ww_i.nrow == w->ww_w.nrow)	/* not framed */
-		return -1;
+		return;
 	Wauxcursor(w->ww_win, 0, where);
 	for (i = w->ww_o.ncol - where - 1; i > 0 && *l; l++)
 		for (p = unctrl(*l); *p; p++, i--)

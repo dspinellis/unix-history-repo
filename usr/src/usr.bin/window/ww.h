@@ -1,4 +1,4 @@
-/*	@(#)ww.h	3.10 83/08/19		*/
+/*	@(#)ww.h	3.11 83/08/26		*/
 
 #include <stdio.h>
 #include <sgtty.h>
@@ -82,6 +82,15 @@ union ww_char {
 
 	/* special ww_index value */
 #define WWX_NOBODY	NWW
+
+#define WWE_NOERR	0
+#define WWE_SYS		1		/* system error */
+#define WWE_NOMEM	2		/* out of memory */
+#define WWE_TOOMANY	3		/* too many windows */
+#define WWE_NOPTY	4		/* no more ptys */
+#define WWE_SIZE	5		/* bad window size */
+#define WWE_BADTERM	6		/* bad terminal type */
+#define WWE_CANTDO	7		/* dumb terminal */
 
 	/* ww_mode values */
 #define WW_PTY		0		/* has pty */

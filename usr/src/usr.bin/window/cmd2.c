@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd2.c	3.9 83/08/26";
+static	char *sccsid = "@(#)cmd2.c	3.10 83/08/26";
 #endif
 
 #include "defs.h"
@@ -7,7 +7,6 @@ static	char *sccsid = "@(#)cmd2.c	3.9 83/08/26";
 struct ww *getwin();
 struct ww *openwin();
 char *strtime();
-
 dohelp()
 {
 	register struct ww *w;

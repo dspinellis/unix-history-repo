@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd1.c	3.8 83/08/26";
+static	char *sccsid = "@(#)cmd1.c	3.9 83/08/26";
 #endif
 
 #include "defs.h"
@@ -11,13 +11,7 @@ dowindow()
 	int col, row, xcol, xrow;
 	int id;
 
-	if ((id = findid()) < 0) {
-		if (terse)
-			Ding();
-		else
-			wwputs("Too many windows.  ", cmdwin);
 		return;
-	}
 	if (!terse)
 		wwputs("Upper left corner: ", cmdwin);
 	col = 0;
@@ -158,6 +152,11 @@ int id, nrow, ncol, row, col;
 		return 0;
 	if ((w = wwopen(WW_PTY, id, nrow, ncol, row, col)) == 0)
 		return 0;
+	}
+	if ((w = wwopen(WWO_PTY, nrow, ncol, row, col, nline)) == 0) {
+		error("%s.", wwerror());
+		return 0;
+	}
 	reframe();
 	if (selwin == 0)
 		setselwin(w);
