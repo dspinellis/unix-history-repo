@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mkboottape.c	7.5 (Berkeley) %G%
+ *	@(#)mkboottape.c	7.6 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -22,11 +22,13 @@
 #include <string.h>
 
 #include <pmax/stand/dec_boot.h>
+#include <pmax/stand/dec_exec.h>
 
 void err __P((const char *, ...));
 void usage __P((void));
 
 struct	Dec_DiskBoot decBootInfo;
+struct	coff_exec dec_exec;
 
 /*
  * This program takes a kernel and the name of the special device file that
@@ -89,14 +91,14 @@ rooterr:	err("%s: %s", argv[2], strerror(errno));
 	 * Check for exec header and skip to code segment.
 	 */
 	if (read(ifd, &aout, sizeof(aout)) != sizeof(aout) ||
-	    aout.ex_fhdr.magic != COFF_MAGIC || aout.a_magic != OMAGIC)
-		err("need impure text format (OMAGIC) file");
+	    aout.a_magic != OMAGIC)
+		err("%s: need impure text format (OMAGIC) file", argv[1]);
 
-	loadAddr = aout.ex_aout.codeStart;
+	loadAddr = aout.a_entry;
 	execAddr = aout.a_entry;
 	length = aout.a_text + aout.a_data;
 	textoff = N_TXTOFF(aout);
-	(void)printf("Input file is COFF format\n");
+	(void)printf("Input file is a.out format\n");
 	(void)printf("load %x, start %x, len %d\n", loadAddr, execAddr, length);
 
 	/*
@@ -107,22 +109,27 @@ rooterr:	err("%s: %s", argv[2], strerror(errno));
 
 	if (makebootfile) {
 		/*
-		 * Write modified ECOFF header.
+		 * Write the ECOFF header.
 		 */
-		aout.ex_fhdr.numSections = 1;
-		aout.ex_fhdr.numSyms = 0;
-		aout.ex_fhdr.symPtr = 0;
-		aout.a_text = nsectors << DEV_BSHIFT;
-		aout.a_data = 0;
-		aout.a_bss = 0;
-		aout.ex_aout.heapStart = aout.ex_aout.bssStart =
-			aout.ex_aout.codeStart + aout.a_text;
-		if (write(ofd, (char *)&aout, sizeof(aout)) != sizeof(aout))
+		dec_exec.magic = COFF_MAGIC;
+		dec_exec.numSections = 1;
+		dec_exec.optHeader = 56;
+		dec_exec.flags = 7;
+		dec_exec.aout_magic = OMAGIC;
+		dec_exec.verStamp = 512;
+		dec_exec.codeSize = nsectors << DEV_BSHIFT;
+		dec_exec.entry = execAddr;
+		dec_exec.codeStart = loadAddr;
+		dec_exec.heapStart = dec_exec.bssStart =
+			dec_exec.codeStart + aout.a_text;
+		if (write(ofd, (char *)&dec_exec, sizeof(dec_exec)) !=
+		    sizeof(dec_exec))
 			goto deverr;
 		strncpy(shdr.name, ".text", sizeof(shdr.name));
 		shdr.physAddr = shdr.virtAddr = loadAddr;
-		shdr.size = aout.a_text;
-		shdr.sectionPtr = n = (sizeof(aout) + sizeof(shdr) + 15) & ~15;
+		shdr.size = dec_exec.codeSize;
+		shdr.sectionPtr = n =
+			(sizeof(dec_exec) + sizeof(shdr) + 15) & ~15;
 		shdr.relocPtr = 0;
 		shdr.lnnoPtr = 0;
 		shdr.numReloc = 0;
@@ -130,7 +137,7 @@ rooterr:	err("%s: %s", argv[2], strerror(errno));
 		shdr.flags = 0x20;
 		if (write(ofd, (char *)&shdr, sizeof(shdr)) != sizeof(shdr))
 			goto deverr;
-		n -= sizeof(aout) + sizeof(shdr);
+		n -= sizeof(dec_exec) + sizeof(shdr);
 		if (write(ofd, block, n) != n)
 			goto deverr;
 	} else {
