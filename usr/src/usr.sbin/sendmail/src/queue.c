@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	8.41 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	8.42 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	8.41 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	8.42 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 

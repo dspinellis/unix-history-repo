@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.87 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.88 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -1377,7 +1377,7 @@ tryhost:
 		*/
 
 		putfromline(mci, e);
-		(*e->e_puthdr)(mci, e);
+		(*e->e_puthdr)(mci, e->e_header, e);
 		putline("\n", mci);
 		(*e->e_putbody)(mci, e, NULL);
 
@@ -2057,26 +2057,52 @@ putbody(mci, e, separator)
 				e->e_df, e->e_to, e->e_from.q_paddr);
 		}
 		else
+		{
+			if (bitset(MCIF_INHEADER, mci->mci_flags))
+			{
+				putline("", mci);
+				mci->mci_flags &= ~MCIF_INHEADER;
+			}
 			putline("<<< No Message Collected >>>", mci);
+		}
 	}
 	if (e->e_dfp != NULL)
 	{
 		rewind(e->e_dfp);
-		while (!ferror(mci->mci_out) && fgets(buf, sizeof buf, e->e_dfp) != NULL)
-		{
-			if (buf[0] == 'F' &&
-			    bitnset(M_ESCFROM, mci->mci_mailer->m_flags) &&
-			    strncmp(buf, "From ", 5) == 0)
-				(void) putc('>', mci->mci_out);
-			if (buf[0] == '-' && buf[1] == '-' && separator != NULL)
-			{
-				/* possible separator */
-				int sl = strlen(separator);
 
-				if (strncmp(&buf[2], separator, sl) == 0)
-					(void) putc(' ', mci->mci_out);
+		if (bitset(MCIF_CVT8TO7, mci->mci_flags))
+		{
+			/* do 8 to 7 bit MIME conversion */
+			if (hvalue("MIME-Version", e->e_header) == NULL)
+				putline("MIME-Version: 1.0", mci);
+			mime8to7(mci, e->e_header, e, NULL);
+		}
+		else
+		{
+			/* we can pass it through unmodified */
+			if (bitset(MCIF_INHEADER, mci->mci_flags))
+			{
+				putline("", mci);
+				mci->mci_flags &= ~MCIF_INHEADER;
 			}
-			putline(buf, mci);
+			while (!ferror(mci->mci_out) &&
+			       fgets(buf, sizeof buf, e->e_dfp) != NULL)
+			{
+				if (buf[0] == 'F' &&
+				    bitnset(M_ESCFROM, mci->mci_mailer->m_flags) &&
+				    strncmp(buf, "From ", 5) == 0)
+					(void) putc('>', mci->mci_out);
+				if (buf[0] == '-' && buf[1] == '-' &&
+				    separator != NULL)
+				{
+					/* possible separator */
+					int sl = strlen(separator);
+
+					if (strncmp(&buf[2], separator, sl) == 0)
+						(void) putc(' ', mci->mci_out);
+				}
+				putline(buf, mci);
+			}
 		}
 
 		if (ferror(e->e_dfp))
@@ -2227,7 +2253,7 @@ mailfile(filename, ctladdr, e)
 			mcibuf.mci_flags |= MCIF_7BIT;
 
 		putfromline(&mcibuf, e);
-		(*e->e_puthdr)(&mcibuf, e);
+		(*e->e_puthdr)(&mcibuf, e->e_header, e);
 		putline("\n", &mcibuf);
 		(*e->e_putbody)(&mcibuf, e, NULL);
 		putline("\n", &mcibuf);

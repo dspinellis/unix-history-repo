@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readcf.c	8.25 (Berkeley) %G%";
+static char sccsid[] = "@(#)readcf.c	8.26 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -1048,7 +1048,40 @@ setoption(opt, val, sticky)
 		break;
 
 	  case '7':		/* force seven-bit input */
-		SevenBit = atobool(val);
+		SevenBitInput = atobool(val);
+		break;
+
+	  case '8':		/* handling of 8-bit input */
+		switch (*val)
+		{
+		  case 'r':		/* reject all 8-bit */
+			MimeMode = 0;
+			break;
+
+		  case 'c':		/* convert all 8-bit */
+			MimeMode = MM_CVTMIME|MM_MIME8BIT;
+			break;
+
+		  case 'm':		/* minimal encoding */
+			MimeMode = MM_PASS8BIT;
+			break;
+
+		  case 'p':		/* pass 8 bit, convert MIME */
+			MimeMode = MM_PASS8BIT|MM_CVTMIME;
+			break;
+
+		  case 's':		/* strict adherence */
+			MimeMode = MM_CVTMIME;
+			break;
+
+		  case 'e':		/* encode 8 bit if available */
+			MimeMode = MM_MIME8BIT|MM_PASS8BIT|MM_CVTMIME;
+			break;
+
+		  default:
+			syserr("Unknown 8-bit mode %c", *val);
+			exit(EX_USAGE);
+		}
 		break;
 
 	  case 'A':		/* set default alias file */

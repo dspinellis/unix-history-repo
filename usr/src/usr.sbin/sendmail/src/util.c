@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	8.41 (Berkeley) %G%";
+static char sccsid[] = "@(#)util.c	8.42 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -945,9 +945,22 @@ sfgets(buf, siz, fp, timeout, during)
 	}
 	if (TrafficLogFile != NULL)
 		fprintf(TrafficLogFile, "%05d <<< %s", getpid(), buf);
-	if (SevenBit)
+	if (SevenBitInput)
+	{
 		for (p = buf; *p != '\0'; p++)
 			*p &= ~0200;
+	}
+	else if (!HasEightBits)
+	{
+		for (p = buf; *p != '\0'; p++)
+		{
+			if (bitset(0200, *p))
+			{
+				HasEightBits = TRUE;
+				break;
+			}
+		}
+	}
 	return (buf);
 }
 

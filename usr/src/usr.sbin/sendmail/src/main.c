@@ -13,7 +13,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	8.62 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	8.63 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -1092,7 +1092,7 @@ main(argc, argv, envp)
 
 		/* collect body for UUCP return */
 		if (OpMode != MD_VERIFY)
-			collect(FALSE, FALSE, CurEnv);
+			collect(InChannel, FALSE, FALSE, NULL, CurEnv);
 		finis();
 	}
 
@@ -1114,7 +1114,7 @@ main(argc, argv, envp)
 	if (OpMode != MD_VERIFY || GrabTo)
 	{
 		CurEnv->e_flags |= EF_GLOBALERRS;
-		collect(FALSE, FALSE, CurEnv);
+		collect(InChannel, FALSE, FALSE, NULL, CurEnv);
 	}
 	errno = 0;
 
@@ -1459,7 +1459,7 @@ auth_warning(e, msg, va_alist)
 		VA_START(msg);
 		vsprintf(p, msg, ap);
 		VA_END;
-		addheader("X-Authentication-Warning", buf, e);
+		addheader("X-Authentication-Warning", buf, &e->e_header);
 	}
 }
 /*

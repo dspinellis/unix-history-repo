@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.97 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.98 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -183,7 +183,7 @@ setdefaults(e)
 	MaxHopCount = 25;			/* option h */
 	e->e_sendmode = SM_FORK;		/* option d */
 	e->e_errormode = EM_PRINT;		/* option e */
-	SevenBit = FALSE;			/* option 7 */
+	SevenBitInput = FALSE;			/* option 7 */
 	MaxMciCache = 1;			/* option k */
 	MciCacheTimeout = 300;			/* option K */
 	LogLevel = 9;				/* option L */
@@ -191,6 +191,7 @@ setdefaults(e)
 	TimeOuts.to_q_return = 5 DAYS;		/* option T */
 	TimeOuts.to_q_warning = 0;		/* option T */
 	PrivacyFlags = 0;			/* option p */
+	MimeMode = MM_CVTMIME|MM_PASS8BIT;	/* option 8 */
 	setdefuser();
 	setupmaps();
 	setupmailers();

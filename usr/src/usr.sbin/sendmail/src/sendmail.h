@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	8.45 (Berkeley) %G%
+ *	@(#)sendmail.h	8.46 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	8.45		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	8.46		%G%";
 # endif
 # else /*  _DEFINE */
 # define EXTERN extern
@@ -299,6 +299,8 @@ MCI
 #define MCIF_8BITMIME	000100		/* BODY=8BITMIME supported */
 #define MCIF_7BIT	000200		/* strip this message to 7 bits */
 #define MCIF_MULTSTAT	000400		/* MAIL11V3: handles MULT status */
+#define MCIF_INHEADER	001000		/* currently outputing header */
+#define MCIF_CVT8TO7	002000		/* convert from 8 to 7 bits */
 
 /* states */
 #define MCIS_CLOSED	0		/* no traffic on this connection */
@@ -340,7 +342,7 @@ ENVELOPE
 	short		e_nsent;	/* number of sends since checkpoint */
 	short		e_sendmode;	/* message send mode */
 	short		e_errormode;	/* error return mode */
-	int		(*e_puthdr)__P((MCI *, ENVELOPE *));
+	int		(*e_puthdr)__P((MCI *, HDR *, ENVELOPE *));
 					/* function to put header of message */
 	int		(*e_putbody)__P((MCI *, ENVELOPE *, char *));
 					/* function to put body of message */
@@ -378,6 +380,7 @@ ENVELOPE
 #define EF_METOO	0x0004000	/* send to me too */
 #define EF_LOGSENDER	0x0008000	/* need to log the sender */
 #define EF_NORECEIPT	0x0010000	/* suppress all return-receipts */
+#define EF_HAS8BIT	0x0020000	/* at least one 8-bit char in body */
 
 EXTERN ENVELOPE	*CurEnv;	/* envelope currently being processed */
 /*
@@ -642,7 +645,7 @@ typedef struct event	EVENT;
 
 EXTERN EVENT	*EventQueue;		/* head of event queue */
 /*
-**  Operation, send, and error modes
+**  Operation, send, error, and MIME modes
 **
 **	The operation mode describes the basic operation of sendmail.
 **	This can be set from the command line, and is "send mail" by
@@ -687,6 +690,15 @@ EXTERN char	OpMode;		/* operation mode, see below */
 #define EM_WRITE	'w'		/* write back errors */
 #define EM_BERKNET	'e'		/* special berknet processing */
 #define EM_QUIET	'q'		/* don't print messages (stat only) */
+
+
+/* MIME processing mode */
+EXTERN int	MimeMode;
+
+/* bit values for MimeMode */
+#define MM_CVTMIME	0x0001		/* convert 8 to 7 bit MIME */
+#define MM_PASS8BIT	0x0002		/* just send 8 bit data blind */
+#define MM_MIME8BIT	0x0004		/* convert 8-bit data to MIME */
 /*
 **  Additional definitions
 */
@@ -786,7 +798,8 @@ EXTERN bool	AutoRebuild;	/* auto-rebuild the alias database as needed */
 EXTERN bool	CheckAliases;	/* parse addresses during newaliases */
 EXTERN bool	NoAlias;	/* suppress aliasing */
 EXTERN bool	UseNameServer;	/* use internet domain name server */
-EXTERN bool	SevenBit;	/* force 7-bit data */
+EXTERN bool	SevenBitInput;	/* force 7-bit data on input */
+EXTERN bool	HasEightBits;	/* has at least one eight bit input byte */
 EXTERN time_t	SafeAlias;	/* interval to wait until @:@ in alias file */
 EXTERN FILE	*InChannel;	/* input connection */
 EXTERN FILE	*OutChannel;	/* output connection */

@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)collect.c	8.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)collect.c	8.17 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <errno.h>
@@ -21,6 +21,7 @@ static char sccsid[] = "@(#)collect.c	8.16 (Berkeley) %G%";
 **	stripped off (after important information is extracted).
 **
 **	Parameters:
+**		fp -- file to read.
 **		from -- the person we think it may be from.  If
 **			there is a "From" line, we will replace
 **			the name of the person by this.  If NULL,
@@ -46,6 +47,7 @@ maketemp(from)
 	time_t dbto = smtpmode ? TimeOuts.to_datablock : 0;
 	register char *workbuf, *freebuf;
 	bool inputerr = FALSE;
+	bool headeronly = FALSE;
 	char buf[MAXLINE], buf2[MAXLINE];
 	extern char *hvalue();
 	extern bool isheader(), flusheol();
@@ -53,18 +55,26 @@ maketemp(from)
 
 	CollectErrorMessage = NULL;
 	CollectErrno = 0;
+	if (hdrp == NULL)
+		hdrp = &e->e_header;
+	else
+		headeronly = TRUE;
 
 	/*
 	**  Create the temp file name and create the file.
 	*/
 
-	e->e_df = queuename(e, 'd');
-	e->e_df = newstr(e->e_df);
-	if ((tf = dfopen(e->e_df, O_WRONLY|O_CREAT|O_TRUNC, FileMode)) == NULL)
+	if (!headeronly)
 	{
-		syserr("Cannot create %s", e->e_df);
-		e->e_flags |= EF_NORETURN;
-		finis();
+		e->e_df = queuename(e, 'd');
+		e->e_df = newstr(e->e_df);
+		if ((tf = dfopen(e->e_df, O_WRONLY|O_CREAT|O_TRUNC, FileMode)) == NULL)
+		{
+			syserr("Cannot create %s", e->e_df);
+			e->e_flags |= EF_NORETURN;
+			finis();
+		}
+		HasEightBits = FALSE;
 	}
 
 	/*
@@ -81,17 +91,16 @@ maketemp(from)
 	**  Try to read a UNIX-style From line
 	*/
 
-	if (sfgets(buf, MAXLINE, InChannel, dbto,
-			"initial message read") == NULL)
+	if (sfgets(buf, MAXLINE, fp, dbto, "initial message read") == NULL)
 		goto readerr;
 	fixcrlf(buf, FALSE);
 # ifndef NOTUNIX
-	if (!SaveFrom && strncmp(buf, "From ", 5) == 0)
+	if (!headeronly && !SaveFrom && strncmp(buf, "From ", 5) == 0)
 	{
-		if (!flusheol(buf, InChannel, dbto))
+		if (!flusheol(buf, fp, dbto))
 			goto readerr;
 		eatfrom(buf, e);
-		if (sfgets(buf, MAXLINE, InChannel, dbto,
+		if (sfgets(buf, MAXLINE, fp, dbto,
 				"message header read") == NULL)
 			goto readerr;
 		fixcrlf(buf, FALSE);
@@ -99,7 +108,7 @@ maketemp(from)
 # endif /* NOTUNIX */
 
 	/*
-	**  Copy InChannel to temp file & do message editing.
+	**  Copy fp to temp file & do message editing.
 	**	To keep certain mailers from getting confused,
 	**	and to keep the output clean, lines that look
 	**	like UNIX "From" lines are deleted in the header.
@@ -122,7 +131,7 @@ maketemp(from)
 		}
 
 		/* if the line is too long, throw the rest away */
-		if (!flusheol(workbuf, InChannel, dbto))
+		if (!flusheol(workbuf, fp, dbto))
 			goto readerr;
 
 		/* it's okay to toss '\n' now (flusheol() needed it) */
@@ -138,8 +147,7 @@ maketemp(from)
 		{
 			int clen;
 
-			if (sfgets(freebuf, MAXLINE, InChannel,
-					dbto,
+			if (sfgets(freebuf, MAXLINE, fp, dbto,
 					"message header read") == NULL)
 			{
 				freebuf[0] = '\0';
@@ -150,7 +158,7 @@ maketemp(from)
 			if (*freebuf != ' ' && *freebuf != '\t')
 				break;
 
-			if (!flusheol(freebuf, InChannel, dbto))
+			if (!flusheol(freebuf, fp, dbto))
 				goto readerr;
 
 			fixcrlf(freebuf, TRUE);
@@ -216,10 +224,17 @@ maketemp(from)
 	if (tTd(30, 1))
 		printf("EOH\n");
 
+	if (headeronly)
+	{
+		if (*workbuf != '\0')
+			syserr("collect: lost first line of message");
+		goto readerr;
+	}
+
 	if (*workbuf == '\0')
 	{
 		/* throw away a blank line */
-		if (sfgets(buf, MAXLINE, InChannel, dbto,
+		if (sfgets(buf, MAXLINE, fp, dbto,
 				"message separator read") == NULL)
 			goto readerr;
 	}
@@ -255,14 +270,13 @@ maketemp(from)
 		fputs("\n", tf);
 		if (ferror(tf))
 			tferror(tf, e);
-		if (sfgets(buf, MAXLINE, InChannel, dbto,
-				"message body read") == NULL)
+		if (sfgets(buf, MAXLINE, fp, dbto, "message body read") == NULL)
 			goto readerr;
 	}
 
-	if (feof(InChannel) || ferror(InChannel))
-	{
 readerr:
+	if ((feof(fp) && smtpmode) || ferror(fp))
+	{
 		if (tTd(30, 1))
 			printf("collect: read error\n");
 		inputerr = TRUE;
@@ -271,12 +285,18 @@ readerr:
 	/* reset global timer */
 	sfgetset((time_t) 0);
 
-	if (fflush(tf) != 0)
-		tferror(tf, e);
-	if (fsync(fileno(tf)) < 0 || fclose(tf) < 0)
+	if (headeronly)
+		return;
+
+	if (tf != NULL)
 	{
-		tferror(tf, e);
-		finis();
+		if (fflush(tf) != 0)
+			tferror(tf, e);
+		if (fsync(fileno(tf)) < 0 || fclose(tf) < 0)
+		{
+			tferror(tf, e);
+			finis();
+		}
 	}
 
 	if (CollectErrorMessage != NULL && Errors <= 0)
@@ -299,19 +319,19 @@ readerr:
 		if (host == NULL)
 			host = "localhost";
 
-		if (feof(InChannel))
+		if (feof(fp))
 			problem = "unexpected close";
-		else if (ferror(InChannel))
+		else if (ferror(fp))
 			problem = "I/O error";
 		else
 			problem = "read timeout";
 # ifdef LOG
-		if (LogLevel > 0 && feof(InChannel))
+		if (LogLevel > 0 && feof(fp))
 			syslog(LOG_NOTICE,
 			    "collect: %s on connection from %s, sender=%s: %s\n",
 			    problem, host, e->e_from.q_paddr, errstring(errno));
 # endif
-		if (feof(InChannel))
+		if (feof(fp))
 			usrerr("451 collect: %s on connection from %s, from=%s",
 				problem, host, e->e_from.q_paddr);
 		else
@@ -344,8 +364,10 @@ readerr:
 	**  Add an Apparently-To: line if we have no recipient lines.
 	*/
 
-	if (hvalue("to", e) == NULL && hvalue("cc", e) == NULL &&
-	    hvalue("bcc", e) == NULL && hvalue("apparently-to", e) == NULL)
+	if (hvalue("to", e->e_header) == NULL &&
+	    hvalue("cc", e->e_header) == NULL &&
+	    hvalue("bcc", e->e_header) == NULL &&
+	    hvalue("apparently-to", e->e_header) == NULL)
 	{
 		register ADDRESS *q;
 
@@ -357,7 +379,7 @@ readerr:
 				continue;
 			if (tTd(30, 3))
 				printf("Adding Apparently-To: %s\n", q->q_paddr);
-			addheader("Apparently-To", q->q_paddr, e);
+			addheader("Apparently-To", q->q_paddr, &e->e_header);
 		}
 	}
 
