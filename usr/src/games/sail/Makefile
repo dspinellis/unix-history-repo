@@ -1,7 +1,7 @@
 #
 # Sail - Wooden Ships And Iron Men
 #
-# Makefile	@(#)Makefile	2.2 83/10/31
+# Makefile	@(#)Makefile	2.3 83/11/09
 #
 CC=	cc
 CTAGS=	ctags -w
@@ -58,10 +58,10 @@ clean:
 	rm -f ${DOBJS} ${POBJS} ${LOBJS} ${COMMONOBJS} ${JUNKFILES}
 
 install: sail driver sail.log $(TARGET)/$(LOGFILE)
-	install -s -m 4711 -o ${SAILMASTER} sail ${TARGET}/${SAIL}
-	install -s -m 4711 -o ${SAILMASTER} driver ${TARGET}/${DRIVER}
-	install -s -m 711 sail.log ${TARGET}/${SAIL.LOG}
-	install sail.6 /usr/man/man6
+	install -c -s -m 4711 -o ${SAILMASTER} sail ${TARGET}/${SAIL}
+	install -c -s -m 4711 -o ${SAILMASTER} driver ${TARGET}/${DRIVER}
+	install -c -s -m 711 sail.log ${TARGET}/${SAIL.LOG}
+	install -c sail.6 /usr/man/man6
 
 logfile $(TARGET)/$(LOGFILE):
 	cp /dev/null ${TARGET}/${LOGFILE}
