@@ -266,7 +266,7 @@ help -- I left my architecture manual at home
 
 #if !pdp11 && !vax && !mc68000
 
-edit this file to handle your machine's breakpoint indication
+edit this file to handle your machines breakpoint indication
 
 #endif
 
