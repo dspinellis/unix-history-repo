@@ -1,11 +1,11 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)blkcpy.c 1.2 %G%";
+static char sccsid[] = "@(#)blkcpy.c 1.3 %G%";
 
-blkcpy(siz, from, to)
-	long		siz;
+blkcpy(from, to, siz)
 	register char	*from;
 	register char	*to;
+	long		siz;
 {
 	register int	size = siz;
 
