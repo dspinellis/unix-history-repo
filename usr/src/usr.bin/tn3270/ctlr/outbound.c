@@ -82,27 +82,39 @@ init_ctlr()
     init_inbound();
 }
 
-/* What we know is that table is of size ScreenSize */
 
-FieldFind(table, position, failure)
-register char *table;		/* which table of bytes to use */
-register int position;		/* what position to start from */
-int failure;			/* if unformatted, what value to return */
+FieldInc(position)
+register int	position;		/* Position in previous field */
 {
-    register int ourp;
+    register ScreenImage *ptr;
 
-    ourp = position + 1 + bskip(table+position+1, ScreenSize-position-1, 0);
-    if (ourp < ScreenSize) {
-	return(ourp);
+    ptr = (ScreenImage *)memNSchr((char *)Host+position+1, ATTR_MASK,
+			HighestScreen()-position, ATTR_MASK, sizeof Host[0]);
+    if (ptr == 0) {
+	ptr = (ScreenImage *)memNSchr((char *)Host+LowestScreen(), ATTR_MASK,
+			position-LowestScreen(), ATTR_MASK, sizeof Host[0]);
+	if (ptr == 0) {
+	    return LowestScreen();
+	}
     }
-    /* No fields in table after position.  Look for fields from beginning
-     * of table.
-     */
-    ourp = bskip(table, position+1, 0);
-    if (ourp <= position) {
-	return(ourp);
+    return ptr-Host;
+}
+
+FieldDec(position)
+int	position;
+{
+    register ScreenImage *ptr;
+
+    ptr = (ScreenImage *)memNSchr((char *)(Host+position)-1, ATTR_MASK,
+			position-LowestScreen(), ATTR_MASK, -sizeof Host[0]);
+    if (ptr == 0) {
+	ptr = (ScreenImage *)memNSchr((char *)Host+HighestScreen(), ATTR_MASK,
+			HighestScreen()-position, ATTR_MASK, -sizeof Host[0]);
+	if (ptr == 0) {
+	    return HighestScreen();
+	}
     }
-    return(failure);
+    return ptr-Host;
 }
 
 /* Clear3270 - called to clear the screen */

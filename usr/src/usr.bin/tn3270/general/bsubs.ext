@@ -8,3 +8,6 @@
 extern int
     bunequal(),
     bskip();
+
+extern unsigned char
+    *memNSchr();	/* Search for a character ANDED, increment by stride */
