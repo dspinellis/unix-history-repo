@@ -1,5 +1,5 @@
 #
-#	@(#)Makefile	1.26	(Berkeley)	%G%
+#	@(#)Makefile	1.27	(Berkeley)	%G%
 #
 M=../../libexec/mip
 P=../../libexec/pcc
@@ -102,7 +102,8 @@ lintall:
 		$M/pftn.c $M/trees.c $M/optim.c lint.c
 
 install: all SHELL ${MAN}
-	install -s -o bin -g bin -m 755 lpass1 lpass2 /usr/libexec
+	install -s -o bin -g bin -m 755 lpass1 /usr/libexec/lintpass1
+	install -s -o bin -g bin -m 755 lpass2 /usr/libexec/lintpass2
 	install -c -o bin -g bin -m 444 llib-* /usr/libdata/lint
 	rm -f /usr/libdata/lint/llib-ltermlib*
 	ln -s llib-ltermcap /usr/libdata/lint/llib-ltermlib
