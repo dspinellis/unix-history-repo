@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)conf.c	7.2 (Berkeley) %G%
+ *	@(#)conf.c	7.3 (Berkeley) %G%
  */
 
 #include "../machine/pte.h"
@@ -134,7 +134,7 @@ int	mtstrategy(), mtopen(), mtclose();
 #define	mtclose		nodev
 #endif massbus vax
 
-#define	UT		""
+#define	UT		"ut"
 int	utstrategy(), utopen(), utclose();
 #else BOOT
 #define	TM		""
