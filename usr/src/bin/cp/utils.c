@@ -6,19 +6,21 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)utils.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)utils.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/stat.h>
 #include <sys/mman.h>
 #include <sys/time.h>
-#include <fcntl.h>
+
 #include <errno.h>
-#include <unistd.h>
+#include <fcntl.h>
+#include <fts.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <fts.h>
+#include <unistd.h>
+
 #include "extern.h"
 
 void
@@ -181,8 +183,8 @@ setfile(fs, fd)
 
 	fs->st_mode &= S_ISUID|S_ISGID|S_IRWXU|S_IRWXG|S_IRWXO;
 
-	tv[0].tv_sec = fs->st_atime;
-	tv[1].tv_sec = fs->st_mtime;
+	TIMESPEC_TO_TIMEVAL(&tv[0], &fs->st_atimespec);
+	TIMESPEC_TO_TIMEVAL(&tv[1], &fs->st_mtimespec);
 	if (utimes(to.p_path, tv))
 		err("utimes: %s: %s", to.p_path, strerror(errno));
 	/*
