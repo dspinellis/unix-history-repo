@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)arpadate.c	6.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)arpadate.c	6.3 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -51,9 +51,6 @@ arpadate(ud)
 	time_t t;
 	struct tm gmt;
 	static char b[40];
-	extern struct tm *localtime(), *gmtime();
-	extern char *ctime();
-	extern time_t time();
 
 	/*
 	**  Get current time.

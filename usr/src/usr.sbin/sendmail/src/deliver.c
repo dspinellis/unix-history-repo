@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	6.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	6.10 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -528,6 +528,7 @@ markfailure(e, q, rcode)
 		}
 		q->q_flags |= QBADADDR;
 		e->e_flags |= EF_TIMEOUT;
+		fprintf(e->e_xfp, "421 %s... Message timed out\n", q->q_paddr);
 	}
 	else
 		q->q_flags |= QQUEUEUP;

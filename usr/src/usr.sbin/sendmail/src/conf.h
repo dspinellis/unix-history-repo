@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	6.3 (Berkeley) %G%
+ *	@(#)conf.h	6.4 (Berkeley) %G%
  */
 
 /*
@@ -32,6 +32,7 @@
 # define SMTPLINELIM	990		/* maximum SMTP line length */
 # define MAXKEY		128		/* maximum size of a database key */
 # define MEMCHUNKSIZE	1024		/* chunk size for memory allocation */
+# define MAXUSERENVIRON	100		/* max envariables saved */
 
 # ifndef QUEUESIZE
 # define QUEUESIZE	1000		/* max # of jobs per queue run */

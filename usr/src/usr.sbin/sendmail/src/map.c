@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)map.c	6.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)map.c	6.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -401,7 +401,7 @@ nis_map_lookup(map, buf, bufsiz, av)
 	char **av;
 {
 	char *vp;
-	int *vsize;
+	auto int vsize;
 
 	if (!bitset(MF_NOFOLDCASE, map->map_flags))
 	{
@@ -411,7 +411,8 @@ nis_map_lookup(map, buf, bufsiz, av)
 			if (isupper(*p))
 				*p = tolower(*p);
 	}
-	if (yp_match(map->map_domain, map->map_file, buf, bufsiz, &vp, &vsize) != 0)
+	if (yp_match(map->map_domain, map->map_file, buf, strlen(buf) + 1,
+		     &vp, &vsize) != 0)
 		return NULL;
 	if (!bitset(MF_MATCHONLY, map->map_flags))
 		map_rewrite(vp, vsize, buf, bufsiz, av);

@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	6.4 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	6.5 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	6.4 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	6.5 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -459,6 +459,7 @@ orderq(doall)
 	{
 		FILE *cf;
 		char lbuf[MAXNAME];
+		extern bool shouldqueue();
 
 		/* is this an interesting entry? */
 		if (d->d_ino == 0)
@@ -1168,16 +1169,15 @@ setctluser(user)
 		a->q_home = newstr(pw->pw_dir);
 		a->q_uid = pw->pw_uid;
 		a->q_gid = pw->pw_gid;
-		a->q_ruser = newstr(user);
+		a->q_user = newstr(user);
 	}
 	else
 	{
 		a->q_uid = DefUid;
 		a->q_gid = DefGid;
-		a->q_ruser = newstr(DefUser);
+		a->q_user = newstr(DefUser);
 	}
 
-	a->q_user = a->q_ruser;
 	a->q_flags |= QGOODUID;		/* flag as a "ctladdr"  */
 	a->q_mailer = LocalMailer;
 	return a;

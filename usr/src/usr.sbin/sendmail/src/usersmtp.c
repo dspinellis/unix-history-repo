@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)usersmtp.c	6.2 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	6.3 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)usersmtp.c	6.2 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	6.3 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -446,7 +446,9 @@ reply(m)
 # endif /* ECONNRESET */
 
 			mci->mci_errno = errno;
-			message(Arpa_TSyserr, "reply: read error from %s",
+			mci->mci_exitstat = EX_TEMPFAIL;
+			message(Arpa_TSyserr, "%s: reply: read error from %s",
+				e->e_id == NULL ? "NOQUEUE" : e->e_id,
 				mci->mci_host);
 			/* if debugging, pause so we can see state */
 			if (tTd(18, 100))
