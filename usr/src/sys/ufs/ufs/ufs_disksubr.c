@@ -3,8 +3,13 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ufs_disksubr.c	7.1 (Berkeley) %G%
+ *	@(#)ufs_disksubr.c	7.2 (Berkeley) %G%
  */
+
+#include "param.h"
+#include "systm.h"
+#include "buf.h"
+#include "disklabel.h"
 
 /*
  * Seek sort for disks.  We depend on the driver
@@ -22,10 +27,6 @@
  * A one-way scan is natural because of the way UNIX read-ahead
  * blocks are allocated.
  */
-
-#include "param.h"
-#include "systm.h"
-#include "buf.h"
 
 #define	b_cylin	b_resid
 
@@ -105,4 +106,20 @@ insert:
 	ap->av_forw = bp;
 	if (ap == dp->b_actl)
 		dp->b_actl = bp;
+}
+
+/*
+ * Compute checksum for disk label.
+ */
+dkcksum(lp)
+	register struct disklabel *lp;
+{
+	register u_short *start, *end;
+	register u_short sum = 0;
+
+	start = (u_short *)lp;
+	end = (u_short *)&lp->d_partitions[lp->d_npartitions];
+	while (start < end)
+		sum ^= *start++;
+	return (sum);
 }
