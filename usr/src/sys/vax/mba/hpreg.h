@@ -152,6 +152,9 @@ struct hpdevice
 #define	SI9730M	0x0d00		/* 9730 mapped */
 #define	SI9766	0x0300		/* 9766 */
 #define	SI9762	0x0100		/* 9762 */
+#define	SICAPD	0x0500		/* Capricorn direct */
+#define	SICAPN	0x0400		/* Capricorn mapped */
+#define	SI9751D	0x0f00		/* Eagle direct */
 
 #define	SIRM03	0x8000		/* RM03 indication */
 #define	SIRM05	0x0000		/* RM05 pseudo-indication */
