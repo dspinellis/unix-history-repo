@@ -29,6 +29,13 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00032
+ * --------------------         -----   ----------------------
+ *
+ * 05 Aug 92	David Greenman		Fix kernel namelist db create/use
  */
 
 #ifndef lint
@@ -137,6 +144,9 @@ create_knlist(name, db)
 #endif
 #ifdef vax
 			rel_off = nbuf.n_value & ~KERNBASE;
+#endif
+#ifdef i386
+			rel_off = ((nbuf.n_value & ~KERNBASE) + CLBYTES);
 #endif
 			/*
 			 * When loaded, data is rounded to next page cluster
