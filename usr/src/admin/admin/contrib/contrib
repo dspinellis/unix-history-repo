@@ -1,4 +1,4 @@
-.\"	@(#)contrib	5.58 (Berkeley) %G%
+.\"	@(#)contrib	5.59 (Berkeley) %G%
 .\"
 .\" To build a document, pipe the bottom list through column -c140, making
 .\" it two columns wide (remove the .TE at the end of the file first).
@@ -326,6 +326,7 @@ regex(3)	Henry Spencer
 robots(6)	Ken Arnold
 rogue(6)	Timothy C. Stoehr
 rs(1)	John Kunze
+rune support	Paul Borman
 sail(6)	David Riggle
 sail(6)	Edward Wang
 sccs(1)	Eric Allman
