@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)condevs.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)condevs.c	5.5 (Berkeley) %G%";
 #endif
 
 /*
@@ -947,7 +947,7 @@ int fd;
 /*#define HAYSTONE*/
 
 hysqopn(telno, flds, dev)
-register char *telno, *flds[];
+char *telno, *flds[];
 struct Devices *dev;
 {
 	char dcname[20], phone[MAXPH+10], c = 0;
