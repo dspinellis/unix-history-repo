@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)process.c 1.5 %G%";
+static char sccsid[] = "@(#)process.c 1.6 %G%";
 
 /*
  * Process management.
@@ -58,14 +58,15 @@ typedef struct {
 
 struct Process {
     int pid;			/* process being traced */
-    int mask;			/* ps */
-    Word reg[NREG];		/* process's registers */
+    int mask;			/* process status word */
+    Word reg[NREG];		/* process' registers */
     Word oreg[NREG];		/* registers when process last stopped */
     short status;		/* either STOPPED or FINISHED */
     short signo;		/* signal that stopped process */
     int exitval;		/* return value from exit() */
     long sigset;		/* bit array of traced signals */
     CacheWord word[CSIZE];	/* text segment cache */
+    Ttyinfo ttyinfo;		/* process' terminal characteristics */
 };
 
 /*
@@ -851,6 +852,7 @@ register int status;
 	    p->reg[i] = ptrace(UREAD, p->pid, regloc(rloc[i]), 0);
 	    p->oreg[i] = p->reg[i];
 	}
+	savetty(stdout, &(p->ttyinfo));
     }
 }
 
@@ -872,6 +874,7 @@ register Process p;
 	    ptrace(UWRITE, p->pid, regloc(rloc[i]), r);
 	}
     }
+    restoretty(stdout, &(p->ttyinfo));
 }
 
 /*
