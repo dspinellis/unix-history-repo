@@ -1,4 +1,4 @@
-/*	kern_resource.c	4.9	82/07/12	*/
+/*	kern_resource.c	4.10	82/07/24	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -8,8 +8,13 @@
 #include "../h/inode.h"
 #include "../h/proc.h"
 #include "../h/seg.h"
+#include "../h/fs.h"
 
 struct	inode *acctp;
+struct	inode *savacctp;
+
+long	acctlow	= 2;		/* stop accounting when < 2% data space left */
+long	accthigh = 4;		/* resume when space risen to > 4% */
 
 /*
  * Perform process accounting functions.
@@ -23,6 +28,10 @@ sysacct()
 
 	uap = (struct a *)u.u_ap;
 	if (suser()) {
+		if (savacctp) {
+			acctp = savacctp;
+			savacctp = NULL;
+		}
 		if (uap->fname==NULL) {
 			if (ip = acctp) {
 				irele(ip);
@@ -57,8 +66,21 @@ acct()
 	off_t siz;
 	register struct acct *ap = &acctbuf;
 
+	if (savacctp && savacctp->i_fs->fs_cstotal.cs_nbfree >
+	    accthigh * savacctp->i_fs->fs_dsize / 100) {
+		acctp = savacctp;
+		savacctp = NULL;
+		printf("Accounting resumed\n");
+	}
 	if ((ip=acctp)==NULL)
 		return;
+	if (acctp->i_fs->fs_cstotal.cs_nbfree <
+	    acctlow * acctp->i_fs->fs_dsize / 100) {
+		savacctp = acctp;
+		acctp = NULL;
+		printf("Accounting suspended\n");
+		return;
+	}
 	ilock(ip);
 	for (i=0; i<sizeof(ap->ac_comm); i++)
 		ap->ac_comm[i] = u.u_comm[i];
@@ -111,4 +133,41 @@ register long t;
 		}
 	}
 	return((exp<<13) + t);
+}
+
+vtimes()
+{
+	register struct a {
+		struct	vtimes *par_vm;
+		struct	vtimes *ch_vm;
+	} *uap = (struct a *)u.u_ap;
+
+	if (uap->par_vm == 0)
+		goto onlych;
+	if (copyout((caddr_t)&u.u_vm, (caddr_t)uap->par_vm,
+	    sizeof(struct vtimes)) < 0)
+		u.u_error = EFAULT;
+onlych:
+	if (uap->ch_vm == 0)
+		return;
+	if (copyout((caddr_t)&u.u_cvm, (caddr_t)uap->ch_vm,
+	    sizeof(struct vtimes)) < 0)
+		u.u_error = EFAULT;
+}
+
+vmsadd(vp, wp)
+	register struct vtimes *vp, *wp;
+{
+
+	vp->vm_utime += wp->vm_utime;
+	vp->vm_stime += wp->vm_stime;
+	vp->vm_nswap += wp->vm_nswap;
+	vp->vm_idsrss += wp->vm_idsrss;
+	vp->vm_ixrss += wp->vm_ixrss;
+	if (vp->vm_maxrss < wp->vm_maxrss)
+		vp->vm_maxrss = wp->vm_maxrss;
+	vp->vm_majflt += wp->vm_majflt;
+	vp->vm_minflt += wp->vm_minflt;
+	vp->vm_inblk += wp->vm_inblk;
+	vp->vm_oublk += wp->vm_oublk;
 }

@@ -1,10 +1,11 @@
-/*	sys_generic.c	5.2	82/07/22	*/
+/*	sys_generic.c	5.3	82/07/24	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
 #include "../h/dir.h"
 #include "../h/user.h"
 #include "../h/tty.h"
+#include "../h/fcntl.h"
 #include "../h/file.h"
 #include "../h/inode.h"
 #include "../h/buf.h"
@@ -22,6 +23,7 @@
 #else
 #define	CHARGE(nothing)
 #endif
+#include "../h/descrip.h"
 
 /*
  * Read system call.
@@ -52,7 +54,7 @@ read()
 	if ((u.u_procp->p_flag&SNUSIG) && setjmp(u.u_qsav)) {
 		if (u.u_count == uap->count)
 			u.u_eosys = RESTARTSYS;
-	} else if (fp->f_flag & FSOCKET)
+	} else if (fp->f_type == DTYPE_SOCKET)
 		u.u_error = soreceive(fp->f_socket, (struct sockaddr *)0);
 	else {
 		ip = fp->f_inode;
@@ -97,10 +99,12 @@ write()
 	if ((u.u_procp->p_flag&SNUSIG) && setjmp(u.u_qsav)) {
 		if (u.u_count == uap->count)
 			u.u_eosys = RESTARTSYS;
-	} else if (fp->f_flag & FSOCKET)
+	} else if (fp->f_type == DTYPE_SOCKET)
 		u.u_error = sosend(fp->f_socket, (struct sockaddr *)0);
 	else {
 		ip = fp->f_inode;
+		if (fp->f_flag & O_APPEND)
+			fp->f_offset = ip->i_size;
 		u.u_offset = fp->f_offset;
 		if ((ip->i_mode&IFMT) == IFREG) {
 			ilock(ip);
@@ -113,6 +117,15 @@ write()
 	u.u_r.r_val1 = uap->count - u.u_count;
 }
 
+readv()
+{
+
+}
+
+writev()
+{
+
+}
 
 /*
  * Ioctl system call
@@ -146,7 +159,7 @@ ioctl()
 		u.u_pofile[uap->fdes] &= ~EXCLOSE;
 		return;
 	}
-	if (fp->f_flag & FSOCKET) {
+	if (fp->f_type == DTYPE_SOCKET) {
 		soioctl(fp->f_socket, uap->cmd, uap->cmarg);
 		return;
 	}
