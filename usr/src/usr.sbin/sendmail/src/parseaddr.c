@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parseaddr.c	8.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)parseaddr.c	8.9 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -119,6 +119,25 @@ parseaddr(addr, a, flags, delim, delimptr, e)
 	}
 
 	/*
+	**  Save addr if we are going to have to.
+	**
+	**	We have to do this early because there is a chance that
+	**	the map lookups in the rewriting rules could clobber
+	**	static memory somewhere.
+	*/
+
+	if (bitset(RF_COPYPADDR, flags) && addr != NULL)
+	{
+		char savec = **delimptr;
+
+		if (savec != '\0')
+			**delimptr = '\0';
+		addr = newstr(addr);
+		if (savec != '\0')
+			**delimptr = savec;
+	}
+
+	/*
 	**  Apply rewriting rules.
 	**	Ruleset 0 does basic parsing.  It must resolve.
 	*/
@@ -141,7 +160,7 @@ parseaddr(addr, a, flags, delim, delimptr, e)
 	**  transport them out.
 	*/
 
-	allocaddr(a, flags, addr, *delimptr);
+	allocaddr(a, flags, addr);
 	if (bitset(QBADADDR, a->q_flags))
 		return a;
 
@@ -208,7 +227,6 @@ invalidaddr(addr)
 **		flags -- the copy flag (see RF_ definitions in sendmail.h
 **			for a description).
 **		paddr -- the printname of the address.
-**		delimptr -- a pointer to the address delimiter.  Must be set.
 **
 **	Returns:
 **		none.
@@ -217,27 +235,15 @@ invalidaddr(addr)
 **		Copies portions of a into local buffers as requested.
 */
 
-allocaddr(a, flags, paddr, delimptr)
+allocaddr(a, flags, paddr)
 	register ADDRESS *a;
 	int flags;
 	char *paddr;
-	char *delimptr;
 {
 	if (tTd(24, 4))
 		printf("allocaddr(flags=%o, paddr=%s)\n", flags, paddr);
 
-	if (bitset(RF_COPYPADDR, flags) && paddr != NULL)
-	{
-		char savec = *delimptr;
-
-		if (savec != '\0')
-			*delimptr = '\0';
-		a->q_paddr = newstr(paddr);
-		if (savec != '\0')
-			*delimptr = savec;
-	}
-	else
-		a->q_paddr = paddr;
+	a->q_paddr = paddr;
 
 	if (a->q_user == NULL)
 		a->q_user = "";
@@ -2096,7 +2102,7 @@ maplocaluser(a, sendq, e)
 		printaddr(a, FALSE);
 	}
 	a1->q_alias = a;
-	allocaddr(a1, RF_COPYALL, NULL, delimptr);
+	allocaddr(a1, RF_COPYALL, NULL);
 	(void) recipient(a1, sendq, e);
 }
 /*
