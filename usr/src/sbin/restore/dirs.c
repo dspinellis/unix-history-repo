@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)dirs.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)dirs.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "restore.h"
@@ -44,7 +44,7 @@ extern struct inotab *allocinotab();
  */
 struct modeinfo {
 	ino_t ino;
-	time_t timep[2];
+	struct timeval timep[2];
 	short mode;
 	short uid;
 	short gid;
@@ -488,7 +488,7 @@ setdirmodes()
 		cp = myname(ep);
 		(void) chown(cp, node.uid, node.gid);
 		(void) chmod(cp, node.mode);
-		utime(cp, node.timep);
+		utimes(cp, node.timep);
 		ep->e_flags &= ~NEW;
 	}
 	if (ferror(mf))
@@ -577,8 +577,10 @@ allocinotab(ino, dip, seekpt)
 	if (mf == NULL)
 		return(itp);
 	node.ino = ino;
-	node.timep[0] = dip->di_atime;
-	node.timep[1] = dip->di_mtime;
+	node.timep[0].tv_sec = dip->di_atime;
+	node.timep[0].tv_usec = 0;
+	node.timep[1].tv_sec = dip->di_mtime;
+	node.timep[1].tv_usec = 0;
 	node.mode = dip->di_mode;
 	node.uid = dip->di_uid;
 	node.gid = dip->di_gid;
