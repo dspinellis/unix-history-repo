@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mfs_vnops.c	8.1 (Berkeley) %G%
+ *	@(#)mfs_vnops.c	8.2 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -69,6 +69,7 @@ struct vnodeopv_entry_desc mfs_vnodeop_entries[] = {
 	{ &vop_strategy_desc, mfs_strategy },		/* strategy */
 	{ &vop_print_desc, mfs_print },			/* print */
 	{ &vop_islocked_desc, mfs_islocked },		/* islocked */
+	{ &vop_pathconf_desc, mfs_pathconf },		/* pathconf */
 	{ &vop_advlock_desc, mfs_advlock },		/* advlock */
 	{ &vop_blkatoff_desc, mfs_blkatoff },		/* blkatoff */
 	{ &vop_valloc_desc, mfs_valloc },		/* valloc */
