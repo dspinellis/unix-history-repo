@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)headers.c	5.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)headers.c	5.17 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/param.h>
@@ -351,20 +351,6 @@ eatheader(e)
 	p = hvalue("errors-to");
 	if (p != NULL)
 		sendtolist(p, (ADDRESS *) NULL, &e->e_errorqueue);
-
-	/* from person */
-	if (OpMode == MD_ARPAFTP)
-	{
-		register struct hdrinfo *hi = HdrInfo;
-
-		for (p = NULL; p == NULL && hi->hi_field != NULL; hi++)
-		{
-			if (bitset(H_FROM, hi->hi_flags))
-				p = hvalue(hi->hi_field);
-		}
-		if (p != NULL)
-			setsender(p);
-	}
 
 	/* full name of from person */
 	p = hvalue("full-name");
