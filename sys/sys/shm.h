@@ -98,10 +98,10 @@ __BEGIN_DECLS
 
 int shmsys __P((int, ...));
 
-int shmat  __P((int, caddr_t, int));
+void *shmat  __P((int, void *, int));
 int shmget __P((key_t, int, int));
-int shmctl __P((int, int, caddr_t));
-int shmdt  __P((caddr_t));
+int shmctl __P((int, int, void *));
+int shmdt  __P((void *));
 
 __END_DECLS
 
