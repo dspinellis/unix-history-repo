@@ -8,26 +8,36 @@
 # software without specific prior written permission. This software
 # is provided ``as is'' without express or implied warranty.
 #
-#	@(#)Makefile	1.1 (Berkeley) %G%
+#	@(#)Makefile	1.2 (Berkeley) %G%
 #
 
 # The following is the telnet makefile for tn3270, using the shared telnet
 # sources.
 
 VPATH	=	../../telnet/Source
-INCLUDES=	-I../../telnet/Source -I.
-DEFINES	=	-DTN3270
-CFLAGS	=	-O ${INCLUDES} ${DEFINES}
+XINCLUDES=	-I../../telnet/Source
+INCLUDES=	-I.
+XDEFINES	=	-DTN3270
+OPTIMIZE=	-O
+CFLAGS	=	${OPTIMIZE} ${INCLUDES} ${DEFINES}
+XCFLAGS=	${XINCLUDES} ${XDEFINES}
 LD	=	ld
 LDFLAGS	=	-r
+PRINT	= print
+ACTION = sccs tell
 LIBC=	/lib/libc.a
+ALLH=	defines.h externs.h fdset.h general.h ring.h types.h
 SRCS=	commands.c main.c network.c ring.c \
 	sys_bsd.c sys_dos.c telnet.c terminal.c \
 	tn3270.c utilities.c
+ALLHC=		${ALLH} ${SRCS}
+ALLSOURCE=	${ALLHC}
+ALLPRINT =	${ALLSOURCE}
 OBJS=	commands.o main.o network.o ring.o sys_bsd.o sys_dos.o \
 	telnet.o terminal.o tn3270.o utilities.o
 
-all: telnet
+.c.o:
+	${CC} -c ${CFLAGS} ${XCFLAGS} $<
 
 telnet:	${OBJS} ${LIBC}
 	${LD} ${LDFLAGS} -o $@ ${OBJS}
@@ -38,14 +48,29 @@ clean: FRC
 depend: FRC ${SRCS}
 	mkdep ${CFLAGS} ${SRCS}
 
-install: FRC
-	install -s -o bin -g bin -m 755 telnet ${DESTDIR}/usr/ucb/telnet
-
-lint: FRC
+lint: FRC ${SRCS}
 	lint ${CFLAGS} ${SRCS}
 
-tags: FRC
-	ctags ${SRCS}
+tags: FRC ${ALLSOURCE}
+	ctags ${ALLSOURCE}
+
+print:	FRC ${ALLPRINT}
+	${PRINT} ${ALLPRINT}
+
+action: FRC
+	${ACTION}
+
+clist:	FRC ${SRCS}
+	@for i in ${SRCS} ; \
+		do (echo ${DIRPATH}$$i); done
+
+hclist:	FRC ${ALLHC}
+	@for i in ${ALLHC} ; \
+		do (echo ${DIRPATH}$$i); done
+
+sourcelist:	FRC ${ALLSOURCE}
+	@for i in ${ALLSOURCE} ; \
+		do (echo ${DIRPATH}$$i); done
 
 FRC:
 
