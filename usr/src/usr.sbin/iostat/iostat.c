@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)iostat.c	4.6 (Berkeley) 81/04/21";
+static	char *sccsid = "@(#)iostat.c	4.7 (Berkeley) 83/02/23";
 /*
  * iostat
  */
@@ -6,9 +6,14 @@ static	char *sccsid = "@(#)iostat.c	4.6 (Berkeley) 81/04/21";
 #include <nlist.h>
 #include <sys/types.h>
 #include <sys/buf.h>
+#include <sys/dk.h>
+#ifdef vax
 #include <sys/ubavar.h>
 #include <sys/mbavar.h>
-#include <sys/dk.h>
+#endif
+#ifdef sun
+#include <sundev/mbvar.h>
+#endif
 
 struct nlist nl[] = {
 	{ "_dk_busy" },
@@ -29,10 +34,19 @@ struct nlist nl[] = {
 #define	X_CP_TIME	7
 	{ "_dk_mspw" },
 #define	X_DK_MSPW	8
+
+#ifdef vax
 	{ "_mbdinit" },
 #define X_MBDINIT	9
 	{ "_ubdinit" },
 #define X_UBDINIT	10
+#endif
+
+#ifdef sun
+	{ "_mbdinit" },
+#define X_MBDINIT	9
+#endif
+
 	{ 0 },
 };
 
@@ -193,12 +207,9 @@ stat1(o)
 	printf("%3.0f", 100*s.cp_time[o]/time);
 }
 
-/*
- * Read the drive names out of kmem.
- * ARGH ARGH ARGH ARGH !!!!!!!!!!!!
- */
-
 #define steal(where, var) lseek(mf, where, 0); read(mf, &var, sizeof var);
+
+#ifdef vax
 read_names()
 {
 	struct mba_device mdev;
@@ -216,9 +227,7 @@ read_names()
 		fprintf(stderr, "iostat: Disk init info not in namelist\n");
 		exit(1);
 	}
-	if (mp)
-	while(1)
-	{
+	if (mp) for (;;) {
 		steal(mp++, mdev);
 		if (mdev.mi_driver == 0)
 			break;
@@ -228,8 +237,7 @@ read_names()
 		steal(mdrv.md_dname, two_char);
 		sprintf(dr_name[mdev.mi_dk], "%c%c%d", cp[0], cp[1], mdev.mi_unit);
 	}
-	while(1)
-	{
+	if (up) for (;;) {
 		steal(up++, udev);
 		if (udev.ui_driver == 0)
 			break;
@@ -240,3 +248,31 @@ read_names()
 		sprintf(dr_name[udev.ui_dk], "%c%c%d", cp[0], cp[1], udev.ui_unit);
 	}
 }
+#endif
+
+#ifdef sun
+read_names()
+{
+	struct mb_device mdev;
+	register struct mb_device *mp;
+	struct mb_driver mdrv;
+	short two_char;
+	char *cp = (char *) &two_char;
+
+	mp = (struct mb_device *) nl[X_MBDINIT].n_value;
+	if (mp == 0) {
+		fprintf(stderr, "iostat: Disk init info not in namelist\n");
+		exit(1);
+	}
+	for (;;) {
+		steal(mp++, mdev);
+		if (mdev.md_driver == 0)
+			break;
+		if (mdev.md_dk < 0 || mdev.md_alive == 0)
+			continue;
+		steal(mdev.md_driver, mdrv);
+		steal(mdrv.mdr_dname, two_char);
+		sprintf(dr_name[mdev.md_dk], "%c%c%d", cp[0], cp[1], mdev.md_unit);
+	}
+}
+#endif
