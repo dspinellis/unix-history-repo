@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)dump.8	6.7 (Berkeley) %G%
+.\"     @(#)dump.8	6.8 (Berkeley) %G%
 .\"
 .Dd 
 .Dt DUMP 8
@@ -82,9 +82,9 @@ Attempt to caluculate the amount of tape needed
 at a particular density.
 If this amount is exceeded,
 .Nm dump
-prompts for a new tape. It is recommended to be a bit conservative
-on this option.
-The default size is 2300 feet.
+prompts for a new tape.
+It is recommended to be a bit conservative on this option.
+The default tape length is 2300 feet.
 .It Cm u
 Update the file
 .Pa /etc/dumpdates
@@ -126,12 +126,6 @@ exits immediately.
 .It Cm w
 Is like W, but prints only those filesystems which need to be dumped.
 .El
-.Pp
-If no options are specified,
-.Nm dump
-does a level
-.Cm 9u
-to the system's default tape device.
 .Pp
 .Nm Dump
 requires operator intervention on these conditions:
