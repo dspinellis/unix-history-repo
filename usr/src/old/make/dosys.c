@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)dosys.c	4.4 (Berkeley) 82/06/17";
+static	char *sccsid = "@(#)dosys.c	4.5 (Berkeley) 82/10/19";
 #include "defs"
 #include <signal.h>
 
@@ -91,13 +91,13 @@ for (od = firstod; od; od = od->nxtopendir)
 
 
 
-
+#define MAXARGV	400
 
 doexec(str)
 register char *str;
 {
 register char *t;
-char *argv[200];
+char *argv[MAXARGV];
 register char **p;
 
 while( *str==' ' || *str=='\t' )
@@ -108,6 +108,8 @@ if( *str == '\0' )
 p = argv;
 for(t = str ; *t ; )
 	{
+	if (p >= argv + MAXARGV)
+		fatal1("%s: Too many arguments.", str);
 	*p++ = t;
 	while(*t!=' ' && *t!='\t' && *t!='\0')
 		++t;
