@@ -1,4 +1,4 @@
-/*	rx.c	4.14	83/04/15	*/
+/*	rx.c	4.15	83/04/15	*/
 
 #include "rx.h"
 #if NFX > 0
@@ -65,8 +65,8 @@ struct buf	rxutab[NRX];	/* per drive buffers */
 /* per-drive data */
 struct rx_softc {
 	int	sc_flags;	/* drive status flags */
-#define	RXF_DIRECT	0x01	/* use direct sector mapping */
-#define	RXF_TRKZERO	0x02	/* start mapping on track 0 */
+#define	RXF_TRKZERO	0x01	/* start mapping on track 0 */
+#define	RXF_DIRECT	0x02	/* use direct sector mapping */
 #define	RXF_DBLDEN	0x04	/* use double density */
 #define	RXF_DEVTYPE	0x07	/* mapping flags */
 #define	RXF_LOCK	0x10	/* exclusive use */
@@ -85,7 +85,7 @@ struct rx_softc {
 	 */
 	caddr_t	sc_uaddr;	/* unibus base address */
 	long	sc_bcnt;	/* total transfer count */
-	long	sc_resid;	/* no of bytes left to transfer */
+	long	sc_resid;	/* no. of bytes left to transfer */
 } rx_softc[NRX];
 
 struct rxerr {
