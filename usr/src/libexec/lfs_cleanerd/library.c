@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)library.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)library.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -49,7 +49,7 @@ fs_getmntinfo(buf, type)
 	struct statfs *sbp;
 	int count, i, tcount;
 
-	tcount = getmntinfo(&tstatfsp, 0);
+	tcount = getmntinfo(&tstatfsp, MNT_NOWAIT);
 
 	if (tcount < 0) {
 		err(0, "getmntinfo failed");
