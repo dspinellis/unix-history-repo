@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1983 The Regents of the University of California.
+ * Copyright (c) 1983, 1988 The Regents of the University of California.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms are permitted
@@ -17,24 +17,24 @@
 
 #ifndef lint
 char copyright[] =
-"@(#) Copyright (c) 1983 The Regents of the University of California.\n\
+"@(#) Copyright (c) 1983, 1988 The Regents of the University of California.\n\
  All rights reserved.\n";
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rshd.c	5.14 (Berkeley) 1/23/89";
+static char sccsid[] = "@(#)rshd.c	5.17 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
  * remote shell server:
- *	\0
+ *	[port]\0
  *	remuser\0
  *	locuser\0
  *	command\0
  *	data
  */
-#include <sys/ioctl.h>
 #include <sys/param.h>
+#include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <sys/file.h>
 #include <sys/time.h>
@@ -114,7 +114,7 @@ main(argc, argv)
 	argv += optind;
 
 #ifdef	KERBEROS
-	if(use_kerberos && vacuous) {
+	if (use_kerberos && vacuous) {
 		syslog(LOG_ERR, "only one of -k and -v allowed");
 		exit(1);
 	}
@@ -135,14 +135,14 @@ main(argc, argv)
 	if (setsockopt(0, SOL_SOCKET, SO_LINGER, (char *)&linger,
 	    sizeof (linger)) < 0)
 		syslog(LOG_WARNING, "setsockopt (SO_LINGER): %m");
-	doit(dup(0), &from);
+	doit(0, &from);
 }
 
 char	username[20] = "USER=";
 char	homedir[64] = "HOME=";
 char	shell[64] = "SHELL=";
 char	*envinit[] =
-	    {homedir, shell, "PATH=:/usr/ucb:/bin:/usr/bin", username, 0};
+	    {homedir, shell, "PATH=/usr/ucb:/bin:/usr/bin:", username, 0};
 char	**environ;
 
 doit(f, fromp)
@@ -157,11 +157,11 @@ doit(f, fromp)
 	char *hostname;
 	short port;
 	int pv[2], pid, cc;
-	long ready, readfrom;
+	int nfd;
+	fd_set ready, readfrom;
 	char buf[BUFSIZ], sig;
 	int one = 1;
-	char	localhost[MAXHOSTNAMELEN], remotehost[MAXHOSTNAMELEN];
-	char	*raddr;
+	char remotehost[2 * MAXHOSTNAMELEN + 1];
 
 #ifdef	KERBEROS
 	AUTH_DAT	*kdata = (AUTH_DAT *) NULL;
@@ -212,10 +212,10 @@ doit(f, fromp)
 			exit(1);
 		}
 #ifdef	KERBEROS
-		if(c == OLD_RCMD || c == KERB_RCMD)
+		if (c == OLD_RCMD || c == KERB_RCMD)
 			break;
 
-		if(c == KERB_RCMD_MUTUAL) {
+		if (c == KERB_RCMD_MUTUAL) {
 			encrypt = 1;
 			break;
 		}
@@ -248,62 +248,68 @@ doit(f, fromp)
 	}
 
 #ifdef	KERBEROS
-	if(vacuous) {
+	if (vacuous) {
 		error("rshd: remote host requires Kerberos authentication\n");
 		exit(1);
 	}
 #endif
 
+#ifdef notdef
+	/* from inetd, f is already on 0, 1, 2 */
 	dup2(f, 0);
 	dup2(f, 1);
 	dup2(f, 2);
+#endif
 	hp = gethostbyaddr((char *)&fromp->sin_addr, sizeof (struct in_addr),
 		fromp->sin_family);
 	if (hp) {
-		(void) gethostname(localhost, sizeof(localhost));
-		if(same_domain(hp->h_name, localhost)) {
-			bcopy(hp->h_name, remotehost, sizeof(remotehost));
+		/*
+		 * If name returned by gethostbyaddr is in our domain,
+		 * attempt to verify that we haven't been fooled by someone
+		 * in a remote net; look up the name and check that this
+		 * address corresponds to the name.
+		 */
+		if (local_domain(hp->h_name)) {
+			strncpy(remotehost, hp->h_name, sizeof(remotehost) - 1);
+			remotehost[sizeof(remotehost) - 1] = 0;
 			hp = gethostbyname(remotehost);
-			if(hp == NULL) {
-				syslog(LOG_NOTICE, "Couldn't get host entry for %s",
-					remotehost);
-				error("Couldn't get host entry for your host");
+			if (hp == NULL) {
+				syslog(LOG_INFO,
+				    "Couldn't look up address for %s",
+				    remotehost);
+				error("Couldn't look up address for your host");
 				exit(1);
-			} else {
-			    for(;;) {
-				if(!(raddr = hp->h_addr_list[0])) {
-					syslog(LOG_NOTICE, "Host addr not listed for host %s",
-						hp->h_name);
+			} else for (; ; hp->h_addr_list++) {
+				if (!bcmp(hp->h_addr_list[0],
+				    (caddr_t)&fromp->sin_addr,
+				    sizeof(fromp->sin_addr)))
+					break;
+				if (hp->h_addr_list[0] == NULL) {
+					syslog(LOG_NOTICE,
+					  "Host addr %s not listed for host %s",
+					    inet_ntoa(fromp->sin_addr),
+					    hp->h_name);
 					error("Host address mismatch");
 					exit(1);
 				}
-				if(!bcmp(raddr, (caddr_t)&fromp->sin_addr,
-					sizeof(struct in_addr))) {
-						break;
-				}
-				hp->h_addr_list++;
-			    }
 			}
 		}
 		hostname = hp->h_name;
-	} else {
+	} else
 		hostname = inet_ntoa(fromp->sin_addr);
-	}
 
 #ifdef	KERBEROS
-	if(use_kerberos) {
+	if (use_kerberos) {
 		h_name = strsave(hp->h_name);
 		kdata = (AUTH_DAT *) authbuf;
 		ticket = (KTEXT) tickbuf;
 		authopts = 0L;
 		strcpy(instance, "*");
 		version[VERSION_SIZE - 1] = '\0';
-		if(rc = krb_recvauth(
-			authopts, f, ticket, "rcmd",
+		if (rc = krb_recvauth(authopts, f, ticket, "rcmd",
 			instance, &fromaddr,
 			(struct sockaddr_in *) 0,
-			kdata, "", (bit_64 *) 0, version)
-		) {
+			kdata, "", (bit_64 *) 0, version)) {
 			fprintf(stderr,
 				"Kerberos authentication failure: %s\r\n",
 				  krb_err_txt[rc]);
@@ -333,13 +339,13 @@ doit(f, fromp)
 	}
 
 #ifdef	KERBEROS
-	if(use_kerberos) {
+	if (use_kerberos) {
 		if (pwd->pw_passwd != 0 && *pwd->pw_passwd != '\0') {
-			if(krb_kntoln(kdata, remuser) != KSUCCESS) {
+			if (krb_kntoln(kdata, remuser) != KSUCCESS) {
 				error("Permission denied.\n");
 				exit(1);
 			}
-			if(kuserok(kdata, locuser) != 0) {
+			if (kuserok(kdata, locuser) != 0) {
 				syslog(LOG_NOTICE, "Kerberos rlogin denied to %s.%s@%s",
 					kdata->pname, kdata->pinst, kdata->prealm);
 				error("Permission denied.\n");
@@ -360,7 +366,7 @@ doit(f, fromp)
 		exit(1);
 	}
 #ifdef	KERBEROS
-	if(encrypt) {
+	if (encrypt) {
 		char c = KERB_RCMD_MUTUAL;
 		(void) write(2, &c, 1);
 	} else {
@@ -381,33 +387,41 @@ doit(f, fromp)
 			error("Try again.\n");
 			exit(1);
 		}
+		if (pv[0] > s)
+			nfd = pv[0];
+		else
+			nfd = s;
+		nfd++;
 		if (pid) {
 			(void) close(0); (void) close(1); (void) close(2);
 			(void) close(f); (void) close(pv[1]);
-			readfrom = (1L<<s) | (1L<<pv[0]);
+			FD_ZERO(&readfrom);
+			FD_SET(s, &readfrom);
+			FD_SET(pv[0], &readfrom);
 			ioctl(pv[0], FIONBIO, (char *)&one);
 			/* should set s nbio! */
 			do {
 				ready = readfrom;
-				if (select(16, &ready, (fd_set *)0,
+				if (select(nfd, &ready, (fd_set *)0,
 				    (fd_set *)0, (struct timeval *)0) < 0)
 					break;
-				if (ready & (1L<<s)) {
+				if (FD_ISSET(s, &ready)) {
 					if (read(s, &sig, 1) <= 0)
-						readfrom &= ~(1L<<s);
+						FD_CLR(s, &readfrom);
 					else
 						killpg(pid, sig);
 				}
-				if (ready & (1L<<pv[0])) {
+				if (FD_ISSET(pv[0], &ready)) {
 					errno = 0;
 					cc = read(pv[0], buf, sizeof (buf));
 					if (cc <= 0) {
 						shutdown(s, 1+1);
-						readfrom &= ~(1L<<pv[0]);
+						FD_CLR(pv[0], &readfrom);
 					} else
 						(void) write(s, buf, cc);
 				}
-			} while (readfrom);
+			} while (FD_ISSET(s, &readfrom) ||
+			    FD_ISSET(pv[0], &readfrom));
 			exit(0);
 		}
 		setpgrp(0, getpid());
@@ -464,13 +478,23 @@ getstr(buf, cnt, err)
 	} while (c != 0);
 }
 
-int
-same_domain(h1, h2)
-	register char	*h1, *h2;
+/*
+ * Check whether host h is in our local domain,
+ * as determined by the part of the name following
+ * the first '.' in its name and in ours.
+ * If either name is unqualified (contains no '.'),
+ * assume that the host is local, as it will be
+ * interpreted as such.
+ */
+local_domain(h)
+	char *h;
 {
-	register char *p1 = index(h1, '.');
-	register char *p2 = index(h2, '.');
-	if(!strcasecmp(p1, p2))
+	char localhost[MAXHOSTNAMELEN];
+	char *p1, *p2 = index(h, '.');
+
+	(void) gethostname(localhost, sizeof(localhost));
+	p1 = index(localhost, '.');
+	if (p1 == NULL || p2 == NULL || !strcasecmp(p1, p2))
 		return(1);
 	return(0);
 }
