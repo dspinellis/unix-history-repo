@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)socketvar.h	7.6 (Berkeley) %G%
+ *	@(#)socketvar.h	7.7 (Berkeley) %G%
  */
 
 /*
@@ -133,11 +133,14 @@ struct socket {
 		(sb)->sb_mbcnt -= MCLBYTES; \
 }
 
+#ifndef _TSLEEP_
+#include "tsleep.h"
+#endif
 /* set lock on sockbuf sb */
 #define sblock(sb) { \
 	while ((sb)->sb_flags & SB_LOCK) { \
 		(sb)->sb_flags |= SB_WANT; \
-		sleep((caddr_t)&(sb)->sb_flags, PZERO+1); \
+		tsleep((caddr_t)&(sb)->sb_flags, PZERO+1, SLP_SO_SBLOCK, 0); \
 	} \
 	(sb)->sb_flags |= SB_LOCK; \
 }

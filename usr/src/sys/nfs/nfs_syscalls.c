@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_syscalls.c	7.5 (Berkeley) %G%
+ *	@(#)nfs_syscalls.c	7.6 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -38,6 +38,7 @@
 #include "nfsv2.h"
 #include "nfs.h"
 #include "nfsrvcache.h"
+#include "tsleep.h"
 
 /* Global defs. */
 extern u_long nfs_prog, nfs_vers;
@@ -250,7 +251,8 @@ async_daemon()
 	for (;;) {
 		while (dp->b_actf == NULL) {
 			nfs_iodwant[myiod] = u.u_procp;
-			sleep((caddr_t)&nfs_iodwant[myiod], PZERO+1);
+			tsleep((caddr_t)&nfs_iodwant[myiod], PZERO+1, 
+				SLP_NFS_IOD, 0);
 		}
 		/* Take one off the end of the list */
 		bp = dp->b_actl;
