@@ -4,11 +4,35 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)namei.h	7.16 (Berkeley) %G%
+ *	@(#)namei.h	7.17 (Berkeley) %G%
  */
+
+/* NEEDSWORK: function defns need update */
 
 #ifndef _NAMEI_H_
 #define	_NAMEI_H_
+
+
+struct componentname {
+	u_long cn_nameiop;	/* in */
+	u_long cn_flags;	/* in */
+	long cn_namelen;	/* in */
+	char *cn_nameptr;	/* in */
+	u_long cn_hash;		/* in */
+	char *cn_pnbuf;		/* in */
+	struct ucred *cn_cred;	/* in */
+	struct proc *cn_proc;	/* in */
+	/*
+	 * Side effects.
+	 */
+	struct ufs_specific {		/* saved info for new dir entry */
+		off_t	ufs_endoff;	/* end of useful directory contents */
+		long	ufs_offset;	/* offset of free space in directory */
+		long	ufs_count;	/* size of free slot in directory */
+		ino_t	ufs_ino;	/* inode number of found directory */
+		u_long	ufs_reclen;	/* size of found directory entry */
+	} cn_ufs;
+};
 
 /*
  * Encapsulation of namei parameters.
@@ -19,42 +43,47 @@ struct nameidata {
 	 */
 	caddr_t	ni_dirp;		/* pathname pointer */
 	enum	uio_seg ni_segflg;	/* location of pathname */
-	u_long	ni_nameiop;		/* see below */
+        u_long	ni_nameiop;		/* see below.  NEEDSWORK: here for compatibility */
 	/*
 	 * Arguments to lookup.
 	 */
-	struct	ucred *ni_cred;		/* credentials */
+     /* struct	ucred *ni_cred;		/* credentials */
 	struct	vnode *ni_startdir;	/* starting directory */
 	struct	vnode *ni_rootdir;	/* logical root directory */
 	/*
-	 * Results
+	 * Results: returned from/manipulated by lookup
 	 */
 	struct	vnode *ni_vp;		/* vnode of result */
 	struct	vnode *ni_dvp;		/* vnode of intermediate directory */
 	/*
 	 * Shared between namei, lookup routines, and commit routines.
 	 */
-	char	*ni_pnbuf;		/* pathname buffer */
+     /* char	*ni_pnbuf;		/* pathname buffer */
 	long	ni_pathlen;		/* remaining chars in path */
-	char	*ni_ptr;		/* current location in pathname */
-	long	ni_namelen;		/* length of current component */
+     /* char	*ni_ptr;		/* current location in pathname */
+     /* long	ni_namelen;		/* length of current component */
 	char	*ni_next;		/* next location in pathname */
-	u_long	ni_hash;		/* hash value of current component */
+     /* u_long	ni_hash;		/* hash value of current component */
 	u_char	ni_loopcnt;		/* count of symlinks encountered */
-	u_char	ni_makeentry;		/* 1 => add entry to name cache */
-	u_char	ni_isdotdot;		/* 1 => current component name is .. */
-	u_char	ni_more;		/* 1 => symlink needs interpretation */
+     /* u_char	ni_makeentry;		/* 1 => add entry to name cache */
+     /* u_char	ni_isdotdot;		/* 1 => current component name is .. */
+     /* u_char	ni_more;		/* 1 => symlink needs interpretation */
 	/*
-	 * Side effects.
+	 * Lookup params.
 	 */
-	struct ufs_specific {		/* saved info for new dir entry */
-		off_t	ufs_endoff;	/* end of useful directory contents */
-		long	ufs_offset;	/* offset of free space in directory */
-		long	ufs_count;	/* size of free slot in directory */
-		ino_t	ufs_ino;	/* inode number of found directory */
-		u_long	ufs_reclen;	/* size of found directory entry */
-	} ni_ufs;
+	struct componentname ni_cnd;
 };
+/*
+ * Backwards compatibility.
+ */
+/* #define ni_nameiop	ni_cnd.cn_nameiop */
+#define ni_cred		ni_cnd.cn_cred
+#define ni_pnbuf	ni_cnd.cn_pnbuf
+#define ni_namelen	ni_cnd.cn_namelen
+#define ni_ptr		ni_cnd.cn_nameptr
+#define ni_hash		ni_cnd.cn_hash
+#define ni_flags	ni_cnd.cn_flags
+#define ni_ufs		ni_cnd.cn_ufs
 
 #ifdef KERNEL
 /*
@@ -66,7 +95,7 @@ struct nameidata {
 #define	RENAME		3	/* setup for file renaming */
 #define	OPMASK		3	/* mask for operation */
 /*
- * namei operational modifiers
+ * namei operational modifier flags, stored in ni_cnd.flags
  */
 #define	LOCKLEAF	0x0004	/* lock inode on return */
 #define	LOCKPARENT	0x0008	/* want parent vnode returned locked */
@@ -89,12 +118,17 @@ struct nameidata {
  * name being sought. The caller is responsible for releasing the
  * buffer and for vrele'ing ni_startdir.
  */
-#define	NOCROSSMOUNT	0x0100	/* do not cross mount points */
-#define	RDONLY		0x0200	/* lookup with read-only semantics */
-#define	HASBUF		0x0400	/* has allocated pathname buffer */
-#define	SAVENAME	0x0800	/* save pathanme buffer */
-#define	SAVESTART	0x1000	/* save starting directory */
-#define PARAMASK	0xff00	/* mask of parameter descriptors */
+#define	NOCROSSMOUNT	0x00100	/* do not cross mount points */
+#define	RDONLY		0x00200	/* lookup with read-only semantics */
+#define	HASBUF		0x00400	/* has allocated pathname buffer */
+#define	SAVENAME	0x00800	/* save pathanme buffer */
+#define	SAVESTART	0x01000	/* save starting directory */
+/* new: */
+#define ISDOTDOT	0x02000	/* current component name is .. */
+#define MAKEENTRY	0x04000	/* entry is to be added to name cache */
+#define ISLASTCN	0x08000	/* this is last component of pathname */
+#define ISSYMLINK	0x10000	/* symlink needs interpretation */
+#define PARAMASK	0xfff00	/* mask of parameter descriptors */
 #endif
 
 /*
