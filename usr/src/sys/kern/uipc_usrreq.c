@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1982, 1986 Regents of the University of California.
  *
- *	@(#)uipc_usrreq.c	7.30 (Berkeley) %G%
+ *	@(#)uipc_usrreq.c	7.31 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -300,6 +300,9 @@ unp_attach(so)
 		case SOCK_DGRAM:
 			error = soreserve(so, unpdg_sendspace, unpdg_recvspace);
 			break;
+
+		default:
+			panic("unp_attach");
 		}
 		if (error)
 			return (error);
