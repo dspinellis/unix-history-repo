@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.5 (Berkeley) %G%";
 #endif
 
 /*
@@ -29,6 +29,8 @@ static jmp_buf mainloop;	/* label for error jumps */
 
 void	fault();
 off_t	lseek();
+
+static	int readline();
 
 main(argc, argv)
 	register int argc;
@@ -82,7 +84,10 @@ main(argc, argv)
 	 * If the error occurred while the process was running,
 	 * we need to remove any breakpoints.
 	 */
-	(void) setjmp(mainloop);
+	if (setjmp(mainloop))
+		waserr = 1;		/* well, presumably */
+	else
+		waserr = 0;
 	if (executing) {
 		executing = 0;
 		delbp();
@@ -197,7 +202,7 @@ readchar()
  * Alas, cannot read more than one character at a time here (except
  * possibly on tty devices; must think about that later).
  */
-static
+static int
 readline(p, n)
 	register char *p;
 	register int n;
