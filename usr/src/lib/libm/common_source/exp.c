@@ -13,22 +13,19 @@
 
 #ifndef lint
 static char sccsid[] =
-"@(#)exp.c	4.3 (Berkeley) 8/21/85; 1.3 (ucb.elefunt) %G%";
+"@(#)exp.c	4.3 (Berkeley) 8/21/85; 1.4 (ucb.elefunt) %G%";
 #endif not lint
 
 /* EXP(X)
  * RETURN THE EXPONENTIAL OF X
  * DOUBLE PRECISION (IEEE 53 bits, VAX D FORMAT 56 BITS)
  * CODED IN C BY K.C. NG, 1/19/85; 
- * REVISED BY K.C. NG on 2/6/85, 2/15/85, 3/7/85, 3/24/85, 4/16/85.
+ * REVISED BY K.C. NG on 2/6/85, 2/15/85, 3/7/85, 3/24/85, 4/16/85, 6/14/86.
  *
  * Required system supported functions:
  *	scalb(x,n)	
  *	copysign(x,y)	
  *	finite(x)
- *
- * Kernel function:
- *	exp__E(x,c)
  *
  * Method:
  *	1. Argument Reduction: given the input x, find r and integer k such 
@@ -36,11 +33,13 @@ static char sccsid[] =
  *	                   x = k*ln2 + r,  |r| <= 0.5*ln2 .  
  *	   r will be represented as r := z+c for better accuracy.
  *
- *	2. Compute expm1(r)=exp(r)-1 by 
+ *	2. Compute exp(r) by 
  *
- *			expm1(r=z+c) := z + exp__E(z,r)
+ *		exp(r) = 1 + r + r*R1/(2-R1),
+ *	   where
+ *		R1 = x - x^2*(p1+x^2*(p2+x^2*(p3+x^2*(p4+p5*x^2)))).
  *
- *	3. exp(x) = 2^k * ( expm1(r) + 1 ).
+ *	3. exp(x) = 2^k * exp(r) .
  *
  * Special cases:
  *	exp(INF) is INF, exp(NaN) is NaN;
@@ -50,7 +49,7 @@ static char sccsid[] =
  * Accuracy:
  *	exp(x) returns the exponential of x nearly rounded. In a test run
  *	with 1,156,000 random arguments on a VAX, the maximum observed
- *	error was .768 ulps (units in the last place).
+ *	error was 0.869 ulps (units in the last place).
  *
  * Constants:
  * The hexadecimal values are the intended ones for the following constants.
@@ -66,18 +65,39 @@ static char sccsid[] =
 /* lnhuge =  9.4961163736712506989E1     , Hex  2^  7   *  .BDEC1DA73E9010 */
 /* lntiny = -9.5654310917272452386E1     , Hex  2^  7   * -.BF4F01D72E33AF */
 /* invln2 =  1.4426950408889634148E0     ; Hex  2^  1   *  .B8AA3B295C17F1 */
+/* p1     =  1.6666666666666602251E-1    , Hex  2^-2    *  .AAAAAAAAAAA9F1 */
+/* p2     = -2.7777777777015591216E-3    , Hex  2^-8    * -.B60B60B5F5EC94 */
+/* p3     =  6.6137563214379341918E-5    , Hex  2^-13   *  .8AB355792EF15F */
+/* p4     = -1.6533902205465250480E-6    , Hex  2^-19   * -.DDEA0E2E935F84 */
+/* p5     =  4.1381367970572387085E-8    , Hex  2^-24   *  .B1BB4B95F52683 */
 static long     ln2hix[] = { 0x72174031, 0x0000f7d0};
 static long     ln2lox[] = { 0xbcd52ce7, 0xd9cce4f1};
 static long    lnhugex[] = { 0xec1d43bd, 0x9010a73e};
 static long    lntinyx[] = { 0x4f01c3bf, 0x33afd72e};
 static long    invln2x[] = { 0xaa3b40b8, 0x17f1295c};
+static long        p1x[] = { 0xaaaa3f2a, 0xa9f1aaaa};
+static long        p2x[] = { 0x0b60bc36, 0xec94b5f5};
+static long        p3x[] = { 0xb355398a, 0xf15f792e};
+static long        p4x[] = { 0xea0eb6dd, 0x5f842e93};
+static long        p5x[] = { 0xbb4b3431, 0x268395f5};
 #define    ln2hi    (*(double*)ln2hix)
 #define    ln2lo    (*(double*)ln2lox)
 #define   lnhuge    (*(double*)lnhugex)
 #define   lntiny    (*(double*)lntinyx)
 #define   invln2    (*(double*)invln2x)
+#define       p1    (*(double*)p1x)
+#define       p2    (*(double*)p2x)
+#define       p3    (*(double*)p3x)
+#define       p4    (*(double*)p4x)
+#define       p5    (*(double*)p5x)
+
 #else	/* IEEE double */
 static double
+p1     =  1.6666666666666601904E-1    , /*Hex  2^-3    *  1.555555555553E */
+p2     = -2.7777777777015593384E-3    , /*Hex  2^-9    * -1.6C16C16BEBD93 */
+p3     =  6.6137563214379343612E-5    , /*Hex  2^-14   *  1.1566AAF25DE2C */
+p4     = -1.6533902205465251539E-6    , /*Hex  2^-20   * -1.BBD41C5D26BF1 */
+p5     =  4.1381367970572384604E-8    , /*Hex  2^-25   *  1.6376972BEA4D0 */
 ln2hi  =  6.9314718036912381649E-1    , /*Hex  2^ -1   *  1.62E42FEE00000 */
 ln2lo  =  1.9082149292705877000E-10   , /*Hex  2^-33   *  1.A39EF35793C76 */
 lnhuge =  7.1602103751842355450E2     , /*Hex  2^  9   *  1.6602B15B7ECF2 */
@@ -88,7 +108,7 @@ invln2 =  1.4426950408889633870E0     ; /*Hex  2^  0   *  1.71547652B82FE */
 double exp(x)
 double x;
 {
-	double scalb(), copysign(), exp__E(), z,hi,lo,c;
+	double scalb(), copysign(), z,hi,lo,c;
 	int k,finite();
 
 #ifndef VAX
@@ -101,14 +121,16 @@ double x;
 
 			k=invln2*x+copysign(0.5,x);	/* k=NINT(x/ln2) */
 
-			/* express x-k*ln2 as z+c */
-			hi=x-k*ln2hi;
-			z=hi-(lo=k*ln2lo);
-			c=(hi-z)-lo;
+		    /* express x-k*ln2 as hi-lo and let x=hi-lo rounded */
 
-		    /* return 2^k*[expm1(x) + 1]  */
-			z += exp__E(z,c);
-			return (scalb(z+1.0,k));  
+			hi=x-k*ln2hi;
+			x=hi-(lo=k*ln2lo);
+
+		    /* return 2^k*[1+x+x*c/(2+c)]  */
+			z=x*x;
+			c= x - z*(p1+z*(p2+z*(p3+z*(p4+z*p5))));
+			return  scalb(1.0+(hi-(lo-x*c/(2.0-c))),k);
+
 		}
 		/* end of x > lntiny */
 
