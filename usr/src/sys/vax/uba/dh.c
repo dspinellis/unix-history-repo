@@ -1,4 +1,4 @@
-/*	dh.c	4.26	81/02/27	*/
+/*	dh.c	4.27	81/03/06	*/
 
 #include "dh.h"
 #if NDH > 0
@@ -322,6 +322,7 @@ dhrint(dh)
 	register struct dhdevice *addr;
 	register struct tty *tp0;
 	register struct uba_dinfo *ui;
+	int overrun = 0;
 
 	ui = dhinfo[dh];
 	if (ui == 0 || ui->ui_alive == 0)
@@ -342,8 +343,10 @@ dhrint(dh)
 			if ((tp->t_flags&(EVENP|ODDP))==EVENP
 			 || (tp->t_flags&(EVENP|ODDP))==ODDP )
 				continue;
-		if (c & DH_DO)
-			printf("O");
+		if ((c & DH_DO) && overrun == 0) {
+			printf("dh%d: silo overflow\n", dh);
+			overrun = 1;
+		}
 		if (c & DH_FE)
 			/*
 			 * At framing error (break) generate
@@ -458,7 +461,7 @@ dhxint(dh)
 	addr = (struct dhdevice *)ui->ui_addr;
 	if (addr->un.dhcsr & DH_NXM) {
 		addr->un.dhcsr |= DH_CNI;
-		printf("dh%d NXM\n", dh);
+		printf("dh%d: NXM\n", dh);
 	}
 	sbar = &dhsar[dh];
 	bar = *sbar & ~addr->dhbar;
@@ -609,7 +612,6 @@ dhreset(uban)
 
 	if (dh_ubinfo[uban] == 0)
 		return;
-	printf(" dh");
 	ubarelse(uban, &dh_ubinfo[uban]);
 	dh_ubinfo[uban] = uballoc(uban, (caddr_t)cfree,
 	    512+nclist*sizeof (struct cblock), 0);
@@ -619,6 +621,7 @@ dhreset(uban)
 		ui = dhinfo[dh];
 		if (ui == 0 || ui->ui_alive == 0 || ui->ui_ubanum != uban)
 			continue;
+		printf(" dh%d", dh);
 		((struct dhdevice *)ui->ui_addr)->un.dhcsr |= DH_IE;
 		((struct dhdevice *)ui->ui_addr)->dhsilo = 16;
 		unit = dh * 16;
