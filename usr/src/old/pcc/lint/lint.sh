@@ -1,6 +1,6 @@
 #! /bin/sh
 #
-#	@(#)lint.sh	1.2	(Berkeley)	%G%
+#	@(#)lint.sh	1.3	(Berkeley)	%G%
 #
 L=/usr/lib/lint/lint T=/usr/tmp/lint.$$ PATH=/bin:/usr/bin O="-C -Dlint"
 X= P=unix LL=/usr/lib/lint
@@ -17,7 +17,7 @@ do
 	-[IDOU]*)	O="$O $A" ;;
 	-X)	LL=/usr/scj/lint L=/usr/scj/lint/lpass ;;
 	-*)	X="$X$A" ;;
-	*)	(/lib/cpp $O $A | ${L}1 $X >>$T)2>&1
+	*)	echo "$A:" ; (/lib/cpp $O $A | ${L}1 $X >>$T)2>&1
 	esac
 	done
 case $P in
