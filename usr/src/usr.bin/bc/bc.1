@@ -3,80 +3,82 @@
 .\"
 .\" %sccs.include.proprietary.roff%
 .\"
-.\"	@(#)bc.1	6.7 (Berkeley) %G%
+.\"	@(#)bc.1	6.8 (Berkeley) %G%
 .\"
 .Dd 
 .Dt BC 1
 .Os ATT 7th
 .Sh NAME
-.Nm bc
+.Nm \&bc
 .Nd arbitrary-precision arithmetic language and calculator
 .Sh SYNOPSIS
-.Nm bc
+.Nm \&bc
 .Op Fl c
 .Op Fl l
 .Ar
 .Sh DESCRIPTION
-.Nm Bc
+.Nm \&Bc
 is an interactive processor for a language which resembles
 C but provides unlimited precision arithmetic.
 It takes input from any files given, then reads
 the standard input.
-The
-.Tp Fl l
+.Pp
+Options available:
+.Bl -tag -width flag
+.It Fl l
 allow specification
 of an arbitrary precision math library.
-.Tp Fl c
-.Nm Bc
+.It Fl c
+.Nm \&Bc
 is actually a preprocessor for
-.Ar dc 1 ,
+.Ar \&dc 1 ,
 which it invokes automatically, unless the
 .Fl c
 compile only.
 option is present.
 In this case the
-.Ar dc
+.Ar \&dc
 input is sent to the standard output instead.
-.Tp 
+.El 
 .Pp
 The syntax for
-.Nm bc
+.Nm \&bc
 programs is as follows;
 L means letter a-z,
 E means expression, S means statement.
 .Pp
 Comments
-.Ds I
+.Bd -unfilled -offset indent -compact
 are enclosed in /* and */.
-.De
+.Ed
 .Pp
 Names
-.Ds I
+.Bd -unfilled -offset indent -compact
 simple variables: L
 array elements: L [ E ]
 The words `ibase', `obase', and `scale'
-.De
+.Ed
 .Pp
 Other operands
-.Ds I
+.Bd -unfilled -offset indent -compact
 arbitrarily long numbers with optional sign and decimal point.
 \&( E \&)
 sqrt ( E )
 length ( E )	number of significant decimal digits
 scale ( E )	number of digits right of decimal point
 L ( E , ... , E )
-.De
+.Ed
 .Pp
 Operators
-.Ds I
+.Bd -unfilled -offset indent -compact
 \&+  \-  *  /  %  ^ (% is remainder; ^ is power)
 \&++   \-\-         (prefix and postfix; apply to names)
 \&==  <=  >=  !=  <  >
 \&=  +=  \-=  *=  /=  %=  ^=
-.De
+.Ed
 .Pp
 Statements
-.Ds I
+.Bd -unfilled -offset indent -compact
 E
 { S ; ... ; S }
 if ( E ) S
@@ -85,34 +87,34 @@ for ( E ; E ; E ) S
 null statement
 break
 quit
-.De
+.Ed
 .Pp
 Function definitions
-.Ds I
+.Bd -unfilled -offset indent -compact
 define L ( L ,..., L ) {
 	auto L, ... , L
 	S; ... S
 	return ( E )
 }
-.De
+.Ed
 .Pp
 Functions in
 .Fl l
 math library
-.Dw j(n,x)
-.Dp s(x)
+.Bl -tag -width j(n,x) -offset indent -compact
+.It s(x)
 sine
-.Dp c(x)
+.It c(x)
 cosine
-.Dp e(x)
+.It e(x)
 exponential
-.Dp l(x)
+.It l(x)
 log
-.Dp a(x)
+.It a(x)
 arctangent
-.Dp j(n,x)
+.It j(n,x)
 Bessel function
-.Dp
+.El
 .Pp
 All function arguments are passed by value.
 .Pp
@@ -123,7 +125,7 @@ Assignment to
 .Ar scale
 influences the number of digits to be retained on arithmetic
 operations in the manner of
-.Xr dc 1 .
+.Xr \&dc 1 .
 Assignments to
 .Ar ibase
 or
@@ -139,8 +141,7 @@ or defining them as automatic variables
 empty square brackets must follow the array name.
 .Pp
 For example
-.Pp
-.Ds I
+.Bd -literal -offset indent
 scale = 20
 define e(x){
 	auto a, b, c, i, s
@@ -155,9 +156,8 @@ define e(x){
 		s = s+c
 	}
 }
-.De
+.Ed
 .Pp
-.fi
 defines a function to compute an approximate value of
 the exponential function and
 .Pp
@@ -167,24 +167,27 @@ prints approximate values of the exponential function of
 the first ten integers.
 .Sh FILES
 .\" /usr/lib/lib.b	mathematical library
-.Dw Dc(1)
-.Di L
-.Dp Pa dc(1)	desk calculator proper
-.Dp
+.Bl -tag -width xxxxx -compact
+.It Xr \&dc 1
+Desk calculator Proper.
+.El
 .Sh SEE ALSO
-.Xr dc 1
-.br
-L. L. Cherry and R. Morris,
-.Em BC \- An arbitrary precision desk-calculator language
+.Xr \&dc 1
+.Rs
+.%A L. L. Cherry
+.%A R. Morris
+.%T "BC \- An arbitrary precision desk-calculator language"
+.Re
 .Sh HISTORY
 The
-.Nm bc
-command appeared in Version 7 AT&T UNIX.
+.Nm \&bc
+command appeared in
+.At v6 .
 .Sh BUGS
 No &&, \(or\\(or, or ! operators.
-.br
+.Pp
 .Ql For
 statement must have all three E's.
-.br
+.Pp
 .Ql Quit
 is interpreted when read, not when executed.

@@ -3,9 +3,8 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)roffbib.1	6.5 (Berkeley) %G%
+.\"	@(#)roffbib.1	6.6 (Berkeley) %G%
 .\"
-.Vx
 .Dd 
 .Dt ROFFBIB 1
 .Os BSD 4.2
@@ -20,11 +19,9 @@
 .Op Fl o
 .Op Fl r
 .Op Fl s
-.Oo
-.Op Fl T Ar term
-.Oo
+.Op Fl T Ns Ar term
 .Op Fl x
-.Op Fl m Ar mac
+.Op Fl m Ns Ar mac
 .Op Fl V
 .Op Fl Q
 .Ar
@@ -44,21 +41,28 @@ such as the
 .Fl T
 flag to specify terminal type.
 .Pp
-If abstracts or comments are entered in the database following the %X field key,
+If abstracts or comments are entered in the database following the
+.Cm %X
+field key,
 .Nm roffbib
 will format them into paragraphs for an annotated bibliography.
-Several %X fields may be given if several
+Several
+.Cm %X
+fields may be given if several
 annotation paragraphs are desired.
 .Pp
 Options exclusive to
 .Nm roffbib :
-.Tp Fl x
-Suppresses the printing of %X abstracts.
-.Tp Fl V
+.Bl -tag -width Fl x
+.It Fl x
+Suppresses the printing of
+.Cm %X
+abstracts.
+.It Fl V
 Send output to the Versatec (use vtroff).
-.Tp Fl Q
+.It Fl Q
 Queue the output to the default troff device.
-.Tp
+.El
 .Pp
 If neither the
 .Fl Q
@@ -80,33 +84,23 @@ Four command-line registers control formatting style
 of the bibliography, much like the number registers of
 .Xr ms  7  .
 The command-line argument
-.Cx Fl r
-.Ar N1
-.Cx
+.Fl r Ns Ar N1 
 will number
 the references starting at one  1 .
 The flag
-.Cx Fl r
-.Ar V2
-.Cx
-will double space the biblio\%graphy,
+.Fl r Ns Ar V2 
+will double space the bibliography,
 while
-.Cx Fl r
-.Ar V1
-.Cx
+.Fl r Ns Ar V1 
 will double space references
 but single space annotation paragraphs.
 The line length can be changed from the default 6.5 inches
 to 6 inches with the
-.Cx Fl r
-.Ar L6i
-.Cx
+.Fl r Ns Ar L6i 
 argument,
 and the page offset can be set from the default of 0
 to one inch by specifying
-.Cx Fl r
-.Ar O1i
-.Cx
+.Fl r Ns Ar O1i 
 (capital O, not zero).
 Note: with the
 .Fl V
@@ -120,17 +114,16 @@ is limited, but it is a good script to copy and adopt
 for one's own needs, as it does demonstrate usage of
 .Xr refer 1 .
 .Sh FILES
-.Dw /usr/share/tmac/tmac.bib
-.Di L
-.Dp Pa /usr/bin/roffbib
-.Nm
+.Bl -tag -width /usr/share/tmac/tmac.bib -compact
+.It Pa /usr/bin/roffbib
+.Nm Roffbib
 script.
-.Dp Pa /usr/share/tmac/tmac.bib
-file of macros used by
+.It Pa /usr/share/tmac/tmac.bib
+File of macros used by
 .Xr nroff 1
 and
-.Xr troff 1
-.Dp
+.Xr troff 1 .
+.El
 .Sh SEE ALSO
 .Xr refer 1 ,
 .Xr addbib 1 ,
@@ -138,8 +131,10 @@ and
 .Xr indxbib 1 ,
 .Xr lookbib 1
 .Sh HISTORY
-.Nm Roffbib
-appeared in 4.2 BSD.
+The
+.Nm roffbib
+command appeared in
+.Bx 4.2 .
 .Sh BUGS
 Users have to rewrite macros
 to create customized formats.
