@@ -1,4 +1,4 @@
-/*	ip_output.c	6.4	84/05/25	*/
+/*	ip_output.c	6.5	84/06/22	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -28,7 +28,7 @@ ip_output(m, opt, ro, flags)
 	register struct ifnet *ifp;
 	int len, hlen = sizeof (struct ip), off, error = 0;
 	struct route iproute;
-	struct sockaddr *dst;
+	struct sockaddr_in *dst;
 
 	if (opt)				/* XXX */
 		(void) m_free(opt);		/* XXX */
@@ -50,10 +50,10 @@ ip_output(m, opt, ro, flags)
 		ro = &iproute;
 		bzero((caddr_t)ro, sizeof (*ro));
 	}
-	dst = &ro->ro_dst;
+	dst = (struct sockaddr_in *)&ro->ro_dst;
 	if (ro->ro_rt == 0) {
-		ro->ro_dst.sa_family = AF_INET;
-		((struct sockaddr_in *)&ro->ro_dst)->sin_addr = ip->ip_dst;
+		dst->sin_family = AF_INET;
+		dst->sin_addr = ip->ip_dst;
 		/*
 		 * If routing to interface only,
 		 * short circuit routing lookup.
@@ -80,7 +80,7 @@ ip_output(m, opt, ro, flags)
 	}
 	ro->ro_rt->rt_use++;
 	if (ro->ro_rt->rt_flags & (RTF_GATEWAY|RTF_HOST))
-		dst = &ro->ro_rt->rt_gateway;
+		dst = (struct sockaddr_in *)&ro->ro_rt->rt_gateway;
 gotif:
 #ifndef notdef
 	/*
@@ -97,7 +97,7 @@ gotif:
 	 * and verify user is allowed to send
 	 * such a packet.
 	 */
-	if (in_lnaof(((struct sockaddr_in *)dst)->sin_addr) == INADDR_ANY) {
+	if (in_lnaof(dst->sin_addr) == INADDR_ANY) {
 		if ((ifp->if_flags & IFF_BROADCAST) == 0) {
 			error = EADDRNOTAVAIL;
 			goto bad;
@@ -121,7 +121,7 @@ gotif:
 		ip->ip_off = htons((u_short)ip->ip_off);
 		ip->ip_sum = 0;
 		ip->ip_sum = in_cksum(m, hlen);
-		error = (*ifp->if_output)(ifp, m, dst);
+		error = (*ifp->if_output)(ifp, m, (struct sockaddr *)dst);
 		goto done;
 	}
 
@@ -182,7 +182,7 @@ gotif:
 		mhip->ip_off = htons((u_short)mhip->ip_off);
 		mhip->ip_sum = 0;
 		mhip->ip_sum = in_cksum(mh, hlen);
-		if (error = (*ifp->if_output)(ifp, mh, dst))
+		if (error = (*ifp->if_output)(ifp, mh, (struct sockaddr *)dst))
 			break;
 	}
 	m_freem(m);
