@@ -1,6 +1,6 @@
 	/* LINTLIBRARY */
 /*
- *	@(#)llib-lc	1.1	(Berkeley)	%G%
+ *	@(#)llib-lc	1.2	(Berkeley)	%G%
  */
 #include <stdio.h>
 #include <sgtty.h>
@@ -9,6 +9,8 @@
 #include <sys/stat.h>
 #include <time.h>
 int	errno;
+int	sys_nerr;
+char	*sys_errlist[];
 int	alarm(s) unsigned s; { return(s); }
 char	*brk(a) char *a; { return(a); }
 int	chdir(s) char *s; { return(0); }
