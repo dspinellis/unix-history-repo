@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_cluster.c	7.21 (Berkeley) %G%
+ *	@(#)vfs_cluster.c	7.22 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -153,7 +153,7 @@ bwrite(bp)
 	register struct buf *bp;
 {
 	register int flag;
-	int error;
+	int s, error;
 
 	flag = bp->b_flags;
 	bp->b_flags &= ~(B_READ | B_DONE | B_ERROR | B_DELWRI);
@@ -165,7 +165,9 @@ bwrite(bp)
 	    pack(bp->b_vp->v_mount->m_fsid[0], bp->b_bcount), bp->b_lblkno);
 	if (bp->b_bcount > bp->b_bufsize)
 		panic("bwrite");
+	s = splbio();
 	bp->b_vp->v_numoutput++;
+	splx(s);
 	VOP_STRATEGY(bp);
 
 	/*
