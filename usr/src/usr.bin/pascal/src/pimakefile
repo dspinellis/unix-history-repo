@@ -1,4 +1,4 @@
-SCCSID = "@(#)pimakefile 1.6 %G%"
+SCCSID = "@(#)pimakefile 1.7 %G%"
 
 MKSTR = /usr/ucb/mkstr
 EYACC = /usr/ucb/eyacc
