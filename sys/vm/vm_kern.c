@@ -75,6 +75,7 @@
  */
 
 #include "param.h"
+#include "syslog.h"
 
 #include "vm.h"
 #include "vm_page.h"
@@ -382,7 +383,8 @@ kmem_malloc(map, size, canwait)
 			if (map == kmem_map)
 				panic("kmem_malloc: kmem_map too small");
 			else if (map == mb_map)
-				printf("kmem_malloc: mb_map too small (can't wait)\n");
+				log(LOG_WARNING,
+					"kmem_malloc: mb_map too small (can't wait)\n");
 		}
 		return 0;
 	}
