@@ -6,7 +6,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#       @(#)makesendmail	8.7 (Berkeley) %G%
+#       @(#)makesendmail	8.8 (Berkeley) %G%
 #
 
 #
@@ -25,10 +25,24 @@ esac
 
 # determine operating system type
 os=`uname -s`
+case $os
+in
+  DYNIX/ptx)	os=PTX;;
+esac
 
 # determine operating system release
 rel=`uname -r`
 rbase=`echo $rel | sed 's/\..*//''`
+
+# heuristic tweaks to clean up names
+if [ -r /unix -a -r /usr/lib/libseq.a -a -r /lib/cpp ]
+then
+	# might be a DYNIX/ptx 2.x system, which has a broken uname
+	if strings /lib/cpp | grep _SEQUENT_ > /dev/null
+	then
+		os=PTX
+	fi
+fi
 
 # now try to find a reasonable object directory
 if [ -r obj.$os.$arch.$rel ]; then
@@ -84,4 +98,4 @@ else
 fi
 echo "Making in $obj"
 cd $obj
-exec ${MAKE:-make} $*
+exec ${MAKE-make} "$@"
