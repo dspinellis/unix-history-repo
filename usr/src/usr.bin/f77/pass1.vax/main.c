@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -22,6 +22,12 @@ static char sccsid[] = "@(#)main.c	5.1 (Berkeley) %G%";
  * University of Utah CS Dept modification history:
  *
  * $Log:	main.c,v $
+ * Revision 5.2  85/08/10  04:57:16  donn
+ * Jerry Berkman's changes to ifdef 66 code and add -r8/double flag..
+ * 
+ * Revision 5.1  85/08/10  03:48:26  donn
+ * 4.3 alpha
+ * 
  * Revision 3.2  85/01/14  04:21:31  donn
  * Added changes to implement Jerry's '-q' option.
  * 
@@ -122,14 +128,20 @@ while(argc>0 && argv[0][0]=='-')
 			profileflag = YES;
 			break;
 
+		case '8':
+			dblflag = YES;
+			break;
+
 		case 'C':
 			checksubs = YES;
 			break;
 
+#ifdef ONLY66
 		case '6':
 			no66flag = YES;
 			noextflag = YES;
 			break;
+#endif
 
 		case '1':
 			onetripflag = YES;
