@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)machdep.c	7.6 (Berkeley) %G%
+ *	@(#)machdep.c	7.7 (Berkeley) %G%
  */
 
 #include "reg.h"
@@ -768,6 +768,7 @@ boot(arghowto)
 {
 	register int howto;		/* r11 == how to boot */
 	register int devtype;		/* r10 == major of root dev */
+	extern char *panicstr;
 
 	howto = arghowto;
 	if ((howto&RB_NOSYNC)==0 && waittime < 0 && bfreelist[0].b_forw) {
@@ -780,7 +781,8 @@ boot(arghowto)
 		/*
 		 * Release inodes held by texts before update.
 		 */
-		xumount(NODEV);
+		if (panicstr == 0)
+			xumount(NODEV);
 		update();
 
 		for (iter = 0; iter < 20; iter++) {
