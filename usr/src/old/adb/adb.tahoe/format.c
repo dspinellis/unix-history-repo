@@ -1,5 +1,5 @@
 #ifndef lint
-static	char sccsid[] = "@(#)format.c	1.3 (Berkeley) %G%";
+static	char sccsid[] = "@(#)format.c	1.4 (Berkeley) %G%";
 #endif
 /*
  *
@@ -141,13 +141,13 @@ STRING		ifp;
 
 		    case 'c': case 'C':
 			IF modifier=='C'
-			THEN printesc(byte(w));
-			ELSE printc(byte(w));
+			THEN printesc((w>>8)&0xff);
+			ELSE printc((w>>8)&0xff);
 			FI
 			dotinc=1; break;
 
 		    case 'b': case 'B':
-			printf("%-8o", byte(w)); dotinc=1; break;
+			printf("%-8o", (w>>8)&0xff); dotinc=1; break;
 
 			case '1':
 			printf("%-8R", byte(wx)); dotinc=1; break;
