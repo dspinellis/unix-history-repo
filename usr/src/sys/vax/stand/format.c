@@ -1,4 +1,4 @@
-/*	format.c	6.3	83/09/23	*/
+/*	format.c	6.4	84/11/27	*/
 
 
 /* 
@@ -58,7 +58,7 @@ int	pattern;
  * Purdue/EE severe burnin patterns.
  */
 unsigned short ppat[] = {
-0031463,0070707,0133333,0155555,0161616,0143434,
+0xf00f, 0xec6d, 0031463,0070707,0133333,0155555,0161616,0143434,
 0107070,0016161,0034343,0044444,0022222,0111111,0125252, 052525,
 0125252,0125252,0125252,0125252,0125252,0125252,0125252,0125252,
 #ifndef	SHORTPASS
@@ -69,7 +69,7 @@ unsigned short ppat[] = {
  };
 
 #define	NPT	(sizeof (ppat) / sizeof (short))
-int	npat;		/* subscript to ppat[] */
+int	maxpass, npat;	/* subscript to ppat[] */
 int	severe;		/* nz if running "severe" burnin */
 int	nbads;		/* subscript for bads */
 long	bads[MAXBADDESC]; /* Bad blocks accumulated */
@@ -87,7 +87,7 @@ main()
 	struct st st;
 	struct sector *bp, *cbp;
 	char *rbp, *rcbp;
-	int pass, maxpass;
+	int pass;
 	char *cp;
 
 	printf("Disk format/check utility\n\n");
@@ -125,12 +125,10 @@ again:
 	rtracksize = SECTSIZ * st.nsect;
 	bp = (struct sector *)malloc(tracksize);
 	rbp = malloc(rtracksize);
-	if (severe) {
-		npat = 0;
-		maxpass = NPT;
-	} else
-		maxpass = 1;
-	for (pass = 0; pass < maxpass; pass++) {
+	pass = 0;
+	npat = 0;
+more:
+	for (; pass < maxpass; pass++) {
 		if (severe)
 			printf("Begin pass %d\n", pass);
 		bufinit(bp, tracksize);
@@ -141,7 +139,7 @@ again:
 		 *
 		 * 1) Write header and test pattern.
 		 * 2) Read data.  Hardware checks header and data ECC.
-		 *    Read data (esp on Eagles) is much faster when write check.
+		 *    Read data (esp on Eagles) is much faster than write check.
 		 */
 		lastsector = st.nspc * st.ncyl;
 		for (sector = 0; sector < lastsector; sector += st.nsect) {
@@ -212,24 +210,33 @@ again:
 	 * Checking finished.
 	 */
 out:
-	if (severe && nbads) {
-		/*
-		 * Sort bads and insert in bad block table.
-		 */
-		qsort(bads, nbads, sizeof (long), qcompar);
-		severe = 0;
-		for (i = 0; i < nbads; i++) {
-			errno = EECC;	/* for now */
-			recorderror(fd, bads[i], &st);
-		}
-		severe++;
-	}
 	if (errors[FE_TOTAL] || errors[FE_SSE]) {
 		printf("Errors:\n");
 		for (i = 0; i < NERRORS; i++)
 			printf("%s: %d\n", errornames[i], errors[i]);
 		printf("Total of %d hard errors found\n",
 			errors[FE_TOTAL] + errors[FE_SSE]);
+	}
+	if (severe && maxpass < NPT) {
+		cp = prompt("More passes? (0 or number) ");
+		maxpass = atoi(cp);
+		if (maxpass > 0) {
+			maxpass += pass;
+			goto more;
+		}
+	}
+	if (severe && nbads) {
+		/*
+		 * Sort bads and insert in bad block table.
+		 */
+		qsort(bads, nbads, sizeof (long), qcompar);
+		severe = 0;
+		errno = 0;
+		for (i = 0; i < nbads; i++)
+			recorderror(fd, bads[i], &st);
+		severe++;
+	}
+	if (errors[FE_TOTAL] || errors[FE_SSE]) {
 		/* change the headers of all the bad sectors */
 		writebb(fd, errors[FE_SSE], &sstab, &st, SSERR);
 		writebb(fd, errors[FE_TOTAL], &dkbad, &st, BSERR);
@@ -250,12 +257,6 @@ out:
 	printf("Done\n");
 	ioctl(fd,SAIONOSSI,(char *)0);
 	close(fd);
-/*
-	if (severe) {
-		asm("halt");
-		exit(0);
-	}
-*/
 #ifndef JUSTEXIT
 	goto again;
 #endif
@@ -338,20 +339,24 @@ recorderror(fd, bn, st)
 			return(-1);
 		}
 		bads[nbads++] = bn;
+		if (errno < EBSE || errno > EHER)
+			return(0);
+		errno -= EBSE;
+		errors[errno]++;
 		return(0);
 	}
-	if (errors[FE_TOTAL] >= MAXBADDESC) {
-		printf("Too many bad sectors\n");
-		return(-1);
+	if (errno >= EBSE && errno <= EHER) {
+		if (errors[FE_TOTAL] >= MAXBADDESC) {
+			printf("Too many bad sectors\n");
+			return(-1);
+		}
+		if (errors[FE_SSE] >= MAXBADDESC) {
+			printf("Too many skip sector errors\n");
+			return(-1);
+		}
+		errno -= EBSE;
+		errors[errno]++;
 	}
-	if (errors[FE_SSE] >= MAXBADDESC) {
-		printf("Too many skip sector errors\n");
-		return(-1);
-	}
-	if (errno < EBSE || errno > EHER)
-		return(0);
-	errno -= EBSE;
-	errors[errno]++;
 	cn = bn / st->nspc;
 	sn = bn % st->nspc;
 	tn = sn / st->nsect;
@@ -431,7 +436,7 @@ static struct pattern {
 	{ 0xf00ff00f, 	"RH750 worst case" },
 	{ 0xec6dec6d,	"media worst case" },
 	{ 0xa5a5a5a5,	"alternate 1's and 0's" },
-	{ 0xFFFFFFFF,	"Severe burnin (takes several hours)" },
+	{ 0xFFFFFFFF,	"Severe burnin (up to 48 passes)" },
 	{ 0, 0 },
 };
 
@@ -448,10 +453,18 @@ getpattern()
 	npatterns = p - pat;
 	cp = prompt("Pattern (one of the above, other to restart)? ");
 	pattern = atoi(cp) - 1;
+	if (pattern < 0 || pattern >= npatterns)
+		return(1);
 	severe = 0;
-	if (pat[pattern].pa_value == -1)
+	maxpass = 1;
+	if (pat[pattern].pa_value == -1) {
 		severe = 1;
-	return (pattern < 0 || pattern >= npatterns);
+		cp = prompt("How many passes (up to 48)? ");
+		maxpass = atoi(cp);
+		if (maxpass > NPT)
+			maxpass = NPT;
+	}
+	return (0);
 }
 
 struct xsect {
