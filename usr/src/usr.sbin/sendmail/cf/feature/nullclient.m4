@@ -19,8 +19,16 @@ POPDIVERT
 #  sendmail.
 #
 
-VERSIONID(`@(#)nullclient.m4	8.4 (Berkeley) %G%')
+VERSIONID(`@(#)nullclient.m4	8.5 (Berkeley) %G%')
 
+PUSHDIVERT(6)
+# hub host (to which all mail is sent)
+DH`'ifdef(`MAIL_HUB', MAIL_HUB,
+	`errprint(`MAIL_HUB not defined for nullclient feature')')
+
+# route-addr separators
+C: : ,
+POPDIVERT
 PUSHDIVERT(7)
 ############################################
 ###   Null Client Mailer specification   ###
@@ -28,6 +36,8 @@ PUSHDIVERT(7)
 
 ifdef(`confRELAY_MAILER',,
 	`define(`confRELAY_MAILER', `nullclient')')dnl
+ifdef(`confFROM_HEADER',,
+	`define(`confFROM_HEADER', <$g>)')dnl
 
 Mnullclient,	P=[IPC], F=CONCAT(mDFMuXa, SMTP_MAILER_FLAGS),ifdef(`SMTP_MAILER_MAX', ` M=SMTP_MAILER_MAX,')
 		A=IPC $h
