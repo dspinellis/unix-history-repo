@@ -1,4 +1,4 @@
-/*	saio.h	1.1	%G%	*/
+/*	saio.h	1.2	%G%	*/
 
 /*
  * header file for standalone package
@@ -57,3 +57,12 @@ struct	iob iob[NFILES];
 #define	PHYSMBA0	0x20010000
 #define	PHYSMBA1	0x20012000
 #define	PHYSUMEM	0x2013e000
+
+#define	MBAINIT		0x1
+
+int	mbaact;
+
+struct mba_info
+{
+	struct	mba_regs *mi_phys;	/* physical address of mba */
+};

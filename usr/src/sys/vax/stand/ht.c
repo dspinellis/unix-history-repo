@@ -1,4 +1,4 @@
-/*	ht.c	1.1	%G%	*/
+/*	ht.c	1.2	%G%	*/
 
 /*
  * TJU16 tape driver
@@ -24,6 +24,7 @@ struct	device
 };
 
 #define	HTADDR	((struct device *)(PHYSMBA1 + MBA_ERB))
+#define	HTMBA	1
 
 #define	GO	01
 #define	WCOM	060
@@ -65,6 +66,8 @@ register struct iob *io;
 	register skip;
 	int i;
 
+	if ((mbaact&(1<<HTMBA)) == 0)
+		mbainit(HTMBA);
 	htinit();
 	htstrategy(io, REW);
 	skip = io->i_boff;
