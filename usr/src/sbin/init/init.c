@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)init.c	6.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)init.c	6.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -684,7 +684,7 @@ start_session_db()
 {
 	if (session_db && (*session_db->close)(session_db))
 		emergency("session database close: %s", strerror(errno));
-	if ((session_db = hash_open(NULL, O_RDWR, 0, NULL)) == 0) {
+	if ((session_db = dbopen(NULL, O_RDWR, 0, DB_HASH, NULL)) == 0) {
 		emergency("session database open: %s", strerror(errno));
 		return (1);
 	}
@@ -707,7 +707,7 @@ add_session(sp)
 	data.data = &sp;
 	data.size = sizeof sp;
 
-	if ((*session_db->put)(session_db, &key, &data, R_PUT))
+	if ((*session_db->put)(session_db, &key, &data, 0))
 		emergency("insert %d: %s", sp->se_process, strerror(errno));
 }
 
