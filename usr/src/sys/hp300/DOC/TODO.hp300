@@ -47,3 +47,9 @@
    Should use a timer on the clock chip instead of approximating with a
    "while (--count);" loop.  Because of caches, the latter is potentially
    way off.
+
+9. Redo cache handling.
+   There are way too many routines which are specific to particular
+   cache types.  We should be able to come up with a more coherent
+   scheme (though HP 68k boxes have just about every caching scheme
+   imaginable: internal/external, physical/virtual, writeback/writethrough)
