@@ -1,4 +1,4 @@
-/*	tty.c	6.3	83/09/25	*/
+/*	tty.c	6.4	83/09/25	*/
 
 #include "../machine/reg.h"
 
@@ -1045,7 +1045,7 @@ loop:
 			if ((tp->t_state&TS_CARR_ON) == 0 ||
 			    (tp->t_state&TS_NBIO)) {
 				splx(s);
-				return (0);
+				return (EWOULDBLOCK);
 			}
 			sleep((caddr_t)&tp->t_rawq, TTIPRI);
 			splx(s);
