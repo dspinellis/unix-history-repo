@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)dz.c	7.13 (Berkeley) %G%
+ *	@(#)dz.c	7.14 (Berkeley) %G%
  */
 
 #include "dz.h"
@@ -200,8 +200,10 @@ dzopen(dev, flag)
 }
  
 /*ARGSUSED*/
-dzclose(dev, flag)
+dzclose(dev, flag, mode, p)
 	dev_t dev;
+	int flag, mode;
+	struct proc *p;
 {
 	register struct tty *tp;
 	register int unit;
@@ -211,7 +213,7 @@ dzclose(dev, flag)
 	unit = minor(dev);
 	dz = unit >> 3;
 	tp = &dz_tty[unit];
-	(*linesw[tp->t_line].l_close)(tp);
+	(*linesw[tp->t_line].l_close)(tp, flag);
 	dzaddr = dzpdma[unit].p_addr;
 	if (dzaddr->dzcsr&DZ_32)
 		(void) dzmctl(dev, DZ_BRK, DMBIC);

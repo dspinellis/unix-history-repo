@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)dmz.c	7.11 (Berkeley) %G%
+ *	@(#)dmz.c	7.12 (Berkeley) %G%
  */
 
 /*
@@ -168,12 +168,13 @@ dmzopen(dev, flag)
  * Close a DMZ32 line.
  */
 /*ARGSUSED*/
-dmzclose(dev, flag)
+dmzclose(dev, flag, mode, p)
 	dev_t dev;
-	int flag;
+	int flag, mode;
+	struct proc *p;
 {
 
-	return (dmxclose(&dmz_tty[minor(dev)]));
+	return (dmxclose(&dmz_tty[minor(dev)]), flag);
 }
 
 dmzread(dev, uio, flag)
