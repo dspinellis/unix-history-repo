@@ -9,7 +9,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *      @(#)spp_var.h	7.3 (Berkeley) %G%
+ *      @(#)spp_var.h	7.4 (Berkeley) %G%
  */
 
 /*
@@ -66,7 +66,7 @@ struct sppcb {
  * srtt has 3 bits to the right of the binary point, rttvar has 2.
  */
 	short	s_idle;			/* time idle */
-	short	s_timer[TCPT_NTIMERS];	/* timers */
+	short	s_timer[SPPT_NTIMERS];	/* timers */
 	short	s_rxtshift;		/* log(2) of rexmt exp. backoff */
 	short	s_rxtcur;		/* current retransmit value */
 	u_short	s_rtseq;		/* packet being timed */

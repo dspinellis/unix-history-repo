@@ -9,7 +9,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *      @(#)spp_usrreq.c	7.5 (Berkeley) %G%
+ *      @(#)spp_usrreq.c	7.6 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -25,7 +25,6 @@
 #include "../net/if.h"
 #include "../net/route.h"
 #include "../netinet/tcp_fsm.h"
-#include "../netinet/tcp_timer.h"
 
 #include "ns.h"
 #include "ns_pcb.h"
@@ -34,6 +33,7 @@
 #include "ns_error.h"
 #include "sp.h"
 #include "spidp.h"
+#include "spp_timer.h"
 #include "spp_var.h"
 #include "spp_debug.h"
 
@@ -125,7 +125,7 @@ spp_input(m, nsp, ifp)
 	 * reset idle time and keep-alive timer;
 	 */
 	cb->s_idle = 0;
-	cb->s_timer[TCPT_KEEP] = TCPTV_KEEP;
+	cb->s_timer[SPPT_KEEP] = SPPTV_KEEP;
 
 	switch (cb->s_state) {
 
@@ -168,9 +168,9 @@ spp_input(m, nsp, ifp)
 #define THREEWAYSHAKE
 #ifdef THREEWAYSHAKE
 		cb->s_state = TCPS_SYN_RECEIVED;
-		cb->s_force = 1 + TCPT_KEEP;
+		cb->s_force = 1 + SPPT_KEEP;
 		sppstat.spps_accepts++;
-		cb->s_timer[TCPT_KEEP] = TCPTV_KEEP;
+		cb->s_timer[SPPT_KEEP] = SPPTV_KEEP;
 		}
 		break;
 	/*
@@ -186,8 +186,8 @@ spp_input(m, nsp, ifp)
 		}
 #endif
 		nsp->nsp_fport =  si->si_sport;
-		cb->s_timer[TCPT_REXMT] = 0;
-		cb->s_timer[TCPT_KEEP] = TCPTV_KEEP;
+		cb->s_timer[SPPT_REXMT] = 0;
+		cb->s_timer[SPPT_KEEP] = SPPTV_KEEP;
 		soisconnected(so);
 		cb->s_state = TCPS_ESTABLISHED;
 		sppstat.spps_accepts++;
@@ -213,7 +213,7 @@ spp_input(m, nsp, ifp)
 		cb->s_rack = si->si_ack;
 		cb->s_ralo = si->si_alo;
 		cb->s_dport = nsp->nsp_fport =  si->si_sport;
-		cb->s_timer[TCPT_REXMT] = 0;
+		cb->s_timer[SPPT_REXMT] = 0;
 		cb->s_flags |= SF_ACKNOW;
 		soisconnected(so);
 		cb->s_state = TCPS_ESTABLISHED;
@@ -221,9 +221,9 @@ spp_input(m, nsp, ifp)
 		if (cb->s_rtt) {
 			cb->s_srtt = cb->s_rtt << 3;
 			cb->s_rttvar = cb->s_rtt << 1;
-			TCPT_RANGESET(cb->s_rxtcur,
+			SPPT_RANGESET(cb->s_rxtcur,
 			    ((cb->s_srtt >> 2) + cb->s_rttvar) >> 1,
-			    TCPTV_MIN, TCPTV_REXMTMAX);
+			    SPPTV_MIN, SPPTV_REXMTMAX);
 			    cb->s_rtt = 0;
 		}
 	}
@@ -305,9 +305,9 @@ register struct spidp *si;
 
 				cb->s_snxt = si->si_ack;
 				cb->s_cwnd = CUNIT;
-				cb->s_force = 1 + TCPT_REXMT;
+				cb->s_force = 1 + SPPT_REXMT;
 				(void) spp_output(cb, (struct mbuf *)0);
-				cb->s_timer[TCPT_REXMT] = cb->s_rxtcur;
+				cb->s_timer[SPPT_REXMT] = cb->s_rxtcur;
 				cb->s_rtt = 0;
 				if (cwnd >= 4 * CUNIT)
 					cb->s_cwnd = cwnd / 2;
@@ -356,9 +356,9 @@ register struct spidp *si;
 		}
 		cb->s_rtt = 0;
 		cb->s_rxtshift = 0;
-		TCPT_RANGESET(cb->s_rxtcur,
+		SPPT_RANGESET(cb->s_rxtcur,
 			((cb->s_srtt >> 2) + cb->s_rttvar) >> 1,
-			TCPTV_MIN, TCPTV_REXMTMAX);
+			SPPTV_MIN, SPPTV_REXMTMAX);
 	}
 	/*
 	 * If all outstanding data is acked, stop retransmit
@@ -367,10 +367,10 @@ register struct spidp *si;
 	 * timer, using current (possibly backed-off) value;
 	 */
 	if (si->si_ack == cb->s_smax + 1) {
-		cb->s_timer[TCPT_REXMT] = 0;
+		cb->s_timer[SPPT_REXMT] = 0;
 		cb->s_flags |= SF_RXT;
-	} else if (cb->s_timer[TCPT_PERSIST] == 0)
-		cb->s_timer[TCPT_REXMT] = cb->s_rxtcur;
+	} else if (cb->s_timer[SPPT_PERSIST] == 0)
+		cb->s_timer[SPPT_REXMT] = cb->s_rxtcur;
 	/*
 	 * When new data is acked, open the congestion window.
 	 * If the window gives us less than ssthresh packets
@@ -780,9 +780,9 @@ again:
 	 * and timer expired, send what we can and go into
 	 * transmit state.
 	 */
-	if (cb->s_force == 1 + TCPT_PERSIST) {
+	if (cb->s_force == 1 + SPPT_PERSIST) {
 		if (win != 0) {
-			cb->s_timer[TCPT_PERSIST] = 0;
+			cb->s_timer[SPPT_PERSIST] = 0;
 			cb->s_rxtshift = 0;
 		}
 	}
@@ -800,7 +800,7 @@ again:
 		 */
 		len = 0;
 		if (win == 0) {
-			cb->s_timer[TCPT_REXMT] = 0;
+			cb->s_timer[SPPT_REXMT] = 0;
 			cb->s_snxt = cb->s_rack;
 		}
 	}
@@ -858,8 +858,8 @@ again:
 	 * if window is nonzero, transmit what we can,
 	 * otherwise send a probe.
 	 */
-	if (so->so_snd.sb_cc && cb->s_timer[TCPT_REXMT] == 0 &&
-		cb->s_timer[TCPT_PERSIST] == 0) {
+	if (so->so_snd.sb_cc && cb->s_timer[SPPT_REXMT] == 0 &&
+		cb->s_timer[SPPT_PERSIST] == 0) {
 			cb->s_rxtshift = 0;
 			spp_setpersist(cb);
 	}
@@ -950,8 +950,8 @@ send:
 	 * Stuff checksum and output datagram.
 	 */
 	if ((si->si_cc & SP_SP) == 0) {
-		if (cb->s_force != (1 + TCPT_PERSIST) ||
-		    cb->s_timer[TCPT_PERSIST] == 0) {
+		if (cb->s_force != (1 + SPPT_PERSIST) ||
+		    cb->s_timer[SPPT_PERSIST] == 0) {
 			/*
 			 * If this is a new packet and we are not currently 
 			 * timing anything, time this one.
@@ -971,11 +971,11 @@ send:
 			 * Initialize shift counter which is used for backoff
 			 * of retransmit time.
 			 */
-			if (cb->s_timer[TCPT_REXMT] == 0 &&
+			if (cb->s_timer[SPPT_REXMT] == 0 &&
 			    cb->s_snxt != cb->s_rack) {
-				cb->s_timer[TCPT_REXMT] = cb->s_rxtcur;
-				if (cb->s_timer[TCPT_PERSIST]) {
-					cb->s_timer[TCPT_PERSIST] = 0;
+				cb->s_timer[SPPT_REXMT] = cb->s_rxtcur;
+				if (cb->s_timer[SPPT_PERSIST]) {
+					cb->s_timer[SPPT_PERSIST] = 0;
 					cb->s_rxtshift = 0;
 				}
 			}
@@ -985,8 +985,8 @@ send:
 	} else if (cb->s_state < TCPS_ESTABLISHED) {
 		if (cb->s_rtt == 0)
 			cb->s_rtt = 1; /* Time initial handshake */
-		if (cb->s_timer[TCPT_REXMT] == 0)
-			cb->s_timer[TCPT_REXMT] = cb->s_rxtcur;
+		if (cb->s_timer[SPPT_REXMT] == 0)
+			cb->s_timer[SPPT_REXMT] = cb->s_rxtcur;
 	}
 	{
 		/*
@@ -1045,15 +1045,15 @@ spp_setpersist(cb)
 	register t = ((cb->s_srtt >> 2) + cb->s_rttvar) >> 1;
 	extern int spp_backoff[];
 
-	if (cb->s_timer[TCPT_REXMT] && spp_do_persist_panics)
+	if (cb->s_timer[SPPT_REXMT] && spp_do_persist_panics)
 		panic("spp_output REXMT");
 	/*
 	 * Start/restart persistance timer.
 	 */
-	TCPT_RANGESET(cb->s_timer[TCPT_PERSIST],
+	SPPT_RANGESET(cb->s_timer[SPPT_PERSIST],
 	    t*spp_backoff[cb->s_rxtshift],
-	    TCPTV_PERSMIN, TCPTV_PERSMAX);
-	if (cb->s_rxtshift < TCP_MAXRXTSHIFT)
+	    SPPTV_PERSMIN, SPPTV_PERSMAX);
+	if (cb->s_rxtshift < SPP_MAXRXTSHIFT)
 		cb->s_rxtshift++;
 }
 /*ARGSUSED*/
@@ -1244,11 +1244,11 @@ spp_usrreq(so, req, m, nam, rights)
 				(2 * sizeof (struct spidp));
 		/* Above is recomputed when connecting to account
 		   for changed buffering or mtu's */
-		cb->s_rtt = TCPTV_SRTTBASE;
-		cb->s_rttvar = TCPTV_SRTTDFLT << 2;
-		TCPT_RANGESET(cb->s_rxtcur,
-		    ((TCPTV_SRTTBASE >> 2) + (TCPTV_SRTTDFLT << 2)) >> 1,
-		    TCPTV_MIN, TCPTV_REXMTMAX);
+		cb->s_rtt = SPPTV_SRTTBASE;
+		cb->s_rttvar = SPPTV_SRTTDFLT << 2;
+		SPPT_RANGESET(cb->s_rxtcur,
+		    ((SPPTV_SRTTBASE >> 2) + (SPPTV_SRTTDFLT << 2)) >> 1,
+		    SPPTV_MIN, SPPTV_REXMTMAX);
 		nsp->nsp_pcb = (caddr_t) cb; 
 		break;
 
@@ -1294,8 +1294,8 @@ spp_usrreq(so, req, m, nam, rights)
 		cb->s_state = TCPS_SYN_SENT;
 		cb->s_did = 0;
 		spp_template(cb);
-		cb->s_timer[TCPT_KEEP] = TCPTV_KEEP;
-		cb->s_force = 1 + TCPTV_KEEP;
+		cb->s_timer[SPPT_KEEP] = SPPTV_KEEP;
+		cb->s_force = 1 + SPPTV_KEEP;
 		/*
 		 * Other party is required to respond to
 		 * the port I send from, but he is not
@@ -1537,7 +1537,7 @@ spp_abort(nsp)
 	(void) spp_close((struct sppcb *)nsp->nsp_pcb);
 }
 
-int	spp_backoff[TCP_MAXRXTSHIFT+1] =
+int	spp_backoff[SPP_MAXRXTSHIFT+1] =
     { 1, 2, 4, 8, 16, 32, 64, 64, 64, 64, 64, 64, 64 };
 /*
  * Fast timeout routine for processing delayed acks
@@ -1586,7 +1586,7 @@ spp_slowtimo()
 		ipnxt = ip->nsp_next;
 		if (cb == 0)
 			goto tpgone;
-		for (i = 0; i < TCPT_NTIMERS; i++) {
+		for (i = 0; i < SPPT_NTIMERS; i++) {
 			if (cb->s_timer[i] && --cb->s_timer[i] == 0) {
 				(void) spp_usrreq(cb->s_nspcb->nsp_socket,
 				    PRU_SLOWTIMO, (struct mbuf *)0,
@@ -1622,8 +1622,8 @@ spp_timers(cb, timer)
 	 * 2 MSL timeout in shutdown went off.  TCP deletes connection
 	 * control block.
 	 */
-	case TCPT_2MSL:
-		printf("spp: TCPT_2MSL went off for no reason\n");
+	case SPPT_2MSL:
+		printf("spp: SPPT_2MSL went off for no reason\n");
 		cb->s_timer[timer] = 0;
 		break;
 
@@ -1632,9 +1632,9 @@ spp_timers(cb, timer)
 	 * been acked within retransmit interval.  Back off
 	 * to a longer retransmit interval and retransmit one packet.
 	 */
-	case TCPT_REXMT:
-		if (++cb->s_rxtshift > TCP_MAXRXTSHIFT) {
-			cb->s_rxtshift = TCP_MAXRXTSHIFT;
+	case SPPT_REXMT:
+		if (++cb->s_rxtshift > SPP_MAXRXTSHIFT) {
+			cb->s_rxtshift = SPP_MAXRXTSHIFT;
 			sppstat.spps_timeoutdrop++;
 			cb = spp_drop(cb, ETIMEDOUT);
 			break;
@@ -1642,8 +1642,8 @@ spp_timers(cb, timer)
 		sppstat.spps_rexmttimeo++;
 		rexmt = ((cb->s_srtt >> 2) + cb->s_rttvar) >> 1;
 		rexmt *= spp_backoff[cb->s_rxtshift];
-		TCPT_RANGESET(cb->s_rxtcur, rexmt, TCPTV_MIN, TCPTV_REXMTMAX);
-		cb->s_timer[TCPT_REXMT] = cb->s_rxtcur;
+		SPPT_RANGESET(cb->s_rxtcur, rexmt, SPPTV_MIN, SPPTV_REXMTMAX);
+		cb->s_timer[SPPT_REXMT] = cb->s_rxtcur;
 		/*
 		 * If we have backed off fairly far, our srtt
 		 * estimate is probably bogus.  Clobber it
@@ -1651,7 +1651,7 @@ spp_timers(cb, timer)
 		 * move the current srtt into rttvar to keep the current
 		 * retransmit times until then.
 		 */
-		if (cb->s_rxtshift > TCP_MAXRXTSHIFT / 4 ) {
+		if (cb->s_rxtshift > SPP_MAXRXTSHIFT / 4 ) {
 			cb->s_rttvar += (cb->s_srtt >> 2);
 			cb->s_srtt = 0;
 		}
@@ -1676,7 +1676,7 @@ spp_timers(cb, timer)
 	 * Persistance timer into zero window.
 	 * Force a probe to be sent.
 	 */
-	case TCPT_PERSIST:
+	case SPPT_PERSIST:
 		sppstat.spps_persisttimeo++;
 		spp_setpersist(cb);
 		(void) spp_output(cb, (struct mbuf *) 0);
@@ -1686,18 +1686,18 @@ spp_timers(cb, timer)
 	 * Keep-alive timer went off; send something
 	 * or drop connection if idle for too long.
 	 */
-	case TCPT_KEEP:
+	case SPPT_KEEP:
 		sppstat.spps_keeptimeo++;
 		if (cb->s_state < TCPS_ESTABLISHED)
 			goto dropit;
 		if (cb->s_nspcb->nsp_socket->so_options & SO_KEEPALIVE) {
-		    	if (cb->s_idle >= TCPTV_MAXIDLE)
+		    	if (cb->s_idle >= SPPTV_MAXIDLE)
 				goto dropit;
 			sppstat.spps_keepprobe++;
 			(void) spp_output(cb, (struct mbuf *) 0);
 		} else
 			cb->s_idle = 0;
-		cb->s_timer[TCPT_KEEP] = TCPTV_KEEP;
+		cb->s_timer[SPPT_KEEP] = SPPTV_KEEP;
 		break;
 	dropit:
 		sppstat.spps_keepdrops++;
