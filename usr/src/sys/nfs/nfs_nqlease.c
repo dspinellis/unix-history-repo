@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_nqlease.c	7.12 (Berkeley) %G%
+ *	@(#)nfs_nqlease.c	7.13 (Berkeley) %G%
  */
 
 /*
@@ -1024,7 +1024,7 @@ if (vp->v_mount->mnt_stat.f_fsid.val[1] != MOUNT_NFS) panic("trash3");
 				break;
 			} else if ((np->n_expiry - NQ_RENEWAL) < time.tv_sec) {
 			    if ((np->n_flag & (NQNFSWRITE | NQNFSNONCACHE))
-				 == NQNFSWRITE && vp->v_dirtyblkhd &&
+				 == NQNFSWRITE && vp->v_dirtyblkhd.le_next &&
 				 vget(vp) == 0) {
 				 nmp->nm_inprog = vp;
 if (vp->v_mount->mnt_stat.f_fsid.val[1] != MOUNT_NFS) panic("trash4");
