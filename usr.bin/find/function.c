@@ -404,6 +404,13 @@ c_fstype(arg)
     
 	new = palloc(N_FSTYPE, f_fstype);
 	switch (*arg) {
+	case 'i':
+		if (!strcmp(arg, "isofs")) {
+			new->flags = F_MTTYPE;
+			new->mt_data = MOUNT_ISOFS;
+			return (new);
+		}
+		break;
 	case 'l':
 		if (!strcmp(arg, "local")) {
 			new->flags = F_MTFLAG;
