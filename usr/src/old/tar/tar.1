@@ -83,7 +83,7 @@ does its work silently.  The
 .B v
 (verbose) option make
 .I tar
-type the name of each file it treats preceded by the function
+print the name of each file it treats preceded by the function
 letter.  With the
 .B t
 function, the verbose option
@@ -120,7 +120,7 @@ when reading tapes (key letters `x' and `t').
 tells 
 .I tar
 to complain if it cannot resolve all of the links to the
-files dumped. If this is not specified, no error messages are printed.
+files dumped.  If this is not specified, no error messages are printed.
 .TP 10
 .B m
 tells 
@@ -165,6 +165,8 @@ inability to properly handle blocked archives have been lifted.
 /dev/rmt?
 .br
 /tmp/tar*
+.SH "SEE ALSO"
+tar(5)
 .SH DIAGNOSTICS
 Complaints about bad key characters and tape read/write errors.
 .br
@@ -182,4 +184,10 @@ option can be slow.
 .br
 The current limit on file name length is 100 characters.
 .br
-There is no way to selectively follow symbolic links.
+There is no way selectively to follow symbolic links.
+.br
+When extracting tapes created with the
+.B r
+or
+.B u
+options, directory modification times may not be set correctly.
