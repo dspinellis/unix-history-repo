@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_page.h	7.3 (Berkeley) %G%
+ *	@(#)vm_page.h	7.4 (Berkeley) %G%
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -158,25 +158,6 @@ extern
 vm_offset_t	first_phys_addr;	/* physical address for first_page */
 extern
 vm_offset_t	last_phys_addr;		/* physical address for last_page */
-
-extern
-int	vm_page_free_count;	/* How many pages are free? */
-extern
-int	vm_page_active_count;	/* How many pages are active? */
-extern
-int	vm_page_inactive_count;	/* How many pages are inactive? */
-extern
-int	vm_page_wire_count;	/* How many pages are wired? */
-extern
-int	vm_page_free_target;	/* How many do we want free? */
-extern
-int	vm_page_free_min;	/* When to wakeup pageout */
-extern
-int	vm_page_inactive_target;/* How many do we want inactive? */
-extern
-int	vm_page_free_reserved;	/* How many pages reserved to do pageout */
-extern
-int	vm_page_laundry_count;	/* How many pages being laundered? */
 
 #define VM_PAGE_TO_PHYS(entry)	((entry)->phys_addr)
 
