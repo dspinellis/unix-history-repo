@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.27 (Berkeley) %G%
+#	@(#)Makefile	5.28 (Berkeley) %G%
 #
 # Doing a make install builds /usr/include
 #
@@ -27,7 +27,7 @@
 # symbolic links.
 #
 DESTDIR=
-SUBDIRS=arpa pascal protocols kerberos
+SUBDIRS=arpa pascal protocols
 STD=	a.out.h ar.h assert.h ctype.h curses.h ndbm.h dirent.h disktab.h \
 	fcntl.h fstab.h ftw.h grp.h limits.h math.h memory.h mp.h \
 	netdb.h nlist.h paths.h pcc.h pwd.h ranlib.h regexp.h resolv.h \
