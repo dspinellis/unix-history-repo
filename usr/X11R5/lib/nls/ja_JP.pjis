@@ -1,0 +1,101 @@
+#
+# $XConsortium: ja_JP.pjis,v 1.4 91/06/29 20:01:59 xguest Exp $
+#
+# Copyright 1991 by OMRON Corporation, NTT Software Corporation,
+#                      and Nippon Telegraph and Telephone Corporation
+# Copyright 1991 by the Massachusetts Institute of Technology
+#
+# Permission to use, copy, modify, distribute, and sell this software and its
+# documentation for any purpose is hereby granted without fee, provided that
+# the above copyright notice appear in all copies and that both that
+# copyright notice and this permission notice appear in supporting
+# documentation, and that the names of OMRON, NTT Software, NTT, and M.I.T.
+# not be used in advertising or publicity pertaining to distribution of the
+# software without specific, written prior permission. OMRON, NTT Software,
+# NTT, and M.I.T. make no representations about the suitability of this
+# software for any purpose.  It is provided "as is" without express or
+# implied warranty.
+#
+# OMRON, NTT SOFTWARE, NTT, AND M.I.T. DISCLAIM ALL WARRANTIES WITH REGARD
+# TO THIS SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY
+# AND FITNESS, IN NO EVENT SHALL OMRON, NTT SOFTWARE, NTT, OR M.I.T. BE
+# LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES 
+# WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+# ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+# OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+#
+#	Author: Hiroshi Kuribayashi	OMRON Corporation
+#   
+########################################################################
+#
+#	  Locale Name: ja_JP.pjis
+#
+#  pseudo JIS CodeSet
+#   
+XLC_ALL
+ja_JP.pjis
+END XLC_ALL
+
+XLC_ENCODING
+JAPANESE_PSEUDO_JIS
+END XLC_ENCODING
+
+XLC_FONTSET
+# ASCII
+iso8859-1:GL
+# KANJI
+jisx0208.1983-0:GL
+jisx0208.1983-0:GL
+jisx0208.1983-0:GL
+# ROMAN
+jisx0201.1976-0:GL
+jisx0201.1976-0:GL
+# KATAKANA
+jisx0201.1976-0:GR
+jisx0201.1976-0:GR
+# Extend KANJI
+jisx0212.1990-0:GL
+END XLC_FONTSET
+
+XLC_CODESET
+#
+# type:CS0_mblen:CS1_mblen:CS2_mblen
+#
+F:1:2:2:2:1:1:1:1:2
+\033(B
+\033$B
+\033$@
+\033$(B
+\033(J
+\033(H
+\033)I
+\033(I
+\033$(D
+#
+# ASCII (ISO 8859.1 GL)
+#
+(20=20:7f)
+#
+# KANJI, JIS X0208-1983, GL encoding
+#
+(2121=2121:7e7e)
+(2121=2121:7e7e)
+(2121=2121:7e7e)
+#
+# ROMAN, JIS X0201-1976, GL encoding
+#
+(20=20:7f)
+(20=20:7f)
+#
+# KATAKANA, JIS X0201-1976, GR encoding
+#
+(a1=a1:df)
+#
+# KATAKANA, JIS X0201-1976, GL encoding
+#
+(21=a1:df)
+#
+# Extend KANJI
+#
+(2121=2121:7e7e)
+END XLC_CODESET

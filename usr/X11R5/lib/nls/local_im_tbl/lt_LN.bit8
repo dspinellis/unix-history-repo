@@ -1,0 +1,151 @@
+# $XConsortium: lt_LN.bit8,v 1.4 91/12/27 15:11:10 rws Exp $
+#
+#	Conversion file for Local Input Method
+#
+# The format of this file follows.
+#
+#	<from>[<from>...]	[<to>[<to>...]]	[{to_string}[{to_string}...]
+#  or
+#	<from>[<from>...]	Command
+#  or
+#	InitialState		OnState/OffState
+#
+#  from : Input keysym
+#  to_keysym : Output keysym
+#  to_string : Output string
+#  Command : Special commad (NoFilter/ConvertOn/ConvertOff)
+#  InitialState : Initial state (default is OnState)
+
+<Shift_L>			NoFilter
+<Shift_R>			NoFilter
+<Control_L>			NoFilter
+<Control_R>			NoFilter
+<Caps_Lock>			NoFilter
+<Shift_Lock>			NoFilter
+<Meta_L>			NoFilter
+<Meta_R>			NoFilter
+<Alt_L>				NoFilter
+<Alt_R>				NoFilter
+<Super_L>			NoFilter
+<Super_R>			NoFilter
+<Hyper_L>			NoFilter
+<Hyper_R>			NoFilter
+<Execute>			ConvertOn
+<Execute>			ConvertOff
+<backslash><backslash>		<backslash>	{\x5c}
+<backslash><space>		<nobreakspace>	{\xa0}
+<backslash><exclam>		<exclamdown>	{\xa1}
+<backslash><Mod1><C>		<cent>       	{\xa2}
+<backslash><Mod1><p>		<sterling>	{\xa3}
+<backslash><Mod1><c>		<currency>	{\xa4}
+<backslash><Mod1><y>		<yen>		{\xa5}
+<backslash><Mod1><b>		<brokenbar>	{\xa6}
+<backslash><Mod1><s>		<section>	{\xa7}
+<backslash><quotedbl>		<diaeresis>	{\xa8}
+<backslash><Mod1><r>		<copyright>	{\xa9}
+<backslash><Mod1><a>		<ordfeminine>	{\xaa}
+<backslash><less>		<guillemotleft>	{\xab}
+<backslash><Mod1><n>		<notsign>	{\xac}
+<backslash><Mod1><h>		<hyphen>	{\xad}
+<backslash><Mod1><R>		<registered>	{\xae}
+<backslash><Mod1><m>		<macron>	{\xaf}
+
+<backslash><Mod1><d>		<degree>	{\xb0}
+<backslash><plus><minus>	<plusminus>	{\xb1}
+<backslash><Mod1><2>		<twosuperior>	{\xb2}
+<backslash><Mod1><3>		<threesuperior> {\xb3}
+<backslash><apostrophe>		<acute>		{\xb4}
+<backslash><Mod1><u>		<mu>		{\xb5}
+<backslash><Mod1><P>		<paragraph>	{\xb6}
+<backslash><period>		<periodcentered>	{\xb7}
+<backslash><Mod1><S>		<cedilla>	{\xb8}
+<backslash><Mod1><1>		<onesuperior>	{\xb9}
+<backslash><Mod1><o>		<masculine>	{\xba}
+<backslash><greater>		<guillemotright>	{\xbb}
+<backslash><1><slash><4>	<onequarter>	{\xbc}
+<backslash><1><slash><2>	<onehalf>	{\xbd}
+<backslash><3><slash><4>	<threequarters>	{\xbe}
+<backslash><question>		<questiondown>	{\xbf}
+
+<grave><A>			<Agrave>	{\xc0}
+<apostrophe><A>			<Aacute>	{\xc1}
+<asciicircum><A>		<Acircumflex>	{\xc2}
+<asciitilde><A>			<Atilde>	{\xc3}
+<quotedbl><A>			<Adiaeresis>	{\xc4}
+<backslash><o><A>		<Aring>		{\xc5}
+<backslash><A><E>		<AE>		{\xc6}
+<backslash><S><C>		<Ccedilla>	{\xc7}
+<grave><E>			<Egrave>	{\xc8}
+<apostrophe><E>			<Eacute>	{\xc9}
+<asciicircum><E>		<Ecircumflex>	{\xca}
+<quotedbl><E>			<Ediaeresis>	{\xcb}
+<grave><I>			<Igrave>	{\xcc}
+<apostrophe><I>			<Iacute>	{\xcd}
+<asciicircum><I>		<Icircumflex>	{\xce}
+<quotedbl><I>			<Idiaeresis>	{\xcf}
+
+<backslash><D>			<Eth>		{\xd0}
+<asciitilde><N>			<Ntilde>	{\xd1}
+<grave><O>			<Ograve>	{\xd2}
+<apostrophe><O>			<Oacute>	{\xd3}
+<asciicircum><O>		<Ocircumflex>	{\xd4}
+<asciitilde><O>			<Otilde>	{\xd5}
+<quotedbl><O>			<Odiaeresis>	{\xd6}
+<backslash><X>			<multiply>	{\xd7}
+<backslash><O><slash>		<Ooblique>	{\xd8}
+<grave><U>			<Ugrave>	{\xd9}
+<apostrophe><U>			<Uacute>	{\xda}
+<asciicircum><U>		<Ucircumflex>	{\xdb}
+<quotedbl><U>			<Udiaeresis>	{\xdc}
+<apostrophe><Y>			<Yacute>	{\xdd}
+<backslash><P>			<Thorn>		{\xde}
+<backslash><s><s>		<ssharp>	{\xdf}
+
+<grave><a>			<agrave>	{\xe0}
+<apostrophe><a>			<aacute>	{\xe1}
+<asciicircum><a>		<acircumflex>	{\xe2}
+<asciitilde><a>			<atilde>	{\xe3}
+<quotedbl><a>			<adiaeresis>	{\xe4}
+<backslash><o><a>		<aring>		{\xe5}
+<backslash><a><e>		<ae>		{\xe6}
+<backslash><s><c>		<ccedilla>	{\xe7}
+<grave><e>			<egrave>	{\xe8}
+<apostrophe><e>			<eacute>	{\xe9}
+<asciicircum><e>		<ecircumflex>	{\xea}
+<quotedbl><e>			<ediaeresis>	{\xeb}
+<grave><i>			<igrave>	{\xec}
+<apostrophe><i>			<iacute>	{\xed}
+<asciicircum><i>		<icircumflex>	{\xee}
+<quotedbl><i>			<idiaeresis>	{\xef}
+
+<backslash><d>			<eth>		{\xf0}
+<asciitilde><n>			<ntilde>	{\xf1}
+<grave><o>			<ograve>	{\xf2}
+<apostrophe><o>			<oacute>	{\xf3}
+<asciicircum><o>		<ocircumflex>	{\xf4}
+<asciitilde><o>			<otilde>	{\xf5}
+<quotedbl><o>			<odiaeresis>	{\xf6}
+<backslash><slash>		<division>	{\xf7}
+<backslash><o><slash>		<oslash>	{\xf8}
+<grave><u>			<ugrave>	{\xf9}
+<apostrophe><u>			<uacute>	{\xfa}
+<asciicircum><u>		<ucircumflex>	{\xfb}
+<quotedbl><u>			<udiaeresis>	{\xfc}
+<apostrophe><y>			<yacute>	{\xfd}
+<backslash><p>			<thorn>		{\xfe}
+<quotedbl><y>			<ydiaeresis>	{\xff}
+
+# BackSpace		
+# Clear		
+# Escape		
+# Cancel		
+# Break		
+# <space>              0x020
+
+# <quotedbl>           "
+# <apostrophe>         '
+# <quoteright>         0x027	
+# <backslash>          0x05c
+# <asciicircum>        0x05e
+# <grave>              0x060
+# <asciitilde>         0x07e
