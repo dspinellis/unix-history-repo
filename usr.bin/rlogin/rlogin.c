@@ -42,7 +42,7 @@ static char sccsid[] = "@(#)rlogin.c	5.33 (Berkeley) 3/1/91";
 #endif /* not lint */
 
 /*
- * $Source: mit/rlogin/RCS/rlogin.c,v $
+ * $Source: /a/cvs/386BSD/src/usr.bin/rlogin/rlogin.c,v $
  * $Header: mit/rlogin/RCS/rlogin.c,v 5.2 89/07/26 12:11:21 kfall
  *	Exp Locker: kfall $
  */
@@ -100,7 +100,7 @@ u_char escapechar = '~';
 
 char *speeds[] = {
 	"0", "50", "75", "110", "134", "150", "200", "300", "600", "1200",
-	"1800", "2400", "4800", "9600", "19200", "38400"
+	"1800", "2400", "4800", "9600", "19200", "38400", "57600", "115200"
 };
 
 #ifdef sun
