@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)langpats.c 1.11 %G%";
+static char sccsid[] = "@(#)langpats.c 1.12 %G%";
 
 #include <stdio.h>
 #include <ctype.h>
@@ -10,11 +10,22 @@ static char sccsid[] = "@(#)langpats.c 1.11 %G%";
  */
 #define HSHSIZ	101
 
+#ifdef vax
+#define CALLTEMPLATE	"calls\t$"
+#define TEMPLATESIZE	7
+#endif vax
+
+#ifdef mc68000
+#define CALLTEMPLATE	"jbsr\t"
+#define TEMPLATESIZE	5
+#endif mc68000
+
 struct pats {
 	char	*name;
 	char	*replace;
 } ptab[] = {
 
+#ifdef vax
 /*
  * C library routines
  */
@@ -375,6 +386,11 @@ struct pats {
 	pushl	$_ESUBSC\n\
 	calls	$2,_ERROR\n\
 1:\n" },
+#endif vax
+
+#ifdef mc68000
+	{ "NONE", "IMPLEMENTED" },
+#endif mc68000
 
 };
 
@@ -428,7 +444,7 @@ main(argc, argv)
 		lp = index(line, ':');
 		for (cp = (lp != NULL) ? ++lp : line; *cp == '\t'; )
 			cp++;
-		if (strcmpn(cp, "calls\t$", 7) != 0) {
+		if (strcmpn(cp, CALLTEMPLATE, TEMPLATESIZE) != 0) {
 			fputs(line, stdout);
 			continue;
 		}
