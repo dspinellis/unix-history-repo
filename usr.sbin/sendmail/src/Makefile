@@ -24,8 +24,8 @@ LDADD=	${LIBUTIL}
 MAN1=	newaliases.1
 MAN5=	aliases.5
 MAN8=	sendmail.8 
-LINKS=	${DESTDIR}/usr/sbin/sendmail ${DESTDIR}/usr/bin/newaliases \
-	${DESTDIR}/usr/sbin/sendmail ${DESTDIR}/usr/bin/mailq
+LINKS=	/usr/sbin/sendmail /usr/bin/newaliases \
+	/usr/sbin/sendmail /usr/bin/mailq
 BINDIR=	/usr/sbin
 BINOWN=	root
 BINGRP=	kmem
