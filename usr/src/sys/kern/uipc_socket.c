@@ -1,4 +1,4 @@
-/*	uipc_socket.c	4.4	81/11/15	*/
+/*	uipc_socket.c	4.5	81/11/16	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -14,6 +14,7 @@
 #include "../h/socket.h"
 #include "../h/socketvar.h"
 #include "../h/inaddr.h"
+#include "../h/stat.h"
 #include "../net/inet.h"
 #include "../net/inet_systm.h"
 
@@ -85,6 +86,13 @@ socket(aso, type, iap, options)
 	return (0);
 }
 
+sofree(so)
+	struct socket *so;
+{
+
+	m_free(dtom(so));
+}
+
 /*
  * Close a socket on last file table reference removal.
  * Initiate disconnect if connected.
@@ -99,7 +107,7 @@ soclose(so)
 		goto discard;
 	if (so->so_state & SS_ISCONNECTED) {
 		if ((so->so_state & SS_ISDISCONNECTING) == 0) {
-			u.u_error = disconnect(so, 0);
+			u.u_error = disconnect(so, (struct in_addr *)0);
 			if (u.u_error) {
 				splx(s);
 				return;
@@ -121,6 +129,7 @@ discard:
 	splx(s);
 }
 
+/*ARGSUSED*/
 sostat(so, sb)
 	struct socket *so;
 	struct stat *sb;
@@ -157,6 +166,7 @@ bad:
  * protocols.  Check to make sure that connected and no disconnect
  * in progress (for protocol's sake), and then invoke protocol.
  */
+/*ARGSUSED*/
 disconnect(so, iap)
 	struct socket *so;
 	struct in_addr *iap;
@@ -188,14 +198,12 @@ bad:
  */
 send(so, iap)
 	register struct socket *so;
-	struct in_addr *iap;
+	struct inaddr *iap;
 {
 	struct mbuf *top = 0;
 	register struct mbuf *m, **mp = &top;
-	register int bufs;
-	register int len;
-	int error = 0;
-	int s;
+	register u_int len;
+	int error = 0, space, s;
 
 	if (so->so_state & SS_CANTSENDMORE)
 		return (EPIPE);
@@ -234,14 +242,14 @@ again:
 		goto again;
 	}
 	splx(s);
-	while (u.u_count > 0 && sbspace(&so->so_snd) > 0) {
+	while (u.u_count && (space = sbspace(&so->so_snd)) > 0) {
 		MGET(m, 1);
 		if (m == NULL) {
 			error = ENOBUFS;
 			m_freem(top);
 			goto release;
 		}
-		if (u.u_count >= PGSIZE && bufs >= NMBPG) {
+		if (u.u_count >= PGSIZE && space >= NMBPG) {
 			register struct mbuf *p;
 			MPGET(p, 1);
 			if (p == 0)
@@ -268,10 +276,10 @@ release:
 
 receive(so, iap)
 	register struct socket *so;
-	struct in_addr *iap;
+	struct inaddr *iap;
 {
 	register struct mbuf *m, *n;
-	register int len;
+	u_int len;
 	int eor, s, error = 0;
 
 restart:
@@ -288,7 +296,7 @@ restart:
 			goto release;
 		}
 		if (so->so_options & SO_NBIO)
-			rcverr(EWOULDBLOCK);
+			rcverr (EWOULDBLOCK);
 		sbunlock(&so->so_rcv);
 		sleep((caddr_t)&so->so_rcv.sb_cc, PZERO+1);
 		goto restart;
@@ -296,7 +304,6 @@ restart:
 	m = so->so_rcv.sb_mb;
 	if (m == 0)
 		panic("receive");
-	
 	/*
 	 * Pull address off receive chain, if protocol
 	 * put one there.
@@ -359,11 +366,13 @@ restart:
 		(*so->so_proto->pr_usrreq)(so, PRU_RCVD, 0, 0);
 
 release:
-	sounlock(&so->so_rcv);
+	sbunlock(&so->so_rcv);
 	splx(s);
+	return (error);
 }
 
-skioctl(so, cmd, cmdp)
+/*ARGSUSED*/
+soioctl(so, cmd, cmdp)
 	register struct socket *so;
 	int cmd;
 	register caddr_t cmdp;

@@ -1,4 +1,4 @@
-/*	Locore.c	4.12	81/08/29	*/
+/*	Locore.c	4.13	81/11/16	*/
 
 #include "dz.h"
 
@@ -50,6 +50,7 @@ lowinit()
 	u = u;
 	fixctlrmask();
 	main(0);
+	Xustray();
 
 	/*
 	 * Routines called from interrupt vectors.
@@ -69,10 +70,9 @@ lowinit()
 	softclock((caddr_t)0, 0);
 	trap(0, 0, (unsigned)0, 0, 0);
 	syscall(0, 0, (unsigned)0, 0, 0);
+	netintr();
 
 	if (vmemall((struct pte *)0, 0, (struct proc *)0, 0))
-		return;		/* use value */
-	if (forceclose((dev_t)0))
 		return;		/* use value */
 	machinecheck((caddr_t)0);
 	memerr();
@@ -118,6 +118,8 @@ struct	pte CMAP2;
 char	CADDR2[NBPG];
 struct	pte mmap[1];
 char	vmmap[NBPG];
+struct	pte Mbmap[NMBPAGES];
+struct	mbuf mbutl[NMBPAGES*NMBPG];
 struct	pte msgbufmap[CLSIZE];
 struct	msgbuf msgbuf;
 struct	pte camap[32];
@@ -151,7 +153,7 @@ setrq(p) struct proc *p; { }
 /*ARGSUSED*/
 remrq(p) struct proc *p; { }
 
-swtch() { if (whichqs) whichqs = 0; }
+swtch() { if (whichqs) whichqs = 0; masterpaddr = 0; }
 
 /*ARGSUSED*/
 resume(pcbpf) unsigned pcbpf; { }
@@ -199,7 +201,7 @@ mtpr(reg, value) int reg, value; { }
 mfpr(reg) int reg; { return (0); }
 
 
-spl0() { return (0); }
+spl0() { }
 spl4() { return (0); }
 spl5() { return (0); }
 spl6() { return (0); }
