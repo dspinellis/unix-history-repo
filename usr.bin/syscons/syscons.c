@@ -272,6 +272,8 @@ int		i, e;
 		} while (e == 0);
 		if (e == -1 && errno != EIO)
 			perror("getting screensaver info");
+		else
+			fprintf(stderr, "%s: No such screensaver\n", opt);
 	}
 }
 
