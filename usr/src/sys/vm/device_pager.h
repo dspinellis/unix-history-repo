@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)device_pager.h	7.1 (Berkeley) %G%
+ *	@(#)device_pager.h	7.2 (Berkeley) %G%
  */
 
 #ifndef	_DEVICE_PAGER_
@@ -29,24 +29,5 @@ struct devpager {
 typedef struct devpager	*dev_pager_t;
 
 #define DEV_PAGER_NULL	((dev_pager_t)0)
-
-#ifdef KERNEL
-
-void		dev_pager_init();
-vm_pager_t	dev_pager_alloc();
-void		dev_pager_dealloc();
-boolean_t	dev_pager_getpage(), dev_pager_putpage();
-boolean_t	dev_pager_haspage();
-
-struct pagerops devicepagerops = {
-	dev_pager_init,
-	dev_pager_alloc,
-	dev_pager_dealloc,
-	dev_pager_getpage,
-	dev_pager_putpage,
-	dev_pager_haspage
-};
-
-#endif
 
 #endif	/* _DEVICE_PAGER_ */
