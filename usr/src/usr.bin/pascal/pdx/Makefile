@@ -2,7 +2,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	1.14 (Berkeley) %G%
+#	@(#)Makefile	1.15 (Berkeley) %G%
 #
 # make file for pdx
 #
@@ -174,7 +174,7 @@ ${OBJOBJ}:	${OBJECT}objsym.rep
 ${OBJECT}readobj.o ${OBJECT}readsym.o: ${SRCDIR}objfmt.h
 
 install: a.out
-	mv a.out ${INSTALL}
+	install -s a.out ${INSTALL}
 
 clean:
 	${RM} a.out */*.o
