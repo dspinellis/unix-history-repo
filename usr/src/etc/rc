@@ -1,5 +1,9 @@
+#
+#	@(#)rc	5.3 (Berkeley) %G%
+#
+
 HOME=/; export HOME
-PATH=/bin:/sbin:/usr/sbin:/usr/bin
+PATH=/bin:/sbin:/usr/sbin:/usr/bin:/usr/ucb
 export PATH
 
 if [ -r /fastboot ]
@@ -38,10 +42,10 @@ else
 	date >/dev/console
 fi
 
-# attempt to rationally recover the passwd file if needed
+# check the password file
 if [ -f /etc/ptmp ]
 then
-	echo 'password file may be incorrect' > /dev/console
+	echo '/etc/ptmp -- password file may be incorrect' > /dev/console
 fi
 
 umount -a
@@ -54,10 +58,14 @@ quotacheck -a -p					>/dev/console 2>&1
 			echo ' done.'			>/dev/console
 quotaon -a
 
+# build ps data base
 ps -U							>/dev/console 2>&1
+
+# clean up left-over files
 rm -f /etc/nologin
 rm -f /usr/spool/uucp/LCK.*
 rm -f /usr/spool/uucp/STST/*
+
 chmod 666 /dev/tty[pqrs]*
 
 # set hostname, turn on network
@@ -78,6 +86,8 @@ fi
 (cd /tmp; /usr/lib/ex3.7preserve -a)
 			echo clearing /tmp 		>/dev/console
 (cd /tmp; find . ! -name . ! -name lost+found ! -name quotas -exec rm -r {} \; )
+			echo clearing /var/run
+(cd /var/run; rm -rf *)
 
 			echo -n standard daemons:	>/dev/console
 update;			echo -n ' update'		>/dev/console
@@ -102,7 +112,6 @@ if [ ${rwhod-NO} != "NO" ]; then
 	rwhod;		echo -n ' rwhod'		>/dev/console
 fi
 
-rm -f /dev/printer
 /usr/lib/lpd;		echo -n ' printer'		>/dev/console
 			echo '.'			>/dev/console
 
