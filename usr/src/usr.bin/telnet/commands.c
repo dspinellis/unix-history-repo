@@ -902,33 +902,6 @@ char	*argv[];
     return 1;
 }
 
-#if	defined(TN3270) && defined(unix)
-static
-settranscom(argc, argv)
-	int argc;
-	char *argv[];
-{
-	int i, len = 0;
-	char *strcpy(), *strcat();
-
-	if (argc == 1 && transcom) {
-	   transcom = 0;
-	}
-	if (argc == 1) {
-	   return;
-	}
-	for (i = 1; i < argc; ++i) {
-	    len += 1 + strlen(argv[1]);
-	}
-	transcom = tline;
-	(void) strcpy(transcom, argv[1]);
-	for (i = 2; i < argc; ++i) {
-	    (void) strcat(transcom, " ");
-	    (void) strcat(transcom, argv[i]);
-	}
-}
-#endif	/* defined(TN3270) && defined(unix) */
-
 
 
 int
@@ -1016,11 +989,6 @@ tn(argc, argv)
 	}
 	telnetport = 1;
     }
-#if	defined(unix)
-    signal(SIGINT, intr);
-    signal(SIGQUIT, intr2);
-    signal(SIGPIPE, deadpeer);
-#endif	/* defined(unix) */
     printf("Trying...\n");
     do {
 	net = socket(AF_INET, SOCK_STREAM, 0);
@@ -1051,10 +1019,6 @@ tn(argc, argv)
 	    }
 #endif	/* defined(h_addr) */
 	    perror("telnet: Unable to connect to remote host");
-#if defined(unix)
-	    signal(SIGINT, SIG_DFL);
-	    signal(SIGQUIT, SIG_DFL);
-#endif	/* defined(unix) */
 	    return 0;
 	    }
 	connected++;
