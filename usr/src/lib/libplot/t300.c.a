@@ -1,0 +1,316 @@
+!<arch>
+arc.c           287606513   10    1     100664  9         `
+arc(){
+}
+
+box.c           287606513   10    1     100664  114       `
+box(x0, y0, x1, y1)
+{
+	move(x0, y0);
+	cont(x0, y1);
+	cont(x1, y1);
+	cont(x1, y0);
+	cont(x0, y0);
+	move(x1, y1);
+}
+circle.c        287606513   10    1     100664  12        `
+circle(){
+}
+close.c         287606513   10    1     100664  84        `
+#include <stdio.h>
+closevt(){
+	closepl();
+}
+closepl(){
+	fflush(stdout);
+	reset();
+}
+con.h           287606514   10    1     100664  633       `
+#
+#include <sgtty.h>
+/* gsi plotting output routines */
+# define DOWN 012
+# define UP 013
+# define LEFT 010
+# define RIGHT 040
+# define BEL 007
+# define ESC 033
+# define ACK 006
+# define CR 015
+# define FF 014
+# define VERTRESP 48
+# define HORZRESP 60.
+# define VERTRES 8.
+# define HORZRES 6.
+/* down is line feed, up is reverse line feed,
+   left is backspace, right is space.  48 points per inch
+   vertically, 60 horizontally */
+
+extern int xnow, ynow;
+extern int OUTF;
+extern struct sgttyb ITTY, PTTY;
+extern float HEIGHT, WIDTH, OFFSET;
+extern int xscale, xoffset, yscale;
+extern float botx, boty, obotx, oboty, scalex,scaley;
+
+
+dot.c           287606513   10    1     100664  9         `
+dot(){
+}
+
+erase.c         287606513   10    1     100664  102       `
+#include "con.h"
+erase(){
+	int i;
+		for(i=0; i<11*(VERTRESP/VERTRES); i++)
+			spew(DOWN);
+		return;
+}
+label.c         287606524   10    1     100664  118       `
+#include "con.h"
+label(s)
+char *s;
+{
+	int i,c;
+		while((c = *s++) != '\0'){
+			xnow += 6;
+			spew(c);
+		}
+		return;
+}
+line.c          287606571   10    1     100664  792       `
+#include "con.h"
+line(x0,y0,x1,y1){
+	iline(xconv(xsc(x0)),yconv(ysc(y0)),xconv(xsc(x1)),yconv(ysc(y1)));
+		return;
+}
+cont(x0,y0){
+	iline(xnow,ynow,xconv(xsc(x0)),yconv(ysc(y0)));
+	return;
+}
+iline(cx0,cy0,cx1,cy1){
+	int maxp,tt,j,np;
+	char chx,chy;
+	float xd,yd;
+	float dist2(),sqrt();
+		movep(cx0,cy0);
+		maxp = sqrt(dist2(cx0,cy0,cx1,cy1))/2.;
+		xd = cx1-cx0;
+		yd = cy1-cy0;
+		if(xd >= 0)chx = RIGHT;
+		else chx = LEFT;
+		if(yd >= 0)chy = UP;
+		else chy = DOWN;
+		if(maxp==0){
+			xd=0;
+			yd=0;
+		}
+		else{
+			xd /= maxp;
+			yd /= maxp;
+		}
+		inplot();
+		for (tt=0; tt<=maxp; tt++){
+			j= cx0+xd*tt-xnow;
+			xnow += j;
+			j = abval(j);
+			while(j-- > 0)spew(chx);
+			j = cy0+yd*tt-ynow;
+			ynow += j;
+			j = abval(j);
+			while(j-- > 0)spew(chy);
+			spew ('.');
+		}
+		outplot();
+		return;
+}
+linmod.c        287606513   10    1     100664  13        `
+linemod(){
+}
+
+move.c          287606513   10    1     100664  65        `
+move(xi,yi){
+		movep(xconv(xsc(xi)),yconv(ysc(yi)));
+		return;
+}
+
+open.c          287606619   10    1     100664  976       `
+#
+#include <sgtty.h>
+/* gsi plotting output routines */
+# define DOWN 012
+# define UP 013
+# define LEFT 010
+# define RIGHT 040
+# define BEL 007
+# define ACK 006
+# define CR 015
+# define FF 014
+# define VERTRESP 48
+# define HORZRESP 60.
+# define HORZRES 6.
+# define VERTRES 8.
+/* down is line feed, up is reverse oyne feed,
+   left is bwckspace, right is space.  48 points per inch
+   vertically, 60 horizontally */
+
+int xnow, ynow;
+int OUTF;
+struct sgttyb ITTY, PTTY;
+float HEIGHT = 6.0, WIDTH = 6.0, OFFSET = 0.0;
+int xscale, xoffset, yscale;
+float botx = 0., boty = 0., obotx = 0., oboty = 0.;
+float scalex = 1., scaley = 1.;
+
+openpl ()
+{
+	int reset();
+		xnow = ynow = 0;
+		OUTF = 1;
+		printf("\r");
+		gtty(OUTF, &ITTY);
+		signal (2, reset);
+		PTTY = ITTY;
+		PTTY.sg_flags &= ~CRMOD;	/* don't map lf */
+		/* initialize constants */
+		xscale  = 4096./(HORZRESP * WIDTH);
+		yscale = 4096 /(VERTRESP * HEIGHT);
+		xoffset = OFFSET * HORZRESP;
+		return;
+}
+
+openvt(){
+openpl();
+}
+point.c         287606513   10    1     100664  55        `
+point(xi,yi){
+		move(xi,yi);
+		label(".");
+		return;
+}
+
+space.c         287606632   10    1     100664  190       `
+# include "con.h"
+float deltx = 4095.;
+float delty = 4095.;
+space(x0,y0,x1,y1){
+	botx = -2047.;
+	boty = -2047.;
+	obotx = x0;
+	oboty = y0;
+	scalex = deltx/(x1-x0);
+	scaley = delty/(y1-y0);
+}
+subr.c          287606669   10    1     100664  1472      `
+#include <stdio.h>
+#include "con.h"
+abval(q)
+{
+	return (q>=0 ? q : -q);
+}
+
+xconv (xp)
+{
+	/* x position input is -2047 to +2047, output must be 0 to PAGSIZ*HORZRES */
+	xp += 2048;
+	/* the computation is newx = xp*(PAGSIZ*HORZRES)/4096 */
+	return (xoffset + xp /xscale);
+}
+
+yconv (yp)
+{
+	/* see description of xconv */
+	yp += 2048;
+	return (yp / yscale);
+}
+
+inplot()
+{
+	stty(OUTF, &PTTY);
+	spew (ACK);
+}
+
+outplot()
+{
+	spew(ESC);
+	spew(ACK);
+	fflush(stdout);
+	stty(OUTF, &ITTY);
+}
+
+spew(ch)
+{
+	if(ch == UP)putc(ESC,stdout);
+	putc(ch, stdout);
+}
+
+tobotleft ()
+{
+	move(-2048,-2048);
+}
+reset()
+{
+	outplot();
+	exit();
+}
+
+float
+dist2 (x1, y1, x2, y2)
+{
+	float t,v;
+	t = x2-x1;
+	v = y1-y2;
+	return (t*t+v*v);
+}
+
+swap (pa, pb)
+int *pa, *pb;
+{
+	int t;
+	t = *pa;
+	*pa = *pb;
+	*pb = t;
+}
+movep (xg, yg)
+{
+	int i,ch;
+	if((xg == xnow) && (yg == ynow))return;
+	/* if we need to go to left margin, just CR */
+	if (xg < xnow/2)
+	{
+		spew(CR);
+		xnow = 0;
+	}
+	i = (xg-xnow)/HORZRES;
+	if(xnow < xg)ch = RIGHT;
+	else ch = LEFT;
+	xnow += i*HORZRES;
+	i = abval(i);
+	while(i--)spew(ch);
+	i = abval(xg-xnow);
+	inplot();
+	while(i--) spew(ch);
+	outplot();
+	i=(yg-ynow)/VERTRES;
+	if(ynow < yg)ch = UP;
+	else ch = DOWN;
+	ynow += i*VERTRES;
+	i = abval(i);
+	while(i--)spew(ch);
+	i=abval(yg-ynow);
+	inplot();
+	while(i--)spew(ch);
+	outplot();
+	xnow = xg; ynow = yg;
+}
+
+xsc(xi){
+	int xa;
+	xa = (xi - obotx) * scalex + botx;
+	return(xa);
+}
+ysc(yi){
+	int ya;
+	ya = (yi - oboty) *scaley +boty;
+	return(ya);
+}
