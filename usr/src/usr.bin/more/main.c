@@ -27,7 +27,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -355,22 +355,21 @@ strtcpy(to, from, len)
 
 /*
  * Copy a string to a "safe" place
- * (that is, to a buffer allocated by calloc).
+ * (that is, to a buffer allocated by malloc).
  */
 	public char *
 save(s)
 	char *s;
 {
-	register char *p;
+	char *p, *strcpy(), *malloc();
 
-	p = calloc(strlen(s)+1, sizeof(char));
+	p = malloc((u_int)strlen(s)+1);
 	if (p == NULL)
 	{
 		error("cannot allocate memory");
 		quit();
 	}
-	strcpy(p, s);
-	return (p);
+	return(strcpy(p, s));
 }
 
 /*
