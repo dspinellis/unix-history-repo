@@ -1,8 +1,10 @@
 
-static char sccsid[] = "	quiz.c	4.4	88/01/02	";
+static char sccsid[] = "	quiz.c	4.5	90/05/12	";
 
 #include <stdio.h>
 #include <signal.h>
+#include "pathnames.h"
+
 #define NF 10
 #define NL 300
 #define NC 200
@@ -311,7 +313,7 @@ char *argv[];
 	char *t;
 	extern done();
 	int count;
-	info = "/usr/games/lib/quiz.k/index";
+	info = _PATH_INDEX;
 	time(tvec);
 	inc = tvec[1]&077774|01;
 loop:
