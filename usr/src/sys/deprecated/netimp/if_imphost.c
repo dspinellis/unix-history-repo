@@ -9,7 +9,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)if_imphost.c	7.4 (Berkeley) %G%
+ *	@(#)if_imphost.c	7.5 (Berkeley) %G%
  */
 
 #include "imp.h"
@@ -52,7 +52,7 @@ hostlookup(imp, host, unit)
 	for (m = imp_softc[unit].imp_hosts; m; m = m->m_next) {
 		hp = &mtod(m, struct hmbuf *)->hm_hosts[hash];
 	        if (hp->h_imp == imp && hp->h_host == host) {
-			if ((hp->h_flags & HF_INUSE) == 0 && hp->h_timer == 0)
+			if ((hp->h_flags & HF_INUSE) == 0)
 				mtod(dtom(hp), struct hmbuf *)->hm_count++;
 			hp->h_flags |= HF_INUSE;
 			return (hp);
@@ -79,7 +79,7 @@ hostenter(imp, host, unit)
 		mprev = &m->m_next;
 		hp = &mtod(m, struct hmbuf *)->hm_hosts[hash];
 	        if (hp->h_imp == imp && hp->h_host == host) {
-			if ((hp->h_flags & HF_INUSE) == 0 && hp->h_timer == 0)
+			if ((hp->h_flags & HF_INUSE) == 0)
 				mtod(dtom(hp), struct hmbuf *)->hm_count++;
 			goto foundhost;
 		}
@@ -102,8 +102,8 @@ hostenter(imp, host, unit)
 		*mprev = m;
 		hp0 = &mtod(m, struct hmbuf *)->hm_hosts[hash];
 	}
-	mtod(dtom(hp0), struct hmbuf *)->hm_count++;
 	hp = hp0;
+	mtod(dtom(hp), struct hmbuf *)->hm_count++;
 	hp->h_imp = imp;
 	hp->h_host = host;
 	hp->h_timer = 0;
@@ -143,12 +143,13 @@ hostreset(unit)
 hostrelease(hp)
 	register struct host *hp;
 {
-	struct mbuf *mh = dtom(hp);
 
-	hostflush(hp);
-	hp->h_flags = 0;
+	if (hp->h_q)
+		hostflush(hp);
 	hp->h_rfnm = 0;
-	--mtod(mh, struct hmbuf *)->hm_count;
+	if (hp->h_flags & HF_INUSE)
+		--mtod(dtom(hp), struct hmbuf *)->hm_count;
+	hp->h_flags = 0;
 }
 
 /*
@@ -203,6 +204,7 @@ hostslowtimo()
 	struct imp_softc *sc;
 	struct hmbuf *hm;
 	int s = splimp(), unit, any;
+	extern int imppri;
 
 	for (unit = 0; unit < NIMP; unit++) {
 	    any = 0;
@@ -214,12 +216,12 @@ hostslowtimo()
 		for (; hm->hm_count > 0 && hp < lp; hp++) {
 		    if (hp->h_timer && --hp->h_timer == 0) {
 			if (hp->h_rfnm) {
-				log(LOG_WARNING,
+				log(imppri,
 				    "imp%d: host %d/imp %d, lost rfnm\n",
 				    unit, hp->h_host, ntohs(hp->h_imp));
-				imprestarthost(unit, hp);
-			}
-			if (hp->h_rfnm == 0 && hp->h_qcnt == 0) {
+				sc->imp_lostrfnm++;
+				imprestarthost(sc, hp);
+			} else {
 				any = 1;
 				hostrelease(hp);
 				if (sc->imp_hostq == m)
@@ -228,9 +230,8 @@ hostslowtimo()
 		    }
 		}
 	    }
-	    if (any) {
+	    if (any)
 		hostcompress(unit);
-	    }
 	}
 	splx(s);
 }

@@ -9,7 +9,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)if_imp.h	7.3 (Berkeley) %G%
+ *	@(#)if_imp.h	7.4 (Berkeley) %G%
  */
 
 /*
@@ -50,6 +50,8 @@ struct imp_leader {
 /*
  * IMP-host flags
  */
+#define	IMP_1822L_H2I	0xd	/* 1822L host-to-imp, 96-bit format */
+#define	IMP_1822L_I2H	0xe	/* 1822L imp-to-host, 96-bit format */
 #define	IMP_NFF		0xf	/* 96-bit (new) format */
 #define	IMP_TRACE	0x8	/* trace message route */
 
@@ -149,8 +151,8 @@ char *impmessage[] = {
 #define	IMPRETRY_BUFFER		0	/* IMP buffer wasn't available */
 #define	IMPRETRY_BLOCK		1	/* connection block unavailable */
 
-#define	RFNMTIMER	(120*PR_SLOWHZ)	  /* time to wait for RFNM for msg. */
-#define	IMP_OTIMER	(10*IFNET_SLOWHZ) /* max output time unless blocked */
+#define	RFNMTIMER	(120*PR_SLOWHZ)	 /* time to wait for RFNM for msg. */
+#define	IMP_OTIMER	(5*IFNET_SLOWHZ) /* max output time unless blocked */
 
 /*
  * Data structure shared between IMP protocol module and hardware

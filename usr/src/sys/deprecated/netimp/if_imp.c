@@ -9,7 +9,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)if_imp.c	7.4 (Berkeley) %G%
+ *	@(#)if_imp.c	7.5 (Berkeley) %G%
  */
 
 #include "imp.h"
@@ -34,10 +34,7 @@
 
 #include "../machine/mtpr.h"
 
-#include "../vaxuba/ubavar.h"
-
 #include "../net/if.h"
-
 #include "../net/netisr.h"
 #include "../netinet/in.h"
 #include "../netinet/in_systm.h"
@@ -78,8 +75,9 @@ int	impdown(), impinit(), impioctl(), impoutput(), imptimo();
  * set up its back pointers. 
  */
 struct imp_softc *
-impattach(ui, reset)
-	struct uba_device *ui;
+impattach(hwname, hwunit, reset)
+	char *hwname;
+	int hwunit;
 	int (*reset)();
 {
 	struct imp_softc *sc;
@@ -95,8 +93,8 @@ impattach(ui, reset)
 	}
 	sc = &imp_softc[impunit];
 	ifp = &sc->imp_if;
-	sc->imp_cb.ic_hwunit = ui->ui_unit;
-	sc->imp_cb.ic_hwname = ui->ui_driver->ud_dname;
+	sc->imp_cb.ic_hwname = hwname;
+	sc->imp_cb.ic_hwunit = hwunit;
 	ifp->if_unit = impunit;
 	ifp->if_name = "imp";
 	ifp->if_mtu = IMPMTU - sizeof(struct imp_leader);
@@ -181,9 +179,18 @@ impinput(unit, m)
 
 	/* check leader type */
 	if (cp->dl_format != IMP_NFF) {
-		/* ignore old-style noops on reset */
-		if (cp->dl_mtype != IMPTYPE_NOOP &&
-		    cp->dl_mtype != IMPTYPE_RESET) {
+		/*
+		 * We get 1822L NOOPs and RESET
+		 * at initialization.
+		 */
+#ifdef IMPINIT
+		if (imptraceinit)
+			log(imppri, "input, format %x mtype %d\n",
+			    cp->dl_format, cp->dl_mtype);
+#endif
+		if (cp->dl_format != IMP_1822L_I2H ||
+		    (cp->dl_mtype != IMPTYPE_NOOP &&
+		    cp->dl_mtype != IMPTYPE_RESET)) {
 			sc->imp_garbage++;
 			sc->imp_if.if_collisions++;	/* XXX */
 		}
@@ -298,39 +305,27 @@ impinput(unit, m)
 	/*
 	 * RFNM or INCOMPLETE message, decrement rfnm count
 	 * and prepare to send next message.
+	 * If the rfnm allows another queued
+	 * message to be sent, bump msgready
+	 * and start IMP if idle.
 	 * We could pass incomplete's up to the next level,
 	 * but this currently isn't needed.
-	 * Pass "bad" incompletes and rfnms to the log.
+	 * Pass "bad" incompletes and rfnms to the raw socket.
 	 */
 	case IMPTYPE_INCOMPLETE:
 		sc->imp_incomplete++;
 		/* FALL THROUGH */
 	case IMPTYPE_RFNM:
-		if (hp = hostlookup(cp->dl_imp, cp->dl_host, unit)) {
-			if (hp->h_rfnm == 0) {
-				sc->imp_badrfnm++;
-				break;
-			}
-			if (--hp->h_rfnm > 0) {
-				hp->h_timer = RFNMTIMER;
-				if (hp->h_qcnt) {
-					/*
-					 * If the rfnm allows another queued
-					 * message to be sent, bump msgready
-					 * and start IMP if idle.
-					 */
-					if (hp->h_qcnt >
-					   IMP_MAXHOSTMSG - 1 - hp->h_rfnm)
-						sc->imp_msgready++;
-					if (sc->imp_cb.ic_oactive == 0)
-						impstarthost(sc, hp);
-				}
-			} else if (hp->h_qcnt == 0)
-				hostfree(hp);
-			/* else messages on queue waiting their turn */
-			goto drop;
-		} else
+		if ((hp = hostlookup(cp->dl_imp, cp->dl_host, unit)) == 0 ||
+		    hp->h_rfnm == 0) {
 			sc->imp_badrfnm++;
+			if (hp)
+				hostfree(hp);
+			break;
+		}
+		imprestarthost(sc, hp);
+		if (cp->dl_mtype == IMPTYPE_RFNM)
+			goto drop;
 		break;
 
 	/*
@@ -356,11 +351,13 @@ impinput(unit, m)
 	 */
 	case IMPTYPE_BADDATA:
 		impmsg(sc, "data error");
-		if ((hp = hostlookup(cp->dl_imp, cp->dl_host, unit)) &&
-		    hp->h_rfnm) {
+		if (hp = hostlookup(cp->dl_imp, cp->dl_host, unit)) {
 			sc->imp_msgready -=
 			   MIN(hp->h_qcnt, IMP_MAXHOSTMSG - hp->h_rfnm);
-			hostrelease(hp);
+			if (hp->h_rfnm)
+				hostrelease(hp);
+			else
+				hostfree(hp);
 		}
 		impnoops(sc);
 		break;
@@ -424,8 +421,8 @@ impinput(unit, m)
 		return;
 	}
 	splx(s);
-drop:
 	IF_DROP(inq);
+drop:
 	m_freem(m);
 #undef ip
 }
@@ -441,6 +438,7 @@ impdown(sc)
 	if (sc->imp_state == IMPS_GOINGDOWN) {
 		sc->imp_state = IMPS_WINIT;
 		impmsg(sc, "marked down");
+		sc->imp_msgready = 0;
 		hostreset(sc->imp_if.if_unit);
 		if_down(&sc->imp_if);
 	}
@@ -521,6 +519,7 @@ impoutput(ifp, m0, dst)
 {
 	register struct imp_leader *imp;
 	register struct mbuf *m = m0;
+	caddr_t pkt = mtod(m, caddr_t);
 	int error = 0;
 
 	/*
@@ -543,7 +542,7 @@ impoutput(ifp, m0, dst)
 		 */
 		if (m->m_off > MMAXOFF ||
 		    MMINOFF + sizeof(struct imp_leader) > m->m_off) {
-			m = m_get(M_DONTWAIT, MT_HEADER);
+			MGET(m, M_DONTWAIT, MT_HEADER);
 			if (m == 0) {
 				error = ENOBUFS;
 				goto drop;
@@ -557,24 +556,25 @@ impoutput(ifp, m0, dst)
 		imp = mtod(m, struct imp_leader *);
 		imp->il_format = IMP_NFF;
 		imp->il_mtype = IMPTYPE_DATA;
-		imp->il_flags = imp->il_htype = imp->il_subtype = 0;
+		imp->il_flags = 0;
+		imp->il_htype = 0;
+		imp->il_subtype = 0;
 
 		switch (dst->sa_family) {
 
-		case AF_INET: {
-			struct ip *ip = mtod(m, struct ip *);
-
+		case AF_INET:
 			imp->il_link = IMPLINK_IP;
 			imp_addr_to_leader((struct control_leader *)imp,
 				((struct sockaddr_in *)dst)->sin_addr.s_addr);
-			imp->il_length = htons(ntohs((u_short)ip->ip_len) << 3);
+			imp->il_length = htons(ntohs((u_short)
+			    ((struct ip *)pkt)->ip_len) << 3);
 			break;
-		}
 
 		default:
 			printf("imp%d: can't handle af%d\n", ifp->if_unit, 
 				dst->sa_family);
 			error = EAFNOSUPPORT;
+			m0 = m;
 			goto drop;
 		}
 	}
@@ -611,32 +611,23 @@ impsnd(ifp, m)
 	s = splimp();
 	if (imp->dl_mtype == IMPTYPE_DATA) {
 		hp = hostenter(imp->dl_imp, imp->dl_host, ifp->if_unit);
-		if (hp && (hp->h_flags & (HF_DEAD|HF_UNREACH))) {
-			error = hp->h_flags&HF_DEAD ? EHOSTDOWN : EHOSTUNREACH;
-			goto bad;
-		}
-
-		/*
-		 * If IMP would block, queue until RFNM;
-		 * if IMP is busy, queue until our turn.
-		 */
 		if (hp) {
-			if (hp->h_rfnm < IMP_MAXHOSTMSG) {
-				if (sc->imp_cb.ic_oactive == 0) {
-					/*
-					 * Send without queuing;
-					 * adjust rfnm count and timer.
-					 */
-					if (hp->h_rfnm++ == 0)
-					    hp->h_timer = RFNMTIMER;
-					goto send;
-				} else {
-					sc->imp_msgready++;
-					goto q;
-				}
+			if (hp->h_flags & (HF_DEAD|HF_UNREACH))
+				error = hp->h_flags & HF_DEAD ?
+				    EHOSTDOWN : EHOSTUNREACH;
+			else if (hp->h_rfnm < IMP_MAXHOSTMSG &&
+			    sc->imp_cb.ic_oactive == 0) {
+				/*
+				 * Send without queuing;
+				 * adjust rfnm count and timer.
+				 */
+				if (hp->h_rfnm++ == 0)
+				    hp->h_timer = RFNMTIMER;
+				goto send;
 			} else if (hp->h_rfnm + hp->h_qcnt < imphqlen) {
-		q:
 				HOST_ENQUE(hp, m);
+				if (hp->h_rfnm + hp->h_qcnt <= IMP_MAXHOSTMSG)
+					sc->imp_msgready++;
 			} else
 				error = ENOBUFS;
 		} else
@@ -645,33 +636,32 @@ impsnd(ifp, m)
 		goto send;
 	else
 		IF_ENQUEUE(&ifp->if_snd, m);
+
 	splx(s);
-	return (0);
+	if (error)
+		m_freem(m);
+	return (error);
 
 send:
 	sc->imp_if.if_timer = IMP_OTIMER;
 	(*sc->imp_cb.ic_output)(sc->imp_cb.ic_hwunit, m);
 	splx(s);
 	return (0);
-bad:
-	m_freem(m);
-	splx(s);
-	return (error);
 }
 
 /*
  * Start another output operation on IMP; called from hardware
  * transmit-complete interrupt routine at splimp or from imp routines
- * when output is not in progress and more output is ready.  If any packets
- * on shared output queue, send them, otherwise send the next data
- * packet for a host.  Host data packets are sent round-robin based
- * on destination.
+ * when output is not in progress.  If there are any packets on shared
+ * output queue, send them, otherwise send the next data packet for a host.
+ * Host data packets are sent round-robin based on destination by walking
+ * the host list.
  */
 impstart(sc)
 	register struct imp_softc *sc;
 {
 	register struct mbuf *m;
-	struct mbuf *m0;
+	int first = 1;				/* XXX */
 	register struct host *hp;
 	int index;
 
@@ -683,65 +673,63 @@ impstart(sc)
 	}
 	if (sc->imp_msgready) {
 		if ((m = sc->imp_hostq) == 0 && (m = sc->imp_hosts) == 0)
-			panic ("imp msgready");
-		if ((index = sc->imp_hostent) >= HPMBUF)
-			index = 0;
-		m0 = m;
-		for (;;) {
-			for (hp = &mtod(m, struct hmbuf *)->hm_hosts[index];
-			    index < HPMBUF; hp++, index++) {
-				if (hp->h_q && hp->h_rfnm < IMP_MAXHOSTMSG) {
-					impstarthost(sc, hp);
-					sc->imp_hostq = m;
-					sc->imp_hostent = index;
-					return;
-				}
+			panic("imp msgready");
+		index = sc->imp_hostent;
+		for (hp = &mtod(m, struct hmbuf *)->hm_hosts[index]; ;
+		    hp++, index++) {
+			if (index >= HPMBUF) {
+				if ((m = m->m_next) == 0)
+					m = sc->imp_hosts;
+				index = 0;
+				hp = mtod(m, struct hmbuf *)->hm_hosts;
+				first = 0;		/* XXX */
 			}
-			if ((m = m->m_next) == 0)
-				m = sc->imp_hosts;
-			if (m == m0) {
-				if (sc->imp_hostent != 0)
-					sc->imp_hostent = 0;
-				else {
-					log(LOG_ERR,
-					    "imp can't find %d msgready\n",
-					    sc->imp_msgready);
-					sc->imp_msgready = 0;
-					break;
-				}
+			if (hp->h_qcnt && hp->h_rfnm < IMP_MAXHOSTMSG) {
+				/*
+				 * Found host entry with another message
+				 * to send.  Deliver it to the IMP.
+				 * Start with succeeding host next time.
+				 */
+				impstarthost(sc, hp);
+				sc->imp_hostq = m;
+				sc->imp_hostent = index + 1;
+				return;
 			}
-			index = 0;
+			if (m == sc->imp_hostq && !first &&
+			    index + 1 >= sc->imp_hostent) {	/* XXX */
+				log(imppri, "imp: can't find %d msgready\n",
+				    sc->imp_msgready);
+				sc->imp_msgready = 0;
+				break;
+			}
 		}
 	}
 	sc->imp_if.if_timer = 0;
 }
 
 /*
- * Restart output for a host that has timed out
- * while waiting for a RFNM and has more packets to send.
+ * Restart output for a host that has received a RFNM
+ * or incomplete or has timed out while waiting for a RFNM.
  * Must be called at splimp.
  */
-imprestarthost(unit, hp)
-	int unit;
+imprestarthost(sc, hp)
+	register struct imp_softc *sc;
 	struct host *hp;
 {
-	register struct imp_softc *sc = &imp_softc[unit];
 
-	sc->imp_lostrfnm++;
 	if (--hp->h_rfnm > 0)
 		hp->h_timer = RFNMTIMER;
-	if (hp->h_qcnt) {
-		/*
-		 * If the rfnm allows another queued
-		 * message to be sent, bump msgready
-		 * and start IMP if idle.
-		 */
-		if (hp->h_qcnt >
-		   IMP_MAXHOSTMSG - 1 - hp->h_rfnm)
-			sc->imp_msgready++;
+	/*
+	 * If the RFNM moved a queued message into the window,
+	 * update msgready and start IMP if idle.
+	 */
+	if (hp->h_qcnt > IMP_MAXHOSTMSG - 1 - hp->h_rfnm) {
+		sc->imp_msgready++;
 		if (sc->imp_cb.ic_oactive == 0)
 			impstarthost(sc, hp);
 	}
+	if (hp->h_rfnm == 0 && hp->h_qcnt == 0)
+		hostidle(hp);
 }
 
 /*
@@ -838,8 +826,11 @@ impioctl(ifp, cmd, data)
 		if ((ifp->if_flags & IFF_UP) == 0 &&
 		    sc->imp_state != IMPS_DOWN) {
 			if (sc->imp_cb.ic_down &&
-			    (*sc->imp_cb.ic_down)(sc->imp_cb.ic_hwunit))
+			    (*sc->imp_cb.ic_down)(sc->imp_cb.ic_hwunit)) {
 				sc->imp_state = IMPS_DOWN;
+				sc->imp_msgready = 0;
+				hostreset(ifp->if_unit);
+			}
 		} else if (ifp->if_flags & IFF_UP && sc->imp_state == IMPS_DOWN)
 			impinit(ifp->if_unit);
 		break;
