@@ -1,7 +1,7 @@
-/*	tty_tty.c	4.2	%G%	*/
+/*	tty_tty.c	4.3	81/03/09	*/
 
 /*
- *	indirect driver for controlling tty.
+ * Indirect driver for controlling tty.
  */
 #include "../h/param.h"
 #include "../h/systm.h"

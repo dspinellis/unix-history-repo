@@ -1,4 +1,4 @@
-/*	ufs_inode.c	4.3	%G%	*/
+/*	ufs_inode.c	4.4	81/03/09	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
