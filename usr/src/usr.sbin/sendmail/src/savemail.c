@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)savemail.c	6.20 (Berkeley) %G%";
+static char sccsid[] = "@(#)savemail.c	6.21 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <pwd.h>
@@ -401,7 +401,6 @@ returntosender(msg, sendbody)
 		returndepth--;
 		return (-1);
 	}
-	loweraddr(&ee->e_from);
 
 	/* if CurEnv->e_from was queued up, put in on CurEnv->e_sendqueue */
 	if (bitset(QQUEUEUP, CurEnv->e_from.q_flags))

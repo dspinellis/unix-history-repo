@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parseaddr.c	6.25 (Berkeley) %G%";
+static char sccsid[] = "@(#)parseaddr.c	6.26 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -217,35 +217,6 @@ allocaddr(a, copyf, paddr, delimptr)
 
 	if (a->q_paddr == NULL)
 		a->q_paddr = a->q_user;
-
-	/*
-	**  Convert host name to lower case if requested.
-	**	User name will be done later.
-	*/
-
-	if (!bitnset(M_HST_UPPER, m->m_flags))
-		makelower(a->q_host);
-}
-/*
-**  LOWERADDR -- map UPPER->lower case on addresses as requested.
-**
-**	Parameters:
-**		a -- address to be mapped.
-**
-**	Returns:
-**		none.
-**
-**	Side Effects:
-**		none.
-*/
-
-loweraddr(a)
-	register ADDRESS *a;
-{
-	register MAILER *m = a->q_mailer;
-
-	if (!bitnset(M_USR_UPPER, m->m_flags))
-		makelower(a->q_user);
 }
 /*
 **  PRESCAN -- Prescan name and make it canonical
@@ -1208,6 +1179,15 @@ buildaddr(tv, a)
 	/* save the result for the command line/RCPT argument */
 	cataddr(tv, buf, sizeof buf, '\0');
 	a->q_user = buf;
+
+	/*
+	**  Do mapping to lower case as requested by mailer
+	*/
+
+	if (a->q_host != NULL && !bitnset(M_HST_UPPER, m->m_flags))
+		makelower(a->q_host);
+	if (!bitnset(M_USR_UPPER, m->m_flags))
+		makelower(a->q_user);
 
 	return (a);
 }
