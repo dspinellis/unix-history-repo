@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)od.c	5.11 (Berkeley) %G%";
+static char *sccsid = "@(#)od.c	5.12 (Berkeley) %G%";
 /*
  * od -- octal, hex, decimal, character dump of data in a file.
  *
@@ -321,7 +321,7 @@ char	**argv;
 	same = -1;
 	while ((n = fread(dbuf, 1, dbuf_size, stdin)) > 0)
 	{
-		if (same>=0 && bufncmp(dbuf, lastdbuf, dbuf_size) == 0 && !showall)
+		if (same>=0 && bcmp(dbuf, lastdbuf, dbuf_size) == 0 && !showall)
 		{
 			if (same==0)
 			{
@@ -832,16 +832,6 @@ register char *s;
 		a *= 1024;
 
 	return(a);
-}
-
-bufncmp(a, b, n)
-char	*a;
-char	*b;
-int	n;
-{
-	while (n--)
-		if (*a++ != *b++)
-			return(1);
 }
 
 offset(a)
