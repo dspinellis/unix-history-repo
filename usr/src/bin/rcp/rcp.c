@@ -113,7 +113,7 @@ main(argc, argv)
 
 		    default:
 			fprintf(stderr,
-		"Usage: rcp [-rp] f1 f2, or: rcp [-rp] f1 ... fn d2\n");
+		"Usage: rcp [-p] f1 f2; or: rcp [-rp] f1 ... fn d2\n");
 			exit(1);
 		}
 	}
@@ -538,7 +538,8 @@ sink(argc, argv)
 #define mtime	tv[1]
 #define	SCREWUP(str)	{ whopp = str; goto screwup; }
 
-	(void) umask(mask);
+	if (!pflag)
+		(void) umask(mask);
 	if (argc != 1) {
 		error("rcp: ambiguous target\n");
 		exit(1);
@@ -618,7 +619,7 @@ sink(argc, argv)
 		if (*cp++ != ' ')
 			SCREWUP("mode not delimited");
 		size = 0;
-		while (*cp >= '0' && *cp <= '9')
+		while (isdigit(*cp))
 			size = size * 10 + (*cp++ - '0');
 		if (*cp++ != ' ')
 			SCREWUP("size not delimited");
@@ -634,6 +635,8 @@ sink(argc, argv)
 					errno = ENOTDIR;
 					goto bad;
 				}
+				if (pflag)
+					(void) chmod(nambuf, mode);
 			} else if (mkdir(nambuf, mode) < 0)
 				goto bad;
 			myargv[0] = nambuf;
@@ -651,6 +654,8 @@ sink(argc, argv)
 			error("rcp: %s: %s\n", nambuf, sys_errlist[errno]);
 			continue;
 		}
+		if (exists && pflag)
+			(void) fchmod(of, mode);
 		ga();
 		if ((bp = allocbuf(&buffer, of, BUFSIZ)) < 0) {
 			(void) close(of);
