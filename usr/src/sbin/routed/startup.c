@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)startup.c	4.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)startup.c	4.7 (Berkeley) %G%";
 #endif
 
 /*
@@ -9,6 +9,7 @@ static char sccsid[] = "@(#)startup.c	4.6 (Berkeley) %G%";
 #include <sys/ioctl.h>
 #include <net/if.h>
 #include <nlist.h>
+#include <syslog.h>
 
 struct	interface *ifnet;
 int	kmem = -1;
@@ -150,6 +151,8 @@ addrouteforif(ifp)
 		net.sin_addr = inet_makeaddr(ifp->int_net, INADDR_ANY);
 		dst = (struct sockaddr *)&net;
 	}
+	if (ifp->int_transitions++ > 0)
+		syslog(LOG_ERR, "re-installing interface %s", ifp->int_name);
 	rt = rtlookup(dst);
 	rtadd(dst, &ifp->int_addr, ifp->int_metric,
 		ifp->int_flags & (IFF_INTERFACE|IFF_PASSIVE|IFF_REMOTE));
