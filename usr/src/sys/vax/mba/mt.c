@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)mt.c	7.5 (Berkeley) %G%
+ *	@(#)mt.c	7.6 (Berkeley) %G%
  */
 
 #include "mu.h"
@@ -218,6 +218,7 @@ mtclose(dev, flag)
 		log(LOG_INFO, "mu%d: %d soft errors in %d blocks\n",
 		    MUUNIT(dev), sc->sc_softerrs, sc->sc_blks);
 	sc->sc_openf = 0;
+	return (0);
 }
 
 mtcommand(dev, com, count)

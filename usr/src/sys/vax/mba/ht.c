@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ht.c	7.8 (Berkeley) %G%
+ *	@(#)ht.c	7.9 (Berkeley) %G%
  */
 
 #include "tu.h"
@@ -169,6 +169,7 @@ htclose(dev, flag)
 		log(LOG_INFO, "tu%d: %d soft errors in %d blocks\n",
 		    TUUNIT(dev), sc->sc_softerrs, sc->sc_blks);
 	sc->sc_openf = 0;
+	return (0);
 }
 
 htcommand(dev, com, count)
