@@ -1,7 +1,7 @@
-#	@(#)Makefile	4.13 (Berkeley) %G%
+#	@(#)Makefile	4.14 (Berkeley) %G%
 
 CFLAGS+=-I${.CURDIR}/../common_source
-DEST=	/usr/libdata/term
+DEST=	/usr/old/libdata/term
 PROGS=	tab300 tab300-12 tab302 tab302-12 tab37 tab382 tab382-12 tab450 \
 	tab450-12 tab833 tab833-12 tabepson tabitoh tabitoh12 tablpr \
 	tabnec tabnec-t tabnec12 tabnec25-t tabqume tabqume12 tabx-ecs \
