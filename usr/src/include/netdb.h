@@ -4,7 +4,28 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)netdb.h	5.16 (Berkeley) %G%
+ *      @(#)netdb.h	5.17 (Berkeley) %G%
+ *	$Id: netdb.h,v 4.9.1.2 1993/05/17 09:59:01 vixie Exp $
+ * -
+ * Portions Copyright (c) 1993 by Digital Equipment Corporation.
+ * 
+ * Permission to use, copy, modify, and distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies, and that
+ * the name of Digital Equipment Corporation not be used in advertising or
+ * publicity pertaining to distribution of the document or software without
+ * specific, written prior permission.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS" AND DIGITAL EQUIPMENT CORP. DISCLAIMS ALL
+ * WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES
+ * OF MERCHANTABILITY AND FITNESS.   IN NO EVENT SHALL DIGITAL EQUIPMENT
+ * CORPORATION BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL
+ * DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR
+ * PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS
+ * ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS
+ * SOFTWARE.
+ * -
+ * --Copyright--
  */
 
 #ifndef _NETDB_H_
@@ -31,7 +52,7 @@ struct	hostent {
 
 /*
  * Assumption here is that a network number
- * fits in 32 bits -- probably a poor one.
+ * fits in an unsigned long -- probably a poor one.
  */
 struct	netent {
 	char		*n_name;	/* official name of net */
@@ -73,7 +94,7 @@ void		endprotoent __P((void));
 void		endservent __P((void));
 struct hostent	*gethostbyaddr __P((const char *, int, int));
 struct hostent	*gethostbyname __P((const char *));
-struct hostent *gethostent __P((void));
+struct hostent	*gethostent __P((void));
 struct netent	*getnetbyaddr __P((long, int)); /* u_long? */
 struct netent	*getnetbyname __P((const char *));
 struct netent	*getnetent __P((void));
@@ -84,6 +105,7 @@ struct servent	*getservbyname __P((const char *, const char *));
 struct servent	*getservbyport __P((int, const char *));
 struct servent	*getservent __P((void));
 void		herror __P((const char *));
+char		*hstrerror __P((int));
 void		sethostent __P((int));
 /* void		sethostfile __P((const char *)); */
 void		setnetent __P((int));
