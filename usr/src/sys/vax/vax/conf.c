@@ -1,4 +1,4 @@
-/*	conf.c	4.13	%G%	*/
+/*	conf.c	4.14	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -21,22 +21,17 @@ int	nodev();
 #include "hp.h"
 #if NHP > 0
 int	hpstrategy(),hpread(),hpwrite(),hpintr(),hpdump();
-struct	buf	hptab;
-#define	HPTAB	&hptab
 #else
 #define	hpstrategy	nodev
 #define	hpread		nodev
 #define	hpwrite		nodev
 #define	hpintr		nodev
 #define	hpdump		nodev
-#define	HPTAB		0
 #endif
  
 #include "ht.h"
 #if NHT > 0
 int	htopen(),htclose(),htstrategy(),htread(),htwrite(),htdump();
-struct	buf	httab;
-#define	HTTAB	&httab
 #else
 #define	htopen		nodev
 #define	htclose		nodev
@@ -44,28 +39,22 @@ struct	buf	httab;
 #define	htread		nodev
 #define	htwrite		nodev
 #define	htdump		0
-#define	HTTAB		0
 #endif
 
 #include "rk.h"
 #if NRK > 0
 int	rkstrategy(),rkread(),rkwrite(),rkintr(),rkdump();
-struct	buf	rktab;
-#define	RKTAB	&rktab
 #else
 #define	rkstrategy	nodev
 #define	rkread		nodev
 #define	rkwrite		nodev
 #define	rkintr		nodev
 #define	rkdump		nodev
-#define	RKTAB		0
 #endif
 
 #include "tm.h"
 #if NTM > 0
 int	tmopen(),tmclose(),tmstrategy(),tmread(),tmwrite(),tmioctl(),tmdump();
-struct	buf	tmtab;
-#define	TMTAB	&tmtab
 #else
 #define	tmopen		nodev
 #define	tmclose		nodev
@@ -74,14 +63,11 @@ struct	buf	tmtab;
 #define	tmwrite		nodev
 #define	tmioctl		nodev
 #define	tmdump		nodev
-#define	TMTAB		0
 #endif
 
 #include "ts.h"
 #if NTS > 0
 int	tsopen(),tsclose(),tsstrategy(),tsread(),tswrite(),tsdump();
-struct	buf	tstab;
-#define	TSTAB	&tstab
 #else
 #define	tsopen		nodev
 #define	tsclose		nodev
@@ -89,34 +75,30 @@ struct	buf	tstab;
 #define	tsread		nodev
 #define	tswrite		nodev
 #define	tsdump		nodev
-#define	TSTAB		0
 #endif
 
 #include "up.h"
 #if NUP > 0
 int	upstrategy(),upread(),upwrite(),upreset(),updump();
-struct	buf	uptab;
-#define	UPTAB	&uptab
 #else
 #define	upstrategy	nodev
 #define	upread		nodev
 #define	upwrite		nodev
 #define	upreset		nulldev
 #define	updump		nodev
-#define	UPTAB		0
 #endif
 
 int	swstrategy(),swread(),swwrite();
 
 struct bdevsw	bdevsw[] =
 {
-	nulldev,	nulldev,	hpstrategy,	hpdump,	HPTAB,	/*0*/
-	htopen,		htclose,	htstrategy,	htdump,	HTTAB,	/*1*/
-	nulldev,	nulldev,	upstrategy,	updump,	UPTAB,	/*2*/
-	nulldev,	nulldev,	rkstrategy,	rkdump,	RKTAB,	/*3*/
+	nulldev,	nulldev,	hpstrategy,	hpdump,	0,	/*0*/
+	htopen,		htclose,	htstrategy,	htdump,	B_TAPE,	/*1*/
+	nulldev,	nulldev,	upstrategy,	updump,	0,	/*2*/
+	nulldev,	nulldev,	rkstrategy,	rkdump,	0,	/*3*/
 	nodev,		nodev,		swstrategy,	nodev,	0,	/*4*/
-	tmopen,		tmclose,	tmstrategy,	tmdump,	TMTAB,	/*5*/
-	tsopen,		tsclose,	tsstrategy,	tsdump,	TSTAB,	/*6*/
+	tmopen,		tmclose,	tmstrategy,	tmdump,	B_TAPE,	/*5*/
+	tsopen,		tsclose,	tsstrategy,	tsdump,	B_TAPE,	/*6*/
 	0,
 };
 
@@ -419,8 +401,7 @@ int	mem_no = 3; 	/* major device number of memory special file */
  * It cannot be provided to the users, because the
  * swstrategy routine munches the b_dev and b_blkno entries
  * before calling the appropriate driver.  This would horribly
- * confuse, e.g. the hashing routines as well as the placement
- * of the block on the d_tab chains.  Instead, /dev/drum is
+ * confuse, e.g. the hashing routines. Instead, /dev/drum is
  * provided as a character (raw) device.
  */
 dev_t	swapdev = makedev(4, 0);
