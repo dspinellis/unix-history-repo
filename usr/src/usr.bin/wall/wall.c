@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)wall.c	4.5 (Berkeley) 81/06/12";
+static char *sccsid = "@(#)wall.c	4.6 (Berkeley) 82/03/15";
 /*
  * wall.c - Broadcast a message to all users.
  *
@@ -9,11 +9,11 @@ static char *sccsid = "@(#)wall.c	4.5 (Berkeley) 81/06/12";
 #include <stdio.h>
 #include <utmp.h>
 #include <time.h>
-#include <whoami.h>
 #include <signal.h>
 #define	USERS	128
 #define IGNOREUSER	"sleeper"
 
+char	hostname[32];
 char	mesg[3000];
 int	msize,sline;
 struct	utmp utmp[USERS];
@@ -33,6 +33,7 @@ char *argv[];
 	FILE *f;
 	FILE *mf;
 
+	gethostname(hostname, sizeof (hostname));
 	if((f = fopen("/etc/utmp", "r")) == NULL) {
 		fprintf(stderr, "Cannot open /etc/utmp\n");
 		exit(1);
@@ -65,9 +66,6 @@ char *argv[];
 		if ((p->ut_name[0] == 0) ||
 		    (strncmp (p->ut_name, IGNOREUSER, sizeof(p->ut_name)) == 0))
 			continue;
-	/***		this might be nice, but utmp gets so out of date !!
-		sleep(1);
-	***/
 		sendmes(p->ut_line);
 	}
 	exit(0);
@@ -82,13 +80,6 @@ char *tty;
 	register int c, ch;
 	FILE *f;
 
-/***			you can't do this with lots of users & MAXUPROC
-	i = fork();
-	if(i == -1) {
-		fprintf(stderr, "Try again\n");
-		return;
-	}
- ***/
 	while ((i = fork()) == -1)
 		if (wait((int *)0) == -1) {
 			fprintf(stderr, "Try again\n");
@@ -109,7 +100,7 @@ char *tty;
 	setbuf(f, buf);
 	fprintf(f,
 	    "\nBroadcast Message from %s!%s (%.*s) at %d:%02d ...\r\n\n"
-		, sysname
+		, hostname
 		, who
 		, sizeof(utmp[sline].ut_line)
 		, utmp[sline].ut_line

@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)who.c	4.3 (Berkeley) %G%";
+static char *sccsid = "@(#)who.c	4.4 (Berkeley) %G%";
 /*
  * who
  */
@@ -6,19 +6,21 @@ static char *sccsid = "@(#)who.c	4.3 (Berkeley) %G%";
 #include <stdio.h>
 #include <utmp.h>
 #include <pwd.h>
-#include <whoami.h>
 #include <ctype.h>
 
 #define NMAX sizeof(utmp.ut_name)
 #define LMAX sizeof(utmp.ut_line)
 
-struct utmp utmp;
-struct passwd *pw;
-struct passwd *getpwuid();
+struct	utmp utmp;
+struct	passwd *pw;
+struct	passwd *getpwuid();
+char	hostname[32];
 
-char *ttyname(), *rindex(), *ctime(), *strcpy();
+char	*ttyname(), *rindex(), *ctime(), *strcpy();
+
 main(argc, argv)
-char **argv;
+	int argc;
+	char **argv;
 {
 	register char *tp, *s;
 	register FILE *fi;
@@ -47,10 +49,10 @@ char **argv;
 	}
 	while (fread((char *)&utmp, sizeof(utmp), 1, fi) == 1) {
 		if(argc==3) {
-			static char myname[]=sysname;
+			gethostname(hostname, sizeof (hostname));
 			if (strcmp(utmp.ut_line, tp))
 				continue;
-			printf("%s!",myname);
+			printf("%s!", hostname);
 			putline();
 			exit(0);
 		}

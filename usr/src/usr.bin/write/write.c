@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)write.c	4.4 (Berkeley) %G%";
+static char *sccsid = "@(#)write.c	4.5 %G%";
 /*
  * write to another user
  */
@@ -9,10 +9,9 @@ static char *sccsid = "@(#)write.c	4.4 (Berkeley) %G%";
 #include <signal.h>
 #include <utmp.h>
 #include <time.h>
-#include <whoami.h>
 
-#define NMAX sizeof(ubuf.ut_name)
-#define LMAX sizeof(ubuf.ut_line)
+#define	NMAX	sizeof(ubuf.ut_name)
+#define	LMAX	sizeof(ubuf.ut_line)
 
 char	*strcat();
 char	*strcpy();
@@ -32,22 +31,23 @@ FILE	*tf;
 char	*getenv();
 
 main(argc, argv)
-char *argv[];
+	int argc;
+	char *argv[];
 {
 	struct stat stbuf;
 	register i;
 	register FILE *uf;
 	int c1, c2;
-	long	clock = time( 0 );
+	long clock = time(0);
 	struct tm *localtime();
 	struct tm *localclock = localtime( &clock );
 
-	if(argc < 2) {
+	if (argc < 2) {
 		printf("usage: write user [ttyname]\n");
 		exit(1);
 	}
 	him = argv[1];
-	if(argc > 2)
+	if (argc > 2)
 		histtya = argv[2];
 	if ((uf = fopen("/etc/utmp", "r")) == NULL) {
 		printf("cannot open /etc/utmp\n");
@@ -58,13 +58,13 @@ char *argv[];
 		printf("Can't find your tty\n");
 		exit(1);
 	}
-	if (stat (mytty, &stbuf) < 0) {
-		printf ("Can't stat your tty\n");
-		exit (1);
+	if (stat(mytty, &stbuf) < 0) {
+		printf("Can't stat your tty\n");
+		exit(1);
 	}
 	if ((stbuf.st_mode&02) == 0) {
-		printf ("You have write permission turned off.\n");
-		exit (1);
+		printf("You have write permission turned off.\n");
+		exit(1);
 	}
 	mytty = rindex(mytty, '/') + 1;
 	if (histtya) {
@@ -75,23 +75,23 @@ char *argv[];
 		if (ubuf.ut_name[0] == '\0')
 			continue;
 		if (strcmp(ubuf.ut_line, mytty)==0) {
-			for(i=0; i<NMAX; i++) {
+			for (i=0; i<NMAX; i++) {
 				c1 = ubuf.ut_name[i];
-				if(c1 == ' ')
+				if (c1 == ' ')
 					c1 = 0;
 				me[i] = c1;
-				if(c1 == 0)
+				if (c1 == 0)
 					break;
 			}
 		}
-		if(him[0] != '-' || him[1] != 0)
-		for(i=0; i<NMAX; i++) {
+		if (him[0] != '-' || him[1] != 0)
+		for (i=0; i<NMAX; i++) {
 			c1 = him[i];
 			c2 = ubuf.ut_name[i];
-			if(c1 == 0)
-				if(c2 == 0 || c2 == ' ')
+			if (c1 == 0)
+				if (c2 == 0 || c2 == ' ')
 					break;
-			if(c1 != c2)
+			if (c1 != c2)
 				goto nomat;
 		}
 		logcnt++;
@@ -111,9 +111,9 @@ cont:
 	if (histtya==0 && logcnt > 1) {
 		printf("%s logged more than once\nwriting to %s\n", him, histty+5);
 	}
-	if(histty[0] == 0) {
+	if (histty[0] == 0) {
 		printf(him);
-		if(logcnt)
+		if (logcnt)
 			printf(" not on that tty\n"); else
 			printf(" not logged in\n");
 		exit(1);
@@ -132,28 +132,27 @@ cont:
 	if ((stbuf.st_mode&02) == 0)
 		goto perm;
 	sigs(eof);
-	fprintf(tf, "\r\nMessage from ");
-#ifdef interdata
-	fprintf(tf, "(Interdata) " );
-#endif
-	fprintf(tf, "%s!%s on %s at %d:%02d ...\r\n"
-	       , sysname , me, mytty , localclock -> tm_hour , localclock -> tm_min );
+	{ char hostname[32];
+	  gethostname(hostname, sizeof (hostname));
+	  fprintf(tf, "\r\nMessage from ");
+	  fprintf(tf, "%s!%s on %s at %d:%02d ...\r\n",
+	      hostname, me, mytty, localclock->tm_hour, localclock->tm_min);
+	}
 	fflush(tf);
-	for(;;) {
+	for (;;) {
 		char buf[128];
 		i = read(0, buf, 128);
-		if(i <= 0)
+		if (i <= 0)
 			eof();
-		if(buf[0] == '!') {
+		if (buf[0] == '!') {
 			buf[i] = 0;
 			ex(buf);
 			continue;
 		}
 		write(fileno(tf), buf, i);
-		if ( buf[ i - 1 ] == '\n' )
-		    write( fileno( tf ) , "\r" , 1 );
+		if (buf[i-1] == '\n')
+			write(fileno(tf), "\r", 1);
 	}
-
 perm:
 	printf("Permission denied\n");
 	exit(1);
@@ -174,22 +173,23 @@ eof()
 }
 
 ex(bp)
-char *bp;
+	char *bp;
 {
 	register i;
 
 	sigs(SIG_IGN);
 	i = fork();
-	if(i < 0) {
+	if (i < 0) {
 		printf("Try again\n");
 		goto out;
 	}
-	if(i == 0) {
+	if (i == 0) {
 		sigs((int (*)())0);
-		execl(getenv("SHELL") ? getenv("SHELL") : "/bin/sh", "sh", "-c", bp+1, 0);
+		execl(getenv("SHELL") ?
+		    getenv("SHELL") : "/bin/sh", "sh", "-c", bp+1, 0);
 		exit(0);
 	}
-	while(wait((int *)NULL) != i)
+	while (wait((int *)NULL) != i)
 		;
 	printf("!\n");
 out:
@@ -197,10 +197,10 @@ out:
 }
 
 sigs(sig)
-int (*sig)();
+	int (*sig)();
 {
 	register i;
 
-	for(i=0;signum[i];i++)
-		signal(signum[i],sig);
+	for (i=0; signum[i]; i++)
+		signal(signum[i], sig);
 }

@@ -6,10 +6,9 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <setjmp.h>
-#include <whoami.h>
 #include <sysexits.h>
 
-static char SccsId[] = "@(#)mail.local.c	4.6	%G%";
+static char SccsId[] = "@(#)mail.local.c	4.7	%G%";
 
 #define DELIVERMAIL	"/etc/delivermail"
 
@@ -24,13 +23,6 @@ static char SccsId[] = "@(#)mail.local.c	4.6	%G%";
 #define	LSIZE	256
 #define	MAXLET	300	/* maximum number of letters */
 #define	MAILMODE (~0644)		/* mode of created mail */
-# ifndef DELIVERMAIL
-#define	RMAIL	"/usr/net/bin/sendberkmail"
-#define LOCNAM1	"csvax"
-#define LOCNAM2	"ucbvax"
-#define LOCNAM3	"vax"
-#define LOCNAM4	"v"
-# endif
 
 char	line[LSIZE];
 char	resp[LSIZE];
@@ -47,7 +39,6 @@ char	lettmp[] = "/tmp/maXXXXX";
 char	maildir[] = "/usr/spool/mail/";
 char	mailfile[] = "/usr/spool/mail/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
 char	dead[] = "dead.letter";
-char	*thissys = sysname;
 char	*netname = "vax";
 char	forwmsg[] = " forwarded\n";
 FILE	*tmpf;
@@ -373,9 +364,11 @@ copylet(n, f, type) FILE *f;
 	k = let[n+1].adr - let[n].adr;
 	while(k-- > 1 && (ch=fgetc(tmpf))!='\n')
 		if(type!=ZAP) fputc(ch,f);
-	if(type==REMOTE)
-		fprintf(f, " remote from %s\n", thissys);
-	else if (type==FORWARD)
+	if(type==REMOTE) {
+		char hostname[32];
+		gethostname(hostname, sizeof (hostname));
+		fprintf(f, " remote from %s\n", hostname);
+	} else if (type==FORWARD)
 		fprintf(f, forwmsg);
 	else if(type==ORDINARY)
 		fputc(ch,f);
@@ -403,7 +396,6 @@ char **argv;
 	int first;
 	register char *cp;
 	int gaver = 0;
-# ifdef DELIVERMAIL
 	char *newargv[1000];
 	register char **ap;
 	register char **vp;
@@ -430,7 +422,6 @@ char **argv;
 		perror(DELIVERMAIL);
 		exit(EX_UNAVAILABLE);
 	}
-# endif DELIVERMAIL
 
 	truename[0] = 0;
 	line[0] = '\0';
@@ -468,10 +459,8 @@ char **argv;
 			argc--;
 			break;
 
-# ifdef DELIVERMAIL
 		case 'd':
 			break;
-# endif DELIVERMAIL
 		
 		default:
 			usage();
@@ -603,30 +592,6 @@ skip:
 	exit(0);
 }
 
-# ifndef DELIVERMAIL
-/*
- * Send mail on the Berkeley network.
- * Sorry Bill, sendrmt() is so awful we just gave up.
- */
-
-sendberkmail(n, name, fromaddr)
-	char name[];
-	char fromaddr[];
-{
-	char cmd[200];
-	register FILE *cmdf;
-
-	sprintf(cmd, "%s -h %d -f %s -t %s", RMAIL, hseqno, fromaddr, name);
-	if ((cmdf = popen(cmd, "w")) == NULL) {
-		perror(RMAIL);
-		return(0);
-	}
-	copylet(n, cmdf, ORDINARY);
-	pclose(cmdf);
-	return(9);
-}
-# endif
-
 usage()
 {
 
@@ -652,19 +617,6 @@ char *fromaddr;
 	char buf[128];
 	int f;
 
-# ifndef DELIVERMAIL
-	stripfx(LOCNAM1, &name);
-	stripfx(LOCNAM2, &name);
-	stripfx(LOCNAM3, &name);
-	stripfx(LOCNAM4, &name);
-	if(*name == ':')name++;		/* skip colon in to-name */
-	for(p=name; *p!=':' && *p!='!' && *p!='^' &&*p!='\0'; p++);
-	/* if(*p == ':') return(sendrmt(n, name, RMAIL)); */
-	if (*p == ':')
-		return(sendberkmail(n, name, fromaddr));
-	else if (*p=='\0' && strcmp(name, "msgs") == 0)
-		return(sendrmt(n, "-s", "/usr/ucb/msgs"));
-# endif
 	for(p=name; *p!='!'&&*p!='^' &&*p!='\0'; p++)
 		;
 	if (*p == '!'|| *p=='^')
@@ -836,23 +788,3 @@ register char *s, *p;
 	*s = '\0';
 	return(p);
 }
-# ifndef DELIVERMAIL
-/*
-	stripfx(prefix string, pointer to string)
-
-	takes a ptr to string and compares it to prefix string.
-	may be called multiple times
-*/
-stripfx(pfx, name)
-	char *pfx;
-	char **name;
-{
-	register char *cp = *name;
-
-	while (*pfx && (*cp == *pfx || *cp == toupper(*pfx)))
-		cp++, pfx++;
-	if (*cp != ':' || *pfx != 0)
-		return;
-	*name = cp;
-}
-# endif
