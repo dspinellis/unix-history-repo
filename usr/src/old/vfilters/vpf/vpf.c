@@ -1,4 +1,4 @@
-/*	vpf.c	4.1	80/11/30	*/
+/*	vpf.c	4.2	83/03/17	*/
 /*
  * Varian/Versatec printer filter
  */
