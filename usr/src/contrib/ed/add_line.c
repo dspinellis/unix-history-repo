@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)add_line.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)add_line.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -82,7 +82,7 @@ add_line(p, len)
 	sigspecial++;
 	tmp = (char *)calloc(len+1, sizeof(char));
 	if (tmp) {
-		bcopy(p, tmp, len);
+		memmove(tmp, p, len);
 		tmp[len] = '\0';
 	}
 	sigspecial--;
