@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)conf.c	6.9 (Berkeley) %G%
+ *	@(#)conf.c	6.10 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -465,6 +465,21 @@ int	vsopen(),vsclose(),vsioctl(),vsreset(),vsselect();
 #define vsselect nodev
 #endif
 
+#include "dmz.h"
+#if NDMZ > 0
+int dmzopen(),dmzclose(),dmzread(),dmzwrite(),dmzioctl(),dmzstop(),dmzreset();
+struct tty dmz_tty[];
+#else
+#define dmzopen nodev
+#define dmzclose nodev
+#define dmzread nodev
+#define dmzwrite nodev
+#define dmzioctl nodev
+#define dmzstop nodev
+#define dmzreset nulldev
+#define dmz_tty 0
+#endif
+
 int	ttselect(), seltrue();
 
 struct cdevsw	cdevsw[] =
@@ -580,7 +595,10 @@ struct cdevsw	cdevsw[] =
  	seltrue,	nodev,
 	vsopen,		vsclose,	nodev,		nodev,		/*36*/
 	vsioctl,	nodev,		vsreset,	0,
-	vsselect,	nodev
+	vsselect,	nodev,
+	dmzopen,        dmzclose,       dmzread,        dmzwrite,       /*37*/
+	dmzioctl,       dmzstop,        dmzreset,       dmz_tty,
+	ttselect,       nodev,
 };
 int	nchrdev = sizeof (cdevsw) / sizeof (cdevsw[0]);
 
