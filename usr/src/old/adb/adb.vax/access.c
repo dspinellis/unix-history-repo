@@ -6,10 +6,9 @@
  * or the system page tables when debugging the kernel,
  * to translate virtual to physical addresses.
  */
-#define dprintf if (var[varchk('d')]) printf
 
 #include "defs.h"
-static	char sccsid[] = "@(#)access.c 4.3 %G%";
+static	char sccsid[] = "@(#)access.c 4.4 %G%";
 
 
 MAP		txtmap;
@@ -59,7 +58,6 @@ access(mode, addr, space, value)
 	int rd = mode == RD;
 	int file, w;
 
-	dprintf("access(%X)\n", addr);
 	if (space == NSP)
 		return(0);
 	if (pid) {
@@ -73,17 +71,13 @@ access(mode, addr, space, value)
 	w = 0;
 	if (mode==WT && wtflag==0)
 		error("not in write mode");
-	if (!chkmap(&addr, space)) {
-		dprintf("chkmap failed\n");
+	if (!chkmap(&addr, space))
 		return (0);
-	}
 	file = (space&DSP) ? datmap.ufd : txtmap.ufd;
 	if (kernel && space == DSP) {
-		dprintf("calling vtophys(%X)... ", addr);
 		addr = vtophys(addr);
 		if (addr < 0)
 			return (0);
-		dprintf("got %X\n", addr);
 	}
 	if (physrw(file, addr, &w, rd) < 0)
 		rwerr(space);
@@ -103,7 +97,6 @@ vtophys(addr)
 
 	addr &= ~0xc0000000;
 	v = btop(addr);
-	dprintf("addr %X v %X\n", addr, v);
 	switch (oldaddr&0xc0000000) {
 
 	case 0xc0000000:
@@ -137,7 +130,6 @@ vtophys(addr)
 		addr = pcb.pcb_p0br+v;
 		break;
 	oor:
-		dprintf("out of range\n");
 		errflg = "address out of segment";
 		return (-1);
 	}
@@ -147,12 +139,9 @@ vtophys(addr)
 	 */
 	if ((addr & 0x80000000) == 0) {
 		errflg = "bad p0br or p1br in pcb";
-		dprintf("bad p0/p1br\n");
 		return (-1);
 	}
-	dprintf("calling vtophys recursively(%X)\n", addr);
 	addr = vtophys(addr);
-	dprintf("result %X\n", addr);
 simple:
 	/*
 	 * Addr is now address of the pte of the page we
@@ -186,11 +175,9 @@ physrw(file, addr, aw, rd)
 	int *aw, rd;
 {
 
-	dprintf("physrw(%X)... ", addr);
 	if (longseek(file,addr)==0 ||
 	    (rd ? read(file,aw,sizeof(int)) : write(file,aw,sizeof(int))) < 1)
 		return (-1);
-	dprintf("got %X\n", *aw);
 	return (0);
 }
 
