@@ -1,4 +1,4 @@
-/*	proc.h	4.19	82/12/09	*/
+/*	proc.h	4.20	83/01/20	*/
 
 /*
  * One structure allocated per active
@@ -101,7 +101,7 @@ int	whichqs;		/* bit mask summarizing non-empty qs's */
 #define	SULOCK	0x0000040	/* user settable lock in core */
 #define	SPAGE	0x0000080	/* process in page wait state */
 #define	SKEEP	0x0000100	/* another flag to prevent swap out */
-#define	SDLYU	0x0000200	/* delayed unlock of pages */
+/* was SDLYU */
 #define	SWEXIT	0x0000400	/* working on exiting */
 #define	SPHYSIO	0x0000800	/* doing physical i/o (bio.c) */
 #define	SVFORK	0x0001000	/* process resulted from vfork() */
