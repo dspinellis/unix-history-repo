@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)move.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)move.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -89,6 +89,7 @@ move(argv)
 	}
 	(void)lseek(afd, (off_t)SARMAG, SEEK_SET);
 
+	eval = 0;
 	ORPHANS;
 
 	SETCF(tfd1, tname, afd, archive, RPAD|WPAD);
