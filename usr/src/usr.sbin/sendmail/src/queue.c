@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	8.73 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	8.74 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	8.73 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	8.74 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -1284,11 +1284,15 @@ readqf(e)
 		{
 			syserr("readqf: cannot open %s", p);
 		}
-		else if (fstat(fileno(e->e_dfp), &st) >= 0)
+		else
 		{
-			e->e_msgsize = st.st_size;
-			e->e_dfdev = st.st_dev;
-			e->e_dfino = st.st_ino;
+			e->e_flags |= EF_HAS_DF;
+			if (fstat(fileno(e->e_dfp), &st) >= 0)
+			{
+				e->e_msgsize = st.st_size;
+				e->e_dfdev = st.st_dev;
+				e->e_dfino = st.st_ino;
+			}
 		}
 	}
 
@@ -1695,13 +1699,15 @@ setctluser(user)
 			a->q_home = newstr(pw->pw_dir);
 		a->q_uid = pw->pw_uid;
 		a->q_gid = pw->pw_gid;
-		a->q_user = newstr(user);
 		a->q_flags |= QGOODUID;
 	}
+
+	if (*user != '\0')
+		a->q_user = newstr(user);
+	else if (p != NULL)
+		a->q_user = newstr(p);
 	else
-	{
 		a->q_user = newstr(DefUser);
-	}
 
 	a->q_flags |= QPRIMARY;		/* flag as a "ctladdr"  */
 	a->q_mailer = LocalMailer;

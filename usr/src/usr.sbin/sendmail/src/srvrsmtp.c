@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)srvrsmtp.c	8.61 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	8.62 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)srvrsmtp.c	8.61 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	8.62 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -481,7 +481,6 @@ smtp(e)
 			}
 
 			/* save in recipient list after ESMTP mods */
-			a->q_flags |= QPRIMARY;
 			a = recipient(a, &e->e_sendqueue, 0, e);
 
 			if (Errors != 0)
@@ -602,6 +601,9 @@ smtp(e)
 
 		  case CMDRSET:		/* rset -- reset state */
 			message("250 Reset state");
+
+			/* arrange to ignore any current send list */
+			e->e_sendqueue = NULL;
 			e->e_flags |= EF_CLRQUEUE;
 			if (InChild)
 				finis();
@@ -693,6 +695,9 @@ smtp(e)
 			message("221 %s closing connection", MyHostName);
 
 doquit:
+			/* arrange to ignore any current send list */
+			e->e_sendqueue = NULL;
+
 			/* avoid future 050 messages */
 			disconnect(1, e);
 
