@@ -11,7 +11,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)pstat.c	5.25 (Berkeley) %G%";
+static char sccsid[] = "@(#)pstat.c	5.26 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -127,7 +127,7 @@ int	txtf;
 int	prcf;
 int	ttyf;
 int	usrf;
-long	ubase;
+int	upid;
 int	filf;
 int	swpf;
 int	totflg;
@@ -173,7 +173,7 @@ main(argc, argv)
 			break;
 		case 'u':
 			usrf++;
-			sscanf(optarg, "%x", &ubase);
+			sscanf(optarg, "%d", &upid);
 			break;
 		case 's':
 			swpf++;
@@ -186,7 +186,7 @@ main(argc, argv)
 			break;
 		case '?':
 		default:
-			printf("usage: pstat -[Tafiptsx] [-u [ubase]] [system] [core]\n");
+			printf("usage: pstat -[Tafiptsx] [-u [pid]] [system] [core]\n");
 			exit(1);
 		}
 	argc -= optind;
@@ -438,10 +438,6 @@ nfs_print(vp)
 		*flags++ = 'W';
 	if (flag & NMODIFIED)
 		*flags++ = 'M';
-	if (flag & NBUFFERED)
-		*flags++ = 'B';
-	if (flag & NPAGEDON)
-		*flags++ = 'P';
 	if (flag & NWRITEERR)
 		*flags++ = 'E';
 	if (flag == 0)
@@ -944,42 +940,55 @@ struct tty *atp;
 
 dousr()
 {
-	struct user U;
+#ifdef notyet
+	register struct user *up;
 	register i, j, *ip;
 	register struct nameidata *nd = &U.u_nd;
+	struct proc *p;
 
 	/* This wins only if CLBYTES >= sizeof (struct user) */
 	/* (WHICH IT ISN'T, but u. is going away - so who cares */
-	kvm_read(ubase * NBPG, &U, sizeof(U));
+	if (kvm_getprocs(KINFO_PROC_PID, upid) != 0) {
+		error("kvm_getproc: %s", kvm_geterr());
+		return (1);
+	}
+	if ((p = kvm_nextproc()); == NULL) {
+		error("kvm_nextproc: %s", kvm_geterr());
+		return (1);
+	}
+	if (up = kvm_getu(p)) == NULL) {
+		error("kvm_getu: %s", kvm_geterr());
+		return (1);
+	}
 	printf("pcb");
-	ip = (int *)&U.u_pcb;
-	while (ip < &U.u_arg[0]) {
-		if ((ip - (int *)&U.u_pcb) % 4 == 0)
+	ip = (int *)&up->u_pcb;
+	while (ip < &up->u_arg[0]) {
+		if ((ip - (int *)&up->u_pcb) % 4 == 0)
 			printf("\t");
 		printf("%x ", *ip++);
-		if ((ip - (int *)&U.u_pcb) % 4 == 0)
+		if ((ip - (int *)&up->u_pcb) % 4 == 0)
 			printf("\n");
 	}
-	if ((ip - (int *)&U.u_pcb) % 4 != 0)
+	if ((ip - (int *)&up->u_pcb) % 4 != 0)
 		printf("\n");
 	printf("arg");
-	for (i=0; i<sizeof(U.u_arg)/sizeof(U.u_arg[0]); i++) {
+	for (i=0; i<sizeof(up->u_arg)/sizeof(up->u_arg[0]); i++) {
 		if (i%5==0)
 			printf("\t");
-		printf(" %.1x", U.u_arg[i]);
+		printf(" %.1x", up->u_arg[i]);
 		if (i%5==4)
 			printf("\n");
 	}
 	if (i%5)
 		printf("\n");
-	printf("segflg\t%d\nerror %d\n", nd->ni_segflg, U.u_error);
-	printf("uids\t%d,%d,%d,%d\n", U.u_uid,U.u_gid,U.u_ruid,U.u_rgid);
-	printf("procp\t%.1x\n", U.u_procp);
-	printf("ap\t%.1x\n", U.u_ap);
-	printf("r_val?\t%.1x %.1x\n", U.u_r.r_val1, U.u_r.r_val2);
+	printf("segflg\t%d\nerror %d\n", nd->ni_segflg, up->u_error);
+	printf("uids\t%d,%d,%d,%d\n", up->u_uid,up->u_gid,up->u_ruid,up->u_rgid);
+	printf("procp\t%.1x\n", up->u_procp);
+	printf("ap\t%.1x\n", up->u_ap);
+	printf("r_val?\t%.1x %.1x\n", up->u_r.r_val1, up->u_r.r_val2);
 	printf("base, count, offset %.1x %.1x %ld\n", nd->ni_base,
 		nd->ni_count, nd->ni_offset);
-	printf("cdir rdir %.1x %.1x\n", U.u_cdir, U.u_rdir);
+	printf("cdir rdir %.1x %.1x\n", up->u_cdir, up->u_rdir);
 	printf("dirp %.1x\n", nd->ni_dirp);
 	printf("dent %d %.14s\n", nd->ni_dent.d_ino, nd->ni_dent.d_name);
 	printf("dvp vp %.1x %.1x\n", nd->ni_dvp, nd->ni_vp);
@@ -987,7 +996,7 @@ dousr()
 	for (i=0; i<NOFILE; i++) {
 		if (i % 8 == 0)
 			printf("\t");
-		printf("%9.1x", U.u_ofile[i]);
+		printf("%9.1x", up->u_ofile[i]);
 		if (i % 8 == 7)
 			printf("\n");
 	}
@@ -997,7 +1006,7 @@ dousr()
 	for (i=0; i<NOFILE; i++) {
 		if (i % 8 == 0)
 			printf("\t");
-		printf("%9.1x", U.u_pofile[i]);
+		printf("%9.1x", up->u_pofile[i]);
 		if (i % 8 == 7)
 			printf("\n");
 	}
@@ -1007,7 +1016,7 @@ dousr()
 	for (i=0; i<sizeof(label_t)/sizeof(int); i++) {
 		if (i%5==0)
 			printf("\t");
-		printf("%9.1x", U.u_ssave.val[i]);
+		printf("%9.1x", up->u_ssave.val[i]);
 		if (i%5==4)
 			printf("\n");
 	}
@@ -1017,32 +1026,32 @@ dousr()
 	for (i=0; i<NSIG; i++) {
 		if (i % 8 == 0)
 			printf("\t");
-		printf("%.1x ", U.u_signal[i]);
+		printf("%.1x ", up->u_signal[i]);
 		if (i % 8 == 7)
 			printf("\n");
 	}
 	if (i % 8)
 		printf("\n");
-	printf("code\t%.1x\n", U.u_code);
-	printf("ar0\t%.1x\n", U.u_ar0);
-	printf("prof\t%x %x %x %x\n", U.u_prof.pr_base, U.u_prof.pr_size,
-	    U.u_prof.pr_off, U.u_prof.pr_scale);
-	printf("start\t%ld\n", U.u_start.tv_sec);
-	printf("acflag\t%ld\n", U.u_acflag);
-	printf("cmask\t%ld\n", U.u_cmask);
-	printf("sizes\t%.1x %.1x %.1x\n", U.u_tsize, U.u_dsize, U.u_ssize);
+	printf("code\t%.1x\n", up->u_code);
+	printf("ar0\t%.1x\n", up->u_ar0);
+	printf("prof\t%x %x %x %x\n", up->u_prof.pr_base, up->u_prof.pr_size,
+	    up->u_prof.pr_off, up->u_prof.pr_scale);
+	printf("start\t%ld\n", up->u_start.tv_sec);
+	printf("acflag\t%ld\n", up->u_acflag);
+	printf("cmask\t%ld\n", up->u_cmask);
+	printf("sizes\t%.1x %.1x %.1x\n", up->u_tsize, up->u_dsize, up->u_ssize);
 	printf("ru\t");
-	ip = (int *)&U.u_ru;
-	for (i = 0; i < sizeof(U.u_ru)/sizeof(int); i++)
+	ip = (int *)&up->u_ru;
+	for (i = 0; i < sizeof(up->u_ru)/sizeof(int); i++)
 		printf("%ld ", ip[i]);
 	printf("\n");
-	ip = (int *)&U.u_cru;
+	ip = (int *)&up->u_cru;
 	printf("cru\t");
-	for (i = 0; i < sizeof(U.u_cru)/sizeof(int); i++)
+	for (i = 0; i < sizeof(up->u_cru)/sizeof(int); i++)
 		printf("%ld ", ip[i]);
 	printf("\n");
 #ifdef notdef
-	i =  U.u_stack - &U;
+	i =  up->u_stack - &U;
 	while (U[++i] == 0);
 	i &= ~07;
 	while (i < 512) {
@@ -1051,6 +1060,7 @@ dousr()
 			printf("%9x", U[i++]);
 		printf("\n");
 	}
+#endif
 #endif
 }
 
