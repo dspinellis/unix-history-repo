@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_loop.c	7.11 (Berkeley) %G%
+ *	@(#)if_loop.c	7.12 (Berkeley) %G%
  */
 
 /*
@@ -42,6 +42,12 @@
 #include "../netiso/iso_var.h"
 #endif
 
+#ifdef CCITT
+#include "../netccitt/x25.h"
+#include "../netccitt/hdlc.h"
+#include "../netccitt/hd_var.h"
+#endif
+
 #define	LOMTU	(1024+512)
 
 struct	ifnet loif;
@@ -68,8 +74,8 @@ looutput(ifp, m, dst, rt)
 	struct sockaddr *dst;
 	register struct rtentry *rt;
 {
-	int s;
-	register struct ifqueue *ifq;
+	int s, isr;
+	register struct ifqueue *ifq = 0;
 
 	if ((m->m_flags & M_PKTHDR) == 0)
 		panic("looutput no HDR");
@@ -87,40 +93,25 @@ looutput(ifp, m, dst, rt)
 #ifdef INET
 	case AF_INET:
 		ifq = &ipintrq;
-		if (IF_QFULL(ifq)) {
-			IF_DROP(ifq);
-			m_freem(m);
-			splx(s);
-			return (ENOBUFS);
-		}
-		IF_ENQUEUE(ifq, m);
-		schednetisr(NETISR_IP);
+		isr = NETISR_IP;
 		break;
 #endif
 #ifdef NS
 	case AF_NS:
 		ifq = &nsintrq;
-		if (IF_QFULL(ifq)) {
-			IF_DROP(ifq);
-			m_freem(m);
-			splx(s);
-			return (ENOBUFS);
-		}
-		IF_ENQUEUE(ifq, m);
-		schednetisr(NETISR_NS);
+		isr = NETISR_NS;
 		break;
 #endif
 #ifdef ISO
 	case AF_ISO:
 		ifq = &clnlintrq;
-		if (IF_QFULL(ifq)) {
-			IF_DROP(ifq);
-			m_freem(m);
-			splx(s);
-			return (ENOBUFS);
-		}
-		IF_ENQUEUE(ifq, m);
-		schednetisr(NETISR_ISO);
+		isr = NETISR_ISO;
+		break;
+#endif
+#ifdef CCITT
+	case AF_CCITT:
+		ifq = &hdintrq;
+		isr = NETISR_CCITT;
 		break;
 #endif
 	default:
@@ -130,6 +121,14 @@ looutput(ifp, m, dst, rt)
 		m_freem(m);
 		return (EAFNOSUPPORT);
 	}
+	if (IF_QFULL(ifq)) {
+		IF_DROP(ifq);
+		m_freem(m);
+		splx(s);
+		return (ENOBUFS);
+	}
+	IF_ENQUEUE(ifq, m);
+	schednetisr(isr);
 	ifp->if_ipackets++;
 	ifp->if_ibytes += m->m_pkthdr.len;
 	splx(s);
@@ -149,6 +148,9 @@ loioctl(ifp, cmd, data)
 
 	switch (cmd) {
 
+#ifdef CCITT
+	case SIOCSIFCONF_X25:
+#endif
 	case SIOCSIFADDR:
 		ifp->if_flags |= IFF_UP;
 		/*
