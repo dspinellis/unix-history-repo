@@ -95,8 +95,6 @@ ptinit()
 		nw = *p & BMASK;	/* 1st thing is width count */
 		fontlab[i] = PAIR(fontbase[i]->namefont[0], fontbase[i]->namefont[1]);
 		/* for now, still 2 char names */
-		if (smnt == 0 && fontbase[i]->specfont == 1)
-			smnt = i;	/* first special font */
 		p += sizeof(struct font);	/* that's what's on the beginning */
 		fontab[i] = p;
 		kerntab[i] = p + nw;
@@ -271,7 +269,7 @@ tchar	*pi;
 		temp[0] = n & BMASK;
 		temp[1] = n >> BYTE;
 		temp[2] = 0;
-		ptfpcmd(0, temp, 0);
+		ptfpcmd(0, temp);
 		return(outsize);
 	}
 	xbitf = 2;
@@ -440,13 +438,13 @@ ptfont()
 	fprintf(ptid, "f%d\n", xfont);
 }
 
-ptfpcmd(f, s, d)
+ptfpcmd(f, s)
 int	f;
-char	*s, *d;
+char	*s;
 {
 	if (ascii)
 		return;
-	fprintf(ptid, "x font %d %s %s\n", f, s, d==0 ? "" : d);
+	fprintf(ptid, "x font %d %s\n", f, s);
 	ptfont();	/* make sure that it gets noticed */
 }
 
