@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cmds.c	2.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmds.c	2.2 (Berkeley) %G%";
 #endif not lint
 
 #include "timedc.h"
@@ -72,9 +72,9 @@ char *argv[];
 		}
 		server.sin_family = hp->h_addrtype;
 		bcopy(hp->h_addr, &(server.sin_addr.s_addr), hp->h_length); 
-		ack.tv_sec = 1;
-		ack.tv_usec = 500000;
-		if ((measure_status = measure(&ack, &server, OFF)) < 0) {
+		ack.tv_sec = 10;
+		ack.tv_usec = 0;
+		if ((measure_status = measure(&ack, &server)) < 0) {
 			perror("measure");
 			return;
 		}
