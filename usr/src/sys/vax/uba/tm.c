@@ -1,4 +1,4 @@
-/*	tm.c	4.28	81/03/10	*/
+/*	tm.c	4.29	81/03/11	*/
 
 #include "te.h"
 #if NTM > 0
@@ -9,7 +9,6 @@
  *	test driver with more than one slave
  *	test driver with more than one controller
  *	test reset code
- *	test rewinds without hanging in driver
  *	what happens if you offline tape during rewind?
  *	test using file system on tape
  */
@@ -187,7 +186,7 @@ tmopen(dev, flag)
 	register int teunit;
 	register struct uba_device *ui;
 	register struct te_softc *sc;
-	int dens;
+	int olddens, dens;
 
 	teunit = TEUNIT(dev);
 	if (teunit>=NTE || (sc = &te_softc[teunit])->sc_openf ||
@@ -195,15 +194,18 @@ tmopen(dev, flag)
 		u.u_error = ENXIO;
 		return;
 	}
+	olddens = sc->sc_dens;
+	dens = TM_IE | TM_GO | (ui->ui_slave << 8);
+	if ((minor(dev) & T_1600BPI) == 0)
+		dens |= TM_D800;
+	sc->sc_dens = dens;
 get:
 	tmcommand(dev, TM_SENSE, 1);
 	if (sc->sc_erreg&TMER_SDWN) {
 		sleep((caddr_t)&lbolt, PZERO+1);
 		goto get;
 	}
-	dens = TM_IE | TM_GO | (ui->ui_slave << 8);
-	if ((minor(dev) & T_1600BPI) == 0)
-		dens |= TM_D800;
+	sc->sc_dens = olddens;
 	if ((sc->sc_erreg&(TMER_SELR|TMER_TUR)) != (TMER_SELR|TMER_TUR) ||
 	    (flag&FWRITE) && (sc->sc_erreg&TMER_WRL) ||
 	    (sc->sc_erreg&TMER_BOT) == 0 && (flag&FWRITE) &&
