@@ -14,10 +14,9 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)pathnames.h	5.1 (Berkeley) %G%
+ *	@(#)pathnames.h	5.2 (Berkeley) %G%
  */
 
-#define	_PATH_DEFAULT	"/usr/share/man:/usr/new/man:/usr/local/man"
-#define	_PATH_LOCAL	"/usr/local/man"
-#define	_PATH_NEW	"/usr/new/man"
+#define	_PATH_MANCONF	"/etc/man.conf"
 #define	_PATH_PAGER	"/usr/bin/more -s"
+#define	_PATH_WHATIS	"whatis.db"

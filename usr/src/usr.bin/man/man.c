@@ -22,26 +22,20 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)man.c	5.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)man.c	5.19 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/file.h>
+#include <errno.h>
 #include <ctype.h>
+#include <string.h>
 #include "pathnames.h"
 
-static char	*command,		/* command buffer */
-		*defpath,		/* default search path */
-		*locpath,		/* local search path */
-		*machine,		/* machine type */
-		*manpath,		/* current search path */
-		*newpath,		/* new search path */
-		*pager,			/* requested pager */
-		how;			/* how to display */
+extern int errno;
 
-#define	ALL	0x1			/* show all man pages */
-#define	CAT	0x2			/* copy file to stdout */
-#define	WHERE	0x4			/* just tell me where */
+char *command, *machine, *p_augment, *p_path, *pager, *progname;
+int f_all, f_cat, f_where;
 
 main(argc, argv)
 	int argc;
@@ -50,36 +44,38 @@ main(argc, argv)
 	extern char *optarg;
 	extern int optind;
 	int ch;
-	char *getenv(), *malloc();
+	char *check_pager(), *config(), *getenv();
 
-	while ((ch = getopt(argc, argv, "-M:P:afkw")) != EOF)
+	progname = "man";
+	while ((ch = getopt(argc, argv, "-acfkM:m:P:w")) != EOF)
 		switch((char)ch) {
-		case '-':
-			how |= CAT;
+		case 'a':
+			f_all = 1;
+			break;
+		case 'c':
+		case '-':		/* deprecated */
+			f_cat = 1;
+			break;
+		case 'm':
+			p_augment = optarg;
 			break;
 		case 'M':
 		case 'P':		/* backward compatibility */
-			defpath = optarg;
+			p_path = optarg;
 			break;
-		case 'a':
-			how |= ALL;
-			break;
-		/*
-		 * "man -f" and "man -k" are backward contemptible,
-		 * undocumented ways of calling whatis(1) and apropos(1).
-		 */
+			/*
+			 * "man -f" and "man -k" are backward compatible,
+			 * undocumented ways of calling whatis(1) and
+			 * apropos(1).
+			 */
 		case 'f':
 			jump(argv, "-f", "whatis");
-			/*NOTREACHED*/
+			/* NOTREACHED */
 		case 'k':
 			jump(argv, "-k", "apropos");
-			/*NOTREACHED*/
-		/*
-		 * Deliberately undocumented; really only useful when
-		 * you're moving man pages around.  Not worth adding.
-		 */
+			/* NOTREACHED */
 		case 'w':
-			how |= WHERE | ALL;
+			f_all = f_where = 1;
 			break;
 		case '?':
 		default:
@@ -90,43 +86,22 @@ main(argc, argv)
 	if (!*argv)
 		usage();
 
-	if (!(how & CAT))
+	if (!f_cat)
 		if (!isatty(1))
-			how |= CAT;
-		else if (pager = getenv("PAGER")) {
-			register char *p;
-
-			/*
-			 * if the user uses "more", we make it "more -s"
-			 * watch out for PAGER = "mypager /usr/ucb/more"
-			 */
-			for (p = pager; *p && !isspace(*p); ++p);
-			for (; p > pager && *p != '/'; --p);
-			if (p != pager)
-				++p;
-			/* make sure it's "more", not "morex" */
-			if (!strncmp(p, "more", 4) && (!p[4] || isspace(p[4]))){
-				char *opager = pager;
-				/*
-				 * allocate space to add the "-s"
-				 */
-				if (!(pager = malloc((u_int)(strlen(opager) 
-				    + sizeof("-s") + 1)))) {
-					fputs("man: out of space.\n", stderr);
-					exit(1);
-				}
-				(void)sprintf(pager, "%s %s", opager, "-s");
-			}
-		}
+			f_cat = 1;
+		else if (pager = getenv("PAGER"))
+			pager = check_pager(pager);
 		else
 			pager = _PATH_PAGER;
+
 	if (!(machine = getenv("MACHINE")))
 		machine = MACHINE;
-	if (!defpath && !(defpath = getenv("MANPATH")))
-		defpath = _PATH_DEFAULT;
-	locpath = _PATH_LOCAL;
-	newpath = _PATH_NEW;
+
+	if (!p_path && !(p_path = getenv("MANPATH")))
+		p_path = config();
+
 	man(argv);
+
 	/* use system(3) in case someone's pager is "pager arg1 arg2" */
 	if (command)
 		(void)system(command);
@@ -145,121 +120,89 @@ static DIR	list1[] = {		/* section one list */
 	NULL, NULL,
 },		list3[2];		/* single section */
 
-static
+/*
+ * man --
+ *	main loop to find the manual page and print it out.
+ */
 man(argv)
 	char **argv;
 {
-	register char *p;
 	DIR *section, *getsect();
 	int res;
 
 	for (; *argv; ++argv) {
-		manpath = defpath;
-		section = NULL;
-		switch(**argv) {
-		case 'l':				/* local */
-			/* support the "{l,local,n,new}###"  syntax */
-			for (p = *argv; isalpha(*p); ++p);
-			if (!strncmp(*argv, "l", p - *argv) ||
-			    !strncmp(*argv, "local", p - *argv)) {
-				++argv;
-				manpath = locpath;
-				section = getsect(p);
-			}
-			break;
-		case 'n':				/* new */
-			for (p = *argv; isalpha(*p); ++p);
-			if (!strncmp(*argv, "n", p - *argv) ||
-			    !strncmp(*argv, "new", p - *argv)) {
-				++argv;
-				manpath = newpath;
-				section = getsect(p);
-			}
-			break;
-		/*
-		 * old isn't really a separate section of the manual,
-		 * and its entries are all in a single directory.
-		 */
-		case 'o':				/* old */
-			for (p = *argv; isalpha(*p); ++p);
-			if (!strncmp(*argv, "o", p - *argv) ||
-			    !strncmp(*argv, "old", p - *argv)) {
-				++argv;
-				list3[0] = list1[3];
-				section = list3;
-			}
-			break;
-		case '1': case '2': case '3': case '4':
-		case '5': case '6': case '7': case '8':
-			if (section = getsect(*argv))
-				++argv;
-		}
-
+		section = isdigit(**argv) ? getsect(*argv++) : NULL;
 		if (*argv) {
-			if (section)
-				res = manual(section, *argv);
-			else {
-				res = manual(list1, *argv);
-				if (!res || (how & ALL))
-					res += manual(list2, *argv);
-			}
-			if (res || how&WHERE)
+			if (p_augment)
+				if (section)
+					res = manual(p_augment, section, *argv);
+				else {
+					res = manual(p_augment, list1, *argv);
+					if (!res || f_all)
+						res += manual(p_augment, list2,
+						    *argv);
+				}
+			if (p_path)
+				if (section)
+					res = manual(p_path, section, *argv);
+				else {
+					res = manual(p_path, list1, *argv);
+					if (!res || f_all)
+						res += manual(p_path, list2,
+						    *argv);
+				}
+			if (res || f_where)
 				continue;
-		}
-
-		fputs("man: ", stderr);
-		if (*argv)
-			fprintf(stderr, "no entry for %s in the ", *argv);
-		else
-			fputs("what do you want from the ", stderr);
+			(void)fprintf(stderr,
+			    "man: no entry for %s in the ", *argv);
+		} else
+			(void)fprintf(stderr,
+			    "man: what do you want from the ");
 		if (section)
-			fprintf(stderr, "%s section of the ", section->msg);
-		if (manpath == locpath)
-			fputs("local ", stderr);
-		else if (manpath == newpath)
-			fputs("new ", stderr);
+			(void)fprintf(stderr,
+			    "%s section of the ", section->msg);
 		if (*argv)
-			fputs("manual.\n", stderr);
+			(void)fprintf(stderr, "manual.\n");
 		else
-			fputs("manual?\n", stderr);
+			(void)fprintf(stderr, "manual?\n");
 		exit(1);
 	}
 }
 
 /*
  * manual --
- *	given a directory list and a file name find a file that
- *	matches; check ${directory}/${dir}/{file name} and
+ *	given a path, a directory list and a file name, find a file
+ *	that matches; check ${directory}/${dir}/{file name} and
  *	${directory}/${dir}/${machine}/${file name}.
  */
-static
-manual(section, name)
+manual(path, section, name)
+	char *path, *name;
 	DIR *section;
-	char *name;
 {
-	register char *beg, *end;
+	register char *end;
 	register DIR *dp;
 	register int res;
-	char fname[MAXPATHLEN + 1], *index();
+	char fname[MAXPATHLEN + 1];
 
-	for (beg = manpath, res = 0;; beg = end + 1) {
-		if (end = index(beg, ':'))
+	for (res = 0;; path = end + 1) {
+		if (end = index(path, ':'))
 			*end = '\0';
 		for (dp = section; dp->name; ++dp) {
-			(void)sprintf(fname, "%s/%s/%s.0", beg, dp->name, name);
+			(void)sprintf(fname, "%s/%s/%s.0",
+			    path, dp->name, name);
 			if (access(fname, R_OK)) {
-				(void)sprintf(fname, "%s/%s/%s/%s.0", beg,
+				(void)sprintf(fname, "%s/%s/%s/%s.0", path,
 				    dp->name, machine, name);
 				if (access(fname, R_OK))
 					continue;
 			}
-			if (how & WHERE)
-				printf("man: found in %s.\n", fname);
-			else if (how & CAT)
+			if (f_where)
+				(void)printf("man: found in %s.\n", fname);
+			else if (f_cat)
 				cat(fname);
 			else
 				add(fname);
-			if (!(how & ALL))
+			if (!f_all)
 				return(1);
 			res = 1;
 		}
@@ -267,14 +210,13 @@ manual(section, name)
 			return(res);
 		*end = ':';
 	}
-	/*NOTREACHED*/
+	/* NOTREACHED */
 }
 
 /*
  * cat --
  *	cat out the file
  */
-static
 cat(fname)
 	char *fname;
 {
@@ -282,16 +224,17 @@ cat(fname)
 	char buf[BUFSIZ];
 
 	if (!(fd = open(fname, O_RDONLY, 0))) {
-		perror("man: open");
+		(void)fprintf(stderr, "man: %s: %s\n", fname, strerror(errno));
 		exit(1);
 	}
 	while ((n = read(fd, buf, sizeof(buf))) > 0)
 		if (write(1, buf, n) != n) {
-			perror("man: write");
+			(void)fprintf(stderr,
+			    "man: write: %s\n", strerror(errno));
 			exit(1);
 		}
 	if (n == -1) {
-		perror("man: read");
+		(void)fprintf(stderr, "man: read: %s\n", strerror(errno));
 		exit(1);
 	}
 	(void)close(fd);
@@ -301,7 +244,6 @@ cat(fname)
  * add --
  *	add a file name to the list for future paging
  */
-static
 add(fname)
 	char *fname;
 {
@@ -312,19 +254,15 @@ add(fname)
 	char *malloc(), *realloc(), *strcpy();
 
 	if (!command) {
-		if (!(command = malloc(buflen = 1024))) {
-			fputs("man: out of space.\n", stderr);
-			exit(1);
-		}
+		if (!(command = malloc(buflen = 1024)))
+			enomem();
 		len = strlen(strcpy(command, pager));
 		cp = command + len;
 	}
 	flen = strlen(fname);
 	if (len + flen + 2 > buflen) {		/* +2 == space, EOS */
-		if (!(command = realloc(command, buflen += 1024))) {
-			fputs("man: out of space.\n", stderr);
-			exit(1);
-		}
+		if (!(command = realloc(command, buflen += 1024)))
+			enomem();
 		cp = command + len;
 	}
 	*cp++ = ' ';
@@ -337,7 +275,7 @@ add(fname)
  * getsect --
  *	return a point to the section structure for a particular suffix
  */
-static DIR *
+DIR *
 getsect(s)
 	char *s;
 {
@@ -392,15 +330,49 @@ getsect(s)
 			list3[0] = list1[1];
 			return(list3);
 		}
+		break;
 	}
-	return((DIR *)NULL);
+	(void)fprintf(stderr, "man: unknown manual section.\n");
+	exit(1);
+	/* NOTREACHED */
+}
+
+/*
+ * check_pager --
+ *	check the user supplied page information
+ */
+char *
+check_pager(name)
+	char *name;
+{
+	register char *p;
+	char *save, *malloc();
+
+	/*
+	 * if the user uses "more", we make it "more -s"; watch out for
+	 * PAGER = "mypager /usr/ucb/more"
+	 */
+	for (p = name; *p && !isspace(*p); ++p);
+	for (; p > name && *p != '/'; --p);
+	if (p != name)
+		++p;
+
+	/* make sure it's "more", not "morex" */
+	if (!strncmp(p, "more", 4) && (!p[4] || isspace(p[4]))){
+		save = name;
+		/* allocate space to add the "-s" */
+		if (!(name =
+		    malloc((u_int)(strlen(save) + sizeof("-s") + 1))))
+			enomem();
+		(void)sprintf(name, "%s %s", save, "-s");
+	}
+	return(name);
 }
 
 /*
  * jump --
  *	strip out flag argument and jump
  */
-static
 jump(argv, flag, name)
 	char **argv, *name;
 	register char *flag;
@@ -420,11 +392,11 @@ jump(argv, flag, name)
 
 /*
  * usage --
- *	print usage and die
+ *	print usage message and die
  */
-static
 usage()
 {
-	fputs("usage: man [-] [-a] [-M path] [section] title ...\n", stderr);
+	(void)fprintf(stderr,
+	    "usage: man [-ac] [-M path] [-m path] [section] title ...\n");
 	exit(1);
 }
