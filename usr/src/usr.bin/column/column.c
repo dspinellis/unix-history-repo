@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)column.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)column.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -85,14 +85,12 @@ main(argc, argv)
 
 	if (tflag)
 		maketbl();
-	else {
-		if (maxlength >= termwidth)
-			print();
-		if (xflag)
-			c_columnate();
-		else
-			r_columnate();
-	}
+	else if (maxlength >= termwidth)
+		print();
+	else if (xflag)
+		c_columnate();
+	else
+		r_columnate();
 	exit(eval);
 }
 
