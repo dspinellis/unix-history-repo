@@ -4,7 +4,7 @@
 
 		Eric Allman <eric@CS.Berkeley.EDU>
 
-		@(#)README	8.17 (Berkeley) %G%
+		@(#)README	8.18 (Berkeley) %G%
 
 
 This document describes the sendmail configuration files being used
@@ -185,8 +185,6 @@ UUCP_RELAY	The host that will forward UUCP-addressed email.
 		connected.
 BITNET_RELAY	The host that will forward BITNET-addressed email.
 		If not defined, the .BITNET pseudo-domain won't work.
-CSNET_RELAY	The host that will forward CSNET-addressed email.
-		If not defined, the .CSNET pseudo-domain won't work.
 LOCAL_RELAY	The site that will handle unqualified names -- that
 		is, names with out an @domain extension.  If not set,
 		they are assumed to belong on this machine.  This
@@ -1037,7 +1035,7 @@ MACROS
 
    A
    B	Bitnet Relay
-   C	CSNET Relay
+   C
    D	The local domain -- usually not needed
    E
    F	FAX Relay
