@@ -1,6 +1,6 @@
+#	@(#)Makefile	5.4 (Berkeley) 7/21/91
 
 PROG=	tail
-SRCS=	tail.c getopt.c getopt1.c
-CFLAGS+=-I${.CURDIR}
+SRCS=	forward.c misc.c read.c reverse.c tail.c
 
 .include <bsd.prog.mk>
