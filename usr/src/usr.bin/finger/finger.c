@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)finger.c	4.1 (Berkeley) %G%";
+static char *sccsid = "@(#)finger.c	4.2 (Berkeley) %G%";
 
 /*  This is a finger program.  It prints out useful information about users
  *  by digging it up from various system files.  It is not very portable
@@ -599,7 +599,7 @@ shortprint( pers )
 	else  {
 	    printf( "   " );
 	}
-	strcpy( buf, ctime( &pers->loginat ) );
+	strcpy(buf, ctime(&pers->loginat));
 	if( pers->loggedin )  {
 	    stimeprint( &pers->idletime );
 	    offset = 7;
@@ -608,14 +608,12 @@ shortprint( pers )
 	    }
 	    printf( " %-9.9s ", buf );
 	}
-	else  {
-	    printf( " " );
-	    offset = 4;
-	    for( i = 0; i <22; i++ )  {
-		buf[i] = buf[i + offset];
-	    }
-	    printf( "<%-12.12s>", buf );
-	}
+	else if (pers->loginat == 0)
+	    printf(" < .  .  .  . >");
+	else if (tloc - pers->loginat >= 180 * 24 * 60 * 60)
+	    printf( " <%-6.6s, %-4.4s>", buf+4, buf+20 );
+	else
+	    printf(" <%-12.12s>", buf+4);
 	len = strlen( pers->homephone );
 	if(  dialup  &&  (len > 0)  )  {
 	    if( len == 8 )  {
@@ -762,6 +760,12 @@ personprint( pers )
 	    if( idleprinted )  {
 		printf( " Idle Time" );
 	    }
+	}
+	else if (pers->loginat == 0)
+	    printf("\nNever logged in.");
+	else if (tloc - pers->loginat > 180 * 24 * 60 * 60) {
+	    register char *ep = ctime( &pers->loginat );
+	    printf("\nLast login %10.10s, %4.4s on %.*s", ep, ep+20, LMAX, pers->tty);
 	}
 	else  {
 	    register char *ep = ctime( &pers->loginat );
@@ -1013,7 +1017,7 @@ findwhen( pers )
 
 	if( !llopenerr )  {
 	    lseek( lf, pwdt->pw_uid*llsize, 0 );
-	    if( read( lf, (char *) &ll, llsize ) == llsize )  {
+	    if ((i = read( lf, (char *) &ll, llsize )) == llsize) {
 		    for( i = 0; i < LMAX; i++ )  {
 			pers->tty[ i ] = ll.ll_line[ i ];
 		    }
@@ -1021,7 +1025,8 @@ findwhen( pers )
 		    pers->loginat = ll.ll_time;
 	    }
 	    else  {
-		fprintf( stderr, "finger: lastlog read error\n" );
+		if (i != 0)
+			fprintf(stderr, "finger: lastlog read error\n");
 		pers->tty[ 0 ] = NULL;
 		pers->loginat = 0L;
 	    }
