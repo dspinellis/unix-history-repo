@@ -1,4 +1,4 @@
-/*	vm_meter.c	6.4	85/02/22	*/
+/*	vm_meter.c	6.5	85/03/03	*/
 
 #include "param.h"
 #include "systm.h"
@@ -35,71 +35,6 @@ int	klout = KLOUT;
 int	multprog = -1;		/* so we don't count process 2 */
 
 double	avenrun[3];		/* load average, of runnable procs */
-
-/*
- * Setup the paging constants for the clock algorithm.
- * Called after the system is initialized and the amount of memory
- * and number of paging devices is known.
- *
- * Threshold constants are defined in ../machine/vmparam.h.
- */
-setupclock()
-{
-
-	/*
-	 * Setup thresholds for paging:
-	 *	lotsfree	is threshold where paging daemon turns on
-	 *	desfree		is amount of memory desired free.  if less
-	 *			than this for extended period, do swapping
-	 *	minfree		is minimal amount of free memory which is
-	 *			tolerable.
-	 */
-	if (lotsfree == 0) {
-		lotsfree = LOTSFREE / NBPG;
-		if (lotsfree > LOOPPAGES / LOTSFREEFRACT)
-			lotsfree = LOOPPAGES / LOTSFREEFRACT;
-	}
-	if (desfree == 0) {
-		desfree = DESFREE / NBPG;
-		if (desfree > LOOPPAGES / DESFREEFRACT)
-			desfree = LOOPPAGES / DESFREEFRACT;
-	}
-	if (minfree == 0) {
-		minfree = MINFREE / NBPG;
-		if (minfree > desfree / MINFREEFRACT)
-			minfree = desfree / MINFREEFRACT;
-	}
-	/*
-	 * Maxpgio thresholds how much paging is acceptable.
-	 * This figures that 2/3 busy on an arm is all that is
-	 * tolerable for paging.  We assume one operation per disk rev.
-	 */
-	if (maxpgio == 0)
-		maxpgio = (DISKRPM * 2) / 3;
-
-	/*
-	 * Clock to scan using max of ~~10% of processor time for sampling,
-	 *     this estimated to allow maximum of 200 samples per second.
-	 * This yields a ``fastscan'' of roughly (with CLSIZE=2):
-	 *	<=1m	2m	3m	4m	8m
-	 * 	5s	10s	15s	20s	40s
-	 */
-	if (nswdev == 1 && physmem*NBPG > LOTSOFMEM*1024*(1024-16))
-		printf("WARNING: should run interleaved swap with >= %dMb\n",
-		    LOTSOFMEM);
-	if (fastscan == 0)
-		fastscan = (LOOPPAGES/CLSIZE) / 200;
-	if (fastscan < 5)
-		fastscan = 5;
-	if (nswdev >= 2)
-		maxpgio = (maxpgio * 3) / 2;
-
-	/*
-	 * Set slow scan time to 1/2 the fast scan time.
-	 */
-	if (slowscan == 0)
-		slowscan = 2 * fastscan;
-}
 
 /*
  * The main loop of the scheduling (swapping) process.
@@ -387,8 +322,6 @@ vmmeter()
 	}
 }
 
-#define	RATETOSCHEDPAGING	4		/* hz that is */
-
 /*
  * Schedule rate for paging.
  * Rate is linear interpolation between
@@ -396,18 +329,15 @@ vmmeter()
  */
 schedpaging()
 {
-	register int vavail, scanrate;
+	register int vavail;
 
 	nscan = desscan = 0;
 	vavail = freemem - deficit;
 	if (vavail < 0)
 		vavail = 0;
 	if (freemem < lotsfree) {
-		scanrate =
-			(slowscan * vavail + fastscan * (lotsfree - vavail)) /
-				nz(lotsfree);
-		desscan = ((LOOPPAGES / CLSIZE) / nz(scanrate)) /
-				RATETOSCHEDPAGING;
+		desscan = (slowscan * vavail + fastscan * (lotsfree - vavail)) /
+			nz(lotsfree) / RATETOSCHEDPAGING;
 		wakeup((caddr_t)&proc[2]);
 	}
 	timeout(schedpaging, (caddr_t)0, hz / RATETOSCHEDPAGING);
