@@ -1,9 +1,9 @@
-static char *sccsid = "@(#)strip.c	4.1 (Berkeley) %G%";
+static char *sccsid = "@(#)strip.c	4.2 (Berkeley) %G%";
 #include <a.out.h>
 #include <signal.h>
 #include <pagsiz.h>
 
-#define	BUFSIZ	BSIZE
+#define	BUFSIZ	1024
 
 char	*tname;
 char	*mktemp();
