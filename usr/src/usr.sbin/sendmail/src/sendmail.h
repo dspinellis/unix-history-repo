@@ -1,7 +1,7 @@
 /*
 **  SENDMAIL.H -- Global definitions for sendmail.
 **
-**	@(#)sendmail.h	3.26	%G%
+**	@(#)sendmail.h	3.27	%G%
 */
 
 
@@ -76,10 +76,9 @@ typedef struct address ADDRESS;
 **	is only used internally, so the apparent host is still
 **	kept around.
 **
-**	The argument vector is expanded before actual use.  Every-
-**	thing is passed through except for things starting with "$".
-**	"$x" defines some interpolation, as described in conf.c
-**	"$x" where x is unknown expands to "x", so use "$$" to get "$".
+**	The argument vector is expanded before actual use.  All
+**	words except the first are passed through the macro
+**	processor.
 */
 
 struct mailer
