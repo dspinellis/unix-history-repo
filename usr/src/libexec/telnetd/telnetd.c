@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)telnetd.c	5.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)telnetd.c	5.17 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -36,11 +36,10 @@ static char sccsid[] = "@(#)telnetd.c	5.16 (Berkeley) %G%";
 #include <syslog.h>
 #include <ctype.h>
 
-#define	OPT_DONT	0		/* don't do this option */
-#define	OPT_WONT	0		/* won't do this option */
-#define	OPT_DO		1		/* do this option */
-#define	OPT_WILL	1		/* will do this option */
-#define	OPT_ALWAYS_LOOK	2		/* special case for echo */
+#define	OPT_NO			0		/* won't do this option */
+#define	OPT_YES			1		/* will do this option */
+#define	OPT_YES_BUT_ALWAYS_LOOK	2
+#define	OPT_NO_BUT_ALWAYS_LOOK	3
 char	hisopts[256];
 char	myopts[256];
 
@@ -70,12 +69,15 @@ int	not42 = 1;
 char BANNER1[] = "\r\n\r\n4.3 BSD UNIX (",
     BANNER2[] = ")\r\n\r\0\r\n\r\0";
 
-char	subbuffer[100], *subpointer, *subend;	/* buffer for sub-options */
+		/* buffer for sub-options */
+char	subbuffer[100], *subpointer= subbuffer, *subend= subbuffer;
 #define	SB_CLEAR()	subpointer = subbuffer;
-#define	SB_TERM()	subend = subpointer;
+#define	SB_TERM()	{ subend = subpointer; SB_CLEAR(); }
 #define	SB_ACCUM(c)	if (subpointer < (subbuffer+sizeof subbuffer)) { \
 				*subpointer++ = (c); \
 			}
+#define	SB_GET()	((*subpointer++)&0xff)
+#define	SB_EOF()	(subpointer >= subend)
 
 int	pcc, ncc;
 
@@ -96,10 +98,14 @@ struct {
 	echotoggle,		/* last time user entered echo character */
 	modenegotiated,		/* last time operating mode negotiated */
 	didnetreceive,		/* last time we read data from network */
+	ttypeopt,		/* ttype will/won't received */
+	ttypesubopt,		/* ttype subopt is received */
+	getterminal,		/* time started to get terminal information */
 	gotDM;			/* when did we last see a data mark */
 } clocks;
 
-#define	settimer(x)	clocks.x = clocks.system++
+#define	settimer(x)	(clocks.x = ++clocks.system)
+#define	sequenceIs(x,y)	(clocks.x < clocks.y)
 
 main(argc, argv)
 	char *argv[];
@@ -161,31 +167,65 @@ main(argc, argv)
 	doit(0, &from);
 }
 
-
-/*
- * Get()
- *
- *	Return next character from file descriptor.
- *
- *	This is not meant to be very efficient, since it is only
- * run during startup.
- */
-
-Get(f)
-int	f;		/* the file descriptor */
-{
-    char	input;
-
-    if (read(f, &input, 1) != 1) {
-	syslog(LOG_INFO, "read: %m\n");
-	exit(1);
-    }
-    return input&0xff;
-}
-
-char	*terminaltype;
+char	*terminaltype = 0;
 char	*envinit[2];
 int	cleanup();
+
+/*
+ * ttloop
+ *
+ *	A small subroutine to flush the network output buffer, get some data
+ * from the network, and pass it through the telnet state machine.  We
+ * also flush the pty input buffer (by dropping its data) if it becomes
+ * too full.
+ */
+
+void
+ttloop()
+{
+    if (nfrontp-nbackp) {
+	netflush();
+    }
+    ncc = read(net, netibuf, sizeof netibuf);
+    if (ncc < 0) {
+	syslog(LOG_INFO, "ttloop:  read: %m\n");
+    }
+    netip = netibuf;
+    telrcv();			/* state machine */
+    if (ncc > 0) {
+	pfrontp = pbackp = ptyobuf;
+	telrcv();
+    }
+}
+
+/*
+ * getterminaltype
+ *
+ *	Ask the other end to send along its terminal type.
+ * Output is the variable terminaltype filled in.
+ */
+
+void
+getterminaltype()
+{
+    static char sbuf[] = { IAC, DO, TELOPT_TTYPE };
+
+    settimer(getterminal);
+    bcopy(sbuf, nfrontp, sizeof sbuf);
+    nfrontp += sizeof sbuf;
+    while (sequenceIs(ttypeopt, getterminal)) {
+	ttloop();
+    }
+    if (hisopts[TELOPT_TTYPE] == OPT_YES) {
+	static char sbbuf[] = { IAC, SB, TELOPT_TTYPE, TELQUAL_SEND, IAC, SE };
+
+	bcopy(sbbuf, nfrontp, sizeof sbbuf);
+	nfrontp += sizeof sbbuf;
+	while (sequenceIs(ttypesubopt, getterminal)) {
+	    ttloop();
+	}
+    }
+}
 
 /*
  * Get a pty, scan input lines.
@@ -199,104 +239,6 @@ doit(f, who)
 	struct sgttyb b;
 	struct hostent *hp;
 	int c;
-	int gotterminaltype = 0;
-
-	/*
-	 * Try to get a terminal type from the foreign host.
-	 */
-
-	{
-	    static char sbuf[] = { IAC, DO, TELOPT_TTYPE };
-
-	    terminaltype = 0;
-	    if (write(f, sbuf, sizeof sbuf) == -1) {
-		syslog(LOG_INFO, "write sbuf: %m\n");
-		exit(1);
-	    }
-	    for (;;) {		/* ugly, but we are VERY early */
-		while ((c = Get(f)) != IAC) {
-		    NIACCUM(c);
-		}
-		if ((c = Get(f)) == WILL) {
-		    if ((c = Get(f)) == TELOPT_TTYPE) {
-			static char sbbuf[] = { IAC, SB, TELOPT_TTYPE,
-							TELQUAL_SEND, IAC, SE };
-			if (write(f, sbbuf, sizeof sbbuf) == -1) {
-			    syslog(LOG_INFO, "write sbbuf: %m\n");
-			    exit(1);
-			}
-			break;
-		    } else {
-			NIACCUM(IAC);
-			NIACCUM(WILL);
-			NIACCUM(c);
-		    }
-		} else if (c == WONT) {
-		    if ((c = Get(f)) == TELOPT_TTYPE) {
-			terminaltype = "TERM=network";
-			break;
-		    } else {
-			NIACCUM(IAC);
-			NIACCUM(WONT);
-			NIACCUM(c);
-		    }
-		} else {
-		    NIACCUM(IAC);
-		    NIACCUM(c);
-		}
-	    }
-	    if (!terminaltype) {
-		for (;;) {
-		    while ((c = Get(f)) != IAC) {
-			NIACCUM(c);
-		    }
-		    if ((c = Get(f)) != SB) {
-			NIACCUM(IAC);
-			NIACCUM(c);
-		    } else if ((c = Get(f)) != TELOPT_TTYPE) {
-			NIACCUM(IAC);
-			NIACCUM(SB);
-			NIACCUM(c);
-		    } else if ((c = Get(f)) != TELQUAL_IS) {
-			NIACCUM(IAC);
-			NIACCUM(SB);
-			NIACCUM(TELOPT_TTYPE);
-			NIACCUM(c);
-		    } else {		/* Yaaaay! */
-			static char terminalname[5+41] = "TERM=";
-
-			terminaltype = terminalname+strlen(terminalname);
-
-			while (terminaltype <
-				    (terminalname + sizeof terminalname-1)) {
-			    if ((c = Get(f)) == IAC) {
-				if ((c = Get(f)) == SE) {
-				    break;		/* done */
-				} else {
-				    *terminaltype++ = IAC;	/* ? */
-				    if (isupper(c)) {
-					c = tolower(c);
-				    }
-				    *terminaltype++ = c;
-				}
-			    } else {
-				if (isupper(c)) {
-				    c = tolower(c);
-				}
-				*terminaltype++ = c;    /* accumulate name */
-			    }
-			}
-			*terminaltype = 0;
-			terminaltype = terminalname;
-			gotterminaltype = 1;
-			break;
-		    }
-		}
-	    }
-	    envinit[0] = terminaltype;
-	    envinit[1] = 0;
-	}
-	netip = netibuf;
 
 	for (c = 'p'; c <= 's'; c++) {
 		struct stat stb;
@@ -338,6 +280,15 @@ gotpty:
 		host = hp->h_name;
 	else
 		host = inet_ntoa(who->sin_addr);
+
+	net = f;
+	pty = p;
+
+	/*
+	 * get terminal type.
+	 */
+	getterminaltype();
+
 	if ((i = fork()) < 0)
 		fatalperror(f, "fork", errno);
 	if (i)
@@ -348,13 +299,17 @@ gotpty:
 	dup2(t, 1);
 	dup2(t, 2);
 	close(t);
+	envinit[0] = terminaltype;
+	envinit[1] = 0;
 	environ = envinit;
 	/*
 	 * -h : pass on name of host.
+	 *		WARNING:  -h is accepted by login if and only if
+	 *			getuid() == 0.
 	 * -p : don't clobber the environment (so terminal type stays set).
 	 */
 	execl("/bin/login", "login", "-h", host,
-					gotterminaltype ? "-p" : 0, 0);
+					terminaltype ? "-p" : 0, 0);
 	fatalperror(f, "/bin/login", errno);
 	/*NOTREACHED*/
 }
@@ -420,7 +375,6 @@ telnet(f, p)
 	int on = 1;
 	char hostname[MAXHOSTNAMELEN];
 
-	net = f, pty = p;
 	ioctl(f, FIONBIO, &on);
 	ioctl(p, FIONBIO, &on);
 #if	defined(SO_OOBINLINE)
@@ -433,8 +387,12 @@ telnet(f, p)
 	/*
 	 * Request to do remote echo and to suppress go ahead.
 	 */
-	dooption(TELOPT_ECHO);
-	dooption(TELOPT_SGA);
+	if (!myopts[TELOPT_ECHO]) {
+	    dooption(TELOPT_ECHO);
+	}
+	if (!myopts[TELOPT_SGA]) {
+	    dooption(TELOPT_SGA);
+	}
 	/*
 	 * Is the client side a 4.2 (NOT 4.3) system?  We need to know this
 	 * because 4.2 clients are unable to deal with TCP urgent data.
@@ -447,7 +405,7 @@ telnet(f, p)
 	 */
 	sprintf(nfrontp, doopt, TELOPT_ECHO);
 	nfrontp += sizeof doopt-2;
-	hisopts[TELOPT_ECHO] = OPT_ALWAYS_LOOK;
+	hisopts[TELOPT_ECHO] = OPT_YES_BUT_ALWAYS_LOOK;
 
 	/*
 	 * Show banner that getty never gave.
@@ -563,7 +521,7 @@ telnet(f, p)
 			    ncc = recv(net, netibuf, sizeof (netibuf), MSG_OOB);
 			    if ((ncc == -1) && (errno == EINVAL)) {
 				ncc = read(net, netibuf, sizeof (netibuf));
-				if (clocks.didnetreceive < clocks.gotDM) {
+				if (sequenceIs(didnetreceive, gotDM)) {
 				    SYNCHing = stilloob(net);
 				}
 			    }
@@ -671,7 +629,7 @@ telrcv()
 			 * unix way of saying that (\r is only good
 			 * if CRMOD is set, which it normally is).
 			 */
-			if ((myopts[TELOPT_BINARY] == OPT_DONT) && c == '\r') {
+			if ((myopts[TELOPT_BINARY] == OPT_NO) && c == '\r') {
 				if ((ncc > 0) && ('\n' == *netip)) {
 					netip++; ncc--;
 					c = '\n';
@@ -805,25 +763,25 @@ telrcv()
 			break;
 
 		case TS_WILL:
-			if (hisopts[c] != OPT_WILL)
+			if (hisopts[c] != OPT_YES)
 				willoption(c);
 			state = TS_DATA;
 			continue;
 
 		case TS_WONT:
-			if (hisopts[c] != OPT_WONT)
+			if (hisopts[c] != OPT_NO)
 				wontoption(c);
 			state = TS_DATA;
 			continue;
 
 		case TS_DO:
-			if (myopts[c] != OPT_DO)
+			if (myopts[c] != OPT_YES)
 				dooption(c);
 			state = TS_DATA;
 			continue;
 
 		case TS_DONT:
-			if (myopts[c] != OPT_DONT) {
+			if (myopts[c] != OPT_NO) {
 				dontoption(c);
 			}
 			state = TS_DATA;
@@ -856,13 +814,21 @@ willoption(option)
 		 * (to the terminal) mode, we need to send a "WILL ECHO".
 		 * Kludge upon kludge!
 		 */
-		if (myopts[TELOPT_ECHO] == OPT_DO) {
+		if (myopts[TELOPT_ECHO] == OPT_YES) {
 		    dooption(TELOPT_ECHO);
 		}
 		fmt = dont;
 		break;
 
 	case TELOPT_TTYPE:
+		settimer(ttypeopt);
+		if (hisopts[TELOPT_TTYPE] == OPT_YES_BUT_ALWAYS_LOOK) {
+		    hisopts[TELOPT_TTYPE] = OPT_YES;
+		    return;
+		}
+		fmt = doopt;
+		break;
+
 	case TELOPT_SGA:
 		fmt = doopt;
 		break;
@@ -876,9 +842,9 @@ willoption(option)
 		break;
 	}
 	if (fmt == doopt) {
-		hisopts[option] = OPT_WILL;
+		hisopts[option] = OPT_YES;
 	} else {
-		hisopts[option] = OPT_WONT;
+		hisopts[option] = OPT_NO;
 	}
 	sprintf(nfrontp, fmt, option);
 	nfrontp += sizeof (dont) - 2;
@@ -899,7 +865,7 @@ wontoption(option)
 		break;
 	}
 	fmt = dont;
-	hisopts[option] = OPT_WONT;
+	hisopts[option] = OPT_NO;
 	sprintf(nfrontp, fmt, option);
 	nfrontp += sizeof (doopt) - 2;
 }
@@ -934,9 +900,9 @@ dooption(option)
 		break;
 	}
 	if (fmt == will) {
-	    myopts[option] = OPT_DO;
+	    myopts[option] = OPT_YES;
 	} else {
-	    myopts[option] = OPT_DONT;
+	    myopts[option] = OPT_NO;
 	}
 	sprintf(nfrontp, fmt, option);
 	nfrontp += sizeof (doopt) - 2;
@@ -953,14 +919,21 @@ int option;
 	mode(0, ECHO|CRMOD);
 	fmt = wont;
 	break;
+
+    case TELOPT_TTYPE:
+	fmt = wont;
+	settimer(ttypeopt);
+	break;
+
     default:
 	fmt = wont;
 	break;
     }
+
     if (fmt = wont) {
-	myopts[option] = OPT_DONT;
+	myopts[option] = OPT_NO;
     } else {
-	myopts[option] = OPT_DO;
+	myopts[option] = OPT_YES;
     }
     sprintf(nfrontp, fmt, option);
     nfrontp += sizeof (wont) - 2;
@@ -974,12 +947,38 @@ int option;
  *
  *	Currently we recognize:
  *
- *	(nothing - we only do terminal type at start-up time)
+ *	Terminal type is
  */
 
 suboption()
 {
-    switch (subbuffer[0]&0xff) {
+    switch (SB_GET()) {
+    case TELOPT_TTYPE: {		/* Yaaaay! */
+	static char terminalname[5+41] = "TERM=";
+
+	settimer(ttypesubopt);
+
+	if (SB_GET() != TELQUAL_IS) {
+	    return;		/* ??? XXX but, this is the most robust */
+	}
+
+	terminaltype = terminalname+strlen(terminalname);
+
+	while ((terminaltype < (terminalname + sizeof terminalname-1)) &&
+								    !SB_EOF()) {
+	    register int c;
+
+	    c = SB_GET();
+	    if (isupper(c)) {
+		c = tolower(c);
+	    }
+	    *terminaltype++ = c;    /* accumulate name */
+	}
+	*terminaltype = 0;
+	terminaltype = terminalname;
+	break;
+    }
+
     default:
 	;
     }
