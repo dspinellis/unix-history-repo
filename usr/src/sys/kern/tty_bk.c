@@ -1,4 +1,4 @@
-/*	tty_bk.c	4.5	82/10/13	*/
+/*	tty_bk.c	4.6	82/10/17	*/
 
 #include "bk.h"
 
@@ -40,18 +40,15 @@ bkopen(dev, tp)
 {
 	register struct buf *bp;
 
-	if (u.u_error)
-		return;		/* paranoia */
-	if (tp->t_line == NETLDISC) {
-		u.u_error = EBUSY;		/* sometimes the network */
-		return;				/* ... opens /dev/tty */
-	}
+	if (tp->t_line == NETLDISC)
+		return (EBUSY);	/* sometimes the network opens /dev/tty */
 	bp = geteblk(1024);
 	flushtty(tp, FREAD|FWRITE);
 	tp->t_bufp = bp;
 	tp->t_cp = (char *)bp->b_un.b_addr;
 	tp->t_inbuf = 0;
 	tp->t_rec = 0;
+	return (0);
 }
 
 /*
@@ -59,9 +56,9 @@ bkopen(dev, tp)
  * close routine.
  */
 bkclose(tp)
-register struct tty *tp;
+	register struct tty *tp;
 {
-	register s;
+	register int s;
 
 	s = spl5();
 	wakeup((caddr_t)&tp->t_rawq);
@@ -146,16 +143,15 @@ bkioctl(tp, cmd, data, flag)
 {
 
 	if ((cmd>>8) != 't')
-		return (cmd);
+		return (-1);
 	switch (cmd) {
 
 	case TIOCSETD:
 	case TIOCGETD:
 	case TIOCGETP:
 	case TIOCGETC:
-		return (cmd);
+		return (-1);
 	}
-	u.u_error = ENOTTY;
-	return (0);
+	return (ENOTTY);
 }
 #endif
