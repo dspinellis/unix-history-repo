@@ -1,4 +1,4 @@
-/*	mem.h	6.2	84/02/02	*/
+/*	mem.h	6.3	84/12/20	*/
 
 /*
  * Memory controller registers
@@ -82,6 +82,7 @@ struct	mcr {
 #endif
 
 #if VAX730
+#define	M730_UNCORR	0x80000000	/* rds, uncorrectable error, in [1] */
 #define	M730_CRD	0x40000000	/* crd, in [1] */
 #define	M730_FTBPE	0x20000000	/* force tbuf parity error, in [1] */
 #define	M730_ENACRD	0x10000000	/* enable crd interrupt, in [1] */
@@ -91,7 +92,7 @@ struct	mcr {
 
 #define	M730_INH(mcr)	((mcr)->mc_reg[1] = M730_MME)
 #define	M730_ENA(mcr)	((mcr)->mc_reg[1] = (M730_MME|M730_ENACRD))
-#define	M730_ERR(mcr)	((mcr)->mc_reg[1] & M730_CRD)
+#define	M730_ERR(mcr)	((mcr)->mc_reg[1] & (M730_UNCORR|M730_CRD))
 #define	M730_SYN(mcr)	((mcr)->mc_reg[0] & 0x7f)
 #define	M730_ADDR(mcr)	(((mcr)->mc_reg[0] >> 8) & 0x7fff)
 #endif
