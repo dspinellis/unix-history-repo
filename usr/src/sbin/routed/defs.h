@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)defs.h	5.1 (Berkeley) %G%
+ *	@(#)defs.h	5.2 (Berkeley) %G%
  */
 
 /*
@@ -17,11 +17,11 @@
 
 #include <net/route.h>
 #include <netinet/in.h>
+#include <protocols/routed.h>
 
 #include <stdio.h>
 #include <netdb.h>
 
-#include "protocol.h"
 #include "trace.h"
 #include "interface.h"
 #include "table.h"
