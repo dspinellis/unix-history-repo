@@ -4,7 +4,7 @@
 #define	RDR	0
 #define	WTR	1
 static	int	popen_pid[20];
-static	char	*sccsid = "@(#)popen.c	1.4 %G%";
+static	char	*sccsid = "@(#)popen.c	1.5 %G%";
 
 FILE *
 popen(cmd,mode)
