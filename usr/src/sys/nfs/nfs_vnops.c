@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_vnops.c	7.17 (Berkeley) %G%
+ *	@(#)nfs_vnops.c	7.18 (Berkeley) %G%
  */
 
 /*
@@ -1354,11 +1354,11 @@ nfs_doio(bp)
 		reg--;
 		/* I know it is always the else, but that may change someday */
 		if ((bp->b_flags & B_PHYS) == 0)
-			pte = kvtopte(bp->b_un.b_addr);
+			pte = kvtopte(addr);
 		else if (bp->b_flags & B_PAGET)
-			pte = &Usrptmap[btokmx((struct pte *)bp->b_un.b_addr)];
+			pte = &Usrptmap[btokmx((struct pte *)addr)];
 		else {
-			v = btop(bp->b_un.b_addr);
+			v = btop(addr);
 			if (bp->b_flags & B_UAREA)
 				pte = &rp->p_addr[v];
 			else
