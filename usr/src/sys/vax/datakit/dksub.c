@@ -2,7 +2,7 @@
  * Datakit driver
  * Common subroutines for all drivers
  *	SCCSID[] = "@(#)dksub.c	1.2 Garage 84/03/27"
- *		   "@(#)dksub.c	1.4 (Berkeley) %G%"
+ *		   "@(#)dksub.c	1.5 (Berkeley) %G%"
  */
 
 #include "datakit.h"
@@ -19,7 +19,6 @@
 #include "syslog.h"
 #include "conf.h"
 #include "file.h"
-#include "inode.h"
 #include "systm.h"
 #include "proc.h"
 #include "mbuf.h"
@@ -62,15 +61,6 @@ nopages:
 		blen = MIN(MLEN, uio->uio_resid);
 	}
 
-	if (setjmp(&u.u_qsave)) {
-		s = spl5();
-		if (dk_status(chan) & DK_RCV)
-			(void) dk_rabort(chan, dkrdone, (caddr_t) tp) ;
-		splx(s);
-		m_freem(mm);
-		return EINTR ;
-	}
-		
 	while (uio->uio_resid && !err) {
 		len = MIN(uio->uio_resid, blen) ;
 		chanstat = dk_recv(chan, mtod(mm, caddr_t), len, tp->d_rmode, dkrdone, (caddr_t) tp) ;
@@ -86,7 +76,13 @@ nopages:
 
 		s = spl5() ;
 		while (dk_status(chan) & DK_RCV)
-			sleep((caddr_t)(tp), TTOPRI) ;
+			if (err = tsleep((caddr_t)(tp), TTIPRI, ttyin, 0)) {
+				if (dk_status(chan) & DK_RCV)
+					(void) dk_rabort(chan, dkrdone,
+					    (caddr_t) tp);
+				splx(s);
+				goto done;
+			}
 		splx(s) ;
 
 		len -= tp->d_rresid ;
@@ -95,6 +91,7 @@ nopages:
 		if (tp->d_rdone != DKR_FULL)
 			break ;
 	}
+done:
 	m_freem(mm) ;
 	return err;
 }
@@ -133,7 +130,11 @@ short xc;
 				return EWOULDBLOCK;
 			}
 			tp->d_state |= DKWAIT ;
-			sleep((caddr_t)(&tp->d_state), TTOPRI) ;
+			if (error = tsleep((caddr_t)(&tp->d_state), TTOPRI,
+			    ttyout, 0)) {
+				splx(s);
+				return (error);
+			}
 		}
 		splx(s) ;
 
@@ -209,10 +210,13 @@ dkrsplice(chan)
 dksplwait(chan)
 {
 	register struct dkdev *tp ;
+	int error;
 
 	tp = &dkdev[chan] ;
 	while ((tp->d_state & DKSPLICED) == 0)
-		sleep((caddr_t) tp, TTOPRI) ;
+		if (error = tsleep((caddr_t) tp, TTOPRI, ttopen, 0))
+			return (error);
+	return (0);
 }
 
 /* convert file desciptor to Datakit channel */

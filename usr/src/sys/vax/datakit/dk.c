@@ -172,11 +172,14 @@ register caddr_t data;
 			return EIO ;
 		}
 		s = spl5() ;
-		while (tp->dc_state & DKSETUP)
-			sleep((caddr_t) tp, TTOPRI);
-		while (tsp->dc_state & DKSETUP)
-			sleep((caddr_t) tsp, TTOPRI);
+		error = 0;
+		while (error == 0 && tp->dc_state & DKSETUP)
+			error = tsleep((caddr_t)tp, TTOPRI, ttopen, 0);
+		while (error == 0 && tsp->dc_state & DKSETUP)
+			error = tsleep((caddr_t)tsp, TTOPRI, ttopen, 0);
 		splx(s) ;
+		if (error)
+			return (error);
 		if ((dk_status(chan) & DK_RESET) || (dk_status(sp_chan) & DK_RESET))
 			return EIO ;
 		if (tp->d_error || tsp->d_error) 
@@ -187,7 +190,7 @@ register caddr_t data;
 		break ;
 
 	case DIOCSWAIT:
-		(void) dksplwait(chan) ;
+		error = dksplwait(chan);
 		break ;
 
 	default:
@@ -217,9 +220,12 @@ register caddr_t data;
 			return (chanstat < 0 ? ECONNREFUSED : chanstat);
 		}
 		s = spl5() ;
-		while (tp->dc_state & DKSETUP)
-			sleep((caddr_t)(tp), TTOPRI) ;
+		error = 0;
+		while (error == 0 && tp->dc_state & DKSETUP)
+			error = tsleep((caddr_t)(tp), TTOPRI, ttyout, 0) ;
 		splx(s) ;
+		if (error)
+			return error;
 		error = copyout((caddr_t) tp->d_param, *(caddr_t *)data,
 		    3*sizeof (short));
 		if (error) return error;
@@ -408,15 +414,16 @@ int flag;
 	if (u.u_signal[SIGKILL] != SIG_IGN) {	  /* detect close from exit() */
 		while (tp->d_bufct) {
 			tp->d_state |= DKWAIT ;
-			sleep((caddr_t)(&tp->d_state), TTOPRI) ;
+			if (tsleep((caddr_t)(&tp->d_state), TTOPRI, ttyout, 0))
+				break;
 		}
 	}
 	else if (tp->d_bufct)
 		/* Hmm -- buffers queued.  Let's wait 15 seconds max */
 		for (i = 0; tp->d_bufct && i < 15; i++) {
 			tp->d_state |= DKWAIT ;
-			timeout(wakeup, (caddr_t) &tp->d_state, hz);
-			sleep((caddr_t)(&tp->d_state), TTOPRI) ;
+			if (tsleep((caddr_t)(&tp->d_state), TTOPRI, ttyout, hz))
+				break;
 		}
 	splx(s) ;
 	tp->dc_state = 0;

@@ -1,7 +1,7 @@
 /*
  *  Datakit terminal driver
  *	SCCSID[] = "@(#)dktty.c	1.8 Garage 84/05/14"
- *		   "@(#)dktty.c	1.3 (Berkeley) %G%"
+ *		   "@(#)dktty.c	1.4 (Berkeley) %G%"
  */
 
 #include "dktty.h"
@@ -165,6 +165,7 @@ int  flag;
 		dktibuf[d] = NULL;
 	}
 	splx(s);
+	return (0);
 }
 
 static
@@ -279,15 +280,8 @@ caddr_t data;
 	if (error >= 0)
 		return error;
 	error = ttioctl(tp, cmd, data, flag);
-	if (error >= 0) {
-		if (tp->t_ispeed == 0) {
-			tp->t_state &= ~TS_CARR_ON;
-			if (devDEBUG) log(LOG_ERR, "DKT_ioctl carr off\n");
-			gsignal(tp->t_pgid, SIGHUP);
-			gsignal(tp->t_pgid, SIGCONT);
-		}
+	if (error >= 0)
 		return (error);
-	}
 
 	switch(cmd) {
 		case TIOCSBRK:
@@ -422,11 +416,8 @@ dktshut(tp)
 register struct tty *tp;
 {
 	if (tpDEBUG) log(LOG_ERR, "dktshut %d\n", tp-dkt);
-	if ((tp->t_state&TS_ISOPEN) && (tp->t_state&TS_CARR_ON)) {
-		if (tpDEBUG) log(LOG_ERR, "DKT_sighup %d\n",tp->t_pgid);
-		gsignal(tp->t_pgid, SIGHUP);
-		gsignal(tp->t_pgid, SIGCONT);
-	}
+	if ((tp->t_state&TS_ISOPEN) && (tp->t_state&TS_CARR_ON))
+		(void)(*linesw[tp->t_line].l_modem)(tp, 0);
 	tp->t_state &= ~TS_CARR_ON;
 	ttyflush(tp, (FREAD|FWRITE)) ;
 	dk_cmd((tp - dkt), DKC_FLUSH);
