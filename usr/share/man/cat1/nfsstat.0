@@ -1,0 +1,34 @@
+NFSSTAT(1)                   BSD Reference Manual                   NFSSTAT(1)
+
+NNAAMMEE
+     nnffssssttaatt - display NFS statistics
+
+SSYYNNOOPPSSIISS
+     nnffssssttaatt [--MM _c_o_r_e] [--NN _s_y_s_t_e_m] [--ww _w_a_i_t]
+
+DDEESSCCRRIIPPTTIIOONN
+     NNffssssttaatt displays statistics kept about NFS client and server activity.
+
+     The options are as follows:
+
+     --MM      Extract values associated with the name list from the specified
+             core instead of the default _/_d_e_v_/_k_m_e_m.
+
+     --NN      Extract the name list from the specified system instead of the
+             default _/_v_m_u_n_i_x.
+
+     --ww      Display a shorter summary of NFS activity for both the client and
+             server at _w_a_i_t second intervals.
+
+FFIILLEESS
+     /vmunix    default kernel namelist
+     /dev/kmem  default memory file
+
+SSEEEE AALLSSOO
+     fstat(1),  netstat(1),  ps(1),  systat(1),  vmstat(1),  iostat(8),
+     pstat(8),
+
+HHIISSTTOORRYY
+     The nnffssssttaatt command appears in 4.4BSD.
+
+4.4BSD                           June 6, 1993                                1
