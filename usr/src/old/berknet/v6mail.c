@@ -1,4 +1,4 @@
-static char sccsid[] = "@(#)v6mail.c	4.3	(Berkeley)	%G%";
+static char sccsid[] = "@(#)v6mail.c	4.4	(Berkeley)	%G%";
 
 /*
  * Version 6 Cory mail--
@@ -40,7 +40,7 @@ static char sccsid[] = "@(#)v6mail.c	4.3	(Berkeley)	%G%";
  *		Save? type 'x' - doesn't unlink the mail file
  */
 /*
- * BIFF is an immediate notification flag using the MPX stuff
+ * BIFF is an immediate notification flag using the IPC stuff
  */
 # include "local.h"
 # include <stdio.h>
@@ -509,6 +509,13 @@ char *from, *to;
 	return(append(from,to,uid, gid));
 # endif
 }
+
+#ifdef BIFF
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netdb.h>
+#endif
+
 /* return 1 if success, 0 otherwise */
 append(from,to,uid, gid)
 char *from, *to;
@@ -517,13 +524,12 @@ char *from, *to;
 	int ret;
 	struct stat statbuf;
 #ifdef BIFF
-/* biff ... */
-	char *rindex();
-	char *cp;
-	char buf[100];
-	int f;
-/* end biff */
-#endif BIFF
+	char *cp, buf[100], *rindex();
+	int s;
+	struct hostent *hp;
+	struct sockaddr_in sin;
+	struct servent *sp;
+#endif
 	if (stat(to, &statbuf) >= 0 && (statbuf.st_mode&S_IFDIR) != 0) {
 		fprintf(stderr, "Exotic destination %s\n", to);
 		errs++;
@@ -543,23 +549,29 @@ char *from, *to;
 		return(0);
 	}
 #ifdef BIFF
-	{
-		f = open("/dev/mail", 1);
-		cp = rindex(to, '/');
-		if (cp) {
-			sprintf(buf, "%s@%d\n", cp+1, ftell(fdout)); 
-		}
+	{ s = socket(AF_INET, SOCK_STREAM, 0, 0);
+	  cp = rindex(to, '/');
+	  if (cp) 
+		sprintf(buf, "%s@%d\n", cp+1, ftell(fdout));
 	}
-#endif BIFF
+#endif
 	ret = getput(fdin,fdout);
 	fclose(fdin);
 	fclose(fdout);
 #ifdef BIFF
-	if (cp && f >= 0) {
-		write(f, buf, strlen(buf)+1);
-		close(f);
+	if (cp && s >= 0) {
+		hp = gethostbyname("localhost");
+		sp = getservent("biff", "udp");
+		if (hp && sp) {
+			bcopy(hp->h_addr, &sin.sin_addr, hp->h_length);
+			sin.sin_family = hp->h_addrtype;
+			sin.sin_port = sp->s_port;
+			(void) sendto(s, buf, strlen(buf) + 1, 0,
+				&sin, sizeof (sin));
+		}
+		close(s);
 	}
-#endif BIFF
+#endif
 	return(ret);
 }
 
