@@ -1,4 +1,4 @@
-/*	param.c	4.17	83/07/21	*/
+/*	param.c	4.18	83/07/21	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -31,11 +31,14 @@ int	tick = 1000000 / HZ;
 struct	timezone tz = { TIMEZONE, DST };
 #define	NPROC (20 + 8 * MAXUSERS)
 int	nproc = NPROC;
-/* the +20 here is for all the lousy server processes */
-int	ntext = 24 + MAXUSERS + 20;
+#ifdef INET
+#define	NETSLOP	20			/* for all the lousy servers*/
+#else
+#define	NETSLOP	0
+#endif
+int	ntext = 24 + MAXUSERS + NETSLOP;
 int	ninode = (NPROC + 16 + MAXUSERS) + 32;
-/* the +40 here is for 20 server processes */
-int	nfile = 16 * (NPROC + 16 + MAXUSERS) / 10 + 32 + 40;
+int	nfile = 16 * (NPROC + 16 + MAXUSERS) / 10 + 32 + 2 * NETSLOP;
 int	ncallout = 16 + NPROC;
 int	nclist = 100 + 16 * MAXUSERS;
 int	nport = NPROC / 2;
