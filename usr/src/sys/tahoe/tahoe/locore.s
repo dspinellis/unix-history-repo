@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)locore.s	7.9 (Berkeley) %G%
+ *	@(#)locore.s	7.10 (Berkeley) %G%
  */
 
 #include "../tahoe/mtpr.h"
@@ -340,10 +340,12 @@ SCBVEC(netintr):
 	callf	$4,_nsintr	
 1:
 #endif
-	bbc	$NETISR_RAW,_netisr,1f
-	andl2	$~(1<<NETISR_RAW),_netisr	
-	callf	$4,_rawintr	
+#ifdef ISO
+	bbc	$NETISR_ISO,_netisr,1f	
+	andl2	$~(1<<NETISR_ISO),_netisr
+	callf	$4,_clnlintr	
 1:
+#endif
 	incl	_cnt+V_SOFT
 	POPR; REST_FPSTAT
 	rei
@@ -654,6 +656,10 @@ _/**/mname:	.globl	_/**/mname;		\
 #if NHD > 0
 				ADDMAP( NHDC )
 #endif
+#include "vx.h"
+#if NVX > 0
+				ADDMAP( NVX * 16384/NBPG )
+#endif
 	SYSMAP(VMEMend	,vmemend	,0		)
 
 	SYSMAP(VBmap	,vbbase		,CLSIZE		)
@@ -696,10 +702,12 @@ start:
 /* set ISP */
 	movl	$_intstack-SYSTEM+NISP*NBPG,sp	# still physical
 	mtpr	$_intstack+NISP*NBPG,$ISP
-/* count up memory */
+/* count up memory; _physmem contains limit */
 	clrl	r7
+	shll	$PGSHIFT,_physmem,r8
+	decl	r8
 1:	pushl	$1; pushl r7; callf $12,_badaddr; tstl r0; bneq 9f
-	ACBL($MAXMEM*1024-1,$64*1024,r7,1b)
+	ACBL(r8,$64*1024,r7,1b)
 9:
 /* clear memory from kernel bss and pages for proc 0 u. and page table */
 	movab	_edata,r6; andl2 $~SYSTEM,r6
@@ -760,9 +768,7 @@ start:
 /* disable any interrupts */
 	movl	$0,_intenable
 /* init mem sizes */
-	shrl	$PGSHIFT,r7,_maxmem
-	movl	_maxmem,_physmem
-	movl	_maxmem,_freemem
+	shrl	$PGSHIFT,r7,_physmem
 /* setup context for proc[0] == scheduler */
 	andl3	$~SYSTEM,r9,r6			# convert to physical
 	andl2	$~(NBPG-1),r6			# make page boundary
@@ -937,8 +943,10 @@ ENTRY(wbadaddr, R3|R4)
 	bbc	$0,r4,1f; movb	15(fp), (r3)
 1:	bbc	$1,r4,1f; movw	14(fp), (r3)
 1:	bbc	$2,r4,1f; movl	12(fp), (r3)
-1:	clrl	r0			# made it w/o machine checks
-2:	movl	r2,_scb+SCB_BUSERR
+1:	movl	$30000,r0		# delay for error interrupt
+1:	decl	r0
+	jneq	1b
+2:	movl	r2,_scb+SCB_BUSERR	# made it w/o machine checks; r0 is 0
 	mtpr	r1,$IPL
 	ret
 
