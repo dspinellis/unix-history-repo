@@ -1,4 +1,4 @@
-#	@(#)Makefile.hp300	7.7 (Berkeley) %G%
+#	@(#)Makefile.hp300	7.8 (Berkeley) %G%
 #
 # Makefile for 4.4 BSD
 #
@@ -18,9 +18,9 @@
 # -DTRACE	compile in kernel tracing hooks
 # -DQUOTA	compile in file system quotas
 #
-AS=	as
-CC=	cc -Dconst=__const -Dvolatile=__volatile \
-	    -Dsigned=__signed -Dinline=__inline -Uunix -fpcc-struct-return
+AS=	as ${PROF}
+CC=	cc ${PROF}
+CPP=	cpp
 LD=	/bin/ld
 TOUCH=	touch -f -c
 
@@ -28,7 +28,7 @@ S=	../..
 HP300=	../../hp300
 
 INCLUDES= -I. -I$S -I$S/sys
-COPTS=	${INCLUDES} ${IDENT} -DNVM -DKERNEL -Dmc68020 -Dhp300 -DFPCOPROC -DREFBIT
+COPTS=	${INCLUDES} ${IDENT} -DKERNEL -Dmc68020 -Dhp300 -DFPCOPROC -DREFBIT
 CFLAGS=	-O ${COPTS}
 
 %OBJS
@@ -53,13 +53,9 @@ symbols.sort: ${HP300}/hp300/symbols.raw
 	    | sed 's/^	//' | sort -u > symbols.sort
 
 locore.o: assym.s ${HP300}/hp300/vectors.s ${HP300}/hp300/locore.s 
-locore.o: ${HP300}/include/trap.h ${HP300}/include/psl.h ${HP300}/include/pte.h
+locore.o: ${HP300}/include/trap.h ${HP300}/include/psl.h ${HP300}/hp300/pte.h
 locore.o: ${HP300}/include/cpu.h
-	cat assym.s ${HP300}/hp300/vectors.s ${HP300}/hp300/locore.s > locore.c
-	${CC} -E -DLOCORE ${COPTS} locore.c > locore.i
-	@echo 'as -o locore.o locore.i'
-	@${AS} -o locore.o locore.i
-	@rm locore.i
+	${CPP} -DLOCORE ${COPTS} ${HP300}/hp300/locore.s | ${AS} -o locore.o
 
 # the following is necessary because autoconf.o depends on #if GENERIC
 autoconf.o: Makefile
@@ -82,7 +78,7 @@ genassym:
 	    ${HP300}/hp300/genassym.c
 
 depend: assym.s param.c
-	mkdep ${COPTS} ${CFILES} ioconf.c
+	mkdep ${COPTS} ${CFILES} ioconf.c param.c
 	mkdep -a -p ${INCLUDES} ${IDENT} ${PARAM} ${HP300}/hp300/genassym.c
 
 links:
