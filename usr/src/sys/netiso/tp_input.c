@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_input.c	7.28 (Berkeley) %G%
+ *	@(#)tp_input.c	7.29 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -111,9 +111,21 @@ tp_inputprep(m)
 	ENDDEBUG
 
 	while(  m->m_len < 1 ) {
-		if( (m = m_free(m)) == MNULL ) {
-			return (struct mbuf *)0;
-		}
+	    /* The "m_free" logic
+	     * if( (m = m_free(m)) == MNULL )
+	     *      return (struct mbuf *)0;
+		 * would cause a system crash if ever executed.
+		 * This logic will be executed if the first mbuf
+	     * in the chain only contains a CLNP header. The m_free routine
+	     * will release the mbuf containing the CLNP header from the
+	     * chain and the new head of the chain will not have the
+	     * M_PKTHDR bit set. This routine, tp_inputprep, will
+	     * eventually call the "sbappendaddr" routine. "sbappendaddr"
+	     * calls "panic" if M_PKTHDR is not set. m_pullup is a cheap
+	     * way of keeping the head of the chain from being freed.
+		 */
+		if((m = m_pullup(m)) == MNULL)
+			return (MNULL);
 	}
 	if(((int)m->m_data) & 0x3) {
 		/* If we are not 4-byte aligned, we have to be
@@ -182,10 +194,8 @@ static u_char tpdu_info[][4] =
 };
 
 #define CHECK(Phrase, Erval, Stat, Whattodo, Loc)\
-	if (Phrase) {error = (Erval); errlen = (int)(Loc); IncStat(Stat); tpibrk();\
+	if (Phrase) {error = (Erval); errlen = (int)(Loc); IncStat(Stat);\
 	goto Whattodo; }
-
-tpibrk() {}
 
 /* 
  * WHENEVER YOU USE THE FOLLOWING MACRO,
@@ -386,29 +396,37 @@ tp_input(m, faddr, laddr, cons_channel, dgout_routine, ce_bit)
 	int							ce_bit;
 
 {
-	register struct tp_pcb 	*tpcb = (struct tp_pcb *)0;
+	register struct tp_pcb 	*tpcb;
 	register struct tpdu 	*hdr;
 	struct socket 			*so;
 	struct tp_event 		e;
-	int 					error = 0;
+	int 					error;
 	unsigned 				dutype;
-	u_short 				dref, sref = 0, acktime = 2, subseq = 0; /*VAX*/
-	u_char 					preferred_class = 0, class_to_use = 0, pdusize = 0;
-	u_char					opt, dusize = TP_DFL_TPDUSIZE, addlopt = 0, version;
+	u_short 				dref, sref, acktime, subseq;
+	u_char 					preferred_class, class_to_use, pdusize;
+	u_char					opt, dusize, addlopt, version;
 #ifdef TP_PERF_MEAS
 	u_char					perf_meas;
 #endif TP_PERF_MEAS
-	u_char					fsufxlen = 0, lsufxlen = 0;
-	caddr_t					fsufxloc = 0, lsufxloc = 0;
-	int						tpdu_len = 0;
-	u_int 					takes_data = FALSE;
-	u_int					fcc_present = FALSE; 
-	int						errlen = 0;
+	u_char					fsufxlen, lsufxlen;
+	caddr_t					fsufxloc, lsufxloc;
+	int						tpdu_len;
+	u_int 					takes_data;
+	u_int					fcc_present; 
+	int						errlen;
 	struct tp_conn_param 	tpp;
 	int						tpcons_output();
 
 again:
 	hdr = mtod(m, struct tpdu *);
+	tpcb = 0;
+	error = errlen = tpdulen = 0;
+	takes_data = fcc_present = FALSE;
+	acktime = 2; sref = subseq = 0;
+	fsufxloc = lsusfloc = NULL;
+	fsufxlen = lsufxlen =
+		preferred_class = class_to_use = pdusize = addlopt = 0;
+	dusize = TP_DFL_TPDUSIZE;
 #ifdef TP_PERF_MEAS
 	GET_CUR_TIME( &e.e_time ); perf_meas = 0;
 #endif TP_PERF_MEAS
