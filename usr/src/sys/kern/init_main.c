@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)init_main.c	8.4 (Berkeley) %G%
+ *	@(#)init_main.c	8.5 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -285,6 +285,8 @@ start_init(p, regs)
 	struct execve_args args;
 	int options, i, retval[2], error;
 	char **pathp, *path, *ucp, **uap, *arg0, *arg1;
+
+	initproc = p;
 
 	/*
 	 * We need to set p->p_md.md_regs since start_init acts like a
