@@ -1,4 +1,4 @@
-/*	quota.h	4.5	83/05/24	*/
+/*	quota.h	4.6	83/05/27	*/
 
 /*
  * MELBOURNE DISC QUOTAS
@@ -13,7 +13,6 @@
  * the quota struct relevant to the current process, this is changed
  * by 'setuid' sys call, &/or by the Q_SETUID quota() call.
  */
-#ifdef KERNEL
 struct quota {
 	struct	quota *q_forw, *q_back;	/* hash chain, MUST be first */
 	short	q_cnt;			/* ref count (# processes) */
@@ -27,13 +26,12 @@ struct quota {
 	struct	dquot *q_dq[NMOUNT];	/* disc quotas for mounted filesys's */
 };
 
-#ifdef QUOTA
 #define	NOQUOTA	((struct quota *) 0)
 
+#if defined(KERNEL) && defined(QUOTA)
 struct	quota *quota, *quotaNQUOTA;
 int	nquota;
 struct	quota *getquota(), *qfind();
-#endif
 #endif
 
 /*
@@ -91,7 +89,6 @@ struct	dquot {
 	struct dqblk dq_dqb;		/* actual usage & quotas */
 };
 
-#ifdef QUOTA
 #define	dq_own		dq_u.Dq_own
 #define	dq_freef	dq_u.dq_f.Dq_freef
 #define	dq_freeb	dq_u.dq_f.Dq_freeb
@@ -107,11 +104,10 @@ struct	dquot {
 #define	NODQUOT		((struct dquot *) 0)
 #define	LOSTDQUOT	((struct dquot *) 1)
 
-#ifdef KERNEL
+#if defined(KERNEL) && defined(QUOTA)
 struct	dquot *dquot, *dquotNDQUOT;
 int	ndquot;
 struct	dquot *discquota(), *inoquota(), *dqalloc(), *dqp();
-#endif
 #endif
 
 /*
