@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)mkfs.c	1.17 (Berkeley) %G%";
+static	char *sccsid = "@(#)mkfs.c	1.18 (Berkeley) %G%";
 
 /*
  * make file system for cylinder-group style file systems
@@ -14,10 +14,9 @@ static	char *sccsid = "@(#)mkfs.c	1.17 (Berkeley) %G%";
 #include "../h/param.h"
 #include "../h/inode.h"
 #include "../h/fs.h"
-#include "../h/dir.h"
+#include <ndir.h>
 
 #define UMASK		0755
-#define MAXNDIR		(MAXBSIZE / sizeof(struct direct))
 #define MAXINOPB	(MAXBSIZE / sizeof(struct dinode))
 #define POWEROF2(num)	(((num) & ((num) - 1)) == 0)
 
@@ -463,18 +462,22 @@ initcg(cylno)
  */
 struct inode node;
 #define PREDEFDIR 3
-struct direct root_dir[MAXNDIR] = {
-	{ ROOTINO, ".", 0, IFDIR },
-	{ ROOTINO, "..", 0, IFDIR },
-	{ LOSTFOUNDINO, "lost+found", 0, IFDIR },
+struct direct root_dir[] = {
+	{ ROOTINO, sizeof(struct direct), 1, "." },
+	{ ROOTINO, sizeof(struct direct), 2, ".." },
+	{ LOSTFOUNDINO, sizeof(struct direct), 10, "lost+found" },
 };
-struct direct lost_found_dir[MAXNDIR] = {
-	{ LOSTFOUNDINO, ".", 0, IFDIR },
-	{ ROOTINO, "..", 0, IFDIR },
+struct direct lost_found_dir[] = {
+	{ LOSTFOUNDINO, sizeof(struct direct), 1, "." },
+	{ ROOTINO, sizeof(struct direct), 2, ".." },
+	{ 0, DIRBLKSIZ, 0, 0 },
 };
+char buf[MAXBSIZE];
 
 fsinit()
 {
+	int i;
+
 	/*
 	 * initialize the node
 	 */
@@ -484,12 +487,15 @@ fsinit()
 	/*
 	 * create the lost+found directory
 	 */
+	(void)makedir(lost_found_dir, 2);
+	for (i = DIRBLKSIZ; i < sblock.fs_bsize; i += DIRBLKSIZ)
+		bcopy(&lost_found_dir[2], &buf[i], DIRSIZ(&lost_found_dir[2]));
 	node.i_number = LOSTFOUNDINO;
 	node.i_mode = IFDIR | UMASK;
 	node.i_nlink = 2;
 	node.i_size = sblock.fs_bsize;
 	node.i_db[0] = alloc(node.i_size, node.i_mode);
-	wtfs(fsbtodb(&sblock, node.i_db[0]), node.i_size, lost_found_dir);
+	wtfs(fsbtodb(&sblock, node.i_db[0]), node.i_size, buf);
 	iput(&node);
 	/*
 	 * create the root directory
@@ -497,10 +503,34 @@ fsinit()
 	node.i_number = ROOTINO;
 	node.i_mode = IFDIR | UMASK;
 	node.i_nlink = PREDEFDIR;
-	node.i_size = PREDEFDIR * sizeof(struct direct);
+	node.i_size = makedir(root_dir, PREDEFDIR);
 	node.i_db[0] = alloc(sblock.fs_fsize, node.i_mode);
-	wtfs(fsbtodb(&sblock, node.i_db[0]), sblock.fs_fsize, root_dir);
+	wtfs(fsbtodb(&sblock, node.i_db[0]), sblock.fs_fsize, buf);
 	iput(&node);
+}
+
+/*
+ * construct a set of directory entries in "buf".
+ * return size of directory.
+ */
+makedir(protodir, entries)
+	register struct direct *protodir;
+	int entries;
+{
+	char *cp;
+	int i, spcleft;
+
+	spcleft = DIRBLKSIZ;
+	for (cp = buf, i = 0; i < entries - 1; i++) {
+		protodir[i].d_reclen = DIRSIZ(&protodir[i]);
+		bcopy(&protodir[i], cp, protodir[i].d_reclen);
+		cp += protodir[i].d_reclen;
+		spcleft -= protodir[i].d_reclen;
+	}
+	protodir[i].d_reclen = spcleft;
+	bcopy(&protodir[i], cp, DIRSIZ(&protodir[i]));
+	cp += DIRSIZ(&protodir[i]);
+	return (cp - buf);
 }
 
 /*
@@ -626,6 +656,16 @@ wtfs(bno, size, bf)
 		perror("wtfs");
 		exit(1);
 	}
+}
+
+/*
+ * copy a block
+ */
+bcopy(from, to, size)
+	char *from, *to;
+	int size;
+{
+	asm("	movc3	12(ap),*4(ap),*8(ap)");
 }
 
 /*
