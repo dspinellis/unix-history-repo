@@ -1,4 +1,4 @@
-/*	uipc_socket.c	4.36	82/03/19	*/
+/*	uipc_socket.c	4.37	82/03/29	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -16,6 +16,7 @@
 #include "../h/ioctl.h"
 #include "../net/in.h"
 #include "../net/in_systm.h"
+#include "../net/route.h"
 
 /*
  * Socket support routines.
@@ -603,6 +604,24 @@ COUNT(SOIOCTL);
 		}
 		return;
 	}
+
+	/* routing table update calls */
+	case SIOCADDRT:
+	case SIOCDELRT:
+	case SIOCCHGRT: {
+		struct rtentry route;
+#ifdef notdef
+		if (!suser())
+			return;
+#endif
+		if (copyin(cmdp, (caddr_t)&route, sizeof (route))) {
+			u.u_error = EFAULT;
+			return;
+		}
+		u.u_error = rtrequest(cmd, &route);
+		return;
+	}
+
 	/* type/protocol specific ioctls */
 	}
 	u.u_error = EOPNOTSUPP;
