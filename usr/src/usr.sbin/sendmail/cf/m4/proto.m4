@@ -8,7 +8,7 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(@(#)proto.m4	2.4 (Berkeley) %G%)
+VERSIONID(@(#)proto.m4	2.5 (Berkeley) %G%)
 
 
 ##################
@@ -134,10 +134,6 @@ R$*<@$=w.UUCP>$*	$:$1<@$w>$3			.UUCP domain
 
 # pass to name server to make hostname canonical
 R$* < @ $+ > $*		$: $1 < @ $[ $2 $] > $3		then do anything
-
-# hack to add local domain if nothing sofar has done so
-R$* < @ $- > $*		$: $1 < @ $2 @ $w > $3		throw on local host
-R$* < @ $- @ $- $* > $*	$: $1 < @ $2 $4 > $5		strip host part only
 
 
 ##################################################
