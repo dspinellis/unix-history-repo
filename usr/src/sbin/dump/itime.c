@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)itime.c	5.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)itime.c	5.17 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -43,10 +43,6 @@ static	void dumprecout __P((FILE *, struct dumpdates *));
 static	int getrecord __P((FILE *, struct dumpdates *));
 static	int makedumpdate __P((struct dumpdates *, char *));
 static	void readdumptimes __P((FILE *));
-
-#ifdef COMPAT
-extern	char *calloc();
-#endif
 
 void
 initdumptimes()
