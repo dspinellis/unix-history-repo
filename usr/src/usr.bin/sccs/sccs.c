@@ -4,7 +4,7 @@
 # include <sysexits.h>
 # include <whoami.h>
 
-static char SccsId[] = "@(#)sccs.c 1.9 delta %G% 12:31:38 get %H% %T%";
+static char SccsId[] = "@(#)sccs.c 1.10 delta %G% 16:34:19 get %H% %T%";
 
 # define bitset(bit, word)	((bit) & (word))
 
@@ -23,6 +23,7 @@ struct sccsprog
 /* values for sccsoper */
 # define PROG		0	/* call a program */
 # define CMACRO		1	/* command substitution macro */
+# define FIX		2	/* fix a delta */
 
 /* bits for sccsflags */
 # define NO_SDOT	0001	/* no s. on front of args */
@@ -48,6 +49,8 @@ struct sccsprog SccsProg[] =
 	"rmdel",	PROG,	REALUSER,		PROGPATH(rmdel),
 	"what",		PROG,	NO_SDOT,		PROGPATH(what),
 	"del",		CMACRO,	0,			"delta/get",
+	"delt",		CMACRO,	0,			"delta/get",
+	"fix",		FIX,	0,			NULL,
 	NULL,		-1,	0,			NULL
 };
 
@@ -146,10 +149,41 @@ command(argv, forkflag)
 		fprintf(stderr, "Sccs internal error: CMACRO\n");
 		exit(EX_SOFTWARE);
 
+	  case FIX:		/* fix a delta */
+		if (strncmp(argv[1], "-r", 2) != 0)
+		{
+			fprintf(stderr, "Sccs: -r flag needed for fix command\n");
+			break;
+		}
+		xcommand(&argv[1], TRUE, "get", "-k", NULL);
+		xcommand(&argv[1], TRUE, "rmdel", NULL);
+		xcommand(&argv[2], FALSE, "get", "-e", "-g", NULL);
+		fprintf(stderr, "Sccs internal error: FIX\n");
+		exit(EX_SOFTWARE);
+
 	  default:
 		fprintf(stderr, "Sccs internal error: oper %d\n", cmd->sccsoper);
 		exit(EX_SOFTWARE);
 	}
+}
+
+
+xcommand(argv, forkflag, arg0)
+	char **argv;
+	bool forkflag;
+	char *arg0;
+{
+	register char **av;
+	char *newargv[1000];
+	register char **np;
+
+	np = newargv;
+	for (av = &arg0; *av != NULL; av++)
+		*np++ = *av;
+	for (av = argv; *av != NULL; av++)
+		*np++ = *av;
+	*np = NULL;
+	command(newargv, forkflag);
 }
 
 callprog(progpath, flags, argv, forkflag)
@@ -160,7 +194,6 @@ callprog(progpath, flags, argv, forkflag)
 {
 	register char *p;
 	register char **av;
-	char *newargv[1000];
 	extern char *makefile();
 	register int i;
 	auto int st;
@@ -169,26 +202,7 @@ callprog(progpath, flags, argv, forkflag)
 		return (-1);
 
 	/*
-	**  Build new argument vector.
-	*/
-
-	av = newargv;
-	*av++ = *argv;
-
-	/* copy program filename arguments and flags */
-	while ((p = *++argv) != NULL)
-	{
-		if (!bitset(NO_SDOT, flags) && *p != '-')
-			*av++ = makefile(p);
-		else
-			*av++ = p;
-	}
-	
-	/* terminate argument vector */
-	*av = NULL;
-
-	/*
-	**  Call real SCCS program.
+	**  Fork if appropriate.
 	*/
 
 	if (forkflag)
@@ -207,17 +221,29 @@ callprog(progpath, flags, argv, forkflag)
 	}
 
 	/*
+	**  Build new argument vector.
+	*/
+
+	/* copy program filename arguments and flags */
+	av = argv;
+	while ((p = *++av) != NULL)
+	{
+		if (!bitset(NO_SDOT, flags) && *p != '-')
+			*av = makefile(p);
+	}
+
+	/*
 	**  Set protection as appropriate.
 	*/
 
 	if (bitset(REALUSER, flags))
 		setuid(getuid());
-
+	
 	/*
-	**  Call the program.
+	**  Call real SCCS program.
 	*/
 
-	execv(progpath, newargv);
+	execv(progpath, argv);
 	fprintf(stderr, "Sccs: cannot execute ");
 	perror(progpath);
 	exit(EX_UNAVAILABLE);
