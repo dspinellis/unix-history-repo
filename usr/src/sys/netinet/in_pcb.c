@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)in_pcb.c	6.11 (Berkeley) %G%
+ *	@(#)in_pcb.c	6.12 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -135,7 +135,7 @@ in_pcbconnect(inp, nam)
 		    sin->sin_addr = satosin(&in_ifaddr->ia_broadaddr)->sin_addr;
 	}
 	if (inp->inp_laddr.s_addr == INADDR_ANY) {
-		ia = (struct in_ifaddr *)ifa_ifwithnet((struct sockaddr *)sin);
+		ia = in_iaonnetof(in_netof(sin->sin_addr));
 		if (ia == (struct in_ifaddr *)0) {
 			register struct route *ro;
 			struct ifnet *ifp;
@@ -158,7 +158,7 @@ in_pcbconnect(inp, nam)
 				((struct sockaddr_in *) &ro->ro_dst)->sin_addr =
 					sin->sin_addr;
 				rtalloc(ro);
-				if (ro->ro_rt == 0)
+				if (ro->ro_rt == (struct rtentry *)0)
 					ifp = (struct ifnet *)0;
 				else
 					ifp = ro->ro_rt->rt_ifp;
@@ -167,8 +167,7 @@ in_pcbconnect(inp, nam)
 				for (ia = in_ifaddr; ia; ia = ia->ia_next)
 					if (ia->ia_ifp == ifp)
 						break;
-			} else
-				ia = (struct in_ifaddr *)0;
+			}
 			if (ia == 0)
 				ia = in_ifaddr;
 			if (ia == 0)
