@@ -8,10 +8,10 @@
  * %sccs.include.redist.c%
  */
 
-#include "DEFS.h"
+#include <machine/machAsmDefs.h>
 
 #if defined(LIBC_SCCS) && !defined(lint)
-	ASMSTR("@(#)ldexp.s	5.3 (Berkeley) %G%")
+	ASMSTR("@(#)ldexp.s	5.4 (Berkeley) %G%")
 #endif /* LIBC_SCCS and not lint */
 
 #define DEXP_INF	0x7ff
