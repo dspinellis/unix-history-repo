@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)kern_ktrace.c	1.5 (Berkeley) %G%
+ *	@(#)kern_ktrace.c	7.1 (Berkeley) %G%
  */
 
 #ifdef KTRACE
