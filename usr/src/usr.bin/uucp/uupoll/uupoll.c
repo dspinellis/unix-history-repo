@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)uupoll.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)uupoll.c	5.2 (Berkeley) %G%";
 #endif
 
 /*
@@ -18,12 +18,17 @@ main(argc, argv)
 register int argc;
 register char **argv;
 {
+	int ret;
+	char wrkpre[MAXFULLNAME];
+	char file[MAXFULLNAME];
+
 	if (argc < 2) {
 		fprintf(stderr, "usage: uupoll system ...\n");
 		cleanup(1);
 	}
 
-	chdir(Spool);
+	ret = chdir(Spool);
+	ASSERT(ret >= 0, "CHDIR FAILED", Spool, ret);
 	strcpy(Progname, "uupoll");
 	uucpname(Myname);
 
@@ -38,7 +43,15 @@ register char **argv;
 			continue;
 		}
 		/* Remove any STST file that might stop the poll */
-		rmstat(argv[0]);
+		sprintf(wrkpre, "LCK..%.7s", argv[0]);
+		if (access(wrkpre, 0) < 0)
+			rmstat(argv[0]);
+		sprintf(wrkpre, "%c.%.7s", CMDPRE, argv[0]);
+		if (!iswrk(file, "chk", Spool, wrkpre)) {
+			sprintf(file, "%s/%c.%.7szPOLL", subdir(Spool, CMDPRE),
+				CMDPRE, argv[0]);
+			close(creat(file, 0666));
+		}
 		/* Attempt the call */
 		xuucico(argv[0]);
 	}

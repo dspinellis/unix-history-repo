@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)gename.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)gename.c	5.4 (Berkeley) %G%";
 #endif
 
 #include "uucp.h"
@@ -13,16 +13,14 @@ static char sccsid[] = "@(#)gename.c	5.3 (Berkeley) %G%";
  *
  *	return codes:  none
  */
-
 gename(pre, sys, grade, file)
 char pre, *sys, grade, *file;
 {
-	static char sqnum[SEQLEN+1];
+	static char sqnum[5];
 
 	getseq(sqnum);
 	sprintf(file, "%c.%.7s%c%.*s", pre, sys, grade, SEQLEN, sqnum);
 	DEBUG(4, "file - %s\n", file);
-	return;
 }
 
 
@@ -56,7 +54,7 @@ register char *snum;
 			sleep(5);
 		}
 
-		ASSERT(i < SLOCKTRIES, "CAN NOT GET", "SEQLOCK", 0);
+		ASSERT(i < SLOCKTRIES, "CAN NOT GET", SEQLOCK, 0);
 
 		if ((fd = open(SEQFILE, 2)) >= 0) {
 			int alphalen;
@@ -65,11 +63,12 @@ register char *snum;
 
 			alphalen = strlen(alphabet);
 			read(fd, snum, SEQLEN);
+			/* initialize rand() for possible use */
+			srand((int)time((time_t *)0));
 			/* increment the penultimate character */
 			for (i = SEQLEN - 2; i >= 0; --i) {
 				if ((p = index(alphabet, snum[i])) == NULL) {
-					/* drastic but effective */
-					snum[i] = alphabet[alphalen - 1];
+					p = &alphabet[rand() % alphalen];
 					DEBUG(6, "bad seqf: %s\n", snum);
 				}
 				if (++p < &alphabet[alphalen]) {

@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)getpwinfo.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)getpwinfo.c	5.2 (Berkeley) %G%";
 #endif
 
 #include "uucp.h"
@@ -26,28 +26,26 @@ register char *path, *name;
 
 	if ((l = getlogin()) != NULL) {
 		pwd = getpwnam(l);
-		if (pwd->pw_uid == uid)
+		if (pwd->pw_uid == uid || *l == 'U')
 			goto setup;
 	}
 	if ((pwd = getpwuid(uid)) == NULL) {
 		/* can not find uid in passwd file */
 		*path = '\0';
-		return(FAIL);
+		return FAIL;
 	}
 
     setup:
 	strcpy(path, pwd->pw_dir);
 	strcpy(name, pwd->pw_name);
-	return(0);
+	return SUCCESS;
 }
 
 
-/***
- *	gninfo(name, uid, path)	get passwd file info for name
- *	char *path, *name;
- *	int *uid;
+/*
+ *	get passwd file info for name
  *
- *	return codes:  0  |  FAIL
+ *	return codes:  SUCCESS  |  FAIL
  */
 
 gninfo(name, uid, path)
@@ -60,12 +58,10 @@ int *uid;
 	if ((pwd = getpwnam(name)) == NULL) {
 		/* can not find name in passwd file */
 		*path = '\0';
-		return(FAIL);
+		return FAIL;
 	}
 
 	strcpy(path, pwd->pw_dir);
 	*uid = pwd->pw_uid;
-	return(0);
+	return SUCCESS;
 }
-
-

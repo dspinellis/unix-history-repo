@@ -1,29 +1,40 @@
 #ifndef lint
-static char sccsid[] = "@(#)pk1.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)pk1.c	5.2 (Berkeley) %G%";
 #endif
 
-extern	char	*malloc();
-
-#define USER	1
-#include <stdio.h>
-#ifdef SYSIII
+#ifdef USG
 #include <sys/types.h>
-#endif
-#include "pk.p"
+#endif USG
 #include <sys/param.h>
 #include "pk.h"
+#include "uucp.h"
 #include <sys/buf.h>
 #include <setjmp.h>
 #include <signal.h>
+#ifdef BSD4_2
+#include <sys/time.h>
+#endif BSD4_2
 
+#ifdef VMS
+#include <eunice/eunice.h>
+#include <vms/iodef.h>
+#include <vms/ssdef.h>
+int iomask[2];
+#endif VMS
 
 #define PKMAXSTMSG 40
 #define	PKTIME	25
+#define CONNODATA 10
+#define NTIMEOUT 10
+
 extern int Errorrate;
+extern int errno;
+extern char *sys_errlist[];
+extern jmp_buf Sjbuf;
+extern	char *malloc();
+
 int Connodata = 0;
 int Ntimeout = 0;
-#define CONNODATA 10
-#define NTIMEOUT 50
 /*
  * packet driver support routines
  *
@@ -44,23 +55,23 @@ int ifn, ofn;
 	register int i;
 
 	if (++pkactive >= NPLINES)
-		return(NULL);
+		return NULL;
 	if ((pk = (struct pack *) malloc(sizeof (struct pack))) == NULL)
-		return(NULL);
-	pkzero((caddr_t) pk, sizeof (struct pack));
+		return NULL;
+	bzero((caddr_t) pk, sizeof (struct pack));
 	pk->p_ifn = ifn;
 	pk->p_ofn = ofn;
 	pk->p_xsize = pk->p_rsize = PACKSIZE;
 	pk->p_rwindow = pk->p_swindow = WINDOWS;
 	/*  allocate input windows */
 	for (i = 0; i < pk->p_rwindow; i++) {
-		if ((bp = (char **) GETEPACK) == NULL)
+		if ((bp = (char **) malloc((unsigned)pk->p_xsize)) == NULL)
 			break;
 		*bp = (char *) pk->p_ipool;
 		pk->p_ipool = bp;
 	}
 	if (i == 0)
-		return(NULL);
+		return NULL;
 	pk->p_rwindow = i;
 
 	/* start synchronization */
@@ -72,26 +83,26 @@ int ifn, ofn;
 		}
 	}
 	if (i >= NPLINES)
-		return(NULL);
+		return NULL;
 	pkoutput(pk);
 
 	for (i = 0; i < PKMAXSTMSG; i++) {
-		PKGETPKT(pk);
+		pkgetpack(pk);
 		if ((pk->p_state & LIVE) != 0)
 			break;
 	}
 	if (i >= PKMAXSTMSG)
-		return(NULL);
+		return NULL;
 
 	pkreset(pk);
-	return(pk);
+	return pk;
 }
 
 
 /*
  * input framing and block checking.
  * frame layout for most devices is:
- *	
+ *
  *	S|K|X|Y|C|Z|  ... data ... |
  *
  *	where 	S	== initial synch byte
@@ -115,7 +126,7 @@ int pksizes[] = {
 pkgetpack(ipk)
 struct pack *ipk;
 {
-	int ret, k, tries;
+	int k, tries, noise;
 	register char *p;
 	register struct pack *pk;
 	register struct header *h;
@@ -124,36 +135,41 @@ struct pack *ipk;
 	char **bp;
 	char hdchk;
 
-	pk = PADDR;
-	if ((pk->p_state & DOWN) ||
-	  Connodata > CONNODATA /* || Ntimeout > NTIMEOUT */)
+	pk = ipk;
+	if ((pk->p_state & DOWN) || Connodata > CONNODATA || Ntimeout > NTIMEOUT)
 		pkfail();
 	ifn = pk->p_ifn;
 
 	/* find HEADER */
-	for (tries = 0; tries < GETRIES; ) {
+	for (tries = 0, noise = 0; tries < GETRIES; ) {
 		p = (caddr_t) &pk->p_ihbuf;
-		if ((ret = pkcget(ifn, p, 1)) < 0) {
-			/* set up retransmit or REJ */
-			tries++;
-			pk->p_msg |= pk->p_rmsg;
-			if (pk->p_msg == 0)
-				pk->p_msg |= M_RR;
-			if ((pk->p_state & LIVE) == LIVE)
-				pk->p_state |= RXMIT;
-			pkoutput(pk);
-			continue;
+		if (pkcget(ifn, p, 1) == SUCCESS) {
+			if (*p++ == SYN) {
+				if (pkcget(ifn, p, HDRSIZ-1) == SUCCESS)
+					break;
+			} else
+				if (noise++ < (3*pk->p_rsize))
+					continue;
+			DEBUG(4, "Noisy line - set up RXMIT", "");
+			noise = 0;
 		}
+		/* set up retransmit or REJ */
+		tries++;
+		pk->p_msg |= pk->p_rmsg;
+		if (pk->p_msg == 0)
+			pk->p_msg |= M_RR;
+		if ((pk->p_state & LIVE) == LIVE)
+			pk->p_state |= RXMIT;
+		pkoutput(pk);
+
 		if (*p != SYN)
 			continue;
 		p++;
-		ret = pkcget(ifn, p, HDRSIZ - 1);
-		if (ret == -1)
-			continue;
-		break;
+		if (pkcget(ifn, p, HDRSIZ - 1) == SUCCESS)
+			break;
 	}
 	if (tries >= GETRIES) {
-		PKDEBUG(4, "tries = %d\n", tries);
+		DEBUG(4, "tries = %d\n", tries);
 		pkfail();
 	}
 
@@ -165,23 +181,22 @@ struct pack *ipk;
 	sum = (unsigned) *p++ & 0377;
 	sum |= (unsigned) *p << 8;
 	h->sum = sum;
-	PKDEBUG(7, "rec h->cntl %o\n", (unsigned) h->cntl);
+	DEBUG(7, "rec h->cntl 0%o\n", h->cntl&0xff);
 	k = h->ksize;
 	if (hdchk != h->ccntl) {
 		/* bad header */
-		PKDEBUG(7, "bad header %o,", hdchk);
-		PKDEBUG(7, "h->ccntl %o\n", h->ccntl);
+		DEBUG(7, "bad header 0%o,", hdchk&0xff);
+		DEBUG(7, "h->ccntl 0%o\n", h->ccntl&0xff);
 		return;
 	}
 	if (k == 9) {
 		if (((h->sum + h->cntl) & 0xffff) == CHECK) {
 			pkcntl(h->cntl, pk);
-			PKDEBUG(7, "state - %o\n", pk->p_state);
-		}
-		else {
+			DEBUG(7, "state - 0%o\n", pk->p_state);
+		} else {
 			/*  bad header */
-			PKDEBUG(7, "bad header (k==9) %o\n", h->cntl);
 			pk->p_state |= BADFRAME;
+			DEBUG(7, "bad header (k==9) 0%o\n", h->cntl&0xff);
 		}
 		return;
 	}
@@ -190,21 +205,18 @@ struct pack *ipk;
 		pksack(pk);
 		Connodata = 0;
 		bp = pk->p_ipool;
-		pk->p_ipool = (char **) *bp;
 		if (bp == NULL) {
-			PKDEBUG(7, "bp NULL %s\n", "");
-		return;
+			DEBUG(7, "bp NULL %s\n", "");
+			return;
 		}
-	}
-	else {
+		pk->p_ipool = (char **) *bp;
+	} else {
 		return;
 	}
-	ret = pkcget(pk->p_ifn, (char *) bp, pk->p_rsize);
-	if (ret == 0)
+	if (pkcget(pk->p_ifn, (char *) bp, pk->p_rsize) == SUCCESS)
 		pkdata(h->cntl, h->sum, pk, (char **) bp);
-	return;
+	Ntimeout = 0;
 }
-
 
 pkdata(c, sum, pk, bp)
 char c;
@@ -212,9 +224,9 @@ unsigned short sum;
 register struct pack *pk;
 char **bp;
 {
-register x;
-int t;
-char m;
+	register x;
+	int t;
+	char m;
 
 	if (pk->p_state & DRAINO || !(pk->p_state & LIVE)) {
 		pk->p_msg |= pk->p_rmsg;
@@ -237,7 +249,6 @@ slot:
 	pk->p_is[x] = c;
 	pk->p_isum[x] = sum;
 	pk->p_ib[x] = (char *)bp;
-	return;
 }
 
 
@@ -245,9 +256,6 @@ slot:
 /*
  * setup input transfers
  */
-pkrstart(pk)
-{}
-
 #define PKMAXBUF 128
 /*
  * Start transmission on output device associated with pk.
@@ -262,7 +270,6 @@ char cntl;
 register x;
 {
 	register char *p;
-	int ret;
 	short checkword;
 	char hdchk;
 
@@ -284,34 +291,32 @@ register x;
 	*p = cntl;
 	hdchk ^= *p++;
 	*p = hdchk;
- /*  writes  */
-PKDEBUG(7, "send %o\n", (unsigned) cntl);
+	/*  writes  */
+	DEBUG(7, "send 0%o\n", cntl&0xff);
 	p = (caddr_t) & pk->p_ohbuf;
 	if (x < 0) {
-#ifdef PROTODEBUG
-		GENERROR(p, HDRSIZ);
-#endif
-		ret = write(pk->p_ofn, p, HDRSIZ);
-		PKASSERT(ret == HDRSIZ, "PKXSTART ret", "", ret);
+		if(write(pk->p_ofn, p, HDRSIZ) != HDRSIZ) {
+			alarm(0);
+			logent("PKXSTART write failed", sys_errlist[errno]);
+			longjmp(Sjbuf, 4);
+		}
 	}
 	else {
 		char buf[PKMAXBUF + HDRSIZ], *b;
 		int i;
-		for (i = 0, b = buf; i < HDRSIZ; i++) 
+		for (i = 0, b = buf; i < HDRSIZ; i++)
 			*b++ = *p++;
 		for (i = 0, p = pk->p_ob[x]; i < pk->p_xsize; i++)
 			*b++ = *p++;
-#ifdef PROTODEBUG
-		GENERROR(buf, pk->p_xsize + HDRSIZ);
-#endif
-		ret = write(pk->p_ofn, buf, pk->p_xsize + HDRSIZ);
-		PKASSERT(ret == pk->p_xsize + HDRSIZ,
-		  "PKXSTART ret", "", ret);
+		if (write(pk->p_ofn, buf, pk->p_xsize + HDRSIZ) != (HDRSIZ + pk->p_xsize)) {
+			alarm(0);
+			logent("PKXSTART write failed", sys_errlist[errno]);
+			longjmp(Sjbuf, 5);
+		}
 		Connodata = 0;
 	}
 	if (pk->p_msg)
 		pkoutput(pk);
-	return;
 }
 
 
@@ -332,7 +337,6 @@ int count, flag;
 	}
 	for (i = 0; i < count; i++)
 		*d++ = *s++;
-	return;
 }
 
 
@@ -348,49 +352,83 @@ int count, flag;
  */
 
 jmp_buf Getjbuf;
-cgalarm() { longjmp(Getjbuf, 1); }
+cgalarm()
+{
+	longjmp(Getjbuf, 1);
+}
 
 pkcget(fn, b, n)
 int fn, n;
 register char *b;
 {
 	register int nchars, ret;
+	extern int linebaudrate;
+#ifdef BSD4_2
+	long r, itime = 0;
+	struct timeval tv;
+#endif BSD4_2
+#ifdef VMS
+	short iosb[4];
+	int SYS$QioW();	/* use this for long reads on vms */
+#endif VMS
 
 	if (setjmp(Getjbuf)) {
 		Ntimeout++;
-		PKDEBUG(4, "alarm %d\n", Ntimeout);
-		return(-1);
+		DEBUG(4, "pkcget: alarm %d\n", Ntimeout);
+		return FAIL;
 	}
 	signal(SIGALRM, cgalarm);
 
 	alarm(PKTIME);
-	for (nchars = 0; nchars < n; nchars += ret) {
+	for (nchars = 0; nchars < n; ) {
+#ifndef VMS
 		ret = read(fn, b, n - nchars);
+#else VMS
+		_$Cancel_IO_On_Signal = FD_FAB_Pointer[fn];
+		ret = SYS$QioW(_$EFN,(FD_FAB_Pointer[fn]->fab).fab$l_stv,
+				IO$_READVBLK|IO$M_NOFILTR|IO$M_NOECHO,
+				iosb,0,0,b,n-nchars,0,
+				iomask,0,0);
+		_$Cancel_IO_On_Signal = 0;
+		if (ret == SS$_NORMAL)
+			ret = iosb[1]+iosb[3];   /* get length of transfer */
+		else
+			ret = 0;
+#endif VMS
 		if (ret == 0) {
 			alarm(0);
-			return(-1);
+			return FAIL;
 		}
-		PKASSERT(ret > 0, "PKCGET READ", "", ret);
-		b += ret;
+		if (ret <= 0) {
+			alarm(0);
+			logent("PKCGET read failed", sys_errlist[errno]);
+			longjmp(Sjbuf, 6);
+		}
+ 		b += ret;
+		nchars += ret;
+		if (nchars < n)
+#ifndef BSD4_2
+			if (linebaudrate > 0 && linebaudrate < 4800)
+				sleep(1);
+#else BSD4_2
+			if (linebaudrate > 0) {
+				r = (n - nchars) * 100000;
+				r = r / linebaudrate;
+				r = (r * 100) - itime;
+				itime = 0;
+				/* we predict that more than 1/50th of a
+				   second will go by before the read will
+				   give back all that we want. */
+			 	if (r > 20000) {
+					tv.tv_sec = r / 1000000L;
+					tv.tv_usec = r % 1000000L;
+					DEBUG(11, "PKCGET stall for %d", tv.tv_sec);
+					DEBUG(11, ".%06d sec\n", tv.tv_usec);
+					(void) select (fn, (int *)0, (int *)0, (int *)0, &tv);
+			    	}
+		    	}
+#endif BSD4_2
 	}
 	alarm(0);
-	return(0);
+	return SUCCESS;
 }
-
-
-#ifdef PROTODEBUG
-generror(p, s)
-char *p;
-int s;
-{
-	int r;
-	if (Errorrate != 0 && (rand() % Errorrate) == 0) {
-		r = rand() % s;
-fprintf(stderr, "gen err at %o, (%o), ", r, (unsigned) *(p + r));
-		*(p + r) += 1;
-	}
-	return;
-}
-
-
-#endif

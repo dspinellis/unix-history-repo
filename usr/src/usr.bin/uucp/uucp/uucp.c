@@ -1,28 +1,33 @@
 #ifndef lint
-static char sccsid[] = "@(#)uucp.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)uucp.c	5.2 (Berkeley) %G%";
 #endif
 
 #include "uucp.h"
 #include <sys/types.h>
 #include <sys/stat.h>
+#include "uust.h"
 
 /*
  *	uucp
  */
-
 int Uid;
 char *Ropt = " ";
 char Path[100], Optns[10], Ename[8];
 char Grade = 'n';
+#ifdef DONTCOPY
+int Copy = 0;
+#else !DONTCOPY
 int Copy = 1;
+#endif !DONTCOPY
 char Nuser[32];
 
 /* variables used to check if talking to more than one system. */
 int	xsflag = -1;
 char	xsys[8] = 0;
 
-#define MAXCOUNT 20	/* maximun number of commands per C. file */
-
+long Nbytes = 0;
+#define MAXBYTES 50000	/* maximun number of bytes of data per C. file */
+#define MAXCOUNT 15	/* maximun number of files per C. file */
 
 main(argc, argv)
 char *argv[];
@@ -30,17 +35,25 @@ char *argv[];
 	int ret;
 	register char *sysfile1, *sysfl2, *cp;
 	char file1[MAXFULLNAME], file2[MAXFULLNAME];
-	int orig_uid = getuid();
+	int avoidgwd = 0;
 
 	strcpy(Progname, "uucp");
 	uucpname(Myname);
 	umask(WFMASK);
 	Optns[0] = '-';
 	Optns[1] = 'd';
+#ifdef DONTCOPY
+	Optns[2] = 'c';
+#else !DONTCOPY
 	Optns[2] = 'C';
+#endif !DONTCOPY
 	Ename[0] = Nuser[0] = Optns[3] = '\0';
 	while(argc>1 && argv[1][0] == '-'){
 		switch(argv[1][1]){
+		case 'a':
+			/* efficiency hack; avoid gwd call */
+			avoidgwd = 1;
+			break;
 		case 'C':
 			Copy = 1;
 			Optns[2] = 'C';
@@ -58,7 +71,8 @@ char *argv[];
 			sprintf(Ename, "%.7s", &argv[1][2]);
 			break;
 		case 'g':
-			Grade = argv[1][2]; break;
+			Grade = argv[1][2];
+			break;
 		case 'm':
 			strcat(Optns, "m");
 			break;
@@ -71,7 +85,7 @@ char *argv[];
 		case 's':
 			Spool = &argv[1][2]; break;
 		case 'x':
-			chkdebug(orig_uid);
+			chkdebug();
 			Debug = atoi(&argv[1][2]);
 			if (Debug <= 0)
 				Debug = 1;
@@ -82,19 +96,21 @@ char *argv[];
 		--argc;  argv++;
 	}
 	DEBUG(4, "\n\n** %s **\n", "START");
-	gwd(Wrkdir);
-	subchdir(Spool);
+	if (!avoidgwd)
+		gwd(Wrkdir);
+	ret = subchdir(Spool);
+	ASSERT(ret >= 0, "CHDIR FAILED", Spool, ret);
 
 	Uid = getuid();
 	ret = guinfo(Uid, User, Path);
-	ASSERT(ret == 0, "CAN NOT FIND UID", "", Uid);
+	ASSERT(ret == 0, "CAN NOT FIND UID", CNULL, Uid);
 	DEBUG(4, "UID %d, ", Uid);
 	DEBUG(4, "User %s,", User);
 	DEBUG(4, "Ename (%s) ", Ename);
 	DEBUG(4, "PATH %s\n", Path);
 	if (argc < 3) {
 		fprintf(stderr, "usage uucp from ... to\n");
-		cleanup(0);
+		cleanup(1);
 	}
 
 
@@ -108,7 +124,13 @@ char *argv[];
 			sprintf(Rmtname, "%.7s", sysfl2);
 		if (versys(sysfl2) != 0) {
 			fprintf(stderr, "bad system name: %s\n", sysfl2);
-			cleanup(0);
+			cleanup(1);
+		}
+		/* block multi-hop requests immediately */
+		if (index(cp+1, '!') != NULL) {
+			fprintf(stderr, "uucp handles only adjacent sites.\n");
+			fprintf(stderr, "Try uusend for multi-hop delivery.\n");
+			cleanup(1);
 		}
 		strcpy(file2, cp + 1);
 	}
@@ -164,9 +186,8 @@ int code;
 }
 
 
-/***
- *	copy(s1, f1, s2, f2)	generate copy files
- *	char *s1, *f1, *s2, *f2;
+/*
+ *	generate copy files
  *
  *	return codes 0  |  FAIL
  */
@@ -200,20 +221,20 @@ register char *s1, *f1, *s2, *f2;
 		/* all work here */
 		DEBUG(4, "all work here %d\n", type);
 		if (ckexpf(file1))
-			 return(FAIL);
+			 return FAIL;
 		if (ckexpf(file2))
-			 return(FAIL);
+			 return FAIL;
 		if (stat(subfile(file1), &stbuf) != 0) {
 			fprintf(stderr, "can't get file status %s \n copy failed\n",
 			  file1);
-			return(0);
+			return SUCCESS;
 		}
 		statret = stat(subfile(file2), &stbuf1);
 		if (statret == 0
 		  && stbuf.st_ino == stbuf1.st_ino
 		  && stbuf.st_dev == stbuf1.st_dev) {
 			fprintf(stderr, "%s %s - same file; can't copy\n", file1, file2);
-			return(0);
+			return SUCCESS;
 		}
 		if (chkpth(User, "", file1) != 0
 		  || chkperm(file2, index(Optns, 'd'))
@@ -224,33 +245,33 @@ register char *s1, *f1, *s2, *f2;
 		if ((stbuf.st_mode & ANYREAD) == 0) {
 			fprintf(stderr, "can't read file (%s) mode (%o)\n",
 			  file1, stbuf.st_mode);
-			return(FAIL);
+			return FAIL;
 		}
 		if (statret == 0 && (stbuf1.st_mode & ANYWRITE) == 0) {
 			fprintf(stderr, "can't write file (%s) mode (%o)\n",
 			  file2, stbuf.st_mode);
-			return(FAIL);
+			return FAIL;
 		}
 		xcp(file1, file2);
 		logent("WORK HERE", "DONE");
-		return(0);
+		return SUCCESS;
 	case 1:
 		/* receive file */
 		DEBUG(4, "receive file - %d\n", type);
 		chsys(s1);
 		if (file1[0] != '~')
 			if (ckexpf(file1))
-				 return(FAIL);
+				 return FAIL;
 		if (ckexpf(file2))
-			 return(FAIL);
+			 return FAIL;
 		if (chkpth(User, "", file2) != 0) {
 			fprintf(stderr, "permission denied\n");
-			return(FAIL);
+			return FAIL;
 		}
 		if (Ename[0] != '\0') {
 			/* execute uux - remote uucp */
 			xuux(Ename, s1, file1, s2, file2, opts);
-			return(0);
+			return SUCCESS;
 		}
 
 		cfp = gtcfile(s1);
@@ -259,30 +280,30 @@ register char *s1, *f1, *s2, *f2;
 	case 2:
 		/* send file */
 		if (ckexpf(file1))
-			 return(FAIL);
+			 return FAIL;
 		if (file2[0] != '~')
 			if (ckexpf(file2))
-				 return(FAIL);
+				 return FAIL;
 		DEBUG(4, "send file - %d\n", type);
 		chsys(s2);
 
 		if (chkpth(User, "", file1) != 0) {
 			fprintf(stderr, "permission denied %s\n", file1);
-			return(FAIL);
+			return FAIL;
 		}
 		if (stat(subfile(file1), &stbuf) != 0) {
 			fprintf(stderr, "can't get status for file %s\n", file1);
-			return(FAIL);
+			return FAIL;
 		}
 		if ((stbuf.st_mode & S_IFMT) == S_IFDIR) {
 			fprintf(stderr, "directory name illegal - %s\n",
 			  file1);
-			return(FAIL);
+			return FAIL;
 		}
 		if ((stbuf.st_mode & ANYREAD) == 0) {
 			fprintf(stderr, "can't read file (%s) mode (%o)\n",
 			  file1, stbuf.st_mode);
-			return(FAIL);
+			return FAIL;
 		}
 		if ((Nuser[0] != '\0') && (index(Optns, 'n') == NULL))
 			strcat(Optns, "n");
@@ -291,13 +312,14 @@ register char *s1, *f1, *s2, *f2;
 			if (Nuser[0] != '\0')
 				sprintf(opts, "-n%s", Nuser);
 			xuux(Ename, s1, file1, s2, file2, opts);
-			return(0);
+			return SUCCESS;
 		}
+		Nbytes +=  stbuf.st_size;
 		if (Copy) {
-			gename(DATAPRE, s2, Grade, dfile);
+			gename(DATAPRE, Myname, Grade, dfile);
 			if (xcp(file1, dfile) != 0) {
 				fprintf(stderr, "can't copy %s\n", file1);
-				return(FAIL);
+				return FAIL;
 			}
 		}
 		else {
@@ -316,26 +338,26 @@ register char *s1, *f1, *s2, *f2;
 		chsys(s1);
 		if (strcmp(s2,  Myname) == SAME) {
 			if (ckexpf(file2))
-				 return(FAIL);
+				 return FAIL;
 			if (chkpth(User, "", file2) != 0) {
 				fprintf(stderr, "permission denied\n");
-				return(FAIL);
+				return FAIL;
 			}
 		}
 		if (Ename[0] != '\0') {
 			/* execute uux - remote uucp */
 			xuux(Ename, s1, file1, s2, file2, opts);
-			return(0);
+			return SUCCESS;
 		}
 		cfp = gtcfile(s1);
 		fprintf(cfp, "X %s %s!%s %s %s\n", file1, s2, file2, User, Optns);
 		break;
 	}
-	return(0);
+	return SUCCESS;
 }
 
-/***
- *	xuux(ename, s1, s2, f1, f2, opts)	execute uux for remote uucp
+/*
+ *	execute uux for remote uucp
  *
  *	return code - none
  */
@@ -361,8 +383,8 @@ char *ename, *s1, *s2, *f1, *f2, *opts;
 FILE *Cfp = NULL;
 char Cfile[NAMESIZE];
 
-/***
- *	gtcfile(sys)	- get a Cfile descriptor
+/*
+ *	get a Cfile descriptor
  *
  *	return an open file descriptor
  */
@@ -376,24 +398,29 @@ register char *sys;
 	register int savemask;
 
 	if (strcmp(presys, sys) != SAME  /* this is !SAME on first call */
+	  || Nbytes > MAXBYTES
 	  || ++cmdcount > MAXCOUNT) {
-
 		cmdcount = 1;
+		Nbytes = 0;
 		if (presys[0] != '\0') {
 			clscfile();
 		}
 		gename(CMDPRE, sys, Grade, Cfile);
+#ifdef VMS
+		savemask = umask(~0600); /* vms must have read permission */
+#else !VMS
 		savemask = umask(~0200);
+#endif !VMS
 		Cfp = fopen(subfile(Cfile), "w");
 		umask(savemask);
-		ASSERT(Cfp != NULL, "CAN'T OPEN", Cfile, 0);
+		ASSERT(Cfp != NULL, CANTOPEN, Cfile, 0);
 		strcpy(presys, sys);
 	}
-	return(Cfp);
+	return Cfp;
 }
 
-/***
- *	clscfile()	- close cfile
+/*
+ *	close cfile
  *
  *	return code - none
  */
@@ -405,19 +432,13 @@ clscfile()
 	fclose(Cfp);
 	chmod(subfile(Cfile), ~WFMASK & 0777);
 	logent(Cfile, "QUE'D");
+	US_CRS(Cfile);
 	Cfp = NULL;
-	return;
 }
 
-/****
- *
- * chsys(s1)	compile a list of all systems we are referencing
- *	char *s1
- *
- * no return code -- sets up the xsys array.
- * Author: mcnc!swd, Stephen Daniel
+/*
+ * compile a list of all systems we are referencing
  */
-
 chsys(s1)
 register char *s1;
 {
@@ -431,7 +452,7 @@ register char *s1;
 		return;
 	}
 
-	if (strcmp(xsys, s1) == SAME)
+	if (strncmp(xsys, s1, 7) == SAME)
 		return;
 
 	xsflag++;

@@ -1,4 +1,4 @@
-/*	pk.h	5.1	83/07/02	*/
+/*	pk.h	5.2	85/01/22	*/
 
 struct header {
 	char	sync;

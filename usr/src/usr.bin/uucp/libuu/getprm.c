@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)getprm.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)getprm.c	5.2 (Berkeley) %G%";
 #endif
 
 #include <stdio.h>
@@ -10,10 +10,8 @@ static char sccsid[] = "@(#)getprm.c	5.1 (Berkeley) %G%";
 #define HASSYSPART	1
 
 
-/*******
- *	char *
- *	getprm(s, prm)	get next parameter from s
- *	char *s, *prm;
+/*
+ *	get next parameter from s
  *
  *	return - pointer to next character in s
  */
@@ -30,13 +28,13 @@ register char *s, *prm;
 
 	*prm = '\0';
 	if (*s == '\0')
-		return(NULL);
+		return NULL;
 
 	if (*s == '>' || *s == '<' || *s == '|'
 	  || *s == ';' || *s == '&') {
 		*prm++ = *s++;
 		*prm = '\0';
-		return(s);
+		return s;
 	}
 
 	/* look for quoted argument */
@@ -46,7 +44,7 @@ register char *s, *prm;
 			while (c != s)
 				*prm++ = *s++;
 			*prm = '\0';
-			return(s);
+			return s;
 		}
 	}
 
@@ -57,22 +55,21 @@ register char *s, *prm;
 			while (c != s)
 				*prm++ = *s++;
 			*prm = '\0';
-			return(s);
+			return s;
 		}
 	}
 
 	while (*s != ' ' && *s != '\t' && *s != '<'
-	&& *s != '>' && *s != '|' && *s != '\0'
-	&& *s != '&' && *s != ';' && *s != '\n')
+		&& *s != '>' && *s != '|' && *s != '\0'
+		&& *s != '&' && *s != ';' && *s != '\n')
 		*prm++ = *s++;
 	*prm = '\0';
 
-	return(s);
+	return s;
 }
 
-/***
- *	split(name, sys, rest)	split into system and file part
- *	char *name, *sys, *rest;
+/*
+ *	split into system and file part
  *
  *	return codes:
  *		NOSYSPART
@@ -95,14 +92,14 @@ char *sys;
 				*rest++ = *name++;
 			*rest = '\0';
 			*sys = '\0';
-			return(NOSYSPART);
+			return NOSYSPART;
 		}
 	}
 
 	if ((c = index(name, '!')) == NULL) {
 		strcpy(rest, name);
 		*sys = '\0';
-		return(NOSYSPART);
+		return NOSYSPART;
 	}
 
 	*c = '\0';
@@ -111,5 +108,5 @@ char *sys;
 			break;
 
 	strcpy(rest, ++c);
-	return(HASSYSPART);
+	return HASSYSPART;
 }

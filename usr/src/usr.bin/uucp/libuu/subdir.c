@@ -1,16 +1,10 @@
 #ifndef lint
-static char sccsid[] = "@(#)subdir.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)subdir.c	5.2 (Berkeley) %G%";
 #endif
 
 #include "uucp.h"
-#ifdef	UUDIR
 /*
  * By Tom Truscott, March 1983
- * THIS VERSION OF SYSKLUDGE IS FOR USE ONLY
- * WITH THE 'UUDIR' VERSION OF UUCP.
- *
- * There once was a separate 'uudir' package to retrofit
- * versions of uucp, but that is no longer recommended.
  *
  * Prefix table.
  * If a prefix is "abc", for example,
@@ -37,7 +31,6 @@ static char *prefix[] = {
  */
 
 #define	BUFLEN	50
-/* assert(strlen(Spool)+1+14+1+14 <= BUFLEN) */
 
 static	char fn1[BUFLEN], fn2[BUFLEN];	/* remapped filename areas */
 static	int	inspool;		/* true iff working dir is Spool */
@@ -46,7 +39,7 @@ static	int	inspool;		/* true iff working dir is Spool */
  * return (possibly) remapped string s
  */
 char *
-SubFile(as)
+subfile(as)
 char *as;
 {
 	register char *s, **p;
@@ -89,7 +82,7 @@ char *as;
 /*
  * save away filename
  */
-SubChDir(s)
+subchdir(s)
 register char *s;
 {
 	inspool = (strcmp(s, Spool) == 0);
@@ -100,16 +93,13 @@ register char *s;
  * return possibly corrected directory for searching
  */
 char *
-SubDir(d, pre)
+subdir(d, pre)
 register char *d, pre;
 {
 	if (strcmp(d, Spool) == 0)
 		if (pre == CMDPRE)
-			return("/usr/spool/uucp/C.");
+			return(CMDSDIR);
 		else if (pre == XQTPRE)
-			return("/usr/spool/uucp/X.");
+			return(XEQTDIR);
 	return(d);
 }
-#else
-static int subdir_here;		/* quiet 'ranlib' command */
-#endif

@@ -1,13 +1,10 @@
 #ifndef lint
-static char sccsid[] = "@(#)getargs.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)getargs.c	5.2 (Berkeley) %G%";
 #endif
 
-#include <stdio.h>
+#include "uucp.h"
 
-/*******
- *	getargs(s, arps)
- *	char *s, *arps[];
- *
+/*
  *	getargs  -  this routine will generate a vector of
  *	pointers (arps) to the substrings in string "s".
  *	Each substring is separated by blanks and/or tabs.
@@ -21,12 +18,13 @@ static char sccsid[] = "@(#)getargs.c	5.1 (Berkeley) %G%";
  *	is used all over the place.  Its features may be useful
  *	but a separate fancy_getargs() should be called instead.
  *
- *	return - the number of subfields.
+ *	return - the number of subfields, or -1 if >= maxargs.
  */
 
-getargs(s, arps)
+getargs(s, arps, maxargs)
 register char *s;
 char *arps[];
+int maxargs;
 {
 	register int i;
 #ifdef	FANCYARGS
@@ -36,8 +34,7 @@ char *arps[];
 
 	i = 0;
 #ifndef	FANCYARGS
-	for (;;) {
-		arps[i] = NULL;
+	while (i < maxargs) {
 		while (*s == ' ' || *s == '\t')
 			*s++ = '\0';
 		if (*s == '\n')
@@ -50,7 +47,7 @@ char *arps[];
 				s++;
 	}
 #else
-	for (;;) {
+	while (i < maxargs) {
 		while (*s == ' ' || *s == '\t')
 			++s;
 		if (*s == '\n' || *s == '\0')
@@ -91,7 +88,9 @@ char *arps[];
 		}
 		*sp++ = 0;
 	}
-	arps[i] = NULL;
 #endif
-	return(i);
+	if (i >= maxargs)
+		return FAIL;
+	arps[i] = NULL;
+	return i;
 }

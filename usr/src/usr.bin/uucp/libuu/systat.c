@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)systat.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)systat.c	5.2 (Berkeley) %G%";
 #endif
 
 #include "uucp.h"
@@ -7,7 +7,7 @@ static char sccsid[] = "@(#)systat.c	5.1 (Berkeley) %G%";
 
 extern	time_t	time();
 
-#define STATNAME(f, n) sprintf(f, "%s/%s.%.7s", Spool, "STST", n)
+#define STATNAME(f, n) sprintf(f, "%s/%s/%.7s", Spool, "STST", n)
 #define S_SIZE 100
 
 /*******
@@ -23,9 +23,9 @@ char *name, *text;
 int type;
 {
 	char filename[MAXFULLNAME], line[S_SIZE];
-	int count;
+	int count, oldtype;
 	register FILE *fp;
-	time_t prestime;
+	time_t prestime, rtry;
 
 	if (type == 0)
 		return;
@@ -37,19 +37,35 @@ int type;
 	fp = fopen(filename, "r");
 	if (fp != NULL) {
 		fgets(line, S_SIZE, fp);
-		sscanf(&line[2], "%d", &count);
+		sscanf(line, "%d %d", &oldtype, &count);
 		if (count <= 0)
 			count = 0;
 		fclose(fp);
+		/* If merely 'wrong time', don't change existing STST */
+		if (type == SS_WRONGTIME && oldtype != SS_INPROGRESS)
+			return;
 	}
 
-	if (type == SS_FAIL)
+	rtry = Retrytime;
+	/* if failures repeat, don't try so often,
+	 * to forstall a 'MAX RECALLS' situation.
+	 */
+	if (type == SS_FAIL) {
 		count++;
+		if (count > 5) {
+			rtry = rtry * (count-5);
+			if (rtry > ONEDAY/2)
+				rtry = ONEDAY/2;
+		}
+	}
 
+
+#ifdef VMS
+	unlink(filename);
+#endif VMS
 	fp = fopen(filename, "w");
-	ASSERT(fp != NULL, "SYSTAT OPEN FAIL", "", 0);
-/*	chmod(filename, 0666); rm-ed by rti!trt */
-	fprintf(fp, "%d %d %ld %ld %s %s\n", type, count, prestime, Retrytime, text, name);
+	ASSERT(fp != NULL, "SYSTAT OPEN FAIL", filename, 0);
+	fprintf(fp, "%d %d %ld %ld %s %s\n", type, count, prestime, rtry, text, name);
 	fclose(fp);
 	return;
 }
@@ -82,8 +98,8 @@ char *name;
 {
 	char filename[MAXFULLNAME], line[S_SIZE];
 	register FILE *fp;
-	time_t lasttime, prestime;
-	long retrytime;
+	time_t lasttime, prestime, retrytime;
+	long t1, t2;
 	int count, type;
 
 	STATNAME(filename, name);
@@ -100,7 +116,9 @@ char *name;
 
 	fclose(fp);
 	time(&prestime);
-	sscanf(line, "%d%d%ld%ld", &type, &count, &lasttime, &retrytime);
+	sscanf(line, "%d%d%ld%ld", &type, &count, &t1, &t2);
+	lasttime = t1;
+	retrytime = t2;
 
 	switch(type) {
 	case SS_BADSEQ:
@@ -113,17 +131,25 @@ char *name;
 		if (count > MAXRECALLS) {
 			logent("MAX RECALLS", "NO CALL");
 			DEBUG(4, "MAX RECALL COUNT %d\n", count);
-			return(type);
+			if (Debug) {
+				logent("debugging", "continuing anyway");
+				return SS_OK;
+			}
+			return type;
 		}
 
 		if (prestime - lasttime < retrytime) {
 			logent("RETRY TIME NOT REACHED", "NO CALL");
-			DEBUG(4, "RETRY TIME (%d) NOT REACHED\n", (long)  RETRYTIME);
-			return(type);
+			DEBUG(4, "RETRY TIME (%ld) NOT REACHED\n", retrytime);
+			if (Debug) {
+				logent("debugging", "continuing anyway");
+				return SS_OK;
+			}
+			return type;
 		}
 
-		return(SS_OK);
+		return SS_OK;
 	default:
-		return(SS_OK);
+		return SS_OK;
 	}
 }

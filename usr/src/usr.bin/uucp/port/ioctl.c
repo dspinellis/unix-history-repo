@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)ioctl.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)ioctl.c	5.2 (Berkeley) %G%";
 #endif
 
 #include "uucp.h"
@@ -29,6 +29,7 @@ struct sgttyb *ttbuf;
 	case TIOCSETP:
 		return(stty(fn, ttbuf));
 	case TIOCEXCL:
+	case TIOCNXCL:
 	default:
 		return(-1);
 	}

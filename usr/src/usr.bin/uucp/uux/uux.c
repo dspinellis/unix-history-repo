@@ -1,35 +1,18 @@
 #ifndef lint
-static char sccsid[] = "@(#)uux.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)uux.c	5.2 (Berkeley) %G%";
 #endif
 
-/*
- * Grade option "-g<g>" added. See cbosgd.2611 (Mark Horton)
- * no-copy option "-c" added. Suggested by Steve Bellovin
- * "-l" is synonym for "-c".
- * "X" files use local system name, avoids conflict. Steve Bellovin
- */
 #include "uucp.h"
 
 #define NOSYSPART 0
 #define HASSYSPART 1
 
 #define APPCMD(d) {\
-char *p;\
-for (p = d; *p != '\0';) *cmdp++ = *p++;\
-*cmdp++ = ' ';\
-*cmdp = '\0';}
+char *p; for (p = d; *p != '\0';) *cmdp++ = *p++; *cmdp++ = ' '; *cmdp = '\0';}
 
 #define GENSEND(f, a, b, c, d, e) {\
-fprintf(f, "S %s %s %s -%s %s 0666\n", a, b, c, d, e);\
-}
-#define GENRCV(f, a, b, c) {\
-fprintf(f, "R %s %s %s - \n", a, b, c);\
-}
-
-
-/*
- *	
- */
+fprintf(f, "S %s %s %s -%s %s 0666\n", a, b, c, d, e); }
+#define GENRCV(f, a, b, c) {fprintf(f, "R %s %s %s - \n", a, b, c);}
 
 main(argc, argv)
 char *argv[];
@@ -42,7 +25,12 @@ char *argv[];
 	char t2file[NAMESIZE];	/* temporary file name */
 	int cflag = 0;		/*  commands in C. file flag  */
 	int rflag = 0;		/*  C. files for receiving flag  */
+#ifdef DONTCOPY
+	int Copy = 0;		/* Don't Copy spool files */
+#else !DONTCOPY
 	int Copy = 1;		/* Copy spool files */
+#endif !DONTCOPY
+	int Linkit = 0;		/* Try link before copy */
 	char buf[BUFSIZ];
 	char inargs[BUFSIZ];
 	int pipein = 0;
@@ -61,13 +49,18 @@ char *argv[];
 	char redir = '\0';
 	int nonoti = 0;
 	int nonzero = 0;
-	int orig_uid = getuid();
+	int link_failed;
+	char *ReturnTo = NULL;
+	extern int LocalOnly;
 
 	strcpy(Progname, "uux");
 	uucpname(Myname);
 	umask(WFMASK);
 	Ofn = 1;
 	Ifn = 0;
+#ifdef	VMS
+	arg_fix(argc, argv);
+#endif
 	while (argc>1 && argv[1][0] == '-') {
 		switch(argv[1][1]){
 		case 'p':
@@ -78,14 +71,22 @@ char *argv[];
 			startjob = 0;
 			break;
 		case 'c':
+			Copy = 0;
+			Linkit = 0;
+			break;
 		case 'l':
 			Copy = 0;
+			Linkit = 1;
+			break;
+		case 'C':
+			Copy = 1;
+			Linkit = 0;
 			break;
 		case 'g':
 			Grade = argv[1][2];
 			break;
 		case 'x':
-			chkdebug(orig_uid);
+			chkdebug();
 			Debug = atoi(&argv[1][2]);
 			if (Debug <= 0)
 				Debug = 1;
@@ -96,11 +97,24 @@ char *argv[];
 		case 'z':
 			nonzero = 1;
 			break;
+		case 'L':
+			LocalOnly++;
+			break;
+		case 'a':
+			ReturnTo = &argv[1][2];
+			break;
 		default:
 			fprintf(stderr, "unknown flag %s\n", argv[1]);
 				break;
 		}
 		--argc;  argv++;
+	}
+	if (argc > 2) {
+		ret = gwd(Wrkdir);
+		if (ret != 0) {
+			fprintf(stderr, "can't get working directory; will try to continue\n");
+			strcpy(Wrkdir, "/UNKNOWN");
+		}
 	}
 
 	DEBUG(4, "\n\n** %s **\n", "START");
@@ -112,12 +126,8 @@ char *argv[];
 		strcat(inargs, *argv++);
 	}
 	DEBUG(4, "arg - %s\n", inargs);
-	ret = gwd(Wrkdir);
-	if (ret != 0) {
-		fprintf(stderr, "can't get working directory; will try to continue\n");
-		strcpy(Wrkdir, "/UNKNOWN");
-	}
-	subchdir(Spool);
+	ret = subchdir(Spool);
+	ASSERT(ret >= 0, "CHDIR FAILED", Spool, ret);
 	uid = getuid();
 	guinfo(uid, User, path);
 
@@ -135,6 +145,9 @@ char *argv[];
 		fprintf(fprx, "%c\n", X_NONOTI);
 	if (nonzero)
 		fprintf(fprx, "%c\n", X_NONZERO);
+	if (ReturnTo == NULL || *ReturnTo == '\0')
+		ReturnTo = User;
+	fprintf(fprx, "%c %s\n", X_RETURNTO, ReturnTo);
 
 	/* find remote system name */
 	ap = inargs;
@@ -170,12 +183,14 @@ char *argv[];
 			fwrite(buf, 1, ret, fpd);
 		}
 		fclose(fpd);
+		strcpy(tfile, dfile);
 		if (strcmp(local, xsys) != SAME) {
-			GENSEND(fpc, dfile, dfile, User, "", dfile);
+			tfile[strlen(local) + 2] = 'S';
+			GENSEND(fpc, dfile, tfile, User, "", dfile);
 			cflag++;
 		}
-		fprintf(fprx, "%c %s\n", X_RQDFILE, dfile);
-		fprintf(fprx, "%c %s\n", X_STDIN, dfile);
+		fprintf(fprx, "%c %s\n", X_RQDFILE, tfile);
+		fprintf(fprx, "%c %s\n", X_STDIN, tfile);
 	}
 	/* parse command */
 	ap = inargs;
@@ -253,14 +268,21 @@ char *argv[];
 				fprintf(stderr, "permission denied %s\n", rest);
 				cleanup(EX_NOINPUT);
 			}
-			if (Copy) {
+			link_failed = 0;
+			if (Linkit) {
+				if (link(subfile(rest), subfile(dfile)) != 0)
+					link_failed++;
+				else
+					GENSEND(fpc, rest, dfile, User, "", dfile);
+			}
+			if (Copy || link_failed) {
 				if (xcp(rest, dfile) != 0) {
 					fprintf(stderr, "can't copy %s to %s\n", rest, dfile);
 					cleanup(EX_NOINPUT);
 				}
 				GENSEND(fpc, rest, dfile, User, "", dfile);
 			}
-			else {
+			if (!Copy && !Linkit) {
 				GENSEND(fpc, rest, dfile, User, "c", "D.0");
 			}
 			cflag++;
@@ -343,13 +365,24 @@ char *argv[];
 		continue;
 
 	}
+	/*
+	 * clean up trailing ' ' in command.
+	 */
+	if (cmdp > cmd && cmdp[0] == '\0' && cmdp[-1] == ' ')
+		*--cmdp = '\0';
+	/* block multi-hop uux, which doesn't work */
+	for (ap = cmd; *ap && *ap != ' '; ap++)
+		if (*ap == '!') {
+			fprintf(stderr, "uux handles only adjacent sites.\n");
+			fprintf(stderr, "Try uusend for multi-hop delivery.\n");
+			cleanup(1);
+		}
 
 	fprintf(fprx, "%c %s\n", X_CMD, cmd);
 	logent(cmd, "XQT QUE'D");
 	fclose(fprx);
 
-	strcpy(tfile, rxfile);
-	tfile[0] = XQTPRE;
+	gename(XQTPRE, local, Grade, tfile);
 	if (strcmp(xsys, local) == SAME) {
 		/* rti!trt: xmv() works across filesystems, link(II) doesnt */
 		xmv(rxfile, tfile);
@@ -381,8 +414,8 @@ char *argv[];
 char Fname[FTABSIZE][NAMESIZE];
 int Fnamect = 0;
 
-/***
- *	cleanup - cleanup and unlink if error
+/*
+ *	cleanup and unlink if error
  *
  *	return - none - do exit()
  */
@@ -403,8 +436,8 @@ int code;
 	exit(code);
 }
 
-/***
- *	ufopen - open file and record name
+/*
+ *	open file and record name
  *
  *	return file pointer.
  */
@@ -416,5 +449,31 @@ char *file, *mode;
 		strcpy(Fname[Fnamect++], file);
 	else
 		logent("Fname", "TABLE OVERFLOW");
-	return(fopen(subfile(file), mode));
+	return fopen(subfile(file), mode);
 }
+#ifdef	VMS
+/*
+ * EUNICE bug:
+ *	quotes are not stripped from DCL.  Do it here.
+ *	Note if we are running under Unix shell we don't
+ *	do the right thing.
+ */
+arg_fix(argc, argv)
+char **argv;
+{
+	register char *cp, *tp;
+
+	for (; argc > 0; --argc, argv++) {
+		cp = *argv;
+		if (cp == (char *)0 || *cp++ != '"')
+			continue;
+		tp = cp;
+		while (*tp++) ;
+		tp -= 2;
+		if (*tp == '"') {
+			*tp = '\0';
+			*argv = cp;
+		}
+	}
+}
+#endif VMS

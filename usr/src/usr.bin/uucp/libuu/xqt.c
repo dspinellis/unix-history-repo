@@ -1,16 +1,21 @@
 #ifndef lint
-static char sccsid[] = "@(#)xqt.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)xqt.c	5.2 (Berkeley) %G%";
 #endif
 
 #include "uucp.h"
 #include <signal.h>
 
-/*******
- *	xuucico(rmtname)		start up uucico for rmtname
- *	char *rmtname;
+int LocalOnly = 0;
+
+/*
+ *	start up uucico for rmtname
  *
  *	return codes:  none
  */
+
+#ifdef	VMS
+#define	fork	vfork
+#endif VMS
 
 xuucico(rmtname)
 char *rmtname;
@@ -21,9 +26,9 @@ char *rmtname;
 		close(0);
 		close(1);
 		close(2);
-		open("/dev/null", 0);
-		open("/dev/null", 1);
-		open("/dev/null", 1);
+		open(DEVNULL, 0);
+		open(DEVNULL, 1);
+		open(DEVNULL, 1);
 		signal(SIGINT, SIG_IGN);
 		signal(SIGHUP, SIG_IGN);
 		signal(SIGQUIT, SIG_IGN);
@@ -32,15 +37,30 @@ char *rmtname;
 			sprintf(opt, "-s%.7s", rmtname);
 		else
 			opt[0] = '\0';
-		execl(UUCICO, "UUCICO", "-r1", opt, (char *)0);
+#ifndef	VMS
+		if (LocalOnly)
+			execl(UUCICO, "uucico", "-r1", "-L", opt, (char *)0);
+		else
+			execl(UUCICO, "uucico", "-r1", opt, (char *)0);
+#else	VMS
+		/* Under VMS/EUNICE release the batch job */
+		if (LocalOnly)
+			execl(STARTUUCP, "startuucp", "uucico", "-r1", "-L", opt, (char *)0);
+		else
+			execl(STARTUUCP, "startuucp", "uucico", "-r1", opt, (char *)0);
+#endif	VMS
 		exit(100);
 	}
+#ifdef	VMS
+	while(wait(0) != -1)
+		;	/* Wait for it to finish!! */
+#endif	VMS
 	return;
 }
 
 
-/*******
- *	xuuxqt()		start up uuxqt
+/*
+ *	start up uuxqt
  *
  *	return codes:  none
  */
@@ -52,9 +72,9 @@ xuuxqt()
 		close(0);
 		close(1);
 		close(2);
-		open("/dev/null", 2);
-		open("/dev/null", 2);
-		open("/dev/null", 2);
+		open(DEVNULL, 2);
+		open(DEVNULL, 2);
+		open(DEVNULL, 2);
 		signal(SIGINT, SIG_IGN);
 		signal(SIGHUP, SIG_IGN);
 		signal(SIGQUIT, SIG_IGN);
@@ -64,6 +84,7 @@ xuuxqt()
 	}
 	return;
 }
+
 xuucp(str)
 char *str;
 {
@@ -73,15 +94,15 @@ char *str;
 		close(0);
 		close(1);
 		close(2);
-		open("/dev/null", 0);
-		open("/dev/null", 1);
-		open("/dev/null", 1);
+		open(DEVNULL, 0);
+		open(DEVNULL, 1);
+		open(DEVNULL, 1);
 		signal(SIGINT, SIG_IGN);
 		signal(SIGHUP, SIG_IGN);
 		signal(SIGQUIT, SIG_IGN);
 		signal(SIGKILL, SIG_IGN);
 		sprintf(text, "%s -r %s", UUCP, str);
-		execl(SHELL, "sh", "-c", text, (char *)0);
+		execl(SHELL, "sh", "-c", text, CNULL);
 		exit(100);
 	}
 	sleep(15);	/* Give uucp chance to finish */

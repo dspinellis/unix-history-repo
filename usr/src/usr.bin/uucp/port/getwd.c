@@ -1,13 +1,13 @@
 #ifndef lint
-static char sccsid[] = "@(#)getwd.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)getwd.c	5.3 (Berkeley) %G%";
 #endif
 
 #include "uucp.h"
 
-/*******
- *	gwd(wkdir)	get working directory
+/*
+ *	get working directory
  *
- *	return codes  0 | FAIL
+ *	return codes  SUCCESS | FAIL
  */
 
 gwd(wkdir)
@@ -18,27 +18,33 @@ register char *wkdir;
 	extern int rpclose();
 	register char *c;
 
+#ifdef BSD4_2
+	if (getwd(wkdir) == 0)
+		return FAIL;
+#else !BSD4_2
+# ifdef VMS
+	getwd(wkdir);	/* Call Eunice C library version instead */
+#else !VMS
 	*wkdir = '\0';
-	/* PATH added to rpopen.  Suggested by Henry Spencer (utzoo!henry) */
-	if ((fp = rpopen("PATH=/bin:/usr/bin;pwd 2>&-", "r")) == NULL)
-		return(FAIL);
-	if (fgets(wkdir, MAXFULLNAME, fp) == NULL) {
-		pclose(fp);
-		return(FAIL);
+	if ((fp = rpopen("PATH=/bin:/usr/bin:/usr/ucb;pwd 2>&-", "r")) == NULL)
+		return FAIL;
+	if (fgets(wkdir, 100, fp) == NULL) {
+		rpclose(fp);
+		return FAIL;
 	}
 	if (*(c = wkdir + strlen(wkdir) - 1) == '\n')
 		*c = '\0';
 	rpclose(fp);
-	return(0);
+# endif !VMS
+#endif !BSD4_2
+	return SUCCESS;
 }
 
 /*
- * rti!trt: gwd uses 'reverting' version of popen
+ * gwd uses 'reverting' version of popen
  * which runs process with permissions of real gid/uid
  * rather than the effective gid/uid.
- * Bug noted by we13!rjk  (Randy King).
  */
-/* @(#)popen.c	4.1 (Berkeley) 12/21/80 */
 #include <signal.h>
 #define	tst(a,b)	(*mode == 'r'? (b) : (a))
 #define	RDR	0
@@ -93,5 +99,5 @@ FILE *ptr;
 	signal(SIGINT, istat);
 	signal(SIGQUIT, qstat);
 	signal(SIGHUP, hstat);
-	return(status);
+	return status;
 }

@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)gnamef.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)gnamef.c	5.3 (Berkeley) %G%";
 #endif
 
 #include "uucp.h"
@@ -10,10 +10,8 @@ static char sccsid[] = "@(#)gnamef.c	5.2 (Berkeley) %G%";
 #include <sys/dir.h>
 #endif
 
-/*******
- *	gnamef(dirp, filename)	get next file name from directory
- *	DIR *dirp;
- *	char *filename;
+/*
+ *	get next file name from directory
  *
  *	return codes:
  *		0  -  end of directory read
@@ -26,15 +24,17 @@ register char *filename;
 {
 	register struct direct *dentp;
 
-	while (1) {
-		if ((dentp = readdir(dirp)) == NULL)
-			return(0);
+	for (;;) {
+		if ((dentp = readdir(dirp)) == NULL) {
+			return 0;
+		}
 		if (dentp->d_ino != 0)
 			break;
 	}
 
-	/* Truncate filename.  This may become a problem someday. rti!trt */
+	/* Truncate filename.  This may become a problem someday. */
 	strncpy(filename, dentp->d_name, NAMESIZE-1);
 	filename[NAMESIZE-1] = '\0';
-	return(1);
+	DEBUG(99,"gnamef returns %s\n",filename);
+	return 1;
 }

@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)uuname.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)uuname.c	5.2 (Berkeley) %G%";
 #endif
 
 #include "uucp.h"
@@ -17,6 +17,7 @@ main(argc,argv)
 char *argv[];
 int argc;
 {
+	int ret;
 	int i;
 	int intrEXIT();
 	FILE *np;
@@ -24,7 +25,8 @@ int argc;
 	char prev[1000];
 	char s[1000];
 
-	chdir(Spool);
+	ret = chdir(Spool);
+	ASSERT(ret >= 0, "CHDIR FAILED", Spool, ret);
 	strcpy(Progname, "uuname");
 	signal(SIGILL, intrEXIT);
 	signal(SIGTRAP, intrEXIT);
@@ -39,7 +41,7 @@ int argc;
 	signal(SIGQUIT, intrEXIT);
 	signal(SIGTERM, intrEXIT);
 
-	if(argv[1][0] == '-' && argv[1][1] == 'l') {
+	if(argc > 1 && argv[1][0] == '-' && argv[1][1] == 'l') {
 		uucpname(s);
 		printf("%s\n",s);
 		exit(0);
@@ -66,4 +68,10 @@ int argc;
 intrEXIT(inter)
 {
 	exit(inter);
+}
+
+cleanup(code)
+int code;
+{
+	exit(code);
 }

@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)uucpname.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)uucpname.c	5.2 (Berkeley) %G%";
 #endif
 
 #include "uucp.h"
@@ -20,18 +20,17 @@ static char sccsid[] = "@(#)uucpname.c	5.1 (Berkeley) %G%";
 #include <whoami.h>
 #endif
 
-/*******
+/*
  *	uucpname(name)		get the uucp name
  *
  *	return code - none
  */
-
 uucpname(name)
 register char *name;
 {
 	register char *s, *d;
 
-	/* HUGE KLUDGE HERE!  rti!trt
+	/*
 	 * Since some UNIX systems do not honor the set-user-id bit
 	 * when the invoking user is root, we must change the uid here.
 	 * So uucp files are created with the correct owner.
@@ -47,18 +46,24 @@ register char *name;
 
 	s = NULL;	/* system name unknown, so far */
 
-#ifdef	GETHOSTNAME
-	/* Use 4.1a library routine */
+#ifdef GETHOSTNAME
 	if (s == NULL || *s == '\0') {
 		char hostname[32];
+#ifdef VMS
+		int i = sizeof(hostname);
+#endif VMS
 
 		s = hostname;
+#ifdef VMS
+		if(gethostname(hostname, &i) == -1) {
+#else !VMS
 		if(gethostname(hostname, sizeof(hostname)) == -1) {
-			DEBUG(1, "gethostname", "FAILED");
+#endif !VMS
+			DEBUG(1, "gethostname", _FAILED);
 			s = NULL;
 		}
 	}
-#endif
+#endif GETHOSTNAME
 
 #ifdef	UNAME
 	/* Use USG library routine */
@@ -67,7 +72,7 @@ register char *name;
 
 		s = utsn.nodename;
 		if (uname(&utsn) == -1) {
-			DEBUG(1, "uname", "FAILED");
+			DEBUG(1, "uname", _FAILED);
 			s = NULL;
 		}
 	}
@@ -80,7 +85,7 @@ register char *name;
 
 		s = fakehost;
 		if (fakegethostname(fakehost, sizeof(fakehost)) == -1) {
-			DEBUG(1, "whoami search", "FAILED");
+			DEBUG(1, "whoami search", _FAILED);
 			s = NULL;
 		}
 	}
@@ -103,7 +108,7 @@ register char *name;
 		if (((uucpf = fopen("/etc/uucpname", "r")) == NULL &&
 		     (uucpf = fopen("/local/uucpname", "r")) == NULL) ||
 			fgets(s, 8, uucpf) == NULL) {
-				DEBUG(1, "uuname search", "FAILED");
+				DEBUG(1, "uuname search", _FAILED);
 				s = NULL;
 		} else {
 			for (d = stmp; *d && *d != '\n' && d < stmp + 8; d++)
@@ -119,7 +124,7 @@ register char *name;
 	/* Use 3Com's getmyhname() routine */
 	if (s == NULL || *s == '\0') {
 		if ((s == getmyhname()) == NULL)
-			DEBUG(1, "getmyhname", "FAILED");
+			DEBUG(1, "getmyhname", _FAILED);
 	}
 #endif
 
@@ -140,6 +145,12 @@ register char *name;
 	}
 
 	/*
+	 * save entire name for TCP/IP verification
+	 */
+
+	strcpy(Myfullname, s);
+
+	/*
 	 * copy uucpname back to caller-supplied buffer,
 	 * truncating to 7 characters.
 	 * Also set up subdirectory names, if subdirs are being used.
@@ -150,17 +161,14 @@ register char *name;
 	*(name + 7) = '\0';
 	DEBUG(1, "My uucpname = %s\n", name);
 
-#ifdef	UUDIR
 	sprintf(DLocal, "D.%s", name);
 	sprintf(DLocalX, "D.%sX", name);
-#endif
 }
 
 #ifdef	WHOAMI
 /*
- * simulate the 4.1a bsd system call by reading /usr/include/whoami.h
+ * simulate the 4.2 bsd system call by reading /usr/include/whoami.h
  * and looking for the #define sysname
- * CHANGE NOTICE (rti!trt): returns -1 on failure, 0 on success.
  */
 
 #define	HDRFILE "/usr/include/whoami.h"
@@ -198,7 +206,7 @@ int len;
 	}
 	fclose(fd);
 	if (hname[0] == 0)
-		return(-1);	/* added by rti!trt */
+		return FAIL;
 	strncpy(name, hname, len);
 	p = nname;
 	i = strlen(hname) + 1;
@@ -208,6 +216,6 @@ int len;
 		i++;
 	}
 	*q++ = 0;
-	return(0);
+	return SUCCESS;
 }
 #endif

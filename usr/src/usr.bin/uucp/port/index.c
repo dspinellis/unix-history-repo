@@ -1,13 +1,11 @@
 #ifndef lint
-static char sccsid[] = "@(#)index.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)index.c	5.2 (Berkeley) %G%";
 #endif
 
 #include <stdio.h>
 
-/*******
- *	char *
- *	index(str, c)	return pointer to character c
- *	char c, *str;
+/*
+ *	return pointer to character c
  *
  *	return codes:
  *		NULL  -  character not found
@@ -20,8 +18,8 @@ register char c, *str;
 {
 	for (; *str != '\0'; str++) {
 		if (*str == c)
-			return(str);
+			return str;
 	}
 
-	return(NULL);
+	return NULL;
 }
