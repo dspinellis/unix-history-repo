@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	@(#)tty.h	7.10 (Berkeley) 6/26/91
- * $Header: /a/cvs/386BSD/src/sys.386bsd/sys/tty.h,v 1.1.1.1 1993/06/12 14:58:17 rgrimes Exp $
+ * $Header: /a/cvs/386BSD/src/sys/sys/tty.h,v 1.2 1993/07/30 10:52:01 jkh Exp $
  *
  * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
  * --------------------         -----   ----------------------
@@ -43,6 +43,9 @@
  * --------------------         -----   ----------------------
  *
  */
+
+#ifndef _SYS_TTY_H_
+#define _SYS_TTY_H_
 
 #include <sys/termios.h>
 
@@ -208,3 +211,5 @@ struct speedtab {
 /* symbolic sleep message strings */
 extern	 char ttyin[], ttyout[], ttopen[], ttclos[], ttybg[], ttybuf[];
 #endif
+
+#endif	/* _SYS_TTY_H_ */

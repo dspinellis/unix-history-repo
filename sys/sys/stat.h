@@ -129,4 +129,4 @@ int	lstat __P((const char *, struct stat *));
 #endif /* not POSIX */
 __END_DECLS
 #endif
-#endif
+#endif	/* _SYS_STAT_H_ */

@@ -159,4 +159,4 @@ pid_t	wait4 __P((pid_t, int *, int, struct rusage *));
 #endif
 __END_DECLS
 #endif
-#endif
+#endif	/* _SYS_WAIT_H_ */
