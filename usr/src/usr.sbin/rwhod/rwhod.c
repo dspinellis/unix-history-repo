@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rwhod.c	4.1 82/04/02";
+static char sccsid[] = "@(#)rwhod.c	4.2 82/04/15";
 #endif
 
 #include <stdio.h>
@@ -134,7 +134,7 @@ again:
 
 int	utmptime;
 int	utmpent;
-struct	utmp utmp[100];
+struct	utmp utmp[500];
 int	alarmcount;
 
 onalrm()
