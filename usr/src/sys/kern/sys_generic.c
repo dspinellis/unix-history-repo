@@ -1,4 +1,4 @@
-/*	sys_generic.c	5.33	83/05/06	*/
+/*	sys_generic.c	5.34	83/05/08	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -551,8 +551,8 @@ ioctl()
 			u.u_eosys = RESTARTSYS;
 			return;
 		}
-		u.u_error = (*cdevsw[major(dev)].d_ioctl)(dev, com, data, 
-								fp->f_flag);
+		u.u_error =
+		   (*cdevsw[major(dev)].d_ioctl)(dev, com, data, fp->f_flag);
 	}
 
 returndata:
