@@ -1,4 +1,4 @@
-#	symbols.raw	7.3	89/10/22
+#	symbols.raw	7.4	90/04/10
 	_version
 #dmesg
 	_msgbuf
@@ -25,7 +25,6 @@
 	_nproc
 	_ntext
 #pstat
-	_vnode
 	_text
 	_proc
 #	_dz_tty
