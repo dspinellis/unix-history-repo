@@ -1,8 +1,5 @@
-/*	lfs_vnops.c	4.26	82/06/10	*/
+/*	lfs_vnops.c	4.27	82/06/25	*/
 
-#ifdef SIMFS
-#include "../h/sysrenam.h"
-#endif
 #include "../h/param.h"
 #include "../h/systm.h"
 #include "../h/dir.h"
