@@ -9,8 +9,6 @@ LIB=c
 CFLAGS+= -DYP -DLIBC_SCCS -DSYSLIBC_SCCS
 AINC=	-I${.CURDIR}/${MACHINE}
 INSTALL_PIC_ARCHIVE=
-SHLIB_MAJOR= 0
-SHLIB_MINOR= 0
 
 .include "${.CURDIR}/compat-43/Makefile.inc"
 .include "${.CURDIR}/db/Makefile.inc"
