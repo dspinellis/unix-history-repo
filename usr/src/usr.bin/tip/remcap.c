@@ -1,4 +1,4 @@
-/*	remcap.c	4.2	81/05/20	*/
+/*	remcap.c	4.3	81/05/21	*/
 /* Copyright (c) 1979 Regents of the University of California */
 #define	BUFSIZ	1024
 #define MAXHOP	32	/* max number of tc= indirections */
@@ -20,9 +20,14 @@
 #define	tgetflag	rgetflag
 #define	tgetstr		rgetstr
 #undef	E_TERMCAP
-#define	E_TERMCAP	"/etc/remote"
-#define	V6		/* don't look in environment */
+#define	E_TERMCAP	RM = "/etc/remote"
+#define V_TERMCAP	"REMOTE"
+#define V_TERM		"HOST"
+
 char	*RM;
+#else
+#define	V_TERMCAP	"TERMCAP"
+#define V_TERM		"TERM"
 #endif
 
 /*
@@ -64,7 +69,7 @@ tgetent(bp, name)
 	tbuf = bp;
 	tf = 0;
 #ifndef V6
-	cp = getenv("TERMCAP");
+	cp = getenv(V_TERMCAP);
 	/*
 	 * TERMCAP can have one of two things in it. It can be the
 	 * name of a file to use instead of /etc/termcap. In this
@@ -74,7 +79,7 @@ tgetent(bp, name)
 	 */
 	if (cp && *cp) {
 		if (*cp!='/') {
-			cp2 = getenv("TERM");
+			cp2 = getenv(V_TERM);
 			if (cp2==(char *) 0 || strcmp(name,cp2)==0) {
 				strcpy(bp,cp);
 				return(tnchktc());
@@ -82,16 +87,15 @@ tgetent(bp, name)
 				tf = open(E_TERMCAP, 0);
 			}
 		} else
+#ifdef REMOTE
+			tf = open(RM = cp, 0);
+#else
 			tf = open(cp, 0);
+#endif
 	}
 	if (tf==0)
 		tf = open(E_TERMCAP, 0);
 #else
-#ifdef REMOTE
-	if ((RM = getenv("REMOTE")) == (char *)0)
-		RM = E_TERMCAP;
-	tf = open(RM, 0);
-#endif
 	tf = open(E_TERMCAP, 0);
 #endif
 	if (tf < 0)
