@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)cltp_usrreq.c	7.7 (Berkeley) %G%
+ *	@(#)cltp_usrreq.c	7.8 (Berkeley) %G%
  */
 
 #ifndef CLTPOVAL_SRC /* XXX -- till files gets changed */
@@ -235,7 +235,6 @@ cltp_usrreq(so, req, m, nam, control)
 	struct mbuf *m, *nam, *control;
 {
 	register struct isopcb *isop = sotoisopcb(so);
-	register struct sockaddr_iso *siso;
 	int s, error = 0;
 
 	if (req == PRU_CONTROL)
