@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)intro.3	6.2 (Berkeley) %G%
+.\"	@(#)intro.3	6.3 (Berkeley) %G%
 .\"
 .TH INTRO 3F ""
 .UC 5
@@ -43,16 +43,16 @@ module.
 .sp 5p
 abort	abort.3f	abnormal termination
 access	access.3f	determine accessability of a file
-arc	plot.3f	graphics interface
 alarm	alarm.3f	execute a subroutine after a specified time
-bessel	bessel.3f	of two kinds for integer orders
+arc	plot.3f	f77 interface to plot(3x)
+bessel	bessel.3f	bessel functions of two kinds for integer orders
 bit	bit.3f	and, or, xor, not, rshift, lshift bitwise functions
-box	plot.3f	graphics interface
+box	plot.3f	f77 interface to plot(3x)
 chdir	chdir.3f	change default directory
 chmod	chmod.3f	change mode of a file
-circle	plot.3f	graphics interface
-clospl	plot.3f	graphics interface
-cont	plot.3f	graphics interface
+circle	plot.3f	f77 interface to plot(3x)
+clospl	plot.3f	f77 interface to plot(3x)
+cont	plot.3f	f77 interface to plot(3x)
 ctime	time.3f	return system time
 dffrac	flmin.3f	return extreme values
 dflmax	flmin.3f	return extreme values
@@ -60,7 +60,7 @@ dflmin	flmin.3f	return extreme values
 drand	rand.3f	return random values
 drandm	random.3f	better random number generator
 dtime	etime.3f	return elapsed execution time
-erase	plot.3f	graphics interface
+erase	plot.3f	f77 interface to plot(3x)
 etime	etime.3f	return elapsed execution time
 exit	exit.3f	terminate process with status
 falloc	malloc.3f	memory allocator
@@ -93,17 +93,16 @@ idate	idate.3f	return date or time in numerical form
 ierrno	perror.3f	get system error messages
 index	index.3f	tell about character objects
 inmax	flmin.3f	return extreme values
-intro	intro.3f	introduction to FORTRAN library functions
 ioinit	ioinit.3f	change f77 I/O initialization
 irand	rand.3f	return random values
 irandm	random.3f	better random number generator
 isatty	ttynam.3f	find name of a terminal port
 itime	idate.3f	return date or time in numerical form
 kill	kill.3f	send a signal to a process
-label	plot.3f	graphics interface
+label	plot.3f	f77 interface to plot(3x)
 len	index.3f	tell about character objects
-line	plot.3f	graphics interface
-linemd	plot.3f	graphics interface
+line	plot.3f	f77 interface to plot(3x)
+linemd	plot.3f	f77 interface to plot(3x)
 link	link.3f	make a link to an existing file
 lnblnk	index.3f	tell about character objects
 loc	loc.3f	return the address of an object
@@ -111,10 +110,10 @@ long	long.3f	integer object conversion
 lstat	stat.3f	get file status
 ltime	time.3f	return system time
 malloc	malloc.3f	memory allocator
-move	plot.3f	graphics interface
-openpl	plot.3f	graphics interface
+move	plot.3f	f77 interface to plot(3x)
+openpl	plot.3f	f77 interface to plot(3x)
 perror	perror.3f	get system error messages
-point	plot.3f	graphics interface
+point	plot.3f	f77 interface to plot(3x)
 putc	putc.3f	write a character to a fortran logical unit
 qsort	qsort.3f	quick sort
 rand	rand.3f	return random values
@@ -124,7 +123,7 @@ rindex	index.3f	tell about character objects
 short	long.3f	integer object conversion
 signal	signal.3f	change the action for a signal
 sleep	sleep.3f	suspend execution for an interval
-space	plot.3f	graphics interface
+space	plot.3f	f77 interface to plot(3x)
 stat	stat.3f	get file status
 system	system.3f	execute a \s-2UNIX\s0 command
 tclose	topen.3f	f77 tape I/O
