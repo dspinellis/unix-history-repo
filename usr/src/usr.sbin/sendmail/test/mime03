@@ -1,0 +1,14 @@
+To: eric
+Subject: test/mime03
+MIME-Version: 1.0
+Content-Type: multipart/mixed, boundary=foobar
+
+--foobar
+
+test 03, part 1
+MIME-Version header, no others, no 8-bit
+--foobar
+
+test 03, part 2
+
+--foobar--

@@ -1,0 +1,7 @@
+To: eric
+Subject: test/mime04
+MIME-Version: 1.0
+
+test 04
+MIME-Version header, no others, with small 8-bit data
+¯

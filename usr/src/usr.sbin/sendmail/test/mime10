@@ -1,0 +1,40 @@
+To: eric
+Subject: test/mime10
+Content-Type: multipart/mixed; boundary=foo
+
+Part: 0, Leading data
+--foo
+Part: 1
+
+test 08, part 1
+MIME-Version header, no others, no 8-bit
+--foo
+Part: 2
+Content-Type: multipart/mixed; boundary=bar
+
+Part 2, Leading data
+
+--bar
+Part: 2.1
+
+test 08, part 2.1
+small 8-bit data
+¯
+
+--bar
+Part: 2.2
+
+test 08, part 2.2
+no 8-bit data
+
+--bar--
+Part 2, Trailing data
+
+--foo
+Part: 3 (considerable 8-bit data)
+
+ ¡¢£¤¥¦§¨©ª«¬­®¯
+°±²³´µ¶·¸¹º»¼½¾¿
+
+--foo--
+Part 0, Trailing data

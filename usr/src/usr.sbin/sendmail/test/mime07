@@ -1,0 +1,30 @@
+To: eric
+Subject: test/mime07
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary=foobar
+
+Leading data
+--foobar
+Part: 01
+
+test 07, part 1
+MIME-Version header, no others, no 8-bit
+--foobar
+Part: 02
+Content-Type: text/plain; charset=iso-8859-1
+
+test 07, part 2
+small 8-bit data
+¯
+--foobar
+Part: 03
+
+test 07, part 3
+no 8-bit data
+--foobar
+Part: 04 (considerable 8-bit data)
+
+ ¡¢£¤¥¦§¨©ª«¬­®¯
+°±²³´µ¶·¸¹º»¼½¾¿
+--foobar--
+Trailing data
