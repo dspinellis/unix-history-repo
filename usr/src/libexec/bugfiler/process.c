@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)process.c	5.3 (Berkeley) 87/04/11";
+static char sccsid[] = "@(#)process.c	5.4 (Berkeley) 87/04/23";
 #endif not lint
 
 #include <bug.h>
@@ -47,7 +47,7 @@ process()
 		error("can't append to summary file %s.", bfr);
 	if (gettimeofday(&tp, (struct timezone *)NULL))
 		error("can't get time of day.", CHN);
-	printf("\n%s\t\t%s\t%s\t%s\tOwner: Bugs Bunny\n\tComment: Received\n", pfile, ctime(&tp.tv_sec), mailhead[INDX_TAG].line, mailhead[SUBJ_TAG].found ? mailhead[SUBJ_TAG].line : "Subject:\n");
+	printf("\n%s\t\t%s\t%s\t%s\tOwner: Bugs Bunny\n\tStatus: Received\n", pfile, ctime(&tp.tv_sec), mailhead[INDX_TAG].line, mailhead[SUBJ_TAG].found ? mailhead[SUBJ_TAG].line : "Subject:\n");
 	(void)flock(lfd, LOCK_UN);
 	(void)fclose(stdout);
 }
