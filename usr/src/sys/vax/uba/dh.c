@@ -1,4 +1,4 @@
-/*	dh.c	4.17	81/02/18	*/
+/*	dh.c	4.18	81/02/18	*/
 
 #include "dh.h"
 #if NDH11 > 0
@@ -156,6 +156,13 @@ dhcntrlr(ui, reg)
 	dhaddr->un.dhcsr = 0;
 	if (cvec && cvec != 0x200)
 		cvec -= 4;		/* transmit -> receive */
+#ifdef notdef
+	dhaddr->un.dhcsr = DH_RIE|DH_MM;
+	DELAY(5);
+	dhaddr->un.dhcsrl |= DH_RI;
+	DELAY(5);
+	dhaddr->un.dhcsr = 0;
+#endif
 	return (1);
 }
 
