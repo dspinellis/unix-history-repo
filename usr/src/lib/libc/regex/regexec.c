@@ -1,6 +1,6 @@
 /*-
- * Copyright (c) 1992 Henry Spencer.
- * Copyright (c) 1992, 1993
+ * Copyright (c) 1992, 1993, 1994 Henry Spencer.
+ * Copyright (c) 1992, 1993, 1994
  *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
@@ -8,11 +8,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)regexec.c	8.1 (Berkeley) %G%
+ *	@(#)regexec.c	8.2 (Berkeley) %G%
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)regexec.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)regexec.c	8.2 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -113,8 +113,8 @@ static int nope = 0;		/* for use in asserts; shuts lint up */
 
 /*
  - regexec - interface for matching
- = extern int regexec(const regex_t *preg, const char *string, size_t nmatch, \
- =					regmatch_t pmatch[], int eflags);
+ = extern int regexec(const regex_t *, const char *, size_t, \
+ =					regmatch_t [], int);
  = #define	REG_NOTBOL	00001
  = #define	REG_NOTEOL	00002
  = #define	REG_STARTEND	00004
@@ -146,8 +146,7 @@ int eflags;
 	assert(!(g->iflags&BAD));
 	if (g->iflags&BAD)		/* backstop for no-debug case */
 		return(REG_BADPAT);
-	if (eflags != GOODFLAGS(eflags))
-		return(REG_INVARG);
+	eflags = GOODFLAGS(eflags);
 
 	if (g->nstates <= CHAR_BIT*sizeof(states1) && !(eflags&REG_LARGE))
 		return(smatcher(g, (char *)string, nmatch, pmatch, eflags));

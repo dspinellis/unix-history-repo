@@ -1,6 +1,6 @@
 /*-
- * Copyright (c) 1992 Henry Spencer.
- * Copyright (c) 1992, 1993
+ * Copyright (c) 1992, 1993, 1994 Henry Spencer.
+ * Copyright (c) 1992, 1993, 1994
  *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
@@ -8,11 +8,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)regfree.c	8.1 (Berkeley) %G%
+ *	@(#)regfree.c	8.2 (Berkeley) %G%
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)regfree.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)regfree.c	8.2 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -25,7 +25,7 @@ static char sccsid[] = "@(#)regfree.c	8.1 (Berkeley) %G%";
 
 /*
  - regfree - free everything
- = extern void regfree(regex_t *preg);
+ = extern void regfree(regex_t *);
  */
 void
 regfree(preg)

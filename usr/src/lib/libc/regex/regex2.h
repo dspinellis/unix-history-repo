@@ -1,6 +1,6 @@
 /*-
- * Copyright (c) 1992 Henry Spencer.
- * Copyright (c) 1992, 1993
+ * Copyright (c) 1992, 1993, 1994 Henry Spencer.
+ * Copyright (c) 1992, 1993, 1994
  *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)regex2.h	8.2 (Berkeley) %G%
+ *	@(#)regex2.h	8.3 (Berkeley) %G%
  */
 
 /*
@@ -17,7 +17,7 @@
  = typedef struct {
  = 	int re_magic;
  = 	size_t re_nsub;		// number of parenthesized subexpressions
- =	const char *re_endp;	// end pointer for REG_PEND
+ = 	const char *re_endp;	// end pointer for REG_PEND
  = 	struct re_guts *re_g;	// none of your business :-)
  = } regex_t;
  = typedef struct {
@@ -93,19 +93,19 @@ typedef long sopno;
  * vectors at run time.
  */
 typedef struct {
-	uchar *ptr;		/* -> uchar [csetsize] */
-	uchar mask;		/* bit within array */
-	uchar hash;		/* hash code */
+	uch *ptr;		/* -> uch [csetsize] */
+	uch mask;		/* bit within array */
+	uch hash;		/* hash code */
 	size_t smultis;
 	char *multis;		/* -> char[smulti]  ab\0cd\0ef\0\0 */
 } cset;
 /* note that CHadd and CHsub are unsafe, and CHIN doesn't yield 0/1 */
-#define	CHadd(cs, c)	((cs)->ptr[(uchar)(c)] |= (cs)->mask, (cs)->hash += (c))
-#define	CHsub(cs, c)	((cs)->ptr[(uchar)(c)] &= ~(cs)->mask, (cs)->hash -= (c))
-#define	CHIN(cs, c)	((cs)->ptr[(uchar)(c)] & (cs)->mask)
-#define	MCadd(cs, cp)	mcadd(cs, cp)	/* regcomp() internal fns */
-#define	MCsub(cs, cp)	mcsub(cs, cp)
-#define	MCin(cs, cp)	mcin(cs, cp)
+#define	CHadd(cs, c)	((cs)->ptr[(uch)(c)] |= (cs)->mask, (cs)->hash += (c))
+#define	CHsub(cs, c)	((cs)->ptr[(uch)(c)] &= ~(cs)->mask, (cs)->hash -= (c))
+#define	CHIN(cs, c)	((cs)->ptr[(uch)(c)] & (cs)->mask)
+#define	MCadd(p, cs, cp)	mcadd(p, cs, cp)	/* regcomp() internal fns */
+#define	MCsub(p, cs, cp)	mcsub(p, cs, cp)
+#define	MCin(p, cs, cp)	mcin(p, cs, cp)
 
 /* stuff for character categories */
 typedef unsigned char cat_t;
@@ -120,7 +120,7 @@ struct re_guts {
 	int csetsize;		/* number of bits in a cset vector */
 	int ncsets;		/* number of csets in use */
 	cset *sets;		/* -> cset [ncsets] */
-	uchar *setbits;		/* -> uchar[csetsize][ncsets/CHAR_BIT] */
+	uch *setbits;		/* -> uch[csetsize][ncsets/CHAR_BIT] */
 	int cflags;		/* copy of regcomp() cflags argument */
 	sopno nstates;		/* = number of sops */
 	sopno firststate;	/* the initial OEND (normally 0) */

@@ -1,6 +1,6 @@
 /*-
- * Copyright (c) 1992 Henry Spencer.
- * Copyright (c) 1992, 1993
+ * Copyright (c) 1992, 1993, 1994 Henry Spencer.
+ * Copyright (c) 1992, 1993, 1994
  *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)cclass.h	8.1 (Berkeley) %G%
+ *	@(#)cclass.h	8.2 (Berkeley) %G%
  */
 
 /* character-class table */

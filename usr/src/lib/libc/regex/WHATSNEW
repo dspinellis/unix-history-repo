@@ -1,4 +1,31 @@
-# @(#)WHATSNEW	8.1 (Berkeley) %G%
+# @(#)WHATSNEW	8.2 (Berkeley) %G%
+
+New in alpha3.3:  The definition of word boundaries has been altered
+slightly, to more closely match the usual programming notion that "_"
+is an alphabetic.  Stuff used for pre-ANSI systems is now in a subdir,
+and the makefile no longer alludes to it in mysterious ways.  The
+makefile has generally been cleaned up some.  Fixes have been made
+(again!) so that the regression test will run without -DREDEBUG, at
+the cost of weaker checking.  A workaround for a bug in some folks'
+<assert.h> has been added.  And some more things have been added to
+tests, including a couple right at the end which are commented out
+because the code currently flunks them (complex bug; fix coming).
+Plus the usual minor cleanup.
+
+New in alpha3.2:  Assorted bits of cleanup and portability improvement
+(the development base is now a BSDI system using GCC instead of an ancient
+Sun system, and the newer compiler exposed some glitches).  Fix for a
+serious bug that affected REs using many [] (including REG_ICASE REs
+because of the way they are implemented), *sometimes*, depending on
+memory-allocation patterns.  The header-file prototypes no longer name
+the parameters, avoiding possible name conflicts.  The possibility that
+some clot has defined CHAR_MIN as (say) `-128' instead of `(-128)' is
+now handled gracefully.  "uchar" is no longer used as an internal type
+name (too many people have the same idea).  Still the same old lousy
+performance, alas.
+
+New in alpha3.1:  Basically nothing, this release is just a bookkeeping
+convenience.  Stay tuned.
 
 New in alpha3.0:  Performance is no better, alas, but some fixes have been
 made and some functionality has been added.  (This is basically the "get
