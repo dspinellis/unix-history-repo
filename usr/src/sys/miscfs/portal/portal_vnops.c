@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)portal_vnops.c	7.2 (Berkeley) %G%
+ *	@(#)portal_vnops.c	7.3 (Berkeley) %G%
  *
  * $Id: portal_vnops.c,v 1.4 1992/05/30 10:05:24 jsp Exp jsp $
  */
@@ -190,6 +190,8 @@ portal_open(ap)
 {
 	struct socket *so = 0;
 	struct portalnode *pt;
+	struct proc *p = ap->a_p;
+	struct vnode *vp = ap->a_vp;
 	int s;
 	struct uio auio;
 	struct iovec aiov[2];
@@ -208,11 +210,11 @@ portal_open(ap)
 	/*
 	 * Nothing to do when opening the root node.
 	 */
-	if (ap->a_vp->v_flag & VROOT)
+	if (vp->v_flag & VROOT)
 		return (0);
 
 #ifdef PORTAL_DIAGNOSTIC
-	printf("portal_open(%x)\n", ap->a_vp);
+	printf("portal_open(%x)\n", vp);
 #endif
 
 	/*
@@ -220,11 +222,11 @@ portal_open(ap)
 	 * to deal with the side effects.  Check for this
 	 * by testing whether the p_dupfd has been set.
 	 */
-	if (ap->a_p->p_dupfd >= 0)
+	if (p->p_dupfd >= 0)
 		return (ENODEV);
 
-	pt = VTOPORTAL(ap->a_vp);
-	fmp = VFSTOPORTAL(ap->a_vp->v_mount);
+	pt = VTOPORTAL(vp);
+	fmp = VFSTOPORTAL(vp->v_mount);
 
 	/*
 	 * Create a new socket.
@@ -313,7 +315,7 @@ portal_open(ap)
 	auio.uio_iovcnt = 2;
 	auio.uio_rw = UIO_WRITE;
 	auio.uio_segflg = UIO_SYSSPACE;
-	auio.uio_procp = ap->a_p;
+	auio.uio_procp = p;
 	auio.uio_offset = 0;
 	auio.uio_resid = aiov[0].iov_len + aiov[1].iov_len;
 
@@ -419,21 +421,21 @@ portal_open(ap)
 		int i;
 		printf("portal_open: %d extra fds\n", newfds - 1);
 		for (i = 1; i < newfds; i++) {
-			portal_closefd(ap->a_p, *ip);
+			portal_closefd(p, *ip);
 			ip++;
 		}
 	}
 
 	/*
-	 * Check that the ap->a_mode the file is being opened for is a subset 
-	 * of the ap->a_mode of the existing descriptor.
+	 * Check that the mode the file is being opened for is a subset 
+	 * of the mode of the existing descriptor.
 	 */
 #ifdef PORTAL_DIAGNOSTIC
 	printf("portal_open: checking file flags, fd = %d\n", fd);
 #endif
- 	fp = ap->a_p->p_fd->fd_ofiles[fd];
+ 	fp = p->p_fd->fd_ofiles[fd];
 	if (((ap->a_mode & (FREAD|FWRITE)) | fp->f_flag) != fp->f_flag) {
-		portal_closefd(ap->a_p, fd);
+		portal_closefd(p, fd);
 		error = EACCES;
 		goto bad;
 	}
@@ -446,7 +448,7 @@ portal_open(ap)
 	 * special error code (ENXIO) which causes magic things to
 	 * happen in vn_open.  The whole concept is, well, hmmm.
 	 */
-	ap->a_p->p_dupfd = fd;
+	p->p_dupfd = fd;
 	error = ENXIO;
 
 bad:;
@@ -485,45 +487,47 @@ portal_getattr(ap)
 		struct proc *a_p;
 	} */ *ap;
 {
+	struct vnode *vp = ap->a_vp;
+	struct vattr *vap = ap->a_vap;
 	unsigned fd;
 	int error;
 
-	bzero((caddr_t) ap->a_vap, sizeof(*ap->a_vap));
-	vattr_null(ap->a_vap);
-	ap->a_vap->va_uid = 0;
-	ap->a_vap->va_gid = 0;
-	ap->a_vap->va_fsid = ap->a_vp->v_mount->mnt_stat.f_fsid.val[0];
-	ap->a_vap->va_size = DEV_BSIZE;
-	ap->a_vap->va_blocksize = DEV_BSIZE;
-	microtime(&ap->a_vap->va_atime);
-	ap->a_vap->va_mtime = ap->a_vap->va_atime;
-	ap->a_vap->va_ctime = ap->a_vap->va_ctime;
-	ap->a_vap->va_gen = 0;
-	ap->a_vap->va_flags = 0;
-	ap->a_vap->va_rdev = 0;
-	/* ap->a_vap->va_qbytes = 0; */
-	ap->a_vap->va_bytes = 0;
-	/* ap->a_vap->va_qsize = 0; */
-	if (ap->a_vp->v_flag & VROOT) {
+	bzero((caddr_t) vap, sizeof(*vap));
+	vattr_null(vap);
+	vap->va_uid = 0;
+	vap->va_gid = 0;
+	vap->va_fsid = vp->v_mount->mnt_stat.f_fsid.val[0];
+	vap->va_size = DEV_BSIZE;
+	vap->va_blocksize = DEV_BSIZE;
+	microtime(&vap->va_atime);
+	vap->va_mtime = vap->va_atime;
+	vap->va_ctime = vap->va_ctime;
+	vap->va_gen = 0;
+	vap->va_flags = 0;
+	vap->va_rdev = 0;
+	/* vap->va_qbytes = 0; */
+	vap->va_bytes = 0;
+	/* vap->va_qsize = 0; */
+	if (vp->v_flag & VROOT) {
 #ifdef PORTAL_DIAGNOSTIC
 		printf("portal_getattr: stat rootdir\n");
 #endif
-		ap->a_vap->va_type = VDIR;
-		ap->a_vap->va_mode = S_IRUSR|S_IWUSR|S_IXUSR|
+		vap->va_type = VDIR;
+		vap->va_mode = S_IRUSR|S_IWUSR|S_IXUSR|
 				S_IRGRP|S_IWGRP|S_IXGRP|
 				S_IROTH|S_IWOTH|S_IXOTH;
-		ap->a_vap->va_nlink = 2;
-		ap->a_vap->va_fileid = 2;
+		vap->va_nlink = 2;
+		vap->va_fileid = 2;
 	} else {
 #ifdef PORTAL_DIAGNOSTIC
 		printf("portal_getattr: stat portal\n");
 #endif
-		ap->a_vap->va_type = VREG;
-		ap->a_vap->va_mode = S_IRUSR|S_IWUSR|
+		vap->va_type = VREG;
+		vap->va_mode = S_IRUSR|S_IWUSR|
 				S_IRGRP|S_IWGRP|
 				S_IROTH|S_IWOTH;
-		ap->a_vap->va_nlink = 1;
-		ap->a_vap->va_fileid = VTOPORTAL(ap->a_vp)->pt_fileid;
+		vap->va_nlink = 1;
+		vap->va_fileid = VTOPORTAL(vp)->pt_fileid;
 	}
 	return (0);
 }
