@@ -38,3 +38,32 @@ static	char	sccsid[] = "@(#)globals.c	3.1  10/29/86";
 #define DEFINING_INSTANCES
 
 #include	"globals.h"
+
+#include	"general.h"
+
+/*
+ * init_system()
+ *
+ * Initialize the global values in case of a restart.
+ */
+
+void
+init_system()
+{
+    OptHome = OptLeftMargin = OptAPLmode = OptNullProcessing = 0;
+    OptZonesMode = OptEnterNL = OptColFieldTab = OptPacing = 0;
+    OptAlphaInNumeric = OptHome = OptLeftMargin = OptWordWrap = 0;
+
+    ClearArray(Host);
+#if	defined(SLOWSCREEN)
+    ClearArray(Terminal);
+#endif	/* defined(SLOWSCREEN) */
+    ClearArray(FieldForward);
+    ClearArray(FieldReverse);
+    CursorAddress = BufferAddress = 0;
+
+    Lowest = Highest = 0;
+
+    UnLocked = AidByte = 0;
+
+}
