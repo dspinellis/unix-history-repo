@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)system.3	6.2 (Berkeley) %G%
+.\"	@(#)system.3	6.3 (Berkeley) %G%
 .\"
 .TH SYSTEM 3 ""
 .AT 3
@@ -12,6 +12,8 @@ system \- issue a shell command
 .SH SYNOPSIS
 .nf
 .ft B
+#include <stdlib.h>
+
 system(const char *string);
 .ft R
 .fi

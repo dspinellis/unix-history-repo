@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)getenv.3	6.8 (Berkeley) %G%
+.\"	@(#)getenv.3	6.9 (Berkeley) %G%
 .\"
 .TH GETENV 3 ""
 .AT 3
@@ -12,6 +12,8 @@ getenv, putenv, setenv, unsetenv \- manipulate environmental variables
 .SH SYNOPSIS
 .nf
 .ft B
+#include <stdlib.h>
+
 char *
 getenv(const char *name);
 
