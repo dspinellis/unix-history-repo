@@ -1,0 +1,55 @@
+.TH MREAD 1 local
+.SH NAME
+mread \- low level read (copy) an MSDOS file to Unix
+.SH SYNOPSIS
+.B mread
+[
+.B -tnm
+] msdosfile unixfile
+.PP
+.B mread
+[
+.B -tnm
+] msdosfile [ msdosfiles... ] unixdirectory
+.SH DESCRIPTION
+In the first form,
+.I mread
+copies the specified MSDOS file to the named Unix file.  The second form
+of the command copies multiple MSDOS files to the named Unix directory.
+.PP
+.I Mread
+will allow the following command line options:
+.TP
+.B t
+Text file transfer.
+.I Mread
+will translate incoming carriage return/line feeds to line feeds.
+.TP
+.B n
+No warning.
+.I Mread
+will not warn the user when overwriting an existing file.
+.TP
+.B m
+Preserve the file modification times.
+.PP
+If the target file already exists, and the
+.I -n
+option is not in effect,
+.I mread
+asks whether or not to overwrite the file.
+.PP
+MSDOS subdirectory names are supported with either the '/' or '\e\'
+separator.  The use of the '\e\' separator or wildcards will require the
+names to be enclosed in quotes to protect them from the shell.
+.PP
+The
+.I mcd
+command may be used to establish the device and the current working
+directory (relative to MSDOS), otherwise the default is A:/.
+.SH SEE ALSO
+mcd(1), mcopy(1), mtype(1), mwrite(1)
+.SH BUGS
+Unlike MSDOS, the destination directory may
+.B not
+be omitted.

@@ -1,0 +1,68 @@
+				MTOOLS
+			      version 2.0
+
+Mtools is a public domain collection of programs to allow Unix systems
+to read, write, and manipulate files on an MSDOS filesystem (typically a
+diskette).
+
+The following MSDOS commands are emulated:
+
+Mtool 		MSDOS
+name		equivalent	Description
+-----		----		-----------
+mattrib		ATTRIB		change MSDOS file attribute flags
+mcd		CD		change MSDOS directory
+mcopy		COPY		copy MSDOS files to/from Unix
+mdel		DEL/ERASE	delete an MSDOS file
+mdir		DIR		display an MSDOS directory
+mformat		FORMAT		add MSDOS filesystem to a low-level format
+mlabel		LABEL		make an MSDOS volume label.
+mmd		MD/MKDIR	make an MSDOS subdirectory
+mrd		RD/RMDIR	remove an MSDOS subdirectory
+mread		COPY		low level read (copy) an MSDOS file to Unix
+mren		REN/RENAME	rename an existing MSDOS file
+mtype		TYPE		display contents of an MSDOS file
+mwrite		COPY		low level write (copy) a Unix file to MSDOS
+
+You should be able to just close your eyes and pretend you're on an MSDOS
+system.  Everything should work the same... except for the added 'm' at
+the beginning of each command.
+
+I really wanted to avoid the use of a 'text' mode and a 'data' mode when
+transferring files, but I couldn't find a better way.  It gets rather
+confusing and it's quite possible to mess up a file if you apply the
+text mode when it is not appropriate (ie:  to a COM or EXE file).
+
+The pattern matching routine more closely resembles Unix than MSDOS.
+For example, "*" matches all MSDOS files in lieu of "*.*".
+
+The use of wildcards (or the '\' separator) will require the names to be
+enclosed in quotes to protect them from the shell.  For example:
+
+	RIGHT:	mcopy "a:*.c" .
+
+	will copy all files on the A: disk with the extension .C to the
+	current Unix directory.
+
+	WRONG:	mcopy a:*.c .
+
+	will cause the shell to expand a:*.c in the current Unix directory
+	(which is probably not what you wanted) then copy that list of
+	files (if there were any) from A: to the current Unix directory.
+
+	RIGHT:	mcopy *.c a:
+
+	will copy all files with the extension .c in the current Unix
+	directory to the A: drive.  (This time you *want* the shell
+	the expand the *.c).
+
+The manuals are very terse...  it's assumed that the reader is already
+familiar with MSDOS.
+
+Mcopy is really a front-end to the low level Mread and Mwrite commands.
+
+Emmet P. Gray				US Army, HQ III Corps & Fort Hood
+...!uunet!uiucuxc!fthood!egray		Attn: AFZF-DE-ENV
+fthood!egray@uxc.cso.uiuc.edu		Directorate of Engineering & Housing
+					Environmental Management Office
+					Fort Hood, TX 76544-5057

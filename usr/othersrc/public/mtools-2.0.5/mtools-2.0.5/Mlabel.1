@@ -1,0 +1,28 @@
+.TH MLABEL 1 local
+.SH NAME
+mlabel \- make an MSDOS volume label
+.SH SYNOPSIS
+.B mlabel
+[
+.B -v
+] drive:
+.SH DESCRIPTION
+.I Mlabel
+displays the current volume label, if present, and prompts the user
+for a new volume label.  To delete an existing volume label, press
+return at the prompt.
+.PP
+.I Mlabel
+will allow the following command line option:
+.TP
+.B v
+Verbose mode.  Display the new volume label if the label supplied is
+invalid.
+.PP
+Reasonable care is taken to create a valid MSDOS volume label.  If an
+invalid label is specified,
+.I mlabel
+will change the label (and display the new label if the verbose mode is
+set).
+.SH SEE ALSO
+mformat(1)

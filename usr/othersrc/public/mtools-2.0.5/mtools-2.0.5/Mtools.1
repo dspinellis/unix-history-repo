@@ -1,0 +1,50 @@
+.TH MTOOLS 1 local
+.SH NAME
+Mtools \- a collection of tools for manipulating MSDOS files
+.SH SYNOPSIS
+.nf
+\fBmattrib\fR \- change MSDOS file attribute flags
+\fBmcd\fR \- change MSDOS directory
+\fBmcopy\fR \- copy MSDOS files to/from Unix
+\fBmdel\fR \- delete an MSDOS file
+\fBmdir\fR \- display an MSDOS directory
+\fBmformat\fR \- add an MSDOS filesystem to a low-level formatted diskette
+\fBmlabel\fR \- make an MSDOS volume label
+\fBmmd\fR \- make an MSDOS subdirectory
+\fBmrd\fR \- remove an MSDOS subdirectory
+\fBmread\fR \- low level read (copy) an MSDOS file to Unix
+\fBmren\fR \- rename an existing MSDOS file
+\fBmtype\fR \- display contents of an MSDOS file
+\fBmwrite\fR \- low level write (copy) a Unix file to MSDOS
+.fi
+.SH DESCRIPTION
+Mtools is a public domain collection of programs to allow Unix systems
+to read, write, and manipulate files on an MSDOS filesystem (typically a
+diskette).  Each program attempts to emulate the MSDOS equivalent
+command as closely as practical.
+.PP
+MSDOS filenames are optionally composed of a drive letter followed by a
+colon, a subdirectory, and a filename.  Subdirectory names can use either
+the '/' or '\e\' separator.  The use of the '\e\' separator or wildcards
+will require the names to be enclosed in quotes to protect them from the
+shell.
+.PP
+The regular expression "pattern matching" routines follow the Unix-style
+rules.  For example, '*' matches all MSDOS files in lieu of '*.*'.  The
+archive, hidden, read-only and system attribute bits are ignored during
+pattern matching.
+.PP
+All options use the '-' (minus) flag, not '/' as you'd expect in MSDOS.
+.PP
+The
+.I mcd
+command is used to establish the device and the current working
+directory (relative to the MSDOS filesystem), otherwise the default is
+assumed to be A:/.
+.SH SEE ALSO
+mattrib(1), mcd(1), mdel(1), mformat(1), mrd(1), mren(1), mtype(1),
+mcopy(1), mdir(1), mlabel(1), mmd(1), mread(1), mwrite(1)
+.SH BUGS
+An unfortunate side effect of not guessing the proper device (when
+multiple disk capacities are supported) is an occasional error message
+from the device driver.  These can be safely ignored.
