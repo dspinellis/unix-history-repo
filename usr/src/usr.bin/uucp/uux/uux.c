@@ -1,8 +1,9 @@
 #ifndef lint
-static char sccsid[] = "@(#)uux.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)uux.c	5.7 (Berkeley) %G%";
 #endif
 
 #include "uucp.h"
+#include <sys/stat.h>
 
 #define NOSYSPART 0
 #define HASSYSPART 1
@@ -48,6 +49,8 @@ char *argv[];
 	int pipein = 0;
 	int startjob = 1;
 	char Grade = 'A';
+	long Gradedelta = 100000000L;	/* "huge number" */
+	long size = 0L;
 	char path[MAXFULLNAME];
 	char cmd[2*BUFSIZ];
 	char *ap, *cmdp;
@@ -97,6 +100,7 @@ char *argv[];
 			break;
 		case 'g':
 			Grade = argv[1][2];
+			Gradedelta = atol(&argv[1][3]);
 			break;
 		case 'x':
 			chkdebug();
@@ -142,7 +146,11 @@ char *argv[];
 	ret = subchdir(Spool);
 	ASSERT(ret >= 0, "CHDIR FAILED", Spool, ret);
 	uid = getuid();
-	guinfo(uid, User, path);
+	if (guinfo(uid, User, path) != SUCCESS) {
+		assert("Can't find username for ", "uid", uid);
+		DEBUG(1, "Using username", "uucp");
+		strcpy(User, "uucp");
+	}
 
 	strncpy(local, Myname, MAXBASENAME);
 	cmdp = cmd;
@@ -202,6 +210,7 @@ char *argv[];
 				perror(dfile);
 				cleanup(EX_IOERR);
 			}
+			size += ret;
 		}
 		fclose(fpd);
 		strcpy(tfile, dfile);
@@ -268,6 +277,15 @@ char *argv[];
 			/* option */
 			APPCMD(rest);
 			continue;
+		}
+
+		if (rest[0] != '\0') {
+			struct stat stbuf;
+			if (stat(rest, &stbuf) < 0)
+				DEBUG(4, "Can't stat %s\n", rest);
+			else 
+				size += stbuf.st_size;
+			DEBUG(4, "size = %ld\n", size);
 		}
 
 		if (strcmp(xsys, local) == SAME
@@ -407,6 +425,13 @@ char *argv[];
 		logent(cmd, "XQT QUE'D");
 	fclose(fprx);
 
+	if (size > 0 && Gradedelta > 0) {
+		DEBUG (4, "Grade changed from %c ", Grade);
+		Grade += size/Gradedelta;
+		if (Grade > 'z')
+			Grade = 'z';
+		DEBUG(4, "to %c\n", Grade);
+	}
 	gename(XQTPRE, local, Grade, tfile);
 	if (strcmp(xsys, local) == SAME) {
 		/* rti!trt: xmv() works across filesystems, link(II) doesnt */
@@ -519,7 +544,6 @@ register char *name, *rest;
 char *sys;
 {
 	register char *c;
-	register int i;
 
 	if (*name == LQUOTE) {
 		if ((c = index(name + 1, RQUOTE)) != NULL) {
