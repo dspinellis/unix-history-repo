@@ -163,8 +163,7 @@ retry:
                                 if (flags >= 0 && flags & FNDELAY) {
                                         flags &=~ FNDELAY;
                                         if (fcntl(0, F_SETFL, flags) >= 0) {
-                                                out2str("sh: turning off NDELAY
- mode\n");
+						out2str("sh: turning off NDELAY mode\n");
                                                 goto retry;
                                         }
                                 }
