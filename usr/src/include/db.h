@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)db.h	5.14 (Berkeley) %G%
+ *	@(#)db.h	5.15 (Berkeley) %G%
  */
 
 #ifndef _DB_H_
@@ -44,8 +44,7 @@ typedef enum { DB_BTREE, DB_HASH, DB_RECNO } DBTYPE;
 
 /* Access method description structure. */
 typedef struct __db {
-	DBTYPE type;		/* type of underlying db */
-	void *internal;		/* access method private */
+	DBTYPE type;			/* underlying db type */
 	int (*close)	__P((struct __db *));
 	int (*del)	__P((const struct __db *, const DBT *, unsigned int));
 	int (*get)	__P((const struct __db *, const DBT *, DBT *,
@@ -54,6 +53,7 @@ typedef struct __db {
 			    unsigned int));
 	int (*seq)	__P((const struct __db *, DBT *, DBT *, unsigned int));
 	int (*sync)	__P((const struct __db *));
+	void *internal;			/* access method private */
 } DB;
 
 #define	BTREEMAGIC	0x053162
