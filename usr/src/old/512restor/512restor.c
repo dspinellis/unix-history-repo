@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)512restor.c	4.1 (Berkeley) %G%";
+static char *sccsid = "@(#)512restor.c	4.2 (Berkeley) %G%";
 #define MAXINO	3000
 #define BITS	8
 #define MAXXTR	60
@@ -70,7 +70,7 @@ int	fi;
 ino_t	ino, maxi, curino;
 
 int	mt;
-char	tapename[] = "/dev/rmt1";
+char	tapename[] = "/dev/rmt8";
 char	*magtape = tapename;
 #ifdef STANDALONE
 char	mbuf[50];
