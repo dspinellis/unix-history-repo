@@ -6,23 +6,33 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)print.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)print.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
-
-#include <machine/pte.h>
 
 #include <sys/param.h>
 #include <sys/time.h>
 #include <sys/resource.h>
 #include <sys/proc.h>
 #include <sys/stat.h>
-#include <sys/vmparam.h>
-#include <sys/vm.h>
 #include <math.h>
 #include <tzfile.h>
 #include <stddef.h>
 #include <string.h>
 #include "ps.h"
+
+#ifdef SPPWAIT
+#define NEWVM
+#endif
+
+#ifdef NEWVM
+#include <vm/vm.h>
+#include <sys/ucred.h>
+#include <sys/kinfo_proc.h>
+#else
+#include <machine/pte.h>
+#include <sys/vmparam.h>
+#include <sys/vm.h>
+#endif
 
 printheader()
 {
@@ -77,7 +87,11 @@ logname(k, v)
 	KINFO *k;
 	VAR *v;
 {
+#ifndef NEWVM
 	(void) printf("%-*s", v->width, k->ki_p->p_logname);
+#else /* NEWVM */
+	(void) printf("%-*s", v->width, k->ki_e->e_login);
+#endif /* NEWVM */
 }
 
 state(k, v)
@@ -116,8 +130,10 @@ state(k, v)
 	}
 	cp++;
 	if (flag & SLOAD) {
+#ifndef NEWVM
 		if (p->p_rssize > p->p_maxrss)
 			*cp++ = '>';
+#endif
 	} else
 		*cp++ = 'W';
 	if (p->p_nice < NZERO)
@@ -130,9 +146,13 @@ state(k, v)
 		*cp++ = 'S';
 	if (flag & STRC)
 		*cp++ = 'X';
-	if (flag & SWEXIT)
+	if (flag & SWEXIT && p->p_stat != SZOMB)
 		*cp++ = 'E';
+#ifdef NEWVM
+	if (flag & SPPWAIT)
+#else
 	if (flag & SVFORK)
+#endif
 		*cp++ = 'V';
 	if (flag & (SSYS|SLOCK|SULOCK|SKEEP|SPHYSIO))
 		*cp++ = 'L';
@@ -155,14 +175,24 @@ uname(k, v)
 	KINFO *k;
 	VAR *v;
 {
+#ifndef NEWVM
 	(void) printf("%-*s", v->width, user_from_uid(k->ki_p->p_uid, 0));
+#else /* NEWVM */
+	(void) printf("%-*s", v->width,
+		user_from_uid(k->ki_e->e_ucred.cr_uid, 0));
+#endif /* NEWVM */
 }
 
 runame(k, v)
 	KINFO *k;
 	VAR *v;
 {
+#ifndef NEWVM
 	(void) printf("%-*s", v->width, user_from_uid(k->ki_p->p_ruid, 0));
+#else /* NEWVM */
+	(void) printf("%-*s", v->width,
+		user_from_uid(k->ki_e->e_pcred.p_ruid, 0));
+#endif /* NEWVM */
 }
 
 tdev(k, v)
@@ -262,7 +292,7 @@ wchan(k, v)
 	VAR *v;
 {
 	if (k->ki_p->p_wchan) {
-		if (k->ki_p->p_pri > PZERO)
+		if (k->ki_p->p_wmesg)
 			(void) printf("%-*.*s", v->width, v->width, k->ki_e->e_wmesg);
 		else
 			(void) printf("%*x", v->width,
@@ -278,23 +308,37 @@ vsize(k, v)
 	VAR *v;
 {
 	(void) printf("%*d", v->width,
+#ifndef NEWVM
 	    pgtok(k->ki_p->p_dsize + k->ki_p->p_ssize + k->ki_e->e_xsize));
+#else /* NEWVM */
+	    pgtok(k->ki_e->e_vm.vm_dsize + k->ki_e->e_vm.vm_ssize +
+		k->ki_e->e_vm.vm_tsize));
+#endif /* NEWVM */
 }
 
 rssize(k, v)
 	KINFO *k;
 	VAR *v;
 {
+#ifndef NEWVM
 	(void) printf("%*d", v->width,
 	    pgtok(k->ki_p->p_rssize + (k->ki_e->e_xccount ?
 	    (k->ki_e->e_xrssize / k->ki_e->e_xccount) : 0)));
+#else /* NEWVM */
+	/* XXX don't have info about shared */
+	(void) printf("%*d", v->width, pgtok(k->ki_e->e_vm.vm_rssize));
+#endif /* NEWVM */
 }
 
 p_rssize(k, v)		/* doesn't account for text */
 	KINFO *k;
 	VAR *v;
 {
+#ifndef NEWVM
 	(void) printf("%*d", v->width, pgtok(k->ki_p->p_rssize));
+#else /* NEWVM */
+	(void) printf("%*d", v->width, pgtok(k->ki_e->e_vm.vm_rssize));
+#endif /* NEWVM */
 }
 
 cputime(k, v)
@@ -384,10 +428,17 @@ getpmem(k)
 	e = k->ki_e;
 	if ((p->p_flag & SLOAD) == 0)
 		return (0.0);
+#ifndef NEWVM
 	szptudot = UPAGES + clrnd(ctopt(p->p_dsize + p->p_ssize + e->e_xsize));
 	fracmem = ((float)p->p_rssize + szptudot)/CLSIZE/ecmx;
 	if (p->p_textp && e->e_xccount)
 		fracmem += ((float)e->e_xrssize)/CLSIZE/e->e_xccount/ecmx;
+#else /* NEWVM */
+	/* XXX want pmap ptpages, segtab, etc. (per architecture) */
+	szptudot = UPAGES;
+	/* XXX don't have info about shared */
+	fracmem = ((float)e->e_vm.vm_rssize + szptudot)/CLSIZE/ecmx;
+#endif /* NEWVM */
 	return (100.0 * fracmem);
 }
 
@@ -409,9 +460,11 @@ maxrss(k, v)
 	KINFO *k;
 	VAR *v;
 {
+#ifndef NEWVM	/* not yet */
 	if (k->ki_p->p_maxrss != (RLIM_INFINITY/NBPG))
 		(void) printf("%*d", v->width, pgtok(k->ki_p->p_maxrss));
 	else
+#endif /* NEWVM */
 		(void) printf("%*s", v->width, "-");
 }
 
@@ -419,15 +472,21 @@ tsize(k, v)
 	KINFO *k;
 	VAR *v;
 {
+#ifndef NEWVM
 	(void) printf("%*d", v->width, pgtok(k->ki_e->e_xsize));
+#else /* NEWVM */
+	(void) printf("%*d", v->width, pgtok(k->ki_e->e_vm.vm_tsize));
+#endif /* NEWVM */
 }
 
+#ifndef NEWVM
 trss(k, v)
 	KINFO *k;
 	VAR *v;
 {
 	(void) printf("%*d", v->width, pgtok(k->ki_e->e_xrssize));
 }
+#endif /* NEWVM */
 
 /*
  * Generic output routines.  Print fields from various prototype
