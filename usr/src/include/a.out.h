@@ -1,4 +1,10 @@
-/*	a.out.h	4.2	84/07/21	*/
+/*
+ * Copyright (c) 1980 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@(#)a.out.h	5.1 (Berkeley) %G%
+ */
 
 /*
  * Definitions of the a.out header

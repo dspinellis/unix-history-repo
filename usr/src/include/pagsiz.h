@@ -1,4 +1,10 @@
-/*	pagsiz.h	4.1	83/05/03	*/
+/*
+ * Copyright (c) 1983 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@(#)pagsiz.h	5.1 (Berkeley) %G%
+ */
 
 #define	NBPG	512
 #define	PGOFSET	511

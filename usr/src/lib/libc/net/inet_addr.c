@@ -1,4 +1,12 @@
-/*	inet_addr.c	4.5	82/11/14	*/
+/*
+ * Copyright (c) 1983 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ */
+
+#ifndef lint
+static char sccsid[] = "@(#)inet_addr.c	5.1 (Berkeley) %G%";
+#endif not lint
 
 #include <sys/types.h>
 #include <ctype.h>

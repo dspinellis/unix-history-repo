@@ -1,4 +1,10 @@
-/*	ttyent.h	4.2	85/01/30	*/
+/*
+ * Copyright (c) 1983 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@(#)ttyent.h	5.1 (Berkeley) %G%
+ */
 
 struct	ttyent { /* see getttyent(3) */
 	char	*ty_name;	/* terminal device name */
