@@ -2,108 +2,125 @@
  * Copyright (c) 1989 The Regents of the University of California.
  * All rights reserved.
  *
+ * This code is derived from software contributed to Berkeley by
+ * Paul Borman at Krystal Technologies.
+ *
  * %sccs.include.redist.c%
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)isctype.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)isctype.c	5.7 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #define _ANSI_LIBRARY
 #include <ctype.h>
 
 #undef isalnum
+int
 isalnum(c)
 	int c;
 {
-	return ((__ctype + 1)[c] & (_U|_L|_N));
+	return(__istype((c), (_A|_D)));
 }
 
 #undef isalpha
+int
 isalpha(c)
 	int c;
 {
-	return ((__ctype + 1)[c] & (_U|_L));
+	return (__istype((c), _A));
 }
 
 #undef isascii
+int
 isascii(c)
 	int c;
 {
-	return (c <= 0177);
+	return((c & ~0x7F) == 0);
 }
 
 #undef isblank
+int
 isblank(c)
 	int c;
 {
-	return (c == '\t' || c == ' ');
+	return (__istype((c), _B));
 }
 
 #undef iscntrl
+int
 iscntrl(c)
 	int c;
 {
-	return ((__ctype + 1)[c] & _C);
+	return (__istype((c), _C));
 }
 
 #undef isdigit
+int
 isdigit(c)
 	int c;
 {
-	return ((__ctype + 1)[c] & _N);
+	return (__isctype((c), _D));
 }
 
 #undef isgraph
+int
 isgraph(c)
 	int c;
 {
-	return ((__ctype + 1)[c] & (_P|_U|_L|_N));
+	return (__istype((c), _G));
 }
 
 #undef islower
+int
 islower(c)
 	int c;
 {
-	return ((__ctype + 1)[c] & _L);
+	return (__istype((c), _L));
 }
 
 #undef isprint
+int
 isprint(c)
 	int c;
 {
-	return ((__ctype + 1)[c] & (_P|_U|_L|_N|_B));
+	return (__istype((c), _R));
 }
 
 #undef ispunct
+int
 ispunct(c)
 	int c;
 {
-	return ((__ctype + 1)[c] & _P);
+	return (__istype((c), _P));
 }
 
 #undef isspace
+int
 isspace(c)
 	int c;
 {
-	return ((__ctype + 1)[c] & _S);
+	return (__istype((c), _S));
 }
 
 #undef isupper
+int
 isupper(c)
 	int c;
 {
-	return ((__ctype + 1)[c] & _U);
+	return (__istype((c), _U));
 }
 
 #undef isxdigit
+int
 isxdigit(c)
 	int c;
 {
-	return ((__ctype + 1)[c] & (_N|_X));
+	return (__isctype((c), _X));
 }
 
 #undef toascii
+int
 toascii(c)
 	int c;
 {
@@ -111,15 +128,17 @@ toascii(c)
 }
 
 #undef tolower
+int
 tolower(c)
 	int c;
 {
-	return (isupper(c) ? c - 'A' + 'a' : c);
+        return((c & _CRMASK) ? ___toupper(c) : _CurrentRuneLocale->mapupper[c]);
 }
 
 #undef toupper
+int
 toupper(c)
 	int c;
 {
-	return (islower(c) ? c - 'a' + 'A' : c);
+        return((c & _CRMASK) ? ___tolower(c) : _CurrentRuneLocale->maplower[c]);
 }
