@@ -37,7 +37,7 @@
  *
  *	from: Utah $Hdr: swap_pager.c 1.4 91/04/30$
  *	from: @(#)swap_pager.c	7.4 (Berkeley) 5/7/91
- *	$Id: swap_pager.c,v 1.4 1993/11/07 21:48:34 wollman Exp $
+ *	$Id: swap_pager.c,v 1.5 1993/11/25 01:38:56 wollman Exp $
  */
 
 /*
@@ -57,14 +57,9 @@
 #include "specdev.h"
 #include "vnode.h"
 #include "malloc.h"
-#include "queue.h"
 #include "rlist.h"
 
-#include "vm_param.h"
-#include "queue.h"
-#include "lock.h"
-#include "vm_prot.h"
-#include "vm_object.h"
+#include "vm.h"
 #include "vm_page.h"
 #include "vm_pageout.h"
 #include "swap_pager.h"
@@ -351,7 +346,7 @@ swap_pager_dealloc(pager)
 	while (swp->sw_poip) {
 		swp->sw_flags |= SW_WANTED;
 		assert_wait((int)swp);
-		thread_block();
+		thread_block("swpgde");
 	}
 	splx(s);
 	(void) swap_pager_clean(NULL, B_WRITE);
@@ -498,7 +493,7 @@ swap_pager_io(swp, m, flags)
 
 			swp->sw_flags |= SW_WANTED;
 			assert_wait((int)swp);
-			thread_block();
+			thread_block("swpgio");
 		}
 #else
 		(void) swap_pager_clean(m, flags&B_READ);
@@ -672,7 +667,7 @@ swap_pager_io(swp, m, flags)
 #endif
 	while ((bp->b_flags & B_DONE) == 0) {
 		assert_wait((int)bp);
-		thread_block();
+		thread_block("swpgio");
 	}
 #ifdef DEBUG
 	if (flags & B_READ)
