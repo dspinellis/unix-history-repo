@@ -1,0 +1,18 @@
+.TH SLEEP 3F "19 January 1983"
+.SH NAME
+sleep \- sleep for awhile
+.SH SYNOPSIS
+.B subroutine sleep (itime)
+.SH DESCRIPTION
+.I Sleep
+causes the calling process to be suspended for
+.I itime
+seconds.
+The actual time can be up to 1 second less than
+.I itime
+due to granularity in system timekeeping.
+.SH FILES
+.ie \nM /usr/ucb/lib/libU77.a
+.el /usr/lib/libU77.a
+.SH "SEE ALSO"
+sleep(3)

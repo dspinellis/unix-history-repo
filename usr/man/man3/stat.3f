@@ -1,0 +1,35 @@
+.TH STAT 3F "19 January 1983"
+.SH NAME
+stat, fstat \- get file status
+.SH SYNOPSIS
+.B integer function stat (name, statb)
+.br
+.B character*(*) name
+.br
+.B integer statb(11)
+.sp 1
+.B integer function fstat (lunit, statb)
+.br
+.B integer statb(11)
+.SH DESCRIPTION
+These routines return detailed information about a file.
+.I Stat
+returns information about file
+.IR name ;
+.I fstat
+returns information about the file associated with fortran logical unit
+.I lunit.
+The order and meaning of the information returned in array
+.I statb
+is as described for the structure
+.I stat
+under
+.IR stat (2)
+.PP
+The value of either function will be zero if successful;
+an error code otherwise.
+.SH FILES
+.ie \nM /usr/ucb/lib/libU77.a
+.el /usr/lib/libU77.a
+.SH "SEE ALSO"
+stat(2), access(3F), perror(3F), time(3F)

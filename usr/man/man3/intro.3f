@@ -1,0 +1,90 @@
+.TH INTRO 3F "19 January 1983"
+.SH NAME
+intro \- introduction to FORTRAN library functions
+.SH DESCRIPTION
+.LP
+This section describes those functions that are in the FORTRAN run time
+library.  The functions listed here provide an interface from \fIf77\fP
+programs to the system in the same manner as the C library does for C
+programs.  They are automatically loaded as needed by the Fortran compiler
+.IR f77 (1).
+The link editor searches this library under the `\-lm' option.
+Declarations for these functions may be obtained from the include file <math.h>.
+.sp 2
+.ce
+\fIFunctions Available in the FORTRAN Library\fP
+.sp
+.nf
+.ta 0.4i 2.5i
+abort		terminate abruptly with memory image
+access		determine accessability of a file
+alarm		execute a subroutine after a specified time
+bessel functions		of two kinds for integer orders
+bis		bit set, clear, test routines
+	bic	bit set, clear, test routines (see bis.3f)
+	setbit	bit set, clear, test routines (see bis.3f)
+	bit	bit set, clear, test routines (see bis.3f)
+and		bitwise functions
+	or	bitwise or (see and.3f)
+	xor	bitwise xor (see and.3f)
+	not	bitwise not (see and.3f)
+rshift		right shift
+	lshift	left shift (see rshift.3f)
+chdir		change default directory
+etime		return elapsed execution time
+	dtime	return elapsed execution time (see etime.3f)
+exit		terminate process with status
+fdate		return date and time in an ASCII string
+flush		flush output to a logical unit
+fork		create a copy of this process
+fseek		reposition a file on a logical unit
+	ftell	determine position of file on logical unit (see fseek.3f)
+getarg		command arguments to Fortran
+	iargc	command arguments to Fortran (see getarg.3f)
+getc		get a character from a logical unit
+	fgetc	get a character from a logical unit (see getc.3f)
+getcwd		get pathname of current working directory
+getenv		get value of environment variables
+getlog		get user's login name
+getpid		get process id
+getuid		get user ID of the caller
+	getgid	get group ID of the caller (see getuid.3f)
+idate		return date in numerical form
+	itime	return time in numerical form (see idate.3f)
+index		tell about character objects
+	rindex	tell about character objects (see index.3f)
+	lnblnk	tell about character objects (see index.3f)
+	len	tell about character objects (see index.3f)
+kill		send a signal to a process
+link		make a link to an existing file
+loc		return the address of an object
+perror		get system error messages
+	gerror	get system error messages (see perror.3f)
+	ierrno	get system error messages (see perror.3f)
+putc		write a character to a fortran logical unit
+	fputc	write a character to a fortran logical unit (see putc.3f)
+qsort		quick sort
+rand		return random values
+	drand	return random values (see rand.3f)
+	irand	return random values (see rand.3f)
+flmin		return extreme values
+	flmax	return extreme values (see flmin.3f)
+	dflmin	return extreme values (see flmin.3f)
+	dflmax	return extreme values (see flmin.3f)
+	inmax	return extreme values (see flmin.3f)
+signal		change the action for a signal
+sleep		sleep for awhile
+stat		get file status
+	fstat	get file status (see stat.3f)
+system		execute a unix command
+time		return system time
+	ctime	return system time (see time.3f)
+	ltime	return system time (see time.3f)
+	gmtime	return system time (see time.3f)
+traper		trap arithmetic errors
+trapov		trap and repair floating point overflow
+ttynam		find name of a terminal port
+	isatty	find name of a terminal port (see ttynam.3f)
+unlink		remove a directory entry
+wait		wait for a process to terminate
+.fi
