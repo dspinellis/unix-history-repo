@@ -13,7 +13,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mkioconf.c	5.4 (Berkeley) %G%
+ *	@(#)mkioconf.c	5.5 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -247,7 +247,7 @@ struct cfdata cfdata[] = {\n\
 		    state, loc, i->i_cfflags, i->i_pvoff, vs, v) < 0)
 			return (1);
 	}
-	return (fputs("\t0\n};\n", fp) < 0);
+	return (fputs("\t{0}\n};\n", fp) < 0);
 }
 
 /*
