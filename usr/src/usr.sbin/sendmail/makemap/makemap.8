@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)makemap.8	8.2 (Berkeley) %G%
+.\"     @(#)makemap.8	8.3 (Berkeley) %G%
 .\"
 .Dd November 16, 1992
 .Dt MAKEMAP 8
@@ -14,6 +14,7 @@
 .Sh SYNOPSIS
 .Nm
 .Op Fl N
+.Op Fl d
 .Op Fl f
 .Op Fl o
 .Op Fl r
@@ -72,6 +73,11 @@ Include the null byte that terminates strings
 in the map.
 This must match the \-N flag in the sendmail.cf
 ``K'' line.
+.It Fl d
+Allow duplicate keys in the map.
+This is only allowed on B-Tree format maps.
+If two identical keys are read,
+they will both be inserted into the map.
 .It Fl f
 Normally all upper case letters in the key
 are folded to lower case.
