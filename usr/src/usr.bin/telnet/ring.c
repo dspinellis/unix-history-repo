@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ring.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)ring.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -86,7 +86,7 @@ Ring *ring;
 
     ring->top = ring->bottom+ring->size;
 
-#if	defined(ENCRYPT)
+#if	defined(ENCRYPTION)
     ring->clearto = 0;
 #endif
 
@@ -159,7 +159,7 @@ ring_consumed(ring, count)
 		(ring_subtract(ring, ring->mark, ring->consume) < count)) {
 	ring->mark = 0;
     }
-#if	defined(ENCRYPT)
+#if	defined(ENCRYPTION)
     if (ring->consume < ring->clearto &&
 		ring->clearto <= ring->consume + count)
 	ring->clearto = 0;
@@ -299,7 +299,7 @@ ring_consume_data(ring, buffer, count)
 }
 #endif
 
-#if	defined(ENCRYPT)
+#if	defined(ENCRYPTION)
     void
 ring_encrypt(ring, encryptor)
     Ring *ring;

@@ -6,10 +6,10 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)authenc.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)authenc.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
-#if	defined(ENCRYPT) || defined(AUTHENTICATE)
+#if	defined(ENCRYPTION) || defined(AUTHENTICATION)
 #include <sys/types.h>
 #include <arpa/telnet.h>
 #include <libtelnet/encrypt.h>
@@ -38,7 +38,7 @@ net_write(str, len)
 	void
 net_encrypt()
 {
-#if	defined(ENCRYPT)
+#if	defined(ENCRYPTION)
 	if (encrypt_output)
 		ring_encrypt(&netoring, encrypt_output);
 	else

@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)utility.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)utility.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 #define PRINTOPTIONS
@@ -167,7 +167,7 @@ netclear()
 #define	wewant(p)	((nfrontp > p) && ((*p&0xff) == IAC) && \
 				((*(p+1)&0xff) != EC) && ((*(p+1)&0xff) != EL))
 
-#if	defined(ENCRYPT)
+#if	defined(ENCRYPTION)
     thisitem = nclearto > netobuf ? nclearto : netobuf;
 #else
     thisitem = netobuf;
@@ -179,7 +179,7 @@ netclear()
 
     /* Now, thisitem is first before/at boundary. */
 
-#if	defined(ENCRYPT)
+#if	defined(ENCRYPTION)
     good = nclearto > netobuf ? nclearto : netobuf;
 #else
     good = netobuf;	/* where the good bytes go */
@@ -224,7 +224,7 @@ netflush()
 	      n += strlen(nfrontp);  /* get count first */
 	      nfrontp += strlen(nfrontp);  /* then move pointer */
 	    });
-#if	defined(ENCRYPT)
+#if	defined(ENCRYPTION)
 	if (encrypt_output) {
 		char *s = nclearto ? nclearto : nbackp;
 		if (nfrontp - s > 0) {
@@ -263,7 +263,7 @@ netflush()
 	cleanup(0);
     }
     nbackp += n;
-#if	defined(ENCRYPT)
+#if	defined(ENCRYPTION)
     if (nbackp > nclearto)
 	nclearto = 0;
 #endif
@@ -272,7 +272,7 @@ netflush()
     }
     if (nbackp == nfrontp) {
 	nbackp = nfrontp = netobuf;
-#if	defined(ENCRYPT)
+#if	defined(ENCRYPTION)
 	nclearto = 0;
 #endif
     }
@@ -320,7 +320,7 @@ fatal(f, msg)
 	char buf[BUFSIZ];
 
 	(void) sprintf(buf, "telnetd: %s.\r\n", msg);
-#if	defined(ENCRYPT)
+#if	defined(ENCRYPTION)
 	if (encrypt_output) {
 		/*
 		 * Better turn off encryption first....
@@ -434,7 +434,12 @@ putf(cp, where)
 		switch (*++cp) {
 
 		case 't':
+#ifdef	STREAMSPTY
+			/* names are like /dev/pts/2 -- we want pts/2 */
+			slash = index(line+1, '/');
+#else
 			slash = rindex(line, '/');
+#endif
 			if (slash == (char *) 0)
 				putstr(line);
 			else
@@ -891,6 +896,14 @@ printsub(direction, pointer, length)
 			    noquote = 2;
 			    break;
 
+			case ENV_USERVAR:
+			    if (pointer[1] == TELQUAL_SEND)
+				goto def_case;
+			    sprintf(nfrontp, "\" USERVAR " + noquote);
+			    nfrontp += strlen(nfrontp);
+			    noquote = 2;
+			    break;
+
 			default:
 			def_case:
 			    if (isprint(pointer[i]) && pointer[i] != '"') {
@@ -915,7 +928,7 @@ printsub(direction, pointer, length)
 	    }
 	    break;
 
-#if	defined(AUTHENTICATE)
+#if	defined(AUTHENTICATION)
 	case TELOPT_AUTHENTICATION:
 	    sprintf(nfrontp, "AUTHENTICATION");
 	    nfrontp += strlen(nfrontp);
@@ -997,7 +1010,7 @@ printsub(direction, pointer, length)
 	    break;
 #endif
 
-#if	defined(ENCRYPT)
+#if	defined(ENCRYPTION)
 	case TELOPT_ENCRYPT:
 	    sprintf(nfrontp, "ENCRYPT");
 	    nfrontp += strlen(nfrontp);

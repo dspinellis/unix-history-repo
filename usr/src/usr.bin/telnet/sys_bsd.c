@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)sys_bsd.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)sys_bsd.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -79,6 +79,9 @@ extern struct termio new_tc;
 #   define	cfgetispeed(ptr)	cfgetospeed(ptr)
 #  endif
 # endif /* TCSANOW */
+# ifdef	sysV88
+# define TIOCFLUSH TC_PX_DRAIN
+# endif
 #endif	/* USE_TERMIO */
 
 static fd_set ibits, obits, xbits;
@@ -439,9 +442,16 @@ TerminalNewMode(f)
 	tc.t_startc = _POSIX_VDISABLE;
 	tc.t_stopc = _POSIX_VDISABLE;
 #else
-	tmp_tc.c_iflag &= ~(IXANY|IXOFF|IXON);
+	tmp_tc.c_iflag &= ~(IXOFF|IXON);	/* Leave the IXANY bit alone */
     } else {
-	tmp_tc.c_iflag |= IXANY|IXOFF|IXON;
+	if (restartany < 0) {
+		tmp_tc.c_iflag |= IXOFF|IXON;	/* Leave the IXANY bit alone */
+	} else if (restartany > 0) {
+		tmp_tc.c_iflag |= IXOFF|IXON|IXANY;
+	} else {
+		tmp_tc.c_iflag |= IXOFF|IXON;
+		tmp_tc.c_iflag &= ~IXANY;
+	}
 #endif
     }
 
@@ -651,8 +661,10 @@ TerminalNewMode(f)
 #endif
 
 #if	(!defined(TN3270)) || ((!defined(NOT43)) || defined(PUTCHAR))
+# if	!defined(sysV88)
     ioctl(tin, FIONBIO, (char *)&onoff);
     ioctl(tout, FIONBIO, (char *)&onoff);
+# endif
 #endif	/* (!defined(TN3270)) || ((!defined(NOT43)) || defined(PUTCHAR)) */
 #if	defined(TN3270)
     if (noasynchtty == 0) {

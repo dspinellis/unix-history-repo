@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -45,7 +45,7 @@ usage()
 {
 	fprintf(stderr, "Usage: %s %s%s%s%s\n",
 	    prompt,
-#ifdef	AUTHENTICATE
+#ifdef	AUTHENTICATION
 	    " [-8] [-E] [-K] [-L] [-X atype] [-a] [-d] [-e char] [-k realm]",
 	    "\n\t[-l user] [-n tracefile] ",
 #else
@@ -53,7 +53,7 @@ usage()
 	    "\n\t",
 #endif
 #if defined(TN3270) && defined(unix)
-# ifdef AUTHENTICATE
+# ifdef AUTHENTICATION
 	    "[-noasynch] [-noasynctty] [-noasyncnet]\n\t[-r] [-t transcom] ",
 # else
 	    "[-noasynch] [-noasynctty] [-noasyncnet] [-r] [-t transcom]\n\t",
@@ -61,7 +61,7 @@ usage()
 #else
 	    "[-r] ",
 #endif
-#ifdef	ENCRYPT
+#ifdef	ENCRYPTION
 	    "[-x] [host-name [port]]"
 #else
 	    "[host-name [port]]"
@@ -101,7 +101,7 @@ main(argc, argv)
 	rlogin = (strncmp(prompt, "rlog", 4) == 0) ? '~' : _POSIX_VDISABLE;
 	autologin = -1;
 
-	while ((ch = getopt(argc, argv, "8EKLS:X:ade:k:l:n:rt:x")) != EOF) {
+	while ((ch = getopt(argc, argv, "8EKLS:X:acde:k:l:n:rt:x")) != EOF) {
 		switch(ch) {
 		case '8':
 			eight = 3;	/* binary output and input */
@@ -110,7 +110,7 @@ main(argc, argv)
 			rlogin = escape = _POSIX_VDISABLE;
 			break;
 		case 'K':
-#ifdef	AUTHENTICATE
+#ifdef	AUTHENTICATION
 			autologin = 0;
 #endif
 			break;
@@ -135,7 +135,7 @@ main(argc, argv)
 		    }
 			break;
 		case 'X':
-#ifdef	AUTHENTICATE
+#ifdef	AUTHENTICATION
 			auth_disable_name(optarg);
 #endif
 			break;
@@ -152,7 +152,7 @@ main(argc, argv)
 			set_escape_char(optarg);
 			break;
 		case 'k':
-#if defined(AUTHENTICATE) && defined(KRB4)
+#if defined(AUTHENTICATION) && defined(KRB4)
 		    {
 			extern char *dest_realm, dst_realm_buf[], dst_realm_sz;
 			dest_realm = dst_realm_buf;
@@ -198,7 +198,7 @@ main(argc, argv)
 #endif
 			break;
 		case 'x':
-#ifdef	ENCRYPT
+#ifdef	ENCRYPTION
 			encrypt_auto(1);
 			decrypt_auto(1);
 #else

@@ -4,11 +4,18 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)externs.h	5.3 (Berkeley) %G%
+ *	@(#)externs.h	5.4 (Berkeley) %G%
  */
 
 #ifndef	BSD
 # define BSD 43
+#endif
+
+/*
+ * ucb stdio.h defines BSD as something wierd
+ */
+#if defined(sun) && defined(__svr4__)
+#define BSD 43
 #endif
 
 #if (BSD > 43 || defined(SYSV_TERMIO)) && !defined(USE_TERMIO)
@@ -78,6 +85,7 @@ extern int
     In3270,			/* Are we in 3270 mode? */
     telnetport,		/* Are we connected to the telnet port? */
     localflow,		/* Flow control handled locally */
+    restartany,		/* If flow control, restart output on any character */
     localchars,		/* we recognize interrupt/quit */
     donelclchars,		/* the user has set "localchars" */
     showoptions,
@@ -118,7 +126,7 @@ extern char
     wont[],
     options[],		/* All the little options */
     *hostname;		/* Who are we connected to? */
-#if	defined(ENCRYPT)
+#if	defined(ENCRYPTION)
 extern void (*encrypt_output) P((unsigned char *, int));
 extern int (*decrypt_input) P((int));
 #endif
@@ -249,7 +257,7 @@ extern void
     env_opt_end P((int));
 
 extern unsigned char
-    *env_default P((int)),
+    *env_default P((int, int)),
     *env_getvalue P((unsigned char *));
 
 extern int

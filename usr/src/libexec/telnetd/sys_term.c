@@ -6,22 +6,27 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)sys_term.c	5.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)sys_term.c	5.17 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "telnetd.h"
 #include "pathnames.h"
 
-#if	defined(AUTHENTICATE)
+#if	defined(AUTHENTICATION)
 #include <libtelnet/auth.h>
 #endif
 
 #ifdef	NEWINIT
 #include <initreq.h>
 #else	/* NEWINIT*/
-#include <utmp.h>
+# ifdef	UTMPX
+# include <utmpx.h>
+# else
+# include <utmp.h>
+# endif /* UTMPX */
 struct	utmp wtmp;
 
+int	utmp_len = sizeof(wtmp.ut_host);
 # ifndef CRAY
 char	wtmpf[]	= "/usr/adm/wtmp";
 char	utmpf[] = "/etc/utmp";
@@ -29,8 +34,19 @@ char	utmpf[] = "/etc/utmp";
 char	wtmpf[]	= "/etc/wtmp";
 #include <tmpdir.h>
 #include <sys/wait.h>
+#  if defined(_SC_CRAY_SECURE_SYS)
+#include <sys/sysv.h>
+#include <sys/secstat.h>
+extern int secflag;
+extern struct sysv sysv;
+#  endif /* _SC_CRAY_SECURE_SYS */
 # endif	/* CRAY */
 #endif	/* NEWINIT */
+
+#ifdef	STREAMSPTY
+#include <sac.h>
+#include <sys/stropts.h>
+#endif
 
 #define SCPYN(a, b)	(void) strncpy(a, b, sizeof(a))
 #define SCMPN(a, b)	strncmp(a, b, sizeof(a))
@@ -107,6 +123,7 @@ struct termbuf {
 #  endif
 # endif /* TCSANOW */
 struct termios termbuf, termbuf2;	/* pty control structure */
+int ttyfd = -1;
 #endif	/* USE_TERMIO */
 
 /*
@@ -131,7 +148,7 @@ init_termbuf()
 	(void) ioctl(pty, TIOCGSTATE, (char *)&termbuf.state);
 # endif
 #else
-	(void) tcgetattr(pty, &termbuf);
+	(void) tcgetattr(ttyfd, &termbuf);
 #endif
 	termbuf2 = termbuf;
 }
@@ -167,8 +184,8 @@ set_termbuf()
 		(void) ioctl(pty, TIOCLSET, (char *)&termbuf.lflags);
 #else	/* USE_TERMIO */
 	if (bcmp((char *)&termbuf, (char *)&termbuf2, sizeof(termbuf)))
-		(void) tcsetattr(pty, TCSANOW, &termbuf);
-# if	defined(CRAY2) && defined(UNCIOS5)
+		(void) tcsetattr(ttyfd, TCSANOW, &termbuf);
+# if	defined(CRAY2) && defined(UNICOS5)
 	needtermstat = 1;
 # endif
 #endif	/* USE_TERMIO */
@@ -401,19 +418,40 @@ char *myline = "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0";
 getpty()
 {
 	register int p;
+#ifdef	STREAMSPTY
+	int t;
+	char *ptsname();
+
+	p = open("/dev/ptmx", 2);
+	if (p > 0) {
+		grantpt(p);
+		unlockpt(p);
+		strcpy(line, ptsname(p));
+		return(p);
+	}
+
+#else	/* ! STREAMSPTY */
 #ifndef CRAY
-	register char c, *p1, *p2;
+	register char *cp, *p1, *p2;
 	register int i;
+#if defined(sun) && defined(TIOCGPGRP)
+	int dummy;
+#endif
 
 	(void) sprintf(line, "/dev/ptyXX");
 	p1 = &line[8];
 	p2 = &line[9];
 
-	for (c = 'p'; c <= 's'; c++) {
+	for (cp = "pqrstuvwxyzPQRST"; *cp; cp++) {
 		struct stat stb;
 
-		*p1 = c;
+		*p1 = *cp;
 		*p2 = '0';
+		/*
+		 * This stat() check is just to keep us from
+		 * looping through all 256 combinations if there
+		 * aren't that many ptys available.
+		 */
 		if (stat(line, &stb) < 0)
 			break;
 		for (i = 0; i < 16; i++) {
@@ -421,7 +459,17 @@ getpty()
 			p = open(line, 2);
 			if (p > 0) {
 				line[5] = 't';
-				return(p);
+				chown(line, 0, 0);
+				chmod(line, 0600);
+#if defined(sun) && defined(TIOCGPGRP)
+				if (ioctl(p, TIOCGPGRP, &dummy) == 0
+				    || errno != EIO) {
+					chmod(line, 0666);
+					close(p);
+					line[5] = 'p';
+				} else
+#endif /* defined(sun) && defined(TIOCGPGRP) */
+					return(p);
 			}
 		}
 	}
@@ -463,6 +511,7 @@ getpty()
 		}
 	}
 #endif	/* CRAY */
+#endif	/* STREAMSPTY */
 	return(-1);
 }
 #endif	/* convex */
@@ -496,6 +545,20 @@ tty_flowmode()
 	return(((termbuf.tc.t_startc) > 0 && (termbuf.tc.t_stopc) > 0) ? 1 : 0);
 #else
 	return(termbuf.c_iflag & IXON ? 1 : 0);
+#endif
+}
+
+	int
+tty_restartany()
+{
+#ifndef USE_TERMIO
+# ifdef	DECCTQ
+	return((termbuf.lflags & DECCTQ) ? 0 : 1);
+# else
+	return(-1);
+# endif
+#else
+	return(termbuf.c_iflag & IXANY ? 1 : 0);
 #endif
 }
 
@@ -923,6 +986,20 @@ getptyslave()
 	if (t < 0)
 		fatalperror(net, line);
 
+#ifdef	USE_TERMIO
+	ttyfd = t;
+#endif
+#ifdef  STREAMSPTY
+	if (ioctl(t, I_PUSH, "ptem") < 0) 
+		fatal(net, "I_PUSH ptem");
+	if (ioctl(t, I_PUSH, "ldterm") < 0)
+		fatal(net, "I_PUSH ldterm");
+	if (ioctl(t, I_PUSH, "ttcompat") < 0)
+		fatal(net, "I_PUSH ttcompat");
+	if (ioctl(pty, I_PUSH, "pckt") < 0)
+		fatal(net, "I_PUSH pckt");
+#endif
+
 	/*
 	 * set up the tty modes as we like them to be.
 	 */
@@ -1000,18 +1077,44 @@ cleanopen(line)
 	char *line;
 {
 	register int t;
+#if	defined(_SC_CRAY_SECURE_SYS)
+	struct secstat secbuf;
+#endif	/* _SC_CRAY_SECURE_SYS */
 
+#ifndef STREAMSPTY
 	/*
 	 * Make sure that other people can't open the
 	 * slave side of the connection.
 	 */
 	(void) chown(line, 0, 0);
 	(void) chmod(line, 0600);
+#endif
 
 # if !defined(CRAY) && (BSD > 43)
 	(void) revoke(line);
 # endif
+#if	defined(_SC_CRAY_SECURE_SYS)
+	if (secflag) {
+		if (secstat(line, &secbuf) < 0)
+			return(-1);
+		if (setulvl(secbuf.st_slevel) < 0)
+			return(-1);
+		if (setucmp(secbuf.st_compart) < 0)
+			return(-1);
+	}
+#endif	/* _SC_CRAY_SECURE_SYS */
+
 	t = open(line, O_RDWR|O_NOCTTY);
+
+#if	defined(_SC_CRAY_SECURE_SYS)
+	if (secflag) {
+		if (setulvl(sysv.sy_minlvl) < 0)
+			return(-1);
+		if (setucmp(0) < 0)
+			return(-1);
+	}
+#endif	/* _SC_CRAY_SECURE_SYS */
+
 	if (t < 0)
 		return(-1);
 
@@ -1019,7 +1122,7 @@ cleanopen(line)
 	 * Hangup anybody else using this ttyp, then reopen it for
 	 * ourselves.
 	 */
-# if !defined(CRAY) && (BSD <= 43)
+# if !defined(CRAY) && (BSD <= 43) && !defined(STREAMSPTY)
 	(void) signal(SIGHUP, SIG_IGN);
 	vhangup();
 	(void) signal(SIGHUP, SIG_DFL);
@@ -1034,7 +1137,29 @@ cleanopen(line)
 		(void) ioctl(t, TCVHUP, (char *)0);
 		(void) signal(SIGHUP, SIG_DFL);
 		setpgrp();
+
+#if		defined(_SC_CRAY_SECURE_SYS)
+		if (secflag) {
+			if (secstat(line, &secbuf) < 0)
+				return(-1);
+			if (setulvl(secbuf.st_slevel) < 0)
+				return(-1);
+			if (setucmp(secbuf.st_compart) < 0)
+				return(-1);
+		}
+#endif		/* _SC_CRAY_SECURE_SYS */
+
 		i = open(line, O_RDWR);
+
+#if		defined(_SC_CRAY_SECURE_SYS)
+		if (secflag) {
+			if (setulvl(sysv.sy_minlvl) < 0)
+				return(-1);
+			if (setucmp(0) < 0)
+				return(-1);
+		}
+#endif		/* _SC_CRAY_SECURE_SYS */
+
 		if (i < 0)
 			return(-1);
 		(void) close(t);
@@ -1055,7 +1180,7 @@ login_tty(t)
 # ifdef	TIOCSCTTY
 	if (ioctl(t, TIOCSCTTY, (char *)0) < 0)
 		fatalperror(net, "ioctl(sctty)");
-#  if defined(CRAY) && defined(SESS_CTTY)	/* SESS_CTTY is in param.h */
+#  if defined(CRAY)
 	/*
 	 * Close the hard fd to /dev/ttypXXX, and re-open through
 	 * the indirect /dev/tty interface.
@@ -1107,7 +1232,7 @@ startslave(host, autologin, autoname)
 	register int n;
 #endif	/* NEWINIT */
 
-#if	defined(AUTHENTICATE)
+#if	defined(AUTHENTICATION)
 	if (!autoname || !autoname[0])
 		autologin = 0;
 
@@ -1254,6 +1379,33 @@ start_login(host, autologin, name)
 	register char *cp;
 	register char **argv;
 	char **addarg();
+#ifdef	UTMPX
+	register int pid = getpid();
+	struct utmpx utmpx;
+#endif
+#ifdef __svr4__
+	char *term;
+	char termbuf[64];
+#endif
+
+#ifdef	UTMPX
+	/*
+	 * Create utmp entry for child
+	 */
+
+	bzero(&utmpx, sizeof(utmpx));
+	SCPYN(utmpx.ut_user, ".telnet");
+	SCPYN(utmpx.ut_line, line + sizeof("/dev/") - 1);
+	utmpx.ut_pid = pid;
+	utmpx.ut_id[0] = 't';
+	utmpx.ut_id[1] = 'n';
+	utmpx.ut_id[2] = SC_WILDC;
+	utmpx.ut_id[3] = SC_WILDC;
+	utmpx.ut_type = LOGIN_PROCESS;
+	(void) time(&utmpx.ut_tv.tv_sec);
+	if (makeutx(&utmpx) == NULL)
+		fatal(net, "makeutx failed");
+#endif
 
 	/*
 	 * -h : pass on name of host.
@@ -1266,6 +1418,20 @@ start_login(host, autologin, name)
 	argv = addarg(0, "login");
 	argv = addarg(argv, "-h");
 	argv = addarg(argv, host);
+#ifdef	__svr4__
+	/*
+	 * SVR4 version of -h takes TERM= as second arg, or -
+	 */
+	term = getenv("TERM");
+	if (term == NULL || term[0] == 0) {
+		term = "-";
+	} else {
+		strcpy(termbuf, "TERM=");
+		strncat(termbuf, term, sizeof(termbuf) - 6);
+		term = termbuf;
+	}
+	argv = addarg(argv, term);
+#endif
 #if	!defined(NO_LOGIN_P)
 	argv = addarg(argv, "-p");
 #endif
@@ -1287,7 +1453,7 @@ start_login(host, autologin, name)
 	if (require_SecurID)
 		argv = addarg(argv, "-s");
 #endif
-#if	defined (AUTHENTICATE)
+#if	defined (AUTHENTICATION)
 	if (auth_level >= 0 && autologin == AUTH_VALID) {
 # if	!defined(NO_LOGIN_F)
 		argv = addarg(argv, "-f");
@@ -1304,6 +1470,17 @@ start_login(host, autologin, name)
 				argv = addarg(argv, *cpp);
 		}
 #endif
+		/*
+		 * Assume that login will set the USER variable
+		 * correctly.  For SysV systems, this means that
+		 * USER will no longer be set, just LOGNAME by
+		 * login.  (The problem is that if the auto-login
+		 * fails, and the user then specifies a different
+		 * account name, he can get logged in with both
+		 * LOGNAME and USER in his environment, but the
+		 * USER value will be wrong.
+		 */
+		unsetenv("USER");
 	}
 	closelog();
 	execv(_PATH_LOGIN, argv);
@@ -1604,7 +1781,36 @@ cleantmpdir(jid, tpath, user)
  * remove the utmp entry for this person.
  */
 
-#if	!defined(CRAY) && BSD <= 43
+#ifdef	UTMPX
+rmut()
+{
+	register f;
+	int found = 0;
+	struct utmp *u, *utmp;
+	int nutmp;
+	struct stat statbf;
+
+	struct utmpx *utxp, utmpx;
+
+	/*
+	 * This updates the utmpx and utmp entries and make a wtmp/x entry
+	 */
+
+	SCPYN(utmpx.ut_line, line + sizeof("/dev/") - 1);
+	utxp = getutxline(&utmpx);
+	if (utxp) {
+		utxp->ut_type = DEAD_PROCESS;
+		utxp->ut_exit.e_termination = 0;
+		utxp->ut_exit.e_exit = 0;
+		(void) time(&utmpx.ut_tv.tv_sec);
+		utmpx.ut_tv.tv_usec = 0;
+		modutx(utxp);
+	}
+	endutxent();
+}  /* end of rmut */
+#endif
+
+#if	!defined(UTMPX) && !defined(CRAY) && BSD <= 43
 	void
 rmut()
 {
