@@ -1,0 +1,2 @@
+/usr/lib/c0 $1.c c.tmp0 c.tmp1
+/usr/lib/c1 c.tmp0 c.tmp1 $1.s
