@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)uuxqt.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)uuxqt.c	5.10	(Berkeley) %G%";
 #endif
 
 #include "uucp.h"
@@ -41,6 +41,7 @@ int nonzero = 0;
 struct timeb Now;
 
 char PATH[MAXFULLNAME] = "PATH=/bin:/usr/bin:/usr/ucb";
+char UU_MACHINE[MAXFULLNAME];
 char Shell[MAXFULLNAME];
 char HOME[MAXFULLNAME];
 
@@ -49,6 +50,7 @@ char *nenv[] = {
 	PATH,
 	Shell,
 	HOME,
+	UU_MACHINE,
 	0
 };
 
@@ -75,12 +77,13 @@ char *argv[];
 	char cmd[BUFSIZ*2];
 	char *cmdp, prm[1000], *ptr;
 	char *getprm(), *lastpart();
-	int uid, ret, ret2, badfiles;
+	int uid, ret, badfiles;
 	register int i;
 	int stcico = 0;
 	time_t xstart, xnow;
 	char retstat[30];
-	char **ep;
+	extern char *optarg;
+	extern int optind;
 
 	strcpy(Progname, "uuxqt");
 	uucpname(Myname);
@@ -88,32 +91,33 @@ char *argv[];
 	umask(WFMASK);
 	Ofn = 1;
 	Ifn = 0;
-	while (argc>1 && argv[1][0] == '-') {
-		switch(argv[1][1]){
+	while ((i = getopt(argc, argv, "x:S:")) != EOF) 
+		switch(i) {
 		case 'x':
 			chkdebug();
-			Debug = atoi(&argv[1][2]);
+			Debug = atoi(optarg);
 			if (Debug <= 0)
 				Debug = 1;
 			break;
 		case 'S':
-			Spool = &argv[1][2];
+			Spool = optarg;
 			DEBUG(1, "Spool set to %s", Spool);
 			break;
+		case '?':
 		default:
-			fprintf(stderr, "unknown flag %s\n", argv[1]);
+			fprintf(stderr, "unknown flag %s\n", argv[optind-1]);
 				break;
 		}
-		--argc;  argv++;
-	}
 
 	DEBUG(4, "\n\n** START **\n", CNULL);
-	ret = subchdir(Spool);
-	ASSERT(ret >= 0, "CHDIR FAILED", Spool, ret);
+	if (subchdir(Spool) < 0) {
+		syslog(LOG_WARNING, "chdir(%s) failed: %m", Spool);
+		cleanup(1);
+	}
 	strcpy(Wrkdir, Spool);
 	uid = getuid();
 	if (guinfo(uid, User, path) != SUCCESS) {
-		assert("Can't find username for ", "uid", uid);
+		syslog(LOG_WARNING, "Can't find username for uid %d", uid);
 		DEBUG(1, "Using username", "uucp");
 		strcpy(User, "uucp");
 	}
@@ -206,7 +210,10 @@ doprocess:
 		DEBUG(4, "xfile - %s\n", xfile);
 
 		xfp = fopen(subfile(xfile), "r");
-		ASSERT(xfp != NULL, CANTOPEN, xfile, 0);
+		if (xfp == NULL) {
+			syslog(LOG_ERR, "fopen(%s) failed: %m", subfile(xfile));
+			cleanup(1);
+		}
 
 		/*  initialize to default  */
 		strcpy(user, User);
@@ -225,7 +232,7 @@ doprocess:
 		DEBUG(4, "uuxqt: move %s to ", xfile);
 		DEBUG(4, "%s\n", cfilename);
 		xmv(xfile, cfilename);
-		assert("X. FILE CORRUPTED", xfile, 0);
+		syslog(LOG_WARNING, "%s: X. FILE CORRUPTED", xfile);
 		fclose(xfp);
 		goto doprocess;
 		
@@ -233,6 +240,7 @@ doprocess:
 			switch (buf[0]) {
 			case X_USER:
 				sscanf(&buf[1], "%s %s", user, Rmtname);
+				sprintf(UU_MACHINE, "UU_MACHINE=%s", Rmtname);
 				break;
 			case X_RETURNTO:
 				sscanf(&buf[1], "%s", user);
@@ -328,8 +336,10 @@ doprocess:
 		DEBUG(4, "cmd %s\n", buf);
 
 		mvxfiles(xfile);
-		ret = subchdir(XQTDIR);
-		ASSERT(ret >= 0, "CHDIR FAILED", XQTDIR, ret);
+		if (subchdir(XQTDIR) < 0) {
+			syslog(LOG_ERR, "chdir(%s) failed: %m", XQTDIR);
+			cleanup(1);
+		}
 		ret = shio(buf, fin, dfile);
 		sprintf(retstat, "signal %d, exit %d", ret & 0377,
 		  (ret>>8) & 0377);
@@ -354,13 +364,19 @@ doprocess:
 			logent("MAIL FAIL", buf);
 		}
 		DEBUG(4, "exit cmd - %d\n", ret);
-		ret2 = subchdir(Spool);
-		ASSERT(ret2 >= 0, "CHDIR FAILED", Spool, ret);
+		if (subchdir(Spool) < 0) {
+			syslog(LOG_ERR, "chdir(%s) failed: %m", Spool);
+			cleanup(1);
+		}
 		rmxfiles(xfile);
 		if (ret != 0) {
 			/*  exit status not zero */
 			dfp = fopen(subfile(dfile), "a");
-			ASSERT(dfp != NULL, CANTOPEN, dfile, 0);
+			if (dfp == NULL) {
+				syslog(LOG_ERR, "fopen(%s) failed: %m",
+					subfile(dfile));
+				cleanup(1);
+			}
 			fprintf(dfp, "exit status %d", ret);
 			fclose(dfp);
 		}
@@ -372,7 +388,11 @@ doprocess:
 				char *cp = rindex(user, '!');
 				gename(CMDPRE, sysout, 'O', cfile);
 				fp = fopen(subfile(cfile), "w");
-				ASSERT(fp != NULL, "OPEN", cfile, 0);
+				if (fp == NULL) {
+					syslog(LOG_ERR, "fopen(%s) failed: %m",
+						subfile(cfile));
+					cleanup(1);
+				}
 				fprintf(fp, "S %s %s %s - %s 0666\n", dfile,
 					fout, cp ? cp : user, lastpart(dfile));
 				fclose(fp);
@@ -380,7 +400,11 @@ doprocess:
 		}
 	rmfiles:
 		xfp = fopen(subfile(xfile), "r");
-		ASSERT(xfp != NULL, CANTOPEN, xfile, 0);
+		if (xfp == NULL) {
+			syslog(LOG_ERR, "fopen(%s) failed: %m",
+				subfile(xfile));
+			cleanup(1);
+		}
 		while (fgets(buf, BUFSIZ, xfp) != NULL) {
 			if (buf[0] != X_RQDFILE)
 				continue;
@@ -479,7 +503,7 @@ retry:
 			sprintf(cfilename, "%s/%s", CORRUPT,
 				bnp ? bnp + 1 : file);
 			xmv(file, cfilename);
-			assert("X. FILE MISSING FILES", file, 0);
+			syslog(LOG_WARNING, "%s: X. FILE MISSING FILES", file);
 		    }
 	    }
  	    Nfiles = 0;
@@ -561,7 +585,6 @@ char *xfile;
 	register FILE *fp;
 	char buf[BUFSIZ], ffile[MAXFULLNAME], tfile[NAMESIZE];
 	char tfull[MAXFULLNAME];
-	int ret;
 
 	if((fp = fopen(subfile(xfile), "r")) == NULL)
 		return;
@@ -574,8 +597,11 @@ char *xfile;
 		expfile(ffile);
 		sprintf(tfull, "%s/%s", XQTDIR, tfile);
 		unlink(subfile(tfull));
-		ret = xmv(ffile, tfull);
-		ASSERT(ret == 0, "XQTDIR ERROR", CNULL, ret);
+		if (xmv(ffile, tfull) != 0) {
+			syslog(LOG_WARNING, "xmv(%s,%s) failed: %m",
+				ffile, tfull);
+			cleanup(1);
+		}
 	}
 	fclose(fp);
 }
@@ -709,8 +735,7 @@ shio(cmd, fi, fo)
 char *cmd, *fi, *fo;
 {
 	int status, f;
-	int uid, pid, ret;
-	char path[MAXFULLNAME];
+	int pid, ret;
 	char *args[256];
 	extern int errno;
 
