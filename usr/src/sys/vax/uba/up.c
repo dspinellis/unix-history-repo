@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)up.c	7.3 (Berkeley) %G%
+ *	@(#)up.c	7.4 (Berkeley) %G%
  */
 
 #include "up.h"
@@ -23,6 +23,8 @@
 #include "systm.h"
 #include "dkstat.h"
 #include "dkbad.h"
+#include "ioctl.h"
+#include "disklabel.h"
 #include "buf.h"
 #include "conf.h"
 #include "dir.h"
@@ -641,7 +643,6 @@ upintr(sc21)
 			}
 	hard:
 	hard:
-			harderr(bp, "up");
 			printf("cn=%d tn=%d sn=%d cs2=%b er1=%b er2=%b\n",
 			        upaddr->updc, ((upaddr->upda)>>8)&077,
 			        (upaddr->upda)&037,

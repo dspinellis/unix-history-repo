@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)rk.c	7.3 (Berkeley) %G%
+ *	@(#)rk.c	7.4 (Berkeley) %G%
  */
 
 #include "rk.h"
@@ -37,6 +37,8 @@ int	rkbdebug;
 #include "dkstat.h"
 #include "cmap.h"
 #include "dkbad.h"
+#include "ioctl.h"
+#include "disklabel.h"
 #include "uio.h"
 #include "kernel.h"
 #include "syslog.h"
@@ -424,8 +426,9 @@ rkintr(rk11)
 			} else if (++um->um_tab.b_errcnt > 28 ||
 			    ds&RKDS_HARD || er&RKER_HARD || cs2&RKCS2_HARD) {
 hard:
-				harderr(bp, "rk");
-				printf("cs2=%b ds=%b er=%b\n",
+				diskerr(bp, "rk", "hard error", LOG_PRINTF, -1,
+				    (struct disklabel *)0);
+				printf(" cs2=%b ds=%b er=%b\n",
 				    cs2, RKCS2_BITS, ds, 
 				    RKDS_BITS, er, RKER_BITS);
 				bp->b_flags |= B_ERROR;
@@ -564,8 +567,9 @@ rkecc(ui, flag)
 
 		npf--;
 		reg--;
-		log(LOG_WARNING, "rk%d%c: soft ecc sn%d\n", rkunit(bp->b_dev),
-		    'a'+(minor(bp->b_dev)&07), bp->b_blkno + npf);
+		diskerr(bp, "rk", "soft ecc", LOG_WARNING, npf,
+		    (struct disklabel *)0);
+		addlog("\n");
 		mask = rk->rkec2;
 		i = rk->rkec1 - 1;		/* -1 makes 0 origin */
 		bit = i&07;
