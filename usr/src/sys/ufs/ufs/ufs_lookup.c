@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_lookup.c	7.28 (Berkeley) %G%
+ *	@(#)ufs_lookup.c	7.29 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -55,9 +55,10 @@ int	dirchk = 1;
  *
  * NOTE: (LOOKUP | LOCKPARENT) currently returns the parent inode unlocked.
  */
-ufs_lookup(vdp, ndp)
+ufs_lookup(vdp, ndp, p)
 	register struct vnode *vdp;
 	register struct nameidata *ndp;
+	struct proc *p;
 {
 	register struct inode *dp;	/* the directory we are searching */
 	register struct fs *fs;		/* file system that directory is in */
@@ -93,7 +94,7 @@ ufs_lookup(vdp, ndp)
 	 */
 	if ((dp->i_mode&IFMT) != IFDIR)
 		return (ENOTDIR);
-	if (error = ufs_access(vdp, VEXEC, ndp->ni_cred))
+	if (error = ufs_access(vdp, VEXEC, ndp->ni_cred, p))
 		return (error);
 
 	/*
@@ -312,7 +313,7 @@ searchloop:
 		 * Access for write is interpreted as allowing
 		 * creation of files in the directory.
 		 */
-		if (error = ufs_access(vdp, VWRITE, ndp->ni_cred))
+		if (error = ufs_access(vdp, VWRITE, ndp->ni_cred, p))
 			return (error);
 		/*
 		 * Return an indication of where the new directory
@@ -387,7 +388,7 @@ found:
 		/*
 		 * Write access to directory required to delete files.
 		 */
-		if (error = ufs_access(vdp, VWRITE, ndp->ni_cred))
+		if (error = ufs_access(vdp, VWRITE, ndp->ni_cred, p))
 			return (error);
 		/*
 		 * Return pointer to current entry in ndp->ni_offset,
@@ -432,7 +433,7 @@ found:
 	 * regular file, or empty directory.
 	 */
 	if (flag == RENAME && wantparent && *ndp->ni_next == 0) {
-		if (error = ufs_access(vdp, VWRITE, ndp->ni_cred))
+		if (error = ufs_access(vdp, VWRITE, ndp->ni_cred, p))
 			return (error);
 		/*
 		 * Careful about locking second inode.
@@ -771,8 +772,8 @@ dirempty(ip, parentino, cred)
 #define	MINDIRSIZ (sizeof (struct dirtemplate) / 2)
 
 	for (off = 0; off < ip->i_size; off += dp->d_reclen) {
-		error = vn_rdwr(UIO_READ, ITOV(ip), (caddr_t)dp, MINDIRSIZ,
-		    off, UIO_SYSSPACE, IO_NODELOCKED, cred, &count);
+		error = vn_rdwr(UIO_READ, ITOV(ip), (caddr_t)dp, MINDIRSIZ, off,
+		   UIO_SYSSPACE, IO_NODELOCKED, cred, &count, (struct proc *)0);
 		/*
 		 * Since we read MINDIRSIZ, residual must
 		 * be 0 unless we're at end of file.
@@ -832,7 +833,7 @@ checkpath(source, target, cred)
 		}
 		error = vn_rdwr(UIO_READ, ITOV(ip), (caddr_t)&dirbuf,
 			sizeof (struct dirtemplate), (off_t)0, UIO_SYSSPACE,
-			IO_NODELOCKED, cred, (int *)0);
+			IO_NODELOCKED, cred, (int *)0, (struct proc *)0);
 		if (error != 0)
 			break;
 		if (dirbuf.dotdot_namlen != 2 ||
