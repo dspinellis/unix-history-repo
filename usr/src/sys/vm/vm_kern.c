@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_kern.c	8.2 (Berkeley) %G%
+ *	@(#)vm_kern.c	8.3 (Berkeley) %G%
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -222,82 +222,6 @@ vm_map_t kmem_suballoc(parent, min, max, size, pageable)
 	if ((ret = vm_map_submap(parent, *min, *max, result)) != KERN_SUCCESS)
 		panic("kmem_suballoc: unable to change range to submap");
 	return(result);
-}
-
-/*
- *	vm_move:
- *
- *	Move memory from source to destination map, possibly deallocating
- *	the source map reference to the memory.
- *
- *	Parameters are as follows:
- *
- *	src_map		Source address map
- *	src_addr	Address within source map
- *	dst_map		Destination address map
- *	num_bytes	Amount of data (in bytes) to copy/move
- *	src_dealloc	Should source be removed after copy?
- *
- *	Assumes the src and dst maps are not already locked.
- *
- *	Returns new destination address or 0 (if a failure occurs).
- */
-vm_offset_t vm_move(src_map,src_addr,dst_map,num_bytes,src_dealloc)
-	vm_map_t		src_map;
-	register vm_offset_t	src_addr;
-	register vm_map_t	dst_map;
-	vm_offset_t		num_bytes;
-	boolean_t		src_dealloc;
-{
-	register vm_offset_t	src_start;	/* Beginning of region */
-	register vm_size_t	src_size;	/* Size of rounded region */
-	vm_offset_t		dst_start;	/* destination address */
-	register int		result;
-
-	/*
-	 *	Page-align the source region
-	 */
-
-	src_start = trunc_page(src_addr);
-	src_size = round_page(src_addr + num_bytes) - src_start;
-
-	/*
-	 *	If there's no destination, we can be at most deallocating
-	 *	the source range.
-	 */
-	if (dst_map == NULL) {
-		if (src_dealloc)
-			if (vm_deallocate(src_map, src_start, src_size)
-					!= KERN_SUCCESS) {
-				printf("vm_move: deallocate of source");
-				printf(" failed, dealloc_only clause\n");
-			}
-		return(0);
-	}
-
-	/*
-	 *	Allocate a place to put the copy
-	 */
-
-	dst_start = (vm_offset_t) 0;
-	if ((result = vm_allocate(dst_map, &dst_start, src_size, TRUE))
-				== KERN_SUCCESS) {
-		/*
-		 *	Perform the copy, asking for deallocation if desired
-		 */
-		result = vm_map_copy(dst_map, src_map, dst_start, src_size,
-					src_start, FALSE, src_dealloc);
-	}
-
-	/*
-	 *	Return the destination address corresponding to
-	 *	the source address given (rather than the front
-	 *	of the newly-allocated page).
-	 */
-
-	if (result == KERN_SUCCESS)
-		return(dst_start + (src_addr - src_start));
-	return(0);
 }
 
 /*
