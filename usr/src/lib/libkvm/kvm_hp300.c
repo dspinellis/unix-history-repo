@@ -10,7 +10,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)kvm_hp300.c	5.27 (Berkeley) %G%";
+static char sccsid[] = "@(#)kvm_hp300.c	5.28 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -43,6 +43,7 @@ static char sccsid[] = "@(#)kvm_hp300.c	5.27 (Berkeley) %G%";
 
 struct vmstate {
 	u_long lowram;
+	int mmutype;
 	struct ste *Sysseg;
 };
 
@@ -62,7 +63,7 @@ _kvm_initvtop(kd)
 	kvm_t *kd;
 {
 	struct vmstate *vm;
-	struct nlist nlist[3];
+	struct nlist nlist[4];
 
 	vm = (struct vmstate *)_kvm_malloc(kd, sizeof(*vm));
 	if (vm == 0)
@@ -70,8 +71,9 @@ _kvm_initvtop(kd)
 	kd->vmst = vm;
 
 	nlist[0].n_name = "_lowram";
-	nlist[1].n_name = "_Sysseg";
-	nlist[2].n_name = 0;
+	nlist[1].n_name = "_mmutype";
+	nlist[2].n_name = "_Sysseg";
+	nlist[3].n_name = 0;
 
 	if (kvm_nlist(kd, nlist) != 0) {
 		_kvm_err(kd, kd->program, "bad namelist");
@@ -82,7 +84,11 @@ _kvm_initvtop(kd)
 		_kvm_err(kd, kd->program, "cannot read lowram");
 		return (-1);
 	}
-	if (KREAD(kd, (u_long)nlist[1].n_value, &vm->Sysseg)) {
+	if (KREAD(kd, (u_long)nlist[1].n_value, &vm->mmutype)) {
+		_kvm_err(kd, kd->program, "cannot read mmutype");
+		return (-1);
+	}
+	if (KREAD(kd, (u_long)nlist[2].n_value, &vm->Sysseg)) {
 		_kvm_err(kd, kd->program, "cannot read segment table");
 		return (-1);
 	}
@@ -97,52 +103,91 @@ _kvm_vatop(kd, sta, va, pa)
 	u_long *pa;
 {
 	register struct vmstate *vm;
+	register u_long lowram;
 	register u_long addr;
 	int p, ste, pte;
 	int offset;
-	register u_long lowram;
 
-	vm = kd->vmst;
-	/*
-	 * If processing a post-mortem and we are initializing
-	 * (kernel segment table pointer not yet set) then return
-	 * pa == va to avoid infinite recursion.
-	 */
-	if (!ISALIVE(kd) && vm->Sysseg == 0) {
-		*pa = va;
-		return (NBPG - (va & PGOFSET));
-	}
-	addr = (u_long)&sta[va >> SEGSHIFT];
-	/*
-	 * Can't use KREAD to read kernel segment table entries.
-	 * Fortunately it is 1-to-1 mapped so we don't have to. 
-	 */
-	if (sta == vm->Sysseg) {
-		if (lseek(kd->pmfd, (off_t)addr, 0) == -1 ||
-		    read(kd->pmfd, (char *)&ste, sizeof(ste)) < 0)
-			goto invalid;
-	} else if (KREAD(kd, addr, &ste))
-		goto invalid;
-	if ((ste & SG_V) == 0) {
-		_kvm_err(kd, 0, "invalid segment (%x)", ste);
+	if (ISALIVE(kd)) {
+		_kvm_err(kd, 0, "vatop called in live kernel!");
 		return((off_t)0);
 	}
-	p = btop(va & SG_PMASK);
-	addr = (ste & SG_FRAME) + (p * sizeof(struct pte));
+	vm = kd->vmst;
+	offset = va & PGOFSET;
+	/*
+	 * If we are initializing (kernel segment table pointer not yet set)
+	 * then return pa == va to avoid infinite recursion.
+	 */
+	if (vm->Sysseg == 0) {
+		*pa = va;
+		return (NBPG - offset);
+	}
 	lowram = vm->lowram;
+	if (vm->mmutype == -2) {
+		struct ste *sta2;
 
+		addr = (u_long)&sta[va >> SG4_SHIFT1];
+		/*
+		 * Can't use KREAD to read kernel segment table entries.
+		 * Fortunately it is 1-to-1 mapped so we don't have to. 
+		 */
+		if (sta == vm->Sysseg) {
+			if (lseek(kd->pmfd, (off_t)addr, 0) == -1 ||
+			    read(kd->pmfd, (char *)&ste, sizeof(ste)) < 0)
+				goto invalid;
+		} else if (KREAD(kd, addr, &ste))
+			goto invalid;
+		if ((ste & SG_V) == 0) {
+			_kvm_err(kd, 0, "invalid level 1 descriptor (%x)",
+				 ste);
+			return((off_t)0);
+		}
+		sta2 = (struct ste *)(ste & SG4_ADDR1);
+		addr = (u_long)&sta2[(va & SG4_MASK2) >> SG4_SHIFT2];
+		/*
+		 * Address from level 1 STE is a physical address,
+		 * so don't use kvm_read.
+		 */
+		if (lseek(kd->pmfd, (off_t)(addr - lowram), 0) == -1 || 
+		    read(kd->pmfd, (char *)&ste, sizeof(ste)) < 0)
+			goto invalid;
+		if ((ste & SG_V) == 0) {
+			_kvm_err(kd, 0, "invalid level 2 descriptor (%x)",
+				 ste);
+			return((off_t)0);
+		}
+		sta2 = (struct ste *)(ste & SG4_ADDR2);
+		addr = (u_long)&sta2[(va & SG4_MASK3) >> SG4_SHIFT3];
+	} else {
+		addr = (u_long)&sta[va >> SEGSHIFT];
+		/*
+		 * Can't use KREAD to read kernel segment table entries.
+		 * Fortunately it is 1-to-1 mapped so we don't have to. 
+		 */
+		if (sta == vm->Sysseg) {
+			if (lseek(kd->pmfd, (off_t)addr, 0) == -1 ||
+			    read(kd->pmfd, (char *)&ste, sizeof(ste)) < 0)
+				goto invalid;
+		} else if (KREAD(kd, addr, &ste))
+			goto invalid;
+		if ((ste & SG_V) == 0) {
+			_kvm_err(kd, 0, "invalid segment (%x)", ste);
+			return((off_t)0);
+		}
+		p = btop(va & SG_PMASK);
+		addr = (ste & SG_FRAME) + (p * sizeof(struct pte));
+	}
 	/*
 	 * Address from STE is a physical address so don't use kvm_read.
 	 */
-	if (lseek(kd->pmfd, (off_t)addr - lowram, 0) == -1 || 
+	if (lseek(kd->pmfd, (off_t)(addr - lowram), 0) == -1 || 
 	    read(kd->pmfd, (char *)&pte, sizeof(pte)) < 0)
 		goto invalid;
 	addr = pte & PG_FRAME;
-	if (pte == PG_NV || addr < lowram) {
+	if (pte == PG_NV) {
 		_kvm_err(kd, 0, "page not valid");
 		return (0);
 	}
-	offset = va & PGOFSET;
 	*pa = addr - lowram + offset;
 	
 	return (NBPG - offset);
@@ -157,10 +202,7 @@ _kvm_kvatop(kd, va, pa)
 	u_long va;
 	u_long *pa;
 {
-	if (va >= KERNBASE)
-		return (_kvm_vatop(kd, (u_long)kd->vmst->Sysseg, va, pa));
-	_kvm_err(kd, 0, "invalid address (%x)", va);
-	return (0);
+	return (_kvm_vatop(kd, (u_long)kd->vmst->Sysseg, va, pa));
 }
 
 /*
@@ -176,8 +218,35 @@ _kvm_uvatop(kd, p, va, pa)
 	register struct vmspace *vms = p->p_vmspace;
 	int kva;
 
+	/*
+	 * If this is a live kernel we just look it up in the kernel
+	 * virtually allocated flat 4mb page table (i.e. let the kernel
+	 * do the table walk).  In this way, we avoid needing to know
+	 * the MMU type.
+	 */
+	if (ISALIVE(kd)) {
+		struct pte *ptab;
+		int pte, offset;
+
+		kva = (int)&vms->vm_pmap.pm_ptab;
+		if (KREAD(kd, kva, &ptab)) {
+			_kvm_err(kd, 0, "invalid address (%x)", va);
+			return (0);
+		}
+		kva = (int)&ptab[btop(va)];
+		if (KREAD(kd, kva, &pte) || (pte & PG_V) == 0) {
+			_kvm_err(kd, 0, "invalid address (%x)", va);
+			return (0);
+		}
+		offset = va & PGOFSET;
+		*pa = (pte & PG_FRAME) | offset;
+		return (NBPG - offset);
+	}
+	/*
+	 * Otherwise, we just walk the table ourself.
+	 */
 	kva = (int)&vms->vm_pmap.pm_stab;
-	if (kvm_read(kd, kva, (char *)&kva, 4) != 4) {
+	if (KREAD(kd, kva, &kva)) {
 		_kvm_err(kd, 0, "invalid address (%x)", va);
 		return (0);
 	}
