@@ -1,14 +1,14 @@
-# Copyright (c) 1985 Regents of the University of California.
-# All rights reserved.
+# Copyright (c) 1985, 1993
+#	The Regents of the University of California.  All rights reserved.
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)cabs.s	5.4 (Berkeley) %G%
+#	@(#)cabs.s	8.1 (Berkeley) %G%
 #
 	.data
 	.align	2
 _sccsid:
-.asciz	"@(#)cabs.s	1.2 (Berkeley) 8/21/85; 5.4 (ucb.elefunt) %G%"
+.asciz	"@(#)cabs.s	1.2 (Berkeley) 8/21/85; 8.1 (ucb.elefunt) %G%"
 
 # double precision complex absolute value
 # CABS by W. Kahan, 9/7/80.
