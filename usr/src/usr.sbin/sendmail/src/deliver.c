@@ -6,7 +6,7 @@
 # include <syslog.h>
 # endif LOG
 
-static char SccsId[] = "@(#)deliver.c	3.51	%G%";
+static char SccsId[] = "@(#)deliver.c	3.52	%G%";
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -390,7 +390,7 @@ sendoff(m, pvp, editfcn, ctladdr)
 	auto int st;
 	register int i;
 	int pid;
-	int pvect[2];
+	int mpvect[2];
 	FILE *mfile;
 	extern putmessage();
 	extern FILE *fdopen();
@@ -405,7 +405,7 @@ sendoff(m, pvp, editfcn, ctladdr)
 	errno = 0;
 
 	/* create a pipe to shove the mail through */
-	if (pipe(pvect) < 0)
+	if (pipe(mpvect) < 0)
 	{
 		syserr("pipe");
 		return (-1);
@@ -415,8 +415,8 @@ sendoff(m, pvp, editfcn, ctladdr)
 	if (pid < 0)
 	{
 		syserr("Cannot fork");
-		(void) close(pvect[0]);
-		(void) close(pvect[1]);
+		(void) close(mpvect[0]);
+		(void) close(mpvect[1]);
 		return (-1);
 	}
 	else if (pid == 0)
@@ -426,16 +426,25 @@ sendoff(m, pvp, editfcn, ctladdr)
 		(void) signal(SIGINT, SIG_IGN);
 		(void) signal(SIGHUP, SIG_IGN);
 		(void) signal(SIGTERM, SIG_DFL);
+
+		/* arrange to filter standard & diag output of command */
+		if (OutChannel != stdout)
+		{
+			(void) close(1);
+			(void) dup(fileno(OutChannel));
+		}
 		(void) close(2);
 		(void) dup(1);
+
+		/* arrange to get standard input */
+		(void) close(mpvect[1]);
 		(void) close(0);
-		if (dup(pvect[0]) < 0)
+		if (dup(mpvect[0]) < 0)
 		{
 			syserr("Cannot dup to zero!");
 			_exit(EX_OSERR);
 		}
-		(void) close(pvect[0]);
-		(void) close(pvect[1]);
+		(void) close(mpvect[0]);
 		if (!bitset(M_RESTR, m->m_flags))
 		{
 			if (ctladdr->q_uid == 0)
@@ -482,10 +491,13 @@ sendoff(m, pvp, editfcn, ctladdr)
 		_exit(EX_UNAVAILABLE);
 	}
 
-	/* write out message to mailer */
-	(void) close(pvect[0]);
+	/*
+	**  Format and write message to mailer.
+	*/
+
+	(void) close(mpvect[0]);
 	(void) signal(SIGPIPE, SIG_IGN);
-	mfile = fdopen(pvect[1], "w");
+	mfile = fdopen(mpvect[1], "w");
 	if (editfcn == NULL)
 		editfcn = putmessage;
 	(*editfcn)(mfile, m);

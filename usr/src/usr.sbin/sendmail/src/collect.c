@@ -1,7 +1,7 @@
 # include <errno.h>
 # include "sendmail.h"
 
-static char	SccsId[] = "@(#)collect.c	3.27	%G%";
+static char	SccsId[] = "@(#)collect.c	3.28	%G%";
 
 /*
 **  COLLECT -- read & parse message header & make temp file.
@@ -19,7 +19,8 @@ static char	SccsId[] = "@(#)collect.c	3.27	%G%";
 **	the protocol.  So we limp by.....
 **
 **	Parameters:
-**		none
+**		sayok -- if set, give an ARPANET style message
+**			to say we are ready to collect input.
 **
 **	Returns:
 **		none.
@@ -31,7 +32,8 @@ static char	SccsId[] = "@(#)collect.c	3.27	%G%";
 
 long	MsgSize;		/* size of message in bytes */
 
-collect()
+collect(sayok)
+	bool sayok;
 {
 	register FILE *tf;
 	char buf[MAXFIELD+1];
@@ -61,12 +63,8 @@ collect()
 	**  Tell ARPANET to go ahead.
 	*/
 
-	if (ArpaMode == ARPA_MAIL)
-	{
-		extern char Arpa_Enter[];
-
-		message(Arpa_Enter, "Enter mail, end with \".\" on a line by itself");
-	}
+	if (sayok)
+		message("354", "Enter mail, end with \".\" on a line by itself");
 
 	/*
 	**  Try to read a UNIX-style From line
@@ -204,7 +202,7 @@ collect()
 	xfrom = hvalue("sender");
 	if (xfrom == NULL)
 		xfrom = OrigFrom;
-	if (ArpaMode != ARPA_NONE)
+	if (ArpaMode)
 		setfrom(xfrom, (char *) NULL);
 
 	/* full name of from person */

@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-static char	SccsId[] =	"@(#)srvrsmtp.c	3.6	%G%";
+static char	SccsId[] =	"@(#)srvrsmtp.c	3.7	%G%";
 
 /*
 **  SMTP -- run the SMTP protocol.
@@ -59,10 +59,11 @@ smtp()
 	extern char *skipword();
 	extern bool sameword();
 	bool hasmail;			/* mail command received */
-	bool hasmrcp;			/* has a recipient */
+	int rcps;			/* number of recipients */
 	bool hasdata;			/* has mail data */
 
-	hasmail = hasmrcp = hasdata = FALSE;
+	hasmail = hasdata = FALSE;
+	rcps = 0;
 	message("220", "%s Sendmail at your service", HostName);
 	for (;;)
 	{
@@ -77,6 +78,9 @@ smtp()
 
 		/* clean up end of line */
 		fixcrlf(inp, TRUE);
+
+		/* echo command to transcript */
+		fprintf(Xscript, "*** %s\n", inp);
 
 		/* break off command */
 		for (p = inp; isspace(*p); p++)
@@ -134,13 +138,12 @@ smtp()
 			if (Errors == 0)
 			{
 				message("250", "Recipient ok");
-				hasmrcp = TRUE;
+				rcps++;
 			}
 			break;
 
 		  case CMDDATA:		/* data -- text of mail */
-			message("354", "Enter mail, end with dot");
-			collect();
+			collect(TRUE);
 			if (Errors == 0)
 			{
 				message("250", "Message stored");
@@ -151,14 +154,18 @@ smtp()
 		  case CMDDOIT:		/* doit -- actually send everything */
 			if (!hasmail)
 				message("503", "Need MAIL command");
-			else if (!hasmrcp)
+			else if (rcps <= 0)
 				message("503", "Need MRCP (recipient)");
 			else if (!hasdata)
 				message("503", "No message, use DATA");
 			else
 			{
+				if (rcps != 1)
+					HoldErrs = MailBack = TRUE;
 				sendall(FALSE);
-				if (Errors == 0)
+				HoldErrs = FALSE;
+				To = NULL;
+				if (Errors == 0 || rcps != 1)
 					message("250", "Sent");
 			}
 			break;
