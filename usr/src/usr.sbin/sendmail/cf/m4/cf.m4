@@ -24,6 +24,7 @@ syscmd(rm -f TEMPFILE)dnl
 divert(-1)
 
 changecom()
+undefine(`format')
 ifdef(`pushdef', `',
 	`errprint(`You need a newer version of M4, at least as new as
 System V or GNU')
@@ -115,4 +116,4 @@ define(`confSEPARATE_PROC', `False')
 define(`confCW_FILE', `/etc/sendmail.cw')
 
 divert(0)dnl
-VERSIONID(`@(#)cf.m4	6.13 (Berkeley) %G%')
+VERSIONID(`@(#)cf.m4	6.14 (Berkeley) %G%')
