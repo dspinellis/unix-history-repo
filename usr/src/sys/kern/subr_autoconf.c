@@ -13,9 +13,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)subr_autoconf.c	7.5 (Berkeley) %G%
+ *	@(#)subr_autoconf.c	7.6 (Berkeley) %G%
  *
- * from: $Header: subr_autoconf.c,v 1.9 92/11/19 01:59:01 torek Exp $ (LBL)
+ * from: $Header: subr_autoconf.c,v 1.12 93/02/01 19:31:48 torek Exp $ (LBL)
  */
 
 #include <sys/param.h>
@@ -241,7 +241,6 @@ config_attach(parent, cf, aux, print)
 	bcopy(cd->cd_name, dev->dv_xname, lname);
 	bcopy(xunit, dev->dv_xname + lname, lunit);
 	dev->dv_parent = parent;
-	bcopy(cd->cd_evnam, dev->dv_evnam, sizeof(cd->cd_evnam));
 	if (parent == ROOT)
 		printf("%s (root)", dev->dv_xname);
 	else {
@@ -289,4 +288,29 @@ config_attach(parent, cf, aux, print)
 		    cf->cf_fstate == FSTATE_NOTFOUND)
 			cf->cf_fstate = FSTATE_FOUND;
 	(*cd->cd_attach)(parent, dev, aux);
+}
+
+/*
+ * Attach an event.  These must come from initially-zero space (see
+ * commented-out assignments below), but that occurs naturally for
+ * device instance variables.
+ */
+void
+evcnt_attach(dev, name, ev)
+	struct device *dev;
+	const char *name;
+	struct evcnt *ev;
+{
+	static struct evcnt **nextp = &allevents;
+
+#ifdef DIAGNOSTIC
+	if (strlen(name) >= sizeof(ev->ev_name))
+		panic("evcnt_attach");
+#endif
+	/* ev->ev_next = NULL; */
+	ev->ev_dev = dev;
+	/* ev->ev_count = 0; */
+	strcpy(ev->ev_name, name);
+	*nextp = ev;
+	nextp = &ev->ev_next;
 }
