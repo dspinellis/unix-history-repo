@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_descrip.c	7.40 (Berkeley) %G%
+ *	@(#)kern_descrip.c	7.41 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -42,7 +42,7 @@ getdtablesize(p, uap, retval)
 	int *retval;
 {
 
-	*retval = p->p_rlimit[RLIMIT_NOFILE].rlim_cur;
+	*retval = min((int)p->p_rlimit[RLIMIT_NOFILE].rlim_cur, maxfiles);
 	return (0);
 }
 
@@ -50,7 +50,7 @@ getdtablesize(p, uap, retval)
  * Duplicate a file descriptor.
  */
 struct dup_args {
-	int	i;
+	u_int	fd;
 };
 /* ARGSUSED */
 dup(p, uap, retval)
@@ -58,27 +58,22 @@ dup(p, uap, retval)
 	struct dup_args *uap;
 	int *retval;
 {
-	register struct filedesc *fdp = p->p_fd;
-	struct file *fp;
-	int fd, error;
+	register struct filedesc *fdp;
+	u_int old;
+	int new, error;
 
+	old = uap->fd;
 	/*
 	 * XXX Compatibility
 	 */
-	if (uap->i &~ 077) { uap->i &= 077; return (dup2(p, uap, retval)); }
+	if (old &~ 077) { uap->fd &= 077; return (dup2(p, uap, retval)); }
 
-	if ((unsigned)uap->i >= fdp->fd_nfiles ||
-	    (fp = fdp->fd_ofiles[uap->i]) == NULL)
+	fdp = p->p_fd;
+	if (old >= fdp->fd_nfiles || fdp->fd_ofiles[old] == NULL)
 		return (EBADF);
-	if (error = fdalloc(p, 0, &fd))
+	if (error = fdalloc(p, 0, &new))
 		return (error);
-	fdp->fd_ofiles[fd] = fp;
-	fdp->fd_ofileflags[fd] = fdp->fd_ofileflags[uap->i] &~ UF_EXCLOSE;
-	fp->f_count++;
-	if (fd > fdp->fd_lastfile)
-		fdp->fd_lastfile = fd;
-	*retval = fd;
-	return (0);
+	return (finishdup(fdp, (int)old, new, retval));
 }
 
 /*
@@ -95,18 +90,18 @@ dup2(p, uap, retval)
 	int *retval;
 {
 	register struct filedesc *fdp = p->p_fd;
-	register struct file *fp;
 	register u_int old = uap->from, new = uap->to;
 	int i, error;
 
 	if (old >= fdp->fd_nfiles ||
-	    (fp = fdp->fd_ofiles[old]) == NULL ||
+	    fdp->fd_ofiles[old] == NULL ||
 	    new >= p->p_rlimit[RLIMIT_NOFILE].rlim_cur ||
-	    new > maxfiles)
+	    new >= maxfiles)
 		return (EBADF);
-	*retval = new;
-	if (old == new)
+	if (old == new) {
+		*retval = new;
 		return (0);
+	}
 	if (new >= fdp->fd_nfiles) {
 		if (error = fdalloc(p, new, &i))
 			return (error);
@@ -120,12 +115,7 @@ dup2(p, uap, retval)
 		 */
 		(void) closef(fdp->fd_ofiles[new], p);
 	}
-	fdp->fd_ofiles[new] = fp;
-	fdp->fd_ofileflags[new] = fdp->fd_ofileflags[old] &~ UF_EXCLOSE;
-	fp->f_count++;
-	if (new > fdp->fd_lastfile)
-		fdp->fd_lastfile = new;
-	return (0);
+	return (finishdup(fdp, (int)old, (int)new, retval));
 }
 
 /*
@@ -148,24 +138,22 @@ fcntl(p, uap, retval)
 	struct vnode *vp;
 	int i, tmp, error, flg = F_POSIX;
 	struct flock fl;
+	u_int newmin;
 
 	if ((unsigned)uap->fd >= fdp->fd_nfiles ||
 	    (fp = fdp->fd_ofiles[uap->fd]) == NULL)
 		return (EBADF);
 	pop = &fdp->fd_ofileflags[uap->fd];
-	switch(uap->cmd) {
+	switch (uap->cmd) {
+
 	case F_DUPFD:
-		if ((unsigned)uap->arg >= p->p_rlimit[RLIMIT_NOFILE].rlim_cur)
+		newmin = uap->arg;
+		if (newmin >= p->p_rlimit[RLIMIT_NOFILE].rlim_cur ||
+		    newmin >= maxfiles)
 			return (EINVAL);
-		if (error = fdalloc(p, uap->arg, &i))
+		if (error = fdalloc(p, newmin, &i))
 			return (error);
-		fdp->fd_ofiles[i] = fp;
-		fdp->fd_ofileflags[i] = *pop &~ UF_EXCLOSE;
-		fp->f_count++;
-		if (i > fdp->fd_lastfile)
-			fdp->fd_lastfile = i;
-		*retval = i;
-		return (0);
+		return (finishdup(fdp, uap->fd, i, retval));
 
 	case F_GETFD:
 		*retval = *pop & 1;
@@ -275,6 +263,26 @@ fcntl(p, uap, retval)
 		return (EINVAL);
 	}
 	/* NOTREACHED */
+}
+
+/*
+ * Common code for dup, dup2, and fcntl(F_DUPFD).
+ */
+int
+finishdup(fdp, old, new, retval)
+	register struct filedesc *fdp;
+	register int old, new, *retval;
+{
+	register struct file *fp;
+
+	fp = fdp->fd_ofiles[old];
+	fdp->fd_ofiles[new] = fp;
+	fdp->fd_ofileflags[new] = fdp->fd_ofileflags[old] &~ UF_EXCLOSE;
+	fp->f_count++;
+	if (new > fdp->fd_lastfile)
+		fdp->fd_lastfile = new;
+	*retval = new;
+	return (0);
 }
 
 /*
@@ -414,7 +422,7 @@ fdalloc(p, want, result)
 	 * of want or fd_freefile.  If that fails, consider
 	 * expanding the ofile array.
 	 */
-	lim = p->p_rlimit[RLIMIT_NOFILE].rlim_cur;
+	lim = min((int)p->p_rlimit[RLIMIT_NOFILE].rlim_cur, maxfiles);
 	for (;;) {
 		last = min(fdp->fd_nfiles, lim);
 		if ((i = want) < fdp->fd_freefile)
@@ -472,10 +480,10 @@ fdavail(p, n)
 {
 	register struct filedesc *fdp = p->p_fd;
 	register struct file **fpp;
-	register int i;
+	register int i, lim;
 
-	if ((i = p->p_rlimit[RLIMIT_NOFILE].rlim_cur - fdp->fd_nfiles) > 0 &&
-	    (n -= i) <= 0)
+	lim = min((int)p->p_rlimit[RLIMIT_NOFILE].rlim_cur, maxfiles);
+	if ((i = lim - fdp->fd_nfiles) > 0 && (n -= i) <= 0)
 		return (1);
 	fpp = &fdp->fd_ofiles[fdp->fd_freefile];
 	for (i = fdp->fd_nfiles - fdp->fd_freefile; --i >= 0; fpp++)
