@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)range.c	5.3	%G%
+ *	@(#)range.c	5.4	%G%
  *
  * routines to return extreme values
  * VERY MACHINE DEPENDENT
@@ -32,7 +32,11 @@ flmax_()
 #if	tahoe
 	n.i = 0x7fffffffL;
 #else	tahoe
+#if	hp300
+	n.i = 0x7fffffffL;
+#else	hp300
 	UNKNOWN MACHINE!
+#endif	hp300
 #endif	tahoe
 #endif	vax
 #endif	pdp11
@@ -55,7 +59,12 @@ dflmax_()
 	n.j[0] = 0x7fffffffL;
 	n.j[1] = 0xffffffffL;
 #else	tahoe
+#if	hp300
+	n.j[0] = 0x7fffffffL;
+	n.j[1] = 0xffffffffL;
+#else	hp300
 	UNKNOWN MACHINE!
+#endif	hp300
 #endif	tahoe
 #endif	vax
 #endif	pdp11
@@ -75,7 +84,11 @@ flmin_()
 #if	tahoe
 	n.i = 0x00800000L;
 #else	tahoe
+#if	hp300
+	n.i = 0x00800000L;
+#else	hp300
 	UNKNOWN MACHINE!
+#endif	hp300
 #endif	tahoe
 #endif	vax
 #endif	pdp11
@@ -98,7 +111,12 @@ dflmin_()
 	n.j[0] = 0x00800000L;
 	n.j[1] = 0;
 #else	tahoe
+#if	hp300
+	n.j[0] = 0x00800000L;
+	n.j[1] = 0;
+#else	hp300
 	UNKNOWN MACHINE!
+#endif	hp300
 #endif	tahoe
 #endif	vax
 #endif	pdp11
@@ -125,7 +143,11 @@ ffrac_()
 #if	tahoe
 	n.i = 0x35000000L;
 #else	tahoe
+#if	hp300
+	n.i = 0x35000000L;
+#else	hp300
 	UNKNOWN MACHINE!
+#endif	hp300
 #endif	tahoe
 #endif	vax
 #endif	pdp11
@@ -148,7 +170,12 @@ dffrac_()
 	n.j[0] = 0x25000000L;
 	n.j[1] = 0;
 #else	tahoe
+#if	hp300
+	n.j[0] = 0x25000000L;
+	n.j[1] = 0;
+#else	hp300
 	UNKNOWN MACHINE!
+#endif	hp300
 #endif	tahoe
 #endif	vax
 #endif	pdp11
