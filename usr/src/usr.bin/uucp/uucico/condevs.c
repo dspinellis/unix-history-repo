@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)condevs.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)condevs.c	5.14 (Berkeley) %G%";
 #endif
 
 extern int errno;
@@ -55,11 +55,19 @@ struct condev condevs[] = {
 	{ "ACU", "hayestone", Acuopn, hystopn, hyscls },
 	{ "WATS", "hayestone", Acuopn, hystopn, hyscls },
 #endif HAYES
+#ifdef HAYES2400
+	{ "ACU", "hayes2400", Acuopn, hyspopn24, hyscls24 },
+	{ "ACU", "hayes2400pulse", Acuopn, hyspopn24, hyscls24 },
+	{ "ACU", "hayes2400tone", Acuopn, hystopn24, hyscls24 },
+#endif HAYES2400
 #ifdef HAYESQ	/* a version of hayes that doesn't use result codes */
 	{ "ACU", "hayesq", Acuopn, hysqpopn, hysqcls },
 	{ "ACU", "hayesqpulse", Acuopn, hysqpopn, hysqcls },
 	{ "ACU", "hayesqtone", Acuopn, hysqtopn, hysqcls },
 #endif HAYESQ
+#ifdef CDS224
+	{ "ACU", "cds224", Acuopn, cdsopn224, cdscls224},
+#endif CDS224
 #ifdef NOVATION
 	{ "ACU", "novation", Acuopn, novopn, novcls},
 #endif NOVATION
