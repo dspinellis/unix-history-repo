@@ -4,7 +4,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)op.me	6.24 (Berkeley) %G%
+.\"	@(#)op.me	6.25 (Berkeley) %G%
 .\"
 .\" eqn op.me | pic | troff -me
 .eh 'SMM:07-%''Sendmail Installation and Operation Guide'
@@ -40,9 +40,9 @@ University of California, Berkeley
 Mammoth Project
 eric@CS.Berkeley.EDU
 .sp
-Version 6.24
+Version 6.25
 .sp
-For Sendmail Version 6.37
+For Sendmail Version 6.40
 .)l
 .sp 2
 .pp
@@ -5553,15 +5553,18 @@ or
 .i /usr/spool/mqueue .
 .pp
 All queue files have the name
-\fIx\fP\|\fBf\fP\fIAA99999\fP
+\fIx\fP\|\fBf\fP\fIAAA99999\fP
 where
-.i AA99999
+.i AAA99999
 is the
 .i id
 for this message
 and the
 .i x
 is a type.
+The first letter of the id encodes the hour of the day
+that the message was received by the system
+(with A being the hour between midnight and 1:00AM).
 All files with the same id collectively define one message.
 .pp
 The types are:
@@ -5684,7 +5687,7 @@ nothing can replace looking at what your own system generates.
 .(b
 P835771
 T404261372
-DdfAA13557
+DdfAAA13557
 Seric
 Cdaemon
 Eowner-sendmail@vangogh.CS.Berkeley.EDU
@@ -5692,10 +5695,10 @@ Ceric
 Reric@mammoth.Berkeley.EDU
 Rbostic@okeeffe.CS.Berkeley.EDU
 H?P?return-path: <owner-sendmail@vangogh.CS.Berkeley.EDU>
-Hreceived: by vangogh.CS.Berkeley.EDU (5.108/2.7) id AA06703;
+Hreceived: by vangogh.CS.Berkeley.EDU (5.108/2.7) id AAA06703;
 	Fri, 17 Jul 92 00:28:55 -0700
 Hreceived: from mail.CS.Berkeley.EDU by vangogh.CS.Berkeley.EDU (5.108/2.7)
-	id AA06698; Fri, 17 Jul 92 00:28:54 -0700
+	id AAA06698; Fri, 17 Jul 92 00:28:54 -0700
 Hreceived: from [128.32.31.21] by mail.CS.Berkeley.EDU (5.96/2.5)
 	id AA22777; Fri, 17 Jul 92 03:29:14 -0400
 Hreceived: by foo.bar.baz.de (5.57/Ultrix3.0-C)
@@ -5792,7 +5795,7 @@ A transcript of the current session.
 .\"Eric Allman
 .\"Britton-Lee, Inc.
 .\".sp
-.\"Version 6.24
+.\"Version 6.25
 .\".ce 0
 .pn 2
 .bp
