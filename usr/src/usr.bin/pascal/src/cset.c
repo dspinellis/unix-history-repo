@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)cset.c 1.6 %G%";
+static char sccsid[] = "@(#)cset.c 1.7 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -10,6 +10,7 @@ static char sccsid[] = "@(#)cset.c 1.6 %G%";
 #ifdef PC
 #include "pc.h"
 #include "pcops.h"
+#include "align.h"
 #endif PC
 
 /*
@@ -398,20 +399,20 @@ postcset( r , csetp )
 	    if ( !CGENNING )
 		return;
 #	    ifdef PC
-		putprintf( "	.data" , 0 );
-		putprintf( "	.align 2" , 0 );
 		label = getlab();
+		putprintf("	.data" , 0 );
+		aligndot(A_SET);
 		putlab( label );
 		lp = &( tempset[0] );
 		limit = &tempset[ ( set.uprbp >> LG2BITSLONG ) + 1 ];
-		while ( lp < limit ) {
-		    putprintf( "	.long	0x%x" , 1 , *lp ++ );
-		    for ( temp = 2 ; ( temp <= 8 ) && lp < limit ; temp ++ ) {
-			putprintf( ",0x%x" , 1 , *lp++ );
+		while (lp < limit) {
+		    putprintf("	.long	0x%x", 1, *lp++);
+		    for (temp = 2 ; temp <= 8 && lp < limit ; temp++) {
+			putprintf(",0x%x", 1, *lp++);
 		    }
-		    putprintf( "" , 0 );
+		    putprintf("", 0);
 		}
-		putprintf( "	.text" , 0 );
+		putprintf("	.text", 0);
 		sprintf( labelname , PREFIXFORMAT , LABELPREFIX , label );
 		putleaf( P2ICON , 0 , 0 , P2PTR | P2STRTY , labelname );
 #	    endif PC
