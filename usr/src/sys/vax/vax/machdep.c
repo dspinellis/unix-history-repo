@@ -1,4 +1,4 @@
-/*	machdep.c	4.16	81/02/26	*/
+/*	machdep.c	4.17	81/02/26	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -24,7 +24,7 @@
 int	coresw = 0;
 int	printsw = 0;
 
-char	version[] = "VM/UNIX (Berkeley Version 4.16) 81/02/26 04:26:10 \n";
+char	version[] = "VM/UNIX (Berkeley Version 4.17) 81/02/26 21:56:22 \n";
 int	icode[] =
 {
 	0x9f19af9f,	/* pushab [&"init",0]; pushab */
@@ -431,7 +431,6 @@ dumpsys()
 		"failed" : "succeeded");
 }
 
-#if VAX780
 char *mc780[] = {
 	"cp read",	"ctrl str par",	"cp tbuf par",	"cp cache par",
 	"cp rdtimo", 	"cp rds",	"ucode lost",	0,
@@ -512,4 +511,3 @@ machinecheck(cmcf)
 	}
 	panic("mchk");
 }
-#endif
