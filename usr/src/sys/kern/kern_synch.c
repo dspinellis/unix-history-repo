@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_synch.c	7.23 (Berkeley) %G%
+ *	@(#)kern_synch.c	7.24 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -15,6 +15,7 @@
 #include "buf.h"
 #include "signalvar.h"
 #include "resourcevar.h"
+#include "vmmeter.h"
 #ifdef KTRACE
 #include "ktrace.h"
 #endif
@@ -27,11 +28,14 @@ int	lbolt;			/* once a second sleep address */
 /*
  * Force switch among equal priority processes every 100ms.
  */
-roundrobin()
+/* ARGSUSED */
+void
+roundrobin(arg)
+	void *arg;
 {
 
 	need_resched();
-	timeout(roundrobin, (caddr_t)0, hz / 10);
+	timeout(roundrobin, (void *)0, hz / 10);
 }
 
 /*
@@ -122,7 +126,10 @@ fixpt_t	ccpu = 0.95122942450071400909 * FSCALE;		/* exp(-1/20) */
 /*
  * Recompute process priorities, once a second
  */
-schedcpu()
+/* ARGSUSED */
+void
+schedcpu(arg)
+	void *arg;
 {
 	register fixpt_t loadfac = loadfactor(averunnable.ldavg[0]);
 	register struct proc *p;
@@ -130,7 +137,7 @@ schedcpu()
 	register unsigned int newcpu;
 
 	wakeup((caddr_t)&lbolt);
-	for (p = allproc; p != NULL; p = p->p_nxt) {
+	for (p = (struct proc *)allproc; p != NULL; p = p->p_nxt) {
 		/*
 		 * Increment time in/out of memory and sleep time
 		 * (if sleeping).  We ignore overflow; with 16-bit int's
@@ -180,7 +187,7 @@ schedcpu()
 	vmmeter();
 	if (bclnlist != NULL)
 		wakeup((caddr_t)pageproc);
-	timeout(schedcpu, (caddr_t)0, hz);
+	timeout(schedcpu, (void *)0, hz);
 }
 
 /*
@@ -188,6 +195,7 @@ schedcpu()
  * For all load averages >= 1 and max p_cpu of 255, sleeping for at least
  * six times the loadfactor will decay p_cpu to zero.
  */
+void
 updatepri(p)
 	register struct proc *p;
 {
@@ -236,6 +244,7 @@ int safepri;
  * if possible, and EINTR is returned if the system call should
  * be interrupted by the signal (return EINTR).
  */
+int
 tsleep(chan, pri, wmesg, timo)
 	void *chan;
 	int pri;
@@ -247,7 +256,7 @@ tsleep(chan, pri, wmesg, timo)
 	register s;
 	int sig, catch = pri & PCATCH;
 	extern int cold;
-	int endtsleep();
+	void endtsleep __P((void *));
 
 #ifdef KTRACE
 	if (KTRPOINT(p, KTR_CSW))
@@ -280,7 +289,7 @@ tsleep(chan, pri, wmesg, timo)
 		*qp->sq_tailp = p;
 	*(qp->sq_tailp = &p->p_link) = 0;
 	if (timo)
-		timeout(endtsleep, (caddr_t)p, timo);
+		timeout(endtsleep, (void *)p, timo);
 	/*
 	 * We put ourselves on the sleep queue and start our timeout
 	 * before calling CURSIG, as we could stop there, and a wakeup
@@ -321,7 +330,7 @@ resume:
 			return (EWOULDBLOCK);
 		}
 	} else if (timo)
-		untimeout(endtsleep, (caddr_t)p);
+		untimeout(endtsleep, (void *)p);
 	if (catch && (sig != 0 || (sig = CURSIG(p)))) {
 #ifdef KTRACE
 		if (KTRPOINT(p, KTR_CSW))
@@ -344,11 +353,15 @@ resume:
  * set timeout flag and undo the sleep.  If proc
  * is stopped, just unsleep so it will remain stopped.
  */
-endtsleep(p)
-	register struct proc *p;
+void
+endtsleep(arg)
+	void *arg;
 {
-	int s = splhigh();
+	register struct proc *p;
+	int s;
 
+	p = (struct proc *)arg;
+	s = splhigh();
 	if (p->p_wchan) {
 		if (p->p_stat == SSLEEP)
 			setrun(p);
@@ -362,6 +375,7 @@ endtsleep(p)
 /*
  * Short-term, non-interruptable sleep.
  */
+void
 sleep(chan, pri)
 	void *chan;
 	int pri;
@@ -422,6 +436,7 @@ sleep(chan, pri)
 /*
  * Remove a process from its wait queue
  */
+void
 unsleep(p)
 	register struct proc *p;
 {
@@ -446,6 +461,7 @@ unsleep(p)
  * Wakeup on "chan"; set all processes
  * sleeping on chan to run state.
  */
+void
 wakeup(chan)
 	register void *chan;
 {
@@ -492,6 +508,63 @@ restart:
 }
 
 /*
+ * The machine independent parts of swtch().
+ * Must be called at splstatclock() or higher.
+ */
+void
+swtch()
+{
+	register struct proc *p = curproc;	/* XXX */
+	register struct rlimit *rlim;
+	register long s, u;
+	struct timeval tv;
+
+	/*
+	 * Compute the amount of time during which the current
+	 * process was running, and add that to its total so far.
+	 */
+	microtime(&tv);
+	u = p->p_rtime.tv_usec + (tv.tv_usec - runtime.tv_usec);
+	s = p->p_rtime.tv_sec + (tv.tv_sec - runtime.tv_sec);
+	if (u < 0) {
+		u += 1000000;
+		s--;
+	} else if (u >= 1000000) {
+		u -= 1000000;
+		s++;
+	}
+	p->p_rtime.tv_usec = u;
+	p->p_rtime.tv_sec = s;
+
+	/*
+	 * Check if the process exceeds its cpu resource allocation.
+	 * If over max, kill it.  In any case, if it has run for more
+	 * than 10 minutes, reduce priority to give others a chance.
+	 */
+	rlim = &p->p_rlimit[RLIMIT_CPU];
+	if (s >= rlim->rlim_cur) {
+		if (s >= rlim->rlim_max)
+			psignal(p, SIGKILL);
+		else {
+			psignal(p, SIGXCPU);
+			if (rlim->rlim_cur < rlim->rlim_max)
+				rlim->rlim_cur += 5;
+		}
+	}
+	if (s > 10 * 60 && p->p_ucred->cr_uid && p->p_nice == NZERO) {
+		p->p_nice = NZERO + 4;
+		setpri(p);
+	}
+
+	/*
+	 * Pick a new current process and record its start time.
+	 */
+	cnt.v_swtch++;
+	cpu_swtch(p);
+	microtime(&runtime);
+}
+
+/*
  * Initialize the (doubly-linked) run queues
  * to be empty.
  */
@@ -508,6 +581,7 @@ rqinit()
  * placing it on the run queue if it is in memory,
  * and awakening the swapper if it isn't in memory.
  */
+void
 setrun(p)
 	register struct proc *p;
 {
@@ -549,6 +623,7 @@ setrun(p)
  * Arrange to reschedule if the resulting priority
  * is better than that of the current process.
  */
+void
 setpri(p)
 	register struct proc *p;
 {
