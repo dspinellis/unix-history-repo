@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)ps.1	6.9 (Berkeley) %G%
+.\"     @(#)ps.1	6.10 (Berkeley) %G%
 .\"
 .TH PS 1 "March 10, 1988"
 .UC 4
@@ -12,10 +12,7 @@ ps \- process status
 .SH SYNOPSIS
 .nf
 .ft B
-ps [ \-aChjlmrSsTuvwx ] [ \-O|o fmt ] [ \-p pid ] [ \-t tty \]
-.br
-	[ system ] [ core ] [ swap ]
-.br
+ps [ \-aChjlmrSsTuvwx ] [ \-O|o fmt ] [ \-p pid ] [ \-t tty \] [ system ] [ core ] [ swap ]
 ps [ \-L ]
 .ft R
 .fi
@@ -58,7 +55,7 @@ will display a long listing of the keywords and their meanings.
 \-l
 Display information associated with the following keywords:
 uid, pid, ppid, cp, pri, nice, vsize, rss, wchan, state, tname,
- cputime and comm.
+cputime and comm.
 .TP
 \-m
 Sort by memory usage, instead of by process ID.
@@ -132,6 +129,15 @@ The third addition argument is a file to be used for swap
 A complete list of the available keywords are listed below.
 Some of these keywords are further specifed as follows:
 .TP
+%cpu
+The cpu utilization of the process; this is a decaying average over up to
+a minute of previous (real) time.
+Since the time base over which this is computed varies (since processes may
+be very young) it is possible for the sum of all %CPU fields to exceed 100%.
+.TP
+%mem
+The percentage of real memory used by this process.
+.TP
 flags
 The flags (in hexadecimal) associated with the process as in
 the include file ``sys/proc.h'':
@@ -174,21 +180,12 @@ The soft limit on memory used, specified via a call to
 .IR setrlimit (2).
 .TP
 lstart
-The time the command started, using the ``%C'' format described in
+The exact time the command started, using the ``%C'' format described in
 .IR strftime (3).
 .TP
 nice
 The process scheduling increment (see
 .IR setpriority (2)).
-.TP
-pcpu
-The cpu utilization of the process; this is a decaying average over up to
-a minute of previous (real) time.
-Since the time base over which this is computed varies (since processes may
-be very young) it is possible for the sum of all %CPU fields to exceed 100%.
-.TP
-pmem
-The percentage of real memory used by this process.
 .TP
 rss
 the real memory (resident set) size of the process (in 1024 byte units).
@@ -199,7 +196,7 @@ If the command started less than 24 hours ago, the start time is
 displayed using the ``%l:ps.1p'' format described in 
 .IR strftime (3).
 If the command started less than 7 days ago, the start time is
-displayed using the ``%a6.9p'' format.
+displayed using the ``%a6.10p'' format.
 Otherwise, the start time is displayed using the ``%e%b%y'' format.
 .TP
 state
@@ -264,7 +261,7 @@ The process is being traced or debugged.
 .RE
 .PD
 .TP
-tname
+tt
 An abbreviation for the pathname of the controlling terminal, if any.
 The abbreviation consists of the two letters following ``/dev/tty'',
 or, for the console, ``co''.
@@ -277,34 +274,37 @@ When printed numerically, the initial part of the address is
 trimmed off and the result is printed in hex, e.g., 0x80324000 prints
 as 324000.
 .PP
-When printing a
-.I command
-format, a process that has exited and has a parent that has not
-yet waited for the process (i.e., a zombie) is marked <defunct>,
-and a process which is blocked trying to exit is marked <exiting>.
+When printing using the command keyword, a process that has exited and
+has a parent that has not yet waited for the process (i.e., a zombie)
+is listed as ``<defunct>'', and a process which is blocked while trying
+to exit is listed as ``<exiting>''.
 .B Ps
 makes an educated guess as to the file name and arguments given when the
 process was created by examining memory or the swap area.
 The method is inherently somewhat unreliable and in any event a process
 is entitled to destroy this information, so the names cannot be depended
 on too much.
-The
-.I ucomm
-(accounting) name can, however, be depended on.
+The ucomm (accounting) keyword can, however, be depended on.
 .SH "KEYWORDS"
+The following is a complete list of the available keywords and their
+meanings.
+Several of them have aliases, i.e. keywords that are synonyms.
+.sp
 .PD 0
-.IP acflag 10 10
-accounting flag
+.IP %cpu 10
+percentage cpu usage (alias pcpu)
+.IP %mem 10
+percentage memory usage (alias pmem)
+.IP acflag 10
+accounting flag (alias acflg)
 .IP command 10
 command and arguments
 .IP cpu 10
 short-term cpu usage factor (for scheduling)
-.IP cputime 10
-accumulated cpu time (user+system)
-.IP flag 10
-flags (hexadecimal)
-.IP inblock 10
-total blocks read
+.IP flags 10
+the process flags, in hexadecimal (alias f)
+.IP inblk 10
+total blocks read (alias inblock)
 .IP jobc 10
 job control count
 .IP ktrace 10
@@ -315,8 +315,6 @@ tracing vnode
 memoryuse limit
 .IP logname 10
 login name of user who started the process
-.IP longtname 10
-full name of control terminal
 .IP lstart 10
 time started
 .IP majflt 10
@@ -328,33 +326,29 @@ total messages received (reads from pipes/sockets)
 .IP msgsnd 10
 total messages sent (writes on pipes/sockets)
 .IP nice 10
-nice
+nice value (alias ni)
 .IP nivcsw 10
 total involuntary context switches
-.IP nsignals 10
-total signals taken
+.IP nsigs 10
+total signals taken (alias nsignals)
 .IP nswap 10
 total swaps in/out
 .IP nvcsw 10
 total voluntary context switches
 .IP nwchan 10
-wait channel (as a number)
-.IP oublock 10
-total blocks written
+wait channel (as an address)
+.IP oublk 10
+total blocks written (alias oublock)
 .IP p_ru 10
 resource usage (valid only for zombie)
 .IP paddr 10
 swap address
 .IP pagein 10
 pageins (same as majflt)
-.IP pcpu 10
-cpu usage (percentage)
 .IP pgid 10
 process group number
 .IP pid 10
 process ID
-.IP pmem 10
-memory usage (percentage)
 .IP poip 10
 pageouts in progress
 .IP ppid 10
@@ -369,61 +363,65 @@ real group ID
 reverse link on run queue, or 0
 .IP rss 10
 resident set size
-.IP rssize 10
-resident set size + (text size / text use count)
+.IP rsz 10
+resident set size + (text size / text use count) (alias rssize)
 .IP ruid 10
 real user ID
 .IP rusage 10
-short for the set of keywords minflt, majflt, nswap, inblock, oublock,
-msgsnd, msgrcv, nsigs, nvcsw and nivcsw.
+an alias for the following keywords: minflt, majflt, nswap, inblock,
+oublock, msgsnd, msgrcv, nsigs, nvcsw and nivcsw.
 .IP ruser 10
 user name (from ruid)
 .IP sess 10
 session pointer
 .IP sig 10
-pending signals
+pending signals (alias pending)
 .IP sigcatch 10
-caught signals
+caught signals (alias caught)
 .IP sigignore 10
-ignored signals
+ignored signals (alias ignored)
 .IP sigmask 10
-blocked signals
+blocked signals (alias blocked)
 .IP sl 10
 sleep time (in seconds; 127 = infinity)
 .IP start 10
 time started
 .IP state 10
-process state (symbolic)
+symbolic process state (alias stat)
 .IP svgid 10
 saved gid from a setgid executable
 .IP svuid 10
 saved uid from a setuid executable
 .IP tdev 10
 control terminal device number
-.IP tname 10
-control terminal name (two letter abbreviation)
+.IP time 10
+accumulated cpu time, user + system (alias cputime)
 .IP tpgid 10
 control terminal process group ID
 .IP trs 10
 text resident set size (in Kbytes)
-.IP tsession 10
+.IP tsess 10
 control terminal session pointer
 .IP tsiz 10
 text size (in Kbytes)
-.IP u_procp 10
+.IP tt 10
+control terminal name (two letter abbreviation)
+.IP tty 10
+full name of control terminal
+.IP uprocp 10
 process pointer
 .IP ucomm 10
 name to be used for accounting
 .IP uid 10
 effective user ID
+.IP upr 10
+scheduling priority on return from system call (alias usrpri)
 .IP user 10
 user name (from uid)
-.IP usrpri 10
-scheduling priority on return from system call
-.IP vsize 10
-virtual size (Kbytes)
+.IP vsz 10
+virtual size in Kbytes (alias vsize)
 .IP wchan 10
-wait channel (symbolic)
+wait channel (as a symbolic name)
 .IP xstat 10
 exit or stop status (valid only for stopped or zombie process)
 .PD
