@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)map.c	6.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)map.c	6.17 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -32,19 +32,27 @@ static char sccsid[] = "@(#)map.c	6.16 (Berkeley) %G%";
 **		if they were ok, FALSE otherwise.  Fill in map with the
 **		values.
 **
-**	char *map_lookup(MAP *map, char buf[], int bufsize,
-**			 char **args, int *pstat)
-**		Look up the key given in buf in the given map.  If found,
-**		do any rewriting the map wants (including "args" if desired)
+**	char *map_lookup(MAP *map, char *key, char **args, int *pstat)
+**		Look up the key in the given map.  If found, do any
+**		rewriting the map wants (including "args" if desired)
 **		and return the value.  Set *pstat to the appropriate status
-**		on error and return NULL.
+**		on error and return NULL.  Args will be NULL if called
+**		from the alias routines, although this should probably
+**		not be relied upon.  It is suggested you call map_rewrite
+**		to return the results -- it takes care of null termination
+**		and uses a dynamically expanded buffer as needed.
 **
 **	void map_store(MAP *map, char *key, char *value)
 **		Store the key:value pair in the map.
 **
 **	bool map_open(MAP *map, int mode)
-**		Open the map for the indicated mode.  Return TRUE if it
-**		was opened successfully, FALSE otherwise.
+**		Open the map for the indicated mode.  Mode should
+**		be either O_RDONLY or O_RDWR.  Return TRUE if it
+**		was opened successfully, FALSE otherwise.  If the open
+**		failed an the MF_OPTIONAL flag is not set, it should
+**		also print an error.  If the MF_ALIAS bit is set
+**		and this map class understands the @:@ convention, it
+**		should call aliaswait() before returning.
 **
 **	void map_close(MAP *map)
 **		Close the map.
@@ -423,7 +431,7 @@ bt_map_open(map, mode)
 		mode |= O_CREAT|O_TRUNC;
 
 	(void) sprintf(buf, "%s.db", map->map_file);
-	db = dbopen(buf, mode, 0644, DB_BTREE, NULL);
+	db = dbopen(buf, mode, DBMMODE, DB_BTREE, NULL);
 	if (db == NULL)
 	{
 		if (!bitset(MF_OPTIONAL, map->map_mflags))
@@ -456,7 +464,7 @@ hash_map_open(map, mode)
 		mode |= O_CREAT|O_TRUNC;
 
 	(void) sprintf(buf, "%s.db", map->map_file);
-	db = dbopen(buf, mode, 0644, DB_HASH, NULL);
+	db = dbopen(buf, mode, DBMMODE, DB_HASH, NULL);
 	if (db == NULL)
 	{
 		if (!bitset(MF_OPTIONAL, map->map_mflags))
