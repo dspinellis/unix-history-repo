@@ -1,4 +1,4 @@
-.\" @(#)License	1.5 (CSRG - distribution) %G%
+.\" @(#)License	1.6 (CSRG - distribution) %G%
 .ND
 .po +0.34375i
 .nr PO +0.34375i
@@ -97,7 +97,9 @@ and shall cease use and sublicensing thereof.
 .PP
 \02.\ \ \fBFees. \fRThe distribution fee for this license and delivery
 of one physical copy of the Fourth Berkeley Software Distribution is
-two thousand dollars ($2,000.00). LICENSEE may obtain additional copies
+two thousand dollars ($2,000.00), unless indicated otherwise on
+Exhibit A, which is incorporated into this Agreement. LICENSEE may
+obtain additional copies 
 and new releases
 of the Fourth Berkeley Software Distribution which The Regents of
 the University of California may choose to make available
@@ -288,12 +290,10 @@ with any law of a federal, state or local government having
 jurisdiction over this Agreement, the validity of the remaining
 portions or provisions shall not be affected thereby.
 .PP
-16.\ \ \fBGoverning Law. \fR  This Agreement shall be construed and
-enforced according to the laws of California.
-If LICENSEE is located outside
-the United States of America, the parties hereto agree
-that any dispute arising in connection with this
-Agreement will be settled by the ICC Court of Arbitration.
+16.\ \ \fBGoverning Law. \fR  The laws of the State of California and the
+United States of America shall control this Agreement. Any dispute
+arising under this Agreement shall be heard by the appropriate State of
+California court or United States federal court in California. 
 .PP
 17.\ \ \fBParagraph Headings. \fR  The headings herein are inserted for
 convenience only and shall not be construed to limit or modify
