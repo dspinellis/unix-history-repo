@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)hp.c	7.7 (Berkeley) %G%
+ *	@(#)hp.c	7.8 (Berkeley) %G%
  */
 
 #ifdef HPDEBUG
@@ -112,13 +112,21 @@ struct	dkbad	hpbad[NHP];
 struct	hpsoftc {
 	u_char	sc_recal;	/* recalibrate state */
 	u_char	sc_doseeks;	/* perform explicit seeks */
+#ifdef COMPAT_42
+	u_char	sc_hdr;		/* next i/o includes header */
+#endif
 	int	sc_state;	/* open fsm */
+	int	sc_wlabel;	/* label sector is currently writable */
 	u_long	sc_openpart;	/* bit mask of open subunits */
 	u_long	sc_copenpart;	/* bit mask of open character subunits */
 	u_long	sc_bopenpart;	/* bit mask of open block subunits */
 	daddr_t	sc_mlsize;	/* ML11 size */
 	int	sc_blkdone;	/* amount sucessfully transfered */
 	daddr_t	sc_badbn;	/* replacement block number */
+	int	sc_status;	/* copy of drive status reg. after format */
+	int	sc_hpds;	/* copy of hpds reg. after format */
+	int	sc_er1;		/* copy of error reg. 1 after format */
+	int	sc_er2;		/* copy of error reg. 2 after format */
 } hpsoftc[NHP];
 
 /*
@@ -158,17 +166,21 @@ hpattach(mi, slave)
 	struct mba_device *mi;
 {
 	register int unit = mi->mi_unit;
+	extern int cold;
 
-	/*
-	 * Try to initialize device and read pack label.
-	 */
-	if (hpinit(hpminor(unit, 0), 0) == 0) {
-		printf(": %s", hplabel[unit].d_typename);
+	if (cold) {
+		/*
+		 * Try to initialize device and read pack label.
+		 */
+		if (hpinit(hpminor(unit, 0), 0) == 0) {
+			printf(": %s", hplabel[unit].d_typename);
 #ifdef notyet
-		addswap(makedev(HPMAJOR, hpminor(unit, 0)), &hplabel[unit]);
+			addswap(makedev(HPMAJOR, hpminor(unit, 0)),
+			    &hplabel[unit]);
 #endif
-	} else
-		printf(": offline");
+		} else
+			printf(": offline");
+	}
 }
 
 hpopen(dev, flags, fmt)
@@ -253,8 +265,8 @@ hpclose(dev, flags, fmt)
 		sc->sc_bopenpart &= ~mask;
 		break;
 	}
-	if (((sc->sc_copenpart | sc->sc_bopenpart) & mask) == 0)
-		sc->sc_openpart &= ~mask;
+	sc->sc_openpart = sc->sc_copenpart | sc->sc_bopenpart;
+
 	/*
 	 * Should wait for I/O to complete on this partition
 	 * even if others are open, but wait for work on blkflush().
@@ -265,6 +277,7 @@ hpclose(dev, flags, fmt)
 			sleep((caddr_t)sc, PZERO - 1);
 		splx(s);
 		sc->sc_state = CLOSED;
+		sc->sc_wlabel = 0;
 	}
 	return (0);
 }
@@ -281,7 +294,6 @@ hpinit(dev, flags)
 	struct dkbad *db;
 	char *msg, *readdisklabel();
 	int unit, i, error = 0;
-	extern int cold;
 
 	unit = hpunit(dev);
 	sc = &hpsoftc[unit];
@@ -294,10 +306,12 @@ hpinit(dev, flags)
 	 * Use the default sizes until we've read the label,
 	 * or longer if there isn't one there.
 	 */
-	lp->d_secsize = DEV_BSIZE;
-	lp->d_nsectors = 32;
-	lp->d_ntracks = 20;
-	lp->d_secpercyl = 32*20;
+	if (lp->d_secpercyl == 0) {
+		lp->d_secsize = DEV_BSIZE;
+		lp->d_nsectors = 32;
+		lp->d_ntracks = 20;
+		lp->d_secpercyl = 32*20;
+	}
 
 	if (flags & O_NDELAY)
 		goto raw;
@@ -334,10 +348,9 @@ hpinit(dev, flags)
 		else
 			log(LOG_ERR, "hp%d: %s\n", unit, msg);
 #ifdef COMPAT_42
-		mi->mi_type = hpmaptype(mi, lp);
-#else
-		goto raw;
+		if ((mi->mi_type = hpmaptype(mi, lp)) == 0)
 #endif
+		goto raw;
 	}
 
 	/*
@@ -367,13 +380,12 @@ hpinit(dev, flags)
 	if ((bp->b_flags & B_ERROR) == 0 && db->bt_mbz == 0 &&
 	    db->bt_flag == 0) {
 		hpbad[unit] = *db;
-		sc->sc_state = OPEN;
 	} else {
 		log(LOG_ERR, "hp%d: %s bad-sector file\n", unit,
 		    (bp->b_flags & B_ERROR) ? "can't read" : "format error in");
 		u.u_error = 0;				/* XXX */
-		sc->sc_state = OPENRAW;
 	}
+	sc->sc_state = OPEN;
 	bp->b_flags = B_INVAL | B_AGE;
 	brelse(bp);
 done:
@@ -381,8 +393,12 @@ done:
 	return (error);
 
 raw:
-	sc->sc_state = OPENRAW;
-	wakeup((caddr_t)sc);
+	if (cold)
+		sc->sc_state = CLOSED;
+	else {
+		sc->sc_state = OPENRAW;
+		wakeup((caddr_t)sc);
+	}
 	return (error);
 }
 
@@ -410,13 +426,32 @@ hpstrategy(bp)
 		bp->b_error = ENXIO;
 		goto bad;
 	}
+#ifdef COMPAT_42
+	if (sc->sc_hdr) {				/* XXX */
+		if (bp->b_bcount == 516)
+			bp->b_flags |= B_FORMAT;
+		sc->sc_hdr = 0;
+	}
+#endif
 	if (sc->sc_state < OPEN)
 		goto q;
+	if (sc->sc_state != OPEN && (bp->b_flags & B_READ) == 0) {
+		bp->b_error = EROFS;
+		goto bad;
+	}
 	if ((sc->sc_openpart & (1 << xunit)) == 0) {
 		bp->b_error = ENODEV;
 		goto bad;
 	}
 	maxsz = lp->d_partitions[xunit].p_size;
+	if (bp->b_blkno + lp->d_partitions[xunit].p_offset <= LABELSECTOR &&
+#if LABELSECTOR != 0
+	    bp->b_blkno + lp->d_partitions[xunit].p_offset + sz > LABELSECTOR &&
+#endif
+	    (bp->b_flags & B_READ) == 0 && sc->sc_wlabel == 0) {
+		bp->b_error = EROFS;
+		goto bad;
+	}
 	if (bp->b_blkno < 0 || bp->b_blkno + sz > maxsz) {
 		if (bp->b_blkno == maxsz) {
 			bp->b_resid = bp->b_bcount;
@@ -588,6 +623,12 @@ hpdtint(mi, mbsr)
 	int bcr;
 
 	bcr = MASKREG(-mi->mi_mba->mba_bcr);
+	if (bp->b_flags & B_FORMAT) {
+		sc->sc_status = mbsr;
+		sc->sc_hpds = hpaddr->hpds;
+		sc->sc_er1 = hpaddr->hper1;
+		sc->sc_er2 = hpaddr->hper2;
+	}
 	if (hpaddr->hpds&HPDS_ERR || mbsr&MBSR_EBITS) {
 		er1 = hpaddr->hper1;
 		er2 = hpaddr->hper2;
@@ -595,7 +636,7 @@ hpdtint(mi, mbsr)
 			npf = bp->b_error;
 			bn = sc->sc_badbn;
 		} else {
-			npf = btop(bp->b_bcount - bcr);
+			npf = btodb(bp->b_bcount + (DEV_BSIZE - 1) - bcr);
 			if (er1 & (HPER1_DCK | HPER1_ECH))
 				npf--;
 			bn = bp->b_blkno + npf;
@@ -671,7 +712,7 @@ hard:
 			    MASKREG(hpaddr->hper1), HPER1_BITS,
 			    MASKREG(hpaddr->hper2), HPER2_BITS);
 			if (bp->b_flags & B_FORMAT)
-				printf(" (hdr i/o)");
+				printf(" (format i/o)");
 			printf("\n");
 			bp->b_flags |= B_ERROR;
 			bp->b_flags &= ~B_BAD;
@@ -773,8 +814,9 @@ hpioctl(dev, cmd, data, flag)
 {
 	int unit = hpunit(dev);
 	register struct disklabel *lp;
+	register struct hpsoftc *sc = &hpsoftc[unit];
 	register struct format_op *fop;
-	int error = 0;
+	int error = 0, wlab;
 	int hpformat();
 
 	lp = &hplabel[unit];
@@ -796,41 +838,83 @@ hpioctl(dev, cmd, data, flag)
 			error = EBADF;
 		else
 			error = setdisklabel(lp, (struct disklabel *)data,
-			    hpsoftc[unit].sc_openpart);
+			    (sc->sc_state == OPENRAW) ? 0 : sc->sc_openpart);
+		if (error == 0)
+			sc->sc_state = OPEN;
+		break;
+
+	case DIOCWLABEL:
+		if ((flag & FWRITE) == 0)
+			error = EBADF;
+		else
+			sc->sc_wlabel = *(int *)data;
 		break;
 
 	case DIOCWDINFO:
+		/* simulate opening partition 0 so write succeeds */
+		sc->sc_openpart |= (1 << 0);		/* XXX */
+		wlab = sc->sc_wlabel;
+		sc->sc_wlabel = 1;
 		if ((flag & FWRITE) == 0)
 			error = EBADF;
 		else if ((error = setdisklabel(lp, (struct disklabel *)data,
-			    hpsoftc[unit].sc_openpart)) == 0)
+		    (sc->sc_state == OPENRAW) ? 0 : sc->sc_openpart)) == 0) {
+			sc->sc_state = OPEN;
 			error = writedisklabel(dev, hpstrategy, lp);
+		}
+		sc->sc_openpart = sc->sc_copenpart | sc->sc_bopenpart;
+		sc->sc_wlabel = wlab;
 		break;
 
-#ifdef notyet
-	case DIOCWFORMAT:
-		if ((flag & FWRITE) == 0) {
+	case DIOCSBAD:
+	    {
+		struct dkbad *db = (struct dkbad *)data;
+
+		if ((flag & FWRITE) == 0)
 			error = EBADF;
-			break;
-		}
-		{
+		else if (db->bt_mbz != 0 || db->bt_flag != 0)
+			error = EINVAL;
+		else
+			hpbad[unit] = *db;
+		break;
+	    }
+
+	case DIOCRFORMAT:
+	case DIOCWFORMAT:
+	    {
 		struct uio auio;
 		struct iovec aiov;
 
+		if (cmd == DIOCWFORMAT && (flag & FWRITE) == 0) {
+			error = EBADF;
+			break;
+		}
 		fop = (struct format_op *)data;
 		aiov.iov_base = fop->df_buf;
 		aiov.iov_len = fop->df_count;
 		auio.uio_iov = &aiov;
 		auio.uio_iovcnt = 1;
 		auio.uio_resid = fop->df_count;
-		auio.uio_segflg = 0;
+		auio.uio_segflg = UIO_USERSPACE;
 		auio.uio_offset = fop->df_startblk * lp->d_secsize;
-		error = physio(hpformat, &rhpbuf[unit], dev, B_WRITE,
-			minphys, &auio);
+		/*
+		 * Don't return errors, as the format op won't get copied
+		 * out if we return nonzero.  Callers must check the returned
+		 * count.
+		 */
+		(void) physio(hpformat, &rhpbuf[unit], dev,
+		    (cmd == DIOCWFORMAT ? B_WRITE : B_READ), minphys, &auio);
 		fop->df_count -= auio.uio_resid;
 		fop->df_reg[0] = sc->sc_status;
-		fop->df_reg[1] = sc->sc_error;
-		}
+		fop->df_reg[1] = sc->sc_hpds;
+		fop->df_reg[2] = sc->sc_er1;
+		fop->df_reg[3] = sc->sc_er2;
+		break;
+	    }
+
+#ifdef COMPAT_42
+	case DKIOCHDR:  /* do header read/write */	/* XXX */
+		sc->sc_hdr = 1;
 		break;
 #endif
 
@@ -1023,7 +1107,7 @@ hpdump(dev)
 		daddr_t bn;
 
 		blk = num > DBSIZE ? DBSIZE : num;
-		bn = dumplo + btop(start);
+		bn = dumplo + btodb(start);
 		cn = (bn + lp->d_partitions[hppart(dev)].p_offset) /
 		    lp->d_secpercyl;
 		sn = bn % lp->d_secpercyl;
@@ -1296,20 +1380,27 @@ hpmaptype(mi, lp)
 			    hpst[type].ncyl == ncyl)
 				break;
 
+		hpaddr->hpcs1 = HP_DCLR|HP_GO;
+		mbclrattn(mi);		/* conservative */
 		if (hptypes[type] == 0) {
 	printf("hp%d: %d sectors, %d tracks, %d cylinders: unknown device\n",
 				mi->mi_unit, nsectors, ntracks, ncyl);
-			type = HPDT_RM02;
+			lp->d_nsectors = nsectors;
+			lp->d_ntracks = ntracks;
+			lp->d_ncylinders = ncyl;
+			lp->d_secpercyl = nsectors*ntracks;
+			lp->d_secperunit = lp->d_secpercyl * lp->d_ncylinders;
+			lp->d_npartitions = 1;
+			lp->d_partitions[0].p_offset = 0;
+			lp->d_partitions[0].p_size = lp->d_secperunit;
+			return (0);
 		}
-		hpaddr->hpcs1 = HP_DCLR|HP_GO;
-		mbclrattn(mi);		/* conservative */
 	}
 
 	/*
 	 * set up minimal disk label.
 	 */
 	st = &hpst[type];
-	lp->d_secsize = 512;
 	lp->d_nsectors = st->nsect;
 	lp->d_ntracks = st->ntrak;
 	lp->d_secpercyl = st->nspc;
