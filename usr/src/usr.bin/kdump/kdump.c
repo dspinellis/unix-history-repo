@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)kdump.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)kdump.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -137,6 +137,9 @@ main(argc, argv)
 		case KTR_PSIG:
 			ktrpsig((struct ktr_psig *)m);
 			break;
+		case KTR_CSW:
+			ktrcsw((struct ktr_csw *)m);
+			break;
 		}
 		if (tail)
 			(void)fflush(stdout);
@@ -178,6 +181,9 @@ dumpheader(kth)
 		break;
 	case KTR_PSIG:
 		type = "PSIG";
+		break;
+	case KTR_CSW:
+		type = "CSW";
 		break;
 	default:
 		(void)sprintf(unknown, "UNKNOWN(%d)", kth->ktr_type);
@@ -388,6 +394,13 @@ ktrpsig(psig)
 	else
 		(void)printf("caught handler=0x%x mask=0x%x code=0x%x\n",
 		    (u_int)psig->action, psig->mask, psig->code);
+}
+
+ktrcsw(cs)
+	struct ktr_csw *cs;
+{
+	(void)printf("%s %s\n", cs->out ? "stop" : "resume",
+		cs->user ? "user" : "kernel");
 }
 
 usage()
