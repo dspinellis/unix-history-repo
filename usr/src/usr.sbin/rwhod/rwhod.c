@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rwhod.c	4.27 (Berkeley) 84/10/23";
+static char sccsid[] = "@(#)rwhod.c	4.28 (Berkeley) 85/02/25";
 #endif
 
 #include <sys/types.h>
@@ -26,6 +26,7 @@ static char sccsid[] = "@(#)rwhod.c	4.27 (Berkeley) 84/10/23";
  * if this is changed.
  */
 #define AL_INTERVAL (3 * 60)
+#define	MAXTTYS	256			/* Max # of utmp entries examined */
 
 struct	sockaddr_in sin = { AF_INET };
 
@@ -228,7 +229,7 @@ verify(name)
 
 int	utmptime;
 int	utmpent;
-struct	utmp utmp[100];
+struct	utmp utmp[MAXTTYS];
 int	alarmcount;
 
 onalrm()
