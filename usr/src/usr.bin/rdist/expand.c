@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)expand.c	4.5 (Berkeley) 83/11/01";
+static	char *sccsid = "@(#)expand.c	4.6 (Berkeley) 83/11/01";
 #endif
 
 #include "defs.h"
@@ -563,6 +563,7 @@ exptilde(buf, file)
 		s2 = homedir;
 		s3 = file;
 	} else {
+		s3 = file;
 		while (*s3 && *s3 != '/')
 			s3++;
 		if (*s3 == '/')
