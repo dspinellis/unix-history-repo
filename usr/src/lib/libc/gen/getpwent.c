@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)getpwent.c	5.19 (Berkeley) %G%";
+static char sccsid[] = "@(#)getpwent.c	5.20 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -134,15 +134,8 @@ __initdb()
 	_pw_db = hash_open(p, O_RDONLY, 0, NULL);
 	if (_pw_db)
 		return(1);
-	if (!warned) {
-		(void)write(STDERR_FILENO, "getpwent: ", 10);
-		(void)write(STDERR_FILENO, p, strlen(p));
-		(void)write(STDERR_FILENO, ": ", 2);
-		p = strerror(errno);
-		(void)write(STDERR_FILENO, p, strlen(p));
-		(void)write(STDERR_FILENO, "\n", 1);
-		warned = 1;
-	}
+	if (!warned)
+		syslog(LOG_ERR, "%s: %m", p);
 	return(0);
 }
 
