@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	6.41 (Berkeley) %G%
+ *	@(#)sendmail.h	6.42 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	6.41		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	6.42		%G%";
 # endif
 # else /*  _DEFINE */
 # define EXTERN extern
@@ -284,6 +284,7 @@ struct envelope
 	FILE		*e_lockfp;	/* the lock file for this message */
 	FILE		*e_qfp;		/* queue control file */
 	char		*e_message;	/* error message */
+	char		*e_statmsg;	/* stat msg (changes per delivery) */
 	char		*e_macro[128];	/* macro definitions */
 };
 
