@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)boggle.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)boggle.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 #include <ctype.h>
@@ -106,6 +106,7 @@ endline ()
 	}
 }
 
+void
 timeout ()
 {
 	if (*timept > 0) {
@@ -115,6 +116,7 @@ timeout ()
 	putchar('\007');
 }
 
+void
 interrupt ()
 {
 	signal(SIGINT, interrupt);
@@ -517,8 +519,8 @@ char **argv;
 	if (setjmp(env) != 0)
 		goodbye(0);
 	signal (SIGINT, interrupt);
-	timein = time(0L);
-	if (argv[0][0] != 'a' && (logfile = open("/usr/games/boglog", 1)) >= 0) {
+	timein = time((time_t *)NULL);
+	if (argv[0][0] != 'a' && (logfile = open(_PATH_BOGLOG, 1)) >= 0) {
 		p = &logbuff[5];
 		q = getlogin();
 		while (*p++ = *q++);
