@@ -13,7 +13,7 @@
 	.data
 	.align	2
 _sccsid:
-.asciz	"@(#)sqrt.s	1.1	(ucb.elefunt)	%G%"
+.asciz	"@(#)sqrt.s	1.2	(ucb.elefunt)	%G%"
 
 /*
  * double sqrt(arg)   revised August 15,1982
@@ -51,7 +51,7 @@ _sqrt:
  *				# internal procedure
  */
 libm$dsqrt_r5:			# ENTRY POINT FOR cdabs and cdsqrt
-	.word	0x003c		# returns double square root scaled by
+	.word	0x0000		# returns double square root scaled by
 				# 2^r6
 2:	ldd	r0
 	std	r4
