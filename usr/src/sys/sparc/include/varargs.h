@@ -13,29 +13,38 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)varargs.h	7.4 (Berkeley) %G%
+ *	@(#)varargs.h	7.5 (Berkeley) %G%
  *
- * from: $Header: varargs.h,v 1.6 92/11/26 02:04:48 torek Exp $
+ * from: $Header: varargs.h,v 1.7 93/05/07 18:10:36 torek Exp $
  */
 
 #ifndef _MACHINE_VARARGS_H_
 #define	_MACHINE_VARARGS_H_
 
+typedef char *va_list;
+
 /* See <machine/stdarg.h> for comments. */
 #if __GNUC__ == 1
 #define __extension__
-#endif
-typedef char *va_list;
 #define	va_dcl	int va_alist;
-#define	va_start(ap) (__builtin_saveregs(), (ap) = (char *)&va_alist)
-#define va_arg(ap, ty) \
-    (sizeof(ty) == 8 ? __extension__ ({ \
-	union { ty __d; int __i[2]; } __u; \
-	__u.__i[0] = ((int *)(ap))[0]; \
-	__u.__i[1] = ((int *)(ap))[1]; \
-	(ap) += 8; \
-	__u.__d; }) : \
-    ((ty *)(ap += sizeof(ty)))[-1])
-#define va_end(ap) /* empty */
+#else /* gcc2 wants to see the '...' token */
+#define	va_dcl	int va_alist; ...
+#endif
+
+#define	va_start(ap)	(__builtin_saveregs(), (ap) = (char *)&va_alist)
+#define va_end(ap)	/* empty */
+
+/* Note, we can assume C code here; C++ does not use <varargs.h>. */
+#define	__va_8byte(ap, ty) ({ \
+	union { ty __d; int __i[2]; } __va_u; \
+	__va_u.__i[0] = ((int *)(void *)(ap))[0]; \
+	__va_u.__i[1] = ((int *)(void *)(ap))[1]; \
+	(ap) += 8; __va_u.__d; })
+#define va_arg(ap, ty) __extension__ ({ \
+    ty __va_temp; \
+    __builtin_classify_type(__va_temp) >= 12 ? \
+	((ty **)(void *)((ap) += sizeof(ty *)))[-1][0] : \
+    sizeof(ty) == 8 ? __va_8byte(ap, ty) : \
+	((ty *)(void *)(ap += sizeof(ty)))[-1]; })
 
 #endif /* !_MACHINE_VARARGS_H_ */

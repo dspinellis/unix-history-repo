@@ -13,9 +13,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)stdarg.h	7.4 (Berkeley) %G%
+ *	@(#)stdarg.h	7.5 (Berkeley) %G%
  *
- * from: $Header: stdarg.h,v 1.7 92/11/26 02:04:47 torek Exp $
+ * from: $Header: stdarg.h,v 1.8 93/05/07 18:10:14 torek Exp $
  */
 
 /*
@@ -55,14 +55,32 @@ typedef char *va_list;
  * at a time, and use type punning (i.e., a union) to produce the result.
  * (We could also do this with a libc function, actually, by returning
  * 8 byte integers in %o0+%o1 and the same 8 bytes as a double in %f0+%f1.)
+ *
+ * Note: we cannot use the union trick (which generates better code) for
+ * C++, since `ty' might be a type with a constructor (these may not appear
+ * in a union).
+ *
+ * The extraneous casts through `void *' avoid gcc alignment warnings.
  */
-#define va_arg(ap, ty) \
-    (sizeof(ty) == 8 ? __extension__ ({ \
-	union { ty __d; int __i[2]; } __u; \
-	__u.__i[0] = ((int *)(ap))[0]; \
-	__u.__i[1] = ((int *)(ap))[1]; \
-	(ap) += 8; \
-	__u.__d; }) : \
-    ((ty *)(ap += sizeof(ty)))[-1])
+#ifdef __cplusplus
+#define	__va_8byte(ap, ty) ({ \
+	int __va_i[2]; \
+	__va_i[0] = ((int *)(void *)(ap))[0]; \
+	__va_i[1] = ((int *)(void *)(ap))[1]; \
+	(ap) += 8; *(ty *)(void *)__va_i; })
+#else
+#define	__va_8byte(ap, ty) ({ \
+	union { ty __d; int __i[2]; } __va_u; \
+	__va_u.__i[0] = ((int *)(void *)(ap))[0]; \
+	__va_u.__i[1] = ((int *)(void *)(ap))[1]; \
+	(ap) += 8; __va_u.__d; })
+#endif /* __cplusplus */
+
+#define va_arg(ap, ty) __extension__ ({ \
+    ty __va_temp; /* to check for invisible-ptr struct-valued args */ \
+    __builtin_classify_type(__va_temp) >= 12 ? \
+	((ty **)(void *)((ap) += sizeof(ty *)))[-1][0] : \
+    sizeof(ty) == 8 ? __va_8byte(ap, ty) : \
+	((ty *)(void *)(ap += sizeof(ty)))[-1]; })
 
 #endif /* _MACHINE_STDARG_H */
