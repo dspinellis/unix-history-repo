@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)expand.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)expand.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -125,8 +125,9 @@ expandarg(arg, arglist, flag)
 	ifsfirst.next = NULL;
 	ifslastp = NULL;
 	argstr(arg->narg.text, flag);
-	if (arglist == NULL)
+	if (arglist == NULL) {
 		return;			/* here document expanded */
+	}
 	STPUTC('\0', expdest);
 	p = grabstackstr(expdest);
 	exparg.lastp = &exparg.list;
@@ -139,6 +140,8 @@ expandarg(arg, arglist, flag)
 		exparg.lastp = &exparg.list;
 		expandmeta(exparg.list, flag);
 	} else {
+		if (flag & EXP_REDIR) /*XXX - for now, just remove escapes */
+			rmescapes(p);
 		sp = (struct strlist *)stalloc(sizeof (struct strlist));
 		sp->text = p;
 		*exparg.lastp = sp;
@@ -201,8 +204,10 @@ argstr(p, flag)
 			expari();
 			break;
 		case ':':
-			if (vartilde)
+			STPUTC(c, expdest);
+			if (vartilde && *p == '~')
 				p = exptilde(p, vartilde);
+			break;
 		default:
 			STPUTC(c, expdest);
 		}
@@ -521,6 +526,21 @@ varvalue(name, quoted, allow_split)
 	char **ap;
 	char const *syntax;
 
+#define STRTODEST(p) \
+	do {\
+	if (allow_split) { \
+		syntax = quoted? DQSYNTAX : BASESYNTAX; \
+		while (*p) { \
+			if (syntax[*p] == CCTL) \
+				STPUTC(CTLESC, expdest); \
+			STPUTC(*p++, expdest); \
+		} \
+	} else \
+		while (*p) \
+			STPUTC(*p++, expdest); \
+	} while (0)
+
+
 	switch (name) {
 	case '$':
 		num = rootpid;
@@ -557,32 +577,20 @@ numvar:
 	case '*':
 		sep = ' ';
 allargs:
-		syntax = quoted? DQSYNTAX : BASESYNTAX;
 		for (ap = shellparam.p ; (p = *ap++) != NULL ; ) {
-			/* should insert CTLESC characters */
-			while (*p) {
-				if (syntax[*p] == CCTL)
-					STPUTC(CTLESC, expdest);
-				STPUTC(*p++, expdest);
-			}
+			STRTODEST(p);
 			if (*ap)
 				STPUTC(sep, expdest);
 		}
 		break;
 	case '0':
 		p = arg0;
-string:
-		syntax = quoted? DQSYNTAX : BASESYNTAX;
-		while (*p) {
-			if (syntax[*p] == CCTL)
-				STPUTC(CTLESC, expdest);
-			STPUTC(*p++, expdest);
-		}
+		STRTODEST(p);
 		break;
 	default:
 		if ((unsigned)(name -= '1') <= '9' - '1') {
 			p = shellparam.p[name];
-			goto string;
+			STRTODEST(p);
 		}
 		break;
 	}
