@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)savecore.c	4.8 (Berkeley) 82/10/21";
+static	char *sccsid = "@(#)savecore.c	4.7.1.1 (Berkeley) 82/10/24";
 /*
  * savecore
  */
@@ -8,7 +8,7 @@ static	char *sccsid = "@(#)savecore.c	4.8 (Berkeley) 82/10/21";
 #include <sys/param.h>
 #include <sys/dir.h>
 #include <sys/stat.h>
-#include <sys/fs.h>
+#include <sys/filsys.h>
 #include <time.h>
 
 #define	DAY	(60L*60L*24L)
@@ -32,25 +32,8 @@ struct nlist nl[] = {
 	{ "_version" },
 #define X_PANICSTR	5
 	{ "_panicstr" },
-#define X_DOADUMP	6
-	{ "_doadump" },
 	{ 0 },
 };
-
-/*
- *	this magic number is found in the kernel at label "doadump"
- *
- *	It is derived as follows:
- *
- *		doadump:	nop			01
- *				nop			01
- *				bicl2 $...		ca
- *							8f
- *
- *	Thus, it is likely to be moderately stable, even across
- *	operating system releases.
- */
-#define DUMPMAG 0x8fca0101
 
 char	*system;
 char	*dirname;			/* directory to save dumps in */
@@ -87,44 +70,13 @@ main(argc, argv)
 		perror(dirname);
 		exit(1);
 	}
-
+	(void) time(&now);
 	read_kmem();
-	if (dump_exists()) {
-		(void) time(&now);
-		check_kmem();
-		log_entry();
-		if (get_crashtime() && check_space()) {
-			save_core();
-			clear_dump();
-		} else
-			exit(1);
-	}
-	return 0;
-}
-
-int
-dump_exists()
-{
-	register int dumpfd;
-	int word;
-
-	dumpfd = Open(ddname, 0);
-	Lseek(dumpfd, (off_t)(dumplo + ok(nl[X_DOADUMP].n_value)), 0);
-	Read(dumpfd, (char *)&word, sizeof word);
-	close(dumpfd);
-	
-	return (word == DUMPMAG);
-}
-
-clear_dump()
-{
-	register int dumpfd;
-	int zero = 0;
-
-	dumpfd = Open(ddname, 1);
-	Lseek(dumpfd, (off_t)(dumplo + ok(nl[X_DOADUMP].n_value)), 0);
-	Write(dumpfd, (char *)&zero, sizeof zero);
-	close(dumpfd);
+	log_entry();
+	if (get_crashtime() && check_space())
+		save_core();
+	else
+		exit(1);
 }
 
 char *
@@ -132,15 +84,18 @@ find_dev(dev, type)
 	register dev_t dev;
 	register int type;
 {
-	register DIR *dfd = opendir("/dev");
-	struct direct *dir;
+	register int dfd = Open("/dev", 0);
+	struct direct dir;
 	struct stat statb;
-	static char devname[MAXPATHLEN + 1];
+	static char devname[DIRSIZ + 1];
 	char *dp;
 
 	strcpy(devname, "/dev/");
-	while ((dir = readdir(dfd))) {
-		strcpy(devname + 5, dir->d_name);
+	while(Read(dfd, (char *)&dir, sizeof dir) > 0) {
+		if (dir.d_ino == 0)
+			continue;
+		strncpy(devname + 5, dir.d_name, DIRSIZ);
+		devname[DIRSIZ] = '\0';
 		if (stat(devname, &statb)) {
 			perror(devname);
 			continue;
@@ -148,13 +103,13 @@ find_dev(dev, type)
 		if ((statb.st_mode&S_IFMT) != type)
 			continue;
 		if (dev == statb.st_rdev) {
-			closedir(dfd);
+			close(dfd);
 			dp = (char *)malloc(strlen(devname)+1);
 			strcpy(dp, devname);
 			return dp;
 		}
 	}
-	closedir(dfd);
+	close(dfd);
 	fprintf(stderr, "Can't find device %d,%d\n", major(dev), minor(dev));
 	exit(1);
 	/*NOTREACHED*/
@@ -191,10 +146,6 @@ read_kmem()
 		fprintf(stderr, "/vmunix: panicstr not in namelist\n");
 		exit(1);
 	}
-	if (nl[X_DOADUMP].n_value == 0) {
-		fprintf(stderr, "/vmunix: doadump not in namelist\n");
-		exit(1);
-	}
 	kmem = Open("/dev/kmem", 0);
 	Lseek(kmem, (long)nl[X_DUMPDEV].n_value, 0);
 	Read(kmem, (char *)&dumpdev, sizeof dumpdev);
@@ -213,12 +164,6 @@ read_kmem()
 	fseek(fp, (long)nl[X_VERSION].n_value, 0);
 	fgets(vers, sizeof vers, fp);
 	fclose(fp);
-}
-
-check_kmem() {
-	FILE *fp;
-	register char *cp;
-
 	if ((fp = fopen(ddname, "r")) == NULL) {
 		perror(ddname);
 		exit(1);
@@ -249,9 +194,11 @@ get_crashtime()
 
 	if (system)
 		return (1);
-	dumpfd = Open(ddname, 0);
+	dumpfd = Open(ddname, 2);
 	Lseek(dumpfd, (off_t)(dumplo + ok(nl[X_TIME].n_value)), 0);
 	Read(dumpfd, (char *)&dumptime, sizeof dumptime);
+	Lseek(dumpfd, (off_t)(dumplo + ok(nl[X_TIME].n_value)), 0);
+	Write(dumpfd, (char *)&clobber, sizeof clobber);
 	close(dumpfd);
 	if (dumptime == 0) {
 #ifdef DEBUG
@@ -283,8 +230,8 @@ check_space()
 {
 	struct stat dsb;
 	register char *ddev;
-	int dfd, freespace;
-	struct fs fs;
+	register int dfd;
+	struct filsys sblk;
 
 	if (stat(dirname, &dsb) < 0) {
 		perror(dirname);
@@ -292,26 +239,13 @@ check_space()
 	}
 	ddev = find_dev(dsb.st_dev, S_IFBLK);
 	dfd = Open(ddev, 0);
-	Lseek(dfd, (long)(SBLOCK * DEV_BSIZE), 0);
-	Read(dfd, (char *)&fs, sizeof fs);
+	Lseek(dfd, 1L<<BSHIFT, 0);
+	Read(dfd, (char *)&sblk, sizeof sblk);
 	close(dfd);
-	/*
-	 * Minimum free space is in terms of kilobytes.
-	 * We ignore the "percent free space to be maintained"
-	 * parameter in the super block in the believe that a
-	 * crash dump is more important than the (temporary)
-	 * degradation in performance one might experience.
-	 */
-	freespace = (fs.fs_cstotal.cs_nbfree * fs.fs_bsize +
-			fs.fs_cstotal.cs_nffree * fs.fs_fsize) / 1024;
-	if (read_number("minfree") > freespace) {
+	if (read_number("minfree") > sblk.s_tfree) {
 		fprintf(stderr, "Dump omitted, not enough space on device\n");
 		return (0);
 	}
-	if (fs.fs_cstotal.cs_nbfree * fs.fs_frag + fs.fs_cstotal.cs_nffree <
-	    fs.fs_dsize * fs.fs_minfree / 100)
-		fprintf(stderr,
-			"Dump performed, but free space threshold crossed\n");
 	return (1);
 }
 
@@ -341,15 +275,13 @@ save_core()
 
 	bounds = read_number("bounds");
 	ifd = Open(system?system:"/vmunix", 0);
-	sprintf(cp, "vmunix.%d", bounds);
-	ofd = Create(path(cp), 0644);
+	ofd = Create(path(sprintf(cp, "vmunix.%d", bounds)), 0666);
 	while((n = Read(ifd, cp, BUFSIZ)) > 0)
 		Write(ofd, cp, n);
 	close(ifd);
 	close(ofd);
 	ifd = Open(ddname, 0);
-	sprintf(cp, "vmcore.%d", bounds);
-	ofd = Create(path(cp), 0644);
+	ofd = Create(path(sprintf(cp, "vmcore.%d", bounds)), 0666);
 	Lseek(ifd, (off_t)dumplo, 0);
 	printf("Saving %d bytes of image in vmcore.%d\n", NBPG*physmem, bounds);
 	while(physmem > 0) {
@@ -461,5 +393,3 @@ Write(fd, buf, size)
 		exit(1);
 	}
 }
-
-
