@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)spp_debug.c	6.3 (Berkeley) %G%
+ *	@(#)spp_debug.c	6.4 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -30,10 +30,6 @@
 #include "spp_debug.h"
 
 int	sppconsdebug = 0;
-extern char *prurequests[];
-extern char *tanames[];
-extern char *tcpstates[];
-extern char *tcptimers[];
 /*
  * spp debug routines
  */
@@ -44,10 +40,15 @@ spp_trace(act, ostate, sp, si, req)
 	struct spidp *si;
 	int req;
 {
+#ifndef BBNNET
 	u_short seq, ack, len, alo;
 	unsigned long iptime();
 	int flags;
 	struct spp_debug *sd = &spp_debug[spp_debx++];
+	extern char *prurequests[];
+	extern char *tanames[];
+	extern char *tcpstates[];
+	extern char *tcptimers[];
 
 	if (spp_debx == SPP_NDEBUG)
 		spp_debx = 0;
@@ -134,5 +135,6 @@ spp_trace(act, ostate, sp, si, req)
 #ifndef lint
 #define p3(f)  { printf("%s = %x, ", "f", sp->s_/**/f); }
 	printf("\t"); p3(rack);p3(ralo);p3(snt);p3(flags); printf("\n");
+#endif
 #endif
 }
