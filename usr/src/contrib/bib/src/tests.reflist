@@ -1,0 +1,24 @@
+.ds l] /usr/new/lib/bmac
+.so \*(l]/bmac.std
+.de s[   \" start reference
+.nh		\" no hyphenation
+.IP [\\*([F] 7n
+..
+.de e[   \" end reference
+.if !"\\*([W"" \s-2[W: \\*([W]\s+2
+.if !"\\*([K"" \s-2[K: \\*([K]\s+2
+.if !"\\*([X"" \s-2[X: \\*([X]\s+2
+.[-
+.hy 14  \" fully restricted hyphenation allowed
+..
+.[-
+.ds [F Yamane85
+.ds [A Yoshito Yamane
+.ds [T Some Thoughts on the Type System of B
+.nr [P 1
+.ds [P 105-110
+.ds [J SIGPLAN Notices
+.ds [V 20
+.ds [N 10
+.ds [D Oct. 1985
+.][
