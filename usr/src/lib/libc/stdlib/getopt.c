@@ -16,7 +16,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)getopt.c	4.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)getopt.c	4.8 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <stdio.h>
@@ -31,15 +31,6 @@ char	*optarg;		/* argument associated with option */
 
 #define	BADCH	(int)'?'
 #define	EMSG	""
-#define	tell(s)	{ \
-	if (opterr) { \
-		fputs(*nargv, stderr); \
-		fputs(s, stderr); \
-		fputc(optopt, stderr); \
-		fputc((int)'\n', stderr); \
-	} \
-	return(BADCH); \
-}
 
 getopt(nargc, nargv, ostr)
 	int nargc;
@@ -61,7 +52,10 @@ getopt(nargc, nargv, ostr)
 	    !(oli = index(ostr, optopt))) {
 		if (!*place)
 			++optind;
-		tell(": illegal option -- ");
+		if (opterr)
+			(void)fprintf(stderr, "%s: illegal option -- %c\n",
+			    *nargv, optopt);
+		return(BADCH);
 	}
 	if (*++oli != ':') {			/* don't need argument */
 		optarg = NULL;
@@ -73,7 +67,11 @@ getopt(nargc, nargv, ostr)
 			optarg = place;
 		else if (nargc <= ++optind) {	/* no arg */
 			place = EMSG;
-			tell(": option requires an argument -- ");
+			if (opterr)
+				(void)fprintf(stderr,
+				    "%s: option requires an argument -- %c\n",
+				    *nargv, optopt);
+			return(BADCH);
 		}
 	 	else				/* white space */
 			optarg = nargv[optind];
