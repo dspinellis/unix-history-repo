@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_nqlease.c	7.10 (Berkeley) %G%
+ *	@(#)nfs_nqlease.c	7.11 (Berkeley) %G%
  */
 
 /*
@@ -64,6 +64,7 @@ int nqsrv_maxnumlease = NQ_MAXNUMLEASE;
 void nqsrv_instimeq(), nqsrv_send_eviction(), nfs_sndunlock();
 void nqsrv_unlocklease(), nqsrv_waitfor_expiry(), nfsrv_slpderef();
 void nqsrv_addhost(), nqsrv_locklease(), nqnfs_serverd();
+void nqnfs_clientlease();
 struct mbuf *nfsm_rpchead();
 
 /*
@@ -692,12 +693,12 @@ nqnfsrv_getlease(nfsd, mrep, md, dpos, cred, nam, mrq)
 		nam, &cache, &frev, cred);
 	error = VOP_GETATTR(vp, vap, cred, nfsd->nd_procp);
 	vput(vp);
-	nfsm_reply(NFSX_FATTR + 4*NFSX_UNSIGNED);
+	nfsm_reply(NFSX_NQFATTR + 4*NFSX_UNSIGNED);
 	nfsm_build(tl, u_long *, 4*NFSX_UNSIGNED);
 	*tl++ = txdr_unsigned(cache);
 	*tl++ = txdr_unsigned(nfsd->nd_duration);
 	txdr_hyper(&frev, tl);
-	nfsm_build(fp, struct nfsv2_fattr *, NFSX_FATTR);
+	nfsm_build(fp, struct nfsv2_fattr *, NFSX_NQFATTR);
 	nfsm_srvfillattr;
 	nfsm_srvdone;
 }
@@ -804,6 +805,7 @@ nqnfs_getlease(vp, rwflag, cred, p)
 	int error = 0;
 	struct mbuf *mreq, *mrep, *md, *mb, *mb2;
 	int cachable;
+	u_quad_t frev;
 	
 	nfsstats.rpccnt[NQNFSPROC_GETLEASE]++;
 	mb = mreq = nfsm_reqh(vp, NQNFSPROC_GETLEASE, NFSX_FH+2*NFSX_UNSIGNED,
@@ -819,42 +821,8 @@ nqnfs_getlease(vp, rwflag, cred, p)
 	cachable = fxdr_unsigned(int, *tl++);
 	reqtime += fxdr_unsigned(int, *tl++);
 	if (reqtime > time.tv_sec) {
-		if (np->n_tnext) {
-			if (np->n_tnext == (struct nfsnode *)nmp)
-				nmp->nm_tprev = np->n_tprev;
-			else
-				np->n_tnext->n_tprev = np->n_tprev;
-			if (np->n_tprev == (struct nfsnode *)nmp)
-				nmp->nm_tnext = np->n_tnext;
-			else
-				np->n_tprev->n_tnext = np->n_tnext;
-			if (rwflag == NQL_WRITE)
-				np->n_flag |= NQNFSWRITE;
-		} else if (rwflag == NQL_READ)
-			np->n_flag &= ~NQNFSWRITE;
-		else
-			np->n_flag |= NQNFSWRITE;
-		if (cachable)
-			np->n_flag &= ~NQNFSNONCACHE;
-		else
-			np->n_flag |= NQNFSNONCACHE;
-		np->n_expiry = reqtime;
-		fxdr_hyper(tl, &np->n_lrev);
-		tp = nmp->nm_tprev;
-		while (tp != (struct nfsnode *)nmp && tp->n_expiry > np->n_expiry)
-			tp = tp->n_tprev;
-		if (tp == (struct nfsnode *)nmp) {
-			np->n_tnext = nmp->nm_tnext;
-			nmp->nm_tnext = np;
-		} else {
-			np->n_tnext = tp->n_tnext;
-			tp->n_tnext = np;
-		}
-		np->n_tprev = tp;
-		if (np->n_tnext == (struct nfsnode *)nmp)
-			nmp->nm_tprev = np;
-		else
-			np->n_tnext->n_tprev = np;
+		fxdr_hyper(tl, &frev);
+		nqnfs_clientlease(nmp, np, rwflag, cachable, reqtime, frev);
 		nfsm_loadattr(vp, (struct vattr *)0);
 	} else
 		error = NQNFS_EXPIRED;
@@ -1176,4 +1144,55 @@ nqsrv_unlocklease(lp)
 	lp->lc_flag &= ~LC_LOCKED;
 	if (lp->lc_flag & LC_WANTED)
 		wakeup((caddr_t)lp);
+}
+
+/*
+ * Update a client lease.
+ */
+void
+nqnfs_clientlease(nmp, np, rwflag, cachable, expiry, frev)
+	register struct nfsmount *nmp;
+	register struct nfsnode *np;
+	int rwflag, cachable;
+	time_t expiry;
+	u_quad_t frev;
+{
+	register struct nfsnode *tp;
+
+	if (np->n_tnext) {
+		if (np->n_tnext == (struct nfsnode *)nmp)
+			nmp->nm_tprev = np->n_tprev;
+		else
+			np->n_tnext->n_tprev = np->n_tprev;
+		if (np->n_tprev == (struct nfsnode *)nmp)
+			nmp->nm_tnext = np->n_tnext;
+		else
+			np->n_tprev->n_tnext = np->n_tnext;
+		if (rwflag == NQL_WRITE)
+			np->n_flag |= NQNFSWRITE;
+	} else if (rwflag == NQL_READ)
+		np->n_flag &= ~NQNFSWRITE;
+	else
+		np->n_flag |= NQNFSWRITE;
+	if (cachable)
+		np->n_flag &= ~NQNFSNONCACHE;
+	else
+		np->n_flag |= NQNFSNONCACHE;
+	np->n_expiry = expiry;
+	np->n_lrev = frev;
+	tp = nmp->nm_tprev;
+	while (tp != (struct nfsnode *)nmp && tp->n_expiry > np->n_expiry)
+		tp = tp->n_tprev;
+	if (tp == (struct nfsnode *)nmp) {
+		np->n_tnext = nmp->nm_tnext;
+		nmp->nm_tnext = np;
+	} else {
+		np->n_tnext = tp->n_tnext;
+		tp->n_tnext = np;
+	}
+	np->n_tprev = tp;
+	if (np->n_tnext == (struct nfsnode *)nmp)
+		nmp->nm_tprev = np;
+	else
+		np->n_tnext->n_tprev = np;
 }

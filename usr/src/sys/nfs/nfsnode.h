@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfsnode.h	7.28 (Berkeley) %G%
+ *	@(#)nfsnode.h	7.29 (Berkeley) %G%
  */
 
 /*
@@ -41,33 +41,19 @@ struct nfsnode {
 	off_t	n_size;			/* Current size of file */
 	int	n_error;		/* Save write error value */
 	u_long	n_direofoffset;		/* Dir. EOF offset cache */
-	union {
-		struct {
-			time_t	un_mtime; /* Prev modify time. */
-			time_t	un_ctime; /* Prev create time. */
-		} un_nfs;
-		struct {
-			u_quad_t un_brev; /* Modify rev when cached */
-			u_quad_t un_lrev; /* Modify rev for lease */
-			time_t	un_expiry; /* Lease expiry time */
-			struct	nfsnode *un_tnext; /* Nqnfs timer chain */
-			struct	nfsnode *un_tprev;
-			long	un_spare; /* pad to 8-byte boundary */
-		} un_nqnfs;
-	} n_un;
+	time_t	n_mtime;		 /* Prev modify time. */
+	time_t	n_ctime;		 /* Prev create time. */
+	u_quad_t n_brev;		 /* Modify rev when cached */
+	u_quad_t n_lrev;		 /* Modify rev for lease */
+	time_t	n_expiry;		 /* Lease expiry time */
+	struct	nfsnode *n_tnext;	 /* Nqnfs timer chain */
+	struct	nfsnode *n_tprev;		
+	long	spare1;			/* To 8 byte boundary */
 	struct	sillyrename n_silly;	/* Silly rename struct */
 	struct	timeval n_atim;		/* Special file times */
 	struct	timeval n_mtim;
-	long	n_spare[4];		/* Up to a power of 2 */
+	long	n_spare[2];		/* Up to a power of 2 */
 };
-
-#define	n_mtime		n_un.un_nfs.un_mtime
-#define	n_ctime		n_un.un_nfs.un_ctime
-#define	n_brev		n_un.un_nqnfs.un_brev
-#define	n_lrev		n_un.un_nqnfs.un_lrev
-#define	n_expiry	n_un.un_nqnfs.un_expiry
-#define	n_tnext		n_un.un_nqnfs.un_tnext
-#define	n_tprev		n_un.un_nqnfs.un_tprev
 
 /*
  * Flags for n_flag

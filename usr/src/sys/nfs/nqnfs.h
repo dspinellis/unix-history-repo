@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nqnfs.h	7.4 (Berkeley) %G%
+ *	@(#)nqnfs.h	7.5 (Berkeley) %G%
  */
 
 /*
@@ -17,9 +17,9 @@
 /* Tunable constants */
 #define	NQ_CLOCKSKEW	3	/* Clock skew factor (sec) */
 #define	NQ_WRITESLACK	5	/* Delay for write cache flushing */
-#define	NQ_MAXLEASE	30	/* Max lease duration (sec) */
-#define	NQ_MINLEASE	2	/* Min lease duration (sec) */
-#define	NQ_DEFLEASE	10	/* Default lease duration (sec) */
+#define	NQ_MAXLEASE	60	/* Max lease duration (sec) */
+#define	NQ_MINLEASE	5	/* Min lease duration (sec) */
+#define	NQ_DEFLEASE	30	/* Default lease duration (sec) */
 #define	NQ_RENEWAL	3	/* Time before expiry (sec) to renew */
 #define	NQ_TRYLATERDEL	15	/* Initial try later delay (sec) */
 #define	NQ_MAXNUMLEASE	2048	/* Upper bound on number of server leases */

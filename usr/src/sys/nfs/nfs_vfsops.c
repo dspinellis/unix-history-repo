@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_vfsops.c	7.44 (Berkeley) %G%
+ *	@(#)nfs_vfsops.c	7.45 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -87,13 +87,14 @@ nfs_statfs(mp, sbp, p)
 	register caddr_t cp;
 	register long t1;
 	caddr_t bpos, dpos, cp2;
-	int error = 0;
+	int error = 0, isnq;
 	struct mbuf *mreq, *mrep, *md, *mb, *mb2;
 	struct nfsmount *nmp;
 	struct ucred *cred;
 	struct nfsnode *np;
 
 	nmp = VFSTONFS(mp);
+	isnq = (nmp->nm_flag & NFSMNT_NQNFS);
 	if (error = nfs_nget(mp, &nmp->nm_fh, &np))
 		return (error);
 	vp = NFSTOV(np);
@@ -103,7 +104,7 @@ nfs_statfs(mp, sbp, p)
 	nfsm_reqhead(vp, NFSPROC_STATFS, NFSX_FH);
 	nfsm_fhtom(vp);
 	nfsm_request(vp, NFSPROC_STATFS, p, cred);
-	nfsm_dissect(sfp, struct nfsv2_statfs *, NFSX_STATFS);
+	nfsm_dissect(sfp, struct nfsv2_statfs *, NFSX_STATFS(isnq));
 	sbp->f_type = MOUNT_NFS;
 	sbp->f_flags = nmp->nm_flag;
 	sbp->f_iosize = NFS_MAXDGRAMDATA;
@@ -111,8 +112,13 @@ nfs_statfs(mp, sbp, p)
 	sbp->f_blocks = fxdr_unsigned(long, sfp->sf_blocks);
 	sbp->f_bfree = fxdr_unsigned(long, sfp->sf_bfree);
 	sbp->f_bavail = fxdr_unsigned(long, sfp->sf_bavail);
-	sbp->f_files = 0;
-	sbp->f_ffree = 0;
+	if (isnq) {
+		sbp->f_files = fxdr_unsigned(long, sfp->sf_files);
+		sbp->f_ffree = fxdr_unsigned(long, sfp->sf_ffree);
+	} else {
+		sbp->f_files = 0;
+		sbp->f_ffree = 0;
+	}
 	if (sbp != &mp->mnt_stat) {
 		bcopy(mp->mnt_stat.f_mntonname, sbp->f_mntonname, MNAMELEN);
 		bcopy(mp->mnt_stat.f_mntfromname, sbp->f_mntfromname, MNAMELEN);

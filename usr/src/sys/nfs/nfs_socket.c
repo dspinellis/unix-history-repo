@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_socket.c	7.36 (Berkeley) %G%
+ *	@(#)nfs_socket.c	7.37 (Berkeley) %G%
  */
 
 /*
@@ -126,7 +126,7 @@ static int proct[NFS_NPROCS] = {
 static int nfs_backoff[8] = { 2, 4, 8, 16, 32, 64, 128, 256, };
 int	nfs_sbwait();
 void	nfs_disconnect(), nfs_realign(), nfsrv_wakenfsd(), nfs_sndunlock();
-void	nfs_rcvunlock(), nqnfs_serverd();
+void	nfs_rcvunlock(), nqnfs_serverd(), nqnfs_clientlease();
 struct mbuf *nfsm_rpchead();
 int nfsrtton = 0;
 struct nfsrtt nfsrtt;
@@ -834,6 +834,7 @@ nfs_request(vp, mrest, procnum, procp, cred, mrp, mdp, dposp)
 	int t1, nqlflag, cachable, s, error = 0, mrest_len, auth_len, auth_type;
 	int trylater_delay = NQ_TRYLATERDEL, trylater_cnt = 0, failed_auth = 0;
 	u_long xid;
+	u_quad_t frev;
 	char *auth_str;
 
 	nmp = VFSTONFS(vp->v_mount);
@@ -1028,6 +1029,13 @@ tryagain:
 					trylater_cnt++;
 				goto tryagain;
 			}
+
+			/*
+			 * If the File Handle was stale, invalidate the
+			 * lookup cache, just in case.
+			 */
+			if (error == ESTALE)
+				cache_purge(vp);
 			m_freem(rep->r_mreq);
 			free((caddr_t)rep, M_NFSREQ);
 			return (error);
@@ -1045,43 +1053,9 @@ tryagain:
 				cachable = fxdr_unsigned(int, *tl++);
 				reqtime += fxdr_unsigned(int, *tl++);
 				if (reqtime > time.tv_sec) {
-				    if (np->n_tnext) {
-					if (np->n_tnext == (struct nfsnode *)nmp)
-					    nmp->nm_tprev = np->n_tprev;
-					else
-					    np->n_tnext->n_tprev = np->n_tprev;
-					if (np->n_tprev == (struct nfsnode *)nmp)
-					    nmp->nm_tnext = np->n_tnext;
-					else
-					    np->n_tprev->n_tnext = np->n_tnext;
-					if (nqlflag == NQL_WRITE)
-					    np->n_flag |= NQNFSWRITE;
-				    } else if (nqlflag == NQL_READ)
-					np->n_flag &= ~NQNFSWRITE;
-				    else
-					np->n_flag |= NQNFSWRITE;
-				    if (cachable)
-					np->n_flag &= ~NQNFSNONCACHE;
-				    else
-					np->n_flag |= NQNFSNONCACHE;
-				    np->n_expiry = reqtime;
-				    fxdr_hyper(tl, &np->n_lrev);
-				    tp = nmp->nm_tprev;
-				    while (tp != (struct nfsnode *)nmp &&
-				           tp->n_expiry > np->n_expiry)
-						tp = tp->n_tprev;
-				    if (tp == (struct nfsnode *)nmp) {
-					np->n_tnext = nmp->nm_tnext;
-					nmp->nm_tnext = np;
-				    } else {
-					np->n_tnext = tp->n_tnext;
-					tp->n_tnext = np;
-				    }
-				    np->n_tprev = tp;
-				    if (np->n_tnext == (struct nfsnode *)nmp)
-					nmp->nm_tprev = np;
-				    else
-					np->n_tnext->n_tprev = np;
+				    fxdr_hyper(tl, &frev);
+				    nqnfs_clientlease(nmp, np, nqlflag,
+					cachable, reqtime, frev);
 				}
 			}
 		}

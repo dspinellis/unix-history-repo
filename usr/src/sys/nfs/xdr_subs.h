@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)xdr_subs.h	7.4 (Berkeley) %G%
+ *	@(#)xdr_subs.h	7.5 (Berkeley) %G%
  */
 
 /*
@@ -17,11 +17,18 @@
  */
 #if BYTE_ORDER == LITTLE_ENDIAN
 #define fxdr_unsigned(t, v)	((t)ntohl((long)(v)))
-#define	fxdr_time(f, t)	{ \
-	((struct timeval *)(t))->tv_sec = \
-		ntohl(((struct timeval *)(f))->tv_sec); \
-	((struct timeval *)(t))->tv_usec = \
-		ntohl(((struct timeval *)(f))->tv_usec); \
+#define	fxdr_nfstime(f, t) { \
+	(t)->ts_sec = \
+		ntohl(((struct nfsv2_time *)(f))->nfs_sec); \
+	(t)->ts_nsec = 1000 * \
+		ntohl(((struct nfsv2_time *)(f))->nfs_usec); \
+}
+
+#define	fxdr_nqtime(f, t) { \
+	(t)->ts_sec = \
+		ntohl(((struct nqnfs_time *)(f))->nq_sec); \
+	(t)->ts_nsec = \
+		ntohl(((struct nqnfs_time *)(f))->nq_nsec); \
 }
 
 /*
@@ -44,22 +51,36 @@ union _hq {
 }
 
 #define	txdr_unsigned(v)	(htonl((long)(v)))
-#define	txdr_time(f, t)	{ \
-	((struct timeval *)(t))->tv_sec = \
-		htonl(((struct timeval *)(f))->tv_sec); \
-	((struct timeval *)(t))->tv_usec = \
-		htonl(((struct timeval *)(f))->tv_usec); \
+#define	txdr_nqtime(f, t) { \
+	((struct nqnfs_time *)(t))->nq_sec = \
+		htonl((f)->ts_sec); \
+	((struct nqnfs_time *)(t))->nq_nsec = \
+		htonl((f)->ts_nsec); \
+}
+#define	txdr_nfstime(f, t) { \
+	((struct nfsv2_time *)(t))->nfs_sec = \
+		htonl((f)->ts_sec); \
+	((struct nfsv2_time *)(t))->nfs_usec = \
+		htonl((f)->ts_nsec) / 1000; \
 }
 #else	/* BIG_ENDIAN */
 #define fxdr_unsigned(t, v)	((t)(v))
-#define	fxdr_time(f, t) \
-	*((struct timeval *)(t)) = *((struct timeval *)(f))
+#define	fxdr_nqtime(f, t) \
+	*(t) = *((struct timespec *)(f))
+#define	fxdr_nfstime(f, t) { \
+	(t)->ts_sec = ((struct nfsv2_time *)(f))->nfs_sec; \
+	(t)->ts_nsec = ((struct nfsv2_time *)(f))->nfs_usec * 1000; \
+}
 #define	fxdr_hyper(f, t) \
 	*((quad_t *)(t)) = *((quad_t *)(f))
 
 #define	txdr_unsigned(v)	((long)(v))
-#define	txdr_time(f, t) \
-	*((struct timeval *)(t)) = *((struct timeval *)(f))
+#define	txdr_nqtime(f, t) \
+	*(t) = *((struct timespec *)(f))
+#define	txdr_nfstime(f, t) { \
+	((struct nfsv2_time *)(t))->nfs_sec = (f)->ts_sec; \
+	((struct nfsv2_time *)(t))->nfs_usec = (f)->ts_nsec / 1000; \
+}
 #define	txdr_hyper(f, t) \
 	*((quad_t *)(t)) = *((quad_t *)(f))
 #endif	/* ENDIAN */
