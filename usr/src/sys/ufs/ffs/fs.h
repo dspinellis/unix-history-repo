@@ -1,4 +1,4 @@
-/*	fs.h	4.7	83/01/09	*/
+/*	fs.h	4.8	83/03/21	*/
 
 /*
  * Each disk drive contains some number of file systems.
@@ -246,7 +246,7 @@ struct	cg {
  * by the number of remaining bits.
  */
 #define	MAXBPG(fs) \
-	(NBBY * ((fs)->fs_bsize - (sizeof (struct cg))) >> (fs)->fs_fragshift)
+	(fragstoblks((fs), (NBBY * ((fs)->fs_bsize - (sizeof (struct cg))))))
 
 /*
  * Turn file system block numbers into disk block addresses.
@@ -277,7 +277,7 @@ struct	cg {
 #define	itog(fs, x)	((x) / (fs)->fs_ipg)
 #define	itod(fs, x) \
 	((daddr_t)(cgimin(fs, itog(fs, x)) + \
-	((((x) % (fs)->fs_ipg) / INOPB(fs)) << (fs)->fs_fragshift)))
+	(blkstofrags((fs), (((x) % (fs)->fs_ipg) / INOPB(fs))))))
 
 /*
  * Give cylinder group number for a file system block.
@@ -314,6 +314,18 @@ struct	cg {
 	(((size) + (fs)->fs_bsize - 1) & (fs)->fs_bmask)
 #define fragroundup(fs, size)	/* calculates roundup(size, fs->fs_fsize) */ \
 	(((size) + (fs)->fs_fsize - 1) & (fs)->fs_fmask)
+#define fragstoblks(fs, frags)	/* calculates (frags / fs->fs_frag) */ \
+	((frags) >> (fs)->fs_fragshift)
+#define blkstofrags(fs, blks)	/* calculates (blks * fs->fs_frag) */ \
+	((blks) << (fs)->fs_fragshift)
+
+/*
+ * Determine the number of available frags given a
+ * percentage to hold in reserve
+ */
+#define freespace(fs, percentreserved) \
+	(blkstofrags((fs), (fs)->fs_cstotal.cs_nbfree) + \
+	(fs)->fs_cstotal.cs_nffree - ((fs)->fs_dsize * (percentreserved) / 100))
 
 /*
  * Determining the size of a file block in the file system.
