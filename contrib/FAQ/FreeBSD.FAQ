@@ -5,7 +5,7 @@
    Please mail all suggestions and additions to FreeBSD-FAQ@freefall.cdrom.com
 
 
-Revision: $Id: FreeBSD.FAQ,v 1.1 1994/04/16 16:34:17 gclarkii Exp $
+Revision: $Id: FreeBSD.FAQ,v 1.2 1994/04/16 20:37:01 jkh Exp $
 
 
 Table of Contents
@@ -454,7 +454,8 @@ Recompile and install.
 	man pages! :-) ]
 
 Look at Gary Clark's perl package "AddIt", which may be found in
-/usr/src/contrib/FAQ/programs/AddIt-0.1B.tar.gz 
+/usr/src/contrib/adduser.  This is a first attempt at solving the problem
+and may be replaced with a more complex but capable solution later.
 
 
 7.0.2: I'm trying to use my printer and keep running into problems.  I tried
