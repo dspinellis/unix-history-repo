@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tcp_timer.c	6.7 (Berkeley) %G%
+ *	@(#)tcp_timer.c	6.8 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -108,7 +108,7 @@ tcp_canceltimers(tp)
 }
 
 float	tcp_backoff[TCP_MAXRXTSHIFT] =
-    { 1.0, 1.2, 1.4, 1.7, 2.0, 3.0, 5.0, 8.0, 16.0, 32.0 };
+    { 1.0, 1.2, 1.4, 1.7, 2.0, 3.0, 5.0, 8.0, 16.0, 32.0, 32.0, 32.0 };
 int	tcpexprexmtbackoff = 0;
 /*
  * TCP timer processing.
@@ -122,11 +122,17 @@ tcp_timers(tp, timer)
 	switch (timer) {
 
 	/*
-	 * 2 MSL timeout in shutdown went off.  Delete connection
-	 * control block.
+	 * 2 MSL timeout in shutdown went off.  If we're closed but
+	 * still waiting for peer to close and connection has been idle
+	 * too long, or if 2MSL time is up from TIME_WAIT, delete connection
+	 * control block.  Otherwise, check again in a bit.
 	 */
 	case TCPT_2MSL:
-		tp = tcp_close(tp);
+		if (tp->t_state != TCPS_TIME_WAIT &&
+		    tp->t_idle <= TCPTV_MAXIDLE)
+			tp->t_timer[TCPT_2MSL] = TCPTV_KEEP;
+		else
+			tp = tcp_close(tp);
 		break;
 
 	/*
@@ -144,7 +150,7 @@ tcp_timers(tp, timer)
 		 * If losing, let the lower level know
 		 * and try for a better route.
 		 */
-		if (tp->t_rxtshift > TCP_MAXRXTSHIFT / 2)
+		if (tp->t_rxtshift > TCP_MAXRXTSHIFT / 3)
 			in_rtchange(tp->t_inpcb);
 		TCPT_RANGESET(tp->t_timer[TCPT_REXMT],
 		    (int)tp->t_srtt, TCPTV_MIN, TCPTV_MAX);

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tcp_timer.h	6.3 (Berkeley) %G%
+ *	@(#)tcp_timer.h	6.4 (Berkeley) %G%
  */
 
 /*
@@ -25,18 +25,20 @@
  * then the retransmit timer is cleared (if there are no more
  * outstanding segments) or reset to the base value (if there
  * are more ACKs expected).  Whenever the retransmit timer goes off,
- * we retransmit all unacknowledged segments, and do an exponential
- * backoff on the retransmit timer.
+ * we retransmit one unacknowledged segment, and do a backoff
+ * on the retransmit timer.
  *
  * The TCPT_PERSIST timer is used to keep window size information
  * flowing even if the window goes shut.  If all previous transmissions
  * have been acknowledged (so that there are no retransmissions in progress),
- * and the window is shut, then we start the TCPT_PERSIST timer, and at
- * intervals send a single byte into the peers window to force him to update
- * our window information.  We do this at most as often as TCPT_PERSMIN
- * time intervals, but no more frequently than the current estimate of
- * round-trip packet time.  The TCPT_PERSIST timer is cleared whenever
- * we receive a window update from the peer.
+ * and the window is too small to bother sending anything, then we start
+ * the TCPT_PERSIST timer.  When it expires, if the window is nonzero,
+ * we go to transmit state.  Otherwise, at intervals send a single byte
+ * into the peer's window to force him to update our window information.
+ * We do this at most as often as TCPT_PERSMIN time intervals,
+ * but no more frequently than the current estimate of round-trip
+ * packet time.  The TCPT_PERSIST timer is cleared whenever we receive
+ * a window update from the peer.
  *
  * The TCPT_KEEP timer is used to keep connections alive.  If an
  * connection is idle (no segments received) for TCPTV_KEEP amount of time,
@@ -53,7 +55,7 @@
 /*
  * Time constants.
  */
-#define	TCPTV_MSL	( 30*PR_SLOWHZ)		/* max seg lifetime */
+#define	TCPTV_MSL	( 15*PR_SLOWHZ)		/* max seg lifetime */
 #define	TCPTV_SRTTBASE	0			/* base roundtrip time;
 						   if 0, no idea yet */
 #define	TCPTV_KEEP	( 45*PR_SLOWHZ)		/* keep alive - 45 secs */
@@ -67,7 +69,7 @@
 
 #define	TCP_LINGERTIME	120			/* linger at most 2 minutes */
 
-#define	TCP_MAXRXTSHIFT	10			/* maximum retransmits */
+#define	TCP_MAXRXTSHIFT	12			/* maximum retransmits */
 
 #ifdef	TCPTIMERS
 char *tcptimers[] =
