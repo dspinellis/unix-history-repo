@@ -1,0 +1,105 @@
+as htboot.s
+nm -u a.out
+strip a.out
+dd if=a.out of=b.out bs=32 skip=1
+11+0 records in
+11+0 records out
+dd if=b.out of=htboot conv=sync
+0+1 records in
+1+0 records out
+as mtboot.s
+nm -u a.out
+strip a.out
+dd if=a.out of=b.out bs=32 skip=1
+12+1 records in
+12+1 records out
+dd if=b.out of=mtboot conv=sync
+0+1 records in
+1+0 records out
+as tmboot.s
+nm -u a.out
+strip a.out
+dd if=a.out of=b.out bs=32 skip=1
+10+1 records in
+10+1 records out
+dd if=b.out of=tmboot conv=sync
+0+1 records in
+1+0 records out
+as tsboot.s
+nm -u a.out
+strip a.out
+dd if=a.out of=b.out bs=32 skip=1
+12+1 records in
+12+1 records out
+dd if=b.out of=tsboot conv=sync
+0+1 records in
+1+0 records out
+as hpboot.s
+nm -u a.out
+strip a.out
+dd if=a.out bs=32 skip=1 of=b.out
+15+1 records in
+15+1 records out
+dd if=b.out of=hpboot conv=sync
+0+1 records in
+1+0 records out
+as hkboot.s
+nm -u a.out
+strip a.out
+dd if=a.out bs=32 skip=1 of=b.out
+15+0 records in
+15+0 records out
+dd if=b.out of=hkboot conv=sync
+0+1 records in
+1+0 records out
+as upboot.s
+nm -u a.out
+strip a.out
+dd if=a.out bs=32 skip=1 of=b.out
+15+1 records in
+15+1 records out
+dd if=b.out of=upboot conv=sync
+0+1 records in
+1+0 records out
+as utboot.s
+nm -u a.out
+strip a.out
+dd if=a.out bs=32 skip=1 of=b.out
+12+1 records in
+12+1 records out
+dd if=b.out of=utboot conv=sync
+0+1 records in
+1+0 records out
+echo | dd of=noboot conv=sync
+0+1 records in
+1+0 records out
+as httoggle.s
+nm -u a.out
+strip a.out
+dd if=a.out bs=32 skip=1 of=httoggle
+2+1 records in
+2+1 records out
+as mttoggle.s
+nm -u a.out
+strip a.out
+dd if=a.out bs=32 skip=1 of=mttoggle
+2+1 records in
+2+1 records out
+as tmtoggle.s
+nm -u a.out
+strip a.out
+dd if=a.out bs=32 skip=1 of=tmtoggle
+1+1 records in
+1+1 records out
+as tstoggle.s
+nm -u a.out
+strip a.out
+dd if=a.out bs=32 skip=1 of=tstoggle
+3+1 records in
+3+1 records out
+as uttoggle.s
+nm -u a.out
+strip a.out
+dd if=a.out bs=32 skip=1 of=uttoggle
+2+0 records in
+2+0 records out
