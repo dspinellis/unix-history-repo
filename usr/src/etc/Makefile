@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.14 (Berkeley) %G%
+#	@(#)Makefile	5.15 (Berkeley) %G%
 
 NOOBJ=	oobj
 
@@ -23,16 +23,21 @@ WCS2=	fpevent fppwcs fppwcs_dual hdcwcs load_diags start_fpp wcs wcs_dual
 all clean cleandir depend etc install lint:
 
 distribution:
-	install -c -o ${BINOWN} -g ${BINGRP} -m 644 ${BIN1} ${DESTDIR}/etc
-	install -c -o ${BINOWN} -g ${BINGRP} -m 666 ${BIN2} ${DESTDIR}/etc
+	# password file first
 	install -c -o root -g wheel -m 600 master.passwd ${DESTDIR}/etc
-	(cd ${DESTDIR}/etc; \
-	    mkpasswd -p master.passwd; \
-	    mv master.passwd.pag passwd.pag; \
-	    mv master.passwd.dir passwd.dir; \
-	    mv master.passwd.orig passwd)
+	install -c -o root -g wheel -m 600 master.passwd ${DESTDIR}/tmp/p
+	pwd_mkdb -p /tmp/p
+	rm -f /tmp/p
+	# install devices
+.if ${MACHINE} == "hp300"
+	(cd etc.hp300; install -c -o ${BINOWN} -g ${BINGRP} -m 444 \
+	    MAKEDEV.hpux ${DESTDIR}/)
+.endif
 	install -c -o ${BINOWN} -g ${BINGRP} -m 555 \
 	     MAKEDEV.local etc.${MACHINE}/MAKEDEV ${DESTDIR}/dev
+	(cd /dev && ./MAKEDEV std)
+	install -c -o ${BINOWN} -g ${BINGRP} -m 644 ${BIN1} ${DESTDIR}/etc
+	install -c -o ${BINOWN} -g ${BINGRP} -m 666 ${BIN2} ${DESTDIR}/etc
 	(cd root; \
 		install -c -o root -g wheel -m 644 dot.cshrc \
 		    ${DESTDIR}/root/.cshrc; \
@@ -63,10 +68,6 @@ distribution:
 	    ${DESTDIR}/var/run/utmp
 	(cd etc.${MACHINE}; install -c -o ${BINOWN} -g ${BINGRP} -m 444 \
 	    fstab.* ${DESTDIR}/)
-.if ${MACHINE} == "hp300"
-	(cd etc.hp300; install -c -o ${BINOWN} -g ${BINGRP} -m 444 \
-	    MAKEDEV.hpux ${DESTDIR}/)
-.endif
 .if ${MACHINE} == "tahoe"
 	(cd etc.tahoe; install -c -o ${BINOWN} -g ${BINGRP} -m 444 ${WCS1} \
 	    ${DESTDIR}/)
