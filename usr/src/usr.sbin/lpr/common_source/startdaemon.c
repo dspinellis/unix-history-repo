@@ -1,4 +1,4 @@
-/*	startdaemon.c	4.2	83/05/13	*/
+/*	startdaemon.c	4.3	83/05/18	*/
 /*
  * Tell the printer daemon that there are new files in the spool directory.
  */
@@ -10,7 +10,7 @@ startdaemon()
 	register int rem, i, err = 0;
 	char buf[BUFSIZ];
 
-	rem = getport();
+	rem = getport(host);
 	if (rem < 0)
 		return(0);
 	(void) sprintf(buf, "\1%s\n", printer);
