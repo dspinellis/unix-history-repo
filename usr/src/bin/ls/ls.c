@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)ls.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)ls.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -518,7 +518,7 @@ fmtinum(p)
 {
 	static char inumbuf[8];
 
-	(void) sprintf(inumbuf, "%5d ", p->fnum);
+	(void) sprintf(inumbuf, "%6d ", p->fnum);
 	return (inumbuf);
 }
 
