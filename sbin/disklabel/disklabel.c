@@ -521,6 +521,7 @@ readmbr(f)
 	 */
 	dp = dos_partitions;
 	npart = njunk = nboot = 0;
+	bsdp = NULL;
 	for (i = 0; i < NDOSPART; i++, dp++) {
 		if (dp->dp_flag != 0x80 && dp->dp_flag != 0) njunk++;
 		else
