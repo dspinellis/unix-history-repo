@@ -7,7 +7,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	3.112		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	3.113		%G%";
 # endif lint
 # else  _DEFINE
 # define EXTERN extern
@@ -125,27 +125,20 @@ typedef struct mailer	MAILER;
 /* bits for m_flags */
 # define M_FOPT		'f'	/* mailer takes picky -f flag */
 # define M_ROPT		'r'	/* mailer takes picky -r flag */
-# define M_RPATH	'P'	/* wants a Return-Path: line */
 # define M_RESTR	'S'	/* must be daemon to execute */
 # define M_NHDR		'n'	/* don't insert From line */
 # define M_LOCAL	'l'	/* delivery is to this host */
 # define M_STRIPQ	's'	/* strip quote chars from user/host */
 # define M_MUSER	'm'	/* can handle multiple users at once */
-# define M_NEEDFROM	'F'	/* need arpa-style From: line */
-# define M_NEEDDATE	'D'	/* need arpa-style Date: line */
-# define M_MSGID	'M'	/* need Message-Id: field */
 # define M_CANONICAL	'C'	/* make addresses canonical "u@dom" */
 # define M_USR_UPPER	'u'	/* preserve user case distinction */
 # define M_HST_UPPER	'h'	/* preserve host case distinction */
-# define M_FULLNAME	'x'	/* want Full-Name field */
 # define M_UGLYUUCP	'U'	/* this wants an ugly UUCP from line */
 # define M_EXPENSIVE	'e'	/* it costs to use this mailer.... */
 # define M_LIMITS	'L'	/* must enforce SMTP line limits */
 # define M_INTERNAL	'I'	/* SMTP to another sendmail site */
 # define M_FROMPATH	'p'	/* use reverse-path in MAIL FROM: */
 # define M_XDOT		'X'	/* use hidden-dot algorithm */
-
-# define M_ARPAFMT	(M_NEEDDATE|M_NEEDFROM|M_MSGID)
 
 EXTERN MAILER	*Mailer[MAXMAILERS+1];
 
