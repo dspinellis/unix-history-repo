@@ -10,7 +10,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)machdep.c	7.10 (Berkeley) %G%
+ *	@(#)machdep.c	7.11 (Berkeley) %G%
  */
 
 /* from: Utah $Hdr: machdep.c 1.63 91/04/24$ */
@@ -31,6 +31,7 @@
 #include <sys/mbuf.h>
 #include <sys/msgbuf.h>
 #include <sys/user.h>
+#include <sys/exec.h>
 #ifdef SYSVSHM
 #include <sys/shm.h>
 #endif
@@ -515,7 +516,7 @@ setregs(p, entry, retval)
 
 	bzero((caddr_t)p->p_md.md_regs, (FSR + 1) * sizeof(int));
 	p->p_md.md_regs[SP] = sp;
-	p->p_md.md_regs[PC] = entry;
+	p->p_md.md_regs[PC] = entry & ~3;
 	p->p_md.md_regs[PS] = PSL_USERSET;
 	p->p_md.md_flags & ~MDP_FPUSED;
 	if (machFPCurProcPtr == p)
@@ -531,6 +532,7 @@ struct sigframe {
 	int	sf_code;		/* additional info for handler */
 	struct	sigcontext *sf_scp;	/* context ptr for handler */
 	sig_t	sf_handler;		/* handler addr for u_sigc */
+	struct	sigcontext sf_sc;	/* actual context */
 };
 
 #ifdef DEBUG
@@ -552,11 +554,11 @@ sendsig(catcher, sig, mask, code)
 {
 	register struct proc *p = curproc;
 	register struct sigframe *fp;
-	register struct sigacts *psp = p->p_sigacts;
-	register struct sigcontext *scp;
 	register int *regs;
+	register struct sigacts *psp = p->p_sigacts;
 	int oonstack, fsize;
 	struct sigcontext ksc;
+	extern char sigcode[], esigcode[];
 
 	regs = p->p_md.md_regs;
 	oonstack = psp->ps_sigstk.ss_flags & SA_ONSTACK;
@@ -567,17 +569,23 @@ sendsig(catcher, sig, mask, code)
 	 * will fail if the process has not already allocated
 	 * the space with a `brk'.
 	 */
+	fsize = sizeof(struct sigframe);
 	if ((psp->ps_flags & SAS_ALTSTACK) &&
 	    (psp->ps_sigstk.ss_flags & SA_ONSTACK) == 0 &&
 	    (psp->ps_sigonstack & sigmask(sig))) {
-		scp = (struct sigcontext *)(psp->ps_sigstk.ss_base +
-		    psp->ps_sigstk.ss_size) - 1;
+		fp = (struct sigframe *)(psp->ps_sigstk.ss_base +
+					 psp->ps_sigstk.ss_size - fsize);
 		psp->ps_sigstk.ss_flags |= SA_ONSTACK;
 	} else
-		scp = (struct sigcontext *)regs[SP] - 1;
-	fp = (struct sigframe *)scp - 1;
+		fp = (struct sigframe *)(regs[SP] - fsize);
 	if ((unsigned)fp <= USRSTACK - ctob(p->p_vmspace->vm_ssize)) 
 		(void)grow(p, (unsigned)fp);
+#ifdef DEBUG
+	if ((sigdebug & SDB_FOLLOW) ||
+	    (sigdebug & SDB_KSTACK) && p->p_pid == sigpid)
+		printf("sendsig(%d): sig %d ssp %x usp %x scp %x\n",
+		       p->p_pid, sig, &oonstack, fp, &fp->sf_sc);
+#endif
 	/*
 	 * Build the signal context to be used by sigreturn.
 	 */
@@ -597,7 +605,7 @@ sendsig(catcher, sig, mask, code)
 		bcopy((caddr_t)&p->p_md.md_regs[F0], (caddr_t)ksc.sc_fpregs,
 			sizeof(ksc.sc_fpregs));
 	}
-	if (copyout((caddr_t)&ksc, (caddr_t)scp, sizeof(ksc))) {
+	if (copyout((caddr_t)&ksc, (caddr_t)&fp->sf_sc, sizeof(ksc))) {
 		/*
 		 * Process has trashed its stack; give it an illegal
 		 * instruction to halt it in its tracks.
@@ -615,17 +623,20 @@ sendsig(catcher, sig, mask, code)
 	 */
 	regs[A0] = sig;
 	regs[A1] = code;
-	regs[A2] = (int)scp;
+	regs[A2] = (int)&fp->sf_sc;
 	regs[A3] = (int)catcher;
 
 	regs[PC] = (int)catcher;
 	regs[SP] = (int)fp;
-	regs[RA] = KERNBASE;	/* this causes a trap which we interpret as
-				 * meaning "do a sigreturn". */
+	/*
+	 * Signal trampoline code is at base of user stack.
+	 */
+	regs[RA] = (int)PS_STRINGS - (esigcode - sigcode);
 #ifdef DEBUG
-	if ((sigdebug & SDB_KSTACK) && p->p_pid == sigpid)
-		printf("sendsig(%d): sig %d ssp %x usp %x scp %x\n",
-		       p->p_pid, sig, &oonstack, fp, fp->sf_scp);
+	if ((sigdebug & SDB_FOLLOW) ||
+	    (sigdebug & SDB_KSTACK) && p->p_pid == sigpid)
+		printf("sendsig(%d): sig %d returns\n",
+		       p->p_pid, sig);
 #endif
 }
 
@@ -653,11 +664,6 @@ sigreturn(p, uap, retval)
 	struct sigcontext ksc;
 	int error;
 
-	register struct frame *frame;
-	register int rf;
-	struct sigcontext tsigc;
-	int flags;
-
 	scp = uap->sigcntxp;
 #ifdef DEBUG
 	if (sigdebug & SDB_FOLLOW)
@@ -669,8 +675,7 @@ sigreturn(p, uap, retval)
 	 * We grab it all at once for speed.
 	 */
 	error = copyin((caddr_t)scp, (caddr_t)&ksc, sizeof(ksc));
-	if (error != 0 || ksc.sc_regs[ZERO] != 0xACEDBADE ||
-	    (unsigned)ksc.sc_regs[SP] < (unsigned)regs[SP]) {
+	if (error || ksc.sc_regs[ZERO] != 0xACEDBADE) {
 #ifdef DEBUG
 		if (!(sigdebug & SDB_FOLLOW))
 			printf("sigreturn: pid %d, scp %x\n", p->p_pid, scp);
@@ -680,22 +685,9 @@ sigreturn(p, uap, retval)
 			ksc.sc_regs[SP], ksc.sc_regs[RA], ksc.sc_regs[PC],
 			error, ksc.sc_regs[ZERO]);
 #endif
-		if (regs[PC] == KERNBASE) {
-			int sig;
-
-			/*
-			 * Process has trashed its stack; give it an illegal
-			 * instruction to halt it in its tracks.
-			 */
-			SIGACTION(p, SIGILL) = SIG_DFL;
-			sig = sigmask(SIGILL);
-			p->p_sigignore &= ~sig;
-			p->p_sigcatch &= ~sig;
-			p->p_sigmask &= ~sig;
-			psignal(p, SIGILL);
-		}
 		return (EINVAL);
 	}
+	scp = &ksc;
 	/*
 	 * Restore the user supplied information
 	 */
@@ -704,13 +696,12 @@ sigreturn(p, uap, retval)
 	else
 		p->p_sigacts->ps_sigstk.ss_flags &= ~SA_ONSTACK;
 	p->p_sigmask = scp->sc_mask &~ sigcantmask;
-	regs[PC] = ksc.sc_pc;
-	bcopy((caddr_t)&ksc.sc_regs[1], (caddr_t)&regs[1],
-		sizeof(ksc.sc_regs) - sizeof(int));
-	ksc.sc_fpused = p->p_md.md_flags & MDP_FPUSED;
-	if (ksc.sc_fpused)
-		bcopy((caddr_t)ksc.sc_fpregs, (caddr_t)&p->p_md.md_regs[F0],
-			sizeof(ksc.sc_fpregs));
+	regs[PC] = scp->sc_pc;
+	bcopy((caddr_t)&scp->sc_regs[1], (caddr_t)&regs[1],
+		sizeof(scp->sc_regs) - sizeof(int));
+	if (scp->sc_fpused)
+		bcopy((caddr_t)scp->sc_fpregs, (caddr_t)&p->p_md.md_regs[F0],
+			sizeof(scp->sc_fpregs));
 	return (EJUSTRETURN);
 }
 
@@ -726,7 +717,7 @@ boot(howto)
 
 	howto |= RB_HALT; /* XXX */
 	boothowto = howto;
-	if ((howto&RB_NOSYNC) == 0 && waittime < 0 && bfreelist[0].b_forw) {
+	if ((howto&RB_NOSYNC) == 0 && waittime < 0) {
 		register struct buf *bp;
 		int iter, nbusy;
 
@@ -1081,9 +1072,11 @@ tc_find_all_options()
 				continue;
 			goto fnd_map;
 		}
+#ifdef DEBUG
 		if (tc_verbose)
 			printf("Cannot associate a device driver to %s\n",
 				sl->module_name);
+#endif
 		sl->present = 0;
 		continue;
 
@@ -1203,6 +1196,7 @@ tc_identify_option(addr, slot, complain)
 		host_type[i] = addr->host_firmware_type[i].value;
 	}
 
+#ifdef DEBUG
 	if (tc_verbose) {
 		firmwr[TC_ROM_LLEN] = '\0';
 		vendor[TC_ROM_LLEN] = '\0';
@@ -1215,6 +1209,7 @@ tc_identify_option(addr, slot, complain)
 		       "ROM size is", addr->rom_size.value << 3,
 		       "Kbytes, uses", addr->slot_size.value, "TC slot(s)");
 	}
+#endif
 
 	bcopy(module, slot->module_name, TC_ROM_LLEN);
 	bcopy(vendor, slot->module_id, TC_ROM_LLEN);
