@@ -1,4 +1,4 @@
-/*	rk.c	4.20	%G%	*/
+/*	rk.c	4.21	%G%	*/
 
 #include "rk.h"
 #if NHK > 0
@@ -278,7 +278,7 @@ loop:
 		rkwaitdry++;
 	}
 	if ((rkaddr->rkds&RK_DREADY) != RK_DREADY) {
-		printf("rk%d not ready", dkunit(bp));
+		printf("rk%d: not ready", dkunit(bp));
 		if ((rkaddr->rkds&RK_DREADY) != RK_DREADY) {
 			printf("\n");
 			rkaddr->rkcs1 = RK_CDT|RK_DCLR|RK_GO;
@@ -346,17 +346,14 @@ rkintr(rk11)
 			u_short ds = rkaddr->rkds;
 			u_short cs2 = rkaddr->rkcs2;
 			u_short er = rkaddr->rker;
-			if (sc->sc_recal)
-				printf("recal CERR\n");
 			if (ds & RK_WLE) {
-				printf("rk%d is write locked\n", dkunit(bp));
+				printf("rk%d: write locked\n", dkunit(bp));
 				bp->b_flags |= B_ERROR;
 			} else if (++um->um_tab.b_errcnt > 28 ||
 			    ds&RKDS_HARD || er&RKER_HARD || cs2&RKCS2_HARD) {
 				bp->b_flags |= B_ERROR;
-				harderr(bp);
-				printf("rk%d%c cs2=%b ds=%b er=%b\n",
-				    dkunit(bp), 'a'+(minor(bp->b_dev)&07),
+				harderr(bp, "rk");
+				printf("cs2=%b ds=%b er=%b\n",
 				    cs2, RKCS2_BITS, ds, 
 				    RKDS_BITS, er, RKER_BITS);
 			} else
@@ -464,7 +461,7 @@ rkecc(ui)
 	npf = btop((rk->rkwc * sizeof(short)) + bp->b_bcount) - 1;
 	reg = btop(um->um_ubinfo&0x3ffff) + npf;
 	o = (int)bp->b_un.b_addr & PGOFSET;
-	printf("soft ecc rk%d%c bn%d\n", dkunit(bp),
+	printf("rk%d%c: soft ecc bn%d\n", dkunit(bp),
 	    'a'+(minor(bp->b_dev)&07), bp->b_blkno + npf);
 	mask = rk->rkec2;
 	ubapurge(um);
@@ -510,20 +507,17 @@ rkecc(ui)
 }
 
 rkreset(uban)
+	int uban;
 {
 	register struct uba_minfo *um;
 	register struct uba_dinfo *ui;
 	register rk11, unit;
-	int any = 0;
 
 	for (rk11 = 0; rk11 < NHK; rk11++) {
 		if ((um = rkminfo[rk11]) == 0 || um->um_ubanum != uban ||
 		    um->um_alive == 0)
 			continue;
-		if (any == 0) {
-			printf(" rk");
-			any++;
-		}
+		printf(" hk%d", rk11);
 		um->um_tab.b_active = 0;
 		um->um_tab.b_actf = um->um_tab.b_actl = 0;
 		rk_softc[um->um_ctlr].sc_recal = 0;
@@ -567,7 +561,7 @@ active:
 		sc->sc_wticks++;
 		if (sc->sc_wticks >= 20) {
 			sc->sc_wticks = 0;
-			printf("lost rkintr ");
+			printf("hk%d: lost interrupt\n", rk11);
 			ubareset(um->um_ubanum);
 		}
 	}
