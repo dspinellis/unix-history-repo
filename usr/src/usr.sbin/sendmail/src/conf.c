@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.176 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.177 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -377,7 +377,7 @@ setupmaps()
 		dequote_init, null_map_open, null_map_close,
 		dequote_map, null_map_store);
 
-#ifdef USERDB
+#if USERDB
 	/* user database */
 	MAPDEF("userdb", ".db", 0,
 		map_parseargs, null_map_open, null_map_close,
@@ -1728,7 +1728,71 @@ reapchild(sig)
 
 #ifdef NEEDPUTENV
 
-void
+# if NEEDPUTENV == 2		/* no setenv(3) call available */
+
+int
+putenv(str)
+	char *str;
+{
+	char **current;
+	int matchlen, envlen=0;
+	char *tmp;
+	char **newenv;
+	static int first=1;
+	extern char **environ;
+
+	/*
+	 * find out how much of str to match when searching
+	 * for a string to replace.
+	 */
+	if ((tmp = index(str, '=')) == NULL || tmp == str)
+		matchlen = strlen(str);
+	else
+		matchlen = (int) (tmp - str);
+	++matchlen;
+
+	/*
+	 * Search for an existing string in the environment and find the
+	 * length of environ.  If found, replace and exit.
+	 */
+	for (current=environ; *current; current++) {
+		++envlen;
+
+		if (strncmp(str, *current, matchlen) == 0) {
+			/* found it, now insert the new version */
+			*current = (char *)str;
+			return(0);
+		}
+	}
+
+	/*
+	 * There wasn't already a slot so add space for a new slot.
+	 * If this is our first time through, use malloc(), else realloc().
+	 */
+	if (first) {
+		newenv = (char **) malloc(sizeof(char *) * (envlen + 2));
+		if (newenv == NULL)
+			return(-1);
+
+		first=0;
+		(void) memcpy(newenv, environ, sizeof(char *) * envlen);
+	} else {
+		newenv = (char **) realloc((char *)environ, sizeof(char *) * (envlen + 2));
+		if (newenv == NULL)
+			return(-1);
+	}
+
+	/* actually add in the new entry */
+	environ = newenv;
+	environ[envlen] = (char *)str;
+	environ[envlen+1] = NULL;
+
+	return(0);
+}
+
+#else			/* implement putenv() in terms of setenv() */
+
+int
 putenv(env)
 	char *env;
 {
@@ -1738,15 +1802,16 @@ putenv(env)
 
 	p = strchr(env, '=');
 	if (p == NULL)
-		return;
+		return 0;
 	l = p - env;
 	if (l > sizeof nbuf - 1)
 		l = sizeof nbuf - 1;
 	bcopy(env, nbuf, l);
 	nbuf[l] = '\0';
-	setenv(nbuf, ++p, 1);
+	return setenv(nbuf, ++p, 1);
 }
 
+# endif
 #endif
 /*
 **  UNSETENV -- remove a variable from the environment
