@@ -1,0 +1,3 @@
+Mfactor	factor.c	/^main(argc, argv)$/
+pr_fact	factor.c	/^pr_fact(val)$/
+usage	factor.c	/^usage()$/
