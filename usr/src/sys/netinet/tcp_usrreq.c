@@ -1,4 +1,4 @@
-/* tcp_usrreq.c 1.14 81/10/26 */
+/* tcp_usrreq.c 1.13 81/10/29 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -240,7 +240,7 @@ COUNT(T_CLOSE);
 		m_freem(up->uc_rbuf);
 		up->uc_rbuf = NULL;
 	}
-	up->uc_rsize = 0;
+	up->uc_rcc = 0;
 	if (up->uc_sbuf != NULL) {
 		m_freem(up->uc_sbuf);
 		up->uc_sbuf = NULL;
@@ -257,7 +257,7 @@ COUNT(T_CLOSE);
 
 	/* lower buffer allocation and decrement host entry */
 
-	netcb.n_lowat -= up->uc_snd + up->uc_rcv + 2;
+	netcb.n_lowat -= up->uc_snd + (up->uc_rhiwat/MSIZE) + 2;
 	netcb.n_hiwat = 2 * netcb.n_lowat;
 	if (up->uc_host != NULL) {
 		h_free(up->uc_host);

@@ -1,4 +1,4 @@
-/* tcp.h 1.7 81/10/28 */
+/* tcp.h 1.8 81/10/29 */
 
 /*
  * Tcp header (fits over ip header).
@@ -45,6 +45,8 @@ struct tcb {
 	struct	tcb *t_tcb_prev;	/* next tcb */
 	struct	ucb *t_ucb;		/* ucb */
 	struct	mbuf *t_rcv_unack;	/* unacked message queue */
+	short	seqcnt;
+	short	xxx;
 	seq_t	iss;			/* initial send seq # */
 	seq_t	irs;			/* initial recv seq # */
 	seq_t	rcv_urp;		/* rcv urgent pointer */
