@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)tunefs.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)tunefs.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -132,6 +132,12 @@ again:
 					"%s changes from %d%% to %d%%\n",
 					name, sblock.fs_minfree, i);
 				sblock.fs_minfree = i;
+				if (i >= 10 && sblock.fs_optim == FS_OPTSPACE)
+					fprintf(stdout, "should optimize %s",
+					    "for time with minfree >= 10%\n");
+				if (i < 10 && sblock.fs_optim == FS_OPTTIME)
+					fprintf(stdout, "should optimize %s",
+					    "for space with minfree < 10%\n");
 				continue;
 
 			case 'o':
@@ -158,6 +164,12 @@ again:
 					"%s changes from %s to %s\n",
 					name, chg[sblock.fs_optim], chg[i]);
 				sblock.fs_optim = i;
+				if (sblock.fs_minfree >= 10 && i == FS_OPTSPACE)
+					fprintf(stdout, "should optimize %s",
+					    "for time with minfree >= 10%\n");
+				if (sblock.fs_minfree < 10 && i == FS_OPTTIME)
+					fprintf(stdout, "should optimize %s",
+					    "for space with minfree < 10%\n");
 				continue;
 
 			default:
