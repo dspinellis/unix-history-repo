@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)ls.c	4.7 82/11/14";
+static	char *sccsid = "@(#)ls.c	4.8 82/12/03";
 #endif
 
 /*
@@ -279,7 +279,7 @@ gstat(fp, file, statarg, pnkb)
 	fp->fnum = 0;
 	fp->ftype = '-';
 	if (statarg || sflg || lflg || tflg) {
-		struct stat stb;
+		struct stat stb, stb1;
 
 		if ((*statf)(file, &stb) < 0) {
 			fprintf(stderr, "%s not found\n", file);
@@ -304,6 +304,14 @@ gstat(fp, file, statarg, pnkb)
 					buf[cc] = 0;
 					fp->flinkto = savestr(buf);
 				}
+				break;
+			}
+			if (stat(file, &stb1) < 0)
+				break;
+			if ((stb1.st_mode & S_IFMT) == S_IFDIR) {
+				stb = stb1;
+				fp->ftype = 'd';
+				fp->fsize = stb.st_size;
 			}
 			break;
 		}
