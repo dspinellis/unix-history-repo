@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)telldir.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)telldir.c	5.10 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -73,7 +73,6 @@ _seekdir(dirp, loc)
 	register struct ddloc *lp;
 	register struct ddloc **prevlp;
 	struct dirent *dp;
-	extern long lseek();
 
 	prevlp = &dd_hash[LOCHASH(loc)];
 	lp = *prevlp;
@@ -87,7 +86,7 @@ _seekdir(dirp, loc)
 		return;
 	if (lp->loc_loc == dirp->dd_loc && lp->loc_seek == dirp->dd_seek)
 		goto found;
-	(void) lseek(dirp->dd_fd, lp->loc_seek, 0);
+	(void) lseek(dirp->dd_fd, (off_t)lp->loc_seek, SEEK_SET);
 	dirp->dd_seek = lp->loc_seek;
 	dirp->dd_loc = 0;
 	while (dirp->dd_loc < lp->loc_loc) {
