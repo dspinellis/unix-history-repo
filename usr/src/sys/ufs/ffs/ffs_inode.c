@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_inode.c	7.66 (Berkeley) %G%
+ *	@(#)ffs_inode.c	7.67 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -212,7 +212,7 @@ ffs_truncate(ap)
 		oip->i_db[i] = 0;
 	oip->i_flag |= ICHG|IUPD;
 	vflags = ((length > 0) ? V_SAVE : 0) | V_SAVEMETA;
-	allerror = vinvalbuf(ovp, vflags, ap->a_cred, ap->a_p);
+	allerror = vinvalbuf(ovp, vflags, ap->a_cred, ap->a_p, 0, 0);
 	if (error = VOP_UPDATE(ovp, &tv, &tv, MNT_WAIT))
 		allerror = error;
 
@@ -363,7 +363,7 @@ ffs_indirtrunc(ip, lbn, dbn, lastbn, level, countp)
 	    fs->fs_dbsize);
 #else SECSIZE
 	vp = ITOV(ip);
-	bp = getblk(vp, lbn, (int)fs->fs_bsize);
+	bp = getblk(vp, lbn, (int)fs->fs_bsize, 0, 0);
 	if (bp->b_flags & (B_DONE | B_DELWRI)) {
 		/* Braces must be here in case trace evaluates to nothing. */
 		trace(TR_BREADHIT, pack(vp, fs->fs_bsize), lbn);
