@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ufs_vnops.c	7.28 (Berkeley) %G%
+ *	@(#)ufs_vnops.c	7.29 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -69,7 +69,8 @@ int	ufs_lookup(),
 	ufs_unlock(),
 	ufs_bmap(),
 	ufs_strategy(),
-	ufs_print();
+	ufs_print(),
+	ufs_islocked();
 
 struct vnodeops ufs_vnodeops = {
 	ufs_lookup,		/* lookup */
@@ -103,6 +104,7 @@ struct vnodeops ufs_vnodeops = {
 	ufs_bmap,		/* bmap */
 	ufs_strategy,		/* strategy */
 	ufs_print,		/* print */
+	ufs_islocked,		/* islocked */
 };
 
 int	spec_lookup(),
@@ -149,6 +151,7 @@ struct vnodeops spec_inodeops = {
 	spec_bmap,		/* bmap */
 	spec_strategy,		/* strategy */
 	ufs_print,		/* print */
+	ufs_islocked,		/* islocked */
 };
 
 enum vtype iftovt_tab[8] = {
@@ -1247,6 +1250,9 @@ ufs_abortop(ndp)
 	return;
 }
 
+/*
+ * Lock an inode.
+ */
 ufs_lock(vp)
 	struct vnode *vp;
 {
@@ -1256,6 +1262,9 @@ ufs_lock(vp)
 	return (0);
 }
 
+/*
+ * Unlock an inode.
+ */
 ufs_unlock(vp)
 	struct vnode *vp;
 {
@@ -1264,6 +1273,18 @@ ufs_unlock(vp)
 	if (!(ip->i_flag & ILOCKED))
 		panic("ufs_unlock NOT LOCKED");
 	IUNLOCK(ip);
+	return (0);
+}
+
+/*
+ * Check for a locked inode.
+ */
+ufs_islocked(vp)
+	struct vnode *vp;
+{
+
+	if (VTOI(vp)->i_flag & ILOCKED)
+		return (1);
 	return (0);
 }
 
