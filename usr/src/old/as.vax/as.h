@@ -1,18 +1,12 @@
 /*
  *	Copyright (c) 1982 Regents of the University of California
- *	@(#)as.h 4.16 %G%
+ *	@(#)as.h 4.17 %G%
  */
 #define	reg	register
 
 #include <sys/types.h>
-#ifdef FLEXNAMES
-#  include <a.out.h>
-#  include <stab.h>
-#else not FLEXNAMES
-#  define ONLIST
-#  include "a.out.h"
-#  include <stab.h>
-#endif FLEXNAMES
+#include <a.out.h>
+#include <stab.h>
 
 #define readonly
 #define	NINST		300
@@ -28,7 +22,7 @@
  *
  *	source file reads	ASINBUFSIZ		integral of BUFSIZ
  *	string assembly		NCPString		large for .stabs
- *	name assembly		NCPName			depends on FLEXNAMES
+ *	name assembly		NCPName	
  *	string save		STRPOOLDALLOP	
  *
  *
@@ -46,17 +40,10 @@
 #endif not NCPString
 
 #define	NCPName	NCPS
-# ifndef FLEXNAMES
-#	ifndef NCPS
-#		undef	NCPName
-#		define	NCPName	8
-#	endif not NCPS
-# else FLEXNAMES
-#	ifndef NCPS
-#		undef	NCPName
-#		define	NCPName	4096
-#	endif not NCPS
-# endif FLEXNAMES
+#ifndef NCPS
+#	undef	NCPName
+#	define	NCPName	4096
+#endif not NCPS
 /*
  *	Check sizes, and compiler error if sizes botch
  */
@@ -219,18 +206,12 @@ struct symtab{
  *	one saves typing, and so that they conform 
  *	with the old naming conventions.
  */
-#ifdef	FLEXNAMES
 #define	s_name	s_nm.n_un.n_name
 #define	i_name	s_name
 #define	FETCHNAME(sp)	(((struct strdesc *)(sp)->s_name)->sd_string)
 #define	STRLEN(sp)	(((struct strdesc *)(sp)->s_name)->sd_strlen)
 #define	STROFF(sp)	(((struct strdesc *)(sp)->s_name)->sd_stroff)
 #define	s_nmx	s_nm.n_un.n_strx	/* string table index */
-#else 	not FLEXNAMES
-#define	s_name	s_nm.n_name
-#define	i_name	s_name
-#define	FETCHNAME(sp)	((sp)->s_name)
-#endif
 #define	s_type	s_nm.n_type		/* type of the symbol */
 #define	s_other	s_nm.n_other		/* other information for sdb */
 #define	s_desc	s_nm.n_desc		/* type descriptor */
@@ -300,11 +281,7 @@ struct Opcode{
 #define	ITABFETCH(o)	itab[o.Op_eopcode][o.Op_popcode]
 
 struct	Instab{
-#ifdef FLEXNAMES
 	char	*I_name;
-#else not FLEXNAMES
-	char	I_name[NCPName];
-#endif
 	u_char	I_popcode;		/* basic op code */
 	char	I_nargs;
 	char	I_args[6];
