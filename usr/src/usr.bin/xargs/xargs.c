@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)xargs.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)xargs.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -28,46 +28,43 @@ static char sccsid[] = "@(#)xargs.c	5.7 (Berkeley) %G%";
 #include <limits.h>
 #include "pathnames.h"
 
-#define	DEF_ARGC	255
-
-int tflag;
-int fflag;
+int fflag, tflag;
 
 main(argc, argv)
 	int argc;
 	char **argv;
 {
-	extern int errno, optind;
+	extern int optind;
 	extern char *optarg;
 	register int ch;
 	register char *p, *bp, *endbp, **bxp, **endxp, **xp;
 	int cnt, indouble, insingle, nargs, nline;
-	char *mark, *prog, **xargs;
+	char *start, **xargs;
 
-	nargs = DEF_ARGC;
-	nline = _POSIX2_LINE_MAX;
+	nargs = 1024;				/* random value */
+	nline = ARG_MAX - 2048;			/* max POSIX.2 value */
 
-	while ((ch = getopt(argc, argv, "n:s:tf")) != EOF)
+	while ((ch = getopt(argc, argv, "fn:s:t")) != EOF)
 		switch(ch) {
+		case 'f':
+			fflag = 1;
+			break;
 		case 'n':
 			if ((nargs = atoi(optarg)) <= 0) {
 				(void)fprintf(stderr,
-				    "xargs: bad argument count.\n");
+				    "xargs: illegal argument count.\n");
 				exit(1);
 			}
 			break;
 		case 's':
 			if ((nline = atoi(optarg)) <= 0) {
 				(void)fprintf(stderr,
-				    "xargs: bad command length.\n");
+				    "xargs: illegal command length.\n");
 				exit(1);
 			}
 			break;
 		case 't':
 			tflag = 1;
-			break;
-		case 'f':
-			fflag = 1;
 			break;
 		case '?':
 		default:
@@ -76,41 +73,47 @@ main(argc, argv)
 	argc -= optind;
 	argv += optind;
 
-	/* room for the command, leftover arguments and trailing NULL */
-	if (!(xargs =
-	    (char **)malloc((u_int)(nargs + argc + 2) * sizeof(char **))))
-		enomem();
+	/*
+	 * Allocate for the utility and arguments passed to xarg, the pointers
+	 * to the arguments read from stdin and the trailing NULL.  Allocate
+	 * for the arguments read from stdin.
+	 */
+	if (!(xargs = malloc((u_int)(nargs + argc + 2) * sizeof(char **))) ||
+	    !(bp = malloc((u_int)nline + 1))) {
+		(void)fprintf(stderr, "xargs: %s.\n", strerror(errno));
+		exit(1);
+	}
 
-	if (!(bp = malloc((u_int)nline + 1)))
-		enomem();
-
+	/*
+	 * Use the user's name for the utility as argv[0], just like the
+	 * shell.  Echo is the default.  Set up pointers for the user's
+	 * arguments.
+	 */
 	xp = xargs + 1;
 	if (!*argv)
-		prog = _PATH_ECHO;
+		*xp++ = _PATH_ECHO;
 	else {
-		prog = *argv;
+		*xp++ = *argv;
 		while (*++argv)
 			*xp++ = *argv;
 	}
 
-	if (xargs[0] = rindex(prog, '/'))
-		++xargs[0];
-	else
-		xargs[0] = prog;
-
-	/* set up the pointers into the buffer and the arguments */
+	/* Set up the pointers into the buffer and the arguments */
 	*(endxp = (bxp = xp) + nargs) = NULL;
-	endbp = (mark = p = bp) + nline;
+	endbp = (start = p = bp) + nline;
 
 	insingle = indouble = 0;
 	for (;;)
 		switch(ch = getchar()) {
 		case EOF:
-			if (p == bp)		/* nothing to display */
+			/* Nothing to display. */
+			if (p == bp)
 				exit(0);
-			if (mark == p) {	/* nothing since last arg end */
+
+			/* Nothing since last arg end. */
+			if (start == p) {
 				*xp = NULL;
-				run(prog, xargs);
+				run(xargs[0], xargs);
 				exit(0);
 			}
 			goto addarg;
@@ -120,24 +123,24 @@ main(argc, argv)
 				goto addch;
 			goto addarg;
 		case '\n':
-			if (mark == p)			/* empty line */
+			if (start == p)			/* Empty line. */
 				continue;
-addarg:			*xp++ = mark;
+addarg:			if (insingle || indouble) {
+				(void)fprintf(stderr,
+				   "xargs: unterminated quote\n");
+				exit(1);
+			}
+			*xp++ = start;
 			*p++ = '\0';
-			if (xp == endxp || p >= endbp || ch == EOF) {
-				if (insingle || indouble) {
-					(void)fprintf(stderr,
-					   "xargs: unterminated quote.\n");
-					exit(1);
-				}
+			if (xp == endxp || p == endbp || ch == EOF) {
 				*xp = NULL;
-				run(prog, xargs);
+				run(xargs[0], xargs);
 				if (ch == EOF)
 					exit(0);
 				p = bp;
 				xp = bxp;
 			}
-			mark = p;
+			start = p;
 			break;
 		case '\'':
 			if (indouble)
@@ -150,11 +153,9 @@ addarg:			*xp++ = mark;
 			indouble = !indouble;
 			break;
 		case '\\':
-			if ((ch = getchar()) == EOF)
-				ch = '\\';
-			if (ch == '\n') {
+			if ((ch = getchar()) == EOF) {
 				(void)fprintf(stderr,
-				    "xargs: newline may not be escaped.\n");
+				    "xargs: backslash at EOF\n");
 				exit(1);
 			}
 			/* FALLTHROUGH */
@@ -163,16 +164,16 @@ addch:			if (p != endbp) {
 				*p++ = ch;
 				continue;
 			}
-			if (xp == bxp) {
+			if (bxp == xp) {
 				(void)fprintf(stderr,
 				    "xargs: argument too large.\n");
 				exit(1);
 			}
 			*xp = NULL;
-			run(prog, xargs);
-			cnt = endbp - mark;
-			bcopy(mark, bp, cnt);
-			p = (mark = bp) + cnt;
+			run(xargs[0], xargs);
+			cnt = endbp - start;
+			bcopy(start, bp, cnt);
+			p = (start = bp) + cnt;
 			*p++ = ch;
 			xp = bxp;
 			break;
@@ -183,7 +184,7 @@ addch:			if (p != endbp) {
 run(prog, argv)
 	char *prog, **argv;
 {
-	union wait pstat;
+	int noinvoke, status;
 	pid_t pid;
 	char **p;
 
@@ -194,36 +195,40 @@ run(prog, argv)
 		(void)fprintf(stderr, "\n");
 		(void)fflush(stderr);
 	}
+	noinvoke = 0;
 	switch(pid = vfork()) {
 	case -1:
 		(void)fprintf(stderr,
-		   "xargs: vfork: %s.\n", strerror(errno));
+		    "xargs: vfork: %s.\n", strerror(errno));
 		exit(1);
 	case 0:
 		execvp(prog, argv);
 		(void)fprintf(stderr,
-		   "xargs: %s: %s.\n", prog, strerror(errno));
+		    "xargs: %s: %s.\n", prog, strerror(errno));
+		noinvoke = 1;
 		_exit(1);
 	}
-	pid = waitpid(pid, (int *)&pstat, 0);
+	pid = waitpid(pid, &status, 0);
 	if (pid == -1) {
 		(void)fprintf(stderr,
-		   "xargs: waitpid: %s.\n", strerror(errno));
+		    "xargs: waitpid: %s.\n", strerror(errno));
 		exit(1);
 	}
-	if (!fflag && pstat.w_status)
-		exit(1);
-}
-
-enomem()
-{
-	(void)fprintf(stderr, "xargs: %s.\n", strerror(ENOMEM));
-	exit(1);
+	/*
+	 * If we couldn't invoke the utility or the utility didn't exit
+	 * properly, quit with 127.
+	 * Otherwise, if not specified otherwise, and the utility exits
+	 * non-zero, exit with that value.
+	 */
+	if (noinvoke || !WIFEXITED(status) || WIFSIGNALED(status))
+		exit(127);
+	if (!fflag && WEXITSTATUS(status))
+		exit(WEXITSTATUS(status));
 }
 
 usage()
 {
 	(void)fprintf(stderr,
-	    "xargs: [-t] [-f] [-n number] [-s size] [utility [argument ...]]\n");
+	    "xargs: [-ft] [-n number] [-s size] [utility [argument ...]]\n");
 	exit(1);
 }
