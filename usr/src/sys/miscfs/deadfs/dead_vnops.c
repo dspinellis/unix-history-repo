@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)dead_vnops.c	7.8 (Berkeley) %G%
+ *	@(#)dead_vnops.c	7.9 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -154,9 +154,9 @@ dead_ioctl(vp, com, data, fflag, cred)
 }
 
 /* ARGSUSED */
-dead_select(vp, which, cred)
+dead_select(vp, which, fflags, cred)
 	struct vnode *vp;
-	int which;
+	int which, fflags;
 	struct ucred *cred;
 {
 
