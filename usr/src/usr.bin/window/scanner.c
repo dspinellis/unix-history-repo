@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)scanner.c	3.3 83/12/12";
+static	char *sccsid = "@(#)scanner.c	3.4 84/04/11";
 #endif
 
 #include <stdio.h>
@@ -54,13 +54,17 @@ s_gettok()
 	register char *p = buf;
 	register c;
 	register state = 0;
-	char quote = 0;
+	char quote;
 
 loop:
 	c = s_getc();
 	switch (state) {
 	case 0:				/* blank skipping */
-		if (c != ' ' && c != '\t') {
+		switch (c) {
+		case ' ':
+		case '\t':
+			break;
+		default:
 			(void) s_ungetc(c);
 			state = 1;
 		}
@@ -73,7 +77,7 @@ loop:
 			state = -1;
 			break;
 		case '#':
-			state = 7;
+			state = 4;
 			break;
 		case EOF:
 			cx.x_token = T_EOF;
@@ -101,7 +105,16 @@ loop:
 			state = 3;
 			break;
 		case '\\':
-			state = 4;
+			switch (c = s_gettok1()) {
+			case -1:
+				break;
+			case -2:
+				state = 0;
+				break;
+			default:
+				*p++ = c;
+				state = 2;
+			}
 			break;
 		case '0':
 			cx.x_val.v_num = 0;
@@ -215,7 +228,15 @@ loop:
 			state = 3;
 			break;
 		case '\\':
-			state = 4;
+			switch (c = s_gettok1()) {
+			case -2:
+				(void) s_ungetc(' ');
+			case -1:
+				break;
+			default:
+				if (p < buf + sizeof buf - 1)
+					*p++ = c;
+			}
 			break;
 		default:
 			(void) s_ungetc(c);
@@ -263,69 +284,24 @@ loop:
 			state = 2;
 			break;
 		case '\\':
-			state = 4;
+			switch (c = s_gettok1()) {
+			case -1:
+			case -2:	/* newlines are invisible */
+				break;
+			default:
+				if (p < buf + sizeof buf - 1)
+					*p++ = c;
+			}
 			break;
 		default:
-			if (c == quote) {
-				quote = 0;
+			if (c == quote)
 				state = 2;
-			} else if (p < buf + sizeof buf - 1)
+			else if (p < buf + sizeof buf - 1)
 				*p++ = c;
 			break;
 		}
 		break;
-	case 4:				/* got \ */
-		switch (c) {
-		case EOF:
-			state = 2;
-			break;
-		case '0': case '1': case '2': case '3': case '4':
-		case '5': case '6': case '7':
-			if (p < buf + sizeof buf - 1)
-				*p = c - '0';
-			state = 5;
-			break;
-		case 'b':
-			c = '\b';
-			goto foo;
-		case 'f':
-			c = '\f';
-			goto foo;
-		case 'n':
-			c = '\n';
-			goto foo;
-		case 'r':
-			c = '\r';
-			goto foo;
-		case 't':
-			c = '\t';
-		foo:
-		default:
-			if (p < buf + sizeof buf - 1)
-				*p++ = c;
-		case '\n':		/* swallow the \n */
-			state = quote == 0 ? 2 : 3;
-		}
-		break;
-	case 5:				/* got \[0-7] */
-		if (c >= '0' && c <= '7') {
-			*p = *p * 8 + c - '0';
-			state = 6;
-		} else {
-			(void) s_ungetc(c);
-			p++;
-			state = quote == 0 ? 2 : 3;
-		}
-		break;
-	case 6:				/* got \[0-7][0-7] */
-		if (c >= '0' && c <= '7')
-			*p = *p * 8 + c - '0';
-		else
-			(void) s_ungetc(c);
-		p++;
-		state = quote == 0 ? 2 : 3;
-		break;
-	case 7:				/* got # */
+	case 4:				/* got # */
 		if (c == '\n' || c == EOF) {
 			(void) s_ungetc(c);
 			state = 1;
@@ -481,4 +457,46 @@ loop:
 	if (state >= 0)
 		goto loop;
 	return cx.x_token;
+}
+
+s_gettok1()
+{
+	register c;
+	register n;
+
+	c = s_getc();			/* got \ */
+	switch (c) {
+	case EOF:
+		return -1;
+	case '\n':
+		return -2;
+	case 'b':
+		return '\b';
+	case 'f':
+		return '\f';
+	case 'n':
+		return '\n';
+	case 'r':
+		return '\r';
+	case 't':
+		return '\t';
+	default:
+		return c;
+	case '0': case '1': case '2': case '3': case '4':
+	case '5': case '6': case '7':
+		break;
+	}
+	n = c - '0';
+	c = s_getc();			/* got \[0-7] */
+	if (c < '0' || c > '7') {
+		(void) s_ungetc(c);
+		return n;
+	}
+	n = n * 8 + c - '0';
+	c = s_getc();			/* got \[0-7][0-7] */
+	if (c < '0' || c > '7') {
+		(void) s_ungetc(c);
+		return n;
+	}
+	return n * 8 + c - '0';
 }
