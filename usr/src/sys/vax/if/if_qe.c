@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)if_qe.c	7.11 (Berkeley) %G%
+ *	@(#)if_qe.c	7.12 (Berkeley) %G%
  */
 
 /* from  @(#)if_qe.c	1.15	(ULTRIX)	4/16/86 */
@@ -151,6 +151,13 @@
 #include "../netns/ns_if.h"
 #endif
 
+#ifdef ISO
+#include "../netiso/iso.h"
+#include "../netiso/iso_var.h"
+#include "../netiso/iso_snpac.h"
+extern struct snpa_cache all_es, all_is;
+#endif
+
 #include "../vax/pte.h"
 #include "../vax/cpu.h"
 #include "../vax/mtpr.h"
@@ -215,7 +222,7 @@ struct	uba_device *qeinfo[NQE];
 extern struct timeval time;
 
 int	qeprobe(), qeattach(), qeintr(), qetimeout();
-int	qeinit(), qeoutput(), qeioctl(), qereset();
+int	qeinit(), qeioctl(), qereset(), qestart();
 
 u_short qestd[] = { 0 };
 struct	uba_driver qedriver =
@@ -350,7 +357,8 @@ qeattach(ui)
 	sc->qe_intvec = addr->qe_vector;
 
 	ifp->if_init = qeinit;
-	ifp->if_output = qeoutput;
+	ifp->if_output = ether_output;
+	ifp->if_start = qestart;
 	ifp->if_ioctl = qeioctl;
 	ifp->if_reset = qereset;
 	ifp->if_watchdog = qetimeout;
@@ -465,7 +473,7 @@ qeinit(unit)
 	ifp->if_flags |= IFF_UP | IFF_RUNNING;
 	sc->qe_flags |= QEF_RUNNING;
 	qesetup( sc );
-	qestart( unit );
+	(void) qestart( ifp );
 	splx( s );
 }
 
@@ -473,9 +481,10 @@ qeinit(unit)
  * Start output on interface.
  *
  */
-qestart(unit)
-	int unit;
+qestart(ifp)
+	struct ifnet *ifp;
 {
+	int unit =  ifp->if_unit;
 	struct uba_device *ui = qeinfo[unit];
 	register struct qe_softc *sc = &qe_softc[unit];
 	register struct qedevice *addr;
@@ -511,7 +520,7 @@ qestart(unit)
 			IF_DEQUEUE(&sc->qe_if.if_snd, m);
 			if( m == 0 ){
 				splx(s);
-				return;
+				return (0);
 			}
 			buf_addr = sc->qe_ifw[index].ifw_info;
 			len = if_ubaput(&sc->qe_uba, &sc->qe_ifw[index], m);
@@ -546,6 +555,7 @@ qestart(unit)
 		}
 	}
 	splx( s );
+	return (0);
 }
 
 /*
@@ -558,10 +568,11 @@ qeintr(unit)
 	struct qedevice *addr = (struct qedevice *)qeinfo[unit]->ui_addr;
 	int buf_addr, csr;
 
-/*
+#ifdef notdef
 	splx(sc->ipl);
-*/
+#else
 	(void) splimp();
+#endif
 	csr = addr->qe_csr;
 	addr->qe_csr = QE_RCV_ENABLE | QE_INT_ENABLE | QE_XMIT_INT | QE_RCV_INT | QE_ILOOP;
 	if( csr & QE_RCV_INT )
@@ -635,7 +646,7 @@ qetint(unit)
 		}
 		sc->otindex = ++sc->otindex % NXMT;
 	}
-	qestart( unit );
+	(void) qestart( &sc->qe_if );
 }
 
 /*
@@ -697,132 +708,6 @@ qerint(unit)
 		rp->qe_valid = 1;
 	}
 }
-/*
- * Ethernet output routine.
- * Encapsulate a packet of type family for the local net.
- * Use trailer local net encapsulation if enough data in first
- * packet leaves a multiple of 512 bytes of data in remainder.
- */
-qeoutput(ifp, m0, dst)
-	struct ifnet *ifp;
-	struct mbuf *m0;
-	struct sockaddr *dst;
-{
-	int type, s, error;
-	u_char edst[6];
-	struct in_addr idst;
-	register struct qe_softc *is = &qe_softc[ifp->if_unit];
-	register struct mbuf *m = m0;
-	register struct ether_header *eh;
-	register int off;
-	int usetrailers;
-
-	if ((ifp->if_flags & (IFF_UP|IFF_RUNNING)) != (IFF_UP|IFF_RUNNING)) {
-		error = ENETDOWN;
-		goto bad;
-	}
-
-	switch (dst->sa_family) {
-
-#ifdef INET
-	case AF_INET:
-		idst = ((struct sockaddr_in *)dst)->sin_addr;
-		if (!arpresolve(&is->qe_ac, m, &idst, edst, &usetrailers))
-			return (0);	/* if not yet resolved */
-		off = ntohs((u_short)mtod(m, struct ip *)->ip_len) - m->m_len;
-		if (usetrailers && off > 0 && (off & 0x1ff) == 0 &&
-		    m->m_off >= MMINOFF + 2 * sizeof (u_short)) {
-			type = ETHERTYPE_TRAIL + (off>>9);
-			m->m_off -= 2 * sizeof (u_short);
-			m->m_len += 2 * sizeof (u_short);
-			*mtod(m, u_short *) = htons((u_short)ETHERTYPE_IP);
-			*(mtod(m, u_short *) + 1) = htons((u_short)m->m_len);
-			goto gottrailertype;
-		}
-		type = ETHERTYPE_IP;
-		off = 0;
-		goto gottype;
-#endif
-#ifdef NS
-	case AF_NS:
-		type = ETHERTYPE_NS;
- 		bcopy((caddr_t)&(((struct sockaddr_ns *)dst)->sns_addr.x_host),
-		    (caddr_t)edst, sizeof (edst));
-		off = 0;
-		goto gottype;
-#endif
-
-
-	case AF_UNSPEC:
-		eh = (struct ether_header *)dst->sa_data;
- 		bcopy((caddr_t)eh->ether_dhost, (caddr_t)edst, sizeof (edst));
-		type = eh->ether_type;
-		goto gottype;
-
-	default:
-		printf("qe%d: can't handle af%d\n", ifp->if_unit,
-			dst->sa_family);
-		error = EAFNOSUPPORT;
-		goto bad;
-	}
-
-gottrailertype:
-	/*
-	 * Packet to be sent as trailer: move first packet
-	 * (control information) to end of chain.
-	 */
-	while (m->m_next)
-		m = m->m_next;
-	m->m_next = m0;
-	m = m0->m_next;
-	m0->m_next = 0;
-	m0 = m;
-
-gottype:
-	/*
-	 * Add local net header.  If no space in first mbuf,
-	 * allocate another.
-	 */
-	if (m->m_off > MMAXOFF ||
-	    MMINOFF + sizeof (struct ether_header) > m->m_off) {
-		m = m_get(M_DONTWAIT, MT_HEADER);
-		if (m == 0) {
-			error = ENOBUFS;
-			goto bad;
-		}
-		m->m_next = m0;
-		m->m_off = MMINOFF;
-		m->m_len = sizeof (struct ether_header);
-	} else {
-		m->m_off -= sizeof (struct ether_header);
-		m->m_len += sizeof (struct ether_header);
-	}
-	eh = mtod(m, struct ether_header *);
-	eh->ether_type = htons((u_short)type);
- 	bcopy((caddr_t)edst, (caddr_t)eh->ether_dhost, sizeof (edst));
- 	bcopy((caddr_t)is->qe_addr, (caddr_t)eh->ether_shost, sizeof (is->qe_addr));
-
-	/*
-	 * Queue message on interface, and start output if interface
-	 * not yet active.
-	 */
-	s = splimp();
-	if (IF_QFULL(&ifp->if_snd)) {
-		IF_DROP(&ifp->if_snd);
-		splx(s);
-		m_freem(m);
-		return (ENOBUFS);
-	}
-	IF_ENQUEUE(&ifp->if_snd, m);
-	qestart(ifp->if_unit);
-	splx(s);
-	return (0);
-
-bad:
-	m_freem(m0);
-	return (error);
-}
-
 
 /*
  * Process an ioctl request.
@@ -841,7 +726,7 @@ qeioctl(ifp, cmd, data)
 	case SIOCSIFADDR:
 		ifp->if_flags |= IFF_UP;
 		qeinit(ifp->if_unit);
-		switch(ifa->ifa_addr.sa_family) {
+		switch(ifa->ifa_addr->sa_family) {
 #ifdef INET
 		case AF_INET:
 			((struct arpcom *)ifp)->ac_ipaddr =
@@ -941,10 +826,15 @@ struct qe_softc *sc;
 	 */
 	bcopy((caddr_t)sc->setup_pkt[0], (caddr_t)sc->setup_pkt[8], 64);
 	/*
-	 * Fill in the broadcast address.
+	 * Fill in the broadcast (and ISO multicast) address(es).
 	 */
-	for ( i = 0; i < 6 ; i++ )
+	for ( i = 0; i < 6 ; i++ ) {
 		sc->setup_pkt[i][2] = 0xff;
+#ifdef ISO
+		sc->setup_pkt[i][3] = all_es.sc_snpa[i];
+		sc->setup_pkt[i][4] = all_is.sc_snpa[i];
+#endif
+	}
 	sc->setupqueued++;
 }
 
@@ -994,49 +884,8 @@ qeread(sc, ifrw, len)
 	 */
 	m = if_ubaget(&sc->qe_uba, ifrw, len, off, &sc->qe_if);
 
-	if (m == 0)
-		return;
-
-	if (off) {
-		struct ifnet *ifp;
-
-		ifp = *(mtod(m, struct ifnet **));
-		m->m_off += 2 * sizeof (u_short);
-		m->m_len -= 2 * sizeof (u_short);
-		*(mtod(m, struct ifnet **)) = ifp;
-	}
-	switch (eh->ether_type) {
-
-#ifdef INET
-	case ETHERTYPE_IP:
-		schednetisr(NETISR_IP);
-		inq = &ipintrq;
-		break;
-
-	case ETHERTYPE_ARP:
-		arpinput(&sc->qe_ac, m);
-		return;
-#endif
-#ifdef NS
-	case ETHERTYPE_NS:
-		schednetisr(NETISR_NS);
-		inq = &nsintrq;
-		break;
-
-#endif
-
-	default:
-		m_freem(m);
-		return;
-	}
-
-	s = splimp();
-	if (IF_QFULL(inq)) {
-		IF_DROP(inq);
-		m_freem(m);
-	} else
-		IF_ENQUEUE(inq, m);
-	splx(s);
+	if (m)
+		ether_input(&sc->qe_if, eh, m);
 }
 
 /*
@@ -1078,6 +927,6 @@ qerestart(sc)
 	addr->qe_rcvlist_lo = (short)sc->rringaddr;
 	addr->qe_rcvlist_hi = (short)((int)sc->rringaddr >> 16);
 	sc->qe_flags |= QEF_RUNNING;
-	qestart(ifp->if_unit);
+	(void) qestart(ifp);
 }
 #endif
