@@ -1,6 +1,6 @@
 #!/bin/sh -
 #
-#	@(#)weekly	5.13 (Berkeley) %G%
+#	@(#)weekly	5.14 (Berkeley) %G%
 #
 
 PATH=/bin:/sbin:/usr/sbin:/usr/bin:/usr/libexec
@@ -17,7 +17,7 @@ echo "Subject: $host weekly run output"
 # before looking there for checked-out files
 
 if [ -d /usr/src -a \
-  X"`find -f /usr/src ! -fstype local -prune -or -type d -print prune`" != X ];
+  X"`find -f /usr/src ! -fstype local -prune -or -type d -print -prune`" != X ];
 then
 	echo "looking for checked out files:"
 	TDIR=/tmp/_checkout$$
