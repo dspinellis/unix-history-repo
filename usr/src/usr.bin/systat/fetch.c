@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)fetch.c	1.1 (Lucasfilm) %G%";
+static char sccsid[] = "@(#)fetch.c	1.2 (Lucasfilm) %G%";
 #endif
 
 #include "systat.h"
@@ -58,10 +58,16 @@ getcmd(pid, mproc)
 {
         static char cmd[30];
 
-        if (mproc == NULL || mproc->p_stat == SZOMB ||
-            mproc->p_flag&(SSYS|SWEXIT))
+        if (mproc == NULL || mproc->p_stat == SZOMB)
+		return ("");
+	if (pid == 1)
+		return ("swapper");
+	if (pid == 2)
+		return ("pagedaemon");
+        if (mproc->p_flag&(SSYS|SWEXIT))
                 return ("");
-        getu(mproc);
+        if (getu(mproc) == 0)
+		return ("???");
         (void) strncpy(cmd, u.u_comm, sizeof (cmd));
         return (cmd);
 }
@@ -80,8 +86,7 @@ getu(mproc)
                         return (0);
                 (void) lseek(swap, (long)dtob(mproc->p_swaddr), L_SET);
                 if (read(swap, (char *)&user.user, size) != size) {
-                        fprintf(stderr, "ps: cant read u for pid %d from %s\n",
-                            mproc->p_pid, swapf);
+			error("cant read u for pid %d", mproc->p_pid);
                         return (0);
                 }
                 pcbpf = 0;
@@ -91,16 +96,14 @@ getu(mproc)
         pteaddr = &Usrptma[btokmx(mproc->p_p0br) + mproc->p_szpt - 1];
         klseek(kmem, (long)pteaddr, L_SET);
         if (read(kmem, (char *)&apte, sizeof (apte)) != sizeof (apte)) {
-                printf("ps: cant read indir pte to get u for pid %d from %s\n",
-                    mproc->p_pid, swapf);
+                error("cant read indir pte to get u for pid %d", mproc->p_pid);
                 return (0);
         }
         klseek(mem,
             (long)ctob(apte.pg_pfnum+1) - (UPAGES+CLSIZE) * sizeof (struct pte),
                 L_SET);
         if (read(mem, (char *)arguutl, sizeof (arguutl)) != sizeof (arguutl)) {
-                printf("ps: cant read page table for u of pid %d from %s\n",
-                    mproc->p_pid, kmemf);
+                error("cant read page table for u of pid %d", mproc->p_pid);
                 return (0);
         }
         if (arguutl[0].pg_fod == 0 && arguutl[0].pg_pfnum)
@@ -113,9 +116,9 @@ getu(mproc)
                 i = ncl * CLSIZE;
                 klseek(mem, (long)ctob(arguutl[CLSIZE+i].pg_pfnum), L_SET);
                 if (read(mem, user.upages[i], CLSIZE*NBPG) != CLSIZE*NBPG) {
-                        printf("ps: cant read page %d of u of pid %d from %s\n",
-                            arguutl[CLSIZE+i].pg_pfnum, mproc->p_pid, memf);
-                        return(0);
+                        error("cant read page %d of u of pid %d\n",
+                            arguutl[CLSIZE+i].pg_pfnum, mproc->p_pid);
+                        return (0);
                 }
         }
         return (1);
