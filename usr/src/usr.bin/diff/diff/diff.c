@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)diff.c 4.4 %G%";
+static	char sccsid[] = "@(#)diff.c 4.5 %G%";
 
 #include "diff.h"
 /*
@@ -56,6 +56,9 @@ main(argc, argv)
 			continue;
 		case 'f':
 			opt = D_REVERSE;
+			continue;
+		case 'n':
+			opt = D_NREVERSE;
 			continue;
 		case 'b':
 			bflag = 1;
@@ -118,7 +121,7 @@ main(argc, argv)
 	file2 = argv[1];
 	if (hflag && opt) {
 		fprintf(stderr,
-		    "diff: -h doesn't support -e, -f, -c, or -I\n");
+		    "diff: -h doesn't support -e, -f, -n, -c, or -I\n");
 		done();
 	}
 	if (!strcmp(file1, "-"))
