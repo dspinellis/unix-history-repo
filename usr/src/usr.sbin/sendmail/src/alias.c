@@ -19,24 +19,17 @@
 # endif
 
 #ifndef lint
-#ifdef DBM
-static char sccsid[] = "@(#)alias.c	5.26 (Berkeley) %G% (with DBM)";
-#else
 #ifdef NEWDB
-static char sccsid[] = "@(#)alias.c	5.26 (Berkeley) %G% (with NEWDB)";
+static char sccsid[] = "@(#)alias.c	5.27 (Berkeley) %G% (with NEWDB)";
 #else
-static char sccsid[] = "@(#)alias.c	5.26 (Berkeley) %G% (without DBM)";
+#ifdef DBM
+static char sccsid[] = "@(#)alias.c	5.27 (Berkeley) %G% (with DBM)";
+#else
+static char sccsid[] = "@(#)alias.c	5.27 (Berkeley) %G% (without DBM)";
 #endif
 #endif
 #endif /* not lint */
-
-# ifdef DBM
-# ifdef NEWDB
-  ERROR ERROR ERROR: must choose one of DBM or NEWDB compilation flags
-# endif
-# endif
-
-/*
+/*
 **  ALIAS -- Compute aliases.
 **
 **	Scans the alias file for an alias for the given address.
@@ -65,11 +58,13 @@ static char sccsid[] = "@(#)alias.c	5.26 (Berkeley) %G% (without DBM)";
 
 
 #ifdef DBM
+#ifndef NEWDB
 typedef struct
 {
 	char	*data;
 	int	size;
 } DBT;
+#endif
 extern DBT fetch();
 #endif /* DBM */
 
@@ -147,21 +142,31 @@ aliaslookup(name)
 	lhs.data = name;
 	lhs.size = strlen(name) + 1;
 # ifdef NEWDB
-	s = AliasDBptr->get(AliasDBptr, &lhs, &rhs, 0);
-	if (s != 0)
-		return (NULL);
+	if (AliasDBptr != NULL)
+	{
+		s = AliasDBptr->get(AliasDBptr, &lhs, &rhs, 0);
+		if (s == 0)
+			return (rhs.data);
+	}
+# ifdef DBM
+	else
+	{
+		rhs = fetch(lhs);
+		return (rhs.data);
+	}
+# endif
 # else
 	rhs = fetch(lhs);
-# endif
 	return (rhs.data);
-# else DBM
+# endif
+# else /* neither NEWDB nor DBM */
 	register STAB *s;
 
 	s = stab(name, ST_ALIAS, ST_FIND);
-	if (s == NULL)
-		return (NULL);
-	return (s->s_alias);
-# endif DBM
+	if (s != NULL)
+		return (s->s_alias);
+# endif
+	return (NULL);
 }
 /*
 **  INITALIASES -- initialize for aliasing
@@ -225,9 +230,13 @@ initaliases(aliasfile, init)
 		AliasDBptr = dbopen(buf, O_RDONLY, DBMMODE, DB_HASH, NULL);
 		if (AliasDBptr == NULL)
 		{
+# ifdef DBM
+			dbminit(aliasfile);
+# else
 			syserr("initaliases: cannot open %s", buf);
 			NoAlias = TRUE;
 			return;
+# endif
 		}
 # else
 		dbminit(aliasfile);
@@ -249,7 +258,8 @@ initaliases(aliasfile, init)
 			*/
 
 # ifdef NEWDB
-			AliasDBptr->close(AliasDBptr);
+			if (AliasDBptr != NULL)
+				AliasDBptr->close(AliasDBptr);
 # endif
 
 			sleep(30);
@@ -260,9 +270,13 @@ initaliases(aliasfile, init)
 			    dbopen(buf, O_RDONLY, DBMMODE, DB_HASH, NULL);
 			if (AliasDBptr == NULL)
 			{
+# ifdef NDBM
+				dbminit(aliasfile);
+# else
 				syserr("initaliases: cannot open %s", buf);
 				NoAlias = TRUE;
 				return;
+# endif
 			}
 # else
 # ifdef NDBM
@@ -405,6 +419,18 @@ readaliases(aliasfile, init)
 	if (init)
 	{
 		oldsigint = signal(SIGINT, SIG_IGN);
+# ifdef NEWDB
+		(void) strcpy(line, aliasfile);
+		(void) strcat(line, ".db");
+		dbp = dbopen(line,
+		    O_RDWR|O_CREAT|O_TRUNC, DBMMODE, DB_HASH, NULL);
+		if (dbp == NULL)
+		{
+			syserr("readaliases: cannot create %s", line);
+			(void) signal(SIGINT, oldsigint);
+			return;
+		}
+# else
 # ifdef DBM
 		(void) strcpy(line, aliasfile);
 		(void) strcat(line, ".dir");
@@ -424,17 +450,6 @@ readaliases(aliasfile, init)
 		}
 		dbminit(aliasfile);
 # endif
-# ifdef NEWDB
-		(void) strcpy(line, aliasfile);
-		(void) strcat(line, ".db");
-		dbp = dbopen(line,
-		    O_RDWR|O_CREAT|O_TRUNC, DBMMODE, DB_HASH, NULL);
-		if (dbp == NULL)
-		{
-			syserr("readaliases: cannot create %s", line);
-			(void) signal(SIGINT, oldsigint);
-			return;
-		}
 # endif
 	}
 
@@ -602,11 +617,11 @@ readaliases(aliasfile, init)
 			key.data = al.q_user;
 			content.size = rhssize;
 			content.data = rhs;
-# ifdef DBM
-			store(key, content);
-# else
+# ifdef NEWDB
 			if (dbp->put(dbp, &key, &content, 0) != 0)
 				syserr("readaliases: db put (%s)", al.q_user);
+# else
+			store(key, content);
 # endif
 		}
 		else
