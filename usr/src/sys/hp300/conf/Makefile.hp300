@@ -1,4 +1,4 @@
-#	@(#)Makefile.hp300	7.4 (Berkeley) %G%
+#	@(#)Makefile.hp300	7.5 (Berkeley) %G%
 #
 # Makefile for 4.4 BSD
 #
@@ -19,7 +19,6 @@
 # -DQUOTA	compile in file system quotas
 #
 AS=	as
-OAS=	oas
 CC=	cc -Dconst=__const__ -Dvolatile=__volatile__ \
 	    -Dsigned=__signed__ -Dinline=__inline__ -Uunix -fpcc-struct-return
 LD=	/bin/ld
@@ -59,7 +58,7 @@ locore.o: ${HP300}/include/cpu.h
 	cat assym.s ${HP300}/hp300/vectors.s ${HP300}/hp300/locore.s > locore.c
 	${CC} -E -DLOCORE ${COPTS} locore.c > locore.i
 	@echo 'as -o locore.o locore.i'
-	@${OAS} -o locore.o locore.i
+	@${AS} -o locore.o locore.i
 	@rm locore.i
 
 # the following is necessary because autoconf.o depends on #if GENERIC
