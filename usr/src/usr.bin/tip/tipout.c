@@ -1,4 +1,4 @@
-/*	tipout.c	4.3	81/11/20	*/
+/*	tipout.c	4.4	81/11/29	*/
 #include "tip.h"
 /*
  * tip
@@ -32,7 +32,7 @@ intEMT()
 
 	signal(SIGEMT, SIG_IGN);
 	read(fildes[0], &c, 1);
-	while(c != '\n') {
+	while (c != '\n') {
 		*pline++ = c;
 		read(fildes[0], &c, 1);
 	}
@@ -82,12 +82,12 @@ tipout()
 	signal(SIGHUP, intTERM);	/* for dial-ups */
 	signal(SIGSYS, intSYS);		/* beautify toggle */
 
-	while(1) {
+	while (1) {
 		do {
 			intflag = 0;
 			read(FD,&ch,1);
 			ch &= 0177;
-		} while(intflag);
+		} while (intflag);
 		write(1, &ch, 1);
 		if (boolean(value(SCRIPT)) && fscript != NULL) {
 			if (boolean(value(BEAUTIFY)) && ch < 040 &&

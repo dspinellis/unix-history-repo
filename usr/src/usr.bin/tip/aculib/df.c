@@ -1,4 +1,4 @@
-/*	df.c	4.4	81/11/20	*/
+/*	df.c	4.5	81/11/29	*/
 /*
  * Dial the DF02-AC or DF03-AC
  */
@@ -14,7 +14,7 @@ static timeout();
 df02_dialer(num, acu)
 	char *num, *acu;
 {
-	return(df_dialer(num, acu, 0));
+	return (df_dialer(num, acu, 0));
 }
 #endif
 
@@ -22,7 +22,7 @@ df02_dialer(num, acu)
 df03_dialer(num, acu)
 	char *num, *acu;
 {
-	return(df_dialer(num, acu, 1));
+	return (df_dialer(num, acu, 1));
 }
 #endif
 
@@ -41,7 +41,7 @@ df_dialer(num, acu, df03)
 	if (setjmp(Sjbuf)) {
 		printf("connection timed out\r\n");
 		df_disconnect();
-		return(0);
+		return (0);
 	}
 	if (boolean(value(VERBOSE)))
 		printf("\ndialing...");
@@ -72,7 +72,7 @@ df_dialer(num, acu, df03)
 		ioctl(f, TIOCSETP, &buf);
 	}
 #endif
-	return(c == 'A');
+	return (c == 'A');
 }
 
 

@@ -1,4 +1,4 @@
-/*	remcap.c	4.5	81/07/13	*/
+/*	remcap.c	4.6	81/11/29	*/
 /* Copyright (c) 1979 Regents of the University of California */
 #ifndef BUFSIZ
 #define	BUFSIZ	1024

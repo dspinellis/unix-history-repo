@@ -1,4 +1,4 @@
-/*	hunt.c	4.4	81/11/20	*/
+/*	hunt.c	4.5	81/11/29	*/
 #include "tip.h"
 
 #define RD	04
@@ -20,7 +20,7 @@ hunt(name)
 
 	deadfl = 0;
 	signal(SIGALRM, dead);
-	while(cp = getremote(name)){
+	while (cp = getremote(name)) {
 		if (access(cp, RD))
 			continue;
 		uucplock = rindex(cp, '/')+1;
@@ -38,12 +38,12 @@ hunt(name)
 		if (!HW)
 			break;
 		alarm(10);
-		if((FD = open(cp, 2)) >= 0){
+		if ((FD = open(cp, 2)) >= 0){
 			alarm(0);
-			if(!deadfl) {
+			if (!deadfl) {
 				ioctl(FD, TIOCEXCL, 0);
 				signal(SIGALRM, SIG_DFL);
-				return((int)cp);
+				return ((int)cp);
 			}
 		}
 		alarm(0);
@@ -51,5 +51,5 @@ hunt(name)
 		delock(uucplock);
 	}
 	signal(SIGALRM, SIG_DFL);
-	return(deadfl ? -1 : (int)cp);
+	return (deadfl ? -1 : (int)cp);
 }
