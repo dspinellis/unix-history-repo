@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)w.c	5.38 (Berkeley) %G%";
+static char sccsid[] = "@(#)w.c	5.39 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -173,7 +173,8 @@ main(argc, argv)
 		 * the true console device dev_t.
 		 */
 		if (ep->tdev == 0) {
-			int mib[2], size;
+			int mib[2];
+			size_t size;
 
 			mib[0] = CTL_MACHDEP;
 			mib[1] = CPU_CONSDEV;
@@ -301,7 +302,8 @@ pr_header(nowp, nusers)
 	double avenrun[3];
 	time_t uptime;
 	int days, hrs, i, mins;
-	int mib[2], size;
+	int mib[2];
+	size_t size;
 	char buf[256], fmt[10];
 
 	/*
