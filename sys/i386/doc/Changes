@@ -1,6 +1,6 @@
 Hello, Emacs, this is an -*- Indented-Text -*- file!
 
-$Id: Changes,v 1.9 1994/02/03 02:45:41 davidg Exp $
+$Id: Changes,v 1.10 1994/02/03 02:50:37 davidg Exp $
 
 This file is intended to keep track of important kernel and user
 changes in FreeBSD between releases.  Entries are in reverse
@@ -20,7 +20,7 @@ Since 1.0.2:
 - Change to generic console code to eliminate console hangs with all 
   "pc" consoles.  (davidg)
 
-- Upgrade to new version of sycons which handles the 'hanging console'
+- Upgrade to new version of sycons which handles the `hanging console'
   problem and adds some new features and code cleanup.  (nate)
 
 - Various TCP bugs fixed - don't forward loopback packets; Nagel
@@ -30,9 +30,11 @@ Since 1.0.2:
   when it is disabled (the default).  (davidg)
 
 - Performance and stylistic improvements to the `sio' serial driver.
-  (ache/bde)
+  Probe code now works somewhat better for oddball devices.  The 16550
+  FIFO length is now configurable using `flags' in the config
+  declaration.  (ache/bde)
 
-- Performance improvements and partial implementation of POSIX VMIN
+- Performance improvements and complete implementation of POSIX VMIN
   and VTIME for the generic TTY code.  (ache/bde)
 
 - Crash dumps on SCSI disks now work and are standard.  (rgrimes/davidg)
@@ -97,7 +99,8 @@ Since 1.0.2:
   stray interrupts better, and supports multiple controllers.  In addition
   this driver supports DOS partitions much better and conforms to ATA specs
   much better.  NB: configuration lines for this driver are different
-  than those for pervious versions; see a GENERIC for details.  (nate/bde)
+  than those for pervious versions; see a GENERIC for details.
+  (nate/bde/guido)
 
 - Added support in the if_ed driver for the Toshiba ethernet cards.The
   support must be enabled with an "options TOSH_ETHER" in the config
@@ -129,9 +132,6 @@ Since 1.0.2:
 
 - Separate all IP-related variables that users might want to modify into
   netinet/in_var.c.  (wollman)
-
-- Update to latest ADO timezone code, and update some timezone files beyond
-  that.  (wollman, ache, Adam David)
 
 Between 1.0.2 and 1.0:
 
