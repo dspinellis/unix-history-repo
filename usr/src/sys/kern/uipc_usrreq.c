@@ -1,4 +1,4 @@
-/*	uipc_usrreq.c	6.12	85/05/27	*/
+/*	uipc_usrreq.c	6.13	85/06/02	*/
 
 #include "param.h"
 #include "dir.h"
@@ -447,6 +447,7 @@ unp_disconnect(unp)
 			unp2->unp_nextref = unp->unp_nextref;
 		}
 		unp->unp_nextref = 0;
+		unp->unp_socket->so_state &= ~SS_ISCONNECTED;
 		break;
 
 	case SOCK_STREAM:
@@ -581,7 +582,7 @@ restart:
 				continue;
 			so = (struct socket *)fp->f_data;
 			if (so->so_proto->pr_domain != &unixdomain ||
-			    (so->so_proto->pr_flags&PR_ADDR) == 0)
+			    (so->so_proto->pr_flags&PR_RIGHTS) == 0)
 				continue;
 			if (so->so_rcv.sb_flags & SB_LOCK) {
 				sbwait(&so->so_rcv);
