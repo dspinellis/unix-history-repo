@@ -1,31 +1,34 @@
-/*	if_slvar.h	7.1	89/06/29	*/
+/*	@(#)if_slvar.h	7.2 (Berkeley) %G% */
 
 /*
- * Definitions for SLIP "interface" data structure.
+ * Definitions for SLIP interface data structures
+ * 
+ * (this exists so programs like slstats can get at the definition
+ *  of sl_softc.)
  *
- * (This exists so that programs can interpret the kernel data structures.)
+ * $Header: if_slvar.h,v 1.3 89/05/31 02:25:18 van Exp $
  */
 struct sl_softc {
 	struct	ifnet sc_if;		/* network-visible interface */
-	short	sc_flags;		/* see below */
-	short	sc_ilen;		/* length of input-packet-so-far */
+	struct	ifqueue sc_fastq;	/* interactive output queue */
 	struct	tty *sc_ttyp;		/* pointer to tty structure */
-	char	*sc_mp;			/* pointer to next available buf char */
-	char	*sc_buf;		/* input buffer */
-	long	sc_lasttime;	/* last time a char arrived - seconds */
-	long	sc_starttime;	/* last time a char arrived - seconds */
-	long	sc_abortcount;	/* number of abort esacpe chars */
-#ifdef INET
-	struct	slcompress sc_comp;	/* tcp compression state */
-#endif
+	u_char	*sc_mp;			/* pointer to next available buf char */
+	u_char	*sc_ep;			/* pointer to last available buf char */
+	u_char	*sc_buf;		/* input buffer */
+	u_int	sc_flags;		/* see below */
+	u_int	sc_escape;	/* =1 if last char input was FRAME_ESCAPE */
+	u_int	sc_bytessent;
+	u_int	sc_bytesrcvd;
+	long	sc_lasttime;		/* last time a char arrived */
+	long	sc_starttime;		/* last time a char arrived */
+	long	sc_abortcount;		/* number of abort esacpe chars */
+	struct	slcompress sc_comp;	/* tcp compression data */
 };
 
 /* flags */
-#define	SC_ESCAPED	0x0001		/* saw a FRAME_ESCAPE */
 #define	SC_COMPRESS	0x0002		/* compress TCP traffic */
 #define	SC_NOICMP	0x0004		/* supress ICMP traffic */
 #define	SC_ABORT	0x0008		/* have been sent an abort request */
-#define	SC_OACTIVE	0x0010		/* output is active */
 
 /* this stuff doesn't belong here... */
 #define	SLIOCGFLAGS	_IOR('t', 90, int)	/* get configuration flags */
