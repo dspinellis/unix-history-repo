@@ -1,4 +1,4 @@
-/*	vm_meter.c	4.18	83/01/08	*/
+/*	vm_meter.c	4.19	83/01/17	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -60,9 +60,13 @@ setupclock()
 	if (lotsfree == 0)
 		lotsfree = LOOPPAGES / 4;
 	if (desfree == 0) {
+#ifndef NOPAGING
 		desfree = (200*1024) / NBPG;
 		if (desfree > LOOPPAGES / 8)
 			desfree = LOOPPAGES / 8;
+#else
+		desfree = (32*1024) / NBPG;
+#endif
 	}
 	if (minfree == 0) {
 		minfree = (64*1024) / NBPG;
