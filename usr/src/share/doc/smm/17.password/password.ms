@@ -1,18 +1,20 @@
-.\"	@(#)password.ms	5.1 (Berkeley) %G%
+.\"	@(#)password.ms	6.1 (Berkeley) %G%
 .\"
 .\" tbl mm ^ eqn ^ troff -ms
+.EH 'SMM:18-%''Password Security: A Case History'
+.OH 'Password Security: A Case History''SMM:18-%'
 .EQ
 delim $$
 .EN
-.RP
+.\".RP
 .\" TM 78-1271-5 39199 39199-11
 .ND April 3, 1978
 .TL
 Password Security:
 A Case History
 .\" .OK
-Encryption
-Computing
+.\"Encryption
+.\"Computing
 .AU "MH 2C-524" 3878
 Robert Morris
 .AU "MH 2C-523" 2394
