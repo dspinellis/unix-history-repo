@@ -1,4 +1,4 @@
-SCCSID = @(#)Makefile 1.12 %G%
+SCCSID = @(#)Makefile 1.13 %G%
 INSTALL = ${DESTDIR}/usr/ucb
 INSTALLIB = ${DESTDIR}/usr/lib
 SRCDIR=	../src
@@ -13,10 +13,13 @@ install: all pxref.p
 	dd if=px_header of=${INSTALLIB}/${PX_HEADER} conv=sync
 	cp pc pix ${INSTALL}
 	cp how* pc2 pc3 pcexterns.o ${INSTALLIB}
+	cd ${INSTALLIB}; chmod 744 how* pcexterns.o ${PX_HEADER}
 	strip ${INSTALLIB}/pc2
 	strip ${INSTALLIB}/pc3
+	cd ${INSTALLIB}; chmod 555 pc2 pc3
 	cp pmerge ${INSTALL}/pmerge
 	-pc -w pxref.p -o ${INSTALL}/pxref
+	cd ${INSTALL} ; chmod 555 pmerge pxref
 
 pix: pix.c config.o
 	${CC} ${CFLAGS} -o pix pix.c config.o
