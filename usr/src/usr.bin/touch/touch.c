@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)touch.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)touch.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -134,6 +134,15 @@ main(argc, argv)
 			rval = 1;
 			warn("%s", *argv);
 		}
+
+		/*
+		 * System V and POSIX 1003.1 require that a NULL argument
+		 * set the access/modification times to the current time.
+		 * The permission checks are different, too, in that the
+		 * ability to write the file is sufficient.  Take a shot.
+		 */
+		 if (!utimes(*argv, NULL))
+			continue;
 
 		/* Try reading/writing. */
 		if (rw(*argv, &sb, fflag))
