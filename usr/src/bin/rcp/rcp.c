@@ -1,7 +1,10 @@
 #ifndef lint
-static char sccsid[] = "@(#)rcp.c	4.4 82/11/14";
+static char sccsid[] = "@(#)rcp.c	4.5 83/06/10";
 #endif
 
+/*
+ * rcp
+ */
 #include <sys/param.h>
 #include <sys/stat.h>
 #include <sys/ioctl.h>
@@ -13,9 +16,7 @@ static char sccsid[] = "@(#)rcp.c	4.4 82/11/14";
 #include <pwd.h>
 #include <ctype.h>
 #include <errno.h>
-/*
- * rcp
- */
+
 int	rem;
 char	*colon(), *index(), *rindex(), *malloc(), *strcpy(), *sprintf();
 int	errs;
@@ -77,7 +78,7 @@ main(argc, argv)
 		targetshouldbedirectory = 1;
 	(void) sprintf(cmd, "rcp%s%s",
 	    iamrecursive ? " -r" : "", targetshouldbedirectory ? " -d" : "");
-	sigsys(SIGPIPE, lostconn);
+	signal(SIGPIPE, lostconn);
 	targ = colon(argv[argc - 1]);
 	if (targ) {
 		*targ++ = 0;

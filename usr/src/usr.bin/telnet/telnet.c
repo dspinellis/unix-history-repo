@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)telnet.c	4.19 (Berkeley) %G%";
+static char sccsid[] = "@(#)telnet.c	4.20 (Berkeley) %G%";
 #endif
 
 /*
@@ -182,12 +182,12 @@ tn(argc, argv)
 	}
 	if (debug && setsockopt(net, SOL_SOCKET, SO_DEBUG, 0, 0) < 0)
 		perror("setsockopt (SO_DEBUG)");
-	sigset(SIGINT, intr);
-	sigset(SIGPIPE, deadpeer);
+	signal(SIGINT, intr);
+	signal(SIGPIPE, deadpeer);
 	printf("Trying...\n");
 	if (connect(net, (caddr_t)&sin, sizeof (sin), 0) < 0) {
 		perror("telnet: connect");
-		sigset(SIGINT, SIG_DFL);
+		signal(SIGINT, SIG_DFL);
 		return;
 	}
 	connected++;
@@ -459,7 +459,7 @@ command(top)
 	if (!top)
 		putchar('\n');
 	else
-		sigset(SIGINT, SIG_DFL);
+		signal(SIGINT, SIG_DFL);
 	for (;;) {
 		printf("%s> ", prompt);
 		if (gets(line) == 0)
@@ -773,14 +773,12 @@ getcmd(name)
 
 deadpeer()
 {
-	sigset(SIGPIPE, deadpeer);
 	(void) mode(0);
 	longjmp(peerdied, -1);
 }
 
 intr()
 {
-	sigset(SIGINT, intr);
 	(void) mode(0);
 	longjmp(toplevel, -1);
 }

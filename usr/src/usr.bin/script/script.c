@@ -1,6 +1,7 @@
 #ifndef lint
-static char *sccsid = "@(#)script.c	4.3 82/03/26";
+static char *sccsid = "@(#)script.c	4.4 83/06/10";
 #endif
+
 /*
  * script
  */
