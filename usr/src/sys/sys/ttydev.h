@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ttydev.h	7.3 (Berkeley) %G%
+ *	@(#)ttydev.h	7.4 (Berkeley) %G%
  */
 
 /*
@@ -15,6 +15,27 @@
 /*
  * Speeds
  */
+#ifdef USE_OLD_TTY
+/*
+ * Speeds
+ */
+#define B0	0
+#define B50	1
+#define B75	2
+#define B110	3
+#define B134	4
+#define B150	5
+#define B200	6
+#define B300	7
+#define B600	8
+#define B1200	9
+#define	B1800	10
+#define B2400	11
+#define B4800	12
+#define B9600	13
+#define EXTA	14
+#define EXTB	15
+#else
 #define B0	0
 #define B50	50
 #define B75	75
@@ -30,16 +51,18 @@
 #define B4800	4800
 #define B9600	9600
 #define B19200	19200
-#define EXTA	B19200
 #define B38400	38400
-#define EXTB	B38400
+#define EXTA	14
+#define EXTB	15
+#endif
+
+#ifdef KERNEL
 
 struct speedtab {
 	int sp_speed;
 	int sp_code;
 };
 
-#ifdef KERNEL
 /*
  * Modem control commands.
  */
