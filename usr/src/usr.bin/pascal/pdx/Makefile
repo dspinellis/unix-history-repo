@@ -1,6 +1,6 @@
 #/* Copyright (c) 1982 Regents of the University of California */
 #
-# static char sccsid[] = "@(#)Makefile 1.2 %G%";
+# static char sccsid[] = "@(#)Makefile 1.3 %G%";
 #
 # make file for pdx
 #
@@ -18,20 +18,21 @@
 #	such as out of memory, I/O error.  If you re-make pdx with
 #	the standard cerror, the program could fault unexpectedly.
 #
-#	Also, this makefile contains NO HEADER DEPENDENCIES.  So
+#	Also, this makefile contains almost NO HEADER DEPENDENCIES.  So
 #	if you modify a header file in a non-trivial way, you need
 #	to touch the C files that include it.
 #
 
 HOME	= /usr/src/cmd/pdx
 LIB		= ${HOME}/library/pdxlib
+PASCAL	= /usr/src/cmd/pascal/
 INSTALL	= /usr/ucb/pdx
 
 #
 # LDFLAGS should be -i for pdp-11
 #
 
-CFLAGS	= -Disvaxpx -I.. -I../../pascal -DOBJ -O
+CFLAGS	= -Disvaxpx -I.. -I${PASCAL} -DOBJ -O
 LDFLAGS	=
 
 #
@@ -168,6 +169,7 @@ ${PROCOBJ}:	${PROCESS}process.rep
 ${SYMOBJ}:	${SYM}sym.rep
 ${TREEOBJ}:	${TREE}tree.rep
 ${OBJOBJ}:	${OBJECT}objsym.rep
+${OBJECT}readobj.o ${OBJECT}readsym.o: ${PASCAL}objfmt.h
 
 install:
 	mv a.out ${INSTALL}
