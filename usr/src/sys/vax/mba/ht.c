@@ -1,4 +1,4 @@
-/*	ht.c	4.14	81/03/11	*/
+/*	ht.c	4.15	81/03/11	*/
 
 #include "tu.h"
 #if NHT > 0
@@ -6,10 +6,10 @@
  * TM03/TU?? tape driver
  *
  * TODO:
- *	test error handling
+ *	cleanup messages on errors
  *	test ioctl's
  *	see how many rewind interrups we get if we kick when not at BOT
- *	check rle error on block tape code
+ *	fixup rle error on block tape code
  */
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -72,6 +72,9 @@ short	tutoht[NTU];
 #define H_ERASED  2	/* last write retry was an erase gap */
 #define H_REWIND  4	/* last unit start was a rewind */
 
+char	hter_bits[] = HTER_BITS;
+char	htds_bits[] = HTDS_BITS;
+
 /*ARGSUSED*/
 htattach(mi)
 	struct mba_device *mi;
@@ -106,7 +109,7 @@ htopen(dev, flag)
 		return;
 	}
 	olddens = sc->sc_dens;
-	dens =
+	dens = sc->sc_dens =
 	    ((minor(dev)&H_1600BPI)?HTTC_1600BPI:HTTC_800BPI)|
 		HTTC_PDP11|sc->sc_slave;
 	htcommand(dev, HT_SENSE, 1);
@@ -300,10 +303,11 @@ htdtint(mi, mbsr)
 			    (mbs&MBSR_EBITS) == (MBSR_DTABT|MBSR_MBEXC) &&
 			    (ds&HTDS_MOL))
 				goto noprint;
-			printf("tu%d: hard error bn%d mbsr=%b er=%b\n",
+			printf("tu%d: hard error bn%d mbsr=%b er=%b ds=%b\n",
 			    TUUNIT(bp->b_dev), bp->b_blkno,
 			    mbsr, mbsr_bits,
-			    MASKREG(htaddr->hter), HTER_BITS);
+			    sc->sc_erreg, hter_bits,
+			    sc->sc_dsreg, htds_bits);
 noprint:
 			bp->b_flags |= B_ERROR;
 			return (MBD_DONE);
@@ -362,9 +366,9 @@ htndtint(mi)
 	if ((ds & (HTDS_ERR|HTDS_MOL)) != HTDS_MOL) {
 		if ((ds & HTDS_MOL) == 0 && sc->sc_openf > 0)
 			sc->sc_openf = -1;
-		printf("tu%d: hard error bn%d er=%b\n",
+		printf("tu%d: hard error bn%d er=%b ds=%b\n",
 		    TUUNIT(bp->b_dev), bp->b_blkno,
-		    sc->sc_erreg, HTER_BITS);
+		    sc->sc_erreg, hter_bits, sc->sc_dsreg, htds_bits);
 		bp->b_flags |= B_ERROR;
 		return (MBN_DONE);
 	}
