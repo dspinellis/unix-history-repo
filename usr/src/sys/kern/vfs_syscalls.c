@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_syscalls.c	7.39 (Berkeley) %G%
+ *	@(#)vfs_syscalls.c	7.40 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -1415,7 +1415,7 @@ getdirentries(scp)
 	struct uio auio;
 	struct iovec aiov;
 	off_t off;
-	int error;
+	int error, eofflag;
 
 	if (error = getvnode(scp->sc_ofile, uap->fd, &fp))
 		RETURN (error);
@@ -1433,7 +1433,7 @@ getdirentries(scp)
 	auio.uio_resid = uap->count;
 	VOP_LOCK(vp);
 	auio.uio_offset = off = fp->f_offset;
-	error = VOP_READDIR(vp, &auio, fp->f_cred);
+	error = VOP_READDIR(vp, &auio, fp->f_cred, &eofflag);
 	fp->f_offset = auio.uio_offset;
 	VOP_UNLOCK(vp);
 	if (error)
