@@ -8,19 +8,20 @@ PUSHDIVERT(-1)
 #
 
 ifdef(`UUCP_MAILER_PATH',, `define(`UUCP_MAILER_PATH', /usr/bin/uux)')
+ifdef(`UUCP_MAILER_ARGS',, `define(`UUCP_MAILER_ARGS', `uux - -r -z -a$f -gC $h!rmail ($u)')')
 ifdef(`UUCP_MAILER_FLAGS',, `define(`UUCP_MAILER_FLAGS', `')')
 POPDIVERT
 #####################################
 ###   UUCP Mailer specification   ###
 #####################################
 
-VERSIONID(`@(#)uucp.m4	8.1 (Berkeley) %G%')
+VERSIONID(`@(#)uucp.m4	8.2 (Berkeley) %G%')
 
 Msuucp,		P=UUCP_MAILER_PATH, F=CONCAT(mDFMhuU, UUCP_MAILER_FLAGS), S=12, R=22, M=100000,
-		A=uux - -r -z -a$f -gC $h!rmail ($u)
+		A=UUCP_MAILER_ARGS
 
 Muucp,		P=UUCP_MAILER_PATH, F=CONCAT(DFMhuU, UUCP_MAILER_FLAGS), S=12, R=22, M=100000,
-		A=uux - -r -z -a$f -gC $h!rmail ($u)
+		A=UUCP_MAILER_ARGS
 
 # sender rewriting
 S12
@@ -35,7 +36,7 @@ R$* < @ $* . >			$1 < @ $2 >		strip trailing dots
 R$* < @ $j >			$1			strip local name
 R$* < @ $- . UUCP >		$2 ! $1			convert to UUCP format
 R$* < @ $+ >			$2 ! $1			convert to UUCP format
-R$+				$: $k ! $1		prepend our name
+R$+				$: $U ! $1		prepend our name
 
 # recipient rewriting
 S22
