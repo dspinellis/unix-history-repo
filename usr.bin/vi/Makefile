@@ -6,7 +6,7 @@ BINDIR?=	/usr/bin
 
 #CFLAGS=-g -DDEBUG
 #CFLAGS+=-pg
-CFLAGS+=-I. -I${.CURDIR} -I${.CURDIR}/obj -I${.CURDIR}/../include -I${.CURDIR}/../curses -I${.CURDIR}/ex.d -I${.CURDIR}/vi.d -I${.CURDIR}/../regex
+CFLAGS+=-I. -I${.CURDIR} -I${.CURDIR}/obj -I${.CURDIR}/../include -I${.CURDIR}/ex.d -I${.CURDIR}/vi.d
 #STRIP=
 .PATH:	${.CURDIR}/ex.d ${.CURDIR}/sex ${.CURDIR}/vi.d ${.CURDIR}/svi \
 	${.CURDIR}/xaw
@@ -49,9 +49,7 @@ SRCS+=	xaw_screen.c
 
 #LDADD+=-pg
 DPADD+= ${LIBCURSES} ${LIBTERM}
-LDADD+=	-L${.CURDIR}/../curses/obj -L${.CURDIR}/../curses \
-	-L${.CURDIR}/../regex/obj -L${.CURDIR}/../regex \
-	-lregex -lcurses -ltermlib -lutil
+LDADD+=	 -lregex -lcurses -ltermlib -lutil
 SPECHDR=excmd.h options.h
 CLEANFILES+=${SPECHDR}
 LINKS=	${BINDIR}/vi ${BINDIR}/ex ${BINDIR}/vi ${BINDIR}/view
