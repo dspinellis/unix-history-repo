@@ -1,7 +1,7 @@
 /* Copyright (c) 1984 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)machdep.c	1.4	(Berkeley)	%G%";
+static char sccsid[] = "@(#)machdep.c	1.5	(Berkeley)	%G%";
 #endif not lint
 
 #include <stdio.h>
@@ -135,7 +135,7 @@ rewrite(instbuf, argc, argv, target)
 	switch (argc) {
 	case 0:
 		instbuf[0] = '\0';
-		fprintf("blank line to rewrite?\n");
+		fprintf(stderr, "blank line to rewrite?\n");
 		return;
 	case 1:
 		sprintf(instbuf, "\t%s\n", argv[0]);
@@ -293,7 +293,7 @@ rewrite(instbuf, argc, argv, target)
 	switch (argc) {
 	case 0:
 		instbuf[0] = '\0';
-		fprintf("blank line to rewrite?\n");
+		fprintf(stderr, "blank line to rewrite?\n");
 		return;
 	case 1:
 		sprintf(instbuf, "\t%s\n", argv[0]);
