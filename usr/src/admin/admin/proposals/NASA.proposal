@@ -1,4 +1,4 @@
-.\"	@(#)NASA.proposal	1.3	91/06/26
+.\"	@(#)NASA.proposal	1.4	91/07/31
 .fo +CSRG NASA proposal++%
 .nr si 3n
 .nr PS 11
@@ -25,6 +25,15 @@ Berkeley CA 94720
 .sp
 Educational
 .sh 2 "Principal Investigator"
+.sp
+.nf
+Professor Susan L. Graham
+Computer Systems Research Group
+Computer Science Division
+University of California
+Berkeley, CA 94720
+.fi
+.sh 2 "Research Investigator"
 .sp
 .nf
 Dr. Marshall Kirk McKusick
@@ -75,12 +84,14 @@ research system available to anyone without restrictions based on
 the inclusion of proprietary software or restrictive licensing.
 CSRG is unquestionably the largest current distributor of technologically
 advanced, freely redistributable software.
+In June 1991, CSRG made an unencumbered release that includes nearly
+all of the kernel and about 75% of the utilities found on 4.3BSD.
 .sh 1 "Project Description"
 .pp
 During the funding period, CSRG anticipates that it will complete
 its next major release, 4.4BSD.
 As soon as this release is complete, CSRG will begin work on a
-follow-on release, tentatively named 5BSD.
+follow-on release, tentatively named 4.5BSD.
 The requested funding will support the development of software for
 both releases.
 .pp
@@ -93,8 +104,7 @@ Hewlett-Packard's (HP) Motorola 68000 based workstations and 9000/7000
 RISC workstations, Digital Equipment
 Corporation's (DEC) DECstation, and
 Sun Microsystem's Sparcstations, as well as the traditional BSD
-platforms, DEC's VAX architectures and Computer Consoles' 6/32
-architectures.
+platform, DEC's VAX architecture.
 We are moderately confident of having support for various MIPS workstations
 and the Data General Avion workstations as well.
 .sh 2 "New Virtual Memory"
@@ -174,8 +184,32 @@ with multiprocessors in mind.
 As part of this future release, we will extend this support to the other
 major kernel subsystems including the networking, filesystem, and terminal
 handling.
-Appropriate user interfaces to multiprocessing, perhaps modeled on the
-POSIX 1003.4a interfaces, will be designed and implemented as well.
+Much of the ground work for doing multiprocessing has already been done
+by removing global kernel state and encapsulating it in well defined
+data structures.
+The remaining work to be done is to implement locking on these data
+structures and to reorder the code to ensure locks are acquired in
+in a specific order to avoid deadlocks.
+.pp
+A kernel that supports multiprocessing,
+allows immediate throughput improvements for
+environments doing timesharing or with single
+applications made up of several processes.
+However, an application that uses a single process
+will not be able to utilize more than a single CPU.
+To provide speedup for these applications, 
+the multiprocessing must be exported from the kernel
+so that the application can be written to explicitly use it.
+This export is typically done by allowing a single process to
+have multiple ``threads'' of execution.
+The system must also provide primitives to provide thread
+synchronization, scheduling, and mutual exclusion.
+There are many interfaces for these primitives in the research
+and commercial communities.
+The POSIX 1003.4a group has been working to find a commonality
+among these interfaces and to develop a coherent standard interface.
+We are involved in this POSIX group,
+and plan to build a prototype of its interface.
 .bp
 .sh 1 "Personnel"
 .pp
@@ -191,8 +225,7 @@ While at Berkeley he implemented the 4.2BSD fast file system and was
 involved in implementing the Berkeley Pascal system.
 He currently is the Research Computer Scientist at the Berkeley Computer
 Systems Research Group.
-He is president of the Usenix Association, a member of the editorial board
-of UNIX Review Magazine, and a member of ACM and IEEE.
+He is president of the Usenix Association and a member of ACM and IEEE.
 He is a co-author of the book ``The Design and Implementation of the
 4.3BSD UNIX Operating System.''
 .pp
@@ -250,23 +283,24 @@ Manchester, England, pp. 481-496, September 1986.
 .sh 1 "Facilities and Equipment"
 .pp
 Equipment for the CSRG is currently being provided by Computer Consoles
-Inc., Hewlett-Packard Corp. and Compaq Corporation.  No additional equipment is required for the proposed project.
+Inc., Hewlett-Packard Corp. and Compaq Corporation.
+No additional equipment is required for the proposed project.
 .sh 1 "Proposed Costs"
 .pp
 The CSRG currently requires funding at a level of $31,179 per month
 for salaries and $6,800 for supplies and expenses such as equipment
 maintenance and power.
-Of the requested funding of $100,000, $48,000 will go directly
+Of the requested funding of $100,000, $49,000 will go directly
 to the University of California as overhead.
-The remaining $52,000 of funding will fund the CSRG for slightly under
+The remaining $51,000 of funding will fund the CSRG for slightly under
 1.5 months.
 Of course, NASA is not the only source of funding for the CSRG.
 Current funding is provided by the Open Software Foundation,
 Hewlett-Packard Corp. and Cray Research.
 .sh 1 "Current Projects"
 .pp
-No other current projects are being conducted by the principal
-investigator, or by other members of CSRG.
+No other current projects are being conducted by the
+research investigator, or by other members of CSRG.
 .sp 8
 .nf
 .in +1.0i
