@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)rexec.3	6.6 (Berkeley) %G%
+.\"	@(#)rexec.3	6.7 (Berkeley) %G%
 .\"
 .TH REXEC 3 ""
 .UC 5
@@ -29,6 +29,12 @@ rexec \- return stream to a remote command
 .B int *fd2p;
 .fi
 .SH DESCRIPTION
+.ft B
+This interface is obsoleted by krcmd(3).
+.br
+It is available from the compatibility library, libcompat.
+.ft R
+.PP
 .I Rexec
 looks up the host
 .I *ahost
