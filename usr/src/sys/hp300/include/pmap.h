@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pmap.h	7.6 (Berkeley) %G%
+ *	@(#)pmap.h	7.7 (Berkeley) %G%
  */
 
 #ifndef	_PMAP_MACHINE_
@@ -42,7 +42,8 @@ extern pmap_t		kernel_pmap;
 #define PMAP_ACTIVATE(pmapp, pcbp, iscurproc) \
 	if ((pmapp) != NULL && (pmapp)->pm_stchanged) { \
 		(pcbp)->pcb_ustp = \
-		    hp300_btop(pmap_extract(kernel_pmap, (pmapp)->pm_stab)); \
+		    hp300_btop(pmap_extract(kernel_pmap, \
+			((vm_offset_t)(pmapp)->pm_stab))); \
 		if (iscurproc) \
 			loadustp((pcbp)->pcb_ustp); \
 		(pmapp)->pm_stchanged = FALSE; \

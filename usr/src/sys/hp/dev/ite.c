@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: ite.c 1.1 90/07/09$
  *
- *	@(#)ite.c	7.6 (Berkeley) %G%
+ *	@(#)ite.c	7.7 (Berkeley) %G%
  */
 
 /*
@@ -864,7 +864,6 @@ itecnputc(dev, c)
 {
 	static int paniced = 0;
 	struct ite_softc *ip = &ite_softc[UNIT(dev)];
-	extern char *panicstr;
 
 	if (panicstr && !paniced &&
 	    (ip->flags & (ITE_ACTIVE|ITE_INGRF)) != ITE_ACTIVE) {
