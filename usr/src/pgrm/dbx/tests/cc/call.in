@@ -1,0 +1,16 @@
+call printf("starting")
+stop at 15
+run
+call p1()
+call p2(3)
+call p3("blah")
+call printf("main_local = %d", main_local)
+print main_local
+call call
+call call()
+call p1(3)
+call p2("blah")
+stop in p3
+call p3("blah")
+cont
+where
