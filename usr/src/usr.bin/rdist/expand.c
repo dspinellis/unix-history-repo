@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)expand.c	4.10 (Berkeley) 84/02/09";
+static	char *sccsid = "@(#)expand.c	4.11 (Berkeley) 84/12/06";
 #endif
 
 #include "defs.h"
@@ -179,8 +179,9 @@ expstr(s)
 	oeargc = eargc;
 	expany = 0;
 	expsh(s);
-	if (eargc != oeargc)
-		sort();
+	if (eargc == oeargc)
+		Cat(s, "");		/* "nonomatch" is set */
+	sort();
 }
 
 /*
