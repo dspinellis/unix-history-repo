@@ -13,9 +13,9 @@
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	6.42 (Berkeley) %G% (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	6.43 (Berkeley) %G% (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	6.42 (Berkeley) %G% (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	6.43 (Berkeley) %G% (without daemon mode)";
 #endif
 #endif /* not lint */
 
@@ -707,17 +707,33 @@ maphostname(map, hbuf, hbsize, avp, statp)
 	u_long in_addr;
 	char *cp;
 	int i;
-	struct hostent *gethostbyaddr();
+	register STAB *s;
+	extern struct hostent *gethostbyaddr();
+	extern int h_errno;
 
 	/* allow room for null */
 	hbsize--;
 
 	/*
-	 * If first character is a bracket, then it is an address
-	 * lookup.  Address is copied into a temporary buffer to
-	 * strip the brackets and to preserve hbuf if address is
-	 * unknown.
-	 */
+	**  See if we have already looked up this name.  If so, just
+	**  return it.
+	*/
+
+	s = stab(hbuf, ST_NAMECANON, ST_ENTER);
+	if (bitset(NCF_VALID, s->s_namecanon.nc_flags))
+	{
+		errno = s->s_namecanon.nc_errno;
+		h_errno = s->s_namecanon.nc_herrno;
+		*statp = s->s_namecanon.nc_stat;
+		return s->s_namecanon.nc_cname;
+	}
+
+	/*
+	**  If first character is a bracket, then it is an address
+	**  lookup.  Address is copied into a temporary buffer to
+	**  strip the brackets and to preserve hbuf if address is
+	**  unknown.
+	*/
 
 	if (*hbuf != '[')
 	{
@@ -725,19 +741,22 @@ maphostname(map, hbuf, hbsize, avp, statp)
 
 		if (tTd(9, 1))
 			printf("maphostname(%s, %d) => ", hbuf, hbsize);
+		s->s_namecanon.nc_flags |= NCF_VALID;		/* will be soon */
 		if (getcanonname(hbuf, hbsize))
 		{
 			if (tTd(9, 1))
 				printf("%s\n", hbuf);
+			s->s_namecanon.nc_cname = newstr(hbuf);
 			return hbuf;
 		}
 		else
 		{
 			register struct hostent *hp;
-			extern int h_errno;
 
 			if (tTd(9, 1))
 				printf("FAIL (%d)\n", h_errno);
+			s->s_namecanon.nc_errno = errno;
+			s->s_namecanon.nc_herrno = h_errno;
 			switch (h_errno)
 			{
 			  case TRY_AGAIN:
@@ -758,6 +777,7 @@ maphostname(map, hbuf, hbsize, avp, statp)
 				*statp = EX_UNAVAILABLE;
 				break;
 			}
+			s->s_namecanon.nc_stat = *statp;
 			if (*statp != EX_TEMPFAIL || UseNameServer)
 				return NULL;
 
@@ -769,11 +789,12 @@ maphostname(map, hbuf, hbsize, avp, statp)
 			if (hp == NULL)
 			{
 				/* no dice there either */
-				*statp = EX_NOHOST;
+				s->s_namecanon.nc_stat = *statp = EX_NOHOST;
 				return NULL;
 			}
 
-			*statp = EX_OK;
+			s->s_namecanon.nc_stat = *statp = EX_OK;
+			s->s_namecanon.nc_cname = newstr(hp->h_name);
 			return hp->h_name;
 		}
 	}
@@ -795,13 +816,21 @@ maphostname(map, hbuf, hbsize, avp, statp)
 
 	/* nope -- ask the name server */
 	hp = gethostbyaddr((char *)&in_addr, sizeof(struct in_addr), AF_INET);
+	s->s_namecanon.nc_errno = errno;
+	s->s_namecanon.nc_herrno = h_errno;
+	s->s_namecanon.nc_flags |= NCF_VALID;		/* will be soon */
 	if (hp == NULL)
+	{
+		s->s_namecanon.nc_stat = *statp = EX_NOHOST;
 		return (NULL);
+	}
 
 	/* found a match -- copy out */
+	s->s_namecanon.nc_cname = newstr(hp->h_name);
 	if (strlen(hp->h_name) > hbsize)
 		hp->h_name[hbsize] = '\0';
 	(void) strcpy(hbuf, hp->h_name);
+	s->s_namecanon.nc_stat = *statp = EX_OK;
 	return hbuf;
 }
 /*
