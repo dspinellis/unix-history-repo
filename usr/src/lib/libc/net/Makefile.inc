@@ -1,4 +1,4 @@
-#	@(#)Makefile.inc	5.3 (Berkeley) %G%
+#	@(#)Makefile.inc	5.4 (Berkeley) %G%
 
 # net sources
 .PATH: ${.CURDIR}/${MACHINE}/net ${.CURDIR}/net
@@ -15,6 +15,8 @@ SRCS+=	gethostnamadr.c getnetbyaddr.c getnetbyname.c getnetent.c \
 SRCS+=	htonl.s htons.s ntohl.s ntohs.s
 .elif (${MACHINE} == "i386")
 SRCS+=	htonl.s htons.s ntohl.s ntohs.s
+.elif (${MACHINE} == "mips")
+SRCS+=	htonl.s htons.s
 .elif (${MACHINE} == "tahoe")
 SRCS+=	htonl.s htons.s ntohl.s ntohs.s
 .elif (${MACHINE} == "vax")
