@@ -1,4 +1,4 @@
-/*	uipc_socket.c	6.5	84/08/21	*/
+/*	uipc_socket.c	6.6	84/08/21	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -10,6 +10,7 @@
 #include "../h/buf.h"
 #include "../h/mbuf.h"
 #include "../h/un.h"
+#include "../h/domain.h"
 #include "../h/protosw.h"
 #include "../h/socket.h"
 #include "../h/socketvar.h"
@@ -399,8 +400,9 @@ soreceive(so, aname, uio, flags, rightsp)
 	struct mbuf **rightsp;
 {
 	register struct mbuf *m, *n;
-	register int len, error = 0, s, eor, tomark;
+	register int len, error = 0, s, tomark;
 	struct protosw *pr = so->so_proto;
+	struct mbuf *nextrecord;
 	int moff;
 
 	if (rightsp)
@@ -457,60 +459,47 @@ restart:
 	}
 	u.u_ru.ru_msgrcv++;
 	m = so->so_rcv.sb_mb;
-	if (m == 0)
-		panic("receive");
 	if (pr->pr_flags & PR_ADDR) {
-		if ((flags & MSG_PEEK) == 0) {
-			so->so_rcv.sb_cc -= m->m_len;
-			so->so_rcv.sb_mbcnt -= MSIZE;
-		}
-		if (aname) {
-			if (flags & MSG_PEEK) {
+		if (m == 0 || m->m_type != MT_SONAME)
+			panic("receive 1a");
+		if (flags & MSG_PEEK) {
+			if (aname)
 				*aname = m_copy(m, 0, m->m_len);
-				if (*aname == NULL)
-					panic("receive 2");
-			} else
-				*aname = m;
-			m = m->m_next;
-			(*aname)->m_next = 0;
-		} else
-			if (flags & MSG_PEEK)
-				m = m->m_next;
 			else
-				m = m_free(m);
-		if (m == 0)
-			panic("receive 2a");
-		if (rightsp) {
-			if (m->m_len)
-				*rightsp = m_copy(m, 0, m->m_len);
-			else {
-				*rightsp = m_get(M_DONTWAIT, MT_SONAME);
-				if (*rightsp)
-					(*rightsp)->m_len = 0;
-			}
-#ifdef notdef
-			if (*rightsp == NULL)
-				panic("receive 2b");
-#endif
+				m = m->m_act;
+		} else {
+			if (aname) {
+				*aname = m;
+				sbfree(&so->so_rcv, m);
+if(m->m_next) panic("receive 1b");
+				so->so_rcv.sb_mb = m = m->m_act;
+			} else
+				m = sbdroprecord(&so->so_rcv);
 		}
-		if (flags & MSG_PEEK)
-			m = m->m_next;
-		else {
-			so->so_rcv.sb_cc -= m->m_len;
-			so->so_rcv.sb_mbcnt -= MSIZE;
-			m = m_free(m);
-		}
-		if (m == 0)
-			panic("receive 3");
-		if ((flags & MSG_PEEK) == 0)
-			so->so_rcv.sb_mb = m;
 	}
-	eor = 0;
+	if (m && m->m_type == MT_RIGHTS) {
+		if ((pr->pr_flags & PR_RIGHTS) == 0)
+			panic("receive 2a");
+		if (flags & MSG_PEEK) {
+			if (rightsp)
+				*rightsp = m_copy(m, 0, m->m_len);
+			else
+				m = m->m_act;
+		} else {
+			if (rightsp) {
+				*rightsp = m;
+				sbfree(&so->so_rcv, m);
+if(m->m_next) panic("receive 2b");
+				so->so_rcv.sb_mb = m = m->m_act;
+			} else
+				m = sbdroprecord(&so->so_rcv);
+		}
+	}
+	if (m == 0)
+		panic("receive 3");
 	moff = 0;
 	tomark = so->so_oobmark;
-	do {
-		if (uio->uio_resid <= 0)
-			break;
+	while (m && uio->uio_resid > 0 && error == 0) {
 		len = uio->uio_resid;
 		so->so_state &= ~SS_RCVATMARK;
 		if (tomark && len > tomark)
@@ -522,15 +511,15 @@ restart:
 		    uiomove(mtod(m, caddr_t) + moff, (int)len, UIO_READ, uio);
 		s = splnet();
 		if (len == m->m_len) {
-			eor = (int)m->m_act;
-			if (flags & MSG_PEEK)
-				m = m->m_next;
-			else {
+			if ((flags & MSG_PEEK) == 0) {
+				nextrecord = m->m_act;
 				sbfree(&so->so_rcv, m);
 				MFREE(m, n);
-				m = n;
+				if (m = n)
+					m->m_act = nextrecord;
 				so->so_rcv.sb_mb = m;
-			}
+			} else
+				m = m->m_next;
 			moff = 0;
 		} else {
 			if (flags & MSG_PEEK)
@@ -553,27 +542,20 @@ restart:
 			if (tomark == 0)
 				break;
 		}
-	} while (m && error == 0 && !eor);
-	if (flags & MSG_PEEK)
-		goto release;
-	if ((so->so_proto->pr_flags & PR_ATOMIC) && eor == 0)
-		do {
-			if (m == 0)
-				panic("receive 4");
-			sbfree(&so->so_rcv, m);
-			eor = (int)m->m_act;
-			so->so_rcv.sb_mb = m->m_next;
-			MFREE(m, n);
-			m = n;
-		} while (eor == 0);
-	if ((so->so_proto->pr_flags & PR_WANTRCVD) && so->so_pcb)
-		(*so->so_proto->pr_usrreq)(so, PRU_RCVD,
-		    (struct mbuf *)0, (struct mbuf *)0, (struct mbuf *)0);
+	}
+	if ((flags & MSG_PEEK) == 0) {
+		if (m == 0)
+			so->so_rcv.sb_mb = nextrecord;
+		else if (pr->pr_flags & PR_ATOMIC)
+			(void) sbdroprecord(&so->so_rcv);
+		if (pr->pr_flags & PR_WANTRCVD && so->so_pcb)
+			(*pr->pr_usrreq)(so, PRU_RCVD, (struct mbuf *)0,
+			    (struct mbuf *)0, (struct mbuf *)0);
+	}
 release:
 	sbunlock(&so->so_rcv);
-	if (error == 0 && rightsp &&
-	    *rightsp && so->so_proto->pr_family == AF_UNIX)
-		error = unp_externalize(*rightsp);
+	if (error == 0 && rightsp && *rightsp && pr->pr_domain->dom_externalize)
+		error = (*pr->pr_domain->dom_externalize)(*rightsp);
 	splx(s);
 	return (error);
 }
@@ -608,8 +590,8 @@ sorflush(so)
 	asb = *sb;
 	bzero((caddr_t)sb, sizeof (*sb));
 	splx(s);
-	if (pr->pr_family == AF_UNIX && (pr->pr_flags & PR_RIGHTS))
-		unp_scan(asb.sb_mb, unp_discard);
+	if (pr->pr_flags & PR_RIGHTS && pr->pr_domain->dom_dispose)
+		(*pr->pr_domain->dom_dispose)(asb.sb_mb);
 	sbrelease(&asb);
 }
 
