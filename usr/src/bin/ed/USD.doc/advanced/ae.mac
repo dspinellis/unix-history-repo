@@ -1,6 +1,6 @@
 .\" %sccs.include.proprietary.roff%
 .\"
-.\"	@(#)ae.mac	6.2 (Berkeley) %G%
+.\"	@(#)ae.mac	8.1 (Berkeley) %G%
 .\"
 .tr _\(em
 .de UL

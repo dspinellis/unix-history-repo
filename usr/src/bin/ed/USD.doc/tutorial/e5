@@ -1,6 +1,6 @@
 .\" %sccs.include.proprietary.roff%
 .\"
-.\"	@(#)e5	6.2 (Berkeley) %G%
+.\"	@(#)e5	8.1 (Berkeley) %G%
 .\"
 .SH
 Change and Insert \- ``c'' and ``i''
