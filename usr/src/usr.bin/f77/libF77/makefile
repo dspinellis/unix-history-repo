@@ -1,6 +1,6 @@
 # Makefile for the f77 math & startup lib - libF77.a
 
-#	@(#)makefile	1.18	%G%
+#	@(#)makefile	1.19	%G%
 
 DESTDIR =
 LIB = libF77.a
@@ -40,7 +40,7 @@ EFL =	ef1asc_.o ef1cmc_.o
 CHAR =	s_cat.o rindex_.o s_cmp.o s_copy.o lnblnk_.o
 
 ALL =	$(MISC) $(POW) $(CX) $(DCX) $(REAL) $(DBL) $(INT) $(HALF) \
-	$(CMP) $(EFL) $(CHAR) cabs.o tanh.o sinh.o
+	$(CMP) $(EFL) $(CHAR)
 
 all:	$(LIB)
 
@@ -79,7 +79,6 @@ SOURCES = main.c s_rnge.c abort_.c exit_.c opcodes.h long_.c short_.c \
 	s_stop.c s_paus.c rand_.c bit.c range.c traper_.c trapov_.c \
 	dbesj0_.c dbesj1_.c dbesjn_.c dbesy0_.c dbesy1_.c dbesyn_.c \
 	besj0_.c besj1_.c besjn_.c besy0_.c besy1_.c besyn_.c \
-	cabs.c tanh.c sinh.c \
 	pow_ci.c pow_dd.c pow_di.c pow_hh.c pow_ii.c  pow_ri.c pow_zi.c \
 	pow_zz.c \
 	c_abs.c c_cos.c c_div.c c_exp.c c_log.c c_sin.c c_sqrt.c \
