@@ -1,0 +1,50 @@
+#!/bin/sh 
+#
+# using information included in the prototype dependencies and 
+# the hierarchy datasets, print off a GNU Make compatible form
+# of the type variable lists
+#
+
+( ../bin/prototype -voutput_type=user-types ../include/prototype.dependencies ; \
+  ) | gawk '{ for (i = 1 ; i <= NF ; i ++) printf "%s\n", $i ; }' | sort > \
+  /tmp/make-types.$$.user_types ;
+
+( ../bin/prototype -voutput_type=user-prototypes ../include/prototype.dependencies ; \
+  ../bin/hierarchy -voutput_type=general ../include/file_types.hierarchy \
+  ) | gawk '{ for (i = 1 ; i <= NF ; i ++) printf "%s\n", $i ; }' | sort > \
+  /tmp/make-types.$$.user_proto_types ;
+
+( ../bin/prototype -voutput_type=libg++-prototypes ../include/prototype.dependencies ; \
+  ) | gawk '{ for (i = 1 ; i <= NF ; i ++) printf "%s\n", $i ; }' | sort > \
+  /tmp/make-types.$$.lib_proto_types ;
+
+# within each variable, all types are on a line by themselves.
+
+echo 'USER_TYPES :=  \' ; 
+cat /tmp/make-types.$$.user_types | gawk '{ printf "\t%s \\\n", $0 ; }' ;
+echo ;
+
+echo 'LIB_TYPES := \' ; 
+echo ;
+
+echo 'USER_PROTO_TYPES := \' ; 
+cat /tmp/make-types.$$.user_proto_types | gawk '{ printf "\t%s \\\n", $0 ; }' ; 
+echo ;
+
+echo 'USER_BASE_PROTO_TYPES := \' ; 
+cat /tmp/make-types.$$.user_proto_types | gawk -F. '{ printf "\t%s \\\n", $NF; }' | \
+  sort | uniq ; 
+echo ;
+
+echo 'LIB_PROTO_TYPES := \' ; 
+cat /tmp/make-types.$$.lib_proto_types | gawk '{ printf "\t%s \\\n", $0 ; }' ;
+echo ;
+
+echo 'LIB_BASE_PROTO_TYPES := \' ; 
+cat /tmp/make-types.$$.lib_proto_types | gawk -F. '{ printf "\t%s \\\n", $NF; }' | \
+  sort | uniq ; 
+echo ;
+
+rm -f /tmp/make-types.$$.user_types ;
+rm -f /tmp/make-types.$$.user_proto_types ;
+rm -f /tmp/make-types.$$.lib_proto_types ;
