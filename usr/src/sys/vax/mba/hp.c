@@ -1,4 +1,4 @@
-/*	hp.c	4.63	83/02/05	*/
+/*	hp.c	4.64	83/02/10	*/
 
 #ifdef HPDEBUG
 int	hpdebug;
@@ -51,11 +51,7 @@ struct	size {
 	0,	0,
 	0,	0,
 	0,	0,
-#ifndef NOBADSECT
 	291280,	118,		/* G=cyl 118 thru 814 */
-#else
-	291346,	118,
-#endif
 	0,	0,
 }, rm3_sizes[8] = {
 	15884,	0,		/* A=cyl 0 thru 99 */
@@ -64,11 +60,7 @@ struct	size {
 	0,	0,
 	0,	0,
 	0,	0,
-#ifndef NOBADSECT
 	81984,	310,		/* G=cyl 310 thru 822 */
-#else
-	82080,	310,
-#endif
 	0,	0,
 }, rm5_sizes[8] = {
 	15884,	0,		/* A=cyl 0 thru 26 */
@@ -76,13 +68,8 @@ struct	size {
 	500384,	0,		/* C=cyl 0 thru 822 */
 	15884,	562,		/* D=cyl 562 thru 588 */
 	55936,	589,		/* E=cyl 589 thru 680 */
-#ifndef NOBADSECT
 	86240,	681,		/* F=cyl 681 thru 822 */
 	158592,	562,		/* G=cyl 562 thru 822 */
-#else
-	86336,	681,
-	158688,	562,
-#endif
 	291346,	82,		/* H=cyl 82 thru 561 */
 }, rm80_sizes[8] = {
 	15884,	0,		/* A=cyl 0 thru 36 */
@@ -103,13 +90,13 @@ struct	size {
 	479850,	330,		/* G=cyl 330 thru 629 */
 	448000,	50,		/* H=cyl 50 thru 329 */
 }, si9775_sizes[8] = {
-	16640,	  0,		/* A=cyl   0 thru  12 */
-	34560,	 13,		/* B=cyl  13 thru  39 */
-	1079040,  0,		/* C=cyl   0 thru 842 - whole disk */
-	0,	  0,		/* D unused */
-	0,	  0,		/* E unused */
-	0,	  0,		/* F unused */
-	513280,	 40,		/* G=cyl  40 thru 440 */
+	16640,	  0,		/* A=cyl 0 thru 12 */
+	34560,	 13,		/* B=cyl 13 thru 39 */
+	1079040,  0,		/* C=cyl 0 thru 842 */
+	0,	  0,
+	0,	  0,
+	0,	  0,
+	513280,	 40,		/* G=cyl 40 thru 440 */
 	513280,	441,		/* H=cyl 441 thru 841 */
 }, si9730_sizes[8] = {
 	15884,	0,		/* A=cyl 0 thru 49 */
@@ -119,11 +106,7 @@ struct	size {
 	0,	0,
 	0,	0,
 	0,	0,
-#ifndef NOBADSECT
 	213664,	155,		/* H=cyl 155 thru 822 */
-#else
-	213760,	155,
-#endif
 }, hpam_sizes[8] = {
 	15884,	0,		/* A=cyl 0 thru 31 */
 	33440,	32,		/* B=cyl 32 thru 97 */
@@ -233,10 +216,8 @@ u_char	hp_offset[16] = {
 };
 
 struct	buf	rhpbuf[NHP];
-#ifndef NOBADSECT
 struct	buf	bhpbuf[NHP];
 struct	dkbad	hpbad[NHP];
-#endif
 /* SHOULD CONSOLIDATE ALL THIS STUFF INTO A STRUCTURE */
 char	hpinit[NHP];
 char	hprecal[NHP];
@@ -445,9 +426,7 @@ hpustart(mi)
 	if ((hpaddr->hpcs1&HP_DVA) == 0)
 		return (MBU_BUSY);
 	if ((hpaddr->hpds & HPDS_VV) == 0 || hpinit[mi->mi_unit] == 0) {
-#ifndef NOBADSECT
 		struct buf *bbp = &bhpbuf[mi->mi_unit];
-#endif
 
 		hpinit[mi->mi_unit] = 1;
 		hpaddr->hpcs1 = HP_DCLR|HP_GO;
@@ -457,7 +436,6 @@ hpustart(mi)
 		if (!ML11)
 			hpaddr->hpof = HPOF_FMT22;
 		mbclrattn(mi);
-#ifndef NOBADSECT
 		if (!ML11) {
 			bbp->b_flags = B_READ|B_BUSY;
 			bbp->b_dev = bp->b_dev;
@@ -469,7 +447,6 @@ hpustart(mi)
 			bbp->av_forw = bp;
 			bp = bbp;
 		}
-#endif
 	}
 	if (mi->mi_tab.b_active || mi->mi_hd->mh_ndrive == 1)
 		return (MBU_DODATA);
@@ -537,12 +514,10 @@ hpdtint(mi, mbsr)
 	register int er1, er2;
 	int retry = 0;
 
-#ifndef NOBADSECT
 	if (bp->b_flags&B_BAD) {
 		if (hpecc(mi, CONT))
 			return(MBD_RESTARTED);
 	}
-#endif
 	if (hpaddr->hpds&HPDS_ERR || mbsr&MBSR_EBITS) {
 #ifdef HPDEBUG
 		if (hpdebug) {
@@ -571,11 +546,9 @@ hpdtint(mi, mbsr)
 			bp->b_flags |= B_ERROR;
 		} else if ((er1&0xffff) == HPER1_FER && RP06 &&
 		    hphdr[mi->mi_unit] == 0) {
-#ifndef NOBADSECT
 			if (hpecc(mi, BSE))
 				return(MBD_RESTARTED);
 			else
-#endif
 				goto hard;
 		} else if (++mi->mi_tab.b_errcnt > 27 ||
 		    mbsr & MBSR_HARD ||
@@ -604,11 +577,9 @@ hard:
 			retry = 0;
 			hprecal[mi->mi_unit] = 0;
 		} else if ((er2 & HPER2_BSE) && !ML11) {
-#ifndef NOBADSECT
 			if (hpecc(mi, BSE))
 				return(MBD_RESTARTED);
 			else
-#endif
 				goto hard;
 		} else if (RM80 && er2&HPER2_SSE) {
 			(void) hpecc(mi, SSE);
@@ -737,11 +708,9 @@ hpecc(mi, flag)
 	bcr = mbp->mba_bcr & 0xffff;
 	if (bcr)
 		bcr |= 0xffff0000;		/* sxt */
-#ifndef NOBADSECT
 	if (flag == CONT)
 		npf = bp->b_error;
 	else
-#endif
 		npf = btop(bcr + bp->b_bcount);
 	o = (int)bp->b_un.b_addr & PGOFSET;
 	bn = dkblock(bp);
@@ -752,8 +721,7 @@ hpecc(mi, flag)
 	cn += tn/st->ntrak;
 	tn %= st->ntrak;
 	switch (flag) {
-	case ECC:
-		{
+	case ECC: {
 		register int i;
 		caddr_t addr;
 		struct pte mpte;
@@ -786,7 +754,6 @@ hpecc(mi, flag)
 		mbp->mba_bcr = -(bp->b_bcount - (int)ptob(npf));
 		break;
 
-#ifndef NOBADSECT
 	case BSE:
 #ifdef HPBDEBUG
 		if (hpbdebug)
@@ -819,7 +786,6 @@ hpecc(mi, flag)
 		if ((mbp->mba_bcr & 0xffff) == 0)
 			return(0);
 		break;
-#endif
 	}
 	rp->hpcs1 = HP_DCLR|HP_GO;
 	if (rp->hpof&HPOF_SSEI)
