@@ -10,7 +10,7 @@
  * Auxiliary functions.
  */
 
-static char *SccsId = "@(#)aux.c	2.5 %G%";
+static char *SccsId = "@(#)aux.c	2.6 %G%";
 
 /*
  * Return a pointer to a dynamic copy of the argument.
@@ -370,6 +370,21 @@ icequal(s1, s2)
 		if (*s2++ == 0)
 			return(1);
 	return(0);
+}
+
+/*
+ * Copy a string, lowercasing it as we go.
+ */
+istrcpy(dest, src)
+	char *dest, *src;
+{
+	register char *cp, *cp2;
+
+	cp2 = dest;
+	cp = src;
+	do {
+		*cp2++ = little(*cp);
+	} while (*cp++ != 0);
 }
 
 /*
@@ -764,3 +779,21 @@ strncmp(as1, as2, an)
 sigchild() {}
 
 #endif SIGRETRO
+
+/*
+ * See if the given header field is supposed to be ignored.
+ */
+isign(field)
+	char *field;
+{
+	char realfld[BUFSIZ];
+	register int h;
+	register struct ignore *igp;
+
+	istrcpy(realfld, field);
+	h = hash(realfld);
+	for (igp = ignore[h]; igp != 0; igp = igp->i_link)
+		if (strcmp(igp->i_field, realfld) == 0)
+			return(1);
+	return(0);
+}
