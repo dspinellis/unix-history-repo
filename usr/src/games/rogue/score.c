@@ -11,7 +11,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)score.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)score.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <stdio.h>
@@ -169,10 +169,11 @@ short other;
 
 	md_lock(1);
 
-	if ((fp = fopen(SCORE_FILE, "r+w")) == NULL) {
+	if ((fp = fopen(SCORE_FILE, "a+")) == NULL) {
 		message("cannot read/write/create score file", 0);
 		sf_error();
 	}
+	rewind(fp);
 	(void) xxx(1);
 
 	for (i = 0; i < 10; i++) {
