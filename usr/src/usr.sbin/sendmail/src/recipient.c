@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	8.88 (Berkeley) %G%";
+static char sccsid[] = "@(#)recipient.c	8.89 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -915,7 +915,7 @@ include(fname, forwarding, ctladdr, sendq, aliaslevel, e)
 		gid = ca->q_gid;
 		uname = ca->q_user;
 	}
-#ifdef HASSETREUID
+#if HASSETREUID || USESETEUID
 	saveduid = geteuid();
 	savedgid = getegid();
 	if (saveduid == 0)
@@ -923,9 +923,15 @@ include(fname, forwarding, ctladdr, sendq, aliaslevel, e)
 		initgroups(uname, gid);
 		if (uid != 0)
 		{
+# if USESETEUID
+			if (seteuid(uid) < 0)
+				syserr("seteuid(%d) failure (real=%d, eff=%d)",
+					uid, getuid(), geteuid());
+# else
 			if (setreuid(0, uid) < 0)
 				syserr("setreuid(0, %d) failure (real=%d, eff=%d)",
 					uid, getuid(), geteuid());
+# endif
 			else
 				sfflags |= SFF_NOPATHCHECK;
 		}
@@ -978,17 +984,23 @@ include(fname, forwarding, ctladdr, sendq, aliaslevel, e)
 
 resetuid:
 
-#ifdef HASSETREUID
+#if HASSETREUID || USESETEUID
 	if (saveduid == 0)
 	{
 		if (uid != 0)
 		{
+# if USESETEUID
+			if (seteuid(0) < 0)
+				syserr("seteuid(0) failure (real=%d, eff=%d)",
+					getuid(), geteuid());
+# else
 			if (setreuid(-1, 0) < 0)
 				syserr("setreuid(-1, 0) failure (real=%d, eff=%d)",
 					getuid(), geteuid());
 			if (setreuid(RealUid, 0) < 0)
 				syserr("setreuid(%d, 0) failure (real=%d, eff=%d)",
 					RealUid, getuid(), geteuid());
+# endif
 		}
 		setgid(savedgid);
 	}

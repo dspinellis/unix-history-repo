@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.163 (Berkeley) %G%
+ *	@(#)conf.h	8.164 (Berkeley) %G%
  */
 
 /*
@@ -48,7 +48,7 @@ struct rusage;	/* forward declaration to get gcc to shut up in wait.h */
 # define MAXMIMENESTING	20		/* max MIME multipart nesting */
 
 # ifndef QUEUESIZE
-# define QUEUESIZE	1000		/* max # of jobs per queue run */
+#  define QUEUESIZE	3000		/* max # of jobs per queue run */
 # endif
 
 /**********************************************************************
@@ -134,8 +134,8 @@ struct rusage;	/* forward declaration to get gcc to shut up in wait.h */
 # undef m_flags		/* conflict between db.h & sys/sysmacros.h on HP 300 */
 # define SYSTEM5	1	/* include all the System V defines */
 # define HASINITGROUPS	1	/* has initgroups(3) call */
-# define HASSETREUID	1	/* has setreuid(2) call */
-# define setreuid(r, e)		setresuid(r, e, -1)
+# define USESETEUID	1	/* has useable seteuid(2) call */
+# define seteuid(e)	setresuid(-1, e, -1)
 # define LA_TYPE	LA_HPUX
 # define SPT_TYPE	SPT_PSTAT
 # define SFS_TYPE	SFS_VFS	/* use <sys/vfs.h> statfs() implementation */
@@ -237,7 +237,7 @@ extern int	syslog(int, char *, ...);
 **  SunOS and Solaris
 **
 **	Tested on SunOS 4.1.x (a.k.a. Solaris 1.1.x) and
-**	Solaris 2.2 (a.k.a. SunOS 5.2).
+**	Solaris 2.4 (a.k.a. SunOS 5.4).
 */
 
 #if defined(sun) && !defined(BSD)
@@ -395,7 +395,7 @@ extern long	dgux_inet_addr();
 
 #ifdef __osf__
 # define HASUNSETENV	1	/* has unsetenv(3) call */
-# define HASSETREUID	1	/* has setreuid(2) call */
+# define USESETEUID	1	/* has useable seteuid(2) call */
 # define HASINITGROUPS	1	/* has initgroups(3) call */
 # ifndef HASFLOCK
 #  define HASFLOCK	1	/* has flock(2) call */
@@ -448,6 +448,7 @@ typedef int		pid_t;
 
 #ifdef BSD4_4
 # define HASUNSETENV	1	/* has unsetenv(3) call */
+# define USESETEUID	1	/* has useable seteuid(2) call */
 # include <sys/cdefs.h>
 # define ERRLIST_PREDEFINED	/* don't declare sys_errlist */
 # define BSD4_4_SOCKADDR	/* has sa_len */
@@ -468,6 +469,7 @@ typedef int		pid_t;
 #ifdef __bsdi__
 # define HASUNSETENV	1	/* has the unsetenv(3) call */
 # define HASSETSID	1	/* has the setsid(2) POSIX syscall */
+# define USESETEUID	1	/* has useable seteuid(2) call */
 # include <sys/cdefs.h>
 # define ERRLIST_PREDEFINED	/* don't declare sys_errlist */
 # define BSD4_4_SOCKADDR	/* has sa_len */
@@ -503,6 +505,7 @@ typedef int		pid_t;
 #if defined(__386BSD__) || defined(__FreeBSD__) || defined(__NetBSD__)
 # define HASUNSETENV	1	/* has unsetenv(3) call */
 # define HASSETSID	1	/* has the setsid(2) POSIX syscall */
+# define USESETEUID	1	/* has useable seteuid(2) call */
 # ifdef __NetBSD__
 #  define HASUNAME	1	/* has uname(2) syscall */
 # endif
@@ -1178,13 +1181,12 @@ typedef int		(*sigfunc_t)();
 #  define SYSTEM5	1	/* include all the System V defines */
 #  define SYS5SIGNALS	1	/* SysV signal semantics -- reset on each sig */
 #  define HASINITGROUPS	1	/* has initgroups(3) call */
-#  define HASSETREUID	1	/* has setreuid(2) call */
+#  define USESETEUID	1	/* has useable seteuid(2) call */
 #  define HASSETSID	1	/* has Posix setsid(2) call */
 #  define HASGETUSERSHELL 1	/* DOES have getusershell(3) call in libc */
 #  define LA_TYPE	LA_READKSYM	/* use MIOC_READKSYM ioctl */
 #  define SFS_TYPE	SFS_STATVFS	/* use <sys/statvfs.h> statvfs() impl */
 #  define GIDSET_T	gid_t
-#  define setreuid(r, e)	seteuid(e)
 #  undef WIFEXITED
 #  undef WEXITSTATUS
 #  define _PATH_UNIX  "/stand/unix"
@@ -1264,8 +1266,7 @@ extern int	errno;
 /**********************************************************************
 **  End of Per-Operating System defines
 **********************************************************************/
-
-/**********************************************************************
+/**********************************************************************
 **  More general defines
 **********************************************************************/
 
@@ -1288,7 +1289,7 @@ extern int	errno;
 /* general System V Release 4 defines */
 #ifdef __svr4__
 # define SYSTEM5	1
-# define HASSETREUID	1	/* has seteuid(2) call & working saved uids */
+# define USESETEUID	1	/* has useable seteuid(2) call */
 # define HASINITGROUPS	1	/* has initgroups(3) call */
 # ifndef HASSETRLIMIT
 #  define HASSETRLIMIT	1	/* has setrlimit(2) call */
@@ -1296,7 +1297,6 @@ extern int	errno;
 # ifndef HASGETUSERSHELL
 #  define HASGETUSERSHELL 0	/* does not have getusershell(3) call */
 # endif
-# define setreuid(r, e)	seteuid(e)
 
 # ifndef _PATH_UNIX
 #  define _PATH_UNIX		"/unix"
@@ -1346,19 +1346,11 @@ extern int	errno;
 #ifdef _POSIX_VERSION
 # define HASSETSID	1	/* has Posix setsid(2) call */
 # define HASWAITPID	1	/* has Posix waitpid(2) call */
+# if _POSIX_VERSION >= 199500 && !defined(USESETEUID)
+#  define USESETEUID	1	/* has useable seteuid(2) call */
+# endif
 #endif
-
-/*
-**  If no type for argument two of getgroups call is defined, assume
-**  it's an integer -- unfortunately, there seem to be several choices
-**  here.
-*/
-
-#ifndef GIDSET_T
-# define GIDSET_T	int
-#endif
-
-/*
+/*
 **  Tweaking for systems that (for example) claim to be BSD or POSIX
 **  but don't have all the standard BSD or POSIX routines (boo hiss).
 */
@@ -1409,6 +1401,14 @@ extern int	errno;
 # define HASFLOCK	0	/* assume no flock(2) support */
 #endif
 
+#ifndef HASSETREUID
+# define HASSETREUID	0	/* assume no setreuid(2) call */
+#endif
+
+#ifndef USESETEUID
+# define USESETEUID	0	/* assume no seteuid(2) call or no saved ids */
+#endif
+
 #ifndef HASSETRLIMIT
 # define HASSETRLIMIT	0	/* assume no setrlimit(2) support */
 #endif
@@ -1428,6 +1428,16 @@ extern int	errno;
 # else
 #  define HASSETSIGMASK	0
 # endif
+#endif
+
+/*
+**  If no type for argument two of getgroups call is defined, assume
+**  it's an integer -- unfortunately, there seem to be several choices
+**  here.
+*/
+
+#ifndef GIDSET_T
+# define GIDSET_T	int
 #endif
 
 #ifndef UID_T
