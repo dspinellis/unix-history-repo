@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)umount.c	8.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)umount.c	8.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -55,15 +55,19 @@ main(argc, argv)
 	int argc;
 	char *argv[];
 {
-	int all, ch, errs;
+	int all, ch, errs, mnts;
 	char **typelist = NULL;
+	struct statfs *mntbuf;
 
 	/* Start disks transferring immediately. */
 	sync();
 
 	all = 0;
-	while ((ch = getopt(argc, argv, "aFfh:t:v")) != EOF)
+	while ((ch = getopt(argc, argv, "AaFfh:t:v")) != EOF)
 		switch (ch) {
+		case 'A':
+			all = 2;
+			break;
 		case 'a':
 			all = 1;
 			break;
@@ -73,8 +77,8 @@ main(argc, argv)
 		case 'f':
 			fflag = MNT_FORCE;
 			break;
-		case 'h':	/* -h implies -a. */
-			all = 1;
+		case 'h':	/* -h implies -A. */
+			all = 2;
 			nfshost = optarg;
 			break;
 		case 't':
@@ -99,14 +103,31 @@ main(argc, argv)
 	if ((nfshost != NULL) && (typelist == NULL))
 		typelist = makevfslist("nfs");
 		
-	if (all) {
+	switch (all) {
+	case 2:
+		if ((mnts = getmntinfo(&mntbuf, MNT_NOWAIT)) == 0) {
+			warn("getmntinfo");
+			errs = 1;
+			break;
+		}
+		for (errs = 0, mnts--; mnts > 0; mnts--) {
+			if (checkvfsname(mntbuf[mnts].f_fstypename, typelist))
+				continue;
+			if (umountfs(mntbuf[mnts].f_mntonname, typelist) != 0)
+				errs = 1;
+		}
+		break;
+	case 1:
 		if (setfsent() == 0)
 			err(1, "%s", _PATH_FSTAB);
 		errs = umountall(typelist);
-	} else
+		break;
+	case 0:
 		for (errs = 0; *argv != NULL; ++argv)
 			if (umountfs(*argv, typelist) != 0)
 				errs = 1;
+		break;
+	}
 	exit(errs);
 }
 
@@ -263,10 +284,12 @@ getmntname(name, what, type)
 	mntwhat what;
 	char **type;
 {
-	struct statfs *mntbuf;
-	int i, mntsize;
+	static struct statfs *mntbuf;
+	static int mntsize;
+	int i;
 
-	if ((mntsize = getmntinfo(&mntbuf, MNT_NOWAIT)) == 0) {
+	if (mntbuf == NULL &&
+	    (mntsize = getmntinfo(&mntbuf, MNT_NOWAIT)) == 0) {
 		warn("getmntinfo");
 		return (NULL);
 	}
