@@ -1,8 +1,7 @@
-#	@(#)Makefile.inc	5.1 (Berkeley) %G%
+#	@(#)Makefile.inc	5.2 (Berkeley) %G%
 #
-.PATH: ${.CURDIR}/db
-
+.include "${.CURDIR}/db/db/Makefile.inc"
 .include "${.CURDIR}/db/btree/Makefile.inc"
 .include "${.CURDIR}/db/hash/Makefile.inc"
-
-MAN3+=	db.0
+.include "${.CURDIR}/db/recno/Makefile.inc"
+.include "${.CURDIR}/db/man/Makefile.inc"
