@@ -1,4 +1,4 @@
-/* socket.h 4.2 81/10/29 */
+/* socket.h 4.3 81/11/07 */
 
 /*
  * User connection block
@@ -6,37 +6,37 @@
 struct ucb {
 	struct	host *uc_host;		/* foreign host table entry */
 	struct	proc *uc_proc;		/* user proc */
-	union {				/* protocol control block */
-		char *unull;			/* general */
-		struct tcb *utcb;		/* for tcp */
-	} U_cp;
-#define	uc_tcb	U_cp.utcb
+	caddr_t	uc_pcb;			/* protocol control block */
+	struct	protosw *uc_proto;	/* protocol handle */
+/* sbuf and rbuf should be uc_s and uc_r which are structures with */
+/* fields: s_buf, s_mbmax, s_mbcnt, s_cc, s_ccmax */
 	struct	mbuf *uc_sbuf;		/* user send buffer */
-	struct	mbuf *uc_rbuf;		/* user receive buffer */
-	u_char	uc_lolink;		/* lowest link no. in range (raw) */
-	u_char	uc_hilink;		/* highest link no. in range (raw) */
 	u_char	uc_snd;			/* # send bufs allocated */
 	u_char	uc_ssize;		/* # bufs on send buffer */
-#define	uc_timeo uc_ssize		/* user timeout parameter */
-	short	uc_rhiwat;
+	short	uc_scc;		/* not used yet */
+	short	uc_shiwat;	/* not used yet */
+	struct	mbuf *uc_rbuf;		/* user receive buffer */
+	u_char	uc_rcv;		/* not used now */
+	u_char	uc_rsize;	/* not used now */
 	short	uc_rcc;
+	short	uc_rhiwat;
+	short	uc_timeo;		/* open timeout */
 	u_char	uc_state;		/* state of this connection */
 	u_short	uc_flags;		/* misc. flags (see below) */
 	struct	proc *uc_rsel;		/* read selecting proc */
-	struct	th *uc_template;
 };
-struct	th *tcp_template();
 
 /* uc_flags field definitions */
+
+/* these belong within TCP */
 #define	UEOL		00001		/* EOL sent */
 #define	UURG		00002		/* urgent data sent */
+/* end belong in TCP */
 #define	UDEBUG		00004		/* turn on debugging info recording */
-#define	UTCP		00020		/* this is a TCP connection */
-#define	UIP		00040		/* this is a raw IP connection */
-#define	URAW		00100		/* this is a raw 1822 connection */
+#define	UTCP		00020		/* SHOULD BE IMPLIED BY uc_proto */
+
 #define	ULISTEN		00200		/* awaiting a connection */
-#define	UCTL		00400		/* this is a control port only */
-#define	URMSK		00560
+
 #define	URCOLL		01000		/* someone collided on read select */
 #define	URLOCK		02000		/* for uc_rbuf */
 #define	URWANT		04000
