@@ -1,0 +1,12 @@
+# Host: DEC VAX running BSD
+# The following types of /bin/cc failures have been observed:
+# 1.  Something in readline.c which I have never seen
+# 2.  ``"values.c", line 816: compiler error: schain botch''
+#msg /bin/cc has been known to fail on VAXen running BSD4.3
+#msg If this occurs, use gcc
+#msg  (but see comments in Makefile.dist about compiling with gcc).
+
+XDEPFILES= infptrace.o inftarg.o fork-child.o coredep.o corelow.o
+REGEX=regex.o
+REGEX1=regex.o
+XM_FILE= xm-vaxbsd.h
