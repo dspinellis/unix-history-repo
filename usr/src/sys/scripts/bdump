@@ -1,7 +1,7 @@
 # Count the number of buffers in the buffer cache for which
 # bp->b_flags & $bufcount_match is non-0.
 #
-#	@(#)bdump	7.1 (Berkeley) %G%
+#	@(#)bdump	7.2 (Berkeley) %G%
 
 set $bufcount_match=0x020000
 define bufcount
@@ -56,4 +56,48 @@ define dumpbucket
 		set $bp = $bp->b_forw
 	end
 	printf "Number of buffers in bucket %d: %d\n", $arg0, $num
+end
+
+# Dump the buffers on the empty and age queues
+
+define bdumpnew
+
+	set $i = 0
+	set $num = 0
+
+	while ($i < 4)
+
+		printf "Queue %d\n", $i
+		set $bp = (struct buf *)bufqueues[$i].qe_next
+		while ($bp)
+			printf "bp=0x%x flags=0x%x vp=0x%x lbn=%d size=0x%x\n", $bp, $bp->b_flags, $bp->b_vp, $bp->b_lblkno, $bp->b_bufsize
+			set $num++
+			set $bp = (struct buf *)$bp->b_freelist.qe_next
+		end
+		set $i++
+	end
+	printf "Number of buffers in free lists: %d\n", $num
+end
+
+define dumpchain
+
+	set $bp = (struct buf *)$arg0
+	while ($bp)
+		printf "bp=0x%x flags=0x%x bn=0x%x lbn=%d count=%d size=%d\n", $bp, $bp->b_flags, $bp->b_blkno, $bp->b_lblkno, $bp->b_bcount, $bp->b_bufsize
+		set $bp = (struct buf *)$bp->b_vnbufs.qe_next
+	end
+end
+
+define dumpq
+
+	set $num = 0
+
+	printf "Queue %d\n", $arg0
+	set $bp = (struct buf *)bufqueues[$arg0].qe_next
+	while ($bp)
+		printf "bp=0x%x flags=0x%x vp=0x%x lbn=%d size=0x%x\n", $bp, $bp->b_flags, $bp->b_vp, $bp->b_lblkno, $bp->b_bufsize
+		set $num++
+		set $bp = (struct buf *)$bp->b_freelist.qe_next
+	end
+	printf "Number of buffers on queue %d: %d\n", $arg0, $num
 end
