@@ -1,11 +1,11 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)kgmon.c	4.3 83/01/15";
+static char sccsid[] = "@(#)kgmon.c	4.4 83/01/15";
 #endif
 
 #include <sys/param.h>
-#include <sys/pte.h>
+#include <machine/pte.h>
 #include <stdio.h>
 #include <nlist.h>
 #include <ctype.h>
@@ -88,7 +88,7 @@ main(argc, argv)
 	nlist(system, nl);
 	if (nl[0].n_type == 0) {
 		fprintf(stderr, "%s: no namelist\n", system);
-		exit(1);
+		exit(2);
 	}
 	if (argc > 0) {
 		kmemf = *argv;
@@ -100,7 +100,7 @@ main(argc, argv)
 		if (kmem < 0) {
 			fprintf(stderr, "cannot open ");
 			perror(kmemf);
-			exit(1);
+			exit(3);
 		}
 		fprintf(stderr, "%s opened read-only\n", kmemf);
 		if (!sflag)
@@ -124,7 +124,7 @@ main(argc, argv)
 		Sysmap = (struct pte *)malloc(nl[N_SYSSIZE].n_value);
 		if (Sysmap == 0) {
 			perror("Sysmap");
-			exit(1);
+			exit(4);
 		}
 		read(kmem, Sysmap, nl[N_SYSSIZE].n_value);
 	}
@@ -228,7 +228,7 @@ resetstate()
 	for (i = ssiz; i > 0; i -= BUFSIZ)
 		if (write(kmem, buf, i < BUFSIZ ? i : BUFSIZ) < 0) {
 			perror("sbuf write");
-			exit(1);
+			exit(7);
 		}
 	s_textsize = kfetch(N_S_TEXTSIZE);
 	fromssize = s_textsize / HASHFRACTION;
@@ -237,7 +237,7 @@ resetstate()
 	for (i = fromssize; i > 0; i -= BUFSIZ)
 		if (write(kmem, buf, i < BUFSIZ ? i : BUFSIZ) < 0) {
 			perror("kforms write");
-			exit(1);
+			exit(8);
 		}
 	tossize = (s_textsize * ARCDENSITY / 100) * sizeof(struct tostruct);
 	ktos = kfetch(N_TOS);
@@ -245,7 +245,7 @@ resetstate()
 	for (i = tossize; i > 0; i -= BUFSIZ)
 		if (write(kmem, buf, i < BUFSIZ ? i : BUFSIZ) < 0) {
 			perror("ktos write");
-			exit(1);
+			exit(9);
 		}
 }
 
@@ -256,7 +256,7 @@ turnonoff(onoff)
 
 	if ((off = nl[N_PROFILING].n_value) == 0) {
 		printf("profiling: not defined in kernel\n");
-		exit(1);
+		exit(10);
 	}
 	klseek(kmem, off, 0);
 	write(kmem, (char *)&onoff, sizeof (onoff));
@@ -270,15 +270,15 @@ kfetch(index)
 
 	if ((off = nl[index].n_value) == 0) {
 		printf("%s: not defined in kernel\n", nl[index].n_name);
-		exit(1);
+		exit(11);
 	}
 	if (klseek(kmem, off, 0) == -1) {
 		perror("lseek");
-		exit(2);
+		exit(12);
 	}
 	if (read(kmem, (char *)&value, sizeof (value)) != sizeof (value)) {
 		perror("read");
-		exit(3);
+		exit(13);
 	}
 	return (value);
 }
