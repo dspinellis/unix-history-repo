@@ -13,7 +13,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	8.137 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	8.138 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -522,9 +522,16 @@ main(argc, argv, envp)
 			break;
 
 		  case 'B':	/* body type */
-			if (strcasecmp(optarg, "7bit") == 0 ||
-			    strcasecmp(optarg, "8bitmime") == 0)
-				CurEnv->e_bodytype = newstr(optarg);
+			if (strcasecmp(optarg, "7BIT") == 0)
+			{
+				CurEnv->e_bodytype = "7BIT";
+				SevenBitInput = TRUE;
+			}
+			else if (strcasecmp(optarg, "8BITMIME") == 0)
+			{
+				CurEnv->e_bodytype = "8BITMIME";
+				SevenBitInput = FALSE;
+			}
 			else
 				usrerr("Illegal body type %s", optarg);
 			break;
