@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)rxformat.8	6.1 (Berkeley) %G%
+.\"	@(#)rxformat.8	6.2 (Berkeley) %G%
 .\"
 .TH RXFORMAT 8V ""
 .UC 5
@@ -34,7 +34,8 @@ contains 256 bytes of data.
 .PP
 Before formatting a diskette
 .I rxformat
-prompts for verification (this allows a user to cleanly
+prompts for verification if standard input is a tty
+(this allows a user to cleanly
 abort the operation; note that
 formatting a diskette will destroy any existing data).
 Formatting is done by the hardware.
