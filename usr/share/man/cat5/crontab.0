@@ -1,0 +1,76 @@
+CRONTAB(8)                BSD System Manager's Manual               CRONTAB(8)
+
+NNAAMMEE
+     ccrroonnttaabb - chronological services schedule file
+
+SSYYNNOOPPSSIISS
+     ccrroonnttaabb
+
+DDEESSCCRRIIPPTTIIOONN
+     The ccrroonnttaabb file contain the schedules used by the cron(8) daemon.  Each
+     line in the schedule gives a time of execution and the command to be exe-
+     cuted.
+
+     A line consists of two fields giving the time, three fields giving the
+     day, a user name field, and lastly the command to be executed.  The first
+     five fields are space or tab separated and may consist of a number, a
+     comma separated list of numbers, or an asterisk meaning any or all possi-
+     ble values.  The last field (the command field) may contain spaces.  A
+     field containing two hyphen separated numbers is treated as an inclusive
+     range.
+
+     The fields are:
+
+           1.   The minute of the hour, a number from 0 to 59.
+
+           2.   The hour, a number from 0 to 23.
+
+           3.   The day in terms of the month, a number from 1 to 31.
+
+           4.   The day in terms of the year, a number from 1 to 12.
+
+           5.   The day in terms of the week, a number from 1 to 7.  Monday is
+                considered day one, Sunday is day seven.
+
+           6.   The name of a user: the command will be run with the user's
+                uid and permissions.
+
+           7.   The command to execute.  This field may be terminated with a
+                newline of the `%' character.
+
+     An optional file ccrroonnttaabb..llooccaall may be created and used for addtional
+     scheduling.
+
+EEXXAAMMPPLLEESS
+     In the example below, the first field indicates the command should be ex-
+     ecuted at the hour, a quarter past the hour, on the half hour and at a
+     quarter to the hour.  The next four fields indicate the command should be
+     run every hour, every day. The sixth field indicates the command is to be
+     run with root privileges.
+
+           0,15,30,45 * * * *      root /usr/libexec/atrun
+
+     In this next exmaple, the first field indicates this command should be
+     exectuted on the half hour.  The second field constrains the hour to 3
+     A.M. The third and second fields indicate any day of the month and any
+     day of the year, but are constrained by the fifth field to the sixth day
+     of the week (Saturday).  The command is to be executed with root privi-
+     leges. The example shown here has been folded (spread across two lines)
+     to make it readable.  It must not be folded in the the ccrroonnttaabb file.
+
+           30 3 * * 6      root    /bin/sh /etc/weekly 2>&1 | tee
+                   /var/log/weekly.out | mail -s "weekly output" root
+
+SSEEEE AALLSSOO
+     cron(8) rc(8)
+
+FFIILLEESS
+     /etc/crontab        General system tasks.
+     /etc/crontab.local  Optional local tasks.
+     /etc/rc             System initialization script (normally, ccrroonn is exe-
+                         cuted from this script.)
+
+HHIISSTTOORRYY
+     A ccrroonnttaabb file appeared in Version 6 AT&T UNIX.
+
+4.4BSD                           June 9, 1993                                2

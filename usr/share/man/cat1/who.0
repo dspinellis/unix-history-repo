@@ -1,0 +1,42 @@
+WHO(1)                       BSD Reference Manual                       WHO(1)
+
+NNAAMMEE
+     wwhhoo - display who is logged in
+
+SSYYNNOOPPSSIISS
+     wwhhoo [_a_m _I] [_f_i_l_e]
+
+DDEESSCCRRIIPPTTIIOONN
+     The utility wwhhoo displays a list of all users currently logged on, showing
+     for each user the login name, tty name, the date and time of login, and
+     hostname if not local.
+
+     Available options:
+
+     _a_m _I  Returns the invoker's real user name.
+
+     _f_i_l_e  By default, wwhhoo gathers information from the file _/_v_a_r_/_r_u_n_/_u_t_m_p. An
+           alternate _f_i_l_e may be specified which is usually _/_v_a_r_/_r_u_n_/_w_t_m_p (or
+           _/_v_a_r_/_r_u_n_/_w_t_m_p_._[_0_-_6_] depending on site policy as _w_t_m_p can grow quite
+           large and daily versions may or may not kept around after compres-
+           sion by ac(8)).  The _w_t_m_p file contains a record of every login,
+           logout, crash, shutdown and date change since _w_t_m_p was last trun-
+           cated or created.
+
+     If _/_v_a_r_/_l_o_g_/_w_t_m_p is being used as the file, the user name may be empty or
+     one of the special characters '|', '}' and '~'.  Logouts produce an out-
+     put line without any user name.  For more information on the special
+     characters, see utmp(5).
+
+FFIILLEESS
+     /var/run/utmp
+     /var/log/wtmp
+     /var/log/wtmp.[0-6]
+
+SSEEEE AALLSSOO
+     last(1),  users(1),  getuid(2),  utmp(5)
+
+HHIISSTTOORRYY
+     A wwhhoo command appeared in Version 6 AT&T UNIX.
+
+4.4BSD                           June 6, 1993                                1

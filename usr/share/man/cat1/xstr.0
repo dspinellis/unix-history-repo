@@ -1,0 +1,73 @@
+XSTR(1)                      BSD Reference Manual                      XSTR(1)
+
+NNAAMMEE
+     xxssttrr - extract strings from C programs to implement shared strings
+
+SSYYNNOOPPSSIISS
+     xxssttrr [--cc] [--] [_f_i_l_e]
+
+DDEESSCCRRIIPPTTIIOONN
+     XXssttrr maintains a file _s_t_r_i_n_g_s into which strings in component parts of a
+     large program are hashed.  These strings are replaced with references to
+     this common area.  This serves to implement shared constant strings, most
+     useful if they are also read-only.
+
+     Available options:
+
+     --       XXssttrr reads from the standard input.
+
+     --cc      XXssttrr will extract the strings from the C source _f_i_l_e or the stan-
+             dard input (--), replacing string references by expressions of the
+             form (&xstr[number]) for some number.  An appropriate declaration
+             of xxssttrr is prepended to the file.  The resulting C text is placed
+             in the file _x_._c, to then be compiled.  The strings from this file
+             are placed in the _s_t_r_i_n_g_s data base if they are not there al-
+             ready.  Repeated strings and strings which are suffices of exist-
+             ing strings do not cause changes to the data base.
+
+     After all components of a large program have been compiled a file _x_s_._c
+     declaring the common xxssttrr space can be created by a command of the form
+
+           xstr
+
+     The file _x_s_._c should then be compiled and loaded with the rest of the
+     program.  If possible, the array can be made read-only (shared) saving
+     space and swap overhead.
+
+     XXssttrr can also be used on a single file.  A command
+
+           xstr name
+
+     creates files _x_._c and _x_s_._c as before, without using or affecting any
+     _s_t_r_i_n_g_s file in the same directory.
+
+     It may be useful to run xxssttrr after the C preprocessor if any macro defi-
+     nitions yield strings or if there is conditional code which contains
+     strings which may not, in fact, be needed.  An appropriate command se-
+     quence for running xxssttrr after the C preprocessor is:
+
+           cc -E name.c | xstr -c -
+           cc -c x.c
+           mv x.o name.o
+
+     XXssttrr does not touch the file _s_t_r_i_n_g_s unless new items are added, thus
+     make(1) can avoid remaking _x_s_._o unless truly necessary.
+
+FFIILLEESS
+     strings     Data base of strings
+     x.c         Massaged C source
+     xs.c        C source for definition of array `xstr'
+     /tmp/xs*    Temp file when `xstr name' doesn't touch _s_t_r_i_n_g_s
+
+SSEEEE AALLSSOO
+     mkstr(1)
+
+BBUUGGSS
+     If a string is a suffix of another string in the data base, but the
+     shorter string is seen first by xxssttrr both strings will be placed in the
+     data base, when just placing the longer one there will do.
+
+HHIISSTTOORRYY
+     The xxssttrr command appeared in 3.0BSD.
+
+3rd Berkeley Distribution        June 9, 1993                                2

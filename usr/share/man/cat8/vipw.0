@@ -1,0 +1,38 @@
+VIPW(8)                   BSD System Manager's Manual                  VIPW(8)
+
+NNAAMMEE
+     vviippww - edit the password file
+
+SSYYNNOOPPSSIISS
+     vviippww
+
+DDEESSCCRRIIPPTTIIOONN
+     VViippww edits the password file after setting the appropriate locks, and
+     does any necessary processing after the password file is unlocked.  If
+     the password file is already locked for editing by another user, vviippww
+     will ask you to try again later. The default editor for vviippww is vi(1).
+
+     VViippww performs a number of consistency checks on the password entries, and
+     will not allow a password file with a ``mangled'' entry to be installed.
+     If vviippww rejects the new password file, the user is prompted to re-enter
+     the edit session.
+
+     Once the information has been verified, vviippww uses pwd_mkdb(8) to update
+     the user database.  This is run in the background, and, at very large
+     sites could take several minutes.  Until this update is completed, the
+     password file is unavailable for other updates and the new information is
+     not available to programs.
+
+EENNVVIIRROONNMMEENNTT
+     If the following environment variable exists it will be utilized by vviippww:
+
+     EDITOR  The editor specified by the string EDITOR will be invoked instead
+             of the default editor vi(1).
+
+SSEEEE AALLSSOO
+     chpass(1),  passwd(1),  passwd(5),  adduser(8),  pwd_mkdb(8)
+
+HHIISSTTOORRYY
+     The vviippww command appeared in 4.0BSD.
+
+4th Berkeley Distribution        June 6, 1993                                1

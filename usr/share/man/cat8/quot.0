@@ -1,0 +1,35 @@
+QUOT(8)                   BSD System Manager's Manual                  QUOT(8)
+
+NNAAMMEE
+     qquuoott - display total block usage per user for a file
+
+SSYYNNOOPPSSIISS
+     qquuoott [--nnccff] [_f_i_l_e_s_y_s_t_e_m _._._.]
+
+DDEESSCCRRIIPPTTIIOONN
+     The qquuoott command displays the total count of blocks owned by a user for
+     the filesystem _f_i_l_e_s_y_s_t_e_m. If the filesystem option _f_i_l_e_s_y_s_t_e_m is not
+     specified, the file systems listed in _/_e_t_c_/_f_s_t_a_b are used.  The following
+     options are available:
+
+     --cc      Display information on file size and block usage. The file sizes
+             are listed in the first column, the second column contains a
+             count of how many files of that size were found and the third
+             column lists the cumulative block usage for the displayed size
+             and all smaller files.
+
+     --ff      For each user, the number of files (inodes) owned is displayed in
+             addition to the block usage.
+
+     --nn      A list sorted by block usage is displayed.  This is the result of
+             qquuoott executing the following command:
+
+                   ncheck filesystem | sort +0n | quot -n filesystem
+
+SSEEEE AALLSSOO
+     ls(1),  du(1)
+
+HHIISSTTOORRYY
+     The qquuoott command appeared in Version 32V AT&T UNIX.
+
+4th Berkeley Distribution        June 6, 1993                                1

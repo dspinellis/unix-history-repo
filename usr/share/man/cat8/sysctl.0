@@ -1,0 +1,132 @@
+SYSCTL(8)                 BSD System Manager's Manual                SYSCTL(8)
+
+NNAAMMEE
+     ssyyssccttll - get or set kernel state
+
+SSYYNNOOPPSSIISS
+     ssyyssccttll [--nn] _n_a_m_e _._._.
+     ssyyssccttll [--nn] --ww _n_a_m_e_=_v_a_l_u_e _._._.
+     ssyyssccttll [--nn] --aaAA
+
+DDEESSCCRRIIPPTTIIOONN
+     The ssyyssccttll utility retrieves kernel state and allows processes with ap-
+     propriate privilege to set kernel state.  The state to be retrieved or
+     set is described using a ``Management Information Base'' (``MIB'') style
+     name, described as a dotted set of components.  The --aa flag can be used
+     to list all the currently available string or integer values.  The --AA
+     flag will list all the known MIB names including tables.  Those with
+     string or integer values will be printed as with the --aa flag; for the
+     table values, the name of the utility to retrieve them is given.
+
+     The --nn flag specifies that the printing of the field name should be sup-
+     pressed and that only its value should be output.  This flag is useful
+     for setting shell variables.  For example, to save the pagesize in vari-
+     able psize, use:
+           set psize=`sysctl -n hw.pagesize`
+
+     If just a MIB style name is given, the corresponding value is retrieved.
+     If a value is to be set, the --ww flag must be specified and the MIB name
+     followed by an equal sign and the new value to be used.
+
+     The information available from ssyyssccttll consists of integers, strings, and
+     tables.  The tabular information can only be retrieved by special purpose
+     programs such as ppss, ssyyssttaatt, and nneettssttaatt. The string and integer informa-
+     tion is summaried below.  For a detailed description of these variable
+     see sysctl(3).  The changeable column indicates whether a process with
+     appropriate privilege can change the value.
+
+     NNaammee                            TTyyppee          CChhaannggeeaabbllee
+     kern.ostype                     string        no
+     kern.osrelease                  string        no
+     kern.osrevision                 integer       no
+     kern.version                    string        no
+     kern.maxvnodes                  integer       yes
+     kern.maxproc                    integer       yes
+     kern.maxfiles                   integer       yes
+     kern.argmax                     integer       no
+     kern.securelevel                integer       raise only
+     kern.hostname                   string        yes
+     kern.hostid                     integer       yes
+     kern.clockrate                  struct        no
+     kern.posix1version              integer       no
+     kern.ngroups                    integer       no
+     kern.job_control                integer       no
+     kern.saved_ids                  integer       no
+     kern.link_max                   integer       no
+     kern.max_canon                  integer       no
+     kern.max_input                  integer       no
+     kern.name_max                   integer       no
+     kern.path_max                   integer       no
+     kern.pipe_buf                   integer       no
+     kern.chown_restricted           integer       no
+     kern.no_trunc                   integer       no
+     kern.vdisable                   integer       no
+
+
+     kern.boottime                   struct        no
+     vm.loadavg                      struct        no
+     machdep.console_device          dev_t         no
+     net.inet.ip.forwarding          integer       yes
+     net.inet.ip.redirect            integer       yes
+     net.inet.ip.ttl                 integer       yes
+     net.inet.icmp.maskrepl          integer       yes
+     net.inet.udp.checksum           integer       yes
+     hw.machine                      string        no
+     hw.model                        string        no
+     hw.ncpu                         integer       no
+     hw.byteorder                    integer       no
+     hw.physmem                      integer       no
+     hw.usermem                      integer       no
+     hw.pagesize                     integer       no
+     user.cs_path                    string        no
+     user.bc_base_max                integer       no
+     user.bc_dim_max                 integer       no
+     user.bc_scale_max               integer       no
+     user.bc_string_max              integer       no
+     user.coll_weights_max           integer       no
+     user.expr_nest_max              integer       no
+     user.line_max                   integer       no
+     user.re_dup_max                 integer       no
+     user.posix2_version             integer       no
+     user.posix2_c_bind              integer       no
+     user.posix2_c_dev               integer       no
+     user.posix2_char_term           integer       no
+     user.posix2_fort_dev            integer       no
+     user.posix2_fort_run            integer       no
+     user.posix2_localedef           integer       no
+     user.posix2_sw_dev              integer       no
+     user.posix2_upe                 integer       no
+
+EEXXAAMMPPLLEESS
+     For example, to retrieve the maximum number of processes allowed in the
+     system, one would use the follow request:
+           sysctl kern.maxproc
+
+     To set the maximum number of processes allowed in the system to 1000, one
+     would use the follow request:
+           sysctl -w kern.maxproc=1000
+
+     Information about the system clock rate may be obtained with:
+           sysctl kern.clockrate
+
+     Information about the load average history may be obtained with
+           sysctl vm.loadavg
+
+FFIILLEESS
+     <sys/sysctl.h>        definitions for top level identifiers, second level
+                           kernel and hardware identifiers, and user level
+                           identifiers
+     <sys/socket.h>        definitions for second level network identifiers
+     <sys/gmon.h>          definitions for third level profiling identifiers
+     <vm/vm_param.h>       definitions for second level virtual memory identi-
+                           fiers
+     <netinet/in.h>        definitions for third level Internet identifiers
+                           and fourth level IP identifiers
+     <netinet/icmp_var.h>  definitions for fourth level ICMP identifiers
+     <netinet/udp_var.h>   definitions for fourth level UDP identifiers
+
+SSEEEE AALLSSOO
+     sysctl(3)
+
+HHIISSTTOORRYY
+     ssyyssccttll first appeared in 4.4BSD.

@@ -1,0 +1,29 @@
+CHROOT(8)                 BSD System Manager's Manual                CHROOT(8)
+
+NNAAMMEE
+     cchhrroooott - change root directory
+
+SSYYNNOOPPSSIISS
+     cchhrroooott _n_e_w_r_o_o_t [_c_o_m_m_a_n_d]
+
+DDEESSCCRRIIPPTTIIOONN
+     The cchhrroooott command changes its root directory to the supplied directory
+     _n_e_w_r_o_o_t and exec's _c_o_m_m_a_n_d, if supplied, or an interactive copy of your
+     shell.
+
+     Note, _c_o_m_m_a_n_d or the shell are run as your real-user-id.
+
+EENNVVIIRROONNMMEENNTT
+     The following environment variable is referenced by cchhrroooott:
+
+     SHELL  If set, the string specified by SHELL is interpreted as the name
+            of the shell to exec.  If the variable SHELL is not set, _/_b_i_n_/_s_h
+            is used.
+
+SSEEEE AALLSSOO
+     chdir(2),  chroot(2),  environ(7)
+
+HHIISSTTOORRYY
+     The cchhrroooott utility first appeared in 4.4BSD.
+
+4.3 Berkeley Distribution        June 9, 1993                                1

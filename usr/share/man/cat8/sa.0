@@ -1,0 +1,198 @@
+
+
+
+SA(8)              BSD System Manager's Manual              SA(8)
+
+
+NNAAMMEE
+       sa, accton - system accounting
+
+SSYYNNOOPPSSIISS
+       ssaa [ --aabbccddDDffiijjkkKKllnnrrssttuuvv ] [ --SS savacctfile ] [ --UU usracct-
+       file ] [ file ]
+
+       aaccccttoonn [ file ]
+
+DDEESSCCRRIIPPTTIIOONN
+       With an argument naming an existing  _f_i_l_e_,  _a_c_c_t_o_n  causes
+       system  accounting  information for every process executed
+       to be placed at the end of the file.  If  no  argument  is
+       given, accounting is turned off.
+
+       _S_a reports on, cleans up, and generally maintains account-
+       ing files.
+
+       _S_a   is   able   to   condense    the    information    in
+       _/_v_a_r_/_a_c_c_o_u_n_t_/_a_c_c_t into a summary file _/_v_a_r_/_a_c_c_o_u_n_t_/_s_a_v_a_c_c_t
+       which contains a count of the number of times each command
+       was  called and the time resources consumed.  This conden-
+       sation  is   desirable   because   on   a   large   system
+       _/_v_a_r_/_a_c_c_o_u_n_t_/_a_c_c_t  can  grow  by  100 blocks per day.  The
+       summary file is normally read before the accounting  file,
+       so the reports include all available information.
+
+       If  a  file  name is given as the last argument, that file
+       will be treated as the accounting file;  _/_v_a_r_/_a_c_c_o_u_n_t_/_a_c_c_t
+       is the default.
+
+       Output   fields   are   labeled:  "cpu"  for  the  sum  of
+       user+system time (in minutes), "re" for real time (also in
+       minutes),  "k"  for  cpu-time  averaged  core usage (in 1k
+       units), "avio" for average number of  i/o  operations  per
+       execution.   With  options  fields labeled "tio" for total
+       i/o operations, "k*sec" for cpu  storage  integral  (kilo-
+       core  seconds),  "u"  and "s" for user and system cpu time
+       alone (both in minutes) will sometimes appear.
+
+       There are near a googol of options:
+
+
+       a      Print all  command  names,  even  those  containing
+              unprintable  characters  and  those used only once.
+              By  default,  those  are  placed  under  the   name
+              `***other.'
+
+       b      Sort  output by sum of user and system time divided
+              by number of calls.  Default sort is by sum of user
+              and system times.
+
+
+
+4th Berkeley Distribution  June 6, 1993                         1
+
+
+
+
+
+
+
+
+SA(8)              BSD System Manager's Manual              SA(8)
+
+
+       c      Besides  total user, system, and real time for each
+              command print percentage of  total  time  over  all
+              commands.
+
+       d      Sort by average number of disk i/o operations.
+
+       D      Print  and  sort by total number of disk i/o opera-
+              tions.
+
+       f      Force no interactive threshold compression with  -v
+              flag.
+
+       i      Don't read in summary file.
+
+       j      Instead  of  total  minutes time for each category,
+              give seconds per call.
+
+       k      Sort by cpu-time average memory usage.
+
+       K      Print and sort by cpu-storage integral.
+
+       l      Separate system and user time;  normally  they  are
+              combined.
+
+       m      Print number of processes and number of CPU minutes
+              for each user.
+
+       n      Sort by number of calls.
+
+       r      Reverse order of sort.
+
+       s      Merge   accounting   file   into    summary    file
+              _/_v_a_r_/_a_c_c_o_u_n_t_/_s_a_v_a_c_c_t when done.
+
+       t      For  each  command report ratio of real time to the
+              sum of user and system times.
+
+       u      Superseding all other flags, print for each command
+              in  the  accounting  file  the  user ID and command
+              name.
+
+       v      Followed by a number _n_, types the name of each com-
+              mand used _n times or fewer.  Await a reply from the
+              terminal; if it begins with `y', add the command to
+              the  category `**junk**.' This is used to strip out
+              garbage.
+
+       S      The following filename is used as the command  sum-
+              mary file instead of _/_v_a_r_/_a_c_c_o_u_n_t_/_s_a_v_a_c_c_t_.
+
+       U      The   following   filename   is   used  instead  of
+
+
+
+4th Berkeley Distribution  June 6, 1993                         2
+
+
+
+
+
+
+
+
+SA(8)              BSD System Manager's Manual              SA(8)
+
+
+              _/_v_a_r_/_a_c_c_o_u_n_t_/_u_s_r_a_c_c_t  to  accumulate  the  per-user
+              statistics printed by the -m option.
+
+FFIILLEESS
+       /var/account/acct   raw accounting
+       /var/account/savacctsummary
+       /var/account/usracctper-user summary
+
+SSEEEE AALLSSOO
+       ac(8), acct(2)
+
+BBUUGGSS
+       The number of options to this program is absurd.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+4th Berkeley Distribution  June 6, 1993                         3
+
+
+
+
+

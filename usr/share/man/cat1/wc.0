@@ -1,0 +1,55 @@
+WC(1)                        BSD Reference Manual                        WC(1)
+
+NNAAMMEE
+     wwcc - word, line, and byte count
+
+SSYYNNOOPPSSIISS
+     wwcc [--ccllww] [_f_i_l_e _._._.]
+
+DDEESSCCRRIIPPTTIIOONN
+     The wwcc utility displays the number of lines, words, and bytes contained
+     in each input _f_i_l_e (or standard input, by default) to the standard out-
+     put.  A line is defined as a string of chacters delimited by a <newline>
+     character, and a word is defined as a string of characters delimited by
+     white space characters.  White space characters are the set of characters
+     for which the isspace(3) function returns true.  If more than one input
+     file is specified, a line of cumulative counts for all the files is dis-
+     played on a separate line after the output for the last file.
+
+     The following options are available:
+
+     --cc      The number of bytes in each input file is written to the standard
+             output.
+
+     --ll      The number of lines in each input file is written to the standard
+             output.
+
+     --ww      The number of words in each input file is written to the standard
+             output.
+
+     When an option is specified, wwcc only reports the information requested by
+     that option.  The default action is equivalent to specifying all of the
+     flags.
+
+     If no files are specified, the standard input is used and no file name is
+     displayed.
+
+     The wwcc utility exits 0 on success, and >0 if an error occurs.
+
+SSEEEE AALLSSOO
+     isspace(3)
+
+CCOOMMPPAATTIIBBIILLIITTYY
+     Historically, the wwcc utility was documented to define a word as a ``maxi-
+     mal string of characters delimited by <space>, <tab> or <newline> charac-
+     ters''.  The implementation, however, didn't handle non-printing charac-
+     ters correctly so that ``  ^D^E  '' counted as 6 spaces, while
+     ``foo^D^Ebar'' counted as 8 characters.  4BSD systems after 4.3BSD modi-
+     fied the implementation to be consistent with the documentation.  This
+     implementation defines a ``word'' in terms of the isspace(3) function, as
+     required by IEEE Std1003.2 (``POSIX'').
+
+SSTTAANNDDAARRDDSS
+     The wwcc function conforms to IEEE Std1003.2 (``POSIX'').
+
+4.4BSD                           June 6, 1993                                1

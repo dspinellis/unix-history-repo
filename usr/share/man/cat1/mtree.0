@@ -1,0 +1,159 @@
+MTREE(8)                  BSD System Manager's Manual                 MTREE(8)
+
+NNAAMMEE
+     mmttrreeee - map a directory hierarchy
+
+SSYYNNOOPPSSIISS
+     mmttrreeee [--ccddeerruuxx] [--ff _s_p_e_c] [--KK _k_e_y_w_o_r_d_s] [--kk _k_e_y_w_o_r_d_s] [--pp _p_a_t_h] [--ss _s_e_e_d]
+
+DDEESSCCRRIIPPTTIIOONN
+     The utility mmttrreeee compares the file hierarchy rooted in the current di-
+     rectory against a specification read from the standard input.  Messages
+     are written to the standard output for any files whose characteristics do
+     not match the specification's, or which are missing from either the file
+     hierarchy or the specification.
+
+     The options are as follows:
+
+     --cc    Print a specification for the file hierarchy to the standard out-
+           put.
+
+     --dd    Ignore everything except directory type files.
+
+     --ee    Don't complain about files that are in the file hierarchy, but not
+           in the specification.
+
+     --ff    Read the specification from _f_i_l_e, instead of from the standard in-
+           put.
+
+     --KK    Add the specified (whitespace or comma separated) keywords to the
+           current set of keywords.
+
+     --kk    Use the ``type'' keyword plus the specified (whitespace or comma
+           separated) keywords instead of the current set of keywords.
+
+     --pp    Use the file hierarchy rooted in _p_a_t_h, instead of the current di-
+           rectory.
+
+     --rr    Remove any files in the file hierarchy that are not described in
+           the specification.
+
+     --ss    Display a single checksum to the standard error output that repre-
+           sents all of the files for which the keyword cckkssuumm was specified.
+           The checksum is seeded with the specified value.
+
+     --uu    Modify the owner, group, and permissions of existing files to match
+           the specification and create any missing directories.  User, group,
+           and permissions must all be specified for missing directories to be
+           created.
+
+     --xx    Don't descend below mount points in the file hierarchy.
+
+     Specifications are mostly composed of ``keywords'', i.e. strings that
+     that specify values relating to files.  No keywords have default values,
+     and if a keyword has no value set, no checks based on it are performed.
+
+     Currently supported keywords are as follows:
+
+     cckkssuumm       The checksum of the file using the default algorithm speci-
+                 fied by the cksum(1) utility.
+
+     iiggnnoorree      Ignore any file hierarchy below this file.
+
+     ggiidd         The file group as a numeric value.
+
+
+     ggnnaammee       The file group as a symbolic name.
+
+     mmooddee        The current file's permissions as a numeric (octal) or sym-
+                 bolic value.
+
+     nnlliinnkk       The number of hard links the file is expected to have.
+
+     uuiidd         The file owner as a numeric value.
+
+     uunnaammee       The file group as a symbolic name.
+
+     ssiizzee        The size, in bytes, of the file.
+
+     lliinnkk        The file the symbolic link is expected to reference.
+
+     ttiimmee        The last modification time of the file.
+
+     ttyyppee        The type of the file; may be set to any one of the following:
+
+                 bblloocckk       block special device
+                 cchhaarr        character special device
+                 ddiirr         directory
+                 ffiiffoo        fifo
+                 ffiillee        regular file
+                 lliinnkk        symbolic link
+                 ssoocckkeett      socket
+
+     The default set of keywords are ggiidd, mmooddee, nnlliinnkk, ssiizzee, sslliinnkk, ttiimmee, and
+     uuiidd.
+
+     There are four types of lines in a specification.
+
+     The first type of line sets a global value for a keyword, and consists of
+     the string ``/set'' followed by whitespace, followed by sets of key-
+     word/value pairs, separated by whitespace.  Keyword/value pairs consist
+     of a keyword, followed by an equals sign (``=''), followed by a value,
+     without whitespace characters.  Once a keyword has been set, its value
+     remains unchanged until either reset or unset.
+
+     The second type of line unsets keywords and consists of the string ``/un-
+     set'', followed by whitespace, followed by one or more keywords, separat-
+     ed by whitespace.
+
+     The third type of line is a file specification and consists of a file
+     name, followed by whitespace, followed by zero or more whitespace sepa-
+     rated keyword/value pairs.  The file name may be preceded by whitespace
+     characters.  The file name may contain any of the standard file name
+     matching characters (``['', ``]'', ``?'' or ``*''), in which case files
+     in the hierarchy will be associated with the first pattern that they
+     match.
+
+     Each of the keyword/value pairs consist of a keyword, followed by an
+     equals sign (``=''), followed by the keyword's value, without whitespace
+     characters.  These values override, without changing, the global value of
+     the corresponding keyword.
+
+     All paths are relative.  Specifying a directory will cause subsequent
+     files to be searched for in that directory hierarchy.  Which brings us to
+     the last type of line in a specification: a line containing only the
+     string ``....'' causes the current directory path to ascend one level.
+
+     Empty lines and lines whose first non-whitespace character is a hash mark
+     (``#'') are ignored.
+
+     The mmttrreeee utility exits with a status of 0 on success, 1 if any error oc-
+     curred, and 2 if the file hierarchy did not match the specification.
+
+EEXXAAMMPPLLEESS
+     To detect system binaries that have been ``trojan horsed'', it is recom-
+     mended that mmttrreeee be run on the file systems, and a copy of the results
+     stored on a different machine, or, at least, in encrypted form.  The seed
+     for the --ss option should not be an obvious value and the final checksum
+     should not be stored on-line under any circumstances!  Then, periodical-
+     ly, mmttrreeee should be run against the on-line specifications and the final
+     checksum compared with the previous value.  While it is possible for the
+     bad guys to change the on-line specifications to conform to their modi-
+     fied binaries, it shouldn't be possible for them to make it produce the
+     same final checksum value.  If the final checksum value changes, the off-
+     line copies of the specification can be used to detect which of the bina-
+     ries have actually been modified.
+
+     The --dd and --uu options can be used in combination to create directory hi-
+     erarchies for distributions and other such things.
+
+FFIILLEESS
+     /etc/mtree  system specification directory
+
+SSEEEE AALLSSOO
+     chmod(1),  chown(1),  chgrp(1),  cksum(1),  stat(2),  fts(3),
+
+HHIISSTTOORRYY
+     The mmttrreeee utility appeared in 4.3BSD-Reno.
+
+4.4BSD                           June 6, 1993                                3

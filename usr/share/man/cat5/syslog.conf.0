@@ -1,0 +1,112 @@
+SYSLOG.CONF(5)              BSD Programmer's Manual             SYSLOG.CONF(5)
+
+NNAAMMEE
+     ssyysslloogg..ccoonnff - syslogd(8) configuration file
+
+DDEESSCCRRIIPPTTIIOONN
+     The ssyysslloogg..ccoonnff file is the configuration file for the syslogd(8) pro-
+     gram.  It consists of lines with two fields: the _s_e_l_e_c_t_o_r field which
+     specifies the types of messages and priorities to which the line applies,
+     and an _a_c_t_i_o_n field which specifies the action to be taken if a message
+     syslogd receives matches the selection criteria.  The _s_e_l_e_c_t_o_r field is
+     separated from the _a_c_t_i_o_n field by one or more tab characters.
+
+     The _S_e_l_e_c_t_o_r_s function are encoded as a _f_a_c_i_l_i_t_y, a period (``.''), and a
+     _l_e_v_e_l, with no intervening white-space.  Both the _f_a_c_i_l_i_t_y and the _l_e_v_e_l
+     are case insensitive.
+
+     The _f_a_c_i_l_i_t_y describes the part of the system generating the message, and
+     is one of the following keywords: auth, authpriv, cron, daemon, kern,
+     lpr, mail, mark, news, syslog, user, uucp and local0 through local7.
+     These keywords (with the exception of mark) correspond to the similar
+     ``LOG_'' values specified to the openlog(3) and syslog(3) library rou-
+     tines.
+
+     The _l_e_v_e_l describes the severity of the message, and is a keyword from
+     the following ordered list (higher to lower): emerg, alert, crit, err,
+     warning, notice and debug.  These keywords correspond to the similar
+     (LOG_) values specified to the syslog library routine.
+
+     See syslog(3) for a further descriptions of both the _f_a_c_i_l_i_t_y and _l_e_v_e_l
+     keywords and their significance.
+
+     If a received message matches the specified _f_a_c_i_l_i_t_y and is of the speci-
+     fied _l_e_v_e_l _(_o_r _a _h_i_g_h_e_r _l_e_v_e_l_), the action specified in the _a_c_t_i_o_n field
+     will be taken.
+
+     Multiple _s_e_l_e_c_t_o_r_s may be specified for a single _a_c_t_i_o_n by separating
+     them with semicolon (``;'') characters.  It is important to note, howev-
+     er, that each _s_e_l_e_c_t_o_r can modify the ones preceding it.
+
+     Multiple _f_a_c_i_l_i_t_i_e_s may be specified for a single _l_e_v_e_l by separating
+     them with comma (``,'') characters.
+
+     An asterisk (``*'') can be used to specify all _f_a_c_i_l_i_t_i_e_s or all _l_e_v_e_l_s.
+
+     The special _f_a_c_i_l_i_t_y ``mark'' receives a message at priority ``info'' ev-
+     ery 20 minutes (see syslogd(8)).  This is not enabled by a _f_a_c_i_l_i_t_y field
+     containing an asterisk.
+
+     The special _l_e_v_e_l ``none'' disables a particular _f_a_c_i_l_i_t_y.
+
+     The _a_c_t_i_o_n field of each line specifies the action to be taken when the
+     _s_e_l_e_c_t_o_r field selects a message.  There are four forms:
+
+     ++oo   A pathname (beginning with a leading slash).  Selected messages are
+         appended to the file.
+
+     ++oo   A hostname (preceded by an at (``@'') sign).  Selected messages are
+         forwarded to the syslogd program on the named host.
+
+     ++oo   A comma separated list of users.  Selected messages are written to
+         those users if they are logged in.
+
+     ++oo   An asterisk.  Selected messages are written to all logged-in users.
+
+
+     Blank lines and lines whose first non-blank character is a hash (``#'')
+     character are ignored.
+
+EEXXAAMMPPLLEESS
+     A configuration file might appear as follows:
+
+     # Log all kernel messages, authentication messages of
+     # level notice or higher and anything of level err or
+     # higher to the console.
+     # Don't log private authentication messages!
+     *.err;kern.*;auth.notice;authpriv.none  /dev/console
+
+     # Log anything (except mail) of level info or higher.
+     # Don't log private authentication messages!
+     *.info;mail.none;authpriv.none          /var/log/messages
+
+     # The authpriv file has restricted access.
+     authpriv.*                                              /var/log/secure
+
+     # Log all the mail messages in one place.
+     mail.*                                                  /var/log/maillog
+
+     # Everybody gets emergency messages, plus log them on another
+     # machine.
+     *.emerg                                                 *
+     *.emerg                                                 @arpa.berkeley.edu
+
+     # Root and Eric get alert and higher messages.
+     *.alert                                                 root,eric
+
+     # Save mail and news errors of level err and higher in a
+     # special file.
+     uucp,news.crit                                          /var/log/spoolerr
+
+FFIILLEESS
+     /etc/syslog.conf  The syslogd(8) configuration file.
+
+BBUUGGSS
+     The effects of multiple selectors are sometimes not intuitive.  For exam-
+     ple ``mail.crit,*.err'' will select ``mail'' facility messages at the
+     level of ``err'' or higher, not at the level of ``crit'' or higher.
+
+SSEEEE AALLSSOO
+     syslog(3),  syslogd(8)
+
+4.4BSD                           June 9, 1993                                2

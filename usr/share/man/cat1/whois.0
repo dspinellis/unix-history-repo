@@ -1,0 +1,31 @@
+WHOIS(1)                     BSD Reference Manual                     WHOIS(1)
+
+NNAAMMEE
+     wwhhooiiss - Internet user name directory service
+
+SSYYNNOOPPSSIISS
+     wwhhooiiss [--hh _h_o_s_t_n_a_m_e] _n_a_m_e _._._.
+
+DDEESSCCRRIIPPTTIIOONN
+     WWhhooiiss looks up records in the Network Information Center (NIC) database.
+
+     The options are as follows:
+
+     --hh      Use the specified host instead of the default NIC (nic.ddn.mil).
+
+     The operands specified to wwhhooiiss are concatenated together (separated by
+     white-space) and presented to the wwhhooiiss server.
+
+     The default action, unless directed otherwise with a special _n_a_m_e, is to
+     do a very broad search, looking for matches to _n_a_m_e in all types of
+     records and most fields (name, nicknames, hostname, net address, etc.) in
+     the database.  For more information as to what _n_a_m_e operands have special
+     meaning, and how to guide the search, use the special name ``_h_e_l_p''.
+
+SSEEEE AALLSSOO
+     RFC 812: Nicname/Whois
+
+HHIISSTTOORRYY
+     The wwhhooiiss command appeared in 4.3BSD.
+
+4.3 Berkeley Distribution        June 6, 1993                                1

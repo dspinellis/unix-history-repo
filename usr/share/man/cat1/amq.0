@@ -1,0 +1,65 @@
+AMQ(8)                    BSD System Manager's Manual                   AMQ(8)
+
+NNAAMMEE
+     aammqq - automounter query tool
+
+SSYYNNOOPPSSIISS
+     aammqq [--ff] [--hh _h_o_s_t_n_a_m_e] [--MM _m_o_u_n_t_m_a_p___e_n_t_r_y] [--mm] [--ss] [--uu] [--vv]
+         [_d_i_r_e_c_t_o_r_y] _._._.
+
+DDEESSCCRRIIPPTTIIOONN
+     AAmmqq provides a simple way of determining the current state of the amd(8)
+     program.  Communication is by RPC. Three modes of operation are supported
+     by the current protocol.  By default a list of mount points and auto-
+     mounted filesystems is output.  An alternative host can be specified us-
+     ing the --hh option.
+
+     If directory names are given, as output by default, then per-filesystem
+     information is displayed.
+
+OOPPTTIIOONNSS
+     --ff      Request automounter to flush the internal caches.
+
+     --hh _h_o_s_t_n_a_m_e
+             Query alternate host _h_o_s_t_n_a_m_e. By default the local host is used.
+             In an HP-UX cluster, the root server is queried by default, since
+             that is the system on which the automounter is normally run.
+
+     --mm      Request the automounter to provide a list of mounted filesystems,
+             including the number of references to each filesystem and any er-
+             ror which occured while mounting.
+
+     --ss      Request the automounter to provide system-wide mount statistics.
+
+     --uu      Request the automounter to unmount the named filesystems instead
+             of providing information about them.  Unmounts are requested, not
+             forced.  They merely cause the mounted filesystem to timeout,
+             which will be picked up by amd's  main scheduler thus causing the
+             normal timeout action to be taken.
+
+     --vv      Request the automounter to provide version information.  This is
+             a subset of the information provided by amd's
+
+     --vv      option.
+
+     --MM      Request automounter to add the given map entry to the root map
+             and then trigger a mount request for it.
+
+FFIILLEESS
+     amq.x   RPC protocol description.
+
+CCAAVVEEAATTSS
+     AAmmqq uses a Sun registered RPC program number (300019 decimal) which may
+     not be in the _/_e_t_c_/_r_p_c database.
+
+SSEEEE AALLSSOO
+     amd(8)
+
+AAUUTTHHOORR
+     Jan-Simon Pendry <jsp@doc.ic.ac.uk>, Department of Computing, Imperial
+     College, London, UK.
+
+HHIISSTTOORRYY
+     AAmmqq AT&T UNIX
+
+4.4BSD                          March 16, 1991                               1

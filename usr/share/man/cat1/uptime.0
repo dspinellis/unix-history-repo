@@ -1,0 +1,23 @@
+UPTIME(1)                    BSD Reference Manual                    UPTIME(1)
+
+NNAAMMEE
+     uuppttiimmee - show how long system has been running
+
+SSYYNNOOPPSSIISS
+     uuppttiimmee
+
+DDEESSCCRRIIPPTTIIOONN
+     The uuppttiimmee utiliity displays the current time, the length of time the
+     system has been up, the number of users, and the load average of the sys-
+     tem over the last 1, 5, and 15 minutes.
+
+FFIILLEESS
+     /vmunix  system name list
+
+SSEEEE AALLSSOO
+     w(1)
+
+HHIISSTTOORRYY
+     The uuppttiimmee command appeared in 3.0BSD.
+
+3rd Berkeley Distribution        June 6, 1993                                1

@@ -1,0 +1,64 @@
+CONFIG(8)                 BSD System Manager's Manual                CONFIG(8)
+
+NNAAMMEE
+     ccoonnffiigg - build system configuration files
+
+SSYYNNOOPPSSIISS
+     ccoonnffiigg [--pp] _S_Y_S_T_E_M___N_A_M_E
+
+DDEESSCCRRIIPPTTIIOONN
+     CCoonnffiigg builds a set of system configuration files from the file
+     _S_Y_S_T_E_M___N_A_M_E which describes the system to configure.  A second file tells
+     ccoonnffiigg what files are needed to generate a system and can be augmented by
+     configuration specific set of files that give alternate files for a spe-
+     cific machine.  (see the _F_I_L_E_S section below)
+
+     Available option and operand:
+
+     --pp           If the --pp option is supplied, ccoonnffiigg will configure a system
+                  for profiling; for example, kgmon(8) and gprof(1).
+
+     _S_Y_S_T_E_M___N_A_M_E  specifies the name of the system configuration file contain-
+                  ing device specifications, configuration options and other
+                  system parameters for one system configuration.
+
+     CCoonnffiigg should be run from the _c_o_n_f subdirectory of the system source
+     (usually _/_s_y_s_/_c_o_n_f). CCoonnffiigg assumes the directory _._._/_S_Y_S_T_E_M___N_A_M_E exists
+     and places all output files there.  The output of ccoonnffiigg consists of a
+     number of files; for the VAX, they are: _i_o_c_o_n_f_._c, a description of what
+     I/O devices are attached to the system; _u_b_g_l_u_e_._s, a set of interrupt ser-
+     vice routines for devices attached to the UNIBUS; _u_b_v_e_c_._s, offsets into a
+     structure used for counting per-device interrupts; _M_a_k_e_f_i_l_e, used by
+     make(1) in building the system; header files, definitions of the number
+     of various devices that will be compiled into the system; swap configura-
+     tion files, definitions for the disk areas to be used for swapping, the
+     root file system, argument processing, and system dumps.
+
+     After running ccoonnffiigg, it is necessary to run ``make depend'' in the di-
+     rectory where the new makefile was created.  CCoonnffiigg prints a reminder of
+     this when it completes.
+
+     If any other error messages are produced by ccoonnffiigg, the problems in the
+     configuration file should be corrected and ccoonnffiigg should be run again.
+     Attempts to compile a system that had configuration errors are likely to
+     fail.
+
+FFIILLEESS
+     /sys/conf/Makefile.vax  generic makefile for the VAX
+     /sys/conf/files         list of common files system is built from
+     /sys/conf/files.vax     list of VAX specific files
+     /sys/conf/devices.vax   name to major device mapping file for the VAX
+     /sys/conf/files._E_R_N_I_E   list of files specific to _E_R_N_I_E system
+
+SSEEEE AALLSSOO
+     The SYNOPSIS portion of each device in section 4.
+
+     _B_u_i_l_d_i_n_g _4_._3 _B_S_D _U_N_I_X _S_y_s_t_e_m _w_i_t_h _C_o_n_f_i_g.
+
+BBUUGGSS
+     The line numbers reported in error messages are usually off by one.
+
+HHIISSTTOORRYY
+     The ccoonnffiigg command appeared in 4.1BSD.
+
+4th Berkeley Distribution        June 6, 1993                                1

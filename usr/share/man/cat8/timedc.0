@@ -1,0 +1,76 @@
+TIMEDC(8)                 BSD System Manager's Manual                TIMEDC(8)
+
+NNAAMMEE
+     ttiimmeeddcc - timed control program
+
+SSYYNNOOPPSSIISS
+     ttiimmeeddcc [_c_o_m_m_a_n_d [_a_r_g_u_m_e_n_t _._._.]]
+
+DDEESSCCRRIIPPTTIIOONN
+     TTiimmeeddcc is used to control the operation of the timed(8) program.  It may
+     be used to:
+
+     ++oo   Measure the differences between machines' clocks,
+
+     ++oo   Find the location where the master time server is running,
+
+     ++oo   Enable or disable tracing of messages received by timed,  and
+
+     ++oo   Perform various debugging actions.
+
+     Without any arguments, ttiimmeeddcc will prompt for commands from the standard
+     input.  If arguments are supplied, ttiimmeeddcc interprets the first argument
+     as a command and the remaining arguments as parameters to the command.
+     The standard input may be redirected causing ttiimmeeddcc to read commands from
+     a file.  Commands may be abbreviated; recognized commands are:
+
+     ?? [_c_o_m_m_a_n_d _._._.]
+
+     hheellpp [_c_o_m_m_a_n_d _._._.]
+             Print a short description of each command specified in the argu-
+             ment list, or, if no arguments are given, a list of the recog-
+             nized commands.
+
+     cclloocckkddiiffff _h_o_s_t _._._.
+             Compute the differences between the clock of the host machine and
+             the clocks of the machines given as arguments.
+
+     mmssiittee [_h_o_s_t _._._.]
+             Show the master time server for specified host(s).
+
+     ttrraaccee { _o_n | _o_f_f _}
+             Enable or disable the tracing of incoming messages to timed in
+             the file _/_v_a_r_/_l_o_g_/_t_i_m_e_d_._l_o_g_.
+
+     eelleeccttiioonn _h_o_s_t
+             Asks the daemon on the target host to reset its "election" timers
+             and to ensure that a time master has been elected.
+
+     qquuiitt    Exit from timedc.
+
+     Other commands may be included for use in testing and debugging timed;
+     the help command and the program source may be consulted for details.
+
+FFIILLEESS
+     /var/log/timed.log        tracing file for timed
+     /var/log/timed.masterlog  log file for master timed
+
+SSEEEE AALLSSOO
+     date(1),  adjtime(2),  icmp(4),  timed(8),
+
+     R. Gusella, and S. Zatti, _T_S_P_: _T_h_e _T_i_m_e _S_y_n_c_h_r_o_n_i_z_a_t_i_o_n _P_r_o_t_o_c_o_l _f_o_r _U_N_I_X
+     _4_._3_B_S_D.
+
+DDIIAAGGNNOOSSTTIICCSS
+
+     ?Ambiguous command
+             abbreviation matches more than one command
+     ?Invalid command
+             no match found
+     ?Privileged command
+             command can be executed by root only
+
+HHIISSTTOORRYY
+     The ttiimmeeddcc command appeared in 4.3BSD.
+
+4.3 Berkeley Distribution        June 6, 1993                                2

@@ -1,0 +1,27 @@
+UPDATE(8)                 BSD System Manager's Manual                UPDATE(8)
+
+NNAAMMEE
+     uuppddaattee - flush internal filesystem caches to disk frequently
+
+SSYYNNOOPPSSIISS
+     uuppddaattee
+
+DDEESSCCRRIIPPTTIIOONN
+     The uuppddaattee command helps protect the integrity of disk volumes by flush-
+     ing voliatile cached filesystem data to disk at thirty second intervals.
+     UUppddaattee uses the sync(2) function call to do the task.
+
+     UUppddaattee is commonly invoked at startup time by rc(8) when the system goes
+     multi-user.
+
+SSEEEE AALLSSOO
+     sync(2),  fsck(8),  init(8),  rc(8),  sync(8)
+
+BBUUGGSS
+     It is possible on some systems, that a sync occuring simultaneously with
+     a crash may cause file system damage. See fsck(8).
+
+HHIISSTTOORRYY
+     An uuppddaattee command appeared in Version 6 AT&T UNIX.
+
+4.4BSD                           June 6, 1993                                1

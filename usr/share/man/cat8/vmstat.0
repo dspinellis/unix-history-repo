@@ -1,0 +1,198 @@
+
+
+
+VMSTAT(1)              BSD Reference Manual             VMSTAT(1)
+
+
+NNAAMMEE
+       vmstat - report virtual memory statistics
+
+SSYYNNOOPPSSIISS
+       vvmmssttaatt [[ --ffiimmsstt ]] [[ --cc ccoouunntt ]] [[ --MM ccoorree ]] [[ --NN ssyysstteemm ]]
+            [[ --ww wwaaiitt ]] [[ ddiisskkss ]]
+
+DDEESSCCRRIIPPTTIIOONN
+       _V_m_s_t_a_t  reports  certain kernel statistics kept about pro-
+       cess, virtual memory, disk, trap and cpu activity.
+
+       The options are as follows:
+
+       -c     Repeat the display _c_o_u_n_t times.  The first  display
+              is  for the time since a reboot and each subsequent
+              report is for the time period since the  last  dis-
+              play.   If  no  _w_a_i_t  interval  is  specified,  the
+              default is 1 second.
+
+       -f     Report on the number _f_o_r_k(2)  and  _v_f_o_r_k(2)  system
+              calls since system startup, and the number of pages
+              of virtual memory involved in each.
+
+       -i     Report on the number of interrupts  taken  by  each
+              device since system startup.
+
+       -M     Extract  values  associated with the name list from
+              the  specified  core   instead   of   the   default
+              ``/dev/kmem''.
+
+       -N     Extract  the  name  list  from the specified system
+              instead of the default ``/vmunix''.
+
+       -m     Report on the usage of kernel dynamic memory listed
+              first  by  size  of  allocation and then by type of
+              usage.
+
+       -s     Display the contents of the _s_u_m  structure,  giving
+              the total number of several kinds of paging related
+              events which have occurred since system startup.
+
+       -t     Report on the number of page in and  page  reclaims
+              since  system  startup,  and  the  amount  of  time
+              required by each.
+
+       -w     Pause _w_a_i_t seconds between  each  display.   If  no
+              repeat _c_o_u_n_t is specified, the default is infinity.
+
+       By default, _v_m_s_t_a_t displays the following information:
+
+
+
+
+
+4th Berkeley Distribution  June 6, 1993                         1
+
+
+
+
+
+
+
+
+VMSTAT(1)              BSD Reference Manual             VMSTAT(1)
+
+
+       procs  Information about the numbers of processes in vari-
+              ous states.
+
+              r    in run queue
+              b    blocked for resources (i/o, paging, etc.)
+              w    runnable or short sleeper (< 20 secs) but swapped
+
+       memory Information  about  the  usage  of virtual and real
+              memory.  Virtual pages (reported in units  of  1024
+              bytes) are considered active if they belong to pro-
+              cesses which are running or have run in the last 20
+              seconds.
+
+              avm  active virtual pages
+              fre  size of the free list
+
+       page   Information  about page faults and paging activity.
+              These are averaged each five seconds, and given  in
+              units per second.
+
+              re   page reclaims (simulating reference bits)
+              at   pages attached (found in free list)
+              pi   pages paged in
+              po   pages paged out
+              fr   pages freed per second
+              de   anticipated short term memory shortfall
+              sr   pages scanned by clock algorithm, per-second
+
+       disks  Disk  operations  per  second (this field is system
+              dependent).  Typically paging will be split  across
+              the  available  drives.  The header of the field is
+              the first character of the disk name and  the  unit
+              number.   If more than four disk drives are config-
+              ured in the system, _v_m_s_t_a_t displays only the  first
+              four  drives.   To force _v_m_s_t_a_t to display specific
+              drives, their names may be supplied on the  command
+              line.
+
+       faults Trap/interrupt rate averages per second over last 5
+              seconds.
+
+              in   device interrupts per interval (including clock interrupts)
+              sy   system calls per interval
+              cs   cpu context switch rate (switches/interval)
+
+       cpu    Breakdown of percentage usage of CPU time.
+
+              us   user time for normal and low priority processes
+              sy   system time
+              id   cpu idle
+
+
+
+
+4th Berkeley Distribution  June 6, 1993                         2
+
+
+
+
+
+
+
+
+VMSTAT(1)              BSD Reference Manual             VMSTAT(1)
+
+
+EEXXAAMMPPLLEESS
+       The command ``vmstat -i 5'' will print what the system  is
+       doing  every five seconds; this is a good choice of print-
+       ing interval since this is how often some of  the  statis-
+       tics  are sampled in the system.  Others vary every second
+       and running the output for a while will make  it  apparent
+       which are recomputed every second.
+
+FFIILLEESS
+       /vmunix    default kernel namelist
+       /dev/kmem  default memory file
+
+SSEEEE AALLSSOO
+       _f_s_t_a_t(1),   _n_e_t_s_t_a_t(1),   _n_f_s_s_t_a_t(1),   _p_s(1),  _s_y_s_t_a_t(1),
+       _i_o_s_t_a_t(8), _p_s_t_a_t(8)
+
+       The sections starting with  ``Interpreting  system  activ-
+       ity'' in _I_n_s_t_a_l_l_i_n_g _a_n_d _O_p_e_r_a_t_i_n_g _4_._3_B_S_D.
+
+BBUUGGSS
+       The  -c and -w options are only available with the default
+       output.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+4th Berkeley Distribution  June 6, 1993                         3
+
+
+
+
+
