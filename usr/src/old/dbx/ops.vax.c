@@ -15,7 +15,7 @@
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
 
-static char sccsid[] = "@(#)ops.vax.c 5.6 %G%";
+static char sccsid[] = "@(#)ops.vax.c 5.7 %G%";
 #endif /* not lint */
 
 /*
@@ -324,7 +324,7 @@ typedef struct {
 } Optab;
 
 #ifndef ASINSTRS
-#define ASINSTRS "../../bin/as/as.vax/instrs.h"
+#define ASINSTRS "../../pgrm/as/as.vax/instrs.h"
 #endif
 
 #ifndef ADBINSTRS
