@@ -1,4 +1,4 @@
-/*	vfs_lookup.c	4.24	82/08/24	*/
+/*	vfs_lookup.c	4.25	82/10/17	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -569,12 +569,10 @@ direnter(ip)
 		if (freespace < newentrysize)
 			panic("wdir: compact2");
 		u.u_dent.d_reclen = freespace;
-/*ZZ*/if ((((char *)ep-bp->b_un.b_addr)&0x1ff)+dsize>512) panic("wdir: reclen");
 		ep->d_reclen = dsize;
 		ep = (struct direct *)((char *)ep + dsize);
 	}
-/*ZZ*/if((((char*)ep-bp->b_un.b_addr)&0x1ff)+u.u_dent.d_reclen>512)panic("wdir: botch");
-	bcopy(&u.u_dent, ep, newentrysize);
+	bcopy((caddr_t)&u.u_dent, (caddr_t)ep, newentrysize);
 	bwrite(bp);
 	u.u_pdir->i_flag |= IUPD|ICHG;
 	iput(u.u_pdir);
@@ -590,11 +588,9 @@ dirremove()
 		/*
 		 * First entry in block: set d_ino to zero.
 		 */
-/*ZZ*/if(u.u_offset&0x1ff)printf("missed dir compact dir %s/%d off %d file %s\n"
-/*ZZ*/,dp->i_fs->fs_fsmnt,dp->i_number,u.u_offset,u.u_dent.d_name);
 		u.u_dent.d_ino = 0;
-		(void) rdwri(UIO_WRITE, dp, (caddr_t)&u.u_dent, DIRSIZ(&u.u_dent),
-		    u.u_offset, 1, (int *)0);
+		(void) rdwri(UIO_WRITE, dp, (caddr_t)&u.u_dent,
+		    DIRSIZ(&u.u_dent), u.u_offset, 1, (int *)0);
 	} else {
 		/*
 		 * Collapse new free space into previous entry.
@@ -603,8 +599,6 @@ dirremove()
 		if (bp == 0)
 			return (0);
 		ep->d_reclen += u.u_dent.d_reclen;
-/*ZZ*/if((((char *)ep - bp->b_un.b_addr)&0x1ff)+u.u_dent.d_reclen > 512)
-/*ZZ*/	panic("unlink: reclen");
 		bwrite(bp);
 		dp->i_flag |= IUPD|ICHG;
 	}

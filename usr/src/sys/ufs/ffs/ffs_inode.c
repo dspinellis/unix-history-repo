@@ -1,4 +1,4 @@
-/*	ffs_inode.c	4.26	82/10/17	*/
+/*	ffs_inode.c	4.27	82/10/17	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -171,7 +171,7 @@ loop:
 	ip->i_flag = ILOCKED;
 	ip->i_count++;
 	ip->i_lastr = 0;
-	bp = bread(dev, fsbtodb(fs, itod(fs, ino)), fs->fs_bsize);
+	bp = bread(dev, fsbtodb(fs, itod(fs, ino)), (int)fs->fs_bsize);
 	/*
 	 * Check I/O errors
 	 */
@@ -296,7 +296,7 @@ iupdat(ip, ta, tm, waitfor)
 		if (fp->fs_ronly)
 			return;
 		bp = bread(ip->i_dev, fsbtodb(fp, itod(fp, ip->i_number)),
-			fp->fs_bsize);
+			(int)fp->fs_bsize);
 		if (bp->b_flags & B_ERROR) {
 			brelse(bp);
 			return;
@@ -437,7 +437,8 @@ tloop(ip, bn, indflg)
 	fs = ip->i_fs;
 	for (i = NINDIR(fs) - 1; i >= 0; i--) {
 		if (bp == NULL) {
-			bp = bread(ip->i_dev, fsbtodb(fs, bn), fs->fs_bsize);
+			bp = bread(ip->i_dev, fsbtodb(fs, bn),
+				(int)fs->fs_bsize);
 			if (bp->b_flags & B_ERROR) {
 				brelse(bp);
 				return;

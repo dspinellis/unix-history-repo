@@ -1,4 +1,4 @@
-/*	ffs_alloc.c	2.14	82/10/17	*/
+/*	ffs_alloc.c	2.15	82/10/17	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -150,7 +150,7 @@ realloccg(ip, bprev, bpref, osize, nsize)
 			return (NULL);
 		}
 		bp = getblk(ip->i_dev, fsbtodb(fs, bno), nsize);
-		bcopy(obp->b_un.b_addr, bp->b_un.b_addr, osize);
+		bcopy(obp->b_un.b_addr, bp->b_un.b_addr, (u_int)osize);
 		bzero(bp->b_un.b_addr + osize, nsize - osize);
 		brelse(obp);
 		fre(ip, bprev, (off_t)osize);
@@ -358,7 +358,7 @@ fragextend(ip, cg, bprev, osize, nsize)
 		/* cannot extend across a block boundry */
 		return (NULL);
 	}
-	bp = bread(ip->i_dev, fsbtodb(fs, cgtod(fs, cg)), fs->fs_bsize);
+	bp = bread(ip->i_dev, fsbtodb(fs, cgtod(fs, cg)), (int)fs->fs_bsize);
 	cgp = bp->b_un.b_cg;
 	if (bp->b_flags & B_ERROR || cgp->cg_magic != CG_MAGIC) {
 		brelse(bp);
@@ -417,7 +417,7 @@ alloccg(ip, cg, bpref, size)
 	fs = ip->i_fs;
 	if (fs->fs_cs(fs, cg).cs_nbfree == 0 && size == fs->fs_bsize)
 		return (NULL);
-	bp = bread(ip->i_dev, fsbtodb(fs, cgtod(fs, cg)), fs->fs_bsize);
+	bp = bread(ip->i_dev, fsbtodb(fs, cgtod(fs, cg)), (int)fs->fs_bsize);
 	cgp = bp->b_un.b_cg;
 	if (bp->b_flags & B_ERROR || cgp->cg_magic != CG_MAGIC) {
 		brelse(bp);
@@ -627,7 +627,7 @@ ialloccg(ip, cg, ipref, mode)
 	fs = ip->i_fs;
 	if (fs->fs_cs(fs, cg).cs_nifree == 0)
 		return (NULL);
-	bp = bread(ip->i_dev, fsbtodb(fs, cgtod(fs, cg)), fs->fs_bsize);
+	bp = bread(ip->i_dev, fsbtodb(fs, cgtod(fs, cg)), (int)fs->fs_bsize);
 	cgp = bp->b_un.b_cg;
 	if (bp->b_flags & B_ERROR || cgp->cg_magic != CG_MAGIC) {
 		brelse(bp);
@@ -695,7 +695,7 @@ fre(ip, bno, size)
 		printf("bad block %d, ino %d\n", bno, ip->i_number);
 		return;
 	}
-	bp = bread(ip->i_dev, fsbtodb(fs, cgtod(fs, cg)), fs->fs_bsize);
+	bp = bread(ip->i_dev, fsbtodb(fs, cgtod(fs, cg)), (int)fs->fs_bsize);
 	cgp = bp->b_un.b_cg;
 	if (bp->b_flags & B_ERROR || cgp->cg_magic != CG_MAGIC) {
 		brelse(bp);
@@ -784,7 +784,7 @@ ifree(ip, ino, mode)
 		panic("ifree: range");
 	}
 	cg = itog(fs, ino);
-	bp = bread(ip->i_dev, fsbtodb(fs, cgtod(fs, cg)), fs->fs_bsize);
+	bp = bread(ip->i_dev, fsbtodb(fs, cgtod(fs, cg)), (int)fs->fs_bsize);
 	cgp = bp->b_un.b_cg;
 	if (bp->b_flags & B_ERROR || cgp->cg_magic != CG_MAGIC) {
 		brelse(bp);
