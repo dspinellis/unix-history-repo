@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rcp.c	4.11 85/01/09";
+static char sccsid[] = "@(#)rcp.c	4.11 85/02/16";
 #endif
 
 /*
@@ -213,16 +213,26 @@ bad:
 	return (0);
 }
 
-susystem(buf)
-	char *buf;
+susystem(s)
+	char *s;
 {
+	int status, pid, w;
+	register int (*istat)(), (*qstat)();
 
-	if (fork() == 0) {
-		(void) setuid(getuid());
-		(void) system(buf);
-		_exit(0);
-	} else
-		(void) wait((int *)0);
+	if ((pid = vfork()) == 0) {
+		setuid(getuid());
+		execl("/bin/sh", "sh", "-c", s, (char *)0);
+		_exit(127);
+	}
+	istat = signal(SIGINT, SIG_IGN);
+	qstat = signal(SIGQUIT, SIG_IGN);
+	while ((w = wait(&status)) != pid && w != -1)
+		;
+	if (w == -1)
+		status = -1;
+	signal(SIGINT, istat);
+	signal(SIGQUIT, qstat);
+	return (status);
 }
 
 source(argc, argv)
@@ -480,7 +490,7 @@ sink(argc, argv)
 					errno = ENOTDIR;
 					goto bad;
 				}
-			} else if (mkdir(nambuf, mode) < 0)
+			} else if (makedir(nambuf, mode) < 0)
 				goto bad;
 			myargv[0] = nambuf;
 			sink(1, myargv);
@@ -495,8 +505,7 @@ sink(argc, argv)
 		  }
 		}
 		if (exists == 0) {
-			(void) stat(nambuf, &stb);
-			(void) chown(nambuf, pwd->pw_uid, stb.st_gid);
+			(void) chown(nambuf, pwd->pw_uid, -1);
 			(void) chmod(nambuf, mode &~ mask);
 		}
 		ga();
@@ -548,35 +557,18 @@ error(fmt, a1, a2, a3, a4, a5)
 		(void) write(2, buf+1, strlen(buf+1));
 }
 
-mkdir(name, mode)
-	char *name;
-	int mode;
+makedir(name, mode)
+	register char *name;
+	register int mode;
 {
-	char *argv[4];
-	int pid, rc;
+	register int _errno;
 
-	argv[0] = "mkdir";
-	argv[1] = name;
-	argv[2] = 0;
-	pid = fork();
-	if (pid < 0) {
-		perror("cp");
-		return (1);
+	if (mkdir(name, mode) < 0 || chown(name, getuid(), -1) < 0) {
+		_errno = errno;
+		rmdir(name);
+		errno = _errno;
+		return (-1);
 	}
-	if (pid) {
-		while (wait(&rc) != pid)
-			continue;
-		if (rc == 0)
-			if (chmod(name, mode) < 0) {
-				perror(name);
-				rc = 1;
-			}
-		return (rc);
-	}
-	(void) setuid(getuid());
-	execv("/bin/mkdir", argv);
-	execv("/usr/bin/mkdir", argv);
-	perror("mkdir");
-	_exit(1);
-	/*NOTREACHED*/
+
+	return (0);
 }
