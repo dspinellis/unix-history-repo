@@ -1,0 +1,15 @@
+#print
+The way to get rid of a file you are finished with
+is with the "rm" (remove) command.  For example,
+  rm junk
+will get rid of the file named "junk".
+In this directory there is a file named "harry" -
+remove it.
+Then type "ready".
+#create harry
+#user
+test ! -r harry
+#log
+#next
+10.2b 5
+10.3a 2

@@ -1,0 +1,32 @@
+#print
+You can put any number of characters between [..]
+characters, as in
+  [abcdef]
+which matches any of the six letters from a to f;
+and you can put something like that anywhere in a pattern
+for a file name.  For example,
+  ls [abcd]x
+matches any of
+ ax, bx, cx, dx
+You can also combine this with other operators such as
+* or ?.  For example,
+  ls [ab]?
+matches all two-letter names beginning with a or b.
+How would you ask for all names, of any length, ending
+in 1 2 or 3?
+You can experiment in this directory; eventually,
+type the "ls" command you decide on followed by "ready".
+#create a1
+#create a12
+#create a1a
+#create a2
+#create a23
+#create aa1
+#create abc1
+#copyin
+#user
+#uncopyin
+#match ls *[123]
+#log
+#next
+8.1a 10

@@ -1,0 +1,22 @@
+#print
+There is one file in this directory whose name ends
+in "memo".  Find out that file name and print
+the contents of the file.  Then type "ready".
+#create mymemo
+This is the 7-line file "mymemo";  you should
+have typed "ls *memo", which would print
+"mymemo", and then typed the
+command "cat mymemo".
+Or just plain "cat *memo" would have worked.
+But whatever you did, you got it right
+and now you can type "ready".
+#copyout
+#user
+#uncopyout
+tail -7 .ocopy >X2
+#cmp mymemo X2
+#log
+#next
+6.1b 0
+6.1c 5
+6.1e 10
