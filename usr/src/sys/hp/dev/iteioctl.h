@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- * from: Utah $Hdr: iteioctl.h 1.2 88/05/24$
+ * from: Utah $Hdr: iteioctl.h 1.1 90/07/09$
  *
- *	@(#)iteioctl.h	7.1 (Berkeley) %G%
+ *	@(#)iteioctl.h	7.2 (Berkeley) %G%
  */
 
 #define ITESWITCH _IOW('Z',0x69, int)	/* XXX */
