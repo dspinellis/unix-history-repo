@@ -12,10 +12,12 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)echo.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)echo.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 /* ARGSUSED */
 main(argc, argv)
@@ -24,8 +26,8 @@ main(argc, argv)
 {
 	int nflag;
 
-	++argv;
-	if (!strcmp(*argv, "-n")) {
+	/* This utility may NOT do getopt(3) option parsing. */
+	if (*++argv && !strcmp(*argv, "-n")) {
 		++argv;
 		nflag = 1;
 	}
