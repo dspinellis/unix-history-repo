@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)cron.c	4.9 (Berkeley) %G%";
+static char *sccsid = "@(#)cron.c	4.10 (Berkeley) %G%";
 #endif
 
 #include <sys/types.h>
@@ -171,7 +171,6 @@ init()
 
 	freopen(crontab, "r", stdin);
 	if (list) {
-		free(list);
 		list = realloc(list, LISTS);
 	} else
 		list = malloc(LISTS);
@@ -183,7 +182,6 @@ loop:
 		char *olist;
 		listsize += LISTS;
 		olist = list;
-		free(list);
 		list = realloc(list, listsize);
 		cp = list + (cp - olist);
 	}
