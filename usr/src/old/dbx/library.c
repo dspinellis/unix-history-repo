@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)library.c 1.2 %G%";
+static char sccsid[] = "@(#)library.c 1.3 %G%";
 
 /*
  * General purpose routines.
@@ -206,6 +206,10 @@ String s;
  *
  * This routine is not very efficient when the number of processes
  * to be remembered is large.
+ *
+ * To deal with a kernel idiosyncrasy, we keep a list on the side
+ * of "traced" processes, and do not notice them when waiting for
+ * another process.
  */
 
 typedef struct pidlist {
@@ -214,7 +218,51 @@ typedef struct pidlist {
     struct pidlist *next;
 } Pidlist;
 
-private Pidlist *pidlist, *pfind();
+private Pidlist *pidlist, *ptrclist, *pfind();
+
+public ptraced(pid)
+int pid;
+{
+    Pidlist *p;
+
+    p = alloc(1, Pidlist);
+    p->pid = pid;
+    p->next = ptrclist;
+    ptrclist = p;
+}
+
+public unptraced(pid)
+int pid;
+{
+    register Pidlist *p, *prev;
+
+    prev = nil(Pidlist *);
+    p = ptrclist;
+    while (p != nil(Pidlist *) and p->pid != pid) {
+	prev = p;
+	p = p->next;
+    }
+    if (p != nil(Pidlist *)) {
+	if (prev == nil(Pidlist *)) {
+	    ptrclist = p->next;
+	} else {
+	    prev->next = p->next;
+	}
+	dispose(p);
+    }
+}
+
+private Boolean isptraced(pid)
+int pid;
+{
+    register Pidlist *p;
+
+    p = ptrclist;
+    while (p != nil(Pidlist *) and p->pid != pid) {
+	p = p->next;
+    }
+    return (Boolean) (p != nil(Pidlist *));
+}
 
 public pwait(pid, statusp)
 int pid, *statusp;
@@ -226,24 +274,28 @@ int pid, *statusp;
     if (p != nil(Pidlist *)) {
 	*statusp = p->status;
 	dispose(p);
-	return;
-    }
-    while ((pnum = wait(&status)) != pid && pnum >= 0) {
-	p = alloc(1, Pidlist);
-	p->pid = pnum;
-	p->status = status;
-	p->next = pidlist;
-	pidlist = p;
-    }
-    if (pnum < 0) {
-	p = pfind(pid);
-	if (p == nil(Pidlist *)) {
-	    panic("pwait: pid %d not found", pid);
-	}
-	*statusp = p->status;
-	dispose(p);
     } else {
-	*statusp = status;
+	pnum = wait(&status);
+	while (pnum != pid and pnum >= 0) {
+	    if (not isptraced(pnum)) {
+		p = alloc(1, Pidlist);
+		p->pid = pnum;
+		p->status = status;
+		p->next = pidlist;
+		pidlist = p;
+	    }
+	    pnum = wait(&status);
+	}
+	if (pnum < 0) {
+	    p = pfind(pid);
+	    if (p == nil(Pidlist *)) {
+		panic("pwait: pid %d not found", pid);
+	    }
+	    *statusp = p->status;
+	    dispose(p);
+	} else {
+	    *statusp = status;
+	}
     }
 }
 
