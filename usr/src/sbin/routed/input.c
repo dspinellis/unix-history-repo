@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)input.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)input.c	5.8 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -189,7 +189,8 @@ rip_input(from, size)
 			if (equal(from, &rt->rt_router)) {
 				if (n->rip_metric != rt->rt_metric)
 					rtchange(rt, from, n->rip_metric);
-				rt->rt_timer = 0;
+				if (rt->rt_metric < HOPCNT_INFINITY)
+					rt->rt_timer = 0;
 			} else if ((unsigned) (n->rip_metric) < rt->rt_metric ||
 			    (rt->rt_timer > (EXPIRE_TIME/2) &&
 			    rt->rt_metric == n->rip_metric)) {
