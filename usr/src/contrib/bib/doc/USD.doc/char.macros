@@ -1,8 +1,8 @@
-.. when editing files
-.. BEST TO DO :set noai
-.. so tabs don't get inserted where undesired
-..
-..  CHARACTER DEFINITIONS
+.\" .. when editing files
+.\" .. BEST TO DO :set noai
+.\" .. so tabs don't get inserted where undesired
+.\" ..
+.\" ..  CHARACTER DEFINITIONS
 .\"	fine tunning of ACCENTS enough for catalan, french and spanish
 .ds 'a \v'-0.035m'\h'\w'a'u*3/10'\z\(aa\h'-\w'a'u*3/10'\v'0.035m'a
 .ds 'e \v'-0.035m'\h'\w'e'u*3/10'\z\(aa\h'-\w'e'u*3/10'\v'0.035m'e
