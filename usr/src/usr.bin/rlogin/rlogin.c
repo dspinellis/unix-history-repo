@@ -53,6 +53,7 @@ int		encrypt = 0;
 char		krb_realm[REALM_SZ];
 CREDENTIALS	cred;
 Key_schedule	schedule;
+int		use_kerberos = 1;
 #endif	/* KERBEROS */
 
 /* concession to sun */
@@ -171,7 +172,16 @@ another:
 		fprintf(stderr, "Who are you?\n");
 		exit(1);
 	}
+#ifdef	KERBEROS
+	sp = getservbyname("klogin", "tcp");
+	if(sp == NULL) {
+		use_kerberos = 0;
+		old_warning("klogin service unknown");
+		sp = getservbyname("login", "tcp");
+	}
+#else
 	sp = getservbyname("login", "tcp");
+#endif
 	if (sp == 0) {
 		fprintf(stderr, "rlogin: login/tcp: unknown service\n");
 		exit(2);
@@ -183,11 +193,6 @@ another:
 		(void) strcat(term, "/");
 		(void) strcat(term, speeds[ttyb.sg_ospeed]);
 	}
-        rem = rcmd(&host, sp->s_port, pwd->pw_name,
-	    name ? name : pwd->pw_name, term, 0);
-
-#endif	/* KERBEROS */
-
 	if(rem < 0) 
 		exit(1);
 
@@ -668,4 +673,10 @@ lostpeer()
 	(void) signal(SIGPIPE, SIG_IGN);
 	prf("\007Connection closed.");
 	done(1);
+}
+
+old_warning(str)
+	char	*str;
+{
+	prf("Warning: %s, using standard rlogin", str);
 }
