@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if_imp.c	7.2 (Berkeley) %G%
+ *	@(#)if_imp.c	7.3 (Berkeley) %G%
  */
 
 #include "imp.h"
@@ -27,6 +27,7 @@
 #include "kernel.h"
 #include "errno.h"
 #include "ioctl.h"
+#include "syslog.h"
 
 #include "../vax/cpu.h"
 #include "../vax/mtpr.h"
@@ -42,89 +43,72 @@
 #include "../netinet/in_var.h"
 #include "../netinet/ip.h"
 #include "../netinet/ip_var.h"
+#define IMPMESSAGES
 /* define IMPLEADERS here to get leader printing code */
+#define IMPLEADERS
+#define IMPINIT
 #include "if_imp.h"
 #include "if_imphost.h"
 
-/*
- * IMP software status per interface.
- * (partially shared with the hardware specific module)
- *
- * Each interface is referenced by a network interface structure,
- * imp_if, which the routing code uses to locate the interface.
- * This structure contains the output queue for the interface, its
- * address, ...  IMP specific structures used in connecting the
- * IMP software modules to the hardware specific interface routines
- * are stored here.  The common structures are made visible to the
- * interface driver by passing a pointer to the hardware routine
- * at "attach" time.
- *
- * NOTE: imp_if and imp_cb are assumed adjacent in hardware code.
- */
-struct imp_softc {
-	struct	ifnet imp_if;		/* network visible interface */
-	struct	impcb imp_cb;		/* hooks to hardware module */
-	u_char	imp_state;		/* current state of IMP */
-	char	imp_dropcnt;		/* used during initialization */
-} imp_softc[NIMP];
-
+struct	imp_softc imp_softc[NIMP];
 struct	ifqueue impintrq;
 int	impqmaxlen = IFQ_MAXLEN;
+int	imphqlen = 12;			/* max packets to queue per host */
 
-/*
- * Messages from IMP regarding why
- * it's going down.
- */
-static char *impmessage[] = {
-	"in 30 seconds",
-	"for hardware PM",
-	"to reload software",
-	"for emergency reset"
-};
+int	imppri = LOG_ERR;
+#ifdef IMPLEADERS
+int	impprintfs = 0;
+#endif
+#ifdef IMPINIT
+int	imptraceinit = 0;
+#endif
 
-#define HOSTDEADTIMER	10		/* How long to wait when down */
+#define HOSTDEADTIMER	(30 * PR_SLOWHZ)	/* How long to wait when down */
 
 int	impdown(), impinit(), impioctl(), impoutput();
 
 /*
  * IMP attach routine.  Called from hardware device attach routine
- * at configuration time with a pointer to the UNIBUS device structure.
+ * at configuration time with a pointer to the device structure.
  * Sets up local state and returns pointer to base of ifnet+impcb
  * structures.  This is then used by the device's attach routine
  * set up its back pointers. 
  */
+struct imp_softc *
 impattach(ui, reset)
 	struct uba_device *ui;
 	int (*reset)();
 {
 	struct imp_softc *sc;
 	register struct ifnet *ifp;
+	static int impunit;
 
 #ifdef lint
 	impintr();
 #endif
-	if (ui->ui_unit >= NIMP) {
-		printf("imp%d: not configured\n", ui->ui_unit);
+	if (impunit >= NIMP) {
+		printf("imp%d: not configured\n", impunit++);
 		return (0);
 	}
-	sc = &imp_softc[ui->ui_unit];
+	sc = &imp_softc[impunit];
 	ifp = &sc->imp_if;
-	/* UNIT COULD BE AMBIGUOUS */
-	ifp->if_unit = ui->ui_unit;
+	sc->imp_cb.ic_hwunit = ui->ui_unit;
+	sc->imp_cb.ic_hwname = ui->ui_driver->ud_dname;
+	ifp->if_unit = impunit;
 	ifp->if_name = "imp";
 	ifp->if_mtu = IMPMTU - sizeof(struct imp_leader);
 	ifp->if_reset = reset;
 	ifp->if_init = impinit;
 	ifp->if_ioctl = impioctl;
 	ifp->if_output = impoutput;
-	/* reset is handled at the hardware level */
 	if_attach(ifp);
-	return ((int)ifp);
+	impunit++;
+	return (sc);
 }
 
 /*
  * IMP initialization routine: call hardware module to
- * setup UNIBUS resources, init state and get ready for
+ * setup resources, init state and get ready for
  * NOOPs the IMP should send us, and that we want to drop.
  */
 impinit(unit)
@@ -136,20 +120,16 @@ impinit(unit)
 	if (sc->imp_if.if_addrlist == 0)
 		return;
 	s = splimp();
-	if ((*sc->imp_cb.ic_init)(unit) == 0) {
-		sc->imp_state = IMPS_DOWN;
+#ifdef IMPINIT
+	if (imptraceinit)
+		log(imppri, "impinit\n");
+#endif
+	sc->imp_state = IMPS_WINIT;
+	if ((*sc->imp_cb.ic_init)(sc->imp_cb.ic_hwunit) == 0)
 		sc->imp_if.if_flags &= ~IFF_UP;
-	} else {
-		sc->imp_state = IMPS_INIT;
-		impnoops(sc);
-		impintrq.ifq_maxlen = impqmaxlen;
-	}
+	impintrq.ifq_maxlen = impqmaxlen;
 	splx(s);
 }
-
-#ifdef IMPLEADERS
-int	impprintfs = 0;
-#endif
 
 /*
  * ARPAnet 1822 input routine.
@@ -162,13 +142,12 @@ impinput(unit, m)
 	int unit;
 	register struct mbuf *m;
 {
-	register struct imp_leader *ip;
+	register struct control_leader *cp;
+#define	ip	((struct imp_leader *)cp)
 	register struct imp_softc *sc = &imp_softc[unit];
 	struct ifnet *ifp;
 	register struct host *hp;
 	register struct ifqueue *inq;
-	struct control_leader *cp;
-	struct in_addr addr;
 	struct mbuf *next;
 	struct sockaddr_in *sin;
 
@@ -183,11 +162,12 @@ impinput(unit, m)
 	    (m = m_pullup(m, sizeof(struct control_leader))) == 0)
 		return;
 	cp = mtod(m, struct control_leader *);
-	if (cp->dl_mtype == IMPTYPE_DATA)
-		if (m->m_len < sizeof(struct imp_leader) &&
-		    (m = m_pullup(m, sizeof(struct imp_leader))) == 0)
+	if (cp->dl_mtype == IMPTYPE_DATA &&
+	    m->m_len < sizeof(struct imp_leader)) {
+		if ((m = m_pullup(m, sizeof(struct imp_leader))) == 0)
 			return;
-	ip = mtod(m, struct imp_leader *);
+		cp = mtod(m, struct control_leader *);
+	}
 #ifdef IMPLEADERS
 	if (impprintfs)
 		printleader("impinput", ip);
@@ -195,17 +175,10 @@ impinput(unit, m)
 	inq = &impintrq;
 
 	/* check leader type */
-	if (ip->il_format != IMP_NFF) {
+	if (cp->dl_format != IMP_NFF) {
+		sc->imp_garbage++;
 		sc->imp_if.if_collisions++;	/* XXX */
-		goto rawlinkin;
-	}
-
-	if (ip->il_mtype != IMPTYPE_DATA) {
-		/* If not data packet, build IP addr from leader (BRL) */
-		imp_leader_to_addr(&addr, ip, &sc->imp_if);
-	}
-
-	switch (ip->il_mtype) {
+	} else switch (cp->dl_mtype) {
 
 	case IMPTYPE_DATA:
 		/*
@@ -214,7 +187,7 @@ impinput(unit, m)
 		 * If this isn't a raw interface, advance pointer
 		 * into mbuf past leader.
 		 */
-		switch (ip->il_link) {
+		switch (cp->dl_link) {
 
 		case IMPLINK_IP:
 			m->m_len -= sizeof(struct imp_leader);
@@ -238,11 +211,16 @@ impinput(unit, m)
 		 * first noop sent to the IMP after
 		 * the host resets the IMP interface.
 		 */
+#ifdef IMPINIT
+		if (imptraceinit)
+			log(imppri, "badleader\n");
+#endif
 		if (sc->imp_state != IMPS_INIT) {
 			impmsg(sc, "leader error");
-			hostreset(((struct in_ifaddr *)&sc->imp_if.if_addrlist)->ia_net);
+			hostreset(unit);
 			impnoops(sc);
 		}
+		sc->imp_garbage++;
 		break;
 
 	/*
@@ -251,43 +229,60 @@ impinput(unit, m)
 	 * appropriate time.
 	 */
 	case IMPTYPE_DOWN:
-		if (sc->imp_state < IMPS_INIT)
+	    {	int type, when;
+
+		type = cp->dl_link & IMP_DMASK;
+		when = (cp->dl_link & IMPDOWN_WHENMASK) >> IMPDOWN_WHENSHIFT;
+#ifdef IMPINIT
+		if (imptraceinit)
+			log(imppri, "input DOWN %s %d\n",
+			    impmessage[type], when * IMPDOWN_WHENUNIT);
+#endif
+		if (type != IMPDOWN_GOING && when)
+			impmsg(sc, "going down %s in %d minutes",
+			    (u_int)impmessage[type], when * IMPDOWN_WHENUNIT);
+		else
+			impmsg(sc, "going down %s", (u_int)impmessage[type]);
+		if (sc->imp_state != IMPS_UP)
 			break;
-		if ((ip->il_link & IMP_DMASK) == 0) {
+		if (type == IMPDOWN_GOING) {
 			sc->imp_state = IMPS_GOINGDOWN;
-			timeout(impdown, (caddr_t)sc, 30 * hz);
-		}
-		impmsg(sc, "going down %s",
-			(u_int)impmessage[ip->il_link&IMP_DMASK]);
+			timeout(impdown, (caddr_t)sc, IMPTV_DOWN * hz);
+		} else if (when == 0)
+			sc->imp_state = IMPS_WINIT;
+		sc->imp_dropcnt = 0;
 		break;
+	    }
 
 	/*
-	 * A NOP usually seen during the initialization sequence.
+	 * A NOP, usually seen during the initialization sequence.
 	 * Compare the local address with that in the message.
 	 * Reset the local address notion if it doesn't match.
 	 */
 	case IMPTYPE_NOOP:
-		if (sc->imp_state == IMPS_DOWN) {
+#ifdef IMPINIT
+		if (imptraceinit)
+			log(imppri, "noop\n");
+#endif
+		if (sc->imp_state == IMPS_WINIT) {
+			sc->imp_dropcnt = 0;
+			impnoops(sc);
 			sc->imp_state = IMPS_INIT;
-			sc->imp_dropcnt = IMP_DROPCNT;
 		}
-		if (sc->imp_state == IMPS_INIT && --sc->imp_dropcnt > 0)
-			break;
-		sin = (struct sockaddr_in *)&sc->imp_if.if_addrlist->ifa_addr;
-		if (ip->il_imp != 0) {
+		sc->imp_dropcnt++;
+		if (sc->imp_state == IMPS_INIT && cp->dl_imp != 0) {
 			struct in_addr leader_addr;
 
-			imp_leader_to_addr(&leader_addr, ip, &sc->imp_if);
+			sin = (struct sockaddr_in *)&sc->imp_if.if_addrlist->ifa_addr;
+			imp_leader_to_addr(&leader_addr, cp, &sc->imp_if);
 			if (sin->sin_addr.s_addr != leader_addr.s_addr) {
 				impmsg(sc, "address reset to x%x (%d/%d)",
 					ntohl(leader_addr.s_addr),
-					(u_int)ip->il_host,
-					ntohs(ip->il_imp));
+					(u_int)cp->dl_host,
+					ntohs(cp->dl_imp));
 				sin->sin_addr.s_addr = leader_addr.s_addr;
 			}
 		}
-		sc->imp_state = IMPS_UP;
-		sc->imp_if.if_flags |= IFF_UP;
 		break;
 
 	/*
@@ -296,16 +291,26 @@ impinput(unit, m)
 	 * up to the next level, but this currently isn't
 	 * needed.
 	 */
-	case IMPTYPE_RFNM:
 	case IMPTYPE_INCOMPLETE:
-		if (hp = hostlookup(addr)) {
-			hp->h_timer = HOSTTIMER;
+		sc->imp_incomplete++;
+		/* FALL THROUGH */
+	case IMPTYPE_RFNM:
+		if (hp = hostlookup(cp->dl_imp, cp->dl_host, unit)) {
 			if (hp->h_rfnm == 0)
-				hp->h_flags &= ~HF_INUSE;
-			else if (next = hostdeque(hp))
-				(void) impsnd(&sc->imp_if, next);
-		}
-		goto drop;
+				sc->imp_badrfnm++;
+			else if (--hp->h_rfnm == 0) {
+				hostfree(hp);
+				hp->h_timer = HOSTTIMER;
+			} else {
+				hp->h_timer = RFNMTIMER;
+				HOST_DEQUE(hp, next);
+				if (next)
+					(void) impsnd(&sc->imp_if, next);
+			}
+			goto drop;
+		} else
+			sc->imp_badrfnm++;
+		break;
 
 	/*
 	 * Host or IMP can't be reached.  Flush any packets
@@ -314,8 +319,9 @@ impinput(unit, m)
 	 */
 	case IMPTYPE_HOSTDEAD:
 	case IMPTYPE_HOSTUNREACH:
-		if (hp = hostlookup(addr)) {
-			hp->h_flags |= (1 << (int)ip->il_mtype);
+		if (hp = hostlookup(cp->dl_imp, cp->dl_host, unit)) {
+			hp->h_flags |= (1 << (int)cp->dl_mtype);
+			hp->h_rfnm = 0;
 			hostfree(hp);
 			hp->h_timer = HOSTDEADTIMER;
 		}
@@ -327,8 +333,12 @@ impinput(unit, m)
 	 */
 	case IMPTYPE_BADDATA:
 		impmsg(sc, "data error");
-		if (hp = hostlookup(addr))
+		if ((hp = hostlookup(cp->dl_imp, cp->dl_host, unit)) &&
+		    hp->h_rfnm) {
 			hp->h_rfnm = 0;
+			hostfree(hp);
+		}
+		sc->imp_garbage++;
 		impnoops(sc);
 		break;
 
@@ -336,18 +346,32 @@ impinput(unit, m)
 	 * Interface reset.
 	 */
 	case IMPTYPE_RESET:
-		impmsg(sc, "interface reset");
+#ifdef IMPINIT
+		if (imptraceinit)
+			log(imppri, "reset complete\n");
+#endif
+		if (sc->imp_state != IMPS_INIT) {
+			impmsg(sc, "interface reset");
+			impnoops(sc);
+		}
 		/* clear RFNM counts */
-		hostreset(((struct in_ifaddr *)&sc->imp_if.if_addrlist)->ia_net);
-		impnoops(sc);
+		hostreset(unit);
+		if (sc->imp_state != IMPS_DOWN) {
+			sc->imp_state = IMPS_UP;
+			sc->imp_if.if_flags |= IFF_UP;
+#ifdef IMPINIT
+			if (imptraceinit)
+				log(imppri, "IMP UP\n");
+#endif
+		}
 		break;
 
 	default:
+		sc->imp_garbage++;
 		sc->imp_if.if_collisions++;		/* XXX */
 		break;
 	}
 
-rawlinkin:
 	if (inq == &impintrq)
 		schednetisr(NETISR_IMP);
 	/*
@@ -378,6 +402,25 @@ rawlinkin:
 
 drop:
 	m_freem(m);
+#undef ip
+}
+
+/*
+ * Restart output for a host that has timed out
+ * while waiting for a RFNM.
+ */
+imprestarthost(hp)
+	register struct host *hp;
+{
+	struct mbuf *next;
+
+	hp->h_timer = RFNMTIMER;
+	while (hp->h_rfnm < 8) {
+		HOST_DEQUE(hp, next);
+		if (next == 0)
+			break;
+		(void) impsnd(&imp_softc[hp->h_unit].imp_if, next);
+	}
 }
 
 /*
@@ -388,10 +431,16 @@ impdown(sc)
 {
 	int s = splimp();
 
-	sc->imp_state = IMPS_DOWN;
-	impmsg(sc, "marked down");
-	hostreset(((struct in_ifaddr *)&sc->imp_if.if_addrlist)->ia_net);
-	if_down(&sc->imp_if);
+	if (sc->imp_state == IMPS_GOINGDOWN) {
+		sc->imp_state = IMPS_WINIT;
+		impmsg(sc, "marked down");
+		hostreset(sc->imp_if.if_unit);
+		if_down(&sc->imp_if);
+	}
+#ifdef IMPINIT
+	else if (imptraceinit)
+		log(imppri, "impdown, state now %d (ignored)\n", sc->imp_state);
+#endif
 	splx(s);
 }
 
@@ -402,9 +451,7 @@ impmsg(sc, fmt, a1, a2, a3)
 	u_int a1;
 {
 
-	printf("imp%d: ", sc->imp_if.if_unit);
-	printf(fmt, a1, a2, a3);
-	printf("\n");
+	log(imppri, "imp%d: %r\n", sc->imp_if.if_unit, fmt, &a1);
 }
 
 struct sockproto impproto = { PF_IMPLINK };
@@ -431,8 +478,7 @@ impintr()
 			return;
 
 		cp = mtod(m, struct control_leader *);
-		imp_leader_to_addr(&impsrc.sin_addr, (struct imp_leader *)cp,
-		    ifp);
+		imp_leader_to_addr(&impsrc.sin_addr, cp, ifp);
 		impproto.sp_protocol = cp->dl_link;
 		impdst.sin_addr = IA_SIN(ifp->if_addrlist)->sin_addr;
 
@@ -474,7 +520,7 @@ impoutput(ifp, m0, dst)
 	/*
 	 * Don't even try if the IMP is unavailable.
 	 */
-	if (imp_softc[ifp->if_unit].imp_state != IMPS_UP) {
+	if (!IMPS_RUNNING(imp_softc[ifp->if_unit].imp_state)) {
 		error = ENETDOWN;
 		goto drop;
 	}
@@ -525,7 +571,7 @@ impoutput(ifp, m0, dst)
 	imp = mtod(m, struct imp_leader *);
 	imp->il_format = IMP_NFF;
 	imp->il_mtype = IMPTYPE_DATA;
-	imp_addr_to_leader(imp,
+	imp_addr_to_leader((struct control_leader *)imp,
 		((struct sockaddr_in *)dst)->sin_addr.s_addr); /* BRL */
 	imp->il_length = htons((u_short)len << 3);		/* BRL */
 	imp->il_link = dlink;
@@ -547,24 +593,20 @@ impsnd(ifp, m)
 	struct ifnet *ifp;
 	struct mbuf *m;
 {
-	register struct imp_leader *ip;
+	register struct control_leader *imp;
 	register struct host *hp;
 	struct impcb *icp;
 	int s, error;
 
-	ip = mtod(m, struct imp_leader *);
+	imp = mtod(m, struct control_leader *);
 
 	/*
 	 * Do RFNM counting for data messages
 	 * (no more than 8 outstanding to any host)
 	 */ 
 	s = splimp();
-	if (ip->il_mtype == IMPTYPE_DATA) {
-		struct in_addr addr;
-
-		imp_leader_to_addr(&addr, ip, ifp);	/* BRL */
-		if ((hp = hostlookup(addr)) == 0)
-			hp = hostenter(addr);
+	if (imp->dl_mtype == IMPTYPE_DATA) {
+		hp = hostenter(imp->dl_imp, imp->dl_host, ifp->if_unit);
 		if (hp && (hp->h_flags & (HF_DEAD|HF_UNREACH))) {
 			error = hp->h_flags&HF_DEAD ? EHOSTDOWN : EHOSTUNREACH;
 			hp->h_flags &= ~HF_INUSE;
@@ -575,15 +617,12 @@ impsnd(ifp, m)
 		 * If IMP would block, queue until RFNM
 		 */
 		if (hp) {
-#ifndef NORFNM
-			if (hp->h_rfnm < 8)
-#endif
-			{
-				hp->h_timer = HOSTTIMER;
-				hp->h_rfnm++;
+			if (hp->h_rfnm < 8) {
+				if (hp->h_rfnm++ == 0)
+					hp->h_timer = RFNMTIMER;
 				goto enque;
 			}
-			if (hp->h_qcnt < 8) {	/* high water mark */
+			if (hp->h_qcnt < imphqlen) {	/* high water mark */
 				HOST_ENQUE(hp, m);
 				goto start;
 			}
@@ -595,7 +634,7 @@ enque:
 	if (IF_QFULL(&ifp->if_snd)) {
 		IF_DROP(&ifp->if_snd);
 		error = ENOBUFS;
-		if (ip->il_mtype == IMPTYPE_DATA)
+		if (imp->dl_mtype == IMPTYPE_DATA)
 			hp->h_rfnm--;
 bad:
 		m_freem(m);
@@ -606,7 +645,7 @@ bad:
 start:
 	icp = &imp_softc[ifp->if_unit].imp_cb;
 	if (icp->ic_oactive == 0)
-		(*icp->ic_start)(ifp->if_unit);
+		(*icp->ic_start)(icp->ic_hwunit);
 	splx(s);
 	return (0);
 }
@@ -626,19 +665,22 @@ impnoops(sc)
 	register struct mbuf *m;
 	register struct control_leader *cp;
 
-	sc->imp_dropcnt = IMP_DROPCNT;
-	for (i = 0; i < IMP_DROPCNT + 1; i++) { 
+#ifdef IMPINIT
+	if (imptraceinit)
+		log(imppri, "impnoops\n");
+#endif
+	for (i = 0; i < IMP_NOOPCNT; i++) { 
 		if ((m = m_getclr(M_DONTWAIT, MT_HEADER)) == 0) 
 			return;
 		m->m_len = sizeof(struct control_leader);
 		cp = mtod(m, struct control_leader *);
 		cp->dl_format = IMP_NFF;
-                cp->dl_link = i;
-                cp->dl_mtype = IMPTYPE_NOOP;
+		cp->dl_link = i;
+		cp->dl_mtype = IMPTYPE_NOOP;
 		IF_PREPEND(&sc->imp_if.if_snd, m);
 	}
 	if (sc->imp_cb.ic_oactive == 0)
-		(*sc->imp_cb.ic_start)(sc->imp_if.if_unit);
+		(*sc->imp_cb.ic_start)(sc->imp_cb.ic_hwunit);
 }
 
 /*
@@ -651,6 +693,7 @@ impioctl(ifp, cmd, data)
 {
 	struct ifaddr *ifa = (struct ifaddr *) data;
 	int s = splimp(), error = 0;
+#define sc	((struct imp_softc *)ifp)
 
 	switch (cmd) {
 
@@ -659,12 +702,23 @@ impioctl(ifp, cmd, data)
 			error = EINVAL;
 			break;
 		}
-		if ((ifp->if_flags & IFF_RUNNING) == 0)
+		if ((ifp->if_flags & IFF_UP) == 0)
+			impinit(ifp->if_unit);
+		break;
+
+	case SIOCSIFFLAGS:
+		if ((ifp->if_flags & IFF_UP) == 0 &&
+		    sc->imp_state != IMPS_DOWN) {
+			if (sc->imp_cb.ic_stop &&
+			    (*sc->imp_cb.ic_stop)(sc->imp_cb.ic_hwunit))
+				sc->imp_state = IMPS_DOWN;
+		} else if (ifp->if_flags & IFF_UP && sc->imp_state == IMPS_DOWN)
 			impinit(ifp->if_unit);
 		break;
 
 	default:
 		error = EINVAL;
+		break;
 	}
 	splx(s);
 	return (error);
@@ -723,27 +777,27 @@ printbyte(cp, n)
  * Class B:	Net.net.Host.Imp
  * Class C:	Net.net.net.(Host4|Imp4)
  */
-imp_leader_to_addr(ap, ip, ifp)
+imp_leader_to_addr(ap, cp, ifp)
 	struct in_addr *ap;
-	register struct imp_leader *ip;
+	register struct control_leader *cp;
 	struct ifnet *ifp;
 {
 	register u_long final;
 	register struct sockaddr_in *sin;
-	int imp = ntohs(ip->il_imp);
+	int imp = ntohs(cp->dl_imp);
 
 	sin = (struct sockaddr_in *)(&ifp->if_addrlist->ifa_addr);
 	final = ntohl(sin->sin_addr.s_addr);
 
 	if (IN_CLASSA(final)) {
 		final &= IN_CLASSA_NET;
-		final |= (imp & 0xFF) | ((ip->il_host & 0xFF)<<16);
+		final |= (imp & 0xFF) | ((cp->dl_host & 0xFF)<<16);
 	} else if (IN_CLASSB(final)) {
 		final &= IN_CLASSB_NET;
-		final |= (imp & 0xFF) | ((ip->il_host & 0xFF)<<8);
+		final |= (imp & 0xFF) | ((cp->dl_host & 0xFF)<<8);
 	} else {
 		final &= IN_CLASSC_NET;
-		final |= (imp & 0x0F) | ((ip->il_host & 0x0F)<<4);
+		final |= (imp & 0x0F) | ((cp->dl_host & 0x0F)<<4);
 	}
 	ap->s_addr = htonl(final);
 }
@@ -752,23 +806,23 @@ imp_leader_to_addr(ap, ip, ifp)
  * Function to take InterNet address and fill in IMP leader fields.
  */
 imp_addr_to_leader(imp, a)
-	register struct imp_leader *imp;
+	register struct control_leader *imp;
 	u_long a;
 {
 	register u_long addr = ntohl(a);
 
-	imp->il_network = 0;	/* !! */
+	imp->dl_network = 0;	/* !! */
 
 	if (IN_CLASSA(addr)) {
-		imp->il_host = ((addr>>16) & 0xFF);
-		imp->il_imp = addr & 0xFF;
+		imp->dl_host = ((addr>>16) & 0xFF);
+		imp->dl_imp = addr & 0xFF;
 	} else if (IN_CLASSB(addr)) {
-		imp->il_host = ((addr>>8) & 0xFF);
-		imp->il_imp = addr & 0xFF;
+		imp->dl_host = ((addr>>8) & 0xFF);
+		imp->dl_imp = addr & 0xFF;
 	} else {
-		imp->il_host = ((addr>>4) & 0xF);
-		imp->il_imp = addr & 0xF;
+		imp->dl_host = ((addr>>4) & 0xF);
+		imp->dl_imp = addr & 0xF;
 	}
-	imp->il_imp = htons(imp->il_imp);
+	imp->dl_imp = htons(imp->dl_imp);
 }
 #endif
