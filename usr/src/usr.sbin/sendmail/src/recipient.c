@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	6.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)recipient.c	6.7 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/types.h>
@@ -734,6 +734,12 @@ include(fname, forwarding, ctladdr, sendq, e)
 		e->e_to = oldto;
 		message(Arpa_Info, "%s to %s",
 			forwarding ? "forwarding" : "sending", buf);
+#ifdef LOG
+		if (forwarding && LogLevel >= 10)
+			syslog(LOG_INFO, "%s: forward %s => %s",
+				e->e_id, oldto, buf);
+#endif
+
 		AliasLevel++;
 		sendto(buf, 1, ctladdr, 0);
 		AliasLevel--;

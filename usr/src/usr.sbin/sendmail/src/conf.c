@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	6.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	6.14 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/ioctl.h>
@@ -93,7 +93,7 @@ struct hdrinfo	HdrInfo[] =
 char	Arpa_Info[] =		"050";	/* arbitrary info */
 char	Arpa_TSyserr[] =	"451";	/* some (transient) system error */
 char	Arpa_PSyserr[] =	"554";	/* some (permanent) system error */
-char	Arpa_Usrerr[] =		"554";	/* some (fatal) user error */
+char	Arpa_Usrerr[] =		"501";	/* some (fatal) user error */
 
 
 
@@ -546,8 +546,8 @@ rlsesigs()
 #  if defined(sun)
 #    define LA_TYPE		LA_INT
 #  endif
-#  if defined(mips)
-     /* Ultrix or RISC/os */
+#  if defined(mips) || defined(__alpha)
+     /* Ultrix or OSF/1 or RISC/os */
 #    define LA_TYPE		LA_INT
 #    define LA_AVENRUN		"avenrun"
 #  endif
@@ -588,7 +588,9 @@ rlsesigs()
 #    define _PATH_UNIX		"/unix"
 #  endif
 #  if defined(SYSTEM5)
-#    define _PATH_UNIX		"/unix"
+#    ifndef _PATH_UNIX
+#      define _PATH_UNIX	"/unix"
+#    endif
 #  endif
 #  ifndef _PATH_UNIX
 #    define _PATH_UNIX		"/vmunix"
@@ -604,6 +606,10 @@ struct	nlist Nl[] =
 
 #if defined(unixpc)
 # define FSHIFT		5
+#endif
+
+#if defined(__alpha)
+# define FSHIFT		10
 #endif
 
 #if (LA_TYPE == LA_INT) && !defined(FSHIFT)

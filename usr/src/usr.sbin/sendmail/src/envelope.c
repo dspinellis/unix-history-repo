@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)envelope.c	6.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)envelope.c	6.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -352,10 +352,6 @@ openxscript(e)
 	register char *p;
 	int fd;
 
-# ifdef LOG
-	if (LogLevel > 19)
-		syslog(LOG_DEBUG, "%s: openx%s", e->e_id, e->e_xfp == NULL ? "" : " (no)");
-# endif /* LOG */
 	if (e->e_xfp != NULL)
 		return;
 	p = queuename(e, 'x');
