@@ -1,4 +1,4 @@
-/* vsort.c	1.9	84/03/14
+/* vsort.c	1.10	84/04/11
  *
  *	Sorts and shuffles ditroff output for versatec wide printer.  It
  *	puts pages side-by-side on the output, and fits as many as it can
@@ -490,9 +490,6 @@ oflush()	/* sort, then dump out contents of obuf */
 		}
 		notdone |= vp->d > botv;	/* not done if there's still */
 	    }					/* something to put lower */
-#ifdef DEBUGABLE
-	    if (dbg) fprintf(stderr, "topv=%d, botv=%d\n", topv, botv);
-#endif
 	    if (notdone) putchar('P');		/* mark the end of the spread */
 	    topv += NLINES;			/* unless it's the last one */
 	    botv += NLINES;
@@ -590,9 +587,8 @@ int n;
     				/* if we're near the edge, we'll go over on */
     if (leftmarg + 2*(pageno ? leftmarg/pageno : 0) > WIDTH	/* this page, */
 	  || maxh > WIDTH - INCH || first) {	/* or this is the first page */
-	sprintf(op, "p%d\n", spanno++);		/* make it a REAL page-break */
-	op += strlen(op);
 	oflush();
+	printf("p%d\n", spanno++);		/* make it a REAL page-break */
 	first = pageno = leftmarg = maxh = 0;
     } else {			    /* x = last page's width (in half-inches) */
 	register int x = (maxh - leftmarg + (HALF - 1)) / HALF;
