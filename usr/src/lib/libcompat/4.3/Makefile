@@ -9,8 +9,9 @@
 # software without specific prior written permission. This software
 # is provided ``as is'' without express or implied warranty.
 #
-#	@(#)Makefile	5.2 (Berkeley) %G%
+#	@(#)Makefile	5.3 (Berkeley) %G%
 #
+DEFS=	-DLIBC_SCCS
 CFLAGS=	-O ${DEFS}
 SRCS=	ecvt.c gcvt.c sibuf.c sobuf.c strout.c
 OBJS=	ecvt.o gcvt.o sibuf.o sobuf.o strout.o
