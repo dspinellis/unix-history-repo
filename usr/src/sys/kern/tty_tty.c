@@ -1,4 +1,4 @@
-/*	tty_tty.c	4.10	82/08/22	*/
+/*	tty_tty.c	4.11	82/10/13	*/
 
 /*
  * Indirect driver for controlling tty.
@@ -31,11 +31,9 @@ syread(dev, uio)
 	struct uio *uio;
 {
 
-	if (u.u_ttyp == NULL) {
-		u.u_error = ENXIO;
-		return;
-	}
-	(*cdevsw[major(u.u_ttyd)].d_read)(u.u_ttyd, uio);
+	if (u.u_ttyp == NULL)
+		return (ENXIO);
+	return ((*cdevsw[major(u.u_ttyd)].d_read)(u.u_ttyd, uio));
 }
 
 /*ARGSUSED*/
@@ -44,11 +42,9 @@ sywrite(dev, uio)
 	struct uio *uio;
 {
 
-	if (u.u_ttyp == NULL) {
-		u.u_error = ENXIO;
-		return;
-	}
-	(*cdevsw[major(u.u_ttyd)].d_write)(u.u_ttyd, uio);
+	if (u.u_ttyp == NULL)
+		return (ENXIO);
+	return ((*cdevsw[major(u.u_ttyd)].d_write)(u.u_ttyd, uio));
 }
 
 /*ARGSUSED*/

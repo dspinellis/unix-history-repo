@@ -1,4 +1,4 @@
-/*	tty.c	4.29	82/09/12	*/
+/*	tty.c	4.30	82/10/13	*/
 
 /*
  * TTY subroutines common to more than one line discipline
@@ -243,19 +243,9 @@ ttioctl(tp, com, data, flag)
 	register struct tty *tp;
 	caddr_t data;
 {
-	int dev;
+	int dev = tp->t_dev;
 	extern int nldisp;
 
-	/*
-	 * This is especially so that isatty() will
-	 * fail when carrier is gone.
-	 */
-	if ((tp->t_state&TS_CARR_ON) == 0) {
-		u.u_error = EBADF;
-		return (1);
-	}
-
-	dev = tp->t_dev;
 	/*
 	 * If the ioctl involves modification,
 	 * insist on being able to write the device,
@@ -956,9 +946,10 @@ ttread(tp, uio)
 {
 	register struct clist *qp;
 	register c, first;
+	int error = 0;
 
 	if ((tp->t_state&TS_CARR_ON)==0)
-		return (0);
+		return (EIO);
 loop:
 	(void) spl5();
 	if (tp->t_local&LPENDIN)
@@ -971,7 +962,7 @@ loop:
 		    (u.u_procp->p_flag&SDETACH) ||
 */
 		    u.u_procp->p_flag&SVFORK)
-			return (0);
+			return (EIO);
 		gsignal(u.u_procp->p_pgrp, SIGTTIN);
 		sleep((caddr_t)&lbolt, TTIPRI);
 	}
@@ -981,7 +972,7 @@ loop:
 			if ((tp->t_state&TS_CARR_ON)==0 ||
 			    (tp->t_state&TS_NBIO)) {
 				(void) spl0();
-				return (0);
+				return (EWOULDBLOCK);
 			}
 			sleep((caddr_t)&tp->t_rawq, TTIPRI);
 			(void) spl0();
@@ -989,11 +980,11 @@ loop:
 		}
 		(void) spl0();
 		while (tp->t_rawq.c_cc && uio->uio_iovcnt) {
-			u.u_error = passuc(getc(&tp->t_rawq), uio);
-			if (u.u_error)
+			error = passuc(getc(&tp->t_rawq), uio);
+			if (error)
 				break;
 		}
-		return (0);
+		return (error);
 	} else {
 		qp = tp->t_flags & CBREAK ? &tp->t_rawq : &tp->t_canq;
 		(void) spl5();
@@ -1001,7 +992,7 @@ loop:
 			if ((tp->t_state&TS_CARR_ON)==0 ||
 			    (tp->t_state&TS_NBIO)) {
 				(void) spl0();
-				return (0);
+				return (EWOULDBLOCK);
 			}
 			sleep((caddr_t)&tp->t_rawq, TTIPRI);
 			(void) spl0();
@@ -1033,8 +1024,8 @@ loop:
 			}
 			if (c == tun.t_eofc && (tp->t_flags&CBREAK)==0)
 				break;
-			u.u_error = passuc(c & 0177, uio);
-			if (u.u_error)
+			error = passuc(c & 0177, uio);
+			if (error)
 				break;
 			if (uio->uio_iovcnt == 0)
 				break;
@@ -1044,7 +1035,6 @@ loop:
 		}
 		tp->t_lstate &= ~LSBKSL;
 	}
-
 	if (tp->t_state&TS_TBLOCK && tp->t_rawq.c_cc < TTYHOG/5) {
 		if (putc(tun.t_startc, &tp->t_outq)==0) {
 			tp->t_state &= ~TS_TBLOCK;
@@ -1052,15 +1042,13 @@ loop:
 		}
 		tp->t_char = 0;
 	}
-
-	return (tp->t_rawq.c_cc + tp->t_canq.c_cc);
+	return (error);
 }
 
 /*
  * Called from the device's write routine after it has
  * calculated the tty-structure given as argument.
  */
-caddr_t
 ttwrite(tp, uio)
 	register struct tty *tp;
 	struct uio *uio;
@@ -1079,9 +1067,10 @@ ttwrite(tp, uio)
 	register c;
 	int hiwat = TTHIWAT(tp);
 	int cnt = uio->uio_resid;
+	int error = 0;
 
 	if ((tp->t_state&TS_CARR_ON)==0)
-		return (NULL);
+		return (EIO);
 loop:
 	while (u.u_procp->p_pgrp != tp->t_pgrp && tp == u.u_ttyp &&
 	    (tp->t_local&LTOSTOP) && (u.u_procp->p_flag&SVFORK)==0 &&
@@ -1107,8 +1096,8 @@ loop:
 		if (cc > OBUFSIZ)
 			cc = OBUFSIZ;
 		cp = obuf;
-		u.u_error = uiomove(cp, cc, UIO_WRITE, uio);
-		if (u.u_error)
+		error = uiomove(cp, cc, UIO_WRITE, uio);
+		if (error)
 			break;
 		if (tp->t_outq.c_cc > hiwat)
 			goto ovhiwat;
@@ -1171,7 +1160,7 @@ loop:
 		}
 	}
 	ttstart(tp);
-	return (NULL);
+	return (error);
 
 ovhiwat:
 	(void) spl5();
@@ -1186,8 +1175,8 @@ ovhiwat:
 	ttstart(tp);
 	if (tp->t_state & TS_NBIO) {
 		if (uio->uio_resid == cnt)
-			u.u_error = EWOULDBLOCK;
-		return (NULL);
+			return (EWOULDBLOCK);
+		return (0);
 	}
 	tp->t_state |= TS_ASLEEP;
 	sleep((caddr_t)&tp->t_outq, TTOPRI);
