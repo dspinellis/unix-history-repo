@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-	.asciz "@(#)memset.s	5.1 (Berkeley) %G%"
+	.asciz "@(#)memset.s	5.2 (Berkeley) %G%"
 #endif /* LIBC_SCCS and not lint */
 
 /* void *memset(base, c, length) */
@@ -21,6 +21,7 @@ ENTRY(memset, 0)
 	cmpl	r2,r0
 	jgtru	2f
 	movc5	$0,(r3),r1,r2,(r3)
+	movl	r1,r0
 	ret
 2:
 	subl2	r0,12(ap)
