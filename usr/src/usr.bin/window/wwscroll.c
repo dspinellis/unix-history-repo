@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwscroll.c	3.4 83/08/18";
+static	char *sccsid = "@(#)wwscroll.c	3.5 83/08/22";
 #endif
 
 #include "ww.h"
@@ -23,7 +23,7 @@ register n;
 	n = abs(scroll - w->ww_scroll);
 	if (n < w->ww_w.nr) {
 		while (--n >= 0) {
-			wwscroll1(w, 0, w->ww_w.nr - 1, dir, 0);
+			(void) wwscroll1(w, 0, w->ww_w.nr - 1, dir, 0);
 			w->ww_scroll += dir;
 		}
 	} else {
