@@ -1,4 +1,4 @@
-/*	tcp_input.c	6.9	85/02/12	*/
+/*	tcp_input.c	6.10	85/05/27	*/
 
 #include "param.h"
 #include "systm.h"
@@ -546,8 +546,9 @@ trimthenstep6:
 				 * This is contrary to the specification,
 				 * but if we haven't gotten our FIN in 
 				 * 5 minutes, it's not forthcoming.
-				 */
 				tp->t_timer[TCPT_2MSL] = 5 * 60 * PR_SLOWHZ;
+				 * MUST WORRY ABOUT ONE-WAY CONNECTIONS.
+				 */
 			}
 			break;
 
@@ -599,8 +600,6 @@ step6:
 		tp->snd_wnd = ti->ti_win;
 		tp->snd_wl1 = ti->ti_seq;
 		tp->snd_wl2 = ti->ti_ack;
-		if (tp->snd_wnd != 0)
-			tp->t_timer[TCPT_PERSIST] = 0;
 	}
 
 	/*
