@@ -1,9 +1,9 @@
-/*	tm.c	4.15	%G%	*/
+/*	tm.c	4.16	%G%	*/
 
 #include "tm.h"
-#if NTM03 > 0
+#if NTM > 0
 /*
- * TM tape driver
+ * TM11/TE10 tape driver
  *
  * THIS DRIVER HAS NOT BEEN TESTED WITH MORE THAN ONE TRANSPORT.
  */
@@ -25,19 +25,19 @@
 
 #include "../h/tmreg.h"
 
-struct	buf	ctmbuf[NTM11];
-struct	buf	rtmbuf[NTM11];
+struct	buf	ctmbuf[NTE];
+struct	buf	rtmbuf[NTE];
 
 int	tmprobe(), tmslave(), tmattach(), tmdgo(), tmintr();
-struct	uba_minfo *tmminfo[NTM03];
-struct	uba_dinfo *tmdinfo[NTM11];
-struct	buf tmutab[NTM11];
+struct	uba_minfo *tmminfo[NTM];
+struct	uba_dinfo *tmdinfo[NTE];
+struct	buf tmutab[NTE];
 #ifdef notyet
-struct	uba_dinfo *tmip[NTM03][4];
+struct	uba_dinfo *tmip[NTM][4];
 #endif
 u_short	tmstd[] = { 0772520, 0 };
 struct	uba_driver tmdriver =
-  { tmprobe, tmslave, tmattach, tmdgo, tmstd, "mtm", tmdinfo, "tm", tmminfo };
+ { tmprobe, tmslave, tmattach, tmdgo, tmstd, "te", tmdinfo, "tm", tmminfo, 0 };
 
 /* bits in minor device */
 #define	TMUNIT(dev)	(minor(dev)&03)
@@ -57,7 +57,7 @@ struct	tm_softc {
 	u_short	sc_erreg;	/* copy of last erreg */
 	u_short	sc_dsreg;	/* copy of last dsreg */
 	short	sc_resid;	/* copy of last bc */
-} tm_softc[NTM03];
+} tm_softc[NTM];
 
 /*
  * States for um->um_tab.b_active, the
@@ -87,7 +87,7 @@ tmprobe(reg)
 #endif
 	((struct device *)reg)->tmcs = TM_IE;
 	/*
-	 * If this is a tm03, it ought to have interrupted
+	 * If this is a tm11, it ought to have interrupted
 	 * by now, if it isn't (ie: it is a ts04) then we just
 	 * hope that it didn't interrupt, so autoconf will ignore it.
 	 * Just in case, we will reference one
@@ -146,7 +146,7 @@ tmopen(dev, flag)
 	register struct tm_softc *sc;
 
 	unit = TMUNIT(dev);
-	if (unit>=NTM11 || (sc = &tm_softc[unit])->sc_openf ||
+	if (unit>=NTE || (sc = &tm_softc[unit])->sc_openf ||
 	    (ui = tmdinfo[unit]) == 0 || ui->ui_alive == 0) {
 		u.u_error = ENXIO;
 		return;
@@ -420,13 +420,13 @@ tmdgo(um)
  * Tm interrupt routine.
  */
 /*ARGSUSED*/
-tmintr(tm03)
-	int tm03;
+tmintr(tm11)
+	int tm11;
 {
 	struct buf *dp;
 	register struct buf *bp;
-	register struct uba_minfo *um = tmminfo[tm03];
-	register struct device *addr = (struct device *)tmdinfo[tm03]->ui_addr;
+	register struct uba_minfo *um = tmminfo[tm11];
+	register struct device *addr = (struct device *)tmdinfo[tm11]->ui_addr;
 	register struct tm_softc *sc;
 	int unit;
 	register state;
@@ -642,12 +642,12 @@ tmreset(uban)
 {
 	int printed = 0;
 	register struct uba_minfo *um;
-	register tm03, unit;
+	register tm11, unit;
 	register struct uba_dinfo *ui;
 	register struct buf *dp;
 
-	for (tm03 = 0; tm03 < NTM03; tm03++) {
-		if ((um = tmminfo[tm03]) == 0 || um->um_alive == 0 ||
+	for (tm11 = 0; tm11 < NTM; tm11++) {
+		if ((um = tmminfo[tm11]) == 0 || um->um_alive == 0 ||
 		   um->um_ubanum != uban)
 			continue;
 		if (printed == 0) {
@@ -662,7 +662,7 @@ tmreset(uban)
 			ubadone(um);
 		}
 		((struct device *)(um->um_addr))->tmcs = TM_DCLR;
-		for (unit = 0; unit < NTM11; unit++) {
+		for (unit = 0; unit < NTE; unit++) {
 			if ((ui = tmdinfo[unit]) == 0)
 				continue;
 			if (ui->ui_alive == 0)
