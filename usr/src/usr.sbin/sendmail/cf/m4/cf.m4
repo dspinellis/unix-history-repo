@@ -113,6 +113,7 @@ define(`confME_TOO', `False')
 define(`confCHECK_ALIASES', `True')
 define(`confOLD_STYLE_HEADERS', `True')
 define(`confPRIVACY_FLAGS', `authwarnings')
+define(`confDONT_PRUNE_ROUTES', `False')
 define(`confSAFE_QUEUE', `True')
 define(`confMESSAGE_TIMEOUT', `5d/4h')
 define(`confTIME_ZONE', `USE_SYSTEM')
@@ -127,4 +128,4 @@ define(`confSORT_QUEUE_BY_HOST', `False')
 define(`confBROKEN_SMTP_PEERS', `False')
 
 divert(0)dnl
-VERSIONID(`@(#)cf.m4	8.8 (Berkeley) %G%')
+VERSIONID(`@(#)cf.m4	8.9 (Berkeley) %G%')

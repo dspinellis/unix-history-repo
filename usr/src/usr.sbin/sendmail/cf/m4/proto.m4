@@ -8,7 +8,7 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(`@(#)proto.m4	8.54 (Berkeley) %G%')
+VERSIONID(`@(#)proto.m4	8.55 (Berkeley) %G%')
 
 MAILER(local)dnl
 
@@ -249,6 +249,9 @@ OQ`'ifdef(`QUEUE_DIR', QUEUE_DIR, /var/spool/mqueue)
 ifdef(`confREAD_TIMEOUT',
 	Or`'confREAD_TIMEOUT,
 	#Ordatablock=10m)
+
+# should we not prune routes in route-addr syntax addresses?
+OR`'confDONT_PRUNE_ROUTES
 
 # queue up everything before forking?
 Os`'confSAFE_QUEUE
