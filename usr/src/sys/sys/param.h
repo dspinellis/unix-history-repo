@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)param.h	6.10 (Berkeley) %G%
+ *	@(#)param.h	6.11 (Berkeley) %G%
  */
 
 /*
@@ -102,14 +102,6 @@
 #define	CBSIZE	28		/* number of chars in a clist block */
 #define	CROUND	0x1F		/* clist rounding; sizeof(int *) + CBSIZE -1*/
 
-#ifndef KERNEL
-#include	<sys/types.h>
-#else
-#ifndef LOCORE
-#include	"types.h"
-#endif
-#endif
-
 /*
  * File system parameters and macros.
  *
@@ -183,6 +175,14 @@
 #define	roundup(x, y)	((((x)+((y)-1))/(y))*(y))
 
 /*
- * Maximum size of hostname recognized and stroed in the kernel.
+ * Maximum size of hostname recognized and stored in the kernel.
  */
-#define MAXHOSTNAMELEN	32
+#define MAXHOSTNAMELEN	64
+
+#ifndef KERNEL
+#include	<sys/types.h>
+#else
+#ifndef LOCORE
+#include	"types.h"
+#endif
+#endif
