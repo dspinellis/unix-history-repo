@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)gmon.c	4.5 (Berkeley) %G%";
+static	char *sccsid = "@(#)gmon.c	4.6 (Berkeley) %G%";
 
 #ifdef DEBUG
 #include <stdio.h>
@@ -46,7 +46,13 @@ monstartup(lowpc, highpc)
 	froms = 0;
 	return;
     }
-    tos = (struct tostruct *) sbrk(s_textsize);
+    limit = s_textsize * DENSITY / 100;
+    if ( limit < MINCNT ) {
+	limit = MINCNT;
+    } else if ( limit > 65534 ) {
+	limit = 65534;
+    }
+    tos = (struct tostruct *) sbrk( limit * sizeof( struct tostruct ) );
     if ( tos == (struct tostruct *) -1 ) {
 	write( 2 , MSG , sizeof(MSG) );
 	froms = 0;
@@ -54,13 +60,12 @@ monstartup(lowpc, highpc)
 	return;
     }
     tos[0].link = 0;
-    limit = s_textsize / sizeof(struct tostruct);
 	/*
 	 *	tolimit is what mcount checks to see if
 	 *	all the data structures are ready!!!
 	 *	make sure it won't overflow.
 	 */
-    tolimit = limit > 65534 ? 65534 : limit;
+    tolimit = limit;
     monitor( lowpc , highpc , buffer , monsize , tolimit );
 }
 
