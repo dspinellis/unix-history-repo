@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ls.c	5.59 (Berkeley) %G%";
+static char sccsid[] = "@(#)ls.c	5.60 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>	
@@ -31,14 +31,16 @@ static char sccsid[] = "@(#)ls.c	5.59 (Berkeley) %G%";
 #include "ls.h"
 #include "extern.h"
 
-void	display __P((FTSENT *, FTSENT *));
-int	mastercmp __P((const FTSENT **, const FTSENT **));
-void	traverse __P((int, char **, int));
+void	 display __P((FTSENT *, FTSENT *));
+char	*getbsize __P((char *, int *, int *));
+int	 mastercmp __P((const FTSENT **, const FTSENT **));
+void	 traverse __P((int, char **, int));
 
 static void (*printfcn) __P((FTSENT *, int, u_long, int));
 static int (*sortfcn) __P((const FTSENT *, const FTSENT *));
 
 int termwidth = 80;		/* default terminal width */
+int blocksize;			/* block size units */
 
 /* flags */
 int f_accesstime;		/* use time of last access */
@@ -46,7 +48,6 @@ int f_column;			/* columnated format */
 int f_group;			/* show group ownership of a file */
 int f_flags;			/* show flags associated with a file */
 int f_inode;			/* print inode */
-int f_kblocks;			/* print size in kilobytes */
 int f_listdir;			/* list actual directory, not contents */
 int f_listdot;			/* list files beginning with . */
 int f_longform;			/* long listing format */
@@ -70,7 +71,7 @@ main(argc, argv)
 {
 	static char dot[] = ".", *dotav[] = { dot, NULL };
 	struct winsize win;
-	int ch, fts_options;
+	int ch, fts_options, notused;
 	char *p;
 
 	/* Terminal defaults to -Cq, non-terminal defaults to -1. */
@@ -150,8 +151,8 @@ main(argc, argv)
 		case 'i':
 			f_inode = 1;
 			break;
-		case 'k':
-			f_kblocks = 1;
+		case 'k':		/* Delete before 4.4BSD. */
+			(void)fprintf(stderr, "ls: -k no longer supported\n");
 			break;
 		case 'o':
 			f_flags = 1;
@@ -192,6 +193,12 @@ main(argc, argv)
 	 */
 	if (!f_longform && !f_listdir && !f_type)
 		fts_options |= FTS_COMFOLLOW;
+
+	/* If -l or -s, figure out block size. */
+	if (f_longform || f_size) {
+		(void)getbsize("ls", &notused, &blocksize);
+		blocksize /= 512;
+	}
 
 	/* Select a sort function. */
 	if (f_reversesort) {

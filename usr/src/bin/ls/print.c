@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)print.c	5.31 (Berkeley) %G%";
+static char sccsid[] = "@(#)print.c	5.32 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -65,8 +65,7 @@ printlong(dlist, entries, btotal, maxlen)
 	
 	
 	if (dlist->fts_level != FTS_ROOTLEVEL && (f_longform || f_size))
-		(void)printf("total %lu\n",
-		    f_kblocks ? howmany(btotal, 2) : btotal);
+		(void)printf("total %lu\n", howmany(btotal, blocksize));
 	for (p = dlist; p; p = p->fts_link) {
 		if (IS_NOPRINT(p))
 			continue;
@@ -74,8 +73,8 @@ printlong(dlist, entries, btotal, maxlen)
 		if (f_inode)
 			(void)printf("%6lu ", sp->st_ino);
 		if (f_size)
-			(void)printf("%4ld ", f_kblocks ?
-			    howmany(sp->st_blocks, 2) : sp->st_blocks);
+			(void)printf("%4ld ",
+			    howmany(sp->st_blocks, blocksize));
 		(void)strmode(sp->st_mode, modep);
 		(void)printf("%s %3u %-*s ", modep, sp->st_nlink,
 		    UT_NAMESIZE, user_from_uid(sp->st_uid, 0));
@@ -157,8 +156,7 @@ printcol(dlist, entries, btotal, maxlen)
 		++numrows;
 
 	if (dlist->fts_level != FTS_ROOTLEVEL && (f_longform || f_size))
-		(void)printf("total %lu\n",
-		    f_kblocks ? howmany(btotal, 2) : btotal);
+		(void)printf("total %lu\n", howmany(btotal, blocksize));
 	for (row = 0; row < numrows; ++row) {
 		endcol = colwidth;
 		for (base = row, chcnt = col = 0; col < numcols; ++col) {
@@ -191,8 +189,7 @@ printaname(p)
 	if (f_inode)
 		chcnt += printf("%5lu ", sp->st_ino);
 	if (f_size)
-		chcnt += printf("%4ld ", f_kblocks ?
-		    howmany(sp->st_blocks, 2) : sp->st_blocks);
+		chcnt += printf("%4ld ", howmany(sp->st_blocks, blocksize));
 	chcnt += printf("%s", p->fts_name);
 	if (f_type)
 		chcnt += printtype(sp->st_mode);
