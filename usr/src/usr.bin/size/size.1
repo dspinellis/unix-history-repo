@@ -3,13 +3,11 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)size.1	6.5 (Berkeley) %G%
+.\"     @(#)size.1	6.6 (Berkeley) %G%
 .\"
-.Vx
-.Vx
 .Dd 
 .Dt SIZE 1
-.Os ATT 7th
+.Os
 .Sh NAME
 .Nm size
 .Nd display object file segment sizes (text, data and bss)
@@ -21,14 +19,16 @@
 displays the text, data and bss segment sizes of the given
 .Ar object_file
 in bytes (decimal), and the sum of the three segments (hexidecimal and 
-decimal). If
+decimal).
+If
 .Ar object_file
 is not given,
 .Nm
-will search for the file
+automatically searches for the file
 .Pa a.out .
 .Sh SEE ALSO
 .Xr a.out 5
 .Sh HISTORY
-.Nm Size
-appeared in Version 6 AT&T Unix.
+A
+.Nm size
+command appeared in Version 6 AT&T Unix.
