@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)dm.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)dm.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -94,20 +94,9 @@ static
 read_config()
 {
 	FILE *cfp;
-	char *control, *host, *index(), *strcpy();
-	char lbuf[BUFSIZ], path[MAXHOSTNAMELEN + sizeof(_PATH_CONFIG)];
-	char f1[40], f2[40], f3[40], f4[40], f5[40];
+	char lbuf[BUFSIZ], f1[40], f2[40], f3[40], f4[40], f5[40];
 
-	host = &path[sizeof(_PATH_CONFIG)];
-	if (gethostname(host, MAXHOSTNAMELEN)) {
-		perror("dm: gethostname");
-		exit(1);
-	}
-	(void)strcpy(path, control = _PATH_CONFIG);
-	host[-1] = '.';
-	if (host = index(host, '.'))
-		*host = '\0';
-	if (!(cfp = fopen(path, "r")) && !(cfp = fopen(control, "r")))
+	if (!(cfp = fopen(_PATH_CONFIG, "r")))
 		return;
 	while (fgets(lbuf, sizeof(lbuf), cfp))
 		switch(*lbuf) {
