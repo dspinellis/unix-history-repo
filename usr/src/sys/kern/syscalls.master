@@ -1,4 +1,4 @@
-	@(#)syscalls.master	7.6 (Berkeley) %G%
+	@(#)syscalls.master	7.7 (Berkeley) %G%
 ; System call name/number master file.
 ; Processed to created init_sysent.c, syscalls.c and syscall.h.
 
@@ -77,8 +77,8 @@
 46	OBSOL	0 setgid
 47	STD	0 getgid
 48	OBSOL	0 sigsys
-49	STD	2 getlogname
-50	STD	2 setlogname
+49	STD	2 getlogin
+50	STD	2 setlogin
 51	STD	1 sysacct acct
 52	OBSOL	0 set phys addr
 53	OBSOL	0 lock in core
