@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)stty.c	5.24 (Berkeley) %G%";
+static char sccsid[] = "@(#)stty.c	5.25 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -48,7 +48,8 @@ main(argc, argv)
 	ctl = STDIN_FILENO;
 	fmt = NOTSET;
 	opterr = 0;
-	while ((ch = getopt(argc, argv, "aef:g")) != EOF)
+	while (strspn(argv[optind], "-aefg") == strlen(argv[optind]) &&
+	    (ch = getopt(argc, argv, "aef:g")) != EOF)
 		switch(ch) {
 		case 'a':		/* undocumented: POSIX compatibility */
 			fmt = POSIX;
@@ -58,7 +59,7 @@ main(argc, argv)
 			break;
 		case 'f':
 			if ((ctl = open(optarg, O_RDONLY | O_NONBLOCK)) < 0)
-				err(optarg);
+				err("%s: %s", optarg, strerror(errno));
 			break;
 		case 'g':
 			fmt = GFLAG;
