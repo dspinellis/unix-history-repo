@@ -15,9 +15,10 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)init.c	6.11.1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)init.c	6.12 (Berkeley) %G%";
 #endif /* not lint */
 
+#include <sys/sysctl.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <db.h>
@@ -66,6 +67,7 @@ void stall __P((char *, ...));
 void warning __P((char *, ...));
 void emergency __P((char *, ...));
 void disaster __P((int));
+void badsys __P((int));
 
 /*
  * We really need a recursive typedef...
@@ -188,8 +190,9 @@ main(argc, argv)
 	 * We catch or block signals rather than ignore them,
 	 * so that they get reset on exec.
 	 */
+	handle(badsys, SIGSYS, 0);
 	handle(disaster, SIGABRT, SIGFPE, SIGILL, SIGSEGV,
-	       SIGBUS, SIGSYS, SIGXCPU, SIGXFSZ, 0);
+	       SIGBUS, SIGXCPU, SIGXFSZ, 0);
 	handle(transition_handler, SIGHUP, SIGTERM, SIGTSTP, 0);
 	handle(alrm_handler, SIGALRM, 0);
 	sigfillset(&mask);
@@ -364,6 +367,23 @@ emergency(va_alist)
 }
 
 /*
+ * Catch a SIGSYS signal.
+ *
+ * These may arise if a system does not support sysctl.
+ * We tolerate up to 25 of these, then throw in the towel.
+ */
+void
+badsys(sig)
+	int sig;
+{
+	static int badcount = 0;
+
+	if (badcount++ < 25)
+		return;
+	disaster(sig);
+}
+
+/*
  * Catch an unexpected signal.
  */
 void
@@ -375,6 +395,52 @@ disaster(sig)
 
 	sleep(STALL_TIMEOUT);
 	_exit(sig);		/* reboot */
+}
+
+/*
+ * Get the security level of the kernel.
+ */
+int
+getsecuritylevel()
+{
+	int name[2], len, curlevel;
+	extern int errno;
+
+	name[0] = CTL_KERN;
+	name[1] = KERN_SECURELVL;
+	len = sizeof curlevel;
+	if (sysctl(name, 2, &curlevel, &len, NULL, 0) == -1) {
+		emergency("cannot get kernel security level: %s",
+		    strerror(errno));
+		return (-1);
+	}
+	return (curlevel);
+}
+
+/*
+ * Set the security level of the kernel.
+ */
+setsecuritylevel(newlevel)
+	int newlevel;
+{
+	int name[2], len, curlevel;
+	extern int errno;
+
+	curlevel = getsecuritylevel();
+	if (newlevel == curlevel)
+		return;
+	name[0] = CTL_KERN;
+	name[1] = KERN_SECURELVL;
+	if (sysctl(name, 2, NULL, NULL, &newlevel, sizeof newlevel) == -1) {
+		emergency(
+		    "cannot change kernel security level from %d to %d: %s",
+		    curlevel, newlevel, strerror(errno));
+		return;
+	}
+#ifdef SECURE
+	warning("kernel security level changed from %d to %d",
+	    curlevel, newlevel);
+#endif
 }
 
 /*
@@ -502,6 +568,12 @@ single_user()
 	char *password;
 #endif
 
+	/*
+	 * If the kernel is in secure mode, downgrade it to insecure mode.
+	 */
+	if (getsecuritylevel() > 0)
+		setsecuritylevel(0);
+
 	if ((pid = fork()) == 0) {
 		/*
 		 * Start the single user session.
@@ -535,24 +607,6 @@ single_user()
 		}
 #endif /* KTRACEHACK */
 				
-#ifdef DEBUGSHELL
-		{
-			char altshell[128], *cp = altshell;
-			int num;
-
-#define	SHREQUEST \
-	"Enter pathname of shell or RETURN for sh: "
-			(void)write(STDERR_FILENO,
-			    SHREQUEST, sizeof(SHREQUEST) - 1);
-			while ((num = read(STDIN_FILENO, cp, 1)) != -1 &&
-			    num != 0 && *cp != '\n' && cp < &altshell[127])
-					cp++;
-			*cp = '\0';
-			if (altshell[0] != '\0')
-				shell = altshell;
-		}
-#endif /* DEBUGSHELL */
-
 #ifdef SECURE
 		/*
 		 * Check the root password.
@@ -570,18 +624,30 @@ single_user()
 				password = crypt(password, pp->pw_passwd);
 				if (strcmp(password, pp->pw_passwd) == 0)
 					break;
+				warning("single-user login failed\n");
 			}
 		}
-#ifdef notdef
-		/*
-		 * Make the single-user shell be root's standard shell?
-		 */
-		if (pp && pp->pw_shell)
-			shell = pp->pw_shell;
-#endif
 		endttyent();
 		endpwent();
-#endif
+#endif /* SECURE */
+
+#ifdef DEBUGSHELL
+		{
+			char altshell[128], *cp = altshell;
+			int num;
+
+#define	SHREQUEST \
+	"Enter pathname of shell or RETURN for sh: "
+			(void)write(STDERR_FILENO,
+			    SHREQUEST, sizeof(SHREQUEST) - 1);
+			while ((num = read(STDIN_FILENO, cp, 1)) != -1 &&
+			    num != 0 && *cp != '\n' && cp < &altshell[127])
+					cp++;
+			*cp = '\0';
+			if (altshell[0] != '\0')
+				shell = altshell;
+		}
+#endif /* DEBUGSHELL */
 
 		/*
 		 * Unblock signals.
@@ -1093,6 +1159,15 @@ multi_user()
 
 	requested_transition = 0;
 	logger_enable = 1;
+
+	/*
+	 * If the administrator has not set the security level to -1
+	 * to indicate that the kernel should not run multiuser in secure
+	 * mode, and the run script has not set a higher level of security 
+	 * than level 1, then put the kernel into secure mode.
+	 */
+	if (getsecuritylevel() == 0)
+		setsecuritylevel(1);
 
 	for (sp = sessions; sp; sp = sp->se_next) {
 		if (sp->se_process)
