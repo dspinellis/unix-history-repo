@@ -1,30 +1,41 @@
 /*
- * Copyright (c) 1982, 1986 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+ * Copyright (c) 1982, 1986, 1989 Regents of the University of California.
+ * All rights reserved.
  *
- *	@(#)kern_prot.c	7.5 (Berkeley) %G%
+ * Redistribution and use in source and binary forms are permitted
+ * provided that the above copyright notice and this paragraph are
+ * duplicated in all such forms and that any documentation,
+ * advertising materials, and other materials related to such
+ * distribution and use acknowledge that the software was developed
+ * by the University of California, Berkeley.  The name of the
+ * University may not be used to endorse or promote products derived
+ * from this software without specific prior written permission.
+ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+ *
+ *	@(#)kern_prot.c	7.1.1.1 (Berkeley) %G%
  */
 
 /*
  * System calls related to processes and protection
  */
 
+#include "machine/reg.h"
+
 #include "param.h"
+#include "acct.h"
 #include "systm.h"
-#include "dir.h"
 #include "user.h"
-#include "inode.h"
 #include "proc.h"
 #include "timeb.h"
 #include "times.h"
 #include "reboot.h"
-#include "fs.h"
-#include "buf.h"
 #include "mount.h"
-#include "quota.h"
-
-#include "machine/reg.h"
+#include "buf.h"
+#include "../ufs/quota.h"
+#include "malloc.h"
+#define GRPSTART 0
 
 getpid()
 {
@@ -41,12 +52,13 @@ getpgrp()
 	register struct proc *p;
 
 	if (uap->pid == 0)
-		p = u.u_procp;
-	else if ((p = pfind(uap->pid)) == 0) {
+		uap->pid = u.u_procp->p_pid;
+	p = pfind(uap->pid);
+	if (p == 0) {
 		u.u_error = ESRCH;
 		return;
 	}
-	u.u_r.r_val1 = p->p_pgrp->pg_id;
+	u.u_r.r_val1 = p->p_pgrp;
 }
 
 getuid()
@@ -73,15 +85,17 @@ getgroups()
 	register int *lp;
 	int groups[NGROUPS];
 
-	for (gp = &u.u_groups[NGROUPS]; gp > u.u_groups; gp--)
-		if (gp[-1] != NOGROUP)
-			break;
-	if (uap->gidsetsize < gp - u.u_groups) {
+	if (uap->gidsetsize == 0) {
+		u.u_r.r_val1 = u.u_ngroups - GRPSTART;
+		return;
+	}
+	if (uap->gidsetsize < u.u_ngroups - GRPSTART) {
 		u.u_error = EINVAL;
 		return;
 	}
-	uap->gidsetsize = gp - u.u_groups;
-	for (lp = groups, gp = u.u_groups; lp < &groups[uap->gidsetsize]; )
+	uap->gidsetsize = u.u_ngroups - GRPSTART;
+	gp = &u.u_groups[GRPSTART];
+	for (lp = groups; lp < &groups[uap->gidsetsize]; )
 		*lp++ = *gp++;
 	u.u_error = copyout((caddr_t)groups, (caddr_t)uap->gidset,
 	    uap->gidsetsize * sizeof (groups[0]));
@@ -90,71 +104,27 @@ getgroups()
 	u.u_r.r_val1 = uap->gidsetsize;
 }
 
-setsid()
-{
-	register struct proc *p = u.u_procp;
-
-	if ((p->p_pgid == p->p_pid) || pgfind(p->p_pid))
-		u.u_error = EPERM;
-	else {
-		pgmv(p, p->p_pid, 1);
-		u.u_r.r_val1 = p->p_pid;
-	}
-	return;
-}
-
-/*
- * set process group
- *
- * if target pid != caller's pid
- *	pid must be an inferior
- *	pid must be in same session
- *	pid can't have done an exec
- *	there must exist a pid with pgid in same session 
- * pid must not be session leader
- */
 setpgrp()
 {
+	register struct proc *p;
 	register struct a {
 		int	pid;
-		int	pgid;
+		int	pgrp;
 	} *uap = (struct a *)u.u_ap;
-	register struct proc *p;
-	register struct pgrp *pgrp;
 
 	if (uap->pid == 0)
-		p = u.u_procp;
-	else if ((p = pfind(uap->pid)) == 0 || !inferior(p)) {
+		uap->pid = u.u_procp->p_pid;
+	p = pfind(uap->pid);
+	if (p == 0) {
 		u.u_error = ESRCH;
 		return;
 	}
-	else if (p != u.u_procp) { 
-		if (p->p_session != u.u_procp->p_session) {
-			u.u_error = EPERM;
-			return;
-		}
-		if (p->p_flag&SEXEC) {
-			u.u_error = EACCES;
-			return;
-		}
-	}
-	if (SESS_LEADER(p)) {
+/* need better control mechanisms for process groups */
+	if (p->p_uid != u.u_uid && u.u_uid && !inferior(p)) {
 		u.u_error = EPERM;
 		return;
 	}
-	if (uap->pgid == 0)
-		uap->pgid = p->p_pid;
-	else if ((uap->pgid != p->p_pid) &&
-		(((pgrp = pgfind(uap->pgid)) == 0) || 
-		   pgrp->pg_mem == NULL ||
-	           pgrp->pg_session != u.u_procp->p_session)) {
-		u.u_error = EPERM;
-		return;
-	}
-	/*
-	 * done checking, now doit
-	 */
-	pgmv(p, uap->pgid, 0);
+	p->p_pgrp = uap->pgrp;
 }
 
 setreuid()
@@ -180,6 +150,8 @@ setreuid()
 		return;
 	/*
 	 * Everything's okay, do it.
+	 * Copy credentials so other references do not
+	 * see our changes.
 	 */
 #ifdef QUOTA
 	if (u.u_quota->q_uid != ruid) {
@@ -187,6 +159,8 @@ setreuid()
 		qstart(getquota((uid_t)ruid, 0, 0));
 	}
 #endif
+	if (u.u_cred->cr_ref > 1)
+		u.u_cred = crcopy(u.u_cred);
 	u.u_procp->p_uid = euid;
 	u.u_ruid = ruid;
 	u.u_uid = euid;
@@ -213,11 +187,9 @@ setregid()
 	if (u.u_rgid != egid && u.u_gid != egid &&
 	    (u.u_error = suser(u.u_cred, &u.u_acflag)))
 		return;
-	if (u.u_rgid != rgid) {
-		leavegroup(u.u_rgid);
-		(void) entergroup((gid_t)rgid);
-		u.u_rgid = rgid;
-	}
+	if (u.u_cred->cr_ref > 1)
+		u.u_cred = crcopy(u.u_cred);
+	u.u_rgid = rgid;
 	u.u_gid = egid;
 }
 
@@ -229,11 +201,12 @@ setgroups()
 	} *uap = (struct a *)u.u_ap;
 	register gid_t *gp;
 	register int *lp;
-	int groups[NGROUPS];
+	int ngrp, groups[NGROUPS];
 
 	if (u.u_error = suser(u.u_cred, &u.u_acflag))
 		return;
-	if (uap->gidsetsize > sizeof (u.u_groups) / sizeof (u.u_groups[0])) {
+	ngrp = uap->gidsetsize + GRPSTART;
+	if (ngrp > sizeof (u.u_groups) / sizeof (u.u_groups[0])) {
 		u.u_error = EINVAL;
 		return;
 	}
@@ -241,102 +214,103 @@ setgroups()
 	    uap->gidsetsize * sizeof (groups[0]));
 	if (u.u_error)
 		return;
-	for (lp = groups, gp = u.u_groups; lp < &groups[uap->gidsetsize]; )
+	gp = &u.u_groups[GRPSTART];
+	for (lp = groups; lp < &groups[uap->gidsetsize]; )
 		*gp++ = *lp++;
-	for ( ; gp < &u.u_groups[NGROUPS]; gp++)
-		*gp = NOGROUP;
-}
-
-/*
- * Group utility functions.
- */
-
-/*
- * Delete gid from the group set.
- */
-leavegroup(gid)
-	gid_t gid;
-{
-	register gid_t *gp;
-
-	for (gp = u.u_groups; gp < &u.u_groups[NGROUPS]; gp++)
-		if (*gp == gid)
-			goto found;
-	return;
-found:
-	for (; gp < &u.u_groups[NGROUPS-1]; gp++)
-		*gp = *(gp+1);
-	*gp = NOGROUP;
-}
-
-/*
- * Add gid to the group set.
- */
-entergroup(gid)
-	gid_t gid;
-{
-	register gid_t *gp;
-
-	for (gp = u.u_groups; gp < &u.u_groups[NGROUPS]; gp++) {
-		if (*gp == gid)
-			return (0);
-		if (*gp == NOGROUP) {
-			*gp = gid;
-			return (0);
-		}
-	}
-	return (-1);
+	u.u_ngroups = ngrp;
 }
 
 /*
  * Check if gid is a member of the group set.
  */
-groupmember(gid)
+groupmember(gid, cred)
 	gid_t gid;
+	register struct ucred *cred;
 {
 	register gid_t *gp;
+	gid_t *egp;
 
-	if (u.u_gid == gid)
-		return (1);
-	for (gp = u.u_groups; gp < &u.u_groups[NGROUPS] && *gp != NOGROUP; gp++)
+	egp = &(cred->cr_groups[cred->cr_ngroups]);
+	for (gp = cred->cr_groups; gp < egp; gp++)
 		if (*gp == gid)
 			return (1);
 	return (0);
 }
 
 /*
- * Get login name of process owner, if available
+ * Test if the current user is the super user.
  */
-
-getlogname()
+suser(cred, acflag)
+	struct ucred *cred;
+	short *acflag;
 {
-	struct a {
-		char	*namebuf;
-		u_int	namelen;
-	} *uap = (struct a *)u.u_ap;
 
-	if (uap->namelen > sizeof (u.u_logname))
-		uap->namelen = sizeof (u.u_logname);
-	u.u_error = copyout((caddr_t)u.u_logname, (caddr_t)uap->namebuf,
-		uap->namelen);
+	if (cred->cr_uid == 0) {
+		if (acflag)
+			*acflag |= ASU;
+		return (0);
+	}
+	return (EPERM);
 }
 
 /*
- * Set login name of process owner
+ * Allocate a zeroed cred structure.
  */
-
-setlogname()
+struct ucred *
+crget()
 {
-	struct a {
-		char	*namebuf;
-		u_int	namelen;
-	} *uap = (struct a *)u.u_ap;
+	register struct ucred *cr;
 
-	if (u.u_error = suser(u.u_cred, &u.u_acflag))
+	MALLOC(cr, struct ucred *, sizeof(*cr), M_CRED, M_WAITOK);
+	bzero((caddr_t)cr, sizeof(*cr));
+	cr->cr_ref = 1;
+	return(cr);
+}
+
+/*
+ * Free a cred structure.
+ * Throws away space when ref count gets to 0.
+ */
+crfree(cr)
+	struct ucred *cr;
+{
+	int	s = splimp();
+
+	if (--cr->cr_ref != 0) {
+		(void) splx(s);
 		return;
-	if (uap->namelen > sizeof (u.u_logname) - 1)
-		u.u_error = EINVAL;
-	else
-		u.u_error = copyin((caddr_t)uap->namebuf,
-			(caddr_t)u.u_logname, uap->namelen);
+	}
+	FREE((caddr_t)cr, M_CRED);
+	(void) splx(s);
+}
+
+/*
+ * Copy cred structure to a new one and free the old one.
+ */
+struct ucred *
+crcopy(cr)
+	struct ucred *cr;
+{
+	struct ucred *newcr;
+
+	newcr = crget();
+	*newcr = *cr;
+	crfree(cr);
+	newcr->cr_ref = 1;
+	return(newcr);
+}
+
+/*
+ * Dup cred struct to a new held one.
+ */
+struct ucred *
+crdup(cr)
+	struct ucred *cr;
+{
+	struct ucred *newcr;
+
+	newcr = crget();
+	*newcr = *cr;
+	newcr->cr_ref = 1;
+	return(newcr);
 }
