@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vd.c	7.7 (Berkeley) %G%
+ *	@(#)vd.c	7.8 (Berkeley) %G%
  */
 
 #include "dk.h"
@@ -164,7 +164,7 @@ vdprobe(reg, vm)
 		vdaddr->vdtcf_dcb = AM_ENPDA;
 		vdaddr->vdtcf_trail = AM_ENPDA;
 		vdaddr->vdtcf_data = AM_ENPDA;
-		vdaddr->vdccf = CCF_SEN | CCF_DER | CCF_STS |
+		vdaddr->vdccf = CCF_SEN | CCF_DIU | CCF_STS |
 		    XMD_32BIT | BSZ_16WRD |
 		    CCF_ENP | CCF_EPE | CCF_EDE | CCF_ECE | CCF_ERR;
 	}
@@ -172,7 +172,7 @@ vdprobe(reg, vm)
 	vd->vd_dcbphys = vtoph((struct proc *)0, (unsigned)&vd->vd_dcb);
 	vm->um_addr = reg;		/* XXX */
 	s = spl7();
-	if (!vdcmd(vm, VDOP_INIT, 10) || !vdcmd(vm, VDOP_DIAG, 10)) {
+	if (!vdcmd(vm, VDOP_INIT, 10, 0) || !vdcmd(vm, VDOP_DIAG, 10, 0)) {
 		printf("vd%d: %s cmd failed\n", vm->um_ctlr,
 		    vd->vd_dcb.opcode == VDOP_INIT ? "init" : "diag");
 		splx(s);
@@ -180,7 +180,7 @@ vdprobe(reg, vm)
 	}
 	if (vd->vd_type == VDTYPE_SMDE) {
 		vd->vd_dcb.trail.idtrail.date = 0;
-		if (vdcmd(vm, VDOP_IDENT, 10)) {
+		if (vdcmd(vm, VDOP_IDENT, 10, 0)) {
 			uncache(&vd->vd_dcb.trail.idtrail.date);
 			if (vd->vd_dcb.trail.idtrail.date != 0)
 				vd->vd_flags |= VD_SCATGATH;
@@ -217,9 +217,19 @@ vdslave(vi, vdaddr)
 	struct vdsoftc *vd = &vdsoftc[vi->ui_ctlr];
 
 	if ((vd->vd_flags&VD_INIT) == 0) {
-		printf("vd%d: %s controller%s\n", vi->ui_ctlr,
-		    vd->vd_type == VDTYPE_VDDC ? "VDDC" : "SMDE",
-		    (vd->vd_flags & VD_SCATGATH) ? " with scatter-gather" : "");
+		printf("vd%d: %s controller", vi->ui_ctlr,
+		    vd->vd_type == VDTYPE_VDDC ? "VDDC" : "SMDE");
+		if (vd->vd_flags & VD_SCATGATH) {
+			char rev[5];
+
+			bcopy((caddr_t)&vd->vd_dcb.trail.idtrail.rev, rev,
+			    sizeof(vd->vd_dcb.trail.idtrail.rev));
+			printf(" firmware rev %s (%d-%d-%d)", rev,
+			    (vd->vd_dcb.trail.idtrail.date >> 8) & 0xff,
+			    vd->vd_dcb.trail.idtrail.date & 0xff,
+			    (vd->vd_dcb.trail.idtrail.date >> 16) & 0xffff);
+		}
+		printf("\n");
 		vd->vd_flags |= VD_INIT;
 	}
 
@@ -237,6 +247,7 @@ vdslave(vi, vdaddr)
 	lp->d_ntracks = 23;
 	lp->d_ncylinders = 850;
 	lp->d_secpercyl = 66*23;
+	lp->d_rpm = 3600;
 	lp->d_npartitions = 1;
 	lp->d_partitions[0].p_offset = 0;
 	lp->d_partitions[0].p_size = LABELSECTOR + 1;
@@ -986,7 +997,9 @@ vdioctl(dev, cmd, data, flag)
 		    (dk->dk_state == OPENRAW) ? 0 : dk->dk_openpart)) == 0) {
 			int wlab;
 
-			dk->dk_state = OPEN;
+			if (error == 0 && dk->dk_state == OPENRAW &&
+			    vdreset_drive(vddinfo[unit]))
+				dk->dk_state = OPEN;
 			/* simulate opening partition 0 so write succeeds */
 			dk->dk_openpart |= (1 << 0);		/* XXX */
 			wlab = dk->dk_wlabel;
@@ -1188,7 +1201,7 @@ vdreset_ctlr(vm)
 		vdaddr->vdccf = CCF_STS | XMD_32BIT | BSZ_16WRD |
 		    CCF_ENP | CCF_EPE | CCF_EDE | CCF_ECE | CCF_ERR;
 	}
-	if (!vdcmd(vm, VDOP_INIT, 10) || !vdcmd(vm, VDOP_DIAG, 10)) {
+	if (!vdcmd(vm, VDOP_INIT, 10, 0) || !vdcmd(vm, VDOP_DIAG, 10, 0)) {
 		printf("%s cmd failed\n",
 		    vd->vd_dcb.opcode == VDOP_INIT ? "init" : "diag");
 		return;
@@ -1229,6 +1242,20 @@ top:
 		printf(" during config\n");
 		return (0);
 	}
+/*
+uncache(&vd->vd_dcb.err_code);
+printf("vdreset_drive %d, error %b, ecode %x, status %x => ",
+   vi->ui_unit, vd->vd_dcb.operrsta, VDERRBITS, vd->vd_dcb.err_code,
+   vdaddr->vdstatus[vi->ui_slave]);
+uncache(&vdaddr->vdstatus[vi->ui_slave]);
+printf("%x =>", vdaddr->vdstatus[vi->ui_slave]);
+{ int status = vd->vd_dcb.operrsta;
+vdcmd(vm, VDOP_STATUS, 5, vi->ui_slave);
+vd->vd_dcb.operrsta = status;
+}
+uncache(&vdaddr->vdstatus[vi->ui_slave]);
+printf("%x\n", vdaddr->vdstatus[vi->ui_slave]);
+*/
 	if (vd->vd_dcb.operrsta & VDERR_HARD) {
 		if (vd->vd_type == VDTYPE_SMDE) {
 			if (lp->d_devflags == 0) {
@@ -1252,7 +1279,7 @@ top:
 			vd->vd_flags |= VD_STARTED;
 			started = (vdcmd(vm, VDOP_START, 10) == 1);
 			DELAY(62000000);
-			printf("done");
+			printf("done\n");
 			lp->d_devflags = 0;
 			if (started)
 				goto top;
@@ -1266,7 +1293,7 @@ top:
 /*
  * Perform a command w/o trailer.
  */
-vdcmd(vm, cmd, t)
+vdcmd(vm, cmd, t, slave)
 	register struct vba_ctlr *vm;
 {
 	register struct vdsoftc *vd = &vdsoftc[vm->um_ctlr];
@@ -1275,7 +1302,7 @@ vdcmd(vm, cmd, t)
 	vd->vd_dcb.intflg = DCBINT_NONE;
 	vd->vd_dcb.nxtdcb = (struct dcb *)0;	/* end of chain */
 	vd->vd_dcb.operrsta = 0;
-	vd->vd_dcb.devselect = 0;
+	vd->vd_dcb.devselect = slave;
 	vd->vd_dcb.trailcnt = 0;
 	vd->vd_mdcb.mdcb_head = (struct dcb *)vd->vd_dcbphys;
 	vd->vd_mdcb.mdcb_status = 0;
@@ -1441,8 +1468,10 @@ vdmaptype(vi, lp)
 		lp->d_ntracks = p->ntrack;
 		lp->d_ncylinders = p->ncyl;
 		lp->d_secsize = p->secsize;
+		DELAY(100000);
 		if (!vdreset_drive(vi))
 			return (0);
+		DELAY(100000);
 		vd->vd_dcb.opcode = VDOP_RD;
 		vd->vd_dcb.intflg = DCBINT_NONE;
 		vd->vd_dcb.nxtdcb = (struct dcb *)0;	/* end of chain */
@@ -1472,7 +1501,6 @@ vdmaptype(vi, lp)
 	}
 	lp->d_npartitions = 8;
 	lp->d_secpercyl = lp->d_nsectors * lp->d_ntracks;
-	lp->d_rpm = 3600;
 	bcopy(p->name, lp->d_typename, 4);
 	return (1);
 }
