@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)tcopy.1	8.1 (Berkeley) %G%
+.\"     @(#)tcopy.1	8.2 (Berkeley) %G%
 .\"
 .Dd 
 .Dt TCOPY 1
@@ -13,7 +13,7 @@
 .Nd copy and/or verify mag tapes
 .Sh SYNOPSIS
 .Nm tcopy
-.Op Fl cv
+.Op Fl cvx
 .Op Fl s Ar maxblk
 .Oo Ar src Op Ar dest
 .Oc
@@ -47,6 +47,12 @@ Given the two tapes,
 and
 .Ar dest
 verify that they are identical.
+.It Fl x
+Output all informational messages to the standard error.
+This option is useful when
+.Ar dest
+is
+.Pa /dev/stdout .
 .El
 .Sh SEE ALSO
 .Xr mtio 4
