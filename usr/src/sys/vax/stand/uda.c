@@ -35,8 +35,6 @@
 #define	MAXCTLR		1		/* all addresses must be specified */
 u_short udastd[MAXCTLR] = { 0772150 };
 
-struct iob	cudbuf;
-
 struct udadevice *udaddr[MAXNUBA][MAXCTLR];
 
 struct	uda1 {
@@ -54,13 +52,12 @@ char	lbuf[SECTSIZ];
 raopen(io)
 	register struct iob *io;
 {
-	register struct mscp *mp;
 	register struct disklabel *lp, *dlp;
 	register struct udadevice *addr;
 	register struct uda1 *ubaddr;
-	register unit;
+	register int uba, unit;
 	static int udainit[MAXNUBA][MAXCTLR];
-	int uba;
+	struct iob tio;
 
 	if ((u_int)io->i_ctlr >= MAXCTLR)
 		return (ECTLR);
@@ -68,35 +65,25 @@ raopen(io)
 	uba = io->i_adapt;
 	addr = udaddr[uba][io->i_ctlr] =
 	    (struct udadevice *)ubamem(uba, udastd[io->i_ctlr]);
-	if (badaddr((char *)addr, sizeof(short))) {
-		printf("ra: nonexistent device\n");
+	if (badaddr((char *)addr, sizeof(short)))
 		return (ENXIO);
-	}
 	if (ud_ubaddr[uba][io->i_ctlr] == 0) {
-		/*
-		 * Initialize cudbuf.i_unit so that controllers
-		 * on UNIBUSes other than 0 can be used.
-		 */
-		cudbuf.i_unit = unit;
-		cudbuf.i_ma = (caddr_t)&uda1;
-		cudbuf.i_cc = sizeof(uda1);
-		ud_ubaddr[uba][io->i_ctlr] = (struct uda1 *)ubasetup(&cudbuf, 2);
+		tio = *io;
+		tio.i_ma = (caddr_t)&uda1;
+		tio.i_cc = sizeof(uda1);
+		ud_ubaddr[uba][io->i_ctlr] = (struct uda1 *)ubasetup(&tio, 2);
 	}
 	ubaddr = ud_ubaddr[uba][io->i_ctlr];
 	if (udainit[uba][io->i_ctlr] == 0) {
 		addr->udaip = 0;
-		while ((addr->udasa & UDA_STEP1) == 0)
-			;
+		while ((addr->udasa & UDA_STEP1) == 0);
 		addr->udasa = UDA_ERR;
-		while ((addr->udasa & UDA_STEP2) == 0)
-			;
+		while ((addr->udasa & UDA_STEP2) == 0);
 		addr->udasa = (short)&ubaddr->uda1_ca.ca_rspdsc;
-		while ((addr->udasa & UDA_STEP3) == 0)
-			;
+		while ((addr->udasa & UDA_STEP3) == 0);
 		addr->udasa =
 		    (short)(((int)&ubaddr->uda1_ca.ca_rspdsc) >> 16);
-		while ((addr->udasa & UDA_STEP4) == 0)
-			;
+		while ((addr->udasa & UDA_STEP4) == 0);
 		addr->udasa = UDA_GO;
 		uda1.uda1_ca.ca_rspdsc = (long)&ubaddr->uda1_rsp.mscp_cmdref;
 		uda1.uda1_ca.ca_cmddsc = (long)&ubaddr->uda1_cmd.mscp_cmdref;
@@ -109,8 +96,6 @@ raopen(io)
 	}
 	lp = &ralabel[uba][io->i_ctlr][unit];
 	if (ratype[uba][io->i_ctlr][unit] == 0) {
-		struct iob tio;
-
 		uda1.uda1_cmd.mscp_unit = unit;
 		if (udcmd(M_OP_ONLINE, io)) {
 			printf("ra: open error, ONLINE\n");
@@ -123,19 +108,18 @@ raopen(io)
 		tio.i_ma = lbuf;
 		tio.i_cc = SECTSIZ;
 		tio.i_flgs |= F_RDDATA;
-		if (rastrategy(&tio, READ) != SECTSIZ) {
-			printf("ra: can't read disk label\n");
-			return (ENXIO);
-		}
+		if (rastrategy(&tio, READ) != SECTSIZ)
+			return (ERDLAB);
 		*lp = *(struct disklabel *)(lbuf + LABELOFFSET);
-		if (lp->d_magic != DISKMAGIC || lp->d_magic2 != DISKMAGIC) {
-			printf("ra%d: unlabeled\n", unit);
+		if (lp->d_magic != DISKMAGIC || lp->d_magic2 != DISKMAGIC)
 #ifdef COMPAT_42
+		{
+			printf("ra%d: unlabeled\n", unit);
 			ramaptype(io, lp);
-#else
-			return (ENXIO);
-#endif
 		}
+#else
+			return (EUNLAB);
+#endif
 	}
 	if ((u_int)io->i_part >= lp->d_npartitions ||
 	    (io->i_boff = lp->d_partitions[io->i_part].p_offset) == -1)
@@ -150,14 +134,14 @@ udcmd(op, io)
 {
 	register struct uda1 *u = &uda1;
 	register struct mscp *mp;
-	int i;
+	register int i;
 
 	u->uda1_cmd.mscp_opcode = op;
 	u->uda1_cmd.mscp_msglen = MSCP_MSGLEN;
 	u->uda1_rsp.mscp_msglen = MSCP_MSGLEN;
 	u->uda1_ca.ca_rspdsc |= MSCP_OWN|MSCP_INT;
 	u->uda1_ca.ca_cmddsc |= MSCP_OWN|MSCP_INT;
-	i = udaddr[io->i_adapt][io->i_ctlr]->udaip;
+	i = udaddr[io->i_adapt][io->i_ctlr]->udaip;	/* start uda polling */
 	mp = &u->uda1_rsp;
 	for (;;) {
 		if (u->uda1_ca.ca_cmdint)
@@ -234,8 +218,8 @@ ramaptype(io, lp)
 	register struct disklabel *lp;
 {
 	register struct partition *pp;
-	register u_int i;
 	register u_long *off;
+	register u_int i;
 
 	if ((i = ratype[io->i_adapt][io->i_ctlr][io->i_unit]) >= NOFFS ||
 	    (off = ra_off[i]) == 0) {
