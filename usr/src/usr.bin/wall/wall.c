@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)wall.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)wall.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -39,7 +39,7 @@ static char sccsid[] = "@(#)wall.c	5.7 (Berkeley) %G%";
 #include <pwd.h>
 #include <errno.h>
 #include <stdio.h>
-#include "pathnames.h"
+#include <paths.h>
 
 #define	IGNOREUSER	"sleeper"
 
@@ -86,6 +86,7 @@ makemsg(argv)
 	char *getlogin(), *malloc(), *strcpy(), *ttyname();
 
 	(void)strcpy(tmpname, _PATH_TMP);
+	(void)strcat(tmpname, "/wall.XXXXXX");
 	if (!(fd = mkstemp(tmpname)) || !(fp = fdopen(fd, "r+"))) {
 		fprintf(stderr, "wall: can't open temporary file.\n");
 		exit(1);
