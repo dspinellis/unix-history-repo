@@ -1,4 +1,4 @@
-/*	ufsmount.h	4.3	81/02/26	*/
+/*	ufsmount.h	4.4	82/07/19	*/
 
 /*
  * Mount structure.
@@ -10,6 +10,7 @@ struct	mount
 	dev_t	m_dev;		/* device mounted */
 	struct	buf *m_bufp;	/* pointer to superblock */
 	struct	inode *m_inodp;	/* pointer to mounted on inode */
+	struct	inode *m_qinod;	/* QUOTA: pointer to quota file */
 };
 #ifdef KERNEL
 struct	mount mount[NMOUNT];
