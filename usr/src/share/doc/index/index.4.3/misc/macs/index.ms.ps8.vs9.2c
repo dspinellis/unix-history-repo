@@ -1,0 +1,14 @@
+.\"	@(#)index	6.1 (Berkeley) 5/23/86
+.\"
+.bp 1
+.2C
+.SH
+Index ps 8 vs 9p
+.nf
+.ps 8
+.vs 9p
+.in .5i
+.de X
+.ti -.5i
+.br
+..

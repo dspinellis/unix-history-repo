@@ -1,0 +1,118 @@
+.\"	@(#)index	6.1 (Berkeley) 5/23/86
+.\"
+.bp 1
+.SH
+.nr LL 7i
+.MC 3.25i .5i
+Index ps 10 vs 12p
+.nh
+.na
+.ps 10
+.vs 12p
+.in .4i
+.wh 0 
+
+.de X
+.if \\*(LH .ds LH \\$1  \" header string 
+.ti -.5i
+\\$1     \\$2
+.br
+..
+.	\" BT - bottom title
+.de BT
+.tm beginning of bt
+.di
+.tm np in bt 
+.if !\\n(LT .nr LT \\n(LLu
+.if \\n(FM+\\n(HM>=\\n(.p \{\
+.	tm HM + FM longer than page
+.	ab
+.\}
+.if "\*(.T"vp" .CM
+.if !\\n(HM .nr HM 1i
+.po \\n(POu
+.nr PF \\n(.f
+.nr PX \\n(.s
+.ft 1
+.ps \\n(PS
+'sp \\n(HMu/2u
+.PT
+'sp |\\n(HMu
+.HD	\"undefined
+.ps \\n(PX
+.ft \\n(PF
+.nr XX 0 1
+.nr YY 0-\\n(FMu
+.ch FO 16i
+.ch FX 17i
+.ch FO -\\n(FMu
+.ch FX \\n(.pu-\\n(FMu
+.if \\n(MF .FV
+.nr MF 0
+.mk
+.os
+.ev 1
+.if !\\n(TD .if \\n(TC<5 .XK
+.nr TC 0
+.ev
+.nr TQ \\n(.i
+.nr TK \\n(.u
+.if \\n(IT \{\
+.	in 0
+.	nf
+.	TT
+.	in \\n(TQu
+.	if \\n(TK .fi
+.\}
+.ns
+.mk #T
+..
+.	\" PT - page titles
+.de PT
+.lt \\n(LTu
+.pc %
+.nr PN \\n%
+.nr PT \\n%
+.if \\n(P1 .nr PT 2
+.if \\n(PT>1 .if !\\n(EH .if !\\n(OH .tl \\*(LH\\*(CH\\*(RH
+.if \\n(PT>1 .if \\n(OH .if o .tl \\*(O1
+.if \\n(PT>1 .if \\n(EH .if e .tl \\*(E2
+.lt \\n(.lu
+.tm xy
+.xy
+.nr PX \\n(.s
+.ft 1
+.ps \\n(PS
+.lt \\n(LTu
+.po \\n(POu
+.if \\n(TM .if \\n(CT \{\
+.	tl ''\\n(PN''
+.	nr CT 0
+.\}
+.if \\n% .if !\\n(EF .if !\\n(OF .tl \\*(LF\\*(CF\\*(RF
+.if \\n% .if \\n(OF .if o .tl \\*(O3
+.if \\n% .if \\n(EF .if e .tl \\*(E4
+.ft \\n(PF
+.ps \\n(PX
+.ds LH "
+.di xy
+.tm end of BT
+..
+.	\" NP - new page
+.de NP
+.tm np noop
+..
+
+.	\" PT - page titles
+.de PT
+.tm pt
+.lt \\n(LTu
+.pc %
+.nr PN \\n%
+.nr PT \\n%
+.if \\n(P1 .nr PT 2
+.if \\n(PT>1 .if !\\n(EH .if !\\n(OH .tl \\*(LH\\*(CH\\*(RH
+.if \\n(PT>1 .if \\n(OH .if o .tl \\*(O1
+.if \\n(PT>1 .if \\n(EH .if e .tl \\*(E2
+.lt \\n(.lu
+..

@@ -1,1 +1,0 @@
-#define NDE 1

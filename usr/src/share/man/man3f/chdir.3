@@ -1,0 +1,34 @@
+.\" Copyright (c) 1983, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" This module is believed to contain source code proprietary to AT&T.
+.\" Use and redistribution is subject to the Berkeley Software License
+.\" Agreement and your Software Agreement with AT&T (Western Electric).
+.\"
+.\"	@(#)chdir.3	8.1 (Berkeley) 6/5/93
+.\"
+.TH CHDIR 3F "June 5, 1993"
+.UC 5
+.SH NAME
+chdir \- change default directory
+.SH SYNOPSIS
+.B integer function chdir (dirname)
+.br
+.B character*(*) dirname
+.SH DESCRIPTION
+The default directory for creating and locating files will be
+changed to
+.I dirname.
+Zero is returned if successful; an error code otherwise.
+.SH FILES
+.ie \nM /usr/ucb/lib/libU77.a
+.el /usr/lib/libU77.a
+.SH "SEE ALSO"
+chdir(2), cd(1), perror(3F)
+.SH BUGS
+Pathnames can be no longer than MAXPATHLEN as defined in
+.RI < sys/param.h >.
+.PP
+Use of this function may cause
+.B inquire
+by unit to fail.

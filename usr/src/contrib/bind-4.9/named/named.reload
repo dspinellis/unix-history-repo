@@ -1,0 +1,6 @@
+#!/bin/sh -
+#
+#	@(#)named.reload	5.1 (Berkeley) 2/8/89
+#	$Id: named.reload,v 4.9.1.1 1993/05/03 00:02:54 vixie Rel $
+#
+kill -HUP `cat /etc/named.pid`

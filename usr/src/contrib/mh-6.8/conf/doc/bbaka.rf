@@ -1,0 +1,27 @@
+.\"	@(MHWARNING)
+.\" @(#)$Id: bbaka.rf,v 1.5 90/04/05 15:11:03 sources Exp $
+.SC BBAKA 8
+.NA
+bbaka \- generate an alias list for BBoards
+.SY
+@(BBHOME)/bbaka
+\%[system]
+.DE
+The \fIbbaka\fR program reads the BBoards database and produces on its
+standard output a file suitable for inclusion in either the \fIMMDF\-II\fR
+aliases file (if the argument `system' is given).
+If the argument is not given,
+then \fIbbaka\fR produces on its standard output a file suitable for becoming
+the @(MHETCPATH)/BBoardsAliases file.
+.Fi
+^@(BBHOME)/BBoards~^BBoards database
+^@(MHETCPATH)/BBoardsAliases~^BBoards aliases file for \fIMH\fR
+.Pr
+None
+.Sa
+bboards(5)
+.De
+None
+.Co
+None
+.En

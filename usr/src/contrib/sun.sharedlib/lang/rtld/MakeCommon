@@ -1,0 +1,116 @@
+# This source code is a product of Sun Microsystems, Inc. and is provided
+# for unrestricted use provided that this legend is included on all tape
+# media and as a part of the software program in whole or part.  Users
+# may copy or modify this source code without charge, but are not authorized
+# to license or distribute it to anyone else except as part of a product or
+# program developed by the user.
+#
+# THIS PROGRAM CONTAINS SOURCE CODE COPYRIGHTED BY SUN MICROSYSTEMS, INC.
+# SUN MICROSYSTEMS, INC., MAKES NO REPRESENTATIONS ABOUT THE SUITABLITY
+# OF SUCH SOURCE CODE FOR ANY PURPOSE.  IT IS PROVIDED "AS IS" WITHOUT
+# EXPRESS OR IMPLIED WARRANTY OF ANY KIND.  SUN MICROSYSTEMS, INC. DISCLAIMS
+# ALL WARRANTIES WITH REGARD TO SUCH SOURCE CODE, INCLUDING ALL IMPLIED
+# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.  IN
+# NO EVENT SHALL SUN MICROSYSTEMS, INC. BE LIABLE FOR ANY SPECIAL, INDIRECT,
+# INCIDENTAL, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING
+# FROM USE OF SUCH SOURCE CODE, REGARDLESS OF THE THEORY OF LIABILITY.
+# 
+# This source code is provided with no support and without any obligation on
+# the part of Sun Microsystems, Inc. to assist in its use, correction, 
+# modification or enhancement.
+#
+# SUN MICROSYSTEMS, INC. SHALL HAVE NO LIABILITY WITH RESPECT TO THE
+# INFRINGEMENT OF COPYRIGHTS, TRADE SECRETS OR ANY PATENTS BY THIS
+# SOURCE CODE OR ANY PART THEREOF.
+#
+# Sun Microsystems, Inc.
+# 2550 Garcia Avenue
+# Mountain View, California 94043
+
+# Copyright (c) 1991 Sun Microsystems, Inc.
+
+#
+# @(#)MakeCommon 1.25 91/04/12 SMI
+#
+LDSO = ld.so
+BINS = ldconfig ld.so
+MID = ..
+LD_DIR 	= ../../ld
+HDRS = ../rtld.h ../cache.h ../../ld/dynamic.h ../../ld/reloc_info.h \
+	./assym.h
+LDSO_OBJS = rtldlib.o rtld.o rtsubrs.o cache_rtld.o cache_common.o verscmp.o\
+	    errors.o
+LDCONFIG_OBJS = ldconfig.o cache_common.o verscmp.o
+CHECK_OBJS = check_stack.o
+m-mc68010 = sun
+m-mc68020 = sun
+m-sparc = sparc
+MD = $(m$(TARGET_MACH))
+d-mc68020 = m68k
+d-mc68010 = m68k
+d-sparc = sparc
+MACH = $(d$(TARGET_MACH))
+arch-sun2=SUN2
+arch-sun3=SUN3
+arch-sun3x=SUN3
+arch-sun4=SUN4
+arch-sun4c=SUN4
+TARGET = $(arch$(TARGET_ARCH))
+
+INCLUDE	= -I.. -I../../ld
+CPPFLAGS += -DPIC -I.. $(INCLUDE)
+LINTFLAGS += -bx $(INCLUDE)
+CCFLAGS += -O3 -D$(MD) -DSUN2=0 -DSUN3=1 -DSUN4=2\
+			 -DTARGET=$(TARGET) $(INCLUDE) 
+CFLAGS	+= -pic $(CCFLAGS)
+ASFLAGS += -k
+CPP = /lib/cpp
+ 
+check_stack.o ldconfig.o rtldlib.o rtld.o rtsubrs.o cache_rtld.o \
+	cache_common.o errors.o := \
+	DIR = $(MID)
+verscmp.o := DIR = $(LD_DIR)
+errors.o := CFLAGS += -R
+
+ldconfig := LDFLAGS += -n -Bdynamic
+ld.so := LDFLAGS += -Bsymbolic -assert pure-text
+
+ld.so:	$(HDRS) $(LDSO_OBJS) check_stack
+	check_stack
+	$(LD) $(LDFLAGS) -o $@ $(LDSO_OBJS) -L. -lc_pic
+
+ldconfig:	$(HDRS) $(LDCONFIG_OBJS)
+	$(CC) $(LDFLAGS) -o $@ $(LDCONFIG_OBJS) 
+	
+check_stack:	$(CHECK_OBJS)
+	$(CC) -o $@ $(CHECK_OBJS)
+
+%.o: $$(DIR)/%.c
+	${CC} ${CFLAGS} -c $<
+
+%.o: %.s
+	${CPP} ${CPPFLAGS}  $< > tmp.s
+	${AS} ${ASFLAGS}  tmp.s
+	mv -f a.out $*.o
+	rm -f tmp.s
+
+assym.h : $(MID)/genassym.c
+	${CC} ${CFLAGS} $(MID)/genassym.c
+	a.out >$@
+	rm a.out
+
+install: $(BINS)
+	install -s ld.so  $(DESTDIR)/usr/lib/$(LDSO)+
+	if [ -z "$(DESTDIR)" ]; then \
+		rm -f $(DESTDIR)/usr/lib/$(LDSO)-; \
+		mv $(DESTDIR)/usr/lib/$(LDSO) $(DESTDIR)/usr/lib/$(LDSO)-; \
+	fi;
+	mv $(DESTDIR)/usr/lib/$(LDSO)+ $(DESTDIR)/usr/lib/$(LDSO)
+	chmod 555 $(DESTDIR)/usr/lib/$(LDSO)
+	install -s ldconfig $(DESTDIR)/usr/etc
+
+masterclean:	
+	-rm -f ld.so ldconfig core *.o assym.h
+
+masterlint :
+	lint $(LINTFLAGS) $(CCFLAGS) $(RTLD_SRCS) $(LD_SRCS)

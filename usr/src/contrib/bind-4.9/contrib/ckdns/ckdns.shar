@@ -1,0 +1,389 @@
+#Here's a shar file containing two scripts for running from cron to
+#check zone data and a modified doc 2.0 for use by the scripts.
+#
+#Jim Knutson
+#knutson@mcc.com
+#cs.utexas.edu!milano!knutson
+#Wk: (512) 338-3362
+
+# This is a shell archive.  Remove anything before this line,
+# then unpack it by saving it in a file and typing "sh file".
+#
+# Wrapped by weber.sw.mcc.com!knutson on Wed Apr 24 10:03:07 CDT 1991
+# Contents:  ckdomaincf.sh ckserial.sh
+ 
+echo x - ckdomaincf.sh
+sed 's/^@//' > "ckdomaincf.sh" <<'@//E*O*F ckdomaincf.sh//'
+#!/bin/sh
+# @(#)ckdomaincf.sh	1.3	1/4/91
+#
+# ckdomaincf - check domain configuration
+#
+# SYNOPSIS
+#	ckdomaincf [ -n ]
+#
+# ckdomaincf checks the domain configuration.  It determines which
+# domains to check by examining /etc/named.boot and checking all domains
+# listed on the primary and secondar lines.  However, ckdomaincf ignores
+# checking the 0.0.127.in-addr.arpa domain and any domain with unixhosts
+# as the data file.  It is assumed that these domain data files will
+# contain domain definitions for the unix localhost and will be specific
+# to the local definition.
+# 
+# If the -n flag is specified, no mail will be sent after checking.
+# 
+BOOTFILE=/etc/named.boot
+MAIL=/usr/ucb/Mail
+NOTIFY=hostmaster
+NOTIFYLEVEL=10	# 10 - any warning or greater
+		# 50 - any error or greater
+		# 100 - any abort
+PATH=$PATH:/usr/local/etc export PATH
+TMP=/tmp/.ckd$$
+
+set -- `getopt n $*`
+if [ $? != 0 ]; then
+	echo usage: ckdomaincf [ -n ]
+	exit 2
+fi
+for i in $*; do
+	case $i in
+	-n ) MAIL="echo /usr/ucb/Mail"; shift;;
+	--)	 shift; break;;
+	esac
+done
+
+tolower() {
+	echo $1 | tr A-Z a-z
+}
+
+is_in_addr() {
+	if [ `expr $1 : '.*in-addr'` -gt 0 ]; then
+		true;
+	else
+		false;
+	fi
+}
+
+# strip comments from zone data
+stripcomments() {
+        sed -e '/^;/d' -e 's/;.*//' $*
+}
+
+# get mail address of person in charge of the zone
+getpersonincharge() {
+	dig soa $1. +pfset=0xa224 | \
+        stripcomments | tr a-z A-Z | awk '$3 == "SOA" {print $5}'
+}
+
+# convert domain name to mail address
+domaintoaddr() {
+        echo $1 | sed -e 's/\.$//' -e 's/\./@/'
+}
+
+# notify the person in charge of a zone of detected errors
+notifypersonincharge() {
+	failtype=problems
+	if [ $2 -gt 50 ]; then
+		failtype=errors
+	fi
+	if [ $2 -gt 100 ]; then
+		failtype=failures
+	fi
+        MB=`getpersonincharge $1`
+	( cat $1.log;
+	  echo ""; echo ""; echo ""; echo "Complete log of test follows:"; echo "";
+	  cat log.$1.
+	) | \
+        $MAIL -s "$1 zone configuration $failtype" $NOTIFY `domaintoaddr $MB` 
+        echo $1 zone configuration $failtype
+	sed 's/^/  /' $1.log
+        echo "  $NOTIFY, `domaintoaddr $MB` notified via mail."
+	echo ""
+}
+
+cd /tmp
+
+trap "rm -f $TMP*; exit 1" 2 3
+
+egrep '^(primary|secondary)' $BOOTFILE >$TMP.domains
+
+while read line; do
+	set -- $line
+
+	domainname=`tolower $2`
+	if is_in_addr $domainname; then
+		parent=arpa.
+	else
+		parent=
+	fi
+
+	# find data file
+	while [ "$2" != "" ]; do
+		shift
+	done
+	datafile=$1
+
+	# ignore localhost domain stuff
+	if [ $domainname = 0.0.127.in-addr.arpa -o $datafile = unixhosts ]; then
+		continue
+	fi
+
+	rm -f log.$domainname.
+	doc -w -e $domainname. $parent 2>/dev/null >$TMP.docout
+	status=$?
+	egrep -v '^(Doc-|DIGERR|Done testing)' <$TMP.docout >$domainname.log
+	
+	if [ $status -gt $NOTIFYLEVEL ]; then
+		notifypersonincharge $domainname $status
+	fi
+	
+	rm -f log.$domainname. $domainname.log
+done <$TMP.domains
+
+rm -f $TMP*
+@//E*O*F ckdomaincf.sh//
+chmod u=r,g=r,o=r ckdomaincf.sh
+ 
+echo x - ckserial.sh
+sed 's/^@//' > "ckserial.sh" <<'@//E*O*F ckserial.sh//'
+#!/bin/sh
+# @(#)ckserial.sh	1.4	11/21/90
+#
+# ckserial - check zone file serial numbers
+#
+# ckserial checks the serial numbers of zone files to ensure
+# that they are sequenced properly.  It keeps a checkpointed
+# set of data for comparison purposes.
+#
+# USAGE
+#	ckserial [ bootfile ]
+#
+# BUGS
+#	Assumes optional ttl field for SOA record is not used.
+
+BOOTFILE=/etc/named.boot
+CKPTDIR=ckpoint		# relative to 'directory' in bootfile
+LOGFILE=/tmp/.ckslog$$
+SEDFILE=/tmp/.ckssed$$
+MAIL=/usr/ucb/Mail
+NOTIFY=hostmaster
+
+# change default bootfile if necessary
+if [ "$1" != "" ]; then
+	if [ -f $1 ]; then
+		BOOTFILE=$1
+	else
+		echo usage: `basename $0` "[ bootfile ]"
+		exit 1
+	fi
+fi
+
+trap "rm -f /tmp/.cks*$$; exit 1" 2 3
+
+# sed file for massaging zone data
+cat >$SEDFILE <<!
+/^;/d
+s/;.*//
+:join
+/([^)]*$/N
+s/\n[ 	]*/ /
+t join
+s/(\(.*\))/\1/
+!
+
+# strip comments from zone data
+stripcomments() {
+	sed -e '/^;/d' -e 's/;.*//' $*
+}
+
+# list zone files used by boot file
+#  secondary zones are not checked.  These are assumed to be correct
+#  as far as transfers go because old serial numbers won't (shouldn't)
+#  be transferred.  Besides, I'm not sure of the semantics for determining
+#  whether the last entry is a file or not.  I suppose a simple test of
+#  existence would work though.
+getzonefiles() {
+	awk '\
+	$1 == "cache" || $1 == "CACHE" || \
+	$1 == "primary" || $1 == "PRIMARY" {
+		printf "%s\n",$NF }' $1
+}
+
+# get zone file directory
+getzonedir() {
+	stripcomments $1 | awk 'BEGIN { dir = "/"; }
+	$1 == "directory" || $1 == "DIRECTORY" {
+		dir = $2 }
+	END {print dir}'
+}
+
+# get SOA serial number
+getserialnumber() {
+	tr a-z A-Z <$1 | sed -f $SEDFILE | awk '$3 == "SOA" { print $6}'
+}
+
+# get mail address of person in charge of the zone
+getpersonincharge() {
+	stripcomments $1 | tr a-z A-Z | awk '$3 == "SOA" {print $5}'
+}
+
+# get zone origin
+getzone() {
+	# get zone from zone data file
+	zone=`stripcomments $1 | tr a-z A-Z | awk '$3 == "SOA" {print $1}'`
+	# if zone is current origin
+	if [ "$zone" = "@" ]; then
+		# get zone from bootfile
+		zone=`grep $1 $BOOTFILE | awk '{print $2}'`
+	fi
+	echo $zone
+}
+
+# checkpoint a list of files
+checkpoint() {
+	while [ "$1" != "" ]; do
+		# copy file preserving modes/dates
+		cp -p $1 $CKPTDIR/$1
+		shift
+	done
+}
+
+# get list of include files from zone file
+includefiles() {
+	grep -i '^\$include' $1 | awk '{print $2}'
+}
+
+# is arg 1 < arg2
+#  test integer and floating numbers
+lt() {
+	awk 'BEGIN{ if ('$1' < '$2') exit 0; else exit 1; }'
+}
+
+# compare two files ignoring white space changes
+compare() {
+	diff -b $1 $2 >/dev/null
+}
+
+# log a zonefile error message
+errlog() {
+	ERRORFILE=$1	# save zone file for error reporting
+	echo "$2" 1>&2
+	echo "$2" >>$LOGFILE
+}
+
+# convert domain name to mail address
+domaintoaddr() {
+	echo $1 | sed -e 's/\.$//' -e 's/\./@/'
+}
+
+# notify the person in charge of a zone of detected errors
+notifypersonincharge() {
+	MB=`getpersonincharge $1`
+	ZONE=`getzone $1`
+	$MAIL -s "$ZONE zone configuration error" $NOTIFY `domaintoaddr $MB` <$LOGFILE
+	echo "	$NOTIFY, `domaintoaddr $MB` notified via mail."
+}
+
+processerrors() {
+	# if errors found, notify person in charge
+	if [ -f $LOGFILE ]; then
+		notifypersonincharge $ERRORFILE
+
+		# truncate error log file
+		rm -f $LOGFILE
+	fi
+}
+
+#########################
+# real work starts here #
+#########################
+
+# cd to the zone file data directory
+cd `getzonedir $BOOTFILE`
+
+ZONEFILES=`getzonefiles $BOOTFILE`
+SOAFILES=`grep -il '[ 	]IN[ 	]*SOA[ 	]' $ZONEFILES | stripcomments`
+EXIT=0
+
+for f in $SOAFILES; do
+	# process any logged errors
+	processerrors
+
+	# check for zone file existence
+	if [ ! -f $f ]; then
+		echo "$BOOTFILE: $f doesn't exist" 1>&2
+		continue
+	fi
+
+	# if this zone file is new, checkpoint it
+	if [ ! -f $CKPTDIR/$f ]; then 
+		checkpoint $f
+		continue
+	fi
+
+	#get serial number of current version
+	nserialno=`getserialnumber $f`
+
+	#get serial number of checkpointed version
+	oserialno=`getserialnumber $CKPTDIR/$f`
+
+	#if serial number differs, continue
+	if [ $nserialno != $oserialno ]; then
+		# sanity check first
+		if lt $nserialno $oserialno; then
+			errlog $f "$f: serial number ($nserialno) < previous ($oserialno)"
+			EXIT=1
+			continue
+		fi
+
+		# checkpoint new zone file and included files
+		checkpoint $f `includefiles $f`
+		continue
+	fi
+
+	#if file differs from ckpoint - error
+	if compare $f $CKPTDIR/$f; then
+		: all ok
+	else
+		errlog $f "$f: zone file changed, but serial number didn't"
+		EXIT=1
+		continue
+	fi
+
+	# test included files as well
+	for i in `includefiles $f`; do
+		# if this zone file is new, checkpoint it
+		if [ ! -f $CKPTDIR/$i ]; then 
+			checkpoint $i
+			continue
+		fi
+
+		#if file differs from ckpoint - error
+		if compare $i $CKPTDIR/$i; then
+			: all ok
+		else
+			errlog $f "$f included changed zone data from $i, but serial number didn't change"
+			EXIT=1
+			continue
+		fi
+
+		# check for nested includes.  these aren't handled
+		# but we don't expect them either.
+		if [ "`grep -i '\$include' $i`" != "" ]; then
+			errlog $i "include file $i includes other files."
+			EXIT=1
+		fi
+	done
+done
+
+# process any remaining errors
+processerrors
+
+rm -f /tmp/.cks*$$
+
+exit $EXIT
+@//E*O*F ckserial.sh//
+chmod u=r,g=r,o=r ckserial.sh
+ 
+exit 0

@@ -1,0 +1,27 @@
+.\" Copyright (c) 1983, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" This module is believed to contain source code proprietary to AT&T.
+.\" Use and redistribution is subject to the Berkeley Software License
+.\" Agreement and your Software Agreement with AT&T (Western Electric).
+.\"
+.\"	@(#)hostnm.3	8.1 (Berkeley) 6/5/93
+.\"
+.TH HOSTNM 3F "June 5, 1993"
+.UC 5
+.SH NAME
+hostnm \- get name of current host
+.SH SYNOPSIS
+.B integer function hostnm (name)
+.br
+.B character*(*) name
+.SH DESCRIPTION
+This function puts the name of the current host into
+character string
+.IR name .
+The return value should be 0; any other value indicates an error.
+.SH FILES
+.ie \nM /usr/ucb/lib/libU77.a
+.el /usr/lib/libU77.a
+.SH "SEE ALSO"
+gethostname(2)

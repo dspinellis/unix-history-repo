@@ -1,0 +1,109 @@
+.\" Copyright (c) 1980, 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms, with or without
+.\" modification, are permitted provided that the following conditions
+.\" are met:
+.\" 1. Redistributions of source code must retain the above copyright
+.\"    notice, this list of conditions and the following disclaimer.
+.\" 2. Redistributions in binary form must reproduce the above copyright
+.\"    notice, this list of conditions and the following disclaimer in the
+.\"    documentation and/or other materials provided with the distribution.
+.\" 3. All advertising materials mentioning features or use of this software
+.\"    must display the following acknowledgement:
+.\"	This product includes software developed by the University of
+.\"	California, Berkeley and its contributors.
+.\" 4. Neither the name of the University nor the names of its contributors
+.\"    may be used to endorse or promote products derived from this software
+.\"    without specific prior written permission.
+.\"
+.\" THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+.\" ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+.\" IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+.\" ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+.\" FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+.\" DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+.\" OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+.\" HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+.\" LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+.\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+.\" SUCH DAMAGE.
+.\"
+.\"     @(#)tm.4	8.1 (Berkeley) 6/5/93
+.\"
+.Dd June 5, 1993
+.Dt TM 4 vax
+.Os BSD 4
+.Sh NAME
+.Nm tm
+.Nd
+.Tn TM-11 Ns / Tn TE-10
+magtape device interface
+.Sh SYNOPSIS
+.Sy "controller tm0 at uba? csr 0172520 vector tmintr"
+.Sy "tape te0 at tm0 drive 0"
+.Sh DESCRIPTION
+The
+.Tn TM-11 Ns / Tn TE-10
+combination provides a standard tape drive
+interface as described in
+.Xr mtio 4 .
+Hardware implementing this on the
+.Tn VAX
+is typified by the Emulex
+.Tn TC-11
+controller operating with a Kennedy model 9300 tape transport,
+providing 800 and 1600
+.Tn BPI operation at 125
+.Tn IPS .
+.Sh DIAGNOSTICS
+.Bl -diag
+.It te%d: no write ring.
+An attempt was made to write on the tape drive
+when no write ring was present; this message is written on the terminal of
+the user who tried to access the tape.
+.Pp
+.It te%d: not online.
+An attempt was made to access the tape while it
+was offline; this message is written on the terminal of the user
+who tried to access the tape.
+.Pp
+.It te%d: can't change density in mid-tape.
+An attempt was made to write
+on a tape at a different density than is already recorded on the tape.
+This message is written on the terminal of the user who tried to switch
+the density.
+.Pp
+.It te%d: hard error bn%d er=%b.
+A tape error occurred
+at block
+.Em bn ;
+the tm error register is
+printed in octal with the bits symbolically decoded.  Any error is
+fatal on non-raw tape; when possible the driver will have retried
+the operation which failed several times before reporting the error.
+.Pp
+.It te%d: lost interrupt.
+A tape operation did not complete
+within a reasonable time, most likely because the tape was taken
+off-line during rewind or lost vacuum.  The controller should, but does not,
+give an interrupt in these cases.  The device will be made available
+again after this message, but any current open reference to the device
+will return an error as the operation in progress aborts.
+.El
+.Sh SEE ALSO
+.Xr mt 1 ,
+.Xr tar 1 ,
+.Xr tp 1 ,
+.Xr mt 4 ,
+.Xr mtio 4 ,
+.Xr ht 4 ,
+.Xr ts 4 ,
+.Xr ut 4
+.Sh HISTORY
+A
+.Nm
+driver appeared in
+.At v6 .
+.Sh BUGS
+May hang if a physical (non-data) error occurs.

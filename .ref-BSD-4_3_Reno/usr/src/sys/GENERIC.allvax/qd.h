@@ -1,1 +1,0 @@
-#define NQD 1

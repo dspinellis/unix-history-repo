@@ -1,0 +1,35 @@
+.\"	@(MHWARNING)
+.\" @(#)$Id: rmail.rf,v 1.5 90/04/05 15:15:00 sources Exp $
+.SC RMAIL 8
+.NA
+rmail \- UUCP interface to mail
+.SY
+rmail
+address\ ...
+.DE
+\fIRmail\fR is intended as a replacement for those systems without
+\fISendMail\fR or \fIMMDF\fR.
+It is normally invoked by \fIuux\fR on behalf of the remote \fIUUCP\fR site.
+For each address, it decides where to send it:
+either locally, via another \fIUUCP\fR link, or via the Internet.
+
+\fIRmail\fR implements a crude access control facility by consulting the
+files \fBRmail.OkHosts\fR and \fBRmail.OkDests\fR in the \fB@(MHETCPATH)/\fR
+directory.
+Hosts listed in the former file can send messages to anywhere they please.
+Hosts listed in the latter file can receive messages from anywhere.
+Note that a host listed in the first file is implicitly listed in the second
+file.
+.Fi
+^@(MHETCPATH)/mtstailor~^tailor file
+^@(MHETCPATH)/Rmail.OkHosts~^list of privileged hosts
+^@(MHETCPATH)/Rmail.OkDests~^list of privileged destinations
+.Pr
+None
+.Sa
+mf(1)
+.De
+None
+.Co
+None
+.En

@@ -1,0 +1,54 @@
+.\"	@(MHWARNING)
+.\" @(#)$Id: popd.rf,v 1.9 1992/02/04 21:13:28 jromine Exp $
+.SC POPD 8
+.NA
+popd \- the POP server
+.SY
+/usr/etc/popd
+\%[\-p\ portno]
+(under /etc/rc.local)
+.DE
+The \fIpopd\fR server implements the Post Office Protocol (version 3),
+as described in RFC1081 and RFC1082.
+Basically, the server listens on the TCP port named \*(lqpop\*(rq
+for connections and enters the
+POP upon establishing a connection.
+The `\-p' option overrides the default TCP port.
+.PP
+If the POP2 configuration option is defined,
+then the server also implements version 2 of the protocol.
+.PP
+If the APOP configuration option is defined,
+then the server supports a non-standard mechanism for identity-establishment
+in which authentication credentials are used to provide for origin
+authentication and reply protection,
+but which do not involve sending a password in the clear over the network.
+See \fIpopauth\fR(8) for more details.
+.Fi
+^/usr/spool/pop/POP~^POP database
+.Pr
+None
+.Sa
+\fIPost Office Protocol - version 3\fR (aka RFC\-1081),
+.br
+\fIPost Office Protocol - version 3: Extended service offerings\fP
+(RFC\-1082),
+.br
+pop(5)
+.De
+None
+.Co
+None
+.Hi
+For historical reasons, the \fIMH\fP POP defaults to using
+the port named \*(lqpop\*(rq (109) instead of its newly assigned
+port named \*(lqpop3\*(rq (110).
+See the POPSERVICE configuration option for more details.
+.sp 
+Previous versions of the server (10/28/84) had the restriction that
+the POP client may retrieve messages for login users only.
+This restriction has been lifted,
+and true POB support is available
+(sending mail to a mailbox on the POP service host
+which does not map to a user\-id in the password file).
+.En

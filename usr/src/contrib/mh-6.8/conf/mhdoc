@@ -1,0 +1,15 @@
+: run this script through /bin/sh
+: '@(#)$Id: mhdoc,v 1.3 90/04/08 15:04:21 sources Exp $'
+
+echo grinding...
+
+sed -f doc/config.sed < doc/tmac.h > ../doc/tmac.h
+sed -f doc/config.sed < doc/tmac.hdr > ../doc/tmac.me
+sed -f doc/config.sed < doc/me2man.sed > ../doc/me2man.sed
+
+for f in doc/*.rf
+do
+    sed -f doc/config.sed < $f > ../doc/`basename $f .rf`.me
+done
+
+exit 0

@@ -1,0 +1,162 @@
+.\" Copyright (c) 1983, 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms, with or without
+.\" modification, are permitted provided that the following conditions
+.\" are met:
+.\" 1. Redistributions of source code must retain the above copyright
+.\"    notice, this list of conditions and the following disclaimer.
+.\" 2. Redistributions in binary form must reproduce the above copyright
+.\"    notice, this list of conditions and the following disclaimer in the
+.\"    documentation and/or other materials provided with the distribution.
+.\" 3. All advertising materials mentioning features or use of this software
+.\"    must display the following acknowledgement:
+.\"	This product includes software developed by the University of
+.\"	California, Berkeley and its contributors.
+.\" 4. Neither the name of the University nor the names of its contributors
+.\"    may be used to endorse or promote products derived from this software
+.\"    without specific prior written permission.
+.\"
+.\" THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+.\" ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+.\" IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+.\" ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+.\" FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+.\" DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+.\" OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+.\" HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+.\" LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+.\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+.\" SUCH DAMAGE.
+.\"
+.\"     @(#)dmf.4	8.1 (Berkeley) 6/5/93
+.\"
+.Dd June 5, 1993
+.Dt DMF 4 vax
+.Os BSD 4.2
+.Sh NAME
+.Nm dmf
+.Nd
+.Tn DMF-32
+terminal multiplexor
+.Sh SYNOPSIS
+.Cd "device dmf0 at uba? csr 0160340 vector dmfsrint dmfsxint dmfdaint dmfdbint dmfrint dmfxint dmflint"
+.Sh DESCRIPTION
+The
+.Nm dmf
+device provides 8 lines of asynchronous serial line support.
+The first two of these have full modem control.
+The device also provides a line printer port
+similar to the
+.Tn LP-11 .
+Other features of the
+.Tn DMF-32
+are not supported.
+During autoconfiguration, the driver examines the configuration of each
+.Tn DMF-32
+and adjusts the interrupt vectors so that fewer vector locations are used
+if possible.
+.Pp
+An optional argument
+.Ar flags
+may be supplied with the device specification
+in the config file indicating
+that the line corresponding to
+bit number
+.Ar i
+is not properly
+connected, and should be treated as hard-wired with carrier
+always present.  Thus specifying
+.Ql flags 0x04
+for
+.Li dmf0
+would cause line
+.Pa ttyA2
+to be treated in this way.
+Flags should be set for all lines without hardware support for modem control.
+.Pp
+Normal
+.Tn I/O
+control parameters for individual lines are managed by
+.Xr ioctl 2
+calls.
+Line speeds may be initiated via
+.Xr getty 8
+and
+.Xr stty 1
+or may be communicated by other programs which
+utilize
+.Xr ioctl
+such as
+.Xr ifcongif 8 ,
+see
+.Xr tty 4  .
+.Pp
+The serial line part of the
+.Nm dmf
+driver normally enables the input silos with a short timeout
+(30 milliseconds); this allows multiple characters to be received
+per interrupt during periods of high-speed input.
+.Pp
+A line printer port on a
+.Nm dmf
+is designated by
+a minor device number of the form
+.Pf 128+ Ns Ar n .
+See
+.Xr MAKEDEV 8 .
+Column and lines per page may be changed from the default
+132 columns and 66 lines by encoding the number of columns
+in bits 8-15 of flags and the number of lines in bits 16-23.
+This device does not provide the fancy output canonicalization
+features of the
+.Xr lp 4
+driver.
+.Sh FILES
+.Bl -tag -width "/dev/tty[A-CE-I][0-7]" -compact
+.It Pa /dev/tty[A-CE-I][0-7]
+.It Pa /dev/ttyd[0-7]
+.It Pa /dev/lp
+.El
+.Sh DIAGNOSTICS
+.Bl -diag
+.It dmf%d: NXM line %d.
+No response from
+.Tn UNIBUS
+on a DMA transfer
+within a timeout period.  This is often followed by a
+.Tn UNIBUS
+adapter
+error.  This occurs most frequently when the
+.Tn UNIBUS
+is heavily loaded
+and when devices which hog the bus (such as
+.Tn RK07 Ns s )
+are present.
+It is not serious.
+.Pp
+.It dmf%d: silo overflow.
+The character input silo overflowed
+before it could be serviced.  This can happen if a hard error occurs
+when the
+.Tn CPU
+is running with elevated priority, as the system will
+then print a message on the console with interrupts disabled.
+It is not serious.
+.Pp
+.It dmfsrint, dmfsxint, dmfdaint, dmfdbint.
+One of the unsupported parts of the dmf interrupted; something
+is amiss, check your interrupt vectors for a conflict with another
+device.
+.El
+.Sh SEE ALSO
+.Xr tty 4
+.Sh HISTORY
+The
+.Nm
+driver appeared in
+.Bx 4.2 .
+.Sh BUGS
+It should be possible to set the silo timeout with a configuration file option,
+as the value is a trade-off between efficiency and response time for flow
+control and character echo.

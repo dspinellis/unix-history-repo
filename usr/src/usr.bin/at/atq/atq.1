@@ -1,0 +1,82 @@
+.\" Copyright (c) 1985, 1990, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms, with or without
+.\" modification, are permitted provided that the following conditions
+.\" are met:
+.\" 1. Redistributions of source code must retain the above copyright
+.\"    notice, this list of conditions and the following disclaimer.
+.\" 2. Redistributions in binary form must reproduce the above copyright
+.\"    notice, this list of conditions and the following disclaimer in the
+.\"    documentation and/or other materials provided with the distribution.
+.\" 3. All advertising materials mentioning features or use of this software
+.\"    must display the following acknowledgement:
+.\"	This product includes software developed by the University of
+.\"	California, Berkeley and its contributors.
+.\" 4. Neither the name of the University nor the names of its contributors
+.\"    may be used to endorse or promote products derived from this software
+.\"    without specific prior written permission.
+.\"
+.\" THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+.\" ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+.\" IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+.\" ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+.\" FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+.\" DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+.\" OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+.\" HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+.\" LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+.\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+.\" SUCH DAMAGE.
+.\"
+.\"     @(#)atq.1	8.1 (Berkeley) 6/6/93
+.\"
+.Dd June 6, 1993
+.Dt ATQ 1
+.Os BSD 4.3
+.Sh NAME
+.Nm atq
+.Nd display the
+.Xr at 1
+job queue
+.Sh SYNOPSIS
+.Nm atq
+.Op Fl c
+.Op Fl n
+.Op Ar name ...
+.Sh DESCRIPTION
+.Nm Atq
+displays the queue of jobs, created by the
+.Xr at 1
+command,
+which are currently awaiting execution.
+With no flags, the queue is sorted in the order that
+the jobs will be executed.
+.Pp
+Options available are:
+.Bl -tag -width Ds
+.It Fl c
+the queue is sorted by the time that the
+.Li at
+command was given.
+.It Fl n
+only the total number of files that are currently
+in the queue are printed.
+.El
+.Pp
+If a name(s) is provided, only those files belonging to that user(s) are
+displayed.
+.Sh FILES
+.Bl -tag -width /var/spool/at -compact
+.It Pa /var/spool/at
+spool area
+.El
+.Sh SEE ALSO
+.Xr at 1 ,
+.Xr atrm 1 ,
+.Xr cron 8
+.Sh HISTORY
+The
+.Nm
+command appeared in 
+.Bx 4.3 .

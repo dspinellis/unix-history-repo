@@ -1,0 +1,81 @@
+#!/bin/sh
+# @(#) make_rev 1.2 92/08/31 @(#)
+# make the reverse mapping file from a DNS database
+#
+# Copyright (c) 1992 by Texas Internet Consulting
+# This code may be freely copied and used so long as this
+# copyright notice is attached.  This code may not be sold
+# without the express written permission of Texas Internet Consulting.
+# Texas Internet Consulting makes no warranty as to the correctness
+# nor the applicability of this code for any purpose.
+
+DNS_DOMAIN=$1
+DNS_NETWORK=$2
+
+# the reverse  template file
+REV_HEAD=hosts.revhead
+# calculate the reverse domain from the network 
+# the assumption is subnets are divided along byte boundaries
+DNS_REVDOMAIN=`echo $DNS_NETWORK | awk -F. '{
+	for (i = NF; i>0; i--) {
+		if ($i == 0) continue
+		revdomain = revdomain $i "."
+	}
+	revdomain = substr(revdomain, 1, length(revdomain)-1)
+	print revdomain
+}'`
+
+# update the serial field
+serial=`cat serial`
+echo "; $serial" >f.${DNS_NETWORK}
+sed "s/<SERIAL>/$serial/" ${REV_HEAD} >>f.${DNS_NETWORK}
+# build the reverse map
+awk '
+BEGIN {
+	domain = "'${DNS_DOMAIN}'."
+	reverse = "'${DNS_REVDOMAIN}'"
+	split(reverse, revbytes, ".")
+	nrevbytes = 0
+	for (i in revbytes)
+		nrevbytes++
+}
+/IN A|in a/ {
+	# hostname is a blank
+	if ($1 == "IN" && $2 == "A" || $1 == "in" && $2 == "a") {
+		address = $3
+	}
+	# special ugly nasty case - no reverse map for the domain itself
+	# an A record is added for non-mx mailers, but by convention the
+	# name of the domain gateway is domain.domain...
+	else if ($1 == "@") {
+		next
+	}
+	else {
+		host = $1
+		address = $4
+	}
+	# split the host address apart and reverse it
+	split(address, byte, ".")
+	for (i=1; i<=nrevbytes; i++) {
+		if (byte[i] != revbytes[nrevbytes-i+1])
+			break
+	}
+	# address is in this zone
+	if (i > nrevbytes) {
+		rev = ""
+		for (j=4; j>nrevbytes; j--) {
+			if (j < 4)
+				rev = rev "."
+			rev = rev byte[j]
+		}
+		# print the PTR record
+		# if it end in a "." then do not create a PTR record
+		if (host !~ /\.$/) {
+			printf("%s IN PTR ",  rev)
+			if (host == "")
+				printf("%s\n", domain)
+			else
+				printf("%s.%s\n", host, domain)
+		}
+	}
+}' ${DNS_DOMAIN} >>f.${DNS_NETWORK}

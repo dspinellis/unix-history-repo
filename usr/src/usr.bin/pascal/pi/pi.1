@@ -1,0 +1,186 @@
+.\" Copyright (c) 1980, 1990, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms, with or without
+.\" modification, are permitted provided that the following conditions
+.\" are met:
+.\" 1. Redistributions of source code must retain the above copyright
+.\"    notice, this list of conditions and the following disclaimer.
+.\" 2. Redistributions in binary form must reproduce the above copyright
+.\"    notice, this list of conditions and the following disclaimer in the
+.\"    documentation and/or other materials provided with the distribution.
+.\" 3. All advertising materials mentioning features or use of this software
+.\"    must display the following acknowledgement:
+.\"	This product includes software developed by the University of
+.\"	California, Berkeley and its contributors.
+.\" 4. Neither the name of the University nor the names of its contributors
+.\"    may be used to endorse or promote products derived from this software
+.\"    without specific prior written permission.
+.\"
+.\" THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+.\" ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+.\" IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+.\" ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+.\" FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+.\" DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+.\" OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+.\" HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+.\" LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+.\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+.\" SUCH DAMAGE.
+.\"
+.\"	@(#)pi.1	8.1 (Berkeley) 6/6/93
+.\"
+.Dd June 6, 1993
+.Dt PI 1
+.Os BSD 4
+.Sh NAME
+.Nm pi
+.Nd Pascal interpreter code translator
+.Sh SYNOPSIS
+.Nm \&pi
+.Op Fl blnpstuwz
+.Op Fl i Ar name ...
+.Ar name.p
+.Sh DESCRIPTION
+.Nm \&Pi
+translates the program in the file
+.Ar name.p
+leaving interpreter code in the file
+.Pa obj
+in the current directory.
+The interpreter code can be executed using
+.Nm \&px .
+.Nm \&Pix
+performs the functions of
+.Nm \&pi
+and
+.Nm \&px
+for `load and go' Pascal.
+.Pp
+The following flags are interpreted by
+.Nm \&pi ;
+the associated options can also be controlled in comments within the program
+as described in the
+.%T "Berkeley Pascal User's Manual" .
+.Bl -tag -width indent
+.It Fl b
+Block buffer the file
+.Ar output .
+.It Fl i
+Enable the listing for
+any specified procedures and functions and while processing any specified
+.Ic include
+files.
+.It Fl l
+Make a program listing during translation.
+.It Fl n
+Begin each listed
+.Ic include
+file on a new page with a banner line.
+.It Fl p
+Suppress the post-mortem control flow backtrace
+if an error occurs;
+suppress statement limit counting.
+.It Fl s
+Accept standard Pascal only;
+non-standard constructs cause warning diagnostics.
+.It Fl t
+Suppress runtime tests of subrange variables and treat
+.Ic assert
+statements as comments.
+.It Fl u
+Card image mode;
+only the first 72 characters of input lines are used.
+.It Fl w
+Suppress warning diagnostics.
+.It Fl z
+Allow execution profiling with
+.Nm pxp
+by generating statement counters, and arranging for the
+creation of the profile data file
+.Pa pmon.out
+when the resulting object is executed.
+.El
+.Sh FILES
+.Bl -tag -width /usr/lib/pi1.*strings -compact
+.It Pa file.p
+Input file.
+.It Pa file.i
+Include file(s).
+.It Pa /usr/lib/pi2.*strings
+Text of the error messages.
+.It Pa /usr/lib/how_pi*
+Basic usage explanation.
+.It Pa obj
+Interpreter code output.
+.El
+.Sh SEE ALSO
+.Xr pix 1 ,
+.Xr \&px 1 ,
+.Xr pxp 1 ,
+.Xr pxref 1
+.Rs
+.%T "Berkeley Pascal User's Manual"
+.Re
+.Sh DIAGNOSTICS
+For a basic explanation do
+.Bd -literal -offset indent
+pi
+.Ed
+.Pp
+In the diagnostic output of the translator,
+lines containing syntax errors are listed with a flag indicating the
+point of error.
+Diagnostic messages indicate the action which the recovery mechanism
+took in order to be able to continue parsing.
+Some diagnostics indicate only that the input is `malformed.'
+This occurs if the recovery can find no simple correction to make the input
+syntactically valid.
+.Pp
+Semantic error diagnostics indicate a line in the source text near the
+point of error.
+Some errors evoke more than one diagnostic to help pinpoint the error;
+the follow-up messages begin with an ellipsis `...'.
+.Pp
+The first character of each error message indicates its class:
+.Pp
+.Bl -tag -width indent -compact -offset indent
+.It Li E
+Fatal error; no code will be generated.
+.It Li e
+Non-fatal error.
+.It Li w
+Warning \- a potential problem.
+.It Li s
+Non-standard Pascal construct warning.
+.El
+.Pp
+If a severe error occurs which inhibits further processing,
+the translator will give a diagnostic and then
+.Sq Dv QUIT .
+.Sh BUGS
+The keyword
+.Ic packed
+is recognized but has no effect.
+.Pp
+For clarity,
+semantic errors should be flagged at an appropriate place in the source text,
+and multiple instances of the `same' semantic error should be summarized
+at the end of a
+.Ic procedure
+or
+.Ic function
+rather than evoking many diagnostics.
+.Pp
+When
+.Ic include
+files are present,
+diagnostics relating to the last procedure in one file may appear after the
+beginning of the listing of the next.
+.\" .Sh ENVIRONMENT
+.Sh HISTORY
+The
+.Nm \&Pi
+command appeared in
+.Bx 3.0 .

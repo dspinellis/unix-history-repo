@@ -1,0 +1,67 @@
+.\"	@(MHWARNING)
+.\" @(#)$Id: mh-hack.rf,v 1.6 1992/05/12 22:23:34 jromine Exp $
+.SC MH-HACK 8
+.NA
+mh-hack \- how to hack MH
+.SY
+big hack attack
+.DE
+This is a description of how one can modify the \fIMH\fR system.
+The \fIMH\fR distribution has a lot of complex inter\-relations,
+so before you go modifying any code, you should read this and
+understand what is going on.
+
+.in +.5i
+.ti -.5i
+\fBADDING A NEW PROGRAM\fR
+.br
+Suppose you want to create a new \fIMH\fR command called
+\*(lqpickle\*(rq.
+First, create and edit \*(lqpickle.c\*(rq in the \fBuip/\fR directory.
+Next edit \fBconf/makefiles/uip\fR to include \*(lqpickle\*(rq.
+This file has directions at the end of it which explain how it should
+be modified.
+Next, update any documentation (described below).
+At this point you can re\-configure \fIMH\fR.
+See \fImh\-gen(8)\fR for instructions on how to do this
+(basically, you want \*(lqmhconfig MH\*(rq).
+
+.ti -.5i
+\fBADDING A NEW SUBROUTINE\fR
+.br
+Suppose you want to create a new \fIMH\fR routine called
+\*(lqpickle\*(rq.
+First, create and edit \*(lqpickle.c\*(rq in the \fBsbr/\fR directory.
+Next edit \fBconf/makefiles/sbr\fR to include \*(lqpickle\*(rq.
+This file has directions at the end of it which explain how it should
+be modified.
+You should modify \fBconfig/mh.h\fR to define \*(lqpickle ();\*(rq.
+Similarly, \fBsbr/llib\-lsbr\fR should be modified for \fIlint\fR.
+At this point you can re\-configure \fIMH\fR.
+
+.ti -.5i
+\fBUPDATING DOCUMENTATION\fR
+.br
+Edit whatever files you want in \fBconf/doc/\fR.
+When documenting a new program, such as \*(lqpickle\*(rq,
+you should create a manual page with the name \*(lqpickle.rf\*(rq.
+The file \fBconf/doc/template\fR has a manual page template that you
+can use.
+If you are documenting a new program, then you should also update three
+other files:
+The file \fBconf/doc/mh.rf\fR should be modified to include the
+\*(lq\&.NA\*(rq section from \*(lqpickle.rf\*(rq.
+The file \fBconf/doc/mh\-chart.rf\fR should be modified to include
+the \*(lq\&.SY\*(rq section from \*(lqpickle.rf\*(rq.
+Finally, the file \fBconf/doc/MH.rf\fR should be modified to include a
+\*(lq\&.so pickle.me\*(rq.
+Naturally, none of these changes will be reflected in the configuration
+until you actually run \fImhconfig\fR.
+.in -.5i
+.Fi
+Too numerous to mention.  Honest.
+.Sa
+mh\-gen(8)
+.Bu
+Hacking is an art, but most programmers are butchers, not artists.
+.En

@@ -1,0 +1,23 @@
+WHAT(1)                      BSD Reference Manual                      WHAT(1)
+
+NNAAMMEE
+     wwhhaatt - show what versions of object modules were used to construct a file
+
+SSYYNNOOPPSSIISS
+     wwhhaatt _n_a_m_e _._._.
+
+DDEESSCCRRIIPPTTIIOONN
+     WWhhaatt reads each file _n_a_m_e and searches for sequences of the form ``@(#)''
+     as inserted by the source code control system.  It prints the remainder
+     of the string following this marker, up to a null character, newline,
+     double quote, or ``> character.''
+
+BBUUGGSS
+     As BSD is not licensed to distribute SCCS this is a rewrite of the wwhhaatt
+     command which is part of SCCS, and may not behave exactly the same as
+     that command does.
+
+HHIISSTTOORRYY
+     The wwhhaatt command appeared in 4.0BSD.
+
+4th Berkeley Distribution        June 6, 1993                                1

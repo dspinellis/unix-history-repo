@@ -1,0 +1,74 @@
+#!/bin/sh -
+#
+#	@(#)MAKEDEV.local	1.00 (ACC) 5/19/89
+#
+# Terminal multiplexors:
+#	xx*	unibus acp5250/6250 with x29 option
+# Special purpose devices:
+#	pi*	unibus acp5250/6250 with programmers interface option
+#
+X29_MAJOR=60
+XPI_MAJOR=61
+
+umask 77
+for i
+do
+case $i in
+
+local)
+	echo "acceptable arguments are pi, xt, and pad"
+	;;
+
+xt*|pad*)
+	case $i in
+	pad*) name=pad ;;
+	xt*)  name=xt  ;;
+	esac
+	unit=`expr $i : "$name\(.*\)"`
+	if [ ! -f x29show ] ; then
+		/etc/mknod x29show c $X29_MAJOR 255
+	fi
+	case $unit in
+	0) ch=J ;; 1) ch=K ;; 2) ch=L ;; 3) ch=M ;;
+	4) ch=N ;; 5) ch=O ;; 6) ch=P ;; 7) ch=Q ;;
+	*) echo bad unit for $name in: $i ;;
+	esac
+	count=16 ;
+	eval `echo $ch $unit $X29_MAJOR $count $name |
+	  awk ' { ch = $1; u = $4 * $2; m = $3; cnt = $4; n=$5 } END {
+	    for (i = 0; i < cnt; i++)
+	      if (n == "pad")
+		if (i < 10)
+		  printf("/etc/mknod pad%s%x c %d %d; ",ch,i,m,128+u+i);
+		else
+		  printf("/etc/mknod pad%s%c c %d %d; ",ch,87+i,m,128+u+i);
+	      else
+	        if (i < 10)
+		  printf("/etc/mknod tty%s%x c %d %d; ",ch,i,m,u+i);
+	        else
+		  printf("/etc/mknod tty%s%c c %d %d; ",ch,87+i,m,u+i); }'`
+	;;
+
+pi*)
+	class=`expr $i : 'pi\(.*\)'`
+	case $class in
+	0) offset=0  name=a;;
+	1) offset=32 name=b;;
+	2) offset=64 name=c;;
+	3) offset=96 name=d;;
+	*) echo bad unit for pi in: $i;;
+	esac
+	case $class in
+	0|1|2|3)
+		umask 0
+		eval `echo $offset $name $XPI_MAJOR | awk ' { b=$1; n=$2; m=$3 } END {
+			for (i = 0; i < 32; i++)
+				printf("/etc/mknod pi%s%02d c %d %d; ", \
+					n, i, m, b+i); }'`
+		umask 77
+		;;
+
+	esac
+	;;
+esac
+done

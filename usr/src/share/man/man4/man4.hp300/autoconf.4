@@ -1,0 +1,136 @@
+.\" Copyright (c) 1990, 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms, with or without
+.\" modification, are permitted provided that the following conditions
+.\" are met:
+.\" 1. Redistributions of source code must retain the above copyright
+.\"    notice, this list of conditions and the following disclaimer.
+.\" 2. Redistributions in binary form must reproduce the above copyright
+.\"    notice, this list of conditions and the following disclaimer in the
+.\"    documentation and/or other materials provided with the distribution.
+.\" 3. All advertising materials mentioning features or use of this software
+.\"    must display the following acknowledgement:
+.\"	This product includes software developed by the University of
+.\"	California, Berkeley and its contributors.
+.\" 4. Neither the name of the University nor the names of its contributors
+.\"    may be used to endorse or promote products derived from this software
+.\"    without specific prior written permission.
+.\"
+.\" THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+.\" ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+.\" IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+.\" ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+.\" FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+.\" DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+.\" OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+.\" HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+.\" LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+.\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+.\" SUCH DAMAGE.
+.\"
+.\"     @(#)autoconf.4	8.1 (Berkeley) 6/9/93
+.\"
+.Dd June 9, 1993
+.Dt AUTOCONF 4 hp300
+.Os
+.Sh NAME
+.Nm autoconf
+.Nd diagnostics from the autoconfiguration code
+.Sh DESCRIPTION
+When
+.Tn UNIX
+bootstraps it probes the innards of the machine
+on which it is running
+and locates controllers, drives, and other devices, printing out
+what it finds on the console.  This procedure is driven by a system
+configuration table which is processed by
+.Xr config 8
+and compiled into each kernel.
+.Pp
+Autoconfiguration on the
+.Tn HP300 Ns s
+is similar to that on the
+.Tn VAX ,
+the primary difference is in the naming conventions.
+On the
+.Tn HP300 ,
+if devices exist which are not configured they will be ignored;
+if devices exist of unsupported type they will be ignored.
+.Pp
+Normally, the system uses the disk from which it was loaded as the root
+filesystem.
+If that is not possible,
+a generic system will use
+.Sq Li rd0
+if it exists.
+If such a system is booted with the
+.Dv RB_ASKNAME
+option (see
+.Xr reboot 2 ) ,
+then the name of the root device is read from the console terminal at boot
+time, and any available device may be used.
+.Sh DIAGNOSTICS
+.Bl -diag
+.It CPU type not configured.
+You tried to boot
+.Tn UNIX
+on a
+.Tn CPU
+type which it doesn't
+(or at least this compiled version of
+.Tn UNIX
+doesn't) understand.
+.Pp
+.It hpib%d at sc%d, ipl %d.
+An
+.Tn HP-IB
+was found at sc%d (the select code)
+with ipl%d (interrupt priority level).
+.Tn UNIX
+will call it hpib%d.
+.Pp
+.It %s%d: %s.
+.It %s%d at hpib%d, slave %d.
+An
+.Tn HP-IB
+disk or tape controller was found.
+For disks
+.Ql %s%d
+will look like
+.Sq Li rd0 ,
+for tapes like
+.Sq Li ct0 .
+The
+.Ql %s
+in the first line will be a product type like ``7945A'' or ``9144''.
+The slave number comes from the address select switches on the drive.
+.Pp
+.It grf0 csr 0x560000
+.It grf%d at sc%d
+A bit mapped display was found either at the ``internal'' address (first case)
+or at some ``external'' select code (second case).
+If it exists, the internal display will always be unit 0.
+.Pp
+.It %s%d at sc%d, ipl %d flags %d
+Another peripheral controller was found at the indicated select code
+and with indicated interrupt priority level.
+.Ql %s
+will be one of
+.Xr dca 4
+(single-port serial interfaces),
+.Xr dcm 4
+(four-port serial interfaces), or
+.Xr le 4
+.Pf ( Tn LAN
+cards).
+The slave number comes from the address select switches on the interface card.
+.El
+.Sh SEE ALSO
+.Xr intro 4 ,
+.Xr boot 8 ,
+.Xr config 8
+.Rs
+.%T 4.3BSD for the HP300
+.%O in the distribution documentation package
+.Re

@@ -1,0 +1,101 @@
+#	@(#)README	8.1 (Berkeley) 6/9/93
+
+This is the directory to use for building nvi/nex.  The Makefile and the
+PORT/include/compat.h files should be all that needs to be modified to
+make nvi/nex run on a new system.  The Makefile will build an executable
+of nvi/nex using the source code in the main directories as well as the
+following:
+
+	The directory PORT/db is a copy of the 4.4BSD version of the
+	dbopen(3) routines.  This is a complete database access methods
+	package that is used as the interface to the underlying file by
+	nex/nvi.
+
+	The directory PORT/curses is a copy of the 4.4BSD version of the
+	curses(3) routines.  This is an updated implementation of the
+	traditional BSD curses package.  This is only if you don't have
+	your own version of the curses library, or, if your version is
+	too old to have scrolling support.  (Older versions of BSD curses
+	didn't, and some System V versions don't do it right, and this
+	makes nvi intolerably slow, since it ends up repainting the entire
+	screen on every update.)
+
+	The directory PORT/regex is a copy of the 4.4BSD version of the
+	regular expression routines.  This is an implementation of the
+	POSIX 1003.2 standard regular expression interfaces.  (The files
+	and functions have similar names to historic RE packages, but they
+	often aren't the same, so be careful.)
+
+	The directory PORT/clib and PORT/include are various portability
+	source modules and include files.  PORT/sys is a symlink to the
+	PORT/include directory.
+
+The directory PORT/nvi.recover is the source code for the nvi recovery
+program.  See the man page in that directory for more information.  It's
+much less complex than nvi, and should build fairly trivially.  The only
+things that you're like to have to change is to add err.o, snprintf.o,
+and strerror.o to the MISC line in the Makefile.
+
+The curses code has NOT been ported to other systems, yet.  The dbopen
+code is running on lots of systems and is pretty portable.  Please send
+me back whatever fixes you have to make to get nvi and curses to run, and
+I'll integrate them into the package so that you don't have to do it
+twice!
+
+Some knobs you may have to turn:
+
+In the Makefile:
+	If you have an old (4.3BSD) version of curses, uncomment the
+	inclusion of the curses library in the Makefile.
+
+	There are lots of subroutines that are POSIX 1003.2, or ANSI C,
+	or 4.4BSD.  Once you get nvi to link, go through the list of
+	undefined routines and add entries to the MISC line in the
+	Makefile as necessary.
+
+In include/compat.h:
+	Before attempting to build nvi, you might want to skim through
+	the compat.h file, and adjust it as necessary for your system.
+	It's possible to use the #ifndef construct to figure out if a
+	#ifdef has been set, but C provides no similar method to figure
+	out if a typedef has been done.  All of the typedef's are grouped
+	at the top of compat.h; your compile errors will tell you which
+	ones you need.
+
+Some other issues:
+	You may see warning messages about illegal pointer combinations.
+	Nvi currently uses u_char's to represent characters, and there
+	are some places where it uses C library routines that expect
+	char *'s.  This inconsistency will be resolved with nvi is made
+	8-bit clean.  Additionally, systems prototype malloc, calloc
+	and realloc in different places, and the missing prototypes
+	will produce such warnings.
+
+	One interesting bit of functionality that nvi needs is the ability
+	to replace the underlying read/write routines in a stdio stream
+	with its own.  The way this works is that when vi wants to use an
+	ex routine, it sets it up so that the output of ex goes to an nvi
+	function which knows how to display the stuff on the screen.  This
+	way vi never has to leave curses (resulting in much nicer screen
+	displays) and ex can simply use printf and friends without regard
+	for what's really going on.  4.4BSD has a stdio function
+	(fwopen(3)) which provides this functionality.  If you don't have
+	fwopen or similar functionality, read the comment in vi/v_init.c
+	and #define FWOPEN_NOT_AVAILABLE.  Note, you have to select one
+	of two ways to do the write(2) system calls in the
+	vi/v_init.c:v_init() function.
+
+Comments for SunOS 4.1.2:
+	The file vi/v_init.c needs to have FWOPEN_NOT_AVAILABLE
+	#defined.
+
+	The MISC line in the Makefile needs:
+		glob.o Xaddnstr.o cfmakeraw.o err.o memmove.o
+		realloc.o snprintf.o strerror.o strsep.o strtoul.o
+
+	Some revisions also need memset.o, and the VSPRINTF_CHARSTAR
+	hack in include/compat.h.
+
+	The realloc(3) hack in the include/compat.h file is
+	necessary.
+

@@ -1,0 +1,84 @@
+#	@(#)NEWS3200	8.1 (Berkeley) 6/10/93
+#
+# NWS-3200
+#
+machine		"news3400"
+cpu		"news3400"
+ident		"NEWS3400"
+timezone	8 dst
+maxusers	32
+
+options		DEBUG
+options		DIAGNOSTIC
+options		QUOTA
+options		FIFO
+options		FFS
+options		NFS
+options		MFS
+options		LOFS
+options		KERNFS
+options		FDESC
+options		INET
+options		MULTICAST
+options		MROUTING
+options		KTRACE
+options		"TCP_COMPAT_42"
+options		"COMPAT_43"
+options		SWAPPAGER,VNODEPAGER,DEVPAGER
+
+# OSI stuff:
+#options	ISO
+#options	TPIP
+#options	EON
+
+#
+# machine dependant options
+#
+options		CPU_SINGLE
+options		COMPAT_NEWSOS
+options		"NEWS3200"
+options		"news3200"
+
+config		vmunix root on sd0a swap on sd0b and sd1b
+config		vmunixe root on sd0e swap on sd0b and sd1b
+
+#
+# nexus
+#
+controller	hb0	at nexus ?
+
+#
+# HB devices
+#
+master	sdc0	at hb0					priority 0
+master	sdc1	at hb0					priority 1
+master	sdc2	at hb0					priority 2
+master	sdc3	at hb0					priority 3
+master	sdc4	at hb0					priority 4
+master	sdc5	at hb0					priority 5
+master	sdc6	at hb0					priority 6
+
+disk		sd0	at sdc0 drive 0
+disk		sd1	at sdc1 drive 0
+
+device		en0	at hb0					priority 16
+device		kb0	at hb0					priority 36
+device		ms0	at hb0					priority 40
+device		fb0	at hb0					priority 44
+device		rs0	at hb0		flags 0xf		priority 48
+#device		rs1	at hb0		flags 0xf		priority 64
+#device		rs2	at hb0		flags 0xf		priority 80
+
+#
+# standard pseudo devices
+#
+pseudo-device	sl	2
+pseudo-device	pty
+pseudo-device	loop
+pseudo-device	ether
+
+#
+# optional pseudo devices
+#
+pseudo-device	bm
+pseudo-device	lfbm

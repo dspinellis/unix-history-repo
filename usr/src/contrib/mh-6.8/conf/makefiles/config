@@ -1,0 +1,88 @@
+##############################################################################
+#    Instructions to Make, for compilation of MH modules
+#
+#	@(MHWARNING)
+# @(#)$Id: config,v 2.8 1992/02/05 21:52:46 jromine Exp $
+##############################################################################
+
+OPTIONS	=	@(MHOPTIONS)
+LDOPTIONS=	@(LDOPTIONS)
+
+CC	=	@(MHCOMPILER)
+@BEGIN: OPTIM
+CFLAGS	=	$(OPTIONS)
+@END: OPTIM
+@BEGIN: DEBUG
+CFLAGS	=	     $(OPTIONS)
+@END: DEBUG
+LDFLAGS	=	$(LDOPTIONS)
+LIBES	=
+LINT	=	lint
+LFLAGS	=	-bhu $(OPTIONS)
+LLIBS	=
+
+
+##############################################################################
+#	Generate object file for MH configuration
+##############################################################################
+
+CFILES	=	config.c version.c
+OFILES	=	config.o version.o
+
+all:		$(OFILES)
+
+lint:;		$(LINT) $(LFLAGS) $(CFILES) $(LLIBS)
+
+version version.c:	true
+		@/bin/sh version.sh @(MHHOSTVER) @(MHRELEASE)
+
+true:;
+
+##############################################################################
+#	Miscellaneous tasks
+##############################################################################
+
+unconfig:	distribution
+		-rm -f Makefile
+
+distribution:   clean
+		-rm -f config.c version.c version
+
+clean:		unclean
+		-rm -f *.o
+
+unclean:;	-rm -f _* :* core eddep makedep
+
+
+##############################################################################
+#	Dependencies
+##############################################################################
+
+MODULES	=	$(CFILES)
+
+depend:;	for m in $(MODULES); do ( \
+		    i=`basename $$m .c`; \
+		    echo $$i.o: $$i.c >> makedep; \
+		    grep '^#[ 	]*include' $$i.c | \
+			sed -e 's,[^"]*"/\([^"]*\)".*,'$$i'.o: /\1,' \
+			    -e 's,[^"]*"\([^"]*\)".*,'$$i'.o: \1,' \
+			    -e 's,[^<]*<\(.*\)>.*,#'$$i'.o: /usr/include/\1,' \
+			>> makedep \
+		); done
+		echo '/^# DO NOT DELETE THIS LINE/+2,$$d' > eddep
+		echo '$$r makedep' >> eddep
+		echo 'w' >> eddep
+		cp Makefile _Makefile
+		ed - Makefile < eddep
+		rm eddep makedep
+		echo '# DEPENDENCIES MUST END AT END OF FILE' >> Makefile
+		echo '# IF YOU PUT STUFF HERE IT WILL GO AWAY' >> Makefile
+
+# DO NOT DELETE THIS LINE
+# DEPENDENCIES START HERE
+config.o: config.c
+config.o: ../h/mh.h
+#config.o: /usr/include/pwd.h
+#config.o: /usr/include/stdio.h
+# DEPENDENCIES MUST END AT END OF FILE
+# IF YOU PUT STUFF HERE IT WILL GO AWAY

@@ -1,0 +1,273 @@
+.\" Copyright (c) 1980, 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms, with or without
+.\" modification, are permitted provided that the following conditions
+.\" are met:
+.\" 1. Redistributions of source code must retain the above copyright
+.\"    notice, this list of conditions and the following disclaimer.
+.\" 2. Redistributions in binary form must reproduce the above copyright
+.\"    notice, this list of conditions and the following disclaimer in the
+.\"    documentation and/or other materials provided with the distribution.
+.\" 3. All advertising materials mentioning features or use of this software
+.\"    must display the following acknowledgement:
+.\"	This product includes software developed by the University of
+.\"	California, Berkeley and its contributors.
+.\" 4. Neither the name of the University nor the names of its contributors
+.\"    may be used to endorse or promote products derived from this software
+.\"    without specific prior written permission.
+.\"
+.\" THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+.\" ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+.\" IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+.\" ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+.\" FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+.\" DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+.\" OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+.\" HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+.\" LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+.\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+.\" SUCH DAMAGE.
+.\"
+.\"     @(#)autoconf.4	8.1 (Berkeley) 6/5/93
+.\"
+.Dd June 5, 1993
+.Dt AUTOCONF 4
+.Os BSD 4
+.Sh NAME
+.Nm autoconf
+.Nd "diagnostics from the autoconfiguration code"
+.Sh DESCRIPTION
+When
+.Tn UNIX
+bootstraps it probes the innards of the machine
+on which it is running and
+locates controllers, drives, and other devices.
+Each item found is recorded on the console.
+This procedure is driven by a system
+configuration table which is processed by
+.Xr config 8
+and compiled into each kernel.
+.Pp
+On the
+.Tn VAX ,
+devices in
+.Tn NEXUS
+slots are normally noted, thus memory controllers,
+.Tn UNIBUS
+and
+.Tn MASSBUS
+adaptors.  Devices which are not supported which
+are found in
+.Tn NEXUS
+slots are noted also.
+The Q-bus on the
+.Tn MICROVAX
+is configured in the same way as the
+.Tn UNIBUS.
+.Pp
+.Tn MASSBUS
+devices are located by a very deterministic procedure since
+.Tn MASSBUS
+space is completely probe-able.  If devices exist which
+are not configured they will be silently ignored; if devices exist of
+unsupported type they will be noted.
+.Pp
+.Tn UNIBUS
+devices are located by probing to see if their control-status
+registers respond.  If not, they are silently ignored.  If the control
+status register responds but the device cannot be made to interrupt,
+a diagnostic warning will be printed on the console and the device
+will not be available to the system. 
+.Pp
+Normally, the system uses the disk from which it was loaded as the root
+filesystem.
+If that is not possible,
+a generic system will pick its root device
+as the
+.Dq best
+available device
+.Pf ( Tn MASSBUS
+disks are better than
+.Tn SMD UNIBUS
+disks are better than
+.Tn RK07 Ns s ;
+the device must be drive 0
+to be considered).
+If such a system is booted with the
+.Dv RB_ASKNAME
+option (see
+.Xr reboot 2 ) ,
+then the name of the root device is read from the console terminal at boot
+time, and any available device may be used.
+.Sh DIAGNOSTICS
+.Bl -diag
+.It cpu type %d not configured.
+You tried to boot
+.Tn UNIX
+on a
+.Tn CPU
+type which it doesn't (or at least this compiled version of
+.Tn UNIX
+doesn't)
+understand.
+.Pp
+.It mba%d at tr%d.
+A
+.Tn MASSBUS
+adapter was found in
+.Ql tr%d
+(the
+.Tn NEXUS
+slot number).
+.Tn UNIX
+will call it
+.Ql mba%d .
+.Pp
+.It %d mba's not configured.
+More
+.Tn MASSBUS
+adapters were found on
+the machine than were declared in the machine configuration; the excess
+.Tn MASSBUS
+adapters will not be accessible.
+.Pp
+.It uba%d at tr%d.
+A
+.Tn UNIBUS
+adapter was found in
+.Ql tr%d
+(the
+.Tn NEXUS
+slot number).
+.Tn UNIX
+will call it
+.Ql uba%d .
+.Pp
+.It dr32 unsupported (at tr %d).
+A
+.Tn DR Ns 32
+interface was found in
+a
+.Tn NEXUS ,
+for which
+.Tn UNIX
+does not have a driver.
+.Pp
+.It ci unsupported (at tr %d).
+A
+.Tn CI
+interface was found in
+a
+.Tn NEXUS ,
+for which
+.Tn UNIX
+does not have a driver.
+.Pp
+.It mcr%d at tr%d.
+A memory controller was found in
+.Ql tr%d
+(the
+.Tn NEXUS
+slot number).
+.Tn UNIX
+will call it
+.Ql mcr%d .
+.Pp
+.It 5 mcr's unsupported.
+.Tn UNIX
+supports only 4 memory controllers
+per
+.Tn CPU .
+.Pp
+.It mpm unsupported (at tr%d).
+Multi-port memory is unsupported
+in the sense that
+.Tn UNIX
+does not know how to poll it for
+.Tn ECC
+errors.
+.Pp
+.It %s%d at mba%d drive %d.
+A tape formatter or a disk was found
+on the
+.Tn MASSBUS ;
+for disks
+.Ql %s%d
+will look like
+.Dq Li hp0 ,
+for tape formatters
+like
+.Dq Li ht1 .
+The drive number comes from the unit plug on the drive
+or in the
+.Tn TM
+formatter
+.Pf ( Em not
+on the tape drive; see below).
+.Pp
+.It %s%d at %s%d slave %d.
+(For
+.Tn MASSBUS
+devices).
+Which would look like
+.Dq Li tu0 at ht0 slave 0 ,
+where
+.Dq Li tu0
+is the name for the tape device and
+.Dq Li ht0
+is the name
+for the formatter.  A tape slave was found on the tape formatter at the
+indicated drive number (on the front of the tape drive).
+.Ux
+will call the device, e.g.,
+.Dq Li tu0 .
+.Pp
+.It "%s%d at uba%d csr %o vec %o ipl %x."
+The device
+.Ql %s%d ,
+e.g.
+.Dq Li dz0
+was found on
+.Ql uba%d
+at control-status register address
+.Ql \&%o
+and with
+device vector
+.Ql \&%o .
+The device interrupted at priority level
+.Ql \&%x .
+.Pp
+.It %s%d at uba%d csr %o zero vector.
+The device did not present
+a valid interrupt vector, rather presented 0 (a passive release condition)
+to the adapter.
+.Pp
+.It %s%d at uba%d csr %o didn't interrupt.
+The device did not interrupt,
+likely because it is broken, hung, or not the kind of device it is advertised
+to be.
+.Pp
+.It %s%d at %s%d slave %d.
+(For UNIBUS devices).
+Which would look like 
+.Dq Li up0 at sc0 slave 0 ,
+where
+.Dq Li up0
+is the name of a disk drive and
+.Dq Li sc0
+is the name
+of the controller.  Analogous to
+.Tn MASSBUS
+case.
+.El
+.Sh SEE ALSO
+.Xr intro 4 ,
+.Xr boot 8 ,
+.Xr config 8
+.Sh HISTORY
+The
+.Nm
+feature
+appeared in
+.Bx 4.1 .

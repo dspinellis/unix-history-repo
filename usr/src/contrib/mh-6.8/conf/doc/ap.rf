@@ -1,0 +1,77 @@
+.\"	@(MHWARNING)
+.\" @(#)$Id: ap.rf,v 1.7 1992/05/12 22:23:34 jromine Exp $
+.SC AP 8
+.NA
+ap \- parse addresses 822-style
+.SY
+@(MHETCPATH)/ap
+\%[\-form\ formatfile]
+\%[\-format\ string]
+\%[\-normalize] \%[\-nonormalize]
+\%[\-width\ columns]
+addrs\ ...
+\%[\-help] 
+.DE
+\fIAp\fR is a program that parses addresses according to the ARPA Internet
+standard.
+It also understands many non\-standard formats.
+It is useful for seeing how \fIMH\fR will interpret an address.
+
+The \fIap\fR program treats each argument as one or more addresses,
+and prints those addresses out in the official 822\-format.
+Hence, it is usually best to enclose each argument in double\-quotes for the
+shell.
+
+To override the output format used by \fIap\fR,
+the `\-format\ string' or `\-format\ file' switches are used.
+This permits individual fields of the address to be extracted with ease.
+The string is simply a format stringand thefile is simply a format file.
+See \fImh\-format\fR\0(5) for the details.
+
+In addition to the standard escapes,
+\fIap\fR also recognizes the following additional escape:
+.sp 1
+.nf
+.ta \w'Escape  'u +\w'Returns  'u
+\fIEscape\fR	\fIReturns\fR	\fIDescription\fR
+error	string	A diagnostic if the parse failed
+.re
+.fi
+
+If the `\-normalize' switch is given,
+\fIap\fR will try to track down the official hostname of the address.
+
+Here is the default format string used by \fIap\fR:
+
+.ti +.5i
+%<{error}%{error}: %{text}%|%(putstr(proper{text}))%>
+
+which says that if an error was detected, print the error, a `:',
+and the address in error.
+Otherwise, output the 822\-proper format of the address.
+.Fi
+^$HOME/\&.mh\(ruprofile~^The user profile
+^@(MHETCPATH)/mtstailor~^tailor file
+.Pr
+None
+.Sa
+dp(8),
+.br
+\fIStandard for the Format of ARPA Internet Text Messages\fR (aka RFC\-822)
+.De
+`\-format' defaults as described above
+.Ds
+`\-normalize'
+.Ds
+`\-width' defaults to the width of the terminal
+.Co
+None
+.Bu
+The argument to the `\-format' switch must be interpreted as a single token
+by the shell that invokes \fIap\fR.
+Therefore,
+one must usually place the argument to this switch inside double\-quotes.
+
+On hosts where \fIMH\fR was configured with the BERK option,
+address parsing is not enabled.
+.En

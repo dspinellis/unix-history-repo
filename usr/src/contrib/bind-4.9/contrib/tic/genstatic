@@ -1,0 +1,55 @@
+#!/bin/sh
+# @(#) genstatic 1.4 92/08/31 @(#)
+# generate the static hosttable from database files
+# called from updatehosts
+#
+# files used
+#	hosts.local
+#	hosts.main
+#	hosts.cname
+
+# Copyright (c) 1992 by Texas Internet Consulting
+# This code may be freely copied and used so long as this
+# copyright notice is attached.  This code may not be sold
+# without the express written permission of Texas Internet Consulting.
+# Texas Internet Consulting makes no warranty as to the correctness
+# nor the applicability of this code for any purpose.
+
+# this cannot be /etc/hosts
+HOSTS=hosts.static
+SERIAL=serial
+PATH=.:$PATH
+
+# put the serial number of this table as the first line
+serial=`cat $SERIAL`
+echo "# $serial" >$HOSTS
+
+# extract host name and IP address from hosts.main
+readinfo ip host <hosts.main  | awk '
+{
+	# split up the domain name
+	n = split($2, domain, ".")
+	printf("%s %s %s\n", $1, $2, domain[1])
+}' >>$HOSTS
+
+# build edit script for aliases
+readinfo host alias <hosts.cname | awk '
+{
+	# extract simple alias name from domain name
+	n = split($2, alias, ".")
+	# split up the domain name
+	n = split($1, domain, ".")
+	# build the edit command for this line
+	# will look like /<domain>/s/$/<alias> <alias.domain>/
+	edcmd = "/" domain[1]
+	# replace "." with "\."
+	for (i=2; i<=n; i++) {
+		edcmd = edcmd "\\." domain[i]
+	}
+	edcmd = edcmd "/s/$/ " $2 " " alias[1] "/"
+	print edcmd
+}
+END {
+	print "w"
+	print "q"
+}' | ed >/dev/null 2>&1 $HOSTS

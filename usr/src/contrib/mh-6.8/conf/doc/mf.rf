@@ -1,0 +1,60 @@
+.\"	@(MHWARNING)
+.\" @(#)$Id: mf.rf,v 1.5 90/04/05 15:12:57 sources Exp $
+.SC MF 1
+.NA
+muinc, musift, uminc, umsift \- mail filters
+.SY
+@(MHETCPATH)/muinc
+
+.ti .5i
+@(MHETCPATH)/musift
+\%[files\ ...]
+
+.ti .5i
+@(MHETCPATH)/uminc
+
+.ti .5i
+@(MHETCPATH)/umsift
+\%[files\ ...]
+.DE
+The mail filters
+are a set of programs that filter mail from one format to another.
+In particular, \fIUUCP\fR\- and \fIMMDF\fR\-style mail files are handled.
+
+\fImuinc\fR
+filters mail from the user's \fIMMDF\fR maildrop into the user's \fIUUCP\fR
+maildrop;
+similarly,
+\fIuminc\fR
+filters mail from the user's \fIUUCP\fR maildrop into the user's \fIMMDF\fR
+maildrop.
+These two programs respect each system's maildrop locking protocols.
+
+\fImusift\fR
+filters each file on the command line
+(or the standard input if no arguments are given),
+and places the result on the standard output in \fIUUCP\fR format.
+The files (or standard input) are expected to be in \fIMMDF\fR format.
+\fIumsift\fR
+does the same thing filtering \fIUUCP\fR formatted files (or input),
+and places the \fIMMDF\fR formatted result on the standard output.
+No locking protocols are used by these programs.
+
+If the files aren't in the expected format,
+the mail filters will try to recover.
+In really bad cases,
+you may lose big.
+.Fi
+^/usr/spool/mail/~^UUCP spool area for maildrops
+^@(MHDROPLOC)~^Location of standard maildrop
+.Pr
+None
+.Sa
+\fIProposed Standard for Message Header Munging\fR (aka RFC\-886),
+.br
+inc(1)
+.De
+.Co
+.Bu
+Numerous; protocol translation is very difficult.
+.En

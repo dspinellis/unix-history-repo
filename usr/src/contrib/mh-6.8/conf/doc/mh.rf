@@ -1,0 +1,285 @@
+.\"	@(MHWARNING)
+.\" @(#)$Id: mh.rf,v 1.12 1992/10/28 17:00:27 jromine Exp $
+.if '\*(ZZ'-man' \{\
+.SC MH 1
+.NA
+mh \- Message Handler
+.SY
+any \fIMH\fR command
+.DE
+\fIMH\fR is the name of a powerful message handling system.
+Rather then being a single comprehensive program,
+\fIMH\fR consists of a collection of fairly simple 
+single-purpose programs to send, receive, save, 
+and retrieve messages.  The user should refer
+to the \fIMH User's Manual\fR
+and the pages for the \fIMH\fR
+programs in the Unix Programmers Manual.
+
+Unlike \fImail\fR, the standard UNIX mail user interface program,
+\fIMH\fR is not a closed system which must be explicitly run,
+then exited when you wish to return to the shell.
+You may freely intersperse \fIMH\fR commands with other shell commands,
+allowing you to read and answer your mail while you have (for example)
+a compilation running,
+or search for a file or run programs as needed to find the answer to
+someone's question before answering their mail.
+
+The rest of this manual entry is a quick tutorial which will teach you the
+basics of \fIMH\fR.
+You should read the manual entries for the individual programs for complete
+documentation.
+
+To get started using \fIMH\fR, put the directory
+\fB@(MHBINPATH)\fR on your \fB$PATH\fR.
+This is best done in one of the files:
+\fB\&.profile\fR, \fB\&.login\fR, or \fB\&.cshrc\fR
+in your home directory.
+(Check the manual entry for the shell you use,
+in case you don't know how to do this.)
+Run the \fIinc\fR command.
+If you've never used \fIMH\fR before,
+it will create the necessary default files and directories after
+asking you if you wish it to do so.
+
+\fIinc\fR moves mail from your system maildrop
+into your \fIMH\fR `+inbox' folder,
+breaking it up into separate files
+and converting it to \fIMH\fR format as it goes.
+It prints one line for each message it processes,
+containing the from field, the subject field
+and as much of the first line of the message as will fit.
+It leaves the first message it processes as your current message.
+You'll need to run \fIinc\fR each time you wish to incorporate new mail
+into your \fIMH\fR file.
+
+\fIscan\fR prints a list of the messages in your current folder.
+
+The commands:
+\fIshow\fR, \fInext\fR, and \fIprev\fR
+are used to read specific messages from the current folder.
+\fIshow\fR displays the current message,
+or a specific message, which may be specified by its number,
+which you pass as an argument to \fIshow\fR.
+\fInext\fR and \fIprev\fR display, respectively,
+the message numerically after or before the current message.
+In all cases, the message displayed becomes the current message.
+If there is no current message,
+\fIshow\fR may be called with an argument,
+or \fInext\fR may be used to advance to the first message.
+
+\fIrmm\fR (remove message) deletes the current message.
+It may be called with message numbers passed as arguments,
+to delete specific messages.
+
+\fIrepl\fR is used to respond to the current message (by default).
+It places you in the editor with a prototype response form.
+While you're in the editor,
+you may peruse the item you're responding to by reading the file \fB@\fR.
+After completing your response,
+type \fBl\fR to review it,
+or \fBs\fR to send it.
+
+\fIcomp\fR allows you to compose a message by putting you in the editor on
+a prototype message form,
+and then lets you send it.
+
+All the \fIMH\fR commands may be run with the single argument: `\-help',
+which causes them to print a list of the arguments they may be invoked with.
+
+Commands which take a message number as an argument
+(\fIscan\fR, \fIshow\fR, \fIrepl\fR, ...)
+also take one of the words:
+\fIfirst\fR, \fIprev\fR, \fIcur\fR, \fInext\fR, or \fIlast\fR
+to indicate (respectively) the first, previous, current, next, or last
+message in the current folder (assuming they are defined).
+
+Commands which take a range of message numbers
+(\fIrmm\fR, \fIscan\fR, \fIshow\fR, ...)
+also take any of the abbreviations:
+.sp
+.in +5
+.ti -3
+.I <num1>-<num2>
+- Indicates all messages in the range <num1> to <num2>, inclusive. The range
+.B must
+be nonempty.
+.sp
+.ti -3
+.I <num>:+N
+.ti -3
+.I <num>:-N
+- Up to
+.I N
+messages beginning with (or ending with) message
+.I num.
+.I Num
+may be any of the pre-defined symbols:
+.I first, prev, cur, next
+or
+.I last.
+.sp
+.ti -3
+.I first:N
+.ti -3
+.I prev:N
+.ti -3
+.I next:N
+.ti -3
+.I last:N
+- The first, previous, next or last
+.I N
+messages, if they exist.
+.in -5
+
+There are many other possibilities such as creating multiple folders for
+different topics, and automatically refiling messages according to subject,
+source, destination, or content.
+These are beyond the scope of this manual entry.
+
+Following is a list of all the \fIMH\fR commands:
+.\}
+
+.nf
+.in .5i
+.ta 1.5i
+^ali (1)~^\- list mail aliases
+^anno (1)~^\- annotate messages
+@BEGIN: BBOARDS
+^bbc (1)~^\- check on BBoards
+@BEGIN: BBSERVER
+^bbl (1)~^\- manage a BBoard
+^bbleader (1)~^\- responsiblities of a BBoard\-leader
+@END: BBSERVER
+^bboards (1)~^\- the UCI BBoards facility
+@END: BBOARDS
+^burst (1)~^\- explode digests into messages
+@BEGIN: TMA
+^cipher (1)~^\- en/de\-cipher txt
+@END: TMA
+^comp (1)~^\- compose a message 
+@BEGIN: TMA
+^decipher (1)~^\- decipher messages
+@END: TMA
+^dist (1)~^\- redistribute a message to additional addresses
+^folder (1)~^\- set/list current folder/message
+^folders (1)~^\- list all folders
+^forw (1)~^\- forward messages
+^inc (1)~^\- incorporate new mail
+^mark (1)~^\- mark messages
+^mhl (1)~^\- produce formatted listings of MH messages
+^mhmail (1)~^\- send or read mail
+^mhook (1)~^\- MH receive\-mail hooks
+^mhparam (1)~^\- print MH profile components
+^mhpath (1)~^\- print full pathnames of MH messages and folders
+^msgchk (1)~^\- check for messages
+^msh (1)~^\- MH shell (and BBoard reader)
+^next (1)~^\- show the next message
+^packf (1)~^\- compress a folder into a single file
+^pick (1)~^\- select messages by content
+^prev (1)~^\- show the previous message
+^prompter (1)~^\- prompting editor front end
+^rcvstore (1)~^\- incorporate new mail asynchronously
+^refile (1)~^\- file messages in other folders
+^repl (1)~^\- reply to a message
+^rmf (1)~^\- remove folder
+^rmm (1)~^\- remove messages
+^scan (1)~^\- produce a one line per message scan listing
+^send (1)~^\- send a message
+^show (1)~^\- show (list) messages
+^slocal (1)~^\- special local mail delivery
+^sortm (1)~^\- sort messages
+@BEGIN: TMA
+^tma (1)~^\- manipulate the TTI Trusted Mail Agent (TMA)
+@END: TMA
+^vmh (1)~^\- visual front\-end to MH
+^whatnow (1)~^\- prompting front\-end for send
+^whom (1)~^\- report to whom a message would go
+.if '\*(ZZ'-man' \{\
+.sp 1
+^mh\-alias (5)~^\- alias file for MH message system
+^mh\-format (5)~^\- format file for MH message system
+^mh\-mail (5)~^\- message format for MH message system
+^mh\-profile (5)~^\- user customization for MH message system
+^mh\-sequence (5)~^\- sequence specification for MH message system
+.sp 1
+^ap (8)~^\- parse addresses 822\-style
+^conflict (8)~^\- search for alias/password conflicts
+^dp (8)~^\- parse dates 822\-style
+^fmtdump (8)~^\- decode \fIMH\fP format files
+^install\-mh (8)~^\- initialize the MH environment
+^post (8)~^\- deliver a message
+.\}
+.fi
+.re
+
+.if '\*(ZZ'-man' \{\
+.Fi
+^@(MHBINPATH)~^directory containing \fIMH\fR commands
+^@(MHETCPATH)~^\fIMH\fR library
+.Sa
+\fIThe RAND \fIMH\fR Message Handling System: User's Manual\fR,
+.br
+\fIThe RAND \fIMH\fR Message Handling System: Tutorial\fR,
+.br
+\fIThe RAND \fIMH\fR Message Handling System: The UCI BBoards Facility\fR,
+.br
+\fIMH.5: How to process 200 messages a day and still get some real work
+done\fR
+.br
+.Bu
+If problems are encountered with an \fIMH\fR program,
+the problems should be reported to the local maintainers of \fIMH\fR.
+When doing this,
+the name of the program should be reported,
+along with the version information for the program.
+.br
+To find out what version of an \fIMH\fR program is being run,
+invoke the program with the `\-help' switch.
+In addition to listing the syntax of the command,
+the program will list information pertaining to its version.
+This information includes the version of \fIMH\fR,
+the host it was generated on,
+and the date the program was loaded.
+A second line of information,
+found on versions of \fIMH\fR after #5.380 include \fIMH\fR configuration
+options.
+For example,
+
+.nf
+.in +.5i
+version: MH 6.1 #1[UCI] (glacier) of Wed Nov  6 01:13:53 PST 1985
+options: [BSD42] [MHE] [NETWORK] [SENDMTS] [MMDFII] [SMTP] [POP]
+.in -.5i
+.fi
+
+The `6.1 #1[UCI]' indicates that the program is from the UCI \fIMH.6.1\fR
+version of \fIMH\fR.
+The program was generated on the host `glacier' on
+`Wed Nov  6 01:13:53 PST 1985'.
+It's usually a good idea to send the output of the `\-help' switch along
+with your report.
+
+If there is no local \fIMH\fR maintainer,
+try the address \fBBug-MH\fR.
+If that fails, use the Internet mailbox \fBBug-MH@ICS.UCI.EDU\fR.
+.Fi
+^$HOME/\&.mh\(ruprofile~^The user profile
+.Pr
+^Path:~^To determine the user's MH directory
+.\" .Ps
+.\" for each additional profile entry
+.\" .Sa
+.\" the see\-also's go here
+.\" .De
+.\" the first default goes here
+.\" .Ds
+.\" for each additional default
+.\" .Co
+.\" context changes go here
+.\" You can also have
+.\" .Hh \- the helpful hints section
+.\" .Hi \- the history section
+.\" .Bu \- the bugs section
+.En
+.\}

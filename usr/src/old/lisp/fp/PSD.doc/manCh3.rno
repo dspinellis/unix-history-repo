@@ -1,0 +1,68 @@
+.\" Copyright (c) 1980 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms, with or without
+.\" modification, are permitted provided that the following conditions
+.\" are met:
+.\" 1. Redistributions of source code must retain the above copyright
+.\"    notice, this list of conditions and the following disclaimer.
+.\" 2. Redistributions in binary form must reproduce the above copyright
+.\"    notice, this list of conditions and the following disclaimer in the
+.\"    documentation and/or other materials provided with the distribution.
+.\" 3. All advertising materials mentioning features or use of this software
+.\"    must display the following acknowledgement:
+.\"	This product includes software developed by the University of
+.\"	California, Berkeley and its contributors.
+.\" 4. Neither the name of the University nor the names of its contributors
+.\"    may be used to endorse or promote products derived from this software
+.\"    without specific prior written permission.
+.\"
+.\" THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+.\" ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+.\" IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+.\" ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+.\" FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+.\" DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+.\" OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+.\" HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+.\" LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+.\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+.\" SUCH DAMAGE.
+.\"
+.\"	@(#)manCh3.rno	6.2 (Berkeley) 4/17/91
+.\"
+.NS 1 "Getting on and off the System"
+.sp
+.pp
+Startup FP from the shell by entering the command:
+.sp
+.ce
+.b "/usr/local/fp".
+.sp
+.pp
+The system will prompt you for input by indenting over six character
+positions.
+Exit from FP (back to the shell) with a  control/D (\fB^D\fP).
+.NS 2 "Comments"
+.pp
+A user may end any line (including a command) with a comment;
+the comment character is '#'.  The
+interpreter will ignore any character after the '#' until it encounters
+a  newline character or end-of-file, whichever comes first.
+.sp 4p
+.NS 2 "Breaks"
+.pp
+Breaks interrupt any work in progress causing the system
+to do a \s-2FRANZ\s+2 reset before returning control back to the user.
+.sp 4p
+.NS 2 "Non-Termination"
+.pp
+LISP's namestack may,
+on occasion,
+overflow.
+FP responds by printing \*(lqnon-terminating\*(rq and
+returning  bottom as the result of the application.  It does a 
+\s-2FRANZ\s+2 reset before returning control to
+the user.
+.sx 1
+.sp

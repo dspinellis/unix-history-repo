@@ -1,0 +1,56 @@
+.\"	@(MHWARNING)
+.\" @(#)$Id: whom.rf,v 1.7 1992/02/11 00:47:53 jromine Exp $
+.SC WHOM 1
+.NA
+whom \- report to whom a message would go
+.SY
+whom
+\%[\-alias\ aliasfile]
+\%[\-check] \%[\-nocheck]
+\%[\-draft]
+\%[\-draftfolder\ +folder] \%[\-draftmessage\ msg] \%[\-nodraftfolder]
+\%[file]
+\%[\-help]
+.DE
+\fIWhom\fR is used to expand the headers of a message into a set of addresses
+and optionally verify that those addresses are deliverable at that time
+(if `\-check' is given).
+
+The `\-draftfolder\ +folder' and `\-draftmessage\ msg' switches invoke the
+\fIMH\fR draft folder facility.
+This is an advanced (and highly useful) feature.
+Consult the \fBAdvanced Features\fR section of the \fIMH\fR manual for more
+information.
+
+The files specified by the profile entry \*(lqAliasfile:\*(rq and any
+additional alias files given by the `\-alias aliasfile' switch will be read
+(more than one file, each  preceeded by `\-alias', can be named).
+See \fImh\-alias\fR\0(5) for more information.
+.Fi
+^$HOME/\&.mh\(ruprofile~^The user profile
+.Pr
+^Path:~^To determine the user's MH directory
+.Ps
+^Draft\-Folder:~^To find the default draft\-folder
+.Ps
+^Aliasfile:~^For a default alias file
+.Ps
+^postproc:~^Program to post the message
+.Sa
+mh\-alias(5), post(8)
+.De
+`file' defaults to <mh\-dir>/draft
+.Ds
+`\-nocheck'
+.Ds
+`\-alias @(MHETCPATH)/MailAliases'
+.Co
+None
+.Bu
+With the `\-check' option, \fIwhom\fR makes no guarantees that the addresses
+listed as being ok are really deliverable, rather, an address being listed
+as ok means that at the time that \fIwhom\fR was run the address was
+thought to be deliverable by the transport service.  For local addresses, this
+is absolute; for network addresses, it means that the host is known; for uucp
+addresses, it (often) means that the \fIUUCP\fR network is available for use.
+.En

@@ -1,0 +1,461 @@
+#!/usr/bin/perl
+# @(#)scanspool.pl	1.20 4/6/92 00:47:35
+#
+# Written by:  Landon Curt Noll		(chongo was here  /\../\)
+#
+# This code is placed in the public domain.
+#
+# scanspool - perform a big scan over all articles in /usr/spool/news
+#
+# usage:
+#    scanspool [-a active_file] [-s spool_dir] [-v] [-c] [-n]
+#
+#    -a active_file	active file to use (default /usr/lib/news/active)
+#    -s spool_dir	spool tree (default /usr/spool/news)
+#    -v 		verbose mode
+#			verbose messages begin with a tab
+#			show articles found in non-active directories
+#    -c			check article filenames, don't scan the articles
+#    -n			don't throttle innd
+#
+# NOTE: This take a while, -v is a good thing if you want to know
+#	how far this program has progressed.
+#
+# This program will scan first the active file, noting problems such as:
+#
+#	malformed line
+#	group aliased to a non-existent group
+#	group aliased to a group tat is also aliased
+#
+# Then it will examine all articles under your news spool directory,
+# looking for articles that:
+#
+#	basename that starts with a leading 0
+#	basename that is out of range with the active file
+#	does not contain a Newsgroups: line
+#	article that is all header and no text
+#	is in a directory for which there is no active group
+#	article that is in a group to which it does not belong
+#
+# Scanspool understands aliased groups.  Thus, if an article is posted
+# to foo.old.name that is aliases to foo.bar, it will be expected to
+# be found under foo.bar and not foo.old.name.
+#
+# Any group that is of type 'j' or 'x' (4th field of the active file)
+# will be allowed to show up under the junk group.
+#
+# Scanspool assumes that the path of a valid newsgroup's directory
+# from the top of the spool tree will not contain any "." character.
+# Thus, directories such as out.going, tmp.dir, in.coming and
+# news.archive will not be searched.  This program also assumes that
+# article basenames contain only decimal digits.  Last, files under
+# the top level directory "lost+found" are not scanned.
+#
+# The output of scanspool will start with one of 4 forms:
+#
+#    FATAL: 	    fatal or internal error 			(to stderr)
+#
+#    WARN: 	    active or article format problem,		(to stderr)
+#		    group alias problem, find error,
+#		    article open error
+#
+#    path/123:	    basename starts with 0,			(to stdout)
+#		    article number out of range,
+#		    article in the wrong directory,
+#		    article in directory not related to
+#		        an active non-aliases newsgroup
+#
+#    \t ...	    verbose message starting with a tab		(to stdout)
+
+
+# Data structures
+#
+# $gname2type{$name}
+#    $name	- newsgroup name in foo.dot.form
+#    produces  => 4th active field  (y, n, x, ...)
+#		  alias type is "=", not "=foo.bar"
+#
+# $realgname{$name}
+#    $name      - newsgroup name in foo.dot.form
+#    produces  => newsgroup name in foo.dot.form
+#		  if type is =, this will be a.b, not $name
+#
+# $lowart{$name}
+#    $name      - newsgroup name in foo.dot.form
+#    produces  => lowest article allowed in the group
+#		  if type is =, this is not valid
+#
+# $highart{$name}
+#    $name      - newsgroup name in foo.dot.form
+#    produces  => highest article allowed in the group
+#		  if type is =, this is not valid
+#		  If $highart{$name} < $lowart{$name},
+#		  then the group should be empty
+
+# perl requirements
+#
+require "getopts.pl";
+
+# setup non-buffered stdout and stderr
+#
+select(STDERR);
+$|=1;
+select(STDOUT);
+$|=1;
+
+# global constants
+#
+$prog = $0;			 	# our name
+# =()<$spool = "@<_PATH_SPOOL>@";>()=   # top of where articles are filed
+$spool = "/var/spool/news/spool";
+# =()<$active = "@<_PATH_ACTIVE>@";>()=	# inn active file, list of groups
+$active = "/var/spool/news/data/active";
+# =()<$ctlinnd = "@<_PATH_NEWSBIN>@/ctlinnd";>()=
+$ctlinnd = "/usr/contrib/news/ctlinnd";
+$reason = "running scanspool";		# throttle reason
+
+# parse args
+#
+&Getopts("a:s:vcn");
+$active = $opt_a if (defined($opt_a));
+$spool = $opt_s if (defined($opt_s));
+
+# throttle innd unless -n
+#
+if (! defined($opt_n)) {
+    system("$ctlinnd throttle '$reason' >/dev/null 2>&1");
+}
+
+# process the active file
+#
+&parse_active($active);
+
+# check the spool directory
+#
+&check_spool($spool);
+
+# unthrottle innd unless -n
+#
+if (! defined($opt_n)) {
+    system("$ctlinnd go '$reason' >/dev/null 2>&1");
+}
+
+# all done
+exit(0);
+
+
+# parse_active - parse the active file
+#
+# From the active file, fill out the @gname2type (type of newsgroup)
+# and @realgname (real/non-aliased name of group), @lowart & @highart
+# (low and high article numbers).  This routine will also check for
+# aliases to missing groups or groups that are also aliases.
+#
+sub parse_active
+{
+    local ($active) = $_[0];	# the name of the active file to use
+    local (*ACTIVE);		# active file handle
+    local ($line);		# active file line
+    local ($name);		# name of newsgroup
+    local ($low);		# low article number
+    local ($high);		# high article number
+    local ($type);		# type of newsgroup (4th active field)
+    local ($field5);		# 5th active field (should not exist)
+    local ($dir);		# directory path of group from $spool
+    local ($alias);		# realname of an aliased group
+    local ($linenum);		# active file line number
+
+    # if verbose (-v), say what we are doing
+    print "\tscanning $active\n" if defined($opt_v);
+
+    # open the active file
+    open (ACTIVE, $active) || &fatal(1, "cannot open $active");
+
+    # parse each line
+    $linenum = 0;
+    while ($line = <ACTIVE>) {
+
+	# count the line
+	++$linenum;
+
+	# verify that we have a correct number of tokens
+	if ($line !~ /^\S+ 0*(\d+) 0*(\d+) \S+$/o) {
+	    &problem("WARNING: active line is mal-formed at line $linenum");
+	    next;
+	}
+	($name, $high, $low, $type) = $line =~ /^(\S+) 0*(\d+) 0*(\d+) (\S+)$/o;
+
+	# watch for duplicate entries
+	if (defined($realgname{$name})) {
+	    &problem("WARNING: ignoring dup group: $name, at line $linenum");
+	    next;
+	}
+
+	# record which type it is
+	$gname2type{$name} = $type;
+
+	# record the low and high article numbers
+	$lowart{$name} = $low;
+	$highart{$name} = $high;
+
+	# determine the directory and real group name
+	if ($type eq "j" || $type eq "x") {
+	    $dir = "junk";
+	    $alias = $name;
+	} elsif ($type =~ /^=(.+)/o) {
+	    $alias = $1;
+	    ($dir = $alias) =~ s#\.#/#go;
+	    $gname2type{$name} = "=";	# rename type to be just =
+	} else {
+	    $dir = $name;
+	    $dir =~ s#\.#/#go;
+	    $alias = $name;
+	}
+	$realgname{$name} = $alias;
+    }
+
+    # close the active file
+    close (ACTIVE);
+
+    # be sure that any alias type is aliased to a real group
+    foreach $name (keys %realgname) {
+
+	# skip if not an alias type
+	next if $gname2type{$name} ne "=";
+
+	# be sure that the alias exists
+	$alias = $realgname{$name};
+	if (! defined($realgname{$alias})) {
+	    &problem("WARNING: alias for $name: $alias, is not a group");
+	    next;
+	}
+
+	# be sure that the alias is not an alias of something else
+	if ($gname2type{$alias} eq "=") {
+	    &problem("WARNING: alias for $name: $alias, is also an alias");
+	    next;
+	}
+    }
+}
+
+
+# problem - report a problem to stdout
+#
+# Print a message to stdout.  Parameters are space separated.
+# A final newline is appended to it.
+#
+# usage:
+#	&problem(arg, arg2, ...)
+#
+sub problem
+{
+    local ($line);		# the line to write
+
+    # print the line with the header and newline
+    $line = join(" ", @_);
+    print STDERR $line, "\n";
+}
+
+
+# fatal - report a fatal error to stderr and exit
+#
+# Print a message to stderr.  The message has the program name prepended
+# to it.  Parameters are space separated.  A final newline is appended
+# to it.  This function exists with the code of exitval.
+#
+# usage:
+#	&fatal(exitval, arg, arg2, ...)
+#
+sub fatal
+{
+    local ($exitval) = $_[0];	# what to exit with
+
+    # firewall
+    if ($#_ < 1) {
+	print STDERR "FATAL: fatal called with only ", $#_-1, " arguments\n";
+	if ($#_ < 0) {
+	    $exitval = -1;
+	}
+    }
+
+    # print the error message
+    shift(@_);
+    $line = join(" ", @_);
+    print STDERR "$prog: ", $line, "\n";
+
+    # unthrottle innd unless -n
+    #
+    if (! defined($opt_n)) {
+	system("$ctlinnd go '$reason' >/dev/null 2>&1");
+    }
+
+    # exit
+    exit($exitval);
+}
+
+
+# check_spool - check the articles found in the spool directory
+#
+# This subroutine will check all articles found under the $spool directory.
+# It will examine only file path that do not contain any "." or whitespace
+# character, and whose basename is completely numeric.  Files under
+# lost+found will also be ignored.
+#
+# given:
+#	$spooldir  - top of /usr/spool/news article tree
+#
+sub check_spool
+{
+    local ($spooldir) = $_[0];	# top of article tree
+    local (*FILEFILE);		# pipe from the find files process
+    local ($filename);		# article pathname under $spool
+    local ($artgrp);		# group of an article
+    local ($artnum);		# article number in a group
+    local ($prevgrp);		# previous different value of $artgrp
+    local ($preverrgrp);	# previous non-active $artgrp
+    local (*ARTICLE);		# article handle
+    local ($aline);		# header line from an article
+    local (@group);		# array of groups from the Newsgroup header
+    local ($j);
+
+    # if verbose, say what we are doing
+    print "\tfinding articles under $spooldir\n" if defined($opt_v);
+
+    # move to the $spool directory
+    chdir $spooldir || &fatal(2, "cannot chdir to $spool");
+
+    # start finding files
+    #
+    if (!open (FINDFILE,
+	  "find . \\( -type f -o -type l \\) -name '[0-9]*' -print 2>&1 |")) {
+	&fatal(3, "cannot start find in $spool");
+    }
+
+    # process each history line
+    #
+    while ($filename = <FINDFILE>) {
+
+	# if the line contains find:, assume it is a find error and print it
+	chop($filename);
+	if ($filename =~ /find:\s/o) {
+	    &problem("WARNING:", $filename);
+	    next;
+	}
+
+	# remove the \n and ./ that find put in our path
+	$filename =~ s#^\./##o;
+
+	# skip is this path has a . in it (beyond a leading ./)
+	next if ($filename =~ /\./o);
+
+	# skip if lost+found
+	next if ($filename =~ m:^lost+found/:o);
+
+	# skip if not a numeric basename
+	next if ($filename !~ m:/\d+$:o);
+
+	# get the article's newsgroup name (based on its path from $spool)
+	$artgrp = $filename;
+	$artgrp =~ s#/\d+$##o;
+	$artgrp =~ s#/#.#go;
+
+	# if verbose (-v), then note if our group changed
+	if (defined($opt_v) && $artgrp ne $prevgrp) {
+	    print "\t$artgrp\n";
+	    $prevgrp = $artgrp;
+	}
+
+	# note if the article is not in a directory that is used by
+	# a real (non-aliased) group in the active file
+	#
+	# If we complained about this dgroup before, don't complain again.
+	# If verbose, note files that could be removed.
+	#
+	if (!defined($gname2type{$artgrp}) || $gname2type{$artgrp} =~ /[=jx]/o){
+	    if ($preverrgrp ne $artgrp) {
+		&problem("$artgrp: not an active group directory");
+		$preverrgrp = $artgrp;
+	    }
+	    if (defined($opt_v)) {
+		&problem("$filename: article found in non-active directory");
+	    }
+	    next;
+	}
+
+	# check on the article number
+	$artnum = $filename;
+	$artnum =~ s#^.+/##o;
+	if ($artnum =~ m/^0/o) {
+	    &problem("$filename: article basename starts with a 0");
+	}
+	if (defined($gname2type{$artgrp})) {
+	    if ($lowart{$artgrp} > $highart{$artgrp}) {
+		&problem("$filename: active indicates group should be empty");
+	    } elsif ($artnum < $lowart{$artgrp}) {
+		&problem("$filename: article number is too low");
+	    } elsif ($artnum > $highart{$artgrp}) {
+		&problem("$filename: article number is too high");
+	    }
+	}
+
+	# if check filenames only (-c), then do nothing else with the file
+	next if (defined($opt_c));
+
+	# don't open a control or junk, they can be from anywhere
+	next if ($artgrp eq "control" || $artgrp eq "junk");
+
+	# try open the file
+	if (!open(ARTICLE, $filename)) {
+
+	    # the find is now gone (expired?), give up on it
+	    &problem("WARNING: cannot open $filename");
+	    next;
+	}
+
+	# read until the Newsgroup header line is found
+	AREADLINE:
+	while ($aline = <ARTICLE>) {
+
+	    # catch the newsgroup: header
+	    if ($aline =~ /^Newsgroups:\w*\W/io) {
+
+		# convert $aline into a comma separated list of groups
+		$aline =~ s/^Newsgroups://io;
+		$aline =~ tr/ \t\n//d;
+
+		# form an array of news groups
+		@group = split(",", $aline);
+
+		# see if any groups in the Newsgroup list are our group
+		for ($j=0; $j <= $#group; ++$j) {
+
+		    # look at the group
+		    if ($realgname{$group[$j]} eq $artgrp) {
+			# this article was posted to this group
+			last AREADLINE;
+		    }
+		}
+
+		# no group or group alias was found
+		&problem("$filename: does not belong in $artgrp");
+		last;
+
+	    # else watch for the end of the header
+	    } elsif ($aline =~ /^\s*$/o) {
+
+		# no Newsgroup: header found
+		&problem("WARNING: $filename: no Newsgroup header");
+		last;
+	    }
+	    if (eof(ARTICLE)) {
+		&problem("WARNING: $filename: EOF found while reading header");
+	    }
+	}
+
+	# close the article
+	close(ARTICLE);
+    }
+
+    # all done with the find
+    close(FINDFILE);
+}

@@ -1,0 +1,111 @@
+.\"	@(MHWARNING)
+.\" @(#)$Id: mh-mts.rf,v 1.10 1992/05/12 22:23:34 jromine Exp $
+.SC MH-MTS 8
+.NA
+mh-mts \- the MH interface to the message transport system
+.SY
+SendMail
+
+.ti .5i
+Zmailer
+
+.ti .5i
+MMDF (any release)
+
+.ti .5i
+stand\-alone
+.DE
+\fIMH\fR can use a wide range of message transport systems to deliver mail.
+Although the \fIMH\fR administrator usually doesn't get to choose which MTS
+to use (since it's already in place),
+this document briefly describes the interfaces.
+
+When communicating with \fISendMail\fR,
+\fIMH\fR always uses the SMTP to post mail.
+Depending on the \fIMH\fR configuration,
+\fISendMail\fR may be invoked directly (via a \fIfork\fR and an \fIexec\fR),
+or \fIMH\fR may open a TCP/IP connection to the SMTP server on the localhost.
+
+When communicating with \fIzmailer\fP,
+the \fISendMail\fP compatibility program is
+required to be installed in /usr/lib.
+\fIMH\fP communicates with \fIzmailer\fP
+by using the SMTP.
+It does this by invoking the \fB/usr/lib/sendmail\fP
+compatibility program directly, with the `\-bs' option.
+
+When communicating with \fIMMDF\fR,
+normally \fIMH\fR uses the \*(lqmm\(ru\*(rq routines to post mail.
+However, depending on the \fIMH\fR configuration,
+\fIMH\fR instead may open a TCP/IP connection to the SMTP server on the
+localhost.
+
+When using the stand\-alone system (\fBNOT\fR recommended),
+\fIMH\fR delivers local mail itself and queues \fIUUCP\fR and network mail.
+The network mail portion will probably have to be modified to reflect the
+local host's tastes, since there is no well\-known practice in this area for
+all types of UNIX hosts.
+
+If you are running a UNIX system with TCP/IP networking,
+then it is felt that the best interface is achieved by using either
+\fISendMail\fR or \fIMMDF\fR with the SMTP option.
+This gives greater flexibility.
+To enable this option you append the /smtp suffix to the mts option in the
+\fIMH\fR configuration.
+This yields two primary advantages:
+First,
+you don't have to know where \fIsubmit\fR or \fISendMail\fR live.
+This means that \fIMH\fR binaries (e.g., \fIpost\fR\0)
+don't have to have this information hard\-coded,
+or can run different programs altogether;
+and,
+second, you can post mail with the server on different systems, so you don't
+need either \fIMMDF\fR or \fISendMail\fR on your local host.
+Big win in conserving cycles and disk space.
+Since \fIMH\fR supports the notion of a server search\-list in this respect,
+this approach can be tolerant of faults.
+Be sure to set \*(lqservers:\*(rq as described in
+mh\-tailor(8) if you use this option.
+
+There are four disadvantages to using the SMTP option:
+First, only UNIX systems with TCP/IP are supported.
+Second, you need to have an SMTP server running somewhere on any network your
+local host can reach.
+Third, this bypasses any authentication mechanisms in \fIMMDF\fR
+or \fISendMail\fR.
+Fourth,
+the file \fB/etc/hosts\fR is used for hostname lookups
+(although there is an exception file).
+In response to these disadvantages though:
+First, there's got to be an SMTP server somewhere around if you're in the
+Internet or have a local network.
+Since the server search\-list is very general,
+a wide\-range of options are possible.
+Second,
+SMTP should be fixed to have authentication mechanisms in it, like POP.
+Third,
+\fIMH\fR won't choke on mail to hosts whose official names it can't verify,
+it'll just plug along
+(and besides
+if you enable the BERK or DUMB configuration options,
+\fIMH\fR ignores the hosts file altogether).
+.Fi
+^@(MHETCPATH)/mtstailor~^tailor file
+.Pr
+None
+.Sa
+\fIMMDF\-II: A Technical Review\fR,
+Proceedings, Usenix Summer '84 Conference
+.br
+\fISENDMAIL \-\- An Internetwork Mail Router\fR
+.br
+mh\-tailor(8), post(8)
+.De
+None
+.Co
+None
+.Bu
+The @(MHETCPATH)/mtstailor file ignores the information in the \fIMMDF\-II\fR
+tailoring file.
+It should not.
+.En

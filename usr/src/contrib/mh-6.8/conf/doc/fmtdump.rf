@@ -1,0 +1,32 @@
+.\"	@(MHWARNING)
+.\" @(#)$Id: fmtdump.rf,v 1.6 1992/12/02 21:38:37 jromine Exp $
+.SC FMTDUMP 8
+.NA
+fmtdump \- decode MH format files
+.SY
+@(MHETCPATH)/fmtdump
+\%[\-form\ formatfile]
+\%[\-format\ string]
+\%[\-help]
+.DE
+\fIFmtdump\fR is a program that parses an \fIMH\fP format file
+and produces a pseudo-language listing of the how \fIMH\fP
+interprets the file.
+
+The `\-format\ string' and `\-form\ formatfile' switches may be used
+to specify a format string or format file to read.
+The string is simply a format string and the file is simply a format file.
+See \fImh-format\fR\|(5) for the details.
+.Fi
+^$HOME/\&.mh\(ruprofile~^The user profile
+^@(MHETCPATH)/scan.default~^The default format file
+.Pr
+^Path:~^To determine the user's MH directory
+.Sa
+mh-format(5), mh-sequences(8)
+.Co
+None
+.Bu
+The output may not be useful unless you are familiar
+with the internals of the mh-format subroutines.
+.En

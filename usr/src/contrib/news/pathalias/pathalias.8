@@ -1,0 +1,528 @@
+.\" @(#)pathalias.8	9.8 93/03/02
+.TH PATHALIAS 8 "3/2/93" "Public Domain"
+.SH NAME
+pathalias, makedb \- mail routing tools
+.SH SYNOPSIS
+.B pathalias
+[
+.B \-ivcDfI
+] [
+.BI \-l \0host
+] [
+.BI \-d \0link
+] [
+.ig
+.\" for pathparse.
+.BI \-t \0link
+] [
+.BI \-g \0file
+] [
+.BI \-s \0link
+] [
+.BI \-a \0link
+] [
+..
+.I files ...
+]
+.PP
+.B makedb
+[
+.B \-a
+] [
+.BI \-o \0dbmfile
+] [
+.I files ...
+]
+.ad b
+.SH DESCRIPTION
+.I Pathalias
+computes the shortest paths and corresponding routes from one host
+(computer system) to all other known, reachable hosts.
+.I Pathalias
+reads host-to-host connectivity
+information on standard input or in the named
+.IR files ,
+and writes a list of
+host-route pairs on the standard output.
+.PP
+Here are the
+.I pathalias
+options:
+.TP 6
+.B \-i
+Ignore case:  map all host names to lower case.
+By default, case is significant.
+.TP
+.B \-c
+Print costs: print the path cost before each host-route pair.
+.TP
+.B \-v
+Verbose: report some statistics on the standard error output.
+.TP
+.B \-D
+Terminal domains: see 
+.I domains 
+section.
+.TP
+.B \-f
+First hop cost: the printed cost is the cost to the first relay in a path,
+instead of the cost of the path itself; implies (and overrides) the
+.B \-c
+option.
+.TP
+.B \-I
+Internet connected: assume a DEDICATED link to any
+fully-qualified domain name encountered in the input stream.
+.ig
+.\" the -g option is for pathparse and is not for public consumption.
+.TP
+.BI \-g \0file
+Dump the edges of the graph into the named file.
+..
+.TP
+.BI \-l \0host
+Set local host name to
+.IR host .
+By default,
+.I pathalias
+discovers the local host name in a system-dependent way.
+.TP
+.BI \-d \0arg
+Declare a dead link, host, or network.
+If
+.I arg
+is of the form ``host-1!host-2,'' the link from host-1 to host-2
+is treated as an extremely high cost (\fIi.e.\fP, \s-1DEAD\s0) link.
+If
+.I arg
+is a single host name,
+that host is treated as dead
+and is used as a relay host of last resort on any path.
+If
+.I arg
+is a network name, the network requires a gateway.
+.TP
+.BI \-t \0arg
+Trace input for link, host or network on the standard error output.
+The form of
+.I arg
+is as above.
+.TP
+.BI \-s \0file
+Dump the edges that constitute the shortest path tree into the named file.
+.PP
+.I Makedb
+takes
+.I pathalias
+output and creates or appends to a
+.IR dbm (3)
+database.
+.PP
+Here are the
+.I makedb
+options:
+.TP 6
+.B \-a
+Append to an existing database;
+by default,
+.I makedb
+truncates the database.
+.TP
+.BI \-o \0dbmfile
+Identify the output file base name.
+.SS \fIPathalias\fP Input Format
+A line beginning with white space continues the preceding line.
+Anything following `#' on an input line is ignored.
+.PP
+A list of host-to-host connections consists of a ``from'' host in column 1,
+followed by white space,
+followed by a comma-separated list of ``to' hosts, called
+.IR links .
+A link may be preceded or followed by a network character to use
+in the route.
+Valid network characters are `!' (default), `@', `:', and `%'.
+A link (and network character, if present) may be
+followed by a ``cost'' enclosed in parentheses.
+Costs may be arbitrary
+arithmetic expressions involving numbers, parentheses, `+', `\-', `*',
+and `/'.
+Negative costs are prohibited.
+The following symbolic costs are
+recognized:
+.PP
+.RS
+.nf
+.ta 14mR 17m
+\s-1LOCAL\s0	25	(local-area network connection)
+\s-1DEDICATED\s0	95	(high speed dedicated link)
+\s-1DIRECT\s0	200	(toll-free call)
+\s-1DEMAND\s0	300	(long-distance call)
+\s-1HOURLY\s0	500	(hourly poll)
+\s-1EVENING\s0	1800	(time restricted call)
+\s-1DAILY\s0	5000	(daily poll, also called \s-1POLLED\s0)
+\s-1WEEKLY\s0	30000	(irregular poll)
+.fi
+.RE
+.PP
+In addition,
+.SM DEAD
+is a very large number (effectively infinite),
+.SM HIGH
+and
+.SM LOW
+are \-5 and +5 respectively,
+for baud-rate or quality bonuses/penalties,
+and
+.SM FAST
+is \-80, for adjusting costs of links that use high-speed (9.6 Kbaud or more) modems.
+These symbolic costs represent an imperfect measure of bandwidth,
+monetary cost, and frequency of connections.
+For most mail traffic, it is important to minimize the number
+of hosts in a route,
+thus,
+.IR e.g. ,
+.SM HOURLY
+\&* 24
+is much larger than
+.SM DAILY.
+If no cost is given,
+a default of 4000 is used.
+.PP
+For the most part, arithmetic expressions that mix symbolic constants
+other than
+.SM HIGH,
+.SM LOW,
+and
+.SM FAST
+make no sense.
+.IR E.g. ,
+if a host calls a local neighbor whenever there is work,
+and additionally polls every evening,
+the cost is
+.SM DIRECT,
+.B not
+.SM DIRECT+EVENING.
+.PP
+Some examples:
+.PP
+.RS
+.nf
+.ta 10m 15m
+down	princeton!(\s-1DEDICATED\s0), tilt,
+	%thrash(\s-1LOCAL\s0)
+princeton	topaz!(\s-1DEMAND\s0+\s-1LOW\s0)
+topaz	@rutgers(\s-1LOCAL\s0+1)
+.fi
+.RE
+.PP
+If a link is encountered more than once,
+the least-cost occurrence dictates the cost and network character.
+Links are treated as bidirectional but asymmetric:
+for each link declared in the input, a
+.SM DEAD
+reverse link is assumed.
+.PP
+If the ``to'' host in a link is surrounded by angle brackets,
+the link is considered
+.IR terminal ,
+and
+further links beyond this one are heavily penalized.
+.IR E.g. ,
+with input
+.PP
+.RS
+.nf
+.ta 10m 15m
+seismo	<research>(10), research(100), ihnp4(10)
+research	allegra(10)
+ihnp4	allegra(50)
+.fi
+.RE
+.PP
+the path from seismo to research is direct, but the path from seismo
+to allegra
+uses ihnp4 as a relay, not research.
+.PP
+The set of names by which a host is known to its neighbors is
+called its
+.IR aliases .
+Aliases are declared as follows:
+.PP
+.RS
+name = alias, alias ...
+.RE
+.PP
+The name used in the route to or through aliased hosts
+is the name by which the host is known
+to its predecessor in the route.
+.PP
+Fully connected networks, such as the
+.SM ARPANET
+or a local-area network,
+are declared as follows:
+.PP
+.RS
+net = {host, host, ...}
+.RE
+.PP
+The host-list may be preceded or followed by a routing
+character (`!' default), and may be followed by a cost (default 4000).
+The network name is optional; if not given,
+.I pathalias
+makes one up.
+.PP
+.RS
+.nf
+etherhosts = {rahway, milan, joliet}!(\s-1LOCAL\s0)
+ringhosts = @{gimli, alida, almo}(\s-1DEDICATED\s0)
+= {etherhosts, ringhosts}(0)
+.fi
+.RE
+.PP
+The routing character used in a route to a network member is the one
+encountered when ``entering'' the network.
+See also the sections on
+.I gateways
+and
+.I domains .
+.PP
+Connection data may be given while hiding host names
+by declaring
+.PP
+.RS
+private {host, host, ...}
+.RE
+.PP
+.I Pathalias
+will not generate routes for private hosts, but may produce routes
+through them.
+The scope of a private declaration extends from the declaration to the end of
+the input file in which it appears, or to a private declaration with an empty
+host list, whichever comes first.
+The latter scope rule offers a way to retain the
+semantics of private declarations when
+reading from the standard input.
+.PP
+Dead hosts, links, or networks may be presented in the input stream by declaring
+.PP
+.RS
+dead {arg, ...}
+.RE
+.PP
+where
+.I arg
+has the same form as the argument to the
+.B \-d
+option.
+.PP
+To force a specific cost for a link, delete all prior declarations with
+.PP
+.RS
+delete {host-1!host-2}
+.RE
+.PP
+and declare the link as desired.
+To delete a host and all its links, use
+.PP
+.RS
+delete {host}
+.RE
+.PP
+Error diagnostics refer to the file in which the error was found.
+To alter the file name, use
+.PP
+.RS
+file {filename}
+.RE
+.PP
+Fine-tuning is possible by adjusting the weights
+of all links from a given host, as in
+.PP
+.RS
+adjust {host-1, host-2(LOW), host-3(\-1)}
+.RE
+.PP
+If no cost is given a default of 4000 is used.
+.PP
+Input from compressed (and uncompressed) files can be
+piped into 
+.I pathalias
+with the following script.
+.PP
+.RS
+.nf
+for i in $*; do
+	case $i in
+	*.Z)	echo "file {`expr $i : '\e(.*\e).Z'`}"
+		zcat $i ;;
+	*)	echo "file {$i}"
+		cat $i ;;
+	esac
+	echo "private {}"
+done | pathalias
+.fi
+.RE
+.PP
+.SS Output Format
+A list of host-route pairs is written to the standard output,
+where route is a string appropriate for use with
+.IR printf (3),
+.IR e.g. ,
+.PP
+.RS
+.nf
+.ta 10m 20m
+rutgers	princeton!topaz!%s@rutgers
+.fi
+.RE
+.PP
+The ``%s'' in the route string should be replaced by the
+user name at the destination host.
+(This task is normally performed by a mailer.)
+.PP
+Except for
+.IR domains ,
+the name of a network is never used in
+routes.
+Thus, in the earlier example, the path from down to
+up would be ``up!%s,'' not ``princeton-ethernet!up!%s.''
+.SS Gateways
+A network is represented by
+a pseudo-host and a set of network members.
+Links from the members to the network have the weight given in
+the input, while the cost from the network to the members is zero.
+If a network is declared dead,
+the member-to-network links are marked dead,
+which effectively prohibits access to the network
+from its members.
+.PP
+However, if the input also shows an explicit link from any host to the network,
+then that host can be used as a gateway.
+(In particular, the gateway need not be a network member.)
+.PP
+.IR E.g. ,
+if
+.SM CSNET
+is declared dead
+and the input contains
+.PP
+.RS
+.nf
+.ta 10m 20m
+\s-1CSNET\s0 = {...}
+csnet-relay	\s-1CSNET\s0
+.fi
+.RE
+.PP
+then routes to
+.SM CSNET
+hosts will use csnet-relay as a gateway.
+.SS Domains
+A network whose name begins with `.' is called
+a domain.
+Domains are presumed to require gateways,
+.IR i.e. ,
+they are \s-1DEAD\s0.
+The route given by a path through a domain is similar to
+that for a network, but here
+the domain name is tacked onto the end of the next host.
+Subdomains are permitted.
+.PP
+.IR E.g. ,
+.PP
+.RS
+.nf
+.ta 1i
+.ta 10m 20m 30m
+harvard	.\s-1EDU\s0	# harvard is gateway to .EDU domain
+\&.\s-1EDU\s0	= {.\s-1BERKELEY\s0, .\s-1UMICH\s0}
+\&.\s-1BERKELEY\s0	= {ernie}
+.fi
+.RE
+.PP
+yields
+.PP
+.RS
+.nf
+.ta 10m 20m
+ernie	...!harvard!ernie.\s-1BERKELEY\s0.\s-1EDU\s0!%s
+.fi
+.RE
+.PP
+Output is given for the nearest gateway
+to a domain,
+.IR e.g. ,
+the example above gives
+.PP
+.RS
+.nf
+.ta 10m 25m
+\&.\s-1EDU\s0	...!harvard!%s
+.fi
+.RE
+.PP
+Output is given for a subdomain if it has a different
+route than its parent domain, or if all its ancestor domains are private.
+.PP
+If the
+.B \-D
+option is given on the command line,
+.I pathalias
+treats a link from a domain to a host member of that domain as terminal.
+This property extends to host members of subdomains,
+.IR etc ,
+and discourages
+routes that use any domain member as a relay.
+.SS Databases
+.I Makedb
+builds a
+.IR dbm (3)
+database from the standard input or from the named
+.IR files .
+Input is expected to be sequence of
+.SM ASCII
+records,
+each consisting of a key field and a data field separated by a single tab.
+If the tab is missing, the data field is assumed to be empty.
+.SH FILES ET AL.
+.ta \w'/usr/local/lib/palias.{dir,pag}     'u
+/usr/local/lib/palias.{dir,pag}	default dbm output
+.br
+newsgroup comp.mail.maps	likely location of some input files
+.br
+.IR getopt (3),
+available from comp.sources.unix archives (if not in the C library).
+.SH BUGS
+The
+.B \-i
+option should be the default.
+.PP
+The order of arguments is significant.
+In particular,
+.B \-i
+and
+.B \-t
+should appear early.
+.PP
+.I Pathalias
+can generate hybrid (\fIi.e.\fP ambiguous) routes, which are
+abhorrent and most certainly should not be given as examples
+in the manual entry.
+Experienced mappers largely shun `@' when preparing input; this
+is historical, but also reflects \s-1UUCP\s0's
+facile syntax for source routes.
+.PP
+Multiple `@'s in routes are loathsome, so
+.I pathalias
+resorts to the ``magic %'' rule when necessary.
+This convention is not documented anywhere, including here.
+.PP
+The
+.B \-D
+option elides insignificant routes to domain members.
+This is benign, perhaps even beneficial, but confusing, since the
+behavior is undocumented and somewhat unpredictable.
+.SH SEE ALSO
+P. Honeyman and S.M. Bellovin, ``\s-1PATHALIAS\s0 \fIor\fP The Care and Feeding
+of Relative Addresses,''
+in \fIProc. Summer \s-1USENIX\s0 Conf.\fP, Atlanta, 1986.

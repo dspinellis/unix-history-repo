@@ -1,0 +1,39 @@
+#	@(#)README	5.2 (Berkeley) 3/1/93
+
+For compiling:
+	There are several flag options for compiling 'ed' into executable.
+
+This table briefly describes the flags used in compilation:
+
+	BSD | POSIX
+		specifies over-riding behaviour in historical terms:
+		BSD=> BSD behaviour when confilicting with P1003.2,
+		POSIX=> as P1003.2 specified when conflicting with BSD.
+
+	STDIO | DBI | MEMORY
+		specifies which method is to be used for the buffer.
+                Be sure to understand that there are trade-offs with
+                any of the methods:
+		STDIO=> standard I/O temp file,
+		DBI=> BSD recno database file (db(3)),
+		MEMORY=> ye olde silicon.
+
+	One of each compile flag option _must_ be chosen to get a sensible
+	compile.
+
+One define not listed above, yet used as a flag, is RE_STARTEND. This
+is used to automagically check if you are using the real BSD RE interfaces.
+See regex(3) (4.4BSD) for a description of RE_STARTEND; an extension to
+P1003.2 B.5. If you happen to be using another POSIX regex(3) this
+automatically taken care of; the old RE interfaces are unsupported.
+
+This implementation of `ed' is a superset of the POSIX 1003.2 description
+for `ed' to remain compatible with earlier (BSD) versions of `ed'.
+Hence, any BSD 'ed'isms that do not conflict with P1003.2 are available
+to the user even under the POSIX flag compilation. Likewise, any POSIX
+'ed'isms that do not conflict with historical BSD behaviour are available
+to the user.
+
+Refer to the man page ed(1) for information about using `ed'.
+
+-Rodney

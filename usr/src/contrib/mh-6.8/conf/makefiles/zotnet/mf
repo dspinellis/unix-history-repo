@@ -1,0 +1,243 @@
+##############################################################################
+#    Instructions to Make, for compilation of ZOT UIP/utility processes
+#
+#	@(MHWARNING)
+# @(#)$Id: mf,v 1.6 1992/01/29 23:10:03 jromine Exp $
+##############################################################################
+
+# The following entries were inserted during MH configuration
+BINDIR	=	$(DESTDIR)@(MHBINPATH)
+ETCDIR	=	$(DESTDIR)@(MHETCPATH)
+OPTIONS	=	@(MHOPTIONS) -I..
+LDOPTIONS=	@(LDOPTIONS)
+@BEGIN: MF
+ALL	=	uminc umsift muinc musift
+INST-ALL=	inst-uminc inst-umsift inst-muinc inst-musift
+TALL	=	xuminc xumsift xmuinc xmusift
+@END: MF
+@BEGIN: MHMTS
+OFILES	=	uumm.o mmuu.o
+@END: MHMTS
+REMOVE	=	@(MHREMOVE)
+
+CC      =	@(MHCOMPILER)
+@BEGIN: OPTIM
+CFLAGS  =	$(OPTIONS)
+@END: OPTIM
+@BEGIN: DEBUG
+CFLAGS  =	      $(OPTIONS)
+@END: DEBUG
+LDFLAGS =	$(LDOPTIONS)
+LIBES   =	../mts/mts.o ../mts/lock.o
+TWSLIB	=	../tws/dtime.o ../tws/dtimep.o
+LINT	=	lint
+LFLAGS	=	-bhu $(OPTIONS)
+LLIBS	=
+
+.c:;            echo $@
+
+######################################################################
+#	Here it is...
+######################################################################
+
+all:		mf.o $(ALL) $(OFILES)
+
+lint:		l-mf
+
+install:	inst-all clean
+
+inst-all:	$(INST-ALL)
+
+tar:		$(ALL)
+@BEGIN: MF
+		@touch $(TALL)
+		@make -n inst-all > MAKEMF
+		@chmod +x MAKEMF
+		tar $(TFLAGS) MAKEMF $(TALL)
+		@rm -f MAKEMF
+@END: MF
+
+uninstall:;
+@BEGIN: MF
+		-cd $(ETCDIR); rm -f $(ALL)
+@END: MF
+
+
+######################################################################
+# uminc
+######################################################################
+
+inst-uminc:	$(ETCDIR)/uminc
+
+$(ETCDIR)/uminc:	xuminc
+		-$(REMOVE) $(ETCDIR)/uminc zuminc
+		cp xuminc $@
+		-@ls -l $@
+		-@echo ""
+
+uminc:		xuminc
+
+xuminc:		uminc.o uumm.o mf.o $(TWSLIB) $(LIBES)
+		$(CC) $(LDFLAGS) -o $@ uminc.o uumm.o mf.o $(TWSLIB) $(LIBES)
+
+
+######################################################################
+# umsift
+######################################################################
+
+inst-umsift:	$(ETCDIR)/umsift
+
+$(ETCDIR)/umsift:	xumsift
+		-$(REMOVE) $(ETCDIR)/umsift zumsift
+		cp xumsift $@
+		-@ls -l $@
+		-@echo ""
+
+umsift:		xumsift
+
+xumsift:	umsift.o uumm.o mf.o $(TWSLIB) $(LIBES)
+		$(CC) $(LDFLAGS) -o $@ umsift.o uumm.o mf.o $(TWSLIB) $(LIBES)
+
+
+######################################################################
+# uumm
+######################################################################
+
+uumm:		uumm.o
+
+
+######################################################################
+# muinc
+######################################################################
+
+inst-muinc:	$(ETCDIR)/muinc
+
+$(ETCDIR)/muinc:	xmuinc
+		-$(REMOVE) $(ETCDIR)/muinc zmuinc
+		cp xmuinc $@
+		-@ls -l $@
+		-@echo ""
+
+muinc:		xmuinc
+
+xmuinc:		muinc.o mmuu.o mf.o $(TWSLIB) $(LIBES)
+		$(CC) $(LDFLAGS) -o $@ muinc.o mmuu.o mf.o $(TWSLIB) $(LIBES)
+
+
+####################################################################
+# musift
+######################################################################
+
+inst-musift:	$(ETCDIR)/musift
+
+$(ETCDIR)/musift:	xmusift
+		-$(REMOVE) $(ETCDIR)/musift zmusift
+		cp xmusift $@
+		-@ls -l $@
+		-@echo ""
+
+musift:		xmusift
+
+xmusift:	musift.o mmuu.o mf.o $(TWSLIB) $(LIBES)
+		$(CC) $(LDFLAGS) -o $@ musift.o mmuu.o mf.o $(TWSLIB) $(LIBES)
+
+
+######################################################################
+# mmuu
+######################################################################
+
+mmuu:		mmuu.o
+
+
+######################################################################
+# mf
+######################################################################
+
+mf:		mf.o
+
+l-mf:;		$(LINT) $(LFLAGS) mf.c $(LLIBS)
+
+
+##############################################################################
+#	Miscellaneous tasks
+##############################################################################
+
+unconfig:	distribution
+		-rm -f Makefile
+
+distribution:   clean
+
+clean:		unclean
+		-rm -f x* *.o
+
+unclean:;	-rm -f z* _* :* core eddep makedep MAKEMF
+
+
+##############################################################################
+#	Dependencies
+##############################################################################
+
+MODULES	=	uminc umsift uumm muinc musift mmuu mf
+
+depend:;	for m in $(MODULES); do ( \
+		    i=`basename $$m .c`; \
+		    echo $$i.o: $$i.c >> makedep; \
+		    grep '^#[ 	]*include' $$i.c | \
+			sed -e 's,[^"]*"/\([^"]*\)".*,'$$i'.o: /\1,' \
+			    -e 's,[^"]*"\([^"]*\)".*,'$$i'.o: \1,' \
+			    -e 's,[^<]*<\(.*\)>.*,#'$$i'.o: /usr/include/\1,' \
+			>> makedep \
+		); done
+		echo '/^# DO NOT DELETE THIS LINE/+2,$$d' > eddep
+		echo '$$r makedep' >> eddep
+		echo 'w' >> eddep
+		cp Makefile _Makefile
+		ed - Makefile < eddep
+		rm eddep makedep
+		echo '# DEPENDENCIES MUST END AT END OF FILE' >> Makefile
+		echo '# IF YOU PUT STUFF HERE IT WILL GO AWAY' >> Makefile
+
+# DO NOT DELETE THIS LINE
+# DEPENDENCIES START HERE
+uminc.o: uminc.c
+uminc.o: mf.h
+#uminc.o: /usr/include/stdio.h
+uminc.o: ../mts/mts.h
+#uminc.o: /usr/include/errno.h
+#uminc.o: /usr/include/sys/types.h
+#uminc.o: /usr/include/sys/stat.h
+umsift.o: umsift.c
+umsift.o: mf.h
+#umsift.o: /usr/include/stdio.h
+uumm.o: uumm.c
+uumm.o: mf.h
+uumm.o: ../tws/tws.h
+#uumm.o: /usr/include/stdio.h
+uumm.o: ../mts/mts.h
+#uumm.o: /usr/include/ctype.h
+#uumm.o: /usr/include/sys/types.h
+#uumm.o: /usr/include/sys/stat.h
+muinc.o: muinc.c
+muinc.o: mf.h
+#muinc.o: /usr/include/stdio.h
+muinc.o: ../mts/mts.h
+#muinc.o: /usr/include/errno.h
+#muinc.o: /usr/include/sys/types.h
+#muinc.o: /usr/include/sys/stat.h
+musift.o: musift.c
+musift.o: mf.h
+#musift.o: /usr/include/stdio.h
+mmuu.o: mmuu.c
+mmuu.o: mf.h
+mmuu.o: ../tws/tws.h
+#mmuu.o: /usr/include/stdio.h
+mmuu.o: ../mts/mts.h
+#mmuu.o: /usr/include/ctype.h
+#mmuu.o: /usr/include/sys/types.h
+#mmuu.o: /usr/include/sys/stat.h
+mf.o: mf.c
+mf.o: mf.h
+#mf.o: /usr/include/ctype.h
+#mf.o: /usr/include/stdio.h
+# DEPENDENCIES MUST END AT END OF FILE
+# IF YOU PUT STUFF HERE IT WILL GO AWAY

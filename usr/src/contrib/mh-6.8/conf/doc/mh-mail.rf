@@ -1,0 +1,227 @@
+.\"	@(MHWARNING)
+.\" @(#)$Id: mh-mail.rf,v 1.6 1992/05/12 22:23:34 jromine Exp $
+.SC MH-MAIL 5
+.NA
+mh-mail \- message format for MH message system
+.SY
+any \fIMH\fR command
+.DE
+\fIMH\fR processes messages in a particular format.
+It should be noted that although neither Bell nor Berkeley mailers produce
+message files in the format that \fIMH\fR prefers,
+\fIMH\fR can read message files in that antiquated format.
+
+Each user possesses a mail drop box which initially receives
+all messages processed by \fIpost\fR\0(8).
+\fIInc\fR\0(1) will read from that drop box and incorporate the new messages
+found there into the user's own mail folders (typically `+inbox').
+The mail drop
+box consists of one or more messages.
+@BEGIN: MMDFMTS
+To facilitate the
+separation of messages, each message begins and ends with
+a line consisting of nothing but four CTRL\-A (octal 001)
+characters.
+@END: MMDFMTS
+@BEGIN: MHMTS
+To facilitate the
+separation of messages, each message begins and ends with
+a line consisting of nothing but four CTRL\-A (octal 001)
+characters.
+@END: MHMTS
+
+Messages
+are expected to consist of lines of text.
+Graphics and binary data are not handled.
+No data compression is accepted.
+All text is clear
+ASCII 7-bit data.
+
+The general \*(lqmemo\*(rq framework of RFC\-822 is used.
+A message consists of a block of information in a rigid format,
+followed by general text with no specified format.
+The rigidly formatted first part of a message is called the header,
+and the free-format portion is called the body.
+The header must always exist, but the body is optional.
+These parts are separated by an empty line,
+i.e., two consecutive newline characters.
+Within \fIMH\fR,
+the header and body may be separated by a line consisting of dashes:
+
+.nf
+.in +.5i
+.ne 10
+.eo
+.so @(MHETCPATH)/components
+.ec
+.in -.5i
+.fi
+
+The header is composed of one or more header items.
+Each header item can be viewed as a single logical line of ASCII
+characters.
+If the text of a header item extends across several
+real lines, the continuation lines are indicated by leading
+spaces or tabs.
+
+Each header item is called a component and is composed of a
+keyword or name, along with associated text.
+The keyword begins at the
+left margin, may NOT contain spaces or tabs, may not exceed 63
+characters (as specified by RFC\-822), and is terminated by a colon (`:').
+Certain
+components (as identified by their keywords) must follow rigidly
+defined formats in their text portions.
+
+The text for most formatted components
+(e.g., \*(lqDate:\*(rq and \*(lqMessage\-Id:\*(rq)
+is produced automatically.
+The only ones entered by the
+user are address fields such as \*(lqTo:\*(rq, \*(lqcc:\*(rq, etc.
+Internet addresses
+are assigned mailbox names and host computer specifications.
+The
+rough format is \*(lqlocal@domain\*(rq, such as \*(lqMH@UCI\*(rq,
+or \*(lqMH@UCI\-ICSA.ARPA\*(rq.
+Multiple addresses are separated by commas.
+A missing host/domain is assumed to be the local host/domain.
+
+As mentioned above,
+a blank line (or a line of dashes)
+signals that all following text up to the end of the file is the body.
+No formatting is expected or enforced within the body.
+
+Following is a list of header components that are considered
+meaningful to various MH programs.
+.in +.5i
+.ti -.5i
+Date:
+.br
+Added by \fIpost\fR\0(8),
+contains date and time of the message's entry into the transport system.
+
+.ti -.5i
+From:
+.br
+Added by \fIpost\fR\0(8),
+contains the address of the author or authors (may be more than one if a
+\*(lqSender:\*(rq field is present).
+Replies are typically directed to addresses in the \*(lqReply\-To:\*(rq or
+\*(lqFrom:\*(rq field (the former has precedence if present).
+
+.ti -.5i
+Sender:
+.br
+Added by \fIpost\fR\0(8)
+in the event that the message already has a \*(lqFrom:\*(rq line.
+This line contains the address of the actual sender.
+Replies are never sent to addresses in the \*(lqSender:\*(rq field.
+
+.ti -.5i
+To:
+.br
+Contains addresses of primary recipients.
+
+.ti -.5i
+cc:
+.br
+Contains addresses of secondary recipients.
+
+.ti -.5i
+Bcc:
+.br
+Still more recipients.
+However, the \*(lqBcc:\*(rq line is not copied onto the message as delivered,
+so these recipients are not listed.
+\fIMH\fR uses an encapsulation method for blind copies, see \fIsend\fR\0(1).
+
+.ti -.5i
+Fcc:
+.br
+Causes \fIpost\fR\0(8) to copy the message into the specified folder for the
+sender,
+if the message was successfully given to the transport system.
+
+.ti -.5i
+Message\-ID:
+.br
+A unique message identifier added by \fIpost\fR\0(8) if the `\-msgid' flag
+is set.
+
+.ti -.5i
+Subject:
+.br
+Sender's commentary.  It is displayed by \fIscan\fR\0(1).
+
+.ti -.5i
+In\-Reply\-To:
+.br
+A commentary line added by \fIrepl\fR\0(1) when replying to a message.
+
+.ti -.5i
+Resent\-Date:
+.br
+Added when redistributing a message by \fIpost\fR\0(8).
+
+.ti -.5i
+Resent\-From:
+.br
+Added when redistributing a message by \fIpost\fR\0(8).
+
+.ti -.5i
+Resent\-To:
+.br
+New recipients for a message resent by \fIdist\fR\0(1).
+
+.ti -.5i
+Resent\-cc:
+.br
+Still more recipients.
+See \*(lqcc:\*(rq and \*(lqResent\-To:\*(rq.
+
+.ti -.5i
+Resent\-Bcc:
+.br
+Even more recipients.
+See \*(lqBcc:\*(rq and \*(lqResent\-To:\*(rq.
+
+.ti -.5i
+Resent\-Fcc:
+.br
+Copy resent message into a folder.
+See \*(lqFcc:\*(rq and \*(lqResent\-To:\*(rq.
+
+.ti -.5i
+Resent\-Message\-Id:
+.br
+A unique identifier glued on by \fIpost\fR\0(8) if the `\-msgid' flag
+is set.
+See \*(lqMessage\-Id:\*(rq and \*(lqResent\-To:\*(rq.
+
+.ti -.5i
+Resent:
+.br
+Annotation for \fIdist\fR\0(1) under the `\-annotate' option.
+
+.ti -.5i
+Forwarded:
+.br
+Annotation for \fIforw\fR\0(1) under the `\-annotate' option.
+
+.ti -.5i
+Replied:
+.br
+Annotation for \fIrepl\fR\0(1) under the `\-annotate' option.
+.in -.5i
+.sp
+.Fi
+^@(MHDROPLOC)~^Location of mail drop
+.Pr
+None
+.Sa
+\fIStandard for the Format of ARPA Internet Text Messages\fR (aka RFC\-822)
+.De
+None
+.Co
+None
+.En

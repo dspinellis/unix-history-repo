@@ -1,0 +1,314 @@
+To: usenix@boulder.colorado.edu
+Subject: USENIX - `figures (appendix through vgrind)' for `A Pageable Memory Based Filesystem'
+--------
+'ss 23
+'ds _ \d\(mi\u
+'ps 9p
+'vs 10p
+'ds - \(mi
+'ds / \\h'\\w' 'u-\\w'/'u'/
+'ds /* \\h'\\w' 'u-\\w'/'u'/*
+'bd B 3
+'bd S B 3
+'nr cm 0
+'nf
+'de vH
+'ev 2
+'if t 'if !\nv 'tl '\-\-''\-\-'
+'ft 1
+'sp .35i
+'tl '\s14\f3\\*(=F\fP\s0'\\*(=H'\f3\s14\\*(=F\fP\s0'
+'sp .25i
+'ft 1
+\f2\s12\h'\\n(.lu-\w'\\*(=f'u'\\*(=f\fP\s0\h'|0u'
+.sp .05i
+'ev
+'ds =G \\*(=F
+..
+'de vF
+'ev 2
+'sp .35i
+'ie o 'tl '\f2\\*(=M''Page % of \\*(=G\fP'
+'el 'tl '\f2Page % of \\*(=G''\\*(=M\fP'
+'bp
+'ev
+'ft 1
+'if \\n(cm=1 'ft 2
+..
+'de ()
+'pn 1
+..
+'de +C
+'nr cm 1
+'ft 2
+'ds +K
+'ds -K
+..
+'de -C
+'nr cm 0
+'ft 1
+'ds +K \f3
+'ds -K \fP
+..
+'+C
+'-C
+'am +C
+'ne 3
+..
+'de FN
+\f2\s14\h'\\n(.lu-\w'\\$1'u'\\$1\fP\s0\h'|0u'\c
+.if \\nx .tm \\$1 \\*(=F \\n%
+'ds =f \&...\\$1
+..
+'de FC
+.if \\nx .tm \\$1 \\*(=F \\n%
+'ds =f \&...\\$1
+..
+'de -F
+'rm =f
+..
+'ft 1
+'lg 0
+'-F
+.\"	@(#)A.t	1.2	(Copyright 1990 M. K. McKusick)	90/04/17
+.bp
+.nr PS 10
+.nr VS 12
+.SH
+Appendix A - Implementation Details
+.LP
+.nf
+.vS
+\fI\h'\w' 'u-\w'/'u'/\fP\fI*\fP\c\c
+'+C
+
+ \fI*\fP This structure defines the control data for the memory
+ \fI*\fP based file system\&.
+ \fI*\fP\fI\h'\w' 'u-\w'/'u'/\fP\c
+'-C
+
+\*(+Kstruct\*(-K mfsnode \*(+K{\*(-K
+\h'|11n'\*(+Kstruct\*(-K\h'|21n'vnode \fI*\fPmfs\*_vnode;\h'|51n'\fI\h'\w' 'u-\w'/'u'/\fP\fI*\fP\c\c
+'+C
+ vnode associated with this mfsnode \fI*\fP\fI\h'\w' 'u-\w'/'u'/\fP\c
+'-C
+
+\h'|11n'caddr\*_t\h'|21n'mfs\*_baseoff;\h'|51n'\fI\h'\w' 'u-\w'/'u'/\fP\fI*\fP\c\c
+'+C
+ base of file system in memory \fI*\fP\fI\h'\w' 'u-\w'/'u'/\fP\c
+'-C
+
+\h'|11n'\*(+Klong\*(-K\h'|21n'mfs\*_size;\h'|51n'\fI\h'\w' 'u-\w'/'u'/\fP\fI*\fP\c\c
+'+C
+ size of memory file system \fI*\fP\fI\h'\w' 'u-\w'/'u'/\fP\c
+'-C
+
+\h'|11n'pid\*_t\h'|21n'mfs\*_pid;\h'|51n'\fI\h'\w' 'u-\w'/'u'/\fP\fI*\fP\c\c
+'+C
+ supporting process pid \fI*\fP\fI\h'\w' 'u-\w'/'u'/\fP\c
+'-C
+
+\h'|11n'\*(+Kstruct\*(-K\h'|21n'buf \fI*\fPmfs\*_buflist;\h'|51n'\fI\h'\w' 'u-\w'/'u'/\fP\fI*\fP\c\c
+'+C
+ list of I\fI\h'\w' 'u-\w'/'u'/\fPO requests \fI*\fP\fI\h'\w' 'u-\w'/'u'/\fP\c
+'-C
+
+\*(+K}\*(-K;
+
+\fI\h'\w' 'u-\w'/'u'/\fP\fI*\fP\c\c
+'+C
+
+ \fI*\fP Convert between mfsnode pointers and vnode pointers
+ \fI*\fP\fI\h'\w' 'u-\w'/'u'/\fP\c
+'-C
+
+\*(+K#define\*(-K\h'|11n'VTOMFS(vp)\h'|31n'((\*(+Kstruct\*(-K mfsnode \fI*\fP)(vp)\*->v\*_data)
+\*(+K#define\*(-K\h'|11n'MFSTOV(mfsp)\h'|31n'((mfsp)\*->mfs\*_vnode)
+\*(+K#define\*(-K\h'|11n'MFS\*_EXIT\h'|31n'(\*(+Kstruct\*(-K buf \fI*\fP)\*-1
+
+\fI\h'\w' 'u-\w'/'u'/\fP\fI*\fP\c\c
+'+C
+
+ \fI*\fP Arguments to mount MFS
+ \fI*\fP\fI\h'\w' 'u-\w'/'u'/\fP\c
+'-C
+
+\*(+Kstruct\*(-K mfs\*_args \*(+K{\*(-K
+\h'|11n'\*(+Kchar\*(-K\h'|21n'\fI*\fPname;\h'|41n'\fI\h'\w' 'u-\w'/'u'/\fP\fI*\fP\c\c
+'+C
+ name to export for statfs \fI*\fP\fI\h'\w' 'u-\w'/'u'/\fP\c
+'-C
+
+\h'|11n'caddr\*_t\h'|21n'base;\h'|41n'\fI\h'\w' 'u-\w'/'u'/\fP\fI*\fP\c\c
+'+C
+ base address of file system in memory \fI*\fP\fI\h'\w' 'u-\w'/'u'/\fP\c
+'-C
+
+\h'|11n'u\*_long\h'|21n'size;\h'|41n'\fI\h'\w' 'u-\w'/'u'/\fP\fI*\fP\c\c
+'+C
+ size of file system \fI*\fP\fI\h'\w' 'u-\w'/'u'/\fP\c
+'-C
+
+\*(+K}\*(-K;
+.bp
+\fI\h'\w' 'u-\w'/'u'/\fP\fI*\fP\c\c
+'+C
+
+ \fI*\fP Mount an MFS filesystem\&.
+ \fI*\fP\fI\h'\w' 'u-\w'/'u'/\fP\c
+'-C
+
+'FN mfs_mount
+mfs\*_mount(mp, path, data)
+\h'|11n'\*(+Kstruct\*(-K mount \fI*\fPmp;
+\h'|11n'\*(+Kchar\*(-K \fI*\fPpath;
+\h'|11n'caddr\*_t data;
+\*(+K{\*(-K
+\h'|11n'\*(+Kstruct\*(-K vnode \fI*\fPdevvp;
+\h'|11n'\*(+Kstruct\*(-K mfsnode \fI*\fPmfsp;
+\h'|11n'\*(+Kstruct\*(-K buf \fI*\fPbp;
+\h'|11n'\*(+Kstruct\*(-K mfs\*_args args;
+
+\h'|11n'\fI\h'\w' 'u-\w'/'u'/\fP\fI*\fP\c\c
+'+C
+
+\h'|11n' \fI*\fP Create a block device to represent the disk\&.
+\h'|11n' \fI*\fP\fI\h'\w' 'u-\w'/'u'/\fP\c
+'-C
+
+\h'|11n'devvp = getnewvnode(VT\*_MFS, VBLK, &mfs\*_vnodeops);
+\h'|11n'mfsp = VTOMFS(devvp);
+\h'|11n'\fI\h'\w' 'u-\w'/'u'/\fP\fI*\fP\c\c
+'+C
+
+\h'|11n' \fI*\fP Save base address of the filesystem from the supporting process\&.
+\h'|11n' \fI*\fP\fI\h'\w' 'u-\w'/'u'/\fP\c
+'-C
+
+\h'|11n'copyin(data, &args, (\*(+Ksizeof\*(-K mfs\*_args));
+\h'|11n'mfsp\*->mfs\*_baseoff = args\&.base;
+\h'|11n'mfsp\*->mfs\*_size = args\&.size;
+\h'|11n'\fI\h'\w' 'u-\w'/'u'/\fP\fI*\fP\c\c
+'+C
+
+\h'|11n' \fI*\fP Record the process identifier of the supporting process\&.
+\h'|11n' \fI*\fP\fI\h'\w' 'u-\w'/'u'/\fP\c
+'-C
+
+\h'|11n'mfsp\*->mfs\*_pid = u\&.u\*_procp\*->p\*_pid;
+\h'|11n'\fI\h'\w' 'u-\w'/'u'/\fP\fI*\fP\c\c
+'+C
+
+\h'|11n' \fI*\fP Mount the filesystem\&.
+\h'|11n' \fI*\fP\fI\h'\w' 'u-\w'/'u'/\fP\c
+'-C
+
+\h'|11n'mfsp\*->mfs\*_buflist = NULL;
+\h'|11n'mountfs(devvp, mp);
+\h'|11n'\fI\h'\w' 'u-\w'/'u'/\fP\fI*\fP\c\c
+'+C
+
+\h'|11n' \fI*\fP Loop processing I\fI\h'\w' 'u-\w'/'u'/\fPO requests\&.
+\h'|11n' \fI*\fP\fI\h'\w' 'u-\w'/'u'/\fP\c
+'-C
+
+\h'|11n'\*(+Kwhile\*(-K (mfsp\*->mfs\*_buflist != MFS\*_EXIT) \*(+K{\*(-K
+\h'|21n'\*(+Kwhile\*(-K (mfsp\*->mfs\*_buflist != NULL) \*(+K{\*(-K
+\h'|31n'bp = mfsp\*->mfs\*_buflist;
+\h'|31n'mfsp\*->mfs\*_buflist = bp\*->av\*_forw;
+\h'|31n'offset = mfsp\*->mfs\*_baseoff + (bp\*->b\*_blkno \fI*\fP DEV\*_BSIZE);
+\h'|31n'\*(+Kif\*(-K (bp\*->b\*_flags & B\*_READ)
+\h'|41n'copyin(offset, bp\*->b\*_un\&.b\*_addr, bp\*->b\*_bcount);
+\h'|31n'\*(+Kelse\*(-K \fI\h'\w' 'u-\w'/'u'/\fP\fI*\fP\c\c
+'+C
+ write\*_request \fI*\fP\fI\h'\w' 'u-\w'/'u'/\fP\c
+'-C
+
+\h'|41n'copyout(bp\*->b\*_un\&.b\*_addr, offset, bp\*->b\*_bcount);
+\h'|31n'biodone(bp);
+\h'|21n'\*(+K}\*(-K
+\h'|21n'sleep((caddr\*_t)devvp, PWAIT);
+\h'|11n'\*(+K}\*(-K
+\*(+K}\*(-K\c\c
+'-F
+
+.bp
+\fI\h'\w' 'u-\w'/'u'/\fP\fI*\fP\c\c
+'+C
+
+ \fI*\fP If the MFS process requests the I\fI\h'\w' 'u-\w'/'u'/\fPO then we must do it directly\&.
+ \fI*\fP Otherwise put the request on the list and request the MFS process
+ \fI*\fP to be run\&.
+ \fI*\fP\fI\h'\w' 'u-\w'/'u'/\fP\c
+'-C
+
+'FN mfs_strategy
+mfs\*_strategy(bp)
+\h'|11n'\*(+Kstruct\*(-K buf \fI*\fPbp;
+\*(+K{\*(-K
+\h'|11n'\*(+Kstruct\*(-K vnode \fI*\fPdevvp;
+\h'|11n'\*(+Kstruct\*(-K mfsnode \fI*\fPmfsp;
+\h'|11n'off\*_t offset;
+
+\h'|11n'devvp = bp\*->b\*_vp;
+\h'|11n'mfsp = VTOMFS(devvp);
+\h'|11n'\*(+Kif\*(-K (mfsp\*->mfs\*_pid == u\&.u\*_procp\*->p\*_pid) \*(+K{\*(-K
+\h'|21n'offset = mfsp\*->mfs\*_baseoff + (bp\*->b\*_blkno \fI*\fP DEV\*_BSIZE);
+\h'|21n'\*(+Kif\*(-K (bp\*->b\*_flags & B\*_READ)
+\h'|31n'copyin(offset, bp\*->b\*_un\&.b\*_addr, bp\*->b\*_bcount);
+\h'|21n'\*(+Kelse\*(-K \fI\h'\w' 'u-\w'/'u'/\fP\fI*\fP\c\c
+'+C
+ write\*_request \fI*\fP\fI\h'\w' 'u-\w'/'u'/\fP\c
+'-C
+
+\h'|31n'copyout(bp\*->b\*_un\&.b\*_addr, offset, bp\*->b\*_bcount);
+\h'|21n'biodone(bp);
+\h'|11n'\*(+K}\*(-K \*(+Kelse\*(-K \*(+K{\*(-K
+\h'|21n'bp\*->av\*_forw = mfsp\*->mfs\*_buflist;
+\h'|21n'mfsp\*->mfs\*_buflist = bp;
+\h'|21n'wakeup((caddr\*_t)bp\*->b\*_vp);
+\h'|11n'\*(+K}\*(-K
+\*(+K}\*(-K\c\c
+'-F
+
+
+\fI\h'\w' 'u-\w'/'u'/\fP\fI*\fP\c\c
+'+C
+
+ \fI*\fP The close routine is called by unmount after the filesystem
+ \fI*\fP has been successfully unmounted\&.
+ \fI*\fP\fI\h'\w' 'u-\w'/'u'/\fP\c
+'-C
+
+'FN mfs_close
+mfs\*_close(devvp)
+\h'|11n'\*(+Kstruct\*(-K vnode \fI*\fPdevvp;
+\*(+K{\*(-K
+\h'|11n'\*(+Kstruct\*(-K mfsnode \fI*\fPmfsp = VTOMFS(vp);
+\h'|11n'\*(+Kstruct\*(-K buf \fI*\fPbp;
+
+\h'|11n'\fI\h'\w' 'u-\w'/'u'/\fP\fI*\fP\c\c
+'+C
+
+\h'|11n' \fI*\fP Finish any pending I\fI\h'\w' 'u-\w'/'u'/\fPO requests\&.
+\h'|11n' \fI*\fP\fI\h'\w' 'u-\w'/'u'/\fP\c
+'-C
+
+\h'|11n'\*(+Kwhile\*(-K (bp = mfsp\*->mfs\*_buflist) \*(+K{\*(-K
+\h'|21n'mfsp\*->mfs\*_buflist = bp\*->av\*_forw;
+\h'|21n'mfs\*_doio(bp, mfsp\*->mfs\*_baseoff);
+\h'|21n'wakeup((caddr\*_t)bp);
+\h'|11n'\*(+K}\*(-K
+\h'|11n'\fI\h'\w' 'u-\w'/'u'/\fP\fI*\fP\c\c
+'+C
+
+\h'|11n' \fI*\fP Send a request to the filesystem server to exit\&.
+\h'|11n' \fI*\fP\fI\h'\w' 'u-\w'/'u'/\fP\c
+'-C
+
+\h'|11n'mfsp\*->mfs\*_buflist = MFS\*_EXIT;
+\h'|11n'wakeup((caddr\*_t)vp);
+\*(+K}\*(-K\c\c
+'-F
+
+.vE

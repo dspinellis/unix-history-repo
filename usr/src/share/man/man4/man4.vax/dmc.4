@@ -1,0 +1,158 @@
+.\" Copyright (c) 1983, 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms, with or without
+.\" modification, are permitted provided that the following conditions
+.\" are met:
+.\" 1. Redistributions of source code must retain the above copyright
+.\"    notice, this list of conditions and the following disclaimer.
+.\" 2. Redistributions in binary form must reproduce the above copyright
+.\"    notice, this list of conditions and the following disclaimer in the
+.\"    documentation and/or other materials provided with the distribution.
+.\" 3. All advertising materials mentioning features or use of this software
+.\"    must display the following acknowledgement:
+.\"	This product includes software developed by the University of
+.\"	California, Berkeley and its contributors.
+.\" 4. Neither the name of the University nor the names of its contributors
+.\"    may be used to endorse or promote products derived from this software
+.\"    without specific prior written permission.
+.\"
+.\" THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+.\" ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+.\" IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+.\" ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+.\" FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+.\" DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+.\" OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+.\" HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+.\" LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+.\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+.\" SUCH DAMAGE.
+.\"
+.\"     @(#)dmc.4	8.1 (Berkeley) 6/5/93
+.\"
+.Dd June 5, 1993
+.Dt DMC 4 vax
+.Os BSD 4.2
+.Sh NAME
+.Nm dmc
+.Nd
+.Tn DEC
+.Tn DMC-11 Ns / Tn DMR-11
+point-to-point communications device
+.Sh SYNOPSIS
+.Cd "device dmc0 at uba0 csr 167600 vector dmcrint dmcxint"
+.Sh DESCRIPTION
+The
+.Nm dmc
+interface provides access to a point-to-point communications
+device which runs at either 1 Mb/s or 56 Kb/s.
+.Tn DMC-11 Ns s
+communicate
+using the
+.Tn DEC DDCMP
+link layer protocol.
+.Pp
+The
+.Nm dmc
+interface driver also supports a
+.Tn DEC
+.Tn DMR-11
+providing point-to-point
+communication running at data rates from 2.4 Kb/s to 1 Mb/s.
+.Tn DMR-11 Ns s
+are a more recent design and thus are preferred over
+.Tn DMC-11 Ns s .
+The
+.Dv NXMT
+and
+.Dv NRCV
+constants in the driver may be increased in this case,
+as the
+.Tn DMR
+can accept up to 64 transmit and receive buffers, as opposed
+to 7 for the
+.Tn DMC .
+.Pp
+The configuration flags specify how to set up the device,
+.Bl -column xxx -offset indent
+0	full duplex DDCMP (normal mode)
+1	DDCMP Maintence mode (generally useless)
+2	DDCMP Half Duplex, primary station
+3	DDCMP Half Duplex, secondary station
+.El
+.Pp
+Several device error counters are available via
+.Xr adb 1 ,
+for
+more information see the
+.Xr adb
+script
+.Pa /usr/lib/adb/dmcstats ,
+or the
+.Tn DMC-11
+technical manual.
+.Pp
+The host's address must be specified with an
+.Dv SIOCSIFADDR
+.Xr ioctl 2 ,
+and the destination address specified with a
+.Dv SIOCSIFDSTADDR
+.Xr ioctl ,
+before the interface will transmit or receive any packets.
+.Sh ROUTING
+The driver places a
+.Tn HOST
+entry in the kernel routing tables for the
+address given in the
+.Dv SIOCSIFDSTADDR
+.Xr ioctl.
+To use the
+.Tn DMC
+as a
+link between local nets, the route to the remote net must be added manually
+with the
+.Xr route 8
+command, or by the use of the routing process
+.Xr routed 8
+on each end of the link.
+.Sh DIAGNOSTICS
+.Bl -diag
+.It dmc%d: bad control %o.
+A bad parameter was passed to the
+.Em dmcload
+routine.
+.Pp
+.It dmc%d: unknown address type %d.
+An input packet was received which contained a type of
+address unknown to the driver.
+.Pp
+.It DMC fatal error 0%o.
+A fatal error in
+.Tn DDMCP
+occurred, causing the device to be restarted.
+.Pp
+.It DMC soft error 0%o.
+A non-fatal error in
+.Tn DDMCP
+has occurred.
+.Pp
+.It dmc%d: af%d not supported.
+The interface was handed a message which has
+addresses formatted in an unsuitable address family.
+.El
+.Sh SEE ALSO
+.Xr intro 4 ,
+.Xr inet 4
+.Sh HISTORY
+The
+.Nm
+driver appeared in
+.Bx 4.2 .
+.Sh BUGS
+The current version of the driver uses a link-level encapsulation
+so that multiple protocol types may be used.
+It is thus incompatible with earlier drivers,
+including the
+.Bx 4.2
+version.

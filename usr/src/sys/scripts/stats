@@ -1,0 +1,19 @@
+#	@(#)stats	8.1 (Berkeley) 6/10/93
+#
+# disk statistics
+
+define dstat
+	set $op=(struct sdop *)&($arg0[$arg2])
+	set $i=$arg1
+	while ($i) 
+		printf "$arg3 "
+		printf "%d %d 0x%x 0x%x %d", $op->bp, $op->bufsize, $op->blkno, $op->when.tv_sec, $op->when.tv_usec
+		if ($op->op & 1)
+			printf " READ\n"
+		else
+			printf " WRITE\n"
+		end
+		set $op = $op + 1
+		set $i = $i - 1
+	end
+end

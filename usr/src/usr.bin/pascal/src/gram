@@ -1,0 +1,61 @@
+"@(#)gram 8.1 6/6/93"
+/yyval/s/int/union semstack/
+s/ 0//
+/yypv/s/int/union semstack/
+/\*yysterm\[]/,$d
+1;/yyactr/ka
+'a,$s/yypv/yyYpv/g
+'aa
+	register union semstack *yyYpv;
+	register struct tnode *p, *q;
+	yyYpv = yypv;
+.
+1;/^##/-w! y.tab.h
+/^int yylval 0/d
+/extern int yychar,/s//extern/
+/yyclearin/d
+/yyerrok/d
+1;/^##/d
+$a
+
+yyEactr(__np__, var)
+int __np__;
+char *var;
+{
+switch(__np__) {
+default:
+return (1);
+break;
+.
+g/case.*@@/s/@@//\
+.m$
+g/@@/ka\
+'a;?case?,?case?t$\
+'am$\
+a\
+}\
+break;
+$a
+}
+/*NOTREACHED*/
+}
+.
+1,$s/@@//
+/int nterms/d
+/int nnonter/d
+/int nstate/d
+/int yyerrval/d
+/yyact\[/s/ {/ = {/
+/yypact/s/ {/ = {/
+/yyr1/s/ {/ = {/
+/yyr2/s/ {/ = {/
+/yygo/s/ {/ = {/
+/yypgo/s/ {/ = {/
+/static/i
+#ifndef lint
+.
+/static/a
+#endif
+.
+w!
+q

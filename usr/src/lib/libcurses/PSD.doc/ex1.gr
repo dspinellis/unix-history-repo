@@ -1,0 +1,175 @@
+'-F
+.ds =F ex1.c
+.ds =M Jun  8 18:32 1993
+.\" Copyright (c) 1992, 1993
+.\"	 The Regents of the University of California.  All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms, with or without
+.\" modification, are permitted provided that the following conditions
+.\" are met:
+.\" 1. Redistributions of source code must retain the above copyright
+.\"    notice, this list of conditions and the following disclaimer.
+.\" 2. Redistributions in binary form must reproduce the above copyright
+.\"    notice, this list of conditions and the following disclaimer in the
+.\"    documentation and/or other materials provided with the distribution.
+.\" 3. All advertising materials mentioning features or use of this software
+.\"    must display the following acknowledgement:
+.\"	This product includes software developed by the University of
+.\"	California, Berkeley and its contributors.
+.\" 4. Neither the name of the University nor the names of its contributors
+.\"    may be used to endorse or promote products derived from this software
+.\"    without specific prior written permission.
+.\"
+.\" THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+.\" ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+.\" IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+.\" ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+.\" FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+.\" DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+.\" OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+.\" HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+.\" LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+.\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+.\" SUCH DAMAGE.
+.\"
+.\"     @(#)ex1.c	8.1 (Berkeley) 6/8/93
+.\"
+\*(+K#include\*(-K <sys\fI\h'\w' 'u-\w'/'u'/\fPtypes\&.h>
+\*(+K#include\*(-K <curses\&.h>
+\*(+K#include\*(-K <stdio\&.h>
+\*(+K#include\*(-K <signal\&.h>
+
+
+\*(+K#define\*(-K YSIZE 10 
+\*(+K#define\*(-K XSIZE 20
+
+\*(+Kint\*(-K quit();
+
+'FN main
+main()
+\*(+K{\*(-K
+\h'|11n'\*(+Kint\*(-K i, j, c;
+\h'|11n'size\*_t len;
+\h'|11n'\*(+Kchar\*(-K id[100];
+\h'|11n'FILE \fI*\fPfp;
+\h'|11n'\*(+Kchar\*(-K \fI*\fPs;
+
+\h'|11n'initscr();\h'|51n'\fI\h'\w' 'u-\w'/'u'/\fP\fI*\fP\c\c
+'+C
+ Always call initscr() first \fI*\fP\fI\h'\w' 'u-\w'/'u'/\fP\c
+'-C
+
+\h'|11n'signal(SIGINT, quit);\h'|51n'\fI\h'\w' 'u-\w'/'u'/\fP\fI*\fP\c\c
+'+C
+ Make sure wou have a \'cleanup\' fn \fI*\fP\fI\h'\w' 'u-\w'/'u'/\fP\c
+'-C
+
+\h'|11n'crmode();\h'|51n'\fI\h'\w' 'u-\w'/'u'/\fP\fI*\fP\c\c
+'+C
+ We want cbreak mode \fI*\fP\fI\h'\w' 'u-\w'/'u'/\fP\c
+'-C
+
+\h'|11n'noecho();\h'|51n'\fI\h'\w' 'u-\w'/'u'/\fP\fI*\fP\c\c
+'+C
+ We want to have control of chars \fI*\fP\fI\h'\w' 'u-\w'/'u'/\fP\c
+'-C
+
+\h'|11n'delwin(stdscr);\h'|51n'\fI\h'\w' 'u-\w'/'u'/\fP\fI*\fP\c\c
+'+C
+ Create our own stdscr \fI*\fP\fI\h'\w' 'u-\w'/'u'/\fP\c
+'-C
+
+\h'|11n'stdscr = newwin(YSIZE, XSIZE, 10, 35); 
+\h'|11n'flushok(stdscr, TRUE);\h'|51n'\fI\h'\w' 'u-\w'/'u'/\fP\fI*\fP\c\c
+'+C
+ Enable flushing of stdout \fI*\fP\fI\h'\w' 'u-\w'/'u'/\fP\c
+'-C
+
+\h'|11n'scrollok(stdscr, TRUE);\h'|51n'\fI\h'\w' 'u-\w'/'u'/\fP\fI*\fP\c\c
+'+C
+ Enable scrolling \fI*\fP\fI\h'\w' 'u-\w'/'u'/\fP\c
+'-C
+
+\h'|11n'erase();\h'|51n'\fI\h'\w' 'u-\w'/'u'/\fP\fI*\fP\c\c
+'+C
+ Initially, clear the screen \fI*\fP\fI\h'\w' 'u-\w'/'u'/\fP\c
+'-C
+
+
+\h'|11n'standout();
+\h'|11n'move(0,0);
+\h'|11n'\*(+Kwhile\*(-K (1) \*(+K{\*(-K
+\h'|21n'c = getchar();
+\h'|21n'\*(+Kswitch\*(-K(c) \*(+K{\*(-K
+\h'|21n'\*(+Kcase\*(-K \'q\':\h'|51n'\fI\h'\w' 'u-\w'/'u'/\fP\fI*\fP\c\c
+'+C
+ Quit on \'q\' \fI*\fP\fI\h'\w' 'u-\w'/'u'/\fP\c
+'-C
+
+\h'|31n'quit();
+\h'|31n'\*(+Kbreak\*(-K;
+\h'|21n'\*(+Kcase\*(-K \'s\':\h'|51n'\fI\h'\w' 'u-\w'/'u'/\fP\fI*\fP\c\c
+'+C
+ Go into standout mode on \'s\' \fI*\fP\fI\h'\w' 'u-\w'/'u'/\fP\c
+'-C
+
+\h'|31n'standout();
+\h'|31n'\*(+Kbreak\*(-K;
+\h'|21n'\*(+Kcase\*(-K \'e\':\h'|51n'\fI\h'\w' 'u-\w'/'u'/\fP\fI*\fP\c\c
+'+C
+ Exit standout mode on \'e\' \fI*\fP\fI\h'\w' 'u-\w'/'u'/\fP\c
+'-C
+
+\h'|31n'standend();
+\h'|31n'\*(+Kbreak\*(-K;
+\h'|21n'\*(+Kcase\*(-K \'r\':\h'|51n'\fI\h'\w' 'u-\w'/'u'/\fP\fI*\fP\c\c
+'+C
+ Force a refresh on \'r\' \fI*\fP\fI\h'\w' 'u-\w'/'u'/\fP\c
+'-C
+
+\h'|31n'wrefresh(curscr);
+\h'|31n'\*(+Kbreak\*(-K;
+\h'|21n'\*(+Kdefault\*(-K:\h'|51n'\fI\h'\w' 'u-\w'/'u'/\fP\fI*\fP\c\c
+'+C
+ By default output the character \fI*\fP\fI\h'\w' 'u-\w'/'u'/\fP\c
+'-C
+
+\h'|31n'addch(c);
+\h'|31n'refresh();
+\h'|21n'\*(+K}\*(-K
+\h'|11n'\*(+K}\*(-K
+\*(+K}\*(-K\c\c
+'-F
+
+
+
+\*(+Kint\*(-K
+'FN quit
+quit()
+\*(+K{\*(-K
+\h'|11n'erase();\h'|41n'\fI\h'\w' 'u-\w'/'u'/\fP\fI*\fP\c\c
+'+C
+ Terminate by erasing the screen \fI*\fP\fI\h'\w' 'u-\w'/'u'/\fP\c
+'-C
+
+\h'|11n'refresh();
+\h'|11n'endwin();\h'|41n'\fI\h'\w' 'u-\w'/'u'/\fP\fI*\fP\c\c
+'+C
+ Always end with endwin() \fI*\fP\fI\h'\w' 'u-\w'/'u'/\fP\c
+'-C
+
+\h'|11n'delwin(curscr);\h'|41n'\fI\h'\w' 'u-\w'/'u'/\fP\fI*\fP\c\c
+'+C
+ Return storage \fI*\fP\fI\h'\w' 'u-\w'/'u'/\fP\c
+'-C
+
+\h'|11n'delwin(stdscr);
+\h'|11n'putchar(\'\en\');
+\h'|11n'exit(0);
+\*(+K}\*(-K\c\c
+'-F
+
+
+\h'|41n'
+\h'|11n'
+\h'|11n'

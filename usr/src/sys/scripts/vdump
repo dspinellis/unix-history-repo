@@ -1,0 +1,12 @@
+#	@(#)vdump	8.1 (Berkeley) 6/10/93
+#
+# dump the vnode list
+
+define dumpvnodes
+
+	set $vp = (struct vnode *)$arg0
+	while ($vp)
+		printf "vnode=0x%x freef=0x%x mountf=0x%x usecount=%d\n", $vp, $vp->v_freef, $vp->v_mountf, $vp->v_usecount
+		set $vp = (struct vnode *)$vp->v_freef
+	end
+end

@@ -1,0 +1,173 @@
+.\" Copyright (c) 1980, 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms, with or without
+.\" modification, are permitted provided that the following conditions
+.\" are met:
+.\" 1. Redistributions of source code must retain the above copyright
+.\"    notice, this list of conditions and the following disclaimer.
+.\" 2. Redistributions in binary form must reproduce the above copyright
+.\"    notice, this list of conditions and the following disclaimer in the
+.\"    documentation and/or other materials provided with the distribution.
+.\" 3. All advertising materials mentioning features or use of this software
+.\"    must display the following acknowledgement:
+.\"	This product includes software developed by the University of
+.\"	California, Berkeley and its contributors.
+.\" 4. Neither the name of the University nor the names of its contributors
+.\"    may be used to endorse or promote products derived from this software
+.\"    without specific prior written permission.
+.\"
+.\" THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+.\" ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+.\" IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+.\" ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+.\" FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+.\" DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+.\" OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+.\" HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+.\" LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+.\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+.\" SUCH DAMAGE.
+.\"
+.\"     @(#)va.4	8.1 (Berkeley) 6/5/93
+.\"
+.Dd June 5, 1993
+.Dt VA 4 vax
+.Os BSD 4
+.Sh NAME
+.Nm va
+.Nd Benson-Varian interface
+.Sh SYNOPSIS
+.Cd "controller va0 at uba0 csr 0164000 vector vaintr"
+.Cd "disk vz0 at va0 drive 0"
+.Sh DESCRIPTION
+.Bf -symbolic
+(NOTE: the configuration description, while counter-intuitive,
+is actually as shown above.)
+.Ef
+.Pp
+The Benson-Varian printer/plotter in normally used with the line printer
+system.
+This description is designed for those who wish to drive the Benson-Varian
+directly.
+.Pp
+In print mode, the Benson-Varian uses a modified
+.Tn ASCII
+character set.
+Most control characters print various non-
+.Tn ASCII
+graphics such as daggers,
+sigmas, copyright symbols, etc.
+Only
+.Tn LF
+and
+.Tn FF
+are used as format effectors.
+.Tn LF
+acts as a newline,
+advancing to the beginning of the next line, and
+.Tn FF
+advances to the top of
+the next page.
+.Pp
+In plot mode, the Benson-Varian prints one raster line at a time.
+An entire raster line of bits (2112 bits = 264 bytes) is sent, and
+then the Benson-Varian advances to the next raster line.
+.Pp
+.Em Note :
+The Benson-Varian must be sent an even number of bytes.
+If an odd number is sent, the last byte will be lost.
+Nulls can be used in print mode to pad to an even number of bytes.
+.Pp
+To use the Benson-Varian yourself,
+you must realize that you cannot open the device,
+.Pa /dev/va0
+if there is an daemon active.
+You can see if there is an active daemon by doing a
+.Xr lpq 1
+and seeing if there are any files being printed.
+Printing should be turned off using
+.Xr lpc 8 .
+.Pp
+To set the Benson-Varian into plot mode include the file
+.Aq Pa sys/vcmd.h
+and use the following
+.Xr ioctl 2
+call
+.Bd -literal -offset indent
+ioctl(fileno(va), VSETSTATE, plotmd);
+.Ed
+.Pp
+where
+.Ar plotmd
+is defined to be
+.Bd -literal -offset indent
+int plotmd[] = { VPLOT, 0, 0 };
+.Ed
+.Pp
+and
+.Ar va
+is the result of a call to
+.Xr fopen
+on stdio.
+When you finish using the Benson-Varian in plot mode you should advance to
+a new page
+by sending it a
+.Tn FF
+after putting it back into print mode, i.e. by
+.Bd -literal -offset indent
+int prtmd[] = { VPRINT, 0, 0 };
+\&...
+fflush(va);
+ioctl(fileno(va), VSETSTATE, prtmd);
+write(fileno(va), "\ef\e0", 2);
+.Ed
+.Sh FILES
+.Bl -tag -width /dev/va0xx -compact
+.It Pa /dev/va0
+.El
+.Sh DIAGNOSTICS
+The following error numbers are significant at the
+time the device is opened.
+.Bl -tag -width ENXIOxx
+.It Bq Er ENXIO
+The device is already in use.
+.It Bq Er EIO
+The device is offline.
+.El
+.Pp
+The following message may be printed on the console.
+.Pp
+.Bl -diag
+.It va%d: npr timeout.
+The device was not able to get data from
+the
+.Tn UNIBUS
+within the timeout period, most likely because some other
+device was hogging the bus.  (But see
+.Sx BUGS
+below).
+.El
+.Sh SEE ALSO
+.Xr vfont 5 ,
+.Xr lpr 1 ,
+.Xr lpd 8 ,
+.Xr vp 4
+.Sh HISTORY
+The
+.Nm
+driver appeared in
+.Bx 4.0 .
+.Sh BUGS
+The 1's (one's) and l's (lower-case el's) in the Benson-Varian's
+standard character set look very similar; caution is advised.
+.Pp
+The interface hardware is rumored to have problems which can
+play havoc with the
+.Tn UNIBUS .
+We have intermittent minor problems on the
+.Tn UNIBUS
+where our
+.Xr va
+lives, but haven't ever been able to pin them down
+completely.

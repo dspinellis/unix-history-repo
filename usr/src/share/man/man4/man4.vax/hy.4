@@ -1,0 +1,136 @@
+.\" Copyright (c) 1983, 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms, with or without
+.\" modification, are permitted provided that the following conditions
+.\" are met:
+.\" 1. Redistributions of source code must retain the above copyright
+.\"    notice, this list of conditions and the following disclaimer.
+.\" 2. Redistributions in binary form must reproduce the above copyright
+.\"    notice, this list of conditions and the following disclaimer in the
+.\"    documentation and/or other materials provided with the distribution.
+.\" 3. All advertising materials mentioning features or use of this software
+.\"    must display the following acknowledgement:
+.\"	This product includes software developed by the University of
+.\"	California, Berkeley and its contributors.
+.\" 4. Neither the name of the University nor the names of its contributors
+.\"    may be used to endorse or promote products derived from this software
+.\"    without specific prior written permission.
+.\"
+.\" THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+.\" ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+.\" IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+.\" ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+.\" FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+.\" DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+.\" OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+.\" HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+.\" LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+.\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+.\" SUCH DAMAGE.
+.\"
+.\"     @(#)hy.4	8.1 (Berkeley) 6/5/93
+.\"
+.Dd June 5, 1993
+.Dt HY 4 vax
+.Os BSD 4.2
+.Sh NAME
+.Nm hy
+.Nd Network Systems Hyperchannel interface
+.Sh SYNOPSIS
+.Cd "device hy0 at uba0 csr 0172410 vector hyint"
+.Sh DESCRIPTION
+The
+.Nm hy
+interface provides access to a Network
+Systems Corporation Hyperchannel Adapter.
+.Pp
+The network to which the interface is attached
+is specified at boot time with an
+.Dv SIOCSIFADDR
+.Xr ioctl 2 .  
+The host's address is discovered by reading the adapter status
+register.  The interface will not transmit or receive
+packets until the network number is known.
+.Sh DIAGNOSTICS
+.Bl -diag
+.It "hy%d: unit number 0x%x port %d type %x microcode level 0x%x."
+Identifies the device during autoconfiguration.
+.Pp
+.It hy%d: can't handle af%d.
+The interface was handed
+a message with addresses formatted in an unsuitable address
+family; the packet was dropped.
+.Pp
+.It hy%d: can't initialize.
+The interface was unable to allocate
+.Tn UNIBUS
+resources. This
+is usually due to having too many network devices on an 11/750
+where there are only 3 buffered data paths.
+.Pp
+.It hy%d: NEX - Non Existent Memory.
+Non existent memory error returned from hardware.
+.Pp
+.It hy%d:  BAR overflow.
+Bus address register
+overflow error returned from hardware.
+.Pp
+.It hy%d: Power Off bit set, trying to reset.
+Adapter has lost power, driver will reset the bit
+and see if power is still out in the adapter.
+.Pp
+.It hy%d: Power Off Error, network shutdown.
+Power was really off in the adapter, network
+connections are dropped.
+Software does not shut down the network unless
+power has been off for a while.
+.Pp
+.It hy%d: RECVD MP > MPSIZE (%d).
+A message proper was received that is too big.
+Probable a driver bug.
+Shouldn't happen.
+.Pp
+.It "hy%d: xmit error \- len > hy_olen [%d > %d]."
+Probable driver error.
+Shouldn't happen.
+.Pp
+.It hy%d: DRIVER BUG \- INVALID STATE %d.
+The driver state machine reached a non-existent state.
+Definite driver bug.
+.Pp
+.It hy%d: watchdog timer expired.
+A command in the adapter has taken too long to complete.
+Driver will abort and retry the command.
+.Pp
+.It hy%d: adapter power restored.
+Software was able to reset the power off bit,
+indicating that the power has been restored.
+.El
+.Sh SEE ALSO
+.Xr netintro 4 ,
+.Xr inet 4
+.Sh HISTORY
+The
+.Nm
+interface appeared in
+.Bx 4.2 .
+.Sh BUGS
+If the adapter does not respond to the status command
+issued during autoconfigure, the adapter is assumed down.
+A reboot is required to recognize it.
+.Pp
+The adapter power fail interrupt seems to occur
+sporadically when power has, in fact, not failed.
+The driver will believe that power has failed
+only if it can not reset the power fail latch after
+a
+.Dq reasonable
+time interval.
+These seem to appear about 2-4 times a day on some machines.
+There seems to be no correlation with adapter
+rev level, number of ports used etc. and whether a
+machine will get these
+.Dq bogus powerfails .
+They don't seem to cause any real problems so they have
+been ignored.

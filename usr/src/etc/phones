@@ -1,0 +1,7 @@
+#	@(#)phones	8.1 (Berkeley) 6/9/93
+#
+# phones -- remote host phone number data base
+# see tip(1), phones(5)
+
+system1		9=1112223333
+system2		  1112223333

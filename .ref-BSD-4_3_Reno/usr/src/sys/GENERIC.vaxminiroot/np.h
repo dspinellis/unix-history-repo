@@ -1,1 +1,0 @@
-#define NNP 0

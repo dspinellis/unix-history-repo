@@ -1,0 +1,192 @@
+#!/bin/sh
+# @(#) gendns 1.15 92/08/31 @(#)
+# generate the DNS database files from generic database files
+#
+# files used
+#	hosts.main
+#	hosts.aliases
+#	hosts.mx
+#	hosts.ns
+#	hosts.wks
+#
+# this script assumes that a subdomain is always delegated to
+# another nameserver and hosts for the subdomain except for the
+# glue records do not exist in the base host database files
+
+# Copyright (c) 1992 by Texas Internet Consulting
+# This code may be freely copied and used so long as this
+# copyright notice is attached.  This code may not be sold
+# without the express written permission of Texas Internet Consulting.
+# Texas Internet Consulting makes no warranty as to the correctness
+# nor the applicability of this code for any purpose.
+
+# make the forward database files
+
+makeforw() {
+
+	# extract host name and IP address from hosts.main
+	# and make A records out of it,
+	# but only for hosts within this domain
+	# add NS and A records for the servers
+	# add HINFO from hardware and os
+
+	( readinfo host ip hard os <hosts.main | awk -F'	' '
+	BEGIN {
+		nservers = split("'"$servers"'", servers, " ")
+		for (i=1; i<=nservers; i++) {
+			printf("'$domain'. IN NS %s.\n", servers[i])
+		}
+	}
+	{
+		for (i=1; i<=nservers; i++) {
+			if ($1 == servers[i]) {
+				printf("%s. IN A %s\n", $1, $2)
+				if ($3 != "X") {
+					printf("%s. IN HINFO %s %s\n", $1, $3, $4)
+				}
+				next
+			}
+		}
+		if ($1 ~ /'$escape_domain'$/) {
+ 			printf("%s. IN A %s\n", $1, $2)
+			if ($3 != "X") {
+				printf("%s. IN HINFO %s %s\n", $1, $3, $4)
+			}
+		}
+	}'
+
+	# make cname records out of the aliases
+	# again only for this domain
+
+	readinfo alias host <hosts.cname | awk -F'	' '{
+		if ($1 ~ /'$escape_domain'$/)
+			printf("%s. IN CNAME %s.\n", $1, $2)
+	}'
+
+	# and the MX records the same way
+
+	readinfo domain priority host <hosts.mx | awk -F'	' '{
+		if ($1 ~ /'$escape_domain'$/)
+			printf("%s. IN MX %s %s.\n", $1, $2, $3)
+	}'
+
+	# and WKS records
+	# sort them and concatenate the application protocol mnemonics
+
+	readinfo host ip proto wks <hosts.wks | sort | awk -F'	' '{
+		if ($1 ~ /'$escape_domain'$/) {
+			if ($1 != host || $2 != ip || $3 != proto) {
+				if (host != "") {
+					printf("%s. IN WKS %s %s %s\n", host, ip, proto, wks)
+					wks = ""
+				}
+			}
+			host = $1
+			ip = $2
+			proto = $3
+			wks = wks " " $4
+		}
+	}
+	END {
+		printf("%s. IN WKS %s %s %s\n", host, ip, proto, wks)
+	}' )
+}
+
+makerev() {
+
+	# extract host name and IP address from hosts.main
+	# and make inverse PTR records out of it
+	# but only for IP addresses which match the IP addresses in this domain
+
+	readinfo host ip <hosts.main | awk -F'	' '
+	BEGIN {
+		nrev = split("'$unreverse'", unreverse, ".")
+		nservers = split("'"$servers"'", servers, " ")
+		for (i=1; i<=nservers; i++) {
+			printf("'$domain'. IN NS %s.\n", servers[i])
+		}
+	}
+	{
+		# check for servers and output glue A records
+		for (i=1; i<=nservers; i++) {
+			if ($1 == servers[i]) {
+				printf("%s. IN A %s\n", $1, $2)
+			}
+		}
+		n = split($2, ipparts, ".")
+		for (i=1; i<=nrev; i++) {
+			if (ipparts[i] != unreverse[i])
+				break
+		}
+		if (i <= nrev)
+			next
+		for(; i<=n; i++)
+			printf("%s.", ipparts[i])
+		printf("%s. IN PTR %s.\n", "'$domain'", $1)
+	}'
+}
+
+SERIAL=serial
+
+serial=`cat $SERIAL`
+dateserial=`date +%y%m%d`
+
+# read SOA info for each domain
+readinfo domain server contact refresh retry expire min <hosts.soa |\
+while read domain server contact refresh retry expire min; do
+
+	# get the domain name with escaped "."
+
+	escape_domain=`echo $domain | awk -F. '{
+		for (i=1; i<NF; i++) {
+			printf("%s", $i)
+			printf("\\.")
+		}
+		printf("%s", $NF)
+	}'`
+
+	# get servers for this domain
+
+	servers=`readinfo domain server <hosts.ns | awk -F'	' '{
+		if ($1 ~ /'$escape_domain'$/)
+			printf("%s ", $2)
+	}'`
+
+	case $domain in
+	*.in-addr.arpa)
+		rev=true
+		# get the filename fo reverse domains	
+		# unreverse the domain name for matching IP addresses
+		unreverse=`echo $domain | awk -F. '{
+			for (i=NF-2; i>1; i--)
+				printf("%s.", $i)
+			printf("%s", $1)
+		}'`
+		filename=f.$unreverse ;;
+
+	*)
+		rev=
+		filename=$domain ;;
+	esac
+
+	# print the header and SOA record
+
+	( echo "; $serial"
+	echo '$ORIGIN'" ${domain}."
+	echo "@ SOA ${server}. ${contact}. ( $dateserial $refresh $retry $expire $min )"
+
+	# scan the input file and extract info depending on whether this
+	# is a forward or reverse domain file
+
+	if [ $rev ]; then
+		makerev
+	else
+		makeforw
+	fi |\
+
+	# get rid of extraneous domain info
+
+	sed -e 's/\(.*\)\(\.'${escape_domain}'\.\)/\1/g' \
+	-e 's/\(.*\)\(\.'${escape_domain}'\. \)/\1 /g' \
+     	-e 's/^'${escape_domain}'\./@/g' ) >$filename
+done

@@ -1,0 +1,132 @@
+.\" Copyright (c) 1983, 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms, with or without
+.\" modification, are permitted provided that the following conditions
+.\" are met:
+.\" 1. Redistributions of source code must retain the above copyright
+.\"    notice, this list of conditions and the following disclaimer.
+.\" 2. Redistributions in binary form must reproduce the above copyright
+.\"    notice, this list of conditions and the following disclaimer in the
+.\"    documentation and/or other materials provided with the distribution.
+.\" 3. All advertising materials mentioning features or use of this software
+.\"    must display the following acknowledgement:
+.\"	This product includes software developed by the University of
+.\"	California, Berkeley and its contributors.
+.\" 4. Neither the name of the University nor the names of its contributors
+.\"    may be used to endorse or promote products derived from this software
+.\"    without specific prior written permission.
+.\"
+.\" THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+.\" ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+.\" IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+.\" ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+.\" FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+.\" DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+.\" OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+.\" HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+.\" LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+.\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+.\" SUCH DAMAGE.
+.\"
+.\"     @(#)pcl.4	8.1 (Berkeley) 6/5/93
+.\"
+.Dd June 5, 1993
+.Dt PCL 4 vax
+.Os BSD 4.2
+.Sh NAME
+.Nm pcl
+.Nd
+.Tn DEC CSS
+.Tn PCL-11 B
+Network Interface
+.Sh SYNOPSIS
+.Cd "device pcl0 at uba? csr 164200 vector pclxint pclrint"
+.Sh DESCRIPTION
+The 
+.Nm pcl
+device provides an
+.Tn IP Ns -only
+interface to the
+.Tn DEC CSS
+.Tn PCL-11
+time division multiplexed network bus.
+The controller itself is not accessible to users.
+.Pp
+The hosts's address is specified with the
+.Dv SIOCSIFADDR
+.Xr ioctl 2 .
+The interface will not transmit or receive any data before
+its address is defined.
+.Pp
+As the
+.Tn PCL-11
+hardware is only capable of having 15 interfaces per network,
+a single-byte host-on-network number is used, with range [1..15] to match
+the
+.Tn TDM
+bus addresses of the interfaces.
+.Pp
+The interface currently only supports the Internet protocol family
+and only provides
+.Dq natural
+(header) encapsulation.
+.Sh DIAGNOSTICS
+.Bl -diag
+.It pcl%d: can't init.
+Insufficient
+.Tn UNIBUS
+resources existed to initialize the device.
+This is likely to occur when the device is run on a buffered
+data path on an 11/750 and other network interfaces are also
+configured to use buffered data paths, or when it is configured
+to use buffered data paths on an 11/730 (which has none).
+.Pp
+.It pcl%d: can't handle af%d.
+The interface was handed a message with addresses formatted in an
+unsuitable address family;  the packet was dropped.
+.Pp
+.It pcl%d: stray xmit interrupt.
+An interrupt occurred when no output had previously been started.
+.Pp
+.It pcl%d: master.
+The
+.Tn TDM
+bus had no station providing ``bus master'' timing signals,
+so this interface has assumed the ``master'' role.  This message should
+only appear at most once per
+.Tn UNIBUS INIT
+on a single system.
+Unless there is a hardware failure, only one station may be master at at time.
+.Pp
+.It pcl%d: send error, tcr=%b, tsr=%b.
+The device indicated a problem sending data on output.
+If a ``receiver offline'' error is detected, it is not normally logged
+unless the option
+.Dv PCL_TESTING
+has been selected, as this causes a lot
+of console chatter when sending to a down machine.  However, this option
+is quite useful when debugging problems with the
+.Tn PCL
+interfaces.
+.Pp
+.It pcl%d: rcv error, rcr=%b rsr=%b.
+The device indicated a problem receiving data on input.
+.Pp
+.It pcl%d: bad len=%d.
+An input operation resulted in a data transfer of less than
+0 or more than 1008 bytes of
+data into memory (according to the word count register).
+This should never happen as the maximum size of a
+.Tn PCL
+message
+has been agreed upon to be 1008 bytes (same as ArpaNet message).
+.El
+.Sh SEE ALSO
+.Xr intro 4 ,
+.Xr inet 4
+.Sh HISTORY
+The
+.Nm
+interface appeared in
+.Bx 4.2 .

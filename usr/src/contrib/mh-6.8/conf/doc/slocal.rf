@@ -1,0 +1,377 @@
+.\"	@(MHWARNING)
+.\" @(#)$Id: slocal.rf,v 1.15 1992/10/28 16:53:03 jromine Exp $
+.SC SLOCAL 1
+.NA
+slocal \- special local mail delivery
+.SY
+@(MHETCPATH)/slocal \%[address\ info\ sender]
+.na
+.br
+\%[\-addr\ address]
+\%[\-info\ data]
+\%[\-sender\ sender]
+.br
+\%[\-user\ username]
+\%[\-mailbox\ mbox]
+\%[\-file\ file]
+.\" \%[\-home\ homedir]
+.br
+\%[\-maildelivery\ deliveryfile]
+\%[\-verbose] \%[\-noverbose]
+\%[\-debug]
+\%[\-help]
+.ad
+.DE
+\fISlocal\fP is a program designed to allow you to have
+your inbound mail processed according to a complex
+set of selection criteria.
+You do not normally invoke \fIslocal\fP yourself,
+rather \fIslocal\fP is invoked on your behalf by your system's 
+Message Transfer Agent.
+
+The message selection
+criteria used by \fIslocal\fP
+is specified in the file \fI\&.maildelivery\fP
+in the user's home directory.  The format of this file
+is given below.
+
+The message delivery address and message sender are
+determined from the Message Transfer Agent
+envelope information, if possible.  Under \fISendMail\fP,
+the sender will obtained from the UUCP \*(lqFrom\ \*(rq
+line, if present.  The user may override these values
+with command line arguments, or arguments to 
+the `\-addr' and `\-sender' switches.
+
+The message is normally read from the standard input.
+The `\-file' switch sets the name of the file from which
+the message should be read, instead of reading stdin.
+The `\-user' switch tells \fIslocal\fP
+the name of the user for whom it is delivering mail.
+The `\-mailbox' switch tells \fIslocal\fP the name
+of the user's maildrop file.
+
+The `\-info' switch may be used to pass an arbitrary
+argument to sub-processes which \fIslocal\fP may
+invoke on your behalf.
+The `\-verbose' switch causes \fIslocal\fP
+to give information on stdout about its progress.
+The `\-debug' switch produces more verbose debugging output on stderr.
+
+.Uh "Message Transfer Agents"
+If your MTA is \fISendMail\fP,
+you should include the line
+.sp
+.nf
+.in +.5i
+    \*(lq|\ @(MHETCPATH)/slocal\ \-user\ username\*(rq
+.in -.5i
+.fi
+.sp
+in your \&.forward file in your home directory.
+This will cause \fISendMail\fP to invoke \fIslocal\fP on your behalf.
+
+If your MTA is \fIMMDF-I\fP,
+you should (symbolically) link @(MHETCPATH)/slocal to the file
+bin/rcvmail in your home directory.
+This will cause \fIMMDF-I\fP to invoke \fIslocal\fP on your behalf
+with the correct \*(lq\fIaddress\ info\ sender\fP\*(rq arguments.
+
+If your MTA is \fIMMDF-II\fP,
+then you should not use \fIslocal\fP.
+An equivalent functionality is already provided by \fIMMDF-II\fP;
+see maildelivery(5) for details.
+
+.Uh "The Maildelivery File"
+
+The \fI\&.maildelivery\fR file
+controls how local delivery is performed.
+Each line of this file
+consists of five fields, separated by white-space or comma.
+Since double-quotes are honored,
+these characters may be included in a single argument by enclosing the
+entire argument in double-quotes.
+A double-quote can be included by preceding it with a backslash.
+Lines beginning with `#' are ignored.
+The format of each line in the \fI\&.maildelivery\fR file is:
+
+
+	\fBheader	pattern	action	result	string\fR
+.sp
+.in +.5i
+.ti -.5i
+\fBheader\fP:
+.br
+The name of a header field that is to be searched for a pattern.
+This is any field in the headers of the message that might be present.
+The following special fields are also defined:
+.sp
+.in +1i
+.ta +1i
+.ti -1i
+\fIsource\fR	the out-of-band sender information
+.ti -1i
+\fIaddr\fR	the address that was used to cause delivery to the recipient
+.ti -1i
+\fIdefault\fR	this matches \fIonly\fR if the message hasn't been delivered yet
+.ti -1i
+\fI*\fR	this always matches
+.in -1i
+
+.ti -.5i
+\fBpattern\fR:
+.br
+The sequence
+of characters to match in the specified header field.
+Matching is case-insensitive, but does not use regular expressions.
+
+.ti -.5i
+\fBaction\fR:
+.br
+The action to take to deliver the message:
+.sp
+.in +1i
+.ta +1i
+.ti -1i
+\fIdestroy\fR	This action always succeeds.
+
+.ti -1i
+\fIfile\fR or >	Append
+the message to the file named by \fBstring\fR.
+The message is appended to the file in the maildrop 
+format which is used by your message transport system.
+If the message can be appended to the file,
+then this action succeeds.
+When writing to the file,
+a \*(lqDelivery\-Date:\ date\*(rq header is added
+which indicates the date and time that message was appended to the file.
+
+.ti -1i
+\fImbox\fR	Identical
+to \fIfile\fR,
+but always appends the message using the format used by \fIpackf\fR
+(the MMDF mailbox format).
+
+.ti -1i
+\fIpipe\fR or |	Pipe
+the message as the standard input to the command named by \fBstring\fR,
+using the Bourne shell \fIsh\fR(1) to interpret the string.
+Prior to giving the string to the shell,
+it is expanded with the following built-in variables:
+.sp
+.in +1i
+.ta +1i
+.ti -1i
+$(sender) 	the out-of-band sender information
+.ti -1i
+$(address) 	the address that was used to cause delivery to the recipient
+.ti -1i
+$(size)	the size of the message in bytes
+.ti -1i
+$(reply\-to) 	either the \*(lqReply\-To:\*(rq or \*(lqFrom:\*(rq field
+of the message
+.ti -1i
+$(info)	the out-of-band information specified
+.in -1i
+.ti -1i
+\fIqpipe\fR or
+.ti -1i
+\fI<caret>\fR	Similar to \fIpipe\fR,
+but executes the command directly,
+after built-in variable expansion,
+without assistance from the shell.
+This action can be used to avoid quoting special characters
+which your shell might interpret.
+.in -1i
+
+.ti -.5i
+\fBresult\fR:
+.br
+Indicates how the action should be performed:
+
+.in +1i
+.ta +1i
+.ti -1i
+\fIA\fR	Perform the action.
+If the action succeeds, then the message is considered delivered.
+
+.ti -1i
+\fIR\fR	Perform the action.
+Regardless of the outcome of the action,
+the message is not considered delivered.
+
+.ti -1i
+\fI?\fR	Perform
+the action only if the message has not been delivered.
+If the action succeeds, then the message is considered delivered.
+
+.ti -1i
+\fIN\fR	Perform
+the action only if the message has not been delivered
+and the previous action succeeded.
+If this action succeeds, then the message is considered delivered.
+.sp
+.in -1i
+.in -.5i
+To summarize, here's an example:
+.sp
+.if t .in +.5i
+.nf
+.ta \w'default  'u +\w'mh-workersxx 'uC +\w'destroy 'uC +\w'result 'u
+#\fIfield\fR	\fIpattern\fR	\fIaction\fR	\fIresult\fR	\fIstring\fR
+# lines starting with a '#' are ignored, as are blank lines
+#
+# file mail with mmdf2 in the \*(lqTo:\*(rq line into file mmdf2.log
+\fITo	mmdf2	file	A	mmdf2.log\fP
+# Messages from mmdf pipe to the program err-message-archive
+\fIFrom	mmdf	pipe	A	/bin/err-message-archive\fP
+# Anything with the \*(lqSender:\*(rq address \*(lqmh-workers\*(rq
+# file in mh.log if not filed already
+\fISender	mh-workers	file	?	mh.log\fP
+# \*(lqTo:\*(rq unix \- put in file unix-news
+\fITo	Unix	>	A	unix-news\fP
+.\" # if the address is jpo=mmdf \- pipe into mmdf-redist
+.\" \fIaddr	jpo=mmdf	|	A	mmdf-redist\fP
+# if the address is jpo=ack \- send an acknowledgement copy back
+\fIaddr	jpo=ack	\fP|\fI	R	\*(lq/bin/resend\0\-r\0$(reply-to)\*(rq\fP
+# anything from steve \- destroy!
+\fIFrom	steve	destroy	A	\-\fP
+# anything not matched yet \- put into mailbox
+\fIdefault	\-	>	?	mailbox\fP
+# always run rcvtty
+\fI*	\-	\fP|\fI	R	/mh/lib/rcvtty\fP
+.re
+.fi
+.if t .in -.5i
+
+The file is always read completely,
+so that several matches can be made and several actions can be taken.
+The \fI\&.maildelivery\fR file must be owned either by the user or by root,
+and must be writable only by the owner.
+If the \fI\&.maildelivery\fR file cannot be found,
+or does not perform an action which delivers the message,
+then the file @(MHETCPATH)/maildelivery is read according to the same rules.
+This file must be owned by the root and must be writable only by the root.
+If this file cannot be found
+or does not perform an action which delivers the message,
+then standard delivery to the user's maildrop is performed.
+
+.Uh "Sub-process environment"
+When a process is invoked, its environment is:
+the user/group-ids are set to recipient's ids;
+the working directory is the recipient's home directory;
+the umask is 0077;
+the process has no /dev/tty;
+the standard input is set to the message;
+the standard output and diagnostic output are set to /dev/null;
+all other file-descriptors are closed;
+the envariables \fB$USER\fR, \fB$HOME\fR, \fB$SHELL\fR are set
+appropriately,
+and no other envariables exist.
+
+The process is given a certain amount of time to execute.
+If the process does not exit within this limit,
+the process will be terminated with extreme prejudice.
+The amount of time is calculated as ((size x 60) + 300) seconds,
+where size is the number of bytes in the message.
+
+The exit status of the process is consulted in determining the success of the
+action.
+An exit status of zero means that the action succeeded.
+Any other exit status (or abnormal termination) means that the action failed.
+
+In order to avoid any time limitations,
+you might implement a process that began by \fIforking\fR.
+The parent would return the appropriate value immediately,
+and the child could continue on,
+doing whatever it wanted for as long as it wanted.
+This approach is somewhat risky if the parent is going to return an
+exit status of zero.
+If the parent is going to return a non-zero exit status,
+then this approach can lead to quicker delivery into your maildrop.
+@BEGIN: MSGID
+
+.Uh "Duplicate Message Suppression"
+\fIslocal\fR is able to detect and supress duplicate messages.
+To enable this,
+create two empty files in your $HOME directory:
+\&.maildelivery.pag and \&.maildelivery.dir.
+These are ndbm files which are used to store the Message-IDs of
+incoming messages.
+@END: MSGID
+.Fi
+^@(MHETCPATH)/mtstailor~^MH tailor file
+^$HOME/\&.maildelivery~^The file controlling local delivery
+^@(MHETCPATH)/maildelivery~^Rather than the standard file
+^@(MHDROPLOC)~^The default maildrop
+.Sa
+rcvstore(1), mhook(1), mh\-format(5)
+@BEGIN: MMDFIIMTS
+, maildelivery(5)
+@END: MMDFIIMTS
+.De
+`\-noverbose'
+.Ds
+`\-maildelivery \&.maildelivery'
+.Ds
+`\-mailbox @(MHDROPLOC)'
+.Ds
+`\-file' defaults to stdin
+.Ds
+`\-user' defaults to the current user
+.Co
+None
+.Hi
+@BEGIN: MHMTS
+For compatibility with older versions of \fIMH\fR,
+if \fIslocal\fR can't find the user's \fI\&.maildelivery\fR file,
+it will attempt to execute an old-style rcvmail hook in the user's $HOME
+directory.
+In particular,
+it will first attempt to execute
+
+.ti +.5i
+\&.mh\(rureceive file maildrop directory user
+
+failing that it will attempt to execute
+
+.ti +.5i
+$HOME/bin/rcvmail user file sender
+
+before giving up and writing to the user's maildrop.
+
+In addition,
+whenever a hook or process is invoked,
+file-descriptor three (3) is set to the message in addition to the standard
+input.
+
+@END: MHMTS
+\fISlocal\fP is designed to be backward-compatible with the
+\fImaildelivery\fP facility provided by \fIMMDF-II\fP.
+Thus, the \fI\&.maildelivery\fP file syntax is limited,
+as is the functionality of \fIslocal\fP.
+
+In addition to an exit status of zero,
+the \fIMMDF\fR values \fIRP_MOK\fR (32) and \fIRP_OK\fR (9)
+mean that the message has been fully delivered.
+Any other non-zero exit status,
+including abnormal termination,
+is interpreted as the \fIMMDF\fR value \fIRP_MECH\fR (200),
+which means \*(lquse an alternate route\*(rq
+(deliver the message to the maildrop).
+.Bu
+Only two return codes are meaningful, others should be.
+
+\fISlocal\fP is designed to be
+backwards-compatible with the \fImaildelivery\fP functionality provided
+by \fBMMDF-II\fP.
+
+Versions of \fIMMDF\fR with the \fImaildelivery\fR mechanism aren't
+entirely backwards-compatible with earlier versions of \fIMMDF\fP.
+If you have an \fIMMDF-I\fP old-style hook,
+the best you can do is to have a one-line
+\fI\&.maildelivery\fR file:
+
+.ti +.5i
+default \- pipe A \*(lqbin/rcvmail $(address) $(info) $(sender)\*(rq
+.En

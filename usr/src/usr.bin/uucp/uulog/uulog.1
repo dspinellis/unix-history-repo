@@ -1,0 +1,98 @@
+.\" Copyright (c) 1991, 1993, 19861990
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms, with or without
+.\" modification, are permitted provided that the following conditions
+.\" are met:
+.\" 1. Redistributions of source code must retain the above copyright
+.\"    notice, this list of conditions and the following disclaimer.
+.\" 2. Redistributions in binary form must reproduce the above copyright
+.\"    notice, this list of conditions and the following disclaimer in the
+.\"    documentation and/or other materials provided with the distribution.
+.\" 3. All advertising materials mentioning features or use of this software
+.\"    must display the following acknowledgement:
+.\"	This product includes software developed by the University of
+.\"	California, Berkeley and its contributors.
+.\" 4. Neither the name of the University nor the names of its contributors
+.\"    may be used to endorse or promote products derived from this software
+.\"    without specific prior written permission.
+.\"
+.\" THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+.\" ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+.\" IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+.\" ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+.\" FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+.\" DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+.\" OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+.\" HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+.\" LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+.\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+.\" SUCH DAMAGE.
+.\"
+.\"     @(#)uulog.1	8.1 (Berkeley) 6/6/93
+.\"
+.Dd June 6, 1993
+.Dt UULOG 1
+.Os BSD 4.3
+.Sh NAME
+.Nm uulog
+.Nd display
+.Tn UUCP
+log entries
+.Sh SYNOPSIS
+.Nm uulog
+.Op Fl s Ar sys
+.Op Fl u Ar user
+.Sh DESCRIPTION
+The
+.Nm uulog
+program displays
+.Xr uucp 1
+and
+.Xr uux 1
+log entries from the file
+.Pa /var/spool/uucp/LOGFILE .
+.Pp
+Options supported by
+.Nm uulog :
+.Bl -tag -width Ar
+.It Fl s Ar sys
+Display all entries logged which include the system named
+.Ar sys .
+.It Fl u Ar user
+Display only entries which include the user name
+.Ar user .
+.El
+.Sh FILES
+.Bl -tag -width /usr/spool/uucp/LOGFILEXx
+.It Pa /usr/spool/uucp/LOGFILE
+Logfile of all uucp events.
+.El
+.Sh SEE ALSO
+.Xr uucp 1 ,
+.Xr uux 1 .
+.Sh NOTES
+Very early releases of
+.Tn UUCP
+used separate log files
+for each of the
+.Tn UUCP
+utilities;
+.Nm uulog
+was used to merge the individual logs into a master file.
+This capability has not been necessary for some time and is
+no longer supported.
+.Sh BUGS
+.Tn UUCP Ns 's
+recording of which user issued a request is unreliable.
+.Pp
+The
+.Nm uulog
+program
+is little more than an overspecialized version of
+.Xr grep 1 .
+.Sh HISTORY
+A
+.Nm
+command appeared in
+.At 32v .

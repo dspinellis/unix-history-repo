@@ -1,0 +1,163 @@
+.\" Copyright (c) 1983, 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms, with or without
+.\" modification, are permitted provided that the following conditions
+.\" are met:
+.\" 1. Redistributions of source code must retain the above copyright
+.\"    notice, this list of conditions and the following disclaimer.
+.\" 2. Redistributions in binary form must reproduce the above copyright
+.\"    notice, this list of conditions and the following disclaimer in the
+.\"    documentation and/or other materials provided with the distribution.
+.\" 3. All advertising materials mentioning features or use of this software
+.\"    must display the following acknowledgement:
+.\"	This product includes software developed by the University of
+.\"	California, Berkeley and its contributors.
+.\" 4. Neither the name of the University nor the names of its contributors
+.\"    may be used to endorse or promote products derived from this software
+.\"    without specific prior written permission.
+.\"
+.\" THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+.\" ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+.\" IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+.\" ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+.\" FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+.\" DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+.\" OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+.\" HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+.\" LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+.\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+.\" SUCH DAMAGE.
+.\"
+.\"     @(#)dr.4	8.1 (Berkeley) 6/5/93
+.\"
+.Dd June 5, 1993
+.Dt DR 4 tahoe
+.Os BSD 4.2
+.Sh NAME
+.Nm dr
+.Nd Ikon
+.Tn DR-11W
+interface
+.Sh SYNOPSIS
+.Cd "device dr0 at vba? csr 0xffff8000 vector drintr"
+.Sh DESCRIPTION
+The
+.Nm dr
+driver provides access
+to an Ikon
+.Tn DR-11W
+.Tn DMA
+controller.
+Each minor device is a different controller.
+.Pp
+In addition to reading and writing, the following
+.Xr ioctl 2
+requests are available:
+.Bl -tag -width DRSETNORSTALL
+.It Dv DRWAIT
+Wait for an attention interrupt from the associated device.
+.It Dv DRPIOW
+Write to the programmed
+.Tn I/O
+register.
+.It Dv DRPACL
+Write to the pulse register.
+.It Dv DRDACL
+Set the ``ac-low'' bit in the next command sent to the
+.Tn DR-11W .
+.It Dv DRPCYL
+Set the ``cycle'' bit in the next command sent to the
+.Tn DR-11W .
+.It Dv DRDFCN
+Hold the function bits until the next command is issused.
+.It Dv DRRATN
+Reset the attention flag.
+.It Dv DRRDMA
+Reset the
+.Tn DMA
+complete flag.
+.It Dv DRSFCN
+Set the function bits in the control status register and,
+as a side effect, clear the interrupt enable flag.
+.It Dv DRRPER
+Reset the parity error flag.
+.It Dv DRSETRSTALL
+Set ``no stall'' mode for all subsequent reads.
+In no stall mode the driver will abort
+read requests that fail to complete before a user
+specified timeout expires.
+.It Dv DRSETNORSTALL
+Disable no stall mode for reads.
+.It Dv DRGETRSTALL
+Return true if in no stall mode for reads.
+.It Dv DRSETRTIMEOUT
+Set the value of the timeout used in no stall mode  for
+reads.  The time is specified in tenths of seconds.
+.It Dv DRGETRTIMEOUT
+Return the time until (in tenths of seconds) before a read
+is timed out when in no stall mode.
+.It Dv DRSETWSTALL
+Set ``no stall'' mode for all subsequent writes.
+In no stall mode the driver will abort
+write requests that fail to complete before a user
+specified timeout expires.
+.It Dv DRSETNOWSTALL
+Disable no stall mode for writes.
+.It Dv DRGETWSTALL
+Return true if in no stall mode for writes.
+.It Dv DRSETWTIMEOUT
+Set the value of the timeout used in no stall mode  for
+writes.  The time is specified in tenths of seconds.
+.It Dv DRGETRTIMEOUT
+Return the time until (in tenths of seconds) before a write
+is timed out when in no stall mode.
+.It Dv DRWRITEREADY
+Return 1 if the device can accept data, 0 otherwise
+(this is really the
+.Tn DR-11W A
+status bit).
+.It Dv DRREADREADY
+Return 1 if the device has data for the host to read,
+0 otherwise (this is really the
+.Tn DR-11W B
+status bit).
+.It Dv DRBUSY
+Return 1  if the device is busy, 0 otherwise.
+.It Dv DRRESET
+Reset the DR-11W.
+.It Dv DR11STAT
+Return the driver status and the contents of the
+.Tn DR-11W
+.Tn I/O registers.  The
+eight words returned are, in order, the driver
+status flags, the contents of the control status
+register, the contents of the status register
+at the time of the last interrupt from the device,
+the contents of the programmed
+.Tn I/O data register,
+a combination of the address modifier used by the
+device in performing
+.Tn VERSAbus
+transfers and the
+interrupt vector used by the device, the contents
+of the range register, the contents of the rahi
+register, and the contents of the ralo register.
+.It Dv DR11LOOP
+Perform loopback testing (the loopback cable must
+be in place for this to work).
+.El
+.Sh FILES
+.Bl -tag -width /dev/dr[0-7]xx -compact
+.It Pa /dev/dr[0-7]
+standard devices
+.El
+.Sh DIAGNOSTICS
+Lots of them, none of them meaningful.
+.Sh HISTORY
+The
+.Nm
+driver appeared in
+.Bx 4.3 tahoe .
+.Sh BUGS
+This driver needs to be rewritten.

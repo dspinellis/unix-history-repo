@@ -1,0 +1,138 @@
+.\" Copyright (c) 1990, 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms, with or without
+.\" modification, are permitted provided that the following conditions
+.\" are met:
+.\" 1. Redistributions of source code must retain the above copyright
+.\"    notice, this list of conditions and the following disclaimer.
+.\" 2. Redistributions in binary form must reproduce the above copyright
+.\"    notice, this list of conditions and the following disclaimer in the
+.\"    documentation and/or other materials provided with the distribution.
+.\" 3. All advertising materials mentioning features or use of this software
+.\"    must display the following acknowledgement:
+.\"	This product includes software developed by the University of
+.\"	California, Berkeley and its contributors.
+.\" 4. Neither the name of the University nor the names of its contributors
+.\"    may be used to endorse or promote products derived from this software
+.\"    without specific prior written permission.
+.\"
+.\" THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+.\" ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+.\" IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+.\" ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+.\" FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+.\" DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+.\" OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+.\" HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+.\" LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+.\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+.\" SUCH DAMAGE.
+.\"
+.\"     @(#)intro.4	8.1 (Berkeley) 6/5/93
+.\"
+.Dd June 5, 1993
+.Dt INTRO 4 hp300
+.Os
+.Sh NAME
+.Nm intro
+.Nd introduction to special files and hardware support
+.Sh DESCRIPTION
+This section describes the special files, related driver functions,
+and networking support
+available in the system.
+In this part of the manual, the
+.Tn SYNOPSIS
+section of
+each configurable device gives a sample specification
+for use in constructing a system description for the
+.Xr config 8
+program.
+The
+.Tn DIAGNOSTICS
+section lists messages which may appear on the console
+and/or in the system error log
+.Pa /usr/adm/messages
+due to errors in device operation;
+see
+.Xr syslogd 8
+for more information.
+.Pp
+This section contains both devices
+which may be configured into the system
+and network related information.
+The networking support is introduced in
+.Xr netintro 4 .
+.Sh HP DEVICE SUPPORT
+This section describes the hardware supported on the
+.Tn HP
+9000/300 series.
+Software support for these devices comes in two forms.  A hardware
+device may be supported with a character or block
+.Em device driver ,
+or it may be used within the networking subsystem and have a
+.Em network interface driver .
+Block and character devices are accessed through files in the file
+system of a special type; see
+.Xr mknod 8 .
+Network interfaces are indirectly accessed through the interprocess
+communication facilities provided by the system; see
+.Xr socket 2 .
+.Pp
+A hardware device is identified to the system at configuration time
+and the appropriate device or network interface driver is then compiled
+into the system.  When the resultant system is booted, the
+autoconfiguration facilities in the system probe for the device
+and, if found, enable the software support for it.
+If a device does not respond at autoconfiguration
+time it is not accessible at any time afterwards.
+To enable a device which did not autoconfigure,
+the system will have to be rebooted.
+.Pp
+The autoconfiguration system is described in
+.Xr autoconf 4 .
+A list of the supported devices is given below.
+.Sh SEE ALSO
+.Xr intro 4 ,
+.Xr intro 4 ,
+.Xr autoconf 4 ,
+.Xr config 8 .
+.Rs
+.%T "Building 4.3 BSD UNIX Systems with Config (SMM:2)"
+.Re
+.Sh LIST OF DEVICES
+The devices listed below are supported in this incarnation of
+the system.  Pseudo-devices are not listed.
+Devices are indicated by their functional interface.
+Occasionally, new devices of a similar type may be added
+simply by creating appropriate table entries in the driver;
+for example, new
+.Tn CS/80
+drives.
+.Bl -column grf/ite -offset indent
+ct	7946/9144 CS/80 cartridge tape
+dca	98644 built-in serial interface
+dcl	HP 98628A communications link
+dcm	HP 98642A communications multiplexer
+dma	98620B DMA controller
+dv	HP98730 ``DaVinci'' device interface
+gb	 HP98700 ``Gatorbox'' device interface
+grf/ite	Topcat/Gatorbox/Renaissance frame buffer
+hil	HIL interface
+hpib	Built-in and 98625 HP-IB interface
+ite	HP Internal Terminal Emulator
+le	98643 Lance-based ethernet interface
+mem	main memory
+ppi	HP-IB printer/plotter interface
+rb	HP98720 ``Renaissance'' device interface
+rd	CS/80 disk interface
+rmp	HP Remote Maintenance Protocol family
+st	CCS SCSI tape drive
+tc	HP98544-98550 ``Topcat'' and ``Catseye'' device interface
+.El
+.Sh HISTORY
+The
+.Tn HP300
+.Nm intro
+appeared in
+.Bx 4.3 Reno .

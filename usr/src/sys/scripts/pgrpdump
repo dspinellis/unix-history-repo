@@ -1,0 +1,21 @@
+#	@(#)pgrpdump	8.1 (Berkeley) 6/10/93
+
+define allpgrps
+	set $lim = pidhashmask + 1
+	set $i = 0
+	while ($i < $lim)
+		if (pgrphash[$i])
+			printf "--- pgrphash[%d] ---\n", $i
+			pgrpchain pgrphash[$i]
+		end
+		set $i++
+	end
+end
+
+define pgrpchain
+	set $pgrp = (struct pgrp *)$arg0
+	while ($pgrp)
+		print *$pgrp
+		set $pgrp = $pgrp->pg_hforw
+	end
+end
