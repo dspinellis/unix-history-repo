@@ -10,7 +10,7 @@
  * File I/O.
  */
 
-static char *SccsId = "@(#)fio.c	1.9 %G%";
+static char *SccsId = "@(#)fio.c	1.10 %G%";
 
 /*
  * Set up the input pointers while copying the mail file into
@@ -295,9 +295,11 @@ edstop()
 	FILE *obuf, *ibuf;
 	struct stat statb;
 	char tempname[30];
+	int (*sigs[3])();
 
 	if (readonly)
 		return;
+	sigsave(sigs, SIG_IGN);
 	for (mp = &message[0], gotcha = 0; mp < &message[msgCount]; mp++) {
 		if (mp->m_flag & MNEW) {
 			mp->m_flag &= ~MNEW;
@@ -309,19 +311,21 @@ edstop()
 		}
 	}
 	if (!gotcha)
-		return;
+		goto done;
 	ibuf = NULL;
 	if (stat(editfile, &statb) >= 0 && statb.st_size > mailsize) {
 		strcpy(tempname, "/tmp/mboxXXXXXX");
 		mktemp(tempname);
 		if ((obuf = fopen(tempname, "w")) == NULL) {
 			perror(tempname);
+			sigret(sigs);
 			reset(0);
 		}
 		if ((ibuf = fopen(editfile, "r")) == NULL) {
 			perror(editfile);
 			fclose(obuf);
 			remove(tempname);
+			sigret(sigs);
 			reset(0);
 		}
 		while ((c = getc(ibuf)) != EOF)
@@ -331,6 +335,7 @@ edstop()
 		if ((ibuf = fopen(tempname, "r")) == NULL) {
 			perror(tempname);
 			remove(tempname);
+			sigret(sigs);
 			reset(0);
 		}
 		remove(tempname);
@@ -339,6 +344,7 @@ edstop()
 	flush();
 	if ((obuf = fopen(editfile, "w")) == NULL) {
 		perror(editfile);
+		sigret(sigs);
 		reset(0);
 	}
 	c = 0;
@@ -348,6 +354,7 @@ edstop()
 		c++;
 		if (send(mp, obuf) < 0) {
 			perror(editfile);
+			sigret(sigs);
 			reset(0);
 		}
 	}
@@ -360,6 +367,7 @@ edstop()
 	fflush(obuf);
 	if (ferror(obuf)) {
 		perror(editfile);
+		sigret(sigs);
 		reset(0);
 	}
 	fclose(obuf);
@@ -370,6 +378,33 @@ edstop()
 	else
 		printf("complete\n");
 	flush();
+
+done:
+	sigret(sigs);
+}
+
+/*
+ * Save signals SIGHUP - SIGQUIT in sigs, set them all to action.
+ */
+sigsave(sigs, action)
+	int (*sigs[])();
+{
+	register int i;
+
+	for (i = SIGHUP; i <= SIGQUIT; i++)
+		sigs[i - SIGHUP] = sigset(i, action);
+}
+
+/*
+ * Restore SIGHUP - SIGQUIT from sigs.
+ */
+sigret(sigs)
+	int (*sigs[])();
+{
+	register int i;
+	
+	for (i = SIGHUP; i <= SIGQUIT; i++)
+		sigset(i, sigs[i - SIGHUP]);
 }
 
 /*
@@ -456,10 +491,8 @@ expand(name)
 
 	if (!anyof(name, "~{[*?$`'\"\\"))
 		return(name);
-	/* sigint = signal(SIGINT, SIG_IGN); */
 	if (pipe(pivec) < 0) {
 		perror("pipe");
-		/* signal(SIGINT, sigint) */
 		return(name);
 	}
 	sprintf(cmdbuf, "echo %s", name);
@@ -511,11 +544,9 @@ expand(name)
 		fprintf(stderr, "\"%s\": Ambiguous\n", name);
 		goto err;
 	}
-	/* signal(SIGINT, sigint) */
 	return(savestr(xname));
 
 err:
-	/* signal(SIGINT, sigint); */
 	return(NOSTR);
 }
 
