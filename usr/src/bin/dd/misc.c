@@ -10,7 +10,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)misc.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)misc.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -31,11 +31,16 @@ summary(notused)
 	/* Use snprintf(3) so that we don't reenter stdio(3). */
 	len = snprintf(buf, sizeof(buf),
 	    "%u+%u records in\n%u+%u records out\n",
-	    in.f_stats, in.p_stats, out.f_stats, out.p_stats);
+	    st.in_full, st.in_part, st.out_full, st.out_part);
 	(void)write(STDERR_FILENO, buf, len);
-	if (in.t_stats) {
+	if (st.swab) {
+		len = snprintf(buf, sizeof(buf), "%u odd length swab %s\n",
+		     st.swab, (st.swab == 1) ? "block" : "blocks");
+		(void)write(STDERR_FILENO, buf, len);
+	}
+	if (st.trunc) {
 		len = snprintf(buf, sizeof(buf), "%u truncated %s\n",
-		     in.t_stats, (in.t_stats == 1) ? "block" : "blocks");
+		     st.trunc, (st.trunc == 1) ? "block" : "blocks");
 		(void)write(STDERR_FILENO, buf, len);
 	}
 }
