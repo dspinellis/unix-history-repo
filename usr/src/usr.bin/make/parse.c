@@ -11,7 +11,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parse.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)parse.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /*-
@@ -2513,8 +2513,10 @@ Parse_MainName()
 	Punt ("make: no target to make.\n");
     	/*NOTREACHED*/
     } else if (mainNode->type & OP_DOUBLEDEP) {
+	(void) Lst_AtEnd (main, (ClientData)mainNode);
 	Lst_Concat(main, mainNode->cohorts, LST_CONCNEW);
     }
-    (void) Lst_AtEnd (main, (ClientData)mainNode);
+    else
+	(void) Lst_AtEnd (main, (ClientData)mainNode);
     return (main);
 }
