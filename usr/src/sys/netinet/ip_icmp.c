@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ip_icmp.c	7.8.1.1 (Berkeley) %G%
+ *	@(#)ip_icmp.c	7.11 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -36,12 +36,12 @@
 #include "ip_icmp.h"
 #include "icmp_var.h"
 
-#ifdef ICMPPRINTFS
 /*
  * ICMP routines: error generation, receive packet processing, and
  * routines to turnaround packets back to the originator, and
  * host table maintenance routines.
  */
+#ifdef ICMPPRINTFS
 int	icmpprintfs = 0;
 #endif
 
@@ -305,8 +305,7 @@ reflect:
 			u_long in_netof();
 			icmpsrc.sin_addr =
 			 in_makeaddr(in_netof(icp->icmp_ip.ip_dst), INADDR_ANY);
-			icmpmask.sin_addr.s_addr =
-					in_maskof(icp->icmp_ip.ip_dst);
+			in_sockmaskof(icp->icmp_ip.ip_dst, &icmpmask);
 			rtredirect((struct sockaddr *)&icmpsrc,
 			  (struct sockaddr *)&icmpdst,
 			  (struct sockaddr *)&icmpmask, RTF_GATEWAY,
@@ -395,36 +394,60 @@ icmp_reflect(m)
 		/*
 		 * Retrieve any source routing from the incoming packet;
 		 * add on any record-route or timestamp options.
-		 * Strip out original options.  Adjust the IP length.
 		 */
 		cp = (u_char *) (ip + 1);
-		if (opts = ip_srcroute())
-		    for (cnt = optlen; cnt > 0; cnt -= len, cp += len) {
-			opt = cp[IPOPT_OPTVAL];
-			if (opt == IPOPT_EOL)
-				break;
-			if (opt == IPOPT_NOP)
-				len = 1;
-			else {
-				len = cp[IPOPT_OLEN];
-				if (len <= 0 || len > cnt)
-					break;
-			}
-			/* should check for overflow, but it "can't happen" */
-			if (opt == IPOPT_RR || opt == IPOPT_TS) {
-				bcopy((caddr_t)cp,
-				    mtod(opts, caddr_t) + opts->m_len, len);
-				opts->m_len += len;
-			}
+		if ((opts = ip_srcroute()) == 0 &&
+		    (opts = m_gethdr(M_DONTWAIT, MT_HEADER))) {
+			opts->m_len = sizeof(struct in_addr);
+			mtod(opts, struct in_addr *)->s_addr = 0;
 		}
-		ovbcopy((caddr_t)ip, (caddr_t)ip + optlen, sizeof(struct ip));
-		m->m_data += optlen;
-		m->m_len -= optlen;
-		ip = mtod(m, struct ip *);
+		if (opts) {
+#ifdef ICMPPRINTFS
+		    if (icmpprintfs)
+			    printf("icmp_reflect optlen %d rt %d => ",
+				optlen, opts->m_len);
+#endif
+		    for (cnt = optlen; cnt > 0; cnt -= len, cp += len) {
+			    opt = cp[IPOPT_OPTVAL];
+			    if (opt == IPOPT_EOL)
+				    break;
+			    if (opt == IPOPT_NOP)
+				    len = 1;
+			    else {
+				    len = cp[IPOPT_OLEN];
+				    if (len <= 0 || len > cnt)
+					    break;
+			    }
+			    /*
+			     * should check for overflow, but it "can't happen"
+			     */
+			    if (opt == IPOPT_RR || opt == IPOPT_TS) {
+				    bcopy((caddr_t)cp,
+					mtod(opts, caddr_t) + opts->m_len, len);
+				    opts->m_len += len;
+			    }
+		    }
+		    if (opts->m_len % 4 != 0) {
+			    *(mtod(opts, caddr_t) + opts->m_len) = IPOPT_EOL;
+			    opts->m_len++;
+		    }
+#ifdef ICMPPRINTFS
+		    if (icmpprintfs)
+			    printf("%d\n", opts->m_len);
+#endif
+		}
+		/*
+		 * Now strip out original options by copying rest of first
+		 * mbuf's data back, and adjust the IP length.
+		 */
 		ip->ip_len -= optlen;
 		ip->ip_hl = sizeof(struct ip) >> 2;
+		m->m_len -= optlen;
 		if (m->m_flags & M_PKTHDR)
 			m->m_pkthdr.len -= optlen;
+		optlen += sizeof(struct ip);
+		bcopy((caddr_t)ip + optlen, (caddr_t)(ip + 1),
+		    m->m_len - sizeof(struct ip));
 	}
 	icmp_send(m, opts);
 	if (opts)
