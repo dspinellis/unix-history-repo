@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)cico.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)cico.c	5.12 (Berkeley) %G%";
 #endif
 
 #include <signal.h>
@@ -238,7 +238,6 @@ register char *argv[];
 			ttyn = ttyname(Ifn);
 		}
 		fixmode(Ifn);
-		getbaud(Ifn);
 
 		/*
 		 * Initial Message -- tell them we're here, and who we are.
@@ -539,14 +538,11 @@ loop:
 		seq = 0;
 #endif !GNXSEQ
 		if (MaxGrade != '\177') {
-			char buf[MAXFULLNAME];
-			sprintf(buf, " -p%c -vgrade=%c", MaxGrade, MaxGrade);
-			strcat(rflags, buf);
-		}
-
-		sprintf(msg, "%s -Q%d %s", Myname, seq, rflags);
-		if (MaxGrade != '\177')
 			DEBUG(2, "Max Grade this transfer is %c\n", MaxGrade);
+			sprintf(msg, "%s -Q%d -p%c -vgrade=%c %s",
+				Myname, seq, MaxGrade, MaxGrade, rflags);
+		} else
+			sprintf(msg, "%s -Q%d %s", Myname, seq, rflags);
 		omsg('S', msg, Ofn);
 		for (;;) {
 			ret = imsg(msg, Ifn);

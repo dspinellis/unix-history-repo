@@ -1,4 +1,4 @@
-/*	condevs.h	4.3	85/06/19	*/
+/*	condevs.h	4.4	86/01/24	*/
 
 #include "uucp.h"
 #include <errno.h>
@@ -31,6 +31,10 @@ int dnopn(), dncls();
 int hyspopn(), hystopn(), hyscls();
 #endif HAYES
 
+#ifdef HAYES2400
+int hyspopn24(), hystop24n(), hyscls();
+#endif HAYES2400
+
 #ifdef HAYESQ
 int hysqopn(), hysqcls();  /* a version of hayes that doesn't use ret codes */
 #endif HAYESQ
@@ -38,6 +42,10 @@ int hysqopn(), hysqcls();  /* a version of hayes that doesn't use ret codes */
 #ifdef NOVATION
 int novopn(), novcls();
 #endif NOVATION
+
+#ifdef CDS224
+int cdsopn224(), cdscls224();
+#endif CDs224
 
 #ifdef DF02
 int df2opn(), df2cls();

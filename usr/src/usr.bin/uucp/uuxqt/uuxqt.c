@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)uuxqt.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)uuxqt.c	5.8 (Berkeley) %G%";
 #endif
 
 #include "uucp.h"
@@ -290,11 +290,6 @@ doprocess:
 		 */
 		if (cmdp > buf && cmdp[0] == '\0' && cmdp[-1] == ' ')
 			*--cmdp = '\0';
-		if (strpbrk(user, BADCHARS) != NULL) {
-			sprintf(lbuf, "%s INVALID CHARACTER IN USERNAME", user);
-			logent(cmd, lbuf);
-			strcpy(user, "postmaster");
-		}
 		if (argnok || badfiles) {
 			sprintf(lbuf, "%s XQT DENIED", user);
 			logent(cmd, lbuf);
@@ -629,25 +624,35 @@ char *user, *rmt, *cmd, *str;
 	char text[MAXFULLNAME];
 	char ruser[MAXFULLNAME];
 
+	if (strpbrk(user, BADCHARS) != NULL) {
+		char lbuf[MAXFULLNAME];
+		sprintf(lbuf, "%s INVALID CHARACTER IN USERNAME", user);
+		logent(cmd, lbuf);
+		strcpy(user, "postmaster");
+	}
 	sprintf(text, "uuxqt cmd (%s) status (%s)", cmd, str);
 	if (prefix(rmt, Myname))
 		strcpy(ruser, user);
 	else
 		sprintf(ruser, "%s!%s", rmt, user);
 	mailst(ruser, text, CNULL);
-	return;
 }
 
 /*
  *	return mail to sender
  *
  */
-
 retosndr(user, rmt, file)
 char *user, *rmt, *file;
 {
 	char ruser[MAXFULLNAME];
 
+	if (strpbrk(user, BADCHARS) != NULL) {
+		char lbuf[MAXFULLNAME];
+		sprintf(lbuf, "%s INVALID CHARACTER IN USERNAME", user);
+		logent(file, lbuf);
+		strcpy(user, "postmaster");
+	}
 	if (strcmp(rmt, Myname) == SAME)
 		strcpy(ruser, user);
 	else

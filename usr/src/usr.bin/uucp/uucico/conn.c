@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)conn.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)conn.c	5.10 (Berkeley) %G%";
 #endif
 
 #include <signal.h>
@@ -102,6 +102,7 @@ static char PCP_brand[20];
 
 int Dcf = -1;
 char *Flds[MAXC/10];
+char LineType[10];
 extern int LocalOnly;
 
 conn(system)
@@ -120,10 +121,11 @@ char *system;
 	DEBUG(4, "finds (%s) called\n", system);
 keeplooking:
 	while((nf = finds(fsys, system, info, Flds)) > 0) {
+		strncpy(LineType, Flds[F_LINE], 10);
 		if (LocalOnly) {
-			if (strcmp("TCP", Flds[F_LINE])
-				&& strcmp("DIR", Flds[F_LINE])
-				&& strcmp("LOCAL", Flds[F_LINE]) ) {
+			if (strcmp("TCP", LineType)
+				&& strcmp("DIR", LineType)
+				&& strcmp("LOCAL", LineType) ) {
 					fcode = CF_TIME;
 					continue;
 			}
@@ -135,7 +137,7 @@ keeplooking:
 				continue;
 		}
 		/* For GTE's PC Pursuit */
-		if (snccmp(Flds[F_LINE], PCP) == SAME) {
+		if (snccmp(LineType, PCP) == SAME) {
 			FILE *dfp;
 			int status;
 			static struct Devices dev;
@@ -182,7 +184,7 @@ keeplooking:
 
 	Dcf = fcode;
 
-	if (fcode >= 0 && snccmp(Flds[F_LINE], PCP) == SAME) {
+	if (fcode >= 0 && snccmp(LineType, PCP) == SAME) {
 		AbortOn = "Good";	/* .... Good Bye */
 		fcode = expect("****~300", Dcf);
 		if (fcode != SUCCESS) {
@@ -560,39 +562,6 @@ int tty, spwant;
 #endif
 	linebaudrate = spwant;
 	return SUCCESS;
-}
-
-/*
- *	getbaud(tty)	set linebaudrate variable
- *
- *	return codes:  none
- */
-
-getbaud(tty)
-int tty;
-{
-#ifdef	USG
-	struct termio ttbuf;
-#else
-	struct sgttyb ttbuf;
-#endif
-	register struct sg_spds *ps;
-	register int name;
-
-	if (IsTcpIp)
-		return;
-#ifdef	USG
-	ioctl(tty, TCGETA, &ttbuf);
-	name = ttbuf.c_cflag & CBAUD;
-#else
-	ioctl(tty, TIOCGETP, &ttbuf);
-	name = ttbuf.sg_ispeed;
-#endif
-	for (ps = spds; ps->sp_val; ps++)
-		if (ps->sp_name == name) {
-			linebaudrate = ps->sp_val;
-			break;
-		}
 }
 
 #define MR 100
@@ -1003,16 +972,10 @@ char *string;
   	if (th < tl) { 		/* crosses midnight */
   		if (tl <= tn || tn < th)
   			return MGrade;
-  	} else
-
-	if (i < 2)
-		return MGrade;
-	if (th < tl) { 	/* crosses midnight */
-		if (tl <= tn || tn < th)
-			return MGrade;
-	} else
+  	} else {
 		if (tl <= tn && tn < th)
 			return MGrade;
+	}
 	return FAIL;
 }
 

@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)acucntrl.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)acucntrl.c	5.7 (Berkeley) %G%";
 #endif
 
 /*  acucntrl - turn around tty line between dialin and dialout
@@ -46,6 +46,7 @@ static char sccsid[] = "@(#)acucntrl.c	5.6 (Berkeley) %G%";
 /* #define SENSECARRIER */
 
 #include "uucp.h"
+#ifdef DIALINOUT
 #include <sys/buf.h>
 #include <signal.h>
 #include <sys/conf.h>
@@ -417,13 +418,18 @@ char *device;
 	}
 
 	ndevice = strlen(device);
+#ifndef BRL4_2
 	utmploc = sizeof(utmp);
+#else BRL4_2
+	utmploc = 0;
+#endif BRL4_2
 
 	while(fgets(linebuf, sizeof(linebuf) - 1, ttysfile) != NULL) {
 		if(strncmp(device, linebuf, ndevice) == 0)
 			return;
 		ttyslnbeg += strlen(linebuf);
-		utmploc += sizeof(utmp);
+		if (linebuf[0] != '#' && linebuf[0] != '\0')
+			utmploc += sizeof(utmp);
 		if (fputs(linebuf, nttysfile) == NULL) {
 			fprintf(stderr, "On %s write: %s\n",
 				Etcttys, sys_errlist[errno]);
@@ -723,3 +729,4 @@ prefix(s1, s2)
 			return (1);
 	return (c == '\0');
 }
+#endif DIALINOUT
