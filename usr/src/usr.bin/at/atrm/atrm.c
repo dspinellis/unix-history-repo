@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)atrm.c	1.2	(Berkeley)	%G%";
+static char sccsid[] = "@(#)atrm.c	1.3	(Berkeley)	%G%";
 #endif not lint
 
 /*
@@ -46,6 +46,7 @@ char **argv;
 	int jobexists;			/* does a requested job exist? */
 	int alphasort();		/* sort jobs by date of execution */
 	int filewanted();		/* should a file be listed in queue? */
+	char *getname();		/* get a user name from a uid */
 	struct stat *statptr;		/* pointer to file stat structure */
 	struct stat *stbuf[MAXENTRIES]; /* array of pointers to stat structs */
 	struct direct **namelist;	/* names of jobs in spooling area */
@@ -114,7 +115,7 @@ char **argv;
 	/*
 	 * Get a list of the files in the spooling area.
 	 */
-	if ((numjobs = scandir(".",&namelist,filewanted, alphasort)) < 0) {
+	if ((numjobs = scandir(".",&namelist,filewanted,alphasort)) < 0) {
 		perror(ATDIR);
 		exit(1);
 	}
@@ -144,10 +145,11 @@ char **argv;
 	 */
 	if (allflag) {
 		for (i = 0; i < numjobs; ++i) { 
-			if (user == SUPERUSER || user == stbuf[i]->st_uid)
+			if (user == SUPERUSER || isowner(getname(user),
+							namelist[i]->d_name)) 
 				removentry(namelist[i]->d_name,
 						(int)stbuf[i]->st_ino,
-							stbuf[i]->st_uid);
+							user);
 		}
 		exit(0);
 	}
@@ -177,12 +179,7 @@ char **argv;
 			 * the uid of the owner of the file......
 			 */
 			if (isuname) {
-				if ((userid = getid(*argv)) == -1) {
-					printf("%6s: no such ",*argv);
-					printf("user name\n");
-					break;
-				}
-				if (stbuf[i]->st_uid != userid)
+				if (!isowner(*argv,namelist[i]->d_name))
 					continue;
 
 			/*
@@ -195,7 +192,7 @@ char **argv;
 			}
 			++jobexists;
 			removentry(namelist[i]->d_name, (int)stbuf[i]->st_ino,
-					stbuf[i]->st_uid);
+					user);
 		}
 
 		/*
@@ -259,48 +256,106 @@ char *string;
  * write permission (since all jobs are mode 644). If access is granted,
  * unlink the file. If the fflag (suppress announcements) is not set,
  * print the job number that we are removing and the result of the access
- * check (either "permission denied" or "removed"). If the super-user is
- * removing jobs, inform him/her who owns each file after it is removed.
- * If we are running interactively (iflag), prompt the user before we 
- * unlink the file.
+ * check (either "permission denied" or "removed"). If we are running 
+ * interactively (iflag), prompt the user before we unlink the file. If 
+ * the super-user is removing jobs, inform him/her who owns each file before 
+ * it is removed.
  */
-removentry(filename,inode,uid)
+removentry(filename,inode,user)
 char *filename;
 int inode;
-int uid;
+int user;
 {
-
-	char *getname();		/* get a user name using a uid */
-
 
 	if (!fflag)
 		printf("%6d: ",inode);
 
-	if (access(filename,W_OK) < 0) {
+	if (!isowner(getname(user),filename) && user != SUPERUSER) {
+
 		if (!fflag) {
 			printf("permission denied\n");
 		}
+
 	} else {
 		if (iflag) {
-			if (user == SUPERUSER)
-				printf("  (owned by %s)\t",getname(uid));
+			if (user == SUPERUSER) {
+				printf("\t(owned by ");
+				powner(filename);
+				printf(")");
+			}
 			printf("remove it? ");
 			if (!yes())
 				return;
 		}
 		if (unlink(filename) < 0) {
-			if (!fflag)
-				printf("unlink: Permission denied.\n");
-
+			if (!fflag) {
+				fputs("FATAL ERROR (unlink fails): ",stdout);
+				fflush(stdout);
+				perror(filename);
+			}
 			return;
 		}
-		if (!fflag && !iflag) {
-			printf("removed");
-			if (user == SUPERUSER)
-				printf("\t(owned by %s)",getname(uid));
-			printf("\n");
-		}
+		if (!fflag && !iflag)
+			printf("removed\n");
 	}
+}
+
+/*
+ * See if "name" owns "job".
+ */
+isowner(name,job)
+char *name;
+char *job;
+{
+	char buf[30];			/* buffer for 1st line of spoolfile 
+					   header */
+	FILE *infile;			/* I/O stream to spoolfile */
+
+	if ((infile = fopen(job,"r")) == NULL) {
+		fprintf(stderr,"Couldn't open spoolfile");
+		perror(job);
+		return(0);
+	}
+
+	if (fscanf(infile,"# owner: %s\n",buf) != 1) {
+		fclose(infile);
+		return(0);
+	}
+
+	close(infile);
+	return((strcmp(name,buf) == 0) ? 1 : 0);
+}
+
+/*
+ * Print the owner of the job. This is stored on the first line of the
+ * spoolfile. If we run into trouble getting the name, we'll just print "???".
+ */
+powner(file)
+char *file;
+{
+	char owner[80];				/* the owner */
+	FILE *infile;				/* I/O stream to spoolfile */
+
+	/*
+	 * Open the job file and grab the first line.
+	 */
+
+	if ((infile = fopen(file,"r")) == NULL) {
+		printf("%s","???");
+		perror(file);
+		return;
+	}
+
+	if (fscanf(infile,"# owner: %s",owner) != 1) {
+		printf("%s","???");
+		perror(file);
+		fclose(infile);
+		return;
+	}
+
+	fclose(infile);
+	printf("%s",owner);
+
 }
 
 /*
@@ -348,3 +403,4 @@ int uid;
 		return("???");
 	return(pwdinfo->pw_name);
 }
+
