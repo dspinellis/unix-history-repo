@@ -1,4 +1,4 @@
-/*	mba.c	4.15	81/03/06	*/
+/*	mba.c	4.16	81/03/07	*/
 
 #include "mba.h"
 #if NMBA > 0
@@ -16,14 +16,15 @@
 #include "../h/proc.h"
 #include "../h/map.h"
 #include "../h/pte.h"
-#include "../h/mba.h"
+#include "../h/mbareg.h"
+#include "../h/mbavar.h"
 #include "../h/mtpr.h"
 #include "../h/vm.h"
 
 char	mbasr_bits[] = MBASR_BITS;
 /*
  * Start activity on a massbus device.
- * We are given the device's mba_info structure and activate
+ * We are given the device's mba_device structure and activate
  * the device via the unit start routine.  The unit start
  * routine may indicate that it is finished (e.g. if the operation
  * was a ``sense'' on a tape drive), that the (multi-ported) unit
@@ -32,7 +33,7 @@ char	mbasr_bits[] = MBASR_BITS;
  * set up a data transfer operation and we should start the massbus adaptor.
  */
 mbustart(mi)
-	register struct mba_info *mi;
+	register struct mba_device *mi;
 {
 	register struct buf *bp;	/* i/o operation at head of queue */
 	register struct mba_hd *mhp;	/* header for mba device is on */
@@ -59,7 +60,7 @@ loop:
 
 	case MBU_DODATA:	/* all ready to do data transfer */
 		/*
-		 * Queue the device mba_info structure on the massbus
+		 * Queue the device mba_device structure on the massbus
 		 * mba_hd structure for processing as soon as the
 		 * data path is available.
 		 */
@@ -113,7 +114,7 @@ loop:
 mbstart(mhp)
 	register struct mba_hd *mhp;
 {
-	register struct mba_info *mi;
+	register struct mba_device *mi;
 	struct buf *bp;
 	register struct mba_regs *mbp;
 
@@ -133,7 +134,8 @@ loop:
 	 * we screwed up, and can't really do the operation.
 	 */
 	if ((mi->mi_drv->mbd_ds & (MBD_DPR|MBD_MOL)) != (MBD_DPR|MBD_MOL)) {
-		printf("%c%d: not ready\n", mi->mi_name, dkunit(bp));
+		printf("%s%d: not ready\n", mi->mi_driver->md_dname,
+		    dkunit(bp));
 		mi->mi_tab.b_actf = bp->av_forw;
 		mi->mi_tab.b_errcnt = 0;
 		mi->mi_tab.b_active = 0;
@@ -177,7 +179,7 @@ mbintr(mbanum)
 {
 	register struct mba_hd *mhp = &mba_hd[mbanum];
 	register struct mba_regs *mbp = mhp->mh_mba;
-	register struct mba_info *mi;
+	register struct mba_device *mi;
 	register struct buf *bp;
 	register int drive;
 	int mbasr, as;
@@ -262,14 +264,14 @@ mbintr(mbanum)
 	while (drive = ffs(as)) {
 		drive--;		/* was 1 origin */
 		as &= ~(1 << drive);
-		/*
-		 * driver has a handler for non-data transfer
-		 * interrupts, give it a chance to tell us that
-		 * the operation needs to be redone
-		 */
 		mi = mhp->mh_mbip[drive];
 		if (mi == NULL)
 			continue;
+		/*
+		 * If driver has a handler for non-data transfer
+		 * interrupts, give it a chance to tell us that
+		 * the operation needs to be redone
+		 */
 		if (mi->mi_driver->md_ndint) {
 			mi->mi_tab.b_active = 0;
 			switch ((*mi->mi_driver->md_ndint)(mi)) {
@@ -280,12 +282,28 @@ mbintr(mbanum)
 				 * completed i/o request's processing.
 				 */
 				mi->mi_tab.b_errcnt = 0;
+				bp = mi->mi_tab.b_actf;
 				mi->mi_tab.b_actf = bp->av_forw;
 				iodone(bp);
 				/* fall into... */
 			case MBN_RETRY:
 				if (mi->mi_tab.b_actf)
 					mbustart(mi);
+				break;
+
+			case MBN_SKIP:
+				/*
+				 * Ignore (unsolicited interrupt, e.g.)
+				 */
+				break;
+
+			case MBN_CONT:
+				/*
+				 * Continue with unit active, e.g.
+				 * between first and second rewind
+				 * interrupts.
+				 */
+				mi->mi_tab.b_active = 1;
 				break;
 
 			default:
@@ -307,7 +325,7 @@ mbintr(mbanum)
  * Setup the mapping registers for a transfer.
  */
 mbasetup(mi)
-	register struct mba_info *mi;
+	register struct mba_device *mi;
 {
 	register struct mba_regs *mbap = mi->mi_mba;
 	struct buf *bp = mi->mi_tab.b_actf;

@@ -1,4 +1,4 @@
-/*	rk.c	4.23	%G%	*/
+/*	rk.c	4.24	%G%	*/
 
 int	rkpip;
 int	rknosval;
@@ -24,7 +24,8 @@ int	rknosval;
 #include "../h/pte.h"
 #include "../h/map.h"
 #include "../h/vm.h"
-#include "../h/uba.h"
+#include "../h/ubareg.h"
+#include "../h/ubavar.h"
 #include "../h/dk.h"
 #include "../h/cpu.h"
 #include "../h/cmap.h"
@@ -55,9 +56,9 @@ struct size {
 /* END OF STUFF WHICH SHOULD BE READ IN PER DISK */
 
 int	rkprobe(), rkslave(), rkattach(), rkdgo(), rkintr();
-struct	uba_minfo *rkminfo[NHK];
-struct	uba_dinfo *rkdinfo[NRK];
-struct	uba_dinfo *rkip[NHK][4];
+struct	uba_ctlr *rkminfo[NHK];
+struct	uba_device *rkdinfo[NRK];
+struct	uba_device *rkip[NHK][4];
 
 u_short	rkstd[] = { 0777440, 0 };
 struct	uba_driver hkdriver =
@@ -103,7 +104,7 @@ rkprobe(reg)
 }
 
 rkslave(ui, reg)
-	struct uba_dinfo *ui;
+	struct uba_device *ui;
 	caddr_t reg;
 {
 	register struct rkdevice *rkaddr = (struct rkdevice *)reg;
@@ -121,7 +122,7 @@ rkslave(ui, reg)
 }
 
 rkattach(ui)
-	register struct uba_dinfo *ui;
+	register struct uba_device *ui;
 {
 
 	if (rkwstart == 0) {
@@ -138,7 +139,7 @@ rkattach(ui)
 rkstrategy(bp)
 	register struct buf *bp;
 {
-	register struct uba_dinfo *ui;
+	register struct uba_device *ui;
 	register struct rkst *st;
 	register int unit;
 	register struct buf *dp;
@@ -176,10 +177,10 @@ bad:
 }
 
 rkustart(ui)
-	register struct uba_dinfo *ui;
+	register struct uba_device *ui;
 {
 	register struct buf *bp, *dp;
-	register struct uba_minfo *um;
+	register struct uba_ctlr *um;
 	register struct rkdevice *rkaddr;
 	register struct rkst *st;
 	daddr_t bn;
@@ -243,10 +244,10 @@ out:
 }
 
 rkstart(um)
-	register struct uba_minfo *um;
+	register struct uba_ctlr *um;
 {
 	register struct buf *bp, *dp;
-	register struct uba_dinfo *ui;
+	register struct uba_device *ui;
 	register struct rkdevice *rkaddr;
 	struct rkst *st;
 	daddr_t bn;
@@ -313,7 +314,7 @@ nosval:
 }
 
 rkdgo(um)
-	register struct uba_minfo *um;
+	register struct uba_ctlr *um;
 {
 	register struct rkdevice *rkaddr = (struct rkdevice *)um->um_addr;
 
@@ -324,8 +325,8 @@ rkdgo(um)
 rkintr(rk11)
 	int rk11;
 {
-	register struct uba_minfo *um = rkminfo[rk11];
-	register struct uba_dinfo *ui;
+	register struct uba_ctlr *um = rkminfo[rk11];
+	register struct uba_device *ui;
 	register struct rkdevice *rkaddr = (struct rkdevice *)um->um_addr;
 	register struct buf *bp, *dp;
 	int unit;
@@ -423,9 +424,18 @@ retry:
 		as &= ~(1<<ui->ui_slave);
 	}
 	for (unit = 0; as; as >>= 1, unit++)
-		if (as & 1)
-			if (rkustart(rkip[rk11][unit]))
-				needie = 0;
+		if (as & 1) {
+			ui = rkip[rk11][unit];
+			if (ui) {
+				if (rkustart(rkip[rk11][unit]))
+					needie = 0;
+			} else {
+				rkaddr->rkcs1 = RK_CERR|RK_CDT;
+				rkaddr->rkcs2 = unit;
+				rkaddr->rkcs1 = RK_CDT|RK_DCLR|RK_GO;
+				rkwait(rkaddr);
+			}
+		}
 	if (um->um_tab.b_actf && um->um_tab.b_active == 0)
 		if (rkstart(um))
 			needie = 0;
@@ -464,11 +474,11 @@ rkwrite(dev)
 }
 
 rkecc(ui)
-	register struct uba_dinfo *ui;
+	register struct uba_device *ui;
 {
 	register struct rkdevice *rk = (struct rkdevice *)ui->ui_addr;
 	register struct buf *bp = rkutab[ui->ui_unit].b_actf;
-	register struct uba_minfo *um = ui->ui_mi;
+	register struct uba_ctlr *um = ui->ui_mi;
 	register struct rkst *st;
 	struct uba_regs *ubp = ui->ui_hd->uh_uba;
 	register int i;
@@ -527,8 +537,8 @@ rkecc(ui)
 rkreset(uban)
 	int uban;
 {
-	register struct uba_minfo *um;
-	register struct uba_dinfo *ui;
+	register struct uba_ctlr *um;
+	register struct uba_device *ui;
 	register rk11, unit;
 
 	for (rk11 = 0; rk11 < NHK; rk11++) {
@@ -557,7 +567,7 @@ rkreset(uban)
 
 rkwatch()
 {
-	register struct uba_minfo *um;
+	register struct uba_ctlr *um;
 	register rk11, unit;
 	register struct rk_softc *sc;
 
@@ -595,7 +605,7 @@ rkdump(dev)
 	int num, blk, unit;
 	struct size *sizes;
 	register struct uba_regs *uba;
-	register struct uba_dinfo *ui;
+	register struct uba_device *ui;
 	register short *rp;
 	struct rkst *st;
 
@@ -603,7 +613,7 @@ rkdump(dev)
 	if (unit >= NRK)
 		return (ENXIO);
 #define	phys(cast, addr) ((cast)((int)addr & 0x7fffffff))
-	ui = phys(struct uba_dinfo *, rkdinfo[unit]);
+	ui = phys(struct uba_device *, rkdinfo[unit]);
 	if (ui->ui_alive == 0)
 		return (ENXIO);
 	uba = phys(struct uba_hd *, ui->ui_hd)->uh_physuba;
@@ -635,7 +645,7 @@ rkdump(dev)
 		blk = num > DBSIZE ? DBSIZE : num;
 		io = uba->uba_map;
 		for (i = 0; i < blk; i++)
-			*(int *)io++ = (btop(start)+i) | (1<<21) | UBA_MRV;
+			*(int *)io++ = (btop(start)+i) | (1<<21) | UBAMR_MRV;
 		*(int *)io = 0;
 		bn = dumplo + btop(start);
 		cn = bn/st->nspc + sizes[minor(dev)&07].cyloff;

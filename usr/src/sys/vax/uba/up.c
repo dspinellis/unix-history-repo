@@ -1,4 +1,4 @@
-/*	up.c	4.29	81/03/06	*/
+/*	up.c	4.30	81/03/07	*/
 
 #include "up.h"
 #if NSC > 0
@@ -6,12 +6,11 @@
  * UNIBUS disk driver with overlapped seeks and ECC recovery.
  *
  * TODO:
- *	Check out handling of spun-down drives and write lock
  *	Add reading of bad sector information and disk layout from sector 1
  *	Add bad sector forwarding code
  *	Check multiple drive handling
- *	Check dump code
  *	Check unibus reset code
+ *	Check that offset recovery code, etc works
  */
 #define	DELAY(N)		{ register int d; d = N; while (--d > 0); }
 
@@ -28,7 +27,8 @@
 #include "../h/pte.h"
 #include "../h/mtpr.h"
 #include "../h/vm.h"
-#include "../h/uba.h"
+#include "../h/ubavar.h"
+#include "../h/ubareg.h"
 #include "../h/cmap.h"
 
 #include "../h/upreg.h"
@@ -73,9 +73,9 @@ int	upSDIST = _upSDIST;
 int	upRDIST = _upRDIST;
 
 int	upprobe(), upslave(), upattach(), updgo(), upintr();
-struct	uba_minfo *upminfo[NSC];
-struct	uba_dinfo *updinfo[NUP];
-struct	uba_dinfo *upip[NSC][4];
+struct	uba_ctlr *upminfo[NSC];
+struct	uba_device *updinfo[NUP];
+struct	uba_device *upip[NSC][4];
 
 u_short	upstd[] = { 0776700, 0774400, 0776300, 0 };
 struct	uba_driver scdriver =
@@ -127,7 +127,7 @@ upprobe(reg)
 }
 
 upslave(ui, reg)
-	struct uba_dinfo *ui;
+	struct uba_device *ui;
 	caddr_t reg;
 {
 	register struct updevice *upaddr = (struct updevice *)reg;
@@ -142,7 +142,7 @@ upslave(ui, reg)
 }
 
 upattach(ui)
-	register struct uba_dinfo *ui;
+	register struct uba_device *ui;
 {
 #ifdef notdef
 	register struct updevice *upaddr;
@@ -170,7 +170,7 @@ upattach(ui)
 upstrategy(bp)
 	register struct buf *bp;
 {
-	register struct uba_dinfo *ui;
+	register struct uba_device *ui;
 	register struct upst *st;
 	register int unit;
 	register struct buf *dp;
@@ -220,10 +220,10 @@ bad:
  * positioning forever without transferrring.)
  */
 upustart(ui)
-	register struct uba_dinfo *ui;
+	register struct uba_device *ui;
 {
 	register struct buf *bp, *dp;
-	register struct uba_minfo *um = ui->ui_mi;
+	register struct uba_ctlr *um;
 	register struct updevice *upaddr;
 	register struct upst *st;
 	daddr_t bn;
@@ -238,6 +238,7 @@ upustart(ui)
 
 	if (ui == 0)
 		return (0);
+	um = ui->ui_mi;
 	dk_busy &= ~(1<<ui->ui_dk);
 	dp = &uputab[ui->ui_unit];
 	if ((bp = dp->b_actf) == NULL)
@@ -343,10 +344,10 @@ out:
  * Start up a transfer on a drive.
  */
 upstart(um)
-	register struct uba_minfo *um;
+	register struct uba_ctlr *um;
 {
 	register struct buf *bp, *dp;
-	register struct uba_dinfo *ui;
+	register struct uba_device *ui;
 	register struct updevice *upaddr;
 	struct upst *st;
 	daddr_t bn;
@@ -436,7 +437,7 @@ loop:
  * Now all ready to go, stuff the registers.
  */
 updgo(um)
-	struct uba_minfo *um;
+	struct uba_ctlr *um;
 {
 	register struct updevice *upaddr = (struct updevice *)um->um_addr;
 
@@ -451,8 +452,8 @@ upintr(sc21)
 	register sc21;
 {
 	register struct buf *bp, *dp;
-	register struct uba_minfo *um = upminfo[sc21];
-	register struct uba_dinfo *ui;
+	register struct uba_ctlr *um = upminfo[sc21];
+	register struct uba_device *ui;
 	register struct updevice *upaddr = (struct updevice *)um->um_addr;
 	register unit;
 	struct up_softc *sc = &up_softc[um->um_ctlr];
@@ -473,7 +474,7 @@ upintr(sc21)
 	}
 	/*
 	 * Get device and block structures, and a pointer
-	 * to the uba_dinfo for the drive.  Select the drive.
+	 * to the uba_device for the drive.  Select the drive.
 	 */
 	dp = um->um_tab.b_actf;
 	bp = dp->b_actf;
@@ -633,11 +634,11 @@ upwrite(dev)
  * across a page boundary.
  */
 upecc(ui)
-	register struct uba_dinfo *ui;
+	register struct uba_device *ui;
 {
 	register struct updevice *up = (struct updevice *)ui->ui_addr;
 	register struct buf *bp = uputab[ui->ui_unit].b_actf;
-	register struct uba_minfo *um = ui->ui_mi;
+	register struct uba_ctlr *um = ui->ui_mi;
 	register struct upst *st;
 	struct uba_regs *ubp = ui->ui_hd->uh_uba;
 	register int i;
@@ -654,7 +655,7 @@ upecc(ui)
 	npf = btop((up->upwc * sizeof(short)) + bp->b_bcount) - 1;
 	reg = btop(um->um_ubinfo&0x3ffff) + npf;
 	o = (int)bp->b_un.b_addr & PGOFSET;
-	printf("up%d%c: soft ecc bn%d\n", dkunit(bp),
+	printf("up%d%c: soft ecc sn%d\n", dkunit(bp),
 	    'a'+(minor(bp->b_dev)&07), bp->b_blkno + npf);
 	mask = up->upec2;
 	/*
@@ -723,8 +724,8 @@ upecc(ui)
 upreset(uban)
 	int uban;
 {
-	register struct uba_minfo *um;
-	register struct uba_dinfo *ui;
+	register struct uba_ctlr *um;
+	register struct uba_device *ui;
 	register sc21, unit;
 
 	for (sc21 = 0; sc21 < NSC; sc21++) {
@@ -760,7 +761,7 @@ upreset(uban)
  */
 upwatch()
 {
-	register struct uba_minfo *um;
+	register struct uba_ctlr *um;
 	register sc21, unit;
 	register struct up_softc *sc;
 
@@ -798,7 +799,7 @@ updump(dev)
 	int num, blk, unit, i;
 	struct size *sizes;
 	register struct uba_regs *uba;
-	register struct uba_dinfo *ui;
+	register struct uba_device *ui;
 	register short *rp;
 	struct upst *st;
 
@@ -806,20 +807,19 @@ updump(dev)
 	if (unit >= NUP)
 		return (ENXIO);
 #define	phys(cast, addr) ((cast)((int)addr & 0x7fffffff))
-	ui = phys(struct uba_dinfo *, updinfo[unit]);
+	ui = phys(struct uba_device *, updinfo[unit]);
 	if (ui->ui_alive == 0)
 		return (ENXIO);
 	uba = phys(struct uba_hd *, ui->ui_hd)->uh_physuba;
-#if VAX780
-	if (cpu == VAX_780)
-		ubainit(uba);
-#endif
+	ubainit(uba);
 	upaddr = (struct updevice *)ui->ui_physaddr;
-	if ((upaddr->upcs1&UP_DVA) == 0)
-		return (EFAULT);
+	DELAY(2000000);
 	num = maxfree;
 	start = 0;
 	upaddr->upcs2 = unit;
+	DELAY(100);
+	if ((upaddr->upcs1&UP_DVA) == 0)
+		return (EFAULT);
 	if ((upaddr->upds & UP_VV) == 0) {
 		upaddr->upcs1 = UP_DCLR|UP_GO;
 		upaddr->upcs1 = UP_PRESET|UP_GO;
@@ -840,7 +840,7 @@ updump(dev)
 		blk = num > DBSIZE ? DBSIZE : num;
 		io = uba->uba_map;
 		for (i = 0; i < blk; i++)
-			*(int *)io++ = (btop(start)+i) | (1<<21) | UBA_MRV;
+			*(int *)io++ = (btop(start)+i) | (1<<21) | UBAMR_MRV;
 		*(int *)io = 0;
 		bn = dumplo + btop(start);
 		cn = bn/st->nspc + sizes[minor(dev)&07].cyloff;
