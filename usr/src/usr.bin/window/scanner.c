@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)scanner.c	3.6 %G%";
+static char sccsid[] = "@(#)scanner.c	3.7 %G%";
 #endif
 
 #include <stdio.h>
@@ -136,6 +136,9 @@ loop:
 		case '|':
 			state = 25;
 			break;
+		case '$':
+			state = 26;
+			break;
 		case '~':
 			cx.x_token = T_COMP;
 			state = -1;
@@ -170,10 +173,6 @@ loop:
 			break;
 		case ')':
 			cx.x_token = T_RP;
-			state = -1;
-			break;
-		case '$':
-			cx.x_token = T_DOLLAR;
 			state = -1;
 			break;
 		case ',':
@@ -443,7 +442,7 @@ loop:
 			state = -1;
 		}
 		break;
-	case 24:			/* and & */
+	case 24:			/* got & */
 		switch (c) {
 		case '&':
 			cx.x_token = T_ANDAND;
@@ -455,7 +454,7 @@ loop:
 			state = -1;
 		}
 		break;
-	case 25:			/* and | */
+	case 25:			/* got | */
 		switch (c) {
 		case '|':
 			cx.x_token = T_OROR;
@@ -464,6 +463,18 @@ loop:
 		default:
 			(void) s_ungetc(c);
 			cx.x_token = T_OR;
+			state = -1;
+		}
+		break;
+	case 26:			/* got $ */
+		switch (c) {
+		case '?':
+			cx.x_token = T_DQ;
+			state = -1;
+			break;
+		default:
+			(void) s_ungetc(c);
+			cx.x_token = T_DOLLAR;
 			state = -1;
 		}
 		break;

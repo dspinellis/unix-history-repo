@@ -1,5 +1,5 @@
 /*
- * @(#)token.h	3.2 %G%
+ * @(#)token.h	3.3 %G%
  */
 
 #define token		(cx.x_token)
@@ -24,7 +24,7 @@
 #define T_NUM		16
 #define T_MOD		17
 #define T_XOR		18
-/* 19 */
+#define T_DQ		19		/* $? */
 #define T_GE		20
 #define T_RS		21
 #define T_GT		22
