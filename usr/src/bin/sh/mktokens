@@ -1,14 +1,14 @@
 #!/bin/sh -
 #
-# Copyright (c) 1991 The Regents of the University of California.
-# All rights reserved.
+# Copyright (c) 1991, 1993
+#	The Regents of the University of California.  All rights reserved.
 #
 # This code is derived from software contributed to Berkeley by
 # Kenneth Almquist.
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)mktokens	5.2 (Berkeley) %G%
+#	@(#)mktokens	8.1 (Berkeley) %G%
 
 # The following is a list of tokens.  The second column is nonzero if the
 # token marks the end of a list.  The third column is the name to print in
