@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)myhistedit.h	1.4 (Berkeley) %G%
+ *	@(#)myhistedit.h	8.1 (Berkeley) %G%
  */
 
 #include <histedit.h>
