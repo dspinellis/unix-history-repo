@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)address.c 1.1 %G%";
+static char sccsid[] = "@(#)address.c 1.2 %G%";
 
 /*
  * Some machine and runtime dependent manipulation of a symbol.
@@ -27,44 +27,44 @@ ADDRESS address(s, frame)
 register SYM *s;
 FRAME *frame;
 {
-	SYM *f;
-	FRAME *frp;
-	ADDRESS r, *dp, *disp;
-	short offs;
+    SYM *f;
+    FRAME *frp;
+    ADDRESS r, *dp, *disp;
+    short offs;
 
-	f = s->func;
-	if (s->class == FVAR) {
-		offs = f->symvalue.offset;
+    f = s->func;
+    if (s->class == FVAR) {
+	offs = f->symvalue.offset;
+    } else {
+	offs = s->symvalue.offset;
+    }
+    if (f == program) {
+	r = (ADDRESS) dispval(MAINBLK) + offs;
+    } else if (f == curfunc && frame == NIL) {
+	dp = curdp();
+	disp = contents(dp);
+	r = (ADDRESS) disp + offs;
+    } else {
+	if (frame == NIL) {
+	    frp = findframe(s->func);
+	    if (frp == NIL) {
+		panic("address: findframe returned NIL");
+	    }
 	} else {
-		offs = s->symvalue.offset;
+	    frp = frame;
 	}
-	if (f == program) {
-		r = (ADDRESS) dispval(MAINBLK) + offs;
-	} else if (f == curfunc && frame == NIL) {
-		dp = curdp();
-		disp = contents(dp);
-		r = (ADDRESS) disp + offs;
-	} else {
-		if (frame == NIL) {
-			frp = findframe(s->func);
-			if (frp == NIL) {
-				panic("address: findframe returned NIL");
-			}
-		} else {
-			frp = frame;
-		}
-		r = stkaddr(frp, s->blkno) + offs;
-	}
-	return r;
+	r = stkaddr(frp, s->blkno) + offs;
+    }
+    return r;
 }
 
 /*
  * The next three routines assume the procedure entry code is
  *
- *		f:	tra4	A
- *			...
- *		A:	beg
- *		B:	<code for first line>
+ *      f:  tra4    A
+ *          ...
+ *      A:  beg
+ *      B:  <code for first line>
  *
  * Pi gives f, we compute and store A with "findbeginning(f)",
  * (retrieved by "codeloc(f)"), B is computed by "firstline(f)".
@@ -82,7 +82,7 @@ FRAME *frame;
 findbeginning(f)
 SYM *f;
 {
-	f->symvalue.funcv.codeloc = nextaddr(f->symvalue.funcv.codeloc, FALSE);
+    f->symvalue.funcv.codeloc = nextaddr(f->symvalue.funcv.codeloc, FALSE);
 }
 
 /*
@@ -92,13 +92,16 @@ SYM *f;
 ADDRESS firstline(f)
 SYM *f;
 {
-	ADDRESS addr;
+    ADDRESS addr;
 
-	addr = codeloc(f);
-	while (linelookup(addr) == 0) {
-		addr = nextaddr(addr, FALSE);
+    addr = codeloc(f);
+    while (linelookup(addr) == 0) {
+	if (isendofproc(addr)) {
+	    return -1;
 	}
-	return(addr);
+	addr = nextaddr(addr, FALSE);
+    }
+    return addr;
 }
 
 /*
@@ -107,7 +110,7 @@ SYM *f;
 
 runtofirst()
 {
-	stepto(firstline(curfunc));
+    stepto(firstline(curfunc));
 }
 
 /*
@@ -117,8 +120,8 @@ runtofirst()
 
 ADDRESS lastaddr()
 {
-	if (objsize == 0) {
-		panic("lastaddr: objsize = 0!");
-	}
-	return(objsize - sizeof(short));
+    if (objsize == 0) {
+	panic("lastaddr: objsize = 0!");
+    }
+    return(objsize - sizeof(short));
 }
