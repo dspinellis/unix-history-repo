@@ -6,7 +6,7 @@
  */
 
 #include "defs.h"
-static	char sccsid[] = "@(#)expr.c	4.6 %G%";
+static	char sccsid[] = "@(#)expr.c	4.7 %G%";
 
 MSG		BADSYM;
 MSG		BADVAR;
@@ -100,6 +100,63 @@ term(a)
 			term(a|1); expv = -expv; return(1);
 
 		    case '~':
+			term(a|1); expv = ~expv; return(1);
+
+		    case '#':
+			term(a|1); expv = !expv; return(1);
+
+		    case '(':
+			expr(2);
+			IF *lp!=')'
+			THEN	error(BADSYN);
+			ELSE	lp++; return(1);
+			FI
+
+		    default:
+			lp--;
+			return(item(a));
+	}
+}
+
+item(a)
+{	/* name [ . local ] | number | . | ^ | <var | <register | 'x | | */
+	INT		base, d;
+	CHAR		savc;
+	BOOL		hex;
+	L_INT		frame;
+	register struct nlist *symp;
+	int regptr;
+
+	hex=FALSE;
+
+	readchar();
+	IF symchar(0)
+	THEN	readsym();
+		IF lastc=='.'
+		THEN	frame= *(ADDR *)(((ADDR)&u)+FP); lastframe=0;
+			callpc= *(ADDR *)(((ADDR)&u)+PC);
+			WHILE errflg==0
+			DO  savpc=callpc;
+				findsym(callpc,ISYM);
+			    IF  eqsym(cursym->n_un.n_name,isymbol,'~')
+			    THEN break;
+			    FI
+				callpc=get(frame+16, DSP);
+			    lastframe=frame;
+			    frame=get(frame+12,DSP)&EVEN;
+			    IF frame==0
+			    THEN error(NOCFN);
+			    FI
+			OD
+			savlastf=lastframe; savframe=frame;
+			readchar();
+			IF symchar(0)
+			THEN	chkloc(expv=frame);
+			FI
+		ELIF (symp=lookup(isymbol))==0 THEN error(BADSYM);
+		ELSE expv = symp->n_value;
+		FI
+		lp--;
 
 	ELIF getnum(readchar)
 	THEN ;
