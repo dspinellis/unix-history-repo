@@ -1,10 +1,7 @@
 /* 
  * Copyright (c) 1987 Carnegie-Mellon University.
- * Copyright (c) 1991 Regents of the University of California.
  * All rights reserved.
  *
- * This code is derived from software contributed to Berkeley by
- * The Mach Operating System project at Carnegie-Mellon University.
  * Authors: Avadis Tevanian, Jr., Michael Wayne Young
  * 
  * Permission to use, copy, modify and distribute this software and
@@ -26,9 +23,16 @@
  *	Carnegie Mellon University
  *	Pittsburgh PA 15213-3890
  *
+ *
+ * Copyright (c) 1991 Regents of the University of California.
+ * All rights reserved.
+ *
+ * This code is derived from software contributed to Berkeley by
+ * The Mach Operating System project at Carnegie-Mellon University.
+ *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_fault.c	7.2 (Berkeley) %G%
+ *	@(#)vm_fault.c	7.3 (Berkeley) %G%
  */
 
 /*
