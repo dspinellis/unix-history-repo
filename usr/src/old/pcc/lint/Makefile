@@ -1,11 +1,11 @@
 #
-#	@(#)Makefile	1.14	(Berkeley)	%G%
+#	@(#)Makefile	1.15	(Berkeley)	%G%
 #
 M=/usr/src/lib/mip
 #ifdef vax
-#P=/usr/src/lib/pcc.vax
+#P=/usr/src/lib/pcc/pcc.vax
 #else
-P=/usr/src/lib/pcc.tahoe
+P=/usr/src/lib/pcc/pcc.tahoe
 #endif
 CFLAGS=-O
 LINTLIBS=llib-port.ln llib-lc.ln llib-lcurses.ln llib-ldbm.ln llib-lm.ln \
