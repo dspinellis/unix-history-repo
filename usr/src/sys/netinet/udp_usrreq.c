@@ -9,7 +9,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)udp_usrreq.c	7.4 (Berkeley) %G%
+ *	@(#)udp_usrreq.c	7.5 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -234,7 +234,7 @@ udp_output(inp, m0)
 	ui->ui_sum = 0;
 	if (udpcksum) {
 	    if ((ui->ui_sum = in_cksum(m, sizeof (struct udpiphdr) + len)) == 0)
-		ui->ui_sum = -1;
+		ui->ui_sum = 0xffff;
 	}
 	((struct ip *)ui)->ip_len = sizeof (struct udpiphdr) + len;
 	((struct ip *)ui)->ip_ttl = udp_ttl;
