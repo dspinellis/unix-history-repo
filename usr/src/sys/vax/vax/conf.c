@@ -1,4 +1,4 @@
-/*	conf.c	4.52	82/05/27	*/
+/*	conf.c	4.53	82/05/27	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -287,6 +287,17 @@ struct	tty pt_tty[];
 #define	ptsstop		nulldev
 #endif
 
+#include "lpa.h"
+#if NLA > 0
+int	lpaopen(), lpaclose(), lparead(), lpawrite(), lpaioctl();
+#else
+#define	lpaopen		nodev
+#define	lpaclose	nodev
+#define	lparead		nodev
+#define	lpawrite	nodev
+#define	lpaioctl	nodev
+#endif
+
 #include "dn.h"
 #if NDN > 0
 int	dnopen(), dnclose(), dnwrite();
@@ -395,6 +406,9 @@ struct cdevsw	cdevsw[] =
 /* 25-29 reserved to local sites */
 	gpibopen,	gpibclose,	gpibread,	gpibwrite,	/*25*/
 	gpibioctl,	nulldev,	nodev,		0,
+	seltrue,
+	lpaopen,	lpaclose,	lparead,	lpawrite,	/*26*/
+	lpaioctl,	nodev,		nulldev,	0,
 	seltrue,
 	0,	
 };
