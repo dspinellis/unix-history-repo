@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)subr_log.c	7.14 (Berkeley) %G%
+ *	@(#)subr_log.c	7.15 (Berkeley) %G%
  */
 
 /*
@@ -177,7 +177,7 @@ logioctl(dev, com, data, flag, p)
 		splx(s);
 		if (l < 0)
 			l += MSG_BSIZE;
-		*(off_t *)data = l;
+		*(int *)data = l;
 		break;
 
 	case FIONBIO:
