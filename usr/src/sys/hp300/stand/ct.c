@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ct.c	7.4 (Berkeley) %G%
+ *	@(#)ct.c	7.5 (Berkeley) %G%
  */
 
 /*
@@ -139,6 +139,7 @@ ctopen(io)
 	skip = io->i_part;
 	while (skip--)
 		ctstrategy(io, MTFSF);
+	return(0);
 }
 
 ctclose(io)
@@ -155,6 +156,9 @@ ctstrategy(io, func)
 	register int unit = io->i_ctlr;
 	register struct ct_softc *rs = &ct_softc[ctlr][unit];
 	char stat;
+
+	if (io->i_cc == 0 && (func == F_READ || func == F_WRITE))
+		return(0);
 
 	rs->sc_retry = 0;
 	ct_ioc.unit = C_SUNIT(rs->sc_punit);
