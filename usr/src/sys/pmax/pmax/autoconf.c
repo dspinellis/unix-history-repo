@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: autoconf.c 1.31 91/01/21$
  *
- *	@(#)autoconf.c	7.1 (Berkeley) %G%
+ *	@(#)autoconf.c	7.2 (Berkeley) %G%
  */
 
 /*
@@ -53,11 +53,24 @@ configure()
 	register struct pmax_ctlr *cp;
 	register struct scsi_device *dp;
 	register struct driver *drp;
+#ifdef DS5000
+	register int i;
+#endif
 
 	/* print what type of CPU and FPU we have */
 	switch (cpu.cpu.cp_imp) {
 	case MIPS_R2000:
 		printf("cpu0 (MIPS R2000 revision %d.%d)\n",
+			cpu.cpu.cp_majrev, cpu.cpu.cp_minrev);
+		break;
+
+	case MIPS_R3000:
+		printf("cpu0 (MIPS R3000 revision %d.%d)\n",
+			cpu.cpu.cp_majrev, cpu.cpu.cp_minrev);
+		break;
+
+	case MIPS_R4000:
+		printf("cpu0 (MIPS R4000 revision %d.%d)\n",
 			cpu.cpu.cp_majrev, cpu.cpu.cp_minrev);
 		break;
 
@@ -71,6 +84,16 @@ configure()
 			fpu.cpu.cp_majrev, fpu.cpu.cp_minrev);
 		break;
 
+	case MIPS_R3010:
+		printf("fpu0 (MIPS R3010 revision %d.%d)\n",
+			fpu.cpu.cp_majrev, fpu.cpu.cp_minrev);
+		break;
+
+	case MIPS_R4010:
+		printf("fpu0 (MIPS R4010 revision %d.%d)\n",
+			fpu.cpu.cp_majrev, fpu.cpu.cp_minrev);
+		break;
+
 	default:
 		printf("fpu0 (implementation %d revision %d.%d)\n",
 			fpu.cpu.cp_imp, fpu.cpu.cp_majrev, fpu.cpu.cp_minrev);
@@ -80,8 +103,28 @@ configure()
 
 	/* probe and initialize controllers */
 	for (cp = pmax_cinit; drp = cp->pmax_driver; cp++) {
+#ifdef DS3100
 		if (!(*drp->d_init)(cp))
 			continue;
+#endif
+#ifdef DS5000
+		/*
+		 * If the device is still in an unknown slot,
+		 * then it was not found by tc_find_all_options().
+		 */
+		if (cp->pmax_addr == (char *)QUES)
+			continue;
+		if (!(*drp->d_init)(cp))
+			continue;
+		if (drp->d_intr && (i = cp->pmax_pri) >= 0) {
+			if (intr_tab[i].func)
+				printf("%s: slot %d already in use\n",
+					drp->d_name, i);
+			intr_tab[i].func = drp->d_intr;
+			intr_tab[i].unit = cp->pmax_unit;
+			tc_enable_interrupt(i, 1);
+		}
+#endif
 
 		cp->pmax_alive = 1;
 
