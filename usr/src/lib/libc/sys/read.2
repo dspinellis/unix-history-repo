@@ -1,154 +1,162 @@
-.\" Copyright (c) 1980 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1980, 1991 Regents of the University of California.
+.\" All rights reserved.
 .\"
-.\"	@(#)read.2	6.6 (Berkeley) %G%
+.\" %sccs.include.redist.man%
 .\"
-.TH READ 2 ""
-.UC 4
-.SH NAME
-read, readv \- read input
-.SH SYNOPSIS
-.nf
-.ft B
-cc = read(d, buf, nbytes)
-int cc, d;
-char *buf;
-int nbytes;
-.PP
-.ft B
-#include <sys/types.h>
-#include <sys/uio.h>
-.PP
-.ft B
-cc = readv(d, iov, iovcnt)
-int cc, d;
-struct iovec *iov;
-int iovcnt;
-.fi
-.SH DESCRIPTION
-.I Read
+.\"     @(#)read.2	6.7 (Berkeley) %G%
+.\"
+.Dd 
+.Dt READ 2
+.Os BSD 4
+.Sh NAME
+.Nm read ,
+.Nm readv
+.Nd read input
+.Sh SYNOPSIS
+.Fd #include <unistd.h>
+.Fd #include <sys/types.h>
+.Fd #include <sys/uio.h>
+.Ft ssize_t
+.Fn read "int d" "char *buf" "size_t nbytes"
+.Ft int
+.Fn readv "int d" "struct iovec *iov" "int iovcnt"
+.Sh DESCRIPTION
+.Fn Read
 attempts to read
-.I nbytes
+.Fa nbytes
 of data from the object referenced by the descriptor
-.I d
+.Fa d
 into the buffer pointed to by
-.IR buf .
-.I Readv
+.Fa buf .
+.Fn Readv
 performs the same action, but scatters the input data
 into the 
-.I iovcnt
+.Fa iovcnt
 buffers specified by the members of the
-.I iov
+.Fa iov
 array: iov[0], iov[1], ..., iov[iovcnt\|\-\|1].
-.PP
+.Pp
 For 
-.IR readv ,
+.Fn readv ,
 the 
-.I iovec
+.Fa iovec
 structure is defined as
-.PP
-.nf
-.RS
-.DT
+.Bd -literal -offset indent -compact
 struct iovec {
 	caddr_t	iov_base;
 	int	iov_len;
 };
-.RE
-.fi
-.PP
+.Ed
+.Pp
 Each 
-.I iovec
+.Fa iovec
 entry specifies the base address and length of an area
 in memory where data should be placed. 
-.I Readv
+.Fn Readv
 will always fill an area completely before proceeding
 to the next.
-.PP
+.Pp
 On objects capable of seeking, the
-.I read
+.Fn read
 starts at a position
 given by the pointer associated with
-.IR d 
+.Fa d
 (see
-.IR lseek (2)).
+.Xr lseek 2 ) .
 Upon return from
-.IR read ,
+.Fn read ,
 the pointer is incremented by the number of bytes actually read.
-.PP
+.Pp
 Objects that are not capable of seeking always read from the current
 position.  The value of the pointer associated with such an
 object is undefined.
-.PP
+.Pp
 Upon successful completion,
-.I read
+.Fn read
 and
-.I readv
+.Fn readv
 return the number of bytes actually read and placed in the buffer.
 The system guarantees to read the number of bytes requested if
 the descriptor references a normal file that has that many bytes left
 before the end-of-file, but in no other case.
-.PP
-If the returned value is 0, then
-end-of-file has been reached.
-.SH "RETURN VALUE
+.Pp
+.Sh RETURN VALUES
 If successful, the
-number of bytes actually read is returned.
-Otherwise, a \-1 is returned and the global variable
-.I errno
+number of bytes actually read is returned. Upon reading end-of-file,
+zero is returned.
+Otherwise, a -1 is returned and the global variable
+.Va errno
 is set to indicate the error.
-.SH "ERRORS
-.I Read
+.Sh ERRORS
+.Fn Read
 and
-.I readv
-will fail if one or more of the following are true:
-.TP 15
-[EBADF]
-\fID\fP is not a valid file or socket descriptor open for reading.
-.TP 15
-[EFAULT]
-\fIBuf\fP points outside the allocated address space.
-.TP 15
-[EIO]
+.Fn readv
+will succeed unless:
+.Bl -tag -width Er
+.It Bq Er EBADF
+.Fa D
+is not a valid file or socket descriptor open for reading.
+.It Bq Er EFAULT
+.Fa Buf
+points outside the allocated address space.
+.It Bq Er EIO
 An I/O error occurred while reading from the file system.
-.TP 15
-[EINTR]
+.It Bq Er EINTR
 A read from a slow device was interrupted before
 any data arrived by the delivery of a signal.
-.TP 15
-[EINVAL]
+.It Bq Er EINVAL
 The pointer associated with
-.I d
+.Fa d
 was negative.
-.TP 15
-[EWOULDBLOCK]
+.It Bq Er EWOULDBLOCK
 The file was marked for non-blocking I/O,
 and no data were ready to be read.
-.PP
+.El
+.Pp
 In addition, 
-.I readv
+.Fn readv
 may return one of the following errors:
-.TP 15
-[EINVAL]
-.I Iovcnt
+.Bl -tag -width Er
+.It Bq Er EINVAL
+.Fa Iovcnt
 was less than or equal to 0, or greater than 16.
-.TP 15
-[EINVAL]
+.It Bq Er EINVAL
 One of the
-.I iov_len
+.Fa iov_len
 values in the
-.I iov
+.Fa iov
 array was negative.
-.TP 15
-[EINVAL]
+.It Bq Er EINVAL
 The sum of the
-.I iov_len
+.Fa iov_len
 values in the
-.I iov
+.Fa iov
 array overflowed a 32-bit integer.
-.TP 15
-[EFAULT]
-Part of the \fIiov\fP points outside the process's allocated address space.
-.SH "SEE ALSO"
-dup(2), fcntl(2), open(2), pipe(2), select(2), socket(2), socketpair(2)
+.It Bq Er EFAULT
+Part of the
+.Fa iov
+points outside the process's allocated address space.
+.El
+.Sh SEE ALSO
+.Xr dup 2 ,
+.Xr fcntl 2 ,
+.Xr open 2 ,
+.Xr pipe 2 ,
+.Xr select 2 ,
+.Xr socket 2 ,
+.Xr socketpair 2
+.Sh STANDARDS
+.Fn Read
+is expected to conform to IEEE Std 1003.1-1988
+.Pq Dq Tn POSIX .
+.Sh HISTORY
+The
+.Fn readv
+function call
+appeared in
+.Bx 4.2 .
+A
+.Nm read
+function call
+appeared in
+Version 6 AT&T UNIX.

@@ -1,52 +1,63 @@
-.\" Copyright (c) 1983 The Regents of the University of California.
+.\" Copyright (c) 1983, 1991 The Regents of the University of California.
 .\" All rights reserved.
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)setgroups.2	6.6 (Berkeley) %G%
+.\"     @(#)setgroups.2	6.7 (Berkeley) %G%
 .\"
-.TH SETGROUPS 2 ""
-.UC 5
-.SH NAME
-setgroups \- set group access list
-.SH SYNOPSIS
-.nf
-.ft B
-#include <sys/param.h>
-.PP
-.ft B
-setgroups(ngroups, gidset)
-int ngroups, *gidset;
-.fi
-.SH DESCRIPTION
-.I Setgroups
+.Dd 
+.Dt SETGROUPS 2
+.Os BSD 4.2
+.Sh NAME
+.Nm setgroups
+.Nd set group access list
+.Sh SYNOPSIS
+.Fd #include <unistd.h>
+.Fd #include <sys/param.h>
+.Ft int
+.Fn setgroups "int ngroups" "const int *gidset"
+.Sh DESCRIPTION
+.Fn Setgroups
 sets the group access list of the current user process
 according to the array 
-.IR gidset .
+.Fa gidset .
 The parameter
-.I ngroups
+.Fa ngroups
 indicates the number of entries in the array and must be no
-more than NGROUPS, as defined in
-.RI < sys/param.h >.
-.PP
+more than
+.Dv NGROUPS ,
+as defined in
+.Ao Pa sys/param.h Ac .
+.Pp
 Only the super-user may set new groups.
-.SH "RETURN VALUE
-A 0 value is returned on success, \-1 on error, with
-a error code stored in \fIerrno\fP.
-.SH "ERRORS
-The \fIsetgroups\fP call will fail if:
-.TP 15
-[EPERM]
-The caller is not the super-user.
-.TP 15
-[EFAULT]
-The address specified for \fIgidset\fP is outside the process
-address space.
-.SH "SEE ALSO
-getgroups(2), initgroups(3)
-.SH BUGS
+.Sh RETURN VALUES
+A 0 value is returned on success, -1 on error, with
+an error code stored in
+.Va errno .
+.Sh ERRORS
 The
-.I gidset
+.Fn setgroups
+call will fail if:
+.Bl -tag -width Er
+.It Bq Er EPERM
+The caller is not the super-user.
+.It Bq Er EFAULT
+The address specified for
+.Fa gidset
+is outside the process
+address space.
+.El
+.Sh SEE ALSO
+.Xr getgroups 2 ,
+.Xr initgroups 3
+.Sh BUGS
+The
+.Fa gidset
 array should be of type
-.BR gid_t ,
+.Em gid_t ,
 but remains integer for compatibility with earlier systems.
+.Sh HISTORY
+The
+.Nm
+function call appeared in
+.Bx 4.2 .

@@ -1,70 +1,94 @@
-.\" Copyright (c) 1980 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1980, 1991 Regents of the University of California.
+.\" All rights reserved.
 .\"
-.\"	@(#)close.2	6.3 (Berkeley) %G%
+.\" %sccs.include.redist.man%
 .\"
-.TH CLOSE 2 ""
-.UC 4
-.SH NAME
-close \- delete a descriptor
-.SH SYNOPSIS
-.B close(d)
-.br
-.B "int d;"
-.SH DESCRIPTION
+.\"     @(#)close.2	6.4 (Berkeley) %G%
+.\"
+.Dd 
+.Dt CLOSE 2
+.Os BSD 4
+.Sh NAME
+.Nm close
+.Nd delete a descriptor
+.Sh SYNOPSIS
+.Fd #include <unistd.h>
+.Ft int
+.Fn close "int d"
+.Sh DESCRIPTION
 The
-\fIclose\fP call deletes a descriptor from the per-process object
+.Fn close
+call deletes a descriptor from the per-process object
 reference table.
-If this is the last reference to the underlying object, then
-it will be deactivated.
+If this is the last reference to the underlying object, the
+object will be deactivated.
 For example, on the last close of a file
-the current \fIseek\fP pointer associated with the file is lost;
+the current
+.Em seek
+pointer associated with the file is lost;
 on the last close of a
-.IR socket (2)
+.Xr socket 2
 associated naming information and queued data are discarded;
 on the last close of a file holding an advisory lock
 the lock is released (see further
-.IR flock (2)\fR).
-.PP
-A close of all of a process's descriptors is automatic on
-.IR exit ,
-but since
-there is a limit on the number of active descriptors per process,
-.I close
-is necessary for programs that deal with many descriptors.
-.PP
+.Xr flock 2 ) .
+.Pp
+When a process exits,
+all associated file descriptors are freed, but since there is
+a limit on active descriptors per processes, the
+.Fn close
+function call
+is useful when a large quanitity of file descriptors are being handled.
+.Pp
 When a process forks (see
-.IR fork (2)),
+.Xr fork 2 ) ,
 all descriptors for the new child process reference the same
 objects as they did in the parent before the fork.
 If a new process is then to be run using
-.IR execve (2),
+.Xr execve 2 ,
 the process would normally inherit these descriptors.  Most
 of the descriptors can be rearranged with
-.IR dup2 (2)
+.Xr dup2 2
 or deleted with
-.I close
+.Fn close
 before the
-.I execve
+.Xr execve
 is attempted, but if some of these descriptors will still
 be needed if the execve fails, it is necessary to arrange for them
 to be closed if the execve succeeds.
-For this reason, the call ``fcntl(d, F_SETFD, 1)'' is provided,
+For this reason, the call
+.Dq Li fcntl(d, F_SETFD, 1)
+is provided,
 which arranges that a descriptor will be closed after a successful
-execve; the call ``fcntl(d, F_SETFD, 0)'' restores the default,
+execve; the call
+.Dq Li fcntl(d, F_SETFD, 0)
+restores the default,
 which is to not close the descriptor.
-.SH "RETURN VALUE
+.Sh RETURN VALUES
 Upon successful completion, a value of 0 is returned.
-Otherwise, a value of \-1 is returned and the global integer variable
-.I errno
+Otherwise, a value of -1 is returned and the global integer variable
+.Va errno
 is set to indicate the error.
-.SH ERRORS
-.I Close
+.Sh ERRORS
+.Fn Close
 will fail if:
-.TP 15
-[EBADF]
-\fID\fP is not an active descriptor.
-.SH "SEE ALSO"
-accept(2), flock(2), open(2), pipe(2), socket(2), socketpair(2),
-execve(2), fcntl(2)
+.Bl -tag -width Er
+.It Bq Er EBADF
+.Fa D
+is not an active descriptor.
+.It Bq Er EINTR
+An interupt was received.
+.El
+.Sh SEE ALSO
+.Xr accept 2 ,
+.Xr flock 2 ,
+.Xr open 2 ,
+.Xr pipe 2 ,
+.Xr socket 2 ,
+.Xr socketpair 2 ,
+.Xr execve 2 ,
+.Xr fcntl 2
+.Sh STANDARDS
+.Fn Close
+conforms to IEEE Std 1003.1-1988
+.Pq Dq Tn POSIX .

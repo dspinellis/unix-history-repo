@@ -1,45 +1,48 @@
-.\" Copyright (c) 1983 The Regents of the University of California.
+.\" Copyright (c) 1983, 1991 The Regents of the University of California.
 .\" All rights reserved.
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)sigpause.2	6.5 (Berkeley) %G%
+.\"     @(#)sigpause.2	6.6 (Berkeley) %G%
 .\"
-.TH SIGPAUSE 2 ""
-.UC 4
-.SH NAME
-sigpause \- atomically release blocked signals and wait for interrupt
-.SH SYNOPSIS
-.ft B
-sigpause(sigmask)
-.br
-int sigmask;
-.ft R
-.SH DESCRIPTION
-.B "This interface is made obsolete by sigsuspend(2).
-.LP
-.I Sigpause
+.Dd 
+.Dt SIGPAUSE 2
+.Os BSD 4
+.Sh NAME
+.Nm sigpause
+.Nd atomically release blocked signals and wait for interrupt
+.Sh SYNOPSIS
+.Fd #include <sys/signal.h>
+.Ft int
+.Fn sigpause "int sigmask"
+.Sh DESCRIPTION
+.Sy This interface is made obsolete by
+.Xr sigsuspend 2 .
+.Pp
+.Fn Sigpause
 assigns 
-.I sigmask
+.Fa sigmask
 to the set of masked signals
 and then waits for a signal to arrive;
 on return the set of masked signals is restored.
-.I Sigmask
+.Fa Sigmask
 is usually 0 to indicate that no
-signals are now to be blocked.
-.I Sigpause
-always terminates by being interrupted, returning \-1 with
-.I errno
-set to EINTR.
-.PP
-In normal usage, a signal is blocked using
-.IR sigblock (2),
-to begin a critical section, variables modified on the occurrence
-of the signal are examined to determine that there is no work
-to be done, and the process pauses awaiting work by using
-.I sigpause
-with the mask returned by
-.IR sigblock .
-.SH SEE ALSO
-sigsuspend(2), kill(2), sigaction(2), sigprocmask(2),
-sigblock(2), sigvec(2)
+signals are to be blocked.
+.Fn Sigpause
+always terminates by being interrupted, returning -1 with
+.Va errno
+set to
+.Dv EINTR
+.Sh SEE ALSO
+.Xr sigsuspend 2 ,
+.Xr kill 2 ,
+.Xr sigaction 2 ,
+.Xr sigprocmask 2 ,
+.Xr sigblock 2 ,
+.Xr sigvec 2
+.Sh HISTORY
+The
+.Nm
+function call appeared in
+.Bx 4.2
+and has been deprecated.

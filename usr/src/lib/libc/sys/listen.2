@@ -1,62 +1,74 @@
-.\" Copyright (c) 1983 The Regents of the University of California.
+.\" Copyright (c) 1983, 1991 The Regents of the University of California.
 .\" All rights reserved.
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)listen.2	6.4 (Berkeley) %G%
+.\"     @(#)listen.2	6.5 (Berkeley) %G%
 .\"
-.TH LISTEN 2 ""
-.UC 5
-.SH NAME
-listen \- listen for connections on a socket
-.SH SYNOPSIS
-.nf
-.ft B
-listen(s, backlog)
-int s, backlog;
-.fi
-.SH DESCRIPTION
+.Dd 
+.Dt LISTEN 2
+.Os BSD 4.2
+.Sh NAME
+.Nm listen
+.Nd listen for connections on a socket
+.Sh SYNOPSIS
+.Fd #include <sys/socket.h>
+.Ft int
+.Fn listen "int s" "int backlog"
+.Sh DESCRIPTION
 To accept connections, a socket
 is first created with
-.IR socket (2),
+.Xr socket 2 ,
 a willingness to accept incoming connections and
 a queue limit for incoming connections are specified with
-.IR listen (2),
+.Fn listen ,
 and then the connections are
 accepted with
-.IR accept (2).
+.Xr accept 2 .
 The
-.I listen
+.Fn listen
 call applies only to sockets of type
-SOCK_STREAM
+.Dv SOCK_STREAM
 or
-SOCK_SEQPACKET.
-.PP
+.Dv SOCK_SEQPACKET.
+.Pp
 The
-.I backlog
+.Fa backlog
 parameter defines the maximum length the queue of
 pending connections may grow to.
 If a connection
 request arrives with the queue full the client may
-receive an error with an indication of ECONNREFUSED,
+receive an error with an indication of
+.Er ECONNREFUSED ,
 or, if the underlying protocol supports retransmission,
 the request may be ignored so that retries may succeed.
-.SH "RETURN VALUE
-A 0 return value indicates success; \-1 indicates an error.
-.SH "ERRORS
-The call fails if:
-.TP 20
-[EBADF]
-The argument \fIs\fP is not a valid descriptor.
-.TP 20
-[ENOTSOCK]
-The argument \fIs\fP is not a socket.
-.TP 20
-[EOPNOTSUPP]
-The socket is not of a type that supports the operation \fIlisten\fP.
-.SH "SEE ALSO"
-accept(2), connect(2), socket(2)
-.SH BUGS
+.Sh RETURN VALUES
+A 0 return value indicates success; -1 indicates an error.
+.Sh ERRORS
+.Fn Listen will fail if:
+.Bl -tag -width [EOPNOTSUPP]
+.It Bq Er EBADF
+The argument
+.Fa s
+is not a valid descriptor.
+.It Bq Er ENOTSOCK
+The argument
+.Fa s
+is not a socket.
+.It Bq Er EOPNOTSUPP
+The socket is not of a type that supports the operation
+.Fn listen .
+.El
+.Sh SEE ALSO
+.Xr accept 2 ,
+.Xr connect 2 ,
+.Xr socket 2
+.Sh BUGS
 The
-.I backlog
+.Fa backlog
 is currently limited (silently) to 5.
+.Sh HISTORY
+The
+.Nm
+function call appeared in
+.Bx 4.2 .

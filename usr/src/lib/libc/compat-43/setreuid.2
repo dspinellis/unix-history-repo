@@ -1,40 +1,49 @@
-.\" Copyright (c) 1980 The Regents of the University of California.
+.\" Copyright (c) 1980, 1991 The Regents of the University of California.
 .\" All rights reserved.
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)setreuid.2	6.3 (Berkeley) %G%
+.\"     @(#)setreuid.2	6.4 (Berkeley) %G%
 .\"
-.TH SETREUID 2 ""
-.UC 4
-.SH NAME
-setreuid \- set real and effective user ID's
-.SH SYNOPSIS
-.ft B
-.nf
-setreuid(ruid, euid)
-int ruid, euid;
-.fi
-.ft R
-.SH DESCRIPTION
+.Dd 
+.Dt SETREUID 2
+.Os BSD 4
+.Sh NAME
+.Nm setreuid
+.Nd set real and effective user ID's
+.Sh SYNOPSIS
+.Fd #include <unistd.h>
+.Ft int
+.Fn setreuid "int ruid" "int euid"
+.Sh DESCRIPTION
 The real and effective user ID's of the
 current process are set according to the arguments.
 If
-.I ruid
+.Fa ruid
 or 
-.I euid
-is \-1, the current uid is filled in by the system.
+.Fa euid
+is -1, the current uid is filled in by the system.
 Unprivileged users may change the real user
 ID to the effective user ID and vice-versa; only the super-user may
 make other changes.
-.SH "RETURN VALUE
+.Sh RETURN VALUES
 Upon successful completion, a value of 0 is returned.  Otherwise,
-a value of \-1 is returned and \fIerrno\fP is set to indicate the error.
-.SH "ERRORS
-.TP 15
-[EPERM]
+a value of -1 is returned and
+.Va errno
+is set to indicate the error.
+.Sh ERRORS
+.Bl -tag -width [EPERM]
+.It Bq Er EPERM
 The current process is not the super-user and a change
 other than changing the effective user-id to the real user-id
 was specified.
-.SH "SEE ALSO"
-getuid(2), setregid(2), setuid(3)
+.El
+.Sh SEE ALSO
+.Xr getuid 2 ,
+.Xr setregid 2 ,
+.Xr setuid 3
+.Sh HISTORY
+The
+.Nm
+function call appeared in
+.Bx 4.2 .

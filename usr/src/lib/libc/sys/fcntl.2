@@ -3,149 +3,187 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)fcntl.2	6.6 (Berkeley) %G%
+.\"     @(#)fcntl.2	6.7 (Berkeley) %G%
 .\"
-.TH FCNTL 2 ""
-.UC 5
-.SH NAME
-fcntl \- file control
-.SH SYNOPSIS
-.nf
-.ft B
-#include <fcntl.h>
-.PP
-.ft B
-res = fcntl(fd, cmd, arg)
-int res;
-int fd, cmd, arg;
-.ft R
-.SH DESCRIPTION
-.I Fcntl
+.Dd 
+.Dt FCNTL 2
+.Os BSD 4.2
+.Sh NAME
+.Nm fcntl
+.Nd file control
+.Sh SYNOPSIS
+.Fd #include <sys/fcntl.h>
+.Ft int
+.Fn fcntl "int fd" "int cmd" "int arg"
+.Sh DESCRIPTION
+.Fn Fcntl
 provides for control over descriptors.
 The argument
-.I fd
+.Fa fd
 is a descriptor to be operated on by
-.I cmd
+.Fa cmd
 as follows:
-.TP 15
-F_DUPFD
+.Bl -tag -width F_GETOWNX
+.It Dv F_DUPFD
 Return a new descriptor as follows:
-.IP
+.Pp
+.Bl -bullet -compact -offset 4n
+.It
 Lowest numbered available descriptor greater than or equal to
-.I arg.
-.IP
+.Fa arg .
+.It
 Same object references as the original descriptor.
-.IP
-New descriptor shares the same file pointer if the object
+.It
+New descriptor shares the same file offset if the object
 was a file.
-.IP
+.It
 Same access mode (read, write or read/write).
-.IP
+.It
 Same file status flags (i.e., both file descriptors
 share the same file status flags).
-.IP
+.It
 The close-on-exec flag associated with the new file descriptor
 is set to remain open across
-.IR execv (2)
+.Xr execv 2
 system calls.
-.TP 15
-F_GETFD
+.El
+.It Dv F_GETFD
 Get the close-on-exec flag associated with the file descriptor
-.IR fd .
-If the low-order bit is 0, the file will remain open across
-.IR exec ,
+.Fa fd .
+If the low-order bit of the returned value is 0,
+the file will remain open across
+.Fn exec ,
 otherwise the file will be closed upon execution of
-.I exec.
-.TP 15
-F_SETFD
+.Fn exec
+.Fa ( arg
+is ignored).
+.It Dv F_SETFD
 Set the close-on-exec flag associated with
-.I fd
+.Fa fd
 to the low order bit of
-.I arg
+.Fa arg
 (0 or 1 as above).
-.TP 15
-F_GETFL
-Get descriptor status flags, as described below.
-.TP 15
-F_SETFL
-Set descriptor status flags.
-.TP 15
-F_GETOWN
+.It Dv F_GETFL
+Get descriptor status flags, as described below
+.Fa ( arg
+is ignored).
+.It Dv F_SETFL
+Set descriptor status flags to
+.Fa arg .
+.It Dv F_GETOWN
 Get the process ID or process group
-currently receiving SIGIO and SIGURG
+currently receiving
+.Dv SIGIO
+and
+.Dv SIGURG
 signals; process groups are returned
-as negative values.
-.TP
-F_SETOWN
+as negative values
+.Fa ( arg
+is ignored).
+.It Dv F_SETOWN
 Set the process or process group
-to receive SIGIO and SIGURG signals;
+to receive
+.Dv SIGIO
+and
+.Dv SIGURG
+signals;
 process groups are specified by supplying
-.I arg
+.Fa arg
 as negative, otherwise 
-.I arg
+.Fa arg
 is interpreted as a process ID.
-.LP
-The flags for the F_GETFL and F_SETFL flags are as follows:
-.TP 15
-FNDELAY
+.El
+.Pp
+The flags for the
+.Dv F_GETFL
+and
+.Dv F_SETFL
+flags are as follows:
+.Bl -tag -width F_GETOWNX
+.It Dv O_NDELAY
 Non-blocking I/O; if no data is available to a
-.I read
-call, or if a write operation would block,
-the call returns -1 with the error EWOULDBLOCK.
-.TP
-FAPPEND
+.Xr read
+call, or if a
+.Xr write
+operation would block,
+the read or write call returns -1 with the error
+.Er EWOULDBLOCK .
+.It Dv O_APPEND
 Force each write to append at the end of file;
-corresponds to the O_APPEND flag of
-.IR open (2).
-.TP
-FASYNC
-Enable the SIGIO signal to be sent to the process group
+corresponds to the
+.Dv O_APPEND
+flag of
+.Xr open 2 .
+.It Dv O_ASYNC
+Enable the
+.Dv SIGIO
+signal to be sent to the process group
 when I/O is possible, e.g.,
 upon availability of data to be read.
-.SH "RETURN VALUE
+.El
+.Sh RETURN VALUES
 Upon successful completion, the value returned depends on
-.I cmd
+.Fa cmd
 as follows:
-.sp .5v
-.nf
-.ta .25i 1.25i
-	F_DUPFD	A new file descriptor.
-	F_GETFD	Value of flag (only the low-order bit is defined).
-	F_GETFL	Value of flags.
-	F_GETOWN	Value of file descriptor owner.
-	other	Value other than \-1.
-.fi
-.sp .5v
-Otherwise, a value of \-1 is returned and
-.I errno
+.Bl -tag -width F_GETOWNX -offset indent
+.It Dv F_DUPFD
+A new file descriptor.
+.It Dv F_GETFD
+Value of flag (only the low-order bit is defined).
+.It Dv F_GETFL
+Value of flags.
+.It Dv F_GETOWN
+Value of file descriptor owner.
+.It other
+Value other than -1.
+.El
+.Pp
+Otherwise, a value of -1 is returned and
+.Va errno
 is set to indicate the error.
-.SH ERRORS
-.I Fcntl
-will fail if one or more of the following are true:
-.TP 15
-[EBADF]
-.I Fildes
+.Sh ERRORS
+.Fn Fcntl
+will fail if:
+.Bl -tag -width Er
+.It Bq Er EBADF
+.Fa Fildes
 is not a valid open file descriptor.
-.TP 15
-[EMFILE]
-.I Cmd
-is F_DUPFD and the maximum allowed number of file descriptors are currently
+.It Bq Er EMFILE
+.Fa Cmd
+is
+.Dv F_DUPFD
+and the maximum allowed number of file descriptors are currently
 open.
-.TP 15
-[EINVAL]
-.I Cmd
-is F_DUPFD and
-.I arg
+.It Bq Er EINVAL
+.Fa Cmd
+is
+.Dv F_DUPFD
+and
+.Fa arg
 is negative or greater than the maximum allowable number
 (see
-.IR getdtablesize (2)).
-.TP 15
-[ESRCH]
-.I Cmd
-is F_SETOWN and
+.Xr getdtablesize 2 ) .
+.It Bq Er ESRCH
+.Fa Cmd
+is
+.Dv F_SETOWN
+and
 the process ID given as argument is not in use.
-.SH "SEE ALSO
-close(2), execve(2), getdtablesize(2), open(2), sigvec(2)
-.SH BUGS
-The asynchronous I/O facilities of FNDELAY and FASYNC
+.El
+.Sh SEE ALSO
+.Xr close 2 ,
+.Xr execve 2 ,
+.Xr getdtablesize 2 ,
+.Xr open 2 ,
+.Xr sigvec 2
+.Sh BUGS
+The asynchronous I/O facilities of
+.Dv FNDELAY
+and
+.Dv FASYNC
 are currently available only for tty and socket operations.
+.Sh HISTORY
+The
+.Nm
+function call appeared in
+.Bx 4.2 .

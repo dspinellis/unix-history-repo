@@ -1,42 +1,51 @@
-.\" Copyright (c) 1983 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1983, 1991 Regents of the University of California.
+.\" All rights reserved.
 .\"
-.\"	@(#)getpgrp.2	6.3 (Berkeley) %G%
+.\" %sccs.include.redist.man%
 .\"
-.TH GETPGRP 2 ""
-.UC 5
-.SH NAME
-getpgrp \- get process group
-.SH SYNOPSIS
-.ft B
-.nf
-pgrp = getpgrp(pid)
-int pgrp;
-int pid;
-.fi
-.ft R
-.SH DESCRIPTION
+.\"     @(#)getpgrp.2	6.4 (Berkeley) %G%
+.\"
+.Dd 
+.Dt GETPGRP 2
+.Os BSD 4.2
+.Sh NAME
+.Nm getpgrp
+.Nd get process group
+.Sh SYNOPSIS
+.Ft pid_t
+.Fn getpgrp "int pid"
+.Sh DESCRIPTION
 The process group of the specified process is returned by
-.I getpgrp.
+.Fn getpgrp .
 If
-.I pid
-is zero, then the call applies to the current process.
-.PP
+.Fa pid
+is zero, the call applies to the current process.
+.Pp
 Process groups are used for distribution of signals, and
 by terminals to arbitrate requests for their input: processes
 that have the same process group as the terminal are foreground
 and may read, while others will block with a signal if they attempt
 to read.
-.PP
+.Pp
 This call is thus used by programs such as
-.IR csh (1)
+.Xr csh 1
 to create
 process groups
 in implementing job control.
-The TIOCGPGRP and TIOCSPGRP calls
+The
+.Dv TIOCGPGRP
+and
+.Dv TIOCSPGRP
+calls
 described in
-.IR tty (4)
+.Xr termios 4
 are used to get/set the process group of the control terminal.
-.SH "SEE ALSO"
-setpgrp(2), getuid(2), tty(4)
+.Sh SEE ALSO
+.Xr setpgrp 2 ,
+.Xr getuid 2 ,
+.Xr termios 4
+.Sh HISTORY
+The
+.Nm
+function call appeared in
+.Bx 4.0 .

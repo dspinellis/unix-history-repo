@@ -3,42 +3,53 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)fsync.2	6.6 (Berkeley) %G%
+.\"     @(#)fsync.2	6.7 (Berkeley) %G%
 .\"
-.TH FSYNC 2 ""
-.UC 5
-.SH NAME
-fsync \- synchronize a file's in-core state with that on disk
-.SH SYNOPSIS
-.ft B
-fsync(fd)
-.br
-int fd;
-.ft R
-.SH DESCRIPTION
-.I Fsync
-causes all modified data and attributes of \fIfd\fP
+.Dd 
+.Dt FSYNC 2
+.Os BSD 4.2
+.Sh NAME
+.Nm fsync
+.Nd "synchronize a file's in-core state with that on disk"
+.Sh SYNOPSIS
+.Fd #include <unistd.h>
+.Ft int
+.Fn fsync "int fd"
+.Sh DESCRIPTION
+.Fn Fsync
+causes all modified data and attributes of
+.Fa fd
 to be moved to a permanent storage device.
 This normally results in all in-core modified copies
 of buffers for the associated file to be written to a disk.
-.PP
-.I Fsync
+.Pp
+.Fn Fsync
 should be used by programs that require a file to be
 in a known state, for example, in building a simple transaction
 facility.
-.SH "RETURN VALUE
-A 0 value is returned on success.  A \-1 value indicates
+.Sh RETURN VALUES
+A 0 value is returned on success.  A -1 value indicates
 an error.
-.SH "ERRORS
-The \fIfsync\fP fails if:
-.TP 15
-[EBADF]
-\fIFd\fP is not a valid descriptor.
-.TP 15
-[EINVAL]
-\fIFd\fP refers to a socket, not to a file.
-.TP 15
-[EIO]
+.Sh ERRORS
+The
+.Fn fsync
+fails if:
+.Bl -tag -width Er
+.It Bq Er EBADF
+.Fa Fd
+is not a valid descriptor.
+.It Bq Er EINVAL
+.Fa Fd
+refers to a socket, not to a file.
+.It Bq Er EIO
 An I/O error occurred while reading from or writing to the file system.
-.SH "SEE ALSO"
-sync(2), sync(8), update(8)
+.El
+.Sh SEE ALSO
+.Xr sync 2 ,
+.Xr sync 8 ,
+.Xr update 8
+.Sh HISTORY
+The
+.Nm
+function call appeared in
+.Bx 4.2 .

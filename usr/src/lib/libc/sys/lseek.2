@@ -1,83 +1,109 @@
-.\" Copyright (c) 1980 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1980, 1991 Regents of the University of California.
+.\" All rights reserved.
 .\"
-.\"	@(#)lseek.2	6.4 (Berkeley) %G%
+.\" %sccs.include.redist.man%
 .\"
-.TH LSEEK 2 ""
-.UC 4
-.SH NAME
-lseek \- move read/write pointer
-.SH SYNOPSIS
-.nf
-.ft B
-#include <unistd.h>
-
-pos = lseek(d, offset, whence)
-off_t pos;
-int d;
-off_t offset;
-int whence;
-.fi
-.ft R
-.SH DESCRIPTION
-The descriptor 
-.I d
-refers to a file or device open for reading and/or writing.
-.I Lseek
-sets the file pointer of
-.I d
+.\"     @(#)lseek.2	6.5 (Berkeley) %G%
+.\"
+.Dd 
+.Dt LSEEK 2
+.Os BSD 4
+.Sh NAME
+.Nm lseek
+.Nd reposition read/write file offset
+.Sh SYNOPSIS
+.Fd #include <unistd.h>
+.Ft off_t
+.Fn lseek "int fildes" "off_t offset" "int whence"
+.Sh DESCRIPTION
+The
+.Fn lseek
+function repositions the offset of the file descriptor
+.Fa fildes
+to the
+argument
+.Fa offset
+according to the directive
+.Fa whence.
+The argument
+.Fa fildes
+must be an open
+file descriptor.
+.Fn Lseek
+repositions the file pointer
+.Fa fildes
 as follows:
-.IP
+.Bl -item -offset indent
+.It
 If
-.I whence
-is SEEK_SET, the pointer is set to
-.I offset
+.Fa whence
+is
+.Dv SEEK_SET ,
+the offset is set to
+.Fa offset
 bytes.
-.IP
+.It
 If
-.I whence
-is SEEK_CUR, the pointer is set to its current location plus
-.IR offset .
-.IP
+.Fa whence
+is
+.Dv SEEK_CUR ,
+the offset is set to its current location plus
+.Fa offset
+bytes.
+.It
 If
-.I whence
-is SEEK_END, the pointer is set to the size of the
+.Fa whence
+is
+.Dv SEEK_END ,
+the offset is set to the size of the
 file plus
-.IR offset .
-.PP
-Upon successful completion, the resulting pointer location
-as measured in bytes from beginning of the file is returned.
+.Fa offset
+bytes.
+.El
+.Pp
+The
+.Fn lseek
+function allows the file offset to be set beyond the end
+of the existing end-of-file of the file. If data is later written
+at this point, subsequent reads of the data in the gap return
+bytes of zeros (until data is actualy written into the gap).
+.Pp
 Some devices are incapable of seeking.  The value of the pointer
 associated with such a device is undefined.
-.SH NOTES
-Seeking far beyond the end of a file, then writing,
-creates a gap or \*(lqhole\*(rq, which occupies no
-physical space and reads as zeros.
-.SH "RETURN VALUE
+.Sh RETURN VALUES
 Upon successful completion,
-the current file pointer value is returned.
+.Fn lseek
+returns the resulting offset location as measured in bytes from the
+begining of the file.
 Otherwise,
-a value of \-1 is returned and \fIerrno\fP is set to indicate
+a value of -1 is returned and
+.Va errno
+is set to indicate
 the error.
-.SH "ERRORS
-.I Lseek
+.Sh ERRORS
+.Fn Lseek
 will fail and the file pointer will remain unchanged if:
-.TP 15
-[EBADF]
-.I Fildes
+.Bl -tag -width [EINVAL]
+.It Bq Er EBADF
+.Em Fildes
 is not an open file descriptor.
-.TP 15
-[ESPIPE]
-.I Fildes
-is associated with a pipe or a socket.
-.TP 15
-[EINVAL]
-.I Whence
+.It Bq Er ESPIPE
+.Em Fildes
+is associated with a pipe, socket, or FIFO.
+.It Bq Er EINVAL
+.Fa Whence
 is not a proper value.
-.SH "SEE ALSO"
-dup(2), open(2)
-.SH BUGS
+.El
+.Sh SEE ALSO
+.Xr dup 2 ,
+.Xr open 2
+.Sh BUGS
 This document's use of
-.I whence
+.Fa whence
 is incorrect English, but maintained for historical reasons.
+.Sh STANDARDS
+The
+.Fn lseek
+function
+conforms to IEEE Std 1003.1-1988
+.Pq Dq Tn POSIX .

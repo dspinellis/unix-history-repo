@@ -1,56 +1,69 @@
-.\" Copyright (c) 1980 The Regents of the University of California.
+.\" Copyright (c) 1980, 1991 Regents of the University of California.
 .\" All rights reserved.
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)killpg.2	6.4 (Berkeley) %G%
+.\"     @(#)killpg.2	6.5 (Berkeley) %G%
 .\"
-.TH KILLPG 2 ""
-.UC 4
-.SH NAME
-killpg \- send signal to a process group
-.SH SYNOPSIS
-.ft B
-killpg(pgrp, sig)
-.br
-int pgrp, sig;
-.ft R
-.SH DESCRIPTION
-.I Killpg
+.Dd 
+.Dt KILLPG 2
+.Os BSD 4
+.Sh NAME
+.Nm killpg
+.Nd send signal to a process group
+.Sh SYNOPSIS
+.Fd #include <sys/signal.h>
+.Ft int
+.Fn killpg "pid_t pgrp" "int sig"
+.Sh DESCRIPTION
+.Fn Killpg
 sends the signal
-.I sig
+.Fa sig
 to the process group
-.IR pgrp .
+.Fa pgrp .
 See
-.IR sigvec (2)
+.Xr sigaction 2
 for a list of signals.
-.PP
+If
+.Fa pgrp
+is 0,
+.Fn killpg
+sends the signal to the sending process's process group.
+.Pp
 The sending process and members of the process group must
 have the same effective user ID, or
 the sender must be the super-user.
 As a single special case the continue signal SIGCONT may be sent
 to any process that is a descendant of the current process.
-.SH "RETURN VALUE
+.Sh RETURN VALUES
 Upon successful completion, a value of 0 is returned.  Otherwise,
-a value of \-1 is returned and the global variable \fIerrno\fP
+a value of -1 is returned and the global variable
+.Va errno
 is set to indicate the error.
-.SH "ERRORS
-\fIKillpg\fP will fail and no signal will be sent if any of the
-following occur:
-.TP 15
-[EINVAL]
-\fISig\fP is not a valid signal number.
-.TP 15
-[ESRCH]
-No process can be found in the process group specified by \fIpgrp\fP.
-.TP 15
-[ESRCH]
+.Sh ERRORS
+.Fn Killpg
+will fail and no signal will be sent if:
+.Bl -tag -width Er
+.It Bq Er EINVAL
+.Fa Sig
+is not a valid signal number.
+.It Bq Er ESRCH
+No process can be found in the process group specified by
+.Fa pgrp .
+.It Bq Er ESRCH
 The process group was given as 0
 but the sending process does not have a process group.
-.TP 15
-[EPERM]
+.It Bq Er EPERM
 The sending process is not the super-user and one or more
 of the target processes has an effective user ID different from that
 of the sending process.
-.SH "SEE ALSO"
-kill(2), getpgrp(2), sigvec(2)
+.El
+.Sh SEE ALSO
+.Xr kill 2 ,
+.Xr getpgrp 2 ,
+.Xr sigaction 2
+.Sh HISTORY
+The
+.Nm
+function call appeared in
+.Bx 4.0 .

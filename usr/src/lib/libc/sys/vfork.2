@@ -1,84 +1,100 @@
-.\" Copyright (c) 1980 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1980, 1991 Regents of the University of California.
+.\" All rights reserved.
 .\"
-.\"	@(#)vfork.2	6.2 (Berkeley) %G%
+.\" %sccs.include.redist.man%
 .\"
-.TH VFORK 2 ""
-.UC 4
-.SH NAME
-vfork \- spawn new process in a virtual memory efficient way
-.SH SYNOPSIS
-.B pid = vfork()
-.br
-.B int pid;
-.SH DESCRIPTION
-.I Vfork
+.\"     @(#)vfork.2	6.3 (Berkeley) %G%
+.\"
+.Dd 
+.Dt VFORK 2
+.Os BSD 4
+.Sh NAME
+.Nm vfork
+.Nd spawn new process in a virtual memory efficient way
+.Sh SYNOPSIS
+.Fd #include <unistd.h>
+.Ft int
+.Fn vfork void
+.Sh DESCRIPTION
+.Fn Vfork
 can be used to create new processes without fully copying the address
 space of the old process, which is horrendously inefficient in a paged
 environment.  It is useful when the purpose of
-.IR fork (2)
+.Xr fork 2
 would have been to create a new system context for an
-.IR execve .
-.I Vfork
+.Xr execve .
+.Fn Vfork
 differs from
-.I fork
+.Xr fork
 in that the child borrows the parent's memory and thread of
 control until a call to
-.IR execve (2)
+.Xr execve 2
 or an exit (either by a call to
-.IR exit (2)
+.Xr exit 2
 or abnormally.)
 The parent process is suspended while the child is using its resources.
-.PP
-.I Vfork
+.Pp
+.Fn Vfork
 returns 0 in the child's context and (later) the pid of the child in
 the parent's context.
-.PP
-.I Vfork
+.Pp
+.Fn Vfork
 can normally be used just like
-.I fork.
+.Xr fork .
 It does not work, however, to return while running in the childs context
 from the procedure that called
-.I vfork
+.Fn vfork
 since the eventual return from
-.I vfork
+.Fn vfork
 would then return to a no longer existent stack frame.
 Be careful, also, to call
-.I _exit
+.Xr _exit
 rather than
-.I exit
+.Xr exit
 if you can't
-.IR execve ,
+.Xr execve ,
 since
-.I exit
+.Xr exit
 will flush and close standard I/O channels, and thereby mess up the
 parent processes standard I/O data structures.
 (Even with
-.I fork
+.Xr fork
 it is wrong to call
-.I exit
+.Xr exit
 since buffered data would then be flushed twice.)
-.SH SEE ALSO
-fork(2), execve(2), sigvec(2), wait(2),
-.SH DIAGNOSTICS
+.Sh SEE ALSO
+.Xr fork 2 ,
+.Xr execve 2 ,
+.Xr sigvec 2 ,
+.Xr wait 2 ,
+.Sh DIAGNOSTICS
 Same as for
-.IR fork .
-.SH BUGS
+.Xr fork .
+.Sh BUGS
 This system call will be eliminated when proper system sharing
 mechanisms are implemented. 
 Users should not depend on the memory
 sharing semantics of
-.I vfork
+.Xr vfork
 as it will, in that case, be made synonymous to
-.IR fork .
-.PP
+.Xr fork .
+.Pp
 To avoid a possible deadlock situation,
 processes that are children in the middle
 of a
-.I vfork
-are never sent SIGTTOU or SIGTTIN signals; rather,
+.Fn vfork
+are never sent
+.Dv SIGTTOU
+or
+.Dv SIGTTIN
+signals; rather,
 output or
-.IR ioctl s
+.Xr ioctl 2
+calls
 are allowed
 and input attempts result in an end-of-file indication.
+.Sh HISTORY
+The
+.Nm
+function call appeared in
+.Bx 3.0 .

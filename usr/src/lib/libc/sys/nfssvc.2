@@ -1,47 +1,53 @@
-.\" Copyright (c) 1989 The Regents of the University of California.
+.\" Copyright (c) 1989, 1991 The Regents of the University of California.
 .\" All rights reserved.
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)nfssvc.2	6.4 (Berkeley) %G%
+.\"     @(#)nfssvc.2	6.5 (Berkeley) %G%
 .\"
-.TH NFSSVC 2 ""
-.UC 7
-.SH NAME
-nfssvc \- create a remote NFS server
-.SH SYNOPSIS
-.nf
-.ft B
-.LP
-nfssvc(sock)
-int sock;
-.fi
-.ft R
-.SH DESCRIPTION
-.I Nfssvc
+.Dd 
+.Dt NFSSVC 2
+.Os BSD 4.4
+.Sh NAME
+.Nm nfssvc
+.Nd create a remote NFS server
+.Sh SYNOPSIS
+.Fd #include <unistd.h>
+.Ft int
+.Fn nfssvc "int sock"
+.Sh DESCRIPTION
+.Bf -symbolic
+The calling sequence of this function is expected to change
+.Ef
+.Fn Nfssvc
 starts an
-.SM NFS
+.Tn NFS
 daemon listening on socket
-.IR sock .
+.Fa sock .
 The socket must be in the
-.SM AF_INET
-family and of type
-.SM SOCK_DGRAM .
-.SH RETURN VALUE
-Normally this system calls does not return unless the server
+.Dv AF_INET
+family.
+.Sh RETURN VALUES
+Normally
+.Nm nfssvc
+does not return unless the server
 is terminated by a signal at which time a value of 0 is returned.
-Otherwise, \-1 is returned and the global variable
-.I errno
+Otherwise, -1 is returned and the global variable
+.Va errno
 is set to indicate the error.
-.SH ERRORS
-.I Nfssvc
-fails if one or more of the following are true:
-.TP 15
-EBADF
-.I fd
+.Sh ERRORS
+.Fn Nfssvc
+fails if:
+.Bl -tag -width [EPERM]
+.It Bq Er EBADF
+.Fa Fd
 is not a valid open file descriptor.
-.TP 15
-EPERM
+.It Bq Er EPERM
 The caller is not the super-user.
-.SH SEE ALSO
-.IR nfsd (8)
+.El
+.Sh SEE ALSO
+.Xr nfsd 8
+.Sh HISTORY
+The
+.Nm
+function call is currently under development.
