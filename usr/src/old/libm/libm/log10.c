@@ -13,7 +13,7 @@ From Prof. Kahan at UC at Berkeley
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)log10.c	1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)log10.c	1.2 (Berkeley) %G%";
 #endif not lint
 
 /* LOG10(X)
@@ -38,9 +38,9 @@ static char sccsid[] = "@(#)log10.c	1.1 (Berkeley) %G%";
  *	  log(x) by [1/log(10)].
  *
  * Special cases:
- *	log10(x) is NAN with signal if x < 0; 
+ *	log10(x) is NaN with signal if x < 0; 
  *	log10(+INF) is +INF with no signal; log10(0) is -INF with signal;
- *	log10(NAN) is that NAN with no signal.
+ *	log10(NaN) is that NaN with no signal.
  *
  * Accuracy:
  *	log10(X) returns the exact log10(x) nearly rounded. In a test run
@@ -59,7 +59,7 @@ static char sccsid[] = "@(#)log10.c	1.1 (Berkeley) %G%";
 /* ln10hi =  2.3025850929940456790E0     ; Hex   2^  2   *  .935D8DDDAAA8AC */
 static long    ln10hix[] = { 0x5d8d4113, 0xa8acddaa};
 #define   ln10hi    (*(double*)ln10hix)
-#else  		/* IEEE double precision (53 bits) */
+#else	/* IEEE double */
 static double
 ivln10 =  4.3429448190325181667E-1    ; /*Hex   2^ -2   *  1.BCB7B1526E50E */
 #endif
@@ -71,7 +71,7 @@ double x;
 
 #ifdef VAX
 	return(log(x)/ln10hi);
-#else
+#else	/* IEEE double */
 	return(ivln10*log(x));
 #endif
 }
