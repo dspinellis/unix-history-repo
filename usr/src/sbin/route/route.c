@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)route.c	4.2 82/08/19";
+static char sccsid[] = "@(#)route.c	4.3 82/10/07";
 #endif
 
 #include <stdio.h>
@@ -10,6 +10,7 @@ static char sccsid[] = "@(#)route.c	4.2 82/08/19";
 #include <net/in.h>
 #include <errno.h>
 #include <ctype.h>
+#include <netdb.h>
 
 struct	rtentry route;
 int	options;
@@ -55,7 +56,7 @@ newroute(argc, argv)
 	getaddr(argv[2], &route.rt_gateway);
 	sin = (struct sockaddr_in *)&route.rt_dst;
 	route.rt_flags = RTF_UP;
-	if (in_lnaof(sin->sin_addr) != 0)
+	if (inet_lnaof(sin->sin_addr) != 0)
 		route.rt_flags |= RTF_HOST;
 	if (argc > 3 && atoi(argv[3]) > 0)
 		route.rt_flags |= RTF_GATEWAY;
@@ -92,35 +93,18 @@ getaddr(s, sin)
 	char *s;
 	struct sockaddr_in *sin;
 {
-	sin->sin_family = AF_INET;
-	if ((sin->sin_addr.s_addr = rhost(&s)) != -1)
-		return;
-	if (!isdigit(*s)) {
-		fprintf(stderr, "%s: unknown host\n", s);
-		exit(1);
-	}
-	sin->sin_addr.s_addr = atoi(s);
-	if (sin->sin_addr.s_addr == -1) {
-		fprintf(stderr, "%s: bad value\n", s);
-		exit(1);
-	}
-}
+	struct hostent *hp;
 
-/*
- * Return the local network address portion of an
- * internet address; handles class a/b/c network
- * number formats.
- */
-in_lnaof(in)
-	struct in_addr in;
-{
-#if vax || pdp11
-#define	IN_LNAOF(in) \
-	(((in).s_addr&IN_CLASSA) == 0 ? (in).s_addr&IN_CLASSA_LNA : \
-		((in).s_addr&IN_CLASSB) == 0 ? (in).s_addr&IN_CLASSB_LNA : \
-			(in).s_addr&IN_CLASSC_LNA)
-	return ((int)htonl((u_long)IN_LNAOF(in)));
-#else
-	return (IN_LNAOF(in));
-#endif
+	hp = gethostbyname(s);
+	if (hp == 0) {
+		sin->sin_addr.s_addr = inet_addr(s);
+		if (sin->sin_addr.s_addr == -1) {
+			fprintf(stderr, "%s: bad value\n", s);
+			exit(1);
+		}
+		sin->sin_family = AF_INET;
+		return;
+	}
+	sin->sin_family = hp->h_addrtype;
+	bcopy(hp->h_addr, &sin->sin_addr, hp->h_length);
 }
