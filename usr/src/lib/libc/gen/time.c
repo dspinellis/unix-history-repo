@@ -1,4 +1,4 @@
-/*	time.c	4.1	83/02/24	*/
+/*	time.c	4.2	83/02/27	*/
 
 /*
  * Backwards compatible time call.
@@ -12,7 +12,7 @@ time(t)
 {
 	struct timeval tt;
 
-	if (getimeofday(&tt, (struct timezone *)0) < 0)
+	if (gettimeofday(&tt, (struct timezone *)0) < 0)
 		return (-1);
 	if (t)
 		*t = tt.tv_sec;
