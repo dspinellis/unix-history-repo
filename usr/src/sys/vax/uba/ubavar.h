@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ubavar.h	7.2 (Berkeley) %G%
+ *	@(#)ubavar.h	7.3 (Berkeley) %G%
  */
 
 /*
@@ -86,6 +86,7 @@ struct uba_ctlr {
 /* the driver saves the prototype command here for use in its go routine */
 	int	um_cmd;		/* communication to dgo() */
 	int	um_ubinfo;	/* save unibus registers, etc */
+	int	um_bdp;		/* for controllers that hang on to bdp's */
 	struct	buf um_tab;	/* queue of devices for this controller */
 };
 
@@ -143,6 +144,7 @@ struct uba_driver {
 	char	*ud_mname;		/* name of a controller */
 	struct	uba_ctlr **ud_minfo;	/* backpointers to ubminit structs */
 	short	ud_xclu;		/* want exclusive use of bdp's */
+	short	ud_keepbdp;		/* hang on to bdp's once allocated */
 	int	(*ud_ubamem)();		/* see if dedicated memory is present */
 };
 #endif
@@ -166,6 +168,8 @@ struct uba_driver {
 
 #ifndef LOCORE
 #ifdef KERNEL
+#define	ubago(ui)	ubaqueue(ui, 0)
+
 /*
  * UBA related kernel variables
  */
