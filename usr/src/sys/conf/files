@@ -8,8 +8,9 @@ kern/kern_exit.c	standard
 kern/kern_fork.c	standard
 kern/kern_kinfo.c	standard
 kern/kern_ktrace.c	standard
+kern/kern_lock.c	standard
 kern/kern_malloc.c	standard
-kern/kern_mman.c	standard
+kern/kern_physio.c	standard
 kern/kern_proc.c	standard
 kern/kern_prot.c	standard
 kern/kern_resource.c	standard
@@ -51,18 +52,23 @@ kern/uipc_socket.c	standard
 kern/uipc_socket2.c	standard
 kern/uipc_syscalls.c	standard
 kern/uipc_usrreq.c	standard
-kern/vm_drum.c		standard
-kern/vm_mem.c		standard
-kern/vm_mon.c		standard
-kern/vm_page.c		standard
-kern/vm_proc.c		standard
-kern/vm_pt.c		standard
-kern/vm_sched.c		standard
-kern/vm_subr.c		standard
-kern/vm_sw.c		standard
-kern/vm_swap.c		standard
-kern/vm_swp.c		standard
-kern/vm_text.c		standard
+vm/vm_fault.c		standard
+vm/vm_glue.c		standard
+vm/vm_init.c		standard
+vm/vm_kern.c		standard
+vm/vm_map.c		standard
+vm/vm_meter.c		standard
+vm/vm_mmap.c		standard
+vm/vm_object.c		standard
+vm/vm_pageout.c		standard
+vm/vm_pager.c		standard
+vm/vm_resident.c	standard
+vm/vm_swap.c		standard
+vm/vm_unix.c		standard
+vm/vm_user.c		standard
+vm/device_pager.c	optional devpager
+vm/swap_pager.c		optional swappager
+vm/vnode_pager.c	optional vnodepager
 ufs/ufs_alloc.c		standard
 ufs/ufs_bmap.c		standard
 ufs/ufs_disksubr.c	standard
