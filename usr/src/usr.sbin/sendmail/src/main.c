@@ -6,7 +6,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)main.c	3.109		%G%);
+SCCSID(@(#)main.c	3.110		%G%);
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -413,7 +413,6 @@ main(argc, argv)
 		syslog(LOG_DEBUG, "entered, uid=%d, pid=%d", getuid(), getpid());
 # endif LOG
 	readcf(ConfFile, safecf);
-	initsys();
 
 	/* our name for SMTP codes */
 	(void) expand("$i", ibuf, &ibuf[sizeof ibuf - 1]);
@@ -458,6 +457,8 @@ main(argc, argv)
 		}
 	}
 # endif DEBUG
+
+	initsys();
 
 #ifdef DAEMON
 	/*
@@ -1000,6 +1001,17 @@ initsys()
 	register struct tm *tm;
 	extern struct tm *gmtime();
 	auto time_t now;
+
+	/*
+	**  Set OutChannel to something useful if stdout isn't it.
+	*/
+
+	if (Mode == MD_DAEMON || HoldErrs)
+		OutChannel = Xscript;
+
+	/*
+	**  Set up some basic system macros.
+	*/
 
 	/* process id */
 	(void) sprintf(pbuf, "%d", getpid());

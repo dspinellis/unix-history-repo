@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)clock.c	3.10		%G%);
+SCCSID(@(#)clock.c	3.11		%G%);
 
 /*
 **  SETEVENT -- set an event to happen at a specific time.
@@ -134,10 +134,10 @@ tick()
 		printf("tick: now=%ld\n", now);
 # endif DEBUG
 
-	while (EventQueue != NULL && EventQueue->ev_time <= now)
+	while ((ev = EventQueue) != NULL &&
+	       (ev->ev_time <= now || ev->ev_pid != getpid()))
 	{
 		int (*f)(), a;
-		int pid;
 
 		/* process the event on the top of the queue */
 		ev = EventQueue;
@@ -151,9 +151,8 @@ tick()
 		/* we must be careful in here because ev_func may not return */
 		f = ev->ev_func;
 		a = ev->ev_arg;
-		pid = ev->ev_pid;
 		free(ev);
-		if (pid != getpid())
+		if (ev->ev_pid != getpid())
 			continue;
 		if (EventQueue != NULL)
 		{

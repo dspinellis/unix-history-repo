@@ -1,7 +1,7 @@
 # include <pwd.h>
 # include "sendmail.h"
 
-SCCSID(@(#)savemail.c	3.42		%G%);
+SCCSID(@(#)savemail.c	3.43		%G%);
 
 /*
 **  SAVEMAIL -- Save mail on error
@@ -226,6 +226,7 @@ returntosender(msg, sendbody)
 	NoAlias = TRUE;
 	ErrorMessage = msg;
 	SendBody = sendbody;
+	define('g', "$f");
 
 	/* fake up an address header for the from person */
 	bmove((char *) &CurEnv->e_from, (char *) &to_addr, sizeof to_addr);
