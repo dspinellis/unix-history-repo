@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 /* Many bug fixes are from Jim Guyton <guyton@rand-unix> */
@@ -26,16 +26,23 @@ static char sccsid[] = "@(#)main.c	5.11 (Berkeley) %G%";
 
 #include <netinet/in.h>
 
+#include <arpa/inet.h>
+
+#include <ctype.h>
+#include <errno.h>
+#include <netdb.h>
+#include <setjmp.h>
 #include <signal.h>
 #include <stdio.h>
-#include <errno.h>
-#include <setjmp.h>
-#include <ctype.h>
-#include <netdb.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+
+#include "extern.h"
 
 #define	TIMEOUT		5		/* secs between rexmt's */
 
-struct	sockaddr_in sin;
+struct	sockaddr_in peeraddr;
 int	f;
 short   port;
 int	trace;
@@ -50,16 +57,33 @@ jmp_buf	toplevel;
 void	intr();
 struct	servent *sp;
 
-int	quit(), help(), setverbose(), settrace(), status();
-int     get(), put(), setpeer(), modecmd(), setrexmt(), settimeout();
-int     setbinary(), setascii();
+void	get __P((int, char **));
+void	help __P((int, char **));
+void	modecmd __P((int, char **));
+void	put __P((int, char **));
+void	quit __P((int, char **));
+void	setascii __P((int, char **));
+void	setbinary __P((int, char **));
+void	setpeer __P((int, char **));
+void	setrexmt __P((int, char **));
+void	settimeout __P((int, char **));
+void	settrace __P((int, char **));
+void	setverbose __P((int, char **));
+void	status __P((int, char **));
+
+static __dead void command __P((void));
+
+static void getusage __P((char *));
+static void makeargv __P((void));
+static void putusage __P((char *));
+static void settftpmode __P((char *));
 
 #define HELPINDENT (sizeof("connect"))
 
 struct cmd {
 	char	*name;
 	char	*help;
-	int	(*handler)();
+	void	(*handler) __P((int, char **));
 };
 
 char	vhelp[] = "toggle verbose mode";
@@ -90,7 +114,7 @@ struct cmd cmdtab[] = {
 	{ "rexmt",	xhelp,		setrexmt },
 	{ "timeout",	ihelp,		settimeout },
 	{ "?",		hhelp,		help },
-	0
+	{ 0 }
 };
 
 struct	cmd *getcmd();
@@ -98,11 +122,12 @@ char	*tail();
 char	*index();
 char	*rindex();
 
+int
 main(argc, argv)
+	int argc;
 	char *argv[];
 {
 	struct sockaddr_in sin;
-	int top;
 
 	sp = getservbyname("tftp", "udp");
 	if (sp == 0) {
@@ -114,9 +139,9 @@ main(argc, argv)
 		perror("tftp: socket");
 		exit(3);
 	}
-	bzero((char *)&sin, sizeof (sin));
+	bzero((char *)&sin, sizeof(sin));
 	sin.sin_family = AF_INET;
-	if (bind(f, (struct sockaddr *)&sin, sizeof (sin)) < 0) {
+	if (bind(f, (struct sockaddr *)&sin, sizeof(sin)) < 0) {
 		perror("tftp: bind");
 		exit(1);
 	}
@@ -127,13 +152,14 @@ main(argc, argv)
 			exit(0);
 		setpeer(argc, argv);
 	}
-	top = setjmp(toplevel) == 0;
-	for (;;)
-		command(top);
+	if (setjmp(toplevel) != 0)
+		(void)putchar('\n');
+	command();
 }
 
 char    hostname[100];
 
+void
 setpeer(argc, argv)
 	int argc;
 	char *argv[];
@@ -154,13 +180,13 @@ setpeer(argc, argv)
 	}
 	host = gethostbyname(argv[1]);
 	if (host) {
-		sin.sin_family = host->h_addrtype;
-		bcopy(host->h_addr, &sin.sin_addr, host->h_length);
+		peeraddr.sin_family = host->h_addrtype;
+		bcopy(host->h_addr, &peeraddr.sin_addr, host->h_length);
 		strcpy(hostname, host->h_name);
 	} else {
-		sin.sin_family = AF_INET;
-		sin.sin_addr.s_addr = inet_addr(argv[1]);
-		if (sin.sin_addr.s_addr == -1) {
+		peeraddr.sin_family = AF_INET;
+		peeraddr.sin_addr.s_addr = inet_addr(argv[1]);
+		if (peeraddr.sin_addr.s_addr == -1) {
 			connected = 0;
 			printf("%s: unknown host\n", argv[1]);
 			return;
@@ -193,7 +219,9 @@ struct	modes {
 	{ 0,		0 }
 };
 
+void
 modecmd(argc, argv)
+	int argc;
 	char *argv[];
 {
 	register struct modes *p;
@@ -208,7 +236,7 @@ modecmd(argc, argv)
 			if (strcmp(argv[1], p->m_name) == 0)
 				break;
 		if (p->m_name) {
-			setmode(p->m_mode);
+			settftpmode(p->m_mode);
 			return;
 		}
 		printf("%s: unknown mode\n", argv[1]);
@@ -226,18 +254,27 @@ modecmd(argc, argv)
 	return;
 }
 
+void
 setbinary(argc, argv)
-char *argv[];
-{       setmode("octet");
+	int argc;
+	char *argv[];
+{      
+
+	settftpmode("octet");
 }
 
+void
 setascii(argc, argv)
-char *argv[];
-{       setmode("netascii");
+	int argc;
+	char *argv[];
+{
+
+	settftpmode("netascii");
 }
 
-setmode(newmode)
-char *newmode;
+static void
+settftpmode(newmode)
+	char *newmode;
 {
 	strcpy(mode, newmode);
 	if (verbose)
@@ -248,7 +285,9 @@ char *newmode;
 /*
  * Send file(s).
  */
+void
 put(argc, argv)
+	int argc;
 	char *argv[];
 {
 	int fd;
@@ -286,8 +325,8 @@ put(argc, argv)
 			herror((char *)NULL);
 			return;
 		}
-		bcopy(hp->h_addr, (caddr_t)&sin.sin_addr, hp->h_length);
-		sin.sin_family = hp->h_addrtype;
+		bcopy(hp->h_addr, (caddr_t)&peeraddr.sin_addr, hp->h_length);
+		peeraddr.sin_family = hp->h_addrtype;
 		connected = 1;
 		strcpy(hostname, hp->h_name);
 	}
@@ -305,7 +344,7 @@ put(argc, argv)
 		if (verbose)
 			printf("putting %s to %s:%s [%s]\n",
 				cp, hostname, targ, mode);
-		sin.sin_port = port;
+		peeraddr.sin_port = port;
 		sendfile(fd, targ, mode);
 		return;
 	}
@@ -323,11 +362,12 @@ put(argc, argv)
 		if (verbose)
 			printf("putting %s to %s:%s [%s]\n",
 				argv[n], hostname, targ, mode);
-		sin.sin_port = port;
+		peeraddr.sin_port = port;
 		sendfile(fd, targ, mode);
 	}
 }
 
+static void
 putusage(s)
 	char *s;
 {
@@ -338,7 +378,9 @@ putusage(s)
 /*
  * Receive file(s).
  */
+void
 get(argc, argv)
+	int argc;
 	char *argv[];
 {
 	int fd;
@@ -379,8 +421,9 @@ get(argc, argv)
 				herror((char *)NULL);
 				continue;
 			}
-			bcopy(hp->h_addr, (caddr_t)&sin.sin_addr, hp->h_length);
-			sin.sin_family = hp->h_addrtype;
+			bcopy(hp->h_addr, (caddr_t)&peeraddr.sin_addr,
+			    hp->h_length);
+			peeraddr.sin_family = hp->h_addrtype;
 			connected = 1;
 			strcpy(hostname, hp->h_name);
 		}
@@ -394,7 +437,7 @@ get(argc, argv)
 			if (verbose)
 				printf("getting from %s:%s to %s [%s]\n",
 					hostname, src, cp, mode);
-			sin.sin_port = port;
+			peeraddr.sin_port = port;
 			recvfile(fd, src, mode);
 			break;
 		}
@@ -407,13 +450,14 @@ get(argc, argv)
 		if (verbose)
 			printf("getting from %s:%s to %s [%s]\n",
 				hostname, src, cp, mode);
-		sin.sin_port = port;
+		peeraddr.sin_port = port;
 		recvfile(fd, src, mode);
 	}
 }
 
+static void
 getusage(s)
-char * s;
+	char *s;
 {
 	printf("usage: %s host:file host:file ... file, or\n", s);
 	printf("       %s file file ... file if connected\n", s);
@@ -421,7 +465,9 @@ char * s;
 
 int	rexmtval = TIMEOUT;
 
+void
 setrexmt(argc, argv)
+	int argc;
 	char *argv[];
 {
 	int t;
@@ -440,14 +486,16 @@ setrexmt(argc, argv)
 	}
 	t = atoi(argv[1]);
 	if (t < 0)
-		printf("%s: bad value\n", t);
+		printf("%s: bad value\n", argv[1]);
 	else
 		rexmtval = t;
 }
 
 int	maxtimeout = 5 * TIMEOUT;
 
+void
 settimeout(argc, argv)
+	int argc;
 	char *argv[];
 {
 	int t;
@@ -466,12 +514,14 @@ settimeout(argc, argv)
 	}
 	t = atoi(argv[1]);
 	if (t < 0)
-		printf("%s: bad value\n", t);
+		printf("%s: bad value\n", argv[1]);
 	else
 		maxtimeout = t;
 }
 
+void
 status(argc, argv)
+	int argc;
 	char *argv[];
 {
 	if (connected)
@@ -487,6 +537,7 @@ status(argc, argv)
 void
 intr()
 {
+
 	signal(SIGALRM, SIG_IGN);
 	alarm(0);
 	longjmp(toplevel, -1);
@@ -512,18 +563,16 @@ tail(filename)
 /*
  * Command parser.
  */
-command(top)
-	int top;
+static __dead void
+command()
 {
 	register struct cmd *c;
 
-	if (!top)
-		putchar('\n');
 	for (;;) {
 		printf("%s> ", prompt);
 		if (gets(line) == 0) {
 			if (feof(stdin)) {
-				quit();
+				exit(0);
 			} else {
 				continue;
 			}
@@ -557,7 +606,7 @@ getcmd(name)
 	longest = 0;
 	nmatches = 0;
 	found = 0;
-	for (c = cmdtab; p = c->name; c++) {
+	for (c = cmdtab; (p = c->name) != NULL; c++) {
 		for (q = name; *q == *p++; q++)
 			if (*q == 0)		/* exact match? */
 				return (c);
@@ -578,6 +627,7 @@ getcmd(name)
 /*
  * Slice a string up into argc/argv.
  */
+static void
 makeargv()
 {
 	register char *cp;
@@ -600,15 +650,19 @@ makeargv()
 	*argp++ = 0;
 }
 
-/*VARARGS*/
-quit()
+void
+quit(argc, argv)
+	int argc;
+	char *argv[];
 {
+
 	exit(0);
 }
 
 /*
  * Help command.
  */
+void
 help(argc, argv)
 	int argc;
 	char *argv[];
@@ -618,7 +672,7 @@ help(argc, argv)
 	if (argc == 1) {
 		printf("Commands may be abbreviated.  Commands are:\n\n");
 		for (c = cmdtab; c->name; c++)
-			printf("%-*s\t%s\n", HELPINDENT, c->name, c->help);
+			printf("%-*s\t%s\n", (int)HELPINDENT, c->name, c->help);
 		return;
 	}
 	while (--argc > 0) {
@@ -634,15 +688,19 @@ help(argc, argv)
 	}
 }
 
-/*VARARGS*/
-settrace()
+void
+settrace(argc, argv)
+	int argc;
+	char **argv;
 {
 	trace = !trace;
 	printf("Packet tracing %s.\n", trace ? "on" : "off");
 }
 
-/*VARARGS*/
-setverbose()
+void
+setverbose(argc, argv)
+	int argc;
+	char **argv;
 {
 	verbose = !verbose;
 	printf("Verbose mode %s.\n", verbose ? "on" : "off");

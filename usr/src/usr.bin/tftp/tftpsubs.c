@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tftpsubs.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)tftpsubs.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 /* Simple minded read-ahead/write-behind subroutines for tftp user and
@@ -25,7 +25,11 @@ static char sccsid[] = "@(#)tftpsubs.c	5.6 (Berkeley) %G%";
 #include <sys/ioctl.h>
 #include <netinet/in.h>
 #include <arpa/tftp.h>
+
 #include <stdio.h>
+#include <unistd.h>
+
+#include "tftpsubs.h"
 
 #define PKTSIZE SEGSIZE+4       /* should be moved to tftp.h */
 
@@ -39,23 +43,23 @@ struct bf {
 #define BF_FREE  -2             /* free */
 /* [-1 .. SEGSIZE] = size of data in the data buffer */
 
-static int nextone;     /* index of next buffer to use */
-static int current;     /* index of buffer in use */
+static int nextone;		/* index of next buffer to use */
+static int current;		/* index of buffer in use */
 
-			/* control flags for crlf conversions */
-int newline = 0;        /* fillbuf: in middle of newline expansion */
-int prevchar = -1;      /* putbuf: previous char (cr check) */
+				/* control flags for crlf conversions */
+int newline = 0;		/* fillbuf: in middle of newline expansion */
+int prevchar = -1;		/* putbuf: previous char (cr check) */
 
-struct tftphdr *rw_init();
+static struct tftphdr *rw_init();
 
 struct tftphdr *w_init() { return rw_init(0); }         /* write-behind */
 struct tftphdr *r_init() { return rw_init(1); }         /* read-ahead */
 
-struct tftphdr *
-rw_init(x)              /* init for either read-ahead or write-behind */
-int x;                  /* zero for write-behind, one for read-head */
+static struct tftphdr *
+rw_init(x)			/* init for either read-ahead or write-behind */
+	int x;			/* zero for write-behind, one for read-head */
 {
-	newline = 0;            /* init crlf flag */
+	newline = 0;		/* init crlf flag */
 	prevchar = -1;
 	bfs[0].counter =  BF_ALLOC;     /* pass out the first buffer */
 	current = 0;
@@ -68,6 +72,7 @@ int x;                  /* zero for write-behind, one for read-head */
 /* Have emptied current buffer by sending to net and getting ack.
    Free it and return next buffer filled with data.
  */
+int
 readit(file, dpp, convert)
 	FILE *file;                     /* file opened for read */
 	struct tftphdr **dpp;
@@ -81,7 +86,7 @@ readit(file, dpp, convert)
 	b = &bfs[current];              /* look at new buffer */
 	if (b->counter == BF_FREE)      /* if it's empty */
 		read_ahead(file, convert);      /* fill it */
-/*      assert(b->counter != BF_FREE);  /* check */
+/*      assert(b->counter != BF_FREE);*//* check */
 	*dpp = (struct tftphdr *)b->buf;        /* set caller's ptr */
 	return b->counter;
 }
@@ -90,6 +95,7 @@ readit(file, dpp, convert)
  * fill the input buffer, doing ascii conversions if requested
  * conversions are  lf -> cr,lf  and cr -> cr, nul
  */
+void
 read_ahead(file, convert)
 	FILE *file;                     /* file opened for read */
 	int convert;                    /* if true, convert to ascii */
@@ -138,15 +144,16 @@ read_ahead(file, convert)
    from the queue.  Calls write_behind only if next buffer not
    available.
  */
+int
 writeit(file, dpp, ct, convert)
 	FILE *file;
 	struct tftphdr **dpp;
-	int convert;
+	int ct, convert;
 {
 	bfs[current].counter = ct;      /* set size of data to write */
 	current = !current;             /* switch to other buffer */
 	if (bfs[current].counter != BF_FREE)     /* if not free */
-		write_behind(file, convert);     /* flush it */
+		(void)write_behind(file, convert); /* flush it */
 	bfs[current].counter = BF_ALLOC;        /* mark as alloc'd */
 	*dpp =  (struct tftphdr *)bfs[current].buf;
 	return ct;                      /* this is a lie of course */
@@ -158,6 +165,7 @@ writeit(file, dpp, ct, convert)
  * Note spec is undefined if we get CR as last byte of file or a
  * CR followed by anything else.  In this case we leave it alone.
  */
+int
 write_behind(file, convert)
 	FILE *file;
 	int convert;
@@ -218,7 +226,7 @@ skipit:
 
 int
 synchnet(f)
-int	f;		/* socket to flush */
+	int	f;		/* socket to flush */
 {
 	int i, j = 0;
 	char rbuf[PKTSIZE];
