@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	8.70 (Berkeley) %G%";
+static char sccsid[] = "@(#)recipient.c	8.71 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -752,7 +752,7 @@ include(fname, forwarding, ctladdr, sendq, aliaslevel, e)
 	gid_t savedgid, gid;
 	char *uname;
 	int rval = 0;
-	int sfflags = forwarding ? SFF_MUSTOWN : SFF_ANYFILE;
+	int sfflags = SFF_REGONLY;
 	struct stat st;
 	char buf[MAXLINE];
 #ifdef _POSIX_CHOWN_RESTRICTED
@@ -786,6 +786,9 @@ include(fname, forwarding, ctladdr, sendq, aliaslevel, e)
 
 	if (tTd(27, 9))
 		printf("include: old uid = %d/%d\n", getuid(), geteuid());
+
+	if (forwarding)
+		sfflags |= SFF_MUSTOWN;
 
 	ca = getctladdr(ctladdr);
 	if (ca == NULL)
