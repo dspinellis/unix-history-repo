@@ -14,10 +14,10 @@
 # WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF MERCHANTIBILITY AND
 # FITNESS FOR A PARTICULAR PURPOSE.
 #
-# @(#)Makefile	5.1 (Berkeley) %G%
+# @(#)Makefile	5.2 (Berkeley) %G%
 #
 
-CFLAGS=	-O
+CFLAGS=	-O -DCOMPAT_43
 LIBC=	/lib/libc.a
 SRCS=	df.c
 OBJS=
