@@ -1,89 +1,107 @@
-.\" Copyright (c) 1980 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1989 The Regents of the University of California.
+.\" All rights reserved.
 .\"
-.\"	@(#)mv.1	6.1 (Berkeley) %G%
+.\" Redistribution and use in source and binary forms are permitted
+.\" provided that the above copyright notice and this paragraph are
+.\" duplicated in all such forms and that any documentation,
+.\" advertising materials, and other materials related to such
+.\" distribution and use acknowledge that the software was developed
+.\" by the University of California, Berkeley.  The name of the
+.\" University may not be used to endorse or promote products derived
+.\" from this software without specific prior written permission.
+.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+.\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\"
+.\"	@(#)mv.1	6.2 (Berkeley) %G%
 .\"
 .TH MV 1 ""
-.UC 4
+.UC 7
 .SH NAME
-mv \- move or rename files
+mv \- move files
 .SH SYNOPSIS
-.B mv
-[
-.B \-i
-] [
-.B \-f
-] [
-.B \-
-] file1 file2
-.PP
-.B mv
-[
-.B \-i
-] [
-.B \-f
-] [
-.B \-
-] file ... directory
+.nf
+mv  [ \-f | \-i ] source target
+mv  [ \-f | \-i ] source ... source directory
+.fi
 .SH DESCRIPTION
-.I Mv
-moves (changes the name of)
-.I file1
-to
-.IR file2 .
 .PP
-If
-.I file2
-already exists, it is removed before
-.I file1
-is moved.  If
-.I file2
-has a mode which forbids writing,
+In its first form, the
 .I mv
-prints the mode (see
-.IR chmod (2))
-and reads the standard input to obtain a line; if the line begins with
-.B y,
-the move takes place; if not,
-.I mv
-exits.
+utility renames the file named by the
+.I source
+operand to the destination path named by the
+.I target
+operand.
+This form is assumed when the last operand does not name an already
+existing directory.
 .PP
-In the second form, one or more
-.I files
-(plain files or directories) are moved to the
+In its second form,
+.I mv
+moves each file named by a
+.I source
+operand to a destination file in the existing directory named by the
 .I directory
-with their original file-names.
+operand.
+The destination path for each operand is the pathname produced by the
+concatenation of the last operand, a slash, and the final pathname
+component of the named file.
 .PP
-.I Mv
-refuses to move a file onto itself.
-.PP
-Options:
+The following options are available:
 .TP
-.B \-i
-stands for interactive mode. Whenever a move is to supercede an
-existing file, the user is prompted by the name of the file
-followed by a question mark. If he answers with a line starting
-with 'y', the move continues. Any other reply prevents the move from
-occurring.
+\-f
+Do not prompt for confirmation before overwriting the destination
+path.
+(The
+.I \-i
+option is ignored if the
+.I \-f
+option is specified.)
 .TP
-.B \-f
-stands for force. This option overrides any mode restrictions or the
-\-i switch.
-.TP
-.B \-
-means interpret all the following arguments to 
+\-i
+Causes
 .I mv
-as file names.  This allows file names starting with minus.
-.SH "SEE ALSO"
-cp(1), ln(1)
-.SH BUGS
-If
-.I file1
+to write a prompt to standard error before moving a file that would
+overwrite an existing file.
+If the response from the standard input begins with the character ``y'',
+the move is attempted.
+.PP
+It is an error for either the
+.I source
+operand or the destination path to specify a directory unless both do.
+.PP
+If the destination path does not have a mode which permits writing,
+.I mv
+prompts the user for confirmation as specified for the
+.I \-i
+option.
+.PP
+As the
+.IR rename (2)
+call does not work across file systems,
+.I mv
+uses
+.IR cp (1)
 and
-.I file2
-lie on different file systems,
+.IR rm (1)
+to accomplish the move.
+The effect is equivalent to:
+.sp
+.nf
+.ti +5
+rm -f destination_path && \e
+.ti +8
+cp -pr source_file destination && \e
+.ti +8
+rm -rf source_file
+.fi
+.PP
+The
 .I mv
-must copy the file and delete the original.
-In this case the owner name becomes that of the copying process and any
-linking relationship with other files is lost.
+utility exits 0 on success, and >0 if an error occurs.
+.SH ENVIRONMENT
+.SH "SEE ALSO"
+.SH STANDARDS
+The
+.I mv
+function is expected to be POSIX 1003.2 compatible.
