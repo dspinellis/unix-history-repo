@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)sys_term.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)sys_term.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "telnetd.h"
@@ -1021,21 +1021,19 @@ char *host;
 	/*
 	 * set up standard paths before forking to login
 	 */
-#ifndef	NO_SETSID
-	if (setsid() < 0)
-		fatalperror(net, "setsid");
-#endif
-
-#ifdef	TIOCSCTTY
-	if (ioctl(t, TIOCSCTTY, (char *)0) < 0)
-		fatalperror(net, "ioctl(sctty)");
-#endif
-	(void) close(net);
-	(void) close(pty);
+#if BSD > 43
+	if (login_tty(t) == -1)
+		fatalperror(net, "login_tty");
+#else
 	(void) dup2(t, 0);
 	(void) dup2(t, 1);
 	(void) dup2(t, 2);
 	(void) close(t);
+#endif
+	if (net > 2)
+		(void) close(net);
+	if (pty > 2)
+		(void) close(pty);
 	/*
 	 * -h : pass on name of host.
 	 *		WARNING:  -h is accepted by login if and only if
