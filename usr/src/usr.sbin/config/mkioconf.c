@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mkioconf.c	5.20 (Berkeley) %G%";
+static char sccsid[] = "@(#)mkioconf.c	5.21 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <stdio.h>
@@ -18,6 +18,7 @@ static char sccsid[] = "@(#)mkioconf.c	5.20 (Berkeley) %G%";
  */
 char	*qu();
 char	*intv();
+char	*wnum();
 
 #if MACHINE_VAX
 vax_ioconf()
@@ -439,10 +440,9 @@ tahoe_ioconf()
 #if MACHINE_HP300
 hp300_ioconf()
 {
-	register struct device *dp, *mp, *np;
+	register struct device *dp, *mp;
 	register int hpib, slave;
 	FILE *fp;
-	extern char *wnum();
 
 	fp = fopen(path("ioconf.c"), "w");
 	if (fp == 0) {
@@ -546,7 +546,6 @@ hp300_ioconf()
 hpbadslave(mp, dp)
 	register struct device *dp, *mp;
 {
-	extern char *wnum();
 
 	if (mp == TO_NEXUS && ishpibdev(dp->d_name) ||
 	    mp != TO_NEXUS && eq(mp->d_name, "hpib") &&
@@ -563,16 +562,6 @@ hpbadslave(mp, dp)
 		return (1);
 	}
 	return (0);
-}
-
-char *
-wnum(num)
-{
-
-	if (num == QUES || num == UNKNOWN)
-		return ("?");
-	(void) sprintf(errbuf, "%d", num);
-	return (errbuf);
 }
 #endif
 
@@ -712,6 +701,85 @@ sirq(num)
 }
 #endif
 
+#if MACHINE_PMAX
+pmax_ioconf()
+{
+	register struct device *dp, *mp;
+	FILE *fp;
+
+	fp = fopen(path("ioconf.c"), "w");
+	if (fp == 0) {
+		perror(path("ioconf.c"));
+		exit(1);
+	}
+	fprintf(fp, "#include \"types.h\"\n");
+	fprintf(fp, "#include \"pmax/dev/device.h\"\n\n");
+	fprintf(fp, "#define C (char *)\n\n");
+
+	/* print controller initialization structures */
+	for (dp = dtab; dp != 0; dp = dp->d_next) {
+		if (dp->d_type == PSEUDO_DEVICE)
+			continue;
+		fprintf(fp, "extern struct driver %sdriver;\n", dp->d_name);
+	}
+	fprintf(fp, "\nstruct pmax_ctlr pmax_cinit[] = {\n");
+	fprintf(fp, "/*\tdriver,\t\tunit,\taddr,\t\tflags */\n");
+	for (dp = dtab; dp != 0; dp = dp->d_next) {
+		if (dp->d_type != CONTROLLER && dp->d_type != MASTER)
+			continue;
+		if (dp->d_conn != TO_NEXUS) {
+			printf("%s%s must be attached to a nexus (internal bus)\n",
+				dp->d_name, wnum(dp->d_unit));
+			continue;
+		}
+		if (dp->d_drive != UNKNOWN || dp->d_slave != UNKNOWN) {
+			printf("can't specify drive/slave for %s%s\n",
+				dp->d_name, wnum(dp->d_unit));
+			continue;
+		}
+		if (dp->d_unit == UNKNOWN || dp->d_unit == QUES)
+			dp->d_unit = 0;
+		fprintf(fp,
+			"\t{ &%sdriver,\t%d,\tC 0x%x,\t0x%x },\n",
+			dp->d_name, dp->d_unit, dp->d_addr, dp->d_flags);
+	}
+	fprintf(fp, "\t0\n};\n");
+
+	/* print devices connected to other controllers */
+	fprintf(fp, "\nstruct scsi_device scsi_dinit[] = {\n");
+	fprintf(fp,
+	   "/*driver,\tcdriver,\tunit,\tctlr,\tdrive,\tslave,\tdk,\tflags*/\n");
+	for (dp = dtab; dp != 0; dp = dp->d_next) {
+		if (dp->d_type == CONTROLLER || dp->d_type == MASTER ||
+		    dp->d_type == PSEUDO_DEVICE)
+			continue;
+		mp = dp->d_conn;
+		if (mp == 0 || !eq(mp->d_name, "sii")) {
+			printf("%s%s: devices must be attached to a SCSI (sii) controller\n",
+				dp->d_name, wnum(dp->d_unit));
+			continue;
+		}
+		if ((unsigned)dp->d_drive > 6) {
+			printf("%s%s: SCSI drive must be in the range 0..6\n",
+				dp->d_name, wnum(dp->d_unit));
+			continue;
+		}
+		/* may want to allow QUES later */
+		if ((unsigned)dp->d_slave > 7) {
+			printf("%s%s: SCSI slave (LUN) must be in the range 0..7\n",
+				dp->d_name, wnum(dp->d_unit));
+			continue;
+		}
+		fprintf(fp, "{ &%sdriver,\t&%sdriver,", dp->d_name, mp->d_name);
+		fprintf(fp, "\t%d,\t%d,\t%d,\t%d,\t%d,\t0x%x },\n",
+			dp->d_unit, mp->d_unit, dp->d_drive, dp->d_slave,
+			dp->d_dk, dp->d_flags);
+	}
+	fprintf(fp, "0\n};\n");
+	(void) fclose(fp);
+}
+#endif
+
 char *
 intv(dev)
 	register struct device *dev;
@@ -733,5 +801,15 @@ qu(num)
 	if (num == UNKNOWN)
 		return (" -1");
 	(void) sprintf(errbuf, "%3d", num);
+	return (errbuf);
+}
+
+char *
+wnum(num)
+{
+
+	if (num == QUES || num == UNKNOWN)
+		return ("?");
+	(void) sprintf(errbuf, "%d", num);
 	return (errbuf);
 }
