@@ -25,10 +25,15 @@ mbinit()
 {
 	int s;
 
+#if CLBYTES < 4096
+#define NCL_INIT	(4096/CLBYTES)
+#else
+#define NCL_INIT	1
+#endif
 	s = splimp();
-	if (m_clalloc(4096/CLBYTES, MPG_MBUFS, M_DONTWAIT) == 0)
+	if (m_clalloc(NCL_INIT, MPG_MBUFS, M_DONTWAIT) == 0)
 		goto bad;
-	if (m_clalloc(4096/CLBYTES, MPG_CLUSTERS, M_DONTWAIT) == 0)
+	if (m_clalloc(NCL_INIT, MPG_CLUSTERS, M_DONTWAIT) == 0)
 		goto bad;
 	splx(s);
 	return;
@@ -59,7 +64,7 @@ m_clalloc(ncl, how, canwait)
 		}
 		return (0);
 	}
-	m = cltom(mbx / CLSIZE);
+	m = cltom(mbx * NBPG / MCLBYTES);
 	if (memall(&Mbmap[mbx], npg, proc, CSYS) == 0) {
 		rmfree(mbmap, (long)npg, (long)mbx);
 		return (0);
@@ -68,11 +73,12 @@ m_clalloc(ncl, how, canwait)
 	switch (how) {
 
 	case MPG_CLUSTERS:
+		ncl = ncl * CLBYTES / MCLBYTES;
 		for (i = 0; i < ncl; i++) {
 			m->m_off = 0;
 			m->m_next = mclfree;
 			mclfree = m;
-			m += CLBYTES / sizeof (*m);
+			m += MCLBYTES / sizeof (*m);
 			mbstat.m_clfree++;
 		}
 		mbstat.m_clusters += ncl;
