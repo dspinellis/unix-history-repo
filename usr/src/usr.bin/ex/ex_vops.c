@@ -1,5 +1,5 @@
 /* Copyright (c) 1981 Regents of the University of California */
-static char *sccsid = "@(#)ex_vops.c	7.3	%G%";
+static char *sccsid = "@(#)ex_vops.c	7.4	%G%";
 #include "ex.h"
 #include "ex_tty.h"
 #include "ex_vis.h"
@@ -784,7 +784,7 @@ xdw()
 	}
 	vsave();
 	setLAST();
-	if (dot > wdot) {
+	if (dot > wdot || (dot == wdot && wcursor != 0 && cursor > wcursor)) {
 		register line *addr;
 
 		vcline -= dot - wdot;
