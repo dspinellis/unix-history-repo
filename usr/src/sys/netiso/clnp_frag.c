@@ -26,7 +26,7 @@ SOFTWARE.
  */
 /* $Header: /var/src/sys/netiso/RCS/clnp_frag.c,v 5.1 89/02/09 16:20:26 hagens Exp $ */
 /* $Source: /var/src/sys/netiso/RCS/clnp_frag.c,v $ */
-/*	@(#)clnp_frag.c	7.7 (Berkeley) %G% */
+/*	@(#)clnp_frag.c	7.8 (Berkeley) %G% */
 
 #ifndef lint
 static char *rcsid = "$Header: /var/src/sys/netiso/RCS/clnp_frag.c,v 5.1 89/02/09 16:20:26 hagens Exp $";
@@ -74,13 +74,14 @@ struct mbuf	*clnp_comp_pdu();
  *					the packet was fragmented during forwarding. In this
  *					case, we ought to send an ER back.
  */
-clnp_fragment(ifp, m, first_hop, total_len, segoff, flags)
+clnp_fragment(ifp, m, first_hop, total_len, segoff, flags, rt)
 struct ifnet	*ifp;		/* ptr to outgoing interface */
 struct mbuf		*m;			/* ptr to packet */
 struct sockaddr	*first_hop;	/* ptr to first hop */
 int				total_len;	/* length of datagram */
 int				segoff;		/* offset of segpart in hdr */
 int				flags;		/* flags passed to clnp_output */
+struct rtentry *rt;			/* route if direct ether */
 {
 	struct clnp_fixed		*clnp = mtod(m, struct clnp_fixed *);
 	int						hdr_len = (int)clnp->cnf_hdr_len;
@@ -215,9 +216,9 @@ int				flags;		/* flags passed to clnp_output */
 			ENDDEBUG
 
 #ifdef	TROLL
-			error = troll_output(ifp, frag_hdr, first_hop);
+			error = troll_output(ifp, frag_hdr, first_hop, rt);
 #else
-			error = (*ifp->if_output)(ifp, frag_hdr, first_hop);
+			error = (*ifp->if_output)(ifp, frag_hdr, first_hop, rt);
 #endif	TROLL
 
 			/*
@@ -787,10 +788,11 @@ float troll_random()
  * NOTES:			The operation of this procedure is regulated by the
  *					troll control structure (Troll).
  */
-troll_output(ifp, m, dst)
+troll_output(ifp, m, dst, rt)
 struct ifnet	*ifp;
 struct mbuf		*m;
 struct sockaddr	*dst;
+struct rtentry *rt;
 {
 	int	err = 0;
 	troll_cnt++;
@@ -805,19 +807,19 @@ struct sockaddr	*dst;
 		if (i_freq == f_freq) {
 			struct mbuf *dup = m_copy(m, 0, (int)M_COPYALL);
 			if (dup != NULL)
-				err = (*ifp->if_output)(ifp, dup, dst);
+				err = (*ifp->if_output)(ifp, dup, dst, rt);
 		}
 		if (!err)
-			err = (*ifp->if_output)(ifp, m, dst);
+			err = (*ifp->if_output)(ifp, m, dst, rt);
 		return(err);
 	} else if (trollctl.tr_ops & TR_DROPPKT) {
 	} else if (trollctl.tr_ops & TR_CHANGE) {
 		struct clnp_fixed *clnp = mtod(m, struct clnp_fixed *);
 		clnp->cnf_cksum_msb = 0;
-		err = (*ifp->if_output)(ifp, m, dst);
+		err = (*ifp->if_output)(ifp, m, dst, rt);
 		return(err);
 	} else {
-		err = (*ifp->if_output)(ifp, m, dst);
+		err = (*ifp->if_output)(ifp, m, dst, rt);
 		return(err);
 	}
 }

@@ -27,7 +27,7 @@ SOFTWARE.
  */
 /* $Header: /var/src/sys/netiso/RCS/clnp.h,v 5.1 89/02/09 16:17:22 hagens Exp $ */
 /* $Source: /var/src/sys/netiso/RCS/clnp.h,v $ */
-/*	@(#)clnp.h	7.5 (Berkeley) %G% */
+/*	@(#)clnp.h	7.6 (Berkeley) %G% */
 
 #ifndef BYTE_ORDER
 /*
@@ -364,7 +364,7 @@ struct troll {
 };
 
 #define	SN_OUTPUT(clcp, m)\
-	troll_output(clcp->clc_ifa->ia_ifp, m, clcp->clc_firsthop)
+	troll_output(clcp->clc_ifa->ia_ifp, m, clcp->clc_firsthop, clcp->clc_rt)
 
 #define	SN_MTU(ifp)\
 	(ifp->if_mtu - trollctl.tr_mtu_adj)
@@ -376,7 +376,7 @@ extern float troll_random;
 #else	/* NO TROLL */
 
 #define	SN_OUTPUT(clcp, m)\
-	(*clcp->clc_ifa->ia_ifp->if_output)(clcp->clc_ifa->ia_ifp, m, clcp->clc_firsthop)
+	(*clcp->clc_ifa->ia_ifp->if_output)(clcp->clc_ifa->ia_ifp, m, clcp->clc_firsthop, clcp->clc_rt)
 
 #define	SN_MTU(ifp)\
 	(ifp->if_mtu)
@@ -424,6 +424,8 @@ struct clnp_cache {
 	struct sockaddr		*clc_firsthop;	/* first hop of packet (points into
 											the route structure) */
 	struct iso_ifaddr	*clc_ifa;		/* ptr to interface (points into
+											the route structure) */
+	struct rtentry		*clc_rt;		/* ptr to rtentry (points into
 											the route structure) */
 	struct mbuf 		*clc_hdr;		/* cached pkt hdr (finally)! */
 };
