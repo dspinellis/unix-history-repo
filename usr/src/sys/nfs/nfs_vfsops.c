@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_vfsops.c	7.18 (Berkeley) %G%
+ *	@(#)nfs_vfsops.c	7.19 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -44,6 +44,7 @@ int nfs_mount();
 int nfs_start();
 int nfs_unmount();
 int nfs_root();
+int nfs_quotactl();
 int nfs_statfs();
 int nfs_sync();
 int nfs_fhtovp();
@@ -55,6 +56,7 @@ struct vfsops nfs_vfsops = {
 	nfs_start,
 	nfs_unmount,
 	nfs_root,
+	nfs_quotactl,
 	nfs_statfs,
 	nfs_sync,
 	nfs_fhtovp,
@@ -245,20 +247,23 @@ bad:
 /*
  * unmount system call
  */
-nfs_unmount(mp, flags)
+nfs_unmount(mp, mntflags)
 	struct mount *mp;
-	int flags;
+	int mntflags;
 {
 	register struct nfsmount *nmp;
 	register struct nfsreq *rep;
 	struct nfsreq *rep2;
 	struct nfsnode *np;
 	struct vnode *vp;
+	int flags = 0;
 	int error;
 	int s;
 
-	if (flags & MNT_FORCE)
+	if (mntflags & MNT_FORCE)
 		return (EINVAL);
+	if (mntflags & MNT_FORCE)
+		flags |= FORCECLOSE;
 	nmp = vfs_to_nfs(mp);
 	/*
 	 * Clear out the buffer cache
@@ -378,4 +383,18 @@ nfs_start(mp, flags)
 {
 
 	return (0);
+}
+
+/*
+ * Do operations associated with quotas, not supported
+ */
+/* ARGSUSED */
+nfs_quotactl(mp, cmd, uid, arg)
+	struct mount *mp;
+	int cmd;
+	uid_t uid;
+	caddr_t arg;
+{
+
+	return (EOPNOTSUPP);
 }
