@@ -1,0 +1,31 @@
+.\"	@(#)acct.5	4.1 (Berkeley) %G%
+.\"
+.TH ACCT 5
+.AT 3
+.SH NAME
+acct \- execution accounting file
+.SH SYNOPSIS
+.B #include <sys/acct.h>
+.SH DESCRIPTION
+.IR Acct (2)
+causes entries to be made into an accounting file
+for each process that terminates.
+The accounting file is a sequence of entries whose layout,
+as defined by the include file
+is:
+.PP
+.nf
+.ta \w'typedef 'u +\w'comp_t  'u +\w'ac_comm[10];   'u
+.so /usr/include/sys/acct.h
+.fi
+.PP
+If the process does an
+.IR exec (2),
+the first 10 characters of the filename appear in
+.I ac_comm.
+The accounting flag contains bits indicating whether
+.IR exec (2)
+was ever accomplished, and whether the
+process ever had super-user privileges.
+.SH SEE ALSO
+acct(2), sa(1)
