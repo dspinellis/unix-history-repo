@@ -1,7 +1,7 @@
 # include	"../hdr/defines.h"
 # include	"../hdr/had.h"
 
-SCCSID(@(#)snull.c	4.2);
+SCCSID(@(#)snull.c	4.3);
 USXALLOC();
 
 int	Debug	0;
@@ -190,11 +190,11 @@ register struct packet *pkt;
 		if (getadel(pkt,&dt) != BDELTAB)
 			fmterr(pkt);
 		newp = alloc(n = sizeof(*Dhead));
-		zero(newp,n);
+		bzero(newp,n);
 		if (!Dhead) {
 			Dhead = newp;
 			New_ser_ptr = alloc(n = 2 * (dt.d_serial + 1));
-			zero(New_ser_ptr,n);
+			bzero(New_ser_ptr,n);
 			Max_old_ser = dt.d_serial;
 		}
 		else {
@@ -209,7 +209,7 @@ register struct packet *pkt;
 		newp->ds_ser = dt.d_serial;
 		newp->ds_pred = dt.d_pred;
 		newp->ds_datetime = dt.d_datetime;
-		move(&dt.d_pgmr,newp->ds_pgmr,sizeof(dt.d_pgmr));
+		bcopy(&dt.d_pgmr,newp->ds_pgmr,sizeof(dt.d_pgmr));
 		newp->ds_type = dt.d_type;
 		newp->ds_stats.s_ins = stats.s_ins;
 		newp->ds_stats.s_del = stats.s_del;
@@ -344,7 +344,7 @@ mkdelt()
 		numnull = reldiff;	/* number of null deltas needed */
 		while (--numnull) {	/* insert null deltas */
 			nulldel = alloc(n = sizeof(*Dhead));
-			zero(nulldel,n);
+			bzero(nulldel,n);
 			nulldel->ds_youngerdel = ptrtemp;
 			nulldel->ds_olderdel = ptrtemp->ds_olderdel;
 			ptrtemp->ds_olderdel = nulldel;
@@ -525,11 +525,11 @@ struct deltalist *ptr;
 {
 	struct deltab dt;
 
-	move(&ptr->ds_sid,&dt.d_sid,sizeof(dt.d_sid));
+	bcopy(&ptr->ds_sid,&dt.d_sid,sizeof(dt.d_sid));
 	dt.d_serial = ptr->ds_ser;
 	dt.d_pred = ptr->ds_pred;
 	dt.d_datetime = ptr->ds_datetime;
-	move(ptr->ds_pgmr,&dt.d_pgmr,sizeof(dt.d_pgmr));
+	bcopy(ptr->ds_pgmr,&dt.d_pgmr,sizeof(dt.d_pgmr));
 	dt.d_type = ptr->ds_type;
 
 	del_ba(&dt,line);

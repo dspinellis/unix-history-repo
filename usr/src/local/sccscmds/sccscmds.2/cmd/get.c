@@ -1,9 +1,10 @@
+#include <sys/param.h>		/* for MAXPATHLEN */
+#undef MAX
 # include	"../hdr/defines.h"
 # include	"../hdr/had.h"
 # include	<sys/dir.h>
 
-SCCSID(@(#)get.c	4.6);
-USXALLOC();
+SCCSID(@(#)get.c	4.7);
 
 int	Debug	0;
 struct packet gpkt;
@@ -155,13 +156,13 @@ get(file)
 	else {
 		if ((ser = Ser) > maxser(&gpkt))
 			fatal("serial number too large (ge19)");
-		move(&gpkt.p_idel[ser].i_sid, &gpkt.p_gotsid, sizeof(sid));
+		bcopy(&gpkt.p_idel[ser].i_sid, &gpkt.p_gotsid, sizeof(sid));
 		if (HADR && sid.s_rel != gpkt.p_gotsid.s_rel) {
-			zero(&gpkt.p_reqsid, sizeof(gpkt.p_reqsid));
+			bzero(&gpkt.p_reqsid, sizeof(gpkt.p_reqsid));
 			gpkt.p_reqsid.s_rel = sid.s_rel;
 		}
 		else
-			move(&gpkt.p_gotsid, &gpkt.p_reqsid, sizeof(sid));
+			bcopy(&gpkt.p_gotsid, &gpkt.p_reqsid, sizeof(sid));
 	}
 	doie(&gpkt,ilist,elist,0);
 	setup(&gpkt,ser);
@@ -175,7 +176,7 @@ get(file)
 	}
 	if (HADE) {
 		if (!HADR)
-			move(&gpkt.p_gotsid,&gpkt.p_reqsid,
+			bcopy(&gpkt.p_gotsid,&gpkt.p_reqsid,
 			     sizeof(gpkt.p_reqsid));
 		newsid(&gpkt,Sflags[BRCHFLAG - 'a'] && HADB);
 		permiss(&gpkt);
@@ -386,17 +387,17 @@ register struct packet *pkt;
 		fclose(out);
 }
 
-
 char	Curdate[18];
 char	*Curtime;
 char	Gdate[9];
 char	Chgdate[18];
 char	*Chgtime;
 char	Gchgdate[9];
+char	Qchgdate[30];
 char	Sid[32];
-char	Olddir[BUFSIZ];
-char	Pname[BUFSIZ];
-char	Dir[BUFSIZ];
+char	Olddir[MAXPATHLEN+1];
+char	Pname[MAXPATHLEN+1];
+char	Dir[MAXPATHLEN+1];
 
 idsetup(pkt)
 register struct packet *pkt;
@@ -410,12 +411,12 @@ register struct packet *pkt;
 	Curdate[8] = 0;
 	copy(pkt->p_file,Dir);
 	dname(Dir);
-	if(curdir(Olddir) != 0)
-		fatal("curdir failed (ge20)");
+	if(getwd(Olddir) == 0)
+		fatal("getwd failed (ge20)");
 	if(chdir(Dir) != 0)
 		fatal("cannot change directory (ge22)");
-	if(curdir(Pname) != 0)
-		fatal("curdir failed (ge21)");
+	if(getwd(Pname) == 0)
+		fatal("getwd failed (ge21)");
 	if(chdir(Olddir) != 0)
 		fatal("cannot change directory (ge23)");
 	makgdate(Curdate,Gdate);
@@ -427,6 +428,7 @@ register struct packet *pkt;
 	Chgtime = &Chgdate[9];
 	Chgdate[8] = 0;
 	makgdate(Chgdate,Gchgdate);
+	makqdate(Gchgdate,Qchgdate);
 	sid_ba(&pkt->p_gotsid,Sid);
 	if (p = Sflags[MODFLAG - 'a'])
 		copy(p,Mod);
@@ -451,8 +453,32 @@ register char *old, *new;
 	*new = 0;
 }
 
+makqdate(old,new)
+register char *old, *new;
+{
+	static	char *months[12] =
+	    { "January", "February", "March", "April", "May", "June", "July",
+	      "August", "September", "October", "November", "December" };
+
+	strcpy(new, months[atoi(old)-1]);
+	while (*new != '\0')
+		new++;
+	while (*old++ != '/')
+		;
+	*new++ = ' ';
+	*new++ = *old++;
+	if (*old != '/')
+		*new++ = *old++;
+	*new++ = ',';
+	*new++ = ' ';
+	*new++ = '1'; *new++ = '9';	/* works for this century at least */
+	*new++ = *++old;
+	*new++ = *++old;
+	*new = '\0';
+}
 
 static char Zkeywd[5]	"@(#)";
+
 
 idsubst(pkt,line)
 register struct packet *pkt;
@@ -502,6 +528,9 @@ char line[];
 				break;
 			case 'G':
 				tp = trans(tp,Gchgdate);
+				break;
+			case 'Q':
+				tp = trans(tp,Qchgdate);
 				break;
 			case 'U':
 				tp = trans(tp,Chgtime);
@@ -594,7 +623,7 @@ char *inc, *exc;
 		fatal("cannot create lock file (cm4)");
 	if (exists(p = auxf(pkt->p_file,'p'))) {
 		fd = xopen(p,2);
-		in = fdfopen(fd,0);
+		in = fdopen(fd,"r");
 		while (fgets(line,sizeof(line),in) != NULL) {
 			p = line;
 			p[length(p) - 1] = 0;
@@ -614,7 +643,7 @@ char *inc, *exc;
 			if (!equal(pf.pf_user,user))
 				fprintf(stderr,"WARNING: being edited: `%s' (ge18)\n",line);
 		}
-		out = fdfopen(dup(fd),1);
+		out = fdopen(dup(fd),"w");
 		fclose(in);
 	}
 	else
@@ -681,9 +710,9 @@ register struct packet *pkt;
 	if (ser == 0)
 		fatal("nonexistent sid (ge5)");
 	rdp = &pkt->p_idel[ser];
-	move(&rdp->i_sid, &pkt->p_gotsid, sizeof(pkt->p_gotsid));
+	bcopy(&rdp->i_sid, &pkt->p_gotsid, sizeof(pkt->p_gotsid));
 	if (def || (pkt->p_reqsid.s_lev == 0 && pkt->p_reqsid.s_rel == pkt->p_gotsid.s_rel))
-		move(&pkt->p_gotsid, &pkt->p_reqsid, sizeof(pkt->p_gotsid));
+		bcopy(&pkt->p_gotsid, &pkt->p_reqsid, sizeof(pkt->p_gotsid));
 	return(ser);
 }
 

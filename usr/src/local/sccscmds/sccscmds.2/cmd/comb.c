@@ -1,7 +1,7 @@
 # include	"../hdr/defines.h"
 # include	"../hdr/had.h"
 
-SCCSID(@(#)comb.c	4.1);
+SCCSID(@(#)comb.c	4.2);
 USXALLOC();
 
 struct packet gpkt;
@@ -104,7 +104,7 @@ comb(file)
 		fmterr(&gpkt);
 
 	Cvec = alloc(n = ((maxser(&gpkt) + 1) * sizeof(*Cvec)));
-	zero(Cvec, n);
+	bzero(Cvec, n);
 	Cnt = 0;
 
 	if (HADP) {

@@ -47,7 +47,7 @@ struct delent {		/* structure for delta table entry */
 	char *pred;
 } del;
 
-SCCSID(@(#)val.c	4.1);
+SCCSID(@(#)val.c	4.2);
 
 /* This is the main program that determines whether the command line
  * comes from the standard input or read off the original command
@@ -477,7 +477,7 @@ register struct packet *pkt;
 register char *file;
 {
 
-	zero(pkt,sizeof(*pkt));
+	bzero(pkt,sizeof(*pkt));
 	copy(file,pkt->p_file);
 	pkt->p_wrttn = 1;
 	pkt->do_chksum = 1;	/* turn on checksum check for getline */

@@ -1,7 +1,7 @@
 # include	"../hdr/defines.h"
 # include	"../hdr/had.h"
 
-SCCSID(@(#)delta.c	4.6);
+SCCSID(@(#)delta.c	4.7);
 USXALLOC();
 
 # ifdef LOGDELTA
@@ -151,7 +151,7 @@ char *file;
 	setup(&gpkt,ser);
 	finduser(&gpkt);
 	doflags(&gpkt);
-	move(&pp->pf_nsid,&gpkt.p_reqsid,sizeof(gpkt.p_reqsid));
+	bcopy(&pp->pf_nsid,&gpkt.p_reqsid,sizeof(gpkt.p_reqsid));
 	permiss(&gpkt);
 	flushto(&gpkt,EUSERTXT,1);
 	gpkt.p_chkeof = 1;
@@ -297,7 +297,7 @@ int orig_nlines;
 	}
 	putline(pkt,sprintf(str,"%c%c00000\n",CTLCHAR,HEAD));
 	newstats(pkt,str,"0");
-	move(sp,&dt.d_sid,sizeof(dt.d_sid));
+	bcopy(sp,&dt.d_sid,sizeof(dt.d_sid));
 
 	/*
 	Check if 'null' deltas should be inserted
@@ -428,7 +428,7 @@ struct sid *sp;
 
 	cnt = -1;
 	user = logname();
-	zero(&goodpf,sizeof(goodpf));
+	bzero(&goodpf,sizeof(goodpf));
 	in = xfopen(auxf(pkt->p_file,'p'),0);
 	out = xfcreat(auxf(pkt->p_file,'q'),0644);
 	root = getuid() == 0;
@@ -441,14 +441,14 @@ struct sid *sp;
 					fclose(in);
 					fatal("missing -r argument (de1)");
 				}
-				move(&pf,&goodpf,sizeof(pf));
+				bcopy(&pf,&goodpf,sizeof(pf));
 				continue;
 			}
 			else if (sp->s_rel == pf.pf_gsid.s_rel &&
 				sp->s_lev == pf.pf_gsid.s_lev &&
 				sp->s_br == pf.pf_gsid.s_br &&
 				sp->s_seq == pf.pf_gsid.s_seq) {
-					move(&pf,&goodpf,sizeof(pf));
+					bcopy(&pf,&goodpf,sizeof(pf));
 					continue;
 			}
 		}
@@ -484,10 +484,10 @@ int difflim;
 	}
 	else if (i == 0) {
 		close(pfd[0]);
-		close(1);
-		dup(pfd[1]);
-		close(pfd[1]);
-		for (i = 5; i < 15; i++)
+		dup2(pfd[1], 1);
+		if (pfd[1] != 1)
+			close(pfd[1]);
+		for (i = getdtablesize(); i > 4; i--)
 			close(i);
 		sprintf(num,"%d",difflim);
 		execl(Diffpgm,Diffpgm,oldf,newf,num,"-s",0);
@@ -496,7 +496,7 @@ int difflim;
 	}
 	else {
 		close(pfd[1]);
-		iop = fdfopen(pfd[0],0);
+		iop = fdopen(pfd[0],"r");
 		return(iop);
 	}
 }
@@ -512,7 +512,7 @@ register int *plinenum;
 	static int chg_num, chg_ln;
 	int lowline, highline;
 
-	if ((p = rddiff(line,512)) == NULL)
+	if ((p = rddiff(line,sizeof (line))) == NULL)
 		return(0);
 
 	if (*p == '-') {

@@ -1,7 +1,7 @@
 # include	"../hdr/defines.h"
 # include	"../hdr/had.h"
 
-SCCSID(@(#)cmt.c	4.2);
+SCCSID(@(#)cmt.c	4.3);
 
 struct packet gpkt;
 int	num_files, had_ffile;
@@ -321,7 +321,7 @@ char *result;
 	setbuf(iop,NULL);
 	sz = sizeof(line) - size(repstr);
 	while (!done && fgets(line,sz,iop) != NULL) {
-		p = strend(line);
+		p = index(line, '\0');
 		if (*--p == '\n') {
 			if (*--p == '\\') {
 				copy(repstr,p);

@@ -1,6 +1,6 @@
 # include "../hdr/defines.h"
 
-SCCSID(@(#)bdiff.c	4.1);
+SCCSID(@(#)bdiff.c	4.2);
 
 /*
 	This program segments two files into pieces of <= seglim lines
@@ -192,9 +192,9 @@ char *argv[];
 		}
 		else if (i == 0) {	/* child process */
 			close(pfd[0]);
-			close(1);
-			dup(pfd[1]);
-			close(pfd[1]);
+			dup2(pfd[1], 1);
+			if (pfd[1] != 1)
+				close(pfd[1]);
 
 			/*
 			Execute 'diff' on the segment files.
@@ -205,7 +205,7 @@ char *argv[];
 		}
 		else {			/* parent process */
 			close(pfd[1]);
-			pipeinp = fdfopen(pfd[0],0);
+			pipeinp = fdopen(pfd[0],"r");
 
 			/*
 			Process 'diff' output.
