@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)coredump.c 1.3 %G%";
+static char sccsid[] = "@(#)coredump.c 1.4 %G%";
 
 /*
  * Deal with the core dump anachronism.
@@ -108,7 +108,7 @@ int *signo;
       hdr.a_magic != up->u_exdata.ux_mag) {
 	warning("core dump ignored");
 	coredump = false;
-	fclose(coredump);
+	fclose(corefile);
 	fclose(objfile);
 	start(nil, nil, nil);
     }
