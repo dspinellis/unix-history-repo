@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	6.22 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	6.23 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -113,7 +113,7 @@ deliver(firstto, editfcn)
 				continue;
 			to->q_flags |= QQUEUEUP|QDONTSEND;
 			e->e_to = to->q_paddr;
-			message(Arpa_Info, "queued");
+			message("queued");
 			if (LogLevel > 8)
 				logdelivery("queued", e);
 		}
@@ -193,7 +193,7 @@ deliver(firstto, editfcn)
 		*pvp++ = newstr(buf);
 		if (pvp >= &pv[MAXPV - 3])
 		{
-			syserr("Too many parameters to %s before $u", pv[0]);
+			syserr("554 Too many parameters to %s before $u", pv[0]);
 			return (-1);
 		}
 	}
@@ -212,7 +212,7 @@ deliver(firstto, editfcn)
 		*pvp = NULL;
 # else /* SMTP */
 		/* oops!  we don't implement SMTP */
-		syserr("SMTP style mailer");
+		syserr("554 SMTP style mailer");
 		return (EX_SOFTWARE);
 # endif /* SMTP */
 	}
@@ -271,7 +271,7 @@ deliver(firstto, editfcn)
 		if (m->m_maxsize != 0 && e->e_msgsize > m->m_maxsize)
 		{
 			NoReturn = TRUE;
-			usrerr("Message is too large; %ld bytes max", m->m_maxsize);
+			usrerr("552 Message is too large; %ld bytes max", m->m_maxsize);
 			giveresponse(EX_UNAVAILABLE, m, e);
 			continue;
 		}
@@ -382,7 +382,7 @@ deliver(firstto, editfcn)
 		(void) expand(*mvp, buf, &buf[sizeof buf - 1]);
 		*pvp++ = newstr(buf);
 		if (pvp >= &pv[MAXPV])
-			syserr("deliver: pv overflow after $u for %s", pv[0]);
+			syserr("554 deliver: pv overflow after $u for %s", pv[0]);
 	}
 	*pvp++ = NULL;
 
@@ -417,7 +417,7 @@ deliver(firstto, editfcn)
 		if (rcode == EX_OK)
 		{
 			/* shouldn't happen */
-			syserr("deliver: rcode=%d, mci_state=%d, sig=%s",
+			syserr("554 deliver: rcode=%d, mci_state=%d, sig=%s",
 				rcode, mci->mci_state, firstsig);
 			rcode = EX_SOFTWARE;
 		}
@@ -540,7 +540,7 @@ markfailure(e, q, rcode)
 			if (e->e_message != NULL)
 				free(e->e_message);
 			e->e_message = newstr(buf);
-			message(Arpa_Info, buf);
+			message(buf);
 		}
 		q->q_flags |= QBADADDR;
 		e->e_flags |= EF_TIMEOUT;
@@ -736,7 +736,7 @@ openmailer(m, pvp, ctladdr, clever, pmfile, prfile)
 		curhost = hostsignature(m, pvp[1], e);
 
 		if (!clever)
-			syserr("non-clever IPC");
+			syserr("554 non-clever IPC");
 		if (pvp[2] != NULL)
 			port = atoi(pvp[2]);
 		else
@@ -755,7 +755,7 @@ openmailer(m, pvp, ctladdr, clever, pmfile, prfile)
 		else
 			return (0);
 #else /* no DAEMON */
-		syserr("openmailer: no IPC");
+		syserr("554 openmailer: no IPC");
 		if (tTd(11, 1))
 			printf("openmailer: NULL\n");
 		return (-1);
@@ -1037,7 +1037,7 @@ giveresponse(stat, m, e)
 	*/
 
 	if (stat == EX_OK || stat == EX_TEMPFAIL)
-		message(Arpa_Info, &statmsg[4]);
+		message(&statmsg[4]);
 	else
 	{
 		Errors++;
@@ -1296,9 +1296,7 @@ mailfile(filename, ctladdr, e)
 		f = dfopen(filename, "a");
 		if (f == NULL)
 		{
-			extern char Arpa_PSyserr[];
-
-			message(Arpa_PSyserr, "cannot open");
+			message("554 cannot open");
 			exit(EX_CANTCREAT);
 		}
 
@@ -1310,9 +1308,7 @@ mailfile(filename, ctladdr, e)
 		putline("\n", f, ProgMailer);
 		if (ferror(f))
 		{
-			extern char Arpa_TSyserr[];
-
-			message(Arpa_TSyserr, "I/O error");
+			message("451 I/O error");
 			setstat(EX_IOERR);
 		}
 		(void) fclose(f);
@@ -1393,7 +1389,7 @@ sendall(e, mode)
 	if (e->e_hopcount > MaxHopCount)
 	{
 		errno = 0;
-		syserr("sendall: too many hops %d (%d max): from %s, to %s",
+		syserr("554 too many hops %d (%d max): from %s, to %s",
 			e->e_hopcount, MaxHopCount, e->e_from.q_paddr,
 			e->e_sendqueue->q_paddr);
 		return;
@@ -1535,6 +1531,6 @@ sendall(e, mode)
 		{
 			e->e_to = q->q_paddr;
 			if (!bitset(QDONTSEND|QBADADDR, q->q_flags))
-				message(Arpa_Info, "deliverable");
+				message("deliverable");
 		}
 }

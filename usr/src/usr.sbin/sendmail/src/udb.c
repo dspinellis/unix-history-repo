@@ -8,9 +8,9 @@
 
 #ifndef lint
 #ifdef USERDB
-static char sccsid [] = "@(#)udb.c	6.10 (Berkeley) %G% (with USERDB)";
+static char sccsid [] = "@(#)udb.c	6.11 (Berkeley) %G% (with USERDB)";
 #else
-static char sccsid [] = "@(#)udb.c	6.10 (Berkeley) %G% (without USERDB)";
+static char sccsid [] = "@(#)udb.c	6.11 (Berkeley) %G% (without USERDB)";
 #endif
 #endif
 
@@ -195,7 +195,7 @@ udbexpand(a, sendq, e)
 				bcopy(info.data, user, info.size);
 				user[info.size] = '\0';
 
-				message(Arpa_Info, "expanded to %s", user);
+				message("expanded to %s", user);
 #ifdef LOG
 				if (LogLevel >= 10)
 					syslog(LOG_INFO, "%s: expand %s => %s",
@@ -241,7 +241,7 @@ udbexpand(a, sendq, e)
 			else
 				user = xalloc(i + 1);
 			(void) sprintf(user, "%s@%s", a->q_user, up->udb_fwdhost);
-			message(Arpa_Info, "expanded to %s", user);
+			message("expanded to %s", user);
 			a->q_flags &= ~QSELFREF;
 			AliasLevel++;
 			naddrs = sendtolist(user, a, sendq, e);

@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)usersmtp.c	6.13 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	6.14 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)usersmtp.c	6.13 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	6.14 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -100,7 +100,7 @@ smtpinit(m, pvp)
 		/* fall through */
 
 	  case MCIS_CLOSED:
-		syserr("smtpinit: state CLOSED");
+		syserr("451 smtpinit: state CLOSED");
 		return;
 
 	  case MCIS_OPENING:
@@ -333,7 +333,7 @@ smtpfinish(m, editfcn)
 	/* terminate the message */
 	fprintf(SmtpOut, ".%s", m->m_eol);
 	if (Verbose)
-		nmessage(Arpa_Info, ">>> .");
+		nmessage(">>> .");
 
 	/* check for the results of the transaction */
 	SmtpPhase = mci->mci_phase = "result wait";
@@ -393,7 +393,7 @@ smtpquit(m)
 	/* and pick up the zombie */
 	i = endmailer(SmtpPid, m->m_argv[0]);
 	if (i != EX_OK)
-		syserr("smtpquit %s: stat %d", m->m_argv[0], i);
+		syserr("451 smtpquit %s: stat %d", m->m_argv[0], i);
 }
 /*
 **  SMTPRSET -- send a RSET (reset) command
@@ -484,7 +484,6 @@ reply(m)
 		if (p == NULL)
 		{
 			extern char MsgBuf[];		/* err.c */
-			extern char Arpa_TSyserr[];	/* conf.c */
 
 			/* if the remote end closed early, fake an error */
 			if (errno == 0)
@@ -496,7 +495,7 @@ reply(m)
 
 			mci->mci_errno = errno;
 			mci->mci_exitstat = EX_TEMPFAIL;
-			message(Arpa_TSyserr, "%s: reply: read error from %s",
+			message("451 %s: reply: read error from %s",
 				e->e_id == NULL ? "NOQUEUE" : e->e_id,
 				mci->mci_host);
 			/* if debugging, pause so we can see state */
@@ -525,7 +524,7 @@ reply(m)
 
 		/* display the input for verbose mode */
 		if (Verbose)
-			nmessage(Arpa_Info, "%s", SmtpReplyBuffer);
+			nmessage("%s", SmtpReplyBuffer);
 
 		/* if continuation is required, we can go on */
 		if (SmtpReplyBuffer[3] == '-' ||
@@ -580,7 +579,7 @@ smtpmessage(f, m, a, b, c)
 	(void) vsprintf(SmtpMsgBuffer, f, ap);
 	VA_END;
 	if (tTd(18, 1) || Verbose)
-		nmessage(Arpa_Info, ">>> %s", SmtpMsgBuffer);
+		nmessage(">>> %s", SmtpMsgBuffer);
 	if (SmtpOut != NULL)
 		fprintf(SmtpOut, "%s%s", SmtpMsgBuffer,
 			m == NULL ? "\r\n" : m->m_eol);

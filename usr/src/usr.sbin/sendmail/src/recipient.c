@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	6.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)recipient.c	6.16 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/types.h>
@@ -164,7 +164,7 @@ recipient(a, sendq, e)
 	/* break aliasing loops */
 	if (AliasLevel > MAXRCRSN)
 	{
-		usrerr("aliasing/forwarding loop broken");
+		usrerr("554 aliasing/forwarding loop broken");
 		return (a);
 	}
 
@@ -192,7 +192,7 @@ recipient(a, sendq, e)
 	if (a->q_alias == NULL && m == ProgMailer)
 	{
 		a->q_flags |= QDONTSEND|QBADADDR;
-		usrerr("Cannot mail directly to programs", m->m_name);
+		usrerr("550 Cannot mail directly to programs", m->m_name);
 	}
 
 	/*
@@ -216,7 +216,7 @@ recipient(a, sendq, e)
 			if (!bitset(QPRIMARY, q->q_flags))
 			{
 				if (!bitset(QDONTSEND, a->q_flags))
-					message(Arpa_Info, "duplicate suppressed");
+					message("duplicate suppressed");
 				q->q_flags |= a->q_flags;
 			}
 			return (q);
@@ -244,11 +244,11 @@ recipient(a, sendq, e)
 		if (a->q_alias == NULL)
 		{
 			a->q_flags |= QBADADDR;
-			usrerr("Cannot mail directly to :include:s");
+			usrerr("550 Cannot mail directly to :include:s");
 		}
 		else
 		{
-			message(Arpa_Info, "including file %s", a->q_user);
+			message("including file %s", a->q_user);
 			(void) include(a->q_user, FALSE, a, sendq, e);
 		}
 	}
@@ -262,7 +262,7 @@ recipient(a, sendq, e)
 		if (a->q_alias == NULL && !QueueRun)
 		{
 			a->q_flags |= QDONTSEND|QBADADDR;
-			usrerr("Cannot mail directly to files");
+			usrerr("550 Cannot mail directly to files");
 		}
 		else if ((stat(buf, &stb) >= 0) ? (!writable(&stb)) :
 		    (*p = '\0', !safefile(buf, getruid(), S_IWRITE|S_IEXEC)))
@@ -298,7 +298,7 @@ recipient(a, sendq, e)
 				syslog(LOG_INFO, "%s: deferred: udbexpand",
 					e->e_id);
 # endif
-			message(Arpa_Info, "queued (user database error)");
+			message("queued (user database error)");
 			e->e_nrcpts++;
 			return (a);
 		}
@@ -356,7 +356,7 @@ recipient(a, sendq, e)
 				a->q_user = newstr(pw->pw_name);
 				if (findusercount++ > 3)
 				{
-					usrerr("aliasing/forwarding loop for %s broken",
+					usrerr("554 aliasing/forwarding loop for %s broken",
 						pw->pw_name);
 					return (a);
 				}
@@ -457,7 +457,7 @@ finduser(name, fuzzyp)
 		{
 			if (tTd(29, 4))
 				printf("fuzzy matches %s\n", pw->pw_name);
-			message(Arpa_Info, "sending to login name %s", pw->pw_name);
+			message("sending to login name %s", pw->pw_name);
 			*fuzzyp = TRUE;
 			return (pw);
 		}
@@ -593,7 +593,7 @@ include(fname, forwarding, ctladdr, sendq, e)
 		int ret = errno;
 
 		clrevent(ev);
-		usrerr("Cannot open %s", fname);
+		usrerr("550 Cannot open %s", fname);
 		return ret;
 	}
 
@@ -638,7 +638,7 @@ include(fname, forwarding, ctladdr, sendq, e)
 		if (buf[0] == '#' || buf[0] == '\0')
 			continue;
 		e->e_to = NULL;
-		message(Arpa_Info, "%s to %s",
+		message("%s to %s",
 			forwarding ? "forwarding" : "sending", buf);
 #ifdef LOG
 		if (forwarding && LogLevel > 9)
@@ -698,7 +698,7 @@ sendtoargv(argv, e)
 			char nbuf[MAXNAME];
 
 			if (strlen(p) + strlen(argv[1]) + 2 > sizeof nbuf)
-				usrerr("address overflow");
+				usrerr("554 address overflow");
 			else
 			{
 				(void) strcpy(nbuf, p);

@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)headers.c	6.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)headers.c	6.11 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <errno.h>
@@ -64,7 +64,7 @@ chompheader(line, def, e)
 			p = q;
 		}
 		else
-			usrerr("chompheader: syntax error, line \"%s\"", line);
+			usrerr("553 header syntax error, line \"%s\"", line);
 		cond = TRUE;
 	}
 
@@ -73,7 +73,7 @@ chompheader(line, def, e)
 	p = strchr(p, ':');
 	if (p == NULL)
 	{
-		syserr("chompheader: syntax error, line \"%s\"", line);
+		syserr("553 header syntax error, line \"%s\"", line);
 		return (0);
 	}
 	fvalue = &p[1];

@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)savemail.c	6.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)savemail.c	6.11 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/types.h>
@@ -75,7 +75,7 @@ savemail(e)
 	{
 		if (parseaddr("root", &e->e_from, 0, '\0', e) == NULL)
 		{
-			syserr("Cannot parse root!");
+			syserr("553 Cannot parse root!");
 			ExitStat = EX_SOFTWARE;
 			finis();
 		}
@@ -123,7 +123,7 @@ savemail(e)
 		return;
 
 	  default:
-		syserr("savemail: ErrorMode x%x\n");
+		syserr("554 savemail: ErrorMode x%x\n");
 		state = ESM_MAIL;
 		break;
 	}
@@ -220,7 +220,7 @@ savemail(e)
 			{
 				if (parseaddr("postmaster", q, 0, '\0', e) == NULL)
 				{
-					syserr("cannot parse postmaster!");
+					syserr("553 cannot parse postmaster!");
 					ExitStat = EX_SOFTWARE;
 					state = ESM_USRTMP;
 					break;
@@ -257,7 +257,7 @@ savemail(e)
 			}
 			if (p == NULL)
 			{
-				syserr("Can't return mail to %s", e->e_from.q_paddr);
+				syserr("554 Can't return mail to %s", e->e_from.q_paddr);
 				state = ESM_MAIL;
 				break;
 			}
@@ -270,7 +270,7 @@ savemail(e)
 				define('z', p, e);
 				expand("\201z/dead.letter", buf, &buf[sizeof buf - 1], e);
 				Verbose = TRUE;
-				message(Arpa_Info, "Saving message in %s", buf);
+				message("Saving message in %s", buf);
 				Verbose = oldverb;
 				e->e_to = buf;
 				q = NULL;
@@ -316,13 +316,13 @@ savemail(e)
 			break;
 
 		  default:
-			syserr("savemail: unknown state %d", state);
+			syserr("554 savemail: unknown state %d", state);
 
 			/* fall through ... */
 
 		  case ESM_PANIC:
 			/* leave the locked queue & transcript files around */
-			syserr("savemail: cannot save rejected email anywhere");
+			syserr("554 savemail: cannot save rejected email anywhere");
 			exit(EX_SOFTWARE);
 		}
 	}
@@ -369,7 +369,7 @@ returntosender(msg, sendbody)
 	if (++returndepth >= MAXRETURNS)
 	{
 		if (returndepth != MAXRETURNS)
-			syserr("returntosender: infinite recursion on %s", returnq->q_paddr);
+			syserr("554 returntosender: infinite recursion on %s", returnq->q_paddr);
 		/* don't "unrecurse" and fake a clean exit */
 		/* returndepth--; */
 		return (0);
@@ -385,7 +385,7 @@ returntosender(msg, sendbody)
 	(void) expand("$n", buf, &buf[sizeof buf - 1]);
 	if (parse(buf, &CurEnv->e_from, -1) == NULL)
 	{
-		syserr("Can't parse myself!");
+		syserr("553 Can't parse myself!");
 		ExitStat = EX_SOFTWARE;
 		returndepth--;
 		return (-1);
