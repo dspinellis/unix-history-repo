@@ -1,10 +1,10 @@
 /*
- * Copyright (c) 1982, 1986, 1991 Regents of the University of California.
+ * Copyright (c) 1982, 1986, 1991, 1993 Regents of the University of California.
  * All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)in_pcb.c	7.26 (Berkeley) %G%
+ *	@(#)in_pcb.c	7.27 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -16,6 +16,8 @@
 #include <sys/socketvar.h>
 #include <sys/ioctl.h>
 #include <sys/errno.h>
+#include <sys/time.h>
+#include <sys/proc.h>
 
 #include <net/if.h>
 #include <net/route.h>
@@ -55,46 +57,61 @@ in_pcbbind(inp, nam)
 	register struct socket *so = inp->inp_socket;
 	register struct inpcb *head = inp->inp_head;
 	register struct sockaddr_in *sin;
+	struct proc *p = curproc;		/* XXX */
 	u_short lport = 0;
-	int wild = 0;
+	int wild = 0, reuseport = (so->so_options & SO_REUSEPORT);
+	int error;
 
 	if (in_ifaddr == 0)
 		return (EADDRNOTAVAIL);
 	if (inp->inp_lport || inp->inp_laddr.s_addr != INADDR_ANY)
 		return (EINVAL);
-	if ((so->so_options & SO_REUSEADDR) == 0 &&
+	if ((so->so_options & (SO_REUSEADDR|SO_REUSEPORT)) == 0 &&
 	    ((so->so_proto->pr_flags & PR_CONNREQUIRED) == 0 ||
 	     (so->so_options & SO_ACCEPTCONN) == 0))
 		wild = INPLOOKUP_WILDCARD;
-	if (nam == 0)
-		goto noname;
-	sin = mtod(nam, struct sockaddr_in *);
-	if (nam->m_len != sizeof (*sin))
-		return (EINVAL);
-	if (sin->sin_addr.s_addr != INADDR_ANY) {
-		int tport = sin->sin_port;
+	if (nam) {
+		sin = mtod(nam, struct sockaddr_in *);
+		if (nam->m_len != sizeof (*sin))
+			return (EINVAL);
+#ifdef notdef
+		/*
+		 * We should check the family, but old programs
+		 * incorrectly fail to initialize it.
+		 */
+		if (sin->sin_family != AF_INET)
+			return (EAFNOSUPPORT);
+#endif
+		lport = sin->sin_port;
+		if (IN_MULTICAST(ntohl(sin->sin_addr.s_addr))) {
+			/*
+			 * Treat SO_REUSEADDR as SO_REUSEPORT for multicast;
+			 * allow complete duplication of binding if
+			 * SO_REUSEPORT is set, or if SO_REUSEADDR is set
+			 * and a multicast address is bound on both
+			 * new and duplicated sockets.
+			 */
+			if (so->so_options & SO_REUSEADDR)
+				reuseport = SO_REUSEADDR|SO_REUSEPORT;
+		} else if (sin->sin_addr.s_addr != INADDR_ANY) {
+			sin->sin_port = 0;		/* yech... */
+			if (ifa_ifwithaddr((struct sockaddr *)sin) == 0)
+				return (EADDRNOTAVAIL);
+		}
+		if (lport) {
+			struct inpcb *t;
 
-		sin->sin_port = 0;		/* yech... */
-		if (ifa_ifwithaddr((struct sockaddr *)sin) == 0)
-			return (EADDRNOTAVAIL);
-		sin->sin_port = tport;
+			/* GROSS */
+			if (ntohs(lport) < IPPORT_RESERVED &&
+			    (error = suser(p->p_ucred, &p->p_acflag)))
+				return (error);
+			t = in_pcblookup(head, zeroin_addr, 0,
+			    sin->sin_addr, lport, wild);
+			if (t && (reuseport & t->inp_socket->so_options) == 0)
+				return (EADDRINUSE);
+		}
+		inp->inp_laddr = sin->sin_addr;
 	}
-	lport = sin->sin_port;
-	if (lport) {
-		struct inpcb *t;
-		u_short aport = ntohs(lport);
-
-		/* GROSS */
-		if (aport < IPPORT_RESERVED && (so->so_state & SS_PRIV) == 0)
-			return (EACCES);
-		t = in_pcblookup(head, zeroin_addr, 0,
-				sin->sin_addr, lport, wild);
-		if (t && !((so->so_options & t->inp_socket->so_options) &
-		    SO_REUSEPORT))
-			return (EADDRINUSE);
-	}
-	inp->inp_laddr = sin->sin_addr;
-noname:
 	if (lport == 0)
 		do {
 			if (head->inp_lport++ < IPPORT_RESERVED ||
