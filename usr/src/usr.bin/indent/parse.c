@@ -19,14 +19,11 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parse.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)parse.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "./indent_globs.h"
 #include "./indent_codes.h"
-
-
-
 
 parse(tk)
     int         tk;		/* the code for the construct scanned */
@@ -191,25 +188,27 @@ parse(tk)
 }
 
 /*
- * Copyright (C) 1976 by the Board of Trustees of the University of Illinois
- * 
- * All rights reserved
- * 
- * 
  * NAME: reduce
  * 
  * FUNCTION: Implements the reduce part of the parsing algorithm
  * 
- * ALGORITHM: The following reductions are done.  Reductions are repeated until
- * no more are possible.
+ * ALGORITHM: The following reductions are done.  Reductions are repeated
+ *	until no more are possible.
  * 
- * Old TOS		New TOS <stmt> <stmt>	<stmtl> <stmtl> <stmt>	<stmtl> do
- * <stmt>	"dostmt" if <stmt>	"ifstmt" switch <stmt>	<stmt> decl
- * <stmt>	<stmt> "ifelse" <stmt>	<stmt> for <stmt>	<stmt> while
- * <stmt>	<stmt> "dostmt" while	<stmt>
+ * Old TOS		New TOS
+ * <stmt> <stmt>	<stmtl>
+ * <stmtl> <stmt>	<stmtl>
+ * do <stmt>		"dostmt"
+ * if <stmt>		"ifstmt"
+ * switch <stmt>	<stmt>
+ * decl <stmt>		<stmt>
+ * "ifelse" <stmt>	<stmt>
+ * for <stmt>		<stmt>
+ * while <stmt>		<stmt>
+ * "dostmt" while	<stmt>
  * 
- * On each reduction, ps.i_l_follow (the indentation for the following line) is
- * set to the indentation level associated with the old TOS.
+ * On each reduction, ps.i_l_follow (the indentation for the following line)
+ * is set to the indentation level associated with the old TOS.
  * 
  * PARAMETERS: None
  * 
@@ -219,11 +218,11 @@ parse(tk)
  * 
  * CALLS: None
  * 
- * CALLED BY: parse 
+ * CALLED BY: parse
  * 
  * HISTORY: initial coding 	November 1976	D A Willcox of CAC
  * 
- */
+ */
 /*----------------------------------------------*\
 |   REDUCTION PHASE				    |
 \*----------------------------------------------*/
