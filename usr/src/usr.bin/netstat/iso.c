@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)iso.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)iso.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -584,31 +584,21 @@ tprintstat(s, indent)
 			" LOCAL,~PDN",
 			" LOCAL, PDN"
 		};
-#define factor(i) \
-	div = (s->ts_rtt[(i)].tv_sec * 1000000) + \
-		s->ts_rtt[(i)].tv_usec ;\
-	if(div) {\
-		f = ((s->ts_rtv[(i)].tv_sec * 1000000) + \
-				s->ts_rtv[(i)].tv_usec)/div;  \
-		div = (int) (f + 0.5);\
-	}
 
 		fprintf(OUT,
-			"\n%*sRound trip times, listed in (sec: usec):\n", indent, " ");
+			"\n%*sRound trip times, listed in ticks:\n", indent, " ");
 		fprintf(OUT,
 			"\t%*s%11.11s  %12.12s | %12.12s | %s\n", indent, " ",
 				"Category",
 				"Smoothed avg", "Deviation", "Deviation/Avg");
 		for( j=0; j<=3; j++) {
-			factor(j);
 			fprintf(OUT,
-				"\t%*s%11.11s: %5d:%-6d | %5d:%-6d | %-6d\n", indent, " ",
+				"\t%*s%11.11s: %-11d | %-11d | %-11d | %-11d\n", indent, " ",
 				name[j],
-				s->ts_rtt[j].tv_sec,
-				s->ts_rtt[j].tv_usec,
-				s->ts_rtv[j].tv_sec,
-				s->ts_rtv[j].tv_usec,
-				div);
+				s->ts_rtt[j],
+				s->ts_rtt[j],
+				s->ts_rtv[j],
+				s->ts_rtv[j]);
 		}
 	}
 	fprintf(OUT,
