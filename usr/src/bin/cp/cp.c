@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)cp.c	5.19 (Berkeley) %G%";
+static char sccsid[] = "@(#)cp.c	5.20 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -54,7 +54,7 @@ PATH_T to = { "", to.p_path };
 
 uid_t myuid;
 int exit_val, myumask;
-int iflag, pflag, rflag;
+int iflag, pflag, orflag, rflag;
 int (*statfcn)();
 char *buf, *pname;
 char *path_append(), *path_basename();
@@ -90,9 +90,11 @@ main(argc, argv)
 		case 'p':
 			pflag = 1;
 			break;
-		case 'r':
 		case 'R':
 			rflag = 1;
+			break;
+		case 'r':
+			orflag = 1;
 			break;
 		case '?':
 		default:
@@ -105,6 +107,12 @@ main(argc, argv)
 
 	if (argc < 2)
 		usage();
+
+	if (rflag && orflag) {
+		(void)fprintf(stderr,
+		    "cp: the -R and -r options are mutually exclusive.\n");
+		exit(1);
+	}
 
 	buf = (char *)malloc(MAXBSIZE);
 	if (!buf) {
@@ -208,7 +216,7 @@ copy()
 		copy_link(!dne);
 		return;
 	case S_IFDIR:
-		if (!rflag) {
+		if (!rflag && !orflag) {
 			(void)fprintf(stderr,
 			    "%s: %s is a directory (not copied).\n",
 			    pname, from.p_path);
@@ -244,23 +252,22 @@ copy()
 			setfile(&from_stat, 0);
 		else if (dne)
 			(void)chmod(to.p_path, from_stat.st_mode);
-		break;
+		return;
 	case S_IFCHR:
 	case S_IFBLK:
-		/*
-		 * if recursive flag on, try and create the special device
-		 * otherwise copy the contents.
-		 */
 		if (rflag) {
 			copy_special(&from_stat, !dne);
-			if (pflag)
-				setfile(&from_stat, 0);
 			return;
 		}
-		/* FALLTHROUGH */
-	default:
-		copy_file(&from_stat, dne);
+		break;
+	case S_IFIFO:
+		if (rflag) {
+			copy_fifo(&from_stat, !dne);
+			return;
+		}
+		break;
 	}
+	copy_file(&from_stat, dne);
 }
 
 copy_file(fs, dne)
@@ -319,30 +326,16 @@ copy_file(fs, dne)
 	if (pflag)
 		setfile(fs, to_fd);
 	/*
-	 * If the source was setuid, set the bits on the copy if the copy
-	 * was created and is owned by the same uid.  If the source was
-	 * setgid, set the bits on the copy if the copy was created and is
-	 * owned by the same gid and the user is a member of that group.
-	 * If both setuid and setgid, lose both bits unless all the above
-	 * conditions are met.
+	 * If the source was setuid or setgid, lose the bits unless the
+	 * copy is owned by the same user and group.
 	 */
-	else if (fs->st_mode & (S_ISUID|S_ISGID)) {
-		if (fs->st_mode & S_ISUID && myuid != fs->st_uid)
-			fs->st_mode &= ~(S_ISUID|S_ISGID);
-		if (fs->st_mode & S_ISGID) {
-			if (fstat(to_fd, &to_stat)) {
-				error(to.p_path);
-				fs->st_mode &= ~(S_ISUID|S_ISGID);
-			}
-			else if (fs->st_gid != to_stat.st_gid ||
-			    !ismember(fs->st_gid))
-				fs->st_mode &= ~(S_ISUID|S_ISGID);
-		}
-		if (fs->st_mode & (S_ISUID|S_ISGID) && fchmod(to_fd,
-		    fs->st_mode & (S_ISUID|S_ISGID|S_IRWXU|S_IRWXG|S_IRWXO) &
-		    ~myumask))
+	else if (fs->st_mode & (S_ISUID|S_ISGID) && fs->st_uid == myuid)
+		if (fstat(to_fd, &to_stat))
 			error(to.p_path);
-	}
+#define	RETAINBITS	(S_ISUID|S_ISGID|S_ISVTX|S_IRWXU|S_IRWXG|S_IRWXO)
+		else if (fs->st_gid == to_stat.st_gid && fchmod(to_fd,
+		    fs->st_mode & RETAINBITS & ~myumask))
+			error(to.p_path);
 	(void)close(from_fd);
 	(void)close(to_fd);
 }
@@ -445,6 +438,22 @@ copy_link(exists)
 	}
 }
 
+copy_fifo(from_stat, exists)
+	struct stat *from_stat;
+	int exists;
+{
+	if (exists && unlink(to.p_path)) {
+		error(to.p_path);
+		return;
+	}
+	if (mkfifo(to.p_path, from_stat->st_mode)) {
+		error(to.p_path);
+		return;
+	}
+	if (pflag)
+		setfile(from_stat, 0);
+}
+
 copy_special(from_stat, exists)
 	struct stat *from_stat;
 	int exists;
@@ -457,6 +466,8 @@ copy_special(from_stat, exists)
 		error(to.p_path);
 		return;
 	}
+	if (pflag)
+		setfile(from_stat, 0);
 }
 
 setfile(fs, fd)
@@ -632,6 +643,6 @@ path_basename(p)
 usage()
 {
 	(void)fprintf(stderr,
-"usage: cp [-fhipr] src target;\n   or: cp [-fhipr] src1 ... srcN directory\n");
+"usage: cp [-Rfhip] src target;\n   or: cp [-Rfhip] src1 ... srcN directory\n");
 	exit(1);
 }
