@@ -1439,47 +1439,13 @@ coloop:
 	rsb
 
 /*
- * non-local goto's
- */
-#ifdef notdef		/* this is now expanded completely inline */
-	.align	1
-JSBENTRY(Setjmp, R0)
-	movl	fp,(r0)+	# current stack frame
-	movl	(sp),(r0)	# resuming pc
-	clrl	r0
-	rsb
-#endif
-
-#define PCLOC 16	/* location of pc in calls frame */
-#define APLOC 8		/* location of ap,fp in calls frame */
-	.align	1
-JSBENTRY(Longjmp, R0)
-	movl	(r0)+,newfp	# must save parameters in memory as all
-	movl	(r0),newpc	# registers may be clobbered.
-1:
-	cmpl	fp,newfp	# are we there yet?
-	bgequ	2f		# yes
-	moval	1b,PCLOC(fp)	# redirect return pc to us!
-	ret			# pop next frame
-2:
-	beql	3f		# did we miss our frame?
-	pushab	4f		# yep ?!?
-	calls	$1,_panic
-3:
-	movl	newpc,r0	# all done, just return to the `setjmp'
-	jmp	(r0)		# ``rsb''
-
-	.data
-newpc:	.space	4
-newfp:	.space	4
-4:	.asciz	"longjmp"
-	.text
-/*
- * setjmp that saves all registers as the call frame may not
- * be available to recover them in the usual mannor by longjmp.
+ * savectx is like setjmp but saves all registers.
  * Called before swapping out the u. area, restored by resume()
  * below.
  */
+#define PCLOC 16	/* location of pc in calls frame */
+#define APLOC 8		/* location of ap,fp in calls frame */
+
 ENTRY(savectx, 0)
 	movl	4(ap),r0
 	movq	r6,(r0)+
@@ -1674,7 +1640,7 @@ res0:
 	bneq	res1
 	rei
 res1:
-	movl	_u+PCB_SSWAP,r0			# longjmp to saved context
+	movl	_u+PCB_SSWAP,r0		# restore alternate saved context
 	clrl	_u+PCB_SSWAP
 	movq	(r0)+,r6			# restore r6, r7
 	movq	(r0)+,r8			# restore r8, r9
