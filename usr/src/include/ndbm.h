@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ndbm.h	5.6 (Berkeley) %G%
+ *	@(#)ndbm.h	5.7 (Berkeley) %G%
  */
 
 #ifndef _NDBM_H_
@@ -35,6 +35,7 @@ typedef struct {
 } datum;
 
 typedef DB DBM;
+#define	dbm_pagfno(a)	DBM_PAGFNO_NOT_AVAILABLE
 
 __BEGIN_DECLS
 void	 dbm_close __P((DBM *));
@@ -45,6 +46,7 @@ long	 dbm_forder __P((DBM *, datum));
 datum	 dbm_nextkey __P((DBM *));
 DBM	*dbm_open __P((const char *, int, int));
 int	 dbm_store __P((DBM *, datum, datum, int));
+int	 dbm_dirfno __P((DBM *));
 __END_DECLS
 
 #endif /* !_NDBM_H_ */
