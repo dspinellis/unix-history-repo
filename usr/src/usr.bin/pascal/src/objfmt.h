@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-/* static char sccsid[] = "@(#)objfmt.h 1.12 %G%"; */
+/* static char sccsid[] = "@(#)objfmt.h 1.13 %G%"; */
 
 /*
  * The size of the display.
@@ -126,11 +126,19 @@ struct formalrtn {
 	    short	magicnum;
     };
 
+/*
+ *	START defines the beginning of the text space.
+ *	This should be the defined external label "start",
+ *	however there is no way to access externals from C
+ *	whose names do not begin with an "_".
+ */
 #ifdef vax
 #   define HEADER_BYTES	2048			/* the size of px_header */
+#   define START 0x0				/* beginning of text */
 #endif vax
 #ifdef mc68000
 #   define HEADER_BYTES	3072			/* the size of px_header */
+#   define START 0x8000				/* beginning of text */
 #endif mc68000
 #   define INDX 1				/* amt to shift display index */
 #endif OBJ
