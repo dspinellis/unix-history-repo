@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_prot.c	7.2 (Berkeley) %G%
+ *	@(#)kern_prot.c	7.3 (Berkeley) %G%
  */
 
 /*
@@ -298,4 +298,41 @@ groupmember(gid)
 		if (*gp == gid)
 			return (1);
 	return (0);
+}
+
+/*
+ * Get login name of process owner, if available
+ */
+
+getlogname()
+{
+	struct a {
+		char	*namebuf;
+		u_int	namelen;
+	} *uap = (struct a *)u.u_ap;
+
+	if (uap->namelen > sizeof (u.u_logname))
+		uap->namelen = sizeof (u.u_logname);
+	u.u_error = copyout((caddr_t)u.u_logname, (caddr_t)uap->namebuf,
+		uap->namelen);
+}
+
+/*
+ * Set login name of process owner
+ */
+
+setlogname()
+{
+	struct a {
+		char	*namebuf;
+		u_int	namelen;
+	} *uap = (struct a *)u.u_ap;
+
+	if(suser()) {
+		if(uap->namelen > sizeof (u.u_logname) - 1)
+			u.u_error = EINVAL;
+		else
+			u.u_error = copyin((caddr_t)uap->namebuf,
+				(caddr_t)u.u_logname, uap->namelen);
+	} 
 }
