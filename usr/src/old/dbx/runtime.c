@@ -1,7 +1,7 @@
 
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)runtime.c 1.8 %G%";
+static char sccsid[] = "@(#)runtime.c 1.9 %G%";
 
 /*
  * Runtime organization dependent routines, mostly dealing with
@@ -94,7 +94,7 @@ Frame frp;
  *
  *  The addr in sub at which the exception occured is not in sub.save_pc
  *  but in the machine check exception block.  It is at the magic address
- *  fp + 76.
+ *  fp + 84.
  *
  *  The current approach ignores the sys_frame (what adb reports as sigtramp)
  *  and takes the pc for sub from the exception block.  This allows the
@@ -104,7 +104,7 @@ Frame frp;
 nextf:
     dread(&frame, prev_frame, sizeof(struct Frame));
     if (ntramp == 1) {
-	dread(&callpc, prev_frame + 76, sizeof(callpc));
+	dread(&callpc, prev_frame + 84, sizeof(callpc));
     } else {
 	callpc = frame.save_pc;
     }
