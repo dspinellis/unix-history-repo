@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_bio.c	7.16 (Berkeley) %G%
+ *	@(#)lfs_bio.c	7.17 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -54,11 +54,16 @@ lfs_bwrite(ap)
 	 * the buffer onto the LOCKED free list.  This is necessary, otherwise
 	 * getnewbuf() would try to reclaim the buffers using bawrite, which
 	 * isn't going to work.
+	 *
+	 * XXX we don't let meta-data writes run out of space because they can
+	 * come from the segment writer.  We need to make sure that there is
+	 * enough space reserved so that there's room to write meta-data
+	 * blocks.
 	 */
 	if (!(bp->b_flags & B_LOCKED)) {
 		fs = VFSTOUFS(bp->b_vp->v_mount)->um_lfs;
-		if (!LFS_FITS(fs, fsbtodb(fs, 1)) && !IS_IFILE(bp)) {
-			bp->b_flags |= B_INVAL;
+		if (!LFS_FITS(fs, fsbtodb(fs, 1)) && !IS_IFILE(bp) &&
+		    bp->b_lblkno > 0) {
 			brelse(bp);
 			wakeup(&lfs_allclean_wakeup);
 			return (ENOSPC);
