@@ -9,21 +9,22 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pk_usrreq.c	7.13 (Berkeley) %G%
+ *	@(#)pk_usrreq.c	7.14 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "systm.h"
 #include "mbuf.h"
 #include "socket.h"
-#include "protosw.h"
 #include "socketvar.h"
+#include "protosw.h"
 #include "errno.h"
 #include "ioctl.h"
 #include "user.h"
 #include "stat.h"
 
 #include "../net/if.h"
+#include "../net/route.h"
 
 #include "x25.h"
 #include "pk.h"
@@ -148,10 +149,7 @@ struct mbuf *control;
 	 *  After a receive, we should send a RR.
 	 */
 	case PRU_RCVD: 
-		lcp -> lcd_rxcnt++;
-		lcp -> lcd_template = pk_template (lcp -> lcd_lcn, X25_RR);
-		pk_output (lcp);
-		/*pk_flowcontrol (lcp, sbspace (&so -> so_rcv) <= 0, 1);*/
+		pk_flowcontrol (lcp, /*sbspace (&so -> so_rcv) <= */ 0, 1);
 		break;
 
 	/* 
@@ -179,10 +177,10 @@ struct mbuf *control;
 			register struct cmsghdr *ch = mtod (m, struct cmsghdr *);
 			control -> m_len -= sizeof (*ch);
 			control -> m_data += sizeof (*ch);
-			pk_ctloutput (PRCO_SETOPT, so, ch -> cmsg_level,
+			error = pk_ctloutput (PRCO_SETOPT, so, ch -> cmsg_level,
 					ch -> cmsg_type, &control);
 		}
-		if (m)
+		if (error == 0 && m)
 			error = pk_send (lcp, m);
 		break;
 
@@ -269,7 +267,7 @@ release:
 /* 
  * If you want to use UBC X.25 level 3 in conjunction with some
  * other X.25 level 2 driver, have the ifp -> if_ioctl routine
- * assign pk_start to pkp -> pk_start when called with SIOCSIFCONF_X25.
+ * assign pk_start to ia -> ia_start when called with SIOCSIFCONF_X25.
  */
 /* ARGSUSED */
 pk_start (lcp)
@@ -278,6 +276,13 @@ register struct pklcd *lcp;
 	pk_output (lcp);
 	return (0); /* XXX pk_output should return a value */
 }
+
+#ifndef _offsetof
+#define _offsetof(t, m) ((int)((caddr_t)&((t *)0)->m))
+#endif
+struct sockaddr_x25 pk_sockmask = {
+_offsetof(struct sockaddr_x25, x25_addr[0]),
+0, -1};
 
 /*ARGSUSED*/
 pk_control (so, cmd, data, ifp)
@@ -329,49 +334,37 @@ register struct ifnet *ifp;
 			} else
 				ifp -> if_addrlist = &ia -> ia_ifa;
 			ifa = &ia -> ia_ifa;
-			ifa -> ifa_netmask = (struct sockaddr *)&ia -> ia_sockmask;
+			ifa -> ifa_netmask = (struct sockaddr *)&pk_sockmask;
 			ifa -> ifa_addr = (struct sockaddr *)&ia -> ia_xc.xc_addr;
-			ia -> ia_xcp = &ia -> ia_xc;
+			ifa -> ifa_dstaddr = (struct sockaddr *)&ia -> ia_dstaddr; /* XXX */
 			ia -> ia_ifp = ifp;
-			ia -> ia_pkcb.pk_ia = ia;
-			ia -> ia_pkcb.pk_next = pkcbhead;
-			ia -> ia_pkcb.pk_state = DTE_WAITING;
-			ia -> ia_pkcb.pk_start = pk_start;
-			pkcbhead = &ia -> ia_pkcb;
+			ia -> ia_dstaddr.x25_family = AF_CCITT;
+			ia -> ia_dstaddr.x25_len = pk_sockmask.x25_len;
+		} else {
+			rtinit (ifa, (int)RTM_DELETE, 0);
 		}
 		old_maxlcn = ia -> ia_maxlcn;
 		ia -> ia_xc = ifr -> ifr_xc;
-		if (ia -> ia_chan && (ia -> ia_maxlcn != old_maxlcn)) {
-			pk_restart (&ia -> ia_pkcb, X25_RESTART_NETWORK_CONGESTION);
-			dev_lcp = ia -> ia_chan[0];
-			free ((caddr_t)ia -> ia_chan, M_IFADDR);
-			ia -> ia_chan = 0;
-		}
-		if (ia -> ia_chan == 0) {
-			n = (ia -> ia_maxlcn + 1) * sizeof (struct pklcd *);
-			ia -> ia_chan = (struct pklcd **) malloc (n, M_IFADDR, M_WAITOK);
-			if (ia -> ia_chan) {
-				bzero ((caddr_t)ia -> ia_chan, n);
-				if (dev_lcp == 0)
-					dev_lcp = pk_attach ((struct socket *)0);
-				ia -> ia_chan[0] = dev_lcp;
-				dev_lcp -> lcd_state = READY;
-				dev_lcp -> lcd_pkp = &ia -> ia_pkcb;
-			} else {
-				if (dev_lcp)
-					pk_close (dev_lcp);
-				return (ENOBUFS);
-			}
+		ia -> ia_dstaddr.x25_net = ia -> ia_xc.xc_addr.x25_net;
+		if (ia -> ia_maxlcn != old_maxlcn && old_maxlcn != 0) {
+			/* VERY messy XXX */
+			register struct pkcb *pkp;
+			for (pkp = pkcbhead; pkp; pkp = pkp -> pk_next)
+				if (pkp -> pk_ia == ia)
+					pk_resize (pkp);
 		}
 		/*
 		 * Give the interface a chance to initialize if this
 		 * is its first address, and to validate the address.
 		 */
+		ia -> ia_start = pk_start;
 		s = splimp();
 		if (ifp -> if_ioctl)
 			error = (*ifp -> if_ioctl)(ifp, SIOCSIFCONF_X25, ifa);
 		if (error)
 			ifp -> if_flags &= ~IFF_UP;
+		else
+			error = rtinit (ifa, (int)RTM_ADD, RTF_UP);
 		splx (s);
 		return (error);
 
@@ -389,26 +382,31 @@ int cmd, level, optname;
 {
 	register struct mbuf *m = *mp;
 	register struct pklcd *lcp = (struct pklcd *) so -> so_pcb;
-	int error;
+	int error = EOPNOTSUPP;
 
+	if (m == 0)
+		return (EINVAL);
 	if (cmd == PRCO_SETOPT) switch (optname) {
-	case PK_ACCTFILE:
-		if (m == 0)
-			return (EINVAL);
-		if (m -> m_len)
-			error = pk_accton (mtod (m, char *));
-		else
-			error = pk_accton ((char *)0);
-		(void) m_freem (m);
-		*mp = 0;
-		return (error);
-
 	case PK_FACILITIES:
 		if (m == 0)
 			return (EINVAL);
 		lcp -> lcd_facilities = m;
 		*mp = 0;
 		return (0);
+
+	case PK_ACCTFILE:
+		if (m -> m_len)
+			error = pk_accton (mtod (m, char *));
+		else
+			error = pk_accton ((char *)0);
+		break;
+
+	case PK_RTATTACH:
+		error = pk_rtattach (so, m);
+		break;
+	    
+	case PK_PRLISTEN:
+		error = pk_user_protolisten (mtod (m, u_char *));
 	}
 	if (*mp) {
 		(void) m_freem (*mp);
@@ -417,6 +415,7 @@ int cmd, level, optname;
 	return (EOPNOTSUPP);
 
 }
+
 
 /*
  * Do an in-place conversion of an "old style"
