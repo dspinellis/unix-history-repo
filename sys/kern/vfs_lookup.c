@@ -38,7 +38,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vfs_lookup.c	7.32 (Berkeley) 5/21/91
- *	$Id: vfs_lookup.c,v 1.6 1994/05/04 08:27:11 rgrimes Exp $
+ *	$Id: vfs_lookup.c,v 1.7 1994/05/22 23:04:14 ache Exp $
  */
 
 #include "param.h"
@@ -261,7 +261,6 @@ lookup(ndp, p)
 	int flag;			/* LOOKUP, CREATE, RENAME or DELETE */
 	int wantparent;			/* 1 => wantparent or lockparent flag */
 	int rdonly;			/* mounted read-only flag bit(s) */
-	int trailing_slash;
 	int error = 0;
 
 	/*
@@ -307,25 +306,6 @@ dirloop:
 #endif
 	ndp->ni_pathlen -= ndp->ni_namelen;
 	ndp->ni_next = cp;
-
-	/*
-	 * Replace multiple slashes by a single slash and trailing slashes
-	 * by a null.  This must be done before VOP_LOOKUP() because the
-	 * some fs's don't know about trailing slashes.  Trailing slashes
-	 * will be disallowed later if the file turns out not to be a
-	 * directory.
-	 */
-	trailing_slash = 0;
-	while (*cp == '/' && (cp[1] == '/' || cp[1] == '\0')) {
-		cp++;
-		ndp->ni_pathlen--;
-		if (*cp == '\0') {
-			trailing_slash = 1;
-			*ndp->ni_next = '\0';	/* XXX for direnter() ... */
-		}
-	}
-	ndp->ni_next = cp;
-
 	ndp->ni_makeentry = 1;
 	if (*cp == '\0' && docache == 0)
 		ndp->ni_makeentry = 0;
@@ -394,9 +374,7 @@ dirloop:
 		printf("not found\n");
 #endif
 		if (flag == LOOKUP || flag == DELETE ||
-		    error != ENOENT || *cp != '\0' ||
-		    *cp == '\0' && trailing_slash &&
-		    !(ndp->ni_nameiop & WILLBEDIR))
+		    error != ENOENT || *cp != '\0')
 			goto bad;
 		/*
 		 * If creating and at end of pathname, then can consider
@@ -429,14 +407,6 @@ dirloop:
 	    ((ndp->ni_nameiop & FOLLOW) || *ndp->ni_next == '/')) {
 		ndp->ni_more = 1;
 		return (0);
-	}
-
-	/*
-	 * Check for bogus trailing slashes.
-	 */
-	if (trailing_slash && dp->v_type != VDIR) {
-		error = ENOTDIR;
-		goto bad2;
 	}
 
 	/*
