@@ -43,6 +43,13 @@
 **	EX_CANTCREAT -- A (user specified) output file cannot be
 **		created.
 **	EX_IOERR -- An error occurred while doing I/O on some file.
+**	EX_TEMPFAIL -- temporary failure, indicating something that
+**		is not really an error.  In sendmail, this means
+**		that a mailer (e.g.) could not create a connection,
+**		and the request should be reattempted later.
+**
+**	Maintained by IngVAX:eric (eric@berkeley, ucbvax!eric) --
+**		please mail changes to me.
 */
 
 # define EX_OK		0	/* successful termination */
@@ -60,3 +67,4 @@
 # define EX_OSFILE	72	/* critical OS file missing */
 # define EX_CANTCREAT	73	/* can't create (user) output file */
 # define EX_IOERR	74	/* input/output error */
+# define EX_TEMPFAIL	75	/* temp failure; user is invited to retry */
