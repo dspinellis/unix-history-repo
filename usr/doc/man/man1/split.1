@@ -1,0 +1,34 @@
+.th SPLIT I 1/15/73
+.sh NAME
+split \*- split a file into pieces
+.sh SYNOPSIS
+.bd split
+.bd \*-\fIn
+[ file [ name ] ]
+.sh DESCRIPTION
+.it Split
+reads
+.it file
+and writes
+it in
+\fIn\fR-line
+pieces
+(default 1000), as many as necessary,
+onto
+a set of output files.  The name of the first output
+file is
+.it name
+with
+.bd aa
+appended, and so on
+lexicographically.
+If no output name is given,
+.bd x
+is default.
+.s3
+If no input file is given, or
+if
+.bd \*-
+is given in its stead,
+then the standard input file is used.
+.sh BUGS
