@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.149 (Berkeley) %G%
+ *	@(#)conf.h	8.150 (Berkeley) %G%
  */
 
 /*
@@ -209,7 +209,7 @@ extern int	syslog(int, char *, ...);
 # define LA_TYPE	LA_INT
 
 # ifdef SOLARIS_2_3
-#  define SOLARIS		/* for back compat only -- use -DSOLARIS=203 */
+#  define SOLARIS	203	/* for back compat only -- use -DSOLARIS=203 */
 # endif
 
 # ifdef SOLARIS
