@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)inetd.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)inetd.c	5.7 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -394,8 +394,13 @@ config()
 				SWAP(sep->se_argv[i], cp->se_argv[i]);
 			sigsetmask(omask);
 			freeconfig(cp);
-		} else
+			if (debug)
+				print_service("REDO", sep);
+		} else {
 			sep = enter(cp);
+			if (debug)
+				print_service("ADD ", sep);
+		}
 		sep->se_checked = 1;
 		sp = getservbyname(sep->se_service, sep->se_proto);
 		if (sp == 0) {
@@ -429,6 +434,8 @@ config()
 			nsock--;
 			(void) close(sep->se_fd);
 		}
+		if (debug)
+			print_service("FREE", sep);
 		freeconfig(sep);
 		free((char *)sep);
 	}
@@ -575,7 +582,8 @@ more:
 		}
 		sep->se_bi = bi;
 		sep->se_wait = bi->bi_wait;
-	}
+	} else
+		sep->se_bi = NULL;
 	argc = 0;
 	for (arg = skip(&cp); cp; arg = skip(&cp))
 		if (argc < MAXARGV)
@@ -917,4 +925,18 @@ daytime_dg(s, sep)		/* Return human-readable time of day */
 		return;
 	sprintf(buffer, "%s\r", ctime(&clock));
 	(void) sendto(s, buffer, strlen(buffer), 0, &sa, sizeof(sa));
+}
+
+/*
+ * print_service:
+ *	Dump relevant information to stderr
+ */
+print_service(action, sep)
+	char *action;
+	struct servtab *sep;
+{
+	fprintf(stderr,
+	    "%s: %s proto=%s, wait=%d, user=%s builtin=%x server=%s\n",
+	    action, sep->se_service, sep->se_proto,
+	    sep->se_wait, sep->se_user, sep->se_bi, sep->se_server);
 }
