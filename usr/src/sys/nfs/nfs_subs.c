@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_subs.c	7.3 (Berkeley) %G%
+ *	@(#)nfs_subs.c	7.4 (Berkeley) %G%
  */
 
 /*
@@ -601,6 +601,8 @@ nfs_loadattrcache(vp, mdp, dposp, vaper)
 	fxdr_time(p, &(vap->va_mtime));
 	p += 2;
 	fxdr_time(p, &(vap->va_ctime));
+	vap->va_gen = 0;
+	vap->va_flags = 0;
 	np->n_attrstamp = time.tv_sec;
 	*dposp = dpos;
 	*mdp = md;
@@ -814,7 +816,7 @@ nfsm_adj(mp, len, nul)
 			break;
 		m = m->m_next;
 	}
-	if (m->m_len >= len) {
+	if (m->m_len > len) {
 		m->m_len -= len;
 		if (nul > 0) {
 			cp = mtod(m, caddr_t)+m->m_len-nul;
