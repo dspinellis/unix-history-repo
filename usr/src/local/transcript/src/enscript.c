@@ -779,9 +779,9 @@ long tval; {
 
 
 #ifdef SYSV
-#define ARGS "12gGBlL:oqrRkKmf:F:b:p:t:d:n:w:h"
+#define ARGS "12gGBlL:oqQrRkKmf:F:b:p:t:d:n:w:h"
 #else
-#define ARGS "12gGBlL:oqrRkKf:F:b:p:J:C:P:#:mh"
+#define ARGS "12gGBlL:oqQrRkKf:F:b:p:J:C:P:#:mh"
 #endif
 
 private VOID ParseArgs(ac, av)
@@ -804,7 +804,8 @@ char **av; {
 	    case 'l': LPTsimulate = TRUE; NoTitle = TRUE; Lines = 66; break;
 	    case 'L': Lines = atoi(optarg); break;
 	    case 'o': ListOmitted = TRUE; break;
-	    case 'q': BeQuiet = !BeQuiet; break;
+	    case 'q': BeQuiet = TRUE; break;
+	    case 'Q': BeQuiet = !BeQuiet; break;
 	    case 'r': Rotated = TRUE; break;
 	    case 'R': Rotated = FALSE; break;
 	    case 'k': PreFeed = TRUE; break;
@@ -1081,8 +1082,9 @@ char  **argv; {
 		spoolCopies, atoi(spoolCopies) > 1 ? "ies" : "y" );
     }
     if (Cvted) {
-	if (OutOnly && !BeQuiet) {
-	    fprintf(stderr,"left in %s\n", OutName);
+	if (OutOnly) {
+	    if (!BeQuiet) 
+		fprintf(stderr,"left in %s\n", OutName);
 	}
 	else {
 	    SpoolIt(); /* does an exec */
