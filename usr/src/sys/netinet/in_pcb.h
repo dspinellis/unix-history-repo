@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)in_pcb.h	6.2 (Berkeley) %G%
+ *	@(#)in_pcb.h	6.3 (Berkeley) %G%
  */
 
 /*
@@ -25,6 +25,7 @@ struct inpcb {
 	struct	socket *inp_socket;	/* back pointer to socket */
 	caddr_t	inp_ppcb;		/* pointer to per-protocol pcb */
 	struct	route inp_route;	/* placeholder for routing entry */
+	struct	mbuf *inp_options;	/* IP options */
 };
 
 #define	INPLOOKUP_WILDCARD	1
