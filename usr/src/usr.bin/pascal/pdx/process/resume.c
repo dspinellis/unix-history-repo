@@ -1,9 +1,9 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)resume.c 1.8 %G%";
+static char sccsid[] = "@(#)resume.c 1.9 %G%";
 
 /*
- * resume execution, first setting appropriate registers
+ * Resume execution, first setting appropriate registers.
  */
 
 #include "defs.h"
@@ -14,13 +14,11 @@ static char sccsid[] = "@(#)resume.c 1.8 %G%";
 #include "process.rep"
 #include "runtime/frame.rep"
 
-#   if (isvaxpx)
-#       include "machine/pxerrors.h"
-#       include "pxinfo.h"
-#   endif
+#include "machine/pxerrors.h"
+#include "pxinfo.h"
 
 #ifdef vax
-LOCAL ADDRESS fetchpc();
+    LOCAL ADDRESS fetchpc();
 #endif
 
 LOCAL ADDRESS *pcaddr;
@@ -41,26 +39,22 @@ resume()
 	    fflush(stdout);
 	}
 	pcont(p);
-#       if (isvaxpx)
-#           ifdef sun
-		if (pcaddr == 0) {
-		    dread(&pcaddr, PCADDRP, sizeof(pcaddr));
+#       ifdef sun
+	    if (pcaddr == 0) {
+		dread(&pcaddr, PCADDRP, sizeof(pcaddr));
+	    }
+	    dread(&pc, pcaddr, sizeof(pc));
+#       else ifdef vax
+	    if (p->status == STOPPED) {
+		if (isbperr()) {
+		    pc = p->reg[11];
+		} else {
+		    dread(&pcframe, PCADDRP, sizeof(pcframe));
+		    pcframe++;
+		    pc = fetchpc(pcframe);
 		}
-		dread(&pc, pcaddr, sizeof(pc));
-#           else ifdef vax
-		if (p->status == STOPPED) {
-		    if (isbperr()) {
-			pc = p->reg[11];
-		    } else {
-			dread(&pcframe, PCADDRP, sizeof(pcframe));
-			pcframe++;
-			pc = fetchpc(pcframe);
-		    }
-		    pc -= (sizeof(char) + ENDOFF);
-		}
-#           endif
-#       else /* compiled code */
-	    pc = process->pc;
+		pc -= (sizeof(char) + ENDOFF);
+	    }
 #       endif
 	if (option('e')) {
 	    printf("execution stops at pc 0x%x, lc %d on sig %d\n",
@@ -71,27 +65,23 @@ resume()
 	    errnum = 0;
 	}
     } while (p->signo == SIGCONT);
-#   if (isvaxpx)
-	if (option('r') && p->signo != 0) {
-	    choose();
-	}
+    if (option('r') && p->signo != 0) {
+	choose();
+    }
 
     /*
      * If px implements a breakpoint by executing a halt instruction
-     * (which is true on the VAX), the real pc must be incremented to
-     * skip over it.  On other machines (such as SUNs), px sends itself
-     * a signal and no incrementing is needed.
+     * the real pc must be incremented to skip over it.
+     *
+     * Currently, px sends itself a signal so no incrementing is needed.
+     *
+	if (isbperr()) {
+	    p->pc++;
+	}
      */
-#       ifdef vax
-	    if (isbperr()) {
-		p->pc++;
-	    }
-#       endif
-#   endif
 }
 
-# if (isvaxpx)
-# ifdef vax
+#ifdef vax
 
 /*
  * Find the location in the Pascal object where execution was suspended.
@@ -149,7 +139,7 @@ ADDRESS *framep;
     return(r);
 }
 
-# endif
+#endif
 
 /*
  * Under the -r option, we offer the opportunity to just get
@@ -190,5 +180,3 @@ LOCAL choose()
     option('r') = FALSE;
     fprintf(stderr, " type 'help' for help.\n");
 }
-
-# endif
