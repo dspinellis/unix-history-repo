@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)fs.h	7.2.1.1 (Berkeley) %G%
+ *	@(#)fs.h	7.3 (Berkeley) %G%
  */
 
 /*
@@ -34,10 +34,8 @@
 #define SBSIZE		8192
 #define	BBOFF		((off_t)(0))
 #define	SBOFF		((off_t)(BBOFF + BBSIZE))
-#ifndef SECSIZE
 #define	BBLOCK		((daddr_t)(0))
 #define	SBLOCK		((daddr_t)(BBLOCK + BBSIZE / DEV_BSIZE))
-#endif SECSIZE
 
 /*
  * Addresses stored in inodes are capable of addressing fragments
