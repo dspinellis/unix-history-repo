@@ -35,6 +35,9 @@
 #define	ring_increment(d,a,c)	(((a)+(c) < (d)->top)? \
 					(a)+(c) : (((a)+(c))-(d)->size))
 
+#define	ring_decrement(d,a,c)	(((a)-(c) >= (d)->bottom)? \
+					(a)-(c) : (((a)-(c))-(d)->size))
+
 
 /*
  * The following is a clock, used to determine full, empty, etc.
@@ -73,6 +76,45 @@ int count;
     return 1;
 }
 
+/* Mark routines */
+
+/*
+ * Mark the most recently supplied byte.
+ */
+
+void
+ring_mark(ring)
+Ring *ring;
+{
+    ring->mark = ring_decrement(ring, ring->supply, 1);
+}
+
+/*
+ * Is the ring pointing to the mark?
+ */
+
+int
+ring_at_mark(ring)
+Ring *ring;
+{
+    if (ring->mark == ring->consume) {
+	return 1;
+    } else {
+	return 0;
+    }
+}
+
+/*
+ * Clear any mark set on the ring.
+ */
+
+void
+ring_clear_mark(ring)
+Ring *ring;
+{
+    ring->mark = 0;
+}
+
 /*
  * Add characters from current segment to ring buffer.
  */
@@ -96,6 +138,10 @@ int count;
     if (count == 0)	/* don't update anything */
 	return;
 
+    if (ring->mark &&
+		(ring_subtract(ring, ring->mark, ring->consume) < count)) {
+	ring->mark = 0;
+    }
     ring->consume = ring_increment(ring, ring->consume, count);
     ring->consumetime = ++ring_clock;
     /*
@@ -142,27 +188,45 @@ Ring *ring;
     }
 }
 
-/* number of bytes that are available for consuming */
+/* Return the number of bytes that are available for consuming
+ * (but don't give more than enough to get to cross over set mark)
+ */
+
 int
 ring_full_count(ring)
 Ring *ring;
 {
-    if (ring_full(ring)) {
-	return ring->size;	/* nothing consumed, but full */
+    if ((ring->mark == 0) || (ring->mark == ring->consume)) {
+	if (ring_full(ring)) {
+	    return ring->size;	/* nothing consumed, but full */
+	} else {
+	    return ring_subtract(ring, ring->supply, ring->consume);
+	}
     } else {
-	return ring_subtract(ring, ring->supply, ring->consume);
+	return ring_subtract(ring, ring->mark, ring->consume);
     }
 }
 
-/* number of CONSECUTIVE bytes available for consuming */
+/*
+ * Return the number of CONSECUTIVE bytes available for consuming.
+ * However, don't return more than enough to cross over set mark.
+ */
 int
 ring_full_consecutive(ring)
 Ring *ring;
 {
-    if ((ring->supply < ring->consume) || ring_full(ring)) {
-	return ring_subtract(ring, ring->top, ring->consume);
+    if ((ring->mark == 0) || (ring->mark == ring->consume)) {
+	if ((ring->supply < ring->consume) || ring_full(ring)) {
+	    return ring_subtract(ring, ring->top, ring->consume);
+	} else {
+	    return ring_subtract(ring, ring->supply, ring->consume);
+	}
     } else {
-	return ring_subtract(ring, ring->supply, ring->consume);
+	if (ring->mark < ring->consume) {
+	    return ring_subtract(ring, ring->top, ring->consume);
+	} else {	/* Else, distance to mark */
+	    return ring_subtract(ring, ring->mark, ring->consume);
+	}
     }
 }
 
@@ -205,26 +269,4 @@ int count;
 	count -= i;
 	buffer += i;
     }
-}
-
-/* Mark routines */
-
-/* XXX do something here */
-void
-ring_mark(ring)
-Ring *ring;
-{
-}
-
-int
-ring_at_mark(ring)
-Ring *ring;
-{
-    return 0;
-}
-
-void
-ring_clear_mark(ring)
-Ring *ring;
-{
 }

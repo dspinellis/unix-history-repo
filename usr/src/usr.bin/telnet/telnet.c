@@ -1001,7 +1001,9 @@ void
 dosynch()
 {
     netclear();			/* clear the path to the network */
-    NET2ADD(IAC, DM);
+    NETADD(IAC);
+    setneturg();
+    NETADD(DM);
 
 #if	defined(NOT43)
     return 0;
