@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_debug.c	7.1 (Berkeley) %G%
+ *	@(#)lfs_debug.c	7.2 (Berkeley) %G%
  */
 
 #ifdef DEBUG
@@ -145,12 +145,12 @@ lfs_vinvalbuf(vp)
 		else
 			break;
 		for (bp = blist; bp; bp = nbp) {
-printf("lfs_vinvalbuf: ino %d, lblkno %d, blkno %lx flags %xl\n",
-VTOI(vp)->i_number, bp->b_lblkno, bp->b_blkno, bp->b_flags);
+	printf("lfs_vinvalbuf: ino %d, lblkno %d, blkno %lx flags %xl\n",
+	     VTOI(vp)->i_number, bp->b_lblkno, bp->b_blkno, bp->b_flags);
 			nbp = bp->b_blockf;
 			s = splbio();
 			if (bp->b_flags & B_BUSY) {
-printf("lfs_vinvalbuf: buffer busy, would normally sleep\n");
+	printf("lfs_vinvalbuf: buffer busy, would normally sleep\n");
 /*
 				bp->b_flags |= B_WANTED;
 				sleep((caddr_t)bp, PRIBIO + 1);
@@ -163,7 +163,7 @@ printf("lfs_vinvalbuf: buffer busy, would normally sleep\n");
 			splx(s);
 			if (bp->b_flags & B_DELWRI) {
 				dirty++;			/* XXX */
-printf("lfs_vinvalbuf: buffer dirty (DELWRI). would normally write\n");
+	printf("lfs_vinvalbuf: buffer dirty (DELWRI). would normally write\n");
 				break;
 			}
 			if (bp->b_vp != vp)
