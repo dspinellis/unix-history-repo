@@ -146,7 +146,7 @@ struct ifnet {
 /* flags set internally only: */
 #define	IFF_CANTCHANGE \
 	(IFF_BROADCAST|IFF_POINTOPOINT|IFF_RUNNING|IFF_OACTIVE|IFF_SIMPLEX \
-	 IFF_MULTICAST|IFF_VIRTUAL)
+	|IFF_MULTICAST|IFF_VIRTUAL)
 
 /*
  * Output queues (ifp->if_snd) and internetwork datagram level (pup level 1)
