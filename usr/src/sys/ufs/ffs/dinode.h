@@ -1,9 +1,9 @@
 /*
- * Copyright (c) 1982, 1986 Regents of the University of California.
+ * Copyright (c) 1982 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)dinode.h	7.1 (Berkeley) %G%
+ *	@(#)dinode.h	7.2 (Berkeley) %G%
  */
 
 /*
@@ -70,7 +70,7 @@ struct dinode {
 #define	i_uid		i_ic.ic_uid
 #define	i_gid		i_ic.ic_gid
 /* ugh! -- must be fixed */
-#ifdef vax
+#if defined(vax) || defined(tahoe)
 #define	i_size		i_ic.ic_size.val[0]
 #endif
 #define	i_db		i_ic.ic_db
@@ -92,7 +92,7 @@ struct dinode {
 #define	di_nlink	di_ic.ic_nlink
 #define	di_uid		di_ic.ic_uid
 #define	di_gid		di_ic.ic_gid
-#ifdef vax
+#if defined(vax) || defined(tahoe)
 #define	di_size		di_ic.ic_size.val[0]
 #endif
 #define	di_db		di_ic.ic_db
