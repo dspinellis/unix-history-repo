@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)vmstat.c	5.37 (Berkeley) %G%";
+static char sccsid[] = "@(#)vmstat.c	5.38 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -41,7 +41,7 @@ static char sccsid[] = "@(#)vmstat.c	5.37 (Berkeley) %G%";
 #include <limits.h>
 
 #define NEWVM			/* XXX till old has been updated or purged */
-struct nlist nl[] = {
+struct nlist namelist[] = {
 #define	X_CPTIME	0
 	{ "_cp_time" },
 #define	X_DK_NDRIVE	1
@@ -206,13 +206,14 @@ main(argc, argv)
 		exit(1);
 	}
 
-	if ((c = kvm_nlist(kd, nl)) != 0) {
+	if ((c = kvm_nlist(kd, namelist)) != 0) {
 		if (c > 0) {
 			(void)fprintf(stderr,
 			    "vmstat: undefined symbols: ");
-			for (c = 0; c < sizeof(nl)/sizeof(nl[0]); c++)
-				if (nl[c].n_type == 0)
-					printf(" %s", nl[c].n_name);
+			for (c = 0;
+			    c < sizeof(namelist)/sizeof(namelist[0]); c++)
+				if (namelist[c].n_type == 0)
+					printf(" %s", namelist[c].n_name);
 			(void)fputc('\n', stderr);
 		} else
 			(void)fprintf(stderr, "vmstat: kvm_nlist: %s\n",
@@ -366,7 +367,7 @@ dovmstat(interval, reps)
 	halfuptime = uptime / 2;
 	(void)signal(SIGCONT, needhdr);
 
-	if (nl[X_STATHZ].n_type != 0 && nl[X_STATHZ].n_value != 0)
+	if (namelist[X_STATHZ].n_type != 0 && namelist[X_STATHZ].n_value != 0)
 		kread(X_STATHZ, &hz, sizeof(hz));
 	if (!hz)
 		kread(X_HZ, &hz, sizeof(hz));
@@ -675,8 +676,9 @@ dointr()
 	register char *intrname;
 
 	uptime = getuptime();
-	nintr = nl[X_EINTRCNT].n_value - nl[X_INTRCNT].n_value;
-	inamlen = nl[X_EINTRNAMES].n_value - nl[X_INTRNAMES].n_value;
+	nintr = namelist[X_EINTRCNT].n_value - namelist[X_INTRCNT].n_value;
+	inamlen =
+	    namelist[X_EINTRNAMES].n_value - namelist[X_INTRNAMES].n_value;
 	intrcnt = malloc((size_t)nintr);
 	intrname = malloc((size_t)inamlen);
 	if (intrcnt == NULL || intrname == NULL) {
@@ -761,16 +763,16 @@ kread(nlx, addr, size)
 {
 	char *sym;
 
-	if (nl[nlx].n_type == 0 || nl[nlx].n_value == 0) {
-		sym = nl[nlx].n_name;
+	if (namelist[nlx].n_type == 0 || namelist[nlx].n_value == 0) {
+		sym = namelist[nlx].n_name;
 		if (*sym == '_')
 			++sym;
 		(void)fprintf(stderr,
 		    "vmstat: symbol %s not defined\n", sym);
 		exit(1);
 	}
-	if (kvm_read(kd, nl[nlx].n_value, addr, size) != size) {
-		sym = nl[nlx].n_name;
+	if (kvm_read(kd, namelist[nlx].n_value, addr, size) != size) {
+		sym = namelist[nlx].n_name;
 		if (*sym == '_')
 			++sym;
 		(void)fprintf(stderr, "vmstat: %s: %s\n", sym, kvm_geterr(kd));
