@@ -1,5 +1,5 @@
 #
-	char	id_tset[] = "@(#)tset.c	1.4 %G%";
+	char	id_tset[] = "@(#)tset.c	1.5 %G%";
 
 /*
 **  TSET -- set terminal modes
@@ -1604,7 +1604,7 @@ char *
 stypeof(ttyid)
 char	*ttyid;
 {
-	static char	typebuf[50];
+	static char	typebuf[BUFSIZ];
 	register char	*PortType;
 	register char	*PortName;
 	register char	*TtyId;
