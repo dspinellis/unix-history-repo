@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)fts.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)fts.c	5.5 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -239,7 +239,8 @@ ftsread(sp)
 	}
 
 	if (p->fts_info == FTS_D)
-		if (instr == FTS_SKIP) {
+		if (instr == FTS_SKIP || sp->fts_options & FTS_XDEV &&
+		    p->fts_statb.st_dev != sp->sdev) {
 			if (sp->fts_child) {
 				fts_lfree(sp->fts_child);
 				sp->fts_child = NULL;
@@ -300,6 +301,7 @@ ftsread(sp)
 			} else
 				cd = 1;
 			p->fts_info = fts_stat(p, 0);
+			sp->sdev = p->fts_statb.st_dev;
 		} else {
 			(void)free((char *)sp->fts_cur);
 			cp = sp->fts_path + NAPPEND(p->fts_parent);
