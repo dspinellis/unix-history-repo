@@ -7,7 +7,7 @@
 **  All rights reserved.  The Berkeley software License Agreement
 **  specifies the terms and conditions for redistribution.
 **
-**	@(#)sendmail.h	5.8 (Berkeley) %G%
+**	@(#)sendmail.h	5.9 (Berkeley) %G%
 */
 
 /*
@@ -19,7 +19,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	5.8		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	5.9		%G%";
 # endif lint
 # else  _DEFINE
 # define EXTERN extern
