@@ -82,6 +82,7 @@ Rod Shady <rls@id.net>
 Sascha Wildner <swildner@channelz.GUN.de>
 Sean Eric Fagan <sef@kithrup.com>
 Steven Wallace <swallace@ece.uci.edu>
+Søren Schmidt <sos@login.dkuug.dk>
 Terry Lee <terry@uivlsi.csl.uiuc.edu>
 Theo Deraadt <deraadt@fsa.ca>
 Yuval Yarom <yval@cs.huji.ac.il>
@@ -179,4 +180,4 @@ Wolfgang Solfrank <ws@tools.de>
 Wolfgang Stanglmeier <wolf@dentaro.GUN.de>
 Yuval Yarom <yval@cs.huji.ac.il>
 
-$Id: CONTRIB.FreeBSD,v 1.29 1994/02/13 21:41:19 joerg Exp $
+$Id: CONTRIB.FreeBSD,v 1.30 1994/02/14 13:09:14 rgrimes Exp $
