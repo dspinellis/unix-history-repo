@@ -1,4 +1,4 @@
-/*	machdep.c	4.85	83/07/09	*/
+/*	machdep.c	4.86	83/07/20	*/
 
 #include "../machine/reg.h"
 #include "../machine/pte.h"
@@ -621,8 +621,10 @@ dumpsys()
 {
 
 	rpb.rp_flag = 1;
+#ifdef notdef
 	if ((minor(dumpdev)&07) != 1)
 		return;
+#endif
 	dumpsize = physmem;
 	printf("\ndumping to dev %x, offset %d\n", dumpdev, dumplo);
 	printf("dump ");
