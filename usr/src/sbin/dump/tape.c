@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tape.c	5.26 (Berkeley) %G%";
+static char sccsid[] = "@(#)tape.c	5.27 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -401,6 +401,7 @@ rollforward()
 		j = 0;
 #endif
 
+		prev = NULL;
 		for (p = slp->req; p->count > 0; p += p->count) {
 #ifdef ROLLDEBUG
 			printf("    req %d count %d dblk %d\n",
@@ -414,6 +415,8 @@ rollforward()
 			prev = q;
 			q += q->count;
 		}
+		if (prev == NULL)
+			quit("rollforward: protocol botch");
 		if (prev->dblk != 0)
 			prev->count -= 1;
 		else
@@ -598,7 +601,7 @@ restore_check_point:
 		if (nexttape || index(tape, ',')) {
 			if (nexttape && *nexttape)
 				tape = nexttape;
-			if (p = index(tape, ',')) {
+			if ((p = index(tape, ',')) != NULL) {
 				*p = '\0';
 				nexttape = p + 1;
 			} else
