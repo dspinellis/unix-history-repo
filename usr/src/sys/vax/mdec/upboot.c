@@ -4,7 +4,7 @@
  * specifies the terms and conditions for redistribution.
  */
 
-/* "@(#)upboot.c	7.2 (Berkeley) %G%" */
+/* "@(#)upboot.c	7.3 (Berkeley) %G%" */
 #include <sys/disklabel.h>
 
 	.set	MAJOR,2			/* major("/dev/up0a") */
@@ -56,6 +56,7 @@ init:
 	insv	r4,$8,$8,r10		/* set partition */
 	movl	r5,r11			/* boot flags */
 
+	movl	r2,r8			/* boot device CSR */
 	brw	start0
 
 /*
@@ -68,15 +69,12 @@ packlabel:
 
 start0:
 	movl	physUBA[r9],r9		/* UNIBUS adaptor address */
-	movl	r2,r8			/* boot device CSR */
 	movl	r3,r7			/* unit number */
 	movl	$RELOC,sp
 	moval	init,r4
 	movc3	$end,(r4),(sp)
-	movl	r9,r1			/* UNIBUS I/O page address */
-	movl	r8,r2			/* boot device CSR */
-	movl	r7,r3			/* unit number */
 /* init up, set vv in drive; if any errors, give up */
+/* probably unneeded: rom should have already done this */
 	bisw3	r7,$UPCS2_CLR,UP_cs2(r8)
 	movw	$UP_DCLR+UP_GO,UP_cs1(r8)
 	movw	$UP_PRESET+UP_GO,UP_cs1(r8)
@@ -86,7 +84,6 @@ start0:
 	bbc	$UP_pRDY,r0,1b
 /* relocate to high core */
 start:
-	movl	r5,r11			/* boot flags */
 	movl	$RELOC,sp
 	moval	init,r6
 	movc3	$end,(r6),(sp)

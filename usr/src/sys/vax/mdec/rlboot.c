@@ -4,7 +4,7 @@
  * specifies the terms and conditions for redistribution.
  */
 
-/* "@(#)rlboot.c	7.2 (Berkeley) %G%" */
+/* "@(#)rlboot.c	7.3 (Berkeley) %G%" */
 #include <sys/disklabel.h>
 
 	.set	MAJOR,14		/* major("/dev/rl0a") */
@@ -40,7 +40,7 @@ init:
         .word   0			/* entry mask for dec monitor */
         nop;nop;nop;nop;nop;nop;nop;nop	/* some no-ops for 750 boot to skip */
 	nop;nop;
-	movl	$MAJOR,r10		/* major("/dev/xx0a") */
+	cvtbl	$MAJOR,r10		/* major("/dev/xx0a") */
 	extzv	$18,$1,r1,r9		/* get UBA number from R1 */
 	xorb2	$0x01,r9		/* complement bit */
 	insv	r9,$24,$8,r10		/* set UBA number */
@@ -49,6 +49,8 @@ init:
 	bicw2	$0xf000,r5		/* remove from r5 */
 	insv	r4,$8,$8,r10		/* set partition */
 	movl	r5,r11			/* boot flags */
+
+	movl	r2,r8			/* boot device CSR */
 	brw	start0
 
 /*
@@ -61,16 +63,13 @@ packlabel:
 
 start0:
 	movl	physUBA[r9],r9		/* UNIBUS adaptor address */
-	movl	r2,r8			/* boot device CSR */
-	movl	r3,r7			/* unit number */
-	ashl	$8,r7,r7		/* shifted for HL_cs */
+	ashl	$8,r3,r7		/* unit number, shifted for HL_cs */
 
 /* init rl11, and drive, don't check for any errors now */
         movw    $HL_RESET,HL_da(r8)
         bisw3	r7,$HL_GSTAT,HL_cs(r8)
 /* relocate to high core */
 start:
-        movl    r5,r11			/* save boot flags */
         movl    $RELOC,sp
         moval   init,r6
         movc3   $end,(r6),(sp)
