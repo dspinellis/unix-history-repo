@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)gethostbyname.3	8.2 (Berkeley) %G%
+.\"     @(#)gethostbyname.3	8.3 (Berkeley) %G%
 .\"
 .Dd 
 .Dt GETHOSTBYNAME 3
@@ -18,7 +18,7 @@
 .Nd get network host entry
 .Sh SYNOPSIS
 .Fd #include <netdb.h>
-.Fd extern struct h_errno;
+.Fd extern int h_errno;
 .Ft struct hostent *
 .Fn gethostbyname "char *name"
 .Ft struct hostent *
