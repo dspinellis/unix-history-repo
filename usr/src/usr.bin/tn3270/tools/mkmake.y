@@ -26,8 +26,6 @@ typedef struct string {
  */
 
 typedef struct same {
-    unsigned int
-	visit_time;			/* For loops */
     string_t
 	*string;			/* My name */
     struct same
@@ -175,9 +173,9 @@ static int column = 0, lineno = 1;
 static string_t
     *strings = 0;
 static same_t
-    *variables,
-    *targets,
-    *actions;
+    *variables = 0,
+    *targets = 0,
+    *actions = 0;
 
 static same_t
     *null,
@@ -196,8 +194,8 @@ struct {
 
 #define	visit(what,via) \
 	(visit_stack[++clock].next = 0, visit_stack[clock].first = via = what)
-#define	visited(via)	\
-	(visit_stack[clock].next && (via == visit_stack[clock].first))
+#define	visited(via)	(((via) == 0) \
+	|| (visit_stack[clock].next && (via == visit_stack[clock].first)))
 #define	visit_next(via)	(visit_stack[clock].next = 1, (via) = (via)->nexttoken)
 #define	visit_end()	(clock--)
 
@@ -296,13 +294,16 @@ same_t
 {
     same_t *last;
 
-    last = tokens->lasttoken;
-    tokens->lasttoken = list->lasttoken;
-    list->lasttoken = last;
-    tokens->lasttoken->nexttoken = tokens;
-    last->nexttoken = list;
-
-    return list;
+    if (list) {
+	last = tokens->lasttoken;
+	tokens->lasttoken = list->lasttoken;
+	list->lasttoken = last;
+	tokens->lasttoken->nexttoken = tokens;
+	last->nexttoken = list;
+	return list;
+    } else {
+	return tokens;
+    }
 }
 
 same_t *
@@ -327,13 +328,14 @@ same_t *same;
 {
     same_t *head, *copy;
 
-    head = same_item(same->string);
-    for (copy = same->nexttoken; copy != same; copy = copy->nexttoken) {
+    head = 0;
+    for (visit(same, copy); !visited(copy); visit_next(copy)) {
 	same_t *ptr;
 
 	ptr = same_item(copy->string);
-	same_cat(head, ptr);
+	head = same_cat(head, ptr);
     }
+    visit_end();
     return head;
 }
 
@@ -356,8 +358,12 @@ same_unlink(token)
 same_t
     *token;
 {
+    if (token == 0) {
+	return;
+    }
     token->lasttoken->nexttoken = token->nexttoken;
     token->nexttoken->lasttoken = token->lasttoken;
+    token->nexttoken = token->lasttoken = token;
     (void) free((char *) token);
 }
 
@@ -369,12 +375,13 @@ same_t
     same_t *ptr;
 
     if ((ptr = same_search(targets, target)) == 0) {
-	same_cat(targets, target);
+	targets = same_cat(targets, target);
+	return target;
     } else {
-	same_cat(ptr->action_list, target->action_list);
-	same_cat(ptr->depend_list, target->depend_list);
+	ptr->action_list = same_cat(ptr->action_list, target->action_list);
+	ptr->depend_list = same_cat(ptr->depend_list, target->depend_list);
+	return ptr;
     }
-    return 0;
 }
 
 same_t *
@@ -383,17 +390,21 @@ same_t
     *target,
     *actions;
 {
-    same_t *traverse;
+    same_t *ptr, *original = target;
 
-    for (visit(target, traverse); !visited(traverse); visit_next(traverse)) {
-	if (target->action_list) {
-	    same_cat(target->action_list, actions);
-	} else {
-	    target->action_list = actions;
-	}
-	add_target(traverse);
+    if (target == 0) {
+	return 0;
     }
-    visit_end();
+    do {
+	target->action_list = same_cat(target->action_list,
+						same_copy(actions));
+	ptr = target->nexttoken;
+	same_unlink(target);
+	add_target(target);
+	target = ptr;
+    } while (target != original);
+
+    same_free(actions);
     return 0;
 }
 
@@ -405,16 +416,13 @@ same_t
 {
     same_t *original = target;
 
-    same_cat(depends, same_copy(blank));			/* Separator */
+    depends = same_cat(depends, same_copy(blank));	/* Separator */
 
     for (visit(original, target); !visited(target); visit_next(target)) {
-	if (target->depend_list) {
-	    same_cat(target->depend_list, depends);
-	} else {
-	    target->depend_list = depends;
-	}
+	target->depend_list = same_cat(target->depend_list, same_copy(depends));
     }
     visit_end();
+    same_free(depends);
 
     return original;
 }
@@ -435,9 +443,10 @@ same_t
     if ((ptr = same_search(variables, variable)) != 0) {
 	same_free(ptr->value_list);
 	same_unlink(ptr);
+	same_free(ptr);
     }
     variable->value_list = value;
-    same_cat(variables, variable);
+    variables = same_cat(variables, variable);
 }
 
 same_t *
@@ -447,9 +456,9 @@ same_t *variable;
     same_t *ptr = same_search(variables, variable);
 
     if (ptr == 0) {
-	return null;
+	return same_copy(null);
     } else {
-	return ptr->value_list;
+	return same_copy(ptr->value_list);
     }
 }
 
@@ -592,10 +601,6 @@ main()
     newline = same_item(string_lookup("\n"));
     blank = same_item(string_lookup(" "));
 
-    variables = same_item(string_lookup("variables"));
-    targets = same_item(string_lookup("targets"));
-    actions = same_item(string_lookup("actions"));
-
     return yyparse();
 }
 
@@ -613,8 +618,7 @@ do_dump()
     }
 
     printf("variables...\n");
-    for (same = variables->nexttoken; same != variables;
-						same = same->nexttoken) {
+    for (visit(variables, same); !visited(same); visit_next(same)) {
 	printf("\t%s =\t", same->string->string);
 	for (visit(same->value_list, same2); !visited(same2);
 						visit_next(same2)) {
@@ -623,27 +627,27 @@ do_dump()
 	visit_end();
 	printf("\n");
     }
+    visit_end();
 
     printf("targets...\n");
-    for (same = targets->nexttoken; same != targets; same = same->nexttoken) {
+    for (visit(targets, same); !visited(same); visit_next(same)) {
 	printf("\t%s :\t", same->string->string);
 	for (visit(same->depend_list, same2); !visited(same2);
 						visit_next(same2)) {
 	    printf(same2->string->string);
 	}
 	visit_end();
-	if (same->action_list) {
-	    printf("\n\t\t");
-	    for (visit(same->action_list, same2); !visited(same2);
-						visit_next(same2)) {
-		printf(same2->string->string);
-		if (same2->string->string[0] == '\n') {
-		    printf("\t\t");
-		}
+	printf("\n\t\t");
+	for (visit(same->action_list, same2); !visited(same2);
+					    visit_next(same2)) {
+	    printf(same2->string->string);
+	    if (same2->string->string[0] == '\n') {
+		printf("\t\t");
 	    }
-	    visit_end();
-	    printf("\n");
 	}
+	visit_end();
+	printf("\n");
     }
+    visit_end();
 }
 #endif	/* YYDEBUG */
