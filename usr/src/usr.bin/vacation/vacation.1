@@ -1,29 +1,51 @@
 .\" Copyright (c) 1985, 1987 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" All rights reserved.
 .\"
-.\"	@(#)vacation.1	6.4 (Berkeley) %G%
+.\" Redistribution and use in source and binary forms are permitted
+.\" provided that this notice is preserved and that due credit is given
+.\" to the University of California at Berkeley. The name of the University
+.\" may not be used to endorse or promote products derived from this
+.\" software without specific prior written permission. This software
+.\" is provided ``as is'' without express or implied warranty.
 .\"
-.TH VACATION 1 "June 16, 1985"
+.\"	@(#)vacation.1	6.5 (Berkeley) %G%
+.\"
+.TH VACATION 1 ""
 .UC 6
 .SH NAME
-vacation \- return ``I am on vacation'' indication
+vacation \- return ``I am not here'' indication
 .SH SYNOPSIS
 .B vacation
 .B -i
 .br
-.B vacation login
+.B vacation
+[
+.B -a
+alias ] login
 .SH DESCRIPTION
 \fIVacation\fP returns a message to the sender of a message telling
-them that you are not currently reading your mail.  The intended use
-is in a \fI.forward\fP file.  For example, your \fI.forward\fP file might
-have:
+them that you are currently not reading your mail.  The intended use
+is in a \fI.forward\fP file.  For example, your \fI.forward\fP file
+might have:
 .PP
 .ti +5
-\eeric, "|/usr/ucb/vacation eric"
+\eeric, "|/usr/ucb/vacation -a allman eric"
 .PP
 which would send messages to you (assuming your login name was eric) and
-send a message back to the sender.
+reply to any messages for ``eric'' or ``allman''.
+.PP
+No message will be sent unless \fIlogin\fP or an \fIalias\fP supplied
+using the \fB-a\fP option is a substring of either the ``To:'' or ``Cc:''
+headers of the mail.  No messages from ``???-REQUEST'', ``Postmaster'',
+``UUCP'', ``MAILER'', or ``MAILER-DAEMON'' will be replied to, nor is a
+notification sent if a ``Precedence: bulk'' or ``Precedence: junk'' line
+is included in the mail headers.  Only one message per week will be sent
+to each unique sender.  The people who have sent you messages are
+maintained as an \fIndbm\fP(3) database in the files \fI.vacation.pag\fP
+and \fI.vacation.dir\fP in your home directory.
+.PP
+The \fB-i\fP flag initializes the vacation database files.  It should be
+used before you modify your \fI.forward\fP file.
 .PP
 \fIVacation\fP expects a file \fI.vacation.msg\fP, in your home directory,
 containing a message to be sent back to each sender.  It should be an entire
@@ -33,7 +55,8 @@ message (including headers).  For example, it might say:
 .nf
 From: eric@ucbmonet.Berkeley.EDU (Eric Allman)
 Subject: I am on vacation
-Delivered-By-The-Graces-Of: the Vacation program
+Delivered-By-The-Graces-Of: The Vacation program
+Precedence: bulk
 
 I am on vacation until July 22.  If you have something urgent,
 please contact Joe Kalash <kalash@ucbingres.Berkeley.EDU>.
@@ -45,28 +68,13 @@ please contact Joe Kalash <kalash@ucbingres.Berkeley.EDU>.
 a \s-1UNIX\s0-style ``From'' line to determine the sender.
 \fISendmail\fP(8) includes this ``From'' line automatically.
 .PP
-This message will only be sent once a week to each unique sender.  The
-people who have sent you messages are maintained as an \fIndbm\fP(3)
-database in the files \fI.vacation.pag\fP and \fI.vacation.dir\fP in
-your home directory.  To avoid notifying various mailing lists of your
-absence, any addresses listed in \fI.vacation.ignore\fP will never be
-replied to.  Also, no messages from ``-REQUEST'', ``Postmaster'',
-``UUCP'', ``MAILER'', or ``MAILER-DAEMON'' will be replied to.  Nor is
-a notification sent if a ``Precedence: bulk'' or ``Precedence: junk'' line
-is included in the mail header.
-.PP
-The \fB-i\fP flag initializes the vacation database files.  It should be
-used before you modify your \fI.forward\fP file as well as when you
-update your \fI.vacation.ignore\fP file.
-.PP
 Fatal errors, such as calling \fIvacation\fP with incorrect arguments,
 or with non-existent \fIlogin\fPs, are logged in the system log file,
 using \fIsyslog\fP(8).
 .SH FILES
 .nf
-.ta \w'~/.vacation.ignore    'u
+.ta \w'~/.vacation.msg    'u
 ~/.vacation.dir	database file
-~/.vacation.ignore	list of addresses to ignore
 ~/.vacation.msg	message to send
 ~/.vacation.pag	database file
 .fi
