@@ -1,4 +1,4 @@
-/*	kern_fork.c	6.3	84/06/06	*/
+/*	kern_fork.c	6.4	84/07/14	*/
 
 #include "../machine/reg.h"
 #include "../machine/pte.h"
@@ -76,7 +76,7 @@ fork1(isvfork)
 	if (newproc(isvfork)) {
 		u.u_r.r_val1 = p1->p_pid;
 		u.u_r.r_val2 = 1;  /* child */
-		u.u_start = time.tv_sec;
+		u.u_start = time;
 		u.u_acflag = AFORK;
 		return;
 	}
