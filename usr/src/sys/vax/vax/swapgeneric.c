@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)swapgeneric.c	7.1 (Berkeley) %G%
+ *	@(#)swapgeneric.c	6.5 (Berkeley) %G%
  */
 
 #include "mba.h"
@@ -27,7 +27,7 @@
 /*
  * Generic configuration;  all in one
  */
-dev_t	rootdev;
+dev_t	rootdev = NODEV;
 dev_t	argdev = NODEV;
 dev_t	dumpdev = NODEV;
 int	nswap;
@@ -67,6 +67,8 @@ setconf()
 	register struct genericconf *gc;
 	int unit, swaponroot = 0;
 
+	if (rootdev != NODEV)
+		goto doswap;
 	if (boothowto & RB_ASKNAME) {
 		char name[128];
 retry:
@@ -119,6 +121,7 @@ bad:
 found:
 	gc->gc_root = makedev(major(gc->gc_root), unit*8);
 	rootdev = gc->gc_root;
+doswap:
 	swdevt[0].sw_dev = argdev = dumpdev =
 	    makedev(major(rootdev), minor(rootdev)+1);
 	/* swap size and dumplo set during autoconfigure */

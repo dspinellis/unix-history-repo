@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)autoconf.c	7.1 (Berkeley) %G%
+ *	@(#)autoconf.c	6.27 (Berkeley) %G%
  */
 
 /*
@@ -113,10 +113,11 @@ configure()
 #endif
 			mtpr(TBIS, Sysbase);
 #if GENERIC
-			if ((boothowto & RB_ASKNAME) || setroot() == 0)
-				setconf();
+			if ((boothowto & RB_ASKNAME) == 0)
+				setroot();
+			setconf();
 #else
-			(void) setroot();
+			setroot();
 #endif
 			/*
 			 * Configure swap area and related system
@@ -905,10 +906,10 @@ setroot()
 
 	if (boothowto & RB_DFLTROOT ||
 	    (bootdev & B_MAGICMASK) != (u_long)B_DEVMAGIC)
-		return (0);
+		return;
 	majdev = (bootdev >> B_TYPESHIFT) & B_TYPEMASK;
 	if (majdev > sizeof(devname) / sizeof(devname[0]))
-		return (0);
+		return;
 	adaptor = (bootdev >> B_ADAPTORSHIFT) & B_ADAPTORMASK;
 	part = (bootdev >> B_PARTITIONSHIFT) & B_PARTITIONMASK;
 	unit = (bootdev >> B_UNITSHIFT) & B_UNITMASK;
@@ -948,10 +949,10 @@ setroot()
 			      & mask) == adaptor)
 			    	break;
 		if (mbap->mi_driver == 0)
-			return (0);
+			return;
 		mindev = mbap->mi_unit;
 #else
-		return (0);
+		return;
 #endif
 	} else {
 		register struct uba_device *ubap;
@@ -964,7 +965,7 @@ setroot()
 			    	break;
 
 		if (ubap->ui_driver == 0)
-			return (0);
+			return;
 		mindev = ubap->ui_unit;
 	}
 	mindev = (mindev << PARTITIONSHIFT) + part;
@@ -975,7 +976,7 @@ setroot()
 	 * just calculated, don't need to adjust the swap configuration.
 	 */
 	if (rootdev == orootdev)
-		return (1);
+		return;
 
 	printf("Changing root device to %c%c%d%c\n",
 		devname[majdev][0], devname[majdev][1],
@@ -993,7 +994,7 @@ setroot()
 		}
 	}
 	if (swp->sw_dev == 0)
-		return (1);
+		return;
 
 	/*
 	 * If argdev and dumpdev were the same as the old primary swap
@@ -1004,5 +1005,4 @@ setroot()
 	if (temp == argdev)
 		argdev = swdevt[0].sw_dev;
 #endif
-	return (1);
 }
