@@ -1,10 +1,9 @@
-SCCSID = "@(#)Makefile 1.7 %G%"
+SCCSID = "@(#)Makefile 1.8 %G%"
 
 CFLAGS = -O
-DEFS =
-SRCDIR =/usr/ucb
-DESTDIR =/usr/ucb
-LIBDIR =/usr/lib
+DESTDIR =
+SRCDIR = /usr/ucb
+LIBDIR = /usr/lib
 PASCALDIR = /usr/src/cmd/pascal
 LIBPCDIR = /usr/src/lib/libpc
 CC = cc
@@ -30,7 +29,7 @@ ${PCHDR}:
 	cp ${LIBPCDIR}/$@ $@
 
 .c.o:
-	${CC} ${CFLAGS} ${DEFS} -c $*.c
+	${CC} ${CFLAGS} -c $*.c
 
 px: Version.c ${PXOBJ}
 	${CC} ${CFLAGS} -o px Version.c ${PXOBJ} -lpc -lm
@@ -39,7 +38,7 @@ Version.c: version.c
 	./version >Version.c
 	${RM}  version
 interp.o interp.s: interp.c
-	${CC} ${DEFS} -S interp.c
+	${CC} -S interp.c
 	sed -f interp.sed <interp.s >tmp
 	${OPT} tmp interp.s
 	/usr/lib/pc2 <interp.s >tmp
@@ -53,7 +52,7 @@ h02opcs.h: OPnames.h opc.c
 	${RM} opc
 
 install: px
-	cp px ${DESTDIR}/px
+	cp px ${DESTDIR}/usr/ucb/px
 
 clean:
 	${RM}  *.o *.s px version opc* pic* OPnames.h objfmt.h libpc.h\
