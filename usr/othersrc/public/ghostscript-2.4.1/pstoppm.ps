@@ -1,0 +1,210 @@
+%! PS-Adobe-2.0
+%% Program for reading a .ps file and writing out a PPM file.
+%% For Ghostscript 2.4.
+%%
+%% Modified by L. Peter Deutsch 4/6/92:
+%%   Ghostscript 2.4 requires all 8 primary colors to be in the palette.
+%% Modified by L. Peter Deutsch 1/17/92:
+%%   the palette for makeimagedevice is now a string, not an array.
+%% Modified by L. Peter Deutsch 9/24/91:
+%%   allow starting page number to be specified.
+%% Modified by L. Peter Deutsch 7/7/91 to keep track of page count
+%%   in a way that gets around save and restore.
+%% Modified by L. Peter Deutsch 11/07/90
+%%   to use filename.ppm for the first page, renamed to filename.1ppm
+%%   with subsequent pages .2ppm, etc. if more than one page.
+%% Modified by Henry Minsky 11/03/90
+%%   for each showpage, it writes out a ppm file with name filename.ppm.N
+%%   where N increments each showpage, starting at 1
+%% Modified by L. Peter Deutsch -- Aladdin Enterprises -- 08/25/90 --
+%%   converted from a one-shot program to a utility package,
+%%   designed to be used from an interactive terminal.
+%% Modified by L. Peter Deutsch -- Aladdin Enterprises -- 08/02/90
+%% Modified on 08/02/90 for using the CORRECT color map.
+%% Modified 06/26/90 for a color file
+%% Original version by Phillip Conrad - Perfect Byte, Inc.
+%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%% Define the directory for holding the PPM information
+
+/ppmdict 30 dict def
+ppmdict begin
+
+  /Horz_dpi 72 def		% defaults to screen density
+  /Vert_dpi 72 def
+
+  /OutFilePrefix () def		% default to null (current directory)
+
+  /FirstPageNumber 1 def	% any non-negative integer is OK
+
+  /Palette1 <ff 00> def
+  /Palette8
+%========== Here we define all 256 color entries. ======
+%========== Colors were taken from the X Windows default colors, ======
+%========== hacked up a little so we get all 8 primaries. ======
+<
+000000 ffffff a8a8a8 ebebeb 5c5c5c 373737 5f929e 85ccdd
+345057 1f3034 729efe a0ddff 3f578c 263454 6186d8 2f2f64
+ffff00 b0e2ff ff0000 808080 efdf84 55fe55 fe0000 66fe57
+fe987a feca71 fefefe fe8d7c fea977 fec472 feb875 fe937b
+fe957a feb575 98fe5d fe8b7d fea677 feb276 feaf76 febe74
+fe837e fefc6a fe0c9a fe0350 fe08b5 6715fe fefb3f fe544b
+00c000 20c000 40c000 60c000 80c000 a0c000 c0c000 e0c000
+00ff00 20e000 40e000 60e000 80e000 a0e000 c0e000 e0e000
+000040 200040 400040 600040 800040 a00040 c00040 e00040
+002040 202040 402040 602040 802040 a02040 c02040 e02040
+004040 204040 404040 604040 804040 a04040 c04040 e04040
+006040 206040 406040 606040 806040 a06040 c06040 e06040
+008040 208040 408040 608040 808040 a08040 c08040 e08040
+00a040 20a040 40a040 60a040 80a040 a0a040 c0a040 e0a040
+00c040 20c040 40c040 60c040 80c040 a0c040 c0c040 e0c040
+00e040 20e040 40e040 60e040 80e040 a0e040 c0e040 e0e040
+000080 200080 400080 600080 800080 a00080 c00080 e00080
+002080 202080 402080 602080 802080 a02080 c02080 e02080
+004080 204080 404080 604080 804080 a04080 c04080 e04080
+006080 206080 406080 606080 806080 a06080 c06080 e06080
+008080 208080 408080 608080 808080 a08080 c08080 e08080
+00a080 20a080 40a080 60a080 80a080 a0a080 c0a080 e0a080
+00c080 20c080 40c080 60c080 80c080 a0c080 c0c080 e0c080
+00e080 20e080 40e080 60e080 80e080 a0e080 c0e080 e0e080
+0000ff 2000c0 4000c0 6000c0 8000c0 a000c0 c000c0 ff00ff
+0020c0 2020c0 4020c0 6020c0 8020c0 a020c0 c020c0 e020c0
+0040c0 2040c0 4040c0 6040c0 8040c0 a040c0 c040c0 e040c0
+0060c0 2060c0 4060c0 6060c0 8060c0 a060c0 c060c0 e060c0
+0080c0 2080c0 4080c0 6080c0 8080c0 a080c0 c080c0 e080c0
+00a0c0 20a0c0 40a0c0 60a0c0 80a0c0 a0a0c0 c0a0c0 e0a0c0
+00c0c0 20c0c0 40c0c0 60c0c0 80c0c0 a0c0c0 c0c0c0 e0c0c0
+00ffff 20e0c0 40e0c0 60e0c0 80e0c0 a0e0c0 c0e0c0 e0e0c0
+> def
+
+  % Define a procedure for computing the output file name for a given page.
+  /pagefilename		% <int|null> pagefilename -> <string
+   { OutFilePrefix FileName concatstrings (.) concatstrings
+     exch dup null ne
+      { 1 sub FirstPageNumber add (xxxxxx) cvs concatstrings }
+      { pop }
+     ifelse (ppm) concatstrings
+   } def
+
+  % Redefine copypage and showpage appropriately.
+  /copypage
+   { ppmdict begin
+
+       /PageCount PageCountString cvi 100000 sub def
+       /PageCount PageCount 1 add def
+
+       PageCount 1 eq
+	{ null pagefilename			% first page
+	}
+	{ PageCount 2 eq
+	   {					% second page, rename first
+	     null pagefilename 1 pagefilename
+	     (Renaming ) print 1 index print ( to ) print
+	       dup print (\n) print
+	     flush
+	     renamefile
+	   } if
+	  PageCount pagefilename
+	} ifelse
+       /FileNameOut exch def
+
+       FileNameOut (w) file
+         /FileDescOut exch def
+
+       (Writing ) print FileNameOut print (\n) print
+       flush
+       FileDescOut Device writeppmfile
+       FileDescOut closefile
+
+       WrotePage 0 1 put	% /WrotePage true def
+       PageCount 100000 add PageCountString cvs pop
+
+     end
+   } userdict begin def end
+  /showpage
+   { copypage erasepage initgraphics
+   } userdict begin def end
+
+  /Convert			% the main procedure
+  				% <filename> <palette> Convert -
+   { /Palette exch def
+     /FileName exch def
+
+     % Save and restore don't save and restore the contents of strings.
+     % Therefore, we use strings to hold the two variables whose values
+     % must persist across page boundaries (PageCount and WrotePage).
+
+     /PageCountString 6 string def
+     100000 PageCountString cvs pop
+     /WrotePage 1 string def
+
+     /ScaleX Horz_dpi 72 div def
+     /ScaleY Vert_dpi 72 div def
+
+     /Width 85 Horz_dpi mul 5 add 10 div cvi def % add 5 to round up!
+     /Height 11 Vert_dpi mul def
+
+     FileName (.ps) concatstrings
+       /FileNameIn exch def		% file name with extension
+
+     [ScaleX 0.0 0.0 ScaleY neg 0.0 Height]
+     Width Height Palette makeimagedevice
+       /Device exch def
+     Device setdevice
+
+     % For running the file, remove ppmdict from the dict stack
+     FileNameIn end run		% ppmdict
+     ppmdict begin
+     WrotePage 0 get 0 eq { showpage } if % make sure the page got written
+     end			% ppmdict
+
+   } def
+
+end				% ppmdict
+
+%%%%%% Define the user-callable procedures
+
+/ppmsetdensity
+ { ppmdict begin
+   /Vert_dpi exch def
+   /Horz_dpi exch def
+   end
+ } def
+
+/ppmsetprefix
+ { ppmdict begin
+   /OutFilePrefix exch def
+   end
+ } def
+
+/ppmsetfirstpagenumber
+ { cvi
+   ppmdict begin
+   /FirstPageNumber exch def
+ } def
+
+/ppm1run
+ { ppmdict begin   Palette1 Convert
+ } def
+
+/ppm8run
+ { ppmdict begin   Palette8 Convert
+ } def
+
+/ppm24run
+ { ppmdict begin   null Convert
+ } def
+
+%%%%%% Display instructions for the user.
+
+(Usage: (file) ppmNrun\n) print
+(   converts file.ps to file.ppm (single page),\n) print
+(     or file.1ppm, file.2ppm, ... (multi page).\n) print
+(   N is # of bits per pixel (1, 8, or 24).\n) print
+(Examples: (golfer) ppm1run   ..or..   (escher) ppm8run\n) print
+(Optional commands you can give first:\n) print
+(   horiz_DPI vert_DPI ppmsetdensity\n) print
+(   (dirname/) ppmsetprefix\n) print
+(   page_num ppmsetfirstpagenumber\n) print
+flush
