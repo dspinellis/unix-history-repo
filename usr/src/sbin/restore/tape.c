@@ -1,7 +1,7 @@
 /* Copyright (c) 1983 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)tape.c	3.9	(Berkeley)	83/03/27";
+static char sccsid[] = "@(#)tape.c	3.10	(Berkeley)	83/03/27";
 #endif
 
 #include "restore.h"
@@ -133,9 +133,9 @@ setup()
 	map = calloc((unsigned)1, (unsigned)howmany(maxino, NBBY));
 	if (map == (char *)NIL)
 		panic("no memory for file removal list\n");
+	clrimap = map;
 	curfile.action = USING;
 	getfile(xtrmap, xtrmapskip);
-	clrimap = map;
 	if (checktype(&spcl, TS_BITS) == FAIL) {
 		fprintf(stderr, "Cannot find file dump list\n");
 		done(1);
@@ -143,9 +143,9 @@ setup()
 	map = calloc((unsigned)1, (unsigned)howmany(maxino, NBBY));
 	if (map == (char *)NULL)
 		panic("no memory for file dump list\n");
+	dumpmap = map;
 	curfile.action = USING;
 	getfile(xtrmap, xtrmapskip);
-	dumpmap = map;
 }
 
 getvol(nextvol)
@@ -476,6 +476,7 @@ xtrmap(buf, size)
 {
 
 	bcopy(buf, map, size);
+	map += size;
 }
 
 xtrmapskip(buf, size)
@@ -485,9 +486,9 @@ xtrmapskip(buf, size)
 
 #ifdef lint
 	buf = buf;
-	size = size;
 #endif
 	panic("hole in map\n");
+	map += size;
 }
 
 null() {;}
@@ -628,14 +629,14 @@ gethead(buf)
 			long	c_ddate;
 			long	c_volume;
 			long	c_tapea;
-			short	c_inumber;
+			u_short	c_inumber;
 			long	c_magic;
 			long	c_checksum;
 			struct odinode {
 				unsigned short odi_mode;
-				short	odi_nlink;
-				short	odi_uid;
-				short	odi_gid;
+				u_short	odi_nlink;
+				u_short	odi_uid;
+				u_short	odi_gid;
 				long	odi_size;
 				long	odi_rdev;
 				char	odi_addr[36];
