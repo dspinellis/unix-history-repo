@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)ifconfig.c	4.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)ifconfig.c	4.7 (Berkeley) %G%";
 #endif
 
 #include <sys/types.h>
@@ -17,7 +17,7 @@ static char sccsid[] = "@(#)ifconfig.c	4.6 (Berkeley) %G%";
 struct	ifreq ifr;
 struct	sockaddr_in sin = { AF_INET };
 char	name[30];
-int	flags;
+int	setaddr;
 int	s;
 
 int	setifflags(), setifaddr();
@@ -33,6 +33,8 @@ struct	cmd {
 	{ "-trailers",	IFF_NOTRAILERS,	setifflags },
 	{ "arp",	-IFF_NOARP,	setifflags },
 	{ "-arp",	IFF_NOARP,	setifflags },
+	{ "local",	IFF_LOCAL,	setifflags },
+	{ "-local",	-IFF_LOCAL,	setifflags },
 	{ "debug",	IFF_DEBUG,	setifflags },
 	{ "-debug",	-IFF_DEBUG,	setifflags },
 #ifdef notdef
@@ -67,7 +69,6 @@ main(argc, argv)
 		Perror("ioctl (SIOCGIFFLAGS)");
 		exit(1);
 	}
-	flags = ifr.ifr_flags;
 	argc--, argv++;
 	if (argc == 0) {
 		status();
@@ -83,6 +84,12 @@ main(argc, argv)
 			(*p->c_func)(*argv, p->c_parameter);
 		argc--, argv++;
 	}
+	if (setaddr) {
+		strncpy(ifr.ifr_name, name, sizeof (ifr.ifr_name));
+		ifr.ifr_addr = *(struct sockaddr *) &sin;
+		if (ioctl(s, SIOCSIFADDR, (caddr_t)&ifr) < 0)
+			Perror("ioctl (SIOCSIFADDR)");
+	}
 	exit(0);
 }
 
@@ -92,20 +99,13 @@ setifaddr(addr, param)
 	int param;
 {
 
-	getaddr(addr, (struct sockaddr_in *)&ifr.ifr_addr);
-	strncpy(ifr.ifr_name, name, sizeof (ifr.ifr_name));
-	if (ioctl(s, SIOCSIFADDR, (caddr_t)&ifr) < 0)
-		Perror("ioctl (SIOCSIFADDR)");
-	/* 
-	 * SIFADDR ioctl above can change the flags value if it is
-	 * the first time the address has been set.  Must get the
-	 * new flags so that we don't store outdated ones later on.
+	getaddr(addr, &sin);
+	/*
+	 * Delay the ioctl to set the interface addr until flags are all set.
+	 * The address interpretation may depend on the flags,
+	 * and the flags may change when the address is set.
 	 */
-	if (ioctl(s, SIOCGIFFLAGS, (caddr_t)&ifr) < 0) {
-		Perror("ioctl (SIOCGIFFLAGS) 2");
-		exit(1);
-	}
-	flags = ifr.ifr_flags;
+	setaddr++;
 }
 
 setifflags(vname, value)
@@ -115,10 +115,9 @@ setifflags(vname, value)
 
 	if (value < 0) {
 		value = -value;
-		flags &= ~value;
+		ifr.ifr_flags &= ~value;
 	} else
-		flags |= value;
-	ifr.ifr_flags = flags;
+		ifr.ifr_flags |= value;
 	strncpy(ifr.ifr_name, name, sizeof (ifr.ifr_name));
 	if (ioctl(s, SIOCSIFFLAGS, (caddr_t)&ifr) < 0)
 		Perror(vname);
@@ -127,6 +126,7 @@ setifflags(vname, value)
 status()
 {
 	struct sockaddr_in *sin;
+	int flags = ifr.ifr_flags;
 
 	strncpy(ifr.ifr_name, name, sizeof (ifr.ifr_name));
 	if (ioctl(s, SIOCGIFADDR, (caddr_t)&ifr) < 0)
@@ -134,7 +134,8 @@ status()
 	sin = (struct sockaddr_in *)&ifr.ifr_addr;
 	printf("%s: %s ", name, inet_ntoa(sin->sin_addr));
 #define	IFFBITS \
-"\020\1UP\2BROADCAST\3DEBUG\4ROUTE\5POINTOPOINT\6NOTRAILERS\7RUNNING\10NOARP"
+"\020\1UP\2BROADCAST\3DEBUG\4ROUTE\5POINTOPOINT\6NOTRAILERS\7RUNNING\10NOARP\
+\11LOCAL"
 	printb("flags", flags, IFFBITS); putchar('\n');
 }
 
