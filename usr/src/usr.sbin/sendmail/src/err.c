@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)err.c	3.29		%G%);
+SCCSID(@(#)err.c	3.30		%G%);
 
 /*
 **  SYSERR -- Print error message.
@@ -42,10 +42,6 @@ syserr(fmt, a, b, c, d, e)
 		p = Arpa_TSyserr;
 	fmtmsg(MsgBuf, (char *) NULL, p, fmt, a, b, c, d, e);
 	putmsg(MsgBuf);
-
-	/* mark the error as having occured */
-	Errors++;
-	FatalErrors = TRUE;
 
 	/* determine exit status if not already set */
 	if (ExitStat == EX_OK)
@@ -90,11 +86,10 @@ usrerr(fmt, a, b, c, d, e)
 
 	if (SuprErrs)
 		return;
-	Errors++;
-	FatalErrors = TRUE;
 
 	fmtmsg(MsgBuf, CurEnv->e_to, Arpa_Usrerr, fmt, a, b, c, d, e);
 	putmsg(MsgBuf);
+
 	if (QuickAbort)
 		longjmp(TopFrame, 1);
 }
@@ -121,6 +116,33 @@ message(num, msg, a, b, c, d, e)
 {
 	errno = 0;
 	fmtmsg(MsgBuf, CurEnv->e_to, num, msg, a, b, c, d, e);
+	putmsg(MsgBuf);
+}
+/*
+**  NMESSAGE -- print message (not necessarily an error)
+**
+**	Just like "message" except it never puts the to... tag on.
+**
+**	Parameters:
+**		num -- the default ARPANET error number (in ascii)
+**		msg -- the message (printf fmt) -- if it begins
+**			with a digit, this number overrides num.
+**		a, b, c, d, e -- printf arguments
+**
+**	Returns:
+**		none
+**
+**	Side Effects:
+**		none.
+*/
+
+/*VARARGS2*/
+nmessage(num, msg, a, b, c, d, e)
+	register char *num;
+	register char *msg;
+{
+	errno = 0;
+	fmtmsg(MsgBuf, NULL, num, msg, a, b, c, d, e);
 	putmsg(MsgBuf);
 }
 /*
@@ -153,6 +175,18 @@ putmsg(msg)
 		else
 			fprintf(OutChannel, "%s\n", &msg[4]);
 		(void) fflush(OutChannel);
+	}
+
+	/* determine error status */
+	switch (msg[0])
+	{
+	  case '5':
+		FatalErrors = TRUE;
+		/* fall through.... */
+
+	  case '4':
+		Errors++;
+		break;
 	}
 }
 /*
