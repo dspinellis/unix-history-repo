@@ -1,4 +1,4 @@
-#	@(#)POSIX	5.9 (Berkeley) %G%
+#	@(#)POSIX	5.10 (Berkeley) %G%
 
 Comments on the IEEE P1003.2 Draft 12
      Part 2: Shell and Utilities
@@ -97,10 +97,7 @@ All uses of "POSIX" refer to section 4.55, Draft 12 of POSIX 1003.2.
 	did not produce any output.  POSIX does not specify this behavior.
 	This implementation follows historic practice.
 
-10.	POSIX does not specify that the q command causes all lines that
-	have been appended to be output and that the pattern space is
-	printed before exiting.  This implementation follows historic
-	practice.
+10.	Deleted.
 
 11.	Historical implementations do not output the change text of a c
 	command in the case of an address range whose first line number
