@@ -63,6 +63,9 @@ queue_head_t	vm_page_queue_inactive;
 simple_lock_data_t	vm_page_queue_lock;
 simple_lock_data_t	vm_page_queue_free_lock;
 
+/* has physical page allocation been initialized? */
+boolean_t vm_page_startup_initialized;
+
 vm_page_t	vm_page_array;
 long		first_page;
 long		last_page;
@@ -103,19 +106,15 @@ void vm_set_page_size()
  *	for the object/offset-to-page hash table headers.
  *	Each page cell is initialized and placed on the free list.
  */
-vm_offset_t vm_page_startup(start, end, vaddr)
-	register vm_offset_t	start;
-	vm_offset_t	end;
-	register vm_offset_t	vaddr;
+void vm_page_startup(start, end)
+	vm_offset_t	*start;
+	vm_offset_t	*end;
 {
-	register vm_offset_t	mapped;
 	register vm_page_t	m;
 	register queue_t	bucket;
 	vm_size_t		npages;
-	register vm_offset_t	new_start;
 	int			i;
 	vm_offset_t		pa;
-
 	extern	vm_offset_t	kentry_data;
 	extern	vm_size_t	kentry_data_size;
 
@@ -137,7 +136,7 @@ vm_offset_t vm_page_startup(start, end, vaddr)
 	queue_init(&vm_page_queue_inactive);
 
 	/*
-	 *	Allocate (and initialize) the hash table buckets.
+	 *	Calculate the number of hash table buckets.
 	 *
 	 *	The number of buckets MUST BE a power of 2, and
 	 *	the actual value is the next power of 2 greater
@@ -147,27 +146,20 @@ vm_offset_t vm_page_startup(start, end, vaddr)
 	 *		This computation can be tweaked if desired.
 	 */
 
-	vm_page_buckets = (queue_t) vaddr;
-	bucket = vm_page_buckets;
 	if (vm_page_bucket_count == 0) {
 		vm_page_bucket_count = 1;
-		while (vm_page_bucket_count < atop(end - start))
+		while (vm_page_bucket_count < atop(*end - *start))
 			vm_page_bucket_count <<= 1;
 	}
 
 	vm_page_hash_mask = vm_page_bucket_count - 1;
 
 	/*
-	 *	Validate these addresses.
+	 *	Allocate (and initialize) the hash table buckets.
 	 */
-
-	new_start = round_page(((queue_t)start) + vm_page_bucket_count);
-	mapped = vaddr;
-	vaddr = pmap_map(mapped, start, new_start,
-			VM_PROT_READ|VM_PROT_WRITE);
-	start = new_start;
-	blkclr((caddr_t) mapped, vaddr - mapped);
-	mapped = vaddr;
+	vm_page_buckets = (queue_t) pmap_bootstrap_alloc(vm_page_bucket_count
+		* sizeof(struct queue_entry));
+	bucket = vm_page_buckets;
 
 	for (i = vm_page_bucket_count; i--;) {
 		queue_init(bucket);
@@ -177,10 +169,10 @@ vm_offset_t vm_page_startup(start, end, vaddr)
 	simple_lock_init(&bucket_lock);
 
 	/*
-	 *	round (or truncate) the addresses to our page size.
+	 *	Truncate the remainder of physical memory to our page size.
 	 */
 
-	end = trunc_page(end);
+	*end = trunc_page(*end);
 
 	/*
 	 *	Pre-allocate maps and map entries that cannot be dynamically
@@ -196,19 +188,7 @@ vm_offset_t vm_page_startup(start, end, vaddr)
 
 	kentry_data_size = MAX_KMAP * sizeof(struct vm_map) +
 			   MAX_KMAPENT * sizeof(struct vm_map_entry);
-	kentry_data_size = round_page(kentry_data_size);
-	kentry_data = (vm_offset_t) vaddr;
-	vaddr += kentry_data_size;
-
-	/*
-	 *	Validate these zone addresses.
-	 */
-
-	new_start = start + (vaddr - mapped);
-	pmap_map(mapped, start, new_start, VM_PROT_READ|VM_PROT_WRITE);
-	blkclr((caddr_t) mapped, (vaddr - mapped));
-	mapped = vaddr;
-	start = new_start;
+	kentry_data = (vm_offset_t) pmap_bootstrap_alloc(kentry_data_size);
 
 	/*
  	 *	Compute the number of pages of memory that will be
@@ -217,15 +197,14 @@ vm_offset_t vm_page_startup(start, end, vaddr)
 	 */
 
 	cnt.v_free_count = npages =
-		(end - start)/(PAGE_SIZE + sizeof(struct vm_page));
+		(*end - *start)/(PAGE_SIZE + sizeof(struct vm_page));
 
 	/*
-	 *	Initialize the mem entry structures now, and
-	 *	put them in the free queue.
+	 *	Record the extent of physical memory that the
+	 *	virtual memory system manages.
 	 */
 
-	m = vm_page_array = (vm_page_t) vaddr;
-	first_page = start;
+	first_page = *start;
 	first_page += npages*sizeof(struct vm_page);
 	first_page = atop(round_page(first_page));
 	last_page  = first_page + npages - 1;
@@ -234,24 +213,17 @@ vm_offset_t vm_page_startup(start, end, vaddr)
 	last_phys_addr  = ptoa(last_page) + PAGE_MASK;
 
 
-#ifdef i386
-	/* XXX - waiting for pmap_bootstrap_malloc() (or somebody like him) */
-	if (first_phys_addr > 0xa0000)
-		panic("vm_page_startup: fell into the hole");
-#endif
 	/*
-	 *	Validate these addresses.
+	 *	Allocate and clear the mem entry structures.
 	 */
 
-	new_start = start + (round_page(m + npages) - mapped);
-	mapped = pmap_map(mapped, start, new_start,
-			VM_PROT_READ|VM_PROT_WRITE);
-	start = new_start;
+	m = vm_page_array = (vm_page_t)
+		pmap_bootstrap_alloc(npages * sizeof(struct vm_page));
 
 	/*
-	 *	Clear all of the page structures
+	 *	Initialize the mem entry structures now, and
+	 *	put them in the free queue.
 	 */
-	blkclr((caddr_t)m, npages * sizeof(*m));
 
 	pa = first_phys_addr;
 	while (npages--) {
@@ -284,7 +256,8 @@ vm_offset_t vm_page_startup(start, end, vaddr)
 	 */
 	simple_lock_init(&vm_pages_needed_lock);
 
-	return(mapped);
+	/* from now on, pmap_bootstrap_alloc can't be used */
+	vm_page_startup_initialized = TRUE;
 }
 
 /*
@@ -306,7 +279,7 @@ vm_offset_t vm_page_startup(start, end, vaddr)
  *	The object and page must be locked.
  */
 
-void vm_page_insert(mem, object, offset)
+static void vm_page_insert(mem, object, offset)
 	register vm_page_t	mem;
 	register vm_object_t	object;
 	register vm_offset_t	offset;
@@ -354,6 +327,7 @@ void vm_page_insert(mem, object, offset)
 
 /*
  *	vm_page_remove:		[ internal use only ]
+ *				NOTE: used by device pager as well -wfj
  *
  *	Removes the given mem entry from the object/offset-page
  *	table and the object page list.
