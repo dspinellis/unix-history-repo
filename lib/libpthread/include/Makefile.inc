@@ -6,7 +6,7 @@
 # links.
 
 
-FILES= cond.h fd.h fd_pipe.h kernel.h mutex.h posix.h \
+FILES= cond.h copyright.h fd.h fd_pipe.h kernel.h mutex.h posix.h \
 	   pthread.h pthread_attr.h queue.h util.h engine.h
 
 realinstall:

@@ -47,6 +47,7 @@
         .asciz "@(#)syscall.s   5.1 (Berkeley) 4/23/90"
 #endif /* SYSLIBC_SCCS and not lint */
 
+#include <pthread/copyright.h>
 #include <machine/asm.h>
 #include <sys/syscall.h>
 

@@ -5,7 +5,7 @@ at the Winter 93 USENIX conference.
 It is currently being designed and written by me, Chris Provenzano.
 All bug, comments, and questions can be sent me at either
 proven@athena.mit.edu or proven@sun-lamp.cs.berkeley.edu
-Please don't send questions, bugs or patches to any of the FreeBSD mailing lists.
+Please don't send questions, bugs or patches to any of the NetBSD mailing lists.
 
 Thanks goes to John Carr jfc@mit.edu for porting this to the IBM/RT,
 and for his bug reports and fixes.
