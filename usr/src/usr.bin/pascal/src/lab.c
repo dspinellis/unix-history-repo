@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)lab.c 1.15 %G%";
+static char sccsid[] = "@(#)lab.c 1.16 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -138,7 +138,17 @@ gotoop(s)
 		     *	local goto.
 		     */
 		extlabname( extname , p -> symbol , bn );
-		putprintf( "	jbr	%s" , 0 , extname );
+		    /*
+		     *	this is a jmp because it's a jump to a label that
+		     *	has been declared global. Although this branch is
+		     *	within this module the assembler will complain that
+		     *	the destination is a global symbol. The complaint
+		     *	arises because the assembler doesn't change jbr's
+		     *	into jmp's and consequently may cause a branch 
+		     *	displacement overflow when the module is subsequently
+		     *	linked into the rest of the program.
+		     */
+		putprintf( "	jmp	%s" , 0 , extname );
 	    } else {
 		    /*
 		     *	Non-local goto.
