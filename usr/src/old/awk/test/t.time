@@ -1,0 +1,13 @@
+BEGIN {
+	FS = "-"
+}
+
+/ing$/ {
+	n++
+	s += length($NF)
+	print
+}
+
+END {
+	print n, s, s/n >"glop"
+}
