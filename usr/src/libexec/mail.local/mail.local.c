@@ -9,7 +9,7 @@
 #include <whoami.h>
 #include <sysexits.h>
 
-static char SccsId[] = "@(#)mail.local.c	4.5	%G%";
+static char SccsId[] = "@(#)mail.local.c	4.6	%G%";
 
 #define DELIVERMAIL	"/etc/delivermail"
 
@@ -101,7 +101,7 @@ char **argv;
 	   (argc == 1 || argv[1][0] == '-' && !any(argv[1][1], "rhd")))
 		printmail(argc, argv);
 	else
-		sendmail(argc, argv);
+		bulkmail(argc, argv);
 	done();
 }
 
@@ -396,7 +396,7 @@ register char *lp;
 	return(1);
 }
 
-sendmail(argc, argv)
+bulkmail(argc, argv)
 char **argv;
 {
 	char truename[100];
@@ -523,9 +523,10 @@ char **argv;
 		fprintf(stderr, "mail: cannot reopen %s for reading\n", lettmp);
 		return;
 	}
-	while (--argc > 0)
-		if (!send(0, *++argv, truename))
+	while (--argc > 0) {
+		if (!sendmail(0, *++argv, truename))
 			error++;
+	}
 	if (error) {
 		setuid(getuid());
 		malf = fopen(dead, "w");
@@ -632,7 +633,13 @@ usage()
 	fprintf(stderr, "Usage: mail [ -f ] people . . .\n");
 }
 
-send(n, name, fromaddr)
+#include <sys/socket.h>
+#include <net/in.h>
+#include <wellknown.h>
+struct sockaddr_in biffaddr = { AF_INET, IPPORT_BIFFUDP };
+char *localhost = "localhost";
+
+sendmail(n, name, fromaddr)
 int n;
 char *name;
 char *fromaddr;
@@ -677,23 +684,24 @@ char *fromaddr;
 		return(0);
 	}
 	malf = fopen(file, "a");
-	chown(file, pw->pw_uid, pw->pw_gid);
 	umask(mask);
 	if (malf == NULL) {
 		fprintf(stdout, "mail: cannot append to %s\n", file);
 		return(0);
 	}
 	lock(file);
+	chown(file, pw->pw_uid, pw->pw_gid);
 	{
-		f = open("/dev/mail", 1);
+		f = socket(SOCK_DGRAM, 0, 0, 0);
 		sprintf(buf, "%s@%d\n", name, ftell(malf)); 
 	}
 	copylet(n, malf, ORDINARY);
+	fclose(malf);
 	if (f >= 0) {
-		write(f, buf, strlen(buf)+1);
+		biffaddr.sin_addr.s_addr = rhost(&localhost);
+		send(f, &biffaddr, buf, strlen(buf)+1);
 		close(f);
 	}
-	fclose(malf);
 	unlock();
 	return(1);
 }
