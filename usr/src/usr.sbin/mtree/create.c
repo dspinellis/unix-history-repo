@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)create.c	5.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)create.c	5.18 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -96,7 +96,7 @@ statf(p)
 	u_long len, val;
 	int fd, indent;
 
-	if (S_ISDIR(p->fts_statb.st_mode))
+	if (S_ISDIR(p->fts_statp->st_mode))
 		indent = printf("%s", p->fts_name); 
 	else
 		indent = printf("    %s", p->fts_name);
@@ -106,27 +106,27 @@ statf(p)
 	else
 		indent += printf("%*s", INDENTNAMELEN - indent, "");
 
-	if (!S_ISREG(p->fts_statb.st_mode))
-		output(&indent, "type=%s", inotype(p->fts_statb.st_mode));
-	if (keys & (F_UID | F_UNAME) && p->fts_statb.st_uid != uid)
-		if (keys & F_UNAME && (pw = getpwuid(p->fts_statb.st_uid)))
+	if (!S_ISREG(p->fts_statp->st_mode))
+		output(&indent, "type=%s", inotype(p->fts_statp->st_mode));
+	if (keys & (F_UID | F_UNAME) && p->fts_statp->st_uid != uid)
+		if (keys & F_UNAME && (pw = getpwuid(p->fts_statp->st_uid)))
 			output(&indent, "uname=%s", pw->pw_name);
 		else /* if (keys & F_UID) */
-			output(&indent, "uid=%u", p->fts_statb.st_uid);
-	if (keys & (F_GID | F_GNAME) && p->fts_statb.st_gid != gid)
-		if (keys & F_GNAME && (gr = getgrgid(p->fts_statb.st_gid)))
+			output(&indent, "uid=%u", p->fts_statp->st_uid);
+	if (keys & (F_GID | F_GNAME) && p->fts_statp->st_gid != gid)
+		if (keys & F_GNAME && (gr = getgrgid(p->fts_statp->st_gid)))
 			output(&indent, "gid=%s", gr->gr_name);
 		else /* if (keys & F_GID) */
-			output(&indent, "gid=%u", p->fts_statb.st_gid);
-	if (keys & F_MODE && (p->fts_statb.st_mode & MBITS) != mode)
-		output(&indent, "mode=%#o", p->fts_statb.st_mode & MBITS);
-	if (keys & F_NLINK && p->fts_statb.st_nlink != 1)
-		output(&indent, "nlink=%u", p->fts_statb.st_nlink);
+			output(&indent, "gid=%u", p->fts_statp->st_gid);
+	if (keys & F_MODE && (p->fts_statp->st_mode & MBITS) != mode)
+		output(&indent, "mode=%#o", p->fts_statp->st_mode & MBITS);
+	if (keys & F_NLINK && p->fts_statp->st_nlink != 1)
+		output(&indent, "nlink=%u", p->fts_statp->st_nlink);
 	if (keys & F_SIZE)
-		output(&indent, "size=%ld", p->fts_statb.st_size);
+		output(&indent, "size=%ld", p->fts_statp->st_size);
 	if (keys & F_TIME)
-		output(&indent, "time=%ld", p->fts_statb.st_mtime);
-	if (keys & F_CKSUM && S_ISREG(p->fts_statb.st_mode)) {
+		output(&indent, "time=%ld", p->fts_statp->st_mtime);
+	if (keys & F_CKSUM && S_ISREG(p->fts_statp->st_mode)) {
 		if ((fd = open(p->fts_accpath, O_RDONLY, 0)) < 0 ||
 		    crc(fd, &val, &len))
 			err("%s: %s", p->fts_accpath, strerror(errno));
@@ -174,17 +174,17 @@ statd(t, parent, puid, pgid, pmode)
 
 	maxuid = maxgid = maxmode = 0;
 	for (; p; p = p->fts_link) {
-		smode = p->fts_statb.st_mode & MBITS;
+		smode = p->fts_statp->st_mode & MBITS;
 		if (smode < MAXMODE && ++m[smode] > maxmode) {
 			savemode = smode;
 			maxmode = m[smode];
 		}
-		sgid = p->fts_statb.st_gid;
+		sgid = p->fts_statp->st_gid;
 		if (sgid < MAXGID && ++g[sgid] > maxgid) {
 			savegid = sgid;
 			maxgid = g[sgid];
 		}
-		suid = p->fts_statb.st_uid;
+		suid = p->fts_statp->st_uid;
 		if (suid < MAXUID && ++u[suid] > maxuid) {
 			saveuid = suid;
 			maxuid = u[suid];
@@ -220,10 +220,10 @@ static int
 dsort(a, b)
 	const FTSENT **a, **b;
 {
-	if (S_ISDIR((*a)->fts_statb.st_mode)) {
-		if (!S_ISDIR((*b)->fts_statb.st_mode))
+	if (S_ISDIR((*a)->fts_statp->st_mode)) {
+		if (!S_ISDIR((*b)->fts_statp->st_mode))
 			return (1);
-	} else if (S_ISDIR((*b)->fts_statb.st_mode))
+	} else if (S_ISDIR((*b)->fts_statp->st_mode))
 		return (-1);
 	return (strcmp((*a)->fts_name, (*b)->fts_name));
 }

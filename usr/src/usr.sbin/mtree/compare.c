@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)compare.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)compare.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -51,42 +51,42 @@ compare(name, s, p)
 	label = 0;
 	switch(s->type) {
 	case F_BLOCK:
-		if (!S_ISBLK(p->fts_statb.st_mode))
+		if (!S_ISBLK(p->fts_statp->st_mode))
 			goto typeerr;
 		break;
 	case F_CHAR:
-		if (!S_ISCHR(p->fts_statb.st_mode))
+		if (!S_ISCHR(p->fts_statp->st_mode))
 			goto typeerr;
 		break;
 	case F_DIR:
-		if (!S_ISDIR(p->fts_statb.st_mode))
+		if (!S_ISDIR(p->fts_statp->st_mode))
 			goto typeerr;
 		break;
 	case F_FIFO:
-		if (!S_ISFIFO(p->fts_statb.st_mode))
+		if (!S_ISFIFO(p->fts_statp->st_mode))
 			goto typeerr;
 		break;
 	case F_FILE:
-		if (!S_ISREG(p->fts_statb.st_mode))
+		if (!S_ISREG(p->fts_statp->st_mode))
 			goto typeerr;
 		break;
 	case F_LINK:
-		if (!S_ISLNK(p->fts_statb.st_mode))
+		if (!S_ISLNK(p->fts_statp->st_mode))
 			goto typeerr;
 		break;
 	case F_SOCK:
-		if (!S_ISSOCK(p->fts_statb.st_mode)) {
+		if (!S_ISSOCK(p->fts_statp->st_mode)) {
 typeerr:		LABEL;
 			(void)printf("\ttype (%s, %s)\n",
-			    ftype(s->type), inotype(p->fts_statb.st_mode));
+			    ftype(s->type), inotype(p->fts_statp->st_mode));
 		}
 		break;
 	}
 	/* Set the uid/gid first, then set the mode. */
-	if (s->flags & (F_UID | F_UNAME) && s->st_uid != p->fts_statb.st_uid) {
+	if (s->flags & (F_UID | F_UNAME) && s->st_uid != p->fts_statp->st_uid) {
 		LABEL;
 		(void)printf("%suser (%u, %u",
-		    tab, s->st_uid, p->fts_statb.st_uid);
+		    tab, s->st_uid, p->fts_statp->st_uid);
 		if (uflag)
 			if (chown(p->fts_accpath, s->st_uid, -1))
 				(void)printf(", not modified: %s)\n",
@@ -97,9 +97,9 @@ typeerr:		LABEL;
 			(void)printf(")\n");
 		tab = "\t";
 	}
-	if (s->flags & (F_GID | F_GNAME) && s->st_gid != p->fts_statb.st_gid) {
+	if (s->flags & (F_GID | F_GNAME) && s->st_gid != p->fts_statp->st_gid) {
 		LABEL;
-		(void)printf("%sgid (%u, %u", s->st_gid, p->fts_statb.st_gid);
+		(void)printf("%sgid (%u, %u", s->st_gid, p->fts_statp->st_gid);
 		if (uflag)
 			if (chown(p->fts_accpath, -1, s->st_gid))
 				(void)printf(", not modified: %s)",
@@ -110,10 +110,11 @@ typeerr:		LABEL;
 			(void)printf(")\n");
 		tab = "\t";
 	}
-	if (s->flags & F_MODE && s->st_mode != (p->fts_statb.st_mode & MBITS)) {
+	if (s->flags & F_MODE &&
+	    s->st_mode != (p->fts_statp->st_mode & MBITS)) {
 		LABEL;
 		(void)printf("%spermissions (%#o, %#o",
-		    tab, s->st_mode, p->fts_statb.st_mode & MBITS);
+		    tab, s->st_mode, p->fts_statp->st_mode & MBITS);
 		if (uflag)
 			if (chmod(p->fts_accpath, s->st_mode))
 				(void)printf(", not modified: %s)",
@@ -125,23 +126,23 @@ typeerr:		LABEL;
 		tab = "\t";
 	}
 	if (s->flags & F_NLINK && s->type != F_DIR &&
-	    s->st_nlink != p->fts_statb.st_nlink) {
+	    s->st_nlink != p->fts_statp->st_nlink) {
 		LABEL;
 		(void)printf("%slink count (%u, %u)\n",
-		    tab, s->st_nlink, p->fts_statb.st_nlink);
+		    tab, s->st_nlink, p->fts_statp->st_nlink);
 		tab = "\t";
 	}
-	if (s->flags & F_SIZE && s->st_size != p->fts_statb.st_size) {
+	if (s->flags & F_SIZE && s->st_size != p->fts_statp->st_size) {
 		LABEL;
 		(void)printf("%ssize (%ld, %ld)\n",
-		    tab, s->st_size, p->fts_statb.st_size);
+		    tab, s->st_size, p->fts_statp->st_size);
 		tab = "\t";
 	}
-	if (s->flags & F_TIME && s->st_mtime != p->fts_statb.st_mtime) {
+	if (s->flags & F_TIME && s->st_mtime != p->fts_statp->st_mtime) {
 		LABEL;
 		(void)printf("%smodification time (%.24s, ",
 		    tab, ctime(&s->st_mtime));
-		(void)printf("%.24s)\n", ctime(&p->fts_statb.st_mtime));
+		(void)printf("%.24s)\n", ctime(&p->fts_statp->st_mtime));
 		tab = "\t";
 	}
 	if (s->flags & F_CKSUM)
