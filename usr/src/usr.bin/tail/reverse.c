@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)reverse.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)reverse.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -101,11 +101,13 @@ r_reg(fp, style, off, sbp)
 		if (*--p == '\n') {
 			WR(p + 1, llen);
 			llen = 0;
-			if (style == RLINES && !--off)
+			if (style == RLINES && !--off) {
+				++p;
 				break;
+			}
 		}
 	if (llen)
-		WR(p + 1, llen);
+		WR(p, llen);
 }
 
 typedef struct bf {
