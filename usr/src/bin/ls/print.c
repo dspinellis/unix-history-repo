@@ -19,7 +19,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)print.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)print.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -27,6 +27,7 @@ static char sccsid[] = "@(#)print.c	5.2 (Berkeley) %G%";
 #include <stdio.h>
 #include <grp.h>
 #include <pwd.h>
+#include <utmp.h>
 #include <tzfile.h>
 #include "ls.h"
 
@@ -158,35 +159,52 @@ printaname(entry)
 	return(chcnt);
 }
 
-/*
- * print group and user name
- */
-printgrp(gid)
-	gid_t gid;
-{
-	struct group *groupentry;
-
-	if ((groupentry = getgrgid((int)gid)) == NULL) {
-		/* can't find group, print out number instead */
-		(void)printf("%-9u ", gid);
-		return;
-	}
-	(void)printf("%-9s", groupentry->gr_name);
-	(void)getgrent();		/* to rewind group file */
-}
-
+#define	NCACHE	64		/* power of 2 */
+#define	LSMASK	NCACHE - 1	/* bits to store with */
 printowner(uid)
 	uid_t uid;
 {
-	struct passwd *pwentry;
+	static struct ncache {
+		uid_t	uid;
+		char	name[UT_NAMESIZE];
+	} c_uid[NCACHE];
+	register struct passwd *pw;
+	register struct ncache *cp;
 
-	if ((pwentry = getpwuid((int)uid)) == NULL) {
-		/* can't find owner, print out number instead */
-		(void)printf("%-9u ", uid);
-		return;
+	cp = c_uid + (uid & LSMASK);
+	if (cp->uid != uid || !*cp->name) {
+		/* if can't find owner, print out number instead */
+		if (!(pw = getpwuid(uid))) {
+			(void)printf("%-*.*u ", UT_NAMESIZE, UT_NAMESIZE, uid);
+			return;
+		}
+		cp->uid = uid;
+		(void)strncpy(cp->name, pw->pw_name, UT_NAMESIZE);
 	}
-	(void)printf("%-9s", pwentry->pw_name);
-	(void)getpwent();
+	(void)printf("%-*.*s ", UT_NAMESIZE, UT_NAMESIZE, cp->name);
+}
+
+printgrp(gid)
+	gid_t gid;
+{
+	static struct ncache {
+		gid_t	gid;
+		char	name[UT_NAMESIZE];
+	} c_gid[NCACHE];
+	register struct group *gr;
+	register struct ncache *cp;
+
+	cp = c_gid + (gid & LSMASK);
+	if (cp->gid != gid || *cp->name) {
+		/* can't find group, print out number instead */
+		if (!(gr = getgrgid(gid))) {
+			(void)printf("%-*.*u ", UT_NAMESIZE, UT_NAMESIZE, gid);
+			return;
+		}
+		cp->gid = gid;
+		(void)strncpy(cp->name, gr->gr_name, UT_NAMESIZE);
+	}
+	(void)printf("%-*.*s ", UT_NAMESIZE, UT_NAMESIZE, cp->name);
 }
 
 printtime(ftime)
