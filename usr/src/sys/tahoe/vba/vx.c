@@ -1,4 +1,4 @@
-/*	vx.c	1.10	87/01/11	*/
+/*	vx.c	1.11	87/09/06	*/
 
 #include "vx.h"
 #if NVX > 0
@@ -460,11 +460,11 @@ vxxint(vx, cp)
 	}
 	vrelease(vs, cp);
 	if (vs->vs_vers == VXV_NEW)
-		vxstart(tp);
+		(*linesw[tp->t_line].l_start)(tp);
 	else {
 		tp0 = &vx_tty[vx*16 + vs->vs_hiport];
 		for(tp = &vx_tty[vx*16 + vs->vs_loport]; tp <= tp0; tp++)
-			vxstart(tp);
+			(*linesw[tp->t_line].l_start)(tp);
 		if ((cp = nextcmd(vs)) != NULL) {	/* command to send? */
 			vs->vs_xmtcnt++;
 			(void) vcmd(vx, (caddr_t)&cp->cmd);
