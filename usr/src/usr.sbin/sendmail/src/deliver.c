@@ -6,7 +6,7 @@
 # include <syslog.h>
 # endif LOG
 
-SCCSID(@(#)deliver.c	3.74		%G%);
+SCCSID(@(#)deliver.c	3.75		%G%);
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -1189,6 +1189,7 @@ remotename(name, m)
 	char *name;
 	struct mailer *m;
 {
+# ifdef NOTDEF
 	static char buf[MAXNAME];
 	char lbuf[MAXNAME];
 	extern char *macvalue();
@@ -1253,6 +1254,10 @@ remotename(name, m)
 		printf("remotename(%s) => `%s'\n", name, buf);
 # endif DEBUG
 	return (buf);
+# else NOTDEF
+	/* oh bother, this breaks UUCP......   */
+	return (name);
+# endif NOTDEF
 }
 /*
 **  SAMEFROM -- tell if two text addresses represent the same from address.
