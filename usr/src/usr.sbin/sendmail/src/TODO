@@ -1,4 +1,4 @@
-(Version 8.9 of %G%)
+(Version 8.10 of %G%)
 
 Key:
   X -- extension (user visible change)
@@ -79,6 +79,8 @@ E ***	Eliminate E qf line and e_errorqueue; use e_errorsto a la
 	Wassenaar)
 
 B ***	Fix syslog buffer overflow problems.
+
+X ***	DECNET_RELAY support in configs.
 
 B **	Commas in NAME envariable cause problems (Peter Wan
 	<peter@cc.gatech.edu>).  Merge with suggestions to use
