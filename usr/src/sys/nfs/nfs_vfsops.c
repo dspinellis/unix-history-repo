@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_vfsops.c	7.36 (Berkeley) %G%
+ *	@(#)nfs_vfsops.c	7.37 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -549,6 +549,7 @@ nfs_unmount(mp, mntflags, p)
 	 */
 	vrele(vp);
 	vrele(vp);
+	vgone(vp);
 	nfs_disconnect(nmp);
 	m_freem(nmp->nm_nam);
 
