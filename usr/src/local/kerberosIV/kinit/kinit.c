@@ -44,6 +44,22 @@ char    aname[ANAME_SZ];
 char    inst[INST_SZ];
 char    realm[REALM_SZ];
 
+#define	gets(buf) _gets(buf, sizeof(buf))	/* hack */
+
+char *
+_gets(p, n)
+	char *p;
+	int n;
+{
+	char *rv, *fgets();
+	
+	if ((rv = fgets(p, n, stdin)) == NULL)
+		return (rv);
+	if (p = index(p, '\n'))
+		*p = '\0';
+	return (rv);
+}
+
 main(argc, argv)
     char   *argv[];
 {
@@ -94,8 +110,6 @@ main(argc, argv)
 	fprintf(stderr, "%s: k_gethostname failed\n", progname);
 	exit(1);
     }
-    if (vflag)
-    	printf("4.4 BSD/MIT Project Athena (%s)\n", buf);
 
     if (username) {
 	printf("Kerberos Initialization for \"%s", aname);
@@ -110,15 +124,25 @@ main(argc, argv)
 		printf("Kerberos name: ");
 		gets(aname);
 	} else {
-		/* default to current user name */
-		struct passwd	*pwd = getpwuid(geteuid());
+		int uid = getuid();
+		char *getenv();
+		struct passwd *pwd;
 
-		if (pwd == (struct passwd *) NULL) {
-			fprintf(stderr, "Unknown Kerberos name for your uid\n");
-			printf("Kerberos name: ");
-			gets(aname);
-		} else
-			strncpy(aname, pwd->pw_name, sizeof(aname));
+		/* default to current user name unless running as root */
+		if (uid == 0 && (username = getenv("USER")) &&
+		    strcmp(username, "root") != 0) {
+			strncpy(aname, username, sizeof(aname));
+			strncpy(inst, "root", sizeof(inst));
+		} else {
+			pwd = getpwuid(uid);
+
+			if (pwd == (struct passwd *) NULL) {
+				fprintf(stderr, "Unknown name for your uid\n");
+				printf("Kerberos name: ");
+				gets(aname);
+			} else
+				strncpy(aname, pwd->pw_name, sizeof(aname));
+		}
 	}
 		
 	if (!*aname)
@@ -176,6 +200,7 @@ main(argc, argv)
 	fprintf(stderr, "%s: %s\n", progname, krb_err_txt[k_errno]);
 	exit(1);
     }
+    exit(0);
 }
 
 usage()
