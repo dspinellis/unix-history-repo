@@ -1,4 +1,4 @@
-: calendar.sh 4.3 82/02/13
+: calendar.sh 4.4 82/11/07
 PATH=/bin:/usr/bin:
 tmp=/tmp/cal$$
 trap "rm -f $tmp /tmp/cal2$$"
@@ -7,7 +7,7 @@ trap exit 1 2 13 15
 case $# in
 0)
 	trap "rm -f $tmp ; exit" 0 1 2 13 15
-	egrep -f $tmp calendar;;
+	(/lib/cpp calendar | egrep -f $tmp);;
 *)
 	trap "rm -f $tmp /tmp/cal2$$; exit" 0 1 2 13 15
 	sed '
@@ -18,7 +18,7 @@ case $# in
 		eval $x
 		if test -r $y/calendar
 		then
-			egrep -f $tmp $y/calendar 2>/dev/null  > /tmp/cal2$$
+			(/lib/cpp $y/calendar | egrep -f $tmp) 2>/dev/null  > /tmp/cal2$$
 			if test -s /tmp/cal2$$
 			then
 				< /tmp/cal2$$ mail $z
