@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mfs_extern.h	8.2 (Berkeley) %G%
+ *	@(#)mfs_extern.h	8.3 (Berkeley) %G%
  */
 
 struct buf;
@@ -28,6 +28,7 @@ int	mfs_mount __P((struct mount *mp,
 	    char *path, caddr_t data, struct nameidata *ndp, struct proc *p));
 int	mfs_open __P((struct vop_open_args *));
 int	mfs_print __P((struct vop_print_args *)); /* XXX */
+#define	mfs_revoke vop_revoke
 int	mfs_start __P((struct mount *mp, int flags, struct proc *p));
 int	mfs_statfs __P((struct mount *mp, struct statfs *sbp, struct proc *p));
 int	mfs_strategy __P((struct vop_strategy_args *)); /* XXX */
