@@ -4,7 +4,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)maketape	4.20 (Berkeley) %G%
+#	@(#)maketape	4.21 (Berkeley) %G%
 #
 #	maketape [ 6250 | 1600 [ tapename [ remotetapemachine ] ] ]
 miniroot=hp0d
@@ -58,7 +58,8 @@ then
 	fi
 fi
 echo "Add user source code"
-cd /nbsd/usr/src; eval tar cf ${tartape} . \
+cd /nbsd/usr/src; eval tar cf ${tartape} Makefile bin etc games \
+	include lib local old ucb undoc usr.bin usr.lib \
 	${remote+'| $remote /usr/local/20b ">" $tape'}
 echo "Add user contributed software"
 cd /nbsd/usr/src/new; eval tar cf ${tartape} . \
