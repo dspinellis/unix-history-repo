@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ntohl.s	5.1 (Berkeley) %G%";
+_sccsid:.asciz	"@(#)ntohl.s	5.2 (Berkeley) %G%"
 #endif not lint
 
 /* hostorder = ntohl(netorder) */

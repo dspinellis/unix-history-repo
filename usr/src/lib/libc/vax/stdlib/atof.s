@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)atof.s	5.1 (Berkeley) %G%";
+	.asciz	"@(#)atof.s	5.2 (Berkeley) %G%"
 #endif not lint
 
 #include "DEFS.h"

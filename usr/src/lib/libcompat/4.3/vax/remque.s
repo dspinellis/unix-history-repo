@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)remque.s	5.1 (Berkeley) %G%";
+	.asciz	"@(#)remque.s	5.2 (Berkeley) %G%"
 #endif not lint
 
 /* remque(entry) */

@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)strncmp.s	5.1 (Berkeley) %G%";
+	.asciz	"@(#)strncmp.s	5.2 (Berkeley) %G%"
 #endif not lint
 
 /*

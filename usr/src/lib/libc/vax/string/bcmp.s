@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)bcmp.s	5.1 (Berkeley) %G%";
+	.asciz	"@(#)bcmp.s	5.2 (Berkeley) %G%"
 #endif not lint
 
 /* bcmp(s1, s2, n) */
