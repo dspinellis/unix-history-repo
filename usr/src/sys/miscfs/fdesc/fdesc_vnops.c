@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fdesc_vnops.c	8.11 (Berkeley) %G%
+ *	@(#)fdesc_vnops.c	8.12 (Berkeley) %G%
  *
  * $Id: fdesc_vnops.c,v 1.12 1993/04/06 16:17:17 jsp Exp $
  */
@@ -46,41 +46,21 @@ dev_t devctty;
 FD_STDIN, FD_STDOUT, FD_STDERR must be a sequence n, n+1, n+2
 #endif
 
-#define	NFDCACHE 3
-#define	FD_NHASH(ix) ((ix) & NFDCACHE)
+#define	NFDCACHE 4
 
-/*
- * Cache head
- */
-struct fdcache {
-	struct fdescnode	*fc_forw;
-	struct fdescnode	*fc_back;
-};
-
-static struct fdcache fdcache[NFDCACHE];
+#define FD_NHASH(ix) \
+	(&fdhashtbl[(ix) & fdhash])
+LIST_HEAD(fdhashhead, fdescnode) *fdhashtbl;
+u_long fdhash;
 
 /*
  * Initialise cache headers
  */
 fdesc_init()
 {
-	struct fdcache *fc;
 
 	devctty = makedev(nchrdev, 0);
-
-	for (fc = fdcache; fc < fdcache + NFDCACHE; fc++)
-		fc->fc_forw = fc->fc_back = (struct fdescnode *) fc;
-}
-
-/*
- * Compute hash list for given target vnode
- */
-static struct fdcache *
-fdesc_hash(ix)
-	int ix;
-{
-
-	return (&fdcache[FD_NHASH(ix)]);
+	fdhashtbl = hashinit(NFDCACHE, M_CACHE, &fdhash);
 }
 
 int
@@ -90,13 +70,13 @@ fdesc_allocvp(ftype, ix, mp, vpp)
 	struct mount *mp;
 	struct vnode **vpp;
 {
-	struct fdcache *fc;
+	struct fdhashhead *fc;
 	struct fdescnode *fd;
 	int error = 0;
 
+	fc = FD_NHASH(ix);
 loop:
-	fc = fdesc_hash(ix);
-	for (fd = fc->fc_forw; fd != (struct fdescnode *) fc; fd = fd->fd_forw) {
+	for (fd = fc->lh_first; fd != 0; fd = fd->fd_hash.le_next) {
 		if (fd->fd_ix == ix && fd->fd_vnode->v_mount == mp) {
 			if (vget(fd->fd_vnode, 0))
 				goto loop;
@@ -126,8 +106,7 @@ loop:
 	fd->fd_fd = -1;
 	fd->fd_link = 0;
 	fd->fd_ix = ix;
-	fc = fdesc_hash(ix);
-	insque(fd, fc);
+	LIST_INSERT_HEAD(fc, fd, fd_hash);
 
 out:;
 	fdcache_lock &= ~FDL_LOCKED;
@@ -773,8 +752,9 @@ fdesc_reclaim(ap)
 	} */ *ap;
 {
 	struct vnode *vp = ap->a_vp;
+	struct fdescnode *fd = VTOFDESC(vp);
 
-	remque(VTOFDESC(vp));
+	LIST_REMOVE(fd, fd_hash);
 	FREE(vp->v_data, M_TEMP);
 	vp->v_data = 0;
 
