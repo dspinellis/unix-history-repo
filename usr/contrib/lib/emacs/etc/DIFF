@@ -1,0 +1,779 @@
+How is this Emacs different from all other Emacses?  -*-Outline-*-
+ (Actually, from Twenex Emacs)
+
+* Copyright (c) 1985 Richard M. Stallman
+
+   Permission is granted to anyone to make or distribute verbatim copies
+   of this document as received, in any medium, provided that the
+   copyright notice and permission notice are preserved,
+   and that the distributor grants the recipient permission
+   for further redistribution as permitted by this notice.
+
+   Permission is granted to distribute modified versions
+   of this document, or of portions of it,
+   under the above conditions, provided also that they
+   carry prominent notices stating who last changed them.
+
+* Fundamental concepts.
+
+** There is no concept of "typeout" in GNU Emacs.
+
+Any time that a command wants to display some output,
+it creates a buffer (usually with a name surrounded by asterisks)
+and displays it in a window.
+
+This provides some advantages:
+ you can edit some more while looking at the output;
+ you can copy parts of the output into other buffers.
+
+It also has a disadvantage that you must type a command
+in order to make the output disappear.
+You can use C-x 1 to get rid of all windows except the
+selected one.  To be more selective, you can switch to
+the window you want to get rid of and then type C-x 0
+(delete-window).
+
+You also need to type a command to scroll the other
+window if not all the output fits in it.  Meta-Control-v
+will usually do the job.
+
+** There is no concept of a "subsystem" in GNU Emacs.
+
+Where Twenex Emacs would use a subsystem, GNU Emacs
+instead creates a buffer and redefines commands in it.
+
+For example, when you send mail in GNU Emacs, you use
+a buffer named *mail* which is in Mail Mode.  You can
+switch away from this buffer to any other buffer and
+resume normal editing; then switch back and resume
+composing mail.  You do not have to "exit" from
+composing mail in order to do ordinary editing.
+
+This has many advantages, but it also has a disadvantage:
+Subsystems in Emacs tend to have "exit" commands that return you
+to whatever you were doing before entering the subsystem.
+In GNU Emacs the idea of what to return to is not well defined,
+so it is not clear what an "exit" command should do.
+The only way to "exit" in general is to type C-x b, C-x C-f, or
+some other suitable command to switch buffers.  Some
+subsystem-like major modes, such as Info and Mail mode, provide
+commands to "exit" by switching to the previously selected
+buffer.
+
+** Files are always visited in their own buffers.
+
+Beginning users of Twenex Emacs were told how to edit
+using a single buffer and reading one file after another
+into that buffer.  Use of a new buffer for each file was
+regarded as a more advanced mode.
+
+In GNU Emacs, the idea of using a single buffer for various
+files, one by one, has been dropped, given that the address
+space is expected to be large enough for many buffers.  C-x
+C-f (find-file), which behaves nearly the same as in Twenex
+Emacs, is in GNU Emacs the canonical way for all users to
+visit files.
+
+Various commands need to read files into Emacs in the course
+of their execution.  In Twenex Emacs the user must tell them
+whether to reuse buffers or create new ones, using the variable
+Tags Find File.  In GNU Emacs, these commands always use
+C-x C-f.
+
+The command C-x C-v does still exist; it kills the current
+buffer and reads the specified file into a new buffer.
+It is equivalent to kill-buffer followed by find-file.
+
+Since there is no reusing of buffers, there is no point in
+calling the initial buffer "main".  So the initial buffer
+in GNU Emacs is called "*scratch*" and is intended for typing
+Lisp expressions to be evaluated.
+
+** File name defaulting.
+
+GNU Emacs records a separate working directory for each buffer.
+Normally this is the directory on which the buffer's file
+resides; for buffers not visiting any file, it is copied from
+the buffer that was current when it was created.  The current buffer's
+working directory can be printed with M-x pwd and set with M-x cd.
+
+GNU Emacs shows you the default directory by inserting it in
+the minibuffer when a file name is being read.  You can type
+the filename you want at the end of the default as if the
+default were not there, or you can edit and alter the default.
+
+If you want file /lose/big when the default /foo/defaultdir/
+has been inserted for you, you need not kill the default; simply
+type at the end of it: /foo/defaultdir//lose/big.  Such a file
+name is not ordinarily considered valid, but GNU Emacs
+considers it equivalent to /lose/big.
+
+Likewise, if you want file quux in your home directory, just add
+~/quux to the end of the supplied text, to get
+/foo/defaultdir/~/quux.  GNU Emacs sees "/~" and throws away
+everything before the "~".
+
+You can refer to environment variables also within file names.
+$ followed by the environment variable name is replaced by the
+variable's value.  The variable name should either be followed
+by a nonalphanumeric character (which counts as part of the
+file name) or be surrounded by braces {...} (which do not count
+as part of the file name).  Thus, if variable USER has value "rms",
+"x/$USER-foo" is expanded to "x/rms-foo", and "x${USER}foo"
+is expanded to "xrmsfoo".  Note that this substitution is not
+performed by the primitive file operation functions of GNU Emacs,
+but rather by the interactive file name reader.  It is also
+available as a separate primitive, in the function
+substitute-in-file-name.
+
+** Exit commands C-z, C-x C-c and C-x C-z.
+
+There are two ways to exit GNU Emacs: killing and suspending.
+Killing is like what Control-c does to ordinary Unix programs.
+In GNU Emacs, you type C-x C-c to kill it.  (This offers to
+save any modified file buffers before really killing Emacs.)
+Suspending is like what Control-z does to ordinary Unix programs.
+To suspend GNU Emacs, type C-x C-z, or type just C-z.
+Note that C-z suspends ordinary programs instantly, but
+Emacs does not suspend until it reads the C-z.
+
+Usually it is better to suspend: once a system is smart
+enough to have job control, why ever kill an editor?
+You'll just have to make a new one in a minute.
+This is why the convenient command C-z is provided for
+suspending.
+
+C-c is used as a prefix key for mode-specific commands and for users'
+own commands.  We deliberately do not make C-c ever kill Emacs,
+because it should not be so easy to do something irreversible.
+
+** Quitting with C-g.
+
+If you type C-g while GNU Emacs is waiting for input, it
+is an ordinary command (which is defined to beep).  If you
+type C-g while Lisp code is executing, it sets a flag which
+causes a special signal, nearly the same as an error, to
+happen atthe next safe place in Lisp execution.  This usually
+has the effect of aborting the current command in a safe way.
+
+Because at times there have been bugs causing GNU Emacs to loop
+without checking the quit flag, a special feature causes
+GNU Emacs to be suspended immediately if you type a second C-g
+while the flag is already set.  So you can always get out
+of GNU Emacs.  Normally GNU Emacs recognizes and clears the quit flag
+quickly enough to prevent this from happening.
+
+When you resume GNU Emacs after a suspension caused by multiple C-g, it
+asks two questions before resuming execution:
+ Checkpoint?
+ Dump core?
+Answer each one with `y' or `n' and a Return.
+ `y' to Checkpoint? causes immediate auto-saving of all
+    buffers in which auto-saving is enabled.
+ `y' to Dump core? causes an illegal instruction to be executed.
+    This is to enable a wizard to figure out why GNU Emacs was
+    looping without checking for quits.  Execution does not continue
+    after a core dump.  If you answer `n', execution continues.
+With luck, GNU Emacs will ultimately check the quit flag,
+and quit normally.  If not, and you type another C-g, it
+is suspended again.
+
+If GNU Emacs is not really hung, just slow, you may invoke
+the double C-g feature without really meaning to.  Then just
+resume and answer `n' to both questions, and you will
+arrive at your former state.  Presumably the quit you
+wanted will finish happening soon.
+
+These questions are not asked if you suspend GNU Emacs with the C-z
+command.  Continuing GNU Emacs after a C-z takes you straight back
+into editing.
+
+** Undoing with C-x u or C-_
+
+You can undo many commands--up to 10,000 characters worth.
+Each time you type C-x u or C-_, another command or batch of change
+is undone.  Undo information is stored per buffer, and the undo
+command always applies to the current buffer.  A numeric argument
+serves as a repeat count.
+
+Consecutive self-inserting characters are undone in groups of twenty.
+
+** Different character set.
+
+GNU Emacs does not expect anyone ever to have a keyboard in which
+the Control key sets an independent bit which may accompany any
+character. The only control characters that can exist are the
+ASCII control characters.
+
+There is, as a result, no "control prefix" character.
+
+** Control-h is the Help character.
+
+I'm amazed it took me so long to get this idea.  In Twenex Emacs, C-h
+and C-b are equivalent commands, making C-h redundant.  C-h is not
+only easy to type, it is mnemonic for "Help".  So in GNU Emacs the
+Help character is C-h.
+
+** Completion is done by TAB, not ESC.
+
+ESC in the minibuffer is a Meta prefix, same as at top level.
+
+** The string-argument reader is the minibuffer is an editor window.
+
+In GNU Emacs, the line at the bottom of the screen is the minibuffer.
+Commands that want string arguments always use this line to read them,
+and you can use the ordinary Emacs editing commands to edit the
+input.  You can terminate input with Return because Return is defined
+as the exit-minibuffer command when in the minibuffer.  If you
+are using a command that needs several arguments, terminate each
+one with Return.  You cannot separate arguments with Escape
+the way you would in Twenex Emacs.
+
+The minibuffer window does not overlay other editor windows;
+it is a nearly ordinary editor window which lacks a mode line
+and is "turned off" when not in use.  While it IS in use, you
+can switch windows to and from the minibuffer, kill text in other
+windows and yank in the minibuffer, etc.
+
+You can even issue a command that uses the minibuffer while in the
+minibuffer.  This gets you temporarily into a recursive minibuffer.
+However, this is allowed only if you enable it, since it could be
+confusing for beginners.
+
+When you exit the minibuffer, the cursor immediately moves back to
+column zero of the minibuffer line, to show you that the exit
+command has been obeyed.  The minibuffer contents remain on the screen
+until the end of the command, unless some other text is displayed there.
+
+A single Control-g exits the minibuffer.
+
+** There are no &'s or ^R's or spaces in function names.
+
+For example, the function which is called ^R Forward Word
+in Twenex Emacs is called forward-word in GNU Emacs.
+
+** The extension language is Lisp rather than TECO.
+
+Libraries must be written in Lisp.  Meta-ESC reads a Lisp
+expression, evaluates it, and prints the result.  Note that
+Meta-ESC is "disabled" by default, so that beginning users
+do not get into the minibuffer by accident in a confusing way.
+
+Data types available include integers (which double as characters),
+strings, symbols, lists, vectors, buffers, buffer pointers,
+windows, and process channels.
+
+For now, to learn about writing Lisp code for GNU Emacs, read some of
+the source code, which is in directory ../lisp.  Also, all Lisp
+primitives have self-documentation you can read with C-h f.
+
+** Enabling the error handler.
+
+GNU Emacs has a Lisp debugger/stepper/trace package, but normally
+errors do not enter the debugger because that is slow, and unlikely to
+be of interest to most users.  Set the variable debug-on-error to t to
+cause errors to invoke the debugger.  Set debug-on-quit to cause quit
+signals (caused by C-g) to invoke the debugger.
+
+* Other changes.
+
+** More than two windows are allowed.
+
+C-x 2 splits the current window into two windows,
+  one above the other.  Initially they both display
+  the same buffer.
+
+  C-x 2 now accepts a numeric argument to specify the number of
+  lines to give to the uppermost of the two windows it makes.
+
+C-x 0 kills the current window, making all others larger.
+C-x 1 kills all windows except the current one.
+C-x O switches to the next window down.
+  It rotates from the bottom one to the top one.
+  An argument serves as a repeat count; negative arguments
+  circulate in the reverse order.
+
+If the same buffer is displayed in several windows,
+changes made in it are redisplayed in all of them.
+
+** Side by side windows are supported.
+
+The command C-x 5 splits the current window into
+two side-by-side windows.
+
+C-x } makes the selected window ARG columns wider at the
+expense of the windows at its sides.  C-x { makes the selected
+window ARG columns narrower.  An argument to C-x 5 specifies
+how many columns to give to the leftmost of the two windows made.
+
+** Horizontal scrolling of the lines in a window is implemented.
+
+C-x < (scroll-left) scrolls all displayed lines left,
+with the numeric argument (default 1) saying how far to scroll.
+When the window is scrolled left, some amount of the beginning
+of each nonempty line is replaced by an "$".
+C-x > scrolls right.  If a window has no text hidden at the left
+margin, it cannot be scrolled any farther right than that.
+When nonzero leftwards scrolling is in effect in a window.
+lines are automatically truncated at the window's right margin
+regardless of the value of the variable truncate-lines in the
+buffer being displayed.
+
+** Return key does not use up empty lines.
+
+In Twenex Emacs, the Return command advances over an existing
+empty line in some cases.  In GNU Emacs, the Return command always
+makes inserts a newline.  Twenex Emacs was designed at a time when
+most display terminals did not have the ability to scroll part
+of the screen, and using existing empty lines made redisplay faster.
+Nowadays, terminals that cannot scroll part of the screen are rare,
+so there is no need to make Return behave in a more complicated manner.
+
+** Help m.
+
+Typing C-h m displays documentation of the current major mode.,
+telling you what special commands and features are available
+and how to use them or get more information on them.
+
+This is simply the documentation, as a function, of the
+symbol which is the value of major-mode.  Each major mode
+function has been given documentation intended for C-h m.
+
+** Display-hiding features.
+
+*** Hiding indented lines
+
+The command C-x $ with numeric argument N causes lines indented by N
+or more columns to become invisible.  All you see is " ..."  appended
+to the previous line, in place of any number of consecutive invisible
+lines.
+
+*** Outline Mode.
+
+Outline mode is designed for editing outline-structured
+files, such as this one.
+
+Headings should be lines starting with one or more asterisks.
+Major headings have one asterisk, subheadings two, etc.
+Lines not starting with asterisks are body text.
+
+You can make the body under a heading, or the subheadings
+under a heading, temporarily invisible, or visible again.
+Invisible lines are attached to the end of the previous line
+so they go with it if you kill it and yank it back.
+
+Commands:
+Meta-}   next-visible-heading      move by visible headings
+Meta-{   previous-visible-heading  move by visible headings
+
+Meta-x hide-body	make all body text invisible (not headings).
+Meta-x show-all		make everything in buffer visible.
+
+The remaining commands are used when dot is on a heading line.
+They apply to some of the body or subheadings of that heading.
+C-c C-h  hide-subtree	make text and subheadings invisible.
+C-c C-s  show-subtree	make text and subheadings visible.
+C-c C-i  show-children	make direct subheadings visible.
+		 No effect on body, or subheadings 2 or more levels down.
+		 With arg N, affects subheadings N levels down.
+M-x hide-entry	make immediately following body invisible.
+M-x show-entry	make it visible.
+M-x hide-leaves	 make text under heading and under its subheadings invisible.
+		 The subheadings remain visible.
+M-x show-branches  make all subheadings at all levels visible.
+
+** C mode is fancy.
+
+C mode assumes that you put the initial open-brace of
+a function definition at the beginning of a line.
+If you use the popular indenting style that puts this
+open-brace at the end of a line containing a type declaration,
+YOU WILL LOSE: C mode does not know a function starts there.
+
+Open-brace at the beginning of a line makes it possible
+for C mode to find function boundaries with total reliability;
+something I consider vital and which cannot be done
+if the other style is used.
+
+The Tab command indents C code very cleverly.
+I know of only one cases in which Tab does not indent C code nicely:
+ Expressions continued over several lines with few parentheses.
+ Tab does not know the precedences of C operators, so it does
+ not know which lines of the expression should go where.
+ Using parentheses to indicate the nesting of operators
+ except within a line makes this problem go away.
+
+The indenting algorithm is entirely written in Lisp.
+
+Tab with a numeric argument in Twenex Emacs indents
+that many lines.  It is different in GNU Emacs: it means
+to shift all the lines of a bracketed expression by the
+same amount as the line being indented.  For example, if you have
+    if (foo)
+        {
+	    hack ();
+	     /** Well? */
+	}
+and type C-u Tab on the line with the open brace, you get
+    if (foo)
+      {
+	  hack ();
+	   /* Well? */
+      }
+from indenting the brace line and then shifting the
+lines within the braces rigidly with the first one.
+
+Meta-Control-q works as in Lisp mode; it should be
+used with dot just before a bracketed grouping, and
+indents each line INSIDE that grouping using Tab.
+If used instead of C-u Tab in the previous example, it makes
+    if (foo)
+        {
+	  hack ();
+	  /* Well? */
+	}
+
+Meta-Control-h puts mark at the end of the current C function
+and puts dot before it.
+
+Most other Meta-Control commands intended for Lisp expressions
+work usefully in C mode as well.
+
+** Meta-g (fill-region) is different.
+
+In Twenex Emacs, Meta-g fills the region with no paragraph
+boundaries except for blank and indented lines.  In GNU Emacs,
+it divides the region into paragraphs in the same manner as
+Meta-], and fills each paragraph separately.  There is also
+the function fill-region-as-paragraph which fills the region
+regarding at as a single paragraph regardless even of blank
+or indented lines.
+
+** Indented Text Mode instead of Edit Indented Text.
+
+Twenex Emacs has a command Edit Indented Text which temporarily
+alters some commands for editing indented paragraphs.
+GNU Emacs has instead a separate major mode, Indented Text Mode,
+which is different from ordinary Text Mode in just the same
+alterations.  Specifically, in Indented Text Mode,
+Tab runs the function indent-relative, and auto filling indents
+the newly created lines.
+
+** But rectangle commands are implemented.
+
+C-x r stores the rectangle described by dot and mark
+into a register; it reads the register name from the keyboard.
+C-x g, the command to insert the contents of a register,
+can be used to reinsert the rectangle elsewhere.
+
+Other rectangle commands include
+  open-rectangle:
+    insert a blank rectangle in the position and size
+    described by dot and mark, at its corners;
+    the existing text is pushed to the right.
+  clear-rectangle:
+    replace the rectangle described by dot ane mark
+    with blanks.  The previous text is deleted.
+  delete-rectangle:
+    delete the text of the specified rectangle,
+    moving the text beyond it on each line leftward.
+  kill-rectangle
+    like delete-rectangle but also stores the text of
+    the rectangle in the "rectangle kill buffer".
+    More precisely, it stores the text as a list of strings
+    (one string for each line) in the variable killed-rectangle.
+  yank-rectangle
+    inserts the text of the last killed rectangle.
+  extract-rectangle and delete-extract-rectangle
+    these functions return the text of a rectangle
+    as a list of strings.  They are for use in writing
+    other functions that operate on rectangles.   
+
+** Keyboard Macros
+
+The C-x ( command for defining a keyboard macro can in GNU Emacs
+be given a numeric argument, which means that the new macro
+starts out not empty but rather as the same as the last
+keyboard macro entered.  In addition, that last keyboard
+macro is replayed when the C-x ( is typed.  C-x ( with an
+argument is thus equivalent to typing plain C-x ( and then
+retyping the last keyboard macro entered.
+
+The command write-kbd-macro and append-kbd-macro can be used to
+save a keyboard macro definition in a file.  It is represented as
+a Lisp expression which, when evaluated, will define the keyboard
+macro.  write-kbd-macro writes the specified file from scratch,
+whereas append-kbd-macro adds to any existing text in the file.
+Both expect the keyboard macro to be saved to be specified by
+name; this means you must use the command name-last-kbd-macro to
+give the macro a name before you can save it.
+
+** The command to resume a terminated tags-search or tags-query-replace
+
+is Meta-comma in GNU Emacs.
+
+** Auto Save is on by default.
+
+Auto Save mode is enabled by default in all buffers
+that are visiting files.
+
+The file name used for auto saving is made by prepending
+"#" to the file name visited.
+
+** Backup files.
+
+Since Unix stupidly fails to have file version numbers,
+GNU Emacs compensates slightly in the customary fashion:
+when a file is modified and saved for the first time in
+a particular GNU Emacs run, the original file is renamed,
+appending "~" to its name.  Thus, foo.c becomes foo.c~.
+
+Emacs can also put a version number into the name of the backup file,
+as in foo.c.~69~ for version number 69.  This is an optional feature
+that the user has to enable.
+
+** Mode Line differences.
+
+Each window in GNU Emacs has its own mode line, which always
+displays the status of that window's buffer and nothing else.
+The mode line appears at the bottom of the window.  It is
+full of dashes, to emphasize the boundaries between windows,
+and is displayed in inverse video if the terminal supports it.
+The information usually available includes:
+
+** Local Modes feature changed slightly.
+
+GNU Emacs supports local mode lists much like those in Twenex Emacs,
+but you can only set variables, not commands.  You write
+
+Local variables:
+tab-width:      10
+end:
+
+in the last page of a file, if you want to make tab-width be ten in a
+file's buffer.  The value you specify must be a Lisp object!
+It will be read, but not evaluated.  So, to specify a string,
+you MUST use doublequotes.  For "false", in variables whose
+meanings are true or false, you MUST write  nil  .
+
+Two variable names are special: "mode" and "eval".
+Mode is used for specifying the major mode (as in Twenex Emacs).
+
+mode: text
+
+specifies text mode.  Eval is used for requesting the evaluation
+of a Lisp expression; its value is ignored.  Thus,
+
+eval: (set-syntax-table lisp-mode-syntax-table)
+
+causes Lisp Mode syntax to be used.
+
+
+Note that GNU Emacs looks for the string "Local variables:"
+whereas Twenex Emacs looks for "Local modes:".  This incompatibility
+id deliberate, so that neither one will see local settings
+intended for the other.
+
+** Lisp code libraries.
+
+Libraries of commands, and init files, are written in Lisp.
+libraries conventionally have names ending in .el, while the
+init file is named .emacs and is in your home directory.
+
+Use  Meta-x load-library  to load a library.  Most standard libraries
+load automatically if you try to use the commands in them.
+
+Meta-x byte-compile-file filename
+compiles the file into byte code which loads and runs faster
+than Lisp source code.  The file of byte code is given a name
+made by appending "c" to the end of the input file name.
+
+Meta-x byte-recompile-directory directoryname
+compiles all files in the specified directory (globbing not allowed)
+which have been compiled before but have been changed since then.
+
+Meta-x load-library automatically checks for a compiled file
+before loading the source file.
+
+Libraries once loaded do not retain their identity within GNU
+Emacs.  Therefore, you cannot tell just what was loaded from a
+library, and you cannot un-load a library.  Normally, libraries
+are written so that loading one has no effect on the editing
+operations that you would have used if you had not loaded the
+library.
+
+** Dired features.
+
+You can do dired on partial directories --- any pattern
+the shell can glob.  Dired creates a buffer named after
+the directory or pattern, so you can dired several different
+directories.  If you repeat dired on the same directory or
+pattern, it just reselects the same buffer.  Use Meta-x Revert
+on that buffer to read in the current contents of the directory.
+
+** Directory listing features.
+
+C-x C-d now uses the default output format of `ls',
+which gives just file names in multiple columns.
+C-u C-x C-d passes the -l switch to `ls'.
+
+Both read a directory spec from the minibuffer.  It can
+be any pattern that the shell can glob.
+
+** Compiling other programs.
+
+Meta-x compile allows you to run make, or any other compilation
+command, underneath GNU Emacs.  Error messages go into a buffer whose
+name is *compilation*.  If you get error messages, you can use the
+command C-x ` (that is a backquote) to find the text of the next
+error message.
+
+You must specify the command to be run as an argument to M-x compile.
+A default is placed in the minibuffer; you can kill it and start
+fresh, edit it, or just type Return if it is what you want.
+The default is the last compilation command you used; initially,
+it is "make -k".
+
+** Searching multiple files.
+
+Meta-x grep searches many files for a regexp by invoking grep
+and reading the output of grep into a buffer.  You can then
+move to the text lines that grep found, using the C-x ` command
+just as after M-x compile.
+
+** Running inferior shells.
+
+Do Meta-x shell to make an inferior shell together with a buffer
+which serves to hold "terminal" input and output of the shell.
+The shell used is specified by the environment variable ESHELL,
+or by SHELL if ESHELL is not set.
+
+Use C-h m whilst in the *shell* buffer to get more detailed info.
+
+The inferior shell loads the file .emacs_csh or.emacs_sh
+(or similar using whatever name the shell has) when it starts up.
+
+M-! executes a shell command in an inferior shell
+and displays the output from it.  With a prefix argument,
+it inserts the output in the current buffer after dot
+and sets the mark after the output.  The shell command
+gets /dev/null as its standard input.
+
+M-| is like M-! but passes the contents of the region
+as input to the shell command.  A prefix argument makes
+the output from the command replace the contents of the region.
+
+** Sending mail.
+
+Once you enter Mail Mode using C-x m or C-x 4 m or M-x mail,
+C-c becomes a prefix character for mail-related editing commands.
+C-c C-s is vital; that's how you send the message.  C-c C-c sends
+and then switches buffers or kills the current window.
+Use C-h m to get a list of the others.
+
+** Regular expressions.
+
+GNU Emacs has regular expression facilities like those of most
+Unix editors, but more powerful:
+
+***		-- + --
+
++ specifies repetition of the preceding expression 1 or more
+times.  It is in other respect like *, which specifies repetition
+0 or more times.
+
+***		-- ? --
+
+?  is like * but matches at most one repetition of the preceding
+expression.
+
+***		-- \| --
+
+\| specifies an alternative.  Two regular expressions A and B with \| in
+between form an expression that matches anything that either A or B will
+match.  Thus, "foo\|bar" matches either "foo" or "bar" but no other
+string.
+
+\| applies to the larges possible surrounding expressions.  Only a
+surrounding \( ... \) grouping can limit the grouping power of \|.
+
+Full backtracking capability exists when multiple \|'s are used.
+
+***		-- \( ... \) --
+
+\( ... \) are a grouping construct that serves three purposes:
+
+1.  To enclose a set of \| alternatives for other operations.
+    Thus, "\(foo\|bar\)x" matches either "foox" or "barx".
+2.  To enclose a complicated expression for * to operate on.
+    Thus, "ba\(na\)*" matches "bananana", etc., with any number
+    of na's (zero or more).
+3.  To mark a matched substring for future reference.
+
+Application 3 is not a consequence of the idea of a parenthetical
+grouping; it is a separate feature which happens to be assigned as a
+second meaning to the same \( ... \) construct because there is no
+conflict in practice between the two meanings.  Here is an explanation
+of this feature.
+
+		-- \digit --
+
+After the end of a \( ... \) construct, the matcher remembers the
+beginning and end of the text matched by that construct.  Then, later on
+in the regular expression, you can use \ followed by a digit to mean,
+``match the same text matched this time by the \( ... \) construct.''
+The first nine \( ... \) constructs that appear in a regular expression
+are assigned numbers 1 through 9 in order of their beginnings.  \1
+through \9 can be used to refer to the text matched by the corresponding
+\( ... \) construct.
+
+For example, "\(.*\)\1" matches any string that is composed of two
+identical halves.  The "\(.*\)" matches the first half, which can be
+anything, but the \1 that follows must match the same exact text.
+
+***		-- \` --
+
+Matches the empty string, but only if it is at the beginning of the buffer.
+
+***		-- \' --
+
+Matches the empty string, but only if it is at the end of the buffer.
+
+***		-- \b --
+
+Matches the empty string, but only if it is at the beginning or end of
+a word.  Thus, "\bfoo\b" matches any occurrence of "foo" as a separate word.
+"\bball\(s\|\)\b" matches "ball" or "balls" as a separate word.
+
+***		-- \B --
+
+Matches the empty string, provided it is NOT at the beginning or end of
+a word.
+
+***		-- \< --
+
+Matches the empty string, provided it is at the beginning of a word.
+
+***		-- \> --
+
+Matches the empty string, provided it is at the end of a word.
+
+***		-- \w --
+
+Matches any word-constituent character.  The editor syntax table determines
+which characters these are.
+
+***		-- \W --
+
+Matches any character that is not a word-constituent.
+
+***		-- \s<code> --
+
+Matches any character whose syntax is <code>.  <code> is a letter that
+represents a syntax code: thus, "w" for word constituent, "-" for
+whitespace, "(" for open-parenthesis, etc.  Thus, "\s(" matches any
+character with open-parenthesis syntax.
+
+***		-- \S<code> --
+
+Matches any character whose syntax is not <code>.
