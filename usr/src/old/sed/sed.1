@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)sed.1	6.6 (Berkeley) %G%
+.\"     @(#)sed.1	6.7 (Berkeley) %G%
 .\"
 .Dd 
 .Dt SED 1
@@ -167,16 +167,28 @@ with the following additions:
 .Pp
 .Bl -enum -offset indent
 .It
-In a context address, the construction \e?RE?, where ?
-is any character, is identical to /RE/.  Note that in the
-context address \exabc\exdefx, the second x stands for
-itself, so that the regular expression is abcxdef.
+In a context address, the construction
+.Li \e?RE? ,
+where ?
+is any character, is identical to
+.Li /RE/ .
+Note that in the
+context address
+.Li \exabc\exdefx ,
+the second
+.Ql x
+stands for
+itself, so that the regular expression is
+.Li abcxdef .
 .It
-The escape sequence \en matches a <newline> embedded
+The escape sequence
+.Ql \en
+matches a <newline> embedded
 in the pattern space.
 .It
-A period (.) matches any character except the termi-
-nal <newline> of the pattern space.
+A period
+.Ql \&.
+matches any character except the terminal <newline> of the pattern space.
 .El
 .Pp
 In the following list of functions the maximum number of
@@ -233,58 +245,79 @@ arguments.
 The following synopses indicate which arguments
 are separated from the commands by <blank>s.
 .Bl -tag -width addrcommandxx
-.It Oo Ad 2addr Oc \&{ command_list \&}
+.It Xo
+.Oo Ad 2addr Oc \&{ command_list \&}
+.Xc
 Executes command_list only when the pattern
 space is selected.
 The {} braces can be preceded
 and followed by white space.
-.It Oo Ad 1addr Oc Ns Cm a Ar text
+.It Xo
+.Oo Ad 1addr Oc Ns Cm a Ar text
+.Xc
 Writes text to the standard output after the
 pattern space is written.
-.It Oo Ad 2addr Oc Ns Cm b Ar label
+.It Xo
+.Oo Ad 2addr Oc Ns Cm b Ar label
+.Xc
 Branches to the
 .Cm \&:
 command bearing the label.
 If label is empty, branch to the end of the
 script.
-.It Oo Ad 2addr Oc Ns Cm c Ar text
+.It Xo
+.Oo Ad 2addr Oc Ns Cm c Ar text
+.Xc
 Deletes the pattern space.
 With 0 or 1
 address or at the end of a 2-address range,
 places text on the output.
-.It Oo Ad 2addr Oc Ns Cm d
+.It Xo
+.Oo Ad 2addr Oc Ns Cm d
+.Xc
 Deletes the pattern space and starts the next
 cycle.
-.It Oo Ad 2addr Oc Ns Cm D
+.It Xo
+.Oo Ad 2addr Oc Ns Cm D
+.Xc
 Deletes the initial segment of the pattern
 space through the first <newline> and starts
 the next cycle.
-.It Oo Ad 2addr Oc Ns Cm g
+.It Xo
+.Oo Ad 2addr Oc Ns Cm g
+.Xc
 Replaces the contents of the pattern space by
 the contents of the hold space.
-.It Oo Ad 2addr Oc Ns Cm G
+.It Xo
+.Oo Ad 2addr Oc Ns Cm G
+.Xc
 Appends the contents of the hold space to the
 pattern space.
-.It Oo Ad 2addr Oc Ns Cm h
+.It Xo
+.Oo Ad 2addr Oc Ns Cm h
+.Xc
 Replaces the contents of the hold space by
 the contents of the pattern space.
-.It Oo Ad 2addr Oc Ns Cm H
+.It Xo
+.Oo Ad 2addr Oc Ns Cm H
+.Xc
 Appends the contents of the pattern space to
 the hold space.
-.It Oo Ad 1addr Oc Ns Cm i Ar text
+.It Xo
+.Oo Ad 1addr Oc Ns Cm i Ar text
+.Xc
 Writes text to the standard output before the
 pattern space is written.
-.It Oo Ad 2addr Oc Ns Cm l
+.It Xo
+.Oo Ad 2addr Oc Ns Cm l
+.Xc
 Lists the pattern space on the standard out-
 put in an unambiguous form.
 Nonprinting
 characters are listed as hexadecimal digit
 pairs, with a preceding backslash, with the
 following exceptions:
-.Pp
-.ne 8
-.Bd -filled -offset indent -compact
-.Bl -column <carriagexreturn>
+.Bl -column <carriagexreturn> -offset indent
 <alert>	\ea
 <backslash>	\e\e
 <backspace>	\eb
@@ -294,40 +327,53 @@ following exceptions:
 <tab>	\et
 <vertical tab>	\ev
 .El
-.Ed
 .Pp
 Long lines are folded; the length at which
 folding occurs is ungiven, but should be
 appropriate for the output device.
-.It Oo Ad 2addr Oc Ns Cm n
+.It Xo
+.Oo Ad 2addr Oc Ns Cm n
+.Xc
 Copies the pattern space to the standard output
 and replaces the pattern space with the
 next line of input.
-.It Oo Ad 2addr Oc Ns Cm N
+.It Xo
+.Oo Ad 2addr Oc Ns Cm N
+.Xc
 Appends the next line of input to the pattern
 space, using an embedded <newline> to
 separate the appended material from the
 original material.
 Note that the current line
 number changes.
-.It Oo Ad 2addr Oc Ns Cm p
+.It Xo
+.Oo Ad 2addr Oc Ns Cm p
+.Xc
 Copies
 .Op prints
 the pattern space to the
 standard output.
-.It Oo Ad 2addr Oc Ns Cm P
+.It Xo
+.Oo Ad 2addr Oc Ns Cm P
+.Xc
 Copies
 .Op prints
 the pattern space, up to the
 first <newline>, to the standard output.
-.It Oo Ad 1addr Oc Ns Cm q
+.It Xo
+.Oo Ad 1addr Oc Ns Cm q
+.Xc
 Branches to the end of the script and quits
 without starting a new cycle.
-.It Oo Ad 1addr Oc Ns Cm r Ar rfile
+.It Xo
+.Oo Ad 1addr Oc Ns Cm r Ar rfile
+.Xc
 Read the contents of rfile.
 Place them on the
 output before reading the next input line.
-.It Oo Ad 2addr Oc Ns \\*(cMs\\*(dF/\\*(aRregular expression\\*(dF/\\*(aRreplacement string\\*(dF/flags
+.It Xo
+.Oo Ad 2addr Oc Ns \\*(cMs\\*(dF/\\*(aRregular expression\\*(dF/\\*(aRreplacement string\\*(dF/flags
+.Xc
 Substitutes the replacement string for
 instances of the regular expression in the
 pattern space.
@@ -338,7 +384,8 @@ The value of flags is zero or
 more of:
 .Bl -tag -width Ds
 .It Ar n
-n=1-512.  Substitutes for the nth
+n=1-512.  Substitutes for the
+.Ar n Ns th
 occurrence only of the regular
 expression found within the pattern space.
 .It Cm g
@@ -362,7 +409,9 @@ to
 if a replacement was
 made.
 .El
-.It Oo Ad 2addr Oc Ns Cm t Ar label
+.It Xo
+.Oo Ad 2addr Oc Ns Cm t Ar label
+.Xc
 Test.
 Branches to the
 .Cm \&:
@@ -373,15 +422,21 @@ line or execution of a
 .Cm t .
 If label is empty,
 branches to the end of the script.
-.It Oo Ad 2addr Oc Ns Cm w Ar wfile
+.It Xo
+.Oo Ad 2addr Oc Ns Cm w Ar wfile
+.Xc
 Appends
 .Op writes
 the pattern space to
 .Ar wfile .
-.It Oo Ad 2addr Oc Ns Cm x
+.It Xo
+.Oo Ad 2addr Oc Ns Cm x
+.Xc
 Exchanges the contents of the pattern and
 hold spaces.
-.It Oo Ad 2addr Oc Ns \\*(cMy\\*(dF/\\*(aRstring1\\*(dF/\\*(aRstring2\\*(dF/
+.It Xo
+.Oo Ad 2addr Oc Ns \\*(cMy\\*(dF/\\*(aRstring1\\*(dF/\\*(aRstring2\\*(dF/
+.Xc
 Replaces all occurrences of collating
 elements in
 .Ar string1
@@ -393,20 +448,30 @@ The lengths of
 and
 .Ar string2
 shall be equal.
-.It Oo Ad 2addr Oc Ns \\*(cM!\\*(dFfunction
+.It Xo
+.Oo Ad 2addr Oc Ns \\*(cM!\\*(dFfunction
+.Xc
 Applies the function (or group, if function
 is {) only to the lines that are not selected
 by the address(es).
-.It Oo Ad 0addr Oc Ns \\*(cM:\\*(dFlabel
+.It Xo
+.Oo Ad 0addr Oc Ns \\*(cM:\\*(dFlabel
+.Xc
 This command does nothing; it bears a label
 for the b and t commands to branch to.
-.It Oo Ad 1addr Oc Ns Cm \&=
+.It Xo
+.Oo Ad 1addr Oc Ns Cm \&=
+.Xc
 Places the current line number on the standard
 output as a line with its own line
 number.
-.It Oo Ad 0addr Oc
+.It Xo
+.Oo Ad 0addr Oc
+.Xc
 An empty command is ignored.
-.It Oo Ad 0addr Oc Cm #
+.It Xo
+.Oo Ad 0addr Oc Cm #
+.Xc
 If a
 .Cm #
 appears as the first character on any
