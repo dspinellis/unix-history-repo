@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)setjmp.3	6.1 (Berkeley) %G%
+.\"	@(#)setjmp.3	6.2 (Berkeley) %G%
 .\"
 .TH SETJMP 3 ""
 .UC 4
@@ -61,11 +61,22 @@ while
 and
 .I _longjmp
 manipulate only the C stack and registers.
+.SH ERRORS
+.PP
+If the contents of the
+.B jmp_buf
+are corrupted, or correspond to an environment that has already returned,
+.I longjmp
+calls the routine 
+.IR longjmperror .
+If
+.I longjmperror
+returns the program is aborted.
+The default version of 
+.I longjmperror
+prints the message ``longjmp botch'' to standard error and returns.
+User programs wishing to exit more gracefully can write their own
+versions of 
+.IR longjmperror .
 .SH "SEE ALSO"
 sigvec(2), sigstack(2), signal(3)
-.SH BUGS
-.I Setjmp
-does not save current notion of whether the process is
-executing on the signal stack.  The result is that a
-longjmp to some place on the signal stack leaves the
-signal stack state incorrect.
