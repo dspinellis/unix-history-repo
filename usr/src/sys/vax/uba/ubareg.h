@@ -1,16 +1,11 @@
-/*	ubareg.h	4.16	81/03/06	*/
+/*	ubareg.h	4.17	81/03/08	*/
 
 /*
- * UNIBUS adaptor
+ * VAX UNIBUS adapter registers
  */
-#if VAX750
-#define	UBA750	((struct uba_regs *)0xf30000)
-#define	UMEM750	((u_short *)0xfc0000)
-#endif
-
 #ifndef LOCORE
 /*
- * UBA registers
+ * UBA hardware registers
  */
 struct uba_regs
 {
@@ -31,110 +26,86 @@ struct uba_regs
 #endif
 
 #if VAX780
-/* UBA control register, UBACR */
-#define	UBA_MRD16	0x40000000	/* map reg disable bit 4 */
-#define	UBA_MRD8	0x20000000	/* map reg disable bit 3 */
-#define	UBA_MRD4	0x10000000	/* map reg disable bit 2 */
-#define	UBA_MRD2	0x08000000	/* map reg disable bit 1 */
-#define	UBA_MRD1	0x04000000	/* map reg disable bit 0 */
-#define	UBA_IFS		0x00000040	/* interrupt field switch */
-#define	UBA_BRIE	0x00000020	/* BR interrupt enable */
-#define	UBA_USEFIE	0x00000010	/* UNIBUS to SBI error field IE */
-#define	UBA_SUEFIE	0x00000008	/* SBI to UNIBUS error field IE */
-#define	UBA_CNFIE	0x00000004	/* configuration IE */
-#define	UBA_UPF		0x00000002	/* UNIBUS power fail */
-#define	UBA_ADINIT	0x00000001	/* adapter init */
+/* uba_cnfgr */
+#define	UBACNFGR_UBINIT	0x00040000	/* unibus init asserted */
+#define	UBACNFGR_UBPDN	0x00020000	/* unibus power down */
+#define	UBACNFGR_UBIC	0x00010000	/* unibus init complete */
 
-/* UBA status register, UASR */
-#define	UBA_BR7FULL	0x08000000	/* BR7 receive vector reg full */
-#define	UBA_BR6FULL	0x04000000	/* BR6 receive vector reg full */
-#define	UBA_BR5FULL	0x02000000	/* BR5 receive vector reg full */
-#define	UBA_BR4FULL	0x01000000	/* BR4 receive vector reg full */
-#define	UBA_RDTO	0x00000400	/* UNIBUS to SBI read data timeout */
-#define	UBA_RDS		0x00000200	/* read data substitute */
-#define	UBA_CRD		0x00000100	/* corrected read data */
-#define	UBA_CXTER	0x00000080	/* command transmit error */
-#define	UBA_CXTMO	0x00000040	/* command transmit timeout */
-#define	UBA_DPPE	0x00000020	/* data path parity error */
-#define	UBA_IVMR	0x00000010	/* invalid map register */
-#define	UBA_MRPF	0x00000008	/* map register parity failure */
-#define	UBA_LEB		0x00000004	/* lost error */
-#define	UBA_UBSTO	0x00000002	/* UNIBUS select timeout */
-#define	UBA_UBSSYNTO	0x00000001	/* UNIBUS slave sync timeout */
+/* uba_cr */
+#define	UBACR_MRD16	0x40000000	/* map reg disable bit 4 */
+#define	UBACR_MRD8	0x20000000	/* map reg disable bit 3 */
+#define	UBACR_MRD4	0x10000000	/* map reg disable bit 2 */
+#define	UBACR_MRD2	0x08000000	/* map reg disable bit 1 */
+#define	UBACR_MRD1	0x04000000	/* map reg disable bit 0 */
+#define	UBACR_IFS	0x00000040	/* interrupt field switch */
+#define	UBACR_BRIE	0x00000020	/* BR interrupt enable */
+#define	UBACR_USEFIE	0x00000010	/* UNIBUS to SBI error field IE */
+#define	UBACR_SUEFIE	0x00000008	/* SBI to UNIBUS error field IE */
+#define	UBACR_CNFIE	0x00000004	/* configuration IE */
+#define	UBACR_UPF	0x00000002	/* UNIBUS power fail */
+#define	UBACR_ADINIT	0x00000001	/* adapter init */
+
+/* uba_sr */
+#define	UBASR_BR7FULL	0x08000000	/* BR7 receive vector reg full */
+#define	UBASR_BR6FULL	0x04000000	/* BR6 receive vector reg full */
+#define	UBASR_BR5FULL	0x02000000	/* BR5 receive vector reg full */
+#define	UBASR_BR4FULL	0x01000000	/* BR4 receive vector reg full */
+#define	UBASR_RDTO	0x00000400	/* UNIBUS to SBI read data timeout */
+#define	UBASR_RDS	0x00000200	/* read data substitute */
+#define	UBASR_CRD	0x00000100	/* corrected read data */
+#define	UBASR_CXTER	0x00000080	/* command transmit error */
+#define	UBASR_CXTMO	0x00000040	/* command transmit timeout */
+#define	UBASR_DPPE	0x00000020	/* data path parity error */
+#define	UBASR_IVMR	0x00000010	/* invalid map register */
+#define	UBASR_MRPF	0x00000008	/* map register parity failure */
+#define	UBASR_LEB	0x00000004	/* lost error */
+#define	UBASR_UBSTO	0x00000002	/* UNIBUS select timeout */
+#define	UBASR_UBSSYNTO	0x00000001	/* UNIBUS slave sync timeout */
 
 #define	UBASR_BITS \
 "\20\13RDTO\12RDS\11CRD\10CXTER\7CXTMO\6DPPE\5IVMR\4MRPF\3LEB\2UBSTO\1UBSSYNTO"
 
-/* BR receive vector register, BRRVR */
-#define	UBA_AIRI	0x80000000	/* adapter interrupt request */
-#define	UBA_DIV		0x0000ffff	/* device interrupt vector field */
-#endif
+/* uba_brrvr[] */
+#define	UBABRRVR_AIRI	0x80000000	/* adapter interrupt request */
+#define	UBABRRVR_DIV	0x0000ffff	/* device interrupt vector field */
+#endif VAX780
  
-/* data path register, DPR */
+/* uba_dpr */
 #if VAX780
-#define	UBA_BNE		0x80000000	/* buffer not empty - purge */
-#define	UBA_BTE		0x40000000	/* buffer transfer error */
-#define	UBA_DPF		0x20000000	/* DP function (RO) */
-#define	UBA_BS		0x007f0000	/* buffer state field */
-#define	UBA_BUBA	0x0000ffff	/* buffered UNIBUS address */
-#endif
+#define	UBADPR_BNE	0x80000000	/* buffer not empty - purge */
+#define	UBADPR_BTE	0x40000000	/* buffer transfer error */
+#define	UBADPR_DPF	0x20000000	/* DP function (RO) */
+#define	UBADPR_BS	0x007f0000	/* buffer state field */
+#define	UBADPR_BUBA	0x0000ffff	/* buffered UNIBUS address */
+#endif VAX780
 #if VAX750
-#define	UBA_ERROR	0x80000000	/* error occurred */
-#define	UBA_NXM		0x40000000	/* nxm from memory */
-#define	UBA_UCE		0x20000000	/* uncorrectable error */
-#define	UBA_PURGE	0x00000001	/* purge bdp */
-#endif
+#define	UBADPR_ERROR	0x80000000	/* error occurred */
+#define	UBADPR_NXM	0x40000000	/* nxm from memory */
+#define	UBADPR_UCE	0x20000000	/* uncorrectable error */
+#define	UBADPR_PURGE	0x00000001	/* purge bdp */
+#endif VAX750
  
-/* map register, MR */
-#define	UBA_MRV		0x80000000	/* map register valid */
-#define	UBA_BO		0x02000000	/* byte offset bit */
-#define	UBA_DPDB	0x01e00000	/* data path designator field */
-#define	UBA_SBIPFN	0x000fffff	/* SBI page address field */
+/* uba_mr[] */
+#define	UBAMR_MRV	0x80000000	/* map register valid */
+#define	UBAMR_BO	0x02000000	/* byte offset bit */
+#define	UBAMR_DPDB	0x01e00000	/* data path designator field */
+#define	UBAMR_SBIPFN	0x000fffff	/* SBI page address field */
 
-#define	UBA_DPSHIFT	21		/* shift to data path designator */
+#define	UBAMR_DPSHIFT	21		/* shift to data path designator */
 
-#ifndef LOCORE
 /*
- * Each UNIBUS mass storage controller has uba_minfo structure,
- * and a uba_dinfo structure (as below) for each attached drive.
+ * Number of UNIBUS map registers.  We can't use the last 8k of UNIBUS
+ * address space for i/o transfers since it is used by the devices,
+ * hence have slightly less than 256K of UNIBUS address space.
  */
-struct uba_minfo {
-	struct	uba_driver *um_driver;
-	short	um_ctlr;	/* controller index in driver */
-	short	um_ubanum;	/* the uba it is on */
-	short	um_alive;	/* controller exists */
-	int	(**um_intr)();	/* interrupt handler(s) */
-	caddr_t	um_addr;	/* address of device in i/o space */
-	struct	uba_hd *um_hd;
-	int	um_cmd;		/* communication to dgo() */
-	int	um_ubinfo;	/* save unibus registers, etc */
-	struct	buf um_tab;	/* queue for this controller */
-};
+#define	NUBMREG	496
+
 /*
- * Each UNIBUS device has a uba_dinfo structure.
- * If a controller has many drives attached, then there will
- * be several uba_dinfo structures associated with a single uba_minfo
- * structure.
+ * Number of unibus buffered data paths and possible uba's per cpu type.
  */
-struct uba_dinfo {
-	struct	uba_driver *ui_driver;
-	short	ui_unit;	/* unit number on the system */
-	short	ui_ctlr;	/* mass ctlr number; -1 if none */
-	short	ui_ubanum;	/* the uba it is on */
-	short	ui_slave;	/* slave on controller */
-	int	(**ui_intr)();	/* interrupt handler(s) */
-	caddr_t	ui_addr;	/* address of device in i/o space */
-	short	ui_dk;		/* if init 1 set to number for iostat */
-	short	ui_flags;	/* param to device init. */
-	short	ui_alive;	/* device exists */
-	short	ui_type;	/* driver specific type information */
-	caddr_t	ui_physaddr;	/* phys addr, for standalone (dump) code */
-	struct	uba_dinfo *ui_forw;
-/* if the device isn't also a controller, this is the controller it is on */
-	struct	uba_minfo *ui_mi;
-	struct	uba_hd *ui_hd;
-};
-#endif
+#define	NBDP780	15
+#define	NBDP750	3
+#define	MAXNBDP	15
 
 #define	NUBA780	4
 #define	NUBA750	1
@@ -144,76 +115,10 @@ struct uba_dinfo {
 #define	MAXNUBA	1
 #endif
 
-#ifndef LOCORE
 /*
- * This structure exists per-uba.
+ * For VAXen with specific UBA addresses, give the addresses.
  */
-struct	uba_hd {
-	struct	uba_regs *uh_uba;	/* virt addr of uba */
-	struct	uba_regs *uh_physuba;	/* phys addr of uba */
-	int	(**uh_vec)();		/* interrupt vector */
-	struct	uba_dinfo *uh_actf;	/* head of queue to transfer */
-	struct	uba_dinfo *uh_actl;	/* tail of queue to transfer */
-	short	uh_mrwant;		/* someone is waiting for map reg */
-	short	uh_bdpwant;		/* someone awaits bdp's */
-	int	uh_bdpfree;		/* free bdp's */
-	int	uh_hangcnt;		/* number of ticks hung */
-	int	uh_zvcnt;		/* number of 0 vectors */
-	short	uh_users;		/* transient bdp use count */
-	short	uh_xclu;		/* an rk07 is using this uba! */
-#define	UAMSIZ	50
-	struct	map *uh_map;
-};
-#ifdef KERNEL
-struct	uba_hd uba_hd[MAXNUBA];
-#endif
-/*
- * Each UNIBUS driver defines entries for a set of routines
- * as well as an array of types which are acceptable to it.
- */
-struct uba_driver {
-	int	(*ud_probe)();		/* see if a driver is really there */
-	int	(*ud_slave)();		/* see if a slave is there */
-	int	(*ud_attach)();		/* setup driver for a slave */
-	int	(*ud_dgo)();		/* fill csr/ba to start transfer */
-	u_short	*ud_addr;		/* device csr addresses */
-	char	*ud_dname;		/* name of a device */
-	struct	uba_dinfo **ud_dinfo;	/* backpointers to ubdinit structs */
-	char	*ud_mname;		/* name of a controller */
-	struct	uba_minfo **ud_minfo;	/* backpointers to ubminit structs */
-	short	ud_xclu;		/* want exclusive use of bdp's */
-};
-#endif
-
-/*
- * unibus maps
- */
-#define	NBDP780	15
-#define	NBDP750	3
-#define	MAXNBDP	15
-
-#define	NUBMREG	496
-
-/*
- * flags to uba map/bdp allocation routines
- */
-#define	UBA_NEEDBDP	1		/* transfer needs a bdp */
-#define	UBA_CANTWAIT	2		/* don't block me */
-#define	UBA_NEED16	3		/* need 16 bit addresses only */
-
-/*
- * UNIBUS related kernel variables
- */
-#ifndef LOCORE
-#ifdef KERNEL
-extern	struct	uba_minfo ubminit[];
-extern	struct	uba_dinfo ubdinit[];
-int	numuba;
-extern	struct pte UMEMmap[MAXNUBA][16];
-extern	char umem[MAXNUBA][16*NBPG];
-extern	int (*UNIvec[])();
-#if VAX780
-extern	Xua0int(), Xua1int(), Xua2int(), Xua3int();
-#endif
-#endif
+#if VAX750
+#define	UBA750	((struct uba_regs *)0xf30000)
+#define	UMEM750	((u_short *)0xfc0000)
 #endif
