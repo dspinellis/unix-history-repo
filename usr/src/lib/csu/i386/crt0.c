@@ -9,32 +9,25 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)crt0.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)crt0.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
-
 
 /*
  *	C start up routine.
  *	Robert Henry, UCB, 20 Oct 81
  *
- *	We make the following (true) assumptions:
- *	1) The only register variable that we can trust is bp,
+ *	We make the following (true) assumption:
+ *	1) The only register variable that we can trust is ebp,
  *	which points to the base of the kernel calling frame.
- *	2) We can allocate as many register variables as we want,
- *	and don't have to save them for anybody.
  */
 
 char **environ = (char **)0;
 static int fd;
 
-#ifdef notyet
 asm("#define _start start");
 asm("#define _eprol eprol");
 asm("	.text");
-asm("	.long 0"); /* first instruction should always be 0 (indir thru 0) */
-asm("	.long 0"); /*this means all null pointers return value 0 regardless */
-			/* of type */
-#endif
+asm("	.long 0xc000c000");
 extern	unsigned char	etext;
 extern	unsigned char	eprol;
 start()
