@@ -9,7 +9,7 @@
 # software without specific prior written permission. This software
 # is provided ``as is'' without express or implied warranty.
 #
-#	@(#)Makefile	5.9 (Berkeley) %G%
+#	@(#)Makefile	5.10 (Berkeley) %G%
 #
 DESTDIR=
 CFLAGS=	-O
@@ -29,13 +29,13 @@ SCRIPT=	wargames
 
 # C sources that live in the current directory
 #
-SRCS=	arithmetic.c banner.c bcd.c factor.c fish.c number.c primes.c \
+SRCS=	arithmetic.c banner.c bcd.c factor.c fish.c number.c ppt.c primes.c \
 	rain.c worm.c worms.c wump.c
 
 # C programs that live in the current directory and do not need
 # explicit make lines.
 #
-STD=	arithmetic banner bcd factor fish number wump
+STD=	arithmetic banner bcd factor fish number ppt wump
 
 # C programs that live in the current directory and need explicit make lines.
 #
@@ -45,7 +45,7 @@ NSTD=	primes rain worm worms
 HIDE=	fish wump worm
 
 # programs that don't
-NOHIDE=	arithmetic banner bcd factor number primes rain worms
+NOHIDE=	arithmetic banner bcd factor number ppt primes rain worms
 
 # Programs that require a lisp interpreter or compiler
 LISP=	doctor
@@ -107,18 +107,20 @@ bcd: bcd.c
 factor: factor.c
 fish: fish.c /usr/include/stdio.h
 number: number.c /usr/include/stdio.h /usr/include/ctype.h
+ppt: ppt.c /usr/include/stdio.h
 primes: primes.c /usr/include/stdio.h /usr/include/math.h
-rain: rain.c /usr/include/stdio.h /usr/include/sgtty.h /usr/include/sys/ioctl.h
-rain: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
-rain: /usr/include/signal.h /usr/include/machine/trap.h
+rain: rain.c /usr/include/sys/types.h /usr/include/stdio.h /usr/include/sgtty.h
+rain: /usr/include/sys/ioctl.h /usr/include/sys/ttychars.h
+rain: /usr/include/sys/ttydev.h /usr/include/signal.h
+rain: /usr/include/machine/trap.h
 worm: worm.c /usr/include/ctype.h /usr/include/curses.h /usr/include/stdio.h
 worm: /usr/include/sgtty.h /usr/include/sys/ioctl.h /usr/include/sys/ttychars.h
 worm: /usr/include/sys/ttydev.h /usr/include/signal.h
 worm: /usr/include/machine/trap.h
-worms: worms.c /usr/include/stdio.h /usr/include/sgtty.h
-worms: /usr/include/sys/ioctl.h /usr/include/sys/ttychars.h
-worms: /usr/include/sys/ttydev.h /usr/include/signal.h
-worms: /usr/include/machine/trap.h
+worms: worms.c /usr/include/sys/types.h /usr/include/stdio.h
+worms: /usr/include/sgtty.h /usr/include/sys/ioctl.h
+worms: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
+worms: /usr/include/signal.h /usr/include/machine/trap.h
 wump: wump.c /usr/include/stdio.h /usr/include/sgtty.h /usr/include/sys/ioctl.h
 wump: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
 
