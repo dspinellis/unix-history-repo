@@ -8,15 +8,20 @@
 **  specifies the terms and conditions for redistribution.
 */
 
+#ifndef MXDOMAIN
 #ifndef lint
-static char	SccsId[] = "@(#)domain.c	5.1 (Berkeley) %G%";
+static char	SccsId[] = "@(#)domain.c	5.2 (Berkeley) %G% (no MXDOMAIN)";
+#endif not lint
+#else MXDOMAIN
+
+#ifndef lint
+static char	SccsId[] = "@(#)domain.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 # include <sys/param.h>
-# include <netinet/in.h>
+# include "sendmail.h"
 # include <arpa/nameser.h>
 # include <resolv.h>
-# include <stdio.h>
 # include <netdb.h>
 
 typedef union {
@@ -28,17 +33,19 @@ static char hostbuf[BUFSIZ];
 
 int h_errno;
 
-getmxrr(host, mxhosts, maxmx)
+getmxrr(host, mxhosts, maxmx, localhost)
 	char *host, **mxhosts;
 	int maxmx;
+	char *localhost;
 {
 
 	HEADER *hp;
 	char *eom, *bp, *cp;
 	querybuf buf, answer;
 	int n, n1, i, j, nmx, ancount, qdcount, buflen;
+	int seenlocal;
 	u_short prefer[BUFSIZ];
-	u_short pref, type, class;
+	u_short pref, localpref, type, class;
 
 	n = res_mkquery(QUERY, host, C_IN, T_MX, (char *)NULL, 0, NULL,
 		(char *)&buf, sizeof(buf));
@@ -47,7 +54,8 @@ getmxrr(host, mxhosts, maxmx)
 		if (tTd(8, 1) || _res.options & RES_DEBUG)
 			printf("res_mkquery failed\n");
 #endif
-		return(-1);
+		h_errno = NO_RECOVERY;
+		return(-2);
 	}
 	n = res_send((char *)&buf, n, (char *)&answer, sizeof(answer));
 	if (n < 0) {
@@ -73,26 +81,31 @@ getmxrr(host, mxhosts, maxmx)
 		switch (hp->rcode) {
 			case NXDOMAIN:
 				/* Check if it's an authoritive answer */
-				if (hp->aa)
+				if (hp->aa) {
 					h_errno = HOST_NOT_FOUND;
-				else
+					return(-3);
+				} else {
 					h_errno = TRY_AGAIN;
-				break;
+					return(-1);
+				}
 			case SERVFAIL:
 				h_errno = TRY_AGAIN;
-				break;
+				return(-1);
 			case NOERROR:
-				h_errno = NO_ADDRESS;
-				break;
+				(void) strcpy(hostbuf, host);
+				mxhosts[0] = hostbuf;
+				return(1);
 			case FORMERR:
 			case NOTIMP:
 			case REFUSED:
 				h_errno = NO_RECOVERY;
+				return(-2);
 		}
 		return (-1);
 	}
 	bp = hostbuf;
 	nmx = 0;
+	seenlocal = 0;
 	buflen = sizeof(hostbuf);
 	cp = (char *)&answer + sizeof(HEADER);
 	if (qdcount) {
@@ -106,7 +119,9 @@ getmxrr(host, mxhosts, maxmx)
 		cp += n;
 		type = getshort(cp);
  		cp += sizeof(u_short);
+		/*
 		class = getshort(cp);
+		*/
  		cp += sizeof(u_short) + sizeof(u_long);
 		n = getshort(cp);
 		cp += sizeof(u_short);
@@ -123,15 +138,24 @@ getmxrr(host, mxhosts, maxmx)
 		cp += sizeof(u_short);
 		if ((n = dn_expand((char *)&answer, eom, cp, bp, buflen)) < 0)
 			break;
+		cp += n;
+		if (sameword(bp, localhost))
+		{
+			seenlocal = 1;
+			localpref = pref;
+			continue;
+		}
 		prefer[nmx] = pref;
 		mxhosts[nmx++] = bp;
 		n1 = strlen(bp)+1;
 		bp += n1;
 		buflen -= n1;
-		cp += n;
 	}
-	if (nmx == 0)
-		return(-1);
+	if (nmx == 0) {
+		(void) strcpy(hostbuf, host);
+		mxhosts[0] = hostbuf;
+		return(1);
+	}
 	/* sort the records */
 	for (i = 0; i < nmx; i++) {
 		for (j = i + 1; j < nmx; j++) {
@@ -147,6 +171,22 @@ getmxrr(host, mxhosts, maxmx)
 				mxhosts[j] = temp1;
 			}
 		}
+		if (seenlocal && (prefer[i] >= localpref))
+		{
+			nmx = i;
+			/*
+			 * We are the first MX, might as well try delivering
+			 * since nobody is supposed to have more info.
+			 */
+			if (nmx == 0)
+			{
+				(void) strcpy(hostbuf, host);
+				mxhosts[0] = hostbuf;
+				return(1);
+			}
+			break;
+		}
 	}
 	return(nmx);
 }
+#endif MXDOMAIN
