@@ -4,10 +4,10 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pathnames.h	5.3 (Berkeley) %G%
+ *	@(#)pathnames.h	5.4 (Berkeley) %G%
  */
 
 #include <paths.h>
 
 #undef _PATH_TMP
-#define	_PATH_TMP	"/tmp/passwd.XXXXXX"
+#define	_PATH_TMP	"/tmp/chpass.XXXXXX"
