@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)2.t	6.1 (Berkeley) %G%
+.\"	@(#)2.t	6.2 (Berkeley) %G%
 .\"
 .ds lq ``
 .ds rq ''
@@ -27,14 +27,12 @@ Bootstrapping from the tape
 .PP
 The set of files on the distribution tape are as follows:
 .DS
-1) standalone copy program
-2) disk image of the root filesystem
-3) dump image of the root filesystem
-4) tar image of the /var filesystem
-5) tar image of the /usr filesystem
-6) tar image of the rest of /usr/src
-7) tar image of /usr/src/sys
-8) (8mm tape only) tar image of /usr/src/X11R5
+1) dd (HP300 and DecStation) or dump (Sparc) image of the root filesystem
+2) tar image of the /var filesystem
+3) tar image of the /usr filesystem
+4) tar image of /usr/src/sys
+5) tar image of the rest of /usr/src
+6) (8mm tape only) tar image of /usr/src/X11R5
 .DE
 .PP
 The tape bootstrap procedure used to create a
@@ -48,27 +46,19 @@ with \fItar\fP\|(1).
 .IP 3)
 Extract the system and utility source files as desired.
 .PP
-The details of the first step varies between architectures.
+The following sections describe the above steps in detail.
+The details of the first step vary between architectures.
 The specific steps for the HP300, Sparc, and DecStation are
 given in the next three sections respectively.
-You should follow the specific instructions for your
-particular architecture.
-.PP
-The following sections describe the above steps in detail.  In these
-sections references to disk drives are of the form \fIxx\fP\|(\fId\fP,
-\fIp\fP) and references to files on tape drives are of the form
-\fIxx\fP\|(\fIc\fP,\fId\fP, \fIp\fP)
-where \fIxx\fP are device types described in section 1.2,
-\fIc\fP is the (optional) controller unit number,
-\fId\fP is the drive unit number, and \fIp\fP is a disk partition
-or tape file offset numbers as described in section 1.2.
-For the sake of simplicity, all disk examples will use the disk type
-``\*(Dk'' and all tape examples will similarly use ``\*(Mt'';
-the examples assume drive 0, partition 0.
-Commands you are expected to type are shown in italics, while that
+You should follow the instructions for your particular architecture.
+In all sections,
+commands you are expected to type are shown in italics, while that
 information printed by the system is shown emboldened.
+.PP
 .NH 2
 Booting the HP300
+.NH 3
+Supported hardware
 .LP
 The hardware supported by \*(4B for the HP300/400 is as follows:
 .TS
@@ -127,87 +117,171 @@ T}
 Major items not supported include the 310 and 332 CPUs, 400 series machines
 configured for Domain/OS, EISA and VME bus adaptors, audio, the centronics
 port, 1/2" tape drives (7980), CD-ROM, and the PVRX/TVRX 3D graphics displays.
+.NH 3
+Standalone device file naming
+.PP
+The standalone system device name syntax on the HP300 is of the form:
+.DS
+xx(a,c,u,p)
+.DE
+where
+\fIxx\fP is the device type,
+\fIa\fP specifies the adaptor to use,
+\fIc\fP the controller,
+\fIu\fP the unit, and
+\fIp\fP a partition.
+The \fIdevice type\fP differentiates the various disks and tapes and is one of:
+``rd'' (HP-IB CS80 disks),
+``ct'' (HP-IB CS80 cartridge tape),
+``sd'' (SCSI-I disks) or
+``st'' (SCSI-I tapes).
+The \fIadaptor\fP field is a logical HP-IB or SCSI bus adaptor card number.
+This will typically be
+0 for SCSI disks and tapes,
+0 for devices on the ``slow'' HP-IB interface (usually tapes) and
+1 for devices on the ``fast'' HP-IB interface (usually disks).
+To get a complete mapping of physical (select-code) to logical card numbers
+just type a ^C at the standalone prompt.
+The \fIcontroller\fP field is the disk or tape's target number on the
+HP-IB or SCSI bus.
+For SCSI the range is 0 to 6 (7 is the adaptor address) and
+for HP-IB the range is 0 to 7.
+The \fIunit\fP field is unused and should be 0.
+The \fIpartition\fP field is interpreted differently for tapes
+and disks: for disks it is a disk partition (in the range 0-7),
+and for tapes it is a file number offset on the tape.
+Thus, partition 2 of a SCSI disk drive at target 3 on SCSI bus 1
+would be ``sd(1,0,3,2)''.
+If you have only one of any type bus adaptor, you may omit the adaptor
+and controller numbers;
+e.g. ``sd(0,2)'' could be used instead of ``sd(0,0,0,2)''.
+The following examples always use the full syntax for clarity.
+.NH 3
+The Procedure
 .LP
 The basic steps involved in bringing up the HP300 are as follows:
 .IP 1)
-Obtain a new disk and format it, if necessary.
+Obtain a second disk and format it, if necessary.
 .IP 2)
 Copy a root file system from the
 tape onto the beginning of the disk.
 .IP 3)
 Boot the UNIX system on the new disk.
 .IP 4)
-If optimal performance is desired, restore the root file system
-using \fIrestore\fP\|(8).
-.IP 5)
 Label the disks with the \fIdisklabel\fP\|(8) program.
-.NH 3
+.NH 4
 Step 1: formating a disk.
 .PP
-For your first system you will have to obtain a formatted disk.
+For your first system you will have to obtain a formatted disk
+of a type given in the ``supported hardware'' list above.
+Since most HP disk drives, with the exception of optical media,
+come pre-formatted there should be nothing to do.
+If necessary, you can format a disk under HP-UX using
+the \fImediainit\fP\|(1m) program.
 Once you have \*(4B up and running on one machine you can use
 the \fIscsiformat\fP\|(8) program to format additional disks.
-.NH 3
+.NH 4
 Step 2: copying the root file system from tape to disk
 .PP
 There are two approaches to getting the root file system from tape to disk.
-If you have two disks, the easiest approach is to boot your vendor
-operating system from the first disk, and then use \fIdd\fP\|(1)
-to copy the root filesystem image from the tape to the beginning of the
-second disk. 
-The root filesystem image is the second file on the tape. 
+If you have an extra disk, the easiest approach is to use \fIdd\fP\|(1)
+under HP-UX to copy the root filesystem image from the tape to the beginning
+of the second disk. 
+For HPs, the root filesystem image is the first file on the tape.
 It includes a disklabel and bootblock along with the root filesystem.
-The set of commands to copy it from the tape to the beginning of the disk are:
+An example command to copy the image from tape to the beginning of a disk is:
 .DS
-mt -f /dev/nr\*(Mt0 fsf 1
-dd if=/dev/nr\*(Mt0 of=/dev/r\*(Dk1c bs=20b
+dd if=/dev/rmt/0m of=/dev/rdsk/1s0 bs=20b
 .DE
+The actual special file syntax may vary depending on unit numbers and
+the version of HP-UX that is running.
+Consult the HP-UX \fImt\fP(7) and \fIdisk\fP(7) man pages for details.
 .PP
 If you have only a single machine with a single disk,
 you need to use the more difficult approach of booting a
 standalone copy program, and using that to copy the 
 root filesystem image from the tape to the disk.
-Disk 0 is normally used for
-this operation; this is reflected in the example procedure.  Another disk
-may be substituted if necessary, although several modifications will
-be necessary to create special files for the alternate disk.
-\fICopy\fP is loaded from the first file on the tape, and then:
+If your distribution is on 8mm tape and you have an 8mm drive attached
+to the target machine, you should be able to boot from the distribution
+tape directly.
+If you have the 9-track distribution or only have a CS80 cartridge or
+4mm DAT drive, you will need to create your own boot tape.
+To do this, you need to extract the first file of the distribution tape
+(the root image), copy it over to a machine with a supported HP tape
+drive and then create a bootable cartridge or DAT tape.
+For example:
+.DS
+dd if=/dev/rst0 of=bootimage bs=20b
+rcp bootimage foo:/tmp/bootimage
+<login to foo>
+dd if=/tmp/bootimage of=/dev/rct/0m bs=20b
+.DE
+Once this tape is created you can boot and run the standalone tape
+copy program from it.
+The copy program is loaded just as any other program would be loaded
+by the bootrom in ``attended'' mode:
+reset the CPU,
+hold down the space bar until the word ``Keyboard'' appears in the
+installed interface list, and
+enter the menu selection for SYS_TCOPY.
+Once loaded and running:
 .DS
 .TS
 lw(2i) l.
-\fB:\|\fP\fI\*(Mt(0,0)copy\fP	(load and run copy program)
-\fBFrom:\fP \fI\*(Mt(0,1)\fP	(tape drive unit 0, second tape file)
-\fBTo:\fP \fI\*(Dk(0,2)\fP	(disk drive unit 0, third disk partition)
-\fBCopy completed: 1400 records copied\fP
+\fBFrom:\fP \fI^C\fP	(control-C to see logical adaptor assignments)
+\fBhpib0 at sc7\fP
+\fBscsi0 at sc14\fP
+\fBFrom:\fP \fIct(0,7,0,0)\fP	(HP-IB tape target 7, first tape file)
+\fBTo:\fP \fIsd(0,0,0,2)\fP	(SCSI disk target 0, third disk partition)
+\fBCopy completed: 2048 records copied\fP
 .TE
 .DE
-.NH 3
+.LP
+This copy will likely take 30 minutes or more.
+.NH 4
 Step 3: booting the root filesystem
 .PP
 You now have a bootable root filesystem on the disk.
 If you were previously running with two disks,
-shut down the machine, remove the disk that you previously booted on,
-set the unit number of the disk onto which you loaded \*(4B to zero,
-and power up the machine.
-If you used the standalone copy program,
-you should power down the machine, switch the tape drive offline,
-and power the machine back up.
-It should now find, boot, and run \*(4B with output that looks
-approximately like this:
+it would be best if you shut down the machine and turn off power on
+the HP-UX drive.
+It will be less confusing and it will eliminate any chance of accidentally
+destroying the HP-UX disk.
+Whether you booted from tape or copied from disk you should now reboot
+the machine and perform another assisted boot, this time with SYS_TBOOT.
+Once loaded and running the boot program will display the CPU type and
+prompt for a kernel file to boot:
 .DS
 .B
-597316+34120+139288 start 0x9ec
+HP433 CPU
+Boot
+.R
+\fB:\fP \fI/vmunix\fP
+.DE
+.LP
+After providing the kernel name, the machine will boot and run \*(4B with
+output that looks approximately like this:
+.DS
+.B
+597316+34120+139288 start 0xfe8019ec
+Copyright (c) 1982, 1986, 1989, 1991, 1993
+	The Regents of the University of California.
+Copyright (c) 1992 Hewlett-Packard Company
+Copyright (c) 1992 Motorola Inc.
+All rights reserved.
+
 4.4BSD UNIX #3: Tue Jul  6 14:02:20 PDT 1993
-	(mckusick@vangogh.CS.Berkeley.EDU:/usr/obj/sys/compile/GENERIC.hp300)
-real mem  = xxx
+    mckusick@vangogh.CS.Berkeley.EDU:/usr/obj/sys/compile/GENERIC.hp300
+HP9000/433 (33MHz MC68040 CPU+MMU+FPU, 4k on-chip physical I/D caches)
+real mem = xxx
 avail mem = ###
 using ### buffers containing ### bytes of memory
 (... information about available devices ...)
-root device? 
+root device?
 .R
 .DE
 .PP
-The first three numbers are printed out by the bootstrap programs and
+The first three numbers are printed out by the bootstrap program and
 are the sizes of different parts of the system (text, initialized and
 uninitialized data).  The system also allocates several system data
 structures after it starts running.  The sizes of these structures are
@@ -249,8 +323,9 @@ The \*(lqroot device?\*(rq prompt was printed by the system
 to ask you for the name of the root file system to use.
 This happens because the distribution system is a \fIgeneric\fP
 system, i.e., it can be bootstrapped on a cpu with its root device
-and paging area on any available disk drive.  You should respond to the
-root device question with ``\*(Dk0''.  This response indicates that
+and paging area on any available disk drive.
+You should respond to the root device question with
+ ``\*(Dk0''.  This response indicates that
 that the disk it is running on is drive 0 of type ``\*(Dk''.
 You will later build a system tailored to your configuration
 that will not ask this question when it is bootstrapped.
@@ -265,7 +340,7 @@ The \*(lqerase ...\*(rq message is part of the /.profile
 that was executed by the root shell when it started.  This message
 is present to inform you as to what values the character erase,
 line erase, and interrupt characters have been set.
-.NH 3
+.NH 4
 Step 4: restoring the root file system
 .PP
 UNIX is now running,
@@ -308,7 +383,7 @@ but should eventually stop with the message:
 .PP
 You should then shut down the system, and boot on the disk that
 you just created following the procedure in step (3) above.
-.NH 3
+.NH 4
 Step 5: placing labels on the disks
 .PP
 \*(4B uses disk labels in the first sector of each disk to contain
@@ -334,10 +409,140 @@ You should now proceed to the generic part of the installation
 described starting in section 2.5 below.
 .NH 2
 Booting the SPARC
+.NH 3
+Supported hardware
+.NH 3
+Limitations
+.LP
+There are several important limitations on the \*(4B distribution
+for the SPARC:
+.IP 1)
+You MUST have SunOS 4.1.x or Solaris in order to bring up \*(4B.
+There is no SPARCstation bootstrap code in this distribution.  The
+Sun-supplied boot loader will be used to boot \*(4B; you must copy
+this from your SunOS distribution.  This imposes a number of
+restrictions on the system, as detailed below.
+.IP 2)
+The \*(4B SPARC kernel does not remap SCSI IDs.  A SCSI disk at
+target 0 will become ``sd0'', where in SunOS the same disk will
+normally be called ``sd3''.  If your existing SunOS system is
+diskful, it will be least painful to have SunOS running on the disk
+on target 0 lun 0 and put \*(4B on the disk on target 3 lun 0.  Both
+systems will then think they are running on ``sd0'', and you can
+boot either system as needed simply by changing the EEPROM's boot
+device.
+.IP 3)
+There is no SCSI tape driver.
+You must have another system for tape reading and backups.
+.IP 4)
+Although the \*(4B SPARC kernel will handle existing SunOS shared
+libraries, it does not use or create them itself, and therefore
+requires quite a bit more disk space than SunOS does.
+.IP 5)
+It is currently difficult (though not completely impossible) to
+run \*(4B diskless.  These instructions assume you will have a local
+boot, swap, and root file system.
+.NH 3
+The Procedure
 .PP
-Chris promises to fill us in here!!!
+You must have a spare disk on which to place \*(4B.
+The steps involved in bootstrapping this tape are as follows:
+.IP 1)
+Bring up SunOS (preferably SunOS 4.1.x / Solaris 1.x, although
+Solaris 2 may work -- this is untested).
+.IP 2)
+Attach auxiliary SCSI disk(s).  Format and label using the
+SunOS formating and labeling programs as needed.
+Note that the root file system currently requires at least 10 MB; 16 MB
+or more is recommended.  The b partition will be used for swap;
+this should be at least 32 MB.
+.IP 3)
+Use the SunOS ``newfs'' to build the root file system.  You may also
+want to build other file systems at the same time.  (By default, the
+\*(4B newfs builds a file system that SunOS will not handle; if you
+plan to switch OSes back and forth you may want to sacrifice the
+performance gain from the new file system format for compatibility.)
+You can build an old-format filesystem on \*(4B by giving the -O
+option to \fInewfs\fP\|(8).
+\fIFsck\fP\|(8) can convert old format filesystems to new format
+filesystems, but not vice versa,
+so you may want to initially build old format filesystems so that they
+can be mounted under SunOS,
+and then later convert them to new format filesystems when you are
+satisfied that \*(4B is running properly.
+In any case, YOU MUST BUILD AN OLD-STYLE ROOT FILE SYSTEM
+so that the SunOS boot program will work.
+.IP 4)
+Mount the new root, then copy the SunOS /boot into place and use the
+SunOS ``installboot'' program to enable disk-based booting:
+.DS
+# mount /dev/sd3a /mnt
+# cp /boot /mnt/boot
+# umount /dev/sd3a
+# /usr/kvm/mdec/installboot installboot bootsd /dev/rsd3a
+.DE
+.LP
+The SunOS /boot will load \*(4B kernels; there is no SPARCstation
+bootstrap code on the distribution.  Note that the SunOS /boot does
+not handle the new \*(4B file sytem format.
+.IP 5)
+Mount the new root and restore /.
+.DS
+# mount /dev/sd3a /mnt
+# cd /mnt
+# rrestore xf tapehost:/dev/nrst0
+.DE
+.LP
+If you have chosen to use the SunOS newfs to build /usr, you may
+mount and restore it now and skip the next step.
+.IP 6)
+Boot the supplied kernel.  Configure the network, build /usr, mount it,
+and restore it:
+.DS
+# halt
+ok boot disk3 -s			[for old proms] OR
+ok boot sd(0,3)vmunix -s		[for new proms]
+\&... [\*(4B boot messages]
+# ifconfig le0 [your address, subnet, etc, as needed]
+# newfs /dev/rsd0g
+\&... [newfs output, including a warning about being unable to
+     update the label -- ignore this]
+# mount /dev/sd0g /usr
+# cd /usr
+# rrestore xf tapehost:/dev/nrst0
+.DE
+.IP 7)
+At this point you may wish to set up \*(4B to reboot automatically:
+.DS
+# halt
+ok setenv boot-from sd(0,3)vmunix	[for old proms] OR
+ok setenv boot-device disk3		[for new proms]
+.DE
+.LP
+If you build backwards-compatible file systems, either with the SunOS
+newfs or with the \*(4B ``-O'' option, you can mount these under
+SunOS.  The SunOS fsck will, however, always think that these file
+systems are corrupted, as there are several new (previously unused)
+superblock fields that are updated in \*(4B.  Running ``fsck -b32''
+and letting it ``fix'' the superblock will take care of this.
+.PP
+If you wish to run SunOS binaries that use SunOS shared libraries, you
+simply need to copy all of the dynamic linker files from an existing
+SunOS system:
+.DS
+# rcp sunos-host:/etc/ld.so.cache /etc/
+# rcp sunos-host:'/usr/lib/*.so*' /usr/lib/
+.DE
+.LP
+The SunOS compiler and linker should be able to produce SunOS binaries
+under \*(4B, but this has not been tested.  If you plan to try it you
+will need the appropriate .sa files as well.
 .NH 2
 Booting the DecStation
+.NH 3
+Supported hardware
+.NH 3
+The Procedure
 .PP
 Steps to bootstrap a system.
 .IP 1)
