@@ -9,7 +9,7 @@
 */
 
 #ifndef lint
-static char	SccsId[] = "@(#)envelope.c	5.10 (Berkeley) %G%";
+static char	SccsId[] = "@(#)envelope.c	5.11 (Berkeley) %G%";
 #endif not lint
 
 #include <pwd.h>
@@ -36,16 +36,13 @@ ENVELOPE *
 newenvelope(e)
 	register ENVELOPE *e;
 {
-	register HDR *bh;
-	register HDR **nhp;
 	register ENVELOPE *parent;
 	extern putheader(), putbody();
-	extern ENVELOPE BlankEnvelope;
 
 	parent = CurEnv;
 	if (e == CurEnv)
 		parent = e->e_parent;
-	bzero((char *) e, sizeof *e);
+	clearenvelope(e);
 	if (e == CurEnv)
 		bcopy((char *) &NullAddress, (char *) &e->e_from, sizeof e->e_from);
 	else
@@ -55,15 +52,6 @@ newenvelope(e)
 	e->e_msgpriority = parent->e_msgsize;
 	e->e_puthdr = putheader;
 	e->e_putbody = putbody;
-	bh = BlankEnvelope.e_header;
-	nhp = &e->e_header;
-	while (bh != NULL)
-	{
-		*nhp = (HDR *) xalloc(sizeof *bh);
-		bcopy((char *) bh, (char *) *nhp, sizeof *bh);
-		bh = bh->h_link;
-		nhp = &(*nhp)->h_link;
-	}
 	if (CurEnv->e_xfp != NULL)
 		(void) fflush(CurEnv->e_xfp);
 
@@ -187,6 +175,10 @@ dropenvelope(e)
 clearenvelope(e)
 	register ENVELOPE *e;
 {
+	register HDR *bh;
+	register HDR **nhp;
+	extern ENVELOPE BlankEnvelope;
+
 	/* clear out any file information */
 	if (e->e_xfp != NULL)
 		(void) fclose(e->e_xfp);
@@ -195,6 +187,15 @@ clearenvelope(e)
 
 	/* now clear out the data */
 	STRUCTCOPY(BlankEnvelope, *e);
+	bh = BlankEnvelope.e_header;
+	nhp = &e->e_header;
+	while (bh != NULL)
+	{
+		*nhp = (HDR *) xalloc(sizeof *bh);
+		bcopy((char *) bh, (char *) *nhp, sizeof *bh);
+		bh = bh->h_link;
+		nhp = &(*nhp)->h_link;
+	}
 }
 /*
 **  INITSYS -- initialize instantiation of system
