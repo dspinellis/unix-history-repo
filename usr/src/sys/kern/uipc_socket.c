@@ -1,4 +1,4 @@
-/*	uipc_socket.c	6.9	84/11/14	*/
+/*	uipc_socket.c	6.9	85/03/18	*/
 
 #include "param.h"
 #include "systm.h"
@@ -345,10 +345,10 @@ restart:
 				continue;
 			}
 			MGET(m, M_WAIT, MT_DATA);
-			if (m == NULL) {
-				error = ENOBUFS;		/* SIGPIPE? */
-				goto release;
-			}
+if (m == NULL) {
+	error = ENOBUFS;		/* SIGPIPE? */
+	goto release;
+}
 			if (iov->iov_len >= CLBYTES && space >= CLBYTES) {
 				register struct mbuf *p;
 				MCLGET(p, 1);
@@ -603,38 +603,77 @@ sosetopt(so, level, optname, m)
 	int error = 0;
 
 	if (level != SOL_SOCKET) {
-		error = EINVAL;
-		goto bad;
-	}
-	switch (optname) {
-
-	case SO_LINGER:
-		if (m == NULL || m->m_len != sizeof (struct linger)) {
-			error = EINVAL;
-			goto bad;
-		}
-		so->so_linger = mtod(m, struct linger *)->l_linger;
-		/* fall thru... */
-
-	case SO_DEBUG:
-	case SO_KEEPALIVE:
-	case SO_DONTROUTE:
-	case SO_USELOOPBACK:
-	case SO_BROADCAST:
-	case SO_REUSEADDR:
-		if (m == NULL || m->m_len < sizeof (int)) {
-			error = EINVAL;
-			goto bad;
-		}
-		if (*mtod(m, int *))
-			so->so_options |= optname;
-		else
-			so->so_options &= ~optname;
-		break;
-
-	default:
+		if (so->so_proto && so->so_proto->pr_ctloutput)
+			return ((*so->so_proto->pr_ctloutput)
+				  (PRCO_SETOPT, so, level, optname, m));
 		error = ENOPROTOOPT;
-		break;
+	} else {
+		switch (optname) {
+
+		case SO_LINGER:
+			if (m == NULL || m->m_len != sizeof (struct linger)) {
+				error = EINVAL;
+				goto bad;
+			}
+			so->so_linger = mtod(m, struct linger *)->l_linger;
+			/* fall thru... */
+
+		case SO_DEBUG:
+		case SO_KEEPALIVE:
+		case SO_DONTROUTE:
+		case SO_USELOOPBACK:
+		case SO_BROADCAST:
+		case SO_REUSEADDR:
+			if (m == NULL || m->m_len < sizeof (int)) {
+				error = EINVAL;
+				goto bad;
+			}
+			if (*mtod(m, int *))
+				so->so_options |= optname;
+			else
+				so->so_options &= ~optname;
+			break;
+
+		case SO_SNDBUF:
+		case SO_RCVBUF:
+		case SO_SNDLOWAT:
+		case SO_RCVLOWAT:
+		case SO_SNDTIMEO:
+		case SO_RCVTIMEO:
+			if (m == NULL || m->m_len < sizeof (int)) {
+				error = EINVAL;
+				goto bad;
+			}
+			switch (optname) {
+
+			case SO_SNDBUF:
+			case SO_RCVBUF:
+				if (sbreserve(optname == SO_SNDBUF ? &so->so_snd :
+				    &so->so_rcv, *mtod(m, int *)) == 0) {
+					error = ENOBUFS;
+					goto bad;
+				}
+				break;
+
+			case SO_SNDLOWAT:
+				so->so_snd.sb_lowat = *mtod(m, int *);
+				break;
+			case SO_RCVLOWAT:
+				so->so_rcv.sb_lowat = *mtod(m, int *);
+				break;
+			case SO_SNDTIMEO:
+				so->so_snd.sb_timeo = *mtod(m, int *);
+				break;
+			case SO_RCVTIMEO:
+				so->so_rcv.sb_timeo = *mtod(m, int *);
+				break;
+			}
+			break;
+
+		default:
+			error = ENOPROTOOPT;
+			break;
+		}
 	}
 bad:
 	if (m)
@@ -649,37 +688,66 @@ sogetopt(so, level, optname, mp)
 {
 	register struct mbuf *m;
 
-	if (level != SOL_SOCKET)
-		return (EINVAL);		/* XXX */
-	switch (optname) {
-
-	case SO_LINGER:
+	if (level != SOL_SOCKET) {
+		if (so->so_proto && so->so_proto->pr_ctloutput) {
+			return ((*so->so_proto->pr_ctloutput)
+				  (PRCO_GETOPT, so, level, optname, mp));
+		} else 
+			return (ENOPROTOOPT);
+	} else {
 		m = m_get(M_WAIT, MT_SOOPTS);
 		if (m == NULL)
 			return (ENOBUFS);
-		m->m_len = sizeof (struct linger);
-		mtod(m, struct linger *)->l_onoff = so->so_options & SO_LINGER;
-		mtod(m, struct linger *)->l_linger = so->so_linger;
-		break;
+		switch (optname) {
 
-	case SO_USELOOPBACK:
-	case SO_DONTROUTE:
-	case SO_DEBUG:
-	case SO_KEEPALIVE:
-	case SO_REUSEADDR:
-	case SO_BROADCAST:
-		m = m_get(M_WAIT, MT_SOOPTS);
-		if (m == NULL)
-			return (ENOBUFS);
-		m->m_len = sizeof (int);
-		*mtod(m, int *) = so->so_options & optname;
-		break;
+		case SO_LINGER:
+			m->m_len = sizeof (struct linger);
+			mtod(m, struct linger *)->l_onoff =
+				so->so_options & SO_LINGER;
+			mtod(m, struct linger *)->l_linger = so->so_linger;
+			break;
 
-	default:
-		return (ENOPROTOOPT);
+		case SO_USELOOPBACK:
+		case SO_DONTROUTE:
+		case SO_DEBUG:
+		case SO_KEEPALIVE:
+		case SO_REUSEADDR:
+		case SO_BROADCAST:
+			m->m_len = sizeof (int);
+			*mtod(m, int *) = so->so_options & optname;
+			break;
+
+		case SO_SNDBUF:
+			*mtod(m, int *) = so->so_snd.sb_hiwat;
+			break;
+
+		case SO_RCVBUF:
+			*mtod(m, int *) = so->so_rcv.sb_hiwat;
+			break;
+
+		case SO_SNDLOWAT:
+			*mtod(m, int *) = so->so_snd.sb_lowat;
+			break;
+
+		case SO_RCVLOWAT:
+			*mtod(m, int *) = so->so_rcv.sb_lowat;
+			break;
+
+		case SO_SNDTIMEO:
+			*mtod(m, int *) = so->so_snd.sb_timeo;
+			break;
+
+		case SO_RCVTIMEO:
+			*mtod(m, int *) = so->so_rcv.sb_timeo;
+			break;
+
+		default:
+			m_free(m);
+			return (ENOPROTOOPT);
+		}
+		*mp = m;
+		return (0);
 	}
-	*mp = m;
-	return (0);
 }
 
 sohasoutofband(so)
