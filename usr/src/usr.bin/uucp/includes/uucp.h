@@ -1,4 +1,4 @@
-/*	uucp.h	5.2	83/07/19	*/
+/*	uucp.h	5.3	84/09/04	*/
 
 #include "stdio.h"
 
@@ -63,6 +63,7 @@
 #define VENTEL		/* ventel dialer */
 #define VADIC		/* Racal-Vadic 3450 */
 /*#define RVMACS		/* Racal-Vadic MACS 831 */
+#define TCPNET		/* 4.2 TCP Network */
 /*#define UNET		/* 3Com's UNET */
 /*#define MICOM		/* micom mux port */
 
