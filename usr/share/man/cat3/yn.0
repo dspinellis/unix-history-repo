@@ -1,0 +1,51 @@
+J0(3)                       BSD Programmer's Manual                      J0(3)
+
+NNAAMMEE
+     jj00, jj11, jjnn, yy00, yy11, yynn - bessel functions of first and second kind
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<mmaatthh..hh>>
+
+     _d_o_u_b_l_e
+     jj00(_d_o_u_b_l_e _x);
+
+     _d_o_u_b_l_e
+     jj11(_d_o_u_b_l_e _x);
+
+     _d_o_u_b_l_e
+     jjnn(_i_n_t _n, _d_o_u_b_l_e _x);
+
+     _d_o_u_b_l_e
+     yy00(_d_o_u_b_l_e _x);
+
+     _d_o_u_b_l_e
+     yy11(_d_o_u_b_l_e _x);
+
+     _d_o_u_b_l_e
+     yynn(_i_n_t _n, _d_o_u_b_l_e _x);
+
+DDEESSCCRRIIPPTTIIOONN
+     The functions jj00() and jj11() compute the _B_e_s_s_e_l _f_u_n_c_t_i_o_n _o_f _t_h_e _f_i_r_s_t _k_i_n_d
+     _o_f _t_h_e _o_r_d_e_r 0 and the _o_r_d_e_r 1, respectively, for the real value _x; the
+     function jjnn() computes the _B_e_s_s_e_l _f_u_n_c_t_i_o_n _o_f _t_h_e _f_i_r_s_t _k_i_n_d _o_f _t_h_e
+     _i_n_t_e_g_e_r Bessel0 _n for the real value _x.
+
+     The functions yy00() and yy11() compute the linearly independent _B_e_s_s_e_l
+     _f_u_n_c_t_i_o_n _o_f _t_h_e _s_e_c_o_n_d _k_i_n_d _o_f _t_h_e _o_r_d_e_r 0 and the _o_r_d_e_r 1, respectively,
+     for the postive _i_n_t_e_g_e_r value _x (expressed as a double); the function
+     yynn() computes the _B_e_s_s_e_l _f_u_n_c_t_i_o_n _o_f _t_h_e _s_e_c_o_n_d _k_i_n_d _f_o_r _t_h_e _i_n_t_e_g_e_r
+     Bessel0 _n for the postive _i_n_t_e_g_e_r value _x (expressed as a double).
+
+RREETTUURRNN VVAALLUUEESS
+     If these functions are successful, the computed value is returned. On the
+     VAX and Tahoe architectures, a negative _x value results in an error; the
+     global variable _e_r_r_n_o is set to EDOM and a reserve operand fault is gen-
+     erated.
+
+SSEEEE AALLSSOO
+     math(3),  infnan(3)
+
+HHIISSTTOORRYY
+     A set of these functions function appeared in Version 7 AT&T UNIX.
+
+4th Berkeley Distribution        June 4, 1993                                1

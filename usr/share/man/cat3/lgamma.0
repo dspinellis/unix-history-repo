@@ -1,0 +1,51 @@
+LGAMMA(3)                   BSD Programmer's Manual                  LGAMMA(3)
+
+NNAAMMEE
+     llggaammmmaa ggaammmmaa - log gamma function, gamma function
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<mmaatthh..hh>>
+
+     _e_x_t_e_r_n _i_n_t _s_i_g_n_g_a_m;
+
+     _d_o_u_b_l_e
+     llggaammmmaa(_d_o_u_b_l_e _x);
+
+     _d_o_u_b_l_e
+     ggaammmmaa(_d_o_u_b_l_e _x);
+
+DDEESSCCRRIIPPTTIIOONN                _
+     LLggaammmmaa(_x) returns ln|| (x)|.
+                                                       _
+     The external integer _s_i_g_n_g_a_m returns the sign of | (x).
+                       _
+     GGaammmmaa(_x) returns | (x), with no effect on _s_i_g_n_g_a_m.
+
+IIDDIIOOSSYYNNCCRRAASSIIEESS
+     Do_ not use the expression ``signgam*exp(lgamma(x))'' to compute g :=
+     | (x).  Instead use a program like this (in C):
+
+           lg = lgamma(x); g = signgam*exp(lg);
+
+     Only after llggaammmmaa() has returned can signgam be correct.
+
+     For arguments in its range, ggaammmmaa() is preferred, as for positive argu-
+     ments it is accurate to within one unit in the last place.  Exponentia-
+     tion of llggaammmmaa() will lose up to 10 significant bits.
+
+RREETTUURRNN VVAALLUUEESS
+     GGaammmmaa() and llggaammmmaa() return appropriate values unless an arguent is out
+     of range.  Overflow will occur for sufficiently large positive values,
+     and non-positive integers.  On the VAX, the reserved operator is re-
+     turned, and _e_r_r_n_o is set to ERANGE For large non-integer negative values,
+     ggaammmmaa() will underflow.
+
+SSEEEE AALLSSOO
+     math(3),  infnan(3)
+
+HHIISSTTOORRYY
+     The llggaammmmaa function appeared in 4.3BSD. The ggaammmmaa function appeared in
+     4.4BSD. The name ggaammmmaa() was originally dedicated to the llggaammmmaa() func-
+     tion, so some old code may no longer be compatible.
+
+4.3 Berkeley Distribution        June 4, 1993                                1

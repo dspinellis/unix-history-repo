@@ -1,0 +1,37 @@
+KVM_GETFILES(3)             BSD Programmer's Manual            KVM_GETFILES(3)
+
+NNAAMMEE
+     kkvvmm__ggeettffiilleess - survey open files
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<kkvvmm..hh>>
+     ##iinncclluuddee <<ssyyss//kkiinnffoo..hh>>
+     ##ddeeffiinnee KKEERRNNEELL
+     ##iinncclluuddee <<ssyyss//ffiillee..hh>>
+     ##uunnddeeff KKEERRNNEELL
+
+     _c_h_a_r _*
+     kkvvmm__ggeettffiilleess(_k_v_m___t _*_k_d, _i_n_t _o_p, _i_n_t _a_r_g, _i_n_t _*_c_n_t);
+
+DDEESSCCRRIIPPTTIIOONN
+     kkvvmm__ggeettffiilleess() returns a (sub-)set of the open files in the kernel indi-
+     cated by _k_d_. The _o_p and _a_r_g arguments constitute a predicate which limits
+     the set of files returned.  No predicates are currently defined.
+
+     The number of processes found is returned in the reference parameter _c_n_t.
+     The files are returned as a contiguous array of file structures, preceed-
+     ed by the address of the first file entry in the kernel.  This memory is
+     owned by kvm and is not guaranteed to be persistent across subsequent kvm
+     library calls.  Data should be copied out if it needs to be saved.
+
+RREETTUURRNN VVAALLUUEESS
+     kkvvmm__ggeettffiilleess() will return NULL on failure.
+
+BBUUGGSS
+     This routine does not belong in the kvm interface.
+
+SSEEEE AALLSSOO
+     kvm(3),  kvm_open(3),  kvm_openfiles(3),  kvm_close(3),  kvm_read(3),
+     kvm_write(3),  kvm_nlist(3),  kvm_geterr(3)
+
+4.4BSD                           June 4, 1993                                1
