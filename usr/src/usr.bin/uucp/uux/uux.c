@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)uux.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)uux.c	5.4 (Berkeley) %G%";
 #endif
 
 #include "uucp.h"
@@ -40,8 +40,8 @@ char *argv[];
 	char cmd[BUFSIZ];
 	char *ap, *cmdp;
 	char prm[BUFSIZ];
-	char syspart[8], rest[MAXFULLNAME];
-	char Xsys[8], local[8];
+	char syspart[MAXBASENAME+1], rest[MAXFULLNAME];
+	char Xsys[MAXBASENAME+1], local[MAXBASENAME+1];
 	char *xsys = Xsys;
 	FILE *fprx, *fpc, *fpd, *fp;
 	extern char *getprm(), *lastpart();
@@ -103,6 +103,8 @@ char *argv[];
 			break;
 		case 'a':
 			ReturnTo = &argv[1][2];
+			if (prefix(Myname, ReturnTo) && ReturnTo[strlen(Myname)]				== '!')
+				ReturnTo = index(ReturnTo, '!') + 1;
 			break;
 		default:
 			fprintf(stderr, "unknown flag %s\n", argv[1]);
@@ -111,8 +113,8 @@ char *argv[];
 		--argc;  argv++;
 	}
 	if (argc > 2) {
-		ret = gwd(Wrkdir);
-		if (ret != 0) {
+		ap = getwd(Wrkdir);
+		if (ap == 0) {
 			fprintf(stderr, "can't get working directory; will try to continue\n");
 			strcpy(Wrkdir, "/UNKNOWN");
 		}
@@ -132,7 +134,7 @@ char *argv[];
 	uid = getuid();
 	guinfo(uid, User, path);
 
-	sprintf(local, "%.7s", Myname);
+	strncpy(local, Myname, MAXBASENAME);
 	cmdp = cmd;
 	*cmdp = '\0';
 	gename(DATAPRE, local, 'X', rxfile);
@@ -165,7 +167,7 @@ char *argv[];
 	}
 	if (xsys[0] == '\0')
 		strcpy(xsys, local);
-	sprintf(Rmtname, "%.7s", xsys);
+	strncpy(Rmtname, xsys, MAXBASENAME);
 	DEBUG(4, "xsys %s\n", xsys);
 	if (versys(&xsys) != 0) {
 		/*  bad system name  */
