@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)uipc_mbuf.c	7.19 (Berkeley) 4/20/91
- *	$Id: uipc_mbuf.c,v 1.7.1.1 1994/05/01 02:24:27 jtw Exp $
+ *	$Id: uipc_mbuf.c,v 1.8 1994/05/05 23:48:00 wollman Exp $
  */
 
 #include "param.h"
@@ -726,11 +726,6 @@ m_compress(in, out)
 	(*out)->m_act = 0;
 
 	while (in) {
-		if (in->m_flags & M_EXT) {
-#ifdef DEBUG
-			ASSERT(in->m_len == 0);
-#endif
-		}
 		if ( in->m_len == 0) {
 			in = in->m_next;
 			continue;
