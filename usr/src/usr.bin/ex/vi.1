@@ -3,13 +3,13 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)vi.1	8.1 (Berkeley) %G%
+.\"     @(#)vi.1	6.5 (Berkeley) %G%
 .\"
 .Dd 
 .Dt VI 1
 .Os BSD 3
 .Sh NAME
-.Nm \&vi
+.Nm \&vi , view
 .Nd screen oriented (visual) display editor based on ex
 .Sh SYNOPSIS
 .Nm \&vi
@@ -33,6 +33,11 @@ the command mode of
 from within
 .Nm \&vi
 and vice-versa.
+.Pp
+.Nm View
+is the same as
+.Dq "vi -R" ,
+e.g. run in read-only mode.
 .Pp
 Available options:
 .Bl -tag -width xcommandx
