@@ -1,4 +1,4 @@
-/*	mkioconf.c	2.3	82/10/24	*/
+/*	mkioconf.c	2.4	82/10/24	*/
 
 #include <stdio.h>
 #include "y.tab.h"
@@ -8,12 +8,13 @@
  * build the ioconf.c file
  */
 char	*qu();
+char	*intv();
 
+#if MACHINE_VAX
 vax_ioconf()
 {
 	register struct device *dp, *mp, *np;
 	register int uba_n, slave;
-	char *intv();
 	FILE *fp;
 
 	fp = fopen(path("ioconf.c"), "w");
@@ -250,12 +251,13 @@ vax_ioconf()
 	fprintf(fp, "\t0\n};\n");
 	fclose(fp);
 }
+#endif
 
+#if MACHINE_SUN
 sun_ioconf()
 {
 	register struct device *dp, *mp, *np;
 	register int uba_n, slave;
-	char *intv();
 	FILE *fp;
 
 	fp = fopen(path("ioconf.c"), "w");
@@ -396,6 +398,7 @@ sun_ioconf()
 	fprintf(fp, "\t0\n};\n");
 	fclose(fp);
 }
+#endif
 
 char *intv(dev)
 	register struct device *dev;
