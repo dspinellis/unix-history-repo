@@ -404,13 +404,6 @@ compile_re(p, repp)
 		return (p);
 	}
 	*repp = xmalloc(sizeof(regex_t));
-#ifdef GNU_REGEX
-	/* initialize pattern buffer */
-	(*repp)->buffer = NULL;
-	(*repp)->allocated = 0L;
-	(*repp)->fastmap = 0;		/* not used by GNU regex after 0.12 */
-	(*repp)->translate = 0;
-#endif
 	if (p && (eval = regcomp(*repp, re, 0)) != 0)
 		err(COMPILE, "RE error: %s", strregerror(eval, *repp));
 	if (maxnsub < (*repp)->re_nsub)
