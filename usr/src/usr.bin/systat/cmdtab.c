@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)cmdtab.c	1.2 (Lucasfilm) %G%";
+static char sccsid[] = "@(#)cmdtab.c	1.3 (Lucasfilm) %G%";
 #endif
 
 #include "systat.h"
@@ -16,21 +16,26 @@ WINDOW	*openmbufs();
 int	showiostat(), fetchiostat(), labeliostat();
 int	initiostat(), closeiostat(), cmdiostat();
 WINDOW	*openiostat();
-int	showvmstat(), fetchvmstat(), labelvmstat();
-int	initvmstat(), closevmstat();
-WINDOW	*openvmstat();
+int	showkre(), fetchkre(), labelkre();
+int	initkre(), closekre(), cmdkre();
+WINDOW	*openkre();
 
 struct	cmdtab cmdtab[] = {
         { "pigs",	showpigs,	fetchpigs,	labelpigs,
-	  initpigs,	openpigs,	closepigs },
+	  initpigs,	openpigs,	closepigs,	0,
+	  CF_LOADAV },
         { "swap",	showswap,	fetchswap,	labelswap,
-	  initswap,	openswap,	closeswap },
+	  initswap,	openswap,	closeswap,	0,
+	  CF_LOADAV },
         { "mbufs",	showmbufs,	fetchmbufs,	labelmbufs,
-	  initmbufs,	openmbufs,	closembufs },
+	  initmbufs,	openmbufs,	closembufs,	0,
+	  CF_LOADAV },
         { "iostat",	showiostat,	fetchiostat,	labeliostat,
-	  initiostat,	openiostat,	closeiostat,	cmdiostat },
-        { "vmstat",	showvmstat,	fetchvmstat,	labelvmstat,
-	  initvmstat,	openvmstat,	closevmstat },
+	  initiostat,	openiostat,	closeiostat,	cmdiostat,
+	  CF_LOADAV },
+        { "vmstat",	showkre,	fetchkre,	labelkre,
+	  initkre,	openkre,	closekre,	cmdkre,
+	  0 },
         { 0 }
 };
 struct  cmdtab *curcmd = &cmdtab[0];

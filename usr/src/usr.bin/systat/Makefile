@@ -1,11 +1,11 @@
-#       Makefile     1.5     84/11/19
+#       Makefile     1.6     85/04/28
 DESTDIR=
 INCPATH=
 CFLAGS= -O
 SRCS=	cmds.c cmdtab.c disks.c fetch.c iostat.c \
-	keyboard.c main.c mbufs.c pigs.c swap.c vmstat.c
+	keyboard.c main.c mbufs.c pigs.c swap.c kre.c
 OBJS=	cmds.o cmdtab.o disks.o fetch.o iostat.o \
-	keyboard.o main.o mbufs.o pigs.o swap.o vmstat.o
+	keyboard.o main.o mbufs.o pigs.o swap.o kre.o
 LIBS=   -lcurses -ltermlib -lm
 
 systat: ${OBJS}
