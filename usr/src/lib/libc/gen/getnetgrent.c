@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)getnetgrent.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)getnetgrent.c	5.2 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <stdio.h>
@@ -34,10 +34,11 @@ struct linelist {
 
 struct netgrp {
 	struct netgrp	*ng_next;	/* Chain ptr */
-	char		*ng_host;	/* Host name */
-	char		*ng_user;	/* User name */
-	char		*ng_dom;	/* and Domain name */
+	char		*ng_str[3];	/* Field pointers, see below */
 };
+#define NG_HOST		0	/* Host name */
+#define NG_USER		1	/* User name */
+#define NG_DOM		2	/* and Domain name */
 
 static struct linelist	*linehead = (struct linelist *)0;
 static struct netgrp	*nextgrp = (struct netgrp *)0;
@@ -93,9 +94,9 @@ getnetgrent(hostp, userp, domp)
 {
 
 	if (nextgrp) {
-		*hostp = nextgrp->ng_host;
-		*userp = nextgrp->ng_user;
-		*domp = nextgrp->ng_dom;
+		*hostp = nextgrp->ng_str[NG_HOST];
+		*userp = nextgrp->ng_str[NG_USER];
+		*domp = nextgrp->ng_str[NG_DOM];
 		nextgrp = nextgrp->ng_next;
 		return (1);
 	}
@@ -128,12 +129,12 @@ endnetgrent()
 	while (gp) {
 		ogp = gp;
 		gp = gp->ng_next;
-		if (ogp->ng_host)
-			free(ogp->ng_host);
-		if (ogp->ng_user)
-			free(ogp->ng_user);
-		if (ogp->ng_dom)
-			free(ogp->ng_dom);
+		if (ogp->ng_str[NG_HOST])
+			free(ogp->ng_str[NG_HOST]);
+		if (ogp->ng_str[NG_USER])
+			free(ogp->ng_str[NG_USER]);
+		if (ogp->ng_str[NG_DOM])
+			free(ogp->ng_str[NG_DOM]);
 		free((char *)ogp);
 	}
 	grouphead.gr = (struct netgrp *)0;
@@ -167,8 +168,9 @@ static int
 parse_netgrp(group)
 	char *group;
 {
-	register char *pos, *spos;
-	register int len;
+	register char *spos, *epos;
+	register int len, strpos;
+	char *pos, *gpos;
 	struct netgrp *grp;
 	struct linelist *lp = linehead;
 
@@ -195,51 +197,33 @@ parse_netgrp(group)
 			bzero((char *)grp, sizeof (struct netgrp));
 			grp->ng_next = grouphead.gr;
 			grouphead.gr = grp;
-			spos = ++pos;
-			while (*pos != ',' && *pos != '\0')
-				pos++;
-			if (*pos == '\0')
-				goto errout;
-			len = pos - spos;
-			if (len > 0) {
-				grp->ng_host = (char *)malloc(len + 1);
-				bcopy(spos, grp->ng_host, len);
-				*(grp->ng_host + len) = '\0';
+			pos++;
+			gpos = strsep(&pos, ")");
+			for (strpos = 0; strpos < 3; strpos++) {
+				if (spos = strsep(&gpos, ",")) {
+					while (*spos == ' ' || *spos == '\t')
+						spos++;
+					if (epos = strpbrk(spos, " \t")) {
+						*epos = '\0';
+						len = epos - spos;
+					} else
+						len = strlen(spos);
+					if (len > 0) {
+						grp->ng_str[strpos] =  (char *)
+							malloc(len + 1);
+						bcopy(spos, grp->ng_str[strpos],
+							len + 1);
+					}
+				} else
+					goto errout;
 			}
-			spos = ++pos;
-			while (*pos != ',' && *pos != '\0')
-				pos++;
-			if (*pos == '\0')
-				goto errout;
-			len = pos - spos;
-			if (len > 0) {
-				grp->ng_user = (char *)malloc(len + 1);
-				bcopy(spos, grp->ng_user, len);
-				*(grp->ng_user + len) = '\0';
-			}
-			spos = ++pos;
-			while (*pos != ')' && *pos != '\0')
-				pos++;
-			if (*pos == '\0')
-				goto errout;
-			len = pos - spos;
-			if (len > 0) {
-				grp->ng_dom = (char *)malloc(len + 1);
-				bcopy(spos, grp->ng_dom, len);
-				*(grp->ng_dom + len) = '\0';
-			}
-			if (*++pos != '\0' &&
-				(*pos != ',' || *++pos == ',' || *pos == '\0'))
-				goto errout;
 		} else {
-			spos = pos;
-			while (*pos != ',' && *pos != '\0')
-				pos++;
-			if (*pos == ',')
-				*pos++ = '\0';
+			spos = strsep(&pos, ", \t");
 			if (parse_netgrp(spos))
 				return (1);
 		}
+		while (*pos == ' ' || *pos == ',' || *pos == '\t')
+			pos++;
 	}
 	return (0);
 errout:
@@ -256,13 +240,16 @@ static struct linelist *
 read_for_group(group)
 	char *group;
 {
-	register char *pos, *spos;
-	register int len;
+	register char *pos, *spos, *linep, *olinep;
+	register int len, olen;
+	int cont;
 	struct linelist *lp;
 	char line[LINSIZ + 1];
 
 	while (fgets(line, LINSIZ, netf) != NULL) {
 		pos = line;
+		if (*pos == '#')
+			continue;
 		while (*pos == ' ' || *pos == '\t')
 			pos++;
 		spos = pos;
@@ -278,14 +265,40 @@ read_for_group(group)
 			lp->l_groupname = (char *)malloc(len + 1);
 			bcopy(spos, lp->l_groupname, len);
 			*(lp->l_groupname + len) = '\0';
-			spos = lp->l_line = (char *)malloc(LINSIZ);
-			while (*pos != '\n' && *pos != '\0') {
-				if (*pos != ' ' && *pos != '\t')
-					*spos++ = *pos++;
-				else
-					pos++;
-			}
-			*spos = '\0';
+			len = strlen(pos);
+			olen = 0;
+
+			/*
+			 * Loop around handling line continuations.
+			 */
+			do {
+				if (*(pos + len - 1) == '\n')
+					len--;
+				if (*(pos + len - 1) == '\\') {
+					len--;
+					cont = 1;
+				} else
+					cont = 0;
+				if (len > 0) {
+					linep = (char *)malloc(olen + len + 1);
+					if (olen > 0) {
+						bcopy(olinep, linep, olen);
+						free(olinep);
+					}
+					bcopy(pos, linep + olen, len);
+					olen += len;
+					*(linep + olen) = '\0';
+					olinep = linep;
+				}
+				if (cont) {
+					if (fgets(line, LINSIZ, netf)) {
+						pos = line;
+						len = strlen(pos);
+					} else
+						cont = 0;
+				}
+			} while (cont);
+			lp->l_line = linep;
 			lp->l_next = linehead;
 			linehead = lp;
 
