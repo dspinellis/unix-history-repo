@@ -17,7 +17,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)implog.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)implog.c	5.9 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -26,6 +26,7 @@ static char sccsid[] = "@(#)implog.c	5.8 (Berkeley) %G%";
 
 #include <sys/time.h>
 #include <sys/types.h>
+#include <sys/file.h>
 #include <sys/stat.h>
 #include <sys/socket.h>
 
@@ -43,6 +44,7 @@ int	showdata = 1;
 int	showcontents = 0;
 int	rawheader = 0;
 int	follow = 0;
+int	skip = 0;
 int	link = -1;
 int	host = -1;
 int	imp = -1;
@@ -69,7 +71,7 @@ main(argc, argv)
 	char *argv[];
 {
 	struct stat b;
-	int size;
+	off_t size;
 	char *cp;
 	int hostfrom, impfrom;
 
@@ -81,6 +83,12 @@ main(argc, argv)
 			continue;
 		}
 		if (strcmp(*argv, "-f") == 0) {
+			follow++;
+			argv++, argc--;
+			continue;
+		}
+		if (strcmp(*argv, "-F") == 0) {
+			skip++;
 			follow++;
 			argv++, argc--;
 			continue;
@@ -134,7 +142,7 @@ main(argc, argv)
 			argv++, argc--;;
 			continue;
 		}
-		printf("usage: implog [ -D ] [ -c ] [ -f ] [ -r ] [-h #] [-i #] [ -t # ] [-l [#]] [logfile]\n");
+		printf("usage: implog [ -D ] [ -c ] [ -f ] [ -F ] [ -r ] [-h #] [-i #] [ -t # ] [-l [#]] [logfile]\n");
 		exit(2);
 	}
 	if (argc > 0)
@@ -146,6 +154,8 @@ main(argc, argv)
 	}
 	fstat(log, &b);
 	size = b.st_size;
+	if (skip)
+		(void) lseek(log, size, L_SET);
 again:
 	while (read(log, (char *)&from, sizeof(from)) == sizeof(from)) {
 		if (from.sin_family == 0) {
