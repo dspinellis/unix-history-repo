@@ -23,13 +23,13 @@ fileinit()
 	register int i, j;
 	struct stat stbuf;
 
-	if (tline == INCRMT * 3)
+	if (tline == INCRMT * (HBLKS+2))
 		return;
 	cleanup(0);
 	close(tfile);
-	tline = INCRMT * 3;
-	blocks[0] = 1;
-	blocks[1] = 2;
+	tline = INCRMT * (HBLKS+2);
+	blocks[0] = HBLKS;
+	blocks[1] = HBLKS+1;
 	blocks[2] = -1;
 	dirtcnt = 0;
 	iblock = -1;

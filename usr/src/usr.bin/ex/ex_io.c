@@ -13,12 +13,16 @@
  * Following remember where . was in the previous file for return
  * on file switching.
  */
-short	altdot;
-short	oldadot;
+int	altdot;
+int	oldadot;
 bool	wasalt;
 
 long	cntch;			/* Count of characters on unit io */
+#ifndef VMUNIX
 short	cntln;			/* Count of lines " */
+#else
+int	cntln;
+#endif
 long	cntnull;		/* Count of nulls " */
 long	cntodd;			/* Count of non-ascii characters " */
 
@@ -476,7 +480,9 @@ bool dofname;	/* if 1 call filename, else use savedfile */
 			error(" Use \"w!\" to write partial buffer");
 		}
 cre:
+/*
 		synctmp();
+*/
 #ifdef V6
 		io = creat(file, 0644);
 #else
@@ -689,7 +695,9 @@ unixex(opt, up, newstdin, mode)
 			close(io);
 		if (tfile)
 			close(tfile);
+#ifndef VMUNIX
 		close(erfile);
+#endif
 		signal(SIGHUP, oldhup);
 		signal(SIGQUIT, oldquit);
 		if (ruptible)

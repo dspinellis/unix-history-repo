@@ -7,6 +7,12 @@
 #include <pwd.h>
 #include "local/uparm.h"
 
+#ifdef VMUNIX
+#define	HBLKS	2
+#else
+#define	HBLKS	1
+#endif
+
 /*
  * Expreserve - preserve a file in usrpath(preserve)
  * Bill Joy UCB November 13, 1977
@@ -24,13 +30,21 @@
  *      temporaries.
  */
 
+#ifndef VMUNIX
 #define	LBLKS	125
+#else
+#define	LBLKS	900
+#endif
 #define	FNSIZE	128
 
 struct 	header {
 	time_t	Time;			/* Time temp file last updated */
 	short	Uid;			/* This users identity */
+#ifndef VMUNIX
 	short	Flines;			/* Number of lines in file */
+#else
+	int	Flines;
+#endif
 	char	Savedfile[FNSIZE];	/* The current file name */
 	short	Blocks[LBLKS];		/* Blocks where line pointers stashed */
 } H;
@@ -170,7 +184,7 @@ format:
 #endif
 		goto format;
 	}
-	if (H.Blocks[0] != 1 || H.Blocks[1] != 2) {
+	if (H.Blocks[0] != HBLKS || H.Blocks[1] != HBLKS+1) {
 #ifdef DEBUG
 		fprintf(stderr, "Blocks %d %d\n", H.Blocks[0], H.Blocks[1]);
 #endif

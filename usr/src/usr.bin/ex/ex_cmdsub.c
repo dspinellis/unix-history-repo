@@ -456,7 +456,6 @@ tagfind(quick)
 	short omagic;
 
 	omagic = value(MAGIC);
-	value(MAGIC) = 0;	/* force nomagic mode for tags */
 	if (!skipend()) {
 		register char *lp = lasttag;
 
@@ -531,9 +530,15 @@ badtags:
 				strcat(cmdbuf2, filebuf);
 				globp = cmdbuf2;
 				d = peekc; ungetchar(0);
+				/*
+				 * BUG: if it isn't found (user edited header
+				 * line) we get left in nomagic mode.
+				 */
+				value(MAGIC) = 0;
 				commands(1, 1);
 				peekc = d;
 				globp = oglobp;
+				value(MAGIC) = omagic;
 				samef = 0;
 			}
 			oglobp = globp;
@@ -541,6 +546,7 @@ badtags:
 			d = peekc; ungetchar(0);
 			if (samef)
 				markpr(dot);
+			value(MAGIC) = 0;
 			commands(1, 1);
 			peekc = d;
 			globp = oglobp;
@@ -1031,13 +1037,13 @@ addmac(src,dest,dname)
 	if (dest) {
 		/* Make sure user doesn't screw himself */
 		/*
-		 * Prevent head and tail recursion. We really should be
-		 * checking to see if src is a prefix or suffix of dest
+		 * Prevent tail recursion. We really should be
+		 * checking to see if src is a suffix of dest
 		 * but we are too lazy here, so we don't bother unless
 		 * src is only 1 char long.
 		 */
-		if (src[1] == 0 && (src[0] == dest[0] || src[0] == dest[strlen(dest)-1]))
-			error("No recursion");
+		if (src[1] == 0 && src[0] == dest[strlen(dest)-1])
+			error("No tail recursion");
 		/*
 		 * We don't let the user rob himself of ":", and making
 		 * multi char words is a bad idea so we don't allow it.

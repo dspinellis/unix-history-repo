@@ -9,8 +9,8 @@
 #define IGNORECASE      8
 #define LISP            9
 #define LIST            10
-#define MAPINPUT        11
-#define MAGIC           12
+#define MAGIC           11
+#define MAPINPUT        12
 #define NUMBER          13
 #define OPEN            14
 #define OPTIMIZE        15

@@ -70,7 +70,9 @@ main(ac, av)
 	register int ac;
 	register char *av[];
 {
+#ifndef VMUNIX
 	char *erpath = EXSTRINGS;
+#endif
 	register char *cp;
 	register int c;
 	bool recov = 0;
@@ -99,8 +101,10 @@ main(ac, av)
 	 * For debugging take files out of . if name is a.out.
 	 * If a 'd' in our name, then set options for edit.
 	 */
+#ifndef VMUNIX
 	if (av[0][0] == 'a')
 		erpath = tailpath(erpath);
+#endif
 	if (ivis) {
 #ifdef notdef
 		options[BEAUTIFY].odefault = value(BEAUTIFY) = 1;
@@ -115,10 +119,12 @@ main(ac, av)
 	 * Open the error message file.
 	 */
 	draino();
+#ifndef VMUNIX
 	erfile = open(erpath+4, 0);
 	if (erfile < 0) {
 		erfile = open(erpath, 0);
 	}
+#endif
 	pstop();
 
 	/*

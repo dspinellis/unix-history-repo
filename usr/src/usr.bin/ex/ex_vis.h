@@ -192,8 +192,8 @@ char	DEL[VBSIZE];		/* Last deleted text */
 bool	HADUP;			/* This insert line started with ^ then ^D */
 bool	HADZERO;		/* This insert line started with 0 then ^D */
 char	INS[VBSIZE];		/* Last inserted text */
-short	Vlines;			/* Number of file lines "before" vi command */
-short	Xcnt;			/* External variable holding last cmd's count */
+int	Vlines;			/* Number of file lines "before" vi command */
+int	Xcnt;			/* External variable holding last cmd's count */
 bool	Xhadcnt;		/* Last command had explicit count? */
 short	ZERO;
 short	dir;			/* Direction for search (+1 or -1) */
@@ -203,7 +203,7 @@ bool	hadcnt;			/* (Almost) internal to vmain() */
 bool	heldech;		/* We owe a clear of echo area */
 bool	insmode;		/* Are in character insert mode */
 char	lastcmd[5];		/* Chars in last command */
-short	lastcnt;		/* Count for last command */
+int	lastcnt;		/* Count for last command */
 char	*lastcp;		/* Save current command here to repeat */
 bool	lasthad;		/* Last command had a count? */
 short	lastvgk;		/* Previous input key, if not from keyboard */
@@ -214,7 +214,7 @@ char	*notesgn;		/* Change count from last command */
 char	op;			/* Operation of current command */
 short	Peekkey;		/* Peek ahead key */
 bool	rubble;			/* Line is filthy (in hardcopy open), redraw! */
-short	vSCROLL;		/* Number lines to scroll on ^D/^U */
+int	vSCROLL;		/* Number lines to scroll on ^D/^U */
 char	*vglobp;		/* Untyped input (e.g. repeat insert text) */
 char	vmacbuf[VBSIZE];	/* Text of visual macro, hence nonnestable */
 char	*vmacp;			/* Like vglobp but for visual macros */

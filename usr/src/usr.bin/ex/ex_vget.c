@@ -81,8 +81,9 @@ getATTN:
 			return(*vmacp++);
 		/* End of a macro or set of nested macros */
 		vmacp = 0;
+		if (inopen == -1)	/* don't screw up undo for esc esc */
+			vundkind = VMANY;
 		inopen = 1;	/* restore old setting now that macro done */
-		vundkind = VMANY;
 	}
 #ifdef TRACE
 	if (trace)
@@ -410,7 +411,7 @@ map(c,maps)
 					if (trace)
 						fprintf(trace,"fpk=0: return %c",c);
 #endif
-						macpush(&b[1]);
+						macpush(&b[1],1);
 						return(c);
 					}
 					*q = getkey();
@@ -419,7 +420,7 @@ map(c,maps)
 				if (*p != *q)
 					goto contin;
 			}
-			macpush(maps[d].mapto);
+			macpush(maps[d].mapto,1);
 			c = getkey();
 #ifdef MDEBUG
 	if (trace)
@@ -433,7 +434,7 @@ map(c,maps)
 	if (trace)
 		fprintf(trace,"Fail: return %c",c); /* DEBUG */
 #endif
-	macpush(&b[1]);
+	macpush(&b[1],0);
 	return(c);
 }
 
@@ -442,9 +443,13 @@ map(c,maps)
  * worry about where vmacp was previously pointing. We also have to
  * check for overflow (which is typically from a recursive macro)
  * Finally we have to set a flag so the whole thing can be undone.
+ * canundo is 1 iff we want to be able to undo the macro.  This
+ * is false for, for example, pushing back lookahead from fastpeekkey(),
+ * since otherwise two fast escapes can clobber our undo.
  */
-macpush(st)
+macpush(st, canundo)
 char *st;
+int canundo;
 {
 	char tmpbuf[BUFSIZ];
 
@@ -456,17 +461,22 @@ char *st;
 #endif
 	if (strlen(vmacp) + strlen(st) > BUFSIZ)
 		error("Macro too long@ - maybe recursive?");
-	if (vmacp)
+	if (vmacp) {
 		strcpy(tmpbuf, vmacp);
+		canundo = 0;	/* can't undo inside a macro anyway */
+	}
 	strcpy(vmacbuf, st);
 	if (vmacp)
 		strcat(vmacbuf, tmpbuf);
 	vmacp = vmacbuf;
 	/* arrange to be able to undo the whole macro */
-	inopen = -1;	/* no need to save since it had to be 1 or -1 before */
-	otchng = tchng;
-	saveall();
-	vundkind = VMANY;
+	if (canundo) {
+		inopen = -1;	/* no need to save since it had to be 1 or -1 before */
+		otchng = tchng;
+		vsave();
+		saveall();
+		vundkind = VMANY;
+	}
 #ifdef TRACE
 	if (trace)
 		fprintf(trace, "saveall for macro: undkind=%d, unddel=%d, undap1=%d, undap2=%d, dol=%d, unddol=%d, truedol=%d\n", undkind, lineno(unddel), lineno(undap1), lineno(undap2), lineno(dol), lineno(unddol), lineno(truedol));
@@ -505,6 +515,8 @@ fastpeekkey()
 	int trapalarm();
 	register int c;
 
+	if (inopen == -1)	/* don't work inside macros! */
+		return (0);
 	signal(SIGALRM, trapalarm);
 	alarm(1);
 	CATCH

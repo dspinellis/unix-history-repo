@@ -4,9 +4,9 @@
  * similar to that of ed.  The first block of the file is used for a header
  * block which guides recovery after editor/system crashes.
  * Lines are represented in core by a pointer into the temporary file which
- * is packed into 16 bits.  15 of these bits index the temporary file,
- * the 16'th is used by global commands.  The parameters below control
- * how much the 15 bits are shifted left before they index the temp file.
+ * is packed into 16 bits (32 on VMUNIX).  All but the low bit index the temp
+ * file; the last is used by global commands.  The parameters below control
+ * how much the other bits are shifted left before they index the temp file.
  * Larger shifts give more slop in the temp file but allow larger files
  * to be edited.
  *
@@ -21,10 +21,12 @@
  *
  * The following temp file parameters allow 256k bytes in the temporary
  * file.  By changing to the numbers in comments you can get 512k.
- * By typedefing line to long (32 bit) integers you could get much more
- * space in the temp file with (then) no waste.  This would double core
- * requirements and would probably require some editor debugging.
+ * For VMUNIX you get more than you could ever want.
+ * VMUNIX uses long (32 bit) integers giving much more
+ * space in the temp file and no waste.  This doubles core
+ * requirements but allows files of essentially unlimited size to be edited.
  */
+#ifndef VMUNIX
 #define	BLKMSK	0777		/* 01777 */
 #define	BNDRY	8		/* 16 */
 #define	INCRMT	0200		/* 0100 */
@@ -33,12 +35,22 @@
 #define	OFFBTS	7		/* 6 */
 #define	OFFMSK	0177		/* 077 */
 #define	SHFT	2		/* 3 */
+#else
+#define	BLKMSK	077777
+#define	BNDRY	2
+#define	INCRMT	02000
+#define	LBTMSK	01776
+#define	NMBLKS	077770
+#define	OFFBTS	10
+#define	OFFMSK	01777
+#define	SHFT	0
+#endif
 
 /*
  * The editor uses three buffers into the temporary file (ed uses two
  * and is very similar).  These are two read buffers and one write buffer.
- * Basically, the editor deals with the file as a sequence of 512 character
- * blocks (BUFSIZ).  Each block contains some number of lines (and lines
+ * Basically, the editor deals with the file as a sequence of BUFSIZ character
+ * blocks.  Each block contains some number of lines (and lines
  * can run across block boundaries.
  *
  * New lines are written into the last block in the temporary file
@@ -59,7 +71,11 @@ short	iblock2;		/* Temp file block number of ibuff2 (or -1) */
 short	ninbuf;			/* Number useful chars left in input buffer */
 short	nleft;			/* Number usable chars left in output buffer */
 short	oblock;			/* Temp file block number of obuff (or -1) */
+#ifndef VMUNIX
 short	tline;			/* Current temp file ptr */
+#else
+int	tline;
+#endif
 
 char	ibuff[BUFSIZ];
 char	ibuff2[BUFSIZ];
@@ -83,7 +99,11 @@ char	obuff[BUFSIZ];
 struct 	header {
 	time_t	Time;			/* Time temp file last updated */
 	short	Uid;
+#ifndef VMUNIX
 	short	Flines;			/* Number of lines in file */
+#else
+	int	Flines;
+#endif
 	char	Savedfile[FNSIZE];	/* The current file name */
 	short	Blocks[LBLKS];		/* Blocks where line pointers stashed */
 } H;

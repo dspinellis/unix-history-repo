@@ -10,9 +10,11 @@
  * "/usr/lib/..." here, "/lib" will be tried only for strings.
  */
 #include "local/uparm.h"
-#define	EXRECOVER	libpath(ex3.1recover)
-#define	EXPRESERVE	libpath(ex3.1preserve)
-#define	EXSTRINGS	libpath(ex3.1strings)
+#define	EXRECOVER	libpath(ex3.2recover)
+#define	EXPRESERVE	libpath(ex3.2preserve)
+#ifndef VMUNIX
+#define	EXSTRINGS	libpath(ex3.2strings)
+#endif
 #define	MASTERTAGS	libpath(tags)
 
 /*
@@ -27,12 +29,17 @@
  * Maximums
  *
  * The definition of LBSIZE should be the same as BUFSIZ (512 usually).
- * Most other defitions are quite generous.
+ * Most other definitions are quite generous.
  */
 /* FNSIZE is also defined in expreserve.c */
 #define	FNSIZE		128		/* File name size */
+#ifdef VMUNIX
+#define	LBSIZE		1024
+#define	ESIZE		512
+#else
 #define	LBSIZE		512		/* Line length */
 #define	ESIZE		128		/* Size of compiled re */
+#endif
 #define	RHSSIZE		256		/* Size of rhs of substitute */
 #define	NBRA		9		/* Number of re \( \) pairs */
 #define	TAGSIZE		32		/* Tag length */
@@ -41,13 +48,19 @@
 #define	UXBSIZE		128		/* Unix command buffer size */
 #define	VBSIZE		128		/* Partial line max size in visual */
 /* LBLKS is also defined in expreserve.c */
+#ifndef VMUNIX
 #define	LBLKS		125		/* Line pointer blocks in temp file */
+#define	HBLKS		1		/* struct header fits in BUFSIZ*HBLKS */
+#else
+#define	LBLKS		900
+#define	HBLKS		2
+#endif
 #define	MAXDIRT		12		/* Max dirtcnt before sync tfile */
 #define TCBUFSIZE	1024		/* Max entry size in termcap, see
 					   also termlib and termcap */
 
 /*
- * These are a ridiculously small due to the
+ * Except on VMUNIX, these are a ridiculously small due to the
  * lousy arglist processing implementation which fixes core
  * proportional to them.  Argv (and hence NARGS) is really unnecessary,
  * and argument character space not needed except when
@@ -55,22 +68,33 @@
  * of the incore line information and could then
  * be reasonably large.
  */
+#ifndef VMUNIX
 #define	NARGS	100		/* Maximum number of names in "next" */
-#define	NCARGS	512		/* Maximum arglist chars in "next" */
+#define	NCARGS	LBSIZE		/* Maximum arglist chars in "next" */
+#else
+#define	NCARGS	5120
+#define	NARGS	(NCARGS/6)
+#endif
 
 /*
  * Note: because the routine "alloca" is not portable, TUBESIZE
  * bytes are allocated on the stack each time you go into visual
- * and then never freed by the system.  Thus if you have not terminals
+ * and then never freed by the system.  Thus if you have no terminals
  * which are larger than 24 * 80 you may well want to make TUBESIZE
  * smaller.  TUBECOLS should stay at 160 since this defines the maximum
  * length of opening on hardcopies and allows two lines of open on
  * terminals like adm3's (glass tty's) where it switches to pseudo
  * hardcopy mode when a line gets longer than 80 characters.
  */
-#define	TUBELINES	36	/* Number of screen lines for visual */
+#ifndef VMUNIX
+#define	TUBELINES	40	/* Number of screen lines for visual */
 #define	TUBECOLS	160	/* Number of screen columns for visual */
-#define	TUBESIZE	2880	/* Maximum screen size for visual */
+#define	TUBESIZE	3400	/* Maximum screen size for visual */
+#else
+#define	TUBELINES	66
+#define	TUBECOLS	160
+#define	TUBESIZE	6600	/* 66 * 100 */
+#endif
 
 /*
  * Output column (and line) are set to this value on cursor addressible
