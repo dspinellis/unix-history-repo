@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cmds.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmds.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 #include "tip.h"
@@ -761,11 +761,12 @@ genbrk()
 /*
  * Suspend tip
  */
-suspend()
+suspend(c)
+	char c;
 {
 
 	unraw();
-	kill(0, SIGTSTP);
+	kill(c == CTRL(y) ? getpid() : 0, SIGTSTP);
 	raw();
 }
 
