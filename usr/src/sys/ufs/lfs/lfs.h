@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs.h	7.6 (Berkeley) %G%
+ *	@(#)lfs.h	7.7 (Berkeley) %G%
  */
 
 typedef struct buf	BUF;
@@ -205,28 +205,42 @@ struct segsum {
 
 /* Read in the block with the cleaner info from the ifile. */
 #define LFS_CLEANERINFO(CP, F, BP) { \
-	if (bread((F)->lfs_ivnode, (daddr_t)0, (F)->lfs_bsize, NOCRED, &BP)) \
+	if (bread((F)->lfs_ivnode, (daddr_t)0, (F)->lfs_bsize, NOCRED, &(BP))) \
 		panic("lfs: ifile read"); \
-	(CP) = (CLEANERINFO *)BP->b_un.b_addr; \
+	(CP) = (CLEANERINFO *)(BP)->b_un.b_addr; \
 }
 
 /* Read in the block with a specific inode from the ifile. */
 #define	LFS_IENTRY(IP, F, IN, BP) { \
+	VTOI((F)->lfs_ivnode)->i_flag |= IACC; \
 	if (bread((F)->lfs_ivnode, \
 	    (IN) / (F)->lfs_ifpb + (F)->lfs_cleansz + (F)->lfs_segtabsz, \
-	    (F)->lfs_bsize, NOCRED, &BP)) \
+	    (F)->lfs_bsize, NOCRED, &(BP))) \
 		panic("lfs: ifile read"); \
-	(IP) = (IFILE *)BP->b_un.b_addr + IN % (F)->lfs_ifpb; \
+	(IP) = (IFILE *)(BP)->b_un.b_addr + (IN) % (F)->lfs_ifpb; \
 }
 
 /* Read in the block with a specific segment usage entry from the ifile. */
 #define	LFS_SEGENTRY(SP, F, IN, BP) { \
+	VTOI((F)->lfs_ivnode)->i_flag |= IACC; \
 	if (bread((F)->lfs_ivnode, (IN) / (F)->lfs_sepb + (F)->lfs_cleansz, \
-	    (F)->lfs_bsize, NOCRED, &BP)) \
+	    (F)->lfs_bsize, NOCRED, &(BP))) \
 		panic("lfs: ifile read"); \
-	(SP) = (SEGUSE *)BP->b_un.b_addr + IN % (F)->lfs_sepb; \
+	(SP) = (SEGUSE *)(BP)->b_un.b_addr + (IN) % (F)->lfs_sepb; \
 }
 
+/* Release the ifile block, updating the access time. */
+#define	LFS_IRELEASE(F, BP) { \
+	VTOI((F)->lfs_ivnode)->i_flag |= IACC; \
+	brelse((BP)); \
+}
+
+/* Release the ifile block, scheduling it for writing. */
+#define	LFS_IWRITE(F, BP) { \
+	VTOI((F)->lfs_ivnode)->i_flag |= ICHG | IUPD; \
+	lfs_bwrite((BP)); \
+}
+	
 /*
  * Structures used by lfs_bmapv and lfs_markv to communicate information
  * about inodes and data blocks.
