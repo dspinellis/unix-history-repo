@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)defs.h	5.8 (Berkeley) %G%
+ *	@(#)defs.h	5.9 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -113,7 +113,7 @@ extern int options;		/* global options */
 extern int nerrs;		/* number of errors seen */
 extern int rem;			/* remote file descriptor */
 extern int iamremote;		/* acting as remote server */
-extern char tmpfile[];		/* file name for logging changes */
+extern char tempfile[];		/* file name for logging changes */
 extern struct linkbuf *ihead;	/* list of files with more than one link */
 extern struct passwd *pw;	/* pointer to static area used by getpwent */
 extern struct group *gr;	/* pointer to static area used by getgrent */

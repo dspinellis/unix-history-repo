@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)server.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)server.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "defs.h"
@@ -652,7 +652,7 @@ recvf(cmd, type)
 	struct timeval tvp[2];
 	char *owner, *group;
 	char new[BUFSIZ];
-	extern char *tmpname;
+	extern char *tempname;
 
 	cp = cmd;
 	opts = 0;
@@ -747,12 +747,12 @@ recvf(cmd, type)
 		(void) sprintf(tp, "/%s", cp);
 	cp = rindex(target, '/');
 	if (cp == NULL)
-		strcpy(new, tmpname);
+		strcpy(new, tempname);
 	else if (cp == target)
-		(void) sprintf(new, "/%s", tmpname);
+		(void) sprintf(new, "/%s", tempname);
 	else {
 		*cp = '\0';
-		(void) sprintf(new, "%s/%s", target, tmpname);
+		(void) sprintf(new, "%s/%s", target, tempname);
 		*cp = '/';
 	}
 
@@ -1463,7 +1463,7 @@ response()
  */
 cleanup()
 {
-	(void) unlink(tmpfile);
+	(void) unlink(tempfile);
 	exit(1);
 }
 

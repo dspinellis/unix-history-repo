@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)docmd.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)docmd.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "defs.h"
@@ -107,8 +107,8 @@ doarrow(filev, files, rhost, cmds)
 		signal(SIGPIPE, lostconn);
 		if (!makeconn(rhost))
 			return;
-		if ((lfp = fopen(tmpfile, "w")) == NULL) {
-			fatal("cannot open %s\n", tmpfile);
+		if ((lfp = fopen(tempfile, "w")) == NULL) {
+			fatal("cannot open %s\n", tempfile);
 			exit(1);
 		}
 	}
@@ -142,9 +142,9 @@ done:
 	}
 	for (sc = cmds; sc != NULL; sc = sc->sc_next)
 		if (sc->sc_type == NOTIFY)
-			notify(tmpfile, rhost, sc->sc_args, 0);
+			notify(tempfile, rhost, sc->sc_args, 0);
 	if (!nflag) {
-		(void) unlink(tmpfile);
+		(void) unlink(tempfile);
 		for (; ihead != NULL; ihead = ihead->nextp) {
 			free(ihead);
 			if ((opts & IGNLNKS) || ihead->count == 0)
@@ -319,7 +319,7 @@ dodcolon(filev, files, stamp, cmds)
 	if (nflag || (options & VERIFY))
 		tfp = NULL;
 	else {
-		if ((tfp = fopen(tmpfile, "w")) == NULL) {
+		if ((tfp = fopen(tempfile, "w")) == NULL) {
 			error("%s: %s\n", stamp, strerror(errno));
 			return;
 		}
@@ -344,9 +344,9 @@ dodcolon(filev, files, stamp, cmds)
 		(void) fclose(tfp);
 	for (sc = cmds; sc != NULL; sc = sc->sc_next)
 		if (sc->sc_type == NOTIFY)
-			notify(tmpfile, NULL, sc->sc_args, lastmod);
+			notify(tempfile, NULL, sc->sc_args, lastmod);
 	if (!nflag && !(options & VERIFY))
-		(void) unlink(tmpfile);
+		(void) unlink(tempfile);
 }
 
 /*
