@@ -1,6 +1,6 @@
 # Makefile for the f77 math & startup lib - libF77.a
 
-#	@(#)makefile	1.11	%G%
+#	@(#)makefile	1.12	%G%
 
 LIB = libF77.a
 LPR = lpr
@@ -8,10 +8,12 @@ LPR = lpr
 # for the CFO 11's
 #LIBDIR = /usr/ucb/lib
 #TAPE = /dev/nrmt1
+#OPTIONS = 
 
 # for the VAX
 LIBDIR = /usr/lib
 TAPE = /dev/rnmt0.1600
+OPTIONS = -DUCBVAX
 
 MISC =	Version.o main.o s_rnge.o abort_.o exit_.o \
 	s_stop.o s_paus.o rand_.o range.o traper_.o trapov_.o \
@@ -49,7 +51,7 @@ $(LIB):	$(ALL)
 c_abs.o c_cos.o c_div.o c_div.o c_exp.o c_log.o c_sin.o c_sqrt.o d_cnjg.o d_imag.o pow_ci.o pow_zi.o pow_zz.o r_cnjg.o r_imag.o z_abs.o z_cos.o z_div.o z_div.o z_exp.o z_log.o z_sin.o z_sqrt.o:	complex
 
 trapov_.o: trapov_.c
-	@cc -S trapov_.c
+	@cc -S ${OPTIONS} trapov_.c
 	@(echo "g/.set	L[0-9][0-9]*,0x0$$/s/0x0/0xf10/"; echo "x") \
 		| ex - trapov_.s
 	@as trapov_.s -o trapov_.o
@@ -57,7 +59,7 @@ trapov_.o: trapov_.c
 
 # compile, then strip unnecessary symbols
 .c.o :
-	cc -O -c -DVAX -DUCBVAX $*.c
+	cc -O -c ${OPTIONS} $*.c
 	-ld -r -x $*.o
 	mv a.out $*.o
 
