@@ -1,5 +1,5 @@
 #ifndef lint
-char version[] = "@(#)main.c	2.31 (Berkeley) %G%";
+char version[] = "@(#)main.c	2.32 (Berkeley) %G%";
 #endif
 
 #include <stdio.h>
@@ -866,7 +866,7 @@ pass2check(idesc)
 	 */
 	if (idesc->id_entryno != 0)
 		goto chk1;
-	if (dirp->d_ino != 0 && dirp->d_namlen == 1 && dirp->d_name[0] == '.') {
+	if (dirp->d_ino != 0 && strcmp(dirp->d_name, ".") == 0) {
 		if (dirp->d_ino != idesc->id_number) {
 			direrr(idesc->id_number, "BAD INODE NUMBER FOR '.'");
 			dirp->d_ino = idesc->id_number;
@@ -880,7 +880,7 @@ pass2check(idesc)
 	proto.d_namlen = 1;
 	(void)strcpy(proto.d_name, ".");
 	entrysize = DIRSIZ(&proto);
-	if (dirp->d_ino != 0) {
+	if (dirp->d_ino != 0 && strcmp(dirp->d_name, "..") != 0) {
 		pfatal("CANNOT FIX, FIRST ENTRY IN DIRECTORY CONTAINS %s\n",
 			dirp->d_name);
 	} else if (dirp->d_reclen < entrysize) {
@@ -921,8 +921,7 @@ chk1:
 		bzero((char *)dirp, n);
 		dirp->d_reclen = n;
 	}
-	if (dirp->d_ino != 0 && dirp->d_namlen == 2 &&
-	    strcmp(dirp->d_name, "..") == 0) {
+	if (dirp->d_ino != 0 && strcmp(dirp->d_name, "..") == 0) {
 		if (dirp->d_ino != idesc->id_parent) {
 			direrr(idesc->id_number, "BAD INODE NUMBER FOR '..'");
 			dirp->d_ino = idesc->id_parent;
@@ -932,7 +931,7 @@ chk1:
 		goto chk2;
 	}
 	direrr(idesc->id_number, "MISSING '..'");
-	if (dirp->d_ino != 0) {
+	if (dirp->d_ino != 0 && strcmp(dirp->d_name, ".") != 0) {
 		pfatal("CANNOT FIX, SECOND ENTRY IN DIRECTORY CONTAINS %s\n",
 			dirp->d_name);
 	} else if (dirp->d_reclen < entrysize) {
@@ -946,9 +945,9 @@ chk1:
 chk2:
 	if (dirp->d_ino == 0)
 		return (ret|KEEPON);
-	if (idesc->id_entryno >= 2 &&
-	    dirp->d_namlen <= 2 &&
-	    dirp->d_name[0] == '.') {
+	if (dirp->d_namlen <= 2 &&
+	    dirp->d_name[0] == '.' &&
+	    idesc->id_entryno >= 2) {
 		if (dirp->d_namlen == 1) {
 			direrr(idesc->id_number, "EXTRA '.' ENTRY");
 			dirp->d_ino = 0;
