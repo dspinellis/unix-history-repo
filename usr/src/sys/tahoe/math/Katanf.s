@@ -1,6 +1,6 @@
-/*	Katanf.s	1.2	86/01/03	*/
+/*	Katanf.s	1.3	86/01/05	*/
 
-#include "SYS.h"
+#include "../tahoe/SYS.h"
 
 	.text
 ENTRY(Katanf, 0)
@@ -20,8 +20,7 @@ ENTRY(Katanf, 0)
 	stf	r0
 	ret				# return(-satan(-arg));
 
-	.align	1
-satan: .word	R3|R2
+ASENTRY(satan, R2|R3)
 	subl3	$60,fp,sp
 	cmpd2	4(fp),_sq2m1		# if (arg < sq2m1)
 	jgeq	1f
@@ -76,8 +75,7 @@ satan: .word	R3|R2
 	ldd	r0; cvdf; stf r0
 	ret
 
-	.align	1
-xatan: .word	0
+ASENTRY(xatan, 0)
 	subl3	$68,fp,sp
 	pushl	12(fp)			# hfs
 	ldd	4(fp); pushd; pushd

@@ -1,6 +1,6 @@
-/*	Ksubf.s	1.2	86/01/03	*/
+/*	Ksubf.s	1.3	86/01/05	*/
 
-#include "SYS.h"
+#include "../tahoe/SYS.h"
 
 /*
  * _Ksubf(acc_most,acc_least,op_most,op_least,hfs)

@@ -1,6 +1,6 @@
-/*	Kexpf.s	1.2	86/01/03	*/
+/*	Kexpf.s	1.3	86/01/05	*/
 
-#include "SYS.h"
+#include "../tahoe/SYS.h"
 
 	.text
 ENTRY(Kexpf, R4|R3)

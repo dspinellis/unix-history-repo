@@ -1,6 +1,6 @@
-/*	Kcmpd.s	1.2	86/01/03	*/
+/*	Kcmpd.s	1.3	86/01/05	*/
 
-#include "SYS.h"
+#include "../tahoe/SYS.h"
 
 /*
  * cmpd(hi1, lo1, hi2, lo2)

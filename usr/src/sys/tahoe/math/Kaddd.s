@@ -1,7 +1,7 @@
-/*	Kaddd.s	1.2	86/01/03	*/
+/*	Kaddd.s	1.3	86/01/05	*/
 
-#include "fp.h"
-#include "SYS.h"
+#include "../tahoemath/fp.h"
+#include "../tahoe/SYS.h"
 
 /*
  * _Kaddd(acc_most,acc_least,op_most,op_least,hfs)

@@ -1,8 +1,8 @@
-/*	Kdivf.s	1.2	86/01/03	*/
+/*	Kdivf.s	1.3	86/01/05	*/
 
-#include "fp.h"
-#include "Kfp.h"
-#include "SYS.h"
+#include "../tahoemath/fp.h"
+#include "../tahoemath/Kfp.h"
+#include "../tahoe/SYS.h"
 
 #define	HIDDEN	23	 	# here we count from 0 not from 1 as in fp.h
 
