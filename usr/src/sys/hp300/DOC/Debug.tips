@@ -1,3 +1,11 @@
+NOTE: this description applies to the hp300 system with the old BSD
+virtual memory system.  It has not been updated to reflect the new,
+Mach-derived VM system, but should still be useful.
+The new system has no fixed-address "u.", but has a fixed mapping
+for the kernel stack at 0xfff00000.
+
+--------------------------------------------------------------------------
+
 Some quick notes on the HPBSD VM layout and kernel debugging.
 
 Physical memory:
