@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)if_dmc.c	7.3 (Berkeley) %G%
+ *	@(#)if_dmc.c	7.4 (Berkeley) %G%
  */
 
 #include "dmc.h"
@@ -601,12 +601,6 @@ dmcxint(unit)
 			m = if_ubaget(&sc->sc_ifuba, ifrw, len, off, ifp);
 			if (m == 0)
 				goto setup;
-			if (off) {
-				ifp = *(mtod(m, struct ifnet **));
-				m->m_off += 2 * sizeof (u_short);
-				m->m_len -= 2 * sizeof (u_short);
-				*(mtod(m, struct ifnet **)) = ifp;
-			}
 			switch (dh->dmc_type) {
 
 #ifdef INET
@@ -761,12 +755,13 @@ dmcoutput(ifp, m0, dst)
 	switch (dst->sa_family) {
 #ifdef	INET
 	case AF_INET:
-		off = ntohs((u_short)mtod(m, struct ip *)->ip_len) - m->m_len;
+		off = m->m_pkthdr.len - m->m_len;
 		if ((ifp->if_flags & IFF_NOTRAILERS) == 0)
 		if (off > 0 && (off & 0x1ff) == 0 &&
-		    m->m_off >= MMINOFF + 2 * sizeof (u_short)) {
+		    (m->m_flags & M_EXT) == 0 &&
+		    m->m_data >= m->m_pktdat + 2 * sizeof (u_short)) {
 			type = DMC_TRAILER + (off>>9);
-			m->m_off -= 2 * sizeof (u_short);
+			m->m_data -= 2 * sizeof (u_short);
 			m->m_len += 2 * sizeof (u_short);
 			*mtod(m, u_short *) = htons((u_short)DMC_IPTYPE);
 			*(mtod(m, u_short *) + 1) = htons((u_short)m->m_len);
@@ -806,19 +801,10 @@ gottype:
 	 * Add local network header
 	 * (there is space for a uba on a vax to step on)
 	 */
-	if (m->m_off > MMAXOFF ||
-	    MMINOFF + sizeof(struct dmc_header) > m->m_off) {
-		m = m_get(M_DONTWAIT, MT_HEADER);
-		if (m == 0) {
-			error = ENOBUFS;
-			goto bad;
-		}
-		m->m_next = m0;
-		m->m_off = MMINOFF;
-		m->m_len = sizeof (struct dmc_header);
-	} else {
-		m->m_off -= sizeof (struct dmc_header);
-		m->m_len += sizeof (struct dmc_header);
+	M_PREPEND(m, sizeof(struct dmc_header), M_DONTWAIT);
+	if (m == 0) {
+		error = ENOBUFS;
+		goto bad;
 	}
 	dh = mtod(m, struct dmc_header *);
 	dh->dmc_type = htons((u_short)type);
