@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)quotactl.2	6.1 (Berkeley) %G%
+.\"	@(#)quotactl.2	6.2 (Berkeley) %G%
 .\"
 .TH QUOTA 2 ""
 .UC 5
@@ -106,17 +106,15 @@ disc quotas will be checked.  Otherwise,
 indicates a specific major-minor device to be checked.
 This call is restricted to the super-user.
 .SH "RETURN VALUE"
-A successful call returns 0 and, possibly, more
-information specific to the 
-.I cmd
-performed; when an error occurs, the value \-1
-is returned and 
+A successful call returns 0,
+otherwise the value \-1 is returned and the global variable
 .I errno
-is set to indicate the reason.
+indicates the reason for the failure.
 .SH ERRORS
-A
-.I quota
-call will fail when one of the following occurs:
+A \fIquota\fP call will fail when one of the following occurs:
+.TP 15
+[EINVAL]
+The kernel has not been compiled with the QUOTA option.
 .TP 15
 [EINVAL]
 .I Cmd
@@ -128,7 +126,7 @@ No disc quota is found for the indicated user.
 [EPERM]
 The call is priviledged and the caller was not the super-user.
 .TP 15
-[EINVAL]
+[ENODEV]
 The 
 .I arg
 parameter is being interpreted as a major-minor
