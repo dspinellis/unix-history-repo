@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)lprint.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)lprint.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -49,9 +49,10 @@ lprint(pn)
 	register struct tm *delta;
 	register WHERE *w;
 	register int cpr, len, maxlen;
+	struct tm *tp;
 	int oddfield;
 	time_t time();
-	char *t, *ctime(), *prphone();
+	char *t, *tzn, *prphone();
 
 	/*
 	 * long format --
@@ -114,8 +115,11 @@ lprint(pn)
 	for (w = pn->whead; w != NULL; w = w->next) {
 		switch (w->info) {
 		case LOGGEDIN:
-			cpr = printf("On since %16.16s on %s",
-			    ctime(&w->loginat), w->tty);
+			tp = localtime(&w->loginat);
+			t = asctime(tp);
+			tzn = tp->tm_zone;
+			cpr = printf("On since %16.16s (%s) on %s",
+			    t, tzn, w->tty);
 			/*
 			 * idle time is tough; if have one, print a comma,
 			 * then spaces to pad out the device name, then the
@@ -145,13 +149,15 @@ lprint(pn)
 				(void)printf("Never logged in.");
 				break;
 			}
-			t = ctime(&w->loginat);
+			tp = localtime(&w->loginat);
+			t = asctime(tp);
+			tzn = tp->tm_zone;
 			if (now - w->loginat > SECSPERDAY * DAYSPERNYEAR / 2)
-				cpr = printf("Last login %10.10s, %4.4s on %s",
-				    t, t + 20, w->tty);
+				cpr = printf("Last login %10.10s (%s), %4.4s on %s",
+				    t, t + 20, tzn, w->tty);
 			else
-				cpr = printf("Last login %16.16s on %s",
-					t, w->tty);
+				cpr = printf("Last login %16.16s (%s) on %s",
+				    t, tzn, w->tty);
 			break;
 		}
 		if (*w->host) {
