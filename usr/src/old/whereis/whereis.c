@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)whereis.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)whereis.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -31,6 +31,22 @@ static char sccsid[] = "@(#)whereis.c	5.3 (Berkeley) %G%";
 #include <ctype.h>
 
 static char *bindirs[] = {
+	"/bin",
+	"/sbin",
+	"/usr/ucb",
+	"/usr/bin",
+	"/usr/sbin",
+	"/usr/old",
+	"/usr/contrib",
+	"/usr/games",
+	"/usr/local",
+	"/usr/libexec",
+	"/usr/include",
+	"/usr/hosts",
+	"/usr/share", /*?*/
+	"/etc",
+#ifdef notdef
+	/* before reorg */
 	"/etc",
 	"/bin",
 	"/usr/bin",
@@ -43,8 +59,10 @@ static char *bindirs[] = {
 	"/usr/old",
 	"/usr/hosts",
 	"/usr/include",
+#endif
 	0
 };
+/* This needs to be redone - man pages live with sources */
 static char *mandirs[] = {
 	"/usr/man/man1",
 	"/usr/man/man2",
@@ -60,6 +78,29 @@ static char *mandirs[] = {
 	0
 };
 static char *srcdirs[]  = {
+	"/usr/src/bin",
+	"/usr/src/sbin",
+	"/usr/src/etc",
+	"/usr/src/pgrm",
+	"/usr/src/usr.bin",
+	"/usr/src/usr.sbin",
+	"/usr/src/usr.ucb",
+	"/usr/src/usr.new",
+	"/usr/src/usr.lib",
+	"/usr/src/libexec",
+	"/usr/src/libdata",
+	"/usr/src/share",
+	"/usr/src/contrib",
+	"/usr/src/athena",
+	"/usr/src/devel",
+	"/usr/src/games",
+	"/usr/src/local",
+	"/usr/src/man",
+	"/usr/src/root",
+	"/usr/src/old",
+	"/usr/src/include",
+	/* still need libs */
+#ifdef notdef /* before reorg */
 	"/usr/src/bin",
 	"/usr/src/usr.bin",
 	"/usr/src/etc",
@@ -80,6 +121,7 @@ static char *srcdirs[]  = {
 	"/usr/src/ucb/pascal",
 	"/usr/src/ucb/pascal/utilities",
 	"/usr/src/undoc",
+#endif
 	0
 };
 
