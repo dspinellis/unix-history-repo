@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)resume.c 1.1 %G%";
+static char sccsid[] = "@(#)resume.c 1.2 %G%";
 
 /*
  * resume execution, first setting appropriate registers
@@ -76,7 +76,7 @@ resume()
 				p->signo = ESIGNAL;
 				break;
 		}
-		if (option('r')) {
+		if (option('r') && oldsigno != 0) {
 			p->signo = oldsigno;
 			choose();
 			p->signo = ESIGNAL;
