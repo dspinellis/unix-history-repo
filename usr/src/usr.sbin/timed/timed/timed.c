@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)timed.c	1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)timed.c	1.2 (Berkeley) %G%";
 #endif not lint
 
 #include "globals.h"
@@ -21,12 +21,6 @@ static char sccsid[] = "@(#)timed.c	1.1 (Berkeley) %G%";
 #include <sys/file.h>
 #include <sys/ioctl.h>
 #include <setjmp.h>
-
-#define OFF		0
-#define ON		1
-#define SLAVE		0
-#define MASTER		1
-#define MAXRANDOM	2147483648	/* 2**31, max random number */
 
 int id;
 int trace;
@@ -38,8 +32,9 @@ int machup;
 u_short sequence;			/* sequence number */
 long delay1;
 long delay2;
-char hostname[32];
+char hostname[MAXHOSTNAMELEN];
 struct in_addr broadcastaddr;		/* local net broadcast address */
+u_long netmask, mynet = 0;		/* my network number & netmask */
 struct sockaddr_in server;
 struct host hp[NHOSTS];
 char *fj;
@@ -73,7 +68,7 @@ char **argv;
 	long seed;
 	int Mflag;
 	int nflag;
-	char mastername[32];
+	char mastername[MAXHOSTNAMELEN];
 	char *netname;
 	struct timeval time;
 	struct servent *srvp;
@@ -84,7 +79,14 @@ char **argv;
 	long casual();
 	char *malloc(), *strcpy();
 	char *date();
-	struct in_addr inet_makeaddr();
+	int n;
+	int n_addrlen;
+	char *n_addr;
+	char buf[BUFSIZ];
+	struct ifconf ifc;
+	struct ifreq ifreq, *ifr;
+	struct sockaddr_in *sin;
+	
 
 	Mflag = SLAVE;
 	on = 1;
@@ -92,9 +94,10 @@ char **argv;
 	fj = "/usr/adm/timed.log";
 	trace = OFF;
 	nflag = OFF;
+	openlog("timed", LOG_ODELAY, LOG_DAEMON);
 
 	if (getuid() != 0) {
-		printf("Sorry: need to be root\n");
+		fprintf(stderr, "Timed: not superuser\n");
 		exit(1);
 	}
 
@@ -108,10 +111,6 @@ char **argv;
 				break;
 			case 't':
 				trace = ON; 
-				fd = fopen(fj, "w");
-				fprintf(fd, "Tracing started on: %s\n\n", 
-							date());
-				(void)fflush(fd);
 				break;
 			case 'n':
 				argc--, argv++;
@@ -127,28 +126,53 @@ char **argv;
 		} while (*++(*argv));
 	}
 
+#ifndef DEBUG
+	if (fork())
+		exit(0);
+	{ int s;
+	  for (s = 0; s < 10; s++)
+		(void) close(s);
+	  (void) open("/", 0);
+	  (void) dup2(0, 1);
+	  (void) dup2(0, 2);
+	  s = open("/dev/tty", 2);
+	  if (s >= 0) {
+		(void) ioctl(s, (int)TIOCNOTTY, (char *)0);
+		(void) close(s);
+	  }
+	}
+#endif
+
+	if (trace == ON) {
+		fd = fopen(fj, "w");
+		fprintf(fd, "Tracing started on: %s\n\n", 
+					date());
+		(void)fflush(fd);
+	}
+	openlog("timed", LOG_ODELAY|LOG_CONS, LOG_DAEMON);
+
 	srvp = getservbyname("timed", "udp");
 	if (srvp == 0) {
-		syslog(LOG_ERR, "udp/timed: unknown service\n");
+		syslog(LOG_CRIT, "unknown service 'timed/udp'");
 		exit(1);
 	}
 	server.sin_port = srvp->s_port;
 	server.sin_family = AF_INET;
 	sock = socket(AF_INET, SOCK_DGRAM, 0);
 	if (sock < 0) {
-		syslog(LOG_ERR, "timed: opening socket\n");
+		syslog(LOG_ERR, "socket: %m");
 		exit(1);
 	}
 	if (setsockopt(sock, SOL_SOCKET, SO_BROADCAST, (char *)&on, 
 							sizeof(on)) < 0) {
-		syslog(LOG_ERR, "timed: setsockopt");
+		syslog(LOG_ERR, "setsockopt: %m");
 		exit(1);
 	}
 	if (bind(sock, &server, sizeof(server))) {
 		if (errno == EADDRINUSE)
-			fprintf(stderr, "timed already running\n");
+		        syslog(LOG_ERR, "server already running");
 		else
-			syslog(LOG_ERR, "timed: bind");
+		        syslog(LOG_ERR, "bind: %m");
 		exit(1);
 	}
 
@@ -167,7 +191,7 @@ char **argv;
 	id = getpid();
 
 	if (gethostname(hostname, sizeof(hostname) - 1) < 0) {
-		syslog(LOG_ERR, "timed: gethostname: %m");
+		syslog(LOG_ERR, "gethostname: %m");
 		exit(1);
 	}
 	hp[0].name = hostname;
@@ -175,53 +199,64 @@ char **argv;
 	if (nflag) {
 		localnet = getnetbyname(netname);
 		if (localnet == NULL) {
-			syslog(LOG_ERR, "timed: getnetbyname: %m");
+			syslog(LOG_ERR, "getnetbyname: unknown net %s",
+				netname);
 			exit(1);
 		}
-		if (localnet == NULL) {
-			syslog(LOG_ERR, "timed: no network: %m");
-			exit(1);
+	}
+	ifc.ifc_len = sizeof(buf);
+	ifc.ifc_buf = buf;
+	if (ioctl(sock, (int)SIOCGIFCONF, (char *)&ifc) < 0) {
+		syslog(LOG_ERR, "get interface configuration: %m");
+		exit(1);
+	}
+	ifr = ifc.ifc_req;
+	for (n = ifc.ifc_len/sizeof(struct ifreq); n > 0; n--, ifr++) {
+		ifreq = *ifr;
+		if (ioctl(sock, (int)SIOCGIFFLAGS, 
+					(char *)&ifreq) < 0) {
+			syslog(LOG_ERR, "get interface flags: %m");
+			continue;
 		}
-		broadcastaddr = inet_makeaddr(localnet->n_net,INADDR_BROADCAST);
-	} else {
-		int n;
-		int n_addrlen;
-		char *n_addr;
-		char buf[BUFSIZ];
-		struct ifconf ifc;
-		struct ifreq ifreq, *ifr;
-		struct sockaddr_in *sin;
-	
-		ifc.ifc_len = sizeof(buf);
-		ifc.ifc_buf = buf;
-		if (ioctl(sock, (int)SIOCGIFCONF, (char *)&ifc) < 0) {
-			syslog(LOG_ERR, "timed: (get interface configuration)");
-			exit(1);
+		if ((ifreq.ifr_flags & IFF_UP) == 0 ||
+			(ifreq.ifr_flags & IFF_BROADCAST) == 0) {
+			continue;
 		}
-		ifr = ifc.ifc_req;
-		for (n = ifc.ifc_len/sizeof(struct ifreq); n > 0; n--, ifr++) {
-			ifreq = *ifr;
-			if (ioctl(sock, (int)SIOCGIFFLAGS, 
-						(char *)&ifreq) < 0) {
-				syslog(LOG_ERR, "timed: (get interface flags)");
-				continue;
-			}
-			if ((ifreq.ifr_flags & IFF_UP) == 0 ||
-		    		(ifreq.ifr_flags & IFF_BROADCAST) == 0) {
-				continue;
-			}
-			if (ioctl(sock, (int)SIOCGIFBRDADDR, 
-						(char *)&ifreq) < 0) {
-				syslog(LOG_ERR, "timed: (get broadaddr)");
-				continue;
-			}
-			n_addrlen = sizeof(ifr->ifr_addr);
-			n_addr = (char *)malloc((unsigned)n_addrlen);
-			bcopy((char *)&ifreq.ifr_broadaddr, n_addr, n_addrlen);
-			sin = (struct sockaddr_in *)n_addr;
-			broadcastaddr = sin->sin_addr;
-			break;
+		if (ioctl(sock, (int)SIOCGIFNETMASK, 
+					(char *)&ifreq) < 0) {
+			syslog(LOG_ERR, "get broadaddr: %m");
+			continue;
 		}
+		netmask = ((struct sockaddr_in *)
+			&ifreq.ifr_addr)->sin_addr.s_addr;
+		if (ioctl(sock, (int)SIOCGIFBRDADDR, 
+					(char *)&ifreq) < 0) {
+			syslog(LOG_ERR, "get broadaddr: %m");
+			continue;
+		}
+		n_addrlen = sizeof(ifr->ifr_addr);
+		n_addr = (char *)malloc((unsigned)n_addrlen);
+		bcopy((char *)&ifreq.ifr_broadaddr, n_addr, n_addrlen);
+		sin = (struct sockaddr_in *)n_addr;
+		broadcastaddr = sin->sin_addr;
+		if (nflag) {
+			u_long addr, mask;
+
+			addr = ntohl(broadcastaddr.s_addr);
+			mask = ntohl(netmask);
+			while ((mask & 1) == 0) {
+				addr >>= 1;
+				mask >>= 1;
+			}
+			if (addr != localnet->n_net)
+				continue;
+		}
+		mynet = netmask & broadcastaddr.s_addr;
+		break;
+	}
+	if (!mynet) {
+		syslog(LOG_ERR, "No network usable");
+		exit(1);
 	}
 
 	/* us. delay to be used in response to broadcast */
@@ -260,7 +295,7 @@ char **argv;
 			server = masteraddr;
 			if (acksend(&conflict, (char *)mastername, 
 							TSP_ACK) == NULL) {
-				syslog(LOG_ERR, "timed: error on sending TSP_CONFLICT\n");
+				syslog(LOG_ERR, "error on sending TSP_CONFLICT");
 				exit(1);
 			}
 		}
@@ -269,7 +304,7 @@ char **argv;
 		/* open raw socket used to measure time differences */
 		sock_raw = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP); 
 		if (sock_raw < 0)  {
-			fprintf(stderr, "timed: opening raw socket");
+			syslog(LOG_ERR, "opening raw socket: %m");
 			exit (1);
 		}
 
@@ -324,16 +359,16 @@ startd:
 			break;
 		default:
 			/* this should not happen */
-			syslog(LOG_ERR, 
-				"timed: error on return from longjmp\n");
+			syslog(LOG_ERR, "Attempt to enter invalid state");
 			break;
 		}
 			
-		if (status) 
+		if (status == MASTER) 
 			master();
 		else 
 			slave();
 	} else {
+		status = SLAVE;
 		/* if Mflag is not set timedaemon is forced to act as a slave */
 		if (setjmp(jmpenv)) {
 			resp.tsp_type = TSP_SLAVEUP;
@@ -355,14 +390,12 @@ long sup;
 	float value;
 	long random();
 
-	value = (float)random();
-	value /= MAXRANDOM;
-	if (value < 0) 
-		value = -value;
+	value = (float)(random() & 0x7fffffff) / 0x7fffffff;
 	return(inf + (sup - inf) * value);
 }
 
-char *date()
+char *
+date()
 {
 	char	*ret;
 	char    *asctime();
