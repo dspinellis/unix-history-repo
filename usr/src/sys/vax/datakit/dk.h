@@ -1,4 +1,6 @@
 /*
+ *	@(#)dk.h	1.3 (Berkeley) %G%
+ *
  *	DATAKIT VCS User Level definitions
  *		@(#)dk.h	2.1 DKHOST 84/07/03
  */
@@ -75,7 +77,7 @@ struct diocreq {
  */
 struct diocdial {
 		struct	diocreq iocb;
-		char	dialstring[112-sizeof (struct diocreq)];
+		char	dialstring[MLEN-sizeof (struct diocreq)];
 };
 
 /*
@@ -106,7 +108,7 @@ struct diocspl {
 
 struct diocctype {
 	int	dct_type;		/* Annotation type */
-	char	dct_name[112-sizeof (int)-1];	/* Connection type */
+	char	dct_name[MLEN-sizeof (int)-1];	/* Connection type */
 };
 #define	DCT_DIAL	1		/* Dialstring uttered */
 #define	DCT_SERVE	2		/* Server name */
