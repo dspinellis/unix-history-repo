@@ -1,6 +1,9 @@
 #	@(#)bsd.lib.mk	5.26 (Berkeley) 5/2/91
 #
 # $Log: bsd.lib.mk,v $
+# Revision 1.21  1993/11/12  00:01:30  paul
+# Commented out yet more ld -x -r lines
+#
 # Revision 1.20  1993/11/09  04:50:28  paul
 # Temporary fix to make src tree closer to useable.
 #
@@ -133,34 +136,34 @@ BINMODE?=	555
 
 .c.po:
 	${CC} -p ${CFLAGS} -c ${.IMPSRC} -o ${.TARGET}
-	@${LD} -X -r ${.TARGET}
-	@mv a.out ${.TARGET}
+#	@${LD} -X -r ${.TARGET}
+#	@mv a.out ${.TARGET}
 
 .c.so:
 	${CC} ${PICFLAG} -DPIC ${CFLAGS} -c ${.IMPSRC} -o ${.TARGET}
 
 .cc.o .cxx.o .C.o:
 	${CXX} ${CXXFLAGS} -c ${.IMPSRC} 
-	@${LD} -x -r ${.TARGET}
-	@mv a.out ${.TARGET}
+#	@${LD} -x -r ${.TARGET}
+#	@mv a.out ${.TARGET}
 
 .cc.po .C.po .cxx.o:
 	${CXX} -p ${CXXFLAGS} -c ${.IMPSRC} -o ${.TARGET}
-	@${LD} -X -r ${.TARGET}
-	@mv a.out ${.TARGET}
+#	@${LD} -X -r ${.TARGET}
+#	@mv a.out ${.TARGET}
 
 .cc.so .C.so:
 	${CXX} ${PICFLAG} -DPIC ${CXXFLAGS} -c ${.IMPSRC} -o ${.TARGET}
 
 .f.o:
 	${FC} ${RFLAGS} -o ${.TARGET} -c ${.IMPSRC} 
-	@${LD} -x -r ${.TARGET}
-	@mv a.out ${.TARGET}
+#	@${LD} -x -r ${.TARGET}
+#	@mv a.out ${.TARGET}
 
 .f.po:
 	${FC} -p ${RFLAGS} -o ${.TARGET} -c ${.IMPSRC} 
-	@${LD} -X -r ${.TARGET}
-	@mv a.out ${.TARGET}
+#	@${LD} -X -r ${.TARGET}
+#	@mv a.out ${.TARGET}
 
 .s.o:
 	${CPP} -E ${CFLAGS:M-[ID]*} ${AINC} ${.IMPSRC} | \
