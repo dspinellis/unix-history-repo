@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)readcf.c	4.5		%G%);
+SCCSID(@(#)readcf.c	4.6		%G%);
 
 /*
 **  READCF -- read control file.
@@ -636,8 +636,6 @@ setoption(opt, val, safe, sticky)
 	else if (tTd(37, 1))
 		printf("\n");
 #endif DEBUG
-	if (sticky)
-		setbitn(opt, StickyOpt);
 
 	if (getruid() == 0)
 		safe = TRUE;
@@ -739,6 +737,7 @@ setoption(opt, val, safe, sticky)
 
 	  case 'M':		/* define macro */
 		define(val[0], newstr(&val[1]), CurEnv);
+		sticky = FALSE;
 		break;
 
 	  case 'm':		/* send to me too */
@@ -822,6 +821,8 @@ setoption(opt, val, safe, sticky)
 	  default:
 		break;
 	}
+	if (sticky)
+		setbitn(opt, StickyOpt);
 	return;
 }
 /*
