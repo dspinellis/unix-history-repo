@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)union_vnops.c	8.1 (Berkeley) %G%
+ *	@(#)union_vnops.c	8.2 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -23,7 +23,7 @@
 #include <sys/malloc.h>
 #include <sys/buf.h>
 #include <sys/queue.h>
-#include "union.h"
+#include <miscfs/union/union.h>
 
 static int
 union_lookup1(udvp, dvp, vpp, cnp)

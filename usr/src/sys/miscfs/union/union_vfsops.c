@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)union_vfsops.c	8.1 (Berkeley) %G%
+ *	@(#)union_vfsops.c	8.2 (Berkeley) %G%
  */
 
 /*
@@ -26,7 +26,7 @@
 #include <sys/malloc.h>
 #include <sys/filedesc.h>
 #include <sys/queue.h>
-#include "union.h"
+#include <miscfs/union/union.h>
 
 /*
  * Mount union filesystem
