@@ -1,0 +1,175 @@
+What *is* hunt?
+
+	Hunt is a multi-player search-and-destroy game that takes place
+	in a maze.  The game may either be slow and strategic or fast
+	and tactical, depending on how familiar the players are with the
+	keyboard commands.
+
+Distribution Policy:
+
+	Hunt is part of the user-contributed software distributed by
+	Berkeley in 4BSD.  The sources are copyrighted by the authors
+	and the University of California.  You may redistribute freely
+	as long as the copyright notices are retained.
+
+Words of Warning:
+
+	hunt uses the socket mechanism of 4BSD Unix, so if you are on
+		System V (my sympathies), you're on your own.
+	If your machine does not permit non-setuid-root processes to
+		broadcast UDP packets, then hunt uses a *very* inefficient
+		method for locating the hunt server: it sends a packet
+		to every host on your network.  If your machine falls
+		into this category, we strongly recommend that you use
+		either standalone or inetd mode *and* start hunt by
+		specifying the hunt server host.
+	hunt can be configured to use Unix-domain sockets, but that
+		code has not been tested in recent memory.  Also, since
+		4.2BSD Unix-domain sockets are buggy, running hunt on
+		4.2BSD with Unix-domain sockets will probably crash
+		your system.  If you want to experiment, feel free to
+		do so.  However, don't say I didn't warn you :-).
+	hunt uses a fair amount of CPU time, both in user time (for
+		computing interactions) and system time (for processing
+		terminal interrupts).  We found that a VAX 750 can
+		support about three users before the system is
+		noticeably impacted.  The number goes up to about 8 or
+		10 for a VAX 8650.  On a network of Sun 3/50's with the
+		server running on a 3/280, things work much more
+		smoothly as the computing load is distributed across
+		many machines.
+	hunt may be dangerous to your health.  "Arthritic pain" and
+		"lack of circulation" in fingers have been reported by
+		hunt abusers.  Hunt may also be addictive, and the
+		withdrawal symptoms are not pretty :-)
+
+Installation:
+
+	1. Edit file "Makefile" and make sure the options selected are
+		reasonable.  There are four "make" variables that you
+		should check: GAME_PARAM, SYSCFLAGS, SYSLDFLAGS, and DEFS.
+		GAME_PARAM controls what features of the game will be
+		compiled in (e.g. reflecting walls).  The optional features
+		are listed in comments above where GAME_PARAM is defined.
+		If you want to try them, just add the ones you want to the 
+		GAME_PARAM definition.
+
+		DEFS is where most system configuration is described.
+		If your system is 4.3BSD, Sun, Ultrix, Convex, HPUX
+		v6.0.1, or SGI, you're in luck.  We provide the
+		appropriate definitions for these systems and you just
+		need to select one of them (e.g. if you have an Ultrix
+		system, just change the line
+			DEFS=	$(GAME_PARAM) $(DEFS_43)
+		to
+			DEFS=	$(GAME_PARAM) $(DEFS_ULTRIX)
+		).  If your system is *not* listed above, then you may
+		need to do some experiments.  All of the options are
+		documented in the Makefile, be brave.
+
+		SYSCFLAGS and SYSLDFLAGS are used for "unusual" systems
+		and you probably won't need to deal with it.  An
+		example of an unusual system is the Silicon Graphics
+		IRIS, which keeps the network socket code in a BSD
+		emulation library that is in -lbsd.  Edit these only if
+		you *know* your system is "different."
+
+	2. Edit file "Makefile" and look at the "install:" target.  By
+		default, files are installed in /usr/games,
+		/usr/games/lib, and /usr/man/man6, which are "standard"
+		locations for games.  If your system has a local games
+		directory, you'll need to change these.
+	3. Edit file "pathname.c" and make sure the file names and port
+		numbers are reasonable.  You can ignore the first set
+		of variables as they are used only for debugging
+		purposes.  The second set is used in the installed
+		version of hunt.  The important variables are "Driver"
+		(where the server is kept), "Test_port" (the Internet
+		UDP port number that new players should use to contact
+		the server), and "Stat_file" (where scoring statistics
+		and body counts are written).  The only tricky variable
+		here is "Test_port".  The default value is chosen so
+		that it is unlikely to conflict with other service port
+		numbers, but you can change it if you want to.
+	4. Type "make install", which will compile and install the
+		programs and manual pages.  Now you're almost ready to
+		go (see next section).  There may be some warnings during
+		compilation.  Ignore them.
+
+Setting up the network:
+
+	Hunt may be set up in one of three modes: standalone, inetd, or
+	nothing.  In "standalone" mode, there is always a hunt server
+	running on a server machine.  All players who enter the game
+	will be talking to this server.  This is the mode we use at
+	UCSF.  The cost is one entry in the process table on the server
+	machine.  In "inetd" mode, the server is started via inetd.
+	Again, only one machine should be set up to answer game
+	requests.  The cost is having to edit a few system files.  In
+	"nothing" mode, no server is running when there is no one
+	playing.  The first person to enter hunt will automatically
+	start up a server on his machine.  This, of course, gives him
+	an unfair advantage.  Also, there may be race conditions such
+	that players end up in different games.  The choice of which
+	mode to use depends on site configuration and politics.  We
+	recommend using "standalone" mode because it is simple to set
+	up and starts up rapidly.
+
+	-----
+
+	FOR STANDALONE MODE, put these lines in /etc/rc.local on the
+	server machine.  THERE SHOULD ONLY BE ONE SERVER MACHINE!
+
+	# start up the hunt daemon if present
+	if [ -f /usr/games/lib/huntd ]; then
+		/usr/games/lib/huntd -s & (echo -n ' huntd')	>/dev/console
+	fi
+
+	Also, you should start one up (on the off chance that you will
+	want to test this mess :-) by typing "/usr/games/lib/hunt -s".
+
+	-----
+
+	FOR INETD MODE, then things get more complicated.  You need to
+	edit both /etc/services and /etc/inetd.conf.  In /etc/services,
+	add the line
+
+	hunt		26740/udp
+
+	26740 corresponds to the default "Test_port".  If you changed
+	that variable, then you should put whatever value you used here
+	as well.  In /etc/inetd.conf, add the line
+
+	hunt	dgram	udp	wait	nobody	/usr/games/lib/huntd	huntd
+
+	This works for 4.3BSD.  I don't remember the configuration file
+	format for 4.2BSD inetd.
+
+	See the huntd.6 manual page for more details.
+
+	-----
+
+	FOR NOTHING MODE, do nothing.
+
+Testing:
+	Now you are ready to test the code.  Type "/usr/games/hunt" or
+	whatever you call the hunt executable.  You should be prompted
+	for your name and team.  Then you should get the display of a
+	maze.  At this point, you should read the manual page :-).
+
+======
+
+Hunt is not officially supported by anyone anywhere (that I know of);
+however, bug reports will be read and bug fixes/enhancements may be
+sent out at irregular intervals.  Send no flames, just money.  Happy
+hunting.
+
+					Conrad Huang
+					conrad@cgl.ucsf.edu
+					Greg Couch
+					gregc@cgl.ucsf.edu
+					October 17, 1988
+
+P.S.  The authors of the game want to emphasize that this version of hunt
+was started over eight years ago, and the programming style exhibited here
+in no way reflects the current programming practices of the authors.
