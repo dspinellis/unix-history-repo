@@ -1,4 +1,4 @@
-/*	autoconf.c	4.7	81/02/18	*/
+/*	autoconf.c	4.8	81/02/19	*/
 
 /*
  * Configure the system for the current machine.
@@ -11,83 +11,27 @@
 #include "../h/pte.h"
 #include "../h/buf.h"
 #include "../h/mba.h"
+#include "../h/dk.h"
+#include "../h/vm.h"
 #include "../h/uba.h"
 #include "../h/mtpr.h"
 #include "../h/cpu.h"
 #include "../h/scb.h"
-#include "../h/vmparam.h"
-#include "../h/vmmac.h"
 #include "../h/mem.h"
 
+int	cold;
 int	nexnum;		/* current nexus number */
+int	dkn;		/* number of dk numbers assigned so far */
 
-struct	uba_regs *curuba;
-
-/*
- * Definitions for uba's and mba's.
- */
-
-/*
- * Catcher is 1k bytes of memory where we write in stray
- * UNIBUS interrupt decoding code.
- */
-extern	int catcher[256];
-
-/*
- * UMEMmap maps the UNIBUS memory for the portion accessible
- * as device registers and umem is the corresponding virtual space.
- */
-extern	struct pte UMEMmap[MAXNUBA][16];
-extern	char umem[MAXNUBA][16*NBPG];
-
-/*
- * The umaddr* arrays give the physical addresses of the UNIBUS
- * register space.
- */
+int	(*mbaintv[4])() =	{ Xmba0int, Xmba1int, Xmba2int, Xmba3int };
 #if VAX780
+int	(*ubaintv[4])() =	{ Xua0int, Xua1int, Xua2int, Xua3int };
 caddr_t	umaddr780[4] = {
 	(caddr_t) 0x2013e000, (caddr_t) 0x2017e000,
 	(caddr_t) 0x201be000, (caddr_t) 0x201fe000
 };
 #endif
-#if VAX750
-caddr_t	umaddr750[1] = {
-	(caddr_t) 0xffe000
-};
-#endif
 
-/*
- * The ?baintv arrays give the addresses of the UNIBUS and
- * MASSBUS interrupt handling routines.
- */
-extern	Xmba0int(),	Xmba1int(),	Xmba2int(),	Xmba3int();
-extern	Xua0int();
-#if VAX780
-extern			Xua1int(),	Xua2int(),	Xua3int();
-#endif
-
-int	(*mbaintv[4])() = {
-	Xmba0int,	Xmba1int,	Xmba2int,	Xmba3int
-};
-int	(*ubaintv[])() = {
-#if VAX780
-	Xua0int,	Xua1int,	Xua2int,	Xua3int
-#endif
-#if VAX750
-	Xua0int
-#endif
-};
-
-/*
- * UNIvec is permanently allocated in scb.s.  On an 750, it is
- * where the hardware sends the interrupts; on a 780 we use the
- * space for the first UNIBUS adaptor.
- */
-extern	int	(*UNIvec[])();
-
-/*
- * Structure per cpu type giving address of configuration routine
- */
 int	c780(), c750();
 
 struct percpu percpu[] = {
@@ -116,14 +60,11 @@ configure()
 		if (ocp->pc_cputype == cpusid.cpuany.cp_type) {
 			cpu = ocp->pc_cputype;
 			(*ocp->pc_config)(ocp);
-			for (i = 2; i < 256; i += 2) {
-				catcher[i] = catcher[0];
-				catcher[i+1] = catcher[1] - i*4;
-			}
 #if GENERIC
 			setconf();
 #endif
 			/* WRITE PROTECT SCB */
+			cold = 0;
 			return;
 		}
 	printf("cpu type %d unsupported\n", cpusid.cpuany.cp_type);
@@ -159,6 +100,7 @@ c780(pcpu)
 				printf("5 mba's");
 				goto unsupp;
 			}
+			printf("mba%d at tr%d\n", nummba, nexnum);
 			mbafind(nxv, nxp);
 			nummba++;
 			break;
@@ -171,10 +113,11 @@ c780(pcpu)
 				printf("5 uba's");
 				goto unsupp;
 			}
+			printf("uba%d at tr%d\n", numuba, nexnum);
+			setscbnex(nexnum, ubaintv[numuba]);
 			i = nexcsr.nex_type - NEX_UBA0;
 			unifind((struct uba_regs *)nxv, (struct uba_regs *)nxp,
 			    umem[i], umaddr780[i]);
-			setscbnex(nexnum, ubaintv[numuba]);
 			((struct uba_regs *)nxv)->uba_cr =
 			    UBA_IFS|UBA_BRIE|UBA_USEFIE|UBA_SUEFIE;
 			numuba++;
@@ -234,7 +177,7 @@ c750(pcpu)
 	}
 	nxaccess((caddr_t)nxp, Nexmap[nexnum++]);
 	unifind((struct uba_regs *)nxv++, (struct uba_regs *)nxp,
-	    umem[0], umaddr750[0]);
+	    umem[0], UMEM750);
 	numuba = 1;
 	nxaccess((caddr_t)MCR_750, Nexmap[nexnum]);
 	mcraddr[nmcr++] = nxv;
@@ -314,11 +257,8 @@ found:
 #define	match(fld)	(ni->fld == mi->fld || mi->fld == '?')
 		if (!match(mi_slave) || !match(mi_drive) || !match(mi_mbanum))
 			continue;
-		printf("%c at mba%d drive %d ",
-		    mi->mi_name, ni->mi_mbanum, ni->mi_drive);
-		if (ni->mi_slave >= 0)
-			printf("slave %d ", ni->mi_slave);
-		printf("is unit %d\n", mi->mi_unit);
+		printf("%c%d at mba%d drive %d\n",
+		    mi->mi_name, mi->mi_unit, ni->mi_mbanum, ni->mi_drive);
 		mi->mi_alive = 1;
 		mi->mi_hd = &mba_hd[ni->mi_mbanum];
 		mba_hd[ni->mi_mbanum].mh_mbip[ni->mi_drive] = mi;
@@ -328,6 +268,10 @@ found:
 		mi->mi_mbanum = ni->mi_mbanum;
 		mi->mi_drive = ni->mi_drive;
 		mi->mi_slave = ni->mi_slave;
+		if (mi->mi_dk && dkn < DK_NDRIVE)
+			mi->mi_dk = dkn++;
+		else
+			mi->mi_dk = -1;
 	}
 }
 
@@ -365,7 +309,7 @@ unifind(vubp, pubp, vumem, pumem)
 	u_short *umem = (u_short *)vumem, *sp, *reg, addr;
 	struct uba_hd *uhp;
 	struct uba_driver *udp;
-	int i, (**ivec)();
+	int i, (**ivec)(), haveubasr = 0;
 
 	/*
 	 * Initialize the UNIBUS, by freeing the map
@@ -377,12 +321,13 @@ unifind(vubp, pubp, vumem, pumem)
 	switch (cpu) {
 #if VAX780
 	case VAX_780:
-		uhp->uh_bdpfree = (1<<15) - 1;		/* 15 bdp's */
+		uhp->uh_bdpfree = (1<<NBDP780) - 1;
+		haveubasr = 1;
 		break;
 #endif
 #if VAX750
 	case VAX_750:
-		uhp->uh_bdpfree = (1<<3) - 1;		/* 3 bdp's */
+		uhp->uh_bdpfree = (1<<NBDP750) - 1;
 		break;
 #endif
 	}
@@ -403,14 +348,10 @@ unifind(vubp, pubp, vumem, pumem)
 		    scbentry(&catcher[i*2], SCB_ISTACK);
 	nxaccess((struct nexus *)pumem, UMEMmap[numuba]);
 #if VAX780
-	if (cpu == VAX_780) {
+	if (haveubasr) {
 		vubp->uba_sr = vubp->uba_sr;
-		curuba = vubp;
+		vubp->uba_cr = UBA_IFS|UBA_BRIE;
 	}
-#endif
-#if VAX750
-	if (cpu != VAX_780)
-		setvecs();
 #endif
 	/*
 	 * Map the first page of UNIBUS i/o
@@ -435,28 +376,23 @@ unifind(vubp, pubp, vumem, pumem)
 		if (badaddr((caddr_t)reg, 2))
 			continue;
 #if VAX780
-		if (vax == VAX_780) {
-			if (vubp->uba_sr) {
-				vubp->uba_sr = vubp->uba_sr;
-				continue;
-			}
-			ubatstvec(vubp);
+		if (haveubasr && vubp->uba_sr) {
+			vubp->uba_sr = vubp->uba_sr;
+			continue;
 		}
 #endif
 		cvec = 0x200;
 		i = (*udp->ud_cntrlr)(um, reg);
 #if VAX780
-		if (vax == VAX_780) {
-			if (vubp->uba_sr) {
-				vubp->uba_sr = vubp->uba_sr;
-				continue;
-			}
+		if (haveubasr && vubp->uba_sr) {
+			vubp->uba_sr = vubp->uba_sr;
+			continue;
 		}
 #endif
 		if (i == 0)
 			continue;
-		printf("%s %d at uba%d %o ",
-		    udp->ud_pname, um->um_ctlr, numuba, addr);
+		printf("%s%d at uba%d csr %o ",
+		    udp->ud_mname, um->um_ctlr, numuba, addr);
 		if (cvec == 0) {
 			printf("zero vector\n");
 			continue;
@@ -465,7 +401,7 @@ unifind(vubp, pubp, vumem, pumem)
 			printf("didn't interrupt\n");
 			continue;
 		}
-		printf("vector %o, ipl %x\n", cvec, br);
+		printf("vec %o, ipl %x\n", cvec, br);
 		um->um_alive = 1;
 		um->um_ubanum = numuba;
 		um->um_hd = &uba_hd[numuba];
@@ -481,20 +417,23 @@ unifind(vubp, pubp, vumem, pumem)
 			    ui->ui_ctlr != um->um_ctlr && ui->ui_ctlr != '?' ||
 			    ui->ui_ubanum != numuba && ui->ui_ubanum != '?')
 				continue;
-			if ((*udp->ud_slave)(ui, reg, ui->ui_slave)) {
+			if ((*udp->ud_slave)(ui, reg)) {
 				ui->ui_alive = 1;
 				ui->ui_ctlr = um->um_ctlr;
 				ui->ui_ubanum = numuba;
 				ui->ui_hd = &uba_hd[numuba];
 				ui->ui_addr = (caddr_t)reg;
 				ui->ui_physaddr = pumem + (addr&0x1fff);
-				ui->ui_dk = 0;
+				if (ui->ui_dk && dkn < DK_NDRIVE)
+					ui->ui_dk = dkn;
+				else
+					ui->ui_dk = -1;
 				ui->ui_mi = um;
 				/* ui_type comes from driver */
 				udp->ud_dinfo[ui->ui_unit] = ui;
-				printf("%s%d slave %d is unit %d\n",
-				    udp->ud_pname, um->um_ctlr,
-				    ui->ui_slave, ui->ui_unit);
+				printf("%s%d at %s%d slave %d\n",
+				    udp->ud_dname, ui->ui_unit,
+				    udp->ud_mname, um->um_ctlr, ui->ui_slave);
 			}
 		}
 	}
@@ -510,28 +449,23 @@ unifind(vubp, pubp, vumem, pumem)
 		if (badaddr((caddr_t)reg, 2))
 			continue;
 #if VAX780
-		if (vax == VAX_780) {
-			if (vubp->uba_sr) {
-				vubp->uba_sr = vubp->uba_sr;
-				continue;
-			}
-			ubatstvec(vubp);
+		if (haveubasr && vubp->uba_sr) {
+			vubp->uba_sr = vubp->uba_sr;
+			continue;
 		}
 #endif
 		cvec = 0x200;
 		i = (*udp->ud_cntrlr)(ui, reg);
 #if VAX780
-		if (vax == VAX_780) {
-			if (vubp->uba_sr) {
-				vubp->uba_sr = vubp->uba_sr;
-				continue;
-			}
+		if (haveubasr && vubp->uba_sr) {
+			vubp->uba_sr = vubp->uba_sr;
+			continue;
 		}
 #endif
 		if (i == 0)
 			continue;
-		printf("%s at uba%d %o ",
-		    ui->ui_driver->ud_pname, numuba, addr);
+		printf("%s%d at uba%d csr %o ",
+		    ui->ui_driver->ud_dname, ui->ui_unit, numuba, addr);
 		if (cvec == 0) {
 			printf("zero vector\n");
 			continue;
@@ -540,7 +474,7 @@ unifind(vubp, pubp, vumem, pumem)
 			printf("didn't interrupt\n");
 			continue;
 		}
-		printf("vector %o, ipl %x\n", cvec, br);
+		printf("vec %o, ipl %x\n", cvec, br);
 		ui->ui_hd = &uba_hd[numuba];
 		for (ivec = ui->ui_intr; *ivec; ivec++) {
 			ui->ui_hd->uh_vec[cvec/4] =
@@ -551,60 +485,20 @@ unifind(vubp, pubp, vumem, pumem)
 		ui->ui_ubanum = numuba;
 		ui->ui_addr = (caddr_t)reg;
 		ui->ui_physaddr = pumem + (addr&0x1fff);
-		ui->ui_dk = 0;
+		ui->ui_dk = -1;
 		/* ui_type comes from driver */
 		udp->ud_dinfo[ui->ui_unit] = ui;
 		(*udp->ud_slave)(ui, reg);
 	}
 }
 
-#if VAX750
-/*
- * For machines which vector unibus interrupts directly,
- * we must spray the unibus vector with pointers to distinct
- * functions.  We use the space normally used to catch stray
- * interrupts (which hasn't been set up) as a subroutine
- * with a number of entry points, with increment register
- * instructions between entry points to tell where we entered.
- */
-setvecs()
-{
-	register int i;
-
-	for (i = 0; i < 128; i++) {
-		catcher[i] = 0x015a04c2;	/* subl2 $4,r10; nop */
-		Scbbase.scb_ubaint[i] = 
-		    scbentry((int (*)())&catcher[i], SCB_ISTACK);
-	}
-	catcher[i] = 0x025b12db;		/* mfpr $IPL,r11; rei */
-}
-#endif
-
-#if VAX780
-/*
- * Init for testing vector addresses on a
- * machine that has a UNIBUS adaptor to recieve interrupts
- */
-ubatstvec(ubp)
-	register struct uba_regs *ubp;
-{
-	register struct scb *sp = &Scbbase;
-	extern int Xconfuaint();
-	
-	sp->scb_ipl14[nexnum] = sp->scb_ipl15[nexnum] =
-	    sp->scb_ipl16[nexnum] = sp->scb_ipl17[nexnum] =
-		scbentry(Xconfuaint, SCB_ISTACK);
-	ubp->uba_cr = UBA_IFS|UBA_BRIE;
-}
-#endif
-
 setscbnex(nexnum, fn)
-	int	(*fn)();
+	int nexnum, (*fn)();
 {
-	register struct scb *sp = &Scbbase;
+	register struct scb *scb = &Scbbase;
 
-	sp->scb_ipl14[nexnum] = sp->scb_ipl15[nexnum] =
-	    sp->scb_ipl16[nexnum] = sp->scb_ipl17[nexnum] =
+	scb->scb_ipl14[nexnum] = scb->scb_ipl15[nexnum] =
+	    scb->scb_ipl16[nexnum] = scb->scb_ipl17[nexnum] =
 		scbentry(fn, SCB_ISTACK);
 }
 
