@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_debug.c	7.3 (Berkeley) %G%
+ *	@(#)lfs_debug.c	7.4 (Berkeley) %G%
  */
 
 #ifdef DEBUG
@@ -86,13 +86,13 @@ lfs_dump_dinode(dip)
 {
 	int i;
 
-	(void)printf("%s%d\t%s%d\t%s%d\t%s%d\t%s%d\n",
+	(void)printf("%s%u\t%s%d\t%s%u\t%s%u\t%s%lu\n",
 		"mode  ", dip->di_mode,
 		"nlink ", dip->di_nlink,
 		"uid   ", dip->di_uid,
 		"gid   ", dip->di_gid,
-		"size  ", (u_long)dip->di_size);
-	(void)printf("inum  %d\n", dip->di_inum);
+		"size  ", dip->di_size);
+	(void)printf("inum  %ld\n", dip->di_inum);
 	(void)printf("Direct Addresses\n");
 	for (i = 0; i < NDADDR; i++) {
 		(void)printf("\t%lx", dip->di_db[i]);
