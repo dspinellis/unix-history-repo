@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)gprof.1	6.2 (Berkeley) %G%
+.\"	@(#)gprof.1	6.3 (Berkeley) %G%
 .\"
 .TH GPROF 1 ""
 .UC 5
@@ -18,37 +18,32 @@ The effect of called routines is incorporated in the profile of each caller.
 The profile data is taken from the call graph profile file
 .RI ( gmon.out
 default) which is created by programs
-which are compiled with the 
+that are compiled with the 
 .B \-pg
 option of 
 .IR cc ,
 .IR pc ,
 and
 .IR f77 .
-That option also links in versions of the library routines 
-which are compiled for profiling.
-The symbol table in the
-named object file
+The
+.B \-pg
+option also links in versions of the library routines 
+that are compiled for profiling.
+The symbol table in the named object file
 .RI ( a.out
 default)
-is read and correlated with the
-call graph profile file.
+is read and correlated with the call graph profile file.
 If more than one profile file is specified,
 the
 .I gprof
 output shows the sum of the profile information in the given profile files.
 .PP
-First, a flat profile is given,
-similar to that provided by
-.IR prof (1).
-This listing gives the total execution times
-and call counts for each of the functions
-in the program, sorted by decreasing time.
-.PP
+.I Gprof
+calculates the amount of time spent in each routine.
 Next, these times are propagated along the edges of the call graph.
 Cycles are discovered, and calls into a cycle are made to share the time 
 of the cycle.
-A second listing shows the functions
+The first listing shows the functions
 sorted according to the time they represent
 including the time of their call graph descendents.
 Below each function entry is shown its (direct) call graph children,
@@ -59,6 +54,16 @@ time of its descendents is propagated to its (direct) call graph parents.
 Cycles are also shown, with an entry for the cycle as a whole and
 a listing of the members of the cycle and their contributions to the
 time and call counts of the cycle.
+.PP
+Second, a flat profile is given,
+similar to that provided by
+.IR prof (1).
+This listing gives the total execution times, the call counts,
+the number of milliseconds per call in the routine itself, and
+the number of milliseconds per call in the routine itself including
+its descendents.
+.PP
+Finally, an index of the function names is provided.
 .PP
 The following options are available:
 .TP
@@ -72,12 +77,12 @@ belongs to the function loaded just before the static function in the
 file.
 .TP
 .B \-b
-supresses the printing of a description of each field in the profile.
+suppresses the printing of a description of each field in the profile.
 .TP
 .B \-c
 the static call graph of the program is discovered by a heuristic
-which examines the text space of the object file.
-Static-only parents or children are indicated
+that examines the text space of the object file.
+Static-only parents or children are shown
 with call counts of 0.
 .TP
 .BI \-e " name"
@@ -161,9 +166,9 @@ option.
 .B \-s
 a profile file
 .I gmon.sum
-is produced which represents
+is produced that represents
 the sum of the profile information in all the specified profile files.
-This summary profile file may be given to subsequent
+This summary profile file may be given to later
 executions of gprof (probably also with a
 .BR \-s )
 to accumulate profile data across several runs of an
@@ -171,9 +176,9 @@ to accumulate profile data across several runs of an
 file.
 .TP
 .B \-z
-displays routines which have zero usage (as indicated by call counts
+displays routines that have zero usage (as shown by call counts
 and accumulated time).
-This is useful in conjunction with the 
+This is useful with the 
 .B \-c
 option for discovering which routines were never called.
 .SH FILES
@@ -200,11 +205,11 @@ statistical at best.
 We assume that the time for each execution of a function
 can be expressed by the total time for the function divided
 by the number of times the function is called.
-Thus the time propagated along the call graph arcs to parents of that
-function is directly proportional to the number of times that
+Thus the time propagated along the call graph arcs to the function's
+parents is directly proportional to the number of times that
 arc is traversed.
 .PP
-Parents which are not themselves profiled will have the time of 
+Parents that are not themselves profiled will have the time of 
 their profiled children propagated to them, but they will appear
 to be spontaneously invoked in the call graph listing, and will
 not have their time propagated further.
