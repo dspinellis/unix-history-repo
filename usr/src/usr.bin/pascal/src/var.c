@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)var.c 1.11 %G%";
+static char sccsid[] = "@(#)var.c 1.12 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -18,8 +18,11 @@ static char sccsid[] = "@(#)var.c 1.11 %G%";
  * of all the local variables is entered into the
  * size array.
  */
-varbeg()
+varbeg( lineofyvar , r )
+    int	lineofyvar;
 {
+    static bool	var_order = FALSE;
+    static bool	var_seen = FALSE;
 
 /* this allows for multiple declaration
  * parts except when the "standard"
@@ -31,21 +34,30 @@ varbeg()
 #ifndef PI1
 	if (!progseen)
 		level1();
+	line = lineofyvar;
 	if ( parts[ cbn ] & RPRT ) {
 	    if ( opt( 's' ) ) {
 		standard();
+		error("Variable declarations should precede routine declarations");
 	    } else {
-		warning();
+		if ( !var_order ) {
+		    var_order = TRUE;
+		    warning();
+		    error("Variable declarations should precede routine declarations");
+		}
 	    }
-	    error("Variable declarations should precede routine declarations");
 	}
 	if ( parts[ cbn ] & VPRT ) {
 	    if ( opt( 's' ) ) {
 		standard();
+		error("All variables should be declared in one var part");
 	    } else {
-		warning();
+		if ( !var_seen ) {
+		    var_seen = TRUE;
+		    warning();
+		    error("All variables should be declared in one var part");
+		}
 	    }
-	    error("All variables should be declared in one var part");
 	}
 	parts[ cbn ] |= VPRT;
 #endif

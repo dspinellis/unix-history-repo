@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)const.c 1.4 %G%";
+static	char sccsid[] = "@(#)const.c 1.5 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -12,8 +12,11 @@ static	char sccsid[] = "@(#)const.c 1.4 %G%";
  * part into the namelist.
  */
 #ifndef PI1
-constbeg()
+constbeg( lineofyconst , r )
+    int	lineofyconst;
 {
+    static bool	const_order = FALSE;
+    static bool	const_seen = FALSE;
 
 /*
  * this allows for multiple declaration
@@ -25,21 +28,30 @@ constbeg()
 
 	if (!progseen)
 		level1();
+	line = lineofyconst;
 	if (parts[ cbn ] & (TPRT|VPRT|RPRT)) {
 	    if ( opt( 's' ) ) {
 		standard();
+		error("Constant declarations should precede type, var and routine declarations");
 	    } else {
-		warning();
+		if ( !const_order ) {
+		    const_order = TRUE;
+		    warning();
+		    error("Constant declarations should precede type, var and routine declarations");
+		}
 	    }
-	    error("Constant declarations should precede type, var and routine declarations");
 	}
 	if (parts[ cbn ] & CPRT) {
 	    if ( opt( 's' ) ) {
 		standard();
+		error("All constants should be declared in one const part");
 	    } else {
-		warning();
+		if ( !const_seen ) {
+		    const_seen = TRUE;
+		    warning();
+		    error("All constants should be declared in one const part");
+		}
 	    }
-	    error("All constants should be declared in one const part");
 	}
 	parts[ cbn ] |= CPRT;
 }
