@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)conf.c	7.7.1.1 (Berkeley) %G%
+ *	@(#)conf.c	7.11 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -13,19 +13,15 @@
 #include "tty.h"
 #include "conf.h"
 
-int	nulldev();
-int	nodev();
+int nulldev(), nodev(), rawread(), rawwrite(), swstrategy();
 
 #include "hp.h"
 #if NHP > 0
-int	hpopen(),hpclose(),hpstrategy();
-int	hpread(),hpwrite(),hpioctl(),hpdump(),hpsize();
+int	hpopen(),hpclose(),hpstrategy(),hpioctl(),hpdump(),hpsize();
 #else
 #define	hpopen		nodev
 #define	hpclose		nodev
 #define	hpstrategy	nodev
-#define	hpread		nodev
-#define	hpwrite		nodev
 #define	hpioctl		nodev
 #define	hpdump		nodev
 #define	hpsize		0
@@ -33,26 +29,21 @@ int	hpread(),hpwrite(),hpioctl(),hpdump(),hpsize();
  
 #include "tu.h"
 #if NHT > 0
-int	htopen(),htclose(),htstrategy(),htread(),htwrite(),htdump(),htioctl();
+int	htopen(),htclose(),htstrategy(),htdump(),htioctl();
 #else
 #define	htopen		nodev
 #define	htclose		nodev
 #define	htstrategy	nodev
-#define	htread		nodev
-#define	htwrite		nodev
 #define	htdump		nodev
 #define	htioctl		nodev
 #endif
 
 #include "rk.h"
 #if NHK > 0
-int	rkopen(),rkstrategy(),rkread(),rkwrite(),rkintr();
-int	rkdump(),rkreset(),rksize();
+int	rkopen(),rkstrategy(),rkintr(),rkdump(),rkreset(),rksize();
 #else
 #define	rkopen		nodev
 #define	rkstrategy	nodev
-#define	rkread		nodev
-#define	rkwrite		nodev
 #define	rkintr		nodev
 #define	rkdump		nodev
 #define	rkreset		nodev
@@ -61,14 +52,11 @@ int	rkdump(),rkreset(),rksize();
 
 #include "te.h"
 #if NTE > 0
-int	tmopen(),tmclose(),tmstrategy(),tmread(),tmwrite();
-int	tmioctl(),tmdump(),tmreset();
+int	tmopen(),tmclose(),tmstrategy(),tmioctl(),tmdump(),tmreset();
 #else
 #define	tmopen		nodev
 #define	tmclose		nodev
 #define	tmstrategy	nodev
-#define	tmread		nodev
-#define	tmwrite		nodev
 #define	tmioctl		nodev
 #define	tmdump		nodev
 #define	tmreset		nulldev
@@ -76,14 +64,12 @@ int	tmioctl(),tmdump(),tmreset();
 
 #include "tms.h"
 #if NTMS > 0
-int	tmscpopen(),tmscpclose(),tmscpstrategy(),tmscpread(),tmscpwrite();
+int	tmscpopen(),tmscpclose(),tmscpstrategy();
 int	tmscpioctl(),tmscpdump(),tmscpreset();
 #else
 #define	tmscpopen	nodev
 #define	tmscpclose	nodev
 #define	tmscpstrategy	nodev
-#define	tmscpread	nodev
-#define	tmscpwrite	nodev
 #define	tmscpioctl	nodev
 #define	tmscpdump	nodev
 #define	tmscpreset	nulldev
@@ -91,14 +77,11 @@ int	tmscpioctl(),tmscpdump(),tmscpreset();
 
 #include "ts.h"
 #if NTS > 0
-int	tsopen(),tsclose(),tsstrategy(),tsread(),tswrite();
-int	tsioctl(),tsdump(),tsreset();
+int	tsopen(),tsclose(),tsstrategy(),tsioctl(),tsdump(),tsreset();
 #else
 #define	tsopen		nodev
 #define	tsclose		nodev
 #define	tsstrategy	nodev
-#define	tsread		nodev
-#define	tswrite		nodev
 #define	tsioctl		nodev
 #define	tsdump		nodev
 #define	tsreset		nulldev
@@ -106,42 +89,35 @@ int	tsioctl(),tsdump(),tsreset();
 
 #include "mu.h"
 #if NMT > 0
-int	mtopen(),mtclose(),mtstrategy(),mtread(),mtwrite();
-int	mtioctl(),mtdump();
+int	mtopen(),mtclose(),mtstrategy(),mtioctl(),mtdump();
 #else
 #define	mtopen		nodev
 #define	mtclose		nodev
 #define	mtstrategy	nodev
-#define	mtread		nodev
-#define	mtwrite		nodev
 #define	mtioctl		nodev
 #define	mtdump		nodev
 #endif
 
 #include "ra.h"
 #if NUDA > 0
-int	udopen(),udclose(),udstrategy(),udread(),udwrite(),udioctl();
-int	udreset(),uddump(),udsize();
+int	udaopen(),udaclose(),udastrategy();
+int	udaioctl(),udareset(),udadump(),udasize();
 #else
-#define	udopen		nodev
-#define	udclose		nodev
-#define	udstrategy	nodev
-#define	udread		nodev
-#define	udwrite		nodev
-#define	udioctl		nodev
-#define	udreset		nulldev
-#define	uddump		nodev
-#define	udsize		0
+#define	udaopen		nodev
+#define	udaclose	nodev
+#define	udastrategy	nodev
+#define	udaioctl	nodev
+#define	udareset	nulldev
+#define	udadump		nodev
+#define	udasize		0
 #endif
 
 #include "up.h"
 #if NSC > 0
-int	upopen(),upstrategy(),upread(),upwrite(),upreset(),updump(),upsize();
+int	upopen(),upstrategy(),upreset(),updump(),upsize();
 #else
 #define	upopen		nodev
 #define	upstrategy	nodev
-#define	upread		nodev
-#define	upwrite		nodev
 #define	upreset		nulldev
 #define	updump		nodev
 #define	upsize		0
@@ -149,14 +125,11 @@ int	upopen(),upstrategy(),upread(),upwrite(),upreset(),updump(),upsize();
 
 #include "tj.h"
 #if NUT > 0
-int	utopen(),utclose(),utstrategy(),utread(),utwrite(),utioctl();
-int	utreset(),utdump();
+int	utopen(),utclose(),utstrategy(),utioctl(),utreset(),utdump();
 #else
 #define	utopen		nodev
 #define	utclose		nodev
-#define	utread		nodev
 #define	utstrategy	nodev
-#define	utwrite		nodev
 #define	utreset		nulldev
 #define	utioctl		nodev
 #define	utdump		nodev
@@ -164,13 +137,10 @@ int	utreset(),utdump();
 
 #include "rb.h"
 #if NIDC > 0
-int	idcopen(),idcstrategy(),idcread(),idcwrite();
-int	idcreset(),idcdump(),idcsize();;
+int	idcopen(),idcstrategy(),idcreset(),idcdump(),idcsize();;
 #else
 #define	idcopen		nodev
 #define	idcstrategy	nodev
-#define	idcread		nodev
-#define	idcwrite	nodev
 #define	idcreset	nulldev
 #define	idcdump		nodev
 #define	idcsize		0
@@ -210,13 +180,10 @@ int	uuopen(),uustrategy(),uuclose(),uureset(),uuioctl();
 
 #include "rl.h"
 #if NRL > 0
-int	rlopen(),rlstrategy(),rlread(),rlwrite();
-int	rlreset(),rldump(),rlsize();
+int	rlopen(),rlstrategy(),rlreset(),rldump(),rlsize();
 #else
 #define	rlopen		nodev
 #define	rlstrategy	nodev
-#define	rlread		nodev
-#define	rlwrite		nodev
 #define	rlreset		nulldev
 #define	rldump		nodev
 #define	rlsize		0
@@ -234,8 +201,6 @@ int	npreset(),npioctl();
 #define	npreset		nulldev
 #define	npioctl		nodev
 #endif
-
-int	swstrategy(),swread(),swwrite();
 
 struct bdevsw	bdevsw[] =
 {
@@ -257,17 +222,17 @@ struct bdevsw	bdevsw[] =
 	  mtdump,	0,		B_TAPE },
 	{ tuopen,	tuclose,	tustrategy,	nodev,		/*8*/
 	  nodev,	0,		B_TAPE },
-	{ udopen,	udclose,	udstrategy,	udioctl,	/*9*/
-	  uddump,	udsize,		0 },
+	{ udaopen,	udaclose,	udastrategy,	udaioctl,	/*9*/
+	  udadump,	udasize,	0 },
 	{ utopen,	utclose,	utstrategy,	utioctl,	/*10*/
 	  utdump,	0,		B_TAPE },
-	{ idcopen,	nodev,		idcstrategy,	nodev,		/*11*/
+	{ idcopen,	nulldev,	idcstrategy,	nodev,		/*11*/
 	  idcdump,	idcsize,	0 },
 	{ rxopen,	rxclose,	rxstrategy,	nodev,		/*12*/
 	  nodev,	0,		0 },
 	{ uuopen,	uuclose,	uustrategy,	nodev,		/*13*/
 	  nodev,	0,		0 },
-	{ rlopen,	nodev,		rlstrategy,	nodev,		/*14*/
+	{ rlopen,	nulldev,	rlstrategy,	nodev,		/*14*/
 	  rldump,	rlsize,		0 },
 	{ tmscpopen,	tmscpclose,	tmscpstrategy,	tmscpioctl,	/*15*/
 	  tmscpdump,	0,		B_TAPE },
@@ -330,6 +295,15 @@ int	crlopen(),crlclose(),crlread(),crlwrite();
 #define	crlclose	nodev
 #define	crlread		nodev
 #define	crlwrite	nodev
+#endif
+
+#if VAX8200
+int	rx50open(),rx50close(),rx50read(),rx50write();
+#else
+#define	rx50open	nodev
+#define	rx50close	nodev
+#define	rx50read	nodev
+#define	rx50write	nodev
 #endif
 
 #if VAX780
@@ -602,148 +576,150 @@ struct cdevsw	cdevsw[] =
 {
 	cnopen,		cnclose,	cnread,		cnwrite,	/*0*/
 	cnioctl,	nulldev,	nulldev,	&cons,
-	ttselect,	nodev,
+	ttselect,	nodev,		NULL,
 	dzopen,		dzclose,	dzread,		dzwrite,	/*1*/
 	dzioctl,	dzstop,		dzreset,	dz_tty,
-	ttselect,	nodev,
+	ttselect,	nodev,		NULL,
 	syopen,		nulldev,	syread,		sywrite,	/*2*/
-	syioctl,	nulldev,	nulldev,	0,
-	syselect,	nodev,
+	syioctl,	nulldev,	nulldev,	NULL,
+	syselect,	nodev,		NULL,
 	nulldev,	nulldev,	mmread,		mmwrite,	/*3*/
-	nodev,		nulldev,	nulldev,	0,
-	mmselect,	nodev,
-	hpopen,		hpclose,	hpread,		hpwrite,	/*4*/
-	hpioctl,	nodev,		nulldev,	0,
-	seltrue,	nodev,
-	htopen,		htclose,	htread,		htwrite,	/*5*/
-	htioctl,	nodev,		nulldev,	0,
-	seltrue,	nodev,
+	nodev,		nulldev,	nulldev,	NULL,
+	mmselect,	nodev,		NULL,
+	hpopen,		hpclose,	rawread,	rawwrite,	/*4*/
+	hpioctl,	nodev,		nulldev,	NULL,
+	seltrue,	nodev,		hpstrategy,
+	htopen,		htclose,	rawread,	rawwrite,	/*5*/
+	htioctl,	nodev,		nulldev,	NULL,
+	seltrue,	nodev,		htstrategy,
 	vpopen,		vpclose,	nodev,		vpwrite,	/*6*/
-	vpioctl,	nulldev,	vpreset,	0,
-	vpselect,	nodev,
-	nulldev,	nulldev,	swread,		swwrite,	/*7*/
-	nodev,		nodev,		nulldev,	0,
-	nodev,		nodev,
+	vpioctl,	nulldev,	vpreset,	NULL,
+	vpselect,	nodev,		NULL,
+	nulldev,	nulldev,	rawread,	rawwrite,	/*7*/
+	nodev,		nodev,		nulldev,	NULL,
+	nodev,		nodev,		swstrategy,
 	flopen,		flclose,	flread,		flwrite,	/*8*/
-	nodev,		nodev,		nulldev,	0,
-	seltrue,	nodev,
-	udopen,		udclose,	udread,		udwrite,	/*9*/
-	udioctl,	nodev,		udreset,	0,
-	seltrue,	nodev,
+	nodev,		nodev,		nulldev,	NULL,
+	seltrue,	nodev,		NULL,
+	udaopen,	udaclose,	rawread,	rawwrite,	/*9*/
+	udaioctl,	nodev,		udareset,	NULL,
+	seltrue,	nodev,		udastrategy,
 	vaopen,		vaclose,	nodev,		vawrite,	/*10*/
-	vaioctl,	nulldev,	vareset,	0,
-	vaselect,	nodev,
-	rkopen,		nulldev,	rkread,		rkwrite,	/*11*/
-	nodev,		nodev,		rkreset,	0,
-	seltrue,	nodev,
+	vaioctl,	nulldev,	vareset,	NULL,
+	vaselect,	nodev,		NULL,
+	rkopen,		nulldev,	rawread,	rawwrite,	/*11*/
+	nodev,		nodev,		rkreset,	NULL,
+	seltrue,	nodev,		rkstrategy,
 	dhopen,		dhclose,	dhread,		dhwrite,	/*12*/
 	dhioctl,	dhstop,		dhreset,	dh11,
-	ttselect,	nodev,
-	upopen,		nulldev,	upread,		upwrite,	/*13*/
-	nodev,		nodev,		upreset,	0,
-	seltrue,	nodev,
-	tmopen,		tmclose,	tmread,		tmwrite,	/*14*/
-	tmioctl,	nodev,		tmreset,	0,
-	seltrue,	nodev,
+	ttselect,	nodev,		NULL,
+	upopen,		nulldev,	rawread,	rawwrite,	/*13*/
+	nodev,		nodev,		upreset,	NULL,
+	seltrue,	nodev,		upstrategy,
+	tmopen,		tmclose,	rawread,	rawwrite,	/*14*/
+	tmioctl,	nodev,		tmreset,	NULL,
+	seltrue,	nodev,		tmstrategy,
 	lpopen,		lpclose,	nodev,		lpwrite,	/*15*/
-	nodev,		nodev,		lpreset,	0,
-	seltrue,	nodev,
-	tsopen,		tsclose,	tsread,		tswrite,	/*16*/
-	tsioctl,	nodev,		tsreset,	0,
-	seltrue,	nodev,
-	utopen,		utclose,	utread,		utwrite,	/*17*/
-	utioctl,	nodev,		utreset,	0,
-	seltrue,	nodev,
+	nodev,		nodev,		lpreset,	NULL,
+	seltrue,	nodev,		NULL,
+	tsopen,		tsclose,	rawread,	rawwrite,	/*16*/
+	tsioctl,	nodev,		tsreset,	NULL,
+	seltrue,	nodev,		tsstrategy,
+	utopen,		utclose,	rawread,	rawwrite,	/*17*/
+	utioctl,	nodev,		utreset,	NULL,
+	seltrue,	nodev,		utstrategy,
 	ctopen,		ctclose,	nodev,		ctwrite,	/*18*/
-	nodev,		nodev,		nulldev,	0,
-	seltrue,	nodev,
-	mtopen,		mtclose,	mtread,		mtwrite,	/*19*/
-	mtioctl,	nodev,		nodev,		0,
-	seltrue,	nodev,
+	nodev,		nodev,		nulldev,	NULL,
+	seltrue,	nodev,		NULL,
+	mtopen,		mtclose,	rawread,	rawwrite,	/*19*/
+	mtioctl,	nodev,		nodev,		NULL,
+	seltrue,	nodev,		mtstrategy,
 	ptsopen,	ptsclose,	ptsread,	ptswrite,	/*20*/
 	ptyioctl,	ptsstop,	nulldev,	pt_tty,
-	ttselect,	nodev,
+	ttselect,	nodev,		NULL,
 	ptcopen,	ptcclose,	ptcread,	ptcwrite,	/*21*/
 	ptyioctl,	nulldev,	nulldev,	pt_tty,
-	ptcselect,	nodev,
+	ptcselect,	nodev,		NULL,
 	dmfopen,	dmfclose,	dmfread,	dmfwrite,	/*22*/
 	dmfioctl,	dmfstop,	dmfreset,	dmf_tty,
-	ttselect,	nodev,
-	idcopen,	nulldev,	idcread,	idcwrite,	/*23*/
-	nodev,		nodev,		idcreset,	0,
-	seltrue,	nodev,
+	ttselect,	nodev,		NULL,
+	idcopen,	nulldev,	rawread,	rawwrite,	/*23*/
+	nodev,		nodev,		idcreset,	NULL,
+	seltrue,	nodev,		idcstrategy,
 	dnopen,		dnclose,	nodev,		dnwrite,	/*24*/
-	nodev,		nodev,		nulldev,	0,
-	seltrue,	nodev,
+	nodev,		nodev,		nulldev,	NULL,
+	seltrue,	nodev,		NULL,
 /* 25-29 reserved to local sites */
 	nodev,		nodev,		nodev,		nodev,		/*25*/
-	nodev,		nulldev,	nulldev,	0,
-	nodev,		nodev,
+	nodev,		nulldev,	nulldev,	NULL,
+	nodev,		nodev,		NULL,
 	lpaopen,	lpaclose,	lparead,	lpawrite,	/*26*/
-	lpaioctl,	nodev,		nulldev,	0,
-	seltrue,	nodev,
+	lpaioctl,	nodev,		nulldev,	NULL,
+	seltrue,	nodev,		NULL,
 	psopen,		psclose,	psread,		pswrite,	/*27*/
-	psioctl,	nodev,		psreset,	0,
-	seltrue,	nodev,
+	psioctl,	nodev,		psreset,	NULL,
+	seltrue,	nodev,		NULL,
 	nodev,		nodev,		nodev,		nodev,		/*28*/
-	nodev,		nulldev,	nulldev,	0,
-	nodev,		nodev,
+	nodev,		nulldev,	nulldev,	NULL,
+	nodev,		nodev,		NULL,
 	adopen,		adclose,	nodev,		nodev,		/*29*/
-	adioctl,	nodev,		adreset,	0,
-	seltrue,	nodev,
+	adioctl,	nodev,		adreset,	NULL,
+	seltrue,	nodev,		NULL,
 	rxopen,		rxclose,	rxread,		rxwrite,	/*30*/
-	rxioctl,	nodev,		rxreset,	0,
-	seltrue,	nodev,
+	rxioctl,	nodev,		rxreset,	NULL,
+	seltrue,	nodev,		NULL,
 	ikopen,		ikclose,	ikread,		ikwrite,	/*31*/
-	ikioctl,	nodev,		ikreset,	0,
-	seltrue,	nodev,
-	rlopen,		nodev,		rlread,		rlwrite,	/*32*/
-	nodev,		nodev,		rlreset,	0,
-	seltrue,	nodev,
+	ikioctl,	nodev,		ikreset,	NULL,
+	seltrue,	nodev,		NULL,
+	rlopen,		nodev,		rawread,	rawwrite,	/*32*/
+	nodev,		nodev,		rlreset,	NULL,
+	seltrue,	nodev,		rlstrategy,
 	logopen,	logclose,	logread,	nodev,		/*33*/
-	logioctl,	nodev,		nulldev,	0,
-	logselect,	nodev,
-	dhuopen,        dhuclose,       dhuread,        dhuwrite,       /*34*/
-	dhuioctl,       dhustop,        dhureset,       dhu_tty,
-	ttselect,       nodev,
+	logioctl,	nodev,		nulldev,	NULL,
+	logselect,	nodev,		NULL,
+	dhuopen,	dhuclose,	dhuread,	dhuwrite,	/*34*/
+	dhuioctl,	dhustop,	dhureset,	dhu_tty,
+	ttselect,	nodev,		NULL,
  	crlopen,	crlclose,	crlread,	crlwrite,	/*35*/
- 	nodev,		nodev,		nulldev,	0,
- 	seltrue,	nodev,
+ 	nodev,		nodev,		nulldev,	NULL,
+ 	seltrue,	nodev,		NULL,
 	vsopen,		vsclose,	nodev,		nodev,		/*36*/
-	vsioctl,	nodev,		vsreset,	0,
-	vsselect,	nodev,
-	dmzopen,        dmzclose,       dmzread,        dmzwrite,       /*37*/
-	dmzioctl,       dmzstop,        dmzreset,       dmz_tty,
-	ttselect,       nodev,
-	tmscpopen,	tmscpclose,	tmscpread,	tmscpwrite,	/*38*/
-	tmscpioctl,	nodev,		tmscpreset,	0,
-	seltrue,	nodev,
+	vsioctl,	nodev,		vsreset,	NULL,
+	vsselect,	nodev,		NULL,
+	dmzopen,	dmzclose,	dmzread,	dmzwrite,	/*37*/
+	dmzioctl,	dmzstop,	dmzreset,	dmz_tty,
+	ttselect,	nodev,		NULL,
+	tmscpopen,	tmscpclose,	rawread,	rawwrite,	/*38*/
+	tmscpioctl,	nodev,		tmscpreset,	NULL,
+	seltrue,	nodev,		tmscpstrategy,
 	npopen,		npclose,	npread,		npwrite,	/*39*/
-	npioctl,	nodev,		npreset,	0,
-	seltrue,	nodev,
-	qvopen,		qvclose,	qvread, 	qvwrite,	/*40*/
-	qvioctl,	qvstop,		qvreset,	0,
-	qvselect,	nodev,
-	qdopen,		qdclose,	qdread, 	qdwrite,	/*41*/
-	qdioctl,	qdstop,		qdreset,	0,
-	qdselect,	nodev,
+	npioctl,	nodev,		npreset,	NULL,
+	seltrue,	nodev,		NULL,
+	qvopen,		qvclose,	qvread,		qvwrite,	/*40*/
+	qvioctl,	qvstop,		qvreset,	NULL,
+	qvselect,	nodev,		NULL,
+	qdopen,		qdclose,	qdread,		qdwrite,	/*41*/
+	qdioctl,	qdstop,		qdreset,	NULL,
+	qdselect,	nodev,		NULL,
 /* 42-50 reserved to local sites */
 	nodev,		nodev,		nodev,		nodev,		/*42*/
-	nodev,		nulldev,	nulldev,	0,
-	nodev,		nodev,
+	nodev,		nulldev,	nulldev,	NULL,
+	nodev,		nodev,		NULL,
 	iiopen,		iiclose,	nulldev,	nulldev,	/*43*/
-	iiioctl,	nulldev,	nulldev,	0,
-	seltrue,	nodev,
-	/* Datakit major devices */
-	dkopen, 	dkclose,	dkread, 	dkwrite,	/* 44*/
-	dkioctl,	nulldev,	nulldev,	0,
-	seltrue,	nodev,
-	dktopen, 	dktclose,	dktread, 	dktwrite,	/* 45*/
+	iiioctl,	nulldev,	nulldev,	NULL,
+	seltrue,	nodev,		NULL,
+	dkopen, 	dkclose,	dkread, 	dkwrite,	/*44*/
+	dkioctl,	nulldev,	nulldev,	NULL,
+	seltrue,	nodev,		NULL,
+	dktopen, 	dktclose,	dktread, 	dktwrite,	/*45*/
 	dktioctl,	dktstop,	nulldev,	dkt,
-	ttselect,	nodev,
-	kmcopen,	kmcclose,	kmcread,	kmcwrite,	/* 46*/
-	kmcioctl,	nulldev,	kmcdclr,	0,
-	seltrue,	nodev,
+	ttselect,	nodev,		NULL,
+	kmcopen,	kmcclose,	kmcread,	kmcwrite,	/*46*/
+	kmcioctl,	nulldev,	kmcdclr,	NULL,
+	seltrue,	nodev,		NULL,
+	rx50open,	rx50close,	rx50read,	rx50write,	/*47*/
+ 	nodev,		nodev,		nulldev,	0,
+ 	seltrue,	nodev,		NULL,
 };
 int	nchrdev = sizeof (cdevsw) / sizeof (cdevsw[0]);
 
