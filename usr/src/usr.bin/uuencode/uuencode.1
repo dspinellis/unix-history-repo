@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)uuencode.1	6.6 (Berkeley) %G%
+.\"	@(#)uuencode.1	6.7 (Berkeley) %G%
 .\"
 .TH UUENCODE 1 ""
 .UC 4
@@ -66,7 +66,7 @@ tree.
 tar cf - src_tree | compress | uuencode src_tree.tar.Z | mail sys1!sys2!user
 .sp
 .SH SEE ALSO
-compress(1), mail(1), uucp(1), uuencode(5)
+compress(1), mail(1), uucp(1), uuencode.format(5)
 .SH BUGS
 The encoded form of the file is expanded by 35% (3 bytes become 4 plus
 control information).
