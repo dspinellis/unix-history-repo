@@ -1,8 +1,9 @@
 # Makefile for f77 system lib, libU77.a
-#	@(#)makefile	1.15	%G%
+#	@(#)makefile	1.16	%G%
 
 DESTDIR =
 LIB = libU77.a
+LIB_P = libU77_p.a
 LPR = lpr
 
 # for 11's
@@ -49,8 +50,9 @@ SOURCES = \
 	isatty_.c \
 	itime_.c \
 	kill_.c \
-	loc_.c \
 	link_.c \
+	loc_.c \
+	lstat_.c \
 	ltime_.c \
 	perror_.c \
 	putc_.c \
@@ -100,9 +102,10 @@ OBJECTS = \
 	isatty_.o \
 	itime_.o \
 	kill_.o \
-	loc_.o \
-	ltime_.o \
 	link_.o \
+	loc_.o \
+	lstat_.o \
+	ltime_.o \
 	perror_.o \
 	putc_.o \
 	qsort_.o \
@@ -118,24 +121,32 @@ OBJECTS = \
 	unlink_.o \
 	wait_.o
 
-all:	$(LIB)
+all:	$(LIB) $(LIB_P)
 
 $(LIB):	$(OBJECTS) Version
-	@rm -f $(LIB)
-	ar rc $(LIB) $(OBJECTS) Version
-	@chmod 664 $(LIB)
+	ar ru $(LIB) $?
+	ranlib $(LIB)
+	@chmod 644 $(LIB)
 
-install:	$(LIBDIR)/$(LIB)
+$(LIB_P):	$(OBJECTS) Version
+	cd profiled; ar ru ../$(LIB_P) $?
+	ranlib $(LIB_P)
+	@chmod 644 $(LIB_P)
+
+install:	$(LIBDIR)/$(LIB) $(LIBDIR)/$(LIB_P)
 
 $(LIBDIR)/$(LIB):	$(LIB)
 	@-mv $(LIBDIR)/$(LIB) $(LIBDIR)/$(LIB).old
-	cp $(LIB) $(LIBDIR)/$(LIB)
-	ranlib $(LIBDIR)/$(LIB)
-	@chmod 644 $(LIBDIR)/$(LIB)
+	tar cf - $(LIB) | (cd $(LIBDIR); tar xvf - )
+
+$(LIBDIR)/$(LIB_P):	$(LIB_P)
+	@-mv $(LIBDIR)/$(LIB_P) $(LIBDIR)/$(LIB_P).old
+	tar cf - $(LIB_P) | (cd $(LIBDIR); tar xvf - )
 
 
 #compile and strip unnecessary symbols
 .c.o:
+	-cd profiled; cc $(CFLAGS) -p -c ../$*.c; ld -r -x $*.o; mv a.out $*.o
 	cc $(CFLAGS) -c $*.c
 	-ld -r -x $*.o
 	mv a.out $*.o
@@ -145,6 +156,8 @@ Version:	$(SOURCES) mkvers
 	./mkvers $(LIB) $(SOURCES) > Version.c
 	cc -c Version.c
 	mv Version.o Version
+	@rm -f profiled/Version
+	ln Version profiled/Version
 
 mkvers:	mkvers.c
 	@cc mkvers.c -o mkvers
@@ -159,7 +172,7 @@ mkindx:	mkindx.c
 	@cc mkindx.c -o mkindx
 
 clean:
-	rm -f $(OBJECTS) $(LIB)
+	rm -f $(OBJECTS) Version $(LIB) $(LIB_P) profiled/*
 
 # End of Makefile
 # Below this is not normally distributed ...
@@ -200,6 +213,10 @@ dtime_.c:	SCCS/s.dtime_.c
 etime_.c:	SCCS/s.etime_.c
 	rm -f etime_.c
 	get SCCS/s.etime_.c
+
+f77lid_.c:	SCCS/s.f77lid_.c
+	rm -f f77lid_.c
+	get SCCS/s.f77lid_.c
 
 fdate_.c:	SCCS/s.fdate_.c
 	rm -f fdate_.c
@@ -269,6 +286,10 @@ gmtime_.c:	SCCS/s.gmtime_.c
 	rm -f gmtime_.c
 	get SCCS/s.gmtime_.c
 
+hostnm_.c:	SCCS/s.hostnm_.c
+	rm -f hostnm_.c
+	get SCCS/s.hostnm_.c
+
 iargc_.c:	SCCS/s.iargc_.c
 	rm -f iargc_.c
 	get SCCS/s.iargc_.c
@@ -293,13 +314,17 @@ kill_.c:	SCCS/s.kill_.c
 	rm -f kill_.c
 	get SCCS/s.kill_.c
 
+link_.c:	SCCS/s.link_.c
+	rm -f link_.c
+	get SCCS/s.link_.c
+
 loc_.c:	SCCS/s.loc_.c
 	rm -f loc_.c
 	get SCCS/s.loc_.c
 
-link_.c:	SCCS/s.link_.c
-	rm -f link_.c
-	get SCCS/s.link_.c
+lstat_.c:	SCCS/s.lstat_.c
+	rm -f lstat_.c
+	get SCCS/s.lstat_.c
 
 ltime_.c:	SCCS/s.ltime_.c
 	rm -f ltime_.c
@@ -317,6 +342,10 @@ qsort_.c:	SCCS/s.qsort_.c
 	rm -f qsort_.c
 	get SCCS/s.qsort_.c
 
+rename_.c:	SCCS/s.rename_.c
+	rm -f rename_.c
+	get SCCS/s.rename_.c
+
 signal_.c:	SCCS/s.signal_.c
 	rm -f signal_.c
 	get SCCS/s.signal_.c
@@ -328,6 +357,10 @@ sleep_.c:	SCCS/s.sleep_.c
 stat_.c:	SCCS/s.stat_.c
 	rm -f stat_.c
 	get SCCS/s.stat_.c
+
+symlnk_.c:	SCCS/s.symlnk_.c
+	rm -f symlnk_.c
+	get SCCS/s.symlnk_.c
 
 system_.c:	SCCS/s.system_.c
 	rm -f system_.c
