@@ -5,7 +5,7 @@
 # include <sysexits.h>
 # include <whoami.h>
 
-static char SccsId[] = "@(#)sccs.c	1.16 %G%";
+static char SccsId[] = "@(#)sccs.c	1.17 %G%";
 
 # define bitset(bit, word)	((bit) & (word))
 
@@ -26,6 +26,7 @@ struct sccsprog
 # define CMACRO		1	/* command substitution macro */
 # define FIX		2	/* fix a delta */
 # define CLEAN		3	/* clean out recreatable files */
+# define UNEDIT		4	/* unedit a file */
 
 /* bits for sccsflags */
 # define NO_SDOT	0001	/* no s. on front of args */
@@ -58,7 +59,17 @@ struct sccsprog SccsProg[] =
 	"fix",		FIX,	0,			NULL,
 	"clean",	CLEAN,	REALUSER,		(char *) TRUE,
 	"info",		CLEAN,	REALUSER,		(char *) FALSE,
+	"unedit",	UNEDIT,	0,			NULL,
 	NULL,		-1,	0,			NULL
+};
+
+struct pfile
+{
+	char	*p_osid;	/* old SID */
+	char	*p_nsid;	/* new SID */
+	char	*p_user;	/* user who did edit */
+	char	*p_date;	/* date of get */
+	char	*p_time;	/* time of get */
 };
 
 char	*SccsPath = "SCCS";	/* pathname of SCCS files */
@@ -147,10 +158,10 @@ command(argv, forkflag)
 	**	At this point, argv points to the command name.
 	*/
 
-	cmd = lookup(*argv);
+	cmd = lookup(argv[0]);
 	if (cmd == NULL)
 	{
-		fprintf(stderr, "Sccs: Unknown command \"%s\"\n", *argv);
+		fprintf(stderr, "Sccs: Unknown command \"%s\"\n", argv[0]);
 		exit(EX_USAGE);
 	}
 
@@ -201,6 +212,11 @@ command(argv, forkflag)
 
 	  case CLEAN:
 		clean((bool) cmd->sccspath);
+		break;
+
+	  case UNEDIT:
+		for (avp = &argv[1]; *avp != NULL; avp++)
+			unedit(*avp);
 		break;
 
 	  default:
@@ -441,4 +457,176 @@ clean(really)
 	fclose(dirfd);
 	if (!gotedit && !really)
 		printf("Nothing being editted\n");
+}
+/*
+**  UNEDIT -- unedit a file
+**
+**	Checks to see that the current user is actually editting
+**	the file and arranges that s/he is not editting it.
+**
+**	Parameters:
+**		fn -- the name of the file to be uneditted.
+**
+**	Returns:
+**		none.
+**
+**	Side Effects:
+**		fn is removed
+**		entries are removed from pfile.
+*/
+
+unedit(fn)
+	char *fn;
+{
+	register FILE *pfp;
+	char *pfn;
+	static char tfn[] = "/tmp/sccsXXXXX";
+	FILE *tfp;
+	register char *p;
+	register char *q;
+	bool delete = FALSE;
+	bool others = FALSE;
+	char *myname;
+	extern char *getlogin();
+	struct pfile *pent;
+	extern struct pfile *getpfile();
+	char buf[120];
+
+	/* make "s." filename & find the trailing component */
+	pfn = makefile(fn);
+	q = &pfn[strlen(pfn) - 1];
+	while (q > pfn && *q != '/')
+		q--;
+	if (q <= pfn && (q[0] != 's' || q[1] != '.'))
+	{
+		fprintf(stderr, "Sccs: bad file name \"%s\"\n", fn);
+		return;
+	}
+
+	/* turn "s." into "p." */
+	*++q = 'p';
+
+	pfp = fopen(pfn, "r");
+	if (pfp == NULL)
+	{
+		printf("%12s: not being editted\n", fn);
+		return;
+	}
+
+	/*
+	**  Copy p-file to temp file, doing deletions as needed.
+	*/
+
+	mktemp(tfn);
+	tfp = fopen(tfn, "w");
+	if (tfp == NULL)
+	{
+		fprintf(stderr, "Sccs: cannot create \"%s\"\n", tfn);
+		exit(EX_OSERR);
+	}
+
+	myname = getlogin();
+	while ((pent = getpfile(pfp)) != NULL)
+	{
+		if (strcmp(pent->p_user, myname) == 0)
+		{
+			/* a match */
+			delete++;
+		}
+		else
+		{
+			fprintf(tfp, "%s %s %s %s %s\n", pent->p_osid,
+			    pent->p_nsid, pent->p_user, pent->p_date,
+			    pent->p_time);
+			others++;
+		}
+	}
+
+	/* do final cleanup */
+	if (others)
+	{
+		if (freopen(tfn, "r", tfp) == NULL)
+		{
+			fprintf(stderr, "Sccs: cannot reopen \"%s\"\n", tfn);
+			exit(EX_OSERR);
+		}
+		if (freopen(pfn, "w", pfp) == NULL)
+		{
+			fprintf(stderr, "Sccs: cannot create \"%s\"\n", pfn);
+			return;
+		}
+		while (fgets(buf, sizeof buf, tfp) != NULL)
+			fputs(buf, pfp);
+	}
+	else
+	{
+		unlink(pfn);
+	}
+	fclose(tfp);
+	fclose(pfp);
+	unlink(tfn);
+
+	if (delete)
+	{
+		unlink(fn);
+		printf("%12s: removed\n", fn);
+	}
+	else
+	{
+		printf("%12s: not being editted by you\n", fn);
+	}
+}
+/*
+**  GETPFILE -- get an entry from the p-file
+**
+**	Parameters:
+**		pfp -- p-file file pointer
+**
+**	Returns:
+**		pointer to p-file struct for next entry
+**		NULL on EOF or error
+**
+**	Side Effects:
+**		Each call wipes out results of previous call.
+*/
+
+struct pfile *
+getpfile(pfp)
+	FILE *pfp;
+{
+	static struct pfile ent;
+	static char buf[120];
+	register char *p;
+	extern char *nextfield();
+
+	if (fgets(buf, sizeof buf, pfp) == NULL)
+		return (NULL);
+
+	ent.p_osid = p = buf;
+	ent.p_nsid = p = nextfield(p);
+	ent.p_user = p = nextfield(p);
+	ent.p_date = p = nextfield(p);
+	ent.p_time = p = nextfield(p);
+	if (p == NULL || nextfield(p) != NULL)
+		return (NULL);
+
+	return (&ent);
+}
+
+
+char *
+nextfield(p)
+	register char *p;
+{
+	if (p == NULL || *p == '\0')
+		return (NULL);
+	while (*p != ' ' && *p != '\n' && *p != '\0')
+		p++;
+	if (*p == '\n' || *p == '\0')
+	{
+		*p = '\0';
+		return (NULL);
+	}
+	*p++ = '\0';
+	return (p);
 }
