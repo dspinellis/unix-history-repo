@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)strcmp.3	5.1 (Berkeley) %G%
+.\"	@(#)strcmp.3	5.2 (Berkeley) %G%
 .\"
 .TH STRCMP 3 ""
 .UC 4
@@ -19,6 +19,9 @@ strcmp \- compare strings
 
 int
 strcmp(const char *s1, const char *s2);
+
+int
+strncmp(const char *s1, const char *s2, size_t len);
 .ft R
 .fi
 .SH DESCRIPTION
@@ -34,9 +37,15 @@ is lexicographically greater than, equal to, or less than
 .IR s2 .
 The comparison is done using unsigned characters, so that '\e200'
 is greater than '\e0'.
+.PP
+.I Strncmp
+compares at most
+.I len
+characters.
 .SH SEE ALSO
-bcmp(3), memcmp(3), strcasecmp(3), strcoll(3), strncasecmp(3),
-strncmp(3), strxfrm(3)
+bcmp(3), memcmp(3), strcasecmp(3), strcoll(3), strxfrm(3)
 .SH STANDARDS
 .B Strcmp
-conforms to ANSI X3.159-1989 (``ANSI C'').
+and
+.B strncmp
+conform to ANSI X3.159-1989 (``ANSI C'').
