@@ -35,6 +35,12 @@ SUBDIR=	ar awk biff basename cal calendar \
 awk::
 	@rm -f awk
 	ln -s ../gnu/gawk awk
+gcc1::
+	@rm -f gcc1
+	ln -s ../gnu/gcc1 .
+gcc2::
+	@rm -f gcc2
+	ln -s ../gnu/gcc2 .
 groff::
 	@rm -f groff
 	ln -s ../gnu/groff .
