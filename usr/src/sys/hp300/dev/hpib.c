@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)hpib.c	7.1 (Berkeley) %G%
+ *	@(#)hpib.c	7.2 (Berkeley) %G%
  */
 
 /*
@@ -23,8 +23,6 @@
 #include "machine/cpu.h"
 #include "machine/isr.h"
 
-int	internalhpib = IOV(0x478000);
-
 int	hpibinit(), hpibstart(), hpibgo(), hpibintr(), hpibdone();
 struct	driver hpibdriver = {
 	hpibinit, "hpib", hpibstart, hpibgo, hpibintr, hpibdone,
@@ -36,6 +34,7 @@ int	nhpibppoll(), fhpibppoll();
 
 int	hpibtimeout = 100000;	/* # of status tests before we give up */
 int	hpibidtimeout = 20000;	/* # of status tests for hpibid() calls */
+int	hpibdmathresh = 3;	/* byte count beyond which to attempt dma */
 
 hpibinit(hc)
 	register struct hp_ctlr *hc;

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)hpibvar.h	7.1 (Berkeley) %G%
+ *	@(#)hpibvar.h	7.2 (Berkeley) %G%
  */
 
 #define	HPIB_IPL(x)	((((x) >> 4) & 0x3) + 3)
@@ -54,4 +54,6 @@ struct	hpib_softc {
 #ifdef KERNEL
 extern	struct hpib_softc hpib_softc[];
 extern	int internalhpib;
+extern	int hpibtimeout;
+extern	int hpibdmathresh;
 #endif
