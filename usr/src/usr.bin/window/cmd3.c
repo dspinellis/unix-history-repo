@@ -1,46 +1,9 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd3.c	3.10 84/03/03";
+static	char *sccsid = "@(#)cmd3.c	3.11 84/04/07";
 #endif
 
 #include "defs.h"
-#include "value.h"
-#include "var.h"
 #include "string.h"
-
-c_variable()
-{
-	register struct ww *w;
-	int printvar();
-
-	if ((w = openiwin(wwnrow - 3, "Variables")) == 0) {
-		error("Can't open variable window: %s.", wwerror());
-		return;
-	}
-	if (var_walk(printvar, (int)w) >= 0)
-		waitnl(w);
-	closeiwin(w);
-}
-
-printvar(w, r)
-register struct ww *w;
-register struct var *r;
-{
-	if (more(w, 0) == 2)
-		return -1;
-	wwprintf(w, "%16s\t", r->r_name);
-	switch (r->r_val.v_type) {
-	case V_STR:
-		wwprintf(w, "%s\n", r->r_val.v_str);
-		break;
-	case V_NUM:
-		wwprintf(w, "%d\n", r->r_val.v_num);
-		break;
-	case V_ERR:
-		wwprintf(w, "ERROR\n");
-		break;
-	}
-	return 0;
-}
 
 c_close(w)
 register struct ww *w;
