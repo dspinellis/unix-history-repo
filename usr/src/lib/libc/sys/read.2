@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)read.2	6.7 (Berkeley) %G%
+.\"     @(#)read.2	6.8 (Berkeley) %G%
 .\"
 .Dd 
 .Dt READ 2
@@ -17,7 +17,7 @@
 .Fd #include <sys/types.h>
 .Fd #include <sys/uio.h>
 .Ft ssize_t
-.Fn read "int d" "char *buf" "size_t nbytes"
+.Fn read "int d" "void *buf" "size_t nbytes"
 .Ft int
 .Fn readv "int d" "struct iovec *iov" "int iovcnt"
 .Sh DESCRIPTION
@@ -43,8 +43,8 @@ the
 structure is defined as
 .Bd -literal -offset indent -compact
 struct iovec {
-	caddr_t	iov_base;
-	int	iov_len;
+	void *iov_base;
+	int iov_len;
 };
 .Ed
 .Pp
