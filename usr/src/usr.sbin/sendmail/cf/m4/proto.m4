@@ -8,7 +8,7 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(`@(#)proto.m4	8.28 (Berkeley) %G%')
+VERSIONID(`@(#)proto.m4	8.29 (Berkeley) %G%')
 
 MAILER(local)dnl
 
@@ -575,8 +575,7 @@ ifdef(`UUCP_RELAY',
 R$*<@$*.UUCP>$*		$#smtp $@ $Y $: @ $Y : $1 @ $2.UUCP $3	uucp mail',
 `ifdef(`_MAILER_uucp_',
 `# forward other UUCP traffic straight to UUCP
-R< @ $+ .UUCP. > : $+	$#uucp $@ $1 $: $2		@host.UUCP:...
-R$+ < @ $+ .UUCP. >	$#uucp $@ $2 $: $1		user@host.UUCP',
+R$* < @ $+ .UUCP. > $*		$#uucp $@ $2 $: $1 < @ $2 .UUCP. > $3	user@host.UUCP',
 	`dnl')')
 ifdef(`_MAILER_usenet_', `
 # addresses sent to net.group.USENET will get forwarded to a newsgroup
