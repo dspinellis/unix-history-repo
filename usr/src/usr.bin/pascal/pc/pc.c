@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)pc.c 3.2 %G%";
+static	char sccsid[] = "@(#)pc.c 3.3 %G%";
 #include <stdio.h>
 #include <signal.h>
 #include <wait.h>
@@ -310,6 +310,7 @@ duplicate:
 	if (gflag)
 		ldargs[ldargx++] = "-lg";
 	ldargs[ldargx++] = "-lc";
+	ldargs[ldargx++] = "-lm";
 	ldargs[ldargx] = 0;
 	if (dosys(ld, ldargs, 0, 0)==0 && np == 1 && nxo == 0)
 		unlink(onepso);
