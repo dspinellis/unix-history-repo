@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)pstat.c	4.19 (Berkeley) %G%";
+static char *sccsid = "@(#)pstat.c	4.20 (Berkeley) %G%";
 #endif
 /*
  * Print system stuff
@@ -24,7 +24,6 @@ static char *sccsid = "@(#)pstat.c	4.19 (Berkeley) %G%";
 #include <sys/vm.h>
 #include <nlist.h>
 #include <machine/pte.h>
-#include <sys/descrip.h>
 
 char	*fcore	= "/dev/kmem";
 char	*fnlist	= "/vmunix";
@@ -604,10 +603,7 @@ dofile()
 	register struct file *fp;
 	register nf;
 	int loc;
-	static char *dtypes[] = {
-		"???", "kernel", "fsys", "file", "dir", "bdev",
-		"cdev", "proc", "socket", "domain", "tty"
-	};
+	static char *dtypes[] = { "???", "inode", "socket" };
 
 	nf = 0;
 	nfile = getw(nl[SNFILE].n_value);
@@ -622,22 +618,23 @@ dofile()
 		return;
 	}
 	printf("%d/%d open files\n", nf, nfile);
-	printf("   LOC   TYPE    FLG  CNT   INO    OFFS|SOCK\n");
+	printf("   LOC   TYPE    FLG  CNT  MSG    DATA    OFFSET\n");
 	for (fp=xfile,loc=(int)afile; fp < &xfile[nfile]; fp++,loc+=sizeof(xfile[0])) {
 		if (fp->f_count==0)
 			continue;
 		printf("%8x ", loc);
-		if (fp->f_type <= DTYPE_TERMINAL)
+		if (fp->f_type <= DTYPE_SOCKET)
 			printf("%-8.8s", dtypes[fp->f_type]);
 		else
 			printf("8d", fp->f_type);
 		putf(fp->f_flag&FREAD, 'R');
 		putf(fp->f_flag&FWRITE, 'W');
 		putf(fp->f_flag&FAPPEND, 'A');
-		printf("%4d", mask(fp->f_count));
-		printf("%9.1x", fp->f_inode);
-		if (fp->f_type == DTYPE_SOCKET)
-			printf("  %x\n", fp->f_socket);
+		printf("  %3d", mask(fp->f_count));
+		printf("  %3d", mask(fp->f_msgcount));
+		printf("  %8.1x", fp->f_data);
+		if (fp->f_offset < 0)
+			printf("  %x\n", fp->f_offset);
 		else
 			printf("  %ld\n", fp->f_offset);
 	}
