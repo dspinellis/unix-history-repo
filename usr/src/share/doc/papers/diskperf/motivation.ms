@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)motivation.ms	5.1 (Berkeley) %G%
+.\"	@(#)motivation.ms	6.1 (Berkeley) %G%
 .\"
 .ds RH Motivation
 .NH

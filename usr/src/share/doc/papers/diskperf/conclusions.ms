@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)conclusions.ms	5.1 (Berkeley) %G%
+.\"	@(#)conclusions.ms	6.1 (Berkeley) %G%
 .\"
 .ds RH Conclusions
 .NH
@@ -66,7 +66,7 @@ drive case than when controllers that cannot handle simultaneous
 transfers are used.
 .ds RH Acknowledgements
 .nr H2 1
-.sp 2
+.sp 1
 .SH
 \s+2Acknowledgements\s0
 .PP
@@ -87,14 +87,14 @@ Arpa Order No. 4031 monitored by Naval Electronic System Command under
 Contract No. N00039-82-C-0235.
 .ds RH References
 .nr H2 1
-.sp 2
+.sp 1
 .SH
 \s+2References\s0
 .LP
 .IP [McKusick83] 20
-McKusick, M., Joy, W., Leffler, S., and Fabry, R.
-"A Fast File System for UNIX",
-University of California at Berkeley,
-Computer Systems Research Group Technical Report #7, 1982.
+M. McKusick, W. Joy, S. Leffler, R. Fabry,
+``A Fast File System for UNIX'',
+\fIACM Transactions on Computer Systems 2\fP, 3.
+pp 181-197, August 1984.
 .ds RH Appendix A
 .bp

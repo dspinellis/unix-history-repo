@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)methodology.ms	5.1 (Berkeley) %G%
+.\"	@(#)methodology.ms	6.1 (Berkeley) %G%
 .\"
 .ds RH Methodology
 .NH

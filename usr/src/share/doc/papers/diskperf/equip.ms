@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)equip.ms	5.1 (Berkeley) %G%
+.\"	@(#)equip.ms	6.1 (Berkeley) %G%
 .\"
 .ds RH Equipment
 .NH
