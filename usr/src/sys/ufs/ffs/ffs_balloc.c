@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_balloc.c	7.21 (Berkeley) %G%
+ *	@(#)ffs_balloc.c	7.22 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -29,10 +29,16 @@
  * the array of block pointers described by the dinode.
  */
 int
-ffs_bmap (ap)
-	struct vop_bmap_args *ap;
+ffs_bmap(ap)
+	struct vop_bmap_args /* {
+		struct vnode *a_vp;
+		daddr_t  a_bn;
+		struct vnode **a_vpp;
+		daddr_t *a_bnp;
+	} */ *ap;
 {
 	register daddr_t bn = ap->a_bn;
+	register daddr_t *bnp = ap->a_bnp;
 	register struct inode *ip;
 	register struct fs *fs;
 	register daddr_t nb;
@@ -48,7 +54,7 @@ ffs_bmap (ap)
 	ip = VTOI(ap->a_vp);
 	if (ap->a_vpp != NULL)
 		*ap->a_vpp = ip->i_devvp;
-	if (ap->a_bnp == NULL)
+	if (bnp == NULL)
 		return (0);
 	if (bn < 0)
 		return (EFBIG);
@@ -60,10 +66,10 @@ ffs_bmap (ap)
 	if (bn < NDADDR) {
 		nb = ip->i_db[bn];
 		if (nb == 0) {
-			*ap->a_bnp = (daddr_t)-1;
+			*bnp = (daddr_t)-1;
 			return (0);
 		}
-		*ap->a_bnp = fsbtodb(fs, nb);
+		*bnp = fsbtodb(fs, nb);
 		return (0);
 	}
 	/*
@@ -84,7 +90,7 @@ ffs_bmap (ap)
 	 */
 	nb = ip->i_ib[NIADDR - j];
 	if (nb == 0) {
-		*ap->a_bnp = (daddr_t)-1;
+		*bnp = (daddr_t)-1;
 		return (0);
 	}
 	for (; j <= NIADDR; j++) {
@@ -98,13 +104,13 @@ ffs_bmap (ap)
 		i = (bn / sh) % NINDIR(fs);
 		nb = bap[i];
 		if (nb == 0) {
-			*ap->a_bnp = (daddr_t)-1;
+			*bnp = (daddr_t)-1;
 			brelse(bp);
 			return (0);
 		}
 		brelse(bp);
 	}
-	*ap->a_bnp = fsbtodb(fs, nb);
+	*bnp = fsbtodb(fs, nb);
 	return (0);
 }
 
