@@ -1,4 +1,5 @@
 /*
+ *
  * Copyright (c) 1983, 1989, 1991 The Regents of the University of California.
  * All rights reserved.
  *
@@ -12,7 +13,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)route.c	5.42 (Berkeley) %G%";
+static char sccsid[] = "@(#)route.c	5.43 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -327,12 +328,12 @@ routename(sa)
 		break;
 
 	default:
-	    {	u_short *s = (u_short *)sa->sa_data;
+	    {	u_short *s = (u_short *)sa;
 		u_short *slim = s + ((sa->sa_len + 1) >> 1);
 		char *cp = line + sprintf(line, "(%d)", sa->sa_family);
 
-		while (s < slim)
-			cp += sprintf(cp, " %x", *s++);
+		while (++s < slim) /* start with sa->sa_data */
+			cp += sprintf(cp, " %x", *s);
 		break;
 	    }
 	}
@@ -898,12 +899,36 @@ ns_print(sns)
 }
 
 void
+interfaces()
+{
+	int needed, rlen, af;
+	char *buf, *lim, *next;
+	register struct rt_msghdr *rtm;
+
+	if ((needed = getkerninfo(KINFO_RT_IFLIST, 0, 0, 0)) < 0)
+		quit("route-getkerninfo-estimate");
+	if ((buf = malloc(needed)) == NULL)
+		quit("malloc");
+	if ((rlen = getkerninfo(KINFO_RT_IFLIST, buf, &needed, 0)) < 0)
+		quit("actual retrieval of interface table");
+	lim = buf + rlen;
+	for (next = buf; next < lim; next += rtm->rtm_msglen) {
+		rtm = (struct rt_msghdr *)next;
+		print_rtmsg(rtm, rtm->rtm_msglen);
+	}
+}
+
+void
 monitor()
 {
 	int n;
 	char msg[2048];
 
 	verbose = 1;
+	if (debugonly) {
+		interfaces();
+		exit(0);
+	}
 	for(;;) {
 		n = read(s, msg, 2048);
 		(void) printf("got message of size %d\n", n);
