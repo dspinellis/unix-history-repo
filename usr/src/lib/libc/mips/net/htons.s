@@ -11,27 +11,23 @@
 #include <machine/machAsmDefs.h>
 
 #if defined(LIBC_SCCS) && !defined(lint)
-	ASMSTR("@(#)htons.s	5.4 (Berkeley) %G%")
+	ASMSTR("@(#)htons.s	5.5 (Berkeley) %G%")
 #endif /* LIBC_SCCS and not lint */
-
-#include <machine/endian.h>
-#undef	htons
-#undef	ntohs
 
 /*
  * netorder = htons(hostorder)
  * hostorder = ntohs(netorder)
  */
-LEAF(htons)
+NLEAF(htons)
 ALEAF(ntohs)
-#if BYTE_ORDER == LITTLE_ENDIAN
+#ifdef MIPSEL
 	srl	v0, a0, 8
 	and	v0, v0, 0xff
 	sll	v1, a0, 8
 	and	v1, v1, 0xff00
 	or	v0, v0, v1
 #else
-#if BYTE_ORDER == BIG_ENDIAN
+#ifdef MIPSEB
 	move	v0, a0
 #else
 	ERROR
