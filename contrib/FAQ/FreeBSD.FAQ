@@ -5,7 +5,7 @@
 Please mail all suggestions and additions to <FreeBSD-FAQ@freefall.cdrom.com>
 
 
-Revision: $Id: FreeBSD.FAQ,v 1.19 1994/04/23 19:03:05 gclarkii Exp $
+Revision: $Id: FreeBSD.FAQ,v 1.20 1994/04/24 01:01:39 jkh Exp $
 
 
 Table of Contents
@@ -255,6 +255,23 @@ There is also a mailing list for the discussion of non-US encryption
 software.  For more information, send an email message with a single
 line saying ``help'' in the body of your message to
 <majordomo@braae.ru.ac.za>.
+
+1.8     HELP!  My keyboard locked up during the install!
+
+Some keyboard controllers are not a friend to FreeBSD.  Among these are
+those on certain models of Gateway, IBM and AST machines.  The most frequent
+symptom encountered in such cases is that the keyboard refuses to respond
+to input when at the `kcopy>' prompt in the second phase of bootstrapping
+FreeBSD.  Fortunately, there is a work-around that may get you all the
+way home.  Reset the machine and boot the kcopy floppy again, but this
+time, as the kernel is booting, tap periodically on the num-lock key
+until the kcopy prompt appears.  Your keyboard should respond properly.
+
+Once your system is on the hard disk the problem generally goes away.
+Some folks for whom the problem persists even after this stage find
+relief in switching to the SYSCONS console driver (see /sys/i386/conf/SYSCONS),
+which is in any case far more featureful than pccons and a recommended
+upgrade.
 
 
 
