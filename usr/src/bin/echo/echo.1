@@ -1,4 +1,4 @@
-.\"	@(#)echo.1	6.1 (Berkeley) %G%
+.\"	@(#)echo.1	6.2 (Berkeley) %G%
 .\"
 .TH ECHO 1 ""
 .AT 3
@@ -18,6 +18,6 @@ a newline on the standard output.  If the flag
 is used, no newline is added to the output.
 .PP
 .I Echo
-is useful for producing diagnostics in
-shell programs and for writing constant data on pipes.
-To send diagnostics to the standard error file, do `echo ... 1>&2'.
+is useful for producing diagnostics in shell programs and for writing
+constant data on pipes.  If using the Bourne Shell, to send diagnostics
+to the standard error file, do `echo ... 1>&2'.
