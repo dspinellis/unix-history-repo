@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)bt_debug.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)bt_debug.c	5.4 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -101,6 +101,27 @@ __bt_dmpage(h)
 		(void)fprintf(stderr, ")");
 	}
 	(void)fprintf(stderr, "\nlorder %lu\n", m->m_lorder);
+}
+
+/*
+ * BT_DNPAGE -- Dump the page
+ *
+ * Parameters:
+ *	n:	page number to dump.
+ */
+void
+__bt_dnpage(dbp, pgno)
+	DB *dbp;
+	pgno_t pgno;
+{
+	BTREE *t;
+	PAGE *h;
+
+	t = dbp->internal;
+	if ((h = mpool_get(t->bt_mp, pgno, 0)) != NULL) {
+		__bt_dpage(h);
+		(void)mpool_put(t->bt_mp, h, 0);
+	}
 }
 
 /*
