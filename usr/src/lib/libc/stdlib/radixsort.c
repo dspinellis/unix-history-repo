@@ -6,15 +6,13 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)radixsort.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)radixsort.c	5.4 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
 #include <limits.h>
 #include <stdlib.h>
 #include <stddef.h>
-
-#define	NCHARS	(UCHAR_MAX + 1)
 
 /*
  * Shellsort (diminishing increment sort) from Data Structures and
@@ -55,17 +53,18 @@ int __rsshell_increments[] = { 4, 1, 0, 0, 0, 0, 0, 0 };
  * partitioning.  Radixsort exits when the stack is empty.
  *
  * If the buckets are placed on the stack randomly, the worst case is when
- * all the buckets but one contain (NPARTITION + 1) elements and the bucket
+ * all the buckets but one contain (npartitions + 1) elements and the bucket
  * pushed on the stack last contains the rest of the elements.  In this case,
  * stack growth is bounded by:
  *
- *	(nelements / (npartitions + 1)) - 1
+ *	limit = (nelements / (npartitions + 1)) - 1;
  *
- * This is a very large number.  By forcing the largest bucket to be pushed
- * on the stack first the worst case is when all but two buckets each contain
- * (NPARTITION + 1) elements, with the remaining elements split equally between
- * the first and last buckets pushed on the stack.  In this case, stack growth
- * is bounded when:
+ * This is a very large number, 52,377,648 for the maximum 32-bit signed int.
+ *
+ * By forcing the largest bucket to be pushed on the stack first, the worst
+ * case is when all but two buckets each contain (npartitions + 1) elements,
+ * with the remaining elements split equally between the first and last
+ * buckets pushed on the stack.  In this case, stack growth is bounded when:
  *
  *	for (partition_cnt = 0; nelements > npartitions; ++partition_cnt)
  *		nelements =
@@ -74,8 +73,10 @@ int __rsshell_increments[] = { 4, 1, 0, 0, 0, 0, 0, 0 };
  *
  *	limit = partition_cnt * (nbuckets - 1);
  *
- * This is a much smaller number.
+ * This is a much smaller number, 4590 for the maximum 32-bit signed int.
  */
+#define	NBUCKETS	(UCHAR_MAX + 1)
+
 typedef struct _stack {
 	u_char **bot;
 	int indx, nmemb;
@@ -116,8 +117,8 @@ radixsort(l1, nmemb, tab, endbyte)
 	register int i, indx, t1, t2;
 	register u_char **l2, **p, **bot, *tr;
 	CONTEXT *stack, *stackp;
-	int c[NCHARS + 1], max;
-	u_char ltab[NCHARS];
+	int c[NBUCKETS + 1], max;
+	u_char ltab[NBUCKETS];
 
 	if (nmemb <= 1)
 		return(0);
@@ -130,8 +131,8 @@ radixsort(l1, nmemb, tab, endbyte)
 	 * rounded up before each divide because we want an upper bound;
 	 * this could overflow if nmemb is the maximum int.
 	 */
-	t1 = ((__rspartition + 1) * (UCHAR_MAX - 2)) >> 1;
-	for (i = 0, t2 = nmemb; t2 > __rspartition; i += UCHAR_MAX - 1)
+	t1 = ((__rspartition + 1) * (NBUCKETS - 2)) >> 1;
+	for (i = 0, t2 = nmemb; t2 > __rspartition; i += NBUCKETS - 1)
 		t2 = (++t2 >> 1) - t1;
 	if (i) {
 		if (!(stack = stackp = (CONTEXT *)malloc(i * sizeof(CONTEXT))))
@@ -161,7 +162,7 @@ radixsort(l1, nmemb, tab, endbyte)
 		for (t1 = 0, t2 = endbyte; t1 < t2; ++t1)
 			tr[t1] = t1 + 1;
 		tr[t2] = 0;
-		for (t1 = endbyte + 1; t1 < NCHARS; ++t1)
+		for (t1 = endbyte + 1; t1 < NBUCKETS; ++t1)
 			tr[t1] = t1;
 	}
 
@@ -185,23 +186,23 @@ radixsort(l1, nmemb, tab, endbyte)
 		 * stack into the right number of buckets for this bucket,
 		 * this index.  C contains the cumulative total of keys
 		 * before and included in this bucket, and will later be
-		 * used as an index to the bucket.  c[NCHARS] contains
+		 * used as an index to the bucket.  c[NBUCKETS] contains
 		 * the total number of elements, for determining how many
 		 * elements the last bucket contains.  At the same time
-		 * find the largest bucket so it gets handled first.
+		 * find the largest bucket so it gets pushed first.
 		 */
-		for (i = 1, t2 = -1; i <= NCHARS; ++i) {
-			if ((t1 = c[i - 1]) > t2) {
-				t2 = t1;
+		for (i = max = t1 = 0, t2 = __rspartition; i <= NBUCKETS; ++i) {
+			if (c[i] > t2) {
+				t2 = c[i];
 				max = i;
 			}
-			c[i] += t1;
+			t1 = c[i] += t1;
 		}
 
 		/*
-		 * Partition the elements into buckets; c decrements
-		 * through the bucket, and ends up pointing to the
-		 * first element of the bucket.
+		 * Partition the elements into buckets; c decrements through
+		 * the bucket, and ends up pointing to the first element of
+		 * the bucket.
 		 */
 		for (i = nmemb; i--;) {
 			--p;
@@ -225,7 +226,7 @@ radixsort(l1, nmemb, tab, endbyte)
 			else
 				SHELLSORT
 		}
-		for (i = max + 1; i < NCHARS; ++i) {
+		for (i = max + 1; i < NBUCKETS; ++i) {
 			if ((nmemb = c[i + 1] - (t1 = c[i])) < 2)
 				continue;
 			p = bot + t1;
