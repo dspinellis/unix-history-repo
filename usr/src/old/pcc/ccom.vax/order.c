@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid ="@(#)order.c	1.9 (Berkeley) %G%";
+static char *sccsid ="@(#)order.c	1.10 (Berkeley) %G%";
 #endif lint
 
 # include "pass2.h"
@@ -192,6 +192,18 @@ sucomp( p ) register NODE *p; {
 				sur = max( szr, sur );
 				}
 			}
+		break;
+
+	case DIV:
+	case ASG DIV:
+	case MOD:
+	case ASG MOD:
+		/* EDIV instructions require reg pairs */
+		if( p->in.left->in.type == UNSIGNED &&
+		    p->in.right->in.op == ICON &&
+		    p->in.right->tn.name[0] == '\0' &&
+		    (unsigned) p->in.right->tn.lval < 0x80000000 )
+			sul += 2;
 		break;
 		}
 
