@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)pte.h	7.3.1.1 (Berkeley) %G%
+ *	@(#)pte.h	7.4 (Berkeley) %G%
  */
 
 /*
@@ -68,9 +68,13 @@ unsigned int	pg_blkno:24,		/* file system block number */
  */
 #define	dirty(pte)	((pte)->pg_m)
 
-#ifndef LOCORE
-#ifdef KERNEL
+/*
+ * Kernel virtual address to page table entry and to physical address.
+ */
+#define	kvtopte(va) (&Sysmap[((unsigned)(va) &~ KERNBASE) >> PGSHIFT])
+#define	kvtophys(x) ((kvtopte(x)->pg_pfnum << PGSHIFT) | ((int)(x) & PGOFSET))
 
+#if defined(KERNEL) && !defined(LOCORE)
 /* utilities defined in locore.s */
 extern	struct pte Sysmap[];
 extern	struct pte Usrptmap[];
@@ -85,10 +89,7 @@ extern	struct pte mmap[];
 extern	struct pte msgbufmap[];
 extern	struct pte kmempt[], ekmempt[];
 extern	struct pte Nexmap[][16];
+#if VAX8600
 extern	struct pte Ioamap[][1];
-#ifdef VAX630
-extern	struct pte Clockmap[];
-extern	struct pte Ka630map[];
 #endif
-#endif
-#endif
+#endif /* defined(KERNEL) && !defined(LOCORE) */
