@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	6.42 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	6.43 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -828,7 +828,9 @@ openmailer(m, pvp, ctladdr, clever, pmfile, prfile)
 		{
 			int i;
 			int saveerrno;
-			char *env[2];
+			char **ep;
+			char *env[MAXUSERENVIRON];
+			extern char **environ;
 			extern int DtableSize;
 
 			/* child -- set up input & exec mailer */
@@ -892,9 +894,17 @@ openmailer(m, pvp, ctladdr, clever, pmfile, prfile)
 					(void)fcntl(i, F_SETFD, j|1);
 			}
 
+			/* set up the mailer environment */
+			i = 0;
+			env[i++] = "AGENT=sendmail";
+			for (ep = environ; *ep != NULL; ep++)
+			{
+				if (strncmp(*ep, "TZ=", 3) == 0)
+					env[i++] = *ep;
+			}
+			env[i++] = NULL;
+
 			/* try to execute the mailer */
-			env[0] = "AGENT=sendmail";
-			env[1] = NULL;
 			execve(m->m_mailer, pvp, env);
 			saveerrno = errno;
 			syserr("Cannot exec %s", m->m_mailer);
