@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)unistd.h	5.5 (Berkeley) %G%
+ *	@(#)unistd.h	5.6 (Berkeley) %G%
  */
 
 #include <sys/cdefs.h>
@@ -80,13 +80,6 @@ ssize_t		 write __P((int, const void *, size_t));
 /* structure timeval required for select() */
 #include <sys/time.h>
 
-/* structure qelem required for insque() and remque() */
-struct qelem {
-	struct	qelem *q_forw;
-	struct	qelem *q_back;
-	char	q_data[1];	/* arbitrary amount of data */
-};
-
 int	 acct __P((const char *));
 int	 async_daemon __P((void));
 char	*brk __P((const char *));
@@ -112,7 +105,6 @@ char	*getpass __P((const char *));
 char	*getusershell __P((void));
 char	*getwd __P((char *));			/* obsoleted by getcwd() */
 int	 initgroups __P((const char *, int));
-void	 insque __P((struct qelem *, struct qelem *));
 int	 mknod __P((const char *, mode_t, dev_t));
 int	 mkstemp __P((char *));
 char	*mktemp __P((char *));
@@ -127,7 +119,6 @@ char	*re_comp __P((const char *));
 int	 re_exec __P((const char *));
 int	 readlink __P((const char *, char *, int));
 int	 reboot __P((int));
-void	 remque __P((struct qelem *));
 int	 revoke __P((const char *));
 int	 rresvport __P((int *));
 int	 ruserok __P((const char *, int, const char *, const char *));
