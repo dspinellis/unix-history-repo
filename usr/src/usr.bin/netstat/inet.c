@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)inet.c	4.8 83/02/24";
+static char sccsid[] = "@(#)inet.c	4.9 83/03/11";
 #endif
 
 #include <sys/types.h>
@@ -14,6 +14,7 @@ static char sccsid[] = "@(#)inet.c	4.8 83/02/24";
 #include <netinet/in_pcb.h>
 #include <netinet/ip.h>
 #include <netinet/ip_icmp.h>
+#include <netinet/icmp_var.h>
 #include <netinet/ip_var.h>
 #include <netinet/tcp.h>
 #include <netinet/tcpip.h>
@@ -178,6 +179,71 @@ ip_stats(off, name)
 	printf("\t%d data size < data length\n", ipstat.ips_toosmall);
 	printf("\t%d header length < data size\n", ipstat.ips_badhlen);
 	printf("\t%d data length < header length\n", ipstat.ips_badlen);
+}
+
+static	char *icmpnames[] = {
+	"echo reply",
+	"#1",
+	"#2",
+	"destination unreachable",
+	"source quench",
+	"routing redirect",
+	"#6",
+	"#7",
+	"echo",
+	"#9",
+	"#10",
+	"time exceeded",
+	"parameter problem",
+	"time stamp",
+	"time stamp reply",
+	"information request",
+	"information request reply"
+};
+
+/*
+ * Dump ICMP statistics.
+ */
+icmp_stats(off, name)
+	off_t off;
+	char *name;
+{
+	struct icmpstat icmpstat;
+	register int i, first;
+
+	if (off == 0) {
+		printf("%sstat: symbol not in namelist\n", name);
+		return;
+	}
+	klseek(kmem, off, 0);
+	read(kmem, (char *)&icmpstat, sizeof (icmpstat));
+	printf("%s:\n\t%d calls to icmp_error\n", name, icmpstat.icps_error);
+	printf("\t%d errors not generated 'cuz old message too short\n",
+		icmpstat.icps_oldshort);
+	printf("\t%d errors not generated 'cuz old message was icmp\n",
+		icmpstat.icps_oldicmp);
+	for (first = 0, i = 0; i < ICMP_IREQREPLY + 1; i++)
+		if (icmpstat.icps_outhist[i] != 0) {
+			if (first) {
+				printf("\tOutput histogram:\n");
+				first = 0;
+			}
+			printf("\t\t%s: %d\n", icmpnames[i],
+				icmpstat.icps_outhist[i]);
+		}
+	printf("\t%d messages < minimum length\n", icmpstat.icps_tooshort);
+	printf("\t%d bad checksums\n", icmpstat.icps_checksum);
+	printf("\t%d messages with bad length\n", icmpstat.icps_badlen);
+	printf("\t%d messages respondes generated\n", icmpstat.icps_reflect);
+	for (first = 0, i = 0; i < ICMP_IREQREPLY + 1; i++)
+		if (icmpstat.icps_inhist[i] != 0) {
+			if (first) {
+				printf("\tInput histogram:\n");
+				first = 0;
+			}
+			printf("\t\t%s: %d\n", icmpnames[i],
+				icmpstat.icps_inhist[i]);
+		}
 }
 
 /*
