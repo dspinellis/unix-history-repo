@@ -15,7 +15,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)mkboot.c	7.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)mkboot.c	7.6 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
@@ -73,7 +73,7 @@ main(argc, argv)
 	/*
 	 * Check for exec header and skip to code segment.
 	 */
-	if (!DecHeader(ifd, &loadAddr, &execAddr, &length)) {
+	if (!GetHeader(ifd, &loadAddr, &execAddr, &length)) {
 		fprintf(stderr, "Need impure text format (OMAGIC) file\n");
 		exit(1);
 	}
@@ -133,19 +133,20 @@ usage()
 /*
  *----------------------------------------------------------------------
  *
- * DecHeader -
+ * GetHeader -
  *
- *	Check if the header is a DEC (COFF) file.
+ *	Check if the header is an a.out file.
  *
  * Results:
  *	Return true if all went ok.
  *
  * Side effects:
- *	None.
+ *	bootFID is left ready to read the text & data sections.
+ *	length is set to the size of the text + data sections.
  *
  *----------------------------------------------------------------------
  */
-DecHeader(bootFID, loadAddr, execAddr, length)
+GetHeader(bootFID, loadAddr, execAddr, length)
 	int bootFID;	/* Handle on the boot program */
 	long *loadAddr;	/* Address to start loading boot program. */
 	long *execAddr;	/* Address to start executing boot program. */
@@ -159,16 +160,15 @@ DecHeader(bootFID, loadAddr, execAddr, length)
 		return 0;
 	}
 	bytesRead = read(bootFID, (char *)&aout, sizeof(aout));
-	if (bytesRead != sizeof(aout) || aout.ex_fhdr.magic != COFF_MAGIC ||
-	    aout.a_magic != OMAGIC)
+	if (bytesRead != sizeof(aout) || aout.a_magic != OMAGIC)
 		return 0;
-	*loadAddr = aout.ex_aout.codeStart;
+	*loadAddr = aout.a_entry;
 	*execAddr = aout.a_entry;
 	*length = aout.a_text + aout.a_data;
 	if (lseek(bootFID, N_TXTOFF(aout), 0) < 0) {
 		perror(bootfname);
 		return 0;
 	}
-	printf("Input file is COFF format\n");
+	printf("Input file is a.out format\n");
 	return 1;
 }

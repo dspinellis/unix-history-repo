@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.3 (Berkeley) %G%
+#	@(#)Makefile	5.4 (Berkeley) %G%
 
 DESTDIR=
 STAND=	../../stand
@@ -12,12 +12,16 @@ DEFS= -DSTANDALONE -DDS5000 -DSMALL
 CFLAGS=	-O ${INCPATH} ${DEFS}
 AFLAGS=	-O ${INCPATH} ${DEFS} -DLOCORE
 
-DRIVERS=asc.c rz.c sii.c scsi.c
-SRCS=	conf.c machdep.c trap.c ${DRIVERS}
+DRIVERS= rz.c
+SRCS=	${DRIVERS}
 LIBS=	libdrive.a libsa/libsa.a ../../libkern/obj/libkern.a
 
 #ALL=	boot mkboot mkboottape
 ALL=	boot
+
+.s.o:
+	${CPP} -E ${CFLAGS:M-[ID]*} ${AINC} ${.IMPSRC} | \
+	    ${AS} -o ${.TARGET}
 
 all: ${ALL}
 
@@ -26,22 +30,20 @@ boot: ${LIBS}
 libsa/libsa.a::
 	cd libsa; make
 
-libdrive.a: conf.o machdep.o trap.o ${DRIVERS:.c=.o}
+libdrive.a: conf.o ${DRIVERS:.c=.o}
 	ar crv $@ $?
 	ranlib $@
 
-${DRIVERS}: samachdep.h
-
 # depend on DEFS
-
-machdep.o rz.o trap.o: Makefile
-cons.o dca.o hil.o: Makefile
-ite.o ite_subr.o ite_dv.o ite_gb.o ite_hy.o ite_rb.o ite_tc.o: Makefile
 
 # bootable from real disks
 
-boot:	locore.o boot.o bootconf.o ${LIBS}
-	ld -N -T ${RELOC} -e start locore.o boot.o bootconf.o ${LIBS} -o $@ 
+boot:	start.o boot.o bootconf.o ${LIBS}
+	ld -N -Ttext ${RELOC} -e start start.o boot.o bootconf.o ${LIBS} -o $@ 
+
+start.o: start.s
+	${CPP} -E ${CFLAGS:M-[ID]*} -DLOCORE ${AINC} ${.IMPSRC} | \
+	    ${AS} -o ${.TARGET}
 
 bootconf.o: conf.o
 	rm -f bootconf.c

@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)start.s	7.4 (Berkeley) %G%
+ *	@(#)start.s	7.5 (Berkeley) %G%
  *
  * start.s -
  *
@@ -27,25 +27,38 @@
 
 #include <machine/regdef.h>
 #include <machine/machConst.h>
+#include <machine/machAsmDefs.h>
+#include <pmax/stand/dec_prom.h>
 
 /*
  * Amount to take off of the stack for the benefit of the debugger.
  */
 #define START_FRAME	((4 * 4) + 4 + 4)
-#define Init	0xbfc00018
 
 	.globl	start
 start:
 	.set	noreorder
-	mtc0	zero, MACH_COP_0_STATUS_REG	# Disable interrupts
-	li	sp, MACH_CODE_START - START_FRAME
-	la	gp, _gp
+	li	v0, MACH_SR_BOOT_EXC_VEC
+	mtc0	v0, MACH_COP_0_STATUS_REG	# Disable interrupts
+	la	sp, start - START_FRAME
 	sw	zero, START_FRAME - 4(sp)	# Zero out old ra for debugger
 	sw	zero, START_FRAME - 8(sp)	# Zero out old fp for debugger
-	jal	main				# main(argc, argv, envp)
+#ifdef DS3100
+	la	a3, callvec			# init call vector
+#endif
+	sw	a3, callv			# save call vector
+	move	s0, a0				# save argc
+	move	s1, a1				# save argv
+	la	a0, edata			# clear BSS
+	la	a1, end
+	jal	bzero				# bzero(edata, end - edata)
+	subu	a1, a1, a0
+	move	a0, s0				# restore argc
+	jal	main				# main(argc, argv)
+	move	a1, s1				# restore argv
+	li	v0, DEC_PROM_RESTART		# done, so call prom
+	j	v0
 	nop
-	li	a0, Init			# done, so call prom
-	j	a0
 
 /* dummy routine for gcc2 */
 	.globl	__main
@@ -53,12 +66,35 @@ __main:
 	j	ra
 	nop
 
-	.globl	Boot_Transfer
-Boot_Transfer:
-	mtc0	zero, MACH_COP_0_STATUS_REG	# Disable interrupts
-	li	sp, MACH_CODE_START - START_FRAME
-	la	gp, _gp
-	sw	zero, START_FRAME - 4(sp)	# Zero out old ra for debugger
-	sw	zero, START_FRAME - 8(sp)	# Zero out old fp for debugger
-	jal	a3				# Jump to routine
+LEAF(prom_restart)
+	li	v0, DEC_PROM_RESTART
+	j	v0
 	nop
+END(prom_restart)
+
+LEAF(prom_open)
+	li	v0, DEC_PROM_OPEN
+	j	v0
+	nop
+END(prom_open)
+
+LEAF(prom_lseek)
+	li	v0, DEC_PROM_LSEEK
+	j	v0
+	nop
+END(prom_lseek)
+
+LEAF(prom_read)
+	li	v0, DEC_PROM_READ
+	j	v0
+	nop
+END(prom_read)
+
+LEAF(printf)
+	lw	v0, callv	# get pointer to call back vectors
+	sw	a1, 4(sp)	# store args on stack for printf
+	lw	v0, 48(v0)	# offset for callv->printf
+	sw	a2, 8(sp)
+	j	v0		# call PROM printf
+	sw	a3, 12(sp)
+END(printf)
