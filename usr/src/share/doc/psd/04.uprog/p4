@@ -1,6 +1,6 @@
 .\" %sccs.include.proprietary.roff%
 .\"
-.\"	@(#)p4	6.3 (Berkeley) %G%
+.\"	@(#)p4	8.1 (Berkeley) %G%
 .\"
 .NH
 LOW-LEVEL I/O

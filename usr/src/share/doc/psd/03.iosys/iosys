@@ -1,6 +1,6 @@
 .\" %sccs.include.proprietary.roff%
 .\"
-.\"	@(#)iosys	6.3 (Berkeley) %G%
+.\"	@(#)iosys	8.1 (Berkeley) %G%
 .\"
 .EH 'PSD:3-%''The UNIX I/O System'
 .OH 'The UNIX I/O System''PSD:3-%'

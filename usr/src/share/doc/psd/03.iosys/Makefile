@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.3 (Berkeley) %G%
+#	@(#)Makefile	8.1 (Berkeley) %G%
 
 DIR=	psd/03.iosys
 SRCS=	iosys
