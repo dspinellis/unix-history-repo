@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pk.h	7.3 (Berkeley) %G%
+ *	@(#)pk.h	7.4 (Berkeley) %G%
  */
 
 /*
@@ -74,32 +74,30 @@ typedef char    bool;
 
 #if BYTE_ORDER == BIG_ENDIAN
 #define ORDER2(a, b) a , b
-#define ORDER3(a, b, c) a , b , c
 #define ORDER4(a, b, c, d) a , b , c , d
 #endif
 
 #if BYTE_ORDER == LITTLE_ENDIAN
 #define ORDER2(a, b) b , a
-#define ORDER3(a, b, c) c , b , a
 #define ORDER4(a, b, c, d) d , c , b , a
 #endif
 
 typedef u_char octet;
 
 struct x25_calladdr {
-	octet ORDER2(called_addrlen:4, calling_addrlen:4);
+	octet ORDER2(calling_addrlen:4, called_addrlen:4);
 	octet address_field[MAXADDRLN];
 };
 
 struct x25_packet {
-	octet ORDER3(lc_group_number:4, fmt_identifier:3, q_bit:1);
+	octet ORDER4(q_bit:1, d_bit:1, fmt_identifier:2, lc_group_number:4);
 	octet logical_channel_number;
 	octet packet_type;
 	octet packet_data;
 };
 
 struct data_packet {
-	octet ORDER4(z:1, ps:3, m_bit:1, pr:3);
+	octet ORDER4(pr:3, m_bit:1, ps:3, z:1);
 };
 
 #define FACILITIES_REVERSE_CHARGE	0x1
