@@ -1,4 +1,4 @@
-.\"	@(#)uux.1	6.2 (Berkeley) %G%
+.\"	@(#)uux.1	6.3 (Berkeley) %G%
 .\"
 .TH UUX 1C ""
 .AT 3
@@ -7,7 +7,15 @@ uux \- unix to unix command execution
 .SH SYNOPSIS
 .B uux
 [
-options
+.B -
+] [
+.B -cClLnprz
+] [
+.BI -a name
+] [
+.BI -g grade
+] [
+.BI -x debug
 ]
 command-string
 .SH DESCRIPTION
@@ -16,17 +24,10 @@ will gather zero or more files from various systems,
 execute a command on a specified system
 and then send standard output to a file on a specified
 system.
-Note that, for security reasons, many installations will
-limit the list of
-commands executable on behalf of an incoming request from
-.IR uux .
-Many sites will permit little more than
-the receipt of mail (see
-.IR mail (1))
-via 
-.IR uux .
 .PP
-The \fIcommand-string\fP is made up of one or more arguments that look
+The
+.I command-string
+is made up of one or more arguments that look
 like a Shell command line,
 except that the command and file names
 may be prefixed by
@@ -38,14 +39,19 @@ File names may be one of
 (1) a full path name;
 .IP
 (2) a path name preceded by
-.BI ~ xxx\^
+.BI ~ user
 where
-.I xxx\^
+.I user
 is a login name on the specified system
 and is replaced by that user's login directory;
-.br
 .IP
-(3) anything else is prefixed by the current directory.
+(3) a path name prefixed by
+.BR ~;
+where
+.B ~
+is expanded to the system's public directory (usually /usr/spool/uucppublic);
+.IP
+(4) a partial pathname, which is prefixed by the current directory.
 .PP
 As an example, the command
 .IP
@@ -54,16 +60,16 @@ uux "\^!diff usg!/usr/dan/file1 pwba!/a4/dan/file2 > !~/dan/file.diff\^"
 will get the \fBfile1\fP and \fBfile2\fP files
 from the ``usg'' and ``pwba'' machines,
 execute a
-.I diff\^
+.IR diff (1)
 command
 and put the results in \fBfile.diff\fP in the 
-local PUBDIR/dan/ directory.
+local /usr/spool/uucppublic/dan/ directory.
 .PP
-Any special shell characters such as \fB<>;|\fP should be quoted either
+Any special shell characters, such as \fB<>;|\fP, should be quoted either
 by quoting the entire \fIcommand-string\fP, or quoting the special
 characters as individual arguments.
 .PP
-.I Uux\^
+.I Uux
 will attempt to get all files to the execution system.
 For files that are output files, the file name must be escaped using
 parentheses.
@@ -97,23 +103,45 @@ Use
 as the user identification replacing the initiator user-id.
 .TP .5i
 .B \-c
-Don't copy local file to the spool directory for transfer to the remote
-machine (This is the default).
+Do not copy local file to the spool directory for transfer to the remote
+machine (this is the default).
 .TP .5i
 .B \-C
 Force the copy of local files to the spool directory for transfer.
 .TP .5i
 .BI \-g grade
-Grade is a single letter/number;
-lower ASCII sequence characters will cause the job to be transmitted
-earlier during a particular conversation.
+.I Grade
+is a single letter/number, from
+.B 0
+to
+.BR 9 ,
+.B A
+to
+.BR Z ,
+or
+.B a
+to
+.BR z ;
+.B 0
+is the highest, and
+.B z
+is the lowest grade.
+The default is 
+.BR A ;
+by comparison
+.IR uucp (1C)
+defaults to
+.B n
+and mail is usually sent at grade
+.BR C .
+Lower grades should be specified for high-volume jobs, such as news.
 .TP .5i
 .B \-l
 Try and make a link from the original file to the spool directory.
-If the link can not be made, copy the file.
+If the link cannot be made, copy the file.
 .TP .5i
 .B \-n
-Do not notify the user if the comand fails.
+Do not notify the user when the command completes.
 .TP .5i
 .B \-p
 Same as \-:
@@ -123,21 +151,24 @@ is made the standard input to the
 .IR command-string .
 .TP .5i
 .B \-r
-Don't start the file transfer, just queue the job.
+Do not start the file transfer, just queue the job.
 .TP .5i
 .BI \-x debug
 Produce debugging output on stdout.
 The debug is a number between 0 and 9;
-higher numbers give more detailed information.
+higher numbers give more detailed information. Debugging is permitted
+only for privileged users (specifically, those with read access to
+.IR L.sys (5) .
 .TP .5i
 .B \-z
-Notify the user if the command succeeds.
+Notify the user only if the command fails.
 .TP .5i
 .B \-L
-Start up uucico with the \fI-L\fP flag. This will force
-calls to be made to local sites only. (See \fIuucico(8C)\fP)
-\fI-L\fP can be used as a alternative to \fI-r\fP if
-you are trying to save some money on phone costs.
+Start up
+.I uucico
+with the \fB-L\fP flag. This will force
+calls to be made to local sites only (see
+.IR uucico (8C)).
 .SH FILES
 .PD 0
 .TP 22
@@ -145,22 +176,41 @@ you are trying to save some money on phone costs.
 spool directories
 .TP
 /usr/lib/uucp/\(**
-other data and programs
+UUCP configuration data and daemons
 .PD
 .SH SEE ALSO
-uucp(1C).
+uucp(1C), uucico(8C), uuxqt(8C).
+.SH WARNING
+For security reasons, many installations will
+limit the list of
+commands executable on behalf of an incoming request from
+.IR uux .
+Many sites will permit little more than
+the receipt of mail (see
+.IR mail (1))
+via 
+.IR uux .
 .SH BUGS
 Only the first command of a shell pipeline may
 have a
 .IB system-name !\fR.
 All other commands are executed on the system of the first
 command.
-.br
+.PP
 The use of the shell metacharacter
 .B \(**
 will probably not do what you want it to do.
+.PP
 The shell tokens
 .B <<
 and
 .B >>
 are not implemented.
+.PP
+When invoking
+.I uux
+from
+.IR csh (1),
+the `!' character must be prefixed by the `\\' escape to inhibit
+.IR csh 's
+history mechanism. (Quotes are not sufficient.)
