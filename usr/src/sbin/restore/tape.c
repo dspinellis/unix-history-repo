@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tape.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)tape.c	5.12 (Berkeley) %G%";
 #endif not lint
 
 #include "restore.h"
@@ -111,7 +111,6 @@ setup()
 {
 	int i, j, *ip;
 	struct stat stbuf;
-	extern char *ctime();
 	extern int xtrmap(), xtrmapskip();
 
 	vprintf(stdout, "Verify tape and initialize maps\n");
@@ -211,6 +210,7 @@ getvol(nextvol)
 	union u_spcl tmpspcl;
 #	define tmpbuf tmpspcl.s_spcl
 	char buf[TP_BSIZE];
+	extern char *ctime();
 
 	if (nextvol == 1) {
 		tapesread = 0;
@@ -355,6 +355,7 @@ setdumpnum()
 
 printdumpinfo()
 {
+	extern char *ctime();
 
 	fprintf(stdout, "Dump   date: %s", ctime(&spcl.c_date));
 	fprintf(stdout, "Dumped from: %s",
