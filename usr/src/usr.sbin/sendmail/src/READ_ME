@@ -4,7 +4,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)READ_ME	8.8 (Berkeley) %G%
+#	@(#)READ_ME	8.9 (Berkeley) %G%
 #
 
 This directory contains the source files for sendmail.
@@ -90,6 +90,9 @@ GIDSET_T	The type of entries in a gidset passed as the second
 SLEEP_T		The type returned by the system sleep() function.
 		Defaults to "unsigned int".  Don't worry about this
 		if you don't have compilation problems.
+ARBPTR_T	The type of an arbitrary pointer -- defaults to "void *".
+		If you are an very old compiler you may need to define
+		this to be "char *".
 LA_TYPE		The type of load average your kernel supports.  These
 		can be LA_SUBR (4) if you have the getloadavg(3) routine,
 		LA_FLOAT (3) if you read kmem and interpret the value
@@ -232,4 +235,4 @@ version.c	The version number and information about this
 
 Eric Allman
 
-(Version 8.8, last update %G% 09:09:00)
+(Version 8.9, last update %G% 12:17:36)
