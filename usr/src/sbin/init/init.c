@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1980 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
@@ -6,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)init.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)init.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include <signal.h>
@@ -45,6 +44,8 @@ struct	tab
 	char	wcmd[CMDSIZ];	/* command to start window system process */
 	time_t	gettytime;
 	int	gettycnt;
+	time_t	windtime;
+	int	windcnt;
 } itab[TABSIZ];
 
 int	fi;
@@ -372,6 +373,7 @@ dfork(p)
 	if (pid == 0) {
 		signal(SIGTERM, SIG_DFL);
 		signal(SIGHUP, SIG_IGN);
+		sigsetmask(0);	/* since can be called from masked code */
 		if (dowait) {
 			syslog(LOG_ERR, "'%s %s' failing, sleeping", p->comn, p->line);
 			closelog();
@@ -421,6 +423,7 @@ rmut(p)
 		 * of error detection code in dfork.
 		 */
 		p->gettytime = 0;
+		p->windtime = 0;
 	}
 }
 
@@ -476,22 +479,39 @@ wterm(p)
 wstart(p)
 	register struct tab *p;
 {
-	int npid = fork();
+	register pid;
+	time_t t;
+	int dowait = 0;
 
-	if (npid == 0) {
-/*
+	time(&t);
+	p->windcnt++;
+	if ((t - p->windtime) >= 60) {
+		p->windtime = t;
+		p->windcnt = 1;
+	} else if (p->windcnt >= 5) {
+		dowait = 1;
+		p->windtime = t;
+		p->windcnt = 1;
+	}
+
+	pid = fork();
+
+	if (pid == 0) {
 		signal(SIGTERM, SIG_DFL);
-		signal(SIGHUP,  SIG_DFL);
-		signal(SIGALRM, SIG_DFL);
-		signal(SIGTSTP, SIG_IGN);
-*/
+		signal(SIGHUP,  SIG_IGN);
+		sigsetmask(0);	/* since can be called from masked code */
+		if (dowait) {
+			syslog(LOG_ERR, "'%s %s' failing, sleeping", p->wcmd, p->line);
+			closelog();
+			sleep(30);
+		}
 		execit(p->wcmd, p->line);
 		exit(0);
 	}
-	p->wpid = npid;
+	p->wpid = pid;
 }
 
-#define NARGS	20	/* must be at lease 4 */
+#define NARGS	20	/* must be at least 4 */
 #define ARGLEN	512	/* total size for all the argument strings */
 
 execit(s, arg)
