@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: clock.c 1.18 91/01/21$
  *
- *	@(#)clock.c	7.12 (Berkeley) %G%
+ *	@(#)clock.c	7.13 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -218,7 +218,7 @@ clockmmap(dev, addrp, p)
 	struct specinfo si;
 	int flags;
 
-	flags = MAP_FILE|MAP_SHARED;
+	flags = MAP_SHARED;
 	if (*addrp)
 		flags |= MAP_FIXED;
 	else
