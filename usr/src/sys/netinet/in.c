@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)in.c	7.2 (Berkeley) %G%
+ *	@(#)in.c	7.3 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -374,7 +374,6 @@ in_ifinit(ifp, ia, sin)
 		ia->ia_netbroadcast.s_addr =
 		    htonl(ia->ia_net | (INADDR_BROADCAST &~ ia->ia_netmask));
 	}
-	splx(s);
 	/*
 	 * Add route for the network.
 	 */
@@ -390,6 +389,7 @@ in_ifinit(ifp, ia, sin)
 		    (int)SIOCADDRT, RTF_UP);
 	}
 	ia->ia_flags |= IFA_ROUTE;
+	splx(s);
 	return (0);
 }
 
@@ -409,21 +409,30 @@ in_iaonnetof(net)
 }
 
 /*
- * Return 1 if the address is a local broadcast address.
+ * Return 1 if the address might be a local broadcast address.
  */
 in_broadcast(in)
 	struct in_addr in;
 {
 	register struct in_ifaddr *ia;
+	u_long t;
 
 	/*
 	 * Look through the list of addresses for a match
 	 * with a broadcast address.
 	 */
 	for (ia = in_ifaddr; ia; ia = ia->ia_next)
-	    if (((struct sockaddr_in *)&ia->ia_broadaddr)->sin_addr.s_addr ==
-		in.s_addr && (ia->ia_ifp->if_flags & IFF_BROADCAST))
+	    if (ia->ia_ifp->if_flags & IFF_BROADCAST) {
+		if (satosin(&ia->ia_broadaddr)->sin_addr.s_addr == in.s_addr)
 		     return (1);
+		/*
+		 * Check for old-style (host 0) broadcast.
+		 */
+		if ((t = ntohl(in.s_addr)) == ia->ia_subnet || t == ia->ia_net)
+		    return (1);
+	}
+	if (in.s_addr == INADDR_BROADCAST || in.s_addr == INADDR_ANY)
+		return (1);
 	return (0);
 }
 #endif
