@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tty_conf.c	6.6 (Berkeley) %G%
+ *	@(#)tty_conf.c	6.7 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -75,15 +75,4 @@ nullioctl(tp, cmd, data, flags)
 	tp = tp; data = data; flags = flags;
 #endif
 	return (-1);
-}
-
-/*
- * Default modem control routine.
- * Return argument flag, to turn off device on carrier drop.
- */
-nullmodem(flag)
-	int flag;
-{
-	
-	return (flag);
 }
