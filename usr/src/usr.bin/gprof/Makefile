@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.8 (Berkeley) %G%
+#	@(#)Makefile	5.8 (Berkeley) 5/31/87
 #
 DESTDIR=
 DFLAGS= 
@@ -23,9 +23,9 @@ gprof: ${GPROFOBJS}
 	cc -o gprof ${CFLAGS} ${GPROFOBJS}
 
 install: gprof gprof.flat gprof.callg
-	install -s gprof ${DESTDIR}/usr/ucb/gprof
-	install -c -m 644 gprof.flat ${DESTDIR}/usr/lib
-	install -c -m 644 gprof.callg ${DESTDIR}/usr/lib
+	install -s -o bin -g bin -m 755 gprof ${DESTDIR}/usr/ucb/gprof
+	install -c -o bin -g bin -m 644 gprof.flat ${DESTDIR}/usr/lib
+	install -c -o bin -g bin -m 644 gprof.callg ${DESTDIR}/usr/lib
 
 clean:
 	${RM} ${GPROFOBJS} errs gprof
