@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sd.c	7.18 (Berkeley) %G%
+ *	@(#)sd.c	7.19 (Berkeley) %G%
  */
 
 /*
@@ -328,8 +328,6 @@ sdgetinfo(dev)
 	msg = readdisklabel(sdlabdev(dev), sdstrategy, lp);
 	if (msg == NULL)
 		return(0);
-	if (bcmp(msg, "I/O", 3) == 0) /* XXX */
-		return(EIO);
 
 	pi = lp->d_partitions;
 	printf("sd%d: WARNING: %s, ", unit, msg);
