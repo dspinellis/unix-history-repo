@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)kvm.c	5.19 (Berkeley) %G%";
+static char sccsid[] = "@(#)kvm.c	5.20 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -130,8 +130,8 @@ static struct nlist nl[] = {
 };
 
 static off_t vtophys();
-static void klseek(), seterr(), setsyserr(), vstodb();
-static int getkvars(), kvm_doprocs(), kvm_init();
+static void seterr(), setsyserr(), vstodb();
+static int getkvars(), kvm_doprocs(), kvm_init(), klseek();
 
 /*
  * returns 	0 if files were opened now,
@@ -506,6 +506,9 @@ again:
 				eproc.e_tpgid = -1;
 		} else
 			eproc.e_tdev = NODEV;
+		eproc.e_flag = sess.s_ttyvp ? EPROC_CTTY : 0;
+		if (sess.s_leader == p)
+			eproc.e_flag |= EPROC_SLEADER;
 		if (proc.p_wmesg)
 			kvm_read(proc.p_wmesg, eproc.e_wmesg, WMESGLEN);
 #ifdef NEWVM
@@ -612,14 +615,17 @@ kvm_getu(p)
 	/*
 	 * Reading from swap is too complicated right now.
 	 */
-	if ((p->p_flag & SLOAD) == 0)
+	if ((p->p_flag & SLOAD) == 0) {
+		seterr("can't read from swap yet");
 		return(NULL);
+	}
 	/*
 	 * Read u-area one page at a time for the benefit of post-mortems
 	 */
 	up = (char *) p->p_addr;
 	for (i = 0; i < UPAGES; i++) {
-		klseek(kmem, (long)up, 0);
+		if (klseek(kmem, (long)up, 0) == -1)
+			return (NULL);
 		if (read(kmem, user.upages[i], CLBYTES) != CLBYTES) {
 			seterr("cant read page %x of u of pid %d from %s",
 			    up, p->p_pid, kmemf);
@@ -636,9 +642,10 @@ kvm_getu(p)
 	if (kp->kp_eproc.e_vm.vm_pmap.pm_ptab) {
 		struct pte pte[CLSIZE*2];
 
-		klseek(kmem,
+		if (klseek(kmem,
 		    (long)&kp->kp_eproc.e_vm.vm_pmap.pm_ptab
-		    [btoc(USRSTACK-CLBYTES*2)], 0);
+		    [btoc(USRSTACK-CLBYTES*2)], 0) == -1)
+			return (NULL);
 		if (read(kmem, (char *)&pte, sizeof(pte)) == sizeof(pte)) {
 #if CLBYTES < 2048
 			argaddr0 = ctob(pftoc(pte[CLSIZE*0].pg_pfnum));
@@ -685,7 +692,8 @@ kvm_getu(p)
 		return (&user.user);
 	}
 	pteaddr = &Usrptmap[btokmx(p->p_p0br) + p->p_szpt - 1];
-	klseek(kmem, (long)pteaddr, 0);
+	if (klseek(kmem, (long)pteaddr, 0) == -1)
+		return -1;
 	if (read(kmem, (char *)&apte, sizeof(apte)) != sizeof(apte)) {
 		seterr("can't read indir pte to get u for pid %d from %s",
 		    p->p_pid, kmemf);
@@ -838,24 +846,6 @@ getkvars()
 	if (deadkernel) {
 		/* We must do the sys map first because klseek uses it */
 		long	addr;
-
-#ifndef NEWVM
-		Syssize = nl[X_SYSSIZE].n_value;
-		Sysmap = (struct pte *)
-			calloc((unsigned) Syssize, sizeof (struct pte));
-		if (Sysmap == NULL) {
-			seterr("out of space for Sysmap");
-			return (-1);
-		}
-		addr = (long) nl[X_SYSMAP].n_value;
-		addr &= ~KERNBASE;
-		(void) lseek(kmem, addr, 0);
-		if (read(kmem, (char *) Sysmap, Syssize * sizeof (struct pte))
-		    != Syssize * sizeof (struct pte)) {
-			seterr("can't read Sysmap");
-			return (-1);
-		}
-#endif
 #if defined(hp300)
 		addr = (long) nl[X_LOWRAM].n_value;
 		(void) lseek(kmem, addr, 0);
@@ -880,10 +870,6 @@ getkvars()
 		}
 #endif
 	}
-#ifndef NEWVM
-	usrpt = (struct pte *)nl[X_USRPT].n_value;
-	Usrptmap = (struct pte *)nl[X_USRPTMAP].n_value;
-#endif
 	if (kvm_read((void *) nl[X_NSWAP].n_value, &nswap, sizeof (long)) !=
 	    sizeof (long)) {
 		seterr("can't read nswap");
@@ -923,7 +909,8 @@ kvm_read(loc, buf, len)
 	if (kvmfilesopen == 0 && kvm_openfiles(NULL, NULL, NULL) == -1)
 		return (-1);
 	if (iskva(loc)) {
-		klseek(kmem, (off_t) loc, 0);
+		if (klseek(kmem, (off_t) loc, 0) == -1)
+			return -1;
 		if (read(kmem, buf, len) != len) {
 			seterr("error reading kmem at %x", loc);
 			return (-1);
@@ -938,7 +925,7 @@ kvm_read(loc, buf, len)
 	return (len);
 }
 
-static void
+static
 klseek(fd, loc, off)
 	int fd;
 	off_t loc;
@@ -947,9 +934,10 @@ klseek(fd, loc, off)
 
 	if (deadkernel) {
 		if ((loc = vtophys(loc)) == -1)
-			return;
+			return -1;
 	}
-	(void) lseek(fd, (off_t)loc, off);
+	(void)lseek(fd, (off_t)loc, off);
+	return (0);
 }
 
 #ifndef NEWVM
@@ -996,7 +984,7 @@ vtophys(loc)
 
 	ste = *(int *)&Sysseg[loc >> SG_ISHIFT];
 	if ((ste & SG_V) == 0) {
-		seterr("vtophys: segment not valid");
+		seterr("vtophys: segment not valid (%x)", ste);
 		return((off_t) -1);
 	}
 	p = btop(loc & SG_PMASK);
