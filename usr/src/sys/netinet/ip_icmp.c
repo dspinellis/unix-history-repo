@@ -1,4 +1,4 @@
-/*	ip_icmp.c	6.8	84/11/14	*/
+/*	ip_icmp.c	6.9	85/03/18	*/
 
 #include "param.h"
 #include "systm.h"
@@ -9,9 +9,11 @@
 #include "kernel.h"
 
 #include "../net/route.h"
+#include "../net/if.h"
 
 #include "in.h"
 #include "in_systm.h"
+#include "in_var.h"
 #include "ip.h"
 #include "ip_icmp.h"
 #include "icmp_var.h"
@@ -115,7 +117,7 @@ icmp_input(m)
 	register int i;
 	int (*ctlfunc)(), code;
 	extern u_char ip_protox[];
-	extern struct in_addr if_makeaddr();
+	extern struct in_addr in_makeaddr();
 
 	/*
 	 * Locate icmp structure in mbuf, and check
@@ -217,12 +219,13 @@ icmp_input(m)
 		goto reflect;
 		
 	case ICMP_IREQ:
-#ifdef notdef
-		/* fill in source address zero fields! */
+#define	satosin(sa)	((struct sockaddr_in *)(sa))
+		if (in_netof(ip->ip_src) == 0)
+			ip->ip_src = in_makeaddr(
+			    in_netof(satosin(&in_ifaddr->ia_addr)->sin_addr),
+			    in_lnaof(ip->ip_src));
+		icp->icmp_type = ICMP_IREQREPLY;
 		goto reflect;
-#else
-		goto free;		/* not yet implemented: ignore */
-#endif
 
 	case ICMP_REDIRECT:
 		if (icmplen < ICMP_ADVLENMIN || icmplen < ICMP_ADVLEN(icp)) {
@@ -239,7 +242,7 @@ icmp_input(m)
 		icmpdst.sin_addr = icp->icmp_gwaddr;
 		if (code == ICMP_REDIRECT_NET || code == ICMP_REDIRECT_TOSNET) {
 			icmpsrc.sin_addr =
-			 if_makeaddr(in_netof(icp->icmp_ip.ip_dst), INADDR_ANY);
+			 in_makeaddr(in_netof(icp->icmp_ip.ip_dst), INADDR_ANY);
 			rtredirect((struct sockaddr *)&icmpsrc,
 			  (struct sockaddr *)&icmpdst, RTF_GATEWAY);
 			ip_ctlinput(PRC_REDIRECT_NET, (caddr_t)icp);
@@ -279,9 +282,18 @@ free:
 icmp_reflect(ip)
 	struct ip *ip;
 {
-	struct in_addr t;
+	register struct in_addr t;
+	register struct in_ifaddr *ia;
 
 	t = ip->ip_dst;
+	if (t.s_addr == INADDR_ANY)
+		t = IA_SIN(in_ifaddr)->sin_addr;
+	else for (ia = in_ifaddr; ia; ia = ia->ia_next)
+		if (t.s_addr == satosin(&ia->ia_broadaddr)->sin_addr.s_addr &&
+		    (ia->ia_ifp->if_flags & IFF_BROADCAST)) {
+			t = IA_SIN(ia)->sin_addr;
+			break;
+		}
 	ip->ip_dst = ip->ip_src;
 	ip->ip_src = t;
 	icmp_send(ip);
