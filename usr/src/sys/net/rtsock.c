@@ -4,10 +4,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)rtsock.c	7.29 (Berkeley) %G%
+ *	@(#)rtsock.c	7.30 (Berkeley) %G%
  */
 
 #include "param.h"
+#include "systm.h"
 #include "proc.h"
 #include "mbuf.h"
 #include "socket.h"
