@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tcp_input.c	7.1 (Berkeley) %G%
+ *	@(#)tcp_input.c	7.2 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -51,6 +51,8 @@ struct	tcpcb *tcp_newtcpcb();
 	    (tp)->t_state == TCPS_ESTABLISHED) { \
 		(tp)->rcv_nxt += (ti)->ti_len; \
 		flags = (ti)->ti_flags & TH_FIN; \
+		tcpstat.tcps_rcvpack++;\
+		tcpstat.tcps_rcvbyte += (ti)->ti_len;\
 		sbappend(&(so)->so_rcv, (m)); \
 		sorwakeup(so); \
 	} else \
@@ -92,14 +94,19 @@ tcp_reass(tp, ti)
 		/* conversion to int (in i) handles seq wraparound */
 		i = q->ti_seq + q->ti_len - ti->ti_seq;
 		if (i > 0) {
-			if (i >= ti->ti_len)
+			if (i >= ti->ti_len) {
+				tcpstat.tcps_rcvduppack++;
+				tcpstat.tcps_rcvdupbyte += ti->ti_len;
 				goto drop;
+			}
 			m_adj(dtom(ti), i);
 			ti->ti_len -= i;
 			ti->ti_seq += i;
 		}
 		q = (struct tcpiphdr *)(q->ti_next);
 	}
+	tcpstat.tcps_rcvoopack++;
+	tcpstat.tcps_rcvoobyte += ti->ti_len;
 
 	/*
 	 * While we overlap succeeding segments trim them or,
@@ -175,7 +182,9 @@ tcp_input(m0)
 	short ostate;
 	struct in_addr laddr;
 	int dropsocket = 0;
+	int iss = 0;
 
+	tcpstat.tcps_rcvtotal++;
 	/*
 	 * Get IP and TCP header together in first mbuf.
 	 * Note: IP leaves IP header in first mbuf.
@@ -186,7 +195,7 @@ tcp_input(m0)
 		ip_stripoptions((struct ip *)ti, (struct mbuf *)0);
 	if (m->m_off > MMAXOFF || m->m_len < sizeof (struct tcpiphdr)) {
 		if ((m = m_pullup(m, sizeof (struct tcpiphdr))) == 0) {
-			tcpstat.tcps_hdrops++;
+			tcpstat.tcps_rcvshort++;
 			return;
 		}
 		ti = mtod(m, struct tcpiphdr *);
@@ -205,7 +214,7 @@ tcp_input(m0)
 		if (ti->ti_sum = in_cksum(m, len)) {
 			if (tcpprintfs)
 				printf("tcp sum: src %x\n", ti->ti_src);
-			tcpstat.tcps_badsum++;
+			tcpstat.tcps_rcvbadsum++;
 			goto drop;
 		}
 	}
@@ -218,7 +227,7 @@ tcp_input(m0)
 	if (off < sizeof (struct tcphdr) || off > tlen) {
 		if (tcpprintfs)
 			printf("tcp off: src %x off %d\n", ti->ti_src, off);
-		tcpstat.tcps_badoff++;
+		tcpstat.tcps_rcvbadoff++;
 		goto drop;
 	}
 	tlen -= off;
@@ -226,7 +235,7 @@ tcp_input(m0)
 	if (off > sizeof (struct tcphdr)) {
 		if (m->m_len < sizeof(struct ip) + off) {
 			if ((m = m_pullup(m, sizeof (struct ip) + off)) == 0) {
-				tcpstat.tcps_hdrops++;
+				tcpstat.tcps_rcvshort++;
 				return;
 			}
 			ti = mtod(m, struct tcpiphdr *);
@@ -261,6 +270,7 @@ tcp_input(m0)
 	/*
 	 * Locate pcb for segment.
 	 */
+findpcb:
 	inp = in_pcblookup
 		(&tcb, ti->ti_src, ti->ti_sport, ti->ti_dst, ti->ti_dport,
 		INPLOOKUP_WILDCARD);
@@ -387,7 +397,11 @@ tcp_input(m0)
 			tcp_dooptions(tp, om, ti);
 			om = 0;
 		}
-		tp->iss = tcp_iss; tcp_iss += TCP_ISSINCR/2;
+		if (iss)
+			tp->iss = iss;
+		else
+			tp->iss = tcp_iss;
+		tcp_iss += TCP_ISSINCR/2;
 		tp->irs = ti->ti_seq;
 		tcp_sendseqinit(tp);
 		tcp_rcvseqinit(tp);
@@ -395,6 +409,7 @@ tcp_input(m0)
 		tp->t_state = TCPS_SYN_RECEIVED;
 		tp->t_timer[TCPT_KEEP] = TCPTV_KEEP;
 		dropsocket = 0;		/* committed to socket */
+		tcpstat.tcps_accepts++;
 		goto trimthenstep6;
 		}
 
@@ -430,13 +445,13 @@ tcp_input(m0)
 		tcp_rcvseqinit(tp);
 		tp->t_flags |= TF_ACKNOW;
 		if (SEQ_GT(tp->snd_una, tp->iss)) {
+			tcpstat.tcps_connects++;
 			soisconnected(so);
 			tp->t_state = TCPS_ESTABLISHED;
 			tp->t_maxseg = MIN(tp->t_maxseg, tcp_mss(tp));
 			(void) tcp_reass(tp, (struct tcpiphdr *)0);
 		} else
 			tp->t_state = TCPS_SYN_RECEIVED;
-		goto trimthenstep6;
 
 trimthenstep6:
 		/*
@@ -450,6 +465,8 @@ trimthenstep6:
 			m_adj(m, -todrop);
 			ti->ti_len = tp->rcv_wnd;
 			tiflags &= ~TH_FIN;
+			tcpstat.tcps_rcvpackafterwin++;
+			tcpstat.tcps_rcvbyteafterwin += todrop;
 		}
 		tp->snd_wl1 = ti->ti_seq - 1;
 		tp->rcv_up = ti->ti_seq;
@@ -457,70 +474,103 @@ trimthenstep6:
 	}
 
 	/*
-	 * If data is received on a connection after the
-	 * user processes are gone, then RST the other end.
-	 */
-	if ((so->so_state & SS_NOFDREF) && tp->t_state > TCPS_CLOSE_WAIT &&
-	    ti->ti_len) {
-		tp = tcp_close(tp);
-		goto dropwithreset;
-	}
-
-	/*
 	 * States other than LISTEN or SYN_SENT.
 	 * First check that at least some bytes of segment are within 
-	 * receive window.
+	 * receive window.  If segment begins before rcv_nxt,
+	 * drop leading data (and SYN); if nothing left, just ack.
 	 */
+	todrop = tp->rcv_nxt - ti->ti_seq;
+	if (todrop > 0) {
+		if (tiflags & TH_SYN) {
+			tiflags &= ~TH_SYN;
+			ti->ti_seq++;
+			if (ti->ti_urp > 1) 
+				ti->ti_urp--;
+			else
+				tiflags &= ~TH_URG;
+			todrop--;
+		}
+		if (todrop > ti->ti_len ||
+		    todrop == ti->ti_len && (tiflags&TH_FIN) == 0) {
+			tcpstat.tcps_rcvduppack++;
+			tcpstat.tcps_rcvdupbyte += ti->ti_len;
+			goto dropafterack;
+		}
+		tcpstat.tcps_rcvpartduppack++;
+		tcpstat.tcps_rcvpartdupbyte += todrop;
+		m_adj(m, todrop);
+		ti->ti_seq += todrop;
+		ti->ti_len -= todrop;
+		if (ti->ti_urp > todrop)
+			ti->ti_urp -= todrop;
+		else {
+			tiflags &= ~TH_URG;
+			ti->ti_urp = 0;
+		}
+	}
+
 	if (tp->rcv_wnd == 0) {
 		/*
 		 * If window is closed can only take segments at
 		 * window edge, and have to drop data and PUSH from
 		 * incoming segments.
+		 *
+		 * If new data is received on a connection after the
+		 * user processes are gone, then RST the other end.
 		 */
-		if (tp->rcv_nxt != ti->ti_seq)
+		if ((so->so_state & SS_NOFDREF) &&
+		    tp->t_state > TCPS_CLOSE_WAIT && ti->ti_len) {
+			tp = tcp_close(tp);
+			tcpstat.tcps_rcvafterclose++;
+			goto dropwithreset;
+		}
+		if (tp->rcv_nxt != ti->ti_seq) {
+			tcpstat.tcps_rcvpackafterwin++;
+			tcpstat.tcps_rcvbyteafterwin += ti->ti_len;
 			goto dropafterack;
+		}
 		if (ti->ti_len > 0) {
+			if (ti->ti_len == 1) 
+				tcpstat.tcps_rcvwinprobe++;
+			else {
+				tcpstat.tcps_rcvpackafterwin++;
+				tcpstat.tcps_rcvbyteafterwin += ti->ti_len;
+			}
 			m_adj(m, ti->ti_len);
 			ti->ti_len = 0;
 			tiflags &= ~(TH_PUSH|TH_FIN);
 		}
 	} else {
 		/*
-		 * If segment begins before rcv_nxt, drop leading
-		 * data (and SYN); if nothing left, just ack.
-		 */
-		todrop = tp->rcv_nxt - ti->ti_seq;
-		if (todrop > 0) {
-			if (tiflags & TH_SYN) {
-				tiflags &= ~TH_SYN;
-				ti->ti_seq++;
-				if (ti->ti_urp > 1) 
-					ti->ti_urp--;
-				else
-					tiflags &= ~TH_URG;
-				todrop--;
-			}
-			if (todrop > ti->ti_len ||
-			    todrop == ti->ti_len && (tiflags&TH_FIN) == 0)
-				goto dropafterack;
-			m_adj(m, todrop);
-			ti->ti_seq += todrop;
-			ti->ti_len -= todrop;
-			if (ti->ti_urp > todrop)
-				ti->ti_urp -= todrop;
-			else {
-				tiflags &= ~TH_URG;
-				ti->ti_urp = 0;
-			}
-		}
-		/*
 		 * If segment ends after window, drop trailing data
 		 * (and PUSH and FIN); if nothing left, just ACK.
 		 */
 		todrop = (ti->ti_seq+ti->ti_len) - (tp->rcv_nxt+tp->rcv_wnd);
 		if (todrop > 0) {
-			if (todrop >= ti->ti_len)
+			if (todrop >= ti->ti_len) {
+				/*
+				 * If a new connection request is received
+				 * while in TIME_WAIT, drop the old connection
+				 * and start over if the sequence numbers
+				 * are above the previous ones.
+				 */
+				if (tiflags & TH_SYN &&
+				    tp->t_state == TCPS_TIME_WAIT &&
+				    SEQ_GT(ti->ti_seq, tp->rcv_nxt)) {
+					iss = tp->rcv_nxt + TCP_ISSINCR;
+					(void) tcp_close(tp);
+					goto findpcb;
+				}
+				if (todrop == 1) 
+					tcpstat.tcps_rcvwinprobe++;
+				else {
+					tcpstat.tcps_rcvpackafterwin++;
+					tcpstat.tcps_rcvbyteafterwin += todrop;
+				}
 				goto dropafterack;
+			}
+			tcpstat.tcps_rcvpackafterwin++;
+			tcpstat.tcps_rcvbyteafterwin += todrop;
 			m_adj(m, -todrop);
 			ti->ti_len -= todrop;
 			tiflags &= ~(TH_PUSH|TH_FIN);
@@ -590,6 +640,7 @@ trimthenstep6:
 		if (SEQ_LT(tp->snd_nxt, tp->snd_una))
 			tp->snd_nxt = tp->snd_una;
 		tp->t_timer[TCPT_REXMT] = 0;
+		tcpstat.tcps_connects++;
 		soisconnected(so);
 		tp->t_state = TCPS_ESTABLISHED;
 		tp->t_maxseg = MIN(tp->t_maxseg, tcp_mss(tp));
@@ -612,19 +663,26 @@ trimthenstep6:
 	case TCPS_CLOSING:
 	case TCPS_LAST_ACK:
 	case TCPS_TIME_WAIT:
-#define	ourfinisacked	(acked > 0)
 
-		if (SEQ_LEQ(ti->ti_ack, tp->snd_una))
+		if (SEQ_LEQ(ti->ti_ack, tp->snd_una)) {
+			if (ti->ti_len == 0)
+				tcpstat.tcps_rcvdupack++;
 			break;
-		if (SEQ_GT(ti->ti_ack, tp->snd_max))
+		}
+		if (SEQ_GT(ti->ti_ack, tp->snd_max)) {
+			tcpstat.tcps_rcvacktoomuch++;
 			goto dropafterack;
+		}
 		acked = ti->ti_ack - tp->snd_una;
+		tcpstat.tcps_rcvackpack++;
+		tcpstat.tcps_rcvackbyte += acked;
 
 		/*
 		 * If transmit timer is running and timed sequence
 		 * number was acked, update smoothed round trip time.
 		 */
 		if (tp->t_rtt && SEQ_GT(ti->ti_ack, tp->t_rtseq)) {
+			tcpstat.tcps_rttupdated++;
 			if (tp->t_srtt == 0)
 				tp->t_srtt = tp->t_rtt;
 			else
@@ -651,11 +709,11 @@ trimthenstep6:
 		/*
 		 * When new data is acked, open the congestion window a bit.
 		 */
-		if (acked > 0)
-			tp->snd_cwnd = MIN(11 * tp->snd_cwnd / 10, 65535);
+		tp->snd_cwnd = MIN(11 * tp->snd_cwnd / 10, 65535);
 		if (acked > so->so_snd.sb_cc) {
 			tp->snd_wnd -= so->so_snd.sb_cc;
 			sbdrop(&so->so_snd, (int)so->so_snd.sb_cc);
+#define	ourfinisacked	(acked > 0)
 		} else {
 			sbdrop(&so->so_snd, acked);
 			tp->snd_wnd -= acked;
@@ -738,6 +796,12 @@ step6:
 	    (SEQ_LT(tp->snd_wl1, ti->ti_seq) || tp->snd_wl1 == ti->ti_seq &&
 	    (SEQ_LT(tp->snd_wl2, ti->ti_ack) ||
 	     tp->snd_wl2 == ti->ti_ack && ti->ti_win > tp->snd_wnd))) {
+		/* keep track of pure window updates */
+		if (ti->ti_len == 0 &&
+		    tp->snd_wl2 == ti->ti_ack && ti->ti_win > tp->snd_wnd) {
+			tcpstat.tcps_rcvwinupd++;
+			tcpstat.tcps_rcvdupack--;
+		}
 		tp->snd_wnd = ti->ti_win;
 		tp->snd_wl1 = ti->ti_seq;
 		tp->snd_wl2 = ti->ti_ack;
