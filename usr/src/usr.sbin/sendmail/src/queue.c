@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	5.50 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	5.51 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	5.50 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	5.51 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -802,7 +802,8 @@ readqf(e)
 	register FILE *qfp;
 	ADDRESS *ctladdr;
 	struct stat st;
-	char buf[MAXFIELD];
+	char *bp;
+	char buf[MAXLINE];
 	extern char *fgetfolded();
 	extern long atol();
 	extern ADDRESS *setctluser();
@@ -835,7 +836,7 @@ readqf(e)
 		return FALSE;
 	}
 
-	if (st.st_uid != 0 || (st.st_mode & 07777) != FileMode)
+	if (st.st_uid != geteuid() || (st.st_mode & 07777) != FileMode)
 	{
 # ifdef LOG
 		if (LogLevel > 0)
@@ -878,14 +879,14 @@ readqf(e)
 	if (Verbose)
 		printf("\nRunning %s\n", e->e_id);
 	ctladdr = NULL;
-	while (fgetfolded(buf, sizeof buf, qfp) != NULL)
+	while ((bp = fgetfolded(buf, sizeof buf, qfp)) != NULL)
 	{
 		if (tTd(40, 4))
-			printf("+++++ %s\n", buf);
-		switch (buf[0])
+			printf("+++++ %s\n", bp);
+		switch (bp[0])
 		{
 		  case 'C':		/* specify controlling user */
-			ctladdr = setctluser(&buf[1]);
+			ctladdr = setctluser(&bp[1]);
 			break;
 
 		  case 'R':		/* specify recipient */
@@ -893,38 +894,38 @@ readqf(e)
 			break;
 
 		  case 'E':		/* specify error recipient */
-			sendtolist(&buf[1], ctladdr, &e->e_errorqueue, e);
+			sendtolist(&bp[1], ctladdr, &e->e_errorqueue, e);
 			break;
 
 		  case 'H':		/* header */
-			(void) chompheader(&buf[1], FALSE, e);
+			(void) chompheader(&bp[1], FALSE, e);
 			break;
 
 		  case 'M':		/* message */
-			e->e_message = newstr(&buf[1]);
+			e->e_message = newstr(&bp[1]);
 			break;
 
 		  case 'S':		/* sender */
-			setsender(newstr(&buf[1]), e);
+			setsender(newstr(&bp[1]), e);
 			break;
 
 		  case 'D':		/* data file name */
-			e->e_df = newstr(&buf[1]);
+			e->e_df = newstr(&bp[1]);
 			e->e_dfp = fopen(e->e_df, "r");
 			if (e->e_dfp == NULL)
 				syserr("readqf: cannot open %s", e->e_df);
 			break;
 
 		  case 'T':		/* init time */
-			e->e_ctime = atol(&buf[1]);
+			e->e_ctime = atol(&bp[1]);
 			break;
 
 		  case 'P':		/* message priority */
-			e->e_msgpriority = atol(&buf[1]) + WkTimeFact;
+			e->e_msgpriority = atol(&bp[1]) + WkTimeFact;
 			break;
 
 		  case '$':		/* define macro */
-			define(buf[1], newstr(&buf[2]), e);
+			define(bp[1], newstr(&bp[2]), e);
 			break;
 
 		  case '\0':		/* blank line; ignore */
@@ -932,9 +933,12 @@ readqf(e)
 
 		  default:
 			syserr("readqf(%s:%d): bad line \"%s\"", e->e_id,
-				LineNumber, buf);
+				LineNumber, bp);
 			break;
 		}
+
+		if (bp != buf)
+			free(bp);
 	}
 
 	FileName = NULL;

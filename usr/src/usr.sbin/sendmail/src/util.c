@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	5.33 (Berkeley) %G%";
+static char sccsid[] = "@(#)util.c	5.34 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <stdio.h>
@@ -18,8 +18,7 @@ static char sccsid[] = "@(#)util.c	5.33 (Berkeley) %G%";
 # include <errno.h>
 # include "sendmail.h"
 # include "conf.h"
-
-/*
+/*
 **  STRIPQUOTES -- Strip quotes & quote bits from a string.
 **
 **	Runs through a string and strips off unquoted quote
@@ -663,7 +662,9 @@ readtimeout()
 **		f -- file to read from.
 **
 **	Returns:
-**		buf on success, NULL on error or EOF.
+**		input line(s) on success, NULL on error or EOF.
+**		This will normally be buf -- unless the line is too
+**			long, when it will be xalloc()ed.
 **
 **	Side Effects:
 **		buf gets lines from f, with continuation lines (lines
@@ -678,6 +679,7 @@ fgetfolded(buf, n, f)
 	FILE *f;
 {
 	register char *p = buf;
+	char *bp = buf;
 	register int i;
 
 	n--;
@@ -693,10 +695,26 @@ fgetfolded(buf, n, f)
 				i = '\r';
 			}
 		}
-		if (--n > 0)
-			*p++ = i;
-		else if (n == 0)
-			nmessage(Arpa_Info, "warning: line truncated");
+		if (--n <= 0)
+		{
+			/* allocate new space */
+			char *nbp;
+			int nn;
+
+			nn = (p - bp);
+			if (nn < 1024)
+				nn *= 2;
+			else
+				nn += 1024;
+			nbp = xalloc(nn);
+			bcopy(bp, nbp, p - bp);
+			p = &nbp[p - bp];
+			if (bp != buf)
+				free(bp);
+			bp = nbp;
+			n = nn - (p - bp);
+		}
+		*p++ = i;
 		if (i == '\n')
 		{
 			LineNumber++;
@@ -707,10 +725,10 @@ fgetfolded(buf, n, f)
 				break;
 		}
 	}
-	if (p == buf)
+	if (p == bp)
 		return (NULL);
 	*--p = '\0';
-	return (buf);
+	return (bp);
 }
 /*
 **  CURTIME -- return current time.

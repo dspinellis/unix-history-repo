@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)collect.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)collect.c	5.16 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <errno.h>
@@ -40,7 +40,7 @@ maketemp(from)
 {
 	register FILE *tf;
 	bool ignrdot = smtpmode ? FALSE : IgnrDot;
-	char buf[MAXFIELD], buf2[MAXFIELD];
+	char buf[MAXLINE], buf2[MAXLINE];
 	register char *workbuf, *freebuf;
 	extern char *hvalue();
 	extern bool isheader(), flusheol();
@@ -70,7 +70,7 @@ maketemp(from)
 	**  Try to read a UNIX-style From line
 	*/
 
-	if (sfgets(buf, MAXFIELD, InChannel) == NULL)
+	if (sfgets(buf, MAXLINE, InChannel) == NULL)
 		goto readerr;
 	fixcrlf(buf, FALSE);
 # ifndef NOTUNIX
@@ -79,7 +79,7 @@ maketemp(from)
 		if (!flusheol(buf, InChannel))
 			goto readerr;
 		eatfrom(buf, e);
-		if (sfgets(buf, MAXFIELD, InChannel) == NULL)
+		if (sfgets(buf, MAXLINE, InChannel) == NULL)
 			goto readerr;
 		fixcrlf(buf, FALSE);
 	}
@@ -117,7 +117,7 @@ maketemp(from)
 
 		curbuf = workbuf;
 		curbuflen = strlen(curbuf);
-		curbuffree = MAXFIELD - curbuflen;
+		curbuffree = MAXLINE - curbuflen;
 		p = curbuf + curbuflen;
 
 		/* get the rest of this field */
@@ -125,7 +125,7 @@ maketemp(from)
 		{
 			int clen;
 
-			if (sfgets(freebuf, MAXFIELD, InChannel) == NULL)
+			if (sfgets(freebuf, MAXLINE, InChannel) == NULL)
 				goto readerr;
 
 			/* is this a continuation line? */
@@ -136,7 +136,7 @@ maketemp(from)
 				goto readerr;
 
 			fixcrlf(freebuf, TRUE);
-			clen = strlen(freebuf);
+			clen = strlen(freebuf) + 1;
 
 			/* if insufficient room, dynamically allocate buffer */
 			if (clen >= curbuffree)
@@ -145,16 +145,18 @@ maketemp(from)
 				int nbuflen = ((p - curbuf) + clen) * 2;
 				char *nbuf = xalloc(nbuflen);
 
-				p = nbuf + (p - curbuf);
-				curbuffree = nbuflen - (p - workbuf) - clen;
-				bcopy(curbuf, nbuf, p - curbuf);
+				p = nbuf + curbuflen;
+				curbuffree = nbuflen - curbuflen;
+				bcopy(curbuf, nbuf, curbuflen);
 				if (curbuf != buf && curbuf != buf2)
 					free(curbuf);
 				curbuf = nbuf;
 			}
-			bcopy(freebuf, p, clen);
-			p += clen;
+			*p++ = '\n';
+			bcopy(freebuf, p, clen - 1);
+			p += clen - 1;
 			curbuffree -= clen;
+			curbuflen += clen;
 		}
 		*p++ = '\0';
 
@@ -199,7 +201,7 @@ maketemp(from)
 	if (*workbuf == '\0')
 	{
 		/* throw away a blank line */
-		if (sfgets(buf, MAXFIELD, InChannel) == NULL)
+		if (sfgets(buf, MAXLINE, InChannel) == NULL)
 			goto readerr;
 	}
 	else if (workbuf == buf2)	/* guarantee `buf' contains data */
@@ -233,7 +235,7 @@ maketemp(from)
 		fputs("\n", tf);
 		if (ferror(tf))
 			tferror(tf, e);
-	} while (sfgets(buf, MAXFIELD, InChannel) != NULL);
+	} while (sfgets(buf, MAXLINE, InChannel) != NULL);
 
 readerr:
 	if (fflush(tf) != 0)

@@ -30,12 +30,12 @@ ERROR: DBM is no longer supported -- use NDBM instead.
 
 #ifndef lint
 #ifdef NEWDB
-static char sccsid[] = "@(#)alias.c	5.40 (Berkeley) %G% (with NEWDB)";
+static char sccsid[] = "@(#)alias.c	5.41 (Berkeley) %G% (with NEWDB)";
 #else
 #ifdef NDBM
-static char sccsid[] = "@(#)alias.c	5.40 (Berkeley) %G% (with NDBM)";
+static char sccsid[] = "@(#)alias.c	5.41 (Berkeley) %G% (with NDBM)";
 #else
-static char sccsid[] = "@(#)alias.c	5.40 (Berkeley) %G% (without NDBM)";
+static char sccsid[] = "@(#)alias.c	5.41 (Berkeley) %G% (without NDBM)";
 #endif
 #endif
 #endif /* not lint */
@@ -652,6 +652,13 @@ readaliases(aliasfile, init, e)
 			if (fgets(p, sizeof line - (p - line), af) == NULL)
 				break;
 			LineNumber++;
+
+			/* check for line overflow */
+			if (strchr(p, '\n') == NULL)
+			{
+				usrerr("alias too long");
+				break;
+			}
 		}
 
 		/*

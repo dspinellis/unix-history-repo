@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)usersmtp.c	5.25 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	5.26 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)usersmtp.c	5.25 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	5.26 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -540,7 +540,7 @@ smtpmessage(f, m, mci VA_ARG_FORMAL)
 {
 	VA_LOCAL_DECL
 
-	VA_START(f);
+	VA_START(mci);
 	(void) vsprintf(SmtpMsgBuffer, f, ap);
 	VA_END;
 	if (tTd(18, 1) || (Verbose && !HoldErrs))

@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readcf.c	5.51 (Berkeley) %G%";
+static char sccsid[] = "@(#)readcf.c	5.52 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -68,6 +68,7 @@ readcf(cfname)
 	char *q;
 	char **pv;
 	struct rewrite *rwp = NULL;
+	char *bp;
 	char buf[MAXLINE];
 	register char *p;
 	extern char **prescan();
@@ -113,15 +114,19 @@ readcf(cfname)
 #endif
 	}
 
-	while (fgetfolded(buf, sizeof buf, cf) != NULL)
+	while ((bp = fgetfolded(buf, sizeof buf, cf)) != NULL)
 	{
-		if (buf[0] == '#')
+		if (bp[0] == '#')
+		{
+			if (bp != buf)
+				free(bp);
 			continue;
+		}
 
 		/* map $ into \001 (ASCII SOH) for macro expansion */
-		for (p = buf; *p != '\0'; p++)
+		for (p = bp; *p != '\0'; p++)
 		{
-			if (*p == '#' && p > buf && ConfigLevel >= 3)
+			if (*p == '#' && p > bp && ConfigLevel >= 3)
 			{
 				/* this is an on-line comment */
 				register char *e;
@@ -140,7 +145,7 @@ readcf(cfname)
 
 				  default:
 					/* delete preceeding white space */
-					while (isspace(*p) && p > buf)
+					while (isspace(*p) && p > bp)
 						p--;
 					if ((e = strchr(++p, '\n')) != NULL)
 						(void) strcpy(p, e);
@@ -166,19 +171,19 @@ readcf(cfname)
 		}
 
 		/* interpret this line */
-		switch (buf[0])
+		switch (bp[0])
 		{
 		  case '\0':
 		  case '#':		/* comment */
 			break;
 
 		  case 'R':		/* rewriting rule */
-			for (p = &buf[1]; *p != '\0' && *p != '\t'; p++)
+			for (p = &bp[1]; *p != '\0' && *p != '\t'; p++)
 				continue;
 
 			if (*p == '\0')
 			{
-				syserr("invalid rewrite line \"%s\"", buf);
+				syserr("invalid rewrite line \"%s\"", bp);
 				break;
 			}
 
@@ -197,7 +202,7 @@ readcf(cfname)
 
 			/* expand and save the LHS */
 			*p = '\0';
-			expand(&buf[1], exbuf, &exbuf[sizeof exbuf], e);
+			expand(&bp[1], exbuf, &exbuf[sizeof exbuf], e);
 			rwp->r_lhs = prescan(exbuf, '\t', pvpbuf);
 			if (rwp->r_lhs != NULL)
 				rwp->r_lhs = copyplist(rwp->r_lhs, TRUE);
@@ -220,7 +225,7 @@ readcf(cfname)
 			break;
 
 		  case 'S':		/* select rewriting set */
-			ruleset = atoi(&buf[1]);
+			ruleset = atoi(&bp[1]);
 			if (ruleset >= MAXRWSETS || ruleset < 0)
 			{
 				syserr("bad ruleset %d (%d max)", ruleset, MAXRWSETS);
@@ -230,20 +235,20 @@ readcf(cfname)
 			break;
 
 		  case 'D':		/* macro definition */
-			define(buf[1], newstr(munchstring(&buf[2])), e);
+			define(bp[1], newstr(munchstring(&bp[2])), e);
 			break;
 
 		  case 'H':		/* required header line */
-			(void) chompheader(&buf[1], TRUE, e);
+			(void) chompheader(&bp[1], TRUE, e);
 			break;
 
 		  case 'C':		/* word class */
 		  case 'F':		/* word class from file */
 			/* read list of words from argument or file */
-			if (buf[0] == 'F')
+			if (bp[0] == 'F')
 			{
 				/* read from file */
-				for (p = &buf[2]; *p != '\0' && !isspace(*p); p++)
+				for (p = &bp[2]; *p != '\0' && !isspace(*p); p++)
 					continue;
 				if (*p == '\0')
 					p = "%s";
@@ -253,12 +258,12 @@ readcf(cfname)
 					while (isspace(*++p))
 						continue;
 				}
-				fileclass(buf[1], &buf[2], p, safe);
+				fileclass(bp[1], &bp[2], p, safe);
 				break;
 			}
 
 			/* scan the list of words and set class for all */
-			for (p = &buf[2]; *p != '\0'; )
+			for (p = &bp[2]; *p != '\0'; )
 			{
 				register char *wd;
 				char delim;
@@ -271,7 +276,7 @@ readcf(cfname)
 				delim = *p;
 				*p = '\0';
 				if (wd[0] != '\0')
-					setclass(buf[1], wd);
+					setclass(bp[1], wd);
 				*p = delim;
 			}
 			break;
@@ -290,18 +295,18 @@ readcf(cfname)
 				toomany('P', MAXPRIORITIES);
 				break;
 			}
-			for (p = &buf[1]; *p != '\0' && *p != '=' && *p != '\t'; p++)
+			for (p = &bp[1]; *p != '\0' && *p != '=' && *p != '\t'; p++)
 				continue;
 			if (*p == '\0')
 				goto badline;
 			*p = '\0';
-			Priorities[NumPriorities].pri_name = newstr(&buf[1]);
+			Priorities[NumPriorities].pri_name = newstr(&bp[1]);
 			Priorities[NumPriorities].pri_val = atoi(++p);
 			NumPriorities++;
 			break;
 
 		  case 'T':		/* trusted user(s) */
-			p = &buf[1];
+			p = &bp[1];
 			while (*p != '\0')
 			{
 				while (isspace(*p))
@@ -325,17 +330,19 @@ readcf(cfname)
 			break;
 
 		  case 'V':		/* configuration syntax version */
-			ConfigLevel = atoi(&buf[1]);
+			ConfigLevel = atoi(&bp[1]);
 			break;
 
 		  case 'K':
-			makemapentry(&buf[1]);
+			makemapentry(&bp[1]);
 			break;
 
 		  default:
 		  badline:
-			syserr("unknown control line \"%s\"", buf);
+			syserr("unknown control line \"%s\"", bp);
 		}
+		if (bp != buf)
+			free(bp);
 	}
 	if (ferror(cf))
 	{
