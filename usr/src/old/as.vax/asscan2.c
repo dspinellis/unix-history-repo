@@ -2,7 +2,7 @@
  *	Copyright (c) 1982 Regents of the University of California
  */
 #ifndef lint
-static char sccsid[] = "@(#)asscan2.c 4.3 %G%";
+static char sccsid[] = "@(#)asscan2.c 4.4 %G%";
 #endif not lint
 
 #include "asscanl.h"
@@ -42,12 +42,16 @@ static	char	*InBufPtr = 0;
 static	char	p_swapped = '\0';			
 static	char	*p_start = &inbuffer[NINBUFFERS * BUFSIZ];
 static	char	*p_stop = &inbuffer[NINBUFFERS * BUFSIZ];
+
 char *fillinbuffer()
 {
 	register	char	*to;
 	register	char	*from;
 			char	*inbufptr;
 	int		nread;
+	static		int	hadeof;
+	int		goal;
+	int		got;
 
 	*p_start = p_swapped;
 	inbufptr = &inbuffer[1*BUFSIZ] - (p_stop - p_start);
@@ -57,13 +61,40 @@ char *fillinbuffer()
 	/*
 	 *	Now, go read two full buffers (hopefully)
 	 */
-	nread = read(stdin->_file, &inbuffer[1*BUFSIZ], (NINBUFFERS - 1)*BUFSIZ);
+	if (hadeof){
+		hadeof = 0;
+		return (0);
+	}
+	goal = (NINBUFFERS - 1)*BUFSIZ;
+	nread = 0;
+	do {
+		got = read(stdin->_file, &inbuffer[1*BUFSIZ + nread], goal);
+		if (got == 0)
+			hadeof = 1;
+		if (got <= 0)
+			break;
+		nread += got;
+		goal -= got;
+	} while (goal);
+
 	if (nread == 0)
 		return(0);
 	p_stop = from = &inbuffer[1*BUFSIZ + nread];
 	*from = '\0';
-	while (*--from != '\n')		/* back over the partial line */
-		continue;
+
+	while (*--from != '\n'){
+		/*
+		 *	back over the partial line
+		 */
+		if (from == &inbuffer[1*BUFSIZ]) {
+			from = p_stop;
+			*p_stop++ = '\n';
+			break;
+		} else {
+			continue;
+		}
+	}
+
 	from++;				/* first char of partial line */
 	p_start = from;
 	p_swapped = *p_start;
@@ -376,13 +407,14 @@ scan_dot_s(bufferbox)
 		       && !(INCHARSET( (ch = getchar()), STRESCAPE))
 		      ){
 			stuff:
-				maxstrlg-= 1;
+				maxstrlg -= 1;
 				pchar(bufptr, ch);
 			}
 		if (maxstrlg <= 0){	/*enough characters to fill a string buffer*/
 			ungetc('"');		/*will read it next*/
 		}
-		else if (ch == '"');		/*done*/
+		else if (ch == '"')
+			/*VOID*/ ;		/*done*/
 		else if (ch == '\n'){
 			yywarning("New line embedded in a string constant.");
 			scanlineno++;
@@ -422,7 +454,7 @@ scan_dot_s(bufferbox)
 				ch = getchar();
 			}
 			ungetc(ch);
-			val = (char)intval;
+			ch = (char)intval;
 			goto stuff;
 		}
 		/*
