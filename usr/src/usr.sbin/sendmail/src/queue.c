@@ -17,12 +17,12 @@
 
 # ifndef QUEUE
 # ifndef lint
-static char	SccsId[] = "@(#)queue.c	5.20 (Berkeley) %G%	(no queueing)";
+static char	SccsId[] = "@(#)queue.c	5.21 (Berkeley) %G%	(no queueing)";
 # endif not lint
 # else QUEUE
 
 # ifndef lint
-static char	SccsId[] = "@(#)queue.c	5.20 (Berkeley) %G%";
+static char	SccsId[] = "@(#)queue.c	5.21 (Berkeley) %G%";
 # endif not lint
 
 /*
@@ -325,6 +325,12 @@ runqueue(forkflag)
 # ifdef DAEMON
 	clrdaemon();
 # endif DAEMON
+
+	/*
+	**  Make sure the alias database is open.
+	*/
+
+	initaliases(AliasFile, FALSE);
 
 	/*
 	**  Start making passes through the queue.

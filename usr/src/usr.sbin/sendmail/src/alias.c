@@ -20,9 +20,9 @@
 
 #ifndef lint
 # ifdef DBM
-static char	SccsId[] = "@(#)alias.c	5.12 (Berkeley) %G%	(with DBM)";
+static char	SccsId[] = "@(#)alias.c	5.13 (Berkeley) %G%	(with DBM)";
 # else DBM
-static char	SccsId[] = "@(#)alias.c	5.12 (Berkeley) %G%	(without DBM)";
+static char	SccsId[] = "@(#)alias.c	5.13 (Berkeley) %G%	(without DBM)";
 # endif DBM
 #endif not lint
 
@@ -178,6 +178,11 @@ initaliases(aliasfile, init)
 	char buf[MAXNAME];
 #endif DBM
 	struct stat stb;
+	static bool initialized = FALSE;
+
+	if (initialized)
+		return;
+	initialized = TRUE;
 
 	if (aliasfile == NULL || stat(aliasfile, &stb) < 0)
 	{
