@@ -9,12 +9,12 @@
 # software without specific prior written permission. This software
 # is provided ``as is'' without express or implied warranty.
 #
-#	@(#)Makefile	6.4 (Berkeley) %G%
+#	@(#)Makefile	6.5 (Berkeley) %G%
 #
 MELIB=	/usr/lib/me
 TMLIB=	/usr/lib/tmac
 MESRCS=	acm.me chars.me deltext.me eqn.me float.me footnote.me \
-	index.me local.me null.me refer.me sh.me tbl.me thesis.me
+	index.me letterhead.me local.me null.me refer.me sh.me tbl.me thesis.me
 TMSRCS=	tmac.e
 
 all:
