@@ -1,0 +1,396 @@
+
+
+
+SLOCAL(1)              BSD Reference Manual             SLOCAL(1)
+
+
+NNAAMMEE
+       slocal - special local mail delivery
+
+SSYYNNOOPPSSIISS
+       /usr/contrib/mh-6.8/lib/slocal [address info sender]
+            [-addr address] [-info data] [-sender sender]
+            [-user username] [-mailbox mbox] [-file file]
+            [-maildelivery deliveryfile] [-verbose] [-noverbose]
+            [-debug] [-help]
+
+DDEESSCCRRIIPPTTIIOONN
+       _S_l_o_c_a_l is a program designed to allow  you  to  have  your
+       inbound  mail  processed  according  to  a  complex set of
+       selection criteria.  You do  not  normally  invoke  _s_l_o_c_a_l
+       yourself,  rather _s_l_o_c_a_l is invoked on your behalf by your
+       system's Message Transfer Agent.
+
+       The message selection criteria used by _s_l_o_c_a_l is specified
+       in  the  file  _._m_a_i_l_d_e_l_i_v_e_r_y in the user's home directory.
+       The format of this file is given below.
+
+       The message delivery address and message sender are deter-
+       mined  from  the  Message Transfer Agent envelope informa-
+       tion,  if  possible.   Under  _S_e_n_d_M_a_i_l,  the  sender  will
+       obtained from the UUCP "From " line, if present.  The user
+       may override these values with command line arguments,  or
+       arguments to the `-addr' and `-sender' switches.
+
+       The message is normally read from the standard input.  The
+       `-file' switch sets the name of the file  from  which  the
+       message  should  be  read,  instead of reading stdin.  The
+       `-user' switch tells _s_l_o_c_a_l the name of the user for  whom
+       it is delivering mail.  The `-mailbox' switch tells _s_l_o_c_a_l
+       the name of the user's maildrop file.
+
+       The `-info' switch may be used to pass an arbitrary  argu-
+       ment  to  sub-processes  which  _s_l_o_c_a_l  may invoke on your
+       behalf.  The  `-verbose'  switch  causes  _s_l_o_c_a_l  to  give
+       information  on  stdout  about its progress.  The `-debug'
+       switch produces more verbose debugging output on stderr.
+
+
+   MMeessssaaggee TTrraannssffeerr AAggeennttss
+       If your MTA is _S_e_n_d_M_a_i_l, you should include the line
+
+                "| /usr/contrib/mh-6.8/lib/slocal -user username"
+
+       in your .forward file in your home directory.   This  will
+       cause _S_e_n_d_M_a_i_l to invoke _s_l_o_c_a_l on your behalf.
+
+       If  your  MTA  is  _M_M_D_F_-_I,  you should (symbolically) link
+
+
+
+[mh.6]                        MH.6.8                            1
+
+
+
+
+
+
+
+
+SLOCAL(1)              BSD Reference Manual             SLOCAL(1)
+
+
+       /usr/contrib/mh-6.8/lib/slocal to the file bin/rcvmail  in
+       your  home  directory.   This  will cause _M_M_D_F_-_I to invoke
+       _s_l_o_c_a_l    on    your    behalf    with     the     correct
+       "_a_d_d_r_e_s_s _i_n_f_o _s_e_n_d_e_r" arguments.
+
+       If  your  MTA  is _M_M_D_F_-_I_I, then you should not use _s_l_o_c_a_l.
+       An equivalent functionality is already provided  by  _M_M_D_F_-
+       _I_I; see maildelivery(5) for details.
+
+
+   TThhee MMaaiillddeelliivveerryy FFiillee
+       The _._m_a_i_l_d_e_l_i_v_e_r_y file controls how local delivery is per-
+       formed.  Each line of this file consists of  five  fields,
+       separated  by  white-space  or comma.  Since double-quotes
+       are honored, these characters may be included in a  single
+       argument  by  enclosing  the  entire  argument  in double-
+       quotes.  A double-quote can be included  by  preceding  it
+       with  a  backslash.  Lines beginning with `#' are ignored.
+       The format of each line in the _._m_a_i_l_d_e_l_i_v_e_r_y file is:
+
+
+            hheeaaddeerr    ppaatttteerrnn   aaccttiioonn    rreessuulltt    ssttrriinngg
+
+       hheeaaddeerr:
+            The name of a header field that is to be searched for
+            a  pattern.   This is any field in the headers of the
+            message that might be present.  The following special
+            fields are also defined:
+
+            _s_o_u_r_c_e    the out-of-band sender information
+            _a_d_d_r      the address that was used to cause delivery
+                      to the recipient
+            _d_e_f_a_u_l_t   this matches _o_n_l_y  if  the  message  hasn't
+                      been delivered yet
+            _*         this always matches
+
+       ppaatttteerrnn:
+            The  sequence of characters to match in the specified
+            header field.  Matching is case-insensitive, but does
+            not use regular expressions.
+
+       aaccttiioonn:
+            The action to take to deliver the message:
+
+            _d_e_s_t_r_o_y   This action always succeeds.
+
+            _f_i_l_e  or  > Append  the  message to the file named by
+                      ssttrriinngg.  The message  is  appended  to  the
+                      file  in  the maildrop format which is used
+                      by your message transport system.   If  the
+                      message  can  be appended to the file, then
+
+
+
+[mh.6]                        MH.6.8                            2
+
+
+
+
+
+
+
+
+SLOCAL(1)              BSD Reference Manual             SLOCAL(1)
+
+
+                      this action succeeds.  When writing to  the
+                      file,  a  "Delivery-Date: date"  header  is
+                      added which indicates  the  date  and  time
+                      that message was appended to the file.
+
+            _m_b_o_x      Identical  to  _f_i_l_e, but always appends the
+                      message using the format used by _p_a_c_k_f (the
+                      MMDF mailbox format).
+
+            _p_i_p_e  or  | Pipe the message as the standard input to
+                      the command  named  by  ssttrriinngg,  using  the
+                      Bourne shell _s_h(1) to interpret the string.
+                      Prior to giving the string to the shell, it
+                      is  expanded  with  the  following built-in
+                      variables:
+
+                      $(sender) the out-of-band  sender  informa-
+                                tion
+                      $(address)  the  address  that  was used to
+                                cause delivery to the recipient
+                      $(size)   the size of the message in bytes
+                      $(reply-to)  either  the   "Reply-To:"   or
+                                "From:" field of the message
+                      $(info)   the out-of-band information spec-
+                                ified
+            _q_p_i_p_e or
+            _<_c_a_r_e_t_>   Similar to _p_i_p_e, but executes  the  command
+                      directly,  after  built-in  variable expan-
+                      sion, without assistance  from  the  shell.
+                      This  action  can  be used to avoid quoting
+                      special characters which your  shell  might
+                      interpret.
+
+       rreessuulltt:
+            Indicates how the action should be performed:
+
+            _A         Perform  the  action.   If  the action suc-
+                      ceeds,  then  the  message  is   considered
+                      delivered.
+
+            _R         Perform the action.  Regardless of the out-
+                      come of the action, the message is not con-
+                      sidered delivered.
+
+            _?         Perform  the action only if the message has
+                      not been delivered.   If  the  action  suc-
+                      ceeds,   then  the  message  is  considered
+                      delivered.
+
+            _N         Perform the action only if the message  has
+                      not  been delivered and the previous action
+
+
+
+[mh.6]                        MH.6.8                            3
+
+
+
+
+
+
+
+
+SLOCAL(1)              BSD Reference Manual             SLOCAL(1)
+
+
+                      succeeded.  If this action  succeeds,  then
+                      the message is considered delivered.
+
+       To summarize, here's an example:
+
+       #_f_i_e_l_d   _p_a_t_t_e_r_n   _a_c_t_i_o_n  _r_e_s_u_l_t    _s_t_r_i_n_g
+       # lines starting with a '#' are ignored, as are blank lines
+       #
+       # file mail with mmdf2 in the "To:" line into file mmdf2.log
+       _T_o       _m_m_d_f_2      _f_i_l_e      _A      _m_m_d_f_2_._l_o_g
+       # Messages from mmdf pipe to the program err-message-archive
+       _F_r_o_m     _m_m_d_f       _p_i_p_e      _A      _/_b_i_n_/_e_r_r_-_m_e_s_s_a_g_e_-_a_r_c_h_i_v_e
+       # Anything with the "Sender:" address "mh-workers"
+       # file in mh.log if not filed already
+       _S_e_n_d_e_r   _m_h_-_w_o_r_k_e_r_s _f_i_l_e      _?      _m_h_._l_o_g
+       # "To:" unix - put in file unix-news
+       _T_o       _U_n_i_x         _>       _A      _u_n_i_x_-_n_e_w_s
+       # if the address is jpo=ack - send an acknowledgement copy back
+       _a_d_d_r     _j_p_o_=_a_c_k      |       _R      _"_/_b_i_n_/_r_e_s_e_n_d _-_r _$_(_r_e_p_l_y_-_t_o_)_"
+       # anything from steve - destroy!
+       _F_r_o_m     _s_t_e_v_e     _d_e_s_t_r_o_y    _A      _-
+       # anything not matched yet - put into mailbox
+       _d_e_f_a_u_l_t  _-            _>       _?      _m_a_i_l_b_o_x
+       # always run rcvtty
+       _*        _-            |       _R      _/_m_h_/_l_i_b_/_r_c_v_t_t_y
+
+       The  file  is  always  read  completely,  so  that several
+       matches can be made and several actions can be taken.  The
+       _._m_a_i_l_d_e_l_i_v_e_r_y  file must be owned either by the user or by
+       root, and must be writable only  by  the  owner.   If  the
+       _._m_a_i_l_d_e_l_i_v_e_r_y file cannot be found, or does not perform an
+       action  which  delivers  the  message,   then   the   file
+       /usr/contrib/mh-6.8/lib/maildelivery  is read according to
+       the same rules.  This file must be owned by the  root  and
+       must be writable only by the root.  If this file cannot be
+       found or does not perform an  action  which  delivers  the
+       message,  then standard delivery to the user's maildrop is
+       performed.
+
+
+   SSuubb--pprroocceessss eennvviirroonnmmeenntt
+       When  a  process  is  invoked,  its  environment  is:  the
+       user/group-ids  are  set  to  recipient's ids; the working
+       directory is the recipient's home directory; the umask  is
+       0077;  the  process has no /dev/tty; the standard input is
+       set to the message; the  standard  output  and  diagnostic
+       output  are  set  to /dev/null; all other file-descriptors
+       are closed; the envariables $$UUSSEERR, $$HHOOMMEE, $$SSHHEELLLL  are  set
+       appropriately, and no other envariables exist.
+
+       The  process is given a certain amount of time to execute.
+
+
+
+[mh.6]                        MH.6.8                            4
+
+
+
+
+
+
+
+
+SLOCAL(1)              BSD Reference Manual             SLOCAL(1)
+
+
+       If the process does not exit within this limit,  the  pro-
+       cess  will  be  terminated  with  extreme  prejudice.  The
+       amount of time is calculated as ((size x 60) +  300)  sec-
+       onds, where size is the number of bytes in the message.
+
+       The exit status of the process is consulted in determining
+       the success of the action.  An exit status of  zero  means
+       that  the  action  succeeded.   Any  other exit status (or
+       abnormal termination) means that the action failed.
+
+       In order to avoid any time limitations, you  might  imple-
+       ment  a  process  that began by _f_o_r_k_i_n_g.  The parent would
+       return the appropriate value immediately,  and  the  child
+       could continue on, doing whatever it wanted for as long as
+       it wanted.  This approach is somewhat risky if the  parent
+       is  going to return an exit status of zero.  If the parent
+       is going to return  a  non-zero  exit  status,  then  this
+       approach  can lead to quicker delivery into your maildrop.
+
+FFIILLEESS
+       /usr/contrib/mh-6.8/lib/mtstailor         MH tailor file
+       $HOME/.maildelivery                       The file controlling local delivery
+       /usr/contrib/mh-6.8/lib/maildelivery      Rather than the standard file
+       /var/mail/$USER                           The default maildrop
+
+SSEEEE AALLSSOO
+       rcvstore(1), mhook(1), mh-format(5)
+
+DDEEFFAAUULLTTSS
+       `-noverbose'
+       `-maildelivery .maildelivery'
+       `-mailbox /var/mail/$USER'
+       `-file' defaults to stdin
+       `-user' defaults to the current user
+
+CCOONNTTEEXXTT
+       None
+
+HHIISSTTOORRYY
+       _S_l_o_c_a_l is designed  to  be  backward-compatible  with  the
+       _m_a_i_l_d_e_l_i_v_e_r_y  facility  provided  by  _M_M_D_F_-_I_I.   Thus, the
+       _._m_a_i_l_d_e_l_i_v_e_r_y file syntax is limited, as is the  function-
+       ality of _s_l_o_c_a_l.
+
+       In  addition  to  an  exit status of zero, the _M_M_D_F values
+       _R_P___M_O_K (32) and _R_P___O_K (9) mean that the message  has  been
+       fully  delivered.  Any other non-zero exit status, includ-
+       ing abnormal termination, is interpreted as the _M_M_D_F value
+       _R_P___M_E_C_H  (200),  which  means  "use  an  alternate  route"
+       (deliver the message to the maildrop).
+
+
+
+
+[mh.6]                        MH.6.8                            5
+
+
+
+
+
+
+
+
+SLOCAL(1)              BSD Reference Manual             SLOCAL(1)
+
+
+BBUUGGSS
+       Only two return codes are meaningful, others should be.
+
+       _S_l_o_c_a_l is designed to  be  backwards-compatible  with  the
+       _m_a_i_l_d_e_l_i_v_e_r_y functionality provided by MMMMDDFF--IIII.
+
+       Versions  of  _M_M_D_F  with the _m_a_i_l_d_e_l_i_v_e_r_y mechanism aren't
+       entirely backwards-compatible  with  earlier  versions  of
+       _M_M_D_F.   If you have an _M_M_D_F_-_I old-style hook, the best you
+       can do is to have a one-line _._m_a_i_l_d_e_l_i_v_e_r_y file:
+
+            default -  pipe  A  "bin/rcvmail  $(address)  $(info)
+       $(sender)"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[mh.6]                        MH.6.8                            6
+
+
+
+
+
