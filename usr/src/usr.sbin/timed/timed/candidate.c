@@ -1,122 +1,141 @@
-/*
- * Copyright (c) 1983 Regents of the University of California.
+/*-
+ * Copyright (c) 1985, 1993 The Regents of the University of California.
  * All rights reserved.
  *
  * %sccs.include.redist.c%
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)candidate.c	2.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)candidate.c	5.1 (Berkeley) %G%";
 #endif /* not lint */
 
-#include "globals.h"
-#include <protocols/timed.h>
+#ifdef sgi
+#ident "$Revision: 1.9 $"
+#endif
 
-#define ELECTIONWAIT	3	/* seconds */
+#include "globals.h"
 
 /*
- * `election' candidates a host as master: it is called by a slave 
- * which runs with the -M option set when its election timeout expires. 
+ * `election' candidates a host as master: it is called by a slave
+ * which runs with the -M option set when its election timeout expires.
  * Note the conservative approach: if a new timed comes up, or another
  * candidate sends an election request, the candidature is withdrawn.
  */
-
+int
 election(net)
-struct netinfo *net;
+	struct netinfo *net;
 {
-	int ret;
-	struct tsp *resp, msg, *readmsg();
-	struct timeval wait;
-	struct tsp *answer, *acksend();
-	long casual();
-	struct sockaddr_in server;
+	struct tsp *resp, msg;
+	struct timeval then, wait;
+	struct tsp *answer;
+	struct hosttbl *htp;
+	char loop_lim = 0;
 
-	syslog(LOG_INFO, "THIS MACHINE IS A CANDIDATE");
-	if (trace) {
-		fprintf(fd, "THIS MACHINE IS A CANDIDATE\n");
+/* This code can get totally confused if it gets slightly behind.  For
+ *	example, if readmsg() has some QUIT messages waiting from the last
+ *	round, we would send an ELECTION message, get the stale QUIT,
+ *	and give up.  This results in network storms when several machines
+ *	do it at once.
+ */
+	wait.tv_sec = 0;
+	wait.tv_usec = 0;
+	while (0 != readmsg(TSP_REFUSE, ANYADDR, &wait, net)) {
+		if (trace)
+			fprintf(fd, "election: discarded stale REFUSE\n");
+	}
+	while (0 != readmsg(TSP_QUIT, ANYADDR, &wait, net)) {
+		if (trace)
+			fprintf(fd, "election: discarded stale QUIT\n");
 	}
 
-	ret = MASTER;
-	slvcount = 1;
-
+again:
+	syslog(LOG_INFO, "This machine is a candidate time master");
+	if (trace)
+		fprintf(fd, "This machine is a candidate time master\n");
 	msg.tsp_type = TSP_ELECTION;
 	msg.tsp_vers = TSPVERSION;
 	(void)strcpy(msg.tsp_name, hostname);
 	bytenetorder(&msg);
 	if (sendto(sock, (char *)&msg, sizeof(struct tsp), 0,
-		(struct sockaddr *)&net->dest_addr,
-		sizeof(struct sockaddr_in)) < 0) {
-		syslog(LOG_ERR, "sendto: %m");
-		exit(1);
+		   (struct sockaddr*)&net->dest_addr,
+		   sizeof(struct sockaddr)) < 0) {
+		trace_sendto_err(net->dest_addr.sin_addr);
+		return(SLAVE);
 	}
 
-	do {
-		wait.tv_sec = ELECTIONWAIT;
-		wait.tv_usec = 0;
-		resp = readmsg(TSP_ANY, (char *)ANYADDR, &wait, net);
-		if (resp != NULL) {
-			switch (resp->tsp_type) {
+	(void)gettimeofday(&then, 0);
+	then.tv_sec += 3;
+	for (;;) {
+		(void)gettimeofday(&wait, 0);
+		timevalsub(&wait,&then,&wait);
+		resp = readmsg(TSP_ANY, ANYADDR, &wait, net);
+		if (!resp)
+			return(MASTER);
 
-			case TSP_ACCEPT:
-				(void) addmach(resp->tsp_name, &from);
-				break;
+		switch (resp->tsp_type) {
 
-			case TSP_MASTERUP:
-			case TSP_MASTERREQ:
-				/*
-				 * If a timedaemon is coming up at the same time,
-				 * give up the candidature: it will be the master.
-				 */
-				ret = SLAVE;
-				break;
+		case TSP_ACCEPT:
+			(void)addmach(resp->tsp_name, &from,fromnet);
+			break;
 
-			case TSP_QUIT:
-			case TSP_REFUSE:
-				/*
-				 * Collision: change value of election timer 
-				 * using exponential backoff.
-				 * The value of timer will be recomputed (in slave.c)
-				 * using the original interval when election will 
-				 * be successfully completed.
-				 */
-				backoff *= 2;
-				delay2 = casual((long)MINTOUT, 
-							(long)(MAXTOUT * backoff));
-				ret = SLAVE;
-				break;
-
-			case TSP_ELECTION:
-				/* no master for another round */
-				msg.tsp_type = TSP_REFUSE;
-				(void)strcpy(msg.tsp_name, hostname);
-				server = from;
-				answer = acksend(&msg, &server, resp->tsp_name,
-				    TSP_ACK, (struct netinfo *)NULL);
-				if (answer == NULL) {
-					syslog(LOG_ERR, "error in election");
-				} else {
-					(void) addmach(resp->tsp_name, &from);
-				}
-				break;
-
-			case TSP_SLAVEUP:
-				(void) addmach(resp->tsp_name, &from);
-				break;
-
-			case TSP_SETDATE:
-			case TSP_SETDATEREQ:
-				break;
-
-			default:
-				if (trace) {
-					fprintf(fd, "candidate: ");
-					print(resp, &from);
-				}
-				break;
+		case TSP_MASTERUP:
+		case TSP_MASTERREQ:
+			/*
+			 * If another timedaemon is coming up at the same
+			 * time, give up, and let it be the master.
+			 */
+			if (++loop_lim < 5
+			    && !good_host_name(resp->tsp_name)) {
+				(void)addmach(resp->tsp_name, &from,fromnet);
+				suppress(&from, resp->tsp_name, net);
+				goto again;
 			}
-		} else {
+			rmnetmachs(net);
+			return(SLAVE);
+
+		case TSP_QUIT:
+		case TSP_REFUSE:
+			/*
+			 * Collision: change value of election timer
+			 * using exponential backoff. 
+			 *
+			 *  Fooey.
+			 * An exponential backoff on a delay starting at
+			 * 6 to 15 minutes for a process that takes
+			 * milliseconds is silly.  It is particularly
+			 * strange that the original code would increase
+			 * the backoff without bound.
+			 */
+			rmnetmachs(net);
+			return(SLAVE);
+
+		case TSP_ELECTION:
+			/* no master for another round */
+			htp = addmach(resp->tsp_name,&from,fromnet);
+			msg.tsp_type = TSP_REFUSE;
+			(void)strcpy(msg.tsp_name, hostname);
+			answer = acksend(&msg, &htp->addr, htp->name,
+					 TSP_ACK, 0, htp->noanswer);
+			if (!answer) {
+				syslog(LOG_ERR, "error in election from %s",
+				       htp->name);
+			}
+			break;
+
+		case TSP_SLAVEUP:
+			(void)addmach(resp->tsp_name, &from,fromnet);
+			break;
+
+		case TSP_SETDATE:
+		case TSP_SETDATEREQ:
+			break;
+
+		default:
+			if (trace) {
+				fprintf(fd, "candidate: ");
+				print(resp, &from);
+			}
 			break;
 		}
-	} while (ret == MASTER);
-	return(ret);
+	}
 }

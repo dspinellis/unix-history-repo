@@ -1,50 +1,47 @@
-/*
- * Copyright (c) 1983 Regents of the University of California.
+/*-
+ * Copyright (c) 1985, 1993 The Regents of the University of California.
  * All rights reserved.
  *
  * %sccs.include.redist.c%
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readmsg.c	2.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)readmsg.c	5.1 (Berkeley) %G%";
 #endif /* not lint */
 
+#ifdef sgi
+#ident "$Revision: 1.17 $"
+#endif
+
 #include "globals.h"
-#include <protocols/timed.h>
 
 extern char *tsptype[];
 
 /*
  * LOOKAT checks if the message is of the requested type and comes from
- * the right machine, returning 1 in case of affirmative answer 
+ * the right machine, returning 1 in case of affirmative answer
  */
-
 #define LOOKAT(msg, mtype, mfrom, netp, froms) \
-	(((((mtype) == TSP_ANY) || ((mtype) == (msg).tsp_type)) && \
-	(((mfrom) == NULL) || (strcmp((mfrom), (msg).tsp_name) == 0)) && \
-	(((netp) == NULL) || \
-	(((netp)->mask & (froms).sin_addr.s_addr) == (netp)->net))) \
-	? 1 : 0)
-
-#define MORETIME(rtime, rtout) \
-	(((rtime).tv_sec > (rtout).tv_sec || \
-	    ((rtime).tv_sec == (rtout).tv_sec && \
-		(rtime).tv_usec >= (rtout).tv_usec)) \
-	? 0 : 1)
+	(((mtype) == TSP_ANY || (mtype) == (msg).tsp_type) &&		\
+	 ((mfrom) == 0 || !strcmp((mfrom), (msg).tsp_name)) &&		\
+	 ((netp) == 0 || 						\
+	  ((netp)->mask & (froms).sin_addr.s_addr) == (netp)->net.s_addr))
 
 struct timeval rtime, rwait, rtout;
 struct tsp msgin;
 static struct tsplist {
 	struct tsp info;
+	struct timeval when;
 	struct sockaddr_in addr;
 	struct tsplist *p;
 } msgslist;
 struct sockaddr_in from;
 struct netinfo *fromnet;
+struct timeval from_when;
 
 /*
- * `readmsg' returns message `type' sent by `machfrom' if it finds it 
- * either in the receive queue, or in a linked list of previously received 
+ * `readmsg' returns message `type' sent by `machfrom' if it finds it
+ * either in the receive queue, or in a linked list of previously received
  * messages that it maintains.
  * Otherwise it waits to see if the appropriate message arrives within
  * `intvl' seconds. If not, it returns NULL.
@@ -52,29 +49,39 @@ struct netinfo *fromnet;
 
 struct tsp *
 readmsg(type, machfrom, intvl, netfrom)
-
-int type;
-char *machfrom;
-struct timeval *intvl;
-struct netinfo *netfrom;
+	int type;
+	char *machfrom;
+	struct timeval *intvl;
+	struct netinfo *netfrom;
 {
 	int length;
 	fd_set ready;
 	static struct tsplist *head = &msgslist;
 	static struct tsplist *tail = &msgslist;
+	static int msgcnt = 0;
 	struct tsplist *prev;
 	register struct netinfo *ntp;
 	register struct tsplist *ptr;
 
 	if (trace) {
-		fprintf(fd, "looking for %s from %s\n",
-			tsptype[type], machfrom == NULL ? "ANY" : machfrom);
-		ptr = head->p;
-		fprintf(fd, "msgqueue:\n");
-		while (ptr != NULL) {
-			fprintf(fd, "\t");
-			print(&ptr->info, &ptr->addr);
-			ptr = ptr->p;
+		fprintf(fd, "readmsg: looking for %s from %s, %s\n",
+			tsptype[type], machfrom == NULL ? "ANY" : machfrom,
+			netfrom == NULL ? "ANYNET" : inet_ntoa(netfrom->net));
+		if (head->p != 0) {
+			length = 1;
+			for (ptr = head->p; ptr != 0; ptr = ptr->p) {
+				/* do not repeat the hundreds of messages */
+				if (++length > 3) {
+					if (ptr == tail) {
+						fprintf(fd,"\t ...%d skipped\n",
+							length);
+					} else {
+						continue;
+					}
+				}
+				fprintf(fd, length > 1 ? "\t" : "queue:\t");
+				print(&ptr->info, &ptr->addr);
+			}
 		}
 	}
 
@@ -82,23 +89,25 @@ struct netinfo *netfrom;
 	prev = head;
 
 	/*
-	 * Look for the requested message scanning through the 
-	 * linked list. If found, return it and free the space 
+	 * Look for the requested message scanning through the
+	 * linked list. If found, return it and free the space
 	 */
 
 	while (ptr != NULL) {
 		if (LOOKAT(ptr->info, type, machfrom, netfrom, ptr->addr)) {
+again:
 			msgin = ptr->info;
 			from = ptr->addr;
+			from_when = ptr->when;
 			prev->p = ptr->p;
-			if (ptr == tail) 
+			if (ptr == tail)
 				tail = prev;
 			free((char *)ptr);
 			fromnet = NULL;
 			if (netfrom == NULL)
 			    for (ntp = nettab; ntp != NULL; ntp = ntp->next) {
 				    if ((ntp->mask & from.sin_addr.s_addr) ==
-					ntp->net) {
+					ntp->net.s_addr) {
 					    fromnet = ntp;
 					    break;
 				    }
@@ -106,9 +115,23 @@ struct netinfo *netfrom;
 			else
 			    fromnet = netfrom;
 			if (trace) {
-				fprintf(fd, "readmsg: ");
+				fprintf(fd, "readmsg: found ");
 				print(&msgin, &from);
 			}
+
+/* The protocol can get far behind.  When it does, it gets
+ *	hopelessly confused.  So delete duplicate messages.
+ */
+			for (ptr = prev; (ptr = ptr->p) != NULL; prev = ptr) {
+				if (ptr->addr.sin_addr.s_addr
+					== from.sin_addr.s_addr
+				    && ptr->info.tsp_type == msgin.tsp_type) {
+					if (trace)
+						fprintf(fd, "\tdup ");
+					goto again;
+				}
+			}
+			msgcnt--;
 			return(&msgin);
 		} else {
 			prev = ptr;
@@ -118,155 +141,168 @@ struct netinfo *netfrom;
 
 	/*
 	 * If the message was not in the linked list, it may still be
-	 * coming from the network. Set the timer and wait 
+	 * coming from the network. Set the timer and wait
 	 * on a select to read the next incoming message: if it is the
 	 * right one, return it, otherwise insert it in the linked list.
 	 */
 
-	(void)gettimeofday(&rtime, (struct timezone *)0);
-	rtout.tv_sec = rtime.tv_sec + intvl->tv_sec;
-	rtout.tv_usec = rtime.tv_usec + intvl->tv_usec;
-	if (rtout.tv_usec > 1000000) {
-		rtout.tv_usec -= 1000000;
-		rtout.tv_sec++;
-	}
-
+	(void)gettimeofday(&rtout, 0);
+	timevaladd(&rtout, intvl);
 	FD_ZERO(&ready);
-	for (; MORETIME(rtime, rtout);
-	    (void)gettimeofday(&rtime, (struct timezone *)0)) {
-		rwait.tv_sec = rtout.tv_sec - rtime.tv_sec;
-		rwait.tv_usec = rtout.tv_usec - rtime.tv_usec;
-		if (rwait.tv_usec < 0) {
-			rwait.tv_usec += 1000000;
-			rwait.tv_sec--;
-		}
-		if (rwait.tv_sec < 0) 
+	for (;;) {
+		(void)gettimeofday(&rtime, 0);
+		timevalsub(&rwait, &rtout, &rtime);
+		if (rwait.tv_sec < 0)
 			rwait.tv_sec = rwait.tv_usec = 0;
+		else if (rwait.tv_sec == 0
+			 && rwait.tv_usec < 1000000/CLK_TCK)
+			rwait.tv_usec = 1000000/CLK_TCK;
 
 		if (trace) {
-			fprintf(fd, "readmsg: wait: (%d %d)\n", 
-						rwait.tv_sec, rwait.tv_usec);
+			fprintf(fd, "readmsg: wait %ld.%6ld at %s\n",
+				rwait.tv_sec, rwait.tv_usec, date());
+			/* Notice a full disk, as we flush trace info.
+			 * It is better to flush periodically than at
+			 * every line because the tracing consists of bursts
+			 * of many lines.  Without care, tracing slows
+			 * down the code enough to break the protocol.
+			 */
+			if (rwait.tv_sec != 0
+			    && EOF == fflush(fd))
+				traceoff("Tracing ended for cause at %s\n");
 		}
+
 		FD_SET(sock, &ready);
-		if (select(FD_SETSIZE, &ready, (fd_set *)0, (fd_set *)0,
-		    &rwait)) {
-			length = sizeof(struct sockaddr_in);
-			if (recvfrom(sock, (char *)&msgin, sizeof(struct tsp), 
-			    0, (struct sockaddr *)&from, &length) < 0) {
-				syslog(LOG_ERR,
-				    "receiving datagram packet: %m");
-				exit(1);
+		if (!select(sock+1, &ready, (fd_set *)0, (fd_set *)0,
+			   &rwait)) {
+			if (rwait.tv_sec == 0 && rwait.tv_usec == 0)
+				return(0);
+			continue;
+		}
+		length = sizeof(from);
+		if (recvfrom(sock, (char *)&msgin, sizeof(struct tsp), 0,
+			     (struct sockaddr*)&from, &length) < 0) {
+			syslog(LOG_ERR, "recvfrom: %m");
+			exit(1);
+		}
+		(void)gettimeofday(&from_when, (struct timezone *)0);
+		bytehostorder(&msgin);
+
+		if (msgin.tsp_vers > TSPVERSION) {
+			if (trace) {
+			    fprintf(fd,"readmsg: version mismatch\n");
+			    /* should do a dump of the packet */
+			}
+			continue;
+		}
+
+		fromnet = NULL;
+		for (ntp = nettab; ntp != NULL; ntp = ntp->next)
+			if ((ntp->mask & from.sin_addr.s_addr) ==
+			    ntp->net.s_addr) {
+				fromnet = ntp;
+				break;
 			}
 
-			bytehostorder(&msgin);
-
-			if (msgin.tsp_vers > TSPVERSION) {
+		/*
+		 * drop packets from nets we are ignoring permanently
+		 */
+		if (fromnet == NULL) {
+			/*
+			 * The following messages may originate on
+			 * this host with an ignored network address
+			 */
+			if (msgin.tsp_type != TSP_TRACEON &&
+			    msgin.tsp_type != TSP_SETDATE &&
+			    msgin.tsp_type != TSP_MSITE &&
+			    msgin.tsp_type != TSP_TEST &&
+			    msgin.tsp_type != TSP_TRACEOFF) {
 				if (trace) {
-				    fprintf(fd, "readmsg: version mismatch\n");
-				    /* should do a dump of the packet, but... */
+				    fprintf(fd,"readmsg: discard null net ");
+				    print(&msgin, &from);
 				}
 				continue;
 			}
+		}
 
-			fromnet = NULL;
-			for (ntp = nettab; ntp != NULL; ntp = ntp->next)
-				if ((ntp->mask & from.sin_addr.s_addr) ==
-				    ntp->net) {
-					fromnet = ntp;
-					break;
-				}
-
-			/*
-			 * drop packets from nets we are ignoring permanently
-			 */
-			if (fromnet == NULL) {
-				/* 
-				 * The following messages may originate on
-				 * this host with an ignored network address
-				 */
-				if (msgin.tsp_type != TSP_TRACEON &&
-				    msgin.tsp_type != TSP_SETDATE &&
-				    msgin.tsp_type != TSP_MSITE &&
-#ifdef	TESTING
-				    msgin.tsp_type != TSP_TEST &&
-#endif
-				    msgin.tsp_type != TSP_TRACEOFF) {
-					if (trace) {
-					    fprintf(fd, "readmsg: discarded: ");
-					    print(&msgin, &from);
-					}
-					continue;
-				}
+		/*
+		 * Throw away messages coming from this machine,
+		 * unless they are of some particular type.
+		 * This gets rid of broadcast messages and reduces
+		 * master processing time.
+		 */
+		if (!strcmp(msgin.tsp_name, hostname)
+		    && msgin.tsp_type != TSP_SETDATE
+		    && msgin.tsp_type != TSP_TEST
+		    && msgin.tsp_type != TSP_MSITE
+		    && msgin.tsp_type != TSP_TRACEON
+		    && msgin.tsp_type != TSP_TRACEOFF
+		    && msgin.tsp_type != TSP_LOOP) {
+			if (trace) {
+				fprintf(fd, "readmsg: discard own ");
+				print(&msgin, &from);
 			}
+			continue;
+		}
 
-			/*
-			 * Throw away messages coming from this machine, unless
-			 * they are of some particular type.
-			 * This gets rid of broadcast messages and reduces
-			 * master processing time.
-			 */
-			if ( !(strcmp(msgin.tsp_name, hostname) != 0 ||
-					msgin.tsp_type == TSP_SETDATE ||
-#ifdef TESTING
-					msgin.tsp_type == TSP_TEST ||
-#endif
-					msgin.tsp_type == TSP_MSITE ||
-					(msgin.tsp_type == TSP_LOOP &&
-					msgin.tsp_hopcnt != 10) ||
-					msgin.tsp_type == TSP_TRACEON ||
-					msgin.tsp_type == TSP_TRACEOFF)) {
-				if (trace) {
-					fprintf(fd, "readmsg: discarded: ");
-					print(&msgin, &from);
-				}
-				continue;
-			}
+		/*
+		 * Send acknowledgements here; this is faster and
+		 * avoids deadlocks that would occur if acks were
+		 * sent from a higher level routine.  Different
+		 * acknowledgements are necessary, depending on
+		 * status.
+		 */
+		if (fromnet == NULL)	/* do not de-reference 0 */
+			ignoreack();
+		else if (fromnet->status == MASTER)
+			masterack();
+		else if (fromnet->status == SLAVE)
+			slaveack();
+		else
+			ignoreack();
 
-			/*
-			 * Send acknowledgements here; this is faster and avoids
-			 * deadlocks that would occur if acks were sent from a 
-			 * higher level routine.  Different acknowledgements are
-			 * necessary, depending on status.
-			 */
-			if (fromnet->status == MASTER)
-				masterack();
-			else if (fromnet->status == SLAVE)
-				slaveack();
-			else
-				ignoreack();
-				
-			if (LOOKAT(msgin, type, machfrom, netfrom, from)) {
-				if (trace) {
-					fprintf(fd, "readmsg: ");
-					print(&msgin, &from);
-				}
-				return(&msgin);
-			} else {
-				tail->p = (struct tsplist *)
-						malloc(sizeof(struct tsplist)); 
-				tail = tail->p;
-				tail->p = NULL;
-				tail->info = msgin;
-				tail->addr = from;
+		if (LOOKAT(msgin, type, machfrom, netfrom, from)) {
+			if (trace) {
+				fprintf(fd, "readmsg: ");
+				print(&msgin, &from);
 			}
+			return(&msgin);
+		} else if (++msgcnt > NHOSTS*3) {
+
+/* The protocol gets hopelessly confused if it gets too far
+*	behind.  However, it seems able to recover from all cases of lost
+*	packets.  Therefore, if we are swamped, throw everything away.
+*/
+			if (trace)
+				fprintf(fd,
+					"readmsg: discarding %d msgs\n",
+					msgcnt);
+			msgcnt = 0;
+			while ((ptr=head->p) != NULL) {
+				head->p = ptr->p;
+				free((char *)ptr);
+			}
+			tail = head;
 		} else {
-			break;
+			tail->p = (struct tsplist *)
+				    malloc(sizeof(struct tsplist));
+			tail = tail->p;
+			tail->p = NULL;
+			tail->info = msgin;
+			tail->addr = from;
+			/* timestamp msgs so SETTIMEs are correct */
+			tail->when = from_when;
 		}
 	}
-	return((struct tsp *)NULL);
 }
 
 /*
- * `slaveack' sends the necessary acknowledgements: 
- * only the type ACK is to be sent by a slave 
+ * Send the necessary acknowledgements:
+ * only the type ACK is to be sent by a slave
  */
-
+void
 slaveack()
 {
-	int length;
-	struct tsp resp;
-
-	length = sizeof(struct sockaddr_in);
 	switch(msgin.tsp_type) {
 
 	case TSP_ADJTIME:
@@ -276,22 +312,18 @@ slaveack()
 	case TSP_TRACEON:
 	case TSP_TRACEOFF:
 	case TSP_QUIT:
-		resp = msgin;
-		resp.tsp_type = TSP_ACK;
-		resp.tsp_vers = TSPVERSION;
-		(void)strcpy(resp.tsp_name, hostname);
 		if (trace) {
 			fprintf(fd, "Slaveack: ");
-			print(&resp, &from);
+			print(&msgin, &from);
 		}
-		bytenetorder(&resp);     /* this is not really necessary here */
-		if (sendto(sock, (char *)&resp, sizeof(struct tsp), 0, 
-		    (struct sockaddr *)&from, length) < 0) {
-			syslog(LOG_ERR, "sendto: %m");
-			exit(1);
-		}
+		xmit(TSP_ACK,msgin.tsp_seq, &from);
 		break;
+
 	default:
+		if (trace) {
+			fprintf(fd, "Slaveack: no ack: ");
+			print(&msgin, &from);
+		}
 		break;
 	}
 }
@@ -300,48 +332,38 @@ slaveack()
  * Certain packets may arrive from this machine on ignored networks.
  * These packets should be acknowledged.
  */
-
+void
 ignoreack()
 {
-	int length;
-	struct tsp resp;
-
-	length = sizeof(struct sockaddr_in);
 	switch(msgin.tsp_type) {
 
 	case TSP_TRACEON:
 	case TSP_TRACEOFF:
-		resp = msgin;
-		resp.tsp_type = TSP_ACK;
-		resp.tsp_vers = TSPVERSION;
-		(void)strcpy(resp.tsp_name, hostname);
+	case TSP_QUIT:
 		if (trace) {
 			fprintf(fd, "Ignoreack: ");
-			print(&resp, &from);
+			print(&msgin, &from);
 		}
-		bytenetorder(&resp);     /* this is not really necessary here */
-		if (sendto(sock, (char *)&resp, sizeof(struct tsp), 0, 
-		    (struct sockaddr *)&from, length) < 0) {
-			syslog(LOG_ERR, "sendto: %m");
-			exit(1);
-		}
+		xmit(TSP_ACK,msgin.tsp_seq, &from);
 		break;
+
 	default:
+		if (trace) {
+			fprintf(fd, "Ignoreack: no ack: ");
+			print(&msgin, &from);
+		}
 		break;
 	}
 }
 
 /*
- * `masterack' sends the necessary acknowledgments 
- * to the messages received by a master 
+ * `masterack' sends the necessary acknowledgments
+ * to the messages received by a master
  */
-
+void
 masterack()
 {
-	int length;
 	struct tsp resp;
-
-	length = sizeof(struct sockaddr_in);
 
 	resp = msgin;
 	resp.tsp_vers = TSPVERSION;
@@ -352,92 +374,89 @@ masterack()
 	case TSP_QUIT:
 	case TSP_TRACEON:
 	case TSP_TRACEOFF:
-	case TSP_MSITE:
 	case TSP_MSITEREQ:
-		resp.tsp_type = TSP_ACK;
-		bytenetorder(&resp);
 		if (trace) {
 			fprintf(fd, "Masterack: ");
-			print(&resp, &from);
+			print(&msgin, &from);
 		}
-		if (sendto(sock, (char *)&resp, sizeof(struct tsp), 0, 
-		    (struct sockaddr *)&from, length) < 0) {
-			syslog(LOG_ERR, "sendto: %m");
-			exit(1);
-		}
+		xmit(TSP_ACK,msgin.tsp_seq, &from);
 		break;
+
 	case TSP_RESOLVE:
 	case TSP_MASTERREQ:
-		resp.tsp_type = TSP_MASTERACK;
-		bytenetorder(&resp);
 		if (trace) {
 			fprintf(fd, "Masterack: ");
-			print(&resp, &from);
+			print(&msgin, &from);
 		}
-		if (sendto(sock, (char *)&resp, sizeof(struct tsp), 0, 
-		    (struct sockaddr *)&from, length) < 0) {
-			syslog(LOG_ERR, "sendto: %m");
-			exit(1);
-		}
+		xmit(TSP_MASTERACK,msgin.tsp_seq, &from);
 		break;
-	case TSP_SETDATEREQ:
-		resp.tsp_type = TSP_DATEACK;
-		bytenetorder(&resp);
-		if (trace) {
-			fprintf(fd, "Masterack: ");
-			print(&resp, &from);
-		}
-		if (sendto(sock, (char *)&resp, sizeof(struct tsp), 0, 
-		    (struct sockaddr *)&from, length) < 0) {
-			syslog(LOG_ERR, "sendto: %m");
-			exit(1);
-		}
-		break;
+
 	default:
+		if (trace) {
+			fprintf(fd,"Masterack: no ack: ");
+			print(&msgin, &from);
+		}
 		break;
 	}
 }
 
 /*
- * Print a TSP message 
+ * Print a TSP message
  */
+void
 print(msg, addr)
-struct tsp *msg;
-struct sockaddr_in *addr;
+	struct tsp *msg;
+	struct sockaddr_in *addr;
 {
+	char tm[26];
 	switch (msg->tsp_type) {
 
 	case TSP_LOOP:
-		fprintf(fd, "%s %d %d (#%d) %s %s\n",
+		fprintf(fd, "%s %d %-6u #%d %-15s %s\n",
 			tsptype[msg->tsp_type],
 			msg->tsp_vers,
 			msg->tsp_seq,
 			msg->tsp_hopcnt,
-			msg->tsp_name,
-			inet_ntoa(addr->sin_addr));
+			inet_ntoa(addr->sin_addr),
+			msg->tsp_name);
 		break;
 
 	case TSP_SETTIME:
-	case TSP_ADJTIME:
 	case TSP_SETDATE:
 	case TSP_SETDATEREQ:
-		fprintf(fd, "%s %d %d (%d, %d) %s %s\n",
+#ifdef sgi
+		(void)cftime(tm, "%D %T", &msg->tsp_time.tv_sec);
+#else
+		strncpy(tm, ctime(&msg->tsp_time.tv_sec)+3+1, sizeof(tm));
+		tm[15] = '\0';		/* ugh */
+#endif /* sgi */
+		fprintf(fd, "%s %d %-6u %s %-15s %s\n",
 			tsptype[msg->tsp_type],
 			msg->tsp_vers,
 			msg->tsp_seq,
-			msg->tsp_time.tv_sec, 
-			msg->tsp_time.tv_usec, 
-			msg->tsp_name,
-			inet_ntoa(addr->sin_addr));
+			tm,
+			inet_ntoa(addr->sin_addr),
+			msg->tsp_name);
+		break;
+
+	case TSP_ADJTIME:
+		fprintf(fd, "%s %d %-6u (%ld,%ld) %-15s %s\n",
+			tsptype[msg->tsp_type],
+			msg->tsp_vers,
+			msg->tsp_seq,
+			msg->tsp_time.tv_sec,
+			msg->tsp_time.tv_usec,
+			inet_ntoa(addr->sin_addr),
+			msg->tsp_name);
 		break;
 
 	default:
-		fprintf(fd, "%s %d %d %s %s\n",
+		fprintf(fd, "%s %d %-6u %-15s %s\n",
 			tsptype[msg->tsp_type],
 			msg->tsp_vers,
 			msg->tsp_seq,
-			msg->tsp_name,
-			inet_ntoa(addr->sin_addr));
+			inet_ntoa(addr->sin_addr),
+			msg->tsp_name);
 		break;
 	}
 }
