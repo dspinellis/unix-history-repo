@@ -1,7 +1,7 @@
 # include <pwd.h>
 # include "sendmail.h"
 
-SCCSID(@(#)savemail.c	3.55		%G%);
+SCCSID(@(#)savemail.c	3.56		%G%);
 
 /*
 **  SAVEMAIL -- Save mail on error
@@ -256,7 +256,6 @@ returntosender(msg, sendbody)
 /*
 **  ERRHDR -- Output the header for error mail.
 **	Parameters:
-**		xfile -- the transcript file.
 **		fp -- the output file.
 **		xdot -- if set, use smtp hidden dot algorithm.
 **
@@ -271,9 +270,7 @@ returntosender(msg, sendbody)
 errhdr(fp, m, xdot)
 	register FILE *fp;
 	register struct mailer *m;
-	bool xdot;
 	register ENVELOPE *e;
-	bool crlf;
 {
 	char buf[MAXLINE];
 	register FILE *xfile;
@@ -304,7 +301,7 @@ errhdr(fp, m, xdot)
 		if (e->e_xfp != NULL)
 			(void) fflush(e->e_xfp);
 		while (fgets(buf, sizeof buf, xfile) != NULL)
-			putline(buf, fp, crlf, fullsmtp);
+			putline(buf, fp, m);
 		(void) fclose(xfile);
 	}
 	errno = 0;
@@ -353,19 +350,25 @@ errhdr(fp, m, xdot)
 	{
 		if (SendBody)
 		{
-			fprintf(fp, "\n   ----- Unsent message follows -----\n");
+			putline("\n", fp, m);
+			putline("   ----- Unsent message follows -----\n", fp, m);
 			(void) fflush(fp);
 			putmessage(fp, Mailer[1], xdot);
 		}
 		else
 		{
-			fprintf(fp, "\n  ----- Message header follows -----\n");
+			putline("\n", fp, m);
+			putline("  ----- Message header follows -----\n", fp, m);
 			(void) fflush(fp);
-			putheader(fp, m, e->e_parent, crlf);
+			putheader(fp, m, e->e_parent);
 		}
 	}
 	else
-		fprintf(fp, "\n  ----- No message was collected -----\n\n");
+	{
+		putline("\n", fp, m);
+		putline("  ----- No message was collected -----\n", fp, m);
+		putline("\n", fp, m);
+	}
 
 	/*
 	**  Cleanup and exit

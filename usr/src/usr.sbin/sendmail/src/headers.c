@@ -1,7 +1,7 @@
 # include <errno.h>
 # include "sendmail.h"
 
-SCCSID(@(#)headers.c	3.45		%G%);
+SCCSID(@(#)headers.c	3.46		%G%);
 
 /*
 **  CHOMPHEADER -- process and save a header line.
@@ -493,7 +493,6 @@ crackaddr(addr)
 **		fp -- file to put it on.
 **		m -- mailer to use.
 **		e -- envelope to use.
-**		crlf -- if set, output CRLF on the end of lines.
 **
 **	Returns:
 **		none.
@@ -502,7 +501,7 @@ crackaddr(addr)
 **		none.
 */
 
-putheader(fp, m, e, crlf)
+putheader(fp, m, e)
 	register FILE *fp;
 	register MAILER *m;
 	register ENVELOPE *e;
@@ -512,7 +511,6 @@ putheader(fp, m, e, crlf)
 	extern char *arpadate();
 	extern char *capitalize();
 	char obuf[MAXLINE];
-	bool fullsmtp = bitset(M_FULLSMTP, m->m_flags);
 
 	for (h = e->e_header; h != NULL; h = h->h_link)
 	{
@@ -539,13 +537,13 @@ putheader(fp, m, e, crlf)
 
 			if (bitset(H_FROM, h->h_flags))
 				oldstyle = FALSE;
-			commaize(h, p, fp, oldstyle, m, crlf);
+			commaize(h, p, fp, oldstyle, m);
 		}
 		else
 		{
 			/* vanilla header line */
 			(void) sprintf(obuf, "%s: %s\n", capitalize(h->h_field), p);
-			putline(obuf, fp, crlf, fullsmtp);
+			putline(obuf, fp, m);
 		}
 	}
 }
@@ -559,7 +557,6 @@ putheader(fp, m, e, crlf)
 **		oldstyle -- TRUE if this is an old style header.
 **		m -- a pointer to the mailer descriptor.  If NULL,
 **			don't transform the name at all.
-**		crlf -- set if we want CRLF's on the end of lines.
 **
 **	Returns:
 **		none.
@@ -568,17 +565,15 @@ putheader(fp, m, e, crlf)
 **		outputs "p" to file "fp".
 */
 
-commaize(h, p, fp, oldstyle, m, crlf)
+commaize(h, p, fp, oldstyle, m)
 	register HDR *h;
 	register char *p;
 	FILE *fp;
 	bool oldstyle;
 	register MAILER *m;
-	bool crlf;
 {
 	register char *obp;
 	int opos;
-	bool fullsmtp = FALSE;
 	bool firstone = TRUE;
 	char obuf[MAXLINE];
 
@@ -591,9 +586,6 @@ commaize(h, p, fp, oldstyle, m, crlf)
 	if (tTd(14, 2))
 		printf("commaize(%s: %s)\n", h->h_field, p);
 # endif DEBUG
-
-	if (m != NULL && bitset(M_FULLSMTP, m->m_flags))
-		fullsmtp = TRUE;
 
 	obp = obuf;
 	(void) sprintf(obp, "%s: ", capitalize(h->h_field));
@@ -657,8 +649,7 @@ commaize(h, p, fp, oldstyle, m, crlf)
 		*p = '\0';
 
 		/* translate the name to be relative */
-		if (m != NULL)
-			name = remotename(name, m, bitset(H_FROM, h->h_flags));
+		name = remotename(name, m, bitset(H_FROM, h->h_flags));
 		if (*name == '\0')
 		{
 			*p = savechar;
@@ -671,12 +662,8 @@ commaize(h, p, fp, oldstyle, m, crlf)
 			opos += 2;
 		if (opos > 78 && !firstone)
 		{
-			*obp = '\0';
-			putline(obuf, fp, crlf, fullsmtp);
-			fputc(',', fp);
-			if (crlf)
-				fputc('\r', fp);
-			fputc('\n', fp);
+			(void) strcat(obp, ",\n");
+			putline(obuf, fp, m);
 			obp = obuf;
 			(void) sprintf(obp, "        ");
 			opos = strlen(obp);
@@ -700,7 +687,7 @@ commaize(h, p, fp, oldstyle, m, crlf)
 		*p = savechar;
 	}
 	(void) strcpy(obp, "\n");
-	putline(obuf, fp, crlf, fullsmtp);
+	putline(obuf, fp, m);
 }
 /*
 **  ISATWORD -- tell if the word we are pointing to is "at".

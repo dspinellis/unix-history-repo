@@ -3,7 +3,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)deliver.c	3.144		%G%);
+SCCSID(@(#)deliver.c	3.145		%G%);
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -356,7 +356,7 @@ deliver(firstto, editfcn)
 	{
 		i = smtpfinish(m, editfcn);
 		/* send the initial SMTP protocol */
-		rcode = smtpinit(m, pv, (ADDRESS *) NULL);
+		rcode = smtpinit(m, pv);
 
 		if (rcode == EX_OK)
 		{
@@ -367,7 +367,7 @@ deliver(firstto, editfcn)
 				int i;
 
 				e->e_to = to->q_paddr;
-				i = smtprcpt(to);
+				i = smtprcpt(to, m);
 				if (i != EX_OK)
 				{
 					markfailure(e, to, i);
@@ -386,11 +386,11 @@ deliver(firstto, editfcn)
 			else
 			{
 				e->e_to = tobuf + 1;
-				rcode = smtpfinish(m, e);
+				rcode = smtpdata(m, e);
 			}
 
 			/* now close the connection */
-			smtpquit(pv[0]);
+			smtpquit(pv[0], m);
 		}
 	}
 	else
@@ -535,7 +535,6 @@ dofork()
 **		editfcn -- function to pipe it through.
 **		ctladdr -- an address pointer controlling the
 **			user/groupid etc. of the mailer.
-**		crlf -- set if we want CRLF on the end of lines.
 **
 **	Returns:
 **		exit status of mailer.
@@ -545,13 +544,12 @@ dofork()
 */
 
 sendoff(m, pvp, editfcn, ctladdr)
-sendoff(e, m, pvp, ctladdr, crlf)
+sendoff(e, m, pvp, ctladdr)
 	register ENVELOPE *e;
 	MAILER *m;
 	char **pvp;
 	int (*editfcn)();
 	ADDRESS *ctladdr;
-	bool crlf;
 {
 	auto FILE *mfile;
 	auto FILE *rfile;
@@ -1141,7 +1139,11 @@ mailfile(filename, ctladdr)
 			exit(EX_CANTCREAT);
 
 		putmessage(f, Mailer[1], FALSE);
-		fputs("\n", f);
+		putfromline(f, ProgMailer);
+		(*CurEnv->e_puthdr)(f, ProgMailer, CurEnv);
+		putline("\n", f, ProgMailer);
+		(*CurEnv->e_putbody)(f, ProgMailer, CurEnv);
+		putline("\n", f, ProgMailer);
 		(void) fclose(f);
 		(void) fflush(stdout);
 

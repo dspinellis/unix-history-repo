@@ -5,10 +5,10 @@
 # include <errno.h>
 
 # ifndef QUEUE
-SCCSID(@(#)queue.c	3.66		%G%	(no queueing));
+SCCSID(@(#)queue.c	3.67		%G%	(no queueing));
 # else QUEUE
 
-SCCSID(@(#)queue.c	3.66		%G%);
+SCCSID(@(#)queue.c	3.67		%G%);
 
 /*
 **  Work queue.
@@ -46,6 +46,7 @@ queueup(df)
 	register FILE *f;
 	register HDR *h;
 	register ADDRESS *q;
+	MAILER nullmailer;
 
 	/*
 	**  Create control file.
@@ -98,7 +99,12 @@ queueup(df)
 	**	everything as absolute headers.
 	**		All headers that must be relative to the recipient
 	**		can be cracked later.
+	**	We set up a "null mailer" -- i.e., a mailer that will have
+	**	no effect on the addresses as they are output.
 	*/
+
+	bzero(&nullmailer, sizeof nullmailer);
+	nullmailer.m_r_rwset = nullmailer.m_s_rwset = -1;
 
 	define('g', "$f", e);
 	for (h = CurEnv->e_header; h != NULL; h = h->h_link)
