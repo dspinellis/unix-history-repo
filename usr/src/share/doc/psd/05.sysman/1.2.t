@@ -1,9 +1,9 @@
-.\" Copyright (c) 1983 The Regents of the University of California.
-.\" All rights reserved.
+.\" Copyright (c) 1983, 1993
+.\"	The Regents of the University of California.  All rights reserved.
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)1.2.t	6.11 (Berkeley) %G%
+.\"	@(#)1.2.t	8.1 (Berkeley) %G%
 .\"
 .sh "Memory management\(dg
 .NH 3
