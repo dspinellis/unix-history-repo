@@ -1,4 +1,4 @@
-	@(#)syscalls.master	7.12 (Berkeley) %G%
+	@(#)syscalls.master	7.13 (Berkeley) %G%
 ; System call name/number master file.
 ; Processed to created init_sysent.c, syscalls.c and syscall.h.
 
@@ -172,7 +172,7 @@
 129	STD	2 truncate
 130	STD	2 ftruncate
 131	STD	2 flock
-132	UNIMPL	0 nosys
+132	STD	2 mkfifo
 133	STD	6 sendto
 134	STD	2 shutdown
 135	STD	5 socketpair
