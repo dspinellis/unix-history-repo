@@ -319,7 +319,7 @@ hilread(dev, uio)
 	error = 0;
 	while (uio->uio_resid > 0 && error == 0) {
 		cc = hilq_to_b(&dptr->hd_queue, buf,
-			       MIN(uio->uio_resid, HILBUFSIZE));
+			       min(uio->uio_resid, HILBUFSIZE));
 		if (cc <= 0)
 			break;
 		error = uiomove(buf, cc, uio);
