@@ -1,4 +1,4 @@
-/*	vfs_syscalls.c	6.1	83/08/06	*/
+/*	vfs_syscalls.c	6.2	83/09/25	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -213,6 +213,7 @@ mknod()
 		return;
 	switch (ip->i_mode & IFMT) {
 
+	case IFMT:	/* used by badsect to flag bad sectors */
 	case IFCHR:
 	case IFBLK:
 		if (uap->dev) {
