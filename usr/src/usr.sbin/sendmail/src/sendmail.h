@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	8.124 (Berkeley) %G%
+ *	@(#)sendmail.h	8.125 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	8.124		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	8.125		%G%";
 # endif
 # else /*  _DEFINE */
 # define EXTERN extern
@@ -387,6 +387,7 @@ ENVELOPE
 	char		*e_msgboundary;	/* MIME-style message part boundary */
 	char		*e_origrcpt;	/* original recipient (one only) */
 	char		*e_envid;	/* envelope id from MAIL FROM: line */
+	char		*e_status;	/* DSN status for this message */
 	time_t		e_dtime;	/* time of last delivery attempt */
 	int		e_ntries;	/* number of delivery attempts */
 	dev_t		e_dfdev;	/* df file's device, for crash recov */
