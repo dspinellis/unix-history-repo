@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)sa.c	4.5 (Berkeley) 83/10/14";
+static	char *sccsid = "@(#)sa.c	4.6 (Berkeley) 84/07/14";
 #endif
 
 /*
@@ -18,6 +18,7 @@ static	char *sccsid = "@(#)sa.c	4.5 (Berkeley) 83/10/14";
  *	31jan81
  */
 #include <stdio.h>
+#include <ctype.h>
 #include <sys/types.h>
 #include <sys/acct.h>
 #include <signal.h>
@@ -269,6 +270,10 @@ int	htabinstall = 1;
 int	maxuser = -1;
 int	(*cmp)();
 
+/* we assume pagesize is at least 1k */
+int	pgdiv;
+#define	pgtok(x)	((x) / pgdiv)
+
 extern	tcmp(), ncmp(), bcmp(), dcmp(), Dcmp(), kcmp(), Kcmp();
 extern	double sum();
 
@@ -282,6 +287,9 @@ main(argc, argv)
 	int i, j, size, nchunks, smallest;
 	struct chunkdesc *chunkvector;
 
+	pgdiv = getpagesize() / 1024;
+	if (pgdiv == 0)
+		pgdiv = 1;
 	maxuser = USERSLOP + getmaxuid();
 
 	tabinit();
@@ -532,7 +540,7 @@ printmoney()
 				printf("%7u %9.2fcpu %10.0ftio %12.0fk*sec\n",
 					up->us_cnt, up->us_ctime / 60,
 					up->us_io,
-					up->us_imem / (60 * 2));
+					up->us_imem / 60);
 			}
 		}
 	}
@@ -550,7 +558,7 @@ column(n, a, b, c, d, e)
 	}
 	col(n, a, treal, "re");
 	if (oflg)
-		col(n, 3600*(b/(b+c)), tcpu+tsys, "u/s");
+		col(n, 60*64*(b/(b+c)), tcpu+tsys, "u/s");
 	else if(lflg) {
 		col(n, b, tcpu, "u");
 		col(n, c, tsys, "s");
@@ -563,9 +571,9 @@ column(n, a, b, c, d, e)
 	else
 		printf("%10.0ftio", e);
 	if (kflg || !Kflg)
-		printf("%10.0fk", d/(2*((b+c)!=0.0?(b+c):1.0)));
+		printf("%10.0fk", d/((b+c)!=0.0?(b+c):1.0));
 	else
-		printf("%10.0fk*sec", d/(2*60));
+		printf("%10.0fk*sec", d/60);
 }
 
 col(n, a, m, cp)
@@ -574,8 +582,8 @@ col(n, a, m, cp)
 {
 
 	if(jflg)
-		printf("%11.2f%s", a/(n*60.), cp); else
-		printf("%11.2f%s", a/3600., cp);
+		printf("%11.2f%s", a/(n*64.), cp); else
+		printf("%11.2f%s", a/60*64., cp);
 	if(cflg) {
 		if(a == m)
 			printf("%9s", ""); else
@@ -613,28 +621,24 @@ char *f;
 			printf("Input record from %s number %d\n",
 				f, nrecords);
 #endif DEBUG
-		if (fbuf.ac_comm[0]==0) {
-			fbuf.ac_comm[0] = '?';
-		}
-		for (cp = fbuf.ac_comm; cp < &fbuf.ac_comm[NC]; cp++) {
-			c = *cp & 0377;
-			if (c && (c < ' ' || c >= 0200)) {
+		for (cp = fbuf.ac_comm; *cp && cp < &fbuf.ac_comm[NC]; cp++)
+			if (!isascii(*cp) || iscntrl(*cp))
 				*cp = '?';
-			}
-		}
+		if (cp == fbuf.ac_comm)
+			*cp++ = '?';
 		if (fbuf.ac_flag&AFORK) {
-			for (cp=fbuf.ac_comm; cp < &fbuf.ac_comm[NC]; cp++)
-				if (*cp==0) {
-					*cp = '*';
-					break;
-				}
+			if (cp >= &fbuf.ac_comm[NC])
+				cp = &fbuf.ac_comm[NC];
+			*cp++ = '*';
 		}
+		if (cp < &fbuf.ac_comm[NC])
+			*cp = '\0';
 		x = expand(fbuf.ac_utime) + expand(fbuf.ac_stime);
-		y = fbuf.ac_mem;
+		y = pgtok((u_short)fbuf.ac_mem);
 		z = expand(fbuf.ac_io);
 		if (uflg) {
-			printf("%3d %6d cpu %8u mem %6d io %.14s\n",
-			    fbuf.ac_uid, x, y, z, fbuf.ac_comm);
+			printf("%3d %6.2f cpu %8uk mem %6d io %.*s\n",
+			    fbuf.ac_uid, x / 64.0, y, z, NC, fbuf.ac_comm);
 			continue;
 		}
 		up = finduser(fbuf.ac_uid);
