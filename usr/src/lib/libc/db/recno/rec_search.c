@@ -6,14 +6,14 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)rec_search.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)rec_search.c	5.2 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
 #include <errno.h>
 #include <db.h>
 #include <stdio.h>
-#include "../btree/btree.h"
+#include "recno.h"
 
 /*
  * __REC_SEARCH -- Search a btree for a key.
@@ -21,6 +21,7 @@ static char sccsid[] = "@(#)rec_search.c	5.1 (Berkeley) %G%";
  * Parameters:
  *	t:	tree to search
  *	key:	key to find
+ *	op: 	search operation
  *	exactp:	pointer to exact match flag
  *
  * Returns:
@@ -32,37 +33,29 @@ static char sccsid[] = "@(#)rec_search.c	5.1 (Berkeley) %G%";
  *	next search of any kind in any tree.
  */
 EPG *
-__rec_search(t, recno, exactp)
+__rec_search(t, recno, op)
 	BTREE *t;
 	recno_t recno;
-	int *exactp;
+	enum SRCHOP op;
 {
 	static EPG e;
 	register index_t index;
 	register PAGE *h;
+	EPGNO *parent;
 	RINTERNAL *r;
 	pgno_t pg;
 	index_t top;
 	recno_t total;
+	int serrno;
 
 	for (pg = P_ROOT, total = 0;;) {
 		if ((h = mpool_get(t->bt_mp, pg, 0)) == NULL)
-			return (NULL);
+			goto err;
 		if (h->flags & P_RLEAF) {
 			e.page = h;
 			e.index = recno - total;
-			top = NEXTINDEX(h);
-
-			if (e.index > top) {
-				mpool_put(t->bt_mp, h, 0);
-				errno = EINVAL;
-				return (NULL);
-			}
-
-			*exactp = e.index < top ? 1 : 0;
 			return (&e);
 		}
-
 		for (index = 0, top = NEXTINDEX(h);;) {
 			r = GETRINTERNAL(h, index);
 			if (++index == top || total + r->nrecs >= recno)
@@ -70,10 +63,37 @@ __rec_search(t, recno, exactp)
 			total += r->nrecs;
 		}
 
-		if (bt_push(t, h->pgno, index - 1) == RET_ERROR)
+		if (__bt_push(t, pg, index) == RET_ERROR)
 			return (NULL);
-
+		
 		pg = r->pgno;
-		mpool_put(t->bt_mp, h, 0);
+		switch (op) {
+		case SDELETE:
+			--GETRINTERNAL(h, index)->nrecs;
+			mpool_put(t->bt_mp, h, MPOOL_DIRTY);
+			break;
+		case SINSERT:
+			++GETRINTERNAL(h, index)->nrecs;
+			mpool_put(t->bt_mp, h, MPOOL_DIRTY);
+			break;
+		case SEARCH:
+			mpool_put(t->bt_mp, h, 0);
+			break;
+		}
+
 	}
+	/* Try and recover the tree. */
+err:	serrno = errno;
+	if (op != SEARCH)
+		while  ((parent = BT_POP(t)) != NULL) {
+			if ((h = mpool_get(t->bt_mp, parent->pgno, 0)) == NULL)
+				break;
+			if (op == SINSERT)
+				--GETRINTERNAL(h, parent->index)->nrecs;
+			else
+				++GETRINTERNAL(h, parent->index)->nrecs;
+                        mpool_put(t->bt_mp, h, MPOOL_DIRTY);
+                }
+	errno = serrno;
+	return (NULL);
 }
