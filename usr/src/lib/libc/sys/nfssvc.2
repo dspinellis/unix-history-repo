@@ -1,0 +1,54 @@
+.\" Copyright (c) 1989 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms are permitted
+.\" provided that the above copyright notice and this paragraph are
+.\" duplicated in all such forms and that any documentation,
+.\" advertising materials, and other materials related to such
+.\" distribution and use acknowledge that the software was developed
+.\" by the University of California, Berkeley.  The name of the
+.\" University may not be used to endorse or promote products derived
+.\" from this software without specific prior written permission.
+.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+.\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\"
+.\"	@(#)nfssvc.2	6.1 (Berkeley) %G%
+.\"
+.TH NFSSVC 2 ""
+.UC 7
+.SH NAME
+nfssvc \- get file system statistics
+.SH SYNOPSIS
+.nf
+.ft B
+.LP
+nfssvc(sock)
+int sock;
+.fi
+.ft R
+.SH DESCRIPTION
+.I Nfssvc
+starts an
+.SM NFS
+daemon listening on socket
+.IR sock .
+The socket must be in the
+.SM AF_INET
+family and of type
+.SM SOCK_DGRAM .
+.SH RETURN VALUE
+Upon successful completion, a value of 0 is returned.
+Otherwise, \-1 is returned and the global variable
+.I errno
+is set to indicate the error.
+.SH ERRORS
+.I Nfssvc
+fails if one or more of the following are true:
+.TP 15
+EBADF
+.I fd
+is not a valid open file descriptor.
+.TP 15
+EPERM
+The caller is not the super-user.
