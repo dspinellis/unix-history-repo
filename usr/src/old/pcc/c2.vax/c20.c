@@ -1,5 +1,5 @@
 #
-static	char sccsid[] = "@(#)c20.c 4.4 %G%";
+static	char sccsid[] = "@(#)c20.c 4.5 %G%";
 /* char C20[] = {"@(#)c20.c 1.35 80/08/26 14:13:40"}; /* sccs ident */
 /*
  *	 C object code improver
@@ -397,7 +397,7 @@ oplook()
 	register struct optab *optp,**ophp;
 	register char *p,*p2;
 	register int t;
-	char tempop[C2_ASIZE];
+	char tempop[20];
 	static struct optab OPNULL={"",0};
 
 	for (p=line, p2=tempop; *p && !isspace(*p); *p2++= *p++); *p2=0; p2=p;

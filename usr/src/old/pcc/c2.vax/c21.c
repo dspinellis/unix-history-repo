@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)c21.c 4.4 %G%";
+static	char sccsid[] = "@(#)c21.c 4.5 %G%";
 /* char C21[] = {"@(#)c21.c 1.83 80/10/16 21:18:22 JFR"}; /* sccs ident */
 
 /*
@@ -68,7 +68,7 @@ bmove() {
 		if ((p->subop&0xF)!=LONG) goto std; cp1=p->code;
 		if (*cp1++!='$') goto std; splitrand(p);
 		if (equstr(regs[RT2],"fp") && !indexa(regs[RT1])) {/* address comp. */
-			char buf[50]; cp2=buf; *cp2++='-'; 
+			char buf[C2_ASIZE]; cp2=buf; *cp2++='-'; 
 			cp1=regs[RT1]+1; while (*cp2++= *cp1++); --cp2;
 			cp1="(fp),"; while (*cp2++= *cp1++); --cp2;
 			cp1=regs[RT3]; while (*cp2++= *cp1++);
@@ -86,7 +86,7 @@ bmove() {
 			**	movl	r0,bar	  /
 			*/
 			register struct	node	*pnext = p->forw;
-			char	buf[50];
+			char	buf[C2_ASIZE];
 
 			if (pnext->op == MOV && pnext->subop == LONG)
 			{
@@ -772,7 +772,7 @@ bicopt(p) register struct node *p; {
 /* use field operations or MOVZ if possible.  done as part of 'bflow'.
 */
 	register char *cp1,*cp2; int r;
-	char src[50];
+	char src[C2_ASIZE];
 	if (!bixprep(p,JBCC)) return(p);
 	if (f==0) {/* the BIC isolates low order bits */
 		siz=pos; pos=0;
@@ -865,7 +865,7 @@ addsob()
 
 	for (p = &first; (p1 = p->forw)!=0; p = p1) {
 	if (p->combop==T(DEC,LONG) && p1->op==CBR) {
-		if (abs(p->seq - p1->ref->seq) > 12) continue;
+		if (abs(p->seq - p1->ref->seq) > 8) continue;
 		if (p1->subop==JGE || p1->subop==JGT) {
 			if (p1->subop==JGE) p->combop=SOBGEQ; else p->combop=SOBGTR;
 			p->pop=0;
@@ -890,7 +890,7 @@ addsob()
 		if (p1->combop==T(CMP,LONG) && (p2=p1->forw)->op==CBR) {
 			register char *cp1,*cp2;
 			splitrand(p1); if (!equstr(p->code,regs[RT1])) continue;
-			if (abs(p->seq - p2->ref->seq)>12) {/* outside byte displ range */
+			if (abs(p->seq - p2->ref->seq)>8) {/* outside byte displ range */
 				if (p2->subop!=JLE) continue;
 				p->combop=T(ACB,LONG);
 				cp2=regs[RT1]; cp1=regs[RT2]; while (*cp2++= *cp1++); /* limit */
