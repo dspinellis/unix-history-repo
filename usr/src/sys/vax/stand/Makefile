@@ -9,7 +9,7 @@
 # software without specific prior written permission. This software
 # is provided ``as is'' without express or implied warranty.
 #
-#	@(#)Makefile	7.9 (Berkeley) %G%
+#	@(#)Makefile	7.10 (Berkeley) %G%
 #
 DESTDIR=/
 INCPATH=-I. -I../stand -I../h
@@ -233,9 +233,9 @@ depend: ${SRCS} FRC
 install: FRC
 	install -c -s -o bin -g bin -m 644 format copy drtest ${DESTDIR}/
 	install -c -o bin -g bin -m 644 boot pcs750.bin ${DESTDIR}/
-	cp tpcopy ../dist/tp/copy
-	cp tpboot ../dist/tp/boot
-	cp tpformat ../dist/tp/format
+	cp tpcopy ../vaxdist/tp/copy
+	cp tpboot ../vaxdist/tp/boot
+	cp tpformat ../vaxdist/tp/format
 	cp boot a.out; strip a.out; \
 		dd if=a.out of=../floppy/boot bs=32 skip=1; rm a.out
 	cp 730boot a.out; strip a.out; \
