@@ -2,7 +2,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)uipc_syscalls.c	7.19 (Berkeley) %G%
+ *	@(#)uipc_syscalls.c	7.20 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -499,9 +499,9 @@ sendit(s, mp, flags, retsize)
 	if (mp->msg_control) {
 		if (mp->msg_controllen < sizeof(struct cmsghdr)
 #ifdef COMPAT_43
-		    && mp->msg_flags != MSG_COMPAT)
+		    && mp->msg_flags != MSG_COMPAT
 #endif
-		{
+		) {
 			error = EINVAL;
 			goto bad;
 		}
