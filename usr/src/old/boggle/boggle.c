@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)boggle.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)boggle.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 #include <ctype.h>
@@ -20,6 +20,7 @@ static char sccsid[] = "@(#)boggle.c	5.3 (Berkeley) %G%";
 #include <sgtty.h>
 #include <signal.h>
 #include <stdio.h>
+#include "pathnames.h"
 
 /* basic parameters */
 #define N 4
@@ -65,8 +66,6 @@ extern char *ctime(), *getlogin();
 extern long lseek();
 
 /* dictionary interface */
-char defname[] = "/usr/games/lib/bogdict";
-char *dictname = &defname[0];
 FILE *dict;
 
 /* structures for doing matching */
@@ -529,8 +528,8 @@ char **argv;
 		logloc = lseek(logfile, 0L, 2);
 		write(logfile, &logbuff[0], p-&logbuff[1]);
 	}
-	if ((dict = fopen(dictname, "r")) == NULL) {
-		printf("can't open %s\n", dictname);
+	if ((dict = fopen(_PATH_DICTIONARY, "r")) == NULL) {
+		printf("can't open %s\n", _PATH_DICTIONARY);
 		goodbye (2);
 	}
 	while ( argc > 1 && ( argv[1][0] == '+' || argv[1][0] == '-' ) ) {
