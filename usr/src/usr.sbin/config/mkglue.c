@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mkglue.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)mkglue.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -204,6 +204,12 @@ dump_vbavec(fp, vector, number)
 	fprintf(fp, "\tREST_FPSTAT\n");
 	fprintf(fp, "\trei\n\n");
 }
+
+/*
+ * HP9000/300 interrupts are auto-vectored.
+ * Code is hardwired in locore.s
+ */
+hpglue() {}
 
 static	char *vaxinames[] = {
 	"clock", "cnr", "cnx", "tur", "tux",
