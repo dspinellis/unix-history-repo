@@ -1,0 +1,9 @@
+#
+# Format is:
+#   OID of RDN: Types available at this level: Default type
+#
+2.5.4.10:Person, Place, Department: Person
+2.5.4.11:Person, Place, Department: Person
+2.5.4.6:Place, Organization:Organization
+2.5.4.7:Place, Organization, Department: Organization
+@: Place: Place
