@@ -1,4 +1,4 @@
-/*	hpoint.c	1.3	83/03/30
+/*	hpoint.c	1.4	83/07/09
  *
  * Copyright -C- 1982 Barry S. Roitblat
  *
@@ -19,7 +19,7 @@ POINT *PTInit()
  */
 
 {
-	POINT *pt;
+	register POINT *pt;
 
 	pt = (POINT *) malloc(sizeof(POINT));
 	pt->x = nullpt;
@@ -28,7 +28,8 @@ POINT *PTInit()
 }  /* end PTInit */
 
 POINT *PTMakePoint(x, y, pointlist)
-float x, y;
+float x;
+float y;
 POINT *(*pointlist);
 /*
  *      This routine creates a new point with coordinates x and y and 
@@ -36,13 +37,12 @@ POINT *(*pointlist);
  */
 
 {
-	POINT *pt1;
+	register POINT *pt1;
 
 	pt1 = *pointlist;
-	while ( !Nullpoint(pt1) )
-	{
+	while ( !Nullpoint(pt1) ) {
 		pt1 = pt1->nextpt;
-	}  /* end while */;
+	}
 	pt1->x = x;
 	pt1->y = y;
 	pt1->nextpt = PTInit();
