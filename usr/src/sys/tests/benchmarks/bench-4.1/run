@@ -1,0 +1,44 @@
+#! /bin/csh -fx
+# Script to run benchmark programs.
+#
+date
+time syscall 100000
+onintr cleanup
+time seqwrite test 8		# 8 megabyte file
+repeat 3 time seqbread test
+repeat 3 time seqread test
+repeat 3 time randread test 30000
+time seqrewrite test 8
+time randrewrite test 30000
+rm test
+time randwrite test 8 30000	# 8 megabyte file
+rm test; onintr
+time seqpage -p 3750 10
+time seqpage -v -p 3750 10
+time randpage -p 3901 30000
+time randpage -v -p 3901 30000
+time gausspage -p 3901 -s 1 30000
+time gausspage -p 3901 -s 10 30000
+time gausspage -p 3901 -s 30 30000
+time gausspage -p 3901 -s 40 30000
+time gausspage -p 3901 -s 50 30000
+time gausspage -p 3901 -s 60 30000
+time gausspage -p 3901 -s 80 30000
+time gausspage -p 3901 -s 10000 30000
+time csw 10000
+time signocsw 10000
+time pipeself 10000 512
+time pipeself 10000 4
+#time udgcself 10000 512
+#time udgself 10000 4
+time pipediscard 10000 512
+time pipediscard 10000 4
+#time udgdiscard 10000 512
+#time udgdiscard 10000 4
+time pipeback 10000 512
+time pipeback 10000 4
+#time udgback 10000 512
+#time udgback 10000 4
+exit
+cleanup:
+rm -f test
