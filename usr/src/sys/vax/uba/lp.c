@@ -1,4 +1,4 @@
-/*	lp.c	4.13	81/03/09	*/
+/*	lp.c	4.14	81/03/11	*/
 
 #include "lp.h"
 #if NLP > 0
@@ -68,24 +68,44 @@ struct uba_driver lpdriver =
 extern	lbolt;
 int	lptout();
 
+lpattach(ui)
+	struct uba_device *ui;
+{
+	register struct lp_softc *sc;
+
+	sc = &lp_softc[ui->ui_unit];
+	sc->sc_lpchar = -1;
+}
+
+lpprobe(reg)
+	caddr_t reg;
+{
+	register struct lpdevice *lpaddr = (struct lpdevice *)reg;
+
+	lpaddr->lpsr = IENABLE;
+	lpaddr->lpbuf = ' ';
+	DELAY(10000);
+	lpaddr->lpsr = 0;
+}
+
 /*ARGSUSED*/
 lpopen(dev, flag)
-dev_t dev;
+	dev_t dev;
+	int flag;
 {
 	register int unit;
 	register struct lpdevice *lpaddr;
 	register struct lp_softc *sc;
 	register struct uba_device *ui;
 
-	if ((unit = LPUNIT(dev)) >= NLP)
-	{
+	if ((unit = LPUNIT(dev)) >= NLP ||
+	    (sc = &lp_softc[unit])->sc_state&OPEN ||
+	    (ui = lpinfo[unit]) == 0 || ui->ui_alive == 0) {
 		u.u_error = ENXIO;
 		return;
 	}
-	sc = &lp_softc[unit];
-	ui = lpinfo[unit];
-	lpaddr = (struct lpdevice *) ui->ui_addr;
-	if (sc->sc_state&OPEN || lpaddr->lpsr&ERROR) {
+	lpaddr = (struct lpdevice *)ui->ui_addr;
+	if (lpaddr->lpsr&ERROR) {
 		u.u_error = EIO;
 		return;
 	}
@@ -98,46 +118,44 @@ dev_t dev;
 		timeout(lptout, dev, 10*hz);
 	}
 	(void) spl0();
-	lpcanon('\f');
+	lpcanon(dev, '\f');
 }
 
 /*ARGSUSED*/
 lpclose(dev, flag)
-dev_t dev;
+	dev_t dev;
+	int flag;
 {
-	register struct lp_softc *sc;
+	register struct lp_softc *sc = &lp_softc[LPUNIT(dev)];
 
-	sc = &lp_softc[LPUNIT(dev)];
-	lpcanon('\f');
+	lpcanon(dev, '\f');
 	brelse(sc->sc_inbuf);
 	sc->sc_state &= ~OPEN;
 }
 
 lpwrite(dev)
-register dev_t dev;
+	dev_t dev;
 {
 	register int n;
 	register char *cp;
-	register struct lp_softc *sc;
+	register struct lp_softc *sc = &lp_softc[LPUNIT(dev)];
 
-	sc = &lp_softc[LPUNIT(dev)];
 	while (n = min(BSIZE, u.u_count)) {
 		cp = sc->sc_inbuf->b_un.b_addr;
 		iomove(cp, n, B_WRITE);
 		do
-			lpcanon(*cp++, dev);
+			lpcanon(dev, *cp++);
 		while (--n);
 	}
 }
 
-lpcanon(c, dev)
-register int c;
-register dev_t dev;
+lpcanon(dev, c)
+	dev_t dev;
+	register int c;
 {
 	register int logcol, physcol;
-	register struct lp_softc *sc;
+	register struct lp_softc *sc = &lp_softc[LPUNIT(dev)];
 
-	sc = &lp_softc[LPUNIT(dev)];
 	if (sc->sc_flags&CAP) {
 		register c2;
 
@@ -165,7 +183,7 @@ register dev_t dev;
 			c2 = '^';
 
 		esc:
-			lpcanon(c2, dev);
+			lpcanon(dev, c2);
 			sc->sc_logcol--;
 			c = '-';
 		}
@@ -186,7 +204,7 @@ register dev_t dev;
 		/* fall into ... */
 
 	case '\n':
-		lpoutput(c, dev);
+		lpoutput(dev, c);
 		if (c == '\f')
 			sc->sc_physline = 0;
 		else
@@ -197,7 +215,7 @@ register dev_t dev;
 	case '\r':
 		logcol = 0;
 		(void) spl4();
-		lpintr(dev);
+		lpintr(LPUNIT(dev));
 		(void) spl0();
 		break;
 
@@ -208,15 +226,15 @@ register dev_t dev;
 
 	default:
 		if (logcol < physcol) {
-			lpoutput('\r', dev);
+			lpoutput(dev, '\r');
 			physcol = 0;
 		}
 		if (logcol < MAXCOL) {
 			while (logcol > physcol) {
-				lpoutput(' ');
+				lpoutput(dev, ' ');
 				physcol++;
 			}
-			lpoutput(c, dev);
+			lpoutput(dev, c);
 			physcol++;
 		}
 		logcol++;
@@ -227,15 +245,15 @@ register dev_t dev;
 	sc->sc_physcol = physcol;
 }
 
-lpoutput(c, dev)
-dev_t dev;
+lpoutput(dev, c)
+	dev_t dev;
+	int c;
 {
-	register struct lp_softc *sc;
+	register struct lp_softc *sc = &lp_softc[LPUNIT(dev)];
 
-	sc = &lp_softc[LPUNIT(dev)];
 	if (sc->sc_outq.c_cc >= LPHWAT) {
 		(void) spl4();
-		lpintr(dev);				/* unchoke */
+		lpintr(LPUNIT(dev));				/* unchoke */
 		while (sc->sc_outq.c_cc >= LPHWAT) {
 			sc->sc_state |= ASLP;		/* must be ERROR */
 			sleep((caddr_t)sc, LPPRI);
@@ -246,17 +264,14 @@ dev_t dev;
 		sleep((caddr_t)&lbolt, LPPRI);
 }
 
-lpintr(dev)
-dev_t dev;
+lpintr(lp11)
+	int lp11;
 {
 	register int n;
-	register struct lp_softc *sc;
-	register struct lpdevice *lpaddr;
-	register struct uba_device *ui;
+	register struct lp_softc *sc = &lp_softc[lp11];
+	register struct uba_device *ui = lpinfo[lp11];
+	register struct lpdevice *lpaddr = (struct lpdevice *)ui->ui_addr;
 
-	sc = &lp_softc[LPUNIT(dev)];
-	ui = lpinfo[LPUNIT(dev)];
-	lpaddr = (struct lpdevice *) ui->ui_addr;
 	lpaddr->lpsr &= ~IENABLE;
 	n = sc->sc_outq.c_cc;
 	if (sc->sc_lpchar < 0)
@@ -275,7 +290,7 @@ dev_t dev;
 }
 
 lptout(dev)
-register dev_t dev;
+	dev_t dev;
 {
 	register struct lp_softc *sc;
 	register struct uba_device *ui;
@@ -295,47 +310,23 @@ register dev_t dev;
 		return;
 	}
 	if (sc->sc_outq.c_cc && (lpaddr->lpsr&DONE) && (lpaddr->lpsr&ERROR)==0)
-		lpintr(dev);			/* ready to go */
+		lpintr(LPUNIT(dev));			/* ready to go */
 	timeout(lptout, dev, 10*hz);
 }
 
 lpreset(uban)
-int uban;
+	int uban;
 {
 	register struct uba_device *ui;
 	register struct lpdevice *lpaddr;
 	register int unit;
 
-	for (unit = 0; unit < NLP; unit++)
-	{
-		ui = lpinfo[unit];
-		if (ui == 0 || ui->ui_ubanum != uban || ui->ui_alive == 0)
+	for (unit = 0; unit < NLP; unit++) {
+		if ((ui = lpinfo[unit]) == 0 || ui->ui_ubanum != uban ||
+		    ui->ui_alive == 0)
 			continue;
 		printf(" lp%d", unit);
-		lpaddr = (struct lpdevice *) ui->ui_addr;
+		lpaddr = (struct lpdevice *)ui->ui_addr;
 		lpaddr->lpsr |= IENABLE;
 	}
-}
-
-lpattach(ui)
-struct uba_device *ui;
-{
-	register struct lp_softc *sc;
-
-	sc = &lp_softc[ui->ui_unit];
-	sc->sc_lpchar = -1;
-}
-
-lpprobe(reg)
-caddr_t reg;
-{
-	register struct lpdevice *lpaddr;
-	register int delay = 10000;
-
-	lpaddr = (struct lpdevice *) reg;
-	lpaddr->lpsr |= IENABLE;
-	lpaddr->lpbuf = ' ';
-	while(delay--)
-		continue;
-	lpaddr->lpsr &= ~IENABLE;
 }
