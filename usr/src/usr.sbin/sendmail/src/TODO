@@ -1,4 +1,4 @@
-(Version 8.26 of %G%)
+(Version 8.27 of %G%)
 
 Key:
   X -- extension (user visible change)
@@ -8,10 +8,6 @@ Key:
 
 
 X ****	Merge Sun changes.  [8.7]
-
-X ****	Create a "service switch" abstraction that will interface with
-	Sun NSS, Ultrix /etc/svc.conf, etc.  This will allow you to
-	turn off DNS entirely, a la ``OIoff''.  [8.7]
 
 E ****	Fix parseaddr to return a dummy mailer with QBADADDR set for
 	all cases except null input; change calls to be more sceptical
@@ -28,11 +24,6 @@ B ****	Aliases with .REDIRECT fail during newaliases if the "n" flag
 B ****	Calls to gethostbyname with a trailing dot fail if you are
 	not running DNS.
 
-E ****	Move delivery forking from sendenvelope to sendall so that
-	the connection cache works between split envelopes, and to
-	avoid a flurry of processes should you be sending to lots of
-	sub-lists.
-
 X ****	Add uucp-bang mailer that strips off any domain name from
 	the envelope recipient address first; this is for use in
 	mailer table entries.
@@ -43,8 +34,6 @@ X ****	"quote" map (inverse of dequote).  Lets you turn node::user
 X ****	Named rulesets.
 
 ? ****	Should $( [1.2.3.4] $) convert the address to a name?
-
-X ****	Add smrsh to release.
 
 E ***	Arrange to run queue jobs as the owner of that queue file.  This
 	probably requires forcing a fork in order to be able to completely
@@ -77,9 +66,6 @@ X ***	Add -P to set precedence (e.g., -Pbulk). [8.8]  (BCX)
 
 E ***	Don't send ErrMsgFile to postmaster bounces.  (Josh Smith,
 	josh@osiris.ac.hmc.edu).
-
-X ***	Add "user" map to look up a user name via getpwnam -- so that
-	non-local names can be forwarded to another site.  [8.8]
 
 E ***	Have daemons that start up check the alias database for
 	correctness and auto-rebuild if necessary.  This is to handle
