@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	5.32 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	5.33 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	5.32 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	5.33 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -24,6 +24,10 @@ static char sccsid[] = "@(#)queue.c	5.32 (Berkeley) %G% (without queueing)";
 # include <pwd.h>
 
 # ifdef QUEUE
+
+# ifdef LOCKF
+# include <unistd.h>
+# endif
 
 /*
 **  Work queue.
@@ -70,22 +74,38 @@ queueup(df)
 	**  Create control file.
 	*/
 
-	do {
+	do
+	{
 		strcpy(tf, queuename(e, 't'));
 		fd = open(tf, O_CREAT|O_WRONLY|O_EXCL, FileMode);
-		if (fd < 0) {
-			if ( errno != EEXIST) {
+		if (fd < 0)
+		{
+			if (errno != EEXIST)
+			{
 				syserr("queueup: cannot create temp file %s",
 					tf);
 				return NULL;
 			}
-		} else {
-			if (flock(fd, LOCK_EX|LOCK_NB) < 0) {
+		}
+		else
+		{
+# ifdef LOCKF
+			if (lockf(fd, F_TLOCK, 0) < 0)
+			{
+				if (errno != EACCES)
+					syserr("cannot lockf(%s)", tf);
+				close(fd);
+				fd = -1;
+			}
+# else
+			if (flock(fd, LOCK_EX|LOCK_NB) < 0)
+			{
 				if (errno != EWOULDBLOCK)
 					syserr("cannot flock(%s)", tf);
 				close(fd);
 				fd = -1;
 			}
+# endif
 		}
 	} while (fd < 0);
 
@@ -540,6 +560,7 @@ dowork(w)
 	if (i == 0)
 	{
 		FILE *qflock, *readqf();
+
 		/*
 		**  CHILD
 		*/
@@ -620,7 +641,11 @@ readqf(e, full)
 		return NULL;
 	}
 
+# ifdef LOCKF
+	if (lockf(fileno(qfp), F_TLOCK, 0) < 0)
+# else
 	if (flock(fileno(qfp), LOCK_EX|LOCK_NB) < 0)
+# endif
 	{
 # ifdef LOG
 		/* being processed by another queuer */
@@ -792,7 +817,11 @@ printqueue()
 			continue;
 		}
 		printf("%7s", w->w_name + 2);
+# ifdef LOCKF
+		if (flock(fileno(f), F_TEST, 0) < 0)
+# else
 		if (flock(fileno(f), LOCK_SH|LOCK_NB) < 0)
+# endif
 			printf("*");
 		else if (shouldqueue(w->w_pri))
 			printf("X");
