@@ -15,7 +15,7 @@
  *
  * from: hp300/hp300/locore.s   7.16 (Berkeley) 7/8/92
  *
- *	@(#)locore.s	7.3 (Berkeley) %G%
+ *	@(#)locore.s	7.4 (Berkeley) %G%
  */
 
 #include "assym.s"
@@ -471,18 +471,17 @@ Lstkrip:
 	.even
 Lstackok:
 #endif
-	btst	#CLK_INT,CLOCK_REG 	| check system clock-intr
-	jeq	Lnottimer
-	movb	#CLK_CLR,CLOCK_REG	| clear system clock interrupt
-        tstl	_clock_on		| clock not yet started 
-        jeq	Lnottimer
-	lea	sp@(16),a1		| get pointer to PS
-	movl	a1@,sp@-		| push padded PS
-	movl	a1@(4),sp@-		| push PC
-	jbsr	_hardclock		| call generic clock int routine
-	addql	#8,sp			| pop params
+	lea	sp@(16),a1		| a1 = &clockframe
+	btst	#CLK_INT,CLOCK_REG 	| system-clock intrrupt?
+	jeq	Lnottimer		| no, skip hardclock
+	movb	#CLK_CLR,CLOCK_REG	| clear system-clock interrupt
+        tstl	_clock_on		| system-clock started?
+        jeq	Lnottimer		| no, skip hardclock
+	addql	#1,_intrcnt+28		| count hardclock interrupt
+	movl	a1@,sp@-
+	jbsr	_hardclock		| hardclock(&frame)
+	addql	#4,sp
 Lnottimer:
-	addql	#1,_intrcnt+28		| add another system clock interrupt
 	moveml	sp@+,#0x0303		| restore scratch regs
 	addql	#2,sp			| pop pad word
 	addql	#1,_cnt+V_INTR		| chalk up another interrupt
