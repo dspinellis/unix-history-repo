@@ -11,7 +11,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)dir.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)dir.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /*-
@@ -57,7 +57,7 @@ static char sccsid[] = "@(#)dir.c	8.1 (Berkeley) %G%";
 
 #include <stdio.h>
 #include <sys/types.h>
-#include <sys/dir.h>
+#include <dirent.h>
 #include <sys/stat.h>
 #include "make.h"
 #include "hash.h"
@@ -975,7 +975,7 @@ Dir_AddDir (path, name)
     LstNode       ln;	      /* node in case Path structure is found */
     register Path *p;	      /* pointer to new Path structure */
     DIR     	  *d;	      /* for reading directory */
-    register struct direct *dp; /* entry in directory */
+    register struct dirent *dp; /* entry in directory */
     
     ln = Lst_Find (openDirectories, (ClientData)name, DirFindName);
     if (ln != NILLNODE) {
@@ -1003,7 +1003,7 @@ Dir_AddDir (path, name)
 	    (void)readdir(d);
 	    (void)readdir(d);
 	    
-	    while ((dp = readdir (d)) != (struct direct *) NULL) {
+	    while ((dp = readdir (d)) != (struct dirent *) NULL) {
 #ifdef sun
 		/*
 		 * The sun directory library doesn't check for a 0 inode
