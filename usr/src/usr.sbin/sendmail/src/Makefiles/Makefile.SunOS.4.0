@@ -8,7 +8,7 @@
 #	You may find you need to find versions of some routines
 #	such as strcasecmp in order to link this on SunOS 4.0.3.
 #
-#	@(#)Makefile.SunOS.4.0	8.4 (Berkeley) %G%
+#	@(#)Makefile.SunOS.4.0	8.5 (Berkeley) %G%
 #
 
 # use O=-O (usual) or O=-g (debugging)
@@ -29,7 +29,7 @@ ENVDEF=	-DSUNOS403
 # see also conf.h for additional compilation flags
 
 # include directories
-INCDIRS=-I/usr/sww/include/db
+INCDIRS=-I/usr/sww/include
 
 # loader options
 LDOPTS=	-Bstatic

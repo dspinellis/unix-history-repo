@@ -7,7 +7,7 @@
 #
 #  This has been tested on OSF/1 1.3
 #
-#	@(#)Makefile.Paragon	8.1 (Berkeley) %G%
+#	@(#)Makefile.Paragon	8.2 (Berkeley) %G%
 #
 
 # use O=-O (usual) or O=-g (debugging)
@@ -28,7 +28,7 @@ ENVDEF=
 # see also conf.h for additional compilation flags
 
 # include directories
-INCDIRS=-I/usr/sww/include/db
+INCDIRS=-I/usr/sww/include
 
 # library directories
 LIBDIRS=-L/usr/sww/lib -L/usr/shlib -L/usr/lib

@@ -7,7 +7,7 @@
 #
 #  This has been tested on OSF/1 1.3
 #
-#	@(#)Makefile.OSF1	8.4 (Berkeley) %G%
+#	@(#)Makefile.OSF1	8.5 (Berkeley) %G%
 #
 
 # use O=-O (usual) or O=-g (debugging)
@@ -20,7 +20,7 @@ O=	-O
 # The really old (V7) DBM library is no longer supported.
 # See READ_ME for a description of how these flags interact.
 #
-DBMDEF=	-DNDBM
+DBMDEF=	-DNDBM -DNEWDB -DNIS
 
 # environment definitions (e.g., -D_AIX3)
 ENVDEF=	-Olimit 1000
@@ -28,13 +28,14 @@ ENVDEF=	-Olimit 1000
 # see also conf.h for additional compilation flags
 
 # include directories
-INCDIRS=-I/usr/sww/include/db
+INCDIRS=-I/usr/sww/include
 
 # library directories
 LIBDIRS=-L/usr/sww/lib -L/usr/shlib -L/usr/lib
 
 # libraries required on your system
-LIBS=	-ldbm
+#  delete -lresolv if you are not running BIND 4.9.x
+LIBS=	-ldbm -ldb -lresolv
 
 # location of sendmail binary (usually /usr/sbin or /usr/lib)
 BINDIR=	${DESTDIR}/usr/sbin

@@ -7,7 +7,7 @@
 #
 #	For Mips RISC/os 4.52.
 #
-#	@(#)Makefile.RISCos	8.4 (Berkeley) %G%
+#	@(#)Makefile.RISCos	8.5 (Berkeley) %G%
 #
 
 # use O=-O (usual) or O=-g (debugging)
@@ -31,7 +31,7 @@ ENVDEF=	-DRISCOS -Olimit 800
 # see also conf.h for additional compilation flags
 
 # include directories
-#INCDIRS=-I/usr/sww/include/db
+#INCDIRS=-I/usr/sww/include
 
 # library directories
 #LIBDIRS=-L/usr/sww/lib

@@ -9,7 +9,7 @@
 #
 #	From Tim "Pinball Wizard" Wright <timw@sequent.com>.
 #
-#	@(#)Makefile.PTX	8.4 (Berkeley) %G%
+#	@(#)Makefile.PTX	8.5 (Berkeley) %G%
 #
 
 # use O=-O (usual) or O=-g (debugging)
@@ -30,7 +30,7 @@ ENVDEF=
 # see also conf.h for additional compilation flags
 
 # include directories
-#INCDIRS=-I/usr/sww/include/db
+#INCDIRS=-I/usr/sww/include
 INCDIRS=
 
 # loader options

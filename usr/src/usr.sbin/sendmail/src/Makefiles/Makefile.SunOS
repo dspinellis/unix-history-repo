@@ -10,7 +10,7 @@
 #		create empty files stdlib.h and stddef.h in your
 #		compile directory.
 #
-#	@(#)Makefile.SunOS	8.4 (Berkeley) %G%
+#	@(#)Makefile.SunOS	8.5 (Berkeley) %G%
 #
 
 # use O=-O (usual) or O=-g (debugging)
@@ -32,7 +32,7 @@ ENVDEF=
 # see also conf.h for additional compilation flags
 
 # include directories
-INCDIRS=-I/usr/sww/include/db
+INCDIRS=-I/usr/sww/include
 
 # loader options
 LDOPTS=	-Bstatic

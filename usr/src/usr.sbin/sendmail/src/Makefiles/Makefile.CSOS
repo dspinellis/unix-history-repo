@@ -5,7 +5,7 @@
 #
 #	Contributed by Scott Bolte <scott@craycos.com>.
 #
-#	@(#)Makefile.CSOS	8.1	(Berkeley)	%G%
+#	@(#)Makefile.CSOS	8.2	(Berkeley)	%G%
 #
 
 # use O=-O (usual) or O=-g (debugging)
@@ -29,7 +29,7 @@ ENVDEF=
 # see also conf.h for additional compilation flags
 
 # include directories
-#INCDIRS=-I/usr/sww/include/db
+#INCDIRS=-I/usr/sww/include
 
 # loader options
 LDOPTS=
