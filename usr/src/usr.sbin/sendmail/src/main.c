@@ -7,7 +7,7 @@
 # include <syslog.h>
 # endif LOG
 
-SCCSID(@(#)main.c	3.74		%G%);
+SCCSID(@(#)main.c	3.74.1.1		%G%);
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -136,6 +136,7 @@ main(argc, argv)
 	extern bool safefile();
 	STAB *st;
 	extern time_t convtime();
+	extern putheader(), putbody();
 	extern ADDRESS *recipient();
 	bool canrename;
 
@@ -148,7 +149,12 @@ main(argc, argv)
 		(void) signal(SIGHUP, finis);
 	(void) signal(SIGTERM, finis);
 	OldUmask = umask(0);
+
+	/* set up the main envelope */
+	MainEnvelope.e_puthdr = putheader;
+	MainEnvelope.e_putbody = putbody;
 	CurEnv = &MainEnvelope;
+
 # ifdef LOG
 	openlog("sendmail", 0);
 # endif LOG
@@ -396,7 +402,7 @@ main(argc, argv)
 	initsys();
 
 	/* our name for SMTP codes */
-	(void) expand("$i", ibuf, &ibuf[sizeof ibuf - 1]);
+	expand("$i", ibuf, &ibuf[sizeof ibuf - 1], CurEnv);
 	HostName = ibuf;
 
 	/* the indices of local and program mailers */
@@ -716,7 +722,7 @@ finis()
 
 	/* send back return receipts as requested */
 	if (CurEnv->e_sendreceipt && ExitStat == EX_OK)
-		returntosender("Return receipt", FALSE);
+		returntosender("Return receipt", &CurEnv->e_from, FALSE);
 
 	/* mail back the transcript on errors */
 	if (FatalErrors)
@@ -727,7 +733,7 @@ finis()
 	if (CurEnv->e_queueup)
 	{
 # ifdef QUEUE
-		queueup(InFileName);
+		queueup(CurEnv);
 # else QUEUE
 		syserr("finis: trying to queue %s", InFileName);
 # endif QUEUE
@@ -847,7 +853,7 @@ setsender(from)
 
 	/* run user's .mailcf file */
 	define('z', pw->pw_dir);
-	(void) expand("$z/.mailcf", cfbuf, &cfbuf[sizeof cfbuf - 1]);
+	expand("$z/.mailcf", cfbuf, &cfbuf[sizeof cfbuf - 1], CurEnv);
 	if (!nofullname && safefile(cfbuf, getruid(), S_IREAD))
 		readcf(cfbuf, FALSE);
 
@@ -994,4 +1000,35 @@ initmacros()
 		buf[1] = c;
 		define(c, newstr(buf));
 	}
+}
+/*
+**  NEWENVELOPE -- allocate a new envelope
+**
+**	Supports inheritance.
+**
+**	Parameters:
+**		e -- the new envelope to fill in.
+**
+**	Returns:
+**		e.
+**
+**	Side Effects:
+**		none.
+*/
+
+ENVELOPE *
+newenvelope(e)
+	register ENVELOPE *e;
+{
+	bmove(CurEnv, e, sizeof *e);
+	e->e_header = NULL;
+	e->e_queueup = FALSE;
+	e->e_oldstyle = FALSE;
+	e->e_retreceipt = FALSE;
+	e->e_sendreceipt = FALSE;
+	e->e_origfrom = NULL;
+	e->e_to = NULL;
+	e->e_sendqueue = NULL;
+	e->e_parent = CurEnv;
+	e->e_df = NULL;
 }

@@ -1,7 +1,7 @@
 # include <pwd.h>
 # include "sendmail.h"
 
-SCCSID(@(#)savemail.c	3.29		%G%);
+SCCSID(@(#)savemail.c	3.29.1.1		%G%);
 
 /*
 **  SAVEMAIL -- Save mail on error
@@ -33,9 +33,18 @@ savemail()
 	extern char *ttypath();
 	static int exclusive;
 	typedef int (*fnptr)();
+	ENVELOPE errenvelope;
+	register ENVELOPE *ee;
+	extern ENVELOPE *newenvelope();
 
-	if (exclusive++ || CurEnv->e_class <= PRI_JUNK)
+	if (exclusive++)
 		return;
+	if (CurEnv->e_class <= PRI_JUNK)
+	{
+		if (Verbose)
+			message(Arpa_Info, "Dumping junk mail");
+		return;
+	}
 	ForceMail = TRUE;
 
 	/*
@@ -89,7 +98,7 @@ savemail()
 			xfile = fopen(Transcript, "r");
 			if (xfile == NULL)
 				syserr("Cannot open %s", Transcript);
-			(void) expand("$n", buf, &buf[sizeof buf - 1]);
+			expand("$n", buf, &buf[sizeof buf - 1], CurEnv);
 			printf("\r\nMessage from %s...\r\n", buf);
 			printf("Errors occurred while sending mail; transcript follows:\r\n");
 			while (fgets(buf, sizeof buf, xfile) != NULL && !ferror(stdout))
@@ -113,7 +122,7 @@ savemail()
 
 	if (MailBack)
 	{
-		if (returntosender("Unable to deliver mail", TRUE) == 0)
+		if (returntosender("Unable to deliver mail", &CurEnv->e_from, TRUE) == 0)
 			return;
 	}
 
@@ -151,11 +160,11 @@ savemail()
 		/* we have a home directory; open dead.letter */
 		message(Arpa_Info, "Saving message in dead.letter");
 		define('z', p);
-		(void) expand("$z/dead.letter", buf, &buf[sizeof buf - 1]);
+		expand("$z/dead.letter", buf, &buf[sizeof buf - 1], CurEnv);
 		CurEnv->e_to = buf;
 		q = NULL;
 		sendto(buf, -1, (ADDRESS *) NULL, &q);
-		(void) deliver(q, (fnptr) NULL);
+		(void) deliver(q);
 	}
 
 	/* add terminator to writeback message */
@@ -182,23 +191,33 @@ savemail()
 static char	*ErrorMessage;
 static bool	SendBody;
 
-returntosender(msg, sendbody)
+returntosender(msg, returnto, sendbody)
 	char *msg;
+	ADDRESS *returnto;
 	bool sendbody;
 {
 	ADDRESS to_addr;
 	char buf[MAXNAME];
 	register int i;
-	extern errhdr();
+	extern putheader(), errbody();
+	register ENVELOPE *ee;
+	extern ENVELOPE *newenvelope();
+	ENVELOPE errenvelope;
 
 	NoAlias++;
-	ErrorMessage = msg;
 	SendBody = sendbody;
+	ee = newenvelope(&errenvelope);
+	ee->e_puthdr = putheader;
+	ee->e_putbody = errbody;
+	addheader("date", "$b", ee);
+	addheader("from", "$g (Mail Delivery Subsystem)", ee);
+	addheader("to", returnto->q_paddr, ee);
+	addheader("subject", msg, ee);
 
 	/* fake up an address header for the from person */
-	bmove((char *) &CurEnv->e_from, (char *) &to_addr, sizeof to_addr);
-	(void) expand("$n", buf, &buf[sizeof buf - 1]);
-	if (parse(buf, &CurEnv->e_from, -1) == NULL)
+	bmove((char *) returnto, (char *) &to_addr, sizeof to_addr);
+	expand("$n", buf, &buf[sizeof buf - 1], CurEnv);
+	if (parse(buf, &ee->e_from, -1) == NULL)
 	{
 		syserr("Can't parse myself!");
 		ExitStat = EX_SOFTWARE;
@@ -206,102 +225,90 @@ returntosender(msg, sendbody)
 	}
 	to_addr.q_next = NULL;
 	to_addr.q_flags &= ~QDONTSEND;
-	i = deliver(&to_addr, errhdr);
-	bmove((char *) &to_addr, (char *) &CurEnv->e_from, sizeof CurEnv->e_from);
+	ee->e_sendqueue = &to_addr;
 
-	/* if CurEnv->e_from was queued up, put in on CurEnv->e_sendqueue */
-	if (bitset(QQUEUEUP, CurEnv->e_from.q_flags))
-	{
-		CurEnv->e_from.q_next = CurEnv->e_sendqueue;
-		CurEnv->e_sendqueue = &CurEnv->e_from;
-	}
+	/* push state into submessage */
+	CurEnv = ee;
+	define('f', "$n");
+	define('x', "Mail Delivery Subsystem");
+
+	/* actually deliver the error message */
+	i = deliver(&to_addr);
+
+	/* if the error message was "queued", make that happen */
+	if (bitset(QQUEUEUP, to_addr.q_flags))
+		queueup(ee);
+
+	/* restore state */
+	CurEnv = CurEnv->e_parent;
 
 	if (i != 0)
 	{
-		syserr("Can't return mail to %s", CurEnv->e_from.q_paddr);
+		syserr("Can't return mail to %s", to_addr.q_paddr);
 		return (-1);
 	}
 	return (0);
 }
 /*
-**  ERRHDR -- Output the header for error mail.
-**
-**	This is the edit filter to error mailbacks.
+**  ERRHEADER -- Output the header for error mail.
 **
 **	Parameters:
 **		xfile -- the transcript file.
 **		fp -- the output file.
-**		xdot -- if set, use smtp hidden dot algorithm.
 **
 **	Returns:
 **		none
 **
 **	Side Effects:
-**		Outputs the current message with an appropriate
-**		error header.
+**		Outputs the header for an error message.
 */
 
-errhdr(fp, m, xdot)
+errheader(fp, m)
+	register FILE *fp;
+	register struct mailer *m;
+{
+	/*
+	**  Output header of error message.
+	*/
+
+	putheader(fp, m);
+}
+/*
+**  ERRBODY -- output the body of an error message.
+**
+**	Typically this is a copy of the transcript plus a copy of the
+**	original offending message.
+**
+**	Parameters:
+**		xfile -- the transcript file.
+**		fp -- the output file.
+**		xdot -- if set, use the SMTP hidden dot algorithm.
+**
+**	Returns:
+**		none
+**
+**	Side Effects:
+**		Outputs the body of an error message.
+*/
+
+errbody(fp, m, xdot)
 	register FILE *fp;
 	register struct mailer *m;
 	bool xdot;
 {
-	char buf[MAXLINE];
 	register FILE *xfile;
-	extern char *macvalue();
-	char *oldfmac;
-	char *oldgmac;
-
-	oldfmac = macvalue('f');
-	define('f', "$n");
-	oldgmac = macvalue('g');
-	define('g', m->m_from);
+	char buf[MAXLINE];
 
 	(void) fflush(stdout);
-	(void) fflush(Xscript);
 	if ((xfile = fopen(Transcript, "r")) == NULL)
 		syserr("Cannot open %s", Transcript);
 	errno = 0;
 
 	/*
-	**  Output "From" line unless supressed
-	*/
-
-	if (!bitset(M_NHDR, m->m_flags))
-	{
-		(void) expand("$l", buf, &buf[sizeof buf - 1]);
-		fprintf(fp, "%s\n", buf);
-	}
-
-	/*
-	**  Output header of error message.
-	*/
-
-	if (bitset(M_NEEDDATE, m->m_flags))
-	{
-		(void) expand("$b", buf, &buf[sizeof buf - 1]);
-		fprintf(fp, "Date: %s\n", buf);
-	}
-	if (bitset(M_NEEDFROM, m->m_flags))
-	{
-		(void) expand("$g", buf, &buf[sizeof buf - 1]);
-		fprintf(fp, "From: %s (Mail Delivery Subsystem)\n", buf);
-	}
-	fprintf(fp, "To: %s\n", CurEnv->e_to);
-	fprintf(fp, "Subject: %s\n", ErrorMessage);
-
-	/*
-	**  End of error message header
-	*/
-
-	define('f', oldfmac);
-	define('g', oldgmac);
-
-	/*
 	**  Output transcript of errors
 	*/
 
-	fprintf(fp, "\n   ----- Transcript of session follows -----\n");
+	fprintf(fp, "   ----- Transcript of session follows -----\n");
 	(void) fflush(Xscript);
 	while (fgets(buf, sizeof buf, xfile) != NULL)
 		fputs(buf, fp);
@@ -318,7 +325,9 @@ errhdr(fp, m, xdot)
 		{
 			fprintf(fp, "\n   ----- Unsent message follows -----\n");
 			(void) fflush(fp);
-			putmessage(fp, Mailer[1], xdot);
+			putheader(fp, Mailer[1], CurEnv->e_parent);
+			fprintf(fp, "\n");
+			putbody(fp, Mailer[1], xdot);
 		}
 		else
 		{
@@ -336,5 +345,5 @@ errhdr(fp, m, xdot)
 
 	(void) fclose(xfile);
 	if (errno != 0)
-		syserr("errhdr: I/O error");
+		syserr("errbody: I/O error");
 }

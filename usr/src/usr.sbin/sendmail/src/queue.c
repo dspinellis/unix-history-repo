@@ -5,10 +5,10 @@
 # include <errno.h>
 
 # ifndef QUEUE
-SCCSID(@(#)queue.c	3.13		%G%	(no queueing));
+SCCSID(@(#)queue.c	3.13.1.1		%G%	(no queueing));
 # else QUEUE
 
-SCCSID(@(#)queue.c	3.13		%G%);
+SCCSID(@(#)queue.c	3.13.1.1		%G%);
 
 /*
 **  QUEUEUP -- queue a message up for future transmission.
@@ -17,8 +17,7 @@ SCCSID(@(#)queue.c	3.13		%G%);
 **	This routine just outputs the control file as appropriate.
 **
 **	Parameters:
-**		df -- location of the data file.  The name will
-**			be transformed into a control file name.
+**		e -- the envelope to queue up.
 **
 **	Returns:
 **		none.
@@ -28,11 +27,12 @@ SCCSID(@(#)queue.c	3.13		%G%);
 **			are saved in a control file.
 */
 
-queueup(df)
-	char *df;
+queueup(e)
+	register ENVELOPE *e;
 {
 	char cf[MAXNAME];
-	register FILE *f;
+	char buf[MAXNAME];
+	register FILE *cfp;
 	register HDR *h;
 	register ADDRESS *q;
 	extern char *mktemp();
@@ -43,10 +43,10 @@ queueup(df)
 	*/
 
 	strcpy(cf, QueueDir);
-	strcat(cf, "/cfXXXXXX");
+	strcat(cf, "/tfXXXXXX");
 	(void) mktemp(cf);
-	f = fopen(cf, "w");
-	if (f == NULL)
+	cfp = fopen(cf, "w");
+	if (cfp == NULL)
 	{
 		syserr("queueup: cannot create control file %s", cf);
 		return;
@@ -54,37 +54,61 @@ queueup(df)
 
 # ifdef DEBUG
 	if (Debug)
-		printf("queued in %s\n", cf);
+		printf("queueing in %s\n", cf);
 # endif DEBUG
+
+	/*
+	**  If there is no data file yet, create one.
+	*/
+
+	if (e->e_df == NULL)
+	{
+		register FILE *dfp;
+
+		strcpy(buf, QueueDir);
+		strcat(buf, "/dfXXXXXX");
+		e->e_df = newstr(mktemp(buf));
+		dfp = fopen(e->e_df, "w");
+		if (dfp == NULL)
+		{
+			syserr("queueup: cannot create %s", e->e_df);
+			fclose(cfp);
+			return;
+		}
+		(*e->e_putbody)(dfp, Mailer[1], FALSE);
+		fclose(dfp);
+	}
 
 	/*
 	**  Output future work requests.
 	*/
 
 	/* output name of data file */
-	fprintf(f, "D%s\n", df);
+	fprintf(cfp, "D%s\n", e->e_df);
 
 	/* output name of sender */
-	fprintf(f, "S%s\n", CurEnv->e_from.q_paddr);
+	fprintf(cfp, "S%s\n", e->e_from.q_paddr);
 
 	/* output timeout */
-	fprintf(f, "T%ld\n", TimeOut);
+	fprintf(cfp, "T%ld\n", TimeOut);
 
 	/* output message priority */
-	fprintf(f, "P%ld\n", CurEnv->e_msgpriority);
+	fprintf(cfp, "P%ld\n", e->e_msgpriority);
+
+	/* output message class */
+	fprintf(cfp, "C%d\n", e->e_class);
 
 	/* output macro definitions */
 	for (i = 0; i < 128; i++)
 	{
-		extern char *Macro[128];
-		register char *p = Macro[i];
+		register char *p = e->e_macro[i];
 
 		if (p != NULL && i != (int) 'b')
-			fprintf(f, "M%c%s\n", i, p);
+			fprintf(cfp, "M%c%s\n", i, p);
 	}
 
 	/* output list of recipient addresses */
-	for (q = CurEnv->e_sendqueue; q != NULL; q = q->q_next)
+	for (q = e->e_sendqueue; q != NULL; q = q->q_next)
 	{
 # ifdef DEBUG
 		if (Debug > 0)
@@ -94,25 +118,32 @@ queueup(df)
 		}
 # endif DEBUG
 		if (bitset(QQUEUEUP, q->q_flags))
-			fprintf(f, "R%s\n", q->q_paddr);
+			fprintf(cfp, "R%s\n", q->q_paddr);
 	}
 
 	/* output headers for this message */
-	for (h = CurEnv->e_header; h != NULL; h = h->h_link)
+	for (h = e->e_header; h != NULL; h = h->h_link)
 	{
 		if (h->h_value == NULL || h->h_value[0] == '\0')
 			continue;
-		fprintf(f, "H");
+		fprintf(cfp, "H");
 		if (h->h_mflags != 0 && bitset(H_CHECK|H_ACHECK, h->h_flags))
-			mfdecode(h->h_mflags, f);
-		fprintf(f, "%s: %s\n", h->h_field, h->h_value);
+			mfdecode(h->h_mflags, cfp);
+		fprintf(cfp, "%s: %s\n", h->h_field, h->h_value);
 	}
 
 	/*
 	**  Clean up.
 	*/
 
-	(void) fclose(f);
+	(void) fclose(cfp);
+	(void) strcpy(buf, QueueDir);
+	(void) strcat(buf, "/cfXXXXXX");
+	(void) mktemp(buf);
+	if (link(cf, buf) < 0)
+		syserr("cannot link(%s, %s), df=%s", cf, buf, e->e_df);
+	else
+		unlink(cf);
 }
 /*
 **  RUNQUEUE -- run the jobs in the queue.
@@ -436,22 +467,52 @@ dowork(w)
 
 	if (i == 0)
 	{
+		char buf[MAXNAME];
+
 		/*
 		**  CHILD
+		**	Change the name of the control file to avoid
+		**	duplicate deliveries.   Then run the file as
+		**	though we had just read it.
 		*/
 
 		QueueRun = TRUE;
+		(void) strcpy(buf, QueueDir);
+		(void) strcat(buf, "/tfXXXXXX");
+		(void) mktemp(buf);
+		if (link(w->w_name, buf) < 0)
+		{
+			syserr("dowork: link(%s, %s)", w->w_name, buf);
+
+			/* it's ok to lie -- it will be run later */
+			exit(EX_OK);
+		}
+		(void) unlink(w->w_name);
+
+		/* create ourselves a transcript file */
 		openxscrpt();
+
+		/* do basic system initialization */
 		initsys();
-		readqf(w->w_name);
+
+		/* read the queue control file */
+		readqf(buf);
+
+		/* do the delivery */
 		sendall(FALSE);
+
+		/* if still not sent, perhaps we should time out.... */
 # ifdef DEBUG
 		if (Debug > 2)
 			printf("CurTime=%ld, TimeOut=%ld\n", CurTime, TimeOut);
 # endif DEBUG
 		if (CurEnv->e_queueup && CurTime > TimeOut)
 			timeout(w);
-		(void) unlink(w->w_name);
+
+		/* get rid of the temporary file -- a new cf will be made */
+		(void) unlink(buf);
+
+		/* finish up and exit */
 		finis();
 	}
 
@@ -522,8 +583,6 @@ readqf(cf)
 			break;
 
 		  case 'S':		/* sender */
-			if (Verbose)
-				message(Arpa_Info, "Sender: %s", &buf[1]);
 			setsender(newstr(&buf[1]));
 			break;
 
@@ -543,6 +602,10 @@ readqf(cf)
 
 			/* make sure that big things get sent eventually */
 			CurEnv->e_msgpriority -= WKTIMEFACT;
+			break;
+
+		  case 'C':		/* message class */
+			(void) sscanf(&buf[1], "%hd", &CurEnv->e_class);
 			break;
 
 		  case 'M':		/* define macro */
@@ -578,7 +641,8 @@ timeout(w)
 # endif DEBUG
 
 	/* return message to sender */
-	(void) returntosender("Cannot send mail for three days");
+	(void) returntosender("Cannot send mail for three days",
+			      &CurEnv->e_from, TRUE);
 
 	/* arrange to remove files from queue */
 	CurEnv->e_queueup = FALSE;

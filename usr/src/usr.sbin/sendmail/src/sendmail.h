@@ -7,7 +7,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	3.68		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	3.68.1.1		%G%";
 # endif lint
 # else  _DEFINE
 # define EXTERN extern
@@ -178,19 +178,23 @@ extern struct hdrinfo	HdrInfo[];
 
 struct envelope
 {
-	HDR	*e_header;	/* head of header list */
-	long	e_msgpriority;	/* adjusted priority of this message */
-	bool	e_queueup;	/* queue this message for future xmission */
-	bool	e_oldstyle;	/* spaces (not commas) delimit addresses */
-	bool	e_retreceipt;	/* give a return receipt if delivery occurs */
-	bool	e_sendreceipt;	/* actually send a receipt back */
-	char	*e_origfrom;	/* the From: line read from the message */
-	char	*e_to;		/* the target person */
-	ADDRESS	e_from;		/* the person it is from */
-	ADDRESS	*e_sendqueue;	/* list of message recipients */
-	long	e_msgsize;	/* size of the message in bytes */
-	int	(*e_putfunc)();	/* function used to put the message */
-	short	e_class;	/* message class (priority, junk, etc.) */
+	HDR		*e_header;	/* head of header list */
+	long		e_msgpriority;	/* adjusted priority of this message */
+	bool		e_queueup;	/* queue this message */
+	bool		e_oldstyle;	/* use spaces (not commas) in hdrs */
+	bool		e_retreceipt;	/* give a return receipt */
+	bool		e_sendreceipt;	/* actually send a receipt back */
+	char		*e_origfrom;	/* the From: line first read */
+	char		*e_to;		/* the target person */
+	ADDRESS		e_from;		/* the person it is from */
+	ADDRESS		*e_sendqueue;	/* list of message recipients */
+	long		e_msgsize;	/* size of the message in bytes */
+	short		e_class;	/* msg class (priority, junk, etc.) */
+	int		(*e_puthdr)();	/* function to put header of message */
+	int		(*e_putbody)();	/* function to put body of message */
+	struct envelope	*e_parent;	/* the message this one encloses */
+	char		*e_df;		/* location of temp file */
+	char		*e_macro[128];	/* macro definitions */
 };
 
 typedef struct envelope	ENVELOPE;
@@ -378,6 +382,5 @@ EXTERN time_t	CurTime;	/* time of this message */
 extern char	*newstr();
 extern ADDRESS	*parse();
 extern char	*xalloc();
-extern char	*expand();
 extern bool	sameaddr();
 extern FILE	*dfopen();

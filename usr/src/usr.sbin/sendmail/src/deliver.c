@@ -6,7 +6,7 @@
 # include <syslog.h>
 # endif LOG
 
-SCCSID(@(#)deliver.c	3.79		%G%);
+SCCSID(@(#)deliver.c	3.79.1.1		%G%);
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -20,9 +20,6 @@ SCCSID(@(#)deliver.c	3.79		%G%);
 **
 **	Parameters:
 **		firstto -- head of the address list to deliver to.
-**		editfcn -- if non-NULL, we want to call this function
-**			to output the letter (instead of just out-
-**			putting it raw).
 **
 **	Returns:
 **		zero -- successfully delivered.
@@ -32,9 +29,8 @@ SCCSID(@(#)deliver.c	3.79		%G%);
 **		The standard input is passed off to someone.
 */
 
-deliver(firstto, editfcn)
+deliver(firstto)
 	ADDRESS *firstto;
-	int (*editfcn)();
 {
 	char *host;			/* host being sent to */
 	char *user;			/* user being sent to */
@@ -43,7 +39,6 @@ deliver(firstto, editfcn)
 	register char *p;
 	register struct mailer *m;	/* mailer for this recipient */
 	register int i;
-	extern putmessage();
 	extern bool checkcompat();
 	char *pv[MAXPV+1];
 	char tobuf[MAXLINE];		/* text line of to people */
@@ -61,14 +56,16 @@ deliver(firstto, editfcn)
 	if (!ForceMail && bitset(QDONTSEND|QPSEUDO, to->q_flags))
 		return (0);
 
+	m = to->q_mailer;
+	host = to->q_host;
+
 # ifdef DEBUG
 	if (Debug)
 		printf("\n--deliver, mailer=%d, host=`%s', first user=`%s'\n",
-			to->q_mailer->m_mno, to->q_host, to->q_user);
+			m->m_mno, host, to->q_user);
 # endif DEBUG
-
-	m = to->q_mailer;
-	host = to->q_host;
+	if (Verbose)
+		message(Arpa_Info, "Connecting to %s.%s...", host, m->m_name);
 
 	/*
 	**  If this mailer is expensive, and if we don't want to make
@@ -102,7 +99,7 @@ deliver(firstto, editfcn)
 	*/
 
 	/* rewrite from address, using rewriting rules */
-	(void) expand(m->m_from, buf, &buf[sizeof buf - 1]);
+	expand(m->m_from, buf, &buf[sizeof buf - 1], CurEnv);
 	mvp = prescan(buf, '\0');
 	if (mvp == NULL)
 	{
@@ -125,7 +122,7 @@ deliver(firstto, editfcn)
 			*pvp++ = "-f";
 		else
 			*pvp++ = "-r";
-		(void) expand("$g", buf, &buf[sizeof buf - 1]);
+		expand("$g", buf, &buf[sizeof buf - 1], CurEnv);
 		*pvp++ = newstr(buf);
 	}
 
@@ -145,7 +142,7 @@ deliver(firstto, editfcn)
 			break;
 
 		/* this entry is safe -- go ahead and process it */
-		(void) expand(*mvp, buf, &buf[sizeof buf - 1]);
+		expand(*mvp, buf, &buf[sizeof buf - 1], CurEnv);
 		*pvp++ = newstr(buf);
 		if (pvp >= &pv[MAXPV - 3])
 		{
@@ -299,11 +296,9 @@ deliver(firstto, editfcn)
 		/*
 		**  See if this user name is "special".
 		**	If the user name has a slash in it, assume that this
-		**	is a file -- send it off without further ado.
-		**	Note that this means that editfcn's will not
-		**	be applied to the message.  Also note that
-		**	this type of addresses is not processed along
-		**	with the others, so we fudge on the CurEnv->e_to person.
+		**	is a file -- send it off without further ado.  Note
+		**	that this type of addresses is not processed along
+		**	with the others, so we fudge on the To person.
 		*/
 
 		if (m == LocalMailer)
@@ -338,7 +333,7 @@ deliver(firstto, editfcn)
 
 		if (!clever)
 		{
-			(void) expand(*mvp, buf, &buf[sizeof buf - 1]);
+			expand(*mvp, buf, &buf[sizeof buf - 1], CurEnv);
 			*pvp++ = newstr(buf);
 			if (pvp >= &pv[MAXPV - 2])
 			{
@@ -367,7 +362,7 @@ deliver(firstto, editfcn)
 
 	while (!clever && *++mvp != NULL)
 	{
-		(void) expand(*mvp, buf, &buf[sizeof buf - 1]);
+		expand(*mvp, buf, &buf[sizeof buf - 1], CurEnv);
 		*pvp++ = newstr(buf);
 		if (pvp >= &pv[MAXPV])
 			syserr("deliver: pv overflow after $u for %s", pv[0]);
@@ -382,19 +377,17 @@ deliver(firstto, editfcn)
 	**	If we are running SMTP, we just need to clean up.
 	*/
 
-	if (editfcn == NULL)
-		editfcn = putmessage;
 	if (ctladdr == NULL)
 		ctladdr = &CurEnv->e_from;
 # ifdef SMTP
 	if (clever)
 	{
-		i = smtpfinish(m, editfcn);
+		i = smtpfinish(m, CurEnv);
 		smtpquit(pv[0]);
 	}
 	else
 # endif SMTP
-		i = sendoff(m, pv, editfcn, ctladdr);
+		i = sendoff(m, pv, ctladdr);
 
 	/*
 	**  If we got a temporary failure, arrange to queue the
@@ -482,7 +475,6 @@ dofork()
 **	Parameters:
 **		m -- mailer descriptor.
 **		pvp -- parameter vector to send to it.
-**		editfcn -- function to pipe it through.
 **		ctladdr -- an address pointer controlling the
 **			user/groupid etc. of the mailer.
 **
@@ -493,16 +485,14 @@ dofork()
 **		none.
 */
 
-sendoff(m, pvp, editfcn, ctladdr)
+sendoff(m, pvp, ctladdr)
 	struct mailer *m;
 	char **pvp;
-	int (*editfcn)();
 	ADDRESS *ctladdr;
 {
 	auto FILE *mfile;
 	auto FILE *rfile;
 	register int i;
-	extern putmessage();
 	int pid;
 
 	/*
@@ -518,10 +508,10 @@ sendoff(m, pvp, editfcn, ctladdr)
 	*/
 
 	(void) signal(SIGPIPE, SIG_IGN);
-	if (editfcn == NULL)
-		editfcn = putmessage;
-	
-	(*editfcn)(mfile, m, FALSE);
+	putfromline(mfile, m);
+	(*CurEnv->e_puthdr)(mfile, m, CurEnv);
+	fprintf(mfile, "\n");
+	(*CurEnv->e_putbody)(mfile, m, FALSE);
 	(void) fclose(mfile);
 
 	i = endmailer(pid, pvp[0]);
@@ -896,102 +886,66 @@ giveresponse(stat, force, m)
 		setstat(stat);
 }
 /*
-**  PUTMESSAGE -- output a message to the final mailer.
+**  PUTFROMLINE -- output a UNIX-style from line (or whatever)
 **
 **	then passes the rest of the message through.  If we have
 **	managed to extract a date already, use that; otherwise,
 **	use the current date/time.
 **
+**	One of the ugliest hacks seen by human eyes is
+**	contained herein: UUCP wants those stupid
+**	"remote from <host>" lines.  Why oh why does a
+**	well-meaning programmer such as myself have to
+**	deal with this kind of antique garbage????
+**
 **	Parameters:
-**		fp -- file to output onto.
-**		m -- a mailer descriptor.
-**		xdot -- if set, hide lines beginning with dot.
+**		fp -- the file to output to.
+**		m -- the mailer describing this entry.
 **
 **	Returns:
-**		none.
+**		none
 **
 **	Side Effects:
-**		The message is written onto fp.
+**		outputs some text to fp.
 */
 
-putmessage(fp, m, xdot)
-	FILE *fp;
-	struct mailer *m;
-	bool xdot;
+putfromline(fp, m)
+	register FILE *fp;
+	register MAILER *m;
 {
-	char buf[BUFSIZ];
+	char buf[MAXLINE];
 	extern char SentDate[];
 
-	/*
-	**  Output "From" line unless supressed
-	**
-	**  >>>>>>>>>>	One of the ugliest hacks seen by human eyes is
-	**  >>>>>>>>>>	contained herein: UUCP wants those stupid
-	**  >> NOTE >>	"remote from <host>" lines.  Why oh why does a
-	**  >>>>>>>>>>	well-meaning programmer such as myself have to
-	**  >>>>>>>>>>	deal with this kind of antique garbage????
-	*/
+	if (bitset(M_NHDR, m->m_flags))
+		return;
 
-	if (!bitset(M_NHDR, m->m_flags))
-	{
 # ifdef UGLYUUCP
-		if (bitset(M_UGLYUUCP, m->m_flags))
-		{
-			extern char *macvalue();
-			char *sys = macvalue('g');
-			char *bang = index(sys, '!');
+	if (bitset(M_UGLYUUCP, m->m_flags))
+	{
+		extern char *macvalue();
+		char *sys = macvalue('g');
+		char *bang = index(sys, '!');
 
-			if (bang == NULL)
-				syserr("No ! in UUCP! (%s)", sys);
-			else
-				*bang = '\0';
-			(void) expand("From $f  $d remote from $g", buf,
-					&buf[sizeof buf - 1]);
-			*bang = '!';
-		}
+		if (bang == NULL)
+			syserr("No ! in UUCP! (%s)", sys);
 		else
+			*bang = '\0';
+		expand("From $f  $d remote from $g", buf,
+				&buf[sizeof buf - 1], CurEnv);
+		*bang = '!';
+	}
+	else
 # endif UGLYUUCP
-			(void) expand("$l", buf, &buf[sizeof buf - 1]);
-		fprintf(fp, "%s\n", buf);
-	}
-
-	/*
-	**  Output all header lines
-	*/
-
-	putheader(fp, m);
-
-	/*
-	**  Output the body of the message
-	*/
-
-	if (TempFile != NULL)
-	{
-		rewind(TempFile);
-		while (!ferror(fp) && fgets(buf, sizeof buf, TempFile) != NULL)
-			fprintf(fp, "%s%s", xdot && buf[0] == '.' ? "." : "", buf);
-
-		if (ferror(TempFile))
-		{
-			syserr("putmessage: read error");
-			ExitStat = EX_IOERR;
-		}
-	}
-
-	(void) fflush(fp);
-	if (ferror(fp) && errno != EPIPE)
-	{
-		syserr("putmessage: write error");
-		ExitStat = EX_IOERR;
-	}
-	errno = 0;
+		expand("$l\n", buf, &buf[sizeof buf - 1], CurEnv);
+	fputs(buf, fp);
 }
 /*
-**  PUTHEADER -- put the header part of a message
+**  PUTHEADER -- put the header part of a message from the in-core copy
 **
 **	Parameters:
 **		fp -- file to put it on.
 **		m -- mailer to use.
+**		e -- envelope to use.
 **
 **	Returns:
 **		none.
@@ -1000,24 +954,24 @@ putmessage(fp, m, xdot)
 **		none.
 */
 
-putheader(fp, m)
+putheader(fp, m, e)
 	register FILE *fp;
 	register struct mailer *m;
+	register ENVELOPE *e;
 {
 	char buf[BUFSIZ];
 	register HDR *h;
 	extern char *arpadate();
-	bool anyheader = FALSE;
 	extern char *capitalize();
 	extern char *hvalue();
 	extern bool samefrom();
 	char *of_line;
 
 	of_line = hvalue("original-from");
-	for (h = CurEnv->e_header; h != NULL; h = h->h_link)
+	for (h = e->e_header; h != NULL; h = h->h_link)
 	{
 		register char *p;
-		char *origfrom = CurEnv->e_origfrom;
+		char *origfrom = e->e_origfrom;
 		bool nooutput;
 
 		nooutput = FALSE;
@@ -1033,7 +987,7 @@ putheader(fp, m)
 		}
 		else if (bitset(H_DEFAULT, h->h_flags))
 		{
-			(void) expand(h->h_value, buf, &buf[sizeof buf]);
+			expand(h->h_value, buf, &buf[sizeof buf], e);
 			p = buf;
 		}
 		else if (bitset(H_ADDR, h->h_flags))
@@ -1063,7 +1017,7 @@ putheader(fp, m)
 					extern bool isatword();
 					char *oldp;
 
-					if (!CurEnv->e_oldstyle || !isspace(*p))
+					if (!e->e_oldstyle || !isspace(*p))
 					{
 						p++;
 						continue;
@@ -1120,10 +1074,7 @@ putheader(fp, m)
 		{
 			/* output new Original-From line if needed */
 			if (of_line == NULL && !samefrom(p, origfrom))
-			{
 				fprintf(fp, "Original-From: %s\n", origfrom);
-				anyheader = TRUE;
-			}
 			if (of_line != NULL && !nooutput && samefrom(p, of_line))
 			{
 				/* delete Original-From: line if redundant */
@@ -1139,11 +1090,56 @@ putheader(fp, m)
 		{
 			fprintf(fp, "%s: %s\n", capitalize(h->h_field), p);
 			h->h_flags |= H_USED;
-			anyheader = TRUE;
 		}
 	}
-	if (anyheader)
-		fprintf(fp, "\n");
+}
+/*
+**  PUTBODY -- put the body of a message.
+**
+**	Parameters:
+**		fp -- file to output onto.
+**		m -- a mailer descriptor.
+**		xdot -- if set, use SMTP hidden dot algorithm.
+**
+**	Returns:
+**		none.
+**
+**	Side Effects:
+**		The message is written onto fp.
+*/
+
+putbody(fp, m, xdot)
+	FILE *fp;
+	struct mailer *m;
+	bool xdot;
+{
+	char buf[MAXLINE + 1];
+
+	/*
+	**  Output the body of the message
+	*/
+
+	if (TempFile != NULL)
+	{
+		rewind(TempFile);
+		buf[0] = '.';
+		while (!ferror(fp) && fgets(&buf[1], sizeof buf - 1, TempFile) != NULL)
+			fputs((xdot && buf[1] == '.') ? buf : &buf[1], fp);
+
+		if (ferror(TempFile))
+		{
+			syserr("putbody: read error");
+			ExitStat = EX_IOERR;
+		}
+	}
+
+	(void) fflush(fp);
+	if (ferror(fp) && errno != EPIPE)
+	{
+		syserr("putbody: write error");
+		ExitStat = EX_IOERR;
+	}
+	errno = 0;
 }
 /*
 **  ISATWORD -- tell if the word we are pointing to is "at".
@@ -1251,7 +1247,7 @@ remotename(name, m, force)
 
 	/* make the name relative to the receiving mailer */
 	define('f', lbuf);
-	(void) expand(m->m_from, buf, &buf[sizeof buf - 1]);
+	expand(m->m_from, buf, &buf[sizeof buf - 1], CurEnv);
 
 	/* rewrite to get rid of garbage we added in the expand above */
 	pvp = prescan(buf, '\0');
@@ -1260,7 +1256,7 @@ remotename(name, m, force)
 
 	/* now add any comment info we had before back */
 	define('g', lbuf);
-	(void) expand("$q", buf, &buf[sizeof buf - 1]);
+	expand("$q", buf, &buf[sizeof buf - 1], CurEnv);
 
 	define('f', oldf);
 	define('g', oldg);
@@ -1396,7 +1392,10 @@ mailfile(filename, ctladdr)
 		if (f == NULL)
 			exit(EX_CANTCREAT);
 
-		putmessage(f, Mailer[1], FALSE);
+		putfromline(f, Mailer[1]);
+		(*CurEnv->e_puthdr)(f, Mailer[1], CurEnv);
+		fprintf(f, "\n");
+		(*CurEnv->e_putbody)(f, Mailer[1], FALSE);
 		fputs("\n", f);
 		(void) fclose(f);
 		(void) fflush(stdout);
@@ -1466,6 +1465,6 @@ sendall(verifyonly)
 			}
 		}
 		else
-			(void) deliver(q, (fnptr) NULL);
+			(void) deliver(q);
 	}
 }

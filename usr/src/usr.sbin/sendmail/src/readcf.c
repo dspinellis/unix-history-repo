@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)readcf.c	3.23		%G%);
+SCCSID(@(#)readcf.c	3.23.1.1		%G%);
 
 /*
 **  READCF -- read control file.
@@ -106,7 +106,7 @@ readcf(cfname, safe)
 
 			/* expand and save the LHS */
 			*p = '\0';
-			(void) expand(&buf[1], exbuf, &exbuf[sizeof exbuf]);
+			expand(&buf[1], exbuf, &exbuf[sizeof exbuf], CurEnv);
 			rwp->r_lhs = prescan(exbuf, '\t');
 			if (rwp->r_lhs != NULL)
 				rwp->r_lhs = copyplist(rwp->r_lhs, TRUE);
@@ -114,7 +114,7 @@ readcf(cfname, safe)
 			/* expand and save the RHS */
 			while (*++p == '\t')
 				continue;
-			(void) expand(p, exbuf, &exbuf[sizeof exbuf]);
+			expand(p, exbuf, &exbuf[sizeof exbuf], CurEnv);
 			rwp->r_rhs = prescan(exbuf, '\t');
 			if (rwp->r_rhs != NULL)
 				rwp->r_rhs = copyplist(rwp->r_rhs, TRUE);

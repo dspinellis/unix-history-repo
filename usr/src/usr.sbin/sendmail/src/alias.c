@@ -4,9 +4,9 @@
 # include "sendmail.h"
 
 # ifdef DBM
-SCCSID(@(#)alias.c	3.31		%G%	(with DBM));
+SCCSID(@(#)alias.c	3.31.1.1		%G%	(with DBM));
 # else DBM
-SCCSID(@(#)alias.c	3.31		%G%	(without DBM));
+SCCSID(@(#)alias.c	3.31.1.1		%G%	(without DBM));
 # endif DBM
 
 /*
@@ -472,7 +472,7 @@ forward(user, sendq)
 
 	/* good address -- look for .forward file in home */
 	define('z', user->q_home);
-	(void) expand("$z/.forward", buf, &buf[sizeof buf - 1]);
+	expand("$z/.forward", buf, &buf[sizeof buf - 1], CurEnv);
 	if (!safefile(buf, user->q_uid, S_IREAD))
 		return;
 
