@@ -12,7 +12,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)uipc_syscalls.c	7.12 (Berkeley) %G%
+ *	@(#)uipc_syscalls.c	7.13 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -43,23 +43,22 @@ socket()
 	} *uap = (struct a *)u.u_ap;
 	struct socket *so;
 	struct file *fp;
-	int fd;
+	int fd, error;
 
-	if (u.u_error = falloc(&fp, &fd))
-		return;
+	if (error = falloc(&fp, &fd))
+		RETURN (error);
 	fp->f_flag = FREAD|FWRITE;
 	fp->f_type = DTYPE_SOCKET;
 	fp->f_ops = &socketops;
-	u.u_error = socreate(uap->domain, &so, uap->type, uap->protocol);
-	if (u.u_error)
-		goto bad;
-	fp->f_data = (caddr_t)so;
-	u.u_r.r_val1 = fd;
-	return;
-bad:
-	u.u_ofile[fd] = 0;
-	crfree(fp->f_cred);
-	fp->f_count = 0;
+	if (error = socreate(uap->domain, &so, uap->type, uap->protocol)) {
+		u.u_ofile[fd] = 0;
+		crfree(fp->f_cred);
+		fp->f_count = 0;
+	} else {
+		fp->f_data = (caddr_t)so;
+		u.u_r.r_val1 = fd;
+	}
+	RETURN (error);
 }
 
 bind()
@@ -71,15 +70,16 @@ bind()
 	} *uap = (struct a *)u.u_ap;
 	register struct file *fp;
 	struct mbuf *nam;
+	int error;
 
-	fp = getsock(uap->s);
+	fp = getsock(uap->s, &error);
 	if (fp == 0)
-		return;
-	u.u_error = sockargs(&nam, uap->name, uap->namelen, MT_SONAME);
-	if (u.u_error)
-		return;
-	u.u_error = sobind((struct socket *)fp->f_data, nam);
+		RETURN (error);
+	if (error = sockargs(&nam, uap->name, uap->namelen, MT_SONAME))
+		RETURN (error);
+	error = sobind((struct socket *)fp->f_data, nam);
 	m_freem(nam);
+	RETURN (error);
 }
 
 listen()
@@ -89,60 +89,80 @@ listen()
 		int	backlog;
 	} *uap = (struct a *)u.u_ap;
 	register struct file *fp;
+	int error;
 
-	fp = getsock(uap->s);
+	fp = getsock(uap->s, &error);
 	if (fp == 0)
-		return;
-	u.u_error = solisten((struct socket *)fp->f_data, uap->backlog);
+		RETURN (error);
+	RETURN (solisten((struct socket *)fp->f_data, uap->backlog));
 }
 
 #ifdef COMPAT_43
 accept()
 {
-	accept1(0);
+	struct a {
+		int	s;
+		caddr_t	name;
+		int	*anamelen;
+		int	compat_43;
+	};
+	((struct a *)u.u_ap)->compat_43 = 0;
+
+	RETURN (accept1());
 }
 
 oaccept()
 {
-	accept1(1);
-}
+	struct a {
+		int	s;
+		caddr_t	name;
+		int	*anamelen;
+		int	compat_43;
+	};
+	((struct a *)u.u_ap)->compat_43 = 1;
 
-accept1(compat_43)
-#else
-accept()
+	RETURN (accept1());
+}
+#else /* COMPAT_43 */
+
+#define	accept1	accept
 #endif
+
+accept1()
 {
 	register struct a {
 		int	s;
 		caddr_t	name;
 		int	*anamelen;
+#ifdef COMPAT_43
+		int	compat_43;
+#endif
 	} *uap = (struct a *)u.u_ap;
 	struct file *fp;
 	struct mbuf *nam;
 	int namelen, error, s;
 	register struct socket *so;
 
-	if (uap->name == 0)
-		goto noname;
-	error = copyin((caddr_t)uap->anamelen, (caddr_t)&namelen,
-		sizeof (namelen));
-	if (error)
-		RETURN (error);
-	if (useracc((caddr_t)uap->name, (u_int)namelen, B_WRITE) == 0)
-		RETURN (EFAULT);
-noname:
-	fp = getsock(uap->s);
+	if (uap->name) {
+		error = copyin((caddr_t)uap->anamelen, (caddr_t)&namelen,
+			sizeof (namelen));
+		if (error)
+			return (error);
+		if (useracc((caddr_t)uap->name, (u_int)namelen, B_WRITE) == 0)
+			return (EFAULT);
+	}
+	fp = getsock(uap->s, &error);
 	if (fp == 0)
-		return;
+		return (error);
 	s = splnet();
 	so = (struct socket *)fp->f_data;
 	if ((so->so_options & SO_ACCEPTCONN) == 0) {
 		splx(s);
-		RETURN (EINVAL);
+		return (EINVAL);
 	}
 	if ((so->so_state & SS_NBIO) && so->so_qlen == 0) {
 		splx(s);
-		RETURN (EWOULDBLOCK);
+		return (EWOULDBLOCK);
 	}
 	while (so->so_qlen == 0 && so->so_error == 0) {
 		if (so->so_state & SS_CANTRCVMORE) {
@@ -152,18 +172,18 @@ noname:
 		if (error = tsleep((caddr_t)&so->so_timeo, PSOCK | PCATCH,
 		    netcon, 0)) {
 			splx(s);
-			RETURN (error);
+			return (error);
 		}
 	}
 	if (so->so_error) {
 		error = so->so_error;
 		so->so_error = 0;
 		splx(s);
-		RETURN (error);
+		return (error);
 	}
 	if (error = falloc(&fp, &u.u_r.r_val1)) {
 		splx(s);
-		RETURN (error);
+		return (error);
 	}
 	{ struct socket *aso = so->so_q;
 	  if (soqremque(aso, 1) == 0)
@@ -178,7 +198,7 @@ noname:
 	(void) soaccept(so, nam);
 	if (uap->name) {
 #ifdef COMPAT_43
-		if (compat_43)
+		if (uap->compat_43)
 			mtod(nam, struct osockaddr *)->sa_family =
 			    mtod(nam, struct sockaddr *)->sa_family;
 #endif
@@ -192,7 +212,7 @@ noname:
 	}
 	m_freem(nam);
 	splx(s);
-	RETURN (0);
+	return (0);
 }
 
 connect()
@@ -207,9 +227,9 @@ connect()
 	struct mbuf *nam;
 	int error, s;
 
-	fp = getsock(uap->s);
+	fp = getsock(uap->s, &error);
 	if (fp == 0)
-		return;
+		RETURN (error);
 	so = (struct socket *)fp->f_data;
 	if ((so->so_state & SS_NBIO) && (so->so_state & SS_ISCONNECTING))
 		RETURN (EALREADY);
@@ -250,47 +270,41 @@ socketpair()
 	} *uap = (struct a *)u.u_ap;
 	struct file *fp1, *fp2;
 	struct socket *so1, *so2;
-	int fd, sv[2];
+	int fd, error, sv[2];
 
-	if (useracc((caddr_t)uap->rsv, 2 * sizeof (int), B_WRITE) == 0) {
-		u.u_error = EFAULT;
-		return;
-	}
-	u.u_error = socreate(uap->domain, &so1, uap->type, uap->protocol);
-	if (u.u_error)
-		return;
-	u.u_error = socreate(uap->domain, &so2, uap->type, uap->protocol);
-	if (u.u_error)
+	if (useracc((caddr_t)uap->rsv, 2 * sizeof (int), B_WRITE) == 0)
+		RETURN (EFAULT);
+	if (error = socreate(uap->domain, &so1, uap->type, uap->protocol))
+		RETURN (error);
+	if (error = socreate(uap->domain, &so2, uap->type, uap->protocol))
 		goto free1;
-	if (u.u_error = falloc(&fp1, &fd))
+	if (error = falloc(&fp1, &fd))
 		goto free2;
 	sv[0] = fd;
 	fp1->f_flag = FREAD|FWRITE;
 	fp1->f_type = DTYPE_SOCKET;
 	fp1->f_ops = &socketops;
 	fp1->f_data = (caddr_t)so1;
-	if (u.u_error = falloc(&fp2, &fd))
+	if (error = falloc(&fp2, &fd))
 		goto free3;
 	fp2->f_flag = FREAD|FWRITE;
 	fp2->f_type = DTYPE_SOCKET;
 	fp2->f_ops = &socketops;
 	fp2->f_data = (caddr_t)so2;
 	sv[1] = fd;
-	u.u_error = soconnect2(so1, so2);
-	if (u.u_error)
+	if (error = soconnect2(so1, so2))
 		goto free4;
 	if (uap->type == SOCK_DGRAM) {
 		/*
 		 * Datagram socket connection is asymmetric.
 		 */
-		 u.u_error = soconnect2(so2, so1);
-		 if (u.u_error)
+		 if (error = soconnect2(so2, so1))
 			goto free4;
 	}
-	(void) copyout((caddr_t)sv, (caddr_t)uap->rsv, 2 * sizeof (int));
-	u.u_r.r_val1 = sv[0];
-	u.u_r.r_val2 = sv[1];
-	return;
+	error = copyout((caddr_t)sv, (caddr_t)uap->rsv, 2 * sizeof (int));
+	u.u_r.r_val1 = sv[0];		/* XXX ??? */
+	u.u_r.r_val2 = sv[1];		/* XXX ??? */
+	RETURN (error);
 free4:
 	crfree(fp2->f_cred);
 	fp2->f_count = 0;
@@ -303,6 +317,7 @@ free2:
 	(void)soclose(so2);
 free1:
 	(void)soclose(so1);
+	RETURN (error);
 }
 
 sendto()
@@ -328,11 +343,10 @@ sendto()
 #endif
 	aiov.iov_base = uap->buf;
 	aiov.iov_len = uap->len;
-	sendit(uap->s, &msg, uap->flags);
+	RETURN (sendit(uap->s, &msg, uap->flags));
 }
 
 #ifdef COMPAT_43
-
 osend()
 {
 	register struct a {
@@ -352,7 +366,7 @@ osend()
 	aiov.iov_len = uap->len;
 	msg.msg_control = 0;
 	msg.msg_flags = 0;
-	sendit(uap->s, &msg, uap->flags);
+	RETURN (sendit(uap->s, &msg, uap->flags));
 }
 
 #define MSG_OSENDMSG	0x8000
@@ -365,20 +379,17 @@ osendmsg()
 	} *uap = (struct a *)u.u_ap;
 	struct msghdr msg;
 	struct iovec aiov[MSG_MAXIOVLEN];
+	int error;
 
-	u.u_error = copyin(uap->msg, (caddr_t)&msg, sizeof (struct omsghdr));
-	if (u.u_error)
-		return;
-	if ((u_int)msg.msg_iovlen >= sizeof (aiov) / sizeof (aiov[0])) {
-		u.u_error = EMSGSIZE;
-		return;
-	}
-	u.u_error = copyin((caddr_t)msg.msg_iov, (caddr_t)aiov,
-		(unsigned)(msg.msg_iovlen * sizeof (aiov[0])));
-	if (u.u_error)
-		return;
+	if (error = copyin(uap->msg, (caddr_t)&msg, sizeof (struct omsghdr)))
+		RETURN (error);
+	if ((u_int)msg.msg_iovlen >= sizeof (aiov) / sizeof (aiov[0]))
+		RETURN (EMSGSIZE);
+	if (error = copyin((caddr_t)msg.msg_iov, (caddr_t)aiov,
+	    (unsigned)(msg.msg_iovlen * sizeof (aiov[0]))))
+		RETURN (error);
 	msg.msg_flags = MSG_OSENDMSG;
-	sendit(uap->s, &msg, uap->flags);
+	RETURN (sendit(uap->s, &msg, uap->flags));
 }
 #endif
 
@@ -391,22 +402,21 @@ sendmsg()
 	} *uap = (struct a *)u.u_ap;
 	struct msghdr msg;
 	struct iovec aiov[MSG_MAXIOVLEN];
+	int error;
 
-	if (u.u_error = copyin(uap->msg, (caddr_t)&msg, sizeof (msg)))
-		return;
-	if ((u_int)msg.msg_iovlen >= sizeof (aiov) / sizeof (aiov[0])) {
-		u.u_error = EMSGSIZE;
-		return;
-	}
+	if (error = copyin(uap->msg, (caddr_t)&msg, sizeof (msg)))
+		RETURN (error);
+	if ((u_int)msg.msg_iovlen >= sizeof (aiov) / sizeof (aiov[0]))
+		RETURN (EMSGSIZE);
 	if (msg.msg_iovlen &&
-	    (u.u_error = copyin((caddr_t)msg.msg_iov, (caddr_t)aiov,
-				(unsigned)(msg.msg_iovlen * sizeof (aiov[0])))))
-		return;
+	    (error = copyin((caddr_t)msg.msg_iov, (caddr_t)aiov,
+	    (unsigned)(msg.msg_iovlen * sizeof (aiov[0])))))
+		RETURN (error);
 	msg.msg_iov = aiov;
 #ifdef COMPAT_43
 	msg.msg_flags = 0;
 #endif
-	sendit(uap->s, &msg, uap->flags);
+	RETURN (sendit(uap->s, &msg, uap->flags));
 }
 
 sendit(s, mp, flags)
@@ -419,11 +429,11 @@ sendit(s, mp, flags)
 	register struct iovec *iov;
 	register int i;
 	struct mbuf *to, *control;
-	int len;
+	int len, error;
 	
-	fp = getsock(s);
+	fp = getsock(s, &error);
 	if (fp == 0)
-		return;
+		return (error);
 	auio.uio_iov = mp->msg_iov;
 	auio.uio_iovcnt = mp->msg_iovlen;
 	auio.uio_segflg = UIO_USERSPACE;
@@ -432,38 +442,33 @@ sendit(s, mp, flags)
 	auio.uio_resid = 0;
 	iov = mp->msg_iov;
 	for (i = 0; i < mp->msg_iovlen; i++, iov++) {
-		if (iov->iov_len < 0) {
-			u.u_error = EINVAL;
-			return;
-		}
+		if (iov->iov_len < 0)
+			return (EINVAL);
 		if (iov->iov_len == 0)
 			continue;
-		if (useracc(iov->iov_base, (u_int)iov->iov_len, B_READ) == 0) {
-			u.u_error = EFAULT;
-			return;
-		}
+		if (useracc(iov->iov_base, (u_int)iov->iov_len, B_READ) == 0)
+			return (EFAULT);
 		auio.uio_resid += iov->iov_len;
 	}
 	if (mp->msg_name) {
-		u.u_error =
-		    sockargs(&to, mp->msg_name, mp->msg_namelen, MT_SONAME);
-		if (u.u_error)
-			return;
+		if (error = sockargs(&to, mp->msg_name, mp->msg_namelen,
+		    MT_SONAME))
+			return (error);
 	} else
 		to = 0;
 	if (mp->msg_control) {
-		u.u_error =
-		    sockargs(&control, mp->msg_control, mp->msg_controllen,
-		    MT_CONTROL);
-		if (u.u_error)
+		if (error = sockargs(&control, mp->msg_control,
+		    mp->msg_controllen, MT_CONTROL))
 			goto bad;
 #ifdef COMPAT_43
 		if (mp->msg_flags) {
 			register struct cmsghdr *cm;
+
 			M_PREPEND(control, sizeof(*cm), M_WAIT);
-			if (control == 0)
-				u.u_error = ENOBUFS;
-			else {
+			if (control == 0) {
+				error = ENOBUFS;
+				goto bad;
+			} else {
 				cm = mtod(control, struct cmsghdr *);
 				cm->cmsg_len = control->m_len;
 				cm->cmsg_level = SOL_SOCKET;
@@ -474,37 +479,62 @@ sendit(s, mp, flags)
 	} else
 		control = 0;
 	len = auio.uio_resid;
-	u.u_error = sosend((struct socket *)fp->f_data, to, &auio,
-	    flags, control);
-	if ((u.u_error == EINTR || u.u_error == ERESTART ||
-	    u.u_error == EWOULDBLOCK) && auio.uio_resid != len)
-		u.u_error = 0;
-	u.u_r.r_val1 = len - auio.uio_resid;
+	if (error = sosend((struct socket *)fp->f_data, to, &auio,
+	    flags, control)) {
+		if (auio.uio_resid != len && (error == ERESTART ||
+		    error == EINTR || error == EWOULDBLOCK))
+			error = 0;
+		if (error == EPIPE)
+			psignal(u.u_procp, SIGPIPE);
+	} else
+		u.u_r.r_val1 = len - auio.uio_resid;
 	if (control)
 		m_freem(control);
 bad:
 	if (to)
 		m_freem(to);
+	return (error);
 }
 
 #ifdef COMPAT_43
 recvfrom()
 {
-	recvfrom1(0);
+	struct a {
+		int	s;
+		caddr_t	buf;
+		int	len;
+		int	flags;
+		caddr_t	from;
+		int	*fromlenaddr;
+		int	compat_43;
+	};
+
+	((struct a *)u.u_ap)->compat_43 = 0;
+	RETURN (recvfrom1());
 }
 
 orecvfrom()
 {
-	recvfrom1(1);
-}
+	struct a {
+		int	s;
+		caddr_t	buf;
+		int	len;
+		int	flags;
+		caddr_t	from;
+		int	*fromlenaddr;
+		int	compat_43;
+	};
 
-recvfrom1(compat_43)
-{	/* vi will want an extra } to be happy! */
-#else
-recvfrom()
-{
-	int compat_43 = 0;
+	((struct a *)u.u_ap)->compat_43 = 1;
+	RETURN (recvfrom1());
+}
+#else /* COMPAT_43 */
+
+#define	recvfrom1	recvfrom
 #endif
+
+recvfrom1()
+{
 	register struct a {
 		int	s;
 		caddr_t	buf;
@@ -512,16 +542,18 @@ recvfrom()
 		int	flags;
 		caddr_t	from;
 		int	*fromlenaddr;
+#ifdef COMPAT_43
+		int	compat_43;
+#endif
 	} *uap = (struct a *)u.u_ap;
 	struct msghdr msg;
 	struct iovec aiov;
-	int len;
+	int len, error;
 
 	if (uap->fromlenaddr) {
-		u.u_error = copyin((caddr_t)uap->fromlenaddr, (caddr_t)&len,
-		   sizeof (len));
-		if (u.u_error)
-			return;
+		if (error = copyin((caddr_t)uap->fromlenaddr, (caddr_t)&len,
+		   sizeof (len)))
+			return (error);
 	} else
 		len = 0;
 	msg.msg_name = uap->from;
@@ -532,8 +564,11 @@ recvfrom()
 	aiov.iov_len = uap->len;
 	msg.msg_control = 0;
 	msg.msg_flags = uap->flags;
-	recvit(uap->s, &msg, (caddr_t)uap->fromlenaddr, (caddr_t)0, compat_43);
+	/* COMPAT_43 */
+	return (recvit(uap->s, &msg, (caddr_t)uap->fromlenaddr, (caddr_t)0,
+	    uap->compat_43));
 }
+
 #ifdef COMPAT_43
 orecv()
 {
@@ -554,7 +589,7 @@ orecv()
 	aiov.iov_len = uap->len;
 	msg.msg_control = 0;
 	msg.msg_flags = uap->flags;
-	recvit(uap->s, &msg, (caddr_t)0, (caddr_t)0, 0);
+	RETURN (recvit(uap->s, &msg, (caddr_t)0, (caddr_t)0, 0));
 }
 
 orecvmsg()
@@ -566,30 +601,24 @@ orecvmsg()
 	} *uap = (struct a *)u.u_ap;
 	struct msghdr msg;
 	struct iovec aiov[MSG_MAXIOVLEN];
+	int error;
 
-	u.u_error = copyin((caddr_t)uap->msg, (caddr_t)&msg,
-	    sizeof (struct omsghdr));
-	if (u.u_error)
-		return;
-	if ((u_int)msg.msg_iovlen >= sizeof (aiov) / sizeof (aiov[0])) {
-		u.u_error = EMSGSIZE;
-		return;
-	}
+	if (error = copyin((caddr_t)uap->msg, (caddr_t)&msg,
+	    sizeof (struct omsghdr)))
+		RETURN (error);
+	if ((u_int)msg.msg_iovlen >= sizeof (aiov) / sizeof (aiov[0]))
+		RETURN (EMSGSIZE);
 	msg.msg_flags = uap->flags;
-	u.u_error = copyin((caddr_t)msg.msg_iov, (caddr_t)aiov,
-		(unsigned)(msg.msg_iovlen * sizeof (aiov[0])));
-	if (u.u_error)
-		return;
+	if (error = copyin((caddr_t)msg.msg_iov, (caddr_t)aiov,
+	    (unsigned)(msg.msg_iovlen * sizeof (aiov[0]))))
+		RETURN (error);
 	msg.msg_iov = aiov;
-	if (msg.msg_control)
-		if (useracc((caddr_t)msg.msg_control,
-		    (unsigned)msg.msg_controllen, B_WRITE) == 0) {
-			    u.u_error = EFAULT;
-			    return;
-		}
+	if (msg.msg_control && useracc((caddr_t)msg.msg_control,
+	    (unsigned)msg.msg_controllen, B_WRITE) == 0)
+		RETURN (EFAULT);
 	    
-	recvit(uap->s, &msg, (caddr_t)&uap->msg->msg_namelen,
-	    (caddr_t)&uap->msg->msg_accrightslen, /* compat_43 */1);
+	RETURN (recvit(uap->s, &msg, (caddr_t)&uap->msg->msg_namelen,
+	    (caddr_t)&uap->msg->msg_accrightslen, /* compat_43 */1));
 }
 #endif
 
@@ -602,36 +631,29 @@ recvmsg()
 	} *uap = (struct a *)u.u_ap;
 	struct msghdr msg;
 	struct iovec aiov[MSG_MAXIOVLEN], *uiov;
-	register int error1;
+	register int error;
 
-	u.u_error = copyin((caddr_t)uap->msg, (caddr_t)&msg, sizeof (msg));
-	if (u.u_error)
-		return;
-	if ((u_int)msg.msg_iovlen >= sizeof (aiov) / sizeof (aiov[0])) {
-		u.u_error = EMSGSIZE;
-		return;
-	}
+	if (error = copyin((caddr_t)uap->msg, (caddr_t)&msg, sizeof (msg)))
+		RETURN (error);
+	if ((u_int)msg.msg_iovlen >= sizeof (aiov) / sizeof (aiov[0]))
+		RETURN (EMSGSIZE);
 	msg.msg_flags = uap->flags;
 	uiov = msg.msg_iov;
 	msg.msg_iov = aiov;
-	u.u_error = copyin((caddr_t)uiov, (caddr_t)aiov,
-		(unsigned)(msg.msg_iovlen * sizeof (aiov[0])));
-	if (u.u_error)
-		return;
-	if (msg.msg_control)
-		if (useracc((caddr_t)msg.msg_control,
-		    (unsigned)msg.msg_controllen, B_WRITE) == 0) {
-			u.u_error = EFAULT;
-			return;
-		}
-	recvit(uap->s, &msg, (caddr_t)0, (caddr_t)0, 0);
-	msg.msg_iov = uiov;
-	error1 = copyout((caddr_t)&msg, (caddr_t)uap->msg, sizeof(msg));
-	if (error1 && u.u_error == 0)
-		u.u_error = error1;
+	if (error = copyin((caddr_t)uiov, (caddr_t)aiov,
+	    (unsigned)(msg.msg_iovlen * sizeof (aiov[0]))))
+		RETURN (error);
+	if (msg.msg_control && useracc((caddr_t)msg.msg_control,
+	    (unsigned)msg.msg_controllen, B_WRITE) == 0)
+		RETURN (EFAULT);
+	if ((error = recvit(uap->s, &msg, (caddr_t)0, (caddr_t)0, 0)) == 0) {
+		msg.msg_iov = uiov;
+		error = copyout((caddr_t)&msg, (caddr_t)uap->msg, sizeof(msg));
+	}
+	RETURN (error);
 }
 
-/* ARGSUSED */
+/* ARGSUSED COMPAT_43 */
 recvit(s, mp, namelenp, rightslenp, compat_43)
 	int s, compat_43;
 	register struct msghdr *mp;
@@ -641,12 +663,12 @@ recvit(s, mp, namelenp, rightslenp, compat_43)
 	struct uio auio;
 	register struct iovec *iov;
 	register int i;
-	int len;
+	int len, error;
 	struct mbuf *from = 0, *rights = 0, *control = 0;
 	
-	fp = getsock(s);
+	fp = getsock(s, &error);
 	if (fp == 0)
-		return;
+		return (error);
 	auio.uio_iov = mp->msg_iov;
 	auio.uio_iovcnt = mp->msg_iovlen;
 	auio.uio_segflg = UIO_USERSPACE;
@@ -655,24 +677,23 @@ recvit(s, mp, namelenp, rightslenp, compat_43)
 	auio.uio_resid = 0;
 	iov = mp->msg_iov;
 	for (i = 0; i < mp->msg_iovlen; i++, iov++) {
-		if (iov->iov_len < 0) {
-			u.u_error = EINVAL;
-			return;
-		}
+		if (iov->iov_len < 0)
+			return (EINVAL);
 		if (iov->iov_len == 0)
 			continue;
-		if (useracc(iov->iov_base, (u_int)iov->iov_len, B_WRITE) == 0) {
-			u.u_error = EFAULT;
-			return;
-		}
+		if (useracc(iov->iov_base, (u_int)iov->iov_len, B_WRITE) == 0)
+			return (EFAULT);
 		auio.uio_resid += iov->iov_len;
 	}
 	len = auio.uio_resid;
-	u.u_error = soreceive((struct socket *)fp->f_data, &from, &auio,
-	    &mp->msg_flags, &rights, &control);
-	if ((u.u_error == EINTR || u.u_error == ERESTART ||
-	    u.u_error == EWOULDBLOCK) && auio.uio_resid != len)
-		u.u_error = 0;
+	if (error = soreceive((struct socket *)fp->f_data, &from, &auio,
+	    &mp->msg_flags, &rights, &control)) {
+		if (auio.uio_resid != len && (error == ERESTART ||
+		    error == EINTR || error == EWOULDBLOCK))
+			error = 0;
+	}
+	if (error)
+		goto out;
 	u.u_r.r_val1 = len - auio.uio_resid;
 	if (mp->msg_name) {
 		len = mp->msg_namelen;
@@ -735,12 +756,14 @@ recvit(s, mp, namelenp, rightslenp, compat_43)
 		}
 		mp->msg_controllen = len;
 	}
+out:
 	if (rights)
 		m_freem(rights);
 	if (from)
 		m_freem(from);
 	if (control)
 		m_freem(control);
+	return (error);
 }
 
 shutdown()
@@ -750,11 +773,12 @@ shutdown()
 		int	how;
 	} *uap = (struct a *)u.u_ap;
 	struct file *fp;
+	int error;
 
-	fp = getsock(uap->s);
+	fp = getsock(uap->s, &error);
 	if (fp == 0)
-		return;
-	u.u_error = soshutdown((struct socket *)fp->f_data, uap->how);
+		RETURN (error);
+	RETURN (soshutdown((struct socket *)fp->f_data, uap->how));
 }
 
 setsockopt()
@@ -768,30 +792,26 @@ setsockopt()
 	} *uap = (struct a *)u.u_ap;
 	struct file *fp;
 	struct mbuf *m = NULL;
+	int error;
 
-	fp = getsock(uap->s);
+	fp = getsock(uap->s, &error);
 	if (fp == 0)
-		return;
-	if (uap->valsize > MLEN) {
-		u.u_error = EINVAL;
-		return;
-	}
+		RETURN (error);
+	if (uap->valsize > MLEN)
+		RETURN (EINVAL);
 	if (uap->val) {
 		m = m_get(M_WAIT, MT_SOOPTS);
-		if (m == NULL) {
-			u.u_error = ENOBUFS;
-			return;
-		}
-		u.u_error =
-		    copyin(uap->val, mtod(m, caddr_t), (u_int)uap->valsize);
-		if (u.u_error) {
+		if (m == NULL)
+			RETURN (ENOBUFS);
+		if (error = copyin(uap->val, mtod(m, caddr_t),
+		    (u_int)uap->valsize)) {
 			(void) m_free(m);
-			return;
+			RETURN (error);
 		}
 		m->m_len = uap->valsize;
 	}
-	u.u_error =
-	    sosetopt((struct socket *)fp->f_data, uap->level, uap->name, m);
+	RETURN (sosetopt((struct socket *)fp->f_data, uap->level,
+	    uap->name, m));
 }
 
 getsockopt()
@@ -805,65 +825,58 @@ getsockopt()
 	} *uap = (struct a *)u.u_ap;
 	struct file *fp;
 	struct mbuf *m = NULL;
-	int valsize;
+	int valsize, error;
 
-	fp = getsock(uap->s);
+	fp = getsock(uap->s, &error);
 	if (fp == 0)
-		return;
+		RETURN (error);
 	if (uap->val) {
-		u.u_error = copyin((caddr_t)uap->avalsize, (caddr_t)&valsize,
-			sizeof (valsize));
-		if (u.u_error)
-			return;
+		if (error = copyin((caddr_t)uap->avalsize, (caddr_t)&valsize,
+		    sizeof (valsize)))
+			RETURN (error);
 	} else
 		valsize = 0;
-	u.u_error =
-	    sogetopt((struct socket *)fp->f_data, uap->level, uap->name, &m);
-	if (u.u_error)
-		goto bad;
-	if (uap->val && valsize && m != NULL) {
+	if ((error = sogetopt((struct socket *)fp->f_data, uap->level,
+	    uap->name, &m)) == 0 && uap->val && valsize && m != NULL) {
 		if (valsize > m->m_len)
 			valsize = m->m_len;
-		u.u_error = copyout(mtod(m, caddr_t), uap->val, (u_int)valsize);
-		if (u.u_error)
-			goto bad;
-		u.u_error = copyout((caddr_t)&valsize, (caddr_t)uap->avalsize,
-		    sizeof (valsize));
+		error = copyout(mtod(m, caddr_t), uap->val, (u_int)valsize);
+		if (error == 0)
+			error = copyout((caddr_t)&valsize,
+			    (caddr_t)uap->avalsize, sizeof (valsize));
 	}
-bad:
 	if (m != NULL)
 		(void) m_free(m);
+	RETURN (error);
 }
 
 pipe()
 {
 	struct file *rf, *wf;
 	struct socket *rso, *wso;
-	int fd;
+	int fd, error;
 
-	u.u_error = socreate(AF_UNIX, &rso, SOCK_STREAM, 0);
-	if (u.u_error)
-		return;
-	u.u_error = socreate(AF_UNIX, &wso, SOCK_STREAM, 0);
-	if (u.u_error)
+	if (error = socreate(AF_UNIX, &rso, SOCK_STREAM, 0))
+		RETURN (error);
+	if (error = socreate(AF_UNIX, &wso, SOCK_STREAM, 0))
 		goto free1;
-	if (u.u_error = falloc(&rf, &fd))
+	if (error = falloc(&rf, &fd))
 		goto free2;
 	u.u_r.r_val1 = fd;
 	rf->f_flag = FREAD;
 	rf->f_type = DTYPE_SOCKET;
 	rf->f_ops = &socketops;
 	rf->f_data = (caddr_t)rso;
-	if (u.u_error = falloc(&wf, &fd))
+	if (error = falloc(&wf, &fd))
 		goto free3;
 	wf->f_flag = FWRITE;
 	wf->f_type = DTYPE_SOCKET;
 	wf->f_ops = &socketops;
 	wf->f_data = (caddr_t)wso;
 	u.u_r.r_val2 = fd;
-	if (u.u_error = unp_connect2(wso, rso))
+	if (error = unp_connect2(wso, rso))
 		goto free4;
-	return;
+	RETURN (0);
 free4:
 	wf->f_count = 0;
 	u.u_ofile[u.u_r.r_val2] = 0;
@@ -874,6 +887,7 @@ free2:
 	(void)soclose(wso);
 free1:
 	(void)soclose(rso);
+	RETURN (error);
 }
 
 /*
@@ -882,57 +896,74 @@ free1:
 #ifdef COMPAT_43
 getsockname()
 {
-	getsockname1(0);
+	struct a {
+		int	fdes;
+		caddr_t	asa;
+		int	*alen;
+		int	compat_43;
+	};
+	((struct a *)u.u_ap)->compat_43 = 0;
+
+	RETURN (getsockname1());
 }
 
 ogetsockname()
 {
-	getsockname1(1);
-}
+	struct a {
+		int	fdes;
+		caddr_t	asa;
+		int	*alen;
+		int	compat_43;
+	};
+	((struct a *)u.u_ap)->compat_43 = 1;
 
-getsockname1(compat_43)
-#else
-getsockname()
+	RETURN (getsockname1());
+}
+#else /* COMPAT_43 */
+
+#define	getsockname1	getsockname
 #endif
+
+getsockname1()
 {
 	register struct a {
 		int	fdes;
 		caddr_t	asa;
 		int	*alen;
+#ifdef COMPAT_43
+		int	compat_43;
+#endif
 	} *uap = (struct a *)u.u_ap;
 	register struct file *fp;
 	register struct socket *so;
 	struct mbuf *m;
-	int len;
+	int len, error;
 
-	fp = getsock(uap->fdes);
+	fp = getsock(uap->fdes, &error);
 	if (fp == 0)
-		return;
-	u.u_error = copyin((caddr_t)uap->alen, (caddr_t)&len, sizeof (len));
-	if (u.u_error)
-		return;
+		return (error);
+	if (error = copyin((caddr_t)uap->alen, (caddr_t)&len, sizeof (len)))
+		return (error);
 	so = (struct socket *)fp->f_data;
 	m = m_getclr(M_WAIT, MT_SONAME);
-	if (m == NULL) {
-		u.u_error = ENOBUFS;
-		return;
-	}
-	u.u_error = (*so->so_proto->pr_usrreq)(so, PRU_SOCKADDR, 0, m, 0);
-	if (u.u_error)
+	if (m == NULL)
+		return (ENOBUFS);
+	if (error = (*so->so_proto->pr_usrreq)(so, PRU_SOCKADDR, 0, m, 0))
 		goto bad;
 	if (len > m->m_len)
 		len = m->m_len;
 #ifdef COMPAT_43
-	if (compat_43)
+	if (uap->compat_43)
 		mtod(m, struct osockaddr *)->sa_family =
 		    mtod(m, struct sockaddr *)->sa_family;
 #endif
-	u.u_error = copyout(mtod(m, caddr_t), (caddr_t)uap->asa, (u_int)len);
-	if (u.u_error == 0)
-		u.u_error = copyout((caddr_t)&len, (caddr_t)uap->alen,
+	error = copyout(mtod(m, caddr_t), (caddr_t)uap->asa, (u_int)len);
+	if (error == 0)
+		error = copyout((caddr_t)&len, (caddr_t)uap->alen,
 		    sizeof (len));
 bad:
 	m_freem(m);
+	return (error);
 }
 
 /*
@@ -941,61 +972,75 @@ bad:
 #ifdef COMPAT_43
 getpeername()
 {
-	getpeername1(0);
+	register struct a {
+		int	fdes;
+		caddr_t	asa;
+		int	*alen;
+		int	compat_43;
+	} *uap = (struct a *)u.u_ap;
+
+	((struct a *)u.u_ap)->compat_43 = 0;
+	getpeername1();
 }
 
 ogetpeername()
-{
-	getpeername1(1);
-}
-
-getpeername1(compat_43)
-#else
-getpeername()
-#endif
 {
 	register struct a {
 		int	fdes;
 		caddr_t	asa;
 		int	*alen;
+		int	compat_43;
+	} *uap = (struct a *)u.u_ap;
+
+	((struct a *)u.u_ap)->compat_43 = 1;
+	getpeername1();
+}
+#else /* COMPAT_43 */
+
+#define	getpeername1	getpeername
+#endif
+
+getpeername1()
+{
+	register struct a {
+		int	fdes;
+		caddr_t	asa;
+		int	*alen;
+#ifdef COMPAT_43
+		int	compat_43;
+#endif
 	} *uap = (struct a *)u.u_ap;
 	register struct file *fp;
 	register struct socket *so;
 	struct mbuf *m;
-	int len;
+	int len, error;
 
-	fp = getsock(uap->fdes);
+	fp = getsock(uap->fdes, &error);
 	if (fp == 0)
-		return;
+		return (error);
 	so = (struct socket *)fp->f_data;
-	if ((so->so_state & (SS_ISCONNECTED|SS_ISCONFIRMING)) == 0) {
-		u.u_error = ENOTCONN;
-		return;
-	}
+	if ((so->so_state & (SS_ISCONNECTED|SS_ISCONFIRMING)) == 0)
+		return (ENOTCONN);
 	m = m_getclr(M_WAIT, MT_SONAME);
-	if (m == NULL) {
-		u.u_error = ENOBUFS;
-		return;
-	}
-	u.u_error = copyin((caddr_t)uap->alen, (caddr_t)&len, sizeof (len));
-	if (u.u_error)
-		return;
-	u.u_error = (*so->so_proto->pr_usrreq)(so, PRU_PEERADDR, 0, m, 0);
-	if (u.u_error)
+	if (m == NULL)
+		return (ENOBUFS);
+	if (error = copyin((caddr_t)uap->alen, (caddr_t)&len, sizeof (len)))
+		return (error);
+	if (error = (*so->so_proto->pr_usrreq)(so, PRU_PEERADDR, 0, m, 0))
 		goto bad;
 	if (len > m->m_len)
 		len = m->m_len;
 #ifdef COMPAT_43
-	if (compat_43)
+	if (uap->compat_43)
 		mtod(m, struct osockaddr *)->sa_family =
 		    mtod(m, struct sockaddr *)->sa_family;
 #endif
-	u.u_error = copyout(mtod(m, caddr_t), (caddr_t)uap->asa, (u_int)len);
-	if (u.u_error)
+	if (error = copyout(mtod(m, caddr_t), (caddr_t)uap->asa, (u_int)len))
 		goto bad;
-	u.u_error = copyout((caddr_t)&len, (caddr_t)uap->alen, sizeof (len));
+	error = copyout((caddr_t)&len, (caddr_t)uap->alen, sizeof (len));
 bad:
 	m_freem(m);
+	return (error);
 }
 
 sockargs(aname, name, namelen, type)
@@ -1025,6 +1070,7 @@ sockargs(aname, name, namelen, type)
 		*aname = m;
 	if (type == MT_SONAME) {
 		register struct sockaddr *sa = mtod(m, struct sockaddr *);
+
 #if defined(COMPAT_43) && BYTE_ORDER != BIG_ENDIAN
 		if (sa->sa_family == 0 && sa->sa_len < AF_MAX)
 			sa->sa_family = sa->sa_len;
@@ -1035,17 +1081,17 @@ sockargs(aname, name, namelen, type)
 }
 
 struct file *
-getsock(fdes)
-	int fdes;
+getsock(fdes, errp)
+	int fdes, *errp;
 {
 	register struct file *fp;
 
 	if ((unsigned)fdes >= NOFILE || (fp = u.u_ofile[fdes]) == NULL) {
-		u.u_error = EBADF;
+		*errp = EBADF;
 		return (0);
 	}
 	if (fp->f_type != DTYPE_SOCKET) {
-		u.u_error = ENOTSOCK;
+		*errp = ENOTSOCK;
 		return (0);
 	}
 	return (fp);
