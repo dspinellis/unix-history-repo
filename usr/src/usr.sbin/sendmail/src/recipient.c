@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	8.94 (Berkeley) %G%";
+static char sccsid[] = "@(#)recipient.c	8.95 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -557,7 +557,7 @@ recipient(a, sendq, aliaslevel, e)
 	{
 		for (q = *sendq; q != NULL; q = q->q_next)
 		{
-			if (!bitset(QDONTSEND|QBADADDR, q->q_flags) &&
+			if (!bitset(QDONTSEND, q->q_flags) &&
 			    bitset(QTHISPASS, q->q_flags))
 				break;
 		}
