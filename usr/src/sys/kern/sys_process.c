@@ -1,4 +1,4 @@
-/*	sys_process.c	5.6	82/10/31	*/
+/*	sys_process.c	5.7	82/10/31	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -77,17 +77,17 @@ ptrace()
 	wakeup((caddr_t)&ipc);
 }
 
-#if vax
+#ifdef vax
 #define	NIPCREG 16
 #endif
-#if sun
+#ifdef sun
 #define	NIPCREG 17
 #endif
 int ipcreg[NIPCREG] =
-#if vax
+#ifdef vax
 	{R0,R1,R2,R3,R4,R5,R6,R7,R8,R9,R10,R11,AP,FP,SP,PC};
 #endif
-#if sun
+#ifdef sun
 	{R0,R1,R2,R3,R4,R5,R6,R7,AR0,AR1,AR2,AR3,AR4,AR5,AR6,AR7,PC};
 #endif
 
