@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)spec_vnops.c	8.5 (Berkeley) %G%
+ *	@(#)spec_vnops.c	8.6 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -553,7 +553,7 @@ spec_close(ap)
 		 * we must invalidate any in core blocks, so that
 		 * we can, for instance, change floppy disks.
 		 */
-		if (error = vinvalbuf(vp, 1, ap->a_cred, ap->a_p, 0, 0))
+		if (error = vinvalbuf(vp, V_SAVE, ap->a_cred, ap->a_p, 0, 0))
 			return (error);
 		/*
 		 * We do not want to really close the device if it
