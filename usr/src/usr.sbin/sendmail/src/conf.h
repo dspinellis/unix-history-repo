@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.61 (Berkeley) %G%
+ *	@(#)conf.h	8.62 (Berkeley) %G%
  */
 
 /*
@@ -194,11 +194,24 @@
 #  endif
 
 # else
-			/* SunOS 4.1.x */
+			/* SunOS 4.0.3 or 4.1.x */
 #  define HASSTATFS	1	/* has the statfs(2) syscall */
 #  define HASFLOCK	1	/* has flock(2) call */
 #  include <vfork.h>
 
+#  ifdef SUNOS403
+			/* special tweaking for SunOS 4.0.3 */
+#   include <malloc.h>
+#   define SYS5SIGNALS	1	/* SysV signal semantics -- reset on each sig */
+#   define WAITUNION	1	/* use "union wait" as wait argument type */
+#   undef WIFEXITED
+#   undef WEXITSTATUS
+#   undef HASUNAME
+#   define setpgid	setpgrp
+typedef int		pid_t;
+extern char		*getenv();
+
+#  endif
 # endif
 #endif
 
@@ -503,6 +516,9 @@ extern void		*malloc();
 # endif
 # ifndef _PATH_SENDMAILPID
 #  define _PATH_SENDMAILPID	"/usr/ucblib/sendmail.pid"
+# endif
+# ifndef SYSLOG_BUFSIZE
+#  define SYSLOG_BUFSIZE	128
 # endif
 #endif
 
