@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)n5.c	4.1 %G%";
+static char sccsid[] = "@(#)n5.c	4.2 %G%";
 #endif lint
 
 #include "tdef.h"
@@ -653,7 +653,8 @@ caseta(){
 	tabtab[0] = nonumb = 0;
 	for(i=0; ((i < (NTAB-1)) && !nonumb); i++){
 		if(skip())break;
-		tabtab[i] = max(hnumb(&tabtab[max(i-1,0)]),0) & TMASK;
+		tabtab[i] = tabtab[max(i-1,0)] & TMASK;
+		tabtab[i] = max(hnumb(&tabtab[i]),0) & TMASK;
 		if(!nonumb) switch(ch & CMASK){
 			case 'C':
 				tabtab[i] |= CTAB;
