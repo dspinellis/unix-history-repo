@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)Title	8.3 (Berkeley) %G%
+.\"	@(#)Title	8.4 (Berkeley) %G%
 .\"
 .af % i
 .nr LL 6.5i
@@ -125,11 +125,13 @@ Sebastopol, CA 94572
 .nr VS 11
 .LP
 First Printing, 1994
-.sp 2
+.br
+Second Printing, 1995
+.sp 1.6
 .LP
 Copyright 1979, 1980, 1983, 1986, 1988, 1989, 1991, 1992, 1993, 1994
 The Regents of the University of California.  All rights reserved.
-.sp 2
+.sp 1.6
 .LP
 Other than the specific manual pages and documents listed below
 as copyrighted by AT&T,
@@ -165,7 +167,7 @@ HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
 LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
 OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 SUCH DAMAGE.\s+1\fP
-.sp 2
+.sp 1.6
 .LP
 Documents PSD:1, 2, 3, 4, 6, 11, 15, 16, and 17
 are copyright 1979, AT&T Bell Laboratories, Incorporated.
@@ -177,25 +179,29 @@ permitted to copy these documents, or any portion of them,
 as necessary for licensed use of the software,
 provided this copyright notice and statement of permission
 are included.
-.sp 2
+.sp 1.6
 Document PSD:10 is part of the user contributed software and is
 copyright 1992 by the Free Software Foundation, Inc.
 Permission is granted to make and distribute verbatim copies of
 this document provided the copyright notice and this permission notice
 are preserved on all copies.
-.sp 2
+.sp 1.6
 Document PSD:13 is part of the user contributed software and is
 copyright 1983 by Walter F. Tichy.
 Permission to copy the RCS documentation or any portion thereof as
 necessary for licensed use of the software is granted to licensees
 of this software, provided this copyright notice is included.
-.sp 2
+.sp 1.6
 .LP
 The views and conclusions contained in this manual are those of the
 authors and should not be interpreted as representing official policies,
 either expressed or implied, of the Regents of the University of California.
-.sp 2
+.sp 1.6
 .LP
+The 4.4BSD Daemon used on the cover is
+copyright 1994 by Marshall Kirk McKusick
+and is reproduced with permission.
+.br
 This book was printed and bound in the United States of America.
 .br
 Distributed by O'Reilly & Associates, Inc.
