@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)telnet.c	5.44 (Berkeley) %G%";
+static char sccsid[] = "@(#)telnet.c	5.45 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -90,10 +90,9 @@ int
 
 #define	CONTROL(x)	((x)&0x1f)		/* CTRL(x) is not portable */
 
-unsigned char
-	*prompt = 0,
-	escape,
-	echoc;
+unsigned char *prompt = 0;
+
+cc_t escape, echoc;
 
 /*
  * Telnet receiver states for fsm
@@ -895,8 +894,8 @@ int len, init;
  */
 
 struct spc {
-	char val;
-	char *valp;
+	cc_t val;
+	cc_t *valp;
 	char flags;	/* Current flags & level */
 	char mylevel;	/* Maximum level & flags */
 } spc_data[NSLC+1];
@@ -909,7 +908,7 @@ static int slc_mode = SLC_EXPORT;
 slc_init()
 {
 	register struct spc *spcp;
-	extern char *tcval();
+	extern cc_t *tcval();
 
 	localchars = 1;
 	for (spcp = spc_data; spcp < &spc_data[NSLC+1]; spcp++) {
@@ -1058,7 +1057,7 @@ int len;
 
 		level = cp[SLC_FLAGS]&(SLC_LEVELBITS|SLC_ACK);
 
-		if ((cp[SLC_VALUE] == spcp->val) &&
+		if ((cp[SLC_VALUE] == (unsigned char)spcp->val) &&
 		    ((level&SLC_LEVELBITS) == (spcp->flags&SLC_LEVELBITS))) {
 			continue;
 		}
@@ -1074,7 +1073,7 @@ int len;
 		}
 
 		if (level == ((spcp->flags&SLC_LEVELBITS)|SLC_ACK)) {
-			spcp->val = cp[SLC_VALUE];
+			spcp->val = (cc_t)cp[SLC_VALUE];
 			spcp->flags = cp[SLC_FLAGS];	/* include SLC_ACK */
 			continue;
 		}
@@ -1083,7 +1082,7 @@ int len;
 
 		if (level <= (spcp->mylevel&SLC_LEVELBITS)) {
 			spcp->flags = cp[SLC_FLAGS]|SLC_ACK;
-			spcp->val = cp[SLC_VALUE];
+			spcp->val = (cc_t)cp[SLC_VALUE];
 		}
 		if (level == SLC_DEFAULT) {
 			if ((spcp->mylevel&SLC_LEVELBITS) != SLC_DEFAULT)
@@ -1128,13 +1127,13 @@ slc_start_reply()
 slc_add_reply(func, flags, value)
 char func;
 char flags;
-char value;
+cc_t value;
 {
 	if ((*slc_replyp++ = func) == IAC)
 		*slc_replyp++ = IAC;
 	if ((*slc_replyp++ = flags) == IAC)
 		*slc_replyp++ = IAC;
-	if ((*slc_replyp++ = value) == IAC)
+	if ((*slc_replyp++ = (unsigned char)value) == IAC)
 		*slc_replyp++ = IAC;
 }
 

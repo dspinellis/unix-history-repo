@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)terminal.c	1.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)terminal.c	1.18 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <arpa/telnet.h>
@@ -54,6 +54,14 @@ char termStartChar;
 # ifndef VSTOP
 char termStopChar;
 # endif
+# ifndef VEOL
+char termForw1Char;
+# endif
+# ifndef VEOL2
+char termForw2Char;
+# endif
+#else
+char termForw2Char;
 #endif
 
 /*

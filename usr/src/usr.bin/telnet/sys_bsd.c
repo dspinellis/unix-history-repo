@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)sys_bsd.c	1.23 (Berkeley) %G%";
+static char sccsid[] = "@(#)sys_bsd.c	1.24 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -41,6 +41,12 @@ static char sccsid[] = "@(#)sys_bsd.c	1.23 (Berkeley) %G%";
 #include "externs.h"
 #include "types.h"
 
+#if	defined(CRAY)
+#define	SIG_FUNC_RET	void
+#else
+#define	SIG_FUNC_RET	int
+#endif
+
 int
 	tout,			/* Output file descriptor */
 	tin,			/* Input file descriptor */
@@ -56,6 +62,11 @@ int	olmode = 0;
 struct	termio old_tc = { 0 };
 extern struct termio new_tc;
 
+#ifndef	TCGETA
+#define	TCGETA	TIOCGETA
+#define	TCSETA	TIOCSETA
+#define	TCSETAW	TIOCSETAW
+#endif	/* TCGETA */
 #endif	/* USE_TERMIO */
 
 static fd_set ibits, obits, xbits;
@@ -202,25 +213,24 @@ TerminalSaveState()
 #endif	/* USE_TERMIO */
 }
 
-unsigned
-char *
+cc_t *
 tcval(func)
 register int func;
 {
     switch(func) {
-    case SLC_IP:	return((unsigned char *)&termIntChar);
-    case SLC_ABORT:	return((unsigned char *)&termQuitChar);
-    case SLC_EOF:	return((unsigned char *)&termEofChar);
-    case SLC_EC:	return((unsigned char *)&termEraseChar);
-    case SLC_EL:	return((unsigned char *)&termKillChar);
-    case SLC_XON:	return((unsigned char *)&termStartChar);
-    case SLC_XOFF:	return((unsigned char *)&termStopChar);
+    case SLC_IP:	return(&termIntChar);
+    case SLC_ABORT:	return(&termQuitChar);
+    case SLC_EOF:	return(&termEofChar);
+    case SLC_EC:	return(&termEraseChar);
+    case SLC_EL:	return(&termKillChar);
+    case SLC_XON:	return(&termStartChar);
+    case SLC_XOFF:	return(&termStopChar);
 #ifndef	SYSV_TERMIO
-    case SLC_AO:	return((unsigned char *)&termFlushChar);
-    case SLC_SUSP:	return((unsigned char *)&termSuspChar);
-    case SLC_EW:	return((unsigned char *)&termWerasChar);
-    case SLC_RP:	return((unsigned char *)&termRprntChar);
-    case SLC_LNEXT:	return((unsigned char *)&termLiteralNextChar);
+    case SLC_AO:	return(&termFlushChar);
+    case SLC_SUSP:	return(&termSuspChar);
+    case SLC_EW:	return(&termWerasChar);
+    case SLC_RP:	return(&termRprntChar);
+    case SLC_LNEXT:	return(&termLiteralNextChar);
 #endif	/* SYSV_TERMIO */
 
     case SLC_SYNCH:
@@ -230,7 +240,7 @@ register int func;
     case SLC_FORW1:
     case SLC_FORW2:
     default:
-	return((unsigned char *)0);
+	return((cc_t *)0);
     }
 }
 
@@ -457,20 +467,24 @@ register int f;
 
     if (f != -1) {
 #ifdef	SIGTSTP
-	if (f&MODE_EDIT) {
-	    void doescape();
+	void susp();
 
-# ifndef USE_TERMIO
-	    ltc.t_suspc = escape;
-# else
-	    tmp_tc.c_cc[VSUSP] = escape;
-# endif
-	    (void) signal(SIGTSTP, (int (*)())doescape);
-	} else if (old&MODE_EDIT) {
-	    (void) signal(SIGTSTP, SIG_DFL);
-	    sigsetmask(sigblock(0) & ~(1<<(SIGTSTP-1)));
-	}
+	(void) signal(SIGTSTP, (SIG_FUNC_RET (*)())susp);
 #endif	/* SIGTSTP */
+#ifdef	USE_TERMIO
+#ifdef	VEOL2
+	/*
+	 * If the VEOL character is already set, then use VEOL2,
+	 * otherwise use VEOL.
+	 */
+	if (tmp_tc.c_cc[VEOL] != (cc_t)(-1))
+		tmp_tc.c_cc[VEOL2] = escape;
+	else
+#endif
+		tmp_tc.c_cc[VEOL] = escape;
+#else
+	tc.t_brkc = escape;
+#endif
     } else {
 #ifdef	SIGTSTP
 	(void) signal(SIGTSTP, SIG_DFL);
@@ -650,6 +664,13 @@ intr2()
 }
 
 static void
+susp()
+{
+    if (localchars)
+	sendsusp();
+}
+
+static void
 sendwin()
 {
     if (connected) {
@@ -666,17 +687,14 @@ doescape()
 void
 sys_telnet_init()
 {
-#ifndef	VOID_SIGNAL
-    (void) signal(SIGINT, (int (*)())intr);
-    (void) signal(SIGQUIT, (int (*)())intr2);
-    (void) signal(SIGPIPE, (int (*)())deadpeer);
-#else
-    (void) signal(SIGINT, (void (*)())intr);
-    (void) signal(SIGQUIT, (void (*)())intr2);
-    (void) signal(SIGPIPE, (void (*)())deadpeer);
-#endif
+    (void) signal(SIGINT, (SIG_FUNC_RET (*)())intr);
+    (void) signal(SIGQUIT, (SIG_FUNC_RET (*)())intr2);
+    (void) signal(SIGPIPE, (SIG_FUNC_RET (*)())deadpeer);
 #ifdef	SIGWINCH
-    (void) signal(SIGWINCH, (int (*)())sendwin);
+    (void) signal(SIGWINCH, (SIG_FUNC_RET (*)())sendwin);
+#endif
+#ifdef	SIGTSTP
+    (void) signal(SIGTSTP, (SIG_FUNC_RET (*)())susp);
 #endif
 
     setconnmode(0);

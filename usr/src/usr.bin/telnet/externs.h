@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)externs.h	1.20 (Berkeley) %G%
+ *	@(#)externs.h	1.21 (Berkeley) %G%
  */
 
 #ifndef	BSD
@@ -37,6 +37,8 @@
 #   define termio termios
 #  endif
 # endif
+#else
+typedef char cc_t;
 #endif
 
 #define	SUBBUFSIZE	256
@@ -78,9 +80,11 @@ extern int
 #endif	/* defined(unix) */
     debug;			/* Debug level */
 
-extern unsigned char
+extern cc_t
     echoc,		/* Toggle local echoing */
-    escape,		/* Escape to command mode */
+    escape;		/* Escape to command mode */
+
+extern unsigned char
     *prompt;		/* Prompt for command. */
 
 extern char
@@ -213,19 +217,23 @@ extern struct	sgttyb nttyb;
 # define termWerasChar		nltc.t_werasc
 # define termStartChar		ntc.t_startc
 # define termStopChar		ntc.t_stopc
+# define termForw1Char		ntc.t_brkc
+extern char termForw2Char;
 
-# define termEofCharp		(unsigned char *)&ntc.t_eofc
-# define termEraseCharp		(unsigned char *)&nttyb.sg_erase
-# define termFlushCharp		(unsigned char *)&nltc.t_flushc
-# define termIntCharp		(unsigned char *)&ntc.t_intrc
-# define termKillCharp		(unsigned char *)&nttyb.sg_kill
-# define termLiteralNextCharp	(unsigned char *)&nltc.t_lnextc
-# define termQuitCharp		(unsigned char *)&ntc.t_quitc
-# define termSuspCharp		(unsigned char *)&nltc.t_suspc
-# define termRprntCharp		(unsigned char *)&nltc.t_rprntc
-# define termWerasCharp		(unsigned char *)&nltc.t_werasc
-# define termStartCharp		(unsigned char *)&ntc.t_startc
-# define termStopCharp		(unsigned char *)&ntc.t_stopc
+# define termEofCharp		(cc_t *)&ntc.t_eofc
+# define termEraseCharp		(cc_t *)&nttyb.sg_erase
+# define termFlushCharp		(cc_t *)&nltc.t_flushc
+# define termIntCharp		(cc_t *)&ntc.t_intrc
+# define termKillCharp		(cc_t *)&nttyb.sg_kill
+# define termLiteralNextCharp	(cc_t *)&nltc.t_lnextc
+# define termQuitCharp		(cc_t *)&ntc.t_quitc
+# define termSuspCharp		(cc_t *)&nltc.t_suspc
+# define termRprntCharp		(cc_t *)&nltc.t_rprntc
+# define termWerasCharp		(cc_t *)&nltc.t_werasc
+# define termStartCharp		(cc_t *)&ntc.t_startc
+# define termStopCharp		(cc_t *)&ntc.t_stopc
+# define termForw1Charp		(cc_t *)&ntc.t_brkc
+# define termForw2Charp		(cc_t *)&termForw2Char
 
 # else
 
@@ -272,6 +280,16 @@ extern char termStopChar;
 # else
 #  define termStopChar		new_tc.c_cc[VSTOP]
 # endif
+# ifndef	VEOL
+extern char termForw1Char;
+# else
+#  define termForw1Char		new_tc.c_cc[VEOL]
+# endif
+# ifndef	VEOL2
+extern char termForw2Char;
+# else
+#  define termForw2Char		new_tc.c_cc[VEOL]
+# endif
 
 # ifndef CRAY
 #  define termEofCharp		&termEofChar
@@ -286,6 +304,8 @@ extern char termStopChar;
 #  define termLiteralNextCharp	&termLiteralNextChar
 #  define termStartCharp	&termStartChar
 #  define termStopCharp		&termStopChar
+#  define termForw1Charp	&termForw1Char
+#  define termForw2Charp	&termForw2Char
 # else
 	/* Work around a compiler bug */
 #  define termEofCharp		0
@@ -300,6 +320,8 @@ extern char termStopChar;
 #  define termLiteralNextCharp	0
 #  define termStartCharp	0
 #  define termStopCharp		0
+#  define termForw1Charp	0
+#  define termForw2Charp	0
 # endif
 #endif
 
