@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)nohup.1	4.1 (Berkeley) %G%
+.\"	@(#)nohup.1	5.1 (Berkeley) %G%
 .\"
-.TH NICE 1 
+.TH NICE 1  "18 January 1983"
 .UC 4
 .SH NAME
 nice, nohup \- run a command at low priority (\fIsh\fR only)
@@ -50,7 +50,7 @@ The syntax of nice is also different.
 nohup.out	standard output and standard error file under
 .I nohup
 .SH "SEE ALSO"
-csh(1), nice(2), renice(8)
+csh(1), setpriority(2), renice(8)
 .SH DIAGNOSTICS
 .I Nice
 returns the exit status of the subject command.
