@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fifo.h	8.5 (Berkeley) %G%
+ *	@(#)fifo.h	8.6 (Berkeley) %G%
  */
 
 #ifdef FIFO
@@ -40,7 +40,7 @@ int	fifo_select __P((struct vop_select_args *));
 #define fifo_readdir ((int (*) __P((struct  vop_readdir_args *)))fifo_badop)
 #define fifo_readlink ((int (*) __P((struct  vop_readlink_args *)))fifo_badop)
 #define fifo_abortop ((int (*) __P((struct  vop_abortop_args *)))fifo_badop)
-#define fifo_inactive ((int (*) __P((struct  vop_inactive_args *)))nullop)
+int	fifo_inactive __P((struct  vop_inactive_args *));
 #define fifo_reclaim ((int (*) __P((struct  vop_reclaim_args *)))nullop)
 #define fifo_lock ((int (*) __P((struct  vop_lock_args *)))vop_nolock)
 #define fifo_unlock ((int (*) __P((struct  vop_unlock_args *)))vop_nounlock)
