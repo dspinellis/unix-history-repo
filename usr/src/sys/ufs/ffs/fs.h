@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fs.h	7.13 (Berkeley) %G%
+ *	@(#)fs.h	7.14 (Berkeley) %G%
  */
 
 /*
@@ -182,8 +182,8 @@ struct	fs
 	short	fs_opostbl[16][8];	/* old rotation block list head */
 	long	fs_sparecon[55];	/* reserved for future constants */
 	long	fs_state;		/* validate fs_clean field */
-	quad	fs_qbmask;		/* ~fs_bmask - for use with quad size */
-	quad	fs_qfmask;		/* ~fs_fmask - for use with quad size */
+	quad_t	fs_qbmask;		/* ~fs_bmask - for use with quad size */
+	quad_t	fs_qfmask;		/* ~fs_fmask - for use with quad size */
 	long	fs_postblformat;	/* format of positional layout tables */
 	long	fs_nrpos;		/* number of rotaional positions */
 	long	fs_postbloff;		/* (short) rotation block list head */
