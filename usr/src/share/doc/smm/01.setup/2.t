@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)2.t	6.29 (Berkeley) %G%
+.\"	@(#)2.t	6.30 (Berkeley) %G%
 .\"
 .ds lq ``
 .ds rq ''
@@ -278,7 +278,7 @@ It includes a disklabel and bootblock along with the root filesystem.
 An example command to copy the image from tape to the beginning of a disk is:
 .DS
 .ft CW
-dd if=/dev/rmt/0m of=/dev/rdsk/1s0 bs=40b
+dd if=/dev/rmt/0m of=/dev/rdsk/1s0 bs=\*(Bzb
 .DE
 The actual special file syntax may vary depending on unit numbers and
 the version of HP-UX that is running.
@@ -305,10 +305,10 @@ and then copy the image onto tape.
 For example:
 .DS
 .ft CW
-dd if=/dev/rst0 of=bootimage bs=40b
+dd if=/dev/rst0 of=bootimage bs=\*(Bzb
 rcp bootimage foo:/tmp/bootimage
 <login to foo>
-dd if=/tmp/bootimage of=/dev/rct/0m bs=40b
+dd if=/tmp/bootimage of=/dev/rct/0m bs=\*(Bzb
 .DE
 Once this tape is created you can boot and run the standalone tape
 copy program from it.
@@ -870,7 +870,7 @@ root filesystem.
 An example command to copy the image to the beginning of a disk is:
 .DS
 .ft CW
-dd if=root.image of=/dev/rz1c bs=40b
+dd if=root.image of=/dev/rz1c bs=\*(Bzb
 .DE
 The actual special file syntax will vary depending on unit numbers and
 the version of ULTRIX that is running.
@@ -898,7 +898,7 @@ First, you will need to create a boot tape. This can be done using
 .DS
 .ft CW
 dd if=vmunix.tape of=/dev/nrmt0 bs=1b
-dd if=root.dump of=/dev/nrmt0 bs=20b
+dd if=root.dump of=/dev/nrmt0 bs=\*(Bzb
 .DE
 The actual special file syntax for the tape drive will vary depending on
 unit numbers, tape device and the version of ULTRIX that is running.
@@ -1418,13 +1418,13 @@ correct ones, you may need to extract the files indirectly using
 For example, for a directly connected tape drive you might do:
 .DS
 \fB#\fP \fImt -f /dev/nr\*(Mt0 fsf\fP
-\fB#\fP \fItar xbpf 40 /dev/nr\*(Mt0\fP
+\fB#\fP \fItar xbpf \*(Bz /dev/nr\*(Mt0\fP
 .DE
 The equivalent indirect procedure (where the tape drive is on machine ``foo'')
 is:
 .DS
 \fB#\fP \fIrsh foo mt -f /dev/nr\*(Mt0 fsf\fP
-\fB#\fP \fIrsh foo dd if=/dev/nr\*(Mt0 bs=40b | tar xbpf 40 -\fP
+\fB#\fP \fIrsh foo dd if=/dev/nr\*(Mt0 bs=\*(Bzb | tar xbpf \*(Bz -\fP
 .DE
 Obviously, the target machine must be connected to the local network
 for this to work.
@@ -1467,7 +1467,7 @@ lw(2i) l.
 \fB#\fP \fImount /dev/\*(Dk#p /var\fP	(mount the var filesystem)
 \fB#\fP \fIcd /var\fP	(make /var the current directory)
 \fB#\fP \fImt -f /dev/nr\*(Mt0 fsf\fP	(space to end of previous tape file)
-\fB#\fP \fItar xbpf 40 /dev/nr\*(Mt0\fP	(extract all of var)
+\fB#\fP \fItar xbpf \*(Bz /dev/nr\*(Mt0\fP	(extract all of var)
 (this takes a few minutes)
 \fB#\fP \fInewfs r\*(Dk#p\fP	(create empty user filesystem)
 (as before \fI\*(Dk\fP is the disk type, \fI#\fP is the unit number,
@@ -1475,7 +1475,7 @@ lw(2i) l.
 \fB#\fP \fImount /dev/\*(Dk#p /mnt\fP	(mount the new /usr in temporary location)
 \fB#\fP \fIcd /mnt\fP	(make /mnt the current directory)
 \fB#\fP \fImt -f /dev/nr\*(Mt0 fsf\fP	(space to end of previous tape file)
-\fB#\fP \fItar xbpf 40 /dev/nr\*(Mt0\fP	(extract all of usr except usr/src)
+\fB#\fP \fItar xbpf \*(Bz /dev/nr\*(Mt0\fP	(extract all of usr except usr/src)
 (this takes about 15-20 minutes)
 \fB#\fP \fIcd /\fP	(make / the current directory)
 \fB#\fP \fIumount /mnt\fP	(unmount from temporary mount point)
@@ -1527,7 +1527,7 @@ lw(2i) l.
 \fB#\fP \fIcd /usr/src\fP
 \fB#\fP \fImt -f /dev/nr\*(Mt0 fsf\fP	(space to end of previous tape file)
 (this should only be done on Exabyte distributions)
-\fB#\fP \fItar xpbf 40 /dev/nr\*(Mt0\fP	(extract the kernel sources)
+\fB#\fP \fItar xpbf \*(Bz /dev/nr\*(Mt0\fP	(extract the kernel sources)
 (this takes about 15-30 minutes)
 .TE
 .DE
@@ -1539,7 +1539,7 @@ It is extracted as follows:
 lw(2i) l.
 \fB#\fP \fIcd /usr/src\fP
 \fB#\fP \fImt -f /dev/nr\*(Mt0 fsf\fP	(space to end of previous tape file)
-\fB#\fP \fItar xpbf 40 /dev/rmt12\fP 	(extract the utility source)
+\fB#\fP \fItar xpbf \*(Bz /dev/rmt12\fP 	(extract the utility source)
 (this takes about 30-60 minutes)
 .TE
 .DE
@@ -1557,7 +1557,7 @@ lw(2i) l.
 \fB#\fP \fIcd /usr/src\fP
 \fB#\fP \fImt -f /dev/nr\*(Mt0 fsf\fP	(space to end of previous tape file)
 (this should only be done on Exabyte distributions)
-\fB#\fP \fItar xpbf 40 /dev/rmt12\fP 	(extract the contributed software source)
+\fB#\fP \fItar xpbf \*(Bz /dev/rmt12\fP 	(extract the contributed software source)
 (this takes about 30-60 minutes)
 .TE
 .DE
@@ -1574,7 +1574,7 @@ format.  As distributed, X11R5 should be placed in
 lw(2i) l.
 \fB#\fP \fIcd /usr/src\fP
 \fB#\fP \fImt -f /dev/nr\*(Mt0 fsf\fP	(space to end of previous tape file)
-\fB#\fP \fItar xpbf 40 /dev/nr\*(Mt0\fP	(extract the X11R5 source)
+\fB#\fP \fItar xpbf \*(Bz /dev/nr\*(Mt0\fP	(extract the X11R5 source)
 (this takes about 30-60 minutes)
 .TE
 .DE
