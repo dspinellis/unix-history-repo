@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)disktab	4.17 (Berkeley) %G%
+#	@(#)disktab	4.18 (Berkeley) %G%
 #
 # Disk geometry and partition layout tables. 
 # Key:
@@ -442,3 +442,26 @@ rx02|RX02|DEC RX02:\
 	:ty=removable:ns#13:nt#1:nc#77:\
 	:dt=floppy:\
 	:pa#1001:oa#0:ba#4096:fa#512:
+
+ncc|nec800|800 Mb NEC:\
+	:ty=winchester:ns#66:nt#23:nc#850:rm#3600:se#512:\
+	:dt=SMD:\
+	:d0#0:d1#40960:\
+	:pa#97152:oa#0:ba#8192:fa#1024:\
+	:pb#92598:ob#97152:bb#8192:fb#1024:tb=swap:\
+	:pc#1092960:oc#189750:bc#8192:fc#1024:\
+	:ph#1282710:oh#0:bh#8192:fh#1024:
+
+ncc2|nec2363|1Gb NEC:\
+	:ty=winchester:ns#64:nt#27:nc#1024:rm#3600:se#512:\
+	:dt=SMD:\
+	:d0#0:\
+        :pa#15884:oa#0:ba#8192:fa#1024:\
+	:pb#66880:ob#17280:bb#8192:fb#1024:tb=swap:\
+	:pc#1769472:oc#0:bc#8192:fc#1024:\
+	:pd#15884:od#376704:bd#4096:fd#512:\
+	:pe#307200:oe#393984:be#8192:fe#1024:\
+	:pf#1067904:of#701568:bf#8192:ff#1024:\
+	:pg#1392768:og#376704:bg#8192:fg#1024:\
+	:ph#291346:oh#84672:bh#8192:fh#1024:
+
