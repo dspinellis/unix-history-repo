@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mkioconf.c	5.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)mkioconf.c	5.19 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <stdio.h>
@@ -598,9 +598,8 @@ i386_ioconf()
 	fprintf(fp, "#include \"sys/param.h\"\n");
 	fprintf(fp, "#include \"sys/buf.h\"\n");
 	fprintf(fp, "#include \"sys/map.h\"\n");
-	fprintf(fp, "#include \"sys/vm.h\"\n");
 	fprintf(fp, "\n");
-	fprintf(fp, "#define V(s)	V/**/s\n");
+	fprintf(fp, "#define V(s)	__CONCAT(V,s)\n");
 	fprintf(fp, "#define C (caddr_t)\n\n");
 	/*
 	 * First print the isa initialization structures
