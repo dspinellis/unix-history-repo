@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)if.c	4.6 84/11/20";
+static char sccsid[] = "@(#)if.c	4.7 85/06/03";
 #endif
 
 #include <sys/types.h>
@@ -7,6 +7,7 @@ static char sccsid[] = "@(#)if.c	4.6 84/11/20";
 
 #include <net/if.h>
 #include <netinet/in.h>
+#include <netinet/in_var.h>
 
 #include <stdio.h>
 
@@ -15,7 +16,7 @@ extern	int tflag;
 extern	int nflag;
 extern	char *interface;
 extern	int unit;
-extern	char *routename();
+extern	char *routename(), *netname();
 
 /*
  * Print a description of the network interfaces.
@@ -25,6 +26,11 @@ intpr(interval, ifnetaddr)
 	off_t ifnetaddr;
 {
 	struct ifnet ifnet;
+	union {
+		struct ifaddr ifa;
+		struct in_ifaddr in;
+	} ifaddr;
+	off_t ifaddraddr;
 	char name[16];
 
 	if (ifnetaddr == 0) {
@@ -44,32 +50,80 @@ intpr(interval, ifnetaddr)
 	if (tflag)
 		printf(" %-6.6s", "Timer");
 	putchar('\n');
-	while (ifnetaddr) {
+	ifaddraddr = 0;
+	while (ifnetaddr || ifaddraddr) {
 		struct sockaddr_in *sin;
 		register char *cp;
+		int n;
 		char *index();
 		struct in_addr in, inet_makeaddr();
 
-		klseek(kmem, ifnetaddr, 0);
-		read(kmem, &ifnet, sizeof ifnet);
-		klseek(kmem, (int)ifnet.if_name, 0);
-		read(kmem, name, 16);
-		name[15] = '\0';
-		ifnetaddr = (off_t) ifnet.if_next;
-		if (interface != 0 &&
-		    (strcmp(name, interface) != 0 || unit != ifnet.if_unit))
-			continue;
-		cp = index(name, '\0');
-		*cp++ = ifnet.if_unit + '0';
-		if ((ifnet.if_flags&IFF_UP) == 0)
-			*cp++ = '*';
-		*cp = '\0';
+		if (ifaddraddr == 0) {
+			klseek(kmem, ifnetaddr, 0);
+			read(kmem, &ifnet, sizeof ifnet);
+			klseek(kmem, (off_t)ifnet.if_name, 0);
+			read(kmem, name, 16);
+			name[15] = '\0';
+			ifnetaddr = (off_t) ifnet.if_next;
+			if (interface != 0 &&
+			    (strcmp(name, interface) != 0 || unit != ifnet.if_unit))
+				continue;
+			cp = index(name, '\0');
+			*cp++ = ifnet.if_unit + '0';
+			if ((ifnet.if_flags&IFF_UP) == 0)
+				*cp++ = '*';
+			*cp = '\0';
+			ifaddraddr = (off_t)ifnet.if_addrlist;
+		}
 		printf("%-5.5s %-5d ", name, ifnet.if_mtu);
-		sin = (struct sockaddr_in *)&ifnet.if_addr;
-		in = inet_makeaddr(ifnet.if_net, INADDR_ANY);
-		printf("%-10.10s  ", routename(in));
-		printf("%-12.12s %-7d %-5d %-7d %-5d %-6d",
-		    routename(sin->sin_addr),
+		if (ifaddraddr == 0) {
+			printf("%-10.10s  ", "none");
+			printf("%-12.12s ", "none");
+		} else {
+			klseek(kmem, ifaddraddr, 0);
+			read(kmem, &ifaddr, sizeof ifaddr);
+			ifaddraddr = (off_t)ifaddr.ifa.ifa_next;
+			switch (ifaddr.ifa.ifa_addr.sa_family) {
+			case AF_UNSPEC:
+				printf("%-10.10s  ", "none");
+				printf("%-12.12s ", "none");
+				break;
+			case AF_INET:
+				sin = (struct sockaddr_in *)&ifaddr.in.ia_addr;
+#ifdef notdef
+				/* can't use inet_makeaddr because kernel
+				 * keeps nets unshifted.
+				 */
+				in = inet_makeaddr(ifaddr.in.ia_subnet,
+					INADDR_ANY);
+				printf("%-10.10s  ", netname(in));
+#else
+				printf("%-10.10s  ",
+					netname(htonl(ifaddr.in.ia_subnet),
+						ifaddr.in.ia_subnetmask));
+#endif
+				printf("%-12.12s ", routename(sin->sin_addr));
+				break;
+			default:
+				printf("af%2d: ", ifaddr.ifa.ifa_addr.sa_family);
+				for (cp = (char *)&ifaddr.ifa.ifa_addr +
+				    sizeof(struct sockaddr) - 1;
+				    cp >= ifaddr.ifa.ifa_addr.sa_data; --cp)
+					if (*cp != 0)
+						break;
+				n = cp - (char *)ifaddr.ifa.ifa_addr.sa_data + 1;
+				cp = (char *)ifaddr.ifa.ifa_addr.sa_data;
+				if (n <= 6)
+					while (--n)
+						printf("%02d.", *cp++ & 0xff);
+				else
+					while (--n)
+						printf("%02d", *cp++ & 0xff);
+				printf("%02d ", *cp & 0xff);
+				break;
+			}
+		}
+		printf("%-7d %-5d %-7d %-5d %-6d",
 		    ifnet.if_ipackets, ifnet.if_ierrors,
 		    ifnet.if_opackets, ifnet.if_oerrors,
 		    ifnet.if_collisions);
