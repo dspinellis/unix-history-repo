@@ -1,10 +1,10 @@
 /*
- * Copyright (c) 1982, 1986, 1989 Regents of the University of California.
+ * Copyright (c) 1986, 1989, 1991 Regents of the University of California.
  * All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_inode.c	7.45 (Berkeley) %G%
+ *	@(#)lfs_inode.c	7.46 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -17,15 +17,13 @@
 #include <sys/kernel.h>
 #include <sys/malloc.h>
 
-#include <ufs/quota.h>
-#include <ufs/inode.h>
-#include <ufs/ufsmount.h>
-#include <ufs/ufs_extern.h>
+#include <ufs/ufs/quota.h>
+#include <ufs/ufs/inode.h>
+#include <ufs/ufs/ufsmount.h>
+#include <ufs/ufs/ufs_extern.h>
 
-#include <lfs/lfs.h>
-#include <lfs/lfs_extern.h>
-
-extern int prtactive;	/* 1 => print out reclaim of active vnodes */
+#include <ufs/lfs/lfs.h>
+#include <ufs/lfs/lfs_extern.h>
 
 int
 lfs_init()
@@ -44,18 +42,16 @@ lfs_iget(pip, ino, ipp)
 	ino_t ino;
 	struct inode **ipp;
 {
-	register LFS *fs;
+	register struct lfs *fs;
 	register struct inode *ip;
-	register struct vnode *vp;
 	struct buf *bp;
-	struct inode *nip;
 	struct mount *mntp;
-	struct vnode *nvp;
+	struct vnode *vp;
 	dev_t dev;
 	int error;
 
-printf("lfs_iget ino %d\n", ino);
-
+	mntp = ITOV(pip)->v_mount;
+	fs = VFSTOUFS(mntp)->um_lfs;
 	if (ino < ROOTINO)
 		return (EINVAL);
 
@@ -64,13 +60,11 @@ printf("lfs_iget ino %d\n", ino);
 		return (0);
 
 	/* Allocate new vnode/inode. */
-	mntp = ITOV(pip)->v_mount;
-	error = lfs_vcreate(mntp, ino, &nvp);
-	if (error) {
+	if (error = lfs_vcreate(mntp, ino, &vp)) {
 		*ipp = NULL;
 		return (error);
 	}
-	ip = VTOI(nvp);
+	ip = VTOI(vp);
 		
 	/*
 	 * Put it onto its hash chain and lock it so that other requests for
@@ -81,13 +75,12 @@ printf("lfs_iget ino %d\n", ino);
 	ufs_ihashins(ip);
 
 	/* Read in the disk contents for the inode, copy into the inode. */
-	fs = VFSTOUFS(mntp)->um_lfs;
 	if (error = bread(VFSTOUFS(mntp)->um_devvp, lfs_itod(fs, ino),
 	    (int)fs->lfs_bsize, NOCRED, &bp)) {
 		/*
 		 * The inode does not contain anything useful, so it would
 		 * be misleading to leave it on its hash chain.  Iput() will
-		 * take care of putting it back on the free list.
+		 * return it to the free list.
 		 */
 		remque(ip);
 		ip->i_forw = ip;
@@ -102,13 +95,16 @@ printf("lfs_iget ino %d\n", ino);
 	ip->i_din = *lfs_ifind(fs, ino, bp->b_un.b_dino);
 	brelse(bp);
 
-	/* Initialize the vnode from the inode, check for aliases. */
-	if (error = ufs_vinit(mntp, ip, &nip)) {
+	/*
+	 * Initialize the vnode from the inode, check for aliases.  In all
+	 * cases re-init ip, the underlying vnode/inode may have changed.
+	 */
+	if (error = ufs_vinit(mntp, &vp)) {
 		ufs_iput(ip);
 		*ipp = NULL;
 		return (error);
 	}
-	*ipp = nip;
+	*ipp = VTOI(vp);
 	return (0);
 }
 
@@ -138,7 +134,7 @@ lfs_itrunc(oip, length, flags)
 	u_long length;
 	int flags;
 {
-	register LFS *fs;
+	register struct lfs *fs;
 	struct buf *bp;
 	daddr_t lbn;
 	int error, offset, size;
