@@ -15,7 +15,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)quotacheck.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)quotacheck.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -510,7 +510,7 @@ getnextinode(inumber)
 		err("bad inode number %d to nextinode", inumber);
 	if (inumber >= lastinum) {
 		readcnt++;
-		dblk = fsbtodb(&sblock, itod(&sblock, lastinum));
+		dblk = fsbtodb(&sblock, ino_to_fsba(&sblock, lastinum));
 		if (readcnt % readpercg == 0) {
 			size = partialsize;
 			lastinum += partialcnt;

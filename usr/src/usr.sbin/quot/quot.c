@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)quot.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)quot.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -174,7 +174,7 @@ check(file, fsdir)
 	}
 	nfiles = sblock.fs_ipg * sblock.fs_ncg;
 	for (ino = 0; ino < nfiles; ) {
-		iblk = fsbtodb(&sblock, itod(&sblock, ino));
+		iblk = fsbtodb(&sblock, ino_to_fsba(&sblock, ino));
 		bread(fd, (off_t)iblk * dev_bsize, itab, (int)sblock.fs_bsize);
 		for (j = 0; j < INOPB(&sblock) && ino < nfiles; j++, ino++) {
 			if (ino < ROOTINO)

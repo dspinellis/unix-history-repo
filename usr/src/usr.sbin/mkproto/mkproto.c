@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mkproto.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)mkproto.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -22,8 +22,10 @@ static char sccsid[] = "@(#)mkproto.c	8.1 (Berkeley) %G%";
 #include <sys/param.h>
 #include <sys/time.h>
 #include <sys/dir.h>
+
 #include <ufs/ufs/dinode.h>
 #include <ufs/ffs/fs.h>
+
 #include <stdio.h>
 
 union {
@@ -125,7 +127,7 @@ descend(par, parinum)
 		inum = ialloc(&in);
 	} else {
 		par = &in;
-		i = itod(fs, ROOTINO);
+		i = ino_to_fsba(fs, ROOTINO);
 		rdfs(fsbtodb(fs, i), fs->fs_bsize, (char *)inos);
 		dip = &inos[ROOTINO % INOPB(fs)];
 		inum = ROOTINO;
@@ -362,9 +364,9 @@ iput(ip, aibc, ib, inum)
 		printf("bad mode %o\n", ip->di_mode);
 		exit(1);
 	}
-	d = fsbtodb(fs, itod(fs, inum));
+	d = fsbtodb(fs, ino_to_fsba(fs, inum));
 	rdfs(d, (int)fs->fs_bsize, (char *)buf);
-	buf[itoo(fs, inum)] = *ip;
+	buf[ino_to_fsbo(fs, inum)] = *ip;
 	wtfs(d, (int)fs->fs_bsize, (char *)buf);
 }
 
@@ -429,7 +431,7 @@ ialloc(ip)
 	int c;
 
 	inum = ++ino;
-	c = itog(&sblock, inum);
+	c = ino_to_cg(&sblock, inum);
 	rdfs(fsbtodb(&sblock, cgtod(&sblock, c)), (int)sblock.fs_cgsize,
 	    (char *)&acg);
 	if (!cg_chkmagic(&acg)) {

@@ -15,7 +15,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)clri.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)clri.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -84,9 +84,9 @@ main(argc, argv)
 		(void)printf("clearing %d\n", inonum);
 
 		/* read in the appropriate block. */
-		offset = itod(sbp, inonum);	/* inode to fs block */
-		offset = fsbtodb(sbp, offset);	/* fs block to disk block */
-		offset *= DEV_BSIZE;		/* disk block to disk bytes */
+		offset = ino_to_fsba(sbp, inonum);	/* inode to fs blk */
+		offset = fsbtodb(sbp, offset);		/* fs blk disk blk */
+		offset *= DEV_BSIZE;			/* disk blk to bytes */
 
 		/* seek and read the block */
 		if (lseek(fd, offset, SEEK_SET) < 0)
@@ -95,7 +95,7 @@ main(argc, argv)
 			err(1, "%s", fs);
 
 		/* get the inode within the block. */
-		ip = &ibuf[itoo(sbp, inonum)];
+		ip = &ibuf[ino_to_fsbo(sbp, inonum)];
 
 		/* clear the inode, and bump the generation count. */
 		generation = ip->di_gen + 1;

@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)pigs.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)pigs.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -165,12 +165,11 @@ fetchpigs()
 	}
 	if (nproc > lastnproc) {
 		free(pt);
-		if ((pt = (struct p_times *) malloc 
-		    ((nproc + 1) * sizeof(struct p_times))) == NULL) {
-		    error("Out of memory");
-		    die(0);
-	    }
-
+		if ((pt =
+		    malloc((nproc + 1) * sizeof(struct p_times))) == NULL) {
+			error("Out of memory");
+			die(0);
+		}
 	}
 	lastnproc = nproc;
 	/*
@@ -180,8 +179,8 @@ fetchpigs()
 		pt[i].pt_kp = &kpp[i];
 		pp = &kpp[i].kp_proc;
 		pctp = &pt[i].pt_pctcpu;
-		time = pp->p_time;
-		if (time == 0 || (pp->p_flag & SLOAD) == 0)
+		time = pp->p_swtime;
+		if (time == 0 || (pp->p_flag & P_INMEM) == 0)
 			*pctp = 0;
 		else
 			*pctp = ((double) pp->p_pctcpu / 
@@ -205,7 +204,8 @@ fetchpigs()
 void
 labelpigs()
 {
-	wmove(wnd, 0, 0); wclrtoeol(wnd);
+	wmove(wnd, 0, 0);
+	wclrtoeol(wnd);
 	mvwaddstr(wnd, 0, 20,
 	    "/0   /10  /20  /30  /40  /50  /60  /70  /80  /90  /100");
 }

@@ -10,7 +10,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)kvm_proc.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)kvm_proc.c	8.3 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -216,7 +216,7 @@ kvm_proclist(kd, what, arg, p, bp, maxcnt)
 				pgrp.pg_session);
 			return (-1);
 		}
-		if ((proc.p_flag & SCTTY) && sess.s_ttyp != NULL) {
+		if ((proc.p_flag & P_CONTROLT) && sess.s_ttyp != NULL) {
 			if (KREAD(kd, (u_long)sess.s_ttyp, &tty)) {
 				_kvm_err(kd, kd->program,
 					 "can't read tty at %x", sess.s_ttyp);
@@ -265,13 +265,13 @@ kvm_proclist(kd, what, arg, p, bp, maxcnt)
 			break;
 
 		case KERN_PROC_TTY:
-			if ((proc.p_flag&SCTTY) == 0 || 
+			if ((proc.p_flag & P_CONTROLT) == 0 || 
 			     eproc.e_tdev != (dev_t)arg)
 				continue;
 			break;
 		}
-		bcopy((char *)&proc, (char *)&bp->kp_proc, sizeof(proc));
-		bcopy((char *)&eproc, (char *)&bp->kp_eproc, sizeof(eproc));
+		bcopy(&proc, &bp->kp_proc, sizeof(proc));
+		bcopy(&eproc, &bp->kp_eproc, sizeof(eproc));
 		++bp;
 		++cnt;
 	}

@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)gcore.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)gcore.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -108,9 +108,9 @@ main(argc, argv)
 	if (p->p_stat == SZOMB)
 		err(1, "%d: zombie", pid);
 
-	if (p->p_flag & SWEXIT)
+	if (p->p_flag & P_WEXIT)
 		err(0, "process exiting");
-	if (p->p_flag & SSYS)		/* Swapper or pagedaemon. */
+	if (p->p_flag & P_SYSTEM)	/* Swapper or pagedaemon. */
 		err(1, "%d: system process");
 
 	if (corefile == NULL) {
