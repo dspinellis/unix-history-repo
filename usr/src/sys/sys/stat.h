@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)stat.h	6.2 (Berkeley) %G%
+ *	@(#)stat.h	6.3 (Berkeley) %G%
  */
 
 struct	stat
@@ -12,8 +12,8 @@ struct	stat
 	ino_t	st_ino;
 	unsigned short st_mode;
 	short	st_nlink;
-	short	st_uid;
-	short	st_gid;
+	uid_t	st_uid;
+	gid_t	st_gid;
 	dev_t	st_rdev;
 	off_t	st_size;
 	time_t	st_atime;

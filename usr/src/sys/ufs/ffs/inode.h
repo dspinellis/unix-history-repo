@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)inode.h	6.8 (Berkeley) %G%
+ *	@(#)inode.h	6.9 (Berkeley) %G%
  */
 
 /*
@@ -40,8 +40,8 @@ struct inode {
 	{
 		u_short	ic_mode;	/*  0: mode and type of file */
 		short	ic_nlink;	/*  2: number of links to file */
-		short	ic_uid;		/*  4: owner's user id */
-		short	ic_gid;		/*  6: owner's group id */
+		uid_t	ic_uid;		/*  4: owner's user id */
+		gid_t	ic_gid;		/*  6: owner's group id */
 		quad	ic_size;	/*  8: number of bytes in file */
 		time_t	ic_atime;	/* 16: time last accessed */
 		long	ic_atspare;

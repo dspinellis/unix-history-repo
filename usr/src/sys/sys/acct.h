@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)acct.h	6.3 (Berkeley) %G%
+ *	@(#)acct.h	6.4 (Berkeley) %G%
  */
 
 /*
@@ -21,8 +21,8 @@ struct	acct
 	comp_t	ac_stime;		/* Accounting system time */
 	comp_t	ac_etime;		/* Accounting elapsed time */
 	time_t	ac_btime;		/* Beginning time */
-	short	ac_uid;			/* Accounting user ID */
-	short	ac_gid;			/* Accounting group ID */
+	uid_t	ac_uid;			/* Accounting user ID */
+	gid_t	ac_gid;			/* Accounting group ID */
 	short	ac_mem;			/* average memory usage */
 	comp_t	ac_io;			/* number of disk IO blocks */
 	dev_t	ac_tty;			/* control typewriter */
