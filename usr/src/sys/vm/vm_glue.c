@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_glue.c	7.5 (Berkeley) %G%
+ *	@(#)vm_glue.c	7.6 (Berkeley) %G%
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -68,8 +68,8 @@ kernacc(addr, len, rw)
 	 * or worse, inconsistencies at the pmap level.  We only worry
 	 * about the buffer cache for now.
 	 */
-	if (rv && (saddr >= (vm_offset_t)buffers ||
-		   eaddr < (vm_offset_t)buffers + MAXBSIZE * nbuf))
+	if (rv && (eaddr > (vm_offset_t)buffers &&
+		   saddr < (vm_offset_t)buffers + MAXBSIZE * nbuf))
 		rv = FALSE;
 	return(rv == TRUE);
 }
