@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)xinstall.c	5.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)xinstall.c	5.17 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -220,7 +220,8 @@ strip(to_name)
 		error("fork");
 		bad(to_name);
 	case 0:
-		execl(_PATH_STRIP, "strip", to_name);
+		execl(_PATH_STRIP, "strip", to_name, (char *)NULL);
+		error(_PATH_STRIP);
 		_exit(1);
 	default:
 		if (wait(&status) == -1 || status)
