@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)chmod.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)chmod.c	5.24 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -88,23 +88,22 @@ done:	argv += optind;
 	}
 
 	retval = 0;
-	if (oct)
-		fts_options |= FTS_NOSTAT;
 	if ((ftsp = fts_open(++argv, fts_options, 0)) == NULL)
-			err(1, "");
+		err(1, "");
 	while (p = fts_read(ftsp))
 		switch(p->fts_info) {
 		case FTS_D:
 			if (!rflag)
 				fts_set(ftsp, p, FTS_SKIP);
+		case FTS_SL:
+		case FTS_SLNONE:
 			break;
 		case FTS_DNR:
 		case FTS_ERR:
 		case FTS_NS:
 			err(1, "%s", p->fts_path);
 		default:	
-			if (p->fts_info == FTS_SL && 
-			    !(hflag || 
+			if (p->fts_info == FTS_SL && !(hflag || 
 			    (Hflag && p->fts_level == FTS_ROOTLEVEL)))
 				continue;
 			if (chmod(p->fts_accpath, oct ? omode :
