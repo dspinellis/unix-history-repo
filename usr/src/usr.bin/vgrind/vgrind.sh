@@ -1,7 +1,7 @@
 #
 # vgrind
 #
-set b=.
+set b=/usr/lib
 set o=
 set t=
 set f=''
