@@ -34,9 +34,10 @@
  *
  * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
  * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         1       00018
+ * CURRENT PATCH LEVEL:         2       00019
  * --------------------         -----   ----------------------
  *
+ * 30 Aug 92	Poul-Henning Kamp	Stabilize SLIP on lossy lines/UARTS
  * 09 Aug 92	Christoph Robitschko	Correct minor number on com ports
  */
 static char rcsid[] = "$Header: /usr/bill/working/sys/i386/isa/RCS/com.c,v 1.2 92/01/21 14:34:11 william Exp $";
@@ -375,8 +376,10 @@ comeint(unit, stat, com)
 		c |= TTY_FE;
 	else if (stat & LSR_PE)
 		c |= TTY_PE;
-	else if (stat & LSR_OE)
+	else if (stat & LSR_OE) {			/* 30 Aug 92*/
+		c |= TTY_PE;	/* Ought to have it's own define... */
 		log(LOG_WARNING, "com%d: silo overflow\n", unit);
+	}
 	(*linesw[tp->t_line].l_rint)(c, tp);
 }
 

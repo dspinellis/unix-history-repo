@@ -31,6 +31,13 @@
  * SUCH DAMAGE.
  *
  *	@(#)if_sl.c	7.22 (Berkeley) 4/20/91
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00019
+ * --------------------         -----   ----------------------
+ *
+ * 30 Aug 92    Poul-Henning Kamp       Stabilize SLIP on lossy lines/UARTS
  */
 
 /*
@@ -623,8 +630,10 @@ slinput(c, tp)
 	sc = (struct sl_softc *)tp->t_sc;
 	if (sc == NULL)
 		return;
-	if (!(tp->t_state&TS_CARR_ON))	/* XXX */
+	if (c > 255 || !(tp->t_state&TS_CARR_ON)) {       /* XXX 30 Aug 92*/
+		sc->sc_flags |= SC_ERROR;
 		return;
+	}
 
 	++sc->sc_bytesrcvd;
 	++sc->sc_if.if_ibytes;
@@ -674,7 +683,12 @@ slinput(c, tp)
 		return;
 
 	case FRAME_END:
+		if(sc->sc_flags & SC_ERROR) {			/* 30 Aug 92*/
+			sc->sc_flags &= ~SC_ERROR;
+			goto newpack;
+		}
 		len = sc->sc_mp - sc->sc_buf;
+
 		if (len < 3)
 			/* less than min length packet - ignore */
 			goto newpack;
@@ -730,6 +744,7 @@ slinput(c, tp)
 		sc->sc_escape = 0;
 		return;
 	}
+	sc->sc_flags |= SC_ERROR;			/* 30 Aug 92*/
 error:
 	sc->sc_if.if_ierrors++;
 newpack:

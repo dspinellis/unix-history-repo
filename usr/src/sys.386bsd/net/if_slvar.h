@@ -33,6 +33,13 @@
  *	@(#)if_slvar.h	7.7 (Berkeley) 5/7/91
  *
  * $Header: if_slvar.h,v 1.3 89/05/31 02:25:18 van Exp $
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00019
+ * --------------------         -----   ----------------------
+ *
+ * 30 Aug 92    Poul-Henning Kamp       Stabilize SLIP on lossy lines/UARTS
  */
 
 /*
@@ -65,6 +72,7 @@ struct sl_softc {
 #define	SC_NOICMP	0x0004		/* supress ICMP traffic */
 #define	SC_AUTOCOMP	0x0008		/* auto-enable TCP compression */
 /* internal flags (should be separate) */
+#define	SC_ERROR	0x08000		/* had an input error - 30 Aug 92*/
 #define	SC_ABORT	0x10000		/* have been sent an abort request */
 
 /* this stuff doesn't belong here... */
