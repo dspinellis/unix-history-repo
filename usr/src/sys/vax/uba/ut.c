@@ -1,4 +1,4 @@
-/*	ut.c	6.3	84/11/27	*/
+/*	ut.c	6.4	85/03/13	*/
 
 #include "tj.h"
 #if NUT > 0
@@ -25,6 +25,7 @@
 #include "cmap.h"
 #include "uio.h"
 #include "kernel.h"
+#include "tty.h"
 
 #include "../vax/cpu.h"
 #include "ubareg.h"
@@ -68,6 +69,7 @@ struct	tj_softc {
 	u_short	sc_dens;	/* sticky selected density */
 	daddr_t	sc_timo;	/* time until timeout expires */
 	short	sc_tact;	/* timeout is active flag */
+	struct	tty *sc_ttyp;	/* record user's tty for errors */
 } tj_softc[NTJ];
 
 /*
@@ -162,6 +164,7 @@ get:
 	sc->sc_nxrec = INF;
 	sc->sc_lastiow = 0;
 	sc->sc_dens = dens;
+	sc->sc_ttyp = u.u_ttyp;
 	/*
 	 * For 6250 bpi take exclusive use of the UNIBUS.
 	 */
@@ -488,7 +491,7 @@ utintr(ut11)
 		 */
 		if (sc->sc_erreg & UTER_COR && (bp->b_flags & B_READ) &&
 		    (addr->uttc & UTTC_DEN) != UT_NRZI) {
-			printf(
+			tprintf(sc->sc_ttyp,
 			  "ut%d: soft error bn%d cs1=%b er=%b cs2=%b ds=%b\n",
 			  tjunit, bp->b_blkno, cs1, UT_BITS, sc->sc_erreg,
 			  UTER_BITS, cs2, UTCS2_BITS, sc->sc_dsreg, UTDS_BITS);
@@ -530,7 +533,8 @@ utintr(ut11)
 		/*
 		 * Couldn't recover error.
 		 */
-		printf("ut%d: hard error bn%d cs1=%b er=%b cs2=%b ds=%b\n",
+		tprintf(sc->sc_ttyp,
+			"ut%d: hard error bn%d cs1=%b er=%b cs2=%b ds=%b\n",
 			tjunit, bp->b_blkno, cs1, UT_BITS, sc->sc_erreg,
 			UTER_BITS, cs2, UTCS2_BITS, sc->sc_dsreg, UTDS_BITS);
 		bp->b_flags |= B_ERROR;

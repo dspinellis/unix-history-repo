@@ -1,4 +1,4 @@
-/*	tm.c	6.4	84/08/29	*/
+/*	tm.c	6.5	85/03/13	*/
 
 #include "te.h"
 #include "ts.h"
@@ -29,6 +29,7 @@
 #include "cmap.h"
 #include "uio.h"
 #include "kernel.h"
+#include "tty.h"
 
 #include "../vax/cpu.h"
 #include "ubareg.h"
@@ -101,8 +102,9 @@ struct	te_softc {
 	short	sc_lastcmd;	/* last command to handle direction changes */
 #endif
 	u_short	sc_dens;	/* prototype command with density info */
-	daddr_t	sc_timo;	/* time until timeout expires */
 	short	sc_tact;	/* timeout is active */
+	daddr_t	sc_timo;	/* time until timeout expires */
+	struct	tty *sc_ttyp;	/* record user's tty for errors */
 } te_softc[NTE];
 #ifdef unneeded
 int	tmgapsdcnt;		/* DEBUG */
@@ -230,6 +232,7 @@ get:
 	sc->sc_nxrec = INF;
 	sc->sc_lastiow = 0;
 	sc->sc_dens = dens;
+	sc->sc_ttyp = u.u_ttyp;
 	s = spl6();
 	if (sc->sc_tact == 0) {
 		sc->sc_timo = INF;
@@ -629,7 +632,8 @@ tmintr(tm11)
 		/*
 		 * Couldn't recover error
 		 */
-		printf("te%d: hard error bn%d er=%b\n", minor(bp->b_dev)&03,
+		tprintf(sc->sc_ttyp,
+		    "te%d: hard error bn%d er=%b\n", minor(bp->b_dev)&03,
 		    bp->b_blkno, sc->sc_erreg, TMER_BITS);
 		bp->b_flags |= B_ERROR;
 		goto opdone;
