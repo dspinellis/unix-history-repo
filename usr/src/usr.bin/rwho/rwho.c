@@ -21,6 +21,10 @@ int	nusers;
 
 #define	WHDRSIZE	(sizeof (wd) - sizeof (wd.wd_we))
 #define	RWHODIR		"/usr/spool/rwho"
+/* 
+ * this macro should be shared with ruptime.
+ */
+#define	down(w,now)	((now) - (w)->wd_recvtime > 11 * 60)
 
 char	*ctime(), *strcpy();
 int	now;
@@ -68,7 +72,7 @@ again:
 			(void) close(f);
 			continue;
 		}
-		if (now - w->wd_recvtime > 5 * 60) {
+		if (down(w,now)) {
 			(void) close(f);
 			continue;
 		}
@@ -101,7 +105,7 @@ again:
 	mp = myutmp;
 	for (i = 0; i < nusers; i++) {
 		char buf[22];
-		sprintf(buf, "%s:%s", mp->myhost, mp->myutmp.out_line);
+		(void)sprintf(buf, "%s:%s", mp->myhost, mp->myutmp.out_line);
 		printf("%-8.8s %-*s %.12s",
 		   mp->myutmp.out_name,
 		   width,
