@@ -1,4 +1,4 @@
-/*	if_imphost.c	4.17	83/02/23	*/
+/*	if_imphost.c	4.18	83/02/23	*/
 
 #include "imp.h"
 #if NIMP > 0
@@ -209,5 +209,5 @@ hostslowtimo()
 				hostrelease(hp);
 		}
 	}
-	splimp(s);
+	splx(s);
 }
