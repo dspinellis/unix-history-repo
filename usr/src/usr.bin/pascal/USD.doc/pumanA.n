@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)pumanA.n	8.1 (Berkeley) %G%
+.\"	@(#)pumanA.n	8.2 (Berkeley) %G%
 .\"
 .if !\n(xx \{\
 .so tmac.p \}
@@ -934,6 +934,6 @@ Acknowledgments
 The financial support of William Joy and Susan Graham by
 the National Science Foundation under grants
 MCS74-07644-A04, MCS78-07291, and MCS80-05144,
-and the William Joy by an
+and of William Joy by an
 .SM IBM
 Graduate Fellowship are gratefully acknowledged.
