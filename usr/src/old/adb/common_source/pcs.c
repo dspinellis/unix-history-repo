@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)pcs.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)pcs.c	5.5 (Berkeley) %G%";
 #endif
 
 /*
@@ -63,9 +63,8 @@ subpcs(modif)
 	case 'b':
 	case 'B':
 		/* set breakpoint */
-		if ((bp = scanbkpt(dot)) != NULL)
-			bp->state = BKPT_FREE;
-		else {
+		if ((bp = scanbkpt(dot)) == NULL) {
+			/* find a free one, or make one */
 			for (bp = bkpthead; bp != NULL; bp = bp->next)
 				if (bp->state == BKPT_FREE)
 					break;
@@ -110,13 +109,9 @@ subpcs(modif)
 		runcount = ecount;
 		runmode = CONTINUOUS;
 		execsig = 0;
-		if (gavedot) {
-			if (scanbkpt(dot) == NULL)
-				runcount++;
-		} else {
-			if (scanbkpt(entrypc()) == NULL)
-				runcount++;
-		}
+		/* if starting at a breakpoint, run over it */
+		if (scanbkpt(gavedot ? dot : entrypc()) != NULL)
+			runcount++;
 		break;
 
 	case 's':
@@ -351,6 +346,9 @@ setup()
 	bpstate = BPOUT;
 }
 
+/*
+ * Single step over a location containing a breakpoint.
+ */
 execbkpt(bp, execsig)
 	struct bkpt *bp;
 	int execsig;
