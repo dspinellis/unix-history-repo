@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)options.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)options.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "shell.h"
@@ -83,6 +83,7 @@ procargs(argc, argv)
 		argptr++;
 	}
 	setinteractive(iflag);
+	histedit();
 	setjobctl(jflag);
 }
 
@@ -254,6 +255,7 @@ setcmd(argc, argv)  char **argv; {
 	INTOFF;
 	options(0);
 	setinteractive(iflag);
+	histedit();
 	setjobctl(jflag);
 	if (*argptr != NULL) {
 		setparam(argptr);
