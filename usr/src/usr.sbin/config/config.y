@@ -76,7 +76,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)config.y	5.13 (Berkeley) %G%
+ *	@(#)config.y	5.14 (Berkeley) %G%
  */
 
 #include "config.h"
@@ -275,14 +275,7 @@ dump_device_spec:
 
 arg_spec:
 	  ARGS optional_on arg_device_spec
-		= {
-			struct file_list *fl = *confp;
-
-			if (fl && fl->f_argdev != NODEV)
-				yyerror("extraneous arg device specification");
-			else
-				fl->f_argdev = $3;
-		}
+		= { yyerror("arg device specification obsolete, ignored"); }
 	;
 
 arg_device_spec:
@@ -565,7 +558,6 @@ mkconf(sysname)
 	fl->f_type = SYSTEMSPEC;
 	fl->f_needs = sysname;
 	fl->f_rootdev = NODEV;
-	fl->f_argdev = NODEV;
 	fl->f_dumpdev = NODEV;
 	fl->f_fn = 0;
 	fl->f_next = 0;
@@ -834,33 +826,24 @@ checksystemspec(fl)
 	if (generic) {
 		if (fl->f_rootdev != NODEV)
 			yyerror("root device specified with generic swap");
-		if (fl->f_argdev != NODEV)
-			yyerror("arg device specified with generic swap");
 		if (fl->f_dumpdev != NODEV)
 			yyerror("dump device specified with generic swap");
 		return;
 	}
 	/*
-	 * Default argument device and check for oddball arrangements.
-	 */
-	if (fl->f_argdev == NODEV)
-		fl->f_argdev = swap->f_swapdev;
-	if (fl->f_argdev != swap->f_swapdev)
-		yyerror("Warning, arg device different than primary swap");
-	/*
 	 * Default dump device and warn if place is not a
-	 * swap area or the argument device partition.
+	 * swap area.
 	 */
 	if (fl->f_dumpdev == NODEV)
 		fl->f_dumpdev = swap->f_swapdev;
-	if (fl->f_dumpdev != swap->f_swapdev && fl->f_dumpdev != fl->f_argdev) {
+	if (fl->f_dumpdev != swap->f_swapdev) {
 		struct file_list *p = swap->f_next;
 
 		for (; p && p->f_type == SWAPSPEC; p = p->f_next)
 			if (fl->f_dumpdev == p->f_swapdev)
 				return;
-		(void) sprintf(buf, "Warning, orphaned dump device, %s",
-			"do you know what you're doing");
+		(void) sprintf(buf,
+		    "Warning: dump device is not a swap partition");
 		yyerror(buf);
 	}
 }
@@ -888,11 +871,6 @@ verifysystemspecs()
 			if (!finddev(fl->f_dumpdev))
 				deverror(fl->f_needs, "dump");
 			*pchecked++ = fl->f_dumpdev;
-		}
-		if (!alreadychecked(fl->f_argdev, checked, pchecked)) {
-			if (!finddev(fl->f_argdev))
-				deverror(fl->f_needs, "arg");
-			*pchecked++ = fl->f_argdev;
 		}
 	}
 }

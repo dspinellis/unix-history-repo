@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mkmakefile.c	5.32 (Berkeley) %G%";
+static char sccsid[] = "@(#)mkmakefile.c	5.33 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -19,10 +19,16 @@ static char sccsid[] = "@(#)mkmakefile.c	5.32 (Berkeley) %G%";
 #include <ctype.h>
 #include "y.tab.h"
 #include "config.h"
-#include "pathnames.h"
 
 #define next_word(fp, wd) \
 	{ register char *word = get_word(fp); \
+	  if (word == (char *)EOF) \
+		return; \
+	  else \
+		wd = word; \
+	}
+#define next_quoted_word(fp, wd) \
+	{ register char *word = get_quoted_word(fp); \
 	  if (word == (char *)EOF) \
 		return; \
 	  else \
@@ -73,10 +79,7 @@ new_fent()
 	register struct file_list *fp;
 
 	fp = (struct file_list *) malloc(sizeof *fp);
-	fp->f_needs = 0;
-	fp->f_next = 0;
-	fp->f_flags = 0;
-	fp->f_type = 0;
+	bzero(fp, sizeof *fp);
 	if (fcur == 0)
 		fcur = ftab = fp;
 	else
@@ -85,7 +88,6 @@ new_fent()
 	return (fp);
 }
 
-char	*COPTS;
 static	struct users {
 	int	u_default;
 	int	u_min;
@@ -157,40 +159,15 @@ makefile()
 	    zone, dst, maxusers);
 	for (op = mkopt; op; op = op->op_next)
 		fprintf(ofp, "%s=%s\n", op->op_name, op->op_value);
+	if (debugging)
+		fprintf(ofp, "DEBUG=-g\n");
+	if (profiling)
+		fprintf(ofp, "PROF=-pg\n");
 	while (fgets(line, BUFSIZ, ifp) != 0) {
-		if (*line == '%')
-			goto percent;
-		if ((debugging || profiling) &&
-		    strncmp(line, "COPTS=", 6) == 0) {
-			register char *cp;
-
-			cp = index(line, '\n');
-			if (cp)
-				*cp = 0;
-			if (profiling) {
-				cp = line + 6;
-				while (*cp && (*cp == ' ' || *cp == '\t'))
-					cp++;
-				COPTS = malloc((unsigned)(strlen(cp) + 1));
-				if (COPTS == 0) {
-					printf("config: out of memory\n");
-					exit(1);
-				}
-				strcpy(COPTS, cp);
-			}
+		if (*line != '%') {
 			fprintf(ofp, "%s", line);
-			if (debugging)
-				fprintf(ofp, " -g");
-			if (profiling) {
-				fprintf(ofp, " -pg\n");
-				fprintf(ofp, _PATH_GPROF, machinename);
-			} else
-				fprintf(ofp, "\n");
 			continue;
 		}
-		fprintf(ofp, "%s", line);
-		continue;
-	percent:
 		if (eq(line, "%OBJS\n"))
 			do_objs(ofp);
 		else if (eq(line, "%CFILES\n"))
@@ -219,9 +196,9 @@ read_files()
 	register struct device *dp;
 	struct device *save_dp;
 	register struct opt *op;
-	char *wd, *this, *needs, *devorprof;
+	char *wd, *this, *needs, *special;
 	char fname[32];
-	int nreqs, first = 1, configdep, isdup, std;
+	int nreqs, first = 1, configdep, isdup, std, filetype;
 
 	ftab = 0;
 	(void) strcpy(fname, "../../conf/files");
@@ -235,6 +212,7 @@ next:
 	/*
 	 * filename	[ standard | optional ] [ config-dependent ]
 	 *	[ dev* | profiling-routine ] [ device-driver]
+	 *	[ compile-with "compile rule" ]
 	 */
 	wd = get_word(fp);
 	if (wd == (char *)EOF) {
@@ -271,10 +249,11 @@ next:
 		printf("%s: Local file %s overrides %s.\n",
 		    fname, this, tp->f_fn);
 	nreqs = 0;
-	devorprof = "";
+	special = 0;
 	configdep = 0;
 	needs = 0;
 	std = 0;
+	filetype = NORMAL;
 	if (eq(wd, "standard"))
 		std = 1;
 	else if (!eq(wd, "optional")) {
@@ -289,20 +268,33 @@ nextparam:
 		configdep++;
 		goto nextparam;
 	}
-	devorprof = wd;
-	if (eq(wd, "device-driver") || eq(wd, "profiling-routine")) {
-		next_word(fp, wd);
-		goto save;
+	if (eq(wd, "compile-with")) {
+		next_quoted_word(fp, wd);
+		if (wd == 0) {
+			printf("%s: %s missing compile command string.\n",
+			       fname);
+			exit(1);
+		}
+		special = ns(wd);
+		goto nextparam;
 	}
 	nreqs++;
+	if (eq(wd, "device-driver")) {
+		filetype = DRIVER;
+		goto nextparam;
+	}
+	if (eq(wd, "profiling-routine")) {
+		filetype = PROFILING;
+		goto nextparam;
+	}
 	if (needs == 0 && nreqs == 1)
 		needs = ns(wd);
 	if (isdup)
 		goto invis;
 	for (dp = dtab; dp != 0; save_dp = dp, dp = dp->d_next)
 		if (eq(dp->d_name, wd)) {
-			if (std &&
-			    dp->d_type == PSEUDO_DEVICE && dp->d_slave <= 0)
+			if (std && dp->d_type == PSEUDO_DEVICE &&
+			    dp->d_slave <= 0)
 				dp->d_slave = 1;
 			goto nextparam;
 		}
@@ -332,6 +324,7 @@ invis:
 	tp->f_type = INVISIBLE;
 	tp->f_needs = needs;
 	tp->f_flags = isdup;
+	tp->f_special = special;
 	goto next;
 
 doneparam:
@@ -347,21 +340,17 @@ save:
 		    fname, this);
 		exit(1);
 	}
-	if (eq(devorprof, "profiling-routine") && profiling == 0)
+	if (filetype == PROFILING && profiling == 0)
 		goto next;
 	if (tp == 0)
 		tp = new_fent();
 	tp->f_fn = this;
-	if (eq(devorprof, "device-driver"))
-		tp->f_type = DRIVER;
-	else if (eq(devorprof, "profiling-routine"))
-		tp->f_type = PROFILING;
-	else
-		tp->f_type = NORMAL;
+	tp->f_type = filetype;
 	tp->f_flags = 0;
 	if (configdep)
 		tp->f_flags |= CONFIGDEP;
 	tp->f_needs = needs;
+	tp->f_special = special;
 	if (pf && pf->f_type == INVISIBLE)
 		pf->f_flags = 1;		/* mark as duplicate */
 	goto next;
@@ -485,115 +474,52 @@ do_rules(f)
 {
 	register char *cp, *np, och, *tp;
 	register struct file_list *ftp;
-	char *extras;
+	char *special;
 
-for (ftp = ftab; ftp != 0; ftp = ftp->f_next) {
-	if (ftp->f_type == INVISIBLE)
-		continue;
-	cp = (np = ftp->f_fn) + strlen(ftp->f_fn) - 1;
-	och = *cp;
-	*cp = '\0';
-	if (och == 'o') {
-		fprintf(f, "%so:\n\t-cp $S/%so .\n\n", tail(np), np);
-		continue;
-	}
-	fprintf(f, "%so: $S/%s%c\n", tail(np), np, och);
-	tp = tail(np);
-	if (och == 's') {
-		fprintf(f, "\t${CPP} ${COPTS} $S/%ss | ${AS} -o %so\n",
-			np, tp);
-		continue;
-	}
-	if (ftp->f_flags & CONFIGDEP)
-		extras = "${PARAM} ";
-	else
-		extras = "";
-	switch (ftp->f_type) {
-
-	case NORMAL:
-		switch (machine) {
-
-		case MACHINE_VAX:
-		case MACHINE_TAHOE:
-			fprintf(f, "\t${CC} -c -S ${COPTS} %s$S/%sc\n",
-				extras, np);
-			fprintf(f, "\t${C2} %ss | ${INLINE} | ${AS} -o %so\n",
-			    tp, tp);
-			fprintf(f, "\trm -f %ss\n\n", tp);
-			break;
-
-		case MACHINE_HP300:
-		case MACHINE_I386:
-			fprintf(f, "\t${CC} -c ${CFLAGS} %s$S/%sc\n\n",
-				extras, np);
-			break;
-		}
-		break;
-
-	case DRIVER:
-		switch (machine) {
-
-		case MACHINE_VAX:
-		case MACHINE_TAHOE:
-			fprintf(f, "\t${CC} -c -S ${COPTS} %s$S/%sc\n",
-				extras, np);
-			fprintf(f,"\t${C2} -i %ss | ${INLINE} | ${AS} -o %so\n",
-			    tp, tp);
-			fprintf(f, "\trm -f %ss\n\n", tp);
-			break;
-
-		case MACHINE_HP300:
-		case MACHINE_I386:
-			fprintf(f, "\t${CC} -c ${CFLAGS} %s$S/%sc\n\n",
-				extras, np);
-			break;
-		}
-		break;
-
-	case PROFILING:
-		if (!profiling)
+	for (ftp = ftab; ftp != 0; ftp = ftp->f_next) {
+		if (ftp->f_type == INVISIBLE)
 			continue;
-		if (COPTS == 0) {
-			fprintf(stderr,
-			    "config: COPTS undefined in generic makefile");
-			COPTS = "";
+		cp = (np = ftp->f_fn) + strlen(ftp->f_fn) - 1;
+		och = *cp;
+		*cp = '\0';
+		if (och == 'o') {
+			fprintf(f, "%so:\n\t-cp $S/%so .\n\n", tail(np), np);
+			continue;
 		}
-		switch (machine) {
+		fprintf(f, "%so: $S/%s%c\n", tail(np), np, och);
+		tp = tail(np);
+		special = ftp->f_special;
+		if (special == 0) {
+			char *ftype;
+			static char cmd[128];
 
-		case MACHINE_TAHOE:
-			fprintf(f, "\t${CC} -c -S %s %s$S/%sc\n",
-				COPTS, extras, np);
-			fprintf(f, "\tex - %ss < ${GPROF.EX}\n", tp);
-			fprintf(f,"\t${C2} %ss | ${INLINE} | ${AS} -o %so\n",
-			    tp, tp);
-			fprintf(f, "\trm -f %ss\n\n", tp);
-			break;
+			switch (ftp->f_type) {
 
-		case MACHINE_VAX:
-			fprintf(f, "\t${CC} -c -S %s %s$S/%sc\n",
-				COPTS, extras, np);
-			fprintf(f, "\tex - %ss < ${GPROF.EX}\n", tp);
-			fprintf(f, "\t${INLINE} %ss | ${AS} -o %so\n", tp, tp);
-			fprintf(f, "\trm -f %ss\n\n", tp);
-			break;
+			case NORMAL:
+				ftype = "NORMAL";
+				break;
 
-		case MACHINE_HP300:
-		case MACHINE_I386:
-			fprintf(f, "\t${CC} -c -S %s %s$S/%sc\n",
-				COPTS, extras, np);
-			fprintf(f, "\tex - %ss < ${GPROF.EX}\n", tp);
-			fprintf(f, "\t${AS} -o %so %ss\n", tp, tp);
-			fprintf(f, "\trm -f %ss\n\n", tp);
-			break;
+			case DRIVER:
+				ftype = "DRIVER";
+				break;
+
+			case PROFILING:
+				if (!profiling)
+					continue;
+				ftype = "PROFILE";
+				break;
+
+			default:
+				printf("config: don't know rules for %s\n", np);
+				break;
+			}
+			(void)sprintf(cmd, "${%s_%c%s}", ftype, toupper(och),
+				      ftp->f_flags & CONFIGDEP? "_C" : "");
+			special = cmd;
 		}
-		break;
-
-	default:
-		printf("Don't know rules for %s\n", np);
-		break;
+		*cp = och;
+		fprintf(f, "\t%s\n\n", special);
 	}
-	*cp = och;
-}
 }
 
 /*
@@ -623,51 +549,12 @@ do_systemspec(f, fl, first)
 	int first;
 {
 
-	fprintf(f, "%s: Makefile symbols.sort", fl->f_needs);
-	if (machine == MACHINE_VAX)
-		fprintf(f, " ${INLINECMD} locore.o emulate.o");
-	else if (machine == MACHINE_TAHOE)
-		fprintf(f, " ${INLINE} locore.o");
-	else
-		fprintf(f, " locore.o");
-	fprintf(f, " ${OBJS} param.o ioconf.o swap%s.o\n", fl->f_fn);
-	fprintf(f, "\t@echo loading %s\n\t@rm -f %s\n",
-	    fl->f_needs, fl->f_needs);
-	if (first) {
-		fprintf(f, "\t@sh $S/conf/newvers.sh\n");
-		fprintf(f, "\t@${CC} ${CFLAGS} -c vers.c\n");
-	}
-	switch (machine) {
-
-	case MACHINE_VAX:
-		fprintf(f, "\t@${LD} -n -o %s -e start -%c -T 80000000 ",
-			fl->f_needs, debugging ? 'X' : 'x');
-		fprintf(f,
-		    "locore.o emulate.o ${OBJS} vers.o ioconf.o param.o ");
-		break;
-
-	case MACHINE_TAHOE:
-		fprintf(f, "\t@${LD} -n -o %s -e start -%c -T C0000800 ",
-			fl->f_needs, debugging ? 'X' : 'x');
-		fprintf(f, "locore.o ${OBJS} vers.o ioconf.o param.o ");
-		break;
-
-	case MACHINE_HP300:
-		fprintf(f, "\t@${LD} -n -o %s -e start -%c ",
-			fl->f_needs, debugging ? 'X' : 'x');
-		fprintf(f, "locore.o ${OBJS} vers.o ioconf.o param.o ");
-		break;
-
-	case MACHINE_I386:
-		fprintf(f, "\t@${LD} -n -T FE000000 -o %s -%c ",
-			fl->f_needs, debugging ? 'X' : 'x');
-		fprintf(f, "locore.o ${OBJS} vers.o ioconf.o param.o ");
-	}
-	fprintf(f, "swap%s.o\n", fl->f_fn);
-	fprintf(f, "\t@echo rearranging symbols\n");
-	fprintf(f, "\t@-symorder symbols.sort %s\n", fl->f_needs);
-	fprintf(f, "\t@size %s\n", fl->f_needs);
-	fprintf(f, "\t@chmod 755 %s\n\n", fl->f_needs);
+	fprintf(f, "%s: ${SYSTEM_DEP} swap%s.o", fl->f_needs, fl->f_fn);
+	if (first)
+		fprintf(f, " newvers");
+	fprintf(f, "\n\t${SYSTEM_LD_HEAD}\n");
+	fprintf(f, "\t${SYSTEM_LD} swap%s.o\n", fl->f_fn);
+	fprintf(f, "\t${SYSTEM_LD_TAIL}\n\n");
 	do_swapspec(f, fl->f_fn);
 	for (fl = fl->f_next; fl->f_type == SWAPSPEC; fl = fl->f_next)
 		;
@@ -679,32 +566,12 @@ do_swapspec(f, name)
 	register char *name;
 {
 
-	if (!eq(name, "generic")) {
+	if (!eq(name, "generic"))
 		fprintf(f, "swap%s.o: swap%s.c\n", name, name);
-		fprintf(f, "\t${CC} -c -O ${COPTS} swap%s.c\n\n", name);
-		return;
-	}
-	fprintf(f, "swapgeneric.o: $S/%s/%s/swapgeneric.c\n", 
-	    machinename, machinename);
-	switch (machine) {
-
-	case MACHINE_VAX:
-	case MACHINE_TAHOE:
-		fprintf(f, "\t${CC} -c -S ${COPTS} ");
-		fprintf(f, "$S/%s/%s/swapgeneric.c\n",
-		    machinename, machinename);
-		fprintf(f, "\t${C2} swapgeneric.s | ${INLINE}");
-		fprintf(f, " | ${AS} -o swapgeneric.o\n");
-		fprintf(f, "\trm -f swapgeneric.s\n\n");
-		break;
-
-	case MACHINE_HP300:
-	case MACHINE_I386:
-		fprintf(f, "\t${CC} -c ${CFLAGS} ");
-		fprintf(f, "$S/%s/%s/swapgeneric.c\n\n",
-		    machinename, machinename);
-		break;
-	}
+	else
+		fprintf(f, "swapgeneric.o: ../%s/swapgeneric.c\n",
+			machinename);
+	fprintf(f, "\t${NORMAL_C}\n\n");
 }
 
 char *
