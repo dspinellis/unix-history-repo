@@ -87,8 +87,10 @@ copy(from, to)
 	if (rflag && (stfrom.st_mode&S_IFMT) == S_IFDIR) {
 		(void) close(fold);
 		if (stat(to, &stto) < 0) {
-			if (mkdir(to, (int)stfrom.st_mode) < 0)
+			if (mkdir(to, (int)stfrom.st_mode) < 0) {
+				fprintf(stderr, "cp: "); perror(to);
 				return (1);
+			}
 		} else if ((stto.st_mode&S_IFMT) != S_IFDIR) {
 			fprintf(stderr, "cp: %s: Not a directory.\n", to);
 			return (1);
@@ -165,36 +167,4 @@ rcopy(from, to)
 		(void) sprintf(fromname, "%s/%s", from, dp->d_name);
 		errs += copy(fromname, to);
 	}
-}
-
-mkdir(name, mode)
-	char *name;
-	int mode;
-{
-	char *argv[4];
-	int pid, rc;
-
-	argv[0] = "mkdir";
-	argv[1] = name;
-	argv[2] = 0;
-	pid = fork();
-	if (pid < 0) {
-		perror("cp");
-		return (1);
-	}
-	if (pid) {
-		while (wait(&rc) != pid)
-			continue;
-		if (rc == 0)
-			if (chmod(name, mode) < 0) {
-				perror(name);
-				rc = 1;
-			}
-		return (rc);
-	}
-	execv("/bin/mkdir", argv);
-	execv("/usr/bin/mkdir", argv);
-	perror("mkdir");
-	_exit(1);
-	/*NOTREACHED*/
 }
