@@ -1,4 +1,4 @@
-/*	uipc_socket.c	6.11	85/05/27	*/
+/*	uipc_socket.c	6.12	85/06/02	*/
 
 #include "param.h"
 #include "systm.h"
@@ -29,10 +29,8 @@
  * switching out to the protocol specific routines.
  *
  * TODO:
- *	sostat
  *	test socketpair
- *	PR_RIGHTS
- *	clean up select, async
+ *	clean up async
  *	out-of-band is a kludge
  */
 /*ARGSUSED*/
@@ -47,7 +45,7 @@ socreate(dom, aso, type, proto)
 	register int error;
 
 	if (proto)
-		prp = pffindproto(dom, proto);
+		prp = pffindproto(dom, proto, type);
 	else
 		prp = pffindtype(dom, type);
 	if (prp == 0)
@@ -64,7 +62,7 @@ socreate(dom, aso, type, proto)
 	so->so_proto = prp;
 	error =
 	    (*prp->pr_usrreq)(so, PRU_ATTACH,
-		(struct mbuf *)0, (struct mbuf *)0, (struct mbuf *)0);
+		(struct mbuf *)0, (struct mbuf *)proto, (struct mbuf *)0);
 	if (error) {
 		so->so_state |= SS_NOFDREF;
 		sofree(so);
@@ -334,16 +332,18 @@ restart:
 			register struct iovec *iov = uio->uio_iov;
 
 			MGET(m, M_WAIT, MT_DATA);
-			if (iov->iov_len >= CLBYTES && space >= CLBYTES) {
+			if (iov->iov_len >= NBPG && space >= CLBYTES) {
 				register struct mbuf *p;
 				MCLGET(p, 1);
 				if (p == 0)
 					goto nopages;
 				m->m_off = (int)p - (int)m;
-				len = CLBYTES;
+				len = min(CLBYTES, iov->iov_len);
+				space -= CLBYTES;
 			} else {
 nopages:
 				len = MIN(MLEN, iov->iov_len);
+				space -= len;
 			}
 			error = uiomove(mtod(m, caddr_t), len, UIO_WRITE, uio);
 			m->m_len = len;
@@ -351,7 +351,6 @@ nopages:
 			if (error)
 				goto release;
 			mp = &m->m_next;
-			space -= len;
 			if (uio->uio_resid <= 0)
 				break;
 			while (uio->uio_iov->iov_len == 0) {
@@ -370,6 +369,7 @@ nopages:
 		splx(s);
 		if (dontroute)
 			so->so_options &= ~SO_DONTROUTE;
+		rights = 0;
 		top = 0;
 		first = 0;
 		if (error)
@@ -486,7 +486,7 @@ if(m->m_next) panic("receive 2b");
 				m = sbdroprecord(&so->so_rcv);
 		}
 	}
-	if (m == 0)
+	if (m == 0 || m->m_type != MT_DATA)
 		panic("receive 3");
 	moff = 0;
 	tomark = so->so_oobmark;
@@ -495,13 +495,13 @@ if(m->m_next) panic("receive 2b");
 		so->so_state &= ~SS_RCVATMARK;
 		if (tomark && len > tomark)
 			len = tomark;
-		if (moff+len > m->m_len - moff)
+		if (len > m->m_len - moff)
 			len = m->m_len - moff;
 		splx(s);
 		error =
 		    uiomove(mtod(m, caddr_t) + moff, (int)len, UIO_READ, uio);
 		s = splnet();
-		if (len == m->m_len) {
+		if (len == m->m_len - moff) {
 			if ((flags & MSG_PEEK) == 0) {
 				nextrecord = m->m_act;
 				sbfree(&so->so_rcv, m);
