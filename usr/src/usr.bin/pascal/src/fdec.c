@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)fdec.c 1.1 %G%";
+static	char sccsid[] = "@(#)fdec.c 1.2 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -365,7 +365,7 @@ funcext(fp)
 	} else {
 		if (cbn == 1) {
 			fp->ext_flags |= NEXTERN;
-			stabefunc( fp -> symbol , line);
+			stabefunc( fp -> symbol , fp -> class , line );
 		}
 		else
 			error("External procedures and functions can only be declared at the outermost level.");
@@ -412,9 +412,9 @@ funcbody(fp)
 	fp->ptr[2] = nlp;
 #	ifdef PC
 	    if ( fp -> class != PROG ) {
-		stabfunc( fp -> symbol , line , cbn - 1 );
+		stabfunc( fp -> symbol , fp -> class , line , cbn - 1 );
 	    } else {
-		stabfunc( "program" , line , 0 );
+		stabfunc( "program" , fp -> class , line , 0 );
 	    }
 #	endif PC
 	if (fp->class != PROG) {
@@ -436,8 +436,9 @@ funcbody(fp)
 		    q = fp -> ptr[ NL_FVAR ];
 		    sizes[cbn].om_off -= lwidth( q -> type );
 		    sizes[cbn].om_max = sizes[cbn].om_off;
-		    stabvar( q -> symbol , p2type( q -> type )
-			    , q -> value[ NL_OFFS ] , lwidth( q -> type ) );
+		    stabvar( q -> symbol , p2type( q -> type ) , cbn 
+			    , q -> value[ NL_OFFS ] , lwidth( q -> type )
+			    , line );
 #		endif PC
 	}
 #	ifdef PTREE
