@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)rx50.c	7.1 (Berkeley) %G%
+ *	@(#)rx50.c	7.2 (Berkeley) %G%
  */
 
 #if VAX8200
@@ -89,12 +89,12 @@ rx50close(dev, flags)
 }
 
 /*
- * Perform a read (rw==UIO_READ) or write (rw==UIO_WRITE).
+ * Perform a read (uio->uio_rw==UIO_READ) or write (uio->uio_rw==UIO_WRITE).
  */
-rx50operation(dev, rw, uio)
+rx50operation(dev, uio, flags)
 	dev_t dev;
-	enum uio_rw rw;
 	register struct uio *uio;
+	int flags;
 {
 	register struct rx50device *rxaddr;
 	register struct rx50state *rs;
@@ -127,15 +127,15 @@ rx50operation(dev, rw, uio)
 		if (rs->rs_blkno >= RX50MAXSEC) {
 			if (rs->rs_blkno > RX50MAXSEC)
 				error = EINVAL;
-			else if (rw == UIO_WRITE)
+			else if (uio->uio_rw == UIO_WRITE)
 				error = ENOSPC;
 			/* else ``eof'' */
 			break;
 		}
 		rs->rs_flags &= ~(RS_ERROR | RS_DONE);
-		if (rw == UIO_WRITE) {
+		if (uio->uio_rw == UIO_WRITE) {
 			/* copy the data to the RX50 silo */
-			error = uiomove(secbuf, 512, UIO_WRITE, uio);
+			error = uiomove(secbuf, 512, uio);
 			if (error)
 				break;
 			i = rxaddr->rxrda;
@@ -161,12 +161,12 @@ rx50operation(dev, rw, uio)
 			error = EIO;
 			break;
 		}
-		if (rw == UIO_READ) {
+		if (uio->uio_rw == UIO_READ) {
 			/* copy the data out of the silo */
 			i = rxaddr->rxrda;
 			for (cp = secbuf, i = 512; --i >= 0;)
 				*cp++ = rxaddr->rxedb;
-			error = uiomove(secbuf, 512, UIO_READ, uio);
+			error = uiomove(secbuf, 512, uio);
 			if (error)
 				break;
 		}
@@ -178,22 +178,6 @@ rx50operation(dev, rw, uio)
 		wakeup((caddr_t) rs);
 
 	return (error);
-}
-
-rx50read(dev, uio)
-	dev_t dev;
-	struct uio *uio;
-{
-
-	return (rx50operation(dev, UIO_READ, uio));
-}
-
-rx50write(dev, uio)
-	dev_t dev;
-	struct uio *uio;
-{
-
-	return (rx50operation(dev, UIO_WRITE, uio));
 }
 
 rx50intr()

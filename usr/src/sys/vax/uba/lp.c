@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)lp.c	7.2 (Berkeley) %G%
+ *	@(#)lp.c	7.3 (Berkeley) %G%
  */
 
 #include "lp.h"
@@ -154,7 +154,7 @@ lpwrite(dev, uio)
 
 	while (n = MIN(LPBUFSIZE, (unsigned)uio->uio_resid)) {
 		cp = sc->sc_inbuf->b_un.b_addr;
-		error = uiomove(cp, (int)n, UIO_WRITE, uio);
+		error = uiomove(cp, (int)n, uio);
 		if (error)
 			return (error);
 		do
