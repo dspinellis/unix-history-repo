@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_ethersubr.c	7.20 (Berkeley) %G%
+ *	@(#)if_ethersubr.c	7.21 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -316,7 +316,7 @@ ether_input(ifp, eh, m)
 		    l->llc_dsap = l->llc_ssap;
 		    l->llc_ssap = c;
 		    if (m->m_flags & (M_BCAST | M_MCAST))
-			bcopy((caddr_t)ac->ac_enaddr,
+			bcopy((caddr_t)((struct arpcom *)ifp)->ac_enaddr,
 			      (caddr_t)eh->ether_dhost, 6);
 		    sa.sa_family = AF_UNSPEC;
 		    sa.sa_len = sizeof(sa);
