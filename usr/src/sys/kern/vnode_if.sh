@@ -1,13 +1,15 @@
 #!/bin/sh -
-#
-# Copyright (c) 1992, 1993, 1994
-#	The Regents of the University of California.  All rights reserved.
-#
-# %sccs.include.redist.sh%
-#
-# from: $NetBSD: vnode_if.sh,v 1.7 1994/08/25 03:04:28 cgd Exp $
-#
-SCRIPT_ID='@(#)vnode_if.sh	8.5 (Berkeley) %G%'
+copyright='
+/*
+ * Copyright (c) 1992, 1993, 1994
+ *	The Regents of the University of California.  All rights reserved.
+ *
+ * %sccs.include.redist.sh%
+ *
+ * from: NetBSD: vnode_if.sh,v 1.7 1994/08/25 03:04:28 cgd Exp $
+ */
+'
+SCRIPT_ID='@(#)vnode_if.sh	8.6 (Berkeley) %G%'
 
 # Script to produce VFS front-end sugar.
 #
