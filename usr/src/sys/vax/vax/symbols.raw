@@ -1,4 +1,4 @@
-# symbols.raw 3.4 %G%
+# symbols.raw 3.5 %G%
 	_version
 #dmesg
 	_msgbuf
@@ -27,11 +27,6 @@
 	_dz_cnt
 	_cons
 	_file
-#	_mpx_cha
-#	_mpx_mac
-#	_mptbc
-#	_mptbuf
-#	_mpsn
 #uptime
 	_bootime
 	_avenrun
@@ -51,7 +46,7 @@
 #w
 	_proc
 	_swapdev
-	_Usrptma
+	_Usrptmap
 	_usrpt
 	_nswap
 	_avenrun
