@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)lfs_vnops.c	7.38 (Berkeley) %G%
+ *	@(#)lfs_vnops.c	7.39 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -1455,22 +1455,20 @@ ufs_bmap(vp, bn, vpp, bnp)
 		*vpp = ip->i_devvp;
 	if (bnp == NULL)
 		return (0);
-	return (bmap(ip, bn, bnp, (daddr_t *)0, (int *)0));
+	return (bmap(ip, bn, bnp));
 }
 
 /*
- * Just call the device strategy routine
+ * Calculate the logical to physical mapping if not done already,
+ * then call the device strategy routine.
  */
-int checkoverlap = 1;
+int checkoverlap = 0;
 
 ufs_strategy(bp)
 	register struct buf *bp;
 {
 	register struct inode *ip = VTOI(bp->b_vp);
-	register struct buf *ep;
 	struct vnode *vp;
-	struct buf *ebp;
-	daddr_t start, last;
 	int error;
 
 	if (bp->b_vp->v_type == VBLK || bp->b_vp->v_type == VCHR)
@@ -1485,7 +1483,12 @@ ufs_strategy(bp)
 		biodone(bp);
 		return (0);
 	}
+#ifdef DIAGNOSTIC
 	if (checkoverlap) {
+		register struct buf *ep;
+		struct buf *ebp;
+		daddr_t start, last;
+
 		ebp = &buf[nbuf];
 		start = bp->b_blkno;
 		last = start + btodb(bp->b_bcount) - 1;
@@ -1505,8 +1508,10 @@ ufs_strategy(bp)
 			printf("\tstart %d, end %d overlap start %d, end %d\n",
 				start, last, ep->b_blkno,
 				ep->b_blkno + btodb(ep->b_bcount) - 1);
+			panic("Disk buffer overlap");
 		}
 	}
+#endif /* DIAGNOSTIC */
 	vp = ip->i_devvp;
 	bp->b_dev = vp->v_rdev;
 	(*(vp->v_op->vn_strategy))(bp);
