@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mount.c	5.27 (Berkeley) %G%";
+static char sccsid[] = "@(#)mount.c	5.28 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "pathnames.h"
@@ -46,6 +46,8 @@ static char sccsid[] = "@(#)mount.c	5.27 (Berkeley) %G%";
 #include <nfs/nfsv2.h>
 #include <nfs/nfs.h>
 #endif
+
+#define DEFAULT_ROOTUID	-2
 
 #define	BADTYPE(type) \
 	(strcmp(type, FSTAB_RO) && strcmp(type, FSTAB_RW) && \
@@ -234,6 +236,8 @@ mountfs(spec, name, flags, type, options, mntopts)
 		if (options)
 			getufsopts(options, &flags);
 		args.fspec = spec;
+		args.exroot = DEFAULT_ROOTUID;
+		args.exflags = getexportflags(name, flags);
 		argp = (caddr_t)&args;
 		break;
 
@@ -519,6 +523,32 @@ makevfslist(fslist)
 	}
 	av[i++] = 0;
 	return (av);
+}
+
+/*
+ * Check to see if a UFS filesystem is being exported.
+ */
+getexportflags(name, mntflags)
+	char *name;
+	int mntflags;
+{
+	FILE *fd;
+	int flags = 0;
+	char *cp, line[BUFSIZ];
+
+	if (mntflags & M_RDONLY)
+		flags |= M_EXRDONLY;
+	if ((fd = fopen(_PATH_EXPORTS, "r")) == NULL)
+		return (flags);
+	while (fgets(line, BUFSIZ, fd)) {
+		cp = strtok(line, " \t\n");
+		if (strcmp(cp, name))
+			continue;
+		flags |= M_EXPORTED;
+		break;
+	}
+	fclose(fd);
+	return (flags);
 }
 
 #ifdef NFS
