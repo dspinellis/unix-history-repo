@@ -213,7 +213,7 @@ static char **sys_siglist;
 
 static int sys_nsig = NSIG;
 #ifdef __STDC__
-extern const char * const sys_siglist[];
+extern char * const sys_siglist[];
 #else
 extern char *sys_siglist[];
 #endif
