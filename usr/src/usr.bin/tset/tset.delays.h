@@ -79,3 +79,44 @@ struct delay	FFdelay[] =
 	2000,	FF1,
 	-1
 };
+
+#ifdef CBVIRTTERM
+/*
+ * Map from the universal tables in termcap to the particular numbers
+ * this system uses.  The lack of standardization of terminal numbers
+ * is a botch but such is life.
+ */
+struct vt_map {
+	char stdnum;
+	char localnum;
+} vt_map[] = {
+#ifdef	TERM_TEC
+	1, TERM_TEC,
+#endif
+#ifdef	TERM_V61
+	2, TERM_V61,
+#endif
+#ifdef	TERM_V10
+	3, TERM_V10,
+#endif
+#ifdef	TERM_TEX
+	4, TERM_TEX,
+#endif
+#ifdef	TERM_D40
+	5, TERM_D40,
+#endif
+#ifdef	TERM_H45
+	6, TERM_H45,
+#endif
+#ifdef	TERM_D42
+	7, TERM_D42,
+#endif
+#ifdef TERM_C100
+	8, TERM_C100,
+#endif
+#ifdef TERM_MIME
+	9, TERM_MIME,
+#endif
+	0,0
+};
+#endif
