@@ -9,7 +9,7 @@
 */
 
 #ifndef lint
-static char	SccsId[] = "@(#)recipient.c	5.4 (Berkeley) %G%";
+static char	SccsId[] = "@(#)recipient.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 # include <pwd.h>
@@ -434,6 +434,8 @@ finduser(name)
 	{
 		if (*p == (SpaceSub & 0177) || *p == '_')
 			*p = ' ';
+		else if (ischar(*p) && isupper(*p))
+			*p = tolower(*p);
 	}
 
 	/* look up this login name */

@@ -9,7 +9,7 @@
 */
 
 #ifndef lint
-static char	SccsId[] = "@(#)savemail.c	5.6 (Berkeley) %G%";
+static char	SccsId[] = "@(#)savemail.c	5.7 (Berkeley) %G%";
 #endif not lint
 
 # include <pwd.h>
@@ -286,6 +286,11 @@ savemail(e)
 					state = ESM_DONE;
 				else
 					state = ESM_MAIL;
+			}
+			else
+			{
+				/* no data file -- try mailing back */
+				state = ESM_MAIL;
 			}
 			break;
 
