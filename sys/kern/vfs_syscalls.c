@@ -165,6 +165,10 @@ update:
 		mp->mnt_flag |= MNT_NODEV;
 	else
 		mp->mnt_flag &= ~MNT_NODEV;
+	if (uap->flags & MNT_NOCORE)
+		mp->mnt_flag |= MNT_NOCORE;
+	else
+		mp->mnt_flag &= ~MNT_NOCORE;
 	if (uap->flags & MNT_SYNCHRONOUS)
 		mp->mnt_flag |= MNT_SYNCHRONOUS;
 	else

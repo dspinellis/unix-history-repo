@@ -39,6 +39,8 @@
 #include "resourcevar.h"
 #include "namei.h"
 #include "vnode.h"
+#include "mount.h"
+#include "filedesc.h"
 #include "proc.h"
 #include "systm.h"
 #include "timeb.h"
@@ -1026,8 +1028,13 @@ sigexit(p, sig)
 
 /*
  * Create a core dump.
- * The file name is "core.progname".
- * Core dumps are not created if the process is setuid.
+ * The file name is "progname.core".
+ * Core dumps are not created if:
+ *	the process is setuid,
+ *	we are on a filesystem mounted with MNT_NOCORE,
+ *	a file already exists and is not a core file,
+ *		or was not produced from the same program,
+ *	the link count to the corefile is > 1.
  */
 coredump(p)
 	register struct proc *p;
@@ -1037,9 +1044,9 @@ coredump(p)
 	register struct ucred *cred = pcred->pc_ucred;
 	register struct vmspace *vm = p->p_vmspace;
 	struct vattr vattr;
-	int error, error1;
+	int error, error1, exists;
 	struct nameidata nd;
-	char name[MAXCOMLEN+6];	/* core.progname */
+	char name[MAXCOMLEN+6];	/* progname.core */
 
 	if (pcred->p_svuid != pcred->p_ruid ||
 	    pcred->p_svgid != pcred->p_rgid)
@@ -1047,16 +1054,38 @@ coredump(p)
 	if (ctob(UPAGES + vm->vm_dsize + vm->vm_ssize) >=
 	    p->p_rlimit[RLIMIT_CORE].rlim_cur)
 		return (EFAULT);
-	sprintf(name, "core.%s", p->p_comm);
+	if (p->p_fd->fd_cdir->v_mount->mnt_flag & MNT_NOCORE)
+		return (EFAULT);
+
+	sprintf(name, "%s.core", p->p_comm);
 	nd.ni_dirp = name;
 	nd.ni_segflg = UIO_SYSSPACE;
-	if (error = vn_open(&nd, p, O_CREAT|FWRITE, 0644))
+	if ((error = vn_open(&nd, p, FWRITE, 0644)) == 0)
+		exists = 1;
+	else
+		exists = 0;
+	if (error == ENOENT)
+		error = vn_open(&nd, p, O_CREAT | FWRITE, 0644);
+	if (error)
 		return (error);
 	vp = nd.ni_vp;
 	if (vp->v_type != VREG || VOP_GETATTR(vp, &vattr, cred, p) ||
 	    vattr.va_nlink != 1) {
 		error = EFAULT;
 		goto out;
+	}
+	if (exists) {	/* if file already exists, look if it's a coredump */
+	    struct user	userbuf;	/* XXX */
+	    error = vn_rdwr(UIO_READ, vp, (caddr_t)&userbuf, sizeof(userbuf),
+		(off_t)0, UIO_SYSSPACE, IO_NODELOCKED|IO_UNIT, cred,
+		(int *)NULL, p);
+	    if (error || (vattr.va_size != ctob(UPAGES + 
+			userbuf.u_kproc.kp_eproc.e_vm.vm_dsize +
+			userbuf.u_kproc.kp_eproc.e_vm.vm_ssize)) ||
+			strcmp(p->p_comm, userbuf.u_kproc.kp_proc.p_comm)) {
+		error = EFAULT;
+		goto out;
+		}
 	}
 	VATTR_NULL(&vattr);
 	vattr.va_size = 0;
