@@ -1,7 +1,7 @@
 #
-#	@(#)Makefile	4.9	%G%
+#	@(#)Makefile	4.10	%G%
 #
-SCCSID = "@(#)Makefile	4.9 %G%"
+SCCSID = "@(#)Makefile	4.10 %G%"
 #
 # This high quality math library is intended to run on either a VAX in
 # D_floating format or a machine that conforms to the IEEE standard 754
@@ -11,7 +11,7 @@ SCCSID = "@(#)Makefile	4.9 %G%"
 # Version 7 math library, if nothing better is available.
 
 #
-# MACH indicates the type of floating point hardware you are using; legal
+# MACHINE indicates the type of floating point hardware you are using; legal
 # values are:
 #
 # VAX		- for the VAX D_floating format, the default.
@@ -19,16 +19,12 @@ SCCSID = "@(#)Makefile	4.9 %G%"
 #		  has similar byte ordering as the NATIONAL 32016 with 32081.
 # IEEE		- for other IEEE machines, we hope.
 #
-MACH = VAX
-
-#
-# invoke object-code optimizer with appropriate MACH definition
-#
-CFLAGS=-O -D${MACH}
-
-INSTALL=install
 
 DESTDIR=
+MACHINE=unknown
+CFLAGS=-O
+
+INSTALL=install
 
 #
 # Files comprising the standard Math library;
@@ -57,12 +53,15 @@ TAGSFILE=tags
 
 all: libm.a libm_p.a
 
-libm.a libm_p.a: ${FILES} more
+libm.a libm_p.a: ${FILES} more.${MACHINE}
 	cd profiled; ar cru ../libm_p.a ${FILES}
 	ar cru libm.a ${FILES}
 
-more:
-	@cd ${MACH}; make "MACH=${MACH}" "CFLAGS=${CFLAGS}"
+more.vax:
+	@cd VAX; make "CFLAGS=${CFLAGS} -DVAX"
+
+more.tahoe:
+	@cd IEEE; make "CFLAGS=${CFLAGS} -DTAHOE"
 
 install: libm.a libm_p.a
 	-rm -f ${DESTDIR}/usr/lib/libnm.a ${DESTDIR}/usr/lib/libnm_p.a
@@ -80,4 +79,4 @@ tags:
 	done
 
 clean:
-	-rm -f *.o ${MACH}/*.o profiled/*.o libm.a libm_p.a tags
+	-rm -f *.o IEEE/*.o VAX/*.o profiled/*.o libm.a libm_p.a tags
