@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)ranlib.c 4.1 %G%";
+static	char sccsid[] = "@(#)ranlib.c 4.2 %G%";
 /*
  * ranlib - create table of contents for archive; string table version
  */
@@ -16,10 +16,10 @@ struct	exec	exp;
 FILE	*fi, *fo;
 long	off, oldoff;
 long	atol(), ftell();
-#define TABSZ	2000
+#define TABSZ	5000
 struct	ranlib tab[TABSZ];
 int	tnum;
-#define	STRTABSZ	25000
+#define	STRTABSZ	75000
 char	tstrtab[STRTABSZ];
 int	tssiz;
 char	*strtab;
