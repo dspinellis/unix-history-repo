@@ -1,4 +1,4 @@
-/*	init_main.c	4.12	81/03/09	*/
+/*	init_main.c	4.13	81/04/13	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -74,6 +74,7 @@ main(firstaddr)
 			u.u_limit[i] = INFINITY;
 			continue;
 		}
+	p->p_maxrss = INFINITY/NBPG;
 	clkstart();
 
 	/*
