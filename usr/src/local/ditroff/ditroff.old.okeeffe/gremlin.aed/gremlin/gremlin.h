@@ -1,4 +1,4 @@
-/* @(#)gremlin.h	1.2	%G%
+/* @(#)gremlin.h	1.3	%G%
  *
  *
  * This file contains standard definitions used by the gremlin program.
@@ -42,6 +42,7 @@
 #define VECTOR 3
 #define ARC 4
 #define CURVE 5
+#define POLYGON 6
 #define TOPLEFT 10
 #define TOPCENT 11
 #define TOPRIGHT 12
