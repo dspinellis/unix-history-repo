@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	8.81 (Berkeley) %G%
+ *	@(#)sendmail.h	8.82 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	8.81		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	8.82		%G%";
 # endif
 # else /*  _DEFINE */
 # define EXTERN extern
@@ -359,9 +359,9 @@ ENVELOPE
 	short		e_sendmode;	/* message send mode */
 	short		e_errormode;	/* error return mode */
 	short		e_timeoutclass;	/* message timeout class */
-	int		(*e_puthdr)__P((MCI *, HDR *, ENVELOPE *, int));
+	int		(*e_puthdr)__P((MCI *, HDR *, ENVELOPE *));
 					/* function to put header of message */
-	int		(*e_putbody)__P((MCI *, ENVELOPE *, char *, int));
+	int		(*e_putbody)__P((MCI *, ENVELOPE *, char *));
 					/* function to put body of message */
 	struct envelope	*e_parent;	/* the message this one encloses */
 	struct envelope *e_sibling;	/* the next envelope of interest */
@@ -797,13 +797,6 @@ struct prival
 #define SFF_MUSTOWN		0x0001	/* user must own this file */
 #define SFF_NOSLINK		0x0002	/* file cannot be a symbolic link */
 #define SFF_ROOTOK		0x0004	/* ok for root to own this file */
-
-
-/*
-**  Flags passed to putheader and putbody.
-*/
-
-#define PF_DELETEMIMEHDRS	0x0001	/* delete Content-Type: and C-T-E: */
 
 
 /*
