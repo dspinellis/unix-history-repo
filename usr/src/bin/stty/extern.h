@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)extern.h	5.3 (Berkeley) %G%
+ *	@(#)extern.h	5.4 (Berkeley) %G%
  */
 
 __BEGIN_DECLS
@@ -23,5 +23,4 @@ void	warn __P((const char *, ...));
 __END_DECLS
 
 extern struct cchar cchars1[], cchars2[];
-extern struct modes cmodes[], imodes[], lmodes[], omodes[];
 extern char *usage;
