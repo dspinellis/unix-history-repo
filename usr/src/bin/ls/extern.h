@@ -4,22 +4,22 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)extern.h	5.1 (Berkeley) %G%
+ *	@(#)extern.h	5.2 (Berkeley) %G%
  */
 
-int	 acccmp __P((LS *, LS *));
+int	 acccmp __P((const FTSENT *, const FTSENT *));
+int	 modcmp __P((const FTSENT *, const FTSENT *));
+int	 namecmp __P((const FTSENT *, const FTSENT *));
+int	 revacccmp __P((const FTSENT *, const FTSENT *));
+int	 revmodcmp __P((const FTSENT *, const FTSENT *));
+int	 revnamecmp __P((const FTSENT *, const FTSENT *));
+int	 revstatcmp __P((const FTSENT *, const FTSENT *));
+int	 statcmp __P((const FTSENT *, const FTSENT *));
+
 void	*emalloc __P((u_int));
-void	 err __P((const char *, ...));
-int	 modcmp __P((LS *, LS *));
-int	 namecmp __P((LS *, LS *));
+void	 err __P((int, const char *, ...));
 void	 prcopy __P((char *, char *, int));
-void	 printcol __P((LS *, int));
-void	 printlong __P((LS *, int));
-void	 printscol __P((LS *, int));
-int	 revacccmp __P((LS *, LS *));
-int	 revmodcmp __P((LS *, LS *));
-int	 revnamecmp __P((LS *, LS *));
-int	 revstatcmp __P((LS *, LS *));
-int	 statcmp __P((LS *, LS *));
+void	 printcol __P((FTSENT *, int, u_long, int));
+void	 printlong __P((FTSENT *, int, u_long, int));
+void	 printscol __P((FTSENT *, int, u_long, int));
 void	 usage __P((void));
-void	 warn __P((const char *, ...));
