@@ -1,4 +1,4 @@
-/*	config.h	1.11	83/05/18	*/
+/*	config.h	1.12	83/05/18	*/
 
 /*
  * Config.
@@ -10,7 +10,8 @@
 struct file_list {
 	struct	file_list *f_next;	
 	char	*f_fn;			/* the name */
-	int	f_type;			/* see below */
+	short	f_type;			/* see below */
+	short	f_special;		/* requires special make rule */
 	char	*f_needs;
 	/*
 	 * Random values:
