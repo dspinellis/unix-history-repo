@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readcf.c	8.2.1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)readcf.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -973,10 +973,6 @@ setoption(opt, val, sticky)
 
 	switch (opt)
 	{
-	  case '!':		/* extended options */
-		setextoption(val, safe, sticky, e);
-		break;
-
 	  case '7':		/* force seven-bit input */
 		SevenBit = atobool(val);
 		break;
@@ -1275,7 +1271,9 @@ setoption(opt, val, sticky)
 		Verbose = atobool(val);
 		break;
 
-	    /* 'w' available -- was "no wildcard MX matching" */
+	  case 'w':		/* if we are best MX, try host directly */
+		TryNullMXList = atobool(val);
+		break;
 
 	    /* 'W' available -- was wizard password */
 
@@ -1309,88 +1307,6 @@ setoption(opt, val, sticky)
 	if (sticky)
 		setbitn(opt, StickyOpt);
 	return;
-}
-/*
-**  SETEXTOPTION -- set extended option
-**
-**	This is a bogus attempt to do what sendmail should have done
-**	in the first place.  Parses "name=value" options.
-**
-**	Parameters:
-**		opt -- pointer to the string option.
-**		safe -- from setoption.
-**		sticky -- from setoption.
-**		e -- the envelope.
-**
-**	Returns:
-**		none.
-*/
-
-struct extopts
-{
-	char	*xo_name;	/* option name */
-	short	xo_code;	/* option code */
-	short	xo_flags;	/* flag bits */
-};
-
-/* bits for xo_flags */
-#define XOF_SAFE	0x0001	/* this option is safe */
-#define XOF_STICKY	0x0100	/* this option has been given & is sticky */
-
-struct extopts	ExtOpts[] =
-{
-#define XO_TRYNULLMXLIST	1
-	"trynullmxlist",	XO_TRYNULLMXLIST,	XOF_SAFE,
-#define XO_MAXCODE		1
-	NULL,			-1,			0
-};
-
-
-setextoption(opt, safe, sticky, e)
-	register char *opt;
-	bool safe;
-	bool sticky;
-	register ENVELOPE *e;
-{
-	register char *val;
-	register struct extopts *xo;
-	extern bool atobool();
-
-	val = strchr(opt, '=');
-	if (val != NULL)
-		*val++ = '\0';
-
-	for (xo = ExtOpts; xo->xo_name != NULL; xo++)
-	{
-		if (strcasecmp(xo->xo_name, opt) == 0)
-			break;
-	}
-
-	if (!sticky && bitset(XOF_STICKY, xo->xo_flags))
-		return;
-
-	if (!safe && !bitset(XOF_SAFE, xo->xo_flags))
-	{
-		if (RealUid != geteuid())
-		{
-			(void) setgid(RealGid);
-			(void) setuid(RealUid);
-		}
-	}
-
-	switch (xo->xo_code)
-	{
-	  case XO_TRYNULLMXLIST:
-		TryNullMXList = atobool(val);
-		break;
-
-	  default:
-		syserr("Unknown extended option \"%s\"", opt);
-		return;
-	}
-
-	if (sticky)
-		xo->xo_flags |= XOF_STICKY;
 }
 /*
 **  SETCLASS -- set a word into a class
