@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)dr.c	7.5 (Berkeley) %G%
+ *	@(#)dr.c	7.6 (Berkeley) %G%
  */
 
 #include "dr.h"
@@ -163,6 +163,7 @@ drclose (dev)
 		wakeup((caddr_t)&dra->dr_buf.b_flags);
 	}
 	splx(s);
+	return (0);
 }
 
 
@@ -319,7 +320,8 @@ drioctl(dev, cmd, data)
 			 * so function bits are not changed
 			 */
 			rsaddr->dr_pulse = IENB;
-			sleep((caddr_t)&dra->dr_cmd, DRPRI);
+			error = tsleep((caddr_t)&dra->dr_cmd, DRPRI | PCATCH,
+			    devio, 0);
 		}
 		splx(s);
 		break;
@@ -445,8 +447,9 @@ drioctl(dev, cmd, data)
 		/* Reset DMA ATN RPER flag */
 		rsaddr->dr_pulse = (MCLR|RDMA|RATN|RPER);
 		DELAY(0x1f000);
-		while ((rsaddr->dr_cstat & REDY) == 0)
-			sleep((caddr_t)dra, DRPRI);	/* Wakeup by drtimo() */
+		while ((rsaddr->dr_cstat & REDY) == 0 && error == 0)
+			/* Wakeup by drtimo() */
+			error = tsleep((caddr_t)dra, DRPRI | PCATCH, devio, 0);	
 		dra->dr_istat = 0;
 		dra->dr_cmd = 0;
 		dra->currenttimo = 0;
@@ -794,7 +797,7 @@ drstrategy (bp)
 	}
 	while (dra->dr_flags & DR_ACTV)
 		/* Device is active; should never be in here... */
-		sleep((caddr_t)&dra->dr_flags,DRPRI);
+		(void) tsleep((caddr_t)&dra->dr_flags, DRPRI, devio, 0);
 	dra->dr_actf = bp;
 #ifdef DR_DEBUG
 	drva(dra, bp->b_proc, bp->b_un.b_addr, bp->b_bcount);
@@ -842,7 +845,7 @@ drwait(rs, dr)
 
 	s = SPL_UP();
 	while (dr->dr_flags & DR_ACTV)
-		sleep((caddr_t)dr, DRPRI);
+		(void) tsleep((caddr_t)dr, DRPRI, devio, 0);
 	splx(s);
 	if (dr->dr_flags & DR_TMDM) {		/* DMA timed out */
 		dr->dr_flags &= ~DR_TMDM;
