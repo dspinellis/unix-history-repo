@@ -1,0 +1,70 @@
+69
+6x12.pcf -misc-fixed-medium-r-semicondensed--12-110-75-75-c-60-iso8859-1
+6x13.pcf -misc-fixed-medium-r-semicondensed--13-120-75-75-c-60-iso8859-1
+6x10.pcf -misc-fixed-medium-r-normal--10-100-75-75-c-60-iso8859-1
+7x13.pcf -misc-fixed-medium-r-normal--13-120-75-75-c-70-iso8859-1
+7x14.pcf -misc-fixed-medium-r-normal--14-130-75-75-c-70-iso8859-1
+clR8x12.pcf -schumacher-clean-medium-r-normal--12-120-75-75-c-80-iso8859-1
+clR8x13.pcf -schumacher-clean-medium-r-normal--13-130-75-75-c-80-iso8859-1
+6x9.pcf -misc-fixed-medium-r-normal--9-90-75-75-c-60-iso8859-1
+clR8x10.pcf -schumacher-clean-medium-r-normal--10-100-75-75-c-80-iso8859-1
+5x7.pcf -misc-fixed-medium-r-normal--7-70-75-75-c-50-iso8859-1
+clR8x16.pcf -schumacher-clean-medium-r-normal--16-160-75-75-c-80-iso8859-1
+clR8x14.pcf -schumacher-clean-medium-r-normal--14-140-75-75-c-80-iso8859-1
+clR8x8.pcf -schumacher-clean-medium-r-normal--8-80-75-75-c-80-iso8859-1
+5x8.pcf -misc-fixed-medium-r-normal--8-80-75-75-c-50-iso8859-1
+clR9x15.pcf -schumacher-clean-medium-r-normal--15-150-75-75-c-90-iso8859-1
+clR6x8.pcf -schumacher-clean-medium-r-normal--8-80-75-75-c-60-iso8859-1
+clR5x6.pcf -schumacher-clean-medium-r-normal--6-60-75-75-c-50-iso8859-1
+clR7x8.pcf -schumacher-clean-medium-r-normal--8-80-75-75-c-70-iso8859-1
+clR4x6.pcf -schumacher-clean-medium-r-normal--6-60-75-75-c-40-iso8859-1
+clR5x8.pcf -schumacher-clean-medium-r-normal--8-80-75-75-c-50-iso8859-1
+clR6x6.pcf -schumacher-clean-medium-r-normal--6-60-75-75-c-60-iso8859-1
+6x13B.pcf -misc-fixed-bold-r-semicondensed--13-120-75-75-c-60-iso8859-1
+12x24rk.pcf -sony-fixed-medium-r-normal--24-170-100-100-c-120-jisx0201.1976-0
+7x13B.pcf -misc-fixed-bold-r-normal--13-120-75-75-c-70-iso8859-1
+7x14B.pcf -misc-fixed-bold-r-normal--14-130-75-75-c-70-iso8859-1
+clR6x12.pcf -schumacher-clean-medium-r-normal--12-120-75-75-c-60-iso8859-1
+clR6x13.pcf -schumacher-clean-medium-r-normal--13-130-75-75-c-60-iso8859-1
+clR6x10.pcf -schumacher-clean-medium-r-normal--10-100-75-75-c-60-iso8859-1
+clR7x12.pcf -schumacher-clean-medium-r-normal--12-120-75-75-c-70-iso8859-1
+clR7x10.pcf -schumacher-clean-medium-r-normal--10-100-75-75-c-70-iso8859-1
+clR7x14.pcf -schumacher-clean-medium-r-normal--14-140-75-75-c-70-iso8859-1
+8x13.pcf -misc-fixed-medium-r-normal--13-120-75-75-c-80-iso8859-1
+8x16.pcf -sony-fixed-medium-r-normal--16-120-100-100-c-80-iso8859-1
+clR5x10.pcf -schumacher-clean-medium-r-normal--10-100-75-75-c-50-iso8859-1
+9x15.pcf -misc-fixed-medium-r-normal--15-140-75-75-c-90-iso8859-1
+heb6x13.pcf -misc-fixed-medium-r-semicondensed--13-120-75-75-c-60-iso8859-8
+clB8x8.pcf -schumacher-clean-bold-r-normal--8-80-75-75-c-80-iso8859-1
+8x13B.pcf -misc-fixed-bold-r-normal--13-120-75-75-c-80-iso8859-1
+7x14rk.pcf -misc-fixed-medium-r-normal--14-130-75-75-c-70-jisx0201.1976-0
+9x15B.pcf -misc-fixed-bold-r-normal--15-140-75-75-c-90-iso8859-1
+clI8x8.pcf -schumacher-clean-medium-i-normal--8-80-75-75-c-80-iso8859-1
+heb8x13.pcf -misc-fixed-medium-r-normal--13-120-75-75-c-80-iso8859-8
+decsess.pcf decw$session
+clB8x12.pcf -schumacher-clean-bold-r-normal--12-120-75-75-c-80-iso8859-1
+clB8x13.pcf -schumacher-clean-bold-r-normal--13-130-75-75-c-80-iso8859-1
+clB8x10.pcf -schumacher-clean-bold-r-normal--10-100-75-75-c-80-iso8859-1
+clB8x16.pcf -schumacher-clean-bold-r-normal--16-160-75-75-c-80-iso8859-1
+clB8x14.pcf -schumacher-clean-bold-r-normal--14-140-75-75-c-80-iso8859-1
+clB9x15.pcf -schumacher-clean-bold-r-normal--15-150-75-75-c-90-iso8859-1
+olcursor.pcf -sun-open look cursor-----12-120-75-75-p-160-sunolcursor-1
+hanglg16.pcf -daewoo-gothic-medium-r-normal--16-120-100-100-c-160-ksc5601.1987-0
+8x16rk.pcf -sony-fixed-medium-r-normal--16-120-100-100-c-80-jisx0201.1976-0
+clB6x12.pcf -schumacher-clean-bold-r-normal--12-120-75-75-c-60-iso8859-1
+clB6x10.pcf -schumacher-clean-bold-r-normal--10-100-75-75-c-60-iso8859-1
+jiskan24.pcf -jis-fixed-medium-r-normal--24-230-75-75-c-240-jisx0208.1983-0
+hanglm16.pcf -daewoo-mincho-medium-r-normal--16-120-100-100-c-160-ksc5601.1987-0
+hanglm24.pcf -daewoo-mincho-medium-r-normal--24-170-100-100-c-240-ksc5601.1987-0
+jiskan16.pcf -jis-fixed-medium-r-normal--16-150-75-75-c-160-jisx0208.1983-0
+cursor.pcf cursor
+deccurs.pcf decw$cursor
+clI6x12.pcf -schumacher-clean-medium-i-normal--12-120-75-75-c-60-iso8859-1
+olgl19.pcf -sun-open look glyph-----19-190-75-75-p-154-sunolglyph-1
+olgl12.pcf -sun-open look glyph-----12-120-75-75-p-113-sunolglyph-1
+olgl10.pcf -sun-open look glyph-----10-100-75-75-p-101-sunolglyph-1
+k14.pcf -misc-fixed-medium-r-normal--14-130-75-75-c-140-jisx0208.1983-0
+olgl14.pcf -sun-open look glyph-----14-140-75-75-p-128-sunolglyph-1
+nil2.pcf -misc-nil-medium-r-normal--2-20-75-75-c-10-misc-fontspecific
+10x20.pcf -misc-fixed-medium-r-normal--20-200-75-75-c-100-iso8859-1
+12x24.pcf -sony-fixed-medium-r-normal--24-170-100-100-c-120-iso8859-1
