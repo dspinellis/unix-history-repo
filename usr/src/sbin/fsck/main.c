@@ -1,4 +1,5 @@
-static	char *sccsid = "@(#)main.c	1.4 (Berkeley) %G%";
+static	char *sccsid = "@(#)main.c	1.5 (Berkeley) %G%";
+
 #include <stdio.h>
 #include <ctype.h>
 #include "../h/param.h"
@@ -594,8 +595,8 @@ out1b:
 		for (n = 0; n < sblock.fs_cpg; n++)
 			for (i = 0; i < NRPOS; i++)
 				if (bo[n][i] != cgrp.cg_b[n][i]) {
-					printf("[%d][%d] have %d calc %d\n",
-					    n, i, cgrp.cg_b[n][i], bo[n][i]);
+					printf("cg[%d].cg_b[%d][%d] have %d calc %d\n",
+					    c, n, i, cgrp.cg_b[n][i], bo[n][i]);
 					offsumbad++;
 				}
 	}
@@ -634,8 +635,8 @@ out5:
 	if (fixcg) {
 		if (preen == 0)
 			printf("** Phase 6 - Salvage Cylinder Groups\n");
-		sblock.fs_cs = (struct csum *)
-		    calloc(sblock.fs_ncg, roundup(sizeof (struct csum), BSIZE));
+		sblock.fs_cs = (struct csum *)calloc(1,
+		    roundup(cssize(&sblock), BSIZE));
 		makecg();
 		for (i = 0; i < cssize(&sblock); i += BSIZE)
 			bwrite(&dfile, ((char *)sblock.fs_cs) + i,
@@ -731,7 +732,7 @@ ckinode(dp, flg)
 		return (KEEPON);
 	func = (flg == ADDR) ? pfunc : dirscan;
 	ndb = howmany(dp->di_size, BSIZE);
-	for (ap = dp->di_db; ap < &dp->di_db[NDADDR]; ap++) {
+	for (ap = &dp->di_db[0]; ap < &dp->di_db[NDADDR]; ap++) {
 		if (--ndb == 0 && (dp->di_size&BMASK))
 			size = howmany(dp->di_size&BMASK, FSIZE);
 		else
@@ -739,10 +740,9 @@ ckinode(dp, flg)
 		if (*ap && (ret = (*func)(*ap, size)) & STOP)
 			return (ret);
 	}
-	for (n = 1; n <= 2; n++) {
-		if (*ap && (ret = iblock(*ap, n, flg, dp->di_size)) & STOP)
+	for (ap = &dp->di_ib[0], n = 1; n <= 2; ap++, n++) {
+		if (*ap && (ret = iblock(*ap, n, flg, dp->di_size - BSIZE * NDADDR)) & STOP)
 			return (ret);
-		ap++;
 	}
 	return (KEEPON);
 }
@@ -754,32 +754,36 @@ iblock(blk, ilevel, flg, isize)
 {
 	register daddr_t *ap;
 	register daddr_t *aplim;
-	register n;
+	register int i, n;
 	int (*func)(), nif;
 	BUFAREA ib;
 
-	nif = howmany(isize - NDADDR*BSIZE, NINDIR / FRAG * BSIZE);
-	if (nif > FRAG || ilevel > 1)
-		nif = FRAG;
 	if (flg == ADDR) {
 		func = pfunc;
-		if (((n = (*func)(blk, nif)) & KEEPON) == 0)
+		if (((n = (*func)(blk, FRAG)) & KEEPON) == 0)
 			return (n);
 	} else
 		func = dirscan;
 	if (outrange(blk))		/* protect thyself */
 		return (SKIP);
 	initbarea(&ib);
-	if (getblk(&ib, blk, nif * FSIZE) == NULL)
+	if (getblk(&ib, blk, BSIZE) == NULL)
 		return (SKIP);
 	ilevel--;
-	aplim = & ib.b_un.b_indir[NINDIR*nif/FRAG];
-	for (ap = ib.b_un.b_indir; ap < aplim; ap++)
+	if (ilevel == 0) {
+		nif = isize / BSIZE + 1;
+	} else /* ilevel == 1 */ {
+		nif = isize / (BSIZE * NINDIR) + 1;
+	}
+	if (nif > NINDIR)
+		nif = NINDIR;
+	aplim = & ib.b_un.b_indir[nif];
+	for (ap = ib.b_un.b_indir, i = 1; ap < aplim; ap++, i++)
 		if (*ap) {
 			if (ilevel > 0)
-				n = iblock(*ap, ilevel, flg, BSIZE);
+				n = iblock(*ap, ilevel, flg, isize - i * NINDIR * BSIZE);
 			else
-				n = (*func)(*ap, BSIZE);
+				n = (*func)(*ap, FRAG);
 			if (n & STOP)
 				return (n);
 		}
@@ -969,8 +973,9 @@ outrange(blk)
 	register int c;
 
 	c = dtog(blk, &sblock);
-	if (blk >= fmax || blk < cgdmin(c, &sblock))
+	if (blk >= fmax || blk < cgdmin(c, &sblock)) {
 		return (1);
+	}
 	return (0);
 }
 

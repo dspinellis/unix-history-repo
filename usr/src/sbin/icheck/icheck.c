@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)icheck.c	1.4 (Berkeley) %G%";
+static	char *sccsid = "@(#)icheck.c	1.5 (Berkeley) %G%";
 
 /*
  * icheck
@@ -45,13 +45,10 @@ ino_t	nmcfile;
 
 daddr_t	nblock;
 daddr_t	nfrag;
-long	szfrag;
 daddr_t	nindir;
-long	szindir;
 daddr_t	niindir;
 
 daddr_t	nffree;
-long	szffree;
 daddr_t	nbfree;
 
 daddr_t	ndup;
@@ -139,9 +136,7 @@ char *file;
 
 	nblock = 0;
 	nfrag = 0;
-	szfrag = 0;
 	nindir = 0;
-	szindir = 0;
 	niindir = 0;
 
 	ndup = 0;
@@ -178,19 +173,19 @@ char *file;
 		for (c=0; c < sblock.fs_ncg; c++) {
 			cgd = cgtod(c, &sblock);
 			for (d = cgbase(c, &sblock); d < cgd; d += FRAG)
-				chk(d, "badcg", 0);
+				chk(d, "badcg", BSIZE);
 			d = cgimin(c, &sblock);
 			while (cgd < d) {
-				chk(cgd, "cg", 0);
+				chk(cgd, "cg", BSIZE);
 				cgd += FRAG;
 			}
 			d = cgdmin(c, &sblock);
 			for (; cgd < d; cgd += FRAG)
-				chk(cgd, "inode", 0);
+				chk(cgd, "inode", BSIZE);
 			if (c == 0) {
 				d += howmany(cssize(&sblock), FSIZE);
 				for (; cgd < d; cgd += FRAG)
-					chk(cgd, "csum", 0);
+					chk(cgd, "csum", BSIZE);
 			}
 		}
 	}
@@ -218,7 +213,6 @@ char *file;
 		return;
 	}
 	nffree = 0;
-	szffree = 0;
 	nbfree = 0;
 	for (c = 0; c < sblock.fs_ncg; c++) {
 		cbase = cgbase(c,&sblock);
@@ -226,13 +220,12 @@ char *file;
 		for (b = 0; b < sblock.fs_fpg; b += FRAG) {
 			if (isblock(cgrp.cg_free, b / FRAG)) {
 				nbfree++;
-				chk(cbase+b, "block", 0);
+				chk(cbase+b, "block", BSIZE);
 			} else {
 				for (d = 0; d < FRAG; d++)
 					if (isset(cgrp.cg_free, b+d)) {
-						chk(cbase+b+d, "frag", 1);
+						chk(cbase+b+d, "frag", FSIZE);
 						nffree++;
-						szffree++;
 					}
 			}
 		}
@@ -251,22 +244,22 @@ char *file;
 	printf("files %u (r=%u,d=%u,b=%u,c=%u,mc=%u)\n",
 		i, nrfile, ndfile, nbfile, ncfile, nmcfile);
 #endif
-	n = (nblock + nindir + niindir) * FRAG + szfrag + szindir;
+	n = (nblock + nindir + niindir) * FRAG + nfrag;
 #ifdef STANDALONE
 	printf("used %ld (i=%ld,ii=%ld,b=%ld,f=%ld)\n",
 		n, nindir, niindir, nblock, nfrag);
-	printf("free %ld (b=%ld,f=%ld)\n", szffree + FRAG * nbfree,
+	printf("free %ld (b=%ld,f=%ld)\n", nffree + FRAG * nbfree,
 	    nbfree, nffree);
 #else
 	printf("used %7ld (i=%ld,ii=%ld,b=%ld,f=%ld)\n",
 		n, nindir, niindir, nblock, nfrag);
-	printf("free %7ld (b=%ld,f=%ld)\n", szffree + FRAG * nbfree,
+	printf("free %7ld (b=%ld,f=%ld)\n", nffree + FRAG * nbfree,
 	    nbfree, nffree);
 #endif
 	if(!dflg) {
 		n = 0;
 		for (d = 0; d < sblock.fs_size; d++)
-			if(!duped(d, 1)) {
+			if(!duped(d, FSIZE)) {
 				if(mflg)
 					printf("%ld missing\n", d);
 				n++;
@@ -278,10 +271,10 @@ char *file;
 pass1(ip)
 	register struct dinode *ip;
 {
-	fsbaddr_t ind1[NINDIR];
-	fsbaddr_t ind2[NINDIR];
-	fsbaddr_t db, ib;
-	register i, j, k;
+	daddr_t ind1[NINDIR];
+	daddr_t ind2[NINDIR];
+	daddr_t db, ib;
+	register int i, j, k, siz;
 
 	i = ip->di_mode & IFMT;
 	if(i == 0) {
@@ -309,56 +302,81 @@ pass1(ip)
 		db = ip->di_db[i];
 		if (db == 0)
 			continue;
-		chk(fsbtodb(db), "data (block)", isfrag(db));
-		nblock++;
+		siz = dblksize(ip, i);
+		chk(db, "data (block)", siz);
+		if (siz == BSIZE)
+			nblock++;
+		else
+			nfrag += howmany(siz, FSIZE);
 	}
 	for(i = 0; i < NIADDR; i++) {
 		ib = ip->di_ib[i];
 		if(ib == 0)
 			continue;
-		if (chk(fsbtodb(ib), "1st indirect", 0))
+		if (chk(ib, "1st indirect", BSIZE))
 			continue;
-		bread(fsbtodb(ib), (char *)ind1, BSIZE);
+		bread(ib, (char *)ind1, BSIZE);
 		nindir++;
 		for (j = 0; j < NINDIR; j++) {
 			ib = ind1[j];
 			if (ib == 0)
 				continue;
 			if (i == 0) {
-				chk(fsbtodb(ib), "data (large)", isfrag(ib));
-				nblock++;
+				siz = dblksize(ip, NDADDR + j);
+				chk(ib, "data (large)", siz);
+				if (siz == BSIZE)
+					nblock++;
+				else
+					nfrag += howmany(siz, FSIZE);
 				continue;
 			}
-			if (chk(fsbtodb(ib), "2nd indirect", 0))
+			if (chk(ib, "2nd indirect", BSIZE))
 				continue;
-			bread(fsbtodb(ib), (char *)ind2, BSIZE);
+			bread(ib, (char *)ind2, BSIZE);
 			niindir++;
 			for (k = 0; k < NINDIR; k++) {
 				ib = ind2[k];
 				if (ib == 0)
 					continue;
-				chk(fsbtodb(ib), "data (huge)", isfrag(ib));
-				nblock++;
+				siz = dblksize(ip,
+				    NDADDR + NINDIR * (i + j) + k);
+				chk(ib, "data (huge)", siz);
+				if (siz == BSIZE)
+					nblock++;
+				else
+					nfrag += howmany(siz, FSIZE);
 			}
 		}
 	}
 }
 
-chk(bno, s, fragflg)
+chk(bno, s, size)
 	daddr_t bno;
 	char *s;
-	int fragflg;
+	int size;
 {
 	register n, cg;
 
 	cg = dtog(bno, &sblock);
-	if (cginit==0 && bno<cgdmin(cg,&sblock) || bno>=FRAG*sblock.fs_size) {
+	if (cginit==0 &&
+	    bno<cgdmin(cg,&sblock) || bno >= FRAG * sblock.fs_size) {
 		printf("%ld bad; inode=%u, class=%s\n", bno, ino, s);
 		return(1);
 	}
-	if (duped(bno, fragflg)) {
-		printf("%ld dup; inode=%u, class=%s\n", bno, ino, s);
-		ndup++;
+	if (size == BSIZE) {
+		if (duped(bno, size)) {
+			printf("%ld dup block; inode=%u, class=%s\n",
+			    bno, ino, s);
+			ndup += FRAG;
+		}
+	} else {
+		for (n = 0; n < size / FSIZE; n++) {
+			if (duped(bno + n, FSIZE)) {
+				printf("%ld dup frag; inode=%u, class=%s\n",
+				    bno, ino, s);
+				ndup++;
+			}
+		}
 	}
 	for (n=0; blist[n] != -1; n++)
 		if (bno == blist[n])
@@ -366,13 +384,15 @@ chk(bno, s, fragflg)
 	return(0);
 }
 
-duped(bno, fragflg)
+duped(bno, size)
 	daddr_t bno;
-	int fragflg;
+	int size;
 {
 	if(dflg)
 		return(0);
-	if (fragflg) {
+	if (size != FSIZE && size != BSIZE)
+		printf("bad size %d to duped\n", size);
+	if (size == FSIZE) {
 		if (isset(bmap, bno))
 			return(1);
 		setbit(bmap, bno);

@@ -1,6 +1,6 @@
 /* Copyright (c) 1981 Regents of the University of California */
 
-static char vers[] = "@(#)ffs_alloc.c 1.2 %G%";
+static char vers[] = "@(#)ffs_alloc.c 1.3 %G%";
 
 /*	alloc.c	4.8	81/03/08	*/
 
@@ -40,8 +40,39 @@ alloc(dev, ip, bpref, size)
 	bno = hashalloc(dev, fs, cg, (long)bpref, size, alloccg);
 	if (bno == 0)
 		goto nospace;
-	bp = getblk(dev, bno);
+	bp = getblk(dev, bno, size);
 	clrbuf(bp);
+	return (bp);
+nospace:
+	fserr(fs, "file system full");
+	uprintf("\n%s: write failed, file system is full\n", fs->fs_fsmnt);
+	u.u_error = ENOSPC;
+	return (NULL);
+}
+
+struct buf *
+realloccg(dev, ip, bpref, osize, nsize)
+	dev_t dev;
+	struct inode *ip;
+	daddr_t bpref;
+	int osize, nsize;
+{
+	daddr_t bno;
+	register struct fs *fs;
+	struct buf *bp;
+	int cg;
+	
+	fs = getfs(dev);
+	if (bpref == 0)
+		cg = itog(ip->i_number, fs);
+	else
+		cg = dtog(bpref, fs);
+	bno = fragalloc(dev, fs, cg, (long)bpref, osize, nsize);
+	if (bno == 0)
+		goto nospace;
+	bp = getblk(dev, bno, osize);
+	bp->b_bcount += nsize - osize;
+	blkclr(bp->b_un.b_addr + osize, nsize - osize);
 	return (bp);
 nospace:
 	fserr(fs, "file system full");
@@ -147,6 +178,51 @@ hashalloc(dev, fs, cg, pref, size, allocator)
 }
 
 daddr_t
+fragalloc(dev, fs, cg, pref, osize, nsize)
+	dev_t dev;
+	register struct fs *fs;
+	int cg;
+	long pref;
+	int osize, nsize;
+{
+	struct buf *bp;
+	struct cg *cgp;
+	int i;
+
+	if ((unsigned)osize > BSIZE || osize % FSIZE != 0 ||
+	    (unsigned)nsize > BSIZE || nsize % FSIZE != 0)
+		panic("fragalloc: bad size");
+	bp = bread(dev, cgtod(cg, fs), BSIZE);
+	if (bp->b_flags & B_ERROR)
+		return (0);
+	cgp = bp->b_un.b_cg;
+	if (pref) {
+		pref %= fs->fs_fpg;
+		for (i = osize / FSIZE; i < nsize / FSIZE; i++) {
+			if (isclr(cgp->cg_free, pref + i))
+				break;
+		}
+		if (i == nsize / FSIZE)
+			goto extendit;
+	}
+	/*
+	 * MUST FIND ALTERNATE LOCATION
+	 */
+	panic("fragalloc: reallocation too hard!");
+	brelse(bp);
+	return (0);
+extendit:
+	for (i = osize / FSIZE; i < nsize / FSIZE; i++) {
+		clrbit(cgp->cg_free, pref + i);
+		cgp->cg_nffree--;
+		fs->fs_nffree--;
+	}
+	fs->fs_fmod++;
+	bdwrite(bp);
+	return (cg * fs->fs_fpg + pref);
+}
+
+daddr_t
 alloccg(dev, fs, cg, bpref, size)
 	dev_t dev;
 	struct fs *fs;
@@ -158,9 +234,9 @@ alloccg(dev, fs, cg, bpref, size)
 	struct cg *cgp;
 	int i;
 
-	if (size != BSIZE)
-		panic("alloccg: size != BSIZE is too hard!");
-	bp = bread(dev, cgtod(cg, fs));
+	if ((unsigned)size > BSIZE || size % FSIZE != 0)
+		panic("alloccg: bad size");
+	bp = bread(dev, cgtod(cg, fs), BSIZE);
 	if (bp->b_flags & B_ERROR)
 		return (0);
 	cgp = bp->b_un.b_cg;
@@ -182,13 +258,28 @@ alloccg(dev, fs, cg, bpref, size)
 	brelse(bp);
 	return (0);
 gotit:
-	clrblock(cgp->cg_free, bpref/FRAG);
-	cgp->cg_nbfree--;
-	fs->fs_nbfree--;
-	fs->fs_cs[cg].cs_nbfree--;
+	if (size == BSIZE) {
+		clrblock(cgp->cg_free, bpref/FRAG);
+		cgp->cg_nbfree--;
+		fs->fs_nbfree--;
+		fs->fs_cs[cg].cs_nbfree--;
+		i = bpref * NSPF;
+		cgp->cg_b[i/fs->fs_spc][i%fs->fs_nsect*NRPOS/fs->fs_nsect]--;
+	} else {
+		cgp->cg_nffree += FRAG;
+		fs->fs_nffree += FRAG;
+		for (i = 0; i < size / FSIZE; i++) {
+			clrbit(cgp->cg_free, bpref + i);
+			cgp->cg_nffree--;
+			fs->fs_nffree--;
+		}
+		cgp->cg_nbfree--;
+		fs->fs_nbfree--;
+		fs->fs_cs[cg].cs_nbfree--;
+		i = bpref * NSPF;
+		cgp->cg_b[i/fs->fs_spc][i%fs->fs_nsect*NRPOS/fs->fs_nsect]--;
+	}
 	fs->fs_fmod++;
-	i = bpref * NSPF;
-	cgp->cg_b[i/fs->fs_spc][i%fs->fs_nsect*NRPOS/fs->fs_nsect]--;
 	bdwrite(bp);
 	return (cg * fs->fs_fpg + bpref);
 }
@@ -205,7 +296,7 @@ ialloccg(dev, fs, cg, ipref, mode)
 	struct cg *cgp;
 	int i;
 
-	bp = bread(dev, cgtod(cg, fs));
+	bp = bread(dev, cgtod(cg, fs), BSIZE);
 	if (bp->b_flags & B_ERROR)
 		return (0);
 	cgp = bp->b_un.b_cg;
@@ -255,26 +346,46 @@ fre(dev, bno, size)
 	int i;
 	int cg;
 
-	if (size != BSIZE)
-		panic("free: size != BSIZE is too hard!");
+	if ((unsigned)size > BSIZE || size % FSIZE != 0)
+		panic("free: bad size");
 	fs = getfs(dev);
 	cg = dtog(bno, fs);
 	if (badblock(fs, bno))
 		return;
-	bp = bread(dev, cgtod(cg, fs));
+	bp = bread(dev, cgtod(cg, fs), BSIZE);
 	if (bp->b_flags & B_ERROR)
 		return;
 	cgp = bp->b_un.b_cg;
 	bno %= fs->fs_fpg;
-	if (isblock(cgp->cg_free, bno/FRAG))
-		panic("free: freeing free block");
-	setblock(cgp->cg_free, bno/FRAG);
-	cgp->cg_nbfree++;
-	fs->fs_nbfree++;
-	fs->fs_cs[cg].cs_nbfree++;
+	if (size == BSIZE) {
+		if (isblock(cgp->cg_free, bno/FRAG))
+			panic("free: freeing free block");
+		setblock(cgp->cg_free, bno/FRAG);
+		cgp->cg_nbfree++;
+		fs->fs_nbfree++;
+		fs->fs_cs[cg].cs_nbfree++;
+		i = bno * NSPF;
+		cgp->cg_b[i/fs->fs_spc][i%fs->fs_nsect*NRPOS/fs->fs_nsect]++;
+	} else {
+		for (i = 0; i < size / FSIZE; i++) {
+			if (isset(cgp->cg_free, bno + i))
+				panic("free: freeing free frag");
+			setbit(cgp->cg_free, bno + i);
+			cgp->cg_nffree++;
+			fs->fs_nffree++;
+		}
+		if (isblock(cgp->cg_free, (bno - bno % FRAG) / FRAG)) {
+			cgp->cg_nffree -= FRAG;
+			fs->fs_nffree -= FRAG;
+			cgp->cg_nbfree++;
+			fs->fs_nbfree++;
+			fs->fs_cs[cg].cs_nbfree++;
+			i = bno * NSPF;
+			cgp->cg_b[i / fs->fs_spc]
+				 [i % fs->fs_nsect * NRPOS / fs->fs_nsect]++;
+		}
+	}
 	fs->fs_fmod++;
-	i = bno * NSPF;
-	cgp->cg_b[i/fs->fs_spc][i%fs->fs_nsect*NRPOS/fs->fs_nsect]++;
 	bdwrite(bp);
 }
 
@@ -293,7 +404,7 @@ ifree(dev, ino, mode)
 	if ((unsigned)ino >= fs->fs_ipg*fs->fs_ncg)
 		panic("ifree: range");
 	cg = itog(ino, fs);
-	bp = bread(dev, cgtod(cg, fs));
+	bp = bread(dev, cgtod(cg, fs), BSIZE);
 	if (bp->b_flags & B_ERROR)
 		return;
 	cgp = bp->b_un.b_cg;
@@ -422,14 +533,15 @@ update()
 				continue;
 			if (fs->fs_ronly != 0)
 				panic("update: rofs mod");
-			bp = getblk(mp->m_dev, SBLOCK);
+			bp = getblk(mp->m_dev, SBLOCK, BSIZE);
 			fs->fs_fmod = 0;
 			fs->fs_time = TIME;
 			if (bp->b_un.b_fs != fs)
 				panic("update: bad b_fs");
 			bwrite(bp);
 			for (i = 0; i < cssize(fs); i += BSIZE) {
-				bp = getblk(mp->m_dev, csaddr(fs) + i / FSIZE);
+				bp = getblk(mp->m_dev, csaddr(fs) + i / FSIZE,
+					BSIZE);
 				bcopy(fs->fs_cs + i, bp->b_un.b_addr, BSIZE);
 				bwrite(bp);
 			}
