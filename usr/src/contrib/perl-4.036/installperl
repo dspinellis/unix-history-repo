@@ -112,29 +112,31 @@ for (@scripts) {
     s#.*/##; &chmod(0755, "$installscr/$_");
 }
 
-# Install man pages.
+# BSD modification -- install them in makefile.
 
-if ($mansrc ne '') {
-    &makedir($mansrc);
-
-    ($mdev,$mino) = stat($mansrc);
-    if ($mdev != $ddev || $mino != $dino) {
-	for (@manpages) {
-	    ($new = $_) =~ s/man$/$manext/;
-	    $new =~ s#.*/##;
-	    print STDERR "  Installing $mansrc/$new\n";
-	    next if $nonono;
-	    open(MI,$_) || warn "Can't open $_: $!\n";
-	    open(MO,">$mansrc/$new") || warn "Can't install $mansrc/$new: $!\n";
-	    print MO ".ds RP Release $release Patchlevel $patchlevel\n";
-	    while (<MI>) {
-		print MO;
-	    }
-	    close MI;
-	    close MO;
-	}
-    }
-}
+# Install man pages. 
+#
+#if ($mansrc ne '') {
+#    &makedir($mansrc);
+#
+#    ($mdev,$mino) = stat($mansrc);
+#    if ($mdev != $ddev || $mino != $dino) {
+#	for (@manpages) {
+#	    ($new = $_) =~ s/man$/$manext/;
+#	    $new =~ s#.*/##;
+#	    print STDERR "  Installing $mansrc/$new\n";
+#	    next if $nonono;
+#	    open(MI,$_) || warn "Can't open $_: $!\n";
+#	    open(MO,">$mansrc/$new") || warn "Can't install $mansrc/$new: $!\n";
+#	    print MO ".ds RP Release $release Patchlevel $patchlevel\n";
+#	    while (<MI>) {
+#		print MO;
+#	    }
+#	    close MI;
+#	    close MO;
+#	}
+#    }
+#}
 
 # Install library files.
 

@@ -237,6 +237,8 @@ sub expr {
 .nr nl 0-1		\" fake up transition to first page again
 .nr % 0			\" start at page 1
 '; __END__ ############# From here on it's a standard manual page ############
+!NO!SUBS!
+cat << ENDOFMAN > h2ph.man
 .TH H2PH 1 "August 8, 1990"
 .AT 3
 .SH NAME
@@ -278,8 +280,6 @@ that it can translate.
 It's only intended as a rough tool.
 You may need to dicker with the files produced.
 .ex
-!NO!SUBS!
+ENDOFMAN
 chmod 755 h2ph
 $eunicefix h2ph
-rm -f h2ph.man
-ln h2ph h2ph.man

@@ -51,7 +51,7 @@ esac
 
 set `echo "$* " | sed 's/\.[oc] / /g'`
 
-for file do
+for file; do
 
     case "$#" in
     1) ;;

@@ -42,6 +42,7 @@ static int	int_how = NEWWAY;
 
 /* Formatting int's the old way or the new "improved" way? */
 
+#ifdef notdef
 #if	defined(vax) || defined(pdp11)
 
 static long
@@ -63,6 +64,7 @@ register long x;
 	return x;
 }
 
+#endif
 #endif
 
 static int

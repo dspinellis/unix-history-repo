@@ -46,12 +46,6 @@ sed <<!GROK!THIS! >config.h -e 's!^#undef!/\*#undef!'
  */
 #define LOC_SED "$sed"             /**/
 
-/* ALIGNBYTES
- *	This symbol contains the number of bytes required to align a double.
- *	Usual values are 2, 4, and 8.
- */
-#define ALIGNBYTES $alignbytes		/**/
-
 /* BIN
  *	This symbol holds the name of the directory in which the user wants
  *	to keep publicly executable images for the package in question.  It

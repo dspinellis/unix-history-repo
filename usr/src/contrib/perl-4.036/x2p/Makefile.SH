@@ -88,7 +88,7 @@ a2p: $(obj) a2p.o
 	$(CC) $(LDFLAGS) $(obj) a2p.o $(libs) -o a2p
 
 a2p.c: a2p.y
-	@ echo Expect 231 shift/reduce conflicts...
+	@echo Expect 231 shift/reduce conflicts...
 	$(YACC) a2p.y
 	mv y.tab.c a2p.c
 
@@ -146,7 +146,7 @@ malloc.c: ../malloc.c
 
 # AUTOMATICALLY GENERATED MAKE DEPENDENCIES--PUT NOTHING BELOW THIS LINE
 $(obj):
-	@ echo "You haven't done a "'"make depend" yet!'; exit 1
+	@echo "You haven't done a "'"make depend" yet!'; exit 1
 makedepend: makedepend.SH
 	/bin/sh $(shellflags) makedepend.SH
 !NO!SUBS!
