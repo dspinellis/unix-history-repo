@@ -1,7 +1,8 @@
-/*	if_ec.c	4.4	82/04/12	*/
+/*	if_ec.c	4.5	82/04/14	*/
 
 #include "ec.h"
 #include "imp.h"
+#include "loop.h"
 
 /*
  * 3Com Ethernet Controller interface
@@ -43,6 +44,8 @@ struct	uba_driver ecdriver =
 int	ecinit(),ecoutput(),ecreset();
 struct mbuf *ecget();
 
+extern struct ifnet loif;
+
 /*
  * Ethernet software status per interface.
  *
@@ -58,9 +61,9 @@ struct mbuf *ecget();
 struct	ec_softc {
 	struct	ifnet es_if;		/* network-visible interface */
 	struct	ifuba es_ifuba;		/* UNIBUS resources */
-	short	es_delay;		/* current output delay */
 	short	es_mask;		/* mask for current output delay */
 #ifdef notdef
+	short	es_delay;		/* current output delay */
 	long	es_lastx;		/* host last transmitted to */
 #endif
 	short	es_oactive;		/* is output active? */
@@ -249,7 +252,7 @@ int	enlastmask = (~0) << 5;
 /*
  * Start or restart output on interface.
  * If interface is already active, then this is a retransmit
- * after a collision, and just restuff registers and delay.
+ * after a collision, and just restuff registers.
  * If interface is not already active, get another datagram
  * to send off of the interface queue, and map it to the interface
  * before starting the output.
@@ -327,7 +330,6 @@ COUNT(ECXINT);
 		printf("ec%d: strange xmit interrupt!\n", unit);
 	es->es_if.if_opackets++;
 	es->es_oactive = 0;
-	es->es_delay = 0;
 	es->es_mask = ~0;
 	addr->ec_xcr = EC_XCLR;
 	/*
@@ -357,7 +359,7 @@ eccollide(unit)
 	struct ec_softc *es = &ec_softc[unit];
 COUNT(ECCOLLIDE);
 
-	printf("ec%d: eccollide\n", unit);
+	printf("ec%d: collision\n", unit);
 	es->es_if.if_collisions++;
 	if (es->es_oactive == 0)
 		return;
@@ -368,6 +370,10 @@ ecdocoll(unit)
 	int unit;
 {
 	register struct ec_softc *es = &ec_softc[unit];
+	register struct ecdevice *addr =
+	    (struct ecdevice *)ecinfo[unit]->ui_addr;
+	register i;
+	int delay;
 
 	/*
 	 * Es_mask is a 16 bit number with n low zero bits, with
@@ -375,24 +381,39 @@ ecdocoll(unit)
 	 * backed off 16 times, and give up.
 	 */
 	if (es->es_mask == 0) {
+		es->es_if.if_oerrors++;
 		printf("ec%d: send error\n", unit);
 		/*
-		 * this makes enxint wrong.  fix later.
+		 * Reset interface, then requeue rcv buffers.
+		 * Some incoming packets may be lost, but that
+		 * can't be helped.
 		 */
-		ecxint(unit);
+		addr->ec_xcr = EC_UECLR;
+		for (i=ECRHBF; i>=ECRLBF; i--)
+			addr->ec_rcr = EC_READ|i;
+		/*
+		 * Reset and transmit next packet (if any).
+		 */
+		es->es_oactive = 0;
+		es->es_mask = ~0;
+		if (es->es_if.if_snd.ifq_head)
+			ecstart(unit);
 		return;
 	}
 	/*
-	 * Another backoff.  Restart with delay based on n low bits
-	 * of the interval timer.
+	 * Do exponential backoff.  Compute delay based on low bits
+	 * of the interval timer.  Then delay for that number of
+	 * slot times.  A slot time is 51.2 microseconds (rounded to 51).
+	 * This does not take into account the time already used to
+	 * process the interrupt.
 	 */
 	es->es_mask <<= 1;
-	es->es_delay = mfpr(ICR) &~ es->es_mask;
+	delay = mfpr(ICR) &~ es->es_mask;
+	DELAY(delay * 51);
 	/*
-	 * This should do some sort of delay before calling ecstart.
-	 * I'll figure this out later.
+	 * Clear the controller's collision flag, thus enabling retransmit.
 	 */
-	ecstart(unit);
+	addr->ec_xcr = EC_JCLR;
 }
 
 #ifdef notdef
@@ -442,7 +463,7 @@ COUNT(ECREAD);
 		panic("ecrint");
 	ecbuf = es->es_buf[buf];
 	ecoff = *(short *)ecbuf;
-	if (ecoff <= ECRDOFF || ecoff > ECMTU+ECRDOFF) {
+	if (ecoff <= ECRDOFF || ecoff > 2046) {
 		es->es_if.if_ierrors++;
 #ifdef notdef
 		if (es->es_if.if_ierrors % 100 == 0)
@@ -535,6 +556,9 @@ setup:
  * Encapsulate a packet of type family for the local net.
  * Use trailer local net encapsulation if enough data in first
  * packet leaves a multiple of 512 bytes of data in remainder.
+ * If destination is this address or broadcast, send packet to
+ * loop device to kludge around the fact that 3com interfaces can't
+ * talk to themselves.
  */
 ecoutput(ifp, m0, dst)
 	struct ifnet *ifp;
@@ -547,6 +571,7 @@ ecoutput(ifp, m0, dst)
 	register struct ec_header *ec;
 	register int off;
 	register int i;
+	struct mbuf *mcopy = (struct mbuf *) 0;		/* Null */
 
 COUNT(ECOUTPUT);
 	switch (dst->sa_family) {
@@ -554,6 +579,13 @@ COUNT(ECOUTPUT);
 #ifdef INET
 	case AF_INET:
 		dest = ((struct sockaddr_in *)dst)->sin_addr.s_addr;
+		if ((dest &~ 0xff) == 0)
+			mcopy = m_copy(m, 0, M_COPYALL);
+		else if (dest == ((struct sockaddr_in *)&es->es_if.if_addr)->
+		    sin_addr.s_addr) {
+			mcopy = m;
+			goto gotlocal;
+		}
 		off = ntohs((u_short)mtod(m, struct ip *)->ip_len) - m->m_len;
 		if (off > 0 && (off & 0x1ff) == 0 &&
 		    m->m_off >= MMINOFF + 2 * sizeof (u_short)) {
@@ -646,7 +678,11 @@ gottype:
 	if (es->es_oactive == 0)
 		ecstart(ifp->if_unit);
 	splx(s);
-	return (0);
+gotlocal:
+	if (mcopy)				/* Kludge, but it works! */
+		return(looutput(&loif, mcopy, dst));
+	else
+		return (0);
 qfull:
 	m0 = m;
 	splx(s);
