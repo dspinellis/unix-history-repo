@@ -1,6 +1,6 @@
 # ------------------------
 #
-#	Termcap source file @(#)termcap.src	1.25	(Berkeley) %G%
+#	Termcap source file @(#)termcap.src	1.26	(Berkeley) %G%
 #	Kevin Layer, Berkeley
 #	Craig Leres, Berkeley
 #	Mark Horton, Berkeley
@@ -2179,6 +2179,10 @@ zn|trs100|Radio Shack Model 100:\
 	:ku=^^:kd=^_:kl=^]:kr=^\:up=\EA:nd=\EC:ho=\EH:ce=\EK:\
 	:cd=\EJ:cl=\EE:xt:cm=\EY%+ %+ :\
 	:so=\Ep:se=\Eq:al=\EL:dl=\EM:
+k1|kermit:\
+	:pt@:sr@:tc=vt52:
+k2|pckermit|kermit on IBM PC:\
+	:pt@:sr@:li#25:tc=vt52:
 #
 # END OF TERMCAP
 #  ------------------------
