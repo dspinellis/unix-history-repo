@@ -1,4 +1,4 @@
-/*	@(#)psgrind.c	1.2 %G%	*/
+/*	@(#)psgrind.c	1.3 %G%	*/
 /*
  *  psgrind - quick hack to grind C source files directly into
  *  PostScript.
@@ -32,7 +32,7 @@
 #define PtsPerInch 72
 #define UperPt 20
 #define TruePageWidth  (UperInch*17/2)
-#define PageWidth  (UperInch*(8*17-3)/4)
+#define PageWidth  (UperInch*(4*17-3)/8)
 #define PageLength (UperInch*(8*11-3)/8)
 #define TruePageLength (UperInch*11)
 
@@ -85,6 +85,7 @@ private int PipeOut = 0;	/* true if output to stdout (-p -) */
 private int ListOmitted = 0;	/* list omitted chars on the tty */
 private int LPTsimulate = 0;	/* true if an lpt should be simulated */
 private int LinesLeft = 64;	/* lines left on page when in LPT mode */
+private int col;		/* column number on current line */
 private int LineNo;		/* line number in current file */
 private int SeenText = 1;	/* true if seen some text on this page */
 private int OutOnly = 0;	/* true if PS file only wanted */
@@ -328,9 +329,29 @@ register int c; {
     nX = dX + f->Xwid[c]; /* resulting position after showing this char */
     nY = dY;
 
-    if (c != ' ' || ((cX == dX) && (cY == dY)))
-	if ((!Rotated && (nX <= PageWidth) && (nY <= PageLength))
-	|| (Rotated && (nX <= PageLength) && (nY <= PageWidth))) {
+    if (c != ' ' || ((cX == dX) && (cY == dY))) {
+	    /*
+	     * If character doesn't fit on this line
+	     * (and we're not at left margin), simulate newline
+	     * and then call ourselves recursively.
+	     */
+	    if (((!Rotated && nX > PageWidth)
+	        || (Rotated && nX > PageLength)) &&
+	        dX > lX) {
+		    LineNo++;
+		    SeenText++;
+		    dY = lY = lY + crY;
+		    dX = lX = lX + crX;
+		    if (((!Rotated) && (dY < UperLine))
+		        || (Rotated && (dY < ((PageLength-TruePageWidth) +
+						3*UperLine+480)))
+		        || (LPTsimulate && (--LinesLeft <= 0)))
+			    PageEject ();
+		    col = 1;
+		    ShowChar(c);
+		    level--;
+		    return;
+	    }
 	    if (cX != dX) {
 	       if (cY != dY) {
 		  FlushShow();
@@ -354,8 +375,6 @@ register int c; {
 	    cX = nX;
 	    cY = nY;
 	}
-	else
-	    TruncChars++;
     dX = nX;
     dY = nY;
 
@@ -524,11 +543,11 @@ private char *KeyWordList[] = {
 /* Copy the standard input file to the PS file */
 private CopyFile () {
     register int   c, last;
-    register int    col = 1;
     int	InComment, InString, InChar, IsKword;
     char token[50], *tend = token + sizeof (token) - 1;
     register char *tp, **kwp;
 
+    col = 1;
     if (OutFile == 0) {
 	if (OutOnly && !(PageSpec || Reverse)) {
 	   OutFile = PipeOut ? stdout : fopen(OutName,"w");
@@ -615,7 +634,7 @@ private CopyFile () {
 		    break;
 		case 011: /* tab ^I */
 		    col = (col - 1) / 8 * 8 + 9;
-		    dX = lX + (col - 1) / 8 * TabWidth;
+		    dX += TabWidth - ((dX - lX) % TabWidth);
 		    break;
 	        case '\\': /* special escape */
 		    last = c;
