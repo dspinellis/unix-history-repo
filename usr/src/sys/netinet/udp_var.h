@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)udp_var.h	7.10 (Berkeley) %G%
+ *	@(#)udp_var.h	7.11 (Berkeley) %G%
  */
 
 /*
@@ -43,7 +43,7 @@ struct	udpstat {
 /*
  * Names for UDP sysctl objects
  */
-#define	UDPCTL_CHECKSUM		1	/* allow replies to netmask requests */
+#define	UDPCTL_CHECKSUM		1	/* checksum UDP packets */
 #define UDPCTL_MAXID		2
 
 #define UDPCTL_NAMES { \
