@@ -2,27 +2,36 @@
  * Copyright (c) 1992 Regents of the University of California.
  * All rights reserved.
  *
- * This code is derived from software developed by the Computer Systems
- * Engineering group at Lawrence Berkeley Laboratory under DARPA
- * contract BG 91-66 and contributed to Berkeley.
+ * This software was developed by the Computer Systems Engineering group
+ * at Lawrence Berkeley Laboratory under DARPA contract BG 91-66 and
+ * contributed to Berkeley.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)device.h	7.2 (Berkeley) %G%
+ *	@(#)device.h	7.3 (Berkeley) %G%
  *
- * from: $Header: device.h,v 1.3 92/01/15 18:25:53 torek Exp $ (LBL)
+ * from: $Header: device.h,v 1.6 92/06/11 17:56:45 torek Exp $ (LBL)
  */
 
 /*
  * Minimal device structures.
+ * Note that all ``system'' device types are listed here.
  */
-enum devtype { DV_DULL, DV_DISK, DV_TAPE, DV_TTY };
+enum devclass {
+	DV_DULL,		/* generic, no special info */
+	DV_CPU,			/* CPU (carries resource utilization) */
+	DV_DISK,		/* disk drive (label, etc) */
+	DV_IFNET,		/* network interface */
+	DV_TAPE,		/* tape device */
+	DV_TTY			/* serial line interface (???) */
+};
 
 struct device {
-/*	enum	devclass dv_class;	/* class */
+	enum	devclass dv_class;	/* this device's classification */
+	struct	device *dv_next;	/* next in list of all */
+	struct	cfdata *dv_cfdata;	/* config data that found us */
 	char	*dv_name;		/* device name */
 	int	dv_unit;		/* device unit number */
-	int	dv_flags;		/* flags (copied from config) */
 	char	*dv_xname;		/* expanded name (name + unit) */
 	struct	device *dv_parent;	/* pointer to parent device */
 };
@@ -41,7 +50,7 @@ struct cfdata {
 };
 #define FSTATE_NOTFOUND	0	/* has not been found */
 #define	FSTATE_FOUND	1	/* has been found */
-#define	FSTATE_STAR	2	/* duplicable leaf (unimplemented) */
+#define	FSTATE_STAR	2	/* duplicable */
 
 typedef int (*cfmatch_t) __P((struct device *, struct cfdata *, void *));
 
@@ -58,6 +67,7 @@ struct cfdriver {
 	char	*cd_name;		/* device name */
 	cfmatch_t cd_match;		/* returns a match level */
 	void	(*cd_attach) __P((struct device *, struct device *, void *));
+	enum	devclass cd_class;	/* device classification */
 	size_t	cd_devsize;		/* size of dev data (for malloc) */
 	void	*cd_aux;		/* additional driver, if any */
 	int	cd_ndevs;		/* size of cd_devs array */
@@ -73,6 +83,8 @@ typedef int (*cfprint_t) __P((void *, char *));
 #define	QUIET	0		/* print nothing */
 #define	UNCONF	1		/* print " not configured\n" */
 #define	UNSUPP	2		/* print " not supported\n" */
+
+struct	device *alldevs;	/* head of list of all devices */
 
 struct cfdata *config_search __P((cfmatch_t, struct device *, void *));
 struct cfdata *config_rootsearch __P((cfmatch_t, char *, void *));
