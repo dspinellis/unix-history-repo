@@ -1,25 +1,30 @@
 /*
  * Stand alone driver for the HDC controller
+ *
+ *	@(#)hd.c	7.2 (Berkeley) %G%
  */
+#define	KERNEL
 
-#define KERNEL
+#include "machine/mtpr.h"
+#include "param.h"
+#include "systm.h"
+#include "buf.h"
+#include "time.h"
+#include "inode.h"
+#include "fs.h"
+#include "ioctl.h"
+#include "tahoevba/dsk.h"
+#include "tahoevba/dskio.h"
+#include "tahoevba/hdc.h"
+#include "saio.h"
 
-#include "../uts/machine/ml/mtpr.h"
-#include "../uts/machine/sys/param.h"
-#include "../uts/machine/sys/systm.h"
-#include "../uts/machine/sys/buf.h"
-#include "../uts/machine/sys/time.h"
-#include "../uts/machine/sys/vnode.h"
-#include "../uts/machine/ufs/inode.h"
-#include "../uts/machine/ufs/fs.h"
-#include "../uts/machine/sys/vbavar.h"
-#include "../uts/machine/sys/ioctl.h"
-#include "../uts/machine/sys/dsk.h"
-#include "../uts/machine/sys/dskio.h"
-#include "../uts/machine/sys/hdc.h"
-#include "../stand/saio.h"
+#define	NHD		4
+#define	NDRIVE		8		/* drives per controller */
+#define	HDSLAVE(x)	((x) % NDRIVE)
+#define	HDCTLR(x)	((x) / NDRIVE)
 
-#define HDREG(x)	(ctlr_addr->x)	/* standalone io to an hdc register */
+#define	HDREG(x)	(ctlr_addr->x)	/* standalone io to an hdc register */
+#define	HID_HDC		0x01		/* hvme_id for HDC */
 
 /*
  * hdc controller table. It contains information about the hdc controller.
@@ -93,13 +98,13 @@ register struct iob	*io ;	/* i/o block
 	int	        bus;		/* the bus number                   */
 	int		unit;		/* the unit number		    */
 	int	        i;		/* temp                             */
+	long		junk;		/* badaddr will write junk here     */
 	hdc_regs_type	*ctlr_addr;	/* hdc i/o registers                */
-	int		junk;		/* badaddr will write junk here     */
 
-	par = io->i_part;
-	bus = io->i_bus;
-	ctlr = io->i_ctlr;
-	drive = io->i_drive;
+	par = io->i_boff;		/* io->i_part; */
+	bus = 0;			/* io->i_bus; */
+	ctlr = HDCTLR(io->i_unit);	/* io->i_ctlr; */
+	drive = HDSLAVE(io->i_unit);	/* io->i_drive; */
 	hu = &hdc_unit[drive][ctlr][bus];
 	hc = &hdc_ctlr[ctlr][bus];
 	mcb = &hc->mcb;
@@ -108,20 +113,22 @@ register struct iob	*io ;	/* i/o block
 	 * Validate the device specification
 	 */
 
-	if (ctlr < 1 || ctlr > HDC_MAXCTLR)
-		return( -1 );
+	if (ctlr >= HDC_MAXCTLR) {
+		printf("invalid controller number\n");
+		return (ENXIO);
+	}
 	if (drive < 0 || drive > (HDC_MAXDRIVE-1)) {
 		printf("hdc: bad drive number.\n");
-		return( 0 );
+		return( 1 );
 	}
 	if (par < 0 || par > 7) {
 		printf("hdc: bad partition number.\n");
-		return( 0 );
+		return( 1 );
 	}
-	io->i_ctlr_addr =    bus == 0 ?
+	ctlr_addr = (hdc_regs_type *)(bus == 0 ?
 		0xC0000000 | ctlr << 24 | HDC_MID << 16  :
-		0x80000000 | ctlr << 24 | HDC_MID << 16;
-	ctlr_addr = (hdc_regs_type *) io->i_ctlr_addr;
+		0x80000000 | ctlr << 24 | HDC_MID << 16);
+	/* ctlr_addr = (hdc_regs_type *) io->i_ctlr_addr; */
 
 	/*
 	 * Init drive structure.
@@ -133,9 +140,11 @@ register struct iob	*io ;	/* i/o block
 	/*
 	 * Insure that this is an hdc, then reset the hdc.
 	 */
-
-	if (badaddr(&ctlr_addr->module_id_reg,4,&junk))
-  		return( -1 );
+	junk = 0;
+	if (wbadaddr(&ctlr_addr->module_id_reg, 4, &junk)) {
+		printf("hd%d: %x: invalid csr\n", ctlr, ctlr_addr);
+		return (ENXIO);
+	}
 	HDREG(soft_reset_reg) = 0;
 	DELAY(1000000);
 
@@ -149,18 +158,18 @@ register struct iob	*io ;	/* i/o block
 	id = &hc->mid;
 	HDREG(module_id_reg) = (unsigned long) id;
 	DELAY(10000);
-	mtpr(0,PADC);
+	mtpr(PADC, 0);
 	if (id->module_id != (unsigned char) HDC_MID) {
 		printf("hdc: Controller bad module id: id= %x\n",id->module_id);
 		return( -1 );
 	}
 	if (id->code_rev == (unsigned char) 0xFF ) {
 		printf("hdc:  Controller micro-code is not loaded.\n");
-		return( 0 );
+		return( 1 );
 	}
 	if (id->fit != (unsigned char) 0xFF ) {
 		printf("hdc:  Controller FIT test failed: error= %x\n",id->fit);
-		return( 0 );
+		return( 1 );
 	}
 
 	/*
@@ -175,7 +184,7 @@ register struct iob	*io ;	/* i/o block
 	mcb->chain[0].lwc = (long) sizeof(drive_stat_type) / 4;
 	mcb->chain[0].ta  = (long) &status;
 	if (hdmcb(mcb, io))
-		return( 0 );
+		return( 1 );
 	hu->cylinders = status.max_cyl+1;
 	hu->heads = status.max_head+1;
 	hu->sectors = status.max_sector+1;
@@ -204,7 +213,7 @@ register struct iob	*io ;	/* i/o block
 		printf("hdc: clearing drive fault.\n");
 	if ( !(status.drs & DRS_ONLINE)) {
 		printf("hdc: drive is not online.\n");
-		return( 0 );
+		return( 1 );
 	}
 
 	/*
@@ -247,15 +256,17 @@ register struct iob	*io ;	/* i/o block
 	 */
 
 	if (par != HDC_DEFPART) {
-		if (geo->partition[par].length == 0)
+		if (geo->partition[par].length == 0) {
 			printf("hdc:  null partition\n");
+			return ( 1 );
+		}
 		else {
 			hu->partition[par].start  = geo->partition[par].start;
 			hu->partition[par].length = geo->partition[par].length;
 			io->i_boff = hu->partition[par].start;
 		}
 	}
-	return( 1 ) ;
+	return( 0 ) ;
 }
 
 /*************************************************************************
@@ -287,9 +298,9 @@ long			func ;	/* i/o operation to perform
 	int	        ctlr;		/* the controller number            */
 	int	        drive;		/* the drive number                 */
 
-	bus = io->i_bus;
-	ctlr = io->i_ctlr;
-	drive = io->i_drive;
+	bus = 0;			/* io->i_bus; */
+	ctlr = HDCTLR(io->i_unit);	/* io->i_ctlr; */
+	drive = HDSLAVE(io->i_unit);	/* io->i_drive; */
 	hu = &hdc_unit[drive][ctlr][bus];
 	hc = &hdc_ctlr[ctlr][bus];
 
@@ -297,7 +308,7 @@ long			func ;	/* i/o operation to perform
 	 * Only the format program can access the disk definition tracks.
 	 */
 
-	if (io->i_part == HDC_DEFPART)
+	if (io->i_boff == HDC_DEFPART)
 		if (!hu->format) {
 			printf("hdc: partition 7 is protected\n");
 			return 0;
@@ -308,11 +319,11 @@ long			func ;	/* i/o operation to perform
 	 * Set and validate transfer size.
 	 */
 
-	partstart = hu->partition[io->i_part].start ;
-	partlen = hu->partition[io->i_part].length ;
+	partstart = hu->partition[io->i_boff].start ;
+	partlen = hu->partition[io->i_boff].length ;
 	if ( (io->i_bn < partstart) || (io->i_bn >= partstart+partlen) )
 		return( 0 ) ;
-	bytes = min( io->i_cc, DEV_BSIZE*(partstart+partlen-io->i_bn) );
+	bytes = MIN( io->i_cc, DEV_BSIZE*(partstart+partlen-io->i_bn) );
 	if (io->i_cc & 3) {
 		printf("hdc:  i/o not a longword multiple\n");
 		return 0;
@@ -363,9 +374,9 @@ int		arg ; 		/* Data. Format depends on ioctl.
 	int	        ctlr;		/* the controller number            */
 	int	        drive;		/* the drive number                 */
 
-	bus = io->i_bus;
-	ctlr = io->i_ctlr;
-	drive = io->i_drive;
+	bus = 0;			/* io->i_bus; */
+	ctlr = HDCTLR(io->i_unit);	/* io->i_ctlr; */
+	drive = HDSLAVE(io->i_unit);	/* io->i_drive; */
 	hu = &hdc_unit[drive][ctlr][bus];
 	hc = &hdc_ctlr[ctlr][bus];
 
@@ -486,7 +497,7 @@ int		arg ; 		/* Data. Format depends on ioctl.
 			if (hu->format) return (1);
 			/* If not already formatting.... */
 			hu->format = 1 ;
-			io->i_part = HDC_DEFPART;
+			/* io->i_part = HDC_DEFPART; */
 			io->i_boff = hu->partition[HDC_DEFPART].start;
 		}
 		else
@@ -583,8 +594,8 @@ register struct iob	*io ;	/* i/o block				    */
 	int		i,end;
 	unsigned int	*ptr;
 
-	bus = io->i_bus;
-	ctlr = io->i_ctlr;
+	bus = 0;			/* io->i_bus; */
+	ctlr = HDCTLR(io->i_unit);	/* io->i_ctlr; */
 	hc = &hdc_ctlr[ctlr][bus];
 
 	mcb->interrupt = FALSE;
@@ -607,7 +618,7 @@ register struct iob	*io ;	/* i/o block				    */
 	timeout = 15000;
 	while (TRUE) {
 		DELAY(1000);
-		mtpr(0,PADC);
+		mtpr(PADC, 0);
 		if ( (master_mcb->mcs & MCS_DONE) &&
 			!(master_mcb->mcs & MCS_FATALERROR) ) return 0;
 		timeout--;
