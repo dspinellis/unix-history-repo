@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)com.c	7.5 (Berkeley) 5/16/91
- *	$Id: sio.c,v 1.49 1994/05/30 22:53:41 ache Exp $
+ *	$Id: sio.c,v 1.50 1994/05/31 02:13:30 ache Exp $
  */
 
 #include "sio.h"
@@ -362,8 +362,7 @@ sioprobe(dev)
 		if (mdev != NULL) {
 			outb(mdev->id_iobase + com_scr, 0x80);
 			mcr_image = 0;
-		}
-		else
+		} else
 			return (0);
 	}
 #endif /* COM_MULTIPORT */
@@ -701,27 +700,27 @@ open_top:
 					error = EBUSY;
 					goto out;
 				}
-				    error = tsleep((caddr_t)&com->active_out,
+				error =	tsleep((caddr_t)&com->active_out,
 					       TTIPRI | PCATCH, "siobi", 0);
 				if (error != 0)
 					goto out;
 				goto open_top;
-				    }
-				}
+			}
+		}
 		if (tp->t_state & TS_XCLUDE && p->p_ucred->cr_uid != 0) {
 			error = EBUSY;
 			goto out;
-			}
-				} else {
+		}
+	} else {
 		/*
 		 * The device isn't open, so there are no conflicts.
 		 * Initialize it.  Initialization is done twice in many
 		 * cases: to preempt sleeping callin opens if we are
 		 * callout, and to complete a callin open after DCD rises.
 		 */
-	tp->t_oproc = comstart;
-	tp->t_param = comparam;
-	tp->t_dev = dev;
+		tp->t_oproc = comstart;
+		tp->t_param = comparam;
+		tp->t_dev = dev;
 		tp->t_termios = mynor & CALLOUT_MASK
 				? com->it_out : com->it_in;
 		commctl(com, MCR_DTR | MCR_RTS, DMSET);
@@ -772,7 +771,7 @@ open_top:
 			goto out;
 		goto open_top;
 	}
-		error = (*linesw[tp->t_line].l_open)(dev, tp, 0);
+	error =	(*linesw[tp->t_line].l_open)(dev, tp, 0);
 	if (tp->t_state & TS_ISOPEN && mynor & CALLOUT_MASK)
 		com->active_out = TRUE;
 out:
@@ -849,8 +848,8 @@ comhardclose(com)
 				timeout(siodtrwakeup, (caddr_t)com,
 					com->dtr_wait);
 				com->state |= CS_DTR_OFF;
+			}
 		}
-	}
 	}
 	com->active_out = FALSE;
 	wakeup((caddr_t)&com->active_out);
