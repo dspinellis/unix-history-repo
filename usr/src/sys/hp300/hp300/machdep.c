@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: machdep.c 1.63 91/04/24$
  *
- *	@(#)machdep.c	7.20 (Berkeley) %G%
+ *	@(#)machdep.c	7.21 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -313,7 +313,7 @@ setregs(p, entry, retval)
 	u_long entry;
 	int retval[2];
 {
-	p->p_regs[PC] = entry & ~1;
+	p->p_md.md_regs[PC] = entry & ~1;
 #ifdef FPCOPROC
 	/* restore a null state frame */
 	p->p_addr->u_pcb.pcb_fpregs.fpf_null = 0;
@@ -322,7 +322,7 @@ setregs(p, entry, retval)
 #ifdef HPUXCOMPAT
 	if (p->p_flag & SHPUX) {
 
-		p->p_regs[A0] = 0;	/* not 68010 (bit 31), no FPA (30) */
+		p->p_md.md_regs[A0] = 0; /* not 68010 (bit 31), no FPA (30) */
 		retval[0] = 0;		/* no float card */
 #ifdef FPCOPROC
 		retval[1] = 1;		/* yes 68881 */
@@ -537,7 +537,7 @@ sendsig(catcher, sig, mask, code)
 	extern short exframesize[];
 	extern char sigcode[], esigcode[];
 
-	frame = (struct frame *)p->p_regs;
+	frame = (struct frame *)p->p_md.md_regs;
 	ft = frame->f_format;
 	oonstack = ps->ps_onstack;
 	/*
@@ -755,7 +755,7 @@ sigreturn(p, uap, retval)
 		    copyin((caddr_t)scp, (caddr_t)&tsigc, sizeof tsigc)) {
 			p->p_sigacts->ps_onstack = hscp->hsc_onstack & 01;
 			p->p_sigmask = hscp->hsc_mask &~ sigcantmask;
-			frame = (struct frame *) p->p_regs;
+			frame = (struct frame *) p->p_md.md_regs;
 			frame->f_regs[SP] = hscp->hsc_sp;
 			frame->f_pc = hscp->hsc_pc;
 			frame->f_sr = hscp->hsc_ps &~ PSL_USERCLR;
@@ -787,7 +787,7 @@ sigreturn(p, uap, retval)
 	 */
 	p->p_sigacts->ps_onstack = scp->sc_onstack & 01;
 	p->p_sigmask = scp->sc_mask &~ sigcantmask;
-	frame = (struct frame *) p->p_regs;
+	frame = (struct frame *) p->p_md.md_regs;
 	frame->f_regs[SP] = scp->sc_sp;
 	frame->f_regs[A6] = scp->sc_fp;
 	frame->f_pc = scp->sc_pc;
