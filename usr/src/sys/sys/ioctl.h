@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ioctl.h	6.16 (Berkeley) %G%
+ *	@(#)ioctl.h	6.17 (Berkeley) %G%
  */
 
 /*
@@ -241,6 +241,8 @@ struct winsize {
 #define	SIOCGIFCONF	_IOWR(i,20, struct ifconf)	/* get ifnet list */
 #define	SIOCGIFNETMASK	_IOWR(i,21, struct ifreq)	/* get net addr mask */
 #define	SIOCSIFNETMASK	_IOW(i,22, struct ifreq)	/* set net addr mask */
+#define	SIOCGIFMETRIC	_IOWR(i,23, struct ifreq)	/* get IF metric */
+#define	SIOCSIFMETRIC	_IOW(i,24, struct ifreq)	/* set IF metric */
 
 #define	SIOCSARP	_IOW(i, 30, struct arpreq)	/* set arp entry */
 #define	SIOCGARP	_IOWR(i,31, struct arpreq)	/* get arp entry */
