@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)hexdump.1	5.8 (Berkeley) %G%
+.\"     @(#)hexdump.1	5.9 (Berkeley) %G%
 .\"
 .Dd 
 .Dt HEXDUMP 1
@@ -12,63 +12,63 @@
 .Nm hexdump
 .Nd ascii, decimal, hexadecimal, octal dump
 .Sh SYNOPSIS
-.Ar hexdump
+.Nm hexdump
 .Op Fl bcdovx
-.Op Fl e format_string
-.Op Fl f format_file
-.Op Fl n length
-.Op Fl s skip
-.Op
-.Ar file  . . .
+.Op Fl e Ar format_string
+.Op Fl f Ar format_file
+.Op Fl n Ar length
+.Op Fl s Ar skip
+.Ar file  ...
 .Sh DESCRIPTION
-The hexdump utility is a filter that displays the specified files, or
+The hexdump utility is a filter which displays the specified files, or
 the standard input, if no files are specified, in a user specified
 format.
 .Pp
 The options are as follows:
-.Tp
--b
-One-byte octal display.
-.Pp
+.Tw Fl
+.Tp Fl b
+.Em One-byte octal display .
 Display the input offset in hexadecimal, followed by sixteen
 space-separated, three column, zero-filled, bytes of input data,
 in octal, per line.
-.Tp
--c
-One-byte character display.
-.Pp
+.Tp Fl c
+.Em One-byte character display .
 Display the input offset in hexadecimal, followed by sixteen
 space-separated, three column, space-filled, characters of input
 data per line.
-.Tp
--d
+.Tp Fl d
 Two-byte decimal display.
-.Pp
 Display the input offset in hexadecimal, followed by eight
 space-separated, five column, zero-filled, two-byte units
 of input data, in unsigned decimal, per line.
-.Tp
--e
+.Tc Fl e
+.Ws
+.Ar format_string
+.Cx
 Specify a format string to be used for displaying data.
-.Tp
--f
+.Tc Fl f
+.Ws
+.Ar format_file
+.Cx
 Specify a file that contains one or more newline separated format strings.
 Empty lines and lines whose first non-blank character is a hash mark
 (#) are ignored.
-.Tp
--n
+.Tc Fl n
+.Ws
+.Ar length
+.Cx
 Interpret only
 .Ar length
 bytes of input.
-.Tp
--o
+.Tp Fl o
 Two-byte octal display.
-.Pp
 Display the input offset in hexadecimal, followed by eight
 space-separated, six column, zero-filled, two byte quantities of
 input data, in octal, per line.
-.Tp
--s
+.Tc Fl s
+.Ws
+.Ar offset
+.Cx
 Skip
 .Ar offset
 bytes from the beginning of the input.
@@ -85,8 +85,7 @@ Appending the character ``b'', ``k'', or ``m'' to
 .Ar offset
 causes it to be interpreted as a multiple of 512, 1024, or 1048576,
 respectively.
-.Tp
--v
+.Tp Fl v
 The
 .Fl v
 option causes hexdump to display all input data.
@@ -96,13 +95,12 @@ option, any number of groups of output lines, which would be
 identical to the immediately preceding group of output lines (except
 for the input offsets), are replaced with a line comprised of a
 single asterisk.
-.Tp
--x
+.Tp Fl x
 Two-byte hexadecimal display.
-.Pp
 Display the input offset in hexadecimal, followed by eight, space
 separated, four column, zero-filled, two-byte quantities of input
 data, in hexadecimal, per line.
+.Tp
 .Pp
 For each input file,
 .Nm hexdump
@@ -112,7 +110,7 @@ data according to the format strings specified by the
 and
 .Fl f
 options, in the order that they were specified.
-.Pp
+.Ss Formats
 A format string contains any number of format units, separated by
 whitespace.
 A format unit contains up to three items: an iteration count, a byte
@@ -135,84 +133,91 @@ The format is required and must be surrounded by double quote
 (" ") marks.
 It is interpreted as a fprintf-style format string, with the
 following exceptions:
-.Tp
-.Ar \ (bu
-An asterisk (*) may not be used as a field width or precision.
-.Tp
-.Ar \ (bu
-A byte count or field precision is required for each ``s'' conversion
-character.
-.Tp
-.Ar \ (bu
+.Ds I
+.Tw Ds
+.Tp \&Unsupported \&fprintf \&Conversion \&Characters:
 The conversion characters ``h'', ``n'', and ``p'' are not
 supported.
+.Tp Supported Escape Sequences:
+The single character escape sequences
+described in the C standard are supported:
+.Ds I
+.Cw <alert_character>
+.Cl NUL	\e0
+.Cl <alert character>	\ea
+.Cl <backspace>	\eb
+.Cl <form-feed>	\ef
+.Cl <newline>	\en
+.Cl <carriage return>	\er
+.Cl <tab>	\et
+.Cl <vertical tab>	\ev
+.Cw
+.De
+.Tp Taboo:
+An asterisk (*) may not be used as a field width or precision.
+.Tp ``\&%s'' Anomaly:
+A byte count or field precision
+.Em is
+required for each ``s'' conversion
+character (unlike the
+.Xr fprintf 3
+default which prints the entire string if the precision is unspecified).
 .Tp
-.Ar \ (bu
-The single character escape sequences (\ea, \eb, \ef, \en, \er,
-\et, and \ev) described in the C standard are supported.
+.De
 .Pp
 Hexdump also supports the the following additional conversion strings:
-.Pp
-.Tp
-_a
+.Tw Fl
+.Tc Cm \&_a
 .Op dox
+.Cx
 Display the input offset, cumulative across input files, of the
 next byte to be displayed.
 The appended characters ``d'', ``o'', and ``x'' specify the display base
 as decimal, octal or hexadecimal respectively.
-.Tp
-_A
+.Tc Cm \&_A
 .Op dox
+.Cx
 Identical to the _a conversion string except that it is only performed
 once, when all of the input data has been processed.
-.Tp
-_c
+.Tp Cm \&_c
 Output characters in the default character set.
 Nonprinting characters are displayed in three character, zero-padded
 octal, except for those representable by standard escape notation,
-which are displayed as the following two character strings:
-.in +5
-.TS
-l l.
-NUL	\e0
-<alert character>	\ea
-<backspace>	\eb
-<form-feed>	\ef
-<newline>	\en
-<carriage return>	\er
-<tab>	\et
-<vertical tab>	\ev
-.TE
-.Tp
-_p
+which are displayed as the following two character strings.
+.Tp Cm _p
 Output characters in the default character set.
 Nonprinting characters are displayed as a single ``.''.
-.Tp
-_u
+.Tp Cm _u
 Output US ASCII characters, with the exception that control characters are
 displayed using the following, lower-case, names.
 Characters greater than 0xff, hexadecimal, are displayed as hexadecimal
 strings.
-.Pp
+.Cw \&000_nul \&001_soh \&002_stx \&003_etx \&004_eot
+.Cl \&000\ nul\t001\ soh\t002\ stx\t003\ etx\t004\ eot\t005\ enq
+.Cl \&006\ ack\t007\ bel\t008\ bs\t009\ ht\t00A\ lf\t00B\ vt
+.Cl \&00C\ ff\t00D\ cr\t00E\ so\t00F\ si\t010\ dle\t011\ dc1
+.Cl \&012\ dc2\t013\ dc3\t014\ dc4\t015\ nak\t016\ syn\t017\ etb
+.Cl \&018\ can\t019\ em\t01A\ sub\t01B\ esc\t01C\ fs\t01D\ gs
+.Cl \&01E\ rs\t01F\ us\t0FF\ del
+.Cw
 .Tp
-000 nul  001 soh  002 stx  003 etx  004 eot  005 enq
-006 ack  007 bel  008  bs  009  ht  00A  lf  00B  vt
-00C  ff  00D  cr  00E  so  00F  si  010 dle  011 dc1
-012 dc2  013 dc3  014 dc4  015 nak  016 syn  017 etb
-018 can  019  em  01A sub  01B esc  01C  fs  01D  gs
-01E rs   01F  us  0FF del
-.Tp Pp
+.Pp
 The default and supported byte counts for the conversion characters
 are as follows:
-.Tp
-"%_c, %_p, %_u, %c"
+.Tw Fl
+.Tp Li \&%_c , %_p , %_u , \&%c
 One byte counts only.
-.Tp
-"%d, %i, %o, %u, %X, %x"
+.Tc Li \&%d , \&%i , \&%o ,
+.Ws
+.Li \&%u , \&%X , \&%x
+.Cx
 Four byte default, one and two byte counts supported.
-.Tp
-"%E, %e, %f, %G, %g"
+.Tc Li \&%E , \&%e , \&%f ,
+.Ws
+.Li \&%G , \&%g
+.Cx
 Eight byte default, four byte counts supported.
+.Tp
 .Pp
 The amount of data interpreted by each format string is the sum of the
 data required by each format unit, which is the iteration count times the
@@ -261,27 +266,19 @@ exits 0 on success and >0 if an error occurred.
 .Sh EXAMPLES
 Display the input in perusal format:
 .Pp
-.Tp
-"%06.6_ao
-.Ar 12/1 "%3_u "
-.br
+.Ds I
+"%06.6_ao "  12/1 "%3_u "
 "\et\et" "%_p "
-.br
 "\en"
-.Tp Pp
+.De
+.Pp
 Implement the \-x option:
 .Pp
-.Tp
+.Ds I
 "%07.7_Ax\en"
-.br
-"%07.7_ax
-.Ar 8/2 "%04x
-.Ar "\en"
-.Tp
--PTXX FROM- 4.3
--ENV USAGE-
--MANPAGE HISTORY-
-/usr/src/usr.bin/hexdump/odsyntax.c:	while ((ch = getopt(argc, argv, "aBbcDdeFfHhIiLlOoPpswvXx")) != EOF)
-/usr/src/usr.bin/hexdump/hexsyntax.c:	while ((ch = getopt(argc, argv, "bcde:f:n:os:vx")) != EOF)
-/usr/src/usr.bin/hexdump/odsyntax.c:	while ((ch = getopt(argc, argv, "aBbcDdeFfHhIiLlOoPpswvXx")) != EOF)
-/usr/src/usr.bin/hexdump/hexsyntax.c:	while ((ch = getopt(argc, argv, "bcde:f:n:os:vx")) != EOF)
+"%07.7_ax  " 8/2 "%04x " "\en"
+.De
+.Sh STANDARDS
+The
+.Nm Hexdump
+utility is expected to be POSIX 1003.2 compatible.
