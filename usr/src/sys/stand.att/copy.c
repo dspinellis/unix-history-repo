@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)copy.c	7.6 (Berkeley) %G%
+ *	@(#)copy.c	7.7 (Berkeley) %G%
  */
 
 #define	BSIZE	10240
@@ -15,30 +15,32 @@
 main()
 {
 	extern int errno;
-	register int from, to, record, rcc, wcc;
+	register int from, to, record, rcc, wcc, bsize = BSIZE;
 	char buf[BSIZE];
 
 	from = getfile("From", 0);
 	to = getfile("To", 1);
 	for (record = 0;; ++record) {
-		if (!(rcc = read(from, buf, BSIZE)))
+		if (!(rcc = read(from, buf, bsize)))
 			break;
 		if (rcc < 0) {
 			printf("Record %d: read error, errno=%d\n",
 			    record, errno);
 			break;
 		}
-		if (!record && rcc != BSIZE) {
-			rcc = BSIZE;
-			printf("Block size set from input; %d bytes\n", BSIZE);
+		if (rcc != bsize) {
+			if (record == 0) {
+				bsize = rcc;
+				printf("Block size set from input; %d bytes\n",
+				    bsize);
+			} else
+				printf("Record %d: read short; expected %d, got %d\n",
+				    record, bsize, rcc);
 		}
-		if (rcc < BSIZE)
-			printf("Record %d: read short; expected %d, got %d\n",
-			    record, BSIZE, rcc);
 #ifdef vax
 		/* For bug in ht driver. */
-		if (rcc > BSIZE)
-			rcc = BSIZE;
+		if (rcc > bsize)
+			rcc = bsize;
 #endif
 		if ((wcc = write(to, buf, rcc)) < 0) {
 			printf("Record %d: write error: errno=%d\n",
