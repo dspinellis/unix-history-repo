@@ -468,8 +468,13 @@ command(top)
 		signal(SIGINT, SIG_DFL);
 	for (;;) {
 		printf("%s> ", prompt);
-		if (gets(line) == 0)
+		if (gets(line) == 0) {
+			if (feof(stdin)) {
+				clearerr(stdin);
+				putchar('\n');
+			}
 			break;
+		}
 		if (line[0] == 0)
 			break;
 		makeargv();
