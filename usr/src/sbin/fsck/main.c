@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.19 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -142,6 +142,8 @@ main(argc, argv)
 			if (strcmp(fsp->fs_type, FSTAB_RW) &&
 			    strcmp(fsp->fs_type, FSTAB_RO) &&
 			    strcmp(fsp->fs_type, FSTAB_RQ))
+				continue;
+			if (strcmp(fsp->fs_vfstype, "ufs"))
 				continue;
 			if (preen == 0 ||
 			    passno == 1 && fsp->fs_passno == 1) {
