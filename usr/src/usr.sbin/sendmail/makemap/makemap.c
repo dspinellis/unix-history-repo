@@ -7,16 +7,18 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)makemap.c	8.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)makemap.c	8.10 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <stdio.h>
 #include <sysexits.h>
 #include <sys/types.h>
-#include <sys/file.h>
 #include <ctype.h>
 #include <string.h>
 #include <sys/errno.h>
+#ifndef ISC_UNIX
+# include <sys/file.h>
+#endif
 #include "useful.h"
 #include "conf.h"
 
