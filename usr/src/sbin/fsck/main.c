@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)fsck.c	2.4 (Berkeley) 4/15/82";
+static	char sccsid[] = "@(#)main.c	2.6	(Berkeley)	%G%";
 
 #include <stdio.h>
 #include <ctype.h>
@@ -38,6 +38,7 @@ typedef struct direct	DIRECT;
 #define	REG	((dp->di_mode & IFMT) == IFREG)
 #define	BLK	((dp->di_mode & IFMT) == IFBLK)
 #define	CHR	((dp->di_mode & IFMT) == IFCHR)
+#define	LNK	((dp->di_mode & IFMT) == IFLNK)
 #define	SPECIAL	(BLK || CHR)
 
 ino_t	startinum;		/* blk num of first in raw area */
@@ -85,7 +86,7 @@ daddr_t	duplist[DUPTBLSIZE];	/* dup block table */
 daddr_t	*enddup;		/* next entry in dup table */
 daddr_t	*muldup;		/* multiple dups part of table */
 
-#define	MAXLNCNT	20	/* num zero link cnts to remember */
+#define	MAXLNCNT	50	/* num zero link cnts to remember */
 ino_t	badlncnt[MAXLNCNT];	/* table of inos with zero link cnts */
 ino_t	*badlnp;		/* next entry in table */
 
@@ -374,7 +375,8 @@ check(dev)
 		return;
 	}
 /* 1 */
-	if (preen==0) {
+	if (preen == 0) {
+		printf("** Last Mounted on %s\n", sblock.fs_fsmnt);
 		if (hotroot)
 			printf("** Root file system\n");
 		printf("** Phase 1 - Check Blocks and Sizes\n");
@@ -702,10 +704,6 @@ out5:
 	}
 	ckfini();
 	sync();
-	if (dfile.mod && hotroot) {
-		printf("\n***** BOOT UNIX (NO SYNC!) *****\n");
-		exit(4);
-	}
 	if (dfile.mod && preen == 0)
 		printf("\n***** FILE SYSTEM WAS MODIFIED *****\n");
 	free(blockmap);
@@ -760,13 +758,13 @@ preendie()
  * or a warning (preceded by filename) when preening.
  */
 /* VARARGS1 */
-pwarn(s, a1, a2, a3, a4, a5)
+pwarn(s, a1, a2, a3, a4, a5, a6)
 	char *s;
 {
 
 	if (preen)
 		printf("%s: ", devname);
-	printf(s, a1, a2, a3, a4, a5);
+	printf(s, a1, a2, a3, a4, a5, a6);
 }
 
 ckinode(dp, flg)
@@ -1066,6 +1064,7 @@ struct dirstuff {
 	int blkno;
 	int blksiz;
 	ino_t number;
+	int fix;
 };
 
 dirscan(blk, nf)
@@ -1085,7 +1084,10 @@ dirscan(blk, nf)
 	dirp.loc = 0;
 	dirp.blkno = blk;
 	dirp.blksiz = blksiz;
-	dirp.number = dnum;
+	if (dirp.number != dnum) {
+		dirp.number = dnum;
+		dirp.fix = 0;
+	}
 	for (dp = readdir(&dirp); dp != NULL; dp = readdir(&dirp)) {
 		dsize = dp->d_reclen;
 		copy(dp, dbuf, dsize);
@@ -1111,39 +1113,66 @@ readdir(dirp)
 	register struct dirstuff *dirp;
 {
 	register DIRECT *dp, *ndp;
+	long size;
 
 	if (getblk(&fileblk, dirp->blkno, dirp->blksiz) == NULL) {
 		filsize -= dirp->blksiz - dirp->loc;
 		return NULL;
 	}
-	for (;;) {
-		if (filsize <= 0 || dirp->loc >= dirp->blksiz)
-			return NULL;
+	while (dirp->loc % DIRBLKSIZ == 0 && filsize > 0 &&
+	    dirp->loc < dirp->blksiz) {
 		dp = (DIRECT *)(dirblk.b_buf + dirp->loc);
-		dirp->loc += dp->d_reclen;
-		filsize -= dp->d_reclen;
-		ndp = (DIRECT *)(dirblk.b_buf + dirp->loc);
-		if (dirp->loc < dirp->blksiz && filsize > 0 &&
-		    (ndp->d_ino > imax || ndp->d_namlen > MAXNAMLEN ||
-		    ndp->d_reclen <= 0 || 
-		    ndp->d_reclen > DIRBLKSIZ - (dirp->loc % DIRBLKSIZ))) {
+	   	if (dp->d_ino < imax &&
+		    dp->d_namlen <= MAXNAMLEN && dp->d_namlen >= 0 &&
+		    dp->d_reclen > 0 && dp->d_reclen <= DIRBLKSIZ)
+			break;
+		dirp->loc += DIRBLKSIZ;
+		filsize -= DIRBLKSIZ;
+		if (dirp->fix == 0) {
 			pwarn("DIRECTORY %D CORRUPTED", dirp->number);
-			if (preen)
+			dirp->fix = 1;
+			if (preen) {
 				printf(" (SALVAGED)\n");
-			else if (reply("SALVAGE") == 0) {
-				dirp->loc +=
-				    DIRBLKSIZ - (dirp->loc % DIRBLKSIZ);
-				filsize -= DIRBLKSIZ - (dirp->loc % DIRBLKSIZ);
-				return(dp);
-			}
-			dirp->loc -= dp->d_reclen;
-			filsize += dp->d_reclen;
-			dp->d_reclen = DIRBLKSIZ - (dirp->loc % DIRBLKSIZ);
-			dirty(&fileblk);
-			continue;
+				dirp->fix = 2;
+			} else if (reply("SALVAGE") != 0)
+				dirp->fix = 2;
 		}
-		return (dp);
+		if (dirp->fix < 2)
+			continue;
+		dp->d_reclen = DIRBLKSIZ;
+		dp->d_ino = 0;
+		dp->d_namlen = 0;
+		dirty(&fileblk);
 	}
+	if (filsize <= 0 || dirp->loc >= dirp->blksiz)
+		return NULL;
+	dp = (DIRECT *)(dirblk.b_buf + dirp->loc);
+	dirp->loc += dp->d_reclen;
+	filsize -= dp->d_reclen;
+	ndp = (DIRECT *)(dirblk.b_buf + dirp->loc);
+	if (dirp->loc < dirp->blksiz && filsize > 0 &&
+	    (ndp->d_ino >= imax ||
+	    ndp->d_namlen > MAXNAMLEN || ndp->d_namlen < 0 ||
+	    ndp->d_reclen <= 0 || 
+	    ndp->d_reclen > DIRBLKSIZ - (dirp->loc % DIRBLKSIZ))) {
+		size = DIRBLKSIZ - (dirp->loc % DIRBLKSIZ);
+		dirp->loc += size;
+		filsize -= size;
+		if (dirp->fix == 0) {
+			pwarn("DIRECTORY %D CORRUPTED", dirp->number);
+			dirp->fix = 1;
+			if (preen) {
+				printf(" (SALVAGED)\n");
+				dirp->fix = 2;
+			} else if (reply("SALVAGE") != 0)
+				dirp->fix = 2;
+		}
+		if (dirp->fix > 2) {
+			dp->d_reclen += size;
+			dirty(&fileblk);
+		}
+	}
+	return (dp);
 }
 
 direrr(s)
