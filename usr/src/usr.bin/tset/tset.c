@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)tset.c	1.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)tset.c	1.7 (Berkeley) %G%";
 #endif
 
 /*
@@ -848,7 +848,7 @@ mapold:				Map->Ident = NewType;
 	if (bufp && *bufp != '/')
 		strcpy(bufp-8, "NOTHING");	/* overwrite only "TERMCAP" */
 	/* get current idea of terminal type from environment */
-	if (!Dash_h && !Mapped && TtyType == 0)
+	if (!Dash_h && TtyType == 0)
 		TtyType = getenv("TERM");
 # endif
 
