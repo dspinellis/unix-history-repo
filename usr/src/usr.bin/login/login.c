@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)login.c	5.47 (Berkeley) %G%";
+static char sccsid[] = "@(#)login.c	5.48 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -38,7 +38,7 @@ static char sccsid[] = "@(#)login.c	5.47 (Berkeley) %G%";
 #include <sys/time.h>
 #include <sys/resource.h>
 #include <sys/file.h>
-#include <sys/ioctl.h>
+#include <sgtty.h>
 
 #include <utmp.h>
 #include <signal.h>
@@ -123,8 +123,11 @@ main(argc, argv)
 	else
 		domain = index(localhost, '.');
 
+	openlog("login", LOG_ODELAY, LOG_AUTH);
+
 	fflag = hflag = pflag = rflag = 0;
 	passwd_req = 1;
+	uid = getuid();
 	while ((ch = getopt(argc, argv, "fh:pr:")) != EOF)
 		switch (ch) {
 		case 'f':
@@ -136,7 +139,7 @@ main(argc, argv)
 			fflag = 1;
 			break;
 		case 'h':
-			if (getuid()) {
+			if (uid) {
 				(void)fprintf(stderr,
 				    "login: -h for super-user only.\n");
 				exit(1);
@@ -180,7 +183,8 @@ main(argc, argv)
 			break;
 		case '?':
 		default:
-			syslog(LOG_ERR, "invalid flag");
+			if (!uid)
+				syslog(LOG_ERR, "invalid flag %c", ch);
 			(void)fprintf(stderr,
 			    "usage: login [-fp] [username]\n");
 			exit(1);
@@ -226,8 +230,6 @@ main(argc, argv)
 	else
 		tty = ttyn;
 
-	openlog("login", LOG_ODELAY, LOG_AUTH);
-
 	for (cnt = 0;; ask = 1) {
 		ioctlval = TTYDISC;
 		(void)ioctl(0, TIOCSETD, &ioctlval);
@@ -237,9 +239,8 @@ main(argc, argv)
 			getloginname();
 		}
 		/*
-		 * Note if trying multiple user names;
-		 * log failures for previous user name,
-		 * but don't bother logging one failure
+		 * Note if trying multiple user names; log failures for
+		 * previous user name, but don't bother logging one failure
 		 * for nonexistent name (mistyped username).
 		 */
 		if (failures && strcmp(tbuf, username)) {
@@ -262,8 +263,6 @@ main(argc, argv)
 		 * root, disallow if the uid's differ.
 		 */
 		if (fflag && pwd) {
-			int uid = getuid();
-
 			passwd_req =
 #ifndef	KERBEROS
 			     pwd->pw_uid == 0 ||
@@ -277,6 +276,25 @@ main(argc, argv)
 		 */
 		if (!passwd_req || (pwd && !*pwd->pw_passwd))
 			break;
+
+		/*
+		 * If trying to log in as root, but with insecure terminal,
+		 * refuse the login attempt.
+		 */
+		if (pwd->pw_uid == 0 && !rootterm(tty)) {
+			(void)fprintf(stderr,
+			    "%s login refused on this terminal.\n",
+			    pwd->pw_name);
+			if (hostname)
+				syslog(LOG_NOTICE,
+				    "LOGIN %s REFUSED FROM %s ON TTY %s",
+				    pwd->pw_name, hostname, tty);
+			else
+				syslog(LOG_NOTICE,
+				    "LOGIN %s REFUSED ON TTY %s",
+				     pwd->pw_name, tty);
+			continue;
+		}
 
 		setpriority(PRIO_PROCESS, 0, -4);
 		pp = getpass("Password:");
@@ -305,20 +323,6 @@ main(argc, argv)
 
 	/* paranoia... */
 	endpwent();
-
-	/*
-	 * If valid so far and root is logging in, see if root logins on
-	 * this terminal are permitted.
-	 */
-	if (pwd->pw_uid == 0 && !rootterm(tty)) {
-		if (hostname)
-			syslog(LOG_NOTICE, "ROOT LOGIN REFUSED FROM %s",
-			    hostname);
-		else
-			syslog(LOG_NOTICE, "ROOT LOGIN REFUSED ON %s", tty);
-		(void)printf("Login incorrect\n");
-		sleepexit(1);
-	}
 
 	if (quota(Q_SETUID, pwd->pw_uid, 0, 0) < 0 && errno != EINVAL) {
 		switch(errno) {
