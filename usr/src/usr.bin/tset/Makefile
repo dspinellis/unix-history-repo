@@ -14,43 +14,35 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.8 (Berkeley) %G%
+#	@(#)Makefile	5.9 (Berkeley) %G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
 SRCS=	tset.c
+MAN=	tset.0
 
 all: tset
 
 tset: ${SRCS} ${LIBC}
 	${CC} -o $@ ${CFLAGS} ${SRCS} -ltermlib
 
-clean: FRC
+clean:
 	rm -f ${OBJS} core tset
 
-depend: FRC
+cleandir: clean
+	rm -f ${MAN} tags .depend
+
+depend: ${SRCS}
 	mkdep -p ${CFLAGS} ${SRCS}
 
-install: FRC
+install: ${MAN}
 	install -s -o bin -g bin -m 755 tset ${DESTDIR}/usr/ucb/tset
 	rm -f ${DESTDIR}/usr/ucb/reset
 	ln ${DESTDIR}/usr/ucb/tset ${DESTDIR}/usr/ucb/reset
+	install -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat1
 
-lint: FRC
+lint: ${SRCS}
 	lint ${CFLAGS} ${SRCS}
 
-tags: FRC
+tags: ${SRCS}
 	ctags ${SRCS}
-
-FRC:
-
-# DO NOT DELETE THIS LINE -- mkdep uses it.
-# DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
-
-tset: tset.c /usr/include/ttyent.h /usr/include/sgtty.h
-tset: /usr/include/sys/ioctl.h /usr/include/sys/ttychars.h
-tset: /usr/include/sys/ttydefaults.h /usr/include/sys/ttydev.h
-tset: /usr/include/stdio.h /usr/include/signal.h /usr/include/machine/trap.h
-tset: tset.delays.h
-
-# IF YOU PUT ANYTHING HERE IT WILL GO AWAY
