@@ -3,36 +3,42 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)title.urm	8.9 (Berkeley) %G%
+.\"	@(#)title.urm	8.10 (Berkeley) %G%
 .\"
 .af % i
+.nr LL 6.5i
 .EH ''''
 .OH ''''
-.OF '''\s10- % -\s0'
-.EF '\s10- % -\s0'''
+.EF ''''
+.OF ''''
 \&
-.sp |2.75i
-.nr PS 24
-.nr VS 28
+.sp |1.5i
+.nr PS 36
+.nr VS 39
 .LP
 .ft B
 .ce 2
-UNIX User's Reference Manual
+4.4BSD
+User's Reference Manual
+.nr PS 24
+.nr VS 32
+.LP
+.ft B
+.ce 1
 (URM)
-.nr LL 5.5i
-.nr PO 1.5i
 .bp
 \&
-.sp |1.5i
-.nr PS 11
-.nr VS 13
+.sp |0.83i
+.nr PS 14
+.nr VS 16.5
 .LP
-The USENIX Association,
+Now in its twentieth your, the USENIX Association,
 the UNIX and Advanced Computing Systems professional and technical organization,
 is a not-for-profit membership association of individuals and
 institutions with an interest in UNIX and UNIX-like systems,
-and, by extension, C++, X windows, and other programming tools.
-It is dedicated to:
+and, by extension, C++, X windows, and other advanced tools and technologies.
+.LP
+USENIX and its members are dedicated to:
 .IP \(bu
 fostering innovation and communicating research and technological developments,
 .IP \(bu
@@ -43,48 +49,83 @@ providing a neutral forum for the exercise of critical
 thought and airing of technical issues.
 .LP
 USENIX publishes a journal (\fBComputing Systems\fP),
-Conference and Workshop Proceedings, and a Book Series.
-.nr LL 6i
-.nr PO 1i
+a newsletter (\fI;login:\fP),
+Proceedings from its frequent Conferences and Symposia,
+and a Book Series.
+.LP
+SAGE, The Systems Administrators Guild, a Special Technical Group with
+the USENIX Association, is dedicated to the advancement of system
+administration as a profession.
+.LP
+SAGE brings together systems managers and administrators to:
+.IP \(bu
+propagate knowledge of good professional practice,
+.IP \(bu
+recruit talented individuals to the profession,
+.IP \(bu
+recognize individuals who attain professional excellence,
+.IP \(bu
+foster technical development and share solutions to technical
+problems, and
+.IP \(bu
+communicate in an organized voice with users, management, and vendors
+on system administration topics.
 .bp
 \&
-.sp |2.75i
+.sp |1i
+.nr PS 36
+.nr VS 39
+.LP
+.ft B
+.ce 3
+4.4BSD
+User's Reference Manual
+.nr PS 24
+.nr VS 32
+.LP
+.ft B
+.ce 1
+(URM)
+.sp 1i
+.nr PS 24
+.nr VS 26
+.LP
+.ft B
+.ce 1
+Berkeley Software Distribution
 .nr PS 18
-.nr VS 22
+.nr VS 26
+.LP
+.ft B
+.ce 1
+April, 1994
+.sp 1i
+.nr PS 18
+.nr VS 20
 .LP
 .ft B
 .ce 2
-UNIX User's Reference Manual
-(URM)
-.sp |4i
-.ce 2
-4.4 Berkeley Software Distribution
-(June, 1993)
-.sp 3
-.nr PS 15
-.nr VS 18
-.LP
-.ce 2
 Computer Systems Research Group
-University of California, Berkeley
-.sp |8.2i
+University of California at Berkeley
+.sp 2.75i
 .nr PS 12
-.nr VS 15
+.nr VS 14.5
 .LP
+.ft B
 .ce 4
 A USENIX Association Book
 O'Reilly & Associates, Inc.
-Sebastopol, California
-Cambridge, Massachusetts
+103 Morris Street, Suite A
+Sebastopol, CA 94572
 .bp
 .hy 0
 .nr PS 9
 .nr VS 11
 .LP
-First Printing, 1993
+First Printing, 1994
 .sp 1
 .LP
-Copyright 1979, 1980, 1983, 1986, 1993
+Copyright 1979, 1980, 1983, 1986, 1993, 1994
 The Regents of the University of California.  All rights reserved.
 .sp 1
 .LP
@@ -172,15 +213,27 @@ either expressed or implied, of the Regents of the University of California.
 This book was printed and bound in the United States of America.
 .br
 Distributed by O'Reilly & Associates, Inc.
+.sp 1
+.IP "[recycle logo]" 16
+This book is printed on acid-free paper with 50% recycled content,
+10-13% post-consumer waste. O'Reilly & Associates is committed to
+using paper with the highest recycled content available consistent
+with high quality.
+.LP
+.sp 1
+ISBN: 1-56592-075-9
 .bp
 \&
 .sp |1.5i
-.nr PS 11
-.nr VS 13
+.nr PS 24
+.nr VS 26
 .LP
 .ce 1
 \s+4\fBContents\fP\s-4
-.sp 3
+.sp 1
+.nr PS 14
+.nr VS 17
+.LP
 .TS
 expand;
 l r.
@@ -195,6 +248,8 @@ List of Documents	inside back cover
 .if o .bp
 \&
 .bp
+.OF '''\s10- % -\s0'
+.EF '\s10- % -\s0'''
 .\"
 .\" The contributor list below is derived from the file that resides in
 .\" vangogh:~admin/contrib/contrib:
@@ -472,6 +527,9 @@ lock(1)	Bob Toxen
 .nr VS 12
 \&
 .sp |1.5i
+.EQ
+delim $$
+.EN
 .LP
 .ce
 \fB\s+4PREFACE\s-4\fP
@@ -486,7 +544,7 @@ a new virtual filesystem interface supporting filesystem stacking,
 a freely redistributable implementation of NFS,
 a log-structured filesystem,
 enhancement of the local filesystems to support
-files and filesystems that are up to 2^63 bytes in size,
+files and filesystems that are up to $2 sup 63$ bytes in size,
 enhanced security and system management support,
 and the conversion to and addition of the IEEE Std1003.1 (``POSIX'')
 facilities and many of the IEEE Std1003.2 facilities.
@@ -557,6 +615,14 @@ The ISO/OSI Networking consists of a kernel implementation of
 transport class 4 (TP-4),
 connectionless networking protocol (CLNP),
 and 802.3-based link-level support (hardware-compatible with Ethernet*).
+.\"
+.\" ditroff screws up the environment for footnote. This restores it.
+.\"
+.ev 1
+.ps 8
+.vs 9
+.ev
+.\" end of ditroff fix
 .FS
 *Ethernet is a trademark of the Xerox Corporation.
 .FE
@@ -629,7 +695,7 @@ clustering which allows large pieces of files to be
 allocated contiguously resulting in near doubling
 of filesystem throughput.
 The filesystem interface has been extended to allow
-files and filesystems to grow to 2^63 bytes in size.
+files and filesystems to grow to $2 sup 63$ bytes in size.
 The quota system has been rewritten to support both
 user and group quotas (simultaneously if desired).
 Quota expiration is based on time rather than
@@ -647,6 +713,9 @@ memory, all writing and most reading of kernel data structures
 must be done using a new ``sysctl'' interface.
 The information to be access is described through an extensible
 ``Management Information Base'' (MIB).
+.EQ
+delim off
+.EN
 .NH 2
 POSIX terminal driver changes
 .PP
@@ -818,7 +887,7 @@ M. K. McKusick
 K. Bostic
 .fi
 .in 0
-.sp 1.4
+.sp 3
 .nr PS 9
 .nr VS 10
 .LP
@@ -1045,7 +1114,7 @@ R. S. Fabry
 K. Sklower
 .fi
 .in 0
-.sp 1.5
+.sp 3
 .ne 1i
 .ce
 \fIPreface to the Third Berkeley distribution\fP
@@ -1075,14 +1144,12 @@ W. N. Joy
 .br
 \v'-3p'\h'2p'\*:\v'3p'\h'-2p'O. Babao\*~glu
 .in 0
-.sp 1.5
+.sp 3
 .ne 1i
 .ce
 \fIPreface to the UNIX/32V distribution\fP
 .sp 1
-The
-.UX
-operating system for the VAX*-11
+The UNIX operating system for the VAX*-11
 .FS
 *VAX and PDP are Trademarks of Digital Equipment Corporation.
 .FE
@@ -1099,7 +1166,7 @@ T. B. London
 .br
 J. F. Reiser
 .in 0
-.sp 2
+.sp 3
 .ne 1i
 .ce
 \fIPreface to the Seventh Edition\fP
@@ -1834,7 +1901,7 @@ Good luck and enjoy BSD.
 .EF '\s9\\\\*(Dt''\\\\*(Ed\s0'
 .OF '\s9\\\\*(Ed''\\\\*(Dt\s0'
 .nr PS 10
-.nr VS 11
+.nr VS 11.5
 .LP
 .ce
 \s+4\fBLIST \|OF \|MANUAL \|PAGES\fP\s-4
