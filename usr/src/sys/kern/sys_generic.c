@@ -1,4 +1,4 @@
-/*	sys_generic.c	6.5	84/10/19	*/
+/*	sys_generic.c	6.6	84/12/27	*/
 
 #include "param.h"
 #include "systm.h"
@@ -240,6 +240,17 @@ ioctl()
 
 int	unselect();
 int	nselcoll;
+
+/*
+ * Select uses bit masks of file descriptors in ints.
+ * These macros manipulate such bit fields (the filesystem macros use chars).
+ */
+#define NBI		(sizeof(int) * NBBY)		/* bits per int */
+#define	NI		howmany(NOFILE, NBI)
+#define	tbit(p, n)	((p)[(n)/NBI] & (1 << ((n) % NBI)))
+#define	sbit(p, n)	((p)[(n)/NBI] |= (1 << ((n) % NBI)))
+#define	cbit(p, n)	((p)[(n)/NBI] &= ~(1 << ((n) % NBI)))
+
 /*
  * Select system call.
  */
@@ -247,28 +258,27 @@ select()
 {
 	register struct uap  {
 		int	nd;
-		long	*in, *ou, *ex;
+		int	*in, *ou, *ex;
 		struct	timeval *tv;
 	} *uap = (struct uap *)u.u_ap;
-	int ibits[3], obits[3];
+	int ibits[3][NI], obits[3][NI];
 	struct timeval atv;
-	int s, ncoll, mask;
+	int s, ncoll, ni;
 	label_t lqsave;
 
-	obits[0] = obits[1] = obits[2] = 0;
+	bzero(ibits, sizeof(ibits));
+	bzero(obits, sizeof(obits));
 	if (uap->nd > NOFILE)
 		uap->nd = NOFILE;	/* forgiving, if slightly wrong */
-	mask = (1 << uap->nd) - 1;
+	ni = howmany(uap->nd, NBI);
 
 #define	getbits(name, x) \
 	if (uap->name) { \
-		u.u_error = copyin((caddr_t)uap->name, (caddr_t)&ibits[x], \
-		    sizeof (ibits[x])); \
+		u.u_error = copyin((caddr_t)uap->name, (caddr_t)ibits[x], \
+		    ni * sizeof(int)); \
 		if (u.u_error) \
 			goto done; \
-		ibits[x] &= mask; \
-	} else \
-		ibits[x] = 0;
+	}
 	getbits(in, 0);
 	getbits(ou, 1);
 	getbits(ex, 2);
@@ -288,7 +298,7 @@ select()
 retry:
 	ncoll = nselcoll;
 	u.u_procp->p_flag |= SSEL;
-	u.u_r.r_val1 = selscan(ibits, obits);
+	u.u_r.r_val1 = selscan(ibits, obits, uap->nd);
 	if (u.u_error || u.u_r.r_val1)
 		goto done;
 	s = spl6();
@@ -324,8 +334,8 @@ retry:
 done:
 #define	putbits(name, x) \
 	if (uap->name) { \
-		int error = copyout((caddr_t)&obits[x], (caddr_t)uap->name, \
-		    sizeof (obits[x])); \
+		int error = copyout((caddr_t)obits[x], (caddr_t)uap->name, \
+		    ni * sizeof(int)); \
 		if (error) \
 			u.u_error = error; \
 	}
@@ -353,17 +363,15 @@ unselect(p)
 	splx(s);
 }
 
-selscan(ibits, obits)
-	int *ibits, *obits;
+selscan(ibits, obits, nfd)
+	int (*ibits)[NI], (*obits)[NI];
 {
-	register int which, bits, i;
+	register int which, bits, i, j;
 	int flag;
 	struct file *fp;
 	int n = 0;
 
 	for (which = 0; which < 3; which++) {
-		bits = ibits[which];
-		obits[which] = 0;
 		switch (which) {
 
 		case 0:
@@ -375,16 +383,19 @@ selscan(ibits, obits)
 		case 2:
 			flag = 0; break;
 		}
-		while (i = ffs(bits)) {
-			bits &= ~(1<<(i-1));
-			fp = u.u_ofile[i-1];
-			if (fp == NULL) {
-				u.u_error = EBADF;
-				break;
-			}
-			if ((*fp->f_ops->fo_select)(fp, flag)) {
-				obits[which] |= (1<<(i-1));
-				n++;
+		for (i = 0; i < nfd; i += NBI) {
+			bits = ibits[which][i/NBI];
+			while ((j = ffs(bits)) && i + --j < nfd) {
+				bits &= ~(1 << j);
+				fp = u.u_ofile[i + j];
+				if (fp == NULL) {
+					u.u_error = EBADF;
+					break;
+				}
+				if ((*fp->f_ops->fo_select)(fp, flag)) {
+					sbit(obits[which], i + j);
+					n++;
+				}
 			}
 		}
 	}
