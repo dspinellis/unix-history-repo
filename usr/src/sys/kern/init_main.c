@@ -2,7 +2,7 @@
  * Copyright (c) 1982, 1986 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
- *	@(#)init_main.c	7.21 (Berkeley) %G%
+ *	@(#)init_main.c	7.22 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -62,6 +62,7 @@ main(firstaddr)
 	 * set up system process 0 (swapper)
 	 */
 	p = &proc[0];
+	bcopy("swapper", p->p_comm, sizeof ("swapper"));
 	p->p_p0br = u.u_pcb.pcb_p0br;
 	p->p_szpt = 1;
 	p->p_addr = uaddr(p);
@@ -204,6 +205,7 @@ main(firstaddr)
 	if (newproc(0)) {
 		proc[2].p_flag |= SLOAD|SSYS;
 		proc[2].p_dsize = u.u_dsize = nswbuf*CLSIZE*KLMAX; 
+		bcopy("pagedaemon", proc[2].p_comm, sizeof ("pagedaemon"));
 		pageout();
 		/*NOTREACHED*/
 	}
