@@ -21,7 +21,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)targ.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)targ.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 /*-
@@ -418,7 +418,7 @@ Targ_PrintType (type)
 	type &= ~tbit;
 
 	switch(tbit) {
-	    PRINTBIT(DONTCARE);
+	    PRINTBIT(OPTIONAL);
 	    PRINTBIT(USE);
 	    PRINTBIT(EXEC);
 	    PRINTBIT(IGNORE);

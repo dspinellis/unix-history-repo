@@ -19,7 +19,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)make.h	5.8 (Berkeley) %G%
+ *	@(#)make.h	5.9 (Berkeley) %G%
  */
 
 /*-
@@ -139,7 +139,7 @@ typedef struct GNode {
 				     * per line (::) */
 #define OP_OPMASK	(OP_DEPENDS|OP_FORCE|OP_DOUBLEDEP)
 
-#define OP_DONTCARE	0x00000008  /* Don't care if the target doesn't
+#define OP_OPTIONAL	0x00000008  /* Don't care if the target doesn't
 				     * exist and can't be created */
 #define OP_USE		0x00000010  /* Use associated commands for parents */
 #define OP_EXEC	  	0x00000020  /* Target is never out of date, but always

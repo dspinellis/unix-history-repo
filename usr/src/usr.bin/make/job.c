@@ -21,7 +21,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)job.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)job.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 /*-
@@ -801,9 +801,9 @@ Job_Touch (gn, silent)
     struct timeval times[2];	/* Times for utimes() call */
     struct stat attr;        /* Attributes of the file */
 
-    if (gn->type & (OP_JOIN|OP_USE|OP_EXEC|OP_DONTCARE)) {
+    if (gn->type & (OP_JOIN|OP_USE|OP_EXEC|OP_OPTIONAL)) {
 	/*
-	 * .JOIN, .USE, .ZEROTIME and .DONTCARE targets are "virtual" targets
+	 * .JOIN, .USE, .ZEROTIME and .OPTIONAL targets are "virtual" targets
 	 * and, as such, shouldn't really be created.
 	 */
 	return;
@@ -896,7 +896,7 @@ Job_CheckCommands (gn, abortProc)
 	     * given, we stop in our tracks, otherwise we just don't update
 	     * this node's parents so they never get examined. 
 	     */
-	    if (gn->type & OP_DONTCARE) {
+	    if (gn->type & OP_OPTIONAL) {
 		printf ("Can't figure out how to make %s (ignored)\n",
 			gn->name);
 	    } else if (keepgoing) {
