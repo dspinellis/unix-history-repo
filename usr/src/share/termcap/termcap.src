@@ -1,6 +1,6 @@
 # ------------------------
 #
-#	Termcap source file	@(#)termcap.src	5.20 (Berkeley) %G%
+#	Termcap source file	@(#)termcap.src	5.21 (Berkeley) %G%
 #	Kevin Layer, Berkeley
 #	Craig Leres, Berkeley
 #	Mark Horton, Berkeley
@@ -2071,7 +2071,7 @@ yf|t1061f|teleray 1061 with fast PROMs:\
 # Wyse 50 entry by Toni Guttman extended by Jeff Anton
 ye|w50|wyse50|Wyse 50:\
 	:al=\EE:am:bs:bt=\EI:cd=\EY:ce=\ET:cl=^Z:cm=\E=%+ %+ :co#80:\
-	:dc=\EW:dl=\ER:do=^J:ei=\Er:im=\Eq:is=\E`\:\200\EC\EDF\E0\E'\E(\EA21:\
+	:dc=\EW:dl=\ER:do=^J:ei=\Er:im=\Eq:is=\E`\072\200\EC\EDF\E0\E'\E(\EA21:\
 	:kd=^J:kl=^H:kr=^L:ku=^K:li#24:nd=^L:up=^K:us=\EG8:ue=\EG0:\
 	:so=\EG4:se=\EG0:
 #	:hs:ts=\Ef:fs=\Eg:	status line does not work with sysline
