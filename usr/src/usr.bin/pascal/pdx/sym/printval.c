@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)printval.c 1.6 %G%";
+static char sccsid[] = "@(#)printval.c 1.7 %G%";
 
 /*
  * Print out the value at the top of the stack using the given type.
@@ -26,10 +26,10 @@ SYM *s;
     if (s->class == REF) {
 	s = s->type;
     }
-    switch(s->class) {
+    switch (s->class) {
 	case ARRAY:
 	    t = rtype(s->type);
-	    if (t==t_char || (t->class==RANGE && t->type==t_char)) {
+	    if (t == t_char || (t->class == RANGE && t->type == t_char)) {
 		len = size(s);
 		sp -= len;
 		printf("'%.*s'", len, sp);
@@ -50,56 +50,31 @@ SYM *s;
 	case RANGE:
 	    if (s == t_real) {
 		prtreal(pop(double));
-	    } else if (s == t_char) {
-		printf("'%c'", pop(char));
-	    } else if (s == t_boolean) {
-		printf(popsmall(s) == TRUE ? "true" : "false");
 	    } else {
-		printf("%ld", popsmall(s));
+		printordinal(popsmall(s), rtype(s->type));
 	    }
 	    break;
 
 	case FILET:
-	case PTR: {
-	    ADDRESS addr;
-
-	    addr = pop(ADDRESS);
-	    if (addr == 0) {
+	case PTR:
+	    a = pop(ADDRESS);
+	    if (a == 0) {
 		printf("nil");
 	    } else {
-		printf("0%o", addr);
+		printf("0%o", a);
 	    }
 	    break;
-	}
 
 	case FIELD:
 	    error("missing record specification");
 	    break;
 
-	case SCAL: {
-	    int scalar;
-	    BOOLEAN found;
-
-	    scalar = popsmall(s);
-	    found = FALSE;
-	    for (t = s->chain; t != NIL; t = t->chain) {
-		if (t->symvalue.iconval == scalar) {
-		    printf("%s", t->symbol);
-		    found = TRUE;
-		    break;
-		}
-	    }
-	    if (!found) {
-		printf("(scalar = %d)", scalar);
-	    }
+	case SCAL:
+	    printordinal(popsmall(s), s);
 	    break;
-	}
 
 	case FPROC:
 	case FFUNC:
-	{
-	    ADDRESS a;
-
 	    a = fparamaddr(pop(long));
 	    t = whatblock(a);
 	    if (t == NIL) {
@@ -108,7 +83,6 @@ SYM *s;
 		printf("%s", t->symbol);
 	    }
 	    break;
-	}
 
 	default:
 	    if (s->class < BADUSE || s->class > VARNT) {
@@ -116,6 +90,39 @@ SYM *s;
 	    }
 	    error("don't know how to print a %s", classname(s));
 	    /* NOTREACHED */
+    }
+}
+
+/*
+ * Print out an ordinal value (either an integer, character, or
+ * an enumeration constant).
+ */
+
+printordinal(v, t)
+long v;
+SYM *t;
+{
+    BOOLEAN found;
+    SYM *c;
+    int iv;
+
+    iv = v;
+    if (t->class == SCAL) {
+	c = t->chain;
+	while (c != NIL && c->symvalue.iconval != iv) {
+	    c = c->chain;
+	}
+	if (c == NIL) {
+	    printf("(scalar = %d)", iv);
+	} else {
+	    printf("%s", c->symbol);
+	}
+    } else if (t == t_char) {
+	printf("'%c'", iv);
+    } else if (t == t_boolean) {
+	printf("%s", (iv == TRUE) ? "true" : "false");
+    } else {
+	printf("%ld", v);
     }
 }
 
