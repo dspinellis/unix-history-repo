@@ -151,6 +151,7 @@ tahoemath/Ksubf.s	optional fpe
 tahoevba/cy.c		optional yc device-driver
 tahoevba/dr.c		optional dr device-driver
 tahoevba/ik.c		optional ik device-driver
+tahoevba/mp.c		optional mp device-driver
 tahoevba/vba.c		optional vba device-driver
 tahoevba/vd.c		optional dk device-driver
 tahoevba/vx.c		optional vx device-driver
