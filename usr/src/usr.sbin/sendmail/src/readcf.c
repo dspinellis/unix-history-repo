@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readcf.c	8.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)readcf.c	8.12 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -349,7 +349,15 @@ readcf(cfname)
 			break;
 
 		  case 'S':		/* select rewriting set */
-			ruleset = atoi(&bp[1]);
+			for (p = &bp[1]; isascii(*p) && isspace(*p); p++)
+				continue;
+			if (!isascii(*p) || !isdigit(*p))
+			{
+				syserr("invalid argument to S line: \"%.20s\"", 
+					&bp[1]);
+				break;
+			}
+			ruleset = atoi(p);
 			if (ruleset >= MAXRWSETS || ruleset < 0)
 			{
 				syserr("bad ruleset %d (%d max)", ruleset, MAXRWSETS);
@@ -450,7 +458,15 @@ readcf(cfname)
 			break;
 
 		  case 'V':		/* configuration syntax version */
-			ConfigLevel = atoi(&bp[1]);
+			for (p = &bp[1]; isascii(*p) && isspace(*p); p++)
+				continue;
+			if (!isascii(*p) || !isdigit(*p))
+			{
+				syserr("invalid argument to V line: \"%.20s\"", 
+					&bp[1]);
+				break;
+			}
+			ConfigLevel = atoi(p);
 			if (ConfigLevel >= 5)
 			{
 				/* level 5 configs have short name in $w */
