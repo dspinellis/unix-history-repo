@@ -1,6 +1,6 @@
 # ------------------------
 #
-#	Termcap source file @(#)termcap.src	1.22	(Berkeley) %G%
+#	Termcap source file @(#)termcap.src	1.23	(Berkeley) %G%
 #	Kevin Layer, Berkeley
 #	Craig Leres, Berkeley
 #	Mark Horton, Berkeley
@@ -962,6 +962,11 @@ Nd|aaa-db|ann arbor ambassador 30/destructive backspace:\
 	:ti=\E[H\E[J\E[30;0;0;30p:te=\E7\E[60;0;0;30p\E8:li#30:\
 	:is=\E[60;0;0;30p\E[H\E[J\E[1Q\E[m\E[20l\E[>30h:le=\E[D:bc=\E[D:bs@:\
 	:tc=aaa-unk:
+N1|aa|annarbor|4080|ann arbor 4080:\
+	:cr=^M:do=^J:nl=^J:bl=^G:pt:ct=^\^P^P:st=^]^P1:\
+	:cm=^O%r%\066%.%>^S^L%+@:\
+	:co#80:li#40:le=^H:bs:cl=2^L:up=^N:nd=^_:ho=^K:am:\
+	:kb=^^:kd=^J:ku=^N:kl=^H:kr=^_:kh=^K:ma=^_ ^N^P:
 
 # # --------------------------------
 #
