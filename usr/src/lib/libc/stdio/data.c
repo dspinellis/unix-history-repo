@@ -1,8 +1,6 @@
 /* @(#)data.c	4.3 (Berkeley) %G% */
 #include <stdio.h>
 #include <sys/param.h>
-char	_sibuf[MAXBSIZE];
-char	_sobuf[MAXBSIZE];
 
 struct	_iobuf	_iob[_NFILE] ={
 	{ 0, NULL, NULL, NULL, _IOREAD, 0},

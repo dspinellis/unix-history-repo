@@ -1,4 +1,4 @@
-/* @(#)wbuf.c	4.6 (Berkeley) %G% */
+/* @(#)wbuf.c	4.7 (Berkeley) %G% */
 #include	<stdio.h>
 #include	<sys/types.h>
 #include	<sys/stat.h>
