@@ -76,9 +76,6 @@ miscfs/fdesc/fdesc_vnops.c	optional fdesc
 miscfs/fifofs/fifo_vnops.c	optional fifo
 miscfs/kernfs/kernfs_vfsops.c	optional kernfs
 miscfs/kernfs/kernfs_vnops.c	optional kernfs
-miscfs/lofs/lofs_subr.c	optional lofs
-miscfs/lofs/lofs_vfsops.c	optional lofs
-miscfs/lofs/lofs_vnops.c	optional lofs
 miscfs/nullfs/null_subr.c	optional nullfs
 miscfs/nullfs/null_vfsops.c	optional nullfs
 miscfs/nullfs/null_vnops.c	optional nullfs

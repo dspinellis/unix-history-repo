@@ -1,4 +1,4 @@
-#	@(#)files.newconf	8.8 (Berkeley) %G%
+#	@(#)files.newconf	8.9 (Berkeley) %G%
 
 # generic attributes
 define	disk
@@ -97,9 +97,6 @@ file	miscfs/fdesc/fdesc_vnops.c	fdesc
 file	miscfs/fifofs/fifo_vnops.c	fifo
 file	miscfs/kernfs/kernfs_vfsops.c	kernfs
 file	miscfs/kernfs/kernfs_vnops.c	kernfs
-file	miscfs/lofs/lofs_subr.c	lofs
-file	miscfs/lofs/lofs_vfsops.c	lofs
-file	miscfs/lofs/lofs_vnops.c	lofs
 file	miscfs/nullfs/null_subr.c	nullfs
 file	miscfs/nullfs/null_vfsops.c	nullfs
 file	miscfs/nullfs/null_vnops.c	nullfs
