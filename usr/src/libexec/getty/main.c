@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -130,10 +130,11 @@ main(argc, argv)
 	 * J. Gettys - MIT Project Athena.
 	 */
 	if (argc <= 2 || strcmp(argv[2], "-") == 0)
-		strcpy(ttyn, ttyname(0));
+	    strcpy(ttyn, ttyname(0));
 	else {
-		strcpy(ttyn, dev);
-		strncat(ttyn, argv[2], sizeof(ttyn)-sizeof(dev));
+	    strcpy(ttyn, dev);
+	    strncat(ttyn, argv[2], sizeof(ttyn)-sizeof(dev));
+	    if (strcmp(argv[0], "+") != 0) {
 		chown(ttyn, 0, 0);
 		chmod(ttyn, 0622);
 		/*
@@ -155,6 +156,7 @@ main(argc, argv)
 		dup(1);
 		dup(0);
 		signal(SIGHUP, SIG_DFL);
+	    }
 	}
 
 	gettable("default", defent, defstrs);
