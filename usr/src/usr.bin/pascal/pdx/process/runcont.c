@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)runcont.c 1.2 %G%";
+static char sccsid[] = "@(#)runcont.c 1.3 %G%";
 
 /*
  * Execution management.
@@ -16,7 +16,7 @@ static char sccsid[] = "@(#)runcont.c 1.2 %G%";
 #include "command.h"
 #include "process.rep"
 
-#define MAXNARGS 100		/* maximum number of arguments to RUN */
+#define MAXNARGS 100        /* maximum number of arguments to RUN */
 
 typedef char *String;
 
@@ -25,6 +25,7 @@ LOCAL int argc;
 LOCAL String argv[MAXNARGS];
 LOCAL String infile;
 LOCAL String outfile;
+LOCAL PROCESS pbuf;
 
 /*
  * This is a px-related kludge to deal with the possibility
@@ -37,8 +38,8 @@ LOCAL String realname;
 setargs(m, r)
 char *m, *r;
 {
-	mode = m;
-	realname = r;
+    mode = m;
+    realname = r;
 }
 
 /*
@@ -47,21 +48,21 @@ char *m, *r;
 
 arginit()
 {
-	infile = NIL;
-	outfile = NIL;
-#	if (isvaxpx)
-		argv[0] = mode;
-		argv[1] = objname;
-		if (option('t') && realname == NIL) {
-			argc = 2;
-		} else {
-			argv[2] = realname;
-			argc = 3;
-		}
-#	else
-		argv[0] = objname;
-		argc = 1;
-#	endif
+    infile = NIL;
+    outfile = NIL;
+#   if (isvaxpx)
+	argv[0] = mode;
+	argv[1] = objname;
+	if (option('t') && realname == NIL) {
+	    argc = 2;
+	} else {
+	    argv[2] = realname;
+	    argc = 3;
+	}
+#   else
+	argv[0] = objname;
+	argc = 1;
+#   endif
 }
 
 /*
@@ -71,10 +72,10 @@ arginit()
 newarg(arg)
 String arg;
 {
-	if (argc >= MAXNARGS) {
-		error("too many arguments to run");
-	}
-	argv[argc++] = arg;
+    if (argc >= MAXNARGS) {
+	error("too many arguments to run");
+    }
+    argv[argc++] = arg;
 }
 
 /*
@@ -84,10 +85,10 @@ String arg;
 inarg(filename)
 String filename;
 {
-	if (infile != NIL) {
-		error("multiple input redirects");
-	}
-	infile = filename;
+    if (infile != NIL) {
+	error("multiple input redirects");
+    }
+    infile = filename;
 }
 
 /*
@@ -98,10 +99,10 @@ String filename;
 outarg(filename)
 String filename;
 {
-	if (outfile != NIL) {
-		error("multiple output redirect");
-	}
-	outfile = filename;
+    if (outfile != NIL) {
+	error("multiple output redirect");
+    }
+    outfile = filename;
 }
 
 /*
@@ -111,9 +112,11 @@ String filename;
 
 initstart()
 {
-	arginit();
-	argv[argc] = NIL;
-	start(argv, infile, outfile);
+    arginit();
+    argv[argc] = NIL;
+    process = &pbuf;
+    initcache(process);
+    start(argv, infile, outfile);
 }
 
 /*
@@ -122,13 +125,13 @@ initstart()
 
 run()
 {
-	fixbps();
-	curline = 0;
-	argv[argc] = NIL;
-	start(argv, infile, outfile);
-	just_started = TRUE;
-	isstopped = FALSE;
-	cont();
+    fixbps();
+    curline = 0;
+    argv[argc] = NIL;
+    start(argv, infile, outfile);
+    just_started = TRUE;
+    isstopped = FALSE;
+    cont();
 }
 
 /*
@@ -143,35 +146,35 @@ typedef int INTFUNC();
 LOCAL INTFUNC *dbintr;
 LOCAL intr();
 
-#define succeeds	== TRUE
-#define fails		== FALSE
+#define succeeds    == TRUE
+#define fails       == FALSE
 
 cont()
 {
-	dbintr = signal(SIGINT, &intr);
-	if (just_started) {
-		just_started = FALSE;
+    dbintr = signal(SIGINT, intr);
+    if (just_started) {
+	just_started = FALSE;
+    } else {
+	if (!isstopped) {
+	    error("can't continue execution");
+	}
+	isstopped = FALSE;
+	step();
+    }
+    for (;;) {
+	if (single_stepping) {
+	    printnews();
 	} else {
-		if (!isstopped) {
-			error("can't continue execution");
-		}
-		isstopped = FALSE;
-		step();
+	    setallbps();
+	    resume();
+	    unsetallbps();
+	    if (bpact() fails) {
+		printstatus();
+	    }
 	}
-	for (;;) {
-		if (single_stepping) {
-			printnews();
-		} else {
-			setallbps();
-			resume();
-			unsetallbps();
-			if (bpact() fails) {
-				printstatus();
-			}
-		}
-		step();
-	}
-	/* NOTREACHED */
+	step();
+    }
+    /* NOTREACHED */
 }
 
 /*
@@ -186,10 +189,10 @@ cont()
 
 LOCAL intr()
 {
-	signal(SIGINT, &intr);
+    signal(SIGINT, intr);
 }
 
 fixintr()
 {
-	signal(SIGINT, &dbintr);
+    signal(SIGINT, dbintr);
 }
