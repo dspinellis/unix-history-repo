@@ -16,24 +16,14 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)strchr.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)strchr.c	5.5 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
-#ifdef notdef
-static char sccsid[] = "@(#)index.c	5.3 (Berkeley) 6/2/88";
-#endif
-
-#include <stdio.h>
+#include <string.h>
 
 char *
 strchr(p, ch)
-	register char *p, ch;
+	char *p, ch;
 {
-	for (;; ++p) {
-		if (*p == ch)
-			return(p);
-		if (!*p)
-			return((char *)NULL);
-	}
-	/* NOTREACHED */
+	return(index(p, ch));
 }
