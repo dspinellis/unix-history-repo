@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tn3270.c	1.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)tn3270.c	1.13 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -33,6 +33,9 @@ static char sccsid[] = "@(#)tn3270.c	1.12 (Berkeley) %G%";
 
 #include "../ctlr/screen.h"
 #include "../general/globals.h"
+
+#include "../telextrn.h"
+#include "../ctlr/externs.h"
 
 #if	defined(unix)
 char	tline[200];
@@ -166,7 +169,7 @@ DataToTerminal(buffer, count)
 register char	*buffer;		/* where the data is */
 register int	count;			/* how much to send */
 {
-    register int loop, c;
+    register int c;
     int origCount;
 
     origCount = count;
@@ -178,14 +181,14 @@ register int	count;			/* how much to send */
 
 	    FD_ZERO(&o);
 #endif	/* defined(unix) */
-	    ttyflush();
+	    ttyflush(0);
 	    while (TTYROOM() == 0) {
 #if	defined(unix)
 		FD_SET(tout, &o);
 		(void) select(tout+1, (fd_set *) 0, &o, (fd_set *) 0,
 						(struct timeval *) 0);
 #endif	/* defined(unix) */
-		ttyflush();
+		ttyflush(0);
 	    }
 	}
 	c = TTYROOM();
@@ -216,7 +219,7 @@ EmptyTerminal()
     if (TTYBYTES() == 0) {
 #if	defined(unix)
 	FD_SET(tout, &o);
-	(void) select(tout+1, (int *) 0, &o, (int *) 0,
+	(void) select(tout+1, (fd_set *) 0, &o, (fd_set *) 0,
 			(struct timeval *) 0);	/* wait for TTLOWAT */
 #endif	/* defined(unix) */
     } else {
@@ -224,7 +227,7 @@ EmptyTerminal()
 	    ttyflush(0);
 #if	defined(unix)
 	    FD_SET(tout, &o);
-	    (void) select(tout+1, (int *) 0, &o, (int *) 0,
+	    (void) select(tout+1, (fd_set *) 0, &o, (fd_set *) 0,
 				(struct timeval *) 0);	/* wait for TTLOWAT */
 #endif	/* defined(unix) */
 	}
@@ -341,6 +344,7 @@ int returnCode;
     exit(returnCode);
 }
 
+#if defined(MSDOS)
 void
 ExitPerror(string, returnCode)
 char *string;
@@ -350,6 +354,7 @@ int returnCode;
     perror(string);
     exit(returnCode);
 }
+#endif /* defined(MSDOS) */
 
 void
 SetIn3270()
@@ -430,16 +435,13 @@ settranscom(argc, argv)
 	int argc;
 	char *argv[];
 {
-	int i, len = 0;
+	int i;
 
 	if (argc == 1 && transcom) {
 	   transcom = 0;
 	}
 	if (argc == 1) {
 	   return;
-	}
-	for (i = 1; i < argc; ++i) {
-	    len += 1 + strlen(argv[1]);
 	}
 	transcom = tline;
 	(void) strcpy(transcom, argv[1]);

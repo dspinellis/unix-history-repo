@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)sys_bsd.c	1.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)sys_bsd.c	1.14 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -303,10 +303,10 @@ register int f;
 
 
 int
-NetClose(net)
-int	net;
+NetClose(fd)
+int	fd;
 {
-    return close(net);
+    return close(fd);
 }
 
 
@@ -383,10 +383,6 @@ doescape()
 void
 sys_telnet_init()
 {
-#if	defined(TN3270)
-    int myPid;
-#endif	/* defined(TN3270) */
-
     (void) signal(SIGINT, (int (*)())intr);
     (void) signal(SIGQUIT, (int (*)())intr2);
     (void) signal(SIGPIPE, (int (*)())deadpeer);
