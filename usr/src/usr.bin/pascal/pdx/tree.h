@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tree.h	5.1 (Berkeley) %G%
+ *	@(#)tree.h	5.2 (Berkeley) %G%
  */
 
 /*
@@ -27,9 +27,15 @@ typedef char STACK;
 
 #define WMASK			(sizeof(int) - 1)
 
+#ifdef tahoe
+#define push(type, value)	((*(type *)sp) = value, sp += (sizeof(type) + WMASK) & ~WMASK, value)
+#define	pop(type)		(sp -= (sizeof(type) + WMASK) & ~WMASK, (*((type *) sp)))
+#else
 #define push(type, value)	((type *) (sp += sizeof(type)))[-1] = (value)
 #define pop(type)		(*((type *) (sp -= sizeof(type))))
+#endif
 #define alignstack()		sp = (char *) (( ((int) sp) + WMASK)&~WMASK)
+#define downalignstack()	sp = (char *) (( ((int) sp))&~WMASK)
 
 STACK stack[];
 STACK *sp;
