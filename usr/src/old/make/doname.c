@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)doname.c	4.3 (Berkeley) 83/03/11";
+static	char *sccsid = "@(#)doname.c	4.4 (Berkeley) 84/11/28";
 #include "defs"
 
 /*  BASIC PROCEDURE.  RECURSIVE.  */
