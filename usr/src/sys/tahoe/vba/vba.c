@@ -1,4 +1,4 @@
-/*	vba.c	1.7	87/04/06	*/
+/*	vba.c	1.8	87/06/06	*/
 
 /*
  * Tahoe VERSAbus adapator support routines.
@@ -20,6 +20,7 @@
 #include "vmmac.h"
 #include "proc.h"
 #include "syslog.h"
+#include "malloc.h"
 
 #include "../tahoevba/vbavar.h"
 
@@ -43,7 +44,7 @@ vbainit(vb, xsize, flags)
 	n = roundup(xsize, NBPG);
 	vb->vb_bufsize = n;
 	if (vb->vb_rawbuf == 0)
-		vb->vb_rawbuf = calloc(n);
+		vb->vb_rawbuf = (caddr_t)malloc(n, M_DEVBUF, M_NOWAIT);
 	if ((int)vb->vb_rawbuf & PGOFSET)
 		panic("vbinit pgoff");
 	vb->vb_physbuf = vtoph((struct proc *)0, vb->vb_rawbuf);
