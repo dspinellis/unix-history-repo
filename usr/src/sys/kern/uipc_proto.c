@@ -1,4 +1,4 @@
-/*	uipc_proto.c	4.21	82/04/25	*/
+/*	uipc_proto.c	4.22	82/06/20	*/
 
 #include "../h/param.h"
 #include "../h/socket.h"
@@ -139,7 +139,6 @@ pfinit()
 {
 	register struct protosw *pr;
 
-COUNT(PFINIT);
 	for (pr = protoswLAST; pr >= protosw; pr--)
 		if (pr->pr_init)
 			(*pr->pr_init)();
@@ -155,7 +154,6 @@ pffindtype(family, type)
 {
 	register struct protosw *pr;
 
-COUNT(PFFINDTYPE);
 	if (family == 0)
 		return (0);
 	for (pr = protosw; pr <= protoswLAST; pr++)
@@ -173,7 +171,6 @@ pffindproto(family, protocol)
 {
 	register struct protosw *pr;
 
-COUNT(PFFINDPROTO);
 	if (family == 0)
 		return (0);
 	for (pr = protosw; pr <= protoswLAST; pr++)
@@ -187,7 +184,6 @@ pfctlinput(cmd, arg)
 	caddr_t arg;
 {
 	register struct protosw *pr;
-COUNT(PFCTLINPUT);
 
 	for (pr = protosw; pr <= protoswLAST; pr++)
 		if (pr->pr_ctlinput)
@@ -201,7 +197,6 @@ pfslowtimo()
 {
 	register struct protosw *pr;
 
-COUNT(PFSLOWTIMO);
 	for (pr = protoswLAST; pr >= protosw; pr--)
 		if (pr->pr_slowtimo)
 			(*pr->pr_slowtimo)();
@@ -211,7 +206,6 @@ pffasttimo()
 {
 	register struct protosw *pr;
 
-COUNT(PFSLOWTIMO);
 	for (pr = protoswLAST; pr >= protosw; pr--)
 		if (pr->pr_fasttimo)
 			(*pr->pr_fasttimo)();

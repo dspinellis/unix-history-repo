@@ -1,4 +1,4 @@
-/*	uipc_socket.c	4.41	82/06/14	*/
+/*	uipc_socket.c	4.42	82/06/20	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -38,7 +38,6 @@ socreate(aso, type, asp, asa, options)
 	register struct socket *so;
 	struct mbuf *m;
 	int pf, proto, error;
-COUNT(SOCREATE);
 
 	/*
 	 * Use process standard protocol/protocol family if none
@@ -96,7 +95,6 @@ sofree(so)
 	struct socket *so;
 {
 
-COUNT(SOFREE);
 	if (so->so_pcb || (so->so_state & SS_USERGONE) == 0)
 		return;
 	sbrelease(&so->so_snd);
@@ -117,7 +115,6 @@ soclose(so, exiting)
 {
 	int s = splnet();		/* conservative */
 
-COUNT(SOCLOSE);
 	if (so->so_pcb == 0)
 		goto discard;
 	if (exiting)
@@ -165,7 +162,6 @@ sostat(so, sb)
 	struct stat *sb;
 {
 
-COUNT(SOSTAT);
 	bzero((caddr_t)sb, sizeof (*sb));		/* XXX */
 	return (0);					/* XXX */
 }
@@ -180,7 +176,6 @@ soaccept(so, asa)
 	int s = splnet();
 	int error;
 
-COUNT(SOACCEPT);
 	if ((so->so_options & SO_ACCEPTCONN) == 0) {
 		error = EINVAL;			/* XXX */
 		goto bad;
@@ -208,7 +203,6 @@ soconnect(so, asa)
 	int s = splnet();
 	int error;
 
-COUNT(SOCONNECT);
 	if (so->so_state & (SS_ISCONNECTED|SS_ISCONNECTING)) {
 		error = EISCONN;
 		goto bad;
@@ -232,7 +226,6 @@ sodisconnect(so, asa)
 	int s = splnet();
 	int error;
 
-COUNT(SODISCONNECT);
 	if ((so->so_state & SS_ISCONNECTED) == 0) {
 		error = ENOTCONN;
 		goto bad;
@@ -264,7 +257,6 @@ sosend(so, asa)
 	register u_int len;
 	int error = 0, space, s;
 
-COUNT(SOSEND);
 	if (sosendallatonce(so) && u.u_count > so->so_snd.sb_hiwat)
 		return (EMSGSIZE);
 #ifdef notdef
@@ -359,7 +351,6 @@ soreceive(so, asa)
 	int eor, s, error = 0, cnt = u.u_count;
 	caddr_t base = u.u_base;
 
-COUNT(SORECEIVE);
 restart:
 	sblock(&so->so_rcv);
 	s = splnet();
@@ -468,7 +459,6 @@ soioctl(so, cmd, cmdp)
 	register caddr_t cmdp;
 {
 
-COUNT(SOIOCTL);
 	switch (cmd) {
 
 	case FIONBIO: {

@@ -1,4 +1,4 @@
-/*	uipc_pipe.c	4.12	82/06/14	*/
+/*	uipc_pipe.c	4.13	82/06/20	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -30,7 +30,6 @@ piconnect(wso, rso)
 	struct socket *wso, *rso;
 {
 
-COUNT(PICONNECT);
 	/* when we reserve memory this routine may fail */
 	wso->so_proto = rso->so_proto = &pipeproto;
 	wso->so_pcb = (caddr_t)rso;
@@ -57,7 +56,6 @@ piusrreq(so, req, m, addr)
 {
 	struct socket *so2 = (struct socket *)so->so_pcb;
 
-COUNT(PIUSRREQ);
 	switch (req) {
 
 	case PRU_ATTACH:
