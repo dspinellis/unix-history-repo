@@ -6,11 +6,16 @@
  * at Lawrence Berkeley Laboratory under DARPA contract BG 91-66 and
  * contributed to Berkeley.
  *
+ * All advertising materials mentioning features or use of this software
+ * must display the following acknowledgement:
+ *	This product includes software developed by the University of
+ *	California, Lawrence Berkeley Laboratory.
+ *
  * %sccs.include.redist.c%
  *
- *	@(#)disk.h	5.1 (Berkeley) %G%
+ *	@(#)disk.h	5.2 (Berkeley) %G%
  *
- * from: $Header: disk.h,v 1.1 92/07/10 07:13:43 torek Exp $ (LBL)
+ * from: $Header: disk.h,v 1.5 92/11/19 04:33:03 torek Exp $ (LBL)
  */
 
 /*
@@ -24,7 +29,7 @@ struct buf;
 struct dkdevice {
 	struct	device dk_dev;		/* base device */
 	struct	dkdevice *dk_next;	/* list of disks; not yet used */
-	int	dk_wpms;		/* xfer rate */
+	int	dk_bps;			/* xfer rate: bytes per second */
 	int	dk_bopenmask;		/* block devices open */
 	int	dk_copenmask;		/* character devices open */
 	int	dk_openmask;		/* composite (bopen|copen) */
@@ -44,9 +49,9 @@ struct dkdriver {
 	int	(*d_ioctl) __P((dev_t dev, int cmd, caddr_t data, int fflag,
 				struct proc *));
 	int	(*d_dump) __P((dev_t));
-#endif
 	void	(*d_start) __P((struct buf *, daddr_t));
 	int	(*d_mklabel) __P((struct dkdevice *));
+#endif
 };
 
 /* states */
