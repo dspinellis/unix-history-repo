@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)rm.c	4.19 (Berkeley) %G%";
+static char *sccsid = "@(#)rm.c	4.20 (Berkeley) %G%";
 
 /*
  * rm - for ReMoving files, directories & trees.
@@ -16,7 +16,7 @@ int	rflg;		/* -r recurse */
 
 int	errcode;	/* true if errors occured */
 
-char	*strcpy(), *malloc(), *realloc();
+char	*strcpy(), *malloc();
 
 main(argc, argv)
 	char *argv[];
