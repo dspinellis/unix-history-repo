@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)union_vfsops.c	1.8 (Berkeley) %G%
+ *	@(#)union_vfsops.c	1.9 (Berkeley) %G%
  */
 
 /*
@@ -40,9 +40,12 @@ union_mount(mp, path, data, ndp, p)
 {
 	int error = 0;
 	struct union_args args;
-	struct vnode *lowerrootvp;
-	struct vnode *upperrootvp;
+	struct vnode *lowerrootvp = NULLVP;
+	struct vnode *upperrootvp = NULLVP;
 	struct union_mount *um;
+	struct ucred *cred = 0;
+	char *cp;
+	int len;
 	u_int size;
 
 #ifdef UNION_DIAGNOSTIC
@@ -58,14 +61,35 @@ union_mount(mp, path, data, ndp, p)
 		 * 1. a way to convert between rdonly and rdwr mounts.
 		 * 2. support for nfs exports.
 		 */
-		return (EOPNOTSUPP);
+		error = EOPNOTSUPP;
+		goto bad;
 	}
+
+	/*
+	 * Take a copy of the process's credentials.  This isn't
+	 * quite right since the euid will always be zero and we
+	 * want to get the "real" users credentials.  So fix up
+	 * the uid field after taking the copy.
+	 */
+	cred = crdup(p->p_ucred);
+	cred->cr_uid = p->p_cred->p_ruid;
+
+	/*
+	 * Ensure the *real* user has write permission on the
+	 * mounted-on directory.  This allows the mount_union
+	 * command to be made setuid root so allowing anyone
+	 * to do union mounts onto any directory on which they
+	 * have write permission.
+	 */
+	error = VOP_ACCESS(mp->mnt_vnodecovered, VWRITE, cred, p);
+	if (error)
+		goto bad;
 
 	/*
 	 * Get argument
 	 */
 	if (error = copyin(data, (caddr_t)&args, sizeof(struct union_args)))
-		return (error);
+		goto bad;
 
 	lowerrootvp = mp->mnt_vnodecovered;
 	VREF(lowerrootvp);
@@ -75,18 +99,16 @@ union_mount(mp, path, data, ndp, p)
 	 */
 	NDINIT(ndp, LOOKUP, FOLLOW|WANTPARENT,
 	       UIO_USERSPACE, args.target, p);
-	if (error = namei(ndp)) {
-		vrele(lowerrootvp);
-		return (error);
-	}
+	if (error = namei(ndp))
+		goto bad;
+
 	upperrootvp = ndp->ni_vp;
 	vrele(ndp->ni_dvp);
 	ndp->ni_dvp = NULL;
 
 	if (upperrootvp->v_type != VDIR) {
-		vrele(lowerrootvp);
-		vrele(upperrootvp);
-		return (EINVAL);
+		error = EINVAL;
+		goto bad;
 	}
 	
 	um = (struct union_mount *) malloc(sizeof(struct union_mount),
@@ -95,17 +117,36 @@ union_mount(mp, path, data, ndp, p)
 	/*
 	 * Keep a held reference to the target vnodes.
 	 * They are vrele'd in union_unmount.
+	 *
+	 * Depending on the _BELOW flag, the filesystems are
+	 * viewed in a different order.  In effect, this is the
+	 * same as providing a mount under option to the mount syscall.
 	 */
-	um->um_lowervp = lowerrootvp;
-	um->um_uppervp = upperrootvp;
-	/*
-	 * Take a copy of the process's credentials.  This isn't
-	 * quite right since the euid will always be zero and we
-	 * want to get the "real" users credentials.  So fix up
-	 * the uid field after taking the copy.
-	 */
-	um->um_cred = crdup(p->p_ucred);
-	um->um_cred->cr_uid = p->p_cred->p_ruid;
+
+	switch (args.mntflags & UNMNT_OPMASK) {
+	case UNMNT_ABOVE:
+		um->um_lowervp = lowerrootvp;
+		um->um_uppervp = upperrootvp;
+		break;
+
+	case UNMNT_BELOW:
+		um->um_lowervp = upperrootvp;
+		um->um_uppervp = lowerrootvp;
+		break;
+
+	case UNMNT_REPLACE:
+		vrele(lowerrootvp);
+		lowerrootvp = NULLVP;
+		um->um_uppervp = upperrootvp;
+		um->um_lowervp = lowerrootvp;
+		break;
+
+	default:
+		error = EINVAL;
+		goto bad;
+	}
+
+	um->um_cred = cred;
 	um->um_cmode = UN_DIRMODE &~ p->p_fd->fd_cmask;
 
 	/*
@@ -117,8 +158,9 @@ union_mount(mp, path, data, ndp, p)
 	 * flag implies that some of the files might be stored locally
 	 * then you will want to change the conditional.
 	 */
-	if ((lowerrootvp->v_mount->mnt_flag & MNT_LOCAL) &&
-	    (upperrootvp->v_mount->mnt_flag & MNT_LOCAL))
+	if (((um->um_lowervp == NULLVP) ||
+	     (um->um_lowervp->v_mount->mnt_flag & MNT_LOCAL)) &&
+	    (um->um_uppervp->v_mount->mnt_flag & MNT_LOCAL))
 		mp->mnt_flag |= MNT_LOCAL;
 
 	/*
@@ -128,21 +170,47 @@ union_mount(mp, path, data, ndp, p)
 	 * mount of the underlying filesystem to go from rdonly to rdwr
 	 * will leave the unioned view as read-only.
 	 */
-	mp->mnt_flag |= (upperrootvp->v_mount->mnt_flag & MNT_RDONLY);
+	mp->mnt_flag |= (um->um_uppervp->v_mount->mnt_flag & MNT_RDONLY);
 	mp->mnt_data = (qaddr_t) um;
 	getnewfsid(mp, MOUNT_UNION);
 
 	(void) copyinstr(path, mp->mnt_stat.f_mntonname, MNAMELEN - 1, &size);
 	bzero(mp->mnt_stat.f_mntonname + size, MNAMELEN - size);
-	bcopy("union:", mp->mnt_stat.f_mntfromname, 6);
-	(void) copyinstr(args.target, mp->mnt_stat.f_mntfromname + 6,
-			MNAMELEN - 1 - 6, &size);
-	bzero(mp->mnt_stat.f_mntfromname + 6 + size, MNAMELEN - 6 - size);
+
+	switch (args.mntflags & UNMNT_OPMASK) {
+	case UNMNT_ABOVE:
+		cp = "un-above:";
+		break;
+	case UNMNT_BELOW:
+		cp = "un-below:";
+		break;
+	case UNMNT_REPLACE:
+		cp = "replace:";
+		break;
+	}
+	len = strlen(cp);
+	bcopy(cp, mp->mnt_stat.f_mntfromname, len);
+
+	cp = mp->mnt_stat.f_mntfromname + len;
+	len = MNAMELEN - len;
+
+	(void) copyinstr(args.target, cp, len - 1, &size);
+	bzero(cp + size, len - size);
+
 #ifdef UNION_DIAGNOSTIC
-	printf("union_mount: upper %s, lower at %s\n",
+	printf("union_mount: from %s, on %s\n",
 		mp->mnt_stat.f_mntfromname, mp->mnt_stat.f_mntonname);
 #endif
 	return (0);
+
+bad:
+	if (cred)
+		crfree(cred);
+	if (upperrootvp)
+		vrele(upperrootvp);
+	if (lowerrootvp)
+		vrele(lowerrootvp);
+	return (error);
 }
 
 /*
@@ -203,7 +271,8 @@ union_unmount(mp, mntflags, p)
 	/*
 	 * Discard references to upper and lower target vnodes.
 	 */
-	vrele(um->um_lowervp);
+	if (um->um_lowervp)
+		vrele(um->um_lowervp);
 	vrele(um->um_uppervp);
 	crfree(um->um_cred);
 	/*
@@ -240,7 +309,8 @@ union_root(mp, vpp)
 	 * Return locked reference to root.
 	 */
 	VREF(um->um_uppervp);
-	VREF(um->um_lowervp);
+	if (um->um_lowervp)
+		VREF(um->um_lowervp);
 	error = union_allocvp(vpp, mp,
 			      (struct vnode *) 0,
 			      (struct vnode *) 0,
@@ -250,7 +320,8 @@ union_root(mp, vpp)
 
 	if (error) {
 		vrele(um->um_uppervp);
-		vrele(um->um_lowervp);
+		if (um->um_lowervp)
+			vrele(um->um_lowervp);
 	} else {
 		(*vpp)->v_flag |= VROOT;
 	}
@@ -289,9 +360,11 @@ union_statfs(mp, sbp, p)
 
 	bzero(&mstat, sizeof(mstat));
 
-	error = VFS_STATFS(um->um_lowervp->v_mount, &mstat, p);
-	if (error)
-		return (error);
+	if (um->um_lowervp) {
+		error = VFS_STATFS(um->um_lowervp->v_mount, &mstat, p);
+		if (error)
+			return (error);
+	}
 
 	/* now copy across the "interesting" information and fake the rest */
 #if 0
