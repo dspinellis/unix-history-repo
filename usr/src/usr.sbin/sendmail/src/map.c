@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)map.c	8.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)map.c	8.19 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -408,9 +408,22 @@ ndbm_map_open(map, mode)
 		return FALSE;
 	}
 	map->map_db1 = (void *) dbm;
-	if (mode == O_RDONLY && bitset(MF_ALIAS, map->map_mflags))
-		if (!aliaswait(map, ".pag", TRUE))
+	if (mode == O_RDONLY)
+	{
+		if (bitset(MF_ALIAS, map->map_mflags) &&
+		    !aliaswait(map, ".pag", TRUE))
 			return FALSE;
+	}
+	else
+	{
+		int fd;
+
+		/* exclusive lock for duration of rebuild */
+		fd = dbm_dirfno((DBM *) map->map_db1);
+		if (fd >= 0 && !bitset(MF_LOCKED, map->map_mflags) &&
+		    lockfile(fd, map->map_file, ".dir", LOCK_EX))
+			map->map_mflags |= MF_LOCKED;
+	}
 	if (fstat(dbm_dirfno((DBM *) map->map_db1), &st) >= 0)
 		map->map_mtime = st.st_mtime;
 	return TRUE;
@@ -1211,6 +1224,9 @@ impl_map_open(map, mode)
 #if defined(NEWDB) || defined(NDBM)
 	if (Verbose)
 		message("WARNING: cannot open alias database %s", map->map_file);
+#else
+	if (mode != O_RDONLY)
+		usrerr("Cannot rebuild aliases: no database format defined");
 #endif
 
 	return stab_map_open(map, mode);
