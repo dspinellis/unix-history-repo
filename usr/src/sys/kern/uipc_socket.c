@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)uipc_socket.c	7.11 (Berkeley) %G%
+ *	@(#)uipc_socket.c	7.12 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -381,7 +381,7 @@ nopages:
 				 * For datagram protocols, leave room
 				 * for protocol headers in first mbuf.
 				 */
-				if (atomic && len < mlen)
+				if (atomic && top == 0 && len < mlen)
 					MH_ALIGN(m, len);
 			}
 			error = uiomove(mtod(m, caddr_t), len, UIO_WRITE, uio);
