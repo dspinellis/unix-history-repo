@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if_ec.c	6.11 (Berkeley) %G%
+ *	@(#)if_ec.c	6.12 (Berkeley) %G%
  */
 
 #include "ec.h"
@@ -27,12 +27,14 @@
 #include "../net/netisr.h"
 #include "../net/route.h"
 
+#ifdef	BBNNET
+#define	INET
+#endif
 #ifdef INET
 #include "../netinet/in.h"
 #include "../netinet/in_systm.h"
 #include "../netinet/in_var.h"
 #include "../netinet/ip.h"
-#include "../netinet/ip_var.h"
 #include "../netinet/if_ether.h"
 #endif
 
@@ -512,12 +514,16 @@ ecread(unit)
 	 * information to be at the front, but we still have to drop
 	 * the type and length which are at the front of any trailer data.
 	 */
-	m = ecget(ecbuf, len, off);
+	m = ecget(ecbuf, len, off, &es->es_if);
 	if (m == 0)
 		goto setup;
 	if (off) {
+		struct ifnet *ifp;
+
+		ifp = *(mtod(m, struct ifnet **));
 		m->m_off += 2 * sizeof (u_short);
 		m->m_len -= 2 * sizeof (u_short);
+		*(mtod(m, struct ifnet **)) = ifp;
 	}
 	switch (ec->ether_type) {
 
@@ -758,9 +764,10 @@ ecput(ecbuf, m)
  * mbufs have even lengths.
  */
 struct mbuf *
-ecget(ecbuf, totlen, off0)
+ecget(ecbuf, totlen, off0, ifp)
 	u_char *ecbuf;
 	int totlen, off0;
+	struct ifnet *ifp;
 {
 	register struct mbuf *m;
 	struct mbuf *top = 0, **mp = &top;
@@ -781,12 +788,14 @@ ecget(ecbuf, totlen, off0)
 				sizeof (struct ether_header) + off;
 		} else
 			len = totlen;
-		if (len >= CLBYTES) {
+		if (ifp)
+			len += sizeof(ifp);
+		if (len >= NBPG) {
 			struct mbuf *p;
 
 			MCLGET(p, 1);
 			if (p != 0) {
-				m->m_len = len = CLBYTES;
+				m->m_len = len = MIN(len, CLBYTES);
 				m->m_off = (int)p - (int)m;
 			} else {
 				m->m_len = len = MIN(MLEN, len);
@@ -797,6 +806,15 @@ ecget(ecbuf, totlen, off0)
 			m->m_off = MMINOFF;
 		}
 		mcp = mtod(m, u_char *);
+		if (ifp) {
+			/*
+			 * Prepend interface pointer to first mbuf.
+			 */
+			*(mtod(m, struct ifnet **)) = ifp;
+			mcp += sizeof(ifp);
+			len -= sizeof(ifp);
+			ifp = (struct ifnet *)0;
+		}
 		if (words = (len >> 1)) {
 			register u_short *to, *from;
 
@@ -897,7 +915,7 @@ int unit;
 	register struct ecdevice *addr = (struct ecdevice *)ui->ui_addr;
 	register char nibble;
 	register int i, j;
-	char *cp;
+
 	/*
 	 * Use the ethernet address supplied
 	 * NOte that we do a UECLR here, so the recieve buffers
