@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rwhod.c	4.9 83/05/05";
+static char sccsid[] = "@(#)rwhod.c	4.10 83/05/09";
 #endif
 
 #include <sys/types.h>
@@ -155,6 +155,8 @@ main()
 			continue;
 		}
 #endif
+		if (wd.wd_vers != WHODVERSION)
+			continue;
 		if (wd.wd_type != WHODTYPE_STATUS)
 			continue;
 		if (!verify(wd.wd_hostname)) {
