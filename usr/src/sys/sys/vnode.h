@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vnode.h	8.1 (Berkeley) %G%
+ *	@(#)vnode.h	8.2 (Berkeley) %G%
  */
 
 #include <sys/queue.h>
@@ -181,7 +181,7 @@ void	vref __P((struct vnode *));
 /*
  * Global vnode data.
  */
-extern	struct vnode *rootdir;		/* root (i.e. "/") vnode */
+extern	struct vnode *rootvnode;	/* root (i.e. "/") vnode */
 extern	int desiredvnodes;		/* number of vnodes desired */
 extern	struct vattr va_null;		/* predefined null vattr structure */
 

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_ihash.c	8.1 (Berkeley) %G%
+ *	@(#)ufs_ihash.c	8.2 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -22,7 +22,7 @@
  */
 struct inode **ihashtbl;
 u_long	ihash;		/* size of hash table - 1 */
-#define	INOHASH(dev, ino)	(((dev) + (ino)) & ihash)
+#define	INOHASH(device, inum)	(((device) + (inum)) & ihash)
 
 /*
  * Initialize inode hash table.
@@ -35,53 +35,48 @@ ufs_ihashinit()
 }
 
 /*
- * Use the dev/ino pair to find the incore inode, and return a pointer to it.
- * If it is in core, return it, even if it is locked.
+ * Use the device/inum pair to find the incore inode, and return a pointer
+ * to it. If it is in core, return it, even if it is locked.
  */
 struct vnode *
-ufs_ihashlookup(dev, ino)
-	dev_t dev;
-	ino_t ino;
+ufs_ihashlookup(device, inum)
+	dev_t device;
+	ino_t inum;
 {
 	register struct inode **ipp, *ip;
 
-	ipp = &ihashtbl[INOHASH(dev, ino)];
-loop:
-	for (ip = *ipp; ip; ip = ip->i_next) {
-		if (ino != ip->i_number || dev != ip->i_dev)
-			continue;
-		return (ITOV(ip));
-	}
+	ipp = &ihashtbl[INOHASH(device, inum)];
+	for (ip = *ipp; ip; ip = ip->i_next)
+		if (inum == ip->i_number && device == ip->i_dev)
+			return (ITOV(ip));
 	return (NULL);
 }
 
 /*
- * Use the dev/ino pair to find the incore inode, and return a pointer to it.
- * If it is in core, but locked, wait for it.
+ * Use the device/inum pair to find the incore inode, and return a pointer
+ * to it. If it is in core, but locked, wait for it.
  */
 struct vnode *
-ufs_ihashget(dev, ino)
-	dev_t dev;
-	ino_t ino;
+ufs_ihashget(device, inum)
+	dev_t device;
+	ino_t inum;
 {
 	register struct inode **ipp, *ip;
 	struct vnode *vp;
 
-	ipp = &ihashtbl[INOHASH(dev, ino)];
-loop:
-	for (ip = *ipp; ip; ip = ip->i_next) {
-		if (ino != ip->i_number || dev != ip->i_dev)
-			continue;
-		if ((ip->i_flag & ILOCKED) != 0) {
-			ip->i_flag |= IWANT;
-			sleep((caddr_t)ip, PINOD);
-			goto loop;
+	ipp = &ihashtbl[INOHASH(device, inum)];
+retry:	for (ip = *ipp; ip != NULL; ip = ip->i_next)
+		if (inum == ip->i_number && device == ip->i_dev) {
+			if (ip->i_flag & ILOCKED) {
+				ip->i_flag |= IWANT;
+				sleep(ip, PINOD);
+				goto retry;
+			}
+			vp = ITOV(ip);
+			if (vget(vp))
+				goto retry;
+			return (vp);
 		}
-		vp = ITOV(ip);
-		if (vget(vp))
-			goto loop;
-		return (vp);
-	}
 	return (NULL);
 }
 

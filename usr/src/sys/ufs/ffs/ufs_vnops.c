@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_vnops.c	8.1 (Berkeley) %G%
+ *	@(#)ufs_vnops.c	8.2 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -375,15 +375,15 @@ ufs_chmod(vp, mode, cred, p)
 	    (error = suser(cred, &p->p_acflag)))
 		return (error);
 	if (cred->cr_uid) {
-		if (vp->v_type != VDIR && (mode & ISVTX))
+		if (vp->v_type != VDIR && (mode & S_ISTXT))
 			return (EFTYPE);
 		if (!groupmember(ip->i_gid, cred) && (mode & ISGID))
 			return (EPERM);
 	}
-	ip->i_mode &= ~07777;
-	ip->i_mode |= mode & 07777;
+	ip->i_mode &= ~ALLPERMS;
+	ip->i_mode |= mode & ALLPERMS;
 	ip->i_flag |= ICHG;
-	if ((vp->v_flag & VTEXT) && (ip->i_mode & ISVTX) == 0)
+	if ((vp->v_flag & VTEXT) && (ip->i_mode & S_ISTXT) == 0)
 		(void) vnode_pager_uncache(vp);
 	return (0);
 }
@@ -567,11 +567,6 @@ ufs_seek(ap)
 	return (0);
 }
 
-/*
- * ufs remove
- * Hard to avoid races here, especially
- * in unlinking directories.
- */
 int
 ufs_remove(ap)
 	struct vop_remove_args /* {
@@ -1049,7 +1044,7 @@ abortit:
 		 * otherwise the destination may not be changed (except by
 		 * root). This implements append-only directories.
 		 */
-		if ((dp->i_mode & ISVTX) && tcnp->cn_cred->cr_uid != 0 &&
+		if ((dp->i_mode & S_ISTXT) && tcnp->cn_cred->cr_uid != 0 &&
 		    tcnp->cn_cred->cr_uid != dp->i_uid &&
 		    xp->i_uid != tcnp->cn_cred->cr_uid) {
 			error = EPERM;

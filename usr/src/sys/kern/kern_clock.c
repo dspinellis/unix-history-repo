@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_clock.c	8.1 (Berkeley) %G%
+ *	@(#)kern_clock.c	8.2 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -211,67 +211,87 @@ softclock()
 }
 
 /*
- * Arrange that (*func)(arg) is called in t/hz seconds.
+ * timeout --
+ *	Execute a function after a specified length of time.
+ *
+ * untimeout --
+ *	Cancel previous timeout function call.
+ *
+ *	See AT&T BCI Driver Reference Manual for specification.  This
+ *	implementation differs from that one in that no identification
+ *	value is returned from timeout, rather, the original arguments
+ *	to timeout are used to identify entries for untimeout.
  */
 void
-timeout(func, arg, t)
-	void (*func) __P((void *));
+timeout(ftn, arg, ticks)
+	void (*ftn) __P((void *));
 	void *arg;
-	register int t;
+	register int ticks;
 {
-	register struct callout *p1, *p2, *pnew;
+	register struct callout *new, *p, *t;
 	register int s;
 
+	if (ticks <= 0)
+		ticks = 1;
+
+	/* Lock out the clock. */
 	s = splhigh();
-	if (t <= 0)
-		t = 1;
-	pnew = callfree;
-	if (pnew == NULL)
-		panic("timeout table overflow");
-	callfree = pnew->c_next;
-	pnew->c_arg = arg;
-	pnew->c_func = func;
-	for (p1 = &calltodo; (p2 = p1->c_next) && p2->c_time < t; p1 = p2)
-		if (p2->c_time > 0)
-			t -= p2->c_time;
-	p1->c_next = pnew;
-	pnew->c_next = p2;
-	pnew->c_time = t;
-	if (p2)
-		p2->c_time -= t;
+
+	/* Fill in the next free callout structure. */
+	if (callfree == NULL)
+		panic("timeout table full");
+	new = callfree;
+	callfree = new->c_next;
+	new->c_arg = arg;
+	new->c_func = ftn;
+
+	/*
+	 * The time for each event is stored as a difference from the time
+	 * of the previous event on the queue.  Walk the queue, correcting
+	 * the ticks argument for queue entries passed.  Correct the ticks
+	 * value for the queue entry immediately after the insertion point
+	 * as well.
+	 */
+	for (p = &calltodo;
+	    (t = p->c_next) != NULL && ticks > t->c_time; p = t)
+		ticks -= t->c_time;
+	new->c_time = ticks;
+	if (t != NULL)
+		t->c_time -= ticks;
+
+	/* Insert the new entry into the queue. */
+	p->c_next = new;
+	new->c_next = t;
 	splx(s);
 }
 
-/*
- * untimeout is called to remove a function timeout call
- * from the callout structure.
- */
 void
-untimeout(func, arg)
-	void (*func) __P((void *));
+untimeout(ftn, arg)
+	void (*ftn) __P((void *));
 	void *arg;
 {
-	register struct callout *p1, *p2;
+	register struct callout *p, *t;
 	register int s;
 
 	s = splhigh();
-	for (p1 = &calltodo; (p2 = p1->c_next) != NULL; p1 = p2) {
-		if (p2->c_func == func && p2->c_arg == arg) {
-			if (p2->c_next && p2->c_time > 0)
-				p2->c_next->c_time += p2->c_time;
-			p1->c_next = p2->c_next;
-			p2->c_next = callfree;
-			callfree = p2;
+	for (p = &calltodo; (t = p->c_next) != NULL; p = t)
+		if (t->c_func == ftn && t->c_arg == arg) {
+			/* Increment next entry's tick count. */
+			if (t->c_next && t->c_time > 0)
+				t->c_next->c_time += t->c_time;
+
+			/* Move entry from callout queue to callfree queue. */
+			p->c_next = t->c_next;
+			t->c_next = callfree;
+			callfree = t;
 			break;
 		}
-	}
 	splx(s);
 }
 
 /*
- * Compute number of hz until specified time.
- * Used to compute third argument to timeout() from an
- * absolute time.
+ * Compute number of hz until specified time.  Used to
+ * compute third argument to timeout() from an absolute time.
  */
 int
 hzto(tv)
@@ -449,7 +469,7 @@ statclock(frame)
 		if (++p->p_cpu == 0)
 			p->p_cpu--;
 		if ((p->p_cpu & 3) == 0) {
-			setpri(p);
+			resetpriority(p);
 			if (p->p_pri >= PUSER)
 				p->p_pri = p->p_usrpri;
 		}
