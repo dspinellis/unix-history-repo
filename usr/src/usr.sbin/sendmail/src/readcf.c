@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)readcf.c	3.54		%G%);
+SCCSID(@(#)readcf.c	3.55		%G%);
 
 /*
 **  READCF -- read control file.
@@ -60,6 +60,7 @@ readcf(cfname, safe)
 	extern char **copyplist();
 	char exbuf[MAXLINE];
 	extern char *fgetfolded();
+	extern char *munchstring();
 
 	cf = fopen(cfname, "r");
 	if (cf == NULL)
@@ -132,7 +133,7 @@ readcf(cfname, safe)
 			break;
 
 		  case 'D':		/* macro definition */
-			define(buf[1], newstr(&buf[2]), CurEnv);
+			define(buf[1], newstr(munchstring(&buf[2])), CurEnv);
 			break;
 
 		  case 'H':		/* required header line */
