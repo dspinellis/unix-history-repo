@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)1.t	6.9 (Berkeley) %G%
+.\"	@(#)1.t	6.10 (Berkeley) %G%
 .\"
 .ds lq ``
 .ds rq ''
@@ -20,9 +20,9 @@ version of UNIX on your system.
 The filesystem format is compatible with \*(Ps
 and it will only be necessary for you to do a full bootstrap
 procedure if you are installing the release on a new machine.
-The object file formats are completely different in the System V releases.
-Thus, the most straightforward procedure for upgrading a System V
-system is to do a full bootstrap.
+The object file formats are completely different from the System
+V release, so the most straightforward procedure for upgrading
+a System V system is to do a full bootstrap.
 .PP
 The full bootstrap procedure
 is outlined in section 2; the process starts with copying a filesystem
@@ -32,17 +32,17 @@ system binaries and sources from the archives on the tape(s).
 .PP
 The technique for upgrading a \*(Ps system is described
 in section 3 of this document.
-The upgrade procedure involves extracting a new set of system binaries
+The upgrade procedure involves extracting system binaries
 onto new root and
 .Pn /usr
-filesystems and local
-configuration files are merged into the new system.
+filesystems and merging local
+configuration files into the new system.
 User filesystems may be upgraded in place.
 Most \*(Ps binaries may be used with \*(4B in the course
 of the conversion.
 It is desirable to recompile local sources after the conversion,
 as the new compiler (GCC) provides superior code optimization.
-Consult section 3.5 for a description of the differences
+Consult section 3.5 for a description of some of the differences
 between \*(Ps and \*(4B.
 .NH 2
 Distribution format
