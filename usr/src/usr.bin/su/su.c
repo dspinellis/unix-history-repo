@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)su.c	5.23 (Berkeley) %G%";
+static char sccsid[] = "@(#)su.c	5.24 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -261,7 +261,7 @@ kerberos(username, user, uid)
 	u_long faddr;
 	char lrealm[REALM_SZ], krbtkfile[MAXPATHLEN];
 	char hostname[MAXHOSTNAMELEN], savehost[MAXHOSTNAMELEN];
-	char *ontty();
+	char *ontty(), *krb_get_phost();
 
 	if (krb_get_lrealm(lrealm, 1) != KSUCCESS) {
 		(void)fprintf(stderr, "su: couldn't get local realm.\n");

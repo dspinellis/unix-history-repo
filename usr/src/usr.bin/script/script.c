@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)script.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)script.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -50,7 +50,7 @@ main(argc, argv)
 	extern char *optarg;
 	extern int optind;
 	int ch;
-	int finish();
+	void finish();
 	char *getenv();
 
 	while ((ch = getopt(argc, argv, "a")) != EOF)
@@ -116,13 +116,14 @@ doinput()
 
 #include <sys/wait.h>
 
+void
 finish()
 {
 	union wait status;
 	register int pid;
 	register int die = 0;
 
-	while ((pid = wait3(&status, WNOHANG, 0)) > 0)
+	while ((pid = wait3((int *)&status, WNOHANG, 0)) > 0)
 		if (pid == child)
 			die = 1;
 

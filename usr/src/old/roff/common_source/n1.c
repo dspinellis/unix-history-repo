@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)n1.c	4.11 %G%";
+static char sccsid[] = "@(#)n1.c	4.12 %G%";
 #endif lint
 
 #include "tdef.h"
@@ -49,7 +49,6 @@ extern char *ibufp;
 extern char *xbufp;
 extern char *eibuf;
 extern char *xeibuf;
-extern int cbuf[NC];
 extern int *cp;
 extern int *vlist;
 extern int nx;
@@ -154,7 +153,7 @@ char **argv;
 {
 	char *p, *q;
 	register i, j;
-	extern catch(), fpecatch(), kcatch();
+	extern void catch(), fpecatch(), kcatch();
 
 	signal(SIGHUP,catch);
 	if(signal(SIGINT,catch) == SIG_IGN){
@@ -318,16 +317,19 @@ lt:
 	text();
 	goto loop;
 }
+void
 catch(){
 /*
 	prstr("Interrupt\n");
 */
 	done3(01);
 }
+void
 fpecatch(){
 	prstrfl("Floating Exception.\n");
 	signal(SIGFPE,fpecatch);
 }
+void
 kcatch(){
 	signal(SIGTERM,SIG_IGN);
 	done3(01);
@@ -424,13 +426,14 @@ char *a;
 mesg(f)
 int f;
 {
+	struct stat cb;
 	static int mode;
 
 	if (ttyp==0)
 		return;
 	if(!f){
-		stat(ttyp,cbuf);
-		mode = ((struct stat *)(cbuf))->st_mode;
+		stat(ttyp,&cb);
+		mode = (cb.st_mode);
 		chmod(ttyp,mode & ~022);
 	}else{
 		chmod(ttyp,mode);
