@@ -105,6 +105,8 @@
 #define _maxx   maxx
 #define _maxy   maxy
 
+#define _tty __baset
+
 #endif /* _CURSES_PRIVATE */
 
 extern char	 GT;			/* Gtty indicates tabs. */
@@ -192,8 +194,10 @@ typedef struct __window {		/* Window structure. */
 extern WINDOW	*curscr;		/* Current screen. */
 extern WINDOW	*stdscr;		/* Standard screen. */
 
-extern struct termios __orig_termios;	/* Terminal state before curses */
-extern struct termios __baset;		/* Our base terminal state */
+typedef struct termios SGTTY;
+
+extern SGTTY          __orig_termios;   /* Terminal state before curses */
+extern SGTTY          __baset;          /* Our base terminal state */
 extern int __tcaction;			/* If terminal hardware set. */
 
 extern int	 COLS;			/* Columns on the screen. */
