@@ -1,5 +1,5 @@
 /*-
- *	@(#)READ_ME	6.7 (Berkeley) %G%
+ *	@(#)READ_ME	6.8 (Berkeley) %G%
  */
 
 THIS IS AN ALPHA VERSION OF SENDMAIL.  DON'T EVEN THINK ABOUT USING IT
@@ -50,6 +50,8 @@ Important RFCs for electronic mail are:
 	RFC976	UUCP mail format
 	RFC1123	Host requirements (modifies 821, 822, and 974)
 	RFC1413	Identification server
+	RFC1341	MIME: Multipurpose Internet Mail Extensions
+	RFC1344	Implications of MIME for Internet Mail Gateways
 
 Other standards that may be of interest (but which are less directly
 relevant to sendmail) are:
