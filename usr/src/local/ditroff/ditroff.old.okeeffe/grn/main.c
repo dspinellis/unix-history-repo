@@ -1,4 +1,4 @@
-/*	main.c	1.1	(Berkeley) 83/07/21
+/*	main.c	1.2	(Berkeley) 83/07/22
  *
  *	This file contains the main and file system dependent routines
  * for processing gremlin files into troff input.  The program watches
@@ -44,6 +44,7 @@ extern POINT *PTInit(), *PTMakePoint();
 
 char *doinput();
 
+#define GREMLIB		"/usr/lib/gremlib/"
 #define DEVDIR		"/usr/lib/font/dev"
 #define DEFAULTDEV	"var"
 
@@ -59,7 +60,7 @@ char *doinput();
 #define JRIGHT		1		/*    get placed within the line */
 
 
-char	SccsId[] = "main.c	1.1	83/07/21";
+char	SccsId[] = "main.c	1.2	83/07/22";
 
 char	*printer = DEFAULTDEV;	/* device to look up resolution of */
 double	res;			/* that printer's resolution goes here */
@@ -99,8 +100,6 @@ int	thick[STYLES];	/* thicknesses set by defaults, then by commands */
 char	*tfont[FONTS];	/* fonts originally set to defstring values, then */
 char 	*tsize[SIZES];	/*    optionally changed by commands inside grn */
 
-int	cfont;		/* current font */
-int	csize;		/* current point size */
 double	troffscale;	/* scaling factor at output time */ 
 double	width;		/* user-request maximum width for picture (in inches) */
 double	height;		/* user-request height */
@@ -395,8 +394,13 @@ int baseline;
 		    return;
 		}
 		if ((gfp = fopen(gremlinfile, "r")) == NULL) {
-		    fprintf(stderr, "grn: can't open %s\n", gremlinfile);
-		    return;
+		    char name[100];	/* if the file isn't in the current */
+					/* directory, try the gremlin library */
+		    sprintf(name, "%s%s", GREMLIB, gremlinfile);
+		    if ((gfp = fopen(name, "r")) == NULL) {
+			fprintf(stderr, "grn: can't open %s\n", gremlinfile);
+			return;
+		    }
 		}
 		initpic();		/* set defaults, ranges, etc. */
 
@@ -445,12 +449,11 @@ int baseline;
 					/* end picture at lower left */
 		ptr.x = leftpoint;
 		ptr.y = bottompoint;
-		tmove(&ptr);
-		printf("\\D't %du'\\D's %du'", DEFTHICK, DEFSTYLE);
-		cr ();
+		tmove(&ptr);		/* restore default line parameters, */
 					/* put out the ".GE" line from user */
 					/* then restore everything to the way */
 					/* it was before the .GS */
+		printf("\\D't %du'\\D's %du'\n", DEFTHICK, DEFSTYLE);
 		printf("%s.ft \\n(g1\n.ps \\n(g2\n", inputline);
 		printf(".vs \\n(g3u\n.if \\n(g4 .fi\n");
 	    } else {
