@@ -1,9 +1,11 @@
 # ------------------------
 #
-#	Termcap source file @(#)termcap.src	1.12	(Berkeley) %G%
+#	Termcap source file @(#)termcap.src	1.13	(Berkeley) %G%
 #	Kevin Layer, Berkeley
 #	Craig Leres, Berkeley
 #	Mark Horton, Berkeley
+#
+# Please mail changes to (arpanet): termcap@berkeley
 #
 # This file describes capabilities of various terminals, as needed by
 # software such as screen editors.  It does not attempt to describe
