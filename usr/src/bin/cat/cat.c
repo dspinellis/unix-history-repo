@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cat.c	4.7 (Berkeley) %G%";
+static	char *sccsid = "@(#)cat.c	4.8 (Berkeley) %G%";
 #endif
 
 /*
@@ -10,8 +10,10 @@ static	char *sccsid = "@(#)cat.c	4.7 (Berkeley) %G%";
 #include <sys/types.h>
 #include <sys/stat.h>
 
-int	bflg, eflg, nflg, sflg, tflg, vflg;
-int	spaced, col, lno, inline;
+/* #define OPTSIZE BUFSIZ	/* define this only if not 4.2 BSD */
+
+int	bflg, eflg, nflg, sflg, tflg, uflg, vflg;
+int	spaced, col, lno, inline, ibsize, obsize;
 
 main(argc, argv)
 char **argv;
@@ -21,6 +23,7 @@ char **argv;
 	register c;
 	int dev, ino = -1;
 	struct stat statb;
+	int retval = 0;
 
 	lno = 1;
 	for( ; argc>1 && argv[1][0]=='-'; argc--,argv++) {
@@ -29,6 +32,7 @@ char **argv;
 			break;
 		case 'u':
 			setbuf(stdout, (char *)NULL);
+			uflg++;
 			continue;
 		case 'n':
 			nflg++;
@@ -60,7 +64,10 @@ char **argv;
 			dev = statb.st_dev;
 			ino = statb.st_ino;
 		}
+		obsize = statb.st_blksize;
 	}
+	else
+		obsize = 0;
 	if (argc < 2) {
 		argc = 2;
 		fflg++;
@@ -71,6 +78,7 @@ char **argv;
 		else {
 			if ((fi = fopen(*argv, "r")) == NULL) {
 				perror(*argv);
+				retval = 1;
 				continue;
 			}
 		}
@@ -80,21 +88,29 @@ char **argv;
 				fprintf(stderr, "cat: input %s is output\n",
 				   fflg?"-": *argv);
 				fclose(fi);
+				retval = 1;
 				continue;
 			}
+			ibsize = statb.st_blksize;
 		}
+		else
+			ibsize = 0;
 		if (nflg||sflg||vflg)
 			copyopt(fi);
-		else {
+		else if (uflg) {
 			while ((c = getc(fi)) != EOF)
 				putchar(c);
-		}
+		} else
+			fastcat(fileno(fi));	/* no flags specified */
 		if (fi!=stdin)
 			fclose(fi);
+		if (ferror(stdout)) {
+			fprintf(stderr, "cat: output write error\n");
+			retval = 1;
+			break;
+		}
 	}
-	if (ferror(stdout))
-		fprintf(stderr, "cat: output write error\n");
-	return(0);
+	exit(retval);
 }
 
 copyopt(f)
@@ -142,4 +158,46 @@ top:
 		putchar(c);
 	spaced = 0;
 	goto top;
+}
+
+fastcat(fd)
+register int fd;
+{
+	register int	buffsize, n, nwritten, offset;
+	register char	*buff;
+	struct stat	statbuff;
+	char		*malloc();
+
+#ifndef	OPTSIZE
+	if (ibsize == 0)
+		buffsize = BUFSIZ;	/* handle reads from a pipe */
+	else if (obsize == 0)
+		buffsize = ibsize;
+	else
+		buffsize = obsize;	/* common case, use output blksize */
+#else
+	buffsize = OPTSIZE;
+#endif
+
+	if ((buff = malloc(buffsize)) == NULL)
+		perror("cat: no memory");
+
+	/*
+	 * Note that on some systems (V7), very large writes to a pipe
+	 * return less than the requested size of the write.
+	 * In this case, multiple writes are required.
+	 */
+	while ((n = read(fd, buff, buffsize)) > 0) {
+		offset = 0;
+		do {
+			nwritten = write(fileno(stdout), &buff[offset], n);
+			if (nwritten <= 0)
+				perror("cat: write error");
+			offset += nwritten;
+		} while ((n -= nwritten) > 0);
+	}
+	if (n < 0)
+		perror("cat: read error");
+
+	free(buff);
 }
