@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	6.18 (Berkeley) %G%
+ *	@(#)conf.h	6.19 (Berkeley) %G%
  */
 
 /*
@@ -50,8 +50,6 @@
 */
 
 # define LOG		1	/* enable logging */
-# define SMTP		1	/* enable user and server SMTP */
-# define QUEUE		1	/* enable queueing */
 # define UGLYUUCP	1	/* output ugly UUCP From lines */
 # define NETINET	1	/* include internet support */
 # define SETPROCTITLE	1	/* munge argv to display current status */
@@ -124,9 +122,9 @@
 */
 
 #if defined(NETINET) || defined(NETISO)
-# define DAEMON		1
-# define SMTP		1
-# define QUEUE		1
+# define SMTP		1	/* enable user and server SMTP */
+# define QUEUE		1	/* enable queueing */
+# define DAEMON		1	/* include the daemon (requires IPC & SMTP) */
 #endif
 
 
