@@ -1,5 +1,5 @@
 #ifndef lint
-static	char sccsid[] = "@(#)telnetd.c	4.31 (Berkeley) %G%";
+static	char sccsid[] = "@(#)telnetd.c	4.32 (Berkeley) %G%";
 #endif
 
 /*
@@ -9,6 +9,7 @@ static	char sccsid[] = "@(#)telnetd.c	4.31 (Berkeley) %G%";
 #include <sys/socket.h>
 #include <sys/wait.h>
 #include <sys/file.h>
+#include <sys/stat.h>
 
 #include <netinet/in.h>
 
@@ -45,7 +46,7 @@ int	pty, net;
 int	inter;
 extern	char **environ;
 extern	int errno;
-char	line[] = "/dev/ptyp0";
+char	*line;
 
 main(argc, argv)
 	char *argv[];
@@ -76,18 +77,23 @@ doit(f, who)
 	int f;
 	struct sockaddr_in *who;
 {
-	char *cp = line, *host, *inet_ntoa();
+	char *host, *inet_ntoa();
 	int i, p, t;
 	struct sgttyb b;
 	struct hostent *hp;
-	char *pqrs;
+	char c;
 
-	t = strlen("/dev/ptyp");
-	for (pqrs = "pqrs"; *pqrs; pqrs++) {
-		cp[t] = *pqrs;
+	for (c = 'p'; c <= 's'; c++) {
+		struct stat stb;
+
+		line = "/dev/ptyXX";
+		line[strlen("/dev/pty")] = c;
+		line[strlen("/dev/ptyp")] = '0';
+		if (stat(line, &stb) < 0)
+			break;
 		for (i = 0; i < 16; i++) {
-			cp[t] = "0123456789abcdef"[i];
-			p = open(cp, O_RDWR);
+			line[strlen("/dev/ptyp")] = "0123456789abcdef"[i];
+			p = open(line, 2);
 			if (p > 0)
 				goto gotpty;
 		}
@@ -96,15 +102,15 @@ doit(f, who)
 	/*NOTREACHED*/
 gotpty:
 	dup2(f, 0);
-	cp[strlen("/dev/")] = 't';
+	line[strlen("/dev/")] = 't';
 	t = open("/dev/tty", O_RDWR);
 	if (t >= 0) {
 		ioctl(t, TIOCNOTTY, 0);
 		close(t);
 	}
-	t = open(cp, O_RDWR);
+	t = open(line, O_RDWR);
 	if (t < 0)
-		fatalperror(f, cp, errno);
+		fatalperror(f, line, errno);
 	ioctl(t, TIOCGETP, &b);
 	b.sg_flags = CRMOD|XTABS|ANYP;
 	ioctl(t, TIOCSETP, &b);
