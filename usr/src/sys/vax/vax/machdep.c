@@ -1,4 +1,4 @@
-/*	machdep.c	4.59	82/07/22	*/
+/*	machdep.c	4.60	82/08/13	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -684,6 +684,8 @@ char *mc780[] = {
 	0,		0,		"ib tbuf par",	0,
 	"ib rds",	"ib rd timo",	0,		"ib cache par"
 };
+#define	MC780_TBPAR	2
+#define	MC750_TBPAR	2
 #endif
 #if VAX730
 #define	NMC730	12
@@ -692,6 +694,7 @@ char *mc730[] = {
 	"unkn mcr err",	"iib rd err",	"nxm ref",	"cp rds",
 	"unalgn ioref",	"nonlw ioref",	"bad ioaddr",	"unalgn ubaddr",
 };
+#define	MC730_TBPAR	0
 #endif
 
 /*
@@ -790,6 +793,11 @@ machinecheck(cmcf)
 		    mcf->mc5_buserr, mcf->mc5_mcesr, mcf->mc5_pc, mcf->mc5_psl,
 		    mfpr(MCSR));
 		mtpr(MCESR, 0xf);
+		if ((type&0xf)==MC750_TBPAR) {
+			printf("tbuf par!?!: flushing and returning\n");
+			mtpr(TBIA, 0);
+			return;
+		}
 		break;
 		}
 #endif
