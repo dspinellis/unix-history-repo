@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1987 Regents of the University of California.
+ * Copyright (c) 1987,1988 Regents of the University of California.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms are permitted
@@ -9,7 +9,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)disklabel.h	7.7 (Berkeley) %G%
+ *	@(#)disklabel.h	7.8 (Berkeley) %G%
  */
 
 /*
@@ -38,8 +38,24 @@ struct disklabel {
 	short	d_type;			/* drive type */
 	short	d_subtype;		/* controller/d_type specific */
 	char	d_typename[16];		/* type name, e.g. "eagle" */
-	char	d_name[16];		/* pack identifier */
-
+	/* 
+	 * d_packname contains the pack identifier and is returned when
+	 * the disklabel is read off the disk or in-core copy.
+	 * d_boot0 and d_boot1 are the (optional) names of the
+	 * primary (block 0) and secondary (block 1-15) bootstraps
+	 * as found in /usr/mdec.  These are returned when using
+	 * getdiskbyname(3) to retrieve the values from /etc/disktab.
+	 */
+	 union {
+		char	un_d_packname[16];	/* pack identifier */ 
+		struct {
+			char *un_d_boot0;	/* primary bootstrap name */
+			char *un_d_boot1;	/* secondary bootstrap name */
+		} un_b; 
+	} d_un; 
+#define d_packname	d_un.un_d_packname
+#define d_boot0		d_un.un_b.un_d_boot0
+#define d_boot1		d_un.un_b.un_d_boot1
 			/* disk geometry: */
 	u_long	d_secsize;		/* # of bytes per sector */
 	u_long	d_nsectors;		/* # of data sectors per track */
@@ -225,10 +241,10 @@ struct partinfo {
 /*
  * Disk-specific ioctls.
  */
-		/* get and set disklabel; last form used internally */
+		/* get and set disklabel; DIOCGPART used internally */
 #define DIOCGDINFO	_IOR('d', 101, struct disklabel)/* get */
 #define DIOCSDINFO	_IOW('d', 102, struct disklabel)/* set */
-#define DIOCWDINFO	_IOW('d', 103, struct disklabel)/* set and write back */
+#define DIOCWDINFO	_IOW('d', 103, struct disklabel)/* set, update disk */
 #define DIOCGPART	_IOW('d', 104, struct partinfo)	/* get partition */
 
 /* do format operation, read or write */
@@ -237,6 +253,7 @@ struct partinfo {
 
 #define DIOCSSTEP	_IOW('d', 107, int)	/* set step rate */
 #define DIOCSRETRIES	_IOW('d', 108, int)	/* set # of retries */
+#define DIOCWLABEL	_IOW('d', 109, int)	/* write en/disable label */
 
 #endif LOCORE
 
