@@ -3,7 +3,7 @@ From Prof. Kahan at UC at Berkeley
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)ieee.3	6.1 (Berkeley) %G%
+.\"	@(#)ieee.3	6.2 (Berkeley) %G%
 .\"
 .TH IEEE 3M  ""
 .UC 6
@@ -70,8 +70,6 @@ or x lies between 0 and the Underflow Threshold; see below under "BUGS".
 .PP
 Scalb(x,n) = x\(**(2**n) computed, for integer n, without first computing
 2**n.
-.SH SEE ALSO
-floor(3M), intro(3M), infnan(3M)
 .SH DIAGNOSTICS
 IEEE 754 defines drem(x,0) and
 .if n \
@@ -95,6 +93,8 @@ requires the latter to signal Division\-by\-Zero.
 But on a VAX, logb(0) = 1.0 \- 2.0**31 = \-2,147,483,647.0.
 And if the correct value of scalb(x,n) would overflow on a VAX,
 it returns the reserved operand and sets \fIerrno\fR to ERANGE.
+.SH SEE ALSO
+floor(3M), math(3M), infnan(3M)
 .SH AUTHOR
 Kwok\-Choi Ng
 .SH BUGS

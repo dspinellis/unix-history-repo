@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)exp.3	6.7 (Berkeley) %G%
+.\"	@(#)exp.3	6.8 (Berkeley) %G%
 .\"
 .TH EXP 3M  ""
 .UC 4
@@ -49,8 +49,6 @@ Pow(x,y) returns
 x**y.
 .if t \
 x\u\s8y\s10\d.
-.SH SEE ALSO
-intro(3M), infnan(3M)
 .SH ERROR (due to Roundoff etc.)
 exp(x), log(x), expm1(x) and log1p(x) are accurate to within 
 an \*(up, and log10(x) to within about 2 \*(ups;
@@ -124,5 +122,7 @@ infinity**0 = 1/0**0 = 1 too; and
 \(if**0 = 1/0**0 = 1 too; and
 then \*(nn**0 = 1 too because x**0 = 1 for all finite
 and infinite x, i.e. independently of x.
+.SH SEE ALSO
+math(3M), infnan(3M)
 .SH AUTHOR
 Kwok\-Choi Ng, W. Kahan

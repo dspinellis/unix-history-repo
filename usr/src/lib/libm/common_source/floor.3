@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)floor.3	6.3 (Berkeley) %G%
+.\"	@(#)floor.3	6.4 (Berkeley) %G%
 .\"
 .TH FLOOR 3M  ""
 .UC 4
@@ -34,10 +34,6 @@ Ceil returns the smallest integer no less than x.
 .PP
 Rint returns the integer (represented as a double precision number)
 nearest x in the direction of the prevailing rounding mode.
-.SH SEE ALSO
-abs(3),
-ieee(3M),
-intro(3M)
 .SH NOTES
 On a VAX, rint(x) is equivalent to adding half to the magnitude
 and then rounding towards zero.
@@ -59,3 +55,7 @@ If in doubt, use floor, ceil, or rint first, whichever you intend.
 Also note that, if x is larger than k can accommodate, the value of
 k and the presence or absence of an integer overflow are hard to
 predict.
+.SH SEE ALSO
+abs(3),
+ieee(3M),
+math(3M)

@@ -3,7 +3,7 @@ From Prof. Kahan at UC at Berkeley
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)asinh.3	6.1 (Berkeley) %G%
+.\"	@(#)asinh.3	6.2 (Berkeley) %G%
 .\"
 .TH ASINH 3M  ""
 .UC 6
@@ -26,8 +26,6 @@ asinh, acosh, atanh \- inverse hyperbolic functions
 .SH DESCRIPTION
 These functions compute the designated inverse hyperbolic functions for real
 arguments.
-.SH SEE ALSO
-intro(3M), exp(3M), infnan(3M)
 .SH ERROR (due to Roundoff etc.)
 These functions inherit much of their error from log1p described in
 exp(3M).  On a VAX, acosh is accurate to about 3 \*(ups,
@@ -38,5 +36,7 @@ Acosh returns the reserved operand on a VAX if the argument is less than 1.
 .PP
 Atanh returns the reserved operand on a VAX if the argument has absolute
 value bigger than or equal to 1.
+.SH SEE ALSO
+math(3M), exp(3M), infnan(3M)
 .SH AUTHOR
 W. Kahan, Kwok\-Choi Ng

@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)sqrt.3	6.1 (Berkeley) %G%
+.\"	@(#)sqrt.3	6.2 (Berkeley) %G%
 .\"
 .TH SQRT 3M  ""
 .UC 6
@@ -23,8 +23,6 @@ cbrt, sqrt \- cube root, square root
 Cbrt(x) returns the cube root of x.
 .PP
 Sqrt(x) returns the square root of x.
-.SH SEE ALSO
-intro(3M), infnan(3M)
 .SH DIAGNOSTICS
 On a VAX, sqrt(negative)
 returns the reserved operand and sets \fIerrno\fR to EDOM .
@@ -37,5 +35,7 @@ Sqrt on a machine that conforms to IEEE 754 is correctly rounded
 in accordance with the rounding mode in force; the error is less than
 half an \*(up in the default mode (round\-to\-nearest).
 An \*(up is one \fIU\fRnit in the \fIL\fRast \fIP\fRlace carried.
+.SH SEE ALSO
+math(3M), infnan(3M)
 .SH AUTHOR
 W. Kahan

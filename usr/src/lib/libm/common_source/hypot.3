@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)hypot.3	6.4 (Berkeley) %G%
+.\"	@(#)hypot.3	6.5 (Berkeley) %G%
 .\"
 .TH HYPOT 3M  ""
 .UC 4
@@ -30,8 +30,6 @@ hypot(infinity,v) = hypot(v,infinity) = +infinity for all v,
 .if t \
 hypot(\(if,v) = hypot(v,\(if) = +\(if for all v, 
 including \*(nn.
-.SH SEE ALSO
-intro(3M), sqrt(3M)
 .SH ERROR (due to Roundoff, etc.)
 Below 0.97 \*(ups.  Consequently hypot(5.0,12.0)\0=\013.0 exactly;
 in general, hypot and cabs return an integer whenever an
@@ -72,5 +70,7 @@ disappear when it turns out to be irrelevant, as it does in
 hypot(infinity,\*(nn).
 .if t \
 hypot(\(if,\*(nn).
+.SH SEE ALSO
+math(3M), sqrt(3M)
 .SH AUTHOR
 W. Kahan
