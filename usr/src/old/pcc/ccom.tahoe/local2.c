@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)local2.c	1.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)local2.c	1.15 (Berkeley) %G%";
 #endif
 
 # include "pass2.h"
@@ -1298,82 +1298,112 @@ optim2( p ) register NODE *p; {
 
 struct functbl {
 	int fop;
+	TWORD ftype;
 	char *func;
-} opfunc[] = {
-	DIV,		"udiv", 
-	ASG DIV,	"udiv", 
-	0
-};
+	} opfunc[] = {
+	DIV,		TANY,	"udiv",
+	MOD,		TANY,	"urem",
+	ASG DIV,	TANY,	"audiv",
+	ASG MOD,	TANY,	"aurem",
+	0,	0,	0 };
 
 hardops(p)  register NODE *p; {
 	/* change hard to do operators into function calls.  */
 	register NODE *q;
 	register struct functbl *f;
-	register int o;
-	register TWORD t, t1, t2;
+	register o;
+	NODE *old,*temp;
 
 	o = p->in.op;
+	if( ! (optype(o)==BITYPE &&
+	       (ISUNSIGNED(p->in.left->in.type) ||
+		ISUNSIGNED(p->in.right->in.type))) )
+		return;
 
 	for( f=opfunc; f->fop; f++ ) {
 		if( o==f->fop ) goto convert;
-	}
+		}
 	return;
 
 	convert:
-	t = p->in.type;
-	t1 = p->in.left->in.type;
-	t2 = p->in.right->in.type;
-
-	if (!((ISUNSIGNED(t1) && !(ISUNSIGNED(t2))) || 
-	     ( t2 == UNSIGNED))) return;
-
-	/* need to rewrite tree for ASG OP */
-	/* must change ASG OP to a simple OP */
 	if( asgop( o ) ) {
-		q = talloc();
-		q->in.op = NOASG ( o );
-		q->in.rall = NOPREF;
-		q->in.type = p->in.type;
-		q->in.left = tcopy(p->in.left);
-		q->in.right = p->in.right;
-		p->in.op = ASSIGN;
-		p->in.right = q;
-		zappost(q->in.left); /* remove post-INCR(DECR) from new node */
-		fixpre(q->in.left);	/* change pre-INCR(DECR) to +/-	*/
-		p = q;
-
-	}
-	/* turn logicals to compare 0 */
-	else if( logop( o ) ) {
-		ncopy(q = talloc(), p);
-		p->in.left = q;
-		p->in.right = q = talloc();
-		q->in.op = ICON;
-		q->in.type = INT;
-#ifndef FLEXNAMES
-		q->in.name[0] = '\0';
+		old = NIL;
+		switch( p->in.left->in.op ){
+		case FLD:
+			q = p->in.left->in.left;
+			/*
+			 * rewrite (lval.fld /= rval); as
+			 *  ((*temp).fld = udiv((*(temp = &lval)).fld,rval));
+			 * else the compiler will evaluate lval twice.
+			 */
+			if( q->in.op == UNARY MUL ){
+				/* first allocate a temp storage */
+				temp = talloc();
+				temp->in.op = OREG;
+				temp->tn.rval = TMPREG;
+				temp->tn.lval = BITOOR(freetemp(1));
+				temp->in.type = INCREF(p->in.type);
+#ifdef FLEXNAMES
+				temp->in.name = "";
 #else
-		q->in.name = "";
+				temp->in.name[0] = '\0';
 #endif
-		q->tn.lval = 0;
-		q->tn.rval = 0;
-		p = p->in.left;
-	}
+				old = q->in.left;
+				q->in.left = temp;
+			}
+			/* fall thru ... */
+
+		case REG:
+		case NAME:
+		case OREG:
+			/* change ASG OP to a simple OP */
+			q = talloc();
+			q->in.op = NOASG p->in.op;
+			q->in.rall = NOPREF;
+			q->in.type = p->in.type;
+			q->in.left = tcopy(p->in.left);
+			q->in.right = p->in.right;
+			p->in.op = ASSIGN;
+			p->in.right = q;
+			p = q;
+			f -= 2; /* Note: this depends on the table order */
+			/* on the right side only - replace *temp with
+			 *(temp = &lval), build the assignment node */
+			if( old ){
+				temp = q->in.left->in.left; /* the "*" node */
+				q = talloc();
+				q->in.op = ASSIGN;
+				q->in.left = temp->in.left;
+				q->in.right = old;
+				q->in.type = old->in.type;
+#ifdef FLEXNAMES
+				q->in.name = "";
+#else
+				q->in.name[0] = '\0';
+#endif
+				temp->in.left = q;
+			}
+			break;
+
+		case UNARY MUL:
+			/* avoid doing side effects twice */
+			q = p->in.left;
+			p->in.left = q->in.left;
+			q->in.op = FREE;
+			break;
+
+		default:
+			cerror( "hardops: can't compute & LHS" );
+			}
+		}
 
 	/* build comma op for args to function */
-	t1 = p->in.left->in.type;
-	t2 = 0;
-	if ( optype(p->in.op) == BITYPE) {
-		q = talloc();
-		q->in.op = CM;
-		q->in.rall = NOPREF;
-		q->in.type = INT;
-		q->in.left = p->in.left;
-		q->in.right = p->in.right;
-		t2 = p->in.right->in.type;
-	} else
-		q = p->in.left;
-
+	q = talloc();
+	q->in.op = CM;
+	q->in.rall = NOPREF;
+	q->in.type = INT;
+	q->in.left = p->in.left;
+	q->in.right = p->in.right;
 	p->in.op = CALL;
 	p->in.right = q;
 
@@ -1383,9 +1413,9 @@ hardops(p)  register NODE *p; {
 	q->in.rall = NOPREF;
 	q->in.type = INCREF( FTN + p->in.type );
 #ifndef FLEXNAMES
-		strcpy( q->in.name, f->func );
+	strcpy( q->in.name, f->func );
 #else
-		q->in.name = f->func;
+	q->in.name = f->func;
 #endif
 	q->tn.lval = 0;
 	q->tn.rval = 0;
