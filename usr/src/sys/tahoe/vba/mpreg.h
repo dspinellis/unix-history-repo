@@ -1,4 +1,6 @@
-/*	mpreg.h	7.1	88/05/21	*/
+/*
+ *	@(#)mpreg.h	1.3 (Berkeley) %G%
+ */
 
 /*
  * MPCC Asynchronous Communications Interface.
@@ -36,13 +38,13 @@ struct his {
 	u_char	brdnum;		/* Virtual brd number for protocol */
 	u_char	unused;
 	struct {
-		char	inbdone[MPMAXPORT];	/* Ports w/ inbound completed */
-		char	outbdone[MPMAXPORT];	/* Ports w/ outbound available */
+		u_char	inbdone[MPMAXPORT];	/* Ports w/ inbound completed */
+		u_char	outbdone[MPMAXPORT];	/* Ports w/outbound available */
 		u_int	fill[2];
 	} proto[NMPPROTO];
 };
 
-#define MPPORT_EOL	-1		/* end of port list */
+#define MPPORT_EOL	0xff		/* end of port list */
 
 /*
  * Async host transmit list structure.

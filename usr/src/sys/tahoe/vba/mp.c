@@ -1,4 +1,16 @@
-/*	mp.c	7.1	88/05/21	*/
+/*
+ * Copyright (c) 1988 Regents of the University of California.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms are permitted
+ * provided that this notice is preserved and that due credit is given
+ * to the University of California at Berkeley. The name of the University
+ * may not be used to endorse or promote products derived from this
+ * software without specific prior written permission. This software
+ * is provided ``as is'' without express or implied warranty.
+ *
+ *	@(#)mp.c	1.6 (Berkeley) %G%
+ */
 
 #include "mp.h"
 #if NMP > 0
@@ -6,9 +18,6 @@
  * Multi Protocol Communications Controller (MPCC).
  * Asynchronous Terminal Protocol Support.
  */
-#include "../machine/pte.h"
-#include "../machine/mtpr.h"
-
 #include "param.h"
 #include "ioctl.h"
 #include "tty.h"
@@ -24,6 +33,9 @@
 #include "vmmac.h"
 #include "kernel.h"
 #include "clist.h"
+
+#include "../machine/pte.h"
+#include "../machine/mtpr.h"
 
 #include "../tahoevba/vbavar.h"
 #include "../tahoevba/mpreg.h"
@@ -92,6 +104,7 @@ mpprobe(reg, vi)
 #ifdef lint
 	br = 0; cvec = br; br = cvec;
 	mpintr(0);
+	mpdlintr(0);
 #endif
 	if (badaddr(reg, 2))
 		return (0);
@@ -129,6 +142,7 @@ mpattach(vi)
 /*
  * Open an mpcc port.
  */
+/* ARGSUSED */
 mpopen(dev, mode)
 	dev_t dev;
 {
@@ -207,7 +221,8 @@ bad:
 /*
  * Close an mpcc port.
  */
-mpclose(dev)
+/* ARGSUSED */
+mpclose(dev, flag)
 	dev_t dev;
 {
 	register struct tty *tp;
@@ -451,7 +466,7 @@ mpstart(tp)
 				break;
 			}
 		}
-		hxp->dblock[i] = (caddr_t)vtoph(0, (int)outq.c_cf);
+		hxp->dblock[i] = (caddr_t)kvtophys(outq.c_cf);
 		hxp->size[i] = n;
 		xcnt++;		/* count of xmts to send */
 		ndadvance(&outq, n);
@@ -515,13 +530,12 @@ out:
 /*
  * Stop output on a line, e.g. for ^S/^Q or output flush.
  */
+/* ARGSUSED */
 mpstop(tp, rw)
 	register struct tty *tp;
 	int rw;
 {
-	int s, port;
-	struct mpevent *ev;
-	struct mblok *mb;
+	int s;
 
 	s = spl8();
 	/* XXX: DISABLE TRANSMITTER */
@@ -555,8 +569,8 @@ mpportinit(ms, mp, port)
 		ev->ev_error = 0;
 		ev->ev_flags = 0;
 		ev->ev_count = 0;
-		ev->ev_un.hxl = (struct hxmtl *) vtoph(0, &ms->ms_hxl[port]);
-		ev->ev_params = (caddr_t) vtoph(0, &ms->ms_async[port][i]);
+		ev->ev_un.hxl = (struct hxmtl *) kvtophys(&ms->ms_hxl[port]);
+		ev->ev_params = (caddr_t) kvtophys(&ms->ms_async[port][i]);
 	}
 	ev = &mp->mp_sendq[0];
 	for (i = 0; ev < &mp->mp_sendq[MPOUTSET]; ev++, i++) {
@@ -568,8 +582,8 @@ mpportinit(ms, mp, port)
 		ev->ev_flags = 0;
 		ev->ev_count = 0;
 		ptr = (caddr_t) &ms->ms_cbuf[port][i][0];
-		ev->ev_un.rcvblk = (u_char *)vtoph(0, ptr);
-		ev->ev_params = (caddr_t) vtoph(0, ptr);
+		ev->ev_un.rcvblk = (u_char *)kvtophys(ptr);
+		ev->ev_params = (caddr_t) kvtophys(ptr);
 	}
 	return (0);
 }
@@ -612,7 +626,7 @@ mp_getevent(mp, unit)
 	 * If not a close request, verify one extra
 	 * event is available for closing the port.
 	 */
-	if ((mp->mp_flags && MP_PROGRESS) == 0) {
+	if ((mp->mp_flags & MP_PROGRESS) == 0) {
 		if ((i = mp->mp_on + 1) >= MPINSET)
 			i = 0;
 		if (mp->mp_recvq[i].ev_status != EVSTATUS_FREE)
@@ -718,13 +732,11 @@ mpcleanport(mb, port)
 	mp = &mb->mb_port[port];
 	if (mp->mp_proto == MPPROTO_ASYNC) {
 		mp->mp_flags = MP_REMBSY;
-		/* flush I/O queues and send hangup signals */
+		/* signal loss of carrier and close */
 		tp = &mp_tty[mb->mb_unit*MPCHUNK+port];
-		tp->t_state &= ~TS_CARR_ON;
 		ttyflush(tp, FREAD|FWRITE);
-		gsignal(tp->t_pgrp, SIGHUP);
-		gsignal(tp->t_pgrp, SIGKILL);
-		mpclose(tp->t_dev, 0);
+		(void) (*linesw[tp->t_line].l_modem)(tp, 0);
+		(void) mpclose(tp->t_dev, 0);
 	}
 }
 
@@ -735,7 +747,7 @@ mpclean(mb, port)
 	register struct mpport *mp;
 	register struct mpevent *ev;
 	register int i;
-	char list[2], *cp;
+	u_char list[2];
 	int unit;
 
 	mp = &mb->mb_port[port];
@@ -779,7 +791,6 @@ mpintr(mpcc)
 {
 	register struct mblok *mb;
 	register struct his *his;
-	register int i;
 
 	mb = mp_softc[mpcc].ms_mb;
 	if (mb == 0) {
@@ -804,7 +815,7 @@ mpintr(mpcc)
  * Handler for processing completion of transmitted events.
  */
 mpxintr(unit, list)
-	register char *list;
+	register u_char *list;
 {
 	register struct mpport *mp;
 	register struct mpevent *ev;
@@ -827,7 +838,7 @@ mpxintr(unit, list)
 		for(; ev->ev_status & EVSTATUS_DONE; ev = nextevent(mp)) {
 			/* YUCK */
 			ap = &ms->ms_async[port][mp->mp_off];
-			mppurge(ap, sizeof (*ap));
+			mppurge((caddr_t)ap, (int)sizeof (*ap));
 			switch (ev->ev_cmd) {
 			case EVCMD_OPEN:
 				/*
@@ -872,12 +883,12 @@ mpxintr(unit, list)
 					tp->t_state &= ~TS_FLUSH;
 					wakeup((caddr_t)&tp->t_state);
 				} else {
-					register int cc = 0, i;
+					register int cc = 0, n;
 					struct hxmtl *hxp;
 
 					hxp = &ms->ms_hxl[port];
-					for(i = 0; i < ev->ev_count; i++)
-						cc += hxp->size[i];
+					for(n = 0; n < ev->ev_count; n++)
+						cc += hxp->size[n];
 					ndflush(&tp->t_outq, cc);
 				}
 				switch (ev->ev_error) {
@@ -891,7 +902,7 @@ mpxintr(unit, list)
 				mpstart(tp);
 				break;
 			default:
-				mplog(unit, port, A_INVCMD, ev->ev_cmd);  
+				mplog(unit, port, A_INVCMD, (int)ev->ev_cmd);  
 				break;
 			}
 			/* re-init all values in this entry */
@@ -914,7 +925,7 @@ done:
  * Handler for processing received events.
  */
 mprintr(unit, list)
-	char *list;
+	u_char *list;
 {
 	register struct tty *tp;
 	register struct mpport *mp;
@@ -937,7 +948,7 @@ mprintr(unit, list)
 			if (ev->ev_cmd != EVCMD_READ &&
 			    ev->ev_cmd != EVCMD_STATUS) {
 				mplog(unit, port, "unexpected command",
-				    ev->ev_cmd);
+				    (int)ev->ev_cmd);
 				goto next;
 			}
 			if (ev->ev_cmd == EVCMD_STATUS) {
@@ -951,7 +962,7 @@ mprintr(unit, list)
 				else
 					mplog(unit, port,
 					    "unexpect status command",
-					    ev->ev_opts);
+					    (int)ev->ev_opts);
 				goto next;
 			}
 			/*
@@ -981,8 +992,8 @@ mprintr(unit, list)
 			}
 			/* setup for next read */
 			ptr = (caddr_t)&mp_softc[unit].ms_cbuf[port][mp->mp_nextrcv][0];
-			ev->ev_un.rcvblk = (u_char *)vtoph(0, ptr);
-			ev->ev_params = (caddr_t) vtoph(0, ptr);
+			ev->ev_un.rcvblk = (u_char *)kvtophys(ptr);
+			ev->ev_params = (caddr_t) kvtophys(ptr);
 			switch(ev->ev_error) {
 			case RCVDTA:    /* Normal (good) rcv data */
 					/* do not report the following */
@@ -1002,7 +1013,7 @@ mprintr(unit, list)
 				rcverr = "undefined rcv error";
 			}
 			if (rcverr != (char *)0)
-				mplog(unit, port, rcverr, ev->ev_error);
+				mplog(unit, port, rcverr, (int)ev->ev_error);
 		next:
 			ev->ev_cmd = 0;
 			ev->ev_opts = 0;
@@ -1045,7 +1056,6 @@ mptimeint(mb)
  */
 mpintmpcc(mb, port)
 	register struct mblok *mb;
-	u_short port;
 {
 
         mb->mb_intr[port] |= MPSEMA_WORK;
@@ -1053,12 +1063,12 @@ mpintmpcc(mb, port)
                 mb->mb_mpintcnt = 0;
 		*(u_short *)mpinfo[mb->mb_unit]->ui_addr = 2;
                 if (mb->mb_mpintclk) {
-                        untimeout(mptimeint, mb);
+                        untimeout(mptimeint, (caddr_t)mb);
                         mb->mb_mpintclk = 0;
                 }
         } else {
                 if (mb->mb_mpintclk == 0) {
-                        timeout(mptimeint, mb, 4);
+                        timeout(mptimeint, (caddr_t)mb, 4);
                         mb->mb_mpintclk = (caddr_t)1;
                 }
         }
@@ -1160,8 +1170,8 @@ mpdlwrite(dev, uio)
 		return (EFAULT);
 	dl = &ms->ms_mb->mb_dl;
 	dl->mpdl_count = uio->uio_iov->iov_len;
-	dl->mpdl_data = (caddr_t) vtoph((struct proc *)0, mpdlbuf);
-	if (error = uiomove(mpdlbuf, dl->mpdl_count, UIO_WRITE, uio))
+	dl->mpdl_data = (caddr_t) kvtophys(mpdlbuf);
+	if (error = uiomove(mpdlbuf, (int)dl->mpdl_count, UIO_WRITE, uio))
 		return (error);
 	uio->uio_resid -= dl->mpdl_count;    /* set up return from write */
 	dl->mpdl_cmd = MPDLCMD_NORMAL;
@@ -1173,7 +1183,6 @@ mpdlclose(dev)
 	dev_t dev;
 {
 	register struct mblok *mb = mp_softc[MPUNIT(minor(dev))].ms_mb;
-	int ret = 0;
 
 	if (mb == 0 || mb->mb_status != MP_DLDONE) {
 		mpbogus.status = 0;
@@ -1188,21 +1197,16 @@ mpdlclose(dev)
 	return (0);
 }
 
-mpreset(dev)
-	dev_t dev;
-{
-	/* XXX */
-}
-
 int	mpdltimeout();
 
+/* ARGSUSED */
 mpdlioctl(dev, cmd, data, flag)
 	dev_t dev;
 	caddr_t data;
 {
 	register struct mblok *mb;
 	register struct mpdl *dl;
-	int unit, error, s, i, j;
+	int unit, error, s, i;
 
 	mb = mp_softc[unit=MPUNIT(minor(dev))].ms_mb;
 	if (mb == 0)
@@ -1233,7 +1237,7 @@ mpdlioctl(dev, cmd, data, flag)
 		break;
 	case MPIOASYNCNF:
 		bcopy(data, mpdlbuf, sizeof (struct abdcf));
-		dl->mpdl_data = (caddr_t) vtoph((struct proc *)0, mpdlbuf);
+		dl->mpdl_data = (caddr_t) kvtophys(mpdlbuf);
 		dl->mpdl_count = sizeof (struct abdcf);
 		dl->mpdl_cmd = MPIOASYNCNF&IOCPARM_MASK;
 		error = mpdlwait(dl);
@@ -1258,11 +1262,11 @@ mpdlioctl(dev, cmd, data, flag)
 		mb->mb_diagswitch[1] = 'P';
 		s = spl8();
 		*(u_short *)mpinfo[unit]->ui_addr = 2;
-		timeout(mpdltimeout, mb, 30*hz);	/* approx 15 seconds */
+		timeout(mpdltimeout, (caddr_t)mb, 30*hz);
 		sleep((caddr_t)&mb->mb_status, PZERO+1);
 		splx(s);
 		if (mb->mb_status == MP_DLOPEN) {
-			untimeout(mpdltimeout, mb);
+			untimeout(mpdltimeout, (caddr_t)mb);
 		} else if (mb->mb_status == MP_DLTIME) {
 			mpbogus.status = 0;
 			error = ETIMEDOUT;
@@ -1272,7 +1276,7 @@ mpdlioctl(dev, cmd, data, flag)
 			log(LOG_ERR, "mp%d: start download: unknown status %x",
 			    unit, mb->mb_status);
 		}
-		bzero(mb->mb_port, sizeof (mb->mb_port));
+		bzero((caddr_t)mb->mb_port, sizeof (mb->mb_port));
 		break;
 	case MPIORESETBOARD:
 		s = spl8();
@@ -1343,7 +1347,7 @@ mpdlintr(mpcc)
 		return;
 	case MP_DLPEND:
 		mb->mb_status = MP_DLOPEN;
-		wakeup(&mb->mb_status);
+		wakeup((caddr_t)&mb->mb_status);
 		/* fall thru... */
 	case MP_DLTIME:
 		return;

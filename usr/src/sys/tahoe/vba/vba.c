@@ -1,9 +1,15 @@
 /*
- * Copyright (c) 1987 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+ * Copyright (c) 1987, 1988 Regents of the University of California.
+ * All rights reserved.
  *
- *	@(#)vba.c	7.1 (Berkeley) %G%
+ * Redistribution and use in source and binary forms are permitted
+ * provided that this notice is preserved and that due credit is given
+ * to the University of California at Berkeley. The name of the University
+ * may not be used to endorse or promote products derived from this
+ * software without specific prior written permission. This software
+ * is provided ``as is'' without express or implied warranty.
+ *
+ *	@(#)vba.c	1.13 (Berkeley) %G%
  */
 
 /*
@@ -44,21 +50,21 @@ vbainit(vb, xsize, flags)
 	register n;
 
 	vb->vb_flags = flags;
-	if (vbmapalloc(btoc(xsize) + 1, &vb->vb_map, &vb->vb_utl) == 0) {
+	if (vbmapalloc((int)btoc(xsize) + 1, &vb->vb_map, &vb->vb_utl) == 0) {
 		printf("vbmap exhausted\n");
 		return (0);
 	}
 	n = roundup(xsize, NBPG);
 	vb->vb_bufsize = n;
 	if (vb->vb_rawbuf == 0)
-		vb->vb_rawbuf = (caddr_t)malloc(n, M_DEVBUF, M_NOWAIT);
+		vb->vb_rawbuf = (caddr_t)malloc((u_long)n, M_DEVBUF, M_NOWAIT);
 	if (vb->vb_rawbuf == 0) {
 		printf("no memory for device buffer\n");
 		return (0);
 	}
 	if ((int)vb->vb_rawbuf & PGOFSET)
 		panic("vbinit pgoff");
-	vb->vb_physbuf = vtoph((struct proc *)0, vb->vb_rawbuf);
+	vb->vb_physbuf = (u_long)kvtophys(vb->vb_rawbuf);
 	if (flags & VB_20BIT)
 		vb->vb_maxphys = btoc(VB_MAXADDR20);
 	else if (flags & VB_24BIT)
@@ -230,11 +236,10 @@ vba_sgsetup(bp, vb, sg)
 {
 	register struct pte *spte;
 	register struct addr_chain *adr;
-	register int npf, i;
+	register int i;
 	int o;
 
 	o = (int)bp->b_un.b_addr & PGOFSET;
-	npf = btoc(bp->b_bcount + o);
 	vb->vb_iskernel = (((int)bp->b_un.b_addr & KERNBASE) == KERNBASE);
 	vb->vb_copy = 0;
 	if (vb->vb_iskernel) {
@@ -255,7 +260,7 @@ vba_sgsetup(bp, vb, sg)
 	i = (i + 1) >> 1;
 	for (adr = sg->addr_chain; i > 0; adr++, i -= NBPG / 2) {
 		adr->nxt_addr = (spte++)->pg_pfnum << PGSHIFT;
-		adr->nxt_len = min(i, NBPG / 2);
+		adr->nxt_len = imin(i, NBPG / 2);
 	}
 	adr->nxt_addr = 0;
 	adr++->nxt_len = 0;
