@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_subr.c	7.20 (Berkeley) %G%
+ *	@(#)vfs_subr.c	7.21 (Berkeley) %G%
  */
 
 /*
@@ -232,7 +232,7 @@ getnewvnode(tag, mp, vops, vpp)
 		*vpp = 0;
 		return (ENFILE);
 	}
-	if (vp->v_count)
+	if (vp->v_usecount)
 		panic("free vnode isn't");
 	if (vq = vp->v_freef)
 		vq->v_freeb = &vfreeh;
@@ -245,6 +245,7 @@ getnewvnode(tag, mp, vops, vpp)
 	vp->v_flag = 0;
 	vp->v_shlockc = 0;
 	vp->v_exlockc = 0;
+	vp->v_lastr = 0;
 	vp->v_socket = 0;
 	cache_purge(vp);
 	vp->v_tag = tag;
@@ -349,7 +350,7 @@ loop:
 		/*
 		 * Alias, but not in use, so flush it out.
 		 */
-		if (vp->v_count == 0) {
+		if (vp->v_usecount == 0) {
 			vgone(vp);
 			goto loop;
 		}
@@ -366,8 +367,7 @@ loop:
 		MALLOC(nvp->v_specinfo, struct specinfo *,
 			sizeof(struct specinfo), M_VNODE, M_WAITOK);
 		nvp->v_rdev = nvp_rdev;
-		nvp->v_mounton = NULL;
-		nvp->v_lastr = 0;
+		nvp->v_hashchain = vpp;
 		nvp->v_specnext = *vpp;
 		*vpp = nvp;
 		return ((struct vnode *)0);
@@ -399,7 +399,7 @@ vget(vp)
 		sleep((caddr_t)vp, PINOD);
 		return (1);
 	}
-	if (vp->v_count == 0) {
+	if (vp->v_usecount == 0) {
 		if (vq = vp->v_freef)
 			vq->v_freeb = vp->v_freeb;
 		else
@@ -420,7 +420,7 @@ void vref(vp)
 	struct vnode *vp;
 {
 
-	vp->v_count++;
+	vp->v_usecount++;
 }
 
 /*
@@ -443,10 +443,10 @@ void vrele(vp)
 
 	if (vp == NULL)
 		panic("vrele: null vp");
-	vp->v_count--;
-	if (vp->v_count < 0)
+	vp->v_usecount--;
+	if (vp->v_usecount < 0)
 		vprint("vrele: bad ref count", vp);
-	if (vp->v_count > 0)
+	if (vp->v_usecount > 0)
 		return;
 	if (vfreeh == (struct vnode *)0) {
 		/*
@@ -464,6 +464,28 @@ void vrele(vp)
 	vp->v_freef = NULL;
 	vfreet = &vp->v_freef;
 	VOP_INACTIVE(vp);
+}
+
+/*
+ * Page or buffer structure gets a reference.
+ */
+vhold(vp)
+	register struct vnode *vp;
+{
+
+	vp->v_holdcnt++;
+}
+
+/*
+ * Page or buffer structure frees a reference.
+ */
+holdrele(vp)
+	register struct vnode *vp;
+{
+
+	if (vp->v_holdcnt <= 0)
+		panic("holdrele: holdcnt");
+	vp->v_holdcnt--;
 }
 
 /*
@@ -493,10 +515,10 @@ vflush(mp, skipvp, flags)
 		if (vp == skipvp)
 			continue;
 		/*
-		 * With v_count == 0, all we need to do is clear
+		 * With v_usecount == 0, all we need to do is clear
 		 * out the vnode data structures and we are done.
 		 */
-		if (vp->v_count == 0) {
+		if (vp->v_usecount == 0) {
 			vgone(vp);
 			continue;
 		}
@@ -539,7 +561,7 @@ void vclean(vp, doclose)
 	 * so that its count cannot fall to zero and generate a
 	 * race against ourselves to recycle it.
 	 */
-	if (active = vp->v_count)
+	if (active = vp->v_usecount)
 		VREF(vp);
 	/*
 	 * Prevent the vnode from being recycled or
@@ -599,16 +621,14 @@ void vclean(vp, doclose)
 void vgoneall(vp)
 	register struct vnode *vp;
 {
-	register struct vnode *vq, **vpp;
+	register struct vnode *vq;
 
-	if (vp->v_flag & VALIASED) {
-		vpp = &speclisth[SPECHASH(vp->v_rdev)];
-	loop:
-		for (vq = *vpp; vq; vq = vq->v_specnext) {
+	while (vp->v_flag & VALIASED) {
+		for (vq = *vp->v_hashchain; vq; vq = vq->v_specnext) {
 			if (vq->v_rdev != vp->v_rdev || vp == vq)
 				continue;
 			vgone(vq);
-			goto loop;
+			break;
 		}
 	}
 	vgone(vp);
@@ -621,7 +641,7 @@ void vgoneall(vp)
 void vgone(vp)
 	register struct vnode *vp;
 {
-	register struct vnode *vq, **vpp;
+	register struct vnode *vq;
 	struct vnode *vx;
 	long count;
 
@@ -643,11 +663,10 @@ void vgone(vp)
 	 * If special device, remove it from special device alias list.
 	 */
 	if (vp->v_type == VBLK || vp->v_type == VCHR) {
-		vpp = &speclisth[SPECHASH(vp->v_rdev)];
-		if (*vpp == vp) {
-			*vpp = vp->v_specnext;
+		if (*vp->v_hashchain == vp) {
+			*vp->v_hashchain = vp->v_specnext;
 		} else {
-			for (vq = *vpp; vq; vq = vq->v_specnext) {
+			for (vq = *vp->v_hashchain; vq; vq = vq->v_specnext) {
 				if (vq->v_specnext != vp)
 					continue;
 				vq->v_specnext = vp->v_specnext;
@@ -657,7 +676,8 @@ void vgone(vp)
 				panic("missing bdev");
 		}
 		if (vp->v_flag & VALIASED) {
-			for (count = 0, vq = *vpp; vq; vq = vq->v_specnext) {
+			count = 0;
+			for (vq = *vp->v_hashchain; vq; vq = vq->v_specnext) {
 				if (vq->v_rdev != vp->v_rdev)
 					continue;
 				count++;
@@ -695,24 +715,23 @@ void vgone(vp)
 vcount(vp)
 	register struct vnode *vp;
 {
-	register struct vnode *vq, **vpp;
+	register struct vnode *vq;
 	int count;
 
 	if ((vp->v_flag & VALIASED) == 0)
-		return (vp->v_count);
-	vpp = &speclisth[SPECHASH(vp->v_rdev)];
+		return (vp->v_usecount);
 loop:
-	for (count = 0, vq = *vpp; vq; vq = vq->v_specnext) {
+	for (count = 0, vq = *vp->v_hashchain; vq; vq = vq->v_specnext) {
 		if (vq->v_rdev != vp->v_rdev)
 			continue;
 		/*
 		 * Alias, but not in use, so flush it out.
 		 */
-		if (vq->v_count == 0) {
+		if (vq->v_usecount == 0) {
 			vgone(vq);
 			goto loop;
 		}
-		count += vq->v_count;
+		count += vq->v_usecount;
 	}
 	return (count);
 }
@@ -730,6 +749,7 @@ vprint(label, vp)
 
 	if (label != NULL)
 		printf("%s: ", label);
-	printf("type %s, count %d, ", typename[vp->v_type], vp->v_count);
+	printf("type %s, usecount %d, refcount %d,\n\t", typename[vp->v_type],
+		vp->v_usecount, vp->v_holdcnt);
 	VOP_PRINT(vp);
 }
