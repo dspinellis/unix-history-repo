@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.1 (Berkeley) %G%
+#	@(#)Makefile	5.2 (Berkeley) %G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
@@ -22,25 +22,24 @@ SRCS=	telnetd.c get_date.c gettytab.c
 OBJS=	telnetd.o get_date.o gettytab.o
 VPATH=	../getty
 MAN=	telnetd.0
-MAN8=	/usr/man/cat8/
 
 all: telnetd
 
 telnetd: ${OBJS} ${LIBC}
 	${CC} -o $@ ${CFLAGS} ${OBJS} -lutil
 
-cleandir: clean
-	rm -f tags .depend
-
 clean:
-	rm -f ${OBJS} core telnetd ${MAN}
+	rm -f ${OBJS} core telnetd
+
+cleandir: clean
+	rm -f ${MAN} tags .depend
 
 depend: ${SRCS}
 	mkdep ${CFLAGS} ${SRCS}
 
 install: ${MAN}
 	install -s -o bin -g bin -m 755 telnetd ${DESTDIR}/etc/telnetd
-	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}${MAN8}${MAN}
+	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat8
 
 lint: ${SRCS}
 	lint ${CFLAGS} ${SRCS}
