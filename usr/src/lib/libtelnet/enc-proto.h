@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)enc-proto.h	5.3 (Berkeley) %G%
+ *	@(#)enc-proto.h	5.4 (Berkeley) %G%
  */
 
 /*
@@ -34,7 +34,7 @@
 #endif
 #endif
 
-#if	defined(ENCRYPTION)
+#ifdef	ENCRYPTION
 void encrypt_init P((char *, int));
 Encryptions *findencryption P((int));
 void encrypt_send_supprt P((void));
@@ -96,4 +96,4 @@ void des_set_random_generator_seed P((Block));
 void des_key_sched P((Block, Schedule));
 void des_ecb_encrypt P((Block, Block, Schedule, int));
 int  des_string_to_key P((char *, Block));
-#endif
+#endif	/* ENCRYPTION */

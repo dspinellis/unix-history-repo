@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)krb4encpwd.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)krb4encpwd.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 
@@ -86,9 +86,9 @@ static	KTEXT_ST auth;
 static	char name[ANAME_SZ];
 static	char user_passwd[ANAME_SZ];
 static	AUTH_DAT adat = { 0 };
-#if	defined(ENCRYPTION)
+#ifdef	ENCRYPTION
 static Block	session_key	= { 0 };
-#endif
+#endif	/* ENCRYPTION */
 static Schedule sched;
 static char  challenge[REALM_SZ];
 
