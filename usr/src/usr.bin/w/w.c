@@ -29,11 +29,13 @@ static char sccsid[] = "@(#)w.c	5.4 (Berkeley) %G%";
 #include <sys/dir.h>
 #include <sys/user.h>
 #include <sys/proc.h>
+#include <sys/ioctl.h>
 #include <machine/pte.h>
 #include <sys/vm.h>
 
 #define NMAX sizeof(utmp.ut_name)
 #define LMAX sizeof(utmp.ut_line)
+#define HMAX sizeof(utmp.ut_host)
 
 #define ARGWIDTH	33	/* # chars left on 80 col crt for args */
 
@@ -105,8 +107,10 @@ struct	tm *localtime();
 time_t	findidle();
 
 int	debug;			/* true if -d flag: debugging output */
+int	ttywidth = 80;		/* width of tty */
 int	header = 1;		/* true if -h flag: don't print heading */
 int	lflag = 1;		/* true if -l flag: long style output */
+int	prfrom = 1;		/* true if not -f flag: print host from */
 int	login;			/* true if invoked as login shell */
 time_t	idle;			/* number of minutes user is idle */
 int	nusers;			/* number of users logged in now */
@@ -132,6 +136,7 @@ main(argc, argv)
 	register int i, j;
 	char *cp;
 	register int curpid, empty;
+	struct winsize win;
 
 	login = (argv[0][0] == '-');
 	cp = rindex(argv[0], '/');
@@ -145,6 +150,10 @@ main(argc, argv)
 
 				case 'd':
 					debug++;
+					break;
+
+				case 'f':
+					prfrom = !prfrom;
 					break;
 
 				case 'h':
@@ -171,7 +180,7 @@ main(argc, argv)
 			}
 		} else {
 			if (!isalnum(argv[1][0]) || argc > 2) {
-				printf("Usage: %s [ -hlsuw ] [ user ]\n", cp);
+				printf("Usage: %s [ -hlsfuw ] [ user ]\n", cp);
 				exit(1);
 			} else
 				sel_user = argv[1];
@@ -179,6 +188,8 @@ main(argc, argv)
 		argc--; argv++;
 	}
 
+	if (ioctl(1, TIOCGWINSZ, &win) == -1 || win.ws_col > 70)
+		ttywidth = win.ws_col;
 	if ((kmem = open("/dev/kmem", 0)) < 0) {
 		fprintf(stderr, "No kmem\n");
 		exit(1);
@@ -250,8 +261,12 @@ main(argc, argv)
 			exit(0);
 
 		/* Headers for rest of output */
-		if (lflag)
+		if (lflag && prfrom)
+			printf("User     tty from           login@  idle   JCPU   PCPU  what\n");
+		else if (lflag)
 			printf("User     tty       login@  idle   JCPU   PCPU  what\n");
+		else if (prfrom)
+			printf("User    tty from            idle  what\n");
 		else
 			printf("User    tty  idle  what\n");
 		fflush(stdout);
@@ -337,41 +352,55 @@ gettty()
 putline()
 {
 	register int tm;
+	int width = ttywidth - 1;
 
 	/* print login name of the user */
 	printf("%-*.*s ", NMAX, NMAX, utmp.ut_name);
+	width -= NMAX + 1;
 
 	/* print tty user is on */
-	if (lflag)
+	if (lflag && !prfrom) {
 		/* long form: all (up to) LMAX chars */
 		printf("%-*.*s", LMAX, LMAX, utmp.ut_line);
-	else {
+		width -= LMAX;
+	 } else {
 		/* short form: 2 chars, skipping 'tty' if there */
 		if (utmp.ut_line[0]=='t' && utmp.ut_line[1]=='t' && utmp.ut_line[2]=='y')
 			printf("%-2.2s", &utmp.ut_line[3]);
 		else
 			printf("%-2.2s", utmp.ut_line);
+		width -= 2;
 	}
 
-	if (lflag)
+	if (prfrom) {
+		printf(" %-14.14s", utmp.ut_host);
+		width -= 15;
+	}
+
+	if (lflag) {
 		/* print when the user logged in */
 		prtat(&utmp.ut_time);
+		width -= 8;
+	}
 
 	/* print idle time */
 	if (idle >= 36 * 60)
 		printf("%2ddays ", (idle + 12 * 60) / (24 * 60));
 	else
 		prttime(idle," ");
+	width -= 7;
 
 	if (lflag) {
 		/* print CPU time for all processes & children */
 		prttime(jobtime," ");
+		width -= 7;
 		/* print cpu time for interesting process */
 		prttime(proctime," ");
+		width -= 7;
 	}
 
 	/* what user is doing, either command tail or args */
-	printf(" %-.32s\n",doing);
+	printf(" %-.*s\n", width-1, doing);
 	fflush(stdout);
 }
 
