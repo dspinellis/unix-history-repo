@@ -1,18 +1,16 @@
-.TH EXP 3M  "8 May 1985"
+.TH EXP 3M  "19 August 1985"
 .UC 4
+.ds nn \fINaN\fR
 .SH NAME
-E, L, exp, log, log10, pow \- exponential, logarithm, power
+exp, expm1, log, log10, log1p, pow \- exponential, logarithm, power
 .SH SYNOPSIS
 .nf
 .B #include <math.h>
 .PP
-.B double E(x)
-.B double x;
-.PP
-.B double L(x)
-.B double x;
-.PP
 .B double exp(x)
+.B double x;
+.PP
+.B double expm1(x)
 .B double x;
 .PP
 .B double log(x)
@@ -21,275 +19,100 @@ E, L, exp, log, log10, pow \- exponential, logarithm, power
 .B double log10(x)
 .B double x;
 .PP
-.B double pow(x, y)
-.B double x, y;
+.B double log1p(x)
+.B double x;
+.PP
+.B double pow(x,y)
+.B double x,y;
 .fi
 .SH DESCRIPTION
-.I E
-returns
-.I exp(x)\-1
-accurately (even if
-.I x
-is close to
-.I 0
-).
 .PP
-.I L
-returns
-.I log(1+x)
-accurately (even if
-.I x
-is close to
-.I 0
-).
+Exp returns the exponential function of x.
 .PP
-.I Exp
-returns the exponential function of 
-.I x.
+Expm1 returns exp(x)\-1 accurately even for tiny x.
 .PP
-.I Log
-returns the natural logarithm of 
-.IR x ;
-.I log10
-returns the base
-.I 10
-logarithm.
+Log returns the natural logarithm of x.
 .PP
-.I Pow
-returns
+Log10 returns the logarithm of x to base 10.
+.PP
+Log1p returns log(1+x) accurately even for tiny x.
+.PP
+Pow(x,y) returns
 .if n \
-.I  x**y.
+x**y.
 .if t \
-.I  x\u\s8y\s10\d.
+x\u\s8y\s10\d.
 .SH SEE ALSO
-intro(3M)
+intro(3M), infnan(3M)
+.SH ERROR (due to Roundoff etc.)
+exp(x), log(x), expm1(x) and log1p(x) are accurate to within 
+an \fIulp\fR, and log10(x) to within about 2 \fIulp\fRs;
+an \fIulp\fR is one \fIU\fRnit in the \fIL\fRast \fIP\fRlace.
+The error in pow(x,y) is below about 2 \fIulp\fRs when its
+magnitude is moderate, but increases as pow(x,y) approaches
+the over/underflow thresholds until almost as many bits are
+lost as are occupied by the floating\-point format's exponent
+field; that is 8 bits for VAX D and 11 bits for IEEE 754 Double.
+Moderate values of pow are accurate enough that pow(integer,integer)
+is exact until it is bigger than 2**56 on a VAX, 2**53 for IEEE.
 .SH DIAGNOSTICS
-.I E,
-.I L,
-.I exp
-and
-.I pow
-return the reserved operand on the VAX when the correct value would overflow;
-.I errno
-is set to ERANGE.
-.I Pow
-returns the reserved operand on the VAX and sets
-.I errno
-to EDOM when the first argument is negative and the second is non-integral.
+Exp, expm1 and pow return the reserved operand on a VAX when the correct
+value would overflow, and they set \fIerrno\fR to ERANGE.
+Pow(x,y) returns the reserved operand on a VAX and sets \fIerrno\fR
+to EDOM when x < 0 and y is not an integer.
 .PP
-.I Log
-returns the reserved operand on the VAX when
-.I x
-is zero or negative;
-.I errno
-is set to EDOM.
+On a VAX, \fIerrno\fR is set to EDOM and the reserved operand is returned
+by log unless x > 0, by log1p unless x > \-1.
 .SH NOTES
-.I Pow
-defines
-.if n\
-.I x**0
-.if t\
-.I x\u\s80\s10\d
-=
-.I 1
-for all
-.I x,
-including
-.I zero,
-.if n\
-.I infinity
-.if t\
+The functions exp(x)\-1 and log(1+x) are called expm1
+and logp1 in BASIC on the Hewlett\-Packard HP\-71B and APPLE
+Macintosh, EXP1 and LN1 in Pascal, exp1 and log1 in C
+on APPLE Macintoshes, where they have been provided to make
+sure financial calculations of ((1+x)**n\-1)/x, namely
+expm1(n\(**log1p(x))/x, will be accurate when x is tiny.
+They also provide accurate inverse hyperbolic functions.
+.PP
+Pow(x,0) returns x**0 = 1 for all x including x = 0,
+.if n \
+Infinity
+.if t \
 \(if
-(not applicable on the VAX) and
-.I NaN
-(the reserved operand on the VAX).
-Previous implementations of
-.I pow
-may have defined
-.if n\
-.I x**0
-.if t\
-.I  x\u\s80\s10\d
-to be
-.I undefined
-in some or all of those cases.
-The reasons for setting
-.if n\
-.I x**0
-.if t\
-.I  x\u\s80\s10\d
-=
-.I 1
-in all cases are these:
-.IP (1)
-Any program that already tests whether
-.I x
-is
-.I 0
-(or
-.if n\
-.I infinity
-.if t\
-\(if
-or
-.I NaN\fR)
-before computing
-.if n\
-.I x**0
-.if t\
-.I  x\u\s80\s10\d
-will be indifferent to whether
-.if n\
-.I 0**0
-.if t\
-.I  0\u\s80\s10\d
-=
-.I 1
-or not.
-Any program that expects
-.if n\
-.I 0**0
-.if t\
-.I  0\u\s80\s10\d
-to be invalid is dubious anyway since that
-expectation is bound to be contradicted by some
-computer systems.
-.IP (2)
-Some Algebra texts (e.g. Sigler's) define
-.if n\
-.I x**0
-.if t\
-.I  x\u\s80\s10\d
-=
-.I 1
-for all
-.I x,
-including
-.I x
-=
-.I 0.
-This is compatible with the convention for polynomials
-that accepts
-.br
-.I p(x) =
-.if n \{\
-.I a[0]*x**0
-+
-.I a[1]*x**1
-+ ... +
-.I a[n]*x**n \}
-.if t \{\
-.I a\d\s80\s10\u\(**x\u\s80\s10\d
-+
-.I a\d\s81\s10\u\(**x\u\s81\s10\d
-+ ... +
-.I a\d\s8n\s10\u\(**x\u\s8n\s10\d \}
-and evaluates 
-.I p(0)
-=
-.if n\
-.I a[0]
-.if t\
-.I a\d\s80\s10\u
-rather than reject
-.if n\
-.I a[0]*0**0
-.if t\
-.I a\d\s80\s10\u\(**0\u\s80\s10\d
-as invalid.
-.IP (3)
-Analysts will accept
-.if n\
-.I 0**0
-.if t\
-.I  0\u\s80\s10\d
-=
-.I 1
-despite that
-.if n\
-.I x**y
-.if t\
-.I  x\u\s8y\s10\d
-can approach anything or nothing as
-.I x
-and
-.I y
-approach
-.I zero
+(not found on a VAX), and \*(nn (the reserved
+operand on a VAX).  Previous implementations of pow may
+have defined x**0 to be undefined in some or all of these
+cases.  Here are reasons for returning x**0 = 1 always:
+.IP (1) \w'\0\0\0\0'u
+Any program that already tests whether x is zero (or
+infinite or \*(nn) before computing x**0 cannot care
+whether 0**0 = 1 or not. Any program that depends
+upon 0**0 to be invalid is dubious anyway since that
+expression's meaning and, if invalid, its consequences 
+vary from one computer system to another.
+.IP (2) \w'\0\0\0\0'u
+Some Algebra texts (e.g. Sigler's) define x**0 = 1 for 
+all x, including x = 0.
+This is compatible with the convention that accepts a[0]
+as the value of polynomial
+.ce
+p(x) = a[0]\(**x**0 + a[1]\(**x**1 + a[2]\(**x**2 +...+ a[n]\(**x**n
+.IP
+at x = 0 rather than reject a[0]\(**0**0 as invalid.
+.IP (3) \w'\0\0\0\0'u
+Analysts will accept 0**0 = 1 despite that x**y can
+approach anything or nothing as x and y approach 0
 independently.
-The reason for setting
-.if n\
-.I 0**0
-.if t\
-.I  0\u\s80\s10\d
-=
-.I 1
-anyway is this:
-.br
-If
-.I x(z)
-and
-.I y(z)
-are
-.I any
-functions analytic (expressible as power series) in
-.I z
-at
-.I z
-=
-.I 0,
-and if
-.I x(0)
-=
-.I y(0)
-=
-.I 0,
-then
-.if n\
-.I x(z)**y(z)
-.if t\
-.I x(z)\u\s8y(z)\s10\d
-\(->
-.I 1
-as
-.I z
-\(->
-.I 0.
-.IP (4)
-If
-.if n\
-.I 0**0
-.if t\
-.I  0\u\s80\s10\d
-=
-.I 1,
-then
-.if n\
-.I infinity**0
-.if t\
-\(if\u\s8\fI0\fR\s10\d
-=
-.if t\
-.I  1/0\u\s80\s10\d
-.if n\
-.I 1/0**0
-=
-.I 1
-too; and then
-.if n\
-.I NaN**0
-.if t\
-.I  NaN\u\s80\s10\d
-=
-.I 1
-because
-.if n\
-.I x**0
-.if t\
-.I  x\u\s80\s10\d
-=
-.I 1
-for all finite and infinite
-.I x.
+The reason for setting 0**0 = 1 anyway is this:
+.IP
+If x(z) and y(z) are \fIany\fR functions analytic (expandable
+in power series) in z around z = 0, and if there 
+x(0) = y(0) = 0, then x(z)**y(z) \(-> 1 as z \(-> 0.
+.IP (4) \w'\0\0\0\0'u
+If 0**0 = 1, then
+.if n \
+infinity**0 = 1/0**0 = 1 too; and
+.if t \
+\(if**0 = 1/0**0 = 1 too; and
+then \*(nn**0 = 1 too because x**0 = 1 for all finite
+and infinite x, i.e. independently of x.
 .SH AUTHOR
 Kwok\-Choi Ng, W. Kahan
