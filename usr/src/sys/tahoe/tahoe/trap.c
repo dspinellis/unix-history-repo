@@ -1,4 +1,4 @@
-/*	trap.c	1.5	86/07/16	*/
+/*	trap.c	1.6	86/11/25	*/
 
 #include "../tahoe/psl.h"
 #include "../tahoe/reg.h"
@@ -43,8 +43,9 @@ char	*trap_type[] = {
 	"Alignment fault",			/* T_ALIGNFLT */
 	"Kernel stack not valid",		/* T_KSPNOTVAL */
 	"Bus error",				/* T_BUSERR */
+	"Kernel debugger trap",			/* T_KDBTRAP */
 };
-#define	TRAP_TYPES	(sizeof (trap_type) / sizeof (trap_type[0]))
+int	TRAP_TYPES = sizeof (trap_type) / sizeof (trap_type[0]);
 
 /*
  * Called from the trap handler when a processor trap occurs.
@@ -70,6 +71,10 @@ trap(sp, type, hfs, accmst, acclst, dbl, code, pc, psl)
 	switch (type) {
 
 	default:
+#ifdef KDB
+		if (kdb_trap(&psl))
+			return;
+#endif
 		printf("trap type %d, code = %x, pc = %x\n", type, code, pc);
 		type &= ~USER;
 		if (type < TRAP_TYPES && trap_type[type])

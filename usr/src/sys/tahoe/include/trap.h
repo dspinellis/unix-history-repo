@@ -1,4 +1,4 @@
-/*	trap.h	1.1	86/01/05	*/
+/*	trap.h	1.2	86/11/25	*/
 
 /*	first 3 constants known in system C files - don't change */
 #define	T_RESADFLT	0	/* reserved addressing */
@@ -17,3 +17,4 @@
 #define	T_ALIGNFLT	14	/* alignment fault */
 #define	T_KSPNOTVAL	15	/* kernel stack pointer not valid */
 #define	T_BUSERR	16	/* bus error */
+#define	T_KDBTRAP	17	/* kernel debugger trap */
