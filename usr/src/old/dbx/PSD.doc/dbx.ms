@@ -1,4 +1,4 @@
-.\"	@(#)dbx.ms	6.2 (Berkeley) %G%
+.\"	@(#)dbx.ms	6.3 (Berkeley) %G%
 .\"
 .\" modified by mark seiden in cosmetic ways.
 .\" examples VAXinated by Kevin Dunlap
@@ -368,10 +368,8 @@ run	execute object file
 cont	continue execution from where it stopped
 trace	display tracing information at specified place
 stop	stop execution at specified place
-when	execute \&\fIdbx\fP requests at specified place
 status	display active \&\fItrace\fP and \&\fIstop\fP requests
 delete	delete specific \&\fItrace\fP or \&\fIstop\fP requests
-clear	clear all breakpoints
 catch	start trapping specified signals
 ignore	stop trapping specified signals
 step	execute the next source line, stepping into functions
@@ -383,8 +381,6 @@ _
 	displaying data
 _
 print	print the value of an expression
-display	display the value of an expression at each stopping point
-undisplay	don't display the value of an expression any more
 whatis	print the declaration of a given identifier or type
 which	print outer block associated with identifier
 whereis	print all symbols matching identifier
@@ -411,8 +407,6 @@ file	change current source file
 func	change the current function or procedure
 list	display lines of source code
 use	set directory list to search for source files
-cd	change \&\fIdbx\fP directory
-pwd	print working \&\fIdbx\fP directory
 /.../	search down in file to match regular expression
 ?...?	search up in file to match regular expression
 .T&
@@ -425,9 +419,6 @@ sh	pass command line to the shell
 alias	change \&\fIdbx\fP command name
 help	explain commands
 source	read commands from external file
-dbxenv	set \&\fIdbx\fP environment
-debug	start debugging another object file
-kill	terminate debugging of current program
 quit	exit the debugger
 .TE
 .KE
