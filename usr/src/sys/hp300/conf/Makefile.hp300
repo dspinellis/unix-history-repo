@@ -1,4 +1,4 @@
-#	@(#)Makefile.hp300	7.20 (Berkeley) %G%
+#	@(#)Makefile.hp300	7.21 (Berkeley) %G%
 #
 # Makefile for 4.4 BSD
 #
@@ -84,10 +84,10 @@ SYSTEM_LD_TAIL=	@size $@; chmod 755 $@; \
 
 libkern.a:
 	-@if [ X${PROF} = X ]; \
-	then ln -s ../../libkern/obj/libkern.a libkern.a; \
-	else ln -s ../../libkern/obj/libkern_p.a libkern.a; \
+	then ln -s $S/libkern/obj/libkern.a libkern.a; \
+	else ln -s $S/libkern/obj/libkern_p.a libkern.a; \
 	fi; \
-	echo ln -s ../../libkern/obj/libkern.a libkern.a
+	echo ln -s $S/libkern/obj/libkern.a libkern.a
 
 newvers:
 	sh $S/conf/newvers.sh
