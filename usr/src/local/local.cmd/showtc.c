@@ -1,23 +1,24 @@
+#ifndef LINT
+static char *sccsid="@(#)showtc.c	1.2	(Berkeley) %G%";
+#endif
+
 /*
 ** show termcap entries
 **
 ** where:
-**	-x	expand tc= capabilities
 **	-S	sort entries before display
-**	-d	look for duplicate names
-**	-n	-d and stop
-**	-g	sort on generic names
 **	-b	show bare entries
+**	-d	look for duplicate names
 **	-f	following arg is FULL PATHNAME of termcap file
+**	-g	sort on generic names
+**	-n	-d and stop
+**	-s	don't print two char name at the front of every line
+**	-x	expand tc= capabilities
 **	[ent]	display specific entry. tc= will be expanded.
 **
 ** David L. Wasley, U.C.Berkeley
 ** Modified for 4.1c by Kevin Layer
 */
-
-#ifndef LINT
-static char *sccsid="@(#)showtc.c	1.1	(Berkeley) %G%";
-#endif
 
 #include <stdio.h>
 #include <sys/file.h>
@@ -29,7 +30,7 @@ static char *sccsid="@(#)showtc.c	1.1	(Berkeley) %G%";
 #define YES		1
 #define CNULL		'\0'
 #define NOENTRIES	1024
-#define USAGE		"usage: %s [-Sxdngb] [-f termcapfile] [entry] ..."
+#define USAGE		"usage: %s [-Sxdngb] [-f termcapfile] [entry] ...\n"
 
 struct TcName {
 	char	name_buf[124];
@@ -40,7 +41,8 @@ struct TcName {
 int		Dflag = NO;
 #endif
 int		xflag = NO;
-int		sflag = YES;
+int		Sflag = YES;
+int		sflag = NO;
 int		dflag = NO;
 int		nflag = NO;
 int		gflag = NO;
@@ -105,9 +107,14 @@ main(argc, argv, envp)
 					dflag = YES;
 					continue;
 
+				/* strip the two name off */
+				case 's':
+					sflag = YES;
+					continue;
+
 				/* sort the name array */
 				case 'S':
-					sflag = NO;
+					Sflag = NO;
 					continue;
 
 #ifdef DEBUG
@@ -284,7 +291,7 @@ main(argc, argv, envp)
 	/*
 	** Order the list
 	*/
-	if (sflag)
+	if (Sflag)
 		qsort((char *)tcNames, tn - tcNames,
 			sizeof (struct TcName), name_cmp);
 
@@ -408,12 +415,15 @@ prnt_ent(buf)
 	}
 	*cp = CNULL;		/* was (char *)0 */
 
-	if (sflag)
+	if (Sflag)
 		qsort((char *) caps, cp - caps, sizeof (char *), ent_cmp);
 
 	printf("%s\n", name);
 	for (cp = caps; *cp; cp++)
-		printf("%2.2s	%s\n", name, *cp);
+		if (sflag)
+			printf("	%s\n", *cp);
+		else
+			printf("%2.2s	%s\n", name, *cp);
 	(void) putchar('\n');
 }
 
