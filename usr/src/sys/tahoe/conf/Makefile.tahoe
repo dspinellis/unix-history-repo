@@ -1,7 +1,6 @@
-#	makefile.tahoe	1.2	85/04/22
-#	makefile.tahoe	6.3	9/25/83
+#	@(#)Makefile.tahoe	1.2 (Berkeley) %G%
 #
-# Makefile for 4.2 BSD
+# Makefile for 4.3 BSD
 #
 # This makefile is constructed from a machine description:
 #	config machine
@@ -10,7 +9,7 @@
 # after which you should do
 #	 config machineid
 # Generic makefile changes should be made in
-#	/sys/conf/makefile
+#	/sys/conf/Makefile
 # after which config should be rerun for all machines.
 #
 # N.B.: NO DEPENDENCIES ON FOLLOWING FLAGS ARE VISIBLE TO MAKEFILE
@@ -20,18 +19,14 @@
 # -DQUOTA	compile in file system quotas
 # -DSWABIPS	compile in code to byte swap ip packets on 3Mb/s Ethernet
 #
-DESTDIR=
-AS=/bin/as
-CC=/bin/cc
-LD=/bin/ld
-INCLDIR=${DESTDIR}/usr/include
-LIBDIR=${DESTDIR}/lib
-ULIBDIR=${DESTDIR}/usr/lib
+C2=	/lib/c2
+LD=	/bin/ld
+TOUCH=	touch -f -c
+INDIR=	../tahoe/inline
+INLINE=	${INDIR}/inline
 
-LCC=/bin/cc
-TOUCH=	touch -c
-
-COPTS=	${IDENT} -DKERNEL
+INCLUDES= -I. -I../h
+COPTS=	${INCLUDES} ${IDENT} -DKERNEL
 CFLAGS=	-O ${COPTS}
 
 %OBJS
@@ -45,69 +40,73 @@ clean:
 		errs linterrs makelinks
 
 lint: /tmp
-	@lint -hbxn -I. -DGENERIC ${COPTS} ../machine/Locore.c \
-	  ${CFILES} ../machine/swapgeneric.c ioconf.c | \
+	@lint -hbxn -I. -DGENERIC ${COPTS} ${PARAM} ../tahoe/Locore.c \
+	  ${CFILES} ../tahoe/swapgeneric.c ioconf.c param.c | \
 	    grep -v 'struct/union .* never defined' | \
 	    grep -v 'possible pointer alignment problem'
 
-../machine/symbols.sort: ../machine/symbols.raw
-	grep -v '^#' ../machine/symbols.raw \
-	    | sed 's/^	//' | sort -u > ../machine/symbols.sort
+../tahoe/symbols.sort: ../tahoe/symbols.raw
+	grep -v '^#' ../tahoe/symbols.raw \
+	    | sed 's/^	//' | sort -u > ../tahoe/symbols.sort
 
-locore.o: assym.s ../machine/scb.s ../machine/locore.s \
-    ubglue.s ../machine/mtpr.h ../machine/trap.h ../machine/psl.h \
-    ../machine/pte.h ../machine/cp.h ../machine/mem.h
-	cat assym.s ../machine/scb.s ../machine/locore.s \
-	    ubglue.s > locore.c
+${INLINE}: ${INDIR}/inline.h ${INDIR}/langpats.c
+${INLINE}: ${INDIR}/libcpats.c ${INDIR}/machdep.c
+${INLINE}: ${INDIR}/machpats.c ${INDIR}/main.c
+	cd ${INDIR}; make
+
+locore.o: assym.s ../tahoe/scb.s ../tahoe/locore.s \
+    vbglue.s ../tahoe/mtpr.h ../tahoe/trap.h ../tahoe/psl.h \
+    ../tahoe/pte.h ../tahoe/cp.h ../tahoe/mem.h
+	cat assym.s ../tahoe/scb.s ../tahoe/locore.s \
+	    vbglue.s > locore.c
 	${CC} -E -I. -DLOCORE ${COPTS} locore.c > locore.i
 	@echo 'as -o locore.o locore.i'
 	@${AS} -o locore.o locore.i
 	@rm locore.i
 
 # the following is necessary because autoconf.o depends on #if GENERIC
-autoconf.o tu.o: makefile
+autoconf.o: Makefile
 
 # depend on network configuration
-af.o : makefile
+af.o : Makefile
 # depend on maxusers
-assym.s: makefile
+assym.s machdep.o: Makefile
 
-assym.s: ../h/param.h ../machine/pte.h ../h/buf.h ../h/vmparam.h \
-    ../h/vmmeter.h ../h/dir.h ../h/cmap.h ../h/map.h ../vba/vbavar.h \
+assym.s: ../h/param.h ../tahoe/pte.h ../h/buf.h ../h/vmparam.h \
+    ../h/vmmeter.h ../h/dir.h ../h/cmap.h ../h/map.h ../tahoevba/vbavar.h \
     ../h/proc.h ../h/msgbuf.h
-	${LCC} -I/DIST/usr/include ${IDENT} ${PARAM} ../machine/genassym.c; ./a.out >assym.s; rm -f a.out
+	${CC} ${INCLUDES} -DKERNEL ${IDENT} ${PARAM} ../tahoe/genassym.c; ./a.out >assym.s; rm -f a.out
 
-../h/param.h: ../machine/param.h ../h/signal.h ../h/types.h
+../h/param.h: ../tahoe/machparam.h ../h/signal.h ../h/types.h
 	${TOUCH} ../h/param.h
 ../h/tty.h:  ../h/ttychars.h ../h/ttydev.h
 	${TOUCH} ../h/tty.h
 ../h/ioctl.h: /usr/include/sgtty.h ../h/ttychars.h ../h/ttydev.h
 	${TOUCH} ../h/ioctl.h
-../h/user.h: ../machine/pcb.h ../h/dmap.h ../h/time.h ../h/resource.h \
+../h/user.h: ../tahoe/pcb.h ../h/dmap.h ../h/time.h ../h/resource.h \
     /usr/include/errno.h
 	${TOUCH} ../h/user.h
 ../h/vm.h: ../h/vmmac.h ../h/vmmeter.h ../h/vmparam.h ../h/vmsystm.h
 	${TOUCH} ../h/vm.h
-../h/vmparam.h: ../machine/vmparam.h
+../h/vmparam.h: ../tahoe/vmparam.h
 	${TOUCH} ../h/vmparam.h
 
-depend:
-	grep '^#include' ${CFILES} | grep -v '<' | \
-	sed -e 's/:[^"]*"\([^"]*\)".*/: \1/' \
-	    -e 's/\.c/.o/' \
-	    -e 's,../[a-zA-Z]*/,,' | \
+depend: 
+	-if [ ! -f assym.s ]; then touch assym.s; fi
+	${CC} -M ${COPTS} ${CFILES} | \
+	sed -e ':loop' \
+	    -e 's/\.\.\/[^ /]*\/\.\./../' \
+	    -e 't loop' | \
 	awk ' { if ($$1 != prev) { print rec; rec = $$0; prev = $$1; } \
 		else { if (length(rec $$2) > 78) { print rec; rec = $$0; } \
 		       else rec = rec " " $$2 } } \
 	      END { print rec } ' > makedep
-	echo '$$r makedep' >>eddep
 	echo '/^# DO NOT DELETE THIS LINE/+1,$$d' >eddep
 	echo '$$r makedep' >>eddep
 	echo 'w' >>eddep
-	cp makefile makefile.bak
-	ed - makefile < eddep
+	cp Makefile Makefile.bak
+	ex - Makefile < eddep
 	rm eddep makedep
-
 
 links:
 	egrep '#if' ${CFILES} | sed -f ../conf/defines | \
@@ -123,23 +122,24 @@ tags:
 	/usr/ucb/ctags ${CFILES}
 
 print:
-	@pr -f makefile ../sys/TODO linterrs
+	@pr -f Makefile ../sys/TODO linterrs
 	@/usr/ucb/ctags -x ${CFILES} | pr -f -h XREF
 	@(size vmunix *.o) | pr -f -h sizes
 	@ls -ls | pr -f
 	@cd ../h; ls -ls | pr -f ; pr -f *.m *.h
 	@echo 'once upon a time ...'
-	@cd ../sys; pr -f asm.sed Locore.c scb.s locore.s
+	@cd ../tahoe; pr -f Locore.c scb.s locore.s
+	@cd ${INDIR}; make print
 	@pr -f ${CFILES}
 
-ioconf.o: ioconf.c ../h/param.h ../machine/pte.h ../h/buf.h ../h/map.h \
-    ../h/vm.h ../vba/vbavar.h
+ioconf.o: ioconf.c ../h/param.h ../tahoe/pte.h ../h/buf.h ../h/map.h \
+    ../h/vm.h ../tahoevba/vbavar.h
 
 param.c: ../conf/param.c
 	rm -f param.c
 	cp ../conf/param.c .
 
-param.o: param.c makefile
+param.o: param.c Makefile
 	${CC} -I. -c ${CFLAGS} ${PARAM} param.c
 
 %RULES
