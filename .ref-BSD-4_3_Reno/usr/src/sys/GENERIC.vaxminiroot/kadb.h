@@ -1,1 +1,0 @@
-#define NKADB 0

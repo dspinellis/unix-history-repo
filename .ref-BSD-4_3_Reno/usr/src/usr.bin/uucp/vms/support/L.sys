@@ -1,9 +1,0 @@
-acf1 None ACU 300
-acf2 None ACU 300
-acf3 None ACU 300
-acf4 Any TCP 9600 ttyp0
-cmcl1 None ACU 300
-cmcl2 Any TCP 9600 ttyp0
-csd1 Any TCP 9600 ttyp0
-csd2 Any TCP 9600 ttyp0
-csd34a None ACU 300

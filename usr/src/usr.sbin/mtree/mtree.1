@@ -1,0 +1,227 @@
+.\" Copyright (c) 1989, 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms, with or without
+.\" modification, are permitted provided that the following conditions
+.\" are met:
+.\" 1. Redistributions of source code must retain the above copyright
+.\"    notice, this list of conditions and the following disclaimer.
+.\" 2. Redistributions in binary form must reproduce the above copyright
+.\"    notice, this list of conditions and the following disclaimer in the
+.\"    documentation and/or other materials provided with the distribution.
+.\" 3. All advertising materials mentioning features or use of this software
+.\"    must display the following acknowledgement:
+.\"	This product includes software developed by the University of
+.\"	California, Berkeley and its contributors.
+.\" 4. Neither the name of the University nor the names of its contributors
+.\"    may be used to endorse or promote products derived from this software
+.\"    without specific prior written permission.
+.\"
+.\" THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+.\" ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+.\" IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+.\" ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+.\" FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+.\" DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+.\" OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+.\" HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+.\" LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+.\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+.\" SUCH DAMAGE.
+.\"
+.\"     @(#)mtree.1	5.10 (Berkeley) 7/30/91
+.\"
+.Dd July 30, 1991
+.Dt MTREE 8
+.Os
+.Sh NAME
+.Nm mtree
+.Nd map a directory hierarchy
+.Sh SYNOPSIS
+.Nm mtree
+.Op Fl cderux
+.Op Fl f Ar spec
+.Op Fl p Ar path
+.Sh DESCRIPTION
+The utility
+.Nm mtree
+compares a directory hierarchy against a specification for a
+directory hierarchy.
+By default, the specification is read from the standard input.
+.Nm Mtree
+verifies that the tree rooted in the current directory matches the
+specification.
+.Pp
+Messages are written to standard output for any files whose
+characteristics do not match those of the specification, or which are
+missing from either the specification or the tree.
+.Pp
+The options are as follows:
+.Bl -tag -width flag
+.It Fl c
+Print a specification for the tree to standard output.
+.It Fl d
+Ignore everything except directory type files.
+.It Fl e
+Don't object to files that are in the tree but not in the specification.
+.It Fl f
+Read the specification from
+.Ar file  ,
+instead of from standard input.
+.It Fl p
+Traverse the tree rooted in
+.Ar path  ,
+instead of the current directory.
+.It Fl r
+Remove any files in the tree that are not described in the
+specification.
+.It Fl u
+Modify the owner, group, and permissions of existing files to match
+the specification, as well as create any missing directories.
+Owner, group, and permissions must all be specified for missing
+directories to be created.
+.It Fl x
+Don't descend below any mount points.
+.El
+.Pp
+Specifications are mostly composed of ``keywords'', i.e. strings that
+that specify values relating to files.
+No keywords have default values, and if a keyword has no set value no
+checks based on it are performed.
+.Pp
+Currently supported keywords are as follows:
+.Bl -tag -width Cm
+.It Cm cksum
+The checksum of the file using the algorithm specified by
+the program
+.Xr cksum  1  .
+.It Cm ignore
+Causes the hierarchy below the file to be ignored.
+.It Cm group
+The group of the file; may be either numeric or symbolic.
+.It Cm mode
+The current file's permissions as an absolute (octal) or symbolic
+value (see
+.Xr chmod  1  ) .
+.It Cm nlink
+The number of hard links the file is expected to have.
+.It Cm owner
+The owner of the file; may be either numeric or symbolic.
+.It Cm size
+The size, in bytes, of the file.
+.It Cm link
+The file a symbolic link is expected to reference.
+.It Cm time
+The last modification time of the file.
+.It Cm type
+The type of the file; may be set to any one of the following:
+.Bl -tag -width Cm -compact
+.It Cm block
+block special device
+.It Cm char
+character special device
+.It Cm dir
+directory
+.It Cm fifo
+fifo
+.It Cm file
+regular file
+.It Cm link
+symbolic link
+.It Cm socket
+socket
+.El
+.El
+.Pp
+There are four types of lines in a specification.
+.Pp
+The first type of line sets a ``global'' value for a keyword, and
+consists of a leading ``/set'' followed by whitespace, followed by
+sets of keyword/value pairs, separated by whitespace.
+Keyword/value pairs consist of a keyword, followed by a equals sign
+(``=''), followed by a value, without intervening whitespace.
+Once a keyword has been set, its value remains unchanged until either
+set again or unset.
+.Pp
+The second type of line unsets keywords and consists of a leading
+``/unset'', followed by whitespace, followed by one or more keywords,
+separated by whitespace.
+.Pp
+The third type of line is a file specification and consists of a file
+name, followed by whitespace, followed by zero or more whitespace
+separated keyword/value pairs.
+The file name may be preceded by any number of whitespace characters.
+The file name may contain any of the standard file name matching
+characters (``['', ``]'', ``?'' or ``*''), in which case files
+in the hierarchy will be associated with the first pattern that
+they match.
+.Pp
+Each of the keyword/value pairs consist of a keyword, followed by an
+equals sign (``=''), followed by the keyword's value, without intervening
+whitespace.
+These values override, without changing, the global value of the
+corresponding keyword.
+.Pp
+All paths are relative.
+Specifying a directory will cause subsequent files to be searched
+for in that directory hierarchy.
+Which brings us to the last type of line in a specification: a line
+containing only the string
+.Dq Nm \&..
+causes the current directory
+path to ascend one level.
+.Pp
+Empty lines and lines whose first non-whitespace character is a hash
+mark (``#'') are ignored.
+.Pp
+.Nm Mtree
+exits with a status of 0 on success and >0 if an error occurred or the
+tree did not match the specification.
+.Sh FILES
+.Bl -tag -width /etc/mtree -compact
+.It Pa /etc/mtree
+system specification directory
+.El
+.Sh SEE ALSO
+.Xr chmod 1 ,
+.Xr chown 1 ,
+.Xr chgrp 1 ,
+.Xr cksum 1 ,
+.Xr find 1 ,
+.Xr stat 2 ,
+.Xr fts 3 ,
+.Xr mkproto 8
+.Sh BUGS
+The
+.Cm cksum
+keyword is not yet implemented.
+.Pp
+The
+.Cm time
+keyword should be specifiable in human readable terms.
+.Sh EXAMPLE
+.Bd -literal -offset indent -compact
+#	  fs: /a/staff/rick/mybin
+#	  by: rick
+#	date: Fri May 25 12:26:57 1990
+
+/set group=staff mode=0555 nlink=1 owner=rick type=file
+[ 		nlink=2 size=6144
+adb		size=53248
+df		group=operator mode=02555 size=20480
+ps		group=kmem mode=02555 size=54272
+rcp		owner=root mode=04555 size=79872
+test		nlink=2 size=6144
+
+/set group=wheel mode=0444 nlink=1 owner=rick type=file
+manpages	type=dir mode=0775 nlink=2 size=1024
+adb.man	size=9473
+df.man	size=5263
+tar.man	size=3324
+\&..
+.Ed
+.Sh HISTORY
+The
+.Nm mtree
+utility appeared in
+.Bx 4.3 Reno .
