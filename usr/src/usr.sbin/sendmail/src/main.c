@@ -13,7 +13,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	8.39 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	8.40 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -104,6 +104,11 @@ main(argc, argv, envp)
 
 	/* do machine-dependent initializations */
 	init_md(argc, argv);
+
+	/* arrange to dump state on signal */
+#ifdef SIGUSR1
+	setsignal(SIGUSR1, dumpstate);
+#endif
 
 	/* in 4.4BSD, the table can be huge; impose a reasonable limit */
 	DtableSize = getdtsize();
