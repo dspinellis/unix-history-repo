@@ -7,7 +7,7 @@
  *
  * %sccs.include.386.c%
  *
- *	@(#)trap.c	5.7 (Berkeley) %G%
+ *	@(#)trap.c	5.8 (Berkeley) %G%
  */
 
 
@@ -41,9 +41,13 @@
 
 struct	sysent sysent[];
 int	nsysent;
-#include "dbg.h"
 /*
- * Called from the trap handler when a processor trap occurs.
+ * trap(frame):
+ *	Exception, fault, and trap interface to BSD kernel. This
+ * common code is called from assembly language IDT gate entry
+ * routines that prepare a suitable stack frame, and restore this
+ * frame after the exception has been processed. Note that the
+ * effect is as if the arguments were passed call by reference.
  */
 unsigned rcr2(), Sysbase;
 extern short cpl;
@@ -158,24 +162,6 @@ pg("panic");
 		i = SIGFPE;
 		break;
 
-#ifdef notdef
-	/*
-	 * If the user SP is above the stack segment,
-	 * grow the stack automatically.
-	 */
-	case T_STKFLT + USER:
-	case T_SEGFLT + USER:
-		if (grow((unsigned)locr0[tESP]) /*|| grow(code)*/)
-			goto out;
-		ucode = code;
-		i = SIGSEGV;
-		break;
-
-	case T_TABLEFLT:		/* allow page table faults in kernel */
-	case T_TABLEFLT + USER:		/* page table fault */
-		panic("ptable fault");
-#endif
-
 	case T_PAGEFLT:			/* allow page faults in kernel mode */
 		if (code & PGEX_P) goto bit_sucker;
 		/* fall into */
@@ -235,33 +221,6 @@ u.u_ar0 = oar0;
 		i = SIGTRAP;
 		break;
 
-#ifdef notdef
-	/*
-	 * For T_KSPNOTVAL and T_BUSERR, can not allow spl to
-	 * drop to 0 as clock could go off and we would end up
-	 * doing an rei to the interrupt stack at ipl 0 (a
-	 * reserved operand fault).  Instead, we allow psignal
-	 * to post an ast, then return to user mode where we
-	 * will reenter the kernel on the kernel's stack and
-	 * can then service the signal.
-	 */
-	case T_KSPNOTVAL:
-		if (noproc)
-			panic("ksp not valid");
-		/* fall thru... */
-	case T_KSPNOTVAL + USER:
-		printf("pid %d: ksp not valid\n", u.u_procp->p_pid);
-		/* must insure valid kernel stack pointer? */
-		trapsignal(SIGKILL,0|FRMTRAP);
-u.u_ar0 = oar0;
-		return;
-
-	case T_BUSERR + USER:
-		trapsignal(SIGBUS, code|FRMTRAP);
-u.u_ar0 = oar0;
-		return;
-#endif
-
 #include "isa.h"
 #if	NISA > 0
 	case T_NMI:
@@ -314,7 +273,9 @@ u.u_ar0 = oar0;
 }
 
 /*
- * Called from locore when a system call occurs
+ * syscall(frame):
+ *	System call request from POSIX system call gate interface to kernel.
+ * Like trap(), argument is call by reference.
  */
 /*ARGSUSED*/
 syscall(frame)
@@ -322,7 +283,7 @@ syscall(frame)
 #define code frame.sf_eax	/* note: written over! */
 #define pc frame.sf_eip
 {
-	register int *locr0 = ((int *)&frame)/*-PS*/;
+	register int *locr0 = ((int *)&frame);
 	register caddr_t params;
 	register int i;
 	register struct sysent *callp;
