@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)make.1	8.3 (Berkeley) %G%
+.\"	@(#)make.1	8.4 (Berkeley) %G%
 .\"
 .Dd 
 .Dt MAKE 1
@@ -356,6 +356,8 @@ was executed with
 A path to the directory where
 .Nm make
 was executed.
+.It Va .OBJDIR
+A path to the directory where the targets are built.
 .It Ev MAKEFLAGS
 The environment variable
 .Ql Ev MAKEFLAGS
@@ -496,7 +498,7 @@ option are searched before the system
 makefile directory.
 .Pp
 Conditional expressions are also preceded by a single dot as the first
-chraracter of a line.
+character of a line.
 The possible conditionals are as follows:
 .Bl -tag -width Ds
 .It Ic .undef Ar variable
@@ -605,7 +607,7 @@ The boolean operator
 .Ql Ic \&!
 may be used to logically negate an entire
 conditional.
-It is of higher precendence than
+It is of higher precedence than
 .Ql Ic \&&& .
 .Pp
 The value of
@@ -825,7 +827,7 @@ command in the file.
 .It Ic .SUFFIXES
 Each source specifies a suffix to
 .Nm make .
-If no sources are specified, any previous specifies suffices are deleted.
+If no sources are specified, any previous specified suffices are deleted.
 .Sh ENVIRONMENT
 .Nm Make
 utilizes the following environment variables, if they exist:
