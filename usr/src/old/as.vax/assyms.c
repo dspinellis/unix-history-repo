@@ -1,5 +1,5 @@
 /* Copyright (c) 1980 Regents of the University of California */
-static	char sccsid[] = "@(#)assyms.c 4.5 %G%";
+static	char sccsid[] = "@(#)assyms.c 4.6 %G%";
 #include <stdio.h>
 #include <ctype.h>
 #include "as.h"
@@ -460,6 +460,7 @@ struct symtab **lookup(instflg)
 	return(hp);
 }	/*end of lookup*/
 
+#ifdef FLEXNAMES
 char *savestr(str)
 	char *str;
 {
@@ -477,6 +478,7 @@ char *savestr(str)
 	strplhead->str_nalloc += len;
 	return (res);
 }
+#endif FLEXNAMES
 
 /*
  *	The relocation information is saved internally in an array of
