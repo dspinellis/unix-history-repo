@@ -1,0 +1,7 @@
+NeXT running 2.0
+STRTOD_MISSING	1	/* NeXT strtod() is buggy */
+STDC_HEADERS	1 
+ALLOCA_PROTO	1
+SZTC (size_t)
+INTC (int)
+MAKE_NeXT
