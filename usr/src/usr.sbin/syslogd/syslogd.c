@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)syslogd.c	4.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)syslogd.c	4.5 (Berkeley) %G%";
 #endif
 
 /*
@@ -9,7 +9,7 @@ static char sccsid[] = "@(#)syslogd.c	4.4 (Berkeley) %G%";
  * Each line may have a priority, signified as "<n>" as
  * the first three characters of the line.  If this is
  * not present, a default priority (DefPri) is used, which
- * starts out as LOG_ERR.  The default priority can get
+ * starts out as LOG_NOTICE.  The default priority can get
  * changed using "<*>n".
  *
  * To kill syslogd, send a signal 15 (terminate).  A signal 1 (hup) will
@@ -72,9 +72,10 @@ struct filed {
 	char	f_name[248];		/* filename */
 };
 
-#define F_TTY	01		/* file is a tty */
-#define F_MARK	02		/* write to the file periodically */
-#define F_FORW	04		/* forward message to another host */
+#define F_TTY	001		/* file is a tty */
+#define F_MARK	002		/* write to the file periodically */
+#define F_FORW	004		/* forward message to another host */
+#define F_CONS	010		/* file is the console */
 
 struct filed	Files[NLOGS];
 
@@ -88,7 +89,8 @@ struct	susers Susers[NSUSERS];
 
 int	Debug;			/* debug flag */
 int	LogFile;		/* log file descriptor */
-int	DefPri = LOG_ERR;	/* the default priority for untagged msgs */
+int	DefPri = LOG_NOTICE;	/* default priority for untagged msgs */
+int	DefSysPri = LOG_EMERG;	/* default priority for untagged system msgs */
 int	Sumask;			/* lowest priority written to super-users */
 int	MarkIntvl = 15;		/* mark interval in minutes */
 char	*ConfFile = defconf;	/* configuration file */
@@ -304,7 +306,7 @@ printline(local, msg)
 	}
 	*q = '\0';
 
-	logmsg(pri, line, local ? host : rhost);
+	logmsg(pri, line, local ? host : rhost, 0);
 }
 
 /*
@@ -317,20 +319,23 @@ printsys(msg)
 	register char *p, *q;
 	register int c;
 	char line[MAXLINE + 1];
-	int pri;
+	static char prevline[MAXLINE + 1];
+	static int count = 0;
+	int pri, ign;
 	long now;
 
 	time(&now);
 	for (p = msg; *p != '\0'; ) {
 		/* test for special codes */
-		pri = DefPri;
+		ign = 0;
+		pri = DefSysPri;
 		if (p[0] == '<' && p[2] == '>') {
 			switch (p[1]) {
 			case '*':	/* reset default message priority */
 				dprintf("default priority = %c\n", p[3]);
 				c = p[3] - '0';
 				if ((unsigned) c <= 9)
-					DefPri = c;
+					DefSysPri = c;
 				break;
 
 			case '$':	/* reconfigure */
@@ -341,8 +346,9 @@ printsys(msg)
 			pri = *p++ - '0';
 			p++;
 			if ((unsigned) pri > LOG_DEBUG)
-				pri = DefPri;
-		}
+				pri = DefSysPri;
+		} else
+			ign = 1; /* kernel printf's come out on console */
 
 		q = line;
 		sprintf(q, "vmunix: %.15s-- ", ctime(&now) + 4);
@@ -351,7 +357,20 @@ printsys(msg)
 		    q < &line[sizeof(line) - 1])
 			*q++ = c;
 		*q = '\0';
-		logmsg(pri, line, host);
+		if (strcmp(line+26, prevline+26) == 0) {
+			count++;
+			strncpy(prevline+8, line+8, 15); /* update time */
+			continue;
+		}
+		if (count) {
+			if (count > 1)
+				sprintf(prevline+26,
+				    "last message repeated %d times", count);
+			logmsg(pri, prevline, host, ign);
+		}
+		count = 0;
+		strcpy(prevline, line);
+		logmsg(pri, line, host, ign);
 	}
 }
 
@@ -360,9 +379,10 @@ printsys(msg)
  * the priority.
  */
 
-logmsg(pri, msg, from)
+logmsg(pri, msg, from, igncons)
 	int	pri;
 	char	*msg, *from;
+	int	igncons;
 {
 	char line[MAXLINE + 1];
 	register struct filed *f;
@@ -383,6 +403,21 @@ logmsg(pri, msg, from)
 	for (f = Files; f < &Files[NLOGS]; f++) {
 		if (f->f_file < 0 || f->f_pmask < pri)
 			continue;
+		if (igncons && (f->f_flags & F_CONS))
+			continue;
+		if (pri < 0) {	/* mark message */
+			struct stat stb;
+			long now;
+
+			if (!(f->f_flags & F_MARK))
+				continue;
+			if (fstat(f->f_file, &stb) < 0)
+				continue;
+			time(&now);
+			if (!(f->f_flags & F_CONS) &&
+			    stb.st_mtime > now - MarkIntvl * 60)
+				continue;
+		}
 		if (f->f_flags & F_FORW) {
 			sprintf(line, "<%d>%s", pri, msg);
 			l = strlen(line);
@@ -410,7 +445,7 @@ logmsg(pri, msg, from)
 	/*
 	 * Output high priority messages to terminals.
 	 */
-	if (pri <= Sumask)
+	if (pri >= 0 && pri <= Sumask)
 		wallmsg(pri, msg, from);
 }
 
@@ -456,7 +491,7 @@ init()
 	 *  Close all open log files.
 	 */
 	for (f = Files; f < &Files[NLOGS]; f++) {
-		if (f->f_file < 0)
+		if (f->f_file >= 0)
 			(void) close(f->f_file);
 		f->f_file = -1;
 	}
@@ -468,7 +503,7 @@ init()
 		if ((f->f_file = open(ctty, O_WRONLY)) >= 0) {
 			strncpy(f->f_name, ctty, sizeof(f->f_name)-1);
 			f->f_pmask = LOG_CRIT;
-			f->f_flags = F_TTY|F_MARK;
+			f->f_flags = F_TTY|F_MARK|F_CONS;
 		}
 		return;
 	}
@@ -534,12 +569,14 @@ init()
 			continue;
 		}
 		strncpy(f->f_name, p, sizeof(f->f_name)-1);
-		if ((f->f_file = open(p, O_WRONLY|O_APPEND)) < 0) {
+		if ((f->f_file = open(p, O_WRONLY|O_APPEND|O_NDELAY)) < 0) {
 			logerror(p);
 			continue;
 		}
 		if (isatty(f->f_file))
 			flags |= F_TTY;
+		if (strcmp(p, ctty) == 0)
+			flags |= F_CONS;
 		f->f_pmask = pmask;
 		f->f_flags = flags;
 		dprintf("File %s pmask %d flags %o\n", p, pmask, flags);
@@ -633,7 +670,7 @@ wallmsg(pri, msg, from)
 			}
 			continue;
 		}
-		prmsg:
+	prmsg:
 
 		/* compute the device name */
 		p = "/dev/12345678";
@@ -643,8 +680,10 @@ wallmsg(pri, msg, from)
 		f = open(p, O_WRONLY|O_NDELAY);
 		if (f < 0)
 			continue;
-		if ((flags = fcntl(f, F_GETFL, 0)) == -1)
+		if ((flags = fcntl(f, F_GETFL, 0)) == -1) {
+			(void) close(f);
 			continue;
+		}
 		if (fcntl(f, F_SETFL, flags | FNDELAY) == -1)
 			goto oldway;
 		i = write(f, line, len);
@@ -672,24 +711,14 @@ wallmsg(pri, msg, from)
  */
 domark()
 {
-	register struct filed *f;
-	struct stat stb;
 	char buf[40];
 	long now;
 
 	dprintf("domark\n");
 
 	time(&now);
-	for (f = Files; f < &Files[NLOGS]; f++) {
-		if (!(f->f_flags & F_MARK))
-			continue;
-		if (f->f_file < 0 || fstat(f->f_file, &stb) < 0)
-			continue;
-		if (stb.st_mtime >= now - MarkIntvl * 60)
-			continue;
-		sprintf(buf, "syslogd: %.24s-- MARK", ctime(&now));
-		logmsg(-1, buf, host);
-	}
+	sprintf(buf, "syslogd: %.24s-- MARK", ctime(&now));
+	logmsg(-1, buf, host, 0);
 	alarm(MarkIntvl * 60);
 }
 
@@ -738,7 +767,7 @@ logerror(type)
 			ctime(&now), type, sys_errlist[errno]);
 	errno = 0;
 	dprintf("%s\n", buf);
-	logmsg(LOG_ERR, buf, host);
+	logmsg(LOG_ERR, buf, host, 0);
 }
 
 die()
