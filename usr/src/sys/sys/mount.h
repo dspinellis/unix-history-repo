@@ -4,10 +4,10 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mount.h	7.28 (Berkeley) %G%
+ *	@(#)mount.h	7.29 (Berkeley) %G%
  */
 
-typedef quad fsid_t;			/* file system id type */
+typedef struct { long val[2]; } fsid_t;		/* file system id type */
 
 /*
  * File identifier.
