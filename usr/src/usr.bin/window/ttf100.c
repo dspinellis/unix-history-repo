@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)ttf100.c	3.4 3.4";
+static	char *sccsid = "@(#)ttf100.c	3.5 3.5";
 #endif
 
 #include "ww.h"
@@ -16,16 +16,15 @@ short f100_frame[16] = {
 	'K'|G,	'D'|G,	'K'|G,	'O'|G,
 	'C'|G,	'L'|G,	'N'|G,	'I'|G
 };
-extern char *gen_GE, *gen_GS;
+extern char *gen_AE, *gen_AS;
 
 tt_f100()
 {
-	int ret;
-
-	ret = tt_generic();
+	if (tt_generic() < 0)
+		return -1;
 	tt.tt_frame = f100_frame;
 	tt.tt_availmodes |= WWM_GRP;
-	gen_GS = "\033$";
-	gen_GE = "\033%";
-	return ret;
+	gen_AS = "\033$";
+	gen_AE = "\033%";
+	return 0;
 }
