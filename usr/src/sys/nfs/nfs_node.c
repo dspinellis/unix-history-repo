@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_node.c	7.11 (Berkeley) %G%
+ *	@(#)nfs_node.c	7.12 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -208,6 +208,14 @@ nfs_reclaim(vp)
 {
 	register struct nfsnode *np = VTONFS(vp);
 
+	/*
+	 * Flush out any associated bio buffers that might be lying about
+	 */
+	if (vp->v_type == VREG && (np->n_flag & NBUFFERED)) {
+		nfs_lock(np);
+		nfs_blkflush(vp, (daddr_t)0, np->n_size, TRUE);
+		nfs_unlock(np);
+	}
 	if (vp->v_count != 0)
 		printf("nfs_reclaim: pushing active fileid %d fsid 0x%x\n",
 			np->n_vattr.va_fileid, np->n_vattr.va_fsid);
@@ -218,13 +226,6 @@ nfs_reclaim(vp)
 	np->n_forw = np;
 	np->n_back = np;
 	cache_purge(vp);
-	/*
-	 * Flush out any associated bio buffers that might be lying about
-	 */
-	if (vp->v_type == VREG && (np->n_flag & NBUFFERED)) {
-		np->n_flag |= NLOCKED;
-		nfs_blkflush(vp, (daddr_t)0, np->n_size, TRUE);
-	}
 	return (0);
 }
 
