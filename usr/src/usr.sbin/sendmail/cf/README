@@ -4,7 +4,7 @@
 
 		Eric Allman <eric@CS.Berkeley.EDU>
 
-		@(#)README	8.58 (Berkeley) %G%
+		@(#)README	8.59 (Berkeley) %G%
 
 
 This document describes the sendmail configuration files being used
@@ -252,6 +252,10 @@ PROCMAIL_MAILER_ARGS	[procmail -m $h $f $u] The arguments passed to
 			the Procmail mailer.
 PROCMAIL_MAILER_MAX	[undefined] If set, the maximum size message that
 			will be accepted by the procmail mailer.
+MAIL11_MAILER_PATH	[/usr/etc/mail11] The path to the mail11 mailer.
+MAIL11_MAILER_FLAGS	[nsFx] Flags for the mail11 mailer.
+MAIL11_MAILER_ARGS	[mail11 $g $x $h $u] Arguments passed to the mail11
+			mailer.
 
 +---------+
 | DOMAINS |
@@ -373,6 +377,10 @@ procmail	An interface to procmail (does not come with sendmail).
 		the name of the sender and $2 is the name of the recipient.
 		If you use this with FEATURE(local_procmail), the FEATURE
 		should be listed first.
+
+mail11		The DECnet mail11 mailer, useful only if you have the mail11
+		program from gatekeeper.dec.com:/pub/DEC/gwtools (and
+		DECnet, of course).
 
 The local mailer accepts addresses of the form "user+detail", where
 the "+detail" is not used for mailbox matching but is available
@@ -1449,6 +1457,7 @@ MAILERS
    2	uucp-*		UNIX-to-UNIX Copy Program
    3	netnews		Network News delivery
    4	fax		Sam Leffler's FlexFAX software
+   5	mail11		DECnet mailer
 
 
 MACROS
