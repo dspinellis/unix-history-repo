@@ -377,6 +377,37 @@ main(argc, argv)
 	}
 # endif DEBUG
 
+	/*
+	**  If test mode, read addresses from stdin and process.
+	*/
+
+	if (Mode == MD_TEST)
+	{
+		char buf[MAXLINE];
+
+		printf("TEST MODE\nEnter <ruleset> <address>\n");
+		for (;;)
+		{
+			register char **pvp;
+			extern char **prescan();
+			extern char **rewrite();
+
+			printf("> ");
+			fflush(stdout);
+			if (fgets(buf, sizeof buf, stdin) == NULL)
+				finis();
+			for (p = buf; *p != '\0' && !isspace(*p); p++)
+				continue;
+			while (isspace(*p))
+				*p++ = '\0';
+			if (*p == '\0')
+				continue;
+			pvp = prescan(p, '\n');
+			rewrite(pvp, 3);
+			rewrite(pvp, atoi(buf));
+		}
+	}
+
 #ifdef DAEMON
 	/*
 	**  If a daemon, wait for a request.
