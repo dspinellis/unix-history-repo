@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)library.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)library.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -233,10 +233,11 @@ lfs_segmapv(fsp, seg, seg_buf, blocks, bcount)
 	BLOCK_INFO *bip;
 	SEGSUM *sp;
 	SEGUSE *sup;
+	FINFO *fip;
 	struct lfs *lfsp;
 	caddr_t s, segend;
 	daddr_t pseg_addr, seg_addr;
-	int nelem, nblocks;
+	int i, nelem, nblocks, sumsize;
 	time_t timestamp;
 
 	lfsp = &fsp->fi_lfs;
@@ -255,6 +256,7 @@ lfs_segmapv(fsp, seg, seg_buf, blocks, bcount)
 	*bcount = 0;
 	for (segend = seg_buf + seg_size(lfsp), timestamp = 0; s < segend; ) {
 		sp = (SEGSUM *)s;
+
 #ifdef VERBOSE
 		printf("\tpartial at: 0x%x\n", pseg_addr);
 		print_SEGSUM(lfsp, sp);
@@ -269,6 +271,23 @@ lfs_segmapv(fsp, seg, seg_buf, blocks, bcount)
 		if (timestamp > ((SEGSUM*)s)->ss_create)
 			break;
 		timestamp = ((SEGSUM*)s)->ss_create;
+
+#ifdef DIAGNOSTIC
+		/* Verfiy size of summary block */
+		sumsize = sizeof(SEGSUM) +
+		    (sp->ss_ninos + INOPB(lfsp) - 1) / INOPB(lfsp);
+		for (fip = (FINFO *)(sp + 1); i < sp->ss_nfinfo; ++i) {
+			sumsize += sizeof(FINFO) +
+			    (fip->fi_nblocks - 1) * sizeof(daddr_t);
+			fip = (FINFO *)(&fip->fi_blocks[fip->fi_nblocks]);
+		}
+		if (sumsize > LFS_SUMMARY_SIZE) {
+			fprintf(stderr,
+			    "Segment %d summary block too big: %d\n",
+			    seg, sumsize);
+			exit(1);
+		}
+#endif
 
 		if (*bcount + nblocks + sp->ss_ninos > nelem) {
 			nelem = *bcount + nblocks + sp->ss_ninos;
@@ -439,6 +458,7 @@ pseg_valid (fsp, ssp)
 	caddr_t	p;
 	int i, nblocks;
 	u_long *datap;
+	SEGUSE *sup;
 
 	if ((nblocks = dump_summary(&fsp->fi_lfs, ssp, 0, NULL)) <= 0)
 		return(0);
@@ -571,8 +591,10 @@ bi_compare(a, b)
 			return(-1);
 		else if (bb->bi_lbn == LFS_UNUSED_LBN)
 			return(1);
-		else if (ba->bi_lbn < 0)
+		else if (ba->bi_lbn < 0 && bb->bi_lbn >= 0)
 			return(1);
+		else if (bb->bi_lbn < 0 && ba->bi_lbn >= 0)
+			return(-1);
 		else
 			return (diff);
 	}
