@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)vacation.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)vacation.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -34,21 +34,22 @@ static char sccsid[] = "@(#)vacation.c	5.11 (Berkeley) %G%";
 #include <sys/param.h>
 #include <sys/file.h>
 #include <pwd.h>
+#include <ndbm.h>
+#include <syslog.h>
+#include <tzfile.h>
 #include <stdio.h>
 #include <ctype.h>
-#include <syslog.h>
 
 /*
-**  VACATION -- return a message to the sender when on vacation.
-**
-**	This program could be invoked as a message receiver when someone is
-**	on vacation.  It returns a message specified by the user to whoever
-**	sent the mail, taking care not to return a message too often to
-**	prevent "I am on vacation" loops.
-*/
+ *  VACATION -- return a message to the sender when on vacation.
+ *
+ *	This program is invoked as a message receiver.  It returns a
+ *	message specified by the user to whomever sent the mail, taking
+ *	care not to return a message too often to prevent "I am on
+ *	vacation" loops.
+ */
 
 #define	MAXLINE	500			/* max line from mail header */
-#define	PERIOD	(60L*60L*24L*7L)	/* week between notifications */
 #define	VMSG	".vacation.msg"		/* vacation message */
 #define	VACAT	".vacation"		/* dbm's database prefix */
 #define	VDIR	".vacation.dir"		/* dbm's DB prefix, part 1 */
@@ -56,26 +57,34 @@ static char sccsid[] = "@(#)vacation.c	5.11 (Berkeley) %G%";
 
 typedef struct alias {
 	struct alias *next;
-	char	*name;
+	char *name;
 } ALIAS;
-ALIAS	*names;
+ALIAS *names;
 
-static char from[MAXLINE];		/* sender's address */
+static DBM *db;
+
+extern int errno;
+
+#define	VIT	"__VACATION__INTERVAL__TIMER__"
+static char from[MAXLINE];
 
 main(argc, argv)
 	int argc;
 	char **argv;
 {
-	extern int optind;
+	extern int optind, opterr;
 	extern char *optarg;
 	struct passwd *pw;
 	ALIAS *cur;
+	time_t interval;
 	int ch, iflag;
 	char *malloc();
 	uid_t getuid();
+	long atol();
 
-	iflag = 0;
-	while ((ch = getopt(argc, argv, "a:Ii")) != EOF)
+	opterr = iflag = 0;
+	interval = -1;
+	while ((ch = getopt(argc, argv, "a:Iir:")) != EOF)
 		switch((char)ch) {
 		case 'a':			/* alias */
 			if (!(cur = (ALIAS *)malloc((u_int)sizeof(ALIAS))))
@@ -84,9 +93,18 @@ main(argc, argv)
 			cur->next = names;
 			names = cur;
 			break;
-		case 'i':			/* init the database */
 		case 'I':			/* backward compatible */
+		case 'i':			/* init the database */
 			iflag = 1;
+			break;
+		case 'r':
+			if (isdigit(*optarg)) {
+				interval = atol(optarg) * SECS_PER_DAY;
+				if (interval < 0)
+					goto usage;
+			}
+			else
+				interval = LONG_MAX;
 			break;
 		case '?':
 		default:
@@ -97,46 +115,50 @@ main(argc, argv)
 
 	if (argc != 1) {
 		if (!iflag) {
-usage:			syslog(LOG_ERR, "uid %u: usage: vacation [-i] [-a alias] login\n", getuid());
-			exit(1);
+usage:			syslog(LOG_NOTICE, "uid %u: usage: vacation [-i] [-a alias] login\n", getuid());
+			myexit(1);
 		}
 		if (!(pw = getpwuid(getuid()))) {
 			syslog(LOG_ERR, "vacation: no such user uid %u.\n", getuid());
-			exit(1);
+			myexit(1);
 		}
 	}
 	else if (!(pw = getpwnam(*argv))) {
 		syslog(LOG_ERR, "vacation: no such user %s.\n", *argv);
-		exit(1);
+		myexit(1);
 	}
 	if (chdir(pw->pw_dir)) {
-		syslog(LOG_ERR, "vacation: no such directory %s.\n", pw->pw_dir);
-		exit(1);
+		syslog(LOG_NOTICE, "vacation: no such directory %s.\n", pw->pw_dir);
+		myexit(1);
 	}
 
-	if (iflag) {
+	if (iflag || access(VDIR, F_OK))
 		initialize();
-		exit(0);
+	if (!(db = dbm_open(VACAT, O_RDWR, 0))) {
+		syslog(LOG_NOTICE, "vacation: %s: %s\n", VACAT,
+		    strerror(errno));
+		myexit(1);
 	}
+
+	if (interval != -1)
+		setinterval(interval);
+	if (iflag)
+		myexit(0);
 
 	if (!(cur = (ALIAS *)malloc((u_int)sizeof(ALIAS))))
-		exit(1);
+		myexit(1);
 	cur->name = pw->pw_name;
 	cur->next = names;
 	names = cur;
 
 	readheaders();
 
-	if (access(VDIR, F_OK))
-		initialize();
-	else
-		dbminit(VACAT);
-
 	if (!recent()) {
 		setreply();
 		sendmessage(pw->pw_name);
 	}
-	exit(0);
+	myexit(0);
+	/* NOTREACHED */
 }
 
 /*
@@ -160,8 +182,10 @@ char **shortp;
 				for (p = buf + 5; *p && *p != ' '; ++p);
 				*p = '\0';
 				(void)strcpy(from, buf + 5);
+				if (p = index(from, '\n'))
+					*p = '\0';
 				if (junkmail())
-					exit(0);
+					myexit(0);
 			}
 			break;
 		case 'P':		/* "Precedence:" */
@@ -174,7 +198,7 @@ char **shortp;
 			if (!*p)
 				break;
 			if (!strncasecmp(p, "junk", 4) || !strncasecmp(p, "bulk", 4))
-				exit(0);
+				myexit(0);
 			break;
 		case 'C':		/* "Cc:" */
 			if (strncmp(buf, "Cc:", 3))
@@ -195,10 +219,10 @@ findme:			for (cur = names; !tome && cur; cur = cur->next)
 				tome += nsearch(cur->name, buf);
 		}
 	if (!tome)
-		exit(0);
+		myexit(0);
 	if (!*from) {
-		syslog(LOG_ERR, "vacation: no initial \"From\" line.\n");
-		exit(1);
+		syslog(LOG_NOTICE, "vacation: no initial \"From\" line.\n");
+		myexit(1);
 	}
 }
 
@@ -209,7 +233,6 @@ findme:			for (cur = names; !tome && cur; cur = cur->next)
  * junkmail --
  *	read the header and return if automagic/junk/bulk mail
  */
-static
 junkmail()
 {
 	static struct ignore {
@@ -247,28 +270,16 @@ junkmail()
 	return(0);
 }
 
-typedef struct {
-	char	*dptr;
-	int	dsize;
-} DATUM;
-
-typedef struct {
-	time_t	sentdate;
-} DBREC;
-
 /*
  * recent --
  *	find out if user has gotten a vacation message recently.
+ *	use bcopy for machines with alignment restrictions
  */
-static
 char *user;
 {
-	DATUM k, d, fetch();
-	time_t now, then, time();
+	datum key, data;
+	time_t then, next, time();
 
-	k.dptr = from;
-	k.dsize = strlen(from) + 1;
-	d = fetch(k);
 	if (d.dptr == NULL)
 		return FALSE;
 	bcopy(d.dptr, (char *)&ldbrec, sizeof ldbrec);	/* realign data */
@@ -286,61 +297,82 @@ register unsigned size;
 #endif
 
 /*
+ * setinterval --
+ *	store the reply interval
+ */
+setinterval(interval)
+	time_t interval;
+{
+	datum key, data;
+
+	key.dptr = VIT;
+	key.dsize = sizeof(VIT) - 1;
+	data.dptr = (char *)&interval;
+	data.dsize = sizeof(interval);
+	dbm_store(db, key, data, DBM_REPLACE);
+}
+
+/*
  * setreply --
  *	store that this user knows about the vacation.
  */
-static
 setreply()
 {
-	DBREC xrec;
-	DATUM k, d;
-	time_t time();
+	datum key, data;
+	time_t now, time();
 
-	k.dptr = from;
-	k.dsize = strlen(from) + 1;
-	(void)time(&xrec.sentdate);
-	d.dptr = (char *)&xrec;
-	d.dsize = sizeof(xrec);
-	store(k, d);
+	key.dptr = from;
+	key.dsize = strlen(from);
+	(void)time(&now);
+	data.dptr = (char *)&now;
+	data.dsize = sizeof(now);
+	dbm_store(db, key, data, DBM_REPLACE);
 }
 
 /*
  * sendmessage --
  *	exec sendmail to send the vacation file to sender
  */
-static
 sendmessage(myname)
 	char *myname;
 {
 	if (!freopen(VMSG, "r", stdin)) {
-		syslog(LOG_ERR, "vacation: no ~%s/%s file.\n", myname, VMSG);
-		exit(1);
+		syslog(LOG_NOTICE, "vacation: no ~%s/%s file.\n", myname, VMSG);
+		myexit(1);
 	}
 	execl("/usr/lib/sendmail", "sendmail", "-f", myname, from, NULL);
 	syslog(LOG_ERR, "vacation: can't exec /usr/lib/sendmail.\n");
-	exit(1);
+	myexit(1);
 }
 
 /*
  * initialize --
  *	initialize the dbm database
  */
-static
 initialize()
 {
-	extern int errno;
-	extern char *sys_errlist[];
 	int fd;
 
 	if ((fd = open(VDIR, O_WRONLY|O_CREAT|O_TRUNC, 0644)) < 0) {
-		syslog(LOG_ERR, "vacation: %s: %s\n", VDIR, sys_errlist[errno]);
+		syslog(LOG_NOTICE, "vacation: %s: %s\n", VDIR, strerror(errno));
 		exit(1);
 	}
 	(void)close(fd);
 	if ((fd = open(VPAG, O_WRONLY|O_CREAT|O_TRUNC, 0644)) < 0) {
-		syslog(LOG_ERR, "vacation: %s: %s\n", VPAG, sys_errlist[errno]);
+		syslog(LOG_NOTICE, "vacation: %s: %s\n", VPAG, strerror(errno));
 		exit(1);
 	}
 	(void)close(fd);
-	dbminit(VACAT);
+}
+
+/*
+ * myexit --
+ *	we're outta here...
+ */
+myexit(eval)
+	int eval;
+{
+	if (db)
+		dbm_close(db);
+	exit(eval);
 }
