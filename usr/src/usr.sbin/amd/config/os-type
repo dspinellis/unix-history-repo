@@ -10,9 +10,9 @@
 # This code is derived from software contributed to Berkeley by
 # Jan-Simon Pendry at Imperial College, London.
 #
-# %sccs include.redist.sh%
+# %sccs.include.redist.sh%
 #
-#	@(#)os-type	5.2 (Berkeley) %G%
+#	@(#)os-type	5.3 (Berkeley) %G%
 #
 
 #
