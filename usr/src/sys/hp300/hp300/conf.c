@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *      @(#)conf.c	8.4 (Berkeley) %G%
+ *      @(#)conf.c	8.5 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -18,14 +18,14 @@
 
 int	rawread		__P((dev_t, struct uio *, int));
 int	rawwrite	__P((dev_t, struct uio *, int));
-int	swstrategy	__P((struct buf *));
+void	swstrategy	__P((struct buf *));
 int	ttselect	__P((dev_t, int, struct proc *));
 
 #define	dev_type_open(n)	int n __P((dev_t, int, int, struct proc *))
 #define	dev_type_close(n)	int n __P((dev_t, int, int, struct proc *))
-#define	dev_type_strategy(n)	int n __P((struct buf *))
+#define	dev_type_strategy(n)	void n __P((struct buf *))
 #define	dev_type_ioctl(n) \
-	int n __P((dev_t, int, caddr_t, int, struct proc *))
+	int n __P((dev_t, u_long, caddr_t, int, struct proc *))
 
 /* bdevsw-specific types */
 #define	dev_type_dump(n)	int n __P(())
