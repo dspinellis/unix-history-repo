@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	6.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)util.c	6.9 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <stdio.h>
@@ -923,6 +923,36 @@ bitzerop(map)
 		if (map[i] != 0)
 			return (FALSE);
 	return (TRUE);
+}
+/*
+**  STRCONTAINEDIN -- tell if one string is contained in another
+**
+**	Parameters:
+**		a -- possible substring.
+**		b -- possible superstring.
+**
+**	Returns:
+**		TRUE if a is contained in b.
+**		FALSE otherwise.
+*/
+
+bool
+strcontainedin(a, b)
+	register char *a;
+	register char *b;
+{
+	int l;
+
+	l = strlen(a);
+	for (;;)
+	{
+		b = strchr(b, a[0]);
+		if (b == NULL)
+			return FALSE;
+		if (strncmp(a, b, l) == 0)
+			return TRUE;
+		b++;
+	}
 }
 /*
 **  TRANSIENTERROR -- tell if an error code indicates a transient failure

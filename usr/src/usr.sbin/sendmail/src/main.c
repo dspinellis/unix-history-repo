@@ -13,7 +13,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	6.29 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	6.30 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -461,7 +461,24 @@ main(argc, argv, envp)
 			(void) unsetenv("HOSTALIASES");
 			FullName = NULL;
 			queuemode = TRUE;
-			QueueIntvl = convtime(optarg);
+			switch (optarg[0])
+			{
+			  case 'I':
+				QueueLimitId = newstr(&optarg[1]);
+				break;
+
+			  case 'R':
+				QueueLimitRecipient = newstr(&optarg[1]);
+				break;
+
+			  case 'S':
+				QueueLimitSender = newstr(&optarg[1]);
+				break;
+
+			  default:
+				QueueIntvl = convtime(optarg);
+				break;
+			}
 # else /* QUEUE */
 			usrerr("I don't know about queues");
 			ExitStat = EX_USAGE;

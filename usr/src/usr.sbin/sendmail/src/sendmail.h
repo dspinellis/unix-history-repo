@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	6.24 (Berkeley) %G%
+ *	@(#)sendmail.h	6.25 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	6.24		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	6.25		%G%";
 # endif lint
 # else /*  _DEFINE */
 # define EXTERN extern
@@ -670,6 +670,9 @@ EXTERN int	MaxMciCache;	/* maximum entries in MCI cache */
 EXTERN time_t	MciCacheTimeout;	/* maximum idle time on connections */
 EXTERN char	*ForwardPath;	/* path to search for .forward files */
 EXTERN long	MinBlocksFree;	/* minimum number of blocks free on queue fs */
+EXTERN char	*QueueLimitRecipient;	/* limit queue runs to this recipient */
+EXTERN char	*QueueLimitSender;	/* limit queue runs to this sender */
+EXTERN char	*QueueLimitId;		/* limit queue runs to this id */
 
 
 /*

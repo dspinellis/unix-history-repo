@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	6.20 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	6.21 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	6.20 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	6.21 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -503,6 +503,8 @@ runqueue(forkflag)
 
 # define NEED_P		001
 # define NEED_T		002
+# define NEED_R		004
+# define NEED_S		010
 
 # ifndef DIR
 # define DIR		FILE
@@ -523,6 +525,17 @@ orderq(doall)
 	WORK wlist[QUEUESIZE+1];
 	int wn = -1;
 	extern workcmpf();
+
+	if (tTd(41, 1))
+	{
+		printf("orderq:\n");
+		if (QueueLimitId != NULL)
+			printf("\tQueueLimitId = %s\n", QueueLimitId);
+		if (QueueLimitSender != NULL)
+			printf("\tQueueLimitSender = %s\n", QueueLimitSender);
+		if (QueueLimitRecipient != NULL)
+			printf("\tQueueLimitRecipient = %s\n", QueueLimitRecipient);
+	}
 
 	/* clear out old WorkQ */
 	for (w = WorkQ; w != NULL; )
@@ -552,6 +565,7 @@ orderq(doall)
 		FILE *cf;
 		char lbuf[MAXNAME];
 		extern bool shouldqueue();
+		extern bool strcontainedin();
 
 		/* is this an interesting entry? */
 		if (d->d_ino == 0)
@@ -561,6 +575,10 @@ orderq(doall)
 			printf("orderq: %12s\n", d->d_name);
 # endif DEBUG
 		if (d->d_name[0] != 'q' || d->d_name[1] != 'f')
+			continue;
+
+		if (QueueLimitId != NULL &&
+		    !strcontainedin(QueueLimitId, d->d_name))
 			continue;
 
 		if (strlen(d->d_name) != 9)
@@ -583,6 +601,7 @@ orderq(doall)
 		/* yes -- open control file (if not too many files) */
 		if (++wn >= QUEUESIZE)
 			continue;
+
 		cf = fopen(d->d_name, "r");
 		if (cf == NULL)
 		{
@@ -604,9 +623,14 @@ orderq(doall)
 
 		/* extract useful information */
 		i = NEED_P | NEED_T;
+		if (QueueLimitSender != NULL)
+			i |= NEED_S;
+		if (QueueLimitRecipient != NULL)
+			i |= NEED_R;
 		while (i != 0 && fgets(lbuf, sizeof lbuf, cf) != NULL)
 		{
 			extern long atol();
+			extern bool strcontainedin();
 
 			switch (lbuf[0])
 			{
@@ -619,11 +643,24 @@ orderq(doall)
 				w->w_ctime = atol(&lbuf[1]);
 				i &= ~NEED_T;
 				break;
+
+			  case 'R':
+				if (QueueLimitRecipient != NULL &&
+				    strcontainedin(QueueLimitRecipient, &lbuf[1]))
+					i &= ~NEED_R;
+				break;
+
+			  case 'S':
+				if (QueueLimitSender != NULL &&
+				    strcontainedin(QueueLimitSender, &lbuf[1]))
+					i &= ~NEED_S;
+				break;
 			}
 		}
 		(void) fclose(cf);
 
-		if (!doall && shouldqueue(w->w_pri, w->w_ctime))
+		if ((!doall && shouldqueue(w->w_pri, w->w_ctime)) ||
+		    bitset(NEED_R|NEED_S, i))
 		{
 			/* don't even bother sorting this job in */
 			wn--;
