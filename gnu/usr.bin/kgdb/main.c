@@ -383,7 +383,6 @@ Options available are:\n\
   -exec EXECFILE    Use EXECFILE as the executable.\n\
   -se FILE          Use FILE as symbol file and executable file.\n\
   -core COREFILE    Analyze the core dump COREFILE.\n\
-  -k                Kernel debugging.\n\
   -w                Writeable text.\n\
   -v                Print GNU message and version number on startup.\n\
   -nc               Don't confirm quit or run commands.\n\
@@ -394,10 +393,6 @@ GDB manual (available as on-line info or a printed manual).\n", stderr);
 	     the most useful thing to do.  */
 	  exit (0);
 	}
-#ifdef KERNELDEBUG
-      else if (!strcmp (argv[i], "-k"))
-	kernel_debugging = 1;
-#endif
       else if (!strcmp (argv[i], "-w"))
 	writeable_text = 1;
       else if (!strcmp (argv[i], "-v"))
