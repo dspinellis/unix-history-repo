@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1982, 1986 Regents of the University of California.
+ * Copyright (c) 1982, 1986, 1990 Regents of the University of California.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms are permitted
@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)sys_socket.c	7.5 (Berkeley) %G%
+ *	@(#)sys_socket.c	7.6 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -44,7 +44,7 @@ soo_read(fp, uio, cred)
 {
 
 	return (soreceive((struct socket *)fp->f_data, (struct mbuf **)0,
-		uio, (int *)0, (struct mbuf **)0, (struct mbuf **)0));
+		uio, (struct mbuf **)0, (struct mbuf **)0, (int *)0));
 }
 
 /* ARGSUSED */
@@ -55,7 +55,7 @@ soo_write(fp, uio, cred)
 {
 
 	return (sosend((struct socket *)fp->f_data, (struct mbuf *)0,
-		uio, 0, (struct mbuf *)0, (struct mbuf *)0));
+		uio, (struct mbuf *)0, (struct mbuf *)0, 0));
 }
 
 soo_ioctl(fp, cmd, data)
@@ -102,10 +102,9 @@ soo_ioctl(fp, cmd, data)
 	 * interface and routing ioctls should have a
 	 * different entry since a socket's unnecessary
 	 */
-#define	cmdbyte(x)	(((x) >> 8) & 0xff)
-	if (cmdbyte(cmd) == 'i')
+	if (IOCGROUP(cmd) == 'i')
 		return (ifioctl(so, cmd, data));
-	if (cmdbyte(cmd) == 'r')
+	if (IOCGROUP(cmd) == 'r')
 		return (rtioctl(cmd, data));
 	return ((*so->so_proto->pr_usrreq)(so, PRU_CONTROL, 
 	    (struct mbuf *)cmd, (struct mbuf *)data, (struct mbuf *)0));
