@@ -1,4 +1,4 @@
-/*	param.h	4.11	81/05/05	*/
+/*	param.h	4.12	81/06/11	*/
 
 /*
  * Tunable variables which do not usually vary per system.
@@ -142,7 +142,6 @@
 
 #define	CBSIZE	28		/* number of chars in a clist block */
 #define	CROUND	0x1F		/* clist rounding; sizeof(int *) + CBSIZE -1*/
-#define	CLKTICK	(1000000/(HZ))	/* microseconds in a clock tick */
 
 /*
  * Macros for fast min/max
