@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)operators.c 1.4 %G%";
+static char sccsid[] = "@(#)operators.c 1.5 %G%";
 
 /*
  * Tree node classes.
@@ -48,6 +48,7 @@ typedef enum {
     O_PRINT,		/* print the values of a list of expressions */
     O_PSYM,		/* print symbol information */
     O_RUN,		/* start up program */
+    O_SEARCH,		/* regular expression search of source file */
     O_SKIP,		/* skip the current line */
     O_SOURCE,		/* read commands from a file */
     O_STATUS,		/* display currently active trace/stop's */
@@ -168,6 +169,7 @@ public Opinfo opinfo[] ={
 /* O_PRINT */		1,	null,		"print",
 /* O_PSYM */		1,	null,		"psym",
 /* O_RUN */		0,	null,		"run",
+/* O_SEARCH */		2,	null,		"search",
 /* O_SKIP */		0,	null,		"skip",
 /* O_SOURCE */		0,	null,		"source",
 /* O_STATUS */		0,	null,		"status",

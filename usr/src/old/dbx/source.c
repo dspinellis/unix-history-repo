@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)source.c 1.9 %G%";
+static char sccsid[] = "@(#)source.c 1.10 %G%";
 
 /*
  * Source file management.
@@ -11,6 +11,7 @@ static char sccsid[] = "@(#)source.c 1.9 %G%";
 #include "object.h"
 #include "mappings.h"
 #include "machine.h"
+#include <sys/file.h>
 
 #ifndef public
 typedef int Lineno;
@@ -124,7 +125,6 @@ static char fileNameBuf[1024];
 public String findsource(filename)
 String filename;
 {
-    register File f;
     register String src, dir;
 
     if (filename[0] == '/') {
@@ -133,9 +133,7 @@ String filename;
 	src = nil;
 	foreach (String, dir, sourcepath)
 	    sprintf(fileNameBuf, "%s/%s", dir, filename);
-	    f = fopen(fileNameBuf, "r");
-	    if (f != nil) {
-		fclose(f);
+	    if (access(fileNameBuf, R_OK) == 0) {
 		src = fileNameBuf;
 		break;
 	    }
@@ -310,4 +308,70 @@ String filename;
 	sprintf(lineno, "+1");
     }
     call(ed, stdin, stdout, lineno, src, nil);
+}
+
+#include "re.h"
+/*
+ * Search the current file with
+ * a regular expression.
+ */
+public search(forward, re)
+	Boolean forward;
+	String re;
+{
+	register String p;
+	register File f;
+	register Lineno line;
+	Lineno l1, l2;
+	Boolean matched;
+	Char buf[512];
+	
+	if (cursource == nil) {
+		beginerrmsg();
+		fprintf(stderr, "No source file.\n");
+		return;
+	}
+	if (cursource != prevsource)
+		skimsource();
+	if (lastlinenum == 0) {
+		beginerrmsg();
+		fprintf(stderr, "Couldn't read \"%s\"\n", cursource);
+		return;
+	}
+	circf = 0;
+	if (re != nil && *re != '\0')
+		recompile(re);
+	matched = false;
+	f = srcfp;
+	line = cursrcline;
+	do {
+		if (forward) {
+			line++;
+			if (line > lastlinenum)
+				line = 1;
+		} else {
+			line--;
+			if (line < 1)
+				line = lastlinenum;
+		}
+		fseek(f, srcaddr(line), L_SET);
+		for (p = buf; (*p = getc(f)) != '\n'; p++)
+			if (*p == EOF)
+				error("Unexpected EOF.");
+		*p = '\0';
+		matched = (Boolean)rematch(buf);
+		if (matched)
+			break;
+	} while (line != cursrcline);
+	if (!matched)
+		error("No match");
+#define	WINDOW	10		/* should be used globally */
+	l1 = line - WINDOW / 2;
+	if (l1 < 1)
+		l1 = 1;
+	l2 = line + WINDOW / 2;
+	if (l2 > lastlinenum)
+		l2 = lastlinenum;
+	printlines(l1, l2);
+	cursrcline = line;	/* override printlines */
 }
