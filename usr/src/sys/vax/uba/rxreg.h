@@ -1,5 +1,6 @@
-/*	rxreg.h	4.6	83/05/06	*/
+/*	rxreg.h	4.7	83/05/07	*/
 
+#include <sys/ioctl.h>
 /*
  * RX02 registers
  */
@@ -56,13 +57,12 @@ RXES_DNER\4RXES_ACLO\3RXES_ID\1RXES_CRC"
 /* 
  * Ioctl commands, move to dkio.h later
  */
-#define RXIOC_FORMAT	(('d'<<8)|1)	/* format the disk */
-#define RXIOC_WDDS	(('d'<<8)|2)	/* write `deleted data' mark */
+#define RXIOC_FORMAT	_IOW(d, 1, int)	/* format the disk */
+#define RXIOC_WDDS	_IOW(d, 2, int)	/* write `deleted data' mark */
 					/* on next sector */
-#define RXIOC_RDDSMK	(('d'<<8)|3)	/* did last read sector contain */
+#define RXIOC_RDDSMK	_IOR(d, 3, int)	/* did last read sector contain */
 					/* `deleted data'?*/
-#define	RXIOC_GDENS	(('d'<<8)|4)	/* return density of current disk */
-#define	RXIOC_MASK	0x0ffff		/* mask for ioctl codes */
+#define	RXIOC_GDENS	_IOR(d, 4, int)	/* return density of current disk */
 
 #ifdef RXDEFERR
 /*
