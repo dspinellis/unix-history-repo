@@ -1,10 +1,10 @@
 #
 #	Makefile for sendmail base directory
 #
-#		@(#)Makefile	4.6		%G%
+#		@(#)Makefile	4.7		%G%
 #
 
-ALL=	src/sendmail aux/syslog
+ALL=	src/sendmail
 DIRS=	$(DESTDIR)/usr/spool/mqueue
 SRCDIR=	$(DESTDIR)/usr/src/usr.lib/sendmail
 ALLDIRS=include adm src aux md cf lib doc adb test
