@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_subs.c	7.13 (Berkeley) %G%
+ *	@(#)nfs_subs.c	7.14 (Berkeley) %G%
  */
 
 /*
@@ -623,9 +623,8 @@ nfs_loadattrcache(vpp, mdp, dposp, vaper)
 	if (vp->v_type == VNON) {
 		vp->v_type = type;
 		if (vp->v_type == VCHR || vp->v_type == VBLK) {
-			vp->v_rdev = rdev;
 			vp->v_op = &spec_nfsv2nodeops;
-			if (nvp = checkalias(vp, vp->v_mount)) {
+			if (nvp = checkalias(vp, rdev, vp->v_mount)) {
 				/*
 				 * Reinitialize aliased node.
 				 */

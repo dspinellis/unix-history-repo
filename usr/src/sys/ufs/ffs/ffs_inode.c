@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ffs_inode.c	7.21 (Berkeley) %G%
+ *	@(#)ffs_inode.c	7.22 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -157,9 +157,8 @@ loop:
 	vp = ITOV(ip);
 	vp->v_type = IFTOVT(ip->i_mode);
 	if (vp->v_type == VCHR || vp->v_type == VBLK) {
-		vp->v_rdev = ip->i_rdev;
 		vp->v_op = &spec_inodeops;
-		if (nvp = checkalias(vp, mntp)) {
+		if (nvp = checkalias(vp, ip->i_rdev, mntp)) {
 			/*
 			 * Reinitialize aliased inode.
 			 */
