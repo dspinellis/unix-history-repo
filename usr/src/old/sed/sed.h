@@ -1,4 +1,4 @@
-/*	sed.h	4.1	85/04/05	*/
+/*	sed.h	4.2	87/09/16	*/
 
 /*
  * sed -- stream  editor
@@ -64,7 +64,7 @@ char	*braelist[NBRA];
 char	*braslist[NBRA];
 long	tlno[NLINES];
 int	nlno;
-char	fname[12][40];
+char	*fname[12];
 FILE	*fcode[12];
 int	nfiles;
 
