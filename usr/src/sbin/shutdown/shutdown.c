@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)shutdown.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)shutdown.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -110,6 +110,8 @@ main(argc,argv)
 	int h, m;
 	int first;
 	FILE *termf;
+	extern char *strcat();
+	extern uid_t geteuid();
 
 	shutter = getlogin();
 	if (shutter == 0)
@@ -158,8 +160,8 @@ main(argc,argv)
 	argc--, argv++;
 	nolog2[0] = '\0';
 	while (argc-- > 0) {
-		strcat(nolog2, " ");
-		strcat(nolog2, *argv++);
+		(void) strcat(nolog2, " ");
+		(void) strcat(nolog2, *argv++);
 	}
 	m = ((stogo = sdt - nowtime) + 30)/60;
 	h = m/60; 
