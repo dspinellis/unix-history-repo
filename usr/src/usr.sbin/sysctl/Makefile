@@ -1,7 +1,6 @@
-#	@(#)Makefile	5.1 (Berkeley) %G%
+#	@(#)Makefile	5.2 (Berkeley) %G%
 
 PROG=	sysctl
 MAN8=	sysctl.0
-LDADD=	-lutil -lkvm
 
 .include <bsd.prog.mk>
