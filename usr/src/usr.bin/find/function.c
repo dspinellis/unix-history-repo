@@ -9,10 +9,10 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)function.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)function.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
-#include <sys/types.h>
+#include <sys/param.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <sys/mount.h>
@@ -255,14 +255,14 @@ c_exec(argvp, isok)
 	cnt = ap - *argvp + 1;
 	new->e_argv = (char **)emalloc((u_int)cnt * sizeof(char *));
 	new->e_orig = (char **)emalloc((u_int)cnt * sizeof(char *));
-	new->e_len = (int *)emalloc((u_int)cnt * sizeof(u_char));
+	new->e_len = (int *)emalloc((u_int)cnt * sizeof(int));
 
 	for (argv = *argvp, cnt = 0; argv < ap; ++argv, ++cnt) {
 		new->e_orig[cnt] = *argv;
 		for (p = *argv; *p; ++p)
 			if (p[0] == '{' && p[1] == '}') {
-				new->e_argv[cnt] = emalloc((u_int)1024);
-				new->e_len[cnt] = 1024;
+				new->e_argv[cnt] = emalloc((u_int)MAXPATHLEN);
+				new->e_len[cnt] = MAXPATHLEN;
 				break;
 			}
 		if (!*p) {
