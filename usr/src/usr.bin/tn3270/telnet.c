@@ -26,7 +26,7 @@ static char copyright[] =
 #endif	/* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)telnet.c	6.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)telnet.c	6.3 (Berkeley) %G%";
 #endif	/* not lint */
 
 /*
@@ -2021,7 +2021,7 @@ telrcv()
 		     * \n; since we must turn off CRMOD to get proper
 		     * input, the mapping is done here (sigh).
 		     */
-	    if (c == '\r') {
+	    if ((c == '\r') && !hisopts[TELOPT_BINARY]) {
 		if (scc > 0) {
 		    c = *sbp&0xff;
 		    if (c == 0) {
@@ -2480,9 +2480,15 @@ int	block;			/* should we block in the select ? */
     if (TTYBYTES()) {
 	FD_SET(tout, &obits);
     }
+#if	defined(TN3270)
     if ((tcc == 0) && NETROOM() && (shell_active == 0)) {
 	FD_SET(tin, &ibits);
     }
+#else	/* defined(TN3270) */
+    if ((tcc == 0) && NETROOM()) {
+	FD_SET(tin, &ibits);
+    }
+#endif	/* defined(TN3270) */
 #endif	/* !defined(MSDOS) */
 #   if !defined(TN3270)
     if (TTYROOM()) {
@@ -2705,29 +2711,35 @@ int	block;			/* should we block in the select ? */
 			break;
 		    }
 		}
-		switch (c) {
-		case '\n':
-			/*
-			 * If we are in CRMOD mode (\r ==> \n)
-			 * on our local machine, then probably
-			 * a newline (unix) is CRLF (TELNET).
-			 */
-		    if (MODE_LOCAL_CHARS(globalmode)) {
-			NETADD('\r');
+		if (!myopts[TELOPT_BINARY]) {
+		    switch (c) {
+		    case '\n':
+			    /*
+			     * If we are in CRMOD mode (\r ==> \n)
+			     * on our local machine, then probably
+			     * a newline (unix) is CRLF (TELNET).
+			     */
+			if (MODE_LOCAL_CHARS(globalmode)) {
+			    NETADD('\r');
+			}
+			NETADD('\n');
+			flushline = 1;
+			break;
+		    case '\r':
+			NET2ADD('\r', '\0');
+			flushline = 1;
+			break;
+		    case IAC:
+			NET2ADD(IAC, IAC);
+			break;
+		    default:
+			NETADD(c);
+			break;
 		    }
-		    NETADD('\n');
-		    flushline = 1;
-		    break;
-		case '\r':
-		    NET2ADD('\r', '\0');
-		    flushline = 1;
-		    break;
-		case IAC:
+		} else if (c == IAC) {
 		    NET2ADD(IAC, IAC);
-		    break;
-		default:
+		} else {
 		    NETADD(c);
-		    break;
 		}
 	    }
 #   if defined(TN3270)
@@ -3890,9 +3902,13 @@ command(top)
 	    longjmp(toplevel, 1);
 	    /*NOTREACHED*/
 	}
+#if	defined(TN3270)
 	if (shell_active == 0) {
 	    setconnmode();
 	}
+#else	/* defined(TN3270) */
+	setconnmode();
+#endif	/* defined(TN3270) */
     }
 }
 
