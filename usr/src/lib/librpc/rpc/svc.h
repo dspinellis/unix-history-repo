@@ -151,7 +151,7 @@ struct svc_req {
  *	u_long prog;
  *	u_long vers;
  *	void (*dispatch)();
- *	int protocol;  /* like TCP or UDP, zero means do not register 
+ *	int protocol;  (like TCP or UDP, zero means do not register)
  */
 extern bool_t	svc_register();
 
