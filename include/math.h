@@ -36,11 +36,11 @@
 #ifndef	_MATH_H_
 #define	_MATH_H_
 
-#if defined(vax) || defined(tahoe)		/* DBL_MAX from float.h */
+#if defined(vax) || defined(tahoe)	/* DBL_MAX from float.h */
 #define	HUGE_VAL	1.701411834604692294E+38
 #else
-#define	HUGE_VAL	1.7976931348623157E+308/* IEEE: positive infinity */
-/*#define	HUGE_VAL	1E+500			/* IEEE: positive infinity */
+extern char __infinity[];		/* bytes for IEEE754 +Infinity */
+#define HUGE_VAL (*(double *) __infinity)
 #endif
 
 #if !defined(_ANSI_SOURCE) && !defined(_POSIX_SOURCE)
