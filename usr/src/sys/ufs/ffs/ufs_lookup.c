@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ufs_lookup.c	7.12 (Berkeley) %G%
+ *	@(#)ufs_lookup.c	7.13 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -736,7 +736,7 @@ blkatoff(ip, offset, res, bpp)
 #ifdef SECSIZE
 	bp = bread(ip->i_dev, fsbtodb(fs, bn), bsize, fs->fs_dbsize);
 #else SECSIZE
-	error = bread(ip->i_devvp, bn, bsize, &bp);
+	error = bread(ip->i_devvp, bn, bsize, NOCRED, &bp);
 	if (error) {
 		brelse(bp);
 		return (error);

@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ffs_inode.c	7.11 (Berkeley) %G%
+ *	@(#)ffs_inode.c	7.12 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -158,7 +158,7 @@ loop:
 	 * Read in the disk contents for the inode.
 	 */
 	if (error = bread(VFSTOUFS(mntp)->um_devvp, fsbtodb(fs, itod(fs, ino)),
-	    (int)fs->fs_bsize, &bp)) {
+	    (int)fs->fs_bsize, NOCRED, &bp)) {
 		/*
 		 * The inode doesn't contain anything useful, so it would
 		 * be misleading to leave it on its hash chain. Iput() will
@@ -520,7 +520,7 @@ iupdat(ip, ta, tm, waitfor)
 	if (vp->v_mount->m_flag & M_RDONLY)
 		return (0);
 	error = bread(ip->i_devvp, fsbtodb(fs, itod(fs, ip->i_number)),
-		(int)fs->fs_bsize, &bp);
+		(int)fs->fs_bsize, NOCRED, &bp);
 	if (error) {
 		brelse(bp);
 		return (error);
@@ -607,7 +607,7 @@ itrunc(oip, length)
 		size = blksize(fs, oip, lbn);
 		count = howmany(size, CLBYTES);
 			munhash(oip->i_devvp, bn + i * CLBYTES / DEV_BSIZE);
-		error = bread(oip->i_devvp, bn, size, &bp);
+		error = bread(oip->i_devvp, bn, size, NOCRED, &bp);
 		if (error) {
 			oip->i_size = osize;
 			brelse(bp);
@@ -768,7 +768,8 @@ indirtrunc(ip, bn, lastbn, level, countp)
 	bp = bread(ip->i_dev, fsbtodb(fs, bn), (int)fs->fs_bsize,
 	    fs->fs_dbsize);
 #else SECSIZE
-	error = bread(ip->i_devvp, fsbtodb(fs, bn), (int)fs->fs_bsize, &bp);
+	error = bread(ip->i_devvp, fsbtodb(fs, bn), (int)fs->fs_bsize,
+		NOCRED, &bp);
 	if (error) {
 		brelse(bp);
 		*countp = 0;

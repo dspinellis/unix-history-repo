@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)buf.h	7.7 (Berkeley) %G%
+ *	@(#)buf.h	7.8 (Berkeley) %G%
  */
 
 /*
@@ -76,8 +76,12 @@ struct buf
 #define	b_errcnt b_resid		/* while i/o in progress: # retries */
 	struct  proc *b_proc;		/* proc doing physical or swap I/O */
 	int	(*b_iodone)();		/* function called by iodone */
-	struct vnode *b_vp;		/* Vnode for dev */
+	struct	vnode *b_vp;		/* vnode for dev */
 	int	b_pfcent;		/* center page when swapping cluster */
+	struct	ucred *b_rcred;		/* ref to read credentials */
+	struct	ucred *b_wcred;		/* ref to write credendtials */
+	int	b_dirtyoff;		/* offset in buffer of dirty region */
+	int	b_dirtyend;		/* offset of end of dirty region */
 };
 
 #define	BQUEUES		4		/* number of free buffer queues */

@@ -14,9 +14,8 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)lfs_vfsops.c	7.18 (Berkeley) %G%
+ *	@(#)lfs_vfsops.c	7.19 (Berkeley) %G%
  */
-
 
 #include "param.h"
 #include "systm.h"
@@ -26,6 +25,7 @@
 #include "vnode.h"
 #include "mount.h"
 #include "buf.h"
+#include "ucred.h"
 #include "file.h"
 #include "disklabel.h"
 #include "ioctl.h"
@@ -178,14 +178,13 @@ mountfs(devvp, mp)
 		return (error);
 	}
 	needclose = 1;
-	if (VOP_IOCTL(devvp, DIOCGPART, (caddr_t)&dpart, FREAD,
-	    (struct ucred *)0) != 0)
+	if (VOP_IOCTL(devvp, DIOCGPART, (caddr_t)&dpart, FREAD, NOCRED) != 0)
 		size = DEV_BSIZE;
 	else {
 		havepart = 1;
 		size = dpart.disklab->d_secsize;
 	}
-	if (error = bread(devvp, SBLOCK, SBSIZE, &bp)) {
+	if (error = bread(devvp, SBLOCK, SBSIZE, NOCRED, &bp)) {
 		ump->um_fs = NULL;
 		goto out;
 	}
@@ -246,7 +245,8 @@ mountfs(devvp, mp)
 		tp = bread(dev, fsbtodb(fs, fs->fs_csaddr + i), size,
 		    fs->fs_dbsize);
 #else SECSIZE
-		error = bread(devvp, fsbtodb(fs, fs->fs_csaddr + i), size, &bp);
+		error = bread(devvp, fsbtodb(fs, fs->fs_csaddr + i), size,
+			NOCRED, &bp);
 		if (error) {
 			free((caddr_t)base, M_SUPERBLK);
 			goto out;
@@ -266,6 +266,7 @@ mountfs(devvp, mp)
 	ump->um_dev = dev;
 	ump->um_devvp = devvp;
 	ump->um_qinod = NULL;
+	devvp->v_mount = mp;
 
 	/* Sanity checks for old file systems.			   XXX */
 	fs->fs_npsect = MAX(fs->fs_npsect, fs->fs_nsect);	/* XXX */
@@ -276,8 +277,7 @@ mountfs(devvp, mp)
 	return (0);
 out:
 	if (needclose)
-		(void) VOP_CLOSE(devvp, ronly ? FREAD : FREAD|FWRITE,
-			(struct ucred *)0);
+		(void) VOP_CLOSE(devvp, ronly ? FREAD : FREAD|FWRITE, NOCRED);
 	if (ump->um_fs) {
 		free((caddr_t)ump->um_fs, M_SUPERBLK);
 		ump->um_fs = NULL;
@@ -435,7 +435,7 @@ ufs_sync(mp, waitfor)
 	/*
 	 * Force stale buffer cache information to be flushed.
 	 */
-	bflush(ump->um_devvp->v_rdev);
+	bflush(ump->um_devvp->v_mount);
 	return (error);
 }
 

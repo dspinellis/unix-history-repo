@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)lfs_balloc.c	7.4 (Berkeley) %G%
+ *	@(#)lfs_balloc.c	7.5 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -103,7 +103,7 @@ bmap(ip, bn, bnp, rablockp, rasizep)
 	 */
 	for (; j <= NIADDR; j++) {
 		if (error = bread(ip->i_devvp, fsbtodb(fs, nb),
-		    (int)fs->fs_bsize, &bp)) {
+		    (int)fs->fs_bsize, NOCRED, &bp)) {
 			brelse(bp);
 			return (error);
 		}
@@ -281,7 +281,7 @@ gotit:
 		    fs->fs_dbsize);
 #else SECSIZE
 		if (error = bread(ip->i_devvp, fsbtodb(fs, nb),
-		    (int)fs->fs_bsize, &bp)) {
+		    (int)fs->fs_bsize, NOCRED, &bp)) {
 			brelse(bp);
 			return (error);
 		}

@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_bio.c	7.9 (Berkeley) %G%
+ *	@(#)vfs_bio.c	7.10 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -22,14 +22,16 @@
 #include "buf.h"
 #include "vnode.h"
 #include "trace.h"
+#include "ucred.h"
 
 /*
  * Read in (if necessary) the block and return a buffer pointer.
  */
-bread(vp, blkno, size, bpp)
+bread(vp, blkno, size, cred, bpp)
 	struct vnode *vp;
 	daddr_t blkno;
 	int size;
+	struct ucred *cred;
 	struct buf **bpp;
 #ifdef SECSIZE
 	long secsize;
@@ -51,6 +53,10 @@ bread(vp, blkno, size, bpp)
 	bp->b_flags |= B_READ;
 	if (bp->b_bcount > bp->b_bufsize)
 		panic("bread");
+	if (bp->b_rcred == NOCRED && cred != NOCRED) {
+		crhold(cred);
+		bp->b_rcred = cred;
+	}
 	VOP_STRATEGY(bp);
 	trace(TR_BREADMISS, pack(vp->v_mount->m_fsid[0], size), blkno);
 	u.u_ru.ru_inblock++;		/* pay for read */
@@ -61,13 +67,14 @@ bread(vp, blkno, size, bpp)
  * Read in the block, like bread, but also start I/O on the
  * read-ahead block (which is not allocated to the caller)
  */
-breada(vp, blkno, size, rablkno, rabsize, bpp)
+breada(vp, blkno, size, rablkno, rabsize, cred, bpp)
 	struct vnode *vp;
 	daddr_t blkno; int size;
 #ifdef SECSIZE
 	long secsize;
 #endif SECSIZE
 	daddr_t rablkno; int rabsize;
+	struct ucred *cred;
 	struct buf **bpp;
 {
 	register struct buf *bp, *rabp;
@@ -85,6 +92,10 @@ breada(vp, blkno, size, rablkno, rabsize, bpp)
 			bp->b_flags |= B_READ;
 			if (bp->b_bcount > bp->b_bufsize)
 				panic("breada");
+			if (bp->b_rcred == NOCRED && cred != NOCRED) {
+				crhold(cred);
+				bp->b_rcred = cred;
+			}
 			VOP_STRATEGY(bp);
 			trace(TR_BREADMISS, pack(vp->v_mount->m_fsid[0], size),
 			    blkno);
@@ -109,6 +120,10 @@ breada(vp, blkno, size, rablkno, rabsize, bpp)
 			rabp->b_flags |= B_READ|B_ASYNC;
 			if (rabp->b_bcount > rabp->b_bufsize)
 				panic("breadrabp");
+			if (bp->b_rcred == NOCRED && cred != NOCRED) {
+				crhold(cred);
+				bp->b_rcred = cred;
+			}
 			VOP_STRATEGY(rabp);
 			trace(TR_BREADMISSRA,
 			    pack(vp->v_mount->m_fsid[0], rabsize), rablock);
@@ -125,7 +140,7 @@ breada(vp, blkno, size, rablkno, rabsize, bpp)
 #ifdef SECSIZE
 		return (bread(dev, blkno, size, secsize));
 #else SECSIZE
-		return (bread(vp, blkno, size, bpp));
+		return (bread(vp, blkno, size, cred, bpp));
 	return (biowait(bp));
 }
 
@@ -281,10 +296,11 @@ incore(vp, blkno)
 	return (0);
 }
 
-baddr(vp, blkno, size, bpp)
+baddr(vp, blkno, size, cred, bpp)
 	struct vnode *vp;
 	daddr_t blkno;
 	int size;
+	struct ucred *cred;
 	struct buf **bpp;
 #ifdef SECSIZE
 	long secsize;
@@ -292,7 +308,7 @@ baddr(vp, blkno, size, bpp)
 {
 
 	if (incore(vp, blkno))
-		return (bread(vp, blkno, size, bpp));
+		return (bread(vp, blkno, size, cred, bpp));
 	*bpp = 0;
 #endif SECSIZE
 	return (0);
@@ -515,6 +531,7 @@ struct buf *
 getnewbuf()
 {
 	register struct buf *bp, *dp;
+	register struct ucred *cred;
 	int s;
 
 loop:
@@ -538,6 +555,16 @@ loop:
 	trace(TR_BRELSE,
 	    pack(bp->b_vp->v_mount->m_fsid[0], bp->b_bufsize), bp->b_blkno);
 	brelvp(bp);
+	if (bp->b_rcred != NOCRED) {
+		cred = bp->b_rcred;
+		bp->b_rcred = NOCRED;
+		crfree(cred);
+	}
+	if (bp->b_wcred != NOCRED) {
+		cred = bp->b_wcred;
+		bp->b_wcred = NOCRED;
+		crfree(cred);
+	}
 	bp->b_flags = B_BUSY;
 	return (bp);
 }
@@ -552,7 +579,7 @@ biowait(bp)
 	int s;
 
 	s = splbio();
-	while ((bp->b_flags&B_DONE)==0)
+	while ((bp->b_flags & B_DONE) == 0)
 		sleep((caddr_t)bp, PRIBIO);
 	splx(s);
 	/*
@@ -579,6 +606,8 @@ biodone(bp)
 	if (bp->b_flags & B_DONE)
 		panic("dup biodone");
 	bp->b_flags |= B_DONE;
+	if ((bp->b_flags & B_READ) == 0)
+		bp->b_dirtyoff = bp->b_dirtyend = 0;
 	if (bp->b_flags & B_CALL) {
 		bp->b_flags &= ~B_CALL;
 		(*bp->b_iodone)(bp);
@@ -655,10 +684,10 @@ loop:
 
 /*
  * Make sure all write-behind blocks associated
- * with vp are flushed out (from sync).
+ * with mount point are flushed out (from sync).
  */
-bflush(dev)
-	dev_t dev;
+bflush(mountp)
+	struct mount *mountp;
 {
 	register struct buf *bp;
 	register struct buf *flist;
@@ -666,76 +695,46 @@ bflush(dev)
 
 loop:
 	s = splbio();
-	for (flist = bfreelist; flist < &bfreelist[BQ_EMPTY]; flist++)
-	for (bp = flist->av_forw; bp != flist; bp = bp->av_forw) {
-		if ((bp->b_flags & B_DELWRI) == 0)
-			continue;
-		if (dev == NODEV || dev == bp->b_dev) {
-			notavail(bp);
-			(void) bawrite(bp);
-			splx(s);
-			goto loop;
+	for (flist = bfreelist; flist < &bfreelist[BQ_EMPTY]; flist++) {
+		for (bp = flist->av_forw; bp != flist; bp = bp->av_forw) {
+			if ((bp->b_flags & B_BUSY))
+				continue;
+			if ((bp->b_flags & B_DELWRI) == 0)
+				continue;
+			if (bp->b_vp && bp->b_vp->v_mount == mountp) {
+				notavail(bp);
+				(void) bawrite(bp);
+				splx(s);
+				goto loop;
+			}
 		}
 	}
 	splx(s);
 }
 
-#ifdef unused
-/*
- * Invalidate blocks associated with vp which are on the freelist.
- * Make sure all write-behind blocks associated with vp are flushed out.
- */
-binvalfree(vp)
-	struct vnode *vp;
-{
-	register struct buf *bp;
-	register struct buf *flist;
-	int s;
-
-loop:
-	s = splbio();
-	for (flist = bfreelist; flist < &bfreelist[BQ_EMPTY]; flist++)
-	for (bp = flist->av_forw; bp != flist; bp = bp->av_forw) {
-		if (vp == (struct vnode *) 0 || vp == bp->b_vp) {
-			if (bp->b_flags & B_DELWRI) {
-				notavail(bp);
-				(void) splx(s);
-				(void) bawrite(bp);
-			} else {
-				bp->b_flags |= B_INVAL;
-				brelvp(bp);
-				(void) splx(s);
-			}
-			goto loop;
-		}
-	}
-	(void) splx(s);
-}
-#endif /* unused */
-
 /*
  * Invalidate in core blocks belonging to closed or umounted filesystem
  *
  * We walk through the buffer pool and invalidate any buffers for the
- * indicated device. Normally this routine is preceeded by a bflush
+ * indicated mount point. Normally this routine is preceeded by a bflush
  * call, so that on a quiescent filesystem there will be no dirty
  * buffers when we are done. We return the count of dirty buffers when
  * we are finished.
  */
-binval(dev)
-	dev_t dev;
+binval(mountp)
+	struct mount *mountp;
 {
 	register struct buf *bp;
 	register struct bufhd *hp;
 	int s, dirty = 0;
 #define dp ((struct buf *)hp)
 
+loop:
+	s = splbio();
 	for (hp = bufhash; hp < &bufhash[BUFHSZ]; hp++) {
 		for (bp = dp->b_forw; bp != dp; bp = bp->b_forw) {
-			if (bp->b_dev != dev || (bp->b_flags & B_INVAL))
+			if (bp->b_vp == NULL || bp->b_vp->v_mount != mountp)
 				continue;
-		loop:
-			s = splbio();
 			if (bp->b_flags & B_BUSY) {
 				bp->b_flags |= B_WANTED;
 				sleep((caddr_t)bp, PRIBIO+1);
