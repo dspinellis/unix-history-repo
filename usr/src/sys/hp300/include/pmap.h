@@ -4,12 +4,10 @@
  * All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
- * The Mach Operating System project at Carnegie-Mellon University.
+ * the Systems Programming Group of the University of Utah Computer
+ * Science Department.
  *
- * The CMU software License Agreement specifies the terms and conditions
- * for use and redistribution.
- *
- *	@(#)pmap.h	7.4 (Berkeley) %G%
+ *	@(#)pmap.h	7.5 (Berkeley) %G%
  */
 
 #ifndef	_PMAP_MACHINE_
