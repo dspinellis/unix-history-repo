@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd1.c	3.12 83/09/15";
+static	char *sccsid = "@(#)cmd1.c	3.13 83/11/22";
 #endif
 
 #include "defs.h"
@@ -146,6 +146,7 @@ int maxrow, maxcol;
 struct ww *
 doopen(id, nrow, ncol, row, col)
 int id, nrow, ncol, row, col;
+char *label;
 {
 	register struct ww *w;
 
