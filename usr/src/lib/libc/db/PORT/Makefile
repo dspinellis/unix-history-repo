@@ -11,19 +11,6 @@ OBJ4=	mpool.o
 OBJ5=	rec_close.o rec_delete.o rec_get.o rec_open.o rec_put.o rec_search.o \
 	rec_seq.o rec_utils.o
 
-# If you don't have memmove(3), add memmove.o to the MISC line.
-#
-# If you don't have mktemp(3) or mkstemp(3), add mktemp.o to the MISC line.
-#
-# If realloc(3) of a NULL pointer on your system isn't the same as
-# a malloc(3) call, add realloc.o to the MISC line.
-#
-# If you don't have snprintf/vsnprintf(3), add snprintf.o to the MISC line.
-# Note, this depends you your having vsprintf(3) -- if you don't, there's
-# no workaround other than changing the source code to not use the snprintf
-# calls.  If you have to make that change, check to see if your vsprintf
-# returns a length or a char *; if it's the latter, set VSPRINTF_CHARSTAR
-# in the include/compat.h file.
 MISC=
 
 ${LIBDB}: ${OBJ1} ${OBJ2} ${OBJ3} ${OBJ4} ${OBJ5} ${MISC}
