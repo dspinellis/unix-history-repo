@@ -1,9 +1,12 @@
 .\" Copyright (c) 1992 The Regents of the University of California.
 .\" All rights reserved.
 .\"
+.\" This code is derived from software contributed to Berkeley by
+.\" Nancy L. Tinkham and Darren F. Provine.
+.\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)tetris.6	5.1 (Berkeley) %G%
+.\"	@(#)tetris.6	5.2 (Berkeley) %G%
 .\"
 .Dd ""
 .Dt TETRIS 6
@@ -13,11 +16,9 @@
 .Nd the game of tetris
 .Sh SYNOPSIS
 .Nm
-.Op level
-.Op \-keys
-.br
-.Nm
-0
+.Op Fl s
+.Op Fl k Ar keys
+.Op Fl l Ar level
 .Sh DESCRIPTION
 The
 .Nm
@@ -27,14 +28,11 @@ which then vanish.
 When the shapes fill up to the top, the game ends.
 You can optionally select a level of play, or custom-select control keys.
 .Pp
-To select a level of play,
-specify a number from 1 to 9 as the first argument.
-The default level is 2;
-higher levels mean a faster game, as described below.
-If you specify multiple levels, only the first is used.
+The default level of play is 2.
 .Pp
 The default control keys are as follows:
-.Bl -tag -width <space>x
+.Pp
+.Bl -tag -width "<space>" -compact -offset indent
 .It j
 move left
 .It k
@@ -48,15 +46,30 @@ pause
 .It q
 quit
 .El
-These can be changed by putting the replacements on the command line,
-preceded by a hyphen (``-''), in the order above
-(but note that if you want to specify a space,
-you must quote it from the shell).
-For example, running:
-.D1 1 "tet 2 -jkl\e pq"
-will play at level 2, using the default key assignments.
-Selecting the same key twice in the specification string causes an error.
-The current key settings are displayed at the bottom of the screen during play.
+.Pp
+The options are as follows:
+.Bl -tag -width indent
+.It Fl k
+The default control keys can be changed using the
+.Fl k option.
+The
+.Ar keys
+argument must have the six keys in order, and, remember to quote any
+space or tab characters from the shell.
+For example:
+.sp
+.Dl "tetris -l 2 -k 'jkl pq'"
+.sp
+will play the default games, i.e. level 2 and with the default
+control keys.
+The current key settings are displayed at the bottom of the screen
+during play.
+.It Fl l
+Select a level of play.
+.It Fl s
+Display the top scores.
+.El
+.Pp
 .Sh PLAY
 At the start of the game, a shape will appear at the top of the screen,
 falling one square at a time.
@@ -84,17 +97,17 @@ and your accumulated
 .el points -- 200
 points on level 3 gives you a score of 600.
 Each player gets at most one entry on any level,
-to a total of nine scores in the highscores file.
+for a total of nine scores in the high scores file.
 Players who no longer have accounts are limited to one score.
 Also, scores over 5 years old are expired.
-The exception to these conditions is that the highest score on a given level is
+The exception to these conditions is that the highest score on a given
+level is
 .Em always
 kept,
-so that following generations can pay homage to those who went before.
+so that following generations can pay homage to those who have
+wasted serious amounts of time.
 .Pp
 The score list is produced at the end of the game.
-Optionally, you can read the current scores without playing
-by selecting level 0.
 The printout includes each player's overall ranking,
 name, score, and how many points were scored on what level.
 Scores which are the highest on a given level
@@ -109,6 +122,7 @@ high score file
 The higher levels are unplayable without a fast terminal connection.
 .Sh AUTHORS
 Adapted from a 1989 International Obfuscated C Code Contest winner by
-Chris Torek and Darren F Provine.
+Chris Torek and Darren F. Provine.
 .Pp
-Manual entry written by Nancy L Tinkham & Darren F Provine.
+Manual adapted from the original entry written by Nancy L. Tinkham and
+Darren F. Provine.
