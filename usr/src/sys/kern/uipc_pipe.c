@@ -1,4 +1,4 @@
-/*	uipc_pipe.c	4.4	81/11/21	*/
+/*	uipc_pipe.c	4.5	81/11/21	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -16,7 +16,7 @@ int	piusrreq();
  * Code for pipes and other loopback protocols (single machine, that is.)
  */
 struct	protosw pipeproto = {
-	SOCK_STREAM,	PF_LOCAL,	0,		PR_CONNREQUIRED,
+	SOCK_STREAM,	PF_LOCAL,	0,		PR_CONNREQUIRED|PR_WANTRCVD,
 	0,		0,		0,		0,
 	piusrreq,	0,		0,
 	0,		0,		0,		0
@@ -25,8 +25,6 @@ struct	protosw pipeproto = {
 /*
  * Connect a pipe from wso to rso.  The protocol control block
  * for a pipe is used to store a pointer to the matching socket.
- * Each half of the pipe gets half of the buffer space (half send
- * buffers, half receive buffers).
  */
 piconnect(wso, rso)
 	struct socket *wso, *rso;
@@ -66,7 +64,10 @@ COUNT(PIUSRREQ);
 	switch (req) {
 
 	case PRU_ATTACH:
+		break;
+
 	case PRU_DETACH:
+		so->so_pcb = 0;
 		break;
 
 	case PRU_CONNECT:
@@ -78,6 +79,7 @@ COUNT(PIUSRREQ);
 			return (ENOTCONN);
 		so->so_pcb = 0;
 		soisdisconnected(so);
+		soisdisconnected(so2);
 		break;
 
 	case PRU_SHUTDOWN:
@@ -91,6 +93,10 @@ COUNT(PIUSRREQ);
 			break;
 #define	rcv (&so->so_rcv)
 #define snd (&so2->so_snd)
+/*
+printf("pru_rcvd in: ");
+psndrcv(snd, rcv);
+*/
 		/*
 		 * Transfer resources back to send port
 		 * and wakeup any waiting to write.
@@ -99,6 +105,10 @@ COUNT(PIUSRREQ);
 		rcv->sb_mbmax = rcv->sb_mbcnt;
 		snd->sb_hiwat += rcv->sb_hiwat - rcv->sb_cc;
 		rcv->sb_hiwat = rcv->sb_cc;
+/*
+printf("pru_rcvd out: ");
+psndrcv(snd, rcv);
+*/
 		sbwakeup(snd);
 #undef snd
 #undef rcv
@@ -112,12 +122,20 @@ COUNT(PIUSRREQ);
 		 * give it enough resources to hold what it already has.
 		 * Wake up readers.
 		 */
+/*
+printf("pru_send in: ");
+psndrcv(snd, rcv);
+*/
 		sbappend(rcv, m);
 		snd->sb_mbmax -= rcv->sb_mbcnt - rcv->sb_mbmax;
 		rcv->sb_mbmax = rcv->sb_mbcnt;
 		snd->sb_hiwat -= rcv->sb_cc - rcv->sb_hiwat;
 		rcv->sb_hiwat = rcv->sb_cc;
 		sbwakeup(rcv);
+/*
+printf("pru_send out: ");
+psndrcv(snd, rcv);
+*/
 #undef snd
 #undef rcv
 		break;
@@ -132,4 +150,16 @@ COUNT(PIUSRREQ);
 		panic("piusrreq");
 	}
 	return (0);
+}
+
+psndrcv(snd, rcv)
+	struct sockbuf *snd, *rcv;
+{
+
+	printf("snd: (cc,hiwat,mbcnt,mbmax) (%d,%d,%d,%d) ",
+	    snd->sb_cc, snd->sb_hiwat, snd->sb_mbcnt, snd->sb_mbmax);
+	printf("m %x, m->m_len %d\n", snd->sb_mb, snd->sb_mb ? snd->sb_mb->m_len : 0);
+	printf("rcv: (cc,hiwat,mbcnt,mbmax) (%d,%d,%d,%d) ",
+	    rcv->sb_cc, rcv->sb_hiwat, rcv->sb_mbcnt, rcv->sb_mbmax);
+	printf("m %x, m->m_len %d\n", rcv->sb_mb, rcv->sb_mb ? rcv->sb_mb->m_len : 0);
 }
