@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sioreg.h	7.1 (Berkeley) %G%
+ *	@(#)sioreg.h	7.2 (Berkeley) %G%
  */
 
 /* 
@@ -41,9 +41,6 @@ struct siodevice {
 #define WR5		0x05
 #define WR6		0x06
 #define WR7		0x07
-
-#define WR2A		0x02
-#define WR2B		0x12
 
 #define RR0		0x08
 #define RR1		0x09
@@ -87,6 +84,7 @@ struct siodevice {
 #define WR3_RX8BIT	0xc0	/* Rx Bits/Character: 8 Bits */
 
 #define WR4_NPARITY	0x00	/* No Parity */
+#define WR4_PARENAB	0x01	/* Parity Enable */
 #define WR4_OPARITY	0x01	/* Parity Odd */
 #define WR4_EPARITY	0x02	/* Parity Even */
 #define WR4_STOP1	0x04	/* Stop  Bits (1bit) */
@@ -97,18 +95,22 @@ struct siodevice {
 #define WR4_BAUD24	0xc0	/* Clock Rate (2400 BAUD) */
 
 #define WR5_TXCRC	0x01	/* Tx CRC Check */
-#define WR5_REQSND	0x02	/* Request To Send (LOW) */
+#define WR5_RTS		0x02	/* Request To Send     [RTS] */
 #define WR5_TXENBL	0x08	/* Transmit Enable */
-#define WR5_BREAK	0x10	/* Send Break */
+#define WR5_BREAK	0x10	/* Send Break          [BRK] */
 #define WR5_TX5BIT	0x00	/* Tx Bits/Character: 5 Bits */
 #define WR5_TX7BIT	0x20	/* Tx Bits/Character: 7 Bits */
 #define WR5_TX6BIT	0x40	/* Tx Bits/Character: 6 Bits */
 #define WR5_TX8BIT	0x60	/* Tx Bits/Character: 8 Bits */
+#define WR5_DTR		0x80	/* Data Terminal Ready [DTR] */
 
 #define RR0_RXAVAIL	0x01	/* Rx Character Available */
 #define RR0_INTRPEND	0x02	/* Interrupt Pending (Channel-A Only) */
 #define RR0_TXEMPTY	0x04	/* Tx Buffer Empty */
-#define RR0_BREAK	0x80	/* Break Detected */
+#define RR0_DCD		0x08	/* Data Carrier Detect [DCD] */
+#define RR0_SYNC	0x10	/* Synchronization */
+#define RR0_CTS		0x20	/* Clear To Send       [CTS] */
+#define RR0_BREAK	0x80	/* Break Detected      [BRK] */
 
 #define RR1_PARITY	0x10	/* Parity Error */
 #define RR1_OVERRUN	0x20	/* Data Over Run */
@@ -117,7 +119,13 @@ struct siodevice {
 #define RR_RXRDY	0x0100	/* Rx Character Available */
 #define RR_INTRPEND	0x0200	/* Interrupt Pending (Channel-A Only) */
 #define RR_TXRDY	0x0400	/* Tx Buffer Empty */
+#define RR_DCD		0x0800	/* Data Carrier Detect [DCD] */
+#define RR_SYNC		0x1000	/* Synchronization */
+#define RR_CTS		0x2000	/* Clear To Send       [CTS] */
 #define RR_BREAK	0x8000	/* Break Detected */
 #define RR_PARITY	0x0010	/* Parity Error */
 #define RR_OVERRUN	0x0020	/* Data Over Run */
 #define RR_FRAMING	0x0040	/* Framing Error */
+
+
+#define SIO_HARDADDR	0x51000000			/* build-in serial-interface address */
