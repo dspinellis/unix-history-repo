@@ -1,0 +1,12 @@
+if test x$TERM != x
+then
+	true
+	exit
+fi
+echo 'I need to know what kind of terminal you are using.
+I will put you out of learn. Type these commands
+
+setenv TERM xxx	(where xxx is one of 300, 300S, 450, etc.)
+
+Then type "learn eqn" again.'
+false

@@ -1,0 +1,33 @@
+#once #create message
+.ND
+.LP
+Of course you can use reserved words like "pi" or "int"
+with the "over" construction.  For example, modify
+"Example" so its output looks like the following, then
+type "ready".
+.pl 1
+#once #create Ref
+.LP
+.EQ
+alpha over beta ~=~ pi over 2
+.EN
+.pl 1
+#once #create Example
+.LP
+.EQ
+replace me
+.EN
+.pl 1
+#
+#once neqn Ref | nroff >X1 &
+#once neqn message Ref | nroff -T$TERM %s/tinyms -
+#user
+neqn Example | nroff >X2
+#cmp X1 X2
+#fail
+The names are alpha, beta and pi.
+I hope your trouble wasn't any more
+complicated than that.
+#log
+#next
+4.1c 10

@@ -1,0 +1,46 @@
+#once #create message
+.ND
+.LP
+One of the most common problems in using neqn is forgetting
+to leave spaces or tildes around "magic" words like "pi"
+or "int" or "sum".  The result is that the magic words
+cease to be magic, and just look like ordinary strings
+of letters.
+
+In the file "Example", there are several such errors.
+Find them, and fix them so the output looks
+like this, then type "ready".
+.pl 1
+#once #create Ref
+.LP
+.EQ
+sum ~=~ pi ~+~1
+.EN
+.EQ
+a~=~ pi (x)
+.EN
+.EQ
+alpha ~=~ beta ~+~ gamma ~+~ delta
+.EN
+.pl 1
+#once #create Example
+.LP
+.EQ
+sum=pi+1
+.EN
+.EQ
+a=pi(x)
+.EN
+.EQ
+alpha=beta+gamma+delta
+.EN
+.pl 1
+#
+#once neqn Ref | nroff >X1 &
+#once neqn message Ref | nroff -T$TERM %s/tinyms -
+#user
+neqn Example | nroff >X2
+#cmp X1 X2
+#log
+#next
+3.1a 10
