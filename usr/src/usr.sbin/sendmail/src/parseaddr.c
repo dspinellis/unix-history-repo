@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)parseaddr.c	3.56		%G%);
+SCCSID(@(#)parseaddr.c	3.57		%G%);
 
 /*
 **  PARSE -- Parse an address
@@ -591,20 +591,8 @@ rewrite(pvp, ruleset)
 			}
 # endif DEBUG
 
-			/* see if this is a "subroutine" call */
 			rp = *rvp;
-			if (*rp == CALLSUBR)
-			{
-				rp = *++rvp;
-# ifdef DEBUG
-				if (tTd(21, 3))
-					printf("-----callsubr %s\n", rp);
-# endif DEBUG
-				rewrite(pvp, atoi(rp));
-				rwr = rwr->r_next;
-				continue;
-			}
-			else if (*rp == CANONUSER)
+			if (*rp == CANONUSER)
 			{
 				rvp++;
 				rwr = rwr->r_next;
@@ -663,7 +651,21 @@ rewrite(pvp, ruleset)
 				}
 			}
 			*avp++ = NULL;
-			bmove((char *) npvp, (char *) pvp, (avp - npvp) * sizeof *avp);
+			if (**npvp == CALLSUBR)
+			{
+				bmove((char *) &npvp[2], (char *) pvp,
+					(avp - npvp - 2) * sizeof *avp);
+# ifdef DEBUG
+				if (tTd(21, 3))
+					printf("-----callsubr %s\n", npvp[1]);
+# endif DEBUG
+				rewrite(pvp, atoi(npvp[1]));
+			}
+			else
+			{
+				bmove((char *) npvp, (char *) pvp,
+					(avp - npvp) * sizeof *avp);
+			}
 # ifdef DEBUG
 			if (tTd(21, 4))
 			{

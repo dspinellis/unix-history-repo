@@ -3,7 +3,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)deliver.c	3.113		%G%);
+SCCSID(@(#)deliver.c	3.114		%G%);
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -42,7 +42,7 @@ deliver(firstto, editfcn)
 	extern putmessage();
 	extern bool checkcompat();
 	char *pv[MAXPV+1];
-	char tobuf[MAXLINE];		/* text line of to people */
+	char tobuf[MAXLINE-50];		/* text line of to people */
 	char buf[MAXNAME];
 	ADDRESS *ctladdr;
 	extern ADDRESS *getctladdr();
@@ -185,6 +185,10 @@ deliver(firstto, editfcn)
 		    strcmp(to->q_host, host) != 0 ||
 		    to->q_mailer != firstto->q_mailer)
 			continue;
+
+		/* avoid overflowing tobuf */
+		if (sizeof tobuf - (strlen(to->q_paddr) + strlen(tobuf) + 1) < 0)
+			break;
 
 # ifdef DEBUG
 		if (tTd(10, 1))
