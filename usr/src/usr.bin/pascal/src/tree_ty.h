@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
  
-/* static char sccsid[]="@(#)tree_ty.h 1.2 7/1/83"; */
+/* static char sccsid[]="@(#)tree_ty.h	1.4	(Berkeley)	83/10/11"; */
 
 typedef struct /* T_FORU, T_FORD */
 {
