@@ -1,4 +1,4 @@
-/*	vfs_bio.c	4.26	82/03/13	*/
+/*	vfs_bio.c	4.27	82/03/26	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -727,6 +727,7 @@ unsigned (*mincnt)();
 		bp->b_flags |= B_WANTED;
 		sleep((caddr_t)bp, PRIBIO+1);
 	}
+	splx(s);
 	bp->b_error = 0;
 	bp->b_proc = u.u_procp;
 	bp->b_un.b_addr = u.u_base;
@@ -765,8 +766,8 @@ minphys(bp)
 struct buf *bp;
 {
 
-	if (bp->b_bcount > 60 * 1024)
-		bp->b_bcount = 60 * 1024;
+	if (bp->b_bcount > 65 * 1024)
+		bp->b_bcount = 65 * 1024;
 }
 
 /*
