@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.186 (Berkeley) %G%
+ *	@(#)conf.h	8.187 (Berkeley) %G%
  */
 
 /*
@@ -1185,20 +1185,21 @@ typedef int		(*sigfunc_t)();
 
 # else
 			/* NEWS-OS 6.0.3 with /bin/cc */
-#  define SYSTEM5	1	/* include all the System V defines */
-#  define SYS5SIGNALS	1	/* SysV signal semantics -- reset on each sig */
-#  define HASINITGROUPS	1	/* has initgroups(3) call */
-#  define USESETEUID	1	/* has useable seteuid(2) call */
+#  ifndef __svr4__
+#   define __svr4__		/* use all System V Releae 4 defines below */
+#  endif
 #  define HASSETSID	1	/* has Posix setsid(2) call */
 #  define HASGETUSERSHELL 1	/* DOES have getusershell(3) call in libc */
 #  define LA_TYPE	LA_READKSYM	/* use MIOC_READKSYM ioctl */
-#  define SFS_TYPE	SFS_STATVFS	/* use <sys/statvfs.h> statvfs() impl */
 #  ifndef SPT_TYPE
 #   define SPT_TYPE	SPT_SYSMIPS	/* use sysmips() (OS 6.0.2 or later) */
 #  endif
 #  define GIDSET_T	gid_t
 #  undef WIFEXITED
 #  undef WEXITSTATUS
+#  ifndef SYSLOG_BUFSIZE
+#   define SYSLOG_BUFSIZE	1024
+#  endif
 #  define _PATH_UNIX  "/stand/unix"
 #  ifndef _PATH_SENDMAILCF
 #   define _PATH_SENDMAILCF	"/etc/mail/sendmail.cf"
