@@ -1,4 +1,4 @@
-/*	tm.c	4.41	81/08/30	*/
+/*	tm.c	4.42	81/08/31	*/
 
 #include "te.h"
 #include "ts.h"
@@ -716,7 +716,7 @@ tmtimer(dev)
 	register struct te_softc *sc = &te_softc[TEUNIT(dev)];
 
 	if (sc->sc_timo != INF && (sc->sc_timo -= 5) < 0) {
-		printf("te%d: lost interrupt\n");
+		printf("te%d: lost interrupt\n", TEUNIT(dev));
 		sc->sc_timo = INF;
 		(void) spl5();
 		tmintr(TMUNIT(dev));
