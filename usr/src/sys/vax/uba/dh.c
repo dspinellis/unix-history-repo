@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)dh.c	7.1 (Berkeley) %G%
+ *	@(#)dh.c	7.2 (Berkeley) %G%
  */
 
 #include "dh.h"
@@ -82,12 +82,14 @@ static short timerstarted;
 int	dhstart(), ttrstrt();
 
 /*
- * The clist space is mapped by the driver onto each UNIBUS.
+ * The clist space is mapped by one terminal driver onto each UNIBUS.
+ * The identity of the board which allocated resources is recorded,
+ * so the process may be repeated after UNIBUS resets.
  * The UBACVT macro converts a clist space address for unibus uban
  * into an i/o space address for the DMA routine.
  */
-int	dh_ubinfo[NUBA];		/* info about allocated unibus map */
-int	cbase[NUBA];			/* base address in unibus map */
+int	dh_uballoc[NUBA];	/* which dh (if any) allocated unibus map */
+int	cbase[NUBA];		/* base address of clists in unibus map */
 #define	UBACVT(x, uban)		(cbase[uban] + ((x)-(char *)cfree))
 
 /*
@@ -135,6 +137,7 @@ dhattach(ui)
 
 	dhsoftCAR[ui->ui_unit] = ui->ui_flags;
 	cbase[ui->ui_ubanum] = -1;
+	dh_uballoc[ui->ui_unit] = -1;
 }
 
 /*
@@ -196,10 +199,9 @@ dhopen(dev, flag)
 	 */
 	s = spl5();
 	if (cbase[ui->ui_ubanum] == -1) {
-		dh_ubinfo[ui->ui_ubanum] =
-		    uballoc(ui->ui_ubanum, (caddr_t)cfree,
-			nclist*sizeof(struct cblock), 0);
-		cbase[ui->ui_ubanum] = UBAI_ADDR(dh_ubinfo[ui->ui_ubanum]);
+		dh_uballoc[ui->ui_ubanum] = dh;
+		cbase[ui->ui_ubanum] = UBAI_ADDR(uballoc(ui->ui_ubanum,
+		    (caddr_t)cfree, nclist*sizeof(struct cblock), 0));
 	}
 	if (timerstarted == 0) {
 		timerstarted++;
@@ -605,10 +607,17 @@ dhreset(uban)
 		if (ui == 0 || ui->ui_alive == 0 || ui->ui_ubanum != uban)
 			continue;
 		printf(" dh%d", dh);
-		if (dh_ubinfo[uban]) {
-			dh_ubinfo[uban] = uballoc(uban, (caddr_t)cfree,
-			    nclist*sizeof (struct cblock), 0);
-			cbase[uban] = UBAI_ADDR(dh_ubinfo[uban]);
+		if (dh_uballoc[uban] == dh) {
+			int info;
+
+			info = uballoc(uban, (caddr_t)cfree,
+			    nclist * sizeof(struct cblock), UBA_CANTWAIT);
+			if (info)
+				cbase[uban] = UBAI_ADDR(info);
+			else {
+				printf(" [can't get uba map]");
+				cbase[uban] = -1;
+			}
 		}
 		((struct dhdevice *)ui->ui_addr)->un.dhcsr |= DH_IE;
 		((struct dhdevice *)ui->ui_addr)->dhsilo = 0;

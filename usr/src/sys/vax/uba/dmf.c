@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)dmf.c	7.2 (Berkeley) %G%
+ *	@(#)dmf.c	7.3 (Berkeley) %G%
  */
 
 #include "dmf.h"
@@ -115,12 +115,14 @@ int	dmfact;				/* mask of active dmf's */
 int	dmfstart(), ttrstrt();
 
 /*
- * The clist space is mapped by the driver onto each UNIBUS.
+ * The clist space is mapped by one terminal driver onto each UNIBUS.
+ * The identity of the board which allocated resources is recorded,
+ * so the process may be repeated after UNIBUS resets.
  * The UBACVT macro converts a clist space address for unibus uban
  * into an i/o space address for the DMA routine.
  */
-int	dmf_ubinfo[NUBA];		/* info about allocated unibus map */
-int	cbase[NUBA];			/* base address in unibus map */
+int	dmf_uballoc[NUBA];	/* which dmf (if any) allocated unibus map */
+int	cbase[NUBA];		/* base address of clists in unibus map */
 #define	UBACVT(x, uban)		(cbase[uban] + ((x)-(char *)cfree))
 char	dmf_dma[NDMF*8];
 
@@ -211,6 +213,7 @@ dmfattach(ui)
  	else
  		dmfl_softc[ui->ui_unit].dmfl_format = (2 << 8) | DMFL_FORMAT;
 	cbase[ui->ui_ubanum] = -1;
+	dmf_uballoc[ui->ui_unit] = -1;
 }
 
 
@@ -248,10 +251,9 @@ dmfopen(dev, flag)
 	 */
 	s = spltty();
 	if (cbase[ui->ui_ubanum] == -1) {
-		dmf_ubinfo[ui->ui_ubanum] =
-		    uballoc(ui->ui_ubanum, (caddr_t)cfree,
-			nclist*sizeof(struct cblock), 0);
-		cbase[ui->ui_ubanum] = UBAI_ADDR(dmf_ubinfo[ui->ui_ubanum]);
+		dmf_uballoc[ui->ui_ubanum] = dmf;
+		cbase[ui->ui_ubanum] = UBAI_ADDR(uballoc(ui->ui_ubanum,
+		    (caddr_t)cfree, nclist*sizeof(struct cblock), 0));
 	}
 	if ((dmfact&(1<<dmf)) == 0) {
 		addr->dmfcsr |= DMF_IE;
@@ -802,10 +804,17 @@ dmfreset(uban)
 		if (ui == 0 || ui->ui_alive == 0 || ui->ui_ubanum != uban)
 			continue;
 		printf(" dmf%d", dmf);
-		if (dmf_ubinfo[uban]) {
-			dmf_ubinfo[uban] = uballoc(uban, (caddr_t)cfree,
-			    nclist*sizeof (struct cblock), 0);
-			cbase[uban] = UBAI_ADDR(dmf_ubinfo[uban]);
+		if (dmf_uballoc[uban] == dmf) {
+			int info;
+
+			info = uballoc(uban, (caddr_t)cfree,
+			    nclist * sizeof(struct cblock), UBA_CANTWAIT);
+			if (info)
+				cbase[uban] = UBAI_ADDR(info);
+			else {
+				printf(" [can't get uba map]");
+				cbase[uban] = -1;
+			}
 		}
 		addr = (struct dmfdevice *)ui->ui_addr;
 		addr->dmfcsr = DMF_IE;
