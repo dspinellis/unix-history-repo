@@ -583,7 +583,6 @@ doglob(gflag)
 
 long ucurln = -1;	/* if >= 0, undo enabled */
 long ulastln = -1;	/* if >= 0, undo enabled */
-int usw = 0;		/* if set, undo last undo */
 int patlock = 0;	/* if set, pattern not released by optpat() */
 
 long rows = 22;		/* scroll length: ws_row - 2 */
@@ -646,7 +645,8 @@ docmd(glob)
 			return ERR;
 		VRFYCMD();
 		memset(mark, 0, sizeof mark);
-		lndelete(1, lastln);
+		if (lndelete(1, lastln) < 0)
+			return ERR;
 		ureset();
 		if (sbclose() < 0)
 			return ERR;
@@ -752,9 +752,7 @@ docmd(glob)
 		}
 		VRFYCMD();
 		if (!glob) ureset();
-		if (num == line1 - 1 || num == line2)
-			curln = line2;
-		else if (move(num) < 0)
+		if (move(num, glob) < 0)
 			return ERR;
 		else
 			modified = 1;
@@ -912,7 +910,7 @@ docmd(glob)
 			return ERR;
 		}
 		VRFYCMD();
-		if (undo() < 0)
+		if (undo(glob) < 0)
 			return ERR;
 		break;
 	case 'v':
@@ -1300,74 +1298,6 @@ append(n, glob)
 }
 
 
-#ifdef sun
-/* subst: change all text matching a pattern in a range of lines according to
-   a substitution template; return status  */
-subst(pat, gflag)
-	pattern_t *pat;
-	int gflag;
-{
-	undo_t *up = NULL;
-	char *txt;
-	char *eot;
-	line_t *bp, *ep, *np;
-	long ocl;
-	long nsubs = 0;
-	int len;
-
-	ep = getlp(curln = line2);
-	for (bp = getlp(line1); bp != ep->next; bp = bp->next)
-		if ((len = regsub(pat, bp, gflag)) < 0)
-			return ERR;
-		else if (!len) {
-			/* add copy of bp after current line - this avoids
-			   overloading the undo structure, since only two
-			   undo nodes are needed for the whole substitution;
-			   the cost is high, but the less than if undo is
-			   overloaded on a Sun evidently. XXX */
-			if ((np = lpdup(bp)) == NULL)
-				return ERR;
-			spl1();
-			lpqueue(np);
-			if (up)
-				up->t = getlp(curln);
-			else if ((up = upush(UADD, curln, curln)) == NULL) {
-				spl0();
-				return ERR;
-			}
-			spl0();
-		} else {
-			txt = rbuf;
-			eot = rbuf + len;
-			spl1();
-			do {
-				if ((txt = puttxt(txt)) == NULL) {
-					spl0();
-					return ERR;
-				} else if (up)
-					up->t = getlp(curln);
-				else if ((up = upush(UADD, curln, curln)) == NULL) {
-					spl0();
-					return ERR;
-				}
-			} while (txt != eot);
-			spl0();
-			nsubs++;
-		}
-	ocl = curln;
-	lndelete(line1, line2);
-	curln = ocl - (line2 - line1 + 1);
-	if  (nsubs == 0 && !(gflag & GLB)) {
-		sprintf(errmsg, "no match");
-		return ERR;
-	} else if ((gflag & (GPR | GLS | GNP))
-	 && doprint(curln, curln, gflag) < 0)
-		return ERR;
-	return 1;
-}
-#else	/* sun */
-
-
 /* subst: change all text matching a pattern in a range of lines according to
    a substitution template; return status  */
 subst(pat, gflag)
@@ -1389,7 +1319,8 @@ subst(pat, gflag)
 			return ERR;
 		else if (len) {
 			up = NULL;
-			lndelete(curln, curln);
+			if (lndelete(curln, curln) < 0)
+				return ERR;
 			txt = rbuf;
 			eot = rbuf + len;
 			spl1();
@@ -1416,7 +1347,6 @@ subst(pat, gflag)
 		return ERR;
 	return 1;
 }
-#endif	/* sun */
 
 
 /* regsub: replace text matched by a pattern according to a substitution
@@ -1498,7 +1428,8 @@ join(from, to)
 	}
 	CKBUF(buf, n, size + 2, ERR);
 	memcpy(buf + size, "\n", 2);
-	lndelete(from, to);
+	if (lndelete(from, to) < 0)
+		return ERR;
 	curln = from - 1;
 	spl1();
 	if (puttxt(buf) == NULL
@@ -1513,28 +1444,37 @@ join(from, to)
 
 
 /* move: move a range of lines */
-move(num)
+move(num, glob)
 	long num;
 {
-	line_t *b1, *a1, *b2, *a2;
+	line_t *b1, *a1, *b2, *a2, *lp;
 	long n = nextln(line2, lastln);
 	long p = prevln(line1, lastln);
+	int done = (num == line1 - 1 || num == line2);
 
 	spl1();
-	if (upush(UMOV, p, n) == NULL
+	if (done) {
+		a2 = getlp(n);
+		b2 = getlp(p);
+		curln = line2;
+	} else if (upush(UMOV, p, n) == NULL
 	 || upush(UMOV, num, nextln(num, lastln)) == NULL) {
-	 	spl0();
-	 	return ERR;
+		spl0();
+		return ERR;
+	} else {
+		a1 = getlp(n);
+		if (num < line1)
+			b1 = getlp(p), b2 = getlp(num);	/* this getlp last! */
+		else	b2 = getlp(num), b1 = getlp(p);	/* this getlp last! */
+		a2 = b2->next;
+		requeue(b2, b1->next);
+		requeue(a1->prev, a2);
+		requeue(b1, a1);
+		curln = num + ((num < line1) ? line2 - line1 + 1 : 0);
 	}
-	a1 = getlp(n);
-	if (num < line1)
-		b1 = getlp(p), b2 = getlp(num);	/* this getlp last! */
-	else	b2 = getlp(num), b1 = getlp(p);	/* this getlp last! */
-	a2 = b2->next;
-	requeue(b2, b1->next);
-	requeue(a1->prev, a2);
-	requeue(b1, a1);
-	curln = num + ((num < line1) ? line2 - line1 + 1 : 0);
+	if (glob)
+		for (lp = b2->next; lp != a2; lp = lp->next)
+			lp->len &= ~ACTV;		/* zero ACTV  bit */
 	spl0();
 	return 0;
 }
@@ -1857,7 +1797,6 @@ undo_t *ustack = NULL;				/* undo stack */
 long usize = 0;					/* stack size variable */
 long u_p = 0;					/* undo stack pointer */
 
-
 /* upush: return pointer to intialized undo node */
 undo_t *
 upush(type, from, to)
@@ -1894,14 +1833,22 @@ upush(type, from, to)
 	return NULL;
 }
 
+
+/* USWAP: swap undo nodes */
+#define USWAP(x,y) { \
+	undo_t utmp; \
+	utmp = x, x = y, y = utmp; \
+}
+
+
 /* undo: undo last change to the editor buffer */
-undo()
+undo(glob)
+	int glob;
 {
-	long n = usw ? 0 : u_p - 1;
-	int i = usw ? 1 : -1;
-	long j = u_p;
+	long n;
 	long ocurln = curln;
 	long olastln = lastln;
+	line_t *lp, *np;
 
 	if (ucurln == -1 || ulastln == -1) {
 		sprintf(errmsg, "nothing to undo");
@@ -1910,8 +1857,8 @@ undo()
 		modified = 1;
 	getlp(0);				/* this getlp last! */
 	spl1();
-	for (; j-- > 0; n += i)
-		switch(ustack[n].type ^ usw) {
+	for (n = u_p; n-- > 0;) {
+		switch(ustack[n].type) {
 		case UADD:
 			requeue(ustack[n].h->prev, ustack[n].t->next);
 			break;
@@ -1921,16 +1868,23 @@ undo()
 			break;
 		case UMOV:
 		case VMOV:
-			requeue(ustack[n + i].h, ustack[n].h->next);
-			requeue(ustack[n].t->prev, ustack[n + i].t);
+			requeue(ustack[n - 1].h, ustack[n].h->next);
+			requeue(ustack[n].t->prev, ustack[n - 1].t);
 			requeue(ustack[n].h, ustack[n].t);
-			n += i, j--;
+			n--;
 			break;
 		default:
 			/*NOTREACHED*/
 			;
 		}
-	usw = 1 - usw;
+		ustack[n].type ^= 1;
+	}
+	/* reverse undo order */
+	for (n = u_p; n-- > (u_p + 1)/ 2;)
+		USWAP(ustack[n], ustack[u_p - 1 - n]);
+	if (glob)
+		for (lp = np = getlp(0); (lp = lp->next) != np;)
+			lp->len &= ~ACTV;		/* zero ACTV bit */
 	curln = ucurln, ucurln = ocurln;
 	lastln = ulastln, ulastln = olastln;
 	spl0();
@@ -1946,7 +1900,7 @@ ureset()
 	int i;
 
 	while (u_p--)
-		if ((ustack[u_p].type ^ usw) == UDEL) {
+		if ((ustack[u_p].type) == UDEL) {
 			ep = ustack[u_p].t->next;
 			for (lp = ustack[u_p].h; lp != ep; lp = tl) {
 				if (markno)
@@ -1959,7 +1913,7 @@ ureset()
 				free(lp);
 			}
 		}
-	u_p = usw = 0;
+	u_p = 0;
 	ucurln = curln;
 	ulastln = lastln;
 }
