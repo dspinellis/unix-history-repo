@@ -1,0 +1,70 @@
+TAIL(1)                      BSD Reference Manual                      TAIL(1)
+
+NNAAMMEE
+     ttaaiill - display the last part of a file
+
+SSYYNNOOPPSSIISS
+     ttaaiill [--ff | --rr] [--bb _n_u_m_b_e_r | --cc _n_u_m_b_e_r | --nn _n_u_m_b_e_r] [_f_i_l_e _._._.]
+
+DDEESSCCRRIIPPTTIIOONN
+     The ttaaiill utility displays the contents of _f_i_l_e or, by default, its stan-
+     dard input, to the standard output.
+
+     The display begins at a byte, line or 512-byte block location in the in-
+     put.  Numbers having a leading plus (``+'') sign are relative to the be-
+     ginning of the input, for example, ``-c +2'' starts the display at the
+     second byte of the input.  Numbers having a leading minus (``-'') sign or
+     no explicit sign are relative to the end of the input, for example, ``-n
+     2'' displays the last two lines of the input.  The default starting loca-
+     tion is ``-n 10'', or the last 10 lines of the input.
+
+     The options are as follows:
+
+     --bb _n_u_m_b_e_r
+             The location is _n_u_m_b_e_r 512-byte blocks.
+
+     --cc _n_u_m_b_e_r
+             The location is _n_u_m_b_e_r bytes.
+
+     --ff      The --ff option causes ttaaiill to not stop when end of file is
+             reached, but rather to wait for additional data to be appended to
+             the input.  The --ff option is ignored if the standard input is a
+             pipe, but not if it is a FIFO.
+
+     --nn _n_u_m_b_e_r
+             The location is _n_u_m_b_e_r lines.
+
+     --rr      The --rr option causes the input to be displayed in reverse order,
+             by line.  Additionally, this option changes the meaning of the
+             --bb, --cc and --nn options.  When the --rr option is specified, these
+             options specify the number of bytes, lines or 512-byte blocks to
+             display, instead of the bytes, lines or blocks from the beginning
+             or end of the input from which to begin the display.  The default
+             for the --rr option is to display all of the input.
+
+     If more than a single file is specified, each file is preceded by a head-
+     er consisting of the string ``==> XXX <=='' where ``XXX'' is the name of
+     the file.
+
+     The ttaaiill utility exits 0 on success, and >0 if an error occurs.
+
+SSEEEE AALLSSOO
+     cat(1),  head(1),  sed(1)
+
+SSTTAANNDDAARRDDSS
+     The ttaaiill utility is expected to be a superset of the POSIX 1003.2 speci-
+     fication.  In particular, the --bb and --rr options are extensions to that
+     standard.
+
+     The historic command line syntax of ttaaiill is supported by this implementa-
+     tion.  The only difference between this implementation and historic ver-
+     sions of ttaaiill, once the command line syntax translation has been done, is
+     that the --bb, --cc and --nn options modify the --rr option, i.e. ``-r -c 4''
+     displays the last 4 characters of the last line of the input, while the
+     historic tail (using the historic syntax ``-4cr'') would ignore the --cc
+     option and display the last 4 lines of the input.
+
+HHIISSTTOORRYY
+     A ttaaiill command appeared in Version 7 AT&T UNIX.
+
+4th Berkeley Distribution        June 6, 1993                                2
