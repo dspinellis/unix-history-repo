@@ -1,5 +1,5 @@
 #
-#	@(#)aliases	5.6 (Berkeley) %G%
+#	@(#)aliases	5.7 (Berkeley) %G%
 #
 #  Aliases in this file will NOT be expanded in the header from
 #  Mail, but WILL be visible over networks or from /bin/mail.
@@ -34,19 +34,19 @@ decode:		root
 # OFFICIAL CSRG/BUG ADDRESSES
 
 # Ftp maintainer.
-ftp-bugs: bigbug@ucbvax.berkeley.edu
+ftp-bugs: bigbug@cs.berkeley.edu
 
 # Distribution office.
-bsd-dist: bsd-dist@ucbvax.berkeley.edu
+bsd-dist: bsd-dist@cs.berkeley.edu
 
 # Fortune maintainer.
-fortune: fortune@ucbvax.berkeley.edu
+fortune: fortune@cs.berkeley.edu
 
 # Termcap maintainer.
-termcap: termcap@ucbvax.berkeley.edu
+termcap: termcap@cs.berkeley.edu
 
 # General bug address.
-ucb-fixes: bigbug@ucbvax.berkeley.edu
-ucb-fixes-request: bigbug@ucbvax.berkeley.edu
-bugs: bugs@ucbvax.berkeley.edu
+ucb-fixes: bigbug@cs.berkeley.edu
+ucb-fixes-request: bigbug@cs.berkeley.edu
+bugs: bugs@cs.berkeley.edu
 # END OFFICIAL BUG ADDRESSES
