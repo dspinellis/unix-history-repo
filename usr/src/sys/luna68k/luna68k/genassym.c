@@ -7,7 +7,7 @@
  *
  * from: hp300/hp300/genassym.c	7.13 (Berkeley) 12/27/92
  *
- *	@(#)genassym.c	7.4 (Berkeley) %G%
+ *	@(#)genassym.c	7.5 (Berkeley) %G%
  */
 
 #define KERNEL
@@ -68,7 +68,6 @@ flush()
 
 main()
 {
-	struct KernInter *KernInter = (struct KernInter *)0;
 	struct pio *pio = (struct pio *)PIO0_ADDR;
 	register unsigned i;
 
@@ -77,7 +76,9 @@ main()
 	def("PGSHIFT", PGSHIFT);
 	def("USRSTACK", USRSTACK);
 	def("KERNELSTACK", KERNELSTACK);
-	def("KI_MAXADDR", &KernInter->maxaddr);
+	
+	def("KIFF_SIZE", sizeof(struct KernInter));
+	off("KI_MAXADDR", struct KernInter, maxaddr);
 
 	off("P_LINK", struct proc, p_link);
 	off("P_RLINK", struct proc, p_rlink);
