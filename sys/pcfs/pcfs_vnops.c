@@ -15,7 +15,7 @@
  *
  *  October 1992
  *
- *	$Id: pcfs_vnops.c,v 1.3 1993/11/25 01:37:14 wollman Exp $
+ *	$Id: pcfs_vnops.c,v 1.4 1993/12/19 00:54:32 wollman Exp $
  */
 
 #include "param.h"
@@ -95,6 +95,8 @@ printf("pcfs_create(ndp %08x, vap %08x, p %08x\n", ndp, vap, p);
 		(union dostime *)&ndirp->deTime);
 	unix2dosfn((u_char *)ndp->ni_ptr, ndirp->deName, ndp->ni_namelen);
 	ndirp->deAttributes = (vap->va_mode & VWRITE) ? 0 : ATTR_READONLY;
+	if (vap->va_mode & VEXEC)
+		ndirp->deAttributes |= ATTR_HIDDEN;
 	ndirp->deStartCluster = 0;
 	ndirp->deFileSize = 0;
 	ndirent.de_pmp = pdep->de_pmp;
@@ -219,7 +221,11 @@ pcfs_getattr(vp, vap, cred, p)
 		cn = (cn << 16) | (dep->de_diroffset & 0xffff);
 	}
 	vap->va_fileid = cn;
-	vap->va_mode = (dep->de_Attributes & ATTR_READONLY) ? 0555 : 0777;
+	vap->va_mode = (dep->de_Attributes & ATTR_READONLY) ? 0444 : 0666;
+	if (   dep->de_Attributes & ATTR_HIDDEN
+	    || dep->de_Attributes & ATTR_DIRECTORY
+	   )
+		vap->va_mode |= 0111;
 	if (dep->de_Attributes & ATTR_DIRECTORY)
 		vap->va_mode |= S_IFDIR;
 	vap->va_nlink = 1;
@@ -300,7 +306,11 @@ printf("    va_uid %x, va_gid %x, va_atime.tv_sec %x\n",
  *  write bit to set the readonly attribute.
  */
 	if (vap->va_mode != (u_short)VNOVAL) {
-		/* We ignore the read and execute bits */
+		/* We ignore the read bits */
+		if (vap->va_mode & VEXEC && vp->v_type != VDIR)
+			dep->de_Attributes |= ATTR_HIDDEN;
+		else
+			dep->de_Attributes &= ~ATTR_HIDDEN;
 		if (vap->va_mode & VWRITE)
 			dep->de_Attributes &= ~ATTR_READONLY;
 		else
