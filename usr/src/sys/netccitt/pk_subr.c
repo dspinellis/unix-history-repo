@@ -12,7 +12,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pk_subr.c	7.24 (Berkeley) %G%
+ *	@(#)pk_subr.c	7.25 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -66,7 +66,7 @@ struct socket *so;
 {
 	register struct pklcd *lcp;
 	register int error = ENOBUFS;
-	int pk_output();
+	int pk_output ();
 
 	MALLOC(lcp, struct pklcd *, sizeof (*lcp), M_PCB, M_NOWAIT);
 	if (lcp) {
@@ -146,11 +146,11 @@ struct pklcd *lcp;
 	 * If the X.25 connection is torn down due to link
 	 * level failure (e.g. LLC2 FRMR) and at the same the user
 	 * level is still filling up the socket send buffer that
-	 * send buffer is locked. An attempt to sbflush() that send
+	 * send buffer is locked. An attempt to sbflush () that send
 	 * buffer will lead us into - no, not temptation but - panic!
 	 * So - we'll just check wether the send buffer is locked
 	 * and if that's the case we'll mark the lcp as zombie and 
-	 * have the pk_timer() do the cleaning ...
+	 * have the pk_timer () do the cleaning ...
 	 */
 	
 	if (so && so -> so_snd.sb_flags & SB_LOCK)
@@ -226,7 +226,7 @@ int restart_cause;
 
 	/*
 	 * Don't do this if we're doing a restart issued from
-	 * inside pk_connect() --- which is only done if and
+	 * inside pk_connect () --- which is only done if and
 	 * only if the X.25 link is down, i.e. a RESTART needs
 	 * to be done to get it up.
 	 */
@@ -277,6 +277,27 @@ register struct pklcd *lcp;
 	free ((caddr_t)lcp, M_PCB);
 }
 
+static struct x25_ifaddr *
+pk_ifwithaddr (sx)
+	struct sockaddr_x25 *sx;
+{
+	struct ifnet *ifp;
+	struct ifaddr *ifa;
+	register struct x25_ifaddr *ia;
+	char *addr = sx -> x25_addr;
+
+	for (ifp = ifnet; ifp; ifp = ifp -> if_next)
+		for (ifa = ifp -> if_addrlist; ifa; ifa = ifa -> ifa_next)
+			if (ifa -> ifa_addr -> sa_family == AF_CCITT) {
+				ia = (struct x25_ifaddr *)ifa;
+				if (bcmp (addr, ia -> ia_xc.xc_addr.x25_addr,
+					 16) == 0)
+					return (ia);
+				
+			}
+	return ((struct x25_ifaddr *)0);
+}
+
 
 /* 
  *  Bind a address and protocol value to a socket.  The important
@@ -284,20 +305,18 @@ register struct pklcd *lcp;
  *  Call User Data field.
  */
 
-#define XTRACTPKP(rt)	((rt)->rt_flags & RTF_GATEWAY ? \
-			 ((rt)->rt_llinfo ? \
-			  (struct pkcb *) ((struct rtentry *)((rt)->rt_llinfo))->rt_llinfo : \
+#define XTRACTPKP(rt)	((rt) -> rt_flags & RTF_GATEWAY ? \
+			 ((rt) -> rt_llinfo ? \
+			  (struct pkcb *) ((struct rtentry *)((rt) -> rt_llinfo)) -> rt_llinfo : \
 			  (struct pkcb *) NULL) : \
-			 (struct pkcb *)((rt)->rt_llinfo))
+			 (struct pkcb *)((rt) -> rt_llinfo))
 
 pk_bind (lcp, nam)
 struct pklcd *lcp;
 struct mbuf *nam;
 {
-	register struct pkcb *pkp;
 	register struct pklcd *pp;
 	register struct sockaddr_x25 *sa;
-	register struct rtentry *rt;
 
 	if (nam == NULL)
 		return (EADDRNOTAVAIL);
@@ -312,9 +331,13 @@ struct mbuf *nam;
 	 * net (net != 0), make sure the net is known
 	 */
 
-	if ( !(rt =  rtalloc1(sa, 1)))
-		return (ENETUNREACH);
-	pkp = XTRACTPKP(rt);
+	if (sa -> x25_addr[0]) {
+		if (!pk_ifwithaddr (sa))
+			return (ENETUNREACH);
+	} else if (sa -> x25_net) {
+		if (!ifa_ifwithnet ((struct sockaddr *)sa))
+			return (ENETUNREACH);
+	}
 
 	/*
 	 * For ISO's sake permit default listeners, but only one such . . .
@@ -427,8 +450,8 @@ register struct sockaddr_x25 *sa;
 	register struct rtentry *rt;
 	register struct rtentry *nrt;
 
-	struct rtentry *npaidb_enter();
-	struct pkcb *pk_newlink();
+	struct rtentry *npaidb_enter ();
+	struct pkcb *pk_newlink ();
 
 	if (sa -> x25_addr[0] == '\0')
 		return (EDESTADDRREQ);
@@ -440,27 +463,27 @@ register struct sockaddr_x25 *sa;
 		return (ENETUNREACH);
 
 	if (!(pkp = XTRACTPKP(rt)))
-		pkp = pk_newlink((struct x25_ifaddr *) (rt -> rt_ifa), 
+		pkp = pk_newlink ((struct x25_ifaddr *) (rt -> rt_ifa), 
 				 (caddr_t) 0);
 
 	/*
 	 * Have we entered the LLC address?
 	 */
-	if (nrt = npaidb_enter(rt -> rt_gateway, rt_key(rt), rt, 0))
+	if (nrt = npaidb_enter (rt -> rt_gateway, rt_key (rt), rt, 0))
 		pkp -> pk_llrt = nrt;
 
 	/*
 	 * Have we allocated an LLC2 link yet?
 	 */
-	if (pkp->pk_llnext == (caddr_t)0 && pkp->pk_llctlinput) {
+	if (pkp -> pk_llnext == (caddr_t)0 && pkp -> pk_llctlinput) {
 		struct dll_ctlinfo ctlinfo;
 
 		ctlinfo.dlcti_rt = rt;
 		ctlinfo.dlcti_pcb = (caddr_t) pkp;
 		ctlinfo.dlcti_conf = 
-			(struct dllconfig *) (&((struct x25_ifaddr *)(rt->rt_ifa))->ia_xc);
-		pkp->pk_llnext = 
-			(pkp->pk_llctlinput)(PRC_CONNECT_REQUEST, 0, &ctlinfo);
+			(struct dllconfig *) (&((struct x25_ifaddr *)(rt -> rt_ifa)) -> ia_xc);
+		pkp -> pk_llnext = 
+			(pkp -> pk_llctlinput) (PRC_CONNECT_REQUEST, 0, &ctlinfo);
 	}
 
 	if (pkp -> pk_state != DTE_READY && pkp -> pk_state != DTE_WAITING)
@@ -477,7 +500,7 @@ register struct sockaddr_x25 *sa;
 	 */
 	if (pkp -> pk_state == DTE_WAITING) {
 		pkp -> pk_dxerole |= DTE_CONNECTPENDING;
-		pk_ctlinput(PRC_LINKUP, (struct sockaddr *)0, pkp);
+		pk_ctlinput (PRC_LINKUP, (struct sockaddr *)0, pkp);
 		if (lcp -> lcd_so)
 			soisconnecting (lcp -> lcd_so);
 		return 0;
@@ -496,7 +519,7 @@ register struct sockaddr_x25 *sa;
  */
 #define RESHUFFLELCN(maxlcn, lcn) ((maxlcn) - (lcn) + 1)
 
-pk_callcomplete(pkp)
+pk_callcomplete (pkp)
 	register struct pkcb *pkp;
 {
 	register struct pklcd *lcp;
@@ -556,7 +579,7 @@ pk_callcomplete(pkp)
 				soisconnecting (lcp -> lcd_so); */
 			lcp -> lcd_template = pk_template (lcp -> lcd_lcn, X25_CALL);
 			pk_callrequest (lcp, lcp -> lcd_ceaddr, pkp -> pk_xcp);
-			(*pkp -> pk_ia -> ia_start)(lcp);
+			(*pkp -> pk_ia -> ia_start) (lcp);
 		}
 }
 
@@ -649,7 +672,7 @@ register struct x25config *xcp;
 	 * which is handy for routing info (& OSI type 37 addresses).
 	 */
 	if (xcp -> xc_addr.x25_net && (xcp -> xc_nodnic || xcp -> xc_prepnd0)) {
-		char dnicname[sizeof(long) * NBBY/3 + 2];
+		char dnicname[sizeof (long) * NBBY/3 + 2];
 		register char *p = dnicname;
 
 		sprintf (p, "%d", xcp -> xc_addr.x25_net & 0x7fff);
@@ -1019,7 +1042,7 @@ register struct x25_packet *xp;
 	if (code > MAXRESETCAUSE)
 		code = 7;	/* EXRNCG */
 
-	pk_message(LCN(xp), lcp -> lcd_pkp, "reset code 0x%x, diagnostic 0x%x",
+	pk_message (LCN(xp), lcp -> lcd_pkp, "reset code 0x%x, diagnostic 0x%x",
 			xp -> packet_data, 4[(u_char *)xp]);
 			
 	if (lcp -> lcd_so)
