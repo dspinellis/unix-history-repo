@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_balloc.c	7.22 (Berkeley) %G%
+ *	@(#)lfs_balloc.c	7.23 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -23,11 +23,36 @@
 #include <ufs/lfs/lfs.h>
 #include <ufs/lfs/lfs_extern.h>
 
+static int lfs_getlbns __P((struct vnode *, daddr_t, INDIR *, int *));
+
 /*
  * Bmap converts a the logical block number of a file to its physical block
  * number on the disk. The conversion is done by using the logical block
  * number to index into the array of block pointers described by the dinode.
- *
+ */
+int
+lfs_bmap(vp, bn, vpp, bnp)
+	struct vnode *vp;
+	register daddr_t bn;
+	struct vnode **vpp;
+	daddr_t *bnp;
+{
+#ifdef VERBOSE
+	printf("lfs_bmap\n");
+#endif
+	/*
+	 * Check for underlying vnode requests and ensure that logical
+	 * to physical mapping is requested.
+	 */
+	if (vpp != NULL)
+		*vpp = VTOI(vp)->i_devvp;
+	if (bnp == NULL)
+		return (0);
+
+	return (lfs_bmaparray(vp, bn, bnp, NULL, NULL));
+}
+
+/*
  * LFS has a different version of bmap from FFS because of a naming conflict.
  * In FFS, meta blocks are given real disk addresses at allocation time, and
  * are linked into the device vnode, using a logical block number which is
@@ -45,81 +70,52 @@
  * of the first double indirect block to which they point.
  */
 int
-lfs_bmap(vp, bn, vpp, bnp)
+lfs_bmaparray(vp, bn, bnp, ap, nump)
 	struct vnode *vp;
 	register daddr_t bn;
-	struct vnode **vpp;
 	daddr_t *bnp;
+	INDIR *ap;
+	int *nump;
 {
 	register struct inode *ip;
-	register struct lfs *fs;
-	register daddr_t nb;
 	struct buf *bp;
+	struct lfs *fs;
 	struct vnode *devvp;
-	daddr_t *bap, daddr, metalbn;
-	long realbn;
-	int error, j, off, sh;
+	INDIR a[NIADDR], *xap;
+	daddr_t *bap, daddr;
+	long metalbn;
+	int error, num, off;
 
-	/*
-	 * Check for underlying vnode requests and ensure that logical
-	 * to physical mapping is requested.
-	 */
+
 	ip = VTOI(vp);
-	if (vpp != NULL)
-		*vpp = ip->i_devvp;
-	if (bnp == NULL)
-		return (0);
-
 #ifdef VERBOSE
-printf("lfs_bmap: block number %d, inode %d\n", bn, ip->i_number);
+	printf("lfs_bmap: block number %d, inode %d\n", bn, ip->i_number);
 #endif
-	realbn = bn;
-	if ((long)bn < 0)
-		bn = -(long)bn;
+#ifdef DIAGNOSTIC
+	if (ap != NULL && nump == NULL || ap == NULL && nump != NULL)
+		panic("lfs_bmaparray: invalid arguments");
+#endif
 
-	/* The first NDADDR blocks are direct blocks. */
-	if (bn < NDADDR) {
-		nb = ip->i_db[bn];
-		if (nb == 0) {
+	xap = ap == NULL ? a : ap;
+	if (error = lfs_getlbns(vp, bn, xap, nump))
+		return (error);
+
+	num = *nump;
+	fs = ip->i_lfs;
+	if (num == 0) {
+		*bnp = ip->i_db[bn];
+		if (*bnp == 0)
 			*bnp = UNASSIGNED;
-			return (0);
-		}
-		*bnp = nb;
 		return (0);
 	}
 
-	/* 
-	 * Determine the number of levels of indirection.  After this loop
-	 * is done, sh indicates the number of data blocks possible at the
-	 * given level of indirection, and NIADDR - j is the number of levels
-	 * of indirection needed to locate the requested block.
-	 */
-	bn -= NDADDR;
-	fs = ip->i_lfs;
-	sh = 1;
-	for (j = NIADDR; j > 0; j--) {
-		sh *= NINDIR(fs);
-		if (bn < sh)
-			break;
-		bn -= sh;
-	}
-	if (j == 0)
-		return (EFBIG);
-
-	/* Calculate the address of the first meta-block. */
-	if (realbn >= 0)
-		metalbn = -(realbn - bn + NIADDR - j);
-	else
-		metalbn = -(-realbn - bn + NIADDR - j);
-
-	/* 
-	 * Fetch through the indirect blocks.  At each iteration, off is the
-	 * offset into the bap array which is an array of disk addresses at
-	 * the current level of indirection.
-	 */
+	/* Fetch through the indirect blocks. */
 	bp = NULL;
 	devvp = VFSTOUFS(vp->v_mount)->um_devvp;
-	for (off = NIADDR - j, bap = ip->i_ib; j <= NIADDR; j++) {
+	for (bap = ip->i_ib; num--; off = xap->in_off, ++xap) {
+		off = xap->in_off;
+		metalbn = xap->in_lbn;
+
 		/*
 		 * In LFS, it's possible to have a block appended to a file
 		 * for which the meta-blocks have not yet been allocated.
@@ -132,7 +128,7 @@ printf("lfs_bmap: block number %d, inode %d\n", bn, ip->i_number);
 		}
 
 		/* If searching for a meta-data block, quit when found. */
-		if (metalbn == realbn)
+		if (metalbn == bn)
 			break;
 
 		/*
@@ -143,7 +139,9 @@ printf("lfs_bmap: block number %d, inode %d\n", bn, ip->i_number);
 		 *
 		 * XXX
 		 * This REALLY needs to be fixed, at the very least it needs
-		 * to be rethought when the buffer cache goes away.
+		 * to be rethought when the buffer cache goes away.  When it's
+		 * fixed, change lfs_bmaparray and lfs_getlbns to take an ip,
+		 * not a vp.
 		 */
 		if (bp)
 			brelse(bp);
@@ -162,15 +160,95 @@ printf("lfs_bmap: block number %d, inode %d\n", bn, ip->i_number);
 				return (error);
 			}
 		}
-
 		bap = bp->b_un.b_daddr;
-		sh /= NINDIR(fs);
-		off = (bn / sh) % NINDIR(fs);
-		metalbn -= -1 + off * sh;
 	}
 	if (bp)
 		brelse(bp);
 
 	*bnp = daddr;
+	return (0);
+}
+
+/*
+ * Create an array of logical block number/offset pairs which represent the
+ * path of indirect blocks required to access a data block.  The first "pair"
+ * contains the logical block number of the appropriate single, double or
+ * triple indirect block and the offset into the inode indirect block array.
+ * Note, the logical block number of the inode single/double/triple indirect
+ * block appears twice in the array, once with the offset into the i_ib and
+ * once with the offset into the page itself.
+ */
+int
+lfs_getlbns(vp, bn, ap, nump)
+	struct vnode *vp;
+	register daddr_t bn;
+	INDIR *ap;
+	int *nump;
+{
+	struct lfs *fs;
+	long metalbn, realbn;
+	int j, off, sh;
+
+#ifdef VERBOSE
+	printf("lfs_getlbns: bn %d, inode %d\n", bn, VTOI(vp)->i_number);
+#endif
+	*nump = 0;
+	realbn = bn;
+	if ((long)bn < 0)
+		bn = -(long)bn;
+
+	/* The first NDADDR blocks are direct blocks. */
+	if (bn < NDADDR)
+		return(0);
+
+	/* 
+	 * Determine the number of levels of indirection.  After this loop
+	 * is done, sh indicates the number of data blocks possible at the
+	 * given level of indirection, and NIADDR - j is the number of levels
+	 * of indirection needed to locate the requested block.
+	 */
+	bn -= NDADDR;
+	fs = VTOI(vp)->i_lfs;
+	sh = 1;
+	for (j = NIADDR; j > 0; j--) {
+		sh *= NINDIR(fs);
+		if (bn < sh)
+			break;
+		bn -= sh;
+	}
+	if (j == 0)
+		return (EFBIG);
+
+	/* Calculate the address of the first meta-block. */
+	if (realbn >= 0)
+		metalbn = -(realbn - bn + NIADDR - j);
+	else
+		metalbn = -(-realbn - bn + NIADDR - j);
+
+	/* 
+	 * At each iteration, off is the offset into the bap array which is
+	 * an array of disk addresses at the current level of indirection.
+	 * The logical block number and the offset in that block are stored
+	 * into the argument array.
+	 */
+	++*nump;
+	ap->in_lbn = metalbn;
+	ap->in_off = off = NIADDR - j;
+	ap++;
+	for (; j <= NIADDR; j++) {
+		/* If searching for a meta-data block, quit when found. */
+		if (metalbn == realbn)
+			break;
+
+		sh /= NINDIR(fs);
+		off = (bn / sh) % NINDIR(fs);
+
+		++*nump;
+		ap->in_lbn = metalbn;
+		ap->in_off = off;
+		++ap;
+
+		metalbn -= -1 + off * sh;
+	}
 	return (0);
 }
