@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)map3270.c	4.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)map3270.c	4.3 (Berkeley) %G%";
 #endif /* not lint */
 
 /*	This program reads a description file, somewhat like /etc/termcap,
@@ -139,7 +139,7 @@ GetC()
 static lexicon
 Get()
 {
-    lexicon c;
+    static lexicon c;
     register lexicon *pC = &c;
     register int character;
 
@@ -289,7 +289,7 @@ register char *string2;
 static stringWithLength *
 GetQuotedString()
 {
-    lexicon lex;
+    lexicon lex, *lp;
     static stringWithLength output = { 0 };	/* where return value is held */
     char *pointer = output.array;
 
@@ -303,7 +303,8 @@ GetQuotedString()
 	if ((lex.type == LEX_CHAR) && (lex.value == '\'')) {
 	    break;
 	}
-	if ((lex.type == LEX_CHAR) && !IsPrint(lex.value)) {
+	lp = &lex;
+	if ((lp->type == LEX_CHAR) && !IsPrint(lp->value)) {
 	    UnGet(lex);
 	    return(0);		/* illegal character in quoted string */
 	}
@@ -378,20 +379,21 @@ char	*string;		/* string to get */
 static stringWithLength *
 GetAlphaMericString()
 {
-    lexicon lex;
+    lexicon lex, *lp;
     static stringWithLength output = { 0 };
     char *pointer = output.array;
 #   define	IsAlnum(c)	(isalnum(c) || (c == '_') \
 					|| (c == '-') || (c == '.'))
 
     lex = Get();
+    lp = &lex;
 
-    if ((lex.type != LEX_CHAR) || !IsAlnum(lex.value)) {
+    if ((lp->type != LEX_CHAR) || !IsAlnum(lp->value)) {
 	UnGet(lex);
 	return(0);
     }
 
-    while ((lex.type == LEX_CHAR) && IsAlnum(lex.value)) {
+    while ((lp->type == LEX_CHAR) && IsAlnum(lp->value)) {
 	*pointer++ = lex.value;
 	lex = Get();
     }
@@ -428,12 +430,13 @@ EatToNL()
 static void
 GetWS()
 {
-    lexicon lex;
+    lexicon lex, *lp;
 
     lex = Get();
+    lp = &lex;
 
-    while ((lex.type == LEX_CHAR) &&
-			(isspace(lex.value) || (lex.value == '#'))) {
+    while ((lp->type == LEX_CHAR) &&
+			(isspace(lp->value) || (lp->value == '#'))) {
 	if (lex.value == '#') {
 	    lex = EatToNL();
 	} else {
