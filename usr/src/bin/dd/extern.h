@@ -3,11 +3,12 @@
  * All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
- * Keith Muller of the University of California, San Diego.
+ * Keith Muller of the University of California, San Diego and Lance
+ * Visser of Convex Computer Corporation.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)extern.h	5.1 (Berkeley) %G%
+ *	@(#)extern.h	5.2 (Berkeley) %G%
  */
 
 #include <sys/cdefs.h>

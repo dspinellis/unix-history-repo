@@ -3,7 +3,8 @@
  * All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
- * Keith Muller of the University of California, San Diego.
+ * Keith Muller of the University of California, San Diego and Lance
+ * Visser of Convex Computer Corporation.
  *
  * %sccs.include.redist.c%
  */
@@ -15,7 +16,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)dd.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)dd.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
