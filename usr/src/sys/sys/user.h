@@ -1,4 +1,4 @@
-/*	user.h	6.6	84/08/28	*/
+/*	user.h	6.7	85/02/15	*/
 
 #ifdef KERNEL
 #include "../machine/pcb.h"
@@ -47,7 +47,7 @@ struct	user {
 /* 1.1 - processes and protection */
 	short	u_uid;			/* effective user id */
 	short	u_gid;			/* effective group id */
-	int	u_groups[NGROUPS];	/* groups, 0 terminated */
+	short	u_groups[NGROUPS];	/* groups, 0 terminated */
 	short	u_ruid;			/* real user id */
 	short	u_rgid;			/* real group id */
 
