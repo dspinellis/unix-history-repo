@@ -12,28 +12,26 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rexecd.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)rexecd.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
-#include <sys/ioctl.h>
 #include <sys/param.h>
+#include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <sys/time.h>
-
 #include <netinet/in.h>
-
-#include <stdio.h>
-#include <errno.h>
-#include <pwd.h>
 #include <signal.h>
 #include <netdb.h>
-#include "pathnames.h"
+#include <pwd.h>
+#include <errno.h>
+#include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <paths.h>
 
-extern	int errno;
-struct	passwd *getpwnam();
-char	*crypt(), *rindex(), *strncat();
 /*VARARGS1*/
-int	error();
+int error();
 
 /*
  * remote execute server:
@@ -51,9 +49,9 @@ main(argc, argv)
 	int fromlen;
 
 	fromlen = sizeof (from);
-	if (getpeername(0, &from, &fromlen) < 0) {
-		fprintf(stderr, "%s: ", argv[0]);
-		perror("getpeername");
+	if (getpeername(0, (struct sockaddr *)&from, &fromlen) < 0) {
+		(void)fprintf(stderr,
+		    "rexecd: getpeername: %s\n", strerror(errno));
 		exit(1);
 	}
 	doit(0, &from);
@@ -110,11 +108,11 @@ doit(f, fromp)
 		s = socket(AF_INET, SOCK_STREAM, 0);
 		if (s < 0)
 			exit(1);
-		if (bind(s, &asin, sizeof (asin)) < 0)
+		if (bind(s, (struct sockaddr *)&asin, sizeof (asin)) < 0)
 			exit(1);
 		(void) alarm(60);
 		fromp->sin_port = htons(port);
-		if (connect(s, fromp, sizeof (*fromp)) < 0)
+		if (connect(s, (struct sockaddr *)fromp, sizeof (*fromp)) < 0)
 			exit(1);
 		(void) alarm(0);
 	}
@@ -155,8 +153,9 @@ doit(f, fromp)
 			/* should set s nbio! */
 			do {
 				ready = readfrom;
-				(void) select(16, &ready, (fd_set *)0,
-				    (fd_set *)0, (struct timeval *)0);
+				(void) select(16, (fd_set *)&ready,
+				    (fd_set *)NULL, (fd_set *)NULL,
+				    (struct timeval *)NULL);
 				if (ready & (1<<s)) {
 					if (read(s, &sig, 1) <= 0)
 						readfrom &= ~(1<<s);
