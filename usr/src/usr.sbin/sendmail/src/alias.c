@@ -10,7 +10,7 @@
 # include <pwd.h>
 
 #ifndef lint
-static char sccsid[] = "@(#)alias.c	8.19 (Berkeley) %G%";
+static char sccsid[] = "@(#)alias.c	8.20 (Berkeley) %G%";
 #endif /* not lint */
 
 
