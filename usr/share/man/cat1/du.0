@@ -1,0 +1,52 @@
+DU(1)                        BSD Reference Manual                        DU(1)
+
+NNAAMMEE
+     dduu - display disk usage statistics
+
+SSYYNNOOPPSSIISS
+     dduu [--HH | --LL | --PP] [--aa | --ss] [--xx] [_f_i_l_e _._._.]
+
+DDEESSCCRRIIPPTTIIOONN
+     The dduu utility displays the file system block usage for each file argu-
+     ment and for each directory in the file hierarchy rooted in each directo-
+     ry argument.  If no file is specified, the block usage of the hierarchy
+     rooted in the current directory is displayed.  The number of blocks are
+     in the same units as that returned by the stat(2) system call, i.e.
+     512-byte blocks.  Partial numbers of blocks are rounded up.
+
+     The options are as follows:
+
+     --HH      Symbolic links on the command line are followed.  (Symbolic links
+             encountered in the tree traversal are not followed.)
+
+     --LL      All symbolic links are followed.
+
+     --PP      No symbolic links are followed.
+
+     --aa      Display an entry for each file in the file hierarchy.
+
+     --ss      Display only the grand total for the specified files.
+
+     --xx      Filesystem mount points are not traversed.
+
+     DDuu counts the storage used by symbolic links and not the files they ref-
+     erence unless the --HH or --LL option is specified.  If either the --HH or --LL
+     options are specified, storage used by any symbolic links which are fol-
+     lowed is not counted or displayed.  The --HH, --LL and --PP options override
+     each other and the command's actions are determined by the last one spec-
+     ified.
+
+     Files having multiple hard links are counted (and displayed) a single
+     time per dduu execution.
+
+EENNVVIIRROONNMMEENNTTAALL VVAARRIIAABBLLEESS
+     BLOCKSIZE  If the environmental variable BLOCKSIZE is set, the block
+                counts will be displayed in units of that size block.
+
+SSEEEE AALLSSOO
+     df(1),  fts(3),  symlink(7),  quot(8)
+
+HHIISSTTOORRYY
+     A dduu command appeared in Version 6 AT&T UNIX.
+
+4.4BSD                           April 1, 1994                               1

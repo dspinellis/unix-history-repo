@@ -1,0 +1,31 @@
+FILE(1)                      BSD Reference Manual                      FILE(1)
+
+NNAAMMEE
+     ffiillee - identify file content
+
+SSYYNNOOPPSSIISS
+     ffiillee [--hh] _f_i_l_e _._._.
+
+DDEESSCCRRIIPPTTIIOONN
+     FFiillee tests the specified files and attempts to classify them.  If a file
+     is a text file, it attempts to determine the type of text (e.g.  csh(1)
+     commands or C source code).
+
+     The options are as follows:
+
+     --hh      If a symbolic link is specified, identify the file as a symbolic
+             link.  By default, symbolic links are only identified if they
+             reference non-existent files.
+
+CCOOMMPPAATTIIBBIILLIITTYY
+     Previous implementations of the ffiillee utility did not follow symbolic
+     links by default.
+
+BBUUGGSS
+     As many tests are used and ffiillee stops testing on the first successful
+     one, it can often make mistakes.
+
+HHIISSTTOORRYY
+     A ffiillee command appeared in Version 6 AT&T UNIX.
+
+4.4BSD                          March 31, 1994                               1

@@ -1,0 +1,21 @@
+WHOAMI(1)                    BSD Reference Manual                    WHOAMI(1)
+
+NNAAMMEE
+     wwhhooaammii - display effective user id
+
+SSYYNNOOPPSSIISS
+     wwhhooaammii
+
+DDEESSCCRRIIPPTTIIOONN
+     The wwhhooaammii utility has been obsoleted by the id(1) utility, and is equiv-
+     alent to ``iidd --uunn''. The command ``iidd --pp'' is suggested for normal inter-
+     active use.
+
+     The wwhhooaammii utility displays your effective user ID as a name.
+
+     The wwhhooaammii utility exits 0 on success, and >0 if an error occurs.
+
+SSEEEE AALLSSOO
+     id(1)
+
+                                 June 6, 1993                                1

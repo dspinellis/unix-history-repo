@@ -1,0 +1,101 @@
+KTRACE(1)                    BSD Reference Manual                    KTRACE(1)
+
+NNAAMMEE
+     kkttrraaccee - enable kernel process tracing
+
+SSYYNNOOPPSSIISS
+     kkttrraaccee [--aaCCccddii] [--ff _t_r_f_i_l_e] [--gg _p_g_r_p] [--pp _p_i_d] [--tt _t_r_s_t_r]
+     kkttrraaccee [--aaddii] [--ff _t_r_f_i_l_e] [--tt _t_r_s_t_r] command
+
+DDEESSCCRRIIPPTTIIOONN
+     KKttrraaccee enables kernel trace logging for the specified processes.  Kernel
+     trace data is logged to the file _k_t_r_a_c_e_._o_u_t. The kernel operations that
+     are traced include system calls, namei translations, signal processing,
+     and I/O.
+
+     Once tracing is enabled on a process, trace data will be logged until ei-
+     ther the process exits or the trace point is cleared.  A traced process
+     can generate enormous amounts of log data quickly; It is strongly sug-
+     gested that users memorize how to disable tracing before attempting to
+     trace a process.  The following command is sufficient to disable tracing
+     on all user owned processes, and, if executed by root, all processes:
+
+           $ trace -C
+
+     The trace file is not human readable; use kdump(1) to decode it.
+
+     The options are as follows:
+
+     --aa      Append to the trace file instead of truncating it.
+
+     --CC      Disable tracing on all user owned processes, and, if executed by
+             root, all processes in the system.
+
+     --cc      Clear the trace points associated with the specified file or pro-
+             cesses.
+
+     --dd      Descendants; perform the operation for all current children of
+             the designated processes.
+
+     --ff _f_i_l_e
+             Log trace records to _f_i_l_e instead of _k_t_r_a_c_e_._o_u_t.
+
+     --gg _p_g_i_d
+             Enable (disable) tracing on all processes in the process group
+             (only one --gg flag is permitted).
+
+     --ii      Inherit; pass the trace flags to all future children of the des-
+             ignated processes.
+
+     --pp _p_i_d  Enable (disable) tracing on the indicated process id (only one --pp
+             flag is permitted).
+
+     --tt _t_r_s_t_r
+             The string argument represents the kernel trace points, one per
+             letter.  The following table equates the letters with the trace-
+             points:
+
+             cc     trace system calls
+             nn     trace namei translations
+             ii     trace I/O
+             ss     trace signal processing
+
+     _c_o_m_m_a_n_d
+             Execute _c_o_m_m_a_n_d with the specified trace flags.
+
+
+     The --pp, --gg, and _c_o_m_m_a_n_d options are mutually exclusive.
+
+EEXXAAMMPPLLEESS
+     # trace all kernel operations of process id 34
+           $ ktrace -p 34
+
+     # trace all kernel operations of processes in process group 15 and # pass
+     the trace flags to all current and future children
+           $ ktrace -idg 15
+
+     # disable all tracing of process 65
+           $ ktrace -cp 65
+
+     # disable tracing signals on process 70 and all current children
+           $ ktrace -t s -cdp 70
+
+     # enable tracing of I/O on process 67
+           $ ktrace -ti -p 67
+
+     # run the command "w", tracing only system calls
+           $ ktrace -tc w
+
+     # disable all tracing to the file "tracedata"
+           $ ktrace -c -f tracedata
+
+     # disable tracing of all processes owned by the user
+           $ ktrace -C
+
+SSEEEE AALLSSOO
+     kdump(1)
+
+HHIISSTTOORRYY
+     The kkttrraaccee command appears in 4.4BSD.
+
+4.4BSD                           June 6, 1993                                2

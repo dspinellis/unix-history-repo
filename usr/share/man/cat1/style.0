@@ -1,0 +1,47 @@
+STYLE(1)                     BSD Reference Manual                     STYLE(1)
+
+NNAAMMEE
+     ssttyyllee - analyze surface characteristics of a document
+
+SSYYNNOOPPSSIISS
+     ssttyyllee [--mmll] [--mmmm] [--aa] [--ee] [--ll_n_u_m] [--rr_n_u_m] [--pp] [--PP] _f_i_l_e _._._.
+
+DDEESSCCRRIIPPTTIIOONN
+     SSttyyllee analyzes the surface characteristics of the writing style of a doc-
+     ument.  It reports on readability, sentence length and structure, word
+     length and usage, verb type, and sentence openers.  Because ssttyyllee runs
+     deroff before looking at the text, formatting header files should be in-
+     cluded as part of the input.
+
+     Options available:
+
+     --aa        print all sentences with their length and readability index.
+
+     --ee        print all sentences that begin with an expletive.
+
+     --pp        print all sentences that contain a passive verb.
+
+     --ll _n_u_m    print all sentences longer than _n_u_m.
+
+     --mmll       The flag --mmll, which causes deroff to skip lists, should be used
+               if the document contains many lists of non-sentences.
+
+     --mmmm       The default macro package --mmss may be overridden with the flag
+               --mmmm.
+
+     --rr _n_u_m    print all sentences whose readability index is greater than
+               _n_u_m.
+
+     --PP        print parts of speech of the words in the document.
+
+SSEEEE AALLSSOO
+     deroff(1),  diction(1)
+
+BBUUGGSS
+     Use of non-standard formatting macros may cause incorrect sentence
+     breaks.
+
+HHIISSTTOORRYY
+     The ssttyyllee command appeared in 4BSD.
+
+4th Berkeley Distribution        June 6, 1993                                1

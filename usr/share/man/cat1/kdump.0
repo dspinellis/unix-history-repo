@@ -1,0 +1,45 @@
+KDUMP(1)                     BSD Reference Manual                     KDUMP(1)
+
+NNAAMMEE
+     kkdduummpp - display kernel trace data
+
+SSYYNNOOPPSSIISS
+     kkdduummpp [--ddnnllRRTT] [--ff _f_i_l_e] [--mm _m_a_x_d_a_t_a] [--tt [cnis]]
+
+DDEESSCCRRIIPPTTIIOONN
+     KKdduummpp displays the kernel trace files produced with ktrace(1) in human
+     readable format.  By default, the file _k_t_r_a_c_e_._o_u_t in the current directo-
+     ry is displayed.
+
+     The options are as follows:
+
+     --dd          Display all numbers in decimal.
+
+     --ff _f_i_l_e     Display the specified file instead of _k_t_r_a_c_e_._o_u_t.
+
+     --ll          Loop reading the trace file, once the end-of-file is reached,
+                 waiting for more data.
+
+     --mm _m_a_x_d_a_t_a  Display at most _m_a_x_d_a_t_a bytes when decoding I/O.
+
+     --nn          Suppress ad hoc translations.  Normally kkdduummpp tries to decode
+                 many system calls into a more human readable format.  For ex-
+                 ample, ioctl(2) values are replaced with the macro name and
+                 _e_r_r_n_o values are replaced with the strerror(3) string.  Sup-
+                 pressing this feature yields a more consistent output format
+                 and is easily amenable to further processing.
+
+     --RR          Display relative timestamps (time since previous entry).
+
+     --TT          Display absolute timestamps for each entry (seconds since
+                 epoch).
+
+     --tt _c_n_i_s     See the --tt option of ktrace(1).
+
+SSEEEE AALLSSOO
+     ktrace(1)
+
+HHIISSTTOORRYY
+     The kkdduummpp command appears in 4.4BSD.
+
+4.4BSD                           June 6, 1993                                1
