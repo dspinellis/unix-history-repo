@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)mfs_vfsops.c	7.19 (Berkeley) 4/16/91
- *	$Id$
+ *	$Id: mfs_vfsops.c,v 1.3 1993/10/16 18:17:42 rgrimes Exp $
  */
 
 #include "param.h"
@@ -137,6 +137,8 @@ mfs_mount(mp, path, data, ndp, p)
 		&size);
 	bzero(mp->mnt_stat.f_mntfromname + size, MNAMELEN - size);
 	(void) mfs_statfs(mp, &mp->mnt_stat);
+	if ((args.flags & MFSMNT_SIGPPID) && (p->p_pptr != initproc))
+		(void)psignal(p->p_pptr, SIGUSR1);
 	return (0);
 }
 
