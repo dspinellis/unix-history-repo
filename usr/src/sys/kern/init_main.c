@@ -1,4 +1,4 @@
-/*	init_main.c	4.9	%G%	*/
+/*	init_main.c	4.10	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -19,6 +19,7 @@
 #include "../h/cmap.h"
 #include "../h/text.h"
 #include "../h/vlimit.h"
+#include "../h/clist.h"
 
 /*
  * Initialization code.
@@ -166,19 +167,6 @@ iinit()
 }
 
 /*
- * This is the set of buffers proper, whose heads
- * were declared in buf.h.  There can exist buffer
- * headers not pointing here that are used purely
- * as arguments to the I/O routines to describe
- * I/O to be done-- e.g. swap headers swbuf[] for
- * swapping.
- *
- * These are actually allocated kernel map slots and space is
- * allocated in locore.s for them.
- */
-char	buffers[NBUF][BSIZE];
-
-/*
  * Initialize the buffer I/O system by freeing
  * all buffers and setting all device buffer lists to empty.
  */
@@ -195,10 +183,10 @@ binit()
 		dp->b_flags = B_HEAD;
 	}
 	dp--;				/* dp = &bfreelist[BQUEUES-1]; */
-	for (i=0; i<NBUF; i++) {
+	for (i=0; i<nbuf; i++) {
 		bp = &buf[i];
 		bp->b_dev = NODEV;
-		bp->b_un.b_addr = buffers[i];
+		bp->b_un.b_addr = buffers + i * BSIZE;
 		bp->b_back = dp;
 		bp->b_forw = dp->b_forw;
 		dp->b_forw->b_back = bp;
@@ -232,10 +220,10 @@ binit()
 bswinit()
 {
 	register int i;
-	register struct buf *sp
+	register struct buf *sp = swbuf;
 
 	bswlist.av_forw = sp;
-	for (i=0; i<NSWBUF-1; i++, sp++)
+	for (i=0; i<nswbuf-1; i++, sp++)
 		sp->av_forw = sp+1;
 	sp->av_forw = NULL;
 }

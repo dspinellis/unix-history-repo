@@ -1,4 +1,4 @@
-/*	machdep.c	4.18	81/02/27	*/
+/*	machdep.c	4.19	81/02/27	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -30,7 +30,7 @@
 int	coresw = 0;
 int	printsw = 0;
 
-char	version[] = "VM/UNIX (Berkeley Version 4.18) 81/02/27 02:39:23 \n";
+char	version[] = "VM/UNIX (Berkeley Version 4.19) 81/02/27 17:44:47 \n";
 int	icode[] =
 {
 	0x9f19af9f,	/* pushab [&"init",0]; pushab */
@@ -78,7 +78,7 @@ startup(firstaddr)
 	 * We allocate 1/2 as many swap buffer headers as file i/o buffers.
 	 */
 	nbuf = (32 * physmem) / btoc(1024*1024); if (nbuf < 32) nbuf = 32;
-	nswbuf = nbuf / 2;
+	nswbuf = (nbuf / 2) &~ 1;	/* force even */
 
 	/*
 	 * Allocate space for system data structures.
@@ -91,13 +91,15 @@ startup(firstaddr)
 	valloc(buffers, char, BSIZE*nbuf);
 	valloc(buf, struct buf, nbuf);
 	valloc(swbuf, struct buf, nswbuf);
+	valloc(swsize, short, nswbuf);	/* note: nswbuf is even */
+	valloc(swpf, int, nswbuf);
 	valloclim(inode, struct inode, ninode, inodeNINODE);
 	valloclim(file, struct file, nfile, fileNFILE);
 	valloclim(proc, struct proc, nproc, procNPROC);
 	valloclim(text, struct text, ntext, textNTEXT);
 	valloc(cfree, struct cblock, nclist);
 	valloc(callout, struct callout, ncallout);
-	valloc(swapmap, struct map, nproc * 4);
+	valloc(swapmap, struct map, nswapmap = nproc * 4);
 	valloc(argmap, struct map, 25);
 	valloc(kernelmap, struct map, nproc);
 
@@ -112,7 +114,7 @@ startup(firstaddr)
 	 * Clear allocated space, and make r/w entries
 	 * for the space in the kernel map.
 	 */
-	unixsize = btoc((int)ecmap);
+	unixsize = btoc((int)ecmap &~ 0x80000000);
 	if (unixsize >= physmem - 8*UPAGES)
 		panic("no memory");
 	pte = &Sysmap[firstaddr];

@@ -1,9 +1,9 @@
-/*	kern_clock.c	4.13	%G%	*/
+/*	kern_clock.c	4.14	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
 #include "../h/dk.h"
-#include "../h/callo.h"
+#include "../h/callout.h"
 #include "../h/seg.h"
 #include "../h/dir.h"
 #include "../h/user.h"
@@ -52,7 +52,7 @@
 hardclock(pc, ps)
 	caddr_t pc;
 {
-	register struct callo *p1;
+	register struct callout *p1;
 	register struct proc *pp;
 	register int s, cpstate;
 
@@ -86,7 +86,7 @@ out:
 		}
 		if (s > u.u_vm.vm_maxrss)
 			u.u_vm.vm_maxrss = s;
-		if ((u.u_vm.vm_utime+u.u_vm.vm_stime+1)/HZ > u.u_limit[LIM_CPU]) {
+		if ((u.u_vm.vm_utime+u.u_vm.vm_stime+1)/hz > u.u_limit[LIM_CPU]) {
 			psignal(u.u_procp, SIGXCPU);
 			if (u.u_limit[LIM_CPU] < INFINITY - 5)
 				u.u_limit[LIM_CPU] += 5;
@@ -142,7 +142,7 @@ double	ccpu = 0.95122942450071400909;		/* exp(-1/20) */
 softclock(pc, ps)
 	caddr_t pc;
 {
-	register struct callo *p1, *p2;
+	register struct callout *p1, *p2;
 	register struct proc *pp;
 	register int a, s;
 
@@ -186,7 +186,7 @@ softclock(pc, ps)
 	/*
 	 * Run paging daemon and reschedule every 1/4 sec.
 	 */
-	if (lbolt % (HZ/4) == 0) {
+	if (lbolt % (hz/4) == 0) {
 		vmpago();
 		runrun++;
 		aston();
@@ -200,10 +200,10 @@ softclock(pc, ps)
 	 *	virtual memory metering
 	 *	kick swapper if processes want in
 	 */
-	if (lbolt >= HZ) {
+	if (lbolt >= hz) {
 		if (BASEPRI(ps))
 			return;
-		lbolt -= HZ;
+		lbolt -= hz;
 		++time;
 		wakeup((caddr_t)&lbolt);
 		for(pp = proc; pp < procNPROC; pp++)
@@ -233,7 +233,7 @@ softclock(pc, ps)
 					pp->p_slptime++;
 			if (pp->p_flag&SLOAD)
 				pp->p_pctcpu = ccpu * pp->p_pctcpu +
-				    (1.0 - ccpu) * (pp->p_cpticks/(float)HZ);
+				    (1.0 - ccpu) * (pp->p_cpticks/(float)hz);
 			pp->p_cpticks = 0;
 			a = (pp->p_cpu & 0377)*SCHMAG + pp->p_nice - NZERO;
 			if(a < 0)
@@ -273,7 +273,7 @@ softclock(pc, ps)
 		if (USERMODE(ps)) {
 			pp = u.u_procp;
 			if (pp->p_uid)
-				if (pp->p_nice == NZERO && u.u_vm.vm_utime > 600 * HZ)
+				if (pp->p_nice == NZERO && u.u_vm.vm_utime > 600 * hz)
 					pp->p_nice = NZERO+4;
 			(void) setpri(pp);
 			pp->p_pri = pp->p_usrpri;
@@ -287,10 +287,10 @@ softclock(pc, ps)
 
 /*
  * timeout is called to arrange that
- * fun(arg) is called in tim/HZ seconds.
+ * fun(arg) is called in tim/hz seconds.
  * An entry is sorted into the callout
  * structure. The time in each structure
- * entry is the number of HZ's more
+ * entry is the number of hz's more
  * than the previous entry.
  * In this way, decrementing the
  * first entry has the effect of
@@ -303,7 +303,7 @@ timeout(fun, arg, tim)
 	int (*fun)();
 	caddr_t arg;
 {
-	register struct callo *p1, *p2, *p3;
+	register struct callout *p1, *p2, *p3;
 	register int t;
 	int s;
 
@@ -316,7 +316,7 @@ timeout(fun, arg, tim)
 	}
 	p1->c_time -= t;
 	p2 = p1;
-	p3 = callout+(ncall-2);
+	p3 = callout+(ncallout-2);
 	while(p2->c_func != 0) {
 		if (p2 >= p3)
 			panic("timeout");
