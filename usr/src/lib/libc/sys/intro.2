@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)intro.2	6.9 (Berkeley) %G%
+.\"	@(#)intro.2	6.10 (Berkeley) %G%
 .\"
 .TH INTRO 2 ""
 .UC 4
@@ -43,7 +43,7 @@ names as given in
 .RI < sys/errno.h >.
 .en 0 \h'\w'EIO'u' "Error 0
 Unused.
-.en 1 EPERM "Not owner
+.en 1 EPERM "Operation not permitted
 Typically this error indicates
 an attempt to modify a file in some way forbidden
 except to its owner or super-user.
@@ -66,21 +66,21 @@ after processing the signal
 and the system call is not restarted,
 it will appear as if the interrupted system call
 returned this error condition.
-.en 5 EIO "I/O error
+.en 5 EIO "Input/output error
 Some physical I/O error occurred during a
 .I read
 or
 .IR write .
 This error may in some cases occur
 on a call following the one to which it actually applies.
-.en 6 ENXIO "No such device or address
+.en 6 ENXIO "Device not configured
 I/O on a special file refers to a subdevice that does not
 exist,
 or beyond the limits of the device.
 It may also occur when, for example, an illegal tape drive
 unit number is selected 
 or a disk pack is not loaded on a drive.
-.en 7 E2BIG "Arg list too long
+.en 7 E2BIG "Argument list too long
 An argument list longer than 20480 bytes (or the current limit, NCARGS in
 .IR <sys/param.h> )
 is presented to
@@ -90,22 +90,19 @@ A request is made to execute a file
 that, although it has the appropriate permissions,
 does not start with a valid magic number, (see
 .IR a.out (5)).
-.en 9 EBADF "Bad file number
+.en 9 EBADF "Bad file descriptor
 Either a file descriptor refers to no
 open file,
 or a read (resp. write) request is made to
 a file that is open only for writing (resp. reading).
-.en 10 ECHILD "No children
+.en 10 ECHILD "No child processes
 .I Wait
 and the process has no
 living or unwaited-for children.
-.en 11 EAGAIN "No more processes
-In a
-.I fork,
-the system's process table is full
-or the user is not allowed to create any more
-processes.
-.en 12 ENOMEM "Not enough memory
+.en 11 EDEADLK "Resource deadlock avoided
+An attempt was made to lock a system resource that
+would have resulted in a deadlock situation.
+.en 12 ENOMEM "Cannnot allocate memory
 During an
 .I execve
 or
@@ -141,7 +138,7 @@ e.g.,
 .en 18 EXDEV "Cross-device link
 A hard link to a file on another device
 was attempted.
-.en 19 ENODEV "No such device
+.en 19 ENODEV "Operation not supported by device
 An attempt was made to apply an inappropriate
 system call to a device,
 e.g., to read a write-only device,
@@ -163,7 +160,7 @@ mentioning an unknown signal in
 or some other argument inappropriate for the call.
 Also set by math functions, (see 
 .IR math (3)).
-.en 23 ENFILE "File table overflow
+.en 23 ENFILE "Too many open files in system
 The system's table of open files is full,
 and temporarily no more
 .I opens
@@ -216,15 +213,15 @@ A write on a pipe or socket for which there is no process
 to read the data.
 This condition normally generates a signal;
 the error is returned if the signal is caught or ignored.
-.en 33 EDOM "Argument too large
+.en 33 EDOM "Numerical argument out of domain
 The argument of a function in the math package (3M)
 is out of the domain of the function.
-.en 34 ERANGE "Result too large
+.en 34 ERANGE "Numerical result out of range
 The value of a function in the math package (3M)
 is unrepresentable within machine precision.
-.en 35 EWOULDBLOCK "Operation would block"
-An operation that would cause a process to block was attempted
-on an object in non-blocking mode (see \fIfcntl\fP(2)).
+.en 35 EAGAIN "Resource temporarily unavailable
+This is a temporary condition and later calls to the
+same routine may complete normally.
 .en 36 EINPROGRESS "Operation now in progress"
 An operation that takes a long time to complete (such as
 a \fIconnect\fP(2)) was attempted on a non-blocking object (see
@@ -243,7 +240,7 @@ or some other network limit.
 A protocol was specified that does not support the semantics of the
 socket type requested. For example, you cannot use the ARPA Internet
 UDP protocol with type SOCK_STREAM.
-.en 42 ENOPROTOOPT "Option not supported by protocol 
+.en 42 ENOPROTOOPT "Protocol not available
 A bad option or level was specified in a
 .IR getsockopt (2)
 or
@@ -303,7 +300,6 @@ A request to send data was disallowed because the socket
 had already been shut down with a previous
 .IR shutdown (2)
 call.
-.en 59 \fIunused\fP
 .en 60 ETIMEDOUT "Connection timed out"
 A
 .I connect
@@ -323,12 +319,12 @@ A component of a path name exceeded 255 (MAXNAMELEN) characters, or an entire
 path name exceeded 1023 (MAXPATHLEN-1) characters.
 .en 64 EHOSTDOWN "Host is down"
 A socket operation failed because the destination host was down.
-.en 65 EHOSTUNREACH "Host is unreachable"
+.en 65 EHOSTUNREACH "No route to host"
 A socket operation was attempted to an unreachable host.
 .en 66 ENOTEMPTY "Directory not empty"
 A directory with entries other than \*(lq.\*(rq and \*(lq..\*(rq
 was supplied to a remove directory or rename call.
-...en 67 EPROCLIM "Too many processes"
+.en 67 EPROCLIM "Too many processes"
 .en 68 EUSERS "Too many users"
 The quota system ran out of table entries.
 .en 69 EDQUOT "Disc quota exceeded"
@@ -340,6 +336,30 @@ entry failed because the user's quota of disk blocks was
 exhausted, or the allocation of an inode for a newly
 created file failed because the user's quota of inodes
 was exhausted.
+.en 70 ESTALE "Stale NFS file handle"
+An attempt was made to access an open file (on an NFS filesystem)
+which is now unavailable as referenced by the file descriptor.  
+This may indicate the file was deleted on the NFS server and some 
+other catastrophic event occured.
+.en 72 EBADRPC "RPC struct is bad"
+Exchange of RPC information was unsuccessful.
+.en 73 ERPCMISMATCH "RPC version wrong"
+The version of RPC on the remote peer is not compatible with
+the local version.
+.en 74 EPROGUNAVAIL "RPC prog. not avail"
+The requested program is not registered on the remote host.
+.en 75 EPROGMISMATCH "Program version wrong"
+The requested version of the program is not available 
+on the remote host (RPC).
+.en 76 EPROCUNAVAIL "Bad procedure for program"
+An RPC call was attempted for a procedure which doesn't exist
+in the remote program.
+.en 77 ENOLCK "No locks available"
+A system-imposed limit on the number of simultaneous file 
+locks was reached.
+.en 78 ENOSYS "Function not implemented"
+Attempted a system call that is not available on this 
+system.
 .SH DEFINITIONS
 .TP 5
 Process ID
