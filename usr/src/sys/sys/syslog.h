@@ -1,57 +1,55 @@
-/*	syslog.h	4.3	84/05/04	*/
+/*	syslog.h	4.3	85/01/31	*/
 
 /*
- *  SYSLOG.H -- declarations for system logging program
+ *  Declarations for system logging program
  *
- *	These are used as the first parameter to logmsg().
- *	Their meanings are approximately as follows:
- *
- *	LOG_ALERT -- this priority should essentially never
- *		be used.  It applies only to messages that
- *		are so important that every user should be
- *		aware of them, e.g., a serious hardware failure.
- *	LOG_SALERT -- messages of this priority should be
- *		issued only when immediate attention is needed
- *		by a qualified system person, e.g., when some
- *		valuable system resource dissappears.  They get
- *		sent to a list of system people.
- *	LOG_EMERG -- Emergency messages are not sent to users,
- *		but represent major conditions.  An example
- *		might be hard disk failures.  These could be
- *		logged in a separate file so that critical
- *		conditions could be easily scanned.
- *	LOG_ERR -- these represent error conditions, such as soft
- *		disk failures, etc.
- *	LOG_CRIT -- such messages contain critical information,
- *		but which can not be classed as errors, for example,
- *		'su' attempts.
- *	LOG_WARNING -- issued when an abnormal condition has been
- *		detected, but recovery can take place.
- *	LOG_NOTICE -- something that falls in the class of
- *		"important information"; this class is informational
- *		but important enough that you don't want to throw
- *		it away casually.
- *	LOG_INFO -- information level messages.  These messages
- *		could be thrown away without problems, but should
- *		be included if you want to keep a close watch on
- *		your system.
- *	LOG_DEBUG -- it may be useful to log certain debugging
- *		information.  Normally this will be thrown away.
+ *	These are used as the first parameter to syslog().
  */
 
-/* defines for priorities */
-#define	LOG_ALERT	1	/* alert -- send to all users */
-#define	LOG_SALERT	2	/* subalert -- send to special users */
-#define	LOG_EMERG	3	/* emergency conditions */
-#define	LOG_ERROR	4	/* error */
-#define	LOG_ERR		4	/* synonym of LOG_ERROR */
-#define	LOG_CRIT	5	/* critical information */
-#define	LOG_WARNING	6	/* warning */
-#define	LOG_NOTICE	7	/* important information */
-#define	LOG_INFO	8	/* informational message */
-#define	LOG_DEBUG	9	/* debug level info */
+	/* kernel priorities */
+#define	KERN_EMERG	1	/* emergency -- send to all users (wall) */
+#define	KERN_ALERT	2	/* alert -- system failure */
+#define	KERN_ERR	3	/* hard errors */
+#define	KERN_FAIL	4	/* table full/overflow */
+#define	KERN_RECOV	5	/* recoverable errors (softecc) */
+#define	KERN_INFO	6	/* inconsistency/configuration error */
+
+	/* user abnormal conditions priorities */
+#define	LOG_EMERG	7	/* system unusable -- send to all users */
+#define	LOG_ALERT	8	/* missing files (e.g., /etc/utmp) */
+#define	LOG_CRIT	9	/* critical conditions */
+#define	LOG_ERR		10	/* init open faliures/fatal daemon errors */
+#define	LOG_FAIL	11	/* getty failing, interface dropped */
+#define	LOG_WARN	12	/* non-fatal daemon errs */
+
+	/* user priorities */
+#define	LOG_SALERT	13	/* important information */
+#define	LOG_SECURITY	14	/* root/su logins */
+#define	LOG_FIXED	15	/* abnormal condition fixed (recovery action) */
+#define	LOG_MAIL	16	/* mail failures */
+#define	LOG_REJECT	17	/* login/daemon rejections */
+#define	LOG_NOTICE	18	/* important info */
+
+	/* user information priorities */
+#define	LOG_INFO	19	/* informational message */
+#define	LOG_INFO1	20	/* informational message */
+#define	LOG_INFO2	21	/* informational message */
+#define	LOG_INFO3	22	/* informational message */
+#define	LOG_INFO4	23	/* informational message */
+#define	LOG_INFO5	24	/* informational message */
+
+	/* user debug/local priorities */
+#define	LOG_DEBUG	25	/* debugging info */
+#define	LOG_LOCAL1	26	/* reserved for local use */
+#define	LOG_LOCAL2	27	/* reserved for local use */
+#define	LOG_LOCAL3	28	/* reserved for local use */
+#define	LOG_LOCAL4	29	/* reserved for local use */
+#define	LOG_LOCAL5	30	/* reserved for local use */
+#define	LOG_LOCAL6	31	/* reserved for local use */
 
 /*
  *  Option flags for openlog.
  */
 #define	LOG_PID		01	/* log the pid with each message */
+#define	LOG_CONS	02	/* log on the console if errors in sending */
+#define	LOG_ODELAY	04	/* delay open until syslog() is called */
