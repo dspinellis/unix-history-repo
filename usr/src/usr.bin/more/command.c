@@ -20,7 +20,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)command.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)command.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -51,9 +51,7 @@ extern char *first_cmd;
 extern char *every_first_cmd;
 extern char version[];
 extern char *current_file;
-#if EDITOR
 extern char *editor;
-#endif
 extern int screen_trashed;	/* The screen has been overwritten */
 
 static char cmdbuf[120];	/* Buffer for holding a multi-char command */
@@ -684,7 +682,6 @@ commands()
 			/*
 			 * Invoke an editor on the input file.
 			 */
-#if EDITOR
 			if (ispipe)
 			{
 				error("Cannot edit standard input");
@@ -705,10 +702,6 @@ commands()
 			ch_init(0, 0);
 			clr_linenum();
 			break;
-#else
-			error("Command not available");
-			break;
-#endif
 
 		case A_NEXT_FILE:
 			/*
